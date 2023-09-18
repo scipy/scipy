@@ -1,0 +1,249 @@
+// Keyboard layouts for Great Britain.
+
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+    // The basic UK layout, also known as the IBM 166 layout,
+    // but with the useless brokenbar pushed two levels up.
+
+    include "latin"
+
+    name[Group1]="English (UK)";
+
+    key <TLDE>	{ [     grave,    notsign,          bar,          bar ]	};
+    key <AE02>	{ [         2,   quotedbl,  twosuperior,    oneeighth ]	};
+    key <AE03>	{ [         3,   sterling, threesuperior,    sterling ]	};
+    key <AE04>	{ [         4,     dollar,     EuroSign,   onequarter ]	};
+
+    key <AC11>	{ [apostrophe,         at, dead_circumflex, dead_caron]	};
+    key <BKSL>	{ [numbersign, asciitilde,   dead_grave,   dead_breve ]	};
+
+    key <LSGT>	{ [ backslash,        bar,          bar,    brokenbar ]	};
+
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "intl" {
+
+    // A UK layout but with five accents made into dead keys:
+    // grave, diaeresis, circumflex, acute, and tilde.
+    // By Phil Jones <philjones1 at blueyonder.co.uk>.
+
+    include "latin"
+
+    name[Group1]="English (UK, intl., with dead keys)";
+
+    key <TLDE>  { [ dead_grave,    notsign,            bar,         bar ] };
+    key <AE02>  { [   2,    dead_diaeresis,    twosuperior,     onehalf ] };
+    key <AE03>  { [   3,          sterling,  threesuperior,    onethird ] };
+    key <AE04>  { [   4,            dollar,       EuroSign,  onequarter ] };
+    key <AE06>  { [   6,   dead_circumflex,  threequarters,    onesixth ] };
+
+    key <AC11>  { [ dead_acute,         at,     apostrophe,         bar ] };
+    key <BKSL>  { [ numbersign, dead_tilde,            bar,         bar ] };
+
+    key <LSGT>  { [  backslash,        bar,            bar,         bar ] };
+    key <AB08>  { [      comma,       less,       ccedilla,    Ccedilla ] };
+
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "extd" {
+    // Clone of the Microsoft "United Kingdom Extended" layout, which
+    // includes dead keys for: grave; diaeresis; circumflex; tilde; and
+    // accute. It also enables direct access to accute characters using
+    // the Multi_key (Alt Gr).
+    //
+    // Taken from...
+    //    "Windows Keyboard Layouts"
+    //    https://docs.microsoft.com/en-gb/globalization/windows-keyboard-layouts#U
+    //
+    // -- Jonathan Miles <jon@cybah.co.uk>
+
+    include "latin"
+
+    name[Group1]="English (UK, extended, Windows)";
+
+    key <TLDE> { [ dead_grave,    notsign,       brokenbar,    NoSymbol ] };
+    key <AE02> { [     2,        quotedbl,  dead_diaeresis,     onehalf ] };
+    key <AE03> { [     3,        sterling,   threesuperior,    onethird ] };
+    key <AE04> { [     4,          dollar,        EuroSign,  onequarter ] };
+    key <AE06> { [     6,     asciicircum, dead_circumflex,    NoSymbol ] };
+
+    key <AD02> { [   w,                 W,          wacute,      Wacute ] };
+    key <AD03> { [   e,                 E,          eacute,      Eacute ] };
+    key <AD06> { [   y,                 Y,          yacute,      Yacute ] };
+    key <AD07> { [   u,                 U,          uacute,      Uacute ] };
+    key <AD08> { [   i,                 I,          iacute,      Iacute ] };
+    key <AD09> { [   o,                 O,          oacute,      Oacute ] };
+    key <AD12> { [ bracketright, braceright,      NoSymbol,         bar ] };
+
+    key <AC01> { [   a,                 A,          aacute,      Aacute ] };
+    key <AC11> { [  apostrophe,         at,     dead_acute,      grave  ] };
+    key <BKSL>  { [ numbersign, asciitilde,     dead_tilde,    backslash ] };
+
+    key <LSGT>  { [  backslash,        bar,       NoSymbol,    NoSymbol ] };
+    key <AB03> { [   c,                 C,        ccedilla,    Ccedilla ] };
+
+    include "level3(ralt_switch)"
+};
+
+// Describe the differences between the US Colemak layout
+// and a UK variant. By Andy Buckley (andy@insectnation.org)
+
+partial alphanumeric_keys
+xkb_symbols "colemak" {
+    include "us(colemak)"
+
+    name[Group1]="English (UK, Colemak)";
+
+    key <TLDE>	{ [     grave,    notsign,          bar,   asciitilde ]	};
+    key <AE02>	{ [         2,   quotedbl,  twosuperior,    oneeighth ]	};
+    key <AE03>	{ [         3,   sterling, threesuperior,    sterling ]	};
+    key <AE04>	{ [         4,     dollar,     EuroSign,   onequarter ]	};
+
+    key <AC11>	{ [apostrophe,         at, dead_circumflex, dead_caron]	};
+    key <BKSL>	{ [numbersign, asciitilde,   dead_grave,   dead_breve ]	};
+
+    key <LSGT>	{ [ backslash,        bar,   asciitilde,    brokenbar ]	};
+};
+
+// Colemak-DH (ISO) layout, UK Variant, https://colemakmods.github.io/mod-dh/
+
+partial alphanumeric_keys
+xkb_symbols "colemak_dh" {
+    include "us(colemak_dh)"
+
+    name[Group1]="English (UK, Colemak-DH)";
+
+    key <TLDE>	{ [     grave,    notsign,          bar,   asciitilde ]	};
+    key <AE02>	{ [         2,   quotedbl,  twosuperior,    oneeighth ]	};
+    key <AE03>	{ [         3,   sterling, threesuperior,    sterling ]	};
+    key <AE04>	{ [         4,     dollar,     EuroSign,   onequarter ]	};
+
+    key <AC11>	{ [apostrophe,         at, dead_circumflex, dead_caron]	};
+    key <BKSL>	{ [numbersign, asciitilde,   dead_grave,   dead_breve ]	};
+
+    key <AB05>	{ [ backslash,        bar,   asciitilde,    brokenbar ]	};
+};
+
+
+// Dvorak (UK) keymap (by odaen) allowing the usage of
+// the £ and ? key and swapping the @ and " keys.
+
+partial alphanumeric_keys
+xkb_symbols "dvorak" {
+    include "us(dvorak-alt-intl)"
+
+    name[Group1]="English (UK, Dvorak)";
+
+    key <TLDE> { [	grave,	notsign,   bar,           bar		] };
+    key <AE02> { [	    2,	quotedbl,  twosuperior,   NoSymbol	] };
+    key <AE03> { [	    3,	sterling,  threesuperior, NoSymbol	] };
+    key <AD01> { [ apostrophe,	at		] };
+    key <BKSL> { [ numbersign,	asciitilde	] };
+    key <LSGT> { [  backslash,	bar		] };
+};
+
+// Dvorak letter positions, but punctuation all in the normal UK positions.
+
+partial alphanumeric_keys
+xkb_symbols "dvorakukp" {
+    include "gb(dvorak)"
+
+    name[Group1]="English (UK, Dvorak, with UK punctuation)";
+
+    key <AE11> {        [     minus,    underscore      ]       };
+    key <AE12> {        [     equal,    plus            ]       };
+    key <AD11> {        [ bracketleft,  braceleft       ]       };
+    key <AD12> {        [ bracketright, braceright      ]       };
+    key <AD01> {        [ slash,        question        ]       };
+    key <AC11> {        [apostrophe,    at,         dead_circumflex, dead_caron] };
+};
+
+partial alphanumeric_keys
+xkb_symbols "mac" {
+
+    include "latin"
+
+    name[Group1]= "English (UK, Macintosh)";
+
+    key <TLDE> {	[         section,       plusminus ]	};
+    key <AE02> {	[               2,              at,         EuroSign	]	};
+    key <AE03> {	[               3,        sterling,       numbersign	]	};
+    key <LSGT> {	[           grave,      asciitilde ]	};
+
+    include "level3(ralt_switch)"
+    include "level3(enter_switch)"
+};
+
+
+partial alphanumeric_keys
+xkb_symbols "mac_intl" { 
+
+    include "latin" 
+
+    name[Group1]="English (UK, Macintosh, intl.)";
+
+    key <TLDE>  { [ section,            plusminus,            notsign,    notsign ] }; //dead_grave
+    key <AE02>  { [   2,                       at,           EuroSign,    onehalf ] };
+    key <AE03>  { [   3,                 sterling,        twosuperior,   onethird ] };
+    key <AE04>  { [   4,                   dollar,      threesuperior, onequarter ] };
+    key <AE06>  { [   6,          dead_circumflex,           NoSymbol,   onesixth ] };
+    key <AD09>    { [   o,                        O,                 oe,       OE ] };
+
+    key <AC11>  { [ dead_acute,    dead_diaeresis,     dead_diaeresis,        bar ] }; //dead_doubleacute
+    key <BKSL>  { [ backslash,                bar,         numbersign,        bar ] };
+
+    key <LSGT>  { [ dead_grave,        dead_tilde,          brokenbar,        bar ] };
+
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "pl" {
+
+    // Polish accented letters on upper levels of corresponding base letters.
+    // Idea from Wawrzyniec Niewodniczański, adapted by Aleksander Kowalski.
+
+    include "gb(basic)"
+
+    name[Group1]="Polish (British keyboard)";
+
+    key <AD03>  { [         e,          E,      eogonek,      Eogonek ] };
+    key <AD09>  { [         o,          O,       oacute,       Oacute ] };
+
+    key <AC01>  { [         a,          A,      aogonek,      Aogonek ] };
+    key <AC02>  { [         s,          S,       sacute,       Sacute ] };
+
+    key <AB01>  { [         z,          Z,    zabovedot,    Zabovedot ] };
+    key <AB02>  { [         x,          X,       zacute,       Zacute ] };
+    key <AB03>  { [         c,          C,       cacute,       Cacute ] };
+    key <AB06>  { [         n,          N,       nacute,       Nacute ] };
+};
+
+partial alphanumeric_keys
+xkb_symbols "gla" {
+
+    // Grave-accented letters on the upper levels of the relevant vowels.
+
+    include "gb(basic)"
+
+    name[Group1]="Scottish Gaelic";
+
+    key <AD03> { [   e,                 E,          egrave,      Egrave ] };
+    key <AD07> { [   u,                 U,          ugrave,      Ugrave ] };
+    key <AD08> { [   i,                 I,          igrave,      Igrave ] };
+    key <AD09> { [   o,                 O,          ograve,      Ograve ] };
+
+    key <AC01> { [   a,                 A,          agrave,      Agrave ] };
+};
+
+// EXTRAS:
+
+partial alphanumeric_keys
+	xkb_symbols "sun_type6" {
+	include "sun_vndr/gb(sun_type6)"
+};

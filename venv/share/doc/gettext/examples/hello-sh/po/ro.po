@@ -1,0 +1,37 @@
+# Mesajele în limba română pentru pachetul hello-sh.
+# Copyright (C) 2015 Yoyodyne, Inc. (msgids)
+# This file is distributed under the same license as the gettext package.
+#
+# Eugen Hoancă <eugenh@urban-grafx.ro>, 2003
+# Mihai Cristescu <mihai.cristescu@archlinux.info>, 2015
+# Traducere făcută de MC, pentru versiunea hello-sh 0.20-rc1.
+# Actualizare a mesajelor, de la fișierul „hello-sh-0.20.2.pot”.
+# Actualizare a algoritmului formelor de plural (de la „trei-vechi” la „trei-actual”).
+# NU și a mesajelor traduse (acestea au rămas neschimbate).
+# Eliminare a mesajelor ce-au dispărut în ultima versiune.
+# Actualizări realizate de Remus-Gabriel Chelu <remusgabriel.chelu@disroot.org>, 15.01.2022.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: hello-sh 0.20.2\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"PO-Revision-Date: 2022-01-23 21:23+0100\n"
+"Last-Translator: Remus-Gabriel Chelu <remusgabriel.chelu@disroot.org>\n"
+"Language-Team: Romanian <translation-team-ro@lists.sourceforge.net>\n"
+"Language: ro\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : (n==0 || (n%100 > 0 && n%100 < "
+"20)) ? 1 : 2);\n"
+"X-Generator: Poedit 2.3.1\n"
+
+#: hello.sh:14
+msgid "Hello, world!"
+msgstr "Salut, lume!"
+
+#: hello.sh:17
+#, sh-format
+msgid "This program is running as process number $pid."
+msgstr "Acest program rulează ca procesul numărul $pid."

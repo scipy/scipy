@@ -1,0 +1,150 @@
+//
+//Copyright 1996, 1998  The Open Group
+//
+//Permission to use, copy, modify, distribute, and sell this software and its
+//documentation for any purpose is hereby granted without fee, provided that
+//the above copyright notice appear in all copies and that both that
+//copyright notice and this permission notice appear in supporting
+//documentation.
+//
+//The above copyright notice and this permission notice shall be
+//included in all copies or substantial portions of the Software.
+//
+//THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+//EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+//MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+//IN NO EVENT SHALL THE OPEN GROUP BE LIABLE FOR ANY CLAIM, DAMAGES OR
+//OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+//ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+//OTHER DEALINGS IN THE SOFTWARE.
+//
+//Except as contained in this notice, the name of The Open Group shall
+//not be used in advertising or otherwise to promote the sale, use or
+//other dealings in this Software without prior written authorization
+//from The Open Group.
+//
+default xkb_geometry "sanwaskbkg3" {
+
+    description= "Sanwa Supply SKB-KG3";
+    // SKB-KG3BK (black)
+    // http://www.sanwa.co.jp/product/syohin.asp?code=SKB-KG3BK
+    // http://www.sanwa.co.jp/zooma/keybord/SKB-KG3BK/
+    // SKB-KG3W (white)
+    // http://www.sanwa.co.jp/product/syohin.asp?code=SKB-KG3W
+    // http://www.sanwa.co.jp/zooma/keybord/SKB-KG3SW/
+    // SKB-KG3SV (silver)
+    // http://www.sanwa.co.jp/product/syohin.asp?code=SKB-KG3SV
+    // http://www.sanwa.co.jp/zooma/keybord/SKB-KG3SV/
+
+    width= 304;
+    height= 127;
+
+    shape.cornerRadius= 1;
+    shape "TOP"  { { [15.25,13] }, { [2,2], [13.25,11] } };
+    shape "NORM" { { [17,16] }, { [2,2], [15,14] } };
+    shape "TBBK" { { [24.5,16] }, { [2,2], [22.5,14] } };
+    shape "RTRN" { { [0,0], [36,0], [36,34], [8.5,34], [8.5,16], [0,16] },
+                   { [2,2], [34,2], [34,32], [10.5,32], [10.5,14], [2,14] } };
+    shape "CAPS" { { [33,16] }, { [28,16] }, { [2,2], [26,14] } };
+    shape "LFSH" { { [41,16] }, { [2,2], [39,14] } };
+    shape "CTSH" { { [19.5,16] }, { [2,2], [17.5,14] } };
+    shape "SPCE" { { [57.5,16] }, { [2,2], [55.5,14] } };
+
+    shape "LED"  { cornerRadius= 0, { [5,1] } };
+
+    indicator.onColor= "green";
+    indicator.offColor= "green30";
+    indicator.top= 3;
+    indicator.shape= "LED";
+    indicator "Num Lock"    { left= 247; };
+    indicator "Caps Lock"   { left= 266; };
+    indicator "Scroll Lock" { left= 285; };
+    text.color= "black";
+    text.top= 1;
+    text "Vendor1"          { left=  10; text="SANWA"; };
+    text.top= 4.5;
+    text "Vendor2"          { left=  10; text="SUPPLY"; };
+    text "NumLockLabel"     { left= 241; text="Num Lock"; };
+    text "CapsLockLabel"    { left= 260; text="Caps Lock"; };
+    text "ScrollLockLabel"  { left= 279; text="Scroll Lock"; };
+
+    section.left= 3;
+    row.left= 1;
+    key.shape= "NORM";
+    key.gap= 2;
+    section "Function" {
+        key.shape= "TOP";
+        top= 10;
+        row {
+            top= 1;
+            keys { <ESC>, <FK01>, <FK02>, <FK03>, <FK04>, <FK05>, <FK06>,
+                   <FK07>, <FK08>, <FK09>, <FK10>, <FK11>, <FK12>, <PRSC>,
+                   {<NMLK>, color="grey20"}, <PAUS>, {<DELE>, color="grey20"}
+            };
+        };
+        overlay "SCLK" {
+            <NMLK>=<SCLK>
+        };
+        overlay "FN" {
+            <DELE>=<INS>
+        };
+    }; // End of "Function" section
+
+    section "Alpha" {
+        top= 24;
+        row {
+            top= 2;
+            keys { <HZTG>, <AE01>, <AE02>, <AE03>, <AE04>, <AE05>, <AE06>,
+                   {<AE07>, color="grey20"}, {<AE08>, color="grey20"},
+                   {<AE09>, color="grey20"}, {<AE10>, color="grey20"},
+                   <AE11>, <AE12>, <AE13>, { <BKSP>, "TBBK" }
+            };
+        };
+        row {
+            top= 20;
+            keys { { <TAB>, "TBBK" }, <AD01>, <AD02>, <AD03>, <AD04>, <AD05>,
+                   <AD06>, {<AD07>, color="grey20"}, {<AD08>, color="grey20"},
+                   {<AD09>, color="grey20"}, {<AD10>, color="grey20"}, <AD11>,
+                   <AD12>, { <RTRN>, "RTRN" }
+            };
+        };
+        row {
+            top= 38;
+            keys { { <CAPS>, "CAPS" }, <AC01>, <AC02>, <AC03>, <AC04>, <AC05>,
+                   <AC06>, {<AC07>, color="grey20"}, {<AC08>, color="grey20"},
+                   {<AC09>, color="grey20"}, {<AC10>, color="grey20"}, <AC11>,
+                   <AC12>
+            };
+        };
+        row {
+            top= 56;
+            keys { { <LFSH>, "LFSH" }, <AB01>, <AB02>, <AB03>, <AB04>, <AB05>,
+                   <AB06>, {<AB07>, color="grey20"}, <AB08>,
+                   {<AB09>, color="grey20"}, {<AB10>, color="grey20"}, <AB11>,
+                   {<UP>, color="grey20"}, {<RTSH>, key.shape= "CTSH" }
+            };
+        };
+        row {
+            top= 74;
+            keys { { <LCTL>, key.shape= "CTSH" }, {<FN>, color="grey20"},
+                   <LWIN>, <LALT>, <NFER>, {<SPCE>, "SPCE" }, <XFER>, <HKTG>,
+                   <RALT>, <MENU>, {<LEFT>, color="grey20"},
+                   {<DOWN>, color="grey20"},
+                   {<RGHT>, key.shape= "CTSH", color="grey20"}
+            };
+        };
+        overlay "SCLK" {
+            <AE07>=<KO7>, <AE08>=<KO8>, <AE09>=<KO9>, <AE10>=<KOMU>,
+            <AD07>=<KO4>, <AD08>=<KO5>, <AD09>=<KO6>, <AD10>=<KOSU>,
+            <AC07>=<KO1>, <AC08>=<KO2>, <AC09>=<KO3>, <AC10>=<KOAD>,
+            <AB07>=<KO0>, <AB09>=<KODL>, <AB10>=<KODV>
+        };
+        overlay "FN" {
+            <UP>=<PGUP>, <LEFT>=<HOME>, <DOWN>=<PGDN>, <RGHT>=<END>
+        };
+    }; // End of "Alpha" section
+
+    alias <AC00> = <CAPS>;
+    alias <AA00> = <LCTL>;
+
+}; // End of "default" geometry

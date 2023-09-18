@@ -1,0 +1,16 @@
+#| Example for use of GNU gettext.
+   This file is in the public domain.
+
+   Source code of the librep program.
+|#
+
+(require 'rep.i18n.gettext)
+
+(textdomain "hello-librep")
+(bindtextdomain "hello-librep" "@localedir@")
+
+(write standard-output (_ "Hello, world!"))
+(write standard-output "\n")
+(format standard-output (_ "This program is running as process number %d.")
+                        (process-id))
+(write standard-output "\n")

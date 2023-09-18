@@ -1,0 +1,354 @@
+escape_char /
+comment_char %
+%
+% Vietnamese language locale for Vietnam
+% Source: glibc locale and info from vietnamese native speakers
+% Address:
+% Contact: Pablo Saratxaga
+% Email: pablo@mandrakesoft.com
+% Tel:
+% Fax:
+% Language: vi
+% Territory: VN
+% Revision: 1.1
+% Date: 2004-01-09
+% Users: general
+% Repertoiremap:
+% Charset: UTF-8
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title      "Vietnamese language locale for Vietnam"
+source     "glibc locale and info from vietnamese native speakers"
+address    ""
+contact    "Pablo Saratxaga"
+email      "pablo@mandrakesoft.com"
+tel        ""
+fax        ""
+language   "Vietnamese"
+territory  "Vietnam"
+revision   "1.1"
+date       "2004-01-09"
+%
+category  "vi_VN:2000";LC_IDENTIFICATION
+category  "vi_VN:2000";LC_CTYPE
+category  "vi_VN:2000";LC_COLLATE
+category  "vi_VN:2000";LC_TIME
+category  "vi_VN:2000";LC_NUMERIC
+category  "vi_VN:2000";LC_MONETARY
+category  "vi_VN:2000";LC_MESSAGES
+category  "vi_VN:2000";LC_PAPER
+category  "vi_VN:2000";LC_NAME
+category  "vi_VN:2000";LC_ADDRESS
+category  "vi_VN:2000";LC_TELEPHONE
+category  "vi_VN:2000";LC_MEASUREMENT
+
+END LC_IDENTIFICATION
+
+LC_CTYPE
+copy "i18n"
+translit_start
+
+include  "translit_combining";""
+
+% dong sign -> d// -> dd
+<U20AB> "<U0111>";"<U0064><U0064>"
+
+translit_end
+END LC_CTYPE
+
+LC_COLLATE
+% Copy the template from ISO/IEC 14651
+copy "iso14651_t1"
+
+% A( A^ E^ O+ U+ DD are treatead as base letters
+% ordering of accents is: grave, hook, tilde, acute, dot below
+% a a( a> b c d d/ e e> f g h i j k l m n o o+ p q r s t u u+ v w x y z
+
+collating-symbol <a(>
+collating-symbol <a/>>
+collating-symbol <d//>
+collating-symbol <e/>>
+collating-symbol <o/>>
+collating-symbol <o9>
+collating-symbol <u9>
+
+reorder-after <BAS>
+<GRA>
+<HOK>
+<TIL>
+<ACA>
+<PCT>
+
+reorder-after <a>
+<a(>
+<a/>>
+reorder-after <d>
+<d//>
+reorder-after <e>
+<e/>>
+reorder-after <o>
+<o/>>
+<o9>
+reorder-after <u>
+<u9>
+
+reorder-after <U0061>
+<U1EA3> <a>;<HOK>;<MIN>;IGNORE
+<U1EA1> <a>;<PCT>;<MIN>;IGNORE
+<U0103> <a(>;<BAS>;<MIN>;IGNORE
+<U1EB1> <a(>;<GRA>;<MIN>;IGNORE
+<U1EB3> <a(>;<HOK>;<MIN>;IGNORE
+<U1EB5> <a(>;<TIL>;<MIN>;IGNORE
+<U1EAF> <a(>;<ACA>;<MIN>;IGNORE
+<U1EB7> <a(>;<PCT>;<MIN>;IGNORE
+<U00E2> <a/>>;<BAS>;<MIN>;IGNORE
+<U1EA7> <a/>>;<GRA>;<MIN>;IGNORE
+<U1EA9> <a/>>;<HOK>;<MIN>;IGNORE
+<U1EAB> <a/>>;<TIL>;<MIN>;IGNORE
+<U1EA5> <a/>>;<ACA>;<MIN>;IGNORE
+<U1EAD> <a/>>;<PCT>;<MIN>;IGNORE
+reorder-after <U0041>
+<U1EA2> <a>;<HOK>;<CAP>;IGNORE
+<U1EA0> <a>;<PCT>;<CAP>;IGNORE
+<U0102> <a(>;<BAS>;<CAP>;IGNORE
+<U1EB0> <a(>;<GRA>;<CAP>;IGNORE
+<U1EB2> <a(>;<HOK>;<CAP>;IGNORE
+<U1EB4> <a(>;<TIL>;<CAP>;IGNORE
+<U1EAE> <a(>;<ACA>;<CAP>;IGNORE
+<U1EB6> <a(>;<PCT>;<CAP>;IGNORE
+<U00C2> <a/>>;<BAS>;<CAP>;IGNORE
+<U1EA6> <a/>>;<GRA>;<CAP>;IGNORE
+<U1EA8> <a/>>;<HOK>;<CAP>;IGNORE
+<U1EAA> <a/>>;<TIL>;<CAP>;IGNORE
+<U1EA4> <a/>>;<ACA>;<CAP>;IGNORE
+<U1EAC> <a/>>;<PCT>;<CAP>;IGNORE
+
+reorder-after <U0064>
+<U0111> <d//>;<BAS>;<MIN>;IGNORE
+<U00F0> <d//>;<PCL>;<MIN>;IGNORE
+reorder-after <U0044>
+<U0110> <d//>;<BAS>;<CAP>;IGNORE
+<U00D0> <d//>;<PCL>;<CAP>;IGNORE
+
+reorder-after <U0065>
+<U1EBB> <e>;<HOK>;<MIN>;IGNORE
+<U1EBD> <e>;<TIL>;<MIN>;IGNORE
+<U1EB9> <e>;<PCT>;<MIN>;IGNORE
+<U00EA> <e/>>;<BAS>;<MIN>;IGNORE
+<U1EC1> <e/>>;<GRA>;<MIN>;IGNORE
+<U1EC3> <e/>>;<HOK>;<MIN>;IGNORE
+<U1EC5> <e/>>;<TIL>;<MIN>;IGNORE
+<U1EBF> <e/>>;<ACA>;<MIN>;IGNORE
+<U1EC7> <e/>>;<PCT>;<MIN>;IGNORE
+reorder-after <U0045>
+<U1EBA> <e>;<HOK>;<CAP>;IGNORE
+<U1EBC> <e>;<TIL>;<CAP>;IGNORE
+<U1EB8> <e>;<PCT>;<CAP>;IGNORE
+<U00CA> <e/>>;<BAS>;<CAP>;IGNORE
+<U1EC0> <e/>>;<GRA>;<CAP>;IGNORE
+<U1EC2> <e/>>;<HOK>;<CAP>;IGNORE
+<U1EC4> <e/>>;<TIL>;<CAP>;IGNORE
+<U1EBE> <e/>>;<ACA>;<CAP>;IGNORE
+<U1EC6> <e/>>;<PCT>;<CAP>;IGNORE
+
+reorder-after <U0069>
+<U1EC9> <i>;<HOK>;<MIN>;IGNORE
+<U1ECB> <i>;<PCT>;<MIN>;IGNORE
+reorder-after <U0049>
+<U1EC8> <i>;<HOK>;<CAP>;IGNORE
+<U1ECA> <i>;<PCT>;<CAP>;IGNORE
+
+reorder-after <U006F>
+<U1ECF> <o>;<HOK>;<MIN>;IGNORE
+<U1ECD> <o>;<PCT>;<MIN>;IGNORE
+<U00F4> <o/>>;<BAS>;<MIN>;IGNORE
+<U1ED3> <o/>>;<GRA>;<MIN>;IGNORE
+<U1ED5> <o/>>;<HOK>;<MIN>;IGNORE
+<U1ED7> <o/>>;<TIL>;<MIN>;IGNORE
+<U1ED1> <o/>>;<ACA>;<MIN>;IGNORE
+<U1ED9> <o/>>;<PCT>;<MIN>;IGNORE
+<U01A1> <o9>;<BAS>;<MIN>;IGNORE
+<U1EDD> <o9>;<GRA>;<MIN>;IGNORE
+<U1EDF> <o9>;<HOK>;<MIN>;IGNORE
+<U1EE1> <o9>;<TIL>;<MIN>;IGNORE
+<U1EDB> <o9>;<ACA>;<MIN>;IGNORE
+<U1EE3> <o9>;<PCT>;<MIN>;IGNORE
+reorder-after <U004F>
+<U1ECE> <o>;<HOK>;<CAP>;IGNORE
+<U1ECC> <o>;<PCT>;<CAP>;IGNORE
+<U00D4> <o/>>;<BAS>;<CAP>;IGNORE
+<U1ED2> <o/>>;<GRA>;<CAP>;IGNORE
+<U1ED4> <o/>>;<HOK>;<CAP>;IGNORE
+<U1ED6> <o/>>;<TIL>;<CAP>;IGNORE
+<U1ED0> <o/>>;<ACA>;<CAP>;IGNORE
+<U1ED8> <o/>>;<PCT>;<CAP>;IGNORE
+<U01A0> <o9>;<BAS>;<CAP>;IGNORE
+<U1EDC> <o9>;<GRA>;<CAP>;IGNORE
+<U1EDE> <o9>;<HOK>;<CAP>;IGNORE
+<U1EE0> <o9>;<TIL>;<CAP>;IGNORE
+<U1EDA> <o9>;<ACA>;<CAP>;IGNORE
+<U1EE2> <o9>;<PCT>;<CAP>;IGNORE
+
+reorder-after <U0075>
+<U1EE7> <u>;<HOK>;<MIN>;IGNORE
+<U1EE5> <u>;<PCT>;<MIN>;IGNORE
+<U01B0> <u9>;<BAS>;<MIN>;IGNORE
+<U1EEB> <u9>;<GRA>;<MIN>;IGNORE
+<U1EED> <u9>;<HOK>;<MIN>;IGNORE
+<U1EEF> <u9>;<TIL>;<MIN>;IGNORE
+<U1EE9> <u9>;<ACA>;<MIN>;IGNORE
+<U1EF1> <u9>;<PCT>;<MIN>;IGNORE
+reorder-after <U0055>
+<U1EE6> <u>;<HOK>;<CAP>;IGNORE
+<U1EE4> <u>;<PCT>;<CAP>;IGNORE
+<U01AF> <u9>;<BAS>;<CAP>;IGNORE
+<U1EEA> <u9>;<GRA>;<CAP>;IGNORE
+<U1EEC> <u9>;<HOK>;<CAP>;IGNORE
+<U1EEE> <u9>;<TIL>;<CAP>;IGNORE
+<U1EE8> <u9>;<ACA>;<CAP>;IGNORE
+<U1EF0> <u9>;<PCT>;<CAP>;IGNORE
+
+reorder-after <U0079>
+<U1EF3> <y>;<GRA>;<MIN>;IGNORE
+<U1EF7> <y>;<HOK>;<MIN>;IGNORE
+<U1EF9> <y>;<TIL>;<MIN>;IGNORE
+<U1EF5> <y>;<PCT>;<MIN>;IGNORE
+reorder-after <U0059>
+<U1EF2> <y>;<GRA>;<CAP>;IGNORE
+<U1EF6> <y>;<HOK>;<CAP>;IGNORE
+<U1EF8> <y>;<TIL>;<CAP>;IGNORE
+<U1EF4> <y>;<PCT>;<CAP>;IGNORE
+
+reorder-end
+
+END LC_COLLATE
+
+LC_MONETARY
+int_curr_symbol       "<U0056><U004E><U0044><U0020>"
+currency_symbol       "<U20AB>"
+mon_decimal_point     "<U002C>"
+mon_thousands_sep     "<U002E>"
+mon_grouping          3;3
+positive_sign         ""
+negative_sign         "<U002D>"
+int_frac_digits       0
+frac_digits           0
+p_cs_precedes         0
+p_sep_by_space        0
+n_cs_precedes         1
+n_sep_by_space        0
+p_sign_posn           1
+n_sign_posn           1
+END LC_MONETARY
+
+LC_NUMERIC
+decimal_point        "<U002C>"
+thousands_sep        "<U002E>"
+grouping             3;3
+END LC_NUMERIC
+
+LC_TIME
+abday    "<U0043><U004E>";/
+         "<U0054><U0032>";/
+         "<U0054><U0033>";/
+         "<U0054><U0034>";/
+         "<U0054><U0035>";/
+         "<U0054><U0036>";/
+         "<U0054><U0037>"
+day      "<U0043><U0068><U1EE7><U0020><U006E><U0068><U1EAD><U0074>";/
+         "<U0054><U0068><U1EE9><U0020><U0068><U0061><U0069>";/
+         "<U0054><U0068><U1EE9><U0020><U0062><U0061>";/
+         "<U0054><U0068><U1EE9><U0020><U0074><U01B0>";/
+         "<U0054><U0068><U1EE9><U0020><U006E><U0103><U006D>";/
+         "<U0054><U0068><U1EE9><U0020><U0073><U00E1><U0075>";/
+         "<U0054><U0068><U1EE9><U0020><U0062><U1EA3><U0079>"
+abmon    "<U0054><U0068><U0030><U0031>";/
+         "<U0054><U0068><U0030><U0032>";/
+         "<U0054><U0068><U0030><U0033>";/
+         "<U0054><U0068><U0030><U0034>";/
+         "<U0054><U0068><U0030><U0035>";/
+         "<U0054><U0068><U0030><U0036>";/
+         "<U0054><U0068><U0030><U0037>";/
+         "<U0054><U0068><U0030><U0038>";/
+         "<U0054><U0068><U0030><U0039>";/
+         "<U0054><U0068><U0031><U0030>";/
+         "<U0054><U0068><U0031><U0031>";/
+         "<U0054><U0068><U0031><U0032>"
+mon      "<U0054><U0068><U00E1><U006E><U0067><U0020><U006D><U1ED9><U0074>";/
+         "<U0054><U0068><U00E1><U006E><U0067><U0020><U0068><U0061><U0069>";/
+         "<U0054><U0068><U00E1><U006E><U0067><U0020><U0062><U0061>";/
+         "<U0054><U0068><U00E1><U006E><U0067><U0020><U0074><U01B0>";/
+         "<U0054><U0068><U00E1><U006E><U0067><U0020><U006E><U0103><U006D>";/
+         "<U0054><U0068><U00E1><U006E><U0067><U0020><U0073><U00E1><U0075>";/
+         "<U0054><U0068><U00E1><U006E><U0067><U0020><U0062><U1EA3><U0079>";/
+         "<U0054><U0068><U00E1><U006E><U0067><U0020><U0074><U00E1><U006D>";/
+         "<U0054><U0068><U00E1><U006E><U0067><U0020><U0063><U0068><U00ED><U006E>";/
+         "<U0054><U0068><U00E1><U006E><U0067><U0020><U006D><U01B0><U1EDD><U0069>";/
+         "<U0054><U0068><U00E1><U006E><U0067><U0020><U006D><U01B0><U1EDD><U0069><U0020><U006D><U1ED9><U0074>";/
+         "<U0054><U0068><U00E1><U006E><U0067><U0020><U006D><U01B0><U1EDD><U0069><U0020><U0068><U0061><U0069>"
+d_t_fmt  "<U0025><U0041><U002C><U0020><U0025><U0064><U0020><U0025><U0042><U0020><U004E><U0103><U006D><U0020><U0025><U0059><U0020><U0025><U0054><U0020><U0025><U005A>"
+d_fmt    "<U0025><U0064><U002F><U0025><U006D><U002F><U0025><U0059>"
+t_fmt    "<U0025><U0054>"
+am_pm    "<U0041><U004D>";"<U0050><U004D>"
+t_fmt_ampm  "<U0025><U0049><U003A><U0025><U004D><U0020><U0025><U0070>"
+date_fmt  "<U0025><U0041><U002C><U0020><U0025><U0064><U0020><U0025><U0042><U0020><U006E><U0103><U006D><U0020><U0025><U0059><U0020><U0025><U0054><U0020><U0025><U005A>"
+END LC_TIME
+
+% yes: Va^ng / Da.
+% no: Kho^ng
+LC_MESSAGES
+yesstr   "<U0043><U00F3>"
+nostr    "<U004B><U0068><U00F4><U006E><U0067>"
+yesexpr  "<U005E><U005B><U0031><U0079><U0059><U0063><U0043><U005D><U002E><U002A>"
+noexpr   "<U005E><U005B><U0030><U006E><U004E><U006B><U004B><U005D><U002E><U002A>"
+END LC_MESSAGES
+
+LC_PAPER
+height      297
+width       210
+END LC_PAPER
+
+LC_NAME
+% This is the ISO_IEC TR14652 Locale definition for the
+% LC_NAME category.
+%
+name_fmt    "<U0025><U0070><U0025><U0074><U0025><U0066><U0025><U0074>/
+<U0025><U006D><U0025><U0074><U0025><U0067>"
+name_gen    ""
+name_mr     "<U00D4><U002E>"
+name_mrs    "<U0042><U002E>"
+name_miss   "<U0043><U002E>"
+name_ms     ""
+
+END LC_NAME
+
+
+LC_ADDRESS
+% This is the ISO_IEC TR14652 Locale definition for the
+% LC_ADDRESS
+postal_fmt  "<U0025><U007A><U0025><U0063><U0025><U0054><U0025><U0073>/
+<U0025><U0062><U0025><U0065><U0025><U0072>"
+country_name "<U0056><U0069><U1EC7><U0074><U0020><U006E><U0061><U006D>"
+lang_name "<U0056><U0069><U1EC7><U0074><U0020><U006E><U0067><U1EEF>"
+
+country_ab2 "<U0056><U004E>"
+country_ab3 "<U0056><U004E><U004D>"
+country_num 704
+END LC_ADDRESS
+
+
+LC_TELEPHONE
+% This is the ISO_IEC TR14652 Locale definition for the
+%
+tel_int_fmt "<U002B><U0025><U0063><U0020><U003B><U0025><U0061><U0020>/
+<U003B><U0025><U006C>"
+int_prefix  "<U0038><U0034>"
+int_select  "<U0030><U0030>"
+
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+measurement 1
+END LC_MEASUREMENT

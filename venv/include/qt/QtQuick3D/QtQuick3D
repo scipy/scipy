@@ -1,0 +1,9 @@
+#ifndef QT_QTQUICK3D_MODULE_H
+#define QT_QTQUICK3D_MODULE_H
+#include <QtQuick3D/QtQuick3DDepends>
+#include "qtquick3dglobal.h"
+#include "qquick3d.h"
+#include "qquick3dgeometry.h"
+#include "qquick3dobject.h"
+#include "qtquick3dversion.h"
+#endif

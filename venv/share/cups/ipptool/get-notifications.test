@@ -1,0 +1,36 @@
+#
+# Get subscription events.
+#
+# Copyright © 2007-2013 by Apple Inc.
+# Copyright © 2001-2006 by Easy Software Products. All rights reserved.
+#
+# Licensed under Apache License v2.0.  See the file "LICENSE" for more
+# information.
+#
+# Usage:
+#
+#   ./ipptool -d id=NNN printer-uri get-notifications.test
+#
+
+{
+	# The name of the test...
+	NAME "Get events using Get-Notifications"
+
+	# The operation to use
+	OPERATION Get-Notifications
+
+	# The attributes to send
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR integer notify-subscription-ids $id
+
+	# What statuses are OK?
+	STATUS successful-ok
+
+	# What attributes do we expect?
+	EXPECT notify-event OF-TYPE keyword
+	DISPLAY notify-event
+	DISPLAY notify-text
+}

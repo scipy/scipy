@@ -1,0 +1,279 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Recording Surfaces: Cairo: A Vector Graphics Library</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<link rel="home" href="index.html" title="Cairo: A Vector Graphics Library">
+<link rel="up" href="cairo-surfaces.html" title="Surfaces">
+<link rel="prev" href="cairo-PostScript-Surfaces.html" title="PostScript Surfaces">
+<link rel="next" href="cairo-Win32-Surfaces.html" title="Win32 Surfaces">
+<meta name="generator" content="GTK-Doc V1.27 (XML mode)">
+<link rel="stylesheet" href="style.css" type="text/css">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<table class="navigation" id="top" width="100%" summary="Navigation header" cellpadding="2" cellspacing="5"><tr valign="middle">
+<td width="100%" align="left" class="shortcuts">
+<a href="#" class="shortcut">Top</a><span id="nav_description">  <span class="dim">|</span> 
+                  <a href="#cairo-Recording-Surfaces.description" class="shortcut">Description</a></span>
+</td>
+<td><a accesskey="h" href="index.html"><img src="home.png" width="16" height="16" border="0" alt="Home"></a></td>
+<td><a accesskey="u" href="cairo-surfaces.html"><img src="up.png" width="16" height="16" border="0" alt="Up"></a></td>
+<td><a accesskey="p" href="cairo-PostScript-Surfaces.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
+<td><a accesskey="n" href="cairo-Win32-Surfaces.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
+</tr></table>
+<div class="refentry">
+<a name="cairo-Recording-Surfaces"></a><div class="titlepage"></div>
+<div class="refnamediv"><table width="100%"><tr>
+<td valign="top">
+<h2><span class="refentrytitle"><a name="cairo-Recording-Surfaces.top_of_page"></a>Recording Surfaces</span></h2>
+<p>Recording Surfaces — Records all drawing operations</p>
+</td>
+<td class="gallery_image" valign="top" align="right"></td>
+</tr></table></div>
+<div class="refsect1">
+<a name="cairo-Recording-Surfaces.functions"></a><h2>Functions</h2>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="functions_return">
+<col class="functions_name">
+</colgroup>
+<tbody>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="returnvalue">cairo_surface_t</span></a> *
+</td>
+<td class="function_name">
+<a class="link" href="cairo-Recording-Surfaces.html#cairo-recording-surface-create" title="cairo_recording_surface_create ()">cairo_recording_surface_create</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-Recording-Surfaces.html#cairo-recording-surface-ink-extents" title="cairo_recording_surface_ink_extents ()">cairo_recording_surface_ink_extents</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-Types.html#cairo-bool-t" title="cairo_bool_t"><span class="returnvalue">cairo_bool_t</span></a>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-Recording-Surfaces.html#cairo-recording-surface-get-extents" title="cairo_recording_surface_get_extents ()">cairo_recording_surface_get_extents</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect1">
+<a name="cairo-Recording-Surfaces.other"></a><h2>Types and Values</h2>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="name">
+<col class="description">
+</colgroup>
+<tbody><tr>
+<td class="define_keyword">#define</td>
+<td class="function_name"><a class="link" href="cairo-Recording-Surfaces.html#CAIRO-HAS-RECORDING-SURFACE:CAPS" title="CAIRO_HAS_RECORDING_SURFACE">CAIRO_HAS_RECORDING_SURFACE</a></td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect1">
+<a name="cairo-Recording-Surfaces.description"></a><h2>Description</h2>
+<p>A recording surface is a surface that records all drawing operations at
+the highest level of the surface backend interface, (that is, the
+level of paint, mask, stroke, fill, and show_text_glyphs). The recording
+surface can then be "replayed" against any target surface by using it
+as a source surface.</p>
+<p>If you want to replay a surface so that the results in target will be
+identical to the results that would have been obtained if the original
+operations applied to the recording surface had instead been applied to the
+target surface, you can use code like this:</p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6</pre></td>
+        <td class="listing_code"><pre class="programlisting">cairo_t <span class="gtkdoc opt">*</span>cr<span class="gtkdoc opt">;</span>
+
+cr <span class="gtkdoc opt">=</span> <span class="function"><a href="cairo-cairo-t.html#cairo-create">cairo_create</a></span> <span class="gtkdoc opt">(</span>target<span class="gtkdoc opt">);</span>
+<span class="function"><a href="cairo-cairo-t.html#cairo-set-source-surface">cairo_set_source_surface</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> recording_surface<span class="gtkdoc opt">,</span> <span class="number">0.0</span><span class="gtkdoc opt">,</span> <span class="number">0.0</span><span class="gtkdoc opt">);</span>
+<span class="function"><a href="cairo-cairo-t.html#cairo-paint">cairo_paint</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">);</span>
+<span class="function"><a href="cairo-cairo-t.html#cairo-destroy">cairo_destroy</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">);</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p>A recording surface is logically unbounded, i.e. it has no implicit constraint
+on the size of the drawing surface. However, in practice this is rarely
+useful as you wish to replay against a particular target surface with
+known bounds. For this case, it is more efficient to specify the target
+extents to the recording surface upon creation.</p>
+<p>The recording phase of the recording surface is careful to snapshot all
+necessary objects (paths, patterns, etc.), in order to achieve
+accurate replay. The efficiency of the recording surface could be
+improved by improving the implementation of snapshot for the
+various objects. For example, it would be nice to have a
+copy-on-write implementation for _cairo_surface_snapshot.</p>
+</div>
+<div class="refsect1">
+<a name="cairo-Recording-Surfaces.functions_details"></a><h2>Functions</h2>
+<div class="refsect2">
+<a name="cairo-recording-surface-create"></a><h3>cairo_recording_surface_create ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="returnvalue">cairo_surface_t</span></a> *
+cairo_recording_surface_create (<em class="parameter"><code><a class="link" href="cairo-cairo-surface-t.html#cairo-content-t" title="enum cairo_content_t"><span class="type">cairo_content_t</span></a> content</code></em>,
+                                <em class="parameter"><code>const <a class="link" href="cairo-cairo-t.html#cairo-rectangle-t" title="cairo_rectangle_t"><span class="type">cairo_rectangle_t</span></a> *extents</code></em>);</pre>
+<p>Creates a recording-surface which can be used to record all drawing operations
+at the highest level (that is, the level of paint, mask, stroke, fill
+and show_text_glyphs). The recording surface can then be "replayed" against
+any target surface by using it as a source to drawing operations.</p>
+<p>The recording phase of the recording surface is careful to snapshot all
+necessary objects (paths, patterns, etc.), in order to achieve
+accurate replay.</p>
+<div class="refsect3">
+<a name="cairo-recording-surface-create.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>content</p></td>
+<td class="parameter_description"><p>the content of the recording surface</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>extents</p></td>
+<td class="parameter_description"><p>the extents to record in pixels, can be <a href="/usr/share/gtk-doc/html/glib/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to record
+unbounded operations.</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-recording-surface-create.returns"></a><h4>Returns</h4>
+<p> a pointer to the newly created surface. The caller
+owns the surface and should call <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-destroy" title="cairo_surface_destroy ()"><code class="function">cairo_surface_destroy()</code></a> when done
+with it.</p>
+</div>
+<p class="since">Since: 1.10</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-recording-surface-ink-extents"></a><h3>cairo_recording_surface_ink_extents ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_recording_surface_ink_extents (<em class="parameter"><code><a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="type">cairo_surface_t</span></a> *surface</code></em>,
+                                     <em class="parameter"><code><span class="type">double</span> *x0</code></em>,
+                                     <em class="parameter"><code><span class="type">double</span> *y0</code></em>,
+                                     <em class="parameter"><code><span class="type">double</span> *width</code></em>,
+                                     <em class="parameter"><code><span class="type">double</span> *height</code></em>);</pre>
+<p>Measures the extents of the operations stored within the recording-surface.
+This is useful to compute the required size of an image surface (or
+equivalent) into which to replay the full sequence of drawing operations.</p>
+<div class="refsect3">
+<a name="cairo-recording-surface-ink-extents.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>surface</p></td>
+<td class="parameter_description"><p>a <span class="type">cairo_recording_surface_t</span></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>x0</p></td>
+<td class="parameter_description"><p>the x-coordinate of the top-left of the ink bounding box</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>y0</p></td>
+<td class="parameter_description"><p>the y-coordinate of the top-left of the ink bounding box</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>width</p></td>
+<td class="parameter_description"><p>the width of the ink bounding box</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>height</p></td>
+<td class="parameter_description"><p>the height of the ink bounding box</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.10</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-recording-surface-get-extents"></a><h3>cairo_recording_surface_get_extents ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-Types.html#cairo-bool-t" title="cairo_bool_t"><span class="returnvalue">cairo_bool_t</span></a>
+cairo_recording_surface_get_extents (<em class="parameter"><code><a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="type">cairo_surface_t</span></a> *surface</code></em>,
+                                     <em class="parameter"><code><a class="link" href="cairo-cairo-t.html#cairo-rectangle-t" title="cairo_rectangle_t"><span class="type">cairo_rectangle_t</span></a> *extents</code></em>);</pre>
+<p>Get the extents of the recording-surface.</p>
+<div class="refsect3">
+<a name="cairo-recording-surface-get-extents.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>surface</p></td>
+<td class="parameter_description"><p>a <span class="type">cairo_recording_surface_t</span></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>extents</p></td>
+<td class="parameter_description"><p>the <a class="link" href="cairo-cairo-t.html#cairo-rectangle-t" title="cairo_rectangle_t"><span class="type">cairo_rectangle_t</span></a> to be assigned the extents</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-recording-surface-get-extents.returns"></a><h4>Returns</h4>
+<p> <a href="/usr/share/gtk-doc/html/glib/glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> if the surface is bounded, of recording type, and
+not in an error state, otherwise <a href="/usr/share/gtk-doc/html/glib/glib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a></p>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+</div>
+<div class="refsect1">
+<a name="cairo-Recording-Surfaces.other_details"></a><h2>Types and Values</h2>
+<div class="refsect2">
+<a name="CAIRO-HAS-RECORDING-SURFACE:CAPS"></a><h3>CAIRO_HAS_RECORDING_SURFACE</h3>
+<pre class="programlisting">#define CAIRO_HAS_RECORDING_SURFACE 1
+</pre>
+<p>Defined if the recording surface backend is available.
+The recording surface backend is always built in.
+This macro was added for completeness in cairo 1.10.</p>
+<p class="since">Since: 1.10</p>
+</div>
+</div>
+<div class="refsect1">
+<a name="cairo-Recording-Surfaces.see-also"></a><h2>See Also</h2>
+<p><a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="type">cairo_surface_t</span></a></p>
+</div>
+</div>
+<div class="footer">
+<hr>Generated by GTK-Doc V1.27</div>
+</body>
+</html>

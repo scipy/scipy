@@ -1,0 +1,48 @@
+# Get printer attributes using get-printer-attributes
+{
+	# The name of the test...
+	NAME "Get printer attributes using get-printer-attributes"
+
+	# The resource to use for the POST
+	# RESOURCE /admin
+
+	# The operation to use
+	OPERATION get-printer-attributes
+
+	# The version to use
+	VERSION 2.0
+
+	# Attributes, starting in the operation group...
+	GROUP operation
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR keyword requested-attributes all,media-col-database
+
+	# What statuses are OK?
+	STATUS successful-ok
+
+	# What attributes do we expect?
+	EXPECT charset-configured
+	EXPECT charset-supported
+	EXPECT compression-supported
+	EXPECT document-format-default
+	EXPECT document-format-supported
+	EXPECT generated-natural-language-supported
+	EXPECT ipp-versions-supported
+	EXPECT media-col-default
+	EXPECT natural-language-configured
+	EXPECT operations-supported
+	EXPECT printer-info
+	EXPECT printer-is-accepting-jobs
+	EXPECT printer-location
+	EXPECT printer-make-and-model
+	EXPECT printer-more-info
+	EXPECT printer-name
+	EXPECT printer-state
+	EXPECT printer-state-reasons
+	EXPECT printer-up-time
+	EXPECT printer-uri-supported
+	EXPECT uri-authentication-supported
+	EXPECT uri-security-supported
+}

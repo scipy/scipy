@@ -1,0 +1,17 @@
+#ifndef QT_QTSCXML_MODULE_H
+#define QT_QTSCXML_MODULE_H
+#include <QtScxml/QtScxmlDepends>
+#include "qscxmlcompiler.h"
+#include "qscxmlcppdatamodel.h"
+#include "qscxmldatamodel.h"
+#include "qscxmlecmascriptdatamodel.h"
+#include "qscxmlerror.h"
+#include "qscxmlevent.h"
+#include "qscxmlexecutablecontent.h"
+#include "qscxmlglobals.h"
+#include "qscxmlinvokableservice.h"
+#include "qscxmlnulldatamodel.h"
+#include "qscxmlstatemachine.h"
+#include "qscxmltabledata.h"
+#include "qtscxmlversion.h"
+#endif

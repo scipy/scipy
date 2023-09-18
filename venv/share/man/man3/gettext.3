@@ -1,0 +1,99 @@
+.\" Copyright (c) Bruno Haible <haible@clisp.cons.org>
+.\"
+.\" This is free documentation; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License as
+.\" published by the Free Software Foundation; either version 2 of
+.\" the License, or (at your option) any later version.
+.\"
+.\" References consulted:
+.\"   GNU glibc-2 source code and manual
+.\"   GNU gettext source code and manual
+.\"   LI18NUX 2000 Globalization Specification
+.\"
+.TH GETTEXT 3 "May 2001" "GNU gettext 20220912"
+.SH NAME
+gettext, dgettext, dcgettext \- translate message
+.SH SYNOPSIS
+.nf
+.B #include <libintl.h>
+.sp
+.BI "char * gettext (const char * " msgid );
+.BI "char * dgettext (const char * " domainname ", const char * " msgid );
+.BI "char * dcgettext (const char * " domainname ", const char * " msgid ,
+.BI "                  int " category );
+.fi
+.SH DESCRIPTION
+The \fBgettext\fP, \fBdgettext\fP and \fBdcgettext\fP functions attempt to
+translate a text string into the user's native language, by looking up the
+translation in a message catalog.
+.PP
+The \fImsgid\fP argument identifies the message to be translated. By
+convention, it is the English version of the message, with non-ASCII
+characters replaced by ASCII approximations. This choice allows the
+translators to work with message catalogs, called PO files, that contain
+both the English and the translated versions of each message, and can be
+installed using the \fBmsgfmt\fP utility.
+.PP
+A message domain is a set of translatable \fImsgid\fP messages. Usually,
+every software package has its own message domain. The domain name is used
+to determine the message catalog where the translation is looked up; it must
+be a non-empty string. For the \fBgettext\fP function, it is specified through
+a preceding \fBtextdomain\fP call. For the \fBdgettext\fP and \fBdcgettext\fP
+functions, it is passed as the \fIdomainname\fP argument; if this argument is
+NULL, the domain name specified through a preceding \fBtextdomain\fP call is
+used instead.
+.PP
+Translation lookup operates in the context of the current locale. For the
+\fBgettext\fP and \fBdgettext\fP functions, the \fBLC_MESSAGES\fP locale
+facet is used. It is determined by a preceding call to the \fBsetlocale\fP
+function. \fBsetlocale(LC_ALL,"")\fP initializes the \fBLC_MESSAGES\fP locale
+based on the first nonempty value of the three environment variables
+\fBLC_ALL\fP, \fBLC_MESSAGES\fP, \fBLANG\fP; see \fBsetlocale\fP(3). For the
+\fBdcgettext\fP function, the locale facet is determined by the \fIcategory\fP
+argument, which should be one of the \fBLC_xxx\fP constants defined in the
+<locale.h> header, excluding \fBLC_ALL\fP. In both cases, the functions also
+use the \fBLC_CTYPE\fP locale facet in order to convert the translated message
+from the translator's codeset to the current locale's codeset, unless
+overridden by a prior call to the \fBbind_textdomain_codeset\fP function.
+.PP
+The message catalog used by the functions is at the pathname
+\fIdirname\fP/\fIlocale\fP/\fIcategory\fP/\fIdomainname\fP.mo. Here
+\fIdirname\fP is the directory specified through \fBbindtextdomain\fP. Its
+default is system and configuration dependent; typically it is
+\fIprefix\fP/share/locale, where \fIprefix\fP is the installation prefix of the
+package. \fIlocale\fP is the name of the current locale facet; the GNU
+implementation also tries generalizations, such as the language name without
+the territory name. \fIcategory\fP is \fBLC_MESSAGES\fP for the \fBgettext\fP
+and \fBdgettext\fP functions, or the argument passed to the \fBdcgettext\fP
+function.
+.PP
+If the \fBLANGUAGE\fP environment variable is set to a nonempty value, and the
+locale is not the "C" locale, the value of \fBLANGUAGE\fP is assumed to contain
+a colon separated list of locale names. The functions will attempt to look up
+a translation of \fImsgid\fP in each of the locales in turn. This is a GNU
+extension.
+.PP
+In the "C" locale, or if none of the used catalogs contain a translation for
+\fImsgid\fP, the \fBgettext\fP, \fBdgettext\fP and \fBdcgettext\fP functions
+return \fImsgid\fP.
+.SH "RETURN VALUE"
+If a translation was found in one of the specified catalogs, it is converted
+to the locale's codeset and returned. The resulting string is statically
+allocated and must not be modified or freed. Otherwise \fImsgid\fP is returned.
+.SH ERRORS
+\fBerrno\fP is not modified.
+.SH BUGS
+The return type ought to be \fBconst char *\fP, but is \fBchar *\fP to avoid
+warnings in C code predating ANSI C.
+.PP
+When an empty string is used for \fImsgid\fP, the functions may return a
+nonempty string.
+.SH "SEE ALSO"
+.BR ngettext (3),
+.BR dngettext (3),
+.BR dcngettext (3),
+.BR setlocale (3),
+.BR textdomain (3),
+.BR bindtextdomain (3),
+.BR bind_textdomain_codeset (3),
+.BR msgfmt (1)

@@ -1,0 +1,13 @@
+prefix=/workspaces/scipy/venv
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+includedir=${prefix}/include/qt
+
+
+Name: Qt5 WebView
+Description: Qt WebView module
+Version: 5.15.8
+Libs: -L${libdir} -lQt5WebView 
+Cflags: -DQT_WEBVIEW_LIB -I${includedir}/QtWebView -I${includedir}
+Requires: Qt5Core Qt5Gui
+

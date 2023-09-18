@@ -1,0 +1,652 @@
+// Keyboard layouts for Hungary.
+
+// Some widely used Hungarian keyboard layouts.
+//
+// (C) 2002-2004 Soós Péter <sp@osb.hu>
+// (C) 2010 Andras Timar <timar@fsf.hu>
+//
+// Permission is granted to anyone to use, distribute and modify
+// this file in any way, provided that the above copyright notice
+// is left intact and the author of the modification summarizes
+// the changes in this header.
+//
+// This file is distributed without any expressed or implied warranty.
+//
+// Changes:
+//  2004-04-17 - Moved to new style (only Unicode based layouts)
+//             - Added consistent dead key support
+//             - Fixed abovedot
+//             - Added adiaeresis
+//             - Added EuroSign and cent symbol
+//  2010-04-23 - Added doublelowquotemark
+//             - Added rightdoublequotemark
+//             - Added endash
+//  2010-05-13 - Added ellipsis
+
+
+// Default layout
+default partial
+xkb_symbols "basic" {
+    include "hu(102_qwertz_comma_dead)"
+    name[Group1] = "Hungarian";
+};
+
+// Standard layout
+partial
+xkb_symbols "standard" {
+    include "hu(102_qwertz_comma_dead)"
+    name[Group1] = "Hungarian (standard)";
+};
+
+// Standard layout without dead key support
+partial
+xkb_symbols "nodeadkeys" {
+    include "hu(102_qwertz_comma_nodead)"
+    name[Group1] = "Hungarian (no dead keys)";
+};
+
+// Qwerty layout
+partial
+xkb_symbols "qwerty" {
+    include "hu(101_qwerty_comma_dead)"
+    name[Group1] = "Hungarian (QWERTY)";
+};
+
+// Main layouts
+
+// 101_qwertz_comma_dead
+// 101 key qwertz layout
+// with decimal comma on keypad
+// and with dead key support
+partial
+xkb_symbols "101_qwertz_comma_dead" {
+    name[Group1] = "Hungarian (QWERTZ, 101-key, comma, dead keys)";
+    include "latin"
+    include "hu(def_101)"
+    include "hu(def_qwertz)"
+    include "kpdl(comma)"
+    include "hu(def_dead)"
+    include "hu(def_common)"
+    include "level3(ralt_switch)"
+};
+
+// 101_qwertz_comma_nodead
+// 101 key qwertz layout
+// with decimal comma on keypad
+// and without dead key support
+partial
+xkb_symbols "101_qwertz_comma_nodead" {
+    name[Group1] = "Hungarian (QWERTZ, 101-key, comma, no dead keys)";
+    include "latin"
+    include "hu(def_101)"
+    include "hu(def_qwertz)"
+    include "kpdl(comma)"
+    include "hu(def_nodead)"
+    include "hu(def_common)"
+    include "level3(ralt_switch)"
+};
+
+// 101_qwertz_dot_dead
+// 101 key qwertz layout
+// with decimal dot on keypad
+// and with dead key support
+partial
+xkb_symbols "101_qwertz_dot_dead" {
+    name[Group1] = "Hungarian (QWERTZ, 101-key, dot, dead keys)";
+    include "latin"
+    include "hu(def_101)"
+    include "hu(def_qwertz)"
+    include "hu(def_dot)"
+    include "hu(def_dead)"
+    include "hu(def_common)"
+    include "level3(ralt_switch)"
+};
+
+// 101_qwertz_dot_nodead
+// 101 key qwertz layout
+// with decimal dot on keypad
+// and without dead key support
+partial
+xkb_symbols "101_qwertz_dot_nodead" {
+    name[Group1] = "Hungarian (QWERTZ, 101-key, dot, no dead keys)";
+    include "latin"
+    include "hu(def_101)"
+    include "hu(def_qwertz)"
+    include "hu(def_dot)"
+    include "hu(def_nodead)"
+    include "hu(def_common)"
+    include "level3(ralt_switch)"
+};
+
+// 101_qwerty_comma_dead
+// 101 key qwerty layout
+// with decimal comma on keypad
+// and with dead key support
+partial
+xkb_symbols "101_qwerty_comma_dead" {
+    name[Group1] = "Hungarian (QWERTY, 101-key, comma, dead keys)";
+    include "latin"
+    include "hu(def_101)"
+    include "hu(def_qwerty)"
+    include "kpdl(comma)"
+    include "hu(def_dead)"
+    include "hu(def_common)"
+    include "level3(ralt_switch)"
+};
+
+// 101_qwerty_comma_nodead
+// 101 key qwerty layout
+// with decimal comma on keypad
+// and without dead key support
+partial
+xkb_symbols "101_qwerty_comma_nodead" {
+    name[Group1] = "Hungarian (QWERTY, 101-key, comma, no dead keys)";
+    include "latin"
+    include "hu(def_101)"
+    include "hu(def_qwerty)"
+    include "kpdl(comma)"
+    include "hu(def_nodead)"
+    include "hu(def_common)"
+    include "level3(ralt_switch)"
+};
+
+// 101_qwerty_dot_dead
+// 101 key qwerty layout
+// with decimal dot on keypad
+// and with dead key support
+partial
+xkb_symbols "101_qwerty_dot_dead" {
+    name[Group1] = "Hungarian (QWERTY, 101-key, dot, dead keys)";
+    include "latin"
+    include "hu(def_101)"
+    include "hu(def_qwerty)"
+    include "hu(def_dot)"
+    include "hu(def_dead)"
+    include "hu(def_common)"
+    include "level3(ralt_switch)"
+};
+
+// 101_qwerty_dot_nodead
+// 101 key qwerty layout
+// with decimal dot on keypad
+// and without dead key support
+partial
+xkb_symbols "101_qwerty_dot_nodead" {
+    name[Group1] = "Hungarian (QWERTY, 101-key, dot, no dead keys)";
+    include "latin"
+    include "hu(def_101)"
+    include "hu(def_qwerty)"
+    include "hu(def_dot)"
+    include "hu(def_nodead)"
+    include "hu(def_common)"
+    include "level3(ralt_switch)"
+};
+
+// 102_qwertz_comma_dead
+// 102 key qwertz layout
+// with decimal comma on keypad
+// and with dead key support
+partial
+xkb_symbols "102_qwertz_comma_dead" {
+    name[Group1] = "Hungarian (QWERTZ, 102-key, comma, dead keys)";
+    include "latin"
+    include "hu(def_102)"
+    include "hu(def_qwertz)"
+    include "kpdl(comma)"
+    include "hu(def_dead)"
+    include "hu(def_common)"
+    include "level3(ralt_switch)"
+};
+
+// 102_qwertz_comma_nodead
+// 102 key qwertz layout
+// with decimal comma on keypad
+// and without dead key support
+partial
+xkb_symbols "102_qwertz_comma_nodead" {
+    name[Group1] = "Hungarian (QWERTZ, 102-key, comma, no dead keys)";
+    include "latin"
+    include "hu(def_102)"
+    include "hu(def_qwertz)"
+    include "kpdl(comma)"
+    include "hu(def_nodead)"
+    include "hu(def_common)"
+    include "level3(ralt_switch)"
+};
+
+// 102_qwertz_dot_dead
+// 102 key qwertz layout
+// with decimal dot on keypad
+// and with dead key support
+partial
+xkb_symbols "102_qwertz_dot_dead" {
+    name[Group1] = "Hungarian (QWERTZ, 102-key, dot, dead keys)";
+    include "latin"
+    include "hu(def_102)"
+    include "hu(def_qwertz)"
+    include "hu(def_dot)"
+    include "hu(def_dead)"
+    include "hu(def_common)"
+    include "level3(ralt_switch)"
+};
+
+// 102_qwertz_dot_nodead
+// 102 key qwertz layout
+// with decimal dot on keypad
+// and without dead key support
+partial
+xkb_symbols "102_qwertz_dot_nodead" {
+    name[Group1] = "Hungarian (QWERTZ, 102-key, dot, no dead keys)";
+    include "latin"
+    include "hu(def_102)"
+    include "hu(def_qwertz)"
+    include "hu(def_dot)"
+    include "hu(def_nodead)"
+    include "hu(def_common)"
+    include "level3(ralt_switch)"
+};
+
+// 102_qwerty_comma_dead
+// 102 key qwerty layout
+// with decimal comma on keypad
+// and with dead key support
+partial
+xkb_symbols "102_qwerty_comma_dead" {
+    name[Group1] = "Hungarian (QWERTY, 102-key, comma, dead keys)";
+    include "latin"
+    include "hu(def_102)"
+    include "hu(def_qwerty)"
+    include "kpdl(comma)"
+    include "hu(def_dead)"
+    include "hu(def_common)"
+    include "level3(ralt_switch)"
+};
+
+// 102_qwerty_comma_nodead
+// 102 key qwerty layout
+// with decimal comma on keypad
+// and without dead key support
+partial
+xkb_symbols "102_qwerty_comma_nodead" {
+    name[Group1] = "Hungarian (QWERTY, 102-key, comma, no dead keys)";
+    include "latin"
+    include "hu(def_102)"
+    include "hu(def_qwerty)"
+    include "kpdl(comma)"
+    include "hu(def_nodead)"
+    include "hu(def_common)"
+    include "level3(ralt_switch)"
+};
+
+// 102_qwerty_dot_dead
+// 102 key qwerty layout
+// with decimal dot on keypad
+// and with dead key support
+partial
+xkb_symbols "102_qwerty_dot_dead" {
+    name[Group1] = "Hungarian (QWERTY, 102-key, dot, dead keys)";
+    include "latin"
+    include "hu(def_102)"
+    include "hu(def_qwerty)"
+    include "hu(def_dot)"
+    include "hu(def_dead)"
+    include "hu(def_common)"
+    include "level3(ralt_switch)"
+};
+
+// 102_qwerty_dot_nodead
+// 102 key qwerty layout
+// with decimal dot on keypad
+// and without dead key support
+partial
+xkb_symbols "102_qwerty_dot_nodead" {
+    name[Group1] = "Hungarian (QWERTY, 102-key, dot, no dead keys)";
+    include "latin"
+    include "hu(def_102)"
+    include "hu(def_qwerty)"
+    include "hu(def_dot)"
+    include "hu(def_nodead)"
+    include "hu(def_common)"
+    include "level3(ralt_switch)"
+};
+
+// Partial layouts
+
+// def_102:
+// The standard Hungarian 102 key layout
+hidden partial alphanumeric_keys
+xkb_symbols "def_102" {
+    key <TLDE>  { [            0,      section,           notsign                  ] };
+    key <LSGT>  { [       iacute,       Iacute,              less,         greater ] };
+
+};
+
+// def_101:
+// An alternative layout for 101 key keyboards
+hidden partial alphanumeric_keys
+xkb_symbols "def_101" {
+    key <TLDE>  { [       iacute,       Iacute,                 0,         section ] };
+    key <LSGT>  { [         less,      greater                                     ] };
+};
+
+// def_qwertz:
+// The standard Hungaryan qwertz layout
+hidden partial alphanumeric_keys
+xkb_symbols "def_qwertz" {
+    key <AD06>  { [            z,            Z,           endash                   ] };
+    key <AB01>  { [            y,            Y,           greater                  ] };
+};
+
+
+// def_qwerty:
+// The qwerty layout for people who familiar with the standard US layout
+hidden partial alphanumeric_keys
+xkb_symbols "def_qwerty" {
+    key <AD06>  { [            y,            Y,           endash                   ] };
+    key <AB01>  { [            z,            Z,           greater                  ] };
+};
+
+// def_dot: 	 
+// The Hungarian standard is the comma on the keypad not decimal dot, 	 
+// but programmers hate it 	 
+hidden partial keypad_keys 	 
+xkb_symbols "def_dot" { 	 
+    key <KPDL>  { [    KP_Delete,   KP_Decimal                                     ] }; 	 
+}; 	 
+
+
+// def_dead:
+// Dead keys support part
+hidden partial alphanumeric_keys
+xkb_symbols "def_dead" {
+    key <AE01>  { [            1,   apostrophe,        asciitilde,      dead_tilde ] };
+    key <AE02>  { [            2,     quotedbl,        dead_caron,           caron ] };
+    key <AE03>  { [            3,         plus,       asciicircum, dead_circumflex ] };
+    key <AE04>  { [            4,       exclam,        dead_breve,           breve ] };
+    key <AE05>  { [            5,      percent,    dead_abovering,          degree ] };
+    key <AE06>  { [            6,        slash,       dead_ogonek,          ogonek ] };
+    key <AE07>  { [            7,        equal,             grave,      dead_grave ] };
+    key <AE08>  { [            8,    parenleft,     dead_abovedot,        abovedot ] };
+    key <AE09>  { [            9,   parenright,        dead_acute,           acute ] };
+    key <AE10>  { [   odiaeresis,   Odiaeresis,  dead_doubleacute,     doubleacute ] };
+    key <AE11>  { [   udiaeresis,   Udiaeresis,    dead_diaeresis,       diaeresis ] };
+    key <AE12>  { [       oacute,       Oacute,      dead_cedilla,         cedilla ] };
+};
+
+// def_nodead:
+// Without dead keys support
+hidden partial alphanumeric_keys
+xkb_symbols "def_nodead" {
+    key <AE01>  { [            1,   apostrophe,        asciitilde                  ] };
+    key <AE02>  { [            2,     quotedbl,             caron                  ] };
+    key <AE03>  { [            3,         plus,       asciicircum                  ] };
+    key <AE04>  { [            4,       exclam,             breve                  ] };
+    key <AE05>  { [            5,      percent,            degree                  ] };
+    key <AE06>  { [            6,        slash,            ogonek                  ] };
+    key <AE07>  { [            7,        equal,             grave                  ] };
+    key <AE08>  { [            8,    parenleft,          abovedot                  ] };
+    key <AE09>  { [            9,   parenright,             acute                  ] };
+    key <AE10>  { [   odiaeresis,   Odiaeresis,       doubleacute                  ] };
+    key <AE11>  { [   udiaeresis,   Udiaeresis,         diaeresis                  ] };
+    key <AE12>  { [       oacute,       Oacute,           cedilla                  ] };
+};
+
+
+// def_common:
+// The common part of all Hungarian layout above
+hidden partial alphanumeric_keys
+xkb_symbols "def_common" {
+    key <AD01>  { [            q,            Q,         backslash                  ] };
+    key <AD02>  { [            w,            W,               bar                  ] };
+    key <AD03>  { [            e,            E,        Adiaeresis                  ] };
+    key <AD07>  { [            u,            U,          EuroSign                  ] };
+    key <AD08>  { [            i,            I,            Iacute,          iacute ] };
+    key <AD09>	{ [            o,            O,        doublelowquotemark          ] };
+    key <AD10>	{ [            p,            P,        rightdoublequotemark        ] };
+    key <AD11>  { [ odoubleacute, Odoubleacute,          division                  ] };
+    key <AD12>  { [       uacute,       Uacute,          multiply                  ] };
+
+    key <AC01>  { [            a,            A,        adiaeresis,      Adiaeresis ] };
+    key <AC02>  { [            s,            S,           dstroke                  ] };
+    key <AC03>  { [            d,            D,           Dstroke                  ] };
+    key <AC04>  { [            f,            F,       bracketleft                  ] };
+    key <AC05>  { [            g,            G,      bracketright                  ] };
+    key <AC07>  { [            j,            J,            iacute,          Iacute ] };
+    key <AC08>  { [            k,            K,           lstroke                  ] };
+    key <AC09>  { [            l,            L,           Lstroke                  ] };
+    key <AC10>  { [       eacute,       Eacute,            dollar,            cent ] };
+    key <AC11>  { [       aacute,       Aacute,            ssharp,           U1E9E ] };
+
+    key <BKSL>  { [ udoubleacute, Udoubleacute,          currency                  ] };
+
+    key <AB02>  { [            x,            X,        numbersign                  ] };
+    key <AB03>  { [            c,            C,         ampersand                  ] };
+    key <AB04>  { [            v,            V,                at                  ] };
+    key <AB05>  { [            b,            B,         braceleft                  ] };
+    key <AB06>  { [            n,            N,        braceright                  ] };
+    key <AB07>  { [            m,            M,              less                  ] };
+    key <AB08>  { [        comma,     question,         semicolon                  ] };
+    key <AB09>  { [       period,        colon,           greater                  ] };
+    key <AB10>  { [        minus,   underscore,          asterisk                  ] };
+
+};
+
+// EXTRAS:
+
+// Old Hungarian keyboard layouts.
+//
+// (C) 2013 Andras Tisza
+// (C) 2017,2018,2020  Viktor Kovacs <kov.h.vik@gmail.com>
+//
+// Permission is granted to anyone to use, distribute and modify
+// this file in any way, provided that the above copyright notice
+// is left intact and the author of the modification summarizes
+// the changes in this header.
+//
+// This file is distributed without any expressed or implied warranty.
+//
+// Changes:
+// 2013 - Planned Old Hungarian layout
+// 2017 - Added Old Hungarian layout
+// 2018 - Resolved several easy-of-use issues, added extra punctuation and quotation marks.
+// 2020 - Added ligature-capable layout (with zero-width-joiner), added copyright, copyleft symbols.
+// 2020 - Added ZWNJ key to "Old Hungarian (for ligatures)", changed its ohu_lig id to oldhunlig.
+// Added "oldhun_magic_numpad" for both "Old Hungarian" layouts, as a specialised numpad.
+
+// Old Hungarian layout
+partial alphanumeric_keys
+xkb_symbols "oldhun" {
+name[Group1]="Old Hungarian";
+include "hu(oldhun_base)"
+include "hu(oldhun_origin)"
+include "hu(oldhun_magic_numpad)"
+include "level3(ralt_switch)"
+};
+
+// Old Hungarian layout for ligatures
+partial alphanumeric_keys
+xkb_symbols "oldhunlig" {
+name[Group1]="Old Hungarian (for ligatures)";
+include "hu(oldhun_base)"
+include "hu(oldhun_lig)"
+include "hu(oldhun_magic_numpad)"
+include "level3(ralt_switch)"
+};
+
+// The base Old Hungarian keys
+// In the remarks you can read characters displayed only Unicode point 
+hidden partial alphanumeric_keys
+xkb_symbols "oldhun_base" { 
+key.type[Group1]="FOUR_LEVEL_ALPHABETIC";
+    key <AD01> {[ U10CCE, U10C8E, backslash ]};
+//Old-Hungarian gy, Gy    
+    key <AD02> {[ U10CF0, U10CB0 ]}; 
+//Old Hungarian zs, Zs
+    key <AD03> {[ U10CC9, U10C89, U10CCA, U10C8A ]};
+ //Old Hungarian e, E, close e, close E
+    key <AD04> {[ U10CE2, U10CA2, U10CE3, U10CA3 ]};
+//Old Hungarian r, R, short r, short R    
+    key <AD05> {[ U10CE6, U10CA6, U10CF1, U10CB1 ]};
+//Old Hungarian t, T, ent-sharped sign,Ent-sharped sign    
+    key <AD06> {[ U10CEF, U10CAF ]};
+//Old Hungarian z, Z    
+    key <AD07> {[ U10CEA, U10CAA, U10CF2, U10CB2 ]};
+//Old Hungarian u, U,  Old Hungarian us, Us    
+    key <AD08> {[ U10CD0, U10C90, U10CD1, U10C91 ]};
+//Old Hungarian i, I, ii, II  
+    key <AD09> {[ U10CDB, U10C9B ]};
+//Old Hungarian o, O    
+    key <AD10> {[ U10CE0, U10CA0 ]};
+//Old Hungarian p, P    
+    key <AD11> {[ U10CDF, U10C9F ]};
+//Old Hungarian oee, Oee
+    key <AD12> {[ U10CEB, U10CAB, U10CD5, U10C95 ]};
+//Old Hungarian uu,Uu,unk,Unk   
+    key <AC01> {[ U10CC0, U10C80, U10CC3, U10C83 ]};
+//Old Hungarian a,A,amb,Amb    
+    key <AC02> {[ U10CE4, U10CA4, U10CE1, U10CA1 ]};
+//Old Hungarian s,S,emp,Emp    
+    key <AC03> {[ U10CC7, U10C87, U10CE7, U10CA7 ]};
+//Old Hungarian d,D, ent/ant/int, Ent/Ant/Int
+	key <AC04> {[ U10CCC, U10C8C, bracketleft ]};
+//Old Hungarian f,F    
+    key <AC05> {[ U10CCD, U10C8D, bracketright ]};
+//Old Hungarian g, G    
+    key <AC06> {[ U10CCF, U10C8F, U10CE9, U10CA9 ]};
+//Old Hungarian h, H,ech, Ech    
+    key <AC07> {[ U10CD2, U10C92, backslash ]};
+//Old Hungarian j, J    
+    key <AC08> {[ U10CD3, U10C93, U10CD4, U10C94 ]};
+//Old Hungarian open k, open K, close k, close K    
+    key <AC09> {[ U10CD6, U10C96 ]};
+//Old Hungarian l, L    
+    key <AC10> {[ U10CCB, U10C8B ]};
+//Old Hungarian ee, EE    
+    key <AC11> {[ U10CC1, U10C81, U10CC8, U10C88 ]};
+//Old Hungarian aa, AA, and And	     
+    key <BKSL> {[ U10CEC, U10CAC ]};
+//Old Hungarian ue, Ue    
+    key <AB01> {[ U10CD7, U10C97, greater ]};
+//Old Hungarian ly, Ly    
+    key <AB02> {[ U10CE5, U10CA5, numbersign ]};
+//Old Hungarian sz, Sz    
+    key <AB03> {[ U10CC4, U10C84, U10CC5, U10C85 ]};
+//Old Hungarian c,C, enc, Enc    
+    key <AB04> {[ U10CEE, U10CAE, at ]};
+//Old Hungarian v,V    
+    key <AB05> {[ U10CC2, U10C82, braceleft ]};
+//Old Hungarian b, B    
+    key <AB06> {[ U10CD9, U10C99, braceright ]};
+//Old Hungarian n, N    
+    key <AB07> {[ U10CD8, U10C98, less ]};
+//Old Hungarian m, M    
+    key <AB08> {[ U2E41, U2E2E, U204F ]};
+//reversed question mark,reversed semicolon, reversed comma    
+    key <AB09> {[ period, colon, greater ]};    
+    key <AB10> {[ minus, underscore, asterisk ]};    
+	key <LSGT> {[ U10CD1, U10C91, less ]};
+//Old Hungarian ii,II
+};
+
+//Old Hungarian layout specialised keys
+// In the remarks you can read characters displayed only Unicode point
+hidden partial alphanumeric_keys
+xkb_symbols "oldhun_origin" {
+key.type[Group1]="FOUR_LEVEL_ALPHABETIC";
+	key <TLDE> {[ section, U200F, U200E, 0 ]};
+//Right to left mark, left to right mark
+    key <AE01> {[ U10CFA, apostrophe, U2E42, 1 ]};
+//Old Hungarian one, reversed 9 double low quotemark
+    key <AE02> {[ U10CFB, quotedbl, U201F, 2 ]};
+//Old Hungarian five, reversed 9 double upper quotemark
+    key <AE03> {[ U10CFC, plus, minus, 3 ]};
+//Old Hungarian ten
+    key <AE04> {[ U10CFD, exclam, U203C, 4 ]};
+//Old Hungarian fifty,double exclam
+    key <AE05> {[ U10CFE, percent, U2026, 5 ]};
+//Old Hungarian hundred, triple dot
+    key <AE06> {[ U10CFF, slash, backslash, 6 ]};
+//Old Hungarian thousand
+    key <AE07> {[ U10CC6, U10C86, equal, 7 ]};
+//Old Hungarian cs, Cs    
+    key <AE08> {[ U10CDA, U10C9A, parenleft, 8 ]};
+//Old Hungarian ny, Ny    
+    key <AE09> {[ U10CE8, U10CA8, parenright, 9 ]};
+//Old Hungarian ty, Ty
+    key <AE10> {[ U10CDE, U10C9E, U10CDD, U10C9D ]};
+//Old Hungarian Rudimenta oe, Oe, Nikolsburg oe, Oe
+    key <AE11> {[ U10CED, U10CAD, section ]};
+//Old Hungarian ue , Ue
+    key <AE12> {[ U10CDC, U10C9C, copyright, U1F12F ]};
+//Old Hungarian oo, OO, copyleft    
+};
+
+//Special section for "Old Hungarian (for ligatures)" layout
+// In the remarks you can read characters displayed only Unicode point
+hidden partial alphanumeric_keys
+xkb_symbols "oldhun_lig" {
+key.type[Group1]="FOUR_LEVEL_ALPHABETIC";
+	key <TLDE> {[ U200D, U200F, U200C, 0 ]};
+//Zero-width-joiner,Right to left mark, Zero-width-non-joiner
+//Zero-width-joiner and Zero-width-non-joiner are reqired for ligatures
+    key <AE01> {[ U10CFA, apostrophe, U2E42, 1 ]};
+//Old Hungarian one, reversed 9 double low quotemark
+    key <AE02> {[ U10CFB, quotedbl, U201F, 2 ]};
+//Old Hungarian five, reversed 9 double upper quotemark
+    key <AE03> {[ U10CFC, plus, minus, 3 ]};
+//Old Hungarian ten
+    key <AE04> {[ U10CFD, exclam, U203C, 4 ]};
+//Old Hungarian fifty,double exclam    
+    key <AE05> {[ U10CFE, percent, U2026, 5 ]};
+//Old Hungarian hundred, triple dot
+    key <AE06> {[ U10CFF, slash, backslash, 6 ]};
+//Old Hungarian thousand
+    key <AE07> {[ U10CC6, U10C86, equal, 7 ]};
+//Old Hungarian cs, Cs    
+    key <AE08> {[ U10CDA, U10C9A, parenleft, 8 ]};
+//Old Hungarian ny, Ny    
+    key <AE09> {[ U10CE8, U10CA8, parenright, 9 ]};
+//Old Hungarian ty, Ty
+    key <AE10> {[ U10CDE, U10C9E, U10CDD, U10C9D ]};
+//Old Hungarian Rudimenta oe, Oe, Nikolsburg oe, Oe    
+    key <AE11> {[ U10CED, U10CAD, section ]};
+//Old Hungarian ue , Ue    
+    key <AE12> {[ U10CDC, U10C9C, copyright, U1F12F ]};
+//Old Hungarian oo, OO, copyleft    
+};
+
+//Numpad for Old Hungarian layouts
+// In the remarks you can read characters displayed only Unicode point
+hidden partial keypad_keys
+xkb_symbols "oldhun_magic_numpad" {
+    key.type[Group1]="FOUR_LEVEL_MIXED_KEYPAD";
+    key <NMLK> {[ Num_Lock, Num_Lock, Num_Lock, Num_Lock ]};
+    key <KP0> {[ KP_Insert, KP_0, U200C, U200C ]};
+//Zero-width-non-joiner
+    key <KP7> {[ KP_Home, KP_7, U10CFA, U10CFA ]};
+//Old Hungarian number one
+    key <KP8> {[ KP_Up, KP_8, U10CFB, U10CFB ]};
+//Old Hungarian number five
+    key <KP9> {[ KP_Prior, KP_9, U10CFC, U10CFC ]};
+//Old Hungarian number ten
+    key <KP4> {[ KP_Left, KP_4, U10CFD, U10CFD ]};
+//Old Hungarian number fifty
+    key <KP5> {[ KP_Begin, KP_5, U10CFE, U10CFE ]};
+//Old Hungarian number hundred
+    key <KP6> {[ KP_Right, KP_6, U10CFF, U10CFF ]};
+//Old Hungarian number thousand
+    key <KP1> {[ KP_End, KP_1, U200F, U200F ]};
+//Right-to-left mark
+    key <KP2> {[ KP_Down, KP_2, U200D, U200D ]};
+//Zero-width-joiner
+    key <KP3> {[ KP_Next, KP_3, U200E, U200E ]};
+//Left-to-right mark
+    key <KPEN> {[ KP_Enter, KP_Enter, KP_Enter, KP_Enter ]};
+    key <KPEQ> {[ KP_Equal, KP_Equal, KP_Equal, KP_Equal ]};
+    key <KPDL> {[ KP_Delete, KP_Separator, KP_Delete, KP_Separator ]};
+    key <KPPT> {[ KP_Separator, KP_Separator, KP_Separator, KP_Separator ]};
+    key <KPDV> {[ KP_Divide, KP_Divide, KP_Divide, KP_Divide ]};
+    key <KPMU> {[ KP_Multiply, KP_Multiply, KP_Multiply, KP_Multiply ]};
+    key <KPSU> {[ KP_Subtract, KP_Subtract,	KP_Subtract, KP_Subtract ]};
+    key <KPAD> {[ KP_Add, KP_Add, KP_Add, KP_Add ]};
+};

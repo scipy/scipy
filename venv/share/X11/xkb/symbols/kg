@@ -1,0 +1,132 @@
+// Keyboard layouts for Kyrgyzstan.
+
+//   Standard     :    Phonetic
+// _____________     _____________
+// ё1234567890өң     ё1234567890яю
+// Ё!"№;%:?*()ӨҢ     Ё!"№;%:?-()ЯЮ
+//
+// йцукенгшщзхъү     өүертыуиопчшъ
+// фывапролджэ       асдфгңйклэь
+// ячсмитьбю.(,)     зхжвбнмцщ.(,)
+
+// Authors:
+// Timur Jamakeev <ztimur [at] gmail.com>
+// Ilyas Bakirov <just_ilyas [at] yahoo.com>
+// Yury Fedorov <yury-fedorov [at] prime-task.com>
+// Emil Asanov <a7 [at] on.kg>
+// Ulan Melisbek <ulan.melisbek [at] gmail.com>
+
+
+// Kyrgyz standard keyboard
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+    name[Group1]= "Kyrgyz";
+
+    key	<AE01> {	[		1,	    exclam 	]	};
+    key	<AE02> {	[		2,        quotedbl	]	};
+    key	<AE03> {	[		3,      numerosign	]	};
+    key	<AE04> {	[		4,       semicolon	]	};
+    key	<AE05> {	[		5,	   percent	]	};
+    key	<AE06> {	[		6,	     colon	]	};
+    key	<AE07> {	[		7,	  question	]	};
+    key	<AE08> {	[		8,	  asterisk	]	};
+    key	<AE09> {	[		9,	 parenleft	]	};
+    key	<AE10> {	[		0,	parenright	]	};
+    key	<AE11> {	[    Cyrillic_o_bar,  		Cyrillic_O_bar		]	};
+    key	<AE12> {	[    Cyrillic_en_descender,   	Cyrillic_EN_descender	]	};
+    key	<BKSL> {	[    Cyrillic_u_straight,  	Cyrillic_U_straight	]	};
+    key	<AB10> {	[	   period,	     comma	]	};
+    key <LSGT> {        [           slash,             bar      ]       };
+
+    key	<TLDE> {	[     Cyrillic_io,     Cyrillic_IO	]	};
+    key	<AD01> {	[ Cyrillic_shorti, Cyrillic_SHORTI	]	};
+    key	<AD02> {	[    Cyrillic_tse,    Cyrillic_TSE	]	};
+    key	<AD03> {	[      Cyrillic_u,	Cyrillic_U	]	};
+    key	<AD04> {	[     Cyrillic_ka,     Cyrillic_KA	]	};
+    key	<AD05> {	[     Cyrillic_ie,     Cyrillic_IE	]	};
+    key	<AD06> {	[     Cyrillic_en,     Cyrillic_EN	]	};
+    key	<AD07> {	[    Cyrillic_ghe,    Cyrillic_GHE	]	};
+    key	<AD08> {	[    Cyrillic_sha,    Cyrillic_SHA	]	};
+    key	<AD09> {	[  Cyrillic_shcha,  Cyrillic_SHCHA	]	};
+    key	<AD10> {	[     Cyrillic_ze,     Cyrillic_ZE	]	};
+    key	<AD11> {	[     Cyrillic_ha,     Cyrillic_HA	]	};
+    key	<AD12> {	[	Cyrillic_hardsign,	Cyrillic_HARDSIGN	]	};
+    key	<AC01> {	[     Cyrillic_ef,     Cyrillic_EF	]	};
+    key	<AC02> {	[   Cyrillic_yeru,   Cyrillic_YERU	]	};
+    key	<AC03> {	[     Cyrillic_ve,     Cyrillic_VE	]	};
+    key	<AC04> {	[      Cyrillic_a,	Cyrillic_A	]	};
+    key	<AC05> {	[     Cyrillic_pe,     Cyrillic_PE	]	};
+    key	<AC06> {	[     Cyrillic_er,     Cyrillic_ER	]	};
+    key	<AC07> {	[      Cyrillic_o,	Cyrillic_O	]	};
+    key	<AC08> {	[     Cyrillic_el,     Cyrillic_EL	]	};
+    key	<AC09> {	[     Cyrillic_de,     Cyrillic_DE	]	};
+    key	<AC10> {	[    Cyrillic_zhe,    Cyrillic_ZHE	]	};
+    key	<AC11> {	[      Cyrillic_e,	Cyrillic_E	]	};
+    key	<AB01> {	[     Cyrillic_ya,     Cyrillic_YA	]	};
+    key	<AB02> {	[    Cyrillic_che,    Cyrillic_CHE	]	};
+    key	<AB03> {	[     Cyrillic_es,     Cyrillic_ES	]	};
+    key	<AB04> {	[     Cyrillic_em,     Cyrillic_EM	]	};
+    key	<AB05> {	[      Cyrillic_i,	Cyrillic_I	]	};
+    key	<AB06> {	[     Cyrillic_te,     Cyrillic_TE	]	};
+    key	<AB07> {	[ 	Cyrillic_softsign,	Cyrillic_SOFTSIGN	]	};
+    key	<AB08> {	[     Cyrillic_be,     Cyrillic_BE	]	};
+    key	<AB09> {	[     Cyrillic_yu,     Cyrillic_YU	]	};
+};
+
+// Kyrgyz phonetic layout
+partial alphanumeric_keys
+xkb_symbols "phonetic" {
+
+    name[Group1]="Kyrgyz (phonetic)";
+
+    key	<AE01> {	[		1,	    	exclam 			]	};
+    key	<AE02> {	[		2,        	quotedbl		]	};
+    key	<AE03> {	[		3,      	numerosign		]	};
+    key	<AE04> {	[		4,     	 	semicolon		]	};
+    key	<AE05> {	[		5,    	   	percent			]	};
+    key	<AE06> {	[		6, 	     	colon			]	};
+    key	<AE07> {	[		7,	  	question		]	};
+    key	<AE08> {	[		8,           	minus			]	};
+    key	<AE09> {	[		9,	 	parenleft		]	};
+    key	<AE10> {	[		0,		parenright		]	};
+    key	<AE11> {	[    	Cyrillic_ya,     	Cyrillic_YA		]	};
+    key	<AE12> {	[    	Cyrillic_yu,     	Cyrillic_YU		]	};
+
+    key	<AD11> {	[    	Cyrillic_che,		Cyrillic_CHE		]	};
+    key	<AD12> {	[    	Cyrillic_sha,    	Cyrillic_SHA		]	};
+    key	<BKSL> {	[	Cyrillic_hardsign, 	Cyrillic_HARDSIGN	]	};
+    key	<AB09> {	[    	Cyrillic_shcha,    	Cyrillic_SHCHA		]	};
+    key	<AB10> {	[      	period, 		comma			]	};
+    key	<AB08> {	[	Cyrillic_tse, 		Cyrillic_TSE		]	};
+    key	<AC10> {	[	Cyrillic_e,        	Cyrillic_E		]	};
+    key	<AC11> {	[	Cyrillic_softsign, 	Cyrillic_SOFTSIGN	]	};
+    key	<TLDE> {	[     	Cyrillic_io,     	Cyrillic_IO		]	};
+
+    key	<LatQ> {	[     	Cyrillic_o_bar,  	Cyrillic_O_bar		]	};
+    key	<LatZ> {	[     	Cyrillic_ze,     	Cyrillic_ZE		]	};
+    key	<LatS> {	[     	Cyrillic_es,     	Cyrillic_ES		]	};
+    key	<LatA> {	[     	Cyrillic_a,		Cyrillic_A		]	};
+    key	<LatW> {	[     	Cyrillic_u_straight,  	Cyrillic_U_straight	]	};
+    key	<LatC> {	[     	Cyrillic_zhe,    	Cyrillic_ZHE		]	};
+    key	<LatX> {	[	Cyrillic_ha,     	Cyrillic_HA 		]	};
+    key	<LatD> {	[     	Cyrillic_de,		Cyrillic_DE		]	};
+    key	<LatE> {	[     	Cyrillic_ie,     	Cyrillic_IE		]	};
+    key	<LatV> {	[     	Cyrillic_ve,     	Cyrillic_VE		]	};
+    key	<LatF> {	[     	Cyrillic_ef,     	Cyrillic_EF		]	};
+    key	<LatT> {	[     	Cyrillic_te,     	Cyrillic_TE		]	};
+    key	<LatR> {	[     	Cyrillic_er,     	Cyrillic_ER		]	};
+    key	<LatN> {	[     	Cyrillic_en,     	Cyrillic_EN		]	};
+    key	<LatB> {	[     	Cyrillic_be,     	Cyrillic_BE		]	};
+    key	<LatH> {	[     	Cyrillic_en_descender,  Cyrillic_EN_descender	]	};
+    key	<LatG> {	[    	Cyrillic_ghe,    	Cyrillic_GHE		]	};
+    key	<LatY> {	[   	Cyrillic_yeru,   	Cyrillic_YERU		]	};
+    key	<LatM> {	[     	Cyrillic_em,     	Cyrillic_EM		]	};
+    key	<LatJ> {	[ 	Cyrillic_shorti, 	Cyrillic_SHORTI		]	};
+    key	<LatU> {	[      	Cyrillic_u,		Cyrillic_U		]	};
+    key	<LatK> {	[     	Cyrillic_ka,     	Cyrillic_KA		]	};
+    key	<LatI> {	[      	Cyrillic_i,		Cyrillic_I		]	};
+    key	<LatO> {	[      	Cyrillic_o,		Cyrillic_O		]	};
+    key	<LatL> {	[     	Cyrillic_el,     	Cyrillic_EL		]	};
+    key	<LatP> {	[     	Cyrillic_pe,     	Cyrillic_PE		]	};
+};

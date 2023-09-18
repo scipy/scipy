@@ -1,0 +1,23 @@
+conf.d/README
+
+Each file in this directory is a fontconfig configuration file.  Fontconfig
+scans this directory, loading all files of the form [0-9][0-9]*.conf.
+These files are normally installed in /workspaces/scipy/venv/share/fontconfig/conf.avail
+and then symlinked here, allowing them to be easily installed and then
+enabled/disabled by adjusting the symlinks.
+
+The files are loaded in numeric order, the structure of the configuration
+has led to the following conventions in usage:
+
+ Files beginning with:	Contain:
+ 
+ 00 through 09		Font directories
+ 10 through 19		system rendering defaults (AA, etc)
+ 20 through 29		font rendering options
+ 30 through 39		family substitution
+ 40 through 49		generic identification, map family->generic
+ 50 through 59		alternate config file loading
+ 60 through 69		generic aliases, map generic->family
+ 70 through 79		select font (adjust which fonts are available)
+ 80 through 89		match target="scan" (modify scanned patterns)
+ 90 through 99		font synthesis

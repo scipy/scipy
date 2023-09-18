@@ -1,0 +1,569 @@
+#!/bin/bash
+
+__cards () {
+    while IFS=$'\t' read idx name _; do
+        printf "%s %s\n" "$idx" "$name"
+    done < <(pactl list cards short 2> /dev/null)
+}
+
+__sinks () {
+    while IFS=$'\t' read _ name _ _ _; do
+        printf "%s\n" "$name"
+    done < <(pactl list sinks short 2> /dev/null)
+}
+
+__sinks_idx () {
+    while IFS=$'\t' read idx _ _ _ _; do
+        printf "%s\n" "$idx"
+    done < <(pactl list sinks short 2> /dev/null)
+}
+
+__sources () {
+    while IFS=$'\t' read _ name _ _ _; do
+        printf "%s\n" "$name"
+    done < <(pactl list sources short 2> /dev/null)
+}
+
+__sink_inputs () {
+    while IFS=$'\t' read idx _ _ _ _; do
+        printf "%s\n" "$idx"
+    done < <(pactl list sink-inputs short 2> /dev/null)
+}
+
+__source_outputs () {
+    while IFS=$'\t' read idx _ _ _ _; do
+        printf "%s\n" "$idx"
+    done < <(pactl list source-outputs short 2> /dev/null)
+}
+
+__ports () {
+    pactl list cards 2> /dev/null | awk -- \
+        '/^\tPorts:/ {
+            flag=1; next
+         }
+
+         /^\t[A-Za-z]/ {
+             flag=0
+         }
+
+         flag {
+             if (/^\t\t[A-Za-z]/)
+                 ports = ports substr($0, 3, index($0, ":")-3) " "
+         }
+
+         END {
+             print ports
+         }'
+}
+
+__profiles () {
+    pactl list cards 2> /dev/null | awk -- \
+        '/^\tProfiles:/ {
+            flag=1; next
+        }
+
+        /^\t[A-Za-z]/ {
+            flag=0
+        }
+
+        flag {
+            if (/^\t\t[A-Za-z]/)
+                profiles = profiles substr($0, 3, index($0, ": ")-3) " "
+        }
+
+        END {
+            print profiles
+        }'
+}
+
+__all_modules () {
+    while read name; do
+        name=${name%% *}
+        printf "%s\n" "$name"
+    done < <(pulseaudio --dump-modules 2> /dev/null)
+}
+
+__loaded_modules () {
+    while IFS=$'\t' read idx name _; do
+        printf "%s %s\n" "$idx" "$name"
+    done < <(pactl list modules short 2> /dev/null)
+}
+
+__resample_methods () {
+    while read name; do
+        printf "%s\n" "$name"
+    done < <(pulseaudio --dump-resample-methods 2> /dev/null)
+}
+
+_pacat_file_formats () {
+    while IFS=$'\t' read name _; do
+        printf "%s\n" "$name"
+    done < <(pacat --list-file-formats 2> /dev/null)
+}
+
+in_array() {
+    local i
+    for i in "${@:2}"; do
+        [[ $1 = "$i" ]] && return
+    done
+}
+
+_pactl() {
+    local cur prev words cword preprev word command
+    local comps
+    local flags='-h --help --version -s --server= --client-name='
+    local list_types='short sinks sources sink-inputs source-outputs cards
+                    modules samples clients message-handlers'
+    local commands=(stat info list exit upload-sample play-sample remove-sample
+                    load-module unload-module move-sink-input move-source-output
+                    suspend-sink suspend-source set-card-profile set-default-sink
+                    set-sink-port set-default-source set-source-port set-sink-volume
+                    set-source-volume set-sink-input-volume set-source-output-volume
+                    set-sink-mute set-source-mute set-sink-input-mute
+                    set-source-output-mute set-sink-formats set-port-latency-offset
+                    subscribe send-message help)
+
+    _init_completion -n = || return
+    preprev=${words[$cword-2]}
+
+    for word in "${COMP_WORDS[@]}"; do
+        if in_array "$word" "${commands[@]}"; then
+            command=$word
+            break
+        fi
+    done
+
+    case $preprev in
+        list) COMPREPLY=($(compgen -W 'short' -- "$cur")) ;;
+
+        play-sample)
+            comps=$(__sinks)
+            COMPREPLY=($(compgen -W '${comps[*]}' -- "$cur"))
+            ;;
+
+        move-sink-input)
+            comps=$(__sinks)
+            COMPREPLY=($(compgen -W '${comps[*]}' -- "$cur"))
+            ;;
+
+        move-source-output)
+            comps=$(__sources)
+            COMPREPLY=($(compgen -W '${comps[*]}' -- "$cur"))
+            ;;
+
+        set-card-profile)
+            comps=$(__profiles)
+            COMPREPLY=($(compgen -W '${comps[*]}' -- "$cur"))
+            ;;
+
+        set-*-port)
+            comps=$(__ports)
+            COMPREPLY=($(compgen -W '${comps[*]}' -- "$cur"))
+            ;;
+
+        set-*-mute) COMPREPLY=($(compgen -W 'true false toggle' -- "$cur")) ;;
+
+        set-sink-formats)
+            ;; #TODO
+
+        set-port-*)
+            comps=$(__ports)
+            COMPREPLY=($(compgen -W '${comps[*]}' -- "$cur"))
+            ;;
+        --server)
+            compopt +o nospace
+            _known_hosts_real "$cur"
+            ;;
+    esac
+    [[ $COMPREPLY ]] && return 0
+
+    case $prev in
+        list) COMPREPLY=($(compgen -W '${list_types[*]}' -- "$cur")) ;;
+
+        upload-sample) _filedir ;;
+
+        play-sample) ;; # TODO
+
+        remove-sample) ;; # TODO
+
+        load-module)
+            comps=$(__all_modules)
+            COMPREPLY=($(compgen -W '${comps[*]}' -- "$cur"))
+            ;;
+
+        unload-module)
+            comps=$(__loaded_modules)
+            COMPREPLY=($(compgen -W '${comps[*]}' -- "$cur"))
+            ;;
+
+        set-card*)
+            comps=$(__cards)
+            COMPREPLY=($(compgen -W '${comps[*]}' -- "$cur"))
+            ;;
+
+        *sink-input*)
+            comps=$(__sink_inputs)
+            COMPREPLY=($(compgen -W '${comps[*]}' -- "$cur"))
+            ;;
+
+        *source-output*)
+            comps=$(__source_outputs)
+            COMPREPLY=($(compgen -W '${comps[*]}' -- "$cur"))
+            ;;
+
+        set-sink-formats)
+            comps=$(__sinks_idx)
+            COMPREPLY=($(compgen -W '${comps[*]}' -- "$cur"))
+            ;;
+
+        *sink*)
+            comps=$(__sinks)
+            COMPREPLY=($(compgen -W '${comps[*]}' -- "$cur"))
+            ;;
+
+        *source*)
+            comps=$(__sources)
+            COMPREPLY=($(compgen -W '${comps[*]}' -- "$cur"))
+            ;;
+
+        set-port*)
+            comps=$(__cards)
+            COMPREPLY=($(compgen -W '${comps[*]}' -- "$cur"))
+            ;;
+
+        -s)
+            _known_hosts_real "$cur" ;;
+    esac
+    [[ $COMPREPLY ]] && return 0
+
+    case $cur in
+        --server=*)
+            cur=${cur#*=}
+            _known_hosts_real "$cur"
+            ;;
+
+        -*)
+            COMPREPLY=($(compgen -W '${flags[*]}' -- "$cur"))
+            [[ $COMPREPLY == *= ]] && compopt -o nospace
+            ;;
+
+        *)
+            [[ -z $command ]] && COMPREPLY=($(compgen -W '${commands[*]}' -- "$cur"))
+            ;;
+    esac
+}
+complete -F _pactl pactl
+
+_pacmd() {
+    local cur prev words cword preprev word command
+    local comps
+    local flags='-h --help --version'
+    local commands=(exit help list-modules list-cards list-sinks list-sources list-clients
+                    list-samples list-sink-inputs list-source-outputs stat info
+                    load-module unload-module describe-module set-sink-volume
+                    set-source-volume set-sink-input-volume set-source-output-volume
+                    set-sink-mute set-source-mut set-sink-input-mute
+                    set-source-output-mute update-sink-proplist update-source-proplist
+                    update-sink-input-proplist update-source-output-proplist
+                    set-default-sink set-default-source kill-client kill-sink-input
+                    kill-source-output play-sample remove-sample load-sample
+                    load-sample-lazy load-sample-dir-lazy play-file dump
+                    move-sink-input move-source-output suspend-sink suspend-source
+                    suspend set-card-profile set-sink-port set-source-port
+                    set-port-latency-offset set-log-target set-log-level set-log-meta
+                    set-log-time set-log-backtrace send-message)
+    _init_completion -n = || return
+    preprev=${words[$cword-2]}
+
+    for word in "${COMP_WORDS[@]}"; do
+        if in_array "$word" "${commands[@]}"; then
+            command=$word
+            break
+        fi
+    done
+
+    case $preprev in
+        play-sample|play-file)
+            comps=$(__sinks)
+            COMPREPLY=($(compgen -W '${comps[*]}' -- "$cur"))
+            ;;
+
+        load-sample*) _filedir ;;
+
+        move-sink-input)
+            comps=$(__sinks)
+            COMPREPLY=($(compgen -W '${comps[*]}' -- "$cur"))
+            ;;
+
+        move-source-output)
+            comps=$(__sources)
+            COMPREPLY=($(compgen -W '${comps[*]}' -- "$cur"))
+            ;;
+
+        set-card-profile)
+            comps=$(__profiles)
+            COMPREPLY=($(compgen -W '${comps[*]}' -- "$cur"))
+            ;;
+
+        set-*port*)
+            comps=$(__ports)
+            COMPREPLY=($(compgen -W '${comps[*]}' -- "$cur"))
+            ;;
+
+        set-*-mute) COMPREPLY=($(compgen -W 'true false' -- "$cur"));;
+
+        set-sink-formats)
+            ;; #TODO
+    esac
+
+    case $prev in
+        list-*) ;;
+        describe-module|load-module)
+            comps=$(__all_modules)
+            COMPREPLY=($(compgen -W '${comps[*]}' -- "$cur"))
+            ;;
+
+        unload-module)
+            comps=$(__loaded_modules)
+            COMPREPLY=($(compgen -W '${comps[*]}' -- "$cur"))
+            ;;
+
+        load-sample-dir-lazy) _filedir -d ;;
+        play-file) _filedir ;;
+
+        *sink-input*)
+            comps=$(__sink_inputs)
+            COMPREPLY=($(compgen -W '${comps[*]}' -- "$cur"))
+            ;;
+
+        *source-output*)
+            comps=$(__source_outputs)
+            COMPREPLY=($(compgen -W '${comps[*]}' -- "$cur"))
+            ;;
+
+        *sink*)
+            comps=$(__sinks)
+            COMPREPLY=($(compgen -W '${comps[*]}' -- "$cur"))
+            ;;
+
+        *source*)
+            comps=$(__sources)
+            COMPREPLY=($(compgen -W '${comps[*]}' -- "$cur"))
+            ;;
+
+        set-card*)
+            comps=$(__cards)
+            COMPREPLY=($(compgen -W '${comps[*]}' -- "$cur"))
+            ;;
+
+        set-port-*)
+            comps=$(__cards)
+            COMPREPLY=($(compgen -W '${comps[*]}' -- "$cur"))
+            ;;
+
+        set-log-target)
+            COMPREPLY=($(compgen -W 'auto syslog stderr file: newfile:' -- "$cur"))
+            ;;
+
+        set-log-level)
+            COMPREPLY=($(compgen -W '{0..4}' -- "$cur"))
+            ;;
+
+        set-log-meta|set-log-time|suspend)
+            COMPREPLY=($(compgen -W 'true false' -- "$cur"))
+            ;;
+    esac
+
+    case $cur in
+        -*) COMPREPLY=($(compgen -W '${flags[*]}' -- "$cur")) ;;
+        suspend)
+            COMPREPLY=($(compgen -W 'suspend suspend-sink suspend-source' -- "$cur"))
+            ;;
+
+        load-sample)
+            COMPREPLY=($(compgen -W 'load-sample load-sample-lazy load-sample-dir-lazy' -- "$cur"))
+            ;;
+
+        *)
+            [[ -z $command ]] && COMPREPLY=($(compgen -W '${commands[*]}' -- "$cur"))
+            ;;
+    esac
+}
+complete -F _pacmd pacmd
+
+_pasuspender () {
+    local cur prev
+    local flags='-h --help --version -s --server='
+
+    _init_completion -n = || return
+
+    case $cur in
+        --server=*)
+            cur=${cur#*=}
+            _known_hosts_real "$cur"
+            ;;
+
+        -*)
+            COMPREPLY=($(compgen -W '${flags[*]}' -- "$cur"))
+            [[ $COMPREPLY == *= ]] && compopt -o nospace
+            ;;
+    esac
+
+    case $prev in
+        -s) _known_hosts_real "$cur" ;;
+    esac
+}
+complete -F _pasuspender pasuspender
+
+_padsp () {
+    local cur prev
+    local flags='-h -s -n -m -M -S -D -d'
+
+    _get_comp_words_by_ref cur prev
+
+    case $cur in
+        -*) COMPREPLY=($(compgen -W '${flags[*]}' -- "$cur")) ;;
+    esac
+
+    case $prev in
+        -s) _known_hosts_real "$cur" ;;
+    esac
+}
+complete -F _padsp padsp
+
+_pacat () {
+    local cur prev comps
+    local flags='-h --help --version -r --record -p --playback -v --verbose -s
+                --server= -d --device= -n --client-name= --stream-name= --volume=
+                --rate= --format= --channels= --channel-map= --fix-format --fix-rate
+                --fix-channels --no-remix --no-remap --latency= --process-time=
+                --latency-msec= --process-time-msec= --property= --raw --passthrough
+                --file-format= --list-file-formats --monitor-stream='
+
+    _init_completion -n = || return
+
+    case $cur in
+        --server=*)
+            cur=${cur#*=}
+            _known_hosts_real "$cur"
+            ;;
+
+        --device=*)
+            cur=${cur#*=}
+            comps=$(__sinks)
+            comps+=" "$(__sources)
+            COMPREPLY=($(compgen -W '${comps[*]}' -- "$cur"))
+            ;;
+
+        --monitor-stream=*)
+            cur=${cur#*=}
+            comps=$(__sink_inputs)
+            COMPREPLY=($(compgen -W '${comps[*]}' -- "$cur"))
+            ;;
+
+        --rate=*)
+            cur=${cur#*=}
+            COMPREPLY=($(compgen -W '32000 44100 48000 9600 192000' -- "$cur"))
+            ;;
+
+        --file-format=*)
+            cur=${cur#*=}
+            comps=$(_pacat_file_formats)
+            COMPREPLY=($(compgen -W '${comps[*]}' -- "$cur"))
+            ;;
+
+        --*=*)
+            ;;
+
+        -*)
+            COMPREPLY=($(compgen -W '${flags[*]}' -- "$cur"))
+            [[ $COMPREPLY == *= ]] && compopt -o nospace
+            ;;
+        *) _filedir ;;
+    esac
+
+    case $prev in
+        -s) _known_hosts_real "$cur" ;;
+        -d)
+            comps=$(__sinks)
+            comps+=" "$(__sources)
+            COMPREPLY=($(compgen -W '${comps[*]}' -- "$cur"))
+            ;;
+    esac
+}
+complete -F _pacat pacat paplay parec parecord
+
+_pulseaudio()
+{
+    local cur prev words cword
+    local flags='-h --help --version --dump-conf --dump-resample-methods --cleanup-shm
+                --start -k --kill --check --system= -D --daemonize= --fail= --high-priority=
+                --realtime= --disallow-module-loading= --disallow-exit= --exit-idle-time=
+                --scache-idle-time= --log-level= -v --log-target= --log-meta= --log-time=
+                --log-backtrace= -p --dl-search-path= --resample-method= --use-pit-file=
+                --no-cpu-limit= --disable-shm= --enable-memfd= -L --load= -F --file= -C -n'
+    _init_completion -n = || return
+
+    case $cur in
+        --system=*|--daemonize=*|--fail=*|--high-priority=*|--realtime=*| \
+            --disallow-*=*|--log-meta=*|--log-time=*|--use-pid-file=*| \
+            --no-cpu-limit=*|--disable-shm=*|--enable-memfd=*)
+            cur=${cur#*=}
+            COMPREPLY=($(compgen -W 'true false' -- "$cur"))
+            ;;
+
+        --log-target=*)
+            cur=${cur#*=}
+            COMPREPLY=($(compgen -W 'auto syslog stderr file: newfile:' -- "$cur"))
+            ;;
+
+        --log-level=*)
+            cur=${cur#*=}
+            COMPREPLY=($(compgen -W '{0..4}' -- "$cur"))
+            ;;
+
+        --dl-search-path=*)
+            cur=${cur#*=}
+            _filedir -d
+            ;;
+
+        --file=*)
+            cur=${cur#*=}
+            _filedir
+            ;;
+
+        --resample-method=*)
+            cur=${cur#*=}
+            comps=$(__resample_methods)
+            COMPREPLY=($(compgen -W '${comps[*]}' -- "$cur"))
+            ;;
+
+        --load=*)
+            cur=${cur#*=}
+            comps=$(__all_modules)
+            COMPREPLY=($(compgen -W '${comps[*]}' -- "$cur"))
+            ;;
+
+        --*=*)
+            ;;
+
+        -*)
+            COMPREPLY=($(compgen -W '${flags[*]}' -- "$cur"))
+            [[ $COMPREPLY == *= ]] && compopt -o nospace
+            ;;
+    esac
+
+    case $prev in
+        -D) COMPREPLY=($(compgen -W 'true false' -- "$cur")) ;;
+        -p) _filedir -d ;;
+        -F) _filedir ;;
+        -L)
+            cur=${cur#*=}
+            comps=$(__all_modules)
+            COMPREPLY=($(compgen -W '${comps[*]}' -- "$cur"))
+            ;;
+    esac
+}
+complete -F _pulseaudio pulseaudio
+
+#vim: set ft=zsh sw=4 ts=4 noet

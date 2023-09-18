@@ -1,0 +1,86 @@
+#!/bin/sh
+# Prints a package's identification PACKAGE VERSION or PACKAGE.
+#
+# Copyright (C) 2001-2003, 2005, 2014 Free Software Foundation, Inc.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+want_version="$1"
+
+# NLS nuisances: Letter ranges are different in the Estonian locale.
+LC_ALL=C
+
+while true; do
+  if test -f configure; then
+    package=`(grep '^PACKAGE_NAME=' configure; grep '^ *PACKAGE=' configure) | grep -v '=[ 	]*$' | sed -e '1q' | sed -e 's/^[^=]*=//' | sed -e "s/^'//" -e "s/'$//"`
+    case "$package" in
+      *[\"\$\`\{\}]*)
+        # Some packages (gcal) retrieve the package name dynamically.
+        package=
+        ;;
+    esac
+    if test -n "$package"; then
+      is_gnu=`LC_ALL=C grep "GNU $package" * 2>/dev/null | grep -v '^libtool:'`
+      if test -n "$is_gnu"; then
+        package="GNU $package"
+      fi
+      if test -n "$want_version"; then
+        version=`(grep '^PACKAGE_VERSION=' configure; grep '^ *VERSION=' configure) | grep -v '=[ 	]*$' | sed -e '1q' | sed -e 's/^[^=]*=//' | sed -e "s/^'//" -e "s/'$//"`
+        case "$version" in
+          *[\"\$\`\{\}]*)
+            # Some packages (gcal, gcc, clisp) retrieve the version dynamically.
+            version=
+            ;;
+        esac
+        if test -n "$version"; then
+          echo "$package $version"
+        else
+          echo "$package"
+        fi
+      else
+        echo "$package"
+      fi
+      exit 0
+    fi
+  fi
+  dir=`basename "\`pwd\`"`
+  case "$dir" in
+    i18n)
+      # This directory name, used in GNU make, is not the top level directory.
+      ;;
+    *[A-Za-z]*[0-9]*)
+      package=`echo "$dir" | sed -e 's/^\([^0-9]*\)[0-9].*$/\1/' -e 's/[-_]$//'`
+      if test -n "$want_version"; then
+        version=`echo "$dir" | sed -e 's/^[^0-9]*\([0-9].*\)$/\1/'`
+        echo "$package $version"
+      else
+        echo "$package"
+      fi
+      exit 0
+      ;;
+  esac
+  # Go to parent directory
+  last=`/bin/pwd`
+  cd ..
+  curr=`/bin/pwd`
+  if test "$last" = "$curr"; then
+    # Oops, didn't find the package name.
+    if test -n "$want_version"; then
+      echo "PACKAGE VERSION"
+    else
+      echo "PACKAGE"
+    fi
+    exit 0
+  fi
+done

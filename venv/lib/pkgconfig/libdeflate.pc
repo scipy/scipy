@@ -1,0 +1,18 @@
+prefix=/workspaces/scipy/venv
+exec_prefix=${prefix}
+includedir=${prefix}/include
+libdir=${exec_prefix}/lib
+
+Name: libdeflate
+Description: Fast implementation of DEFLATE, zlib, and gzip
+Version: 1.19
+Libs: -L${libdir} -ldeflate
+Cflags: -I${includedir}
+
+# Note: this library's public header allows LIBDEFLATE_DLL to be defined when
+# linking to the DLL on Windows, to make __declspec(dllimport) be used.
+# However, the only way to define a shared-library-only flag in a pkgconfig file
+# is to use the weird workaround of unconditionally defining it in Cflags, then
+# undefining it in Cflags.private.  Just don't bother with this, since
+# __declspec(dllimport) is optional anyway.  It is a very minor performance
+# optimization that is irrelevant for most use cases of libdeflate.

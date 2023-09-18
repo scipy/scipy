@@ -1,0 +1,261 @@
+// Keyboard layouts for Georgia.
+
+// Original author: Aiet Kolkhi <aietkolkhi@gmail.com>
+//
+// This includes the following keyboard layouts: Georgian QWERTY;
+// Georgian Ergonomic; Georgian MESS; and Georgian Russian.
+//
+// Layouts include the Georgian Mkhedruli alphabet; most layouts also include
+// some special and ancient characters (like Fi, Yn, Elifi, Turned Gan and Ain).
+// The Georgian Asomtavruli or Georgian Khutsuri alphabets are not included.
+
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+    name[Group1]= "Georgian";
+
+    key <TLDE> { [ 0x0100201e, 0x0100201c, 0x0100201e, asciitilde ] };
+    key <AE01> { [ 1,             exclam,        apostrophe    ] };
+    key <AE02> { [ 2,             at,            0x0100201e    ] };
+    key <AE03> { [ 3,             numbersign,    0x0100201c    ] };
+    key <AE04> { [ 4,             dollar,        0x01002116    ] };
+    key <AE05> { [ 5,             percent,       EuroSign      ] };
+    key <AE06> { [ 6,             asciicircum                  ] };
+    key <AE07> { [ 7,             ampersand,     section       ] };
+    key <AE08> { [ 8,             asterisk,      degree        ] };
+    key <AE09> { [ 9,             parenleft                    ] };
+    key <AE10> { [ 0,             parenright                   ] };
+    key <AE11> { [ minus,         underscore,    0x01002014    ] };
+    key <AE12> { [ equal,         plus,          0x01002013    ] };
+
+    key <AD01> { [ Georgian_khar, Q                            ] };
+    key <AD02> { [ Georgian_cil,  Georgian_char                ] };
+    key <AD03> { [ Georgian_en,   E,             Georgian_he   ] };
+    key <AD04> { [ Georgian_rae,  Georgian_ghan, registered    ] };
+    key <AD05> { [ Georgian_tar,  Georgian_tan                 ] };
+    key <AD06> { [ Georgian_qar,  Y,             0x010010f8    ] };
+    key <AD07> { [ Georgian_un,   U                            ] };
+    key <AD08> { [ Georgian_in,   I,             Georgian_hie  ] };
+    key <AD09> { [ Georgian_on,   O                            ] };
+    key <AD10> { [ Georgian_par,  P                            ] };
+    key <AD11> { [ bracketleft,   braceleft                    ] };
+    key <AD12> { [ bracketright,  braceright                   ] };
+
+    key <AC01> { [ Georgian_an,   A,             0x010010fa    ] };
+    key <AC02> { [ Georgian_san,  Georgian_shin                ] };
+    key <AC03> { [ Georgian_don,  D                            ] };
+    key <AC04> { [ Georgian_phar, F,             Georgian_fi   ] };
+    key <AC05> { [ Georgian_gan,  G,             0x010010f9    ] };
+    key <AC06> { [ Georgian_hae,  H,             Georgian_hoe  ] };
+    key <AC07> { [ Georgian_jhan, Georgian_zhar, 0x010010f7    ] };
+    key <AC08> { [ Georgian_kan,  K                            ] };
+    key <AC09> { [ Georgian_las,  L                            ] };
+    key <AC10> { [ semicolon,     colon                        ] };
+    key <AC11> { [ apostrophe,    quotedbl                     ] };
+    key <BKSL> { [ backslash,     bar, asciitilde, asciitilde  ] };
+
+    key <LSGT> { [ guillemotleft, guillemotright               ] };
+    key <AB01> { [ Georgian_zen,  Georgian_jil                 ] };
+    key <AB02> { [ Georgian_xan,  X,             Georgian_har  ] };
+    key <AB03> { [ Georgian_can,  Georgian_chin, copyright     ] };
+    key <AB04> { [ Georgian_vin,  V,             Georgian_we   ] };
+    key <AB05> { [ Georgian_ban,  B                            ] };
+    key <AB06> { [ Georgian_nar,  N,             0x010010fc    ] };
+    key <AB07> { [ Georgian_man,  M                            ] };
+    key <AB08> { [ comma,         less,          guillemotleft ] };
+    key <AB09> { [ period,        greater,      guillemotright ] };
+    key <AB10> { [ slash,         question,      0x010010fb    ] };
+
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "qwerty" {
+    include "ge(basic)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "ergonomic" {
+    include "ge(basic)"
+
+    name[Group1]= "Georgian (ergonomic)";
+
+    key <TLDE> { [ 0x0100201e, apostrophe, 0x0100201e, asciitilde ] };
+    key <AE01> { [ exclam, 1, exclam      ] };
+    key <AE02> { [ 0x01002116, 2, at      ] };
+    key <AE03> { [ comma, 3, numbersign, section ] };
+    key <AE04> { [ semicolon, 4, dollar   ] };
+    key <AE05> { [ percent, 5, EuroSign	 ] };
+    key <AE06> { [ colon, 6, asciicircum  ] };
+    key <AE07> { [ question, 7, ampersand ] };
+    key <AE08> { [ period, 8, asterisk, degree ] };
+    key <AE09> { [ parenleft, 9, parenleft, guillemotleft ] };
+    key <AE10> { [ parenright, 0, parenright, guillemotright ] };
+    key <AE11> { [ minus, plus, 0x01002014, underscore ] };
+    key <AE12> { [ 0x0100201c, equal, equal ] };
+
+    key <AD01> { [ Georgian_chin, noSymbol      ]       };
+    key <AD02> { [ Georgian_par,  noSymbol      ]       };
+    key <AD03> { [ Georgian_un,   noSymbol      ]       };
+    key <AD04> { [ Georgian_jil,  noSymbol, noSymbol, registered ] };
+    key <AD05> { [ Georgian_char, noSymbol, noSymbol, Georgian_tan  ] };
+    key <AD06> { [ Georgian_tar,  noSymbol, noSymbol, 0x010010f8 ] };
+    key <AD07> { [ Georgian_tan,  noSymbol      ]       };
+    key <AD08> { [ Georgian_nar,  noSymbol, 0x010010fc, I ] };
+    key <AD09> { [ Georgian_vin,  noSymbol, Georgian_we      ] };
+    key <AD10> { [ Georgian_shin, noSymbol                ] };
+    key <AD11> { [ Georgian_kan,  noSymbol, bracketleft, braceleft  ] };
+    key <AD12> { [ Georgian_khar, noSymbol, bracketright,braceright ] };
+
+    key <AC01> { [ Georgian_xan,  noSymbol, Georgian_har     ] };
+    key <AC02> { [ Georgian_in,   noSymbol, Georgian_hie     ] };
+    key <AC03> { [ Georgian_an,   noSymbol, 0x010010fa, D ] };
+    key <AC04> { [ Georgian_en,   noSymbol, Georgian_he      ] };
+    key <AC05> { [ Georgian_on,   noSymbol     ]       };
+    key <AC06> { [ Georgian_don,  noSymbol     ]       };
+    key <AC07> { [ Georgian_man,  noSymbol     ]       };
+    key <AC08> { [ Georgian_san,  noSymbol     ]       };
+    key <AC09> { [ Georgian_rae,  noSymbol, L  ]       };
+    key <AC10> { [ Georgian_ban,  noSymbol, colon         ] };
+    key <AC11> { [ Georgian_gan,  noSymbol, 0x010010f9, quotedbl ] };
+    key <BKSL> { [ slash, section, backslash, bar ] };
+
+    key <LSGT> { [ guillemotleft,guillemotright   ] };
+    key <AB01> { [ Georgian_jhan, noSymbol      ]      };
+    key <AB02> { [ Georgian_hae,  noSymbol, Georgian_hoe,  X ] };
+    key <AB03> { [ Georgian_qar,  noSymbol, 0x010010f8, C ] };
+    key <AB04> { [ Georgian_ghan, noSymbol, 0x010010f7, V ] };
+    key <AB05> { [ Georgian_zhar, noSymbol                ] };
+    key <AB06> { [ Georgian_zen,  noSymbol                ] };
+    key <AB07> { [ Georgian_can,  noSymbol, noSymbol, M   ] };
+    key <AB08> { [ Georgian_las,  noSymbol, guillemotleft, less ] };
+    key <AB09> { [ Georgian_phar, noSymbol, Georgian_fi,   guillemotright ] };
+    key <AB10> { [ Georgian_cil,  noSymbol, 0x010010fb    ] };
+
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "mess" {
+    include "ge(basic)"
+
+    name[Group1]= "Georgian (MESS)";
+
+    key <TLDE> { [ Georgian_char, backslash, grave ] };
+    key <AE01> { [ 1, exclam, apostrophe ] };
+    key <AE02> { [ 2, at, asciitilde ] };
+    key <AE03> { [ 3, 0x01002116, numbersign ]	};
+    key <AE04> { [ 4, dollar, EuroSign ] };
+    key <AE05> { [ 5, percent ]	};
+    key <AE06> { [ 6, asciicircum ] };
+    key <AE07> { [ 7, ampersand, section ] };
+    key <AE08> { [ 8, asterisk, degree ] };
+    key <AE09> { [ 9, parenleft ] };
+    key <AE10> { [ 0, parenright, 0x01002014 ] };
+    key <AE11> { [ minus, underscore, 0x01002013 ] };
+    key <AE12> { [ Georgian_zhar,	plus, bar   ]  };
+    key <AD01> { [ Georgian_khar,	Q ] };
+    key <AD02> { [ Georgian_cil, 	W ] };
+    key <AD03> { [ Georgian_en,  	E ] };
+    key <AD04> { [ Georgian_rae, 	R ] };
+    key <AD05> { [ Georgian_tar, 	T ] };
+    key <AD06> { [ Georgian_qar, 	Y ] };
+    key <AD07> { [ Georgian_un,  	U ] };
+    key <AD08> { [ Georgian_in,  	I, Georgian_hie  ] };
+    key <AD09> { [ Georgian_on,  	O ] };
+    key <AD10> { [ Georgian_par, 	P ] };
+    key <AD11> { [ Georgian_shin,	bracketleft,  guillemotleft  ] };
+    key <AD12> { [ Georgian_ghan,	bracketright, guillemotright ] };
+    key <AC01> { [ Georgian_an,  	A, 0x010010fa ] };
+    key <AC02> { [ Georgian_san, 	S ] };
+    key <AC03> { [ Georgian_don, 	D ] };
+    key <AC04> { [ Georgian_phar,	F, Georgian_fi   ] };
+    key <AC05> { [ Georgian_gan, 	G, 0x010010f9 ] };
+    key <AC06> { [ Georgian_hae, 	H, Georgian_he   ]	};
+    key <AC07> { [ Georgian_jhan,	J, 0x010010f7 ] };
+    key <AC08> { [ Georgian_kan, 	K ] };
+    key <AC09> { [ Georgian_las, 	L ] };
+    key <AC10> { [ Georgian_tan, 0x0100201e ] };
+    key <AC11> { [ Georgian_chin,0x0100201c ] };
+    key <BKSL> { [ equal, slash, bar ]	};
+
+    key <LSGT> { [ guillemotleft, guillemotright ] };
+    key <AB01> { [ Georgian_zen,  Z, Georgian_hoe  ] };
+    key <AB02> { [ Georgian_xan,  X, Georgian_har  ]	};
+    key <AB03> { [ Georgian_can, 	C ] };
+    key <AB04> { [ Georgian_vin, 	V, Georgian_we   ]	};
+    key <AB05> { [ Georgian_ban, 	B ] };
+    key <AB06> { [ Georgian_nar, 	N, 0x010010fc ] };
+    key <AB07> { [ Georgian_man, 	M ] };
+    key <AB08> { [ comma, semicolon, less ] };
+    key <AB09> { [ period, colon, greater ] };
+    key <AB10> { [ Georgian_jil,  question, 0x010010fb ] };
+
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "ru" {
+
+    name[Group1]= "Russian (Georgia)";
+
+    key <TLDE> { [ asciicircum,   asciitilde       ]       };
+    key <AE01> { [         1,      exclam          ]       };
+    key <AE02> { [         2,      at              ]       };
+    key <AE03> { [         3,      numbersign      ]       };
+    key <AE04> { [         4,      semicolon       ]       };
+    key <AE05> { [         5,      colon           ]       };
+    key <AE06> { [         6,      comma           ]       };
+    key <AE07> { [         7,      period          ]       };
+    key <AE08> { [         8,      asterisk        ]       };
+    key <AE09> { [         9,      parenleft       ]       };
+    key <AE10> { [         0,      parenright      ]       };
+    key <AE11> { [     minus,      underscore      ]       };
+    key <AE12> { [ numbersign,     bar             ]       };
+
+    key <AD01> { [ Georgian_ghan,  q               ]       };
+    key <AD02> { [ Georgian_can,   w               ]       };
+    key <AD03> { [ Georgian_un,    e               ]       };
+    key <AD04> { [ Georgian_kan,   r               ]       };
+    key <AD05> { [ Georgian_en,    t               ]       };
+    key <AD06> { [ Georgian_nar,   y               ]       };
+    key <AD07> { [ Georgian_gan,   u               ]       };
+    key <AD08> { [ Georgian_shin,  i               ]       };
+    key <AD09> { [ Georgian_cil,   o               ]       };
+    key <AD10> { [ Georgian_zen,   p               ]       };
+    key <AD11> { [ Georgian_xan,   bracketleft     ]       };
+    key <AD12> { [ Georgian_jhan,  bracketright    ]       };
+
+    key <AC01> { [ Georgian_phar,  a               ]       };
+    key <AC02> { [ Georgian_tan,   s               ]       };
+    key <AC03> { [ Georgian_vin,   d               ]       };
+    key <AC04> { [ Georgian_an,    f               ]       };
+    key <AC05> { [ Georgian_par,   g               ]       };
+    key <AC06> { [ Georgian_rae,   h               ]       };
+    key <AC07> { [ Georgian_on,    j               ]       };
+    key <AC08> { [ Georgian_las,   k               ]       };
+    key <AC09> { [ Georgian_don,   l               ]       };
+    key <AC10> { [ Georgian_zhar,  semicolon       ]       };
+    key <AC11> { [ Georgian_jil,   percent         ]       };
+    key <BKSL> { [ backslash,      bar             ]       };
+
+    key <LSGT> { [ guillemotleft,  guillemotright  ]       };
+    key <AB01> { [ Georgian_char,  z               ]       };
+    key <AB02> { [ Georgian_chin,  x               ]       };
+    key <AB03> { [ Georgian_san,   c               ]       };
+    key <AB04> { [ Georgian_man,   v               ]       };
+    key <AB05> { [ Georgian_in,    b               ]       };
+    key <AB06> { [ Georgian_tar,   n               ]       };
+    key <AB07> { [ Georgian_khar,  m               ]       };
+    key <AB08> { [ Georgian_ban,   less            ]       };
+    key <AB09> { [ Georgian_qar,   greater         ]       };
+    key <AB10> { [ Georgian_hae,   question        ]       };
+};
+
+partial alphanumeric_keys
+xkb_symbols "os" {
+
+    include "ru(os_legacy)"
+
+    name[Group1]= "Ossetian (Georgia)";
+};

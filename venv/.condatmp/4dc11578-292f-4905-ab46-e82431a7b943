@@ -1,0 +1,14 @@
+prefix=/workspaces/scipy/venv
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+includedir=${prefix}/include/qt
+
+
+Name: Qt5 UiTools
+Description: Qt UiTools module
+Version: 5.15.8
+Libs: -L${libdir} -lQt5UiTools 
+Libs.private: -L/workspaces/scipy/venv/lib -L/home/conda/feedstock_root/build_artifacts/qt-main_1684749422691/_build_env/x86_64-conda-linux-gnu/sysroot/usr/lib64 -L/home/conda/feedstock_root/build_artifacts/qt-main_1684749422691/_build_env/x86_64-conda-linux-gnu/sysroot/usr/lib /workspaces/scipy/venv/lib/libQt5Widgets.so /workspaces/scipy/venv/lib/libQt5Gui.so /workspaces/scipy/venv/lib/libQt5Core.so -lpthread /workspaces/scipy/venv/lib/libQt5Widgets.so /workspaces/scipy/venv/lib/libQt5Gui.so /workspaces/scipy/venv/lib/libQt5Core.so -L/home/conda/feedstock_root/build_artifacts/qt-main_1684749422691/_build_env/bin/../x86_64-conda-linux-gnu/sysroot/usr/lib64 -lGL   
+Cflags: -DQT_UITOOLS_LIB -I${includedir}/QtUiTools -I${includedir}
+Requires: Qt5Core Qt5Gui Qt5Widgets
+

@@ -1,0 +1,45 @@
+{
+  "build": "h499e0f7_2",
+  "build_number": 2,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [],
+  "depends": [
+    "gcc 12.3.0.*",
+    "gcc_impl_linux-64 12.3.0.*",
+    "gfortran_impl_linux-64 12.3.0.*"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/gfortran-12.3.0-h499e0f7_2",
+  "features": "",
+  "files": [
+    "bin/gfortran"
+  ],
+  "fn": "gfortran-12.3.0-h499e0f7_2.conda",
+  "license": "BSD-3-Clause",
+  "license_family": "BSD",
+  "link": {
+    "source": "/opt/conda/pkgs/gfortran-12.3.0-h499e0f7_2",
+    "type": 1
+  },
+  "md5": "0558a8c44eb7a18e6682bd3a8ae6dcab",
+  "name": "gfortran",
+  "package_tarball_full_path": "/opt/conda/pkgs/gfortran-12.3.0-h499e0f7_2.conda",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "bin/gfortran",
+        "path_type": "softlink",
+        "sha256": "08c4065bb3935965ca09967f9163110d812bfa6504b3cbb45c63d96aa4e65fd5",
+        "size_in_bytes": 1309208
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "5cc7101ce3f44517b1416e1da6e64f107db8a0e8a31d552d3f6ecd4096c2c5ba",
+  "size": 26559,
+  "subdir": "linux-64",
+  "timestamp": 1694604486300,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/gfortran-12.3.0-h499e0f7_2.conda",
+  "version": "12.3.0"
+}

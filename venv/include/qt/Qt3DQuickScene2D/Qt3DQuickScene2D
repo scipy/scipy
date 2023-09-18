@@ -1,0 +1,6 @@
+#ifndef QT_QT3DQUICKSCENE2D_MODULE_H
+#define QT_QT3DQUICKSCENE2D_MODULE_H
+#include <Qt3DQuickScene2D/Qt3DQuickScene2DDepends>
+#include "qscene2d.h"
+#include "qt3dquickscene2dversion.h"
+#endif

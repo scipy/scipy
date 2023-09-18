@@ -1,0 +1,149 @@
+// Keyboard layouts for Vietnam.
+
+// Vietnamese keyboard layout, somehow based on TCVN 5712:1993.
+// Original author: Le Hong Boi <le.hong.boi@bigfoot.com>, 1999.
+// Modified by Ashley Clark <aclark@debian.org>, 2000.
+// Accents to combining marks, Samuel Thibault <samuel.thibault@ens-lyon.org>, 2009.
+
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+    include "us"
+
+    name[Group1]= "Vietnamese";
+
+    key <TLDE> { [	   grave, 	asciitilde	] };
+    key <AE01> { [	   abreve,	Abreve		] };
+    key <AE02> { [	   acircumflex,  Acircumflex	] };
+    key <AE03> { [	   ecircumflex,	Ecircumflex	] };
+    key <AE04> { [	   ocircumflex,	Ocircumflex	] };
+    key <AE05> { [	   0x1000300,	percent,	dead_grave,	percent		] };
+    key <AE06> { [	   0x1000309,	asciicircum,	dead_hook,	asciicircum	] };
+    key <AE07> { [	   0x1000303,	ampersand,	dead_tilde,	ampersand	] };
+    key <AE08> { [	   0x1000301,	asterisk,	dead_acute,	asterisk	] };
+    key <AE09> { [	   0x1000323,	parenleft,	dead_belowdot,	parenleft	] };
+    key <AE10> { [	   dstroke,	Dstroke		] };
+    key <AE11> { [     minus, underscore  ]	};
+    key <AE12> { [     DongSign, plus ]	};
+
+    key <AD11> { [ uhorn,	Uhorn	] };
+    key <AD12> { [ ohorn,	Ohorn	] };
+
+    include "level3(ralt_switch)"
+};
+
+
+// US keyboard made Vietnamese
+//
+// Copyright (C) 2018, Florent Gallaire Phong <f@gallai.re>
+
+partial alphanumeric_keys
+xkb_symbols "us" {
+
+    include "us(basic)"
+    name[Group1]= "Vietnamese (US)";
+
+    key <TLDE> { [dead_grave, dead_tilde,              grave,          asciitilde ] };
+    key <AE04> { [         4,     dollar,           DongSign,            currency ] }; // ₫ ¤
+
+    key <AD03> { [         e,          E,        ecircumflex,         Ecircumflex ] }; // ê Ê
+    key <AD07> { [         u,          U,              uhorn,               Uhorn ] }; // ư Ư
+    key <AD09> { [         o,          O,        ocircumflex,         Ocircumflex ] }; // ô Ô
+    key <AD10> { [         p,          P,              ohorn,               Ohorn ] }; // ơ Ơ
+
+    key <AC01> { [         a,          A,        acircumflex,         Acircumflex ] }; // â Â
+    key <AC02> { [         s,          S,             abreve,              Abreve ] }; // ă Ă
+    key <AC03> { [         d,          D,            dstroke,             Dstroke ] }; // đ Đ
+    key <AC11> { [dead_acute,   quotedbl,         apostrophe ] };
+
+    key <AB09> { [dead_belowdot, greater,             period ] };
+    key <AB10> { [ dead_hook,   question,              slash ] };
+
+    include "level3(ralt_switch)"
+    include "eurosign(5)"
+};
+
+// French keyboard made Vietnamese
+//
+// Copyright (C) 2018, Florent Gallaire Phong <f@gallai.re>
+
+partial alphanumeric_keys
+xkb_symbols "fr" {
+
+    include "fr(basic)"
+
+    name[Group1]="Vietnamese (France)";
+
+    key <AE02> { [dead_tilde,          2,             eacute,          asciitilde ] };
+    key <AE04> { [dead_acute,          4,         apostrophe,           braceleft ] };
+    key <AE07> { [dead_grave,          7,             egrave,               grave ] };
+
+    key <AD01> { [         a,          A,             abreve,              Abreve ] }; // ă Ă
+    key <AD07> { [         u,          U,              uhorn,               Uhorn ] }; // ư Ư
+    key <AD09> { [         o,          O,              ohorn,               Ohorn ] }; // ơ Ơ
+    key <AD12> { [    dollar,   sterling,           DongSign,            currency ] }; // ₫ ¤
+
+    key <AC03> { [         d,          D,            dstroke,             Dstroke ] }; // đ Đ
+
+    key <AB07> { [ dead_hook,   question,          comma ] };
+    key <AB08> { [dead_belowdot,  period,      semicolon ] };
+};
+
+
+// EXTRAS:
+
+// Vietnamese AÐERTY (60s typewriters adaptation)
+//
+// Copyright (C) 2018, Florent Gallaire Phong <f@gallai.re>
+
+partial alphanumeric_keys
+xkb_symbols "aderty" {
+
+    include "fr(basic)"
+
+    name[Group1]="Vietnamese (AÐERTY)";
+
+    key <AE02> { [dead_tilde,          2,             eacute,          asciitilde ] };
+    key <AE04> { [dead_acute,          4,         apostrophe,           braceleft ] };
+    key <AE07> { [dead_grave,          7,             egrave,               grave ] };
+
+    key <AD02> { [   dstroke,    Dstroke,                  z,                   Z ] }; // đ Đ
+    key <AD12> { [    dollar,   sterling,           DongSign,            currency ] }; // ₫ ¤
+
+    key <AC04> { [     uhorn,      Uhorn,                  f,                   F ] }; // ư Ư
+    key <AC07> { [     ohorn,      Ohorn,                  j,                   J ] }; // ơ Ơ
+
+    key <AB01> { [    abreve,     Abreve,                  w,                   W ] }; // ă Ă
+    key <AB07> { [ dead_hook,   question,          comma ] };
+    key <AB08> { [dead_belowdot,  period,      semicolon ] };
+};
+
+// Vietnamese QĐERTY (AĐERTY qwertification)
+//
+// Copyright (C) 2018, Florent Gallaire Phong <f@gallai.re>
+
+partial alphanumeric_keys
+xkb_symbols "qderty" {
+
+    include "us(basic)"
+    name[Group1]= "Vietnamese (QĐERTY)";
+
+    key <TLDE> { [dead_grave, dead_tilde,              grave,          asciitilde ] };
+    key <AE04> { [         4,     dollar,           DongSign,            currency ] }; // ₫ ¤
+
+    key <AD02> { [   dstroke,    Dstroke,                  w,                   W ] }; // đ Đ
+    key <AD03> { [         e,          E,        ecircumflex,         Ecircumflex ] }; // ê Ê
+    key <AD09> { [         o,          O,        ocircumflex,         Ocircumflex ] }; // ô Ô
+
+    key <AC01> { [         a,          A,        acircumflex,         Acircumflex ] }; // â Â
+    key <AC04> { [     uhorn,      Uhorn,                  f,                   F ] }; // ư Ư
+    key <AC07> { [     ohorn,      Ohorn,                  j,                   J ] }; // ơ Ơ
+    key <AC11> { [dead_acute,   quotedbl,         apostrophe ] };
+
+    key <AB01> { [    abreve,     Abreve,                  z,                   Z ] }; // ă Ă
+    key <AB09> { [dead_belowdot, greater,             period ] };
+    key <AB10> { [ dead_hook,   question,              slash ] };
+
+    include "level3(ralt_switch)"
+    include "eurosign(5)"
+};

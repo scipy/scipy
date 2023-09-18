@@ -1,0 +1,30 @@
+// Example for use of GNU gettext.
+// This file is in the public domain.
+
+// Source code of the YCP program.
+
+UI(``{
+    textdomain "hello-ycp";
+
+    map bash_out = SCR::Execute (.target.bash_output, "echo $PPID");
+    integer pid = tointeger (bash_out["stdout"]:"99999");
+
+    OpenDialog (
+        `VBox (
+             `HBox (
+                  `Label (_("Hello, world!")),
+                  `HStretch ()
+                  ),
+             `HBox (
+                  `Label (sformat (_("This program is running as process number %1."), pid)),
+                  `HStretch ()
+                  ),
+             `HBox (
+                  `HStretch (),
+                  `PushButton (`opt(`default), "&OK")
+                  )
+             )
+        );
+    UserInput();
+    CloseDialog();
+})

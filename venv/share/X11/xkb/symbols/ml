@@ -1,0 +1,65 @@
+// Keyboard layouts for Mali.
+
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+    include "fr(basic)"
+
+    name[Group1]="Bambara";
+
+    key <AD02>	{[   z,   Z,   U017E,   U017D ]}; // ž Ž
+    key <AD03>	{[   e,   E,   U025B,   U0190 ]}; // ɛ Ɛ
+
+    key <AC02>	{[   s,   S,   U0161,   U0160 ]}; // š Š
+    key <AC05>	{[   g,   G,   U0254,   U0186 ]}; // ɔ Ɔ
+    key <AC10>	{[   m,   M,   U014B,   U014A ]}; // ŋ Ŋ
+
+    key <AB04>	{[   v,   V,  leftdoublequotemark,  leftsinglequotemark ]}; // “ ‘
+    key <AB05>	{[   b,   B, rightdoublequotemark, rightsinglequotemark ]}; // ” ’
+    key <AB06>	{[   n,   N,   U0272,   U019D ]}; // ɲ Ɲ
+};
+
+partial alphanumeric_keys
+xkb_symbols "fr-oss" {
+
+    include "fr(oss)"
+
+    name[Group1]="French (Mali, alt.)";
+
+    key <AD02>	{[   z,   Z,   U017E,   U017D ]}; // ž Ž
+    key <AD04>	{[   r,   R,   U025B,   U0190 ]}; // ɛ Ɛ
+    key <AD10>	{[   p,   P,   U0254,   U0186 ]}; // ɔ Ɔ
+    key <AC03>	{[   d,   D,   U0161,   U0160 ]}; // š Š
+    key <AC07>	{[   j,   J,   U0272,   U019D ]}; // ɲ Ɲ
+    key <AC10>	{[   m,   M,   U014B,   U014A ]}; // ŋ Ŋ
+};
+
+partial alphanumeric_keys
+xkb_symbols "us-mac" {
+
+    include "us(mac)"
+
+    name[Group1]="English (Mali, US, Macintosh)";
+
+    key <AD09>	{[   o,   O,   U0254,   U0186 ]}; // ɔ Ɔ
+    key <AC01>	{[   a,   A,   U025B,   U0190 ]}; // ɛ Ɛ
+    key <AC02>	{[   s,   S,   U0161,   U0160 ]}; // š Š
+    key <AC07>	{[   j,   J,   U0272,   U019D ]}; // ɲ Ɲ
+    key <AC08>	{[   k,   K,   U014B,   U014A ]}; // ŋ Ŋ
+    key <AB01>	{[   z,   Z,   U017E,   U017D ]}; // ž Ž
+};
+
+partial alphanumeric_keys
+xkb_symbols "us-intl" {
+
+    include "us(intl)"
+
+    name[Group1]="English (Mali, US, intl.)";
+
+    key <AD02>	{[   w,   W,   U025B,   U0190 ]}; // ɛ Ɛ
+    key <AD09>	{[   o,   O,   U0254,   U0186 ]}; // ɔ Ɔ
+    key <AC02>	{[   s,   S,   U0161,   U0160 ]}; // š Š
+    key <AC06>	{[   h,   H,   U0272,   U019D ]}; // ɲ Ɲ
+    key <AC07>	{[   j,   J,   U014B,   U014A ]}; // ŋ Ŋ
+    key <AB02>	{[   x,   X,   U017E,   U017D ]}; // ž Ž
+};

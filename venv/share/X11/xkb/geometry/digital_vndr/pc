@@ -1,0 +1,349 @@
+//
+//Copyright (c) 1996  Digital Equipment Corporation
+//
+//Permission is hereby granted, free of charge, to any person obtaining
+//a copy of this software and associated documentation files (the
+//"Software"), to deal in the Software without restriction, including
+//without limitation the rights to use, copy, modify, merge, publish,
+//distribute, sublicense, and sell copies of the Software, and to
+//permit persons to whom the Software is furnished to do so, subject to
+//the following conditions:
+//
+//The above copyright notice and this permission notice shall be included
+//in all copies or substantial portions of the Software.
+//
+//THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+//OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+//MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+//IN NO EVENT SHALL DIGITAL EQUIPMENT CORPORATION BE LIABLE FOR ANY CLAIM,
+//DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+//OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+//THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+//Except as contained in this notice, the name of the Digital Equipment 
+//Corporation shall not be used in advertising or otherwise to promote
+//the sale, use or other dealings in this Software without prior written
+//authorization from Digital Equipment Corporation.
+//
+// HISTORY
+// Log: pc,v 
+// Revision 1.2  1996/06/18  09:12:50  erik
+// use flags correctly, assorted cleanups and consortium fixes
+//
+// Revision 1.1.6.2  1995/08/18  21:15:18  William_Walker
+// 	Upgrade XKB to Protocol Rev. 0.64
+// 	[1995/08/18  20:41:49  William_Walker]
+//
+// Revision 1.1.2.4  1995/08/11  19:35:48  William_Walker
+// 	Sync up with Erik's pool.
+// 	[1995/08/11  18:36:03  William_Walker]
+// 
+// Revision 1.1.2.3  1995/06/27  12:17:29  William_Walker
+// 	Rename <TLDE> to ISO9995 compliant <AE00>.
+// 	[1995/06/26  20:23:10  William_Walker]
+// 
+// Revision 1.1.2.2  1995/06/05  19:21:19  William_Walker
+// 	New file.  I love keymaps.
+// 	[1995/06/05  18:05:51  William_Walker]
+// 
+// EndLog
+// 
+// @(#)RCSfile: pc,v  Revision: 1.2  (DEC) Date: 1996/02/02 14:40:25
+// 
+partial xkb_geometry "common" {
+    width		= 480;
+    height		= 200;
+
+    shape.cornerRadius = 1;
+    shape "NORM" { primary = { [18,19] }, { [3,2], [15,16] } };
+    shape "KP0"  { primary = { [37,19] }, { [3,2], [34,16] } };
+    shape "KPAD" { primary = { [18,39] }, { [3,2], [15,36] } };
+    shape "LEDS" { [78,22] };
+    shape "LED"  { [5,2] };
+
+    text.color         = "black";
+    section.left       = 17;
+    row.left	       = 1;
+    key.shape	       = "NORM";
+    key.gap	       =  1;
+
+    section "Function" { top = 40;
+        row { top = 1;
+	    keys {  <ESC>,
+	    	    { <FK01>, 20 }, <FK02>, <FK03>, <FK04>,
+	    	    { <FK05>, 10 }, <FK06>, <FK07>, <FK08>,
+		    { <FK09>, 10 }, <FK10>, <FK11>, <FK12>
+	    };
+        };
+    };
+
+    section "Editing" { top = 40; left = 308;
+        row { top = 1;
+    	    keys { <PRSC>, <SCLK>, <PAUS> };
+        };
+        row { top = 41;
+	    keys { <INS>, <HOME>, <PGUP> };
+        };
+        row { top = 61;
+	    keys { <DELE>, <END>, <PGDN> };
+        };
+        row { top = 101; left = 20;
+	    keys { <UP> };
+        };
+        row { top = 121;
+	    keys { <LEFT>, <DOWN>, <RGHT> };
+        };
+    };
+
+    section "Keypad" { top = 80; left = 374;
+        row { top = 1;
+	    keys { <NMLK>, <KPDV>, <KPMU>, <KPSU> };
+        };
+        row { top = 21;
+	    keys { <KP7>, <KP8>, <KP9>, { <KPAD>, "KPAD" } };
+        };
+        row { top = 41;
+	    keys { <KP4>, <KP5>, <KP6> };
+        };
+        row { top = 61;
+	    keys { <KP1>, <KP2>, <KP3>, { <KPEN>, "KPAD" } };
+        };
+        row { top = 81;
+	    keys { { <KP0>, "KP0" }, <KPDL> };
+        };
+    };
+};
+
+partial xkb_geometry "leds_on_keys" {
+    section.top  = 40;
+    section.left = 17;
+    section "LedPanel" {
+        indicator.onColor  = "#00ff00";
+        indicator.offColor = "#001000";
+        indicator.shape    = "LED";
+        indicator "Scroll Lock" { left = 317; top = 5;  };
+        indicator "Num Lock"    { left = 364; top = 45; };
+        indicator "Caps Lock"   { left = 10;   top = 85; };
+    };
+
+    section.left = 375;
+    section.top  = 40;
+    section "LogoPanel" {
+        solid "logo_panel" { top = 0; left = 0;
+            shape = "LEDS";
+	    color = "grey";
+        };
+        text "Logo" {left = 28; top = 10; text="digital\n"; };
+    };
+};
+
+partial xkb_geometry "leds_alone" {
+    section.left = 375;
+    section.top  = 40;
+    section "Indicators" {
+        solid "led_panel" { top = 0; left = 0;
+	    shape = "LEDS";
+	    color = "grey";
+        };
+        indicator.top = 16;
+        indicator.onColor  = "#00ff00";
+        indicator.offColor = "#001000";
+        indicator.shape    = "LED";
+        indicator "Num Lock" 	{ left = 3;  };
+        indicator "Caps Lock"	{ left = 26; };
+        indicator "Scroll Lock" { left = 50; };
+        text "Logo" {left = 2; top = 3; text="digital\n"; };
+    };
+    section "IndicatorLabels" {
+	text.top = 11;
+    	text "NumLockLabel"    {left = 10; text="Num\nLock";    };
+    	text "CapsLockLabel"   {left = 33; text="Caps\nLock";   };
+    	text "ScrollLockLabel" {left = 58; text="Scroll\nLock"; };
+    };
+};
+
+xkb_geometry "pc101" {
+    include "digital_vndr/pc(common)"
+
+    shape.cornerRadius = 1;
+    shape "BKSP" { primary = { [36,19] }, { [3,2], [33,16] } };
+    shape "TABK" { primary = { [27,19] }, { [3,2], [24,16] } };
+    shape "RTRN" { primary = { [41,19] }, { [3,2], [38,16] } };
+    shape "CAPS" { primary = { [32,19] }, { [3,2], [29,16] } };
+    shape "LFSH" { primary = { [41,19] }, { [3,2], [38,16] } };
+    shape "RTSH" { primary = { [51,19] }, { [3,2], [49,16] } };
+    shape "MODK" { primary = { [27,19] }, { [3,2], [24,16] } };
+    shape "BKSL" { primary = { [27,19] }, { [3,2], [24,16] } };
+    shape "SPCE" { primary = { [132,19] },{ [3,2], [129,16]} };
+
+    section.left       = 17;
+    row.left	       = 1;
+    key.shape	       = "NORM";
+    key.gap	       =  1;
+
+    section "Alpha" { top = 80;
+        row { top = 1;
+	    keys {  <AE00>, 
+		    <AE01>, <AE02>, <AE03>, <AE04>, <AE05>, <AE06>, 
+		    <AE07>, <AE08>, <AE09>, <AE10>, <AE11>, <AE12>, 
+		    { <BKSP>, "BKSP" }
+	    };
+        };
+        row { top = 21;
+	    keys {  { <TAB>, "TABK" },
+		    <AD01>, <AD02>, <AD03>, <AD04>, <AD05>, <AD06>, 
+		    <AD07>, <AD08>, <AD09>, <AD10>, <AD11>, <AD12>, 
+		    { <BKSL>, "BKSL" }
+	    };
+
+        };
+        row { top = 41;
+	    keys {  { <CAPS>, "CAPS" },
+		    <AC01>, <AC02>, <AC03>, <AC04>, <AC05>, <AC06>, 
+		    <AC07>, <AC08>, <AC09>, <AC10>, <AC11>,
+		    { <RTRN>, "RTRN" }
+	    };
+        };
+        row { top = 61;
+	    keys {  { <LFSH>, "LFSH" },
+		    <AB01>, <AB02>, <AB03>, <AB04>, <AB05>, <AB06>, 
+                    <AB07>, <AB08>, <AB09>, <AB10>,
+		    { <RTSH>, "RTSH" }
+	    };
+        };
+        row { top = 81;
+	    key.shape = "MODK";
+	    keys {  <LCTL>,
+		    { <LALT>, 20 },
+		    { <SPCE>, "SPCE" },
+		    <RALT>,
+		    { <RCTL>, 21 }
+	    };
+        };
+    };
+};
+
+xkb_geometry "pc102" {
+    include "digital_vndr/pc(common)"
+
+    shape.cornerRadius = 1;
+    shape "BKSP" { primary = { [36,19] }, { [3,2], [33,16] } };
+    shape "TABK" { primary = { [27,19] }, { [3,2], [24,16] } };
+    shape "RTRN" { 
+        approx = { [0,0],[28,19] },
+        { [0,0], [27,0], [27,39], [5,39], [5,19], [0,19] },
+        { [3,2], [24,2], [24,36], [8,36], [8,16], [3,16] }
+    };
+    shape "CAPS" { primary = { [32,19] }, { [3,2], [29,16] } };
+    shape "LFSH" { primary = { [22,19] }, { [3,2], [19,16] } };
+    shape "RTSH" { primary = { [51,19] }, { [3,2], [49,16] } };
+    shape "MODK" { primary = { [27,19] }, { [3,2], [24,16] } };
+    shape "BKSL" { primary = { [27,19] }, { [3,2], [24,16] } };
+    shape "SPCE" { primary = { [132,19] },{ [3,2], [129,16]} };
+
+    section.left       = 17;
+    row.left	       = 1;
+    key.shape	       = "NORM";
+    key.gap	       =  1;
+
+    section "Alpha" { top = 80;
+        row { top = 1;
+	    keys {  <AE00>, 
+		    <AE01>, <AE02>, <AE03>, <AE04>, <AE05>, <AE06>, 
+		    <AE07>, <AE08>, <AE09>, <AE10>, <AE11>, <AE12>, 
+		    { <BKSP>, "BKSP" }
+	    };
+        };
+        row { top = 21;
+	    keys {  { <TAB>, "TABK" },
+		    <AD01>, <AD02>, <AD03>, <AD04>, <AD05>, <AD06>, 
+		    <AD07>, <AD08>, <AD09>, <AD10>, <AD11>, <AD12>, 
+		    { <RTRN>, "RTRN" }
+	    };
+
+        };
+        row { top = 41;
+	    keys {  { <CAPS>, "CAPS" },
+		    <AC01>, <AC02>, <AC03>, <AC04>, <AC05>, <AC06>, 
+		    <AC07>, <AC08>, <AC09>, <AC10>, <AC11>, <AC12>
+	    };
+        };
+        row { top = 61;
+	    keys {  { <LFSH>, "LFSH" },
+		    <BKSL>, <AB01>, <AB02>, <AB03>, <AB04>, <AB05>, 
+	            <AB06>, <AB07>, <AB08>, <AB09>, <AB10>,
+		    { <RTSH>, "RTSH" }
+	    };
+        };
+        row { top = 81;
+	    key.shape = "MODK";
+	    keys {  <LCTL>,
+		    { <LALT>, 20 },
+		    { <SPCE>, "SPCE" },
+		    <RALT>,
+		    { <RCTL>, 21 }
+	    };
+        };
+    };
+};
+
+xkb_geometry "pcxaj" {
+    include "digital_vndr/pc(common)"
+
+    shape.cornerRadius = 1;
+    shape "BKSP" { primary = { [36,19] }, { [3,2], [33,16] } };
+    shape "TABK" { primary = { [27,19] }, { [3,2], [24,16] } };
+    shape "RTRN" { primary = { [22,19] }, { [3,2], [19,16] } };
+    shape "CAPS" { primary = { [32,19] }, { [3,2], [29,16] } };
+    shape "LFSH" { primary = { [41,19] }, { [3,2], [38,16] } };
+    shape "RTSH" { primary = { [32,19] }, { [3,2], [29,16] } };
+    shape "MODK" { primary = { [27,19] }, { [3,2], [24,16] } };
+    shape "BKSL" { primary = { [27,19] }, { [3,2], [24,16] } };
+    shape "SPCE" { primary = { [114,19]}, { [3,2], [111,16]} };
+
+    section.left       = 17;
+    row.left	       = 1;
+    key.shape	       = "NORM";
+    key.gap	       =  1;
+
+    section "Alpha" { top = 80;
+        row { top = 1;
+	    keys {  <AE00>, 
+		    <AE01>, <AE02>, <AE03>, <AE04>, <AE05>, <AE06>, 
+		    <AE07>, <AE08>, <AE09>, <AE10>, <AE11>, <AE12>, 
+		    { <BKSP>, "BKSP" }
+	    };
+        };
+        row { top = 21;
+	    keys {  { <TAB>, "TABK" },
+		    <AD01>, <AD02>, <AD03>, <AD04>, <AD05>, <AD06>, 
+		    <AD07>, <AD08>, <AD09>, <AD10>, <AD11>, <AD12>, 
+		    { <BKSL>, "BKSL" }
+	    };
+        };
+        row { top = 41;
+	    keys {  { <CAPS>, "CAPS" },
+		    <AC01>, <AC02>, <AC03>, <AC04>, <AC05>, <AC06>, 
+		    <AC07>, <AC08>, <AC09>, <AC10>, <AC11>, <AC12>,
+		    { <RTRN>, "RTRN" }
+	    };
+        };
+        row { top = 61;
+	    keys {  { <LFSH>, "LFSH" },
+		    <AB01>, <AB02>, <AB03>, <AB04>, <AB05>, <AB06>, 
+		    <AB07>, <AB08>, <AB09>, <AB10>, <AB11>,
+		    { <RTSH>, "RTSH" }
+	    };
+        };
+        row { top = 81;
+	    key.shape = "MODK";
+	    keys {  <LCTL>, <LALT>, 
+		    { <MUHE>, "NORM" }, 
+		    { <SPCE>, "SPCE" },
+		    { <KANJ>, "NORM" },
+		    { <HIRA>, "NORM" },
+		    <RALT>, <RCTL>
+	    };
+        };
+    };
+};

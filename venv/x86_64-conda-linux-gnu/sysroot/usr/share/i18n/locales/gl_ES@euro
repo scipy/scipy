@@ -1,0 +1,84 @@
+comment_char %
+escape_char  /
+%
+% Galician Language Locale for Spain with Euro
+% Language: gl
+% Territory: ES
+% Option: euro
+% Date: 2000-08-21
+% Application: general
+% Users: general
+% Charset: ISO-8859-15
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title      "Galician locale for Spain with Euro"
+source     "Free Software Foundation, Inc."
+address    "59 Temple Place - Suite 330, Boston, MA 02111-1307, USA"
+contact    ""
+email      "bug-glibc-locales@gnu.org"
+tel        ""
+fax        ""
+language   "Galician"
+territory  "Spain"
+revision   "1.0"
+date       "2000-08-21"
+%
+category  "gl_ES@euro:2000";LC_IDENTIFICATION
+category  "gl_ES@euro:2000";LC_CTYPE
+category  "gl_ES@euro:2000";LC_COLLATE
+category  "gl_ES@euro:2000";LC_TIME
+category  "gl_ES@euro:2000";LC_NUMERIC
+category  "gl_ES@euro:2000";LC_MONETARY
+category  "gl_ES@euro:2000";LC_MESSAGES
+category  "gl_ES@euro:2000";LC_PAPER
+category  "gl_ES@euro:2000";LC_NAME
+category  "gl_ES@euro:2000";LC_ADDRESS
+category  "gl_ES@euro:2000";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_COLLATE
+copy "es_ES"
+END LC_COLLATE
+
+LC_CTYPE
+copy "gl_ES"
+END LC_CTYPE
+
+LC_MESSAGES
+copy "gl_ES"
+END LC_MESSAGES
+
+LC_MONETARY
+copy "gl_ES"
+END LC_MONETARY
+
+LC_NUMERIC
+copy "gl_ES"
+END LC_NUMERIC
+
+LC_TIME
+copy "gl_ES"
+END LC_TIME
+
+LC_PAPER
+copy "gl_ES"
+END LC_PAPER
+
+LC_TELEPHONE
+copy "gl_ES"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+copy "gl_ES"
+END LC_MEASUREMENT
+
+LC_NAME
+copy "gl_ES"
+END LC_NAME
+
+LC_ADDRESS
+copy "gl_ES"
+END LC_ADDRESS

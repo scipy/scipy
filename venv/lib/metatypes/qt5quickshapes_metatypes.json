@@ -1,0 +1,919 @@
+[
+    {
+        "classes": [
+            {
+                "classInfos": [
+                    {
+                        "name": "DefaultProperty",
+                        "value": "stops"
+                    },
+                    {
+                        "name": "QML.Element",
+                        "value": "ShapeGradient"
+                    },
+                    {
+                        "name": "QML.Creatable",
+                        "value": "false"
+                    },
+                    {
+                        "name": "QML.UncreatableReason",
+                        "value": "ShapeGradient is an abstract base class."
+                    }
+                ],
+                "className": "QQuickShapeGradient",
+                "enums": [
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "SpreadMode",
+                        "values": [
+                            "PadSpread",
+                            "RepeatSpread",
+                            "ReflectSpread"
+                        ]
+                    }
+                ],
+                "object": true,
+                "properties": [
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "spread",
+                        "notify": "spreadChanged",
+                        "read": "spread",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "SpreadMode",
+                        "user": false,
+                        "write": "setSpread"
+                    }
+                ],
+                "qualifiedClassName": "QQuickShapeGradient",
+                "signals": [
+                    {
+                        "access": "public",
+                        "name": "spreadChanged",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QQuickGradient"
+                    }
+                ]
+            },
+            {
+                "classInfos": [
+                    {
+                        "name": "DefaultProperty",
+                        "value": "stops"
+                    },
+                    {
+                        "name": "QML.Element",
+                        "value": "LinearGradient"
+                    }
+                ],
+                "className": "QQuickShapeLinearGradient",
+                "object": true,
+                "properties": [
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "x1",
+                        "notify": "x1Changed",
+                        "read": "x1",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setX1"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "y1",
+                        "notify": "y1Changed",
+                        "read": "y1",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setY1"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "x2",
+                        "notify": "x2Changed",
+                        "read": "x2",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setX2"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "y2",
+                        "notify": "y2Changed",
+                        "read": "y2",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setY2"
+                    }
+                ],
+                "qualifiedClassName": "QQuickShapeLinearGradient",
+                "signals": [
+                    {
+                        "access": "public",
+                        "name": "x1Changed",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "y1Changed",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "x2Changed",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "y2Changed",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QQuickShapeGradient"
+                    }
+                ]
+            },
+            {
+                "classInfos": [
+                    {
+                        "name": "DefaultProperty",
+                        "value": "stops"
+                    },
+                    {
+                        "name": "QML.Element",
+                        "value": "RadialGradient"
+                    }
+                ],
+                "className": "QQuickShapeRadialGradient",
+                "object": true,
+                "properties": [
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "centerX",
+                        "notify": "centerXChanged",
+                        "read": "centerX",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setCenterX"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "centerY",
+                        "notify": "centerYChanged",
+                        "read": "centerY",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setCenterY"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "centerRadius",
+                        "notify": "centerRadiusChanged",
+                        "read": "centerRadius",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setCenterRadius"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "focalX",
+                        "notify": "focalXChanged",
+                        "read": "focalX",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setFocalX"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "focalY",
+                        "notify": "focalYChanged",
+                        "read": "focalY",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setFocalY"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "focalRadius",
+                        "notify": "focalRadiusChanged",
+                        "read": "focalRadius",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setFocalRadius"
+                    }
+                ],
+                "qualifiedClassName": "QQuickShapeRadialGradient",
+                "signals": [
+                    {
+                        "access": "public",
+                        "name": "centerXChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "centerYChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "focalXChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "focalYChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "centerRadiusChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "focalRadiusChanged",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QQuickShapeGradient"
+                    }
+                ]
+            },
+            {
+                "classInfos": [
+                    {
+                        "name": "DefaultProperty",
+                        "value": "stops"
+                    },
+                    {
+                        "name": "QML.Element",
+                        "value": "ConicalGradient"
+                    }
+                ],
+                "className": "QQuickShapeConicalGradient",
+                "object": true,
+                "properties": [
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "centerX",
+                        "notify": "centerXChanged",
+                        "read": "centerX",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setCenterX"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "centerY",
+                        "notify": "centerYChanged",
+                        "read": "centerY",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setCenterY"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "angle",
+                        "notify": "angleChanged",
+                        "read": "angle",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setAngle"
+                    }
+                ],
+                "qualifiedClassName": "QQuickShapeConicalGradient",
+                "signals": [
+                    {
+                        "access": "public",
+                        "name": "centerXChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "centerYChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "angleChanged",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QQuickShapeGradient"
+                    }
+                ]
+            },
+            {
+                "classInfos": [
+                    {
+                        "name": "QML.Element",
+                        "value": "ShapePath"
+                    }
+                ],
+                "className": "QQuickShapePath",
+                "enums": [
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "FillRule",
+                        "values": [
+                            "OddEvenFill",
+                            "WindingFill"
+                        ]
+                    },
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "JoinStyle",
+                        "values": [
+                            "MiterJoin",
+                            "BevelJoin",
+                            "RoundJoin"
+                        ]
+                    },
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "CapStyle",
+                        "values": [
+                            "FlatCap",
+                            "SquareCap",
+                            "RoundCap"
+                        ]
+                    },
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "StrokeStyle",
+                        "values": [
+                            "SolidLine",
+                            "DashLine"
+                        ]
+                    }
+                ],
+                "object": true,
+                "properties": [
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "strokeColor",
+                        "notify": "strokeColorChanged",
+                        "read": "strokeColor",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QColor",
+                        "user": false,
+                        "write": "setStrokeColor"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "strokeWidth",
+                        "notify": "strokeWidthChanged",
+                        "read": "strokeWidth",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setStrokeWidth"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "fillColor",
+                        "notify": "fillColorChanged",
+                        "read": "fillColor",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QColor",
+                        "user": false,
+                        "write": "setFillColor"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "fillRule",
+                        "notify": "fillRuleChanged",
+                        "read": "fillRule",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "FillRule",
+                        "user": false,
+                        "write": "setFillRule"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "joinStyle",
+                        "notify": "joinStyleChanged",
+                        "read": "joinStyle",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "JoinStyle",
+                        "user": false,
+                        "write": "setJoinStyle"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "miterLimit",
+                        "notify": "miterLimitChanged",
+                        "read": "miterLimit",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "int",
+                        "user": false,
+                        "write": "setMiterLimit"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "capStyle",
+                        "notify": "capStyleChanged",
+                        "read": "capStyle",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "CapStyle",
+                        "user": false,
+                        "write": "setCapStyle"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "strokeStyle",
+                        "notify": "strokeStyleChanged",
+                        "read": "strokeStyle",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "StrokeStyle",
+                        "user": false,
+                        "write": "setStrokeStyle"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "dashOffset",
+                        "notify": "dashOffsetChanged",
+                        "read": "dashOffset",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setDashOffset"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "dashPattern",
+                        "notify": "dashPatternChanged",
+                        "read": "dashPattern",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QVector<qreal>",
+                        "user": false,
+                        "write": "setDashPattern"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "fillGradient",
+                        "read": "fillGradient",
+                        "required": false,
+                        "reset": "resetFillGradient()",
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QQuickShapeGradient*",
+                        "user": false,
+                        "write": "setFillGradient"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "scale",
+                        "notify": "scaleChanged",
+                        "read": "scale",
+                        "required": false,
+                        "revision": 14,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QSizeF",
+                        "user": false,
+                        "write": "setScale"
+                    }
+                ],
+                "qualifiedClassName": "QQuickShapePath",
+                "signals": [
+                    {
+                        "access": "public",
+                        "name": "shapePathChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "strokeColorChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "strokeWidthChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "fillColorChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "fillRuleChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "joinStyleChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "miterLimitChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "capStyleChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "strokeStyleChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "dashOffsetChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "dashPatternChanged",
+                        "returnType": "void"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "private",
+                        "name": "_q_fillGradientChanged",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QQuickPath"
+                    }
+                ]
+            },
+            {
+                "classInfos": [
+                    {
+                        "name": "DefaultProperty",
+                        "value": "data"
+                    },
+                    {
+                        "name": "QML.Element",
+                        "value": "Shape"
+                    }
+                ],
+                "className": "QQuickShape",
+                "enums": [
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "RendererType",
+                        "values": [
+                            "UnknownRenderer",
+                            "GeometryRenderer",
+                            "NvprRenderer",
+                            "SoftwareRenderer"
+                        ]
+                    },
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "Status",
+                        "values": [
+                            "Null",
+                            "Ready",
+                            "Processing"
+                        ]
+                    },
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "ContainsMode",
+                        "values": [
+                            "BoundingRectContains",
+                            "FillContains"
+                        ]
+                    }
+                ],
+                "object": true,
+                "properties": [
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "rendererType",
+                        "notify": "rendererChanged",
+                        "read": "rendererType",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "RendererType",
+                        "user": false
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "asynchronous",
+                        "notify": "asynchronousChanged",
+                        "read": "asynchronous",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "bool",
+                        "user": false,
+                        "write": "setAsynchronous"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "vendorExtensionsEnabled",
+                        "notify": "vendorExtensionsEnabledChanged",
+                        "read": "vendorExtensionsEnabled",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "bool",
+                        "user": false,
+                        "write": "setVendorExtensionsEnabled"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "status",
+                        "notify": "statusChanged",
+                        "read": "status",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "Status",
+                        "user": false
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "containsMode",
+                        "notify": "containsModeChanged",
+                        "read": "containsMode",
+                        "required": false,
+                        "revision": 11,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "ContainsMode",
+                        "user": false,
+                        "write": "setContainsMode"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "data",
+                        "read": "data",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QQmlListProperty<QObject>",
+                        "user": false
+                    }
+                ],
+                "qualifiedClassName": "QQuickShape",
+                "signals": [
+                    {
+                        "access": "public",
+                        "name": "rendererChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "asynchronousChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "vendorExtensionsEnabledChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "statusChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "containsModeChanged",
+                        "returnType": "void",
+                        "revision": 11
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "private",
+                        "name": "_q_shapePathChanged",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QQuickItem"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "qquickshape_p.h",
+        "outputRevision": 67
+    },
+    {
+        "classes": [
+            {
+                "className": "QQuickShapeFillRunnable",
+                "object": true,
+                "qualifiedClassName": "QQuickShapeFillRunnable",
+                "signals": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "self",
+                                "type": "QQuickShapeFillRunnable*"
+                            }
+                        ],
+                        "name": "done",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QObject"
+                    },
+                    {
+                        "access": "public",
+                        "name": "QRunnable"
+                    }
+                ]
+            },
+            {
+                "className": "QQuickShapeStrokeRunnable",
+                "object": true,
+                "qualifiedClassName": "QQuickShapeStrokeRunnable",
+                "signals": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "self",
+                                "type": "QQuickShapeStrokeRunnable*"
+                            }
+                        ],
+                        "name": "done",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QObject"
+                    },
+                    {
+                        "access": "public",
+                        "name": "QRunnable"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "qquickshapegenericrenderer_p.h",
+        "outputRevision": 67
+    }
+]

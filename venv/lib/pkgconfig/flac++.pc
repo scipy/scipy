@@ -1,0 +1,11 @@
+prefix=/workspaces/scipy/venv
+exec_prefix=/workspaces/scipy/venv
+libdir=/workspaces/scipy/venv/lib
+includedir=/workspaces/scipy/venv/include
+
+Name: FLAC++
+Description: Free Lossless Audio Codec Library (C++ API)
+Version: 1.4.3
+Requires: flac
+Libs: -L${libdir} -lFLAC++
+Cflags: -I${includedir}

@@ -1,0 +1,106 @@
+// Style API docs from sphinx' autodoc / autosummary
+
+/**
+ * Styling for field lists
+ */
+
+/* grey highlighting of 'parameter' and 'returns' field */
+table.field-list {
+  border-collapse: separate;
+  border-spacing: 10px;
+  margin-left: 1px;
+
+  th.field-name {
+    padding: 1px 8px 1px 5px;
+    white-space: nowrap;
+    background-color: var(--pst-color-surface);
+  }
+
+  /* italic font for parameter types */
+  td.field-body {
+    p {
+      font-style: italic;
+
+      > strong {
+        font-style: normal;
+      }
+    }
+
+    /* reduced space around parameter description */
+    blockquote {
+      border-left: none;
+      margin: 0em 0em 0.3em;
+      padding-left: 30px;
+    }
+  }
+}
+
+/**
+* Styling for autosummary tables
+*/
+
+.table.autosummary {
+  // The first column (with the signature) should not wrap
+  td:first-child {
+    white-space: nowrap;
+  }
+}
+
+/* overriding basic.css to use our own monospace font */
+.sig {
+  font-family: var(--pst-font-family-monospace);
+}
+
+/* C++ specific styling - overriding the basic.css to avoid custom colors*/
+
+.sig-inline.c-texpr,
+.sig-inline.cpp-texpr {
+  font-family: unset;
+}
+
+.sig.c .k,
+.sig.c .kt,
+.sig.cpp .k,
+.sig.cpp .kt {
+  color: var(--pst-color-text-base);
+}
+
+.sig.c .m,
+.sig.cpp .m {
+  color: var(--pst-color-text-base);
+}
+
+.sig.c .s,
+.sig.c .sc,
+.sig.cpp .s,
+.sig.cpp .sc {
+  color: var(--pst-color-text-base);
+}
+
+// addition
+
+// .sig.c .sig-name .n,
+// .sig.cpp .sig-name .n {
+//   color: var(--pst-color-inline-code);
+// }
+
+.sig-name {
+  color: var(--pst-color-inline-code);
+}
+
+// change target color for dark theme
+dt:target,
+span.highlighted {
+  background-color: var(--pst-color-target);
+}
+
+.viewcode-back {
+  font-family: var(--pst-font-family-base);
+}
+
+.viewcode-block:target {
+  border-top: 1px solid var(--pst-color-border);
+  border-bottom: 1px solid var(--pst-color-border);
+  position: relative;
+  background-color: var(--pst-color-target);
+}

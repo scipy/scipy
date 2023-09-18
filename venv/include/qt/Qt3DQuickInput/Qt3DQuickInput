@@ -1,0 +1,5 @@
+#ifndef QT_QT3DQUICKINPUT_MODULE_H
+#define QT_QT3DQUICKINPUT_MODULE_H
+#include <Qt3DQuickInput/Qt3DQuickInputDepends>
+#include "qt3dquickinputversion.h"
+#endif

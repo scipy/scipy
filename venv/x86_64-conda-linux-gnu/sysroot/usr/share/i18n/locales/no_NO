@@ -1,0 +1,69 @@
+escape_char	/
+comment_char    %
+
+% Norwegian language locale for Norway
+% Source: Norsk Standardiseringsforbund
+% Address: University Library,
+%   Drammensveien 41, N-9242 Oslo, Norge
+% Contact: Kolbjoern Aamboe
+% Tel: +47 - 22859109
+% Fax: +47 - 22434497
+% Email: kolbjorn.aambo@usit.uio.no
+% Language: no
+% Territory: NO
+% Revision: 4.3
+% Date: 1996-10-15
+% Application: general
+% Users: general
+% Repertoiremap: mnemonic.ds
+% Charset: ISO-8859-1
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+copy "nb_NO"
+END LC_IDENTIFICATION
+
+LC_COLLATE
+copy "nb_NO"
+END LC_COLLATE
+
+LC_CTYPE
+copy "nb_NO"
+END LC_CTYPE
+
+LC_MONETARY
+copy "nb_NO"
+END LC_MONETARY
+
+LC_NUMERIC
+copy "nb_NO"
+END LC_NUMERIC
+
+LC_TIME
+copy "nb_NO"
+END LC_TIME
+
+LC_MESSAGES
+copy "nb_NO"
+END LC_MESSAGES
+
+LC_PAPER
+copy "nb_NO"
+END LC_PAPER
+
+LC_TELEPHONE
+copy "nb_NO"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+copy "nb_NO"
+END LC_MEASUREMENT
+
+LC_NAME
+copy "nb_NO"
+END LC_NAME
+
+LC_ADDRESS
+copy "nb_NO"
+END LC_ADDRESS

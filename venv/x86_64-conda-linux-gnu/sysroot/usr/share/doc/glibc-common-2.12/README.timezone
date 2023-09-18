@@ -1,0 +1,17 @@
+The files
+	zic.c zdump.c ialloc.c scheck.c tzfile.h
+	private.h tzselect.ksh checktab.awk
+come from the tzcode package by Arthur David Olson et.al.
+
+The files
+	africa antarctica asia australasia europe
+	northamerica southamerica pacificnew etcetera factory
+	backward systemv solar87 solar88 solar89
+	iso3166.tab zone.tab leapseconds yearistype
+come from the tzdata package by Arthur David Olson et.al.
+
+Please check the ChangeLog files in the top level directory for the
+version of the tzcode and tzdata packages.
+
+These packages may be found at ftp://elsie.nci.nih.gov/pub/.  Commentary
+should be addressed to tz@elsie.nci.nih.gov.

@@ -1,0 +1,3 @@
+# Include the external websites
+sourcedirs += externalsites
+

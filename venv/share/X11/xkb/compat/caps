@@ -1,0 +1,11 @@
+partial xkb_compatibility "caps_lock" {
+    // Keysym Caps_Lock locks the Lock modifier.
+    // With this definition, the keysym Caps_Lock can be used without binding
+    // the whole key to a real modifier.  This is essential when you don't
+    // want to use Caps_Lock on the first level.
+    // This should not have any compatibility issues when used together with
+    // other layouts which don't utilize this capability.
+    interpret Caps_Lock {
+        action = LockMods(modifiers = Lock);
+    };
+};

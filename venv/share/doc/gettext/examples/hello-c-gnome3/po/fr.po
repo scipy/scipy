@@ -1,0 +1,62 @@
+# Messages français pour GNU gettext.
+# Copyright (C) 2006 Yoyodyne, Inc. (msgids)
+# This file is distributed under the same license as the gettext package.
+#
+# Michel Robitaille <robitail@IRO.UMontreal.CA>, 2006.
+# Christophe Combelles <ccomb@free.fr>, 2006
+# Stéphane Aulery <lkppo@free.fr>, 2015
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: hello-c-gnome3 0.19.4.73\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"PO-Revision-Date: 2015-12-22 23:54+0100\n"
+"Last-Translator: Stéphane Aulery <lkppo@free.fr>\n"
+"Language-Team: French <traduc@traduc.org>\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: hello.c:79
+#, c-format
+msgid ""
+"<big>Hello world!</big>\n"
+"This program is running as process number <b>%d</b>."
+msgstr ""
+"<big>Salut le monde !</big>\n"
+"Ce programme est exécuté en tant que processus numéro <b>%d</b>."
+
+#: hello.c:84
+msgid "<big><u>This is another text</u></big>"
+msgstr "<big><u>Ceci est un autre texte</u></big>"
+
+#: hello.c:86
+msgid "<big><i>This is yet another text</i></big>"
+msgstr "<big><i>Ceci est encore un autre texte</i></big>"
+
+#: hello.desktop.in.in:4
+msgid "Hello"
+msgstr "Bonjour"
+
+#: hello.desktop.in.in:5
+msgid "Hello, world!"
+msgstr "Bonjour, le monde !"
+
+#: hello.ui:6
+msgid "Example Application"
+msgstr "Application d’exemple"
+
+#: hello.ui:34
+msgid "Update text"
+msgstr "Actualiser le texte"
+
+#: hello.gschema.xml:8
+msgid "Use XML markup"
+msgstr "Utiliser le balisage XML"
+
+#: hello.gschema.xml:9
+msgid "Whether to use XML markup in the text."
+msgstr "De quelle manière utiliser le balisage XML dans le texte."

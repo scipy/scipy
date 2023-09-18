@@ -1,0 +1,203 @@
+{
+  "build": "pyhd8ed1ab_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/noarch",
+  "constrains": [],
+  "depends": [
+    "click >=7,<9",
+    "python >=3.7",
+    "rich >=10"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/rich-click-1.6.1-pyhd8ed1ab_0",
+  "features": "",
+  "files": [
+    "lib/python3.10/site-packages/rich_click-1.6.1.dist-info/INSTALLER",
+    "lib/python3.10/site-packages/rich_click-1.6.1.dist-info/LICENSE",
+    "lib/python3.10/site-packages/rich_click-1.6.1.dist-info/METADATA",
+    "lib/python3.10/site-packages/rich_click-1.6.1.dist-info/RECORD",
+    "lib/python3.10/site-packages/rich_click-1.6.1.dist-info/REQUESTED",
+    "lib/python3.10/site-packages/rich_click-1.6.1.dist-info/WHEEL",
+    "lib/python3.10/site-packages/rich_click-1.6.1.dist-info/direct_url.json",
+    "lib/python3.10/site-packages/rich_click-1.6.1.dist-info/entry_points.txt",
+    "lib/python3.10/site-packages/rich_click-1.6.1.dist-info/top_level.txt",
+    "lib/python3.10/site-packages/rich_click/__init__.py",
+    "lib/python3.10/site-packages/rich_click/__main__.py",
+    "lib/python3.10/site-packages/rich_click/cli.py",
+    "lib/python3.10/site-packages/rich_click/py.typed",
+    "lib/python3.10/site-packages/rich_click/rich_click.py",
+    "lib/python3.10/site-packages/rich_click/rich_command.py",
+    "lib/python3.10/site-packages/rich_click/rich_group.py",
+    "lib/python3.10/site-packages/rich_click/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/rich_click/__pycache__/__main__.cpython-310.pyc",
+    "lib/python3.10/site-packages/rich_click/__pycache__/cli.cpython-310.pyc",
+    "lib/python3.10/site-packages/rich_click/__pycache__/rich_click.cpython-310.pyc",
+    "lib/python3.10/site-packages/rich_click/__pycache__/rich_command.cpython-310.pyc",
+    "lib/python3.10/site-packages/rich_click/__pycache__/rich_group.cpython-310.pyc",
+    "bin/rich-click"
+  ],
+  "fn": "rich-click-1.6.1-pyhd8ed1ab_0.conda",
+  "license": "MIT",
+  "license_family": "MIT",
+  "link": {
+    "source": "/opt/conda/pkgs/rich-click-1.6.1-pyhd8ed1ab_0",
+    "type": 1
+  },
+  "md5": "59a168d82c582248859d8dc8075da6f6",
+  "name": "rich-click",
+  "noarch": "python",
+  "package_tarball_full_path": "/opt/conda/pkgs/rich-click-1.6.1-pyhd8ed1ab_0.conda",
+  "package_type": "noarch_python",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "site-packages/rich_click-1.6.1.dist-info/INSTALLER",
+        "path_type": "hardlink",
+        "sha256": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "sha256_in_prefix": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "size_in_bytes": 5
+      },
+      {
+        "_path": "site-packages/rich_click-1.6.1.dist-info/LICENSE",
+        "path_type": "hardlink",
+        "sha256": "d460cfe666617a2f86cb7c66f9041f0a87611c8b0c1f2f3f674a2022adc1f2af",
+        "sha256_in_prefix": "d460cfe666617a2f86cb7c66f9041f0a87611c8b0c1f2f3f674a2022adc1f2af",
+        "size_in_bytes": 1067
+      },
+      {
+        "_path": "site-packages/rich_click-1.6.1.dist-info/METADATA",
+        "path_type": "hardlink",
+        "sha256": "71ee2b2ba00b5375a4faebe8ae4347f8fd476b0d1e611d8ee853696791230116",
+        "sha256_in_prefix": "71ee2b2ba00b5375a4faebe8ae4347f8fd476b0d1e611d8ee853696791230116",
+        "size_in_bytes": 18146
+      },
+      {
+        "_path": "site-packages/rich_click-1.6.1.dist-info/RECORD",
+        "path_type": "hardlink",
+        "sha256": "9cc37fe12f52eecf38e863fe53af4a836b21a998601239ce2a74c1ed2d2ec25f",
+        "sha256_in_prefix": "9cc37fe12f52eecf38e863fe53af4a836b21a998601239ce2a74c1ed2d2ec25f",
+        "size_in_bytes": 1733
+      },
+      {
+        "_path": "site-packages/rich_click-1.6.1.dist-info/REQUESTED",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256_in_prefix": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "site-packages/rich_click-1.6.1.dist-info/WHEEL",
+        "path_type": "hardlink",
+        "sha256": "db07a93359e4e034b8785a58ad6d534ea3dca0635f1e184efe2e66e1c3a299ba",
+        "sha256_in_prefix": "db07a93359e4e034b8785a58ad6d534ea3dca0635f1e184efe2e66e1c3a299ba",
+        "size_in_bytes": 92
+      },
+      {
+        "_path": "site-packages/rich_click-1.6.1.dist-info/direct_url.json",
+        "path_type": "hardlink",
+        "sha256": "e99d365279833c5e19eb3661d830d37acb14195fe5424a35463285aa6274f6f6",
+        "sha256_in_prefix": "e99d365279833c5e19eb3661d830d37acb14195fe5424a35463285aa6274f6f6",
+        "size_in_bytes": 106
+      },
+      {
+        "_path": "site-packages/rich_click-1.6.1.dist-info/entry_points.txt",
+        "path_type": "hardlink",
+        "sha256": "abe25c92b2447e19b39254f9948a5ed684dfebc39a589a40cb532293b946797b",
+        "sha256_in_prefix": "abe25c92b2447e19b39254f9948a5ed684dfebc39a589a40cb532293b946797b",
+        "size_in_bytes": 51
+      },
+      {
+        "_path": "site-packages/rich_click-1.6.1.dist-info/top_level.txt",
+        "path_type": "hardlink",
+        "sha256": "b4a1cf424d73f5677c2eed87ab11d0c85ee8a8e790139fff4940c77b3419e161",
+        "sha256_in_prefix": "b4a1cf424d73f5677c2eed87ab11d0c85ee8a8e790139fff4940c77b3419e161",
+        "size_in_bytes": 11
+      },
+      {
+        "_path": "site-packages/rich_click/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "335bbfa9ea66fe9f5733382d8ffea320febf1f7cb76d178ba9fe10b3b246eaed",
+        "sha256_in_prefix": "335bbfa9ea66fe9f5733382d8ffea320febf1f7cb76d178ba9fe10b3b246eaed",
+        "size_in_bytes": 1640
+      },
+      {
+        "_path": "site-packages/rich_click/__main__.py",
+        "path_type": "hardlink",
+        "sha256": "9c63a670b8a0d610af106467ad6057cdba78466a300e9dfa4d53b92d54fffc40",
+        "sha256_in_prefix": "9c63a670b8a0d610af106467ad6057cdba78466a300e9dfa4d53b92d54fffc40",
+        "size_in_bytes": 416
+      },
+      {
+        "_path": "site-packages/rich_click/cli.py",
+        "path_type": "hardlink",
+        "sha256": "7c18121f65b7c2e699f82a5266003d381e0fc2269f7bcf38b8028d4139b64724",
+        "sha256_in_prefix": "7c18121f65b7c2e699f82a5266003d381e0fc2269f7bcf38b8028d4139b64724",
+        "size_in_bytes": 4288
+      },
+      {
+        "_path": "site-packages/rich_click/py.typed",
+        "path_type": "hardlink",
+        "sha256": "facf0f0ef480ea9392fd51ce853e1ca03c64ba0657545c6fa303a3eb6c2f5feb",
+        "sha256_in_prefix": "facf0f0ef480ea9392fd51ce853e1ca03c64ba0657545c6fa303a3eb6c2f5feb",
+        "size_in_bytes": 57
+      },
+      {
+        "_path": "site-packages/rich_click/rich_click.py",
+        "path_type": "hardlink",
+        "sha256": "5d9aa19508a4f74ad82cde723dd662ae50ed3a72e1f67df8c16f5be535d8a718",
+        "sha256_in_prefix": "5d9aa19508a4f74ad82cde723dd662ae50ed3a72e1f67df8c16f5be535d8a718",
+        "size_in_bytes": 25351
+      },
+      {
+        "_path": "site-packages/rich_click/rich_command.py",
+        "path_type": "hardlink",
+        "sha256": "0ef573806a609e0ae544c8e827e4a6c36ba17dc473c0c07eb3b93f4d73414b47",
+        "sha256_in_prefix": "0ef573806a609e0ae544c8e827e4a6c36ba17dc473c0c07eb3b93f4d73414b47",
+        "size_in_bytes": 988
+      },
+      {
+        "_path": "site-packages/rich_click/rich_group.py",
+        "path_type": "hardlink",
+        "sha256": "05548b65378e9982ea3098b92bee0ddf2c7eb76c1b293badb178ac7a342766d4",
+        "sha256_in_prefix": "05548b65378e9982ea3098b92bee0ddf2c7eb76c1b293badb178ac7a342766d4",
+        "size_in_bytes": 1055
+      },
+      {
+        "_path": "lib/python3.10/site-packages/rich_click/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/rich_click/__pycache__/__main__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/rich_click/__pycache__/cli.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/rich_click/__pycache__/rich_click.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/rich_click/__pycache__/rich_command.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/rich_click/__pycache__/rich_group.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "bin/rich-click",
+        "path_type": "unix_python_entry_point"
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "rich-click",
+  "sha256": "ed8ade65e48279dc9caff53230391d8f72bea6d55f6951fbf7fcc39d762e1e5e",
+  "size": 22643,
+  "subdir": "noarch",
+  "timestamp": 1674124247134,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/noarch/rich-click-1.6.1-pyhd8ed1ab_0.conda",
+  "version": "1.6.1"
+}

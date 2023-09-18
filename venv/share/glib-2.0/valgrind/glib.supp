@@ -1,0 +1,1270 @@
+# GLib Valgrind suppressions file
+#
+# This provides a list of suppressions for all of GLib (including GIO), for all
+# Valgrind tools (memcheck, drd, helgrind, etc.) for the false positives and
+# deliberate one-time leaks which GLib causes to be reported when running under
+# Valgrind.
+#
+# When running an application which links to GLib under Valgrind, you can pass
+# this suppression file to Valgrind using --suppressions=/path/to/glib-2.0.supp.
+#
+# http://valgrind.org/docs/manual/manual-core.html#manual-core.suppress
+#
+# Note that there is currently no way for Valgrind to load this automatically
+# (https://bugs.kde.org/show_bug.cgi?id=160905), so the best GLib can currently
+# do is to install this file as part of its development package.
+#
+# This file should be updated if GLib introduces a new deliberate one-time leak,
+# or another false race positive in Valgrind: please file bugs at:
+#
+# https://gitlab.gnome.org/GNOME/glib/issues/new
+
+{
+	gnutls-init-calloc
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:calloc
+	...
+	fun:gtls_gnutls_init
+}
+
+{
+	gnutls-init-realloc
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:realloc
+	...
+	fun:gtls_gnutls_init
+}
+
+{
+	g-tls-backend-gnutls-init
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:g_once_impl
+	fun:g_tls_backend_gnutls_init
+}
+
+{
+	p11-tokens-init
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:calloc
+	...
+	fun:create_tokens_inlock
+	fun:initialize_module_inlock_reentrant
+}
+
+# One-time allocation from libc for getpwnam() results
+{
+	g-local-vfs-getpwnam
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:malloc
+	...
+	fun:getpwnam
+	fun:g_local_vfs_parse_name
+}
+
+{
+	glib-init-malloc
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:malloc
+	...
+	fun:g_quark_init
+}
+
+{
+	glib-init-calloc
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:calloc
+	...
+	fun:g_quark_init
+}
+
+{
+	gobject-init-malloc
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:malloc
+	...
+	fun:gobject_init*
+}
+
+{
+	gobject-init-realloc
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:realloc
+	...
+	fun:gobject_init*
+}
+
+{
+	gobject-init-calloc
+	Memcheck:Leak
+	match-leak-kinds:possible,reachable
+	fun:calloc
+	...
+	fun:gobject_init*
+}
+
+{
+	g-type-register-dynamic
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:malloc
+	...
+	fun:g_type_register_dynamic
+}
+
+{
+	g-type-register-static
+	Memcheck:Leak
+	match-leak-kinds:possible,reachable
+	fun:malloc
+	...
+	fun:g_type_register_static
+}
+
+{
+	g-type-register-static-realloc
+	Memcheck:Leak
+	match-leak-kinds:possible,reachable
+	fun:realloc
+	...
+	fun:g_type_register_static
+}
+
+{
+	g-type-register-static-calloc
+	Memcheck:Leak
+	match-leak-kinds:possible,reachable
+	fun:calloc
+	...
+	fun:g_type_register_static
+}
+
+{
+	g-type-register-fundamental
+	Memcheck:Leak
+	match-leak-kinds:possible,reachable
+	fun:malloc
+	...
+	fun:g_type_register_fundamental
+}
+
+{
+	g-type-register-fundamental-calloc
+	Memcheck:Leak
+	match-leak-kinds:possible,reachable
+	fun:calloc
+	...
+	fun:g_type_register_fundamental
+}
+
+{
+	g-type-add-interface-dynamic
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:malloc
+	...
+	fun:g_type_add_interface_dynamic
+}
+
+{
+	g-type-add-interface-static
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:malloc
+	...
+	fun:g_type_add_interface_static
+}
+
+{
+	g-type-add-interface-static-realloc
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:realloc
+	...
+	fun:g_type_add_interface_static
+}
+
+{
+	g-type-add-interface-static-calloc
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:calloc
+	...
+	fun:g_type_add_interface_static
+}
+
+{
+	g-test-rand-init
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:calloc
+	...
+	fun:g_rand_new_with_seed_array
+	fun:test_run_seed
+	...
+	fun:g_test_run
+}
+
+{
+	g-rand-init2
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:calloc
+	...
+	fun:g_rand_new_with_seed_array
+	...
+	fun:get_global_random
+}
+
+{
+	g-quark-table-new
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:g_hash_table_new
+	...
+	fun:quark_new
+}
+
+{
+	g-quark-table-resize
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	...
+	fun:g_hash_table_resize
+	...
+	fun:quark_new
+}
+
+{
+	g-type-interface-init
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:malloc
+	...
+	fun:type_iface_vtable_base_init_Wm
+}
+
+{
+	g-type-class-init-calloc
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:calloc
+	...
+	fun:type_class_init_Wm
+}
+
+{
+	g-type-class-init
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:g_type_create_instance
+	...
+	fun:type_class_init_Wm
+}
+
+{
+	g-object-do-class-init-signals
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	...
+	fun:g_signal_new
+	...
+	fun:type_class_init_Wm
+}
+
+{
+	g-type-prerequisites
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:realloc
+	...
+	fun:type_iface_add_prerequisite_W
+}
+
+{
+	g-type-add-interface-check
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:malloc
+	...
+	fun:g_type_add_interface_check
+	...
+	fun:type_class_init_Wm
+}
+
+{
+	g-type-add-interface-check-realloc
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:realloc
+	...
+	fun:g_type_add_interface_check
+	...
+	fun:type_class_init_Wm
+}
+
+{
+	g-object-class-install-property
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:malloc
+	...
+	fun:validate_and_install_class_property
+	...
+	fun:type_class_init_Wm
+}
+
+{
+	g-param-spec-pool-new
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:malloc
+	...
+	fun:g_param_spec_pool_new
+	...
+	fun:type_class_init_Wm
+}
+
+# weak_locations_lock in gobject.c
+{
+	g-weak-ref-lock
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:malloc
+	...
+	fun:g_rw_lock_get_impl
+	...
+	fun:g_weak_ref_set
+}
+
+{
+	g-object-base-class-init-construct-pproperties
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:malloc
+	...
+	fun:g_slist_copy
+	fun:g_object_base_class_init
+	fun:type_class_init_Wm
+}
+
+{
+        g-type-class-ref
+        Memcheck:Leak
+        fun:calloc
+        ...
+        fun:type_class_init_Wm
+        ...
+        fun:g_type_class_ref
+}
+
+{
+	g-type-class-ref-inlined
+	Memcheck:Leak
+	fun:calloc
+	...
+	fun:UnknownInlinedFun
+	...
+	fun:g_type_class_ref
+}
+
+{
+	g-io-module-default-singleton-malloc
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:malloc
+	...
+	fun:g_type_create_instance
+	...
+	fun:_g_io_module_get_default
+}
+
+{
+	g-io-module-default-singleton-calloc
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:calloc
+	...
+	fun:g_type_create_instance
+	...
+	fun:_g_io_module_get_default
+}
+
+# This one seems to show up sometimes with g_type_create_instance() at the top
+# of the stack, as well.
+{
+	g-io-module-default-singleton
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:g_type_create_instance
+	...
+	fun:_g_io_module_get_default
+}
+
+{
+	g-io-module-default-singleton-module
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:calloc
+	...
+	fun:g_module_open
+	...
+	fun:_g_io_module_get_default
+}
+
+{
+	g-io-module-default-singleton-name
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:malloc
+	...
+	fun:g_strdup
+	...
+	fun:_g_io_module_get_default*
+}
+
+{
+	g-io-module-default-singleton-weak-ref
+	Memcheck:Leak
+	fun:calloc
+	...
+	fun:_g_io_module_get_default
+}
+
+{
+	g-get-language-names-malloc
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:malloc
+	...
+	fun:g_get_language_names
+}
+
+{
+	g-get-language-names-calloc
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:calloc
+	...
+	fun:g_get_language_names
+}
+
+{
+        g-get-language_names-with-category-malloc
+        Memcheck:Leak
+        match-leak-kinds:possible,reachable,definite
+        fun:malloc
+        ...
+        fun:g_get_language_names_with_category
+}
+
+{
+        g-get-language_names-with-category-calloc
+        Memcheck:Leak
+        match-leak-kinds:possible,reachable,definite
+        fun:calloc
+        ...
+        fun:g_get_language_names_with_category
+}
+
+{
+        g-get-language_names-with-category-realloc
+        Memcheck:Leak
+        match-leak-kinds:possible,reachable,definite
+        fun:realloc
+        ...
+        fun:g_get_language_names_with_category
+}
+
+{
+	g-static-mutex
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:malloc
+	...
+	fun:g_static_mutex_get_mutex_impl
+}
+
+{
+	g-system-thread-init
+	Memcheck:Leak
+	match-leak-kinds:possible,reachable
+	fun:calloc
+	...
+	fun:g_system_thread_new
+}
+
+{
+	g-system-thread-init-malloc
+	Memcheck:Leak
+	match-leak-kinds:possible,reachable,definite
+	fun:malloc
+	...
+	fun:g_system_thread_new
+}
+
+{
+	g-task-thread-pool-init
+	Memcheck:Leak
+	match-leak-kinds:possible,reachable,definite
+	fun:malloc
+	...
+	fun:g_thread_new
+	...
+	fun:g_task_thread_pool_init
+}
+
+{
+	g-io-module-default-proxy-resolver-gnome
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:calloc
+	...
+	fun:g_proxy_resolver_gnome_init
+	...
+	fun:_g_io_module_get_default
+}
+
+# One-time getaddrinfo() configuration loading
+{
+	g-threaded-resolver-getaddrinfo-config
+	Memcheck:Leak
+	match-leak-kinds:reachable,definite
+	fun:malloc
+	...
+	fun:__resolv_conf_allocate
+	...
+	fun:getaddrinfo
+	fun:do_lookup_by_name
+}
+
+# memcheck checks that the third argument to ioctl() is a valid pointer, but
+# some ioctls use that argument as an integer
+{
+	ioctl-with-non-pointer-param
+	Memcheck:Param
+	ioctl(generic)
+	fun:ioctl
+	fun:btrfs_reflink_with_progress
+}
+
+{
+	g-private-get
+	drd:ConflictingAccess
+	fun:g_private_get
+}
+{
+	g-private-get-helgrind
+	Helgrind:Race
+	fun:g_private_get
+}
+
+
+{
+	g-private-set
+	drd:ConflictingAccess
+	fun:g_private_set
+}
+{
+	g-private-set-helgrind
+	Helgrind:Race
+	fun:g_private_set
+}
+
+{
+	g-type-construct-free
+	drd:ConflictingAccess
+	fun:g_type_free_instance
+}
+{
+	g-type-construct-free-helgrind
+	Helgrind:Race
+	fun:g_type_free_instance
+}
+
+{
+	g-variant-unref
+	drd:ConflictingAccess
+	fun:g_variant_unref
+}
+{
+	g-variant-unref-helgrind
+	Helgrind:Race
+	fun:g_variant_unref
+}
+
+{
+	g-unix-signals-main
+	drd:ConflictingAccess
+	fun:_g_main_create_unix_signal_watch
+}
+{
+	g-unix-signals-dispatch
+	drd:ConflictingAccess
+	...
+	fun:dispatch_unix_signals*
+}
+{
+	g-unix-signals-dispatch-helgrind
+	Helgrind:Race
+	...
+	fun:dispatch_unix_signals*
+}
+{
+	g-unix-signals-other
+	drd:ConflictingAccess
+	fun:g_unix_signal_watch*
+}
+{
+	g-unix-signals-other-helgrind
+	Helgrind:Race
+	fun:g_unix_signal_watch*
+}
+{
+	g-unix-signals-handler
+	drd:ConflictingAccess
+	fun:g_unix_signal_handler*
+}
+{
+	g-unix-signals-handler-helgrind
+	Helgrind:Race
+	fun:g_unix_signal_handler*
+}
+{
+	g-unix-signals-worker
+	drd:ConflictingAccess
+	fun:glib_worker_main
+}
+{
+	g-unix-signals-worker-helgrind
+	Helgrind:Race
+	fun:glib_worker_main
+}
+
+{
+	g-wakeup-acknowledge
+	drd:ConflictingAccess
+	fun:read
+	fun:g_wakeup_acknowledge
+}
+
+{
+	g-type-fundamental
+	drd:ConflictingAccess
+	fun:g_type_fundamental
+}
+{
+	g-type-fundamental-helgrind
+	Helgrind:Race
+	fun:g_type_fundamental
+}
+{
+	g-type-class-peek-static
+	drd:ConflictingAccess
+	fun:g_type_class_peek_static
+}
+{
+	g-type-class-peek-static-helgrind
+	Helgrind:Race
+	fun:g_type_class_peek_static
+}
+{
+	g-type-is-a
+	drd:ConflictingAccess
+	...
+	fun:g_type_is_a
+}
+{
+	g-type-is-a-helgrind
+	Helgrind:Race
+	...
+	fun:g_type_is_a
+}
+
+{
+	g-inet-address-get-type
+	drd:ConflictingAccess
+	fun:g_inet_address_get_type
+}
+{
+	g-inet-address-get-type-helgrind
+	Helgrind:Race
+	fun:g_inet_address_get_type
+}
+
+# From: https://github.com/fredericgermain/valgrind/blob/HEAD/glibc-2.X-drd.supp
+{
+	drd-libc-stdio
+	drd:ConflictingAccess
+	obj:*/lib*/libc-*
+}
+{
+	drd-libc-recv
+	drd:ConflictingAccess
+	fun:recv
+}
+{
+	drd-libc-send
+	drd:ConflictingAccess
+	fun:send
+}
+
+# GSources do an opportunistic ref count check
+{
+	g-source-set-ready-time
+	drd:ConflictingAccess
+	fun:g_source_set_ready_time
+}
+{
+	g-source-set-ready-time-helgrind
+	Helgrind:Race
+	fun:g_source_set_ready_time
+}
+
+{
+	g-source-iter-next
+	Helgrind:Race
+	fun:g_source_iter_next
+	fun:g_main_context_*
+	fun:g_main_context_iterate
+}
+
+{
+	g-object-instance-private
+	drd:ConflictingAccess
+	fun:*_get_instance_private
+}
+{
+	g-object-instance-private-helgrind
+	Helgrind:Race
+	fun:*_get_instance_private
+}
+
+# GLib legitimately calls pthread_cond_signal without a mutex held
+{
+	g-task-thread-complete
+	drd:CondErr
+	...
+	fun:g_cond_signal
+	fun:g_task_thread_complete
+}
+{
+	g-task-thread-complete
+	Helgrind:Misc
+	...
+	fun:g_cond_signal
+	fun:g_task_thread_complete
+}
+
+# False positive, but I can't explain how (FIXME)
+{
+	g-task-cond
+	Helgrind:Misc
+	...
+	fun:g_cond_clear
+	fun:g_task_finalize
+}
+
+# Real race, but is_cancelled() is an opportunistic function anyway
+{
+	g-cancellable-is-cancelled
+	Helgrind:Race
+	fun:g_cancellable_is_cancelled
+}
+
+# False positive
+{
+	g-main-context-cond
+	Helgrind:Misc
+	...
+	fun:g_cond_clear
+	fun:g_main_context_unref
+}
+
+# False positives
+{
+	g-source-unlocked
+	Helgrind:Race
+	fun:g_source_*_unlocked
+}
+{
+	g-source-internal
+	Helgrind:Race
+	fun:g_source_*_internal
+}
+
+# False positive
+{
+	g_object_real_dispose
+	Helgrind:Race
+	fun:g_object_real_dispose
+}
+
+# False positive
+{
+	g_object_new_valist
+	Helgrind:Race
+	...
+	fun:g_object_new_valist
+}
+
+# g_set_user_dirs() deliberately leaks the previous cached g_get_user_*() values.
+# These will not all be reachable on exit.
+{
+	g_set_user_dirs_str
+	Memcheck:Leak
+	match-leak-kinds:definite,reachable
+	fun:malloc
+	...
+	fun:set_str_if_different
+	fun:g_set_user_dirs
+}
+
+# g_set_user_dirs() deliberately leaks the previous cached g_get_user_*() values.
+# These will not all be reachable on exit.
+{
+	g_set_user_dirs_strv
+	Memcheck:Leak
+	match-leak-kinds:definite,reachable
+	fun:malloc
+	...
+	fun:set_strv_if_different
+	fun:g_set_user_dirs
+}
+
+# _g_unset_cached_tmp_dir() deliberately leaks the previous cached g_get_tmp_dir() values.
+# These will not all be reachable on exit.
+{
+	g_get_tmp_dir_test_init
+	Memcheck:Leak
+	match-leak-kinds:definite,reachable
+	fun:malloc
+	...
+	fun:g_get_tmp_dir
+	...
+	fun:g_test_init
+}
+
+# g_get_tmp_dir() caches a one-time allocation
+{
+	g_get_tmp_dir
+	Memcheck:Leak
+	match-leak-kinds:definite,reachable
+	fun:malloc
+	...
+	fun:g_get_tmp_dir
+}
+
+# g_get_system_data_dirs() caches a one-time allocation
+{
+	g_get_system_data_dirs
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:malloc
+	...
+	fun:g_build_system_data_dirs
+	fun:g_get_system_data_dirs
+}
+
+# g_get_user_data_dir() caches a one-time allocation
+{
+	g_get_user_data_dir
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:realloc
+	...
+	fun:g_build_user_data_dir
+	fun:g_get_user_data_dir
+}
+
+# g_get_home_dir() caches a one-time allocation
+{
+	g_get_home_dir
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:malloc
+	...
+	fun:g_build_home_dir
+	fun:g_get_home_dir
+}
+
+# gdesktopappinfo.c caches a one-time allocation global table of @desktop_file_dirs.
+{
+	desktop_file_dirs_malloc
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:malloc
+	...
+	fun:desktop_file_dirs_lock
+}
+
+# gdesktopappinfo.c caches a one-time allocation global table of @desktop_file_dirs.
+{
+	desktop_file_dirs_realloc
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:realloc
+	...
+	fun:desktop_file_dirs_lock
+}
+
+# gdesktopappinfo.c caches a one-time allocation global table of @desktop_file_dirs.
+{
+	desktop_file_dir_unindexed_setup_search
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:malloc
+	...
+	fun:desktop_file_dir_unindexed_setup_search
+	fun:desktop_file_dir_unindexed_setup_search
+}
+
+#gutils.c caches system and user dirs and may need to replace them during tests.
+{
+	g_build_user_data_dir
+	Memcheck:Leak
+	match-leak-kinds:definite
+	fun:malloc
+	...
+	fun:g_build_user_data_dir
+}
+
+#gutils.c caches system and user dirs and may need to replace them during tests.
+{
+	g_build_filename
+	Memcheck:Leak
+	match-leak-kinds:definite
+	fun:malloc
+	...
+	fun:g_build_filename
+}
+
+#gutils.c caches system and user dirs and may need to replace them during tests.
+{
+	g_build_home_dir
+	Memcheck:Leak
+	match-leak-kinds:definite
+	fun:malloc
+	...
+	fun:g_build_home_dir
+}
+
+#gutils.c caches system and user dirs and may need to replace them during tests.
+{
+	g_build_path
+	Memcheck:Leak
+	match-leak-kinds:definite
+	fun:malloc
+	...
+	fun:g_build_path
+}
+
+#gutils.c caches system and user dirs and may need to replace them during tests.
+{
+	g_build_system_config_dirs
+	Memcheck:Leak
+	match-leak-kinds:definite
+	fun:realloc
+	...
+	fun:g_build_system_config_dirs
+}
+
+#gutils.c caches system and user dirs and may need to replace them during tests.
+{
+	g_build_system_data_dir
+	Memcheck:Leak
+	match-leak-kinds:definite
+	fun:malloc
+	...
+	fun:g_build_system_data_dir
+}
+
+#gutils.c caches system and user dirs and may need to replace them during tests.
+{
+	g_build_system_data_dirs
+	Memcheck:Leak
+	match-leak-kinds:definite
+	fun:realloc
+	...
+	fun:g_build_system_data_dirs
+}
+
+#gutils.c caches system and user dirs and may need to replace them during tests.
+{
+	g_build_user_cache_dir
+	Memcheck:Leak
+	match-leak-kinds:definite
+	fun:malloc
+	...
+	fun:g_build_user_cache_dir
+}
+
+#gutils.c caches system and user dirs and may need to replace them during tests.
+{
+	g_build_user_config_dir
+	Memcheck:Leak
+	match-leak-kinds:definite
+	fun:malloc
+	...
+	fun:g_build_user_config_dir
+}
+
+#gutils.c caches system and user dirs and may need to replace them during tests.
+{
+	g_build_user_data_dir
+	Memcheck:Leak
+	match-leak-kinds:definite
+	fun:malloc
+	...
+	fun:g_build_user_data_dir
+}
+
+#gutils.c caches system and user dirs and may need to replace them during tests.
+{
+	g_build_user_runtime_dir
+	Memcheck:Leak
+	match-leak-kinds:definite
+	fun:malloc
+	...
+	fun:g_build_user_runtime_dir
+}
+
+#gutils.c caches system and user dirs and may need to replace them during tests.
+{
+	g_build_user_state_dir
+	Memcheck:Leak
+	match-leak-kinds:definite
+	fun:malloc
+	...
+	fun:g_build_user_state_dir
+}
+
+# g_io_extension_point_register() caches a one-time allocation global table of @extension_points.
+{
+	g_io_extension_point_register
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:calloc
+	...
+	fun:g_io_extension_point_register
+}
+
+# g_strerror() caches a one-time allocation global table of @errors.
+{
+	g_strerror
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:malloc
+	...
+	fun:g_locale_to_utf8
+	fun:g_strerror
+}
+
+# g_socket_connection_factory_register_type() caches a one-time allocation global table of @connection_types.
+{
+	g_socket_connection_factory_register_type
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:calloc
+	...
+	fun:g_socket_connection_factory_register_type
+}
+
+# g_dbus_error_quark() never unregisters itself as a GDBusError domain, as it’s always available
+{
+	g_dbus_error_quark
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:calloc
+	...
+	fun:g_dbus_error_register_error_domain
+	fun:g_dbus_error_quark
+}
+
+# g_win32_registry_get_os_dirs_w*() caches an array of strings that is allocated only once.
+{
+	g_win32_registry_get_os_dirs
+	Memcheck:Leak
+	match-leak-kinds:reachable,definite
+	fun:malloc
+	...
+	fun:g_win32_registry_get_os_dirs*
+}
+
+# Thread-private data allocated once per thread
+{
+	g_private_set_alloc0
+	Memcheck:Leak
+	match-leak-kinds:definite,reachable
+	fun:malloc
+	...
+	fun:g_private_set_alloc0
+}
+{
+	g_private_set_alloc0-calloc
+	Memcheck:Leak
+	match-leak-kinds:definite,reachable
+	fun:calloc
+	...
+	fun:g_private_set_alloc0
+}
+
+# Keys for thread-private data
+{
+	g_private_key
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:malloc
+	fun:g_private_impl_new
+}
+
+# Thread-private GMainContext stack
+{
+	g_main_context_push_thread_default
+	Memcheck:Leak
+	match-leak-kinds:definite,reachable
+	fun:malloc
+	...
+	fun:g_queue_new
+	fun:g_main_context_push_thread_default
+}
+
+# One-time allocations for #GFileInfo attribute cache
+{
+	g_file_info_attribute_cache
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:malloc
+	...
+	fun:ensure_attribute_hash
+	...
+	fun:g_file_*
+}
+{
+	g_file_info_attribute_cache2
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:calloc
+	...
+	fun:ensure_attribute_hash
+	...
+	fun:g_file_*
+}
+{
+	g_file_info_attribute_cache3
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:malloc
+	...
+	fun:lookup_namespace
+	...
+	fun:g_file_*
+}
+{
+	g_file_info_attribute_cache4
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:calloc
+	...
+	fun:lookup_namespace
+	...
+	fun:g_file_*
+}
+
+# Cached charset
+{
+	g_get_charset
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:malloc
+	...
+	fun:g_get_charset
+}
+
+{
+	g_get_charset_calloc
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:calloc
+	...
+	fun:g_get_charset
+}
+
+# Global unused thread queue
+{
+	g_thread_pool_unused_thread_queue
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:malloc
+	...
+	fun:g_async_queue_new_full
+	...
+	fun:g_thread_pool_new
+}
+
+# One-time program name storage
+{
+	g_set_prgname
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:malloc
+	...
+	fun:g_set_prgname
+}
+
+# Error domains hash
+{
+	g_error_init
+	Memcheck:Leak
+	match-leak-kinds: reachable
+	fun:malloc
+	...
+	fun:g_hash_table_new_full
+	fun:g_error_init
+}
+
+# Error domain static registration
+{
+	g_error_domain_register_static
+	Memcheck:Leak
+	match-leak-kinds: reachable
+	fun:malloc
+	...
+	fun:g_hash_table_insert
+	fun:error_domain_register
+	fun:g_error_domain_register_static
+}
+
+{
+	new_quark
+	Memcheck:Leak
+	match-leak-kinds:reachable
+	fun:malloc
+	...
+	fun:g_hash_table_insert
+	fun:quark_new
+}
+
+{
+	xdg_mime_init_malloc
+	Memcheck:Leak
+	fun:malloc
+	...
+	fun:xdg_mime_init
+}
+
+{
+	xdg_mime_init_calloc
+	Memcheck:Leak
+	fun:calloc
+	...
+	fun:xdg_mime_init
+}

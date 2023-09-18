@@ -1,0 +1,11 @@
+prefix=/workspaces/scipy/venv
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: XCB Keysyms library
+Description: XCB Keysyms
+Version: 0.4.0
+Requires: xcb
+Libs: -L${libdir} -lxcb-keysyms 
+Cflags: -I${includedir}

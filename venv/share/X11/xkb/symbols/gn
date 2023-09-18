@@ -1,0 +1,61 @@
+// Keyboard layout for Guinea.
+
+// Layout for N'Ko, by Denis Jacquerye.
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+    name[Group1]="N'Ko (AZERTY)";
+
+    key <AE01> {[      U07F1, U07C1 ]};
+    key <AE02> {[      U07EB, U07C2 ]};
+    key <AE03> {[      U07F5, U07C3,  numbersign,  sterling ]};
+    key <AE04> {[      U07F4, U07C4,       U2E1C,    dollar ]};
+    key <AE05> {[  parenleft, U07C5,       U2E1D            ]};
+    key <AE06> {[      minus, U07C6,         bar            ]};
+    key <AE07> {[      U07EC, U07C7,       grave            ]};
+    key <AE08> {[      U07FA, U07C8,   backslash            ]};
+    key <AE09> {[      U07ED, U07C9, asciicircum, plusminus ]};
+    key <AE10> {[      U07EE, U07C0,          at,    degree ]};
+    key <AE11> {[ parenright        ]};
+    key <AE12> {[      equal,  plus,  braceright            ]};
+
+    key <AD01> {[ U07CA        ]};
+    key <AD02> {[ U07E0,  less ]};
+    key <AD03> {[ U07CD, U07CB ]};
+    key <AD04> {[ U07D9, U07DA ]};
+    key <AD05> {[ U07D5        ]};
+    key <AD06> {[ U07E6, U07E7 ]};
+    key <AD07> {[ U07CE, U07F6 ]};
+    key <AD08> {[ U07CC        ]};
+    key <AD09> {[ U07D0, U07CF ]};
+    key <AD10> {[ U07D4        ]};
+    key <AD11> {[ U07F3        ]};
+    key <AD12> {[dollar, sterling,  currency ]};
+
+    key <AC01> {[ U07EB        ]};
+    key <AC02> {[ U07DB        ]};
+    key <AC03> {[ U07D8        ]};
+    key <AC04> {[ U07DD        ]};
+    key <AC05> {[ U07DC, U07F7 ]};
+    key <AC06> {[ U07E4        ]};
+    key <AC07> {[ U07D6, U07E8 ]};
+    key <AC08> {[ U07DE        ]};
+    key <AC09> {[ U07DF, U07EA ]};
+    key <AC10> {[ U07E1        ]};
+    key <AC11> {[ U07EF, U07F8,      percent ]};
+    key <TLDE> {[ U07EC, asciitilde, notsign ]};
+
+    key <BKSL> {[ U07D1, asterisk ]};
+    key <AB01> {[ U07E5        ]};
+    key <AB02> {[ U060C        ]};
+    key <AB03> {[ U07D7, U07E9 ]};
+    key <AB04> {[ U07E2        ]};
+    key <AB05> {[ U07D3        ]};
+    key <AB06> {[ U07E3, U07D2 ]};
+    key <AB07> {[ U07F8, U061F ]};
+    key <AB08> {[ U061B        ]};
+    key <AB09> {[ U060C, slash ]};
+    key <AB10> {[ U07F9        ]};
+
+    include "level3(ralt_switch)"
+};

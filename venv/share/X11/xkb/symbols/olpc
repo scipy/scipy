@@ -1,0 +1,21 @@
+//
+// Created by Bernardo Innocenti <bernie@codewiz.org>
+//
+// Additional symbol definitions for the OLPC keyboards
+//
+
+alphanumeric_keys modifier_keys
+xkb_symbols "olpc" {
+    include "pc(pc105)"
+
+    modifier_map Mod1 { KP_Home   }; // KP_Home  is the "square" game key
+    modifier_map Mod3 { KP_End    }; // KP_End   is the "tick" game key
+    modifier_map Mod4 { KP_Prior  }; // KP_Prior is the "O" game key
+    modifier_map Mod5 { KP_Next   }; // KP_Next  is the "X" game key
+
+    key <I220> { [ XF86Search    ] }; // search key (unpopulated on olpcm, harmless)
+    key <I221> { [ XF86Meeting   ] }; // fn+search key (unpopulated on olpcm, harmless)
+    key <I236> { [ XF86Start     ] }; // gear key (fn+space)
+    key <I147> { [ XF86TaskPane  ] }; // frame key (the top-right key) (unpopulated on olpcm, harmless)
+    key <I224> { [ XF86Messenger ] }; // overlay key (next to frame key) (unpopulated on olpcm, harmless)
+};

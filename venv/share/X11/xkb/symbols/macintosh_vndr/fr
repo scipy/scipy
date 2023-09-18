@@ -1,0 +1,108 @@
+// Marc.Shapiro@inria.fr 19-sep-1998
+// modifications : Etienne Herlent <eherlent@linux-france.org> june 2000
+// adapted to the new input layer :
+//        Martin Costabel <costabel@wanadoo.fr> 3-jan-2001
+//////////////////////////////////////////////////////////////////
+// Petites Modification le juillet 2005 par Bin Zhang <bb.zhang@free.fr> : 
+// 1) La ligne 83 : remplacer les deux "VoidSymbol" par oe et OE 
+// 2) La ligne 89 : remplacer "VoidSymbol" par "EuroSign"
+// ( 1) et 2) fonctionnent sous UTF-8, mais pas sous iso-8859-1. )
+// 3) Remplacer la ligne 148 par la ligne 149 pour que la touche Alt_L
+// (la touche Apple-Pomme) fonctionne correctement sous Xorg, une idée
+// motivée par http://www.linux-france.org/macintosh/clavier_gentoo.html
+//////////////////////////////////////////////////////////////////
+// This map is an almost-complete mapping of the standard French
+// MacIntosh keyboard under Xwindows.  I tried to remain as faithful
+// as possible to the Mac meaning of each key.	I did this entirely by
+// hand and by intuition, relying on the Clavier (Keyboard?) Desktop
+// Accessory for the Mac meaning of keys, and on reading keysymdef.h
+// to intuit the corresponding X names.	 Lacking proper documentation,
+// I may have made some mistakes.
+
+// Entries marked CHECK are particularly uncertain
+
+// Entries marked MISSING mark Mac characters for which I was unable
+// to find a corresponding keysym.  (Some for sure don't: e.g. the
+// Apple mark and the oe/OE character; others I may have simply not
+// found.)
+
+default
+xkb_symbols "extended" {
+
+    name[Group1]= "France - Mac";
+
+    key <ESC>  {	[ Escape			]	};
+
+    key <TLDE> {	[	   at,	  numbersign,	periodcentered,  	Ydiaeresis	]	};
+    key <ENTR> {        [    KP_Enter                   ]       };
+    key <AE01> {	[   ampersand,	  1,	  	VoidSymbol,	  	dead_acute	]	}; // MISSING: Apple
+    key <AE02> {	[      eacute,	  2,		ediaeresis,	  	Eacute	]	};
+    key <AE03> {	[    quotedbl,	  3,		leftdoublequotemark, 	rightdoublequotemark	] 	};
+    key <AE04> {	[  apostrophe,	  4,		leftsinglequotemark, 	rightsinglequotemark	] 	};
+    key <AE05> {	[   parenleft,	  5,		braceleft,	  	bracketleft	]	};
+    key <AE06> {	[     section,	  6,		paragraph,	  	aring		]	};
+    key <AE07> {	[      egrave,	  7,		guillemotleft,	  	guillemotright]	};
+    key <AE08> {	[      exclam,	  8,		exclamdown,	  	Ucircumflex	]	};
+    key <AE09> {	[    ccedilla,	  9,		Ccedilla,	  	Aacute	]	};
+    key <AE10> {	[      agrave,	  0,		oslash,	  		Oslash	]	};
+    key <AE11> {	[  parenright,	  degree,	braceright,	  	bracketright	]	};
+    key <AE12> {	[	minus,	  underscore,	emdash,	  		endash	]	};
+    key <BKSP> {	[   BackSpace,    VoidSymbol,	Delete,	  		VoidSymbol	]	};
+
+    key	 <TAB> {	[	  Tab,	ISO_Left_Tab	]	};
+    key <AD01> {	[	    a,	A,		ae,			AE		]	};
+    key <AD02> {	[	    z,	Z,		Acircumflex,		Aring		]	};
+    key <AD03> {	[	    e,	E,		ecircumflex,		Ecircumflex	]	};
+    key <AD04> {	[	    r,	R,		registered,		currency	]	};
+    key <AD05> {	[	    t,	T,		dagger,			trademark	]	};
+    key <AD06> {	[	    y,	Y,		Uacute,  		Ydiaeresis	]	};
+    key <AD07> {	[	    u,	U,		masculine,		ordfeminine	]	};
+    key <AD08> {	[	    i,	I,		icircumflex,		idiaeresis	]	};
+    key <AD09> {	[	    o,	O,		oe,			OE		]	};
+    key <AD10> {	[	    p,	P,		Greek_pi,  		Greek_PI	]	};
+    key <AD11> {	[dead_circumflex,dead_diaeresis,ocircumflex, 		Ocircumflex	]	};
+    key <AD12> {	[      dollar,	asterisk,	EuroSign,  		yen   	        ]	};
+    key <CAPS> {	[	Caps_Lock		]	};
+    key <AC01> {	[	  q,	Q,		doubledagger,		Greek_OMEGA	]	};
+    key <AC02> {	[	  s,	S,		Ograve,			Greek_SIGMA	]	};
+    key <AC03> {	[         d,	D,		Greek_delta,		Greek_DELTA	]	};
+    key <AC04> {	[	  f,	F,		VoidSymbol,		periodcentered	]	};
+    key <AC05> {	[	  g,	G,		VoidSymbol,		VoidSymbol	]	}; // MISSING: ligature fi,fl
+    key <AC06> {	[	  h,	H,		Igrave,			Icircumflex	]	};
+    key <AC07> {	[	  j,	J,		Idiaeresis,		Iacute		]	};
+    key <AC08> {	[	  k,	K,		Egrave,			Ediaeresis	]	};
+    key <AC09> {	[	  l,	L,		notsign,		bar		]	};
+    key <AC10> {	[	  m,	M,		mu,			Oacute		]	};
+    key <AC11> {	[    ugrave,	percent,	Ugrave,			0x1002030	]	};
+    key <BKSL> {	[ dead_grave,	sterling,	at,			numbersign	]	};
+    key <RTRN> {	[    Return			]	};
+
+    key <LSGT> {	[	 less,	  greater,	lessthanequal,		greaterthanequal	]	};
+    key <AB01> {	[	  w,	W,		guilsinglleft,		guilsinglright	]	}; // MISSING: half-guillemot (single angle bracket)
+    key <AB02> {	[	  x,	X,		VoidSymbol,		VoidSymbol	]	}; // CHECK: similarequal; MISSING: extra-slanted slash
+    key <AB03> {	[	  c,	C,		copyright,		cent		]	};
+    key <AB04> {	[	  v,	V,		diamond,		radical		]	}; // CHECK diamond
+    key <AB05> {	[	  b,	B,		ssharp,    		integral	]	};
+    key <AB06> {	[	  n,	N,		dead_tilde,		asciitilde	]	};
+    key <AB07> {	[     comma,	question,	infinity,		questiondown	]	};
+    key <AB08> {	[ semicolon,	period,		ellipsis,		periodcentered	]	};
+    key <AB09> {	[     colon,	slash,		division,		backslash	]	};
+    key <AB10> {	[     equal,	plus,		notequal,		plusminus	]	};
+
+    key <SPCE> {	[     space,	space,		nobreakspace,		nobreakspace	]	};
+
+    include "level3(ralt_switch)"
+};
+
+
+
+xkb_symbols "nodeadkeys" {
+include "macintosh_vndr/fr(extended)"
+    name[Group1]= "France - Mac, no dead keys";
+    
+    key <AE01> {	[   ampersand,	  1,	  	VoidSymbol,	  	acute	]	}; // MISSING: Apple
+    key <AD11> {	[asciicircum,diaeresis,ocircumflex, 		Ocircumflex	]	};
+    key <BKSL> {	[ grave,	sterling,	at,			numbersign	]	};
+
+    key <AB06> {	[	  n,	N,		asciitilde,		dead_tilde	]	};
+};

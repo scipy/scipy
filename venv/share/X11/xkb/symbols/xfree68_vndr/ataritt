@@ -1,0 +1,154 @@
+default xkb_symbols "us" {
+
+    name[Group1]= "US/ASCII";
+
+    key <ESC>  {	[	Escape			]	};
+
+    // Alphanumeric section
+    key <AE01> {	[	  1,	exclam 		]	};
+    key <AE02> {	[	  2,	at		]	};
+    key <AE03> {	[	  3,	numbersign	]	};
+    key <AE04> {	[	  4,	dollar		]	};
+    key <AE05> {	[	  5,	percent		]	};
+    key <AE06> {	[	  6,	asciicircum	]	};
+    key <AE07> {	[	  7,	ampersand	]	};
+    key <AE08> {	[	  8,	asterisk	]	};
+    key <AE09> {	[	  9,	parenleft	]	};
+    key <AE10> {	[	  0,	parenright	]	};
+    key <AE11> {	[ minus,	underscore	]	};
+    key <AE12> {	[ equal,	plus		]	};
+    key <TLDE> {	[ grave,	asciitilde	]	};
+    key <BKSP> {	[	BackSpace		]	};
+
+    key  <TAB> {	[	Tab,	ISO_Left_Tab	]	};
+    key <AD01> {	[	  q,	Q 		]	};
+    key <AD02> {	[	  w,	W		]	};
+    key <AD03> {	[	  e,	E		]	};
+    key <AD04> {	[	  r,	R		]	};
+    key <AD05> {	[	  t,	T		]	};
+    key <AD06> {	[	  y,	Y		]	};
+    key <AD07> {	[	  u,	U		]	};
+    key <AD08> {	[	  i,	I		]	};
+    key <AD09> {	[	  o,	O		]	};
+    key <AD10> {	[	  p,	P		]	};
+    key <AD11> {	[ bracketleft,	braceleft	]	};
+    key <AD12> {	[ bracketright,	braceright	]	};
+    key <RTRN> {	[	Return			]	};
+    key <DELE> {	[	Delete			]	};
+
+    key <LCTL> {	[	Control_L		]	};
+    key <AC01> {	[	  a,	A 		]	};
+    key <AC02> {	[	  s,	S		]	};
+    key <AC03> {	[	  d,	D		]	};
+    key <AC04> {	[	  f,	F		]	};
+    key <AC05> {	[	  g,	G		]	};
+    key <AC06> {	[	  h,	H		]	};
+    key <AC07> {	[	  j,	J		]	};
+    key <AC08> {	[	  k,	K		]	};
+    key <AC09> {	[	  l,	L		]	};
+    key <AC10> {	[ semicolon,	colon		]	};
+    key <AC11> {	[ apostrophe,	quotedbl	]	};
+    key <BKSL> {	[ backslash,	bar		]	};
+
+    key <LFSH> {	[ 	 Shift_L		]	};
+    key <AB01> {	[	  z,	Z 		]	};
+    key <AB02> {	[	  x,	X		]	};
+    key <AB03> {	[	  c,	C		]	};
+    key <AB04> {	[	  v,	V		]	};
+    key <AB05> {	[	  b,	B		]	};
+    key <AB06> {	[	  n,	N		]	};
+    key <AB07> {	[	  m,	M		]	};
+    key <AB08> {	[ comma,	less		]	};
+    key <AB09> {	[ period,	greater		]	};
+    key <AB10> {	[ slash,	question	]	};
+    key <RTSH> {	[	 Shift_R		]	};
+
+    key <ALT>  {	[	 Meta_L			]	};
+    key <SPCE> {	[	 space			]	};
+    key <CAPS> {	[	 Caps_Lock		]	};
+    // End alphanumeric section
+
+    // Begin "Function" section
+    key <FK01> {	[	F1		]	};
+    key <FK02> {	[	F2		]	};
+    key <FK03> {	[	F3		]	};
+    key <FK04> {	[	F4		]	};
+    key <FK05> {	[	F5		]	};
+    key <FK06> {	[	F6		]	};
+    key <FK07> {	[	F7		]	};
+    key <FK08> {	[	F8		]	};
+    key <FK09> {	[	F9		]	};
+    key <FK10> {	[	F10		]	};
+    // End "Function" section
+
+    // Begin "Editing" section
+    key <HELP> {	[	Help		]	};
+    key <UNDO> {	[	Undo		]	};
+    key <INS>  {	[	Insert		]	};
+    key <UP>   {	[	Up		]	};
+    key <HOME> {	[	Home,	Clear	]	};
+    key <LEFT> {	[	Left		]	};
+    key <DOWN> {	[	Down		]	};
+    key <RGHT> {	[	Right		]	};
+    // End "Editing" section
+
+    // Begin "Keypad" section
+    key <KPLP> {	[	KP_F1		]	};
+    key <KPRP> {	[	KP_F2		]	};
+    key <KPDV> {	[	KP_Divide	]	};
+    key <KPMU> {	[	KP_Multiply	]	};
+    key <KP7>  {	[	KP_7		]	};
+    key <KP8>  {	[	KP_8		]	};
+    key <KP9>  {	[	KP_9		]	};
+    key <KPSU> {	[	KP_Subtract	]	};
+    key <KP4>  {	[	KP_4		]	};
+    key <KP5>  {	[	KP_5		]	};
+    key <KP6>  {	[	KP_6		]	};
+    key <KPAD> {	[	KP_Add		]	};
+    key <KP1>  {	[	KP_1		]	};
+    key <KP2>  {	[	KP_2		]	};
+    key <KP3>  {	[	KP_3		]	};
+    key <KP0>  {	[	KP_0		]	};
+    key <KPDC> {	[	KP_Decimal	]	};
+    key <KPEN> {	[	KP_Enter	]	};
+    // End "Keypad" section
+
+    modifier_map Shift  { Shift_L, Shift_R };
+    modifier_map Lock   { Caps_Lock };
+    modifier_map Control{ Control_L };
+    modifier_map Mod1	{ Meta_L };
+};
+
+xkb_symbols "de" {
+    include "ataritt(us)"
+
+    name[Group1]= "German";
+
+    key <AE02> {	[	  2,	quotedbl	]	};
+    key <AE03> {	[	  3,	section		]	};
+    key <AE06> {	[	  6,	ampersand	]	};
+    key <AE07> {	[	  7,	slash		]	};
+    key <AE08> {	[	  8,	parenleft	]	};
+    key <AE09> {	[	  9,	parenright	]	};
+    key <AE10> {	[	  0,	equal		]	};
+    key <AE11> {	[    ssharp,	question	]	};
+    key <AE12> {	[ apostrophe,	grave		]	};
+    key <TLDE> {	[ numbersign,	asciicircum	]	};
+
+    key <AD06> {	[	  z,	Z		]	};
+    key <AD11> {	[ udiaeresis,	Udiaeresis	],
+			[        at,	backslash	]	};
+    key <AD12> {	[      plus,	asterisk	]	};
+
+    key <AC10> {	[ odiaeresis,	Odiaeresis	],
+			[ bracketleft,	braceleft	]	};
+    key <AC11> {	[ adiaeresis,	Adiaeresis	],
+			[ bracketright,	braceright	]	};
+    key <BKSL> {	[ asciitilde,	bar		]	};
+
+    key <LSGT> {	[      less,	greater		]	};
+    key <AB01> {	[	  y,	Y 		]	};
+    key <AB08> {	[     comma,	semicolon	]	};
+    key <AB09> {	[    period,	colon		]	};
+    key <AB10> {	[     minus,	underscore	]	};
+};

@@ -1,0 +1,58 @@
+# Bulgarian translations for hello-c-gnome3 package.
+# Copyright (C) 2010 Yoyodyne, Inc. (msgids)
+# This file is distributed under the same license as the gettext package.
+# Roumen Petrov <transl@roumenpetrov.info>, 2010,2014,2015,2019.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: GNU hello-c-gnome3 0.20-rc1\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"PO-Revision-Date: 2019-04-16 21:01+0300\n"
+"Last-Translator: Roumen Petrov <transl@roumenpetrov.info>\n"
+"Language-Team: Bulgarian <dict@ludost.net>\n"
+"Language: bg\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+
+#: hello.c:79
+#, c-format
+msgid ""
+"<big>Hello world!</big>\n"
+"This program is running as process number <b>%d</b>."
+msgstr ""
+"<big>Здравейте!</big>\n"
+"Програмата е пусната под процес номер <b>%d</b>."
+
+#: hello.c:84
+msgid "<big><u>This is another text</u></big>"
+msgstr "<big><u>Това е друг текст</u></big>"
+
+#: hello.c:86
+msgid "<big><i>This is yet another text</i></big>"
+msgstr "<big><i>А това е един друг текст</i></big>"
+
+#: hello.desktop.in.in:4
+msgid "Hello"
+msgstr "Здравейте"
+
+#: hello.desktop.in.in:5
+msgid "Hello, world!"
+msgstr "Здравейте на всички !"
+
+#: hello.ui:6
+msgid "Example Application"
+msgstr "Примерно приложение"
+
+#: hello.ui:34
+msgid "Update text"
+msgstr "Обноваване на текст"
+
+#: hello.gschema.xml:8
+msgid "Use XML markup"
+msgstr "Използване на XML markup"
+
+#: hello.gschema.xml:9
+msgid "Whether to use XML markup in the text."
+msgstr "Дали да се използва XML markup за текст."

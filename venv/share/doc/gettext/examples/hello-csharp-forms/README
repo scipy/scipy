@@ -1,0 +1,81 @@
+Before you read the hello.cs source code:
+
+Preface about GUI Programming Methodologies
+===========================================
+
+The traditional GUI programming methodology for Windows GUI programmers
+is to assemble controls using a GUI builder. These GUI builders
+don't have good techniques for determining the size and position of the
+controls depending on their contents. Instead, they *hardcode* the
+size and positions of the controls in each panel, as fixed numbers,
+measured in pixels.
+
+What are the consequences?
+
+1) Consequences for all users:
+   Such panels would not look nice when the user resizes them. So the
+   programmer simply makes the dialogs non-resizable. When such a
+   panel then contains a scrollable list of items, with 100 items and
+   a scroll window of 5 items, a user's normal reaction is to enlarge
+   the dialog, to see more items. But the dialog is not resizable!
+   Frustration.
+
+2) Consequences for disabled users:
+   Some users need bigger fonts for working comfortably. Guess what
+   happens when the user changes the size of the default system font?
+   Many labels in dialogs are truncated.
+
+3) Consequences for internationalization:
+   The translation of a term or label in another language often needs
+   more screen space. For example, Japanese translations often are 30%
+   longer than the original English label. Therefore, if only the strings
+   of a dialog are localized, many labels are truncated.
+
+Problems 1 and 2 are usually accepted in the Windows programmers
+community. (Problem 1 is not fatal, only frustrating. And problem 2
+affects only a small proportion of the users; they are simply ignored.)
+Problem 3 is "solved" by letting the localization team not only translate
+the strings, but also redo the layout of each dialog.
+
+In contrast, the methodology of programmers of the Qt/KDE, Gtk/GNOME,
+wxWidgets, AWT, Swing, Tk toolkits is to have the positions and sizes
+of controls determined at runtime, according to
+  - the needs of the control itself,
+  - the needs of the other controls in the panel,
+  - the available panel size, given by the user through resizing.
+The common technology for this approach is to group related controls
+together in containers, and perform size and position propagations
+between the controls of the container, the container, the container's
+container etc. These computations are performed by so-called
+"layout manager" objects.
+Other technologies such as global constraint systems (as in Garnet) or
+spring-like attachments are not so much in use anymore nowadays.
+
+This programmed-resizing methodology solves the problems 1), 2) and 3).
+
+What are the associated costs and efforts? Taking the programmed-resizing
+methodology as baseline, the hardcoded sizes and positions approach has
+  - the advantage that the programmer saves about 1/3 of the GUI
+    programming work (namely choosing the layout managers and setting
+    alignment hints),
+  - the drawback that each localization team has much more work, namely
+    to rearrange the controls in the panel.
+In most free software projects, there are at least ca. 5 localizations;
+successful projects even have 30 or 50 localizations.
+In other words, a program built with hardcoded sizes and positions
+cannot afford many localizations, or the effort for localization will
+be prohibitively high.
+
+For this reason, we strongly recommend to use the programmed-resizing
+methodology. In this example, since the Windows.Forms package lacks
+layout manager classes, we compute the layout by hand, through an
+override of the OnResize method. For larger programs, we would recommend
+to build a few simple layout managers, to get on par with the layout
+abilities found in Qt, Swing, etc.
+(The layout system of Gtk/GNOME is somewhat particular: It does not
+provide the ability to set a preferred alignment on controls like labels.
+Instead one uses intermediate containers for the purpose of alignment.)
+
+Acknowledgement: This preface borrows ideas from an article of Luke Plant.
+
+Copyright (C) 2006 Free Software Foundation, Inc.

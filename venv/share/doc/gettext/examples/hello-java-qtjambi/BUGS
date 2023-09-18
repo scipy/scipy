@@ -1,0 +1,2 @@
+Qt looks only at the LANG and LC_ALL values and ignores LC_MESSAGES if LC_ALL is unset.
+Therefore, to make it work, you have to set LC_ALL to the same value as LC_MESSAGES.

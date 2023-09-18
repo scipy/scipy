@@ -1,0 +1,62 @@
+.Dd July 27, 2020
+.Dt XKBCLI\-COMPILE\-KEYMAP 1
+.Os
+.
+.Sh NAME
+.Nm "xkbcli compile\-keymap"
+.Nd compile an XKB keymap
+.
+.Sh SYNOPSIS
+.Nm
+.Op Ar options
+.
+.Sh DESCRIPTION
+.Nm
+compiles and prints a keymap based on the given options.
+.
+.Bl -tag -width Ds
+.It Fl \-help
+Print help and exit
+.
+.It Fl \-verbose
+Enable verbose debugging output
+.
+.It Fl \-rmlvo
+Print the full RMLVO with the defaults filled in for missing elements
+.
+.It Fl \-from\-xkb
+Load the XKB file from stdin, ignore RMLVO options.
+This option must not be used with
+.Fl \-kccgst .
+.
+.It Fl \-include Ar PATH
+Add the given path to the include path list.
+This option is order\-dependent, include paths given first are searched first.
+If an include path is given, the default include path list is not used.
+Use
+.Fl -\-include\-defaults
+to add the default include paths.
+.
+.It Fl \-include\-defaults
+Add the default set of include directories.
+This option is order-dependent, include paths given first are searched first.
+.
+.It Fl \-rules Ar rules
+The XKB ruleset
+.
+.It Fl \-model Ar model
+The XKB model
+.
+.It Fl \-layout Ar layout
+The XKB layout
+.
+.It Fl \-variant Ar variant
+The XKB layout variant
+.
+.It Fl \-options Ar options
+The XKB options
+.El
+.
+.Sh SEE ALSO
+.Xr xkbcli 1 ,
+.Lk https://xkbcommon.org "The libxkbcommon online documentation"

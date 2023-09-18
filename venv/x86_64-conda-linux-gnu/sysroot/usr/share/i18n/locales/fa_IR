@@ -1,0 +1,492 @@
+comment_char %
+escape_char  /
+%
+% Persian Language Locale for Iran with UTF-8 character set
+% Source: Sharif FarsiWeb, Inc.
+% Address: 5, Shahid Ghasemi Habibollah, Azadi Ave, Tehran, Iran
+% Contact: Roozbeh Pournader
+% Email: roozbeh@farsiweb.info
+% Tel: +98 21 6022372
+% Fax: +98 21 6019568
+% Language: fa
+% Territory: IR
+% Revision: 3.0
+% Date: 2005-04-06
+% Users: general
+% Repertoiremap:
+% Charset: UTF-8
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title      "Persian locale for Iran"
+source     "Sharif FarsiWeb, Inc."
+address    "5, Shahid Ghasemi Habibollah, Azadi Ave, Tehran, Iran"
+contact    "Roozbeh Pournader"
+email      "roozbeh@farsiweb.info"
+tel        "+98 21 6022372"
+fax        "+98 21 6019568"
+language   "Persian"
+territory  "Iran"
+revision   "3.0"
+date       "2005-04-06"
+%
+category  "fa_IR:2005";LC_IDENTIFICATION
+category  "fa_IR:2005";LC_CTYPE
+category  "fa_IR:2005";LC_COLLATE
+category  "fa_IR:2005";LC_TIME
+category  "fa_IR:2005";LC_NUMERIC
+category  "fa_IR:2005";LC_MONETARY
+category  "fa_IR:2005";LC_MESSAGES
+category  "fa_IR:2005";LC_PAPER
+category  "fa_IR:2005";LC_NAME
+category  "fa_IR:2005";LC_ADDRESS
+category  "fa_IR:2005";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_CTYPE
+copy "i18n"
+
+% Persian uses the alternate digits U+06F0..U+06F9
+outdigit <U06F0>..<U06F9>
+
+% This is used in the scanf family of functions to read Persian numbers
+% using "%Id" and such.
+map to_inpunct; /
+  (<U0030>,<U06F0>); /
+  (<U0031>,<U06F1>); /
+  (<U0032>,<U06F2>); /
+  (<U0033>,<U06F3>); /
+  (<U0034>,<U06F4>); /
+  (<U0035>,<U06F5>); /
+  (<U0036>,<U06F6>); /
+  (<U0037>,<U06F7>); /
+  (<U0038>,<U06F8>); /
+  (<U0039>,<U06F9>); /
+  (<U002E>,<U066B>); /
+  (<U002C>,<U066C>)
+
+% This is used in the printf family of functions to write Persian floating
+% point numbers using "%If" and such.
+map to_outpunct; /
+  (<U002E>,<U066B>); /
+  (<U002C>,<U066C>)
+
+translit_start
+include "translit_combining";""
+translit_end
+END LC_CTYPE
+
+LC_COLLATE
+copy "iso14651_t1"
+
+% The Persian alphabet order is: ALEF WITH MADDA ABOVE, ALEF, HAMZA (all
+% kinds), BEH, PEH, TEH, JEEM, TCHEH, HAH, KHAH, DAL, THAL, REH, ZAIN, JEH,
+% SEEN, SHEEN, SAD, DAD, TAH, ZAH, AIN, GHAIN, FEH, QAF, KAF, GAF, LAM,
+% MEEM, NOON, WAW, HEH, YEH.
+% The various kinds of HAMZA are sorted as ALEF WITH HAMZA ABOVE, ALEF WITH
+% HAMZA BELOW, WAW WITH HAMZA ABOVE, YEH WITH HAMZA ABOVE.
+
+collating-symbol <AHY> % accent hamza over yeh
+collating-symbol <ADL> % dotless
+collating-symbol <ADO> % with dots over
+collating-symbol <AWO> % with wasla over
+
+collating-symbol <alefmadda>
+collating-symbol <yeh>
+
+% Alternate representations displayed the same
+collating-symbol <ALT1>
+collating-symbol <ALT2>
+
+collating-element <Alef-Madda> from "<U0627><U0653>"
+collating-element <Alef-Hamza> from "<U0627><U0654>"
+collating-element <Alef-HamzaBelow> from "<U0627><U0655>"
+collating-element <Waw-Hamza> from "<U0648><U0654>"
+collating-element <AlefMaksura-Hamza> from "<U0649><U0654>"
+collating-element <Yeh-Hamza> from "<U064A><U0654>"
+collating-element <FarsiYeh-Hamza> from "<U06CC><U0654>"
+
+reorder-after <BAS>
+<AHA>
+<AHS>
+<AWO>
+<AHW>
+<AHY>
+<ADL>
+<ADO>
+<AYE>
+<YBA>
+
+reorder-after <LIG>
+<ALT1>
+<ALT2>
+
+reorder-after <th>
+<alefmadda>
+<alef>
+<hamza>
+
+reorder-after <waw>
+<heh>
+<yeh>
+
+% Persian uses this order: Fatha, Kasra, Damma, Fathatan, Kasratan, Dammatan.
+
+reorder-after <U066D>
+<U064E> IGNORE;IGNORE;IGNORE;<U064E> %<fatha_no>
+<UFE76> IGNORE;IGNORE;IGNORE;<UFE76> %<fatha_is>
+<UFE77> IGNORE;IGNORE;IGNORE;<UFE77> %<fatha_me>
+<U0650> IGNORE;IGNORE;IGNORE;<U0650> %<kasra_no>
+<UFE7A> IGNORE;IGNORE;IGNORE;<UFE7A> %<kasra_is>
+<UFE7B> IGNORE;IGNORE;IGNORE;<UFE7B> %<kasra_me>
+<U064F> IGNORE;IGNORE;IGNORE;<U064F> %<damma_no>
+<UFE78> IGNORE;IGNORE;IGNORE;<UFE78> %<damma_is>
+<UFE79> IGNORE;IGNORE;IGNORE;<UFE79> %<damma_me>
+<U064B> IGNORE;IGNORE;IGNORE;<U064B> %<fathatan_no>
+<UFE70> IGNORE;IGNORE;IGNORE;<UFE70> %<fathatan_is>
+<UFE71> IGNORE;IGNORE;IGNORE;<UFE71> %<fathatan_me>
+<U064D> IGNORE;IGNORE;IGNORE;<U064D> %<kasratan_no>
+<UFE74> IGNORE;IGNORE;IGNORE;<UFE74> %<kasratan_is>
+<U064C> IGNORE;IGNORE;IGNORE;<U064C> %<dammatan_no>
+<UFE72> IGNORE;IGNORE;IGNORE;<UFE72> %<dammatan_is>
+
+reorder-after <UFE7F>
+<U0653> IGNORE;IGNORE;IGNORE;<U0653> %<madda_no>
+<U0654> IGNORE;IGNORE;IGNORE;<U0654> %<hamzaabove_no>
+<U0655> IGNORE;IGNORE;IGNORE;<U0655> %<hamzabelow_no>
+<U0670> IGNORE;IGNORE;IGNORE;<U0670> %<supalef_no>
+
+% The Persian digits are sorted before the Arabic ones: they are the basic forms.
+reorder-after <U0660>
+<U06F0> <0>;<BAS>;<MIN>;IGNORE
+<U0660> <0>;<PCL>;<MIN>;IGNORE
+<U06F1> <1>;<BAS>;<MIN>;IGNORE
+<U0661> <1>;<PCL>;<MIN>;IGNORE
+<U06F2> <2>;<BAS>;<MIN>;IGNORE
+<U0662> <2>;<PCL>;<MIN>;IGNORE
+<U06F3> <3>;<BAS>;<MIN>;IGNORE
+<U0663> <3>;<PCL>;<MIN>;IGNORE
+<U06F4> <4>;<BAS>;<MIN>;IGNORE
+<U0664> <4>;<PCL>;<MIN>;IGNORE
+<U06F5> <5>;<BAS>;<MIN>;IGNORE
+<U0665> <5>;<PCL>;<MIN>;IGNORE
+<U06F6> <6>;<BAS>;<MIN>;IGNORE
+<U0666> <6>;<PCL>;<MIN>;IGNORE
+<U06F7> <7>;<BAS>;<MIN>;IGNORE
+<U0667> <7>;<PCL>;<MIN>;IGNORE
+<U06F8> <8>;<BAS>;<MIN>;IGNORE
+<U0668> <8>;<PCL>;<MIN>;IGNORE
+<U06F9> <9>;<BAS>;<MIN>;IGNORE
+<U0669> <9>;<PCL>;<MIN>;IGNORE
+
+% And then the letters:
+<U0622> <alefmadda>;<BAS>;<MIN>;IGNORE % Alef With Madda Above
+<Alef-Madda> <alefmadda>;<BAS>;<MIN>;IGNORE
+<U0627> <alef>;<BAS>;<MIN>;IGNORE       % Alef
+<U0671> <alef>;<AWO>;<MIN>;IGNORE       % Alef Wasla
+<U0621> <hamza>;<BAS>;<MIN>;IGNORE      % Hamza
+<U0623> <hamza>;<AHA>;<MIN>;IGNORE      % Alef With Hamza Above
+<Alef-Hamza> <hamza>;<AHA>;<MIN>;IGNORE
+<U0625> <hamza>;<AHS>;<MIN>;IGNORE      % Alef With Hamza Below
+<Alef-HamzaBelow> <hamza>;<AHS>;<MIN>;IGNORE
+<U0624> <hamza>;<AHW>;<MIN>;IGNORE      % Waw With Hamza Above
+<Waw-Hamza> <hamza>;<AHW>;<MIN>;IGNORE
+<U0626> <hamza>;<AHY>;<MIN>;IGNORE      % Yeh With Hamza Above
+<FarsiYeh-Hamza> <hamza>;<AHY>;<ALT1>;IGNORE
+<AlefMaksura-Hamza> <hamza>;<AHY>;<ALT2>;IGNORE
+<Yeh-Hamza> <hamza>;<AHY>;<MIN>;IGNORE
+reorder-after <U0642>
+<U06A9> <kaf>;<BAS>;<MIN>;IGNORE        % Keheh
+<U0643> <kaf>;<PCL>;<MIN>;IGNORE        % Kaf
+reorder-after <U0648>
+<U0647> <heh>;<BAS>;<MIN>;IGNORE        % Heh
+<U0629> <heh>;<ADO>;<MIN>;IGNORE        % Teh Marbuta
+<U06C0> <heh>;<AHA>;<MIN>;IGNORE        % Heh With Yeh Above
+<U06CC> <yeh>;<BAS>;<MIN>;IGNORE        % Farsi Yeh
+<U0649> <yeh>;<ADL>;<MIN>;IGNORE        % Alef Maksura
+<U064A> <yeh>;<AYE>;<MIN>;IGNORE        % Yeh
+
+% Finally the letters in Presentation Form:
+reorder-after <UFE80>
+<UFE81> <alefmadda>;<BAS>;<AIS>;IGNORE
+<UFE82> <alefmadda>;<BAS>;<AFI>;IGNORE
+<UFE8D> <alef>;<BAS>;<AIS>;IGNORE
+<UFE8E> <alef>;<BAS>;<AFI>;IGNORE
+<UFB50> <alef>;<AWO>;<AIS>;IGNORE
+<UFB51> <alef>;<AWO>;<AFI>;IGNORE
+<UFE80> <hamza>;<BAS>;<AIS>;IGNORE
+<UFE83> <hamza>;<AHA>;<AIS>;IGNORE
+<UFE84> <hamza>;<AHA>;<AFI>;IGNORE
+<UFE87> <hamza>;<AHS>;<AIS>;IGNORE
+<UFE88> <hamza>;<AHS>;<AFI>;IGNORE
+<UFE85> <hamza>;<AHW>;<AIS>;IGNORE
+<UFE86> <hamza>;<AHW>;<AFI>;IGNORE
+<U0689> <hamza>;<AHY>;<AIS>;IGNORE
+<U068A> <hamza>;<AHY>;<AFI>;IGNORE
+reorder-after <UFEAE>
+<UFDFC> "<reh><yeh><alef><lam>";"<LIG><LIG><LIG><LIG>";"<AII><AME><AFI><AIS>";IGNORE % Rial Sign
+reorder-after <UFED8>
+<UFB8E> <kaf>;<BAS>;<AIS>;IGNORE
+<UFB8F> <kaf>;<BAS>;<AFI>;IGNORE
+<UFB90> <kaf>;<BAS>;<AII>;IGNORE
+<UFB91> <kaf>;<BAS>;<AME>;IGNORE
+<UFED9> <kaf>;<PCL>;<AIS>;IGNORE
+<UFEDA> <kaf>;<PCL>;<AFI>;IGNORE
+<UFEDB> <kaf>;<PCL>;<AII>;IGNORE
+<UFEDC> <kaf>;<PCL>;<AME>;IGNORE
+reorder-after <UFEEE>
+<UFEE9> <heh>;<BAS>;<AIS>;IGNORE
+<UFEEA> <heh>;<BAS>;<AFI>;IGNORE
+<UFEEB> <heh>;<BAS>;<AII>;IGNORE
+<UFEEC> <heh>;<BAS>;<AME>;IGNORE
+<UFE93> <heh>;<ADO>;<AIS>;IGNORE
+<UFE94> <heh>;<ADO>;<AFI>;IGNORE
+<UFBA4> <heh>;<AHA>;<AIS>;IGNORE
+<UFBA5> <heh>;<AHA>;<AFI>;IGNORE
+<UFBFC> <yeh>;<BAS>;<AIS>;IGNORE
+<UFBFD> <yeh>;<BAS>;<AFI>;IGNORE
+<UFBFE> <yeh>;<BAS>;<AII>;IGNORE
+<UFBFF> <yeh>;<BAS>;<AME>;IGNORE
+<UFEEF> <yeh>;<ADL>;<AIS>;IGNORE
+<UFEF0> <yeh>;<ADL>;<AFI>;IGNORE
+<UFEF1> <yeh>;<AYE>;<AIS>;IGNORE
+<UFEF2> <yeh>;<AYE>;<AFI>;IGNORE
+<UFEF3> <yeh>;<AYE>;<AII>;IGNORE
+<UFEF4> <yeh>;<AYE>;<AME>;IGNORE
+<UFEF5> "<lam><alefmadda>";"<BAS><BAS>";"<AIS><AFI>";IGNORE
+<UFEF6> "<lam><alefmadda>";"<BAS><BAS>";"<AFI><AFI>";IGNORE
+<UFEF7> "<lam><hamza>";"<BAS><AHA>";"<AIS><AFI>";IGNORE
+<UFEF8> "<lam><hamza>";"<BAS><AHA>";"<AFI><AFI>";IGNORE
+<UFEF9> "<lam><hamza>";"<BAS><AHS>";"<AIS><AFI>";IGNORE
+<UFEFA> "<lam><hamza>";"<BAS><AHS>";"<AFI><AFI>";IGNORE
+<UFEFB> "<lam><alef>";"<BAS><BAS>";"<AIS><AFI>";IGNORE
+<UFEFC> "<lam><alef>";"<BAS><BAS>";"<AFI><AFI>";IGNORE
+reorder-end
+
+END LC_COLLATE
+
+LC_MONETARY
+int_curr_symbol   "<U0049><U0052><U0052><U0020>"
+currency_symbol   "<U0631><U06CC><U0627><U0644>"
+mon_decimal_point "<U066B>"
+mon_thousands_sep "<U066C>"
+mon_grouping      3
+positive_sign     ""
+negative_sign     "<U002D>"
+int_frac_digits   0
+frac_digits       0
+% The following positioning is based on Unicode 3.0 bidirectional algorithm,
+% with a "base direction" of right-to-left.
+p_cs_precedes     0
+p_sep_by_space    1
+n_cs_precedes     0
+n_sep_by_space    1
+p_sign_posn       1
+n_sign_posn       1
+% The following positioning is based on Unicode 3.0 bidirectional algorithm,
+% with a "base direction" of left-to-right.
+int_p_cs_precedes     0
+int_p_sep_by_space    1
+int_n_cs_precedes     0
+int_n_sep_by_space    1
+int_p_sign_posn       1
+int_n_sign_posn       1
+END LC_MONETARY
+
+LC_NUMERIC
+decimal_point     "<U002E>"
+thousands_sep     "<U002C>"
+grouping          3
+END LC_NUMERIC
+
+LC_TIME
+% Alternative digits are used for Persian numerals in date and time. This is
+% a hack, until a new prefix is defined for alternative digits.
+alt_digits	"<U06F0><U06F0>";"<U06F0><U06F1>";/
+		"<U06F0><U06F2>";"<U06F0><U06F3>";/
+		"<U06F0><U06F4>";"<U06F0><U06F5>";/
+		"<U06F0><U06F6>";"<U06F0><U06F7>";/
+		"<U06F0><U06F8>";"<U06F0><U06F9>";/
+		"<U06F1><U06F0>";"<U06F1><U06F1>";/
+		"<U06F1><U06F2>";"<U06F1><U06F3>";/
+		"<U06F1><U06F4>";"<U06F1><U06F5>";/
+		"<U06F1><U06F6>";"<U06F1><U06F7>";/
+		"<U06F1><U06F8>";"<U06F1><U06F9>";/
+		"<U06F2><U06F0>";"<U06F2><U06F1>";/
+		"<U06F2><U06F2>";"<U06F2><U06F3>";/
+		"<U06F2><U06F4>";"<U06F2><U06F5>";/
+		"<U06F2><U06F6>";"<U06F2><U06F7>";/
+		"<U06F2><U06F8>";"<U06F2><U06F9>";/
+		"<U06F3><U06F0>";"<U06F3><U06F1>";/
+		"<U06F3><U06F2>";"<U06F3><U06F3>";/
+		"<U06F3><U06F4>";"<U06F3><U06F5>";/
+		"<U06F3><U06F6>";"<U06F3><U06F7>";/
+		"<U06F3><U06F8>";"<U06F3><U06F9>";/
+		"<U06F4><U06F0>";"<U06F4><U06F1>";/
+		"<U06F4><U06F2>";"<U06F4><U06F3>";/
+		"<U06F4><U06F4>";"<U06F4><U06F5>";/
+		"<U06F4><U06F6>";"<U06F4><U06F7>";/
+		"<U06F4><U06F8>";"<U06F4><U06F9>";/
+		"<U06F5><U06F0>";"<U06F5><U06F1>";/
+		"<U06F5><U06F2>";"<U06F5><U06F3>";/
+		"<U06F5><U06F4>";"<U06F5><U06F5>";/
+		"<U06F5><U06F6>";"<U06F5><U06F7>";/
+		"<U06F5><U06F8>";"<U06F5><U06F9>";/
+		"<U06F6><U06F0>";"<U06F6><U06F1>";/
+		"<U06F6><U06F2>";"<U06F6><U06F3>";/
+		"<U06F6><U06F4>";"<U06F6><U06F5>";/
+		"<U06F6><U06F6>";"<U06F6><U06F7>";/
+		"<U06F6><U06F8>";"<U06F6><U06F9>";/
+		"<U06F7><U06F0>";"<U06F7><U06F1>";/
+		"<U06F7><U06F2>";"<U06F7><U06F3>";/
+		"<U06F7><U06F4>";"<U06F7><U06F5>";/
+		"<U06F7><U06F6>";"<U06F7><U06F7>";/
+		"<U06F7><U06F8>";"<U06F7><U06F9>";/
+		"<U06F8><U06F0>";"<U06F8><U06F1>";/
+		"<U06F8><U06F2>";"<U06F8><U06F3>";/
+		"<U06F8><U06F4>";"<U06F8><U06F5>";/
+		"<U06F8><U06F6>";"<U06F8><U06F7>";/
+		"<U06F8><U06F8>";"<U06F8><U06F9>";/
+		"<U06F9><U06F0>";"<U06F9><U06F1>";/
+		"<U06F9><U06F2>";"<U06F9><U06F3>";/
+		"<U06F9><U06F4>";"<U06F9><U06F5>";/
+		"<U06F9><U06F6>";"<U06F9><U06F7>";/
+		"<U06F9><U06F8>";"<U06F9><U06F9>"
+% Persian doesn't have abbreviations for weekdays and month names, so
+% "abday" is the same as "day" and "abmon" is the same as "mon"
+abday   "<U06CC><U06A9><U0634><U0646><U0628><U0647>";/
+        "<U062F><U0648><U0634><U0646><U0628><U0647>";/
+        "<U0633><U0647><U200C><U0634><U0646><U0628><U0647>";/
+        "<U0686><U0647><U0627><U0631><U0634><U0646><U0628><U0647>";/
+        "<U067E><U0646><U062C><U0634><U0646><U0628><U0647>";/
+        "<U062C><U0645><U0639><U0647>";/
+        "<U0634><U0646><U0628><U0647>"
+day     "<U06CC><U06A9><U0634><U0646><U0628><U0647>";/
+        "<U062F><U0648><U0634><U0646><U0628><U0647>";/
+        "<U0633><U0647><U200C><U0634><U0646><U0628><U0647>";/
+        "<U0686><U0647><U0627><U0631><U0634><U0646><U0628><U0647>";/
+        "<U067E><U0646><U062C><U0634><U0646><U0628><U0647>";/
+        "<U062C><U0645><U0639><U0647>";/
+        "<U0634><U0646><U0628><U0647>"
+mon     "<U0698><U0627><U0646><U0648><U06CC><U0647>";/
+        "<U0641><U0648><U0631><U06CC><U0647>";/
+        "<U0645><U0627><U0631><U0633>";/
+        "<U0622><U0648><U0631><U06CC><U0644>";/
+        "<U0645><U0647>";/
+        "<U0698><U0648><U0626><U0646>";/
+        "<U0698><U0648><U0626><U06CC><U0647>";/
+        "<U0627><U0648><U062A>";/
+        "<U0633><U067E><U062A><U0627><U0645><U0628><U0631>";/
+        "<U0627><U0643><U062A><U0628><U0631>";/
+        "<U0646><U0648><U0627><U0645><U0628><U0631>";/
+        "<U062F><U0633><U0627><U0645><U0628><U0631>"
+abmon   "<U0698><U0627><U0646><U0648><U06CC><U0647>";/
+        "<U0641><U0648><U0631><U06CC><U0647>";/
+        "<U0645><U0627><U0631><U0633>";/
+        "<U0622><U0648><U0631><U06CC><U0644>";/
+        "<U0645><U0647>";/
+        "<U0698><U0648><U0626><U0646>";/
+        "<U0698><U0648><U0626><U06CC><U0647>";/
+        "<U0627><U0648><U062A>";/
+        "<U0633><U067E><U062A><U0627><U0645><U0628><U0631>";/
+        "<U0627><U0643><U062A><U0628><U0631>";/
+        "<U0646><U0648><U0627><U0645><U0628><U0631>";/
+        "<U062F><U0633><U0627><U0645><U0628><U0631>"
+% Persian does not have the 12-hour format
+am_pm   "";""
+t_fmt_ampm    ""
+%
+% Appropriate date representation (%x)
+%       "%Oy/%Om/%Od"
+d_fmt   "<U0025><U004F><U0079><U002F>/
+<U0025><U004F><U006D><U002F>/
+<U0025><U004F><U0064>"
+%
+% Appropriate time representation (%X)
+%       "%OH:%OM:%OS"
+t_fmt   "<U0025><U004F><U0048><U003A>/
+<U0025><U004F><U004D><U003A>/
+<U0025><U004F><U0053>"
+%
+% FIXME: need to add "HAMZA ABOVE" after January, February, May, July when used
+% before a year
+%
+% Appropriate date and time representation (%c)
+%       "<RLE>%A %Oe %B %Oy<ARABIC COMMA> %OH:%OM:%OS<PDF>"
+d_t_fmt "<U202B><U0025><U0041><U0020>/
+<U0025><U004F><U0065><U0020>/
+<U0025><U0042><U0020>/
+<U0025><U004F><U0079><U060C><U0020>/
+<U0025><U004F><U0048><U003A>/
+<U0025><U004F><U004D><U003A>/
+<U0025><U004F><U0053><U202C>"
+%
+% Appropriate date representation (date(1))
+%       "<RLE>%A %Oe %B %Oy<ARABIC COMMA> <SEEN><ALEF><AIN><TEH> %OH:%OM:%OS (%Z)<PDF>"
+date_fmt "<U202B><U0025><U0041><U0020>/
+<U0025><U004F><U0065><U0020>/
+<U0025><U0042><U0020>/
+<U0025><U004F><U0079><U060C><U0020>/
+<U0633><U0627><U0639><U062A><U0020>/
+<U0025><U004F><U0048><U003A>/
+<U0025><U004F><U004D><U003A>/
+<U0025><U004F><U0053><U0020>/
+<U0028><U0025><U005A><U0029><U202C>"
+first_weekday 7
+first_workday 7
+cal_direction 3
+END LC_TIME
+
+LC_MESSAGES
+% This is "^[yY<ALEF MADDA><BEH>Hf].*"
+yesexpr "<U005E><U005B><U0079><U0059><U0622><U0628><U0048><U0066><U005D><U002E><U002A>"
+% This is "^[nN<KHAH><NOON>ok].*"
+noexpr  "<U005E><U005B><U006E><U004E><U062E><U0646><U006F><U006B><U005D><U002E><U002A>"
+END LC_MESSAGES
+
+LC_PAPER
+height   297
+width    210
+END LC_PAPER
+
+LC_NAME
+name_gen    ""
+name_miss   "<U062E><U0627><U0646><U0645>"
+name_ms     "<U062E><U0627><U0646><U0645>"
+name_mrs    "<U062E><U0627><U0646><U0645>"
+name_mr     "<U0622><U0642><U0627><U06CC>"
+name_fmt    "<U0025><U0064><U0025><U0074><U0025><U0073><U0025><U0074>/
+<U0025><U0067><U0025><U0074><U0025><U006D><U0025><U0074><U0025><U0066>"
+END LC_NAME
+
+LC_ADDRESS
+postal_fmt    "<U0025><U0066><U0025><U004E><U0025><U0061><U0025><U004E>/
+<U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E><U0025><U0073>/
+<U0020><U0025><U0068><U0020><U0025><U0065><U0020><U0025><U0072><U0025>/
+<U004E><U0025><U007A><U0020><U0025><U0054><U0025>/
+<U004E><U0025><U0063><U0025><U004E>"
+country_name   "<U0627><U06CC><U0631><U0627><U0646>"
+country_ab2    "<U0049><U0052>"
+country_ab3    "<U0049><U0052><U004E>"
+country_num    364
+country_car    "<U0049><U0052>"
+country_isbn   "<U0039><U0036><U0034>"
+lang_name      "<U0641><U0627><U0631><U0633><U06CC>"
+lang_ab        "<U0066><U0061>"
+lang_term      "<U0066><U0061><U0073>"
+lang_lib       "<U0070><U0065><U0072>"
+END LC_ADDRESS
+
+LC_TELEPHONE
+tel_int_fmt    "<U202A><U002B><U0025><U0063><U0020><U0025><U0061><U0020>/
+<U0025><U006C><U202C>"
+tel_dom_fmt    "<U202A><U0025><U0041><U2012><U0025><U006C><U202C>"
+int_select     "<U0030><U0030>"
+int_prefix     "<U0039><U0038>"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+measurement    1
+END LC_MEASUREMENT

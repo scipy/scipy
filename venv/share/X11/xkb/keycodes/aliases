@@ -1,0 +1,99 @@
+
+// keycode aliases for phonetic keyboard maps
+
+default
+xkb_keycodes "qwerty" {
+
+   alias <LatQ> = <AD01>;
+   alias <LatW> = <AD02>;
+   alias <LatE> = <AD03>;
+   alias <LatR> = <AD04>;
+   alias <LatT> = <AD05>;
+   alias <LatY> = <AD06>;
+   alias <LatU> = <AD07>;
+   alias <LatI> = <AD08>;
+   alias <LatO> = <AD09>;
+   alias <LatP> = <AD10>;
+
+   alias <LatA> = <AC01>;
+   alias <LatS> = <AC02>;
+   alias <LatD> = <AC03>;
+   alias <LatF> = <AC04>;
+   alias <LatG> = <AC05>;
+   alias <LatH> = <AC06>;
+   alias <LatJ> = <AC07>;
+   alias <LatK> = <AC08>;
+   alias <LatL> = <AC09>;
+
+   alias <LatZ> = <AB01>;
+   alias <LatX> = <AB02>;
+   alias <LatC> = <AB03>;
+   alias <LatV> = <AB04>;
+   alias <LatB> = <AB05>;
+   alias <LatN> = <AB06>;
+   alias <LatM> = <AB07>;
+};
+
+xkb_keycodes "azerty" {
+
+   alias <LatA> = <AD01>;
+   alias <LatZ> = <AD02>;
+   alias <LatE> = <AD03>;
+   alias <LatR> = <AD04>;
+   alias <LatT> = <AD05>;
+   alias <LatY> = <AD06>;
+   alias <LatU> = <AD07>;
+   alias <LatI> = <AD08>;
+   alias <LatO> = <AD09>;
+   alias <LatP> = <AD10>;
+
+   alias <LatQ> = <AC01>;
+   alias <LatS> = <AC02>;
+   alias <LatD> = <AC03>;
+   alias <LatF> = <AC04>;
+   alias <LatG> = <AC05>;
+   alias <LatH> = <AC06>;
+   alias <LatJ> = <AC07>;
+   alias <LatK> = <AC08>;
+   alias <LatL> = <AC09>;
+   alias <LatM> = <AC10>;
+
+   alias <LatW> = <AB01>;
+   alias <LatX> = <AB02>;
+   alias <LatC> = <AB03>;
+   alias <LatV> = <AB04>;
+   alias <LatB> = <AB05>;
+   alias <LatN> = <AB06>;
+};
+
+xkb_keycodes "qwertz" {
+
+   alias <LatQ> = <AD01>;
+   alias <LatW> = <AD02>;
+   alias <LatE> = <AD03>;
+   alias <LatR> = <AD04>;
+   alias <LatT> = <AD05>;
+   alias <LatZ> = <AD06>;
+   alias <LatU> = <AD07>;
+   alias <LatI> = <AD08>;
+   alias <LatO> = <AD09>;
+   alias <LatP> = <AD10>;
+
+   alias <LatA> = <AC01>;
+   alias <LatS> = <AC02>;
+   alias <LatD> = <AC03>;
+   alias <LatF> = <AC04>;
+   alias <LatG> = <AC05>;
+   alias <LatH> = <AC06>;
+   alias <LatJ> = <AC07>;
+   alias <LatK> = <AC08>;
+   alias <LatL> = <AC09>;
+
+   alias <LatY> = <AB01>;
+   alias <LatX> = <AB02>;
+   alias <LatC> = <AB03>;
+   alias <LatV> = <AB04>;
+   alias <LatB> = <AB05>;
+   alias <LatN> = <AB06>;
+   alias <LatM> = <AB07>;
+};

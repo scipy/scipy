@@ -1,0 +1,174 @@
+<?xml version="1.0"?>
+<!-- This file was automatically generated from C sources - DO NOT EDIT!
+To affect the contents of this file, edit the original C definitions,
+and/or use gtk-doc annotations.  -->
+<repository version="1.2"
+            xmlns="http://www.gtk.org/introspection/core/1.0"
+            xmlns:c="http://www.gtk.org/introspection/c/1.0"
+            xmlns:glib="http://www.gtk.org/introspection/glib/1.0">
+  <include name="Gst" version="1.0"/>
+  <include name="GstBase" version="1.0"/>
+  <include name="GstGL" version="1.0"/>
+  <include name="GstVideo" version="1.0"/>
+  <package name="gstreamer-gl-x11-1.0"/>
+  <c:include name="gst/gl/x11/x11.h"/>
+  <namespace name="GstGLX11"
+             version="1.0"
+             shared-library="libgstgl-1.0.so.0"
+             c:identifier-prefixes="Gst"
+             c:symbol-prefixes="gst">
+    <class name="GLDisplayX11"
+           c:symbol-prefix="gl_display_x11"
+           c:type="GstGLDisplayX11"
+           parent="GstGL.GLDisplay"
+           glib:type-name="GstGLDisplayX11"
+           glib:get-type="gst_gl_display_x11_get_type"
+           glib:type-struct="GLDisplayX11Class">
+      <doc xml:space="preserve"
+           filename="gst-libs/gst/gl/x11/gstgldisplay_x11.h"
+           line="45">the contents of a #GstGLDisplayX11 are private and should only be accessed
+through the provided API</doc>
+      <source-position filename="gst-libs/gst/gl/x11/gstgldisplay_x11.h"
+                       line="69"/>
+      <constructor name="new" c:identifier="gst_gl_display_x11_new">
+        <doc xml:space="preserve"
+             filename="gst-libs/gst/gl/x11/gstgldisplay_x11.c"
+             line="87">Create a new #GstGLDisplayX11 from the x11 display name.  See `XOpenDisplay`()
+for details on what is a valid name.</doc>
+        <source-position filename="gst-libs/gst/gl/x11/gstgldisplay_x11.h"
+                         line="72"/>
+        <return-value transfer-ownership="full" nullable="1">
+          <doc xml:space="preserve"
+               filename="gst-libs/gst/gl/x11/gstgldisplay_x11.c"
+               line="94">a new #GstGLDisplayX11 or %NULL</doc>
+          <type name="GLDisplayX11" c:type="GstGLDisplayX11*"/>
+        </return-value>
+        <parameters>
+          <parameter name="name"
+                     transfer-ownership="none"
+                     nullable="1"
+                     allow-none="1">
+            <doc xml:space="preserve"
+                 filename="gst-libs/gst/gl/x11/gstgldisplay_x11.c"
+                 line="89">a display name</doc>
+            <type name="utf8" c:type="const gchar*"/>
+          </parameter>
+        </parameters>
+      </constructor>
+      <constructor name="new_with_display"
+                   c:identifier="gst_gl_display_x11_new_with_display"
+                   introspectable="0">
+        <doc xml:space="preserve"
+             filename="gst-libs/gst/gl/x11/gstgldisplay_x11.c"
+             line="130">Creates a new display connection from a X11 Display.</doc>
+        <source-position filename="gst-libs/gst/gl/x11/gstgldisplay_x11.h"
+                         line="75"/>
+        <return-value transfer-ownership="full">
+          <doc xml:space="preserve"
+               filename="gst-libs/gst/gl/x11/gstgldisplay_x11.c"
+               line="136">a new #GstGLDisplayX11</doc>
+          <type name="GLDisplayX11" c:type="GstGLDisplayX11*"/>
+        </return-value>
+        <parameters>
+          <parameter name="display" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="gst-libs/gst/gl/x11/gstgldisplay_x11.c"
+                 line="132">an existing, x11 display</doc>
+            <type c:type="Display*"/>
+          </parameter>
+        </parameters>
+      </constructor>
+      <field name="parent" readable="0" private="1">
+        <type name="GstGL.GLDisplay" c:type="GstGLDisplay"/>
+      </field>
+      <field name="name" readable="0" private="1">
+        <type name="utf8" c:type="gchar*"/>
+      </field>
+      <field name="display" introspectable="0" readable="0" private="1">
+        <type c:type="Display*"/>
+      </field>
+      <field name="xcb_connection" introspectable="0" readable="0" private="1">
+        <type c:type="xcb_connection_t*"/>
+      </field>
+      <field name="foreign_display" readable="0" private="1">
+        <type name="gboolean" c:type="gboolean"/>
+      </field>
+      <field name="_padding" readable="0" private="1">
+        <array zero-terminated="0" fixed-size="4">
+          <type name="gpointer" c:type="gpointer"/>
+        </array>
+      </field>
+    </class>
+    <record name="GLDisplayX11Class"
+            c:type="GstGLDisplayX11Class"
+            glib:is-gtype-struct-for="GLDisplayX11">
+      <source-position filename="gst-libs/gst/gl/x11/gstgldisplay_x11.h"
+                       line="69"/>
+      <field name="object_class">
+        <type name="GstGL.GLDisplayClass" c:type="GstGLDisplayClass"/>
+      </field>
+      <field name="_padding">
+        <array zero-terminated="0" fixed-size="4">
+          <type name="gpointer" c:type="gpointer"/>
+        </array>
+      </field>
+    </record>
+    <function-macro name="GL_DISPLAY_X11"
+                    c:identifier="GST_GL_DISPLAY_X11"
+                    introspectable="0">
+      <source-position filename="gst-libs/gst/gl/x11/gstgldisplay_x11.h"
+                       line="36"/>
+      <parameters>
+        <parameter name="obj">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="GL_DISPLAY_X11_CAST"
+                    c:identifier="GST_GL_DISPLAY_X11_CAST"
+                    introspectable="0">
+      <source-position filename="gst-libs/gst/gl/x11/gstgldisplay_x11.h"
+                       line="40"/>
+      <parameters>
+        <parameter name="obj">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="GL_DISPLAY_X11_CLASS"
+                    c:identifier="GST_GL_DISPLAY_X11_CLASS"
+                    introspectable="0">
+      <source-position filename="gst-libs/gst/gl/x11/gstgldisplay_x11.h"
+                       line="37"/>
+      <parameters>
+        <parameter name="klass">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="IS_GL_DISPLAY_X11"
+                    c:identifier="GST_IS_GL_DISPLAY_X11"
+                    introspectable="0">
+      <source-position filename="gst-libs/gst/gl/x11/gstgldisplay_x11.h"
+                       line="38"/>
+      <parameters>
+        <parameter name="obj">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="IS_GL_DISPLAY_X11_CLASS"
+                    c:identifier="GST_IS_GL_DISPLAY_X11_CLASS"
+                    introspectable="0">
+      <source-position filename="gst-libs/gst/gl/x11/gstgldisplay_x11.h"
+                       line="39"/>
+      <parameters>
+        <parameter name="klass">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <docsection name="gstgldisplay_x11">
+      <doc xml:space="preserve"
+           filename="gst-libs/gst/gl/x11/gstgldisplay_x11.c"
+           line="21">#GstGLDisplayX11 represents a connection to an X11 `Display` handle created
+internally (gst_gl_display_x11_new()) or wrapped by the application
+(gst_gl_display_x11_new_with_display())</doc>
+    </docsection>
+  </namespace>
+</repository>

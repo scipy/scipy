@@ -1,0 +1,5 @@
+module QtQuick.VirtualKeyboard.Settings
+plugin qtquickvirtualkeyboardsettingsplugin
+classname QtQuickVirtualKeyboardSettingsPlugin
+typeinfo plugins.qmltypes
+depends QtQuick 2.0

@@ -1,0 +1,9 @@
+CONFIG += qlalr
+INCLUDEPATH *= $$QT.repparser.includes
+
+for (include, INCLUDEPATH) {
+    exists($${include}/parser.g) {
+        msvc: QMAKE_CXXFLAGS += /wd4129
+        QLALRSOURCES += $${include}/parser.g
+    }
+}

@@ -1,0 +1,27 @@
+# translation of hello-tcl-tk-0.15-pre5.po to Indonesian
+# Copyright (C) 2006 Yoyodyne, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+#
+# Tedi Heriyanto <tedi_heriyanto@yahoo.com>, 2006.
+msgid ""
+msgstr ""
+"Project-Id-Version: hello-tcl-tk-0.15-pre5\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"PO-Revision-Date: 2006-09-27 20:19+0700\n"
+"Last-Translator: Tedi Heriyanto <tedi_heriyanto@yahoo.com>\n"
+"Language-Team: Indonesian <translation-team-id@lists.sourceforge.net>\n"
+"Language: id\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+"X-Generator: KBabel 1.11.2\n"
+
+#: hello.tcl:13
+msgid "Hello, world!"
+msgstr "Hello, world!"
+
+#: hello.tcl:16
+#, tcl-format
+msgid "This program is running as process number %d."
+msgstr "Program ini berjalan sebagai proses nomor %d"

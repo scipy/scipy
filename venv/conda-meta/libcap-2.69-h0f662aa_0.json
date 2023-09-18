@@ -1,0 +1,789 @@
+{
+  "build": "h0f662aa_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [],
+  "depends": [
+    "attr >=2.5.1,<2.6.0a0",
+    "libgcc-ng >=12"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/libcap-2.69-h0f662aa_0",
+  "features": "",
+  "files": [
+    "include/sys/capability.h",
+    "include/sys/psx_syscall.h",
+    "lib/libcap.a",
+    "lib/libcap.so",
+    "lib/libcap.so.2",
+    "lib/libcap.so.2.69",
+    "lib/libpsx.a",
+    "lib/libpsx.so",
+    "lib/libpsx.so.2",
+    "lib/libpsx.so.2.69",
+    "lib/pkgconfig/libcap.pc",
+    "lib/pkgconfig/libpsx.pc",
+    "sbin/capsh",
+    "sbin/getcap",
+    "sbin/getpcaps",
+    "sbin/setcap",
+    "share/man/man1/capsh.1",
+    "share/man/man3/__psx_syscall.3",
+    "share/man/man3/cap_clear.3",
+    "share/man/man3/cap_clear_flag.3",
+    "share/man/man3/cap_compare.3",
+    "share/man/man3/cap_copy_ext.3",
+    "share/man/man3/cap_copy_int.3",
+    "share/man/man3/cap_copy_int_check.3",
+    "share/man/man3/cap_drop_bound.3",
+    "share/man/man3/cap_dup.3",
+    "share/man/man3/cap_fill.3",
+    "share/man/man3/cap_fill_flag.3",
+    "share/man/man3/cap_free.3",
+    "share/man/man3/cap_from_name.3",
+    "share/man/man3/cap_from_text.3",
+    "share/man/man3/cap_func_launcher.3",
+    "share/man/man3/cap_get_bound.3",
+    "share/man/man3/cap_get_fd.3",
+    "share/man/man3/cap_get_file.3",
+    "share/man/man3/cap_get_flag.3",
+    "share/man/man3/cap_get_mode.3",
+    "share/man/man3/cap_get_nsowner.3",
+    "share/man/man3/cap_get_pid.3",
+    "share/man/man3/cap_get_proc.3",
+    "share/man/man3/cap_get_secbits.3",
+    "share/man/man3/cap_iab.3",
+    "share/man/man3/cap_iab_compare.3",
+    "share/man/man3/cap_iab_dup.3",
+    "share/man/man3/cap_iab_fill.3",
+    "share/man/man3/cap_iab_from_text.3",
+    "share/man/man3/cap_iab_get_pid.3",
+    "share/man/man3/cap_iab_get_proc.3",
+    "share/man/man3/cap_iab_get_vector.3",
+    "share/man/man3/cap_iab_init.3",
+    "share/man/man3/cap_iab_set_proc.3",
+    "share/man/man3/cap_iab_set_vector.3",
+    "share/man/man3/cap_iab_to_text.3",
+    "share/man/man3/cap_init.3",
+    "share/man/man3/cap_launch.3",
+    "share/man/man3/cap_launcher_callback.3",
+    "share/man/man3/cap_launcher_set_chroot.3",
+    "share/man/man3/cap_launcher_set_iab.3",
+    "share/man/man3/cap_launcher_set_mode.3",
+    "share/man/man3/cap_launcher_setgroups.3",
+    "share/man/man3/cap_launcher_setuid.3",
+    "share/man/man3/cap_max_bits.3",
+    "share/man/man3/cap_mode.3",
+    "share/man/man3/cap_mode_name.3",
+    "share/man/man3/cap_new_launcher.3",
+    "share/man/man3/cap_prctl.3",
+    "share/man/man3/cap_prctlw.3",
+    "share/man/man3/cap_proc_root.3",
+    "share/man/man3/cap_set_fd.3",
+    "share/man/man3/cap_set_file.3",
+    "share/man/man3/cap_set_flag.3",
+    "share/man/man3/cap_set_mode.3",
+    "share/man/man3/cap_set_nsowner.3",
+    "share/man/man3/cap_set_proc.3",
+    "share/man/man3/cap_set_secbits.3",
+    "share/man/man3/cap_set_syscall.3",
+    "share/man/man3/cap_setgroups.3",
+    "share/man/man3/cap_setuid.3",
+    "share/man/man3/cap_size.3",
+    "share/man/man3/cap_to_name.3",
+    "share/man/man3/cap_to_text.3",
+    "share/man/man3/capgetp.3",
+    "share/man/man3/capsetp.3",
+    "share/man/man3/libcap.3",
+    "share/man/man3/libpsx.3",
+    "share/man/man3/psx_load_syscalls.3",
+    "share/man/man3/psx_set_sensitivity.3",
+    "share/man/man3/psx_syscall.3",
+    "share/man/man3/psx_syscall3.3",
+    "share/man/man3/psx_syscall6.3",
+    "share/man/man8/captree.8",
+    "share/man/man8/getcap.8",
+    "share/man/man8/getpcaps.8",
+    "share/man/man8/setcap.8"
+  ],
+  "fn": "libcap-2.69-h0f662aa_0.conda",
+  "license": "BSD-3-Clause",
+  "license_family": "BSD",
+  "link": {
+    "source": "/opt/conda/pkgs/libcap-2.69-h0f662aa_0",
+    "type": 1
+  },
+  "md5": "25cb5999faa414e5ccb2c1388f62d3d5",
+  "name": "libcap",
+  "package_tarball_full_path": "/opt/conda/pkgs/libcap-2.69-h0f662aa_0.conda",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "include/sys/capability.h",
+        "path_type": "hardlink",
+        "sha256": "6917b74df2788303245bdcf4017bd7b0f790974f78428554eae8acaa2e1dbbf2",
+        "sha256_in_prefix": "6917b74df2788303245bdcf4017bd7b0f790974f78428554eae8acaa2e1dbbf2",
+        "size_in_bytes": 8681
+      },
+      {
+        "_path": "include/sys/psx_syscall.h",
+        "path_type": "hardlink",
+        "sha256": "a62fb0c469fea23acf8f3af912280dfaaf6d7aeed9595450a78e3742edb4d25f",
+        "sha256_in_prefix": "a62fb0c469fea23acf8f3af912280dfaaf6d7aeed9595450a78e3742edb4d25f",
+        "size_in_bytes": 3511
+      },
+      {
+        "_path": "lib/libcap.a",
+        "path_type": "hardlink",
+        "sha256": "a0da92dcea74e28c5b23b30323b715aa1744254dac2812cd897430035d96f6a7",
+        "sha256_in_prefix": "a0da92dcea74e28c5b23b30323b715aa1744254dac2812cd897430035d96f6a7",
+        "size_in_bytes": 69786
+      },
+      {
+        "_path": "lib/libcap.so",
+        "path_type": "softlink",
+        "sha256": "5d2a940808f16179c76b7853db2a0ae87c0ed04a3305180bdf3ac65c243f1c32",
+        "size_in_bytes": 52496
+      },
+      {
+        "_path": "lib/libcap.so.2",
+        "path_type": "softlink",
+        "sha256": "5d2a940808f16179c76b7853db2a0ae87c0ed04a3305180bdf3ac65c243f1c32",
+        "size_in_bytes": 52496
+      },
+      {
+        "_path": "lib/libcap.so.2.69",
+        "path_type": "hardlink",
+        "sha256": "5d2a940808f16179c76b7853db2a0ae87c0ed04a3305180bdf3ac65c243f1c32",
+        "sha256_in_prefix": "5d2a940808f16179c76b7853db2a0ae87c0ed04a3305180bdf3ac65c243f1c32",
+        "size_in_bytes": 52496
+      },
+      {
+        "_path": "lib/libpsx.a",
+        "path_type": "hardlink",
+        "sha256": "9eab41e24ba4a34a9ccc9b4d8d115d0f061b36271c102add48ed86df8c02f181",
+        "sha256_in_prefix": "9eab41e24ba4a34a9ccc9b4d8d115d0f061b36271c102add48ed86df8c02f181",
+        "size_in_bytes": 21996
+      },
+      {
+        "_path": "lib/libpsx.so",
+        "path_type": "softlink",
+        "sha256": "b89e0c25bb7f9ca9248f5e138687877dcd9537abd4cf280aa5b289251254c709",
+        "size_in_bytes": 25688
+      },
+      {
+        "_path": "lib/libpsx.so.2",
+        "path_type": "softlink",
+        "sha256": "b89e0c25bb7f9ca9248f5e138687877dcd9537abd4cf280aa5b289251254c709",
+        "size_in_bytes": 25688
+      },
+      {
+        "_path": "lib/libpsx.so.2.69",
+        "path_type": "hardlink",
+        "sha256": "b89e0c25bb7f9ca9248f5e138687877dcd9537abd4cf280aa5b289251254c709",
+        "sha256_in_prefix": "b89e0c25bb7f9ca9248f5e138687877dcd9537abd4cf280aa5b289251254c709",
+        "size_in_bytes": 25688
+      },
+      {
+        "_path": "lib/pkgconfig/libcap.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/libcap_1684162302612/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac",
+        "sha256": "c82ceb5699bf8f01d0a71bc1cabf24236fb0017328106070cfe314c27c86379e",
+        "sha256_in_prefix": "81c46d9f6c69a3b52c88b5be98fdb84726e8a8fdd4391a5394b53a1585cb9ce4",
+        "size_in_bytes": 1213
+      },
+      {
+        "_path": "lib/pkgconfig/libpsx.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/libcap_1684162302612/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac",
+        "sha256": "2804f847f2836aca726678469391da9363ddf9c2369830aa8c23129cee7b7b65",
+        "sha256_in_prefix": "4087794dbbaed45a466c15d85f870e2461bc748425fe3766fe7e4101f830554f",
+        "size_in_bytes": 1258
+      },
+      {
+        "_path": "sbin/capsh",
+        "path_type": "hardlink",
+        "sha256": "0b3eac08a7a3bab6f8923860b0c53c5e4cba4088977e3349e2a963a12b18bac3",
+        "sha256_in_prefix": "0b3eac08a7a3bab6f8923860b0c53c5e4cba4088977e3349e2a963a12b18bac3",
+        "size_in_bytes": 61272
+      },
+      {
+        "_path": "sbin/getcap",
+        "path_type": "hardlink",
+        "sha256": "8881bc2f62ac688a912a44ec8887f8bb677bb6c12c9d5eb5ace196b469a7578c",
+        "sha256_in_prefix": "8881bc2f62ac688a912a44ec8887f8bb677bb6c12c9d5eb5ace196b469a7578c",
+        "size_in_bytes": 16736
+      },
+      {
+        "_path": "sbin/getpcaps",
+        "path_type": "hardlink",
+        "sha256": "4ebfd91caa2d9d0f5f414b108cf865084576df7d315b06180b5c0d9ea2e8fbe2",
+        "sha256_in_prefix": "4ebfd91caa2d9d0f5f414b108cf865084576df7d315b06180b5c0d9ea2e8fbe2",
+        "size_in_bytes": 16672
+      },
+      {
+        "_path": "sbin/setcap",
+        "path_type": "hardlink",
+        "sha256": "87016250ba545281ba827ed45dcbde3f7f810d89aede653829b00a95ebf63b55",
+        "sha256_in_prefix": "87016250ba545281ba827ed45dcbde3f7f810d89aede653829b00a95ebf63b55",
+        "size_in_bytes": 16840
+      },
+      {
+        "_path": "share/man/man1/capsh.1",
+        "path_type": "hardlink",
+        "sha256": "193b9ab3d391c19bafbb077e02fc1326a476ab283bf88435e2820c9e01e2f391",
+        "sha256_in_prefix": "193b9ab3d391c19bafbb077e02fc1326a476ab283bf88435e2820c9e01e2f391",
+        "size_in_bytes": 10124
+      },
+      {
+        "_path": "share/man/man3/__psx_syscall.3",
+        "path_type": "hardlink",
+        "sha256": "b4de4f0a7e872526e5e85d414ac2ce6753292918633e24604ffa32b08536467f",
+        "sha256_in_prefix": "b4de4f0a7e872526e5e85d414ac2ce6753292918633e24604ffa32b08536467f",
+        "size_in_bytes": 18
+      },
+      {
+        "_path": "share/man/man3/cap_clear.3",
+        "path_type": "hardlink",
+        "sha256": "f08d625b18f88b541b801b0978584812dc99317121ba6e6733d10039e46f85cd",
+        "sha256_in_prefix": "f08d625b18f88b541b801b0978584812dc99317121ba6e6733d10039e46f85cd",
+        "size_in_bytes": 4301
+      },
+      {
+        "_path": "share/man/man3/cap_clear_flag.3",
+        "path_type": "hardlink",
+        "sha256": "1a338ab2db0d55db416d7749d9c490850d17088c1e2da68ab3d8f81c4ee3ce8c",
+        "sha256_in_prefix": "1a338ab2db0d55db416d7749d9c490850d17088c1e2da68ab3d8f81c4ee3ce8c",
+        "size_in_bytes": 21
+      },
+      {
+        "_path": "share/man/man3/cap_compare.3",
+        "path_type": "hardlink",
+        "sha256": "1a338ab2db0d55db416d7749d9c490850d17088c1e2da68ab3d8f81c4ee3ce8c",
+        "sha256_in_prefix": "1a338ab2db0d55db416d7749d9c490850d17088c1e2da68ab3d8f81c4ee3ce8c",
+        "size_in_bytes": 21
+      },
+      {
+        "_path": "share/man/man3/cap_copy_ext.3",
+        "path_type": "hardlink",
+        "sha256": "1d4996d8071fa1bf9c39465b6dbc679da9c240fa66f56c81dda63c1fdc29180d",
+        "sha256_in_prefix": "1d4996d8071fa1bf9c39465b6dbc679da9c240fa66f56c81dda63c1fdc29180d",
+        "size_in_bytes": 3770
+      },
+      {
+        "_path": "share/man/man3/cap_copy_int.3",
+        "path_type": "hardlink",
+        "sha256": "835a1fe03eb16a0de78da4e5752ed497427bb82dbc6f81a14b78d4d2bbafe54c",
+        "sha256_in_prefix": "835a1fe03eb16a0de78da4e5752ed497427bb82dbc6f81a14b78d4d2bbafe54c",
+        "size_in_bytes": 24
+      },
+      {
+        "_path": "share/man/man3/cap_copy_int_check.3",
+        "path_type": "hardlink",
+        "sha256": "835a1fe03eb16a0de78da4e5752ed497427bb82dbc6f81a14b78d4d2bbafe54c",
+        "sha256_in_prefix": "835a1fe03eb16a0de78da4e5752ed497427bb82dbc6f81a14b78d4d2bbafe54c",
+        "size_in_bytes": 24
+      },
+      {
+        "_path": "share/man/man3/cap_drop_bound.3",
+        "path_type": "hardlink",
+        "sha256": "f6f629a133f259e7e0a76610c7e8499f67c0e01eaa12a138243acaea5c3efd62",
+        "sha256_in_prefix": "f6f629a133f259e7e0a76610c7e8499f67c0e01eaa12a138243acaea5c3efd62",
+        "size_in_bytes": 24
+      },
+      {
+        "_path": "share/man/man3/cap_dup.3",
+        "path_type": "hardlink",
+        "sha256": "cd576e552117c9f8771406ea642598d21715f001c6c2483b37136c7dfd39436f",
+        "sha256_in_prefix": "cd576e552117c9f8771406ea642598d21715f001c6c2483b37136c7dfd39436f",
+        "size_in_bytes": 20
+      },
+      {
+        "_path": "share/man/man3/cap_fill.3",
+        "path_type": "hardlink",
+        "sha256": "1a338ab2db0d55db416d7749d9c490850d17088c1e2da68ab3d8f81c4ee3ce8c",
+        "sha256_in_prefix": "1a338ab2db0d55db416d7749d9c490850d17088c1e2da68ab3d8f81c4ee3ce8c",
+        "size_in_bytes": 21
+      },
+      {
+        "_path": "share/man/man3/cap_fill_flag.3",
+        "path_type": "hardlink",
+        "sha256": "1a338ab2db0d55db416d7749d9c490850d17088c1e2da68ab3d8f81c4ee3ce8c",
+        "sha256_in_prefix": "1a338ab2db0d55db416d7749d9c490850d17088c1e2da68ab3d8f81c4ee3ce8c",
+        "size_in_bytes": 21
+      },
+      {
+        "_path": "share/man/man3/cap_free.3",
+        "path_type": "hardlink",
+        "sha256": "cd576e552117c9f8771406ea642598d21715f001c6c2483b37136c7dfd39436f",
+        "sha256_in_prefix": "cd576e552117c9f8771406ea642598d21715f001c6c2483b37136c7dfd39436f",
+        "size_in_bytes": 20
+      },
+      {
+        "_path": "share/man/man3/cap_from_name.3",
+        "path_type": "hardlink",
+        "sha256": "edf6e62948ba50424ec436dd47f4dd28e84fcb178900e9cec8bc87303467affe",
+        "sha256_in_prefix": "edf6e62948ba50424ec436dd47f4dd28e84fcb178900e9cec8bc87303467affe",
+        "size_in_bytes": 25
+      },
+      {
+        "_path": "share/man/man3/cap_from_text.3",
+        "path_type": "hardlink",
+        "sha256": "5a6cf35ad2bbf675fe1b6c8f2182e336e07f1d302cbbf94df52af4c4e22494f8",
+        "sha256_in_prefix": "5a6cf35ad2bbf675fe1b6c8f2182e336e07f1d302cbbf94df52af4c4e22494f8",
+        "size_in_bytes": 7382
+      },
+      {
+        "_path": "share/man/man3/cap_func_launcher.3",
+        "path_type": "hardlink",
+        "sha256": "3937e84383166d92fe263c5088b150523d42d23618592ce4371ee145ad4d2ebe",
+        "sha256_in_prefix": "3937e84383166d92fe263c5088b150523d42d23618592ce4371ee145ad4d2ebe",
+        "size_in_bytes": 22
+      },
+      {
+        "_path": "share/man/man3/cap_get_bound.3",
+        "path_type": "hardlink",
+        "sha256": "f6f629a133f259e7e0a76610c7e8499f67c0e01eaa12a138243acaea5c3efd62",
+        "sha256_in_prefix": "f6f629a133f259e7e0a76610c7e8499f67c0e01eaa12a138243acaea5c3efd62",
+        "size_in_bytes": 24
+      },
+      {
+        "_path": "share/man/man3/cap_get_fd.3",
+        "path_type": "hardlink",
+        "sha256": "7f470a792e3460d0e8b0539c91db384a31698ce52c0431b6ac7143556950e380",
+        "sha256_in_prefix": "7f470a792e3460d0e8b0539c91db384a31698ce52c0431b6ac7143556950e380",
+        "size_in_bytes": 24
+      },
+      {
+        "_path": "share/man/man3/cap_get_file.3",
+        "path_type": "hardlink",
+        "sha256": "009db1b256ff978564de534194def013bc11e3afd4337a9b7d95c31f912689c1",
+        "sha256_in_prefix": "009db1b256ff978564de534194def013bc11e3afd4337a9b7d95c31f912689c1",
+        "size_in_bytes": 3940
+      },
+      {
+        "_path": "share/man/man3/cap_get_flag.3",
+        "path_type": "hardlink",
+        "sha256": "1a338ab2db0d55db416d7749d9c490850d17088c1e2da68ab3d8f81c4ee3ce8c",
+        "sha256_in_prefix": "1a338ab2db0d55db416d7749d9c490850d17088c1e2da68ab3d8f81c4ee3ce8c",
+        "size_in_bytes": 21
+      },
+      {
+        "_path": "share/man/man3/cap_get_mode.3",
+        "path_type": "hardlink",
+        "sha256": "f6f629a133f259e7e0a76610c7e8499f67c0e01eaa12a138243acaea5c3efd62",
+        "sha256_in_prefix": "f6f629a133f259e7e0a76610c7e8499f67c0e01eaa12a138243acaea5c3efd62",
+        "size_in_bytes": 24
+      },
+      {
+        "_path": "share/man/man3/cap_get_nsowner.3",
+        "path_type": "hardlink",
+        "sha256": "7f470a792e3460d0e8b0539c91db384a31698ce52c0431b6ac7143556950e380",
+        "sha256_in_prefix": "7f470a792e3460d0e8b0539c91db384a31698ce52c0431b6ac7143556950e380",
+        "size_in_bytes": 24
+      },
+      {
+        "_path": "share/man/man3/cap_get_pid.3",
+        "path_type": "hardlink",
+        "sha256": "f6f629a133f259e7e0a76610c7e8499f67c0e01eaa12a138243acaea5c3efd62",
+        "sha256_in_prefix": "f6f629a133f259e7e0a76610c7e8499f67c0e01eaa12a138243acaea5c3efd62",
+        "size_in_bytes": 24
+      },
+      {
+        "_path": "share/man/man3/cap_get_proc.3",
+        "path_type": "hardlink",
+        "sha256": "cf8ca27adf3ac7bce0ddb8f860cb5fa4ac0e735a19db50300524ed93818ff0e4",
+        "sha256_in_prefix": "cf8ca27adf3ac7bce0ddb8f860cb5fa4ac0e735a19db50300524ed93818ff0e4",
+        "size_in_bytes": 12761
+      },
+      {
+        "_path": "share/man/man3/cap_get_secbits.3",
+        "path_type": "hardlink",
+        "sha256": "f6f629a133f259e7e0a76610c7e8499f67c0e01eaa12a138243acaea5c3efd62",
+        "sha256_in_prefix": "f6f629a133f259e7e0a76610c7e8499f67c0e01eaa12a138243acaea5c3efd62",
+        "size_in_bytes": 24
+      },
+      {
+        "_path": "share/man/man3/cap_iab.3",
+        "path_type": "hardlink",
+        "sha256": "7e5a84f0ceb604a16a6e138e46cac702702e80bf3ea4f4d20f43651f0765c6be",
+        "sha256_in_prefix": "7e5a84f0ceb604a16a6e138e46cac702702e80bf3ea4f4d20f43651f0765c6be",
+        "size_in_bytes": 7917
+      },
+      {
+        "_path": "share/man/man3/cap_iab_compare.3",
+        "path_type": "hardlink",
+        "sha256": "9651e9885cd0b3098e5290d0982a5e3f70bf3a147b9dbf432a379c89235285f0",
+        "sha256_in_prefix": "9651e9885cd0b3098e5290d0982a5e3f70bf3a147b9dbf432a379c89235285f0",
+        "size_in_bytes": 19
+      },
+      {
+        "_path": "share/man/man3/cap_iab_dup.3",
+        "path_type": "hardlink",
+        "sha256": "9651e9885cd0b3098e5290d0982a5e3f70bf3a147b9dbf432a379c89235285f0",
+        "sha256_in_prefix": "9651e9885cd0b3098e5290d0982a5e3f70bf3a147b9dbf432a379c89235285f0",
+        "size_in_bytes": 19
+      },
+      {
+        "_path": "share/man/man3/cap_iab_fill.3",
+        "path_type": "hardlink",
+        "sha256": "9651e9885cd0b3098e5290d0982a5e3f70bf3a147b9dbf432a379c89235285f0",
+        "sha256_in_prefix": "9651e9885cd0b3098e5290d0982a5e3f70bf3a147b9dbf432a379c89235285f0",
+        "size_in_bytes": 19
+      },
+      {
+        "_path": "share/man/man3/cap_iab_from_text.3",
+        "path_type": "hardlink",
+        "sha256": "9651e9885cd0b3098e5290d0982a5e3f70bf3a147b9dbf432a379c89235285f0",
+        "sha256_in_prefix": "9651e9885cd0b3098e5290d0982a5e3f70bf3a147b9dbf432a379c89235285f0",
+        "size_in_bytes": 19
+      },
+      {
+        "_path": "share/man/man3/cap_iab_get_pid.3",
+        "path_type": "hardlink",
+        "sha256": "9651e9885cd0b3098e5290d0982a5e3f70bf3a147b9dbf432a379c89235285f0",
+        "sha256_in_prefix": "9651e9885cd0b3098e5290d0982a5e3f70bf3a147b9dbf432a379c89235285f0",
+        "size_in_bytes": 19
+      },
+      {
+        "_path": "share/man/man3/cap_iab_get_proc.3",
+        "path_type": "hardlink",
+        "sha256": "9651e9885cd0b3098e5290d0982a5e3f70bf3a147b9dbf432a379c89235285f0",
+        "sha256_in_prefix": "9651e9885cd0b3098e5290d0982a5e3f70bf3a147b9dbf432a379c89235285f0",
+        "size_in_bytes": 19
+      },
+      {
+        "_path": "share/man/man3/cap_iab_get_vector.3",
+        "path_type": "hardlink",
+        "sha256": "9651e9885cd0b3098e5290d0982a5e3f70bf3a147b9dbf432a379c89235285f0",
+        "sha256_in_prefix": "9651e9885cd0b3098e5290d0982a5e3f70bf3a147b9dbf432a379c89235285f0",
+        "size_in_bytes": 19
+      },
+      {
+        "_path": "share/man/man3/cap_iab_init.3",
+        "path_type": "hardlink",
+        "sha256": "9651e9885cd0b3098e5290d0982a5e3f70bf3a147b9dbf432a379c89235285f0",
+        "sha256_in_prefix": "9651e9885cd0b3098e5290d0982a5e3f70bf3a147b9dbf432a379c89235285f0",
+        "size_in_bytes": 19
+      },
+      {
+        "_path": "share/man/man3/cap_iab_set_proc.3",
+        "path_type": "hardlink",
+        "sha256": "9651e9885cd0b3098e5290d0982a5e3f70bf3a147b9dbf432a379c89235285f0",
+        "sha256_in_prefix": "9651e9885cd0b3098e5290d0982a5e3f70bf3a147b9dbf432a379c89235285f0",
+        "size_in_bytes": 19
+      },
+      {
+        "_path": "share/man/man3/cap_iab_set_vector.3",
+        "path_type": "hardlink",
+        "sha256": "9651e9885cd0b3098e5290d0982a5e3f70bf3a147b9dbf432a379c89235285f0",
+        "sha256_in_prefix": "9651e9885cd0b3098e5290d0982a5e3f70bf3a147b9dbf432a379c89235285f0",
+        "size_in_bytes": 19
+      },
+      {
+        "_path": "share/man/man3/cap_iab_to_text.3",
+        "path_type": "hardlink",
+        "sha256": "9651e9885cd0b3098e5290d0982a5e3f70bf3a147b9dbf432a379c89235285f0",
+        "sha256_in_prefix": "9651e9885cd0b3098e5290d0982a5e3f70bf3a147b9dbf432a379c89235285f0",
+        "size_in_bytes": 19
+      },
+      {
+        "_path": "share/man/man3/cap_init.3",
+        "path_type": "hardlink",
+        "sha256": "72d502f0ef1b460975b8b8e4557b44f1480fde7b3e2782f7dff37c3a78121e40",
+        "sha256_in_prefix": "72d502f0ef1b460975b8b8e4557b44f1480fde7b3e2782f7dff37c3a78121e40",
+        "size_in_bytes": 2354
+      },
+      {
+        "_path": "share/man/man3/cap_launch.3",
+        "path_type": "hardlink",
+        "sha256": "0cfaf431872e6b9ed2cae6fc612d23f2e3c14f739ad4288d28cba76dcb6bdf24",
+        "sha256_in_prefix": "0cfaf431872e6b9ed2cae6fc612d23f2e3c14f739ad4288d28cba76dcb6bdf24",
+        "size_in_bytes": 6700
+      },
+      {
+        "_path": "share/man/man3/cap_launcher_callback.3",
+        "path_type": "hardlink",
+        "sha256": "3937e84383166d92fe263c5088b150523d42d23618592ce4371ee145ad4d2ebe",
+        "sha256_in_prefix": "3937e84383166d92fe263c5088b150523d42d23618592ce4371ee145ad4d2ebe",
+        "size_in_bytes": 22
+      },
+      {
+        "_path": "share/man/man3/cap_launcher_set_chroot.3",
+        "path_type": "hardlink",
+        "sha256": "3937e84383166d92fe263c5088b150523d42d23618592ce4371ee145ad4d2ebe",
+        "sha256_in_prefix": "3937e84383166d92fe263c5088b150523d42d23618592ce4371ee145ad4d2ebe",
+        "size_in_bytes": 22
+      },
+      {
+        "_path": "share/man/man3/cap_launcher_set_iab.3",
+        "path_type": "hardlink",
+        "sha256": "3937e84383166d92fe263c5088b150523d42d23618592ce4371ee145ad4d2ebe",
+        "sha256_in_prefix": "3937e84383166d92fe263c5088b150523d42d23618592ce4371ee145ad4d2ebe",
+        "size_in_bytes": 22
+      },
+      {
+        "_path": "share/man/man3/cap_launcher_set_mode.3",
+        "path_type": "hardlink",
+        "sha256": "3937e84383166d92fe263c5088b150523d42d23618592ce4371ee145ad4d2ebe",
+        "sha256_in_prefix": "3937e84383166d92fe263c5088b150523d42d23618592ce4371ee145ad4d2ebe",
+        "size_in_bytes": 22
+      },
+      {
+        "_path": "share/man/man3/cap_launcher_setgroups.3",
+        "path_type": "hardlink",
+        "sha256": "3937e84383166d92fe263c5088b150523d42d23618592ce4371ee145ad4d2ebe",
+        "sha256_in_prefix": "3937e84383166d92fe263c5088b150523d42d23618592ce4371ee145ad4d2ebe",
+        "size_in_bytes": 22
+      },
+      {
+        "_path": "share/man/man3/cap_launcher_setuid.3",
+        "path_type": "hardlink",
+        "sha256": "3937e84383166d92fe263c5088b150523d42d23618592ce4371ee145ad4d2ebe",
+        "sha256_in_prefix": "3937e84383166d92fe263c5088b150523d42d23618592ce4371ee145ad4d2ebe",
+        "size_in_bytes": 22
+      },
+      {
+        "_path": "share/man/man3/cap_max_bits.3",
+        "path_type": "hardlink",
+        "sha256": "1a338ab2db0d55db416d7749d9c490850d17088c1e2da68ab3d8f81c4ee3ce8c",
+        "sha256_in_prefix": "1a338ab2db0d55db416d7749d9c490850d17088c1e2da68ab3d8f81c4ee3ce8c",
+        "size_in_bytes": 21
+      },
+      {
+        "_path": "share/man/man3/cap_mode.3",
+        "path_type": "hardlink",
+        "sha256": "f6f629a133f259e7e0a76610c7e8499f67c0e01eaa12a138243acaea5c3efd62",
+        "sha256_in_prefix": "f6f629a133f259e7e0a76610c7e8499f67c0e01eaa12a138243acaea5c3efd62",
+        "size_in_bytes": 24
+      },
+      {
+        "_path": "share/man/man3/cap_mode_name.3",
+        "path_type": "hardlink",
+        "sha256": "f6f629a133f259e7e0a76610c7e8499f67c0e01eaa12a138243acaea5c3efd62",
+        "sha256_in_prefix": "f6f629a133f259e7e0a76610c7e8499f67c0e01eaa12a138243acaea5c3efd62",
+        "size_in_bytes": 24
+      },
+      {
+        "_path": "share/man/man3/cap_new_launcher.3",
+        "path_type": "hardlink",
+        "sha256": "3937e84383166d92fe263c5088b150523d42d23618592ce4371ee145ad4d2ebe",
+        "sha256_in_prefix": "3937e84383166d92fe263c5088b150523d42d23618592ce4371ee145ad4d2ebe",
+        "size_in_bytes": 22
+      },
+      {
+        "_path": "share/man/man3/cap_prctl.3",
+        "path_type": "hardlink",
+        "sha256": "f6f629a133f259e7e0a76610c7e8499f67c0e01eaa12a138243acaea5c3efd62",
+        "sha256_in_prefix": "f6f629a133f259e7e0a76610c7e8499f67c0e01eaa12a138243acaea5c3efd62",
+        "size_in_bytes": 24
+      },
+      {
+        "_path": "share/man/man3/cap_prctlw.3",
+        "path_type": "hardlink",
+        "sha256": "f6f629a133f259e7e0a76610c7e8499f67c0e01eaa12a138243acaea5c3efd62",
+        "sha256_in_prefix": "f6f629a133f259e7e0a76610c7e8499f67c0e01eaa12a138243acaea5c3efd62",
+        "size_in_bytes": 24
+      },
+      {
+        "_path": "share/man/man3/cap_proc_root.3",
+        "path_type": "hardlink",
+        "sha256": "9651e9885cd0b3098e5290d0982a5e3f70bf3a147b9dbf432a379c89235285f0",
+        "sha256_in_prefix": "9651e9885cd0b3098e5290d0982a5e3f70bf3a147b9dbf432a379c89235285f0",
+        "size_in_bytes": 19
+      },
+      {
+        "_path": "share/man/man3/cap_set_fd.3",
+        "path_type": "hardlink",
+        "sha256": "7f470a792e3460d0e8b0539c91db384a31698ce52c0431b6ac7143556950e380",
+        "sha256_in_prefix": "7f470a792e3460d0e8b0539c91db384a31698ce52c0431b6ac7143556950e380",
+        "size_in_bytes": 24
+      },
+      {
+        "_path": "share/man/man3/cap_set_file.3",
+        "path_type": "hardlink",
+        "sha256": "7f470a792e3460d0e8b0539c91db384a31698ce52c0431b6ac7143556950e380",
+        "sha256_in_prefix": "7f470a792e3460d0e8b0539c91db384a31698ce52c0431b6ac7143556950e380",
+        "size_in_bytes": 24
+      },
+      {
+        "_path": "share/man/man3/cap_set_flag.3",
+        "path_type": "hardlink",
+        "sha256": "1a338ab2db0d55db416d7749d9c490850d17088c1e2da68ab3d8f81c4ee3ce8c",
+        "sha256_in_prefix": "1a338ab2db0d55db416d7749d9c490850d17088c1e2da68ab3d8f81c4ee3ce8c",
+        "size_in_bytes": 21
+      },
+      {
+        "_path": "share/man/man3/cap_set_mode.3",
+        "path_type": "hardlink",
+        "sha256": "f6f629a133f259e7e0a76610c7e8499f67c0e01eaa12a138243acaea5c3efd62",
+        "sha256_in_prefix": "f6f629a133f259e7e0a76610c7e8499f67c0e01eaa12a138243acaea5c3efd62",
+        "size_in_bytes": 24
+      },
+      {
+        "_path": "share/man/man3/cap_set_nsowner.3",
+        "path_type": "hardlink",
+        "sha256": "7f470a792e3460d0e8b0539c91db384a31698ce52c0431b6ac7143556950e380",
+        "sha256_in_prefix": "7f470a792e3460d0e8b0539c91db384a31698ce52c0431b6ac7143556950e380",
+        "size_in_bytes": 24
+      },
+      {
+        "_path": "share/man/man3/cap_set_proc.3",
+        "path_type": "hardlink",
+        "sha256": "f6f629a133f259e7e0a76610c7e8499f67c0e01eaa12a138243acaea5c3efd62",
+        "sha256_in_prefix": "f6f629a133f259e7e0a76610c7e8499f67c0e01eaa12a138243acaea5c3efd62",
+        "size_in_bytes": 24
+      },
+      {
+        "_path": "share/man/man3/cap_set_secbits.3",
+        "path_type": "hardlink",
+        "sha256": "f6f629a133f259e7e0a76610c7e8499f67c0e01eaa12a138243acaea5c3efd62",
+        "sha256_in_prefix": "f6f629a133f259e7e0a76610c7e8499f67c0e01eaa12a138243acaea5c3efd62",
+        "size_in_bytes": 24
+      },
+      {
+        "_path": "share/man/man3/cap_set_syscall.3",
+        "path_type": "hardlink",
+        "sha256": "13c3ee56d2e34f1cc518a0a01f2df1c4eae0c1b9cb3d3ed323834b18a1ae8718",
+        "sha256_in_prefix": "13c3ee56d2e34f1cc518a0a01f2df1c4eae0c1b9cb3d3ed323834b18a1ae8718",
+        "size_in_bytes": 18
+      },
+      {
+        "_path": "share/man/man3/cap_setgroups.3",
+        "path_type": "hardlink",
+        "sha256": "f6f629a133f259e7e0a76610c7e8499f67c0e01eaa12a138243acaea5c3efd62",
+        "sha256_in_prefix": "f6f629a133f259e7e0a76610c7e8499f67c0e01eaa12a138243acaea5c3efd62",
+        "size_in_bytes": 24
+      },
+      {
+        "_path": "share/man/man3/cap_setuid.3",
+        "path_type": "hardlink",
+        "sha256": "f6f629a133f259e7e0a76610c7e8499f67c0e01eaa12a138243acaea5c3efd62",
+        "sha256_in_prefix": "f6f629a133f259e7e0a76610c7e8499f67c0e01eaa12a138243acaea5c3efd62",
+        "size_in_bytes": 24
+      },
+      {
+        "_path": "share/man/man3/cap_size.3",
+        "path_type": "hardlink",
+        "sha256": "835a1fe03eb16a0de78da4e5752ed497427bb82dbc6f81a14b78d4d2bbafe54c",
+        "sha256_in_prefix": "835a1fe03eb16a0de78da4e5752ed497427bb82dbc6f81a14b78d4d2bbafe54c",
+        "size_in_bytes": 24
+      },
+      {
+        "_path": "share/man/man3/cap_to_name.3",
+        "path_type": "hardlink",
+        "sha256": "edf6e62948ba50424ec436dd47f4dd28e84fcb178900e9cec8bc87303467affe",
+        "sha256_in_prefix": "edf6e62948ba50424ec436dd47f4dd28e84fcb178900e9cec8bc87303467affe",
+        "size_in_bytes": 25
+      },
+      {
+        "_path": "share/man/man3/cap_to_text.3",
+        "path_type": "hardlink",
+        "sha256": "edf6e62948ba50424ec436dd47f4dd28e84fcb178900e9cec8bc87303467affe",
+        "sha256_in_prefix": "edf6e62948ba50424ec436dd47f4dd28e84fcb178900e9cec8bc87303467affe",
+        "size_in_bytes": 25
+      },
+      {
+        "_path": "share/man/man3/capgetp.3",
+        "path_type": "hardlink",
+        "sha256": "f6f629a133f259e7e0a76610c7e8499f67c0e01eaa12a138243acaea5c3efd62",
+        "sha256_in_prefix": "f6f629a133f259e7e0a76610c7e8499f67c0e01eaa12a138243acaea5c3efd62",
+        "size_in_bytes": 24
+      },
+      {
+        "_path": "share/man/man3/capsetp.3",
+        "path_type": "hardlink",
+        "sha256": "f6f629a133f259e7e0a76610c7e8499f67c0e01eaa12a138243acaea5c3efd62",
+        "sha256_in_prefix": "f6f629a133f259e7e0a76610c7e8499f67c0e01eaa12a138243acaea5c3efd62",
+        "size_in_bytes": 24
+      },
+      {
+        "_path": "share/man/man3/libcap.3",
+        "path_type": "hardlink",
+        "sha256": "67476bb59323587cbeb44105007519ef528aae96b221d08614e94b163108765f",
+        "sha256_in_prefix": "67476bb59323587cbeb44105007519ef528aae96b221d08614e94b163108765f",
+        "size_in_bytes": 6492
+      },
+      {
+        "_path": "share/man/man3/libpsx.3",
+        "path_type": "hardlink",
+        "sha256": "0520802a22586cfdf550f2446d266dc78a90efdaba7440174ea62c39f2759272",
+        "sha256_in_prefix": "0520802a22586cfdf550f2446d266dc78a90efdaba7440174ea62c39f2759272",
+        "size_in_bytes": 4458
+      },
+      {
+        "_path": "share/man/man3/psx_load_syscalls.3",
+        "path_type": "hardlink",
+        "sha256": "b4de4f0a7e872526e5e85d414ac2ce6753292918633e24604ffa32b08536467f",
+        "sha256_in_prefix": "b4de4f0a7e872526e5e85d414ac2ce6753292918633e24604ffa32b08536467f",
+        "size_in_bytes": 18
+      },
+      {
+        "_path": "share/man/man3/psx_set_sensitivity.3",
+        "path_type": "hardlink",
+        "sha256": "b4de4f0a7e872526e5e85d414ac2ce6753292918633e24604ffa32b08536467f",
+        "sha256_in_prefix": "b4de4f0a7e872526e5e85d414ac2ce6753292918633e24604ffa32b08536467f",
+        "size_in_bytes": 18
+      },
+      {
+        "_path": "share/man/man3/psx_syscall.3",
+        "path_type": "hardlink",
+        "sha256": "b4de4f0a7e872526e5e85d414ac2ce6753292918633e24604ffa32b08536467f",
+        "sha256_in_prefix": "b4de4f0a7e872526e5e85d414ac2ce6753292918633e24604ffa32b08536467f",
+        "size_in_bytes": 18
+      },
+      {
+        "_path": "share/man/man3/psx_syscall3.3",
+        "path_type": "hardlink",
+        "sha256": "b4de4f0a7e872526e5e85d414ac2ce6753292918633e24604ffa32b08536467f",
+        "sha256_in_prefix": "b4de4f0a7e872526e5e85d414ac2ce6753292918633e24604ffa32b08536467f",
+        "size_in_bytes": 18
+      },
+      {
+        "_path": "share/man/man3/psx_syscall6.3",
+        "path_type": "hardlink",
+        "sha256": "b4de4f0a7e872526e5e85d414ac2ce6753292918633e24604ffa32b08536467f",
+        "sha256_in_prefix": "b4de4f0a7e872526e5e85d414ac2ce6753292918633e24604ffa32b08536467f",
+        "size_in_bytes": 18
+      },
+      {
+        "_path": "share/man/man8/captree.8",
+        "path_type": "hardlink",
+        "sha256": "1f745c6c0b896ebfbbbb11cfa24136d349a0d6d910ea8085d0faa67b16380190",
+        "sha256_in_prefix": "1f745c6c0b896ebfbbbb11cfa24136d349a0d6d910ea8085d0faa67b16380190",
+        "size_in_bytes": 2360
+      },
+      {
+        "_path": "share/man/man8/getcap.8",
+        "path_type": "hardlink",
+        "sha256": "bcb9cb8c46bbf8792b6f6126dad8d5513fbdf79ef3d40481d9dbc9c58ba90635",
+        "sha256_in_prefix": "bcb9cb8c46bbf8792b6f6126dad8d5513fbdf79ef3d40481d9dbc9c58ba90635",
+        "size_in_bytes": 912
+      },
+      {
+        "_path": "share/man/man8/getpcaps.8",
+        "path_type": "hardlink",
+        "sha256": "f941ca48471f46616d7c5992269393201281bc679a82de491ea46b698aba08a3",
+        "sha256_in_prefix": "f941ca48471f46616d7c5992269393201281bc679a82de491ea46b698aba08a3",
+        "size_in_bytes": 1548
+      },
+      {
+        "_path": "share/man/man8/setcap.8",
+        "path_type": "hardlink",
+        "sha256": "48bf4c410969054b3ec163352dbbbe343b909703ab843e6d5d33f1d2e6e70fda",
+        "sha256_in_prefix": "48bf4c410969054b3ec163352dbbbe343b909703ab843e6d5d33f1d2e6e70fda",
+        "size_in_bytes": 1813
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "942f9564b4228609f017b6617425d29a74c43b8a030e12239fa4458e5cb6323c",
+  "size": 100582,
+  "subdir": "linux-64",
+  "timestamp": 1684162447012,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/libcap-2.69-h0f662aa_0.conda",
+  "version": "2.69"
+}

@@ -1,0 +1,61 @@
+# Finnish messages for GNU Gettext examples.
+# This file is distributed under the same license as the gettext package.
+# Copyright © 2007, 2014, 2015 Yoyodyne, Inc. (msgids)
+# Lauri Nurmi <lanurmi@iki.fi>, 2007.
+# Jorma Karvonen <karvonen.jorma@gmail.com>, 2014-2015.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: hello-c-gnome3 0.19.4.73\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"PO-Revision-Date: 2015-09-01 16:59+0300\n"
+"Last-Translator: Jorma Karvonen <karvonen.jorma@gmail.com>\n"
+"Language-Team: Finnish <translation-team-fi@lists.sourceforge.net>\n"
+"Language: fi\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+"X-Generator: Poedit 1.5.4\n"
+
+#: hello.c:79
+#, c-format
+msgid ""
+"<big>Hello world!</big>\n"
+"This program is running as process number <b>%d</b>."
+msgstr ""
+"<big>Hei maailma!</big>\n"
+"Tämän ohjelman prosessinumero on <b>%d</b>."
+
+#: hello.c:84
+msgid "<big><u>This is another text</u></big>"
+msgstr "<big><u>Tämä on toinen teksti</u></big>"
+
+#: hello.c:86
+msgid "<big><i>This is yet another text</i></big>"
+msgstr "<big><i>Tämä on vielä toinen teksti</i></big>"
+
+#: hello.desktop.in.in:4
+msgid "Hello"
+msgstr "Hei"
+
+# Tämä nimenomainen käännös valittu GNU Hellon mukaisesti.
+#: hello.desktop.in.in:5
+msgid "Hello, world!"
+msgstr "Terve maailma!"
+
+#: hello.ui:6
+msgid "Example Application"
+msgstr "Esimerkkisovellus"
+
+#: hello.ui:34
+msgid "Update text"
+msgstr "Päivitä teksti"
+
+#: hello.gschema.xml:8
+msgid "Use XML markup"
+msgstr "Käytä XML-merkintäkieltä"
+
+#: hello.gschema.xml:9
+msgid "Whether to use XML markup in the text."
+msgstr "Käytetäänkö XML-merkintäkieltä tekstissä."

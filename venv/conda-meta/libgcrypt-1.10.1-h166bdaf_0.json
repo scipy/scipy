@@ -1,0 +1,151 @@
+{
+  "build": "h166bdaf_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [],
+  "depends": [
+    "libgcc-ng >=10.3.0",
+    "libgpg-error >=1.44,<2.0a0"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/libgcrypt-1.10.1-h166bdaf_0",
+  "features": "",
+  "files": [
+    "bin/dumpsexp",
+    "bin/hmac256",
+    "bin/libgcrypt-config",
+    "bin/mpicalc",
+    "include/gcrypt.h",
+    "lib/libgcrypt.so",
+    "lib/libgcrypt.so.20",
+    "lib/libgcrypt.so.20.4.1",
+    "lib/pkgconfig/libgcrypt.pc",
+    "share/aclocal/libgcrypt.m4",
+    "share/info/gcrypt.info",
+    "share/info/gcrypt.info-1",
+    "share/info/gcrypt.info-2",
+    "share/man/man1/hmac256.1"
+  ],
+  "fn": "libgcrypt-1.10.1-h166bdaf_0.tar.bz2",
+  "license": "LGPL-2.1-or-later AND GPL-2.0-or-later",
+  "license_family": "GPL",
+  "link": {
+    "source": "/opt/conda/pkgs/libgcrypt-1.10.1-h166bdaf_0",
+    "type": 1
+  },
+  "md5": "f967fc95089cd247ceed56eda31de3a9",
+  "name": "libgcrypt",
+  "package_tarball_full_path": "/opt/conda/pkgs/libgcrypt-1.10.1-h166bdaf_0.tar.bz2",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "bin/dumpsexp",
+        "path_type": "hardlink",
+        "sha256": "1a62b666eecece12e96df6e724c32285876125294091552540b73843d773e792",
+        "sha256_in_prefix": "1a62b666eecece12e96df6e724c32285876125294091552540b73843d773e792",
+        "size_in_bytes": 21192
+      },
+      {
+        "_path": "bin/hmac256",
+        "path_type": "hardlink",
+        "sha256": "14c525e9bc87aeb729d91b2d34fae756cacc4f9d5c28f4836b4cafbd64780dd1",
+        "sha256_in_prefix": "14c525e9bc87aeb729d91b2d34fae756cacc4f9d5c28f4836b4cafbd64780dd1",
+        "size_in_bytes": 21592
+      },
+      {
+        "_path": "bin/libgcrypt-config",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/libgcrypt_1649519985605/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_p",
+        "sha256": "f8cec1a95cac0b8fa1663c66027941b07853b7ab0d56c2d1aa431d035da2c489",
+        "sha256_in_prefix": "1ce76a41dcf57dab60e67cb2e1fc2ecbba49814965f51735ad8d831e5ca73c87",
+        "size_in_bytes": 5185
+      },
+      {
+        "_path": "bin/mpicalc",
+        "path_type": "hardlink",
+        "sha256": "50cb4fb1a110585ec6055dee23faf140e7b8453f737de752094cbbd90ef29762",
+        "sha256_in_prefix": "50cb4fb1a110585ec6055dee23faf140e7b8453f737de752094cbbd90ef29762",
+        "size_in_bytes": 22024
+      },
+      {
+        "_path": "include/gcrypt.h",
+        "path_type": "hardlink",
+        "sha256": "a649936e0130a42ec84d37262b0e99900ba186a8a8da2fa062c3c876ded88ee3",
+        "sha256_in_prefix": "a649936e0130a42ec84d37262b0e99900ba186a8a8da2fa062c3c876ded88ee3",
+        "size_in_bytes": 75765
+      },
+      {
+        "_path": "lib/libgcrypt.so",
+        "path_type": "softlink",
+        "sha256": "15eb66e08057c213a69472ad76d6d29071f2e7ac36b1d30e4df1206c017b018e",
+        "size_in_bytes": 1456464
+      },
+      {
+        "_path": "lib/libgcrypt.so.20",
+        "path_type": "softlink",
+        "sha256": "15eb66e08057c213a69472ad76d6d29071f2e7ac36b1d30e4df1206c017b018e",
+        "size_in_bytes": 1456464
+      },
+      {
+        "_path": "lib/libgcrypt.so.20.4.1",
+        "path_type": "hardlink",
+        "sha256": "15eb66e08057c213a69472ad76d6d29071f2e7ac36b1d30e4df1206c017b018e",
+        "sha256_in_prefix": "15eb66e08057c213a69472ad76d6d29071f2e7ac36b1d30e4df1206c017b018e",
+        "size_in_bytes": 1456464
+      },
+      {
+        "_path": "lib/pkgconfig/libgcrypt.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/libgcrypt_1649519985605/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_p",
+        "sha256": "d35cf9aadcb40531a1c81e129c65fe343bb36e35d79f1ad9bda77e96839d2207",
+        "sha256_in_prefix": "36b73f4793633742c61ffc22e47659278edf48e3b6f21c7540249c6ce96b788d",
+        "size_in_bytes": 886
+      },
+      {
+        "_path": "share/aclocal/libgcrypt.m4",
+        "path_type": "hardlink",
+        "sha256": "8a15616c94d11ecfbde36dd3ee61da1419765906b176519327c923e55b0aa2de",
+        "sha256_in_prefix": "8a15616c94d11ecfbde36dd3ee61da1419765906b176519327c923e55b0aa2de",
+        "size_in_bytes": 6242
+      },
+      {
+        "_path": "share/info/gcrypt.info",
+        "path_type": "hardlink",
+        "sha256": "b186a33a228a0cc59925667d3b6c0cfceb6a21d04bde0de91272882a7182bc0d",
+        "sha256_in_prefix": "b186a33a228a0cc59925667d3b6c0cfceb6a21d04bde0de91272882a7182bc0d",
+        "size_in_bytes": 4380
+      },
+      {
+        "_path": "share/info/gcrypt.info-1",
+        "path_type": "hardlink",
+        "sha256": "abb8b52bf19f10dc45ad3e5d2974386a9819348badf98c4adcc4001a980346b7",
+        "sha256_in_prefix": "abb8b52bf19f10dc45ad3e5d2974386a9819348badf98c4adcc4001a980346b7",
+        "size_in_bytes": 304562
+      },
+      {
+        "_path": "share/info/gcrypt.info-2",
+        "path_type": "hardlink",
+        "sha256": "d0179914e990e20a7f2c3db5f4c88f294a809cedc00fe0d0ba91db4947ee9508",
+        "sha256_in_prefix": "d0179914e990e20a7f2c3db5f4c88f294a809cedc00fe0d0ba91db4947ee9508",
+        "size_in_bytes": 37135
+      },
+      {
+        "_path": "share/man/man1/hmac256.1",
+        "path_type": "hardlink",
+        "sha256": "9c715ff75bf32edf286bd36f5c6ce3a5218a41102dbb4f42287882a6f9fe9755",
+        "sha256_in_prefix": "9c715ff75bf32edf286bd36f5c6ce3a5218a41102dbb4f42287882a6f9fe9755",
+        "size_in_bytes": 1218
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "8fd7e6db1021cd9298d9896233454de204116840eb66a06fcb712e1015ff132a",
+  "size": 719561,
+  "subdir": "linux-64",
+  "timestamp": 1649520091125,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/libgcrypt-1.10.1-h166bdaf_0.tar.bz2",
+  "version": "1.10.1"
+}

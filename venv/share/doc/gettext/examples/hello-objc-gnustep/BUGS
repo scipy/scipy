@@ -1,0 +1,3 @@
+Correct display of characters depends on the GNUstep display engine; as of
+GNUstep-1.8.0, it works only for ISO-8859-1 characters (regardless of whether
+GNUSTEP_STRING_ENCODING is set to NSUTF8StringEncoding or not).

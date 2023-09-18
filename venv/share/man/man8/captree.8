@@ -1,0 +1,75 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.TH CAPTREE 8 "2022-04-11"
+.\" Please adjust this date whenever revising the manpage.
+.SH NAME
+captree \- display tree of process capabilities
+.SH SYNOPSIS
+.BR captree " [OPTIONS] "
+.RI [( pid | glob-name ") ...]"
+.SH DESCRIPTION
+.B captree
+displays the capabilities on the mentioned processes indicated by
+.IR pid " or " glob-name
+value(s) given on the command line. If no
+.I pid
+etc values are supplied,
+.IR pid =1
+is implied. A
+.I pid
+value of 0 displays all the processes known to the kernel.
+.PP
+The POSIX.1e capabilities are displayed in double quotes in the
+.BR cap_from_text (3)
+format. The IAB tuple of capabilities is displayed between square
+brackets in the text format described in
+.BR cap_iab (3).
+Note, the IAB tuple text is omitted if it contains empty A and B
+components. This is because the regular POSIX.1e text contains
+information about the Inheritable flag already. This behavior can be
+overridden with the
+.B --verbose
+command line argument.
+.PP
+Optional arguments (which must precede the list of pid|glob-name
+values):
+.TP
+.B \-\-help
+Displays usage information and exits. Note, modern Go runtimes exit
+with status 0 in this case, but older runtimes exit with status 2.
+.TP
+.BR \-\-verbose
+Displays capability sets and IAB tuples even when they are empty, or
+redundant.
+.TP
+.BI \-\-depth =n
+Displays the process tree to a depth of
+.IR n .
+Note, the default value for this parameter is 0, which implies
+infinite depth.
+.TP
+.BI \-\-colo[u]r =false
+Colo[u]rs the targeted PIDs, if stdout is a TTY, in red. This option
+defaults to true when running via a TTY. The \fB--color\fI=false\fR
+argument will suppress this color. Piping the output into some other
+program will also suppress the use of colo[u]r.
+.SH EXIT STATUS
+If the supplied target cannot be found the exit status is 1. Should an
+unrecognized option be provided, the exit status is 2. Otherwise,
+.B captree
+exits with status 0.
+.SH REPORTING BUGS
+Please report bugs via:
+.TP
+https://bugzilla.kernel.org/buglist.cgi?component=libcap&list_id=1090757
+.SH SEE ALSO
+.BR cap_from_text(3),
+.BR capabilities (7),
+and
+.BR cap_iab (3).
+
+There is a longer article about \fBcaptree\fP, which includes some
+examples, here:
+
+   https://sites.google.com/site/fullycapable/captree
+.SH AUTHOR
+Andrew G. Morgan <morgan@kernel.org>

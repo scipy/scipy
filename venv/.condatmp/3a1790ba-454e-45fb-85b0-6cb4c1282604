@@ -1,0 +1,13 @@
+prefix=/workspaces/scipy/venv
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+includedir=${prefix}/include/qt
+
+
+Name: Qt5 QuickTemplates2
+Description: Qt QuickTemplates2 module
+Version: 5.15.8
+Libs: -L${libdir} -lQt5QuickTemplates2 
+Cflags: -DQT_QUICKTEMPLATES2_LIB -I${includedir}/QtQuickTemplates2 -I${includedir}
+Requires: Qt5Core Qt5Gui Qt5Quick Qt5QmlModels
+

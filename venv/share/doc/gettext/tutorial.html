@@ -1,0 +1,745 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML i18n//EN">
+<!--
+  Copyright (C) 2004-2005, 2012 Gora Mohanty.
+  Written by Gora Mohanty <gora_mohanty@yahoo.co.in>, 2004.
+
+  This manual is covered by the GNU FDL.  Permission is granted to copy,
+  distribute and/or modify this document under the terms of the
+  GNU Free Documentation License (FDL), version 1.2.
+  A copy of the license is at
+  <https://www.gnu.org/licenses/old-licenses/fdl-1.2>.
+-->
+
+<!--Converted with jLaTeX2HTML 2002-2-1 (1.70) JA patch-1.4
+patched version by:  Kenshi Muto, Debian Project.
+LaTeX2HTML 2002-2-1 (1.70),
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>A tutorial on Native Language Support using GNU gettext</TITLE>
+<META NAME="description" CONTENT="A tutorial on Native Language Support using GNU gettext">
+<META NAME="keywords" CONTENT="memo">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+<META NAME="Generator" CONTENT="jLaTeX2HTML v2002-2-1 JA patch-1.4">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<!--
+<LINK REL="STYLESHEET" HREF="memo.css">
+-->
+
+</HEAD>
+
+<BODY >
+
+<!--Navigation Panel
+<DIV CLASS="navigation">
+<IMG WIDTH="81" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next_inactive"
+ SRC="file:/usr/share/latex2html/icons/nx_grp_g.png"> 
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="file:/usr/share/latex2html/icons/up_g.png"> 
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="file:/usr/share/latex2html/icons/prev_g.png">   
+<BR>
+<BR><BR></DIV>
+End of Navigation Panel-->
+
+<H1 ALIGN="CENTER">A tutorial on Native Language Support using GNU gettext</H1><DIV CLASS="author_info">
+
+<P ALIGN="CENTER"><STRONG>G.&nbsp;Mohanty</STRONG></P>
+<P ALIGN="CENTER"><STRONG>Revision 0.3: 24 July 2004</STRONG></P>
+</DIV>
+
+<H3>Abstract:</H3>
+<DIV CLASS="ABSTRACT">
+  The use of the GNU <TT>gettext</TT> utilities to implement support for native
+languages is described here. Though, the language to be supported is
+considered to be Oriya, the method is generally applicable. Likewise, while
+Linux was used as the platform here, any system using GNU <TT>gettext</TT> should work
+in a similar fashion.
+
+<P>
+We go through a step-by-step description of how to make on-screen messages
+from a toy program to appear in Oriya instead of English; starting from the
+programming and ending with the user's viewpoint. Some discussion is also made
+of how to go about the task of translation.
+</DIV>
+<P>
+<H1><A NAME="SECTION00010000000000000000">
+Introduction</A>
+</H1>
+Currently, both commercial and free computer software is typically written and
+documented in English. Till recently, little effort was expended towards
+allowing them to interact with the user in languages other than English, thus
+leaving the non-English speaking world at a disadvantage. However, that
+changed with the release of the GNU <TT>gettext</TT> utilities, and nowadays most GNU
+programs are written within a framework that allows easy translation of the
+program message to languages other than English. Provided that translations
+are available, the language used by the program to interact with the user can
+be set at the time of running it. <TT>gettext</TT> manages to achieve this seemingly
+miraculous task in a manner that simplifies the work of both the programmer
+and the translator, and, more importantly, allows them to work independently
+of each other.
+
+<P>
+This article describes how to support native languages under a system using
+the GNU <TT>gettext</TT> utilities. While it should be applicable to other versions of
+<TT>gettext</TT>, the one actually used for the examples here is version
+0.12.1. Another system, called <TT>catgets</TT>, described in the X/Open
+Portability Guide, is also in use, but we shall not discuss that here.
+
+<P>
+
+<H1><A NAME="SECTION00020000000000000000">
+A simple example</A>
+</H1>
+<A NAME="sec:simple"></A>Our first example of using <TT>gettext</TT> will be the good old Hello World program,
+whose sole function is to print the phrase “Hello, world!” to the terminal.
+The internationalized version of this program might be saved in hello.c as:
+<PRE>
+1    #include &lt;libintl.h&gt;
+2    #include &lt;locale.h&gt;
+3    #include &lt;stdio.h&gt;
+4    #include &lt;stdlib.h&gt;
+5    int main(void)
+6    {
+7      setlocale( LC_ALL, "" );
+8      bindtextdomain( "hello", "/usr/share/locale" );
+9      textdomain( "hello" );
+10      printf( gettext( "Hello, world!\n" ) );
+11      exit(0);
+12    }
+</PRE>
+Of course, a real program would check the return values of the functions and
+try to deal with any errors, but we have omitted that part of the code for
+clarity. Compile as usual with <TT>gcc -o hello hello.c</TT>. The program should
+be linked to the GNU libintl library, but as this is part of the GNU C
+library, this is done automatically for you under Linux, and other systems
+using glibc.
+  
+<H2><A NAME="SECTION00021000000000000000">
+The programmer's viewpoint</A>
+</H2>
+   As expected, when the <TT>hello</TT> executable is run under the default locale
+(usually the C locale) it prints “Hello, world!” in the terminal. Besides
+some initial setup work, the only additional burden faced by the programmer is
+to replace any string to be printed with <TT>gettext(string)</TT>, i.e., to
+instead pass the string as an argument to the <TT>gettext</TT> function. For lazy
+people like myself, the amount of extra typing can be reduced even further by
+a CPP macro, e.g., put this at the beginning of the source code file,
+<PRE>
+  #define _(STRING)    gettext(STRING)
+</PRE>
+and then use <TT>_(string)</TT> instead of <TT>gettext(string)</TT>.
+
+<P>
+Let us dissect the program line-by-line.
+
+<OL>
+<LI><TT>locale.h</TT> defines C data structures used to hold locale
+  information, and is needed by the <TT>setlocale</TT> function. <TT>libintl.h</TT>
+  prototypes the GNU text utilities functions, and is needed here by
+  <TT>bindtextdomain</TT>, <TT>gettext</TT>, and <TT>textdomain</TT>.
+</LI>
+<LI>The call to <TT>setlocale</TT> () on line 7, with LC_ALL as the first argument
+  and an empty string as the second one, initializes the entire current locale
+  of the program as per environment variables set by the user. In other words,
+  the program locale is initialized to match that of the user. For details see
+  “man <TT>setlocale</TT>.”
+</LI>
+<LI>The <TT>bindtextdomain</TT> function on line 8 sets the base directory for the
+  message catalogs for a given message domain. A message domain is a set of
+  translatable messages, with every software package typically having its own
+  domain. Here, we have used “hello” as the name of the message domain for
+  our toy program. As the second argument, /usr/share/locale, is the default
+  system location for message catalogs, what we are saying here is that we are
+  going to place the message catalog in the default system directory. Thus, we
+  could have dispensed with the call to <TT>bindtextdomain</TT> here, and this
+  function is useful only if the message catalogs are installed in a
+  non-standard place, e.g., a packaged software distribution might have
+  the catalogs under a po/ directory under its own main directory. See “man
+  <TT>bindtextdomain</TT>” for details.
+</LI>
+<LI>The <TT>textdomain</TT> call on line 9 sets the message domain of the current
+  program to “hello,” i.e., the name that we are using for our example
+  program. “man textdomain” will give usage details for the function.
+</LI>
+<LI>Finally, on line 10, we have replaced what would normally have been,
+<PRE>
+  printf( "Hello, world!\n" );
+</PRE>
+with,
+<PRE>
+  printf( gettext( "Hello, world!\n" ) );
+</PRE>
+(If you are unfamiliar with C, the <!-- MATH
+ $\backslash$
+ -->
+<SPAN CLASS="MATH">&#92;</SPAN>n at the end of the string
+produces a newline at the end of the output.) This simple modification to all
+translatable strings allows the translator to work independently from the
+programmer. <TT>gettextize</TT> eases the task of the programmer in adapting a
+package to use GNU <TT>gettext</TT> for the first time, or to upgrade to a newer
+version of <TT>gettext</TT>.
+</LI>
+</OL>
+  
+<H2><A NAME="SECTION00022000000000000000">
+Extracting translatable strings</A>
+</H2>
+  Now, it is time to extract the strings to be translated from the program
+source code. This is achieved with <TT>xgettext</TT>, which can be invoked as follows:
+<PRE><FONT color="red">
+  xgettext -d hello -o hello.pot hello.c
+</FONT></PRE>
+This processes the source code in hello.c, saving the output in hello.pot (the
+argument to the -o option).
+The message domain for the program should be specified as the argument
+to the -d option, and should match the domain specified in the call to
+<TT>textdomain</TT> (on line 9 of the program source). Other details on how to use
+<TT>gettext</TT> can be found from “man gettext.”
+
+<P>
+A .pot (portable object template) file is used as the basis for translating
+program messages into any language. To start translation, one can simply copy
+hello.pot to oriya.po (this preserves the template file for later translation
+into a different language). However, the preferred way to do this is by
+use of the <TT>msginit</TT> program, which takes care of correctly setting up some
+default values,
+<PRE><FONT color="red">
+  msginit -l or_IN -o oriya.po -i hello.pot
+</FONT></PRE>
+Here, the -l option defines the locale (an Oriya locale should have been
+installed on your system), and the -i and -o options define the input and
+output files, respectively. If there is only a single .pot file in the
+directory, it will be used as the input file, and the -i option can be
+omitted.  For me, the oriya.po file produced by <TT>msginit</TT> would look like:
+<PRE>
+  # Oriya translations for PACKAGE package.
+  # Copyright (C) 2004 THE PACKAGE'S COPYRIGHT HOLDER
+  # This file is distributed under the same license as the PACKAGE package.
+  # Gora Mohanty &lt;gora_mohanty@yahoo.co.in&gt;, 2004.
+  #
+  msgid ""
+  msgstr ""
+  "Project-Id-Version: PACKAGE VERSION\n"
+  "Report-Msgid-Bugs-To: \n"
+  "POT-Creation-Date: 2004-06-22 02:22+0530\n"
+  "PO-Revision-Date: 2004-06-22 02:38+0530\n"
+  "Last-Translator: Gora Mohanty &lt;gora_mohanty@yahoo.co.in&gt;\n"
+  "Language-Team: Oriya\n"
+  "MIME-Version: 1.0\n"
+  "Content-Type: text/plain; charset=UTF-8\n"
+  "Content-Transfer-Encoding: 8bit\n"
+ 
+  #: hello.c:10
+  msgid "Hello, world!\n"
+  msgstr ""
+</PRE>
+<TT>msginit</TT> prompted for my email address, and probably obtained my real name
+from the system password file. It also filled in values such as the revision
+date, language, character set, presumably using information from the or_IN
+locale.
+
+<P>
+It is important to respect the format of the entries in the .po (portable
+object) file. Each entry has the following structure:
+<PRE>
+  WHITE-SPACE
+  #  TRANSLATOR-COMMENTS
+  #. AUTOMATIC-COMMENTS
+  #: REFERENCE...
+  #, FLAG...
+  msgid UNTRANSLATED-STRING
+  msgstr TRANSLATED-STRING
+</PRE>
+where, the initial white-space (spaces, tabs, newlines,...), and all
+comments might or might not exist for a particular entry. Comment lines start
+with a '#' as the first character, and there are two kinds: (i) manually
+added translator comments, that have some white-space immediately following the
+'#,' and (ii) automatic comments added and maintained by the <TT>gettext</TT> tools,
+with a non-white-space character after the '#.' The <TT>msgid</TT> line contains
+the untranslated (English) string, if there is one for that PO file entry, and
+the <TT>msgstr</TT> line is where the translated string is to be entered. More on
+this later. For details on the format of PO files see gettext::Basics::PO
+Files:: in the Emacs info-browser (see Appdx.&nbsp;<A HREF="#sec:emacs-info">A</A> for an
+introduction to using the info-browser in Emacs).
+  
+<H2><A NAME="SECTION00023000000000000000">
+Making translations</A>
+</H2>
+  The oriya.po file can then be edited to add the translated Oriya
+strings. While the editing can be carried out in any editor if one is careful
+to follow the PO file format, there are several editors that ease the task of
+editing PO files, among them being po-mode in Emacs, <TT>kbabel</TT>, gtranslator,
+poedit, etc. Appdx.&nbsp;<A HREF="#sec:pofile-editors">B</A> describes features of some of
+these editors.
+
+<P>
+The first thing to do is fill in the comments at the beginning and the header
+entry, parts of which have already been filled in by <TT>msginit</TT>. The lines in
+the header entry are pretty much self-explanatory, and details can be found in
+the gettext::Creating::Header Entry:: info node. After that, the remaining
+work consists of typing the Oriya text that is to serve as translations for
+the corresponding English string. For the <TT>msgstr</TT> line in each of the
+remaining entries, add the translated Oriya text between the double quotes;
+the translation corresponding to the English phrase in the <TT>msgid</TT> string
+for the entry. For example, for the phrase “Hello world!<!-- MATH
+ $\backslash$
+ -->
+<SPAN CLASS="MATH">&#92;</SPAN>n” in
+oriya.po, we could enter “&#x0b28;&#x0b2e;&#x0b38;&#x0b4d;&#x0b15;&#x0b3e;&#x0b30;<!-- MATH
+ $\backslash$
+ -->
+<SPAN CLASS="MATH">&#92;</SPAN>n”. The final
+oriya.po file might look like:
+<PRE>
+  # Oriya translations for hello example package.
+  # Copyright (C) 2004 Gora Mohanty
+  # This file is distributed under the same license as the hello example package.
+  # Gora Mohanty &lt;gora_mohanty@yahoo.co.in&gt;, 2004.
+  #
+  msgid ""
+  msgstr ""
+  "Project-Id-Version: oriya\n"
+  "Report-Msgid-Bugs-To: \n"
+  "POT-Creation-Date: 2004-06-22 02:22+0530\n"
+  "PO-Revision-Date: 2004-06-22 10:54+0530\n"
+  "Last-Translator: Gora Mohanty &lt;gora_mohanty@yahoo.co.in&gt;\n"
+  "Language-Team: Oriya\n"
+  "MIME-Version: 1.0\n"
+  "Content-Type: text/plain; charset=UTF-8\n"
+  "Content-Transfer-Encoding: 8bit\n"
+  "X-Generator: KBabel 1.3\n"
+
+  #: hello.c:10
+  msgid "Hello, world!\n"
+  msgstr "&#x0b28;&#x0b2e;&#x0b38;&#x0b4d;&#x0b15;&#x0b3e;&#x0b30;\n"
+</PRE>
+
+<P>
+For editing PO files, I have found the <TT>kbabel</TT> editor suits me the best. The
+only problem is that while Oriya text can be entered directly into <TT>kbabel</TT> 
+using the xkb Oriya keyboard layouts&nbsp;[<A
+ HREF="memo.html#xkb-oriya-layout">1</A>] and the entries
+are saved properly, the text is not displayed correctly in the <TT>kbabel</TT> window
+if it includes conjuncts. Emacs po-mode is a little restrictive, but strictly
+enforces conformance with the PO file format. The main problem with it is that
+it does not seem currently possible to edit Oriya text in Emacs. <TT>yudit</TT>
+is the best at editing Oriya text, but does not ensure that the PO file format
+is followed. You can play around a bit with these editors to find one that
+suits your personal preferences. One possibility might be to first edit the
+header entry with <TT>kbabel</TT> or Emacs po-mode, and then use <TT>yudit</TT> to enter
+the Oriya text on the <TT>msgstr</TT> lines.
+  
+<H2><A NAME="SECTION00024000000000000000">
+Message catalogs</A>
+</H2>
+  <A NAME="sec:catalog"></A>After completing the translations in the oriya.po file, it must be compiled to
+a binary format that can be quickly loaded by the <TT>gettext</TT> tools. To do that,
+use:
+<PRE><FONT color="red">
+  msgfmt -c -v -o hello.mo oriya.po
+</FONT></PRE>
+The -c option does detailed checking of the PO file format, -v makes the
+program verbose, and the output filename is given by the argument to the -o
+option. Note that the base of the output filename should match the message
+domain given in the first arguments to <TT>bindtextdomain</TT> and <TT>textdomain</TT> on
+lines 8 and 9 of the example program in Sec.&nbsp;<A HREF="#sec:simple">2</A>. The .mo
+(machine object) file should be stored in the location whose base directory is
+given by the second argument to <TT>bindtextdomain</TT>. The final location of the
+file will be in the sub-directory LL/LC_MESSAGES or LL_CC/LC_MESSAGES under
+the base directory, where LL stands for a language, and CC for a country. For
+example, as we have chosen the standard location, /usr/share/locale, for our
+base directory, and for us the language and country strings are “or” and
+“IN,” respectively, we will place hello.mo in /usr/share/locale/or_IN. Note
+that you will need super-user privilege to copy hello.mo to this system
+directory. Thus,
+<PRE><FONT color="red">
+  mkdir -p /usr/share/locale/or_IN/LC_MESSAGES
+  cp hello.mo /usr/share/locale/or_IN/LC_MESSAGES
+</FONT></PRE>
+  
+<H2><A NAME="SECTION00025000000000000000">
+The user's viewpoint</A>
+</H2>
+  Once the message catalogs have been properly installed, any user on the system
+can use the Oriya version of the Hello World program, provided an Oriya locale
+is available. First, change your locale with,
+<PRE><FONT color="red">
+  echo $LANG
+  export LANG=or_IN
+</FONT></PRE>
+The first statement shows you the current setting of your locale (this is
+usually en_US, and you will need it to reset the default locale at the end),
+while the second one sets it to an Oriya locale.
+
+<P>
+A Unicode-capable terminal emulator is needed to view Oriya output
+directly. The new versions of both gnome-terminal and konsole (the KDE
+terminal emulator) are Unicode-aware. I will focus on gnome-terminal as it
+seems to have better support for internationalization. gnome-terminal needs to
+be told that the bytes arriving are UTF-8 encoded multibyte sequences. This
+can be done by (a) choosing Terminal <TT>-&gt;</TT> Character Coding <TT>-&gt;</TT>
+Unicode (UTF-8), or (b) typing “/bin/echo -n -e
+'<!-- MATH
+ $\backslash$
+ -->
+<SPAN CLASS="MATH">&#92;</SPAN>033%<!-- MATH
+ $\backslash$
+ -->
+<SPAN CLASS="MATH">&#92;</SPAN>G'” in the terminal, or (c) by running
+/bin/unicode_start. Likewise, you can revert to the default locale by (a)
+choosing Terminal <TT>-&gt;</TT> Character Coding <TT>-&gt;</TT> Current Locale
+(ISO-8859-1), or (b) “/bin/echo -n -e '<!-- MATH
+ $\backslash$
+ -->
+<SPAN CLASS="MATH">&#92;</SPAN>033%<!-- MATH
+ $\backslash$
+ -->
+<SPAN CLASS="MATH">&#92;</SPAN>@',” or
+(c) by running /bin/unicode_stop. Now, running the example program (after
+compiling with gcc as described in Sec.&nbsp;<A HREF="#sec:simple">2</A>) with,
+<PRE><FONT color="red">
+  ./hello
+</FONT></PRE>
+should give you output in Oriya. Please note that conjuncts will most likely
+be displayed with a “halant” as the terminal probably does not render Indian
+language fonts correctly. Also, as most terminal emulators assume fixed-width
+fonts, the results are hardly likely to be aesthetically appealing.
+
+<P>
+An alternative is to save the program output in a file, and view it with
+<TT>yudit</TT> which will render the glyphs correctly. Thus,
+<PRE><FONT color="red">
+  ./hello &gt; junk
+  yudit junk
+</FONT></PRE>
+Do not forget to reset the locale before resuming usual work in the
+terminal. Else, your English characters might look funny.
+
+<P>
+While all this should give the average user some pleasure in being able to see
+Oriya output from a program without a whole lot of work, it should be kept in
+mind that we are still far from our desired goal. Hopefully, one day the
+situation will be such that rather than deriving special pleasure from it,
+users take it for granted that Oriya should be available and are upset
+otherwise.
+
+<P>
+
+<H1><A NAME="SECTION00030000000000000000">
+Adding complications: program upgrade</A>
+</H1>
+The previous section presented a simple example of how Oriya language support
+could be added to a C program. Like all programs, we might now wish to further
+enhance it. For example, we could include a greeting to the user by adding
+another <TT>printf</TT> statement after the first one. Our new hello.c source
+code might look like this:
+<PRE>
+1    #include &lt;libintl.h&gt;
+2    #include &lt;locale.h&gt;
+3    #include &lt;stdio.h&gt;
+4    #include &lt;stdlib.h&gt;
+5    int main(void)
+6    {
+7      setlocale( LC_ALL, "" );
+8      bindtextdomain( "hello", "/usr/share/locale" );
+9      textdomain( "hello" );
+10      printf( gettext( "Hello, world!\n" ) );
+11      printf( gettext( "How are you\n" ) );
+12      exit(0);
+13    }
+</PRE>
+For such a small change, it would be simple enough to just repeat the above
+cycle of extracting the relevant English text, translating it to Oriya, and
+preparing a new message catalog. We can even simplify the work by cutting and
+pasting most of the old oriya.po file into the new one. However, real programs
+will have thousands of such strings, and we would like to be able to translate
+only the changed strings, and have the <TT>gettext</TT> utilities handle the drudgery
+of combining the new translations with the old ones. This is indeed possible.
+  
+<H2><A NAME="SECTION00031000000000000000">
+Merging old and new translations</A>
+</H2>
+  As before, extract the translatable strings from hello.c to a new portable
+object template file, hello-new.pot, using <TT>xgettext</TT>,
+<PRE><FONT color="red">
+  xgettext -d hello -o hello-new.pot hello.c
+</FONT></PRE>
+Now, we use a new program, <TT>msgmerge</TT>, to merge the existing .po file with
+translations into the new template file, viz.,
+<PRE><FONT color="red">
+  msgmerge -U oriya.po hello-new.pot
+</FONT></PRE>
+The -U option updates the existing
+.po file, oriya.po. We could have chosen to instead create a new .po file by
+using “-o <SPAN CLASS="MATH">&lt;</SPAN>filename<SPAN CLASS="MATH">&gt;</SPAN>” instead of -U. The updated .po file will still
+have the old translations embedded in it, and new entries with untranslated
+<TT>msgid</TT> lines. For us, the new lines in oriya.po will look like,
+<PRE>
+  #: hello.c:11
+  msgid "How are you?\n"
+  msgstr ""
+</PRE>
+For the new translation, we could use, “&#x0b06;&#x0b2a;&#x0b23;
+&#x0b15;&#x0b3f;&#x0b2a;&#x0b30;&#x0b3f; &#x0b05;&#x0b1b;&#x0b28;&#x0b4d;&#x0b24;&#x0b3f;?” in
+place of the English phrase “How are you?” The updated oriya.po file,
+including the translation might look like:
+<PRE>
+  # Oriya translations for hello example package.
+  # Copyright (C) 2004 Gora Mohanty
+  # This file is distributed under the same license as the hello examplepackage.
+  # Gora Mohanty &lt;gora_mohanty@yahoo.co.in&gt;, 2004.
+  #
+  msgid ""
+  msgstr ""
+  "Project-Id-Version: oriya\n"
+  "Report-Msgid-Bugs-To: \n"
+  "POT-Creation-Date: 2004-06-23 14:30+0530\n"
+  "PO-Revision-Date: 2004-06-22 10:54+0530\n"
+  "Last-Translator: Gora Mohanty &lt;gora_mohanty@yahoo.co.in&gt;\n"
+  "Language-Team: Oriya\n"
+  "MIME-Version: 1.0\n"
+  "Content-Type: text/plain; charset=UTF-8\n"
+  "Content-Transfer-Encoding: 8bit\n"
+  "X-Generator: KBabel 1.3\n"
+  
+  #: hello.c:10
+  msgid "Hello, world!\n"
+  msgstr "&#x0b28;&#x0b2e;&#x0b38;&#x0b4d;&#x0b15;&#x0b3e;&#x0b30;\n"
+
+  #: hello.c:11
+  msgid "How are you?\n"
+  msgstr "&#x0b06;&#x0b2a;&#x0b23; &#x0b15;&#x0b3f;&#x0b2a;&#x0b30;&#x0b3f; &#x0b05;&#x0b1b;&#x0b28;&#x0b4d;&#x0b24;&#x0b3f;?\n"
+</PRE>
+
+<P>
+Compile oriya.po to a machine object file, and install in the appropriate
+place as in Sec.&nbsp;<A HREF="#sec:catalog">2.4</A>. Thus,
+<PRE><FONT color="red">
+  msgfmt -c -v -o hello.mo oriya.po
+  mkdir -p /usr/share/locale/or_IN/LC_MESSAGES
+  cp hello.mo /usr/share/locale/or_IN/LC_MESSAGES
+</FONT></PRE>
+You can test the Oriya output as above, after recompiling hello.c and running
+it in an Oriya locale.
+
+<P>
+
+<H1><A NAME="SECTION00040000000000000000">
+More about <TT>gettext</TT> </A>
+</H1>
+The GNU <TT>gettext</TT> info pages provide a well-organized and complete description
+of the <TT>gettext</TT> utilities and their usage for enabling Native Language
+Support. One should, at the very least, read the introductory material at
+gettext::Introduction::, and the suggested references in
+gettext::Conclusion::References::. Besides the <TT>gettext</TT> utilities described in
+this document, various other programs to manipulate .po files are discussed in
+gettext:Manipulating::. Finally, support for programming languages other than
+C/C++ is discussed in gettext::Programming Languages::.
+
+<P>
+
+<H1><A NAME="SECTION00050000000000000000">
+The work of translation</A>
+</H1>
+  Besides the obvious program message strings that have been the sole focus of
+our discussion here, there are many other things that require translation,
+including GUI messages, command-line option strings, configuration files,
+program documentation, etc. Besides these obvious aspects, there are a
+significant number of programs and/or scripts that are automatically generated
+by other programs. These generated programs might also themselves require
+translation. So, in any effort to provide support for a given native language,
+carrying out the translation and keeping up with program updates becomes a
+major part of the undertaking, requiring a continuing commitment from the
+language team. A plan has been outlined for the Oriya localization
+project&nbsp;[<A
+ HREF="memo.html#url:oriya-trans-plan">2</A>].
+
+<P>
+
+<H1><A NAME="SECTION00060000000000000000">
+Acknowledgments</A>
+</H1>
+Extensive use has obviously been made of the GNU <TT>gettext</TT> manual in preparing
+this document. I have also been helped by an article in the Linux
+Journal&nbsp;[<A
+ HREF="memo.html#url:lj-translation">3</A>].
+
+<P>
+This work is part of the project for enabling the use of Oriya under Linux. I
+thank my uncle, N.&nbsp;M.&nbsp;Pattnaik, for conceiving of the project. We have all
+benefited from the discussions amidst the group of people working on this
+project. On the particular issue of translation, the help of H.&nbsp;R.&nbsp;Pansari,
+A.&nbsp;Nayak, and M.&nbsp;Chand is much appreciated.
+
+<H1><A NAME="SECTION00070000000000000000">
+The Emacs info browser</A>
+</H1>
+<A NAME="sec:emacs-info"></A>You can start up Emacs from the command-line by typing “emacs,” or “emacs
+<SPAN CLASS="MATH">&lt;</SPAN>filename<SPAN CLASS="MATH">&gt;</SPAN>.” It can be started from the menu in some desktops, e.g., on
+my GNOME desktop, it is under Main Menu <TT>-&gt;</TT> Programming <TT>-&gt;</TT>
+Emacs. If you are unfamiliar with Emacs, a tutorial can be started by typing
+“C-h t” in an Emacs window, or from the Help item in the menubar at the
+top. Emacs makes extensive use of the Control (sometimes labelled as “CTRL”
+or “CTL”) and Meta (sometimes labelled as “Edit” or “Alt”) keys. In
+Emacs parlance, a hyphenated sequence, such as “C-h” means to press the
+Control and ‘h’ key simultaneously, while “C-h t” would mean to press the
+Control and ‘h’ key together, release them, and press the ‘t’ key. Similarly,
+“M-x” is used to indicate that the Meta and ‘x’ keys should be pressed at
+the same time.
+
+<P>
+The info browser can be started by typing “C-h i” in Emacs. The first time
+you do this, it will briefly list some commands available inside the info
+browser, and present you with a menu of major topics. Each menu item, or
+cross-reference is hyperlinked to the appropriate node, and you can visit that
+node either by moving the cursor to the item and pressing Enter, or by
+clicking on it with the middle mouse button. To get to the <TT>gettext</TT> menu items,
+you can either scroll down to the line,
+<PRE>
+  * gettext: (gettext).                          GNU gettext utilities.
+</PRE>
+and visit that node. Or, as it is several pages down, you can locate it using
+“I-search.” Type “C-s” to enter “I-search” which will then prompt you
+for a string in the mini-buffer at the bottom of the window. This is an
+incremental search, so that Emacs will keep moving you forward through the
+buffer as you are entering your search string. If you have reached the last
+occurrence of the search string in the current buffer, you will get a message
+saying “Failing I-search: ...” on pressing “C-s.” At that point, press
+“C-s” again to resume the search at the beginning of the buffer. Likewise,
+“C-r” incrementally searches backwards from the present location.
+
+<P>
+Info nodes are listed in this document with a “::” separator, so
+that one can go to the gettext::Creating::Header Entry:: by visiting the
+“gettext” node from the main info menu, navigating to the “Creating”
+node, and following that to the “Header Entry” node.
+
+<P>
+A stand-alone info browser, independent of Emacs, is also available on many
+systems. Thus, the <TT>gettext</TT> info page can also be accessed by typing
+“info gettext” in a terminal. <TT>xinfo</TT> is an X application serving as an
+info browser, so that if it is installed, typing “xinfo gettext” from the
+command line will open a new browser window with the <TT>gettext</TT> info page.
+
+<P>
+
+<H1><A NAME="SECTION00080000000000000000">
+PO file editors</A>
+</H1>
+<A NAME="sec:pofile-editors"></A>While the <TT>yudit</TT> editor is adequate for our present purposes, and we are
+planning on using that as it is platform-independent, and currently the best
+at rendering Oriya. This section describes some features of some editors that
+are specialized for editing PO files under Linux. This is still work in
+progress, as I am in the process of trying out different editors before
+settling on one. The ones considered here are: Emacs in po-mode, <TT>poedit</TT>,
+<TT>kbabel</TT>, and <TT>gtranslator</TT>.
+  
+<H2><A NAME="SECTION00081000000000000000">
+Emacs PO mode</A>
+</H2>
+  Emacs should automatically enter po-mode when you load a .po file, as
+indicated by “PO” in the modeline at the bottom. The window is made
+read-only, so that you can edit the .po file only through special commands.  A
+description of Emacs po-mode can be found under the gettext::Basics info node,
+or type ‘h’ or ‘?’ in a po-mode window for a list of available commands. While
+I find Emacs po-mode quite restrictive, this is probably due to unfamiliarity
+with it. Its main advantage is that it imposes rigid conformance to the PO
+file format, and checks the file format when closing the .po file
+buffer. Emacs po-mode is not useful for Oriya translation, as I know of no way
+to directly enter Oriya text under Emacs.
+  
+<H2><A NAME="SECTION00082000000000000000">
+poedit</A>
+</H2>
+  XXX: in preparation.
+  
+<H2><A NAME="SECTION00083000000000000000">
+KDE: the kbabel editor</A>
+</H2>
+  <TT>kbabel</TT>&nbsp;[<A
+ HREF="memo.html#url:kbabel">4</A>] is a more user-friendly and configurable editor than
+either of Emacs po-mode or <TT>poedit</TT>. It is integrated into KDE, and offers
+extensive contextual help. Besides support for various PO file features, it
+has a plugin framework for dictionaries, that allows consistency checks and
+translation suggestions.
+  
+<H2><A NAME="SECTION00084000000000000000">
+GNOME: the gtranslator editor</A>
+</H2>
+  XXX: in preparation.
+
+<H2><A NAME="SECTION00090000000000000000">
+Bibliography</A>
+</H2><DL COMPACT><DD><P></P><DT><A NAME="xkb-oriya-layout">1</A>
+<DD>
+G.&nbsp;Mohanty,
+<BR>A practical primer for using Oriya under Linux, v0.3,
+<BR><TT><A NAME="tex2html1"
+  HREF="http://oriya.sarovar.org/docs/getting_started/index.html">http://oriya.sarovar.org/docs/getting_started/index.html</A></TT>, 2004,
+<BR>Sec.&nbsp;6.2 describes the xkb layouts for Oriya.
+
+<P></P><DT><A NAME="url:oriya-trans-plan">2</A>
+<DD>
+G.&nbsp;Mohanty,
+<BR>A plan for Oriya localization, v0.1,
+<BR><TT><A NAME="tex2html2"
+  HREF="http://oriya.sarovar.org/docs/translation_plan/index.html">http://oriya.sarovar.org/docs/translation_plan/index.html</A></TT>,
+  2004.
+
+<P></P><DT><A NAME="url:lj-translation">3</A>
+<DD>
+Linux Journal article on internationalization,
+<BR><TT><A NAME="tex2html3"
+  HREF="https://www.linuxjournal.com/article/3023">https://www.linuxjournal.com/article/3023</A></TT>.
+
+<P></P><DT><A NAME="url:kbabel">4</A>
+<DD>
+Features of the kbabel editor,
+<BR><TT><A NAME="tex2html4"
+  HREF="http://i18n.kde.org/tools/kbabel/features.html">http://i18n.kde.org/tools/kbabel/features.html</A></TT>.
+</DL>
+
+<H1><A NAME="SECTION000100000000000000000">
+About this document ...</A>
+</H1>
+ <STRONG>A tutorial on Native Language Support using GNU gettext</STRONG><P>
+This document was generated using the
+<A HREF="http://www.latex2html.org/"><STRONG>LaTeX</STRONG>2<tt>HTML</tt></A> translator Version 2002-2-1 (1.70)
+<P>
+Copyright &#169; 1993, 1994, 1995, 1996,
+<A HREF="http://cbl.leeds.ac.uk/nikos/personal.html">Nikos Drakos</A>, 
+Computer Based Learning Unit, University of Leeds.
+<BR>Copyright &#169; 1997, 1998, 1999,
+<A HREF="http://www.maths.mq.edu.au/~ross/">Ross Moore</A>, 
+Mathematics Department, Macquarie University, Sydney.
+<P>
+The command line arguments were: <BR>
+ <STRONG>latex2html</STRONG> <TT>-no_math -html_version 4.0,math,unicode,i18n,tables -split 0 memo</TT>
+<P>
+The translation was initiated by Gora Mohanty on 2004-07-24
+<DIV CLASS="navigation"><HR>
+
+<!--Navigation Panel
+<IMG WIDTH="81" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next_inactive"
+ SRC="file:/usr/share/latex2html/icons/nx_grp_g.png"> 
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="file:/usr/share/latex2html/icons/up_g.png"> 
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="file:/usr/share/latex2html/icons/prev_g.png">   
+<BR></DIV>
+End of Navigation Panel-->
+
+<ADDRESS>
+Gora Mohanty
+2004-07-24
+</ADDRESS>
+</BODY>
+</HTML>

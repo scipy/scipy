@@ -1,0 +1,761 @@
+2002-10-03  Stephan Kulow  <coolo@kde.org>
+	
+	* made config.h.bot obsolete
+
+2002-04-26  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in removed bogus message
+
+2001-11-07  Walter Tasin <tasin@kdevelop.org>
+
+	* now #MIN_CONFIG tag takes parameters for KDE_USE_QT, too.
+          e.g. #MIN_CONFIG(2.2) for qt 2.2 usage
+
+2000-11-30  David Faure  <faure@kde.org>
+
+	* acinclude.m4.in: Added kde_moduledir which points to $prefix/lib/kde2/
+
+2000-07-24  Alex Zepeda  <jazepeda@pacbell.net>
+
+	* acinclude.m4.in: Remove the test for malloc.h
+
+2000-04-05  Michael Matz  <matz@ifh.de>
+
+        * config.pl : added kludge for compiling regexp's even if
+	perl < 5.005 is installed
+	* conf.change.pl : added support for autoconf 2.14.1
+
+2000-03-27  David Faure  <faure@kde.org>
+
+	* acinclude.m4.in, Makefile.common: changed inst-apps semantics
+	If present, only the subdirs it lists will be configured and compiled.
+	If absent, then subdirs is used (and inst-apps isn't generated anymore)
+
+2000-03-22  David Faure  <faure@kde.org>
+
+	* am_edit: Added support for KDE_ICON = AUTO
+
+2000-03-18  David Faure  <faure@kde.org>
+
+	* Makefile.common: Rewrote the list-of-Makefiles generation to make it
+	simpler and nicer, using create_makefiles' way of doing it.
+	Added support for COMPILE_LAST and COMPILE_FIRST in toplevel Makefile.am
+
+2000-01-05  David Faure  <faure@kde.org>
+
+	* Makefile.common: hacked around autoconf bug (setting INSTALL to ".."
+	when calling a subconfigure and INSTALL is already set).
+
+1999-12-15  Waldo Bastian  <bastian@kde.org>
+
+        * acinclude.m4.in: Test whether Qt compiles AND LINKS without flags.
+
+1999-06-24  Stephan Kulow  <coolo@kde.org>
+
+	* am_edit: generate correct Makefile entries for kde-i18n toplevel directories
+	* am_edit:
+
+1999-06-14  Stephan Kulow  <coolo@kde.org>
+
+	* am_edit: remove idl generated files on make clean
+
+1999-06-09  Stephan Kulow  <coolo@kde.org>
+
+	* am_edit: skipping programs with variables in sources for final
+
+1999-06-07  Stephan Kulow  <coolo@kde.org>
+
+	* am_edit: added support for idl files
+
+1999-06-02  Stephan Kulow  <coolo@kde.org>
+
+	* Makefile.common: preserve comments in .pot files to make it
+		possible for programmers and translators to comment them
+
+1999-06-02  Simon Hausmann <hausmann@kde.org>
+
+        * acinclude.m4.in: added kde_servicetypesdir
+
+1999-06-02  David Faure  <faure@kde.org>
+
+	* acinclude.m4.in: removed LIB_KFM and LIB_KDEUTIL aliases
+
+1999-05-28  Simon Hausmann <hausmann@kde.org>
+
+	* acinclude.m4.in: added kde_servicesdir
+
+1999-05-27  Stephan Kulow  <coolo@kde.org>
+
+	* am_edit: lots of changes for better support of --enable-final
+
+1999-05-22  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: added support for --with-dmalloc
+
+1999-05-19  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: added support for --enable-final
+
+	* am_edit: added support for --enable-final
+	
+1999-05-06  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: change the meaning of --disable-debug
+
+1999-05-04  Helge Deller <deller@gmx.de>
+
+	* acinclude.m4.in: the test for the X-includes/directories failed,
+	when compile & link work without special directories (as on HP-UX).
+
+1999-04-20  Stephan Kulow  <coolo@kde.org>
+
+	* am_edit: adding DESTDIR replacement for rm and uninstall-local
+	too. Seems very useless, but makes testing for uninstall easier
+
+1999-04-01  David Faure  <faure@kde.org>
+
+	* acinclude.m4.in: Added -lkfile to $(LIB_KIO)
+
+1999-03-30  David Faure  <faure@kde.org>
+
+	* acinclude.m4.in: Added AC_CHECK_KDEMAXPATHLEN, which defines KDEMAXPATHLEN.
+
+1999-03-29  David Faure  <faure@kde.org>
+
+	* acinclude.m4.in: added LIB_X11 to XPMLIB and GLLIB, because
+	on SCO, they need it _after_ themselves.
+
+1999-03-28  David Faure  <faure@kde.org>
+
+	* acinclude.m4.in: added LIB_KFM to LIB_KAB alias
+
+1999-03-26  David Faure  <faure@kde.org>
+
+	* acinclude.m4.in: made LIB_KFILE use LIB_KIO instead of LIB_KFM
+	added LIB_KFORMULA
+
+1999-03-20  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: check for libXext - for Russel :)
+
+1999-03-16  Stephan Kulow  <coolo@kde.org>
+
+	* acinclud3.m4.in: extend the MICO test with a list of possible
+	places where to find CORBA.h
+
+1999-03-15  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: move $QTINC and $QTLIB in search path
+
+1999-03-14  Stephan Kulow  <coolo@kde.org>
+
+	* am_edit: install-root is obsolute. Use DESTDIR always
+
+1999-03-03  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: fixing a bug, that $QTDIR was taken before --with-qt*
+	* acinclude.m4.in: added KDE_USE_QT, that you can choose if to
+	use QT 2.0 or KDE 1.0
+	
+	* Makefile.common: added target package-merge
+
+	* am_edit: many fixes to the POFILES handeling of am_edit
+
+1999-03-02  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: first look at libjpeg6b (from kdesupport) then
+	for libjpeg
+
+	* config.*, libtool.*: update to the latest FSF tools
+
+1999-02-23  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: error when Sparc CC is used. Better use it in
+	configure and tell him the story then letting him find it while
+	compiling
+
+	* acinclude.m4.in: adding KDE_CHECK_EXTRA_LIBS to all possible tests,
+	so that --with-extra-includes is used when needed.
+
+	* acinclude.m4.in: configure looks for giflib30, so it should say so
+
+	* acinclude.m4.in: don't overwrite x include parameters. Patch by
+	Ari Lemmke <ari.lemmke@regex.fi> (bug report 741)
+	
+1999-02-20  Stephan Kulow <coolo@kde.org>
+
+	* acinclude.m4.in: fixing KDE_CHECK_PATHS for rechecking. In case
+	of defaults (kdelibs) configure didn't cache the results
+
+1999-02-18  David Faure  <faure@kde.org>
+
+	* acinclude.m4.in: added AC_CHECK_S_ISSOCK, to fix #706.
+
+1999-02-17  David Faure  <faure@kde.org>
+
+	* acinclude.m4.in: added AC_CHECK_RANDOM, just like
+	AC_CHECK_USLEEP, to enable the fake if necessary.
+
+1999-02-13  Kurt Granroth <granroth@kde.org>
+
+        * acinclude.m4.in: look for QT-2.0
+
+1999-02-05  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: in macro KDE_FIND_PATH treat user given dirs
+	and $PATH dirs the same. Added seperate test for to find binary
+	($5) to replace findperl
+
+1999-01-28  Stephan Kulow  <coolo@kde.org>
+
+	* automoc: added patch by jbb to be a little bit more precise about
+	the number of sourcefiles that include the moc file if it's != 1.
+	Besides that automoc will fail with exit code, so the Makefile.cvs
+	process does stop in case a problem accoured.
+
+	* automoc: don't hardcode header suffix, but allow *.h, *.hh and *.H
+	
+1999-01-27  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: try qobjcoll.h and qapplication.h before saying
+	OK to qt headers. (I could kill SuSE for splitting into qt-dev
+	and qt-compat)
+
+1991-01-23  Stephan Kulow  <coolo@kde.org>
+
+	* automoc: added fixes by JB <jb.nz@writeme.com>
+
+1999-01-21  Stephan Kulow  <coolo@kde.org>
+
+	* automoc: added --help and --path (for use in dist-hook)
+
+1999-01-20  Alex Zepeda  <garbanzo@hooked.net>
+	
+	* ltconfig: added entries for FreeBSD 4.x
+
+1999-01-19  Stephan Kulow  <coolo@kde.org>
+
+	* automoc: added a distclean-metasources target which deletes all
+	moc files and let distclean depend on it
+
+1999-01-18  Stephan Kulow  <coolo@kde.org>
+
+        * automoc: several fixes (ignore comment lines + join lines
+         with \ )
+	
+	* automoc: support META_INCLUDES in case the header files are
+	not in the same dir as the sources.
+
+1999-01-17  Stephan Kulow  <coolo@kde.org>
+
+	* automoc: several fixes.
+
+1999-01-16  Stephan Kulow  <coolo@kde.org>
+
+	* automoc: added support for included MOC files.
+
+	* acinclude.m4.in: use srcdir for the subdirs stuff as well
+
+	* automoc: added better command line parsing and some preparation
+	for handling "normal" moc files
+
+	* acinclude.m4.in: added aliases for libkio and libkdeutil
+
+1999-01-15  Harri Porten  <porten@kde.org>
+
+	* automoc: Carved in stone syntax for Makefile.in:
+	{program}_METASOURCES = USE_AUTOMOC [{suffix}]
+
+1999-01-15  Stephan Kulow  <coolo@kde.org>
+
+	* Makefile.common: set top_srcdir to .
+
+1999-01-14  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: don't use config.h.bot any longer
+
+1999-01-08  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: added KDE_CHECK_NEWLIBS
+
+	* acinclude.m4.in: test for Qt even if both --with-qt-headers and
+	--with-qt-libraries are given. They may be wrong.
+	
+1999-01-06  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: change the MOC test so it can be used for other
+	tools as well
+
+1998-12-28  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: look for QT-1.42 since kpanel needs it
+
+1998-12-27  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: added /usr/lib for libpython test
+	
+	* acinclude.m4.in: take my email address out of it and added a
+	reference to www.kde.org/faq
+
+	* acinclude.m4.in: use Qt >= 1.4
+
+	* acinclude.m4.in: added KDE_CHECK_NAMESPACES
+	
+1998-12-18  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: test for directories to exist before saying yes
+	to compilation :)
+
+1998-12-14  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: added CPLUSPLUS for the kimgio test. It's
+	only important for shaman right now, but at least there it is :)
+
+1998-12-12  Stephan Kulow  <coolo@kde.org>
+
+	* Makefile.cvs: added common Makefile.cvs
+
+	* acinclude.m4.in: Thomas.Schwarz@pro-sieben.de reported a very ugly
+	bug in AC_PROG_CXXCPP, so I added my own version
+	
+	* acinclude.m4.in: added KDE_CREATE_SUBDIRS_LIST to simplify
+	most toplevel configures
+
+1998-12-11  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: added call to AC_PROG_CXXCPP. Not really sure why
+	it never caused problems
+
+	* acinclude.m4.in: moved LIBTIFF alias
+
+	* acinclude.m4.in: only test for the existance of libkimgio if the
+	user wants to. For 99% of the applications it doesn't matter if
+	configure can find libkimgio :)
+	
+1998-12-10  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: some changes to the python check to handle $LIBDL
+
+1998-12-09  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: make Alex's tiff test a real one
+	
+	* acinclude.m4.in: fix the LIB_TIFF alias to really expand
+
+1998-12-08  Alex Zepeda  <garbanzo@hooked.net>
+
+	* acinclude.m4.in: Fix tiff test to use libtiff34 if it exists.
+	This is what the FreeBSD port installs to for whatever reason.
+
+	* acinclude.m4.in: s/kde/KDE/ (at least in some of the
+	descriptions, obviously no variable names were touched.
+
+1998-12-08  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: moved the LIB_QT alias to the Qt check
+	
+	* acinclude.m4.in: unset KDEDIR before running conftest
+	
+	* acinclude.m4.in: fixed mean typo
+	
+	* acinclude.m4.in: added the copyright header for the gettext
+	tests, so that people know we're legal ;)
+
+	* acinclude.m4.in: set language to C++ before testing QIMGIO	
+
+1998-12-07  Alex Zepeda  <garbanzo@hooked.net>
+
+	* acinclude.m4.in: Fix PNG test to use correct ANSI C code, and
+	not trip up gcc.
+
+1998-12-07  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: don't hardcode -ldl
+	
+	* acinclude.m4.in: move the LIB_X11 alias to the X test to make it
+	useful for kdesupport as well
+	
+	* acinclude.m4.in: give the word CHECK_KIMGIO a meaning in really
+	checking for it
+
+	* acinclude.m4.in: simple fix to prevent kimgio test from compiling
+	KDE application in kdelibs
+
+1998-12-05  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: let KDE_CHECK_KIMGIO depend on AC_PATH_KDE,
+	otherwise most tests fail. It didn't mean anything to 90% of the
+	packages since they test for KDE before kimgio, but for shaman
+	it does
+
+	* ltconfig: the real fix for the Solaris && gcc problem.
+	Thanks Kurt for reporting it and Alexandre for fixing it :)
+
+1998-12-04  Stephan Kulow  <coolo@kde.org>
+
+	* libtool.*: update again
+
+	* acinclude.m4.in: changed the function to test for libnsl to
+	inet_ntoa since UnixWare 7's version did not have gethostbyname,
+	but needs libnsl
+
+1998-12-02  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: fixed the MOC test (again) to use the PATH variable
+	correctly (with the correct seperator)
+
+	* config.guess: update from the soon to be released autoconf-2.13
+
+1998-12-01  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: fixes for the MOC test. Use PATH now when found
+
+1998-11-30  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: extended the MOC test. It checks now for the
+	first line of the output of "moc --help" and looks for Qt in it.
+
+1998-11-27  Stephan Kulow  <coolo@kde.org>
+
+	* ltconfig: another libtool update. Fixes an ugly bug on Solaris,
+	when GNU ld is in path before Solaris ld, but gcc uses the later
+
+1998-11-26  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: made the Qt test more advance to check for qt
+	1.41 - I still need to make it better, but there shouldn't be too
+	many qt releases in a row, would there? ;)
+
+	* ltconfig: libtool update with better BSD/OS support
+
+1998-11-22  Stephan Kulow  <coolo@kde.org>
+
+	* ltconfig: cool - libtool uses g++ now to link libraries on Solaris.
+	This means, static objects become usuable on that plattforms (some
+	others as well).
+
+1998-11-20  Stephan Kulow  <coolo@kde.org>
+
+	* ltmain.sh: updated libtool from their CVS - fixes bugs we haven't
+	found and adds some more features, that we do not need ;-)
+
+1998-11-19  David Faure  <faure@kde.org>
+
+	* acinclude.m4.in: added AC_CHECK_UTMP_FILE, taken from kdebase
+
+1998-11-16  Harri Porten  <porten@kde.org>
+
+	* automoc: take care of "ar" object files, too.
+
+1998-11-16  Stephan Kulow  <coolo@kde.org>
+
+	* libtool.m4.in: revised my --silent patch. The solution
+	Alexandre suggested is much better.
+
+1998-11-15  Stephan Kulow  <coolo@kde.org>
+
+	* ltconfig.in: done some tweakings to support -export-dynamic
+	with egcs
+
+	* config.sub: wow - BeOS support :)
+
+1998-11-14  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: don't use rpath for test program, if rpath is
+	disabled for applications
+
+	* ltconfig: patched libtool to make it silent without making
+	ltconfig silent
+
+	* acinclude.m4.in: make libtool silent again
+
+	* libtool.m4.in: update to libtool-981114 (untested stuff, but
+	we have to test it to make it tested - sounds that logical? :-)
+
+	* libtool.m4.in: moved the self stricked libtool tests to "our"
+	file.
+
+	* acinclude.m4.in: moved ChangeLog of kdebase which I used to
+	maintain acinclude.m4.in logs to kde-common/admin. Hopefully I
+	will maintain it more often from now on :)
+
+1998-07-27  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: fixed some things in the MOC test
+
+	* acinclude.m4.in: fixed this damn msgfmt test
+
+1998-06-02  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: ignore msgfmt, if not GNU gettext
+
+1998-05-28  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: fixed KDE_CHECK_STL. Checks for HP and SGI type
+
+	* acinclude.m4.in: embraced every variable with "" to make
+	it consistent
+
+	* acinclude.m4.in: various fixes for the koffice checks
+	(mico, ministl and python)
+
+1998-05-16  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: don't use KDE_CHECK_QT_DIRECT, when
+	--with-qt-libs are given
+
+1998-04-21  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: cool, I found the trick to suppress the ls
+	errors
+
+1998-04-20  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: rewrote the qt checking test, since it
+	didn't work under FreeBSD, since it relied on the .so link.
+	The new version is a little bit buggy, but I need some testing
+	to make it perfect
+
+	* acinclude.m4.in: fixed the side effects of the PAM test
+
+1998-04-18  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: hopefully fixed the PAM test (I rewrote it)
+
+1998-04-16  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: extended the getsockname test inspired
+	by a patch by Martin Baulig
+
+	* configure.in: added test for utmp file
+
+	* acinclude.m4.in: made --without-pam default
+	
+
+1998-04-06  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: don't test compiling, linking, running in
+	one step. This proved to be too dangerous for my mail box.
+	
+1998-03-21  Stephan Kulow  <coolo@kde.org>
+
+	* libtool.m4.in: created some new macros to work around this
+	ugly (because long) help of configure --enable-shared/static
+
+1998-03-05  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: set language to C++ before trying the ksize_t
+	test
+
+	* configure.in: sorted the Makefile entries alphabeticly (and all
+	together: we love xemacs! we love xemacs! ;)
+	
+	* configure.in: added sk
+
+	* acinclude.m4.in: substitute x_libraries to fix the empty -rpath
+	
+1998-03-03  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: add a rpath for every shared library, that is
+	linked too (especially X11 libraries)
+	
+Tue Feb 24 22:04:59 1998  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: added kde_sounddir and set kde_minidir to
+	kde_icondir/mini to break not too much
+
+Sun Feb 15 18:25:50 1998  Stephan Kulow  <coolo@kde.org>
+
+	* configure.in: added bugfix by Bob Miller <kbob@engr.sgi.com>
+	(correct reset of IFS)
+	
+Wed Feb 11 00:53:11 1998  Stephan Kulow  <coolo@kde.org>
+
+	* configure.in: made shadow under Linux default, since the
+	binaries will work also under non-shadow systems. The only problem
+	left is PAM, so I disabled shadow in case, PAM is present
+
+Tue Feb 10 16:46:32 1998  Stephan Kulow  <coolo@kde.org>
+
+	* configure.in: added test for nice to find out, if the option
+	-nice works for the screensavers
+
+	* acinclude.m4.in: port to LynxOS. For this I moved all library
+	search routines in KDE_MISC_TESTS, so I don't need to write this
+	in every package
+
+	* README: some grammar fixes
+
+	* acinclude.m4.in: search for the libs in the exec_prefix, when
+	it's present
+	
+Sun Feb  8 14:07:23 1998  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: updated all packages
+
+	* libtool.m4.in: applied patch for libtool.m4.in to show the
+	correct default for shared and static
+	
+
+Sat Feb  7 10:56:00 1998  Stephan Kulow  <coolo@kde.org>
+
+	* configure.in: good news - KDE is relocatable again.
+
+	* libtool.m4.in: updated to latest libtool 1.0i
+
+Fri Feb  6 21:26:51 1998  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: added a AC_PROVIDE for AC_PROG_CC and
+	AC_PROG_CPP to KDE_CHECK_COMPILERS
+
+Thu Feb  5 16:27:47 1998  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: put $QTDIR/bin before /usr/bin in the path to
+	look for moc. I don't know why, but I got a report, that configure
+	found /usr/bin/moc under Solaris
+
+Fri Jan 30 15:47:50 1998  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: export LIBRARY_PATH after reset to the saved
+	value
+	
+	* acinclude.m4.in: unset the LIBRARY_PATH to get a relieable
+	result when trying to find, if Qt compiles without -L
+
+Sat Jan 24 00:45:52 1998  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: fixed another bug in AC_PATH_KDE
+
+Thu Jan 22 14:46:15 1998  Stephan Kulow  <coolo@kde.org>
+
+	* configure.in: fixed an ugly bug in AC_BASE_PATH_KDE
+
+	* kappfinder/kappfinder.in: let kappfinder create by configure to
+	allow the use of the kde_ paths
+
+Wed Jan 21 22:19:35 1998  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in: - added a install_root prefix to all paths, if
+	set, to enable package managers to move the whole installation at once
+	- added --with-install-root to set the install_root prefix
+
+Tue Jan 20 22:41:04 1998  Stephan Kulow  <coolo@kde.org>
+
+	* configure.in: added NOOPT_CXXFLAGS to allow kioslave to be
+	compiled without -O2
+
+Mon Jan 19 21:55:21 1998  Stephan Kulow  <coolo@kde.org>
+
+	* configure.in: some little fixes for the Makefiles
+
+	* acinclude.m4.in: --prefix will no longer override the search for
+	libraries. If they are present somewhere, they are used (through
+	the methodes in KApplication)
+
+Mon Jan 12 00:30:36 1998  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in fixed an ugly bug, that accoured, when
+	qt_libraries is not set (empty/equals X11/not necessary)
+	
+	* acinclude.m4.in moved the remove of the files after the error
+	detection
+	
+
+Sun Jan 11 17:27:53 1998  Stephan Kulow  <coolo@kde.org>
+
+	* acinclude.m4.in added a new macro KDE_CHECK_QT_DIRECT to unset
+	the Qt library path, if a Qt program compiles without them
+		
+	* acinclude.m4.in added a return value in the CREATE_KFSSTND
+	macro. Perhaps this has caused the problems
+
+Sat Jan 10 17:40:44 1998  Stephan Kulow  <coolo@kde.org>
+
+	* ChangeLog started to maintain a ChangeLog file again
+	* acinclude.m4.in the AC_CREATE_KFSSTND to get better debug output
+	to find the problem
+	
+
+Old logs, Stephan Kulow made:
+	
+0.1 : first steps with libkde
+0.2 : first release with libkde, khtmlw, kdehelp, acli, kwm, kpanel
+0.3 : added kfm and bugfixes
+0.4 : updated khtmlw, kdehelp, kwm, changed install in all subdirs
+0.5 : support libtool (chooseable shared libs)
+0.6 : split libkde in kdecore and kdeui
+0.6.1 : Bugfixes
+0.7 : added code from Janos Farkas (configure)
+    : added @{kde,qt}_{includes,libraries}@
+0.7.1: Bugfixes
+0.7.2: Bugfixes
+0.7.3: added @all_includes@ and @all_libraries@
+       replaced all incompatible flags like $(CC) and -DHAVE_UNISTD_H
+0.7.4: changed support for libkde (back in it's own)
+       added kpat
+       updated kpanel, kwm, kghostview
+0.8: removed a bug in kghostview
+	lifted installation process of several apps
+	splitt kdebase into kdelibs and kdeapps	
+	updated khtmlw, kfm and kdehelp
+	added kcalc and kpaint
+	updated kdisplay
+	added kscreensaver
+	added --enable-kscreensaver
+	added --enable-debug (and @CXXFLAGS@ to all Makefile.ins)
+	updated kwm to 0.4.7
+	added make uninstall to every app
+	added kvt
+	added khexdit
+	added .kdelnk for kmines, kedit, ktetris
+	put kwm, kfind's .kdelnk in the right directories
+	replaced --enable-kscreensaver by --disable-kscreensaver
+	updated kpanel to 0.15
+	some bugfixes (thanks Marco)
+	some bugfixes (thanks Martin)
+	changed acinclude.m4, because aclocal won't
+	updated kwm to 0.4.8 (patched it again for Qt-1.2)
+	updated kvt to 0.13 (patch from Matthias)
+	patched kvt and kwm
+	updated kwm to 0.5.0
+	updated kvt for 0.14 (again and again :-)
+	updated kview to 0.10
+	updated kfm to 0.6.3
+ 	patched kscreensaver for FreeBSD (thanks Marc)
+0.9: updated kdisplay to 0.5.3
+	added klogout
+	patches from Matthias
+	updated kfm to 0.6.4
+	updated kghostview to 0.4
+	added QTINC and QTLIB
+	updated kdehelp to 0.4.11
+	patched kfm to support ktoolbar
+	updated kedit to kedit+
+	added kfontmanager 0.2.1
+0.9.1: changed kpaint's make style
+	bugfixing
+	updated kmines to 0.6.5
+	updated ktetris to 0.2.4
+	changed to Makefiles to depend on Makefile.in
+	changed the Makefiles to let install depend on all
+	added kjots-0.2.2
+	updated kjots-0.2.3
+	updated kfm to 0.6.6
+	updated kjots-0.2.4
+	updated kpaint-0.2
+	updated kedit to 0.5
+	updated kfontmanager to 0.2.2
+	updated kfm to 0.6.7
+	updated ktetris to 0.2.5
+	updated kjots to 0.2.5
+0.10: added HAVE_SQRTL
+	added HAVE_CRYPT_H
+	updated kfind
+	updated kfm to kfm-0.8.1
+	re-introduced automake to kdebase
+	bugfixes for the configure.in
+	added XPM, GL and PAM tests to configure
+	added morph3d to kscreensavers
+	updated kfind to 0.3.2
+	added some patches for SGI
+... lost the time to maintain a Changelog ;)

@@ -1,0 +1,532 @@
+{
+  "build": "hf998b51_1",
+  "build_number": 1,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [],
+  "depends": [
+    "libgcc-ng >=12",
+    "openssl >=3.1.1,<4.0a0"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/libevent-2.1.12-hf998b51_1",
+  "features": "",
+  "files": [
+    "include/evdns.h",
+    "include/event.h",
+    "include/event2/buffer.h",
+    "include/event2/buffer_compat.h",
+    "include/event2/bufferevent.h",
+    "include/event2/bufferevent_compat.h",
+    "include/event2/bufferevent_ssl.h",
+    "include/event2/bufferevent_struct.h",
+    "include/event2/dns.h",
+    "include/event2/dns_compat.h",
+    "include/event2/dns_struct.h",
+    "include/event2/event-config.h",
+    "include/event2/event.h",
+    "include/event2/event_compat.h",
+    "include/event2/event_struct.h",
+    "include/event2/http.h",
+    "include/event2/http_compat.h",
+    "include/event2/http_struct.h",
+    "include/event2/keyvalq_struct.h",
+    "include/event2/listener.h",
+    "include/event2/rpc.h",
+    "include/event2/rpc_compat.h",
+    "include/event2/rpc_struct.h",
+    "include/event2/tag.h",
+    "include/event2/tag_compat.h",
+    "include/event2/thread.h",
+    "include/event2/util.h",
+    "include/event2/visibility.h",
+    "include/evhttp.h",
+    "include/evrpc.h",
+    "include/evutil.h",
+    "lib/cmake/libevent/LibeventConfig.cmake",
+    "lib/cmake/libevent/LibeventConfigVersion.cmake",
+    "lib/cmake/libevent/LibeventTargets-shared-release.cmake",
+    "lib/cmake/libevent/LibeventTargets-shared.cmake",
+    "lib/cmake/libevent/LibeventTargets-static-release.cmake",
+    "lib/cmake/libevent/LibeventTargets-static.cmake",
+    "lib/libevent-2.1.so",
+    "lib/libevent-2.1.so.7",
+    "lib/libevent-2.1.so.7.0.1",
+    "lib/libevent.so",
+    "lib/libevent_core-2.1.so",
+    "lib/libevent_core-2.1.so.7",
+    "lib/libevent_core-2.1.so.7.0.1",
+    "lib/libevent_core.so",
+    "lib/libevent_extra-2.1.so",
+    "lib/libevent_extra-2.1.so.7",
+    "lib/libevent_extra-2.1.so.7.0.1",
+    "lib/libevent_extra.so",
+    "lib/libevent_openssl-2.1.so",
+    "lib/libevent_openssl-2.1.so.7",
+    "lib/libevent_openssl-2.1.so.7.0.1",
+    "lib/libevent_openssl.so",
+    "lib/libevent_pthreads-2.1.so",
+    "lib/libevent_pthreads-2.1.so.7",
+    "lib/libevent_pthreads-2.1.so.7.0.1",
+    "lib/libevent_pthreads.so",
+    "lib/pkgconfig/libevent.pc",
+    "lib/pkgconfig/libevent_core.pc",
+    "lib/pkgconfig/libevent_extra.pc",
+    "lib/pkgconfig/libevent_openssl.pc",
+    "lib/pkgconfig/libevent_pthreads.pc"
+  ],
+  "fn": "libevent-2.1.12-hf998b51_1.conda",
+  "license": "BSD-3-Clause",
+  "license_family": "BSD",
+  "link": {
+    "source": "/opt/conda/pkgs/libevent-2.1.12-hf998b51_1",
+    "type": 1
+  },
+  "md5": "a1cfcc585f0c42bf8d5546bb1dfb668d",
+  "name": "libevent",
+  "package_tarball_full_path": "/opt/conda/pkgs/libevent-2.1.12-hf998b51_1.conda",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "include/evdns.h",
+        "path_type": "hardlink",
+        "sha256": "23a401ad32cfca6653e1529bb392c99f9eae5471d1d8126798b6a876da6f7c3c",
+        "sha256_in_prefix": "23a401ad32cfca6653e1529bb392c99f9eae5471d1d8126798b6a876da6f7c3c",
+        "size_in_bytes": 2019
+      },
+      {
+        "_path": "include/event.h",
+        "path_type": "hardlink",
+        "sha256": "6b6109226e90afb12183e08529b4e7feceb84b29643eb20519eb32411a3344e7",
+        "sha256_in_prefix": "6b6109226e90afb12183e08529b4e7feceb84b29643eb20519eb32411a3344e7",
+        "size_in_bytes": 2744
+      },
+      {
+        "_path": "include/event2/buffer.h",
+        "path_type": "hardlink",
+        "sha256": "ca0e01cd9996615a5a1f755e23371941703be4fb4439b25f8408184a06b08e4f",
+        "sha256_in_prefix": "ca0e01cd9996615a5a1f755e23371941703be4fb4439b25f8408184a06b08e4f",
+        "size_in_bytes": 39189
+      },
+      {
+        "_path": "include/event2/buffer_compat.h",
+        "path_type": "hardlink",
+        "sha256": "37f5a043b9c032f6917f7e1889bed07185eca6b3a3cb51e08caab99f9b30860a",
+        "sha256_in_prefix": "37f5a043b9c032f6917f7e1889bed07185eca6b3a3cb51e08caab99f9b30860a",
+        "size_in_bytes": 4741
+      },
+      {
+        "_path": "include/event2/bufferevent.h",
+        "path_type": "hardlink",
+        "sha256": "8f2094670cc294b29b947339741ed65787118359fae4aeb00ad38108836f64e6",
+        "sha256_in_prefix": "8f2094670cc294b29b947339741ed65787118359fae4aeb00ad38108836f64e6",
+        "size_in_bytes": 34683
+      },
+      {
+        "_path": "include/event2/bufferevent_compat.h",
+        "path_type": "hardlink",
+        "sha256": "87b760fbb0404ac0b6547827b14291725f3c77c8cb69b7d908395eaceb6eec06",
+        "sha256_in_prefix": "87b760fbb0404ac0b6547827b14291725f3c77c8cb69b7d908395eaceb6eec06",
+        "size_in_bytes": 4538
+      },
+      {
+        "_path": "include/event2/bufferevent_ssl.h",
+        "path_type": "hardlink",
+        "sha256": "9ca09315885b7acc1996634508bbfe3839e338c4fe09d0daa1baaf0312346950",
+        "sha256_in_prefix": "9ca09315885b7acc1996634508bbfe3839e338c4fe09d0daa1baaf0312346950",
+        "size_in_bytes": 4848
+      },
+      {
+        "_path": "include/event2/bufferevent_struct.h",
+        "path_type": "hardlink",
+        "sha256": "593efa39fd986b9fb1926764b0d51107a334777b8b82743d6e7c7c8bdf021d9f",
+        "sha256_in_prefix": "593efa39fd986b9fb1926764b0d51107a334777b8b82743d6e7c7c8bdf021d9f",
+        "size_in_bytes": 4135
+      },
+      {
+        "_path": "include/event2/dns.h",
+        "path_type": "hardlink",
+        "sha256": "bc40ab5ec25934e3a4ee8182f375f6c71f24b165e66ac8532f0079ed2c4c1133",
+        "sha256_in_prefix": "bc40ab5ec25934e3a4ee8182f375f6c71f24b165e66ac8532f0079ed2c4c1133",
+        "size_in_bytes": 28018
+      },
+      {
+        "_path": "include/event2/dns_compat.h",
+        "path_type": "hardlink",
+        "sha256": "c97eb16f1821df8bfd23ca645e025cf71ed5d9f77a9ac854806ba1a2b80e3a74",
+        "sha256_in_prefix": "c97eb16f1821df8bfd23ca645e025cf71ed5d9f77a9ac854806ba1a2b80e3a74",
+        "size_in_bytes": 12588
+      },
+      {
+        "_path": "include/event2/dns_struct.h",
+        "path_type": "hardlink",
+        "sha256": "70bfb11dd140f26cb96ee7fc3bbc62c56f2e6d0a261f0bf7c1b389733d170e02",
+        "sha256_in_prefix": "70bfb11dd140f26cb96ee7fc3bbc62c56f2e6d0a261f0bf7c1b389733d170e02",
+        "size_in_bytes": 2596
+      },
+      {
+        "_path": "include/event2/event-config.h",
+        "path_type": "hardlink",
+        "sha256": "7c79d86772c7f79787b7294160b3c2ce0d7d9b1fe7b1d0e3f3da2f5daecb4b4a",
+        "sha256_in_prefix": "7c79d86772c7f79787b7294160b3c2ce0d7d9b1fe7b1d0e3f3da2f5daecb4b4a",
+        "size_in_bytes": 15758
+      },
+      {
+        "_path": "include/event2/event.h",
+        "path_type": "hardlink",
+        "sha256": "a93b3346f3f653236a45799c2f67dabe0f5fe71612130d3e512efe53bfc2e2e6",
+        "sha256_in_prefix": "a93b3346f3f653236a45799c2f67dabe0f5fe71612130d3e512efe53bfc2e2e6",
+        "size_in_bytes": 62337
+      },
+      {
+        "_path": "include/event2/event_compat.h",
+        "path_type": "hardlink",
+        "sha256": "ca01dc1e74024f619cdf603dbc224113146243176dd05123c900b402623496eb",
+        "sha256_in_prefix": "ca01dc1e74024f619cdf603dbc224113146243176dd05123c900b402623496eb",
+        "size_in_bytes": 7639
+      },
+      {
+        "_path": "include/event2/event_struct.h",
+        "path_type": "hardlink",
+        "sha256": "7b52b49ccf92b2a93d330907a8834b6b7d7082ce7a6c21a923d68d712d4d1f0e",
+        "sha256_in_prefix": "7b52b49ccf92b2a93d330907a8834b6b7d7082ce7a6c21a923d68d712d4d1f0e",
+        "size_in_bytes": 5024
+      },
+      {
+        "_path": "include/event2/http.h",
+        "path_type": "hardlink",
+        "sha256": "8eae9570fe42f81d8821b827c79b450fa41b8f6490c59187854ba6ef074c8be7",
+        "sha256_in_prefix": "8eae9570fe42f81d8821b827c79b450fa41b8f6490c59187854ba6ef074c8be7",
+        "size_in_bytes": 42809
+      },
+      {
+        "_path": "include/event2/http_compat.h",
+        "path_type": "hardlink",
+        "sha256": "7268edcd165578ae3af6dbf726824b90ec62e4bcd245241c289525ad2a58d968",
+        "sha256_in_prefix": "7268edcd165578ae3af6dbf726824b90ec62e4bcd245241c289525ad2a58d968",
+        "size_in_bytes": 3265
+      },
+      {
+        "_path": "include/event2/http_struct.h",
+        "path_type": "hardlink",
+        "sha256": "06037f7be8eab59daed8207df0bc3388c80922c8589d5700915f0285d9f27f76",
+        "sha256_in_prefix": "06037f7be8eab59daed8207df0bc3388c80922c8589d5700915f0285d9f27f76",
+        "size_in_bytes": 4809
+      },
+      {
+        "_path": "include/event2/keyvalq_struct.h",
+        "path_type": "hardlink",
+        "sha256": "353f7341da0baf99451947a814ca97c76f409871bbe2db02fbccdbae0533348a",
+        "sha256_in_prefix": "353f7341da0baf99451947a814ca97c76f409871bbe2db02fbccdbae0533348a",
+        "size_in_bytes": 2603
+      },
+      {
+        "_path": "include/event2/listener.h",
+        "path_type": "hardlink",
+        "sha256": "71e54b24e55967a21cbb0bc96a1ee59c09d78fee004f61ab9b5e273c28a39459",
+        "sha256_in_prefix": "71e54b24e55967a21cbb0bc96a1ee59c09d78fee004f61ab9b5e273c28a39459",
+        "size_in_bytes": 7991
+      },
+      {
+        "_path": "include/event2/rpc.h",
+        "path_type": "hardlink",
+        "sha256": "477d073a8d7f0fdf202dd820fea62d0f9cf4be44decbca58f32e82e9d4a7e24c",
+        "sha256_in_prefix": "477d073a8d7f0fdf202dd820fea62d0f9cf4be44decbca58f32e82e9d4a7e24c",
+        "size_in_bytes": 21764
+      },
+      {
+        "_path": "include/event2/rpc_compat.h",
+        "path_type": "hardlink",
+        "sha256": "95eb790804950275eb12b1d4f60831fa77031ce3d08f853609cd562ed283b25d",
+        "sha256_in_prefix": "95eb790804950275eb12b1d4f60831fa77031ce3d08f853609cd562ed283b25d",
+        "size_in_bytes": 2351
+      },
+      {
+        "_path": "include/event2/rpc_struct.h",
+        "path_type": "hardlink",
+        "sha256": "d1041c44af37449a32d7c41c4d51e895fc872682fb1ab444a2240de743ad94fa",
+        "sha256_in_prefix": "d1041c44af37449a32d7c41c4d51e895fc872682fb1ab444a2240de743ad94fa",
+        "size_in_bytes": 3598
+      },
+      {
+        "_path": "include/event2/tag.h",
+        "path_type": "hardlink",
+        "sha256": "ec36b62473831ce153a8e58df2b5eadbd9976751158c5fac49da9448a6367853",
+        "sha256_in_prefix": "ec36b62473831ce153a8e58df2b5eadbd9976751158c5fac49da9448a6367853",
+        "size_in_bytes": 4914
+      },
+      {
+        "_path": "include/event2/tag_compat.h",
+        "path_type": "hardlink",
+        "sha256": "478ca6534915377b6895cf82181f772365b2ff097e68fe9c432b77d731110caa",
+        "sha256_in_prefix": "478ca6534915377b6895cf82181f772365b2ff097e68fe9c432b77d731110caa",
+        "size_in_bytes": 2141
+      },
+      {
+        "_path": "include/event2/thread.h",
+        "path_type": "hardlink",
+        "sha256": "9bbc4767426833fb71f3324fcd550c135d8fdd554e56d5876717f81ef732be1e",
+        "sha256_in_prefix": "9bbc4767426833fb71f3324fcd550c135d8fdd554e56d5876717f81ef732be1e",
+        "size_in_bytes": 9952
+      },
+      {
+        "_path": "include/event2/util.h",
+        "path_type": "hardlink",
+        "sha256": "c438dbc2b6085084366e70ef9bad6b02936ca34d2b6944f7b6dc7645edec66e8",
+        "sha256_in_prefix": "c438dbc2b6085084366e70ef9bad6b02936ca34d2b6944f7b6dc7645edec66e8",
+        "size_in_bytes": 29420
+      },
+      {
+        "_path": "include/event2/visibility.h",
+        "path_type": "hardlink",
+        "sha256": "7a8a2ae1c0cbdc01282b994caa72bc33cc4e66cca399a791864dbec4ac8a674d",
+        "sha256_in_prefix": "7a8a2ae1c0cbdc01282b994caa72bc33cc4e66cca399a791864dbec4ac8a674d",
+        "size_in_bytes": 2871
+      },
+      {
+        "_path": "include/evhttp.h",
+        "path_type": "hardlink",
+        "sha256": "c51a557d4fca95be83691a9dad87711f0bf2fdb921832d0eafab47a2d62bcaa0",
+        "sha256_in_prefix": "c51a557d4fca95be83691a9dad87711f0bf2fdb921832d0eafab47a2d62bcaa0",
+        "size_in_bytes": 2035
+      },
+      {
+        "_path": "include/evrpc.h",
+        "path_type": "hardlink",
+        "sha256": "941b0c0be213217c788ae542038d5415a97cb80ccfacf81a989c834aeb8ac3f2",
+        "sha256_in_prefix": "941b0c0be213217c788ae542038d5415a97cb80ccfacf81a989c834aeb8ac3f2",
+        "size_in_bytes": 2015
+      },
+      {
+        "_path": "include/evutil.h",
+        "path_type": "hardlink",
+        "sha256": "1ff1e5990aaa53eb2fb160523f5f8bd58196317436d5c48d402304d8a32f261a",
+        "sha256_in_prefix": "1ff1e5990aaa53eb2fb160523f5f8bd58196317436d5c48d402304d8a32f261a",
+        "size_in_bytes": 1782
+      },
+      {
+        "_path": "lib/cmake/libevent/LibeventConfig.cmake",
+        "path_type": "hardlink",
+        "sha256": "a06cedc86273719461adf5abba61531dc787f93f722c805724f0ee12ace04b35",
+        "sha256_in_prefix": "a06cedc86273719461adf5abba61531dc787f93f722c805724f0ee12ace04b35",
+        "size_in_bytes": 7246
+      },
+      {
+        "_path": "lib/cmake/libevent/LibeventConfigVersion.cmake",
+        "path_type": "hardlink",
+        "sha256": "f138abc60ade2e844b7324241d20cbc2f04c7ffc10b64b77d88e5a8cc9276cb3",
+        "sha256_in_prefix": "f138abc60ade2e844b7324241d20cbc2f04c7ffc10b64b77d88e5a8cc9276cb3",
+        "size_in_bytes": 369
+      },
+      {
+        "_path": "lib/cmake/libevent/LibeventTargets-shared-release.cmake",
+        "path_type": "hardlink",
+        "sha256": "44f3cf5d0f5e411e0896e18d6011b1fcbf4794790d00de63c440d93315e44866",
+        "sha256_in_prefix": "44f3cf5d0f5e411e0896e18d6011b1fcbf4794790d00de63c440d93315e44866",
+        "size_in_bytes": 2426
+      },
+      {
+        "_path": "lib/cmake/libevent/LibeventTargets-shared.cmake",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/libevent_1685725798133/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pl",
+        "sha256": "61af8a9679fca38476c8c822bf6b1449a34b6f0e88ccf511299eb8a6d27886d8",
+        "sha256_in_prefix": "afa7518387326bceccd49be1d2541ece59f03cb1d16bfcba50920b6d1c099dcc",
+        "size_in_bytes": 5658
+      },
+      {
+        "_path": "lib/cmake/libevent/LibeventTargets-static-release.cmake",
+        "path_type": "hardlink",
+        "sha256": "e515ac9d9c3a7ff51ea2e756767781b263bd4d1b69d5fafcc738c1666c40eea8",
+        "sha256_in_prefix": "e515ac9d9c3a7ff51ea2e756767781b263bd4d1b69d5fafcc738c1666c40eea8",
+        "size_in_bytes": 2318
+      },
+      {
+        "_path": "lib/cmake/libevent/LibeventTargets-static.cmake",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/libevent_1685725798133/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pl",
+        "sha256": "51eebfd049d42054fbb36930b8cde767ca16c6e6e6442cdccee0c1cf0f3aa435",
+        "sha256_in_prefix": "703bca12e278a31d7a570def6e8c1ae3a1023663cd7c77b4531cb3ca319a9f52",
+        "size_in_bytes": 5658
+      },
+      {
+        "_path": "lib/libevent-2.1.so",
+        "path_type": "softlink",
+        "sha256": "1996826a3f734d0d677954bf80bc01ff802c5c8ed10aa32f6a5b71d42712bdda",
+        "size_in_bytes": 407232
+      },
+      {
+        "_path": "lib/libevent-2.1.so.7",
+        "path_type": "softlink",
+        "sha256": "1996826a3f734d0d677954bf80bc01ff802c5c8ed10aa32f6a5b71d42712bdda",
+        "size_in_bytes": 407232
+      },
+      {
+        "_path": "lib/libevent-2.1.so.7.0.1",
+        "path_type": "hardlink",
+        "sha256": "1996826a3f734d0d677954bf80bc01ff802c5c8ed10aa32f6a5b71d42712bdda",
+        "sha256_in_prefix": "1996826a3f734d0d677954bf80bc01ff802c5c8ed10aa32f6a5b71d42712bdda",
+        "size_in_bytes": 407232
+      },
+      {
+        "_path": "lib/libevent.so",
+        "path_type": "softlink",
+        "sha256": "1996826a3f734d0d677954bf80bc01ff802c5c8ed10aa32f6a5b71d42712bdda",
+        "size_in_bytes": 407232
+      },
+      {
+        "_path": "lib/libevent_core-2.1.so",
+        "path_type": "softlink",
+        "sha256": "2799b55b0c6eee5d98f7a1db9b63294570624a751f2ba8e65c5d26699e43486f",
+        "size_in_bytes": 259496
+      },
+      {
+        "_path": "lib/libevent_core-2.1.so.7",
+        "path_type": "softlink",
+        "sha256": "2799b55b0c6eee5d98f7a1db9b63294570624a751f2ba8e65c5d26699e43486f",
+        "size_in_bytes": 259496
+      },
+      {
+        "_path": "lib/libevent_core-2.1.so.7.0.1",
+        "path_type": "hardlink",
+        "sha256": "2799b55b0c6eee5d98f7a1db9b63294570624a751f2ba8e65c5d26699e43486f",
+        "sha256_in_prefix": "2799b55b0c6eee5d98f7a1db9b63294570624a751f2ba8e65c5d26699e43486f",
+        "size_in_bytes": 259496
+      },
+      {
+        "_path": "lib/libevent_core.so",
+        "path_type": "softlink",
+        "sha256": "2799b55b0c6eee5d98f7a1db9b63294570624a751f2ba8e65c5d26699e43486f",
+        "size_in_bytes": 259496
+      },
+      {
+        "_path": "lib/libevent_extra-2.1.so",
+        "path_type": "softlink",
+        "sha256": "5539d80344694a58b351f9829609e638219614c8f132e279fe6aab6e71b6093d",
+        "size_in_bytes": 172048
+      },
+      {
+        "_path": "lib/libevent_extra-2.1.so.7",
+        "path_type": "softlink",
+        "sha256": "5539d80344694a58b351f9829609e638219614c8f132e279fe6aab6e71b6093d",
+        "size_in_bytes": 172048
+      },
+      {
+        "_path": "lib/libevent_extra-2.1.so.7.0.1",
+        "path_type": "hardlink",
+        "sha256": "5539d80344694a58b351f9829609e638219614c8f132e279fe6aab6e71b6093d",
+        "sha256_in_prefix": "5539d80344694a58b351f9829609e638219614c8f132e279fe6aab6e71b6093d",
+        "size_in_bytes": 172048
+      },
+      {
+        "_path": "lib/libevent_extra.so",
+        "path_type": "softlink",
+        "sha256": "5539d80344694a58b351f9829609e638219614c8f132e279fe6aab6e71b6093d",
+        "size_in_bytes": 172048
+      },
+      {
+        "_path": "lib/libevent_openssl-2.1.so",
+        "path_type": "softlink",
+        "sha256": "1194d6560e480c05813fdac0f970eda91fc92bfe8e8d522f9aaaf561a526a9e1",
+        "size_in_bytes": 41944
+      },
+      {
+        "_path": "lib/libevent_openssl-2.1.so.7",
+        "path_type": "softlink",
+        "sha256": "1194d6560e480c05813fdac0f970eda91fc92bfe8e8d522f9aaaf561a526a9e1",
+        "size_in_bytes": 41944
+      },
+      {
+        "_path": "lib/libevent_openssl-2.1.so.7.0.1",
+        "path_type": "hardlink",
+        "sha256": "1194d6560e480c05813fdac0f970eda91fc92bfe8e8d522f9aaaf561a526a9e1",
+        "sha256_in_prefix": "1194d6560e480c05813fdac0f970eda91fc92bfe8e8d522f9aaaf561a526a9e1",
+        "size_in_bytes": 41944
+      },
+      {
+        "_path": "lib/libevent_openssl.so",
+        "path_type": "softlink",
+        "sha256": "1194d6560e480c05813fdac0f970eda91fc92bfe8e8d522f9aaaf561a526a9e1",
+        "size_in_bytes": 41944
+      },
+      {
+        "_path": "lib/libevent_pthreads-2.1.so",
+        "path_type": "softlink",
+        "sha256": "782ee178934e1fffd86626a9c057e2e26cdb1a482cdd8856f4b83fcc2cd032e0",
+        "size_in_bytes": 16848
+      },
+      {
+        "_path": "lib/libevent_pthreads-2.1.so.7",
+        "path_type": "softlink",
+        "sha256": "782ee178934e1fffd86626a9c057e2e26cdb1a482cdd8856f4b83fcc2cd032e0",
+        "size_in_bytes": 16848
+      },
+      {
+        "_path": "lib/libevent_pthreads-2.1.so.7.0.1",
+        "path_type": "hardlink",
+        "sha256": "782ee178934e1fffd86626a9c057e2e26cdb1a482cdd8856f4b83fcc2cd032e0",
+        "sha256_in_prefix": "782ee178934e1fffd86626a9c057e2e26cdb1a482cdd8856f4b83fcc2cd032e0",
+        "size_in_bytes": 16848
+      },
+      {
+        "_path": "lib/libevent_pthreads.so",
+        "path_type": "softlink",
+        "sha256": "782ee178934e1fffd86626a9c057e2e26cdb1a482cdd8856f4b83fcc2cd032e0",
+        "size_in_bytes": 16848
+      },
+      {
+        "_path": "lib/pkgconfig/libevent.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/libevent_1685725798133/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pl",
+        "sha256": "26f46cc49df338d01b5f842d4b2b0700c169cbce5c71bdeef5eeace0faa9cbdc",
+        "sha256_in_prefix": "3a728a3c09a445a96db64203815e9bcde3feb6437f01fae40cdb4efd8b23724b",
+        "size_in_bytes": 1299
+      },
+      {
+        "_path": "lib/pkgconfig/libevent_core.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/libevent_1685725798133/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pl",
+        "sha256": "b73443b547f0448c0c912b76e08cb2b5ee364abaf61aadb05e1de6d1f116650d",
+        "sha256_in_prefix": "4cfb930fa1bd16c4568132db9ff78fe83cffb4185e410859229b2bebe3156b56",
+        "size_in_bytes": 1263
+      },
+      {
+        "_path": "lib/pkgconfig/libevent_extra.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/libevent_1685725798133/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pl",
+        "sha256": "99603f3df6f33f774e7410fa7f41a396ee1f091c5d29fb091f7a60b43aeeff18",
+        "sha256_in_prefix": "9c3b6c34e3b2b465c9f853459f65983b0593133bf398d4923bbbc74da5f1d6d5",
+        "size_in_bytes": 1266
+      },
+      {
+        "_path": "lib/pkgconfig/libevent_openssl.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/libevent_1685725798133/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pl",
+        "sha256": "9931e003938f39bb22eb9044707da2dc79e2b4dbfa387ebdd3fc537398896544",
+        "sha256_in_prefix": "ec21da8b32557ea7edeb76069737e973d6c975ef400ee1c1e0135d5aa046f2f7",
+        "size_in_bytes": 1873
+      },
+      {
+        "_path": "lib/pkgconfig/libevent_pthreads.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/libevent_1685725798133/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pl",
+        "sha256": "94dd28576a571c3832b9cbb41ca0fe84b75fbc037b5ea5cda28faf65babbd4a6",
+        "sha256_in_prefix": "29d9c5baa4ee0147b8d5b6b19c913ce96f4c150cd9bb5e60e62fc033d29c469c",
+        "size_in_bytes": 1336
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "2e14399d81fb348e9d231a82ca4d816bf855206923759b69ad006ba482764131",
+  "size": 427426,
+  "subdir": "linux-64",
+  "timestamp": 1685725977222,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/libevent-2.1.12-hf998b51_1.conda",
+  "version": "2.1.12"
+}

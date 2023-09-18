@@ -1,0 +1,328 @@
+{
+  "build": "pyhd8ed1ab_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/noarch",
+  "constrains": [],
+  "depends": [
+    "python >=3.7"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/execnet-2.0.2-pyhd8ed1ab_0",
+  "features": "",
+  "files": [
+    "lib/python3.10/site-packages/execnet-2.0.2.dist-info/INSTALLER",
+    "lib/python3.10/site-packages/execnet-2.0.2.dist-info/METADATA",
+    "lib/python3.10/site-packages/execnet-2.0.2.dist-info/RECORD",
+    "lib/python3.10/site-packages/execnet-2.0.2.dist-info/REQUESTED",
+    "lib/python3.10/site-packages/execnet-2.0.2.dist-info/WHEEL",
+    "lib/python3.10/site-packages/execnet-2.0.2.dist-info/direct_url.json",
+    "lib/python3.10/site-packages/execnet-2.0.2.dist-info/licenses/LICENSE",
+    "lib/python3.10/site-packages/execnet/__init__.py",
+    "lib/python3.10/site-packages/execnet/_version.py",
+    "lib/python3.10/site-packages/execnet/gateway.py",
+    "lib/python3.10/site-packages/execnet/gateway_base.py",
+    "lib/python3.10/site-packages/execnet/gateway_bootstrap.py",
+    "lib/python3.10/site-packages/execnet/gateway_io.py",
+    "lib/python3.10/site-packages/execnet/gateway_socket.py",
+    "lib/python3.10/site-packages/execnet/multi.py",
+    "lib/python3.10/site-packages/execnet/rsync.py",
+    "lib/python3.10/site-packages/execnet/rsync_remote.py",
+    "lib/python3.10/site-packages/execnet/script/__init__.py",
+    "lib/python3.10/site-packages/execnet/script/loop_socketserver.py",
+    "lib/python3.10/site-packages/execnet/script/quitserver.py",
+    "lib/python3.10/site-packages/execnet/script/shell.py",
+    "lib/python3.10/site-packages/execnet/script/socketserver.py",
+    "lib/python3.10/site-packages/execnet/script/socketserverservice.py",
+    "lib/python3.10/site-packages/execnet/script/xx.py",
+    "lib/python3.10/site-packages/execnet/xspec.py",
+    "lib/python3.10/site-packages/execnet/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/execnet/__pycache__/_version.cpython-310.pyc",
+    "lib/python3.10/site-packages/execnet/__pycache__/gateway.cpython-310.pyc",
+    "lib/python3.10/site-packages/execnet/__pycache__/gateway_base.cpython-310.pyc",
+    "lib/python3.10/site-packages/execnet/__pycache__/gateway_bootstrap.cpython-310.pyc",
+    "lib/python3.10/site-packages/execnet/__pycache__/gateway_io.cpython-310.pyc",
+    "lib/python3.10/site-packages/execnet/__pycache__/gateway_socket.cpython-310.pyc",
+    "lib/python3.10/site-packages/execnet/__pycache__/multi.cpython-310.pyc",
+    "lib/python3.10/site-packages/execnet/__pycache__/rsync.cpython-310.pyc",
+    "lib/python3.10/site-packages/execnet/__pycache__/rsync_remote.cpython-310.pyc",
+    "lib/python3.10/site-packages/execnet/script/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/execnet/script/__pycache__/loop_socketserver.cpython-310.pyc",
+    "lib/python3.10/site-packages/execnet/script/__pycache__/quitserver.cpython-310.pyc",
+    "lib/python3.10/site-packages/execnet/script/__pycache__/shell.cpython-310.pyc",
+    "lib/python3.10/site-packages/execnet/script/__pycache__/socketserver.cpython-310.pyc",
+    "lib/python3.10/site-packages/execnet/script/__pycache__/socketserverservice.cpython-310.pyc",
+    "lib/python3.10/site-packages/execnet/script/__pycache__/xx.cpython-310.pyc",
+    "lib/python3.10/site-packages/execnet/__pycache__/xspec.cpython-310.pyc"
+  ],
+  "fn": "execnet-2.0.2-pyhd8ed1ab_0.conda",
+  "license": "MIT",
+  "license_family": "MIT",
+  "link": {
+    "source": "/opt/conda/pkgs/execnet-2.0.2-pyhd8ed1ab_0",
+    "type": 1
+  },
+  "md5": "67de0d8241e1060a479e3c37793e26f9",
+  "name": "execnet",
+  "noarch": "python",
+  "package_tarball_full_path": "/opt/conda/pkgs/execnet-2.0.2-pyhd8ed1ab_0.conda",
+  "package_type": "noarch_python",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "site-packages/execnet-2.0.2.dist-info/INSTALLER",
+        "path_type": "hardlink",
+        "sha256": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "sha256_in_prefix": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "size_in_bytes": 5
+      },
+      {
+        "_path": "site-packages/execnet-2.0.2.dist-info/METADATA",
+        "path_type": "hardlink",
+        "sha256": "3d8babef0654bf0f2f8bfc4ed5e6871b500434614fddbe06bc63dd485e3ec4fc",
+        "sha256_in_prefix": "3d8babef0654bf0f2f8bfc4ed5e6871b500434614fddbe06bc63dd485e3ec4fc",
+        "size_in_bytes": 2923
+      },
+      {
+        "_path": "site-packages/execnet-2.0.2.dist-info/RECORD",
+        "path_type": "hardlink",
+        "sha256": "e4bb3b5a51166bd13ef5a21661ce28355fc7d8935384d4a7fe48abab835fdffe",
+        "sha256_in_prefix": "e4bb3b5a51166bd13ef5a21661ce28355fc7d8935384d4a7fe48abab835fdffe",
+        "size_in_bytes": 2985
+      },
+      {
+        "_path": "site-packages/execnet-2.0.2.dist-info/REQUESTED",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256_in_prefix": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "site-packages/execnet-2.0.2.dist-info/WHEEL",
+        "path_type": "hardlink",
+        "sha256": "f5006e1e183a14d5bb969a5ba05daf2956c2193573b05ca48114238e56a3ae10",
+        "sha256_in_prefix": "f5006e1e183a14d5bb969a5ba05daf2956c2193573b05ca48114238e56a3ae10",
+        "size_in_bytes": 87
+      },
+      {
+        "_path": "site-packages/execnet-2.0.2.dist-info/direct_url.json",
+        "path_type": "hardlink",
+        "sha256": "e049327eea7e6ec27b78e2b863308ecdb98c5e4ee20fec88a5da4c91c9db9656",
+        "sha256_in_prefix": "e049327eea7e6ec27b78e2b863308ecdb98c5e4ee20fec88a5da4c91c9db9656",
+        "size_in_bytes": 103
+      },
+      {
+        "_path": "site-packages/execnet-2.0.2.dist-info/licenses/LICENSE",
+        "path_type": "hardlink",
+        "sha256": "e89eed1074d3a943198ba139b80844f5b445b860bba74a8aeadc0610566164ea",
+        "sha256_in_prefix": "e89eed1074d3a943198ba139b80844f5b445b860bba74a8aeadc0610566164ea",
+        "size_in_bytes": 1054
+      },
+      {
+        "_path": "site-packages/execnet/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "7cae5a73147afe75a9d55106885987f623ae4cbf6ce82922e2a3253816da5216",
+        "sha256_in_prefix": "7cae5a73147afe75a9d55106885987f623ae4cbf6ce82922e2a3253816da5216",
+        "size_in_bytes": 958
+      },
+      {
+        "_path": "site-packages/execnet/_version.py",
+        "path_type": "hardlink",
+        "sha256": "f950ae98ff9071ccafcb53efd97bb489b9f7b97506370ba6b58c934048803962",
+        "sha256_in_prefix": "f950ae98ff9071ccafcb53efd97bb489b9f7b97506370ba6b58c934048803962",
+        "size_in_bytes": 160
+      },
+      {
+        "_path": "site-packages/execnet/gateway.py",
+        "path_type": "hardlink",
+        "sha256": "d1c67b16a4be1f9f176738abe5456d9b0c933ecfc5c5879ec7b239b3132cbe4c",
+        "sha256_in_prefix": "d1c67b16a4be1f9f176738abe5456d9b0c933ecfc5c5879ec7b239b3132cbe4c",
+        "size_in_bytes": 7115
+      },
+      {
+        "_path": "site-packages/execnet/gateway_base.py",
+        "path_type": "hardlink",
+        "sha256": "7f9d169d0b8b6cdf9c38718143b32a981ddeda233288fda505732edafeac492c",
+        "sha256_in_prefix": "7f9d169d0b8b6cdf9c38718143b32a981ddeda233288fda505732edafeac492c",
+        "size_in_bytes": 51114
+      },
+      {
+        "_path": "site-packages/execnet/gateway_bootstrap.py",
+        "path_type": "hardlink",
+        "sha256": "f84f3448b62f0ebc0c52de22cb27236d7154a9b31c82b98bda8f62193aa58e3b",
+        "sha256_in_prefix": "f84f3448b62f0ebc0c52de22cb27236d7154a9b31c82b98bda8f62193aa58e3b",
+        "size_in_bytes": 2990
+      },
+      {
+        "_path": "site-packages/execnet/gateway_io.py",
+        "path_type": "hardlink",
+        "sha256": "3de0e9c0b6d761240d1ae89287663af0ea1a0207dd730e2f65653a0e7d5bbd4c",
+        "sha256_in_prefix": "3de0e9c0b6d761240d1ae89287663af0ea1a0207dd730e2f65653a0e7d5bbd4c",
+        "size_in_bytes": 6836
+      },
+      {
+        "_path": "site-packages/execnet/gateway_socket.py",
+        "path_type": "hardlink",
+        "sha256": "e62efef0e4a14700a37fbca6b025b40bf534bed21c9f0e38245ae265b5d2d5f9",
+        "sha256_in_prefix": "e62efef0e4a14700a37fbca6b025b40bf534bed21c9f0e38245ae265b5d2d5f9",
+        "size_in_bytes": 2501
+      },
+      {
+        "_path": "site-packages/execnet/multi.py",
+        "path_type": "hardlink",
+        "sha256": "7b702daa2c7420235613814e414e72fd9369c36fe27eeaca1c98b213c5cc9c2f",
+        "sha256_in_prefix": "7b702daa2c7420235613814e414e72fd9369c36fe27eeaca1c98b213c5cc9c2f",
+        "size_in_bytes": 10291
+      },
+      {
+        "_path": "site-packages/execnet/rsync.py",
+        "path_type": "hardlink",
+        "sha256": "5a98982cbd17d54455ccf7d870ca1e359357fb51767459472926471036b22f9e",
+        "sha256_in_prefix": "5a98982cbd17d54455ccf7d870ca1e359357fb51767459472926471036b22f9e",
+        "size_in_bytes": 7611
+      },
+      {
+        "_path": "site-packages/execnet/rsync_remote.py",
+        "path_type": "hardlink",
+        "sha256": "76222d4d45d8502b7f147a98ca7aa1bfd7ed5aaa83de3cbd249703c992282fe7",
+        "sha256_in_prefix": "76222d4d45d8502b7f147a98ca7aa1bfd7ed5aaa83de3cbd249703c992282fe7",
+        "size_in_bytes": 3828
+      },
+      {
+        "_path": "site-packages/execnet/script/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "32c4858e22cc2c967b42150fa550562a2c839c2cebcaab91cabdf6f4da020022",
+        "sha256_in_prefix": "32c4858e22cc2c967b42150fa550562a2c839c2cebcaab91cabdf6f4da020022",
+        "size_in_bytes": 2
+      },
+      {
+        "_path": "site-packages/execnet/script/loop_socketserver.py",
+        "path_type": "hardlink",
+        "sha256": "4d862f997ac0ef062295c009f6da1b0bf93e7335efc5f9412af975317e5c68ce",
+        "sha256_in_prefix": "4d862f997ac0ef062295c009f6da1b0bf93e7335efc5f9412af975317e5c68ce",
+        "size_in_bytes": 418
+      },
+      {
+        "_path": "site-packages/execnet/script/quitserver.py",
+        "path_type": "hardlink",
+        "sha256": "38f2617050eb8d8ee5533579515b886f79c2ea2d4c5e577c59cb8645984d056a",
+        "sha256_in_prefix": "38f2617050eb8d8ee5533579515b886f79c2ea2d4c5e577c59cb8645984d056a",
+        "size_in_bytes": 306
+      },
+      {
+        "_path": "site-packages/execnet/script/shell.py",
+        "path_type": "hardlink",
+        "sha256": "f666236ea5e28b5a07edae08f4c6de486eb80dab8511560b7ce8ec988d4ae537",
+        "sha256_in_prefix": "f666236ea5e28b5a07edae08f4c6de486eb80dab8511560b7ce8ec988d4ae537",
+        "size_in_bytes": 2480
+      },
+      {
+        "_path": "site-packages/execnet/script/socketserver.py",
+        "path_type": "hardlink",
+        "sha256": "60be94a0999c9f99c00cfc2b4b0b1fdfd076bca2b9b61b6f89fbb16c8efb3755",
+        "sha256_in_prefix": "60be94a0999c9f99c00cfc2b4b0b1fdfd076bca2b9b61b6f89fbb16c8efb3755",
+        "size_in_bytes": 3696
+      },
+      {
+        "_path": "site-packages/execnet/script/socketserverservice.py",
+        "path_type": "hardlink",
+        "sha256": "7d0115d8a6fc6a432e6cc4b5d8efa1cf82a3ad4c7ef494edcae28a1ef337897d",
+        "sha256_in_prefix": "7d0115d8a6fc6a432e6cc4b5d8efa1cf82a3ad4c7ef494edcae28a1ef337897d",
+        "size_in_bytes": 3044
+      },
+      {
+        "_path": "site-packages/execnet/script/xx.py",
+        "path_type": "hardlink",
+        "sha256": "892770d05da2de842c38df3fa1b585ff3d30b53f41fd01686c0d2c05ffcae227",
+        "sha256_in_prefix": "892770d05da2de842c38df3fa1b585ff3d30b53f41fd01686c0d2c05ffcae227",
+        "size_in_bytes": 186
+      },
+      {
+        "_path": "site-packages/execnet/xspec.py",
+        "path_type": "hardlink",
+        "sha256": "b7c6cad146b5999d6821b5d89d50efa869bd206adf46a1e400130ac68594b17f",
+        "sha256_in_prefix": "b7c6cad146b5999d6821b5d89d50efa869bd206adf46a1e400130ac68594b17f",
+        "size_in_bytes": 1788
+      },
+      {
+        "_path": "lib/python3.10/site-packages/execnet/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/execnet/__pycache__/_version.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/execnet/__pycache__/gateway.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/execnet/__pycache__/gateway_base.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/execnet/__pycache__/gateway_bootstrap.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/execnet/__pycache__/gateway_io.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/execnet/__pycache__/gateway_socket.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/execnet/__pycache__/multi.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/execnet/__pycache__/rsync.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/execnet/__pycache__/rsync_remote.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/execnet/script/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/execnet/script/__pycache__/loop_socketserver.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/execnet/script/__pycache__/quitserver.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/execnet/script/__pycache__/shell.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/execnet/script/__pycache__/socketserver.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/execnet/script/__pycache__/socketserverservice.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/execnet/script/__pycache__/xx.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/execnet/__pycache__/xspec.cpython-310.pyc",
+        "path_type": "pyc_file"
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "88ea68a360198af39368beecf057af6b31f0ae38071b2bdb2aa961b6ae5427c0",
+  "size": 36534,
+  "subdir": "noarch",
+  "timestamp": 1688933537234,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/noarch/execnet-2.0.2-pyhd8ed1ab_0.conda",
+  "version": "2.0.2"
+}

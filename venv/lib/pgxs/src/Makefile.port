@@ -1,0 +1,13 @@
+AROPT = crs
+
+export_dynamic = -Wl,-E
+# Use --enable-new-dtags to generate DT_RUNPATH instead of DT_RPATH.
+# This allows LD_LIBRARY_PATH to still work when needed.
+# rpath = -Wl,-rpath,'$(rpathdir)',--enable-new-dtags
+# But for Anaconda Distribution it allows LD_LIBRARY_PATH to break everything when not needed.
+rpath = -Wl,-rpath,'$(rpathdir)',--disable-new-dtags
+
+
+# Rule for building a shared library from a single .o file
+%.so: %.o
+	$(CC) $(CFLAGS) $< $(LDFLAGS) $(LDFLAGS_SL) -shared -o $@

@@ -1,0 +1,150 @@
+// Keyboard layouts for Slovakia.
+
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+    // This layout conforms to a new Slovak compromise standard
+    // designed to satisfy most Unix, Windows and Mac users.
+    // 2001 by Kamil Toman <ktoman@email.cz>
+
+    include "latin"
+    name[Group1] = "Slovak";
+
+    key <TLDE>  { [ semicolon, dead_abovering,    grave,   asciitilde ] };
+    key <AE01>  { [      plus,          1,       exclam,   dead_tilde ] };
+    key <AE02>  { [    lcaron,          2,           at,   dead_caron ] };
+    key <AE03>  { [    scaron,          3,   numbersign, dead_circumflex ] };
+    key <AE04>  { [    ccaron,          4,       dollar,   dead_breve ] };
+    key <AE05>  { [    tcaron,          5,      percent, dead_abovering]};
+    key <AE06>  { [    zcaron,          6,  asciicircum,  dead_ogonek ] };
+    key <AE07>  { [    yacute,          7,    ampersand,   dead_grave ] };
+    key <AE08>  { [    aacute,          8,     asterisk, dead_abovedot] };
+    key <AE09>  { [    iacute,          9,    braceleft,   dead_acute ] };
+    key <AE10>  { [    eacute,          0,   braceright, dead_doubleacute ] };
+    key <AE11>  { [     equal,    percent,     NoSymbol, dead_diaeresis]};
+    key <AE12>  { [dead_acute, dead_caron,  dead_macron, dead_cedilla ] };
+
+    key <AD01>  { [         q,          Q,    backslash,     NoSymbol ] };
+    key <AD02>  { [         w,          W,          bar,     Nosymbol ] };
+    key <AD03>  { [         e,          E,     EuroSign,     NoSymbol ] };
+    key <AD04>  { [         r,          R,     NoSymbol,     NoSymbol ] };
+    key <AD05>  { [         t,          T,     NoSymbol,     NoSymbol ] };
+    key <AD06>  { [         z,          Z,     NoSymbol,     NoSymbol ] };
+    key <AD07>  { [         u,          U,     NoSymbol,     NoSymbol ] };
+    key <AD08>  { [         i,          I,     NoSymbol,     NoSymbol ] };
+    key <AD09>  { [         o,          O,     NoSymbol,     NoSymbol ] };
+    key <AD10>  { [         p,          P,     NoSymbol,     NoSymbol ] };
+
+    key <AD11>  { [    uacute,      slash,  bracketleft,     division ] };
+    key <AD12>  { [adiaeresis,  parenleft, bracketright,     multiply ] };
+
+    key <AC01>  { [         a,          A,   asciitilde,     NoSymbol ] };
+    key <AC02>  { [         s,          S,      dstroke,     NoSymbol ] };
+    key <AC03>  { [         d,          D,      Dstroke,     NoSymbol ] };
+    key <AC04>  { [         f,          F,  bracketleft,     NoSymbol ] };
+    key <AC05>  { [         g,          G, bracketright,     NoSymbol ] };
+    key <AC06>  { [         h,          H,        grave,     NoSymbol ] };
+    key <AC07>  { [         j,          J,   apostrophe,     NoSymbol ] };
+    key <AC08>  { [         k,          K,      lstroke,     NoSymbol ] };
+    key <AC09>  { [         l,          L,      Lstroke,     NoSymbol ] };
+
+    key <AC10>  { [ocircumflex,   quotedbl,      dollar,     NoSymbol ] };
+    key <AC11>  { [   section,     exclam,   apostrophe,       ssharp ] };
+    key <BKSL>  { [    ncaron, parenright,    backslash,          bar ] };
+
+    key <LSGT>  { [ backslash,        bar,        slash,     NoSymbol ] };
+    key <AB01>  { [         y,          Y,       degree,     NoSymbol ] };
+    key <AB02>  { [         x,          X,   numbersign,     Nosymbol ] };
+    key <AB03>  { [         c,          C,    ampersand,     NoSymbol ] };
+    key <AB04>  { [         v,          V,           at,     NoSymbol ] };
+    key <AB05>  { [         b,          B,    braceleft,     NoSymbol ] };
+    key <AB06>  { [         n,          N,   braceright,     NoSymbol ] };
+    key <AB07>  { [         m,          M,  asciicircum,     NoSymbol ] };
+    key <AB08>  { [     comma,   question,         less,     NoSymbol ] };
+    key <AB09>  { [    period,      colon,      greater,     NoSymbol ] };
+    key <AB10>  { [     minus, underscore,     asterisk,     NoSymbol ] };
+
+    key <SPCE>  { [     space,      space, nobreakspace, nobreakspace ] };
+
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys alternate_group
+xkb_symbols "acc" {
+
+    // This layout is usually used as the second group, it contains
+    // accented characters only, no 'latin' set.
+    // 2017 by Pavol Babinčák <scroolik@gmail.com>
+
+    // Based on cz(ucw). Slovak letter frequency is used if a letter can be
+    // used with multiple diacritic symbols. Other accented letters of Slovak
+    // and Czech language end up on surrounding unused keys.
+
+    name[Group1] = "Slovak (ACC layout, only accented letters)";
+
+    key <AB01> { [zcaron,      Zcaron      ] };
+    key <AB03> { [ccaron,      Ccaron      ] };
+    key <AB06> { [ncaron,      Ncaron      ] };
+
+    key <AC01> { [aacute,      Aacute      ] };
+    key <AC02> { [scaron,      Scaron      ] };
+    key <AC03> { [dcaron,      Dcaron      ] };
+    key <AC04> { [ecaron,      Ecaron      ] };
+    key <AC05> { [rcaron,      Rcaron      ] };
+    key <AC06> { [uring,       Uring       ] };
+    key <AC08> { [oacute,      Oacute      ] };
+    key <AC09> { [lcaron,      Lcaron      ] };
+
+    key <AD01> { [adiaeresis,  Adiaeresis  ] };
+    key <AD03> { [eacute,      Eacute      ] };
+    key <AD04> { [racute,      Racute      ] };
+    key <AD05> { [tcaron,      Tcaron      ] };
+    key <AD06> { [yacute,      Yacute      ] };
+    key <AD07> { [uacute,      Uacute      ] };
+    key <AD08> { [iacute,      Iacute      ] };
+    key <AD09> { [ocircumflex, Ocircumflex ] };
+    key <AD10> { [lacute,      Lacute      ] };
+
+    key <AE12> { [dead_acute,  dead_caron  ] };
+};
+
+xkb_symbols "bksl" {
+
+    // Put backslash on BKSL key (for when LSGT key is missing).
+
+    include "sk(basic)"
+    name[Group1] = "Slovak (extra backslash)";
+
+    key <BKSL>  { [ backslash,        bar,        slash,     parenright ] };
+    key <LSGT>  { [ backslash,  parenleft,        slash,     NoSymbol ] };
+};
+
+partial alphanumeric_keys
+xkb_symbols "qwerty" {
+
+    // This layout works exactly as the basic Slovak one with the exception
+    // of the 'Z' and 'Y' keys, which are in Qwerty style (i.e. swapped).
+    // 2001 by Kamil Toman <ktoman@email.cz>
+
+    include "sk(basic)"
+    name[Group1] = "Slovak (QWERTY)";
+
+    key <AB01>  { [         z,          Z,       degree,     NoSymbol ] };
+    key <AD06>  { [         y,          Y,     NoSymbol,     NoSymbol ] };
+};
+
+xkb_symbols "qwerty_bksl" {
+
+    include "sk(qwerty)"
+    name[Group1] = "Slovak (QWERTY, extra backslash)";
+
+    key <BKSL>  { [ backslash,        bar,        slash,     parenright ] };
+    key <LSGT>  { [ backslash,  parenleft,        slash,     NoSymbol ] };
+};
+
+// EXTRAS:
+
+partial alphanumeric_keys
+	xkb_symbols "sun_type6" {
+	include "sun_vndr/sk(sun_type6)"
+};

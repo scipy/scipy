@@ -1,0 +1,115 @@
+{
+  "build": "pyhd8ed1ab_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/noarch",
+  "constrains": [],
+  "depends": [
+    "python >=3.6"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/cycler-0.11.0-pyhd8ed1ab_0",
+  "features": "",
+  "files": [
+    "lib/python3.10/site-packages/cycler-0.11.0.dist-info/INSTALLER",
+    "lib/python3.10/site-packages/cycler-0.11.0.dist-info/LICENSE",
+    "lib/python3.10/site-packages/cycler-0.11.0.dist-info/METADATA",
+    "lib/python3.10/site-packages/cycler-0.11.0.dist-info/RECORD",
+    "lib/python3.10/site-packages/cycler-0.11.0.dist-info/REQUESTED",
+    "lib/python3.10/site-packages/cycler-0.11.0.dist-info/WHEEL",
+    "lib/python3.10/site-packages/cycler-0.11.0.dist-info/direct_url.json",
+    "lib/python3.10/site-packages/cycler-0.11.0.dist-info/top_level.txt",
+    "lib/python3.10/site-packages/cycler.py",
+    "lib/python3.10/site-packages/__pycache__/cycler.cpython-310.pyc"
+  ],
+  "fn": "cycler-0.11.0-pyhd8ed1ab_0.tar.bz2",
+  "license": "BSD-3-Clause",
+  "license_family": "BSD",
+  "link": {
+    "source": "/opt/conda/pkgs/cycler-0.11.0-pyhd8ed1ab_0",
+    "type": 1
+  },
+  "md5": "a50559fad0affdbb33729a68669ca1cb",
+  "name": "cycler",
+  "noarch": "python",
+  "package_tarball_full_path": "/opt/conda/pkgs/cycler-0.11.0-pyhd8ed1ab_0.tar.bz2",
+  "package_type": "noarch_python",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "site-packages/cycler-0.11.0.dist-info/INSTALLER",
+        "path_type": "hardlink",
+        "sha256": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "sha256_in_prefix": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "size_in_bytes": 5
+      },
+      {
+        "_path": "site-packages/cycler-0.11.0.dist-info/LICENSE",
+        "path_type": "hardlink",
+        "sha256": "f1218143d766da3fea66f13396b7f15df46a83303f29bf96ba6e98eb4d42f408",
+        "sha256_in_prefix": "f1218143d766da3fea66f13396b7f15df46a83303f29bf96ba6e98eb4d42f408",
+        "size_in_bytes": 1497
+      },
+      {
+        "_path": "site-packages/cycler-0.11.0.dist-info/METADATA",
+        "path_type": "hardlink",
+        "sha256": "9f5567f456be6f314600e4bd935938516e091021713a675ca109f07cb1ac8fc2",
+        "sha256_in_prefix": "9f5567f456be6f314600e4bd935938516e091021713a675ca109f07cb1ac8fc2",
+        "size_in_bytes": 806
+      },
+      {
+        "_path": "site-packages/cycler-0.11.0.dist-info/RECORD",
+        "path_type": "hardlink",
+        "sha256": "7329b71edd400ff399221c6dc71ed4bb25169d1c42f1d0d8723ab71ffd457e3a",
+        "sha256_in_prefix": "7329b71edd400ff399221c6dc71ed4bb25169d1c42f1d0d8723ab71ffd457e3a",
+        "size_in_bytes": 766
+      },
+      {
+        "_path": "site-packages/cycler-0.11.0.dist-info/REQUESTED",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256_in_prefix": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "site-packages/cycler-0.11.0.dist-info/WHEEL",
+        "path_type": "hardlink",
+        "sha256": "7b0c04b9e8a8d42d977874ef4f5ee7f1d6542603afc82582b7459534b0a53fda",
+        "sha256_in_prefix": "7b0c04b9e8a8d42d977874ef4f5ee7f1d6542603afc82582b7459534b0a53fda",
+        "size_in_bytes": 92
+      },
+      {
+        "_path": "site-packages/cycler-0.11.0.dist-info/direct_url.json",
+        "path_type": "hardlink",
+        "sha256": "e3582e117bc88347b0188b3cd22986c6b82c9a1942736850c363047f564e8d8b",
+        "sha256_in_prefix": "e3582e117bc88347b0188b3cd22986c6b82c9a1942736850c363047f564e8d8b",
+        "size_in_bytes": 102
+      },
+      {
+        "_path": "site-packages/cycler-0.11.0.dist-info/top_level.txt",
+        "path_type": "hardlink",
+        "sha256": "0fc05554374001e94b6f614e133ee50e973af802f6d7294a3eb321b46eb2cf21",
+        "sha256_in_prefix": "0fc05554374001e94b6f614e133ee50e973af802f6d7294a3eb321b46eb2cf21",
+        "size_in_bytes": 7
+      },
+      {
+        "_path": "site-packages/cycler.py",
+        "path_type": "hardlink",
+        "sha256": "1cd2d4e15662b26d89406e91934dfe96498e71771c02f0e301798e846c691eb0",
+        "sha256_in_prefix": "1cd2d4e15662b26d89406e91934dfe96498e71771c02f0e301798e846c691eb0",
+        "size_in_bytes": 14519
+      },
+      {
+        "_path": "lib/python3.10/site-packages/__pycache__/cycler.cpython-310.pyc",
+        "path_type": "pyc_file"
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "3b594bc8aa0b9a51269d54c7a4ef6af777d7fad4bee16b05695e1124de6563f6",
+  "size": 10307,
+  "subdir": "noarch",
+  "timestamp": 1635519555262,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/noarch/cycler-0.11.0-pyhd8ed1ab_0.tar.bz2",
+  "version": "0.11.0"
+}

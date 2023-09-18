@@ -1,0 +1,201 @@
+comment_char %
+escape_char  /
+% charset "UTF-8"
+% Distribution and use is free, also for commercial purposes.
+%
+% 2003-08-16: corrections from Raphael Finkel <raphael@cs.uky.edu>
+%
+
+LC_IDENTIFICATION
+title "Yiddish Language locale for the USA"
+source "http:////www.uyip.org//"
+address ""
+contact "Pablo Saratxaga"
+email "pablo@mandrakesoft.com"
+tel ""
+fax ""
+language "Yiddish"
+territory "USA"
+revision "0.4"
+date "2003-08-16"
+
+category "yi_US:2000";LC_IDENTIFICATION
+category "yi_US:2000";LC_COLLATE
+category "yi_US:2000";LC_CTYPE
+category "yi_US:2000";LC_MESSAGES
+category "yi_US:2000";LC_MONETARY
+category "yi_US:2000";LC_NUMERIC
+category "yi_US:2000";LC_TIME
+category "yi_US:2000";LC_PAPER
+category "yi_US:2000";LC_MEASUREMENT
+category "yi_US:2000";LC_TELEPHONE
+category "yi_US:2000";LC_ADDRESS
+
+% ISO/IEC 14652: Converted comments to LC_IDENTIFICATION
+%  added LC_PAPER, LC_MEASUREMENT, LC_IDENTIFICATION, LC_ADDRESS
+% -- mckinstry@computer.org, 2000-07-03
+
+END LC_IDENTIFICATION
+
+
+LC_ADDRESS
+postal_fmt "<U0025><U0064><U0025><U004E><U0025><U0066><U0025><U004E><U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E>/
+<U0025><U0073><U0020><U0025><U0068><U0020><U0035><U0065><U0020><U0025><U0072><U0025><U004E>/
+<U0025><U0043><U0025><U007A><U0020><U0025><U0054><U0025><U004E><U0025><U0063><U0025><U004E>"
+country_name "<U05D3><U05D9><U0020><U05E4><U05BF><U05D0><U05E8><U05D0><U05F2><U05E0><U05D9><U05E7><U05D8><U05E2><U0020><U05E9><U05D8><U05D0><U05B7><U05D8><U05DF>"
+country_post "USA"
+country_ab2 "US"
+country_ab3 "USA"
+country_num 840
+country_car "USA"
+% FIXME Check which isbn for Yiddish in USA
+country_isbn "0"
+lang_name "<U05D9><U05D9><U05B4><U05D3><U05D9><U05E9>"
+lang_ab "yi"
+lang_term "yid"
+lang_lib "yid"
+END LC_ADDRESS
+
+LC_CTYPE
+copy "i18n"
+
+translit_start
+include "translit_combining";""
+
+% if digraphs are not available (this is the case with iso-8859-8)
+% then use the single letters
+<U05F0> "<U05D5><U05D5>";"<U0077><U0077>"
+<U05F1> "<U05D5><U05D9>";"<U0077><U006A>"
+<U05F2> "<U05D9><U05D9>";"<U006A><U006A>"
+translit_end
+
+END LC_CTYPE
+
+LC_COLLATE
+copy "iso14651_t1"
+
+collating-symbol  <b-h-yi>
+collating-element <B+'H-> from "<U05D1><U05BF>"
+collating-symbol  <k-m-yi>
+collating-element <K+.MH> from "<U05DB><U05BC>"
+collating-symbol  <p-m-yi>
+collating-element <P+.MH> from "<U05E4><U05BC>"
+collating-symbol  <p-h-yi>
+collating-element <P+'H-> from "<U05E4><U05BF>"
+collating-symbol  <s-h-yi>
+collating-element <Sh'H.L> from "<U05E9><U05C2>"
+collating-symbol  <t-m-yi>
+collating-element <T+.MH> from "<U05EA><U05BC>"
+
+reorder-after <bet>
+<b-h-yi>
+reorder-after <yod>
+<k-m-yi>
+reorder-after <ayin>
+<p-m-yi>
+<p-h-yi>
+reorder-after <shin>
+<s-h-yi>
+<t-m-yi>
+
+reorder-after <U05D1>
+<B+'H->	<b-h-yi>;<PCT>;IGNORE;IGNORE
+reorder-after <U05D5>
+<U05F0>	"<vav><vav>";"<LIG><LIG>";IGNORE;IGNORE
+<U05F1>	"<vav><yod>";"<LIG><LIG>";IGNORE;IGNORE
+reorder-after <U05D9>
+<U05F2>	"<yod><yod>";"<LIG><LIG>";IGNORE;IGNORE
+<K+.MH>	<k-m-yi>;<PCT>;IGNORE;IGNORE
+reorder-after <U05E2>
+<P+.MH>	<p-m-yi>;<PCT>;IGNORE;IGNORE
+<P+'H->	<p-h-yi>;<PCT>;IGNORE;IGNORE
+reorder-after <U05E9>
+<Sh'H.L>	<s-h-yi>;<PCT>;IGNORE;IGNORE
+<T+.MH>	<t-m-yi>;<PCT>;IGNORE;IGNORE
+
+reorder-end
+
+END LC_COLLATE
+
+LC_MONETARY
+int_curr_symbol   "<U0055><U0053><U0044><U0020>"
+currency_symbol   "<U0024>"
+mon_decimal_point "<U002E>"
+mon_thousands_sep "<U002C>"
+mon_grouping      3;3
+positive_sign     ""
+negative_sign     "<U002D>"
+int_frac_digits   2
+frac_digits       2
+p_cs_precedes     1
+p_sep_by_space    1
+n_cs_precedes     1
+n_sep_by_space    1
+p_sign_posn       2
+n_sign_posn       2
+END LC_MONETARY
+
+LC_TELEPHONE
+copy "en_US"
+END LC_TELEPHONE
+
+LC_PAPER
+copy "en_US"
+END LC_PAPER
+
+LC_MEASUREMENT
+copy "en_US"
+END LC_MEASUREMENT
+
+LC_NUMERIC
+copy "en_US"
+END LC_NUMERIC
+
+LC_TIME
+abday   "<U05D6><U05D5><U05E0><U0027>";"<U05DE><U05D0><U05B8><U05E0><U0027>";"<U05D3><U05D9><U05E0><U0027>";/
+        "<U05DE><U05D9><U05D8><U0027>";"<U05D3><U05D0><U05B8><U05E0><U0027>";"<U05E4><U05BF><U05E8><U05F2><U05B7><U0027>";/
+	"<U05E9><U05D1><U05EA>"
+day     "<U05D6><U05D5><U05E0><U05D8><U05D9><U05E7>";/
+        "<U05DE><U05D0><U05B8><U05E0><U05D8><U05D9><U05E7>";/
+        "<U05D3><U05D9><U05E0><U05E1><U05D8><U05D9><U05E7>";/
+        "<U05DE><U05D9><U05D8><U05F0><U05D0><U05B8><U05DA>";/
+        "<U05D3><U05D0><U05B8><U05E0><U05E2><U05E8><U05E9><U05D8><U05D9><U05E7>";/
+        "<U05E4><U05BF><U05E8><U05F2><U05B7><U05D8><U05D9><U05E7>";/
+        "<U05E9><U05D1><U05EA>"
+mon     "<U05D9><U05D0><U05B7><U05E0><U05D5><U05D0><U05B7><U05E8>";/
+	"<U05E4><U05BF><U05E2><U05D1><U05E8><U05D5><U05D0><U05B7><U05E8>";/
+        "<U05DE><U05D0><U05B7><U05E8><U05E5>";/
+        "<U05D0><U05B7><U05E4><U05BC><U05E8><U05D9><U05DC>";/
+        "<U05DE><U05F2><U05B7>";/
+        "<U05D9><U05D5><U05E0><U05D9>";/
+        "<U05D9><U05D5><U05DC><U05D9>";/
+        "<U05D0><U05F1><U05D2><U05D5><U05E1><U05D8>";/
+        "<U05E1><U05E2><U05E4><U05BC><U05D8><U05E2><U05DE><U05D1><U05E2><U05E8>";/
+        "<U05D0><U05B8><U05E7><U05D8><U05D0><U05B8><U05D1><U05E2><U05E8>";/
+        "<U05E0><U05D0><U05B8><U05F0><U05E2><U05DE><U05D1><U05E2><U05E8>";/
+        "<U05D3><U05E2><U05E6><U05E2><U05DE><U05D1><U05E2><U05E8>"
+abmon   "<U05D9><U05D0><U05B7><U05E0>";"<U05E4><U05BF><U05E2><U05D1>";/
+        "<U05DE><U05D0><U05B7><U05E8>";"<U05D0><U05B7><U05E4><U05BC><U05E8>";/
+        "<U05DE><U05F2><U05B7><U0020>";"<U05D9><U05D5><U05E0>";/
+        "<U05D9><U05D5><U05DC>";"<U05D0><U05F1><U05D2>";/
+        "<U05E1><U05E2><U05E4><U05BC>";"<U05D0><U05B8><U05E7><U05D8>";/
+        "<U05E0><U05D0><U05B8><U05F0>";"<U05D3><U05E2><U05E6>"
+d_t_fmt "<U0025><U005A><U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U0020><U0025><U0059><U0020><U0025><U0062><U0020><U0025><U0064><U0020><U0025><U0061>"
+d_fmt   "<U0025><U0064><U002F><U0025><U006D><U002F><U0025><U0079>"
+t_fmt   "<U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053>"
+am_pm   "<U0041><U004D>";"<U0050><U004D>"
+t_fmt_ampm  "<U0025><U0049><U003A><U0025><U004D><U003A><U0025><U0053><U0020><U0025><U0050>"
+cal_direction	3
+END LC_TIME
+
+LC_MESSAGES
+yesexpr "<U005E><U005B><U0059><U0079><U05D9><U005D><U002E><U002A>"
+noexpr  "<U005E><U005B><U004E><U006E><U05E0><U05E7><U005D><U002E><U002A>"
+yesstr	"<U05D9><U05D0><U05B8>"
+nostr	"<U05E7><U05F2><U05DF>"
+END LC_MESSAGES
+
+LC_NAME
+% FIXME
+copy "en_US"
+END LC_NAME

@@ -1,0 +1,28 @@
+/**
+ * Search page special-cases
+ */
+
+// Turn off the extra search UI at the top of the page
+#search-documentation {
+  display: none;
+  & ~ p,
+  ~ form {
+    display: none;
+  }
+}
+
+// Whitespace
+div#search-results > h2 {
+  margin-top: 0;
+}
+
+// The results of a search
+ul.search {
+  margin: 0;
+  list-style: none;
+
+  li {
+    background-image: none;
+    padding: 0;
+  }
+}

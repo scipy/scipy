@@ -1,0 +1,13 @@
+prefix=/workspaces/scipy/venv
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+includedir=${prefix}/include/qt
+
+
+Name: Qt5 3DAnimation
+Description: Qt 3DAnimation module
+Version: 5.15.8
+Libs: -L${libdir} -lQt53DAnimation 
+Cflags: -DQT_3DANIMATION_LIB -I${includedir}/Qt3DAnimation -I${includedir}
+Requires: Qt5Core Qt5Gui Qt53DCore Qt53DRender
+

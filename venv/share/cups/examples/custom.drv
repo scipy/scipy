@@ -1,0 +1,41 @@
+// Include standard font and media definitions
+#include <font.defs>
+#include <media.defs>
+
+// List the fonts that are supported, in this case all standard
+// fonts...
+Font *
+
+// Manufacturer, model name, and version
+Manufacturer "Foo"
+ModelName "FooJet 2000"
+Version 1.0
+
+// Each filter provided by the driver...
+Filter application/vnd.cups-raster 100 rastertofoo
+
+// Supported page sizes
+*MediaSize Letter
+MediaSize A4
+
+// Supported resolutions
+*Resolution k 8 0 0 0 "600dpi/600 DPI"
+
+// Option Group
+Group "Footasm"
+
+  // Boolean option
+  Option "fooEnhance/Resolution Enhancement" Boolean AnySetup 10
+    *Choice True/Yes "<</cupsCompression 1>>setpagedevice"
+    Choice False/No "<</cupsCompression 0>>setpagedevice"
+
+  // Multiple choice option
+  Option "fooOutputType/Output Quality" PickOne AnySetup 10
+    *Choice "Auto/Automatic Selection" "<</OutputType(Auto)>>setpagedevice"
+    Choice "Text/Optimize for Text" "<</OutputType(Text)>>setpagedevice"
+    Choice "Graph/Optimize for Graphics" "<</OutputType(Graph)>>setpagedevice"
+    Choice "Photo/Optimize for Photos" "<</OutputType(Photo)>>setpagedevice"
+
+// Specify the name of the PPD file we want to generate...
+PCFileName "foojet2k.ppd"
+

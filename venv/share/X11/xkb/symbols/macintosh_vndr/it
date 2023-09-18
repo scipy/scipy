@@ -1,0 +1,60 @@
+default
+xkb_symbols "extended" {
+
+    name[Group1]= "Italy - Mac";
+
+    key <LSGT> {	[        less,  greater   	]	};
+    key <TLDE> {        [        at,    numbersign,    periodcentered              ]	};
+    key <AE01> {	[   ampersand,    1, guillemotleft,guillemotright	]	};
+    key <AE02> {	[    quotedbl,    2 		]	};
+    key <AE03> {	[  apostrophe,    3         	]	};
+    key <AE04> {	[   parenleft,    4,    braceleft,    bracketleft	]	};
+    key <AE05> {	[    ccedilla,    5,     Ccedilla,    Iacute	]	};
+    key <AE06> {	[      egrave,    6,    paragraph,    periodcentered]	};
+    key <AE07> {	[  parenright,    7,   braceright,	  bracketright	]	};
+    key <AE08> {	[    sterling,    8,   infinity			]	};
+    key <AE09> {	[      agrave,    9,        acute,    Ocircumflex	]	};
+    key <AE10> {	[      eacute,    0,        grave,    Oacute	]	};
+    key <AE11> {	[       minus,    underscore	]	};
+    key <AE12> {	[       equal, 	  plus,     notequal,    plusminus	]	};
+
+    key <AD01> {	[           q,  Q 		]	};
+    key <AD02> {	[	    z,  Z		]	};
+    key <AD03> {	[	    e,  E,     EuroSign		]	};
+    key <AD04> {	[	    r,  R,   registered			] 	};
+    key <AD05> {	[	    t,  T		]	};
+    key <AD06> {	[	    y,  Y,       Uacute,	ydiaeresis      ] 	};
+    key <AD07> {	[	    u,  U		]	};
+    key <AD08> {	[	    i,  I,  icircumflex,	idiaeresis      ] 	};
+    key <AD09> {	[	    o,  O		]	};
+    key <AD10> {	[	    p,  P		]	};
+    key <AD11> {	[      igrave,  asciicircum     ]	};
+    key <AD12> {	[      dollar,	asterisk        ]	};
+    key <BKSL> {	[     section,  degree,           at,  numbersign      ]	};
+
+    key <AC01> {	[	  a,	A,      aring,   Aring		] 	};
+    key <AC02> {	[	  s,	S,     ssharp,	 U1E9E		]	};
+    key <AC03> {	[	  d,	D		]	};
+    key <AC04> {	[	  f,	F		]	};
+    key <AC05> {	[	  g,	G		]	};
+    key <AC06> {	[	  h,	H,     Igrave,    Icircumflex     ]	};
+    key <AC07> {	[	  j,	J,  Idiaeresis,   Iacute          ]	};
+    key <AC08> {	[	  k,	K,     Egrave,    Ediaeresis      ]	};
+    key <AC09> {	[	  l,	L,     ssharp,    bar		]	};
+    key <AC10> {	[         m,	M,         mu,    Oacute		]	};
+    key <AC11> {	[    ugrave,	percent,         ae,    AE		]	};
+
+    key <AB01> {	[	  w,	W 		]	};
+    key <AB02> {	[	  x,	X		]	};
+    key <AB03> {	[	  c,	C,  copyright,    copyright	]	};
+    key <AB04> {	[	  v,	V		]	};
+    key <AB05> {	[	  b,	B		]	};
+    key <AB06> {	[	  n,	N,  dead_tilde                    ]       };
+    key <AB07> {	[     comma,	question,          questiondown		]	};
+    key <AB08> {	[ semicolon,	period          ]	};
+    key <AB09> {	[     colon,	slash,        bar,    backslash	]	};
+    key <AB10> {	[    ograve,	exclam,     exclamdown			]	};
+
+    include "kpdl(dot)"
+    include "level3(ralt_switch)"
+};

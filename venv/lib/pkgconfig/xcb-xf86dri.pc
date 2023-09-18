@@ -1,0 +1,11 @@
+prefix=/workspaces/scipy/venv
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: XCB XFree86-DRI
+Description: XCB XFree86-DRI Extension
+Version: 1.15
+Requires.private: xcb
+Libs: -L${libdir} -lxcb-xf86dri
+Cflags: -I${includedir}

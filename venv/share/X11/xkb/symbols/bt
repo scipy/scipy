@@ -1,0 +1,83 @@
+// Keyboard layout for Bhutan.
+
+// Based on the official layout for Dzongkha that was
+// approved by the Department of Information Technology and
+// the Dzongkha Development Commission of the Government of Bhutan.
+//
+// Copyright (C) 2004, Gregory Mokhin <mokhin@bog.msu.ru>
+// January 2004 -- layout map provided by Chris Fynn
+// July 2004 -- some corrections by Pema Geyleg <pema_geyleg@druknet.bt>
+// May 2022 -- updated to the revised standard of October 2009
+
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+    name[Group1]= "Dzongkha";
+
+    key <TLDE>	{[  U0F09,  U0F0A,  U0FD1,  U0FD0      ]};
+
+    // Mainly digits:
+    key <AE01>	{[  U0F21,  U0F04,  1,      U0FD3      ]};
+    key <AE02>	{[  U0F22,  U0F05,  2,      U0FD4      ]};
+    key <AE03>	{[  U0F23,  U0F06,  3,      U0F3A      ]};
+    key <AE04>	{[  U0F24,  U0F48,  4,      U0F3B      ]}; // U+0F48 is an unassigned code point
+    key <AE05>	{[  U0F25,  U0F0E,  5,      U0F85      ]};
+    key <AE06>	{[  U0F26,  U0F08,  6,      U0F01      ]};
+    key <AE07>	{[  U0F27,  U0F38,  7,      U0F8A      ]};
+    key <AE08>	{[  U0F28,  U0F34,  8,      asterisk   ]};
+    key <AE09>	{[  U0F29,  U0F3C,  9,      parenleft  ]};
+    key <AE10>	{[  U0F20,  U0F3D,  0,      parenright ]};
+    key <AE11>	{[  U0F14,  U0F7F,  minus,  U0FD2      ]};
+    key <AE12>	{[  U0F0D,  U0F11,  equal,  plus       ]};
+    key <BKSL>	{[  U0F5D,  U0FAD, backslash,  U0FBA   ]};
+
+    // Consonants ( ka kha ga nga ):
+    key <AD01>	{[  U0F40,  U0F90,  U0F88,  U0F8D  ]};
+    key <AD02>	{[  U0F41,  U0F91,  U0F89,  U0F8E  ]};
+    key <AD03>	{[  U0F42,  U0F92,  U0F8C,  U0F8F  ]};
+    key <AD04>	{[  U0F44,  U0F94,  U0F83,  U0F82  ]};
+
+    // Vowels ( i u e o ):
+    key <AD05>	{[  U0F72,  U0F80,  U0F1A,  U0F8B  ]}; // fourth level needs double code point
+    key <AD06>	{[  U0F74,  U0F84,  U0F1B,  none   ]};
+    key <AD07>	{[  U0F7A,  U0F7B,  U0F1C,  none   ]};
+    key <AD08>	{[  U0F7C,  U0F7D,  U0F1D,  U0F17  ]};
+
+    // Consonants ( ca cha ja nya ):
+    key <AD09>	{[  U0F45,  U0F95,  U0F1E,  U0F18  ]};
+    key <AD10>	{[  U0F46,  U0F96,  U0F1F,  U0F19  ]};
+    key <AD11>	{[  U0F47,  U0F97, parenleft,  U0F3F ]};
+    key <AD12>	{[  U0F49,  U0F99, parenright, U0F3E ]};
+
+    // Consonants ( ta tha da na pa pha ba ma tsa tsha dza wa ):
+    key <AC01>	{[  U0F4F,  U0F9F,  U0F4A,  U0F9A  ]};
+    key <AC02>	{[  U0F50,  U0FA0,  U0F4B,  U0F9B  ]};
+    key <AC03>	{[  U0F51,  U0FA1,  U0F4C,  U0F9C  ]};
+    key <AC04>	{[  U0F53,  U0FA3,  U0F4E,  U0F9E  ]};
+    key <AC05>	{[  U0F54,  U0FA4,  U2039,  guillemotleft  ]};
+    key <AC06>	{[  U0F55,  U0FA5,  U203A,  guillemotright ]};
+    key <AC07>	{[  U0F56,  U0FA6,  U0F37,  U0F35  ]};
+    key <AC08>	{[  U0F58,  U0FA8,  U0F7E,  U0F87  ]};
+    key <AC09>	{[  U0F59,  U0FA9,  U0F39,  U0F86  ]};
+    key <AC10>	{[  U0F5A,  U0FAA, semicolon,  colon ]};
+    key <AC11>	{[  U0F5B,  U0FAB, apostrophe, quotedbl ]};
+
+    key <LSGT>	{[  U0F0D,  U0F11,  U0F10,  U0F0F  ]};
+
+    // Consonants ( zha za 'a ya ra la sha sa ha a ):
+    key <AB01>	{[  U0F5E,  U0FAE,  U0F13,  U0F36  ]};
+    key <AB02>	{[  U0F5F,  U0FAF,  U0FBE,  U0FBF  ]};
+    key <AB03>	{[  U0F60,  U0F71,  U0F03,  U0FB0  ]};
+    key <AB04>	{[  U0F61,  U0FB1,  U0F0F,  U0FBB  ]};
+    key <AB05>	{[  U0F62,  U0FB2,  U0F6A,  U0FBC  ]};
+    key <AB06>	{[  U0F63,  U0FB3,  U0F12,  none   ]};
+    key <AB07>	{[  U0F64,  U0FB4,  U0F65,  U0FB5  ]};
+    key <AB08>	{[  U0F66,  U0FB6,  comma,  U0FD9  ]};
+    key <AB09>	{[  U0F67,  U0FB7, period,  U0FDA  ]};
+    key <AB10>	{[  U0F68,  U0FB8,  slash, question]};
+
+    // Tshegs and spaces:
+    key <SPCE>	{[  U0F0B,  space,  U0F0C,  nobreakspace  ]};
+
+    include "level3(ralt_switch)"
+};

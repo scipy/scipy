@@ -1,0 +1,254 @@
+{
+  "build": "h7f98852_1007",
+  "build_number": 1007,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [],
+  "depends": [
+    "libgcc-ng >=9.3.0"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/xorg-xproto-7.0.31-h7f98852_1007",
+  "features": "",
+  "files": [
+    "include/X11/DECkeysym.h",
+    "include/X11/HPkeysym.h",
+    "include/X11/Sunkeysym.h",
+    "include/X11/X.h",
+    "include/X11/XF86keysym.h",
+    "include/X11/XWDFile.h",
+    "include/X11/Xalloca.h",
+    "include/X11/Xarch.h",
+    "include/X11/Xatom.h",
+    "include/X11/Xdefs.h",
+    "include/X11/Xfuncproto.h",
+    "include/X11/Xfuncs.h",
+    "include/X11/Xmd.h",
+    "include/X11/Xos.h",
+    "include/X11/Xos_r.h",
+    "include/X11/Xosdefs.h",
+    "include/X11/Xpoll.h",
+    "include/X11/Xproto.h",
+    "include/X11/Xprotostr.h",
+    "include/X11/Xthreads.h",
+    "include/X11/Xw32defs.h",
+    "include/X11/Xwindows.h",
+    "include/X11/Xwinsock.h",
+    "include/X11/ap_keysym.h",
+    "include/X11/keysym.h",
+    "include/X11/keysymdef.h",
+    "lib/pkgconfig/xproto.pc"
+  ],
+  "fn": "xorg-xproto-7.0.31-h7f98852_1007.tar.bz2",
+  "license": "MIT",
+  "license_family": "MIT",
+  "link": {
+    "source": "/opt/conda/pkgs/xorg-xproto-7.0.31-h7f98852_1007",
+    "type": 1
+  },
+  "md5": "b4a4381d54784606820704f7b5f05a15",
+  "name": "xorg-xproto",
+  "package_tarball_full_path": "/opt/conda/pkgs/xorg-xproto-7.0.31-h7f98852_1007.tar.bz2",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "include/X11/DECkeysym.h",
+        "path_type": "hardlink",
+        "sha256": "c4f59971b565e2ec25bf1630cd91739faeb6bfb997732329e1d0e944764e6a63",
+        "sha256_in_prefix": "c4f59971b565e2ec25bf1630cd91739faeb6bfb997732329e1d0e944764e6a63",
+        "size_in_bytes": 2820
+      },
+      {
+        "_path": "include/X11/HPkeysym.h",
+        "path_type": "hardlink",
+        "sha256": "51f4a201dbac2060e2b0620a3c067caa014cee4f6de59acfa24aba0feb80594b",
+        "sha256_in_prefix": "51f4a201dbac2060e2b0620a3c067caa014cee4f6de59acfa24aba0feb80594b",
+        "size_in_bytes": 6046
+      },
+      {
+        "_path": "include/X11/Sunkeysym.h",
+        "path_type": "hardlink",
+        "sha256": "aa0f96919b4e11044fb191a8fbf5126ff64dd3a9e5611ef26caa5463f8a0f697",
+        "sha256_in_prefix": "aa0f96919b4e11044fb191a8fbf5126ff64dd3a9e5611ef26caa5463f8a0f697",
+        "size_in_bytes": 4022
+      },
+      {
+        "_path": "include/X11/X.h",
+        "path_type": "hardlink",
+        "sha256": "26a7649965968fbea32d2b04c6e2daa8ab9dd86cbd3abcdf24f0a806b008834d",
+        "sha256_in_prefix": "26a7649965968fbea32d2b04c6e2daa8ab9dd86cbd3abcdf24f0a806b008834d",
+        "size_in_bytes": 20205
+      },
+      {
+        "_path": "include/X11/XF86keysym.h",
+        "path_type": "hardlink",
+        "sha256": "76d3c2edf23cdf8cf39a7a493a57ebdc12ddd5fe398f77a7be03e3e8e52f95ca",
+        "sha256_in_prefix": "76d3c2edf23cdf8cf39a7a493a57ebdc12ddd5fe398f77a7be03e3e8e52f95ca",
+        "size_in_bytes": 13065
+      },
+      {
+        "_path": "include/X11/XWDFile.h",
+        "path_type": "hardlink",
+        "sha256": "f3bae00801ca366c8300bc35a262eaec51d623be3667441e9d6ee0c645120b63",
+        "sha256_in_prefix": "f3bae00801ca366c8300bc35a262eaec51d623be3667441e9d6ee0c645120b63",
+        "size_in_bytes": 3968
+      },
+      {
+        "_path": "include/X11/Xalloca.h",
+        "path_type": "hardlink",
+        "sha256": "5c78fbc4aa42f4194bccbf291dc6f2114f5c18d711be8d62ccf138136597fd1c",
+        "sha256_in_prefix": "5c78fbc4aa42f4194bccbf291dc6f2114f5c18d711be8d62ccf138136597fd1c",
+        "size_in_bytes": 4578
+      },
+      {
+        "_path": "include/X11/Xarch.h",
+        "path_type": "hardlink",
+        "sha256": "e5d6c520a7f79d69e183f96a1450d6f21063c7298662265b93a404dac3981145",
+        "sha256_in_prefix": "e5d6c520a7f79d69e183f96a1450d6f21063c7298662265b93a404dac3981145",
+        "size_in_bytes": 2951
+      },
+      {
+        "_path": "include/X11/Xatom.h",
+        "path_type": "hardlink",
+        "sha256": "4da0ace354f86d5ad38fd24b4bcdb2e28e17432e0637c3eb25ecddb444f89486",
+        "sha256_in_prefix": "4da0ace354f86d5ad38fd24b4bcdb2e28e17432e0637c3eb25ecddb444f89486",
+        "size_in_bytes": 2518
+      },
+      {
+        "_path": "include/X11/Xdefs.h",
+        "path_type": "hardlink",
+        "sha256": "a550be8c24c0d711e664ba24de1681a347be6c973b7889c2aae8966025ece25a",
+        "sha256_in_prefix": "a550be8c24c0d711e664ba24de1681a347be6c973b7889c2aae8966025ece25a",
+        "size_in_bytes": 2404
+      },
+      {
+        "_path": "include/X11/Xfuncproto.h",
+        "path_type": "hardlink",
+        "sha256": "559d911d13c1cc985e949f83fefc9c5208367a4b7935accb6dd2b10cc57c7b6b",
+        "sha256_in_prefix": "559d911d13c1cc985e949f83fefc9c5208367a4b7935accb6dd2b10cc57c7b6b",
+        "size_in_bytes": 7828
+      },
+      {
+        "_path": "include/X11/Xfuncs.h",
+        "path_type": "hardlink",
+        "sha256": "de29db94afe189e0feea12a86f951f1581833565b8a0505d9e79ad813f3a58f0",
+        "sha256_in_prefix": "de29db94afe189e0feea12a86f951f1581833565b8a0505d9e79ad813f3a58f0",
+        "size_in_bytes": 2257
+      },
+      {
+        "_path": "include/X11/Xmd.h",
+        "path_type": "hardlink",
+        "sha256": "7c64c5dbe73212eecc52efe3e14c92364e2f2f2aba2f1e19fb1f0ae39b9adbc3",
+        "sha256_in_prefix": "7c64c5dbe73212eecc52efe3e14c92364e2f2f2aba2f1e19fb1f0ae39b9adbc3",
+        "size_in_bytes": 5122
+      },
+      {
+        "_path": "include/X11/Xos.h",
+        "path_type": "hardlink",
+        "sha256": "66b7eb0ead3f09cf0bfa655ec6cce55ecb61f4a09e47bbbe729982474566d5a4",
+        "sha256_in_prefix": "66b7eb0ead3f09cf0bfa655ec6cce55ecb61f4a09e47bbbe729982474566d5a4",
+        "size_in_bytes": 4362
+      },
+      {
+        "_path": "include/X11/Xos_r.h",
+        "path_type": "hardlink",
+        "sha256": "43bbccf037dfad389ef742c382725c05235ccae31c3142591b78fe4622de966b",
+        "sha256_in_prefix": "43bbccf037dfad389ef742c382725c05235ccae31c3142591b78fe4622de966b",
+        "size_in_bytes": 33693
+      },
+      {
+        "_path": "include/X11/Xosdefs.h",
+        "path_type": "hardlink",
+        "sha256": "cab0a2d64c7d75dcc07718bbd07a6046be254cd9150fb810c1134ab551532b5b",
+        "sha256_in_prefix": "cab0a2d64c7d75dcc07718bbd07a6046be254cd9150fb810c1134ab551532b5b",
+        "size_in_bytes": 3115
+      },
+      {
+        "_path": "include/X11/Xpoll.h",
+        "path_type": "hardlink",
+        "sha256": "b35fd8105ca5fb36a9c7717818e6846c058904831e351ceef872bd0f145febf7",
+        "sha256_in_prefix": "b35fd8105ca5fb36a9c7717818e6846c058904831e351ceef872bd0f145febf7",
+        "size_in_bytes": 7743
+      },
+      {
+        "_path": "include/X11/Xproto.h",
+        "path_type": "hardlink",
+        "sha256": "e7c7c798b06a600670ea0a3a9a17fab27363c9999f0513d30e388b0c5022507c",
+        "sha256_in_prefix": "e7c7c798b06a600670ea0a3a9a17fab27363c9999f0513d30e388b0c5022507c",
+        "size_in_bytes": 56959
+      },
+      {
+        "_path": "include/X11/Xprotostr.h",
+        "path_type": "hardlink",
+        "sha256": "2286016b57ad8c45da16eb7ad2072aa85c4b7350569d868001bef28464f36845",
+        "sha256_in_prefix": "2286016b57ad8c45da16eb7ad2072aa85c4b7350569d868001bef28464f36845",
+        "size_in_bytes": 2805
+      },
+      {
+        "_path": "include/X11/Xthreads.h",
+        "path_type": "hardlink",
+        "sha256": "1d1f3d598e0066d2e7efe133a8568d34fd670730bc9f1eb8dd9f5094ded4b6a9",
+        "sha256_in_prefix": "1d1f3d598e0066d2e7efe133a8568d34fd670730bc9f1eb8dd9f5094ded4b6a9",
+        "size_in_bytes": 12395
+      },
+      {
+        "_path": "include/X11/Xw32defs.h",
+        "path_type": "hardlink",
+        "sha256": "0532eaa476eca2975f82c326c9c40c9d2265218974bf04f477484510a80e1585",
+        "sha256_in_prefix": "0532eaa476eca2975f82c326c9c40c9d2265218974bf04f477484510a80e1585",
+        "size_in_bytes": 1910
+      },
+      {
+        "_path": "include/X11/Xwindows.h",
+        "path_type": "hardlink",
+        "sha256": "e6a229289374c857a21874dc30110a38e42d9379812d156a8beb7e2b4c492e32",
+        "sha256_in_prefix": "e6a229289374c857a21874dc30110a38e42d9379812d156a8beb7e2b4c492e32",
+        "size_in_bytes": 3283
+      },
+      {
+        "_path": "include/X11/Xwinsock.h",
+        "path_type": "hardlink",
+        "sha256": "0e0ef50c3519cc32ac2ea38993bf7085c7c5b6a75ee6322550d631a119c1bb1d",
+        "sha256_in_prefix": "0e0ef50c3519cc32ac2ea38993bf7085c7c5b6a75ee6322550d631a119c1bb1d",
+        "size_in_bytes": 2262
+      },
+      {
+        "_path": "include/X11/ap_keysym.h",
+        "path_type": "hardlink",
+        "sha256": "eca3ab57dffee898629117f4a14a4eafa43b5e468aa16278826bfded686ca244",
+        "sha256_in_prefix": "eca3ab57dffee898629117f4a14a4eafa43b5e468aa16278826bfded686ca244",
+        "size_in_bytes": 2298
+      },
+      {
+        "_path": "include/X11/keysym.h",
+        "path_type": "hardlink",
+        "sha256": "07aa9d1369c2733fbe1d53756499ffd0bf5db090d369fb57b6a44cae6dcc85e2",
+        "sha256_in_prefix": "07aa9d1369c2733fbe1d53756499ffd0bf5db090d369fb57b6a44cae6dcc85e2",
+        "size_in_bytes": 2774
+      },
+      {
+        "_path": "include/X11/keysymdef.h",
+        "path_type": "hardlink",
+        "sha256": "92fb5a36eccea3267e74702d22c2c5f7928844ca763d074bdd04ee9181ad74e4",
+        "sha256_in_prefix": "92fb5a36eccea3267e74702d22c2c5f7928844ca763d074bdd04ee9181ad74e4",
+        "size_in_bytes": 175257
+      },
+      {
+        "_path": "lib/pkgconfig/xproto.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/xorg-xproto_1607291427184/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold",
+        "sha256": "06164ff5f75ea9e0756e8789e00c89889f933c7f698c3b874086c80b297c6d4b",
+        "sha256_in_prefix": "e73a7f61aa28767a10d1687a8e4f97fdfc5079e08206b0a95315c76675b1fefb",
+        "size_in_bytes": 459
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "f197bb742a17c78234c24605ad1fe2d88b1d25f332b75d73e5ba8cf8fbc2a10d",
+  "size": 74922,
+  "subdir": "linux-64",
+  "timestamp": 1607291557628,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/xorg-xproto-7.0.31-h7f98852_1007.tar.bz2",
+  "version": "7.0.31"
+}

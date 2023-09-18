@@ -1,0 +1,13 @@
+prefix=/workspaces/scipy/venv
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+includedir=${prefix}/include/qt
+
+
+Name: Qt5 TextToSpeech
+Description: Qt TextToSpeech module
+Version: 5.15.8
+Libs: -L${libdir} -lQt5TextToSpeech 
+Cflags: -DQT_TEXTTOSPEECH_LIB -I${includedir}/QtTextToSpeech -I${includedir}
+Requires: Qt5Core
+

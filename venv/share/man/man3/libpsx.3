@@ -1,0 +1,133 @@
+.TH LIBPSX 3 "2021-12-12" "" "Linux Programmer's Manual"
+.SH NAME
+psx_syscall3, psx_syscall6, psx_set_sensitivity \- POSIX semantics for system calls
+.SH SYNOPSIS
+.nf
+#include <sys/psx_syscall.h>
+
+long int psx_syscall3(long int syscall_nr,
+                      long int arg1, long int arg2, long int arg3);
+long int psx_syscall6(long int syscall_nr,
+                      long int arg1, long int arg2, long int arg3,
+                      long int arg4, long int arg5, long int arg6);
+int psx_set_sensitivity(psx_sensitivity_t sensitivity);
+void psx_load_syscalls(long int (**syscall_fn)(long int,
+                                    long int, long int, long int),
+                       long int (**syscall6_fn)(long int,
+                                    long int, long int, long int,
+                                    long int, long int, long int));
+.fi
+.sp
+Link with one of these:
+.sp
+.I   ld ... \-lpsx \-lpthread \-\-wrap=pthread_create
+.sp
+.I   gcc ... \-lpsx \-lpthread \-Wl,\-wrap,pthread_create
+.SH DESCRIPTION
+The
+.B libpsx
+library attempts to fill a gap left by the
+.BR pthreads (7)
+implementation on Linux. To be compliant POSIX threads, via the
+.BR nptl "(7) " setxid
+mechanism, glibc maintains consistent UID and GID credentials amongst
+all of the threads associated with the current process. However, other
+credential state is not supported by this abstraction. To support
+these extended kernel managed security attributes,
+.B libpsx
+provides a more generic pair of wrapping system call functions:
+.BR psx_syscall3 "() and " psx_syscall6 ().
+Like the
+.B setxid
+mechanism, the coordination of thread state is mediated by a realtime
+signal. Whereas the
+.B nptl:setxid
+mechanism uses signo=33 (which is hidden by glibc below a redefined
+.BR SIGRTMIN "), " libpsx
+inserts itself in the
+.B SIGSYS
+handler stack. It goes to great length to be the first such handler
+but acts as a pass-through for other
+.B SIGSYS
+uses.
+.PP
+A linker trick of
+.I wrapping
+the
+.BR pthread_create ()
+call with a psx thread registration function is used to ensure
+.B libpsx
+can keep track of all pthreads.
+.PP
+An inefficient macrology trick supports the
+.BR psx_syscall ()
+pseudo function which takes 1 to 7 arguments, depending on the needs
+of the caller. The macrology (which ultimately invokes
+.BR __psx_syscall ())
+pads out the call to actually use
+.BR psx_syscall3 ()
+or
+.BR psx_syscall6 ()
+with zeros filling the missing arguments. While using this in source
+code will make it appear clean, the actual code footprint is
+larger. You are encouraged to use the more explicit
+.BR psx_syscall3 ()
+and
+.BR psx_syscall6 ()
+functions as needed.
+.PP
+.BR psx_set_sensitivity ()
+changes the behavior of the mirrored system calls:
+.B PSX_IGNORE
+ensures that differences are ignored (the default behavior);
+.B PSX_WARNING
+prints a stderr notification about how the results differ; and
+.B PSX_ERROR
+prints the error details and generates a
+.B SIGSYS
+signal.
+.PP
+.BR psx_load_syscalls ()
+can be used to set caller defined function pointers for invoking 3 and
+6 argument syscalls. This function can be used to configure a library,
+or program to change behavior when linked against
+.BR libpsx .
+Indeed,
+.B libcap
+uses this function from
+.B libpsx
+to override its thread scoped default system call based API. When
+linked with
+.BR libpsx ", " libcap
+can operate on all the threads of a multithreaded program to operate
+with POSIX semantics.
+.SH RETURN VALUE
+The return value for system call functions is generally the value
+returned by the kernel, or \-1 in the case of an error. In such cases
+.BR errno (3)
+is set to the detailed error value. The
+.BR psx_syscall3 "() and " psx_syscall6 ()
+functions attempt a single threaded system call and return immediately
+in the case of an error. Should this call succeed, then the same
+system calls are executed from a signal handler on each of the other
+threads of the process.
+.SH CONFORMING TO
+The needs of
+.BR libcap (3)
+for POSIX semantics of capability manipulation. You can read more
+about why this is needed here:
+.TP
+https://sites.google.com/site/fullycapable/who-ordered-libpsx
+.SH "REPORTING BUGS"
+The
+.B libpsx
+library is distributed from
+https://sites.google.com/site/fullycapable/ where the release notes
+may already cover recent issues.  Please report newly discovered bugs
+via:
+.TP
+https://bugzilla.kernel.org/buglist.cgi?component=libcap&list_id=1090757
+.SH SEE ALSO
+.BR libcap (3),
+.BR pthreads "(7) and"
+.BR nptl (7).

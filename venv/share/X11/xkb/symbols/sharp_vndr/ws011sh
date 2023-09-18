@@ -1,0 +1,75 @@
+// $NetBSD: ws011sh,v 1.2 2010/05/30 10:10:20 nonaka Exp $
+
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+	name[Group1]= "Sharp WS011SH";
+
+	key <HZTG> {
+		type[Group1] = "THREE_LEVEL",
+		symbols[Group1] = [ Zenkaku_Hankaku, Zenkaku_Hankaku, exclam ]
+	};
+
+	key <AD01> { [ q, Q, quotedbl ] };
+	key <AD02> { [ w, W, numbersign ] };
+	key <AD03> { [ e, E, dollar ] };
+	key <AD04> { [ r, R, percent ] };
+	key <AD05> { [ t, T, ampersand ] };
+	key <AD06> { [ y, Y, 1 ] };
+	key <AD07> { [ u, U, 2 ] };
+	key <AD08> { [ i, I, 3 ] };
+	key <AD09> { [ o, O, underscore ] };
+	key <AD10> { [ p, P, at ] };
+	key <BKSP> { [ BackSpace, BackSpace, Delete ] };
+	
+	key <TAB> { [ Tab, Tab, Escape ] };
+	key <AC01> { [ a, A, bracketleft ] };
+	key <AC02> { [ s, S, apostrophe ] };
+	key <AC03> { [ d, D, parenleft ] };
+	key <AC04> { [ f, F, parenright ] };
+	key <AC05> { [ g, G, asterisk ] };
+	key <AC06> { [ h, H, 4 ] };
+	key <AC07> { [ j, J, 5 ] };
+	key <AC08> { [ k, K, 6 ] };
+	key <AC09> { [ l, L, plus ] };
+	key <AE11> { [ minus, equal, backslash ] };
+	key <AE02> { [ grave, braceleft, braceright ] };
+
+	key <LFSH> { [ Shift_L ] };
+	key <AB01> { [ z, Z, bracketright ] };
+	key <AB02> { [ x, X, asciicircum ] };
+	key <AB03> { [ c, C, asciitilde ] };
+	key <AB04> { [ v, V, bar ] };
+	key <AB05> { [ b, B, 7 ] };
+	key <AB06> { [ n, N, 8 ] };
+	key <AB07> { [ m, M, 9 ] };
+	key <AB08> { [ comma, less, semicolon ] };
+	key <AB09> { [ period, greater, colon ] };
+	key <AB10> { [ slash, question, 0 ] };
+	key <RTSH> { [ Shift_R ] };
+	key <RTRN> { [ Return ] };
+
+	key <RALT> { [ ISO_Level3_Shift ] };
+
+	key <LCTL> { [ Control_L ] };
+	key <SPCE> { [ space ] };
+	
+	key <UP> { [ Up, Up, Prior ] };
+	key <LEFT> { [ Left, Left, Home ] };
+	key <DOWN> { [ Down, Down, Next ] };
+	key <RGHT> { [ Right, Right, End ] };
+
+	key <ESC> { [ Escape ] };
+
+	key <KP1> { [ 1 ] };
+	key <KP2> { [ 2 ] };
+	key <KP3> { [ 3 ] };
+	key <KP4> { [ 4 ] };
+	key <KP5> { [ 5 ] };
+	key <KP6> { [ 6 ] };
+	key <KP7> { [ 7 ] };
+	key <KP8> { [ 8 ] };
+	key <KP9> { [ 9 ] };
+	key <KP0> { [ 0 ] };
+
+	include "level3(ralt_switch)"
+};

@@ -1,0 +1,190 @@
+{
+  "build": "h9c3ff4c_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [],
+  "depends": [
+    "libgcc-ng >=9.3.0",
+    "libogg >=1.3.4,<1.4.0a0",
+    "libstdcxx-ng >=9.3.0"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/libvorbis-1.3.7-h9c3ff4c_0",
+  "features": "",
+  "files": [
+    "include/vorbis/codec.h",
+    "include/vorbis/vorbisenc.h",
+    "include/vorbis/vorbisfile.h",
+    "lib/cmake/Vorbis/VorbisConfig.cmake",
+    "lib/cmake/Vorbis/VorbisConfigVersion.cmake",
+    "lib/cmake/Vorbis/VorbisTargets-release.cmake",
+    "lib/cmake/Vorbis/VorbisTargets.cmake",
+    "lib/libvorbis.so",
+    "lib/libvorbis.so.0",
+    "lib/libvorbis.so.0.4.9",
+    "lib/libvorbisenc.so",
+    "lib/libvorbisenc.so.2",
+    "lib/libvorbisenc.so.2.0.12",
+    "lib/libvorbisfile.so",
+    "lib/libvorbisfile.so.3",
+    "lib/libvorbisfile.so.3.3.8",
+    "lib/pkgconfig/vorbis.pc",
+    "lib/pkgconfig/vorbisenc.pc",
+    "lib/pkgconfig/vorbisfile.pc"
+  ],
+  "fn": "libvorbis-1.3.7-h9c3ff4c_0.tar.bz2",
+  "license": "BSD-3-Clause",
+  "license_family": "BSD",
+  "link": {
+    "source": "/opt/conda/pkgs/libvorbis-1.3.7-h9c3ff4c_0",
+    "type": 1
+  },
+  "md5": "309dec04b70a3cc0f1e84a4013683bc0",
+  "name": "libvorbis",
+  "package_tarball_full_path": "/opt/conda/pkgs/libvorbis-1.3.7-h9c3ff4c_0.tar.bz2",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "include/vorbis/codec.h",
+        "path_type": "hardlink",
+        "sha256": "1d031e3cbae7defe966426e33802450a56388a1323eec1ec629e6d4095c676c5",
+        "sha256_in_prefix": "1d031e3cbae7defe966426e33802450a56388a1323eec1ec629e6d4095c676c5",
+        "size_in_bytes": 8387
+      },
+      {
+        "_path": "include/vorbis/vorbisenc.h",
+        "path_type": "hardlink",
+        "sha256": "d2aba0527252dc265ffc40bc9b1955d5ac0dc8d5e16d9376fa366c05fa27dc7f",
+        "sha256_in_prefix": "d2aba0527252dc265ffc40bc9b1955d5ac0dc8d5e16d9376fa366c05fa27dc7f",
+        "size_in_bytes": 16990
+      },
+      {
+        "_path": "include/vorbis/vorbisfile.h",
+        "path_type": "hardlink",
+        "sha256": "7d98264e57b0190ef0a2701a0bea5f982e82fc1bedd93cd9408a2fff7790f803",
+        "sha256_in_prefix": "7d98264e57b0190ef0a2701a0bea5f982e82fc1bedd93cd9408a2fff7790f803",
+        "size_in_bytes": 7990
+      },
+      {
+        "_path": "lib/cmake/Vorbis/VorbisConfig.cmake",
+        "path_type": "hardlink",
+        "sha256": "15d7787d026bf77e74bd967ba4f557814d207db0e7f18a8fc8f3ff7d07e93eba",
+        "sha256_in_prefix": "15d7787d026bf77e74bd967ba4f557814d207db0e7f18a8fc8f3ff7d07e93eba",
+        "size_in_bytes": 1260
+      },
+      {
+        "_path": "lib/cmake/Vorbis/VorbisConfigVersion.cmake",
+        "path_type": "hardlink",
+        "sha256": "38abb23a67ba6f2b764dcf6014301b449abe7bc708eb82ceb4e9b69afe1f54b5",
+        "sha256_in_prefix": "38abb23a67ba6f2b764dcf6014301b449abe7bc708eb82ceb4e9b69afe1f54b5",
+        "size_in_bytes": 2742
+      },
+      {
+        "_path": "lib/cmake/Vorbis/VorbisTargets-release.cmake",
+        "path_type": "hardlink",
+        "sha256": "e3f8230872d44147ca710c99642e66735a93c5e2e991f4ff7a3da4f514402c95",
+        "sha256_in_prefix": "e3f8230872d44147ca710c99642e66735a93c5e2e991f4ff7a3da4f514402c95",
+        "size_in_bytes": 1803
+      },
+      {
+        "_path": "lib/cmake/Vorbis/VorbisTargets.cmake",
+        "path_type": "hardlink",
+        "sha256": "55d5b9c6f7e21bbb037688b52cad04b5e6884dcb18015e96a4f170aad9102263",
+        "sha256_in_prefix": "55d5b9c6f7e21bbb037688b52cad04b5e6884dcb18015e96a4f170aad9102263",
+        "size_in_bytes": 3967
+      },
+      {
+        "_path": "lib/libvorbis.so",
+        "path_type": "softlink",
+        "sha256": "325fc3128d8f37c1013d111c4e3e76453df9ff14ee1c06ec2528998bf78c66ba",
+        "size_in_bytes": 250704
+      },
+      {
+        "_path": "lib/libvorbis.so.0",
+        "path_type": "hardlink",
+        "sha256": "325fc3128d8f37c1013d111c4e3e76453df9ff14ee1c06ec2528998bf78c66ba",
+        "sha256_in_prefix": "325fc3128d8f37c1013d111c4e3e76453df9ff14ee1c06ec2528998bf78c66ba",
+        "size_in_bytes": 250704
+      },
+      {
+        "_path": "lib/libvorbis.so.0.4.9",
+        "path_type": "softlink",
+        "sha256": "325fc3128d8f37c1013d111c4e3e76453df9ff14ee1c06ec2528998bf78c66ba",
+        "size_in_bytes": 250704
+      },
+      {
+        "_path": "lib/libvorbisenc.so",
+        "path_type": "softlink",
+        "sha256": "d9122a9d4080413f5bbb4b669d6afc1bc55279fccf68ae1b3de61c9694acb42d",
+        "size_in_bytes": 807912
+      },
+      {
+        "_path": "lib/libvorbisenc.so.2",
+        "path_type": "hardlink",
+        "sha256": "d9122a9d4080413f5bbb4b669d6afc1bc55279fccf68ae1b3de61c9694acb42d",
+        "sha256_in_prefix": "d9122a9d4080413f5bbb4b669d6afc1bc55279fccf68ae1b3de61c9694acb42d",
+        "size_in_bytes": 807912
+      },
+      {
+        "_path": "lib/libvorbisenc.so.2.0.12",
+        "path_type": "softlink",
+        "sha256": "d9122a9d4080413f5bbb4b669d6afc1bc55279fccf68ae1b3de61c9694acb42d",
+        "size_in_bytes": 807912
+      },
+      {
+        "_path": "lib/libvorbisfile.so",
+        "path_type": "softlink",
+        "sha256": "4e82eacc29988e6d552091690bdf590741ee9aa495ea0b4cf209105be6426d27",
+        "size_in_bytes": 53352
+      },
+      {
+        "_path": "lib/libvorbisfile.so.3",
+        "path_type": "hardlink",
+        "sha256": "4e82eacc29988e6d552091690bdf590741ee9aa495ea0b4cf209105be6426d27",
+        "sha256_in_prefix": "4e82eacc29988e6d552091690bdf590741ee9aa495ea0b4cf209105be6426d27",
+        "size_in_bytes": 53352
+      },
+      {
+        "_path": "lib/libvorbisfile.so.3.3.8",
+        "path_type": "softlink",
+        "sha256": "4e82eacc29988e6d552091690bdf590741ee9aa495ea0b4cf209105be6426d27",
+        "size_in_bytes": 53352
+      },
+      {
+        "_path": "lib/pkgconfig/vorbis.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/libvorbis_1610609649376/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_p",
+        "sha256": "fe52b0f636be74541eab41503f150491fa1c2e2f58bac9ae60d0418768441160",
+        "sha256_in_prefix": "7507362a637dee3b4c86ccf6df8c084b8302480093f193259652a3abef18fd5c",
+        "size_in_bytes": 1296
+      },
+      {
+        "_path": "lib/pkgconfig/vorbisenc.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/libvorbis_1610609649376/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_p",
+        "sha256": "373fbc11d6977ef088d8ee8afe832b8ce28cbc6f36f7d923b38257a38c16f7ce",
+        "sha256_in_prefix": "d7ff26b23e5dd1f9c89f90f7832214245f548a013a78ee042722cb2396e786fd",
+        "size_in_bytes": 1360
+      },
+      {
+        "_path": "lib/pkgconfig/vorbisfile.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/libvorbis_1610609649376/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_p",
+        "sha256": "aac1396fefd75c7048bdfe2079645149115a4644c5a7fd8ca54306483f9a6cc4",
+        "sha256_in_prefix": "1ef5bb369ebeaed681a7aab27d50392241763c9c217506cef380459bed1f7315",
+        "size_in_bytes": 1386
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "53080d72388a57b3c31ad5805c93a7328e46ff22fab7c44ad2a86d712740af33",
+  "size": 286280,
+  "subdir": "linux-64",
+  "timestamp": 1610609811627,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/libvorbis-1.3.7-h9c3ff4c_0.tar.bz2",
+  "version": "1.3.7"
+}

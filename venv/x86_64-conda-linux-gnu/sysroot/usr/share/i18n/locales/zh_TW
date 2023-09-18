@@ -1,0 +1,210 @@
+comment_char %
+escape_char /
+%
+% Chinese language locale for Taiwan
+% charmap: BIG5-CP950
+%
+% Original Author:
+%    Ming-Che Chuang
+% 	PPE of NTU, Taiwan, ROC
+%
+% Currently Maintained by:
+%    Yuan-Chung Cheng
+%	platin@ms31.hinet.net
+%    Tung-Han Hsieh
+%	thhsieh@linux.org.tw
+%
+% Reference:	http://wwwold.dkuug.dk/JTC1/SC22/WG20/docs/n690.pdf
+
+LC_IDENTIFICATION
+title      "Chinese locale for Taiwan"
+source     ""
+address    ""
+contact    ""
+email      "bug-glibc-locales@gnu.org"
+tel        ""
+fax        ""
+language   "Chinese"
+territory  "Taiwan"
+revision   "0.2"
+date       "2000-08-02"
+%
+category  "zh_TW:2000";LC_IDENTIFICATION
+category  "zh_TW:2000";LC_CTYPE
+category  "zh_TW:2000";LC_COLLATE
+category  "zh_TW:2000";LC_TIME
+category  "zh_TW:2000";LC_NUMERIC
+category  "zh_TW:2000";LC_MONETARY
+category  "zh_TW:2000";LC_MESSAGES
+category  "zh_TW:2000";LC_PAPER
+category  "zh_TW:2000";LC_NAME
+category  "zh_TW:2000";LC_ADDRESS
+category  "zh_TW:2000";LC_TELEPHONE
+END LC_IDENTIFICATION
+
+LC_CTYPE
+copy "zh_CN"
+END LC_CTYPE
+
+LC_COLLATE
+copy "iso14651_t1"
+END LC_COLLATE
+
+LC_MONETARY
+int_curr_symbol         "<U0054><U0057><U0044><U0020>"
+currency_symbol         "<U004E><U0054><U0024>"
+mon_decimal_point       "<U002E>"
+mon_thousands_sep       "<U002C>"
+mon_grouping            3
+positive_sign           ""
+negative_sign           "<U002D>"
+int_frac_digits         2
+frac_digits             2
+p_cs_precedes           1
+p_sep_by_space          0
+n_cs_precedes           1
+n_sep_by_space          0
+int_p_cs_precedes       1
+int_p_sep_by_space      0
+int_n_cs_precedes       1
+int_n_sep_by_space      0
+p_sign_posn             1
+n_sign_posn             1
+int_p_sign_posn         1
+int_n_sign_posn         1
+END LC_MONETARY
+
+LC_NUMERIC
+decimal_point           "<U002E>"
+thousands_sep           "<U002C>"
+grouping                3
+END LC_NUMERIC
+
+LC_TIME
+% day: Sun, Mon, Tue, Wed, Thr, Fri, Sat
+abday	"<U65E5>";"<U4E00>";"<U4E8C>";"<U4E09>";/
+	"<U56DB>";"<U4E94>";"<U516D>"
+
+day	"<U9031><U65E5>";/
+	"<U9031><U4E00>";/
+	"<U9031><U4E8C>";/
+	"<U9031><U4E09>";/
+	"<U9031><U56DB>";/
+	"<U9031><U4E94>";/
+	"<U9031><U516D>"
+
+% month: Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec.
+abmon	"<U0020><U0031><U6708>";"<U0020><U0032><U6708>";/
+	"<U0020><U0033><U6708>";"<U0020><U0034><U6708>";/
+	"<U0020><U0035><U6708>";"<U0020><U0036><U6708>";/
+	"<U0020><U0037><U6708>";"<U0020><U0038><U6708>";/
+	"<U0020><U0039><U6708>";"<U0031><U0030><U6708>";/
+	"<U0031><U0031><U6708>";"<U0031><U0032><U6708>"
+
+mon	"<U4E00><U6708>";"<U4E8C><U6708>";"<U4E09><U6708>";/
+	"<U56DB><U6708>";"<U4E94><U6708>";"<U516D><U6708>";/
+	"<U4E03><U6708>";"<U516B><U6708>";"<U4E5D><U6708>";/
+	"<U5341><U6708>";"<U5341><U4E00><U6708>";"<U5341><U4E8C><U6708>"
+
+% d_t_fmt: "%Y<y>%m<m>%d<d> (%A) %H<hr>%M<m>%S<s>"
+d_t_fmt "<U897F><U5143><U0025><U0059><U5E74>/
+<U0025><U006D><U6708><U0025><U0064><U65E5>/
+<U0020><U0028><U0025><U0041><U0029>/
+<U0020><U0025><U0048><U6642>/
+<U0025><U004D><U5206><U0025><U0053><U79D2>"
+
+d_fmt	"<U897F><U5143><U0025><U0059><U5E74>/
+<U0025><U006D><U6708><U0025><U0064><U65E5>"
+
+t_fmt	"<U0025><U0048><U6642><U0025><U004D><U5206><U0025><U0053><U79D2>"
+
+am_pm	"<U4E0A><U5348>";"<U4E0B><U5348>"
+
+% t_fmt_ampm: "%p %I<h>%M<m>%S<s>"
+t_fmt_ampm  "<U0025><U0070><U0020><U0025><U0049><U6642>/
+<U0025><U004D><U5206><U0025><U0053><U79D2>"
+
+date_fmt       "<U0025><U0061><U0020><U0025><U0062><U0020><U0025><U0065>/
+<U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U0020>/
+<U0025><U005A><U0020><U0025><U0059>"
+
+END LC_TIME
+
+LC_MESSAGES
+% Any string starting with a Latin Y(y) or Chinese "Shi4" is recognized
+% as affirmative answer.
+% Any string starting with a Latin N(n) or Chinese "Bu4" or "Fou3" is
+% recognized as negative answer.
+% yesexpr     "^[<y><Y><CJK Shi4>]"
+% noexpr      "^[<n><N><CJK Bu4><CJK Fou3>]"
+yesexpr "<U005E><U005B><U0079><U0059><U662F><U005D>"
+noexpr  "<U005E><U005B><U006E><U004E><U4E0D><U5426><U005D>"
+END LC_MESSAGES
+
+LC_PAPER
+% I assume A4, FIXME
+height   297
+width    210
+END LC_PAPER
+
+LC_TELEPHONE
+% tel_int_fmt:  "+%c-%a-%l"
+tel_int_fmt	"<U002B><U0025><U0063><U002D><U0025><U0061>/
+<U002D><U0025><U006C>"
+
+% tel_dom_fmt:  "%A-%l"
+tel_dom_fmt	"<U0025><U0041><U002D><U0025><U006C>"
+
+% int_select:   "00"
+int_select	"<U0030><U0030>"
+
+% int_prefix:   "886"
+int_prefix	"<U0038><U0038><U0036>"
+END LC_TELEPHONE
+
+LC_NAME
+% name_fmt:	"%f%t%g%t%d"
+name_fmt	"<U0025><U0066><U0025><U0074><U0025><U0067><U0025><U0074>/
+<U0025><U0064>"
+
+name_gen	""
+name_miss	"<U5C0F><U59D0>"
+name_mr		"<U5148><U751F>"
+name_mrs	"<U592A><U592A>"
+name_ms		"<U5973><U58EB>"
+END LC_NAME
+
+LC_ADDRESS
+% postal_fmt:	"%c%N%T%N%s %h %e %r%N%b%N%d%N%f%N%a%N"
+postal_fmt	"<U0025><U0063><U0025><U004E><U0025>/
+<U0054><U0025><U004E><U0025><U0073><U0020><U0025><U0068><U0020><U0025>/
+<U0065><U0020><U0025><U0072><U0025><U004E><U0025><U0062><U0025><U004E>/
+<U0025><U0064><U0025><U004E><U0025><U0066><U0025><U004E><U0025><U0061>/
+<U0025><U004E>"
+
+% Reference:	http://www.un.org/Depts/unsd/methods/m49alpha.htm
+%		http://www.isbn.spk-berlin.de/html/prefix.htm
+% country_ab2:	TW
+% country_ab3:	TWN
+% country_isbn:	957
+country_name	"<U4E2D><U83EF><U6C11><U570B>"
+%country_post	"FIXME"
+country_ab2	"<U0054><U0057>"
+country_ab3	"<U0054><U0057><U004E>"
+country_num	158
+%country_car    "FIXME"
+country_isbn	"<U0039><U0035><U0037>"
+
+% Reference:	http://lcweb.loc.gov/standards/iso639-2/langhome.html
+% lang_ab:	zh
+% lang_term:	zho
+% lang_lib:	chi
+lang_name	"<U4E2D><U6587>"
+lang_ab		"<U007A><U0068>"
+lang_term	"<U007A><U0068><U006F>"
+lang_lib	"<U0063><U0068><U0069>"
+END LC_ADDRESS
+
+LC_MEASUREMENT
+measurement	1
+END LC_MEASUREMENT

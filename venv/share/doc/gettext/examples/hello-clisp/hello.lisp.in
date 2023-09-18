@@ -1,0 +1,15 @@
+#| Example for use of GNU gettext.
+   This file is in the public domain.
+
+   Source code of the GNU clisp program.
+|#
+
+(setf (i18n:textdomain) "hello-clisp")
+(setf (i18n:textdomaindir "hello-clisp") "@localedir@/")
+(defmacro _ (string) `(i18n:gettext ,string))
+
+(write-line (_ "Hello, world!"))
+
+(format t (_ "This program is running as process number ~D.")
+          (ext:process-id))
+(terpri)

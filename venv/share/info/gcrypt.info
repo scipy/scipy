@@ -1,0 +1,137 @@
+This is gcrypt.info, produced by makeinfo version 6.5 from gcrypt.texi.
+
+This manual is for Libgcrypt version 1.10.1 and was last updated 28
+March 2022.  Libgcrypt is GNU's library of cryptographic building
+blocks.
+
+Copyright (C) 2000, 2002, 2003, 2004, 2006, 2007, 2008, 2009, 2011, 2012
+Free Software Foundation, Inc.
+Copyright (C) 2012, 2013, 2016, 2017 g10 Code GmbH
+
+     Permission is granted to copy, distribute and/or modify this
+     document under the terms of the GNU General Public License as
+     published by the Free Software Foundation; either version 2 of the
+     License, or (at your option) any later version.  The text of the
+     license can be found in the section entitled "GNU General Public
+     License".
+INFO-DIR-SECTION GNU Libraries
+START-INFO-DIR-ENTRY
+* libgcrypt: (gcrypt).  Cryptographic function library.
+END-INFO-DIR-ENTRY
+
+
+Indirect:
+gcrypt.info-1: 860
+gcrypt.info-2: 305422
+
+Tag Table:
+(Indirect)
+Node: Top860
+Node: Introduction3411
+Node: Getting Started3783
+Node: Features4663
+Node: Overview5448
+Node: Preparation6071
+Node: Header7056
+Node: Building sources8127
+Node: Building sources using Automake10042
+Node: Initializing the library11971
+Ref: sample-use-suspend-secmem15363
+Ref: sample-use-resume-secmem16206
+Node: Multi-Threading17109
+Ref: Multi-Threading-Footnote-118288
+Node: Enabling FIPS mode18697
+Ref: enabling fips mode18880
+Node: Disabling FIPS mode20149
+Ref: disabling fips mode20336
+Node: Hardware features20787
+Ref: hardware features20955
+Ref: Hardware features-Footnote-122279
+Node: Generalities22437
+Node: Controlling the library22696
+Node: Error Handling42137
+Node: Error Values44676
+Node: Error Sources49616
+Node: Error Codes51884
+Node: Error Strings55360
+Node: Handler Functions56544
+Node: Progress handler57103
+Node: Allocation handler59252
+Node: Error handler60798
+Node: Logging handler62364
+Node: Symmetric cryptography62956
+Node: Available ciphers63696
+Node: Available cipher modes66844
+Node: Working with cipher handles72979
+Node: General cipher functions84941
+Node: Public Key cryptography88460
+Node: Available algorithms89299
+Node: Used S-expressions89599
+Node: RSA key parameters90725
+Node: DSA key parameters92003
+Node: ECC key parameters92658
+Ref: ecc_keyparam92809
+Node: Cryptographic Functions96846
+Node: Dedicated ECC Functions111244
+Node: General public-key related Functions112391
+Node: Hashing126078
+Node: Available hash algorithms126811
+Node: Working with hash algorithms133165
+Node: Message Authentication Codes147315
+Node: Available MAC algorithms147983
+Node: Working with MAC algorithms154744
+Node: Key Derivation160736
+Node: Random Numbers163137
+Node: Quality of random numbers163420
+Node: Retrieving random numbers164106
+Node: S-expressions165595
+Node: Data types for S-expressions166238
+Node: Working with S-expressions166564
+Node: MPI library181697
+Node: Data types182719
+Node: Basic functions183028
+Node: MPI formats186049
+Node: Calculations189570
+Node: Comparisons191954
+Node: Bit manipulations192962
+Node: EC functions194284
+Ref: gcry_mpi_ec_new197238
+Node: Miscellaneous202807
+Node: Prime numbers206953
+Node: Generation207223
+Node: Checking208514
+Node: Utilities208924
+Node: Memory allocation209296
+Node: Context management210661
+Ref: gcry_ctx_release211100
+Node: Buffer description211261
+Node: Config reporting212049
+Node: Tools213011
+Node: hmac256213178
+Node: Configuration214183
+Node: Architecture217399
+Ref: fig:subsystems218925
+Ref: Architecture-Footnote-1220012
+Ref: Architecture-Footnote-2220074
+Node: Public-Key Subsystem Architecture220158
+Node: Symmetric Encryption Subsystem Architecture222442
+Node: Hashing and MACing Subsystem Architecture224039
+Node: Multi-Precision-Integer Subsystem Architecture226113
+Node: Prime-Number-Generator Subsystem Architecture227551
+Ref: Prime-Number-Generator Subsystem Architecture-Footnote-1229478
+Node: Random-Number Subsystem Architecture229768
+Node: CSPRNG Description232959
+Ref: CSPRNG Description-Footnote-1234514
+Node: DRBG Description234637
+Node: Self-Tests236318
+Node: FIPS Mode248135
+Ref: fig:fips-fsm252319
+Ref: tbl:fips-states252422
+Ref: tbl:fips-state-transitions253670
+Node: Library Copying257280
+Node: Copying285386
+Node: Figures and Tables305422
+Node: Concept Index305847
+Node: Function and Data Index318472
+
+End Tag Table

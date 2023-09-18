@@ -1,0 +1,186 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html401/loose.dtd">
+<html>
+<!-- Created on October, 9 2022 by texi2html 1.78a -->
+<!--
+Written by: Lionel Cons <Lionel.Cons@cern.ch> (original author)
+            Karl Berry  <karl@freefriends.org>
+            Olaf Bachmann <obachman@mathematik.uni-kl.de>
+            and many others.
+Maintained by: Many creative people.
+Send bugs and suggestions to <texi2html-bug@nongnu.org>
+
+-->
+<head>
+<title>GNU libtextstyle: 1. Introduction</title>
+
+<meta name="description" content="GNU libtextstyle: 1. Introduction">
+<meta name="keywords" content="GNU libtextstyle: 1. Introduction">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="texi2html 1.78a">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+pre.display {font-family: serif}
+pre.format {font-family: serif}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: serif; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: serif; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.roman {font-family:serif; font-weight:normal;}
+span.sansserif {font-family:sans-serif; font-weight:normal;}
+ul.toc {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[ &lt;&lt; ]</td>
+<td valign="middle" align="left">[<a href="libtextstyle_2.html#SEC4" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="libtextstyle_toc.html#SEC_Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="libtextstyle_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="libtextstyle_5.html#SEC45" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="libtextstyle_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+
+<hr size="2">
+<a name="Introduction"></a>
+<a name="SEC1"></a>
+<h1 class="chapter"> <a href="libtextstyle_toc.html#TOC1">1. Introduction</a> </h1>
+
+<p>Text is easier to read when it is accompanied with styling information,
+such as color, font attributes (weight, posture), or underlining, and
+this styling is customized appropriately for the output device.
+</p>
+<p>GNU libtextstyle provides an easy way to add styling to programs that
+produce output to a console or terminal emulator window.  It does this
+in a way that allows the end user to customize the styling using the
+industry standard, namely Cascading Style Sheets (CSS).
+</p>
+
+
+<a name="Style-definitions"></a>
+<a name="SEC2"></a>
+<h2 class="section"> <a href="libtextstyle_toc.html#TOC2">1.1 Style definitions</a> </h2>
+
+<p>Let's look at the traditional way styling is done for specific programs.
+</p>
+<p>Browsers, when they render HTML, use CSS styling.
+</p>
+<p>The older approach to user-customizable text styling is that the user
+associates patterns with escape sequences in an environment variable or a
+command-line argument.  This is the approach used, for example, by the
+GNU &lsquo;<samp>ls</samp>&rsquo; program in combination with the &lsquo;<samp>dircolors</samp>&rsquo; program.
+The processing is distributed across several steps:
+</p><ol>
+<li>
+There is default style definition that is hard-coded in the
+&lsquo;<samp>dircolors</samp>&rsquo; program.  The user can also define their own definitions
+in a file such as &lsquo;<tt>~/.dir_colors</tt>&rsquo;.  This style definition contains
+explicit terminal escape sequences; thus, it can only be used with
+consoles and terminal emulators, and each style definition applies only
+to a certain class of mostly-compatible terminal emulators.
+</li><li>
+The <code>dircolors</code> program, when invoked, translates such a style
+definition to a sequence of shell statements that sets an environment
+variable <code>LS_COLORS</code>.
+</li><li>
+The shell executes these statements, and thus sets the environment
+variable <code>LS_COLORS</code>.
+</li><li>
+The program looks at the environment variable and emits the listed escape
+sequences.
+</li></ol>
+
+<p>In contrast, this library implements styling as follows:
+</p><ol>
+<li>
+There is a default style definition in a CSS file that is part of the
+same package as the stylable program.  The user can also define their own
+definitions in a CSS file, and set an environment environment variable to
+point to it.
+</li><li>
+The program looks at the environment variable, parses the CSS file,
+translates the styling specifications to the form that is appropriate for
+the output device (escape sequences for terminal emulators, inline CSS
+and <code>&lt;span&gt;</code> elements for HTML output), and emits it.
+</li></ol>
+
+<p>Thus, with GNU libtextstyle, the styling has the following properties:
+</p><ul>
+<li>
+It is easier for the user to define their own styling, because the file
+format is standardized and supported by numerous syntax aware editors.
+</li><li>
+A styling file does not depend on the particular output device.  An HTML
+output and a black-on-white terminal emulator can use the same styling
+file.  A white-on-black (or even green-on-black) terminal emulator will
+need different styling, though.
+</li><li>
+It is simpler: There is no need for a program that converts the style
+specification from one format to another.
+</li></ul>
+
+
+<a name="Built_002din-versus-separate-styling"></a>
+<a name="SEC3"></a>
+<h2 class="section"> <a href="libtextstyle_toc.html#TOC3">1.2 Built-in versus separate styling</a> </h2>
+
+<p>There are generally two approaches for adding styling to text:
+</p><ul>
+<li>
+The program that generates the text adds the styling.  It does so through
+interleaved statements that turn on or off specific attributes.
+</li><li>
+The styling gets added by a separate program, that postprocesses the
+output.  This separate program usually uses regular expressions to
+determine which text regions to style with a certain set of text
+attributes.
+</li></ul>
+
+<p>The first approach produces a styling that is 100% correct, regardless of
+the complexity of the text that is being output.  This is the preferred
+approach for example for JSON, XML, or programming language text.
+</p>
+<p>The second approach works well if the output has a simple, easy-to-parse
+format.  It may produce wrong styling in some cases when the text format
+is more complex.  This approach is often used for viewing log files.
+</p>
+<p>GNU libtextstyle supports both approaches; it includes an example program
+for each of the two approaches.
+</p>
+
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC1" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="libtextstyle_2.html#SEC4" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="libtextstyle_toc.html#SEC_Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="libtextstyle_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="libtextstyle_5.html#SEC45" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="libtextstyle_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<p>
+ <font size="-1">
+  This document was generated by <em>Bruno Haible</em> on <em>October, 9 2022</em> using <a href="https://www.nongnu.org/texi2html/"><em>texi2html 1.78a</em></a>.
+ </font>
+ <br>
+
+</p>
+</body>
+</html>

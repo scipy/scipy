@@ -1,0 +1,356 @@
+// Keyboard layouts for Brazil.
+
+default
+xkb_symbols "abnt2" {
+
+    // Based on a very simple Brazilian ABNT2 keyboard,
+    // by Ricardo Y. Igarashi (iga@that.com.br).
+    // With added support for dead keys in I18N applications,
+    // by Conectiva  (http://www.conectiva.com.br).
+
+    include "latin"
+    name[Group1]="Portuguese (Brazil)";
+
+    key <TLDE> { [   apostrophe,       quotedbl,       notsign,         notsign ] };
+    key <AE02> { [            2,             at,   twosuperior,         onehalf ] };
+    key <AE03> { [            3,     numbersign, threesuperior,   threequarters ] };
+    key <AE04> { [            4,         dollar,      sterling,      onequarter ] };
+    key <AE05> { [            5,        percent,          cent,    threeeighths ] };
+    key <AE06> { [            6, dead_diaeresis,       notsign,       diaeresis ] };
+    key <AE12> { [        equal,           plus,       section,     dead_ogonek ] };
+
+    key <AD01> { [            q,              Q,         slash,           slash ] };
+    key <AD02> { [            w,              W,      question,        question ] };
+    key <AD03> { [            e,              E,        degree,          degree ] };
+    key <AD04> { [            r,              R,    registered,      registered ] };
+    key <AD11> { [   dead_acute,     dead_grave,         acute,           grave ] };
+    key <AD12> { [  bracketleft,      braceleft,   ordfeminine,     dead_macron ] };
+    key <BKSL> { [ bracketright,     braceright,     masculine,       masculine ] };
+
+    key <AC10> { [     ccedilla,       Ccedilla,    dead_acute,dead_doubleacute ] };
+    key <AC11> { [   dead_tilde,dead_circumflex,    asciitilde,     asciicircum ] };
+
+    key <LSGT> { [    backslash,            bar,    dead_caron,      dead_breve ] };
+    key <AB03> { [            c,              C,     copyright,       copyright ] };
+    key <AB07> { [            m,              M,            mu,              mu ] };
+    key <AB10> { [    semicolon,          colon, dead_belowdot,   dead_abovedot ] };
+
+    // The ABNT-2 keyboard has this special key:
+    key <AB11> { [        slash,       question,        degree,    questiondown ] };
+
+    include "kpdl(comma)"
+
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "nodeadkeys" {
+
+    include "br(abnt2)"
+    name[Group1]="Portuguese (Brazil, no dead keys)";
+
+    key <AE06> { [            6,      diaeresis,       notsign,         notsign ] };
+    key <AD11> { [   apostrophe,          grave                                 ] };
+    key <AC10> { [     ccedilla,       Ccedilla,         acute,     doubleacute ] };
+    key <AC11> { [   asciitilde,    asciicircum                                 ] };
+    key <AB10> { [    semicolon,          colon, dead_belowdot,        abovedot ] };
+};
+
+
+// The ABNT2 keyboard on IBM/Lenovo Thinkpads,
+// by Piter PUNK <piterpk@terra.com.br>.
+//
+partial alphanumeric_keys
+xkb_symbols "thinkpad" {
+
+    include "br(abnt2)"
+    name[Group1]="Portuguese (Brazil, IBM/Lenovo ThinkPad)";
+
+    key <RCTL> { [        slash,       question,        degree,    questiondown ] };
+};
+
+
+partial alphanumeric_keys
+xkb_symbols "olpc" {
+    // #HW-SPECIFIC
+    include "us(basic)"
+    name[Group1]="Portuguese (Brazil)";
+
+    key <TLDE> { [   apostrophe,        quotedbl                                ] };
+    key <AE01> { [            1,          exclam,   onesuperior                 ] };
+    key <AE02> { [            2,              at,   twosuperior                 ] };
+    key <AE03> { [            3,      numbersign, threesuperior                 ] };
+    key <AE04> { [            4,          dollar,      sterling                 ] };
+    key <AE05> { [            5,         percent,          cent                 ] };
+    key <AE06> { [            6,  dead_diaeresis,       notsign                 ] };
+    key <AE12> { [        equal,            plus,       section                 ] };
+
+    key <AD03> { [            e,               E,      EuroSign                 ] };
+    key <AD11> { [   dead_acute,      dead_grave,         acute,          grave ] };
+    key <AD12> { [  bracketleft,       braceleft,   ordfeminine                 ] };
+    key <BKSL> { [ bracketright,      braceright,     masculine                 ] };
+
+    key <AC10> { [     ccedilla,        Ccedilla                                ] };
+    key <AC11> { [   dead_tilde, dead_circumflex                                ] };
+
+    key <AB01> { [            z,               Z,           bar                 ] };
+    key <AB03> { [            c,               C,     0x10020A2                 ] };
+    key <AB09> { [       period,         greater,     backslash                 ] };
+    key <AB10> { [    semicolon,           colon                                ] };
+
+    key <I219> { [        slash,        question,        degree, ISO_Next_Group ] };
+
+    include "level3(ralt_switch)"
+};
+
+
+//
+// Phonetic Russian for ABNT2 standard layout.
+//
+// Evandro Bernardes    <evbernardes@gmail.com>    2023-02-14
+//
+partial alphanumeric_keys
+xkb_symbols "rus" {
+
+    include "br(abnt2)"
+    name[Group1]= "Russian (Brazil, phonetic)";
+
+    // 1st row
+    key <LatQ> { [ Cyrillic_softsign, Cyrillic_SOFTSIGN, Cyrillic_hardsign, Cyrillic_HARDSIGN  ] };
+    key <LatW> { [      Cyrillic_zhe,      Cyrillic_ZHE  ] };
+    key <LatE> { [       Cyrillic_ie,       Cyrillic_IE, Cyrillic_e,       Cyrillic_E  ] };
+    key <LatR> { [       Cyrillic_er,       Cyrillic_ER  ] };
+    key <LatT> { [       Cyrillic_te,       Cyrillic_TE] };
+    key <LatY> { [     Cyrillic_yeru,     Cyrillic_YERU  ] };
+    key <LatU> { [        Cyrillic_u,        Cyrillic_U, Cyrillic_yu,       Cyrillic_YU  ] };
+    key <LatI> { [        Cyrillic_i,        Cyrillic_I  ] };
+    key <LatO> { [        Cyrillic_o,        Cyrillic_O, Cyrillic_io,       Cyrillic_IO    ] };
+    key <LatP> { [       Cyrillic_pe,       Cyrillic_PE  ] };
+
+    // 2nd row
+    key <LatA> { [        Cyrillic_a,        Cyrillic_A, Cyrillic_ya,       Cyrillic_YA  ] };
+    key <LatS> { [       Cyrillic_es,       Cyrillic_ES  ] };
+    key <LatD> { [       Cyrillic_de,       Cyrillic_DE  ] };
+    key <LatF> { [       Cyrillic_ef,       Cyrillic_EF  ] };
+    key <LatG> { [      Cyrillic_ghe,      Cyrillic_GHE  ] };
+    key <LatH> { [       Cyrillic_ha,       Cyrillic_HA  ] };
+    key <LatJ> { [   Cyrillic_shorti,   Cyrillic_SHORTI  ] };
+    key <LatK> { [       Cyrillic_ka,       Cyrillic_KA  ] };
+    key <LatL> { [       Cyrillic_el,       Cyrillic_EL  ] };
+    key <AC10> { [      Cyrillic_che,      Cyrillic_CHE,    dead_acute,dead_doubleacute ] }; // ccedille
+
+    // 3rd row
+    key <LatZ> { [       Cyrillic_ze,       Cyrillic_ZE  ] };
+    key <LatX> { [      Cyrillic_sha,      Cyrillic_SHA,  Cyrillic_shcha,    Cyrillic_SHCHA ] };
+    key <LatC> { [      Cyrillic_tse,      Cyrillic_TSE  ] };
+    key <LatV> { [       Cyrillic_ve,       Cyrillic_VE  ] };
+    key <LatB> { [       Cyrillic_be,       Cyrillic_BE  ] };
+    key <LatN> { [       Cyrillic_en,       Cyrillic_EN  ] };
+    key <LatM> { [       Cyrillic_em,       Cyrillic_EM  ] };
+};
+
+
+//
+// Brazilian Dvorak layout                                 2005-04-18
+// "Teclado Simplificado Brasileiro" ou "Dvorak Brasileiro"
+//
+// Heitor Moraes    heitor.moraes@gmail.com
+// Luiz Portella    lfpor@lujz.org
+// Nando Florestan  nando2003@mandic.com.br
+// Ari Caldeira     ari@tecladobrasileiro.com.br
+//
+partial alphanumeric_keys
+xkb_symbols "dvorak" {
+
+    name[Group1]="Portuguese (Brazil, Dvorak)";
+
+// Numeric row
+    key <TLDE> { [   apostrophe,        quotedbl,           dead_caron, dead_doubleacute ] };
+    key <AE01> { [            1,          exclam,          onesuperior,       exclamdown ] };
+    key <AE02> { [            2,              at,          twosuperior,          onehalf ] };
+    key <AE03> { [            3,      numbersign,        threesuperior,    threequarters ] };
+    key <AE04> { [            4,          dollar,             sterling,       onequarter ] };
+    key <AE05> { [            5,         percent,                 cent,       0x01002030 ] };
+    key <AE06> { [            6,  dead_diaeresis,              notsign,        diaeresis ] };
+    key <AE07> { [            7,       ampersand,        dead_belowdot,    dead_abovedot ] };
+    key <AE08> { [            8,        asterisk,          dead_ogonek,        dead_horn ] };
+    key <AE09> { [            9,       parenleft,         dead_cedilla,        dead_hook ] };
+    key <AE10> { [            0,      parenright,          dead_macron,       dead_breve ] };
+    key <AE11> { [  bracketleft,       braceleft,          ordfeminine,       0x01000326 ] };
+    key <AE12> { [ bracketright,      braceright,            masculine,   dead_abovering ] };
+
+
+// Upper row
+    key <AD01> { [        slash,        question,               degree,     questiondown ] };
+    key <AD02> { [        comma,            less,           0x01000329,       0x01000313 ] };
+    key <AD03> { [       period,         greater,           0x01002022,   periodcentered ] };
+    key <AD04> { [            p,               P,                thorn,            THORN ] };
+    key <AD05> { [            y,               Y,                  yen,              yen ] };
+    key <AD06> { [            f,               F,  leftdoublequotemark,  leftsinglequotemark ] };
+    key <AD07> { [            g,               G, rightdoublequotemark, rightsinglequotemark ] };
+    key <AD08> { [            c,               C,              uparrow,        copyright ] };
+    key <AD09> { [            r,               R,           registered,       registered ] };
+    key <AD10> { [            l,               L,              lstroke,          Lstroke ] };
+    key <AD11> { [   dead_acute,      dead_grave,                acute,            grave ] };
+    key <AD12> { [        equal,            plus,              section,        plusminus ] };
+
+// Central row
+    key <AC01> { [            a,               A,                   ae,               AE ] };
+    key <AC02> { [            o,               O,                   oe,               OE ] };
+    key <AC03> { [            e,               E,             EuroSign,         EuroSign ] };
+    key <AC04> { [            u,               U,               oslash,           Oslash ] };
+    key <AC05> { [            i,               I,             idotless,        Iabovedot ] };
+    key <AC06> { [            d,               D,                  eth,              ETH ] };
+    key <AC07> { [            h,               H,            leftarrow,        paragraph ] };
+    key <AC08> { [            t,               T,           rightarrow,        trademark ] };
+    key <AC09> { [            n,               N,                  eng,              ENG ] };
+    key <AC10> { [            s,               S,               ssharp,            U1E9E ] };
+    key <AC11> { [   dead_tilde, dead_circumflex,           asciitilde,      asciicircum ] };
+    key <BKSL> { [        minus,      underscore,           0x01002015,       0x01000336 ] };
+
+// Lower row
+    key <LSGT> { [     ccedilla,        Ccedilla,            backslash,              bar ] };
+    key <AB01> { [    semicolon,           colon,           0x01000331,       0x0100032D ] };
+    key <AB02> { [            q,               Q,           0x01000259,       0x0100018F ] };
+    key <AB03> { [            j,               J,           0x01000292,       0x010001B7 ] };
+    key <AB04> { [            k,               K,        guillemotleft,       0x01002039 ] };
+    key <AB05> { [            x,               X,             multiply,         division ] };
+    key <AB06> { [            b,               B,       guillemotright,       0x0100203A ] };
+    key <AB07> { [            m,               M,            downarrow,               mu ] };
+    key <AB08> { [            w,               W,               ubreve,           Ubreve ] };
+    key <AB09> { [            v,               V,   doublelowquotemark, singlelowquotemark ] };
+    key <AB10> { [            z,               Z,           0x0100201F,       0x0100201B ] };
+    key <AB11> { [    backslash,             bar,             currency,        brokenbar ] };
+
+    key <SPCE> { [        space,           space,         nobreakspace,     nobreakspace ] };
+
+// Configures the "," for the numeric keypad
+    include "kpdl(comma)"
+
+// Configures the use of the AltGr key
+    include "level3(ralt_switch)"
+};
+
+
+//
+// Brazilian Nativo layout.
+//     This is a Dvorak-based layout, designed for the Portuguese language.
+//
+// Ari Caldeira    <ari@tecladobrasileiro.com.br>    2005-07-19
+//
+partial alphanumeric_keys
+xkb_symbols "nativo" {
+
+    name[Group1]="Portuguese (Brazil, Nativo)";
+
+// Numeric row
+    key <TLDE> { [        equal,            plus,              section,        plusminus ] };
+    key <AE01> { [            1,          exclam,          onesuperior,       exclamdown ] };
+    key <AE02> { [            2,              at,          twosuperior,          onehalf ] };
+    key <AE03> { [            3,      numbersign,        threesuperior,    threequarters ] };
+    key <AE04> { [            4,          dollar,             sterling,       onequarter ] };
+    key <AE05> { [            5,         percent,                 cent,       0x01002030 ] };
+    key <AE06> { [            6,  dead_diaeresis,              notsign,        diaeresis ] };
+    key <AE07> { [            7,       ampersand,        dead_belowdot,    dead_abovedot ] };
+    key <AE08> { [            8,        asterisk,          dead_ogonek,        dead_horn ] };
+    key <AE09> { [            9,       parenleft,         dead_cedilla,        dead_hook ] };
+    key <AE10> { [            0,      parenright,          dead_macron,       dead_breve ] };
+    key <AE11> { [  bracketleft,       braceleft,          ordfeminine,       0x01000326 ] };
+    key <AE12> { [ bracketright,      braceright,            masculine,   dead_abovering ] };
+
+// Upper row
+    key <AD01> { [        slash,        question,               degree,     questiondown ] };
+    key <AD02> { [        comma,            less,           0x01000329,       0x01000313 ] };
+    key <AD03> { [       period,         greater,           0x01002022,   periodcentered ] };
+    key <AD04> { [            h,               H,            paragraph,        paragraph ] };
+    key <AD05> { [            x,               X,             multiply,         division ] };
+    key <AD06> { [            w,               W,               ubreve,           Ubreve ] };
+    key <AD07> { [            l,               L,              lstroke,          Lstroke ] };
+    key <AD08> { [            t,               T,            trademark,        trademark ] };
+    key <AD09> { [            c,               C,            copyright,        copyright ] };
+    key <AD10> { [            p,               P,                thorn,            THORN ] };
+    key <AD11> { [   dead_tilde, dead_circumflex,           asciitilde,      asciicircum ] };
+    key <AD12> { [        minus,      underscore,           0x01002015,       0x01000336 ] };
+
+// Central row
+    key <AC01> { [            i,               I,             idotless,        Iabovedot ] };
+    key <AC02> { [            e,               E,             EuroSign,         EuroSign ] };
+    key <AC03> { [            a,               A,                   ae,               AE ] };
+    key <AC04> { [            o,               O,                   oe,               OE ] };
+    key <AC05> { [            u,               U,               oslash,           Oslash ] };
+    key <AC06> { [            m,               M,                   mu,               mu ] };
+    key <AC07> { [            d,               D,                  eth,              ETH ] };
+    key <AC08> { [            s,               S,               ssharp,            U1E9E ] };
+    key <AC09> { [            r,               R,           registered,       registered ] };
+    key <AC10> { [            n,               N,                  eng,              ENG ] };
+    key <AC11> { [   dead_acute,      dead_grave,                acute,            grave ] };
+    key <BKSL> { [   apostrophe,        quotedbl,           dead_caron, dead_doubleacute ] };
+
+// Lower row
+    key <LSGT> { [    semicolon,           colon,           0x01000331,       0x0100032D ] };
+    key <AB01> { [            y,               Y,                  yen,              yen ] };
+    key <AB02> { [     ccedilla,        Ccedilla,            backslash,              bar ] };
+    key <AB03> { [            j,               J,           0x01000292,       0x010001B7 ] };
+    key <AB04> { [            b,               B,        guillemotleft,       0x01002039 ] };
+    key <AB05> { [            k,               K,       guillemotright,       0x0100203A ] };
+    key <AB06> { [            q,               Q,           0x01000259,       0x0100018F ] };
+    key <AB07> { [            v,               V,   doublelowquotemark,   singlelowquotemark ] };
+    key <AB08> { [            g,               G,  leftdoublequotemark,  leftsinglequotemark ] };
+    key <AB09> { [            f,               F, rightdoublequotemark, rightsinglequotemark ] };
+    key <AB10> { [            z,               Z,           0x0100201F,       0x0100201B ] };
+    key <AB11> { [    backslash,             bar,             currency,        brokenbar ] };
+
+    key <SPCE> { [        space,           space,         nobreakspace,     nobreakspace ] };
+
+// Configures the "," for the numeric keypad
+    include "kpdl(comma)"
+
+// Configures the use of the AltGr key
+    include "level3(ralt_switch)"
+};
+
+
+//
+// Brazilian Nativo layout for US keyboards.
+//
+// Ari Caldeira    <ari@tecladobrasileiro.com.br>    2005-07-19
+//
+partial alphanumeric_keys
+xkb_symbols "nativo-us" {
+
+    include "br(nativo)"
+
+    name[Group1]="Portuguese (Brazil, Nativo for US keyboards)";
+
+    key <AB01> { [            y,               Y,              ccedilla,        Ccedilla ] };
+    key <AB02> { [    semicolon,           colon,             backslash,             bar ] };
+};
+
+
+//
+// Brazilian Nativo layout for typing Esperanto.
+//
+// Ari Caldeira    <ari@tecladobrasileiro.com.br>    2005-07-19
+//
+partial alphanumeric_keys
+xkb_symbols "nativo-epo" {
+
+    include "br(nativo)"
+
+    name[Group1]="Esperanto (Brazil, Nativo)";
+
+    key <AD04> { [            h,               H,          hcircumflex,      Hcircumflex ] };
+    key <AD05> { [  ccircumflex,     Ccircumflex,                    x,                X ] };
+    key <AD06> { [       ubreve,          Ubreve,                    w,                W ] };
+
+    key <AB01> { [  jcircumflex,     Jcircumflex,                    y,                Y ] };
+    key <AB02> { [  scircumflex,     Scircumflex,             ccedilla,         Ccedilla ] };
+    key <AB06> { [  gcircumflex,     Gcircumflex,                    q,                Q ] };
+};
+
+// EXTRAS:
+
+partial alphanumeric_keys
+	xkb_symbols "sun_type6" {
+	include "sun_vndr/br(sun_type6)"
+};

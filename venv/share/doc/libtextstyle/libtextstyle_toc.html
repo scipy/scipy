@@ -1,0 +1,146 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html401/loose.dtd">
+<html>
+<!-- Created on October, 9 2022 by texi2html 1.78a -->
+<!--
+Written by: Lionel Cons <Lionel.Cons@cern.ch> (original author)
+            Karl Berry  <karl@freefriends.org>
+            Olaf Bachmann <obachman@mathematik.uni-kl.de>
+            and many others.
+Maintained by: Many creative people.
+Send bugs and suggestions to <texi2html-bug@nongnu.org>
+
+-->
+<head>
+<title>GNU libtextstyle: GNU libtextstyle</title>
+
+<meta name="description" content="GNU libtextstyle: GNU libtextstyle">
+<meta name="keywords" content="GNU libtextstyle: GNU libtextstyle">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="texi2html 1.78a">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+pre.display {font-family: serif}
+pre.format {font-family: serif}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: serif; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: serif; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.roman {font-family:serif; font-weight:normal;}
+span.sansserif {font-family:sans-serif; font-weight:normal;}
+ul.toc {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC_Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="libtextstyle_5.html#SEC45" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="libtextstyle_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h1 class="settitle">GNU libtextstyle</h1>
+<a name="SEC_Contents"></a>
+<h1>Table of Contents</h1>
+<div class="contents">
+
+<ul class="toc">
+  <li><a name="TOC1" href="libtextstyle_1.html#SEC1">1. Introduction</a>
+  <ul class="toc">
+    <li><a name="TOC2" href="libtextstyle_1.html#SEC2">1.1 Style definitions</a></li>
+    <li><a name="TOC3" href="libtextstyle_1.html#SEC3">1.2 Built-in versus separate styling</a></li>
+  </ul></li>
+  <li><a name="TOC4" href="libtextstyle_2.html#SEC4">2. The end user's perspective</a>
+  <ul class="toc">
+    <li><a name="TOC5" href="libtextstyle_2.html#SEC5">2.1 The environment variable <code>TERM</code></a>
+    <ul class="toc">
+      <li><a name="TOC6" href="libtextstyle_2.html#SEC6">2.1.1 Terminal emulator programs</a></li>
+      <li><a name="TOC7" href="libtextstyle_2.html#SEC7">2.1.2 Consoles</a></li>
+    </ul></li>
+    <li><a name="TOC8" href="libtextstyle_2.html#SEC8">2.2 The environment variable <code>NO_COLOR</code></a></li>
+    <li><a name="TOC9" href="libtextstyle_2.html#SEC9">2.3 The environment variable <code>NO_TERM_HYPERLINKS</code></a></li>
+    <li><a name="TOC10" href="libtextstyle_2.html#SEC10">2.4 Emacs as a terminal emulator</a></li>
+    <li><a name="TOC11" href="libtextstyle_2.html#SEC11">2.5 The <code>--color</code> option</a></li>
+    <li><a name="TOC12" href="libtextstyle_2.html#SEC12">2.6 The <code>--style</code> option</a>
+    <ul class="toc">
+      <li><a name="TOC13" href="libtextstyle_2.html#SEC13">2.6.1 Creating your own style files</a></li>
+      <li><a name="TOC14" href="libtextstyle_2.html#SEC14">2.6.2 Debugging style files</a></li>
+    </ul>
+</li>
+  </ul></li>
+  <li><a name="TOC15" href="libtextstyle_3.html#SEC15">3. The programmer's perspective</a>
+  <ul class="toc">
+    <li><a name="TOC16" href="libtextstyle_3.html#SEC16">3.1 Basic use of libtextstyle</a>
+    <ul class="toc">
+      <li><a name="TOC17" href="libtextstyle_3.html#SEC17">3.1.1 Hyperlinks</a></li>
+    </ul></li>
+    <li><a name="TOC18" href="libtextstyle_3.html#SEC18">3.2 Include files</a></li>
+    <li><a name="TOC19" href="libtextstyle_3.html#SEC19">3.3 Link options</a></li>
+    <li><a name="TOC20" href="libtextstyle_3.html#SEC20">3.4 Command-line options</a></li>
+    <li><a name="TOC21" href="libtextstyle_3.html#SEC21">3.5 The output stream hierarchy</a>
+    <ul class="toc">
+      <li><a name="TOC22" href="libtextstyle_3.html#SEC22">3.5.1 The abstract <code>ostream</code> class</a></li>
+      <li><a name="TOC23" href="libtextstyle_3.html#SEC23">3.5.2 The abstract <code>styled_ostream</code> class</a></li>
+      <li><a name="TOC24" href="libtextstyle_3.html#SEC24">3.5.3 Concrete ostream subclasses without styling</a>
+      <ul class="toc">
+        <li><a name="TOC25" href="libtextstyle_3.html#SEC25">3.5.3.1 The <code>file_ostream</code> class</a></li>
+        <li><a name="TOC26" href="libtextstyle_3.html#SEC26">3.5.3.2 The <code>fd_ostream</code> class</a></li>
+        <li><a name="TOC27" href="libtextstyle_3.html#SEC27">3.5.3.3 The <code>term_ostream</code> class</a></li>
+        <li><a name="TOC28" href="libtextstyle_3.html#SEC28">3.5.3.4 The <code>html_ostream</code> class</a></li>
+        <li><a name="TOC29" href="libtextstyle_3.html#SEC29">3.5.3.5 The <code>memory_ostream</code> class</a></li>
+        <li><a name="TOC30" href="libtextstyle_3.html#SEC30">3.5.3.6 The <code>iconv_ostream</code> class</a></li>
+      </ul></li>
+      <li><a name="TOC31" href="libtextstyle_3.html#SEC31">3.5.4 Concrete <code>styled_ostream</code> subclasses</a>
+      <ul class="toc">
+        <li><a name="TOC32" href="libtextstyle_3.html#SEC32">3.5.4.1 The <code>term_styled_ostream</code> class</a></li>
+        <li><a name="TOC33" href="libtextstyle_3.html#SEC33">3.5.4.2 The <code>html_styled_ostream</code> class</a></li>
+        <li><a name="TOC34" href="libtextstyle_3.html#SEC34">3.5.4.3 The <code>noop_styled_ostream</code> class</a></li>
+      </ul>
+</li>
+    </ul></li>
+    <li><a name="TOC35" href="libtextstyle_3.html#SEC35">3.6 Debugging the text styling support</a></li>
+    <li><a name="TOC36" href="libtextstyle_3.html#SEC36">3.7 Documenting the text styling support</a></li>
+  </ul></li>
+  <li><a name="TOC37" href="libtextstyle_4.html#SEC37">A. Licenses</a>
+  <ul class="toc">
+    <li><a name="TOC38" href="libtextstyle_4.html#SEC38">A.1 GNU GENERAL PUBLIC LICENSE</a></li>
+    <li><a name="TOC39" href="libtextstyle_4.html#SEC43">A.2 GNU Free Documentation License</a></li>
+  </ul></li>
+  <li><a name="TOC40" href="libtextstyle_5.html#SEC45">Function Index</a></li>
+  <li><a name="TOC41" href="libtextstyle_6.html#SEC46">Variable Index</a></li>
+  <li><a name="TOC42" href="libtextstyle_7.html#SEC47">General Index</a></li>
+</ul>
+</div>
+
+<a name="Top"></a>
+<a name="SEC_Top"></a>
+
+<p>This manual documents the GNU libtextstyle library, version
+0.21.1.
+</p>
+
+
+<hr size="1">
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC_Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="libtextstyle_5.html#SEC45" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="libtextstyle_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<p>
+ <font size="-1">
+  This document was generated by <em>Bruno Haible</em> on <em>October, 9 2022</em> using <a href="https://www.nongnu.org/texi2html/"><em>texi2html 1.78a</em></a>.
+ </font>
+ <br>
+
+</p>
+</body>
+</html>

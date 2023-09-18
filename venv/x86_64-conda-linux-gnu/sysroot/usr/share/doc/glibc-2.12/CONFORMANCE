@@ -1,0 +1,169 @@
+Conformance of the GNU libc with various standards
+==================================================
+
+The GNU libc is designed to be conformant with existing standard as
+far as possible.  To ensure this I've run various tests.  The results
+are presented here.
+
+
+Open Group's hdrchk
+===================
+
+The hdrchk test suite is available from the Open Group at
+
+	ftp://ftp.rdg.opengroup.org/pub/unsupported/stdtools/hdrchk/
+
+I've last run the suite on 2004-04-17 on a Linux/x86 system running
+a Fedora Core 2 test 2 + updates with the following results [*]:
+
+	FIPS		No reported problems
+
+	POSIX90		No reported problems
+
+	XPG3		Prototypes are now in the correct header file
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*** Starting unistd.h
+Missing: extern char *  cuserid();
+Missing: extern int     rename();
+*** Completed unistd.h
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	XPG4		Prototype is now in the correct header file
+			and the _POSIX2_C_VERSION symbol has been removed
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*** Starting unistd.h
+Missing: extern char *  cuserid();
+Missing: #define        _POSIX2_C_VERSION       (-1L)
+*** Completed unistd.h
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	POSIX96		Prototype moved
+			(using "base realtime threads" subsets)
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*** Starting unistd.h
+Missing: extern int     pthread_atfork();
+*** Completed unistd.h
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	UNIX98		Prototypes moved and _POSIX2_C_VERSION removed
+			(using "base realtime threads mse lfs" subset)
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*** Starting unistd.h
+Missing: extern char *  cuserid();
+Missing: #define        _POSIX2_C_VERSION       (-1L)
+Missing: extern int     pthread_atfork();
+*** Completed unistd.h
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+That means all the reported issues are due to the headers having been
+cleaned up for recent POSIX/Unix specification versions.  Duplicated
+prototypes have been removed and obsolete symbols have been removed.
+Which means that as far as the tests performed by the script go, the
+headers files comply to the current POSIX/Unix specification.
+
+
+[*] Since the scripts are not clever enough for the way gcc handles
+include files (namely, putting some of them in gcc-local directory) I
+copied over the iso646.h, float.h, and stddef.h headers and ignored the
+problems resulting from the split limits.h file).
+
+
+Technical C standards conformance issues in glibc
+=================================================
+
+If you compile programs against glibc with __STRICT_ANSI__ defined
+(as, for example, by gcc -ansi, gcc -std=c89, gcc -std=iso1990:199409
+or gcc -std=c99), and use only the headers specified by the version of
+the C standard chosen, glibc will attempt to conform to that version
+of the C standard (as indicated by __STDC_VERSION__):
+
+GCC options		Standard version
+-ansi			ISO/IEC 9899:1990
+-std=c89		ISO/IEC 9899:1990
+-std=iso9899:199409	ISO/IEC 9899:1990 as amended by Amd.1:1995
+-std=c99		ISO/IEC 9899:1999
+
+(Note that -std=c99 is not available in GCC 2.95.2, and that no
+version of GCC presently existing implements the full C99 standard.)
+
+You may then define additional feature test macros to enable the
+features from other standards, and use the headers defined in those
+standards (for example, defining _POSIX_C_SOURCE to be 199506L to
+enable features from ISO/IEC 9945-1:1996).
+
+There are some technical ways in which glibc is known not to conform
+to the supported versions of the C standard, as detailed below.  Some
+of these relate to defects in the standard that are expected to be
+fixed, or to compiler limitations.
+
+
+Defects in the C99 standard
+===========================
+
+Some defects in C99 were corrected in Technical Corrigendum 1 to that
+standard.  glibc follows the corrected specification.
+
+
+Implementation of library functions
+===================================
+
+The implementation of some library functions does not fully follow the
+standard specification:
+
+C99 added additional forms of floating point constants (hexadecimal
+constants, NaNs and infinities) to be recognised by strtod() and
+scanf().  The effect is to change the behavior of some strictly
+conforming C90 programs; glibc implements the C99 versions only
+irrespective of the standard version selected.
+
+C99 added %a as another scanf format specifier for floating point
+values.  This conflicts with the glibc extension where %as, %a[ and
+%aS mean to allocate the string for the data read.  A strictly
+conforming C99 program using %as, %a[ or %aS in a scanf format string
+will misbehave under glibc if it does not include <stdio.h> and
+instead declares scanf itself; if it gets the declaration of scanf
+from <stdio.h>, it will use a C99-conforming version.
+
+
+Compiler limitations
+====================
+
+The macros __STDC_IEC_559__, __STDC_IEC_559_COMPLEX__ and
+__STDC_ISO_10646__ are properly supposed to be defined by the
+compiler, and to be constant throughout the translation unit (before
+and after any library headers are included).  However, they mainly
+relate to library features, and the necessary magic has yet to be
+implemented for GCC to predefine them to the correct values for the
+library in use, so glibc defines them in <features.h>.  Programs that
+test them before including any standard headers may misbehave.
+
+GCC doesn't support the optional imaginary types.  Nor does it
+understand the keyword _Complex before GCC 3.0.  This has the
+corresponding impact on the relevant headers.
+
+glibc's <tgmath.h> implementation is arcane but thought to work
+correctly; a clean and comprehensible version requires compiler
+builtins.
+
+For most of the headers required of freestanding implementations,
+glibc relies on GCC to provide correct versions.  (At present, glibc
+provides <stdint.h>, and GCC doesn't before version 4.5.)
+
+The definition of math_errhandling conforms so long as no translation
+unit using math_errhandling is compiled with -fno-math-errno,
+-fno-trapping-math or options such as -ffast-math that imply these
+options.  math_errhandling is only conditionally defined depending on
+__FAST_MATH__; the compiler does not provide the information needed
+for more exact definitions based on settings of -fno-math-errno and
+-fno-trapping-math, possibly for only some source files in a program.
+
+
+Issues with headers
+===================
+
+None known.

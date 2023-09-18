@@ -1,0 +1,79 @@
+{
+  "build": "hd590300_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [],
+  "depends": [
+    "brotli-bin 1.1.0 hd590300_0",
+    "libbrotlidec 1.1.0 hd590300_0",
+    "libbrotlienc 1.1.0 hd590300_0",
+    "libgcc-ng >=12"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/brotli-1.1.0-hd590300_0",
+  "features": "",
+  "files": [
+    "include/brotli/decode.h",
+    "include/brotli/encode.h",
+    "include/brotli/port.h",
+    "include/brotli/shared_dictionary.h",
+    "include/brotli/types.h"
+  ],
+  "fn": "brotli-1.1.0-hd590300_0.conda",
+  "license": "MIT",
+  "license_family": "MIT",
+  "link": {
+    "source": "/opt/conda/pkgs/brotli-1.1.0-hd590300_0",
+    "type": 1
+  },
+  "md5": "3db48055eab680e43a122e2c7494e7ae",
+  "name": "brotli",
+  "package_tarball_full_path": "/opt/conda/pkgs/brotli-1.1.0-hd590300_0.conda",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "include/brotli/decode.h",
+        "path_type": "hardlink",
+        "sha256": "20d0a87a96bc25a3af7557075be87be4393e88a5fb564db08e92884dee17d841",
+        "sha256_in_prefix": "20d0a87a96bc25a3af7557075be87be4393e88a5fb564db08e92884dee17d841",
+        "size_in_bytes": 16886
+      },
+      {
+        "_path": "include/brotli/encode.h",
+        "path_type": "hardlink",
+        "sha256": "3403a597eff24ff45903128feb471e4dd5138f624104ebe058a9d90ed905550c",
+        "sha256_in_prefix": "3403a597eff24ff45903128feb471e4dd5138f624104ebe058a9d90ed905550c",
+        "size_in_bytes": 19841
+      },
+      {
+        "_path": "include/brotli/port.h",
+        "path_type": "hardlink",
+        "sha256": "d87dae6cce00aff76192a1db4fedc2a817967e14e652829349b8a75088f9e467",
+        "sha256_in_prefix": "d87dae6cce00aff76192a1db4fedc2a817967e14e652829349b8a75088f9e467",
+        "size_in_bytes": 11439
+      },
+      {
+        "_path": "include/brotli/shared_dictionary.h",
+        "path_type": "hardlink",
+        "sha256": "86230f0aaf533044d85d92f84b5aec8b7e4e231d4b64b098604083e7866e8097",
+        "sha256_in_prefix": "86230f0aaf533044d85d92f84b5aec8b7e4e231d4b64b098604083e7866e8097",
+        "size_in_bytes": 3535
+      },
+      {
+        "_path": "include/brotli/types.h",
+        "path_type": "hardlink",
+        "sha256": "96c9330e790aa6fe53f4cdd328d0a4b98e361b82913baa3219db73aadb11272c",
+        "sha256_in_prefix": "96c9330e790aa6fe53f4cdd328d0a4b98e361b82913baa3219db73aadb11272c",
+        "size_in_bytes": 2615
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "8ec33c09c428fcc5fd453e1bd349bb0000ca226716901d356bdf89cdd9b67ab2",
+  "size": 19357,
+  "subdir": "linux-64",
+  "timestamp": 1693583683606,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/brotli-1.1.0-hd590300_0.conda",
+  "version": "1.1.0"
+}

@@ -1,0 +1,101 @@
+Metadata-Version: 2.1
+Name: unicodedata2
+Version: 15.0.0
+Summary: Unicodedata backport updated to the latest Unicode version.
+Home-page: http://github.com/fonttools/unicodedata2
+Download-URL: http://github.com/fonttools/unicodedata2
+Author: Mike Kaplinskiy
+Author-email: mike.kaplinskiy@gmail.com
+License: Apache License 2.0
+Platform: any
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Provides-Extra: testing
+Requires-Dist: pytest ; extra == 'testing'
+Requires-Dist: coverage ; extra == 'testing'
+Requires-Dist: pytest-xdist ; extra == 'testing'
+Requires-Dist: pytest-randomly ; extra == 'testing'
+
+[![Githun CI Status](https://github.com/fonttools/unicodedata2/workflows/Build%20+%20Deploy/badge.svg)](https://github.com/fonttools/unicodedata2/actions?query=workflow%3A%22Build+%2B+Deploy%22)
+[![PyPI](https://img.shields.io/pypi/v/unicodedata2.svg)](https://pypi.org/project/unicodedata2/)
+
+unicodedata2
+============
+
+[unicodedata] backport/updates.
+
+The versions of this package match Unicode versions, so unicodedata2==13.0.0 is data from Unicode 13.0.0.
+
+Pre-compiled wheel packages are available on [PyPI] and can be installed via pip.
+
+[unicodedata]: https://docs.python.org/3/library/unicodedata.html
+[PyPI]: https://pypi.org/project/unicodedata2/
+
+
+Testing
+=======
+
+We run the tests using `tox`. This can be installed as usual with `pip install tox`.
+
+Without any options, `tox` will run the tests against all of the library's
+target Python versions. Any missing versions will be skipped.
+
+To run tests against a specific python version you can use the `-e` option followed by
+a tox environment name. E.g. `-e py38` will run tests against Python 3.8.
+For more info, check `tox`'s [documentation](https://tox.readthedocs.io/en/latest/).
+
+Changelog
+=========
+## 15.0.0
+ - Upgrade to Unicode 15.0.0
+
+## 14.0.0
+ - Upgrade to Unicode 14.0.0
+
+## 13.0.0-2
+ - Fix issue with source distribution tarball archive missing CHANGELOG.md file.
+ - Use tox as test runner.
+
+## 13.0.0
+ - Upgrade to Unicode 13.0.0
+
+## 12.1.0
+ - Upgrade to Unicode 12.1.0
+ - Remove Python 3.4 support as multibuild no longer supports Python 3.4.
+
+## 12.0.0
+ - Upgrade to Unicode 12.0.0
+
+## 11.0.0
+ - Upgrade to Unicode 11.0.0
+ - Remove Python 3.3 support as wheel no longer supports Python 3.3.
+
+## 10.0.0-2
+ - Wheel for Python 3.6
+
+## 10.0.0
+ - Upgrade to Unicode 10.0.0
+ - Remove Python 2.6 support as wheel no longer supports Python 2.6.
+
+## 9.0.0-4
+ - Re-releasing 9.0.0-3 because PyPI doesn't handle bad internet connections well.
+
+## 9.0.0-3
+ - Add binary packages for all platforms. Patch by Cosimo Lupo (anthrotype).
+
+## 9.0.0-2
+ - Python 3 support
+ - Fix incorrect digitification caused by using the underlying Python's Unicode tables.
+
+## 9.0.0
+ - Upgrade to Unicode 9.0.0
+
+## 8.0.0
+ - Upgrade to Unicode 8.0.0
+
+## 7.0.0-2
+ - Compiles under Python 2.6 (and older 2.7). Patch by John Vandenberg. Fixes #2
+ - Runs regular unicodedata tests. Adds Travis and AppVeyor CI. Patch by John Vandenberg (jayvdb).
+
+## 7.0.0
+ - Initial release

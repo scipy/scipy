@@ -1,0 +1,86 @@
+#
+# IPP/2.1 test suite.
+#
+# Copyright © 2007-2017 by Apple Inc.
+# Copyright © 2001-2006 by Easy Software Products. All rights reserved.
+#
+# Licensed under Apache License v2.0.  See the file "LICENSE" for more
+# information.
+#
+# Usage:
+#
+#   ./ipptool -V 2.1 -f filename -t printer-uri ipp-2.1.test
+#
+
+# Do all of the IPP/1.1 and IPP/2.0 tests as an IPP/2.1 client
+INCLUDE "ipp-2.0.test"
+
+
+# Test required printer description attribute support.
+#
+# Required by: PWG 5100.12 section 6.3
+{
+	NAME "PWG 5100.12 section 6.3 - Required Printer Description Attributes"
+	OPERATION Get-Printer-Attributes
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR mimeMediaType document-format application/octet-stream
+
+	STATUS successful-ok
+
+	# Job template attributes
+	EXPECT job-hold-until-default OF-TYPE keyword|name IN-GROUP printer-attributes-tag COUNT 1
+	EXPECT job-hold-until-supported OF-TYPE keyword|name IN-GROUP printer-attributes-tag WITH-VALUE no-hold
+	EXPECT job-priority-default OF-TYPE integer IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE >0,<101
+	EXPECT job-priority-supported OF-TYPE integer IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE >0,<101
+	EXPECT job-settable-attributes-supported OF-TYPE keyword IN-GROUP printer-attributes-tag
+	EXPECT job-sheets-default OF-TYPE keyword|name IN-GROUP printer-attributes-tag
+	EXPECT job-sheets-supported OF-TYPE keyword|name IN-GROUP printer-attributes-tag WITH-VALUE none
+	EXPECT media-col-default OF-TYPE collection IN-GROUP printer-attributes-tag COUNT 1
+	EXPECT media-col-supported OF-TYPE keyword IN-GROUP printer-attributes-tag
+	EXPECT media-col-supported WITH-VALUE media-size
+	EXPECT media-default OF-TYPE keyword|name IN-GROUP printer-attributes-tag COUNT 1
+	EXPECT media-supported OF-TYPE keyword|name IN-GROUP printer-attributes-tag
+
+	# Subscription attributes
+	EXPECT notify-events-default OF-TYPE keyword IN-GROUP printer-attributes-tag
+	EXPECT notify-events-supported OF-TYPE keyword IN-GROUP printer-attributes-tag
+	EXPECT notify-lease-duration-default OF-TYPE integer IN-GROUP printer-attributes-tag COUNT 1
+	EXPECT notify-lease-duration-supported OF-TYPE integer|rangeOfInteger IN-GROUP printer-attributes-tag
+	EXPECT notify-max-events-supported OF-TYPE integer IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE >1
+	EXPECT notify-pull-method-supported OF-TYPE keyword IN-GROUP printer-attributes-tag WITH-VALUE ippget
+
+	# Printer description attributes
+	EXPECT ippget-event-life OF-TYPE integer IN-GROUP printer-attributes-tag COUNT 1
+	EXPECT multiple-operation-time-out OF-TYPE integer IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE >0
+
+	# Operations
+	EXPECT operations-supported WITH-VALUE 0x0005 # Create-Job
+	EXPECT operations-supported WITH-VALUE 0x0006 # Send-Document
+	EXPECT operations-supported WITH-VALUE 0x000C # Hold-Job
+	EXPECT operations-supported WITH-VALUE 0x000D # Release-Job
+	EXPECT operations-supported WITH-VALUE 0x000E # Restart-Job
+	EXPECT operations-supported WITH-VALUE 0x0010 # Pause-Printer
+	EXPECT operations-supported WITH-VALUE 0x0011 # Resume-Printer
+	EXPECT operations-supported WITH-VALUE 0x0012 # Purge-Jobs
+	EXPECT operations-supported WITH-VALUE 0x0013 # Set-Printer-Attributes
+	EXPECT operations-supported WITH-VALUE 0x0014 # Set-Job-Attributes
+	EXPECT operations-supported WITH-VALUE 0x0015 # Get-Printer-Supported-Values
+	EXPECT operations-supported WITH-VALUE 0x0016 # Create-Printer-Subscriptions
+	EXPECT operations-supported WITH-VALUE 0x0018 # Get-Subscription-Attributes
+	EXPECT operations-supported WITH-VALUE 0x0019 # Get-Subscriptions
+	EXPECT operations-supported WITH-VALUE 0x001A # Renew-Subscription
+	EXPECT operations-supported WITH-VALUE 0x001B # Cancel-Subscription
+	EXPECT operations-supported WITH-VALUE 0x001C # Get-Notifications
+	EXPECT operations-supported WITH-VALUE 0x0022 # Enable-Printer
+	EXPECT operations-supported WITH-VALUE 0x0023 # Disable-Printer
+
+	EXPECT ?printer-alert OF-TYPE octetString IN-GROUP printer-attributes-tag
+	EXPECT ?printer-alert-description OF-TYPE text IN-GROUP printer-attributes-tag SAME-COUNT-AS printer-alert
+	EXPECT printer-settable-attributes-supported OF-TYPE keyword IN-GROUP printer-attributes-tag
+	EXPECT printer-state-change-time OF-TYPE integer IN-GROUP printer-attributes-tag COUNT 1
+	EXPECT printer-state-reasons OF-TYPE keyword IN-GROUP printer-attributes-tag
+}

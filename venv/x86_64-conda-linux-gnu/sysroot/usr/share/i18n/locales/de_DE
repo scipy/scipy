@@ -1,0 +1,213 @@
+escape_char /
+comment_char %
+% Locale for German locale in Germany
+% Contributed by Ulrich Drepper <drepper@redhat.com>, 2000
+
+LC_IDENTIFICATION
+title      "German locale for Germany"
+source     "Free Software Foundation, Inc."
+address    "59 Temple Place - Suite 330, Boston, MA 02111-1307, USA"
+contact    ""
+email      "bug-glibc-locales@gnu.org"
+tel        ""
+fax        ""
+language   "German"
+territory  "Germany"
+revision   "1.0"
+date       "2000-06-24"
+%
+category  "de_DE:2000";LC_IDENTIFICATION
+category  "de_DE:2000";LC_CTYPE
+category  "de_DE:2000";LC_COLLATE
+category  "de_DE:2000";LC_TIME
+category  "de_DE:2000";LC_NUMERIC
+category  "de_DE:2000";LC_MONETARY
+category  "de_DE:2000";LC_MESSAGES
+category  "de_DE:2000";LC_PAPER
+category  "de_DE:2000";LC_NAME
+category  "de_DE:2000";LC_ADDRESS
+category  "de_DE:2000";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_CTYPE
+copy "i18n"
+
+translit_start
+
+include "translit_combining";""
+
+% German umlauts.
+% LATIN CAPITAL LETTER A WITH DIAERESIS.
+<U00C4> "<U0041><U0308>";"<U0041><U0045>"
+% LATIN CAPITAL LETTER O WITH DIAERESIS.
+<U00D6> "<U004F><U0308>";"<U004F><U0045>"
+% LATIN CAPITAL LETTER U WITH DIAERESIS.
+<U00DC> "<U0055><U0308>";"<U0055><U0045>"
+% LATIN SMALL LETTER A WITH DIAERESIS.
+<U00E4> "<U0061><U0308>";"<U0061><U0065>"
+% LATIN SMALL LETTER O WITH DIAERESIS.
+<U00F6> "<U006F><U0308>";"<U006F><U0065>"
+% LATIN SMALL LETTER U WITH DIAERESIS.
+<U00FC> "<U0075><U0308>";"<U0075><U0065>"
+
+% Danish.
+% LATIN CAPITAL LETTER A WITH RING ABOVE.
+<U00C5> "<U0041><U030A>";"<U0041><U0041>"
+% LATIN SMALL LETTER A WITH RING ABOVE.
+<U00E5> "<U0061><U030A>";"<U0061><U0061>"
+
+% The following strange first-level transliteration derive from the use
+% U201E and U201C as "correct" quoting characters.  These two characters
+% do not really belong together.  The result is that somebody who uses
+% U201C and U201D will get the incorrect U00AB / U00BB sequences.
+% LEFT DOUBLE QUOTATION MARK
+<U201C> <U00AB>;<U0022>
+% RIGHT DOUBLE QUOTATION MARK
+<U201D> <U00BB>;<U0022>
+% DOUBLE LOW-9 QUOTATION MARK
+<U201E> <U00BB>;"<U002C><U002C>"
+% DOUBLE HIGH-REVERSED-9 QUOTATION MARK
+<U201F> <U00AB>;<U0022>
+
+translit_end
+
+END LC_CTYPE
+
+LC_COLLATE
+
+define DIACRIT_FORWARD
+
+% Copy the template from ISO/IEC 14651
+copy "iso14651_t1"
+
+END LC_COLLATE
+
+LC_MONETARY
+int_curr_symbol     "<U0045><U0055><U0052><U0020>"
+currency_symbol     "<U20AC>"
+mon_decimal_point   "<U002C>"
+mon_thousands_sep   "<U002E>"
+mon_grouping        3;3
+positive_sign       ""
+negative_sign       "<U002D>"
+int_frac_digits     2
+frac_digits         2
+p_cs_precedes       0
+p_sep_by_space      1
+n_cs_precedes       0
+n_sep_by_space      1
+p_sign_posn         1
+n_sign_posn         1
+%
+END LC_MONETARY
+
+LC_NUMERIC
+decimal_point   "<U002C>"
+thousands_sep   "<U002E>"
+grouping        3;3
+END LC_NUMERIC
+
+LC_TIME
+abday	"<U0053><U006F>";"<U004D><U006F>";/
+	"<U0044><U0069>";"<U004D><U0069>";/
+	"<U0044><U006F>";"<U0046><U0072>";/
+	"<U0053><U0061>"
+day	"<U0053><U006F><U006E><U006E><U0074><U0061><U0067>";/
+	"<U004D><U006F><U006E><U0074><U0061><U0067>";/
+	"<U0044><U0069><U0065><U006E><U0073><U0074><U0061><U0067>";/
+	"<U004D><U0069><U0074><U0074><U0077><U006F><U0063><U0068>";/
+	"<U0044><U006F><U006E><U006E><U0065><U0072><U0073><U0074><U0061><U0067>";/
+	"<U0046><U0072><U0065><U0069><U0074><U0061><U0067>";/
+	"<U0053><U0061><U006D><U0073><U0074><U0061><U0067>"
+abmon	"<U004A><U0061><U006E>";"<U0046><U0065><U0062>";/
+	"<U004D><U00E4><U0072>";"<U0041><U0070><U0072>";/
+	"<U004D><U0061><U0069>";"<U004A><U0075><U006E>";/
+	"<U004A><U0075><U006C>";"<U0041><U0075><U0067>";/
+	"<U0053><U0065><U0070>";"<U004F><U006B><U0074>";/
+	"<U004E><U006F><U0076>";"<U0044><U0065><U007A>"
+mon	"<U004A><U0061><U006E><U0075><U0061><U0072>";/
+	"<U0046><U0065><U0062><U0072><U0075><U0061><U0072>";/
+	"<U004D><U00E4><U0072><U007A>";/
+	"<U0041><U0070><U0072><U0069><U006C>";/
+	"<U004D><U0061><U0069>";/
+	"<U004A><U0075><U006E><U0069>";/
+	"<U004A><U0075><U006C><U0069>";/
+	"<U0041><U0075><U0067><U0075><U0073><U0074>";/
+	"<U0053><U0065><U0070><U0074><U0065><U006D><U0062><U0065><U0072>";/
+	"<U004F><U006B><U0074><U006F><U0062><U0065><U0072>";/
+	"<U004E><U006F><U0076><U0065><U006D><U0062><U0065><U0072>";/
+	"<U0044><U0065><U007A><U0065><U006D><U0062><U0065><U0072>"
+am_pm   "";""
+% Appropriate date and time representation (%c)
+%	"%a %d %b %Y %T %Z"
+d_t_fmt "<U0025><U0061><U0020><U0025><U0064><U0020><U0025><U0062><U0020><U0025><U0059><U0020><U0025><U0054><U0020><U0025><U005A>"
+%
+% Appropriate date representation (%x)
+%	"%d.%m.%Y"
+d_fmt   "<U0025><U0064><U002E><U0025><U006D><U002E><U0025><U0059>"
+%
+% Appropriate time representation (%X)
+%	"%T"
+t_fmt   "<U0025><U0054>"
+t_fmt_ampm ""
+date_fmt	"<U0025><U0061><U0020><U0025><U002D><U0064><U002E><U0020>/
+<U0025><U0062><U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053>/
+<U0020><U0025><U005A><U0020><U0025><U0059>"
+
+week    7;19971130;4
+first_weekday 2
+first_workday 2
+END LC_TIME
+
+LC_MESSAGES
+yesexpr "<U005E><U005B><U006A><U004A><U0079><U0059><U005D><U002E><U002A>"
+noexpr  "<U005E><U005B><U006E><U004E><U005D><U002E><U002A>"
+END LC_MESSAGES
+
+LC_PAPER
+height   297
+width    210
+END LC_PAPER
+
+LC_NAME
+name_fmt    "<U0025><U0064><U0025><U0074><U0025><U0067><U0025><U0074>/
+<U0025><U006D><U0025><U0074><U0025><U0066>"
+name_miss   "<U0046><U0072><U00E4><U0075><U006C><U0065><U0069><U006E>"
+name_mr     "<U0048><U0065><U0072><U0072>"
+name_mrs    "<U0046><U0072><U0061><U0075>"
+name_ms     "<U0046><U0072><U0061><U0075>"
+END LC_NAME
+
+
+LC_ADDRESS
+postal_fmt    "<U0025><U0066><U0025><U004E><U0025><U0061><U0025><U004E>/
+<U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E><U0025><U0073>/
+<U0020><U0025><U0068><U0020><U0025><U0065><U0020><U0025><U0072><U0025>/
+<U004E><U0025><U007A><U0020><U0025><U0054><U0025>/
+<U004E><U0025><U0063><U0025><U004E>"
+country_name  "<U0044><U0065><U0075><U0074><U0073><U0063><U0068><U006C>/
+<U0061><U006E><U0064>"
+country_post  "<U0044>"
+country_ab2   "<U0044><U0045>"
+country_ab3   "<U0044><U0045><U0055>"
+country_num   276
+country_car   "<U0044>"
+country_isbn  3
+lang_name     "<U0044><U0065><U0075><U0074><U0073><U0063><U0068>"
+lang_ab       "<U0064><U0065>"
+lang_term     "<U0064><U0065><U0075>"
+lang_lib      "<U0067><U0065><U0072>"
+END LC_ADDRESS
+
+LC_TELEPHONE
+tel_int_fmt    "<U002B><U0025><U0063><U0020><U0025><U0061><U0020><U0025>/
+<U006C>"
+tel_dom_fmt    "<U0025><U0041><U0020><U0025><U006C>"
+int_select     "<U0030><U0030>"
+int_prefix     "<U0034><U0039>"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+measurement    1
+END LC_MEASUREMENT

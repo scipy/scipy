@@ -1,0 +1,1001 @@
+{
+  "build": "pyhd8ed1ab_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/noarch",
+  "constrains": [],
+  "depends": [
+    "python >=3.9",
+    "sphinx >=5"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/sphinxcontrib-serializinghtml-1.1.9-pyhd8ed1ab_0",
+  "features": "",
+  "files": [
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/__init__.py",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/jsonimpl.py",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/.tx/config",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/ar/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/ar/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/bg/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/bg/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/bn/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/bn/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/ca/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/ca/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/cak/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/cak/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/cs/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/cs/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/cy/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/cy/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/da/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/da/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/de/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/de/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/el/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/el/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/eo/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/eo/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/es/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/es/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/et/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/et/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/eu/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/eu/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/fa/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/fa/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/fi/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/fi/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/fr/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/fr/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/he/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/he/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/hi/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/hi/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/hi_IN/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/hi_IN/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/hr/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/hr/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/hu/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/hu/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/id/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/id/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/it/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/it/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/ja/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/ja/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/ko/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/ko/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/lt/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/lt/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/lv/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/lv/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/mk/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/mk/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/nb_NO/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/nb_NO/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/ne/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/ne/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/nl/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/nl/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/pl/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/pl/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/pt/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/pt/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/pt_BR/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/pt_BR/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/pt_PT/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/pt_PT/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/ro/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/ro/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/ru/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/ru/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/si/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/si/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/sk/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/sk/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/sl/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/sl/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/sphinxcontrib.serializinghtml.pot",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/sq/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/sq/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/sr/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/sr/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/sr@latin/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/sr@latin/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/sr_RS/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/sr_RS/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/sv/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/sv/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/ta/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/ta/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/te/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/te/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/tr/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/tr/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/uk_UA/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/uk_UA/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/ur/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/ur/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/vi/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/vi/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/zh_CN/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/zh_CN/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/zh_TW/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/locales/zh_TW/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+    "lib/python3.10/site-packages/sphinxcontrib_serializinghtml-1.1.9.dist-info/INSTALLER",
+    "lib/python3.10/site-packages/sphinxcontrib_serializinghtml-1.1.9.dist-info/LICENSE",
+    "lib/python3.10/site-packages/sphinxcontrib_serializinghtml-1.1.9.dist-info/METADATA",
+    "lib/python3.10/site-packages/sphinxcontrib_serializinghtml-1.1.9.dist-info/RECORD",
+    "lib/python3.10/site-packages/sphinxcontrib_serializinghtml-1.1.9.dist-info/REQUESTED",
+    "lib/python3.10/site-packages/sphinxcontrib_serializinghtml-1.1.9.dist-info/WHEEL",
+    "lib/python3.10/site-packages/sphinxcontrib_serializinghtml-1.1.9.dist-info/direct_url.json",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/__pycache__/jsonimpl.cpython-310.pyc"
+  ],
+  "fn": "sphinxcontrib-serializinghtml-1.1.9-pyhd8ed1ab_0.conda",
+  "license": "BSD-2-Clause",
+  "license_family": "BSD",
+  "link": {
+    "source": "/opt/conda/pkgs/sphinxcontrib-serializinghtml-1.1.9-pyhd8ed1ab_0",
+    "type": 1
+  },
+  "md5": "0612e497d7860728f2cda421ea2aec09",
+  "name": "sphinxcontrib-serializinghtml",
+  "noarch": "python",
+  "package_tarball_full_path": "/opt/conda/pkgs/sphinxcontrib-serializinghtml-1.1.9-pyhd8ed1ab_0.conda",
+  "package_type": "noarch_python",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "e209230225e79559fe93b1ba0eb8f7c6910f8f72e3e28a0a4c2c8766c679306e",
+        "sha256_in_prefix": "e209230225e79559fe93b1ba0eb8f7c6910f8f72e3e28a0a4c2c8766c679306e",
+        "size_in_bytes": 6084
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/jsonimpl.py",
+        "path_type": "hardlink",
+        "sha256": "9064dc3f8307fbd2d3eb8d7902d25d55a0ea078ae625f9f7c97e4397979e8573",
+        "sha256_in_prefix": "9064dc3f8307fbd2d3eb8d7902d25d55a0ea078ae625f9f7c97e4397979e8573",
+        "size_in_bytes": 842
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/.tx/config",
+        "path_type": "hardlink",
+        "sha256": "ee1347be38dd76d2e0f58dd07f997a4f74c188223fce7c4b3981dbe220bc39b8",
+        "sha256_in_prefix": "ee1347be38dd76d2e0f58dd07f997a4f74c188223fce7c4b3981dbe220bc39b8",
+        "size_in_bytes": 245
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/ar/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "0a180a6acadc781f84f0bf2c6b6aebb4a68aa5b934e31d13fc64647597d2ef92",
+        "sha256_in_prefix": "0a180a6acadc781f84f0bf2c6b6aebb4a68aa5b934e31d13fc64647597d2ef92",
+        "size_in_bytes": 882
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/ar/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "336f8fb59bb8239e23eeae536b381e5b32d525ba1a9788b3681d9094bc34dc2b",
+        "sha256_in_prefix": "336f8fb59bb8239e23eeae536b381e5b32d525ba1a9788b3681d9094bc34dc2b",
+        "size_in_bytes": 1346
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/bg/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "2fdbb5ffd992df9338f1c8f40342b5d6675b64046311c122440c59895b3f00b1",
+        "sha256_in_prefix": "2fdbb5ffd992df9338f1c8f40342b5d6675b64046311c122440c59895b3f00b1",
+        "size_in_bytes": 513
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/bg/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "3825a675f45de71875b49d5c34b06357c441c1b945a41218769c3bdf472a97c9",
+        "sha256_in_prefix": "3825a675f45de71875b49d5c34b06357c441c1b945a41218769c3bdf472a97c9",
+        "size_in_bytes": 1001
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/bn/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "c9d958e1e68f132ab8bd76b4a0a3075d447cbbe44546424458e458af879d1b27",
+        "sha256_in_prefix": "c9d958e1e68f132ab8bd76b4a0a3075d447cbbe44546424458e458af879d1b27",
+        "size_in_bytes": 511
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/bn/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "03646f44a8c1382ed3e3c460edfdaee892b2be69ca62514f8740ecddc803ee31",
+        "sha256_in_prefix": "03646f44a8c1382ed3e3c460edfdaee892b2be69ca62514f8740ecddc803ee31",
+        "size_in_bytes": 999
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/ca/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "704b4f4740e7d03bf75eb43133a96d8ac07798f52f198e561b027240b0e71127",
+        "sha256_in_prefix": "704b4f4740e7d03bf75eb43133a96d8ac07798f52f198e561b027240b0e71127",
+        "size_in_bytes": 511
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/ca/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "35313c26cd3878b79b1f417d674ab3d50af08549aefb78128e9ce62dd484d7d0",
+        "sha256_in_prefix": "35313c26cd3878b79b1f417d674ab3d50af08549aefb78128e9ce62dd484d7d0",
+        "size_in_bytes": 999
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/cak/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "0d5a120ca8b3b7422d16f0166879b577184e78d6638b68d737c526f126e087a7",
+        "sha256_in_prefix": "0d5a120ca8b3b7422d16f0166879b577184e78d6638b68d737c526f126e087a7",
+        "size_in_bytes": 473
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/cak/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "7342071da5a828f387d729f0f24e71c7bf087cca18d196b0f2914883381523be",
+        "sha256_in_prefix": "7342071da5a828f387d729f0f24e71c7bf087cca18d196b0f2914883381523be",
+        "size_in_bytes": 1003
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/cs/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "657f4866fc4ffaa7c6f9014d06defa30471244a906ed468fe578901ee2c5323f",
+        "sha256_in_prefix": "657f4866fc4ffaa7c6f9014d06defa30471244a906ed468fe578901ee2c5323f",
+        "size_in_bytes": 589
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/cs/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "f8a5f1b0dfb88d7ab81747ef6f98a042c48e6f2287e35afc6d7bcc9b3b0ac09f",
+        "sha256_in_prefix": "f8a5f1b0dfb88d7ab81747ef6f98a042c48e6f2287e35afc6d7bcc9b3b0ac09f",
+        "size_in_bytes": 1077
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/cy/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "ab3faa7ee2d9c607dabf4faad493a7531d86c1d96b19bb5e607f2aa8f6adb563",
+        "sha256_in_prefix": "ab3faa7ee2d9c607dabf4faad493a7531d86c1d96b19bb5e607f2aa8f6adb563",
+        "size_in_bytes": 554
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/cy/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "db2eaa89d51670ad9fe97426d7dad7f99cf0a30742a63a6592537233aedc2bb6",
+        "sha256_in_prefix": "db2eaa89d51670ad9fe97426d7dad7f99cf0a30742a63a6592537233aedc2bb6",
+        "size_in_bytes": 1042
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/da/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "f622b2997a747fc03df3c094df8c17afdd261ecce753ccbf6a4a316b4286ce1a",
+        "sha256_in_prefix": "f622b2997a747fc03df3c094df8c17afdd261ecce753ccbf6a4a316b4286ce1a",
+        "size_in_bytes": 751
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/da/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "b1d9e3899034cfe18d4399f2e898a283798828802203c28a5f09f870e2f665c5",
+        "sha256_in_prefix": "b1d9e3899034cfe18d4399f2e898a283798828802203c28a5f09f870e2f665c5",
+        "size_in_bytes": 1209
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/de/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "ba7f8d7ea1e579331f88b38adc75cfcaf2caa42a521aad7bdc601746578ac3bf",
+        "sha256_in_prefix": "ba7f8d7ea1e579331f88b38adc75cfcaf2caa42a521aad7bdc601746578ac3bf",
+        "size_in_bytes": 510
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/de/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "9d6aae9ddf61eea0f62a9b65a3e61b9eea28a4903a7fe0f5c0a128927830fd23",
+        "sha256_in_prefix": "9d6aae9ddf61eea0f62a9b65a3e61b9eea28a4903a7fe0f5c0a128927830fd23",
+        "size_in_bytes": 998
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/el/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "4340b86b0dfa17d8f3aeba5474855fff5cca09909dbf792edc43548ae858f5f7",
+        "sha256_in_prefix": "4340b86b0dfa17d8f3aeba5474855fff5cca09909dbf792edc43548ae858f5f7",
+        "size_in_bytes": 871
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/el/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "12f4cddb24aa5a0f082d7283ed29f886b668e9873da67fcaaa8f77f74cf98534",
+        "sha256_in_prefix": "12f4cddb24aa5a0f082d7283ed29f886b668e9873da67fcaaa8f77f74cf98534",
+        "size_in_bytes": 1342
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/eo/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "45152683d4f2444fffb89fc7bf93f94d76e5f76c93cbaaaa95a7a8674103707c",
+        "sha256_in_prefix": "45152683d4f2444fffb89fc7bf93f94d76e5f76c93cbaaaa95a7a8674103707c",
+        "size_in_bytes": 513
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/eo/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "798b424e2f2708ee4336b5f761f844503b2c497a9b7275d06e7563912f872ab9",
+        "sha256_in_prefix": "798b424e2f2708ee4336b5f761f844503b2c497a9b7275d06e7563912f872ab9",
+        "size_in_bytes": 1001
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/es/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "ad0fef5ff549c68018b804b57e42ac95ff68c7058a4c204df048f3ac63bf4806",
+        "sha256_in_prefix": "ad0fef5ff549c68018b804b57e42ac95ff68c7058a4c204df048f3ac63bf4806",
+        "size_in_bytes": 797
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/es/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "c63615a8d5047d6bfed3bd6a6f5171d3983c3a6a4e5fe453f43b65d371ff3232",
+        "sha256_in_prefix": "c63615a8d5047d6bfed3bd6a6f5171d3983c3a6a4e5fe453f43b65d371ff3232",
+        "size_in_bytes": 1336
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/et/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "d5cc78052a525cf0af14b66da5636291e8688139ba2cba3c6bf431972e9f58cb",
+        "sha256_in_prefix": "d5cc78052a525cf0af14b66da5636291e8688139ba2cba3c6bf431972e9f58cb",
+        "size_in_bytes": 663
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/et/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "171eb2107f4b85c9f5ae2811e118d48f084d92c27100066e1d8074d171970b1c",
+        "sha256_in_prefix": "171eb2107f4b85c9f5ae2811e118d48f084d92c27100066e1d8074d171970b1c",
+        "size_in_bytes": 1188
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/eu/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "a8e715f798aa76b3d9e948e1f7a22eb1ec70f60573e597d3d1eb3f1cf45ec795",
+        "sha256_in_prefix": "a8e715f798aa76b3d9e948e1f7a22eb1ec70f60573e597d3d1eb3f1cf45ec795",
+        "size_in_bytes": 510
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/eu/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "5de6bbc9a5cdcb90376e36087fbce972ae98db41fca0e1b2440b1d0b7683ba58",
+        "sha256_in_prefix": "5de6bbc9a5cdcb90376e36087fbce972ae98db41fca0e1b2440b1d0b7683ba58",
+        "size_in_bytes": 998
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/fa/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "63f0612ebbdb74418e187af1a83f53e27201062286e6a68d4a5a6ab6da44d370",
+        "sha256_in_prefix": "63f0612ebbdb74418e187af1a83f53e27201062286e6a68d4a5a6ab6da44d370",
+        "size_in_bytes": 914
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/fa/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "730d91604e4c6f003a3288cbe0e23b1d43762842416afcd4e9d0ac2bba217eec",
+        "sha256_in_prefix": "730d91604e4c6f003a3288cbe0e23b1d43762842416afcd4e9d0ac2bba217eec",
+        "size_in_bytes": 1375
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/fi/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "6ef836fb7ae92cb39ad2cf791e2536b7967e9bac83323b6659da9e467fefe4fd",
+        "sha256_in_prefix": "6ef836fb7ae92cb39ad2cf791e2536b7967e9bac83323b6659da9e467fefe4fd",
+        "size_in_bytes": 511
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/fi/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "7febe8d9b372fa431f88e352d222433b156a5c165143027de075525d80ca4038",
+        "sha256_in_prefix": "7febe8d9b372fa431f88e352d222433b156a5c165143027de075525d80ca4038",
+        "size_in_bytes": 999
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/fr/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "5f794ac0828c57f04e7b5510b9dc4106a82f6c0c06c27c3d0d8c04d59781bcda",
+        "sha256_in_prefix": "5f794ac0828c57f04e7b5510b9dc4106a82f6c0c06c27c3d0d8c04d59781bcda",
+        "size_in_bytes": 794
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/fr/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "bec98c229fe619ac5104942312bec824e52e4574f55c1c60f3e33d6447d60adf",
+        "sha256_in_prefix": "bec98c229fe619ac5104942312bec824e52e4574f55c1c60f3e33d6447d60adf",
+        "size_in_bytes": 1298
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/he/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "4b68f21f5bf658ce08eeb8249c93623699c69e88579b16bc777001079efef3cd",
+        "sha256_in_prefix": "4b68f21f5bf658ce08eeb8249c93623699c69e88579b16bc777001079efef3cd",
+        "size_in_bytes": 604
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/he/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "43e7711e40f6b5135a8519cc50385f6917d3c48ecba67343650a25ea410db185",
+        "sha256_in_prefix": "43e7711e40f6b5135a8519cc50385f6917d3c48ecba67343650a25ea410db185",
+        "size_in_bytes": 1092
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/hi/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "0c9c666c9b7fe83112c05f88909c61fcc4d54561318e7dc623e21e2a600981c4",
+        "sha256_in_prefix": "0c9c666c9b7fe83112c05f88909c61fcc4d54561318e7dc623e21e2a600981c4",
+        "size_in_bytes": 921
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/hi/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "4b9a8da3b82a3ee27e2c78f695660793ba3aa87cebf806d50e0af44c659fb675",
+        "sha256_in_prefix": "4b9a8da3b82a3ee27e2c78f695660793ba3aa87cebf806d50e0af44c659fb675",
+        "size_in_bytes": 1379
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/hi_IN/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "9a62beef52f401957f43a4bf2c51a6c264500c67fe77b10c058393e7dd80f112",
+        "sha256_in_prefix": "9a62beef52f401957f43a4bf2c51a6c264500c67fe77b10c058393e7dd80f112",
+        "size_in_bytes": 523
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/hi_IN/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "26bd456288639943b37458cbc2bf28f9cba2504dd139a83eceed2fcea26c14ef",
+        "sha256_in_prefix": "26bd456288639943b37458cbc2bf28f9cba2504dd139a83eceed2fcea26c14ef",
+        "size_in_bytes": 1011
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/hr/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "c8ec9931fa9696055e1b2c04d9ecb6fa8206d1a68bfb4a42f0f25b8dea458781",
+        "sha256_in_prefix": "c8ec9931fa9696055e1b2c04d9ecb6fa8206d1a68bfb4a42f0f25b8dea458781",
+        "size_in_bytes": 584
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/hr/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "09309e9233c7cdd1cd8e235aa762b5557e0827188204b87bec7daa745127bb04",
+        "sha256_in_prefix": "09309e9233c7cdd1cd8e235aa762b5557e0827188204b87bec7daa745127bb04",
+        "size_in_bytes": 1072
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/hu/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "f2ab4c76774117fafc8f6220830d3816f4b9f416312e2557ebfe5ff70463a382",
+        "sha256_in_prefix": "f2ab4c76774117fafc8f6220830d3816f4b9f416312e2557ebfe5ff70463a382",
+        "size_in_bytes": 797
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/hu/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "c9367cf2de550b82d45ce4387cae4b4568d3880ab89c896e2f0c225d45625297",
+        "sha256_in_prefix": "c9367cf2de550b82d45ce4387cae4b4568d3880ab89c896e2f0c225d45625297",
+        "size_in_bytes": 1240
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/id/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "11459cdcec248c3a2ae4e3462e591790be694aede1d75bc4020b16388755f3ee",
+        "sha256_in_prefix": "11459cdcec248c3a2ae4e3462e591790be694aede1d75bc4020b16388755f3ee",
+        "size_in_bytes": 750
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/id/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "45d7a5525e7f61d09d7ab5077dfe82d6ad99fb7434068e63c6e4edb2316ef1b9",
+        "sha256_in_prefix": "45d7a5525e7f61d09d7ab5077dfe82d6ad99fb7434068e63c6e4edb2316ef1b9",
+        "size_in_bytes": 1190
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/it/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "ce145ed77ee93f4a3013c26c439c1f04629a43a304ed461677bc0f96b3c0da88",
+        "sha256_in_prefix": "ce145ed77ee93f4a3013c26c439c1f04629a43a304ed461677bc0f96b3c0da88",
+        "size_in_bytes": 511
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/it/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "a33fe59e1a7ae55a256416286cda929048d05d0ea807993620b4c928f0d0d415",
+        "sha256_in_prefix": "a33fe59e1a7ae55a256416286cda929048d05d0ea807993620b4c928f0d0d415",
+        "size_in_bytes": 999
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/ja/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "e683e43b0a896441e819471d25b7ea47e085421a743bf3dd5cd344f2fbe3ebec",
+        "sha256_in_prefix": "e683e43b0a896441e819471d25b7ea47e085421a743bf3dd5cd344f2fbe3ebec",
+        "size_in_bytes": 804
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/ja/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "906e3d865522c4d92639ea77f649498a642448871e68c85a09f675760ab20f23",
+        "sha256_in_prefix": "906e3d865522c4d92639ea77f649498a642448871e68c85a09f675760ab20f23",
+        "size_in_bytes": 1274
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/ko/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "29870755dc491f392424ceeb72c725706194c4d7f7bc27c195bfc05ab37e7242",
+        "sha256_in_prefix": "29870755dc491f392424ceeb72c725706194c4d7f7bc27c195bfc05ab37e7242",
+        "size_in_bytes": 774
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/ko/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "9cfa1d9b39a2ba47bb1d9b96f61a740c5dcb950648c1d33fd1449280afbf4031",
+        "sha256_in_prefix": "9cfa1d9b39a2ba47bb1d9b96f61a740c5dcb950648c1d33fd1449280afbf4031",
+        "size_in_bytes": 1220
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/lt/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "5f27a85084ad555066ed37cf94d9387e2b7319478241c45f0424ff84b6fd18bd",
+        "sha256_in_prefix": "5f27a85084ad555066ed37cf94d9387e2b7319478241c45f0424ff84b6fd18bd",
+        "size_in_bytes": 645
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/lt/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "5d31fc2a1b938fed6c857be2e369074b75583544d71a326f3ccff152e648195f",
+        "sha256_in_prefix": "5d31fc2a1b938fed6c857be2e369074b75583544d71a326f3ccff152e648195f",
+        "size_in_bytes": 1133
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/lv/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "ad68f746b8b08be6b4c19c3d205f222bef292f301ce5b882394ca6bb8a032fb9",
+        "sha256_in_prefix": "ad68f746b8b08be6b4c19c3d205f222bef292f301ce5b882394ca6bb8a032fb9",
+        "size_in_bytes": 546
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/lv/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "ebb06fa998a324259473ba93cf6a6623008137f163bdc98e803093e54433a824",
+        "sha256_in_prefix": "ebb06fa998a324259473ba93cf6a6623008137f163bdc98e803093e54433a824",
+        "size_in_bytes": 1034
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/mk/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "06d50a2f4df04e949e3011d26628d46162e834d50830d72078111f7b774410e4",
+        "sha256_in_prefix": "06d50a2f4df04e949e3011d26628d46162e834d50830d72078111f7b774410e4",
+        "size_in_bytes": 544
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/mk/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "d5acb2dc07ff5afb2f48cd8955df14778c3e18e2566b1fe38cc18a1c426d5c26",
+        "sha256_in_prefix": "d5acb2dc07ff5afb2f48cd8955df14778c3e18e2566b1fe38cc18a1c426d5c26",
+        "size_in_bytes": 1032
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/nb_NO/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "4dded854abacc32631d00e1b79aa9970548908e9d547eb21951b5877a72bda19",
+        "sha256_in_prefix": "4dded854abacc32631d00e1b79aa9970548908e9d547eb21951b5877a72bda19",
+        "size_in_bytes": 536
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/nb_NO/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "93257863995f6645d1ca051bf8764d96934ea138c68ff2783cca155987c0ba9a",
+        "sha256_in_prefix": "93257863995f6645d1ca051bf8764d96934ea138c68ff2783cca155987c0ba9a",
+        "size_in_bytes": 1024
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/ne/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "589b910f04e961510387aebdbee39e6ed6fd368781b84aefce5a47f0070475ec",
+        "sha256_in_prefix": "589b910f04e961510387aebdbee39e6ed6fd368781b84aefce5a47f0070475ec",
+        "size_in_bytes": 510
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/ne/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "ac28a82a0340c4a0d4b8b59eb2942c11f587094346a9c587f1d4638c308bf0b5",
+        "sha256_in_prefix": "ac28a82a0340c4a0d4b8b59eb2942c11f587094346a9c587f1d4638c308bf0b5",
+        "size_in_bytes": 998
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/nl/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "177bd9abf48d718bd7c09bda0aad211ad239c3bb801acad03c5e642646326c6c",
+        "sha256_in_prefix": "177bd9abf48d718bd7c09bda0aad211ad239c3bb801acad03c5e642646326c6c",
+        "size_in_bytes": 509
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/nl/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "8b2f172140b213f1d339f3df76a41fe34c079de4916051559a71d88d135b403f",
+        "sha256_in_prefix": "8b2f172140b213f1d339f3df76a41fe34c079de4916051559a71d88d135b403f",
+        "size_in_bytes": 997
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/pl/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "3e2035a3277f0431646b6671bb8b2650314e38773d5701c403f4e03a7dd203cd",
+        "sha256_in_prefix": "3e2035a3277f0431646b6671bb8b2650314e38773d5701c403f4e03a7dd203cd",
+        "size_in_bytes": 760
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/pl/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "04fa02543f8a2cb2921ae1265cddc41c47359d0a95147e8cd6f9fbd50d31b13a",
+        "sha256_in_prefix": "04fa02543f8a2cb2921ae1265cddc41c47359d0a95147e8cd6f9fbd50d31b13a",
+        "size_in_bytes": 1260
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/pt/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "dab4a9111909b613b5e982e6347d7bcbaf747d6de33a4f1b0ea0bf1d7b2723e8",
+        "sha256_in_prefix": "dab4a9111909b613b5e982e6347d7bcbaf747d6de33a4f1b0ea0bf1d7b2723e8",
+        "size_in_bytes": 514
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/pt/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "e650c92edca3c71eeb40b07f84af064f0fcb21ec4547bbc6ec1665072ad73e60",
+        "sha256_in_prefix": "e650c92edca3c71eeb40b07f84af064f0fcb21ec4547bbc6ec1665072ad73e60",
+        "size_in_bytes": 1002
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/pt_BR/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "12a70fe2172454db64c0c1ec92cf239ffaa50b27862fc53a827cec6f3516f518",
+        "sha256_in_prefix": "12a70fe2172454db64c0c1ec92cf239ffaa50b27862fc53a827cec6f3516f518",
+        "size_in_bytes": 802
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/pt_BR/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "dfd88cc9f9b7510d4351fe977e28b93f3e1021a6bd0415832a390c1f2d1df1b1",
+        "sha256_in_prefix": "dfd88cc9f9b7510d4351fe977e28b93f3e1021a6bd0415832a390c1f2d1df1b1",
+        "size_in_bytes": 1270
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/pt_PT/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "63ff5974ffa0ed9a23011b5bdf0c5734b2446c92e3e1b4f46217a942d0802210",
+        "sha256_in_prefix": "63ff5974ffa0ed9a23011b5bdf0c5734b2446c92e3e1b4f46217a942d0802210",
+        "size_in_bytes": 531
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/pt_PT/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "8186fd890fade8e50c25d7fa8289a4857c41a4b5314ad19c0534bdaca2f02106",
+        "sha256_in_prefix": "8186fd890fade8e50c25d7fa8289a4857c41a4b5314ad19c0534bdaca2f02106",
+        "size_in_bytes": 1019
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/ro/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "55d8e523ff09d38b4ae9b5caa96a3b290ebf707a3a83d587783a0ae6abc53a4f",
+        "sha256_in_prefix": "55d8e523ff09d38b4ae9b5caa96a3b290ebf707a3a83d587783a0ae6abc53a4f",
+        "size_in_bytes": 553
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/ro/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "56d96643a0129827594ffccfa5a89f2e941a7708ccbda0ee1b847a3b64d7b4d0",
+        "sha256_in_prefix": "56d96643a0129827594ffccfa5a89f2e941a7708ccbda0ee1b847a3b64d7b4d0",
+        "size_in_bytes": 1041
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/ru/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "a1f40458ef0132765a56a05e39c323dc36d9668c3695a8bb5cdb3bc1f8961512",
+        "sha256_in_prefix": "a1f40458ef0132765a56a05e39c323dc36d9668c3695a8bb5cdb3bc1f8961512",
+        "size_in_bytes": 649
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/ru/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "ffb6c1962d30434080f89e4f25833055c93729b1bca8c470043b17a9a4a9d8d5",
+        "sha256_in_prefix": "ffb6c1962d30434080f89e4f25833055c93729b1bca8c470043b17a9a4a9d8d5",
+        "size_in_bytes": 1137
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/si/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "dca2313d9459b07cd24035039b6c183f5041908ad1c2efd77034a0a5a58f73ec",
+        "sha256_in_prefix": "dca2313d9459b07cd24035039b6c183f5041908ad1c2efd77034a0a5a58f73ec",
+        "size_in_bytes": 511
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/si/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "a856ba804e45938e8694faf5dffb2cb4d27fe43819facad0a3e3ffa464bb25bb",
+        "sha256_in_prefix": "a856ba804e45938e8694faf5dffb2cb4d27fe43819facad0a3e3ffa464bb25bb",
+        "size_in_bytes": 999
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/sk/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "4b6503bf35a0f5694ba7af06c4b2e52f704cc41b01c466df3aa48b47daa862f5",
+        "sha256_in_prefix": "4b6503bf35a0f5694ba7af06c4b2e52f704cc41b01c466df3aa48b47daa862f5",
+        "size_in_bytes": 833
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/sk/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "f05790617373bc53d9cad364d742c3d08a82b8f7b454fef41ee120bbe7f72e77",
+        "sha256_in_prefix": "f05790617373bc53d9cad364d742c3d08a82b8f7b454fef41ee120bbe7f72e77",
+        "size_in_bytes": 1284
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/sl/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "791cf99cda1fa4c5441ae10d4f850644b461c0171787e40c74b9c7073fe3ce43",
+        "sha256_in_prefix": "791cf99cda1fa4c5441ae10d4f850644b461c0171787e40c74b9c7073fe3ce43",
+        "size_in_bytes": 565
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/sl/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "6198f5d1702704f6c44e65feca1d500ab3b11df1302040bf2ca9fca1a03d279c",
+        "sha256_in_prefix": "6198f5d1702704f6c44e65feca1d500ab3b11df1302040bf2ca9fca1a03d279c",
+        "size_in_bytes": 1053
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/sphinxcontrib.serializinghtml.pot",
+        "path_type": "hardlink",
+        "sha256": "62e680065d244618a93385b9ec82243edec66121cb6fe7ed40ebfeb11e23b2da",
+        "sha256_in_prefix": "62e680065d244618a93385b9ec82243edec66121cb6fe7ed40ebfeb11e23b2da",
+        "size_in_bytes": 940
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/sq/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "09a0d4d8c09c80e9a0d8b13d320aa2b9ba62c4436f3bbc8302e8de843282ea54",
+        "sha256_in_prefix": "09a0d4d8c09c80e9a0d8b13d320aa2b9ba62c4436f3bbc8302e8de843282ea54",
+        "size_in_bytes": 776
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/sq/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "bf5f7e4501fe6cd3f83bba03e6a383b4a67795cca761919232ca89de25856866",
+        "sha256_in_prefix": "bf5f7e4501fe6cd3f83bba03e6a383b4a67795cca761919232ca89de25856866",
+        "size_in_bytes": 1241
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/sr/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "6f288f81351844169a5879deb8a631adde93292519c9a8367a473cf0b3f55339",
+        "sha256_in_prefix": "6f288f81351844169a5879deb8a631adde93292519c9a8367a473cf0b3f55339",
+        "size_in_bytes": 585
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/sr/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "1c1aa49660c903be35c3f0c0a2834141f4f34a47bc94ddb14a99c6575b668bd2",
+        "sha256_in_prefix": "1c1aa49660c903be35c3f0c0a2834141f4f34a47bc94ddb14a99c6575b668bd2",
+        "size_in_bytes": 1073
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/sr@latin/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "558aadefd7108c04796ad16d41597d31cddbe4d5a435743f8522dc4bea24710b",
+        "sha256_in_prefix": "558aadefd7108c04796ad16d41597d31cddbe4d5a435743f8522dc4bea24710b",
+        "size_in_bytes": 605
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/sr@latin/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "5324476e0eaf59e164d3346b9705a93b98c93b6161266be77b0932ec902f06e1",
+        "sha256_in_prefix": "5324476e0eaf59e164d3346b9705a93b98c93b6161266be77b0932ec902f06e1",
+        "size_in_bytes": 1093
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/sr_RS/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "b6bdd4d5447a8928481172829c559ac59f83bfb6914d68afd6eae57af426c87b",
+        "sha256_in_prefix": "b6bdd4d5447a8928481172829c559ac59f83bfb6914d68afd6eae57af426c87b",
+        "size_in_bytes": 600
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/sr_RS/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "bf25d76a2071549accf7c542fcaac37350b85349b06c5701f4417d1894c3c0c6",
+        "sha256_in_prefix": "bf25d76a2071549accf7c542fcaac37350b85349b06c5701f4417d1894c3c0c6",
+        "size_in_bytes": 1088
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/sv/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "cc5cf6cfe999449b7ea24a06895ecf5473c50ee6a463a34a9a533901c96304ef",
+        "sha256_in_prefix": "cc5cf6cfe999449b7ea24a06895ecf5473c50ee6a463a34a9a533901c96304ef",
+        "size_in_bytes": 511
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/sv/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "644816b0e49792c5d671f1aacc03da80128fd99c76a9c0761539a3d8ba64f1ed",
+        "sha256_in_prefix": "644816b0e49792c5d671f1aacc03da80128fd99c76a9c0761539a3d8ba64f1ed",
+        "size_in_bytes": 999
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/ta/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "8a73e936cb40d7d0d6aeda7a2251b0dc5596ff3674836a0dc0297f03b8a17fb0",
+        "sha256_in_prefix": "8a73e936cb40d7d0d6aeda7a2251b0dc5596ff3674836a0dc0297f03b8a17fb0",
+        "size_in_bytes": 509
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/ta/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "08237f97d6d4404347afdaab87e893df3b8390b0ddd697754c14b0c95b081ae6",
+        "sha256_in_prefix": "08237f97d6d4404347afdaab87e893df3b8390b0ddd697754c14b0c95b081ae6",
+        "size_in_bytes": 997
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/te/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "47184e799f78876ba2839d29ee38cf33c1689e644722bb999bd06d95896e1bfc",
+        "sha256_in_prefix": "47184e799f78876ba2839d29ee38cf33c1689e644722bb999bd06d95896e1bfc",
+        "size_in_bytes": 510
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/te/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "a38f6e41c71e12660ce3c83f9fa15d24aa046cbe4d526b5626263c187de54316",
+        "sha256_in_prefix": "a38f6e41c71e12660ce3c83f9fa15d24aa046cbe4d526b5626263c187de54316",
+        "size_in_bytes": 998
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/tr/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "c9dc6273fdb2cf77283f010bb9e84aa5345c92b9bd2e910e65dea2ead1a67655",
+        "sha256_in_prefix": "c9dc6273fdb2cf77283f010bb9e84aa5345c92b9bd2e910e65dea2ead1a67655",
+        "size_in_bytes": 762
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/tr/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "51b8accb69a858d7593d8479bde08d135e9bbb091b15bde55591c9681ad16b65",
+        "sha256_in_prefix": "51b8accb69a858d7593d8479bde08d135e9bbb091b15bde55591c9681ad16b65",
+        "size_in_bytes": 1195
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/uk_UA/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "e4eda8f285f9089caa3a66280dfae15a1f457b7b99212c259802a9ce8aa75020",
+        "sha256_in_prefix": "e4eda8f285f9089caa3a66280dfae15a1f457b7b99212c259802a9ce8aa75020",
+        "size_in_bytes": 751
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/uk_UA/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "f444c956e3f8331e88c06341ccc549794f224901df87ae8ee681ecc1c664cd5f",
+        "sha256_in_prefix": "f444c956e3f8331e88c06341ccc549794f224901df87ae8ee681ecc1c664cd5f",
+        "size_in_bytes": 1239
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/ur/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "758e54e1e729a7cf217176bc72425f1aa2d0fd0494e243b318171542f87206f8",
+        "sha256_in_prefix": "758e54e1e729a7cf217176bc72425f1aa2d0fd0494e243b318171542f87206f8",
+        "size_in_bytes": 508
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/ur/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "69d1ca3aa63ba3ee9876d28de292738e478ac19af11704893fb9b0c31117e63a",
+        "sha256_in_prefix": "69d1ca3aa63ba3ee9876d28de292738e478ac19af11704893fb9b0c31117e63a",
+        "size_in_bytes": 996
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/vi/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "d3a6865e151662ec1060bd83f57a25d8b16cb30250c3609ff6b01cb741b4e56e",
+        "sha256_in_prefix": "d3a6865e151662ec1060bd83f57a25d8b16cb30250c3609ff6b01cb741b4e56e",
+        "size_in_bytes": 507
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/vi/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "8cb37d3d6c6847efbda7a7fa0a505bad50f8e79fad38a200402ec20956b4d259",
+        "sha256_in_prefix": "8cb37d3d6c6847efbda7a7fa0a505bad50f8e79fad38a200402ec20956b4d259",
+        "size_in_bytes": 995
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/zh_CN/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "d3182753fe4392dcaabec19688ea057a5c4777efda1f7a06bea0c21d9e97af84",
+        "sha256_in_prefix": "d3182753fe4392dcaabec19688ea057a5c4777efda1f7a06bea0c21d9e97af84",
+        "size_in_bytes": 784
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/zh_CN/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "720841bde0c31fdb7c176e52cbabec9b3b5e6fd655b58a3c1d7a152b0c9e97d6",
+        "sha256_in_prefix": "720841bde0c31fdb7c176e52cbabec9b3b5e6fd655b58a3c1d7a152b0c9e97d6",
+        "size_in_bytes": 1243
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/zh_TW/LC_MESSAGES/sphinxcontrib.serializinghtml.mo",
+        "path_type": "hardlink",
+        "sha256": "4f4199b9b9b55ab581cb6208e6e46b226dc3f34b7501dacf4eca9bef4db5c1a7",
+        "sha256_in_prefix": "4f4199b9b9b55ab581cb6208e6e46b226dc3f34b7501dacf4eca9bef4db5c1a7",
+        "size_in_bytes": 519
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/serializinghtml/locales/zh_TW/LC_MESSAGES/sphinxcontrib.serializinghtml.po",
+        "path_type": "hardlink",
+        "sha256": "b827d3ca635fe5be8837bce1b0ab10ffbbb0d9cd0535426565abbf341662e0b9",
+        "sha256_in_prefix": "b827d3ca635fe5be8837bce1b0ab10ffbbb0d9cd0535426565abbf341662e0b9",
+        "size_in_bytes": 1007
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_serializinghtml-1.1.9.dist-info/INSTALLER",
+        "path_type": "hardlink",
+        "sha256": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "sha256_in_prefix": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "size_in_bytes": 5
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_serializinghtml-1.1.9.dist-info/LICENSE",
+        "path_type": "hardlink",
+        "sha256": "3684cbcc712af8e969688e1d63fcf14d97c24422da92cf15f77f25859e15f2f5",
+        "sha256_in_prefix": "3684cbcc712af8e969688e1d63fcf14d97c24422da92cf15f77f25859e15f2f5",
+        "size_in_bytes": 1453
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_serializinghtml-1.1.9.dist-info/METADATA",
+        "path_type": "hardlink",
+        "sha256": "0592aeb2ae3c0fdc597fcd539645b73802ec70537bdfa9441591fb9138106110",
+        "sha256_in_prefix": "0592aeb2ae3c0fdc597fcd539645b73802ec70537bdfa9441591fb9138106110",
+        "size_in_bytes": 2311
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_serializinghtml-1.1.9.dist-info/RECORD",
+        "path_type": "hardlink",
+        "sha256": "503d983f77815a1552c701daf517dd6c0abcbf678bb9f6d3601191e151aa62c4",
+        "sha256_in_prefix": "503d983f77815a1552c701daf517dd6c0abcbf678bb9f6d3601191e151aa62c4",
+        "size_in_bytes": 16732
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_serializinghtml-1.1.9.dist-info/REQUESTED",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256_in_prefix": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_serializinghtml-1.1.9.dist-info/WHEEL",
+        "path_type": "hardlink",
+        "sha256": "1196c6921ec87b83e865f450f08d19b8ff5592537f4ef719e83484e546abe33e",
+        "sha256_in_prefix": "1196c6921ec87b83e865f450f08d19b8ff5592537f4ef719e83484e546abe33e",
+        "size_in_bytes": 81
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_serializinghtml-1.1.9.dist-info/direct_url.json",
+        "path_type": "hardlink",
+        "sha256": "e6fde3c0519487abe94a532f0043a21492024544e79852b417092563e3c75c07",
+        "sha256_in_prefix": "e6fde3c0519487abe94a532f0043a21492024544e79852b417092563e3c75c07",
+        "size_in_bytes": 125
+      },
+      {
+        "_path": "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/sphinxcontrib/serializinghtml/__pycache__/jsonimpl.cpython-310.pyc",
+        "path_type": "pyc_file"
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "c5710ae7bb7465f25a29cc845d9fb6ad0ea561972d796d379fcb48d801e96d6d",
+  "size": 28664,
+  "subdir": "noarch",
+  "timestamp": 1692580110718,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/noarch/sphinxcontrib-serializinghtml-1.1.9-pyhd8ed1ab_0.conda",
+  "version": "1.1.9"
+}

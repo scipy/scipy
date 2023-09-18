@@ -1,0 +1,16 @@
+#libevent pkg-config source file
+
+prefix=/workspaces/scipy/venv
+exec_prefix=/workspaces/scipy/venv
+libdir=/workspaces/scipy/venv/lib
+includedir=/workspaces/scipy/venv/include
+
+Name: libevent
+Description: libevent is an asynchronous notification event loop library
+Version: 2.1.12
+Requires:
+Conflicts:
+Libs: -L${libdir} -levent
+Libs.private: 
+Cflags: -I${includedir}
+

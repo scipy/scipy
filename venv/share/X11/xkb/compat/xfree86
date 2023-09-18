@@ -1,0 +1,66 @@
+// XFree86 special keysyms.
+
+default partial xkb_compatibility "basic" {
+
+    interpret.repeat= True;
+
+    interpret  XF86_Switch_VT_1 {
+        action = SwitchScreen(Screen=1, !SameServer);
+    };
+    interpret  XF86_Switch_VT_2 {
+        action = SwitchScreen(Screen=2, !SameServer);
+    };
+    interpret  XF86_Switch_VT_3 {
+        action = SwitchScreen(Screen=3, !SameServer);
+    };
+    interpret  XF86_Switch_VT_4 {
+        action = SwitchScreen(Screen=4, !SameServer);
+    };
+    interpret  XF86_Switch_VT_5 {
+        action = SwitchScreen(Screen=5, !SameServer);
+    };
+    interpret  XF86_Switch_VT_6 {
+        action = SwitchScreen(Screen=6, !SameServer);
+    };
+    interpret  XF86_Switch_VT_7 {
+        action = SwitchScreen(Screen=7, !SameServer);
+    };
+    interpret  XF86_Switch_VT_8 {
+        action = SwitchScreen(Screen=8, !SameServer);
+    };
+    interpret  XF86_Switch_VT_9 {
+        action = SwitchScreen(Screen=9, !SameServer);
+    };
+    interpret  XF86_Switch_VT_10 {
+        action = SwitchScreen(Screen=10, !SameServer);
+    };
+    interpret  XF86_Switch_VT_11 {
+        action = SwitchScreen(Screen=11, !SameServer);
+    };
+    interpret  XF86_Switch_VT_12 {
+        action = SwitchScreen(Screen=12, !SameServer);
+    };
+
+    interpret XF86LogGrabInfo {
+        action = Private(type=0x86, data="PrGrbs");
+    };
+    interpret XF86LogWindowTree {
+        action = Private(type=0x86, data="PrWins");
+    };
+
+    interpret XF86_Next_VMode {
+        action = Private(type=0x86, data="+VMode");
+    };
+    interpret XF86_Prev_VMode {
+        action = Private(type=0x86, data="-VMode");
+    };
+};
+
+partial xkb_compatibility "grab_break" {
+    interpret XF86_Ungrab {
+        action = Private(type=0x86, data="Ungrab");
+    };
+    interpret XF86_ClearGrab {
+        action = Private(type=0x86, data="ClsGrb");
+    };
+};

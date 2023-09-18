@@ -1,0 +1,122 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Memory management: Cairo: A Vector Graphics Library</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<link rel="home" href="index.html" title="Cairo: A Vector Graphics Library">
+<link rel="up" href="language-bindings.html" title="Appendix A. Creating a language binding for cairo">
+<link rel="prev" href="language-bindings.html" title="Appendix A. Creating a language binding for cairo">
+<link rel="next" href="bindings-return-values.html" title="Multiple return values">
+<meta name="generator" content="GTK-Doc V1.27 (XML mode)">
+<link rel="stylesheet" href="style.css" type="text/css">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<table class="navigation" id="top" width="100%" summary="Navigation header" cellpadding="2" cellspacing="5"><tr valign="middle">
+<td width="100%" align="left" class="shortcuts"></td>
+<td><a accesskey="h" href="index.html"><img src="home.png" width="16" height="16" border="0" alt="Home"></a></td>
+<td><a accesskey="u" href="language-bindings.html"><img src="up.png" width="16" height="16" border="0" alt="Up"></a></td>
+<td><a accesskey="p" href="language-bindings.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
+<td><a accesskey="n" href="bindings-return-values.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
+</tr></table>
+<div class="sect1">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="bindings-memory"></a>Memory management</h2></div></div></div>
+<p>
+      The objects in cairo can roughly be divided into two types:
+      reference-counted, opaque types like
+      <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="type">cairo_surface_t</span></a>
+      and plain structures like
+      <a class="link" href="cairo-text.html#cairo-glyph-t" title="cairo_glyph_t"><span class="type">cairo_glyph_t</span></a>.
+      <a class="link" href="cairo-Paths.html#cairo-path-t" title="cairo_path_t"><span class="type">cairo_path_t</span></a>
+      and 
+      <a class="link" href="cairo-Paths.html#cairo-path-data-t" title="union cairo_path_data_t"><span class="type">cairo_path_data_t</span></a>
+      are special cases and are treated separately in this appendix.
+    </p>
+<p>
+      Refcounted opaque types all have a
+      <code class="function">..._reference()</code>
+      function to increase the refcount by one and a
+      <code class="function">..._destroy()</code> to decrease the refcount
+      by one. These should not be exposed to the user of the language
+      binding, but rather used to implement memory management within
+      the language binding. The simplest way to do memory management
+      for a language binding is to treat the language binding object
+      as a simple handle to the cairo object. The language binding
+      object references the cairo object, and unreferences it when
+      finalized. This is the recommended method, though there are
+      a couple of caveats to be noted:
+    </p>
+<div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
+<li class="listitem"><p>
+	  Equality won't work as expected. You can have two language
+	  objects for the same cairo and they won't necessarily
+	  compare equal. If the language allows customizing the
+	  equality operation, then this is fixable by comparing
+	  the underlying pointers. It also can be fixed by creating
+	  at most one language object per cairo object, and
+	  uniquifying via a <em class="firstterm">pin table</em> (a hash
+	  table that goes from cairo object to language object).
+	  For <span class="type">cairo_surface_t</span> you can use also 
+	  <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-set-user-data" title="cairo_surface_set_user_data ()"><code class="function">cairo_surface_set_user_data()</code></a>
+	  instead of a separate pin table.
+	</p></li>
+<li class="listitem">
+<p>
+	  Derivation from the language object doesn't work because
+	  you can lose the language object while keeping the Cairo
+	  object. Code like:
+	</p>
+<pre class="programlisting">
+public class MySurface (ImageSurface) {
+   public MySurface (width, height) {
+      super (Format.ARGB32, width, height);
+   }
+   public int get42 () {
+      return 42;	  
+   }
+}
+
+   cr = Cairo(MySurface(width, height));
+   surface = cr.getTarget();
+</pre>
+<p>
+	  Can result in <code class="varname">surface</code> containing an
+	  <code class="classname">ImageSurface</code> not a <code class="classname">MySurface</code>.
+	  This is not easily fixable without creating memory leaks,
+	  and it's probably best to simply forbid deriving from the
+	  language objects.
+	</p>
+</li>
+</ul></div>
+<p>
+      When a plain structure is used as a return value from cairo,
+      this is done by passing it as a “out parameter”.
+    </p>
+<pre class="programlisting">
+cairo_font_extents_t extents;      
+
+cairo_font_extents (cr, &amp;extents);</pre>
+<p>
+      In a language binding, this should typically be treated
+      as a return value:
+    </p>
+<pre class="programlisting">
+FontExtents extents = cr.fontExtents ();</pre>
+<p>
+      A language binding has a choice in how it implements the
+      language objects for plain structures. It can use a pure
+      language object with fields corresponding to those of the C
+      structure, and convert from and to the C structure when calling
+      cairo functions or converting cairo return values. Or it
+      can keep a pointer to the C structure internally and wrap
+      it inside a language object much like occurs for refcounted
+      objects. The choice should be invisible to the user: they should
+      be able to imagine that it is implemented as a pure language
+      object.
+    </p>
+</div>
+<div class="footer">
+<hr>Generated by GTK-Doc V1.27</div>
+</body>
+</html>

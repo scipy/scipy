@@ -1,0 +1,37 @@
+.TH "GStreamer" "1" "August 2012" "" ""
+.SH "NAME"
+gst\-discoverer\-1.0 \- Display file metadata and stream information
+.SH "SYNOPSIS"
+\fBgst\-discoverer\-1.0\fR \fIFILE|DIRECTORY|URI [FILE2|DIRECTORY2|URI2]\fR
+.SH "DESCRIPTION"
+.LP
+\fIgst\-discoverer\-1.0\fP is a tool that can be used to print
+basic metadata and stream information about a media file. It can be run on
+individual files or whole directories. It will recurse into sub-directories
+in that case.
+
+.SH "OPTIONS"
+.l
+\fIgst\-discoverer\-1.0\fP accepts the following options:
+.TP 8
+.B  \-\-help
+Print help synopsis and available FLAGS
+.TP 8
+.B  \-v, \-\-verbose
+Output all available information
+.TP 8
+.B  \-a, \-\-async
+Use asynchronous code path
+.TP 8
+.B  \-t, \-\-timeout=T
+Specify timeout in seconds (default: 10 seconds)
+.TP 8
+.B  \-c, \-\-toc
+Output TOC (chapters and editions) if available
+.TP 8
+
+.SH "SEE ALSO"
+.BR gst\-inspect\-1.0 (1),
+.BR gst\-launch\-1.0 (1),
+.SH "AUTHOR"
+The GStreamer team at http://gstreamer.freedesktop.org/

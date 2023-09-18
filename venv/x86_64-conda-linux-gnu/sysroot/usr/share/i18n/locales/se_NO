@@ -1,0 +1,317 @@
+comment_char %
+escape_char  /
+%
+% Northern Saami Language Locale for Norway
+% Source: http://www.hum.uit.no/a/trond/loc.html
+% Contact: Børre Gaup
+% Email: boerre.gaup@pc.nu
+% Language: se
+% Territory: NO
+% Revision: 0.1
+% Date: 2001-11-03
+% Application: general
+% Users: general
+% Charset: UTF-8
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title "Northern Saami language locale for Norway"
+source "http://www.hum.uit.no/a/trond/loc.html"
+address ""
+contact "Børre Gaup"
+email "boerre.gaup@pc.nu"
+tel ""
+fax ""
+language "Northern Saami"
+territory "Norway"
+revision "0.1"
+date "2001-11-09"
+
+category se_NO:2000;LC_IDENTIFICATION
+category se_NO:2000;LC_CTYPE
+category se_NO:2000;LC_COLLATE
+category se_NO:2000;LC_TIME
+category se_NO:2000;LC_NUMERIC
+category se_NO:2000;LC_PAPER
+category se_NO:2000;LC_TELEPHONE
+category se_NO:2000;LC_MEASUREMENT
+category se_NO:2000;LC_ADDRESS
+category se_NO:2000;LC_MONETARY
+category se_NO:2000;LC_MESSAGES
+
+END LC_IDENTIFICATION
+
+
+LC_COLLATE
+copy "iso14651_t1"
+
+collating-symbol <aring>
+collating-symbol <atilde>
+collating-symbol <acircumflex>
+collating-symbol <agrave>
+collating-symbol <aacute>
+collating-symbol <noae>
+collating-symbol <svae>
+collating-symbol <ccedilla>
+collating-symbol <ccaron>
+collating-symbol <ezh>
+collating-symbol <ezhcaron>
+collating-symbol <dstroke>
+collating-symbol <eth>
+collating-symbol <fhook>
+collating-symbol <gcaron>
+collating-symbol <gstroke>
+collating-symbol <kcaron>
+collating-symbol <otilde>
+collating-symbol <oe>
+collating-symbol <ssharp>
+collating-symbol <scaron>
+collating-symbol <oumlaut>
+collating-symbol <oslash>
+
+%
+reorder-after <CAP>
+<MIN>
+
+reorder-after <a>
+<agrave>
+<atilde>
+<aacute>
+<acircumflex>
+
+
+reorder-after <c>
+<ccaron>
+<ccedilla>
+<ezh>
+<ezhcaron>
+
+reorder-after <d>
+<dstroke>
+<eth>
+
+reorder-after <f>
+<fhook>
+
+reorder-after <g>
+<gcaron>
+<gstroke>
+
+reorder-after <k>
+<kcaron>
+
+reorder-after <s>
+<ssharp>
+<scaron>
+
+reorder-after <th>
+<noae>
+<oslash>
+<aring>
+<svae>
+<oumlaut>
+
+reorder-after <U0061>
+<U00E0> <agrave>;<GRA>;<MIN>;IGNORE % 201 à
+<U00E1> <aacute>;<ACA>;<MIN>;IGNORE % 200 á
+<U00E2> <acircumflex>;<CIR>;<MIN>;IGNORE % 202 â
+<U00E3> <atilde>;<TIL>;<MIN>;IGNORE % 203 ã
+
+reorder-after <U0041>
+<U00C0> <agrave>;<GRA>;<CAP>;IGNORE % 321 À
+<U00C1> <aacute>;<ACA>;<CAP>;IGNORE % 320 Á
+<U00C2> <acircumflex>;<CIR>;<CAP>;IGNORE % 322 Â
+<U00C3> <atilde>;<TIL>;<CAP>;IGNORE % 323 Ã
+
+reorder-after <U0063>
+<U00E7> <ccedilla>;<CDI>;<MIN>;IGNORE % 212 ç
+<U010D> <ccaron>;<CAR>;<MIN>;IGNORE % 215 <c<>
+
+reorder-after <U0043>
+<U00C7> <ccedilla>;<CDI>;<CAP>;IGNORE % 332 Ç
+<U010C> <ccaron>;<CAR>;<CAP>;IGNORE % 335 <C<>
+
+reorder-after <U010B>
+<U0292> <ezh>;<BAS>;<MIN>;IGNORE % ezh
+<U01EF> <ezhcaron>;<CAR>;<MIN>;IGNORE % ezh caron
+
+reorder-after <U010A>
+<U01B7> <ezh>;<BAS>;<MIN>;IGNORE % EZH
+<U01EE> <ezhcaron>;<CAR>;<CAP>;IGNORE % EZH caron
+
+reorder-after <U0064>
+<U00F0> <eth>;<PCL>;<MIN>;IGNORE % 218 ð
+<U0111> <dstroke>;<OBL>;<MIN>;IGNORE % 220 <d//>
+
+reorder-after <U0044>
+<U00D0> <eth>;<PCL>;<CAP>;IGNORE % 338 Ð
+<U0110> <dstroke>;<OBL>;<CAP>;IGNORE % 340 <D//>
+
+reorder-after <U0066>
+<U0192> <fhook>;<BAS>;<MIN>;IGNORE % f WITH HOOK
+
+reorder-after <U0123>
+<U01E7> <gcaron>;<CAR>;<MIN>;IGNORE % gcaron
+<U01E5> <gstroke>;<OBL>;<MIN>;IGNORE % gstroke
+
+reorder-after <U0122>
+<U01E6> <gcaron>;<CAR>;<MIN>;IGNORE % Gcaron
+<U01E4> <gstroke>;<OBL>;<MIN>;IGNORE % Gstroke
+
+reorder-after <U0137>
+<U01E9> <kcaron>;<CAR>;<MIN>;IGNORE % kcaron
+reorder-after <U0136>
+<U01E8> <kcaron>;<CAR>;<CAP>;IGNORE % Kcaron
+
+reorder-after <U0053>
+<U00DF> <ssharp>;"<LIG><LIG>";"<MIN><MIN>";IGNORE % ß
+<U0161> <scaron>;<CAR>;<MIN>;IGNORE % 288 <s<>
+<U0160> <scaron>;<CAR>;<CAP>;IGNORE % 405 <S<>
+
+
+reorder-after <U00E3>
+<U00E4> <svae>;<REU>;<MIN>;IGNORE % ä
+<U00E5> <aring>;<RNE>;<MIN>;IGNORE % å
+<U00E6> <noae>;<LIG>;<MIN>;IGNORE % æ
+reorder-after <U00F5>
+<U00F6> <oumlaut>;<REU>;<MIN>;IGNORE % ö
+<U00F8> <oslash>;<OBL>;<MIN>;IGNORE % ø
+
+reorder-after <U00C3>
+<U00C4> <svae>;<REU>;<CAP>;IGNORE % Ä
+<U00C5> <aring>;<RNE>;<CAP>;IGNORE % Å
+<U00C6> <noae>;<LIG>;<CAP>;IGNORE % Æ
+reorder-after <U00D5>
+<U00D6> <oumlaut>;<REU>;<CAP>;IGNORE % Ö
+<U00D8> <oslash>;<OBL>;<CAP>;IGNORE % Ø
+
+% ü/Ü is treated like y/Y but is sorted after the latter
+reorder-after <U00FB>
+<U00FC> <y>;<REU>;<MIN>;IGNORE % ü
+reorder-after <U00DB>
+<U00DC> <y>;<REU>;<CAP>;IGNORE % Ü
+reorder-end
+
+END LC_COLLATE
+
+LC_CTYPE
+copy "i18n"
+
+translit_start
+include  "translit_combining";""
+translit_end
+END LC_CTYPE
+
+LC_MONETARY
+int_curr_symbol         "<U004E><U004F><U004B><U0020>"
+currency_symbol         "<U0020><U0072><U0075>"
+mon_decimal_point       "<U002C>"
+mon_thousands_sep       "<U002E>"
+mon_grouping            3;3
+positive_sign           ""
+negative_sign           "<U002D>"
+int_frac_digits         2
+frac_digits             2
+p_cs_precedes           1
+p_sep_by_space          0
+n_cs_precedes           1
+n_sep_by_space          0
+p_sign_posn             4
+n_sign_posn             4
+END LC_MONETARY
+
+LC_NUMERIC
+decimal_point           "<U002C>"
+thousands_sep           "<U002E>"
+grouping                3;3
+END LC_NUMERIC
+
+
+LC_TIME
+abday       "<U0073><U006F><U0074><U006E>";"<U0076><U0075><U006F><U0073>";/
+	    "<U006D><U0061><U014B>";"<U0067><U0061><U0073><U006B>";/
+	    "<U0064><U0075><U006F><U0072>";"<U0062><U0065><U0061><U0072>";/
+	    "<U006C><U00E1><U0076>"
+day         "<U0073><U006F><U0074><U006E><U0061><U0062><U0065><U0061><U0069><U0076><U0069>";/
+            "<U0076><U0075><U006F><U0073><U0073><U00E1><U0072><U0067><U0061>";/
+            "<U006D><U0061><U014B><U014B><U0065><U0062><U0061><U0072><U0067><U0061>";/
+            "<U0067><U0061><U0073><U006B><U0061><U0076><U0061><U0068><U006B><U006B><U0075>";/
+            "<U0064><U0075><U006F><U0072><U0061><U0073><U0064><U0061><U0074>";/
+            "<U0062><U0065><U0061><U0072><U006A><U0061><U0064><U0061><U0074>";/
+            "<U006C><U00E1><U0076><U0076><U0061><U0072><U0064><U0061><U0074>"
+abmon       "<U006F><U0111><U0111><U006A>";"<U0067><U0075><U006F><U0076>";/
+            "<U006E><U006A><U0075><U006B>";"<U0063><U0075><U006F><U014B>";/
+            "<U006D><U0069><U0065><U0073>";"<U0067><U0065><U0061><U0073>";/
+            "<U0073><U0075><U006F><U0069>";"<U0062><U006F><U0072><U0067>";/
+            "<U010D><U0061><U006B><U010D>";"<U0067><U006F><U006C><U0067>";/
+            "<U0073><U006B><U00E1><U0062>";"<U006A><U0075><U006F><U0076>"
+mon         "<U006F><U0111><U0111><U0061><U006A><U0061><U0067><U0065><U006D><U00E1><U006E><U0075>";/
+	    "<U0067><U0075><U006F><U0076><U0076><U0061><U006D><U00E1><U006E><U0075>";/
+            "<U006E><U006A><U0075><U006B><U010D><U0061><U006D><U00E1><U006E><U0075>";/
+	    "<U0063><U0075><U006F><U014B><U006F><U006D><U00E1><U006E><U0075>";/
+            "<U006D><U0069><U0065><U0073><U0073><U0065><U006D><U00E1><U006E><U0075>";/
+	    "<U0067><U0065><U0061><U0073><U0073><U0065><U006D><U00E1><U006E><U0075>";/
+            "<U0073><U0075><U006F><U0069><U0064><U006E><U0065><U006D><U00E1><U006E><U0075>";/
+            "<U0062><U006F><U0072><U0067><U0065><U006D><U00E1><U006E><U0075>";/
+            "<U010D><U0061><U006B><U010D><U0061><U006D><U00E1><U006E><U0075>";/
+	    "<U0067><U006F><U006C><U0067><U0067><U006F><U0074><U006D><U00E1><U006E><U0075>";/
+            "<U0073><U006B><U00E1><U0062><U006D><U0061><U006D><U00E1><U006E><U0075>";/
+            "<U006A><U0075><U006F><U0076><U006C><U0061><U006D><U00E1><U006E><U0075>"
+% usual date representation
+% Linjen nedenfor er: %a, %b %e b. %Y %T %Z
+% f.eks. bear, geas 14. b. 2001 21:15:11 CEST
+d_t_fmt     "<U0025><U0061><U002C><U0020><U0025><U0062><U0020><U0025><U0065><U002E><U0020><U0062><U002E><U0020><U0025><U0059><U0020><U0025><U0054><U0020><U0025><U005A>"
+%Linjen nedenfor er: %Y-%m-%d
+%f.eks 2001-04-26
+d_fmt       "<U0025><U0059><U002D><U0025><U006D><U002D><U0025><U0064>"
+t_fmt       "<U0025><U0054>"
+am_pm       "";""
+t_fmt_ampm  ""
+
+% Denne linjen vil gi f.eks.:
+% duorasdat, borgem<U00E1>nu 23. b. 2001 00:47:57 CEST
+date_fmt       "<U0025><U0041><U002C><U0020><U0025><U0042><U0020><U0025><U0064><U002E>/
+<U0020><U0062><U002E><U0020><U0025><U0059><U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053>/
+<U0020><U0025><U005A>"
+
+% %a %b-%e %H:%M:%S %Z %Y søn jan-31 21:15:11 CET 2001
+END LC_TIME
+
+LC_MESSAGES
+yesexpr     "<U005E><U005B><U004A><U006A><U0059><U0079><U005D><U002E><U002A>"
+noexpr      "<U005E><U005B><U0049><U0069><U005D><U002E><U002A>"
+END LC_MESSAGES
+
+
+LC_PAPER
+height   297
+width    210
+END LC_PAPER
+
+LC_TELEPHONE
+tel_int_fmt    "<U002B><U0025><U0063><U0020><U0025><U006C>"
+tel_dom_fmt    "<U0025><U006C>"
+int_select     "<U0030><U0030>"
+int_prefix     "<U0034><U0037>"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+measurement    1
+END LC_MEASUREMENT
+
+LC_NAME
+name_fmt    "<U0025><U0064><U0025><U0074><U0025><U0067><U0025><U0074>/
+<U0025><U006D><U0025><U0074><U0025><U0066>"
+END LC_NAME
+
+LC_ADDRESS
+postal_fmt    "<U0025><U0066><U0025><U004E><U0025><U0061><U0025><U004E>/
+<U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E><U0025><U0073>/
+<U0020><U0025><U0068><U0020><U0025><U0065><U0020><U0025><U0072><U0025>/
+<U004E><U0025><U007A><U0020><U0025><U0054><U0025>/
+<U004E><U0025><U0063><U0025><U004E>"
+country_ab2 "<U004E><U004F>"
+country_ab3 "<U004E><U004F><U0052>"
+country_num 578
+END LC_ADDRESS

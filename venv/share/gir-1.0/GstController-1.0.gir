@@ -1,0 +1,1639 @@
+<?xml version="1.0"?>
+<!-- This file was automatically generated from C sources - DO NOT EDIT!
+To affect the contents of this file, edit the original C definitions,
+and/or use gtk-doc annotations.  -->
+<repository version="1.2"
+            xmlns="http://www.gtk.org/introspection/core/1.0"
+            xmlns:c="http://www.gtk.org/introspection/c/1.0"
+            xmlns:glib="http://www.gtk.org/introspection/glib/1.0">
+  <include name="GLib" version="2.0"/>
+  <include name="GModule" version="2.0"/>
+  <include name="GObject" version="2.0"/>
+  <include name="Gst" version="1.0"/>
+  <package name="gstreamer-controller-1.0"/>
+  <c:include name="gst/controller/controller.h"/>
+  <namespace name="GstController"
+             version="1.0"
+             shared-library="libgstcontroller-1.0.so.0"
+             c:identifier-prefixes="Gst"
+             c:symbol-prefixes="gst">
+    <class name="ARGBControlBinding"
+           c:symbol-prefix="argb_control_binding"
+           c:type="GstARGBControlBinding"
+           parent="Gst.ControlBinding"
+           glib:type-name="GstARGBControlBinding"
+           glib:get-type="gst_argb_control_binding_get_type"
+           glib:type-struct="ARGBControlBindingClass">
+      <doc xml:space="preserve"
+           filename="libs/gst/controller/gstargbcontrolbinding.c"
+           line="23">A value mapping object that attaches multiple control sources to a guint
+gobject properties representing a color. A control value of 0.0 will turn the
+color component off and a value of 1.0 will be the color level.</doc>
+      <source-position filename="libs/gst/controller/gstargbcontrolbinding.h"
+                       line="87"/>
+      <constructor name="new" c:identifier="gst_argb_control_binding_new">
+        <doc xml:space="preserve"
+             filename="libs/gst/controller/gstargbcontrolbinding.c"
+             line="460">Create a new control-binding that attaches the given #GstControlSource to the
+#GObject property.</doc>
+        <source-position filename="libs/gst/controller/gstargbcontrolbinding.h"
+                         line="95"/>
+        <return-value transfer-ownership="none">
+          <doc xml:space="preserve"
+               filename="libs/gst/controller/gstargbcontrolbinding.c"
+               line="472">the new #GstARGBControlBinding</doc>
+          <type name="Gst.ControlBinding" c:type="GstControlBinding*"/>
+        </return-value>
+        <parameters>
+          <parameter name="object" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/controller/gstargbcontrolbinding.c"
+                 line="462">the object of the property</doc>
+            <type name="Gst.Object" c:type="GstObject*"/>
+          </parameter>
+          <parameter name="property_name" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/controller/gstargbcontrolbinding.c"
+                 line="463">the property-name to attach the control source</doc>
+            <type name="utf8" c:type="const gchar*"/>
+          </parameter>
+          <parameter name="cs_a" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/controller/gstargbcontrolbinding.c"
+                 line="464">the control source for the alpha channel</doc>
+            <type name="Gst.ControlSource" c:type="GstControlSource*"/>
+          </parameter>
+          <parameter name="cs_r" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/controller/gstargbcontrolbinding.c"
+                 line="465">the control source for the red channel</doc>
+            <type name="Gst.ControlSource" c:type="GstControlSource*"/>
+          </parameter>
+          <parameter name="cs_g" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/controller/gstargbcontrolbinding.c"
+                 line="466">the control source for the green channel</doc>
+            <type name="Gst.ControlSource" c:type="GstControlSource*"/>
+          </parameter>
+          <parameter name="cs_b" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/controller/gstargbcontrolbinding.c"
+                 line="467">the control source for the blue channel</doc>
+            <type name="Gst.ControlSource" c:type="GstControlSource*"/>
+          </parameter>
+        </parameters>
+      </constructor>
+      <property name="control-source-a"
+                writable="1"
+                construct="1"
+                transfer-ownership="none">
+        <type name="Gst.ControlSource"/>
+      </property>
+      <property name="control-source-b"
+                writable="1"
+                construct="1"
+                transfer-ownership="none">
+        <type name="Gst.ControlSource"/>
+      </property>
+      <property name="control-source-g"
+                writable="1"
+                construct="1"
+                transfer-ownership="none">
+        <type name="Gst.ControlSource"/>
+      </property>
+      <property name="control-source-r"
+                writable="1"
+                construct="1"
+                transfer-ownership="none">
+        <type name="Gst.ControlSource"/>
+      </property>
+      <field name="parent">
+        <type name="Gst.ControlBinding" c:type="GstControlBinding"/>
+      </field>
+      <field name="cs_a" readable="0" private="1">
+        <type name="Gst.ControlSource" c:type="GstControlSource*"/>
+      </field>
+      <field name="cs_r" readable="0" private="1">
+        <type name="Gst.ControlSource" c:type="GstControlSource*"/>
+      </field>
+      <field name="cs_g" readable="0" private="1">
+        <type name="Gst.ControlSource" c:type="GstControlSource*"/>
+      </field>
+      <field name="cs_b" readable="0" private="1">
+        <type name="Gst.ControlSource" c:type="GstControlSource*"/>
+      </field>
+      <field name="cur_value" readable="0" private="1">
+        <type name="GObject.Value" c:type="GValue"/>
+      </field>
+      <field name="last_value" readable="0" private="1">
+        <type name="guint32" c:type="guint32"/>
+      </field>
+      <field name="_gst_reserved" readable="0" private="1">
+        <array zero-terminated="0" fixed-size="4">
+          <type name="gpointer" c:type="gpointer"/>
+        </array>
+      </field>
+    </class>
+    <record name="ARGBControlBindingClass"
+            c:type="GstARGBControlBindingClass"
+            glib:is-gtype-struct-for="ARGBControlBinding">
+      <doc xml:space="preserve"
+           filename="libs/gst/controller/gstargbcontrolbinding.h"
+           line="73">The class structure of #GstARGBControlBinding.</doc>
+      <source-position filename="libs/gst/controller/gstargbcontrolbinding.h"
+                       line="87"/>
+      <field name="parent_class">
+        <doc xml:space="preserve"
+             filename="libs/gst/controller/gstargbcontrolbinding.h"
+             line="75">Parent class</doc>
+        <type name="Gst.ControlBindingClass" c:type="GstControlBindingClass"/>
+      </field>
+      <field name="_gst_reserved" readable="0" private="1">
+        <array zero-terminated="0" fixed-size="4">
+          <type name="gpointer" c:type="gpointer"/>
+        </array>
+      </field>
+    </record>
+    <function-macro name="ARGB_CONTROL_BINDING"
+                    c:identifier="GST_ARGB_CONTROL_BINDING"
+                    introspectable="0">
+      <source-position filename="libs/gst/controller/gstargbcontrolbinding.h"
+                       line="37"/>
+      <parameters>
+        <parameter name="obj">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="ARGB_CONTROL_BINDING_CLASS"
+                    c:identifier="GST_ARGB_CONTROL_BINDING_CLASS"
+                    introspectable="0">
+      <source-position filename="libs/gst/controller/gstargbcontrolbinding.h"
+                       line="39"/>
+      <parameters>
+        <parameter name="klass">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="ARGB_CONTROL_BINDING_GET_CLASS"
+                    c:identifier="GST_ARGB_CONTROL_BINDING_GET_CLASS"
+                    introspectable="0">
+      <source-position filename="libs/gst/controller/gstargbcontrolbinding.h"
+                       line="45"/>
+      <parameters>
+        <parameter name="obj">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <record name="ControlPoint"
+            c:type="GstControlPoint"
+            glib:type-name="GstControlPoint"
+            glib:get-type="gst_control_point_get_type"
+            c:symbol-prefix="control_point">
+      <doc xml:space="preserve"
+           filename="libs/gst/controller/gsttimedvaluecontrolsource.h"
+           line="52">An internal structure for value+time and various temporary
+values used for interpolation. This "inherits" from
+GstTimedValue.</doc>
+      <source-position filename="libs/gst/controller/gsttimedvaluecontrolsource.h"
+                       line="81"/>
+      <field name="timestamp" writable="1">
+        <doc xml:space="preserve"
+             filename="libs/gst/controller/gsttimedvaluecontrolsource.h"
+             line="54">timestamp of the value change</doc>
+        <type name="Gst.ClockTime" c:type="GstClockTime"/>
+      </field>
+      <field name="value" writable="1">
+        <doc xml:space="preserve"
+             filename="libs/gst/controller/gsttimedvaluecontrolsource.h"
+             line="55">the new value</doc>
+        <type name="gdouble" c:type="gdouble"/>
+      </field>
+      <union name="cache" c:type="cache">
+        <source-position filename="libs/gst/controller/gsttimedvaluecontrolsource.h"
+                         line="80"/>
+        <record name="cubic" c:type="cubic">
+          <source-position filename="libs/gst/controller/gsttimedvaluecontrolsource.h"
+                           line="75"/>
+          <field name="h" writable="1">
+            <type name="gdouble" c:type="gdouble"/>
+          </field>
+          <field name="z" writable="1">
+            <type name="gdouble" c:type="gdouble"/>
+          </field>
+        </record>
+        <record name="cubic_monotonic" c:type="cubic_monotonic">
+          <source-position filename="libs/gst/controller/gsttimedvaluecontrolsource.h"
+                           line="78"/>
+          <field name="c1s" writable="1">
+            <type name="gdouble" c:type="gdouble"/>
+          </field>
+          <field name="c2s" writable="1">
+            <type name="gdouble" c:type="gdouble"/>
+          </field>
+          <field name="c3s" writable="1">
+            <type name="gdouble" c:type="gdouble"/>
+          </field>
+        </record>
+        <field name="_gst_reserved" writable="1">
+          <array zero-terminated="0" fixed-size="64">
+            <type name="guint8" c:type="guint8"/>
+          </array>
+        </field>
+      </union>
+      <method name="copy" c:identifier="gst_control_point_copy">
+        <doc xml:space="preserve"
+             filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+             line="84">Copies a #GstControlPoint</doc>
+        <source-position filename="libs/gst/controller/gsttimedvaluecontrolsource.h"
+                         line="154"/>
+        <return-value transfer-ownership="full">
+          <doc xml:space="preserve"
+               filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+               line="90">A copy of @cp</doc>
+          <type name="ControlPoint" c:type="GstControlPoint*"/>
+        </return-value>
+        <parameters>
+          <instance-parameter name="cp" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+                 line="86">The control point to copy</doc>
+            <type name="ControlPoint" c:type="GstControlPoint*"/>
+          </instance-parameter>
+        </parameters>
+      </method>
+      <method name="free" c:identifier="gst_control_point_free">
+        <doc xml:space="preserve"
+             filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+             line="70">Frees all data allocated by a #GstControlPoint instance.</doc>
+        <source-position filename="libs/gst/controller/gsttimedvaluecontrolsource.h"
+                         line="151"/>
+        <return-value transfer-ownership="none">
+          <type name="none" c:type="void"/>
+        </return-value>
+        <parameters>
+          <instance-parameter name="cp" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+                 line="72">the object to free</doc>
+            <type name="ControlPoint" c:type="GstControlPoint*"/>
+          </instance-parameter>
+        </parameters>
+      </method>
+    </record>
+    <function-macro name="DIRECT_CONTROL_BINDING"
+                    c:identifier="GST_DIRECT_CONTROL_BINDING"
+                    introspectable="0">
+      <source-position filename="libs/gst/controller/gstdirectcontrolbinding.h"
+                       line="36"/>
+      <parameters>
+        <parameter name="obj">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="DIRECT_CONTROL_BINDING_CLASS"
+                    c:identifier="GST_DIRECT_CONTROL_BINDING_CLASS"
+                    introspectable="0">
+      <source-position filename="libs/gst/controller/gstdirectcontrolbinding.h"
+                       line="38"/>
+      <parameters>
+        <parameter name="klass">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="DIRECT_CONTROL_BINDING_GET_CLASS"
+                    c:identifier="GST_DIRECT_CONTROL_BINDING_GET_CLASS"
+                    introspectable="0">
+      <source-position filename="libs/gst/controller/gstdirectcontrolbinding.h"
+                       line="44"/>
+      <parameters>
+        <parameter name="obj">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <class name="DirectControlBinding"
+           c:symbol-prefix="direct_control_binding"
+           c:type="GstDirectControlBinding"
+           parent="Gst.ControlBinding"
+           glib:type-name="GstDirectControlBinding"
+           glib:get-type="gst_direct_control_binding_get_type"
+           glib:type-struct="DirectControlBindingClass">
+      <doc xml:space="preserve"
+           filename="libs/gst/controller/gstdirectcontrolbinding.c"
+           line="22">A value mapping object that attaches control sources to gobject properties. It
+will map the control values directly to the target property range. If a
+non-absolute direct control binding is used, the value range [0.0 ... 1.0]
+is mapped to full target property range, and all values outside the range
+will be clipped. An absolute control binding will not do any value
+transformations.</doc>
+      <source-position filename="libs/gst/controller/gstdirectcontrolbinding.h"
+                       line="111"/>
+      <constructor name="new" c:identifier="gst_direct_control_binding_new">
+        <doc xml:space="preserve"
+             filename="libs/gst/controller/gstdirectcontrolbinding.c"
+             line="512">Create a new control-binding that attaches the #GstControlSource to the
+#GObject property. It will map the control source range [0.0 ... 1.0] to
+the full target property range, and clip all values outside this range.</doc>
+        <source-position filename="libs/gst/controller/gstdirectcontrolbinding.h"
+                         line="119"/>
+        <return-value transfer-ownership="none">
+          <doc xml:space="preserve"
+               filename="libs/gst/controller/gstdirectcontrolbinding.c"
+               line="522">the new #GstDirectControlBinding</doc>
+          <type name="Gst.ControlBinding" c:type="GstControlBinding*"/>
+        </return-value>
+        <parameters>
+          <parameter name="object" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/controller/gstdirectcontrolbinding.c"
+                 line="514">the object of the property</doc>
+            <type name="Gst.Object" c:type="GstObject*"/>
+          </parameter>
+          <parameter name="property_name" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/controller/gstdirectcontrolbinding.c"
+                 line="515">the property-name to attach the control source</doc>
+            <type name="utf8" c:type="const gchar*"/>
+          </parameter>
+          <parameter name="cs" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/controller/gstdirectcontrolbinding.c"
+                 line="516">the control source</doc>
+            <type name="Gst.ControlSource" c:type="GstControlSource*"/>
+          </parameter>
+        </parameters>
+      </constructor>
+      <constructor name="new_absolute"
+                   c:identifier="gst_direct_control_binding_new_absolute"
+                   version="1.6">
+        <doc xml:space="preserve"
+             filename="libs/gst/controller/gstdirectcontrolbinding.c"
+             line="532">Create a new control-binding that attaches the #GstControlSource to the
+#GObject property. It will directly map the control source values to the
+target property range without any transformations.</doc>
+        <source-position filename="libs/gst/controller/gstdirectcontrolbinding.h"
+                         line="122"/>
+        <return-value transfer-ownership="none">
+          <doc xml:space="preserve"
+               filename="libs/gst/controller/gstdirectcontrolbinding.c"
+               line="542">the new #GstDirectControlBinding</doc>
+          <type name="Gst.ControlBinding" c:type="GstControlBinding*"/>
+        </return-value>
+        <parameters>
+          <parameter name="object" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/controller/gstdirectcontrolbinding.c"
+                 line="534">the object of the property</doc>
+            <type name="Gst.Object" c:type="GstObject*"/>
+          </parameter>
+          <parameter name="property_name" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/controller/gstdirectcontrolbinding.c"
+                 line="535">the property-name to attach the control source</doc>
+            <type name="utf8" c:type="const gchar*"/>
+          </parameter>
+          <parameter name="cs" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/controller/gstdirectcontrolbinding.c"
+                 line="536">the control source</doc>
+            <type name="Gst.ControlSource" c:type="GstControlSource*"/>
+          </parameter>
+        </parameters>
+      </constructor>
+      <property name="absolute"
+                writable="1"
+                construct-only="1"
+                transfer-ownership="none"
+                default-value="FALSE">
+        <type name="gboolean" c:type="gboolean"/>
+      </property>
+      <property name="control-source"
+                writable="1"
+                construct="1"
+                transfer-ownership="none">
+        <type name="Gst.ControlSource"/>
+      </property>
+      <field name="parent">
+        <type name="Gst.ControlBinding" c:type="GstControlBinding"/>
+      </field>
+      <field name="cs" readable="0" private="1">
+        <type name="Gst.ControlSource" c:type="GstControlSource*"/>
+      </field>
+      <field name="cur_value" readable="0" private="1">
+        <type name="GObject.Value" c:type="GValue"/>
+      </field>
+      <field name="last_value" readable="0" private="1">
+        <type name="gdouble" c:type="gdouble"/>
+      </field>
+      <field name="byte_size" readable="0" private="1">
+        <type name="gint" c:type="gint"/>
+      </field>
+      <field name="convert_value" readable="0" private="1">
+        <type name="DirectControlBindingConvertValue"
+              c:type="GstDirectControlBindingConvertValue"/>
+      </field>
+      <field name="convert_g_value" readable="0" private="1">
+        <type name="DirectControlBindingConvertGValue"
+              c:type="GstDirectControlBindingConvertGValue"/>
+      </field>
+      <union name="ABI" c:type="ABI">
+        <source-position filename="libs/gst/controller/gstdirectcontrolbinding.h"
+                         line="94"/>
+        <field name="_gst_reserved" writable="1">
+          <array zero-terminated="0" fixed-size="4">
+            <type name="gpointer" c:type="gpointer"/>
+          </array>
+        </field>
+        <record name="abi" c:type="abi">
+          <source-position filename="libs/gst/controller/gstdirectcontrolbinding.h"
+                           line="93"/>
+          <field name="want_absolute" writable="1">
+            <type name="gboolean" c:type="gboolean"/>
+          </field>
+        </record>
+      </union>
+    </class>
+    <record name="DirectControlBindingClass"
+            c:type="GstDirectControlBindingClass"
+            glib:is-gtype-struct-for="DirectControlBinding">
+      <doc xml:space="preserve"
+           filename="libs/gst/controller/gstdirectcontrolbinding.h"
+           line="97">The class structure of #GstDirectControlBinding.</doc>
+      <source-position filename="libs/gst/controller/gstdirectcontrolbinding.h"
+                       line="111"/>
+      <field name="parent_class">
+        <doc xml:space="preserve"
+             filename="libs/gst/controller/gstdirectcontrolbinding.h"
+             line="99">Parent class</doc>
+        <type name="Gst.ControlBindingClass" c:type="GstControlBindingClass"/>
+      </field>
+      <field name="_gst_reserved" readable="0" private="1">
+        <array zero-terminated="0" fixed-size="4">
+          <type name="gpointer" c:type="gpointer"/>
+        </array>
+      </field>
+    </record>
+    <callback name="DirectControlBindingConvertGValue"
+              c:type="GstDirectControlBindingConvertGValue">
+      <doc xml:space="preserve"
+           filename="libs/gst/controller/gstdirectcontrolbinding.h"
+           line="61">Function to map a control-value to the target GValue.</doc>
+      <source-position filename="libs/gst/controller/gstdirectcontrolbinding.h"
+                       line="69"/>
+      <return-value transfer-ownership="none">
+        <type name="none" c:type="void"/>
+      </return-value>
+      <parameters>
+        <parameter name="self" transfer-ownership="none">
+          <doc xml:space="preserve"
+               filename="libs/gst/controller/gstdirectcontrolbinding.h"
+               line="63">the #GstDirectControlBinding instance</doc>
+          <type name="DirectControlBinding" c:type="GstDirectControlBinding*"/>
+        </parameter>
+        <parameter name="src_value" transfer-ownership="none">
+          <doc xml:space="preserve"
+               filename="libs/gst/controller/gstdirectcontrolbinding.h"
+               line="64">the value returned by the cotnrol source</doc>
+          <type name="gdouble" c:type="gdouble"/>
+        </parameter>
+        <parameter name="dest_value" transfer-ownership="none">
+          <doc xml:space="preserve"
+               filename="libs/gst/controller/gstdirectcontrolbinding.h"
+               line="65">the target GValue</doc>
+          <type name="GObject.Value" c:type="GValue*"/>
+        </parameter>
+      </parameters>
+    </callback>
+    <callback name="DirectControlBindingConvertValue"
+              c:type="GstDirectControlBindingConvertValue">
+      <doc xml:space="preserve"
+           filename="libs/gst/controller/gstdirectcontrolbinding.h"
+           line="51">Function to map a control-value to the target plain data type.</doc>
+      <source-position filename="libs/gst/controller/gstdirectcontrolbinding.h"
+                       line="59"/>
+      <return-value transfer-ownership="none">
+        <type name="none" c:type="void"/>
+      </return-value>
+      <parameters>
+        <parameter name="self" transfer-ownership="none">
+          <doc xml:space="preserve"
+               filename="libs/gst/controller/gstdirectcontrolbinding.h"
+               line="53">the #GstDirectControlBinding instance</doc>
+          <type name="DirectControlBinding" c:type="GstDirectControlBinding*"/>
+        </parameter>
+        <parameter name="src_value" transfer-ownership="none">
+          <doc xml:space="preserve"
+               filename="libs/gst/controller/gstdirectcontrolbinding.h"
+               line="54">the value returned by the cotnrol source</doc>
+          <type name="gdouble" c:type="gdouble"/>
+        </parameter>
+        <parameter name="dest_value"
+                   transfer-ownership="none"
+                   nullable="1"
+                   allow-none="1">
+          <doc xml:space="preserve"
+               filename="libs/gst/controller/gstdirectcontrolbinding.h"
+               line="55">the target location</doc>
+          <type name="gpointer" c:type="gpointer"/>
+        </parameter>
+      </parameters>
+    </callback>
+    <function-macro name="INTERPOLATION_CONTROL_SOURCE"
+                    c:identifier="GST_INTERPOLATION_CONTROL_SOURCE"
+                    introspectable="0">
+      <source-position filename="libs/gst/controller/gstinterpolationcontrolsource.h"
+                       line="36"/>
+      <parameters>
+        <parameter name="obj">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="INTERPOLATION_CONTROL_SOURCE_CLASS"
+                    c:identifier="GST_INTERPOLATION_CONTROL_SOURCE_CLASS"
+                    introspectable="0">
+      <source-position filename="libs/gst/controller/gstinterpolationcontrolsource.h"
+                       line="38"/>
+      <parameters>
+        <parameter name="vtable">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="INTERPOLATION_CONTROL_SOURCE_GET_CLASS"
+                    c:identifier="GST_INTERPOLATION_CONTROL_SOURCE_GET_CLASS"
+                    introspectable="0">
+      <source-position filename="libs/gst/controller/gstinterpolationcontrolsource.h"
+                       line="44"/>
+      <parameters>
+        <parameter name="inst">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="IS_ARGB_CONTROL_BINDING"
+                    c:identifier="GST_IS_ARGB_CONTROL_BINDING"
+                    introspectable="0">
+      <source-position filename="libs/gst/controller/gstargbcontrolbinding.h"
+                       line="41"/>
+      <parameters>
+        <parameter name="obj">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="IS_ARGB_CONTROL_BINDING_CLASS"
+                    c:identifier="GST_IS_ARGB_CONTROL_BINDING_CLASS"
+                    introspectable="0">
+      <source-position filename="libs/gst/controller/gstargbcontrolbinding.h"
+                       line="43"/>
+      <parameters>
+        <parameter name="klass">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="IS_DIRECT_CONTROL_BINDING"
+                    c:identifier="GST_IS_DIRECT_CONTROL_BINDING"
+                    introspectable="0">
+      <source-position filename="libs/gst/controller/gstdirectcontrolbinding.h"
+                       line="40"/>
+      <parameters>
+        <parameter name="obj">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="IS_DIRECT_CONTROL_BINDING_CLASS"
+                    c:identifier="GST_IS_DIRECT_CONTROL_BINDING_CLASS"
+                    introspectable="0">
+      <source-position filename="libs/gst/controller/gstdirectcontrolbinding.h"
+                       line="42"/>
+      <parameters>
+        <parameter name="klass">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="IS_INTERPOLATION_CONTROL_SOURCE"
+                    c:identifier="GST_IS_INTERPOLATION_CONTROL_SOURCE"
+                    introspectable="0">
+      <source-position filename="libs/gst/controller/gstinterpolationcontrolsource.h"
+                       line="40"/>
+      <parameters>
+        <parameter name="obj">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="IS_INTERPOLATION_CONTROL_SOURCE_CLASS"
+                    c:identifier="GST_IS_INTERPOLATION_CONTROL_SOURCE_CLASS"
+                    introspectable="0">
+      <source-position filename="libs/gst/controller/gstinterpolationcontrolsource.h"
+                       line="42"/>
+      <parameters>
+        <parameter name="vtable">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="IS_LFO_CONTROL_SOURCE"
+                    c:identifier="GST_IS_LFO_CONTROL_SOURCE"
+                    introspectable="0">
+      <source-position filename="libs/gst/controller/gstlfocontrolsource.h"
+                       line="38"/>
+      <parameters>
+        <parameter name="obj">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="IS_LFO_CONTROL_SOURCE_CLASS"
+                    c:identifier="GST_IS_LFO_CONTROL_SOURCE_CLASS"
+                    introspectable="0">
+      <source-position filename="libs/gst/controller/gstlfocontrolsource.h"
+                       line="40"/>
+      <parameters>
+        <parameter name="vtable">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="IS_PROXY_CONTROL_BINDING"
+                    c:identifier="GST_IS_PROXY_CONTROL_BINDING"
+                    introspectable="0">
+      <source-position filename="libs/gst/controller/gstproxycontrolbinding.h"
+                       line="34"/>
+      <parameters>
+        <parameter name="obj">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="IS_PROXY_CONTROL_BINDING_CLASS"
+                    c:identifier="GST_IS_PROXY_CONTROL_BINDING_CLASS"
+                    introspectable="0">
+      <source-position filename="libs/gst/controller/gstproxycontrolbinding.h"
+                       line="36"/>
+      <parameters>
+        <parameter name="klass">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="IS_TIMED_VALUE_CONTROL_SOURCE"
+                    c:identifier="GST_IS_TIMED_VALUE_CONTROL_SOURCE"
+                    introspectable="0">
+      <source-position filename="libs/gst/controller/gsttimedvaluecontrolsource.h"
+                       line="39"/>
+      <parameters>
+        <parameter name="obj">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="IS_TIMED_VALUE_CONTROL_SOURCE_CLASS"
+                    c:identifier="GST_IS_TIMED_VALUE_CONTROL_SOURCE_CLASS"
+                    introspectable="0">
+      <source-position filename="libs/gst/controller/gsttimedvaluecontrolsource.h"
+                       line="41"/>
+      <parameters>
+        <parameter name="vtable">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="IS_TRIGGER_CONTROL_SOURCE"
+                    c:identifier="GST_IS_TRIGGER_CONTROL_SOURCE"
+                    introspectable="0">
+      <source-position filename="libs/gst/controller/gsttriggercontrolsource.h"
+                       line="41"/>
+      <parameters>
+        <parameter name="obj">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="IS_TRIGGER_CONTROL_SOURCE_CLASS"
+                    c:identifier="GST_IS_TRIGGER_CONTROL_SOURCE_CLASS"
+                    introspectable="0">
+      <source-position filename="libs/gst/controller/gsttriggercontrolsource.h"
+                       line="43"/>
+      <parameters>
+        <parameter name="vtable">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <class name="InterpolationControlSource"
+           c:symbol-prefix="interpolation_control_source"
+           c:type="GstInterpolationControlSource"
+           parent="TimedValueControlSource"
+           glib:type-name="GstInterpolationControlSource"
+           glib:get-type="gst_interpolation_control_source_get_type"
+           glib:type-struct="InterpolationControlSourceClass">
+      <doc xml:space="preserve"
+           filename="libs/gst/controller/gstinterpolationcontrolsource.c"
+           line="24">#GstInterpolationControlSource is a #GstControlSource, that interpolates values between user-given
+control points. It supports several interpolation modes and property types.
+
+To use #GstInterpolationControlSource get a new instance by calling
+gst_interpolation_control_source_new(), bind it to a #GParamSpec and set some
+control points by calling gst_timed_value_control_source_set().
+
+All functions are MT-safe.</doc>
+      <source-position filename="libs/gst/controller/gstinterpolationcontrolsource.h"
+                       line="90"/>
+      <constructor name="new"
+                   c:identifier="gst_interpolation_control_source_new">
+        <doc xml:space="preserve"
+             filename="libs/gst/controller/gstinterpolationcontrolsource.c"
+             line="641">This returns a new, unbound #GstInterpolationControlSource.</doc>
+        <source-position filename="libs/gst/controller/gstinterpolationcontrolsource.h"
+                         line="98"/>
+        <return-value transfer-ownership="full">
+          <doc xml:space="preserve"
+               filename="libs/gst/controller/gstinterpolationcontrolsource.c"
+               line="646">a new, unbound #GstInterpolationControlSource.</doc>
+          <type name="Gst.ControlSource" c:type="GstControlSource*"/>
+        </return-value>
+      </constructor>
+      <property name="mode"
+                writable="1"
+                transfer-ownership="none"
+                default-value="GST_INTERPOLATION_MODE_NONE">
+        <type name="InterpolationMode"/>
+      </property>
+      <field name="parent">
+        <type name="TimedValueControlSource"
+              c:type="GstTimedValueControlSource"/>
+      </field>
+      <field name="priv" readable="0" private="1">
+        <type name="InterpolationControlSourcePrivate"
+              c:type="GstInterpolationControlSourcePrivate*"/>
+      </field>
+      <field name="_gst_reserved" readable="0" private="1">
+        <array zero-terminated="0" fixed-size="4">
+          <type name="gpointer" c:type="gpointer"/>
+        </array>
+      </field>
+    </class>
+    <record name="InterpolationControlSourceClass"
+            c:type="GstInterpolationControlSourceClass"
+            glib:is-gtype-struct-for="InterpolationControlSource">
+      <source-position filename="libs/gst/controller/gstinterpolationcontrolsource.h"
+                       line="90"/>
+      <field name="parent_class">
+        <type name="TimedValueControlSourceClass"
+              c:type="GstTimedValueControlSourceClass"/>
+      </field>
+      <field name="_gst_reserved" readable="0" private="1">
+        <array zero-terminated="0" fixed-size="4">
+          <type name="gpointer" c:type="gpointer"/>
+        </array>
+      </field>
+    </record>
+    <record name="InterpolationControlSourcePrivate"
+            c:type="GstInterpolationControlSourcePrivate"
+            disguised="1"
+            opaque="1">
+      <source-position filename="libs/gst/controller/gstinterpolationcontrolsource.h"
+                       line="50"/>
+    </record>
+    <enumeration name="InterpolationMode"
+                 glib:type-name="GstInterpolationMode"
+                 glib:get-type="gst_interpolation_mode_get_type"
+                 c:type="GstInterpolationMode">
+      <doc xml:space="preserve"
+           filename="libs/gst/controller/gstinterpolationcontrolsource.h"
+           line="52">The various interpolation modes available.</doc>
+      <member name="none"
+              value="0"
+              c:identifier="GST_INTERPOLATION_MODE_NONE"
+              glib:nick="none"
+              glib:name="GST_INTERPOLATION_MODE_NONE">
+        <doc xml:space="preserve"
+             filename="libs/gst/controller/gstinterpolationcontrolsource.h"
+             line="54">steps-like interpolation, default</doc>
+      </member>
+      <member name="linear"
+              value="1"
+              c:identifier="GST_INTERPOLATION_MODE_LINEAR"
+              glib:nick="linear"
+              glib:name="GST_INTERPOLATION_MODE_LINEAR">
+        <doc xml:space="preserve"
+             filename="libs/gst/controller/gstinterpolationcontrolsource.h"
+             line="55">linear interpolation</doc>
+      </member>
+      <member name="cubic"
+              value="2"
+              c:identifier="GST_INTERPOLATION_MODE_CUBIC"
+              glib:nick="cubic"
+              glib:name="GST_INTERPOLATION_MODE_CUBIC">
+        <doc xml:space="preserve"
+             filename="libs/gst/controller/gstinterpolationcontrolsource.h"
+             line="56">cubic interpolation (natural), may overshoot
+  the min or max values set by the control point, but is more 'curvy'</doc>
+      </member>
+      <member name="cubic_monotonic"
+              value="3"
+              c:identifier="GST_INTERPOLATION_MODE_CUBIC_MONOTONIC"
+              glib:nick="cubic-monotonic"
+              glib:name="GST_INTERPOLATION_MODE_CUBIC_MONOTONIC">
+        <doc xml:space="preserve"
+             filename="libs/gst/controller/gstinterpolationcontrolsource.h"
+             line="58">monotonic cubic interpolation, will not
+  produce any values outside of the min-max range set by the control points
+  (Since: 1.8)</doc>
+      </member>
+    </enumeration>
+    <class name="LFOControlSource"
+           c:symbol-prefix="lfo_control_source"
+           c:type="GstLFOControlSource"
+           parent="Gst.ControlSource"
+           glib:type-name="GstLFOControlSource"
+           glib:get-type="gst_lfo_control_source_get_type"
+           glib:type-struct="LFOControlSourceClass">
+      <doc xml:space="preserve"
+           filename="libs/gst/controller/gstlfocontrolsource.c"
+           line="24">#GstLFOControlSource is a #GstControlSource, that provides several periodic
+waveforms as control values.
+
+To use #GstLFOControlSource get a new instance by calling
+gst_lfo_control_source_new(), bind it to a #GParamSpec and set the relevant
+properties.
+
+All functions are MT-safe.</doc>
+      <source-position filename="libs/gst/controller/gstlfocontrolsource.h"
+                       line="88"/>
+      <constructor name="new" c:identifier="gst_lfo_control_source_new">
+        <doc xml:space="preserve"
+             filename="libs/gst/controller/gstlfocontrolsource.c"
+             line="394">This returns a new, unbound #GstLFOControlSource.</doc>
+        <source-position filename="libs/gst/controller/gstlfocontrolsource.h"
+                         line="96"/>
+        <return-value transfer-ownership="full">
+          <doc xml:space="preserve"
+               filename="libs/gst/controller/gstlfocontrolsource.c"
+               line="399">a new, unbound #GstLFOControlSource.</doc>
+          <type name="Gst.ControlSource" c:type="GstControlSource*"/>
+        </return-value>
+      </constructor>
+      <property name="amplitude"
+                writable="1"
+                transfer-ownership="none"
+                default-value="1.000000">
+        <doc xml:space="preserve"
+             filename="libs/gst/controller/gstlfocontrolsource.c"
+             line="575">Specifies the amplitude for the waveform of this #GstLFOControlSource.</doc>
+        <type name="gdouble" c:type="gdouble"/>
+      </property>
+      <property name="frequency"
+                writable="1"
+                transfer-ownership="none"
+                default-value="1.000000">
+        <doc xml:space="preserve"
+             filename="libs/gst/controller/gstlfocontrolsource.c"
+             line="548">Specifies the frequency that should be used for the waveform
+of this #GstLFOControlSource. It should be large enough
+so that the period is longer than one nanosecond.</doc>
+        <type name="gdouble" c:type="gdouble"/>
+      </property>
+      <property name="offset"
+                writable="1"
+                transfer-ownership="none"
+                default-value="1.000000">
+        <doc xml:space="preserve"
+             filename="libs/gst/controller/gstlfocontrolsource.c"
+             line="585">Specifies the value offset for the waveform of this #GstLFOControlSource.</doc>
+        <type name="gdouble" c:type="gdouble"/>
+      </property>
+      <property name="timeshift"
+                writable="1"
+                transfer-ownership="none"
+                default-value="0">
+        <doc xml:space="preserve"
+             filename="libs/gst/controller/gstlfocontrolsource.c"
+             line="560">Specifies the timeshift to the right that should be used for the waveform
+of this #GstLFOControlSource in nanoseconds.
+
+To get a n nanosecond shift to the left use
+"(GST_SECOND / frequency) - n".</doc>
+        <type name="guint64" c:type="guint64"/>
+      </property>
+      <property name="waveform"
+                writable="1"
+                transfer-ownership="none"
+                default-value="GST_LFO_WAVEFORM_SINE">
+        <doc xml:space="preserve"
+             filename="libs/gst/controller/gstlfocontrolsource.c"
+             line="538">Specifies the waveform that should be used for this #GstLFOControlSource.</doc>
+        <type name="LFOWaveform"/>
+      </property>
+      <field name="parent">
+        <type name="Gst.ControlSource" c:type="GstControlSource"/>
+      </field>
+      <field name="priv" readable="0" private="1">
+        <type name="LFOControlSourcePrivate"
+              c:type="GstLFOControlSourcePrivate*"/>
+      </field>
+      <field name="lock" readable="0" private="1">
+        <type name="GLib.Mutex" c:type="GMutex"/>
+      </field>
+      <field name="_gst_reserved" readable="0" private="1">
+        <array zero-terminated="0" fixed-size="4">
+          <type name="gpointer" c:type="gpointer"/>
+        </array>
+      </field>
+    </class>
+    <record name="LFOControlSourceClass"
+            c:type="GstLFOControlSourceClass"
+            glib:is-gtype-struct-for="LFOControlSource">
+      <source-position filename="libs/gst/controller/gstlfocontrolsource.h"
+                       line="88"/>
+      <field name="parent_class">
+        <type name="Gst.ControlSourceClass" c:type="GstControlSourceClass"/>
+      </field>
+      <field name="_gst_reserved" readable="0" private="1">
+        <array zero-terminated="0" fixed-size="4">
+          <type name="gpointer" c:type="gpointer"/>
+        </array>
+      </field>
+    </record>
+    <record name="LFOControlSourcePrivate"
+            c:type="GstLFOControlSourcePrivate"
+            disguised="1"
+            opaque="1">
+      <source-position filename="libs/gst/controller/gstlfocontrolsource.h"
+                       line="48"/>
+    </record>
+    <enumeration name="LFOWaveform"
+                 glib:type-name="GstLFOWaveform"
+                 glib:get-type="gst_lfo_waveform_get_type"
+                 c:type="GstLFOWaveform">
+      <doc xml:space="preserve"
+           filename="libs/gst/controller/gstlfocontrolsource.h"
+           line="50">The various waveform modes available.</doc>
+      <member name="sine"
+              value="0"
+              c:identifier="GST_LFO_WAVEFORM_SINE"
+              glib:nick="sine"
+              glib:name="GST_LFO_WAVEFORM_SINE">
+        <doc xml:space="preserve"
+             filename="libs/gst/controller/gstlfocontrolsource.h"
+             line="52">sine waveform</doc>
+      </member>
+      <member name="square"
+              value="1"
+              c:identifier="GST_LFO_WAVEFORM_SQUARE"
+              glib:nick="square"
+              glib:name="GST_LFO_WAVEFORM_SQUARE">
+        <doc xml:space="preserve"
+             filename="libs/gst/controller/gstlfocontrolsource.h"
+             line="53">square waveform</doc>
+      </member>
+      <member name="saw"
+              value="2"
+              c:identifier="GST_LFO_WAVEFORM_SAW"
+              glib:nick="saw"
+              glib:name="GST_LFO_WAVEFORM_SAW">
+        <doc xml:space="preserve"
+             filename="libs/gst/controller/gstlfocontrolsource.h"
+             line="54">saw waveform</doc>
+      </member>
+      <member name="reverse_saw"
+              value="3"
+              c:identifier="GST_LFO_WAVEFORM_REVERSE_SAW"
+              glib:nick="reverse-saw"
+              glib:name="GST_LFO_WAVEFORM_REVERSE_SAW">
+        <doc xml:space="preserve"
+             filename="libs/gst/controller/gstlfocontrolsource.h"
+             line="55">reverse saw waveform</doc>
+      </member>
+      <member name="triangle"
+              value="4"
+              c:identifier="GST_LFO_WAVEFORM_TRIANGLE"
+              glib:nick="triangle"
+              glib:name="GST_LFO_WAVEFORM_TRIANGLE">
+        <doc xml:space="preserve"
+             filename="libs/gst/controller/gstlfocontrolsource.h"
+             line="56">triangle waveform</doc>
+      </member>
+    </enumeration>
+    <function-macro name="LFO_CONTROL_SOURCE"
+                    c:identifier="GST_LFO_CONTROL_SOURCE"
+                    introspectable="0">
+      <source-position filename="libs/gst/controller/gstlfocontrolsource.h"
+                       line="34"/>
+      <parameters>
+        <parameter name="obj">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="LFO_CONTROL_SOURCE_CLASS"
+                    c:identifier="GST_LFO_CONTROL_SOURCE_CLASS"
+                    introspectable="0">
+      <source-position filename="libs/gst/controller/gstlfocontrolsource.h"
+                       line="36"/>
+      <parameters>
+        <parameter name="vtable">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="LFO_CONTROL_SOURCE_GET_CLASS"
+                    c:identifier="GST_LFO_CONTROL_SOURCE_GET_CLASS"
+                    introspectable="0">
+      <source-position filename="libs/gst/controller/gstlfocontrolsource.h"
+                       line="42"/>
+      <parameters>
+        <parameter name="inst">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="PROXY_CONTROL_BINDING"
+                    c:identifier="GST_PROXY_CONTROL_BINDING"
+                    introspectable="0">
+      <source-position filename="libs/gst/controller/gstproxycontrolbinding.h"
+                       line="30"/>
+      <parameters>
+        <parameter name="obj">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="PROXY_CONTROL_BINDING_CLASS"
+                    c:identifier="GST_PROXY_CONTROL_BINDING_CLASS"
+                    introspectable="0">
+      <source-position filename="libs/gst/controller/gstproxycontrolbinding.h"
+                       line="32"/>
+      <parameters>
+        <parameter name="klass">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="PROXY_CONTROL_BINDING_GET_CLASS"
+                    c:identifier="GST_PROXY_CONTROL_BINDING_GET_CLASS"
+                    introspectable="0">
+      <source-position filename="libs/gst/controller/gstproxycontrolbinding.h"
+                       line="38"/>
+      <parameters>
+        <parameter name="obj">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <class name="ProxyControlBinding"
+           c:symbol-prefix="proxy_control_binding"
+           c:type="GstProxyControlBinding"
+           parent="Gst.ControlBinding"
+           glib:type-name="GstProxyControlBinding"
+           glib:get-type="gst_proxy_control_binding_get_type"
+           glib:type-struct="ProxyControlBindingClass">
+      <doc xml:space="preserve"
+           filename="libs/gst/controller/gstproxycontrolbinding.c"
+           line="20">A #GstControlBinding that forwards requests to another #GstControlBinding</doc>
+      <source-position filename="libs/gst/controller/gstproxycontrolbinding.h"
+                       line="71"/>
+      <constructor name="new"
+                   c:identifier="gst_proxy_control_binding_new"
+                   version="1.12">
+        <doc xml:space="preserve"
+             filename="libs/gst/controller/gstproxycontrolbinding.c"
+             line="165">#GstProxyControlBinding forwards all access to data or `sync_values()`
+requests from @property_name on @object to the control binding at
+@ref_property_name on @ref_object.</doc>
+        <source-position filename="libs/gst/controller/gstproxycontrolbinding.h"
+                         line="77"/>
+        <return-value transfer-ownership="none">
+          <doc xml:space="preserve"
+               filename="libs/gst/controller/gstproxycontrolbinding.c"
+               line="177">a new #GstControlBinding that proxies the control interface between
+properties on different #GstObject's</doc>
+          <type name="Gst.ControlBinding" c:type="GstControlBinding*"/>
+        </return-value>
+        <parameters>
+          <parameter name="object" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/controller/gstproxycontrolbinding.c"
+                 line="167">a #GstObject</doc>
+            <type name="Gst.Object" c:type="GstObject*"/>
+          </parameter>
+          <parameter name="property_name" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/controller/gstproxycontrolbinding.c"
+                 line="168">the property name in @object to control</doc>
+            <type name="utf8" c:type="const gchar*"/>
+          </parameter>
+          <parameter name="ref_object" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/controller/gstproxycontrolbinding.c"
+                 line="169">a #GstObject to forward all
+             #GstControlBinding requests to</doc>
+            <type name="Gst.Object" c:type="GstObject*"/>
+          </parameter>
+          <parameter name="ref_property_name" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/controller/gstproxycontrolbinding.c"
+                 line="171">the property_name in @ref_object to control</doc>
+            <type name="utf8" c:type="const gchar*"/>
+          </parameter>
+        </parameters>
+      </constructor>
+      <field name="parent" readable="0" private="1">
+        <type name="Gst.ControlBinding" c:type="GstControlBinding"/>
+      </field>
+      <field name="ref_object" readable="0" private="1">
+        <type name="GObject.WeakRef" c:type="GWeakRef"/>
+      </field>
+      <field name="property_name" readable="0" private="1">
+        <type name="utf8" c:type="gchar*"/>
+      </field>
+      <field name="_padding" readable="0" private="1">
+        <array zero-terminated="0" fixed-size="4">
+          <type name="gpointer" c:type="gpointer"/>
+        </array>
+      </field>
+    </class>
+    <record name="ProxyControlBindingClass"
+            c:type="GstProxyControlBindingClass"
+            glib:is-gtype-struct-for="ProxyControlBinding">
+      <doc xml:space="preserve"
+           filename="libs/gst/controller/gstproxycontrolbinding.h"
+           line="60">Opaque #GstProxyControlBindingClass struct</doc>
+      <source-position filename="libs/gst/controller/gstproxycontrolbinding.h"
+                       line="71"/>
+      <field name="parent_class" readable="0" private="1">
+        <type name="Gst.ControlBindingClass" c:type="GstControlBindingClass"/>
+      </field>
+      <field name="_padding" readable="0" private="1">
+        <array zero-terminated="0" fixed-size="4">
+          <type name="gpointer" c:type="gpointer"/>
+        </array>
+      </field>
+    </record>
+    <function-macro name="TIMED_VALUE_CONTROL_SOURCE"
+                    c:identifier="GST_TIMED_VALUE_CONTROL_SOURCE"
+                    introspectable="0">
+      <source-position filename="libs/gst/controller/gsttimedvaluecontrolsource.h"
+                       line="35"/>
+      <parameters>
+        <parameter name="obj">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="TIMED_VALUE_CONTROL_SOURCE_CLASS"
+                    c:identifier="GST_TIMED_VALUE_CONTROL_SOURCE_CLASS"
+                    introspectable="0">
+      <source-position filename="libs/gst/controller/gsttimedvaluecontrolsource.h"
+                       line="37"/>
+      <parameters>
+        <parameter name="vtable">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="TIMED_VALUE_CONTROL_SOURCE_GET_CLASS"
+                    c:identifier="GST_TIMED_VALUE_CONTROL_SOURCE_GET_CLASS"
+                    introspectable="0">
+      <source-position filename="libs/gst/controller/gsttimedvaluecontrolsource.h"
+                       line="43"/>
+      <parameters>
+        <parameter name="inst">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="TIMED_VALUE_CONTROL_SOURCE_LOCK"
+                    c:identifier="GST_TIMED_VALUE_CONTROL_SOURCE_LOCK"
+                    introspectable="0">
+      <source-position filename="libs/gst/controller/gsttimedvaluecontrolsource.h"
+                       line="112"/>
+      <parameters>
+        <parameter name="o">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="TIMED_VALUE_CONTROL_SOURCE_UNLOCK"
+                    c:identifier="GST_TIMED_VALUE_CONTROL_SOURCE_UNLOCK"
+                    introspectable="0">
+      <source-position filename="libs/gst/controller/gsttimedvaluecontrolsource.h"
+                       line="114"/>
+      <parameters>
+        <parameter name="o">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="TRIGGER_CONTROL_SOURCE"
+                    c:identifier="GST_TRIGGER_CONTROL_SOURCE"
+                    introspectable="0">
+      <source-position filename="libs/gst/controller/gsttriggercontrolsource.h"
+                       line="37"/>
+      <parameters>
+        <parameter name="obj">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="TRIGGER_CONTROL_SOURCE_CLASS"
+                    c:identifier="GST_TRIGGER_CONTROL_SOURCE_CLASS"
+                    introspectable="0">
+      <source-position filename="libs/gst/controller/gsttriggercontrolsource.h"
+                       line="39"/>
+      <parameters>
+        <parameter name="vtable">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="TRIGGER_CONTROL_SOURCE_GET_CLASS"
+                    c:identifier="GST_TRIGGER_CONTROL_SOURCE_GET_CLASS"
+                    introspectable="0">
+      <source-position filename="libs/gst/controller/gsttriggercontrolsource.h"
+                       line="45"/>
+      <parameters>
+        <parameter name="inst">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <class name="TimedValueControlSource"
+           c:symbol-prefix="timed_value_control_source"
+           c:type="GstTimedValueControlSource"
+           parent="Gst.ControlSource"
+           abstract="1"
+           glib:type-name="GstTimedValueControlSource"
+           glib:get-type="gst_timed_value_control_source_get_type"
+           glib:type-struct="TimedValueControlSourceClass">
+      <doc xml:space="preserve"
+           filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+           line="25">Base class for #GstControlSource that use time-stamped values.
+
+When overriding bind, chain up first to give this bind implementation a
+chance to setup things.
+
+All functions are MT-safe.</doc>
+      <source-position filename="libs/gst/controller/gsttimedvaluecontrolsource.h"
+                       line="111"/>
+      <method name="find_control_point_iter"
+              c:identifier="gst_timed_value_control_source_find_control_point_iter">
+        <doc xml:space="preserve"
+             filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+             line="224">Find last value before given timestamp in control point list.
+If all values in the control point list come after the given
+timestamp or no values exist, %NULL is returned.
+
+For use in control source implementations.</doc>
+        <source-position filename="libs/gst/controller/gsttimedvaluecontrolsource.h"
+                         line="124"/>
+        <return-value transfer-ownership="none" nullable="1">
+          <doc xml:space="preserve"
+               filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+               line="235">the found #GSequenceIter or %NULL</doc>
+          <type name="GLib.SequenceIter" c:type="GSequenceIter*"/>
+        </return-value>
+        <parameters>
+          <instance-parameter name="self" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+                 line="226">the control source to search in</doc>
+            <type name="TimedValueControlSource"
+                  c:type="GstTimedValueControlSource*"/>
+          </instance-parameter>
+          <parameter name="timestamp" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+                 line="227">the search key</doc>
+            <type name="Gst.ClockTime" c:type="GstClockTime"/>
+          </parameter>
+        </parameters>
+      </method>
+      <method name="get_all"
+              c:identifier="gst_timed_value_control_source_get_all">
+        <doc xml:space="preserve"
+             filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+             line="393">Returns a read-only copy of the list of #GstTimedValue for the given property.
+Free the list after done with it.</doc>
+        <source-position filename="libs/gst/controller/gsttimedvaluecontrolsource.h"
+                         line="142"/>
+        <return-value transfer-ownership="container">
+          <doc xml:space="preserve"
+               filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+               line="400">a copy
+of the list, or %NULL if the property isn't handled by the controller</doc>
+          <type name="GLib.List" c:type="GList*">
+            <type name="Gst.TimedValue"/>
+          </type>
+        </return-value>
+        <parameters>
+          <instance-parameter name="self" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+                 line="395">the #GstTimedValueControlSource to get the list from</doc>
+            <type name="TimedValueControlSource"
+                  c:type="GstTimedValueControlSource*"/>
+          </instance-parameter>
+        </parameters>
+      </method>
+      <method name="get_count"
+              c:identifier="gst_timed_value_control_source_get_count">
+        <doc xml:space="preserve"
+             filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+             line="418">Get the number of control points that are set.</doc>
+        <source-position filename="libs/gst/controller/gsttimedvaluecontrolsource.h"
+                         line="145"/>
+        <return-value transfer-ownership="none">
+          <doc xml:space="preserve"
+               filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+               line="424">the number of control points that are set.</doc>
+          <type name="gint" c:type="gint"/>
+        </return-value>
+        <parameters>
+          <instance-parameter name="self" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+                 line="420">the #GstTimedValueControlSource to get the number of values from</doc>
+            <type name="TimedValueControlSource"
+                  c:type="GstTimedValueControlSource*"/>
+          </instance-parameter>
+        </parameters>
+      </method>
+      <method name="set" c:identifier="gst_timed_value_control_source_set">
+        <doc xml:space="preserve"
+             filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+             line="260">Set the value of given controller-handled property at a certain time.</doc>
+        <source-position filename="libs/gst/controller/gsttimedvaluecontrolsource.h"
+                         line="128"/>
+        <return-value transfer-ownership="none">
+          <doc xml:space="preserve"
+               filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+               line="268">FALSE if the values couldn't be set, TRUE otherwise.</doc>
+          <type name="gboolean" c:type="gboolean"/>
+        </return-value>
+        <parameters>
+          <instance-parameter name="self" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+                 line="262">the #GstTimedValueControlSource object</doc>
+            <type name="TimedValueControlSource"
+                  c:type="GstTimedValueControlSource*"/>
+          </instance-parameter>
+          <parameter name="timestamp" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+                 line="263">the time the control-change is scheduled for</doc>
+            <type name="Gst.ClockTime" c:type="GstClockTime"/>
+          </parameter>
+          <parameter name="value" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+                 line="264">the control-value</doc>
+            <type name="gdouble" c:type="const gdouble"/>
+          </parameter>
+        </parameters>
+      </method>
+      <method name="set_from_list"
+              c:identifier="gst_timed_value_control_source_set_from_list">
+        <doc xml:space="preserve"
+             filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+             line="282">Sets multiple timed values at once.</doc>
+        <source-position filename="libs/gst/controller/gsttimedvaluecontrolsource.h"
+                         line="132"/>
+        <return-value transfer-ownership="none">
+          <doc xml:space="preserve"
+               filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+               line="290">FALSE if the values couldn't be set, TRUE otherwise.</doc>
+          <type name="gboolean" c:type="gboolean"/>
+        </return-value>
+        <parameters>
+          <instance-parameter name="self" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+                 line="284">the #GstTimedValueControlSource object</doc>
+            <type name="TimedValueControlSource"
+                  c:type="GstTimedValueControlSource*"/>
+          </instance-parameter>
+          <parameter name="timedvalues" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+                 line="285">a list
+with #GstTimedValue items</doc>
+            <type name="GLib.SList" c:type="const GSList*">
+              <type name="Gst.TimedValue"/>
+            </type>
+          </parameter>
+        </parameters>
+      </method>
+      <method name="unset" c:identifier="gst_timed_value_control_source_unset">
+        <doc xml:space="preserve"
+             filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+             line="316">Used to remove the value of given controller-handled property at a certain
+time.</doc>
+        <source-position filename="libs/gst/controller/gsttimedvaluecontrolsource.h"
+                         line="135"/>
+        <return-value transfer-ownership="none">
+          <doc xml:space="preserve"
+               filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+               line="324">FALSE if the value couldn't be unset (i.e. not found, TRUE otherwise.</doc>
+          <type name="gboolean" c:type="gboolean"/>
+        </return-value>
+        <parameters>
+          <instance-parameter name="self" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+                 line="318">the #GstTimedValueControlSource object</doc>
+            <type name="TimedValueControlSource"
+                  c:type="GstTimedValueControlSource*"/>
+          </instance-parameter>
+          <parameter name="timestamp" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+                 line="319">the time the control-change should be removed from</doc>
+            <type name="Gst.ClockTime" c:type="GstClockTime"/>
+          </parameter>
+        </parameters>
+      </method>
+      <method name="unset_all"
+              c:identifier="gst_timed_value_control_source_unset_all">
+        <doc xml:space="preserve"
+             filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+             line="363">Used to remove all time-stamped values of given controller-handled property</doc>
+        <source-position filename="libs/gst/controller/gsttimedvaluecontrolsource.h"
+                         line="139"/>
+        <return-value transfer-ownership="none">
+          <type name="none" c:type="void"/>
+        </return-value>
+        <parameters>
+          <instance-parameter name="self" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+                 line="365">the #GstTimedValueControlSource object</doc>
+            <type name="TimedValueControlSource"
+                  c:type="GstTimedValueControlSource*"/>
+          </instance-parameter>
+        </parameters>
+      </method>
+      <field name="parent">
+        <type name="Gst.ControlSource" c:type="GstControlSource"/>
+      </field>
+      <field name="lock">
+        <type name="GLib.Mutex" c:type="GMutex"/>
+      </field>
+      <field name="values">
+        <type name="GLib.Sequence" c:type="GSequence*"/>
+      </field>
+      <field name="nvalues">
+        <type name="gint" c:type="gint"/>
+      </field>
+      <field name="valid_cache">
+        <type name="gboolean" c:type="gboolean"/>
+      </field>
+      <field name="priv" readable="0" private="1">
+        <type name="TimedValueControlSourcePrivate"
+              c:type="GstTimedValueControlSourcePrivate*"/>
+      </field>
+      <field name="_gst_reserved" readable="0" private="1">
+        <array zero-terminated="0" fixed-size="4">
+          <type name="gpointer" c:type="gpointer"/>
+        </array>
+      </field>
+      <glib:signal name="value-added" when="first" version="1.6">
+        <doc xml:space="preserve"
+             filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+             line="486">Emitted right after the new value has been added to @self</doc>
+        <return-value transfer-ownership="none">
+          <type name="none" c:type="void"/>
+        </return-value>
+        <parameters>
+          <parameter name="timed_value" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+                 line="490">The newly added #GstTimedValue</doc>
+            <type name="ControlPoint"/>
+          </parameter>
+        </parameters>
+      </glib:signal>
+      <glib:signal name="value-changed" when="first" version="1.6">
+        <doc xml:space="preserve"
+             filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+             line="472">Emitted right after the new value has been set on @timed_signals</doc>
+        <return-value transfer-ownership="none">
+          <type name="none" c:type="void"/>
+        </return-value>
+        <parameters>
+          <parameter name="timed_value" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+                 line="475">The #GstTimedValue where the value changed</doc>
+            <type name="ControlPoint"/>
+          </parameter>
+        </parameters>
+      </glib:signal>
+      <glib:signal name="value-removed" when="first" version="1.6">
+        <doc xml:space="preserve"
+             filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+             line="501">Emitted when @timed_value is removed from @self</doc>
+        <return-value transfer-ownership="none">
+          <type name="none" c:type="void"/>
+        </return-value>
+        <parameters>
+          <parameter name="timed_value" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+                 line="505">The removed #GstTimedValue</doc>
+            <type name="ControlPoint"/>
+          </parameter>
+        </parameters>
+      </glib:signal>
+    </class>
+    <record name="TimedValueControlSourceClass"
+            c:type="GstTimedValueControlSourceClass"
+            glib:is-gtype-struct-for="TimedValueControlSource">
+      <source-position filename="libs/gst/controller/gsttimedvaluecontrolsource.h"
+                       line="111"/>
+      <field name="parent_class">
+        <type name="Gst.ControlSourceClass" c:type="GstControlSourceClass"/>
+      </field>
+      <field name="_gst_reserved" readable="0" private="1">
+        <array zero-terminated="0" fixed-size="4">
+          <type name="gpointer" c:type="gpointer"/>
+        </array>
+      </field>
+    </record>
+    <record name="TimedValueControlSourcePrivate"
+            c:type="GstTimedValueControlSourcePrivate"
+            disguised="1"
+            opaque="1">
+      <source-position filename="libs/gst/controller/gsttimedvaluecontrolsource.h"
+                       line="49"/>
+    </record>
+    <class name="TriggerControlSource"
+           c:symbol-prefix="trigger_control_source"
+           c:type="GstTriggerControlSource"
+           parent="TimedValueControlSource"
+           glib:type-name="GstTriggerControlSource"
+           glib:get-type="gst_trigger_control_source_get_type"
+           glib:type-struct="TriggerControlSourceClass">
+      <doc xml:space="preserve"
+           filename="libs/gst/controller/gsttriggercontrolsource.c"
+           line="25">#GstTriggerControlSource is a #GstControlSource, that returns values from user-given
+control points. It allows for a tolerance on the time-stamps.
+
+To use #GstTriggerControlSource get a new instance by calling
+gst_trigger_control_source_new(), bind it to a #GParamSpec and set some
+control points by calling gst_timed_value_control_source_set().
+
+All functions are MT-safe.</doc>
+      <source-position filename="libs/gst/controller/gsttriggercontrolsource.h"
+                       line="73"/>
+      <constructor name="new" c:identifier="gst_trigger_control_source_new">
+        <doc xml:space="preserve"
+             filename="libs/gst/controller/gsttriggercontrolsource.c"
+             line="185">This returns a new, unbound #GstTriggerControlSource.</doc>
+        <source-position filename="libs/gst/controller/gsttriggercontrolsource.h"
+                         line="81"/>
+        <return-value transfer-ownership="full">
+          <doc xml:space="preserve"
+               filename="libs/gst/controller/gsttriggercontrolsource.c"
+               line="190">a new, unbound #GstTriggerControlSource.</doc>
+          <type name="Gst.ControlSource" c:type="GstControlSource*"/>
+        </return-value>
+      </constructor>
+      <property name="tolerance"
+                writable="1"
+                transfer-ownership="none"
+                default-value="0">
+        <type name="gint64" c:type="gint64"/>
+      </property>
+      <field name="parent">
+        <type name="TimedValueControlSource"
+              c:type="GstTimedValueControlSource"/>
+      </field>
+      <field name="priv" readable="0" private="1">
+        <type name="TriggerControlSourcePrivate"
+              c:type="GstTriggerControlSourcePrivate*"/>
+      </field>
+      <field name="_gst_reserved" readable="0" private="1">
+        <array zero-terminated="0" fixed-size="4">
+          <type name="gpointer" c:type="gpointer"/>
+        </array>
+      </field>
+    </class>
+    <record name="TriggerControlSourceClass"
+            c:type="GstTriggerControlSourceClass"
+            glib:is-gtype-struct-for="TriggerControlSource">
+      <source-position filename="libs/gst/controller/gsttriggercontrolsource.h"
+                       line="73"/>
+      <field name="parent_class">
+        <type name="TimedValueControlSourceClass"
+              c:type="GstTimedValueControlSourceClass"/>
+      </field>
+      <field name="_gst_reserved" readable="0" private="1">
+        <array zero-terminated="0" fixed-size="4">
+          <type name="gpointer" c:type="gpointer"/>
+        </array>
+      </field>
+    </record>
+    <record name="TriggerControlSourcePrivate"
+            c:type="GstTriggerControlSourcePrivate"
+            disguised="1"
+            opaque="1">
+      <source-position filename="libs/gst/controller/gsttriggercontrolsource.h"
+                       line="53"/>
+    </record>
+    <function name="timed_value_control_invalidate_cache"
+              c:identifier="gst_timed_value_control_invalidate_cache">
+      <doc xml:space="preserve"
+           filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+           line="433">Reset the controlled value cache.</doc>
+      <source-position filename="libs/gst/controller/gsttimedvaluecontrolsource.h"
+                       line="148"/>
+      <return-value transfer-ownership="none">
+        <type name="none" c:type="void"/>
+      </return-value>
+      <parameters>
+        <parameter name="self" transfer-ownership="none">
+          <doc xml:space="preserve"
+               filename="libs/gst/controller/gsttimedvaluecontrolsource.c"
+               line="435">the #GstTimedValueControlSource</doc>
+          <type name="TimedValueControlSource"
+                c:type="GstTimedValueControlSource*"/>
+        </parameter>
+      </parameters>
+    </function>
+  </namespace>
+</repository>

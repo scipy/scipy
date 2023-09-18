@@ -1,0 +1,12 @@
+prefix=/workspaces/scipy/venv
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: ICE
+Description: X Inter Client Exchange Library
+Version: 1.1.1
+Requires: xproto
+Cflags: -I${includedir}
+Libs: -L${libdir} -lICE
+Libs.private: 

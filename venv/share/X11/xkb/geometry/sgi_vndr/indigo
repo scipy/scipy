@@ -1,0 +1,410 @@
+//
+// Copyright (c) 1996 by Silicon Graphics Computer Systems, Inc.
+//
+// Permission to use, copy, modify, and distribute this
+// software and its documentation for any purpose and without
+// fee is hereby granted, provided that the above copyright
+// notice appear in all copies and that both that copyright
+// notice and this permission notice appear in supporting
+// documentation, and that the name of Silicon Graphics not be 
+// used in advertising or publicity pertaining to distribution 
+// of the software without specific prior written permission.
+// Silicon Graphics makes no representation about the suitability 
+// of this software for any purpose. It is provided "as is"
+// without any express or implied warranty.
+// 
+// SILICON GRAPHICS DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS 
+// SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY 
+// AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL SILICON
+// GRAPHICS BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL 
+// DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, 
+// DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE 
+// OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION  WITH
+// THE USE OR PERFORMANCE OF THIS SOFTWARE.
+//
+default xkb_geometry "pc101" {
+
+    // This is an approximate layout for a 101-key (US/ASCII) SGI
+    // keyboard.  I just took a similar layout (101 key PC keyboard)
+    // and adjusted the sizes of a few keys by eye.  I didn't actually
+    // *measure* a real keyboard.
+
+    description= "Silicon Graphics 101-key keyboard";
+
+    width= 472;
+    height= 193;
+
+    shape "EDGE" { cornerRadius= 2, { [ 472, 193 ] } };
+    shape.cornerRadius= 1;
+    shape "NORM" { { [ 18,18] }, { [2,1], [16,17] } };
+    shape "BKSP" { { [ 37,18] }, { [2,1], [35,17] } };
+    shape "TABK" { { [ 28,18] }, { [2,1], [26,17] } };
+    shape "BKSL" { { [ 27,18] }, { [2,1], [25,17] } };
+    shape "RTRN" { { [ 40,18] }, { [2,1], [37,17] } };
+    shape "CAPS" { { [ 34,18] }, { [2,1], [29,17] } };
+    shape "RTSH" { { [ 49,18] }, { [2,1], [47,17] } };
+    shape "LFSH" { { [ 44,18] }, { [2,1], [42,17] } };
+    shape "MODK" { { [ 28,18] }, { [2,1], [26,17] } };
+    shape "SPCE" { { [130,18] }, { [2,1], [128,17] } };
+    shape "KP0"  { { [ 37,18] }, { [2,1], [35,17] } };
+    shape "KPAD" { { [ 18,37] }, { [2,1], [16,36] } };
+    shape "LOGO" { { [ 16,16] } };
+
+    outline "Edges" {
+	top= 0;
+	left= 0;
+	shape= "EDGE";
+    };
+
+    section.left= 19;
+    row.left= 1;
+    key.shape= "NORM";
+    key.gap=  1;
+    section "Function" {
+	top= 50;
+	row {
+	    top= 1;
+	    keys {	{ <ESC>, color="grey20" },
+			{ <FK01>, 19}, <FK02>, <FK03>, <FK04>,
+			{ <FK05>, 11}, <FK06>, <FK07>, <FK08>,
+			{ <FK09>, 11}, <FK10>, <FK11>, <FK12>
+	    };
+	};
+    }; // End of "Function" section
+
+    section "Alpha" {
+	top= 83;
+	row {
+	    top= 1;
+	    keys { 	<TLDE>, <AE01>, <AE02>, <AE03>, <AE04>,
+			<AE05>, <AE06>, <AE07>, <AE08>, <AE09>,
+			<AE10>, <AE11>, <AE12>,
+			{ <BKSP>, "BKSP", color="grey20" }
+	    };
+	};
+	row {
+	    top= 20;
+	    keys {	{ <TAB>, "TABK", color= "grey20" },
+			<AD01>, <AD02>, <AD03>, <AD04>, <AD05>, 
+			<AD06>, <AD07>, <AD08>, <AD09>, <AD10>, 
+			<AD11>, <AD12>,
+			{ <BKSL>, "BKSL" }
+	    };	
+	};
+	row {
+	    top= 39;
+	    keys { 	{ <CAPS>, "CAPS", color="grey20" },
+	 		<AC01>, <AC02>, <AC03>, <AC04>, <AC05>, 
+			<AC06>, <AC07>, <AC08>, <AC09>, <AC10>, 
+			<AC11>, { <RTRN>, "RTRN", color="grey20" }
+	    };
+	};
+	row {
+	    top= 58;
+	    keys {	{ <LFSH>, "LFSH", color="grey20" }, 
+	 		<AB01>, <AB02>, <AB03>, <AB04>, <AB05>, 
+			<AB06>, <AB07>, <AB08>, <AB09>, <AB10>, 
+			{ <RTSH>, "RTSH", color="grey20" }
+	    };
+	};
+	row {
+	    top= 77;
+	    key.shape= "MODK";
+	    key.color= "grey20";
+	    keys {	<LCTL>,	{ <LALT>, 20 },
+			{ <SPCE>, "SPCE",color="white" },
+			<RALT>, { <RCTL>, 20 }
+	    };
+	};
+    }; // End of "Alpha" section
+
+    section "Editing" {
+	top= 50;
+	left= 312;
+	key.color= "grey20";
+	row {
+	    top= 1;
+	    keys { <PRSC>, <SCLK>, <PAUS> };
+	};
+	row {
+	    top= 33;
+	    keys { <INS>, <HOME>, <PGUP> };
+	};
+	row {
+	    top= 53;
+	    keys { <DELE>, <END>, <PGDN> };
+	};
+	row {
+	    top= 91;
+	    left= 20;
+	    keys { <UP> };
+	};
+	row {
+	    top= 110;
+	    keys { <LEFT>, <DOWN>, <RGHT> };
+	};
+    }; // End of "Editing" section
+
+    shape "LEDS" { cornerRadius= 0, { [ 76 ,20 ] } };
+    shape "LED"  { cornerRadius= 0, { [  1,  3 ] } };
+    solid "LedPanel" {
+	shape= "LEDS";
+	top=  50;
+	left= 377;
+	color= "grey10";
+    };
+    indicator.onColor= "green";
+    indicator.offColor= "green30";
+    indicator.top= 64.5;
+    indicator.shape= "LED";
+    indicator "Num Lock"     { left= 386; };
+    indicator "Caps Lock"    { left= 411; };
+    indicator "Scroll Lock"  { left= 436; };
+    text.top= 52;
+    text.color= "black";
+    text "NumLockLabel"		{ left= 382.5; text="Num\nLock"; };
+    text "CapsLockLabel"	{ left= 407; text="Caps\nLock"; };
+    text "ScrollLockLabel"	{ left= 432; text="Scroll\nLock"; };
+    
+    logo "SGILogoImage" 	{ 
+	top= 17;
+	left= 22;
+	name= "SGI"; 
+	shape= "LOGO"; 
+    };
+    text "SGILogoText"	{
+	top= 21;
+	left= 40;
+	width= 50;
+	text= "SiliconGraphics";
+	font= "helvetica";
+	slant= "o";
+	weight= "bold";
+	fontWidth= "narrow";
+	fontSize= 24;
+    };
+
+    section "Keypad" {
+	top= 83;
+	left= 376;
+	row {
+	    top= 1;
+	    key.color= "grey20";
+	    keys { <NMLK>, <KPDV>, <KPMU>, <KPSU> };
+	};
+	row {
+	    top= 20;
+	    keys { <KP7>, <KP8>, <KP9>, { <KPAD>, "KPAD", color= "grey20" } };
+	};
+	row {
+	    top= 39;
+	    keys { <KP4>, <KP5>, <KP6> };
+    	};
+	row {
+	    top= 58;
+	    keys { <KP1>, <KP2>, <KP3>, { <KPEN>, "KPAD", color= "grey20" } };
+	};
+	row {
+	    top= 77;
+	    keys { { <KP0>, "KP0" }, <KPDL> };
+	};
+    }; // End of "Keypad" section
+    alias <AC00> = <CAPS>;
+    alias <AA00> = <LCTL>;
+};
+xkb_geometry "pc102" {
+
+    // This is an approximate layout for 102-key SGI international
+    // keyboards.  I just took a similar layout (101 key PC keyboard)
+    // and adjusted the sizes of a few keys by eye.  I didn't actually
+    // *measure* a real keyboard.
+
+    description= "Silicon Graphics 102-key Keyboard";
+    width= 470;
+    height= 193;
+
+    shape.cornerRadius= 1;
+    shape "EDGE" { cornerRadius=2, { [ 470, 193 ] } };
+    shape "NORM" { { [18,18] }, { [2,1], [16,17] } };
+    shape "BKSP" { { [35,18] }, { [2,1], [33,17] } };
+    shape "TABK" { { [27,18] }, { [2,1], [25,17] } };
+    shape "RTRN" {
+	approx = { [ 0, 0], [26,37] },
+	{ [ 0, 0], [26, 0], [26,37],
+	  [ 5,37], [ 5,18], [ 0,18] },
+	{ [ 1, 1], [24, 1], [24,36],
+	  [ 7,36], [ 7,17], [ 1,17] }
+    };
+    shape "CAPS" { { [ 32,18] }, { [2,1], [25,17] } };
+    shape "RTSH" { { [ 50,18] }, { [2,1], [48,17] } };
+    shape "LFSH" { { [ 22,18] }, { [2,1], [20,17] } };
+    shape "MODK" { { [ 28,18] }, { [2,1], [26,17] } };
+    shape "SPCE" { { [130,18] }, { [2,1], [128,17] } };
+    shape "KP0"  { { [ 37,18] }, { [2,1], [35,17] } };
+    shape "KPAD" { { [ 18,37] }, { [2,1], [16,36] } };
+    shape "LOGO" { { [ 16,16] } };
+
+    outline "Edges" {
+	top= 0;
+	left= 0;
+	shape= "EDGE";
+    };
+
+    section.left= 19;
+    row.left= 1;
+    key.shape= "NORM";
+    key.gap=  1;
+    section "Function" {
+	top= 50;
+	row {
+	    top= 1;
+	    keys {  	{ <ESC>, color="grey20" },
+			{ <FK01>, 18}, <FK02>, <FK03>, <FK04>,
+			{ <FK05>, 10}, <FK06>, <FK07>, <FK08>,
+			{ <FK09>, 10}, <FK10>, <FK11>, <FK12>
+	    };
+	};
+    }; // End of "Function" section
+
+    section "Alpha" {
+	top= 83;
+	row {
+	    top= 1;
+	    keys { 	<TLDE>, <AE01>, <AE02>, <AE03>, <AE04>,
+			<AE05>, <AE06>, <AE07>, <AE08>, <AE09>,
+			<AE10>, <AE11>, <AE12>,
+			{ <BKSP>, "BKSP", color= "grey20" }
+	    };
+	};
+	row {
+	    top= 20;
+	    keys { 	{ <TAB>, "TABK", color= "grey20" },
+			<AD01>, <AD02>, <AD03>, <AD04>, <AD05>, 
+			<AD06>, <AD07>, <AD08>, <AD09>, <AD10>, 
+			<AD11>, <AD12>,
+			{ <RTRN>, "RTRN", color= "grey20" }
+	    };
+	};
+	row {
+	    top= 39;
+	    keys { 	{ <CAPS>, "CAPS", color= "grey20" },
+			<AC01>, <AC02>, <AC03>, <AC04>, <AC05>, 
+			<AC06>, <AC07>, <AC08>, <AC09>, <AC10>, 
+			<AC11>, <BKSL>
+	    };
+	};
+	row {
+	    top= 58;
+	    keys { 	{ <LFSH>, "LFSH", color= "grey20" }, <LSGT>,
+			<AB01>, <AB02>, <AB03>, <AB04>, <AB05>, 
+			<AB06>, <AB07>, <AB08>, <AB09>, <AB10>, 
+			{ <RTSH>, "RTSH", color= "grey20" }
+	    };
+	};
+	row {
+	    top= 77;
+	    key.shape= "MODK";
+	    key.color= "grey20";
+	    keys {	<LCTL>,
+			{ <LALT>, 19 },
+			{ <SPCE>, "SPCE", color="white" },
+			<RALT>,
+			{ <RCTL>, 19 }
+	    };
+	};
+    }; // End of "Alpha" section
+
+    section "Editing" {
+	top= 50;
+	left= 308;
+	key.color= "grey20";
+	row {
+	    top= 1;
+	    keys { <PRSC>, <SCLK>, <PAUS> };
+	};
+	row {
+	    top= 33;
+	    keys { <INS>, <HOME>, <PGUP> };
+	};
+	row {
+	    top= 53;
+	    keys { <DELE>, <END>, <PGDN> };
+	};
+	row {
+	    top= 91;
+	    left= 20;
+	    keys { <UP> };
+	};
+	row {
+	    top= 110;
+	    keys { <LEFT>, <DOWN>, <RGHT> };
+	};
+    }; // End of "Editing" section
+
+    shape "LEDS" { cornerRadius= 0, { [ 76 ,20 ] } };
+    shape "LED"  { cornerRadius= 0, { [  1,  3 ] } };
+    solid "LedPanel" {
+	shape= "LEDS";
+	top=  50;
+	left= 375;
+	color= "grey10";
+    };
+    indicator.onColor= "green";
+    indicator.offColor= "green30";
+    indicator.top= 64.5;
+    indicator.shape= "LED";
+    indicator "Num Lock"     { left= 384; };
+    indicator "Caps Lock"    { left= 409; };
+    indicator "Scroll Lock"  { left= 434; };
+    text.top= 52;
+    text.color= "black";
+    text "NumLockLabel"		{ left= 380.5; text="Num\nLock"; };
+    text "CapsLockLabel"	{ left= 405; text="Caps\nLock"; };
+    text "ScrollLockLabel"	{ left= 430; text="Scroll\nLock"; };
+
+    logo "SGILogoImage" { 
+	top= 17;
+	left= 22;
+	name= "SGI"; 
+	shape= "LOGO"; 
+    };
+    text "SGILogoText"	{
+	top= 21;
+	left= 40;
+	width= 50;
+	text= "SiliconGraphics";
+	font= "helvetica";
+	slant= "o";
+	weight= "bold";
+	setWidth= "narrow";
+	fontSize= 24;
+    };
+
+    section "Keypad" {
+	top= 83;
+	left= 374;
+	row {
+	    top= 1;
+	    key.color= "grey20";
+	    keys { <NMLK>, <KPDV>, <KPMU>, <KPSU> };
+	};
+	row {
+	    top= 20;
+	    keys { <KP7>, <KP8>, <KP9>, { <KPAD>, "KPAD", color="grey20" } };
+	};
+	row {
+	    top= 39;
+	    keys { <KP4>, <KP5>, <KP6> };
+	};
+	row {
+	    top= 58;
+	    keys { <KP1>, <KP2>, <KP3>, { <KPEN>, "KPAD", color="grey20" } };
+	};
+	row {
+	    top= 77;
+	    keys { { <KP0>, "KP0" }, <KPDL> };
+	};
+    }; // End of "Keypad" section
+    alias <AC00> = <CAPS>;
+    alias <AA00> = <LCTL>;
+};

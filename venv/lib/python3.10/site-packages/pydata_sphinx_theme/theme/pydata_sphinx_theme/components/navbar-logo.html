@@ -1,0 +1,22 @@
+{% if not theme_logo.get("link") %}
+  {% set href = pathto(root_doc) %}
+{% elif theme_logo.get("link").startswith("http") %}
+  {# Logo link is to external URL}
+  {% set href = theme_logo.get("link") %}
+{% else %}
+  {# Logo link is to internal page #}
+  {% set href = pathto(theme_logo.get("link")) %}
+{% endif %}
+
+<a class="navbar-brand logo" href="{{ href }}">
+  {% set is_logo = logo or theme_logo.get("image_light") or theme_logo.get("image_dark") %}
+  {% set image_light = theme_logo.get("image_light") or logo %}
+  {% set image_dark = theme_logo.get("image_dark") or logo %}
+  {% if is_logo %}
+    <img src="{{ pathto('_static/' + image_light, 1) }}" class="logo__image only-light" alt="Logo image">
+    <img src="{{ pathto('_static/' + image_dark, 1) }}" class="logo__image only-dark" alt="Logo image">
+  {% endif %}
+  {% if not is_logo or theme_logo.get("text") %}
+    <p class="title logo__title">{{ theme_logo.get("text") or docstitle }}</p>
+  {% endif %}
+</a>

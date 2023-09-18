@@ -1,0 +1,244 @@
+escape_char	/
+comment_char    %
+
+% Norwegian language locale for Norway
+% Source: Norsk Standardiseringsforbund
+% Address: University Library,
+%   Drammensveien 41, N-9242 Oslo, Norge
+% Contact: Kolbjoern Aamboe
+% Tel: +47 - 22859109
+% Fax: +47 - 22434497
+% Email: kolbjorn.aambo@usit.uio.no
+% Language: no
+% Territory: NO
+% Revision: 4.3
+% Date: 1996-10-15
+% Application: general
+% Users: general
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title      "Norwegian (Bokmal) locale for Norway"
+source     "Norsk Standardiseringsforbund"
+address    "University Library, Drammensveien 41, N-9242 Oslo, Norge"
+contact    ""
+email      "bug-glibc-locales@gnu.org"
+tel        ""
+fax        ""
+language   "Norwegian, Bokm<U00E5>l"
+territory  "Norway"
+revision   "1.0"
+date       "2000-06-29"
+%
+category  "nb_NO:2000";LC_IDENTIFICATION
+category  "nb_NO:2000";LC_CTYPE
+category  "nb_NO:2000";LC_COLLATE
+category  "nb_NO:2000";LC_TIME
+category  "nb_NO:2000";LC_NUMERIC
+category  "nb_NO:2000";LC_MONETARY
+category  "nb_NO:2000";LC_MESSAGES
+category  "nb_NO:2000";LC_PAPER
+category  "nb_NO:2000";LC_NAME
+category  "nb_NO:2000";LC_ADDRESS
+category  "nb_NO:2000";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_COLLATE
+copy "iso14651_t1"
+
+collating-element <A-A> from "<U0041><U0041>"
+collating-element <a-a> from "<U0061><U0061>"
+collating-element <A-a> from "<U0041><U0061>"
+collating-element <a-A> from "<U0061><U0041>"
+collating-symbol <CAP-MIN>
+collating-symbol <MIN-CAP>
+collating-symbol <ae>
+collating-symbol <o-stroke>
+collating-symbol <a-ring>
+collating-symbol <ETH>
+
+reorder-after <RES-1>
+<CAP>
+<CAP-MIN>
+<MIN-CAP>
+
+reorder-after <OBL>
+<ETH>
+
+reorder-after <z>
+<ae>
+<o-stroke>
+<a-ring>
+
+reorder-after <U0178>
+<U00DC> <y>;<U00DC>;<CAP>;IGNORE
+<U0170> <y>;<U0170>;<CAP>;IGNORE
+reorder-after <U00FF>
+<U00FC> <y>;<U00DC>;<MIN>;IGNORE
+<U0171> <y>;<U0170>;<MIN>;IGNORE
+
+reorder-after <U017B>
+<U00C6> <ae>;<BAS>;<CAP>;IGNORE
+<U01FC> <ae>;<ACA>;<CAP>;IGNORE
+<U01E2> <ae>;<MAC>;<CAP>;IGNORE
+<U00C4> <ae>;<PCL>;<CAP>;IGNORE
+<U00D8> <o-stroke>;<BAS>;<CAP>;IGNORE
+<U01FE> <o-stroke>;<ACA>;<CAP>;IGNORE
+<U00D6> <o-stroke>;<REU>;<CAP>;IGNORE
+<U0150> <o-stroke>;<DAC>;<CAP>;IGNORE
+<U00C5> <a-ring>;<BAS>;<CAP>;IGNORE
+<A-A>   <a-ring>;<A-A>;<CAP>;IGNORE
+<A-a>   <a-ring>;<A-A>;<CAP-MIN>;IGNORE
+reorder-after <U017C>
+<U00E6> <ae>;<BAS>;<MIN>;IGNORE
+<U01FD> <ae>;<ACA>;<MIN>;IGNORE
+<U01E3> <ae>;<MAC>;<MIN>;IGNORE
+<U00E4> <ae>;<PCL>;<MIN>;IGNORE
+<U00F8> <o-stroke>;<BAS>;<MIN>;IGNORE
+<U01FF> <o-stroke>;<ACA>;<MIN>;IGNORE
+<U00F6> <o-stroke>;<REU>;<MIN>;IGNORE
+<U0151> <o-stroke>;<DAC>;<MIN>;IGNORE
+<U00E5> <a-ring>;<BAS>;<MIN>;IGNORE
+<a-A>   <a-ring>;<A-A>;<MIN-CAP>;IGNORE
+<a-a>   <a-ring>;<A-A>;<MIN>;IGNORE
+
+%  Present in iso14651_t1, but these definitions seem to have been
+%  removed from latest iso14651 tables.
+reorder-after <U0162>
+<U00DE> "<t><h>";"<LIG><LIG>";"<CAP><CAP>";IGNORE
+reorder-after <U0163>
+<U00FE> "<t><h>";"<LIG><LIG>";"<MIN><MIN>";IGNORE
+
+reorder-after <U0064>
+<U0110> <d>;<OBL>;<CAP>;IGNORE
+<U00D0> <d>;<ETH>;<CAP>;IGNORE
+reorder-after <U0044>
+<U0111> <d>;<OBL>;<MIN>;IGNORE
+<U00F0> <d>;<ETH>;<MIN>;IGNORE
+
+reorder-end
+
+END LC_COLLATE
+
+LC_CTYPE
+copy "i18n"
+
+translit_start
+include  "translit_combining";""
+translit_end
+END LC_CTYPE
+
+LC_MONETARY
+int_curr_symbol         "<U004E><U004F><U004B><U0020>"
+currency_symbol         "<U006B><U0072>"
+mon_decimal_point       "<U002C>"
+mon_thousands_sep       "<U00A0>"
+mon_grouping            3;3
+positive_sign           ""
+negative_sign           "<U002D>"
+int_frac_digits         2
+frac_digits             2
+p_cs_precedes           1
+p_sep_by_space          0
+n_cs_precedes           1
+n_sep_by_space          0
+p_sign_posn             4
+n_sign_posn             4
+END LC_MONETARY
+
+LC_NUMERIC
+decimal_point           "<U002C>"
+thousands_sep           "<U00A0>"
+grouping                3;3
+END LC_NUMERIC
+
+LC_TIME
+abday       "<U0073><U00F8><U002E>";"<U006D><U0061><U002E>";/
+            "<U0074><U0069><U002E>";"<U006F><U006E><U002E>";/
+            "<U0074><U006F><U002E>";"<U0066><U0072><U002E>";/
+            "<U006C><U00F8><U002E>"
+day         "<U0073><U00F8><U006E><U0064><U0061><U0067>";/
+            "<U006D><U0061><U006E><U0064><U0061><U0067>";/
+            "<U0074><U0069><U0072><U0073><U0064><U0061><U0067>";/
+            "<U006F><U006E><U0073><U0064><U0061><U0067>";/
+            "<U0074><U006F><U0072><U0073><U0064><U0061><U0067>";/
+            "<U0066><U0072><U0065><U0064><U0061><U0067>";/
+            "<U006C><U00F8><U0072><U0064><U0061><U0067>"
+abmon       "<U006A><U0061><U006E><U002E>";"<U0066><U0065><U0062><U002E>";/
+            "<U006D><U0061><U0072><U0073>";"<U0061><U0070><U0072><U0069><U006C>";/
+            "<U006D><U0061><U0069>";"<U006A><U0075><U006E><U0069>";/
+            "<U006A><U0075><U006C><U0069>";"<U0061><U0075><U0067><U002E>";/
+            "<U0073><U0065><U0070><U002E>";"<U006F><U006B><U0074><U002E>";/
+            "<U006E><U006F><U0076><U002E>";"<U0064><U0065><U0073><U002E>"
+mon         "<U006A><U0061><U006E><U0075><U0061><U0072>";/
+            "<U0066><U0065><U0062><U0072><U0075><U0061><U0072>";/
+            "<U006D><U0061><U0072><U0073>";/
+            "<U0061><U0070><U0072><U0069><U006C>";/
+            "<U006D><U0061><U0069>";/
+            "<U006A><U0075><U006E><U0069>";/
+            "<U006A><U0075><U006C><U0069>";/
+            "<U0061><U0075><U0067><U0075><U0073><U0074>";/
+            "<U0073><U0065><U0070><U0074><U0065><U006D><U0062><U0065><U0072>";/
+            "<U006F><U006B><U0074><U006F><U0062><U0065><U0072>";/
+            "<U006E><U006F><U0076><U0065><U006D><U0062><U0065><U0072>";/
+            "<U0064><U0065><U0073><U0065><U006D><U0062><U0065><U0072>"
+% usual date representation
+% %a %d. %b %Y kl. %H.%M %z
+d_t_fmt "<U0025><U0061><U0020><U0025><U0064><U002E><U0020><U0025><U0062>/
+<U0020><U0025><U0059><U0020><U006B><U006C><U002E><U0020><U0025><U0048>/
+<U002E><U0025><U004D><U0020><U0025><U007A>"
+% %d. %b %Y
+d_fmt  "<U0025><U0064><U002E><U0020><U0025><U0062><U0020><U0025><U0059>"
+% kl. %H.%M %z
+t_fmt        "<U006B><U006C><U002E><U0020><U0025><U0048><U002E><U0025>/
+<U004D><U0020><U0025><U007A>"
+am_pm       "";""
+t_fmt_ampm  ""
+% %a %d. %b %H:%M:%S %z %Y
+date_fmt       "<U0025><U0061><U0020><U0025><U0064><U002E><U0020><U0025>/
+<U0062><U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053>/
+<U0020><U0025><U007A><U0020><U0025><U0059>"
+
+week    7;19971130;4
+first_weekday 2
+first_workday 2
+END LC_TIME
+
+LC_MESSAGES
+yesexpr     "<U005E><U005B><U004A><U006A><U0059><U0079><U005D><U002E><U002A>"
+noexpr      "<U005E><U005B><U004E><U006E><U005D><U002E><U002A>"
+END LC_MESSAGES
+
+LC_PAPER
+height   297
+width    210
+END LC_PAPER
+
+LC_TELEPHONE
+tel_int_fmt    "<U002B><U0025><U0063><U0020><U0025><U006C>"
+tel_dom_fmt    "<U0025><U006C>"
+int_select     "<U0030><U0030>"
+int_prefix     "<U0034><U0037>"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+measurement    1
+END LC_MEASUREMENT
+
+LC_NAME
+name_fmt    "<U0025><U0064><U0025><U0074><U0025><U0067><U0025><U0074>/
+<U0025><U006D><U0025><U0074><U0025><U0066>"
+END LC_NAME
+
+LC_ADDRESS
+postal_fmt    "<U0025><U0066><U0025><U004E><U0025><U0061><U0025><U004E>/
+<U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E><U0025><U0073>/
+<U0020><U0025><U0068><U0020><U0025><U0065><U0020><U0025><U0072><U0025>/
+<U004E><U0025><U007A><U0020><U0025><U0054><U0025>/
+<U004E><U0025><U0063><U0025><U004E>"
+country_ab2 "<U004E><U004F>"
+country_ab3 "<U004E><U004F><U0052>"
+country_num 578
+END LC_ADDRESS

@@ -1,0 +1,28 @@
+# Portuguese (Portugal) translation of 'hello-c++-wxwidgets' package.
+# Copyright (C) 2018 Yoyodyne, Inc. (msgids)
+# This file is distributed under the same license as the gettext package.
+# Pedro Albuquerque <pmra@protonmail.com>, 2019, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: hello-c++-wxwidgets 0.20.2\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"PO-Revision-Date: 2020-04-17 07:38+0100\n"
+"Last-Translator: Pedro Albuquerque <pmra@protonmail.com>\n"
+"Language-Team: Portuguese <translation-team-pt@lists.sourceforge.net>\n"
+"Language: pt\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\\n\n"
+"X-Generator: Geany / PoHelper 1.36\n"
+
+#: hello.cc:68
+msgid "Hello, world!"
+msgstr "Olá mundo!"
+
+#: hello.cc:71
+#, c-format
+msgid "This program is running as process number %d."
+msgstr "Este programa está em execução como processo nº %d."

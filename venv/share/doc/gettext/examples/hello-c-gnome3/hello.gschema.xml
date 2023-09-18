@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- This file is in the public domain. -->
+<schemalist>
+  <schema path="/org/gnu/gettext/examples/hello/"
+          id="org.gnu.gettext.examples.hello">
+    <key name="use-markup" type="b">
+      <default>true</default>
+      <summary>Use XML markup</summary>
+      <description>Whether to use XML markup in the text.</description>
+    </key>
+  </schema>
+</schemalist>

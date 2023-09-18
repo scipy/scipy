@@ -1,0 +1,13 @@
+prefix=/workspaces/scipy/venv
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+includedir=${prefix}/include/qt
+
+
+Name: Qt5 Xml
+Description: Qt Xml module
+Version: 5.15.8
+Libs: -L${libdir} -lQt5Xml 
+Cflags: -DQT_XML_LIB -I${includedir}/QtXml -I${includedir}
+Requires: Qt5Core
+

@@ -1,0 +1,19 @@
+This example relies on:
+  - the GNOME libraries (libgnomeui, libgnome, libgnomesupport, libart_lgpl)
+    and their dependencies: imlib (libgdk_imlib), audiofile (libaudiofile),
+    esound (libesd), zlib (libz).
+  - the GTK libraries (libgtk, libgdk)
+  - the glib libraries (libglib, libgmodule)
+  - the X11 libraries
+  - the GNOME / Objective C bindings (libobgnome)
+  - the GTK / Objective C bindings (libobgtk)
+  - the Objective C runtime libraries (libobjc)
+
+Installation:
+  ./autogen.sh
+  ./configure --prefix=/some/prefix
+  make
+  make install
+Cleanup:
+  make distclean
+  ./autoclean.sh

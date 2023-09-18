@@ -1,0 +1,37 @@
+#include standard set of HTML header and footer.
+include(html-config.qdocconf)
+include(html-header-offline.qdocconf)
+include(html-footer.qdocconf)
+
+defines                  += offlinedocs
+
+#uncomment if navigation bar is not wanted
+#HTML.nonavigationbar      = "true"
+
+HTML.stylesheets = template/style/offline.css
+HTML.extraimages += template/images/ico_out.png \
+                    template/images/ico_note.png \
+                    template/images/ico_note_attention.png \
+                    template/images/btn_prev.png \
+                    template/images/btn_next.png \
+                    template/images/bullet_dn.png \
+                    template/images/bullet_sq.png \
+                    template/images/bgrContent.png
+
+sourcedirs += includes
+
+#specify which files in the output directory should be packed into the qch file.
+qhp.extraFiles +=   style/offline.css \
+                    images/ico_out.png \
+                    images/ico_note.png \
+                    images/ico_note_attention.png \
+                    images/btn_prev.png \
+                    images/btn_next.png \
+                    images/bullet_dn.png \
+                    images/bullet_sq.png \
+                    images/bgrContent.png
+
+# By default, include override definitions for a simplified template/CSS,
+# suited for rendering HTML with QTextBrowser. Comment out this line to
+# select the standard CSS.
+include(qt-html-templates-offline-simple.qdocconf)

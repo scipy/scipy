@@ -1,0 +1,198 @@
+{
+  "build": "h0b41bf4_2",
+  "build_number": 2,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [],
+  "depends": [
+    "libgcc-ng >=12",
+    "xorg-libx11 >=1.7.2,<2.0a0",
+    "xorg-xextproto"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/xorg-libxext-1.3.4-h0b41bf4_2",
+  "features": "",
+  "files": [
+    "include/X11/extensions/MITMisc.h",
+    "include/X11/extensions/XEVI.h",
+    "include/X11/extensions/XLbx.h",
+    "include/X11/extensions/XShm.h",
+    "include/X11/extensions/Xag.h",
+    "include/X11/extensions/Xcup.h",
+    "include/X11/extensions/Xdbe.h",
+    "include/X11/extensions/Xext.h",
+    "include/X11/extensions/Xge.h",
+    "include/X11/extensions/dpms.h",
+    "include/X11/extensions/extutil.h",
+    "include/X11/extensions/multibuf.h",
+    "include/X11/extensions/security.h",
+    "include/X11/extensions/shape.h",
+    "include/X11/extensions/sync.h",
+    "include/X11/extensions/xtestext1.h",
+    "lib/libXext.so",
+    "lib/libXext.so.6",
+    "lib/libXext.so.6.4.0",
+    "lib/pkgconfig/xext.pc"
+  ],
+  "fn": "xorg-libxext-1.3.4-h0b41bf4_2.conda",
+  "license": "MIT",
+  "license_family": "MIT",
+  "link": {
+    "source": "/opt/conda/pkgs/xorg-libxext-1.3.4-h0b41bf4_2",
+    "type": 1
+  },
+  "md5": "82b6df12252e6f32402b96dacc656fec",
+  "name": "xorg-libxext",
+  "package_tarball_full_path": "/opt/conda/pkgs/xorg-libxext-1.3.4-h0b41bf4_2.conda",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "include/X11/extensions/MITMisc.h",
+        "path_type": "hardlink",
+        "sha256": "90a02761f273c64acf254103a0dfc1b4f132299e51c787e99a0bd0dbc03900c6",
+        "sha256_in_prefix": "90a02761f273c64acf254103a0dfc1b4f132299e51c787e99a0bd0dbc03900c6",
+        "size_in_bytes": 1741
+      },
+      {
+        "_path": "include/X11/extensions/XEVI.h",
+        "path_type": "hardlink",
+        "sha256": "796311638cf5e7bbc5a1f083744913694a6c16a2a09b248244d787baf2b63c72",
+        "sha256_in_prefix": "796311638cf5e7bbc5a1f083744913694a6c16a2a09b248244d787baf2b63c72",
+        "size_in_bytes": 2130
+      },
+      {
+        "_path": "include/X11/extensions/XLbx.h",
+        "path_type": "hardlink",
+        "sha256": "08f56cd5b19120009953d410a3007d28687a73c166efdfd660e75e0a62acb6e4",
+        "sha256_in_prefix": "08f56cd5b19120009953d410a3007d28687a73c166efdfd660e75e0a62acb6e4",
+        "size_in_bytes": 1601
+      },
+      {
+        "_path": "include/X11/extensions/XShm.h",
+        "path_type": "hardlink",
+        "sha256": "67bb1736e6692302ec0162f8c2ccfbdb39da396fa31ae4a01fb6ea63ba95624f",
+        "sha256_in_prefix": "67bb1736e6692302ec0162f8c2ccfbdb39da396fa31ae4a01fb6ea63ba95624f",
+        "size_in_bytes": 3735
+      },
+      {
+        "_path": "include/X11/extensions/Xag.h",
+        "path_type": "hardlink",
+        "sha256": "b3ffc309b0ce2daa74b79dc4f64aed7aa8e25ead9eaf81cd7405021c567fcd9e",
+        "sha256_in_prefix": "b3ffc309b0ce2daa74b79dc4f64aed7aa8e25ead9eaf81cd7405021c567fcd9e",
+        "size_in_bytes": 2377
+      },
+      {
+        "_path": "include/X11/extensions/Xcup.h",
+        "path_type": "hardlink",
+        "sha256": "bfdfa15e01049db30f0377aa080ba0a24da0ad713b3bb9689bd3557944119be8",
+        "sha256_in_prefix": "bfdfa15e01049db30f0377aa080ba0a24da0ad713b3bb9689bd3557944119be8",
+        "size_in_bytes": 1710
+      },
+      {
+        "_path": "include/X11/extensions/Xdbe.h",
+        "path_type": "hardlink",
+        "sha256": "42c07819293953c294e6ca41a1300434427792137de1057e7cce2dbf19df87c1",
+        "sha256_in_prefix": "42c07819293953c294e6ca41a1300434427792137de1057e7cce2dbf19df87c1",
+        "size_in_bytes": 4170
+      },
+      {
+        "_path": "include/X11/extensions/Xext.h",
+        "path_type": "hardlink",
+        "sha256": "ea4aaf64f74d19ac557754b524c0b97c34c96e54216b6f5616928e9327bbf50a",
+        "sha256_in_prefix": "ea4aaf64f74d19ac557754b524c0b97c34c96e54216b6f5616928e9327bbf50a",
+        "size_in_bytes": 1655
+      },
+      {
+        "_path": "include/X11/extensions/Xge.h",
+        "path_type": "hardlink",
+        "sha256": "4540016a411f6814cfba56515a07e6d6f79939be38dcec6b75fc329b2b3215de",
+        "sha256_in_prefix": "4540016a411f6814cfba56515a07e6d6f79939be38dcec6b75fc329b2b3215de",
+        "size_in_bytes": 1927
+      },
+      {
+        "_path": "include/X11/extensions/dpms.h",
+        "path_type": "hardlink",
+        "sha256": "c2cb03ed6efa6ec8a13d3cc0b5bad707c6b2997735335687084521915d352005",
+        "sha256_in_prefix": "c2cb03ed6efa6ec8a13d3cc0b5bad707c6b2997735335687084521915d352005",
+        "size_in_bytes": 2161
+      },
+      {
+        "_path": "include/X11/extensions/extutil.h",
+        "path_type": "hardlink",
+        "sha256": "d9278487d5eb969114e81b4caa8e491315333216e6d07a82b4a91628daaee91e",
+        "sha256_in_prefix": "d9278487d5eb969114e81b4caa8e491315333216e6d07a82b4a91628daaee91e",
+        "size_in_bytes": 6096
+      },
+      {
+        "_path": "include/X11/extensions/multibuf.h",
+        "path_type": "hardlink",
+        "sha256": "db1d12a86c8953101545da29c14c36538f5aa86b5bc62c81dd00a57c5c4549ee",
+        "sha256_in_prefix": "db1d12a86c8953101545da29c14c36538f5aa86b5bc62c81dd00a57c5c4549ee",
+        "size_in_bytes": 5835
+      },
+      {
+        "_path": "include/X11/extensions/security.h",
+        "path_type": "hardlink",
+        "sha256": "1d344df464ab863316197ff4ea6b133ea544ce96c0357aa8b28d14840c8c375e",
+        "sha256_in_prefix": "1d344df464ab863316197ff4ea6b133ea544ce96c0357aa8b28d14840c8c375e",
+        "size_in_bytes": 2457
+      },
+      {
+        "_path": "include/X11/extensions/shape.h",
+        "path_type": "hardlink",
+        "sha256": "63657925a3471338ec8fa6c050a485f89ce9513e0d2afcba98b5a9b055e09652",
+        "sha256_in_prefix": "63657925a3471338ec8fa6c050a485f89ce9513e0d2afcba98b5a9b055e09652",
+        "size_in_bytes": 4133
+      },
+      {
+        "_path": "include/X11/extensions/sync.h",
+        "path_type": "hardlink",
+        "sha256": "5272674ae58ae810850b060285af1d3c0dc57200324933dbab20e7b7736ae592",
+        "sha256_in_prefix": "5272674ae58ae810850b060285af1d3c0dc57200324933dbab20e7b7736ae592",
+        "size_in_bytes": 9676
+      },
+      {
+        "_path": "include/X11/extensions/xtestext1.h",
+        "path_type": "hardlink",
+        "sha256": "3edbb5385a95c62fb771035f363863c1b8d08140d0ac5e2ec0c885da237dc230",
+        "sha256_in_prefix": "3edbb5385a95c62fb771035f363863c1b8d08140d0ac5e2ec0c885da237dc230",
+        "size_in_bytes": 3708
+      },
+      {
+        "_path": "lib/libXext.so",
+        "path_type": "softlink",
+        "sha256": "98347b9de12d64bbe0c7aa44dd267ccac91393948f8a5d071e6c2291d7765750",
+        "size_in_bytes": 96144
+      },
+      {
+        "_path": "lib/libXext.so.6",
+        "path_type": "softlink",
+        "sha256": "98347b9de12d64bbe0c7aa44dd267ccac91393948f8a5d071e6c2291d7765750",
+        "size_in_bytes": 96144
+      },
+      {
+        "_path": "lib/libXext.so.6.4.0",
+        "path_type": "hardlink",
+        "sha256": "98347b9de12d64bbe0c7aa44dd267ccac91393948f8a5d071e6c2291d7765750",
+        "sha256_in_prefix": "98347b9de12d64bbe0c7aa44dd267ccac91393948f8a5d071e6c2291d7765750",
+        "size_in_bytes": 96144
+      },
+      {
+        "_path": "lib/pkgconfig/xext.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/xorg-libxext_1677036750911/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehol",
+        "sha256": "b178e939a3f3f4a555f9af5523ae301fbd068e864417a827d18cee77a5c29d16",
+        "sha256_in_prefix": "aa6f1ad8b716ff701787ea72b81c5aca37c8ddbee10625ddc9afb87e58d0bc33",
+        "size_in_bytes": 496
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "73e5cfbdff41ef8a844441f884412aa5a585a0f0632ec901da035a03e1fe1249",
+  "size": 50143,
+  "subdir": "linux-64",
+  "timestamp": 1677036907815,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/xorg-libxext-1.3.4-h0b41bf4_2.conda",
+  "version": "1.3.4"
+}

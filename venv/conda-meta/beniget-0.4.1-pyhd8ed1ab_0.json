@@ -1,0 +1,129 @@
+{
+  "build": "pyhd8ed1ab_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/noarch",
+  "constrains": [],
+  "depends": [
+    "gast >=0.5.0,<0.6.0",
+    "python >=3.6"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/beniget-0.4.1-pyhd8ed1ab_0",
+  "features": "",
+  "files": [
+    "lib/python3.10/site-packages/beniget-0.4.1.dist-info/INSTALLER",
+    "lib/python3.10/site-packages/beniget-0.4.1.dist-info/LICENSE",
+    "lib/python3.10/site-packages/beniget-0.4.1.dist-info/METADATA",
+    "lib/python3.10/site-packages/beniget-0.4.1.dist-info/RECORD",
+    "lib/python3.10/site-packages/beniget-0.4.1.dist-info/REQUESTED",
+    "lib/python3.10/site-packages/beniget-0.4.1.dist-info/WHEEL",
+    "lib/python3.10/site-packages/beniget-0.4.1.dist-info/direct_url.json",
+    "lib/python3.10/site-packages/beniget-0.4.1.dist-info/top_level.txt",
+    "lib/python3.10/site-packages/beniget/__init__.py",
+    "lib/python3.10/site-packages/beniget/beniget.py",
+    "lib/python3.10/site-packages/beniget/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/beniget/__pycache__/beniget.cpython-310.pyc"
+  ],
+  "fn": "beniget-0.4.1-pyhd8ed1ab_0.tar.bz2",
+  "license": "BSD-3-Clause",
+  "license_family": "BSD",
+  "link": {
+    "source": "/opt/conda/pkgs/beniget-0.4.1-pyhd8ed1ab_0",
+    "type": 1
+  },
+  "md5": "66744e23ceca50ebb022b0a6cba866a8",
+  "name": "beniget",
+  "noarch": "python",
+  "package_tarball_full_path": "/opt/conda/pkgs/beniget-0.4.1-pyhd8ed1ab_0.tar.bz2",
+  "package_type": "noarch_python",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "site-packages/beniget-0.4.1.dist-info/INSTALLER",
+        "path_type": "hardlink",
+        "sha256": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "sha256_in_prefix": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "size_in_bytes": 5
+      },
+      {
+        "_path": "site-packages/beniget-0.4.1.dist-info/LICENSE",
+        "path_type": "hardlink",
+        "sha256": "64ad3e304e9d2d8731c26ac3e652335a6016e38be2f71fe30350be51c6d500b0",
+        "sha256_in_prefix": "64ad3e304e9d2d8731c26ac3e652335a6016e38be2f71fe30350be51c6d500b0",
+        "size_in_bytes": 1490
+      },
+      {
+        "_path": "site-packages/beniget-0.4.1.dist-info/METADATA",
+        "path_type": "hardlink",
+        "sha256": "757f8c425aa0628641e261d8766de84e10b4d7974e36b1b83f0a2fe23db7a4db",
+        "sha256_in_prefix": "757f8c425aa0628641e261d8766de84e10b4d7974e36b1b83f0a2fe23db7a4db",
+        "size_in_bytes": 1110
+      },
+      {
+        "_path": "site-packages/beniget-0.4.1.dist-info/RECORD",
+        "path_type": "hardlink",
+        "sha256": "6f40b375bf992313502c02e3129c686cdf25f5daa9f338c060ab64f15bc019bc",
+        "sha256_in_prefix": "6f40b375bf992313502c02e3129c686cdf25f5daa9f338c060ab64f15bc019bc",
+        "size_in_bytes": 908
+      },
+      {
+        "_path": "site-packages/beniget-0.4.1.dist-info/REQUESTED",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256_in_prefix": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "site-packages/beniget-0.4.1.dist-info/WHEEL",
+        "path_type": "hardlink",
+        "sha256": "3aa464174798e461ecb0ca2b16395b4c8ab4ef6be91e917ad1f21003a952f710",
+        "sha256_in_prefix": "3aa464174798e461ecb0ca2b16395b4c8ab4ef6be91e917ad1f21003a952f710",
+        "size_in_bytes": 92
+      },
+      {
+        "_path": "site-packages/beniget-0.4.1.dist-info/direct_url.json",
+        "path_type": "hardlink",
+        "sha256": "957604a95e1982daf492a8ffe9354b1ce9f005d548beb7eece820676baf834b3",
+        "sha256_in_prefix": "957604a95e1982daf492a8ffe9354b1ce9f005d548beb7eece820676baf834b3",
+        "size_in_bytes": 103
+      },
+      {
+        "_path": "site-packages/beniget-0.4.1.dist-info/top_level.txt",
+        "path_type": "hardlink",
+        "sha256": "35ce518c852fc992feb42838fa57d73f2f433f419b7123bc9fcda8e59e74b564",
+        "sha256_in_prefix": "35ce518c852fc992feb42838fa57d73f2f433f419b7123bc9fcda8e59e74b564",
+        "size_in_bytes": 8
+      },
+      {
+        "_path": "site-packages/beniget/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "928b3ad3e0bf9062eff8d5009f67e3fd26ef95d3c5fee740ba52c4382a8e4243",
+        "sha256_in_prefix": "928b3ad3e0bf9062eff8d5009f67e3fd26ef95d3c5fee740ba52c4382a8e4243",
+        "size_in_bytes": 105
+      },
+      {
+        "_path": "site-packages/beniget/beniget.py",
+        "path_type": "hardlink",
+        "sha256": "a50d95513483b86068ca96a2a710921f6f0c1865b360adbaa43e20ef88dd1399",
+        "sha256_in_prefix": "a50d95513483b86068ca96a2a710921f6f0c1865b360adbaa43e20ef88dd1399",
+        "size_in_bytes": 34711
+      },
+      {
+        "_path": "lib/python3.10/site-packages/beniget/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/beniget/__pycache__/beniget.cpython-310.pyc",
+        "path_type": "pyc_file"
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "767cecb8b32d981f5c666eac1cc231d6fbcb29042124efe1b921a9de9201924b",
+  "size": 12659,
+  "subdir": "noarch",
+  "timestamp": 1627922710217,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/noarch/beniget-0.4.1-pyhd8ed1ab_0.tar.bz2",
+  "version": "0.4.1"
+}

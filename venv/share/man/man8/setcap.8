@@ -1,0 +1,67 @@
+.TH SETCAP 8 "2020-08-29"
+.SH NAME
+setcap \- set file capabilities
+.SH SYNOPSIS
+\fBsetcap\fP [\-q] [\-n <rootuid>] [\-v] {\fIcapabilities|\-|\-r} filename\fP [ ... \fIcapabilitiesN\fP \fIfileN\fP ]
+.SH DESCRIPTION
+In the absence of the
+.B \-v
+(verify) option
+.B setcap
+sets the capabilities of each specified
+.I filename
+to the
+.I capabilities
+specified.  The optional
+.B \-n <rootuid>
+argument can be used to set the file capability for use only in a
+user namespace with this root user ID owner. The
+.B \-v
+option is used to verify that the specified capabilities are currently
+associated with the file. If \-v and \-n are supplied, the
+.B \-n <rootuid>
+argument is also verified.
+.PP
+The
+.I capabilities
+are specified in the form described in
+.BR cap_from_text (3).
+.PP
+The special capability string,
+.BR '\-' ,
+can be used to indicate that capabilities are read from the standard
+input. In such cases, the capability set is terminated with a blank
+line.
+.PP
+The special capability string,
+.BR '\-r' ,
+is used to remove a capability set from a file. Note, setting an empty
+capability set is
+.B not the same
+as removing it. An empty set can be used to guarantee a file is not
+executed with privilege in spite of the fact that the prevailing
+ambient+inheritable sets would otherwise bestow capabilities on
+executed binaries.
+.PP
+The
+.B \-q
+flag is used to make the program less verbose in its output.
+.SH "EXIT CODE"
+The
+.B setcap
+program will exit with a 0 exit code if successful. On failure, the
+exit code is 1.
+.SH "REPORTING BUGS"
+Please report bugs via:
+.TP
+https://bugzilla.kernel.org/buglist.cgi?component=libcap&list_id=1090757
+.SH "SEE ALSO"
+.BR capsh (1),
+.BR cap_from_text (3),
+.BR cap_get_file (3),
+.BR capabilities (7),
+.BR user_namespaces (7),
+.BR captree (8),
+.BR getcap (8)
+and
+.BR getpcaps (8).

@@ -1,0 +1,9 @@
+#ifndef QT_QTGAMEPAD_MODULE_H
+#define QT_QTGAMEPAD_MODULE_H
+#include <QtGamepad/QtGamepadDepends>
+#include "qtgamepadglobal.h"
+#include "qgamepad.h"
+#include "qgamepadkeynavigation.h"
+#include "qgamepadmanager.h"
+#include "qtgamepadversion.h"
+#endif

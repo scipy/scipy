@@ -1,0 +1,712 @@
+// Keyboard layouts for China.
+
+// The default Chinese layout is the same as the American.
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+    include "us(basic)"
+
+    name[Group1]= "Chinese";
+};
+
+// Tibetan Standard Keyboard map for XKB/X.org
+//
+// Based on the CNS Tibetan keyboard as supported by Windows Vista
+// using information published by Tashi Tsering:
+// http://www.yalasoo.com/English/docs/yalasoo_en_MStbKb.html
+//
+// XKB version by Rich Felker <dalias@aerifal.cx>.
+//
+// The CNS Tibetan keyboard standard specifies 5 keyboards worth of keys,
+// but apparently makes no requirements about how each is accessed. Only
+// the first 2 are needed for native Tibetan text; the remainder are
+// filled with special symbols and letters for transliterating foreign
+// text. Further, CNS leaves the level of support of keyboards 2-5 as an
+// option to the implementor (despite the fact that #2 is absolutely
+// essential...). Windows Vista maps them as follows:
+//
+// 1. Unshifted
+// 2. "m"-key-prefixed
+// 3. Shift-modified
+// 4. Ctrl+Alt+Shift-modified
+// 5. "M"-key-prefixed
+//
+// I roughly copy the Windows Vista mapping, which was intended by the
+// designer of the keyboard, with the following exceptions:
+//
+// The fifth keyboard is almost empty and contains only precomposed forms
+// of subjoined letter characters whose use is strongly discouraged, and
+// is not implemented at all in this XKB map. The fourth is implemented,
+// but is accessed by an "m"-prefix (or "M"-prefix, for convenience)
+// followed by a Shift-modified key. This avoids stealing the Ctrl and Alt
+// keys, which belong to applications on *nix and not to the keyboard or
+// input method. Aside from enterring rare special symbols and
+// foreign-word-transliteration letters, these differences should not
+// affect users.
+//
+// Implementation notes:
+//
+// A latching ISO Level3 shift is used for the "m"-prefix modifier. In
+// principle moving it to other keys (e.g. AltGr) would be possible
+// according to user preference, but this is not practical for typing
+// Tibetan, since the subjoined consonants, of which Tibetan has 0-2 per
+// syllable, are accessed via this mechanism.
+//
+// One annoyance is that the latching Level3 shift fails to work if the
+// previous key is not yet released when "m" is pressed (the key release
+// event kills the latch). I consider this a bug in X and don't know an
+// easy way to work around it. Complain to the maintainers if it bothers
+// you and maybe they'll find a fix. You won't notice it unless you're
+// fast at typing Tibetan anyway.
+
+partial alphanumeric_keys
+xkb_symbols "tib" {
+
+    name[Group1]= "Tibetan";
+
+    key <TLDE> { [ 0x1000f68, 0x1000f01, 0x1000fb8, 0x1000f00 ] }; # ཨ ༁ ྸ ༀ
+    key <AE01> { [ 0x1000f21, 0x1000f2a, 0x1000f04, 0x1000f76 ] }; # ༡ ༪ ༄ ྲྀ
+    key <AE02> { [ 0x1000f22, 0x1000f2b, 0x1000f05, 0x1000f77 ] }; # ༢ ༫ ༅ ཷ
+    key <AE03> { [ 0x1000f23, 0x1000f2c, 0x1000f7e, 0x1000f78 ] }; # ༣ ༬ ཾ ླྀ
+    key <AE04> { [ 0x1000f24, 0x1000f2d, 0x1000f83, 0x1000f79 ] }; # ༤ ༭ ྃ ཹ
+    key <AE05> { [ 0x1000f25, 0x1000f2e, 0x1000f37, 0x1000f81 ] }; # ༥ ༮ ༷ ཱྀ
+    key <AE06> { [ 0x1000f26, 0x1000f2f, 0x1000f35, 0x1000f09 ] }; # ༦ ༯ ༵ ༉
+    key <AE07> { [ 0x1000f27, 0x1000f30, 0x1000f7f, 0x1000f0a ] }; # ༧ ༰ ཿ ༊
+    key <AE08> { [ 0x1000f28, 0x1000f31, 0x1000f14, 0x1000f0f ] }; # ༨ ༱ ༔ ༏
+    key <AE09> { [ 0x1000f29, 0x1000f32, 0x1000f11, 0x1000f10 ] }; # ༩ ༲ ༑ ༐
+    key <AE10> { [ 0x1000f20, 0x1000f33, 0x1000f08, 0x1000f12 ] }; # ༠ ༳ ༈ ༒
+    key <AE11> { [ 0x1000f67, 0x1000f3c, 0x1000fb7, 0x1000f0c ] }; # ཧ ༼ ྷ ༌
+    key <AE12> { [ 0x1000f5d, 0x1000f3d, 0x1000fba, 0x1000f13 ] }; # ཝ ༽ ྺ ༓
+
+    key <AD01> { [ 0x1000f45, 0x1000f15, 0x1000f95, 0x1000f89 ] }; # ཅ ༕ ྕ ྉ
+    key <AD02> { [ 0x1000f46, 0x1000f16, 0x1000f96, 0x1000f88 ] }; # ཆ ༖ ྖ ྈ
+    key <AD03> { [ 0x1000f7a, 0x1000f17, 0x1000f7b, 0x1000fbe ] }; # ེ ༗ ཻ ྾
+    key <AD04> { [ 0x1000f62, 0x1000fbc, 0x1000fb2, 0x1000f6a ] }; # ར ྼ ྲ ཪ
+    key <AD05> { [ 0x1000f4f, 0x1000f4a, 0x1000f9f, 0x1000f9a ] }; # ཏ ཊ ྟ ྚ
+    key <AD06> { [ 0x1000f61, 0x1000fbb, 0x1000fb1, 0x1000fbf ] }; # ཡ ྻ ྱ ྿
+    key <AD07> { [ 0x1000f74, 0x1000f18, 0x1000fad, 0x1000f75 ] }; # ུ ༘ ྭ ཱུ
+    key <AD08> { [ 0x1000f72, 0x1000f19, 0x1000f80, 0x1000f73 ] }; # ི ༙ ྀ ཱི
+    key <AD09> { [ 0x1000f7c, 0x1000f1a, 0x1000f7d, 0x1000fc0 ] }; # ོ ༚ ཽ ࿀
+    key <AD10> { [ 0x1000f55, 0x1000f1b, 0x1000fa5, 0x1000fc1 ] }; # ཕ ༛ ྥ ࿁
+    key <AD11> { [ 0x1000f59, 0x1000f1c, 0x1000fa9, 0x1000fc2 ] }; # ཙ ༜ ྩ ࿂
+    key <AD12> { [ 0x1000f5a, 0x1000f1d, 0x1000faa, 0x1000fc3 ] }; # ཚ ༝ ྪ ࿃
+    key <BKSL> { [ 0x1000f5b, 0x1000f1e, 0x1000fab, 0x1000f5c ] }; # ཛ ༞ ྫ ཛྷ
+
+    key <AC01> { [ 0x1000f60, 0x1000f71, 0x1000fb0, 0x1000fc4 ] }; # འ ཱ ྰ ࿄
+    key <AC02> { [ 0x1000f66, 0x1000f1f, 0x1000fb6, 0x1000fc5 ] }; # ས ༟ ྶ ࿅
+    key <AC03> { [ 0x1000f51, 0x1000f4c, 0x1000fa1, 0x1000f9c ] }; # ད ཌ ྡ ྜ
+    key <AC04> { [ 0x1000f56, 0x1000f3e, 0x1000fa6, 0x1000f57 ] }; # བ ༾ ྦ བྷ
+    key <AC05> { [ 0x1000f44, 0x1000f3f, 0x1000f94, 0x1000fc6 ] }; # ང ༿ ྔ ࿆
+    key <AC06> { [ 0x1000f58, 0x1000fcf, 0x1000fa8, 0x1000fc7 ] }; # མ ࿏ ྨ ࿇
+    key <AC07> { [ 0x1000f0b, 0x1000f02, 0x1000f84, 0x1000fc8 ] }; # ་ ༂ ྄ ࿈
+    key <AC08> { [ 0x1000f42, 0x1000f03, 0x1000f92, 0x1000f43 ] }; # ག ༃ ྒ གྷ
+    key <AC09> { [ 0x1000f63, 0x1000f06, 0x1000fb3, 0x1000fc9 ] }; # ལ ༆ ླ ࿉
+    key <AC10> { [ 0x1000f5e, 0x1000f07, 0x1000fae, 0x1000fca ] }; # ཞ ༇ ྮ ࿊
+    key <AC11> { [ 0x1000f0d, 0x1000f38, 0x1000f0e, 0x1000fcb ] }; # ། ༸ ༎ ࿋
+
+    key <AB01> { [ 0x1000f5f, 0x1000f34, 0x1000faf, 0x1000fcc ] }; # ཟ ༴ ྯ ࿌
+    key <AB02> { [ 0x1000f64, 0x1000f65, 0x1000fb4, 0x1000fb5 ] }; # ཤ ཥ ྴ ྵ
+    key <AB03> { [ 0x1000f40, 0x1000f69, 0x1000f90, 0x1000fb9 ] }; # ཀ ཀྵ ྐ ྐྵ
+    key <AB04> { [ 0x1000f41, 0x1000f87, 0x1000f91, 0x1000f36 ] }; # ཁ ྇ ྑ ༶
+    key <AB05> { [ 0x1000f54, 0x1000f86, 0x1000fa4, 0x1000f82 ] }; # པ ྆ ྤ ྂ
+    key <AB06> { [ 0x1000f53, 0x1000f4e, 0x1000fa3, 0x1000f9e ] }; # ན ཎ ྣ ྞ
+    key <AB07> { [ ISO_Level3_Latch, ISO_Level3_Latch, 0x1000f85, 0x1000f52 ] }; # -བཏགས་ ྅ དྷ
+    key <AB08> { [ 0x1000f50, 0x1000f4b, 0x1000fa0, 0x1000f9b ] }; # ཐ ཋ ྠ ྛ
+    key <AB09> { [ 0x1000f47, 0x1000f3a, 0x1000f97, 0x1000f8b ] }; # ཇ ༺ ྗ ྋ
+    key <AB10> { [ 0x1000f49, 0x1000f3b, 0x1000f99, 0x1000f8a ] }; # ཉ ༻ ྙ ྊ
+};
+
+// Tibetan Standard Keyboard with ASCII numerals
+//
+// Users may prefer that the numeral keys enter ASCII numerals instead of
+// Tibetan numerals, since the latter are not in modern use in Tibet.
+// This is especially an issue for laptop users who do not have a numeric
+// keypad by which to access the ASCII numerals, and who need to type
+// numbers to be interpreted by applications.
+//
+// In this mapping, the Shift-modified numeral keys generate Tibetan
+// numerals, since it was unclear to me that the standard Latin punctuation
+// keys would be any use without Latin letters. (One can imagine wanting to
+// type an email address using the @ sign, but as of present non-ASCII
+// email addresses are not possible.) This mapping may change in the future
+// if a clearly better use for the shifted numerals is pointed out by users.
+
+partial alphanumeric_keys
+xkb_symbols "tib_asciinum" {
+    include "cn(tib)"
+
+    name[Group1]= "Tibetan (with ASCII numerals)";
+
+    key <AE01> { [ 1, 0x1000f21, 0x1000f04, 0x1000f76 ] }; # 1 ༡ ༄ ྲྀ
+    key <AE02> { [ 2, 0x1000f22, 0x1000f05, 0x1000f77 ] }; # 2 ༢ ༅ ཷ
+    key <AE03> { [ 3, 0x1000f23, 0x1000f7e, 0x1000f78 ] }; # 3 ༣ ཾ ླྀ
+    key <AE04> { [ 4, 0x1000f24, 0x1000f83, 0x1000f79 ] }; # 4 ༤ ྃ ཹ
+    key <AE05> { [ 5, 0x1000f25, 0x1000f37, 0x1000f81 ] }; # 5 ༥ ༷ ཱྀ
+    key <AE06> { [ 6, 0x1000f26, 0x1000f35, 0x1000f09 ] }; # 6 ༦ ༵ ༉
+    key <AE07> { [ 7, 0x1000f27, 0x1000f7f, 0x1000f0a ] }; # 7 ༧ ཿ ༊
+    key <AE08> { [ 8, 0x1000f28, 0x1000f14, 0x1000f0f ] }; # 8 ༨ ༔ ༏
+    key <AE09> { [ 9, 0x1000f29, 0x1000f11, 0x1000f10 ] }; # 9 ༩ ༑ ༐
+    key <AE10> { [ 0, 0x1000f20, 0x1000f08, 0x1000f12 ] }; # 0 ༠ ༈ ༒
+};
+
+// Uyghur Standard Keyboard Map for XKB/X.Org
+//
+// XKB version in collaboration by Muhemmed Abdullah <muhammad@yulghun.com>,
+// Abdussalam Abdurrahman <abdusalam.abdurahman@gmail.com>, and
+// Ekrem Tomur <ekrem.tomur@gmail.com>
+
+partial alphanumeric_keys
+xkb_symbols "ug" {
+    include "us(basic)"
+
+    name[Group1]= "Uyghur";
+
+    key <AE09> { [ 9,                parenright           ] };  // 9 )
+    key <AE10> { [ 0,                parenleft            ] };  // 0 (
+    key <AE11> { [ minus,            0x1002014            ] };  // - —
+
+    key <AD01> { [ 0x1000686,        VoidSymbol           ] };  // چ
+    key <AD02> { [ 0x10006cb,        VoidSymbol           ] };  // ۋ
+    key <AD03> { [ 0x10006d0,        VoidSymbol           ] };  // ې
+    key <AD04> { [ 0x1000631,        VoidSymbol           ] };  // ر
+    key <AD05> { [ 0x100062a,        VoidSymbol           ] };  // ت
+    key <AD06> { [ 0x100064a,        VoidSymbol           ] };  // ي
+    key <AD07> { [ 0x10006c7,        VoidSymbol           ] };  // ۇ
+    key <AD08> { [ 0x10006ad,        VoidSymbol           ] };  // ڭ
+    key <AD09> { [ 0x1000648,        VoidSymbol           ] };  // و
+    key <AD10> { [ 0x100067e,        VoidSymbol           ] };  // پ
+    key <AD11> { [ bracketright,     guillemotright       ] };  // ] »
+    key <AD12> { [ bracketleft,      guillemotleft        ] };  // [ «
+
+    key <AC01> { [ 0x10006be,        VoidSymbol           ] };  // ھ
+    key <AC02> { [ 0x1000633,        VoidSymbol           ] };  // س
+    key <AC03> { [ 0x100062f,        0x1000698            ] };  // د ژ
+    key <AC04> { [ 0x1000627,        0x1000641            ] };  // ا ف
+    key <AC05> { [ 0x10006d5,        0x10006af            ] };  // ە گ
+    key <AC06> { [ 0x1000649,        0x100062e            ] };  // ى خ
+    key <AC07> { [ 0x1000642,        0x100062c            ] };  // ق ج
+    key <AC08> { [ 0x1000643,        0x10006c6            ] };  // ك ۆ
+    key <AC09> { [ 0x1000644,        VoidSymbol           ] };  // ل
+    key <AC10> { [ Arabic_semicolon, colon                ] };  // ؛ :
+
+    key <AB01> { [ 0x1000632,        VoidSymbol           ] };  // ز
+    key <AB02> { [ 0x1000634,        VoidSymbol           ] };  // ش
+    key <AB03> { [ 0x100063a,        VoidSymbol           ] };  // غ
+    key <AB04> { [ 0x10006c8,        VoidSymbol           ] };  // ۈ
+    key <AB05> { [ 0x1000628,        VoidSymbol           ] };  // ب
+    key <AB06> { [ 0x1000646,        VoidSymbol           ] };  // ن
+    key <AB07> { [ 0x1000645,        VoidSymbol           ] };  // م
+    key <AB08> { [ Arabic_comma,     0x100203a            ] };  // ، ›
+    key <AB09> { [ period,           0x1002039            ] };  // . ‹
+    key <AB10> { [ 0x1000626,        Arabic_question_mark ] };  // ئ ؟
+};
+
+// Pinyin Keyboard, in the style of altgr-intl
+//
+// Chinese speakers and learners often find it hard to type Hanyu Pinyin
+// with all its tones and ü. This rule defines an altgr-intl-like behavior,
+// with dead keys activated by "AltGr + <key>". It also works with many
+// "pinyin" extensions, such as Tongyong Pinyin (Taiwan Mandarin) and
+// various SASM/GNC romanizations.
+//
+// Number row keys 1 2 3 4 are defined as dead-keys for the tones.
+// They correspond to the four tones in Hanyu Pinyin.
+//
+// To generate a · for "neutral" syllables, use AltGr + ` (grave).
+// To generate a raw ü, use AltGr + v.
+// V is used instead of ü for tones.
+//
+// AltGr+Shift+` triggers dead_abovering (˚), used by the Taiwanese
+// Tongyong Pinyin variant for the "neutral" tone.
+//
+// AltGr+6 triggers dead_circumflex (^) for ê ẑ ĉ ŝ, etc.
+// These can be stacked after tones to produce ế and ề; other tones require
+// combining characters, available through nobreakspace (AltGr+Space).
+//
+// AltGr+Shift+6 triggers dead_diaeresis (¨) for SASM/GNC
+// romanization of tib, mon, and ug.
+//
+// This file should be used with an appropriate XCompose file with
+// definitons for dead_{macron,acute,caron,grave} + a/e/i/o/u/v(ü).
+// --Mingye Wang <arthur200126@gmail.com>
+
+partial alphanumeric_keys
+xkb_symbols "altgr-pinyin" {
+   include "us(basic)"
+   name[Group1]= "Hanyu Pinyin Letters (with AltGr dead keys)";
+
+   key <TLDE> { [      grave,	asciitilde,  periodcentered,dead_abovering ]	};
+   key <AE01> { [	   1,	exclam,		dead_macron,	    macron ]	};
+   key <AE02> { [	   2,	at,		dead_acute,	     acute ]	};
+   key <AE03> { [	   3,	numbersign,	dead_caron,	     caron ]	};
+   key <AE04> { [	   4,	dollar,		dead_grave,	     grave ]	};
+
+   key <AE06> { [	   6,	asciicircum,	dead_circumflex, dead_diaeresis ]	};
+   key <AB04> {	[	   v,	V,		udiaeresis,	Udiaeresis ]	};
+
+   key <SPCE>  { [     space,   space,	      nobreakspace,   nobreakspace ]	};
+
+   include "level3(ralt_switch)"
+};
+
+// Mongolian Bichig (traditional) Keyboard Map for XKB/X.Org
+//
+// by Maurizio M. Gavioli <mmg@vistamaresoft.com>, 2019 from PRC
+// standard GB/T 28038-2011, par. 4.3.
+// The original standard has vertical presentation forms (UFExx range)
+// for level 2 of AB08 - AB10, AD11 - AD13, AE01, AE09, AE10; they have
+// been replaced by the corresponding decompositions, assuming that:
+// 1) presentation forms are a job of the font stack more than of the
+//    keyboard management.
+// 2) these keyboard layout will not necessarily be used only for
+//    vertical text orientations.
+
+partial alphanumeric_keys
+xkb_symbols "mon_trad" {
+    include "us(basic)"
+
+    name[Group1]= "Mongolian (Bichig)";
+
+    key <TLDE> { [ U180D,   asciitilde ] };  // ~: FVS3, ~
+    key <AE01> { [ 1,           exclam ] };  // 1: 1, !
+    key <AE02> { [ 2,            U2048 ] };  // 2: 2, ⁈
+    key <AE03> { [ 3,            U2049 ] };  // 3: 3, ⁉
+    key <AE04> { [ 4,                4 ] };  // 4: 4
+    key <AE05> { [ 5,          percent ] };  // 5: 5, %
+    key <AE06> { [ 6,            U200C ] };  // 6: 6, ZWNJ
+    key <AE07> { [ 7,            U180A ] };  // 7: 7, ᠊  NIRUGU
+    key <AE08> { [ 8,            U200D ] };  // 8: 8, ZWJ
+    key <AE09> { [ 9,        parenleft ] };  // 9: 9, (
+    key <AE10> { [ 0,       parenright ] };  // 0: 0, )
+    key <AE11> { [ U202F,        U180E ] };  // -: NNBSP, MVS
+    key <AE12> { [ equal,	      plus ] };  // +: =, +
+
+    key <AD01> { [ U1823,        U1842 ] };  // Q: ᠣ O, ᡂ CHI
+    key <AD02> { [ U1838,        U1838 ] };  // W: ᠸ  WA
+    key <AD03> { [ U1821,        U1827 ] };  // E: ᠡ E,  ᠧ EE
+    key <AD04> { [ U1837,        U183F ] };  // R: ᠷ RA, ᠿ   ZRA
+    key <AD05> { [ U1832,        U1832 ] };  // T: ᠲ TA
+    key <AD06> { [ U1836,        U1836 ] };  // Y: ᠶ YA
+    key <AD07> { [ U1826,        U1826 ] };  // U: ᠦ UE
+    key <AD08> { [ U1822,        U1822 ] };  // I: ᠢ I
+    key <AD09> { [ U1825,        U1825 ] };  // O: ᠥ OE
+    key <AD10> { [ U182B,        U182B ] };  // P: ᠫ PA
+    key <AD11> { [ bracketleft,  U3008 ] };  // [: [,    〈
+    key <AD12> { [ bracketright, U3009 ] };  // ]: ],    〉
+    key <BKSL> { [ U1801,        U2014 ] };  // \: ᠁, —
+
+    key <AC01> { [ U1820,        U1820 ] };  // A: ᠠ  A
+    key <AC02> { [ U1830,        U1830 ] };  // S: ᠰ SA
+    key <AC03> { [ U1833,        U1833 ] };  // D: ᠳ DA
+    key <AC04> { [ U1839,        U1839 ] };  // F: ᠹ FA
+    key <AC05> { [ U182D,        U182D ] };  // G: ᠭ GA
+    key <AC06> { [ U182C,        U183E ] };  // H: ᠬ QA, ᠾ HAA
+    key <AC07> { [ U1835,        U1835 ] };  // J: ᠵ JA
+    key <AC08> { [ U183A,        U183B ] };  // K: ᠺ KA, ᠻ KHA
+    key <AC09> { [ U182F,        U1840 ] };  // L: ᠯ LA, ᡀ LHA
+    key <AC10> { [ semicolon,    U1804 ] };  // ;: ;, ᠄
+    key <AC11> { [ U180B,        U180C ] };  // `: FVS1, FVS2
+
+    key <AB01> { [ U183D,        U1841 ] };  // Z: ᠽ ZA, ᡁ ZHI
+    key <AB02> { [ U1831,        U1831 ] };  // X: ᠱ SHA
+    key <AB03> { [ U1834,        U183C ] };  // C: ᠴ CHA, ᠼ TSA
+    key <AB04> { [ U1824,        U1824 ] };  // V: ᠤ U
+    key <AB05> { [ U182A,        U182A ] };  // B: ᠪ BA
+    key <AB06> { [ U1828,        U1829 ] };  // N: ᠨ NA, ᠩ ANG
+    key <AB07> { [ U182E,        U182E ] };  // M: ᠮ MA
+    key <AB08> { [ U1802,        U300A ] };  // ,: ᠂, 《
+    key <AB09> { [ U1803,        U300B ] };  // .: ᠃, 》
+    key <AB10> { [ U00B7,     question ] };  // /: ·, ?
+};
+
+// Mongolian (Todo) Keyboard Map for XKB/X.Org
+//
+// by Maurizio M. Gavioli <mmg@vistamaresoft.com>, 2019 from PRC
+// standard GB/T 28038-2011, par. 4.4.
+// The original standard has vertical presentation forms (UFExx range)
+// in AB08 - AB10, AC10, AD11 - AD13, AE01, AE09 - AE11: they have been
+// replaced by the corresponding decompositions; see explanation for
+// "mon_trad" above.
+
+partial alphanumeric_keys
+xkb_symbols "mon_trad_todo" {
+    include "us(basic)"
+
+    name[Group1]= "Mongolian (Todo)";
+
+    key <TLDE> { [ U180D,   asciitilde ] };  // ~: FVS3, ~
+    key <AE01> { [ 1,           exclam ] };  // 1: 1, !
+    key <AE02> { [ 2,            U2048 ] };  // 2: 2, ⁈
+    key <AE03> { [ 3,            U2049 ] };  // 3: 3, ⁉
+    key <AE04> { [ 4,            U1843 ] };  // 4: 4, ᡃ TODO LONG VOWEL
+    key <AE05> { [ 5,          percent ] };  // 5: 5, %
+    key <AE06> { [ 6,            U200C ] };  // 6: 6, ZWNJ
+    key <AE07> { [ 7,            U180A ] };  // 7: 7, ᠊  NIRUGU
+    key <AE08> { [ 8,            U200D ] };  // 8: 8, ZWJ
+    key <AE09> { [ 9,        parenleft ] };  // 9: 9, (
+    key <AE10> { [ 0,       parenright ] };  // 0: 0, )
+    key <AE11> { [ U202F,        U2014 ] };  // -: NNBSP, — EM DASH
+    key <AE12> { [ equal,	      plus ] };  // +: =, +
+
+    key <AD01> { [ U1846,        U1806 ] };  // Q: ᡆ TODO O, ᠆ (Todo hyphen)
+    key <AD02> { [ U1856,        U1856 ] };  // W: ᡖ TODO WA
+    key <AD03> { [ U1844,        U1844 ] };  // E: ᡄ TODO E
+    key <AD04> { [ U1837,        U1837 ] };  // R: ᠷ RA
+    key <AD05> { [ U1850,        U1850 ] };  // T: ᡐ TODO TA
+    key <AD06> { [ U1855,        U1855 ] };  // Y: ᡕ TODO YA
+    key <AD07> { [ U1849,        U1849 ] };  // U: ᡉ TODO UE
+    key <AD08> { [ U1845,        U1845 ] };  // I: ᡅ TODO I
+    key <AD09> { [ U1848,        U1848 ] };  // O: ᡈ TODO OE
+    key <AD10> { [ U184C,        U184C ] };  // P: ᠫ PA
+    key <AD11> { [ bracketleft,  U300C ] };  // [: [, 「
+    key <AD12> { [ bracketright, U300D ] };  // ]: ], 」
+    key <BKSL> { [ U1801,        U00B7 ] };  // \: ᠁, ·
+
+    key <AC01> { [ U1820,        U1820 ] };  // A: ᠠ  A
+    key <AC02> { [ U1830,        U1830 ] };  // S: ᠰ SA
+    key <AC03> { [ U1851,        U1851 ] };  // D: ᡑ TODO DA
+    key <AC04> { [ U1838,        U1838 ] };  // F: ᠸ  WA
+    key <AC05> { [ U184E,        U1858 ] };  // G: ᡎ TODO GA, ᡘ TODO GAA
+    key <AC06> { [ U184D,        U1859 ] };  // H: ᡍ TODO Qa, ᡙ TODO HAA
+    key <AC07> { [ U1853,        U185A ] };  // J: ᡓ TODO JA, ᡚ TODO JIA
+    key <AC08> { [ U1857,        U1857 ] };  // K: ᡗ TODO KA
+    key <AC09> { [ U182F,        U1840 ] };  // L: ᠯ LA, ᡀ LHA
+    key <AC10> { [ semicolon,    U1804 ] };  // ;: ;, ᠄
+    key <AC11> { [ U180B,        U180C ] };  // `: FVS1, FVS2
+
+    key <AB01> { [ U1834,        U185C ] };  // Z: ᠴ CHA, ᠼ TODO DZA
+    key <AB02> { [ U1831,        U1831 ] };  // X: ᠱ SHA
+    key <AB03> { [ U1854,        U1852 ] };  // C: ᡔ TODO TSA ᡒ TODO CHA
+    key <AB04> { [ U1847,        U1847 ] };  // V: ᡇ TODO U
+    key <AB05> { [ U184B,        U184B ] };  // B: ᡋ  TODO BA
+    key <AB06> { [ U1828,        U184A ] };  // N: ᠨ NA, ᠩ TODO ANG
+    key <AB07> { [ U184F,        U184F ] };  // M: ᡏ TODO MA
+    key <AB08> { [ comma,        U300E ] };  // ,: ,, 『
+    key <AB09> { [ U3002,        U300F ] };  // .: 。, 』
+    key <AB10> { [ U3001,     question ] };  // /: 、, ?
+};
+
+// Mongolian (Xibe) Keyboard Map for XKB/X.Org
+//
+// by Maurizio M. Gavioli <mmg@vistamaresoft.com>, 2019 from PRC
+// standard GB/T 28038-2011, par. 4.5.
+// The original standard has vertical presentation forms (UFExx range)
+// in AB08 - AB10, AD11 - AD13, AE01, AE09, AE10; they have been
+// replaced by the corresponding decompositions; see explanation for
+// "mon_trad" above.
+
+partial alphanumeric_keys
+xkb_symbols "mon_trad_xibe" {
+    include "us(basic)"
+
+    name[Group1]= "Mongolian (Xibe)";
+
+    key <TLDE> { [ U180D,   asciitilde ] };  // ~: FVS3, ~
+    key <AE01> { [ 1,           exclam ] };  // 1: 1, !
+    key <AE02> { [ 2,            U2018 ] };  // 2: 2, ‘
+    key <AE03> { [ 3,            U2019 ] };  // 3: 3, ’
+    key <AE04> { [ 4,            U1807 ] };  // 4: 4, ᠇ SIBE SYLL. BOUND. MARKER
+    key <AE05> { [ 5,          percent ] };  // 5: 5, %
+    key <AE06> { [ 6,            U200C ] };  // 6: 6, ZWNJ
+    key <AE07> { [ 7,            U180A ] };  // 7: 7, ᠊  NIRUGU
+    key <AE08> { [ 8,            U200D ] };  // 8: 8, ZWJ
+    key <AE09> { [ 9,        parenleft ] };  // 9: 9, (
+    key <AE10> { [ 0,       parenright ] };  // 0: 0, )
+    key <AE11> { [ U202F,        U202F ] };  // -: NNBSP
+    key <AE12> { [ equal,	      plus ] };  // +: =, +
+
+    key <AD01> { [ U1834,        U1834 ] };  // Q: ᠴ CHA
+    key <AD02> { [ U1838,        U1838 ] };  // W: ᠸ  WA
+    key <AD03> { [ U185D,        U185D ] };  // E: ᡝ SIBE E
+    key <AD04> { [ U1837,        U1870 ] };  // R: ᠷ RA, ᡰ SIBE RAA
+    key <AD05> { [ U1868,        U1868 ] };  // T: ᡨ SIBE TA
+    key <AD06> { [ U1836,        U1836 ] };  // Y: ᠶ YA
+    key <AD07> { [ U1860,        U1860 ] };  // U: ᡠ SIBE UE
+    key <AD08> { [ U185E,        U185F ] };  // I: ᡞ SIBE I, ᡟ SIBE IY
+    key <AD09> { [ U1823,        U1823 ] };  // O: ᠣ O
+    key <AD10> { [ U1866,        U1866 ] };  // P: ᡦ SIBE PA
+    key <AD11> { [ bracketleft,  U201C ] };  // [: [, “
+    key <AD12> { [ bracketright, U201D ] };  // ]: ], ”
+    key <BKSL> { [ U1801,        U2014 ] };  // \: ᠁, —
+
+    key <AC01> { [ U1820,        U1820 ] };  // A: ᠠ  A
+    key <AC02> { [ U1830,        U1830 ] };  // S: ᠰ SA
+    key <AC03> { [ U1869,        U1869 ] };  // D: ᡩ SIBE DA
+    key <AC04> { [ U186B,        U186B ] };  // F: ᡫ SIBE FA
+    key <AC05> { [ U1864,        U186C ] };  // G: ᡤ SIBE GA, ᡬ SIBE GAA
+    key <AC06> { [ U1865,        U186D ] };  // H: ᡥ SIBE HA, ᡭ SIBE HAA
+    key <AC07> { [ U186A,        U186A ] };  // J: ᡪ SIBE JA
+    key <AC08> { [ U1863,        U183A ] };  // K: ᡣ SIBE KA, ᠺ KA
+    key <AC09> { [ U182F,        U182F ] };  // L: ᠯ LA
+    key <AC10> { [ semicolon,    U1804 ] };  // ;: ;, ᠄
+    key <AC11> { [ U180B,        U180C ] };  // `: FVS1, FVS2
+
+    key <AB01> { [ U186F,        U1872 ] };  // Z: ᡯ SIBE ZA, ᡲ SIBE ZHA
+    key <AB02> { [ U1867,        U1867 ] };  // X: ᡧ SIBE SHA
+    key <AB03> { [ U186E,        U1871 ] };  // C: ᡮ SIBE TSA, ᡱ SIBE CHA
+    key <AB04> { [ U1861,        U1861 ] };  // V: ᡡ SIBE U
+    key <AB05> { [ U182A,        U182A ] };  // B: ᠪ BA
+    key <AB06> { [ U1828,        U1862 ] };  // N: ᠨ NA, ᡢ SIBE ANG
+    key <AB07> { [ U182E,        U182E ] };  // M: ᠮ MA
+    key <AB08> { [ comma,        U300E ] };  // ,: ,, 『
+    key <AB09> { [ U3002,        U300F ] };  // .: 。, 』
+    key <AB10> { [ U3001,     question ] };  // /: 、, ?
+};
+
+// Mongolian (Manchu) Keyboard Map for XKB/X.Org
+//
+// by Maurizio M. Gavioli <mmg@vistamaresoft.com>, 2019 from PRC
+// standard GB/T 28038-2011, par. 4.6.
+// The original standard has vertical presentation forms (UFExx range)
+// for level 2 of AB10, ABC10, AD11 - AD13, AE01, AE09, AE10; they have been
+// replaced by the corresponding decompositions; see explanation for
+// "mon_trad" above.
+
+
+partial alphanumeric_keys
+xkb_symbols "mon_trad_manchu" {
+    include "us(basic)"
+
+    name[Group1]= "Mongolian (Manchu)";
+
+    key <TLDE> { [ U180D,   asciitilde ] };  // ~: FVS3, ~
+    key <AE01> { [ 1,           exclam ] };  // 1: 1, !
+    key <AE02> { [ 2,                2 ] };  // 2: 2
+    key <AE03> { [ 3,                3 ] };  // 3: 3
+    key <AE04> { [ 4,                4 ] };  // 4: 4
+    key <AE05> { [ 5,          percent ] };  // 5: 5, %
+    key <AE06> { [ 6,            U200C ] };  // 6: 6, ZWNJ
+    key <AE07> { [ 7,            U180A ] };  // 7: 7, ᠊  NIRUGU
+    key <AE08> { [ 8,            U200D ] };  // 8: 8, ZWJ
+    key <AE09> { [ 9,        parenleft ] };  // 9: 9, (
+    key <AE10> { [ 0,       parenright ] };  // 0: 0, )
+    key <AE11> { [ U202F,        U202F ] };  // -: NNBSP
+    key <AE12> { [ equal,	      plus ] };  // +: =, +
+
+    key <AD01> { [ U1834,        U1834 ] };  // Q: ᠴ CHA
+    key <AD02> { [ U1838,        U1838 ] };  // W: ᠸ  WA
+    key <AD03> { [ U185D,        U185D ] };  // E: ᡝ SIBE E
+    key <AD04> { [ U1875,        U1870 ] };  // R: ᡵ MANCHU RA, ᡰ SIBE RAA
+    key <AD05> { [ U1868,        U1868 ] };  // T: ᡠ SIBE TA
+    key <AD06> { [ U1836,        U1836 ] };  // Y: ᠶ YA
+    key <AD07> { [ U1860,        U1860 ] };  // U: ᡠ SIBE UE
+    key <AD08> { [ U1873,        U185F ] };  // I: ᡳ MANCHU I, ᡟ SIBE IY
+    key <AD09> { [ U1823,        U1823 ] };  // O: ᠣ  O
+    key <AD10> { [ U1866,        U1866 ] };  // P: ᡦ SIBE PA
+    key <AD11> { [ bracketleft,  bracketleft  ] };  // [: [
+    key <AD12> { [ bracketright, bracketright ] };  // ]: ]
+    key <BKSL> { [ U1801,        U2014 ] };  // \: ᠁, —
+
+    key <AC01> { [ U1820,        U1820 ] };  // A: ᠠ  A
+    key <AC02> { [ U1830,        U1830 ] };  // S: ᠰ SA
+    key <AC03> { [ U1869,        U1869 ] };  // D: ᡩ SIBE DA
+    key <AC04> { [ U1876,        U1876 ] };  // F: ᡶ MANCHU FA
+    key <AC05> { [ U1864,        U186C ] };  // G: ᡩ SIBE GA, ᡶ SIBE GAA
+    key <AC06> { [ U1865,        U186D ] };  // H: ᡩ SIBE HA, ᡶ SIBE HAA
+    key <AC07> { [ U1835,        U1835 ] };  // J: ᠵ JA
+    key <AC08> { [ U1874,        U183A ] };  // K: ᡴ MANCHU KA, ᠺ KA
+    key <AC09> { [ U182F,        U182F ] };  // L: ᠯ LA
+    key <AC10> { [ semicolon,    U1804 ] };  // ;: ;, ᠄
+    key <AC11> { [ U180B,        U180C ] };  // `: FVS1, FVS2
+
+    key <AB01> { [ U186F,        U1872 ] };  // Z: ᡯ SIBE ZA, ᡲ SIBE ZHA
+    key <AB02> { [ U1867,        U1867 ] };  // X: ᡧ SIBE SHA
+    key <AB03> { [ U186E,        U1871 ] };  // C: ᡮ SIBE TSA, ᡱ SIBE CHA
+    key <AB04> { [ U1861,        U1861 ] };  // V: ᡡ SIBE U
+    key <AB05> { [ U182A,        U182A ] };  // B: ᠪ BA
+    key <AB06> { [ U1828,        U1862 ] };  // N: ᠨ NA, ᡢ SIBE ANG
+    key <AB07> { [ U182E,        U182E ] };  // M: ᠮ MA
+    key <AB08> { [ U1808,        U1808 ] };  // ,: ᠈
+    key <AB09> { [ U1809,        U1809 ] };  // .: ᠉
+    key <AB10> { [ question,  question ] };  // /:  , ?
+};
+
+// Mongolian Bichig Galik Keyboard Map for XKB/X.Org
+//
+// by Maurizio M. Gavioli <mmg@vistamaresoft.com>, 2019 from PRC
+// standard GB/T 28038-2011, par. 4.7.
+
+partial alphanumeric_keys
+xkb_symbols "mon_trad_galik" {
+    include "us(basic)"
+
+    name[Group1]= "Mongolian (Galik)";
+
+    key <TLDE> { [ U180D,        U180D ] };  // ~: FVS3
+    key <AE01> { [ U1811,        U1811 ] };  // 1: ᠑
+    key <AE02> { [ U1812,        U1812 ] };  // 2: ᠒
+    key <AE03> { [ U1813,        U1813 ] };  // 3: ᠓
+    key <AE04> { [ U1814,        U1814 ] };  // 4: ᠔
+    key <AE05> { [ U1815,        U1815 ] };  // 5: ᠕
+    key <AE06> { [ U1816,        U200C ] };  // 6: ᠖, ZWNJ
+    key <AE07> { [ U1817,        U1817 ] };  // 7: ᠗
+    key <AE08> { [ U1818,        U200D ] };  // 8: ᠘, ZWJ
+    key <AE09> { [ U1819,        U1919 ] };  // 9: ᠙
+    key <AE10> { [ U1810,        U1910 ] };  // 0: ᠐
+    key <AE11> { [ U202F,        U180E ] };  // -: NNBSP, MVS
+    key <AE12> { [ VoidSymbol, VoidSymbol ] };  // +: ---
+
+    key <AD01> { [ U1880,        U1827 ] };  // Q: ᢀ ALI GALI ANUNASVARA ONE, ᠧ EE
+    key <AD02> { [ U1881,        U1823 ] };  // W: ᢁ ALI GALI VISARGA ONE, ᠣ O
+    key <AD03> { [ U1882,        U1821 ] };  // E: ᢂ ALI GALI DAMARU, ᠡ E
+    key <AD04> { [ U1883,        U1883 ] };  // R: ᢃ ALI GALI UBADAMA
+    key <AD05> { [ U1884,        U1884 ] };  // T: ᢄ ALI GAL INVERTED UDADAMA
+    key <AD06> { [ U1885,        U1885 ] };  // Y: ᢅ ALI GALI BALUDA
+    key <AD07> { [ U1886,        U1826 ] };  // U: ᢆ ALI GALI THREE BALUDA, ᠦ UE
+    key <AD08> { [ U1887,        U1822 ] };  // I: ᢇ ALI GALI A, ᠢ I
+    key <AD09> { [ U1888,        U1888 ] };  // O: ᢈALI GALI I
+    key <AD10> { [ U1889,        U1889 ] };  // P: ᢉ ALI GALI KA
+    key <AD11> { [ U188A,        U188A ] };  // [: ᢊ ALI GALI NGA
+    key <AD12> { [ U1895,        U1895 ] };  // ]: ᢕ ALI GALI ZHA
+    key <BKSL> { [ VoidSymbol, VoidSymbol ] };  // \: --
+
+    key <AC01> { [ U188B,        U1820 ] };  // A: ᠀  ALI GALI CA,ᠠ  A
+    key <AC02> { [ U188C,        U188C ] };  // S: ᡛ ALI GALI TTA
+    key <AC03> { [ U188D,        U188D ] };  // D: ᢍ ALI GALI THA
+    key <AC04> { [ U188E,        U188E ] };  // F: ᢎ ALI GALI DDA
+    key <AC05> { [ U188F,        U188F ] };  // G: ᢏ ALI GALI NNA
+    key <AC06> { [ U1890,        U1890 ] };  // H: ᢐ ALI GALI TA
+    key <AC07> { [ U1891,        U1853 ] };  // J: ᢑ ALI GALI DA, ᡓ TODO JA
+    key <AC08> { [ U1892,        U1858 ] };  // K: ᢒ ALI GALI PA, ᡘ TODO GAA
+    key <AC09> { [ U1893,        U1893 ] };  // L: ᢓ ALI GALI PHA
+    key <AC10> { [ U1894,        U1894 ] };  // ;: ᢔ ALI GALI SSA
+    key <AC11> { [ U180B,        U180C ] };  // `: FVS1, FVS2
+
+    key <AB01> { [ U1896,        U185C ] };  // Z: ᢖ ALI GALI ZA, ᡜ TODO DZA
+    key <AB02> { [ U1897,        U1897 ] };  // X: ᢗ ALI GALI AH
+    key <AB03> { [ U18A6,        U18A6 ] };  // C: ᢦ ALI GALI HALF U
+    key <AB04> { [ U18A7,        U1824 ] };  // V: ᢦ ALI GALI HALF YA ,ᠤ U
+    key <AB05> { [ U18A9,        U18A9 ] };  // B: ᢩ   ALI GALI DAGALGA
+    key <AB06> { [ U1805,        U1805 ] };  // N: ᠅
+    key <AB07> { [ U1800,        U185B ] };  // M: ᠀ BIRGA, ᡛ TODO NYA
+    key <AB08> { [ U1802,        U1802 ] };  // ,: ᠂
+    key <AB09> { [ U1803,        U1803 ] };  // .: ᠃
+    key <AB10> { [ VoidSymbol, VoidSymbol ] };  // /:
+};
+
+// Mongolian (Todo Galik) Keyboard Map for XKB/X.Org
+//
+// by Maurizio M. Gavioli <mmg@vistamaresoft.com>, 2019 from PRC
+// standard GB/T 28038-2011, par. 4.8.
+
+partial alphanumeric_keys
+xkb_symbols "mon_todo_galik" {
+    include "us(basic)"
+
+    name[Group1]= "Mongolian (Todo Galik)";
+
+    key <TLDE> { [ U180D,        U180D ] };  // ~: FVS3
+    key <AE01> { [ U1811,        U1811 ] };  // 1: ᠑
+    key <AE02> { [ U1812,        U1812 ] };  // 2: ᠒
+    key <AE03> { [ U1813,        U1813 ] };  // 3: ᠓
+    key <AE04> { [ U1814,        U1843 ] };  // 4: ᠔, ᡃ TODO LONG VOWEL SIGN
+
+    key <AE05> { [ U1815,        U1815 ] };  // 5: ᠕
+    key <AE06> { [ U1816,        U200C ] };  // 6: ᠖, ZWNJ
+    key <AE07> { [ U1817,        U1817 ] };  // 7: ᠗
+    key <AE08> { [ U1818,        U200D ] };  // 8: ᠘, ZWJ
+    key <AE09> { [ U1819,        U1919 ] };  // 9: ᠙
+    key <AE10> { [ U1810,        U1910 ] };  // 0: ᠐
+    key <AE11> { [ U202F,        U202F ] };  // -: NNBSP
+    key <AE12> { [ VoidSymbol, VoidSymbol ] };  // /: ---
+
+    key <AD01> { [ U1880,        U1880 ] };  // Q: ᢀ ALI GALI ANUNASVARA ONE
+    key <AD02> { [ U1881,        U1846 ] };  // W: ᢁ ALI GALI VISARGA ONE, ᡆ TODO O
+    key <AD03> { [ U1882,        U1844 ] };  // E: ᢂ ALI GALI DAMARU, ᡄ TODO E
+    key <AD04> { [ U1883,        U1883 ] };  // R: ᢃ ALI GALI UBADAMA
+    key <AD05> { [ U1884,        U1884 ] };  // T: ᢄ ALI GAL INVERTED UDADAMA
+    key <AD06> { [ U1885,        U1885 ] };  // Y: ᢅ ALI GALI BALUDA
+    key <AD07> { [ U1886,        U1849 ] };  // U: ᢆ ALI GALI THREE BALUDA, ᡉ TODO UE
+    key <AD08> { [ U1889,        U1845 ] };  // I: ᢉ ALI GALI KA, ᡅ TODO I
+    key <AD09> { [ U188A,        U188A ] };  // O: ᢊ ALI GALI NGA
+    key <AD10> { [ U1887,        U1887 ] };  // P: ᢇ ALI GALI A
+    key <AD11> { [ VoidSymbol, VoidSymbol ] };  // /: ---
+    key <AD12> { [ VoidSymbol, VoidSymbol ] };  // /: ---
+    key <BKSL> { [ VoidSymbol, VoidSymbol ] };  // /: ---
+
+    key <AC01> { [ U188B,        U1820 ] };  // A: ᢋ ALI GALI CA, ᠠ  A
+    key <AC02> { [ U188C,        U188C ] };  // S: ᢌ ALI GALI TTA
+    key <AC03> { [ U188D,        U188D ] };  // D: ᢍ ALI GALI THA
+    key <AC04> { [ U188E,        U188E ] };  // F: ᢎ ALI GALI DDA
+    key <AC05> { [ U188F,        U188F ] };  // G: ᢏ ALI GALI NNA
+    key <AC06> { [ U1894,        U1894 ] };  // ;: ᢔ ALI GALI SSA
+    key <AC07> { [ U1896,        U1896 ] };  // Z: ᢖ ALI GALI ZA
+    key <AC08> { [ U1897,        U1897 ] };  // X: ᢗ ALI GALI AH
+    key <AC09> { [ U1898,        U1898 ] };  // L: ᢘ TODO ALI GALI TA
+    key <AC10> { [ U1892,        U1892 ] };  // K: ᢒ ALI GALI PA
+    key <AC11> { [ U180B,        U180C ] };  // `: FVS1, FVS2
+
+    key <AB01> { [ U1899,        U1899 ] };  // Z: ᢙ TODO ALI GALI ZHA
+    key <AB02> { [ U18A7,        U18A6 ] };  // X: ᢧ ALI GALI HALF YA
+    key <AB03> { [ U1893,        U1893 ] };  // C: ᢓ ALI GALI PHA
+    key <AB04> { [ U1847,        U1847 ] };  // V: ᡇ TODO U
+    key <AB05> { [ U18A9,        U18A9 ] };  // B: ᢩ   ALIGALI DAGALGA
+    key <AB06> { [ U1805,        U1805 ] };  // N: ᠅ FOUR DOTS
+    key <AB07> { [ U1800,        U185B ] };  // M: ᠀ BIRGA, ᡛ TODO NIA
+    key <AB08> { [ U1802,        U1802 ] };  // ,: ᠂ COMMA
+    key <AB09> { [ U1803,        U1803 ] };  // .: ᠃  FULL STOP
+    key <AB10> { [ VoidSymbol, VoidSymbol ] };  // /: ---
+};
+
+// Mongolian (Manchu Galik) Keyboard Map for XKB/X.Org
+//
+// by Maurizio M. Gavioli <mmg@vistamaresoft.com>, 2019 from PRC
+// standard GB/T 28038-2011, par. 4.9.
+
+
+partial alphanumeric_keys
+xkb_symbols "mon_manchu_galik" {
+    include "us(basic)"
+
+    name[Group1]= "Mongolian (Manchu Galik)";
+
+    key <TLDE> { [ U180D,        U180D ] };  // ~: FVS3
+    key <AE01> { [ VoidSymbol, VoidSymbol ] };  // /: ---
+    key <AE02> { [ VoidSymbol, VoidSymbol ] };  // /: ---
+    key <AE03> { [ VoidSymbol, VoidSymbol ] };  // /: ---
+    key <AE04> { [ VoidSymbol, VoidSymbol ] };  // /: ---
+    key <AE05> { [ VoidSymbol, VoidSymbol ] };  // /: ---
+    key <AE06> { [ VoidSymbol,   U200C ] };  // 6: --, ZWNJ
+    key <AE07> { [ VoidSymbol, VoidSymbol ] };  // /: ---
+    key <AE08> { [ VoidSymbol,   U200D ] };  // 8: 8, ZWJ
+    key <AE09> { [ VoidSymbol, VoidSymbol ] };  // /: ---
+    key <AE10> { [ VoidSymbol, VoidSymbol ] };  // /: ---
+    key <AE11> { [ U202F,        U202F ] };  // -: NNBSP
+    key <AE12> { [ VoidSymbol, VoidSymbol ] };  // /: ---
+
+    key <AD01> { [ U1880,        U1880 ] };  // Q: ᢀ ALI GALI ANUNASVARA ONE
+    key <AD02> { [ U1881,        U1881 ] };  // W: ᢁ ALI GALI VISARGA ONE
+    key <AD03> { [ U1882,        U185D ] };  // E: ᢂ ALI GALI DAMARU, ᡝ SIBE E
+    key <AD04> { [ U1883,        U1883 ] };  // R: ᢃ ALI GALI UBADAMA
+    key <AD05> { [ U1884,        U1884 ] };  // T: ᢄ ALI GAL INVERTED UDADAMA
+    key <AD06> { [ U1885,        U1885 ] };  // Y: ᢅ ALI GALI BALUDA
+    key <AD07> { [ U1886,        U1860 ] };  // U: ᢆ ALI GALI THREE BALUDA, ᡠ SIBE UE
+    key <AD08> { [ U1887,        U1873 ] };  // I: ᢇ ALI GALI A, ᡳ MANCHU I
+    key <AD09> { [ U1888,        U1823 ] };  // O: ᢈ ALI GALI I, ᠣ O
+    key <AD10> { [ U188F,        U188F ] };  // P: ᢏ ALI GALI NNA
+    key <AD11> { [ VoidSymbol, VoidSymbol ] };  // /: ---
+    key <AD12> { [ VoidSymbol, VoidSymbol ] };  // /: ---
+    key <BKSL> { [ VoidSymbol, VoidSymbol ] };  // /: ---
+
+    key <AC01> { [ U1892,        U1820 ] };  // A: ᢒ ALI GALI PA, ᠠ  A
+    key <AC02> { [ U189A,        U189A ] };  // S: ᢚ MANCHU ALI GALI GHA
+    key <AC03> { [ U189B,        U189B ] };  // D: ᢛ MANCHU ALI GALI NGA
+    key <AC04> { [ U189C,        U189C ] };  // F: ᢜ MANCHU ALI GALI CA
+    key <AC05> { [ U189D,        U189D ] };  // G: ᢝ MANCHU ALI GALI JHA
+    key <AC06> { [ U189E,        U189E ] };  // H: ᢞ MANCHU ALI GALI TTA
+    key <AC07> { [ U189F,        U189F ] };  // J: ᢟ MANCHU ALI GALI DDHA
+    key <AC08> { [ U18A0,        U18A0 ] };  // K: ᢠ MANCHU ALI GALI TA
+    key <AC09> { [ U18A1,        U18A1 ] };  // L: ᢡ MANCHU ALI GALI DHA
+    key <AC10> { [ VoidSymbol, VoidSymbol ] };  // /: ---
+    key <AC11> { [ U180B,        U180C ] };  // `: FVS1, FVS2
+
+    key <AB01> { [ U18A2,        U18A2 ] };  // Z: ᢢ MANCHU ALI GALI SSA
+    key <AB02> { [ U18A3,        U18A3 ] };  // X: ᢣ MANCHU ALI GALI CYA
+    key <AB03> { [ U18A4,        U18A4 ] };  // C: ᢤ MANCHU ALI GALI ZHA
+    key <AB04> { [ U18A5,        U1861 ] };  // V: ᢥ MANCHU ALI GALI ZA, ᡡ SIBE U
+    key <AB05> { [ U18A8,        U18A8 ] };  // B: ᢨ MANCHU ALI GALI BHA
+    key <AB06> { [ U18AA,        U18AA ] };  // N: ᢪ MANCHU ALI GALI LHA
+    key <AB07> { [ VoidSymbol, VoidSymbol ] };  // /: ---
+    key <AB08> { [ U1808,        U1808 ] };  // ,: ᠈
+    key <AB09> { [ U1809,        U1809 ] };  // .: ᠉
+    key <AB10> { [ VoidSymbol, VoidSymbol ] };  // /: ---
+};

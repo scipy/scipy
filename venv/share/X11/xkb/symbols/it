@@ -1,0 +1,422 @@
+// Keyboard layouts for Italy.
+
+// 17 May 2003 Modified by Sebastiano Vigna (vigna@dsi.unimi.it)
+// 03 December 2017 - Added it(intl) and it(scn), please refer to
+//                    Cadèmia Siciliana <l10n@cademiasiciliana.org>
+// 18 July 2018 - Fixed inconsistent 'ì' and 'ù' in it(intl)
+//                Alessandro Pellegrini <pellegrini@dis.uniroma1.it>
+// 28 February 2017 - Added it(fur), please refer to
+//                Fabio Tomat <f.t.public@gmail.com>
+
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+    include "latin(type4)"
+
+    name[Group1]="Italian";
+
+    key <TLDE>	{ [ backslash,        bar,      notsign,    brokenbar ]	};
+
+    key <AE02>	{ [         2,   quotedbl,  twosuperior, dead_doubleacute ] };
+    key <AE03>	{ [         3,   sterling,threesuperior,   dead_tilde ]	};
+    key <AE04>	{ [         4,     dollar,   onequarter,    oneeighth ] };
+
+    key <AE10>	{ [         0,      equal,   braceright,  dead_ogonek ] };
+    key <AE11>	{ [apostrophe,   question,        grave, questiondown ]	};
+    key <AE12>	{ [    igrave, asciicircum,  asciitilde, dead_circumflex ] };
+
+    key <AD11>	{ [    egrave,     eacute,  bracketleft,    braceleft ]	};
+    key <AD12>	{ [      plus,   asterisk, bracketright,   braceright ]	};
+
+    key <AC10>	{ [    ograve,   ccedilla,           at, dead_cedilla ] };
+    key <AC11>	{ [    agrave,     degree,   numbersign, dead_abovering ] };
+    key <BKSL>	{ [    ugrave,    section,   dead_grave,   dead_breve ] };
+
+    key <LSGT>	{ [      less,    greater,guillemotleft,guillemotright] };
+    key <AB04>	{ [         v,          V, leftdoublequotemark, leftsinglequotemark ]	};
+    key <AB05>	{ [         b,          B, rightdoublequotemark, rightsinglequotemark ] };
+    key <AB06>	{ [         n,          N,       ntilde,       Ntilde ]	};
+    key <AB08>	{ [     comma,  semicolon,   dead_acute,     multiply ]	};
+    key <AB09>	{ [    period,      colon,periodcentered, dead_diaeresis ] };
+    key <AB10>	{ [     minus, underscore,  dead_macron,     division ] };
+
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "nodeadkeys" {
+
+    // Modifies the basic italian layout to eliminate all dead keys
+
+    include "it(basic)"
+
+    name[Group1]="Italian (no dead keys)";
+
+    key <AE02>	{ [         2,   quotedbl,  twosuperior,  doubleacute ] };
+    key <AE03>	{ [         3,   sterling,threesuperior,   asciitilde ]	};
+
+    key <AE10>	{ [         0,       equal,  braceright,       ogonek ]	};
+    key <AE12>	{ [    igrave, asciicircum,  asciitilde,  asciicircum ] };
+
+    key <AC10>	{ [    ograve,   ccedilla,           at,      cedilla ] };
+    key <AC11>	{ [    agrave,     degree,   numbersign,       degree ] };
+    key <BKSL>	{ [    ugrave,    section,        grave,        breve ]	};
+
+    key <AB08>	{ [     comma,  semicolon,        acute,     multiply ]	};
+    key <AB09>	{ [    period,      colon,periodcentered,   diaeresis ] };
+    key <AB10>	{ [     minus, underscore,       macron,     division ] };
+};
+
+partial alphanumeric_keys
+xkb_symbols "winkeys" {
+
+   include "it(basic)"
+   name[Group1]="Italian (Windows)";
+   include "eurosign(5)"
+};
+
+// Copied from macintosh_vndr/it
+partial alphanumeric_keys
+xkb_symbols "mac" {
+
+    name[Group1]= "Italian (Macintosh)";
+
+    key <TLDE> {        [        at,    numbersign,    periodcentered              ]	};
+    key <AE01> {	[   ampersand,    1, guillemotleft,guillemotright	]	};
+    key <AE02> {	[    quotedbl,    2 		]	};
+    key <AE03> {	[  apostrophe,    3         	]	};
+    key <AE04> {	[   parenleft,    4,    braceleft,    bracketleft	]	};
+    key <AE05> {	[    ccedilla,    5,     Ccedilla,    Iacute	]	};
+    key <AE06> {	[      egrave,    6,    paragraph,    periodcentered]	};
+    key <AE07> {	[  parenright,    7,   braceright,	  bracketright	]	};
+    key <AE08> {	[    sterling,    8,   infinity			]	};
+    key <AE09> {	[      agrave,    9,        acute,    Ocircumflex	]	};
+    key <AE10> {	[      eacute,    0,        grave,    Oacute	]	};
+    key <AE11> {	[       minus,    underscore	]	};
+    key <AE12> {	[       equal, 	  plus,     notequal,    plusminus	]	};
+
+    key <AD01> {	[           q,  Q 		]	};
+    key <AD02> {	[	    z,  Z		]	};
+    key <AD03> {	[	    e,  E,	EuroSign	]	};
+    key <AD04> {	[	    r,  R,   registered			] 	};
+    key <AD05> {	[	    t,  T		]	};
+    key <AD06> {	[	    y,  Y,       Uacute,	ydiaeresis      ] 	};
+    key <AD07> {	[	    u,  U		]	};
+    key <AD08> {	[	    i,  I,  icircumflex,	idiaeresis      ] 	};
+    key <AD09> {	[	    o,  O		]	};
+    key <AD10> {	[	    p,  P		]	};
+    key <AD11> {	[      igrave,  asciicircum     ]	};
+    key <AD12> {	[      dollar,	asterisk        ]	};
+
+    key <AC01> {	[	  a,	A,      aring,   Aring		] 	};
+    key <AC02> {	[	  s,	S,     ssharp,	 U1E9E		]	};
+    key <AC03> {	[	  d,	D		]	};
+    key <AC04> {	[	  f,	F		]	};
+    key <AC05> {	[	  g,	G		]	};
+    key <AC06> {	[	  h,	H,     Igrave,    Icircumflex     ]	};
+    key <AC07> {	[	  j,	J,  Idiaeresis,   Iacute          ]	};
+    key <AC08> {	[	  k,	K,     Egrave,    Ediaeresis      ]	};
+    key <AC09> {	[	  l,	L,     ssharp,    bar		]	};
+    key <AC10> {	[         m,	M,         mu,    Oacute		]	};
+    key <AC11> {	[    ugrave,	percent,         ae,    AE		]	};
+    key <BKSL> {	[   section,	degree,          at,  numbersign	]	};
+
+    key <LSGT> {	[        less,  greater   	]	};
+    key <AB01> {	[	  w,	W 		]	};
+    key <AB02> {	[	  x,	X		]	};
+    key <AB03> {	[	  c,	C,  copyright,    copyright	]	};
+    key <AB04> {	[	  v,	V		]	};
+    key <AB05> {	[	  b,	B		]	};
+    key <AB06> {	[	  n,	N,  dead_tilde                    ]       };
+    key <AB07> {	[     comma,	question,          questiondown		]	};
+    key <AB08> {	[ semicolon,	period          ]	};
+    key <AB09> {	[     colon,	slash,        bar,    backslash	]	};
+    key <AB10> {	[    ograve,	exclam,     exclamdown			]	};
+
+    include "kpdl(dot)"
+    include "level3(ralt_switch)"
+};
+
+// Used by Georgian people in Italy, 
+// contributed by Vladimer Sichinava
+partial alphanumeric_keys
+xkb_symbols "geo" {
+    include "it"
+    include "ge(basic)"
+    name[Group1]= "Georgian (Italy)";
+
+    key <TLDE> { [ backslash, bar, notsign, brokenbar ] };
+    key <AE01> { [ 1, exclam, onesuperior ] };
+    key <AE02> { [ 2, quotedbl, twosuperior, dead_doubleacute ] };
+    key <AE03> { [ 3, sterling, threesuperior, dead_tilde ] };
+    key <AE04> { [ 4, dollar, onequarter, oneeighth ] };
+    key <AE05> { [ 5, percent, onehalf ] };
+    key <AE06> { [ 6, ampersand ] };
+    key <AE07> { [ 7, slash, braceleft ] };
+    key <AE08> { [ 8, parenleft, bracketleft ] };
+    key <AE09> { [ 9, parenright ] };
+    key <AE10> { [ 0, equal, braceright, dead_ogonek ] };
+    key <AE11> { [ apostrophe, question, grave, questiondown ] };
+    key <AE12> { [ igrave, asciicircum, asciitilde, dead_circumflex ] };
+
+    key <AD03> { [ 0x010010d4, E, EuroSign ] };
+    key <AD11> { [ egrave, eacute, bracketleft, braceleft ] };
+    key <AD12> { [ plus, asterisk, bracketright, braceright ] };
+
+    key <AC10> { [ ograve, ccedilla, at, dead_cedilla ] };
+    key <AC11> { [ agrave, degree, numbersign, degree ] };
+    key <BKSL> { [ ugrave, section, dead_grave, dead_breve ] };
+
+    key <LSGT> { [ less, greater ] };
+    key <AB08> { [ comma, semicolon ] };
+    key <AB09> { [ period, colon ] };
+    key <AB10> { [ minus, underscore ] };
+};
+
+// OLPC Section
+xkb_symbols "olpc" {
+
+    include "it(basic)"
+
+    key <AE12> { [ igrave,  asciicircum,    asciitilde,     dead_tilde ] };
+    key <BKSL> { [ ugrave,      section,        Egrave,     dead_breve ] };
+    key <I219> { [ less,        greater, guillemotleft, guillemotright ] };
+};
+
+partial alphanumeric_keys modifier_keys
+xkb_symbols "us" {
+
+    include "us(basic)"
+
+    name[Group1]= "Italian (US)";
+
+    key <TLDE> { [     grave, asciitilde,    dead_grave,       dead_tilde ] };
+    key <AE01> { [         1,     exclam,   onesuperior                   ] };
+    key <AE02> { [         2,         at,   twosuperior                   ] };
+    key <AE03> { [         3, numbersign, threesuperior                   ] };
+    key <AE06> { [         6,asciicircum,dead_circumflex                  ] };
+    key <AE10> { [         0, parenright,        degree                   ] };
+    key <AE11> { [     minus, underscore,   dead_macron                   ] };
+
+    key <AD03> { [         e,          E,        egrave,           Egrave ] };
+    key <AD04> { [         r,          R,    registered                   ] };
+    key <AD07> { [         u,          U,        ugrave,           Ugrave ] };
+    key <AD08> { [         i,          I,        igrave,           Igrave ] };
+    key <AD09> { [         o,          O,        ograve,           Ograve ] };
+
+    key <AC01> { [         a,          A,        agrave,           Agrave ] };
+    key <AC03> { [         d,          D,        eacute,           Eacute ] };
+    key <AC07> { [         j,          J,        uacute,           Uacute ] };
+    key <AC08> { [         k,          K,        iacute,           Iacute ] };
+    key <AC09> { [         l,          L,        oacute,           Oacute ] };
+    key <AC10> { [ semicolon,      colon,dead_diaeresis,   dead_diaeresis ] };
+    key <AC11> { [apostrophe,   quotedbl,    dead_acute                   ] };
+
+    key <AB01> { [         z,          Z,        aacute,           Aacute ] };
+    key <AB03> { [         c,          C,     copyright                   ] };
+    key <AB06> { [         n,          N,        ntilde,           Ntilde ] };
+    key <AB08> { [     comma,       less,   guillemotleft                 ] };
+    key <AB09> { [    period,    greater,  guillemotright                 ] };
+
+    include "level3(ralt_switch)"
+    include "eurosign(5)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "ibm" {
+
+    include "us"
+
+    name[Group1]="Italian (IBM 142)";
+
+    key <TLDE>	{ [ backslash,        bar                             ] };
+
+    key <AE02>	{ [         2,   quotedbl                             ] };
+    key <AE03>	{ [         3,   sterling,   numbersign               ] };
+    key <AE06>	{ [         6,  ampersand                             ] };
+    key <AE07>	{ [         7,      slash,    braceleft               ] };
+    key <AE08>	{ [         8,  parenleft,  bracketleft               ] };
+    key <AE09>	{ [         9, parenright, bracketright               ] };
+    key <AE10>	{ [         0,      equal,   braceright               ] };
+    key <AE11>	{ [apostrophe,   question                             ] };
+    key <AE12>	{ [    igrave, asciicircum                            ] };
+
+    key <AD01>	{ [         q,           Q,          at               ] };
+    key <AD03>	{ [         e,           E,    EuroSign               ] };
+    key <AD11>	{ [    egrave,     eacute                             ] };
+    key <AD12>	{ [      plus,   asterisk,   asciitilde               ] };
+
+    key <AC10>	{ [    ograve,   ccedilla                             ] };
+    key <AC11>	{ [    agrave,     degree                             ] };
+    key <BKSL>	{ [    ugrave,    section,       grave                ] };
+
+    key <LSGT>	{ [      less,    greater                             ] };
+    key <AB08>	{ [     comma,  semicolon                             ] };
+    key <AB09>	{ [    period,      colon                             ] };
+    key <AB10>	{ [     minus, underscore                             ] };
+
+    include "level3(ralt_switch)"
+    include "kpdl(comma)"
+};
+
+
+partial alphanumeric_keys
+xkb_symbols "fur" {
+
+	include "latin(type4)"
+
+	name[Group1] = "Friulian (Italy)";
+
+	key <TLDE>	{[ backslash,        bar,       notsign,     brokenbar ]};
+
+	key <AE02>	{[         2,   quotedbl,   twosuperior,dead_doubleacute]};
+	key <AE03>	{[         3,   sterling, threesuperior,         U1D49 ]};
+	key <AE04>	{[         4,     dollar,    onequarter,     oneeighth ]};
+	key <AE05>	{[         5,    percent,      EuroSign,       onehalf ]};
+	key <AE10>	{[         0,      equal,    braceright,   dead_ogonek ]};
+	key <AE11>	{[apostrophe,   question,         grave,  questiondown ]};
+	key <AE12>	{[    igrave, asciicircum,   asciitilde,dead_circumflex]};
+
+	key <AD03>	{[         e,          E,   ecircumflex,   Ecircumflex ]};
+	key <AD05>	{[         t,          T,         U1D57,         U1D40 ]};
+	key <AD07>	{[         u,          U,   ucircumflex,      NoSymbol ]};
+	key <AD08>	{[         i,          I,   icircumflex,   Icircumflex ]};
+	key <AD09>	{[         o,          O,   ocircumflex,   Ocircumflex ]};
+	key <AD11>	{[    egrave,     eacute,   bracketleft,     braceleft ]};
+	key <AD12>	{[      plus,   asterisk,  bracketright,    braceright ]};
+
+	key <AC01>	{[         a,          A,   acircumflex,   Acircumflex ]};
+	key <AC03>	{[         d,          D,         U1D48                ]};
+	key <AC04>	{[         f,          F,         U1DA0,   ordfeminine ]};
+	key <AC10>	{[    ograve,   ccedilla,            at,  dead_cedilla ]};
+	key <AC11>	{[    agrave,     degree,    numbersign,dead_abovering ]};
+	key <BKSL>	{[    ugrave,    section,    dead_grave,    dead_breve ]};
+
+	key <LSGT>	{[      less,    greater, guillemotleft,guillemotright ]};
+	key <AB03>	{[         c,          C,         U1D9C,     copyright ]};
+    key <AB04>	{ [         v,          V, leftdoublequotemark, leftsinglequotemark ]	};
+    key <AB05>	{ [         b,          B, rightdoublequotemark, rightsinglequotemark ] };
+	key <AB06>	{[         n,          N,         U207F,        Ntilde ]};
+	key <AB07>	{[         m,          M,         U1D50,            mu ]};
+	key <AB08>	{[     comma,  semicolon,    dead_acute,      multiply ]};
+	key <AB09>	{[    period,      colon,periodcentered,dead_diaeresis ]};
+	key <AB10>	{[     minus, underscore,   dead_macron,      division ]};
+
+	include "level3(ralt_switch)"
+};
+
+// EXTRAS:
+
+partial alphanumeric_keys
+	xkb_symbols "sun_type6" {
+	include "sun_vndr/it(sun_type6)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "lld" {
+    include "it(basic)"
+    name[Group1] = "Italian (Ladin)";
+
+    key <AD08> { [ i, I, idiaeresis, Idiaeresis ] };
+    key <AD10> { [ p, P, ediaeresis, Ediaeresis ] };
+
+    key <AC01> { [ a, A, aacute, Aacute ] };
+    key <AC02> { [ s, S, sacute, Sacute ] };
+
+    key <AB03> { [ c, C, cacute, Cacute ] };
+};
+
+partial alphanumeric_keys
+xkb_symbols "intl" {
+    include "it(basic)"
+    name[Group1] = "Italian (intl., with dead keys)";
+
+    key <AE12> { [ igrave, asciicircum,  asciitilde, dead_circumflex ] };
+
+    key <AD03> { [      e,           E,    EuroSign,           U0259 ] };
+
+    key <AC03> { [      d,           D,       U1E0D,           U1E0C ] };
+    key <AC04> { [      f,           F,       U0111,           U0110 ] };
+    key <AC06> { [      h,           H,       U1E25,           U1E24 ] };
+    key <AC11> { [ agrave,      degree,  numbersign,           U1D58 ] };
+    key <BKSL> { [ ugrave,     section,  dead_grave,      dead_breve ] };
+
+    key <AB01> { [      z,           Z                               ] };
+    key <AB02> { [      x,           X,       U03C7,           U03A7 ] };
+};
+
+partial alphanumeric_keys
+xkb_symbols "scn" {
+    include "it(basic)"
+    name[Group1] = "Sicilian";
+
+    key <AE12> { [ iacute, asciicircum,  asciitilde, dead_circumflex ] };
+
+    key <AD03> { [      e,           E,    EuroSign,     ecircumflex ] };
+    key <AD04> { [      r,           R,  ediaeresis,      Ediaeresis ] };
+    key <AD07> { [      u,           U, ucircumflex,     Ucircumflex ] };
+    key <AD08> { [      i,           I, icircumflex,     Icircumflex ] };
+    key <AD09> { [      o,           O, ocircumflex,     Ocircumflex ] };
+
+    key <AC01> { [      a,           A, acircumflex,     Acircumflex ] };
+    key <AC02> { [      s,           S,      scaron,          Scaron ] };
+    key <AC03> { [      d,           D,       U1E0D,           U1E0C ] };
+    key <AC04> { [      f,           F,       U0111,           U0110 ] };
+    key <AC11> { [ agrave,      degree,  numbersign,           U1D58 ] };
+
+    // Replaced dead_grave by ugrave, since it's common to write mixed
+    // Sicilian - Italian (where we replaced ugrave with uacute)
+    key <BKSL> { [ uacute,     section,      ugrave,      dead_breve ] };
+
+    // In our Windows layout, there is no ©, but Ç. Since this character
+    // is available via CapsLock, I decided to keep © in place, as the
+    // Italian layout.
+    key <AB02> { [      x,           X,       U03C7,           U03A7 ] };
+    key <AB03> { [      c,           C,    ccedilla,       copyright ] };
+};
+
+// layout for Italian Dvorak
+// based on https://web.archive.org/web/20170331132815/http://idvorak.altervista.org/
+
+partial alphanumeric_keys
+xkb_symbols "dvorak" {
+    include "it(basic)"
+    name[Group1]= "Italian (Dvorak)";
+
+    key <AD01> { [ agrave, degree, numbersign ] };
+    key <AD02> { [ comma, semicolon ] };
+    key <AD03> { [ period, colon ] };
+    key <AD04> { [ p, P ] };
+    key <AD05> { [ y, Y ] };
+    key <AD06> { [ f, F ] };
+    key <AD07> { [ g, G ] };
+    key <AD08> { [ c, C ] };
+    key <AD09> { [ r, R ] };
+    key <AD10> { [ l, L ] };
+    key <AD11> { [ egrave, eacute, bracketleft ] };
+    key <AD12> { [ plus, asterisk, bracketright ] };
+
+    key <AC01> { [ a, A ] };
+    key <AC02> { [ o, O ] };
+    key <AC03> { [ e, E ] };
+    key <AC04> { [ u, U ] };
+    key <AC05> { [ i, I ] };
+    key <AC06> { [ d, D ] };
+    key <AC07> { [ h, H ] };
+    key <AC08> { [ t, T ] };
+    key <AC09> { [ n, N ] };
+    key <AC10> { [ s, S ] };
+    key <AC11> { [ minus, underscore ] };
+    key <AC12> { [ ugrave, section ] };
+
+    key <AB01> { [ ograve, ccedilla, at ] };
+    key <AB02> { [ q, Q ] } ;
+    key <AB03> { [ j, J ] };
+    key <AB04> { [ k, K ] };
+    key <AB05> { [ x, X ] };
+    key <AB06> { [ b, B ] };
+    key <AB07> { [ m, M ] };
+    key <AB08> { [ w, W ] };
+    key <AB09> { [ v, V ] };
+    key <AB10> { [ z, Z ] };
+};

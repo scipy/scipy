@@ -1,0 +1,137 @@
+escape_char /
+comment_char %
+% charset "UTF-8"
+% Distribution and use is free, also for commercial purposes.
+
+LC_IDENTIFICATION
+title "Inuktitut language locale for Nunavut, Canada"
+source ""
+address ""
+contact "Pablo Saratxaga"
+email "pablo@mandriva.com"
+tel ""
+fax ""
+language "Inuktitut"
+territory "CA"
+revision "0.1"
+date "2001-05-04"
+
+category iu_CA:2000;LC_IDENTIFICATION
+category iu_CA:2000;LC_COLLATE
+category iu_CA:2000;LC_CTYPE
+category iu_CA:2000;LC_MESSAGES
+category iu_CA:2000;LC_MONETARY
+category iu_CA:2000;LC_NUMERIC
+category iu_CA:2000;LC_TIME
+category iu_CA:2000;LC_PAPER
+category iu_CA:2000;LC_NAME
+category iu_CA:2000;LC_MEASUREMENT
+category iu_CA:2000;LC_TELEPHONE
+category iu_CA:2000;LC_ADDRESS
+END LC_IDENTIFICATION
+
+LC_ADDRESS
+postal_fmt    "<U0025><U0061><U0025><U004E><U0025><U0066><U0025><U004E>/
+<U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E><U0025><U0068>/
+<U0020><U0025><U0073><U0020><U0025><U0065><U0020><U0025><U0072><U0025>/
+<U004E><U0025><U0054><U0020><U0025><U007A><U0025>/
+<U004E><U0025><U0063><U0025><U004E>"
+% FIXME country_name "Canada" in inuktitut ?
+% FIXME country_post "CA" for Canada ? 
+country_ab2 "<U0043><U0041>"
+country_ab3 "<U0043><U0041><U004E>"
+country_num 124
+country_car "<U0043><U0041><U004E>" % FIXME
+% FIXME country_isbn for Canada/inuktitut ?
+lang_name "<U1403><U14C4><U1483><U144E><U1450><U1466>"
+lang_ab "<U0069><U0075>"
+lang_term "<U0069><U006B><U0075>"
+lang_lib  "<U0069><U006B><U0075>"
+END LC_ADDRESS
+
+%%%%%%%%%%%%%
+%
+% TODO: LC_COLLATE, LC_TIME, LC_MESSAGES
+%
+%%%%%%%%%%%%
+
+
+LC_COLLATE
+% FIXME: is that order correct ?
+copy "en_CA"
+END LC_COLLATE
+
+LC_CTYPE
+copy "en_CA"
+END LC_CTYPE
+
+LC_MONETARY
+copy "en_CA"
+END LC_MONETARY
+
+LC_NUMERIC
+copy "en_CA"
+END LC_NUMERIC
+
+LC_TELEPHONE
+copy "en_CA"
+END LC_TELEPHONE
+
+LC_TIME
+abday       "<U14C8>";"<U14C7>";/
+            "<U14D5>";"<U1431>";/
+            "<U157F>";"<U1405>";/
+            "<U14EF>"
+day         "<U14C8><U1466><U144E><U1591><U152D><U1550><U1555><U1483>";/
+            "<U14C7><U14A1><U1490><U153E><U152D><U1405>";/
+            "<U14C7><U14A1><U1490><U153E><U152D><U1405><U14D5><U1585><U146D><U1466>";/
+            "<U1431><U1593><U14F2><U14D5><U1585><U14EF><U1405><U1466>";/
+            "<U157F><U144E><U1585><U1470><U1466>";/
+            "<U1405><U14EA><U14D7><U1548><U14D8><U1450><U1403><U14C7><U1585>";/
+            "<U14EF><U1559><U1456><U1555><U1483>"
+abmon       "<U152E><U14C4>";"<U1555><U1557>";/
+            "<U14AA><U1505>";"<U1403><U1433>";/
+            "<U14AA><U1403>";"<U152A><U14C2>";/
+            "<U152A><U14DA>";"<U140A><U148B>";/
+            "<U14EF><U144E>";"<U140A><U1466>";/
+            "<U14C4><U1555>";"<U144E><U14EF>"
+mon         "<U152E><U14C4><U140A><U14D5>";/
+            "<U1555><U1557><U140A><U14D5>";/
+            "<U14AA><U1505><U14EF>";/
+            "<U1403><U1433><U14D7>";/
+            "<U14AA><U1403>";/
+       	    "<U152A><U14C2>";/
+            "<U152A><U14DA><U1403>";/
+            "<U140A><U148B><U14EF>";/
+            "<U14EF><U144E><U1559>";/
+            "<U140A><U1466><U1450><U1559>";/
+            "<U14C4><U1555><U1559>";/
+            "<U144E><U14EF><U155D><U1559>"
+d_t_fmt     "<U0025><U0061><U0020><U0025><U0064><U0020><U0025><U0062><U0020><U0025><U0059><U0020><U0025><U0072><U0020><U0025><U005A>"
+d_fmt       "<U0025><U006D><U002F><U0025><U0064><U002F><U0025><U0079>"
+t_fmt       "<U0025><U0072>"
+am_pm       "<U0041><U004D>";"<U0050><U004D>"
+t_fmt_ampm  "<U0025><U0049><U003A><U0025><U004D><U003A><U0025><U0053><U0020><U0025><U0070>"
+END LC_TIME
+
+LC_MESSAGES
+yesexpr     "<U005B><U0079><U0059><U0073><U0053><U005D><U002E><U002A>"
+noexpr      "<U005B><U006E><U004E><U005D><U002E><U002A>"
+END LC_MESSAGES
+
+LC_PAPER
+copy "en_CA"
+END LC_PAPER
+
+% FIXME
+LC_NAME
+copy "en_CA"
+END LC_NAME
+
+% Metric System (ISO 1000)
+LC_MEASUREMENT
+measurement 1
+END LC_MEASUREMENT
+
+
+

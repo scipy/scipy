@@ -1,0 +1,8 @@
+prefix=/workspaces/scipy/venv
+includedir=${prefix}/include
+
+Name: gstreamer-gl-x11-1.0
+Description: Streaming media framework, OpenGL plugins libraries (X11 specifics)
+Version: 1.22.3
+Requires: gstreamer-gl-1.0, x11-xcb
+Cflags: -I${includedir}/gstreamer-1.0

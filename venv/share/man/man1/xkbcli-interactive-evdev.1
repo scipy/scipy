@@ -1,0 +1,77 @@
+.Dd July 27, 2020
+.Dt XKBCLI\-INTERACTIVE\-EVDEV 1
+.Os
+.
+.Sh NAME
+.Nm "xkbcli interactive\-evdev"
+.Nd interactive debugger for XKB keymaps
+.
+.Sh SYNOPSIS
+.Nm
+.Op Ar options
+.
+.Sh DESCRIPTION
+.Nm
+is a commandline tool to interactively debug XKB keymaps by listening to
+.Pa /dev/input/eventX
+evdev devices.
+.
+.Pp
+.Nm
+requires permission to open the evdev device nodes.
+This usually requires being the
+.Dq root
+user or belonging to the
+.Dq input
+group.
+.
+.Pp
+Press the
+.Aq Escape
+key to exit.
+.
+.Pp
+This is a debugging tool, its behavior or output is not guaranteed to be stable.
+.
+.Bl -tag -width Ds
+.It Fl \-help
+Print help and exit
+.
+.It Fl \-rules Ar rules
+The XKB ruleset
+.
+.It Fl \-model Ar model
+The XKB model
+.
+.It Fl \-layout Ar layout
+The XKB layout
+.
+.It Fl \-variant Ar variant
+The XKB layout variant
+.
+.It Fl \-option Ar options
+The XKB options
+.
+.It Fl \-keymap Ar file
+Specify a keymap path.
+This option is mutually exclusive with the RMLVO options.
+.
+.It Fl \-report\-state\-changes
+Report changes to the keyboard state
+.
+.It Fl \-enable\-compose
+Enable Compose functionality
+.
+.It Fl \-consumed\-mode Brq xkb|gtk
+Set the consumed modifiers mode (default: xkb)
+.
+.It Fl \-without\-x11\-offset
+Don't add an offset of 8 when converting an evdev keycode to an XKB keycode.
+You probably don't want this option.
+.El
+.
+.Sh SEE ALSO
+.Xr xkbcli 1 ,
+.Xr xkbcli\-interactive\-wayland 1 ,
+.Xr xkbcli\-interactive\-x11 1 ,
+.Lk https://xkbcommon.org "The libxkbcommon online documentation"

@@ -1,0 +1,60 @@
+// Keyboard layouts for Egypt.
+
+// Coptic-language layout, based on https://coptic-dictionary.org,
+// with added diacritics.
+default  partial alphanumeric_keys modifier_keys
+xkb_symbols "basic" {
+
+   name[Group1]= "Coptic";
+
+    key <TLDE> { [ U0307,       U0300 ] };
+    key <AE01> { [     1,      exclam ] };
+    key <AE02> { [     2,          at ] };
+    key <AE03> { [     3,  numbersign ] };
+    key <AE04> { [     4,      dollar ] };
+    key <AE05> { [     5,     percent ] };
+    key <AE06> { [     6, asciicircum ] };
+    key <AE07> { [     7,   ampersand ] };
+    key <AE08> { [     8,    asterisk ] };
+    key <AE09> { [     9,   parenleft ] };
+    key <AE10> { [     0,  parenright ] };
+    key <AE11> { [ U0305,       minus,  underscore        ] };
+    key <AE12> { [ U0308,       U2E17,       equal,  plus ] };
+
+    key <AD01> { [ U2C91, U2C90 ] };
+    key <AD02> { [ U2CB1, U2CB0 ] };
+    key <AD03> { [ U2C89, U2C88 ] };
+    key <AD04> { [ U2CA3, U2CA2 ] };
+    key <AD05> { [ U2CA7, U2CA6 ] };
+    key <AD06> { [ U2CAF, U2CAE ] };
+    key <AD07> { [ U2CA9, U2CA8 ] };
+    key <AD08> { [ U2C93, U2C92 ] };
+    key <AD09> { [ U2C9F, U2C9E ] };
+    key <AD10> { [ U2CA1, U2CA0 ] };
+    key <AD11> { [ U03E3, U03E2 ] };
+    key <AD12> { [ bracketleft, bracketright ] };
+
+    key <AC01> { [ U2C81, U2C80 ] };
+    key <AC02> { [ U2CA5, U2CA4 ] };
+    key <AC03> { [ U2C87, U2C86 ] };
+    key <AC04> { [ U03E5, U03E4 ] };
+    key <AC05> { [ U2C85, U2C84 ] };
+    key <AC06> { [ U03E9, U03E8 ] };
+    key <AC07> { [ U03EB, U03EA ] };
+    key <AC08> { [ U2C95, U2C94 ] };
+    key <AC09> { [ U2C97, U2C96 ] };
+    key <AC10> { [ U03E7, U03E6 ] };
+    key <AC11> { [ U2CC9, U2CC8 ] };
+    key <BKSL> { [ U0304, U0323 ] };
+
+    key <AB01> { [ U2C8D, U2C8C ] };
+    key <AB02> { [ U2C9D, U2C9C ] };
+    key <AB03> { [ U2CAD, U2CAC ] };
+    key <AB04> { [ U2CAB, U2CAA ] };
+    key <AB05> { [ U2C83, U2C82 ] };
+    key <AB06> { [ U2C9B, U2C9A ] };
+    key <AB07> { [ U2C99, U2C98 ] };
+    key <AB08> { [ U03ED, U03EC ] };
+    key <AB09> { [ U03EF, U03EE ] };
+    key <AB10> { [ U2C8F, U2C8E ] };
+};

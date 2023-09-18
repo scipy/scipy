@@ -1,0 +1,61 @@
+# Galician translation for hello-c-gnome3 package.
+# Copyright (C) 2010 Yoyodyne, Inc. (msgids)
+# This file is distributed under the same license as the gettext package.
+#
+# Leandro Regueiro <leandro.regueiro@gmail.com>, 2010-2014.
+#
+# Proxecto Trasno - Adaptación do software libre á lingua galega:  Se desexas
+# colaborar connosco, podes atopar máis información en <http://trasno.net>
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: hello-c-gnome3 0.19-rc1\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"PO-Revision-Date: 2014-05-10 16:34+0100\n"
+"Last-Translator: Leandro Regueiro <leandro.regueiro@gmail.com>\n"
+"Language-Team: Galician <proxecto@trasno.net>\n"
+"Language: gl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+
+#: hello.c:79
+#, fuzzy, c-format
+msgid ""
+"<big>Hello world!</big>\n"
+"This program is running as process number <b>%d</b>."
+msgstr "Este programa estase executando como o proceso número %d."
+
+#: hello.c:84
+msgid "<big><u>This is another text</u></big>"
+msgstr ""
+
+#: hello.c:86
+msgid "<big><i>This is yet another text</i></big>"
+msgstr ""
+
+#: hello.desktop.in.in:4
+msgid "Hello"
+msgstr ""
+
+#: hello.desktop.in.in:5
+msgid "Hello, world!"
+msgstr "Ola, mundo!"
+
+#: hello.ui:6
+msgid "Example Application"
+msgstr "Aplicativo de exemplo"
+
+#: hello.ui:34
+msgid "Update text"
+msgstr ""
+
+#: hello.gschema.xml:8
+msgid "Use XML markup"
+msgstr ""
+
+#: hello.gschema.xml:9
+msgid "Whether to use XML markup in the text."
+msgstr ""

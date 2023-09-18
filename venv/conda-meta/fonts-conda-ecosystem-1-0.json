@@ -1,0 +1,36 @@
+{
+  "build": "0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/noarch",
+  "constrains": [],
+  "depends": [
+    "fonts-conda-forge"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/fonts-conda-ecosystem-1-0",
+  "features": "",
+  "files": [],
+  "fn": "fonts-conda-ecosystem-1-0.tar.bz2",
+  "license": "BSD-3-Clause",
+  "license_family": "BSD",
+  "link": {
+    "source": "/opt/conda/pkgs/fonts-conda-ecosystem-1-0",
+    "type": 1
+  },
+  "md5": "fee5683a3f04bd15cbd8318b096a27ab",
+  "name": "fonts-conda-ecosystem",
+  "noarch": "generic",
+  "package_tarball_full_path": "/opt/conda/pkgs/fonts-conda-ecosystem-1-0.tar.bz2",
+  "package_type": "noarch_generic",
+  "paths_data": {
+    "paths": [],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "a997f2f1921bb9c9d76e6fa2f6b408b7fa549edd349a77639c9fe7a23ea93e61",
+  "size": 3667,
+  "subdir": "noarch",
+  "timestamp": 1566974674465,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/noarch/fonts-conda-ecosystem-1-0.tar.bz2",
+  "version": "1"
+}

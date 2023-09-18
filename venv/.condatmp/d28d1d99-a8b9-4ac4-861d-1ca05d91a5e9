@@ -1,0 +1,1116 @@
+# -*-makefile-*-
+# src/Makefile.global.in
+# src/Makefile.global.  Generated from Makefile.global.in by configure.
+
+#------------------------------------------------------------------------------
+# All PostgreSQL makefiles include this file and use the variables it sets,
+# which in turn are put here by the configure script. There is no need for
+# users to edit this file -- if it turns out to be necessary then that's a
+# bug.
+#
+# A makefile that includes this file needs to set the variable `subdir' to
+# the relative path from the top to itself and `top_builddir' to the relative
+# path from itself to the top before including this file. (The "top" is the
+# parent directory of the directory this file is in.)
+#------------------------------------------------------------------------------
+
+
+##########################################################################
+#
+# Meta configuration
+
+standard_targets = all install installdirs uninstall distprep clean distclean maintainer-clean coverage check checkprep installcheck init-po update-po
+# these targets should recurse even into subdirectories not being built:
+standard_always_targets = distprep clean distclean maintainer-clean
+
+.PHONY: $(standard_targets) install-strip html man installcheck-parallel update-unicode
+
+# make `all' the default target
+all:
+
+# Delete target files if the command fails after it has
+# started to update the file.
+.DELETE_ON_ERROR:
+
+# Never delete any intermediate files automatically.
+.SECONDARY:
+
+# PostgreSQL version number
+VERSION = 15.3
+MAJORVERSION = 15
+VERSION_NUM = 150003
+
+PACKAGE_URL = https://www.postgresql.org/
+
+# Set top_srcdir, srcdir, and VPATH.
+ifdef PGXS
+top_srcdir = $(top_builddir)
+
+# If VPATH is set or Makefile is not in current directory we are building
+# the extension with VPATH so we set the variable here.
+ifdef VPATH
+srcdir = $(VPATH)
+else
+ifeq ($(CURDIR),$(dir $(firstword $(MAKEFILE_LIST))))
+srcdir = .
+
+else
+srcdir = $(dir $(firstword $(MAKEFILE_LIST)))
+
+endif
+endif
+else # not PGXS
+vpath_build = no
+abs_top_builddir = /home/conda/feedstock_root/build_artifacts/postgresql-split_1684451506652/work
+abs_top_srcdir = /home/conda/feedstock_root/build_artifacts/postgresql-split_1684451506652/work
+
+ifneq ($(vpath_build),yes)
+top_srcdir = $(top_builddir)
+srcdir = .
+else # vpath_build = yes
+top_srcdir = $(abs_top_srcdir)
+srcdir = $(top_srcdir)/$(subdir)
+
+endif
+endif # not PGXS
+
+vpathsearch = `for f in $(addsuffix /$(1),$(subst :, ,. $(VPATH))); do test -r $$f && echo $$f && break; done`
+
+
+##########################################################################
+#
+# Installation directories
+#
+# These are set by the equivalent --xxxdir configure options.  We
+# append "postgresql" to some of them, if the string does not already
+# contain "pgsql" or "postgres", in order to avoid directory clutter.
+#
+# In a PGXS build, we cannot use the values inserted into Makefile.global
+# by configure, since the installation tree may have been relocated.
+# Instead get the path values from pg_config.
+
+ifndef PGXS
+
+# Note that prefix, exec_prefix, and datarootdir aren't defined in a PGXS build;
+# makefiles may only use the derived variables such as bindir.
+
+prefix := /workspaces/scipy/venv
+exec_prefix := ${prefix}
+datarootdir := ${prefix}/share
+
+bindir := ${exec_prefix}/bin
+
+datadir := ${datarootdir}
+ifeq "$(findstring pgsql, $(datadir))" ""
+ifeq "$(findstring postgres, $(datadir))" ""
+override datadir := $(datadir)/postgresql
+endif
+endif
+
+sysconfdir := ${prefix}/etc
+ifeq "$(findstring pgsql, $(sysconfdir))" ""
+ifeq "$(findstring postgres, $(sysconfdir))" ""
+override sysconfdir := $(sysconfdir)/postgresql
+endif
+endif
+
+libdir := ${exec_prefix}/lib
+
+pkglibdir = $(libdir)
+ifeq "$(findstring pgsql, $(pkglibdir))" ""
+ifeq "$(findstring postgres, $(pkglibdir))" ""
+override pkglibdir := $(pkglibdir)/postgresql
+endif
+endif
+
+includedir := ${prefix}/include
+
+pkgincludedir = $(includedir)
+ifeq "$(findstring pgsql, $(pkgincludedir))" ""
+ifeq "$(findstring postgres, $(pkgincludedir))" ""
+override pkgincludedir := $(pkgincludedir)/postgresql
+endif
+endif
+
+mandir := ${datarootdir}/man
+
+docdir := ${datarootdir}/doc/${PACKAGE_TARNAME}
+ifeq "$(findstring pgsql, $(docdir))" ""
+ifeq "$(findstring postgres, $(docdir))" ""
+override docdir := $(docdir)/postgresql
+endif
+endif
+
+htmldir := ${docdir}
+
+localedir := ${datarootdir}/locale
+
+else # PGXS case
+
+# Extension makefiles should set PG_CONFIG, but older ones might not
+ifndef PG_CONFIG
+PG_CONFIG = pg_config
+endif
+
+bindir := $(shell $(PG_CONFIG) --bindir)
+datadir := $(shell $(PG_CONFIG) --sharedir)
+sysconfdir := $(shell $(PG_CONFIG) --sysconfdir)
+libdir := $(shell $(PG_CONFIG) --libdir)
+pkglibdir := $(shell $(PG_CONFIG) --pkglibdir)
+includedir := $(shell $(PG_CONFIG) --includedir)
+pkgincludedir := $(shell $(PG_CONFIG) --pkgincludedir)
+mandir := $(shell $(PG_CONFIG) --mandir)
+docdir := $(shell $(PG_CONFIG) --docdir)
+localedir := $(shell $(PG_CONFIG) --localedir)
+
+endif # PGXS
+
+# These derived path variables aren't separately configurable.
+
+includedir_server = $(pkgincludedir)/server
+includedir_internal = $(pkgincludedir)/internal
+pgxsdir = $(pkglibdir)/pgxs
+bitcodedir = $(pkglibdir)/bitcode
+
+
+##########################################################################
+#
+# Features
+#
+# Records the choice of the various --enable-xxx and --with-xxx options.
+
+with_icu	= no
+with_perl	= no
+with_python	= no
+with_tcl	= no
+with_ssl	= openssl
+with_readline	= yes
+with_selinux	= no
+with_systemd	= no
+with_gssapi	= yes
+with_krb_srvnam	= postgres
+with_ldap	= no
+with_libxml	= yes
+with_libxslt	= yes
+with_llvm	= no
+with_system_tzdata = /workspaces/scipy/venv/share/zoneinfo
+with_uuid	= e2fs
+with_zlib	= yes
+enable_rpath	= yes
+enable_nls	= no
+enable_debug	= no
+enable_dtrace	= no
+enable_coverage	= no
+enable_tap_tests	= no
+enable_thread_safety	= yes
+
+python_includespec	= 
+python_libdir		= 
+python_libspec		= 
+python_additional_libs	= 
+python_majorversion	= 
+python_version		= 
+
+krb_srvtab = FILE:$(sysconfdir)/krb5.keytab
+
+ICU_CFLAGS		= 
+ICU_LIBS		= 
+
+TCLSH			= 
+TCL_LIBS		= 
+TCL_LIB_SPEC		= 
+TCL_INCLUDE_SPEC	= 
+TCL_SHARED_BUILD	= 
+TCL_SHLIB_LD_LIBS	= 
+
+PTHREAD_CFLAGS		= -pthread -D_REENTRANT -D_THREAD_SAFE
+PTHREAD_LIBS		= 
+
+LLVM_CONFIG = 
+LLVM_BINPATH = 
+CLANG = 
+BITCODE_CFLAGS =  -O2 
+BITCODE_CXXFLAGS =  -O2 
+
+##########################################################################
+#
+# Programs and flags
+
+# Compilers
+
+CPP = /home/conda/feedstock_root/build_artifacts/postgresql-split_1684451506652/_build_env/bin/x86_64-conda-linux-gnu-cpp
+CPPFLAGS = -DNDEBUG -D_FORTIFY_SOURCE=2 -O2 -isystem /workspaces/scipy/venv/include -D_GNU_SOURCE -I/workspaces/scipy/venv/include/libxml2 -I/workspaces/scipy/venv/include  -I/workspaces/scipy/venv/include
+PG_SYSROOT = undefined
+
+override CPPFLAGS := $(ICU_CFLAGS) $(CPPFLAGS)
+
+ifdef PGXS
+override CPPFLAGS := -I$(includedir_server) -I$(includedir_internal) $(CPPFLAGS)
+else # not PGXS
+override CPPFLAGS := -I$(top_srcdir)/src/include $(CPPFLAGS)
+ifdef VPATH
+override CPPFLAGS := -I$(top_builddir)/src/include $(CPPFLAGS)
+endif
+endif # not PGXS
+
+CC = x86_64-conda-linux-gnu-cc
+GCC = yes
+SUN_STUDIO_CC = no
+CXX = x86_64-conda-linux-gnu-c++
+CFLAGS = -Wall -Wmissing-prototypes -Wpointer-arith -Wdeclaration-after-statement -Werror=vla -Wendif-labels -Wmissing-format-attribute -Wimplicit-fallthrough=3 -Wcast-function-type -Wformat-security -fno-strict-aliasing -fwrapv -fexcess-precision=standard -Wno-format-truncation -Wno-stringop-truncation -march=nocona -mtune=haswell -ftree-vectorize -fPIC -fstack-protector-strong -fno-plt -O2 -ffunction-sections -pipe -isystem /workspaces/scipy/venv/include -fdebug-prefix-map=/home/conda/feedstock_root/build_artifacts/postgresql-split_1684451506652/work=/usr/local/src/conda/postgresql-split-15.3 -fdebug-prefix-map=/workspaces/scipy/venv=/usr/local/src/conda-prefix
+CFLAGS_SL = -fPIC
+CFLAGS_UNROLL_LOOPS =  -funroll-loops
+CFLAGS_VECTORIZE =  -ftree-vectorize
+CFLAGS_SSE42 = -msse4.2
+CFLAGS_ARMV8_CRC32C = 
+PERMIT_DECLARATION_AFTER_STATEMENT = -Wno-declaration-after-statement
+CXXFLAGS = -Wall -Wpointer-arith -Wendif-labels -Wmissing-format-attribute -Wimplicit-fallthrough=3 -Wcast-function-type -Wformat-security -fno-strict-aliasing -fwrapv -fvisibility-inlines-hidden -fmessage-length=0 -march=nocona -mtune=haswell -ftree-vectorize -fPIC -fstack-protector-strong -fno-plt -O2 -ffunction-sections -pipe -isystem /workspaces/scipy/venv/include -fdebug-prefix-map=/home/conda/feedstock_root/build_artifacts/postgresql-split_1684451506652/work=/usr/local/src/conda/postgresql-split-15.3 -fdebug-prefix-map=/workspaces/scipy/venv=/usr/local/src/conda-prefix
+
+LLVM_CPPFLAGS = 
+LLVM_CFLAGS = 
+LLVM_CXXFLAGS = 
+
+# Kind-of compilers
+
+BISON = 
+BISONFLAGS =  $(YFLAGS)
+FLEX = 
+FLEXFLAGS =  $(LFLAGS)
+DTRACE = 
+DTRACEFLAGS = 
+ZIC = 
+
+# Linking
+
+AR = /home/conda/feedstock_root/build_artifacts/postgresql-split_1684451506652/_build_env/bin/x86_64-conda-linux-gnu-ar
+DLLTOOL = 
+DLLWRAP = 
+LIBS = -lxslt -lxml2 -lssl -lcrypto -lgssapi_krb5 -lz -lreadline -lpthread -lrt -ldl -lm 
+LDAP_LIBS_FE = 
+LDAP_LIBS_BE = 
+UUID_LIBS = -luuid
+LLVM_LIBS=
+LD = /home/conda/feedstock_root/build_artifacts/postgresql-split_1684451506652/_build_env/bin/x86_64-conda-linux-gnu-ld
+with_gnu_ld = yes
+
+# It's critical that within LDFLAGS, all -L switches pointing to build-tree
+# directories come before any -L switches pointing to external directories.
+# Otherwise it's possible for, e.g., a platform-provided copy of libpq.so
+# to get linked in place of the one we've built.  Therefore we adopt the
+# convention that the first component of LDFLAGS is an extra variable
+# LDFLAGS_INTERNAL, and -L and -l switches for PG's own libraries must be
+# put into LDFLAGS_INTERNAL, so they will appear ahead of those for external
+# libraries.
+#
+# We need LDFLAGS and LDFLAGS_INTERNAL to be "recursively expanded" variables,
+# else adjustments to, e.g., rpathdir don't work right.  So we must NOT do
+# "LDFLAGS := something" anywhere, ditto for LDFLAGS_INTERNAL.
+# These initial assignments must be "=" type, and elsewhere we must only do
+# "LDFLAGS += something" or "LDFLAGS_INTERNAL += something".
+ifdef PGXS
+  LDFLAGS_INTERNAL = -L$(libdir)
+else
+  LDFLAGS_INTERNAL = -L$(top_builddir)/src/port -L$(top_builddir)/src/common
+endif
+LDFLAGS = $(LDFLAGS_INTERNAL) -Wl,-O2 -Wl,--sort-common -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -Wl,--disable-new-dtags -Wl,--gc-sections -Wl,--allow-shlib-undefined -Wl,-rpath,/workspaces/scipy/venv/lib -Wl,-rpath-link,/workspaces/scipy/venv/lib -L/workspaces/scipy/venv/lib -L/workspaces/scipy/venv/lib  -L/workspaces/scipy/venv/lib -Wl,--as-needed
+
+LDFLAGS_EX = 
+# LDFLAGS_SL might have already been assigned by calling makefile
+LDFLAGS_SL += 
+LDREL = -r
+LDOUT = -o
+RANLIB = /home/conda/feedstock_root/build_artifacts/postgresql-split_1684451506652/_build_env/bin/x86_64-conda-linux-gnu-ranlib
+WINDRES = 
+X = 
+
+# Perl
+
+ifneq (/opt/conda/bin/perl,)
+    # quoted to protect pathname with spaces
+    PERL		= '/opt/conda/bin/perl'
+else
+    PERL		= $(missing) perl
+endif
+perl_archlibexp		= 
+perl_privlibexp		= 
+perl_includespec	= 
+perl_embed_ccflags	= 
+perl_embed_ldflags	= 
+
+# Miscellaneous
+
+AWK	= gawk
+LN_S	= ln -s
+MSGFMT  = 
+MSGFMT_FLAGS = 
+MSGMERGE = 
+PYTHON	= 
+TAR	= /usr/bin/tar
+XGETTEXT = 
+
+GZIP	= gzip
+BZIP2	= bzip2
+LZ4	= /opt/conda/bin/lz4
+ZSTD	= /opt/conda/bin/zstd
+
+DOWNLOAD = wget -O $@ --no-use-server-timestamps
+#DOWNLOAD = curl -o $@
+
+
+# Unicode data information
+
+# Before each major release, update these and run make update-unicode.
+
+# Pick a release from here: <https://www.unicode.org/Public/>.  Note
+# that the most recent release listed there is often a pre-release;
+# don't pick that one, except for testing.
+UNICODE_VERSION = 14.0.0
+
+# Pick a release from here: <http://cldr.unicode.org/index/downloads>
+CLDR_VERSION = 41
+
+
+# Tree-wide build support
+
+# Just about every code subdirectory wants to have the generated headers
+# available before building, but we don't want parallel makes all trying
+# to build the same headers.  These rules, together with the recursion rules
+# below, ensure that we update the generated headers once, if needed,
+# at the top level of any "make all/install/check/installcheck" request.
+# If a particular subdirectory knows this isn't needed in itself or its
+# children, it can set NO_GENERATED_HEADERS.
+
+all install check installcheck: submake-generated-headers
+
+.PHONY: submake-generated-headers
+
+submake-generated-headers:
+ifndef NO_GENERATED_HEADERS
+ifeq ($(MAKELEVEL),0)
+	$(MAKE) -C $(top_builddir)/src/backend generated-headers
+endif
+endif
+
+
+# Testing
+
+# In much the same way as above, these rules ensure that we build a temp
+# install tree just once in any recursive "make check".  The additional test
+# on abs_top_builddir prevents doing anything foolish to the root directory.
+
+check: temp-install
+
+.PHONY: temp-install
+
+temp-install: | submake-generated-headers
+ifndef NO_TEMP_INSTALL
+ifneq ($(abs_top_builddir),)
+ifeq ($(MAKELEVEL),0)
+	rm -rf '$(abs_top_builddir)'/tmp_install
+	$(MKDIR_P) '$(abs_top_builddir)'/tmp_install/log
+	$(MAKE) -C '$(top_builddir)' DESTDIR='$(abs_top_builddir)'/tmp_install install >'$(abs_top_builddir)'/tmp_install/log/install.log 2>&1
+	$(MAKE) -j1 $(if $(CHECKPREP_TOP),-C $(CHECKPREP_TOP),) checkprep >>'$(abs_top_builddir)'/tmp_install/log/install.log 2>&1
+endif
+endif
+endif
+
+# Tasks to run serially at the end of temp-install.  Some EXTRA_INSTALL
+# entries appear more than once in the tree, and parallel installs of the same
+# file can fail with EEXIST.
+checkprep:
+	$(if $(EXTRA_INSTALL),for extra in $(EXTRA_INSTALL); do $(MAKE) -C '$(top_builddir)'/$$extra DESTDIR='$(abs_top_builddir)'/tmp_install install || exit; done)
+
+PROVE = 
+# There are common routines in src/test/perl, and some test suites have
+# extra perl modules in their own directory.
+PG_PROVE_FLAGS = -I $(top_srcdir)/src/test/perl/ -I $(srcdir)
+# User-supplied prove flags such as --verbose can be provided in PROVE_FLAGS.
+PROVE_FLAGS =
+
+# prepend to path if already set, else just set it
+define add_to_path
+$(1)="$(if $($(1)),$(2):$$$(1),$(2))"
+endef
+
+# platform-specific environment variable to set shared library path
+# individual ports can override this later, this is the default name
+ld_library_path_var = LD_LIBRARY_PATH
+
+# with_temp_install_extra is for individual ports to define if they
+# need something more here. If not defined then the expansion does
+# nothing.
+with_temp_install = \
+	PATH="$(abs_top_builddir)/tmp_install$(bindir):$(CURDIR):$$PATH" \
+	$(call add_to_path,$(strip $(ld_library_path_var)),$(abs_top_builddir)/tmp_install$(libdir)) \
+	$(with_temp_install_extra)
+
+ifeq ($(enable_tap_tests),yes)
+
+ifndef PGXS
+define prove_installcheck
+echo "+++ tap install-check in $(subdir) +++" && \
+rm -rf '$(CURDIR)'/tmp_check && \
+$(MKDIR_P) '$(CURDIR)'/tmp_check && \
+cd $(srcdir) && \
+   TESTDIR='$(CURDIR)' PATH="$(bindir):$(CURDIR):$$PATH" \
+   PGPORT='6$(DEF_PGPORT)' top_builddir='$(CURDIR)/$(top_builddir)' \
+   PG_REGRESS='$(CURDIR)/$(top_builddir)/src/test/regress/pg_regress' \
+   $(PROVE) $(PG_PROVE_FLAGS) $(PROVE_FLAGS) $(if $(PROVE_TESTS),$(PROVE_TESTS),t/*.pl)
+endef
+else # PGXS case
+define prove_installcheck
+echo "+++ tap install-check in $(subdir) +++" && \
+rm -rf '$(CURDIR)'/tmp_check && \
+$(MKDIR_P) '$(CURDIR)'/tmp_check && \
+cd $(srcdir) && \
+   TESTDIR='$(CURDIR)' PATH="$(bindir):$(CURDIR):$$PATH" \
+   PGPORT='6$(DEF_PGPORT)' \
+   PG_REGRESS='$(top_builddir)/src/test/regress/pg_regress' \
+   $(PROVE) $(PG_PROVE_FLAGS) $(PROVE_FLAGS) $(if $(PROVE_TESTS),$(PROVE_TESTS),t/*.pl)
+endef
+endif # PGXS
+
+define prove_check
+echo "+++ tap check in $(subdir) +++" && \
+rm -rf '$(CURDIR)'/tmp_check && \
+$(MKDIR_P) '$(CURDIR)'/tmp_check && \
+cd $(srcdir) && \
+   TESTDIR='$(CURDIR)' $(with_temp_install) PGPORT='6$(DEF_PGPORT)' \
+   top_builddir='$(CURDIR)/$(top_builddir)' \
+   PG_REGRESS='$(CURDIR)/$(top_builddir)/src/test/regress/pg_regress' \
+   $(PROVE) $(PG_PROVE_FLAGS) $(PROVE_FLAGS) $(if $(PROVE_TESTS),$(PROVE_TESTS),t/*.pl)
+endef
+
+else
+prove_installcheck = @echo "TAP tests not enabled. Try configuring with --enable-tap-tests"
+prove_check = $(prove_installcheck)
+endif
+
+# Installation.
+
+install_bin = /usr/bin/install -c
+install_sh = $(SHELL) $(top_srcdir)/config/install-sh -c
+INSTALL = $(if $(use_install_sh),$(install_sh),$(if $(install_bin),$(install_bin),$(install_sh)))
+
+INSTALL_SCRIPT_MODE	= 755
+INSTALL_DATA_MODE	= 644
+INSTALL_PROGRAM	= $(INSTALL_PROGRAM_ENV) $(INSTALL) $(INSTALL_STRIP_FLAG)
+INSTALL_SCRIPT	= $(INSTALL) -m $(INSTALL_SCRIPT_MODE)
+INSTALL_DATA	= $(INSTALL) -m $(INSTALL_DATA_MODE)
+INSTALL_STLIB	= $(INSTALL_STLIB_ENV) $(INSTALL_DATA) $(INSTALL_STRIP_FLAG)
+INSTALL_SHLIB	= $(INSTALL_SHLIB_ENV) $(INSTALL) $(INSTALL_SHLIB_OPTS) $(INSTALL_STRIP_FLAG)
+# Override in Makefile.port if necessary
+INSTALL_SHLIB_OPTS = -m 755
+
+MKDIR_P = /usr/bin/mkdir -p
+
+missing		= $(SHELL) $(top_srcdir)/config/missing
+
+STRIP		= /home/conda/feedstock_root/build_artifacts/postgresql-split_1684451506652/_build_env/bin/x86_64-conda-linux-gnu-strip
+STRIP_STATIC_LIB = /home/conda/feedstock_root/build_artifacts/postgresql-split_1684451506652/_build_env/bin/x86_64-conda-linux-gnu-strip --strip-unneeded
+STRIP_SHARED_LIB = /home/conda/feedstock_root/build_artifacts/postgresql-split_1684451506652/_build_env/bin/x86_64-conda-linux-gnu-strip --strip-unneeded
+
+# Documentation
+
+DBTOEPUB	= 
+FOP				= 
+XMLLINT			= /workspaces/scipy/venv/bin/xmllint
+XSLTPROC		= /workspaces/scipy/venv/bin/xsltproc
+
+# Code coverage
+
+GCOV = 
+LCOV = 
+GENHTML = 
+
+# Feature settings
+
+DEF_PGPORT = 5432
+WANTED_LANGUAGES = 
+
+
+##########################################################################
+#
+# Additional platform-specific settings
+#
+
+# Name of the "template"
+PORTNAME= linux
+
+build_os = linux-gnu
+
+host_tuple = x86_64-conda-linux-gnu
+host_os = linux-gnu
+host_cpu = x86_64
+
+# Backend stack size limit has to be hard-wired on Windows (it's in bytes)
+WIN32_STACK_RLIMIT=4194304
+
+# Set if we have a working win32 crashdump header
+have_win32_dbghelp = no
+
+DLSUFFIX = .so
+
+# Pull in platform-specific magic
+include $(top_builddir)/src/Makefile.port
+
+# Set up rpath if enabled.  By default it will point to our libdir,
+# but individual Makefiles can force other rpath paths if needed.
+rpathdir = $(libdir)
+
+ifeq ($(enable_rpath), yes)
+LDFLAGS += $(rpath)
+endif
+
+# Show the DLSUFFIX to build scripts (e.g. buildfarm)
+.PHONY: show_dl_suffix
+show_dl_suffix:
+	@echo $(DLSUFFIX)
+
+
+##########################################################################
+#
+# Some variables needed to find some client interfaces
+
+ifdef PGXS
+# some contribs assumes headers and libs are in the source tree...
+libpq_srcdir = $(includedir)
+libpq_builddir = $(libdir)
+else
+libpq_srcdir = $(top_srcdir)/src/interfaces/libpq
+libpq_builddir = $(top_builddir)/src/interfaces/libpq
+endif
+
+# How to link to libpq.  (This macro may be used as-is by backend extensions.
+# Client-side code should go through libpq_pgport or libpq_pgport_shlib,
+# instead.)
+libpq = -L$(libpq_builddir) -lpq
+
+# libpq_pgport is for use by client executables (not libraries) that use libpq.
+# We force clients to pull symbols from the non-shared libraries libpgport
+# and libpgcommon rather than pulling some libpgport symbols from libpq just
+# because libpq uses those functions too.  This makes applications less
+# dependent on changes in libpq's usage of pgport (on platforms where we
+# don't have symbol export control for libpq).  To do this we link to
+# pgport before libpq.  This does cause duplicate -lpgport's to appear
+# on client link lines, since that also appears in $(LIBS).
+# libpq_pgport_shlib is the same idea, but for use in client shared libraries.
+ifdef PGXS
+libpq_pgport = -L$(libdir) -lpgcommon -lpgport $(libpq)
+libpq_pgport_shlib = -L$(libdir) -lpgcommon_shlib -lpgport_shlib $(libpq)
+else
+libpq_pgport = -L$(top_builddir)/src/common -lpgcommon -L$(top_builddir)/src/port -lpgport $(libpq)
+libpq_pgport_shlib = -L$(top_builddir)/src/common -lpgcommon_shlib -L$(top_builddir)/src/port -lpgport_shlib $(libpq)
+endif
+
+# Cygwin seems to need ldap libraries to be mentioned here, too
+ifeq ($(PORTNAME),cygwin)
+libpq_pgport += $(LDAP_LIBS_FE)
+endif
+
+
+##########################################################################
+#
+# Commonly used submake targets
+
+submake-libpq: | submake-generated-headers
+	$(MAKE) -C $(libpq_builddir) all
+
+submake-libpgport: | submake-generated-headers
+	$(MAKE) -C $(top_builddir)/src/port all
+	$(MAKE) -C $(top_builddir)/src/common all
+
+submake-libpgfeutils: | submake-generated-headers
+	$(MAKE) -C $(top_builddir)/src/port all
+	$(MAKE) -C $(top_builddir)/src/common all
+	$(MAKE) -C $(top_builddir)/src/fe_utils all
+
+.PHONY: submake-libpq submake-libpgport submake-libpgfeutils
+
+
+##########################################################################
+#
+# Testing support
+
+ifneq ($(USE_MODULE_DB),)
+  PL_TESTDB = pl_regression_$(NAME)
+  ifneq ($(MODULE_big),)
+    CONTRIB_TESTDB=contrib_regression_$(MODULE_big)
+    ISOLATION_TESTDB=isolation_regression_$(MODULE_big)
+  else
+    ifneq ($(MODULES),)
+      CONTRIB_TESTDB=contrib_regression_$(word 1,$(MODULES))
+      ISOLATION_TESTDB=isolation_regression_$(word 1,$(MODULES))
+    else
+      CONTRIB_TESTDB=contrib_regression_$(word 1,$(REGRESS))
+      ISOLATION_TESTDB=isolation_regression_$(word 1,$(ISOLATION))
+    endif
+  endif
+else
+  PL_TESTDB = pl_regression
+  CONTRIB_TESTDB = contrib_regression
+  ISOLATION_TESTDB = isolation_regression
+endif
+
+ifdef NO_LOCALE
+NOLOCALE += --no-locale
+endif
+
+# file with extra config for temp build
+TEMP_CONF =
+ifdef TEMP_CONFIG
+TEMP_CONF += --temp-config=$(TEMP_CONFIG)
+endif
+
+pg_regress_locale_flags = $(if $(ENCODING),--encoding=$(ENCODING)) $(NOLOCALE)
+pg_regress_clean_files = results/ regression.diffs regression.out tmp_check/ tmp_check_iso/ log/ output_iso/
+
+pg_regress_check = \
+    echo "+++ regress check in $(subdir) +++" && \
+    $(with_temp_install) \
+    $(top_builddir)/src/test/regress/pg_regress \
+    --temp-instance=./tmp_check \
+    --inputdir=$(srcdir) \
+    --bindir= \
+    $(TEMP_CONF) \
+    $(pg_regress_locale_flags) $(EXTRA_REGRESS_OPTS)
+pg_regress_installcheck = \
+    echo "+++ regress install-check in $(subdir) +++" && \
+    $(top_builddir)/src/test/regress/pg_regress \
+    --inputdir=$(srcdir) \
+    --bindir='$(bindir)' \
+    $(pg_regress_locale_flags) $(EXTRA_REGRESS_OPTS)
+
+pg_isolation_regress_check = \
+    echo "+++ isolation check in $(subdir) +++" && \
+    $(with_temp_install) \
+    $(top_builddir)/src/test/isolation/pg_isolation_regress \
+    --temp-instance=./tmp_check_iso \
+    --inputdir=$(srcdir) --outputdir=output_iso \
+    --bindir= \
+    $(TEMP_CONF) \
+    $(pg_regress_locale_flags) $(EXTRA_REGRESS_OPTS)
+pg_isolation_regress_installcheck = \
+    echo "+++ isolation install-check in $(subdir) +++" && \
+    $(top_builddir)/src/test/isolation/pg_isolation_regress \
+    --inputdir=$(srcdir) --outputdir=output_iso \
+    --bindir='$(bindir)' \
+    $(pg_regress_locale_flags) $(EXTRA_REGRESS_OPTS)
+
+##########################################################################
+#
+# Customization
+#
+# This includes your local customizations if Makefile.custom exists
+# in the source directory.  This file doesn't exist in the original
+# distribution so that it doesn't get overwritten when you upgrade.
+#
+# NOTE:  Makefile.custom is from the pre-Autoconf days of PostgreSQL.
+# You are liable to shoot yourself in the foot if you use it without
+# knowing exactly what you're doing.  The preferred (and more
+# reliable) method is to communicate what you want to do to the
+# configure script, and leave the makefiles alone.
+
+-include $(top_srcdir)/src/Makefile.custom
+
+ifneq ($(CUSTOM_INSTALL),)
+INSTALL= $(CUSTOM_INSTALL)
+endif
+
+ifneq ($(CUSTOM_CC),)
+  CC= $(CUSTOM_CC)
+endif
+
+ifneq ($(CUSTOM_COPT),)
+  COPT= $(CUSTOM_COPT)
+endif
+
+#
+# These variables are meant to be set in the environment of "make"
+# to add flags to whatever configure picked.  Unlike the ones above,
+# they are documented.
+#
+ifdef COPT
+   CFLAGS += $(COPT)
+   LDFLAGS += $(COPT)
+endif
+
+ifdef PROFILE
+   CFLAGS += $(PROFILE)
+   LDFLAGS += $(PROFILE)
+endif
+
+
+##########################################################################
+#
+# substitute implementations of C library routines (see src/port/)
+# note we already included -L.../src/port in LDFLAGS above
+
+LIBOBJS =  ${LIBOBJDIR}explicit_bzero$U.o ${LIBOBJDIR}fls$U.o ${LIBOBJDIR}getpeereid$U.o ${LIBOBJDIR}strlcat$U.o ${LIBOBJDIR}strlcpy$U.o
+
+# files needed for the chosen CRC-32C implementation
+PG_CRC32C_OBJS = pg_crc32c_sse42.o pg_crc32c_sb8.o pg_crc32c_sse42_choose.o
+
+LIBS := -lpgcommon -lpgport $(LIBS)
+
+# to make ws2_32.lib the last library
+ifeq ($(PORTNAME),win32)
+LIBS += -lws2_32
+endif
+
+# Not really standard libc functions, used by the backend.
+TAS         = 
+
+
+##########################################################################
+#
+# Global targets and rules
+
+%.c: %.l
+ifdef FLEX
+	$(FLEX) $(if $(FLEX_NO_BACKUP),-b) $(FLEXFLAGS) -o'$@' $<
+	@$(if $(FLEX_NO_BACKUP),if [ `wc -l <lex.backup` -eq 1 ]; then rm lex.backup; else echo "Scanner requires backup; see lex.backup." 1>&2; exit 1; fi)
+	$(if $(FLEX_FIX_WARNING),$(PERL) $(top_srcdir)/src/tools/fix-old-flex-code.pl '$@')
+else
+	@$(missing) flex $< '$@'
+endif
+
+%.c: %.y
+	$(if $(BISON_CHECK_CMD),$(BISON_CHECK_CMD))
+ifdef BISON
+	$(BISON) $(BISONFLAGS) -o $@ $<
+else
+	@$(missing) bison $< $@
+endif
+
+%.i: %.c
+	$(CPP) $(CPPFLAGS) -o $@ $<
+
+%.gz: %
+	$(GZIP) --best -c $< >$@
+
+%.bz2: %
+	$(BZIP2) -c $< >$@
+
+# Direct builds of foo.c -> foo are disabled to avoid generating
+# *.dSYM junk on Macs.  All builds should normally go through the
+# foo.c -> foo.o -> foo steps.  This also ensures that dependency
+# tracking (see below) is used.
+%: %.c
+
+# Replace gmake's default rule for linking a single .o file to produce an
+# executable.  The main point here is to put LDFLAGS after the .o file,
+# since we put -l switches into LDFLAGS and those are order-sensitive.
+# In addition, include CFLAGS and LDFLAGS_EX per project conventions.
+%: %.o
+	$(CC) $(CFLAGS) $^ $(LDFLAGS) $(LDFLAGS_EX) $(LIBS) -o $@$(X)
+
+ifndef PGXS
+
+# Remake Makefile.global from Makefile.global.in if the latter
+# changed. In order to trigger this rule, the including file must
+# write `include $(top_builddir)/src/Makefile.global', not some
+# shortcut thereof.
+$(top_builddir)/src/Makefile.global: $(top_srcdir)/src/Makefile.global.in $(top_builddir)/config.status
+	cd $(top_builddir) && ./config.status src/Makefile.global
+
+# Remake pg_config.h from pg_config.h.in if the latter changed.
+# config.status will not change the timestamp on pg_config.h if it
+# doesn't change, so as to avoid recompiling the entire tree
+# unnecessarily. Therefore we make config.status update a timestamp file
+# stamp-h every time it runs, so that we don't trigger this rule every time.
+# (We do trigger the null rule for stamp-h to pg_config.h every time; so it's
+# important for that rule to be empty!)
+#
+# Of course you need to turn on dependency tracking to get any
+# dependencies on pg_config.h.
+$(top_builddir)/src/include/pg_config.h: $(top_builddir)/src/include/stamp-h ;
+
+$(top_builddir)/src/include/stamp-h: $(top_srcdir)/src/include/pg_config.h.in $(top_builddir)/config.status
+	cd $(top_builddir) && ./config.status src/include/pg_config.h
+
+# Also remake pg_config_ext.h from pg_config_ext.h.in, same logic as above.
+$(top_builddir)/src/include/pg_config_ext.h: $(top_builddir)/src/include/stamp-ext-h ;
+
+$(top_builddir)/src/include/stamp-ext-h: $(top_srcdir)/src/include/pg_config_ext.h.in $(top_builddir)/config.status
+	cd $(top_builddir) && ./config.status src/include/pg_config_ext.h
+
+# Also remake ecpg_config.h from ecpg_config.h.in if the latter changed, same
+# logic as above.
+$(top_builddir)/src/interfaces/ecpg/include/ecpg_config.h: $(top_builddir)/src/interfaces/ecpg/include/stamp-h ;
+
+ $(top_builddir)/src/interfaces/ecpg/include/stamp-h: $(top_builddir)/src/interfaces/ecpg/include/ecpg_config.h.in $(top_builddir)/config.status
+	cd $(top_builddir) && ./config.status src/interfaces/ecpg/include/ecpg_config.h
+
+# When configure changes, rerun configure with the same options as
+# last time. To change configure, you need to run autoconf manually.
+$(top_builddir)/config.status: $(top_srcdir)/configure
+	cd $(top_builddir) && ./config.status --recheck
+
+endif # not PGXS
+
+
+install-strip:
+# install-strip always uses install-sh, so that strip options can be
+# passed.
+	$(MAKE) use_install_sh=yes \
+	    INSTALL_PROGRAM_ENV="STRIPPROG='$(STRIP)'" \
+	    INSTALL_STLIB_ENV="STRIPPROG='$(STRIP_STATIC_LIB)'" \
+	    INSTALL_SHLIB_ENV="STRIPPROG='$(STRIP_SHARED_LIB)'" \
+	    INSTALL_STRIP_FLAG=-s \
+	    install
+
+
+##########################################################################
+#
+# Recursive make support
+# ----------------------
+# Instead of recursing through subdirectories with a for loop or
+# repeated $(MAKE) -C whatever calls, this is a little smarter: it
+# allows parallel make across directories and lets make -k and -q work
+# correctly.
+
+# We need the ability to export target-specific variables, which was
+# added in GNU make 3.81.  That also happens to be the version
+# where the .FEATURES variable was introduced, so this is a simple check.
+ifndef .FEATURES
+$(error GNU make 3.81 or newer is required.  You are using version $(MAKE_VERSION))
+endif
+
+# This function is only for internal use below.  It should be called
+# using $(eval).  It will set up a target so that it recurses into a
+# given subdirectory.  For the tree-wide all/install/check/installcheck cases,
+# ensure we do our one-time tasks before recursing (see targets above).
+# Note that to avoid a nasty bug in make 3.80,
+# this function was written to not use any complicated constructs (like
+# multiple targets on a line) and also not contain any lines that expand
+# to more than about 200 bytes.  This is why we make it apply to just one
+# subdirectory at a time, rather than to a list of subdirectories.
+# $1: target name, e.g., all
+# $2: subdir name
+# $3: target to run in subdir, usually same as $1
+define _create_recursive_target
+.PHONY: $(1)-$(2)-recurse
+$(1): $(1)-$(2)-recurse
+$(1)-$(2)-recurse: $(if $(filter all install check installcheck, $(3)), submake-generated-headers) $(if $(filter check, $(3)), temp-install)
+	$$(MAKE) -C $(2) $(3)
+endef
+# Note that the use of $$ on the last line above is important; we want
+# $(MAKE) to be evaluated when the rule is run, not when the $(eval) is run
+# to create the rule.  This is necessary to get make -q working.
+
+# Call this function in a makefile that needs to recurse into subdirectories.
+# In the normal case all arguments can be defaulted.
+# $1: targets to make recursive (defaults to list of standard targets)
+# $2: list of subdirs (defaults to SUBDIRS variable)
+# $3: target to run in subdir (defaults to current element of $1)
+recurse = $(foreach target,$(if $1,$1,$(standard_targets)),$(foreach subdir,$(if $2,$2,$(SUBDIRS)),$(eval $(call _create_recursive_target,$(target),$(subdir),$(if $3,$3,$(target))))))
+
+# If a makefile's list of SUBDIRS varies depending on configuration, then
+# any subdirectories excluded from SUBDIRS should instead be added to
+# ALWAYS_SUBDIRS, and then it must call recurse_always as well as recurse.
+# This ensures that distprep, distclean, etc will apply to all subdirectories.
+# In the normal case all arguments will be defaulted.
+# $1: targets to make recursive (defaults to standard_always_targets)
+# $2: list of subdirs (defaults to ALWAYS_SUBDIRS variable)
+# $3: target to run in subdir (defaults to current element of $1)
+recurse_always = $(foreach target,$(if $1,$1,$(standard_always_targets)),$(foreach subdir,$(if $2,$2,$(ALWAYS_SUBDIRS)),$(eval $(call _create_recursive_target,$(target),$(subdir),$(if $3,$3,$(target))))))
+
+
+##########################################################################
+#
+# Automatic dependency generation
+# -------------------------------
+# When we configure with --enable-depend then we override the default
+# compilation rule with the magic below. While or after creating the
+# actual output file we also create a dependency list for the .c file.
+# Next time we invoke make we will have top-notch information about
+# whether this file needs to be updated. The dependency files are kept
+# in the .deps subdirectory of each directory.
+
+autodepend = 
+
+ifeq ($(autodepend), yes)
+
+ifndef COMPILE.c
+COMPILE.c = $(CC) $(CFLAGS) $(CPPFLAGS) -c
+endif
+
+ifndef COMPILE.cc
+COMPILE.cc = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c
+endif
+
+DEPDIR = .deps
+
+ifeq ($(GCC), yes)
+
+# GCC allows us to create object and dependency file in one invocation.
+%.o : %.c
+	@if test ! -d $(DEPDIR); then mkdir -p $(DEPDIR); fi
+	$(COMPILE.c) -o $@ $< -MMD -MP -MF $(DEPDIR)/$(*F).Po
+
+%.o : %.cpp
+	@if test ! -d $(DEPDIR); then mkdir -p $(DEPDIR); fi
+	$(COMPILE.cc) -o $@ $< -MMD -MP -MF $(DEPDIR)/$(*F).Po
+
+endif # GCC
+
+# Include all the dependency files generated for the current
+# directory. Note that make would complain if include was called with
+# no arguments.
+Po_files := $(wildcard $(DEPDIR)/*.Po)
+ifneq (,$(Po_files))
+include $(Po_files)
+endif
+
+# hook for clean-up
+clean distclean maintainer-clean: clean-deps
+
+.PHONY: clean-deps
+clean-deps:
+	@rm -rf $(DEPDIR)
+
+endif # autodepend
+
+
+##########################################################################
+#
+# Native language support
+
+ifeq ($(enable_nls), yes)
+ifneq (,$(wildcard $(srcdir)/nls.mk))
+
+include $(top_srcdir)/src/nls-global.mk
+
+endif # nls.mk
+endif # enable_nls
+
+
+##########################################################################
+#
+# Coverage
+
+# Explanation of involved files:
+#   foo.c	source file
+#   foo.o	object file
+#   foo.gcno	gcov graph (a.k.a. "notes") file, created at compile time
+#		(by gcc -ftest-coverage)
+#   foo.gcda	gcov data file, created when the program is run (for
+#		programs compiled with gcc -fprofile-arcs)
+#   foo.c.gcov	gcov output file with coverage information, created by
+#		gcov from foo.gcda (by "make coverage")
+#   foo.c.gcov.out  stdout captured when foo.c.gcov is created, mildly
+#		interesting
+#   lcov_test.info
+#		lcov tracefile, built from gcda files in one directory,
+#		later collected by "make coverage-html"
+#   lcov_base.info
+#		tracefile for zero counters for every file, so that
+#		even files that are not touched by tests are counted
+#		for the overall coverage rate
+
+ifeq ($(enable_coverage), yes)
+
+# make coverage -- text output
+
+local_gcda_files = $(wildcard *.gcda)
+
+coverage: $(local_gcda_files:.gcda=.c.gcov)
+
+%.c.gcov: %.gcda
+	$(GCOV) -b -f -p -o . $(GCOVFLAGS) $*.c >$*.c.gcov.out
+
+# make coverage-html -- HTML output via lcov
+
+.PHONY: coverage-html
+coverage-html: coverage-html-stamp
+
+GENHTML_FLAGS = -q --legend
+GENHTML_TITLE = PostgreSQL $(VERSION)
+
+coverage-html-stamp: lcov_base.info lcov_test.info
+	rm -rf coverage
+	$(GENHTML) $(GENHTML_FLAGS) -o coverage --title='$(GENHTML_TITLE)' --num-spaces=4 $(if $(filter no,$(vpath_build)),--prefix='$(abs_top_srcdir)') $^
+	touch $@
+
+LCOV += --gcov-tool $(GCOV)
+LCOVFLAGS = -q --no-external
+
+all_gcno_files = $(shell find . -name '*.gcno' -print)
+
+lcov_base.info: $(all_gcno_files)
+	$(LCOV) $(LCOVFLAGS) -c -i -d . -d $(srcdir) -o $@
+
+all_gcda_files = $(shell find . -name '*.gcda' -print)
+
+lcov_test.info: $(all_gcda_files)
+	$(LCOV) $(LCOVFLAGS) -c -d . -d $(srcdir) -o $@
+
+
+# hook for clean-up
+clean distclean maintainer-clean: clean-coverage
+
+.PHONY: clean-coverage
+clean-coverage:
+	rm -rf coverage coverage-html-stamp
+	rm -f *.gcda *.gcno lcov*.info *.gcov .*.gcov *.gcov.out
+
+
+# User-callable target to reset counts between test runs
+coverage-clean:
+	rm -f `find . -name '*.gcda' -print`
+
+endif # enable_coverage
+
+##########################################################################
+#
+# LLVM support
+#
+
+ifndef COMPILE.c.bc
+# -Wno-ignored-attributes added so gnu_printf doesn't trigger
+# warnings, when the main binary is compiled with C.
+COMPILE.c.bc = $(CLANG) -Wno-ignored-attributes $(BITCODE_CFLAGS) $(CPPFLAGS) -flto=thin -emit-llvm -c
+endif
+
+ifndef COMPILE.cxx.bc
+COMPILE.cxx.bc = $(CLANG) -xc++ -Wno-ignored-attributes $(BITCODE_CXXFLAGS) $(CPPFLAGS) -flto=thin -emit-llvm -c
+endif
+
+%.bc : %.c
+	$(COMPILE.c.bc) -o $@ $<
+
+%.bc : %.cpp
+	$(COMPILE.cxx.bc) -o $@ $<
+
+# Install LLVM bitcode module (for JITing).
+#
+# The arguments are:
+# $(1) name of the module (e.g. an extension's name or postgres for core code)
+# $(2) source objects, with .o suffix
+#
+# The many INSTALL_DATA invocations aren't particularly fast, it'd be
+# good if we could coalesce them, but I didn't find a good way.
+#
+# Note: blank line at end of macro is necessary to let it be used in foreach
+define install_llvm_module
+$(MKDIR_P) '$(DESTDIR)${bitcodedir}/$(1)'
+$(MKDIR_P) $(sort $(dir $(addprefix '$(DESTDIR)${bitcodedir}'/$(1)/, $(2))))
+$(foreach obj, ${2}, $(INSTALL_DATA) $(patsubst %.o,%.bc, $(obj)) '$(DESTDIR)${bitcodedir}'/$(1)/$(dir $(obj))
+)
+cd '$(DESTDIR)${bitcodedir}' && $(LLVM_BINPATH)/llvm-lto -thinlto -thinlto-action=thinlink -o $(1).index.bc $(addprefix $(1)/,$(patsubst %.o,%.bc, $(2)))
+
+endef
+
+# Uninstall LLVM bitcode module.
+#
+# The arguments are:
+# $(1) name of the module (e.g. an extension's name or postgres for core code)
+#
+# This intentionally doesn't use the explicit installed file list,
+# seems too likely to change regularly.
+define uninstall_llvm_module
+rm -rf '$(DESTDIR)${bitcodedir}/$(1)/'
+rm -f '$(DESTDIR)${bitcodedir}/$(1).index.bc'
+
+endef

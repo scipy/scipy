@@ -1,0 +1,227 @@
+default partial xkb_types "default" {
+
+    // Defines types with an eight-level shift, similar to the three-level
+    // type used for iso9995, but it lets the Shift key behave "normally".
+
+    virtual_modifiers  LevelThree, LevelFive;
+
+    type "EIGHT_LEVEL" {
+	modifiers = Shift + LevelThree + LevelFive;
+	map[None] = Level1;
+	map[Shift] = Level2;
+	map[LevelThree] = Level3;
+	map[Shift+LevelThree] = Level4;
+	map[LevelFive] = Level5;
+	map[Shift+LevelFive] = Level6;
+	map[LevelThree+LevelFive] = Level7;
+	map[Shift+LevelThree+LevelFive] = Level8;
+	level_name[Level1] = "Base";
+	level_name[Level2] = "Shift";
+	level_name[Level3] = "AltGr";
+	level_name[Level4] = "Shift AltGr";
+	level_name[Level5] = "X";
+	level_name[Level6] = "X Shift";
+	level_name[Level7] = "X AltGr";
+	level_name[Level8] = "X Shift AltGr";
+    };
+
+    type "EIGHT_LEVEL_ALPHABETIC" {
+	modifiers = Shift + Lock + LevelThree + LevelFive;
+	map[None] = Level1;
+	map[Shift] = Level2;
+	map[Lock] = Level2;
+	map[Shift+Lock] = Level1;
+	map[LevelThree] = Level3;
+	map[Shift+LevelThree] = Level4;
+	map[Lock+LevelThree] = Level4;
+	map[Shift+Lock+LevelThree] = Level3;
+
+	map[LevelFive] = Level5;
+	map[Shift+LevelFive] = Level6;
+	map[Lock+LevelFive] = Level6;
+	map[Shift+Lock+LevelFive] = Level5;
+	map[LevelThree+LevelFive] = Level7;
+	map[Shift+LevelThree+LevelFive] = Level8;
+	map[Lock+LevelThree+LevelFive] = Level8;
+	map[Shift+Lock+LevelThree+LevelFive] = Level7;
+
+	level_name[Level1] = "Base";
+	level_name[Level2] = "Shift";
+	level_name[Level3] = "AltGr";
+	level_name[Level4] = "Shift AltGr";
+	level_name[Level5] = "X";
+	level_name[Level6] = "X Shift";
+	level_name[Level7] = "X AltGr";
+	level_name[Level8] = "X Shift AltGr";
+    };
+
+    type "EIGHT_LEVEL_SEMIALPHABETIC" {
+	modifiers = Shift + Lock + LevelThree + LevelFive;
+	map[None] = Level1;
+	map[Shift] = Level2;
+	map[Lock] = Level2;
+	map[Shift+Lock] = Level1;
+	map[LevelThree] = Level3;
+	map[Shift+LevelThree] = Level4;
+	map[Lock+LevelThree] = Level3;
+	map[Shift+Lock+LevelThree] = Level4;
+
+	map[LevelFive] = Level5;
+	map[Shift+LevelFive] = Level6;
+	map[Lock+LevelFive] = Level6;
+	map[Shift+Lock+LevelFive] = Level5;
+	map[LevelThree+LevelFive] = Level7;
+	map[Shift+LevelThree+LevelFive] = Level8;
+	map[Lock+LevelThree+LevelFive] = Level7;
+	map[Shift+Lock+LevelThree+LevelFive] = Level8;
+
+	preserve[Lock+LevelThree] = Lock;
+	preserve[Shift+Lock+LevelThree] = Lock;
+	preserve[Lock+LevelThree+LevelFive] = Lock;
+	preserve[Shift+Lock+LevelThree+LevelFive] = Lock;
+
+	level_name[Level1] = "Base";
+	level_name[Level2] = "Shift";
+	level_name[Level3] = "AltGr";
+	level_name[Level4] = "Shift AltGr";
+	level_name[Level5] = "X";
+	level_name[Level6] = "X Shift";
+	level_name[Level7] = "X AltGr";
+	level_name[Level8] = "X Shift AltGr";
+    };
+
+    type "EIGHT_LEVEL_WITH_LEVEL5_LOCK" {
+	// Level5-Lock is implemented with virtual modifier NumLock.
+
+	modifiers = Shift + LevelThree + LevelFive + NumLock;
+
+	map[None]                                    = Level1;
+	map[Shift]                                   = Level2;
+	map[LevelThree]                              = Level3;
+	map[LevelThree+Shift]                        = Level4;
+
+	map[LevelFive]                               = Level5;
+	map[LevelFive+Shift]                         = Level6;
+	map[LevelFive+LevelThree]                    = Level7;
+	map[LevelFive+LevelThree+Shift]              = Level8;
+
+	map[NumLock]                                 = Level5;
+	map[NumLock+Shift]                           = Level6;
+	map[NumLock+LevelThree]                      = Level7;
+	map[NumLock+LevelThree+Shift]                = Level8;
+
+	map[NumLock+LevelFive]                       = Level1;
+	map[NumLock+LevelFive+Shift]                 = Level2;
+	map[NumLock+LevelFive+LevelThree]            = Level3;
+	map[NumLock+LevelFive+LevelThree+Shift]      = Level4;
+
+	preserve[LevelFive+Shift] = Shift;
+	preserve[NumLock+Shift] = Shift;
+
+	level_name[Level1] = "Base";
+	level_name[Level2] = "Shift";
+	level_name[Level3] = "AltGr";
+	level_name[Level4] = "Shift AltGr";
+	level_name[Level5] = "X";
+	level_name[Level6] = "X Shift";
+	level_name[Level7] = "X AltGr";
+	level_name[Level8] = "X Shift AltGr";
+    };
+
+    type "EIGHT_LEVEL_ALPHABETIC_WITH_LEVEL5_LOCK" {
+	// Level5-Lock is implemented with virtual modifier NumLock.
+
+	modifiers = Shift + Lock + LevelThree + LevelFive + NumLock;
+
+	map[None]                                    = Level1;
+	map[Shift]                                   = Level2;
+	map[LevelThree]                              = Level3;
+	map[LevelThree+Shift]                        = Level4;
+
+	map[LevelFive]                               = Level5;
+	map[LevelFive+Shift]                         = Level6;
+	map[LevelFive+LevelThree]                    = Level7;
+	map[LevelFive+LevelThree+Shift]              = Level8;
+
+	map[NumLock]                                 = Level5;
+	map[NumLock+Shift]                           = Level6;
+	map[NumLock+LevelThree]                      = Level7;
+	map[NumLock+LevelThree+Shift]                = Level8;
+
+	map[NumLock+LevelFive]                       = Level1;
+	map[NumLock+LevelFive+Shift]                 = Level2;
+	map[NumLock+LevelFive+LevelThree]            = Level3;
+	map[NumLock+LevelFive+LevelThree+Shift]      = Level4;
+
+	// Lock interchanges Level1 and Level2
+	map[Lock]                                    = Level2;
+	map[Lock+Shift]                              = Level1;
+	map[Lock+LevelThree]                         = Level3;
+	map[Lock+LevelThree+Shift]                   = Level4;
+
+	map[Lock+LevelFive]                          = Level5;
+	map[Lock+LevelFive+Shift]                    = Level6;
+	map[Lock+LevelFive+LevelThree]               = Level7;
+	map[Lock+LevelFive+LevelThree+Shift]         = Level8;
+
+	map[Lock+NumLock]                            = Level5;
+	map[Lock+NumLock+Shift]                      = Level6;
+	map[Lock+NumLock+LevelThree]                 = Level7;
+	map[Lock+NumLock+LevelThree+Shift]           = Level8;
+
+	map[Lock+NumLock+LevelFive]                  = Level2;
+	map[Lock+NumLock+LevelFive+Shift]            = Level1;
+	map[Lock+NumLock+LevelFive+LevelThree]       = Level3;
+	map[Lock+NumLock+LevelFive+LevelThree+Shift] = Level4;
+
+	preserve[LevelFive+Shift] = Shift;
+	preserve[NumLock+Shift] = Shift;
+
+	level_name[Level1] = "Base";
+	level_name[Level2] = "Shift";
+	level_name[Level3] = "AltGr";
+	level_name[Level4] = "Shift AltGr";
+	level_name[Level5] = "X";
+	level_name[Level6] = "X Shift";
+	level_name[Level7] = "X AltGr";
+	level_name[Level8] = "X Shift AltGr";
+    };
+
+    // When you want part of your layout to have eight levels but cannot use
+    // LevelFive as modifier, as this would take over the right Ctrl key for
+    // the whole layout and is too invasive for the average four-level user.
+    // Needed to fix https://bugs.freedesktop.org/9529.
+    type "EIGHT_LEVEL_BY_CTRL" {
+	modifiers = Shift + Lock + LevelThree + Control;
+
+	map[None] = Level1;
+	map[Shift] = Level2;
+	map[Lock]  = Level2;
+	map[Shift+Lock] = Level1;
+
+	map[LevelThree] = Level3;
+	map[Shift+LevelThree] = Level4;
+	map[Lock+LevelThree]  = Level4;
+	map[Shift+Lock+LevelThree] = Level3;
+
+	map[Control] = Level5;
+	map[Shift+Control] = Level6;
+	map[Lock+Control]  = Level6;
+	map[Shift+Lock+Control] = Level5;
+
+	map[LevelThree+Control] = Level7;
+	map[Shift+LevelThree+Control] = Level8;
+	map[Lock+LevelThree+Control]  = Level8;
+	map[Shift+Lock+LevelThree+Control] = Level7;
+
+	level_name[Level1] = "Base";
+	level_name[Level2] = "Shift";
+	level_name[Level3] = "Level3";
+	level_name[Level4] = "Shift Level3";
+	level_name[Level5] = "Ctrl";
+	level_name[Level6] = "Shift Ctrl";
+	level_name[Level7] = "Level3 Ctrl";
+	level_name[Level8] = "Shift Level3 Ctrl";
+    };
+
+};

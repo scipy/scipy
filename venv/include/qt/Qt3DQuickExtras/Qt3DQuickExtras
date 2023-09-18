@@ -1,0 +1,6 @@
+#ifndef QT_QT3DQUICKEXTRAS_MODULE_H
+#define QT_QT3DQUICKEXTRAS_MODULE_H
+#include <Qt3DQuickExtras/Qt3DQuickExtrasDepends>
+#include "qt3dquickwindow.h"
+#include "qt3dquickextrasversion.h"
+#endif

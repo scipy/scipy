@@ -1,0 +1,285 @@
+escape_char  /
+comment_char  %
+
+% Charset: UTF-8
+
+% ChangeLog
+% 0.3 (2005-10-13):
+%     2005-10-12 Dwayne Bailey <dwayne@translate.org.za>
+%        - Added 'Charset: UTF-8' information
+%        - Update contact information
+%        - Allign spellings of month and weekday names with Dept. of
+%          Art and Culture's: Multilingual Mathematics Dictionary
+% 0.2 (2004-10-28):
+%     2004-10-28 Dwayne Bailey <dwayne@translate.org.za>
+%        - Added lang_lib
+%        - Reverted version number to 0.2 - needs more testing
+%     2004-10-27 Dwayne Bailey <dwayne@translate.org.za>
+%        - Add Translate.org.za to "source" for clarity
+%        - Update all contact details
+%        - Remove .* from yes/noexpr
+%     2004-03-30 Dwayne Bailey <dwayne@translate.org.za>
+%        - Added country_ab2/3, country_num
+%        - Added country_car
+%     2004-03-29 Dwayne Bailey <dwayne@translate.org.za>
+%       - Added lang_ab and lang_term
+%     2004-02-27 Dwayne Bailey <dwayne@translate.org.za>
+%	    - Correct capatilisation of lang_name
+% 0.1 (2003-04-19):
+%     2003-04-19:
+%       - Initial Zulu locale by Zuza Software Foundation
+
+LC_IDENTIFICATION
+title      "Zulu locale for South Africa"
+source     "Zuza Software Foundation (Translate.org.za)"
+address    "Box 28364, Sunnyside, 0132, South Africa"
+contact    "Dwayne Bailey"
+email      "dwayne@translate.org.za"
+tel        "+27 12 460 1095"
+fax        "+27 12 460 1095"
+language   "Zulu"
+territory  "South Africa"
+revision   "0.3"
+date       "2005-10-13"
+%
+category  "zu_ZA:2003";LC_IDENTIFICATION
+category  "zu_ZA:2003";LC_CTYPE
+category  "zu_ZA:2003";LC_COLLATE
+category  "zu_ZA:2003";LC_TIME
+category  "zu_ZA:2003";LC_NUMERIC
+category  "zu_ZA:2003";LC_MONETARY
+category  "zu_ZA:2003";LC_MESSAGES
+category  "zu_ZA:2003";LC_PAPER
+category  "zu_ZA:2003";LC_NAME
+category  "zu_ZA:2003";LC_ADDRESS
+category  "zu_ZA:2003";LC_TELEPHONE
+category  "zu_ZA:2003";LC_MEASUREMENT
+
+END LC_IDENTIFICATION
+
+LC_CTYPE
+% Use the characters described in the charmap file "i18n.tgz"
+%
+copy "i18n"
+
+translit_start
+include  "translit_combining";""
+translit_end
+END LC_CTYPE
+
+LC_COLLATE
+% Copy the template from ISO/IEC 14651 i.e.
+% use the rules there when making ordered lists of words.
+%
+copy "iso14651_t1"
+END LC_COLLATE
+
+LC_MONETARY
+copy "en_ZA"
+END LC_MONETARY
+
+LC_NUMERIC
+copy "en_ZA"
+END LC_NUMERIC
+
+LC_TIME
+% abday - The abbreviations for the week days:
+% - Son, Mso, Bil, Tha, Sin, Hla, Mgq
+abday       "<U0053><U006F><U006E>";/
+            "<U004D><U0073><U006F>";/
+            "<U0042><U0069><U006C>";/
+            "<U0054><U0068><U0061>";/
+            "<U0053><U0069><U006E>";/
+            "<U0048><U006C><U0061>";/
+            "<U004D><U0067><U0071>"
+
+% day - The full names of the week days:
+% - iSonto, uMsombuluko, uLwesibili, uLwesithathu, uLwesine, uLwesihlanu, uMgqibelo
+day         "<U0069><U0053><U006F><U006E><U0074><U006F>";/
+            "<U0075><U004D><U0073><U006F><U006D><U0062><U0075><U006C><U0075><U006B><U006F>";/
+            "<U0075><U004C><U0077><U0065><U0073><U0069><U0062><U0069><U006C><U0069>";/
+            "<U0075><U004C><U0077><U0065><U0073><U0069><U0074><U0068><U0061><U0074><U0068><U0075>";/
+            "<U0075><U004C><U0077><U0065><U0073><U0069><U006E><U0065>";/
+            "<U0075><U004C><U0077><U0065><U0073><U0069><U0068><U006C><U0061><U006E><U0075>";/
+            "<U0075><U004D><U0067><U0071><U0069><U0062><U0065><U006C><U006F>"
+
+% abmon - The abbreviations for the months
+% - Mas, Ola, Nda, Mba, Aba, Ang, Ntu, Ncw, Man, Mfu, Lwe, Zib
+abmon       "<U004D><U0061><U0073>";"<U004F><U006C><U0061>";/
+            "<U004E><U0064><U0061>";"<U004D><U0062><U0061>";/
+            "<U0041><U0062><U0061>";"<U0041><U006E><U0067>";/
+            "<U004E><U0074><U0075>";"<U004E><U0063><U0077>";/
+            "<U004D><U0061><U006E>";"<U004D><U0066><U0075>";/
+            "<U004C><U0077><U0065>";"<U005A><U0069><U0062>"
+
+% mon - The full names of the months -
+% - uMasingana, uNhlolanja, uNdasa, uMbasa, uNhlaba, uNhlangulana
+%   uNtulikazi, uNcwaba, uMandulo, uMfumfu, uLwezi, uZibandlela
+mon         "<U0075><U004D><U0061><U0073><U0069><U006E><U0067><U0061><U006E><U0061>";/
+            "<U0075><U004E><U0068><U006C><U006F><U006C><U0061><U006E><U006A><U0061>";/
+            "<U0075><U004E><U0064><U0061><U0073><U0061>";/
+            "<U0075><U004D><U0062><U0061><U0073><U0061>";/
+            "<U0075><U004E><U0068><U006C><U0061><U0062><U0061>";/
+            "<U0075><U004E><U0068><U006C><U0061><U006E><U0067><U0075><U006C><U0061><U006E><U0061>";/
+            "<U0075><U004E><U0074><U0075><U006C><U0069><U006B><U0061><U007A><U0069>";/
+            "<U0075><U004E><U0063><U0077><U0061><U0062><U0061>";/
+            "<U0075><U004D><U0061><U006E><U0064><U0075><U006C><U006F>";/
+            "<U0075><U004D><U0066><U0075><U006D><U0066><U0075>";/
+            "<U0075><U004C><U0077><U0065><U007A><U0069>";/
+            "<U0075><U005A><U0069><U0062><U0061><U006E><U0064><U006C><U0065><U006C><U0061>"
+
+% Abreviated date and time representation to be referenced by the "%c" field descriptor -
+d_t_fmt     "<U0025><U0061><U0020><U0025><U0064><U0020><U0025><U0062><U0020><U0025><U0059><U0020><U0025><U0054><U0020><U0025><U005A>"
+%
+% "%a" (short weekday name),
+% "%d" (day of month as a decimal number),
+% "%b" (short month name),
+% "%Y" (year with century as a decimal number),
+% "%T" (24-hour clock time in format HH:MM:SS),
+% "%Z" (Time zone name)
+
+% Date representation to be referenced by the "%x" field descriptor -
+% "%d/%m/%Y", day/month/year as decimal numbers (01/01/2000).
+d_fmt   "<U0025><U0064><U002F><U0025><U006D><U002F><U0025><U0059>"
+
+% Time representation to be referenced by the "%X" field descriptor -
+% "%T" (24-hour clock time in format HH:MM:SS)
+t_fmt       "<U0025><U0054>"
+
+% Define representation of ante meridiem and post meridiem strings -
+% The ""s mean default to "AM" and "PM".
+am_pm       "";""
+
+% Define time representation in 12-hour format with "am_pm", to be referenced by the "%r"
+% field descriptor -
+% The "" means that this format is not supported.
+t_fmt_ampm  ""
+
+% Date representation not described in ISO/IEC 14652. Comes out as -
+% "%a %b %e %H:%M:%S %Z %Y"
+date_fmt "<U0025><U0061><U0020><U0025><U0062><U0020><U0025><U0065>/
+<U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U0020>/
+<U0025><U005A><U0020><U0025><U0059>"
+% which is
+% %a - abbreviated weekday name,
+% %b - abreviated month name,
+% %e - day of month as a decimal number with leading space (1 to 31),
+% %H - hour (24-hour clock) as a decimal number (00 to 23),
+% %M - minute as a decimal number (00 to 59),
+% %S - seconds as a decimal number (00 to 59),
+% %Z - time-zone name,
+% %Y - year with century as a decimal number,e.g. 2001.
+
+END LC_TIME
+
+LC_MESSAGES
+yesexpr     "<U005E><U005B><U0079><U0059><U005D>"
+% The affirmative response -
+% "^[yY]"
+%
+noexpr      "<U005E><U005B><U006E><U004E><U0063><U0043><U005D>"
+% The negative response -
+% "^[nNcC]"
+%
+END LC_MESSAGES
+
+LC_PAPER
+copy "en_ZA"
+END LC_PAPER
+
+LC_TELEPHONE
+copy "en_ZA"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+copy "en_ZA"
+END LC_MEASUREMENT
+
+LC_NAME
+name_fmt    "<U0025><U0064><U0025><U0074><U0025><U0067><U0025><U0074>/
+<U0025><U006D><U0025><U0074><U0025><U0066>"
+% Format for addressing a person.
+% "%d%t%g%t%m%t%f"
+% "Salutation",
+% "Empty string, or <Space>",
+% "First given name",
+% "Empty string, or <Space>",
+% "Middle names",
+% "Empty string, or <Space>",
+% "Clan names"
+%
+name_miss   "<U004E><U006B><U006F><U0073><U0061><U007A><U0061><U006E><U0065>"
+% Salutation for unmarried females - "Nkosazane"
+%
+name_mr     "<U004D><U006E><U0075><U006D><U007A><U0061><U006E><U0065>"
+% Salutation for males - "Mnumzane"
+%
+name_mrs    "<U004E><U006B><U006F><U0073><U0069><U006B><U0061><U007A><U0069>"
+% Salutation for married females - "Nkosikazi"
+%
+name_ms     ""
+% Salutation valid for all females - "" (no term)
+END LC_NAME
+
+LC_ADDRESS
+country_name "<U004D><U007A><U0061><U006E><U0073><U0069><U0020>/
+<U0041><U0066><U0072><U0069><U006B><U0061>"
+% Country name in Zulu - "Mzansi Afrika"
+%
+country_post "<U005A><U0041>"
+% Abbreviated country postal name - "ZA"
+%
+lang_name "<U0049><U0073><U0069><U005A><U0075><U006C><U0075>"
+% Language name in Zulu - "IsiZulu"
+
+% UN Geneve 1949:68 Distinguishing signs of vehicles in international traffic
+% http://www.unece.org/trans/conventn/disting-signs-5-2001.pdf
+% "ZA"
+country_car   "<U005A><U0041>"
+
+% ISO 639 two and three letter language names
+% see http://www.loc.gov/standards/iso639-2/englangn.html
+% "zu", "zul", "zul"
+lang_ab   "<U007A><U0075>"
+lang_term "<U007A><U0075><U006C>"
+lang_lib  "<U007A><U0075><U006C>"
+
+postal_fmt    "<U0025><U0066><U0025><U004E><U0025><U0061><U0025><U004E>/
+<U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E><U0025><U0073>/
+<U0020><U0025><U0068><U0020><U0025><U0065><U0020><U0025><U0072><U0025>/
+<U004E><U0025><U007A><U0020><U0025><U0054><U0025>/
+<U004E><U0025><U0063><U0025><U004E>"
+% Representation of postal addresses (minus the addressee's name) in South
+% Africa. (Ignored for now)
+% "%f%N%a%N%d%N%b%N%s %h %e %r%N%z %T%N%c%N", which gives -
+% "firm name",
+% "end of line",
+% "C/O address",
+% "end of line",
+% "department name",
+% "Building name",
+% "end of line",
+% "street or block name",
+% "space",
+% "house number or designation",
+% "space",
+% "floor number",
+% "space",
+% "room number, door designation",
+% "end of line",
+% "postal code",
+% "space",
+% "town, city",
+% "end of line",
+% "country designation for the <country_post> keyword",
+% "end of line
+%
+
+% ISO 3166 country number and 2 and 3 letter abreviations
+% http://www.unicode.org/onlinedat/countries.html
+% "ZA", "ZAF"
+country_num   710
+country_ab2   "<U005A><U0041>"
+country_ab3   "<U005A><U0041><U0046>"
+
+END LC_ADDRESS

@@ -1,0 +1,120 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Overloading and optional arguments: Cairo: A Vector Graphics Library</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<link rel="home" href="index.html" title="Cairo: A Vector Graphics Library">
+<link rel="up" href="language-bindings.html" title="Appendix A. Creating a language binding for cairo">
+<link rel="prev" href="bindings-return-values.html" title="Multiple return values">
+<link rel="next" href="bindings-streams.html" title="Streams and File I/O">
+<meta name="generator" content="GTK-Doc V1.27 (XML mode)">
+<link rel="stylesheet" href="style.css" type="text/css">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<table class="navigation" id="top" width="100%" summary="Navigation header" cellpadding="2" cellspacing="5"><tr valign="middle">
+<td width="100%" align="left" class="shortcuts"></td>
+<td><a accesskey="h" href="index.html"><img src="home.png" width="16" height="16" border="0" alt="Home"></a></td>
+<td><a accesskey="u" href="language-bindings.html"><img src="up.png" width="16" height="16" border="0" alt="Up"></a></td>
+<td><a accesskey="p" href="bindings-return-values.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
+<td><a accesskey="n" href="bindings-streams.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
+</tr></table>
+<div class="sect1">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="bindings-overloading"></a>Overloading and optional arguments</h2></div></div></div>
+<p>
+      Function overloading (having a several variants of a function
+      with the same name and different arguments) is a language
+      feature available in many languages but not in C.
+    </p>
+<p>
+      In general, language binding authors should use restraint in
+      combining functions in the cairo API via function
+      overloading. What may seem like an obvious overload now may
+      turn out to be strange with future additions to cairo.
+      It might seem logical to make
+      <a class="link" href="cairo-cairo-t.html#cairo-set-source-rgb" title="cairo_set_source_rgb ()"><code class="function">cairo_set_source_rgb()</code></a>
+	an overload of <code class="function">cairo_set_source()</code>, but future plans to add
+	<code class="function">cairo_set_source_rgb_premultiplied()</code>,
+      which will also take three doubles make this a bad idea. For
+      this reason, only the following pairs of functions should
+      be combined via overloading
+    </p>
+<pre class="programlisting">
+void
+cairo_set_source (cairo_t *cr, cairo_pattern_t *source);
+
+void
+cairo_set_source_surface (cairo_t          *cr,
+                          cairo_surface_t  *source,
+                          double            surface_x,
+                          double            surface_y);
+      
+void
+cairo_mask (cairo_t         *cr,
+	    cairo_pattern_t *pattern);
+
+void
+cairo_mask_surface (cairo_t         *cr,
+		    cairo_surface_t *surface,
+		    double           surface_x,
+		    double           surface_y);
+      
+cairo_surface_t *
+cairo_image_surface_create (cairo_format_t	format,
+			    int			width,
+			    int			height);
+cairo_surface_t *
+cairo_image_surface_create_for_data (unsigned char	       *data,
+				     cairo_format_t		format,
+				     int			width,
+				     int			height,
+				     int			stride);
+
+cairo_status_t
+cairo_surface_write_to_png (cairo_surface_t	*surface,
+			    const char		*filename);
+
+cairo_status_t
+cairo_surface_write_to_png_stream (cairo_surface_t	*surface,
+				   cairo_write_func_t	write_func,
+				   void			*closure);
+
+cairo_surface_t *
+cairo_image_surface_create_from_png (const char	*filename);
+
+cairo_surface_t *
+cairo_image_surface_create_from_png_stream (cairo_read_func_t	read_func,
+					    void		*closure);
+    </pre>
+<p>
+      Note that there are cases where all constructors for a type
+      aren't overloaded together. For example
+      <a class="link" href="cairo-PNG-Support.html#cairo-image-surface-create-from-png" title="cairo_image_surface_create_from_png ()"><code class="function">cairo_image_surface_create_from_png()</code></a>
+      should <span class="emphasis"><em>not</em></span> be overloaded together with
+      <a class="link" href="cairo-Image-Surfaces.html#cairo-image-surface-create" title="cairo_image_surface_create ()"><code class="function">cairo_image_surface_create()</code></a>.
+      In such cases, the remaining constructors will typically need to
+      be bound as static methods. In Java, for example, we might have:
+    </p>
+<pre class="programlisting">
+Surface surface1 = ImageSurface(Format.RGB24, 100, 100);
+Surface surface2 = ImageSurface.createFromPNG("camera.png");</pre>
+<p>
+      Some other overloads that add combinations not found in C may be
+      convenient for users for language bindings that provide
+      <span class="type">cairo_point_t</span> and <span class="type">cairo_rectangle_t</span>
+      types, for example:
+    </p>
+<pre class="programlisting">
+void
+cairo_move_to (cairo_t       *cr,
+               cairo_point_t *point);
+void
+cairo_rectangle (cairo_t           *cr,
+                 cairo_rectangle_t *rectangle);
+    </pre>
+</div>
+<div class="footer">
+<hr>Generated by GTK-Doc V1.27</div>
+</body>
+</html>

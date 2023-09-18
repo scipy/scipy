@@ -1,0 +1,12 @@
+prefix=/workspaces/scipy/venv
+exec_prefix=/workspaces/scipy/venv
+libdir=/workspaces/scipy/venv/lib
+includedir=/workspaces/scipy/venv/include
+
+Name: libpulse-simple
+Description: PulseAudio Simplified Synchronous Client Interface
+Version: 16.1
+Libs: -L${libdir} -lpulse-simple -pthread
+Libs.private: -L${libdir}/pulseaudio -lpulsecommon-16.1
+Cflags: -I${includedir} -D_REENTRANT
+Requires: libpulse

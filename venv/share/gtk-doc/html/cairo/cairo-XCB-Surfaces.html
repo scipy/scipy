@@ -1,0 +1,658 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>XCB Surfaces: Cairo: A Vector Graphics Library</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<link rel="home" href="index.html" title="Cairo: A Vector Graphics Library">
+<link rel="up" href="cairo-surfaces.html" title="Surfaces">
+<link rel="prev" href="cairo-Quartz-Surfaces.html" title="Quartz Surfaces">
+<link rel="next" href="cairo-XLib-Surfaces.html" title="XLib Surfaces">
+<meta name="generator" content="GTK-Doc V1.27 (XML mode)">
+<link rel="stylesheet" href="style.css" type="text/css">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<table class="navigation" id="top" width="100%" summary="Navigation header" cellpadding="2" cellspacing="5"><tr valign="middle">
+<td width="100%" align="left" class="shortcuts">
+<a href="#" class="shortcut">Top</a><span id="nav_description">  <span class="dim">|</span> 
+                  <a href="#cairo-XCB-Surfaces.description" class="shortcut">Description</a></span>
+</td>
+<td><a accesskey="h" href="index.html"><img src="home.png" width="16" height="16" border="0" alt="Home"></a></td>
+<td><a accesskey="u" href="cairo-surfaces.html"><img src="up.png" width="16" height="16" border="0" alt="Up"></a></td>
+<td><a accesskey="p" href="cairo-Quartz-Surfaces.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
+<td><a accesskey="n" href="cairo-XLib-Surfaces.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
+</tr></table>
+<div class="refentry">
+<a name="cairo-XCB-Surfaces"></a><div class="titlepage"></div>
+<div class="refnamediv"><table width="100%"><tr>
+<td valign="top">
+<h2><span class="refentrytitle"><a name="cairo-XCB-Surfaces.top_of_page"></a>XCB Surfaces</span></h2>
+<p>XCB Surfaces — X Window System rendering using the XCB library</p>
+</td>
+<td class="gallery_image" valign="top" align="right"></td>
+</tr></table></div>
+<div class="refsect1">
+<a name="cairo-XCB-Surfaces.functions"></a><h2>Functions</h2>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="functions_return">
+<col class="functions_name">
+</colgroup>
+<tbody>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="returnvalue">cairo_surface_t</span></a> *
+</td>
+<td class="function_name">
+<a class="link" href="cairo-XCB-Surfaces.html#cairo-xcb-surface-create" title="cairo_xcb_surface_create ()">cairo_xcb_surface_create</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="returnvalue">cairo_surface_t</span></a> *
+</td>
+<td class="function_name">
+<a class="link" href="cairo-XCB-Surfaces.html#cairo-xcb-surface-create-for-bitmap" title="cairo_xcb_surface_create_for_bitmap ()">cairo_xcb_surface_create_for_bitmap</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="returnvalue">cairo_surface_t</span></a> *
+</td>
+<td class="function_name">
+<a class="link" href="cairo-XCB-Surfaces.html#cairo-xcb-surface-create-with-xrender-format" title="cairo_xcb_surface_create_with_xrender_format ()">cairo_xcb_surface_create_with_xrender_format</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-XCB-Surfaces.html#cairo-xcb-surface-set-size" title="cairo_xcb_surface_set_size ()">cairo_xcb_surface_set_size</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-XCB-Surfaces.html#cairo-xcb-surface-set-drawable" title="cairo_xcb_surface_set_drawable ()">cairo_xcb_surface_set_drawable</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">xcb_connection_t</span> *
+</td>
+<td class="function_name">
+<a class="link" href="cairo-XCB-Surfaces.html#cairo-xcb-device-get-connection" title="cairo_xcb_device_get_connection ()">cairo_xcb_device_get_connection</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-XCB-Surfaces.html#cairo-xcb-device-debug-cap-xrender-version" title="cairo_xcb_device_debug_cap_xrender_version ()">cairo_xcb_device_debug_cap_xrender_version</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-XCB-Surfaces.html#cairo-xcb-device-debug-cap-xshm-version" title="cairo_xcb_device_debug_cap_xshm_version ()">cairo_xcb_device_debug_cap_xshm_version</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">int</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-XCB-Surfaces.html#cairo-xcb-device-debug-get-precision" title="cairo_xcb_device_debug_get_precision ()">cairo_xcb_device_debug_get_precision</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-XCB-Surfaces.html#cairo-xcb-device-debug-set-precision" title="cairo_xcb_device_debug_set_precision ()">cairo_xcb_device_debug_set_precision</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect1">
+<a name="cairo-XCB-Surfaces.other"></a><h2>Types and Values</h2>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="name">
+<col class="description">
+</colgroup>
+<tbody>
+<tr>
+<td class="define_keyword">#define</td>
+<td class="function_name"><a class="link" href="cairo-XCB-Surfaces.html#CAIRO-HAS-XCB-SURFACE:CAPS" title="CAIRO_HAS_XCB_SURFACE">CAIRO_HAS_XCB_SURFACE</a></td>
+</tr>
+<tr>
+<td class="define_keyword">#define</td>
+<td class="function_name"><a class="link" href="cairo-XCB-Surfaces.html#CAIRO-HAS-XCB-SHM-FUNCTIONS:CAPS" title="CAIRO_HAS_XCB_SHM_FUNCTIONS">CAIRO_HAS_XCB_SHM_FUNCTIONS</a></td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect1">
+<a name="cairo-XCB-Surfaces.description"></a><h2>Description</h2>
+<p>The XCB surface is used to render cairo graphics to X Window System
+windows and pixmaps using the XCB library.</p>
+<p>Note that the XCB surface automatically takes advantage of the X render
+extension if it is available.</p>
+</div>
+<div class="refsect1">
+<a name="cairo-XCB-Surfaces.functions_details"></a><h2>Functions</h2>
+<div class="refsect2">
+<a name="cairo-xcb-surface-create"></a><h3>cairo_xcb_surface_create ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="returnvalue">cairo_surface_t</span></a> *
+cairo_xcb_surface_create (<em class="parameter"><code><span class="type">xcb_connection_t</span> *connection</code></em>,
+                          <em class="parameter"><code><span class="type">xcb_drawable_t</span> drawable</code></em>,
+                          <em class="parameter"><code><span class="type">xcb_visualtype_t</span> *visual</code></em>,
+                          <em class="parameter"><code><span class="type">int</span> width</code></em>,
+                          <em class="parameter"><code><span class="type">int</span> height</code></em>);</pre>
+<p>Creates an XCB surface that draws to the given drawable.
+The way that colors are represented in the drawable is specified
+by the provided visual.</p>
+<p>Note: If <em class="parameter"><code>drawable</code></em>
+ is a Window, then the function
+<a class="link" href="cairo-XCB-Surfaces.html#cairo-xcb-surface-set-size" title="cairo_xcb_surface_set_size ()"><code class="function">cairo_xcb_surface_set_size()</code></a> must be called whenever the size of the
+window changes.</p>
+<p>When <em class="parameter"><code>drawable</code></em>
+ is a Window containing child windows then drawing to
+the created surface will be clipped by those child windows.  When
+the created surface is used as a source, the contents of the
+children will be included.</p>
+<div class="refsect3">
+<a name="cairo-xcb-surface-create.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>connection</p></td>
+<td class="parameter_description"><p>an XCB connection</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>drawable</p></td>
+<td class="parameter_description"><p>an XCB drawable</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>visual</p></td>
+<td class="parameter_description"><p>the visual to use for drawing to <em class="parameter"><code>drawable</code></em>
+. The depth
+of the visual must match the depth of the drawable.
+Currently, only TrueColor visuals are fully supported.</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>width</p></td>
+<td class="parameter_description"><p>the current width of <em class="parameter"><code>drawable</code></em>
+</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>height</p></td>
+<td class="parameter_description"><p>the current height of <em class="parameter"><code>drawable</code></em>
+</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-xcb-surface-create.returns"></a><h4>Returns</h4>
+<p> a pointer to the newly created surface. The caller
+owns the surface and should call <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-destroy" title="cairo_surface_destroy ()"><code class="function">cairo_surface_destroy()</code></a> when done
+with it.</p>
+<p>This function always returns a valid pointer, but it will return a
+pointer to a "nil" surface if an error such as out of memory
+occurs. You can use <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-status" title="cairo_surface_status ()"><code class="function">cairo_surface_status()</code></a> to check for this.</p>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-xcb-surface-create-for-bitmap"></a><h3>cairo_xcb_surface_create_for_bitmap ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="returnvalue">cairo_surface_t</span></a> *
+cairo_xcb_surface_create_for_bitmap (<em class="parameter"><code><span class="type">xcb_connection_t</span> *connection</code></em>,
+                                     <em class="parameter"><code><span class="type">xcb_screen_t</span> *screen</code></em>,
+                                     <em class="parameter"><code><span class="type">xcb_pixmap_t</span> bitmap</code></em>,
+                                     <em class="parameter"><code><span class="type">int</span> width</code></em>,
+                                     <em class="parameter"><code><span class="type">int</span> height</code></em>);</pre>
+<p>Creates an XCB surface that draws to the given bitmap.
+This will be drawn to as a <a class="link" href="cairo-Image-Surfaces.html#CAIRO-FORMAT-A1:CAPS"><code class="literal">CAIRO_FORMAT_A1</code></a> object.</p>
+<div class="refsect3">
+<a name="cairo-xcb-surface-create-for-bitmap.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>connection</p></td>
+<td class="parameter_description"><p>an XCB connection</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>screen</p></td>
+<td class="parameter_description"><p>the XCB screen associated with <em class="parameter"><code>bitmap</code></em>
+</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>bitmap</p></td>
+<td class="parameter_description"><p>an XCB drawable (a Pixmap with depth 1)</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>width</p></td>
+<td class="parameter_description"><p>the current width of <em class="parameter"><code>bitmap</code></em>
+</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>height</p></td>
+<td class="parameter_description"><p>the current height of <em class="parameter"><code>bitmap</code></em>
+</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-xcb-surface-create-for-bitmap.returns"></a><h4>Returns</h4>
+<p> a pointer to the newly created surface. The caller
+owns the surface and should call <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-destroy" title="cairo_surface_destroy ()"><code class="function">cairo_surface_destroy()</code></a> when done
+with it.</p>
+<p>This function always returns a valid pointer, but it will return a
+pointer to a "nil" surface if an error such as out of memory
+occurs. You can use <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-status" title="cairo_surface_status ()"><code class="function">cairo_surface_status()</code></a> to check for this.</p>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-xcb-surface-create-with-xrender-format"></a><h3>cairo_xcb_surface_create_with_xrender_format ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="returnvalue">cairo_surface_t</span></a> *
+cairo_xcb_surface_create_with_xrender_format
+                               (<em class="parameter"><code><span class="type">xcb_connection_t</span> *connection</code></em>,
+                                <em class="parameter"><code><span class="type">xcb_screen_t</span> *screen</code></em>,
+                                <em class="parameter"><code><span class="type">xcb_drawable_t</span> drawable</code></em>,
+                                <em class="parameter"><code><span class="type">xcb_render_pictforminfo_t</span> *format</code></em>,
+                                <em class="parameter"><code><span class="type">int</span> width</code></em>,
+                                <em class="parameter"><code><span class="type">int</span> height</code></em>);</pre>
+<p>Creates an XCB surface that draws to the given drawable.
+The way that colors are represented in the drawable is specified
+by the provided picture format.</p>
+<p>Note: If <em class="parameter"><code>drawable</code></em>
+ is a Window, then the function
+<a class="link" href="cairo-XCB-Surfaces.html#cairo-xcb-surface-set-size" title="cairo_xcb_surface_set_size ()"><code class="function">cairo_xcb_surface_set_size()</code></a> must be called whenever the size of the
+window changes.</p>
+<p>When <em class="parameter"><code>drawable</code></em>
+ is a Window containing child windows then drawing to
+the created surface will be clipped by those child windows.  When
+the created surface is used as a source, the contents of the
+children will be included.</p>
+<div class="refsect3">
+<a name="cairo-xcb-surface-create-with-xrender-format.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>connection</p></td>
+<td class="parameter_description"><p>an XCB connection</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>drawable</p></td>
+<td class="parameter_description"><p>an XCB drawable</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>screen</p></td>
+<td class="parameter_description"><p>the XCB screen associated with <em class="parameter"><code>drawable</code></em>
+</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>format</p></td>
+<td class="parameter_description"><p>the picture format to use for drawing to <em class="parameter"><code>drawable</code></em>
+. The
+depth of <em class="parameter"><code>format</code></em>
+mush match the depth of the drawable.</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>width</p></td>
+<td class="parameter_description"><p>the current width of <em class="parameter"><code>drawable</code></em>
+</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>height</p></td>
+<td class="parameter_description"><p>the current height of <em class="parameter"><code>drawable</code></em>
+</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-xcb-surface-create-with-xrender-format.returns"></a><h4>Returns</h4>
+<p> a pointer to the newly created surface. The caller
+owns the surface and should call <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-destroy" title="cairo_surface_destroy ()"><code class="function">cairo_surface_destroy()</code></a> when done
+with it.</p>
+<p>This function always returns a valid pointer, but it will return a
+pointer to a "nil" surface if an error such as out of memory
+occurs. You can use <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-status" title="cairo_surface_status ()"><code class="function">cairo_surface_status()</code></a> to check for this.</p>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-xcb-surface-set-size"></a><h3>cairo_xcb_surface_set_size ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_xcb_surface_set_size (<em class="parameter"><code><a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="type">cairo_surface_t</span></a> *surface</code></em>,
+                            <em class="parameter"><code><span class="type">int</span> width</code></em>,
+                            <em class="parameter"><code><span class="type">int</span> height</code></em>);</pre>
+<p>Informs cairo of the new size of the XCB drawable underlying the
+surface. For a surface created for a window (rather than a pixmap),
+this function must be called each time the size of the window
+changes. (For a subwindow, you are normally resizing the window
+yourself, but for a toplevel window, it is necessary to listen for
+ConfigureNotify events.)</p>
+<p>A pixmap can never change size, so it is never necessary to call
+this function on a surface created for a pixmap.</p>
+<p>If <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-flush" title="cairo_surface_flush ()"><code class="function">cairo_surface_flush()</code></a> wasn't called, some pending operations
+might be discarded.</p>
+<div class="refsect3">
+<a name="cairo-xcb-surface-set-size.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>surface</p></td>
+<td class="parameter_description"><p>a <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="type">cairo_surface_t</span></a> for the XCB backend</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>width</p></td>
+<td class="parameter_description"><p>the new width of the surface</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>height</p></td>
+<td class="parameter_description"><p>the new height of the surface</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-xcb-surface-set-drawable"></a><h3>cairo_xcb_surface_set_drawable ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_xcb_surface_set_drawable (<em class="parameter"><code><a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="type">cairo_surface_t</span></a> *surface</code></em>,
+                                <em class="parameter"><code><span class="type">xcb_drawable_t</span> drawable</code></em>,
+                                <em class="parameter"><code><span class="type">int</span> width</code></em>,
+                                <em class="parameter"><code><span class="type">int</span> height</code></em>);</pre>
+<p>Informs cairo of the new drawable and size of the XCB drawable underlying the
+surface.</p>
+<p>If <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-flush" title="cairo_surface_flush ()"><code class="function">cairo_surface_flush()</code></a> wasn't called, some pending operations
+might be discarded.</p>
+<div class="refsect3">
+<a name="cairo-xcb-surface-set-drawable.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>surface</p></td>
+<td class="parameter_description"><p>a <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="type">cairo_surface_t</span></a> for the XCB backend</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>drawable</p></td>
+<td class="parameter_description"><p>the new drawable of the surface</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>width</p></td>
+<td class="parameter_description"><p>the new width of the surface</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>height</p></td>
+<td class="parameter_description"><p>the new height of the surface</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-xcb-device-get-connection"></a><h3>cairo_xcb_device_get_connection ()</h3>
+<pre class="programlisting"><span class="returnvalue">xcb_connection_t</span> *
+cairo_xcb_device_get_connection (<em class="parameter"><code><a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> *device</code></em>);</pre>
+<p>Get the connection for the XCB device.</p>
+<div class="refsect3">
+<a name="cairo-xcb-device-get-connection.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>device</p></td>
+<td class="parameter_description"><p>a <a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> for the XCB backend</p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-xcb-device-get-connection.returns"></a><h4>Returns</h4>
+<p> the <span class="type">xcb_connection_t</span> for the connection</p>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-xcb-device-debug-cap-xrender-version"></a><h3>cairo_xcb_device_debug_cap_xrender_version ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_xcb_device_debug_cap_xrender_version
+                               (<em class="parameter"><code><a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> *device</code></em>,
+                                <em class="parameter"><code><span class="type">int</span> major_version</code></em>,
+                                <em class="parameter"><code><span class="type">int</span> minor_version</code></em>);</pre>
+<p>Restricts all future XCB surfaces for this devices to the specified version
+of the RENDER extension. This function exists solely for debugging purpose.
+It let's you find out how cairo would behave with an older version of
+the RENDER extension.</p>
+<p>Use the special values -1 and -1 for disabling the RENDER extension.</p>
+<div class="refsect3">
+<a name="cairo-xcb-device-debug-cap-xrender-version.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>device</p></td>
+<td class="parameter_description"><p>a <a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> for the XCB backend</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>major_version</p></td>
+<td class="parameter_description"><p>major version to restrict to</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>minor_version</p></td>
+<td class="parameter_description"><p>minor version to restrict to</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-xcb-device-debug-cap-xshm-version"></a><h3>cairo_xcb_device_debug_cap_xshm_version ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_xcb_device_debug_cap_xshm_version
+                               (<em class="parameter"><code><a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> *device</code></em>,
+                                <em class="parameter"><code><span class="type">int</span> major_version</code></em>,
+                                <em class="parameter"><code><span class="type">int</span> minor_version</code></em>);</pre>
+<p>Restricts all future XCB surfaces for this devices to the specified version
+of the SHM extension. This function exists solely for debugging purpose.
+It let's you find out how cairo would behave with an older version of
+the SHM extension.</p>
+<p>Use the special values -1 and -1 for disabling the SHM extension.</p>
+<div class="refsect3">
+<a name="cairo-xcb-device-debug-cap-xshm-version.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>device</p></td>
+<td class="parameter_description"><p>a <a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> for the XCB backend</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>major_version</p></td>
+<td class="parameter_description"><p>major version to restrict to</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>minor_version</p></td>
+<td class="parameter_description"><p>minor version to restrict to</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-xcb-device-debug-get-precision"></a><h3>cairo_xcb_device_debug_get_precision ()</h3>
+<pre class="programlisting"><span class="returnvalue">int</span>
+cairo_xcb_device_debug_get_precision (<em class="parameter"><code><a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> *device</code></em>);</pre>
+<p>Get the Xrender precision mode.</p>
+<div class="refsect3">
+<a name="cairo-xcb-device-debug-get-precision.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>device</p></td>
+<td class="parameter_description"><p>a <a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> for the XCB backend</p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-xcb-device-debug-get-precision.returns"></a><h4>Returns</h4>
+<p> the render precision mode</p>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-xcb-device-debug-set-precision"></a><h3>cairo_xcb_device_debug_set_precision ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_xcb_device_debug_set_precision (<em class="parameter"><code><a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> *device</code></em>,
+                                      <em class="parameter"><code><span class="type">int</span> precision</code></em>);</pre>
+<p>Render supports two modes of precision when rendering trapezoids. Set
+the precision to the desired mode.</p>
+<div class="refsect3">
+<a name="cairo-xcb-device-debug-set-precision.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>device</p></td>
+<td class="parameter_description"><p>a <a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> for the XCB backend</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>precision</p></td>
+<td class="parameter_description"><p>the precision to use</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+</div>
+<div class="refsect1">
+<a name="cairo-XCB-Surfaces.other_details"></a><h2>Types and Values</h2>
+<div class="refsect2">
+<a name="CAIRO-HAS-XCB-SURFACE:CAPS"></a><h3>CAIRO_HAS_XCB_SURFACE</h3>
+<pre class="programlisting">#define CAIRO_HAS_XCB_SURFACE 1
+</pre>
+<p>Defined if the xcb surface backend is available.
+This macro can be used to conditionally compile backend-specific code.</p>
+<p class="since">Since: 1.12</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="CAIRO-HAS-XCB-SHM-FUNCTIONS:CAPS"></a><h3>CAIRO_HAS_XCB_SHM_FUNCTIONS</h3>
+<pre class="programlisting">#define CAIRO_HAS_XCB_SHM_FUNCTIONS 1
+</pre>
+</div>
+</div>
+<div class="refsect1">
+<a name="cairo-XCB-Surfaces.see-also"></a><h2>See Also</h2>
+<p><a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="type">cairo_surface_t</span></a></p>
+</div>
+</div>
+<div class="footer">
+<hr>Generated by GTK-Doc V1.27</div>
+</body>
+</html>

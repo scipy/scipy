@@ -1,0 +1,282 @@
+// Keyboard layouts for Japan.
+
+// Layout for Japanese 106-key keyboards.
+// Original author: tsuka@kawalab.dnj.ynu.ac.jp
+default partial alphanumeric_keys
+xkb_symbols "106" {
+
+    include "jp(common)"
+
+    name[Group1]= "Japanese";
+
+    key <AE10>	{[ 0, asciitilde	]};
+    key <AE13>	{[ backslash, bar	]};
+};
+
+partial alphanumeric_keys
+xkb_symbols "OADG109A" {
+
+    include "jp(common)"
+
+    name[Group1]= "Japanese (OADG 109A)";
+
+    key <AE10>	{[ 0		]};
+    key <AE13>	{[ yen, bar	]};
+};
+
+// Keys that are common to 106-key and 109-key keyboards.
+hidden partial alphanumeric_keys
+xkb_symbols "common" {
+
+    key <HZTG>	{[ Zenkaku_Hankaku, Kanji ], type[group1]="PC_ALT_LEVEL2" };
+
+    key <AE01>{[ 1, exclam		]};
+    key <AE02>	{[ 2, quotedbl		]};
+    key <AE03>	{[ 3, numbersign	]};
+    key <AE04>	{[ 4, dollar		]};
+    key <AE05>	{[ 5, percent		]};
+    key <AE06>	{[ 6, ampersand		]};
+    key <AE07>	{[ 7, apostrophe	]};
+    key <AE08>	{[ 8, parenleft		]};
+    key <AE09>	{[ 9, parenright	]};
+    key <AE11>	{[ minus, equal		]};
+    key <AE12>	{[ asciicircum, asciitilde ]};
+
+    key <AD01>	{[ q, Q			]};
+    key <AD02>	{[ w, W			]};
+    key <AD03>	{[ e, E			]};
+    key <AD04>	{[ r, R			]};
+    key <AD05>	{[ t, T			]};
+    key <AD06>	{[ y, Y			]};
+    key <AD07>	{[ u, U			]};
+    key <AD08>	{[ i, I			]};
+    key <AD09>	{[ o, O			]};
+    key <AD10>	{[ p, P			]};
+    key <AD11>	{[ at, grave		]};
+    key <AD12>	{[ bracketleft, braceleft ]};
+
+    key <CAPS>	{[ Eisu_toggle, Caps_Lock ]};
+
+    key <AC01>	{[ a, A			]};
+    key <AC02>	{[ s, S			]};
+    key <AC03>	{[ d, D			]};
+    key <AC04>	{[ f, F			]};
+    key <AC05>	{[ g, G			]};
+    key <AC06>	{[ h, H			]};
+    key <AC07>	{[ j, J			]};
+    key <AC08>	{[ k, K			]};
+    key <AC09>	{[ l, L			]};
+    key <AC10>	{[ semicolon, plus	]};
+    key <AC11>	{[ colon, asterisk	]};
+    key <AC12>	{[ bracketright, braceright ]};
+
+    key <AB01>	{[ z, Z			]};
+    key <AB02>	{[ x, X			]};
+    key <AB03>	{[ c, C			]};
+    key <AB04>	{[ v, V			]};
+    key <AB05>	{[ b, B			]};
+    key <AB06>	{[ n, N			]};
+    key <AB07>	{[ m, M			]};
+    key <AB08>	{[ comma,  less		]};
+    key <AB09>	{[ period, greater	]};
+    key <AB10>	{[ slash, question	]};
+    key <AB11>	{[ backslash, underscore ]};
+
+    key <NFER>	{[ Muhenkan ]};
+    key <XFER>	{[ Henkan, Mode_switch ], type[group1]="PC_ALT_LEVEL2" };
+    key <HKTG>	{[ Hiragana_Katakana, Romaji ], type[group1]="PC_ALT_LEVEL2" };
+
+    key <PRSC>	{[ Print, Execute ], type[group1]="PC_ALT_LEVEL2" };
+};
+
+// 86 keys with kana map
+partial alphanumeric_keys
+xkb_symbols "kana86" {
+
+    include "jp(kana)"
+    include "jp(OADG109A)"
+
+    name[Group1]= "Japanese (Kana 86)";
+
+    // For compatibility with other keyboards connected at the same time:
+    key <RWIN>	{[ Super_R	]};
+    key <RCTL>	{[ Control_R	]};
+
+    include "keypad(numoperdecsep)"
+    include "altwin(menu)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "kana" {
+
+    name[Group1]= "Japanese (Kana)";
+
+    key <HZTG>	{[ Zenkaku_Hankaku, Kanji ], type[group1]="PC_ALT_LEVEL2" };
+
+    key <AE01>	{[ kana_NU		]};
+    key <AE02>	{[ kana_FU		]};
+    key <AE03>	{[ kana_A, kana_a	]};
+    key <AE04>	{[ kana_U, kana_u	]};
+    key <AE05>	{[ kana_E, kana_e	]};
+    key <AE06>	{[ kana_O, kana_o	]};
+    key <AE07>	{[ kana_YA, kana_ya	]};
+    key <AE08>	{[ kana_YU, kana_yu	]};
+    key <AE09>	{[ kana_YO, kana_yo	]};
+    key <AE10>	{[ kana_WA, kana_WO	]};
+    key <AE11>	{[ kana_HO		]};
+    key <AE12>	{[ kana_HE		]};
+    key <AE13>	{[ prolongedsound	]};
+
+    key <AD01>	{[ kana_TA		]};
+    key <AD02>	{[ kana_TE		]};
+    key <AD03>	{[ kana_I, kana_i	]};
+    key <AD04>	{[ kana_SU		]};
+    key <AD05>	{[ kana_KA		]};
+    key <AD06>	{[ kana_N		]};
+    key <AD07>	{[ kana_NA		]};
+    key <AD08>	{[ kana_NI		]};
+    key <AD09>	{[ kana_RA		]};
+    key <AD10>	{[ kana_SE		]};
+    key <AD11>	{[ voicedsound		]};
+    key <AD12>	{[ semivoicedsound, kana_openingbracket ]};
+
+    key <CAPS>	{[ Eisu_toggle, Caps_Lock ]};
+
+    key <AC01>	{[ kana_CHI		]};
+    key <AC02>	{[ kana_TO		]};
+    key <AC03>	{[ kana_SHI		]};
+    key <AC04>	{[ kana_HA		]};
+    key <AC05>	{[ kana_KI		]};
+    key <AC06>	{[ kana_KU		]};
+    key <AC07>	{[ kana_MA		]};
+    key <AC08>	{[ kana_NO		]};
+    key <AC09>	{[ kana_RI		]};
+    key <AC10>	{[ kana_RE		]};
+    key <AC11>	{[ kana_KE		]};
+    key <AC12>	{[ kana_MU, kana_closingbracket ]};
+
+    key <AB01>	{[ kana_TSU, kana_tsu	]};
+    key <AB02>	{[ kana_SA		]};
+    key <AB03>	{[ kana_SO		]};
+    key <AB04>	{[ kana_HI		]};
+    key <AB05>	{[ kana_KO		]};
+    key <AB06>	{[ kana_MI		]};
+    key <AB07>	{[ kana_MO		]};
+    key <AB08>	{[ kana_NE, kana_comma  ]};
+    key <AB09>	{[ kana_RU, kana_fullstop ]};
+    key <AB10>	{[ kana_ME, kana_conjunctive ]};
+    key <AB11>	{[ kana_RO		]};
+
+    key <NFER>	{[ Muhenkan ]};
+    key <XFER>	{[ Henkan, Mode_switch ], type[group1]="PC_ALT_LEVEL2" };
+    key <HKTG>	{[ Hiragana_Katakana, Romaji ], type[group1]="PC_ALT_LEVEL2" };
+
+    key <PRSC>	{[ Print, Execute ], type[group1]="PC_ALT_LEVEL2" };
+};
+
+partial alphanumeric_keys
+xkb_symbols "mac" {
+
+    include "jp(kana)"
+
+    name[Group1]= "Japanese (Macintosh)";
+
+    replace key <CAPS>	{[ Caps_Lock ]};
+};
+
+partial alphanumeric_keys
+xkb_symbols "dvorak" {
+
+    include "jp(OADG109A)"
+
+    name[Group1]= "Japanese (Dvorak)";
+
+    key <AE11>	{[ at, grave		]};
+
+    key <AD01>	{[ colon, asterisk	]};
+    key <AD02>	{[ comma, less		]};
+    key <AD03>	{[ period, greater	]};
+    key <AD04>	{[ p, P			]};
+    key <AD05>	{[ y, Y			]};
+    key <AD06>	{[ f, F			]};
+    key <AD07>	{[ g, G			]};
+    key <AD08>	{[ c, C			]};
+    key <AD09>	{[ r, R			]};
+    key <AD10>	{[ l, L			]};
+    key <AD11>	{[ slash, question	]};
+
+    key <AC02>	{[ o, O			]};
+    key <AC03>	{[ e, E			]};
+    key <AC04>	{[ u, U			]};
+    key <AC05>	{[ i, I			]};
+    key <AC06>	{[ d, D			]};
+    key <AC07>	{[ h, H			]};
+    key <AC08>	{[ t, T			]};
+    key <AC09>	{[ n, N			]};
+    key <AC10>	{[ s, S			]};
+    key <AC11>	{[ minus, equal		]};
+
+    key <AB01>	{[ semicolon, plus	]};
+    key <AB02>	{[ q, Q			]};
+    key <AB03>	{[ j, J			]};
+    key <AB04>	{[ k, K			]};
+    key <AB05>	{[ x, X			]};
+    key <AB06>	{[ b, B			]};
+    key <AB08>	{[ w, W			]};
+    key <AB09>	{[ v, V			]};
+    key <AB10>	{[ z, Z			]};
+};
+
+
+// Kludge for overriding the XF86AudioMedia symbol for non-evdev machines.
+partial alphanumeric_keys
+xkb_symbols "henkan" {
+    key <XFER>	{[ Henkan, Mode_switch ], type[group1]="PC_ALT_LEVEL2" };
+};
+
+// Option for a Nicola-F-style Backspace key.
+partial alphanumeric_keys
+xkb_symbols "nicola_f_bs" {
+    key <AE10>	{[ 0, underscore        ]};
+
+    key <AD11>	{[ colon, asterisk      ]};
+
+    key <AC11>	{[ BackSpace, BackSpace ]};
+    key <AC12>	{[ Escape               ]};
+    key <BKSP>	{[ bracketright, braceright ]};
+
+    key <AB11>	{[ at, grave            ]};
+};
+
+partial alphanumeric_keys
+xkb_symbols "hztg_escape" {
+    replace key <HZTG>	{[ Escape ]};
+};
+
+
+// EXTRAS:
+
+partial alphanumeric_keys
+	xkb_symbols "sun_type6_suncompat" {
+	include "sun_vndr/jp(sun_type6_suncompat)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "sun_type6" {
+	include "sun_vndr/jp(sun_type6)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "sun_type7_suncompat" {
+	include "sun_vndr/jp(sun_type7_suncompat)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "suncompat" {
+	include "sun_vndr/jp(suncompat)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "sun_type7" {
+	include "sun_vndr/jp(sun_type7)"
+};

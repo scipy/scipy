@@ -1,0 +1,22 @@
+#ifndef QT_QTSERIALBUS_MODULE_H
+#define QT_QTSERIALBUS_MODULE_H
+#include <QtSerialBus/QtSerialBusDepends>
+#include "qtserialbusglobal.h"
+#include "qcanbus.h"
+#include "qcanbusdevice.h"
+#include "qcanbusdeviceinfo.h"
+#include "qcanbusfactory.h"
+#include "qcanbusframe.h"
+#include "qmodbusclient.h"
+#include "qmodbusdataunit.h"
+#include "qmodbusdevice.h"
+#include "qmodbusdeviceidentification.h"
+#include "qmodbuspdu.h"
+#include "qmodbusreply.h"
+#include "qmodbusrtuserialmaster.h"
+#include "qmodbusrtuserialslave.h"
+#include "qmodbusserver.h"
+#include "qmodbustcpclient.h"
+#include "qmodbustcpserver.h"
+#include "qtserialbusversion.h"
+#endif

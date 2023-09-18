@@ -1,0 +1,11 @@
+prefix=/workspaces/scipy/venv
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: XCB Atom library
+Description: XCB atom cache
+Version: 0.4.0
+Requires: xcb
+Libs: -L${libdir} -lxcb-util
+Cflags: -I${includedir}

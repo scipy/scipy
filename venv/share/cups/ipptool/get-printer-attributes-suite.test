@@ -1,0 +1,585 @@
+#
+# Mini test suite for Get-Printer-Attributes conformance
+#
+# Verifies IPP conformance for the requested-attributes operation attribute.
+#
+# Usage:
+#
+#   ipptool -tI printer-uri get-printer-attributes-suite.test
+#
+
+# Always use IPP/2.0 for this set of tests...
+VERSION 2.0
+
+{
+	NAME "Get-Printer-Attributes (no requested-attributes)"
+
+	OPERATION Get-Printer-Attributes
+
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+	ATTR uri printer-uri $uri
+
+	STATUS successful-ok
+
+	# 'media-col-database' attribute should never be returned unless
+	# explicitly requested...
+	EXPECT !media-col-database
+
+	# 'printer-description' attributes
+	EXPECT charset-configured OF-TYPE charset COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT charset-supported OF-TYPE charset IN-GROUP printer-attributes-tag
+	EXPECT ?color-supported OF-TYPE boolean COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT compression-supported OF-TYPE keyword IN-GROUP printer-attributes-tag
+	EXPECT document-format-default OF-TYPE mimeMediaType COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT document-format-supported OF-TYPE mimeMediaType IN-GROUP printer-attributes-tag
+	EXPECT generated-natural-language-supported OF-TYPE naturalLanguage IN-GROUP printer-attributes-tag
+	EXPECT ipp-versions-supported OF-TYPE keyword IN-GROUP printer-attributes-tag
+	EXPECT ?job-impressions-supported OF-TYPE rangeOfInteger COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?multiple-document-jobs-supported OF-TYPE boolean COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?multiple-operation-time-out OF-TYPE integer COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT natural-language-configured OF-TYPE naturalLanguage COUNT 1 IN-GROUP printer-attributes-tag
+        EXPECT operations-supported OF-TYPE enum IN-GROUP printer-attributes-tag
+	EXPECT pdl-override-supported OF-TYPE keyword COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?printer-info OF-TYPE text COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?printer-location OF-TYPE text COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?printer-make-and-model OF-TYPE text COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT printer-name OF-TYPE name COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?pages-per-minute-color OF-TYPE integer COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?pages-per-minute OF-TYPE integer COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?printer-current-time OF-TYPE dateTime|unknown COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT printer-is-accepting-jobs OF-TYPE boolean COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?printer-more-info OF-TYPE uri COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT printer-state OF-TYPE enum COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?printer-state-message OF-TYPE text COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT printer-state-reasons OF-TYPE keyword IN-GROUP printer-attributes-tag
+	EXPECT printer-up-time OF-TYPE integer COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT printer-uri-supported OF-TYPE uri IN-GROUP printer-attributes-tag
+	EXPECT queued-job-count OF-TYPE integer COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT uri-authentication-supported OF-TYPE keyword IN-GROUP printer-attributes-tag
+	EXPECT uri-security-supported OF-TYPE keyword IN-GROUP printer-attributes-tag
+
+	# 'job-template' attributes
+	EXPECT ?copies-default OF-TYPE integer IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE >0
+	EXPECT ?copies-supported OF-TYPE rangeOfInteger IN-GROUP printer-attributes-tag
+	EXPECT ?finishings-default OF-TYPE enum IN-GROUP printer-attributes-tag
+	EXPECT ?finishings-supported OF-TYPE enum IN-GROUP printer-attributes-tag WITH-VALUE 3
+	EXPECT ?job-hold-until-default OF-TYPE keyword|name IN-GROUP printer-attributes-tag COUNT 1
+	EXPECT ?job-hold-until-supported OF-TYPE keyword|name IN-GROUP printer-attributes-tag WITH-VALUE no-hold
+	EXPECT job-hold-until-default IF-DEFINED OPTIONAL_HOLD_JOB
+	EXPECT job-hold-until-supported IF-DEFINED OPTIONAL_HOLD_JOB
+	EXPECT ?job-priority-default OF-TYPE integer IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE >0,<101
+	EXPECT ?job-priority-supported OF-TYPE integer IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE >0,<101
+	EXPECT ?job-sheets-default OF-TYPE keyword|name IN-GROUP printer-attributes-tag
+	EXPECT ?job-sheets-supported OF-TYPE keyword|name IN-GROUP printer-attributes-tag WITH-VALUE none
+	EXPECT ?media-default OF-TYPE no-value|keyword|name IN-GROUP printer-attributes-tag COUNT 1
+	EXPECT ?media-ready OF-TYPE keyword|name IN-GROUP printer-attributes-tag
+	EXPECT ?media-supported OF-TYPE keyword|name IN-GROUP printer-attributes-tag
+	EXPECT ?multiple-document-handling-default OF-TYPE keyword IN-GROUP printer-attributes-tag WITH-VALUE "/^(single-document|separate-documents-uncollated-copies|separate-documents-collated-copies|single-document-new-sheet)$$/"
+	EXPECT ?multiple-document-handling-supported OF-TYPE keyword IN-GROUP printer-attributes-tag WITH-VALUE "/^(single-document|separate-documents-uncollated-copies|separate-documents-collated-copies|single-document-new-sheet)$$/"
+	EXPECT ?number-up-default OF-TYPE integer IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE >0
+	EXPECT ?number-up-supported OF-TYPE integer|rangeOfInteger IN-GROUP printer-attributes-tag WITH-VALUE >0
+	EXPECT ?number-up-supported WITH-VALUE 1
+	EXPECT ?orientation-requested-default OF-TYPE no-value|enum IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE 3,4,5,6
+	EXPECT ?orientation-requested-supported OF-TYPE enum IN-GROUP printer-attributes-tag WITH-VALUE 3,4,5,6
+	EXPECT ?pages-ranges-supported OF-TYPE boolean IN-GROUP printer-attributes-tag
+	EXPECT ?print-quality-default OF-TYPE enum IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE 3,4,5
+	EXPECT ?print-quality-supported OF-TYPE enum IN-GROUP printer-attributes-tag WITH-VALUE 3,4,5
+	EXPECT ?printer-resolution-default OF-TYPE resolution IN-GROUP printer-attributes-tag COUNT 1
+	EXPECT ?printer-resolution-supported OF-TYPE resolution IN-GROUP printer-attributes-tag
+	EXPECT ?sides-default OF-TYPE keyword IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE "/^(one-sided|two-sided-long-edge|two-sided-short-edge)$$/"
+	EXPECT ?sides-supported OF-TYPE keyword IN-GROUP printer-attributes-tag WITH-VALUE "/^(one-sided|two-sided-long-edge|two-sided-short-edge)$$/"
+}
+
+{
+	NAME "Get-Printer-Attributes (requested-attributes='all')"
+
+	OPERATION Get-Printer-Attributes
+
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR keyword requested-attributes 'all'
+
+	STATUS successful-ok
+
+	# 'media-col-database' attribute should never be returned unless
+	# explicitly requested...
+	EXPECT !media-col-database
+
+	# 'printer-description' attributes
+	EXPECT charset-configured OF-TYPE charset COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT charset-supported OF-TYPE charset IN-GROUP printer-attributes-tag
+	EXPECT ?color-supported OF-TYPE boolean COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT compression-supported OF-TYPE keyword IN-GROUP printer-attributes-tag
+	EXPECT document-format-default OF-TYPE mimeMediaType COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT document-format-supported OF-TYPE mimeMediaType IN-GROUP printer-attributes-tag
+	EXPECT generated-natural-language-supported OF-TYPE naturalLanguage IN-GROUP printer-attributes-tag
+	EXPECT ipp-versions-supported OF-TYPE keyword IN-GROUP printer-attributes-tag
+	EXPECT ?job-impressions-supported OF-TYPE rangeOfInteger COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?multiple-document-jobs-supported OF-TYPE boolean COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?multiple-operation-time-out OF-TYPE integer COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT natural-language-configured OF-TYPE naturalLanguage COUNT 1 IN-GROUP printer-attributes-tag
+        EXPECT operations-supported OF-TYPE enum IN-GROUP printer-attributes-tag
+	EXPECT pdl-override-supported OF-TYPE keyword COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?printer-info OF-TYPE text COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?printer-location OF-TYPE text COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?printer-make-and-model OF-TYPE text COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT printer-name OF-TYPE name COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?pages-per-minute-color OF-TYPE integer COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?pages-per-minute OF-TYPE integer COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?printer-current-time OF-TYPE dateTime|unknown COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT printer-is-accepting-jobs OF-TYPE boolean COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?printer-more-info OF-TYPE uri COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT printer-state OF-TYPE enum COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?printer-state-message OF-TYPE text COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT printer-state-reasons OF-TYPE keyword IN-GROUP printer-attributes-tag
+	EXPECT printer-up-time OF-TYPE integer COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT printer-uri-supported OF-TYPE uri IN-GROUP printer-attributes-tag
+	EXPECT queued-job-count OF-TYPE integer COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT uri-authentication-supported OF-TYPE keyword IN-GROUP printer-attributes-tag
+	EXPECT uri-security-supported OF-TYPE keyword IN-GROUP printer-attributes-tag
+
+	# 'job-template' attributes
+	EXPECT ?copies-default OF-TYPE integer IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE >0
+	EXPECT ?copies-supported OF-TYPE rangeOfInteger IN-GROUP printer-attributes-tag
+	EXPECT ?finishings-default OF-TYPE enum IN-GROUP printer-attributes-tag
+	EXPECT ?finishings-supported OF-TYPE enum IN-GROUP printer-attributes-tag WITH-VALUE 3
+	EXPECT ?job-hold-until-default OF-TYPE keyword|name IN-GROUP printer-attributes-tag COUNT 1
+	EXPECT ?job-hold-until-supported OF-TYPE keyword|name IN-GROUP printer-attributes-tag WITH-VALUE no-hold
+	EXPECT job-hold-until-default IF-DEFINED OPTIONAL_HOLD_JOB
+	EXPECT job-hold-until-supported IF-DEFINED OPTIONAL_HOLD_JOB
+	EXPECT ?job-priority-default OF-TYPE integer IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE >0,<101
+	EXPECT ?job-priority-supported OF-TYPE integer IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE >0,<101
+	EXPECT ?job-sheets-default OF-TYPE keyword|name IN-GROUP printer-attributes-tag
+	EXPECT ?job-sheets-supported OF-TYPE keyword|name IN-GROUP printer-attributes-tag WITH-VALUE none
+	EXPECT ?media-default OF-TYPE no-value|keyword|name IN-GROUP printer-attributes-tag COUNT 1
+	EXPECT ?media-ready OF-TYPE keyword|name IN-GROUP printer-attributes-tag
+	EXPECT ?media-supported OF-TYPE keyword|name IN-GROUP printer-attributes-tag
+	EXPECT ?multiple-document-handling-default OF-TYPE keyword IN-GROUP printer-attributes-tag WITH-VALUE "/^(single-document|separate-documents-uncollated-copies|separate-documents-collated-copies|single-document-new-sheet)$$/"
+	EXPECT ?multiple-document-handling-supported OF-TYPE keyword IN-GROUP printer-attributes-tag WITH-VALUE "/^(single-document|separate-documents-uncollated-copies|separate-documents-collated-copies|single-document-new-sheet)$$/"
+	EXPECT ?number-up-default OF-TYPE integer IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE >0
+	EXPECT ?number-up-supported OF-TYPE integer|rangeOfInteger IN-GROUP printer-attributes-tag WITH-VALUE >0
+	EXPECT ?number-up-supported WITH-VALUE 1
+	EXPECT ?orientation-requested-default OF-TYPE no-value|enum IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE 3,4,5,6
+	EXPECT ?orientation-requested-supported OF-TYPE enum IN-GROUP printer-attributes-tag WITH-VALUE 3,4,5,6
+	EXPECT ?pages-ranges-supported OF-TYPE boolean IN-GROUP printer-attributes-tag
+	EXPECT ?print-quality-default OF-TYPE enum IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE 3,4,5
+	EXPECT ?print-quality-supported OF-TYPE enum IN-GROUP printer-attributes-tag WITH-VALUE 3,4,5
+	EXPECT ?printer-resolution-default OF-TYPE resolution IN-GROUP printer-attributes-tag COUNT 1
+	EXPECT ?printer-resolution-supported OF-TYPE resolution IN-GROUP printer-attributes-tag
+	EXPECT ?sides-default OF-TYPE keyword IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE "/^(one-sided|two-sided-long-edge|two-sided-short-edge)$$/"
+	EXPECT ?sides-supported OF-TYPE keyword IN-GROUP printer-attributes-tag WITH-VALUE "/^(one-sided|two-sided-long-edge|two-sided-short-edge)$$/"
+}
+
+{
+	NAME "Get-Printer-Attributes (requested-attributes='all','media-col-database')"
+
+	OPERATION Get-Printer-Attributes
+
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR keyword requested-attributes all,media-col-database
+
+	STATUS successful-ok
+
+	# 'media-col-database' attribute should never be returned unless
+	# explicitly requested...
+	EXPECT media-col-database OF-TYPE collection IN-GROUP printer-attributes-tag
+
+	# 'printer-description' attributes
+	EXPECT charset-configured OF-TYPE charset COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT charset-supported OF-TYPE charset IN-GROUP printer-attributes-tag
+	EXPECT ?color-supported OF-TYPE boolean COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT compression-supported OF-TYPE keyword IN-GROUP printer-attributes-tag
+	EXPECT document-format-default OF-TYPE mimeMediaType COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT document-format-supported OF-TYPE mimeMediaType IN-GROUP printer-attributes-tag
+	EXPECT generated-natural-language-supported OF-TYPE naturalLanguage IN-GROUP printer-attributes-tag
+	EXPECT ipp-versions-supported OF-TYPE keyword IN-GROUP printer-attributes-tag
+	EXPECT ?job-impressions-supported OF-TYPE rangeOfInteger COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?multiple-document-jobs-supported OF-TYPE boolean COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?multiple-operation-time-out OF-TYPE integer COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT natural-language-configured OF-TYPE naturalLanguage COUNT 1 IN-GROUP printer-attributes-tag
+        EXPECT operations-supported OF-TYPE enum IN-GROUP printer-attributes-tag
+	EXPECT pdl-override-supported OF-TYPE keyword COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?printer-info OF-TYPE text COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?printer-location OF-TYPE text COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?printer-make-and-model OF-TYPE text COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT printer-name OF-TYPE name COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?pages-per-minute-color OF-TYPE integer COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?pages-per-minute OF-TYPE integer COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?printer-current-time OF-TYPE dateTime|unknown COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT printer-is-accepting-jobs OF-TYPE boolean COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?printer-more-info OF-TYPE uri COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT printer-state OF-TYPE enum COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?printer-state-message OF-TYPE text COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT printer-state-reasons OF-TYPE keyword IN-GROUP printer-attributes-tag
+	EXPECT printer-up-time OF-TYPE integer COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT printer-uri-supported OF-TYPE uri IN-GROUP printer-attributes-tag
+	EXPECT queued-job-count OF-TYPE integer COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT uri-authentication-supported OF-TYPE keyword IN-GROUP printer-attributes-tag
+	EXPECT uri-security-supported OF-TYPE keyword IN-GROUP printer-attributes-tag
+
+	# 'job-template' attributes
+	EXPECT ?copies-default OF-TYPE integer IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE >0
+	EXPECT ?copies-supported OF-TYPE rangeOfInteger IN-GROUP printer-attributes-tag
+	EXPECT ?finishings-default OF-TYPE enum IN-GROUP printer-attributes-tag
+	EXPECT ?finishings-supported OF-TYPE enum IN-GROUP printer-attributes-tag WITH-VALUE 3
+	EXPECT ?job-hold-until-default OF-TYPE keyword|name IN-GROUP printer-attributes-tag COUNT 1
+	EXPECT ?job-hold-until-supported OF-TYPE keyword|name IN-GROUP printer-attributes-tag WITH-VALUE no-hold
+	EXPECT job-hold-until-default IF-DEFINED OPTIONAL_HOLD_JOB
+	EXPECT job-hold-until-supported IF-DEFINED OPTIONAL_HOLD_JOB
+	EXPECT ?job-priority-default OF-TYPE integer IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE >0,<101
+	EXPECT ?job-priority-supported OF-TYPE integer IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE >0,<101
+	EXPECT ?job-sheets-default OF-TYPE keyword|name IN-GROUP printer-attributes-tag
+	EXPECT ?job-sheets-supported OF-TYPE keyword|name IN-GROUP printer-attributes-tag WITH-VALUE none
+	EXPECT ?media-default OF-TYPE no-value|keyword|name IN-GROUP printer-attributes-tag COUNT 1
+	EXPECT ?media-ready OF-TYPE keyword|name IN-GROUP printer-attributes-tag
+	EXPECT ?media-supported OF-TYPE keyword|name IN-GROUP printer-attributes-tag
+	EXPECT ?multiple-document-handling-default OF-TYPE keyword IN-GROUP printer-attributes-tag WITH-VALUE "/^(single-document|separate-documents-uncollated-copies|separate-documents-collated-copies|single-document-new-sheet)$$/"
+	EXPECT ?multiple-document-handling-supported OF-TYPE keyword IN-GROUP printer-attributes-tag WITH-VALUE "/^(single-document|separate-documents-uncollated-copies|separate-documents-collated-copies|single-document-new-sheet)$$/"
+	EXPECT ?number-up-default OF-TYPE integer IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE >0
+	EXPECT ?number-up-supported OF-TYPE integer|rangeOfInteger IN-GROUP printer-attributes-tag WITH-VALUE >0
+	EXPECT ?number-up-supported WITH-VALUE 1
+	EXPECT ?orientation-requested-default OF-TYPE no-value|enum IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE 3,4,5,6
+	EXPECT ?orientation-requested-supported OF-TYPE enum IN-GROUP printer-attributes-tag WITH-VALUE 3,4,5,6
+	EXPECT ?pages-ranges-supported OF-TYPE boolean IN-GROUP printer-attributes-tag
+	EXPECT ?print-quality-default OF-TYPE enum IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE 3,4,5
+	EXPECT ?print-quality-supported OF-TYPE enum IN-GROUP printer-attributes-tag WITH-VALUE 3,4,5
+	EXPECT ?printer-resolution-default OF-TYPE resolution IN-GROUP printer-attributes-tag COUNT 1
+	EXPECT ?printer-resolution-supported OF-TYPE resolution IN-GROUP printer-attributes-tag
+	EXPECT ?sides-default OF-TYPE keyword IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE "/^(one-sided|two-sided-long-edge|two-sided-short-edge)$$/"
+	EXPECT ?sides-supported OF-TYPE keyword IN-GROUP printer-attributes-tag WITH-VALUE "/^(one-sided|two-sided-long-edge|two-sided-short-edge)$$/"
+}
+
+{
+	NAME "Get-Printer-Attributes (requested-attributes='none')"
+
+	OPERATION Get-Printer-Attributes
+
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR keyword requested-attributes 'none'
+
+	STATUS successful-ok
+
+	# 'media-col-database' attribute should never be returned unless
+	# explicitly requested...
+	EXPECT !media-col-database
+
+	# 'printer-description' attributes
+	EXPECT !charset-configured
+	EXPECT !charset-supported
+	EXPECT !color-supported
+	EXPECT !compression-supported
+	EXPECT !document-format-default
+	EXPECT !document-format-supported
+	EXPECT !generated-natural-language-supported
+	EXPECT !ipp-versions-supported
+	EXPECT !job-impressions-supported
+	EXPECT !multiple-document-jobs-supported
+	EXPECT !multiple-operation-time-out
+	EXPECT !natural-language-configured
+        EXPECT !operations-supported
+	EXPECT !pdl-override-supported
+	EXPECT !printer-info
+	EXPECT !printer-location
+	EXPECT !printer-make-and-model
+	EXPECT !printer-name
+	EXPECT !pages-per-minute-color
+	EXPECT !pages-per-minute
+	EXPECT !printer-current-time
+	EXPECT !printer-is-accepting-jobs
+	EXPECT !printer-more-info
+	EXPECT !printer-state
+	EXPECT !printer-state-message
+	EXPECT !printer-state-reasons
+	EXPECT !printer-up-time
+	EXPECT !printer-uri-supported
+	EXPECT !queued-job-count
+	EXPECT !uri-authentication-supported
+	EXPECT !uri-security-supported
+
+	# 'job-template' attributes
+	EXPECT !copies-default
+	EXPECT !copies-supported
+	EXPECT !finishings-default
+	EXPECT !finishings-supported
+	EXPECT !job-hold-until-default
+	EXPECT !job-hold-until-supported
+	EXPECT !job-hold-until-default
+	EXPECT !job-hold-until-supported
+	EXPECT !job-priority-default
+	EXPECT !job-priority-supported
+	EXPECT !job-sheets-default
+	EXPECT !job-sheets-supported
+	EXPECT !media-default
+	EXPECT !media-ready
+	EXPECT !media-supported
+	EXPECT !multiple-document-handling-default
+	EXPECT !multiple-document-handling-supported
+	EXPECT !number-up-default
+	EXPECT !number-up-supported
+	EXPECT !number-up-supported
+	EXPECT !orientation-requested-default
+	EXPECT !orientation-requested-supported
+	EXPECT !pages-ranges-supported
+	EXPECT !print-quality-default
+	EXPECT !print-quality-supported
+	EXPECT !printer-resolution-default
+	EXPECT !printer-resolution-supported
+	EXPECT !sides-default
+	EXPECT !sides-supported
+}
+
+{
+	NAME "Get-Printer-Attributes (requested-attributes='media-col-database')"
+
+	OPERATION Get-Printer-Attributes
+
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR keyword requested-attributes 'all'
+
+	STATUS successful-ok
+
+	# 'media-col-database' attribute should never be returned unless
+	# explicitly requested...
+	EXPECT media-col-database OF-TYPE collection IN-GROUP printer-attributes-tag
+
+	# 'printer-description' attributes
+	EXPECT !charset-configured
+	EXPECT !charset-supported
+	EXPECT !color-supported
+	EXPECT !compression-supported
+	EXPECT !document-format-default
+	EXPECT !document-format-supported
+	EXPECT !generated-natural-language-supported
+	EXPECT !ipp-versions-supported
+	EXPECT !job-impressions-supported
+	EXPECT !multiple-document-jobs-supported
+	EXPECT !multiple-operation-time-out
+	EXPECT !natural-language-configured
+        EXPECT !operations-supported
+	EXPECT !pdl-override-supported
+	EXPECT !printer-info
+	EXPECT !printer-location
+	EXPECT !printer-make-and-model
+	EXPECT !printer-name
+	EXPECT !pages-per-minute-color
+	EXPECT !pages-per-minute
+	EXPECT !printer-current-time
+	EXPECT !printer-is-accepting-jobs
+	EXPECT !printer-more-info
+	EXPECT !printer-state
+	EXPECT !printer-state-message
+	EXPECT !printer-state-reasons
+	EXPECT !printer-up-time
+	EXPECT !printer-uri-supported
+	EXPECT !queued-job-count
+	EXPECT !uri-authentication-supported
+	EXPECT !uri-security-supported
+
+	# 'job-template' attributes
+	EXPECT !copies-default
+	EXPECT !copies-supported
+	EXPECT !finishings-default
+	EXPECT !finishings-supported
+	EXPECT !job-hold-until-default
+	EXPECT !job-hold-until-supported
+	EXPECT !job-hold-until-default
+	EXPECT !job-hold-until-supported
+	EXPECT !job-priority-default
+	EXPECT !job-priority-supported
+	EXPECT !job-sheets-default
+	EXPECT !job-sheets-supported
+	EXPECT !media-default
+	EXPECT !media-ready
+	EXPECT !media-supported
+	EXPECT !multiple-document-handling-default
+	EXPECT !multiple-document-handling-supported
+	EXPECT !number-up-default
+	EXPECT !number-up-supported
+	EXPECT !number-up-supported
+	EXPECT !orientation-requested-default
+	EXPECT !orientation-requested-supported
+	EXPECT !pages-ranges-supported
+	EXPECT !print-quality-default
+	EXPECT !print-quality-supported
+	EXPECT !printer-resolution-default
+	EXPECT !printer-resolution-supported
+	EXPECT !sides-default
+	EXPECT !sides-supported
+}
+
+{
+	NAME "Get-Printer-Attributes (requested-attributes='printer-description')"
+
+	OPERATION Get-Printer-Attributes
+
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR keyword requested-attributes 'printer-description'
+
+	STATUS successful-ok
+
+	# 'media-col-database' attribute should never be returned unless
+	# explicitly requested...
+	EXPECT !media-col-database
+
+	# 'printer-description' attributes
+	EXPECT charset-configured OF-TYPE charset COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT charset-supported OF-TYPE charset IN-GROUP printer-attributes-tag
+	EXPECT ?color-supported OF-TYPE boolean COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT compression-supported OF-TYPE keyword IN-GROUP printer-attributes-tag
+	EXPECT document-format-default OF-TYPE mimeMediaType COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT document-format-supported OF-TYPE mimeMediaType IN-GROUP printer-attributes-tag
+	EXPECT generated-natural-language-supported OF-TYPE naturalLanguage IN-GROUP printer-attributes-tag
+	EXPECT ipp-versions-supported OF-TYPE keyword IN-GROUP printer-attributes-tag
+	EXPECT ?job-impressions-supported OF-TYPE rangeOfInteger COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?multiple-document-jobs-supported OF-TYPE boolean COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?multiple-operation-time-out OF-TYPE integer COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT natural-language-configured OF-TYPE naturalLanguage COUNT 1 IN-GROUP printer-attributes-tag
+        EXPECT operations-supported OF-TYPE enum IN-GROUP printer-attributes-tag
+	EXPECT pdl-override-supported OF-TYPE keyword COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?printer-info OF-TYPE text COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?printer-location OF-TYPE text COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?printer-make-and-model OF-TYPE text COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT printer-name OF-TYPE name COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?pages-per-minute-color OF-TYPE integer COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?pages-per-minute OF-TYPE integer COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?printer-current-time OF-TYPE dateTime|unknown COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT printer-is-accepting-jobs OF-TYPE boolean COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?printer-more-info OF-TYPE uri COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT printer-state OF-TYPE enum COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT ?printer-state-message OF-TYPE text COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT printer-state-reasons OF-TYPE keyword IN-GROUP printer-attributes-tag
+	EXPECT printer-up-time OF-TYPE integer COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT printer-uri-supported OF-TYPE uri IN-GROUP printer-attributes-tag
+	EXPECT queued-job-count OF-TYPE integer COUNT 1 IN-GROUP printer-attributes-tag
+	EXPECT uri-authentication-supported OF-TYPE keyword IN-GROUP printer-attributes-tag
+	EXPECT uri-security-supported OF-TYPE keyword IN-GROUP printer-attributes-tag
+
+	# 'job-template' attributes
+	EXPECT !copies-default
+	EXPECT !copies-supported
+	EXPECT !finishings-default
+	EXPECT !finishings-supported
+	EXPECT !job-hold-until-default
+	EXPECT !job-hold-until-supported
+	EXPECT !job-hold-until-default
+	EXPECT !job-hold-until-supported
+	EXPECT !job-priority-default
+	EXPECT !job-priority-supported
+	EXPECT !job-sheets-default
+	EXPECT !job-sheets-supported
+	EXPECT !media-default
+	EXPECT !media-ready
+	EXPECT !media-supported
+	EXPECT !multiple-document-handling-default
+	EXPECT !multiple-document-handling-supported
+	EXPECT !number-up-default
+	EXPECT !number-up-supported
+	EXPECT !number-up-supported
+	EXPECT !orientation-requested-default
+	EXPECT !orientation-requested-supported
+	EXPECT !pages-ranges-supported
+	EXPECT !print-quality-default
+	EXPECT !print-quality-supported
+	EXPECT !printer-resolution-default
+	EXPECT !printer-resolution-supported
+	EXPECT !sides-default
+	EXPECT !sides-supported
+}
+
+{
+	NAME "Get-Printer-Attributes (requested-attributes='job-template')"
+
+	OPERATION Get-Printer-Attributes
+
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR keyword requested-attributes 'job-template'
+
+	STATUS successful-ok
+
+	# 'media-col-database' attribute should never be returned unless
+	# explicitly requested...
+	EXPECT !media-col-database
+
+	# 'printer-description' attributes
+	EXPECT !charset-configured
+	EXPECT !charset-supported
+	EXPECT !color-supported
+	EXPECT !compression-supported
+	EXPECT !document-format-default
+	EXPECT !document-format-supported
+	EXPECT !generated-natural-language-supported
+	EXPECT !ipp-versions-supported
+	EXPECT !job-impressions-supported
+	EXPECT !multiple-document-jobs-supported
+	EXPECT !multiple-operation-time-out
+	EXPECT !natural-language-configured
+        EXPECT !operations-supported
+	EXPECT !pdl-override-supported
+	EXPECT !printer-info
+	EXPECT !printer-location
+	EXPECT !printer-make-and-model
+	EXPECT !printer-name
+	EXPECT !pages-per-minute-color
+	EXPECT !pages-per-minute
+	EXPECT !printer-current-time
+	EXPECT !printer-is-accepting-jobs
+	EXPECT !printer-more-info
+	EXPECT !printer-state
+	EXPECT !printer-state-message
+	EXPECT !printer-state-reasons
+	EXPECT !printer-up-time
+	EXPECT !printer-uri-supported
+	EXPECT !queued-job-count
+	EXPECT !uri-authentication-supported
+	EXPECT !uri-security-supported
+
+	# 'job-template' attributes
+	EXPECT ?copies-default OF-TYPE integer IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE >0
+	EXPECT ?copies-supported OF-TYPE rangeOfInteger IN-GROUP printer-attributes-tag
+	EXPECT ?finishings-default OF-TYPE enum IN-GROUP printer-attributes-tag
+	EXPECT ?finishings-supported OF-TYPE enum IN-GROUP printer-attributes-tag WITH-VALUE 3
+	EXPECT ?job-hold-until-default OF-TYPE keyword|name IN-GROUP printer-attributes-tag COUNT 1
+	EXPECT ?job-hold-until-supported OF-TYPE keyword|name IN-GROUP printer-attributes-tag WITH-VALUE no-hold
+	EXPECT job-hold-until-default IF-DEFINED OPTIONAL_HOLD_JOB
+	EXPECT job-hold-until-supported IF-DEFINED OPTIONAL_HOLD_JOB
+	EXPECT ?job-priority-default OF-TYPE integer IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE >0,<101
+	EXPECT ?job-priority-supported OF-TYPE integer IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE >0,<101
+	EXPECT ?job-sheets-default OF-TYPE keyword|name IN-GROUP printer-attributes-tag
+	EXPECT ?job-sheets-supported OF-TYPE keyword|name IN-GROUP printer-attributes-tag WITH-VALUE none
+	EXPECT ?media-default OF-TYPE no-value|keyword|name IN-GROUP printer-attributes-tag COUNT 1
+	EXPECT ?media-ready OF-TYPE keyword|name IN-GROUP printer-attributes-tag
+	EXPECT ?media-supported OF-TYPE keyword|name IN-GROUP printer-attributes-tag
+	EXPECT ?multiple-document-handling-default OF-TYPE keyword IN-GROUP printer-attributes-tag WITH-VALUE "/^(single-document|separate-documents-uncollated-copies|separate-documents-collated-copies|single-document-new-sheet)$$/"
+	EXPECT ?multiple-document-handling-supported OF-TYPE keyword IN-GROUP printer-attributes-tag WITH-VALUE "/^(single-document|separate-documents-uncollated-copies|separate-documents-collated-copies|single-document-new-sheet)$$/"
+	EXPECT ?number-up-default OF-TYPE integer IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE >0
+	EXPECT ?number-up-supported OF-TYPE integer|rangeOfInteger IN-GROUP printer-attributes-tag WITH-VALUE >0
+	EXPECT ?number-up-supported WITH-VALUE 1
+	EXPECT ?orientation-requested-default OF-TYPE no-value|enum IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE 3,4,5,6
+	EXPECT ?orientation-requested-supported OF-TYPE enum IN-GROUP printer-attributes-tag WITH-VALUE 3,4,5,6
+	EXPECT ?pages-ranges-supported OF-TYPE boolean IN-GROUP printer-attributes-tag
+	EXPECT ?print-quality-default OF-TYPE enum IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE 3,4,5
+	EXPECT ?print-quality-supported OF-TYPE enum IN-GROUP printer-attributes-tag WITH-VALUE 3,4,5
+	EXPECT ?printer-resolution-default OF-TYPE resolution IN-GROUP printer-attributes-tag COUNT 1
+	EXPECT ?printer-resolution-supported OF-TYPE resolution IN-GROUP printer-attributes-tag
+	EXPECT ?sides-default OF-TYPE keyword IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE "/^(one-sided|two-sided-long-edge|two-sided-short-edge)$$/"
+	EXPECT ?sides-supported OF-TYPE keyword IN-GROUP printer-attributes-tag WITH-VALUE "/^(one-sided|two-sided-long-edge|two-sided-short-edge)$$/"
+}

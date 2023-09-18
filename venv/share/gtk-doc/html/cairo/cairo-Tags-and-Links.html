@@ -1,0 +1,505 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Tags and Links: Cairo: A Vector Graphics Library</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<link rel="home" href="index.html" title="Cairo: A Vector Graphics Library">
+<link rel="up" href="cairo-drawing.html" title="Drawing">
+<link rel="prev" href="cairo-Raster-Sources.html" title="Raster Sources">
+<link rel="next" href="cairo-fonts.html" title="Fonts">
+<meta name="generator" content="GTK-Doc V1.27 (XML mode)">
+<link rel="stylesheet" href="style.css" type="text/css">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<table class="navigation" id="top" width="100%" summary="Navigation header" cellpadding="2" cellspacing="5"><tr valign="middle">
+<td width="100%" align="left" class="shortcuts">
+<a href="#" class="shortcut">Top</a><span id="nav_description">  <span class="dim">|</span> 
+                  <a href="#cairo-Tags-and-Links.description" class="shortcut">Description</a></span>
+</td>
+<td><a accesskey="h" href="index.html"><img src="home.png" width="16" height="16" border="0" alt="Home"></a></td>
+<td><a accesskey="u" href="cairo-drawing.html"><img src="up.png" width="16" height="16" border="0" alt="Up"></a></td>
+<td><a accesskey="p" href="cairo-Raster-Sources.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
+<td><a accesskey="n" href="cairo-fonts.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
+</tr></table>
+<div class="refentry">
+<a name="cairo-Tags-and-Links"></a><div class="titlepage"></div>
+<div class="refnamediv"><table width="100%"><tr>
+<td valign="top">
+<h2><span class="refentrytitle"><a name="cairo-Tags-and-Links.top_of_page"></a>Tags and Links</span></h2>
+<p>Tags and Links — Hyperlinks and document structure</p>
+</td>
+<td class="gallery_image" valign="top" align="right"></td>
+</tr></table></div>
+<div class="refsect1">
+<a name="cairo-Tags-and-Links.functions"></a><h2>Functions</h2>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="functions_return">
+<col class="functions_name">
+</colgroup>
+<tbody>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-Tags-and-Links.html#cairo-tag-begin" title="cairo_tag_begin ()">cairo_tag_begin</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-Tags-and-Links.html#cairo-tag-end" title="cairo_tag_end ()">cairo_tag_end</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect1">
+<a name="cairo-Tags-and-Links.other"></a><h2>Types and Values</h2>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="name">
+<col class="description">
+</colgroup>
+<tbody>
+<tr>
+<td class="define_keyword">#define</td>
+<td class="function_name"><a class="link" href="cairo-Tags-and-Links.html#CAIRO-TAG-DEST:CAPS" title="CAIRO_TAG_DEST">CAIRO_TAG_DEST</a></td>
+</tr>
+<tr>
+<td class="define_keyword">#define</td>
+<td class="function_name"><a class="link" href="cairo-Tags-and-Links.html#CAIRO-TAG-LINK:CAPS" title="CAIRO_TAG_LINK">CAIRO_TAG_LINK</a></td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect1">
+<a name="cairo-Tags-and-Links.description"></a><h2>Description</h2>
+<p>The tag functions provide the ability to specify hyperlinks and
+document logical structure on supported backends. The following tags are supported:</p>
+<div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
+<li class="listitem"><p><a class="link" href="cairo-Tags-and-Links.html#link" title="Link Tags">Link</a> - Create a hyperlink</p></li>
+<li class="listitem"><p><a class="link" href="cairo-Tags-and-Links.html#dest" title="Destination Tags">Destinations</a> - Create a hyperlink destination</p></li>
+<li class="listitem"><p><a class="link" href="cairo-Tags-and-Links.html#doc-struct" title="Document Structure (PDF)">Document Structure Tags</a> - Create PDF Document Structure</p></li>
+</ul></div>
+<div class="refsect2">
+<a name="link"></a><h3>Link Tags</h3>
+<p>A hyperlink is specified by enclosing the hyperlink text with the <a class="link" href="cairo-Tags-and-Links.html#CAIRO-TAG-LINK:CAPS" title="CAIRO_TAG_LINK"><code class="literal">CAIRO_TAG_LINK</code></a> tag.</p>
+<p>For example:</p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="function"><a href="cairo-Tags-and-Links.html#cairo-tag-begin">cairo_tag_begin</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> CAIRO_TAG_LINK<span class="gtkdoc opt">,</span> <span class="string">&quot;uri=&apos;https://cairographics.org&apos;&quot;</span><span class="gtkdoc opt">);</span>
+<span class="function"><a href="cairo-Paths.html#cairo-move-to">cairo_move_to</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> <span class="number">50</span><span class="gtkdoc opt">,</span> <span class="number">50</span><span class="gtkdoc opt">);</span>
+<span class="function"><a href="cairo-text.html#cairo-show-text">cairo_show_text</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> <span class="string">&quot;This is a link to the cairo website.&quot;</span><span class="gtkdoc opt">);</span>
+<span class="function"><a href="cairo-Tags-and-Links.html#cairo-tag-end">cairo_tag_end</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> CAIRO_TAG_LINK<span class="gtkdoc opt">);</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p>The PDF backend uses one or more rectangles to define the clickable
+area of the link.  By default cairo will use the extents of the
+drawing operations enclosed by the begin/end link tags to define the
+clickable area. In some cases, such as a link split across two
+lines, the default rectangle is undesirable.</p>
+<p><em class="parameter"><code>rect</code></em>
+: [optional] The "rect" attribute allows the application to
+specify one or more rectangles that form the clickable region.  The
+value of this attribute is an array of floats. Each rectangle is
+specified by four elements in the array: x, y, width, height. The
+array size must be a multiple of four.</p>
+<p>An example of creating a link with user specified clickable region:</p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30</pre></td>
+        <td class="listing_code"><pre class="programlisting">cairo_font_extents_t font_extents<span class="gtkdoc opt">;</span>
+cairo_text_extents_t text1_extents<span class="gtkdoc opt">;</span>
+cairo_text_extents_t text2_extents<span class="gtkdoc opt">;</span>
+<span class="gtkdoc kwb">char</span> attribs<span class="gtkdoc opt">[</span><span class="number">100</span><span class="gtkdoc opt">];</span>
+<span class="gtkdoc kwb">const char</span> <span class="gtkdoc opt">*</span>text1 <span class="gtkdoc opt">=</span> <span class="string">&quot;This link is split&quot;</span><span class="gtkdoc opt">;</span>
+<span class="gtkdoc kwb">const char</span> <span class="gtkdoc opt">*</span>text2 <span class="gtkdoc opt">=</span> <span class="string">&quot;across two lines&quot;</span><span class="gtkdoc opt">;</span>
+
+<span class="function"><a href="cairo-text.html#cairo-font-extents">cairo_font_extents</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">, &amp;</span>font_extents<span class="gtkdoc opt">);</span>
+<span class="function"><a href="cairo-Paths.html#cairo-move-to">cairo_move_to</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> <span class="number">450</span><span class="gtkdoc opt">,</span> <span class="number">50</span><span class="gtkdoc opt">);</span>
+<span class="function"><a href="cairo-text.html#cairo-text-extents">cairo_text_extents</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> text1<span class="gtkdoc opt">, &amp;</span>text1_extents<span class="gtkdoc opt">);</span>
+<span class="function"><a href="cairo-Paths.html#cairo-move-to">cairo_move_to</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> <span class="number">50</span><span class="gtkdoc opt">,</span> <span class="number">70</span><span class="gtkdoc opt">);</span>
+<span class="function"><a href="cairo-text.html#cairo-text-extents">cairo_text_extents</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> text2<span class="gtkdoc opt">, &amp;</span>text2_extents<span class="gtkdoc opt">);</span>
+<span class="function">sprintf</span> <span class="gtkdoc opt">(</span>attribs<span class="gtkdoc opt">,</span>
+         <span class="string">&quot;rect=[%f %f %f %f %f %f %f %f] uri=&apos;https://cairographics.org&apos;&quot;</span><span class="gtkdoc opt">,</span>
+         text1_extents<span class="gtkdoc opt">.</span>x_bearing<span class="gtkdoc opt">,</span>
+         text1_extents<span class="gtkdoc opt">.</span>y_bearing<span class="gtkdoc opt">,</span>
+         text1_extents<span class="gtkdoc opt">.</span>width<span class="gtkdoc opt">,</span>
+         text1_extents<span class="gtkdoc opt">.</span>height<span class="gtkdoc opt">,</span>
+         text2_extents<span class="gtkdoc opt">.</span>x_bearing<span class="gtkdoc opt">,</span>
+         text2_extents<span class="gtkdoc opt">.</span>y_bearing<span class="gtkdoc opt">,</span>
+         text2_extents<span class="gtkdoc opt">.</span>width<span class="gtkdoc opt">,</span>
+         text2_extents<span class="gtkdoc opt">.</span>height<span class="gtkdoc opt">);</span>
+
+<span class="function"><a href="cairo-Tags-and-Links.html#cairo-tag-begin">cairo_tag_begin</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> CAIRO_TAG_LINK<span class="gtkdoc opt">,</span> attribs<span class="gtkdoc opt">);</span>
+<span class="function"><a href="cairo-text.html#cairo-show-text">cairo_show_text</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> <span class="string">&quot;This is a link to the cairo website&quot;</span><span class="gtkdoc opt">);</span>
+<span class="function"><a href="cairo-Paths.html#cairo-move-to">cairo_move_to</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> <span class="number">450</span><span class="gtkdoc opt">,</span> <span class="number">50</span><span class="gtkdoc opt">);</span>
+<span class="function"><a href="cairo-text.html#cairo-show-text">cairo_show_text</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> text1<span class="gtkdoc opt">);</span>
+<span class="function"><a href="cairo-Paths.html#cairo-move-to">cairo_move_to</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> <span class="number">50</span><span class="gtkdoc opt">,</span> <span class="number">70</span><span class="gtkdoc opt">);</span>
+<span class="function"><a href="cairo-text.html#cairo-show-text">cairo_show_text</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> text2<span class="gtkdoc opt">);</span>
+<span class="function"><a href="cairo-Tags-and-Links.html#cairo-tag-end">cairo_tag_end</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> CAIRO_TAG_LINK<span class="gtkdoc opt">);</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p>There are three types of links. Each type has its own attributes as detailed below.</p>
+<div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
+<li class="listitem"><p><a class="link" href="cairo-Tags-and-Links.html#internal-link" title="Internal Links">Internal Links</a> - A link to a location in the same document</p></li>
+<li class="listitem"><p><a class="link" href="cairo-Tags-and-Links.html#uri-link" title="URI Links">URI Links</a> - A link to a Uniform resource identifier</p></li>
+<li class="listitem"><p><a class="link" href="cairo-Tags-and-Links.html#file-link" title="File Links">File Links</a> - A link to a location in another document</p></li>
+</ul></div>
+<div class="refsect3">
+<a name="internal-link"></a><h4>Internal Links</h4>
+<p>An internal link is a link to a location in the same document. The destination
+is specified with either:</p>
+<p><em class="parameter"><code>dest</code></em>
+: a UTF-8 string specifying the destination in the PDF file to link
+to. Destinations are created with the <a class="link" href="cairo-Tags-and-Links.html#CAIRO-TAG-DEST:CAPS" title="CAIRO_TAG_DEST"><code class="literal">CAIRO_TAG_DEST</code></a> tag.</p>
+<p>or the two attributes:</p>
+<p><em class="parameter"><code>page</code></em>
+: An integer specifying the page number in the PDF file to link to.</p>
+<p><em class="parameter"><code>pos</code></em>
+: [optional] An array of two floats specifying the x,y position
+on the page.</p>
+<p>An example of the link attributes to link to a page and x,y position:</p>
+<pre class="programlisting">
+"page=3 pos=[3.1 6.2]"
+</pre>
+</div>
+<div class="refsect3">
+<a name="uri-link"></a><h4>URI Links</h4>
+<p>A URI link is a link to a Uniform Resource Identifier (<a class="ulink" href="http://tools.ietf.org/html/rfc2396" target="_top">RFC 2396</a>).</p>
+<p>A URI is specified with the following attribute:</p>
+<p><em class="parameter"><code>uri</code></em>
+: An ASCII string specifying the URI.</p>
+<p>An example of the link attributes to the cairo website:</p>
+<pre class="programlisting">
+"uri='https://cairographics.org'"
+</pre>
+</div>
+<div class="refsect3">
+<a name="file-link"></a><h4>File Links</h4>
+<p>A file link is a link a location in another PDF file.</p>
+<p>The file attribute (required) specifies the name of the PDF file:</p>
+<p><em class="parameter"><code>file</code></em>
+: File name of PDF file to link to.</p>
+<p>The position is specified by either:</p>
+<p> <em class="parameter"><code>dest</code></em>
+: a UTF-8 string specifying the named destination in the PDF file.</p>
+<p>or</p>
+<p> <em class="parameter"><code>page</code></em>
+: An integer specifying the page number in the PDF file.</p>
+<p> <em class="parameter"><code>pos</code></em>
+: [optional] An array of two floats specifying the x,y
+ position on the page. Position coordinates in external files are in PDF
+ coordinates (0,0 at bottom left).</p>
+<p>An example of the link attributes to PDF file:</p>
+<pre class="programlisting">
+"file='document.pdf' page=16 pos=[25 40]"
+</pre>
+</div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="dest"></a><h3>Destination Tags</h3>
+<p>A destination is specified by enclosing the destination drawing
+operations with the <a class="link" href="cairo-Tags-and-Links.html#CAIRO-TAG-DEST:CAPS" title="CAIRO_TAG_DEST"><code class="literal">CAIRO_TAG_DEST</code></a> tag.</p>
+<p><em class="parameter"><code>name</code></em>
+: [required] A UTF-8 string specifying the name of this destination.</p>
+<p><em class="parameter"><code>x</code></em>
+: [optional] A float specifying the x coordinate of destination
+                position on this page. If not specified the default
+                x coordinate is the left side of the extents of the
+                operations enclosed by the <a class="link" href="cairo-Tags-and-Links.html#CAIRO-TAG-DEST:CAPS" title="CAIRO_TAG_DEST"><code class="literal">CAIRO_TAG_DEST</code></a> begin/end tags. If
+                no operations are enclosed, the x coordidate is 0.</p>
+<p><em class="parameter"><code>y</code></em>
+: [optional] A float specifying the y coordinate of destination
+                position on this page. If not specified the default
+                y coordinate is the top of the extents of the
+                operations enclosed by the <a class="link" href="cairo-Tags-and-Links.html#CAIRO-TAG-DEST:CAPS" title="CAIRO_TAG_DEST"><code class="literal">CAIRO_TAG_DEST</code></a> begin/end tags. If
+                no operations are enclosed, the y coordidate is 0.</p>
+<p><em class="parameter"><code>internal</code></em>
+: A boolean that if true, the destination name may be
+           omitted from PDF where possible. In this case, links
+           refer directly to the page and position instead of via
+           the named destination table. Note that if this
+           destination is referenced by another PDF (see <a class="link" href="cairo-Tags-and-Links.html#file-link" title="File Links">File Links</a>),
+           this attribute must be false. Default is false.</p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="comment">/* Create a hyperlink */</span>
+<span class="function"><a href="cairo-Tags-and-Links.html#cairo-tag-begin">cairo_tag_begin</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> CAIRO_TAG_LINK<span class="gtkdoc opt">,</span> <span class="string">&quot;dest=&apos;mydest&apos; internal&quot;</span><span class="gtkdoc opt">);</span>
+<span class="function"><a href="cairo-Paths.html#cairo-move-to">cairo_move_to</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> <span class="number">50</span><span class="gtkdoc opt">,</span> <span class="number">50</span><span class="gtkdoc opt">);</span>
+<span class="function"><a href="cairo-text.html#cairo-show-text">cairo_show_text</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> <span class="string">&quot;This is a hyperlink.&quot;</span><span class="gtkdoc opt">);</span>
+<span class="function"><a href="cairo-Tags-and-Links.html#cairo-tag-end">cairo_tag_end</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> CAIRO_TAG_LINK<span class="gtkdoc opt">);</span>
+
+<span class="comment">/* Create a destination */</span>
+<span class="function"><a href="cairo-Tags-and-Links.html#cairo-tag-begin">cairo_tag_begin</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> CAIRO_TAG_DEST<span class="gtkdoc opt">,</span> <span class="string">&quot;name=&apos;mydest&apos;&quot;</span><span class="gtkdoc opt">);</span>
+<span class="function"><a href="cairo-Paths.html#cairo-move-to">cairo_move_to</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> <span class="number">50</span><span class="gtkdoc opt">,</span> <span class="number">250</span><span class="gtkdoc opt">);</span>
+<span class="function"><a href="cairo-text.html#cairo-show-text">cairo_show_text</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> <span class="string">&quot;This paragraph is the destination of the above link.&quot;</span><span class="gtkdoc opt">);</span>
+<span class="function"><a href="cairo-Tags-and-Links.html#cairo-tag-end">cairo_tag_end</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> CAIRO_TAG_DEST<span class="gtkdoc opt">);</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+</div>
+<hr>
+<div class="refsect2">
+<a name="doc-struct"></a><h3>Document Structure (PDF)</h3>
+<p>The document structure tags provide a means of specifying structural information
+such as headers, paragraphs, tables, and figures. The inclusion of structural information facilitates:</p>
+<div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
+<li class="listitem"><p>Extraction of text and graphics for copy and paste</p></li>
+<li class="listitem"><p>Reflow of text and graphics in the viewer</p></li>
+<li class="listitem"><p>Processing text eg searching and indexing</p></li>
+<li class="listitem"><p>Conversion to other formats</p></li>
+<li class="listitem"><p>Accessability support</p></li>
+</ul></div>
+<p>The list of structure types is specified in section 14.8.4 of the
+<a class="ulink" href="http://www.adobe.com/content/dam/Adobe/en/devnet/acrobat/pdfs/PDF32000_2008.pdf" target="_top">PDF Reference</a>.</p>
+<p>Note the PDF "Link" structure tag is the same as the cairo <a class="link" href="cairo-Tags-and-Links.html#CAIRO-TAG-LINK:CAPS" title="CAIRO_TAG_LINK"><code class="literal">CAIRO_TAG_LINK</code></a> tag.</p>
+<p>The following example creates a document structure for a document containing two section, each with
+a header and a paragraph.</p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="function"><a href="cairo-Tags-and-Links.html#cairo-tag-begin">cairo_tag_begin</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> <span class="string">&quot;Document&quot;</span><span class="gtkdoc opt">,</span> NULL<span class="gtkdoc opt">);</span>
+
+<span class="function"><a href="cairo-Tags-and-Links.html#cairo-tag-begin">cairo_tag_begin</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> <span class="string">&quot;Sect&quot;</span><span class="gtkdoc opt">,</span> NULL<span class="gtkdoc opt">);</span>
+<span class="function"><a href="cairo-Tags-and-Links.html#cairo-tag-begin">cairo_tag_begin</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> <span class="string">&quot;H1&quot;</span><span class="gtkdoc opt">,</span> NULL<span class="gtkdoc opt">);</span>
+<span class="function"><a href="cairo-text.html#cairo-show-text">cairo_show_text</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> <span class="string">&quot;Heading 1&quot;</span><span class="gtkdoc opt">);</span>
+<span class="function"><a href="cairo-Tags-and-Links.html#cairo-tag-end">cairo_tag_end</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> <span class="string">&quot;H1&quot;</span><span class="gtkdoc opt">);</span>
+
+<span class="function"><a href="cairo-Tags-and-Links.html#cairo-tag-begin">cairo_tag_begin</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> <span class="string">&quot;P&quot;</span><span class="gtkdoc opt">,</span> NULL<span class="gtkdoc opt">);</span>
+<span class="function"><a href="cairo-text.html#cairo-show-text">cairo_show_text</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> <span class="string">&quot;Paragraph 1&quot;</span><span class="gtkdoc opt">);</span>
+<span class="function"><a href="cairo-Tags-and-Links.html#cairo-tag-end">cairo_tag_end</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> <span class="string">&quot;P&quot;</span><span class="gtkdoc opt">);</span>
+<span class="function"><a href="cairo-Tags-and-Links.html#cairo-tag-end">cairo_tag_end</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> <span class="string">&quot;Sect&quot;</span><span class="gtkdoc opt">);</span>
+
+<span class="function"><a href="cairo-Tags-and-Links.html#cairo-tag-begin">cairo_tag_begin</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> <span class="string">&quot;Sect&quot;</span><span class="gtkdoc opt">,</span> NULL<span class="gtkdoc opt">);</span>
+<span class="function"><a href="cairo-Tags-and-Links.html#cairo-tag-begin">cairo_tag_begin</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> <span class="string">&quot;H1&quot;</span><span class="gtkdoc opt">,</span> NULL<span class="gtkdoc opt">);</span>
+<span class="function"><a href="cairo-text.html#cairo-show-text">cairo_show_text</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> <span class="string">&quot;Heading 2&quot;</span><span class="gtkdoc opt">);</span>
+<span class="function"><a href="cairo-Tags-and-Links.html#cairo-tag-end">cairo_tag_end</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> <span class="string">&quot;H1&quot;</span><span class="gtkdoc opt">);</span>
+
+<span class="function"><a href="cairo-Tags-and-Links.html#cairo-tag-begin">cairo_tag_begin</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> <span class="string">&quot;P&quot;</span><span class="gtkdoc opt">,</span> NULL<span class="gtkdoc opt">);</span>
+<span class="function"><a href="cairo-text.html#cairo-show-text">cairo_show_text</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> <span class="string">&quot;Paragraph 2&quot;</span><span class="gtkdoc opt">);</span>
+<span class="function"><a href="cairo-Tags-and-Links.html#cairo-tag-end">cairo_tag_end</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> <span class="string">&quot;P&quot;</span><span class="gtkdoc opt">);</span>
+<span class="function"><a href="cairo-Tags-and-Links.html#cairo-tag-end">cairo_tag_end</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> <span class="string">&quot;Sect&quot;</span><span class="gtkdoc opt">);</span>
+
+<span class="function"><a href="cairo-Tags-and-Links.html#cairo-tag-end">cairo_tag_end</a></span> <span class="gtkdoc opt">(</span>cr<span class="gtkdoc opt">,</span> <span class="string">&quot;Document&quot;</span><span class="gtkdoc opt">);</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+</div>
+</div>
+<div class="refsect1">
+<a name="cairo-Tags-and-Links.functions_details"></a><h2>Functions</h2>
+<div class="refsect2">
+<a name="cairo-tag-begin"></a><h3>cairo_tag_begin ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_tag_begin (<em class="parameter"><code><a class="link" href="cairo-cairo-t.html#cairo-t" title="cairo_t"><span class="type">cairo_t</span></a> *cr</code></em>,
+                 <em class="parameter"><code>const <span class="type">char</span> *tag_name</code></em>,
+                 <em class="parameter"><code>const <span class="type">char</span> *attributes</code></em>);</pre>
+<p>Marks the beginning of the <em class="parameter"><code>tag_name</code></em>
+ structure. Call
+<a class="link" href="cairo-Tags-and-Links.html#cairo-tag-end" title="cairo_tag_end ()"><code class="function">cairo_tag_end()</code></a> with the same <em class="parameter"><code>tag_name</code></em>
+ to mark the end of the
+structure.</p>
+<p>The attributes string is of the form "key1=value2 key2=value2 ...".
+Values may be boolean (true/false or 1/0), integer, float, string,
+or an array.</p>
+<p>String values are enclosed in single quotes
+('). Single quotes and backslashes inside the string should be
+escaped with a backslash.</p>
+<p>Boolean values may be set to true by only
+specifying the key. eg the attribute string "key" is the equivalent
+to "key=true".</p>
+<p>Arrays are enclosed in '[]'. eg "rect=[1.2 4.3 2.0 3.0]".</p>
+<p>If no attributes are required, <em class="parameter"><code>attributes</code></em>
+ can be an empty string or NULL.</p>
+<p>See <a class="link" href="cairo-Tags-and-Links.html#cairo-Tags-and-Links.description" title="Description">Tags and Links Description</a>
+for the list of tags and attributes.</p>
+<p>Invalid nesting of tags or invalid attributes will cause <em class="parameter"><code>cr</code></em>
+ to
+shutdown with a status of <a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-TAG-ERROR:CAPS"><code class="literal">CAIRO_STATUS_TAG_ERROR</code></a>.</p>
+<p>See <a class="link" href="cairo-Tags-and-Links.html#cairo-tag-end" title="cairo_tag_end ()"><code class="function">cairo_tag_end()</code></a>.</p>
+<div class="refsect3">
+<a name="cairo-tag-begin.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>cr</p></td>
+<td class="parameter_description"><p>a cairo context</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>tag_name</p></td>
+<td class="parameter_description"><p>tag name</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>attributes</p></td>
+<td class="parameter_description"><p>tag attributes</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.16</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-tag-end"></a><h3>cairo_tag_end ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_tag_end (<em class="parameter"><code><a class="link" href="cairo-cairo-t.html#cairo-t" title="cairo_t"><span class="type">cairo_t</span></a> *cr</code></em>,
+               <em class="parameter"><code>const <span class="type">char</span> *tag_name</code></em>);</pre>
+<p>Marks the end of the <em class="parameter"><code>tag_name</code></em>
+ structure.</p>
+<p>Invalid nesting of tags will cause <em class="parameter"><code>cr</code></em>
+ to shutdown with a status of
+<a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-TAG-ERROR:CAPS"><code class="literal">CAIRO_STATUS_TAG_ERROR</code></a>.</p>
+<p>See <a class="link" href="cairo-Tags-and-Links.html#cairo-tag-begin" title="cairo_tag_begin ()"><code class="function">cairo_tag_begin()</code></a>.</p>
+<div class="refsect3">
+<a name="cairo-tag-end.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>cr</p></td>
+<td class="parameter_description"><p>a cairo context</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>tag_name</p></td>
+<td class="parameter_description"><p>tag name</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.16</p>
+</div>
+</div>
+<div class="refsect1">
+<a name="cairo-Tags-and-Links.other_details"></a><h2>Types and Values</h2>
+<div class="refsect2">
+<a name="CAIRO-TAG-DEST:CAPS"></a><h3>CAIRO_TAG_DEST</h3>
+<pre class="programlisting">#define CAIRO_TAG_DEST "cairo.dest"
+</pre>
+<p>Create a destination for a hyperlink. Destination tag attributes
+are detailed at Destinations.</p>
+<p class="since">Since: 1.16</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="CAIRO-TAG-LINK:CAPS"></a><h3>CAIRO_TAG_LINK</h3>
+<pre class="programlisting">#define CAIRO_TAG_LINK "Link"
+</pre>
+<p>Create hyperlink. Link tag attributes are detailed at
+Links.</p>
+<p class="since">Since: 1.16</p>
+</div>
+</div>
+<div class="refsect1">
+<a name="cairo-Tags-and-Links.see-also"></a><h2>See Also</h2>
+<p><span class="type">cairo_pdf_surface_t</span></p>
+</div>
+</div>
+<div class="footer">
+<hr>Generated by GTK-Doc V1.27</div>
+</body>
+</html>

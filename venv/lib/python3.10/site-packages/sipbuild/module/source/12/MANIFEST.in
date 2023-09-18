@@ -1,0 +1,3 @@
+include *.h
+include bool.cpp
+include pyproject.toml

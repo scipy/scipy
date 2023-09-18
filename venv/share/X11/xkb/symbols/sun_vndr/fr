@@ -1,0 +1,175 @@
+//
+// Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, and/or sell copies of the Software, and to permit persons
+// to whom the Software is furnished to do so, provided that the above
+// copyright notice(s) and this permission notice appear in all copies of
+// the Software and that both the above copyright notice(s) and this
+// permission notice appear in supporting documentation.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+// OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+// HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL
+// INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING
+// FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
+// NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
+// WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+// 
+// Except as contained in this notice, the name of a copyright holder
+// shall not be used in advertising or otherwise to promote the sale, use
+// or other dealings in this Software without prior written authorization
+// of the copyright holder.
+//
+
+default partial alphanumeric_keys
+xkb_symbols "sun_type6" {
+
+    name[Group1]="French (Sun Type 6/7)";
+
+	include "sun_vndr/us(sun_type6)"
+
+    key <TLDE>  { [     twosuperior                              ] };
+    key <AE01>	{ [       ampersand,          1                  ] };
+    key <AE02>	{ [          eacute,          2,   asciitilde    ] };
+    key <AE03>	{ [        quotedbl,          3,   numbersign    ] };
+    key <AE04>	{ [      apostrophe,          4,    braceleft    ] };
+    key <AE05>	{ [       parenleft,          5,  bracketleft    ] };
+    key <AE06>	{ [           minus,          6,          bar    ] };
+    key <AE07>	{ [          egrave,          7,        grave    ] };
+    key <AE08>	{ [      underscore,          8,    backslash    ] };
+    key <AE09>	{ [        ccedilla,          9,  asciicircum    ] };
+    key <AE10>	{ [          agrave,          0,           at    ] };
+    key <AE11>	{ [      parenright,     degree, bracketright    ] };
+    key <AE12>	{ [           equal,       plus,   braceright    ] };
+
+    key <AD01>	{ [               a,          A                  ] };
+    key <AD02>	{ [               z,          Z                  ] };
+    key <AD03>	{ [               e,          E,     EuroSign    ] };
+    key <AD11>	{ [ dead_circumflex, dead_diaeresis              ] };
+    key <AD12>	{ [          dollar,   sterling,     currency    ] };
+
+    key <AC01>	{ [               q,          Q                  ] };
+    key <AC10>	{ [               m,          M                  ] };
+    key <AC11>	{ [          ugrave,    percent                  ] };
+    key <BKSL>	{ [        asterisk,         mu                  ] };
+
+    key <LSGT>  { [            less,    greater                  ] };
+    key <AB01>	{ [               w,          W                  ] };
+    key <AB07>	{ [           comma,   question                  ] };
+    key <AB08>	{ [       semicolon,     period                  ] };
+    key <AB09>	{ [           colon,      slash                  ] };
+    key <AB10>	{ [          exclam,    section                  ] };
+
+	include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "basic" {
+	include "sun_vndr/fr(sun_type6)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "olpc" {
+	include "fr(olpc)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "Sundeadkeys" {
+	include "fr(basic)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "sundeadkeys" {
+	include "fr(basic)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "nodeadkeys" {
+	include "fr(nodeadkeys)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "oss" {
+	include "fr(oss)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "oss_latin9" {
+	include "fr(oss_latin9)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "oss_Sundeadkeys" {
+	include "fr(oss)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "oss_sundeadkeys" {
+	include "fr(oss)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "oss_nodeadkeys" {
+	include "fr(oss_nodeadkeys)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "latin9" {
+	include "fr(latin9)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "latin9_Sundeadkeys" {
+	include "fr(latin9)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "latin9_sundeadkeys" {
+	include "fr(latin9)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "latin9_nodeadkeys" {
+	include "fr(latin9_nodeadkeys)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "bepo" {
+	include "fr(bepo)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "bepo_latin9" {
+	include "fr(bepo_latin9)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "dvorak" {
+	include "fr(dvorak)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "bre" {
+	include "fr(bre)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "oci" {
+	include "fr(oci)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "mac" {
+	include "fr(mac)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "geo" {
+	include "fr(geo)"
+};

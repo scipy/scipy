@@ -1,0 +1,76 @@
+{
+  "build": "hfe3b2da_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [],
+  "depends": [
+    "gmp >=6.2.1,<7.0a0",
+    "libgcc-ng >=12",
+    "mpfr >=4.1.0,<5.0a0"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/mpc-1.3.1-hfe3b2da_0",
+  "features": "",
+  "files": [
+    "include/mpc.h",
+    "lib/libmpc.so",
+    "lib/libmpc.so.3",
+    "lib/libmpc.so.3.3.1",
+    "share/info/mpc.info"
+  ],
+  "fn": "mpc-1.3.1-hfe3b2da_0.conda",
+  "license": "LGPL-3.0-or-later",
+  "license_family": "LGPL",
+  "link": {
+    "source": "/opt/conda/pkgs/mpc-1.3.1-hfe3b2da_0",
+    "type": 1
+  },
+  "md5": "289c71e83dc0daa7d4c81f04180778ca",
+  "name": "mpc",
+  "package_tarball_full_path": "/opt/conda/pkgs/mpc-1.3.1-hfe3b2da_0.conda",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "include/mpc.h",
+        "path_type": "hardlink",
+        "sha256": "bca641f4c59f5303d3212650cc00fec0ee2659a220067535dee9029761e83849",
+        "sha256_in_prefix": "bca641f4c59f5303d3212650cc00fec0ee2659a220067535dee9029761e83849",
+        "size_in_bytes": 16949
+      },
+      {
+        "_path": "lib/libmpc.so",
+        "path_type": "softlink",
+        "sha256": "5c55674501f315fc21f437fd15e8ba15800ab5b8157628531c02780f3aede035",
+        "size_in_bytes": 149080
+      },
+      {
+        "_path": "lib/libmpc.so.3",
+        "path_type": "softlink",
+        "sha256": "5c55674501f315fc21f437fd15e8ba15800ab5b8157628531c02780f3aede035",
+        "size_in_bytes": 149080
+      },
+      {
+        "_path": "lib/libmpc.so.3.3.1",
+        "path_type": "hardlink",
+        "sha256": "5c55674501f315fc21f437fd15e8ba15800ab5b8157628531c02780f3aede035",
+        "sha256_in_prefix": "5c55674501f315fc21f437fd15e8ba15800ab5b8157628531c02780f3aede035",
+        "size_in_bytes": 149080
+      },
+      {
+        "_path": "share/info/mpc.info",
+        "path_type": "hardlink",
+        "sha256": "319e0e3b83e1b8d10b908281d6c7cd3ed8179526472be88a34a5f1558305cc7d",
+        "sha256_in_prefix": "319e0e3b83e1b8d10b908281d6c7cd3ed8179526472be88a34a5f1558305cc7d",
+        "size_in_bytes": 113709
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "2f88965949ba7b4b21e7e5facd62285f7c6efdb17359d1b365c3bb4ecc968d29",
+  "size": 116276,
+  "subdir": "linux-64",
+  "timestamp": 1674263855481,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/mpc-1.3.1-hfe3b2da_0.conda",
+  "version": "1.3.1"
+}

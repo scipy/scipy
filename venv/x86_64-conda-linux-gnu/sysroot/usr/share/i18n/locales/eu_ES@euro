@@ -1,0 +1,98 @@
+comment_char %
+escape_char  /
+%
+% Basque Language Locale for Spain with Euro
+% Language: eu
+% Territory: ES
+% Option: euro
+% Date: 2000-08-21
+% Application: general
+% Users: general
+% Charset: ISO-8859-15
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title      "Basque language locale for Spain with Euro"
+source     "Free Software Foundation, Inc."
+address    "59 Temple Place - Suite 330, Boston, MA 02111-1307, USA"
+contact    ""
+email      "bug-glibc-locales@gnu.org"
+tel        ""
+fax        ""
+language   "Basque"
+territory  "Spain"
+revision   "1.0"
+date       "2000-08-21"
+%
+category  "eu_ES@euro:2000";LC_IDENTIFICATION
+category  "eu_ES@euro:2000";LC_CTYPE
+category  "eu_ES@euro:2000";LC_COLLATE
+category  "eu_ES@euro:2000";LC_TIME
+category  "eu_ES@euro:2000";LC_NUMERIC
+category  "eu_ES@euro:2000";LC_MONETARY
+category  "eu_ES@euro:2000";LC_MESSAGES
+category  "eu_ES@euro:2000";LC_PAPER
+category  "eu_ES@euro:2000";LC_NAME
+category  "eu_ES@euro:2000";LC_ADDRESS
+category  "eu_ES@euro:2000";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_COLLATE
+copy "iso14651_t1"
+END LC_COLLATE
+
+LC_CTYPE
+copy "eu_ES"
+END LC_CTYPE
+
+LC_MESSAGES
+copy "eu_ES"
+END LC_MESSAGES
+
+LC_MONETARY
+int_curr_symbol      "<U0045><U0055><U0052><U0020>"
+currency_symbol      "<U20AC>"
+mon_decimal_point    "<U002C>"
+mon_thousands_sep    "<U002E>"
+mon_grouping         3;3
+positive_sign        ""
+negative_sign        "<U002D>"
+int_frac_digits      0
+frac_digits          0
+p_cs_precedes        1
+p_sep_by_space       1
+n_cs_precedes        1
+n_sep_by_space       1
+p_sign_posn          1
+n_sign_posn          1
+END LC_MONETARY
+
+LC_NUMERIC
+copy "eu_ES"
+END LC_NUMERIC
+
+LC_TIME
+copy "eu_ES"
+END LC_TIME
+
+LC_PAPER
+copy "eu_ES"
+END LC_PAPER
+
+LC_TELEPHONE
+copy "eu_ES"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+copy "eu_ES"
+END LC_MEASUREMENT
+
+LC_NAME
+copy "eu_ES"
+END LC_NAME
+
+LC_ADDRESS
+copy "eu_ES"
+END LC_ADDRESS

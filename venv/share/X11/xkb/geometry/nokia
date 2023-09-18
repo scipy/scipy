@@ -1,0 +1,53 @@
+// Zoomed 3x because of text size
+
+default xkb_geometry "nokiarx51" {
+
+    description= "Nokia RX-51";
+    width= 273; // 13x6mm + 2x1.5mm border + 2x5mm border
+    height= 54; // 3x5mm + 2x1.5mm border
+
+    shape.cornerRadius= 1.5;
+    shape "NORM"  { { [18,15] } };
+    shape "SPCE"  { { [36,15] } };
+    shape "FRAME" { cornerRadius= 2.5, { [243,54] } };
+
+    solid "FRAME" {
+	shape= "FRAME";
+	color= "white";
+	top= 0;
+	left= 15;
+    };
+
+    section.left= 15;
+    row.left= 4.5;
+    key.shape= "NORM";
+    key.gap= 0;
+    section "Keys" {
+	top= 0;
+	row {
+	    top= 4.5;
+	    keys { { <LCTL>, "NORM", color="grey20" },
+		   <AD01>, <AD02>, <AD03>, <AD04>, <AD05>,
+		   <AD06>, <AD07>, <AD08>, <AD09>, <AD10>, <AB08>,
+		   { <BKSP>, "NORM", color="grey20" }
+	    };
+	};
+	row {
+	    top= 19.5;
+	    keys { { <RALT>, "NORM", color="grey20" },
+		   <AC01>, <AC02>, <AC03>, <AC04>, <AC05>,
+		   <AC06>, <AC07>, <AC08>, <AC09>, <AB09>, <UP>,
+		   { <RTRN>, "NORM", color="grey20" }
+	    };
+	};
+	row {
+	    top= 34.5;
+	    keys { { <LFSH>, "NORM", color="grey20" },
+		   <AB01>, <AB02>, <AB03>, <AB04>, <AB05>, <AB06>, <AB07>,
+		   { <SPCE>, "SPCE", color="white" },
+		   <LEFT>, <DOWN>, <RGHT>
+	    };
+	};
+    }; // End of "Keys" section
+
+}; // End of "rx51" geometry

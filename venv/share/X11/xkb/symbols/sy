@@ -1,0 +1,132 @@
+// Keyboard layouts for Syria.
+
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+    include "ara(basic)"
+
+    name[Group1]= "Arabic (Syria)";
+};
+
+partial alphanumeric_keys
+xkb_symbols "syc" {
+
+    name[Group1]= "Syriac";
+
+    key <TLDE>	{[  U070F,		U032E,		Arabic_shadda		]};
+    key <AE01>	{[  1,			exclam,		U0701			]};
+    key <AE02>	{[  2,			U030A,		U0702			]};
+    key <AE03>	{[  3,			U0325,		U0703			]};
+    key <AE04>	{[  4,			U0749,		U0704			]};
+    key <AE05>	{[  5,			U2670,		U0705			]};
+    key <AE06>	{[  6,			U2671,		U0708			]};
+    key <AE07>	{[  7,			U070A,		U0709			]};
+    key <AE08>	{[  8,			guillemotright,	U070B			]};
+    key <AE09>	{[  9,			parenright,	U070C			]};
+    key <AE10>	{[  0,			parenleft,	U070D			]};
+    key <AE11>	{[  minus,		guillemotleft,	U250C			]};
+    key <AE12>	{[  equal,		plus,		U2510			]};
+
+    key <AD01>	{[  U0714,		U0730,		Arabic_fatha		]};
+    key <AD02>	{[  U0728,		U0733,		Arabic_fathatan		]};
+    key <AD03>	{[  U0716,		U0736,		Arabic_damma		]};
+    key <AD04>	{[  U0729,		U073A,		Arabic_dammatan		]};
+    key <AD05>	{[  U0726,		U073D,		Arabic_madda_above	]};
+    key <AD06>	{[  U071C,		U0740,		Arabic_hamza_above	]};
+    key <AD07>	{[  U0725,		U0741,		U0747			]};
+    key <AD08>	{[  U0717,		U0308,		U0743			]};
+    key <AD09>	{[  U071E,		U0304,		U0745			]};
+    key <AD10>	{[  U071A,		U0307,		U032D			]};
+    key <AD11>	{[  U0713,		U0303					]};
+    key <AD12>	{[  U0715,		U074A					]};
+    key <BKSL>	{[  U0706,		colon					]};
+
+    key <AC01>	{[  U072B,		U0731,		Arabic_kasra		]};
+    key <AC02>	{[  U0723,		U0734,		Arabic_kasratan		]};
+    key <AC03>	{[  U071D,		U0737					]};
+    key <AC04>	{[  U0712,		U073B,		Arabic_hamza		]};
+    key <AC05>	{[  U0720,		U073E,		Arabic_hamza_below	]};
+    key <AC06>	{[  U0710,		U0711,		Arabic_superscript_alef	]};
+    key <AC07>	{[  U072C,		Arabic_tatweel,	U0748			]};
+    key <AC08>	{[  U0722,		U0324,		U0744			]};
+    key <AC09>	{[  U0721,		U0331,		U0746			]};
+    key <AC10>	{[  U071F,		U0323					]};
+    key <AC11>	{[  U071B,		U0330					]};
+
+    key <AB01>	{[  bracketright,	U0732,		Arabic_sukun		]};
+    key <AB02>	{[  bracketleft,	U0735					]};
+    key <AB03>	{[  U0724,		U0738,		U200D			]};
+    key <AB04>	{[  U072A,		U073C,		U200C			]};
+    key <AB05>	{[  U0727,		U073F,		U200E			]};
+    key <AB06>	{[  U0700,		U0739,		U200F			]};
+    key <AB07>	{[  period,		U0742					]};
+    key <AB08>	{[  U0718,		Arabic_comma				]};
+    key <AB09>	{[  U0719,		Arabic_semicolon			]};
+    key <AB10>	{[  U0707,		Arabic_question_mark			]};
+
+    // Space, plus zero-width non-joiner on level 2:
+    include "nbsp(zwnj2)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "syc_phonetic" {
+
+    include "sy(syc)"
+
+    name[Group1]= "Syriac (phonetic)";
+
+    key <AD01>	{[  U0729,		U0730,		Arabic_fatha		]};
+    key <AD02>	{[  U0718,		U0733,		Arabic_fathatan		]};
+    key <AD03>	{[  U0716,		U0736,		Arabic_damma		]};
+    key <AD04>	{[  U072A,		U073A,		Arabic_dammatan		]};
+    key <AD05>	{[  U072C,		U073D,		Arabic_madda_above	]};
+    key <AD06>	{[  U071D,		U0740,		Arabic_hamza_above	]};
+    key <AD07>	{[  U071C,		U0741,		U0747			]};
+    key <AD08>	{[  U0725,		U0308,		U0743			]};
+    key <AD09>	{[  U0727,		U0304,		U0745			]};
+    key <AD10>	{[  U0726,		U0307,		U032D			]};
+    key <AD11>	{[  bracketright,	U0303					]};
+    key <AD12>	{[  bracketleft,	U074A					]};
+    key <BKSL>	{[  U0706,		colon					]};
+
+    key <AC01>	{[  U0710,		U0731,		Arabic_kasra		]};
+    key <AC02>	{[  U0723,		U0734,		Arabic_kasratan		]};
+    key <AC03>	{[  U0715,		U0737					]};
+    key <AC04>	{[  U0714,		U073B,		Arabic_hamza		]};
+    key <AC05>	{[  U0713,		U073E,		Arabic_hamza_below	]};
+    key <AC06>	{[  U0717,		U0711,		Arabic_superscript_alef	]};
+    key <AC07>	{[  U071B,		Arabic_tatweel,	U0748			]};
+    key <AC08>	{[  U071F,		U0324,		U0744			]};
+    key <AC09>	{[  U0720,		U0331,		U0746			]};
+    key <AC10>	{[  U071A,		U0323					]};
+    key <AC11>	{[  U071E,		U0330					]};
+
+    key <AB01>	{[  U0719,		U0732,		Arabic_sukun		]};
+    key <AB02>	{[  U0728,		U0735					]};
+    key <AB03>	{[  U0724,		U0738,		U200D			]};
+    key <AB04>	{[  U072B,		U073C,		U200C			]};
+    key <AB05>	{[  U0712,		U073F,		U200E			]};
+    key <AB06>	{[  U0722,		U0739,		U200F			]};
+    key <AB07>	{[  U0721,		U0742					]};
+    key <AB08>	{[  U0700,		Arabic_comma				]};
+    key <AB09>	{[  period,		Arabic_semicolon			]};
+    key <AB10>	{[  U0707,		Arabic_question_mark			]};
+};
+
+partial alphanumeric_keys
+xkb_symbols "ku" {
+    include "tr(ku)"
+    name[Group1]= "Kurdish (Syria, Latin Q)";
+};
+
+partial alphanumeric_keys
+xkb_symbols "ku_f" {
+    include "tr(ku_f)"
+    name[Group1]= "Kurdish (Syria, F)";
+};
+
+partial alphanumeric_keys
+xkb_symbols "ku_alt" {
+    include "tr(ku_alt)"
+    name[Group1]= "Kurdish (Syria, Latin Alt-Q)";
+};

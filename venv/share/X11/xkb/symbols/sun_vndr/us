@@ -1,0 +1,280 @@
+//
+// Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, and/or sell copies of the Software, and to permit persons
+// to whom the Software is furnished to do so, provided that the above
+// copyright notice(s) and this permission notice appear in all copies of
+// the Software and that both the above copyright notice(s) and this
+// permission notice appear in supporting documentation.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+// OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+// HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL
+// INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING
+// FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
+// NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
+// WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+// 
+// Except as contained in this notice, the name of a copyright holder
+// shall not be used in advertising or otherwise to promote the sale, use
+// or other dealings in this Software without prior written authorization
+// of the copyright holder.
+//
+
+default partial alphanumeric_keys
+xkb_symbols "sunbasic" {
+
+    include "us(basic)"
+    include "capslock(capslock)"
+    include "srvr_ctrl(xfree86)"
+
+};
+
+partial alphanumeric_keys
+xkb_symbols "sun_type6" {
+
+	name[Group1]= "English (US, Sun Type 6/7)";
+
+    include "sun_vndr/us(sunbasic)"
+    include "eurosign(4)"
+    include "level3(ralt_switch)"
+
+    key <COMP> { [		Multi_key			] };
+    key <SYRQ> { [		SunSys_Req			] };
+};
+
+partial alphanumeric_keys
+	xkb_symbols "basic" {
+	include "sun_vndr/us(sunbasic)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "euro" {
+	include "us(euro)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "ibm238l" {
+	include "us(ibm238l)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "intl" {
+	include "us(intl)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "alt-intl" {
+	include "us(alt-intl)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "dvorak" {
+	include "us(dvorak)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "dvorak-intl" {
+	include "us(dvorak-intl)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "dvorak-alt-intl" {
+	include "us(dvorak-alt-intl)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "dvorak-l" {
+	include "us(dvorak-l)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "dvorak-r" {
+	include "us(dvorak-r)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "dvorak-classic" {
+	include "us(dvorak-classic)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "dvp" {
+	include "us(dvp)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "rus" {
+	include "us(rus)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "mac" {
+	include "us(mac)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "colemak" {
+	include "us(colemak)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "altgr-intl" {
+	include "us(altgr-intl)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "classmate" {
+	include "us(classmate)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "classmate-intl" {
+	include "us(classmate-intl)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "classmate-alt-intl" {
+	include "us(classmate-alt-intl)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "classmate-altgr-intl" {
+	include "us(classmate-altgr-intl)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "olpc" {
+	include "us(olpc)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "olpc2" {
+	include "us(olpc2)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "olpcm" {
+	include "us(olpcm)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "chr" {
+	include "us(chr)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "hbs" {
+	include "us(hbs)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "workman" {
+	include "us(workman)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "workman-intl" {
+	include "us(workman-intl)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "workman-p" {
+	include "us(workman-p)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "norman" {
+	include "us(norman)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "carpalx" {
+	include "us(carpalx)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "carpalx-intl" {
+	include "us(carpalx-intl)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "carpalx-altgr-intl" {
+	include "us(carpalx-altgr-intl)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "carpalx-full" {
+	include "us(carpalx-full)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "carpalx-full-intl" {
+	include "us(carpalx-full-intl)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "carpalx-full-altgr-intl" {
+	include "us(carpalx-full-altgr-intl)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "cz_sk_de" {
+	include "us(cz_sk_de)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "scn" {
+	include "us(scn)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "intl-unicode" {
+	include "us(intl-unicode)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "alt-intl-unicode" {
+	include "us(alt-intl-unicode)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "ats" {
+	include "us(ats)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "crd" {
+	include "us(crd)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "3l" {
+	include "us(3l)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "3l-cros" {
+	include "us(3l-cros)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "3l-emacs" {
+	include "us(3l-emacs)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "drix" {
+	include "us(drix)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "de_se_fi" {
+	include "us(de_se_fi)"
+};

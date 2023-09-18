@@ -1,0 +1,365 @@
+.TH CAPSH 1 "2021-10-22" "libcap" "User Commands"
+.SH NAME
+capsh \- capability shell wrapper
+.SH SYNOPSIS
+.B capsh
+[\fIOPTION\fR]...
+.SH DESCRIPTION
+Linux capability support and use can be explored and constrained with
+this tool. This tool provides a handy wrapper for certain types
+of capability testing and environment creation. It also provides some
+debugging features useful for summarizing capability state.
+.SH OPTIONS
+.B capsh
+takes a number of optional arguments, acting on them in the
+order they are provided. They are as follows:
+.TP
+.B \-\-help
+Display the list of commands supported by
+.BR capsh .
+.TP
+.B \-\-print
+Display prevailing capability and related state.
+.TP
+.B \-\-current
+Display prevailing capability state, 1e capabilities and IAB vector.
+.TP
+.BI \-\- " [args]"
+Execute
+.B /bin/bash
+with trailing arguments. Note, you can use
+.B \-c 'command to execute'
+for specific commands.
+.TP
+.BI \-\+ " [args]"
+Uses \fBcap_launch\fP(3) to fork a child to execute the shell. When
+the child exits, \fBcapsh\fP exits with the status of the child or 1
+in the case that the child was terminated by a signal.
+.TP
+.BI == " [args]"
+Execute
+.B capsh
+again with the remaining arguments. Useful for testing
+.BR exec ()
+behavior. Note, PATH is searched when the running
+.B capsh
+was found via the shell's PATH searching. If the
+.B exec
+occurs after a
+.BI \-\-chroot= /some/path
+argument the PATH located binary may not be resolve to the same binary
+as that running initially. This behavior is an intended feature as it
+can complete the chroot transition.
+.TP
+.BI =\+ " [args]"
+Uses \fBcap_launch\fP(3) to fork a child to re-execute
+\fBcapsh\fP. When this child exits, \fBcapsh\fP exits with the status
+of the child or 1 in the case that the child was terminated by a
+signal.
+.TP
+.BI \-\-caps= cap-set
+Set the prevailing process capabilities to those specified by
+.IR cap-set .
+Where
+.I cap-set
+is a text-representation of capability state as per
+.BR cap_from_text (3).
+.TP
+.BI \-\-drop= cap-list
+Remove the listed capabilities from the prevailing bounding set. The
+capabilities are a comma-separated list of capabilities as recognized
+by the
+.BR cap_from_name (3)
+function. Use of this feature requires that
+.B capsh
+is operating with
+.B CAP_SETPCAP
+in its effective set.
+.TP
+.BI \-\-inh= cap-list
+Set the inheritable set of capabilities for the current process to
+equal those provided in the comma separated list. For this action to
+succeed, the prevailing process should already have each of these
+capabilities in the union of the current inheritable and permitted
+capability sets, or
+.B capsh
+should be operating with
+.B CAP_SETPCAP
+in its effective set.
+.TP
+.BI \-\-user= username
+Assume the identity of the named user. That is, look up the user's
+UID and GID
+with
+.BR getpwuid (3)
+and their group memberships with
+.BR getgrouplist (3)
+and set them all using
+.BR cap_setuid (3)
+and
+.BR cap_setgroups (3).
+Following this command, the effective capabilities will be cleared,
+but the permitted set will not be, so the running program is still
+privileged.
+.TP
+.B \-\-mode
+Display the prevailing libcap mode as guessed by the
+.BR cap_get_mode (3)
+function.
+.TP
+.BR \-\-mode= <mode>
+Force the program into a
+.BR cap_set_mode (3)
+security mode. This is a set of securebits and prevailing capability
+arrangement recommended for its pre-determined security stance.
+.TP
+.B \-\-modes
+Lists all of the libcap modes supported by
+.BR \-\-mode= <mode>.
+.TP
+.BR \-\-inmode= <mode>
+Confirm that the prevailing mode is that specified in
+.IR <mode> ,
+or exit with a status 1.
+.TP
+.BI \-\-uid= id
+Force all
+UID
+values to equal
+.I id
+using the
+.BR setuid (2)
+system call. This argument may require explicit preparation of the
+effective set.
+.TP
+.BR \-\-cap\-uid= <uid>
+use the
+.BR cap_setuid (3)
+function to set the UID of the current process. This performs all
+preparations for setting the UID without dropping capabilities in the
+process. Following this command the prevailing effective capabilities
+will be lowered.
+.TP
+.BI \-\-is\-uid= <id>
+Exit with status 1 unless the current
+UID equals
+.IR <id> .
+.TP
+.BI \-\-gid= <id>
+Force all
+GID
+values to equal
+.I id
+using the
+.BR setgid (2)
+system call.
+.TP
+.BI \-\-is\-gid= <id>
+Exit with status 1 unless the current
+GIQ equals
+.IR <id> .
+.TP
+.BI \-\-groups= <gid-list>
+Set the supplementary groups to the numerical list provided. The
+groups are set with the
+.BR setgroups (2)
+system call. See
+.B \-\-user
+for a more convenient way of doing this.
+.TP
+.BI \-\-keep= <0|1>
+In a non-pure capability mode, the kernel provides liberal privilege
+to the super-user. However, it is normally the case that when the
+super-user changes
+UID
+to some lesser user, then capabilities are dropped. For these
+situations, the kernel can permit the process to retain its
+capabilities after a
+.BR setuid (2)
+system call. This feature is known as
+.I keep-caps
+support. The way to activate it using this program is with this
+argument. Setting the value to 1 will cause
+.I keep-caps
+to be active. Setting it to 0 will cause keep-caps to deactivate for
+the current process. In all cases,
+.I keep-caps
+is deactivated when an
+.BR exec ()
+is performed. See
+.BR \-\-secbits and \-\-mode
+for ways to disable this feature.
+.TP
+.BI \-\-secbits= N
+Set the security-bits for the program.
+This is done using the
+.BR prctl (2)
+.B PR_SET_SECUREBITS
+operation.  The list of supported bits and their meaning can be found
+in the
+.B <sys/secbits.h>
+header file. The program will list these bits via the
+.B \-\-print
+command.  The argument is expressed as a numeric bitmask, in any of
+the formats permitted by
+.BR strtoul (3).
+An alternative to this bit-twiddling is embedded in the
+.B \-\-mode*
+commandline arguments.
+.TP
+.BI \-\-chroot= /some/path
+Execute the
+.BR chroot (2)
+system call with the new root-directory (/) equal to
+.IR path .
+This operation requires
+.B CAP_SYS_CHROOT
+to be in effect.
+.TP
+.BI \-\-forkfor= sec
+This command causes the program to fork a child process for so many
+seconds. The child will sleep that long and then exit with status
+0. The purpose of this command is to support exploring the way
+processes are killable in the face of capability changes. See the
+.B \-\-killit
+command. Only one fork can be active at a time.
+.TP
+.BI \-\-killit= sig
+This commands causes a
+.B \-\-forkfor
+child to be
+.BR kill (2)d
+with the specified signal. The command then waits for the child to exit.
+If the exit status does not match the signal being used to kill it, the
+.B capsh
+program exits with status 1.
+.TP
+.BI \-\-explain= cap_xxx
+Give a brief textual description of what privileges the specified
+capability makes available to a running program. Note, instead of
+\fIcap_xxx\fP, one can provide a decimal number and \fBcapsh\fP will
+look up the corresponding capability's description.
+.TP
+.BI \-\-shell =/full/path
+This option changes the shell that is invoked when the argument
+\fB==\fP is encountered.
+.TP
+.BI \-\-strict
+This option toggles the suppression of subsequent attempts to fixup
+\fB\-\-caps=\fP and \fB\-\-inh=\fP arguments. That is, when the
+prevailing Effective flag does not contain \fBCAP_SETPCAP\fB the to be
+raised Inheritable Flag values (in strict mode) are limited to those
+in the Permitted set. The strict mode defaults to off. Supplying this
+argument an even number of times restores this default behavior.
+.TP
+.BI \-\-suggest= phrase
+Scan each of the textual descriptions of capabilities, known to
+\fBcapsh\fP, and display all descriptions that include \fIphrase\fP.
+.TP
+.BI \-\-decode= N
+This is a convenience feature. If you look at
+.B /proc/1/status
+there are some capability related fields of the following form:
+.nf
+
+CapInh:	0000000000000000
+CapPrm:	0000003fffffffff
+CapEff:	0000003fffffffff
+CapBnd:	0000003fffffffff
+CapAmb:	0000000000000000
+
+.fi
+This option provides a quick way to decode a capability vector
+represented in this hexadecimal form.
+Here's an example that decodes the two lowest capability bits:
+.IP
+.nf
+$ \fBcapsh \-\-decode=3\fP
+0x0000000000000003=cap_chown,cap_dac_override
+.fi
+.TP
+.BI \-\-supports= xxx
+As the kernel evolves, more capabilities are added. This option can be used
+to verify the existence of a capability on the system. For example,
+.BI \-\-supports= cap_syslog
+will cause
+.B capsh
+to promptly exit with a status of 1 when run on
+kernel 2.6.27.  However, when run on kernel 2.6.38 it will silently
+succeed.
+.TP
+.BI \-\-has\-p= xxx
+Exit with status 1 unless the
+.I permitted
+vector has capability
+.B xxx
+raised.
+.TP
+.B \-\-has\-ambient
+Performs a check to see if the running kernel supports ambient
+capabilities. If not,
+.B capsh
+exits with status 1.
+.TP
+.BI \-\-has\-a= xxx
+Exit with status 1 unless the
+.I ambient
+vector has capability
+.B xxx
+raised.
+.TP
+.BI \-\-has\-b= xxx
+Exit with status 1 unless the
+.I bounding
+vector has capability
+.B xxx
+in its (default) non-blocked state.
+.TP
+.BI \-\-iab= xxx
+Attempts to set the IAB tuple of inheritable capability vectors.
+The text conventions used for \fIxxx\fP are those of
+.BR cap_iab_from_text (3).
+.TP
+.BI \-\-addamb= xxx
+Adds the specified ambient capability to the running process.
+.TP
+.BI \-\-delamb= xxx
+Removes the specified ambient capability from the running process.
+.TP
+.B \-\-noamb
+Drops all ambient capabilities from the running process.
+.TP
+.B \-\-noenv
+Suppresses overriding of the HOME and USER environment variables when
+a subsequent
+.B \-\-user
+argument is processed.
+.TP
+.B \-\-quiet
+This argument is ignored unless it is the first one. If present, it
+suppresses the capsh runtime check to confirm the running libcap is
+recent enough that it can name all of the kernel supported capability
+values.
+.SH "EXIT STATUS"
+Following successful execution,
+.B capsh
+exits with status 0. Following
+an error,
+.B capsh
+immediately exits with status 1.
+.SH AUTHOR
+Written by Andrew G. Morgan <morgan@kernel.org>.
+.SH "REPORTING BUGS"
+Please report bugs via:
+.TP
+https://bugzilla.kernel.org/buglist.cgi?component=libcap&list_id=1090757
+.SH "SEE ALSO"
+.BR libcap (3),
+.BR cap_from_text (3),
+.BR cap_iab (3)
+.BR capabilities (7),
+.BR captree (8),
+.BR getcap (8),
+.BR getpcaps (8),
+and
+.BR setcap (8).

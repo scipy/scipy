@@ -1,0 +1,6 @@
+#MIN_CONFIG
+AC_CHECK_HEADERS([unistd.h])
+
+AM_GNU_GETTEXT([external])
+AM_GNU_GETTEXT_VERSION([0.21.1])
+AC_CONFIG_FILES([po/Makefile.in])

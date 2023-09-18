@@ -1,0 +1,226 @@
+comment_char    %
+escape_char     /
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Sidama language locale for Ethiopia.
+%
+% Charset: UTF-8
+%
+% Sidama terms provided by Dessalegn Garsamo Gabbiso <gabbiso2001@yahoo.com>
+% of the National University of Ireland, Dublin and A.H. Weno
+% <bus1hwa@east-01.novell.leeds.ac.uk>. Prepared and contributed to glibc
+% by Daniel Yacob <locales@geez.org>.
+%
+% This locale data has been developed under the Yeha Project:
+%      http://yeha.sourceforge.net/
+%
+% build with: localedef -f UTF-8 -i sid_ET sid_ET
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+LC_IDENTIFICATION
+%
+title      "Sidama language locale for Ethiopia."
+source     "Ge'ez Frontier Foundation"
+address    "7802 Solomon Seal Dr., Springfield, VA 22152, USA"
+contact    ""
+email      "locales@geez.org"
+tel        ""
+fax        ""
+language   "sid"
+territory  "ET"
+revision   "0.20"
+date       "2003-07-05"
+%
+category  "i18n:2000";LC_IDENTIFICATION
+category  "i18n:2000";LC_COLLATE
+category  "i18n:2000";LC_CTYPE
+category  "i18n:2000";LC_MEASUREMENT
+category  "i18n:2000";LC_MONETARY
+category  "posix:1993";LC_NUMERIC
+category  "i18n:2000";LC_PAPER
+category  "i18n:2000";LC_TELEPHONE
+category  "i18n:2000";LC_ADDRESS
+category  "i18n:2000";LC_MESSAGES
+category  "i18n:2000";LC_NAME
+category  "i18n:2000";LC_TIME
+%
+END LC_IDENTIFICATION
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  Ethiopic Specifc Data:
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+LC_COLLATE
+copy "am_ET"
+END LC_COLLATE
+
+LC_CTYPE
+copy "ti_ET"
+END LC_CTYPE
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  Ethiopia Specifc and Shared Data:
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+LC_MEASUREMENT
+copy "ti_ET"
+END LC_MEASUREMENT
+
+LC_MONETARY
+copy "ti_ET"
+END LC_MONETARY
+
+LC_NUMERIC
+copy "ti_ET"
+END LC_NUMERIC
+
+LC_PAPER
+copy "ti_ET"
+END LC_PAPER
+
+LC_TELEPHONE
+copy "ti_ET"
+END LC_TELEPHONE
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  Sidama Specific Data:
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+LC_ADDRESS
+%
+% This is the ISO_IEC TR14652 Locale definition for the LC_ADDRESS category.
+%
+postal_fmt    "<U0025><U007A><U0025><U0063><U0025><U0054><U0025><U0073>/
+<U0025><U0062><U0025><U0065><U0025><U0072>"
+country_name  "<U0049><U0074><U0069><U0079><U006F><U006F><U0070><U0068><U0069><U0079><U0061>"
+country_post  "<U0045><U0054><U0048>"
+country_ab2   "<U0045><U0054>"
+country_ab3   "<U0045><U0054><U0048>"
+country_num   231   % 210 found in at least one ISO 3166 doc
+% country_car   unknown
+% country_isbn  unknown, Need ISO 2108
+lang_name     "<U0053><U0069><U0064><U0061><U0061><U006D><U0075><U0020><U0041><U0066><U006F>"
+lang_term     "<U0073><U0069><U0064>"
+lang_lib      "<U0073><U0069><U0064>"
+%
+END LC_ADDRESS
+
+
+LC_MESSAGES
+copy "ti_ET"
+END LC_MESSAGES
+
+
+LC_NAME
+%
+% This is the ISO_IEC TR14652 Locale definition for the LC_NAME category.
+%
+name_fmt    "<U0025><U0064><U0025><U0074><U0025><U0067><U0025><U0074>/
+<U0025><U006D><U0025><U0074><U0025><U0066>"
+name_gen    ""
+name_mr     "<U004B><U0061><U006C><U0061><U0061>"
+name_mrs    "<U0044><U0075><U006B><U006B><U006F>"
+name_miss   "<U0042><U0065><U0065><U0074><U006F>"
+name_ms     ""
+%
+END LC_NAME
+
+
+LC_TIME
+%
+% Abbreviated weekday names (%a)
+%
+abday    "<U0053><U0061><U006D>";/
+         "<U0053><U0061><U006E>";/
+         "<U004D><U0061><U006B>";/
+         "<U0052><U006F><U0077>";/
+         "<U0048><U0061><U006D>";/
+         "<U0041><U0072><U0062>";/
+         "<U0051><U0069><U0064>"
+%
+% Full weekday names (%A)
+%
+day      "<U0053><U0061><U006D><U0062><U0061><U0074><U0061>";/
+         "<U0053><U0061><U006E><U0079><U006F>";/
+         "<U004D><U0061><U0061><U006B><U0069><U0073><U0061><U006E><U0079><U006F>";/
+         "<U0052><U006F><U006F><U0077><U0065>";/
+         "<U0048><U0061><U006D><U0075><U0073><U0065>";/
+         "<U0041><U0072><U0062><U0065>";/
+         "<U0051><U0069><U0064><U0061><U0061><U006D><U0065>"
+%
+% Abbreviated month names (%b)
+%
+abmon    "<U004A><U0061><U006E>";/
+         "<U0046><U0065><U0062>";/
+         "<U004D><U0061><U0072>";/
+         "<U0041><U0070><U0072>";/
+         "<U004D><U0061><U0079>";/
+         "<U004A><U0075><U006E>";/
+         "<U004A><U0075><U006C>";/
+         "<U0041><U0075><U0067>";/
+         "<U0053><U0065><U0070>";/
+         "<U004F><U0063><U0074>";/
+         "<U004E><U006F><U0076>";/
+         "<U0044><U0065><U0063>"
+%
+% Full month names (%B)
+%
+mon      "<U004A><U0061><U006E><U0075><U0061><U0072><U0079>";/
+         "<U0046><U0065><U0062><U0072><U0075><U0061><U0072><U0079>";/
+         "<U004D><U0061><U0072><U0063><U0068>";/
+         "<U0041><U0070><U0072><U0069><U006C>";/
+         "<U004D><U0061><U0079>";/
+         "<U004A><U0075><U006E><U0065>";/
+         "<U004A><U0075><U006C><U0079>";/
+         "<U0041><U0075><U0067><U0075><U0073><U0074>";/
+         "<U0053><U0065><U0070><U0074><U0065><U006D><U0062><U0065><U0072>";/
+         "<U004F><U0063><U0074><U006F><U0062><U0065><U0072>";/
+         "<U004E><U006F><U0076><U0065><U006D><U0062><U0065><U0072>";/
+         "<U0044><U0065><U0063><U0065><U006D><U0062><U0065><U0072>"
+%
+% Equivalent of AM PM
+%
+am_pm    "<U0073><U006F><U006F><U0064><U006F>";/
+         "<U0068><U0061><U0077><U0077><U0061><U0072><U006F>"
+%
+% Appropriate date representation (%x)
+%	"%d/%m/%Y"
+%
+d_fmt   "<U0025><U0064><U002F><U0025><U006D><U002F><U0025><U0059>"
+%
+% Appropriate time representation (%X)
+%	"%l:%M:%S"
+%
+t_fmt "<U0025><U006C><U003A><U0025><U004D><U003A><U0025><U0053>"
+%
+% Appropriate AM/PM time representation (%r)
+%	"%X %p"
+%
+t_fmt_ampm "<U0025><U0058><U0020><U0025><U0070>"
+%
+% Appropriate date and time representation (%c)
+%	"%A, %B %e, %Y %r %Z
+%
+d_t_fmt    "<U0025><U0041><U002C><U0020><U0025><U0042><U0020><U0025><U0065><U002C>/
+<U0020><U0025><U0059><U0020><U0025><U0072><U0020><U0025><U005A>"
+%
+% Appropriate date representation (date(1))
+%	"%A, %b %e, %r %Z %Y"
+%
+date_fmt    "<U0025><U0041><U002C><U0020><U0025><U0042><U0020><U0025><U0065><U002C>/
+<U0020><U0025><U0072><U0020><U0025><U005A><U0020><U0025><U0059>"
+END LC_TIME
+%

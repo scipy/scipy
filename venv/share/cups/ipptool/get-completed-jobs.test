@@ -1,0 +1,31 @@
+# Get list of completed jobs.
+#
+# Usage:
+#
+#   ./ipptool printer-uri get-completed-jobs.test
+{
+	# The name of the test...
+	NAME "Get completed jobs"
+
+	# The operation to use
+	OPERATION Get-Jobs
+
+	# Attributes, starting in the operation group...
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR keyword which-jobs completed
+	ATTR keyword requested-attributes
+	     job-id,job-uri,job-state,job-state-reasons,job-name,job-originating-user-name,job-media-sheets-completed
+
+	# What statuses are OK?
+	STATUS successful-ok
+
+	# What attributes to display
+	DISPLAY job-id
+	DISPLAY job-state
+	DISPLAY job-name
+	DISPLAY job-originating-user-name
+	DISPLAY job-media-sheets-completed
+}

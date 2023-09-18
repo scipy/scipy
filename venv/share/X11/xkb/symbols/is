@@ -1,0 +1,190 @@
+// Keyboard layouts for Iceland.
+
+// Icelandic keyboard layout, by Hrafnkell Eiriksson - hkelle@rhi.hi.is
+// Fixes by Olafur Osvaldsson - oli@isnic.is - and Bjarni Ingi Gislason.
+
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+    include "latin(type4)"
+
+    name[Group1]="Icelandic";
+
+    key <TLDE>	{ [dead_abovering, dead_diaeresis, notsign,    hyphen ] };
+    key <AE02>	{ [         2,   quotedbl,  twosuperior,    oneeighth ]	};
+    key <AE04>	{ [         4,     dollar,   onequarter,     currency ]	};
+    key <AE11>	{ [odiaeresis, Odiaeresis,    backslash, questiondown ]	};
+    key <AE12>	{ [     minus, underscore, dead_cedilla,  dead_ogonek ]	};
+
+    key <AD10>	{ [        p,           P,          bar,     Greek_pi ] };
+    key <AD11>	{ [       eth,        ETH, dead_diaeresis, dead_abovering ] };
+    key <AD12>	{ [apostrophe,   question,   asciitilde,  dead_macron ]	};
+
+    key <AC03>	{ [         d,          D,  U201e,       U201c ] };
+    key <AC10>	{ [        ae,         AE,  asciicircum, dead_doubleacute ] };
+    key <AC11>	{ [dead_acute, dead_acute, dead_circumflex, dead_caron ] };
+    key <BKSL>	{ [      plus,   asterisk,   grave,   dead_breve ]	};
+
+    key <AB10>	{ [     thorn,      THORN, dead_belowdot, dead_abovedot ] };
+
+    include "level3(ralt_switch)"
+};
+
+// Copied from macintosh_vndr/is.
+// Copyright (C) 2004, 2006 Ævar Arnfjörð Bjarmason <avarab@gmail.com>
+xkb_symbols "mac_legacy" {
+    name[Group1]= "Icelandic (Macintosh, legacy)";
+
+    key <TLDE> { [ sterling,   section,    UF8FF,        apostrophe ] }; // Apple logo
+    key <AE01> { [ 1,          exclam,     exclamdown,   VoidSymbol ] };
+    key <AE02> { [ 2,          quotedbl,   at,           VoidSymbol ] };
+    key <AE03> { [ 3,          numbersign, U2122,        sterling   ] };
+    key <AE04> { [ 4,          dollar,     cent,         EuroSign   ] };
+    key <AE05> { [ 5,          percent,    U2030,        infinity   ] };
+    key <AE06> { [ 6,          ampersand,  asciicircum,  U2044      ] };
+    key <AE07> { [ 7,          slash,      backslash,    division   ] };
+    key <AE08> { [ 8,          parenleft,  bracketleft,  braceleft  ] };
+    key <AE09> { [ 9,          parenright, bracketright, braceright ] };
+    key <AE10> { [ 0,          equal,      U2260,        U2248      ] };
+    key <AE11> { [ odiaeresis, Odiaeresis, oslash,       Oslash     ] };
+    key <AE12> { [ minus,      underscore, endash,       emdash     ] };
+
+    key <AD01> { [ q,          Q,        paragraph,       VoidSymbol ] };
+    key <AD02> { [ w,          W,        U2211,           VoidSymbol ] };
+    key <AD03> { [ e,          E,        dead_grave,      VoidSymbol ] };
+    key <AD04> { [ r,          R,        registered,      VoidSymbol ] };
+    key <AD05> { [ t,          T,        degree,          VoidSymbol ] };
+    key <AD06> { [ y,          Y,        yen,             VoidSymbol ] };
+    key <AD07> { [ u,          U,        dead_diaeresis,  VoidSymbol ] };
+    key <AD08> { [ i,          I,        idotless,        ordfeminine] };
+    key <AD09> { [ o,          O,        dead_circumflex, masculine  ] };
+    key <AD10> { [ p,          P,        Greek_pi,        Greek_PI   ] };
+    key <AD11> { [ eth,        ETH,      U201e,           U201c      ] };
+    key <AD12> { [ apostrophe, question, questiondown, periodcentered] };
+
+    key <AC01> { [ a,          A,                aring,     Aring      ] };
+    key <AC02> { [ s,          S,                ssharp,    abovedot   ] };
+    key <AC03> { [ d,          D,                U2202,     U02DA      ] };
+    key <AC04> { [ f,          F,                function,  macron     ] };
+    key <AC05> { [ g,          G,                copyright, breve      ] };
+    key <AC06> { [ h,          H,                bar,       VoidSymbol ] };
+    key <AC07> { [ j,          J,                U2206,     doubleacute] };
+    key <AC08> { [ k,          K,                notsign,   VoidSymbol ] };
+    key <AC09> { [ l,          L,                U2026,     caron      ] };
+    key <AC10> { [ ae,         AE,               oe,        OE         ] };
+    key <AC11> { [ dead_acute, dead_diaeresis,   U201A,     U2018      ] };
+    key <BKSL> { [ plus,       asterisk,         U2022,     plusminus  ] };
+
+    key <LSGT> { [ less,   greater,   section,          UF8FF          ] }; // Apple logo
+    key <AB01> { [ z,      Z,         Greek_OMEGA,      VoidSymbol     ] };
+    key <AB02> { [ x,      X,         asciitilde,       VoidSymbol     ] };
+    key <AB03> { [ c,      C,         ccedilla,         Ccedilla       ] };
+    key <AB04> { [ v,      V,         U221A,            U25CA          ] };
+    key <AB05> { [ b,      B,         U222B,            VoidSymbol     ] };
+    key <AB06> { [ n,      N,         dead_tilde,       VoidSymbol     ] };
+    key <AB07> { [ m,      M,         mu,               VoidSymbol     ] };
+    key <AB08> { [ comma,  semicolon, lessthanequal,    guillemotleft  ] };
+    key <AB09> { [ period, colon,     greaterthanequal, guillemotright ] };
+    key <AB10> { [ thorn,  THORN,     U2019,            U201d          ] };
+
+    include "level3(ralt_switch)"
+};
+
+// Layout for newer Apple laptop and Aluminium keyboards (A1243/A1255 and later).
+// Copyright (C) 2013 Ævar Arnfjörð Bjarmason <avarab@gmail.com>
+partial alphanumeric_keys
+xkb_symbols "mac" {
+    name[Group1]= "Icelandic (Macintosh)";
+
+    key <TLDE> { [ degree, dead_diaeresis, oslash,       Oslash      ] };
+    key <AE01> { [ 1,          exclam,     exclamdown,   VoidSymbol  ] };
+    key <AE02> { [ 2,          quotedbl,   at,           VoidSymbol  ] };
+    key <AE03> { [ 3,          numbersign, trademark,    sterling    ] };
+    key <AE04> { [ 4,          dollar,     cent,         EuroSign    ] };
+    key <AE05> { [ 5,          percent,    U2030,        infinity    ] };
+    key <AE06> { [ 6,          ampersand,  asciicircum,  U2044       ] };
+    key <AE07> { [ 7,          slash,      braceleft,    division    ] };
+    key <AE08> { [ 8,          parenleft,  bracketleft,  braceleft   ] };
+    key <AE09> { [ 9,          parenright, bracketright, braceright  ] };
+    key <AE10> { [ 0,          equal,      braceright,   approxeq    ] };
+    key <AE11> { [ odiaeresis, Odiaeresis, backslash,    U2260       ] };
+    key <AE12> { [ minus,      underscore, endash,       emdash      ] };
+
+    key <AD01> { [ q,          Q,          at,                 paragraph           ] };
+    key <AD02> { [ w,          W,          U2211,              section             ] };
+    key <AD03> { [ e,          E,          U20AC,              questiondown        ] };
+    key <AD04> { [ r,          R,          registered,         VoidSymbol          ] };
+    key <AD05> { [ t,          T,          degree,             U2022               ] };
+    key <AD06> { [ y,          Y,          yen,                VoidSymbol          ] };
+    key <AD07> { [ u,          U,          dead_diaeresis,     VoidSymbol          ] };
+    key <AD08> { [ i,          I,          idotless,           ordfeminine         ] };
+    key <AD09> { [ o,          O,          dead_circumflex,    masculine           ] };
+    key <AD10> { [ p,          P,          Greek_pi,           Greek_PI            ] };
+    key <AD11> { [ eth,        ETH,        doublelowquotemark, leftdoublequotemark ] };
+    key <AD12> { [ apostrophe, question,   asciitilde,         periodcentered      ] };
+
+    key <AC01> { [ a,          A,          aring,             Aring               ] };
+    key <AC02> { [ s,          S,          ssharp,            abovedot            ] };
+    key <AC03> { [ d,          D,          partialderivative, U02DA               ] };
+    key <AC04> { [ f,          F,          function,          macron              ] };
+    key <AC05> { [ g,          G,          copyright,         breve               ] };
+    key <AC06> { [ h,          H,          bar,               cedilla             ] };
+    key <AC07> { [ j,          J,          U2206,             doubleacute         ] };
+    key <AC08> { [ k,          K,          notsign,           ogonek              ] };
+    key <AC09> { [ l,          L,          ellipsis,          caron               ] };
+    key <AC10> { [ ae,         AE,         oe,                OE                  ] };
+    key <AC11> { [ dead_acute, dead_acute, asciicircum,       leftsinglequotemark ] };
+    key <BKSL> { [ plus,       asterisk,   grave,             plusminus           ] };
+
+    key <LSGT> { [ less,   greater,        bar,                  UF8FF                ] }; // Apple logo
+    key <AB01> { [ z,      Z,              Greek_OMEGA,          VoidSymbol           ] };
+    key <AB02> { [ x,      X,              asciitilde,           VoidSymbol           ] };
+    key <AB03> { [ c,      C,              ccedilla,             Ccedilla             ] };
+    key <AB04> { [ v,      V,              radical,              U25CA                ] };
+    key <AB05> { [ b,      B,              integral,             VoidSymbol           ] };
+    key <AB06> { [ n,      N,              dead_tilde,           VoidSymbol           ] };
+    key <AB07> { [ m,      M,              mu,                   VoidSymbol           ] };
+    key <AB08> { [ comma,  semicolon,      lessthanequal,        guillemotleft        ] };
+    key <AB09> { [ period, colon,          greaterthanequal,     guillemotright       ] };
+    key <AB10> { [ thorn,  THORN,          rightsinglequotemark, rightdoublequotemark ] };
+
+    include "level3(ralt_switch)"
+};
+
+// This is a modified version of the English Dvorak layout that allows
+// you to type all Icelandic letters under X. It's not a full attempt at
+// nationalizing the layout as e.g. the Norwegian, Swedish and French
+// layouts which modify the primary keys of the basic Dvorak layout
+// extensively.
+
+// Rather it's a simple modification of 5 keys of the US Dvorak layout,
+// it adds Germanic/Icelandic style quotation marks („“), eth (ðÐ), ae
+// (æÆ), endash and emdash (–—), thorn (þÞ), EuroSign (€) and the German
+// Sharp S (ßẞ). These keys aren't used in the US version, making the
+// Icelandic version a superset of it.
+
+// Maybe someone else will make a "full" attempt at an Icelandic layout
+// but I was mostly interested in continuing to type English comfortably
+// as a primary function while being able to type the full Icelandic
+// alphabet as a secondary function.
+//     -- Ævar Arnfjörð Bjarmason <avarab@gmail.com>
+
+// Icelandic Dvorak
+partial alphanumeric_keys
+xkb_symbols "dvorak" {
+
+    include "us(dvorak)"
+    include "eurosign(4)"
+
+    name[Group1]= "Icelandic (Dvorak)";
+
+    key <AD11> { [      slash,  question,    U201e,   U201c   ] };
+    key <AC02> { [       o,     O,           odiaeresis, Odiaeresis ] };
+    key <AC06> { [       d,     D,           eth,     ETH     ] };
+    key <AC10> { [       s,     S,           ae,      AE      ] };
+    key <AC11> { [   minus,     underscore,  endash,  emdash  ] };
+    key <AB06> { [       b,     B,           ssharp,  U1E9E   ] };
+    key <AB10> { [       z,     Z,           thorn,   THORN   ] };
+
+    include "level3(ralt_switch)"
+};

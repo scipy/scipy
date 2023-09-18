@@ -1,0 +1,53 @@
+{
+  "build": "hbdbef99_2",
+  "build_number": 2,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [],
+  "depends": [
+    "binutils_impl_linux-64 2.40.*",
+    "sysroot_linux-64"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/binutils_linux-64-2.40-hbdbef99_2",
+  "features": "",
+  "files": [
+    "etc/conda/activate.d/activate-binutils_linux-64.sh",
+    "etc/conda/deactivate.d/deactivate-binutils_linux-64.sh"
+  ],
+  "fn": "binutils_linux-64-2.40-hbdbef99_2.conda",
+  "license": "BSD-3-Clause",
+  "license_family": "BSD",
+  "link": {
+    "source": "/opt/conda/pkgs/binutils_linux-64-2.40-hbdbef99_2",
+    "type": 1
+  },
+  "md5": "adfebae9fdc63a598495dfe3b006973a",
+  "name": "binutils_linux-64",
+  "package_tarball_full_path": "/opt/conda/pkgs/binutils_linux-64-2.40-hbdbef99_2.conda",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "etc/conda/activate.d/activate-binutils_linux-64.sh",
+        "path_type": "hardlink",
+        "sha256": "f904f3850e8ee62b67cb37e19d124b62110b6e2be7c23441162a8a8bfaf4382e",
+        "sha256_in_prefix": "f904f3850e8ee62b67cb37e19d124b62110b6e2be7c23441162a8a8bfaf4382e",
+        "size_in_bytes": 3778
+      },
+      {
+        "_path": "etc/conda/deactivate.d/deactivate-binutils_linux-64.sh",
+        "path_type": "hardlink",
+        "sha256": "82825e79eaa449eb88be5e16eeaeb751ec313a59390cb8772fca3b060e6c8c92",
+        "sha256_in_prefix": "82825e79eaa449eb88be5e16eeaeb751ec313a59390cb8772fca3b060e6c8c92",
+        "size_in_bytes": 3778
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "333f3339d94c93bcc02a723e3e460cb6ff6075e05f5247e15bef5dcdcec541a3",
+  "size": 28178,
+  "subdir": "linux-64",
+  "timestamp": 1694604071236,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/binutils_linux-64-2.40-hbdbef99_2.conda",
+  "version": "2.40"
+}

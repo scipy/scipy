@@ -1,0 +1,59 @@
+# Fax a test page using Create-Job + Send-Document
+#
+# Usage:
+#
+#    ./ipptest -f filename ipp://... fax-job.test
+{
+	# The name of the test...
+	NAME "Create FaxOut Job for 555-1212 and an IPP destination"
+
+	# The operation to use
+	OPERATION Create-Job
+
+	# Attributes, starting in the operation group...
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+
+	GROUP job-attributes-tag
+	ATTR collection destination-uris {
+		MEMBER uri destination-uri tel:4055551212
+	},{
+		MEMBER uri destination-uri ipp://11.22.33.44/ipp/print
+		MEMBER enum print-quality 5
+		MEMBER keyword media na_letter_8.5x11in
+	}
+
+	# What statuses are OK?
+	STATUS successful-ok
+	STATUS successful-ok-ignored-or-substituted-attributes
+
+	# What attributes do we expect?
+	EXPECT job-id OF-TYPE integer WITH-VALUE >0
+	EXPECT job-uri OF-TYPE uri
+}
+{
+	# The name of the test...
+	NAME "Send FaxOut Document"
+
+	# The operation to use
+	OPERATION Send-Document
+
+	# Attributes, starting in the operation group...
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR integer job-id $job-id
+	ATTR name requesting-user-name $user
+	ATTR mimetype document-format $filetype
+	ATTR boolean last-document true
+
+	FILE $filename
+
+	# What statuses are OK?
+	STATUS successful-ok
+	STATUS successful-ok-ignored-or-substituted-attributes
+}

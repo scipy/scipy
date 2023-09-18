@@ -1,0 +1,170 @@
+<!-- Creator     : groff version 1.22.3 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>MSGEXEC</title>
+
+</head>
+<body>
+
+<h1 align="center">MSGEXEC</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+<a href="#REPORTING BUGS">REPORTING BUGS</a><br>
+<a href="#COPYRIGHT">COPYRIGHT</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">msgexec -
+process translations of message catalog</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>msgexec</b>
+[<i>OPTION</i>] <i>COMMAND</i> [<i>COMMAND-OPTION</i>]</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Applies a
+command to all translations of a translation catalog. The
+COMMAND can be any program that reads a translation from
+standard input. It is invoked once for each translation. Its
+output becomes msgexec&rsquo;s output. msgexec&rsquo;s
+return code is the maximum return code across all
+invocations.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A special
+builtin command called &rsquo;0&rsquo; outputs the
+translation, followed by a null byte. The output of
+&quot;msgexec 0&quot; is suitable as input for &quot;xargs
+<b>-0</b>&quot;.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Command
+input: <br>
+--newline</b></p>
+
+<p style="margin-left:22%;">add newline at the end of
+input</p>
+
+<p style="margin-left:11%; margin-top: 1em">Mandatory
+arguments to long options are mandatory for short options
+too.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Input file
+location: <br>
+-i</b>,
+<b>--input</b>=<i>INPUTFILE</i></p>
+
+<p style="margin-left:22%;">input PO file</p>
+
+<p style="margin-left:11%;"><b>-D</b>,
+<b>--directory</b>=<i>DIRECTORY</i></p>
+
+<p style="margin-left:22%;">add DIRECTORY to list for input
+files search</p>
+
+<p style="margin-left:11%; margin-top: 1em">If no input
+file is given or if it is -, standard input is
+read.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Input file
+syntax: <br>
+-P</b>,
+<b>--properties-input</b></p>
+
+<p style="margin-left:22%;">input file is in Java
+.properties syntax</p>
+
+
+<p style="margin-left:11%;"><b>--stringtable-input</b></p>
+
+<p style="margin-left:22%;">input file is in
+NeXTstep/GNUstep .strings syntax</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Informative
+output: <br>
+-h</b>, <b>--help</b></p>
+
+<p style="margin-left:22%;">display this help and exit</p>
+
+<p style="margin-left:11%;"><b>-V</b>,
+<b>--version</b></p>
+
+<p style="margin-left:22%;">output version information and
+exit</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Written by
+Bruno Haible.</p>
+
+<h2>REPORTING BUGS
+<a name="REPORTING BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Report bugs in
+the bug tracker at
+&lt;https://savannah.gnu.org/projects/gettext&gt; or by
+email to &lt;bug-gettext@gnu.org&gt;.</p>
+
+<h2>COPYRIGHT
+<a name="COPYRIGHT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Copyright
+&copy; 2001-2022 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later
+&lt;https://gnu.org/licenses/gpl.html&gt; <br>
+This is free software: you are free to change and
+redistribute it. There is NO WARRANTY, to the extent
+permitted by law.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The full
+documentation for <b>msgexec</b> is maintained as a Texinfo
+manual. If the <b>info</b> and <b>msgexec</b> programs are
+properly installed at your site, the command</p>
+
+<p style="margin-left:22%; margin-top: 1em"><b>info
+msgexec</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">should give you
+access to the complete manual.</p>
+<hr>
+</body>
+</html>

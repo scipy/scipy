@@ -1,0 +1,864 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<!--
+  Copyright (C) 2004-2005, 2007-2008, 2010, 2012, 2014, 2019-2020 Free Software Foundation, Inc.
+  Written by Bruno Haible <bruno@clisp.org>, 2004.
+
+  This manual is free documentation.  It is dually licensed under the
+  GNU FDL and the GNU GPL.  This means that you can redistribute this
+  manual under either of these two licenses, at your choice.
+
+  This manual is covered by the GNU FDL.  Permission is granted to copy,
+  distribute and/or modify this document under the terms of the
+  GNU Free Documentation License (FDL), either version 1.2 of the
+  License, or (at your option) any later version published by the
+  Free Software Foundation (FSF); with no Invariant Sections, with no
+  Front-Cover Text, and with no Back-Cover Texts.
+  A copy of the license is at
+  <https://www.gnu.org/licenses/old-licenses/fdl-1.2>.
+
+  This manual is covered by the GNU GPL.  You can redistribute it and/or
+  modify it under the terms of the GNU General Public License (GPL), either
+  version 2 of the License, or (at your option) any later version published
+  by the Free Software Foundation (FSF).
+  A copy of the license is at
+  <https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html>.
+-->
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <title>GNU gettext FAQ</title>
+</head>
+<body>
+<h1 style="text-align: center;">Frequently Asked Questions<br>
+for GNU gettext
+</h1>
+<h1 style="text-align: center;">Questions</h1>
+<h3>General</h3>
+<ul>
+  <li><a href="#general_mailinglist">Where is the mailing list?</a></li>
+  <li><a href="#general_source">Where is the newest gettext source?</a></li>
+  <li><a href="#general_announce">I want to be notified of new gettext
+releases.</a></li>
+</ul>
+<h3>Problems building GNU gettext</h3>
+<ul>
+  <li><a href="#building_solaris_libasprintf">On Solaris, I get a build
+error “text relocations remain” in the <span
+ style="font-family: monospace;">libasprintf</span> subdirectory</a></li>
+  <li><a href="#building_install">“make install” fails</a></li>
+</ul>
+<h3>Problems integrating GNU gettext</h3>
+<ul>
+  <li><a href="#integrating_howto">How do I make use of <span
+ style="font-family: monospace;">gettext()</span> in my package?</a></li>
+  <li><a href="#integrating_undefined">I get a linker error “undefined
+reference to libintl_gettext”</a></li>
+  <li><a href="#integrating_abuse_gettextize">gettextize adds multiple
+references to the same directories/files
+to <span style="font-family: monospace;">Makefile.am</span> and </a><span
+ style="font-family: monospace;"><a href="#integrating_abuse_gettextize">configure.ac</a><br>
+    </span></li>
+  <li><a href="#integrating_noop">My program compiles and links fine,
+but doesn't output translated
+strings.</a><br>
+  </li>
+</ul>
+<h3>GNU gettext on Windows</h3>
+<ul>
+  <li><a href="#windows_woe32">What does Woe32 mean?</a></li>
+  <li><a href="#windows_howto">How do I compile, link and run a program
+that uses the gettext()
+function?</a><br>
+  </li>
+  <li><a href="#windows_setenv">Setting the <span
+ style="font-family: monospace;">LANG</span>
+environment variable doesn't have any effect</a></li>
+</ul>
+<h3>Other</h3>
+<ul>
+  <li><a href="#newline">What does this mean: “'msgid' and 'msgstr'
+entries do not both
+end with '\n'”</a></li>
+  <li><a href="#translit">German umlauts are displayed like “ge"andert”
+instead of
+“geändert”</a></li>
+  <li><a href="#localename">The <span style="font-family: monospace;">LANGUAGE</span>
+environment variable is ignored after I set <span
+ style="font-family: monospace;">LANG=en</span></a></li>
+  <li><a href="#nonascii_strings">I use accented characters in my
+source code. How do I tell the
+C/C++ compiler in which encoding it is (like <span
+ style="font-family: monospace;">xgettext</span>'s <span
+ style="font-family: monospace;">--from-code</span> option)?</a></li>
+</ul>
+<h1 style="text-align: center;">Answers</h1>
+<h3>General</h3>
+<h4><a name="general_mailinglist"></a>Where is the mailing list?</h4>
+Three mailing lists are available: <br>
+<ul>
+  <li><span style="font-family: monospace;">bug-gettext@gnu.org</span><br>
+This mailing list is for discussion of features and bugs of the GNU
+gettext <span style="font-style: italic;">software</span>, including
+libintl, the gettext-tools, and its autoconf macros.  The archive and subscription instructions can be found at <a href="https://lists.gnu.org/mailman/listinfo/bug-gettext">the information page</a>.</li>
+  <li><span style="font-family: monospace;">translation-i18n@lists.sourceforge.net</span><br>
+This mailing list is for methodology questions around
+internationalization, and for discussions of translator tools,
+including but not limited to GNU gettext.</li>
+  <li><span style="font-family: monospace;">coordinator@translationproject.org</span><br>
+This is the email address of the <a
+ href="https://translationproject.org/">Translation Project</a>,
+that is the project which manages the translated message
+catalogs for many free software packages. Note that KDE and GNOME
+packages are not part of this project; they have their own translation
+projects: <a href="https://l10n.kde.org/">l10n.kde.org</a> and <a
+ href="https://wiki.gnome.org/TranslationProject/">GNOME Translation Project</a>.<br>
+  </li>
+</ul>
+The <span style="font-family: monospace;">bug-gettext</span> list
+is archived <a href="https://lists.gnu.org/archive/html/bug-gettext/">here</a>.
+You may occasionally also see
+<span style="font-family: monospace;">bug-gnu-gettext</span>; this is an alias
+of <span style="font-family: monospace;">bug-gettext</span>.<br>
+<h4><a name="general_source"></a>Where is the newest gettext source?</h4>
+The newest gettext release is available on <span
+ style="font-family: monospace;">ftp.gnu.org</span> and its mirrors, in
+<a href="https://ftp.gnu.org/gnu/gettext/">https://ftp.gnu.org/gnu/gettext/</a>.<br>
+<br>
+Prereleases are announced on the <a
+ href="https://lists.gnu.org/mailman/listinfo/autotools-announce"><span
+ style="font-family: monospace;">autotools-announce</span> mailing list</a>.
+Note that prereleases are meant for testing and not meant for use in
+production environments. Please don't use the “gettextize” program of a
+prerelease on projects which you share with other programmers via CVS.<br>
+<br>
+If you want to live on the bleeding edge, you can also use the
+development sources. Instructions for retrieving the gettext CVS are
+found <a href="https://savannah.gnu.org/projects/gettext">here</a>.
+Note that building from CVS requires special tools (autoconf, automake,
+m4, groff, bison, etc.) and requires that you pay attention to the <span
+ style="font-family: monospace;">README-alpha</span> and <span
+ style="font-family: monospace;">autogen.sh</span> files in the CVS.<br>
+<h4><a name="general_announce"></a>I want to be notified of new gettext
+releases.</h4>
+If you are interested in stable gettext releases, you can follow the <a
+ href="https://lists.gnu.org/mailman/listinfo/info-gnu"><span
+ style="font-family: monospace;">info-gnu</span> mailing list</a>. It
+is also available as a newsgroup <a
+ href="nntp://news.gmane.org/gmane.org.fsf.announce"><span
+ style="font-family: monospace;">gmane.org.fsf.announce</span></a>
+through <a href="https://www.gmane.org/"><span
+ style="font-family: monospace;">gmane.org</span></a>.<br>
+<br>
+You can also periodically check the download location.<br>
+<br>
+If you are interested in testing prereleases as well, you can subscribe
+to the <a href="://lists.gnu.org/mailman/listinfo/autotools-announce"><span
+ style="font-family: monospace;">autotools-announce</span> mailing
+list</a>.<br>
+<h3>Problems building GNU gettext</h3>
+<h4><a name="building_solaris_libasprintf"></a>On Solaris, I get a
+build error “text relocations remain” in the <span
+ style="font-family: monospace;">libasprintf</span> subdirectory</h4>
+libtool (or more precisely, the version of libtool that was available
+at the time the gettext release waas made) doesn't support linking C++
+libraries with some versions of GCC. As a workaround, you can configure
+gettext with the option <span style="font-family: monospace;">--disable-libasprintf</span>.<br>
+<h4><a name="building_install"></a>“make install” fails</h4>
+“<span style="font-family: monospace;">make install DESTDIR=<span
+ style="font-style: italic;">/some/tempdir</span></span>” can fail with
+an error message relating to <span style="font-family: monospace;">libgettextlib</span>
+or <span style="font-family: monospace;">libgettextsrc</span>, or can
+silently fail to install <span style="font-family: monospace;">libgettextsrc</span>.
+On some platforms, this is due to limitations of libtool regarding <span
+ style="font-family: monospace;">DESTDIR</span>. On other platforms, it
+is due to the way the system handles shared libraries, and libtool
+cannot work around it. Fortunately, on Linux and other glibc based
+systems, <span style="font-family: monospace;">DESTDIR</span> is
+supported if no different version of gettext is already installed (i.e.
+it works if you uninstall the older gettext before building and
+installing the newer one, or if you do a plain “<span
+ style="font-family: monospace;">make install</span>” before “<span
+ style="font-family: monospace;">make install DESTDIR=<span
+ style="font-style: italic;">/some/tempdir</span></span>”). On other
+systems, when&nbsp; <span style="font-family: monospace;">DESTDIR</span>
+does not work, you can still do “<span style="font-family: monospace;">make
+install</span>” and copy the installed files to <span
+ style="font-family: monospace;"><span style="font-style: italic;">/some/tempdir</span></span>
+afterwards.<br>
+<br>
+If “<span style="font-family: monospace;">make install</span>” without <span
+ style="font-family: monospace;">DESTDIR</span> fails, it's a bug which
+you are welcome to report to the usual bug report address.
+<h3>Problems integrating GNU gettext</h3>
+<h4><a name="integrating_howto"></a>How do I make use of <span
+ style="font-family: monospace;">gettext()</span> in my package?</h4>
+It's not as difficult as it sounds. Here's the recipe for C or C++
+based packages.<br>
+<ul>
+  <li>Add an invocation of <span style="font-family: monospace;">AM_GNU_GETTEXT([external])</span>
+to the package's <span style="font-family: monospace;">configure.{ac,in}</span>
+file.</li>
+  <li>Invoke “<span style="font-family: monospace;">gettextize --copy</span>”.
+It will do most of the autoconf/automake related work for you.</li>
+  <li>Add the <span style="font-family: monospace;">gettext.h</span>
+file to the package's source directory, and include it in all source
+files that contain translatable strings or do output via <span
+ style="font-family: monospace;">printf</span> or <span
+ style="font-family: monospace;">fprintf</span>.</li>
+  <li>In the source file defining the main() function of the program,
+add these lines to the header<br>
+    <div style="margin-left: 40px;"><code><span
+ style="font-family: monospace;">#include &lt;locale.h&gt;</span><br
+ style="font-family: monospace;">
+    <span style="font-family: monospace;">#include "gettext.h"</span></code><br>
+    </div>
+and these lines near the beginning of the main() function:<br>
+    <div style="margin-left: 40px;"><code><span
+ style="font-family: monospace;">setlocale (LC_ALL, "");</span><br
+ style="font-family: monospace;">
+    <span style="font-family: monospace;">bindtextdomain (PACKAGE,
+LOCALEDIR);</span><br style="font-family: monospace;">
+    <span style="font-family: monospace;">textdomain (PACKAGE);</span></code><br>
+    </div>
+  </li>
+  <li>Mark all strings that should be translated with _(), like this: <span
+ style="font-family: monospace;">_("No errors found.")</span>. While
+doing this, try to turn the strings into good English, one entire
+sentence per string, not more than one paragraph per string, and use
+format strings instead of string concatenation. This is needed so that
+the translators can provide accurate translations.</li>
+  <li>In every source file containing translatable strings, add these lines
+to the header:<br>
+    <div style="margin-left: 40px;"><code><span
+ style="font-family: monospace;">#include "gettext.h"</span><br
+ style="font-family: monospace;">
+    <span style="font-family: monospace;">#define _(string) gettext (string)</span></code><br>
+    </div>
+  </li>
+  <li>In the freshly created <span style="font-family: monospace;">po/</span>
+directory, set up the <span style="font-family: monospace;">POTFILES.in</span>
+file, and do a “<span style="font-family: monospace;">make update-po</span>”.
+Then distribute the generated <span style="font-family: monospace;">.pot</span>
+file to your nearest translation project.</li>
+  <li>Shortly before a release, integrate the translators' <span
+ style="font-family: monospace;">.po</span> files into the <span
+ style="font-family: monospace;">po/</span> directory and do “<span
+ style="font-family: monospace;">make update-po</span>” again.<br>
+  </li>
+</ul>
+You find detailed descriptions of how this all works in the GNU gettext
+manual, chapters “The Maintainer's View” and “Preparing Program
+Sources”.
+<h4><a name="integrating_undefined"></a>I get a linker error “undefined
+reference to libintl_gettext”</h4>
+This error means that the program uses the <span
+ style="font-family: monospace;">gettext()</span> function after having
+included the <span style="font-family: monospace;">&lt;libintl.h&gt;</span>
+file from GNU gettext (which remaps it to <span
+ style="font-family: monospace;">libintl_gettext()</span>), however at
+link time a function of this name could not be linked in. (It is
+expected to come from the <span style="font-family: monospace;">libintl</span>
+library, installed by GNU gettext.)<br>
+<br>
+There are many possible reasons for this error, but in any case you
+should consider the <span style="font-family: monospace;">-I</span>, <span
+ style="font-family: monospace;">-L</span> and <span
+ style="font-family: monospace;">-l</span> options passed to the
+compiler. In packages using <span style="font-family: monospace;">autoconf</span>
+generated configure scripts, <span style="font-family: monospace;">-I</span>
+options come from the <span style="font-family: monospace;">CFLAGS</span>
+and <span style="font-family: monospace;">CPPFLAGS</span> variables
+(in Makefiles also <span style="font-family: monospace;">DEFS</span>
+and <span style="font-family: monospace;">INCLUDES</span>), <span
+ style="font-family: monospace;">-L</span> options come from the <span
+ style="font-family: monospace;">LDFLAGS</span> variable, and <span
+ style="font-family: monospace;">-l</span> options come from the <span
+ style="font-family: monospace;">LIBS</span> variable. The first thing
+you should check are the values of these variables in your environment
+and in the&nbsp; package's <span style="font-family: monospace;">config.status</span>
+autoconfiguration result.<br>
+<br>
+To find the cause of the error, a little analysis is needed. Does the
+program's final link command contains the option “-lintl”?<br>
+<ul>
+  <li>If yes:<br>
+Find out where the <span style="font-family: monospace;">libintl</span>
+comes from. To do this, you have to check for <span
+ style="font-family: monospace;">libintl.a</span> and <span
+ style="font-family: monospace;">libintl.so*</span> (<span
+ style="font-family: monospace;">libintl.dylib</span> on MacOS X) in
+each directory given as a -L option, as well as in the compiler's
+implicit search directories. (You get these implicit search directories
+for gcc by using “<span style="font-family: monospace;">gcc -v</span>”
+instead of “<span style="font-family: monospace;">gcc</span>” in the
+final link command line; compilers other than GCC usually look in <span
+ style="font-family: monospace;">/usr/lib</span> and <span
+ style="font-family: monospace;">/lib</span>.) A shell command like<br>
+    <div style="margin-left: 40px;"><code>$ for d in /usr/local/lib
+/usr/lib /lib; do ls -l $d/libintl.*; done</code><br>
+    </div>
+will show where the <span style="font-family: monospace;">libintl</span>
+comes from. By looking at the dates and whether each library defines <span
+ style="font-family: monospace;">libintl_gettext</span> (via “<span
+ style="font-family: monospace;">nm <span style="font-style: italic;">path</span>/libintl.so
+| grep libintl_gettext</span>”) you can now distinguish three possible
+causes of the error:<br>
+    <ul>
+      <li>Some older libintl is used instead of the newer one. The fix
+is to remove the old library or to reorganize your -L options.</li>
+      <li>The used libintl is the new one, and it doesn't contain
+libintl_gettext. This would be a bug in gettext. If this is the case,
+please report it to the usual bug report address.</li>
+      <li>The used libintl is a static library (libintl.a), there are
+no uses of gettext in .o files before the “-lintl” but there are some
+after the “-lintl”. In this case the fix is to move the “-lintl” to the
+end or near the end of the link command line. The only libintl
+dependency that needs to be mentioned after “-lintl” is “-liconv”.</li>
+    </ul>
+  </li>
+  <li>If no:<br>
+In this case it's likely a bug in the package you are building: The
+package's Makefiles should make sure that “-lintl” is used where needed.<br>
+Test whether libintl was found by configure. You can check this by doing<br>
+    <div style="margin-left: 40px;"><code>$ grep
+'\(INTLLIBS\|LIBINTL\)' config.status</code><br>
+    </div>
+and looking whether the value of this autoconf variable is non-empty.<br>
+    <ul>
+      <li>If yes: It should be the responsibility of the Makefile to
+use the value of this variable in the link command line. Does the
+Makefile.in rule for linking the program use <span
+ style="font-family: monospace;">@INTLLIBS@</span> or <span
+ style="font-family: monospace;">@LIBINTL@</span>?<br>
+        <ul>
+          <li>If no: It's a Makefile.am/in bug.</li>
+          <li>If yes: Something strange is going on. You need to dig
+deeper.</li>
+        </ul>
+Note that <span style="font-family: monospace;">@INTLLIBS@</span> is
+for <span style="font-family: monospace;">gettext.m4</span> versions
+&lt;= 0.10.40 and <span style="font-family: monospace;">@LIBINTL@</span>
+is for <span style="font-family: monospace;">gettext.m4</span>
+versions &gt;= 0.11, depending on which <span
+ style="font-family: monospace;">gettext.m4</span> was used to build
+the package's <span style="font-family: monospace;">configure</span> -
+regardless of which gettext you have now installed.</li>
+      <li>If no: So libintl was not found.<br>
+Take a look at the package's <span style="font-family: monospace;">configure.in/ac</span>.
+Does it invoke AM_GNU_GETTEXT?<br>
+      <ul>
+        <li>If no: The gettext maintainers take no responsibilities for
+lookalikes named CY_GNU_GETTEXT, AM_GLIB_GNU_GETTEXT, AM_GNOME_GETTEXT
+and similar, or for homebrewn autoconf checks. Complain to the package
+maintainer.</li>
+        <li>If yes: It looks like the <span
+ style="font-family: monospace;">-I</span> and <span
+ style="font-family: monospace;">-L</span> options were inconsistent.
+You should have a <span style="font-family: monospace;">-I<span
+ style="font-style: italic;">somedir</span>/include</span> in the <span
+ style="font-family: monospace;">CFLAGS</span> or <span
+ style="font-family: monospace;">CPPFLAGS</span> if and only if you
+also have a <span style="font-family: monospace;">-L<span
+ style="font-style: italic;">somedir</span>/lib</span> in the <span
+ style="font-family: monospace;">LDFLAGS</span>. And <span
+ style="font-family: monospace;"><span style="font-style: italic;">somedir</span>/include</span>
+should contain a <span style="font-family: monospace;">libintl.h</span>
+if and only if <span style="font-family: monospace;"><span
+ style="font-style: italic;">somedir</span>/lib</span> contains <span
+ style="font-family: monospace;">libintl.{a,so}</span>.<br>
+This case can also happen if you have configured a GCC &lt; 3.2 with
+the same <span style="font-family: monospace;">--prefix</span> option
+as you used for GNU libiconv or GNU gettext. This is fatal, because
+these versions of GCC implicitly use <span
+ style="font-family: monospace;">-L<span style="font-style: italic;">prefix</span>/lib</span>
+but <span style="font-weight: bold; font-style: italic;">not</span><br
+ style="font-weight: bold; font-style: italic;">
+          <span style="font-family: monospace;">-I<span
+ style="font-style: italic;">prefix</span>/include</span>. The
+workaround is to use a different <span style="font-family: monospace;">--prefix</span>
+for GCC.<br>
+        </li>
+      </ul>
+     </li>
+    </ul>
+  </li>
+</ul>
+<h4><a name="integrating_abuse_gettextize"></a>gettextize adds multiple
+references to the same directories/files
+to <span style="font-family: monospace;">Makefile.am</span> and <span
+ style="font-family: monospace;">configure.ac</span></h4>
+If <span style="font-family: monospace;">gettextize</span> is used on
+a package, then the <span style="font-family: monospace;">po/</span>, <span
+ style="font-family: monospace;">intl/</span>, <span
+ style="font-family: monospace;">m4/</span> directories of the package
+are removed, and then <span style="font-family: monospace;">gettextize</span>
+is invoked on the package again, it will re-add the <span
+ style="font-family: monospace;">po/</span>, <span
+ style="font-family: monospace;">intl/</span>, <span
+ style="font-family: monospace;">m4/</span> directories and change <span
+ style="font-family: monospace;">Makefile.am</span>, <span
+ style="font-family: monospace;">configure.ac</span> and <span
+ style="font-family: monospace;">ChangeLog</span> accordingly. This is
+normal. The second use of <span style="font-family: monospace;">gettextize</span>
+here is an abuse of the program. <span style="font-family: monospace;">gettextize</span>
+is a wizard intended to transform a <span style="font-style: italic;">working
+source package</span> into a <span style="font-style: italic;">working
+source package</span> that uses the newest version of gettext. If you
+start out from a nonfunctional source package (it is nonfunctional
+since you have omitted some directories), you cannot expect that <span
+ style="font-family: monospace;">gettextize</span> corrects it.<br>
+<br>
+Often this question arises in packages that use CVS. See the section
+“CVS Issues / Integrating with CVS” of the GNU gettext documentation.
+This section mentions a program <span style="font-family: monospace;">autopoint</span>
+which is designed to reconstruct those files and directories created by
+<span style="font-family: monospace;">gettextize</span> that can be
+omitted from a CVS repository.<br>
+<h4><a name="integrating_noop"></a>My program compiles and links fine,
+but doesn't output translated
+strings.</h4>
+There are several possible reasons. Here is a checklist that allows you
+to determine the cause.<br>
+<ol>
+  <li>Check that the environment variables LC_ALL, LC_MESSAGES,
+LC_CTYPE, LANG, LANGUAGE together specify a valid locale and language.<br>
+To check this, run the commands<br>
+    <div style="margin-left: 40px;"><code>$ gettext --version</code><br>
+    <code>$ gettext --help</code><br>
+    </div>
+You should see at least some output in your desired language. If not,
+either<br>
+    <ul>
+      <li>You have chosen a too exotic language. <span
+ style="font-family: monospace;">gettext</span> is localized to 33
+languages. Choose a less exotic language, such as Galician or
+Ukrainian. Or<br>
+      </li>
+      <li>There is a problem with your environment variables. Possibly
+LC_ALL points to a locale that is not installed, or LC_MESSAGES and
+LC_CTYPE are inconsistent.</li>
+    </ul>
+  </li>
+  <li>Check that your program contains a <span
+ style="font-family: monospace;">setlocale</span> call.<br>
+To check this, run your program under ltrace. For example,<br>
+    <div style="margin-left: 40px;"><code>$ ltrace ./myprog</code><br>
+    <code>...</code><br>
+    <code>setlocale(6,
+"")&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+= "de_DE.UTF-8"</code><br>
+    </div>
+If you have no ltrace, you can also do this check by running your
+program under the debugger. For example,<br>
+    <div style="margin-left: 40px;"><code>$ gdb ./myprog</code><br>
+    <code>(gdb) break main</code><br>
+    <code>(gdb) run</code><br>
+    <code>Breakpoint 1, main ()</code><br>
+    <code>(gdb) break setlocale</code><br>
+    <code>(gdb) continue</code><br>
+    <code>Breakpoint 2, setlocale ()</code><br>
+    <code>;; OK, the breakpoint has been hit, setlocale() is being
+called.</code><br>
+    </div>
+Either way, check that the return value of <span
+ style="font-family: monospace;">setlocale()</span> is non-NULL. A NULL
+return value indicates a failure.&nbsp;</li>
+  <li>Check that your program contains a <span
+ style="font-family: monospace;">textdomain</span> call, a <span
+ style="font-family: monospace;">bindtextdomain</span> call referring
+to the same message domain, and then really calls the <span
+ style="font-family: monospace;">gettext</span>, <span
+ style="font-family: monospace;">dgettext</span> or <span
+ style="font-family: monospace;">dcgettext</span> function.<br>
+To check this, run the program under ltrace. For example,<br>
+    <div style="margin-left: 40px;"><code>$ ltrace ./myprog</code><br>
+    <code>...</code><br>
+    <code>textdomain("hello-c")&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+= "hello-c"</code><br>
+    <code>bindtextdomain("hello-c", "/opt/share"...) = "/opt/share"...</code><br>
+    <code>dcgettext(0, 0x08048691, 5, 0x0804a200, 0x08048689) =
+0x4001721f</code><br>
+    </div>
+If you have no ltrace, you can also do this check by running your
+program under the debugger. For example,<br>
+    <div style="margin-left: 40px;"><code>$ gdb ./myprog</code><br>
+    <code>(gdb) break main</code><br>
+    <code>(gdb) run</code><br>
+    <code>Breakpoint 1, main ()</code><br>
+    <code>(gdb) break textdomain</code><br>
+    <code>(gdb) break bindtextdomain</code><br>
+    <code>(gdb) break gettext</code><br>
+    <code>(gdb) break dgettext</code><br>
+    <code>(gdb) break dcgettext</code><br>
+    <code>(gdb) continue</code><br>
+    <code>Breakpoint 2, textdomain ()</code><br>
+    <code>(gdb) continue</code><br>
+    <code>Breakpoint 3, bindtextdomain ()</code><br>
+    <code>(gdb) continue</code><br>
+    <code>Breakpoint 6, dcgettext ()</code><br>
+    </div>
+Note that here <span style="font-family: monospace;">dcgettext()</span>
+is called instead of the <span style="font-family: monospace;">gettext()</span>
+function mentioned in the source code; this is due to an optimization
+in <span style="font-family: monospace;">&lt;libintl.h&gt;</span>.<br>
+When using libintl on a non-glibc system, you have to add a prefix “<span
+ style="font-family: monospace;">libintl_</span>” to all the function
+names mentioned here, because that's what the functions are really
+named, under the hood.<br>
+If <span style="font-family: monospace;">gettext</span>/<span
+ style="font-family: monospace;">dgettext</span>/<span
+ style="font-family: monospace;">dcgettext</span> is not called at all,
+the possible cause might be that some autoconf or Makefile macrology
+has turned off internationalization entirely (like the <span
+ style="font-family: monospace;">--disable-nls</span> configuration
+option usually does).<br>
+  </li>
+  <li>Check that the <span style="font-family: monospace;">.mo</span>
+file that contains the translation is really there where the program
+expects it.<br>
+To check this, run the program under strace and look at the <span
+ style="font-family: monospace;">open()</span> calls. For example,<br>
+    <div style="margin-left: 40px;"><code>$ strace ./myprog 2&gt;&amp;1
+| grep '^open('</code><br>
+    <code>open("/etc/ld.so.preload", O_RDONLY)&nbsp;&nbsp;&nbsp; = -1
+ENOENT (No such file or directory)</code><br>
+    <code>open("/etc/ld.so.cache",
+O_RDONLY)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = 5</code><br>
+    <code>open("/lib/libc.so.6",
+O_RDONLY)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = 5</code><br>
+    <code>open("/usr/lib/locale/locale-archive", O_RDONLY|O_LARGEFILE)
+= 5</code><br>
+    <code>open("/usr/share/locale/locale.alias", O_RDONLY) = 5</code><br>
+    <code>open("/opt/share/locale/de/LC_MESSAGES/hello-c.mo", O_RDONLY)
+= 5</code><br>
+    <code>...</code><br>
+    </div>
+A nonnegative <span style="font-family: monospace;">open()</span>
+return value means that the file has been found.<br>
+If you have no strace, you can also guess the <span
+ style="font-family: monospace;">.mo</span> file's location: it is<br>
+    <div style="margin-left: 40px;"><span
+ style="font-family: monospace;"><span style="font-style: italic;">localedir</span>/<span
+ style="font-style: italic;">lang</span>/LC_MESSAGES/<span
+ style="font-style: italic;">domain</span>.mo</span><br>
+    </div>
+where <span style="font-style: italic;">domain</span> is the argument
+passed to <span style="font-family: monospace;">textdomain()</span>, <span
+ style="font-style: italic;">localedir</span> is the second argument
+passed to <span style="font-family: monospace;">bindtextdomain()</span>,
+and <span style="font-style: italic;">lang</span> is the language (<span
+ style="font-style: italic;">LL</span>) or language and territory (<span
+ style="font-style: italic;">LL</span>_<span style="font-style: italic;">CC</span>),
+depending on the environment variables checked in step 1.</li>
+  <li>Check that the .mo file contains a translation for the string
+that is being asked for.<br>
+To do this, you need to convert the .mo file back to PO file format,
+through the command<br>
+    <div style="margin-left: 40px;"><code>$ msgunfmt </code><span
+ style="font-family: monospace;"><span style="font-style: italic;">localedir</span>/<span
+ style="font-style: italic;">lang</span>/LC_MESSAGES/<span
+ style="font-style: italic;">domain</span>.mo</span><br>
+    <code></code></div>
+and look for an <span style="font-family: monospace;">msgid</span>
+that matches the given string.<br>
+  </li>
+</ol>
+<h3>GNU gettext on Windows</h3>
+<h4><a name="windows_woe32"></a>What does Woe32 mean?</h4>
+“Woe32” denotes the Windows 32-bit operating systems for x86: Windows
+NT/2000/XP/Vista and Windows 95/98/ME. Microsoft uses the term “Win32” to
+denote these; this is a psychological trick in order to make everyone
+believe that these OSes are a “win” for the user. However, for most
+users and developers, they are a source of woes, which is why I call
+them “Woe32”.<br>
+<h4><a name="windows_howto"></a>How do I compile, link and run a
+program that uses the gettext()
+function?</h4>
+When you use RedHat's cygwin environment, it's as on Unix:<br>
+<ul>
+  <li>You need to add an <span style="font-family: monospace;">-I</span>
+option to the compilation command line, so that the compiler finds the <span
+ style="font-family: monospace;">libintl.h</span> include file, and</li>
+  <li>You need to add an <span style="font-family: monospace;">-L</span>
+option to the link command line, so that the linker finds the <span
+ style="font-family: monospace;">libintl</span> library.</li>
+</ul>
+When you use the Mingw environment (either from within cygwin, with <span
+ style="font-family: monospace;">CC="gcc -mno-cygwin"</span>, or from
+MSYS, with <span style="font-family: monospace;">CC="gcc"</span>), I
+don't know the details.<br>
+<br>
+When you use the Microsoft Visual C/C++ (MSVC) compiler, you will
+likely use the precompiled Woe32 binaries. For running a program that
+uses gettext(), one needs the <span style="font-family: monospace;">.bin.woe32.zip</span>
+packages of <span style="font-family: monospace;">gettext-runtime</span>
+and <span style="font-family: monospace;">libiconv</span>. As a
+developer, you'll also need the <span style="font-family: monospace;">xgettext</span>
+and <span style="font-family: monospace;">msgfmt</span> programs that
+are contained in the <span style="font-family: monospace;">.bin.woe32.zip</span>
+package of <span style="font-family: monospace;">gettext-tools</span>.
+Then<br>
+<ul>
+  <li>You need to add an <span style="font-family: monospace;">-MD</span>
+option to all compilation and link command lines. MSVC has six
+different, mutually incompatible, compilation models (<span
+ style="font-family: monospace;">-ML</span>, <span
+ style="font-family: monospace;">-MT</span>, <span
+ style="font-family: monospace;">-MD</span>, <span
+ style="font-family: monospace;">-MLd</span>, <span
+ style="font-family: monospace;">-MTd</span>, <span
+ style="font-family: monospace;">-MDd</span>); the default is <span
+ style="font-family: monospace;">-ML</span>. <span
+ style="font-family: monospace;">intl.dll</span> uses the <span
+ style="font-family: monospace;">-MD</span> model, therefore the rest
+of the program must use <span style="font-family: monospace;">-MD</span>
+as well.<br>
+  </li>
+  <li>You need to add an <span style="font-family: monospace;">-I</span>
+option to the compilation command line, so that the compiler finds the <span
+ style="font-family: monospace;">libintl.h</span> include file.<br>
+  </li>
+  <li>You need to add an <span style="font-family: monospace;">-L</span>
+option to the link command line, so that the linker finds the <span
+ style="font-family: monospace;">intl.lib</span> library.</li>
+  <li>You need to copy the <span style="font-family: monospace;">intl.dll</span>
+and <span style="font-family: monospace;">iconv.dll</span> to the
+directory where your <span style="font-family: monospace;">.exe</span>
+files are created, so that they will be found at runtime.<br>
+  </li>
+</ul>
+<h4><a name="windows_setenv"></a>Setting the <span
+ style="font-family: monospace;">LANG</span>
+environment variable doesn't have any effect</h4>
+If neither LC_ALL, LC_MESSAGES nor LANGUAGES is set, it's the LANG
+environment variable which determines the language into which gettext()
+translates the messages.<br>
+<br>
+You can test your program by setting the LANG environment variable from
+outside the program. In a Windows command interpreter:<br>
+<div style="margin-left: 40px;"><code>set LANG=de_DE</code><br>
+<code>.\myprog.exe</code><br>
+</div>
+Or in a Cygwin shell:<br>
+<div style="margin-left: 40px;"><code>$ env LANG=de_DE ./myprog.exe</code><br>
+</div>
+<br>
+If this test fails, look at the question “My program compiles and links
+fine, but doesn't output translated
+strings.” above.<br>
+<br>
+If this test succeeds, the problem is related in the way you set the
+environment variable. Here is a checklist:<br>
+<ul>
+  <li>Check that you are using the <span
+ style="font-family: monospace;">-MD</span> option in all compilation
+and link command lines. Otherwise you might end up calling the <span
+ style="font-family: monospace;">putenv()</span> function from
+Microsoft's <span style="font-family: monospace;">libc.lib</span>,
+whereas <span style="font-family: monospace;">intl.dll</span> is using
+the <span style="font-family: monospace;">getenv()</span> function
+from Mictosoft's <span style="font-family: monospace;">msvcrt.lib</span>.</li>
+  <li>Check that you set the environment variable using <span
+ style="font-style: italic;">both</span> <span
+ style="font-family: monospace;">SetEnvironmentVariable()</span> and <span
+ style="font-family: monospace;">putenv()</span>. A convenient way to
+do so, and to deal with the fact that some Unix systems have <span
+ style="font-family: monospace;">setenv()</span> and some don't, is the
+following function.<br>
+    <br>
+    <div style="margin-left: 40px;"><code>#include &lt;string.h&gt;</code><br>
+    <code>#include &lt;stdlib.h&gt;</code><br>
+    <code>#if defined _WIN32</code><br>
+    <code># include &lt;windows.h&gt;</code><br>
+    <code>#endif</code><br>
+    <code></code><br>
+    <code>int my_setenv (const char * name, const char * value) {</code><br>
+    <code>&nbsp; size_t namelen = strlen(name);</code><br>
+    <code>&nbsp; size_t valuelen = (value==NULL ? 0 : strlen(value));</code><br>
+    <code>#if defined _WIN32</code><br>
+    <code>&nbsp; /* On Woe32, each process has two copies of the
+environment variables,</code><br>
+    <code>&nbsp;&nbsp;&nbsp;&nbsp; one managed by the OS and one
+managed by the C library. We set</code><br>
+    <code>&nbsp;&nbsp;&nbsp;&nbsp; the value in both locations, so that
+other software that looks in</code><br>
+    <code>&nbsp;&nbsp;&nbsp;&nbsp; one place or the other is guaranteed
+to see the value. Even if it's</code><br>
+    <code>&nbsp;&nbsp;&nbsp;&nbsp; a bit slow. See also</code><br>
+    <code>&nbsp;&nbsp;&nbsp;&nbsp; &lt;<a
+ href="https://article.gmane.org/gmane.comp.gnu.mingw.user/8272">https://article.gmane.org/gmane.comp.gnu.mingw.user/8272</a>&gt;</code><br>
+    <code>&nbsp;&nbsp;&nbsp;&nbsp; &lt;<a
+ href="https://article.gmane.org/gmane.comp.gnu.mingw.user/8273">https://article.gmane.org/gmane.comp.gnu.mingw.user/8273</a>&gt;</code><br>
+    <code>&nbsp;&nbsp;&nbsp;&nbsp; &lt;<a
+ href="https://www.cygwin.com/ml/cygwin/1999-04/msg00478.html">https://www.cygwin.com/ml/cygwin/1999-04/msg00478.html</a>&gt;
+*/</code><br>
+    <code>&nbsp; if (!SetEnvironmentVariableA(name,value))</code><br>
+    <code>&nbsp;&nbsp;&nbsp; return -1; </code><br>
+    <code>#endif</code><br>
+    <code>#if defined(HAVE_PUTENV)</code><br>
+    <code>&nbsp; char* buffer = (char*)malloc(namelen+1+valuelen+1);</code><br>
+    <code>&nbsp; if (!buffer)</code><br>
+    <code>&nbsp;&nbsp;&nbsp; return -1; /* no need to set errno =
+ENOMEM */</code><br>
+    <code>&nbsp; memcpy(buffer,name,namelen);</code><br>
+    <code>&nbsp; if (value != NULL) {</code><br>
+    <code>&nbsp;&nbsp;&nbsp; buffer[namelen] = '=';</code><br>
+    <code>&nbsp;&nbsp;&nbsp; memcpy(buffer+namelen+1,value,valuelen);</code><br>
+    <code>&nbsp;&nbsp;&nbsp; buffer[namelen+1+valuelen] = 0;</code><br>
+    <code>&nbsp; } else</code><br>
+    <code>&nbsp;&nbsp;&nbsp; buffer[namelen] = 0;</code><br>
+    <code>&nbsp; return putenv(buffer);</code><br>
+    <code>#elif defined(HAVE_SETENV)</code><br>
+    <code>&nbsp; return setenv(name,value,1);</code><br>
+    <code>#else</code><br>
+    <code>&nbsp; /* Uh oh, neither putenv() nor setenv() ... */</code><br>
+    <code>&nbsp; return -1;</code><br>
+    <code>#endif</code><br>
+    <code>}</code><br>
+    <code></code></div>
+    <br>
+  </li>
+</ul>
+<h3>Other</h3>
+<h4><a name="newline"></a>What does this mean: “'msgid' and 'msgstr'
+entries do not both end
+with '\n'”</h4>
+It means that when the original string ends in a newline, your
+translation must also end in a newline. And if the original string does
+not end in a newline, then your translation should likewise not have a
+newline at the end.<br>
+<h4><a name="translit"></a>German umlauts are displayed like
+“ge"andert” instead of “geändert”</h4>
+This symptom occurs when the <span style="font-family: monospace;">LC_CTYPE</span>
+facet of the locale is not set; then gettext() doesn't know which
+character set to use, and converts all messages to ASCII, as far as
+possible.<br>
+<br>
+If the program is doing<br>
+<code><br>
+setlocale (LC_MESSAGES, "");<br>
+<br>
+</code>then change it to<br>
+<code><br>
+setlocale (LC_CTYPE, "");<br>
+setlocale (LC_MESSAGES, "");<br>
+</code><br>
+or do both of these in a single call:<br>
+<code><br>
+setlocale (LC_ALL, "");<br>
+</code><br>
+If the program is already doing<br>
+<code><br>
+setlocale (LC_ALL, "");<br>
+</code><br>
+then the symptom can still occur if the user has not set <span
+ style="font-family: monospace;">LANG</span>, but instead has set <span
+ style="font-family: monospace;">LC_MESSAGES</span> to a valid locale
+and has set <span style="font-family: monospace;">LC_CTYPE</span> to
+nothing or an invalid locale. The fix for the user is then to set <span
+ style="font-family: monospace;">LANG</span> instead of <span
+ style="font-family: monospace;">LC_MESSAGES</span>.<br>
+<h4><a name="localename"></a>The <span style="font-family: monospace;">LANGUAGE</span>
+environment variable is ignored after I set <span
+ style="font-family: monospace;">LANG=en</span></h4>
+This is because “en” is a language name, but not a valid locale name.
+The <a href="https://www.gnu.org/software/gettext/manual/html_node/The-LANGUAGE-variable.html">documentation</a> says:<br>
+<blockquote>
+In the <span style="font-family: monospace;">LANGUAGE</span>
+environment variable, but not in the <span
+ style="font-family: monospace;">LANG</span> environment variable, <span
+ style="font-style: italic;">LL</span>_<span style="font-style: italic;">CC</span><span
+ style="font-family: monospace;"> </span>combinations can be
+abbreviated as&nbsp;<span style="font-style: italic;">LL</span> to
+denote the language's main dialect.</blockquote>
+Why is <span style="font-family: monospace;">LANG=en</span> not
+allowed? Because <span style="font-family: monospace;">LANG</span> is
+a setting for the entire locale, including monetary information, and
+this depends on the country: en_GB, en_AU, en_ZA all have different
+currencies.<br>
+<h4><a name="nonascii_strings"></a>I use accented characters in my
+source code. How do I tell the
+C/C++ compiler in which encoding it is (like <span
+ style="font-family: monospace;">xgettext</span>'s <span
+ style="font-family: monospace;">--from-code</span> option)?</h4>
+Short answer: If you want your program to be useful to other people,
+then <span style="font-style: italic;">don't use accented characters</span>
+(or other non-ASCII characters) in string literals <span
+ style="font-style: italic;">in the source code</span>. Instead, use
+only ASCII for string literals, and use <span
+ style="font-family: monospace;">gettext()</span> to retrieve their
+display-ready form.<br>
+<br>
+Long explanation:<br>
+The reason is that the ISO C standard specifies that the character set
+at compilation time can be different from the character set at
+execution time.<br>
+The character encoding at compilation time is the one which determines
+how the source files are interpreted and also how string literals are
+stored in the compiled code. This character encoding is generally
+unspecified; for recent versions of GCC, it depends on the LC_CTYPE
+locale in effect during the compilation process.<br>
+The character encoding at execution time is the one which determines
+how standard functions like <span style="font-family: monospace;">isprint()</span>,
+<span style="font-family: monospace;">wcwidth()</span> etc. work and
+how strings written to standard output should be encoded. This
+character encoding is specified by POSIX to depend on the LC_CTYPE
+locale in effect when the program is executed; see also the description
+in the <a href="https://www.gnu.org/software/gettext/manual/html_node/Locale-Names.html">documentation</a>.<br>
+Strings in the compiled code are not magically converted between the
+time the program is compiled and the time it is run.<br>
+<br>
+Therefore what could you do to get accented characters to work?<br>
+<br>
+Can you ensure that the execution character set is the same as the
+compilation character set? Even if your program is to be used only in a
+single country, this is not realistically possible. For example, in
+Germany there are currently three character encodings in use: UTF-8,
+ISO-8859-15 and ISO-8859-1. Therefore you would have to explicitly
+convert the accented strings from the compilation character set to the
+execution character set at runtime, for example through iconv().<br>
+<br>
+Can you ensure that the compilation character set is the one in which
+your source files are stored? This is not realistically possible
+either: For compilers other than GCC, there is no way to specify the
+compilation character set. So let's assume for a moment that everyone
+uses GCC; then you will specify the LC_CTYPE or LC_ALL environment
+variable in the Makefile. But for this you have to assume that everyone
+has a locale in a given encoding. Be it UTF-8 or ISO-8859-1 - this is
+not realistic. People often have no locale installed besides the one
+they use.<br>
+<br>
+Use of wide strings <span style="font-family: monospace;">L"..."</span>
+doesn't help solving the problem, because on systems like FreeBSD or
+Solaris, the way how wide string literals are stored in compiled code
+depends on the compilation&nbsp; character set, just as it does for
+narrow strings <span style="font-family: monospace;">"..."</span>.
+Moreover, wide strings have problems of their own.<br>
+<br>
+Use of ISO C 99 Unicode escapes "\u<span style="font-style: italic;">xxxx</span>"
+doesn't help either because these characters are converted to the
+compilation character set at compile time; so again, since you can't
+guarantee that the compilation character set is not ASCII, you're
+risking compilation errors just as if the real character had been used
+in the source instead of the Unicode escape.<br>
+<br>
+So, in summary, there is no way to make accented characters in string
+literals work in C/C++.<br>
+<br>
+You might then wonder what <span style="font-family: monospace;">xgettext</span>'s
+<span style="font-family: monospace;">--from-code</span> option is good
+for. The answer is<br>
+<ol>
+  <li>For the comments in C/C++ source code. The compiler ignores them.<br>
+  </li>
+  <li>For other programming languages like Java, for which the compiler
+converts all string literals to UTF-8.</li>
+</ol>
+<br>
+<hr style="width: 100%; height: 2px;">
+<address>GNU gettext FAQ<br>
+Bruno Haible &lt;<a href="mailto:bruno@clisp.org">bruno@clisp.org</a>&gt;</address>
+<p>Last modified: 6 June 2020
+</p>
+</body>
+</html>

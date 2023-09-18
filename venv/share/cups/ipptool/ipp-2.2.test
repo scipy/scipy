@@ -1,0 +1,76 @@
+#
+# IPP/2.2 test suite.
+#
+# Copyright © 2007-2017 by Apple Inc.
+# Copyright © 2001-2006 by Easy Software Products. All rights reserved.
+#
+# Licensed under Apache License v2.0.  See the file "LICENSE" for more
+# information.
+#
+# Usage:
+#
+#   ./ipptool -V 2.2 -f filename -t printer-uri ipp-2.2.test
+#
+
+# Do all of the IPP/1.1, IPP/2.0, and IPP/2.1 tests as an IPP/2.2 client
+INCLUDE "ipp-2.1.test"
+
+
+# Test required printer description attribute support.
+#
+# Required by: PWG 5100.12 section 6.4
+{
+	NAME "PWG 5100.12 section 6.4 - Required Printer Description Attributes"
+	OPERATION Get-Printer-Attributes
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR mimeMediaType document-format application/octet-stream
+
+	STATUS successful-ok
+
+	# Job template attributes
+	EXPECT number-up-default OF-TYPE integer IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE >0
+	EXPECT number-up-supported OF-TYPE integer|rangeOfInteger IN-GROUP printer-attributes-tag WITH-VALUE >0
+	EXPECT overrides-supported OF-TYPE keyword IN-GROUP printer-attributes-tag WITH-VALUE "document-numbers"
+	EXPECT overrides-supported OF-TYPE keyword IN-GROUP printer-attributes-tag WITH-VALUE "pages"
+	EXPECT page-ranges-supported OF-TYPE boolean IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE true
+
+	# Printer description attributes
+	EXPECT job-creation-attributes-supported OF-TYPE keyword IN-GROUP printer-attributes-tag
+	EXPECT job-ids-supported OF-TYPE boolean IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE true
+	EXPECT media-col-ready
+	EXPECT media-ready
+	EXPECT multiple-document-jobs-supported OF-TYPE boolean IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE true
+	EXPECT printer-alert OF-TYPE octetString IN-GROUP printer-attributes-tag
+	EXPECT printer-alert-description OF-TYPE text IN-GROUP printer-attributes-tag SAME-COUNT-AS printer-alert
+	EXPECT printer-device-id OF-TYPE text IN-GROUP printer-attributes-tag COUNT 1
+	EXPECT printer-message-from-operator OF-TYPE text IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE "/^.{0,127}$$/"
+	EXPECT which-jobs-supported OF-TYPE keyword IN-GROUP printer-attributes-tag WITH-VALUE "completed"
+	EXPECT which-jobs-supported OF-TYPE keyword IN-GROUP printer-attributes-tag WITH-VALUE "proof-print"
+	EXPECT which-jobs-supported OF-TYPE keyword IN-GROUP printer-attributes-tag WITH-VALUE "not-completed"
+
+	# Operations
+	EXPECT operations-supported WITH-VALUE 0x0024 # Pause-Printer-After-Current-Job
+	EXPECT operations-supported WITH-VALUE 0x0025 # Hold-New-Jobs
+	EXPECT operations-supported WITH-VALUE 0x0026 # Release-Held-New-Jobs
+	EXPECT operations-supported WITH-VALUE 0x0029 # Restart-Printer
+	EXPECT operations-supported WITH-VALUE 0x002A # Shutdown-Printer
+	EXPECT operations-supported WITH-VALUE 0x002B # Startup-Printer
+	EXPECT operations-supported WITH-VALUE 0x002C # Reprocess-Job
+	EXPECT operations-supported WITH-VALUE 0x002D # Cancel-Current-Job
+	EXPECT operations-supported WITH-VALUE 0x002E # Suspend-Current-Job
+	EXPECT operations-supported WITH-VALUE 0x002F # Resume-Job
+	EXPECT operations-supported WITH-VALUE 0x0030 # Promote-Job
+	EXPECT operations-supported WITH-VALUE 0x0031 # Schedule-Job-After
+	EXPECT operations-supported WITH-VALUE 0x0033 # Cancel-Document
+	EXPECT operations-supported WITH-VALUE 0x0034 # Get-Document-Attributes
+	EXPECT operations-supported WITH-VALUE 0x0035 # Get-Documents
+	EXPECT operations-supported WITH-VALUE 0x0037 # Set-Document-Attributes
+	EXPECT operations-supported WITH-VALUE 0x0038 # Cancel-Jobs
+	EXPECT operations-supported WITH-VALUE 0x0039 # Cancel-My-Jobs
+	EXPECT operations-supported WITH-VALUE 0x003A # Resubmit-Job
+	EXPECT operations-supported WITH-VALUE 0x003B # Close-Job
+}

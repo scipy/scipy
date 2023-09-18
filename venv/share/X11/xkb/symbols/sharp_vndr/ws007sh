@@ -1,0 +1,70 @@
+// $NetBSD: ws007sh,v 1.1 2010/05/15 15:33:30 nonaka Exp $
+
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+	name[Group1]= "Sharp WS007SH";
+
+	key <AE01> { [ 1, exclam ] };
+	key <AE02> { [ 2, quotedbl ] };
+	key <AE03> { [ 3, numbersign ] };
+	key <AE04> { [ 4, dollar ] };
+	key <AE05> { [ 5, percent ] };
+	key <AE06> { [ 6, ampersand ] };
+	key <AE07> { [ 7, apostrophe, grave ] };
+	key <AE08> { [ 8, parenleft, braceleft ] };
+	key <AE09> { [ 9, parenright, braceright ] };
+	key <AE10> { [ 0 ] };
+	key <AE11> { [ minus, equal, backslash ] };
+	key <BKSP> { [ BackSpace, BackSpace, Delete ] };
+
+	key <AD01> { [ q, Q ] };
+	key <AD02> { [ w, W, asciicircum ] };
+	key <AD03> { [ e, E, asciitilde ] };
+	key <AD04> { [ r, R, bar ] };
+	key <AD05> { [ t, T ] };
+	key <AD06> { [ y, Y ] };
+	key <AD07> { [ u, U, bracketleft ] };
+	key <AD08> { [ i, I, bracketright ] };
+	key <AD09> { [ o, O, underscore ] };
+	key <AD10> { [ p, P, at ] };
+	
+	key <TAB> { [ Tab, Tab, Escape ] };
+
+	key <AC01> { [ a, A ] };
+	key <AC02> { [ s, S ] };
+	key <AC03> { [ d, D ] };
+	key <AC04> { [ f, F ] };
+	key <AC05> { [ g, G ] };
+	key <AC06> { [ h, H ] };
+	key <AC07> { [ j, J ] };
+	key <AC08> { [ k, K, plus ] };
+	key <AC09> { [ l, L, asterisk ] };
+
+	key <LFSH> { [ Shift_L ] };
+	key <AB01> { [ z, Z ] };
+	key <AB02> { [ x, X ] };
+	key <AB03> { [ c, C ] };
+	key <AB04> { [ v, V ] };
+	key <AB05> { [ b, B ] };
+	key <AB06> { [ n, N ] };
+	key <AB07> { [ m, M ] };
+	key <AB08> { [ comma, semicolon, less ] };
+	key <AB09> { [ period, colon, greater ] };
+	key <AB10> { [ slash, question ] };
+	key <RTSH> { [ Shift_R ] };
+	key <RTRN> { [ Return ] };
+
+	key <RALT> { [ ISO_Level3_Shift ] };
+
+	key <LCTL> { [ Control_L ] };
+	key <SPCE> { [ space ] };
+	
+	key <UP> { [ Up, Up, Prior ] };
+	key <LEFT> { [ Left, Left, Home ] };
+	key <DOWN> { [ Down, Down, Next ] };
+	key <RGHT> { [ Right, Right, End ] };
+
+	key <ESC> { [ Escape ] };
+
+	include "level3(ralt_switch)"
+};

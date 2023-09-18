@@ -1,0 +1,28 @@
+# Tamil messages for GNU gettext.
+# Copyright (C) 2018 Yoyodyne, Inc. (msgids)
+# This file is distributed under the same license as the gettext package.
+# List of contributors follow:
+# Poorajith <gokulkannanst@gmail.com>, 2018.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: hello-java-qtjambi 0.19.4.73\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"POT-Creation-Date: 2022-10-10 00:16+0200\n"
+"PO-Revision-Date: 2018-12-10 23:03+0530\n"
+"Last-Translator: Arun Isaac <arunisaac@systemreboot.net>\n"
+"Language-Team: Tamil <tamil@systemreboot.net>\n"
+"Language: ta\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+
+#: Hello.java:27
+msgid "Hello, world!"
+msgstr "வணக்கம், உலகு!"
+
+#: Hello.java:34
+#, java-format
+msgid "This program is running as process number {0}."
+msgstr "இந்நிரல் செயலாக்க எண் {0} ஆக இயங்கிக்கொண்டிருக்கிறது."

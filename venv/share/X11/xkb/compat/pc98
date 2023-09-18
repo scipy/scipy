@@ -1,0 +1,50 @@
+// Minimal set of symbol interpretations to provide
+// reasonable default behavior (Num lock, Shift lock,
+// and Mode switch) and set up the automatic updating
+// of common keyboard LEDs.
+
+default xkb_compatibility "basic" {
+
+    virtual_modifiers  NumLock;
+
+    interpret.repeat= False;
+    setMods.clearLocks= True;
+    latchMods.clearLocks= True;
+    latchMods.latchToLock= True;
+
+    interpret Shift_Lock+AnyOf(Shift+Lock) {
+	action= LockMods(modifiers=Shift);
+    };
+
+    interpret Num_Lock+Any {
+	virtualModifier= NumLock;
+	action= LockMods(modifiers=NumLock);
+    };
+
+    interpret Mode_switch {
+	action= SetGroup(group=2,clearLocks);
+    };
+
+    interpret Any + Any {
+	action= SetMods(modifiers=modMapMods);
+    };
+
+    group 2 = Mod5;
+    group 3 = Mod5;
+    group 4 = Mod5;
+
+    indicator.allowExplicit= False;
+    indicator "Caps Lock" {
+	whichModState= Locked;
+	modifiers= Lock;
+    };
+    indicator "Num Lock" {
+	whichModState= Locked;
+	modifiers= NumLock;
+    };
+    indicator "Shift Lock" {
+	whichModState= Locked;
+	modifiers= Shift;
+    };
+    indicator.allowExplicit= True;
+};

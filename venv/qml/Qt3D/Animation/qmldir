@@ -1,0 +1,3 @@
+module Qt3D.Animation
+plugin quick3danimationplugin
+classname Qt3DQuick3DAnimationPlugin

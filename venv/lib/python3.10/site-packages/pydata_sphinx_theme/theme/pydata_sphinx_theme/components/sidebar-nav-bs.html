@@ -1,0 +1,10 @@
+<nav class="bd-links" id="bd-docs-nav" aria-label="{{ _('Main navigation') }}">
+  <div class="bd-toc-item active">
+    {{ generate_nav_html("sidebar",
+                         show_nav_level=theme_show_nav_level|int,
+                         maxdepth=theme_navigation_depth|int,
+                         collapse=theme_collapse_navigation|tobool,
+                         includehidden=True,
+                         titles_only=True) }}
+  </div>
+</nav>

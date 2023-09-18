@@ -1,0 +1,379 @@
+<!-- Creator     : groff version 1.22.3 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>MSGMERGE</title>
+
+</head>
+<body>
+
+<h1 align="center">MSGMERGE</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+<a href="#REPORTING BUGS">REPORTING BUGS</a><br>
+<a href="#COPYRIGHT">COPYRIGHT</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">msgmerge
+- merge message catalog and template</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>msgmerge</b>
+[<i>OPTION</i>] <i>def.po ref.pot</i></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Merges two
+Uniforum style .po files together. The def.po file is an
+existing PO file with translations which will be taken over
+to the newly created file as long as they still match;
+comments will be preserved, but extracted comments and file
+positions will be discarded. The ref.pot file is the last
+created PO file with up-to-date source
+references but old translations, or a PO Template file
+(generally created by xgettext); any translations or
+comments in the file will be discarded, however dot comments
+and file positions will be preserved. Where an exact match
+cannot be found, fuzzy matching is used to produce better
+results.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Mandatory
+arguments to long options are mandatory for short options
+too.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Input file
+location:</b></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>def.po</p></td>
+<td width="2%"></td>
+<td width="56%">
+
+
+<p>translations referring to old sources</p></td>
+<td width="22%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;">ref.pot</p>
+
+<p style="margin-left:22%;">references to new sources</p>
+
+<p style="margin-left:11%;"><b>-D</b>,
+<b>--directory</b>=<i>DIRECTORY</i></p>
+
+<p style="margin-left:22%;">add DIRECTORY to list for input
+files search</p>
+
+<p style="margin-left:11%;"><b>-C</b>,
+<b>--compendium</b>=<i>FILE</i></p>
+
+<p style="margin-left:22%;">additional library of message
+translations, may be specified more than once</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Operation
+mode: <br>
+-U</b>, <b>--update</b></p>
+
+<p style="margin-left:22%;">update def.po, do nothing if
+def.po already up to date</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Output file
+location: <br>
+-o</b>,
+<b>--output-file</b>=<i>FILE</i></p>
+
+<p style="margin-left:22%;">write output to specified
+file</p>
+
+<p style="margin-left:11%; margin-top: 1em">The results are
+written to standard output if no output file is specified or
+if it is -.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Output file
+location in update mode: The result is written back to
+def.po. <b><br>
+--backup</b>=<i>CONTROL</i></p>
+
+<p style="margin-left:22%;">make a backup of def.po</p>
+
+
+<p style="margin-left:11%;"><b>--suffix</b>=<i>SUFFIX</i></p>
+
+<p style="margin-left:22%;">override the usual backup
+suffix</p>
+
+<p style="margin-left:11%; margin-top: 1em">The version
+control method may be selected via the
+<b>--backup</b> option or through the
+VERSION_CONTROL environment variable. Here are the values:
+<br>
+none, off</p>
+
+<p style="margin-left:22%;">never make backups (even if
+<b>--backup</b> is given)</p>
+
+<p style="margin-left:11%;">numbered, t</p>
+
+<p style="margin-left:22%;">make numbered backups</p>
+
+<p style="margin-left:11%;">existing, nil</p>
+
+<p style="margin-left:22%;">numbered if numbered backups
+exist, simple otherwise</p>
+
+<p style="margin-left:11%;">simple, never</p>
+
+<p style="margin-left:22%;">always make simple backups</p>
+
+<p style="margin-left:11%; margin-top: 1em">The backup
+suffix is &rsquo;~&rsquo;, unless set with
+<b>--suffix</b> or the SIMPLE_BACKUP_SUFFIX
+environment variable.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Operation
+modifiers: <br>
+-m</b>, <b>--multi-domain</b></p>
+
+<p style="margin-left:22%;">apply ref.pot to each of the
+domains in def.po</p>
+
+
+<p style="margin-left:11%;"><b>--for-msgfmt</b></p>
+
+<p style="margin-left:22%;">produce output for
+&rsquo;msgfmt&rsquo;, not for a translator</p>
+
+<p style="margin-left:11%;"><b>-N</b>,
+<b>--no-fuzzy-matching</b></p>
+
+<p style="margin-left:22%;">do not use fuzzy matching</p>
+
+
+<p style="margin-left:11%;"><b>--previous</b></p>
+
+<p style="margin-left:22%;">keep previous msgids of
+translated messages</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Input file
+syntax: <br>
+-P</b>,
+<b>--properties-input</b></p>
+
+<p style="margin-left:22%;">input files are in Java
+.properties syntax</p>
+
+
+<p style="margin-left:11%;"><b>--stringtable-input</b></p>
+
+<p style="margin-left:22%;">input files are in
+NeXTstep/GNUstep .strings syntax</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Output
+details: <br>
+--lang</b>=<i>CATALOGNAME</i></p>
+
+<p style="margin-left:22%;">set &rsquo;Language&rsquo;
+field in the header entry</p>
+
+<p style="margin-left:11%;"><b>--color</b></p>
+
+<p style="margin-left:22%;">use colors and other text
+attributes always</p>
+
+
+<p style="margin-left:11%;"><b>--color</b>=<i>WHEN</i></p>
+
+<p style="margin-left:22%;">use colors and other text
+attributes if WHEN. WHEN may be &rsquo;always&rsquo;,
+&rsquo;never&rsquo;, &rsquo;auto&rsquo;, or
+&rsquo;html&rsquo;.</p>
+
+
+<p style="margin-left:11%;"><b>--style</b>=<i>STYLEFILE</i></p>
+
+<p style="margin-left:22%;">specify CSS style rule file for
+<b>--color</b></p>
+
+<p style="margin-left:11%;"><b>-e</b>,
+<b>--no-escape</b></p>
+
+<p style="margin-left:22%;">do not use C escapes in output
+(default)</p>
+
+<p style="margin-left:11%;"><b>-E</b>,
+<b>--escape</b></p>
+
+<p style="margin-left:22%;">use C escapes in output, no
+extended chars</p>
+
+
+<p style="margin-left:11%;"><b>--force-po</b></p>
+
+<p style="margin-left:22%;">write PO file even if empty</p>
+
+<p style="margin-left:11%;"><b>-i</b>,
+<b>--indent</b></p>
+
+<p style="margin-left:22%;">indented output style</p>
+
+
+<p style="margin-left:11%;"><b>--no-location</b></p>
+
+<p style="margin-left:22%;">suppress &rsquo;#:
+filename:line&rsquo; lines</p>
+
+<p style="margin-left:11%;"><b>-n</b>,
+<b>--add-location</b></p>
+
+<p style="margin-left:22%;">preserve &rsquo;#:
+filename:line&rsquo; lines (default)</p>
+
+
+<p style="margin-left:11%;"><b>--strict</b></p>
+
+<p style="margin-left:22%;">strict Uniforum output
+style</p>
+
+<p style="margin-left:11%;"><b>-p</b>,
+<b>--properties-output</b></p>
+
+<p style="margin-left:22%;">write out a Java .properties
+file</p>
+
+
+<p style="margin-left:11%;"><b>--stringtable-output</b></p>
+
+<p style="margin-left:22%;">write out a NeXTstep/GNUstep
+.strings file</p>
+
+<p style="margin-left:11%;"><b>-w</b>,
+<b>--width</b>=<i>NUMBER</i></p>
+
+<p style="margin-left:22%;">set output page width</p>
+
+
+<p style="margin-left:11%;"><b>--no-wrap</b></p>
+
+<p style="margin-left:22%;">do not break long message
+lines, longer than the output page width, into several
+lines</p>
+
+<p style="margin-left:11%;"><b>-s</b>,
+<b>--sort-output</b></p>
+
+<p style="margin-left:22%;">generate sorted output</p>
+
+<p style="margin-left:11%;"><b>-F</b>,
+<b>--sort-by-file</b></p>
+
+<p style="margin-left:22%;">sort output by file
+location</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Informative
+output: <br>
+-h</b>, <b>--help</b></p>
+
+<p style="margin-left:22%;">display this help and exit</p>
+
+<p style="margin-left:11%;"><b>-V</b>,
+<b>--version</b></p>
+
+<p style="margin-left:22%;">output version information and
+exit</p>
+
+<p style="margin-left:11%;"><b>-v</b>,
+<b>--verbose</b></p>
+
+<p style="margin-left:22%;">increase verbosity level</p>
+
+<p style="margin-left:11%;"><b>-q</b>,
+<b>--quiet</b>, <b>--silent</b></p>
+
+<p style="margin-left:22%;">suppress progress
+indicators</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Written by
+Peter Miller.</p>
+
+<h2>REPORTING BUGS
+<a name="REPORTING BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Report bugs in
+the bug tracker at
+&lt;https://savannah.gnu.org/projects/gettext&gt; or by
+email to &lt;bug-gettext@gnu.org&gt;.</p>
+
+<h2>COPYRIGHT
+<a name="COPYRIGHT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Copyright
+&copy; 1995-2022 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later
+&lt;https://gnu.org/licenses/gpl.html&gt; <br>
+This is free software: you are free to change and
+redistribute it. There is NO WARRANTY, to the extent
+permitted by law.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The full
+documentation for <b>msgmerge</b> is maintained as a Texinfo
+manual. If the <b>info</b> and <b>msgmerge</b> programs are
+properly installed at your site, the command</p>
+
+<p style="margin-left:22%; margin-top: 1em"><b>info
+msgmerge</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">should give you
+access to the complete manual.</p>
+<hr>
+</body>
+</html>

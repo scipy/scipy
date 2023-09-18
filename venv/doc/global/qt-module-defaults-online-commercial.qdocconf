@@ -1,0 +1,27 @@
+# This template uses the default online template for qt.io
+# and modifies it for a commercial Qt component
+
+# Start of footer - the rest is defined in the default template
+HTML.footer = \
+    "  <p class=\"qt_commercial\">Available under certain Qt licenses.<br/><a href=\"http://www.qt.io/download/\">Find out more.</a></p>\n" \
+    "  </div>\n"
+
+include(macros.qdocconf)
+include(qt-cpp-defines.qdocconf)
+include(compat.qdocconf)
+#include(manifest-meta.qdocconf)
+include(fileextensions.qdocconf)
+include(qt-html-templates-online.qdocconf)
+
+#extra configuration data DITA information
+include(config.qdocconf)
+
+HTML.prologue = \
+    "<div class=\"context qt_commercial\">\n" \
+    "<a href=\"http://www.qt.io/download/\" title=\"Available under certain Qt licenses.\" ><h1 class=\"qt_commercial\">C</h1></a>\n"
+
+# Turn off single-directory output mode
+HTML.nosubdirs = "false"
+
+# Set navigation homepage
+navigation.homepage = "Qt Documentation"

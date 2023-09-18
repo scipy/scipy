@@ -1,0 +1,6 @@
+#ifndef QT_QTINPUTSUPPORT_MODULE_H
+#define QT_QTINPUTSUPPORT_MODULE_H
+#include <QtInputSupport/QtInputSupportDepends>
+#include "qintegrityhidmanager.h"
+#include "qtinputsupportversion.h"
+#endif

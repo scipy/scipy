@@ -1,0 +1,654 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html401/loose.dtd">
+<html>
+<!-- Created on October, 9 2022 by texi2html 1.78a -->
+<!--
+Written by: Lionel Cons <Lionel.Cons@cern.ch> (original author)
+            Karl Berry  <karl@freefriends.org>
+            Olaf Bachmann <obachman@mathematik.uni-kl.de>
+            and many others.
+Maintained by: Many creative people.
+Send bugs and suggestions to <texi2html-bug@nongnu.org>
+
+-->
+<head>
+<title>GNU gettext utilities: 1. Introduction</title>
+
+<meta name="description" content="GNU gettext utilities: 1. Introduction">
+<meta name="keywords" content="GNU gettext utilities: 1. Introduction">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="texi2html 1.78a">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+pre.display {font-family: serif}
+pre.format {font-family: serif}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: serif; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: serif; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.roman {font-family:serif; font-weight:normal;}
+span.sansserif {font-family:sans-serif; font-weight:normal;}
+ul.toc {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[ &lt;&lt; ]</td>
+<td valign="middle" align="left">[<a href="gettext_2.html#SEC7" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_21.html#SEC387" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+
+<hr size="2">
+<a name="Introduction"></a>
+<a name="SEC1"></a>
+<h1 class="chapter"> <a href="gettext_toc.html#TOC1">1. Introduction</a> </h1>
+
+<p>This chapter explains the goals sought in the creation
+of GNU <code>gettext</code> and the free Translation Project.
+Then, it explains a few broad concepts around
+Native Language Support, and positions message translation with regard
+to other aspects of national and cultural variance, as they apply
+to programs.  It also surveys those files used to convey the
+translations.  It explains how the various tools interact in the
+initial generation of these files, and later, how the maintenance
+cycle should usually operate.
+</p>
+<a name="IDX1"></a>
+<a name="IDX2"></a>
+<a name="IDX3"></a>
+<p>In this manual, we use <em>he</em> when speaking of the programmer or
+maintainer, <em>she</em> when speaking of the translator, and <em>they</em>
+when speaking of the installers or end users of the translated program.
+This is only a convenience for clarifying the documentation.  It is
+<em>absolutely</em> not meant to imply that some roles are more appropriate
+to males or females.  Besides, as you might guess, GNU <code>gettext</code>
+is meant to be useful for people using computers, whatever their sex,
+race, religion or nationality!
+</p>
+<a name="IDX4"></a>
+<p>Please submit suggestions and corrections
+</p><ul>
+<li>
+either in the bug tracker at <a href="https://savannah.gnu.org/projects/gettext">https://savannah.gnu.org/projects/gettext</a>
+</li><li>
+or by email to <code>bug-gettext@gnu.org</code>.
+</li></ul>
+
+<p>Please include the manual's edition number and update date in your messages.
+</p>
+
+
+<a name="Why"></a>
+<a name="SEC2"></a>
+<h2 class="section"> <a href="gettext_toc.html#TOC2">1.1 The Purpose of GNU <code>gettext</code></a> </h2>
+
+<p>Usually, programs are written and documented in English, and use
+English at execution time to interact with users.  This is true
+not only of GNU software, but also of a great deal of proprietary
+and free software.  Using a common language is quite handy for
+communication between developers, maintainers and users from all
+countries.  On the other hand, most people are less comfortable with
+English than with their own native language, and would prefer to
+use their mother tongue for day to day's work, as far as possible.
+Many would simply <em>love</em> to see their computer screen showing
+a lot less of English, and far more of their own language.
+</p>
+<a name="IDX5"></a>
+<p>However, to many people, this dream might appear so far fetched that
+they may believe it is not even worth spending time thinking about
+it.  They have no confidence at all that the dream might ever
+become true.  Yet some have not lost hope, and have organized themselves.
+The Translation Project is a formalization of this hope into a
+workable structure, which has a good chance to get all of us nearer
+the achievement of a truly multi-lingual set of programs.
+</p>
+<p>GNU <code>gettext</code> is an important step for the Translation Project,
+as it is an asset on which we may build many other steps.  This package
+offers to programmers, translators and even users, a well integrated
+set of tools and documentation.  Specifically, the GNU <code>gettext</code>
+utilities are a set of tools that provides a framework within which
+other free packages may produce multi-lingual messages.  These tools
+include
+</p>
+<ul>
+<li>
+A set of conventions about how programs should be written to support
+message catalogs.
+
+</li><li>
+A directory and file naming organization for the message catalogs
+themselves.
+
+</li><li>
+A runtime library supporting the retrieval of translated messages.
+
+</li><li>
+A few stand-alone programs to massage in various ways the sets of
+translatable strings, or already translated strings.
+
+</li><li>
+A library supporting the parsing and creation of files containing
+translated messages.
+
+</li><li>
+A special mode for Emacs<a name="DOCF1" href="gettext_fot.html#FOOT1">(1)</a> which helps preparing these sets
+and bringing them up to date.
+</li></ul>
+
+<p>GNU <code>gettext</code> is designed to minimize the impact of
+internationalization on program sources, keeping this impact as small
+and hardly noticeable as possible.  Internationalization has better
+chances of succeeding if it is very light weighted, or at least,
+appear to be so, when looking at program sources.
+</p>
+<p>The Translation Project also uses the GNU <code>gettext</code> distribution
+as a vehicle for documenting its structure and methods.  This goes
+beyond the strict technicalities of documenting the GNU <code>gettext</code>
+proper.  By so doing, translators will find in a single place, as
+far as possible, all they need to know for properly doing their
+translating work.  Also, this supplemental documentation might also
+help programmers, and even curious users, in understanding how GNU
+<code>gettext</code> is related to the remainder of the Translation
+Project, and consequently, have a glimpse at the <em>big picture</em>.
+</p>
+
+<a name="Concepts"></a>
+<a name="SEC3"></a>
+<h2 class="section"> <a href="gettext_toc.html#TOC3">1.2 I18n, L10n, and Such</a> </h2>
+
+<p>Two long words appear all the time when we discuss support of native
+language in programs, and these words have a precise meaning, worth
+being explained here, once and for all in this document.  The words are
+<em>internationalization</em> and <em>localization</em>.  Many people,
+tired of writing these long words over and over again, took the
+habit of writing <em>i18n</em> and <em>l10n</em> instead, quoting the first
+and last letter of each word, and replacing the run of intermediate
+letters by a number merely telling how many such letters there are.
+But in this manual, in the sake of clarity, we will patiently write
+the names in full, each time&hellip;
+</p>
+<a name="IDX6"></a>
+<p>By <em>internationalization</em>, one refers to the operation by which a
+program, or a set of programs turned into a package, is made aware of and
+able to support multiple languages.  This is a generalization process,
+by which the programs are untied from calling only English strings or
+other English specific habits, and connected to generic ways of doing
+the same, instead.  Program developers may use various techniques to
+internationalize their programs.  Some of these have been standardized.
+GNU <code>gettext</code> offers one of these standards.  See section <a href="gettext_11.html#SEC196">The Programmer's View</a>.
+</p>
+<a name="IDX7"></a>
+<p>By <em>localization</em>, one means the operation by which, in a set
+of programs already internationalized, one gives the program all
+needed information so that it can adapt itself to handle its input
+and output in a fashion which is correct for some native language and
+cultural habits.  This is a particularisation process, by which generic
+methods already implemented in an internationalized program are used
+in specific ways.  The programming environment puts several functions
+to the programmers disposal which allow this runtime configuration.
+The formal description of specific set of cultural habits for some
+country, together with all associated translations targeted to the
+same native language, is called the <em>locale</em> for this language
+or country.  Users achieve localization of programs by setting proper
+values to special environment variables, prior to executing those
+programs, identifying which locale should be used.
+</p>
+<p>In fact, locale message support is only one component of the cultural
+data that makes up a particular locale.  There are a whole host of
+routines and functions provided to aid programmers in developing
+internationalized software and which allow them to access the data
+stored in a particular locale.  When someone presently refers to a
+particular locale, they are obviously referring to the data stored
+within that particular locale.  Similarly, if a programmer is referring
+to &ldquo;accessing the locale routines&rdquo;, they are referring to the
+complete suite of routines that access all of the locale's information.
+</p>
+<a name="IDX8"></a>
+<a name="IDX9"></a>
+<a name="IDX10"></a>
+<p>One uses the expression <em>Native Language Support</em>, or merely NLS,
+for speaking of the overall activity or feature encompassing both
+internationalization and localization, allowing for multi-lingual
+interactions in a program.  In a nutshell, one could say that
+internationalization is the operation by which further localizations
+are made possible.
+</p>
+<p>Also, very roughly said, when it comes to multi-lingual messages,
+internationalization is usually taken care of by programmers, and
+localization is usually taken care of by translators.
+</p>
+
+<a name="Aspects"></a>
+<a name="SEC4"></a>
+<h2 class="section"> <a href="gettext_toc.html#TOC4">1.3 Aspects in Native Language Support</a> </h2>
+
+<p>For a totally multi-lingual distribution, there are many things to
+translate beyond output messages.
+</p>
+<ul>
+<li>
+As of today, GNU <code>gettext</code> offers a complete toolset for
+translating messages output by C programs.  Perl scripts and shell
+scripts will also need to be translated.  Even if there are today some hooks
+by which this can be done, these hooks are not integrated as well as they
+should be.
+
+</li><li>
+Some programs, like <code>autoconf</code> or <code>bison</code>, are able
+to produce other programs (or scripts).  Even if the generating
+programs themselves are internationalized, the generated programs they
+produce may need internationalization on their own, and this indirect
+internationalization could be automated right from the generating
+program.  In fact, quite usually, generating and generated programs
+could be internationalized independently, as the effort needed is
+fairly orthogonal.
+
+</li><li>
+A few programs include textual tables which might need translation
+themselves, independently of the strings contained in the program
+itself.  For example, RFC 1345 gives an English description for each
+character which the <code>recode</code> program is able to reconstruct at execution.
+Since these descriptions are extracted from the RFC by mechanical means,
+translating them properly would require a prior translation of the RFC
+itself.
+
+</li><li>
+Almost all programs accept options, which are often worded out so to
+be descriptive for the English readers; one might want to consider
+offering translated versions for program options as well.
+
+</li><li>
+Many programs read, interpret, compile, or are somewhat driven by
+input files which are texts containing keywords, identifiers, or
+replies which are inherently translatable.  For example, one may want
+<code>gcc</code> to allow diacriticized characters in identifiers or use
+translated keywords; &lsquo;<samp>rm -i</samp>&rsquo; might accept something else than
+&lsquo;<samp>y</samp>&rsquo; or &lsquo;<samp>n</samp>&rsquo; for replies, etc.  Even if the program will
+eventually make most of its output in the foreign languages, one has
+to decide whether the input syntax, option values, etc., are to be
+localized or not.
+
+</li><li>
+The manual accompanying a package, as well as all documentation files
+in the distribution, could surely be translated, too.  Translating a
+manual, with the intent of later keeping up with updates, is a major
+undertaking in itself, generally.
+
+</li></ul>
+
+<p>As we already stressed, translation is only one aspect of locales.
+Other internationalization aspects are system services and are handled
+in GNU <code>libc</code>.  There
+are many attributes that are needed to define a country's cultural
+conventions.  These attributes include beside the country's native
+language, the formatting of the date and time, the representation of
+numbers, the symbols for currency, etc.  These local <em>rules</em> are
+termed the country's locale.  The locale represents the knowledge
+needed to support the country's native attributes.
+</p>
+<a name="IDX11"></a>
+<p>There are a few major areas which may vary between countries and
+hence, define what a locale must describe.  The following list helps
+putting multi-lingual messages into the proper context of other tasks
+related to locales.  See the GNU <code>libc</code> manual for details.
+</p>
+<dl compact="compact">
+<dt> <em>Characters and Codesets</em></dt>
+<dd><a name="IDX12"></a>
+<a name="IDX13"></a>
+<a name="IDX14"></a>
+<a name="IDX15"></a>
+
+<p>The codeset most commonly used through out the USA and most English
+speaking parts of the world is the ASCII codeset.  However, there are
+many characters needed by various locales that are not found within
+this codeset.  The 8-bit ISO 8859-1 code set has most of the special
+characters needed to handle the major European languages.  However, in
+many cases, choosing ISO 8859-1 is nevertheless not adequate: it
+doesn't even handle the major European currency.  Hence each locale
+will need to specify which codeset they need to use and will need
+to have the appropriate character handling routines to cope with
+the codeset.
+</p>
+</dd>
+<dt> <em>Currency</em></dt>
+<dd><a name="IDX16"></a>
+<a name="IDX17"></a>
+
+<p>The symbols used vary from country to country as does the position
+used by the symbol.  Software needs to be able to transparently
+display currency figures in the native mode for each locale.
+</p>
+</dd>
+<dt> <em>Dates</em></dt>
+<dd><a name="IDX18"></a>
+<a name="IDX19"></a>
+
+<p>The format of date varies between locales.  For example, Christmas day
+in 1994 is written as 12/25/94 in the USA and as 25/12/94 in Australia.
+Other countries might use ISO 8601 dates, etc.
+</p>
+<p>Time of the day may be noted as <var>hh</var>:<var>mm</var>, <var>hh</var>.<var>mm</var>,
+or otherwise.  Some locales require time to be specified in 24-hour
+mode rather than as AM or PM.  Further, the nature and yearly extent
+of the Daylight Saving correction vary widely between countries.
+</p>
+</dd>
+<dt> <em>Numbers</em></dt>
+<dd><a name="IDX20"></a>
+<a name="IDX21"></a>
+
+<p>Numbers can be represented differently in different locales.
+For example, the following numbers are all written correctly for
+their respective locales:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">12,345.67       English
+12.345,67       German
+ 12345,67       French
+1,2345.67       Asia
+</pre></td></tr></table>
+
+<p>Some programs could go further and use different unit systems, like
+English units or Metric units, or even take into account variants
+about how numbers are spelled in full.
+</p>
+</dd>
+<dt> <em>Messages</em></dt>
+<dd><a name="IDX22"></a>
+<a name="IDX23"></a>
+
+<p>The most obvious area is the language support within a locale.  This is
+where GNU <code>gettext</code> provides the means for developers and users to
+easily change the language that the software uses to communicate to
+the user.
+</p>
+</dd>
+</dl>
+
+<a name="IDX24"></a>
+<p>These areas of cultural conventions are called <em>locale categories</em>.
+It is an unfortunate term; <em>locale aspects</em> or <em>locale feature
+categories</em> would be a better term, because each &ldquo;locale category&rdquo;
+describes an area or task that requires localization.  The concrete data
+that describes the cultural conventions for such an area and for a particular
+culture is also called a <em>locale category</em>.  In this sense, a locale
+is composed of several locale categories: the locale category describing
+the codeset, the locale category describing the formatting of numbers,
+the locale category containing the translated messages, and so on.
+</p>
+<a name="IDX25"></a>
+<p>Components of locale outside of message handling are standardized in
+the ISO C standard and the POSIX:2001 standard (also known as the SUSV3
+specification).  GNU <code>libc</code>
+fully implements this, and most other modern systems provide a more
+or less reasonable support for at least some of the missing components.
+</p>
+
+<a name="Files"></a>
+<a name="SEC5"></a>
+<h2 class="section"> <a href="gettext_toc.html#TOC5">1.4 Files Conveying Translations</a> </h2>
+
+<p>The letters PO in &lsquo;<tt>.po</tt>&rsquo; files means Portable Object, to
+distinguish it from &lsquo;<tt>.mo</tt>&rsquo; files, where MO stands for Machine
+Object.  This paradigm, as well as the PO file format, is inspired
+by the NLS standard developed by Uniforum, and first implemented by
+Sun in their Solaris system.
+</p>
+<p>PO files are meant to be read and edited by humans, and associate each
+original, translatable string of a given package with its translation
+in a particular target language.  A single PO file is dedicated to
+a single target language.  If a package supports many languages,
+there is one such PO file per language supported, and each package
+has its own set of PO files.  These PO files are best created by
+the <code>xgettext</code> program, and later updated or refreshed through
+the <code>msgmerge</code> program.  Program <code>xgettext</code> extracts all
+marked messages from a set of C files and initializes a PO file with
+empty translations.  Program <code>msgmerge</code> takes care of adjusting
+PO files between releases of the corresponding sources, commenting
+obsolete entries, initializing new ones, and updating all source
+line references.  Files ending with &lsquo;<tt>.pot</tt>&rsquo; are kind of base
+translation files found in distributions, in PO file format.
+</p>
+<p>MO files are meant to be read by programs, and are binary in nature.
+A few systems already offer tools for creating and handling MO files
+as part of the Native Language Support coming with the system, but the
+format of these MO files is often different from system to system,
+and non-portable.  The tools already provided with these systems don't
+support all the features of GNU <code>gettext</code>.  Therefore GNU
+<code>gettext</code> uses its own format for MO files.  Files ending with
+&lsquo;<tt>.gmo</tt>&rsquo; are really MO files, when it is known that these files use
+the GNU format.
+</p>
+
+<a name="Overview"></a>
+<a name="SEC6"></a>
+<h2 class="section"> <a href="gettext_toc.html#TOC6">1.5 Overview of GNU <code>gettext</code></a> </h2>
+
+<p>The following diagram summarizes the relation between the files
+handled by GNU <code>gettext</code> and the tools acting on these files.
+It is followed by somewhat detailed explanations, which you should
+read while keeping an eye on the diagram.  Having a clear understanding
+of these interrelations will surely help programmers, translators
+and maintainers.
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">Original C Sources ───&gt; Preparation ───&gt; Marked C Sources ───╮
+                                                             │
+              ╭─────────&lt;─── GNU gettext Library             │
+╭─── make &lt;───┤                                              │
+│             ╰─────────&lt;────────────────────┬───────────────╯
+│                                            │
+│   ╭─────&lt;─── PACKAGE.pot &lt;─── xgettext &lt;───╯   ╭───&lt;─── PO Compendium
+│   │                                            │              ↑
+│   │                                            ╰───╮          │
+│   ╰───╮                                            ├───&gt; PO editor ───╮
+│       ├────&gt; msgmerge ──────&gt; LANG.po ────&gt;────────╯                  │
+│   ╭───╯                                                               │
+│   │                                                                   │
+│   ╰─────────────&lt;───────────────╮                                     │
+│                                 ├─── New LANG.po &lt;────────────────────╯
+│   ╭─── LANG.gmo &lt;─── msgfmt &lt;───╯
+│   │
+│   ╰───&gt; install ───&gt; /.../LANG/PACKAGE.mo ───╮
+│                                              ├───&gt; &quot;Hello world!&quot;
+╰───────&gt; install ───&gt; /.../bin/PROGRAM ───────╯
+</pre></td></tr></table>
+
+<a name="IDX26"></a>
+<p>As a programmer, the first step to bringing GNU <code>gettext</code>
+into your package is identifying, right in the C sources, those strings
+which are meant to be translatable, and those which are untranslatable.
+This tedious job can be done a little more comfortably using emacs PO
+mode, but you can use any means familiar to you for modifying your
+C sources.  Beside this some other simple, standard changes are needed to
+properly initialize the translation library.  See section <a href="gettext_4.html#SEC17">Preparing Program Sources</a>, for
+more information about all this.
+</p>
+<p>For newly written software the strings of course can and should be
+marked while writing it.  The <code>gettext</code> approach makes this
+very easy.  Simply put the following lines at the beginning of each file
+or in a central header file:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">#define _(String) (String)
+#define N_(String) String
+#define textdomain(Domain)
+#define bindtextdomain(Package, Directory)
+</pre></td></tr></table>
+
+<p>Doing this allows you to prepare the sources for internationalization.
+Later when you feel ready for the step to use the <code>gettext</code> library
+simply replace these definitions by the following:
+</p>
+<a name="IDX27"></a>
+<table><tr><td>&nbsp;</td><td><pre class="example">#include &lt;libintl.h&gt;
+#define _(String) gettext (String)
+#define gettext_noop(String) String
+#define N_(String) gettext_noop (String)
+</pre></td></tr></table>
+
+<a name="IDX28"></a>
+<a name="IDX29"></a>
+<p>and link against &lsquo;<tt>libintl.a</tt>&rsquo; or &lsquo;<tt>libintl.so</tt>&rsquo;.  Note that on
+GNU systems, you don't need to link with <code>libintl</code> because the
+<code>gettext</code> library functions are already contained in GNU libc.
+That is all you have to change.
+</p>
+<a name="IDX30"></a>
+<a name="IDX31"></a>
+<p>Once the C sources have been modified, the <code>xgettext</code> program
+is used to find and extract all translatable strings, and create a
+PO template file out of all these.  This &lsquo;<tt><var>package</var>.pot</tt>&rsquo; file
+contains all original program strings.  It has sets of pointers to
+exactly where in C sources each string is used.  All translations
+are set to empty.  The letter <code>t</code> in &lsquo;<tt>.pot</tt>&rsquo; marks this as
+a Template PO file, not yet oriented towards any particular language.
+See section <a href="gettext_5.html#SEC35">Invoking the <code>xgettext</code> Program</a>, for more details about how one calls the
+<code>xgettext</code> program.  If you are <em>really</em> lazy, you might
+be interested at working a lot more right away, and preparing the
+whole distribution setup (see section <a href="gettext_13.html#SEC229">The Maintainer's View</a>).  By doing so, you
+spare yourself typing the <code>xgettext</code> command, as <code>make</code>
+should now generate the proper things automatically for you!
+</p>
+<p>The first time through, there is no &lsquo;<tt><var>lang</var>.po</tt>&rsquo; yet, so the
+<code>msgmerge</code> step may be skipped and replaced by a mere copy of
+&lsquo;<tt><var>package</var>.pot</tt>&rsquo; to &lsquo;<tt><var>lang</var>.po</tt>&rsquo;, where <var>lang</var>
+represents the target language.  See <a href="gettext_6.html#SEC44">Creating a New PO File</a> for details.
+</p>
+<p>Then comes the initial translation of messages.  Translation in
+itself is a whole matter, still exclusively meant for humans,
+and whose complexity far overwhelms the level of this manual.
+Nevertheless, a few hints are given in some other chapter of this
+manual (see section <a href="gettext_12.html#SEC216">The Translator's View</a>).  You will also find there indications
+about how to contact translating teams, or becoming part of them,
+for sharing your translating concerns with others who target the same
+native language.
+</p>
+<p>While adding the translated messages into the &lsquo;<tt><var>lang</var>.po</tt>&rsquo;
+PO file, if you are not using one of the dedicated PO file editors
+(see section <a href="gettext_8.html#SEC62">Editing PO Files</a>), you are on your own
+for ensuring that your efforts fully respect the PO file format, and quoting
+conventions (see section <a href="gettext_3.html#SEC16">The Format of PO Files</a>).  This is surely not an impossible task,
+as this is the way many people have handled PO files around 1995.
+On the other hand, by using a PO file editor, most details
+of PO file format are taken care of for you, but you have to acquire
+some familiarity with PO file editor itself.
+</p>
+<p>If some common translations have already been saved into a compendium
+PO file, translators may use PO mode for initializing untranslated
+entries from the compendium, and also save selected translations into
+the compendium, updating it (see section <a href="gettext_8.html#SEC79">Using Translation Compendia</a>).  Compendium files
+are meant to be exchanged between members of a given translation team.
+</p>
+<p>Programs, or packages of programs, are dynamic in nature: users write
+bug reports and suggestion for improvements, maintainers react by
+modifying programs in various ways.  The fact that a package has
+already been internationalized should not make maintainers shy
+of adding new strings, or modifying strings already translated.
+They just do their job the best they can.  For the Translation
+Project to work smoothly, it is important that maintainers do not
+carry translation concerns on their already loaded shoulders, and that
+translators be kept as free as possible of programming concerns.
+</p>
+<p>The only concern maintainers should have is carefully marking new
+strings as translatable, when they should be, and do not otherwise
+worry about them being translated, as this will come in proper time.
+Consequently, when programs and their strings are adjusted in various
+ways by maintainers, and for matters usually unrelated to translation,
+<code>xgettext</code> would construct &lsquo;<tt><var>package</var>.pot</tt>&rsquo; files which are
+evolving over time, so the translations carried by &lsquo;<tt><var>lang</var>.po</tt>&rsquo;
+are slowly fading out of date.
+</p>
+<a name="IDX32"></a>
+<p>It is important for translators (and even maintainers) to understand
+that package translation is a continuous process in the lifetime of a
+package, and not something which is done once and for all at the start.
+After an initial burst of translation activity for a given package,
+interventions are needed once in a while, because here and there,
+translated entries become obsolete, and new untranslated entries
+appear, needing translation.
+</p>
+<p>The <code>msgmerge</code> program has the purpose of refreshing an already
+existing &lsquo;<tt><var>lang</var>.po</tt>&rsquo; file, by comparing it with a newer
+&lsquo;<tt><var>package</var>.pot</tt>&rsquo; template file, extracted by <code>xgettext</code>
+out of recent C sources.  The refreshing operation adjusts all
+references to C source locations for strings, since these strings
+move as programs are modified.  Also, <code>msgmerge</code> comments out as
+obsolete, in &lsquo;<tt><var>lang</var>.po</tt>&rsquo;, those already translated entries
+which are no longer used in the program sources (see section <a href="gettext_8.html#SEC73">Obsolete Entries</a>).  It finally discovers new strings and inserts them in
+the resulting PO file as untranslated entries (see section <a href="gettext_8.html#SEC72">Untranslated Entries</a>).  See section <a href="gettext_7.html#SEC53">Invoking the <code>msgmerge</code> Program</a>, for more information about what
+<code>msgmerge</code> really does.
+</p>
+<p>Whatever route or means taken, the goal is to obtain an updated
+&lsquo;<tt><var>lang</var>.po</tt>&rsquo; file offering translations for all strings.
+</p>
+<p>The temporal mobility, or fluidity of PO files, is an integral part of
+the translation game, and should be well understood, and accepted.
+People resisting it will have a hard time participating in the
+Translation Project, or will give a hard time to other participants!  In
+particular, maintainers should relax and include all available official
+PO files in their distributions, even if these have not recently been
+updated, without exerting pressure on the translator teams to get the
+job done.  The pressure should rather come
+from the community of users speaking a particular language, and
+maintainers should consider themselves fairly relieved of any concern
+about the adequacy of translation files.  On the other hand, translators
+should reasonably try updating the PO files they are responsible for,
+while the package is undergoing pretest, prior to an official
+distribution.
+</p>
+<p>Once the PO file is complete and dependable, the <code>msgfmt</code> program
+is used for turning the PO file into a machine-oriented format, which
+may yield efficient retrieval of translations by the programs of the
+package, whenever needed at runtime (see section <a href="gettext_10.html#SEC195">The Format of GNU MO Files</a>).  See section <a href="gettext_10.html#SEC173">Invoking the <code>msgfmt</code> Program</a>, for more information about all modes of execution
+for the <code>msgfmt</code> program.
+</p>
+<p>Finally, the modified and marked C sources are compiled and linked
+with the GNU <code>gettext</code> library, usually through the operation of
+<code>make</code>, given a suitable &lsquo;<tt>Makefile</tt>&rsquo; exists for the project,
+and the resulting executable is installed somewhere users will find it.
+The MO files themselves should also be properly installed.  Given the
+appropriate environment variables are set (see section <a href="gettext_2.html#SEC10">Setting the Locale through Environment Variables</a>),
+the program should localize itself automatically, whenever it executes.
+</p>
+<p>The remainder of this manual has the purpose of explaining in depth the various
+steps outlined above.
+</p>
+
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC1" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="gettext_2.html#SEC7" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_21.html#SEC387" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<p>
+ <font size="-1">
+  This document was generated by <em>Bruno Haible</em> on <em>October, 9 2022</em> using <a href="https://www.nongnu.org/texi2html/"><em>texi2html 1.78a</em></a>.
+ </font>
+ <br>
+
+</p>
+</body>
+</html>

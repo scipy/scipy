@@ -1,0 +1,5 @@
+default partial alphanumeric_keys modifier_keys
+xkb_symbols "basic" {
+    // #UNREGISTERED
+    name[Group1]= "Empty";
+};

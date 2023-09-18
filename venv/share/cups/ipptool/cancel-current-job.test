@@ -1,0 +1,45 @@
+# Cancel the currently printing job.
+#
+# Usage:
+#
+#   ./ipptool printer-uri cancel-current-jobs.test
+{
+	# The name of the test...
+	NAME "Get current job"
+
+	# The operation to use
+	OPERATION Get-Jobs
+
+	# Attributes, starting in the operation group...
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR integer limit 1
+	ATTR name requesting-user-name $user
+	ATTR keyword requested-attributes job-id,job-state
+
+	# What statuses are OK?
+	STATUS successful-ok
+
+	EXPECT job-id OF-TYPE integer COUNT 1
+
+	# What attributes to display
+	DISPLAY job-id
+	DISPLAY job-state
+}
+
+{
+	SKIP-IF-NOT-DEFINED job-id
+	NAME "Cancel current job"
+	OPERATION Cancel-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR integer job-id $job-id
+	ATTR name requesting-user-name $user
+
+	# What statuses are OK?
+	STATUS successful-ok
+}

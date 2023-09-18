@@ -1,0 +1,80 @@
+// Keyboard layouts for Taiwan.
+
+default partial alphanumeric_keys
+xkb_symbols "tw" {
+
+    include "us(basic)"
+
+    name[Group1]= "Taiwanese";
+
+    key <TLDE> { [     grave, asciitilde,    dead_grave,       dead_tilde ] };
+    key <AE01> { [	   1,     exclam,         U030D,       exclamdown ] };
+    key <AE02> { [	   2,         at,         U0358,      twosuperior ] };
+    key <AE03> { [	   3, numbersign,       section,    threesuperior ] };
+    key <AE04> { [	   4,     dollar,           yen,         sterling ] };
+    key <AE05> { [	   5,    percent,      EuroSign,             cent ] };
+    key <AE06> { [         6,asciicircum, dead_circumflex,     dead_caron ] };
+    key <AE07> { [	   7,  ampersand,    dead_acute,         NoSymbol ] };
+    key <AE08> { [	   8,   asterisk,  dead_cedilla,        dead_horn ] };
+    key <AE09> { [	   9,  parenleft,   dead_ogonek,       dead_breve ] };
+    key <AE10> { [	   0, parenright, dead_abovedot,   dead_abovering ] };
+    key <AE11> { [     minus, underscore,   dead_macron,        plusminus ] };
+    key <AE12> { [     equal,       plus,      multiply,         division ] };
+
+    key <AD01> { [	   q,          Q,     paragraph,           degree ] };
+    key <AD03> { [	   e,          E,        eacute,           Eacute ] };
+    key <AD04> { [	   r,          R,         U1E5F,            U1E5E ] };
+    key <AD05> { [	   t,          T,         U1E6F,            U1E6E ] };
+    key <AD06> { [	   y,          Y,         U1E73,            U1E72 ] };
+    key <AD07> { [	   u,          U,         U0289,            U0244 ] };
+    key <AD08> { [	   i,          I,         U0268,            U0197 ] };
+    key <AD09> { [	   o,          O,        oslash,           Oslash ] };
+
+    key <AC02> { [	   s,          S,        ssharp,            U1E9E ] };
+    key <AC03> { [	   d,          D,         U1E0F,            U1E0E ] };
+    key <AC05> { [	   g,          G,           eng,              ENG ] };
+    key <AC09> { [         l,          L,         U1E3B,            U1E3A ] };
+    key <AC10> { [ semicolon,      colon,         U02D0,   dead_diaeresis ] };
+    key <AC11> { [apostrophe,   quotedbl,         U02BC, dead_doubleacute ] };
+
+    key <AB03> { [	   c,          C,      ccedilla,         Ccedilla ] };
+    key <AB06> { [	   n,          N,         U207F,            U1D3A ] };
+    key <AB07> { [	   m,          M,            mu,               mu ] };
+    key <AB08> { [     comma,       less, dead_belowcomma,  guillemotleft ] };
+    key <AB09> { [    period,    greater, dead_belowdot,   guillemotright ] };
+    key <AB10> { [     slash,   question,  questiondown,        dead_hook ] };
+    key <BKSL> { [ backslash,        bar,       notsign,        brokenbar ] };
+
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "indigenous" {
+
+    include "tw(tw)"
+
+    name[Group1]= "Taiwanese (indigenous)";
+
+    key <AC11> { [     U02BC,   quotedbl,    apostrophe, dead_doubleacute ] };
+
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "saisiyat" {
+
+    include "tw(indigenous)"
+
+    name[Group1]= "Saisiyat (Taiwan)";
+
+    key <AC10> { [     U02D0,      colon,     semicolon,   dead_diaeresis ] };
+
+    include "level3(ralt_switch)"
+};
+
+// EXTRAS:
+
+partial alphanumeric_keys
+	xkb_symbols "sun_type6" {
+	include "sun_vndr/tw(sun_type6)"
+};

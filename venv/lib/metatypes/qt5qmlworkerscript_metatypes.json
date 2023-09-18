@@ -1,0 +1,138 @@
+[
+    {
+        "classes": [
+            {
+                "className": "QQuickWorkerScriptEngine",
+                "object": true,
+                "qualifiedClassName": "QQuickWorkerScriptEngine",
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QThread"
+                    }
+                ]
+            },
+            {
+                "classInfos": [
+                    {
+                        "name": "QML.Element",
+                        "value": "WorkerScript"
+                    }
+                ],
+                "className": "QQuickWorkerScript",
+                "interfaces": [
+                    [
+                        {
+                            "className": "QQmlParserStatus",
+                            "id": "\"org.qt-project.Qt.QQmlParserStatus\""
+                        }
+                    ]
+                ],
+                "object": true,
+                "properties": [
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "source",
+                        "notify": "sourceChanged",
+                        "read": "source",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QUrl",
+                        "user": false,
+                        "write": "setSource"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "ready",
+                        "notify": "readyChanged",
+                        "read": "ready",
+                        "required": false,
+                        "revision": 15,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "bool",
+                        "user": false
+                    }
+                ],
+                "qualifiedClassName": "QQuickWorkerScript",
+                "signals": [
+                    {
+                        "access": "public",
+                        "name": "sourceChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "readyChanged",
+                        "returnType": "void",
+                        "revision": 15
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "messageObject",
+                                "type": "QJSValue"
+                            }
+                        ],
+                        "name": "message",
+                        "returnType": "void"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "type": "QQmlV4Function*"
+                            }
+                        ],
+                        "name": "sendMessage",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QObject"
+                    },
+                    {
+                        "access": "public",
+                        "name": "QQmlParserStatus"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "qquickworkerscript_p.h",
+        "outputRevision": 67
+    },
+    {
+        "classes": [
+            {
+                "className": "QQuickWorkerScriptEnginePrivate",
+                "object": true,
+                "qualifiedClassName": "QQuickWorkerScriptEnginePrivate",
+                "signals": [
+                    {
+                        "access": "public",
+                        "name": "stopThread",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QObject"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "qquickworkerscript.cpp",
+        "outputRevision": 67
+    }
+]

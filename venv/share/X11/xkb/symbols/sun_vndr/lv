@@ -1,0 +1,165 @@
+//
+// Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, and/or sell copies of the Software, and to permit persons
+// to whom the Software is furnished to do so, provided that the above
+// copyright notice(s) and this permission notice appear in all copies of
+// the Software and that both the above copyright notice(s) and this
+// permission notice appear in supporting documentation.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+// OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+// HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL
+// INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING
+// FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
+// NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
+// WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+// 
+// Except as contained in this notice, the name of a copyright holder
+// shall not be used in advertising or otherwise to promote the sale, use
+// or other dealings in this Software without prior written authorization
+// of the copyright holder.
+//
+
+default alphanumeric_keys
+xkb_symbols "sun_type6" {
+
+    name[Group1]="Latvian (Sun Type 6/7)";
+
+	include "sun_vndr/us(sun_type6)"
+
+   key <TLDE> { [          grave,    asciitilde,	acute,    asciitilde ] };
+   key <AE01> { [              1,        exclam,	onesuperior,    exclamdown ] };
+   key <AE02> { [              2,            at,	twosuperior,     oneeighth ] };
+   key <AE03> { [              3,    numbersign,	threesuperior,      sterling ] };
+   key <AE04> { [              4,        dollar,	EuroSign,          cent ] };
+   key <AE05> { [              5,       percent,	onehalf,  threeeighths ] };
+   key <AE06> { [              6,   asciicircum,	threequarters,   fiveeighths ] };
+   key <AE07> { [              7,     ampersand,	braceleft,  seveneighths ] };
+   key <AE08> { [              8,      asterisk,	bracketleft,     trademark ] };
+   key <AE09> { [              9,     parenleft,	bracketright,     plusminus ] };
+   key <AE10> { [              0,    parenright,	braceright,        degree ] };
+   key <AE11> { [          minus,    underscore,	backslash,  questiondown ] };
+   key <AE12> { [          equal,          plus,	endash,        emdash ] };
+
+   key <AD01> { [              q,             Q,	q,             Q ] };
+   key <AD02> { [              w,             W,	w,             W ] };
+   key <AD03> { [              e,             E,	emacron,       Emacron ] };
+   key <AD04> { [              r,             R,	rcedilla,      Rcedilla ] };
+   key <AD05> { [              t,             T,	t,             T ] };
+   key <AD06> { [              y,             Y,	y,             Y ] };
+   key <AD07> { [              u,             U,	umacron,       Umacron ] };
+   key <AD08> { [              i,             I,	imacron,       Imacron ] };
+   key <AD09> { [              o,             O,	omacron,       Omacron ] };
+   key <AD10> { [              p,             P,	p,             P ] };
+   key <AD11> { [    bracketleft,     braceleft,	guillemotleft, leftdoublequotemark ] };
+   key <AD12> { [   bracketright,    braceright,	guillemotright, rightdoublequotemark ] };
+
+   key <AC01> { [              a,             A,	amacron,       Amacron ] };
+   key <AC02> { [              s,             S,	scaron,        Scaron ] };
+   key <AC03> { [              d,             D,	d,             D ] };
+   key <AC04> { [              f,             F,	f,             F ] };
+   key <AC05> { [              g,             G,	gcedilla,      Gcedilla ] };
+   key <AC06> { [              h,             H,	h,             H ] };
+   key <AC07> { [              j,             J,	j,             J ] };
+   key <AC08> { [              k,             K,	kcedilla,      Kcedilla ] };
+   key <AC09> { [              l,             L,	lcedilla,      Lcedilla ] };
+   key <AC10> { [      semicolon,         colon,	semicolon,         colon ] };
+   key <AC11> { [     apostrophe,      quotedbl,	leftdoublequotemark, doublelowquotemark ] };
+   key <LSGT> { [      backslash,           bar,	degree,     brokenbar ] };
+
+   key <BKSL> { [      backslash,           bar,	grave,         breve ] };
+   key <AB01> { [              z,             Z,	zcaron,        Zcaron ] };
+   key <AB02> { [              x,             X,	x,             X ] };
+   key <AB03> { [              c,             C,	ccaron,        Ccaron ] };
+   key <AB04> { [              v,             V,	v,             V ] };
+   key <AB05> { [              b,             B,	b,             B ] };
+   key <AB06> { [              n,             N,	ncedilla,      Ncedilla ] };
+   key <AB07> { [              m,             M,	m,             M ] };
+   key <AB08> { [          comma,          less,	U2022,         multiply ] }; // bullet
+   key <AB09> { [         period,       greater,	periodcentered,      division ] };
+   key <AB10> { [          slash,      question,	slash,      abovedot ] };
+
+	include "level3(ralt_switch)"
+};
+
+alphanumeric_keys
+	xkb_symbols "basic" {
+	include "sun_vndr/lv(sun_type6)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "apostrophe" {
+	include "lv(apostrophe)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "tilde" {
+	include "lv(tilde)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "fkey" {
+	include "lv(fkey)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "adapted" {
+	include "lv(adapted)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "ergonomic" {
+	include "lv(ergonomic)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "modern" {
+	include "lv(modern)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "dvorak" {
+	include "lv(dvorak)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "ykeydvorak" {
+	include "lv(ykeydvorak)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "minuskeydvorak" {
+	include "lv(minuskeydvorak)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "dvorakprogr" {
+	include "lv(dvorakprogr)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "ykeydvorakprogr" {
+	include "lv(ykeydvorakprogr)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "minuskeydvorakprogr" {
+	include "lv(minuskeydvorakprogr)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "colemak" {
+	include "lv(colemak)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "apostrophecolemak" {
+	include "lv(apostrophecolemak)"
+};

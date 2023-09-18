@@ -1,0 +1,159 @@
+escape_char  /
+comment_char  %
+% Irish language locale for Ireland
+% Source: NSAI
+% Address: Glasnevin, Dublin 9, Ireland
+% Contact: Michael Everson
+% Email: everson@irlearn.ucd.ie
+% Tel: +353 1 280-0701
+% Fax: +353 1 830-9821
+% Language: ga
+% Territory: IE
+% Revision: 4.3
+% Date: 1996-10-15
+% Users: general
+% Charset: ISO-8859-1
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title      "Irish locale for Ireland"
+source     "NSAI"
+address    "Glasnevin, Dublin 9, Ireland"
+contact    ""
+email      "bug-glibc-locales@gnu.org"
+tel        ""
+fax        ""
+language   "Irish"
+territory  "Ireland"
+revision   "1.0"
+date       "2000-06-29"
+%
+category  "ga_IE:2000";LC_IDENTIFICATION
+category  "ga_IE:2000";LC_CTYPE
+category  "ga_IE:2000";LC_COLLATE
+category  "ga_IE:2000";LC_TIME
+category  "ga_IE:2000";LC_NUMERIC
+category  "ga_IE:2000";LC_MONETARY
+category  "ga_IE:2000";LC_MESSAGES
+category  "ga_IE:2000";LC_PAPER
+category  "ga_IE:2000";LC_NAME
+category  "ga_IE:2000";LC_ADDRESS
+category  "ga_IE:2000";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_CTYPE
+copy "i18n"
+
+translit_start
+include "translit_combining";""
+translit_end
+END LC_CTYPE
+
+LC_COLLATE
+copy "iso14651_t1"
+END LC_COLLATE
+
+LC_MONETARY
+int_curr_symbol         "<U0045><U0055><U0052><U0020>"
+currency_symbol         "<U20AC>"
+mon_decimal_point       "<U002E>"
+mon_thousands_sep       "<U002C>"
+mon_grouping            3;3
+positive_sign           ""
+negative_sign           "<U002D>"
+int_frac_digits         2
+frac_digits             2
+p_cs_precedes           1
+p_sep_by_space          0
+n_cs_precedes           1
+n_sep_by_space          0
+p_sign_posn             1
+n_sign_posn             1
+END LC_MONETARY
+
+LC_NUMERIC
+decimal_point           "<U002E>"
+thousands_sep           "<U002C>"
+grouping                3;3
+END LC_NUMERIC
+
+LC_TIME
+abday       "<U0044><U006F><U006D><U0068>";"<U004C><U0075><U0061><U006E>";/
+            "<U004D><U00E1><U0069><U0072><U0074>";"<U0043><U00E9><U0061><U0064>";/
+            "<U0044><U00E9><U0061><U0072>";"<U0041><U006F><U0069><U006E><U0065>";/
+            "<U0053><U0061><U0074><U0068>"
+day         "<U0044><U00E9><U0020><U0044><U006F><U006D><U0068><U006E><U0061><U0069><U0067><U0068>";/
+            "<U0044><U00E9><U0020><U004C><U0075><U0061><U0069><U006E>";/
+            "<U0044><U00E9><U0020><U004D><U00E1><U0069><U0072><U0074>";/
+            "<U0044><U00E9><U0020><U0043><U00E9><U0061><U0064><U0061><U006F><U0069><U006E>";/
+            "<U0044><U00E9><U0061><U0072><U0064><U0061><U006F><U0069><U006E>";/
+            "<U0044><U00E9><U0020><U0068><U0041><U006F><U0069><U006E><U0065>";/
+            "<U0044><U00E9><U0020><U0053><U0061><U0074><U0068><U0061><U0069><U0072><U006E>"
+abmon       "<U0045><U0061><U006E>";"<U0046><U0065><U0061><U0062><U0068>";/
+            "<U004D><U00E1><U0072><U0074><U0061>";"<U0041><U0069><U0062>";/
+            "<U0042><U0065><U0061><U006C>";"<U004D><U0065><U0069><U0074><U0068>";/
+            "<U0049><U00FA><U0069><U006C>";"<U004C><U00FA><U006E>";/
+            "<U004D><U0046><U00F3><U006D><U0068>";"<U0044><U0046><U00F3><U006D><U0068>";/
+            "<U0053><U0061><U006D><U0068>";"<U004E><U006F><U006C><U006C>"
+mon         "<U0045><U0061><U006E><U00E1><U0069><U0072>";/
+            "<U0046><U0065><U0061><U0062><U0068><U0072><U0061>";/
+            "<U004D><U00E1><U0072><U0074><U0061>";/
+            "<U0041><U0069><U0062><U0072><U0065><U00E1><U006E>";/
+            "<U0042><U0065><U0061><U006C><U0074><U0061><U0069><U006E><U0065>";/
+            "<U004D><U0065><U0069><U0074><U0068><U0065><U0061><U006d><U0068>";/
+            "<U0049><U00FA><U0069><U006C>";/
+            "<U004C><U00FA><U006E><U0061><U0073><U0061>";/
+            "<U004D><U0065><U00E1><U006E><U0020><U0046><U00F3><U006D><U0068><U0061><U0069><U0072>";/
+            "<U0044><U0065><U0069><U0072><U0065><U0061><U0064><U0068><U0020><U0046><U00F3><U006D><U0068><U0061><U0069><U0072>";/
+            "<U0053><U0061><U006D><U0068><U0061><U0069><U006E>";/
+            "<U004E><U006F><U006C><U006C><U0061><U0069><U0067>"
+d_t_fmt     "<U0025><U0061><U0020><U0025><U0064><U0020><U0025><U0062><U0020><U0025><U0059><U0020><U0025><U0054><U0020><U0025><U005A>"
+d_fmt       "<U0025><U0064><U002E><U0025><U006D><U002E><U0025><U0079>"
+t_fmt       "<U0025><U0054>"
+am_pm       "";""
+t_fmt_ampm  ""
+date_fmt       "<U0025><U0061><U0020><U0025><U0062><U0020><U0025><U0065>/
+<U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U0020>/
+<U0025><U005A><U0020><U0025><U0059>"
+END LC_TIME
+
+LC_MESSAGES
+yesexpr     "<U005E><U005B><U0074><U0054><U0079><U0059><U005D><U002E><U002A>"
+noexpr      "<U005E><U005B><U006E><U004E><U005D><U002E><U002A>"
+END LC_MESSAGES
+
+LC_PAPER
+% FIXME
+height   297
+% FIXME
+width    210
+END LC_PAPER
+
+LC_TELEPHONE
+tel_int_fmt    "<U002B><U0025><U0063><U0020><U0025><U0061><U0020><U0025>/
+<U006C>"
+int_prefix     "<U0033><U0035><U0033>"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+% FIXME
+measurement    1
+END LC_MEASUREMENT
+
+LC_NAME
+name_fmt    "<U0025><U0064><U0025><U0074><U0025><U0067><U0025><U0074>/
+<U0025><U006D><U0025><U0074><U0025><U0066>"
+END LC_NAME
+
+LC_ADDRESS
+postal_fmt    "<U0025><U0066><U0025><U004E><U0025><U0061><U0025><U004E>/
+<U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E><U0025><U0073>/
+<U0020><U0025><U0068><U0020><U0025><U0065><U0020><U0025><U0072><U0025>/
+<U004E><U0025><U007A><U0020><U0025><U0054><U0025>/
+<U004E><U0025><U0063><U0025><U004E>"
+country_ab2 "<U0049><U0045>"
+country_ab3 "<U0049><U0052><U004C>"
+country_num 372
+END LC_ADDRESS

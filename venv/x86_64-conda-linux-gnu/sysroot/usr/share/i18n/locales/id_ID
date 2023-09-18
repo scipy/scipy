@@ -1,0 +1,162 @@
+escape_char  /
+comment_char  %
+
+% Indonesian language locale for Indonesia
+% Source:
+% Address:
+% Contact: Pablo Saratxaga, Mohammad DAMT
+% Email: srtxg@chanae.alphanet.ch, mdamt@cakraweb.com
+% Tel:
+% Fax:
+% Language: id
+% Territory: ID
+% Revision: 0.5
+% Date: 1999-09-08
+% Application: general
+% Users: general
+% Repertoiremap:
+% Charset: ISO-8859-1
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title      "Indonesian locale for Indonesia"
+source     ""
+address    ""
+contact    ""
+email      "bug-glibc-locales@gnu.org"
+tel        ""
+fax        ""
+language   "Indonesian"
+territory  "Indonesia"
+revision   "1.0"
+date       "2000-06-29"
+%
+category  "id_ID:2000";LC_IDENTIFICATION
+category  "id_ID:2000";LC_CTYPE
+category  "id_ID:2000";LC_COLLATE
+category  "id_ID:2000";LC_TIME
+category  "id_ID:2000";LC_NUMERIC
+category  "id_ID:2000";LC_MONETARY
+category  "id_ID:2000";LC_MESSAGES
+category  "id_ID:2000";LC_PAPER
+category  "id_ID:2000";LC_NAME
+category  "id_ID:2000";LC_ADDRESS
+category  "id_ID:2000";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_CTYPE
+copy "i18n"
+
+translit_start
+include "translit_combining";""
+translit_end
+END LC_CTYPE
+
+LC_COLLATE
+copy "iso14651_t1"
+END LC_COLLATE
+
+LC_MONETARY
+int_curr_symbol         "<U0049><U0044><U0052><U0020>"
+currency_symbol         "<U0052><U0070>"
+mon_decimal_point       "<U002C>"
+mon_thousands_sep       "<U002E>"
+mon_grouping            3;3
+positive_sign           ""
+negative_sign           "<U002D>"
+int_frac_digits         2
+frac_digits             2
+p_cs_precedes           1
+p_sep_by_space          0
+n_cs_precedes           1
+n_sep_by_space          0
+p_sign_posn             1
+n_sign_posn             1
+END LC_MONETARY
+
+LC_NUMERIC
+decimal_point           "<U002C>"
+thousands_sep           "<U002E>"
+grouping                3;3
+END LC_NUMERIC
+
+LC_TIME
+abday       "<U004D><U0069><U006E>";"<U0053><U0065><U006E>";/
+            "<U0053><U0065><U006C>";"<U0052><U0061><U0062>";/
+            "<U004B><U0061><U006D>";"<U004A><U0075><U006D>";/
+            "<U0053><U0061><U0062>"
+day         "<U004D><U0069><U006E><U0067><U0067><U0075>";/
+            "<U0053><U0065><U006E><U0069><U006E>";/
+            "<U0053><U0065><U006C><U0061><U0073><U0061>";/
+            "<U0052><U0061><U0062><U0075>";/
+            "<U004B><U0061><U006D><U0069><U0073>";/
+            "<U004A><U0075><U006D><U0061><U0074>";/
+            "<U0053><U0061><U0062><U0074><U0075>"
+abmon       "<U004A><U0061><U006E>";"<U0050><U0065><U0062>";/
+            "<U004D><U0061><U0072>";"<U0041><U0070><U0072>";/
+            "<U004D><U0065><U0069>";"<U004A><U0075><U006E>";/
+            "<U004A><U0075><U006C>";"<U0041><U0067><U0075>";/
+            "<U0053><U0065><U0070>";"<U004F><U006B><U0074>";/
+            "<U004E><U006F><U0076>";"<U0044><U0065><U0073>"
+mon         "<U004A><U0061><U006E><U0075><U0061><U0072><U0069>";/
+            "<U0050><U0065><U0062><U0072><U0075><U0061><U0072><U0069>";/
+            "<U004D><U0061><U0072><U0065><U0074>";/
+            "<U0041><U0070><U0072><U0069><U006C>";/
+            "<U004D><U0065><U0069>";/
+            "<U004A><U0075><U006E><U0069>";/
+            "<U004A><U0075><U006C><U0069>";/
+            "<U0041><U0067><U0075><U0073><U0074><U0075><U0073>";/
+            "<U0053><U0065><U0070><U0074><U0065><U006D><U0062><U0065><U0072>";/
+            "<U004F><U006B><U0074><U006F><U0062><U0065><U0072>";/
+            "<U004E><U006F><U0076><U0065><U006D><U0062><U0065><U0072>";/
+            "<U0044><U0065><U0073><U0065><U006D><U0062><U0065><U0072>"
+d_t_fmt     "<U0025><U0061><U0020><U0025><U0064><U0020><U0025><U0062><U0020><U0025><U0059><U0020><U0025><U0072><U0020><U0025><U005A>"
+d_fmt       "<U0025><U0064><U002F><U0025><U006D><U002F><U0025><U0079>"
+t_fmt       "<U0025><U0054>"
+am_pm       "";""
+t_fmt_ampm  ""
+date_fmt       "<U0025><U0061><U0020><U0025><U0062><U0020><U0025><U0065>/
+<U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U0020>/
+<U0025><U005A><U0020><U0025><U0059>"
+END LC_TIME
+
+LC_MESSAGES
+yesexpr     "<U005E><U005B><U0079><U0059><U005D><U002E><U002A>"
+noexpr      "<U005E><U005B><U0074><U0054><U006E><U004E><U005D><U002E><U002A>"
+END LC_MESSAGES
+
+LC_PAPER
+% FIXME
+height   297
+% FIXME
+width    210
+END LC_PAPER
+
+LC_TELEPHONE
+tel_int_fmt    "<U002B><U0025><U0063><U0020><U0025><U0061><U0020><U0025>/
+<U006C>"
+int_prefix     "<U0036><U0032>"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+% FIXME
+measurement    1
+END LC_MEASUREMENT
+
+LC_NAME
+name_fmt    "<U0025><U0064><U0025><U0074><U0025><U0067><U0025><U0074>/
+<U0025><U006D><U0025><U0074><U0025><U0066>"
+END LC_NAME
+
+LC_ADDRESS
+postal_fmt    "<U0025><U0066><U0025><U004E><U0025><U0061><U0025><U004E>/
+<U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E><U0025><U0073>/
+<U0020><U0025><U0068><U0020><U0025><U0065><U0020><U0025><U0072><U0025>/
+<U004E><U0025><U007A><U0020><U0025><U0054><U0025>/
+<U004E><U0025><U0063><U0025><U004E>"
+country_ab2 "<U0049><U0044>"
+country_ab3 "<U0049><U0044><U004E>"
+country_num 360
+END LC_ADDRESS

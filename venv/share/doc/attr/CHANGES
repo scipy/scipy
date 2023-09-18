@@ -1,0 +1,343 @@
+attr-2.4.44
+	- Fix attr/acl code for handling of recursive walking without following symlinks
+	  Patch contributed by Brandon Philips <brandon@ifup.org>.
+	  http://oss.sgi.com/archives/xfs/2008-07/msg00162.html
+
+attr-2.4.43 (20 June 2008)
+	- Added configurable attr exception list for xattr copy, thanks to
+	  Andreas Gruenbacher.
+
+attr-2.4.42 (14 April 2008)
+	- Add Czech translation (thanks to Petr Pisar).
+
+attr-2.4.41 (4 December 2007)
+	- A number of changes from Andreas Gruenbacher:
+	    - remove outdated doc/ea-conv
+	    - fix issues for tree walking with file descriptors
+		- fd duplicates and running out
+
+attr-2.4.40 (21 November 2007)
+	- Address compilation warning about signedness in libattr.c
+	- A number of changes from Andreas Gruenbacher:
+	    - In some cases, gcc does not link in functions from libmisc.a
+	      unless libmisc is specified before the dynamic libraries on
+	      the command line.
+	    - Rip out nftw tree walking, it is broken and hopeless to fix.
+	      The replacement walk_tree() function does exactly what we
+	      want, and is much simpler to use.
+	    - Add a test case for tree walking.
+	    - For some reason, test/attr.test broke.
+
+attr-2.4.39 (11 September 2007)
+	- Fix symlink handling with getfattr, thanks to Utako Usaka.
+
+attr-2.4.38 (30 March 2007)
+	- Add Spanish and Galician translation
+	  (thanks to Antonio Trueba)
+
+attr-2.4.37 (23 January 2007)
+	- Fix cross-compile issues. Thanks to Diego 'Flameeyes' Petten�
+
+attr-2.4.36 (19 December 2006)
+	- Reinstate xattr syscall entry points (these symbols are
+	  explicitly exported from the library - d'oh!).
+	- Fix the original ARM EABI issue a different way, thanks
+	  to Lennert Buytenhek.
+
+attr-2.4.35 (8 December 2006)
+	- Remove system call stubs from libattr, we always defer to
+	  the libc interfaces in this day and age.  Removes a SIGILL
+	  delivery from the ARM EABI, reported by Lennert Buytenhek.
+
+attr-2.4.34 (14 July 2006)
+	- Fix issues with makedepend on libtool libraries.
+
+attr-2.4.33 (03 July 2006)
+	- Update translation Makefile to work better with the Ubuntu
+	  translation system.  Thanks to feedback from Martin Pitt.
+	- Fix annoying "ignores datarootdir" warning from configure.
+	- Fix issues with makedepend build infrastructure.
+
+attr-2.4.32 (28 March 2006)
+	- Debian packaging updates (libc-dev dependency fixed)
+	- Enable -O2 optimised builds by default
+
+attr-2.4.31 (22 February 2006)
+	- Fix GNU/Hurd builds (no PATH_MAX macro, dodge syscalls.c).
+	- Fix segfault in attr_list compat routines, thanks to
+	  Simon Munton <simon@munton.demon.co.uk>.
+
+attr-2.4.30 (15 February 2006)
+	- Debian packaging updates (debmake out, debhelper in).
+	- Skip SGI DMF attributes when copying attrs between files.
+
+attr-2.4.29 (31 January 2006)
+	- Updated Polish translation.
+	  Thanks to Jakub Bogusz <qboosh@pld-linux.org> for this.
+	- Initial Swedish Translation, from the Debian translators.
+	  Thanks to Daniel Nylander <yeager@lidkoping.net> for this.
+	- Fixed rpm specfile with respect to INSTALL_{USER,GROUP}.
+	- Fixed a couple of double frees in libattr attr copy
+	  routines, thanks to Andreas.
+
+attr-2.4.28 (13 January 2006)
+	- Implement the IRIX list_attr interfaces in libattr.so,
+	  the final piece of the IRIX attr compatibility API.
+	- Put back the -L (list) option in attr(1).
+
+attr-2.4.27 (05 December 2005)
+	- Revert xattr.h/attributes.h to stating "Lesser GPL",
+	  accidentally marked "GPL" in previous version.
+
+attr-2.4.26 (10 November 2005)
+	- Sync up build system (m4 macros, etc) with other projects
+	- Update SGI copyright/licence notices
+
+attr-2.4.25 (11 October 2005)
+	- Add French translation from the debian-l10n-french folks
+	  (thanks to Guilhelm Panaget)
+
+attr-2.4.24 (10 August 2005)
+	- Fix botched error reporting in attr_copy_file.c
+	- Updated polish translation (both thanks to Jakub Bogusz)
+
+attr-2.4.23 (3 June 2005)
+	- attr_copy_{fd,file}: Reduce verboseness for ENOTSUP errors.
+	  ENOTSUPP is common when copying between xattr enabled and
+	  xattr disabled file systems.
+
+attr-2.4.22 (21 February 2005)
+	- Allocate the line buffer dynamically when reading from a file.
+	  This mainly fixes restoring of large attributes.
+
+attr-2.4.21 (31 January 2005)
+	- Replace use of _POSIX_PATH_MAX with the larger PATH_MAX
+	  (thanks to Andree Leidenfrost).
+
+attr-2.4.20 (30 November 2004)
+	- Licensing fixes and clarifications.
+	- Update outdated email addresses.
+
+attr-2.4.19 (29 September 2004)
+	- Update m4 macros, incorporating some portability changes.
+
+attr-2.4.18 (21 September 2004)
+	- Add Dutch translation (thanks to Luk Claes)
+
+attr-2.4.17 (8 September 2004)
+	- Clarify setfattr usage information.
+	- Fix email address in manual pages.
+
+attr-2.4.16 (21 April 2004)
+	- Updated Debian packaging dependency information.
+
+attr-2.4.15 (02 February 2004)
+	- Included Polish message translations by Jakub Bogusz.
+
+attr-2.4.14 (14 January 2004)
+	- When attr_copy_file is used on a symlink, process the
+	  symlink instead of the file the symlink points to.
+	- Improve wording in attr(5) man page.
+	- Add the security namespace into the attr(1) command and
+	  libattr IRIX-compatibility code for XFS commands to use.
+
+attr-2.4.13 (06 January 2004)
+	- Fix a permission bug in directory tree walking code.
+
+attr-2.4.12 (13 October 2003)
+	- Fix build on the GNU/Hurd platform for some Debian folks.
+
+attr-2.4.11 (07 October 2003)
+	- Man page tweaks
+
+attr-2.4.10 (29 August 2003)
+	- Fix a bug in nftw worker routines' error handling code.
+
+attr-2.4.9 (27 August 2003)
+	- Fix issues in the libmisc quote routine (from Ben Escoto).
+
+attr-2.4.8 (04 August 2003)
+	- Make quote/unquote return NULL if passed NULL.
+
+attr-2.4.7 (29 July 2003)
+	- Make quote return NULL if out of memory instead of exiting.
+
+attr-2.4.6 (21 July 2003)
+	- Add internal library for misc. functions: quote, unquote,
+	  high_water_alloc.
+	- Quote special characters in path names and attribute names.
+	- Use high_water_alloc everywhere instead of malloc/realloc.
+	- Update the test scripts.
+
+attr-2.4.5 (03 July 2003)
+	- Tweak the build so we don't always run msgmerge,
+	  fix from Steve Langasek originally.
+
+attr-2.4.4 (04 June 2003)
+	- Some Debian-specific packaging updates.
+
+attr-2.4.3 (26 April 2003)
+	- Rework configure.in to make use of shared macros.
+
+attr-2.4.2 (14 April 2003)
+	- Found a better way to handle the trusted/xfsroot namespace
+	  transition, from a suggestion from Andreas.  COMPAT_XFSROOT
+	  is no longer checked, we figure this out on-the-fly now.
+	- Fix configure tests that used AC_PATH_PROG incorrectly.
+
+attr-2.4.1 (27 March 2003)
+	- Cleanups to the build process, in particular the automatic
+	  rpm package generation Makefile and spec file template.
+	- Makepkgs script can now propagate failures back from make.
+	- Change default --prefix to /usr.
+
+attr-2.4.0 (26 February 2003)
+	- Add symbol level versioning to libattr. This improves link
+	  time consistency checks. The library versions are also
+	  honored by RPM, so an RPM package built against say,
+	  libattr.so.1(ATTR_1.1) won't link against
+	  libattr.so.1(ATTR_1.0), which was not checked before.
+	- Make the default check function used by attr_copy_{fd,file}()
+	  accessible as attr_copy_check_permissions().
+	- Increment the library version number, so that the attr_copy
+	  functions can be checked for.
+	- Fix some minor typos.
+
+attr-2.3.0 (21 February 2003)
+	- By default, we use the "trusted" attribute name prefix for
+	  XFS ROOT attribute names, instead of the "xfsroot" prefix.
+	  If the COMPAT_XFSROOT environment variable is set, however,
+	  the old (now deprecated) names are used.  This is useful for
+	  XFS kernel code older than, well, today.  Newer kernels will
+	  work correctly with the new tools (but not the old tools).
+	- Added routines to libattr for copying extended attributes -
+	  attr_copy_file and attr_copy_fd.
+	- libattr.so version updated to reflect these changes.
+	- Update licensing notice in system call man pages for aeb.
+
+attr-2.2.0 (30 November 2002)
+	- Complete the internationalisation support, and added initial
+	  German translation from Andreas.
+
+attr-2.1.2 (22 November 2002)
+	- Add a description of trusted extended attributes to attr(5).
+
+attr-2.1.1 (31 October 2002)
+	- Minor updates to the Debian packaging.
+
+attr-2.1.0 (19 October 2002)
+	- Change the devel .rpm and .deb package names so that they
+	  now use a lib prefix.
+	- Several packaging changes related to this to ensure upgrades
+	  work and depenency information isn't lost.
+
+attr-2.0.12 (07 October 2002)
+	- Fix: the m68k architecture is identified by __mc68000__
+	  rather than by __m68k__.
+	- Correction in the attr(5) manual page.
+	- Add test cases for empty EA values, and for a bad
+	  ACL extended attribute name (there were bugs with these).
+
+attr-2.0.11 (04 September 2002)
+	- Make the test/run script return a proper status code.
+	- Fix up the error message returned for ENODATA rather
+	  than ENOATTR, so if ENOATR is assigned a separate number
+	  we don't mess with ENOATTR's text message.
+
+attr-2.0.10 (28 August 2002)
+	- Add system call numbers for the m68k architecture
+	- Add missing "enabling" #define for the Alpha architecture
+	- Build updates to allow rpmbuild to build rpms (newer versions
+	  of rpm require this, as rpm itself can no longer build rpms)
+	- Several section 3 man page corrections (minor)
+
+attr-2.0.9 (04 July 2002)
+	- Build infrastructure updates so that configure options can be
+	  used to specify paths rather than semi-hard-coded path names
+	  controlled by the PREFIX/ROOT_PREFIX environment variables; eg.
+	  now allows /lib64 and /lib32
+	- Add system call numbers for the Alpha architecture
+
+attr-2.0.8 (22 April 2002)
+	- Minor wording change in the attr(5) manual page
+	- Additional test cases for malformed attribute names
+	- Remove leftover build targets html and ps
+
+attr-2.0.7 (13 April 2002)
+	- Minor build system updates
+
+attr-2.0.6 (26 March 2002)
+	- Add MIPS/MIPS64 system call numbers
+	- Several man page updates
+
+attr-2.0.5 (12 March 2002)
+	- Fix build for architectures which don't have syscalls yet
+	- Fix the syscall number used on Sparc for fremovexattr(2)
+	- Test script updates
+	- Man page updates
+
+attr-2.0.4 (05 March 2002)
+	- A minor change to the test/run script
+
+attr-2.0.3 (01 March 2002)
+	- add in ARM architecture system call numbers
+	- updates to the test output from Andreas
+
+attr-2.0.2 (27 February 2002)
+	- add in S/390 system call numbers from Martin Schwidefsky
+	- revert IA64 syscall numbering after further mail with
+	  David Mosberger (apparently sys_tkill will be moved)
+	  See:	https://external-lists.valinux.com/archives/\
+			/linux-ia64/2002-February/002990.html
+
+attr-2.0.1 (26 February 2002)
+	- incorporate several documentation changes from Andreas,
+	  including a script to convert from the aget format of
+	  attribute backup file, to the new getfattr format
+	- fix IA64 syscall numbering
+
+attr-2.0.0 (26 February 2002)
+	- initial introduction of the new system call interface
+	- synced up with the ext2 project, incorporated get/set tools
+	- new man pages for system calls, getfattr(1) and setfattr(1)
+	- made the attributes.h interface align properly with IRIX
+
+attr-1.1.3 (03 August 2001)
+	- bug fix from Juer Lee, syscall use on non-i386 was broken
+	- tested on PowerPC and i386; code is simpler and works
+	- install an additional library symlink for ld, so that the
+	  shared lib is always found before the static lib at link time
+
+attr-1.1.2 (27 July 2001)
+	- fixes for (hopefully) the last few nits in libtool usage
+
+attr-1.1.1 (23 July 2001)
+	- install static libs and libtool archives into /usr/lib
+	- shared libraries are unchanged, however
+
+attr-1.1.0 (16 July 2001)
+	- reworked Makefiles to use libtool
+	- rework some of the Debian packaging rules
+	- install attr command into /usr/bin, not /bin
+	- libattr now installed into /lib instead of /usr/lib
+	  as it is needed by xfsdump and xfsrestore which must
+	  be available for recovery when only root is mounted
+
+attr-1.0.4 (02 July 2001)
+	- work around syscall number collision on recent ia64 kernels
+
+attr-1.0.3 (18 May 2001)
+	- man page corrections
+
+attr-1.0.2 (24 April 2001)
+	- rearrange headers to make system call internals private
+	- update package descriptions
+
+attr-1.0.1 (30 January 2001)
+	- minor rpm and deb packaging work
+
+attr-1.0.0 (15 January 2001)
+	- extended attribute code abstracted from xfs-cmds package
+	- completed Debian packaging
+	- late beta code
+

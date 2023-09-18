@@ -1,0 +1,131 @@
+comment_char %
+escape_char  /
+% charset "ISO_8859-1:1987"
+% Distribution and use is free, also for commercial purposes.
+
+LC_IDENTIFICATION
+title "Occitan Language Locale for France"
+source "RAP"
+address "Los Genets, 12290 Pont de Salars"
+contact "Jean-Paul Fraysse"
+email "Jean-Paul.Fraysse@wanadoo.fr"
+tel "+33 -565743131 "
+fax ""
+language "Occitan"
+territory "France"
+revision "0.2"
+date "2000-11-15"
+
+category oc_FR:2000;LC_IDENTIFICATION
+category oc_FR:2000;LC_COLLATE
+category oc_FR:2000;LC_CTYPE
+category oc_FR:2000;LC_MESSAGES
+category oc_FR:2000;LC_MONETARY
+category oc_FR:2000;LC_NUMERIC
+category oc_FR:2000;LC_TIME
+category oc_FR:2000;LC_PAPER
+category oc_FR:2000;LC_MEASUREMENT
+category oc_FR:2000;LC_TELEPHONE
+category oc_FR:2000;LC_ADDRESS
+
+% ISO/IEC 14652: Converted comments to LC_IDENTIFICATION
+%  added LC_PAPER, LC_MEASUREMENT, LC_TELEPHONE, LC_ADDRESS
+%  copy LC_MONETARY from fr_FR for brevity
+% -- mckinstry@computer.org, 2000-06-20
+
+END LC_IDENTIFICATION
+
+LC_ADDRESS
+postal_fmt "<U0025><U0064><U0025><U004E><U0025><U0066><U0025><U004E><U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E>/
+<U0025><U0073><U0020><U0025><U0068><U0020><U0035><U0065><U0020><U0025><U0072><U0025><U004E>/
+<U0025><U0043><U0025><U007A><U0020><U0025><U0054><U0025><U004E><U0025><U0063><U0025><U004E>"
+% FIXME country_name "France" in Occitan ?
+country_post "F"
+country_ab2 "FR"
+country_ab3 "FRA"
+country_num 250
+country_isbn "2"
+country_car "F"
+% FIXME lang_name "Occitan" in Occitan ?
+lang_ab "oc"
+lang_term "oci"
+lang_lib "oci"
+END LC_ADDRESS
+
+LC_CTYPE
+copy "i18n"
+translit_start
+include "translit_combining";""
+translit_end
+END LC_CTYPE
+
+LC_COLLATE
+copy "en_DK"
+END LC_COLLATE
+
+LC_MESSAGES
+yesexpr "<U005E><U005B><U006F><U004F><U0073><U0053><U0079><U0059><U005D><U002E><U002A>"
+noexpr  "<U005E><U005B><U006E><U004E><U005D><U002E><U002A>"
+END LC_MESSAGES
+
+LC_MONETARY
+copy "fr_FR"
+END LC_MONETARY
+
+LC_NUMERIC
+copy "fr_FR"
+END LC_NUMERIC
+
+LC_PAPER
+copy "fr_FR"
+END LC_PAPER
+
+LC_MEASUREMENT
+copy "fr_FR"
+END LC_MEASUREMENT
+
+LC_TELEPHONE
+copy "fr_FR"
+END LC_TELEPHONE
+
+LC_TIME
+abday   "<U0064><U0069><U006D>";"<U006C><U0075><U006E>";/
+        "<U006D><U0061><U0072>";"<U006D><U0065><U0063>";/
+        "<U006A><U00F2><U0075>";"<U0076><U0065><U006E>";/
+        "<U0073><U0061><U0062>"
+day     "<U0064><U0069><U006D><U0065><U006E><U0067><U0065>";/
+        "<U0064><U0069><U006C><U0075><U006E><U0073>";/
+        "<U0064><U0069><U006D><U0061><U0072><U0073>";/
+        "<U0064><U0069><U006D><U0065><U0063><U0072><U0065><U0073>";/
+        "<U0064><U0069><U006A><U00F3><U0075><U0073>";/
+        "<U0064><U0069><U0076><U0065><U006E><U0064><U0072><U0065><U0073>";/
+        "<U0064><U0069><U0073><U0061><U0062><U0074><U0065>"
+abmon   "<U0067><U0065><U006E>";"<U0066><U0065><U0062>";/
+        "<U006D><U0061><U0072>";"<U0061><U0062><U0072>";/
+        "<U006D><U0061><U0069>";"<U006A><U0075><U006E>";/
+        "<U006A><U0075><U006C>";"<U0061><U0067><U006F>";/
+        "<U0073><U0065><U0074>";"<U006F><U0063><U0074>";/
+        "<U006E><U006F><U0076>";"<U0064><U0065><U0063>"
+mon     "<U0067><U0065><U006E><U0069><U00E8><U0072>";/
+        "<U0066><U0065><U0062><U0072><U0069><U00E8><U0072>";/
+        "<U006D><U0061><U0072><U00E7>";/
+        "<U0061><U0062><U0072><U0069><U0061><U006C>";/
+        "<U006D><U0061><U0069>";/
+        "<U006A><U0075><U006E><U0068>";/
+        "<U006A><U0075><U006C><U0068><U0065><U0074>";/
+        "<U0061><U0067><U006F><U0073><U0074>";/
+        "<U0073><U0065><U0074><U0065><U006D><U0062><U0072><U0065>";/
+        "<U006F><U0063><U0074><U006F><U0062><U0072><U0065>";/
+        "<U006E><U006F><U0076><U0065><U006D><U0062><U0072><U0065>";/
+        "<U0064><U0065><U0063><U0065><U006D><U0062><U0072><U0065>"
+d_t_fmt "<U0025><U0061><U0020><U0025><U0064><U0020><U0025><U0062><U0020><U0025><U0059><U0020><U0025><U0054><U0020><U0025><U005A>"
+d_fmt   "<U0025><U0064><U002E><U0025><U006D><U002E><U0025><U0059>"
+t_fmt   "<U0025><U0054>"
+am_pm   "";""
+t_fmt_ampm ""
+END LC_TIME
+
+LC_NAME
+% FIXME
+copy "fr_FR"
+END LC_NAME

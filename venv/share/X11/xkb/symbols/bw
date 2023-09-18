@@ -1,0 +1,21 @@
+// Keyboard layout for Botswana.
+
+default partial alphanumeric_keys
+xkb_symbols "tswana" {
+
+    include "us"
+
+    name[Group1]= "Tswana";
+
+    key <TLDE> {[     grave,  asciitilde,  U0300,  U0303 ]};  // COMBINING GRAVE ACCENT, COMBINING TILDE
+    key <AE06> {[         6, asciicircum,  U0302         ]};  // COMBINING CIRCUMFLEX ACCENT
+    key <AE08> {[         8,    asterisk,  U0307,  U0323 ]};  // COMBINING DOT ABOVE, COMBINING DOT BELOW
+    key <AE09> {[         9,   parenleft,  U0306         ]};  // COMBINING BREVE
+    key <AE10> {[         0,  parenright,  U030c         ]};  // COMBINING CARON
+    key <AE11> {[     minus,  underscore,  U0304,  U0331 ]};  // COMBINING MACRON, COMBINING MACRON BELOW
+
+    key <AC10> {[ semicolon,       colon,  U0324,  U0324 ]};  // COMBINING DIAERESIS BELOW
+    key <AC11> {[apostrophe,    quotedbl,  U0301,  U0308 ]};  // COMBINING ACUTE ACCENT, COMBINING DIAERESIS
+
+    include "level3(ralt_switch)"
+};

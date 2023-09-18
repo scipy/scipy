@@ -1,0 +1,49 @@
+Metadata-Version: 2.1
+Name: gmpy2
+Version: 2.1.2
+Summary: gmpy2 interface to GMP/MPIR, MPFR, and MPC for Python 2.7 and 3.5+
+Home-page: https://github.com/aleaxit/gmpy
+Author: Case Van Horsen
+Author-email: casevh@gmail.com
+License: LGPL-3.0+
+Keywords: gmp mpfr mpc multiple-precision arbitrary-precision precision bignum
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)
+Classifier: Natural Language :: English
+Classifier: Operating System :: MacOS :: MacOS X
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Operating System :: POSIX
+Classifier: Programming Language :: C
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: Implementation :: CPython
+Classifier: Topic :: Scientific/Engineering :: Mathematics
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+License-File: COPYING
+License-File: COPYING.LESSER
+
+gmpy2 is an optimized, C-coded Python extension module that supports fast
+multiple-precision arithmetic.  gmpy2 is based on the original gmpy module.
+gmpy2 adds support for correctly rounded multiple-precision real arithmetic
+(using the MPFR library) and complex arithmetic (using the MPC library).
+
+gmpy2 2.1 was extensively refactored. Some of the significant changes are:
+
+  * Support for thread-safe contexts and context methods
+  * Interoperability with Cython extensions
+  * mpz and mpq operation can release the GIL (controlled by the conntext)
+  * Improved argument processing
+
+gmpy2 is available at https://pypi.python.org/pypi/gmpy2/
+
+Documentation is available at https://gmpy2.readthedocs.io/en/latest/
+

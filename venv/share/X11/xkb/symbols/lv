@@ -1,0 +1,596 @@
+// Keyboard layouts for Latvia.
+
+// Latvian keymap version 1.3
+// Copyright (C) Dmitry Golubev <lastguru@mail.ru>, 2003-2004
+//
+// Reworked to get rid of dead_keys (use of which in this case
+// is a dirty hack). It is now not dependent on locale settings
+// and GTK_IM_MODULES in Gnome. The map is also providing some of
+// ISO9995-3 alternate characters. Note that this version works
+// correctly under Gnome 2.6. This is to be put into symbols/
+// directory, or somewhere else.
+//
+// Permission to use, copy, modify, distribute, and sell this software and its
+// documentation for any purpose is hereby granted without fee, provided that
+// the above copyright notice appear in all copies and that both that
+// copyright notice and this permission notice appear in supporting
+// documentation, and that the name of the copyright holder(s) not be used in
+// advertising or publicity pertaining to distribution of the software without
+// specific, written prior permission.  The copyright holder(s) makes no
+// representations about the suitability of this software for any purpose.  It
+// is provided "as is" without express or implied warranty.
+//
+// THE COPYRIGHT HOLDER(S) DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,
+// INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO
+// EVENT SHALL THE COPYRIGHT HOLDER(S) BE LIABLE FOR ANY SPECIAL, INDIRECT OR
+// CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
+// DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+// TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+// PERFORMANCE OF THIS SOFTWARE.
+
+// Modified by Aldis Berjoza <aldis@bsdroot.lv>, 12 april 2011
+// Changes:
+//   * Added Latvian Ergonomic, Latvian Adapted and Latvian Modern variants
+//      Author of this work is Valdis Vītoliņš
+//      http://odo.lv/LatvianKeyboard
+//      http://odo.lv/Recipes/LatvianKeyboard#HErgonomiskC481stastatC5ABrasuzlikC5A1anauzLinuxdatora%22
+//   * Added guillemotleft, leftdoublequotemark, guillemotright,
+//      rightdoublequotemark to Latvian modern layout for AD11 and AD12
+//   * Added US-Dvorac compatible Latvian layouts
+//   * Added programmer US-Dvorac compatible Latvian layouts
+//   * Added US-Colemak compatible Latvian layouts
+//   * Reformatted layouts
+
+
+//============================================================================
+// Latvian QWERTY layout
+// http://en.wikipedia.org/wiki/QWERTY
+//
+default partial alphanumeric_keys modifier_keys
+xkb_symbols "basic" {
+
+	name[Group1]= "Latvian";
+
+	key <TLDE> {[ grave,		asciitilde,	acute,			asciitilde		]};
+	key <AE01> {[ 1,		exclam,		onesuperior,		exclamdown		]};
+	key <AE02> {[ 2,		at,		twosuperior,		oneeighth		]};
+	key <AE03> {[ 3,		numbersign,	threesuperior,		sterling		]};
+	key <AE04> {[ 4,		dollar,		EuroSign,		cent			]};
+	key <AE05> {[ 5,		percent,	onehalf,		threeeighths		]};
+	key <AE06> {[ 6,		asciicircum,	threequarters,		fiveeighths		]};
+	key <AE07> {[ 7,		ampersand,	braceleft,		seveneighths		]};
+	key <AE08> {[ 8,		asterisk,	bracketleft,		trademark		]};
+	key <AE09> {[ 9,		parenleft,	bracketright,		plusminus		]};
+	key <AE10> {[ 0,		parenright,	braceright,		degree			]};
+	key <AE11> {[ minus,		underscore,	backslash,		questiondown		]};
+	key <AE12> {[ equal,		plus,		endash,			emdash			]};
+
+	key <AD01> {[ q,		Q,		q,			Q			]};
+	key <AD02> {[ w,		W,		w,			W			]};
+	key <AD03> {[ e,		E,		emacron,		Emacron			]};
+	key <AD04> {[ r,		R,		rcedilla,		Rcedilla		]};
+	key <AD05> {[ t,		T,		t,			T			]};
+	key <AD06> {[ y,		Y,		y,			Y			]};
+	key <AD07> {[ u,		U,		umacron,		Umacron			]};
+	key <AD08> {[ i,		I,		imacron,		Imacron			]};
+	key <AD09> {[ o,		O,		omacron,		Omacron			]};
+	key <AD10> {[ p,		P,		p,			P			]};
+	key <AD11> {[ bracketleft,	braceleft,	guillemotleft,		leftdoublequotemark	]};
+	key <AD12> {[ bracketright,	braceright,	guillemotright,		rightdoublequotemark	]};
+
+	key <AC01> {[ a,		A,		amacron,		Amacron			]};
+	key <AC02> {[ s,		S,		scaron,			Scaron			]};
+	key <AC03> {[ d,		D,		d,			D			]};
+	key <AC04> {[ f,		F,		f,			F			]};
+	key <AC05> {[ g,		G,		gcedilla,		Gcedilla		]};
+	key <AC06> {[ h,		H,		h,			H			]};
+	key <AC07> {[ j,		J,		j,			J			]};
+	key <AC08> {[ k,		K,		kcedilla,		Kcedilla		]};
+	key <AC09> {[ l,		L,		lcedilla,		Lcedilla		]};
+	key <AC10> {[ semicolon,	colon,		semicolon,		colon			]};
+	key <AC11> {[ apostrophe,	quotedbl,	leftdoublequotemark,	doublelowquotemark	]};
+
+	key <AB01> {[ z,		Z,		zcaron,			Zcaron			]};
+	key <AB02> {[ x,		X,		x,			X			]};
+	key <AB03> {[ c,		C,		ccaron,			Ccaron			]};
+	key <AB04> {[ v,		V,		v,			V			]};
+	key <AB05> {[ b,		B,		b,			B			]};
+	key <AB06> {[ n,		N,		ncedilla,		Ncedilla		]};
+	key <AB07> {[ m,		M,		m,			M			]};
+	key <AB08> {[ comma,		less,		U2022,			multiply		]}; // bullet
+	key <AB09> {[ period,		greater,	periodcentered,		division		]};
+	key <AB10> {[ slash,		question,	slash,			abovedot		]};
+	key <BKSL> {[ backslash,	bar,		grave,			breve			]};
+
+	key <SPCE> {[ space,		space,		space,			space			]};
+
+	include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys modifier_keys
+xkb_symbols "apostrophe" {
+
+	include "lv(basic)"
+
+	name[Group1]= "Latvian (apostrophe)";
+
+	key <AC11> {[ISO_Level3_Latch, quotedbl, apostrophe, quotedbl]};
+	key <SPCE> {[space, space, apostrophe]};
+	modifier_map Mod5 { <AC11> };
+};
+
+partial alphanumeric_keys modifier_keys
+xkb_symbols "apostrophe-deadquotes" {
+
+	include "lv(basic)"
+
+	name[Group1]= "Latvian (apostrophe, dead quotes)";
+
+	key <AC11> {[ISO_Level3_Latch, ISO_Level3_Latch, apostrophe, quotedbl]};
+	key <SPCE> {[space, space, apostrophe, quotedbl]};
+	modifier_map Mod5 { <AC11> };
+};
+
+partial alphanumeric_keys modifier_keys
+xkb_symbols "tilde" {
+
+	include "lv(basic)"
+
+	name[Group1]= "Latvian (tilde)";
+
+	key <TLDE> {[ISO_Level3_Latch, asciitilde, grave, acute]};
+	key <SPCE> {[space, space, asciitilde]};
+	modifier_map Mod5 { <TLDE> };
+};
+
+partial alphanumeric_keys modifier_keys
+xkb_symbols "fkey" {
+
+	include "lv(basic)"
+
+	name[Group1]= "Latvian (F)";
+
+	key <AC04> {[ISO_Level3_Latch, ISO_Level3_Latch, f, F]};
+	key <SPCE> {[space, space, f, F]};
+	modifier_map Mod5 { <AC04> };
+};
+
+//============================================================================
+// Latvian Adapted keyboard layout
+// http://odo.lv/xwiki/bin/download/Main/LatvianKeyboard/Adapted.png
+//
+// http://odo.lv/LatvianKeyboard
+// http://odo.lv/LatvianKeyboard5
+//
+partial alphanumeric_keys modifier_keys
+xkb_symbols "adapted" {
+
+	include "lv(basic)"
+
+	name[Group1]= "Latvian (adapted)";
+
+	key <AE02> {[ 2,		Ccaron,		at,		twosuperior	]};
+	key <AE03> {[ 3,		ccaron,		numbersign,	threesuperior	]};
+	key <AE04> {[ 4,		Zcaron,		dollar,		EuroSign	]};
+	key <AE05> {[ 5,		zcaron,		percent,	onehalf		]};
+
+	key <AD01> {[ scaron,		Scaron,		q,		Q		]};
+	key <AD02> {[ emacron,		Emacron,	w,		W		]};
+	key <AD03> {[ e,		E,		e,		E		]};
+
+	key <AD06> {[ amacron,		Amacron,	y,		Y		]};
+	key <AD07> {[ u,		U,		u,		U		]};
+	key <AD08> {[ i,		I,		i,		I		]};
+	key <AD11> {[ umacron,		Umacron,	bracketleft,	braceleft	]};
+	key <AD12> {[ ncedilla,		Ncedilla,	bracketright,	braceright	]};
+
+	key <AC01> {[ a,		A,		a,		A		]};
+	key <AC02> {[ s,		S,		s,		S		]};
+	key <AC05> {[ g,		G,		g,		G		]};
+
+	key <AC08> {[ k,		K,		k,		K		]};
+	key <AC09> {[ l,		L,		l,		L		]};
+	key <AC10> {[ imacron,		Imacron,	semicolon,	colon		]};
+
+	key <AB01> {[ z,		Z,		z,		Z		]};
+	key <AB02> {[ kcedilla,		Kcedilla,	x,		X		]};
+	key <AB03> {[ c,		C,		c,		C		]};
+
+	key <AB06> {[ n,		N,		n,		N		]};
+
+	key <AB08> {[ comma,		gcedilla,	less,		multiply	]};
+	key <AB09> {[ period,		Gcedilla,	greater,	division	]};
+	key <AB10> {[ lcedilla,		Lcedilla,	slash,		question	]};
+};
+
+//============================================================================
+// Latvian Ergonomic (ŪGJRMV) keyboard layout by Valdis Vītoliņš
+// http://odo.lv/xwiki/bin/download/Main/LatvianKeyboard/Ergonomic.png
+//
+// http://odo.lv/LatvianKeyboard
+// http://odo.lv/LatvianKeyboard5
+//
+partial alphanumeric_keys modifier_keys
+xkb_symbols "ergonomic" {
+
+	include "lv(apostrophe)"
+
+	name[Group1]= "Latvian (ergonomic, ŪGJRMV)";
+
+	key <AE02> {[ 2,		at,		gcedilla,	Gcedilla	]};
+
+	key <AE11> {[ minus,		underscore,	endash,		emdash		]};
+	key <AE12> {[ f,		F,		equal,		plus		]};
+
+	key <AD01> {[ umacron,		Umacron,	q,		Q		]};
+	key <AD02> {[ g,		G,		g,		G		]};
+	key <AD03> {[ j,		J,		j,		J		]};
+	key <AD04> {[ r,		R,		rcedilla,	Rcedilla	]};
+	key <AD05> {[ m,		M,		m,		M		]};
+	key <AD06> {[ v,		V,		w,		W		]};
+	key <AD07> {[ n,		N,		y,		Y		]};
+	key <AD08> {[ z,		Z,		z,		Z		]};
+	key <AD09> {[ emacron,		Emacron,	emacron,	Emacron		]};
+	key <AD10> {[ ccaron,		Ccaron,		ccaron,		Ccaron		]};
+	key <AD11> {[ zcaron,		Zcaron,		bracketleft,	braceleft	]};
+	key <AD12> {[ h,		H,		bracketright,	braceright	]};
+
+	key <AC01> {[ scaron,		Scaron,		scaron,		Scaron		]};
+	key <AC02> {[ u,		U,		u,		U		]};
+	key <AC03> {[ s,		S,		s,		S		]};
+	key <AC04> {[ i,		I,		i,		I		]};
+	key <AC05> {[ l,		L,		l,		L		]};
+	key <AC06> {[ d,		D,		d,		D		]};
+	key <AC07> {[ a,		A,		a,		A		]};
+	key <AC08> {[ t,		T,		t,		T		]};
+	key <AC09> {[ e,		E,		e,		E		]};
+	key <AC10> {[ c,		C,		c,		C		]};
+	key <AC11> {[ ISO_Level3_Latch,	quotedbl,	apostrophe,	quotedbl	]};
+	key <AC12> {[ kcedilla,		Kcedilla,	slash,		backslash	]};
+
+	key <LSGT> {[ gcedilla,		Gcedilla,	gcedilla,	Gcedilla	]};
+	key <AB01> {[ ncedilla,		Ncedilla,	ncedilla,	Ncedilla	]};
+	key <AB02> {[ b,		B,		x,		X		]};
+	key <AB03> {[ imacron,		Imacron,	imacron,	Imacron		]};
+	key <AB04> {[ k,		K,		k,		K		]};
+	key <AB05> {[ p,		P,		p,		P		]};
+	key <AB06> {[ o,		O,		omacron,	Omacron		]};
+	key <AB07> {[ amacron,		Amacron,	amacron,	Amacron		]};
+	key <AB08> {[ comma,		semicolon,	less,		multiply	]};
+	key <AB09> {[ period,		colon,		greater,	division	]};
+	key <AB10> {[ lcedilla,		Lcedilla,	question,	slash		]};
+};
+
+//============================================================================
+// Latvian Modern keyboard layout by Valdis Vītoliņš
+// http://odo.lv/xwiki/bin/download/Recipes/LatvianKeyboard/Modern.png
+//
+// http://odo.lv/LatvianKeyboard
+// http://odo.lv/LatvianKeyboard5
+//
+partial alphanumeric_keys modifier_keys
+xkb_symbols "modern" {
+
+	name[Group1]= "Latvian (Modern Latin)";
+
+	key <TLDE> {[ grave,		asciitilde,	acute,		copyright		]};
+	key <AE01> {[ 1,		exclam,		onesuperior,	exclamdown		]};
+	key <AE02> {[ 2,		at,		twosuperior,	oneeighth		]};
+	key <AE03> {[ 3,		numbersign,	threesuperior,	sterling		]};
+	key <AE04> {[ 4,		dollar,		EuroSign,	cent			]};
+	key <AE05> {[ 5,		percent,	onehalf,	threeeighths		]};
+	key <AE06> {[ 6,		asciicircum,	threequarters,	fiveeighths		]};
+	key <AE07> {[ 7,		ampersand,	braceleft,	seveneighths		]};
+	key <AE08> {[ 8,		asterisk,	bracketleft,	trademark		]};
+	key <AE09> {[ 9,		parenleft,	bracketright,	plusminus		]};
+	key <AE10> {[ 0,		parenright,	braceright,	degree			]};
+	key <AE11> {[ minus,		underscore,	backslash,	questiondown		]};
+	key <AE12> {[ equal,		plus,		endash,		emdash			]};
+
+	key <AD01> {[ emacron,		Emacron,	emacron,	Emacron			]};
+	key <AD02> {[ o,		O,		omacron,	Omacron			]};
+	key <AD03> {[ amacron,		Amacron,	amacron,	Amacron			]};
+	key <AD04> {[ p,		P,		question,	P			]};
+	key <AD05> {[ b,		B,		exclam,		B			]};
+	key <AD06> {[ j,		J,		emdash,		J			]};
+	key <AD07> {[ d,		D,		endash,		D			]};
+	key <AD08> {[ imacron,		Imacron,	imacron,	Imacron			]};
+	key <AD09> {[ l,		L,		lcedilla,	Lcedilla		]};
+	key <AD10> {[ g,		G,		gcedilla,	Gcedilla		]};
+	Key <AD11> {[ bracketleft,	braceleft,	guillemotleft,	leftdoublequotemark	]};
+	key <AD12> {[ bracketright,	braceright,	guillemotright,	rightdoublequotemark	]};
+
+	key <AC01> {[ e,		E,		e,		E			]};
+	key <AC02> {[ u,		U,		umacron,	Umacron			]};
+	key <AC03> {[ a,		A,		a,		A			]};
+	key <AC04> {[ n,		N,		ncedilla,	Ncedilla		]};
+	key <AC05> {[ k,		K,		kcedilla,	Kcedilla		]};
+	key <AC06> {[ ISO_Level3_Latch,	quotedbl,	apostrophe,	quotedbl		]};
+	key <AC07> {[ s,		S,		scaron,		Scaron			]};
+	key <AC08> {[ i,		I,		i,		I			]};
+	key <AC09> {[ t,		T,		t,		T			]};
+	key <AC10> {[ r,		R,		rcedilla,	Rcedilla		]};
+	key <AC11> {[ m,		M,		m,		M			]};
+	key <BKSL> {[ slash,		question,	backslash,	bar			]};
+
+	key <LSGT> {[ q,		Q,		q,		Q			]};
+	key <AB01> {[ x,		X,		q,		Q			]};
+	key <AB02> {[ z,		Z,		zcaron,		Zcaron			]};
+	key <AB03> {[ c,		C,		ccaron,		Ccaron			]};
+	key <AB04> {[ v,		V,		bar,		V			]};
+	key <AB05> {[ w,		W,		backslash,	W			]};
+	key <AB06> {[ f,		F,		period,		F			]};
+	key <AB07> {[ y,		Y,		U0233,		U0232			]};
+	key <AB08> {[ h,		H,		U1E29,		U1E28			]};
+	key <AB09> {[ comma,		semicolon,	less,		multiply		]};
+	key <AB10> {[ period,		colon,		greater,	division		]};
+	key <SPCE> {[ space,		space,		apostrophe				]};
+
+	modifier_map Mod5 { <AC06> };
+
+	include "level3(ralt_switch)"
+};
+
+
+partial alphanumeric_keys modifier_keys
+xkb_symbols "modern-cyr" {
+
+	name[Group1]= "Latvian (Modern Cyrillic)";
+
+	key <TLDE> {[ grave,		asciitilde,	acute,		copyright		]};
+	key <AE01> {[ 1,		exclam,		onesuperior,	exclamdown		]};
+	key <AE02> {[ 2,		at,		twosuperior,	oneeighth		]};
+	key <AE03> {[ 3,		numbersign,	threesuperior,	sterling		]};
+	key <AE04> {[ 4,		dollar,		EuroSign,	cent			]};
+	key <AE05> {[ 5,		percent,	onehalf,	threeeighths		]};
+	key <AE06> {[ 6,		asciicircum,	threequarters,	fiveeighths		]};
+	key <AE07> {[ 7,		ampersand,	braceleft,	seveneighths		]};
+	key <AE08> {[ 8,		asterisk,	bracketleft,	trademark		]};
+	key <AE09> {[ 9,		parenleft,	bracketright,	plusminus		]};
+	key <AE10> {[ 0,		parenright,	braceright,	degree			]};
+	key <AE11> {[ minus,		underscore,	backslash,	questiondown		]};
+	key <AE12> {[ equal,		plus,		endash,		emdash			]};
+
+	key <AD01> {[ U044D,		U042D,		U0454,		U0404			]};
+	key <AD02> {[ U043E,		U041E							]};
+	key <AD03> {[ U044F,		U042F,		U0458,		U0408			]};
+	key <AD04> {[ U043F,		U041F,		question				]};
+	key <AD05> {[ U0431,		U0411,		exclam					]};
+	key <AD06> {[ U0439,		U0419,		emdash					]};
+	key <AD07> {[ U0434,		U0414,		U0452,		U0402			]};
+	key <AD08> {[ U0456,		U0406,		U0457,		U0407			]};
+	key <AD09> {[ U043B,		U041B,		U0459,		U0409			]};
+	key <AD10> {[ U0433,		U0413,		U0491,		U0490			]};
+	Key <AD11> {[ bracketleft,	braceleft,	guillemotleft,	leftdoublequotemark	]};
+	key <AD12> {[ bracketright,	braceright,	guillemotright,	rightdoublequotemark	]};
+
+	key <AC01> {[ U0435,		U0415,		U0451,		U0401			]};
+	key <AC02> {[ U0443,		U0423,		U044E,		U042E			]};
+	key <AC03> {[ U0430,		U0410							]};
+	key <AC04> {[ U043D,		U041D,		U045A,		U040A			]};
+	key <AC05> {[ U043A,		U041A,		U045C,		U040C			]};
+	key <AC06> {[ ISO_Level3_Latch,	quotedbl,	apostrophe,	quotedbl		]};
+	key <AC07> {[ U0441,		U0421,		U0448,		U0428			]};
+	key <AC08> {[ U0438,		U0418							]};
+	key <AC09> {[ U0442,		U0422,		U045B,		U040B			]};
+	key <AC10> {[ U0440,		U0420,		U0453,		U0403			]};
+	key <AC11> {[ U043C,		U041C							]};
+	key <BKSL> {[ slash,		question,	backslash,	bar			]};
+
+	key <LSGT> {[ U0457,		U0407,		U0458,		U0408			]};
+	key <AB01> {[ U044C,		U042C,		U044A,		U042A			]};
+	key <AB02> {[ U0437,		U0417,		U0436,		U0416			]};
+	key <AB03> {[ U0446,		U0426,		U0447,		U0427			]};
+	key <AB04> {[ U0432,		U0412,		U0455,		U0405			]};
+	key <AB05> {[ U0449,		U0429,		U045F,		U040F			]};
+	key <AB06> {[ U0444,		U0424,		U0301					]};
+	key <AB07> {[ U044B,		U042B,		U045E,		U040E			]};
+	key <AB08> {[ U0445,		U0425,		U04BB,		U04BA			]};
+	key <AB09> {[ comma,		semicolon,	less,		multiply		]};
+	key <AB10> {[ period,		colon,		greater,	division		]};
+	key <SPCE> {[ space,		space,		apostrophe				]};
+
+	modifier_map Mod5 { <AC06> };
+
+	include "level3(ralt_switch)"
+};
+
+// EXTRAS:
+
+//============================================================================
+// US Dvorak compatible Latvian layout
+// http://en.wikipedia.org/wiki/Dvorak_Simplified_Keyboard
+//
+partial alphanumeric_keys modifier_keys
+xkb_symbols "dvorak" {
+
+	name[Group1]= "Latvian (Dvorak)";
+
+	key <TLDE> {[ asciitilde,	grave,		acute,			asciitilde		]};
+	key <AE01> {[ 1,		exclam,		onesuperior,		exclamdown		]};
+	key <AE02> {[ 2,		at,		twosuperior,		oneeighth		]};
+	key <AE03> {[ 3,		numbersign,	threesuperior,		sterling		]};
+	key <AE04> {[ 4,		dollar,		EuroSign,		cent			]};
+	key <AE05> {[ 5,		percent,	onehalf,		threeeighths		]};
+	key <AE06> {[ 6,		asciicircum,	threequarters,		fiveeighths		]};
+	key <AE07> {[ 7,		ampersand,	braceleft,		seveneighths		]};
+	key <AE08> {[ 8,		asterisk,	bracketleft,		trademark		]};
+	key <AE09> {[ 9,		parenleft,	bracketright,		plusminus		]};
+	key <AE10> {[ 0,		parenright,	braceright,		degree			]};
+	key <AE11> {[ bracketleft,	braceleft,	leftdoublequotemark,	guillemotleft		]};
+	key <AE12> {[ bracketright,	braceright,	rightdoublequotemark,	guillemotright		]};
+
+	key <AD01> {[ apostrophe,	quotedbl,	leftdoublequotemark,	doublelowquotemark	]};
+	key <AD02> {[ comma,		less,		guillemotleft,		multiply		]};
+	key <AD03> {[ period,		greater,	guillemotright,		division		]};
+	key <AD04> {[ p,		P,		p,			P			]};
+	key <AD05> {[ y,		Y,		y,			Y			]};
+	key <AD06> {[ f,		F,		f,			F			]};
+	key <AD07> {[ g,		G,		gcedilla,		Gcedilla		]};
+	key <AD08> {[ c,		C,		ccaron,			Ccaron			]};
+	key <AD09> {[ r,		R,		rcedilla,		Rcedilla		]};
+	key <AD10> {[ l,		L,		lcedilla,		Lcedilla		]};
+	key <AD11> {[ slash,		question,	slash,			abovedot		]};
+	key <AD12> {[ equal,		plus,		endash,			emdash			]};
+
+	key <AC01> {[ a,		A,		amacron,		Amacron			]};
+	key <AC02> {[ o,		O,		omacron,		Omacron			]};
+	key <AC03> {[ e,		E,		emacron,		Emacron			]};
+	key <AC04> {[ u,		U,		umacron,		Umacron			]};
+	key <AC05> {[ i,		I,		imacron,		Imacron			]};
+	key <AC06> {[ d,		D,		d,			D			]};
+	key <AC07> {[ h,		H,		h,			H			]};
+	key <AC08> {[ t,		T,		t,			T			]};
+	key <AC09> {[ n,		N,		ncedilla,		Ncedilla		]};
+	key <AC10> {[ s,		S,		scaron,			Scaron			]};
+	key <AC11> {[ minus,		underscore,	backslash,		questiondown		]};
+
+	key <AB01> {[ semicolon,	colon,		semicolon,		colon			]};
+	key <AB02> {[ q,		Q,		q,			Q			]};
+	key <AB03> {[ j,		J,		j,			J			]};
+	key <AB04> {[ k,		K,		kcedilla,		Kcedilla		]};
+	key <AB05> {[ x,		X,		x,			X			]};
+	key <AB06> {[ b,		B,		b,			B			]};
+	key <AB07> {[ m,		M,		m,			M			]};
+	key <AB08> {[ w,		W,		w,			W			]};
+	key <AB09> {[ v,		V,		v,			V			]};
+	key <AB10> {[ z,		Z,		zcaron,			Zcaron			]};
+
+	key <BKSL> {[ backslash,	bar,		grave,			breve			]};
+
+	key <SPCE> {[ space,		space,		space,			space			]};
+
+	include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys modifier_keys
+xkb_symbols "ykeydvorak" {
+
+	include "lv(dvorak)"
+
+	name[Group1]= "Latvian (Dvorak, with Y)";
+
+	key <AD05> {[ISO_Level3_Latch, ISO_Level3_Latch, y, Y]};
+	key <SPCE> {[space, space, y, Y]};
+	modifier_map Mod5 { <AD05> };
+};
+
+partial alphanumeric_keys modifier_keys
+xkb_symbols "minuskeydvorak" {
+
+	include "lv(dvorak)"
+
+	name[Group1]= "Latvian (Dvorak, with minus)";
+
+	key <AC11> {[ISO_Level3_Latch, ISO_Level3_Latch, minus, underscore]};
+	key <SPCE> {[space, space, minus, underscore]};
+	modifier_map Mod5 { <AC11> };
+};
+
+//============================================================================
+// US Dvorak programmers layput compatible Latvian layout
+// http://www.kaufmann.no/roland/dvorak/
+//
+partial alphanumeric_keys modifier_keys
+xkb_symbols "dvorakprogr" {
+
+	include "lv(dvorak)"
+
+	name[Group1]= "Latvian (programmer Dvorak)";
+
+	key <TLDE> {[ dollar,		asciitilde,	EuroSign,		cent			]};
+	key <AE01> {[ ampersand,	percent,	acute,			asciitilde		]};
+	key <AE02> {[ bracketleft,	7,		onesuperior,		twosuperior		]};
+	key <AE03> {[ braceleft,	5,		guillemotleft,		leftdoublequotemark	]};
+	key <AE04> {[ braceright,	3,		guillemotright,		rightdoublequotemark	]};
+	key <AE05> {[ parenleft,	1,		onehalf,		threeeighths		]};
+	key <AE06> {[ equal,		9,		threequarters,		fiveeighths		]};
+	key <AE07> {[ asterisk,		0,		degree,			copyright		]};
+	key <AE08> {[ parenright,	2,		endash,			emdash			]};
+	key <AE09> {[ plus,		4,		plusminus,		section			]};
+	key <AE10> {[ bracketright,	6,		registered,		trademark		]};
+	key <AE11> {[ exclam,		8,		exclam,			exclamdown		]};
+	key <AE12> {[ numbersign,	grave,		Greek_alpha,		Greek_beta		]};
+
+	key <AD01> {[ semicolon,	colon,		semicolon,		colon			]};
+	key <AD12> {[ at,		asciicircum,	at,			asciicircum		]};
+
+	key <AB01> {[ apostrophe,	quotedbl,	leftdoublequotemark,	doublelowquotemark	]};
+
+	include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys modifier_keys
+xkb_symbols "ykeydvorakprogr" {
+
+	include "lv(dvorakprogr)"
+
+	name[Group1]= "Latvian (programmer Dvorak, with Y)";
+
+	key <AD05> {[ISO_Level3_Latch, ISO_Level3_Latch, y, Y]};
+	key <SPCE> {[space, space, y, Y]};
+	modifier_map Mod5 { <AD05> };
+};
+
+partial alphanumeric_keys modifier_keys
+xkb_symbols "minuskeydvorakprogr" {
+
+	include "lv(dvorakprogr)"
+
+	name[Group1]= "Latvian (programmer Dvorak, with minus)";
+
+	key <AC11> {[ISO_Level3_Latch, ISO_Level3_Latch, minus, underscore]};
+	key <SPCE> {[space, space, minus, underscore]};
+	modifier_map Mod5 { <AC11> };
+};
+
+//============================================================================
+// Colemak compatible Latvian layout
+// http://colemak.com/
+//
+partial alphanumeric_keys modifier_keys
+xkb_symbols "colemak" {
+
+	include "lv(basic)"
+
+	name[Group1]= "Latvian (Colemak)";
+
+	key <AD03> {[ f,		F,		f,			F			]};
+	key <AD04> {[ p,		P,		p,			P			]};
+	key <AD05> {[ g,		G,		gcedilla,		Gcedilla		]};
+	key <AD06> {[ j,		J,		j,			J			]};
+	key <AD07> {[ l,		L,		lcedilla,		Lcedilla		]};
+	key <AD08> {[ u,		U,		umacron,		Umacron			]};
+	key <AD09> {[ y,		Y,		y,			Y			]};
+	key <AD10> {[ semicolon,	colon,		semicolon,		colon			]};
+
+	key <AC02> {[ r,		R,		rcedilla,		Rcedilla		]};
+	key <AC03> {[ s,		S,		scaron,			Scaron			]};
+	key <AC04> {[ t,		T,		t,			T			]};
+	key <AC05> {[ d,		D,		d,			D			]};
+	key <AC07> {[ n,		N,		ncedilla,		Ncedilla		]};
+	key <AC08> {[ e,		E,		emacron,		Emacron			]};
+	key <AC09> {[ i,		I,		imacron,		Imacron			]};
+	key <AC10> {[ o,		O,		omacron,		Omacron			]};
+
+	key <AB06> {[ k,		K,		kcedilla,		Kcedilla		]};
+
+	include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys modifier_keys
+xkb_symbols "apostrophecolemak" {
+
+	include "lv(colemak)"
+
+	name[Group1]= "Latvian (Colemak, with apostrophe)";
+
+	key <AC11> {[ISO_Level3_Latch, quotedbl, apostrophe, quotedbl]};
+	key <SPCE> {[space, space, apostrophe]};
+	modifier_map Mod5 { <AC11> };
+};
+
+partial alphanumeric_keys
+	xkb_symbols "sun_type6" {
+	include "sun_vndr/lv(sun_type6)"
+};

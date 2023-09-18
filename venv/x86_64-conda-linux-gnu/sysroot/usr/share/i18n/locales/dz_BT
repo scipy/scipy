@@ -1,0 +1,1366 @@
+comment_char %
+escape_char  /
+
+% Bhutanese(Bhutan) locale
+%
+% Name:      dz_BT
+% Author:    Pema Geyleg
+% Contact:   Sherubtse College, Kanglung Bhutan; Pablo Saratxaga
+% E-mail:    pema_geyleg@druknet.bt; pablo@mandrakesoft.com
+% Language:  Dzongkha(dz)
+% Territory: Bhutan(BT)
+% Charset:   UTF-8
+% Revision:  0.3
+% Date:      2004-09-03
+%
+
+LC_IDENTIFICATION
+title      "Dzongkha language locale for Bhutan"
+source     "Sherubtse College"
+address    "Kanglung, Bhutan"
+contact    ""
+email      "bug-glibc@gnu.org"
+tel        ""
+fax        ""
+language   "Dzongkha"
+territory  "Bhutan"
+revision   "0.3"
+date       "2004-09-03"
+%
+category  "dz_BT:2004";LC_IDENTIFICATION
+category  "dz_BT:2004";LC_CTYPE
+category  "dz_BT:2004";LC_COLLATE
+category  "dz_BT:2004";LC_NUMERIC
+category  "dz_BT:2004";LC_MONETARY
+category  "dz_BT:2004";LC_MESSAGES
+category  "dz_BT:2004";LC_PAPER
+category  "dz_BT:2004";LC_NAME
+category  "dz_BT:2004";LC_ADDRESS
+category  "dz_BT:2004";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+%%%%%%%%%%%%%%%%
+% TODO: check LC_MONETARY, LC_NUMERIC, LC_MESSAGES, LC_TIME
+% 	check time and date formats
+%%%%%%%%%%%%%%%%
+
+LC_CTYPE
+copy "i18n"
+
+translit_start
+include "translit_combining";""
+translit_end
+END LC_CTYPE
+
+LC_COLLATE
+copy "iso14651_t1"
+
+script <TIBETAN>
+
+% 30 base letters
+collating-symbol <TIB-KA>
+collating-symbol <TIB-KHA>
+collating-symbol <TIB-GA>
+collating-symbol <TIB-NGA>
+collating-symbol <TIB-CA>
+collating-symbol <TIB-CHA>
+collating-symbol <TIB-JA>
+collating-symbol <TIB-NYA>
+collating-symbol <TIB-TA>
+collating-symbol <TIB-THA>
+collating-symbol <TIB-DA>
+collating-symbol <TIB-NA>
+collating-symbol <TIB-PA>
+collating-symbol <TIB-PHA>
+collating-symbol <TIB-BA>
+collating-symbol <TIB-MA>
+collating-symbol <TIB-TSA>
+collating-symbol <TIB-TSHA>
+collating-symbol <TIB-DZA>
+collating-symbol <TIB-WA>
+collating-symbol <TIB-ZHA>
+collating-symbol <TIB-ZA>
+collating-symbol <TIB--A>
+collating-symbol <TIB-YA>
+collating-symbol <TIB-RA>
+collating-symbol <TIB-LA>
+collating-symbol <TIB-SHA>
+collating-symbol <TIB-SA>
+collating-symbol <TIB-HA>
+collating-symbol <TIB-A>
+
+% 4 explicit vowels
+collating-symbol <TIB-I>
+collating-symbol <TIB-U>
+collating-symbol <TIB-E>
+collating-symbol <TIB-O>
+
+% pre-radicals
+collating-symbol <R_G>
+collating-symbol <R_D>
+collating-symbol <R_B>
+collating-symbol <R_M>
+collating-symbol <R_A>
+collating-symbol <R_R>
+collating-symbol <R_L>
+collating-symbol <R_S>
+collating-symbol <R_BR>
+collating-symbol <R_BL>
+collating-symbol <R_BS>
+
+% nominal, subjoined or variant forms
+collating-symbol <NOM>
+collating-symbol <SUB>
+collating-symbol <VAR>
+
+% ka-radicals
+collating-symbol <TIB-KA-R_D>
+collating-symbol <TIB-KA-R_B>
+collating-symbol <TIB-KA-R_R>
+collating-symbol <TIB-KA-R_L>
+collating-symbol <TIB-KA-R_S>
+collating-symbol <TIB-KA-R_BR>
+collating-symbol <TIB-KA-R_BS>
+collating-element <rad-ka-d> from "<U0F51><U0F40>"
+collating-element <rad-ka-b> from "<U0F56><U0F40>"
+collating-element <rad-ka-r> from "<U0F62><U0F90>"
+collating-element <rad-ka-l> from "<U0F63><U0F90>"
+collating-element <rad-ka-s> from "<U0F66><U0F90>"
+collating-element <rad-ka-b-r> from "<U0F56><U0F62><U0F90>"
+collating-element <rad-ka-b-s> from "<U0F56><U0F66><U0F90>"
+
+% kha-radicals
+collating-symbol <TIB-KHA-R_M>
+collating-symbol <TIB-KHA-R_A>
+collating-element <rad-kha-m> from "<U0F58><U0F41>"
+collating-element <rad-kha-a> from "<U0F60><U0F41>"
+
+% ga-radicals
+% 	as there are ambiguous, the next letter has to be added too;
+%	so the <rad-ga-*> are in fact double elements: the ga-radical
+%	itself, and the following letter.
+collating-symbol <TIB-GA-R_D> % ambiguous
+collating-symbol <TIB-GA-R_B> % ambiguous
+collating-symbol <TIB-GA-R_M> % ambiguous
+collating-symbol <TIB-GA-R_A> % ambiguous
+collating-symbol <TIB-GA-R_R>
+collating-symbol <TIB-GA-R_L>
+collating-symbol <TIB-GA-R_S>
+collating-symbol <TIB-GA-R_BR>
+collating-symbol <TIB-GA-R_BS>
+collating-element <rad-ga-d-ga> from "<U0F51><U0F42><U0F42>"
+collating-element <rad-ga-d-nga> from "<U0F51><U0F42><U0F44>"
+collating-element <rad-ga-d-da> from "<U0F51><U0F42><U0F51>"
+collating-element <rad-ga-d-ba> from "<U0F51><U0F42><U0F56>"
+collating-element <rad-ga-d-wa> from "<U0F51><U0F42><U0F5D>"
+collating-element <rad-ga-d--a> from "<U0F51><U0F42><U0F60>"
+collating-element <rad-ga-d-ra> from "<U0F51><U0F42><U0F62>"
+collating-element <rad-ga-d-la> from "<U0F51><U0F42><U0F63>"
+collating-element <rad-ga-d-sa> from "<U0F51><U0F42><U0F66>"
+collating-element <rad-ga-d-u> from "<U0F51><U0F42><U0F74>"
+collating-element <rad-ga-d-e> from "<U0F51><U0F42><U0F7A>"
+collating-element <rad-ga-d-_ya> from "<U0F51><U0F42><U0FB1>"
+collating-element <rad-ga-d-_ra> from "<U0F51><U0F42><U0FB2>"
+collating-element <rad-ga-b-ga> from "<U0F56><U0F42><U0F42>"
+collating-element <rad-ga-b-da> from "<U0F56><U0F42><U0F51>"
+collating-element <rad-ga-b-ma> from "<U0F56><U0F42><U0F58>"
+collating-element <rad-ga-b-ma2> from "<U0F56><U0F42><U0F7E>"
+collating-element <rad-ga-b-wa> from "<U0F56><U0F42><U0F5D>"
+collating-element <rad-ga-b--a> from "<U0F56><U0F42><U0F60>"
+collating-element <rad-ga-b-ra> from "<U0F56><U0F42><U0F62>"
+collating-element <rad-ga-b-e> from "<U0F56><U0F42><U0F7A>"
+collating-element <rad-ga-b-o> from "<U0F56><U0F42><U0F7C>"
+collating-element <rad-ga-b-_ya> from "<U0F56><U0F42><U0FB1>"
+collating-element <rad-ga-b-_ra> from "<U0F56><U0F42><U0FB2>"
+collating-element <rad-ga-b-_la> from "<U0F56><U0F42><U0FB3>"
+collating-element <rad-ga-m-ra> from "<U0F58><U0F42><U0F62>"
+collating-element <rad-ga-m-la> from "<U0F58><U0F42><U0F63>"
+collating-element <rad-ga-m-u> from "<U0F58><U0F42><U0F74>"
+collating-element <rad-ga-m-e> from "<U0F58><U0F42><U0F7A>"
+collating-element <rad-ga-m-o> from "<U0F58><U0F42><U0F7C>"
+collating-element <rad-ga-m-_ya> from "<U0F58><U0F42><U0FB1>"
+collating-element <rad-ga-m-_ra> from "<U0F58><U0F42><U0FB2>"
+collating-element <rad-ga-a-ga> from "<U0F60><U0F42><U0F42>"
+collating-element <rad-ga-a-nga> from "<U0F60><U0F42><U0F44>"
+collating-element <rad-ga-a-da> from "<U0F60><U0F42><U0F51>"
+collating-element <rad-ga-a-na> from "<U0F60><U0F42><U0F53>"
+collating-element <rad-ga-a-ba> from "<U0F60><U0F42><U0F56>"
+collating-element <rad-ga-a-ma> from "<U0F60><U0F42><U0F58>"
+collating-element <rad-ga-a-ma2> from "<U0F60><U0F42><U0F7E>"
+collating-element <rad-ga-a--a> from "<U0F60><U0F42><U0F60>"
+collating-element <rad-ga-a-ra> from "<U0F60><U0F42><U0F62>"
+collating-element <rad-ga-a-la> from "<U0F60><U0F42><U0F63>"
+collating-element <rad-ga-a-sa> from "<U0F60><U0F42><U0F66>"
+collating-element <rad-ga-a-i> from "<U0F60><U0F42><U0F72>"
+collating-element <rad-ga-a-u> from "<U0F60><U0F42><U0F74>"
+collating-element <rad-ga-a-e> from "<U0F60><U0F42><U0F7A>"
+collating-element <rad-ga-a-o> from "<U0F60><U0F42><U0F7C>"
+collating-element <rad-ga-a-_ya> from "<U0F60><U0F42><U0FB1>"
+collating-element <rad-ga-a-_ra> from "<U0F60><U0F42><U0FB2>"
+collating-element <rad-ga-r> from "<U0F62><U0F92>"
+collating-element <rad-ga-l> from "<U0F63><U0F92>"
+collating-element <rad-ga-s> from "<U0F66><U0F92>"
+collating-element <rad-ga-b-r> from "<U0F56><U0F62><U0F92>"
+collating-element <rad-ga-b-s> from "<U0F56><U0F66><U0F92>"
+
+% nga-radicals
+% 	as there are ambiguous, the next letter has to be added too;
+%	so the <rad-nga-*> are in fact double elements: the nga-radical
+%	itself, and the following letter.
+collating-symbol <TIB-NGA-R_D> % ambiguous
+collating-symbol <TIB-NGA-R_M> % ambiguous
+collating-symbol <TIB-NGA-R_R>
+collating-symbol <TIB-NGA-R_L>
+collating-symbol <TIB-NGA-R_S>
+collating-symbol <TIB-NGA-R_BR>
+collating-symbol <TIB-NGA-R_BS>
+collating-element <rad-nga-d-ga> from "<U0F51><U0F44><U0F42>"
+collating-element <rad-nga-d-nga> from "<U0F51><U0F44><U0F44>"
+collating-element <rad-nga-d-na> from "<U0F51><U0F44><U0F53>"
+collating-element <rad-nga-d-ra> from "<U0F51><U0F44><U0F62>"
+collating-element <rad-nga-d-u> from "<U0F51><U0F44><U0F74>"
+collating-element <rad-nga-d-o> from "<U0F51><U0F44><U0F7C>"
+collating-element <rad-nga-r> from "<U0F62><U0F44><U0F94>"
+collating-element <rad-nga-l> from "<U0F63><U0F44><U0F94>"
+collating-element <rad-nga-s> from "<U0F66><U0F44><U0F94>"
+collating-element <rad-nga-b-r> from "<U0F56><U0F62><U0F94>"
+collating-element <rad-nga-b-s> from "<U0F56><U0F66><U0F94>"
+
+% ca-radicals
+collating-symbol <TIB-CA-R_G>
+collating-symbol <TIB-CA-R_B>
+collating-symbol <TIB-CA-R_L>
+collating-symbol <TIB-CA-R_BL>
+collating-element <rad-ca-g> from "<U0F42><U0F45>"
+collating-element <rad-ca-b> from "<U0F56><U0F45>"
+collating-element <rad-ca-l> from "<U0F63><U0F95>"
+collating-element <rad-ca-b-l> from "<U0F56><U0F63><U0F95>"
+
+% cha-radicals
+collating-symbol <TIB-CHA-R_M>
+collating-symbol <TIB-CHA-R_A>
+collating-element <rad-cha-m> from "<U0F58><U0F46>"
+collating-element <rad-cha-a> from "<U0F60><U0F46>"
+
+% ja-radicals
+collating-symbol <TIB-JA-R_M>
+collating-symbol <TIB-JA-R_A>
+collating-symbol <TIB-JA-R_R>
+collating-symbol <TIB-JA-R_L>
+collating-symbol <TIB-JA-R_BR>
+collating-element <rad-ja-m> from "<U0F58><U0F47>"
+collating-element <rad-ja-a> from "<U0F60><U0F47>"
+collating-element <rad-ja-r> from "<U0F62><U0F97>"
+collating-element <rad-ja-l> from "<U0F63><U0F97>"
+collating-element <rad-ja-b-r> from "<U0F56><U0F62><U0F97>"
+
+% nya-radicals
+collating-symbol <TIB-NYA-R_G>
+collating-symbol <TIB-NYA-R_M>
+collating-symbol <TIB-NYA-R_R>
+collating-symbol <TIB-NYA-R_S>
+collating-symbol <TIB-NYA-R_BR>
+collating-symbol <TIB-NYA-R_BS>
+collating-element <rad-nya-g> from "<U0F42><U0F49>"
+collating-element <rad-nya-m> from "<U0F58><U0F49>"
+collating-element <rad-nya-r> from "<U0F62><U0F99>"
+collating-element <rad-nya-s> from "<U0F66><U0F99>"
+collating-element <rad-nya-b-r> from "<U0F56><U0F62><U0F99>"
+collating-element <rad-nya-b-s> from "<U0F56><U0F66><U0F99>"
+
+% ta-radicals
+collating-symbol <TIB-TA-R_G>
+collating-symbol <TIB-TA-R_B>
+collating-symbol <TIB-TA-R_R>
+collating-symbol <TIB-TA-R_L>
+collating-symbol <TIB-TA-R_S>
+collating-symbol <TIB-TA-R_BR>
+collating-symbol <TIB-TA-R_BL>
+collating-symbol <TIB-TA-R_BS>
+collating-element <rad-ta-g> from "<U0F42><U0F4F>"
+collating-element <rad-ta-b> from "<U0F56><U0F4F>"
+collating-element <rad-ta-r> from "<U0F62><U0F9F>"
+collating-element <rad-ta-l> from "<U0F63><U0F9F>"
+collating-element <rad-ta-s> from "<U0F66><U0F9F>"
+collating-element <rad-ta-b-r> from "<U0F56><U0F62><U0F9F>"
+collating-element <rad-ta-b-l> from "<U0F56><U0F63><U0F9F>"
+collating-element <rad-ta-b-s> from "<U0F56><U0F66><U0F9F>"
+
+% tha-radicals
+collating-symbol <TIB-THA-R_M>
+collating-symbol <TIB-THA-R_A>
+collating-element <rad-tha-m> from "<U0F58><U0F50>"
+collating-element <rad-tha-a> from "<U0F60><U0F50>"
+
+% da-radicals
+% 	as there are ambiguous, the next letter has to be added too;
+%	so the <rad-da-*> are in fact double elements: the da-radical
+%	itself, and the following letter.
+collating-symbol <TIB-DA-R_G> % ambiguous
+collating-symbol <TIB-DA-R_B> % ambiguous
+collating-symbol <TIB-DA-R_M> % ambiguous
+collating-symbol <TIB-DA-R_A> % ambiguous
+collating-symbol <TIB-DA-R_R>
+collating-symbol <TIB-DA-R_L>
+collating-symbol <TIB-DA-R_S>
+collating-symbol <TIB-DA-R_BR>
+collating-symbol <TIB-DA-R_BL>
+collating-symbol <TIB-DA-R_BS>
+collating-element <rad-da-g-ga> from "<U0F42><U0F51><U0F42>"
+collating-element <rad-da-g-nga> from "<U0F42><U0F51><U0F44>"
+collating-element <rad-da-g-na> from "<U0F42><U0F51><U0F53>"
+collating-element <rad-da-g-ba> from "<U0F42><U0F51><U0F56>"
+collating-element <rad-da-g-ma> from "<U0F42><U0F51><U0F58>"
+collating-element <rad-da-g-ma2> from "<U0F42><U0F51><U0F7E>"
+collating-element <rad-da-g--a> from "<U0F42><U0F51><U0F60>"
+collating-element <rad-da-g-ra> from "<U0F42><U0F51><U0F62>"
+collating-element <rad-da-g-la> from "<U0F42><U0F51><U0F63>"
+collating-element <rad-da-g-sa> from "<U0F42><U0F51><U0F66>"
+collating-element <rad-da-g-i> from "<U0F42><U0F51><U0F72>"
+collating-element <rad-da-g-u> from "<U0F42><U0F51><U0F74>"
+collating-element <rad-da-g-e> from "<U0F42><U0F51><U0F7A>"
+collating-element <rad-da-g-o> from "<U0F42><U0F51><U0F7C>"
+collating-element <rad-da-b-ga> from "<U0F56><U0F51><U0F42>"
+collating-element <rad-da-b-ma> from "<U0F56><U0F51><U0F58>"
+collating-element <rad-da-b-ma2> from "<U0F56><U0F51><U0F7E>"
+collating-element <rad-da-b--a> from "<U0F56><U0F51><U0F60>"
+collating-element <rad-da-b-ra> from "<U0F56><U0F51><U0F62>"
+collating-element <rad-da-b-la> from "<U0F56><U0F51><U0F63>"
+collating-element <rad-da-b-sa> from "<U0F56><U0F51><U0F66>"
+collating-element <rad-da-b-u> from "<U0F56><U0F51><U0F74>"
+collating-element <rad-da-b-e> from "<U0F56><U0F51><U0F7A>"
+collating-element <rad-da-b-o> from "<U0F56><U0F51><U0F7C>"
+collating-element <rad-da-m-ga> from "<U0F58><U0F51><U0F42>"
+collating-element <rad-da-m-nga> from "<U0F58><U0F51><U0F44>"
+collating-element <rad-da-m-na> from "<U0F58><U0F51><U0F53>"
+collating-element <rad-da-m--a> from "<U0F58><U0F51><U0F60>"
+collating-element <rad-da-m-ra> from "<U0F58><U0F51><U0F62>"
+collating-element <rad-da-m-u> from "<U0F58><U0F51><U0F74>"
+collating-element <rad-da-m-e> from "<U0F58><U0F51><U0F7A>"
+collating-element <rad-da-m-o> from "<U0F58><U0F51><U0F7C>"
+collating-element <rad-da-a-ga> from "<U0F60><U0F51><U0F42>"
+collating-element <rad-da-a-nga> from "<U0F60><U0F51><U0F44>"
+collating-element <rad-da-a-da> from "<U0F60><U0F51><U0F51>"
+collating-element <rad-da-a-na> from "<U0F60><U0F51><U0F53>"
+collating-element <rad-da-a-ba> from "<U0F60><U0F51><U0F56>"
+collating-element <rad-da-a-ma> from "<U0F60><U0F51><U0F58>"
+collating-element <rad-da-a-ma2> from "<U0F60><U0F51><U0F7E>"
+collating-element <rad-da-a-wa> from "<U0F60><U0F51><U0F5D>"
+collating-element <rad-da-a--a> from "<U0F60><U0F51><U0F60>"
+collating-element <rad-da-a-ra> from "<U0F60><U0F51><U0F62>"
+collating-element <rad-da-a-la> from "<U0F60><U0F51><U0F63>"
+collating-element <rad-da-a-sa> from "<U0F60><U0F51><U0F66>"
+collating-element <rad-da-a-u> from "<U0F60><U0F51><U0F74>"
+collating-element <rad-da-a-e> from "<U0F60><U0F51><U0F7A>"
+collating-element <rad-da-a-o> from "<U0F60><U0F51><U0F7C>"
+collating-element <rad-da-a-_ra> from "<U0F60><U0F51><U0FB2>"
+collating-element <rad-da-r> from "<U0F62><U0FA1>"
+collating-element <rad-da-l> from "<U0F63><U0FA1>"
+collating-element <rad-da-s> from "<U0F66><U0FA1>"
+collating-element <rad-da-b-r> from "<U0F56><U0F62><U0FA1>"
+collating-element <rad-da-b-l> from "<U0F56><U0F63><U0FA1>"
+collating-element <rad-da-b-s> from "<U0F56><U0F66><U0FA1>"
+
+% na-radicals
+%       as there are ambiguous, the next letter has to be added too;
+%       so the <rad-na-*> are in fact double elements: the na-radical
+%       itself, and the following letter.
+collating-symbol <TIB-NA-R_G> % ambiguous
+collating-symbol <TIB-NA-R_M> % ambiguous
+collating-symbol <TIB-NA-R_R>
+collating-symbol <TIB-NA-R_S>
+collating-symbol <TIB-NA-R_BR>
+collating-symbol <TIB-NA-R_BS>
+collating-element <rad-na-g-ga> from "<U0F42><U0F53><U0F42>"
+collating-element <rad-na-g-nga> from "<U0F42><U0F53><U0F44>"
+collating-element <rad-na-g-da> from "<U0F42><U0F53><U0F51>"
+collating-element <rad-na-g-na> from "<U0F42><U0F53><U0F53>"
+collating-element <rad-na-g-ma> from "<U0F42><U0F53><U0F58>"
+collating-element <rad-na-g-ma2> from "<U0F42><U0F53><U0F7E>"
+collating-element <rad-na-g-wa> from "<U0F42><U0F53><U0F5D>"
+collating-element <rad-na-g--a> from "<U0F42><U0F53><U0F60>"
+collating-element <rad-na-g-sa> from "<U0F42><U0F53><U0F66>"
+collating-element <rad-na-g-u> from "<U0F42><U0F53><U0F74>"
+collating-element <rad-na-g-o> from "<U0F42><U0F53><U0F7C>"
+collating-element <rad-na-m-ga> from "<U0F58><U0F53><U0F42>"
+collating-element <rad-na-m-nga> from "<U0F58><U0F53><U0F44>"
+collating-element <rad-na-m-na> from "<U0F58><U0F53><U0F53>"
+collating-element <rad-na-m-ba> from "<U0F58><U0F53><U0F56>"
+collating-element <rad-na-m-ma> from "<U0F58><U0F53><U0F58>"
+collating-element <rad-na-m-ma2> from "<U0F58><U0F53><U0F7E>"
+collating-element <rad-na-m--a> from "<U0F58><U0F53><U0F60>"
+collating-element <rad-na-m-ra> from "<U0F58><U0F53><U0F62>"
+collating-element <rad-na-m-la> from "<U0F58><U0F53><U0F63>"
+collating-element <rad-na-m-u> from "<U0F58><U0F53><U0F74>"
+collating-element <rad-na-m-e> from "<U0F58><U0F53><U0F7A>"
+collating-element <rad-na-m-o> from "<U0F58><U0F53><U0F7C>"
+collating-element <rad-na-r> from "<U0F62><U0FA3>"
+collating-element <rad-na-s> from "<U0F66><U0FA3>"
+collating-element <rad-na-b-r> from "<U0F56><U0F62><U0FA3>"
+collating-element <rad-na-b-s> from "<U0F56><U0F66><U0FA3>"
+
+% pa-radicals
+%       as there are ambiguous, the next letter has to be added too;
+%       so the <rad-pa-*> are in fact double elements: the pa-radical
+%       itself, and the following letter.
+collating-symbol <TIB-PA-R_D> % ambiguous in Dzongkha
+collating-symbol <TIB-PA-R_L>
+collating-symbol <TIB-PA-R_S>
+collating-element <rad-pa-d-ga> from "<U0F51><U0F54><U0F42>"
+collating-element <rad-pa-d-nga> from "<U0F51><U0F54><U0F44>"
+collating-element <rad-pa-d-da> from "<U0F51><U0F54><U0F51>"
+collating-element <rad-pa-d--a> from "<U0F51><U0F54><U0F60>"
+collating-element <rad-pa-d-ra> from "<U0F51><U0F54><U0F62>"
+collating-element <rad-pa-d-la> from "<U0F51><U0F54><U0F63>"
+collating-element <rad-pa-d-sa> from "<U0F51><U0F54><U0F66>"
+collating-element <rad-pa-d-u> from "<U0F51><U0F54><U0F74>"
+collating-element <rad-pa-d-e> from "<U0F51><U0F54><U0F7A>"
+collating-element <rad-pa-d-o-ga> from "<U0F51><U0F54><U0F7C><U0F42>"
+collating-element <rad-pa-d-o-nga> from "<U0F51><U0F54><U0F7C><U0F44>"
+collating-element <rad-pa-d-o-da> from "<U0F51><U0F54><U0F7C><U0F51>"
+collating-element <rad-pa-d-o-na> from "<U0F51><U0F54><U0F7C><U0F53>"
+collating-element <rad-pa-d-o-ra> from "<U0F51><U0F54><U0F7C><U0F62>"
+collating-element <rad-pa-d-_ya> from "<U0F51><U0F54><U0FB1>"
+collating-element <rad-pa-d-_ra> from "<U0F51><U0F54><U0FB2>"
+collating-element <rad-pa-l> from "<U0F63><U0FA4>"
+collating-element <rad-pa-s> from "<U0F66><U0FA4>"
+
+% pha-radicals
+collating-symbol <TIB-PHA-R_A>
+collating-element <rad-pha-a> from "<U0F60><U0F55>"
+
+% ba-radicals
+%       as there are ambiguous, the next letter has to be added too;
+%       so the <rad-ba-*> are in fact double elements: the ba-radical
+%       itself, and the following letter.
+collating-symbol <TIB-BA-R_D> % ambiguous
+collating-symbol <TIB-BA-R_A> % ambiguous
+collating-symbol <TIB-BA-R_R>
+collating-symbol <TIB-BA-R_L>
+collating-symbol <TIB-BA-R_S>
+collating-element <rad-ba-d-ga> from "<U0F51><U0F56><U0F42>"
+collating-element <rad-ba-d-nga> from "<U0F51><U0F56><U0F44>"
+collating-element <rad-ba-d-da> from "<U0F51><U0F56><U0F51>"
+collating-element <rad-ba-d-na> from "<U0F51><U0F56><U0F53>"
+collating-element <rad-ba-d-ba> from "<U0F51><U0F56><U0F56>"
+collating-element <rad-ba-d--a> from "<U0F51><U0F56><U0F60>"
+collating-element <rad-ba-d-ra> from "<U0F51><U0F56><U0F62>"
+collating-element <rad-ba-d-la> from "<U0F51><U0F56><U0F63>"
+collating-element <rad-ba-d-sa> from "<U0F51><U0F56><U0F66>"
+collating-element <rad-ba-d-u> from "<U0F51><U0F56><U0F74>"
+collating-element <rad-ba-d-e> from "<U0F51><U0F56><U0F7A>"
+collating-element <rad-ba-d-o> from "<U0F51><U0F56><U0F7C>"
+collating-element <rad-ba-d-_ya> from "<U0F51><U0F56><U0FB1>"
+collating-element <rad-ba-d-_ra> from "<U0F51><U0F56><U0FB2>"
+collating-element <rad-ba-a-ga> from "<U0F60><U0F56><U0F42>"
+collating-element <rad-ba-a-nga> from "<U0F60><U0F56><U0F44>"
+collating-element <rad-ba-a-da> from "<U0F60><U0F56><U0F51>"
+collating-element <rad-ba-a-na> from "<U0F60><U0F56><U0F53>"
+collating-element <rad-ba-a-ba> from "<U0F60><U0F56><U0F56>"
+collating-element <rad-ba-a-ma> from "<U0F60><U0F56><U0F58>"
+collating-element <rad-ba-a-ma2> from "<U0F60><U0F56><U0F7E>"
+collating-element <rad-ba-a--a> from "<U0F60><U0F56><U0F60>"
+collating-element <rad-ba-a-ra> from "<U0F60><U0F56><U0F62>"
+collating-element <rad-ba-a-la> from "<U0F60><U0F56><U0F63>"
+collating-element <rad-ba-a-i> from "<U0F60><U0F56><U0F72>"
+collating-element <rad-ba-a-u> from "<U0F60><U0F56><U0F74>"
+collating-element <rad-ba-a-e> from "<U0F60><U0F56><U0F7A>"
+collating-element <rad-ba-a-o> from "<U0F60><U0F56><U0F7C>"
+collating-element <rad-ba-a-_ya> from "<U0F60><U0F56><U0FB1>"
+collating-element <rad-ba-a-_ra> from "<U0F60><U0F56><U0FB2>"
+collating-element <rad-ba-r> from "<U0F62><U0FA6>"
+collating-element <rad-ba-l> from "<U0F63><U0FA6>"
+collating-element <rad-ba-s> from "<U0F66><U0FA6>"
+
+% ma-radicals
+%       as there are ambiguous, the next letter has to be added too;
+%       so the <rad-ma-*> are in fact double elements: the ma-radical
+%       itself, and the following letter.
+collating-symbol <TIB-MA-R_D> % ambiguous
+collating-symbol <TIB-MA-R_R>
+collating-symbol <TIB-MA-R_S>
+collating-element <rad-ma-d-ga> from "<U0F51><U0F58><U0F42>"
+collating-element <rad-ma-d-nga> from "<U0F51><U0F58><U0F44>"
+collating-element <rad-ma-d-na> from "<U0F51><U0F58><U0F53>"
+collating-element <rad-ma-d-wa> from "<U0F51><U0F58><U0F5D>"
+collating-element <rad-ma-d--a> from "<U0F51><U0F58><U0F60>"
+collating-element <rad-ma-d-ra> from "<U0F51><U0F58><U0F62>"
+collating-element <rad-ma-d-sa> from "<U0F51><U0F58><U0F66>"
+collating-element <rad-ma-d-i> from "<U0F51><U0F58><U0F72>"
+collating-element <rad-ma-d-u> from "<U0F51><U0F58><U0F74>"
+collating-element <rad-ma-d-e> from "<U0F51><U0F58><U0F7A>"
+collating-element <rad-ma-d-o-da> from "<U0F51><U0F58><U0F7C><U0F51>"
+collating-element <rad-ma-d-_ya> from "<U0F51><U0F58><U0FB1>"
+collating-element <rad-ma-r> from "<U0F62><U0FA8>"
+collating-element <rad-ma-s> from "<U0F66><U0FA8>"
+
+% tsa-radicals
+collating-symbol <TIB-TSA-R_G>
+collating-symbol <TIB-TSA-R_B>
+collating-symbol <TIB-TSA-R_R>
+collating-symbol <TIB-TSA-R_S>
+collating-symbol <TIB-TSA-R_BR>
+collating-symbol <TIB-TSA-R_BS>
+collating-element <rad-tsa-g> from "<U0F42><U0F59>"
+collating-element <rad-tsa-b> from "<U0F56><U0F59>"
+collating-element <rad-tsa-r> from "<U0F62><U0FA9>"
+collating-element <rad-tsa-s> from "<U0F66><U0FA9>"
+collating-element <rad-tsa-b-r> from "<U0F56><U0F62><U0FA9>"
+collating-element <rad-tsa-b-s> from "<U0F56><U0F66><U0FA9>"
+
+% tsha-radicals
+collating-symbol <TIB-TSHA-R_M>
+collating-symbol <TIB-TSHA-R_A>
+collating-element <rad-tsha-m> from "<U0F58><U0F5A>"
+collating-element <rad-tsha-a> from "<U0F60><U0F5A>"
+
+% dza-radicals
+collating-symbol <TIB-DZA-R_M>
+collating-symbol <TIB-DZA-R_A>
+collating-symbol <TIB-DZA-R_R>
+collating-symbol <TIB-DZA-R_BR>
+collating-element <rad-dza-m> from "<U0F58><U0F5B>"
+collating-element <rad-dza-a> from "<U0F60><U0F5B>"
+collating-element <rad-dza-r> from "<U0F60><U0FAB>"
+collating-element <rad-dza-b-r> from "<U0F56><U0F62><U0FAB>"
+
+% zha-radicals
+collating-symbol <TIB-ZHA-R_G>
+collating-symbol <TIB-ZHA-R_B>
+collating-element <rad-zha-g> from "<U0F42><U0F5E>"
+collating-element <rad-zha-b> from "<U0F56><U0F5E>"
+
+% za-radicals
+collating-symbol <TIB-ZA-R_G>
+collating-symbol <TIB-ZA-R_B>
+collating-element <rad-za-g> from "<U0F42><U0F5F>"
+collating-element <rad-za-b> from "<U0F56><U0F5F>"
+
+% ya-radicals
+collating-symbol <TIB-YA-R_G>
+collating-element <rad-ya-g> from "<U0F42><U0F61>"
+
+% ra-radicals
+%       as there are ambiguous, the next letter has to be added too;
+%       so the <rad-ra-*> are in fact double elements: the ra-radical
+%       itself, and the following letter.
+collating-symbol <TIB-RA-R_B> % ambiguous
+collating-element <rad-ra-b-la> from "<U0F56><U0F62><U0FB3>"
+
+% sha-radicals
+collating-symbol <TIB-SHA-R_G>
+collating-symbol <TIB-SHA-R_B>
+collating-element <rad-sha-g> from "<U0F42><U0F64>"
+collating-element <rad-sha-b> from "<U0F56><U0F64>"
+
+% sa-radicals
+%       as there are ambiguous, the next letter has to be added too;
+%       so the <rad-sa-*> are in fact double elements: the sa-radical
+%       itself, and the following letter.
+collating-symbol <TIB-SA-R_G> % ambiguous
+collating-symbol <TIB-SA-R_B> % ambiguous
+collating-element <rad-sa-g-ga> from "<U0F42><U0F66><U0F42>"
+collating-element <rad-sa-g-nga> from "<U0F42><U0F66><U0F44>"
+collating-element <rad-sa-g-da> from "<U0F42><U0F66><U0F51>"
+collating-element <rad-sa-g-na> from "<U0F42><U0F66><U0F53>"
+collating-element <rad-sa-g-ba> from "<U0F42><U0F66><U0F56>"
+collating-element <rad-sa-g--a> from "<U0F42><U0F66><U0F60>"
+collating-element <rad-sa-g-ra> from "<U0F42><U0F66><U0F62>"
+collating-element <rad-sa-g-la> from "<U0F42><U0F66><U0F63>"
+collating-element <rad-sa-g-sa> from "<U0F42><U0F66><U0F66>"
+collating-element <rad-sa-g-i> from "<U0F42><U0F66><U0F72>"
+collating-element <rad-sa-g-u> from "<U0F42><U0F66><U0F74>"
+collating-element <rad-sa-g-e> from "<U0F42><U0F66><U0F7A>"
+collating-element <rad-sa-g-o> from "<U0F42><U0F66><U0F7C>"
+collating-element <rad-sa-b-ga> from "<U0F56><U0F66><U0F42>"
+collating-element <rad-sa-b-nga> from "<U0F56><U0F66><U0F44>"
+collating-element <rad-sa-b-da> from "<U0F56><U0F66><U0F51>"
+collating-element <rad-sa-b-ba> from "<U0F56><U0F66><U0F56>"
+collating-element <rad-sa-b-ma> from "<U0F56><U0F66><U0F58>"
+collating-element <rad-sa-b-ma2> from "<U0F56><U0F66><U0F7E>"
+collating-element <rad-sa-b-ra> from "<U0F56><U0F66><U0F62>"
+collating-element <rad-sa-b-la> from "<U0F56><U0F66><U0F63>"
+collating-element <rad-sa-b-i> from "<U0F56><U0F66><U0F72>"
+collating-element <rad-sa-b-u> from "<U0F56><U0F66><U0F74>"
+collating-element <rad-sa-b-e> from "<U0F56><U0F66><U0F7A>"
+collating-element <rad-sa-b-o> from "<U0F56><U0F66><U0F7C>"
+collating-element <rad-sa-b-_wa> from "<U0F56><U0F66><U0FAD>"
+collating-element <rad-sa-b-_ra> from "<U0F56><U0F66><U0FB2>"
+collating-element <rad-sa-b-_la> from "<U0F56><U0F66><U0FB3>"
+
+% ha-radicals
+collating-symbol <TIB-HA-R_L>
+collating-element <rad-ha-l> from "<U0F63><U0FB7>"
+
+% generic definitions
+reorder-after <AME>
+<NOM>
+<SUB>
+
+reorder-after <DTT>
+<PCT>
+<MAC>
+<VAR>
+<R_G>
+<R_D>
+<R_B>
+<R_M>
+<R_A>
+<R_R>
+<R_L>
+<R_S>
+<R_BR>
+<R_BL>
+<R_BS>
+
+% a better place than after cyrillic ya should be defined
+reorder-after <CYR-YA>
+<TIB-KA>
+<TIB-KA-R_D>
+<TIB-KA-R_B>
+<TIB-KA-R_R>
+<TIB-KA-R_L>
+<TIB-KA-R_S>
+<TIB-KA-R_BR>
+<TIB-KA-R_BS>
+<TIB-KHA>
+<TIB-KHA-R_M>
+<TIB-KHA-R_A>
+<TIB-GA>
+<TIB-GA-R_D>
+<TIB-GA-R_B>
+<TIB-GA-R_M>
+<TIB-GA-R_A>
+<TIB-GA-R_R>
+<TIB-GA-R_L>
+<TIB-GA-R_S>
+<TIB-GA-R_BR>
+<TIB-GA-R_BS>
+<TIB-NGA>
+<TIB-NGA-R_D>
+<TIB-NGA-R_M>
+<TIB-NGA-R_R>
+<TIB-NGA-R_L>
+<TIB-NGA-R_S>
+<TIB-NGA-R_BR>
+<TIB-NGA-R_BS>
+<TIB-CA>
+<TIB-CA-R_G>
+<TIB-CA-R_B>
+<TIB-CA-R_L>
+<TIB-CA-R_BL>
+<TIB-CHA>
+<TIB-CHA-R_M>
+<TIB-CHA-R_A>
+<TIB-JA>
+<TIB-JA-R_M>
+<TIB-JA-R_A>
+<TIB-JA-R_R>
+<TIB-JA-R_L>
+<TIB-JA-R_BR>
+<TIB-NYA>
+<TIB-NYA-R_G>
+<TIB-NYA-R_M>
+<TIB-NYA-R_R>
+<TIB-NYA-R_S>
+<TIB-NYA-R_BR>
+<TIB-NYA-R_BS>
+<TIB-TA>
+<TIB-TA-R_G>
+<TIB-TA-R_B>
+<TIB-TA-R_R>
+<TIB-TA-R_L>
+<TIB-TA-R_S>
+<TIB-TA-R_BR>
+<TIB-TA-R_BL>
+<TIB-TA-R_BS>
+<TIB-THA>
+<TIB-THA-R_M>
+<TIB-THA-R_A>
+<TIB-DA>
+<TIB-DA-R_G>
+<TIB-DA-R_B>
+<TIB-DA-R_M>
+<TIB-DA-R_A>
+<TIB-DA-R_R>
+<TIB-DA-R_L>
+<TIB-DA-R_S>
+<TIB-DA-R_BR>
+<TIB-DA-R_BL>
+<TIB-DA-R_BS>
+<TIB-NA>
+<TIB-NA-R_G>
+<TIB-NA-R_M>
+<TIB-NA-R_R>
+<TIB-NA-R_S>
+<TIB-NA-R_BR>
+<TIB-NA-R_BS>
+<TIB-PA>
+<TIB-PA-R_D>
+<TIB-PA-R_L>
+<TIB-PA-R_S>
+<TIB-PHA>
+<TIB-PHA-R_A>
+<TIB-BA>
+<TIB-BA-R_D>
+<TIB-BA-R_A>
+<TIB-BA-R_R>
+<TIB-BA-R_L>
+<TIB-BA-R_S>
+<TIB-MA>
+<TIB-MA-R_D>
+<TIB-MA-R_R>
+<TIB-MA-R_S>
+<TIB-TSA>
+<TIB-TSA-R_G>
+<TIB-TSA-R_B>
+<TIB-TSA-R_R>
+<TIB-TSA-R_S>
+<TIB-TSA-R_BR>
+<TIB-TSA-R_BS>
+<TIB-TSHA>
+<TIB-TSHA-R_M>
+<TIB-TSHA-R_A>
+<TIB-DZA>
+<TIB-DZA-R_M>
+<TIB-DZA-R_A>
+<TIB-DZA-R_R>
+<TIB-DZA-R_BR>
+<TIB-WA>
+<TIB-ZHA>
+<TIB-ZHA-R_G>
+<TIB-ZHA-R_B>
+<TIB-ZA>
+<TIB-ZA-R_G>
+<TIB-ZA-R_B>
+<TIB--A>
+<TIB-YA>
+<TIB-YA-R_G>
+<TIB-RA>
+<TIB-RA-R_B>
+<TIB-LA>
+<TIB-SHA>
+<TIB-SHA-R_G>
+<TIB-SHA-R_B>
+<TIB-SA>
+<TIB-SA-R_G>
+<TIB-SA-R_B>
+<TIB-HA>
+<TIB-HA-R_L>
+<TIB-A>
+<TIB-I>
+<TIB-U>
+<TIB-E>
+<TIB-O>
+
+%order_start <TIBETAN>;forward;forward;forward;forward,position
+
+% specific definitions
+reorder-after <U042F>
+% digits
+<U0F20>      <0>;<BAS>;IGNORE;IGNORE
+<U0F33>      <0>;<VAR>;IGNORE;IGNORE
+<U0F21>      <1>;<BAS>;IGNORE;IGNORE
+<U0F2A>      <1>;<VAR>;IGNORE;IGNORE
+<U0F22>      <2>;<BAS>;IGNORE;IGNORE
+<U0F2B>      <2>;<VAR>;IGNORE;IGNORE
+<U0F23>      <3>;<BAS>;IGNORE;IGNORE
+<U0F2C>      <3>;<VAR>;IGNORE;IGNORE
+<U0F24>      <4>;<BAS>;IGNORE;IGNORE
+<U0F2D>      <4>;<VAR>;IGNORE;IGNORE
+<U0F25>      <5>;<BAS>;IGNORE;IGNORE
+<U0F2E>      <5>;<VAR>;IGNORE;IGNORE
+<U0F26>      <6>;<BAS>;IGNORE;IGNORE
+<U0F2F>      <6>;<VAR>;IGNORE;IGNORE
+<U0F27>      <7>;<BAS>;IGNORE;IGNORE
+<U0F30>      <7>;<VAR>;IGNORE;IGNORE
+<U0F28>      <8>;<BAS>;IGNORE;IGNORE
+<U0F31>      <8>;<VAR>;IGNORE;IGNORE
+<U0F29>      <9>;<BAS>;IGNORE;IGNORE
+<U0F32>      <9>;<VAR>;IGNORE;IGNORE
+
+% letters
+<U0F40>        <TIB-KA>;<BAS>;<NOM>;IGNORE % ka
+<U0F90>        <TIB-KA>;<BAS>;<SUB>;IGNORE
+<U0F69>        "<TIB-KA><TIB-SHA>";"<BAS><VAR>";"<NOM><SUB>";IGNORE % kssa
+<U0FB9>        "<TIB-KA><TIB-SHA>";"<BAS><VAR>";"<SUB><SUB>";IGNORE
+<rad-ka-d>     <TIB-KA-R_D>;<R_D>;<NOM>;IGNORE
+<rad-ka-b>     <TIB-KA-R_B>;<R_B>;<NOM>;IGNORE
+<rad-ka-r>     <TIB-KA-R_R>;<R_R>;<SUB>;IGNORE
+<rad-ka-l>     <TIB-KA-R_L>;<R_L>;<SUB>;IGNORE
+<rad-ka-s>     <TIB-KA-R_S>;<R_S>;<SUB>;IGNORE
+<rad-ka-b-r>   <TIB-KA-R_BR>;<R_BR>;<SUB>;IGNORE
+<rad-ka-b-s>   <TIB-KA-R_BS>;<R_BS>;<SUB>;IGNORE
+<U0F41>        <TIB-KHA>;<BAS>;<NOM>;IGNORE % kha
+<U0F91>        <TIB-KHA>;<BAS>;<SUB>;IGNORE
+<rad-kha-m>    <TIB-KHA-R_M>;<R_M>;<NOM>;IGNORE
+<rad-kha-a>    <TIB-KHA-R_A>;<R_A>;<NOM>;IGNORE
+<U0F42>        <TIB-GA>;<BAS>;<NOM>;IGNORE % ga
+<U0F92>        <TIB-GA>;<BAS>;<SUB>;IGNORE
+<U0F43>        "<TIB-GA><TIB-HA>";"<BAS><BAS>";"<NOM><SUB>";IGNORE % gha
+<U0F93>        "<TIB-GA><TIB-HA>";"<BAS><BAS>";"<SUB><SUB>";IGNORE
+<rad-ga-d-ga>  "<TIB-GA-R_D><TIB-GA>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-d-nga> "<TIB-GA-R_D><TIB-NGA>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-d-da>  "<TIB-GA-R_D><TIB-DA>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-d-ba>  "<TIB-GA-R_D><TIB-BA>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-d--a>  "<TIB-GA-R_D><TIB--A>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-d-wa>  "<TIB-GA-R_D><TIB-WA>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-d-ra>  "<TIB-GA-R_D><TIB-RA>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-d-la>  "<TIB-GA-R_D><TIB-LA>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-d-sa>  "<TIB-GA-R_D><TIB-SA>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-d-u>   "<TIB-GA-R_D><TIB-U>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-d-e>   "<TIB-GA-R_D><TIB-E>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-d-_ya> "<TIB-GA-R_D><TIB-YA>";"<R_D><BAS>";"<NOM><SUB>";IGNORE
+<rad-ga-d-_ra> "<TIB-GA-R_D><TIB-RA>";"<R_D><BAS>";"<NOM><SUB>";IGNORE
+<rad-ga-b-ga>  "<TIB-GA-R_B><TIB-GA>";"<R_B><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-b-da>  "<TIB-GA-R_B><TIB-DA>";"<R_B><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-b-ma>  "<TIB-GA-R_B><TIB-MA>";"<R_B><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-b-ma2> "<TIB-GA-R_B><TIB-MA>";"<R_B><VAR>";"<NOM><NOM>";IGNORE
+<rad-ga-b-wa>  "<TIB-GA-R_B><TIB-WA>";"<R_B><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-b--a>  "<TIB-GA-R_B><TIB--A>";"<R_B><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-b-ra>  "<TIB-GA-R_B><TIB-RA>";"<R_B><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-b-e>   "<TIB-GA-R_B><TIB-E>";"<R_B><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-b-o>   "<TIB-GA-R_B><TIB-O>";"<R_B><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-b-_ya> "<TIB-GA-R_B><TIB-YA>";"<R_B><BAS>";"<NOM><SUB>";IGNORE
+<rad-ga-b-_ra> "<TIB-GA-R_B><TIB-RA>";"<R_B><BAS>";"<NOM><SUB>";IGNORE
+<rad-ga-b-_la> "<TIB-GA-R_B><TIB-LA>";"<R_B><BAS>";"<NOM><SUB>";IGNORE
+<rad-ga-m-ra>  "<TIB-GA-R_M><TIB-RA>";"<R_M><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-m-la>  "<TIB-GA-R_M><TIB-LA>";"<R_M><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-m-u>   "<TIB-GA-R_M><TIB-U>";"<R_M><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-m-e>   "<TIB-GA-R_M><TIB-E>";"<R_M><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-m-o>   "<TIB-GA-R_M><TIB-O>";"<R_M><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-m-_ya> "<TIB-GA-R_M><TIB-YA>";"<R_M><BAS>";"<NOM><SUB>";IGNORE
+<rad-ga-m-_ra> "<TIB-GA-R_M><TIB-RA>";"<R_M><BAS>";"<NOM><SUB>";IGNORE
+<rad-ga-a-ga>  "<TIB-GA-R_A><TIB-GA>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-a-nga> "<TIB-GA-R_A><TIB-NGA>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-a-da>  "<TIB-GA-R_A><TIB-DA>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-a-na>  "<TIB-GA-R_A><TIB-NA>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-a-ba>  "<TIB-GA-R_A><TIB-BA>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-a-ma>  "<TIB-GA-R_A><TIB-MA>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-a-ma2> "<TIB-GA-R_A><TIB-MA>";"<R_A><VAR>";"<NOM><NOM>";IGNORE
+<rad-ga-a--a>  "<TIB-GA-R_A><TIB--A>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-a-ra>  "<TIB-GA-R_A><TIB-RA>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-a-la>  "<TIB-GA-R_A><TIB-LA>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-a-sa>  "<TIB-GA-R_A><TIB-SA>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-a-i>   "<TIB-GA-R_A><TIB-I>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-a-u>   "<TIB-GA-R_A><TIB-U>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-a-e>   "<TIB-GA-R_A><TIB-E>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-a-o>   "<TIB-GA-R_A><TIB-O>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-ga-a-_ya> "<TIB-GA-R_A><TIB-YA>";"<R_A><BAS>";"<NOM><SUB>";IGNORE
+<rad-ga-a-_ra> "<TIB-GA-R_A><TIB-RA>";"<R_A><BAS>";"<NOM><SUB>";IGNORE
+<rad-ga-r>     <TIB-GA-R_R>;<R_R>;<SUB>;IGNORE
+<rad-ga-l>     <TIB-GA-R_L>;<R_L>;<SUB>;IGNORE
+<rad-ga-s>     <TIB-GA-R_S>;<R_S>;<SUB>;IGNORE
+<rad-ga-b-r>   <TIB-GA-R_BR>;<R_BR>;<SUB>;IGNORE
+<rad-ga-b-s>   <TIB-GA-R_BS>;<R_BS>;<SUB>;IGNORE
+<U0F44>        <TIB-NGA>;<BAS>;<NOM>;IGNORE % nga
+<U0F94>        <TIB-NGA>;<BAS>;<SUB>;IGNORE
+<rad-nga-d-ga> "<TIB-NGA-R_D><TIB-GA>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-nga-d-nga> "<TIB-NGA-R_D><TIB-NGA>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-nga-d-na> "<TIB-NGA-R_D><TIB-NA>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-nga-d-ra> "<TIB-NGA-R_D><TIB-RA>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-nga-d-u>  "<TIB-NGA-R_D><TIB-U>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-nga-d-o>  "<TIB-NGA-R_D><TIB-O>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-nga-m-ga> "<TIB-NGA-R_M><TIB-GA>";"<R_M><BAS>";"<NOM><NOM>";IGNORE
+<rad-nga-m-na> "<TIB-NGA-R_M><TIB-NA>";"<R_M><BAS>";"<NOM><NOM>";IGNORE
+<rad-nga-m--a> "<TIB-NGA-R_M><TIB--A>";"<R_M><BAS>";"<NOM><NOM>";IGNORE
+<rad-nga-m-ra> "<TIB-NGA-R_M><TIB-RA>";"<R_M><BAS>";"<NOM><NOM>";IGNORE
+<rad-nga-m-la> "<TIB-NGA-R_M><TIB-LA>";"<R_M><BAS>";"<NOM><NOM>";IGNORE
+<rad-nga-m-o>  "<TIB-NGA-R_M><TIB-O>";"<R_M><BAS>";"<NOM><NOM>";IGNORE
+<rad-nga-r>     <TIB-NGA-R_R>;<BAS>;<R_R>;IGNORE
+<rad-nga-l>     <TIB-NGA-R_L>;<BAS>;<R_L>;IGNORE
+<rad-nga-s>     <TIB-NGA-R_S>;<BAS>;<R_S>;IGNORE
+<rad-nga-b-r>   <TIB-NGA-R_BR>;<BAS>;<R_BR>;IGNORE
+<rad-nga-b-s>   <TIB-NGA-R_BS>;<BAS>;<R_BS>;IGNORE
+<U0F45>        <TIB-CA>;<BAS>;<NOM>;IGNORE % ca
+<U0F95>        <TIB-CA>;<BAS>;<SUB>;IGNORE
+<rad-ca-g>     <TIB-CA>;<R_G>;<NOM>;IGNORE
+<rad-ca-b>     <TIB-CA>;<R_B>;<NOM>;IGNORE
+<rad-ca-l>     <TIB-CA>;<R_L>;<SUB>;IGNORE
+<rad-ca-b-l>   <TIB-CA>;<R_BL>;<SUB>;IGNORE
+<U0F46>        <TIB-CHA>;<BAS>;<NOM>;IGNORE % cha
+<U0F96>        <TIB-CHA>;<BAS>;<SUB>;IGNORE
+<rad-cha-m>    <TIB-CHA>;<R_M>;<NOM>;IGNORE
+<rad-cha-a>    <TIB-CHA>;<R_A>;<NOM>;IGNORE
+<U0F47>        <TIB-JA>;<BAS>;<NOM>;IGNORE % ja
+<U0F97>        <TIB-JA>;<BAS>;<SUB>;IGNORE
+<rad-ja-m>     <TIB-JA-R_M>;<R_M>;<NOM>;IGNORE
+<rad-ja-a>     <TIB-JA-R_A>;<R_A>;<NOM>;IGNORE
+<rad-ja-r>     <TIB-JA-R_R>;<R_R>;<SUB>;IGNORE
+<rad-ja-l>     <TIB-JA-R_L>;<R_L>;<SUB>;IGNORE
+<rad-ja-b-r>   <TIB-JA-R_BR>;<R_BR>;<SUB>;IGNORE
+<U0F49>        <TIB-NYA>;<BAS>;<NOM>;IGNORE % nya
+<U0F99>        <TIB-NYA>;<BAS>;<SUB>;IGNORE
+<rad-nya-g>    <TIB-NYA-R_G>;<R_G>;<NOM>;IGNORE
+<rad-nya-m>    <TIB-NYA-R_M>;<R_M>;<NOM>;IGNORE
+<rad-nya-r>    <TIB-NYA-R_R>;<R_R>;<SUB>;IGNORE
+<rad-nya-s>    <TIB-NYA-R_S>;<R_S>;<SUB>;IGNORE
+<rad-nya-b-r>  <TIB-NYA-R_BR>;<R_BR>;<SUB>;IGNORE
+<rad-nya-b-s>  <TIB-NYA-R_BS>;<R_BS>;<SUB>;IGNORE
+<U0F4F>        <TIB-TA>;<BAS>;<NOM>;IGNORE % ta
+<U0F9F>        <TIB-TA>;<BAS>;<SUB>;IGNORE
+<U0F4A>        <TIB-TA>;<VAR>;<NOM>;IGNORE % tta
+<U0F9A>        <TIB-TA>;<VAR>;<SUB>;IGNORE
+<rad-ta-g>     <TIB-TA-R_G>;<R_G>;<NOM>;IGNORE
+<rad-ta-b>     <TIB-TA-R_B>;<R_B>;<NOM>;IGNORE
+<rad-ta-r>     <TIB-TA-R_R>;<R_R>;<SUB>;IGNORE
+<rad-ta-l>     <TIB-TA-R_L>;<R_L>;<SUB>;IGNORE
+<rad-ta-s>     <TIB-TA-R_S>;<R_S>;<SUB>;IGNORE
+<rad-ta-b-r>   <TIB-TA-R_BR>;<R_BR>;<SUB>;IGNORE
+<rad-ta-b-l>   <TIB-TA-R_BL>;<R_BL>;<SUB>;IGNORE
+<rad-ta-b-s>   <TIB-TA-R_BS>;<R_BS>;<SUB>;IGNORE
+<U0F50>        <TIB-THA>;<BAS>;<NOM>;IGNORE % tha
+<U0FA0>        <TIB-THA>;<BAS>;<SUB>;IGNORE
+<U0F4B>        <TIB-THA>;<VAR>;<NOM>;IGNORE % ttha
+<U0F9B>        <TIB-THA>;<VAR>;<SUB>;IGNORE
+<rad-tha-m>    <TIB-THA-R_M>;<R_M>;<NOM>;IGNORE
+<rad-tha-a>    <TIB-THA-R_A>;<R_A>;<NOM>;IGNORE
+<U0F51>        <TIB-DA>;<BAS>;<NOM>;IGNORE % da
+<U0FA1>        <TIB-DA>;<BAS>;<SUB>;IGNORE
+<U0F4C>        <TIB-DA>;<VAR>;<NOM>;IGNORE % dda
+<U0F9C>        <TIB-DA>;<VAR>;<SUB>;IGNORE
+<U0F52>        "<TIB-DA><TIB-HA>";"<BAS><BAS>";"<NOM><SUB>";IGNORE % dha
+<U0FA2>        "<TIB-DA><TIB-HA>";"<BAS><BAS>";"<SUB><SUB>";IGNORE
+<U0F4D>        "<TIB-DA><TIB-HA>";"<VAR><BAS>";"<NOM><SUB>";IGNORE % ddha
+<U0F9D>        "<TIB-DA><TIB-HA>";"<VAR><BAS>";"<SUB><SUB>";IGNORE
+<rad-da-g-ga>  "<TIB-DA-R_G><TIB-GA>";"<R_G><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-g-nga> "<TIB-DA-R_G><TIB-NGA>";"<R_G><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-g-na>  "<TIB-DA-R_G><TIB-NA>";"<R_G><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-g-ba>  "<TIB-DA-R_G><TIB-BA>";"<R_G><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-g-ma>  "<TIB-DA-R_G><TIB-MA>";"<R_G><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-g-ma2> "<TIB-DA-R_G><TIB-MA>";"<R_G><VAR>";"<NOM><NOM>";IGNORE
+<rad-da-g--a>  "<TIB-DA-R_G><TIB--A>";"<R_G><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-g-ra>  "<TIB-DA-R_G><TIB-RA>";"<R_G><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-g-la>  "<TIB-DA-R_G><TIB-LA>";"<R_G><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-g-sa>  "<TIB-DA-R_G><TIB-SA>";"<R_G><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-g-i>   "<TIB-DA-R_G><TIB-I>";"<R_G><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-g-u>   "<TIB-DA-R_G><TIB-U>";"<R_G><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-g-e>   "<TIB-DA-R_G><TIB-E>";"<R_G><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-g-o>   "<TIB-DA-R_G><TIB-O>";"<R_G><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-b-ga>  "<TIB-DA-R_B><TIB-GA>";"<R_B><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-b-ma>  "<TIB-DA-R_B><TIB-MA>";"<R_B><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-b-ma2> "<TIB-DA-R_B><TIB-MA>";"<R_B><VAR>";"<NOM><NOM>";IGNORE
+<rad-da-b--a>  "<TIB-DA-R_B><TIB--A>";"<R_B><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-b-ra>  "<TIB-DA-R_B><TIB-RA>";"<R_B><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-b-la>  "<TIB-DA-R_B><TIB-LA>";"<R_B><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-b-sa>  "<TIB-DA-R_B><TIB-SA>";"<R_B><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-b-u>   "<TIB-DA-R_B><TIB-U>";"<R_B><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-b-e>   "<TIB-DA-R_B><TIB-E>";"<R_B><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-b-o>   "<TIB-DA-R_B><TIB-O>";"<R_B><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-m-ga>  "<TIB-DA-R_M><TIB-GA>";"<R_M><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-m-nga> "<TIB-DA-R_M><TIB-NGA>";"<R_M><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-m-na>  "<TIB-DA-R_M><TIB-NA>";"<R_M><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-m--a>  "<TIB-DA-R_M><TIB--A>";"<R_M><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-m-ra>  "<TIB-DA-R_M><TIB-RA>";"<R_M><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-m-u>   "<TIB-DA-R_M><TIB-U>";"<R_M><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-m-e>   "<TIB-DA-R_M><TIB-E>";"<R_M><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-m-o>   "<TIB-DA-R_M><TIB-O>";"<R_M><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-a-ga>  "<TIB-DA-R_A><TIB-GA>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-a-nga> "<TIB-DA-R_A><TIB-NGA>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-a-da>  "<TIB-DA-R_A><TIB-DA>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-a-na>  "<TIB-DA-R_A><TIB-NA>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-a-ba>  "<TIB-DA-R_A><TIB-BA>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-a-ma>  "<TIB-DA-R_A><TIB-MA>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-a-ma2> "<TIB-DA-R_A><TIB-MA>";"<R_A><VAR>";"<NOM><NOM>";IGNORE
+<rad-da-a-wa>  "<TIB-DA-R_A><TIB-WA>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-a--a>  "<TIB-DA-R_A><TIB--A>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-a-ra>  "<TIB-DA-R_A><TIB-RA>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-a-la>  "<TIB-DA-R_A><TIB-LA>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-a-sa>  "<TIB-DA-R_A><TIB-SA>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-a-u>   "<TIB-DA-R_A><TIB-U>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-a-e>   "<TIB-DA-R_A><TIB-E>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-a-o>   "<TIB-DA-R_A><TIB-O>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-a-_ra> "<TIB-DA-R_A><TIB-RA>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-da-r>     <TIB-DA-R_R>;<R_R>;<SUB>;IGNORE
+<rad-da-l>     <TIB-DA-R_L>;<R_L>;<SUB>;IGNORE
+<rad-da-s>     <TIB-DA-R_S>;<R_S>;<SUB>;IGNORE
+<rad-da-b-r>   <TIB-DA-R_BR>;<R_BR>;<SUB>;IGNORE
+<rad-da-b-l>   <TIB-DA-R_BL>;<R_BL>;<SUB>;IGNORE
+<rad-da-b-s>   <TIB-DA-R_BS>;<R_BS>;<SUB>;IGNORE
+<U0F53>        <TIB-NA>;<BAS>;<NOM>;IGNORE % na
+<U0FA3>        <TIB-NA>;<BAS>;<SUB>;IGNORE
+<U0F4E>        <TIB-NA>;<VAR>;<NOM>;IGNORE % nna
+<U0F9E>        <TIB-NA>;<VAR>;<SUB>;IGNORE
+<rad-na-g-ga>  "<TIB-NA-R_G><TIB-GA>";"<R_G><BAS>";"<NOM><NOM>";IGNORE
+<rad-na-g-nga> "<TIB-NA-R_G><TIB-NGA>";"<R_G><BAS>";"<NOM><NOM>";IGNORE
+<rad-na-g-da>  "<TIB-NA-R_G><TIB-DA>";"<R_G><BAS>";"<NOM><NOM>";IGNORE
+<rad-na-g-na>  "<TIB-NA-R_G><TIB-NA>";"<R_G><BAS>";"<NOM><NOM>";IGNORE
+<rad-na-g-ma>  "<TIB-NA-R_G><TIB-MA>";"<R_G><BAS>";"<NOM><NOM>";IGNORE
+<rad-na-g-ma2> "<TIB-NA-R_G><TIB-MA>";"<R_G><VAR>";"<NOM><NOM>";IGNORE
+<rad-na-g-wa>  "<TIB-NA-R_G><TIB-WA>";"<R_G><BAS>";"<NOM><NOM>";IGNORE
+<rad-na-g--a>  "<TIB-NA-R_G><TIB--A>";"<R_G><BAS>";"<NOM><NOM>";IGNORE
+<rad-na-g-sa>  "<TIB-NA-R_G><TIB-SA>";"<R_G><BAS>";"<NOM><NOM>";IGNORE
+<rad-na-g-u>   "<TIB-NA-R_G><TIB-U>";"<R_G><BAS>";"<NOM><NOM>";IGNORE
+<rad-na-g-o>   "<TIB-NA-R_G><TIB-O>";"<R_G><BAS>";"<NOM><NOM>";IGNORE
+<rad-na-m-ga>  "<TIB-NA-R_M><TIB-GA>";"<R_M><BAS>";"<NOM><NOM>";IGNORE
+<rad-na-m-nga> "<TIB-NA-R_M><TIB-NGA>";"<R_M><BAS>";"<NOM><NOM>";IGNORE
+<rad-na-m-na>  "<TIB-NA-R_M><TIB-NA>";"<R_M><BAS>";"<NOM><NOM>";IGNORE
+<rad-na-m-ba>  "<TIB-NA-R_M><TIB-BA>";"<R_M><BAS>";"<NOM><NOM>";IGNORE
+<rad-na-m-ma>  "<TIB-NA-R_M><TIB-MA>";"<R_M><BAS>";"<NOM><NOM>";IGNORE
+<rad-na-m-ma2>  "<TIB-NA-R_M><TIB-MA>";"<R_M><VAR>";"<NOM><NOM>";IGNORE
+<rad-na-m--a>  "<TIB-NA-R_M><TIB--A>";"<R_M><BAS>";"<NOM><NOM>";IGNORE
+<rad-na-m-ra>  "<TIB-NA-R_M><TIB-RA>";"<R_M><BAS>";"<NOM><NOM>";IGNORE
+<rad-na-m-la>  "<TIB-NA-R_M><TIB-LA>";"<R_M><BAS>";"<NOM><NOM>";IGNORE
+<rad-na-m-u>   "<TIB-NA-R_M><TIB-U>";"<R_M><BAS>";"<NOM><NOM>";IGNORE
+<rad-na-m-e>   "<TIB-NA-R_M><TIB-E>";"<R_M><BAS>";"<NOM><NOM>";IGNORE
+<rad-na-m-o>   "<TIB-NA-R_M><TIB-O>";"<R_M><BAS>";"<NOM><NOM>";IGNORE
+<rad-na-r>     <TIB-NA-R_R>;<R_R>;<SUB>;IGNORE
+<rad-na-s>     <TIB-NA-R_S>;<R_S>;<SUB>;IGNORE
+<rad-na-b-r>   <TIB-NA-R_BR>;<R_BR>;<SUB>;IGNORE
+<rad-na-b-s>   <TIB-NA-R_BS>;<R_BS>;<SUB>;IGNORE
+<U0F54>        <TIB-PA>;<BAS>;<NOM>;IGNORE % pa
+<U0FA4>        <TIB-PA>;<BAS>;<SUB>;IGNORE
+<rad-pa-d-ga>  "<TIB-PA-R_D><TIB-GA>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-pa-d-nga> "<TIB-PA-R_D><TIB-NGA>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-pa-d-da>  "<TIB-PA-R_D><TIB-DA>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-pa-d--a>  "<TIB-PA-R_D><TIB--A>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-pa-d-ra>  "<TIB-PA-R_D><TIB-RA>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-pa-d-la>  "<TIB-PA-R_D><TIB-LA>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-pa-d-sa>  "<TIB-PA-R_D><TIB-SA>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-pa-d-u>   "<TIB-PA-R_D><TIB-U>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-pa-d-e>   "<TIB-PA-R_D><TIB-E>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-pa-d-o-ga>  "<TIB-PA-R_D><TIB-O><TIB-GA>";"<R_D><BAS><BAS>";"<NOM><NOM><NOM>";IGNORE
+<rad-pa-d-o-nga> "<TIB-PA-R_D><TIB-O><TIB-NGA>";"<R_D><BAS><BAS>";"<NOM><NOM><NOM>";IGNORE
+<rad-pa-d-o-da>  "<TIB-PA-R_D><TIB-O><TIB-DA>";"<R_D><BAS><BAS>";"<NOM><NOM><NOM>";IGNORE
+<rad-pa-d-o-na>  "<TIB-PA-R_D><TIB-O><TIB-NA>";"<R_D><BAS><BAS>";"<NOM><NOM><NOM>";IGNORE
+<rad-pa-d-o-ra>  "<TIB-PA-R_D><TIB-O><TIB-RA>";"<R_D><BAS><BAS>";"<NOM><NOM><NOM>";IGNORE
+<rad-pa-d-_ya> "<TIB-PA-R_D><TIB-YA>";"<R_D><VAR>";"<NOM><SUB>";IGNORE
+<rad-pa-d-_ra> "<TIB-PA-R_D><TIB-RA>";"<R_D><VAR>";"<NOM><SUB>";IGNORE
+<rad-ta-l>     <TIB-PA-R_L>;<R_L>;<SUB>;IGNORE
+<rad-ta-s>     <TIB-PA-R_S>;<R_S>;<SUB>;IGNORE
+<U0F55>        <TIB-PHA>;<BAS>;<NOM>;IGNORE % pha
+<U0FA5>        <TIB-PHA>;<BAS>;<SUB>;IGNORE
+<rad-pha-a>    <TIB-PHA-R_A>;<R_A>;<NOM>;IGNORE
+<U0F56>        <TIB-BA>;<BAS>;<NOM>;IGNORE % ba
+<U0FA6>        <TIB-BA>;<BAS>;<SUB>;IGNORE
+<U0F57>        "<TIB-BA><TIB-HA>";"<BAS><BAS>";"<NOM><SUB>";IGNORE % bha
+<U0FA7>        "<TIB-BA><TIB-HA>";"<BAS><BAS>";"<SUB><SUB>";IGNORE
+<rad-ba-d-ga>  "<TIB-BA-R_D><TIB-GA>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-ba-d-nga> "<TIB-BA-R_D><TIB-NGA>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-ba-d-da>  "<TIB-BA-R_D><TIB-DA>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-ba-d-na>  "<TIB-BA-R_D><TIB-NA>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-ba-d-ba>  "<TIB-BA-R_D><TIB-BA>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-ba-d--a>  "<TIB-BA-R_D><TIB--A>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-ba-d-ra>  "<TIB-BA-R_D><TIB-RA>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-ba-d-la>  "<TIB-BA-R_D><TIB-LA>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-ba-d-sa>  "<TIB-BA-R_D><TIB-SA>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-ba-d-u>   "<TIB-BA-R_D><TIB-U>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-ba-d-e>   "<TIB-BA-R_D><TIB-E>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-ba-d-o>   "<TIB-BA-R_D><TIB-O>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-ba-d-_ya> "<TIB-BA-R_D><TIB-YA>";"<R_D><BAS>";"<NOM><SUB>";IGNORE
+<rad-ba-d-_ra> "<TIB-BA-R_D><TIB-RA>";"<R_D><BAS>";"<NOM><SUB>";IGNORE
+<rad-ba-a-ga>  "<TIB-BA-R_A><TIB-GA>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-ba-a-nga> "<TIB-BA-R_A><TIB-NGA>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-ba-a-da>  "<TIB-BA-R_A><TIB-DA>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-ba-a-na>  "<TIB-BA-R_A><TIB-NA>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-ba-a-ba>  "<TIB-BA-R_A><TIB-BA>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-ba-a-ma>  "<TIB-BA-R_A><TIB-MA>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-ba-a-ma2> "<TIB-BA-R_A><TIB-MA>";"<R_A><VAR>";"<NOM><NOM>";IGNORE
+<rad-ba-a--a>  "<TIB-BA-R_A><TIB--A>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-ba-a-ra>  "<TIB-BA-R_A><TIB-RA>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-ba-a-la>  "<TIB-BA-R_A><TIB-LA>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-ba-a-i>   "<TIB-BA-R_A><TIB-I>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-ba-a-u>   "<TIB-BA-R_A><TIB-U>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-ba-a-e>   "<TIB-BA-R_A><TIB-E>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-ba-a-o>   "<TIB-BA-R_A><TIB-O>";"<R_A><BAS>";"<NOM><NOM>";IGNORE
+<rad-ba-a-_ya> "<TIB-BA-R_A><TIB-YA>";"<R_A><BAS>";"<NOM><SUB>";IGNORE
+<rad-ba-a-_ra> "<TIB-BA-R_A><TIB-RA>";"<R_A><BAS>";"<NOM><SUB>";IGNORE
+<rad-ba-r>     <TIB-BA-R_R>;<R_R>;<SUB>;IGNORE
+<rad-ba-l>     <TIB-BA-R_L>;<R_L>;<SUB>;IGNORE
+<rad-ba-s>     <TIB-BA-R_S>;<R_S>;<SUB>;IGNORE
+<U0F58>        <TIB-MA>;<BAS>;<NOM>;IGNORE % ma
+<U0FA8>        <TIB-MA>;<BAS>;<SUB>;IGNORE
+<U0F7E>        <TIB-MA>;<VAR>;<NOM>;IGNORE %
+<U0F82>        <TIB-MA>;<VAR>;<SUB>;IGNORE %
+<U0F83>        <TIB-MA>;<VAR>;<VAR>;IGNORE %
+<rad-ma-d-ga>  "<TIB-MA-R_D><TIB-GA>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-ma-d-nga> "<TIB-MA-R_D><TIB-NGA>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-ma-d-na>  "<TIB-MA-R_D><TIB-NA>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-ma-d-wa>  "<TIB-MA-R_D><TIB-WA>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-ma-d--a>  "<TIB-MA-R_D><TIB--A>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-ma-d-ra>  "<TIB-MA-R_D><TIB-RA>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-ma-d-sa>  "<TIB-MA-R_D><TIB-SA>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-ma-d-i>   "<TIB-MA-R_D><TIB-I>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-ma-d-u>   "<TIB-MA-R_D><TIB-U>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-ma-d-e>   "<TIB-MA-R_D><TIB-E>";"<R_D><BAS>";"<NOM><NOM>";IGNORE
+<rad-ma-d-o-da> "<TIB-MA-R_D><TIB-O><TIB-DA>";"<R_D><BAS><BAS>";"<NOM><NOM><NOM>";IGNORE
+<rad-ma-d-_ya> "<TIB-MA-R_D><TIB-YA>";"<R_D><BAS>";"<NOM><SUB>";IGNORE
+<rad-ma-r>     <TIB-MA-R_R>;<R_R>;<SUB>;IGNORE
+<rad-ma-s>     <TIB-MA-R_S>;<R_S>;<SUB>;IGNORE
+<U0F59>        <TIB-TSA>;<BAS>;<NOM>;IGNORE % tsa
+<U0FA9>        <TIB-TSA>;<BAS>;<SUB>;IGNORE
+<rad-tsa-g>    <TIB-TSA-R_G>;<R_G>;<NOM>;IGNORE
+<rad-tsa-b>    <TIB-TSA-R_B>;<R_B>;<NOM>;IGNORE
+<rad-tsa-r>    <TIB-TSA-R_R>;<R_R>;<SUB>;IGNORE
+<rad-tsa-s>    <TIB-TSA-R_S>;<R_S>;<SUB>;IGNORE
+<rad-tsa-b-r>  <TIB-TSA-R_BR>;<R_BR>;<SUB>;IGNORE
+<rad-tsa-b-s>  <TIB-TSA-R_BS>;<R_BS>;<SUB>;IGNORE
+<U0F5A>        <TIB-TSHA>;<BAS>;<NOM>;IGNORE % tsha
+<U0FAA>        <TIB-TSHA>;<BAS>;<SUB>;IGNORE
+<rad-tsha-m>   <TIB-TSHA-R_M>;<R_M>;<NOM>;IGNORE
+<rad-tsha-a>   <TIB-TSHA-R_A>;<R_A>;<NOM>;IGNORE
+<U0F5B>        <TIB-DZA>;<BAS>;<NOM>;IGNORE % dza
+<U0FAB>        <TIB-DZA>;<BAS>;<SUB>;IGNORE
+<U0F5C>        "<TIB-DZA><TIB-HA>";"<BAS><BAS>";"<NOM><SUB>";IGNORE % dzha
+<U0FAC>        "<TIB-DZA><TIB-HA>";"<BAS><BAS>";"<SUB><SUB>";IGNORE
+<rad-dza-m>    <TIB-DZA-R_M>;<R_M>;<NOM>;IGNORE
+<rad-dza-a>    <TIB-DZA-R_A>;<R_A>;<NOM>;IGNORE
+<rad-dza-r>    <TIB-DZA-R_R>;<R_R>;<SUB>;IGNORE
+<rad-dza-b-r>  <TIB-DZA-R_BR>;<R_BR>;<SUB>;IGNORE
+<U0F5D>        <TIB-WA>;<BAS>;<NOM>;IGNORE % wa
+<U0FAD>        <TIB-WA>;<BAS>;<SUB>;IGNORE
+<U0FBA>        <TIB-WA>;<VAR>;<SUB>;IGNORE % fixed wa
+<U0F5E>        <TIB-ZHA>;<BAS>;<NOM>;IGNORE % zha
+<U0FAE>        <TIB-ZHA>;<BAS>;<SUB>;IGNORE
+<rad-zha-g>    <TIB-ZHA-R_G>;<R_G>;<NOM>;IGNORE
+<rad-zha-b>    <TIB-ZHA-R_B>;<R_B>;<NOM>;IGNORE
+<U0F5F>        <TIB-ZA>;<BAS>;<NOM>;IGNORE % za
+<U0FAF>        <TIB-ZA>;<BAS>;<SUB>;IGNORE
+<rad-za-g>     <TIB-ZA-R_G>;<R_G>;<NOM>;IGNORE
+<rad-za-b>     <TIB-ZA-R_B>;<R_B>;<NOM>;IGNORE
+<U0F60>        <TIB--A>;<BAS>;<NOM>;IGNORE % -a
+<U0FB0>        <TIB--A>;<BAS>;<SUB>;IGNORE
+<U0F61>        <TIB-YA>;<BAS>;<NOM>;IGNORE % ya
+<U0FB1>        <TIB-YA>;<BAS>;<SUB>;IGNORE
+<U0FBB>        <TIB-YA>;<VAR>;<SUB>;IGNORE % fixed ya
+<rad-ya-g>     <TIB-YA-R_G>;<R_G>;<NOM>;IGNORE
+<U0F62>        <TIB-RA>;<BAS>;<NOM>;IGNORE % ra
+<U0FB2>        <TIB-RA>;<BAS>;<SUB>;IGNORE
+<U0F6A>        <TIB-RA>;<VAR>;<NOM>;IGNORE % fixed ra
+<U0FBC>        <TIB-RA>;<VAR>;<SUB>;IGNORE
+<U0F76>        <TIB-RA>;<BAS>;<VAR>;IGNORE % vocalic r
+% FIXME; which of the two?
+<U0F77>        <TIB-RA>;<MAC>;<NOM>;IGNORE % vocalic rr
+%<U0F77>        "<TIB-RA><TIB-I>";"<BAS><MAC>;"<SUB><VAR>;IGNORE % vocalic rr
+<rad-ra-b-la>  "<TIB-RA-R_B><TIB-LA>";"<R_B><BAS>";"<NOM><SUB>";IGNORE
+<U0F63>        <TIB-LA>;<BAS>;<NOM>;IGNORE % la
+<U0FB3>        <TIB-LA>;<BAS>;<SUB>;IGNORE
+<U0F78>        <TIB-LA>;<BAS>;<VAR>;IGNORE % vocalic l
+% FIXME; which of the two?
+<U0F79>        <TIB-LA>;<MAC>;<NOM>;IGNORE % vocalic ll
+%<U0F79>        "<TIB-LA><TIB-I>";"<BAS><MAC>;"<SUB><VAR>;IGNORE % vocalic ll
+<U0F64>        <TIB-SHA>;<BAS>;<NOM>;IGNORE % sha
+<U0FB4>        <TIB-SHA>;<BAS>;<SUB>;IGNORE
+<U0F65>        <TIB-SHA>;<VAR>;<NOM>;IGNORE % ssa
+<U0FB5>        <TIB-SHA>;<VAR>;<SUB>;IGNORE
+<rad-sha-g>    <TIB-SHA-R_G>;<R_G>;<NOM>;IGNORE
+<rad-sha-b>    <TIB-SHA-R_B>;<R_B>;<NOM>;IGNORE
+<U0F66>        <TIB-SA>;<BAS>;<NOM>;IGNORE % sa
+<U0FB6>        <TIB-SA>;<BAS>;<SUB>;IGNORE
+<rad-sa-g-ga>  "<TIB-SA-R_G><TIB-GA>";"<R_G><BAS>";"<NOM><NOM>";IGNORE
+<rad-sa-g-nga> "<TIB-SA-R_G><TIB-NGA>";"<R_G><BAS>";"<NOM><NOM>";IGNORE
+<rad-sa-g-da>  "<TIB-SA-R_G><TIB-DA>";"<R_G><BAS>";"<NOM><NOM>";IGNORE
+<rad-sa-g-na>  "<TIB-SA-R_G><TIB-NA>";"<R_G><BAS>";"<NOM><NOM>";IGNORE
+<rad-sa-g-ba>  "<TIB-SA-R_G><TIB-BA>";"<R_G><BAS>";"<NOM><NOM>";IGNORE
+<rad-sa-g--a>  "<TIB-SA-R_G><TIB--A>";"<R_G><BAS>";"<NOM><NOM>";IGNORE
+<rad-sa-g-ra>  "<TIB-SA-R_G><TIB-RA>";"<R_G><BAS>";"<NOM><NOM>";IGNORE
+<rad-sa-g-la>  "<TIB-SA-R_G><TIB-LA>";"<R_G><BAS>";"<NOM><NOM>";IGNORE
+<rad-sa-g-sa>  "<TIB-SA-R_G><TIB-SA>";"<R_G><BAS>";"<NOM><NOM>";IGNORE
+<rad-sa-g-i>   "<TIB-SA-R_G><TIB-I>";"<R_G><BAS>";"<NOM><NOM>";IGNORE
+<rad-sa-g-u>   "<TIB-SA-R_G><TIB-U>";"<R_G><BAS>";"<NOM><NOM>";IGNORE
+<rad-sa-g-e>   "<TIB-SA-R_G><TIB-E>";"<R_G><BAS>";"<NOM><NOM>";IGNORE
+<rad-sa-g-o>   "<TIB-SA-R_G><TIB-O>";"<R_G><BAS>";"<NOM><NOM>";IGNORE
+<rad-sa-b-ga>  "<TIB-SA-R_B><TIB-GA>";"<R_B><BAS>";"<NOM><NOM>";IGNORE
+<rad-sa-b-nga> "<TIB-SA-R_B><TIB-NGA>";"<R_B><BAS>";"<NOM><NOM>";IGNORE
+<rad-sa-b-da>  "<TIB-SA-R_B><TIB-DA>";"<R_B><BAS>";"<NOM><NOM>";IGNORE
+<rad-sa-b-ba>  "<TIB-SA-R_B><TIB-BA>";"<R_B><BAS>";"<NOM><NOM>";IGNORE
+<rad-sa-b-ma>  "<TIB-SA-R_B><TIB-MA>";"<R_B><BAS>";"<NOM><NOM>";IGNORE
+<rad-sa-b-ma2> "<TIB-SA-R_B><TIB-MA>";"<R_B><VAR>";"<NOM><NOM>";IGNORE
+<rad-sa-b-ra>  "<TIB-SA-R_B><TIB-RA>";"<R_B><BAS>";"<NOM><NOM>";IGNORE
+<rad-sa-b-la>  "<TIB-SA-R_B><TIB-LA>";"<R_B><BAS>";"<NOM><NOM>";IGNORE
+<rad-sa-b-i>   "<TIB-SA-R_B><TIB-I>";"<R_B><BAS>";"<NOM><NOM>";IGNORE
+<rad-sa-b-u>   "<TIB-SA-R_B><TIB-U>";"<R_B><BAS>";"<NOM><NOM>";IGNORE
+<rad-sa-b-e>   "<TIB-SA-R_B><TIB-E>";"<R_B><BAS>";"<NOM><NOM>";IGNORE
+<rad-sa-b-o>   "<TIB-SA-R_B><TIB-O>";"<R_B><BAS>";"<NOM><NOM>";IGNORE
+<rad-sa-b-_wa> "<TIB-SA-R_B><TIB-WA>";"<R_B><BAS>";"<NOM><SUB>";IGNORE
+<rad-sa-b-_ra> "<TIB-SA-R_B><TIB-RA>";"<R_B><BAS>";"<NOM><SUB>";IGNORE
+<rad-sa-b-_la> "<TIB-SA-R_B><TIB-LA>";"<R_B><BAS>";"<NOM><SUB>";IGNORE
+<U0F67>        <TIB-HA>;<BAS>;<NOM>;IGNORE % ha
+<U0FB7>        <TIB-HA>;<BAS>;<SUB>;IGNORE
+<rad-ha-l>     <TIB-HA-R_L>;<R_L>;<NOM>;IGNORE
+<U0F68>        <TIB-A>;<BAS>;<NOM>;IGNORE % a
+<U0FB8>        <TIB-A>;<BAS>;<SUB>;IGNORE
+
+% explicit vowels
+<U0F71> IGNORE;<MAC>;IGNORE;IGNORE % long vowel mark % FIXME
+<U0F72> <TIB-I>;<BAS>;<NOM>;IGNORE % i
+<U0F80> <TIB-I>;<BAS>;<VAR>;IGNORE % reversed i
+<U0F73> <TIB-I>;<MAC>;<NOM>;IGNORE % ii
+<U0F81> <TIB-I>;<MAC>;<VAR>;IGNORE % reversed ii
+<U0F74> <TIB-U>;<BAS>;<NOM>;IGNORE % u
+<U0F75> <TIB-U>;<MAC>;<NOM>;IGNORE % uu
+<U0F7A> <TIB-E>;<BAS>;<NOM>;IGNORE % e
+<U0F7B> <TIB-E>;<MAC>;<NOM>;IGNORE % ee
+<U0F7C> <TIB-O>;<BAS>;<NOM>;IGNORE % o
+<U0F7D> <TIB-O>;<MAC>;<NOM>;IGNORE % oo
+
+% FIXME: 0F39, 0F7F, 0F84, 0F85, 0F86, 0F87,
+
+% FIXME: 0F88, UF89, UF8A, 0F8B
+<U0F88> IGNORE;<PCT>;IGNORE;IGNORE
+<U0F89> IGNORE;<PCT>;IGNORE;IGNORE
+<U0F8A> IGNORE;<PCT>;IGNORE;IGNORE
+<U0F8B> IGNORE;<PCT>;IGNORE;IGNORE
+
+reorder-end
+
+END LC_COLLATE
+
+LC_MONETARY
+
+int_curr_symbol         "<U0042><U0054><U004E> "
+currency_symbol    "<U0F51><U0F44><U0F74><U0F63><U0F0B><U0F40><U0FB2><U0F58><U0F0B>"
+mon_decimal_point       "<U002E>"
+mon_thousands_sep       "<U002C>"
+mon_grouping            3;2;
+positive_sign           ""
+negative_sign           "<U002D>"
+int_frac_digits         3
+frac_digits             3
+p_cs_precedes           1
+p_sep_by_space          1
+n_cs_precedes           1
+n_sep_by_space          1
+p_sign_posn             4
+n_sign_posn             4
+
+END LC_MONETARY
+
+LC_NUMERIC
+
+decimal_point           "<U002E>"
+thousands_sep           "<U002C>"
+grouping                3;2
+
+END LC_NUMERIC
+
+LC_TIME
+abday   "<U0F5F><U0FB3><U0F0B>";/
+        "<U0F58><U0F72><U0F62><U0F0B>";/
+        "<U0F63><U0FB7><U0F42><U0F0B>";/
+        "<U0F54><U0F74><U0F62><U0F0B>";/
+        "<U0F66><U0F44><U0F66><U0F0B>";/
+        "<U0F66><U0FA4><U0F7A><U0F53><U0F0B>";/
+        "<U0F49><U0F72><U0F0B>"
+
+day     "<U0F42><U0F5F><U0F60><U0F0B><U0F5F><U0FB3><U0F0B><U0F56><U0F0B>";/
+        "<U0F42><U0F5F><U0F60><U0F0B><U0F58><U0F72><U0F42><U0F0B><U0F51><U0F58><U0F62><U0F0B>";/
+        "<U0F42><U0F5F><U0F60><U0F0B><U0F63><U0FB7><U0F42><U0F0B><U0F55><U0F0B>";/
+        "<U0F42><U0F5F><U0F60><U0F0B><U0F54><U0F74><U0F62><U0F0B><U0F56><U0F74><U0F0B>";/
+        "<U0F42><U0F5F><U0F60><U0F0B><U0F54><U0F0B><U0F66><U0F44><U0F66><U0F0B>";/
+        "<U0F42><U0F5F><U0F60><U0F0B><U0F66><U0FA4><U0F7A><U0F53><U0F0B><U0F55><U0F0B>";/
+        "<U0F42><U0F5F><U0F60><U0F0B><U0F49><U0F72><U0F0B><U0F58><U0F0B>"
+
+
+abmon   "<U0F5F><U0FB3><U0F0B><U0F21>";/
+	"<U0F5F><U0FB3><U0F0B><U0F22>";/
+	"<U0F5F><U0FB3><U0F0B><U0F23>";/
+	"<U0F5F><U0FB3><U0F0B><U0F24>";/
+	"<U0F5F><U0FB3><U0F0B><U0F25>";/
+	"<U0F5F><U0FB3><U0F0B><U0F26>";/
+	"<U0F5F><U0FB3><U0F0B><U0F27>";/
+	"<U0F5F><U0FB3><U0F0B><U0F28>";/
+	"<U0F5F><U0FB3><U0F0B><U0F29>";/
+	"<U0F5F><U0FB3><U0F0B><U0F21><U0F20>";/
+	"<U0F5F><U0FB3><U0F0B><U0F21><U0F21>";/
+	"<U0F5F><U0FB3><U0F0B><U0F21><U0F22>"
+
+mon      "<U0F5F><U0FB3><U0F0B><U0F56><U0F0B><U0F51><U0F44><U0F0B><U0F54><U0F0B>";/
+         "<U0F5F><U0FB3><U0F0B><U0F56><U0F0B><U0F42><U0F49><U0F72><U0F66><U0F0B><U0F54><U0F0B>";/
+         "<U0F5F><U0FB3><U0F0B><U0F56><U0F0B><U0F42><U0F66><U0F74><U0F58><U0F0B><U0F54><U0F0B>";/
+         "<U0F5F><U0FB3><U0F0B><U0F56><U0F0B><U0F56><U0F5E><U0F72><U0F0B><U0F54><U0F0B>";/
+         "<U0F5F><U0FB3><U0F0B><U0F56><U0F0B><U0F63><U0F94><U0F0B><U0F55><U0F0B>";/
+         "<U0F5F><U0FB3><U0F0B><U0F56><U0F0B><U0F51><U0FB2><U0F74><U0F42><U0F0B><U0F54><U0F0B>";/
+         "<U0F5F><U0FB3><U0F0B><U0F56><U0F0B><U0F56><U0F51><U0F74><U0F53><U0F54><U0F0B>";/
+    "<U0F5F><U0FB3><U0F0B><U0F56><U0F0B><U0F56><U0F62><U0F92><U0FB1><U0F51><U0F0B><U0F54><U0F0B>";/
+         "<U0F5F><U0FB3><U0F0B><U0F56><U0F0B><U0F51><U0F42><U0F74><U0F0B><U0F54><U0F0B>";/
+         "<U0F5F><U0FB3><U0F0B><U0F56><U0F0B><U0F56><U0F45><U0F74><U0F0B><U0F54><U0F0B>";/
+"<U0F5F><U0FB3><U0F0B><U0F56><U0F0B><U0F56><U0F45><U0F74><U0F0B><U0F42><U0F45><U0F72><U0F42><U0F0B><U0F54><U0F0B>";/
+"<U0F5F><U0FB3><U0F0B><U0F56><U0F0B><U0F56><U0F45><U0F74><U0F0B><U0F42><U0F49><U0F72><U0F66><U0F0B><U0F54><U0F0B>"
+
+
+
+
+% Appropriate date & time representation
+d_t_fmt      "<U0F54><U0F66><U0FB1><U0F72><U0F0B><U0F63><U0F7C><U0025><U0079>/
+<U0F5F><U0F63><U0025><U006D><U0F5A><U0F7A><U0F66><U0025><U0064>/
+<U0F46><U0F74><U0F0B><U0F5A><U0F7C><U0F51><U0025><U0048><U0F40>/
+<U0F66><U0F62><U0F0B><U0F58><U0025><U004D>/
+<U0F40><U0F66><U0F62><U0F0B><U0F46><U0025><U0053>"
+
+% Appropriate date representation
+d_fmt        "<U0F54><U0F66><U0FB1><U0F72><U0F0B><U0F63><U0F7C><U0025><U0079>/
+<U0F5F><U0F63><U0025><U006D><U0F5A><U0F7A><U0F66><U0025><U0064>"
+
+% Appropriate time representation  "%H:%M:%S"
+t_fmt        "<U0F46><U0F74><U0F0B><U0F5A><U0F7C><U0F51>/
+<U0025><U0048><U0F40><U0F66><U0F62><U0F0B><U0F58>/
+<U0025><U004D><U0F40><U0F66><U0F62><U0F0B><U0F46><U0025><U0053>"
+
+% AM/PM signs
+am_pm   "<U0F44><U0F66><U0F0B><U0F46>";"<U0F55><U0FB1><U0F72><U0F0B><U0F46>"
+
+% Appropriate 12-hour clock representation  "%I:%M:%S %p"
+t_fmt_ampm        "<U0F46><U0F74><U0F0B><U0F5A><U0F7C><U0F51>/
+<U0025><U0049><U0F40><U0F66><U0F62><U0F0B><U0F58><U0025><U004D>/
+<U0F40><U0F66><U0F62><U0F0B><U0F46><U0025><U0053><U0020><U0025><U0070>"
+
+
+END LC_TIME
+
+LC_MESSAGES
+yesstr  "<U0F68><U0F72><U0F53>"
+nostr   "<U0F58><U0F7A><U0F53>"
+yesexpr "<U005E><U005B><U0F68><U0059><U0079><U005D><U002E><U002A>"
+noexpr  "<U005E><U005B><U0F58><U004E><U006E><U005D><U002E><U002A>"
+END LC_MESSAGES
+
+LC_TELEPHONE
+ tel_int_fmt    "<U002B><U0025><U0063><U0020><U0025><U0061><U0020><U0025><U006C>"
+% tel_dom_fmt    "<U0030><U002D><U0025><U0061><U0025><U006C>"
+% int_select     "<U0030><U0030><U0031>"
+% int_prefix     "<U0036><U0036>"
+END LC_TELEPHONE
+
+LC_PAPER
+height   297
+width    210
+END LC_PAPER
+
+LC_MEASUREMENT
+% FIXME
+measurement    1
+END LC_MEASUREMENT
+
+LC_NAME
+name_fmt    "<U0025><U0070><U0025><U0074><U0025><U0067><U0025><U0074>/
+<U0025><U006D><U0025><U0074><U0025><U0066>"
+name_gen    ""
+name_miss   "<U0F58><U0F7C>"
+name_mr     "<U0F55><U0F7C>"
+name_mrs    "<U0F68><U0F58>"
+END LC_NAME
+
+LC_ADDRESS
+%    "%f%N%a%N%d%N%r%t%e%t%b%N%h%t%s%N%T%N%S%N%z%c%N"
+postal_fmt    "<U0025><U0066><U0025><U004E><U0025><U0061><U0025><U004E>/
+<U0025><U0064><U0025><U004E><U0025><U0072><U0025><U0074><U0025><U0065>/
+<U0025><U0074><U0025><U0062><U0025><U004E><U0025><U0068><U0025><U0074>/
+<U0025><U0073><U0025><U004E><U0025><U0054><U0025><U004E><U0025><U0053>/
+<U0025><U004E><U0025><U007A><U0025><U0063><U0025><U004E>"
+country_name  "<U0042><U0048><U0055>"
+%FIXME
+%country_post  ""
+country_ab2   "<U0042><U0054>"
+country_ab3   "<U0042><U0048><U0055>"
+%country_num   "<U0042><U0048><U0055>"
+%FIXME
+%country_car   "<U0042>"
+%FIXME
+%country_isbn  ""
+lang_name     "<U0E44><U0E17><U0E22>"
+lang_ab       "<U0074><U0068>"
+lang_term     "<U0074><U0068><U0061>"
+lang_lib      "<U0074><U0068><U0061>"
+END LC_ADDRESS

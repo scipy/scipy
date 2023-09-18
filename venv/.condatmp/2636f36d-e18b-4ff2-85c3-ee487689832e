@@ -1,0 +1,12 @@
+prefix=/workspaces/scipy/venv
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: libwebp
+Description: Library for the WebP graphics format
+Version: 1.3.2
+Requires.private: libsharpyuv
+Cflags: -I${includedir}
+Libs: -L${libdir} -lwebp
+Libs.private: -lm -pthread 

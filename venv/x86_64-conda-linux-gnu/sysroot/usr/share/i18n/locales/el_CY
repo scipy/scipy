@@ -1,0 +1,104 @@
+comment_char %
+escape_char  /
+%
+% Greek Language Locale for Cyprus
+% Based on locale el_GR by Keld Simonsen.
+
+LC_IDENTIFICATION
+title      "Greek locale for Cyprus"
+source     "Greek Debian Translation Team"
+address    "Konstantinos Margaritis, M. Asias 50, Nafplion 21100, Greece"
+contact    ""
+email      "bug-glibc@gnu.org"
+tel        ""
+fax        ""
+language   "Greek"
+territory  "Cyprus"
+revision   "1.0"
+date       "2004-10-20"
+%
+category  "el_CY:2000";LC_IDENTIFICATION
+category  "el_CY:2000";LC_CTYPE
+category  "el_CY:2000";LC_COLLATE
+category  "el_CY:2000";LC_TIME
+category  "el_CY:2000";LC_NUMERIC
+category  "el_CY:2000";LC_MONETARY
+category  "el_CY:2000";LC_MESSAGES
+category  "el_CY:2000";LC_PAPER
+category  "el_CY:2000";LC_NAME
+category  "el_CY:2000";LC_ADDRESS
+category  "el_CY:2000";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_COLLATE
+copy "iso14651_t1"
+END LC_COLLATE
+
+LC_CTYPE
+copy "el_GR"
+END LC_CTYPE
+
+LC_MESSAGES
+copy "el_GR"
+END LC_MESSAGES
+
+LC_MONETARY
+int_curr_symbol       "<U0045><U0055><U0052><U0020>"
+currency_symbol       "<U20AC>"
+mon_decimal_point     "<U002C>"
+mon_thousands_sep     "<U002E>"
+mon_grouping          3
+positive_sign         ""
+negative_sign         "<U002D>"
+int_frac_digits       2
+frac_digits           2
+p_cs_precedes         0
+p_sep_by_space        0
+n_cs_precedes         1
+n_sep_by_space        0
+p_sign_posn           1
+n_sign_posn           1
+END LC_MONETARY
+
+LC_NUMERIC
+decimal_point             "<U002C>"
+thousands_sep             "<U002E>"
+grouping                  0;0
+END LC_NUMERIC
+
+LC_TIME
+copy "el_GR"
+END LC_TIME
+
+LC_PAPER
+copy "el_GR"
+END LC_PAPER
+
+LC_TELEPHONE
+tel_int_fmt    "<U002B><U0025><U0063><U0020><U0025><U0061><U0020><U0025>/
+<U006C>"
+int_prefix     "<U0033><U0035><U0037>"
+int_select     "<U0030><U0030>"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+% FIXME
+measurement    1
+END LC_MEASUREMENT
+
+LC_NAME
+name_fmt    "<U0025><U0064><U0025><U0074><U0025><U0067><U0025><U0074>/
+<U0025><U006D><U0025><U0074><U0025><U0066>"
+END LC_NAME
+
+LC_ADDRESS
+postal_fmt    "<U0025><U0066><U0025><U004E><U0025><U0061><U0025><U004E>/
+<U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E><U0025><U0073>/
+<U0020><U0025><U0068><U0020><U0025><U0065><U0020><U0025><U0072><U0025>/
+<U004E><U0025><U007A><U0020><U0025><U0054><U0025>/
+<U004E><U0025><U0063><U0025><U004E>"
+country_ab2 "<U0043><U0059>"
+country_ab3 "<U0043><U0059><U0050>"
+country_num 196
+END LC_ADDRESS

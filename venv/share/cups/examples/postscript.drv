@@ -1,0 +1,46 @@
+// Include standard font and media definitions
+#include <font.defs>
+#include <media.defs>
+
+// Specify this is a PostScript printer driver
+DriverType ps
+
+// List the fonts that are supported, in this case all standard fonts
+Font *
+
+// Manufacturer, model name, and version
+Manufacturer "Foo"
+ModelName "Foo LaserProofer 2000"
+Version 1.0
+
+// PostScript printer attributes
+Attribute DefaultColorSpace "" Gray
+Attribute LandscapeOrientation "" Minus90
+Attribute LanguageLevel "" "3"
+Attribute Product "" "(Foo LaserProofer 2000)"
+Attribute PSVersion "" "(3010) 0"
+Attribute TTRasterizer "" Type42
+
+// Supported page sizes
+*MediaSize Letter
+MediaSize Legal
+MediaSize A4
+
+// Query command for page size
+Attribute "?PageSize" "" "
+      save
+      currentpagedevice /PageSize get aload pop
+      2 copy gt {exch} if (Unknown)
+      23 dict
+              dup [612 792] (Letter) put
+              dup [612 1008] (Legal) put
+              dup [595 842] (A4) put
+              {exch aload pop 4 index sub abs 5 le exch 
+               5 index sub abs 5 le and
+              {exch pop exit} {pop} ifelse
+      } bind forall = flush pop pop
+      restore"
+
+// Specify the name of the PPD file we want to generate
+PCFileName "fooproof.ppd"
+

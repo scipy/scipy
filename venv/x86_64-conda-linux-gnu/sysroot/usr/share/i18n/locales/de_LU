@@ -1,0 +1,156 @@
+comment_char %
+escape_char  /
+%
+% German Language Locale for Luxemburg
+% Source: RAP
+% Address: Sankt Jo//rgens Alle 8
+%    DK-1615 Ko//benhavn V, Danmark
+% Contact: Keld Simonsen
+% Email: Keld.Simonsen@dkuug.dk
+% Tel: +45 - 31226543
+% Fax: +45 - 33256543
+% Language: de
+% Territory: LU
+% Revision: 4.3
+% Date: 1996-10-15
+% Users: general
+% Repertoiremap: mnemonic.ds
+% Charset: ISO-8859-1
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title      "German locale for Luxemburg"
+source     "RAP"
+address    "Sankt J<U00F8>rgens Alle 8, DK-1615 K<U00F8>benhavn V, Danmark"
+contact    ""
+email      "bug-glibc-locales@gnu.org"
+tel        ""
+fax        ""
+language   "German"
+territory  "Luxemburg"
+revision   "1.0"
+date       "2000-06-29"
+%
+category  "de_LU:2000";LC_IDENTIFICATION
+category  "de_LU:2000";LC_CTYPE
+category  "de_LU:2000";LC_COLLATE
+category  "de_LU:2000";LC_TIME
+category  "de_LU:2000";LC_NUMERIC
+category  "de_LU:2000";LC_MONETARY
+category  "de_LU:2000";LC_MESSAGES
+category  "de_LU:2000";LC_PAPER
+category  "de_LU:2000";LC_NAME
+category  "de_LU:2000";LC_ADDRESS
+category  "de_LU:2000";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_COLLATE
+copy "iso14651_t1"
+END LC_COLLATE
+
+LC_CTYPE
+copy "de_DE"
+END LC_CTYPE
+
+LC_MESSAGES
+copy "de_DE"
+END LC_MESSAGES
+
+LC_MONETARY
+int_curr_symbol           "<U0045><U0055><U0052><U0020>"
+currency_symbol           "<U20AC>"
+mon_decimal_point         "<U002C>"
+mon_thousands_sep         "<U002E>"
+mon_grouping              3;3
+positive_sign             ""
+negative_sign             "<U002D>"
+int_frac_digits           2
+frac_digits               2
+p_cs_precedes             1
+p_sep_by_space            1
+n_cs_precedes             1
+n_sep_by_space            1
+p_sign_posn               4
+n_sign_posn               4
+END LC_MONETARY
+
+LC_NUMERIC
+copy "de_DE"
+END LC_NUMERIC
+
+LC_TIME
+% copy "de_DE"
+abday   "<U0053><U006F><U006E>";"<U004D><U006F><U006E>";/
+        "<U0044><U0069><U0065>";"<U004D><U0069><U0074>";/
+        "<U0044><U006F><U006E>";"<U0046><U0072><U0065>";/
+        "<U0053><U0061><U006D>"
+day     "<U0053><U006F><U006E><U006E><U0074><U0061><U0067>";/
+        "<U004D><U006F><U006E><U0074><U0061><U0067>";/
+        "<U0044><U0069><U0065><U006E><U0073><U0074><U0061><U0067>";/
+        "<U004D><U0069><U0074><U0074><U0077><U006F><U0063><U0068>";/
+        "<U0044><U006F><U006E><U006E><U0065><U0072><U0073><U0074><U0061><U0067>";/
+        "<U0046><U0072><U0065><U0069><U0074><U0061><U0067>";/
+        "<U0053><U0061><U006D><U0073><U0074><U0061><U0067>"
+abmon   "<U004A><U0061><U006E>";"<U0046><U0065><U0062>";/
+        "<U004D><U00E4><U0072>";"<U0041><U0070><U0072>";/
+        "<U004D><U0061><U0069>";"<U004A><U0075><U006E>";/
+        "<U004A><U0075><U006C>";"<U0041><U0075><U0067>";/
+        "<U0053><U0065><U0070>";"<U004F><U006B><U0074>";/
+        "<U004E><U006F><U0076>";"<U0044><U0065><U007A>"
+mon     "<U004A><U0061><U006E><U0075><U0061><U0072>";/
+        "<U0046><U0065><U0062><U0072><U0075><U0061><U0072>";/
+        "<U004D><U00E4><U0072><U007A>";/
+        "<U0041><U0070><U0072><U0069><U006C>";/
+        "<U004D><U0061><U0069>";/
+        "<U004A><U0075><U006E><U0069>";/
+        "<U004A><U0075><U006C><U0069>";/
+        "<U0041><U0075><U0067><U0075><U0073><U0074>";/
+        "<U0053><U0065><U0070><U0074><U0065><U006D><U0062><U0065><U0072>";/
+        "<U004F><U006B><U0074><U006F><U0062><U0065><U0072>";/
+        "<U004E><U006F><U0076><U0065><U006D><U0062><U0065><U0072>";/
+        "<U0044><U0065><U007A><U0065><U006D><U0062><U0065><U0072>"
+d_t_fmt "<U0025><U0061><U0020><U0025><U0064><U0020><U0025><U0062><U0020><U0025><U0059><U0020><U0025><U0054><U0020><U0025><U005A>"
+d_fmt   "<U0025><U0059><U002D><U0025><U006D><U002D><U0025><U0064>"
+t_fmt   "<U0025><U0054>"
+am_pm   "";""
+t_fmt_ampm ""
+date_fmt	"<U0025><U0061><U0020><U0025><U0062><U0020><U0025><U0065>/
+<U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U0020>/
+<U0025><U005A><U0020><U0025><U0059>"
+END LC_TIME
+
+LC_PAPER
+% FIXME
+height   297
+% FIXME
+width    210
+END LC_PAPER
+
+LC_TELEPHONE
+tel_int_fmt    "<U002B><U0025><U0063><U0020><U0025><U0061><U0020><U0025>/
+<U006C>"
+int_prefix     "<U0033><U0035><U0032>"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+% FIXME
+measurement    1
+END LC_MEASUREMENT
+
+LC_NAME
+name_fmt    "<U0025><U0064><U0025><U0074><U0025><U0067><U0025><U0074>/
+<U0025><U006D><U0025><U0074><U0025><U0066>"
+END LC_NAME
+
+LC_ADDRESS
+postal_fmt    "<U0025><U0066><U0025><U004E><U0025><U0061><U0025><U004E>/
+<U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E><U0025><U0073>/
+<U0020><U0025><U0068><U0020><U0025><U0065><U0020><U0025><U0072><U0025>/
+<U004E><U0025><U007A><U0020><U0025><U0054><U0025>/
+<U004E><U0025><U0063><U0025><U004E>"
+country_ab2 "<U004C><U0055>"
+country_ab3 "<U004C><U0055><U0058>"
+country_num 442
+END LC_ADDRESS

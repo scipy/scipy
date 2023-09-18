@@ -1,0 +1,305 @@
+<HTML>
+<HEAD>
+<TITLE>GNU.Gettext.GettextResourceManager Class</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+<H3>GNU.Gettext.GettextResourceManager Class</H3>
+
+<BLOCKQUOTE>
+<TABLE COLS="1" ROWS="1" WIDTH="100%">
+<TR><TD BGCOLOR="#C0C0C0"><PRE>public class GettextResourceManager: System.Resources.ResourceManager</PRE></TD></TR>
+</TABLE>
+</BLOCKQUOTE>
+
+<H4>Base Types</H4>
+
+<BLOCKQUOTE>
+System.Resources.ResourceManager<BR>
+&nbsp;&nbsp;GettextResourceManager<P>
+
+</BLOCKQUOTE>
+
+<H4>Library</H4>
+
+<BLOCKQUOTE>
+GNU.Gettext
+</BLOCKQUOTE>
+
+<H4>Summary</H4>
+
+<BLOCKQUOTE>
+
+Each instance of this class can be used to lookup translations for a
+given resource name. For each <CODE>CultureInfo</CODE>, it performs the lookup
+in several assemblies, from most specific over territory-neutral to
+language-neutral.
+</BLOCKQUOTE>
+
+<H4>See Also</H4>
+
+<BLOCKQUOTE>
+<A HREF="GNU_Gettext.html" TARGET="members">GNU.Gettext Namespace</A>
+</BLOCKQUOTE>
+
+<H4>Members</H4>
+
+<BLOCKQUOTE>
+<P>
+
+GettextResourceManager Constructors<P>
+
+<A HREF="#GettextResourceManager%28System.String%29%20Constructor" TARGET="contents">GettextResourceManager(System.String) Constructor</A><BR>
+<A HREF="#GettextResourceManager%28System.String%2C%20System.Reflection.Assembly%29%20Constructor" TARGET="contents">GettextResourceManager(System.String, System.Reflection.Assembly) Constructor</A><BR>
+<P>
+
+GettextResourceManager Methods<P>
+
+<A HREF="#GettextResourceManager.GetPluralString%28System.String%2C%20System.String%2C%20long%2C%20System.Globalization.CultureInfo%29%20Method" TARGET="contents">GettextResourceManager.GetPluralString(System.String, System.String, long, System.Globalization.CultureInfo) Method</A><BR>
+<A HREF="#GettextResourceManager.GetPluralString%28System.String%2C%20System.String%2C%20long%29%20Method" TARGET="contents">GettextResourceManager.GetPluralString(System.String, System.String, long) Method</A><BR>
+<A HREF="#GettextResourceManager.GetString%28System.String%2C%20System.Globalization.CultureInfo%29%20Method" TARGET="contents">GettextResourceManager.GetString(System.String, System.Globalization.CultureInfo) Method</A><BR>
+<A HREF="#GettextResourceManager.GetString%28System.String%29%20Method" TARGET="contents">GettextResourceManager.GetString(System.String) Method</A><BR>
+</BLOCKQUOTE>
+
+<HR>
+
+<A NAME="GettextResourceManager%28System.String%29%20Constructor"><H3>GettextResourceManager(System.String) Constructor</H3>
+
+<BLOCKQUOTE>
+<TABLE COLS="1" ROWS="1" WIDTH="100%">
+<TR><TD BGCOLOR="#C0C0C0"><PRE>public GettextResourceManager(System.String baseName);</PRE></TD></TR>
+</TABLE>
+</BLOCKQUOTE>
+
+<H4>Summary</H4>
+
+<BLOCKQUOTE>
+
+Constructor.
+</BLOCKQUOTE>
+
+<H4>Parameters</H4>
+
+<BLOCKQUOTE>
+<DL>
+<DT>baseName</DT>
+<DD>the resource name, also the assembly base
+                       name</DD>
+</DL>
+</BLOCKQUOTE>
+
+<H4>See Also</H4>
+
+<BLOCKQUOTE>
+<A HREF="GNU_Gettext_GettextResourceManager.html" TARGET="contents">GNU.Gettext.GettextResourceManager Class</A>, <A HREF="GNU_Gettext.html" TARGET="members">GNU.Gettext Namespace</A>
+</BLOCKQUOTE>
+
+<HR>
+
+<A NAME="GettextResourceManager%28System.String%2C%20System.Reflection.Assembly%29%20Constructor"><H3>GettextResourceManager(System.String, System.Reflection.Assembly) Constructor</H3>
+
+<BLOCKQUOTE>
+<TABLE COLS="1" ROWS="1" WIDTH="100%">
+<TR><TD BGCOLOR="#C0C0C0"><PRE>public GettextResourceManager(System.String baseName, System.Reflection.Assembly assembly);</PRE></TD></TR>
+</TABLE>
+</BLOCKQUOTE>
+
+<H4>Summary</H4>
+
+<BLOCKQUOTE>
+
+Constructor.
+</BLOCKQUOTE>
+
+<H4>Parameters</H4>
+
+<BLOCKQUOTE>
+<DL>
+<DT>baseName</DT>
+<DD>the resource name, also the assembly base
+                       name</DD>
+</DL>
+</BLOCKQUOTE>
+
+<H4>See Also</H4>
+
+<BLOCKQUOTE>
+<A HREF="GNU_Gettext_GettextResourceManager.html" TARGET="contents">GNU.Gettext.GettextResourceManager Class</A>, <A HREF="GNU_Gettext.html" TARGET="members">GNU.Gettext Namespace</A>
+</BLOCKQUOTE>
+
+<HR>
+
+<A NAME="GettextResourceManager.GetPluralString%28System.String%2C%20System.String%2C%20long%2C%20System.Globalization.CultureInfo%29%20Method"><H3>GettextResourceManager.GetPluralString(System.String, System.String, long, System.Globalization.CultureInfo) Method</H3>
+
+<BLOCKQUOTE>
+<TABLE COLS="1" ROWS="1" WIDTH="100%">
+<TR><TD BGCOLOR="#C0C0C0"><PRE>public virtual System.String GetPluralString(System.String msgid, System.String msgidPlural, long n, System.Globalization.CultureInfo culture);</PRE></TD></TR>
+</TABLE>
+</BLOCKQUOTE>
+
+<H4>Summary</H4>
+
+<BLOCKQUOTE>
+
+Returns the translation of <I>msgid</I> and
+<I>msgidPlural</I> in a given culture, choosing the right
+plural form depending on the number <I>n</I>.
+</BLOCKQUOTE>
+
+<H4>Parameters</H4>
+
+<BLOCKQUOTE>
+<DL>
+<DT>msgid</DT>
+<DD>the key string to be translated, an ASCII
+                    string</DD>
+<DT>msgidPlural</DT>
+<DD>the English plural of <I>msgid</I>,
+                          an ASCII string</DD>
+<DT>n</DT>
+<DD>the number, should be &gt;= 0</DD>
+</DL>
+</BLOCKQUOTE>
+
+<H4>Return Value</H4>
+
+<BLOCKQUOTE>
+the translation, or <I>msgid</I> or
+         <I>msgidPlural</I> if none is found
+</BLOCKQUOTE>
+
+<H4>See Also</H4>
+
+<BLOCKQUOTE>
+<A HREF="GNU_Gettext_GettextResourceManager.html" TARGET="contents">GNU.Gettext.GettextResourceManager Class</A>, <A HREF="GNU_Gettext.html" TARGET="members">GNU.Gettext Namespace</A>
+</BLOCKQUOTE>
+
+<HR>
+
+<A NAME="GettextResourceManager.GetPluralString%28System.String%2C%20System.String%2C%20long%29%20Method"><H3>GettextResourceManager.GetPluralString(System.String, System.String, long) Method</H3>
+
+<BLOCKQUOTE>
+<TABLE COLS="1" ROWS="1" WIDTH="100%">
+<TR><TD BGCOLOR="#C0C0C0"><PRE>public virtual System.String GetPluralString(System.String msgid, System.String msgidPlural, long n);</PRE></TD></TR>
+</TABLE>
+</BLOCKQUOTE>
+
+<H4>Summary</H4>
+
+<BLOCKQUOTE>
+
+Returns the translation of <I>msgid</I> and
+<I>msgidPlural</I> in the current culture, choosing the
+right plural form depending on the number <I>n</I>.
+</BLOCKQUOTE>
+
+<H4>Parameters</H4>
+
+<BLOCKQUOTE>
+<DL>
+<DT>msgid</DT>
+<DD>the key string to be translated, an ASCII
+                    string</DD>
+<DT>msgidPlural</DT>
+<DD>the English plural of <I>msgid</I>,
+                          an ASCII string</DD>
+<DT>n</DT>
+<DD>the number, should be &gt;= 0</DD>
+</DL>
+</BLOCKQUOTE>
+
+<H4>Return Value</H4>
+
+<BLOCKQUOTE>
+the translation, or <I>msgid</I> or
+         <I>msgidPlural</I> if none is found
+</BLOCKQUOTE>
+
+<H4>See Also</H4>
+
+<BLOCKQUOTE>
+<A HREF="GNU_Gettext_GettextResourceManager.html" TARGET="contents">GNU.Gettext.GettextResourceManager Class</A>, <A HREF="GNU_Gettext.html" TARGET="members">GNU.Gettext Namespace</A>
+</BLOCKQUOTE>
+
+<HR>
+
+<A NAME="GettextResourceManager.GetString%28System.String%2C%20System.Globalization.CultureInfo%29%20Method"><H3>GettextResourceManager.GetString(System.String, System.Globalization.CultureInfo) Method</H3>
+
+<BLOCKQUOTE>
+<TABLE COLS="1" ROWS="1" WIDTH="100%">
+<TR><TD BGCOLOR="#C0C0C0"><PRE>public override System.String GetString(System.String msgid, System.Globalization.CultureInfo culture);</PRE></TD></TR>
+</TABLE>
+</BLOCKQUOTE>
+
+<H4>Summary</H4>
+
+<BLOCKQUOTE>
+
+Returns the translation of <I>msgid</I> in a given culture.
+</BLOCKQUOTE>
+
+<H4>Parameters</H4>
+
+<BLOCKQUOTE>
+<DL>
+<DT>msgid</DT>
+<DD>the key string to be translated, an ASCII
+                    string</DD>
+</DL>
+</BLOCKQUOTE>
+
+<H4>Return Value</H4>
+
+<BLOCKQUOTE>
+the translation of <I>msgid</I>, or
+         <I>msgid</I> if none is found
+</BLOCKQUOTE>
+
+<H4>See Also</H4>
+
+<BLOCKQUOTE>
+<A HREF="GNU_Gettext_GettextResourceManager.html" TARGET="contents">GNU.Gettext.GettextResourceManager Class</A>, <A HREF="GNU_Gettext.html" TARGET="members">GNU.Gettext Namespace</A>
+</BLOCKQUOTE>
+
+<HR>
+
+<A NAME="GettextResourceManager.GetString%28System.String%29%20Method"><H3>GettextResourceManager.GetString(System.String) Method</H3>
+
+<BLOCKQUOTE>
+<TABLE COLS="1" ROWS="1" WIDTH="100%">
+<TR><TD BGCOLOR="#C0C0C0"><PRE>public override System.String GetString(System.String msgid);</PRE></TD></TR>
+</TABLE>
+</BLOCKQUOTE>
+
+<H4>Summary</H4>
+
+<BLOCKQUOTE>
+
+Returns the translation of <I>msgid</I> in the current
+culture.
+</BLOCKQUOTE>
+
+<H4>Parameters</H4>
+
+<BLOCKQUOTE>
+<DL>
+<DT>msgid</DT>
+<DD>the key string to be translated, an ASCII
+                    string</DD>
+</DL>
+</BLOCKQUOTE>
+
+<H4>Return Value</H4>
+
+<BLOCKQUOTE>
+the translation of <I>msgid</I>, or
+         <I>msgid</I> if none is found
+</BLOCKQUOTE>
+
+<H4>See Also</H4>
+
+<BLOCKQUOTE>
+<A HREF="GNU_Gettext_GettextResourceManager.html" TARGET="contents">GNU.Gettext.GettextResourceManager Class</A>, <A HREF="GNU_Gettext.html" TARGET="members">GNU.Gettext Namespace</A>
+</BLOCKQUOTE>
+
+</BODY>
+</HTML>

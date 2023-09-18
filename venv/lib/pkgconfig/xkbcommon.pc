@@ -1,0 +1,9 @@
+prefix=/workspaces/scipy/venv
+includedir=${prefix}/include
+libdir=${prefix}/lib
+
+Name: xkbcommon
+Description: XKB API common to servers and clients
+Version: 1.5.0
+Libs: -L${libdir} -lxkbcommon
+Cflags: -I${includedir}

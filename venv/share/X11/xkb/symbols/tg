@@ -1,0 +1,69 @@
+// Keyboard layout for Togo.
+
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+    include "fr(azerty)"
+
+    name[Group1]="French (Togo)";
+
+// This is based on French AZERTY-Keyboard layout that is mostly used in Togo.
+// It includes symbols used to write different local languages in Togo.
+// Created 2015 by Globalbility Togo (www.globalbility.org)
+// Authors: Issaka Ouro-Wétchiré, Caroline Riefstahl, Mats Blakstad <mats @ globalbility.org>
+//
+// LAYOUT OVERVIEW
+//  ____
+// | 1 3| 1 = Shift,  3 = AltGr + Shift    (AltGr is the right side alt key)
+// | 2 4| 2 = normal, 4 = AltGr
+//  ¯¯¯¯
+//  ____ ____ ____ ____ ____ ____ ____ ____ ____ ____ ____ ____ ____ _______
+// |    | 1  | 2  | 3  | 4  | 5  | 6  | 7  | 8  | 9  | 0  | °  | +  | <--   |
+// | ²  | &  | é ~| " #| ' {| ( [| - || è `| _ \| ç ^| à @| ) ]| = }|       |
+//  ========================================================================
+// | |<-  | A  | Z Ʒ| E  | R Ɛ| T Ɗ| Y Ƴ| U Ʊ| I Ɩ| O Ɔ| P  | ¨  | $  |   , |
+// |  ->| | a  | z ʒ| e €| r ɛ| t ɗ| y ƴ| u ʊ| i ɩ| o ɔ| p  | ^  ̌| £ ¤| <-' |
+//  ===================================================================¬    |
+// |       | Q Ǝ| S  | D Ɖ| F Ƒ| G Ɣ| H Ĥ| J Ɨ| K  | L  | M Ŋ| %  | µ  |    |
+// | MAJ   | q ǝ| s  | d ɖ| f ƒ| g ɣ| h ɦ| j ɨ| k  | l  | m ɲ| ù `| *  ́|    |
+//  ========================================================================
+// | ^   | >  | W  | X  | C  | V Ʋ| B Ɓ| N Ŋ| ?  | .  | /  | §  |     |     |
+// | |   | <  | w  | x  | c  | v ʋ| b ɓ| n ŋ| ,  | ;  | : ¯| ! ~|     |     |
+//  ========================================================================
+// |      |      |      |                       |       |      |     |      |
+// | Ctrl | Super| Alt  | Space    Nobreakspace | AltGr | Super|Menu | Ctrl |
+//  ¯¯¯¯¯¯ ¯¯¯¯¯¯ ¯¯¯¯¯¯ ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯ ¯¯¯¯¯¯¯ ¯¯¯¯¯¯ ¯¯¯¯¯ ¯¯¯¯¯¯
+//
+// The different local languages in Togo all together use 17 symbols not found
+// in the French language: Ʒ, ɛ, Ɗ, Ƴ, Ʊ, Ɩ, Ɔ, Ǝ, Ɖ, Ƒ, Ɣ, Ĥ, Ɨ, Ɲ, Ʋ, Ɓ, Ŋ.
+// Togolese local languages use 9 tone markers: acute (´), grave (`), circumflex (ˆ),
+// caron (ˇ), macron (¯), tilde (~), tilde+acute (  ̃́), tilde+grave (  ̃̀), diaeresis (¨).
+// The vowels can use these tone markers except diaeresis.
+// 'Y' is not used as a vowel in most local languages, and can only use diaeresis.
+// Nasal consonants (m, n, ŋ) can only have have accent tones (acute and grave).
+
+    key <AD02>	{[	z,		Z,		ezh,		EZH	]};  // ʒ Ʒ
+    key <AD04>	{[	r,		R,		U025B,		U0190	]};  // ɛ Ɛ
+    key <AD05>	{[	t,		T,		U0257,		U018A	]};  // ɗ Ɗ
+    key <AD06>	{[	y,		Y,		U01B4,		U01B3	]};  // ƴ Ƴ
+    key <AD07>	{[	u,		U,		U028A,		U01B1	]};  // ʊ Ʊ
+    key <AD08>	{[	i,		I,		U0269,		U0196	]};  // ɩ Ɩ
+    key <AD09>	{[	o,		O,		U0254,		U0186	]};  // ɔ Ɔ
+    key <AD11>	{[	dead_circumflex,dead_diaeresis,	dead_caron		]};
+
+    key <AC01>	{[	q,		Q,		U01DD,		U018E	]};  // ǝ Ǝ
+    key <AC03>	{[	d,		D,		U0256,		U0189	]};  // ɖ Ɖ
+    key <AC04>	{[	f,		F,		U0192,		U0191	]};  // ƒ Ƒ
+    key <AC05>	{[	g,		G,		U0263,		U0194	]};  // ɣ Ɣ
+    key <AC06>	{[	h,		H,		U0266,		U0124	]};  // ɦ Ĥ
+    key <AC07>	{[	j,		J,		U0268,		U0197	]};  // ɨ Ɨ
+    key <AC10>	{[	m,		M,		U0272,		U019D	]};  // ɲ Ɲ
+    key <AC11>	{[	ugrave,		percent,	dead_grave		]};
+    key <BKSL>	{[	asterisk,	mu,		dead_acute		]};
+
+    key <AB04>	{[	v,		V,		U028B,		U01B2	]};  // ʋ Ʋ
+    key <AB05>	{[	b,		B,		U0253,		U0181	]};  // ɓ Ɓ
+    key <AB06>	{[	n,		N,		U014B,		U014A	]};  // ŋ Ŋ
+    key <AB09>	{[	colon,		slash,		dead_macron		]};
+    key <AB10>	{[	exclam,		section,	dead_tilde		]};
+};

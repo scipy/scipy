@@ -1,0 +1,62 @@
+# Ukrainian translation to hello-c-gnome3
+# Copyright (C) 2014 Yoyodyne, Inc. (msgids)
+# This file is distributed under the same license as the gettext package.
+#
+# Maxim V. Dziumanenko <dziumanenko@gmail.com>, 2004-2007.
+# Yuri Chornoivan <yurchor@ukr.net>, 2014, 2015.
+msgid ""
+msgstr ""
+"Project-Id-Version: hello-c-gnome3 0.19.4.73\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"PO-Revision-Date: 2015-06-23 20:51+0300\n"
+"Last-Translator: Yuri Chornoivan <yurchor@ukr.net>\n"
+"Language-Team: Ukrainian <translation-team-uk@lists.sourceforge.net>\n"
+"Language: uk\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"X-Generator: Lokalize 1.5\n"
+
+#: hello.c:79
+#, c-format
+msgid ""
+"<big>Hello world!</big>\n"
+"This program is running as process number <b>%d</b>."
+msgstr ""
+"<big>Вітаємо!</big>\n"
+"Ця програма виконується як процес з номером <b>%d</b>."
+
+#: hello.c:84
+msgid "<big><u>This is another text</u></big>"
+msgstr "<big><u>Інший фрагмент тексту</u></big>"
+
+#: hello.c:86
+msgid "<big><i>This is yet another text</i></big>"
+msgstr "<big><i>Ще якийсь фрагмент тексту</i></big>"
+
+#: hello.desktop.in.in:4
+msgid "Hello"
+msgstr "Привіт"
+
+#: hello.desktop.in.in:5
+msgid "Hello, world!"
+msgstr "Привіт, світе!"
+
+#: hello.ui:6
+msgid "Example Application"
+msgstr "Програма-приклад"
+
+#: hello.ui:34
+msgid "Update text"
+msgstr "Оновити текст"
+
+#: hello.gschema.xml:8
+msgid "Use XML markup"
+msgstr "Використати розмітку XML"
+
+#: hello.gschema.xml:9
+msgid "Whether to use XML markup in the text."
+msgstr "Визначає, чи слід використовувати розмітку XML у тексті."

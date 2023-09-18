@@ -1,0 +1,264 @@
+comment_char %
+escape_char  /
+%
+% Kazakh Language Locale for Kazakhstan
+% Source: NIPI, Kazakhstan Copper Corporation
+% Address: 6, Gagarin, 477000, Zhezkazgan, Kazakhstan
+% Contact: Timur Birsh
+% Email: birsh@mail.kz
+% Tel: +7 (310-2) 74-80-12
+% Fax:
+% Language: kk
+% Territory: KZ
+% Revision: 1.0
+% Date: 2003-06-06
+% Application: general
+% Users: general
+% Charset: PT154
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title      "Kazakh locale for Kazakhstan"
+source     "NIPI, Kazakhstan Copper Corporation"
+address    ""
+contact    ""
+email      "bug-glibc-locales@gnu.org"
+tel        ""
+fax        ""
+language   "Kazakh"
+territory  "Kazakhstan"
+revision   "1.0"
+date       "2003-06-06"
+%
+category  "kk_KZ:2000";LC_IDENTIFICATION
+category  "kk_KZ:2000";LC_CTYPE
+category  "kk_KZ:2000";LC_COLLATE
+category  "kk_KZ:2000";LC_TIME
+category  "kk_KZ:2000";LC_NUMERIC
+category  "kk_KZ:2000";LC_MONETARY
+category  "kk_KZ:2000";LC_MESSAGES
+category  "kk_KZ:2000";LC_PAPER
+category  "kk_KZ:2000";LC_NAME
+category  "kk_KZ:2000";LC_ADDRESS
+category  "kk_KZ:2000";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_COLLATE
+copy "iso14651_t1"
+
+% iso14651_t1 is missing Ukrainian ghe
+collating-symbol <UKR-GHE>
+collating-symbol <CYR-SCHWA>
+collating-symbol <CYR-GHE-WITH-STROKE>
+collating-symbol <CYR-KA-WITH-DESCENDER>
+collating-symbol <CYR-EN-WITH-DESCENDER>
+collating-symbol <CYR-BARRED-O>
+collating-symbol <CYR-STRAIGHT-U-WITH-STROKE>
+collating-symbol <CYR-STRAIGHT-U>
+collating-symbol <CYR-SHHA>
+collating-symbol <CYR-BEL-UKR-I>
+
+reorder-after <CYR-GZHE>
+<UKR-GHE>
+
+reorder-after <U0453>
+<U0491> <UKR-GHE>;<BAS>;<MIN>;IGNORE
+
+reorder-after <U0403>
+<U0490> <UKR-GHE>;<BAS>;<CAP>;IGNORE
+
+reorder-after <CYR-A>
+<CYR-SCHWA>
+
+reorder-after <U0430>
+<U04D9> <CYR-SCHWA>;<BAS>;<MIN>;IGNORE
+
+reorder-after <U0410>
+<U04D8> <CYR-SCHWA>;<BAS>;<CAP>;IGNORE
+
+reorder-after <CYR-GHE>
+<CYR-GHE-WITH-STROKE>
+
+reorder-after <U0433>
+<U0493> <CYR-GHE-WITH-STROKE>;<BAS>;<MIN>;IGNORE
+
+reorder-after <U0413>
+<U0492> <CYR-GHE-WITH-STROKE>;<BAS>;<CAP>;IGNORE
+
+reorder-after <CYR-KA>
+<CYR-KA-WITH-DESCENDER>
+
+reorder-after <U043A>
+<U049B> <CYR-KA-WITH-DESCENDER>;<BAS>;<MIN>;IGNORE
+
+reorder-after <U041A>
+<U049A> <CYR-KA-WITH-DESCENDER>;<BAS>;<CAP>;IGNORE
+
+reorder-after <CYR-EN>
+<CYR-EN-WITH-DESCENDER>
+
+reorder-after <U043D>
+<U04A3> <CYR-EN-WITH-DESCENDER>;<BAS>;<MIN>;IGNORE
+
+reorder-after <U041D>
+<U04A2> <CYR-EN-WITH-DESCENDER>;<BAS>;<CAP>;IGNORE
+
+reorder-after <CYR-O>
+<CYR-BARRED-O>
+
+reorder-after <U043E>
+<U04E9> <CYR-BARRED-O>;<BAS>;<MIN>;IGNORE
+
+reorder-after <U041E>
+<U04E8> <CYR-BARRED-O>;<BAS>;<CAP>;IGNORE
+
+reorder-after <CYR-OU>
+<CYR-STRAIGHT-U>
+<CYR-STRAIGHT-U-WITH-STROKE>
+
+reorder-after <U0443>
+<U04AF> <CYR-STRAIGHT-U>;<BAS>;<MIN>;IGNORE
+<U04B1> <CYR-STRAIGHT-U-WITH-STROKE>;<BAS>;<MIN>;IGNORE
+
+reorder-after <U0423>
+<U04AE> <CYR-STRAIGHT-U>;<BAS>;<CAP>;IGNORE
+<U04B0> <CYR-STRAIGHT-U-WITH-STROKE>;<BAS>;<CAP>;IGNORE
+
+reorder-after <CYR-HA>
+<CYR-SHHA>
+
+reorder-after <U0445>
+<U04BB> <CYR-SHHA>;<BAS>;<MIN>;IGNORE
+
+reorder-after <U0425>
+<U04BA> <CYR-SHHA>;<BAS>;<CAP>;IGNORE
+
+reorder-after <CYR-I>
+<CYR-BEL-UKR-I>
+
+reorder-after <U0438>
+<U0456> <CYR-BEL-UKR-I>;<BAS>;<MIN>;IGNORE
+
+reorder-after <U0418>
+<U0406> <CYR-BEL-UKR-I>;<BAS>;<CAP>;IGNORE
+
+reorder-end
+END LC_COLLATE
+
+LC_CTYPE
+copy "i18n"
+
+translit_start
+include "translit_combining";""
+translit_end
+END LC_CTYPE
+
+LC_MESSAGES
+yesexpr "<U005E><U005B><U0418><U0438><U0059><U0079><U005D><U002E><U002A>"
+noexpr  "<U005E><U005B><U0416><U0436><U004E><U006E><U005D><U002E><U002A>"
+END LC_MESSAGES
+
+LC_MONETARY
+int_curr_symbol           "<U004B><U005A><U0054><U0020>"
+currency_symbol           "<U0442><U0433>"
+mon_decimal_point         "<U002E>"
+mon_thousands_sep         "<U0020>"
+mon_grouping              3;3
+positive_sign             ""
+negative_sign             "<U002D>"
+int_frac_digits           2
+frac_digits               2
+p_cs_precedes             0
+p_sep_by_space            1
+n_cs_precedes             0
+n_sep_by_space            1
+p_sign_posn               1
+n_sign_posn               1
+END LC_MONETARY
+
+LC_NUMERIC
+decimal_point             "<U002C>"
+thousands_sep             "<U002E>"
+grouping                  3;3
+END LC_NUMERIC
+
+LC_TIME
+day     "<U0416><U0435><U043A><U0441><U0435><U043D><U0431><U0456>";/
+        "<U0414><U04AF><U0439><U0441><U0435><U043D><U0431><U0456>";/
+        "<U0421><U0435><U0439><U0441><U0435><U043D><U0431><U0456>";/
+        "<U0421><U04D9><U0440><U0441><U0435><U043D><U0431><U0456>";/
+        "<U0411><U0435><U0439><U0441><U0435><U043D><U0431><U0456>";/
+        "<U0416><U04B1><U043C><U0430>";/
+        "<U0421><U0435><U043D><U0431><U0456>"
+abday   "<U0416><U043A>";/
+        "<U0414><U0441>";/
+        "<U0421><U0441>";/
+        "<U0421><U0440>";/
+        "<U0411><U0441>";/
+        "<U0416><U043C>";/
+        "<U0421><U043D>"
+mon     "<U049A><U0430><U04A3><U0442><U0430><U0440>";/
+        "<U0410><U049B><U043F><U0430><U043D>";/
+        "<U041D><U0430><U0443><U0440><U044B><U0437>";/
+        "<U0421><U04D9><U0443><U0456><U0440>";/
+        "<U041C><U0430><U043C><U044B><U0440>";/
+        "<U041C><U0430><U0443><U0441><U044B><U043C>";/
+        "<U0428><U0456><U043B><U0434><U0435>";/
+        "<U0422><U0430><U043C><U044B><U0437>";/
+        "<U049A><U044B><U0440><U043A><U04AF><U0439><U0435><U043A>";/
+        "<U049A><U0430><U0437><U0430><U043D>";/
+        "<U049A><U0430><U0440><U0430><U0448><U0430>";/
+        "<U0416><U0435><U043B><U0442><U043E><U049B><U0441><U0430><U043D>"
+abmon   "<U049A><U0430><U04A3>";/
+        "<U0410><U049B><U043F>";/
+        "<U041D><U0430><U0443>";/
+        "<U0421><U04D9><U0443>";/
+        "<U041C><U0430><U043C>";/
+        "<U041C><U0430><U0443>";/
+        "<U0428><U0456><U043B>";/
+        "<U0422><U0430><U043C>";/
+        "<U049A><U044B><U0440>";/
+        "<U049A><U0430><U0437>";/
+        "<U049A><U0430><U0440>";/
+        "<U0416><U0435><U043B>"
+d_t_fmt "<U0025><U0061><U0020><U0025><U0064><U0020><U0025><U0062>/
+<U0020><U0025><U0059><U0020><U0025><U0054>"
+d_fmt     "<U0025><U0064><U002E><U0025><U006D><U002E><U0025><U0059>"
+t_fmt     "<U0025><U0054>"
+am_pm     "";""
+t_fmt_ampm ""
+date_fmt       "<U0025><U0061><U0020><U0025><U0062><U0020><U0025><U0065>/
+<U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U0020>/
+<U0025><U005A><U0020><U0025><U0059>"
+END LC_TIME
+
+LC_PAPER
+height   297
+width    210
+END LC_PAPER
+
+LC_TELEPHONE
+tel_int_fmt    "<U002B><U0025><U0063><U0020><U0025><U0061><U0020><U0025>/
+<U006C>"
+int_prefix     "<U0037>"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+% FIXME
+measurement    1
+END LC_MEASUREMENT
+
+LC_NAME
+name_fmt    "<U0025><U0064><U0025><U0074><U0025><U0067><U0025><U0074>/
+<U0025><U006D><U0025><U0074><U0025><U0066>"
+END LC_NAME
+
+LC_ADDRESS
+postal_fmt    "<U0025><U0066><U0025><U004E><U0025><U0061><U0025><U004E>/
+<U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E><U0025><U0073>/
+<U0020><U0025><U0068><U0020><U0025><U0065><U0020><U0025><U0072><U0025>/
+<U004E><U0025><U007A><U0020><U0025><U0054><U0025>/
+<U004E><U0025><U0063><U0025><U004E>"
+END LC_ADDRESS

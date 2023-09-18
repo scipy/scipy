@@ -1,0 +1,319 @@
+<!-- Creator     : groff version 1.22.3 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>MSGUNFMT</title>
+
+</head>
+<body>
+
+<h1 align="center">MSGUNFMT</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+<a href="#REPORTING BUGS">REPORTING BUGS</a><br>
+<a href="#COPYRIGHT">COPYRIGHT</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">msgunfmt
+- uncompile message catalog from binary format</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>msgunfmt</b>
+[<i>OPTION</i>] [<i>FILE</i>]...</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Convert binary
+message catalog to Uniforum style .po file.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Mandatory
+arguments to long options are mandatory for short options
+too.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Operation
+mode: <br>
+-j</b>, <b>--java</b></p>
+
+<p style="margin-left:22%;">Java mode: input is a Java
+ResourceBundle class</p>
+
+
+<p style="margin-left:11%;"><b>--csharp</b></p>
+
+<p style="margin-left:22%;">C# mode: input is a .NET .dll
+file</p>
+
+
+<p style="margin-left:11%;"><b>--csharp-resources</b></p>
+
+<p style="margin-left:22%;">C# resources mode: input is a
+.NET .resources file</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p><b>--tcl</b></p></td>
+<td width="4%"></td>
+<td width="63%">
+
+
+<p>Tcl mode: input is a tcl/msgcat .msg file</p></td>
+<td width="15%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Input file
+location:</b> <br>
+FILE ...</p>
+
+<p style="margin-left:22%;">input .mo files</p>
+
+<p style="margin-left:11%; margin-top: 1em">If no input
+file is given or if it is -, standard input is
+read.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Input file
+location in Java mode: <br>
+-r</b>,
+<b>--resource</b>=<i>RESOURCE</i></p>
+
+<p style="margin-left:22%;">resource name</p>
+
+<p style="margin-left:11%;"><b>-l</b>,
+<b>--locale</b>=<i>LOCALE</i></p>
+
+<p style="margin-left:22%;">locale name, either language or
+language_COUNTRY</p>
+
+<p style="margin-left:11%; margin-top: 1em">The class name
+is determined by appending the locale name to the resource
+name, separated with an underscore. The class is located
+using the CLASSPATH.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Input file
+location in C# mode: <br>
+-r</b>,
+<b>--resource</b>=<i>RESOURCE</i></p>
+
+<p style="margin-left:22%;">resource name</p>
+
+<p style="margin-left:11%;"><b>-l</b>,
+<b>--locale</b>=<i>LOCALE</i></p>
+
+<p style="margin-left:22%;">locale name, either language or
+language_COUNTRY</p>
+
+<p style="margin-left:11%;"><b>-d</b> DIRECTORY</p>
+
+<p style="margin-left:22%;">base directory for locale
+dependent .dll files</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>-l</b> and <b>-d</b> options are mandatory.
+The .dll file is located in a subdirectory of the specified
+directory whose name depends on the locale.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Input file
+location in Tcl mode: <br>
+-l</b>, <b>--locale</b>=<i>LOCALE</i></p>
+
+<p style="margin-left:22%;">locale name, either language or
+language_COUNTRY</p>
+
+<p style="margin-left:11%;"><b>-d</b> DIRECTORY</p>
+
+<p style="margin-left:22%;">base directory of .msg message
+catalogs</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>-l</b> and <b>-d</b> options are mandatory.
+The .msg file is located in the specified directory.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Output file
+location: <br>
+-o</b>,
+<b>--output-file</b>=<i>FILE</i></p>
+
+<p style="margin-left:22%;">write output to specified
+file</p>
+
+<p style="margin-left:11%; margin-top: 1em">The results are
+written to standard output if no output file is specified or
+if it is -.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Output
+details: <br>
+--color</b></p>
+
+<p style="margin-left:22%;">use colors and other text
+attributes always</p>
+
+
+<p style="margin-left:11%;"><b>--color</b>=<i>WHEN</i></p>
+
+<p style="margin-left:22%;">use colors and other text
+attributes if WHEN. WHEN may be &rsquo;always&rsquo;,
+&rsquo;never&rsquo;, &rsquo;auto&rsquo;, or
+&rsquo;html&rsquo;.</p>
+
+
+<p style="margin-left:11%;"><b>--style</b>=<i>STYLEFILE</i></p>
+
+<p style="margin-left:22%;">specify CSS style rule file for
+<b>--color</b></p>
+
+<p style="margin-left:11%;"><b>-e</b>,
+<b>--no-escape</b></p>
+
+<p style="margin-left:22%;">do not use C escapes in output
+(default)</p>
+
+<p style="margin-left:11%;"><b>-E</b>,
+<b>--escape</b></p>
+
+<p style="margin-left:22%;">use C escapes in output, no
+extended chars</p>
+
+
+<p style="margin-left:11%;"><b>--force-po</b></p>
+
+<p style="margin-left:22%;">write PO file even if empty</p>
+
+<p style="margin-left:11%;"><b>-i</b>,
+<b>--indent</b></p>
+
+<p style="margin-left:22%;">write indented output style</p>
+
+
+<p style="margin-left:11%;"><b>--strict</b></p>
+
+<p style="margin-left:22%;">write strict uniforum style</p>
+
+<p style="margin-left:11%;"><b>-p</b>,
+<b>--properties-output</b></p>
+
+<p style="margin-left:22%;">write out a Java .properties
+file</p>
+
+
+<p style="margin-left:11%;"><b>--stringtable-output</b></p>
+
+<p style="margin-left:22%;">write out a NeXTstep/GNUstep
+.strings file</p>
+
+<p style="margin-left:11%;"><b>-w</b>,
+<b>--width</b>=<i>NUMBER</i></p>
+
+<p style="margin-left:22%;">set output page width</p>
+
+
+<p style="margin-left:11%;"><b>--no-wrap</b></p>
+
+<p style="margin-left:22%;">do not break long message
+lines, longer than the output page width, into several
+lines</p>
+
+<p style="margin-left:11%;"><b>-s</b>,
+<b>--sort-output</b></p>
+
+<p style="margin-left:22%;">generate sorted output</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Informative
+output: <br>
+-h</b>, <b>--help</b></p>
+
+<p style="margin-left:22%;">display this help and exit</p>
+
+<p style="margin-left:11%;"><b>-V</b>,
+<b>--version</b></p>
+
+<p style="margin-left:22%;">output version information and
+exit</p>
+
+<p style="margin-left:11%;"><b>-v</b>,
+<b>--verbose</b></p>
+
+<p style="margin-left:22%;">increase verbosity level</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Written by
+Ulrich Drepper.</p>
+
+<h2>REPORTING BUGS
+<a name="REPORTING BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Report bugs in
+the bug tracker at
+&lt;https://savannah.gnu.org/projects/gettext&gt; or by
+email to &lt;bug-gettext@gnu.org&gt;.</p>
+
+<h2>COPYRIGHT
+<a name="COPYRIGHT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Copyright
+&copy; 1995-2022 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later
+&lt;https://gnu.org/licenses/gpl.html&gt; <br>
+This is free software: you are free to change and
+redistribute it. There is NO WARRANTY, to the extent
+permitted by law.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The full
+documentation for <b>msgunfmt</b> is maintained as a Texinfo
+manual. If the <b>info</b> and <b>msgunfmt</b> programs are
+properly installed at your site, the command</p>
+
+<p style="margin-left:22%; margin-top: 1em"><b>info
+msgunfmt</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">should give you
+access to the complete manual.</p>
+<hr>
+</body>
+</html>

@@ -1,0 +1,144 @@
+{
+  "build": "pyhd8ed1ab_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/noarch",
+  "constrains": [],
+  "depends": [
+    "python >=3.5"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/sphinxcontrib-jsmath-1.0.1-pyhd8ed1ab_0",
+  "features": "",
+  "files": [
+    "lib/python3.10/site-packages/sphinxcontrib/jsmath/__init__.py",
+    "lib/python3.10/site-packages/sphinxcontrib/jsmath/version.py",
+    "lib/python3.10/site-packages/sphinxcontrib_jsmath-1.0.1-py3.11-nspkg.pth",
+    "lib/python3.10/site-packages/sphinxcontrib_jsmath-1.0.1.dist-info/INSTALLER",
+    "lib/python3.10/site-packages/sphinxcontrib_jsmath-1.0.1.dist-info/LICENSE",
+    "lib/python3.10/site-packages/sphinxcontrib_jsmath-1.0.1.dist-info/METADATA",
+    "lib/python3.10/site-packages/sphinxcontrib_jsmath-1.0.1.dist-info/RECORD",
+    "lib/python3.10/site-packages/sphinxcontrib_jsmath-1.0.1.dist-info/REQUESTED",
+    "lib/python3.10/site-packages/sphinxcontrib_jsmath-1.0.1.dist-info/WHEEL",
+    "lib/python3.10/site-packages/sphinxcontrib_jsmath-1.0.1.dist-info/direct_url.json",
+    "lib/python3.10/site-packages/sphinxcontrib_jsmath-1.0.1.dist-info/namespace_packages.txt",
+    "lib/python3.10/site-packages/sphinxcontrib_jsmath-1.0.1.dist-info/top_level.txt",
+    "lib/python3.10/site-packages/sphinxcontrib/jsmath/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/sphinxcontrib/jsmath/__pycache__/version.cpython-310.pyc"
+  ],
+  "fn": "sphinxcontrib-jsmath-1.0.1-pyhd8ed1ab_0.conda",
+  "license": "BSD-2-Clause",
+  "license_family": "BSD",
+  "link": {
+    "source": "/opt/conda/pkgs/sphinxcontrib-jsmath-1.0.1-pyhd8ed1ab_0",
+    "type": 1
+  },
+  "md5": "da1d979339e2714c30a8e806a33ec087",
+  "name": "sphinxcontrib-jsmath",
+  "noarch": "python",
+  "package_tarball_full_path": "/opt/conda/pkgs/sphinxcontrib-jsmath-1.0.1-pyhd8ed1ab_0.conda",
+  "package_type": "noarch_python",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "site-packages/sphinxcontrib/jsmath/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "9922b4b04d900410fb1bc4011feabbacf7e05b47b9dfb45f12ab7efc2847de34",
+        "sha256_in_prefix": "9922b4b04d900410fb1bc4011feabbacf7e05b47b9dfb45f12ab7efc2847de34",
+        "size_in_bytes": 3409
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/jsmath/version.py",
+        "path_type": "hardlink",
+        "sha256": "627898a1aa62b0843b9f92e9f1cd74b5c09caa94587a7e3862993056ee2a1adf",
+        "sha256_in_prefix": "627898a1aa62b0843b9f92e9f1cd74b5c09caa94587a7e3862993056ee2a1adf",
+        "size_in_bytes": 293
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_jsmath-1.0.1-py3.11-nspkg.pth",
+        "path_type": "hardlink",
+        "sha256": "6ef09bbd30e129409336dac26eee8755ef13b180b81b8fa14645de1dd109eade",
+        "sha256_in_prefix": "6ef09bbd30e129409336dac26eee8755ef13b180b81b8fa14645de1dd109eade",
+        "size_in_bytes": 574
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_jsmath-1.0.1.dist-info/INSTALLER",
+        "path_type": "hardlink",
+        "sha256": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "sha256_in_prefix": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "size_in_bytes": 5
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_jsmath-1.0.1.dist-info/LICENSE",
+        "path_type": "hardlink",
+        "sha256": "d8c25e2e8478ccd32b18375eb3a57c584d31048fe0c23c55905c64c8af6774a9",
+        "sha256_in_prefix": "d8c25e2e8478ccd32b18375eb3a57c584d31048fe0c23c55905c64c8af6774a9",
+        "size_in_bytes": 1435
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_jsmath-1.0.1.dist-info/METADATA",
+        "path_type": "hardlink",
+        "sha256": "1a0d514f01b7cf770cb92aadf7e47ebb23a41589a8d7b14b683cb98497d5eef8",
+        "sha256_in_prefix": "1a0d514f01b7cf770cb92aadf7e47ebb23a41589a8d7b14b683cb98497d5eef8",
+        "size_in_bytes": 1381
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_jsmath-1.0.1.dist-info/RECORD",
+        "path_type": "hardlink",
+        "sha256": "ad7a0237b3d32f39d9e34a2f33a6e5ec966017058feca919fddb11b78a983b4f",
+        "sha256_in_prefix": "ad7a0237b3d32f39d9e34a2f33a6e5ec966017058feca919fddb11b78a983b4f",
+        "size_in_bytes": 1282
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_jsmath-1.0.1.dist-info/REQUESTED",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256_in_prefix": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_jsmath-1.0.1.dist-info/WHEEL",
+        "path_type": "hardlink",
+        "sha256": "9bd580ba99817762460ec5d64062603065c859b418dc5e5cdb10496c186ad276",
+        "sha256_in_prefix": "9bd580ba99817762460ec5d64062603065c859b418dc5e5cdb10496c186ad276",
+        "size_in_bytes": 110
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_jsmath-1.0.1.dist-info/direct_url.json",
+        "path_type": "hardlink",
+        "sha256": "4189c3e44bf6c3759606d533e2a849f45af4033f0aaa32d592a6f603c2ab8c72",
+        "sha256_in_prefix": "4189c3e44bf6c3759606d533e2a849f45af4033f0aaa32d592a6f603c2ab8c72",
+        "size_in_bytes": 116
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_jsmath-1.0.1.dist-info/namespace_packages.txt",
+        "path_type": "hardlink",
+        "sha256": "549ad5dffbda88a415815a51d08d6279cc683b476bcc6bbe3348f8d0f54fd904",
+        "sha256_in_prefix": "549ad5dffbda88a415815a51d08d6279cc683b476bcc6bbe3348f8d0f54fd904",
+        "size_in_bytes": 14
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_jsmath-1.0.1.dist-info/top_level.txt",
+        "path_type": "hardlink",
+        "sha256": "549ad5dffbda88a415815a51d08d6279cc683b476bcc6bbe3348f8d0f54fd904",
+        "sha256_in_prefix": "549ad5dffbda88a415815a51d08d6279cc683b476bcc6bbe3348f8d0f54fd904",
+        "size_in_bytes": 14
+      },
+      {
+        "_path": "lib/python3.10/site-packages/sphinxcontrib/jsmath/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/sphinxcontrib/jsmath/__pycache__/version.cpython-310.pyc",
+        "path_type": "pyc_file"
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "d4337d83b8edba688547766fc80f1ac86d6ec86ceeeda93f376acc04079c5ce2",
+  "size": 10431,
+  "subdir": "noarch",
+  "timestamp": 1691604844204,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/noarch/sphinxcontrib-jsmath-1.0.1-pyhd8ed1ab_0.conda",
+  "version": "1.0.1"
+}

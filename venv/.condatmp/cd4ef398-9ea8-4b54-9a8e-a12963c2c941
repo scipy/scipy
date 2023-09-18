@@ -1,0 +1,12 @@
+prefix=/workspaces/scipy/venv
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: cairo-ps
+Description: PostScript surface backend for cairo graphics library
+Version: 1.16.0
+
+Requires: cairo 
+Libs: -lz 
+Cflags: -I${includedir}/cairo 

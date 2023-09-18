@@ -1,0 +1,227 @@
+MetaInfo {
+    Type {
+        name: "QtCharts.ChartView"
+        icon: "images/areaseries-chart-icon16.png"
+
+        ItemLibraryEntry {
+            name: "Area"
+            category: "Qt Charts - ChartView"
+            libraryIcon: "images/areaseries-chart-icon.png"
+            version: "2.0"
+            requiredImport: "QtCharts"
+
+            QmlSource { source: "default/AreaSeries.qml" }
+        }
+    }
+    Type {
+        name: "QtCharts.ChartView"
+        icon: "images/barseries-icon16.png"
+
+        ItemLibraryEntry {
+            name: "Bar"
+            category: "Qt Charts - ChartView"
+            libraryIcon: "images/barseries-icon.png"
+            version: "2.0"
+            requiredImport: "QtCharts"
+
+            QmlSource { source: "default/BarSeries.qml" }
+        }
+    }
+    Type {
+        name: "QtCharts.ChartView"
+        icon: "images/boxplotseries-chart-icon16.png"
+
+        ItemLibraryEntry {
+            name: "BoxPlot"
+            category: "Qt Charts - ChartView"
+            libraryIcon: "images/boxplotseries-chart-icon.png"
+            version: "2.0"
+            requiredImport: "QtCharts"
+
+            QmlSource { source: "default/BoxPlotSeries.qml" }
+        }
+    }
+    Type {
+        name: "QtCharts.ChartView"
+        icon: "images/horizontalbarseries-icon16.png"
+
+        ItemLibraryEntry {
+            name: "H.Bar"
+            category: "Qt Charts - ChartView"
+            libraryIcon: "images/horizontalbarseries-icon.png"
+            version: "2.0"
+            requiredImport: "QtCharts"
+
+            QmlSource { source: "default/HorizontalBarSeries.qml" }
+        }
+    }
+    Type {
+        name: "QtCharts.ChartView"
+        icon: "images/horizontalpercentbarseries-icon16.png"
+
+        ItemLibraryEntry {
+            name: "H.PercentBar"
+            category: "Qt Charts - ChartView"
+            libraryIcon: "images/horizontalpercentbarseries-icon.png"
+            version: "2.0"
+            requiredImport: "QtCharts"
+
+            QmlSource { source: "default/HorizontalPercentBarSeries.qml" }
+        }
+    }
+    Type {
+        name: "QtCharts.ChartView"
+        icon: "images/horizontalstackedbarseries-icon16.png"
+
+        ItemLibraryEntry {
+            name: "H.StackedBar"
+            category: "Qt Charts - ChartView"
+            libraryIcon: "images/horizontalstackedbarseries-icon.png"
+            version: "2.0"
+            requiredImport: "QtCharts"
+
+            QmlSource { source: "default/HorizontalStackedBarSeries.qml" }
+        }
+    }
+    Type {
+        name: "QtCharts.ChartView"
+        icon: "images/lineseries-chart-icon16.png"
+
+        ItemLibraryEntry {
+            name: "Line"
+            category: "Qt Charts - ChartView"
+            libraryIcon: "images/lineseries-chart-icon.png"
+            version: "2.0"
+            requiredImport: "QtCharts"
+
+            QmlSource { source: "default/LineSeries.qml" }
+        }
+    }
+    Type {
+        name: "QtCharts.ChartView"
+        icon: "images/percentbarseries-icon16.png"
+
+        ItemLibraryEntry {
+            name: "Percent"
+            category: "Qt Charts - ChartView"
+            libraryIcon: "images/percentbarseries-icon.png"
+            version: "2.0"
+            requiredImport: "QtCharts"
+
+            QmlSource { source: "default/PercentBarSeries.qml" }
+        }
+    }
+    Type {
+        name: "QtCharts.ChartView"
+        icon: "images/pieseries-chart-icon16.png"
+
+        ItemLibraryEntry {
+            name: "Pie"
+            category: "Qt Charts - ChartView"
+            libraryIcon: "images/pieseries-chart-icon.png"
+            version: "2.0"
+            requiredImport: "QtCharts"
+
+            QmlSource { source: "default/PieSeries.qml" }
+        }
+    }
+    Type {
+        name: "QtCharts.ChartView"
+        icon: "images/scatterseries-chart-icon16.png"
+
+        ItemLibraryEntry {
+            name: "Scatter"
+            category: "Qt Charts - ChartView"
+            libraryIcon: "images/scatterseries-chart-icon.png"
+            version: "2.0"
+            requiredImport: "QtCharts"
+
+            QmlSource { source: "default/ScatterSeries.qml" }
+        }
+    }
+    Type {
+        name: "QtCharts.ChartView"
+        icon: "images/splineseries-chart-icon16.png"
+
+        ItemLibraryEntry {
+            name: "Spline"
+            category: "Qt Charts - ChartView"
+            libraryIcon: "images/splineseries-chart-icon.png"
+            version: "2.0"
+            requiredImport: "QtCharts"
+
+            QmlSource { source: "default/SplineSeries.qml" }
+        }
+    }
+    Type {
+        name: "QtCharts.ChartView"
+        icon: "images/stackedbarseries-icon16.png"
+
+        ItemLibraryEntry {
+            name: "StackedBar"
+            category: "Qt Charts - ChartView"
+            libraryIcon: "images/stackedbarseries-icon.png"
+            version: "2.0"
+            requiredImport: "QtCharts"
+
+            QmlSource { source: "default/StackedBarSeries.qml" }
+        }
+    }
+
+    Type {
+        name: "QtCharts.ChartView"
+        icon: "images/areaseries-polar-icon16.png"
+
+        ItemLibraryEntry {
+            name: "Area"
+            category: "Qt Charts - PolarChartView"
+            libraryIcon: "images/areaseries-polar-icon.png"
+            version: "2.0"
+            requiredImport: "QtCharts"
+
+            QmlSource { source: "default/PolarAreaSeries.qml" }
+        }
+    }
+    Type {
+        name: "QtCharts.ChartView"
+        icon: "images/lineseries-polar-icon16.png"
+
+        ItemLibraryEntry {
+            name: "Line"
+            category: "Qt Charts - PolarChartView"
+            libraryIcon: "images/lineseries-polar-icon.png"
+            version: "2.0"
+            requiredImport: "QtCharts"
+
+            QmlSource { source: "default/PolarLineSeries.qml" }
+        }
+    }
+    Type {
+        name: "QtCharts.ChartView"
+        icon: "images/scatterseries-polar-icon16.png"
+
+        ItemLibraryEntry {
+            name: "Scatter"
+            category: "Qt Charts - PolarChartView"
+            libraryIcon: "images/scatterseries-polar-icon.png"
+            version: "2.0"
+            requiredImport: "QtCharts"
+
+            QmlSource { source: "default/PolarScatterSeries.qml" }
+        }
+    }
+    Type {
+        name: "QtCharts.ChartView"
+        icon: "images/splineseries-polar-icon16.png"
+
+        ItemLibraryEntry {
+            name: "Spline"
+            category: "Qt Charts - PolarChartView"
+            libraryIcon: "images/splineseries-polar-icon.png"
+            version: "2.0"
+            requiredImport: "QtCharts"
+
+            QmlSource { source: "default/PolarSplineSeries.qml" }
+        }
+    }
+}

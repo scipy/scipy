@@ -1,0 +1,62 @@
+default partial xkb_types "pc" {
+    type "KEYPAD" {
+	modifiers = Shift + NumLock;
+	map[None] = Level1;
+	map[NumLock] = Level2;
+	map[Shift+NumLock] = Level1;
+	level_name[Level1] = "Base";
+	level_name[Level2] = "Number";
+    };
+};
+
+// On Mac keypads, levels 1 and 2 are swapped.
+partial xkb_types "mac" {
+    type "KEYPAD" {
+	modifiers = None;
+	map[None] = Level2;
+	level_name[Level2] = "Number";
+    };
+};
+
+partial xkb_types "microsoft" {
+    type "KEYPAD" {
+	modifiers = Shift + NumLock;
+	map[None] = Level1;
+	preserve[Shift] = Shift;
+	map[NumLock] = Level2;
+	level_name[Level1] = "Base";
+	level_name[Level2] = "Number";
+    };
+};
+
+// Swiss-German style numeric keypad: Shift and NumLock operate as
+// two independent modifiers; however, since we want shift state for
+// the cursor keys, only three levels are used from the key mappings.
+// Closest type is actually FOUR_LEVEL_X, but most numpad layouts use
+// FOUR_LEVEL_MIXED_KEYPAD, so that's the one we are going to override.
+partial xkb_types "shift3" {
+    type "FOUR_LEVEL_MIXED_KEYPAD" {
+	modifiers = Shift + NumLock + Control + Alt;
+
+	// NumLock Off => navigate using cursor keys
+	map[None] = Level1;
+
+	// NumLock Off + Shift pressed => select using cursor keys
+	preserve[Shift] = Shift;
+
+	// NumLock On => decimal digits
+	map[NumLock] = Level2;
+
+	// NumLock On + Shift pressed => auxiliary symbols,
+	// e.g. hexadecimal digits
+	map[Shift+NumLock] = Level3;
+
+	// Ctrl + Alt, regardless of NumLock and Shift => command keys
+	map[Control+Alt] = Level4;
+
+	level_name[Level1] = "Base";
+	level_name[Level2] = "NumLock";
+	level_name[Level3] = "Shift+NumLock";
+	level_name[Level4] = "Ctrl+Alt";
+    };
+};

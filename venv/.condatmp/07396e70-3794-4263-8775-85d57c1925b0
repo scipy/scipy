@@ -1,0 +1,12 @@
+prefix=/workspaces/scipy/venv
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: cairo-gobject
+Description: gobject functions for cairo graphics library
+Version: 1.16.0
+
+Requires: cairo gobject-2.0 glib-2.0 >= 2.14
+Libs:  -L${libdir} -lcairo-gobject
+Cflags: -I${includedir}/cairo 

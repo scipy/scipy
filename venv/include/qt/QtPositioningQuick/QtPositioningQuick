@@ -1,0 +1,6 @@
+#ifndef QT_QTPOSITIONINGQUICK_MODULE_H
+#define QT_QTPOSITIONINGQUICK_MODULE_H
+#include <QtPositioningQuick/QtPositioningQuickDepends>
+#include "qpositioningquickglobal.h"
+#include "qtpositioningquickversion.h"
+#endif

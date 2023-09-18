@@ -1,0 +1,15 @@
+# libvorbis pkg-config source file
+
+prefix=/workspaces/scipy/venv
+exec_prefix=/workspaces/scipy/venv/bin
+libdir=/workspaces/scipy/venv/lib
+includedir=/workspaces/scipy/venv/include
+
+Name: vorbis
+Description: vorbis is the primary Ogg Vorbis library
+Version: 1.3.7
+Requires.private: ogg
+Conflicts:
+Libs: -L${libdir} -lvorbis 
+Libs.private: 
+Cflags: -I${includedir}

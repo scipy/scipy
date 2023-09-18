@@ -1,0 +1,245 @@
+comment_char %
+escape_char  /
+%
+% Bosnian Language Locale for Bosnia
+% Source: adapted from Croatian locale
+% Contact: Tomislav Vujec
+% Email: tvujec@carnet.hr
+% Language: bs
+% Territory: BA
+% Revision: 0.4
+% Date: 2004-01-09
+% Application: general
+% Users: general
+% Charset: ISO-8859-2
+% Distribution and use is free, also
+% for commercial purposes.
+%
+% Revisions:
+% 2004-01-09 pablo@mandrakesoft.com: fixed LC_COLLATE
+
+LC_IDENTIFICATION
+title "Bosnian language locale for Bosnia and Herzegowina"
+source "adapted from Croatian locale"
+address ""
+contact "Tomislav Vujec"
+email "tvujec@carnet.hr"
+tel ""
+fax ""
+language "Bosnian"
+territory "Bosnia and Herzegowina"
+revision "0.4"
+date "2004-01-09"
+
+category bs_BA:2000;LC_IDENTIFICATION
+category bs_BA:2000;LC_CTYPE
+category bs_BA:2000;LC_COLLATE
+category bs_BA:2000;LC_TIME
+category bs_BA:2000;LC_NUMERIC
+category bs_BA:2000;LC_PAPER
+category bs_BA:2000;LC_TELEPHONE
+category bs_BA:2000;LC_MEASUREMENT
+category bs_BA:2000;LC_ADDRESS
+category bs_BA:2000;LC_MONETARY
+category bs_BA:2000;LC_MESSAGES
+
+END LC_IDENTIFICATION
+
+LC_COLLATE
+copy "iso14651_t1"
+
+% a b c c' c< d dz< d// e f g h i j k l lj m n nj o p
+% q r s s< t u v w x y z z<
+
+collating-symbol  <d-z-sh>
+collating-element <D-Z<> from "<U0044><U017D>"
+collating-element <D-z<> from "<U0044><U017E>"
+collating-element <d-Z<> from "<U0064><U017D>"
+collating-element <d-z<> from "<U0064><U017E>"
+collating-symbol  <l-j-sh>
+collating-element <L-J> from "<U004C><U004A>"
+collating-element <L-j> from "<U004C><U006A>"
+collating-element <l-J> from "<U006C><U004A>"
+collating-element <l-j> from "<U006C><U006A>"
+collating-symbol  <n-j-sh>
+collating-element <N-J> from "<U004E><U004A>"
+collating-element <N-j> from "<U004E><U006A>"
+collating-element <n-J> from "<U006E><U004A>"
+collating-element <n-j> from "<U006E><U006A>"
+collating-symbol <cacute>
+collating-symbol <ccaron>
+collating-symbol <d//>
+collating-symbol <scaron>
+collating-symbol <zcaron>
+
+collating-symbol <CAP-MIN>
+collating-symbol <MIN-CAP>
+
+reorder-after <MIN>
+<MIN-CAP>
+reorder-after <CAP>
+<CAP-MIN>
+
+reorder-after <c>
+<cacute>
+<ccaron>
+<d>
+<d-z-sh>
+<d//>
+reorder-after <l>
+<l-j-sh>
+reorder-after <n>
+<n-j-sh>
+reorder-after <s>
+<scaron>
+reorder-after <z>
+<zcaron>
+
+reorder-after <U0063>
+<U0107>	<cacute>;<PCT>;<MIN>;IGNORE
+<U010D>	<ccaron>;<PCT>;<MIN>;IGNORE
+reorder-after <U0043>
+<U0106>	<cacute>;<PCT>;<CAP>;IGNORE
+<U010C>	<ccaron>;<PCT>;<CAP>;IGNORE
+
+reorder-after <U0064>
+<d-z<>	<d-z-sh>;<PCT>;<MIN>;IGNORE
+<d-Z<>	<d-z-sh>;<PCT>;<MIN-CAP>;IGNORE
+<U0111>	<d//>;<PCT>;<MIN>;IGNORE
+reorder-after <U0044>
+<D-Z<>	<d-z-sh>;<PCT>;<CAP>;IGNORE
+<D-z<>	<d-z-sh>;<PCT>;<CAP-MIN>;IGNORE
+<U0110>	<d//>;<PCT>;<CAP>;IGNORE
+
+reorder-after <U006C>
+<l-j>	<l-j-sh>;<PCT>;<MIN>;IGNORE
+<l-J>	<l-j-sh>;<PCT>;<MIN-CAP>;IGNORE
+reorder-after <U004C>
+<L-J>	<l-j-sh>;<PCT>;<CAP>;IGNORE
+<L-j>	<l-j-sh>;<PCT>;<CAP-MIN>;IGNORE
+
+reorder-after <U006E>
+<n-j>	<n-j-sh>;<PCT>;<MIN>;IGNORE
+<n-J>	<n-j-sh>;<PCT>;<MIN-CAP>;IGNORE
+reorder-after <U004E>
+<N-J>	<n-j-sh>;<PCT>;<CAP>;IGNORE
+<N-j>	<n-j-sh>;<PCT>;<CAP-MIN>;IGNORE
+
+reorder-after <U0073>
+<U0161>	<scaron>;<PCT>;<MIN>;IGNORE
+reorder-after <U0053>
+<U0160>	<scaron>;<PCT>;<CAP>;IGNORE
+
+reorder-after <U007A>
+<U017E>	<zcaron>;<PCT>;<MIN>;IGNORE
+reorder-after <U005A>
+<U017D>	<zcaron>;<PCT>;<CAP>;IGNORE
+
+reorder-end
+
+END LC_COLLATE
+
+LC_CTYPE
+copy "en_DK"
+END LC_CTYPE
+
+LC_MESSAGES
+yesexpr "<U005E><U005B><U0064><U0044><U0079><U0059><U005D><U002A><U002E>"
+noexpr  "<U005E><U005B><U006E><U004E><U005D><U002A><U002E>"
+END LC_MESSAGES
+
+LC_MONETARY
+int_curr_symbol           "<U0042><U0041><U004D><U0020>"
+currency_symbol           "<U004B><U004D>"
+mon_decimal_point         "<U002C>"
+mon_thousands_sep         "<U0020>"
+mon_grouping              3;3
+positive_sign             ""
+negative_sign             "<U002D>"
+int_frac_digits           2
+frac_digits               2
+p_cs_precedes             1
+p_sep_by_space            1
+n_cs_precedes             1
+n_sep_by_space            1
+p_sign_posn               1
+n_sign_posn               1
+END LC_MONETARY
+
+LC_NUMERIC
+decimal_point             "<U002C>"
+thousands_sep             ""
+grouping                  0;0
+END LC_NUMERIC
+
+LC_TIME
+
+abday   "<U004E><U0065><U0064>";"<U0050><U006F><U006E>";/
+        "<U0055><U0074><U006F>";"<U0053><U0072><U0069>";/
+        "<U010C><U0065><U0074>";"<U0050><U0065><U0074>";/
+        "<U0053><U0075><U0062>"
+day     "<U004E><U0065><U0064><U006A><U0065><U006C><U006A><U0061>";/
+        "<U0050><U006F><U006E><U0065><U0064><U006A><U0065><U006C><U006A><U0061><U006B>";/
+        "<U0055><U0074><U006F><U0072><U0061><U006B>";/
+        "<U0053><U0072><U0069><U006A><U0065><U0064><U0061>";/
+        "<U010C><U0065><U0074><U0076><U0072><U0074><U0061><U006B>";/
+        "<U0050><U0065><U0074><U0061><U006B>";/
+        "<U0053><U0075><U0062><U006F><U0074><U0061>"
+abmon   "<U004A><U0061><U006E>";"<U0046><U0065><U0062>";/
+        "<U004D><U0061><U0072>";"<U0041><U0070><U0072>";/
+        "<U004D><U0061><U006A>";"<U004A><U0075><U006E>";/
+        "<U004A><U0075><U006C>";"<U0041><U0075><U0067>";/
+        "<U0053><U0065><U0070>";"<U004F><U006B><U0074>";/
+        "<U004E><U006F><U0076>";"<U0044><U0065><U0063>"
+mon     "<U004A><U0061><U006E><U0075><U0061><U0072>";/
+        "<U0046><U0065><U0062><U0072><U0075><U0061><U0072>";/
+        "<U004D><U0061><U0072><U0074>";/
+        "<U0041><U0070><U0072><U0069><U006C>";/
+        "<U004D><U0061><U006A>";/
+        "<U004A><U0075><U006E><U0069>";/
+        "<U004A><U0075><U006C><U0069>";/
+        "<U0041><U0075><U0067><U0075><U0073><U0074>";/
+        "<U0053><U0065><U0070><U0074><U0065><U006D><U0062><U0061><U0072>";/
+        "<U004F><U006B><U0074><U006F><U0062><U0061><U0072>";/
+        "<U004E><U006F><U0076><U0065><U006D><U0062><U0061><U0072>";/
+        "<U0044><U0065><U0063><U0065><U006D><U0062><U0061><U0072>"
+d_t_fmt "<U0025><U0061><U0020><U0025><U0064><U0020><U0025><U0062><U0020><U0025><U0059><U0020><U0025><U0054>"
+d_fmt   "<U0025><U0064><U002E><U0025><U006D><U002E><U0025><U0059>"
+t_fmt   "<U0025><U0054>"
+am_pm   "";""
+t_fmt_ampm ""
+END LC_TIME
+
+LC_PAPER
+height      297
+width       210
+END LC_PAPER
+
+LC_MEASUREMENT
+measurement 1
+END LC_MEASUREMENT
+
+LC_NAME
+% FIXME
+copy "en_DK"
+END LC_NAME
+
+LC_ADDRESS
+% FIXME
+postal_fmt    "<U0025><U0061><U0025><U004E><U0025><U0066><U0025><U004E>/
+<U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E><U0025><U0068>/
+<U0020><U0025><U0073><U0020><U0025><U0065><U0020><U0025><U0072><U0025>/
+<U004E><U0025><U0054><U0020><U0025><U007A><U0025>/
+<U004E><U0025><U0063><U0025><U004E>"
+country_ab2 "<U0042><U0041>"
+country_ab3 "<U0042><U0049><U0048>"
+country_num 070
+END LC_ADDRESS
+
+LC_TELEPHONE
+% FIXME (tel_int-fmt copied from en_DK)
+tel_int_fmt    "<U002B><U0025><U0063><U0020><U0025><U0061><U0020><U0025>/
+<U006C>"
+int_prefix "<U0033><U0038><U0037>"
+int_select "<U0030><U0030>"
+END LC_TELEPHONE

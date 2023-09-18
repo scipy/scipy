@@ -1,0 +1,108 @@
+// Let Space key provide No-Break Space (NBSP), Narrow No-Break Space (NNBSP),
+// Zero-Width Non-Joiner (ZWNJ), and Zero-Width Joiner (ZWJ) for the desired
+// levels.
+
+
+// --- Just Space.
+
+partial
+xkb_symbols "none" {
+  key <SPCE> {[  space  ], type[group1]="ONE_LEVEL" };
+};
+
+
+// --- Plus No-Break Space.
+
+partial
+xkb_symbols "level2" {
+  key <SPCE> {[  space,  nobreakspace  ], type[group1]="TWO_LEVEL" };
+};
+
+partial
+xkb_symbols "level3" {
+  key <SPCE> {[  space,  space,  nobreakspace  ], type[group1]="FOUR_LEVEL" };
+};
+
+// Experience has shown that users accidently type non-breaking spaces when
+// NBSP is on level 3, so having it on level 4 is the safe default nowadays.
+partial
+xkb_symbols "level4" {
+  key <SPCE> {[  space,  space,  space,  nobreakspace  ], type[group1]="FOUR_LEVEL" };
+};
+
+
+// --- Plus Narrow No-Break Space
+
+partial
+xkb_symbols "level3n" {
+  key <SPCE> {[  space,  space,  nobreakspace,  U202F  ], type[group1]="FOUR_LEVEL" };
+};
+
+// NNBSP on level 6 (needing a level5 chooser).
+partial
+xkb_symbols "level4n" {
+  key <SPCE> {[  space,  space,  space,  nobreakspace,  space,  U202F,  any,  any  ],
+                 type[group1]="EIGHT_LEVEL" };
+};
+
+// NNBSP on level 6 (accessed with Ctrl+Shift).
+partial
+xkb_symbols "level4nl" {
+  key <SPCE> {[  space,  space,  space,  nobreakspace,  space,  U202F,  any,  any  ],
+                 type[group1]="EIGHT_LEVEL_BY_CTRL" };
+};
+
+
+// Zero-Width Non-Joiner (ZWNJ) and Zero-Width Joiner (ZWJ) are widely used
+// in Persian, Kurdish, Pashto, Uzbek, and other languages in their area.
+
+// ZWNJ on level 2
+partial
+xkb_symbols "zwnj2" {
+  key <SPCE> {[  space,  U200c  ], type[group1]="TWO_LEVEL" };
+};
+
+// ZWNJ on level 2
+// ZWJ on level 3
+partial
+xkb_symbols "zwnj2zwj3" {
+  key <SPCE> {[  space,  U200c,  U200d  ], type[group1]="FOUR_LEVEL" };
+};
+
+// ZWNJ on level 2
+// ZWJ on level 3
+// NBSP on level 4
+partial
+xkb_symbols "zwnj2zwj3nb4" {
+  key <SPCE> {[  space,  U200c,  U200d,  nobreakspace  ], type[group1]="FOUR_LEVEL" };
+};
+
+// ZWNJ on level 2
+// NBSP on level 3
+partial
+xkb_symbols "zwnj2nb3" {
+  key <SPCE> {[  space,  U200c,  nobreakspace  ], type[group1]="FOUR_LEVEL" };
+};
+
+// ZWNJ on level 2
+// NBSP on level 3
+// ZWJ on level 4
+partial
+xkb_symbols "zwnj2nb3zwj4" {
+  key <SPCE> {[  space,  U200c,  nobreakspace,  U200d  ], type[group1]="FOUR_LEVEL" };
+};
+
+// ZWNJ on level 2
+// NBSP on level 3
+// NNBSP on level 4
+partial
+xkb_symbols "zwnj2nb3nnb4" {
+  key <SPCE> {[  space,  U200c,  nobreakspace,  U202F  ], type[group1]="FOUR_LEVEL" };
+};
+
+// ZWNJ on level 3
+// ZWJ on level 4
+partial
+xkb_symbols "zwnj3zwj4" {
+  key <SPCE> {[  space,  space,  U200c,  U200d  ], type[group1]="FOUR_LEVEL" };
+};

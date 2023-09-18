@@ -1,0 +1,277 @@
+//
+//Copyright (c) 1996  Digital Equipment Corporation
+//
+//Permission is hereby granted, free of charge, to any person obtaining
+//a copy of this software and associated documentation files (the
+//"Software"), to deal in the Software without restriction, including
+//without limitation the rights to use, copy, modify, merge, publish,
+//distribute, sublicense, and sell copies of the Software, and to
+//permit persons to whom the Software is furnished to do so, subject to
+//the following conditions:
+//
+//The above copyright notice and this permission notice shall be included
+//in all copies or substantial portions of the Software.
+//
+//THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+//OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+//MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+//IN NO EVENT SHALL DIGITAL EQUIPMENT CORPORATION BE LIABLE FOR ANY CLAIM,
+//DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+//OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+//THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+//Except as contained in this notice, the name of the Digital Equipment 
+//Corporation shall not be used in advertising or otherwise to promote
+//the sale, use or other dealings in this Software without prior written
+//authorization from Digital Equipment Corporation.
+//
+// HISTORY
+// Log
+// Revision 1.2  1996/06/18  09:13:25  erik
+// use flags correctly, assorted cleanups and consortium fixes
+//
+// Revision 1.1.6.3  1995/10/25  21:00:14  William_Walker
+// 	Add pc104-key support
+// 	[1995/10/23  15:46:21  William_Walker]
+//
+// Revision 1.1.6.2  1995/08/07  17:40:37  William_Walker
+// 	Upgrade XKB to protocol 0.62 (dual submit from decx11)
+// 	[1995/08/06  14:06:28  William_Walker]
+// 
+// Revision 1.1.2.4  1995/08/05  15:25:56  William_Walker
+// 	Upgrade to XKB protocol 0.62
+// 	[1995/08/05  14:40:02  William_Walker]
+// 
+// Revision 1.1.2.3  1995/06/27  12:17:32  William_Walker
+// 	     Rename <TLDE> to ISO9995 compliant <AE00>.
+// 	[1995/06/26  20:24:07  William_Walker]
+// 
+// Revision 1.1.2.2  1995/06/05  19:21:31  William_Walker
+// 	New file.  I love keymaps.
+// 	[1995/06/05  18:07:34  William_Walker]
+// 
+// EndLog
+// 
+// @(#)RCSfile: pc  Revision: /main/3  (DEC) Date: 1996/01/24 12:13:36 
+// 
+xkb_keycodes "pc_common" {
+    // "Function" keys
+    <FK01>	= 9;
+    <FK02>	= 15;
+    <FK03>	= 23;
+    <FK04>	= 31;
+    <FK05>	= 39;
+    <FK06>	= 47;
+    <FK07>	= 55;
+    <FK08>	= 63;
+    <FK09>	= 71;
+    <FK10>	= 79;
+    <FK11>	= 86;
+    <FK12>	= 94;
+
+    // "Editing" keys
+
+    <UP>	= 99;
+    <LEFT>	= 97;
+    <DOWN>	= 96;
+    <RGHT>	= 106;
+
+    // "Keypad" keys
+    <KP7>	= 108;
+    <KP8>	= 117;
+    <KP9>	= 125;
+
+    <KP4>	= 107;
+    <KP5>	= 115;
+    <KP6>	= 116;
+
+    <KP1>	= 105;
+    <KP2>	= 114;
+    <KP3>	= 122;
+    <KPEN>	= 121;
+
+    <KP0>	= 112;
+    <KPDL>	= 113;
+
+    // "Alphanumeric" keys
+    <AE01>	= 22;
+    <AE02>	= 30;
+    <AE03>	= 38;
+    <AE04>	= 37;
+    <AE05>	= 46;
+    <AE06>	= 54;
+    <AE07>	= 61;
+    <AE08>	= 62;
+    <AE09>	= 70;
+    <AE10>	= 69;
+    <AE11>	= 78;
+    <AE12>	= 85;
+    <BKSP>	= 102;
+
+    <TAB>	= 13;
+    <AD01>	= 21;
+    <AD02>	= 29;
+    <AD03>	= 36;
+    <AD04>	= 45;
+    <AD05>	= 44;
+    <AD06>	= 53;
+    <AD07>	= 60;
+    <AD08>	= 67;
+    <AD09>	= 68;
+    <AD10>	= 77;
+    <AD11>	= 84;
+    <AD12>	= 91;
+
+    <CAPS>	= 20;
+    <AC01>	= 28;
+    <AC02>	= 27;
+    <AC03>	= 35;
+    <AC04>	= 43;
+    <AC05>	= 52;
+    <AC06>	= 51;
+    <AC07>	= 59;
+    <AC08>	= 66;
+    <AC09>	= 75;
+    <AC10>	= 76;
+    <AC11>	= 82;
+    <RTRN>	= 90;
+
+    <LFSH>	= 18;
+    <AB01>	= 26;
+    <AB02>	= 34;
+    <AB03>	= 33;
+    <AB04>	= 42;
+    <AB05>	= 50;
+    <AB06>	= 49;
+    <AB07>	= 58;
+    <AB08>	= 65;
+    <AB09>	= 73;
+    <AB10>	= 74;
+    <RTSH>	= 89;
+
+    <LCTL>	= 17;
+    <LALT>	= 25;
+    <SPCE>	= 41;
+    <RALT>	= 57;
+
+    <LDM>	= 255; // Support R5 Lock Down Modifiers
+
+};
+
+xkb_keycodes "pc10x" {
+    include "digital_vndr/pc(pc_common)"
+    <ESC>	= 8;
+    <AE00>	= 14;
+    <PRSC>	= 87;
+    <SCLK>	= 95;
+    <PAUS>	= 98;
+    <INS>	= 103;
+    <HOME>	= 110;
+    <PGUP>	= 111;
+    <DELE>	= 100;
+    <END>	= 101;
+    <PGDN>	= 109;
+    <NMLK>	= 118;
+    <KPDV>	= 119;
+    <KPMU>	= 126;
+    <KPSU>	= 132;
+    <KPAD>	= 124;
+    <RCTL>	= 88;
+
+    alias <TLDE> = <AE00>;
+
+    indicator 3 = "Caps Lock";
+    indicator 4 = "Scroll Lock";
+};
+
+xkb_keycodes "pc101" {
+    include "digital_vndr/pc(pc10x)"
+    <BKSL>  = 92;
+    indicator 5 = "Num Lock";
+};
+
+
+xkb_keycodes "pc102" {
+    include "digital_vndr/pc(pc10x)"
+    <BKSL>  = 19;
+    <AC12>  = 83;
+    indicator 5 = "Num Lock";
+};
+
+xkb_keycodes "pc104" {
+    include "digital_vndr/pc(pc101)"
+    <LWIN>  = 139;
+    <RWIN>  = 140;
+    <MENU>  = 141;
+};
+
+xkb_keycodes "lk411_common" {
+    include "digital_vndr/pc(pc_common)"
+    <AE00>      = 8;
+    <AB00>      = 14;
+    <FK13>	= 24;
+    <FK14>	= 10;
+    <FK17>	= 16;
+    <FK18>	= 87;
+    <FK19>	= 95;
+    <FK20>	= 98;
+    <HELP>	= 11;
+    <DO>	= 12;
+    <FIND>	= 110;
+    <INS>	= 103;
+    <DELE>	= 100;
+    <SELE>	= 101;
+    <PGUP>	= 111;
+    <PGDN>	= 109;
+    <KPF1>	= 118;
+    <KPF2>	= 119;
+    <KPF3>	= 126;
+    <KPF4>	= 132;
+    <KPSU>	= 19;
+    <KPCO>	= 124;
+    <LCMP>	= 40;
+    <RCMP>	= 88;
+
+    alias <TLDE> = <AE00>;
+
+    indicator 3 = "Caps Lock";
+    indicator 4 = "Scroll Lock";
+};
+
+xkb_keycodes "lk411" {
+    include "digital_vndr/pc(lk411_common)"
+    <BKSL>	= 92;
+};
+
+xkb_keycodes "lk450" {
+    include	"digital_vndr/pc(lk411)"
+    indicator 2 = "Compose";
+    indicator 1 = "Wait";
+};
+
+// Japanese variants
+//
+// PCXAJ-AA = pc+BKSL+AC12+AB11+MUHE+KANJ+HIRA+indicator
+// LK411-AJ = lk411+MUHE+KANJ+HIRA
+// LK411-JJ = lk411+BKSL+AZ01+MUHE+KANJ+HIRA
+// LK411-LT = lk411
+
+xkb_keycodes "pcxajaa" {
+    include "digital_vndr/pc(pc10x)"
+    <BKSL>  = 93;
+    <AC12>  = 83;
+    <AB11>  = 81;
+    <MUHE>  = 133;
+    <KANJ>  = 134;
+    <HIRA>  = 135;
+    indicator 5 = "Group 2";
+};
+
+xkb_keycodes "lk411jj" {
+    include "digital_vndr/pc(lk411_common)"
+    <AB11>  = 81;
+    <BKSL>  = 83;
+    <MUHE>  = 133;
+    <KANJ>  = 134;
+    <HIRA>  = 135;
+};

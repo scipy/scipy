@@ -1,0 +1,19 @@
+# Get printer attributes using get-printer-attributes
+{
+	# The name of the test...
+	NAME "CUPS-Get-Printers"
+
+	# The resource to use for the POST
+	# RESOURCE /admin
+
+	# The operation to use
+	OPERATION CUPS-Get-Printers
+
+	# Attributes, starting in the operation group...
+	GROUP operation
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+
+	# What statuses are OK?
+	STATUS successful-ok
+}

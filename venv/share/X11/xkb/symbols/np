@@ -1,0 +1,121 @@
+// Keyboard layouts for Nepal.
+
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+    name[Group1]= "Nepali";
+
+    key <TLDE>	{[  0x100093D,  0x100093C  ]}; //  ऽ  ़
+    key <AE01>	{[  0x1000967,  exclam     ]}; //  १  !
+    key <AE02>	{[  0x1000968,  at         ]}; //  २  @
+    key <AE03>	{[  0x1000969,  numbersign ]}; //  ३  #
+    key <AE04>	{[  0x100096A,  dollar     ]}; //  ४  $
+    key <AE05>	{[  0x100096B,  percent    ]}; //  ५  %
+    key <AE06>	{[  0x100096C,  asciicircum]}; //  ६  ^
+    key <AE07>	{[  0x100096D,  ampersand  ]}; //  ७  &
+    key <AE08>	{[  0x100096e,  asterisk   ]}; //  ८  *
+    key <AE09>	{[  0x100096F,  parenleft  ]}; //  ९  (
+    key <AE10>	{[  0x1000966,  parenright ]}; //  ०  )
+    key <AE11>	{[      minus,  0x1000952  ]}; //  -   ॒
+    key <AE12>	{[  0x100200D,  0x100200C  ]}; //  ZWJ  ZWNJ
+
+    key <AD01>	{[  0x100091F,  0x1000920  ]}; //  ट  ठ
+    key <AD02>	{[  0x100094C,  0x1000914  ]}; // ौ   औ
+    key <AD03>	{[  0x1000947,  0x1000948  ]}; //  े   ै
+    key <AD04>	{[  0x1000930,  0x1000943  ]}; //  र  ृ
+    key <AD05>	{[  0x1000924,  0x1000925  ]}; //  त  थ
+    key <AD06>	{[  0x100092F,  0x100091E  ]}; //  य  ञ
+    key <AD07>	{[  0x1000941,  0x1000942  ]}; //  ु   ू
+    key <AD08>	{[  0x100093F,  0x1000940  ]}; // ि   ी
+    key <AD09>	{[  0x100094B,  0x1000913  ]}; // ो   ओ
+    key <AD10>	{[  0x100092A,  0x100092B  ]}; //  प  फ
+    key <AD11>	{[  0x1000907,  0x1000908  ]}; //  इ  ई
+    key <AD12>	{[  0x100090F,  0x1000910  ]}; //  ए  ऐ
+
+    key <AC01>	{[  0x100093E,  0x1000906  ]}; // ा   आ
+    key <AC02>	{[  0x1000938,  0x1000936  ]}; //  स  श
+    key <AC03>	{[  0x1000926,  0x1000927  ]}; //  द  ध
+    key <AC04>	{[  0x1000909,  0x100090A  ]}; //  उ  ऊ
+    key <AC05>	{[  0x1000917,  0x1000918  ]}; //  ग  घ
+    key <AC06>	{[  0x1000939,  0x1000905  ]}; //  ह  अ
+    key <AC07>	{[  0x100091C,  0x100091D  ]}; //  ज  झ
+    key <AC08>	{[  0x1000915,  0x1000916  ]}; //  क  ख
+    key <AC09>	{[  0x1000932,  0x1000965  ]}; //  ल  ॥
+    key <AC10>	{[  semicolon,  colon      ]}; //  ;  :
+    key <AC11>	{[ apostrophe,  quotedbl   ]}; //  '  "
+    key <BKSL>	{[  0x1000950,  0x1000903  ]}; //  ॐ  ः
+
+    key <AB01>	{[  0x1000937,  0x100090B  ]}; //  ष  ऋ
+    key <AB02>	{[  0x1000921,  0x1000922  ]}; //  ड  ढ
+    key <AB03>	{[  0x100091A,  0x100091B  ]}; //  च  छ
+    key <AB04>	{[  0x1000935,  0x1000901  ]}; //  व  ँ
+    key <AB05>	{[  0x100092C,  0x100092D  ]}; //  ब  भ
+    key <AB06>	{[  0x1000928,  0x1000923  ]}; //  न  ण
+    key <AB07>	{[  0x100092E,  0x1000902  ]}; //  म  ं
+    key <AB08>	{[      comma,  0x1000919  ]}; //  ,  ङ
+    key <AB09>	{[  0x1000964,  period     ]}; //  ।  .
+    key <AB10>	{[  0x100094D,  question   ]}; //  ्   ?
+};
+
+partial alphanumeric_keys
+xkb_symbols "olpc" {
+
+    // #HW-SPECIFIC
+
+    // Contact: Walter Bender <walter@laptop.org>
+
+    name[Group1]= "Nepali";
+
+    key <TLDE>	{[  0x100091E,  0x1000965  ]}; // NYA; double danda
+    key <AE01>	{[  0x1000967,  0x10FFFFD  ]}; // Nepali digit one; U091C+U094D+U091E
+    key <AE02>	{[  0x1000968,  0x1000908  ]}; // Nepali digit two;
+    key <AE03>	{[  0x1000969,  0x1000918  ]}; // Nepali digit three;
+    key <AE04>	{[  0x100096A,  0x10FFFFC  ]}; // Nepali digit four; U0926+U094D+U0927
+    key <AE05>	{[  0x100096B,  0x100091B  ]}; // Nepali digit five
+    key <AE06>	{[  0x100096C,  0x100091F  ]}; // Nepali digit six
+    key <AE07>	{[  0x100096D,  0x1000920  ]}; // Nepali digit seven
+    key <AE08>	{[  0x100096e,  0x1000921  ]}; // Nepali digit eight
+    key <AE09>	{[  0x100096F,  0x1000922  ]}; // Nepali digit nine
+    key <AE10>	{[  0x1000966,  0x1000923  ]}; // Nepali digit zero
+    key <AE11>	{[  0x1000914,  0x1000913  ]}; // O, AU
+    key <AE12>	{[  0x100200C,  0x1000902  ]}; // ZERO-WIDTH-NON-JOINER (ZWNJ); SIGN ANUSVARA
+    key <BKSL>	{[  0x100094D,  0x100200D  ]}; // SIGN VIRAMA; ZERO-WIDTH-JOINER (ZWJ)
+
+    key <AD01>	{[  0x10FFFFB,  0x10FFFFA  ]}; // U0924+U094D+U0930; U0924+U094D+U0924
+    key <AD02>	{[  0x1000927,  0x10FFFF9  ]}; // DHA; U0921+U094D+U0922
+    key <AD03>	{[  0x100092D,  0x1000910  ]}; // BHA, AI
+    key <AD04>	{[  0x100091A,  0x10FFFF8  ]}; // CA; U0926+U094D+U0935
+    key <AD05>	{[  0x1000924,  0x10FFFF7  ]}; // TA; U091F+U094D+U091F
+    key <AD06>	{[  0x1000925,  0x10FFFF6  ]}; // THA; U0920+U094D+U0920
+    key <AD07>	{[  0x1000917,  0x100090A  ]}; // GA, UU
+    key <AD08>	{[  0x1000937,  0x10FFFF5  ]}; // SSA; U0915+U094D+U0937
+    key <AD09>	{[  0x100092F,  0x1000907  ]}; // YA, I
+    key <AD10>	{[  0x1000909,  0x100090F  ]}; // U, E
+    key <AD11>	{[  0x10FFFF4,  0x1000943  ]}; // U0928+U094D+ZWJ; VOWEL SIGN VOCALIC R
+    key <AD12>	{[  0x1000947,  0x1000948  ]}; // SIGN E; SIGN AI
+
+    key <AC01>	{[  0x100092C,  0x1000906  ]}; // BA, AA
+    key <AC02>	{[  0x1000915,  0x10FFFF3  ]}; // KA; U0919+U094D+U0915
+    key <AC03>	{[  0x100092E,  0x10FFFF2  ]}; // MA; U0919+U094D+U0917
+    key <AC04>	{[  0x100093E,  0x1000901  ]}; // CANDRABINDU, VOWEL SIGN AA
+    key <AC05>	{[  0x1000928,  0x10FFFF1  ]}; // NA; U0926+U094D+U0926
+    key <AC06>	{[  0x100091C,  0x100091D  ]}; // JA, JHA
+    key <AC07>	{[  0x1000935,  0x100094B  ]}; // VA, VOWEL SIGN O
+    key <AC08>	{[  0x100092A,  0x100092B  ]}; // PA, PHA
+    key <AC09>	{[  0x100093F,  0x1000940  ]}; // VOWEL SIGN I, VOWEL SIGN II
+    key <AC10>	{[  0x1000938,  0x10FFFF0  ]}; // SA; U091F+U094D+U0920
+    key <AC11>	{[  0x1000941,  0x1000942  ]}; // VOWEL SIGN U, VOWEL SIGN UU
+
+    key <AB01>	{[  0x1000936,  0x10FFFEF  ]}; // SHA; U0915+U094D+U0915
+    key <AB02>	{[  0x1000939,  0x10FFFEE  ]}; // HA; U0939+U094D+U092F
+    key <AB03>	{[  0x1000905,  0x100090B  ]}; // A; U0909+U090B
+    key <AB04>	{[  0x1000916,  0x1000950  ]}; // KHA, OM
+    key <AB05>	{[  0x1000926,  0x100094C  ]}; // DA, VOWEL SIGN AU
+    key <AB06>	{[  0x1000932,  0x10FFFED  ]}; // LA; U0926+U094D+U092F
+    key <AB07>	{[  0x1000903,  0x10FFFEC  ]}; // SIGN VISARGA; U0921+U094D+U0921
+    key <AB08>	{[  0x100093D,  0x1000919  ]}; // SIGN AVAGRHA; NGA
+    key <AB09>	{[  0x1000964,  0x10FFFEB  ]}; // DANDA; U0936+U094D+U0930
+    key <AB10>	{[  0x1000930,  0x10FFFEA  ]}; // RA; U0930+U0941
+
+    include "group(olpc)"
+};

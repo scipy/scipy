@@ -1,0 +1,5 @@
+#ifndef QT_QTMULTIMEDIAGSTTOOLS_MODULE_H
+#define QT_QTMULTIMEDIAGSTTOOLS_MODULE_H
+#include <QtMultimediaGstTools/QtMultimediaGstToolsDepends>
+#include "qtmultimediagsttoolsversion.h"
+#endif

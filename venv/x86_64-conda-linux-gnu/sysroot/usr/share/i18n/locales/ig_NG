@@ -1,0 +1,504 @@
+escape_char /
+comment_char %
+%
+% Igbo language locale for Nigeria
+% Source: 
+% Contact: Pablo Saratxaga
+% Email: pablo@mandriva.com
+% Language: ig
+% Territory: NG
+% Revision: 0.2
+% Date: 2005-12-14
+% Users: general
+% Charset: UTF-8
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title      "Igbo locale for Nigeria"
+source     ""
+address    ""
+contact    ""
+email      "pablo@mandriva.com"
+tel        ""
+fax        ""
+language   "Igbo"
+territory  "Nigeria"
+revision   "0.2"
+date       "2005-12-14"
+%
+category  "ig_NG:2000";LC_IDENTIFICATION
+category  "ig_NG:2000";LC_CTYPE
+category  "ig_NG:2000";LC_COLLATE
+category  "ig_NG:2000";LC_TIME
+category  "ig_NG:2000";LC_NUMERIC
+category  "ig_NG:2000";LC_MONETARY
+category  "ig_NG:2000";LC_MESSAGES
+category  "ig_NG:2000";LC_PAPER
+category  "ig_NG:2000";LC_NAME
+category  "ig_NG:2000";LC_ADDRESS
+category  "ig_NG:2000";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_COLLATE
+
+% Igbo uses the following extra letters:
+% idotbelow, odotbelow, udotbelow, nabovedot
+% plus acute and grave combining marks over vowels and n
+% of those, the following have precombined forms:
+% aacute, eacute, iacute, oacute, uacute, nacute
+% agrave, egrave, igrave, ograve, ugrave, ngrave
+%
+% order: a, b, [c], ch, d, e, f, g, gb, gh, gw, h, i, i., j, k, kp, kw, 
+% l, m, n, n., nw, ny, o, o., p, [q], r, s, sh, t, u, u., v, w, [x], y, z
+
+copy "iso14651_t1"
+
+collating-symbol  <c-h-ig>
+collating-element <C-H> from "<U0043><U0048>"
+collating-element <c-h> from "<U0063><U0068>"
+collating-element <C-h> from "<U0043><U0068>"
+collating-element <c-H> from "<U0063><U0048>"
+collating-symbol  <g-b-ig>
+collating-element <G-B> from "<U0047><U0042>"
+collating-element <g-b> from "<U0067><U0062>"
+collating-element <G-b> from "<U0047><U0062>"
+collating-element <g-B> from "<U0067><U0042>"
+collating-symbol  <g-h-ig>
+collating-element <G-H> from "<U0047><U0048>"
+collating-element <g-h> from "<U0067><U0068>"
+collating-element <G-h> from "<U0047><U0068>"
+collating-element <g-H> from "<U0067><U0048>"
+collating-symbol  <g-w-ig>
+collating-element <G-W> from "<U0047><U0057>"
+collating-element <g-w> from "<U0067><U0077>"
+collating-element <G-w> from "<U0047><U0077>"
+collating-element <g-W> from "<U0067><U0057>"
+collating-symbol  <k-p-ig>
+collating-element <K-P> from "<U004B><U0050>"
+collating-element <k-p> from "<U006B><U0070>"
+collating-element <K-p> from "<U004B><U0070>"
+collating-element <k-P> from "<U006B><U0050>"
+collating-symbol  <k-w-ig>
+collating-element <K-W> from "<U004B><U0057>"
+collating-element <k-w> from "<U006B><U0077>"
+collating-element <K-w> from "<U004B><U0077>"
+collating-element <k-W> from "<U006B><U0057>"
+collating-symbol  <n-w-ig>
+collating-element <N-W> from "<U004E><U0057>"
+collating-element <n-w> from "<U006E><U0077>"
+collating-element <N-w> from "<U004E><U0077>"
+collating-element <n-W> from "<U006E><U0057>"
+collating-symbol  <n-y-ig>
+collating-element <N-Y> from "<U004E><U0059>"
+collating-element <n-y> from "<U006E><U0079>"
+collating-element <N-y> from "<U004E><U0079>"
+collating-element <n-Y> from "<U006E><U0059>"
+collating-symbol  <ibelowdot>
+collating-element <I_>  from "<U0049><U0323>"
+collating-element <i_>  from "<U0069><U0323>"
+collating-element <I_'> from "<U0049><U0323><U0301>"
+collating-element <i_'> from "<U0069><U0323><U0301>"
+collating-element <I_`> from "<U0049><U0323><U0300>"
+collating-element <i_`> from "<U0069><U0323><U0300>"
+collating-element <I_2'> from "<U1ECA><U0301>"
+collating-element <i_2'> from "<U1ECB><U0301>"
+collating-element <I_2`> from "<U1ECA><U0300>"
+collating-element <i_2`> from "<U1ECB><U0300>"
+collating-symbol  <obelowdot>
+collating-element <O_>  from "<U004F><U0323>"
+collating-element <o_>  from "<U006F><U0323>"
+collating-element <O_'> from "<U004F><U0323><U0301>"
+collating-element <o_'> from "<U006F><U0323><U0301>"
+collating-element <O_`> from "<U004F><U0323><U0300>"
+collating-element <o_`> from "<U006F><U0323><U0300>"
+collating-element <O_2'> from "<U1ECC><U0301>"
+collating-element <o_2'> from "<U1ECD><U0301>"
+collating-element <O_2`> from "<U1ECC><U0300>"
+collating-element <o_2`> from "<U1ECD><U0300>"
+collating-symbol  <s-h-ig>
+collating-element <S-H> from "<U0053><U0048>"
+collating-element <S-h> from "<U0053><U0068>"
+collating-element <s-H> from "<U0073><U0048>"
+collating-element <s-h> from "<U0073><U0068>"
+collating-symbol  <ubelowdot>
+collating-element <U_>  from "<U0055><U0323>"
+collating-element <u_>  from "<U0075><U0323>"
+collating-element <U_'> from "<U0055><U0323><U0301>"
+collating-element <u_'> from "<U0075><U0323><U0301>"
+collating-element <U_`> from "<U0075><U0323><U0300>"
+collating-element <u_`> from "<U0055><U0323><U0300>"
+collating-element <U_2'> from "<U1EE4><U0301>"
+collating-element <u_2'> from "<U1EE5><U0301>"
+collating-element <U_2`> from "<U1EE4><U0300>"
+collating-element <u_2`> from "<U1EE5><U0300>"
+collating-symbol  <nabovedot>
+collating-element <N.> from "<U004E><U0307>"
+collating-element <n.> from "<U006E><U0307>"
+collating-symbol  <aacute>
+collating-element <A'> from "<U0041><U0301>"
+collating-element <a'> from "<U0061><U0301>"
+collating-symbol  <eacute>
+collating-element <E'> from "<U0045><U0301>"
+collating-element <e'> from "<U0065><U0301>"
+collating-symbol  <iacute>
+collating-element <I'> from "<U0049><U0301>"
+collating-element <i'> from "<U0069><U0301>"
+collating-symbol  <oacute>
+collating-element <O'> from "<U004F><U0301>"
+collating-element <o'> from "<U006F><U0301>"
+collating-symbol  <uacute>
+collating-element <U'> from "<U0055><U0301>"
+collating-element <u'> from "<U0075><U0301>"
+collating-symbol  <agrave>
+collating-element <A`> from "<U0041><U0300>"
+collating-element <a`> from "<U0061><U0300>"
+collating-symbol  <egrave>
+collating-element <E`> from "<U0045><U0300>"
+collating-element <e`> from "<U0065><U0300>"
+collating-symbol  <igrave>
+collating-element <I`> from "<U0049><U0300>"
+collating-element <i`> from "<U0069><U0300>"
+collating-symbol  <ograve>
+collating-element <O`> from "<U004F><U0300>"
+collating-element <o`> from "<U006F><U0300>"
+collating-symbol  <ugrave>
+collating-element <U`> from "<U0055><U0300>"
+collating-element <u`> from "<U0075><U0300>"
+
+collating-symbol <CAP-MIN>
+collating-symbol <MIN-CAP>
+ 
+reorder-after <MIN>
+<MIN-CAP>
+ 
+reorder-after <CAP>
+<CAP-MIN>
+
+reorder-after <c>
+<c-h-ig>
+reorder-after <g>
+<g-b-ig>
+<g-h-ig>
+<g-w-ig>
+reorder-after <i>
+<ibelowdot>
+reorder-after <k>
+<k-p-ig>
+<k-w-ig>
+reorder-after <n>
+<nabovedot>
+<n-w-ig>
+<n-y-ig>
+<o>
+<obelowdot>
+reorder-after <s>
+<s-h-ig>
+reorder-after <u>
+<ubelowdot>
+
+reorder-after <U0061>
+<U00E1> <a>;<ACA>;<MIN>;IGNORE
+<a'>    <a>;<ACA>;<MIN>;IGNORE
+<U00E0> <a>;<GRA>;<MIN>;IGNORE
+<a`>    <a>;<GRA>;<MIN>;IGNORE
+reorder-after <U0041>
+<U00C1> <a>;<ACA>;<CAP>;IGNORE
+<A'>    <a>;<ACA>;<CAP>;IGNORE
+<U00C0> <a>;<GRA>;<CAP>;IGNORE
+<A`>    <a>;<GRA>;<CAP>;IGNORE
+
+reorder-after <U0063>
+<c-h>   <c-h-ig>;<PCL>;<MIN>;IGNORE
+<c-H>   <c-h-ig>;<PCL>;<MIN-CAP>;IGNORE
+reorder-after <U0043>
+<C-H>   <c-h-ig>;<PCL>;<CAP>;IGNORE
+<C-h>   <c-h-ig>;<PCL>;<CAP-MIN>;IGNORE
+
+reorder-after <U0065>
+<U00E9> <e>;<ACA>;<MIN>;IGNORE
+<e'>    <e>;<ACA>;<MIN>;IGNORE
+<U00E8> <e>;<GRA>;<MIN>;IGNORE
+<e`>    <e>;<GRA>;<MIN>;IGNORE
+reorder-after <U0045>
+<U00C9> <e>;<ACA>;<CAP>;IGNORE
+<E'>    <e>;<ACA>;<CAP>;IGNORE
+<U00C8> <e>;<GRA>;<CAP>;IGNORE
+<E`>    <e>;<GRA>;<CAP>;IGNORE
+
+reorder-after <U0067>
+<g-b>   <g-b-ig>;<PCL>;<MIN>;IGNORE
+<g-B>   <g-b-ig>;<PCL>;<MIN-CAP>;IGNORE
+<g-h>   <g-h-ig>;<PCL>;<MIN>;IGNORE
+<g-H>   <g-h-ig>;<PCL>;<MIN-CAP>;IGNORE
+<g-w>   <g-w-ig>;<PCL>;<MIN>;IGNORE
+<g-W>   <g-w-ig>;<PCL>;<MIN-CAP>;IGNORE
+reorder-after <U0047>
+<G-B>   <g-b-ig>;<PCL>;<CAP>;IGNORE
+<G-b>   <g-b-ig>;<PCL>;<CAP-MIN>;IGNORE
+<G-H>   <g-h-ig>;<PCL>;<CAP>;IGNORE
+<G-h>   <g-h-ig>;<PCL>;<CAP-MIN>;IGNORE
+<G-W>   <g-w-ig>;<PCL>;<CAP>;IGNORE
+<G-w>   <g-w-ig>;<PCL>;<CAP-MIN>;IGNORE
+
+reorder-after <U0069>
+<U00ED> <i>;<ACA>;<MIN>;IGNORE
+<i'>    <i>;<ACA>;<MIN>;IGNORE
+<U00EC> <i>;<GRA>;<MIN>;IGNORE
+<i`>    <i>;<GRA>;<MIN>;IGNORE
+<U1ECB> <ibelowdot>;<BAS>;<MIN>;IGNORE
+<i_>    <ibelowdot>;<BAS>;<MIN>;IGNORE
+<i_'>   <ibelowdot>;<ACA>;<MIN>;IGNORE
+<i_2'>  <ibelowdot>;<ACA>;<MIN>;IGNORE
+<i_`>   <ibelowdot>;<GRA>;<MIN>;IGNORE
+<i_2`>  <ibelowdot>;<GRA>;<MIN>;IGNORE
+reorder-after <U0049>
+<U00CD> <i>;<ACA>;<CAP>;IGNORE
+<I'>    <i>;<ACA>;<CAP>;IGNORE
+<U00CC> <i>;<GRA>;<CAP>;IGNORE
+<I`>    <i>;<GRA>;<CAP>;IGNORE
+<U1ECA> <ibelowdot>;<BAS>;<CAP>;IGNORE
+<I_>    <ibelowdot>;<CAP>;<CAP>;IGNORE
+<I_'>   <ibelowdot>;<ACA>;<CAP>;IGNORE
+<I_2'>  <ibelowdot>;<ACA>;<CAP>;IGNORE
+<I_`>   <ibelowdot>;<GRA>;<CAP>;IGNORE
+<I_2`>  <ibelowdot>;<GRA>;<CAP>;IGNORE
+
+reorder-after <U0067>
+<k-p>   <k-p-ig>;<PCL>;<MIN>;IGNORE
+<k-P>   <k-p-ig>;<PCL>;<MIN-CAP>;IGNORE
+<k-w>   <k-w-ig>;<PCL>;<MIN>;IGNORE
+<k-W>   <k-w-ig>;<PCL>;<MIN-CAP>;IGNORE
+reorder-after <U0047>
+<K-P>   <k-p-ig>;<PCL>;<CAP>;IGNORE
+<K-p>   <k-p-ig>;<PCL>;<CAP-MIN>;IGNORE
+<K-W>   <k-w-ig>;<PCL>;<CAP>;IGNORE
+<K-w>   <k-w-ig>;<PCL>;<CAP-MIN>;IGNORE
+
+reorder-after <U006E>
+<U1E45> <nabovedot>;<BAS>;<MIN>;IGNORE
+<n.>    <nabovedot>;<BAS>;<MIN>;IGNORE
+<n-w>   <n-w-ig>;<PCL>;<MIN>;IGNORE
+<n-W>   <n-w-ig>;<PCL>;<MIN-CAP>;IGNORE
+<n-y>   <n-y-ig>;<PCL>;<MIN>;IGNORE
+<n-Y>   <n-y-ig>;<PCL>;<MIN-CAP>;IGNORE
+reorder-after <U004E>
+<U1E44> <nabovedot>;<BAS>;<CAP>;IGNORE
+<N.>    <nabovedot>;<BAS>;<CAP>;IGNORE
+<N-W>   <n-w-ig>;<PCL>;<CAP>;IGNORE
+<N-w>   <n-w-ig>;<PCL>;<CAP-MIN>;IGNORE
+<N-Y>   <n-y-ig>;<PCL>;<CAP>;IGNORE
+<N-y>   <n-y-ig>;<PCL>;<CAP-MIN>;IGNORE
+
+reorder-after <U006F>
+<U00F3> <o>;<ACA>;<MIN>;IGNORE
+<o'>    <o>;<ACA>;<MIN>;IGNORE
+<U00F2> <o>;<GRA>;<MIN>;IGNORE
+<o`>    <o>;<GRA>;<MIN>;IGNORE
+<U1ECD> <obelowdot>;<BAS>;<MIN>;IGNORE
+<o_>    <obelowdot>;<BAS>;<MIN>;IGNORE
+<o_'>   <obelowdot>;<ACA>;<MIN>;IGNORE
+<o_2'>  <obelowdot>;<ACA>;<MIN>;IGNORE
+<o_`>   <obelowdot>;<GRA>;<MIN>;IGNORE
+<o_2`>  <obelowdot>;<GRA>;<MIN>;IGNORE
+reorder-after <U004F>
+<U00D3> <o>;<ACA>;<CAP>;IGNORE
+<O'>    <o>;<ACA>;<CAP>;IGNORE
+<U00D2> <o>;<GRA>;<CAP>;IGNORE
+<O`>    <o>;<GRA>;<CAP>;IGNORE
+<U1ECC> <obelowdot>;<BAS>;<CAP>;IGNORE
+<O_>    <obelowdot>;<BAS>;<CAP>;IGNORE
+<O_'>   <obelowdot>;<ACA>;<CAP>;IGNORE
+<O_2'>  <obelowdot>;<ACA>;<CAP>;IGNORE
+<O_`>   <obelowdot>;<GRA>;<CAP>;IGNORE
+<O_2`>  <obelowdot>;<GRA>;<CAP>;IGNORE
+
+reorder-after <U0073>
+<s-h>   <s-h-ig>;<PCL>;<MIN>;IGNORE
+<s-H>   <s-h-ig>;<PCL>;<MIN-CAP>;IGNORE
+reorder-after <U0053>
+<S-H>   <s-h-ig>;<PCL>;<CAP>;IGNORE
+<S-h>   <s-h-ig>;<PCL>;<CAP-MIN>;IGNORE
+
+reorder-after <U0075>
+<U00FA> <u>;<ACA>;<MIN>;IGNORE
+<u'>    <u>;<ACA>;<MIN>;IGNORE
+<U00F9> <u>;<GRA>;<MIN>;IGNORE
+<u`>    <u>;<GRA>;<MIN>;IGNORE
+<U1EE5> <ubelowdot>;<BAS>;<MIN>;IGNORE
+<u_>    <ubelowdot>;<BAS>;<MIN>;IGNORE
+<u_'>   <ubelowdot>;<ACA>;<MIN>;IGNORE
+<u_2'>  <ubelowdot>;<ACA>;<MIN>;IGNORE
+<u_`>   <ubelowdot>;<GRA>;<MIN>;IGNORE
+<u_2`>  <ubelowdot>;<GRA>;<MIN>;IGNORE
+reorder-after <U0055>
+<U00DA> <u>;<ACA>;<CAP>;IGNORE
+<U'>    <u>;<ACA>;<CAP>;IGNORE
+<U00D9> <u>;<GRA>;<CAP>;IGNORE
+<U`>    <u>;<GRA>;<CAP>;IGNORE
+<U1EE4> <ubelowdot>;<BAS>;<CAP>;IGNORE
+<U_>    <ubelowdot>;<BAS>;<CAP>;IGNORE
+<U_'>   <ubelowdot>;<ACA>;<CAP>;IGNORE
+<U_2'>  <ubelowdot>;<ACA>;<CAP>;IGNORE
+<U_`>   <ubelowdot>;<GRA>;<CAP>;IGNORE
+<U_2`>  <ubelowdot>;<GRA>;<CAP>;IGNORE
+
+reorder-end
+
+END LC_COLLATE
+
+LC_CTYPE
+copy "en_NG"
+END LC_CTYPE
+
+LC_MONETARY
+copy "en_NG"
+END LC_MONETARY
+
+LC_NUMERIC
+copy "en_NG"
+END LC_NUMERIC
+
+LC_TELEPHONE
+copy "en_NG"
+END LC_TELEPHONE
+ 
+LC_TIME
+% sọn, mọn, tuz, wen, tọs, fra, sat
+abday       "<U0073><U1ECD><U006E>";"<U006D><U1ECD><U006E>";/
+            "<U0074><U0075><U007A>";"<U0077><U0065><U006E>";/
+            "<U0074><U1ECD><U0073>";"<U0066><U0072><U0061>";/
+            "<U0073><U0061><U0074>"
+% sọnde, mọnde, tuzde, wenzde, tọsde, fraịde, satọde
+day         "<U0073><U1ECD><U006E><U0064><U0065>";/
+            "<U006D><U1ECD><U006E><U0064><U0065>";/
+            "<U0074><U0075><U007A><U0064><U0065>";/
+            "<U0077><U0065><U006E><U007A><U0064><U0065>";/
+            "<U0074><U1ECD><U0073><U0064><U0065>";/
+            "<U0066><U0072><U0061><U1ECB><U0064><U0065>";/
+            "<U0073><U0061><U0074><U1ECD><U0064><U0065>"
+% jen, feb, mach, epr, mee, juu, jul, ọgọ, sep, ọkt, nọv, dis
+abmon       "<U006A><U0065><U006E>";"<U0066><U0065><U0062>";/
+            "<U006D><U0061><U0061>";"<U0065><U0070><U0072>";/
+            "<U006D><U0065><U0065>";"<U006A><U0075><U0075>";/
+            "<U006A><U0075><U006C>";"<U1ECD><U0067><U1ECD>";/
+            "<U0073><U0065><U0070>";"<U1ECD><U006B><U0074>";/
+            "<U006E><U1ECD><U0076>";"<U0064><U0069><U0073>"
+% jenụwarị, febụrụwarị, maachị, epreel, mee, juun, 
+% julaị, ọgọstụ, septemba, ọktoba, nọvemba, disemba
+mon         "<U006A><U0065><U006E><U1EE5><U0077><U0061><U0072><U1ECB>";/
+            "<U0066><U0065><U0062><U1EE5><U0072><U1EE5><U0077><U0061><U0072><U1ECB>";/
+            "<U006D><U0061><U0061><U0063><U0068><U1ECB>";/
+            "<U0065><U0070><U0072><U0065><U0065><U006C>";/
+            "<U006D><U0065><U0065>";/
+            "<U006A><U0075><U0075><U006E>";/
+            "<U006A><U0075><U006C><U0061><U1ECB>";/
+            "<U1ECD><U0067><U1ECD><U0073><U0074><U1EE5>";/
+            "<U0073><U0065><U0070><U0074><U0065><U006D><U0062><U0061>";/
+            "<U1ECD><U006B><U0074><U006F><U0062><U0061>";/
+            "<U006E><U1ECD><U0076><U0065><U006D><U0062><U0061>";/
+            "<U0064><U0069><U0073><U0065><U006D><U0062><U0061>"
+% FIXME
+% %A, %d %B %Y %T %Z
+d_t_fmt     "<U0025><U0041><U002C><U0020><U0025><U0064><U0020><U0025><U0042><U0020><U0025><U0059><U0020><U0025><U0054><U0020><U0025><U005A>"
+d_fmt       "<U0025><U0064><U002F><U0025><U006D><U002F><U0025><U0079>"
+t_fmt       "<U0025><U0072>"
+am_pm       "<U0041><U004D>";"<U0050><U004D>"
+t_fmt_ampm  "<U0025><U0049><U003A><U0025><U004D><U003A><U0025><U0053><U0020><U0025><U0070>"
+END LC_TIME
+
+LC_MESSAGES
+% yes: Ee
+yesstr      "<U0045><U0065>"
+% ^[EeIiYy].*
+yesexpr     "<U005E><U005B><U0045><U0065><U0049><U0069><U0059><U0079><U005D><U002E><U002A>"
+% Mba
+nostr       "<U004D><U0062><U0061>"
+% ^[MmNn].*
+noexpr      "<U005E><U005B><U0030><U004D><U006D><U004E><U006E><U005D><U002E><U002A>"
+END LC_MESSAGES
+
+LC_PAPER
+copy "en_NG"
+END LC_PAPER
+
+LC_MEASUREMENT
+copy "en_NG"
+END LC_MEASUREMENT
+
+LC_NAME
+% FIXME
+copy "en_NG"
+END LC_NAME
+
+% FIXME
+LC_ADDRESS
+% Representation of postal addresses (minus the addressee's name) in South
+% Africa. (Ignored for now)
+% "%f%N%a%N%d%N%b%N%s %h %e %r%N%z %T%N%c%N", which gives -
+%
+% "firm name",
+% "end of line",
+% "C/O address",
+% "end of line",
+% "department name",
+% "Building name",
+% "end of line",
+% "street or block name",
+% "space",
+% "house number or designation",
+% "space",
+% "floor number",
+% "space",
+% "room number, door designation",
+% "end of line",
+% "postal code",
+% "space",
+% "town, city",
+% "end of line",
+% "country designation for the <country_post> keyword",
+% "end of line
+postal_fmt    "<U0025><U0066><U0025><U004E><U0025><U0061><U0025><U004E>/
+<U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E><U0025><U0073>/
+<U0020><U0025><U0068><U0020><U0025><U0065><U0020><U0025><U0072><U0025>/
+<U004E><U0025><U007A><U0020><U0025><U0054><U0025>/
+<U004E><U0025><U0063><U0025><U004E>"
+
+% Country name in Igbo - "Nigeria"
+country_name  "<U004E><U0069><U0067><U0065><U0072><U0069><U0061>"
+
+% Language name in Igbo - "Igbo"
+lang_name     "<U0049><U0067><U0062><U006F>"
+
+% CEPT MAILCODES are suggested
+% Alternatively use the code found on your countries postal item tracking number
+% "NG"?
+%country_post   "<U004E><U0047>"
+
+% UN Geneve 1949:68 Distinguishing signs of vehicles in international traffic
+% http://www.unece.org/trans/conventn/Distsigns_Sept2003.pdf
+% "WAN"
+country_car   "<U0057><U0041><U004E>"
+
+% ISO 2108
+% http://www.isbn-international.org/
+country_isbn  978
+
+% ISO 639 language abbreviations:
+% 639-1 2 letter, 639-2 3 letter terminology
+% http://www.loc.gov/standards/iso639-2/englagn.html
+% "ig", "ibo"
+lang_ab       "<U0069><U0067>"
+lang_term     "<U0069><U0062><U006F>"
+lang_lib      "<U0069><U0062><U006F>"
+
+% ISO 3166 country number and 2 and 3 letter abreviations
+% http://www.unicode.org/onlinedat/countries.html
+% "NG", "NGA"
+country_ab2   "<U004E><U0047>"
+country_ab3   "<U004E><U0047><U0041>"
+country_num   566
+
+END LC_ADDRESS
+

@@ -1,0 +1,165 @@
+// Keyboard layouts for Ghana.
+
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+    include "us"
+
+    name[Group1]= "English (Ghana)";
+
+    key <AE04>	{[          4,      U20B5,     dollar,       cent ]}; // ₵ (cedi sign)
+
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "akan" {
+
+    include "gh(basic)"
+
+    name[Group1]= "Akan";
+
+    key <AD01>	{[      U025B,      U0190,          q,          Q ]}; // ɛ Ɛ
+    key <AB02>	{[      U0254,      U0186,          x,          X ]}; // ɔ Ɔ
+};
+
+partial alphanumeric_keys
+xkb_symbols "ga" {
+
+    include "gh(basic)"
+
+    name[Group1]= "Ga";
+
+    key <AD01>	{[      U025B,      U0190,          q,          Q ]}; // ɛ Ɛ
+    key <AB02>	{[      U0254,      U0186,          x,          X ]}; // ɔ Ɔ
+    key <AB03>	{[      U014B,      U014A,          c,          C ]}; // ŋ Ŋ
+};
+
+partial alphanumeric_keys
+xkb_symbols "ewe" {
+
+    include "gh(basic)"
+
+    name[Group1]= "Ewe";
+
+    key <AD01>	{[      U025B,      U0190,          q,          Q ]}; // ɛ Ɛ
+    key <AD11>	{[      U0254,      U0186,  braceleft,  braceleft ]}; // ɔ Ɔ
+    key <AD12>	{[      U028B,      U01B2, braceright, braceright ]}; // ʋ Ʋ
+    key <BKSL>	{[      U0256,      U0189,  backslash,  backslash ]}; // ɖ Ɖ
+
+    key <AC05>	{[          g,          G,      U0263,      U0194 ]}; // ɣ Ɣ
+    key <AC07>	{[      U0192,      U0191,          j,          J ]}; // ƒ Ƒ
+
+    key <AB03>	{[      U014B,      U014A,          c,          C ]}; // ŋ Ŋ
+};
+
+partial alphanumeric_keys
+xkb_symbols "fula" {
+
+    include "gh(basic)"
+
+    name[Group1]= "Fula";
+
+    key <AD01>	{[          q,          Q,          q,          Q ]};
+    key <AD02>	{[ udiaeresis, Udiaeresis,          w,          W ]};
+    key <AD03>	{[          e,          E,   EuroSign,	     cent ]};
+    key <AD11>	{[      U01B4,      U01B3,bracketleft,  braceleft ]}; // ƴ Ƴ
+    key <AD12>	{[     gcaron,     Gcaron,bracketright, braceright]};
+
+    key <AC03>	{[      U0257,      U018A,          d,          D ]}; // ɗ Ɗ
+    key <AC10>	{[      U0131,      U0130,  semicolon,      colon ]}; // ı İ
+    key <AC11>	{[      U01DD,      U018E, apostrophe,   quotedbl ]}; // ǝ Ǝ
+
+    key <AB01>	{[      U0272,      U019D,          z,          Z ]}; // ɲ Ɲ
+    key <AB07>	{[     ntilde,     Ntilde,          m,          M ]};
+    key <AB09>	{[   ccedilla,   Ccedilla,     period,    greater ]};
+    key <AB10>	{[   scedilla,   Scedilla,      slash,   question ]};
+};
+
+partial alphanumeric_keys
+xkb_symbols "hausa" {
+
+    include "gh(fula)"
+
+    name[Group1]= "Hausa (Ghana)";
+};
+
+partial alphanumeric_keys
+xkb_symbols "generic" {
+
+    include "gh(basic)"
+
+    name[Group1]= "English (Ghana, multilingual)";
+
+    key <AE04>	{[          4,     dollar,      U20B5,       cent ]}; // ₵ (cedi sign)
+
+    key <AD03>	{[          e,	        E,      U025b,      U0190 ]}; // ɛ Ɛ
+
+    key <AC03>	{[          d,          D,      U0256,      U0189 ]}; // ɖ Ɖ
+    key <AC04>	{[          f,          F,      U0192,      U0191 ]}; // ƒ Ƒ
+    key <AC05>	{[          g,          G,      U0263,      U0194 ]}; // ɣ Ɣ
+
+    key <AB01>	{[          z,          Z,      U01B6,      U01B5 ]}; // ƶ Ƶ
+    key <AB03>	{[          c,          C,      U0254,      U0186 ]}; // ɔ Ɔ
+    key <AB04>	{[          v,          V,      U028B,      U01B2 ]}; // ʋ Ʋ
+    key <AB06>	{[          n,          N,      U014b,      U014a ]}; // ŋ Ŋ
+};
+
+partial alphanumeric_keys
+xkb_symbols "avn" {
+
+    include "gh(basic)"
+
+    name[Group1]= "Avatime";
+
+    key <TLDE>	{[      grave, asciitilde,      U0300,      U0303 ]}; // combining grave; combining tilde
+    key <AE04>	{[          4,     dollar,       cent,      U20B5 ]}; // ¢, ₵
+    key <AE11>	{[      minus, underscore,      U0304,      U0304 ]}; // combining macron
+
+    key <AD01>	{[      U028B,      U01B2                         ]}; // ʋ, Ʋ
+    key <AD07>	{[          u,          U,      U028A,      U01B1 ]}; // ʊ, Ʊ
+    key <AD08>	{[          i,          I,      U0269,      U0196 ]}; // ɩ, Ɩ
+    key <AD11>	{[      U025B,      U0190,bracketleft,  braceleft ]}; // ɛ, Ɛ
+
+    key <AC03>	{[          d,          D,      U0256,      U0189 ]}; // ɖ, Ɖ
+    key <AC04>	{[          f,          F,      U0192,      U0191 ]}; // ƒ, Ƒ
+    key <AC07>	{[      U014B,      U014A                         ]}; // ŋ, Ŋ
+    key <AC11>	{[ apostrophe,   quotedbl,      U0301,      U0301 ]}; // combining acute
+
+    key <AB03>	{[      U0254,      U0186                         ]}; // ɔ, Ɔ
+};
+
+// This layout imitates the 'Ghana Unicode' layout as used in GILLBT on Windows with Keyman.
+// However, this layout uses a 3rd level key (the right Alt key: AltGr) rather than dead keys.
+// It also has three additional symbols:
+// 1) combining macron above: <Shift> + <AltGr> + <->
+// 2) cent: <AltGr> + <4>
+// 3) ʊ/Ʊ: <AltGr> + <u>/<U>
+partial alphanumeric_keys
+xkb_symbols "gillbt" {
+
+    include "gh(basic)"
+
+    name[Group1]= "English (Ghana, GILLBT)";
+
+    key <TLDE>	{[ grave,      asciitilde,  U0300,        U0303       ]}; // combining grave; combining tilde
+    key <AE04>	{[ 4,          dollar,      cent,         U20B5       ]}; // ¢, ₵
+    key <AE06>	{[ 6,          asciicircum, U0302,        U0302       ]}; // combining circumflex accent
+    key <AE11>	{[ minus,      underscore,  U0331,        U0304       ]}; // combining macron below; combining macron above
+    key <AE12>	{[ U014B,      U014A,       equal,        plus        ]}; // ŋ, Ŋ
+
+    key <AD01>	{[ U028B,      U01B2,       q,            Q           ]}; // ʋ, Ʋ
+    key <AD03>	{[ e,          E,           U01DD,        U018E       ]}; // ǝ, Ǝ
+    key <AD07>	{[ u,          U,           U028A,        U01B1       ]}; // ʊ, Ʊ
+    key <AD11>	{[ U025B,      U0190,       bracketleft,  braceleft   ]}; // ɛ, Ɛ
+    key <AD12>	{[ U0254,      U0186,       bracketright, braceright  ]}; // ɔ, Ɔ
+
+    key <AC03>	{[ d,          D,           U0256,        U0189       ]}; // ɖ, Ɖ
+    key <AC04>	{[ f,          F,           U0192,        U0191       ]}; // ƒ, Ƒ
+    key <AC05>	{[ g,          G,           U0263,        U0194       ]}; // ɣ, Ɣ
+    key <AC11>	{[ apostrophe, quotedbl,    U0301,        U0301       ]}; // combining acute
+
+    key <AB01>	{[ z,          Z,           U0292,        U01B7       ]}; // ʒ, Ʒ
+    key <AB02>	{[ U0269,      U0196,       x,            X           ]}; // ɩ, Ɩ
+    key <AB03>	{[ c,          C,           ccedilla,     Ccedilla    ]}; // ç, Ç
+};

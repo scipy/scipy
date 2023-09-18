@@ -1,0 +1,6 @@
+#ifndef QT_QTBODYMOVIN_MODULE_H
+#define QT_QTBODYMOVIN_MODULE_H
+#include <QtBodymovin/QtBodymovinDepends>
+#include "bmglobal.h"
+#include "qtbodymovinversion.h"
+#endif

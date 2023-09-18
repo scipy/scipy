@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- This file is in the public domain. -->
+<gresources>
+  <gresource prefix="/org/gnu/gettext/examples/hello">
+    <file preprocess="xml-stripblanks">hello.ui</file>
+  </gresource>
+</gresources>

@@ -1,0 +1,479 @@
+body
+{
+  font-family: cantarell, sans-serif;
+}
+.synopsis, .classsynopsis
+{
+  /* tango:aluminium 1/2 */
+  background: #eeeeec;
+  background: rgba(238, 238, 236, 0.5);
+  border: solid 1px rgb(238, 238, 236);
+  padding: 0.5em;
+}
+.programlisting
+{
+  /* tango:sky blue 0/1 */
+  /* fallback for no rgba support */
+  background: #e6f3ff;
+  border: solid 1px #729fcf;
+  background: rgba(114, 159, 207, 0.1);
+  border: solid 1px rgba(114, 159, 207, 0.2);
+  padding: 0.5em;
+}
+.variablelist
+{
+  padding: 4px;
+  margin-left: 3em;
+}
+.variablelist td:first-child
+{
+  vertical-align: top;
+}
+
+div.gallery-float
+{
+  float: left;
+  padding: 10px;
+}
+div.gallery-float img
+{
+  border-style: none;
+}
+div.gallery-spacer
+{
+  clear: both;
+}
+
+a, a:visited
+{
+  text-decoration: none;
+  /* tango:sky blue 2 */
+  color: #3465a4;
+}
+a:hover
+{
+  text-decoration: underline;
+  /* tango:sky blue 1 */
+  color: #729fcf;
+}
+
+div.informaltable table
+{
+  border-collapse: separate;
+  border-spacing: 1em 0.3em;
+  border: none;
+}
+
+div.informaltable table td, div.informaltable table th
+{
+  vertical-align: top;
+}
+
+.function_type,
+.variable_type,
+.property_type,
+.signal_type,
+.parameter_name,
+.struct_member_name,
+.union_member_name,
+.define_keyword,
+.datatype_keyword,
+.typedef_keyword
+{
+  text-align: right;
+}
+
+/* dim non-primary columns */
+.c_punctuation,
+.function_type,
+.variable_type,
+.property_type,
+.signal_type,
+.define_keyword,
+.datatype_keyword,
+.typedef_keyword,
+.property_flags,
+.signal_flags,
+.parameter_annotations,
+.enum_member_annotations,
+.struct_member_annotations,
+.union_member_annotations
+{
+  color: #888a85;
+}
+
+.function_type a,
+.function_type a:visited,
+.function_type a:hover,
+.property_type a,
+.property_type a:visited,
+.property_type a:hover,
+.signal_type a,
+.signal_type a:visited,
+.signal_type a:hover,
+.signal_flags a,
+.signal_flags a:visited,
+.signal_flags a:hover
+{
+ color: #729fcf;
+}
+
+td p
+{
+  margin: 0.25em;
+}
+
+div.table table
+{
+  border-collapse: collapse;
+  border-spacing: 0px;
+  /* tango:aluminium 3 */
+  border: solid 1px #babdb6;
+}
+
+div.table table td, div.table table th
+{
+  /* tango:aluminium 3 */
+  border: solid 1px #babdb6;
+  padding: 3px;
+  vertical-align: top;
+}
+
+div.table table th
+{
+  /* tango:aluminium 2 */
+  background-color: #d3d7cf;
+}
+
+h4
+{
+  color: #555753;
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+
+hr
+{
+  /* tango:aluminium 1 */
+  color: #d3d7cf;
+  background: #d3d7cf;
+  border: none 0px;
+  height: 1px;
+  clear: both;
+  margin: 2.0em 0em 2.0em 0em;
+}
+
+dl.toc dt
+{
+  padding-bottom: 0.25em;
+}
+
+dl.toc > dt
+{
+  padding-top: 0.25em;
+  padding-bottom: 0.25em;
+  font-weight: bold;
+}
+
+dl.toc > dl
+{
+  padding-bottom: 0.5em;
+}
+
+.parameter
+{
+  font-style: normal;
+}
+
+.footer
+{
+  padding-top: 3.5em;
+  /* tango:aluminium 3 */
+  color: #babdb6;
+  text-align: center;
+  font-size: 80%;
+}
+
+.informalfigure,
+.figure
+{
+  margin: 1em;
+}
+
+.informalexample,
+.example
+{
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+
+.warning
+{
+  /* tango:orange 0/1 */
+  background: #ffeed9;
+  background: rgba(252, 175, 62, 0.1);
+  border-color: #ffb04f;
+  border-color: rgba(252, 175, 62, 0.2);
+}
+.note
+{
+  /* tango:chameleon 0/0.5 */
+  background: #d8ffb2;
+  background: rgba(138, 226, 52, 0.1);
+  border-color: #abf562;
+  border-color: rgba(138, 226, 52, 0.2);
+}
+div.blockquote
+{
+  border-color: #eeeeec;
+}
+.note, .warning, div.blockquote
+{
+  padding: 0.5em;
+  border-width: 1px;
+  border-style: solid;
+  margin: 2em;
+}
+.note p, .warning p
+{
+  margin: 0;
+}
+
+div.warning h3.title,
+div.note h3.title
+{
+  display: none;
+}
+
+p + div.section
+{
+  margin-top: 1em;
+}
+
+div.refnamediv,
+div.refsynopsisdiv,
+div.refsect1,
+div.refsect2,
+div.toc,
+div.section
+{
+  margin-bottom: 1em;
+}
+
+/* blob links */
+h2 .extralinks, h3 .extralinks
+{
+  float: right;
+  /* tango:aluminium 3 */
+  color: #babdb6;
+  font-size: 80%;
+  font-weight: normal;
+}
+
+.lineart
+{
+  color: #d3d7cf;
+  font-weight: normal;
+}
+
+.annotation
+{
+  /* tango:aluminium 5 */
+  color: #555753;
+  font-weight: normal;
+}
+
+.structfield
+{
+  font-style: normal;
+  font-weight: normal;
+}
+
+acronym,abbr 
+{
+  border-bottom: 1px dotted gray;
+}
+
+/* code listings */
+
+.listing_code .programlisting .normal,
+.listing_code .programlisting .normal a,
+.listing_code .programlisting .number,
+.listing_code .programlisting .cbracket,
+.listing_code .programlisting .symbol     { color: #555753; }
+.listing_code .programlisting .comment,
+.listing_code .programlisting .linenum    { color: #babdb6; } /* tango: aluminium 3 */
+.listing_code .programlisting .function,
+.listing_code .programlisting .function a,
+.listing_code .programlisting .preproc    { color: #204a87; } /* tango: sky blue 3  */
+.listing_code .programlisting .string     { color: #ad7fa8; } /* tango: plum */
+.listing_code .programlisting .keyword,
+.listing_code .programlisting .usertype,
+.listing_code .programlisting .type,
+.listing_code .programlisting .type a     { color: #4e9a06; } /* tango: chameleon 3  */
+
+.listing_frame {
+  /* tango:sky blue 1 */
+  border: solid 1px #729fcf;
+  border: solid 1px rgba(114, 159, 207, 0.2);
+  padding: 0px;
+}
+
+.listing_lines, .listing_code {
+  margin-top: 0px;
+  margin-bottom: 0px;
+  padding: 0.5em;
+}
+.listing_lines {
+  /* tango:sky blue 0.5 */
+  background: #a6c5e3;
+  background: rgba(114, 159, 207, 0.2);
+  /* tango:aluminium 6 */
+  color: #2e3436;
+}
+.listing_code {
+  /* tango:sky blue 0 */
+  background: #e6f3ff;
+  background: rgba(114, 159, 207, 0.1);
+}
+.listing_code .programlisting {
+  /* override from previous */
+  border: none 0px;
+  padding: 0px;
+  background: none;
+}
+.listing_lines pre, .listing_code pre {
+  margin: 0px;
+}
+
+@media screen {
+  /* these have a <sup> as a first child, but since there are no parent selectors
+   * we can't use that. */
+  a.footnote
+  {
+    position: relative;
+    top: 0em ! important;
+  }
+  /* this is needed so that the local anchors are displayed below the naviagtion */
+  div.footnote a[name], div.refnamediv a[name], div.refsect1 a[name], div.refsect2 a[name], div.index a[name], div.glossary a[name], div.sect1 a[name]
+  {
+    display: inline-block;
+    position: relative;
+    top:-5em;
+  }
+  /* this seems to be a bug in the xsl style sheets when generating indexes */
+  div.index div.index
+  {
+    top: 0em;
+  }
+  /* make space for the fixed navigation bar and add space at the bottom so that
+   * link targets appear somewhat close to top
+   */
+  body
+  {
+    padding-top: 2.5em;
+    padding-bottom: 500px;
+    max-width: 60em;
+  }
+  p
+  {
+    max-width: 60em;
+  }
+  /* style and size the navigation bar */
+  table.navigation#top
+  {
+    position: fixed;
+    background: #e2e2e2;
+    border-bottom: solid 1px #babdb6;
+    border-spacing: 5px;
+    margin-top: 0;
+    margin-bottom: 0;
+    top: 0;
+    left: 0;
+    z-index: 10;
+  }
+  table.navigation#top td
+  {
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+  .navigation a, .navigation a:visited
+  {
+    /* tango:sky blue 3 */
+    color: #204a87;
+  }
+  .navigation a:hover
+  {
+    /* tango:sky blue 2 */
+    color: #3465a4;
+  }
+  td.shortcuts
+  {
+    /* tango:sky blue 2 */
+    color: #3465a4;
+    font-size: 80%;
+    white-space: nowrap;
+  }
+  td.shortcuts .dim
+  {
+    color: #babdb6;
+  }
+  .navigation .title
+  {
+    font-size: 80%;
+    max-width: none;
+    margin: 0px;
+    font-weight: normal;
+  }
+}
+@media screen and (min-width: 60em) {
+  /* screen larger than 60em */
+  body { margin: auto; }
+}
+@media screen and (max-width: 60em) {
+  /* screen less than 60em */
+  #nav_hierarchy { display: none; }
+  #nav_interfaces { display: none; }
+  #nav_prerequisites { display: none; }
+  #nav_derived_interfaces { display: none; }
+  #nav_implementations { display: none; }
+  #nav_child_properties { display: none; }
+  #nav_style_properties { display: none; }
+  #nav_index { display: none; }
+  #nav_glossary { display: none; }
+  .gallery_image { display: none; }
+  .property_flags { display: none; }
+  .signal_flags { display: none; }
+  .parameter_annotations { display: none; }
+  .enum_member_annotations { display: none; }
+  .struct_member_annotations { display: none; }
+  .union_member_annotations { display: none; }
+  /* now that a column is hidden, optimize space */
+  col.parameters_name { width: auto; }
+  col.parameters_description { width: auto; }
+  col.struct_members_name { width: auto; }
+  col.struct_members_description { width: auto; }
+  col.enum_members_name { width: auto; }
+  col.enum_members_description { width: auto; }
+  col.union_members_name { width: auto; }
+  col.union_members_description { width: auto; }
+  .listing_lines { display: none; }
+}
+@media print {
+  table.navigation {
+    visibility: collapse;
+    display: none;
+  }
+  div.titlepage table.navigation {
+    visibility: visible;
+    display: table;
+    background: #e2e2e2;
+    border: solid 1px #babdb6;
+    margin-top: 0;
+    margin-bottom: 0;
+    top: 0;
+    left: 0;
+    height: 3em;
+  }
+}
+

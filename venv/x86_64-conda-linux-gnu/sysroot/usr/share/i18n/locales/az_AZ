@@ -1,0 +1,306 @@
+comment_char %
+escape_char  /
+%
+% Azeri Language Locale for Azerbaijan (latin)
+% Source:
+% Contact: Pablo Saratxaga
+% Email: <pablo@mandrakesoft.com>
+% Language: az
+% Territory: AZ
+% Revision: 0.6
+% Date: 2003-12-06
+% Application: general
+% Users: general
+% Charset: UTF-8
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title "Azeri language locale for Azerbaijan (latin)"
+source ""
+address ""
+contact "Pablo Saratxaga"
+email "pablo@mandrakesoft.com"
+tel ""
+fax ""
+language "Azeri"
+territory "Azerbaijan"
+revision "0.4"
+date "2001-01-26"
+
+category az_AZ:2000;LC_IDENTIFICATION
+category az_AZ:2000;LC_CTYPE
+category az_AZ:2000;LC_COLLATE
+category az_AZ:2000;LC_TIME
+category az_AZ:2000;LC_NUMERIC
+category az_AZ:2000;LC_PAPER
+category az_AZ:2000;LC_TELEPHONE
+category az_AZ:2000;LC_MEASUREMENT
+category az_AZ:2000;LC_ADDRESS
+category az_AZ:2000;LC_MONETARY
+category az_AZ:2000;LC_MESSAGES
+
+END LC_IDENTIFICATION
+
+%
+% TODO: check LC_COLLATE
+% TODO: fix LC_MONETARY
+
+LC_COLLATE
+% The new (1991) latin azeri alphabet is:
+% <a>, <b>, <c>, <c,>, <d>, <e>, <sw>, <f>, <g>, <g(>, <h>, <x>,
+% <i> (dotless i), <i.> (i with dot), <j>, <k>, <q>, <l>, <m>, <n>, <o>,
+% <o:>, <p>, <r>, <s>, <s,>, <t>, <u>, <u:>, <v>, <y>, <z>
+%
+% cyrillic alphabet:
+% <a=>, <b=>, <g=>, <g-=>, <d=>, <e=>, <sw=>, <z%>, <z=>, <i=>, <y=>,
+% <j%>, <k=>, <k//=>, <l=>, <m=>, <n=>, <o=>, <o-=>, <p=>, <r=>, <s=>,
+% <t=>, <u=>, <u'=>, <f=>, <h=>, <h'=>, <c%>, <c%//=>, <s%>
+
+copy "iso14651_t1"
+
+collating-symbol <c,>
+collating-symbol <sw>
+collating-symbol <g(>
+collating-symbol <i.>
+collating-symbol <o:>
+collating-symbol <s,>
+collating-symbol <u:>
+
+collating-symbol <g-=>
+collating-symbol <sw=>
+collating-symbol <k//=>
+collating-symbol <o-=>
+collating-symbol <u'=>
+collating-symbol <h'=>
+collating-symbol <c%//=>
+
+reorder-after <c>
+<c,>
+reorder-after <e>
+<sw>
+reorder-after <g>
+<g(>
+reorder-after <h>
+<x>
+<i>
+<i.>
+<j>
+<k>
+<q>
+reorder-after <o>
+<o:>
+reorder-after <s>
+<s,>
+reorder-after <u>
+<u:>
+
+reorder-after <CYR-GHE>
+<g-=>
+reorder-after <CYR-IE>
+<sw=>
+reorder-after <CYR-KA>
+<k//=>
+reorder-after <CYR-O>
+<o-=>
+reorder-after <CYR-OUBRE>
+<u'=>
+reorder-after <CYR-HA>
+<h'=>
+reorder-after <CYR-CHE>
+<c%//=>
+
+reorder-after <U0063>
+<U00E7> <c,>;<CDI>;<MIN>;IGNORE
+reorder-after <U0043>
+<U00C7> <c,>;<CDI>;<CAP>;IGNORE
+
+reorder-after <U0065>
+<U0259> <sw>;<PCL>;<MIN>;IGNORE
+reorder-after <U0045>
+<U018F> <sw>;<PCL>;<CAP>;IGNORE
+
+reorder-after <U0067>
+<U011F> <g(>;<BRE>;<MIN>;IGNORE
+reorder-after <U0047>
+<U011E> <g(>;<BRE>;<CAP>;IGNORE
+
+reorder-after <U0068>
+<U0131> <i>;<BAS>;<MIN>;IGNORE
+<U0069> <i.>;<PCT>;<MIN>;IGNORE
+reorder-after <U0048>
+<U0049> <i>;<BAS>;<CAP>;IGNORE
+<U0130> <i.>;<PCT>;<CAP>;IGNORE
+
+reorder-after <U006F>
+<U00F6> <o:>;<REU>;<MIN>;IGNORE
+reorder-after <U004F>
+<U00D6> <o:>;<REU>;<CAP>;IGNORE
+
+reorder-after <U0073>
+<U015F> <s,>;<CDI>;<MIN>;IGNORE
+reorder-after <U0053>
+<U015E> <s,>;<CDI>;<CAP>;IGNORE
+
+reorder-after <U0075>
+<U00FC> <u:>;<REU>;<MIN>;IGNORE
+reorder-after <U0055>
+<U00DC> <u:>;<REU>;<CAP>;IGNORE
+
+reorder-after <U0433>
+<U0493> <g-=>;<PCL>;<MIN>;IGNORE
+reorder-after <U0413>
+<U0492> <g-=>;<PCL>;<CAP>;IGNORE
+
+reorder-after <U0435>
+<U04D9> <sw=>;<PCL>;<MIN>;IGNORE
+reorder-after <U0415>
+<U04D8> <sw=>;<PCL>;<CAP>;IGNORE
+
+reorder-after <U043A>
+<U049D> <k//=>;<PCL>;<MIN>;IGNORE
+reorder-after <U041A>
+<U049C> <k//=>;<PCL>;<CAP>;IGNORE
+
+reorder-after <U043E>
+<U04E9> <o-=>;<PCL>;<MIN>;IGNORE
+reorder-after <U041E>
+<U04E8> <o-=>;<PCL>;<CAP>;IGNORE
+
+reorder-after <U0443>
+<U04AF> <u'=>;<PCL>;<MIN>;IGNORE
+reorder-after <U0423>
+<U04AE> <u'=>;<PCL>;<CAP>;IGNORE
+
+reorder-after <U0445>
+<U04BB> <h'=>;<PCL>;<MIN>;IGNORE
+reorder-after <U0425>
+<U04BA> <h'=>;<PCL>;<CAP>;IGNORE
+
+reorder-after <U0447>
+<U04B9> <c%//=>;<PCL>;<MIN>;IGNORE
+reorder-after <U0427>
+<U04B8> <c%//=>;<PCL>;<CAP>;IGNORE
+
+reorder-end
+
+END LC_COLLATE
+
+LC_CTYPE
+copy "tr_TR"
+translit_start
+
+% schwa -> a:
+<U0259> "<U00E4>"
+<U018F> "<U00C4>"
+
+translit_end
+
+END LC_CTYPE
+
+LC_MESSAGES
+% FIXME: No is "yox"; that conflicts with English "yes"... what to do .
+yesstr  "<U0062><U0259><U006C><U0069>"
+nostr   "<U0079><U006F><U0078>"
+yesexpr "<U005E><U005B><U0042><U0062><U005D><U002E><U002A>"
+noexpr  "<U005E><U005B><U0059><U0079><U004E><U006E><U005D><U002E><U002A>"
+END LC_MESSAGES
+
+LC_MONETARY
+int_curr_symbol           "<U0041><U005A><U004D><U0020>"
+currency_symbol           "<U006D><U0061><U006E><U002E>"
+mon_decimal_point         "<U002E>"
+mon_thousands_sep         "<U0020>"
+mon_grouping              3;3
+positive_sign             ""
+negative_sign             "<U002D>"
+int_frac_digits           2
+frac_digits               2
+p_cs_precedes             0
+p_sep_by_space            1
+n_cs_precedes             0
+n_sep_by_space            1
+p_sign_posn               1
+n_sign_posn               1
+END LC_MONETARY
+
+LC_NUMERIC
+decimal_point             "<U002C>"
+thousands_sep             "<U002E>"
+grouping                  3;3
+END LC_NUMERIC
+
+LC_TIME
+day     "<U0062><U0061><U007A><U0061><U0072><U0020><U0067><U00FC><U006E><U00FC>";/
+        "<U0062><U0061><U007A><U0061><U0072><U0020><U0065><U0072><U0074><U0259><U0073><U0069>";/
+        "<U00E7><U0259><U0072><U015F><U0259><U006E><U0062><U0259><U0020><U0061><U0078><U015F><U0061><U006D><U0131>";/
+        "<U00E7><U0259><U0072><U015F><U0259><U006E><U0062><U0259>";/
+        "<U0063><U00FC><U006D><U0259><U0020><U0061><U0078><U015F><U0061><U006D><U0131>";/
+        "<U0063><U00FC><U006D><U0259>";/
+        "<U015F><U0259><U006E><U0062><U0259>"
+abday   "<U0062><U0061><U007A>";/
+        "<U0062><U0065><U0072>";/
+        "<U00E7><U0061><U0078>";/
+        "<U00E7><U0259><U0072>";/
+        "<U0063><U0061><U0078>";/
+        "<U0063><U00FC><U006D>";/
+        "<U015F><U006E><U0062>"
+mon     "<U0079><U0061><U006E><U0076><U0061><U0072>";/
+        "<U0066><U0065><U0076><U0072><U0061><U006C>";/
+        "<U006D><U0061><U0072><U0074>";/
+        "<U0061><U0070><U0072><U0065><U006C>";/
+        "<U006D><U0061><U0079>";/
+        "<U0069><U0079><U0075><U006E>";/
+        "<U0069><U0079><U0075><U006C>";/
+        "<U0061><U0076><U0071><U0075><U0073><U0074>";/
+        "<U0073><U0065><U006E><U0074><U0079><U0061><U0062><U0072>";/
+        "<U006F><U006B><U0074><U0079><U0061><U0062><U0072>";/
+        "<U006E><U006F><U0079><U0061><U0062><U0072>";/
+        "<U0064><U0065><U006B><U0061><U0062><U0072>"
+abmon   "<U0059><U0061><U006E>";/
+        "<U0046><U0065><U0076>";/
+        "<U004D><U0061><U0072>";/
+        "<U0041><U0070><U0072>";/
+        "<U004D><U0061><U0079>";/
+        "<U0130><U0079><U006E>";/
+        "<U0130><U0079><U006C>";/
+        "<U0041><U0076><U0071>";/
+        "<U0053><U0065><U006E>";/
+        "<U004F><U006B><U0074>";/
+        "<U004E><U006F><U0079>";/
+        "<U0044><U0065><U006B>"
+d_t_fmt "<U0025><U0041><U002C><U0020><U0025><U0064><U0020><U0025><U0042><U0020><U0025><U0059><U0020><U0025><U0054>"
+d_fmt     "<U0025><U0064><U002E><U0025><U006D><U002E><U0025><U0059>"
+t_fmt     "<U0025><U0054>"
+am_pm     "";""
+t_fmt_ampm ""
+END LC_TIME
+
+LC_PAPER
+height      297
+width       210
+END LC_PAPER
+
+LC_MEASUREMENT
+measurement 1
+END LC_MEASUREMENT
+
+LC_ADDRESS
+% FIXME
+postal_fmt "???"
+country_ab2 "<U0041><U005A>"
+country_ab3 "<U0041><U005A><U0045>"
+country_num 031
+END LC_ADDRESS
+
+LC_TELEPHONE
+% FIXME
+tel_int_fmt "???"
+int_prefix "<U0039><U0039><U0034>"
+int_select "<U0038><U007E><U0031><U0030>"
+END LC_TELEPHONE
+
+LC_NAME
+% FIXME
+name_fmt "???"
+END LC_NAME

@@ -1,0 +1,198 @@
+// Keyboard layouts for languages from antiquity.
+
+
+default partial alphanumeric_keys
+xkb_symbols "dummy" {
+    include "ancient(uga)"
+    name[group1]= "Ancient";
+};
+
+
+// EXTRAS:
+
+// Gothic layout, created by Tim Nelson <wayland@wayland.id.au>, 2016.
+// (Reference: http://www.alanwood.net/unicode/gothic.html.)
+//
+// Priorities in selecting keys for letters:
+//   1. Make the layout like QWERTY (with Jer = Y)
+//   2. Borrow a thing from Greek layout (Iggws = X)
+//   3. Fit remaining things in (Hwair = V, Thiuth = J)
+//   4. Put the numbers in; use Shift for ×10 (10, 20, 30...);
+//      unshifted AE10 = 900, since Gothic didn't have a zero
+//
+partial alphanumeric_keys
+xkb_symbols "got" {
+
+    name[group1]= "Gothic";
+
+    key <TLDE>	{[	 grave,  asciitilde	]};
+    key <AE01>	{[	U10330,  U10339		]}; // AHSA / EIS
+    key <AE02>	{[	U10331,  U1033A		]}; // BAIRKAN / KUSMA
+    key <AE03>	{[	U10332,  U1033B		]}; // GIBA / LAGUS
+    key <AE04>	{[	U10333,  U1033C		]}; // DAGS / MANNA
+    key <AE05>	{[	U10334,  U1033D		]}; // AIHVUS / NAUTHS
+    key <AE06>	{[	U10335,  U1033E		]}; // QAIRTHRA / JER
+    key <AE07>	{[	U10336,  U1033F		]}; // IUJA / URUS
+    key <AE08>	{[	U10337,  U10340		]}; // HAGL / PAIRTHRA
+    key <AE09>	{[	U10338,  U10341		]}; // THIUTH / NINETY
+    key <AE10>	{[	U1034A,  U10342		]}; // NINE HUNDRED / RAIDA
+    key <AE11>	{[       minus,  underscore	]};
+    key <AE12>	{[       equal,  plus		]};
+
+    key <AD01>	{[	U10335			]}; // Qairthra
+    key <AD02>	{[	U10345			]}; // Winja
+    key <AD03>	{[	U10334			]}; // Aihvus
+    key <AD04>	{[	U10342			]}; // Raida
+    key <AD05>	{[	U10344			]}; // Teiws
+    key <AD06>	{[	U1033E			]}; // Jer
+    key <AD07>	{[	U1033F			]}; // Urus
+    key <AD08>	{[	U10339			]}; // Eis
+    key <AD09>	{[	U10349			]}; // Othal
+    key <AD10>	{[	U10340			]}; // Pairthra
+    key <AD11>	{[ bracketleft,  braceleft	]};
+    key <AD12>	{[bracketright,  braceright	]};
+
+    key <AC01>	{[	U10330			]}; // Ahsa
+    key <AC02>	{[	U10343			]}; // Sauil
+    key <AC03>	{[	U10333			]}; // Dags
+    key <AC04>	{[	U10346			]}; // Faihu
+    key <AC05>	{[	U10332			]}; // Giba
+    key <AC06>	{[	U10337			]}; // Hagl
+    key <AC07>	{[	U10338			]}; // Thiuth
+    key <AC08>	{[	U1033A			]}; // Kusma
+    key <AC09>	{[	U1033B			]}; // Lagus
+    key <AC10>	{[   semicolon,  colon		]};
+    key <AC11>	{[  apostrophe,  quotedbl	]};
+    key <BKSL>	{[   backslash,  bar		]};
+
+    key <AB01>	{[	U10336			]}; // Iuja
+    key <AB02>	{[	U10347			]}; // Iggws
+    key <AB03>	{[	     c,  C		]};
+    key <AB04>	{[	U10348			]}; // Hwair
+    key <AB05>	{[	U10331			]}; // Bairkan
+    key <AB06>	{[	U1033D			]}; // Nauths
+    key <AB07>	{[	U1033C			]}; // Manna
+    key <AB08>	{[       comma,  less		]};
+    key <AB09>	{[      period,  greater	]};
+    key <AB10>	{[       slash,  question	]};
+};
+
+
+// In this layout the Ugaritic characters get the places of
+// the Arabic characters with the matching sound values.
+partial alphanumeric_keys
+xkb_symbols "uga" {
+
+    name[Group1]= "Ugaritic";
+
+    key.type[Group1]="TWO_LEVEL";
+
+    key <TLDE> {[   U1038F,   none           ]};  // 𐎏
+    key <AE01> {[        1,   exclam         ]};  // 1 !
+    key <AE02> {[        2,   at             ]};  // 2 @
+    key <AE03> {[        3,   numbersign     ]};  // 3 #
+    key <AE04> {[        4,   dollar         ]};  // 4 $
+    key <AE05> {[        5,   percent        ]};  // 5 %
+    key <AE06> {[        6,   asciicircum    ]};  // 6 ^
+    key <AE07> {[        7,   ampersand      ]};  // 7 &
+    key <AE08> {[        8,   asterisk       ]};  // 8 *
+    key <AE09> {[        9,   parenleft      ]};  // 9 (
+    key <AE10> {[        0,   parenright     ]};  // 0 )
+    key <AE11> {[    minus,   underscore     ]};  // - _
+    key <AE12> {[    equal,   plus           ]};  // = +
+
+    key <AD01> {[   U1039D,   none           ]};  // 𐎝
+    key <AD02> {[   U10395,   none           ]};  // 𐎕
+    key <AD03> {[   U10398,   none           ]};  // 𐎘
+    key <AD04> {[   U10396,   none           ]};  // 𐎖
+    key <AD05> {[   U10394,   none           ]};  // 𐎔
+    key <AD06> {[   U10399,   none           ]};  // 𐎙
+    key <AD07> {[   U10393,   grave          ]};  // 𐎓 `
+    key <AD08> {[   U10385,   division       ]};  // 𐎅 ÷
+    key <AD09> {[   U10383,   multiply       ]};  // 𐎃 ×
+    key <AD10> {[   U10388,   semicolon      ]};  // 𐎈 ;
+    key <AD11> {[   U10382,   greater        ]};  // 𐎂 >
+    key <AD12> {[   U10384,   less           ]};  // 𐎄 <
+
+    key <AC01> {[   U1038C,   U27E8          ]};  // 𐎌 ⟨
+    key <AC02> {[   U10392,   U27E9          ]};  // 𐎒 ⟩
+    key <AC03> {[   U1038A,   bracketleft    ]};  // 𐎊 [
+    key <AC04> {[   U10381,   bracketright   ]};  // 𐎁 ]
+    key <AC05> {[   U1038D,   none           ]};  // 𐎍
+    key <AC06> {[   U10380,   none           ]};  // 𐎀
+    key <AC07> {[   U1039A,   none           ]};  // 𐎚
+    key <AC08> {[   U10390,   none           ]};  // 𐎐
+    key <AC09> {[   U1038E,   slash          ]};  // 𐎎 /
+    key <AC10> {[   U1038B,   colon          ]};  // 𐎋:
+    key <AC11> {[   U10389,   quotedbl       ]};  // 𐎉  "
+    key <BKSL> {[backslash,   bar            ]};  // \ |
+
+    key <LSGT> {[      bar,   endash         ]};  // | –
+    key <AB01> {[   U1039B,   guillemotleft  ]};  // 𐎛 «
+    key <AB02> {[     none,   guillemotright ]};  //   »
+    key <AB03> {[   U1039C,   braceleft      ]};  // 𐎜 {
+    key <AB04> {[   U10397,   braceright     ]};  // 𐎗 }
+    key <AB05> {[   U1039F,   U2039          ]};  // 𐎟 ‹
+    key <AB06> {[ question,   U203A          ]};  // ? ›
+    key <AB07> {[   U002BC,   apostrophe     ]};  // ʼ '
+    key <AB08> {[   U10386,   comma          ]};  // 𐎆 ,
+    key <AB09> {[   U10387,   period         ]};  // 𐎇 .
+    key <AB10> {[   U10391,   periodcentered ]};  // 𐎑 ·
+};
+
+
+// Layout for Avestan, by Ernst Tremel, coded by Simos Xenitellis.
+// Reference: https://blog.simos.info/avestan-keyboard-layout/.
+// Generated with https://github.com/simos/keyboardlayouteditor.
+partial alphanumeric_keys
+xkb_symbols "ave"
+{
+	name[Group1] = "Avestan";
+
+	key <AE01> {[ U10B78                 ]}; // 𐭸
+	key <AE02> {[ U10B79                 ]}; // 𐭹
+	key <AE03> {[ U10B7A                 ]}; // 𐭺
+	key <AE04> {[ U10B7B                 ]}; // 𐭻
+	key <AE05> {[ U10B7C                 ]}; // 𐭼
+	key <AE06> {[ U10B7D                 ]}; // 𐭽
+	key <AE07> {[ U10B7E                 ]}; // 𐭾
+	key <AE08> {[ U10B7F                 ]}; // 𐭿
+
+	key <AD01> {[ U10B22,         U10B23 ]}; // 𐬢 𐬣
+	key <AD02> {[ U10B33,         U10B34 ]}; // 𐬳 𐬴
+	key <AD03> {[ U10B08,         U10B09 ]}; // 𐬈 𐬉
+	key <AD04> {[ U10B2D,         U10B26 ]}; // 𐬭 𐬦
+	key <AD05> {[ U10B19,         U10B1A ]}; // 𐬙 𐬚
+	key <AD06> {[ U10B2B,         U10B2A ]}; // 𐬫 𐬪
+	key <AD07> {[ U10B0E,         U10B0F ]}; // 𐬎 𐬏
+	key <AD08> {[ U10B0C,         U10B0D ]}; // 𐬌 𐬍
+	key <AD09> {[ U10B0A,         U10B0B ]}; // 𐬊 𐬋
+	key <AD10> {[ U10B1E                 ]}; // 𐬞
+	key <AD11> {[ U10B06,         U10B07 ]}; // 𐬆 𐬇
+	key <AD12> {[ U10B02,         U10B03 ]}; // 𐬂 𐬃
+
+	key <AC01> {[ U10B00,         U10B01 ]}; // 𐬀 𐬁
+	key <AC02> {[ U10B2F,         U10B31 ]}; // 𐬯 𐬱
+	key <AC03> {[ U10B1B,         U10B1C ]}; // 𐬛 𐬜
+	key <AC04> {[ U10B1F,         U10B16 ]}; // 𐬟 𐬖
+	key <AC05> {[ U10B14,         U10B15 ]}; // 𐬔 𐬕
+	key <AC06> {[ U10B35,          UE100 ]}; // 𐬵 
+	key <AC07> {[ U10B18,         U10B24 ]}; // 𐬘 𐬤
+	key <AC08> {[ U10B10,          UE101 ]}; // 𐬐 
+	key <AC09> {[ U10B2E,          UE103 ]}; // 𐬮 
+	key <AC10> {[ U10B3B,         U10B3A ]}; // 𐬻 𐬺
+	key <AC11> {[ U10B1D                 ]}; // 𐬝
+	key <BKSL> {[ U10B04,         U10B05 ]}; // 𐬄 𐬅
+
+	key <LSGT> {[ U10B04,         U10B05 ]}; // 𐬄 𐬅
+	key <AB01> {[ U10B30,         U10B32 ]}; // 𐬰 𐬲
+	key <AB02> {[ U10B11,         U10B12 ]}; // 𐬑 𐬒
+	key <AB03> {[ U10B17,          UE102 ]}; // 𐬗 
+	key <AB04> {[ U10B2C,         U10B13 ]}; // 𐬬 𐬓
+	key <AB05> {[ U10B20,         U10B21 ]}; // 𐬠 𐬡
+	key <AB06> {[ U10B25,         U10B27 ]}; // 𐬥 𐬧
+	key <AB07> {[ U10B28,         U10B29 ]}; // 𐬨 𐬩
+	key <AB08> {[ U10B3C,         U10B39 ]}; // 𐬼 𐬹
+	key <AB09> {[ U10B3E,         U10B3D ]}; // 𐬾 𐬽
+	key <AB10> {[ U10B3F, periodcentered ]}; // 𐬿 ·
+};

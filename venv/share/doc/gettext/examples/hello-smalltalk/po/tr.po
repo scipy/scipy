@@ -1,0 +1,29 @@
+# Turkish translation for hello-smalltalk.
+# This file is distributed under the same license as the gettext package.
+# Copyright (C) 2017 Yoyodyne, Inc. (msgids)
+# Copyright (C) 2004 Free Software Foundation, Inc.
+# Nilgün Belma Bugüner <nilgun@superonline.com>, 2003,2004
+# Mehmet Kececi <mkececi@mehmetkececi.com>, 2017, 2019, 2020.
+msgid ""
+msgstr ""
+"Project-Id-Version: hello-smalltalk 0.20.2\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"PO-Revision-Date: 2020-04-17 13:10+0300\n"
+"Last-Translator: Mehmet Kececi <mkececi@mehmetkececi.com>\n"
+"Language-Team: Turkish <gnu-tr-u12a@lists.sourceforge.net>\n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Poedit 2.3\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+
+#: hello.st.in:31
+msgid "Hello, world!"
+msgstr "Merhaba, dünya!"
+
+#: hello.st.in:32
+#, smalltalk-format
+msgid "This program is running as process number %1."
+msgstr "Bu yazılım %1 süreç numarası ile çalışıyor."

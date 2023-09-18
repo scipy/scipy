@@ -1,0 +1,258 @@
+escape_char     /
+comment_char    %
+
+% Finnish language locale for Finland
+% sorting according to SFS 4600 (1986-06-09)
+% Source: RAP
+% Address: Sankt Jo//rgens Alle 8
+%    DK-1615 Ko//benhavn V, Danmark
+% Contact: Keld Simonsen
+% Email: Keld.Simonsen@dkuug.dk
+% Tel: +45 - 31226543
+% Fax: +45 - 33256543
+% Language: fi
+% Territory: FI
+% Revision: 4.3
+% Date: 1996-10-15
+% Application: general
+% Users: general
+% Charset: ISO-8859-1
+% Distribution and use is free, also
+% for commercial purposes.
+%
+% Useful sources:
+%   Locale info for Finnish in Finland
+%     http://std.dkuug.dk/cultreg/registrations/narrative/fi_FI,_1.0
+
+LC_IDENTIFICATION
+title      "Finnish locale for Finland"
+source     "RAP"
+address    "Sankt J<U00F8>rgens Alle 8, DK-1615 K<U00F8>benhavn V, Danmark"
+contact    ""
+email      "bug-glibc-locales@gnu.org"
+tel        ""
+fax        ""
+language   "Finnish"
+territory  "Finland"
+revision   "1.0"
+date       "2000-06-29"
+%
+category  "fi_FI:2000";LC_IDENTIFICATION
+category  "fi_FI:2000";LC_CTYPE
+category  "fi_FI:2000";LC_COLLATE
+category  "fi_FI:2000";LC_TIME
+category  "fi_FI:2000";LC_NUMERIC
+category  "fi_FI:2000";LC_MONETARY
+category  "fi_FI:2000";LC_MESSAGES
+category  "fi_FI:2000";LC_PAPER
+category  "fi_FI:2000";LC_MEASUREMENT
+category  "fi_FI:2000";LC_NAME
+category  "fi_FI:2000";LC_ADDRESS
+category  "fi_FI:2000";LC_TELEPHONE
+END LC_IDENTIFICATION
+
+LC_COLLATE
+copy "iso14651_t1"
+
+collating-symbol <a-ring>
+collating-symbol <a-diaerisis>
+collating-symbol <o-diaerisis>
+
+reorder-after <z>
+<a-ring>
+<a-diaerisis>
+<o-diaerisis>
+
+reorder-after <U007A>
+<U00E5> <a-ring>;<BAS>;<MIN>;IGNORE
+<U01FB> <a-ring>;<ACA>;<MIN>;IGNORE
+<U00E4> <a-diaerisis>;<BAS>;<MIN>;IGNORE
+<U00E6> <a-diaerisis>;<REU>;<MIN>;IGNORE
+<U01FD> <a-diaerisis>;<U01FD>;<MIN>;IGNORE
+<U01E3> <a-diaerisis>;<MAC>;<MIN>;IGNORE
+<U00F6> <o-diaerisis>;<BAS>;<MIN>;IGNORE
+<U00F8> <o-diaerisis>;<U00D8>;<MIN>;IGNORE
+<U01FF> <o-diaerisis>;<U01FF>;<MIN>;IGNORE
+<U00F5> <o-diaerisis>;<TIL>;<MIN>;IGNORE
+reorder-after <U005A>
+<U00C5> <a-ring>;<BAS>;<CAP>;IGNORE
+<U01FA> <a-ring>;<ACA>;<CAP>;IGNORE
+<U00C4> <a-diaerisis>;<BAS>;<CAP>;IGNORE
+<U00C6> <a-diaerisis>;<REU>;<CAP>;IGNORE
+<U01FC> <a-diaerisis>;<U01FD>;<CAP>;IGNORE
+<U01E2> <a-diaerisis>;<MAC>;<CAP>;IGNORE
+<U00D6> <o-diaerisis>;<BAS>;<CAP>;IGNORE
+<U00D8> <o-diaerisis>;<U00D8>;<CAP>;IGNORE
+<U01FE> <o-diaerisis>;<U01FF>;<CAP>;IGNORE
+<U00D5> <o-diaerisis>;<TIL>;<CAP>;IGNORE
+
+reorder-after <U016B>
+<U0076> <v>;<U0056>;<BAS>;<MIN>
+<U1E7D> <v>;<U0056>;<TIL>;<MIN>
+<U0077> <w>;<U0057>;<BAS>;<MIN>
+<U1E83> <w>;<U0057>;<ACA>;<MIN>
+<U1E81> <w>;<U0057>;<GRA>;<MIN>
+<U0175> <w>;<U0057>;<CIR>;<MIN>
+<U1E85> <w>;<U0057>;<REU>;<MIN>
+<U1E87> <w>;<U0057>;<PCT>;<MIN>
+reorder-after <U016A>
+<U0056> <v>;<U0056>;<BAS>;<CAP>
+<U1E7C> <v>;<U0056>;<TIL>;<CAP>
+<U0057> <w>;<U0057>;<BAS>;<CAP>
+<U1E82> <w>;<U0057>;<ACA>;<CAP>
+<U1E80> <w>;<U0057>;<GRA>;<CAP>
+<U0174> <w>;<U0057>;<CIR>;<CAP>
+<U1E84> <w>;<U0057>;<REU>;<CAP>
+<U1E86> <w>;<U0057>;<PCT>;<CAP>
+
+reorder-after <U00FF>
+<U00FC> <y>;<DTT>;<MIN>;IGNORE
+reorder-after <U0178>
+<U00DC> <y>;<DTT>;<CAP>;IGNORE
+
+%  Present in iso14651_t1, but these definitions seem to have been
+%  removed from latest iso14651 tables.
+reorder-after <U0163>
+<U00FE> "<t><h>";"<LIG><LIG>";"<MIN><MIN>";IGNORE
+reorder-after <U0162>
+<U00DE> "<t><h>";"<LIG><LIG>";"<CAP><CAP>";IGNORE
+
+reorder-after <U0064>
+<U00F0> <d>;<PCL>;<MIN>;IGNORE
+<U0111> <d>;<OBL>;<MIN>;IGNORE
+reorder-after <U0044>
+<U00D0> <d>;<PCL>;<CAP>;IGNORE
+<U0110> <d>;<OBL>;<CAP>;IGNORE
+
+reorder-end
+END LC_COLLATE
+
+LC_CTYPE
+copy "i18n"
+
+translit_start
+include "translit_combining";""
+translit_end
+END LC_CTYPE
+
+LC_MONETARY
+int_curr_symbol      "<U0045><U0055><U0052><U0020>"
+currency_symbol      "<U20AC>"
+mon_decimal_point    "<U002C>"
+mon_thousands_sep    "<U00A0>"
+mon_grouping         3;3
+positive_sign        ""
+negative_sign        "<U002D>"
+int_frac_digits      2
+frac_digits          2
+p_cs_precedes        0
+p_sep_by_space       1
+n_cs_precedes        0
+n_sep_by_space       1
+p_sign_posn          1
+n_sign_posn          1
+END LC_MONETARY
+
+LC_NUMERIC
+decimal_point        "<U002C>"
+thousands_sep        "<U00A0>"
+grouping             3;3
+END LC_NUMERIC
+
+LC_TIME
+abday    "<U0073><U0075>";"<U006D><U0061>";"<U0074><U0069>";/
+         "<U006B><U0065>";"<U0074><U006F>";"<U0070><U0065>";/
+         "<U006C><U0061>"
+day      "<U0073><U0075><U006E><U006E><U0075><U006E><U0074><U0061><U0069>";/
+         "<U006D><U0061><U0061><U006E><U0061><U006E><U0074><U0061><U0069>";/
+         "<U0074><U0069><U0069><U0073><U0074><U0061><U0069>";/
+         "<U006B><U0065><U0073><U006B><U0069><U0076><U0069><U0069><U006B><U006B><U006F>";/
+         "<U0074><U006F><U0072><U0073><U0074><U0061><U0069>";/
+         "<U0070><U0065><U0072><U006A><U0061><U006E><U0074><U0061><U0069>";/
+         "<U006C><U0061><U0075><U0061><U006E><U0074><U0061><U0069>"
+abmon    "<U0074><U0061><U006D><U006D><U0069>";/
+         "<U0068><U0065><U006C><U006D><U0069>";/
+         "<U006D><U0061><U0061><U006C><U0069><U0073>";/
+         "<U0068><U0075><U0068><U0074><U0069>";/
+         "<U0074><U006F><U0075><U006B><U006F>";/
+         "<U006B><U0065><U0073><U00E4>";/
+         "<U0068><U0065><U0069><U006E><U00E4>";/
+         "<U0065><U006C><U006F>";/
+         "<U0073><U0079><U0079><U0073>";/
+         "<U006C><U006F><U006B><U0061>";/
+         "<U006D><U0061><U0072><U0072><U0061><U0073>";/
+         "<U006A><U006F><U0075><U006C><U0075>"
+mon      "<U0074><U0061><U006D><U006D><U0069><U006B><U0075><U0075>";/
+         "<U0068><U0065><U006C><U006D><U0069><U006B><U0075><U0075>";/
+         "<U006D><U0061><U0061><U006C><U0069><U0073><U006B><U0075><U0075>";/
+         "<U0068><U0075><U0068><U0074><U0069><U006B><U0075><U0075>";/
+         "<U0074><U006F><U0075><U006B><U006F><U006B><U0075><U0075>";/
+         "<U006B><U0065><U0073><U00E4><U006B><U0075><U0075>";/
+         "<U0068><U0065><U0069><U006E><U00E4><U006B><U0075><U0075>";/
+         "<U0065><U006C><U006F><U006B><U0075><U0075>";/
+         "<U0073><U0079><U0079><U0073><U006B><U0075><U0075>";/
+         "<U006C><U006F><U006B><U0061><U006B><U0075><U0075>";/
+         "<U006D><U0061><U0072><U0072><U0061><U0073><U006B><U0075><U0075>";/
+         "<U006A><U006F><U0075><U006C><U0075><U006B><U0075><U0075>"
+d_t_fmt  "<U0025><U0061><U0020><U0025><U0065><U002E><U0020><U0025><U0042>/
+<U0074><U0061><U0020><U0025><U0059><U0020><U0025><U0048><U002E><U0025>/
+<U004D><U002E><U0025><U0053>"
+d_fmt    "<U0025><U0064><U002E><U0025><U006D><U002E><U0025><U0059>"
+t_fmt    "<U0025><U0048><U002E><U0025><U004D><U002E><U0025><U0053>"
+am_pm    "";""
+t_fmt_ampm  ""
+date_fmt       "<U0025><U0061><U0020><U0025><U002D><U0064><U002E><U0025>/
+<U002D><U006D><U002E><U0025><U0059><U0020><U0025><U0048><U002E><U0025>/
+<U004D><U002E><U0025><U0053><U0020><U0025><U007A>"
+week     7;19971130;4
+first_weekday 2 % Monday
+first_workday 2 % Monday
+END LC_TIME
+
+LC_MESSAGES
+yesexpr  "<U005E><U005B><U004B><U006B><U0059><U0079><U005D><U002E><U002A>"
+noexpr   "<U005E><U005B><U0045><U0065><U004E><U006E><U005D><U002E><U002A>"
+END LC_MESSAGES
+
+LC_PAPER
+height   297
+width    210
+END LC_PAPER
+
+LC_TELEPHONE
+tel_dom_fmt    "<U0028><U0025><U0041><U0029><U0020><U0025><U006C>"
+tel_int_fmt    "<U002B><U0025><U0063><U0020><U0025><U0061><U0020><U0025>/
+<U006C>"
+int_prefix     "<U0033><U0035><U0038>"
+int_select     "<U0030><U0030>"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+measurement    1
+END LC_MEASUREMENT
+
+LC_NAME
+name_fmt    "<U0025><U0064><U0025><U0074><U0025><U0067><U0025><U0074>/
+<U0025><U006D><U0025><U0074><U0025><U0066>"
+% Finnish equivalents for Mr/Mrs/Miss/Ms are herra/rouva/rouva/neiti
+% but they are practically never used, thus we don't define them here.
+END LC_NAME
+
+LC_ADDRESS
+postal_fmt   "<U0025><U0066><U0025><U004E><U0025><U0064><U0025><U004E>/
+<U0025><U0062><U0025><U004E><U0025><U0061><U0025><U004E><U0025><U0073>/
+<U0020><U0025><U0068><U0025><U0074><U0025><U0065><U0025><U0074><U0025>/
+<U0072><U0025><U004E><U0025><U007A><U0020><U0025><U0054><U0025>/
+<U004E><U0025><U0063><U0025><U004E>"
+country_ab2 "<U0046><U0049>"
+country_ab3 "<U0046><U0049><U004E>"
+country_num 246
+country_name "<U0053><U0075><U006F><U006D><U0069>"
+country_post "<U0046><U0049>"
+country_car  "<U0046><U0049><U004E>"
+country_isbn 952
+lang_name    "<U0073><U0075><U006F><U006D><U0069>"
+lang_ab      "<U0066><U0069>"
+lang_term    "<U0066><U0069><U006E>"
+lang_lib     "<U0066><U0069><U006E>"
+END LC_ADDRESS

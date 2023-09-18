@@ -1,0 +1,964 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html401/loose.dtd">
+<html>
+<!-- Created on October, 9 2022 by texi2html 1.78a -->
+<!--
+Written by: Lionel Cons <Lionel.Cons@cern.ch> (original author)
+            Karl Berry  <karl@freefriends.org>
+            Olaf Bachmann <obachman@mathematik.uni-kl.de>
+            and many others.
+Maintained by: Many creative people.
+Send bugs and suggestions to <texi2html-bug@nongnu.org>
+
+-->
+<head>
+<title>GNU libtextstyle: 3. The programmer's perspective</title>
+
+<meta name="description" content="GNU libtextstyle: 3. The programmer's perspective">
+<meta name="keywords" content="GNU libtextstyle: 3. The programmer's perspective">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="texi2html 1.78a">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+pre.display {font-family: serif}
+pre.format {font-family: serif}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: serif; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: serif; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.roman {font-family:serif; font-weight:normal;}
+span.sansserif {font-family:sans-serif; font-weight:normal;}
+ul.toc {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="libtextstyle_2.html#SEC4" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="libtextstyle_4.html#SEC37" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="libtextstyle_toc.html#SEC_Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="libtextstyle_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="libtextstyle_5.html#SEC45" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="libtextstyle_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+
+<hr size="2">
+<a name="The-programmer_0027s-view"></a>
+<a name="SEC15"></a>
+<h1 class="chapter"> <a href="libtextstyle_toc.html#TOC15">3. The programmer's perspective</a> </h1>
+
+<p>As a programmer, enabling styling consists of the following tasks:
+</p><ol>
+<li>
+Define the command-line options and environment variable that the user
+can use to control the styling.
+</li><li>
+Define the CSS classes that the user can use in the CSS file.  Each CSS
+class corresponds to a text role; each CSS class can be given a different
+styling by the user.
+</li><li>
+Change the output routines so that they take an &lsquo;<samp>ostream_t</samp>&rsquo; object
+as argument instead of a &lsquo;<samp>FILE *</samp>&rsquo;.
+</li><li>
+Insert paired invocations to <code>styled_ostream_begin_css_class</code>,
+<code>styled_ostream_end_css_class</code> around each run of text with a
+specific text role.
+</li><li>
+Link with <code>libtextstyle</code>.  If your package is using GNU autoconf,
+you can use the <code>libtextstyle.m4</code> macro from Gnulib.
+</li><li>
+Prepare a default style file.
+</li><li>
+Update the documentation of your package.
+</li></ol>
+
+<p>The following sections go into more detail.
+</p>
+
+
+<a name="Basic-use"></a>
+<a name="SEC16"></a>
+<h2 class="section"> <a href="libtextstyle_toc.html#TOC16">3.1 Basic use of libtextstyle</a> </h2>
+
+<p>Source code that makes use of GNU libtextstyle needs an include statement:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">#include &lt;textstyle.h&gt;
+</pre></td></tr></table>
+
+<p>Basic use of GNU libtextstyle consists of statements like these:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">  styled_ostream_t stream =
+    styled_ostream_create (STDOUT_FILENO, &quot;(stdout)&quot;, TTYCTL_AUTO,
+                           style_file_name);
+  ...
+  styled_ostream_begin_use_class (stream, css_class);
+  ...
+  ostream_write_str (stream, string);
+  ...
+  styled_ostream_end_use_class (stream, css_class);
+  ...
+  styled_ostream_free (stream);
+</pre></td></tr></table>
+
+<p>Before this snippet, your code needs to determine the name of the style
+file to use (<code>style_file_name</code>).  If no styling is desired &ndash; the
+precise condition depends on the value of <code>color_mode</code> but also on
+your application logic &ndash;, you should set <code>style_file_name</code> to
+<code>NULL</code>.
+</p>
+<p>An object of type <code>styled_ostream_t</code> is allocated.  The function
+<code>styled_ostream_create</code> allocates it; the function
+<code>styled_ostream_free</code> deallocates it.
+</p>
+<p>Such <code>styled_ostream_t</code> supports output operations
+(<code>ostream_write_str</code>), interleaved with adding and removing CSS
+classes.  The CSS class in effect when an output operation is performed
+determines, through the style file, the text attributes associated with
+that piece of text.
+</p>
+
+
+<a name="Hyperlinks"></a>
+<a name="SEC17"></a>
+<h3 class="subsection"> <a href="libtextstyle_toc.html#TOC17">3.1.1 Hyperlinks</a> </h3>
+
+<p>Text output may contain hyperlinks.  These hyperlinks are encoded through
+an escape sequence, specified at
+<a href="https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda">Hyperlinks in terminal emulators</a>.  Currently (as of 2019), they are
+displayed only in <code>gnome-terminal</code> version 3.26 or above.  More
+terminal emulators will support hyperlinks in the future.  Terminal
+emulators which don't support hyperlinks ignore it, except for a few
+terminal emulators, for which users may need to disable the hyperlinks
+(see <a href="libtextstyle_2.html#SEC9">The environment variable <code>NO_TERM_HYPERLINKS</code></a>) if the heuristic built into
+<code>libtextstyle</code> does not already disable them.
+</p>
+<p>To emit a hyperlink, use code like this:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">  styled_ostream_t stream = ...
+  ...
+  /* Start a hyperlink.  */
+  styled_ostream_set_hyperlink (stream, url, NULL);
+  ...
+  /* Emit the anchor text.  This can be styled text.  */
+  ostream_write_str (stream, &quot;Click here!&quot;);
+  ...
+  /* End the current hyperlink.  */
+  styled_ostream_set_hyperlink (stream, NULL, NULL);
+</pre></td></tr></table>
+
+<p>The anchor text can be styled.  But the hyperlinks themselves cannot be
+styled; they behave as implemented by the terminal emulator.
+</p>
+
+<a name="Include-files"></a>
+<a name="SEC18"></a>
+<h2 class="section"> <a href="libtextstyle_toc.html#TOC18">3.2 Include files</a> </h2>
+
+<p>The include file <code>&lt;textstyle.h&gt;</code> declares all facilities defined by
+the library.
+</p>
+
+<a name="Link-options"></a>
+<a name="SEC19"></a>
+<h2 class="section"> <a href="libtextstyle_toc.html#TOC19">3.3 Link options</a> </h2>
+
+<p>The library to link with is called <code>libtextstyle</code>, with a
+system-dependent suffix.  You link with it though link options of the
+form <code>-ltextstyle</code> for a library installed in system locations, or
+<code>-L<var>libdir</var> -ltextstyle</code> for a static library installed in other
+locations, or <code>-L<var>libdir</var> -ltextstyle -Wl,-rpath,<var>libdir</var></code>
+for a shared library installed in other locations (assuming a GCC
+compatible compiler and linker and no <code>libtool</code>), or
+<code>-L<var>libdir</var> -ltextstyle -R<var>libdir</var></code> for a shared library
+installed in other locations (with <code>libtool</code>).  Additionally, the
+link options may need to include the dependencies: <code>-lm</code>, and
+<code>-lncurses</code> or (on NetBSD) <code>-ltermcap</code> or (on AIX)
+<code>-lxcurses</code> or (on HP-UX) <code>-lcurses</code>, and on some systems also
+<code>-liconv</code>.
+</p>
+<p>It is a bit complicated to determine the right link options in a portable
+way.  Therefore an Autoconf macro is provided in the file
+<code>libtextstyle.m4</code> in Gnulib, that makes this task easier.  Assuming
+the build system of your package is based on GNU Autoconf, you invoke it
+through <code>gl_LIBTEXTSTYLE</code>.  It searches for an installed
+<code>libtextstyle</code>.  If found, it sets and AC_SUBSTs
+<code>HAVE_LIBTEXTSTYLE=yes</code> and the <code>LIBTEXTSTYLE</code> and
+<code>LTLIBTEXTSTYLE</code> variables, and augments the <code>CPPFLAGS</code>
+variable, and #defines <code>HAVE_LIBTEXTSTYLE</code> to 1.  Otherwise, it sets
+and AC_SUBSTs <code>HAVE_LIBTEXTSTYLE=no</code> and <code>LIBTEXTSTYLE</code> and
+<code>LTLIBTEXTSTYLE</code> to empty.  In link commands that use <code>libtool</code>,
+use <code>LTLIBTEXTSTYLE</code>; in link commands that don't use <code>libtool</code>,
+use <code>LIBTEXTSTYLE</code>.
+</p>
+<p>If you use GNU Automake, the proper place to use the link options is
+<code><var>program</var>_LDADD</code> for programs and <code><var>library</var>_LIBADD</code>
+for libraries.
+</p>
+
+<a name="Command_002dline-options"></a>
+<a name="SEC20"></a>
+<h2 class="section"> <a href="libtextstyle_toc.html#TOC20">3.4 Command-line options</a> </h2>
+
+<p>While you are free to provide any command-line option to enable the
+styling of the output, it is good if different GNU programs use the same
+command-line options for this purpose.  These options are described in
+the sections <a href="libtextstyle_2.html#SEC11">The <code>--color</code> option</a> and <a href="libtextstyle_2.html#SEC12">The <code>--style</code> option</a>.  To
+achieve this, use the following API (declared in <code>&lt;textstyle.h&gt;</code>):
+</p>
+<dl>
+<dt><u>Variable:</u> bool <b>color_test_mode</b>
+<a name="IDX1"></a>
+</dt>
+<dd><p>True if a <code>--color</code> option with value <code>test</code> has been seen.
+</p></dd></dl>
+
+<dl>
+<dt><u>Variable:</u> enum&nbsp;color_option <b>color_mode</b>
+<a name="IDX2"></a>
+</dt>
+<dd><p>Stores the value of the <code>--color</code> option.
+</p></dd></dl>
+
+<dl>
+<dt><u>Variable:</u> const&nbsp;char&nbsp;* <b>style_file_name</b>
+<a name="IDX3"></a>
+</dt>
+<dd><p>Stores the value of the <code>--style</code> option.
+</p></dd></dl>
+
+<p>Note: These variables, like any variables exported from shared libraries,
+can only be used in executable code.  You <em>cannot</em> portably use
+their address in initializers of global or static variables.  This is a
+restriction that is imposed by the Windows, Cygwin, and Android platforms.
+</p>
+<dl>
+<dt><u>Function:</u> bool <b>handle_color_option</b><i> (const&nbsp;char&nbsp;*<var>option</var>)</i>
+<a name="IDX4"></a>
+</dt>
+<dd><p>You invoke this function when, during argument parsing, you have
+encountered a <code>--color</code> or <code>--color=...</code> option.  The return
+value is an error indicator: <code>true</code> means an invalid option.
+</p></dd></dl>
+
+<dl>
+<dt><u>Function:</u> void <b>handle_style_option</b><i> (const&nbsp;char&nbsp;*<var>option</var>)</i>
+<a name="IDX5"></a>
+</dt>
+<dd><p>You invoke this function when, during argument parsing, you have
+encountered a <code>--style</code> or <code>--style=...</code> option.
+</p></dd></dl>
+
+<dl>
+<dt><u>Function:</u> void <b>print_color_test</b><i> (void)</i>
+<a name="IDX6"></a>
+</dt>
+<dd><p>Prints a color test page.  You invoke this function after argument
+parsing, when the <code>color_test_mode</code> variable is true.
+</p></dd></dl>
+
+<dl>
+<dt><u>Function:</u> void <b>style_file_prepare</b><i> (const&nbsp;char&nbsp;*<var>style_file_envvar</var>, const&nbsp;char&nbsp;*<var>stylesdir_envvar</var>, const&nbsp;char&nbsp;*<var>stylesdir_after_install</var>, const&nbsp;char&nbsp;*<var>default_style_file</var>)</i>
+<a name="IDX7"></a>
+</dt>
+<dd><p>Assigns a default value to <code>style_file_name</code> if necessary.  You
+invoke this function after argument parsing, when <code>color_test_mode</code>
+is false.
+</p>
+<p><code><var>style_file_envvar</var></code> is an environment variable that, when set
+to a non-empty value, specifies the style file to use.  This environment
+variable is meant to be set by the user.
+</p>
+<p><code><var>stylesdir_envvar</var></code> is an environment variable that, when set
+to a non-empty value, specifies the directory with the style files, or
+<code>NULL</code>.  This is necessary for running the testsuite before
+&lsquo;<samp>make install</samp>&rsquo;.
+</p>
+<p><code><var>stylesdir_after_install</var></code> is the directory with the style
+files after &lsquo;<samp>make install</samp>&rsquo;.
+</p>
+<p><code><var>default_style_file</var></code> is the file name of the default style
+file, relative to <var>stylesdir</var>.
+</p></dd></dl>
+
+
+<a name="The-output-stream-hierarchy"></a>
+<a name="SEC21"></a>
+<h2 class="section"> <a href="libtextstyle_toc.html#TOC21">3.5 The output stream hierarchy</a> </h2>
+
+<p>There are various classes of output streams, some of them with styling
+support.  These &ldquo;classes&rdquo; are defined in an object-oriented programming
+style that resembles C++ or Java, but are actually implemented in C with
+a little bit of object orientation syntax.  These definitions are
+preprocessed down to C.  As a consequence, GNU libtextstyle is a C
+library and does not need to link with the C++ standard library.
+</p>
+<p>All these classes are declared in <code>&lt;textstyle.h&gt;</code>.
+</p>
+<p>The base output stream type is &lsquo;<samp>ostream_t</samp>&rsquo;.  It is a pointer type to
+a (hidden) implementation type.  Similarly for the subclasses.
+</p>
+<p>When we say that &lsquo;<samp>some_ostream_t</samp>&rsquo; is a subclass of &lsquo;<samp>ostream_t</samp>&rsquo;,
+what we mean is:
+</p><ul>
+<li>
+Every &lsquo;<samp>some_ostream_t</samp>&rsquo; object can be converted to an
+&lsquo;<samp>ostream_t</samp>&rsquo;, by virtue of a simple assignment.  No cast is needed.
+</li><li>
+The opposite conversion, from &lsquo;<samp>ostream_t</samp>&rsquo; to &lsquo;<samp>some_ostream_t</samp>&rsquo;,
+can also be performed, provided that the object is actually an instance
+of &lsquo;<samp>some_ostream_t</samp>&rsquo;.
+</li><li>
+Every method &lsquo;<samp>ostream_<var>foobar</var></samp>&rsquo; exists also as a method
+&lsquo;<samp>some_ostream_<var>foobar</var></samp>&rsquo; with compatible argument types and a
+compatible return type.
+</li></ul>
+
+
+
+<a name="The-ostream-class"></a>
+<a name="SEC22"></a>
+<h3 class="subsection"> <a href="libtextstyle_toc.html#TOC22">3.5.1 The abstract <code>ostream</code> class</a> </h3>
+
+<p>The base output stream type is &lsquo;<samp>ostream_t</samp>&rsquo;.
+</p>
+<p>It has the following methods:
+</p>
+<dl>
+<dt><u>Function:</u> void <b>ostream_write_mem</b><i> (ostream_t&nbsp;<var>stream</var>, const&nbsp;void&nbsp;*<var>data</var>, size_t&nbsp;<var>len</var>)</i>
+<a name="IDX8"></a>
+</dt>
+<dd><p>Writes a sequence of bytes to a stream.
+</p></dd></dl>
+
+<dl>
+<dt><u>Function:</u> void <b>ostream_write_str</b><i> (ostream_t&nbsp;<var>stream</var>, const&nbsp;char&nbsp;*<var>string</var>)</i>
+<a name="IDX9"></a>
+</dt>
+<dd><p>Writes a string's contents to a stream.
+</p></dd></dl>
+
+<dl>
+<dt><u>Function:</u> ptrdiff_t <b>ostream_printf</b><i> (ostream_t&nbsp;<var>stream</var>, const&nbsp;char&nbsp;*<var>format</var>, ...)</i>
+<a name="IDX10"></a>
+</dt>
+<dt><u>Function:</u> ptrdiff_t <b>ostream_vprintf</b><i> (ostream_t&nbsp;<var>stream</var>, const&nbsp;char&nbsp;*<var>format</var>, va_list args)</i>
+<a name="IDX11"></a>
+</dt>
+<dd><p>Writes formatted output to a stream.
+</p>
+<p>These functions return the size of formatted output, or a negative value
+in case of an error.
+</p></dd></dl>
+
+<dl>
+<dt><u>Function:</u> void <b>ostream_flush</b><i> (ostream_t&nbsp;<var>stream</var>, ostream_flush_scope_t&nbsp;<var>scope</var>)</i>
+<a name="IDX12"></a>
+</dt>
+<dd><p>Brings buffered data to its destination.
+</p></dd></dl>
+
+<dl>
+<dt><u>Function:</u> void <b>ostream_free</b><i> (ostream_t&nbsp;<var>stream</var>)</i>
+<a name="IDX13"></a>
+</dt>
+<dd><p>Closes and frees a stream.
+</p></dd></dl>
+
+
+<a name="The-styled_005fostream-class"></a>
+<a name="SEC23"></a>
+<h3 class="subsection"> <a href="libtextstyle_toc.html#TOC23">3.5.2 The abstract <code>styled_ostream</code> class</a> </h3>
+
+<p>The type for a styled output stream is &lsquo;<samp>styled_ostream_t</samp>&rsquo;.  It is a
+subclass of &lsquo;<samp>ostream_t</samp>&rsquo; that adds the following methods:
+</p>
+<dl>
+<dt><u>Function:</u> void <b>styled_ostream_begin_use_class</b><i> (styled_ostream_t&nbsp;<var>stream</var>, const&nbsp;char&nbsp;*<var>classname</var>)</i>
+<a name="IDX14"></a>
+</dt>
+<dd><p>Starts a run of text belonging to <code><var>classname</var></code>.  The
+<code><var>classname</var></code> is the name of a CSS class.  It can be chosen
+arbitrarily and customized through the CSS file.
+</p></dd></dl>
+
+<dl>
+<dt><u>Function:</u> void <b>styled_ostream_end_use_class</b><i> (styled_ostream_t&nbsp;<var>stream</var>, const&nbsp;char&nbsp;*<var>classname</var>)</i>
+<a name="IDX15"></a>
+</dt>
+<dd><p>Ends a run of text belonging to <code><var>classname</var></code>.  The
+<code>styled_ostream_begin_use_class</code> /
+<code>styled_ostream_end_use_class</code> calls must match properly.
+</p></dd></dl>
+
+<dl>
+<dt><u>Function:</u> const char * <b>styled_ostream_get_hyperlink_ref</b><i> (styled_ostream_t&nbsp;<var>stream</var>)</i>
+<a name="IDX16"></a>
+</dt>
+<dd><p>Returns the referred URL of the currently set hyperlink, or <code>NULL</code>
+if no hyperlink attribute is currently set.
+</p>
+<p>Note: The returned string is only valid up to the next invocation of
+<code>styled_ostream_set_hyperlink</code>.
+</p></dd></dl>
+
+<dl>
+<dt><u>Function:</u> const char * <b>styled_ostream_get_hyperlink_id</b><i> (styled_ostream_t&nbsp;<var>stream</var>)</i>
+<a name="IDX17"></a>
+</dt>
+<dd><p>Returns the id of the currently set hyperlink, or <code>NULL</code> if no
+hyperlink attribute is currently set.
+</p>
+<p>Note: The returned string is only valid up to the next invocation of
+<code>styled_ostream_set_hyperlink</code>.
+</p></dd></dl>
+
+<dl>
+<dt><u>Function:</u> void <b>styled_ostream_set_hyperlink</b><i> (styled_ostream_t&nbsp;<var>stream</var>, const&nbsp;char&nbsp;*<var>ref</var>, const&nbsp;char&nbsp;*<var>id</var>)</i>
+<a name="IDX18"></a>
+</dt>
+<dd><p>Sets or removes a hyperlink attribute.
+</p>
+<p>To set a hyperlink attribute, pass a non-<code>NULL</code> <var>ref</var>.
+<var>ref</var> is an URL; it should be at most 2083 bytes long.  Non-ASCII
+characters should be URI-escaped (using the %nn syntax).  <var>id</var> is
+an optional identifier.  On terminal output, multiple hyperlinks with
+the same <var>id</var> will be highlighted together.  If specified, <var>id</var>
+should be at most 250 bytes long.
+</p>
+<p>To remove a hyperlink attribute, pass <code>NULL</code> for <var>ref</var> and <var>id</var>.
+</p>
+<p>Hyperlinks don't nest.  That is, a hyperlink attribute is enabled only
+up to the next invocation of <code>styled_ostream_set_hyperlink</code>.
+</p></dd></dl>
+
+<dl>
+<dt><u>Function:</u> void <b>styled_ostream_flush_to_current_style</b><i> (styled_ostream_t&nbsp;<var>stream</var>)</i>
+<a name="IDX19"></a>
+</dt>
+<dd><p>This function acts like <code>ostream_flush (<var>stream</var>, FLUSH_THIS_STREAM)</code>,
+except that it leaves the destination with the current text style enabled,
+instead of with the default text style.
+</p>
+<p>After calling this function, you can output strings without newlines(!) to the
+underlying stream, and they will be rendered like strings passed to
+<code>ostream_write_mem</code>, <code>ostream_write_str</code>, or <code>ostream_printf</code>.
+</p></dd></dl>
+
+
+<a name="ostream-subclasses-without-styling"></a>
+<a name="SEC24"></a>
+<h3 class="subsection"> <a href="libtextstyle_toc.html#TOC24">3.5.3 Concrete ostream subclasses without styling</a> </h3>
+
+
+
+<a name="The-file_005fostream-class"></a>
+<a name="SEC25"></a>
+<h4 class="subsubsection"> <a href="libtextstyle_toc.html#TOC25">3.5.3.1 The <code>file_ostream</code> class</a> </h4>
+
+<p>The <code>file_ostream</code> class supports output to an <code>&lt;stdio.h&gt;</code>
+<code>FILE</code> stream.  Its type is &lsquo;<samp>file_ostream_t</samp>&rsquo;.  It is a subclass
+of &lsquo;<samp>ostream_t</samp>&rsquo; that adds no methods.
+</p>
+<p>It can be instantiated through this function:
+</p>
+<dl>
+<dt><u>Function:</u> file_ostream_t <b>file_ostream_create</b><i> (FILE&nbsp;*<var>fp</var>)</i>
+<a name="IDX20"></a>
+</dt>
+<dd><p>Creates an output stream referring to <code><var>fp</var></code>.
+</p>
+<p>Note: The resulting stream must be closed before <code><var>fp</var></code> can be
+closed.
+</p></dd></dl>
+
+
+<a name="The-fd_005fostream-class"></a>
+<a name="SEC26"></a>
+<h4 class="subsubsection"> <a href="libtextstyle_toc.html#TOC26">3.5.3.2 The <code>fd_ostream</code> class</a> </h4>
+
+<p>The <code>file_ostream</code> class supports output to a file descriptor.  Its
+type is &lsquo;<samp>fd_ostream_t</samp>&rsquo;.  It is a subclass of &lsquo;<samp>ostream_t</samp>&rsquo; that
+adds no methods.
+</p>
+<p>It can be instantiated through this function:
+</p>
+<dl>
+<dt><u>Function:</u> fd_ostream_t <b>fd_ostream_create</b><i> (int&nbsp;<var>fd</var>, const&nbsp;char&nbsp;*<var>filename</var>, bool&nbsp;<var>buffered</var>)</i>
+<a name="IDX21"></a>
+</dt>
+<dd><p>Creates an output stream referring to the file descriptor <code><var>fd</var></code>.
+</p>
+<p><code><var>filename</var></code> is used only for error messages.
+</p>
+<p>Note: The resulting stream must be closed before <code><var>fd</var></code> can be
+closed.
+</p></dd></dl>
+
+
+<a name="The-term_005fostream-class"></a>
+<a name="SEC27"></a>
+<h4 class="subsubsection"> <a href="libtextstyle_toc.html#TOC27">3.5.3.3 The <code>term_ostream</code> class</a> </h4>
+
+<p>The <code>term_ostream</code> class supports output to a file descriptor that
+is connected to a terminal emulator or console.  Its type is
+&lsquo;<samp>term_ostream_t</samp>&rsquo;.  It is a subclass of &lsquo;<samp>ostream_t</samp>&rsquo;.
+</p>
+<p>It can be instantiated through this function:
+</p>
+<dl>
+<dt><u>Function:</u> term_ostream_t <b>term_ostream_create</b><i> (int&nbsp;<var>fd</var>, const&nbsp;char&nbsp;*<var>filename</var>, ttyctl_t&nbsp;<var>tty_control</var>)</i>
+<a name="IDX22"></a>
+</dt>
+<dd><p>Creates an output stream referring to the file descriptor <code><var>fd</var></code>.
+</p>
+<p><code><var>filename</var></code> is used only for error messages.
+</p>
+<p><code><var>tty_control</var></code> specifies the amount of control to take over the
+underlying tty.
+</p>
+<p>The resulting stream will be line-buffered.
+</p>
+<p>Note: The resulting stream must be closed before <code><var>fd</var></code> can be
+closed.
+</p></dd></dl>
+
+<p>The class adds the following methods:
+</p>
+<dl>
+<dt><u>Function:</u> term_color_t <b>term_ostream_rgb_to_color</b><i> (term_ostream_t&nbsp;<var>stream</var>, int&nbsp;<var>red</var>, int&nbsp;<var>green</var>, int&nbsp;<var>blue</var>)</i>
+<a name="IDX23"></a>
+</dt>
+<dd><p>Converts an RGB value
+(<code><var>red</var></code>, <code><var>green</var></code>, <code><var>blue</var></code> in [0..255]) to
+a color, valid for this stream only.
+</p></dd></dl>
+
+<dl>
+<dt><u>Function:</u> term_color_t <b>term_ostream_get_color</b><i> (term_ostream_t&nbsp;<var>stream</var>)</i>
+<a name="IDX24"></a>
+</dt>
+<dt><u>Function:</u> void <b>term_ostream_set_color</b><i> (term_ostream_t&nbsp;<var>stream</var>, term_color_t&nbsp;<var>color</var>)</i>
+<a name="IDX25"></a>
+</dt>
+<dd><p>Gets/sets the text color.
+</p></dd></dl>
+
+<dl>
+<dt><u>Function:</u> term_color_t <b>term_ostream_get_bgcolor</b><i> (term_ostream_t&nbsp;<var>stream</var>)</i>
+<a name="IDX26"></a>
+</dt>
+<dt><u>Function:</u> void <b>term_ostream_set_bgcolor</b><i> (term_ostream_t&nbsp;<var>stream</var>, term_color_t&nbsp;<var>color</var>)</i>
+<a name="IDX27"></a>
+</dt>
+<dd><p>Gets/sets the background color.
+</p></dd></dl>
+
+<dl>
+<dt><u>Function:</u> term_weight_t <b>term_ostream_get_weight</b><i> (term_ostream_t&nbsp;<var>stream</var>)</i>
+<a name="IDX28"></a>
+</dt>
+<dt><u>Function:</u> void <b>term_ostream_set_weight</b><i> (term_ostream_t&nbsp;<var>stream</var>, term_weight_t&nbsp;<var>weight</var>)</i>
+<a name="IDX29"></a>
+</dt>
+<dd><p>Gets/sets the font weight.
+</p></dd></dl>
+
+<dl>
+<dt><u>Function:</u> term_posture_t <b>term_ostream_get_posture</b><i> (term_ostream_t&nbsp;<var>stream</var>)</i>
+<a name="IDX30"></a>
+</dt>
+<dt><u>Function:</u> void <b>term_ostream_set_posture</b><i> (term_ostream_t&nbsp;<var>stream</var>, term_posture_t&nbsp;<var>posture</var>)</i>
+<a name="IDX31"></a>
+</dt>
+<dd><p>Gets/sets the font posture.
+</p></dd></dl>
+
+<dl>
+<dt><u>Function:</u> term_underline_t <b>term_ostream_get_underline</b><i> (term_ostream_t&nbsp;<var>stream</var>)</i>
+<a name="IDX32"></a>
+</dt>
+<dt><u>Function:</u> void <b>term_ostream_set_underline</b><i> (term_ostream_t&nbsp;<var>stream</var>, term_underline_t&nbsp;<var>underline</var>)</i>
+<a name="IDX33"></a>
+</dt>
+<dd><p>Gets/sets the text underline decoration.
+</p></dd></dl>
+
+<dl>
+<dt><u>Function:</u> const char * <b>term_ostream_get_hyperlink_ref</b><i> (term_ostream_t&nbsp;<var>stream</var>)</i>
+<a name="IDX34"></a>
+</dt>
+<dd><p>Returns the referred URL of the currently set hyperlink, or <code>NULL</code>
+if no hyperlink attribute is currently set.
+</p>
+<p>Note: The returned string is only valid up to the next invocation of
+<code>term_ostream_set_hyperlink</code>.
+</p></dd></dl>
+
+<dl>
+<dt><u>Function:</u> const char * <b>term_ostream_get_hyperlink_id</b><i> (term_ostream_t&nbsp;<var>stream</var>)</i>
+<a name="IDX35"></a>
+</dt>
+<dd><p>Returns the id of the currently set hyperlink, or <code>NULL</code> if no
+hyperlink attribute is currently set.
+</p>
+<p>Note: The returned string is only valid up to the next invocation of
+<code>term_ostream_set_hyperlink</code>.
+</p></dd></dl>
+
+<dl>
+<dt><u>Function:</u> void <b>term_ostream_set_hyperlink</b><i> (term_ostream_t&nbsp;<var>stream</var>, const&nbsp;char&nbsp;*<var>ref</var>, const&nbsp;char&nbsp;*<var>id</var>)</i>
+<a name="IDX36"></a>
+</dt>
+<dd><p>Sets or removes a hyperlink attribute.
+</p>
+<p>To set a hyperlink attribute, pass a non-<code>NULL</code> <var>ref</var>.
+<var>ref</var> is an URL; it should be at most 2083 bytes long.  Non-ASCII
+characters should be URI-escaped (using the %nn syntax).  <var>id</var> is
+an optional identifier.  Multiple hyperlinks with the same <var>id</var>
+will be highlighted together.  If specified, <var>id</var> should be at most
+250 bytes long.
+</p>
+<p>To remove a hyperlink attribute, pass <code>NULL</code> for <var>ref</var> and <var>id</var>.
+</p>
+<p>Hyperlinks don't nest.  That is, a hyperlink attribute is enabled only
+up to the next invocation of <code>styled_ostream_set_hyperlink</code>.
+</p></dd></dl>
+
+<dl>
+<dt><u>Function:</u> void <b>term_ostream_flush_to_current_style</b><i> (term_ostream_t&nbsp;<var>stream</var>)</i>
+<a name="IDX37"></a>
+</dt>
+<dd><p>This function acts like <code>ostream_flush (<var>stream</var>, FLUSH_THIS_STREAM)</code>,
+except that it leaves the terminal with the current text attributes enabled,
+instead of with the default text attributes.
+</p>
+<p>After calling this function, you can output strings without newlines(!) to the
+underlying file descriptor, and they will be rendered like strings passed to
+<code>ostream_write_mem</code>, <code>ostream_write_str</code>, or <code>ostream_printf</code>.
+</p></dd></dl>
+
+
+<a name="The-html_005fostream-class"></a>
+<a name="SEC28"></a>
+<h4 class="subsubsection"> <a href="libtextstyle_toc.html#TOC28">3.5.3.4 The <code>html_ostream</code> class</a> </h4>
+
+<p>The <code>html_ostream</code> class supports output to any destination, in HTML
+syntax.  Its type is &lsquo;<samp>html_ostream_t</samp>&rsquo;.  It is a subclass of
+&lsquo;<samp>ostream_t</samp>&rsquo;.
+</p>
+<p>It can be instantiated through this function:
+</p>
+<dl>
+<dt><u>Function:</u> html_ostream_t <b>html_ostream_create</b><i> (ostream_t&nbsp;<var>destination</var>)</i>
+<a name="IDX38"></a>
+</dt>
+<dd><p>Creates an output stream that takes input in the UTF-8 encoding and
+writes it in HTML form on <code><var>destination</var></code>.
+</p>
+<p>This stream produces a sequence of lines.  The caller is responsible for
+opening the <code>&lt;body&gt;&lt;html&gt;</code> elements before and for closing them
+after the use of this stream.
+</p>
+<p>Note: The resulting stream must be closed before <code><var>destination</var></code>
+can be closed.
+</p></dd></dl>
+
+<p>The class adds the following methods:
+</p>
+<dl>
+<dt><u>Function:</u> void <b>html_ostream_begin_span</b><i> (html_ostream_t&nbsp;<var>stream</var>, const&nbsp;char&nbsp;*<var>classname</var>)</i>
+<a name="IDX39"></a>
+</dt>
+<dd><p>Starts a <code>&lt;span class=&quot;<var>classname</var>&quot;&gt;</code> element.  The
+<code><var>classname</var></code> is the name of a CSS class.  It can be chosen
+arbitrarily and customized through the CSS file.
+</p></dd></dl>
+
+<dl>
+<dt><u>Function:</u> void <b>html_ostream_end_span</b><i> (html_ostream_t&nbsp;<var>stream</var>, const&nbsp;char&nbsp;*<var>classname</var>)</i>
+<a name="IDX40"></a>
+</dt>
+<dd><p>Ends a <code>&lt;span class=&quot;<var>classname</var>&quot;&gt;</code> element.
+</p>
+<p>The <code>html_ostream_begin_span</code> / <code>html_ostream_end_span</code> calls
+must match properly.
+</p></dd></dl>
+
+<dl>
+<dt><u>Function:</u> const char * <b>html_ostream_get_hyperlink_ref</b><i> (html_ostream_t&nbsp;<var>stream</var>)</i>
+<a name="IDX41"></a>
+</dt>
+<dd><p>Returns the referred URL of the currently set hyperlink, or <code>NULL</code>
+if no hyperlink attribute is currently set.
+</p>
+<p>Note: The returned string is only valid up to the next invocation of
+<code>html_ostream_set_hyperlink_ref</code>.
+</p></dd></dl>
+
+<dl>
+<dt><u>Function:</u> void <b>html_ostream_set_hyperlink_ref</b><i> (html_ostream_t&nbsp;<var>stream</var>, const&nbsp;char&nbsp;*<var>ref</var>)</i>
+<a name="IDX42"></a>
+</dt>
+<dd><p>Sets or removes a hyperlink attribute.
+</p>
+<p>To set a hyperlink attribute, pass a non-<code>NULL</code> <var>ref</var>.
+<var>ref</var> is an URL; it should be at most 2083 bytes long.  Non-ASCII
+characters should be URI-escaped (using the %nn syntax).
+</p>
+<p>To remove a hyperlink attribute, pass <code>NULL</code> for <var>ref</var>.
+</p>
+<p>Hyperlinks don't nest.  That is, a hyperlink attribute is enabled only
+up to the next invocation of <code>html_ostream_set_hyperlink_ref</code>.
+</p></dd></dl>
+
+<dl>
+<dt><u>Function:</u> void <b>html_ostream_flush_to_current_style</b><i> (html_ostream_t&nbsp;<var>stream</var>)</i>
+<a name="IDX43"></a>
+</dt>
+<dd><p>This function acts like <code>ostream_flush (<var>stream</var>, FLUSH_THIS_STREAM)</code>,
+except that it leaves the destination with the current text style enabled,
+instead of with the default text style.
+</p>
+<p>After calling this function, you can output strings without newlines(!) to the
+underlying stream, and they will be rendered like strings passed to
+<code>ostream_write_mem</code>, <code>ostream_write_str</code>, or <code>ostream_printf</code>.
+</p></dd></dl>
+
+
+<a name="The-memory_005fostream-class"></a>
+<a name="SEC29"></a>
+<h4 class="subsubsection"> <a href="libtextstyle_toc.html#TOC29">3.5.3.5 The <code>memory_ostream</code> class</a> </h4>
+
+<p>The <code>memory_ostream</code> class supports output to an in-memory buffer.
+Its type is &lsquo;<samp>memory_ostream_t</samp>&rsquo;.  It is a subclass of
+&lsquo;<samp>ostream_t</samp>&rsquo;.
+</p>
+<p>It can be instantiated through this function:
+</p>
+<dl>
+<dt><u>Function:</u> memory_ostream_t <b>memory_ostream_create</b><i> (void)</i>
+<a name="IDX44"></a>
+</dt>
+<dd><p>Creates an output stream that accumulates the output in a memory buffer.
+</p></dd></dl>
+
+<p>The class adds the following method:
+</p>
+<dl>
+<dt><u>Function:</u> void <b>memory_ostream_contents</b><i> (memory_ostream_t&nbsp;<var>stream</var>, const&nbsp;void&nbsp;**<var>bufp</var>, size_t&nbsp;*<var>buflenp</var>)</i>
+<a name="IDX45"></a>
+</dt>
+<dd><p>Returns a pointer to the output accumulated so far and its size.  It
+stores them in <code>*<var>bufp</var></code> and <code>*<var>buflenp</var></code>, respectively.
+</p>
+<p>Note: These two return values become invalid when more output is done to
+the stream or when the stream is freed.
+</p></dd></dl>
+
+
+<a name="The-iconv_005fostream-class"></a>
+<a name="SEC30"></a>
+<h4 class="subsubsection"> <a href="libtextstyle_toc.html#TOC30">3.5.3.6 The <code>iconv_ostream</code> class</a> </h4>
+
+<p>The <code>iconv_ostream</code> class supports output to any destination.  Its
+type is &lsquo;<samp>iconv_ostream_t</samp>&rsquo;.  It is a subclass of &lsquo;<samp>ostream_t</samp>&rsquo;
+that adds no methods.
+</p>
+<p>It can be instantiated through this function:
+</p>
+<dl>
+<dt><u>Function:</u> iconv_ostream_t <b>iconv_ostream_create</b><i> (const&nbsp;char&nbsp;*<var>from_encoding</var>, const&nbsp;char&nbsp;*<var>to_encoding</var>, ostream_t&nbsp;<var>destination</var>)</i>
+<a name="IDX46"></a>
+</dt>
+<dd><p>Creates an output stream that converts from <code><var>from_encoding</var></code> to
+<code><var>to_encoding</var></code>, writing the result to <code><var>destination</var></code>.
+</p>
+<p>Note: The resulting stream must be closed before <code><var>destination</var></code>
+can be closed.
+</p></dd></dl>
+
+
+<a name="styled_005fostream-subclasses"></a>
+<a name="SEC31"></a>
+<h3 class="subsection"> <a href="libtextstyle_toc.html#TOC31">3.5.4 Concrete <code>styled_ostream</code> subclasses</a> </h3>
+
+
+
+<a name="The-term_005fstyled_005fostream-class"></a>
+<a name="SEC32"></a>
+<h4 class="subsubsection"> <a href="libtextstyle_toc.html#TOC32">3.5.4.1 The <code>term_styled_ostream</code> class</a> </h4>
+
+<p>The <code>term_styled_ostream</code> class supports styled output to a file
+descriptor that is connected to a terminal emulator or console.  Its type
+is &lsquo;<samp>term_styled_ostream_t</samp>&rsquo;.  It is a subclass of
+&lsquo;<samp>styled_ostream_t</samp>&rsquo;.
+</p>
+<p>It can be instantiated through this function:
+</p>
+<dl>
+<dt><u>Function:</u> term_styled_ostream_t <b>term_styled_ostream_create</b><i> (int&nbsp;<var>fd</var>, const&nbsp;char&nbsp;*<var>filename</var>, ttyctl_t&nbsp;<var>tty_control</var>, const&nbsp;char&nbsp;*<var>css_filename</var>)</i>
+<a name="IDX47"></a>
+</dt>
+<dd><p>Creates an output stream referring to the file descriptor <code><var>fd</var></code>,
+styled with the file <code><var>css_filename</var></code>.
+</p>
+<p><code><var>filename</var></code> is used only for error messages.
+</p>
+<p><code><var>tty_control</var></code> specifies the amount of control to take over the
+underlying tty.
+</p>
+<p>Note: The resulting stream must be closed before <code><var>fd</var></code> can be
+closed.
+</p>
+<p>Returns <code>NULL</code> upon failure.
+</p></dd></dl>
+
+<p>The following is a variant of this function.  Upon failure, it does not
+return <code>NULL</code>; instead, it returns a styled <code>fd_stream</code> on
+which the styling operations exist but are no-ops.
+</p>
+<dl>
+<dt><u>Function:</u> styled_ostream_t <b>styled_ostream_create</b><i> (int&nbsp;<var>fd</var>, const&nbsp;char&nbsp;*<var>filename</var>, ttyctl_t&nbsp;<var>tty_control</var>, const&nbsp;char&nbsp;*<var>css_filename</var>)</i>
+<a name="IDX48"></a>
+</dt>
+<dd><p>Creates an output stream referring to the file descriptor <code><var>fd</var></code>,
+styled with the file <code><var>css_filename</var></code> if possible.
+</p>
+<p><code><var>filename</var></code> is used only for error messages.
+</p>
+<p><code><var>tty_control</var></code> specifies the amount of control to take over the
+underlying tty.
+</p>
+<p>Note: The resulting stream must be closed before <code><var>fd</var></code> can be
+closed.
+</p></dd></dl>
+
+
+<a name="The-html_005fstyled_005fostream-class"></a>
+<a name="SEC33"></a>
+<h4 class="subsubsection"> <a href="libtextstyle_toc.html#TOC33">3.5.4.2 The <code>html_styled_ostream</code> class</a> </h4>
+
+<p>The <code>html_styled_ostream</code> class supports styled output to any
+destination, in HTML syntax.  Its type is &lsquo;<samp>html_styled_ostream_t</samp>&rsquo;.
+It is a subclass of &lsquo;<samp>styled_ostream_t</samp>&rsquo;.
+</p>
+<p>It can be instantiated through this function:
+</p>
+<dl>
+<dt><u>Function:</u> html_styled_ostream_t <b>html_styled_ostream_create</b><i> (ostream_t&nbsp;<var>destination</var>, const&nbsp;char&nbsp;*<var>css_filename</var>)</i>
+<a name="IDX49"></a>
+</dt>
+<dd><p>Creates an output stream that takes input in the UTF-8 encoding and
+writes it in HTML form on <code><var>destination</var></code>, styled with the file
+<code><var>css_filename</var></code>.
+</p>
+<p>Note: The resulting stream must be closed before <code><var>destination</var></code>
+can be closed.
+</p></dd></dl>
+
+
+<a name="The-noop_005fstyled_005fostream-class"></a>
+<a name="SEC34"></a>
+<h4 class="subsubsection"> <a href="libtextstyle_toc.html#TOC34">3.5.4.3 The <code>noop_styled_ostream</code> class</a> </h4>
+
+<p>The <code>noop_styled_ostream</code> class supports the styled output operations
+to any destination.  The text is output to the given destination; the
+styling operations, however, do nothing.  Its type is
+&lsquo;<samp>noop_styled_ostream_t</samp>&rsquo;.  It is a subclass of &lsquo;<samp>styled_ostream_t</samp>&rsquo;.
+</p>
+<p>It can be instantiated through this function:
+</p>
+<dl>
+<dt><u>Function:</u> noop_styled_ostream_t <b>noop_styled_ostream_create</b><i> (ostream_t&nbsp;<var>destination</var>, bool&nbsp;<var>pass_ownership</var>)</i>
+<a name="IDX50"></a>
+</dt>
+<dd><p>Creates an output stream that delegates to <code><var>destination</var></code> and
+that supports the styling operations as no-ops.
+</p>
+<p>If <code><var>pass_ownership</var></code> is <code>true</code>, closing the resulting
+stream will automatically close the <code><var>destination</var></code>.
+</p>
+<p>Note: If <code><var>pass_ownership</var></code> is <code>false</code>, the resulting stream
+must be closed before <code><var>destination</var></code> can be closed.
+</p></dd></dl>
+
+
+<a name="Debugging-the-styling-code"></a>
+<a name="SEC35"></a>
+<h2 class="section"> <a href="libtextstyle_toc.html#TOC35">3.6 Debugging the text styling support</a> </h2>
+
+<p>If you want to understand which output of your program is associated with
+which CSS classes, the simplest way is as follows:
+</p>
+<ol>
+<li>
+Run the program with the command-line option <code>--color=html</code>,
+redirecting the output to a file.
+</li><li>
+Then inspect this output.  Text regions associated with a CSS class are
+surrounded by <code>&lt;span class=&quot;<var>css-class</var>&quot;&gt;</code>...<code>&lt;/span&gt;</code>.
+</li></ol>
+
+
+<a name="What-to-document"></a>
+<a name="SEC36"></a>
+<h2 class="section"> <a href="libtextstyle_toc.html#TOC36">3.7 Documenting the text styling support</a> </h2>
+
+<p>To make the text styling support available to the end user of your
+package, the following need to be documented:
+</p><ul>
+<li>
+The command-line options.  This typically needs to be done in several
+places: in the &lsquo;<samp>--help</samp>&rsquo; output, in the <code>man</code> pages (if present),
+and in the documentation.
+</li><li>
+Which programs support &lsquo;<samp>--color=test</samp>&rsquo;?
+</li><li>
+The list of CSS classes and their meaning.  This is necessary, so that
+the user can create their own style file; the CSS classes are part of the
+selectors in the CSS rules.
+</li><li>
+The location of the default style file.  This is a convenience, so that
+the user, when creating their own style file, can start from the default
+one.
+</li><li>
+The environment variable, called <code><var>style_file_envvar</var></code> above,
+that, when set to a non-empty value, specifies the style file to use.
+</li></ul>
+
+
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC15" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="libtextstyle_4.html#SEC37" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="libtextstyle_toc.html#SEC_Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="libtextstyle_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="libtextstyle_5.html#SEC45" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="libtextstyle_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<p>
+ <font size="-1">
+  This document was generated by <em>Bruno Haible</em> on <em>October, 9 2022</em> using <a href="https://www.nongnu.org/texi2html/"><em>texi2html 1.78a</em></a>.
+ </font>
+ <br>
+
+</p>
+</body>
+</html>

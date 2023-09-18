@@ -1,0 +1,17 @@
+This example relies on:
+  - a recent Java implementation
+    (i.e. when using Sun's JDK: at least JDK 1.5)
+  - the Qt4/Java binding (libqtjambi)
+  - Qt4 (libQtGui, libQtCore) and its dependencies: libpng, zlib (libz)
+  - the C++ runtime libraries (libstdc++)
+
+Installation:
+  ./autogen.sh
+  export LD_LIBRARY_PATH=<directory with libqtjambi and libQt*.so.4>
+  export CLASSPATH=.:.../qtjambi.jar:.../libintl.jar
+  ./configure --prefix=/some/prefix
+  make
+  make install
+Cleanup:
+  make distclean
+  ./autoclean.sh

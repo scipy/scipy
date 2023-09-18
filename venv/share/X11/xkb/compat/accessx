@@ -1,0 +1,52 @@
+default partial xkb_compatibility "basic" {
+    interpret AccessX_Enable {
+	action= LockControls(controls=AccessXKeys);
+    };
+};
+
+partial xkb_compatibility "full" {
+
+    interpret AccessX_Enable {
+	action= LockControls(controls=AccessXKeys);
+    };
+
+    interpret AccessX_Feedback_Enable {
+	action= LockControls(controls=AccessXFeedback);
+    };
+
+    interpret RepeatKeys_Enable {
+	action= LockControls(controls=RepeatKeys);
+    };
+
+    interpret SlowKeys_Enable {
+	action= LockControls(controls=SlowKeys);
+    };
+
+    interpret BounceKeys_Enable {
+	action= LockControls(controls=BounceKeys);
+    };
+
+    interpret StickyKeys_Enable {
+	action= LockControls(controls=StickyKeys);
+    };
+
+    interpret MouseKeys_Enable {
+	action= LockControls(controls=MouseKeys);
+    };
+
+    interpret MouseKeys_Accel_Enable {
+	action= LockControls(controls=MouseKeysAccel);
+    };
+
+    interpret Overlay1_Enable {
+	action= LockControls(controls=Overlay1);
+    };
+
+    interpret Overlay2_Enable {
+	action= LockControls(controls=Overlay2);
+    };
+
+    interpret AudibleBell_Enable {
+	action= LockControls(controls=AudibleBell);
+    };
+};

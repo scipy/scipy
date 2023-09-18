@@ -1,0 +1,44 @@
+/**
+ * Icon links in the navbar
+ */
+
+#navbar-icon-links {
+  i {
+    &.fa,
+    &.fab,
+    &.far,
+    &.fas {
+      vertical-align: middle;
+      font-style: normal;
+      font-size: 1.5rem;
+      line-height: 1.25;
+    }
+
+    /* Social media buttons */
+    &.fa-twitter-square:before {
+      color: #55acee;
+    }
+
+    &.fa-gitlab:before {
+      color: #548;
+    }
+
+    &.fa-bitbucket:before {
+      color: #0052cc;
+    }
+  }
+
+  img.icon-link-image {
+    height: 1.5em;
+    border-radius: 0.2rem;
+  }
+
+  // inline the element in the navbar as long as they fit and use display block when colapsing
+  @include media-breakpoint-down(md) {
+    flex-direction: row;
+
+    a {
+      margin-right: 0.1em;
+    }
+  }
+}

@@ -1,0 +1,27 @@
+# Test get-job-attributes by sending a print job, getting the attributes,
+# and cancelling it.
+{
+	# The name of the test...
+	NAME "Get job info with get-job-attributes"
+
+	# The resource to use for the POST
+	# RESOURCE /admin
+
+	# The operation to use
+	OPERATION get-job-attributes
+
+	# Attributes, starting in the operation group...
+	GROUP operation
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+	ATTR uri job-uri $uri
+#	ATTR keyword requested-attributes job-media-sheets-completed,job-state
+
+	# What statuses are OK?
+	#STATUS successful-ok
+	#STATUS successful-ok-ignored-or-substituted-attributes
+
+	# What attributes do we expect?
+	EXPECT job-uri
+	EXPECT job-state
+}

@@ -1,0 +1,53 @@
+.\" Created from Texinfo source by yat2m 1.0
+.TH HMAC256 1 2022-04-09 "Libgcrypt 1.10.1" "Libgcrypt"
+.SH NAME
+.B hmac256
+\- Compute an HMAC-SHA-256 MAC
+.SH SYNOPSIS
+.B  hmac256
+.RB [ \-\-binary ]
+.I key
+.I [FILENAME]
+
+.SH DESCRIPTION
+This is a standalone HMAC-SHA-256 implementation used to compute an
+HMAC-SHA-256 message authentication code.  The tool has originally
+been developed as a second implementation for Libgcrypt to allow
+comparing against the primary implementation and to be used for
+internal consistency checks.  It should not be used for sensitive data
+because no mechanisms to clear the stack etc are used.
+
+The code has been written in a highly portable manner and requires
+only a few standard definitions to be provided in a config.h file.
+
+
+\fBhmac256\fR is commonly invoked as
+
+.RS 2
+.nf
+hmac256 "This is my key" foo.txt
+.fi
+.RE
+
+
+This compute the MAC on the file \(oq\fIfoo.txt\fR\(cq using the key given on
+the command line.
+
+.SH OPTIONS
+
+\fBhmac256\fR understands these options:
+
+
+.TP
+.B  --binary
+Print the MAC as a binary string.  The default is to print the MAC
+encoded as lower case hex digits.
+
+.TP
+.B  --version
+Print version of the program and exit.
+
+.P
+
+.SH SEE ALSO
+\fBsha256sum\fR(1)

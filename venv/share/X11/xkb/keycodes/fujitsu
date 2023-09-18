@@ -1,0 +1,186 @@
+//
+//Copyright 1996, 1998  The Open Group
+//
+//Permission to use, copy, modify, distribute, and sell this software and its
+//documentation for any purpose is hereby granted without fee, provided that
+//the above copyright notice appear in all copies and that both that
+//copyright notice and this permission notice appear in supporting
+//documentation.
+//
+//The above copyright notice and this permission notice shall be
+//included in all copies or substantial portions of the Software.
+//
+//THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+//EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+//MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+//IN NO EVENT SHALL THE OPEN GROUP BE LIABLE FOR ANY CLAIM, DAMAGES OR
+//OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+//ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+//OTHER DEALINGS IN THE SOFTWARE.
+//
+//Except as contained in this notice, the name of The Open Group shall
+//not be used in advertising or otherwise to promote the sale, use or
+//other dealings in this Software without prior written authorization
+//from The Open Group.
+//
+default xkb_keycodes "138" {
+
+    minimum= 8;
+    maximum= 255;
+
+    <ESC>  = 37;
+    <AE01> = 38;
+    <AE02> = 39;
+    <AE03> = 40;
+    <AE04> = 41;
+    <AE05> = 42;
+    <AE06> = 43;
+    <AE07> = 44;
+    <AE08> = 45;
+    <AE09> = 46;
+    <AE10> = 47;
+    <AE11> = 48;
+    <AE12> = 49;
+    <TLDE> = 50;
+    <BKSP> = 51;
+
+    <TAB>  = 61;
+    <AD01> = 62;
+    <AD02> = 63;
+    <AD03> = 64;
+    <AD04> = 65;
+    <AD05> = 66;
+    <AD06> = 67;
+    <AD07> = 68;
+    <AD08> = 69;
+    <AD09> = 70;
+    <AD10> = 71;
+    <AD11> = 72;
+    <AD12> = 73;
+
+    <LCTL> = 84;
+    <AC01> = 85;
+    <AC02> = 86;
+    <AC03> = 87;
+    <AC04> = 88;
+    <AC05> = 89;
+    <AC06> = 90;
+    <AC07> = 91;
+    <AC08> = 92;
+    <AC09> = 93;
+    <AC10> = 94;
+    <AC11> = 95;
+    <BKSL> = 96;
+    <RTRN> = 97;
+
+    <LFSH> = 107;
+    <AB01> = 108;
+    <AB02> = 109;
+    <AB03> = 110;
+    <AB04> = 111;
+    <AB05> = 112;
+    <AB06> = 113;
+    <AB07> = 114;
+    <AB08> = 115;
+    <AB09> = 116;
+    <AB10> = 117;
+    <AB11> = 52;
+    <RTSH> = 118;
+
+    <CAPS> = 127;
+    <LALT> = 27;
+    <LMTA> = 128;
+    <UNK4> = 125;
+    <SPCE> = 129;
+    <UNK5> = 10;
+    <RMTA> = 130;
+    <RALT> = 23;
+    <COMP> = 75;
+    <LNFD> = 119;
+    <UNK6> = 56;
+
+    <FK01> = 13;
+    <FK02> = 14;
+    <FK03> = 16;
+    <FK04> = 18;
+    <FK05> = 20;
+    <FK06> = 22;
+    <FK07> = 24;
+    <FK08> = 25;
+    <FK09> = 26;
+    <FK10> = 15;
+    <FK11> = 17;
+    <FK12> = 19;
+    <FK13> = 137;
+    <FK14> = 138;
+    <FK15> = 139;
+    <FK16> = 140;
+    <FK17> = 141;
+    <FK18> = 142;
+    <FK19> = 143;
+    <FK20> = 144;
+    <FK21> = 145;
+    <FK22> = 146;
+    <FK23> = 147;
+    <FK24> = 148;
+    <FK25> = 153;
+    <FK26> = 154;
+    <FK27> = 155;
+    <FK28> = 156;
+    <FK29> = 149;
+    <FK30> = 150;
+    <FK31> = 151;
+    <FK32> = 152;
+
+    <UNDO> = 34;
+    <COPY> = 59;
+    <PAST> = 81;
+     <CUT> = 105;
+    <HELP> = 126;
+
+    <BREA> = 9;
+    <PRSC> = 30;
+    <KNJI> = 21;
+    <PAUS> = 29;
+
+    <UNK0> = 82;
+    <UNK1> = 83;
+    <UNK2> = 12;
+    <PGUP> = 35;
+    <HOME> = 32;
+    <PGDN> = 36;
+    <UNK3> = 28;
+     <DEL> = 74;
+     <INS> = 60;
+      <UP> = 33;
+    <DOWN> = 103;
+    <LEFT> = 57;
+    <RGHT> = 80;
+    <EXEC> = 11;
+
+    <KPMU> = 55;
+    <KPDV> = 54;
+    <KPAD> = 133;
+    <KPSU> = 79;
+
+    <KP7>  = 76;
+    <KP8>  = 77;
+    <KP9>  = 78;
+    <KPEQ> = 53;
+
+    <KP4>  = 99;
+    <KP5>  = 100;
+    <KP6>  = 101;
+    <KPDC> = 58;
+
+    <KP1>  = 120;
+    <KP2>  = 121;
+    <KP3>  = 122;
+    <KPEN> = 98;
+
+    <KP0>  = 102;
+    <KP00> = 31;
+
+    <UNK7> = 123;
+    <UNK8> = 124;
+};

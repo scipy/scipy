@@ -1,0 +1,99 @@
+escape_char /
+comment_char %
+% English language locale for Antigua and Barbuda.
+% Contributed by Ulrich Drepper <drepper@redhat.com>, 2008
+
+LC_IDENTIFICATION
+title      "English language locale for Antigua and Barbuda"
+source     "Free Software Foundation, Inc."
+address    "59 Temple Place - Suite 330, Boston, MA 02111-1307, USA"
+contact    ""
+email      "bug-glibc-locales@gnu.org"
+tel        ""
+fax        ""
+language   "English"
+territory  "Antigua and Barbuda"
+revision   "1.0"
+date       "2008-09-16"
+%
+category  "en_AG:2008";LC_IDENTIFICATION
+category  "en_AG:2008";LC_CTYPE
+category  "en_AG:2008";LC_COLLATE
+category  "en_AG:2008";LC_TIME
+category  "en_AG:2008";LC_NUMERIC
+category  "en_AG:2008";LC_MONETARY
+category  "en_AG:2008";LC_MESSAGES
+category  "en_AG:2008";LC_PAPER
+category  "en_AG:2008";LC_NAME
+category  "en_AG:2008";LC_ADDRESS
+category  "en_AG:2008";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_CTYPE
+copy "en_GB"
+END LC_CTYPE
+
+LC_COLLATE
+copy "en_GB"
+END LC_COLLATE
+
+LC_MONETARY
+int_curr_symbol     "<U0058><U0043><U0044><U0020>"
+currency_symbol     "<U0024>"
+mon_decimal_point   "<U002E>"
+mon_thousands_sep   "<U002C>"
+mon_grouping        3;3
+positive_sign       ""
+negative_sign       "<U002D>"
+int_frac_digits     2
+frac_digits         2
+p_cs_precedes       1
+p_sep_by_space      0
+n_cs_precedes       1
+n_sep_by_space      0
+p_sign_posn         1
+n_sign_posn         1
+END LC_MONETARY
+
+LC_NUMERIC
+copy "en_GB"
+END LC_NUMERIC
+
+LC_TIME
+copy "en_GB"
+END LC_TIME
+
+LC_MESSAGES
+copy "en_GB"
+END LC_MESSAGES
+
+LC_PAPER
+copy "en_US"
+END LC_PAPER
+
+LC_NAME
+copy "en_GB"
+END LC_NAME
+
+LC_ADDRESS
+postal_fmt    "<U0025><U0066><U0025><U004E><U0025><U0061><U0025><U004E>/
+<U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E><U0025><U0073>/
+<U0020><U0025><U0068><U0020><U0025><U0065><U0020><U0025><U0072><U0025>/
+<U004E><U0025><U0025><U007A><U0020><U0025><U0054><U0025>/
+<U004E><U0025><U0063><U0025><U004E>"
+country_ab2   "<U0041><U0047>"
+country_ab3   "<U0041><U0054><U0047>"
+country_num   28
+END LC_ADDRESS
+
+LC_TELEPHONE
+tel_int_fmt    "<U002B><U0025><U0063><U0020><U0025><U0061><U0020><U0025>/
+<U006C>"
+int_prefix     "<U0031>"
+int_select     "<U0030><U0031><U0031>"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+copy "en_US"
+END LC_MEASUREMENT

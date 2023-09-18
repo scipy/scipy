@@ -1,0 +1,599 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html401/loose.dtd">
+<html>
+<!-- Created on October, 9 2022 by texi2html 1.78a -->
+<!--
+Written by: Lionel Cons <Lionel.Cons@cern.ch> (original author)
+            Karl Berry  <karl@freefriends.org>
+            Olaf Bachmann <obachman@mathematik.uni-kl.de>
+            and many others.
+Maintained by: Many creative people.
+Send bugs and suggestions to <texi2html-bug@nongnu.org>
+
+-->
+<head>
+<title>GNU gettext utilities: 16. Other Data Formats</title>
+
+<meta name="description" content="GNU gettext utilities: 16. Other Data Formats">
+<meta name="keywords" content="GNU gettext utilities: 16. Other Data Formats">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="texi2html 1.78a">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+pre.display {font-family: serif}
+pre.format {font-family: serif}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: serif; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: serif; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.roman {font-family:serif; font-weight:normal;}
+span.sansserif {font-family:sans-serif; font-weight:normal;}
+ul.toc {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="gettext_15.html#SEC262" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="gettext_17.html#SEC362" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_21.html#SEC387" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+
+<hr size="2">
+<a name="Data-Formats"></a>
+<a name="SEC338"></a>
+<h1 class="chapter"> <a href="gettext_toc.html#TOC332">16. Other Data Formats</a> </h1>
+
+<p>While the GNU gettext tools deal mainly with POT and PO files, they can
+also manipulate a couple of other data formats.
+</p>
+
+
+<a name="Internationalizable-Data"></a>
+<a name="SEC339"></a>
+<h2 class="section"> <a href="gettext_toc.html#TOC333">16.1 Internationalizable Data Formats</a> </h2>
+
+<p>Here is a list of other data formats which can be internationalized
+using GNU gettext.
+</p>
+
+
+<a name="POT"></a>
+<a name="SEC340"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC334">16.1.1 POT - Portable Object Template</a> </h3>
+
+<dl compact="compact">
+<dt> RPMs</dt>
+<dd><p>gettext
+</p>
+</dd>
+<dt> Ubuntu packages</dt>
+<dd><p>gettext
+</p>
+</dd>
+<dt> File extension</dt>
+<dd><p><code>pot</code>, <code>po</code>
+</p>
+</dd>
+<dt> Extractor</dt>
+<dd><p><code>xgettext</code>
+</p></dd>
+</dl>
+
+
+<a name="RST"></a>
+<a name="SEC341"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC335">16.1.2 Resource String Table</a> </h3>
+
+<p>RST is the format of resource string table files of the Free Pascal compiler
+versions older than 3.0.0.  RSJ is the new format of resource string table
+files, created by the Free Pascal compiler version 3.0.0 or newer.
+</p>
+<dl compact="compact">
+<dt> RPMs</dt>
+<dd><p>fpk
+</p>
+</dd>
+<dt> Ubuntu packages</dt>
+<dd><p>fp-compiler
+</p>
+</dd>
+<dt> File extension</dt>
+<dd><p><code>rst</code>, <code>rsj</code>
+</p>
+</dd>
+<dt> Extractor</dt>
+<dd><p><code>xgettext</code>, <code>rstconv</code>
+</p></dd>
+</dl>
+
+
+<a name="Glade"></a>
+<a name="SEC342"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC336">16.1.3 Glade - GNOME user interface description</a> </h3>
+
+<dl compact="compact">
+<dt> RPMs</dt>
+<dd><p>glade, libglade, glade2, libglade2, intltool
+</p>
+</dd>
+<dt> Ubuntu packages</dt>
+<dd><p>glade, libglade2-dev, intltool
+</p>
+</dd>
+<dt> File extension</dt>
+<dd><p><code>glade</code>, <code>glade2</code>, <code>ui</code>
+</p>
+</dd>
+<dt> Extractor</dt>
+<dd><p><code>xgettext</code>, <code>libglade-xgettext</code>, <code>xml-i18n-extract</code>, <code>intltool-extract</code>
+</p></dd>
+</dl>
+
+
+<a name="GSettings"></a>
+<a name="SEC343"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC337">16.1.4 GSettings - GNOME user configuration schema</a> </h3>
+
+<dl compact="compact">
+<dt> RPMs</dt>
+<dd><p>glib2
+</p>
+</dd>
+<dt> Ubuntu packages</dt>
+<dd><p>libglib2.0-dev
+</p>
+</dd>
+<dt> File extension</dt>
+<dd><p><code>gschema.xml</code>
+</p>
+</dd>
+<dt> Extractor</dt>
+<dd><p><code>xgettext</code>, <code>intltool-extract</code>
+</p></dd>
+</dl>
+
+
+<a name="AppData"></a>
+<a name="SEC344"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC338">16.1.5 AppData - freedesktop.org application description</a> </h3>
+
+<p>This file format is specified in
+<a href="https://www.freedesktop.org/software/appstream/docs/">https://www.freedesktop.org/software/appstream/docs/</a>.
+</p>
+<dl compact="compact">
+<dt> RPMs</dt>
+<dd><p>appdata-tools, appstream, libappstream-glib, libappstream-glib-builder
+</p>
+</dd>
+<dt> Ubuntu packages</dt>
+<dd><p>appdata-tools, appstream, libappstream-glib-dev
+</p>
+</dd>
+<dt> File extension</dt>
+<dd><p><code>appdata.xml</code>, <code>metainfo.xml</code>
+</p>
+</dd>
+<dt> Extractor</dt>
+<dd><p><code>xgettext</code>, <code>intltool-extract</code>, <code>itstool</code>
+</p></dd>
+</dl>
+
+
+<a name="Preparing-ITS-Rules"></a>
+<a name="SEC345"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC339">16.1.6 Preparing Rules for XML Internationalization</a> </h3>
+
+<p>Marking translatable strings in an XML file is done through a separate
+&quot;rule&quot; file, making use of the Internationalization Tag Set standard
+(ITS, <a href="https://www.w3.org/TR/its20/">https://www.w3.org/TR/its20/</a>).  The currently supported ITS
+data categories are: &lsquo;<samp>Translate</samp>&rsquo;, &lsquo;<samp>Localization Note</samp>&rsquo;,
+&lsquo;<samp>Elements Within Text</samp>&rsquo;, and &lsquo;<samp>Preserve Space</samp>&rsquo;.  In addition to
+them, <code>xgettext</code> also recognizes the following extended data
+categories:
+</p>
+<dl compact="compact">
+<dt> &lsquo;<samp>Context</samp>&rsquo;</dt>
+<dd>
+<p>This data category associates <code>msgctxt</code> to the extracted text.  In
+the global rule, the <code>contextRule</code> element contains the following:
+</p>
+<ul class="toc">
+<li>
+A required <code>selector</code> attribute.  It contains an absolute selector
+that selects the nodes to which this rule applies.
+
+</li><li>
+A required <code>contextPointer</code> attribute that contains a relative
+selector pointing to a node that holds the <code>msgctxt</code> value.
+
+</li><li>
+An optional <code>textPointer</code> attribute that contains a relative
+selector pointing to a node that holds the <code>msgid</code> value.
+</li></ul>
+
+</dd>
+<dt> &lsquo;<samp>Escape Special Characters</samp>&rsquo;</dt>
+<dd>
+<p>This data category indicates whether the special XML characters
+(<code>&lt;</code>, <code>&gt;</code>, <code>&amp;</code>, <code>&quot;</code>) are escaped with entity
+reference.  In the global rule, the <code>escapeRule</code> element contains
+the following:
+</p>
+<ul class="toc">
+<li>
+A required <code>selector</code> attribute.  It contains an absolute selector
+that selects the nodes to which this rule applies.
+
+</li><li>
+A required <code>escape</code> attribute with the value <code>yes</code> or <code>no</code>.
+</li></ul>
+
+</dd>
+<dt> &lsquo;<samp>Extended Preserve Space</samp>&rsquo;</dt>
+<dd>
+<p>This data category extends the standard &lsquo;<samp>Preserve Space</samp>&rsquo; data
+category with the additional values &lsquo;<samp>trim</samp>&rsquo; and &lsquo;<samp>paragraph</samp>&rsquo;.
+&lsquo;<samp>trim</samp>&rsquo; means to remove the leading and trailing whitespaces of the
+content, but not to normalize whitespaces in the middle.
+&lsquo;<samp>paragraph</samp>&rsquo; means to normalize the content but keep the paragraph
+boundaries.  In the global
+rule, the <code>preserveSpaceRule</code> element contains the following:
+</p>
+<ul class="toc">
+<li>
+A required <code>selector</code> attribute.  It contains an absolute selector
+that selects the nodes to which this rule applies.
+
+</li><li>
+A required <code>space</code> attribute with the value <code>default</code>,
+<code>preserve</code>, <code>trim</code>, or <code>paragraph</code>.
+</li></ul>
+
+</dd>
+</dl>
+
+<p>All those extended data categories can only be expressed with global
+rules, and the rule elements have to have the
+<code>https://www.gnu.org/s/gettext/ns/its/extensions/1.0</code> namespace.
+</p>
+<p>Given the following XML document in a file &lsquo;<tt>messages.xml</tt>&rsquo;:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;messages&gt;
+  &lt;message&gt;
+    &lt;p&gt;A translatable string&lt;/p&gt;
+  &lt;/message&gt;
+  &lt;message&gt;
+    &lt;p translatable=&quot;no&quot;&gt;A non-translatable string&lt;/p&gt;
+  &lt;/message&gt;
+&lt;/messages&gt;
+</pre></td></tr></table>
+
+<p>To extract the first text content (&quot;A translatable string&quot;), but not the
+second (&quot;A non-translatable string&quot;), the following ITS rules can be used:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;its:rules xmlns:its=&quot;http://www.w3.org/2005/11/its&quot; version=&quot;1.0&quot;&gt;
+  &lt;its:translateRule selector=&quot;/messages&quot; translate=&quot;no&quot;/&gt;
+  &lt;its:translateRule selector=&quot;//message/p&quot; translate=&quot;yes&quot;/&gt;
+
+  &lt;!-- If 'p' has an attribute 'translatable' with the value 'no', then
+       the content is not translatable.  --&gt;
+  &lt;its:translateRule selector=&quot;//message/p[@translatable = 'no']&quot;
+    translate=&quot;no&quot;/&gt;
+&lt;/its:rules&gt;
+</pre></td></tr></table>
+
+<p>&lsquo;<samp>xgettext</samp>&rsquo; needs another file called &quot;locating rule&quot; to associate
+an ITS rule with an XML file.  If the above ITS file is saved as
+&lsquo;<tt>messages.its</tt>&rsquo;, the locating rule would look like:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;locatingRules&gt;
+  &lt;locatingRule name=&quot;Messages&quot; pattern=&quot;*.xml&quot;&gt;
+    &lt;documentRule localName=&quot;messages&quot; target=&quot;messages.its&quot;/&gt;
+  &lt;/locatingRule&gt;
+  &lt;locatingRule name=&quot;Messages&quot; pattern=&quot;*.msg&quot; target=&quot;messages.its&quot;/&gt;
+&lt;/locatingRules&gt;
+</pre></td></tr></table>
+
+<p>The <code>locatingRule</code> element must have a <code>pattern</code> attribute,
+which denotes either a literal file name or a wildcard pattern of the
+XML file<a name="DOCF7" href="gettext_fot.html#FOOT7">(7)</a>.  The <code>locatingRule</code> element can have child
+<code>documentRule</code> element, which adds checks on the content of the XML
+file.
+</p>
+<p>The first rule matches any file with the &lsquo;<tt>.xml</tt>&rsquo; file extension, but
+it only applies to XML files whose root element is &lsquo;<samp>&lt;messages&gt;</samp>&rsquo;.
+</p>
+<p>The second rule indicates that the same ITS rule file are also
+applicable to any file with the &lsquo;<tt>.msg</tt>&rsquo; file extension.  The
+optional <code>name</code> attribute of <code>locatingRule</code> allows to choose
+rules by name, typically with <code>xgettext</code>'s <code>-L</code> option.
+</p>
+<p>The associated ITS rule file is indicated by the <code>target</code> attribute
+of <code>locatingRule</code> or <code>documentRule</code>.  If it is specified in a
+<code>documentRule</code> element, the parent <code>locatingRule</code> shouldn't
+have the <code>target</code> attribute.
+</p>
+<p>Locating rule files must have the &lsquo;<tt>.loc</tt>&rsquo; file extension.  Both ITS
+rule files and locating rule files must be installed in the
+&lsquo;<tt>$prefix/share/gettext/its</tt>&rsquo; directory.  Once those files are
+properly installed, <code>xgettext</code> can extract translatable strings
+from the matching XML files.
+</p>
+
+<a name="SEC346"></a>
+<h4 class="subsubsection"> <a href="gettext_toc.html#TOC340">16.1.6.1 Two Use-cases of Translated Strings in XML</a> </h4>
+
+<p>For XML, there are two use-cases of translated strings.  One is the case
+where the translated strings are directly consumed by programs, and the
+other is the case where the translated strings are merged back to the
+original XML document.  In the former case, special characters in the
+extracted strings shouldn't be escaped, while they should in the latter
+case.  To control wheter to escape special characters, the &lsquo;<samp>Escape
+Special Characters</samp>&rsquo; data category can be used.
+</p>
+<p>To merge the translations, the &lsquo;<samp>msgfmt</samp>&rsquo; program can be used with
+the option <code>--xml</code>.  See section <a href="gettext_10.html#SEC173">Invoking the <code>msgfmt</code> Program</a>, for more details
+about how one calls the &lsquo;<samp>msgfmt</samp>&rsquo; program.  &lsquo;<samp>msgfmt</samp>&rsquo;'s
+<code>--xml</code> option doesn't perform character escaping, so translated
+strings can have arbitrary XML constructs, such as elements for markup.
+</p>
+
+
+<a name="Localized-Data"></a>
+<a name="SEC347"></a>
+<h2 class="section"> <a href="gettext_toc.html#TOC341">16.2 Localized Data Formats</a> </h2>
+
+<p>Here is a list of file formats that contain localized data and that the
+GNU gettext tools can manipulate.
+</p>
+
+
+<a name="Editable-Message-Catalogs"></a>
+<a name="SEC348"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC342">16.2.1 Editable Message Catalogs</a> </h3>
+
+<p>These file formats can be used with all of the <code>msg*</code> tools and with
+the <code>xgettext</code> program.
+</p>
+<p>If you just want to convert among these formats, you can use the
+<code>msgcat</code> program (with the appropriate option) or the <code>xgettext</code>
+program.
+</p>
+
+
+<a name="PO"></a>
+<a name="SEC349"></a>
+<h4 class="subsubsection"> <a href="gettext_toc.html#TOC343">16.2.1.1 PO - Portable Object</a> </h4>
+
+<dl compact="compact">
+<dt> File extension</dt>
+<dd><p><code>po</code>
+</p></dd>
+</dl>
+
+
+<a name="Java-_002eproperties"></a>
+<a name="SEC350"></a>
+<h4 class="subsubsection"> <a href="gettext_toc.html#TOC344">16.2.1.2 Java .properties</a> </h4>
+
+<dl compact="compact">
+<dt> File extension</dt>
+<dd><p><code>properties</code>
+</p></dd>
+</dl>
+
+
+<a name="GNUstep-_002estrings"></a>
+<a name="SEC351"></a>
+<h4 class="subsubsection"> <a href="gettext_toc.html#TOC345">16.2.1.3 NeXTstep/GNUstep .strings</a> </h4>
+
+<dl compact="compact">
+<dt> File extension</dt>
+<dd><p><code>strings</code>
+</p></dd>
+</dl>
+
+
+<a name="Compiled-Message-Catalogs"></a>
+<a name="SEC352"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC346">16.2.2 Compiled Message Catalogs</a> </h3>
+
+<p>These file formats can be created through <code>msgfmt</code> and converted back
+to PO format through <code>msgunfmt</code>.
+</p>
+
+
+<a name="MO"></a>
+<a name="SEC353"></a>
+<h4 class="subsubsection"> <a href="gettext_toc.html#TOC347">16.2.2.1 MO - Machine Object</a> </h4>
+
+<dl compact="compact">
+<dt> File extension</dt>
+<dd><p><code>mo</code>
+</p></dd>
+</dl>
+
+<p>See section <a href="gettext_10.html#SEC195">The Format of GNU MO Files</a> for details.
+</p>
+
+<a name="Java-ResourceBundle"></a>
+<a name="SEC354"></a>
+<h4 class="subsubsection"> <a href="gettext_toc.html#TOC348">16.2.2.2 Java ResourceBundle</a> </h4>
+
+<dl compact="compact">
+<dt> File extension</dt>
+<dd><p><code>class</code>
+</p></dd>
+</dl>
+
+<p>For more information, see the section <a href="gettext_15.html#SEC297">Java</a> and the examples
+<code>hello-java</code>, <code>hello-java-awt</code>, <code>hello-java-swing</code>.
+</p>
+
+<a name="C_0023-Satellite-Assembly"></a>
+<a name="SEC355"></a>
+<h4 class="subsubsection"> <a href="gettext_toc.html#TOC349">16.2.2.3 C# Satellite Assembly</a> </h4>
+
+<dl compact="compact">
+<dt> File extension</dt>
+<dd><p><code>dll</code>
+</p></dd>
+</dl>
+
+<p>For more information, see the section <a href="gettext_15.html#SEC298">C#</a>.
+</p>
+
+<a name="C_0023-Resource"></a>
+<a name="SEC356"></a>
+<h4 class="subsubsection"> <a href="gettext_toc.html#TOC350">16.2.2.4 C# Resource</a> </h4>
+
+<dl compact="compact">
+<dt> File extension</dt>
+<dd><p><code>resources</code>
+</p></dd>
+</dl>
+
+<p>For more information, see the section <a href="gettext_15.html#SEC298">C#</a>.
+</p>
+
+<a name="Tcl-message-catalog"></a>
+<a name="SEC357"></a>
+<h4 class="subsubsection"> <a href="gettext_toc.html#TOC351">16.2.2.5 Tcl message catalog</a> </h4>
+
+<dl compact="compact">
+<dt> File extension</dt>
+<dd><p><code>msg</code>
+</p></dd>
+</dl>
+
+<p>For more information, see the section <a href="gettext_15.html#SEC323">Tcl - Tk's scripting language</a> and the examples
+<code>hello-tcl</code>, <code>hello-tcl-tk</code>.
+</p>
+
+<a name="Qt-message-catalog"></a>
+<a name="SEC358"></a>
+<h4 class="subsubsection"> <a href="gettext_toc.html#TOC352">16.2.2.6 Qt message catalog</a> </h4>
+
+<dl compact="compact">
+<dt> File extension</dt>
+<dd><p><code>qm</code>
+</p></dd>
+</dl>
+
+<p>For more information, see the examples <code>hello-c++-qt</code> and
+<code>hello-c++-kde</code>.
+</p>
+
+<a name="Desktop-Entry"></a>
+<a name="SEC359"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC353">16.2.3 Desktop Entry files</a> </h3>
+
+<p>The programmer produces a desktop entry file template with only the
+English strings.  These strings get included in the POT file, by way of
+<code>xgettext</code> (usually by listing the template in <code>po/POTFILES.in</code>).
+The translators produce PO files, one for each language.  Finally, an
+<code>msgfmt --desktop</code> invocation collects all the translations in the
+desktop entry file.
+</p>
+<p>For more information, see the example <code>hello-c-gnome3</code>.
+</p>
+
+
+<a name="Icons"></a>
+<a name="SEC360"></a>
+<h4 class="subsubsection"> <a href="gettext_toc.html#TOC354">16.2.3.1 How to handle icons in Desktop Entry files</a> </h4>
+
+<p>Icons are generally locale dependent, for the following reasons:
+</p>
+<ul>
+<li>
+Icons may contain signs that are considered rude in some cultures.  For
+example, the high-five sign, in some cultures, is perceived as an
+unfriendly &ldquo;stop&rdquo; sign.
+</li><li>
+Icons may contain metaphors that are culture specific.  For example, a
+mailbox in the U.S. looks different than mailboxes all around the world.
+</li><li>
+Icons may need to be mirrored for right-to-left locales.
+</li><li>
+Icons may contain text strings (a bad practice, but anyway).
+</li></ul>
+
+<p>However, icons are not covered by GNU gettext localization, because
+</p><ul>
+<li>
+Icons cannot be easily embedded in PO files,
+</li><li>
+The need to localize an icon is rare, and the ability to do so in a PO
+file would introduce translator mistakes.
+</li></ul>
+
+<p>Desktop Entry files may contain an &lsquo;<samp>Icon</samp>&rsquo; property, and this
+property is localizable.  If a translator wishes to localize an icon,
+she should do so by bypassing the normal workflow with PO files:
+</p><ol>
+<li>
+The translator contacts the package developers directly, sending them
+the icon appropriate for her locale, with a request to change the
+template file.
+</li><li>
+The package developers add the icon file to their repository, and a
+line
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">Icon[<var>locale</var>]=<var>icon_file_name</var>
+</pre></td></tr></table>
+<p>to the template file.
+</p></li></ol>
+<p>This line remains in place when this template file is merged with the
+translators' PO files, through <code>msgfmt</code>.
+</p>
+
+<a name="XML"></a>
+<a name="SEC361"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC355">16.2.4 XML files</a> </h3>
+
+<p>See the section <a href="#SEC345">Preparing Rules for XML Internationalization</a> and
+<a href="gettext_10.html#SEC173">Invoking the <code>msgfmt</code> Program</a>, subsection &ldquo;XML mode operations&rdquo;.
+</p>
+
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC338" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="gettext_17.html#SEC362" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_21.html#SEC387" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<p>
+ <font size="-1">
+  This document was generated by <em>Bruno Haible</em> on <em>October, 9 2022</em> using <a href="https://www.nongnu.org/texi2html/"><em>texi2html 1.78a</em></a>.
+ </font>
+ <br>
+
+</p>
+</body>
+</html>

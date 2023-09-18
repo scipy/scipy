@@ -1,0 +1,563 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Transformations: Cairo: A Vector Graphics Library</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<link rel="home" href="index.html" title="Cairo: A Vector Graphics Library">
+<link rel="up" href="cairo-drawing.html" title="Drawing">
+<link rel="prev" href="cairo-Regions.html" title="Regions">
+<link rel="next" href="cairo-text.html" title="text">
+<meta name="generator" content="GTK-Doc V1.27 (XML mode)">
+<link rel="stylesheet" href="style.css" type="text/css">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<table class="navigation" id="top" width="100%" summary="Navigation header" cellpadding="2" cellspacing="5"><tr valign="middle">
+<td width="100%" align="left" class="shortcuts">
+<a href="#" class="shortcut">Top</a><span id="nav_description">  <span class="dim">|</span> 
+                  <a href="#cairo-Transformations.description" class="shortcut">Description</a></span>
+</td>
+<td><a accesskey="h" href="index.html"><img src="home.png" width="16" height="16" border="0" alt="Home"></a></td>
+<td><a accesskey="u" href="cairo-drawing.html"><img src="up.png" width="16" height="16" border="0" alt="Up"></a></td>
+<td><a accesskey="p" href="cairo-Regions.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
+<td><a accesskey="n" href="cairo-text.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
+</tr></table>
+<div class="refentry">
+<a name="cairo-Transformations"></a><div class="titlepage"></div>
+<div class="refnamediv"><table width="100%"><tr>
+<td valign="top">
+<h2><span class="refentrytitle"><a name="cairo-Transformations.top_of_page"></a>Transformations</span></h2>
+<p>Transformations — Manipulating the current transformation matrix</p>
+</td>
+<td class="gallery_image" valign="top" align="right"></td>
+</tr></table></div>
+<div class="refsect1">
+<a name="cairo-Transformations.functions"></a><h2>Functions</h2>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="functions_return">
+<col class="functions_name">
+</colgroup>
+<tbody>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-Transformations.html#cairo-translate" title="cairo_translate ()">cairo_translate</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-Transformations.html#cairo-scale" title="cairo_scale ()">cairo_scale</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-Transformations.html#cairo-rotate" title="cairo_rotate ()">cairo_rotate</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-Transformations.html#cairo-transform" title="cairo_transform ()">cairo_transform</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-Transformations.html#cairo-set-matrix" title="cairo_set_matrix ()">cairo_set_matrix</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-Transformations.html#cairo-get-matrix" title="cairo_get_matrix ()">cairo_get_matrix</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-Transformations.html#cairo-identity-matrix" title="cairo_identity_matrix ()">cairo_identity_matrix</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-Transformations.html#cairo-user-to-device" title="cairo_user_to_device ()">cairo_user_to_device</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-Transformations.html#cairo-user-to-device-distance" title="cairo_user_to_device_distance ()">cairo_user_to_device_distance</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-Transformations.html#cairo-device-to-user" title="cairo_device_to_user ()">cairo_device_to_user</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-Transformations.html#cairo-device-to-user-distance" title="cairo_device_to_user_distance ()">cairo_device_to_user_distance</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect1">
+<a name="cairo-Transformations.description"></a><h2>Description</h2>
+<p>The current transformation matrix, <em class="firstterm">ctm</em>, is a
+two-dimensional affine transformation that maps all coordinates and other
+drawing instruments from the <em class="firstterm">user space</em> into the
+surface's canonical coordinate system, also known as the <em class="firstterm">device
+space</em>.</p>
+</div>
+<div class="refsect1">
+<a name="cairo-Transformations.functions_details"></a><h2>Functions</h2>
+<div class="refsect2">
+<a name="cairo-translate"></a><h3>cairo_translate ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_translate (<em class="parameter"><code><a class="link" href="cairo-cairo-t.html#cairo-t" title="cairo_t"><span class="type">cairo_t</span></a> *cr</code></em>,
+                 <em class="parameter"><code><span class="type">double</span> tx</code></em>,
+                 <em class="parameter"><code><span class="type">double</span> ty</code></em>);</pre>
+<p>Modifies the current transformation matrix (CTM) by translating the
+user-space origin by (<em class="parameter"><code>tx</code></em>
+, <em class="parameter"><code>ty</code></em>
+). This offset is interpreted as a
+user-space coordinate according to the CTM in place before the new
+call to <a class="link" href="cairo-Transformations.html#cairo-translate" title="cairo_translate ()"><code class="function">cairo_translate()</code></a>. In other words, the translation of the
+user-space origin takes place after any existing transformation.</p>
+<div class="refsect3">
+<a name="cairo-translate.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>cr</p></td>
+<td class="parameter_description"><p>a cairo context</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>tx</p></td>
+<td class="parameter_description"><p>amount to translate in the X direction</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>ty</p></td>
+<td class="parameter_description"><p>amount to translate in the Y direction</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.0</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-scale"></a><h3>cairo_scale ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_scale (<em class="parameter"><code><a class="link" href="cairo-cairo-t.html#cairo-t" title="cairo_t"><span class="type">cairo_t</span></a> *cr</code></em>,
+             <em class="parameter"><code><span class="type">double</span> sx</code></em>,
+             <em class="parameter"><code><span class="type">double</span> sy</code></em>);</pre>
+<p>Modifies the current transformation matrix (CTM) by scaling the X
+and Y user-space axes by <em class="parameter"><code>sx</code></em>
+ and <em class="parameter"><code>sy</code></em>
+ respectively. The scaling of
+the axes takes place after any existing transformation of user
+space.</p>
+<div class="refsect3">
+<a name="cairo-scale.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>cr</p></td>
+<td class="parameter_description"><p>a cairo context</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>sx</p></td>
+<td class="parameter_description"><p>scale factor for the X dimension</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>sy</p></td>
+<td class="parameter_description"><p>scale factor for the Y dimension</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.0</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-rotate"></a><h3>cairo_rotate ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_rotate (<em class="parameter"><code><a class="link" href="cairo-cairo-t.html#cairo-t" title="cairo_t"><span class="type">cairo_t</span></a> *cr</code></em>,
+              <em class="parameter"><code><span class="type">double</span> angle</code></em>);</pre>
+<p>Modifies the current transformation matrix (CTM) by rotating the
+user-space axes by <em class="parameter"><code>angle</code></em>
+ radians. The rotation of the axes takes
+places after any existing transformation of user space. The
+rotation direction for positive angles is from the positive X axis
+toward the positive Y axis.</p>
+<div class="refsect3">
+<a name="cairo-rotate.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>cr</p></td>
+<td class="parameter_description"><p>a cairo context</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>angle</p></td>
+<td class="parameter_description"><p>angle (in radians) by which the user-space axes will be
+rotated</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.0</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-transform"></a><h3>cairo_transform ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_transform (<em class="parameter"><code><a class="link" href="cairo-cairo-t.html#cairo-t" title="cairo_t"><span class="type">cairo_t</span></a> *cr</code></em>,
+                 <em class="parameter"><code>const <a class="link" href="cairo-cairo-matrix-t.html#cairo-matrix-t" title="cairo_matrix_t"><span class="type">cairo_matrix_t</span></a> *matrix</code></em>);</pre>
+<p>Modifies the current transformation matrix (CTM) by applying
+<em class="parameter"><code>matrix</code></em>
+ as an additional transformation. The new transformation of
+user space takes place after any existing transformation.</p>
+<div class="refsect3">
+<a name="cairo-transform.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>cr</p></td>
+<td class="parameter_description"><p>a cairo context</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>matrix</p></td>
+<td class="parameter_description"><p>a transformation to be applied to the user-space axes</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.0</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-set-matrix"></a><h3>cairo_set_matrix ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_set_matrix (<em class="parameter"><code><a class="link" href="cairo-cairo-t.html#cairo-t" title="cairo_t"><span class="type">cairo_t</span></a> *cr</code></em>,
+                  <em class="parameter"><code>const <a class="link" href="cairo-cairo-matrix-t.html#cairo-matrix-t" title="cairo_matrix_t"><span class="type">cairo_matrix_t</span></a> *matrix</code></em>);</pre>
+<p>Modifies the current transformation matrix (CTM) by setting it
+equal to <em class="parameter"><code>matrix</code></em>
+.</p>
+<div class="refsect3">
+<a name="cairo-set-matrix.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>cr</p></td>
+<td class="parameter_description"><p>a cairo context</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>matrix</p></td>
+<td class="parameter_description"><p>a transformation matrix from user space to device space</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.0</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-get-matrix"></a><h3>cairo_get_matrix ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_get_matrix (<em class="parameter"><code><a class="link" href="cairo-cairo-t.html#cairo-t" title="cairo_t"><span class="type">cairo_t</span></a> *cr</code></em>,
+                  <em class="parameter"><code><a class="link" href="cairo-cairo-matrix-t.html#cairo-matrix-t" title="cairo_matrix_t"><span class="type">cairo_matrix_t</span></a> *matrix</code></em>);</pre>
+<p>Stores the current transformation matrix (CTM) into <em class="parameter"><code>matrix</code></em>
+.</p>
+<div class="refsect3">
+<a name="cairo-get-matrix.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>cr</p></td>
+<td class="parameter_description"><p>a cairo context</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>matrix</p></td>
+<td class="parameter_description"><p>return value for the matrix</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.0</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-identity-matrix"></a><h3>cairo_identity_matrix ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_identity_matrix (<em class="parameter"><code><a class="link" href="cairo-cairo-t.html#cairo-t" title="cairo_t"><span class="type">cairo_t</span></a> *cr</code></em>);</pre>
+<p>Resets the current transformation matrix (CTM) by setting it equal
+to the identity matrix. That is, the user-space and device-space
+axes will be aligned and one user-space unit will transform to one
+device-space unit.</p>
+<div class="refsect3">
+<a name="cairo-identity-matrix.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>cr</p></td>
+<td class="parameter_description"><p>a cairo context</p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.0</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-user-to-device"></a><h3>cairo_user_to_device ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_user_to_device (<em class="parameter"><code><a class="link" href="cairo-cairo-t.html#cairo-t" title="cairo_t"><span class="type">cairo_t</span></a> *cr</code></em>,
+                      <em class="parameter"><code><span class="type">double</span> *x</code></em>,
+                      <em class="parameter"><code><span class="type">double</span> *y</code></em>);</pre>
+<p>Transform a coordinate from user space to device space by
+multiplying the given point by the current transformation matrix
+(CTM).</p>
+<div class="refsect3">
+<a name="cairo-user-to-device.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>cr</p></td>
+<td class="parameter_description"><p>a cairo context</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>x</p></td>
+<td class="parameter_description"><p>X value of coordinate (in/out parameter)</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>y</p></td>
+<td class="parameter_description"><p>Y value of coordinate (in/out parameter)</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.0</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-user-to-device-distance"></a><h3>cairo_user_to_device_distance ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_user_to_device_distance (<em class="parameter"><code><a class="link" href="cairo-cairo-t.html#cairo-t" title="cairo_t"><span class="type">cairo_t</span></a> *cr</code></em>,
+                               <em class="parameter"><code><span class="type">double</span> *dx</code></em>,
+                               <em class="parameter"><code><span class="type">double</span> *dy</code></em>);</pre>
+<p>Transform a distance vector from user space to device space. This
+function is similar to <a class="link" href="cairo-Transformations.html#cairo-user-to-device" title="cairo_user_to_device ()"><code class="function">cairo_user_to_device()</code></a> except that the
+translation components of the CTM will be ignored when transforming
+(<em class="parameter"><code>dx</code></em>
+,<em class="parameter"><code>dy</code></em>
+).</p>
+<div class="refsect3">
+<a name="cairo-user-to-device-distance.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>cr</p></td>
+<td class="parameter_description"><p>a cairo context</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>dx</p></td>
+<td class="parameter_description"><p>X component of a distance vector (in/out parameter)</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>dy</p></td>
+<td class="parameter_description"><p>Y component of a distance vector (in/out parameter)</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.0</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-device-to-user"></a><h3>cairo_device_to_user ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_device_to_user (<em class="parameter"><code><a class="link" href="cairo-cairo-t.html#cairo-t" title="cairo_t"><span class="type">cairo_t</span></a> *cr</code></em>,
+                      <em class="parameter"><code><span class="type">double</span> *x</code></em>,
+                      <em class="parameter"><code><span class="type">double</span> *y</code></em>);</pre>
+<p>Transform a coordinate from device space to user space by
+multiplying the given point by the inverse of the current
+transformation matrix (CTM).</p>
+<div class="refsect3">
+<a name="cairo-device-to-user.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>cr</p></td>
+<td class="parameter_description"><p>a cairo</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>x</p></td>
+<td class="parameter_description"><p>X value of coordinate (in/out parameter)</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>y</p></td>
+<td class="parameter_description"><p>Y value of coordinate (in/out parameter)</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.0</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-device-to-user-distance"></a><h3>cairo_device_to_user_distance ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_device_to_user_distance (<em class="parameter"><code><a class="link" href="cairo-cairo-t.html#cairo-t" title="cairo_t"><span class="type">cairo_t</span></a> *cr</code></em>,
+                               <em class="parameter"><code><span class="type">double</span> *dx</code></em>,
+                               <em class="parameter"><code><span class="type">double</span> *dy</code></em>);</pre>
+<p>Transform a distance vector from device space to user space. This
+function is similar to <a class="link" href="cairo-Transformations.html#cairo-device-to-user" title="cairo_device_to_user ()"><code class="function">cairo_device_to_user()</code></a> except that the
+translation components of the inverse CTM will be ignored when
+transforming (<em class="parameter"><code>dx</code></em>
+,<em class="parameter"><code>dy</code></em>
+).</p>
+<div class="refsect3">
+<a name="cairo-device-to-user-distance.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>cr</p></td>
+<td class="parameter_description"><p>a cairo context</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>dx</p></td>
+<td class="parameter_description"><p>X component of a distance vector (in/out parameter)</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>dy</p></td>
+<td class="parameter_description"><p>Y component of a distance vector (in/out parameter)</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.0</p>
+</div>
+</div>
+<div class="refsect1">
+<a name="cairo-Transformations.other_details"></a><h2>Types and Values</h2>
+</div>
+<div class="refsect1">
+<a name="cairo-Transformations.see-also"></a><h2>See Also</h2>
+<p><a class="link" href="cairo-cairo-matrix-t.html#cairo-matrix-t" title="cairo_matrix_t"><span class="type">cairo_matrix_t</span></a></p>
+</div>
+</div>
+<div class="footer">
+<hr>Generated by GTK-Doc V1.27</div>
+</body>
+</html>

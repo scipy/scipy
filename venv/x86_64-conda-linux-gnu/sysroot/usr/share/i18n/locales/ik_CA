@@ -1,0 +1,235 @@
+escape_char /
+comment_char %
+%
+% Inupiaq language locale for Canada
+% Source: 
+% Contact: Pablo Saratxaga
+% Email: pablo@mandriva.com
+% Language: ik
+% Territory: CA
+% Revision: 0.2
+% Date: 2004-08-01
+% Users: general
+% Charset: UTF-8
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title      "Inupiaq locale for Canada"
+source     ""
+address    ""
+contact    ""
+email      "pablo@mandriva.com"
+tel        ""
+fax        ""
+language   "Inupiaq"
+territory  "Canada"
+revision   "0.2"
+date       "2004-08-01"
+%
+category  "ik_CA:2000";LC_IDENTIFICATION
+category  "ik_CA:2000";LC_CTYPE
+category  "ik_CA:2000";LC_COLLATE
+category  "ik_CA:2000";LC_TIME
+category  "ik_CA:2000";LC_NUMERIC
+category  "ik_CA:2000";LC_MONETARY
+category  "ik_CA:2000";LC_MESSAGES
+category  "ik_CA:2000";LC_PAPER
+category  "ik_CA:2000";LC_NAME
+category  "ik_CA:2000";LC_ADDRESS
+category  "ik_CA:2000";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_COLLATE
+
+% Inupiaq uses the following extra letters: 
+% gdotabove, ldotbelow, lbarred, lbarreddotbelow (not in unicode,
+% has to be composed as lbarred+composingdotbelow), eng, ntilde
+%
+% sorting order from
+% http://www.nsbsd.org/anep/public/index.cfm/17,459,html
+% however I'm not
+% sure if all letters are to be considered as separate items for
+% sorting purposes...
+%
+% order: a, [b], [c], ch, [d], [e], [f], g, g., h, i, [j], k, l,
+% l/, l-., l/-., m, n, n?, ng, [o], p, q, r, s, sr, t, u, v, [w],
+% [x], y, [z]
+
+copy "iso14651_t1"
+
+collating-symbol  <c-h-ik>
+collating-element <C-H> from "<U0043><U0048>"
+collating-element <c-h> from "<U0063><U0068>"
+collating-element <C-h> from "<U0043><U0068>"
+collating-element <c-H> from "<U0063><U0048>"
+collating-symbol  <s-r-ik>
+collating-element <S-R> from "<U0053><U0052>"
+collating-element <s-r> from "<U0073><U0072>"
+collating-element <S-r> from "<U0053><U0072>"
+collating-element <s-R> from "<U0073><U0052>"
+collating-symbol  <l-dotbelow-ik>
+collating-element <L-dot> from "<U004C><U0323>"
+collating-element <l-dot> from "<U006C><U0323>"
+collating-symbol  <lbar-dotbelow-ik>
+collating-element <Lbar-dot> from "<U0141><U0323>"
+collating-element <lbar-dot> from "<U0142><U0323>"
+collating-symbol  <gdot>
+collating-symbol  <lbar>
+collating-symbol  <ntilde>
+collating-symbol  <eng>
+
+collating-symbol <CAP-MIN>
+collating-symbol <MIN-CAP>
+ 
+reorder-after <MIN>
+<MIN-CAP>
+ 
+reorder-after <CAP>
+<CAP-MIN>
+
+reorder-after <c>
+<c-h-ik>
+reorder-after <g>
+<gdot>
+reorder-after <l>
+<lbar>
+<l-dotbelow-ik>
+<lbar-dotbelow-ik>
+reorder-after <n>
+<ntilde>
+<eng>
+reorder-after <s>
+<s-r-ik>
+
+reorder-after <U0063>
+<c-h>   <c-h-ik>;<PCT>;<MIN>;IGNORE
+<c-H>   <c-h-ik>;<PCT>;<MIN-CAP>;IGNORE
+reorder-after <U0043>
+<C-H>   <c-h-ik>;<PCT>;<CAP>;IGNORE
+<C-h>   <c-h-ik>;<PCT>;<CAP-MIN>;IGNORE
+
+reorder-after <U0067>
+<U0121>   <gdot>;<PCT>;<MIN>;IGNORE
+reorder-after <U0047>
+<U0120>   <gdot>;<PCT>;<CAP>;IGNORE
+
+reorder-after <U006C>
+<U0142> <lbar>;<BAS>;<MIN>;IGNORE
+<l-dot> <l-dotbelow-ik>;<PCT>;<MIN>;IGNORE
+<U1E37> <l-dotbelow-ik>;<PCT>;<MIN>;IGNORE
+<U1E39> <l-dotbelow-ik>;<PCT>;<MIN>;IGNORE
+<lbar-dot> <lbar-dotbelow-ik>;<PCT>;<MIN>;IGNORE
+reorder-after <U004C>
+<U0141> <lbar>;<BAS>;<CAP>;IGNORE
+<L-dot> <l-dotbelow-ik>;<PCT>;<CAP>;IGNORE
+<U1E36> <l-dotbelow-ik>;<PCT>;<CAP>;IGNORE
+<U1E38> <l-dotbelow-ik>;<PCT>;<CAP>;IGNORE
+<Lbar-dot> <lbar-dotbelow-ik>;<PCT>;<CAP>;IGNORE
+
+reorder-after <U006E>
+<U00F1> <ntilde>;<TIL>;<MIN>;IGNORE
+<U014B> <eng>;<PCL>;<MIN>;IGNORE
+reorder-after <U004E>
+<U00D1> <ntilde>;<TIL>;<CAP>;IGNORE
+<U014A> <eng>;<PCL>;<CAP>;IGNORE
+
+reorder-after <U0073>
+<s-r>   <s-r-ik>;<PCT>;<MIN>;IGNORE
+<s-R>   <s-r-ik>;<PCT>;<MIN-CAP>;IGNORE
+reorder-after <U0053>
+<S-R>   <s-r-ik>;<PCT>;<CAP>;IGNORE
+<S-r>   <s-r-ik>;<PCT>;<CAP-MIN>;IGNORE
+
+ 
+reorder-end
+
+END LC_COLLATE
+
+LC_CTYPE
+copy "en_CA"
+END LC_CTYPE
+
+LC_MONETARY
+copy "en_CA"
+END LC_MONETARY
+
+LC_NUMERIC
+copy "en_CA"
+END LC_NUMERIC
+
+LC_TELEPHONE
+copy "en_CA"
+END LC_TELEPHONE
+ 
+LC_TIME
+abday       "<U004D><U0069><U006E>";"<U0053><U0061><U0076>";/
+            "<U0049><U006C><U0061>";"<U0051><U0069><U0074>";/
+            "<U0053><U0069><U0073>";"<U0054><U0061><U006C>";/
+            "<U004D><U0061><U0071>"
+day         "<U004D><U0069><U006E><U0121><U0075><U0069><U0071><U0073><U0069><U006F><U0069><U0071>";/
+            "<U0053><U0061><U0076><U0061><U0142><U0142><U0069><U0071>";/
+            "<U0049><U006C><U0061><U0071><U0074><U0063><U0068><U0069><U0069><U006F><U0069><U0071>";/
+            "<U0051><U0069><U0074><U0063><U0068><U0069><U0069><U006F><U0069><U0071>";/
+            "<U0053><U0069><U0073><U0061><U006D><U0069><U0069><U006F><U0069><U0071>";/
+            "<U0054><U0061><U006C><U006C><U0069><U006D><U006D><U0069><U0069><U006F><U0069><U0071>";/
+            "<U004D><U0061><U0071><U0069><U006E><U0121><U0075><U006F><U0069><U0071>"
+abmon       "<U0053><U00F1><U0074>";"<U0053><U00F1><U0073>";/
+            "<U0050><U0061><U006E>";"<U0051><U0069><U006C>";/
+            "<U0053><U0075><U0070>";"<U0049><U0121><U00F1>";/
+            "<U0049><U0074><U0063>";"<U0054><U0069><U00F1>";/
+            "<U0041><U006D><U0069>";"<U0053><U0069><U006B>";/
+            "<U004E><U0069><U0070>";"<U0053><U0069><U0071>"
+mon         "<U0053><U0069><U0071><U0069><U00F1><U00F1><U0061><U0061><U0074><U0063><U0068><U0069><U0061><U0071>";/
+            "<U0053><U0069><U0071><U0069><U00F1><U00F1><U0061><U0061><U0073><U0072><U0075><U0067><U0072><U0075><U006B>";/
+            "<U0050><U0061><U006E><U0069><U0071><U0073><U0069><U0071><U0073><U0069><U0069><U0076><U0069><U006B>";/
+            "<U0051><U0069><U006C><U0121><U0069><U0063><U0068><U0020><U0054><U0061><U0074><U0071><U0069><U0061><U0074>";/
+            "<U0053><U0075><U0070><U0070><U0069><U0076><U0069><U006B>";/
+            "<U0049><U0121><U00F1><U0069><U0076><U0069><U006B>";/
+            "<U0049><U0074><U0063><U0068><U0061><U0076><U0069><U006B>";/
+            "<U0054><U0069><U00F1><U00F1><U0069><U0076><U0069><U006B>";/
+            "<U0041><U006D><U0069><U0121><U0061><U0069><U0071><U0073><U0069><U0076><U0069><U006B>";/
+            "<U0053><U0069><U006B><U006B><U0075><U0076><U0069><U006B>";/
+            "<U004E><U0069><U0070><U0070><U0069><U0076><U0069><U006B>";/
+            "<U0053><U0069><U0071><U0069><U00F1><U0121><U0069><U1E37><U0061><U0071>"
+d_t_fmt     "<U0025><U0061><U0020><U0025><U0064><U0020><U0025><U0062><U0020><U0025><U0059><U0020><U0025><U0072><U0020><U0025><U005A>"
+d_fmt       "<U0025><U0064><U002F><U0025><U006D><U002F><U0025><U0079>"
+t_fmt       "<U0025><U0072>"
+am_pm       "<U0041><U004D>";"<U0050><U004D>"
+t_fmt_ampm  "<U0025><U0049><U003A><U0025><U004D><U003A><U0025><U0053><U0020><U0025><U0070>"
+END LC_TIME
+
+LC_MESSAGES
+yesstr      "<U0061><U0061>"
+nostr       "<U0071><U0061><U00F1><U0061><U0061>"
+yesexpr     "<U005B><U0079><U0059><U0069><U0049><U0061><U0041><U005D><U002E><U002A>"
+noexpr      "<U005B><U006E><U004E><U0071><U0051><U005D><U002E><U002A>"
+END LC_MESSAGES
+
+LC_PAPER
+copy "en_CA"
+END LC_PAPER
+
+% Metric System (ISO 1000)
+LC_MEASUREMENT
+measurement 1
+END LC_MEASUREMENT
+
+LC_NAME
+% FIXME
+copy "en_CA"
+END LC_NAME
+
+LC_ADDRESS
+% FIXME
+postal_fmt    "<U0025><U0066><U0025><U004E><U0025><U0061><U0025><U004E>/
+<U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E><U0025><U0073>/
+<U0020><U0025><U0068><U0020><U0025><U0065><U0020><U0025><U0072><U0025>/
+<U004E><U0025><U007A><U0020><U0025><U0054><U0025>/
+<U004E><U0025><U0063><U0025><U004E>"
+country_ab2 "<U0043><U0041>"
+country_ab3 "<U0043><U0041><U004E>"
+country_num 124
+END LC_ADDRESS
+

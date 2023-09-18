@@ -1,0 +1,6 @@
+#ifndef QT_QT3DQUICK_MODULE_H
+#define QT_QT3DQUICK_MODULE_H
+#include <Qt3DQuick/Qt3DQuickDepends>
+#include "qqmlaspectengine.h"
+#include "qt3dquickversion.h"
+#endif

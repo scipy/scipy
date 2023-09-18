@@ -1,0 +1,364 @@
+// Keyboard layouts for Cameroon.
+
+// Cameroon is officially a bilingual country, using French and English, but there are over 270 minority languages.
+// The XKB versions of the French and English keyboards were developed by Matthew Lee, Jenni Beadle, and Bruce Cox
+// of SIL Cameroon in association with Going Komputya, Uwe Yung of the Goethe Institute, Yaoundé, and Centre ANACLAC.
+
+// Cameroon QWERTY and Cameroon AZERTY are based largely on SIL Cameroon's Keyman and Microsoft keyboards of the
+// same style already in wide use.  These keyboards are designed to allow the user to type any of Cameroon's 270+
+// languages and dialects that use the approved orthography.  This Approved Orthography was adopted in 1979 by the
+// National Committee for the Unification and Harmonisation of Alphabets of Camerooninan Languages.
+
+default partial alphanumeric_keys
+xkb_symbols "basic"
+{
+	include "us(basic)"
+	name[Group1]="English (Cameroon)";
+};
+
+partial alphanumeric_keys
+xkb_symbols "french"
+{
+	include "fr(basic)"
+	name[Group1]="French (Cameroon)";
+};
+
+// == Cameroon AZERTY ==
+// Cameroon AZERTY uses the French AZERTY layout, as French keyboards are widely used here. While this keyboard is designed for
+// Cameroonian orthography, it still is possible (but not recommended) to type French with minimal discomfort using this keyboard.
+// Cameroon AZERTY uses the "!" (exclamation) key as the "Cameroon" key. Pressing this key before another key allows you to access
+// the special letters and diacritics needed in Cameroonian orthography.
+// For example, press "!" then "a" and get "ɛ" (small epsilon). "!" then "Shift" + "a" (A) will get an "Ɛ" (capital epsilon).
+// Press the "!" key twice to get a "!".
+// If you prefer, you can hold the AltGr key to access the same letters, but we have found this to be much more awkward in practice.
+// If you really don't like our Cameroon key, simply comment out "include "cm(exclamation_switch)"" and the exclamation key will
+// return to normal.
+// All Diacritics (with the exception of French Trema and Circumflex) must be typed (in order of stacking) after the letter.
+
+partial alphanumeric_keys
+xkb_symbols "azerty"
+{
+	include "cm(basic)"
+	name[Group1] = "Cameroon (AZERTY, intl.)";
+	key <AB01> { [ w, W, U1E85, U1E84 ] };	//  SMALL LETTER W,  CAPITAL LETTER W, SMALL LETTER W WITH DIAERESIS, CAPITAL LETTER W WITH DIAERESIS
+	key <AB02> { [ x, X, U2039, U203A ] };	// SMALL LETTER X, CAPITAL LETTER X, SINGLE LEFT-POINTING ANGLE QUOTATION MARK, SINGLE RIGHT-POINTING ANGLE QUOTATION MARK
+	key <AB03> { [ c, C, U0327, copyright ] };	// SMALL LETTER C, CAPITAL LETTER C, COMBINING CEDILLA, COPYRIGHT SIGN
+	key <AB04> { [ v, V, UA78C, UA78B ] };	// SMALL LETTER V, CAPITAL LETTER V, SMALL LETTER GLOTTAL (SALTILLO), CAPITAL LETTER GLOTTAL (SALTILLO)
+	key <AB05> { [ b, B, U0253, U0181 ] };	// SMALL LETTER B, CAPITAL LETTER B, SMALL LETTER B WITH HOOK, CAPITAL LETTER B WITH HOOK
+	key <AB06> { [ n, N, U014B, U014A ] };	// SMALL LETTER N, CAPITAL LETTER N, SMALL LETTER ENG, CAPITAL LETTER ENG
+	key <AB07> { [ U002C, U003F, NoSymbol, U00D7 ] };	// COMMA, QUESTION MARK, , MULTIPLY
+	key <AB08> { [ semicolon, period, dead_acute, dead_grave ] };	// SEMICOLON, PERIOD
+	key <AB09> { [ colon, slash, U0323 ] };	// COLON, SLASH, COMBINING DOT BELOW
+	key <AB10> { [ exclam, U00A7 ] };	// EXCLAMATION MARK, SECTION SIGN
+	key <AC01> { [ q, Q, U2014, U2013 ] };	// SMALL LETTER Q, CAPITAL LETTER Q, EM DASH, EN DASH
+	key <AC02> { [ s, S, U201C, U201D ] };	// SMALL LETTER S, CAPITAL LETTER S, LEFT DOUBLE QUOTES, RIGHT DOUBLE QUOTES 
+	key <AC03> { [ d, D, U0257, U018A ] };	// SMALL LETTER D, CAPITAL LETTER D, SMALL LETTER D WITH HOOK, CAPITAL LETTER D WITH HOOK
+	key <AC04> { [ f, F, U00E6, U00C6 ] };	// SMALL LETTER F, CAPITAL LETTER F, SMALL LIGATURE AE, CAPITAL LIGATURE AE
+	key <AC05> { [ g, G, U02BC, UA78B ] };	// SMALL LETTER G, CAPITAL LETTER G, CURVED GLOTTAL, CAPITAL LETTER GLOTTAL (SALTILLO)
+	key <AC06> { [ h, H, U0251, U2C6D ] };	// SMALL LETTER H, CAPITAL LETTER H, SMALL LETTER ALPHA, CAPITAL LETTER ALPHA
+	key <AC07> { [ j, J, leftarrow, U2122 ] };	//SMALL LETTER J, CAPITAL LETTER J, LEFT ARROW, TRADE MARK SIGN
+	key <AC08> { [ k, K, downarrow, uparrow ] };	// SMALL LETTER K, CAPITAL LETTER K, DOWN ARROW, UP ARROW
+	key <AC09> { [ l, L, rightarrow, U00A3 ] };	// SMALL LETTER L, CAPITAL LETTER L, RIGHT ARROW, POUND STERLING
+	key <AC10> { [ m, M, U00F9, U00B5 ] };	// SMALL LETTER M, CAPITAL LETTER M, SMALL LETTER U WITH GRAVE, MICRO SYMBOL
+	key <AC11> { [ U0300, U0302, U1DC5, U1DC4 ] };	// COMBINING LOW TONE, COMBINING FALLING TONE, COMBINING LOW-MID TONE, COMBINING MID-HIGH TONE
+	key <AD01> { [ a, A, U025B, U0190 ] };	// SMALL LETTER A, CAPITAL LETTER A, SMALL LETTER OPEN E, CAPITAL LETTER OPEN E
+	key <AD02> { [ z, Z, U2026, U2020 ] };	// SMALL LETTER Z, CAPITAL LETTER Z, ELLIPSIS, DAGGER
+	key <AD03> { [ e, E, U0259, U018F ] };	// SMALL LETTER E, CAPITAL LETTER E, SMALL LETTER SCHWA, CAPITAL LETTER SCHWA
+	key <AD04> { [ r, R, U25CC, U00AE ] };	// SMALL LETTER R, CAPITAL LETTER R, PLACEHOLDER SYMBOL, REGISTERED SIGN
+	key <AD05> { [ t, T, U0153, U0152 ] };	// SMALL LETTER T, CAPITAL LETTER T, SMALL LIGATURE OE, CAPITAL LIGATURE OE
+	key <AD06> { [ y, Y, U01B4, U01B3 ] };	// SMALL LETTER Y, CAPITAL LETTER Y, SMALL LETTER Y WITH HOOK, CAPITAL LETTER Y WITH HOOK
+	key <AD07> { [ u, U, U0289, U0244 ] };	// SMALL LETTER U, CAPITAL LETTER U, SMALL LETTER U BAR, CAPITAL LETTER U BAR
+	key <AD08> { [ i, I, U0268, U0197 ] };	// SMALL LETTER I, CAPITAL LETTER I, SMALL LETTER I BAR, CAPITAL LETTER I BAR
+	key <AD09> { [ o, O, U0254, U0186 ] };	// SMALL LETTER O, CAPITAL LETTER O, SMALL LETTER OPEN O, CAPITAL LETTER OPEN O
+	key <AD10> { [ p, P, U00F8, U00D8 ] };	// SMALL LETTER P, CAPITAL LETTER P, SMALL LETTER O BAR, CAPITAL LETTER O BAR
+	key <AD11> { [ U0301, U030C, dead_circumflex, dead_diaeresis ] };	// COMBINING HIGH TONE, COMBINING RISING TONE, DEAD CIRCUMFLEX, DEAD DIAERESIS
+	key <AD12> { [ U0330, U0303, U0304, U030D ] };	// COMBINING TILDE (NASAL) BELOW, COMBINING TILDE (NASAL), COMBINING MID TONE, COMBINING VERTICAL LINE ABOVE
+	key <AE01> { [ U0026, KP_1, U00B9, U2018 ] };	// AMPERSAND, 1, SUPERSCRIPT 1, LEFT SINGLE QUOTE
+	key <AE02> { [ eacute, KP_2, asciitilde, U2019 ] };	// SMALL LETTER E WITH ACUTE, 2, TILDE, RIGHT SINGLE QUOTE
+	key <AE03> { [ U0022, KP_3, U0025 ] };	// QUOTATION MARK, 3, PERCENT SIGN
+	key <AE04> { [ U0027, KP_4, U007B ] };	// APOSTROPHE, 4, LEFT CURLY BRACKET
+	key <AE05> { [ U0028, KP_5, U005B, numbersign ] };	// LEFT PARENTHESIS, 5, LEFT SQUARE BRACKET, NUMBER SIGN
+	key <AE06> { [ U002D, KP_6, U007C ] };	// HYPHEN/MINUS, 6, BAR
+	key <AE07> { [ U00E8, KP_7, U0300 ] };	// SMALL LETTER E WITH GRAVE, 7, COMBINING GRAVE
+	key <AE08> { [ underscore, KP_8, backslash, U20D6 ] };	// UNDERSCORE, 8, BACKSLASH, COMBINING LEFT ARROW ABOVE
+	key <AE09> { [ ccedilla, KP_9, U005E] };	// SMALL LETTER C WITH CEDILLA, 9, CIRCUMFLEX
+	key <AE10> { [ U00E0, KP_0, at, U20D7 ] };	// SMALL LETTER A WITH GRAVE, 0, @, COMBINING RIGHT ARROW ABOVE
+	key <AE11> { [ U0029, U00B0, U005D ] };	// RIGHT PARENTHESIS, DEGREE, RIGHT SQUARE BRACKET
+	key <AE12> { [ U003D, U002B, U007D, U00B1 ] };	// EQUAL SIGN, PLUS SIGN, RIGHT CURLY BRACKET, PLUS-MINUS SIGN
+	key <BKSL> { [ U1DC6, U1DC7, asterisk, U00A4 ] };	//  COMBINING MID-LOW, COMBINING HIGH-MID, MULTIPLY, CURRENCY SIGN
+	key <LSGT> { [ U003C, U003E, U00AB, U00BB ] };	// LESS THAN, GREATER THAN, LEFT GUILLEMET, RIGHT GUILLEMET
+	key <TLDE> { [ U0024, U20AC, U00B2, U00B3 ] };	// DOLLAR, EURO, SUPERSCRIPT 2, SUPERSCRIPT 3
+	include "cm(exclamation_switch)"
+	include "level3(ralt_switch)"
+};
+
+// == Cameroon QWERTY ==
+// Cameroon QWERTY uses the US QWERTY layout, as US keyboards are also widely used here. While this keyboard is designed for
+// Cameroonian orthography, it is possible (but not recommended) to type English with minimal discomfort using this keyboard.
+// Cameroon QWERTY uses the ";" (semicolon) key as the "Cameroon" key.	Pressing this key before another key allows you to access
+// the special letters and diacritics needed in Cameroonian orthography.
+// For example, press ";" then "a" and get "ɛ" (small epsilon). ";" then "Shift" + "a" (A) will get an "Ɛ" (capital epsilon).
+// Press ";" twice to get a ";", or press Shift + ; (:) twice to get a ":" (colon).
+// If you prefer, you can hold the AltGr key to access the same letters, but we have found this to be much more awkward in practice.
+// If you really don't like our Cameroon key, simply comment out "include "cm(semicolon_switch)"" and the semicolon key will return
+// to normal.
+// All Diacritics must be typed (in order of stacking) after the letter.
+
+partial alphanumeric_keys
+xkb_symbols "qwerty"
+{
+	include "cm(basic)"
+	name[Group1] = "Cameroon Multilingual (QWERTY, intl.)";
+	key <AB01> { [ z, Z, U2026, U2020 ] };	// SMALL LETTER Z, CAPITAL LETTER Z, ELLIPSIS, DAGGER
+	key <AB02> { [ x, X ] };	// SMALL LETTER X, CAPITAL LETTER X
+	key <AB03> { [ c, C, U0327, U00A9 ] };	// SMALL LETTER C, CAPITAL LETTER C, CEDILLA, COPYRIGHT
+	key <AB04> { [ v, V, UA78C, UA78B ] };	// SMALL LETTER V, CAPITAL LETTER V, SMALL LETTER GLOTTAL (SALTILLO), CAPITAL LETTER GLOTTAL (SALTILLO)
+	key <AB05> { [ b, B, U0253, U0181 ] };	// SMALL LETTER B, CAPITAL LETTER B, SMALL LETTER B WITH HOOK, CAPITAL LETTER B WITH HOOK
+	key <AB06> { [ n, N, U014B, U014A ] };	// SMALL LETTER N, CAPITAL LETTER N, SMALL LETTER ENG, CAPITAL LETTER ENG
+	key <AB07> { [ m, M, NoSymbol, U2122 ] };	// SMALL LETTER M, CAPITAL LETTER M, , TRADEMARK SIGN
+	key <AB08> { [ U002C, U003C, U2039, U00AB ] };	// COMMA, LESS THAN SIGN, LEFT SINGLE GUILLEMET, LEFT DOUBLE GUILLEMET
+	key <AB09> { [ U002E, U003E, U203A, U00BB ] };    // PERIOD, GREATER THAN SIGN, RIGHT SINGLE GUILLEMET, RIGHT DOUBLE GUILLEMET
+	key <AB10> { [ U002F, U003F, U00F7 ] };    // SLASH, QUESTION MARK, DIVISION SIGN
+	key <AC01> { [ a, A, U025B, U0190 ] };	// SMALL LETTER A, CAPITAL LETTER A, SMALL LETTER OPEN E, CAPITAL LETTER OPEN E
+	key <AC02> { [ s, S ] };	// SMALL LETTER S, CAPITAL LETTER S
+	key <AC03> { [ d, D, U0257, U018A ] };	// SMALL LETTER D, CAPITAL LETTER D, SMALL LETTER D WITH HOOK, CAPITAL LETTER D WITH HOOK
+	key <AC04> { [ f, F, U00E6, U00C6 ] };	// SMALL LETTER F, CAPITAL LETTER F, SMALL LIGATURE AE, CAPITAL LIGATURE AE
+	key <AC05> { [ g, G, U02BC, UA78B ] };	// SMALL LETTER G, CAPITAL LETTER G, CURVED GLOTTAL, CAPITAL LETTER GLOTTAL (SALTILLO)
+	key <AC06> { [ h, H, U0251, U2C6D ] };	// SMALL LETTER H, CAPITAL LETTER H, SMALL LETTER ALPHA, CAPITAL LETTER ALPHA
+	key <AC07> { [ j, J, U0330, U0323 ] };	// SMALL LETTER J, CAPITAL LETTER J, COMBINING TILDE (NASAL) BELOW, COMBINING DOT BELOW
+	key <AC08> { [ k, K, U1DC5, U1DC7 ] };	// SMALL LETTER K, CAPITAL LETTER K, COMBINING LOW-MID TONE, COMBINING HIGH-MID
+	key <AC09> { [ l, L, U1DC6, U1DC4 ] };	// SMALL LETTER L, CAPITAL LETTER L, COMBINING MID-LOW, COMBINING MID-HIGH TONE
+	key <AC10> { [ U003B, U003A ] };	// SEMICOLON, COLON
+	key <AC11> { [ U0300, U0302, U0027, U0022 ] };	// COMBINING LOW TONE, COMBINING FALLING TONE, APOSTROPHE, QUOTATION MARK
+	key <AD01> { [ q, Q, U2014, U2013 ] };	// SMALL LETTER Q, CAPITAL LETTER Q, EM DASH, EN DASH
+	key <AD02> { [ w, W, U1E85, U1E84 ] };	// SMALL LETTER W, CAPITAL LETTER W, SMALL LETTER W WITH DIAERESIS, CAPITAL LETTER W WITH DIAERESIS
+	key <AD03> { [ e, E, U0259, U018F ] };	// SMALL LETTER E, CAPITAL LETTER E, SMALL LETTER SCHWA, CAPITAL LETTER SCHWA
+	key <AD04> { [ r, R, U25CC, U00AE ] };	// SMALL LETTER R, CAPITAL LETTER R, PLACEHOLDER SYMBOL, REGISTERED SIGN
+	key <AD05> { [ t, T, U0153, U0152 ] };	// SMALL LETTER T, CAPITAL LETTER T, SMALL LIGATURE OE, CAPITAL LIGATURE OE
+	key <AD06> { [ y, Y, U01B4, U01B3 ] };	// SMALL LETTER Y, CAPITAL LETTER Y, SMALL LETTER Y WITH HOOK, CAPITAL LETTER Y WITH HOOK
+	key <AD07> { [ u, U, U0289, U0244 ] };	// SMALL LETTER U, CAPITAL LETTER U, SMALL LETTER U BAR, CAPITAL LETTER U BAR
+	key <AD08> { [ i, I, U0268, U0197 ] };	// SMALL LETTER I, CAPITAL LETTER I, SMALL LETTER I BAR, CAPITAL LETTER I BAR
+	key <AD09> { [ o, O, U0254, U0186 ] };	// SMALL LETTER O, CAPITAL LETTER O, SMALL LETTER OPEN O, CAPITAL LETTER OPEN O
+	key <AD10> { [ p, P, U00F8, U00D8 ] };	// SMALL LETTER P, CAPITAL LETTER P, SMALL LETTER O BAR, CAPITAL LETTER O BAR
+	key <AD11> { [ U0301, U030C, U005B, U007B ] };	// COMBINING HIGH TONE, COMBINING RISING TONE, LEFT SQUARE BRACKET, LEFT CURLY BRACKET
+	key <AD12> { [ U0327, U0308, U005D, U007D ] };	// COMBINING CEDILLA, COMBINING DIAERESIS, RIGHT SQUARE BRACKET, RIGHT CURLY BRACKET
+	key <AE01> { [ U0031, U0021, U00BC ] };	// 1, EXCLAMATION POINT, ONE QUARTER
+	key <AE02> { [ U0032, U0040, U00BD ] };	//2, AT SYMBOL, ONE HALF
+	key <AE03> { [ U0033, U0023, U00BE ] };	// 3, NUMBER SIGN, THREE QUARTERS
+	key <AE04> { [ U0034, U0024, NoSymbol, U20AC ] };	// 4, DOLLAR, , EURO SIGN
+	key <AE08> { [ U0038, U002A, NoSymbol, U00D7 ] };	// 8, ASTERISK, , MATH MULTIPLY
+	key <AE09> { [ U0039, U0028, U2018, U201C ] };	// 9, LEFT PARENTHESIS, LEFT SINGLE QUOTE MARK, LEFT DOUBLE QUOTE MARK
+	key <AE10> { [ U0030, U0029, U2019, U201D ] };	// 0, RIGHT PARENTHESIS, RIGHT SINGLE QUOTE MARK, LEFT DOUBLE QUOTE MARK
+	key <AE11> { [ U002D, U005F, U0304 ] };	// MINUS, UNDERSCORE, COMBINING MID TONE, COMBINING MID TONE
+	key <AE12> { [ U003D, U002B, NoSymbol, U00B1 ] };	// EQUAL, PLUS, , PLUS-MINUS
+	key <BKSL> { [ U005C, U007C ] };	// BACKSLASH, BAR
+	key <TLDE> { [ U030D, U0303, U0060, U007E ] };	// COMBINING VERTICAL LINE ABOVE, COMBINING TILDE ABOVE, GRAVE ACCENT, TILDE
+	include "cm(semicolon_switch)"
+	include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "dvorak"
+{
+	name[Group1] = "Cameroon (Dvorak, intl.)";
+	key <AB01> { [ semicolon, colon ] };	// SEMICOLON, COLON
+	key <AB02> { [ q, Q, U2014, U2013 ] };	// SMALL LETTER Q, CAPITAL LETTER Q, EM DASH, EN DASH
+	key <AB03> { [ j, J, U0330, U0323 ] };	// SMALL LETTER J, CAPITAL LETTER J, COMBINING TILDE (NASAL) BELOW, COMBINING DOT BELOW
+	key <AB04> { [ k, K, U1DC5, U1DC7 ] };	// SMALL LETTER K, CAPITAL LETTER K, COMBINING LOW-MID TONE, COMBINING HIGH-MID
+	key <AB05> { [ x, X ] };	// SMALL LETTER X, CAPITAL LETTER X
+	key <AB06> { [ b, B, U0253, U0181 ] };	// SMALL LETTER B, CAPITAL LETTER B, SMALL LETTER B WITH HOOK, CAPITAL LETTER B WITH HOOK
+	key <AB07> { [ m, M, NoSymbol, U2122 ] };	// SMALL LETTER M, CAPITAL LETTER M, , TRADEMARK SIGN
+	key <AB08> { [ w, W, U1E85, U1E84 ] };	// SMALL LETTER W, CAPITAL LETTER W, SMALL LETTER W WITH DIAERESIS, CAPITAL LETTER W WITH DIAERESIS
+	key <AB09> { [ v, V, UA78C, UA78B ] };	// SMALL LETTER V, CAPITAL LETTER V, SMALL LETTER GLOTTAL (SALTILLO), CAPITAL LETTER GLOTTAL (SALTILLO)
+	key <AB10> { [ z, Z, U2026, U2020 ] };	// SMALL LETTER Z, CAPITAL LETTER Z, ELLIPSIS, DAGGER
+	key <AC01> { [ a, A, U025B, U0190 ] };	// SMALL LETTER A, CAPITAL LETTER A, SMALL LETTER OPEN E, CAPITAL LETTER OPEN E
+	key <AC02> { [ o, O, U0254, U0186 ] };	// SMALL LETTER O, CAPITAL LETTER O, SMALL LETTER OPEN O, CAPITAL LETTER OPEN O
+	key <AC03> { [ e, E, U0259, U018F ] };	// SMALL LETTER E, CAPITAL LETTER E, SMALL LETTER SCHWA, CAPITAL LETTER SCHWA
+	key <AC04> { [ u, U, U0289, U0244 ] };	// SMALL LETTER U, CAPITAL LETTER U, SMALL LETTER U BAR, CAPITAL LETTER U BAR
+	key <AC05> { [ i, I, U0268, U0197 ] };	// SMALL LETTER I, CAPITAL LETTER I, SMALL LETTER I BAR, CAPITAL LETTER I BAR
+	key <AC06> { [ d, D, U0257, U018A ] };	// SMALL LETTER D, CAPITAL LETTER D, SMALL LETTER D WITH HOOK, CAPITAL LETTER D WITH HOOK
+	key <AC07> { [ h, H, U0251, U2C6D ] };	// SMALL LETTER H, CAPITAL LETTER H, SMALL LETTER ALPHA, CAPITAL LETTER ALPHA
+	key <AC08> { [ t, T, U0153, U0152 ] };	// SMALL LETTER T, CAPITAL LETTER T, SMALL LIGATURE OE, CAPITAL LIGATURE OE
+	key <AC09> { [ n, N, U014B, U014A ] };	// SMALL LETTER N, CAPITAL LETTER N, SMALL LETTER ENG, CAPITAL LETTER ENG
+	key <AC10> { [ s, S ] };	// SMALL LETTER S, CAPITAL LETTER S
+	key <AC11> { [ minus, underscore, U0304 ] };	// MINUS, UNDERSCORE, COMBINING MID TONE
+	key <AD01> { [ U0300, U0302, U0027, U0022 ] };	// COMBINING LOW TONE, COMBINING FALLING TONE, APOSTROPHE, QUOTATION MARK
+	key <AD02> { [ comma, less, U2039, U00AB ] };	// COMMA, LESS THAN SIGN, LEFT SINGLE GUILLEMET, LEFT DOUBLE GUILLEMET
+	key <AD03> { [ period, greater, U203A, U00BB ] };	// PERIOD, GREATER THAN SIGN, RIGHT SINGLE GUILLEMET, RIGHT DOUBLE GUILLEMET
+	key <AD04> { [ p, P, U00F8, U00D8 ] };	// SMALL LETTER P, CAPITAL LETTER P, SMALL LETTER O BAR, CAPITAL LETTER O BAR
+	key <AD05> { [ y, Y, U01B4, U01B3 ] };	// SMALL LETTER Y, CAPITAL LETTER Y, SMALL LETTER Y WITH HOOK, CAPITAL LETTER Y WITH HOOK
+	key <AD06> { [ f, F, U00E6, U00C6 ] };	// SMALL LETTER F, CAPITAL LETTER F, SMALL LIGATURE AE, CAPITAL LIGATURE AE
+	key <AD07> { [ g, G, U02BC, UA78B ] };	// SMALL LETTER G, CAPITAL LETTER G, CURVED GLOTTAL, CAPITAL LETTER GLOTTAL (SALTILLO)
+	key <AD08> { [ c, C, U0327, U00A9 ] };	// SMALL LETTER C, CAPITAL LETTER C, CEDILLA, COPYRIGHT
+	key <AD09> { [ r, R, U25CC, U00AE ] };	// SMALL LETTER R, CAPITAL LETTER R, PLACEHOLDER SYMBOL, REGISTERED SIGN
+	key <AD10> { [ l, L, U1DC6, U1DC4 ] };	// SMALL LETTER L, CAPITAL LETTER L, COMBINING MID-LOW, COMBINING MID-HIGH TONE
+	key <AD11> { [ slash, U003F, U00F7, U0294 ] };	// SLASH, QUESTION MARK, DIVISION SIGN, GLOTTAL STOP
+	key <AD12> { [ equal, plus, NoSymbol, plusminus ] };	// EQUAL, PLUS, , PLUS-MINUS
+	key <AE01> { [ 1, exclam, U00BC ] };	// 1, EXCLAMATION POINT, ONE QUARTER
+	key <AE02> { [ 2, at, U00BD ] };	// 2, AT SYMBOL, ONE HALF
+	key <AE03> { [ 3, numbersign, U00BE ] };	// 3, NUMBER SIGN, THREE QUARTERS
+	key <AE04> { [ 4, dollar, NoSymbol, U20AC ] };	// 4, DOLLAR, , EURO SIGN
+	key <AE05> { [ 5, percent ] };	// 5, PERCENT
+	key <AE06> { [ 6, asciicircum, dead_circumflex, dead_circumflex ] };	// 6, CARET, DEAD CIRCUMFLEX, DEAD CIRCUMFLEX
+	key <AE07> { [ 7, ampersand ] };	// 7, AMPERSAND
+	key <AE08> { [ 8, asterisk, NoSymbol, multiply ] };	// 8, ASTERISK, , MULTIPLY
+	key <AE09> { [ 9, parenleft, leftsinglequotemark, leftdoublequotemark ] };	// 9, LEFT PARENTHESIS, LEFT SINGLE QUOTE MARK, LEFT DOUBLE QUOTE MARK
+	key <AE10> { [ 0, parenright, rightsinglequotemark, rightdoublequotemark ] };	// 0, RIGHT PARENTHESIS, RIGHT SINGLE QUOTE MARK, LEFT DOUBLE QUOTE MARK
+	key <AE11> { [ U0301, U030C, U005B, U007B ] };	// COMBINING HIGH TONE, COMBINING RISING TONE, LEFT SQUARE BRACKET, LEFT CURLY BRACKET
+	key <AE12> { [ U0327, dead_diaeresis, U005D, braceright ] };	// COMBINING CEDILLA, DEAD DIAERESIS, RIGHT SQUARE BRACKET, RIGHT CURLY BRACKET
+	key <BKSL> { [ backslash, bar ] };	// BACKSLASH, BAR
+	key <TLDE> { [ U030D, U0303, U0060, U007E ] };	// COMBINING VERTICAL LINE ABOVE, COMBINING TILDE ABOVE, GRAVE ACCENT, TILDE
+	include "cm(semicolon_switch_dvorak)"
+	include "level3(ralt_switch)"
+};
+
+// The following code creates the "Cameroon key" phenomenon.
+
+partial modifier_keys
+xkb_symbols "semicolon_switch" {
+	key <AC10> {[  ISO_Level3_Latch,  colon,  semicolon,  colon  ]};
+	modifier_map Mod5	{ ISO_Level3_Latch };
+};
+
+partial modifier_keys
+xkb_symbols "exclamation_switch" {
+	key <AB10> {[  ISO_Level3_Latch,  U00A7,  exclam,  U00A7  ]};
+	modifier_map Mod5	{ ISO_Level3_Latch };
+};
+
+partial modifier_keys
+xkb_symbols "semicolon_switch_dvorak" {
+	key <AB01> {[  ISO_Level3_Latch,  colon,  semicolon,  colon  ]};
+	modifier_map Mod5	{ ISO_Level3_Latch };
+};
+
+
+//   The layout below is for the Mmuock alphabet as described in the book
+//   "The Sound of Mmuock: Orthography (2. ed.)" [ISBN: 978-9956-645-28-1].
+//   Mmuock is the language of the Mmuock (local: Muòk) people of Western Cameroon.
+//
+//      Author: Tano Fotang <fotang at mmuock dot org>
+//     Created: 2014-06-24
+//     Version: 1.2
+//
+// NOTES:
+//
+// 1. We use combining diacritical marks to create tone markings. There are 13
+//    tones that need to be indicated, although the first 5 are usually enough
+//    to represent the rest in simplified orthography.
+//
+// 2. When composing Mmuock text, about every fourth symbol is for tone. To
+//    facilitate easy and fast input, the combining diacritics are placed on
+//    the home row (AC). To reduce the number of key strokes required, the
+//    unshifted third level is used. Only 5 of the combining diacritics are
+//    not on the AC row; they are in the top number row, AE.
+//
+// 3. Symbols that are used infrequently (`r', `h', `ɛ', `ǝ', etc.) are placed
+//    in level3. Additionally, the letter eng (`ŋ'), although commonly used,
+//    is found in level3 because it can alternatively be represented by <ng>.
+//    (Indeed, the keyman version of keyboard actually replaces <ng> with `ŋ'.)
+//
+// 4. The unshifted AB10 key (normally assigned to the slash `/') is used as
+//    level 3 switch/latch since the slash is not used in the ordinary course
+//    of typing Mmuock text.
+//
+// 5. The 'Cameroon Multilingual' keyboards that are defined elsewhere, do not
+//    fit our needs because: (a) they are based on a different alphabet, (b) the
+//    vast majority of their symbols are not used in Mmuock, and (c) for the few
+//    symbols that are used in Mmuock, their placings are not egonomic for
+//    typing Mmuock as the _PRIMARY_ language. The aim of this keyboard is to
+//    give priority to symbols that are actually used in the Mmuock alphabet.
+//
+// 6. The following fonts have been found to produce the best results with this
+//    keyboard:
+//         Family                    Accuracy
+//      DejaVu (except Sans Mono)        9/10
+//      Linux Libertine                  8/10
+//      Ubuntu (except light)            8/10
+//      Droid (except sans mono)         7/10
+//      Gentium, Gentium Alt           6.5/10
+//    In the terminal emulator, the following font variants have been tested:
+//      Ubuntu Mono                      9/10
+//      Unifont (Medium)                 9/10
+//      DejaVu Sans Mono               7.5/10
+//      Droid Sans Mono                6.5/10
+//   These fonts are all freely available.
+//
+// ------the layout-----------
+//
+//   ┌─────┐
+//   │ 2 4 │   2 = Shift,  4 = Level3 + Shift
+//   │ 1 3 │   1 = Normal, 3 = Level3
+//   └─────┘
+//
+//   ┌─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┲━━━━━━━━━┓
+//   │ ~ ~ │ !   │ @   │ #   │ $   │ %   │ ^   │ &   | *   │ (   │ )   │ _ – │ +   ̣┃ ⌫ Back- ┃
+// AE│ ` ` │ 1   │ 2   │ 3   │ 4   │ 5   │ 6   ̂│ 7   ̑│ 8   ̍│ 9   ̓│ 0   ̊│ ¯ - │ =   ̋┃  space  ┃
+//   ┢━━━━━┷━┱───┴─┬───┴─┬───┴─┬───┴─┬───┴─┬───┴─┬───┴─┬───┴─┬───┴─┬───┴─┬───┴─┬───┺━┳━━━━━━━┫
+//   ┃       ┃ Q   │ W   │ E Ǝ │ Š R │ T   │ Y   │ U Ω │ I Ɛ │ O Φ │ P ∏ │ Ø { │ Σ } ┃ Enter ┃
+// AD┃Tab ↹  ┃ q   │ w   │ e ǝ │ š r │ t   │ y   │ u ω │ i ɛ │ o φ │ p π │ ø [ │ σ ] ┃   ⏎   ┃
+//   ┣━━━━━━━┻┱────┴┬────┴┬────┴┬────┴┬────┴┬────┴┬────┴┬────┴┬────┴┬────┴┬────┴┬────┺┓      ┃
+//   ┃        ┃ A   │ S   │ D   │ F   │ G   │  ̇ H │ J   │ K   │ L   │ Œ : │ " ” │ Æ | ┃      ┃
+// AC┃Caps ⇬  ┃ a   ̃│ s   ̄| d   ́| f   ̀| g   ̌|  ̣ h │ j   ̆│ k   ̏│ l   ̈│ œ ; │ ' ’ │ æ \ ┃      ┃
+//   ┣━━━━━━━━┹────┬┴────┬┴────┬┴────┬┴────┬┴────┬┴────┬┴────┬┴────┬┴────┬┴────┲┷━━━━━┻━━━━━━┫
+//   ┃             │ Z ǲ │ X   │ C   │ V   │ B   │ N ŋ │ M   │ < « │ > » │ ?   ┃             ┃
+// AB┃Shift ⇧      │ z ǳ │ x   │ c   │ v   │ b   │ n Ŋ │ m   │ , ‹ │ . › │   / ┃Shift ⇧      ┃
+//   ┣━━━━━━━┳━━━━━┷━┳━━━┷━━━┱─┴─────┴─────┴─────┴─────┴─────┴───┲━┷━━━━━╈━━━━━┻━┳━━━━━━━┳━━━┛
+//   ┃       ┃       ┃       ┃                                   ┃       ┃       ┃       ┃
+// AA┃Ctrl   ┃Meta   ┃Alt    ┃             Space                 ┃AltGr ⇮┃Menu   ┃Ctrl   ┃
+//   ┗━━━━━━━┻━━━━━━━┻━━━━━━━┹───────────────────────────────────┺━━━━━━━┻━━━━━━━┻━━━━━━━┛
+//
+
+partial alphanumeric_keys
+xkb_symbols "mmuock" {
+
+   include "us(basic)"
+
+   name[Group1]= "Mmuock";
+
+   key <TLDE> { [ dead_grave,  dead_tilde,          grave,    asciitilde ] };
+   key <AE06> { [          6, asciicircum,          U0302                ] }; // tone 10
+   key <AE07> { [          7,   ampersand,          U0311                ] }; // tone 12
+   key <AE08> { [          8,    asterisk,          U030D                ] }; // tone 13
+   key <AE09> { [          9,   parenleft,          U0307                ] }; // tone 7
+   key <AE10> { [          0,  parenright,          U030A                ] }; // tone 6
+   key <AE11> { [dead_macron,  underscore,          minus,        endash ] };
+   key <AE12> { [      equal,        plus,          U030B, dead_belowdot ] }; // U030B = tone 8
+
+   key <AD03> { [          e,           E,          U01DD,         U018E ] }; // U01DD = reversed E
+   key <AD04> { [     scaron,      Scaron,              r,             R ] };
+   key <AD07> { [          u,           U,    Greek_omega,   Greek_OMEGA ] };
+   key <AD08> { [          i,           I,          U025B,         U0190 ] }; // U025B = open E
+   key <AD09> { [          o,           O,      Greek_phi,     Greek_PHI ] };
+   key <AD10> { [          p,           P,       Greek_pi,      Greek_PI ] };
+   key <AD11> { [     oslash,      Oslash,    bracketleft,     braceleft ] };
+   key <AD12> { [Greek_sigma, Greek_SIGMA,   bracketright,    braceright ] }; 
+
+   key <AC01> { [          a,           A,          U0303                ] }; // tone 0
+   key <AC02> { [          s,           S,          U0304                ] }; // tone 1
+   key <AC03> { [          d,           D,          U0301                ] }; // tone 3
+   key <AC04> { [          f,           F,          U0300                ] }; // tone 4
+   key <AC05> { [          g,           G,          U030C                ] }; // tone 5
+   key <AC06> { [      U0323,       U0307,              h,             H ] }; // COMBINING DOT BELOW, ABOVE
+   key <AC07> { [          j,           J,          U0306                ] }; // tone 9
+   key <AC08> { [          k,           K,          U030F                ] }; // tone 11
+   key <AC09> { [          l,           L,          U0308                ] }; // tone 14
+   key <AC10> { [         oe,          OE,      semicolon,         colon ] };
+   key <AC11> { [ dead_acute,    quotedbl,     apostrophe                ] };
+   key <BKSL> { [         ae,          AE,      backslash,           bar ] };
+
+   key <AB01> { [          z,           Z,          U01F3,         U01F2 ] }; // U01F3 = letter dz
+   key <AB06> { [          n,           N,            eng,           ENG ] };
+   key <AB08> { [      comma,        less,  guillemotleft,         U2039 ] };
+   key <AB09> { [     period,     greater, guillemotright,         U203A ] };
+
+   include "cm(solidus_switch)"
+   include "level3(ralt_switch)"
+};
+
+// Use the slash key as special key for switching or latching to level 3.
+partial modifier_keys
+xkb_symbols "solidus_switch" {
+   key <AB10> {[  ISO_Level3_Latch,  question,  slash,  dead_abovedot  ]};
+   modifier_map Mod5	{ ISO_Level3_Latch };
+};

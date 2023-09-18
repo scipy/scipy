@@ -1,0 +1,892 @@
+{
+  "build": "pyhd8ed1ab_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/noarch",
+  "constrains": [],
+  "depends": [
+    "python >=3.9",
+    "sphinx >=5"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/sphinxcontrib-devhelp-1.0.5-pyhd8ed1ab_0",
+  "features": "",
+  "files": [
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/__init__.py",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/.tx/config",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/ar/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/ar/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/bn/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/bn/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/ca/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/ca/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/cs/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/cs/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/cy/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/cy/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/da/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/da/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/de/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/de/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/el/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/el/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/eo/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/eo/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/es/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/es/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/et/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/et/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/eu/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/eu/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/fa/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/fa/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/fi/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/fi/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/fr/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/fr/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/he/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/he/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/hi/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/hi/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/hi_IN/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/hi_IN/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/hr/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/hr/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/hu/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/hu/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/id/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/id/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/it/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/it/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/ja/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/ja/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/ko/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/ko/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/lt/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/lt/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/lv/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/lv/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/mk/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/mk/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/nb_NO/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/nb_NO/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/ne/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/ne/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/nl/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/nl/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/pl/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/pl/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/pt/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/pt/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/pt_BR/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/pt_BR/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/pt_PT/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/pt_PT/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/ro/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/ro/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/ru/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/ru/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/si/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/si/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/sk/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/sk/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/sl/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/sl/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/sphinxcontrib.devhelp.pot",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/sr/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/sr/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/sr@latin/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/sr@latin/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/sv/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/sv/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/ta/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/ta/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/tr/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/tr/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/uk_UA/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/uk_UA/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/vi/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/vi/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/zh_CN/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/zh_CN/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/zh_TW/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/locales/zh_TW/LC_MESSAGES/sphinxcontrib.devhelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib_devhelp-1.0.5.dist-info/INSTALLER",
+    "lib/python3.10/site-packages/sphinxcontrib_devhelp-1.0.5.dist-info/LICENSE",
+    "lib/python3.10/site-packages/sphinxcontrib_devhelp-1.0.5.dist-info/METADATA",
+    "lib/python3.10/site-packages/sphinxcontrib_devhelp-1.0.5.dist-info/RECORD",
+    "lib/python3.10/site-packages/sphinxcontrib_devhelp-1.0.5.dist-info/REQUESTED",
+    "lib/python3.10/site-packages/sphinxcontrib_devhelp-1.0.5.dist-info/WHEEL",
+    "lib/python3.10/site-packages/sphinxcontrib_devhelp-1.0.5.dist-info/direct_url.json",
+    "lib/python3.10/site-packages/sphinxcontrib/devhelp/__pycache__/__init__.cpython-310.pyc"
+  ],
+  "fn": "sphinxcontrib-devhelp-1.0.5-pyhd8ed1ab_0.conda",
+  "license": "BSD-2-Clause",
+  "license_family": "BSD",
+  "link": {
+    "source": "/opt/conda/pkgs/sphinxcontrib-devhelp-1.0.5-pyhd8ed1ab_0",
+    "type": 1
+  },
+  "md5": "ebf08f5184d8eaa486697bc060031953",
+  "name": "sphinxcontrib-devhelp",
+  "noarch": "python",
+  "package_tarball_full_path": "/opt/conda/pkgs/sphinxcontrib-devhelp-1.0.5-pyhd8ed1ab_0.conda",
+  "package_type": "noarch_python",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "8e334b16ad9378657fe6bd0b02d342605a473686717d97fd441ba78634381b1d",
+        "sha256_in_prefix": "8e334b16ad9378657fe6bd0b02d342605a473686717d97fd441ba78634381b1d",
+        "size_in_bytes": 4871
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/.tx/config",
+        "path_type": "hardlink",
+        "sha256": "00a42679572429f70c1759e23767ea8a1a3807ee3af5ebf7634e9ea7572a440b",
+        "sha256_in_prefix": "00a42679572429f70c1759e23767ea8a1a3807ee3af5ebf7634e9ea7572a440b",
+        "size_in_bytes": 221
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/ar/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "a5b13bf8c2008daad3af4e13ebc57e3d0db0b2e6e1eb868ac3f76a3b5b6c2427",
+        "sha256_in_prefix": "a5b13bf8c2008daad3af4e13ebc57e3d0db0b2e6e1eb868ac3f76a3b5b6c2427",
+        "size_in_bytes": 959
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/ar/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "efa7f538f5078f2175dd0cbcccb813c972a5b217b59d7067af69860ad4f8a7a3",
+        "sha256_in_prefix": "efa7f538f5078f2175dd0cbcccb813c972a5b217b59d7067af69860ad4f8a7a3",
+        "size_in_bytes": 1106
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/bn/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "a57d25161d754c107e158b51269a02cb64d9f85c48be2f6a7af1e0d965703583",
+        "sha256_in_prefix": "a57d25161d754c107e158b51269a02cb64d9f85c48be2f6a7af1e0d965703583",
+        "size_in_bytes": 877
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/bn/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "422017930df431cd2fb5b27982a2c3cb2425e948c44dfa940367a9d64f1a2598",
+        "sha256_in_prefix": "422017930df431cd2fb5b27982a2c3cb2425e948c44dfa940367a9d64f1a2598",
+        "size_in_bytes": 1024
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/ca/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "581851dc3dc9f22713daa8a5c7008e036aed21567f07ff23689c6efab306aa83",
+        "sha256_in_prefix": "581851dc3dc9f22713daa8a5c7008e036aed21567f07ff23689c6efab306aa83",
+        "size_in_bytes": 877
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/ca/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "84ef6c668e3bd9a63484b39bf9f6819f1d9e43d231c764538935e57fe5eb0aaa",
+        "sha256_in_prefix": "84ef6c668e3bd9a63484b39bf9f6819f1d9e43d231c764538935e57fe5eb0aaa",
+        "size_in_bytes": 1024
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/cs/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "f7ba3c3518049d88f67d00247a93063cf9928cf8cfb79b0e5a5bd6e0d7cb82e0",
+        "sha256_in_prefix": "f7ba3c3518049d88f67d00247a93063cf9928cf8cfb79b0e5a5bd6e0d7cb82e0",
+        "size_in_bytes": 955
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/cs/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "ede3ad8bab2236c445cf1196ccabb8ae623ace882e79bc7c85df6e6754ed6980",
+        "sha256_in_prefix": "ede3ad8bab2236c445cf1196ccabb8ae623ace882e79bc7c85df6e6754ed6980",
+        "size_in_bytes": 1102
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/cy/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "6ba9942dfbccfbb14d073d028833cdc3ce1f565a87fff8d6d9d45fa3d455fae9",
+        "sha256_in_prefix": "6ba9942dfbccfbb14d073d028833cdc3ce1f565a87fff8d6d9d45fa3d455fae9",
+        "size_in_bytes": 920
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/cy/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "c32125559813b5231460dc9043819009fe695676bab6f5e96e07ed85999ed460",
+        "sha256_in_prefix": "c32125559813b5231460dc9043819009fe695676bab6f5e96e07ed85999ed460",
+        "size_in_bytes": 1067
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/da/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "1ebaf5d70afcb12fce85f7ec4bb6d271518cf000df95877262b3eeab0fc6fcd0",
+        "sha256_in_prefix": "1ebaf5d70afcb12fce85f7ec4bb6d271518cf000df95877262b3eeab0fc6fcd0",
+        "size_in_bytes": 876
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/da/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "ced5ac2c6e18296d237f3993c66e6370f47c6a942c1683123d299ee1a4364cbc",
+        "sha256_in_prefix": "ced5ac2c6e18296d237f3993c66e6370f47c6a942c1683123d299ee1a4364cbc",
+        "size_in_bytes": 1023
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/de/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "c6d785497f25e948c47b21bf770f0de845a1a8816f41a53077ffe6d95c93e4db",
+        "sha256_in_prefix": "c6d785497f25e948c47b21bf770f0de845a1a8816f41a53077ffe6d95c93e4db",
+        "size_in_bytes": 876
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/de/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "d5a0636a160af626a7a87d1eb5cc0d3455bd51c5ac3cb594ea990d879139e0fa",
+        "sha256_in_prefix": "d5a0636a160af626a7a87d1eb5cc0d3455bd51c5ac3cb594ea990d879139e0fa",
+        "size_in_bytes": 1023
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/el/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "38c89eebe0a3647f9139962943688a124f92d89946411f1eead5497c296a2c98",
+        "sha256_in_prefix": "38c89eebe0a3647f9139962943688a124f92d89946411f1eead5497c296a2c98",
+        "size_in_bytes": 875
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/el/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "d8205332ceabb6a98fc19f918742ded5bdde9f61babaad0eb8bd5a2db6667522",
+        "sha256_in_prefix": "d8205332ceabb6a98fc19f918742ded5bdde9f61babaad0eb8bd5a2db6667522",
+        "size_in_bytes": 1022
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/eo/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "2c84bec548a1c94a63d391ccbcf2628b8f3a5c25c809c6a1822c745c05532c50",
+        "sha256_in_prefix": "2c84bec548a1c94a63d391ccbcf2628b8f3a5c25c809c6a1822c745c05532c50",
+        "size_in_bytes": 879
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/eo/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "22cd9debf4f29f9fe27a2441d0f7129f62abc602541bee8049eb4b1c00495187",
+        "sha256_in_prefix": "22cd9debf4f29f9fe27a2441d0f7129f62abc602541bee8049eb4b1c00495187",
+        "size_in_bytes": 1026
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/es/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "97440889216efb1a59222c38099bb306734f799a3b9e207762702d43e9362b0c",
+        "sha256_in_prefix": "97440889216efb1a59222c38099bb306734f799a3b9e207762702d43e9362b0c",
+        "size_in_bytes": 877
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/es/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "b5f19cda1821ea86813e1c5a4e0b0402d303df1f3a2c6e41401089f8198e29b3",
+        "sha256_in_prefix": "b5f19cda1821ea86813e1c5a4e0b0402d303df1f3a2c6e41401089f8198e29b3",
+        "size_in_bytes": 1024
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/et/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "3d039cbe74a08bf22bbdfe3394a8373124b09db2b092a6b6f04cb4c65ab8c59c",
+        "sha256_in_prefix": "3d039cbe74a08bf22bbdfe3394a8373124b09db2b092a6b6f04cb4c65ab8c59c",
+        "size_in_bytes": 885
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/et/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "de882fa22e853cf161309f56ec6da35f620389c7ab466ee6ab842c071ac67e9b",
+        "sha256_in_prefix": "de882fa22e853cf161309f56ec6da35f620389c7ab466ee6ab842c071ac67e9b",
+        "size_in_bytes": 1293
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/eu/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "1422c0875b53b3a405325ebf7baa1a56acd7d751fdc28719dfc5890246198d74",
+        "sha256_in_prefix": "1422c0875b53b3a405325ebf7baa1a56acd7d751fdc28719dfc5890246198d74",
+        "size_in_bytes": 876
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/eu/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "48df23cb9ec8a63edaf6cf6683d2ad961286e7405ef126dc768e3240bd259ff9",
+        "sha256_in_prefix": "48df23cb9ec8a63edaf6cf6683d2ad961286e7405ef126dc768e3240bd259ff9",
+        "size_in_bytes": 1023
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/fa/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "a4b43fcea432c88eed95d54c15bcd03c8735863b3bc79b31f92335a0e585d61b",
+        "sha256_in_prefix": "a4b43fcea432c88eed95d54c15bcd03c8735863b3bc79b31f92335a0e585d61b",
+        "size_in_bytes": 876
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/fa/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "d6c5cdf5ff6a9040c735f597fd39b4dbef0e4286dd3f9f28c3cbf6dde667c1d2",
+        "sha256_in_prefix": "d6c5cdf5ff6a9040c735f597fd39b4dbef0e4286dd3f9f28c3cbf6dde667c1d2",
+        "size_in_bytes": 1023
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/fi/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "ee09a2e810d8a0ca695d1ba8d1db9cf3eb57710b23dd8093d3bcb000782815f2",
+        "sha256_in_prefix": "ee09a2e810d8a0ca695d1ba8d1db9cf3eb57710b23dd8093d3bcb000782815f2",
+        "size_in_bytes": 877
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/fi/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "061b556bb98a6a308e117264de3ec1f1c1938450cc8f9c02bda1dbf6725b91a3",
+        "sha256_in_prefix": "061b556bb98a6a308e117264de3ec1f1c1938450cc8f9c02bda1dbf6725b91a3",
+        "size_in_bytes": 1024
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/fr/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "e45a7375097fce260ab6e21c9dd6b96a68ad145fc6396a0ee5184ea0f52f9f7a",
+        "sha256_in_prefix": "e45a7375097fce260ab6e21c9dd6b96a68ad145fc6396a0ee5184ea0f52f9f7a",
+        "size_in_bytes": 901
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/fr/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "259f6b1848aae853bd1685337a18fad3ddca4100f5e4fa503bfc1d832085793c",
+        "sha256_in_prefix": "259f6b1848aae853bd1685337a18fad3ddca4100f5e4fa503bfc1d832085793c",
+        "size_in_bytes": 1310
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/he/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "5c038e71e836aa39d4535956797576864f0440da1fd577e9b4f4e85b8c20c1ef",
+        "sha256_in_prefix": "5c038e71e836aa39d4535956797576864f0440da1fd577e9b4f4e85b8c20c1ef",
+        "size_in_bytes": 970
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/he/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "6d0f470c1273e139a2ab09aa5971cf2f413c2567a6ded983a92afa95462ff344",
+        "sha256_in_prefix": "6d0f470c1273e139a2ab09aa5971cf2f413c2567a6ded983a92afa95462ff344",
+        "size_in_bytes": 1117
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/hi/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "16af46001ae688bd70d2d9991d5ba165d66a883c9ce768879381cdd409bc59ef",
+        "sha256_in_prefix": "16af46001ae688bd70d2d9991d5ba165d66a883c9ce768879381cdd409bc59ef",
+        "size_in_bytes": 875
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/hi/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "bd6bcadf8d407b286531c1d3a5bf135628838e0a7b274f544d9bac484ee8bdde",
+        "sha256_in_prefix": "bd6bcadf8d407b286531c1d3a5bf135628838e0a7b274f544d9bac484ee8bdde",
+        "size_in_bytes": 1022
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/hi_IN/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "96a044eac94d1bb2536007155efdcd9fc7e6af230494a1e18d3c43c7854a97ff",
+        "sha256_in_prefix": "96a044eac94d1bb2536007155efdcd9fc7e6af230494a1e18d3c43c7854a97ff",
+        "size_in_bytes": 889
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/hi_IN/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "902bc0256cd51fc02fa822459d43fb5281ea260beff881c6df504f78aa6272e2",
+        "sha256_in_prefix": "902bc0256cd51fc02fa822459d43fb5281ea260beff881c6df504f78aa6272e2",
+        "size_in_bytes": 1036
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/hr/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "8f2590ae0bd977ba339ee16cc09a334be8e4a88a860bb82f15ef3c09a36d89c4",
+        "sha256_in_prefix": "8f2590ae0bd977ba339ee16cc09a334be8e4a88a860bb82f15ef3c09a36d89c4",
+        "size_in_bytes": 950
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/hr/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "dc6478417205a4c41fdc0b6299642d2957ae0056d24bad02a565606f905fbb95",
+        "sha256_in_prefix": "dc6478417205a4c41fdc0b6299642d2957ae0056d24bad02a565606f905fbb95",
+        "size_in_bytes": 1097
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/hu/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "fd9d086ed11840f34b8b91692cded08c8723c5a7e93df53b87f8ea745c909751",
+        "sha256_in_prefix": "fd9d086ed11840f34b8b91692cded08c8723c5a7e93df53b87f8ea745c909751",
+        "size_in_bytes": 879
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/hu/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "a5c1f01c62362dc791d027c2479b55b17078f50a4d3ed70d62b3f2187a56a63b",
+        "sha256_in_prefix": "a5c1f01c62362dc791d027c2479b55b17078f50a4d3ed70d62b3f2187a56a63b",
+        "size_in_bytes": 1026
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/id/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "73ac2aeb5a2591d5d257a14db5b32659fd04d3ca923e91f1c6b81dea1d24558f",
+        "sha256_in_prefix": "73ac2aeb5a2591d5d257a14db5b32659fd04d3ca923e91f1c6b81dea1d24558f",
+        "size_in_bytes": 877
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/id/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "62f4c2ed8bd73e950153253f178f19ca2a6312801546ccfdef33edcb009a00af",
+        "sha256_in_prefix": "62f4c2ed8bd73e950153253f178f19ca2a6312801546ccfdef33edcb009a00af",
+        "size_in_bytes": 1296
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/it/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "6de179e3d48daac8fef7c8a53de4dd24d92cd189fc421872d3923e22ae090a71",
+        "sha256_in_prefix": "6de179e3d48daac8fef7c8a53de4dd24d92cd189fc421872d3923e22ae090a71",
+        "size_in_bytes": 877
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/it/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "6f5a79d308bfa7f666ca3237c9b1cbbb5a45fc58de3f354b4f2cd5e40676651a",
+        "sha256_in_prefix": "6f5a79d308bfa7f666ca3237c9b1cbbb5a45fc58de3f354b4f2cd5e40676651a",
+        "size_in_bytes": 1024
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/ja/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "2cd4e6641dc490e07e1e7e210e5a82d3865acdc3550bbf09064372d16891634f",
+        "sha256_in_prefix": "2cd4e6641dc490e07e1e7e210e5a82d3865acdc3550bbf09064372d16891634f",
+        "size_in_bytes": 871
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/ja/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "eb257f46c9145cd0daaeaa708013eee26fe0397a110f51ad9b9e93a886f2a5b1",
+        "sha256_in_prefix": "eb257f46c9145cd0daaeaa708013eee26fe0397a110f51ad9b9e93a886f2a5b1",
+        "size_in_bytes": 1018
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/ko/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "92c6c1eb77caface2caf4b9a2108a5d18e7290a01c152162ffbd06596c999137",
+        "sha256_in_prefix": "92c6c1eb77caface2caf4b9a2108a5d18e7290a01c152162ffbd06596c999137",
+        "size_in_bytes": 869
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/ko/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "19e607baef6e608e8320340cc5b0bc9c89d0d38ff35f1226fabd6130da81131d",
+        "sha256_in_prefix": "19e607baef6e608e8320340cc5b0bc9c89d0d38ff35f1226fabd6130da81131d",
+        "size_in_bytes": 1016
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/lt/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "d640a99866e23c5a608a030e14ffa031051fefa8efcc4e747f624b22cbfcaaef",
+        "sha256_in_prefix": "d640a99866e23c5a608a030e14ffa031051fefa8efcc4e747f624b22cbfcaaef",
+        "size_in_bytes": 1011
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/lt/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "e85a9dd003d9ee9ffa72f12ebe84361b6641b08cae91d7b77b36e7b0a41032a8",
+        "sha256_in_prefix": "e85a9dd003d9ee9ffa72f12ebe84361b6641b08cae91d7b77b36e7b0a41032a8",
+        "size_in_bytes": 1158
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/lv/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "029c707f59dbcec5ecc2cab595e76893ceba4cc1bafc6e1b9206b4379780ff06",
+        "sha256_in_prefix": "029c707f59dbcec5ecc2cab595e76893ceba4cc1bafc6e1b9206b4379780ff06",
+        "size_in_bytes": 912
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/lv/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "956a9f317c63b729a3e6d89d65639ff8df3323adb031022863fc5c694c11c121",
+        "sha256_in_prefix": "956a9f317c63b729a3e6d89d65639ff8df3323adb031022863fc5c694c11c121",
+        "size_in_bytes": 1059
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/mk/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "4a57b78ca26f3d88539359c52150576430d1685ddb82b585618caf461756194f",
+        "sha256_in_prefix": "4a57b78ca26f3d88539359c52150576430d1685ddb82b585618caf461756194f",
+        "size_in_bytes": 910
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/mk/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "867beaaf401864757379dc333b67db4d5a9c502ef39a820d90d7362175df0909",
+        "sha256_in_prefix": "867beaaf401864757379dc333b67db4d5a9c502ef39a820d90d7362175df0909",
+        "size_in_bytes": 1057
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/nb_NO/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "cfe97b6c7028d14c25def27571383c85d151179dca64887ed6a92a0947b56d4e",
+        "sha256_in_prefix": "cfe97b6c7028d14c25def27571383c85d151179dca64887ed6a92a0947b56d4e",
+        "size_in_bytes": 902
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/nb_NO/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "ebd475efd2d62fe8b9b3e17f2cc5fff7625c2b8cb024028dbafe6d97080fb509",
+        "sha256_in_prefix": "ebd475efd2d62fe8b9b3e17f2cc5fff7625c2b8cb024028dbafe6d97080fb509",
+        "size_in_bytes": 1049
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/ne/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "bf0205b503643355001e4f9e944049b4d85c50b758b4834f592a93d273a556c4",
+        "sha256_in_prefix": "bf0205b503643355001e4f9e944049b4d85c50b758b4834f592a93d273a556c4",
+        "size_in_bytes": 876
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/ne/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "094bae858d2aad793989bc5ec4573658053d37658d1bb11259a1a44c249899ac",
+        "sha256_in_prefix": "094bae858d2aad793989bc5ec4573658053d37658d1bb11259a1a44c249899ac",
+        "size_in_bytes": 1023
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/nl/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "ec7cf90f13f1299acb31567d8a7268ef3d67ecb6e674069bd1ed8219f0f5d111",
+        "sha256_in_prefix": "ec7cf90f13f1299acb31567d8a7268ef3d67ecb6e674069bd1ed8219f0f5d111",
+        "size_in_bytes": 875
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/nl/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "18323048e27e2003a2a705ed060025f1e6a2c88676184fdc3bc84a722781a739",
+        "sha256_in_prefix": "18323048e27e2003a2a705ed060025f1e6a2c88676184fdc3bc84a722781a739",
+        "size_in_bytes": 1022
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/pl/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "9af27c3ddd53734b51c216aa9b50477f40c975b292f6e53107cc7f19e22225db",
+        "sha256_in_prefix": "9af27c3ddd53734b51c216aa9b50477f40c975b292f6e53107cc7f19e22225db",
+        "size_in_bytes": 1012
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/pl/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "4e9f7355ea327562952491c24b0469349951822990bafd4b6592f2116fe155a3",
+        "sha256_in_prefix": "4e9f7355ea327562952491c24b0469349951822990bafd4b6592f2116fe155a3",
+        "size_in_bytes": 1398
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/pt/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "a689241bc12911115aecf79e4d3761de7815a50b47076110d6d7832cb3ad96a7",
+        "sha256_in_prefix": "a689241bc12911115aecf79e4d3761de7815a50b47076110d6d7832cb3ad96a7",
+        "size_in_bytes": 880
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/pt/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "aa50212245e0d7a3576fcda623de4c3350655e512702f129cc521c88c67bdeab",
+        "sha256_in_prefix": "aa50212245e0d7a3576fcda623de4c3350655e512702f129cc521c88c67bdeab",
+        "size_in_bytes": 1027
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/pt_BR/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "c8c85abe63d320df10961128bd94a6996f7480a450e86c61776c7bb159c30cbc",
+        "sha256_in_prefix": "c8c85abe63d320df10961128bd94a6996f7480a450e86c61776c7bb159c30cbc",
+        "size_in_bytes": 894
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/pt_BR/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "44c9521e4bd09f1e9be0f2b656d19234befaefd9a0435c5533b381f221690e99",
+        "sha256_in_prefix": "44c9521e4bd09f1e9be0f2b656d19234befaefd9a0435c5533b381f221690e99",
+        "size_in_bytes": 1041
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/pt_PT/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "b4cc470c652fc940b3002f58a904492559b2b5e7e59333e9b310443f27703cb9",
+        "sha256_in_prefix": "b4cc470c652fc940b3002f58a904492559b2b5e7e59333e9b310443f27703cb9",
+        "size_in_bytes": 897
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/pt_PT/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "4d62088b837e578fb8e230feb051eb9c404c781e00c85ef52279a7923c11bac7",
+        "sha256_in_prefix": "4d62088b837e578fb8e230feb051eb9c404c781e00c85ef52279a7923c11bac7",
+        "size_in_bytes": 1044
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/ro/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "3ec33cc9251cc3d36cf901c946ced77d1905fc08e4fa864379d7dd13ab9c08c8",
+        "sha256_in_prefix": "3ec33cc9251cc3d36cf901c946ced77d1905fc08e4fa864379d7dd13ab9c08c8",
+        "size_in_bytes": 919
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/ro/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "246e1d5a64a19b332a0dbc83cc069c69d64f5e7403cf3eebc765b9d624a45991",
+        "sha256_in_prefix": "246e1d5a64a19b332a0dbc83cc069c69d64f5e7403cf3eebc765b9d624a45991",
+        "size_in_bytes": 1066
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/ru/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "dbc9aca9e1212e125c0c8062e64c8edef248a04d12cc8bd2fa6a20cecaae6d09",
+        "sha256_in_prefix": "dbc9aca9e1212e125c0c8062e64c8edef248a04d12cc8bd2fa6a20cecaae6d09",
+        "size_in_bytes": 1015
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/ru/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "9d24e78e7a1fddd66b6913f61d57c5c2b5bba275a13445939d2bbc1da0290382",
+        "sha256_in_prefix": "9d24e78e7a1fddd66b6913f61d57c5c2b5bba275a13445939d2bbc1da0290382",
+        "size_in_bytes": 1162
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/si/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "95cc61373fa0ca436bb22428dd4f63dec12cae9bf6f13cc7e914f56a4ca2ceef",
+        "sha256_in_prefix": "95cc61373fa0ca436bb22428dd4f63dec12cae9bf6f13cc7e914f56a4ca2ceef",
+        "size_in_bytes": 877
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/si/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "ab84f17ed702fec88850b74150a326698ef18d3755bc325b34cbfa09a27a6701",
+        "sha256_in_prefix": "ab84f17ed702fec88850b74150a326698ef18d3755bc325b34cbfa09a27a6701",
+        "size_in_bytes": 1024
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/sk/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "a5c33872fd6bc626ee7a800baa312ff16c5b58fd04559e1379eacc2a46b8e438",
+        "sha256_in_prefix": "a5c33872fd6bc626ee7a800baa312ff16c5b58fd04559e1379eacc2a46b8e438",
+        "size_in_bytes": 951
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/sk/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "501c482f10c06ac37d76f4fb7e8833ac611ea03514c80c923d545a14ac5c8563",
+        "sha256_in_prefix": "501c482f10c06ac37d76f4fb7e8833ac611ea03514c80c923d545a14ac5c8563",
+        "size_in_bytes": 1098
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/sl/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "8b9535200ec2e829466709f3e712541de2a5cad942c36e28105040f73a6e5798",
+        "sha256_in_prefix": "8b9535200ec2e829466709f3e712541de2a5cad942c36e28105040f73a6e5798",
+        "size_in_bytes": 931
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/sl/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "a5b2ec2e67505f74e3dae12f9434af17e94f37e757acfd5701436b6236d5ec65",
+        "sha256_in_prefix": "a5b2ec2e67505f74e3dae12f9434af17e94f37e757acfd5701436b6236d5ec65",
+        "size_in_bytes": 1078
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/sphinxcontrib.devhelp.pot",
+        "path_type": "hardlink",
+        "sha256": "1e080dfc66f3783772eb0dab048a5b03ea310ff182ce9ee4002f168eef2d7f18",
+        "sha256_in_prefix": "1e080dfc66f3783772eb0dab048a5b03ea310ff182ce9ee4002f168eef2d7f18",
+        "size_in_bytes": 965
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/sr/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "be6a4733fa28aedba7e391146037a00043341df3d521943cc4685665519b20d4",
+        "sha256_in_prefix": "be6a4733fa28aedba7e391146037a00043341df3d521943cc4685665519b20d4",
+        "size_in_bytes": 951
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/sr/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "7dbd0cc7abd6b49037e04a6937d808c67797410085988be0ec515b64aaa7076d",
+        "sha256_in_prefix": "7dbd0cc7abd6b49037e04a6937d808c67797410085988be0ec515b64aaa7076d",
+        "size_in_bytes": 1098
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/sr@latin/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "4114d88e86127be05938afcc4e78fadcebcab05bd6968ba8d358ec9c0901b698",
+        "sha256_in_prefix": "4114d88e86127be05938afcc4e78fadcebcab05bd6968ba8d358ec9c0901b698",
+        "size_in_bytes": 973
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/sr@latin/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "62abc2508b9d7daa083716fdc461f9319458c1392a244d27fa1d5d4535656d77",
+        "sha256_in_prefix": "62abc2508b9d7daa083716fdc461f9319458c1392a244d27fa1d5d4535656d77",
+        "size_in_bytes": 1120
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/sv/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "c75553efb3a948923f67dbdd27d88fe0e3a94246c4135210415da854014db58d",
+        "sha256_in_prefix": "c75553efb3a948923f67dbdd27d88fe0e3a94246c4135210415da854014db58d",
+        "size_in_bytes": 877
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/sv/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "06ea096363f13380cd16fda1aa204e75362ef0188bdfdc93a689f7f5c7373146",
+        "sha256_in_prefix": "06ea096363f13380cd16fda1aa204e75362ef0188bdfdc93a689f7f5c7373146",
+        "size_in_bytes": 1024
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/ta/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "6e6c074a44b54673b7dcd4205e95bd471c166719387e4f2c709bfcd8b25b8580",
+        "sha256_in_prefix": "6e6c074a44b54673b7dcd4205e95bd471c166719387e4f2c709bfcd8b25b8580",
+        "size_in_bytes": 875
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/ta/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "4d7cb147d57a42b0f3b23d6a65eacb4cea82b81bdcdeff7162b73278529a63ee",
+        "sha256_in_prefix": "4d7cb147d57a42b0f3b23d6a65eacb4cea82b81bdcdeff7162b73278529a63ee",
+        "size_in_bytes": 1022
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/tr/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "a7241168920c0e56c11eb39cf7a838f629e79e94b22462b4ccaac96eb792e846",
+        "sha256_in_prefix": "a7241168920c0e56c11eb39cf7a838f629e79e94b22462b4ccaac96eb792e846",
+        "size_in_bytes": 876
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/tr/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "f45e368b665923c045efa8b627b3dcc137d91c68d70c6ab76fb3b837e35c2feb",
+        "sha256_in_prefix": "f45e368b665923c045efa8b627b3dcc137d91c68d70c6ab76fb3b837e35c2feb",
+        "size_in_bytes": 1023
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/uk_UA/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "d8f338170d4d4550f027461ec5cb89209b74e1fe5fd53b826d71856306276b64",
+        "sha256_in_prefix": "d8f338170d4d4550f027461ec5cb89209b74e1fe5fd53b826d71856306276b64",
+        "size_in_bytes": 1117
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/uk_UA/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "ca96685e2a055a8fc556449cf3880491e56b8af52736f4fff12ba27175106aa5",
+        "sha256_in_prefix": "ca96685e2a055a8fc556449cf3880491e56b8af52736f4fff12ba27175106aa5",
+        "size_in_bytes": 1264
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/vi/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "1bcd1a98d27eef3c0e527ffdd8f762f87bf52c6fdc5854778ea17fff2fc0f0da",
+        "sha256_in_prefix": "1bcd1a98d27eef3c0e527ffdd8f762f87bf52c6fdc5854778ea17fff2fc0f0da",
+        "size_in_bytes": 873
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/vi/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "b4ded265c45deee915f3b4fc495263bb6f2e82631c8ba9211fbd68432670a2b8",
+        "sha256_in_prefix": "b4ded265c45deee915f3b4fc495263bb6f2e82631c8ba9211fbd68432670a2b8",
+        "size_in_bytes": 1020
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/zh_CN/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "c5f92d612151801eb79d673e2a45e01cbe5e1ca5a23b06856435ec720ea260d9",
+        "sha256_in_prefix": "c5f92d612151801eb79d673e2a45e01cbe5e1ca5a23b06856435ec720ea260d9",
+        "size_in_bytes": 930
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/zh_CN/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "956909d2bd6d921ae4a09b4de6baa50cc32a707c7dc48c82c3733e6aad0c9bf3",
+        "sha256_in_prefix": "956909d2bd6d921ae4a09b4de6baa50cc32a707c7dc48c82c3733e6aad0c9bf3",
+        "size_in_bytes": 1368
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/zh_TW/LC_MESSAGES/sphinxcontrib.devhelp.mo",
+        "path_type": "hardlink",
+        "sha256": "5ce401dd62e0c70e0ebb032c857bad7506cc46f36a52608994ce2cc919b949fc",
+        "sha256_in_prefix": "5ce401dd62e0c70e0ebb032c857bad7506cc46f36a52608994ce2cc919b949fc",
+        "size_in_bytes": 885
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/devhelp/locales/zh_TW/LC_MESSAGES/sphinxcontrib.devhelp.po",
+        "path_type": "hardlink",
+        "sha256": "6f193de30853707803ba7169db0f9982641afb294219ba5c7dd7385d795a0e90",
+        "sha256_in_prefix": "6f193de30853707803ba7169db0f9982641afb294219ba5c7dd7385d795a0e90",
+        "size_in_bytes": 1032
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_devhelp-1.0.5.dist-info/INSTALLER",
+        "path_type": "hardlink",
+        "sha256": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "sha256_in_prefix": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "size_in_bytes": 5
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_devhelp-1.0.5.dist-info/LICENSE",
+        "path_type": "hardlink",
+        "sha256": "c166b04a478c94b74910f162c63867359671d2cedd766e9a873c4db8eb40f64c",
+        "sha256_in_prefix": "c166b04a478c94b74910f162c63867359671d2cedd766e9a873c4db8eb40f64c",
+        "size_in_bytes": 1437
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_devhelp-1.0.5.dist-info/METADATA",
+        "path_type": "hardlink",
+        "sha256": "1e4736050a17aba67a009797260c482f4f163c50f0dfd43b17f2b01de92adff2",
+        "sha256_in_prefix": "1e4736050a17aba67a009797260c482f4f163c50f0dfd43b17f2b01de92adff2",
+        "size_in_bytes": 2241
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_devhelp-1.0.5.dist-info/RECORD",
+        "path_type": "hardlink",
+        "sha256": "010a9bed936250676b33f465f10e882126600875921dd36dadf35d112f9880bd",
+        "sha256_in_prefix": "010a9bed936250676b33f465f10e882126600875921dd36dadf35d112f9880bd",
+        "size_in_bytes": 13232
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_devhelp-1.0.5.dist-info/REQUESTED",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256_in_prefix": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_devhelp-1.0.5.dist-info/WHEEL",
+        "path_type": "hardlink",
+        "sha256": "1196c6921ec87b83e865f450f08d19b8ff5592537f4ef719e83484e546abe33e",
+        "sha256_in_prefix": "1196c6921ec87b83e865f450f08d19b8ff5592537f4ef719e83484e546abe33e",
+        "size_in_bytes": 81
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_devhelp-1.0.5.dist-info/direct_url.json",
+        "path_type": "hardlink",
+        "sha256": "8cb9fffcaae305a5fb496577cabc88cc1e65c1669784db0d2371240e7652d785",
+        "sha256_in_prefix": "8cb9fffcaae305a5fb496577cabc88cc1e65c1669784db0d2371240e7652d785",
+        "size_in_bytes": 117
+      },
+      {
+        "_path": "lib/python3.10/site-packages/sphinxcontrib/devhelp/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "770e13ebfef321426c09ec51d95c57755512db160518b2922a4337546ee51672",
+  "size": 24551,
+  "subdir": "noarch",
+  "timestamp": 1692039743416,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/noarch/sphinxcontrib-devhelp-1.0.5-pyhd8ed1ab_0.conda",
+  "version": "1.0.5"
+}

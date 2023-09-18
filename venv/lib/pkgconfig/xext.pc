@@ -1,0 +1,12 @@
+prefix=/workspaces/scipy/venv
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: Xext
+Description: Misc X Extension Library
+Version: 1.3.4
+Requires: xextproto
+Requires.private: x11
+Cflags: -I${includedir}
+Libs: -L${libdir} -lXext

@@ -1,0 +1,160 @@
+escape_char /
+comment_char  %
+
+% Secwepemctsin (Shuswap) language locale for Canada
+% sorting according to CAN/CSA-Z243.4.1-1992
+% Source: Neskie Manuel
+% Address: 745 Ska-Hiish Dr 
+%          Chase BC V0E 1M3
+% Contact: Neskie Manuel
+% Email: neskiem@gmail.com
+% Tel: +1 - 2506792821
+% Fax: +1 - 2506792821
+% Language: shs
+% Territory: CA
+% Revision: 0.1
+% Date: 2008-01-11
+% Application: general
+% Users: general
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title      "Secwepemctsin locale for Canada"
+source     "Neskie Manuel"
+address    "745 Ska-Hiish Dr, Chase BC V0E 1M3"
+contact    ""
+email      "bug-glibc-locales@gnu.org"
+tel        ""
+fax        ""
+language   "Secwepemctsin"
+territory  "Canada"
+revision   "1.0"
+date       "2008-01-15"
+%
+category  "shs_CA:2000";LC_IDENTIFICATION
+category  "shs_CA:2000";LC_CTYPE
+category  "shs_CA:2000";LC_COLLATE
+category  "shs_CA:2000";LC_TIME
+category  "shs_CA:2000";LC_NUMERIC
+category  "shs_CA:2000";LC_MONETARY
+category  "shs_CA:2000";LC_MESSAGES
+category  "shs_CA:2000";LC_PAPER
+category  "shs_CA:2000";LC_NAME
+category  "shs_CA:2000";LC_ADDRESS
+category  "shs_CA:2000";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_COLLATE
+copy "iso14651_t1"
+
+reorder-after <RES-1>
+<CAP>
+
+%  Present in iso14651_t1, but these definitions seem to have been
+%  removed from latest iso14651 tables.
+reorder-after <U0041>
+<U00C6> "<U003C><U0061><U003E><U003C><U0065><U003E>";"<U003C><U004C><U0049><U0047><U003E><U003C><U004C><U0049><U0047><U003E>";"<U003C><U0043><U0041><U0050><U003E><U003C><U0043><U0041><U0050><U003E>";IGNORE
+
+reorder-after <U0061>
+<U00E6> "<U003C><U0061><U003E><U003C><U0065><U003E>";"<U003C><U004C><U0049><U0047><U003E><U003C><U004C><U0049><U0047><U003E>";"<U003C><U004D><U0049><U004E><U003E><U003C><U004D><U0049><U004E><U003E>";IGNORE
+
+reorder-end
+
+END LC_COLLATE
+
+LC_CTYPE
+copy "en_CA"
+END LC_CTYPE
+
+LC_MONETARY
+copy "en_CA"
+END LC_MONETARY
+
+LC_NUMERIC
+copy "en_CA"
+END LC_NUMERIC
+
+LC_TIME
+abday      "<U0053><U0078><U0065>";/
+           "<U0053><U0070><U0065>";/
+           "<U0053><U0065><U006C>";/
+           "<U0053><U006B><U0065>";/
+           "<U0053><U006D><U0065>";/
+           "<U0053><U0074><U0073>";/
+           "<U0053><U0074><U0071>"
+day        "<U0053><U0078><U0065><U0074><U0073><U0070><U0065><U0073><U0071><U0313><U0074>";/
+           "<U0053><U0070><U0065><U0074><U006B><U0065><U0073><U0071><U0313><U0074>";/
+           "<U0053><U0065><U006C><U0065><U0073><U0071><U0313><U0074>";/
+           "<U0053><U006B><U0065><U006C><U006C><U0065><U0073><U0071><U0313><U0074>";/
+           "<U0053><U006D><U0065><U0073><U0065><U0073><U0071><U0313><U0074>";/
+           "<U0053><U0074><U0073><U0065><U006C><U006B><U0073><U0074><U0065><U0073><U0071><U0313><U0074>";/
+           "<U0053><U0074><U0071><U006D><U0065><U006B><U0073><U0074><U0065><U0073><U0071><U0313><U0074>"
+abmon      "<U004B><U0077><U0065>";/
+           "<U0054><U0073><U0069>";/
+           "<U0053><U0071><U0065>";/
+           "<U00C9><U0077><U0074>";/
+           "<U0045><U006C><U006C>";/
+           "<U0054><U0073><U0070>";/
+           "<U0054><U0071><U0077>";/
+           "<U0043><U0074><U0313><U00E9>";/
+           "<U0051><U0065><U006C>";/
+           "<U0057><U00E9><U006C>";/
+           "<U0055><U0037><U006C>";/
+           "<U0054><U0065><U0074>"
+mon        "<U0050><U0065><U006C><U006C><U006B><U0077><U0065><U0074><U0313><U006D><U0069><U006E>";/
+       "<U0050><U0065><U006C><U0063><U0074><U0073><U0069><U0070><U0077><U0065><U006E><U0313><U0074><U0065><U006E>";/
+       "<U0050><U0065><U006C><U006C><U0073><U0071><U00E9><U0070><U0074><U0073>";/
+       "<U0050><U0065><U0073><U006C><U006C><U00E9><U0077><U0074><U0065><U006E>";/
+       "<U0050><U0065><U006C><U006C><U0037><U0065><U006C><U006C><U0037><U00E9><U0037><U006C><U006C><U0071><U0074><U0065><U006E>";/
+       "<U0050><U0065><U006C><U006C><U0074><U0073><U0070><U00E9><U006E><U0074><U0073><U006B>";/
+       "<U0050><U0065><U006C><U006C><U0074><U0071><U0077><U0065><U006C><U0071><U0313><U0077><U00E9><U006C><U0313><U0074>";/
+       "<U0050><U0065><U006C><U006C><U0063><U0074><U0313><U00E9><U0078><U0065><U006C><U0313><U0063><U0074><U0065><U006E>";/
+       "<U0050><U0065><U0073><U0071><U0065><U006C><U0071><U006C><U00E9><U006C><U0074><U0065><U006E>";/
+       "<U0050><U0065><U0073><U006C><U006C><U0077><U00E9><U006C><U0073><U0074><U0065><U006E>";/
+       "<U0050><U0065><U006C><U006C><U0063><U0037><U0065><U006C><U006C><U0037><U00E9><U0037><U006C><U006C><U0063><U0077><U0074><U0065><U006E><U0313>";/
+       "<U0050><U0065><U006C><U006C><U0074><U0065><U0074><U00E9><U0074><U0071><U0313><U0065><U006D>"
+d_t_fmt    "<U0025><U0061><U0020><U0025><U0064><U0020><U0025><U0062><U0020><U0025><U0059><U0020><U0025><U0072><U0020><U0025><U005A>"
+d_fmt      "<U0025><U0064><U002F><U0025><U006D><U002F><U0025><U0079>"
+t_fmt      "<U0025><U0072>"
+am_pm      "<U0041><U004D>";"<U0050><U004D>"
+t_fmt_ampm "<U0025><U0049><U003A><U0025><U004D><U003A><U0025><U0053><U0020><U0025><U0070>"
+date_fmt   "<U0025><U0061><U0020><U0025><U0062><U0020><U0025><U0065><U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U0020><U0025><U005A><U0020><U0025><U0059>"
+%  FIXME: found in CLDR
+first_weekday 1
+END LC_TIME
+
+LC_MESSAGES
+copy "en_CA"
+END LC_MESSAGES
+
+LC_PAPER
+copy "en_CA"
+END LC_PAPER
+
+LC_TELEPHONE
+copy "en_CA"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+copy "en_CA"
+END LC_MEASUREMENT
+
+LC_NAME
+copy "en_CA"
+END LC_NAME
+
+LC_ADDRESS
+postal_fmt    "<U0025><U0066><U0025><U004E><U0025><U0061><U0025><U004E>/
+<U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E><U0025><U0073>/
+<U0020><U0025><U0068><U0020><U0025><U0065><U0020><U0025><U0072><U0025>/
+<U004E><U0025><U007A><U0020><U0025><U0054><U0025>/
+<U004E><U0025><U0063><U0025><U004E>"
+country_ab2 "<U0043><U0041>"
+country_ab3 "<U0043><U0041><U004E>"
+country_num 124
+lang_name "<U0053><U0065><U0063><U0077><U0065><U0070><U0065><U006D><U0063><U0074><U0073><U0069><U006E>"
+lang_term "<U0073><U0068><U0073>"
+lang_lib "<U0073><U0068><U0073>"
+END LC_ADDRESS

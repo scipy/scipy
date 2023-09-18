@@ -1,0 +1,157 @@
+//
+//Copyright 1996, 1998  The Open Group
+//
+//Permission to use, copy, modify, distribute, and sell this software and its
+//documentation for any purpose is hereby granted without fee, provided that
+//the above copyright notice appear in all copies and that both that
+//copyright notice and this permission notice appear in supporting
+//documentation.
+//
+//The above copyright notice and this permission notice shall be
+//included in all copies or substantial portions of the Software.
+//
+//THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+//EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+//MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+//IN NO EVENT SHALL THE OPEN GROUP BE LIABLE FOR ANY CLAIM, DAMAGES OR
+//OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+//ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+//OTHER DEALINGS IN THE SOFTWARE.
+//
+//Except as contained in this notice, the name of The Open Group shall
+//not be used in advertising or otherwise to promote the sale, use or
+//other dealings in this Software without prior written authorization
+//from The Open Group.
+//
+
+default xkb_geometry "pc98" {
+
+    description= "Generic PC98";
+    width= 405;
+    height= 172;
+
+    shape.cornerRadius= 1;
+    shape "NORM" { { [ 17,18] }, { [2,1], [ 15,17] } };
+    shape "RTRN" { { [ 20,37] }, { [2,1], [ 18,35] } };
+    shape "LFSH" { { [ 42,18] }, { [2,1], [ 40,17] } };
+    shape "RTSH" { { [ 31,18] }, { [2,1], [ 29,17] } };
+    shape "MODK" { { [ 28,18] }, { [2,1], [ 26,17] } };
+    shape "SPCE" { { [115,18] }, { [2,1], [113,17] } };
+    shape "FUNC" { { [ 21,18] }, { [2,1], [ 19,17] } };
+    shape "BKSP" { { [ 18,18] }, { [2,1], [ 16,17] } };
+    shape "KPAD" { { [ 18,37] }, { [2,1], [ 16,36] } };
+    shape "TABK" { { [ 30,18] }, { [2,1], [ 28,17] } };
+    shape "ARRW" { { [ 35,18] }, { [2,1], [ 33,17] } };
+
+    section.left= 8;
+    row.left= 1;
+    key.shape= "NORM";
+    key.gap=  1;
+    section "Function" {
+	top= 29;
+	row {
+	    top= 1;
+	    key.shape="FUNC";
+	    keys {  { <BRK>, "NORM" }, { <PRSC>, "NORM", 5 },
+		    { <FK01>, 6 }, <FK02>, <FK03>, <FK04>, <FK05>, 
+		    { <FK06>, 6 }, <FK07>, <FK08>, <FK09>, <FK10>, 
+		    { <FK11>, 6 }, <FK12>, <FK13>, <FK14>, <FK15>
+	    };
+	};
+    }; // End of "Function" section
+
+    section "Alpha" {
+	top= 54;
+	row {
+	    top= 1;
+	    keys { { <ESC>, shape="BKSP"}, 
+		   <AE01>, <AE02>, <AE03>, <AE04>,
+		   <AE05>, <AE06>, <AE07>, <AE08>, <AE09>,
+		   <AE10>, <AE11>, <AE12>, <BKSL>,
+		   { <BKSP>, "BKSP" }
+	    };
+	};
+	row {
+	    top= 20;
+	    keys { { <TAB>, "TABK" },
+		   <AD01>, <AD02>, <AD03>, <AD04>, <AD05>, 
+		   <AD06>, <AD07>, <AD08>, <AD09>, <AD10>, 
+		   <AD11>, <AD12>, { <RTRN>, "RTRN", 6 }
+	    };
+	};
+	row {
+	    top= 39;
+	    keys { <LCTL>, <CAPS>,
+		   <AC01>, <AC02>, <AC03>, <AC04>, <AC05>, 
+		   <AC06>, <AC07>, <AC08>, <AC09>, <AC10>, 
+		   <AC11>, <AC12>
+	    };
+	};
+	row {
+	    top= 58;
+	    keys { { <LFSH>, "LFSH" },
+		    <AB01>, <AB02>, <AB03>, <AB04>, <AB05>, 
+		    <AB06>, <AB07>, <AB08>, <AB09>, <AB10>, <AB11>,
+		    { <RTSH>, "RTSH" }
+	    };
+	};
+	row {
+	    top= 77;
+	    keys { { <ALGR>, 35 } , <LALT>, { <NFER>, "FUNC" },
+		   { <SPCE>, "SPCE" }, { <XFER>, "FUNC" }
+		   
+	    };
+	};
+    }; // End of "Alpha" section
+
+    section "Editing" {
+	top= 54;
+	left= 281;
+	row {
+	    top= 1;
+	    keys { <INS>, <DELE> };
+	};
+        row {
+	    top= 20;
+	    keys { <PGDN>, <PGUP> };
+	};
+	row {
+	    top= 39;
+	    keys { { <UP>, "ARRW" } };
+	};
+	row {
+	    top= 58;
+	    keys { <LEFT>, <RGHT> };
+	};
+	row {
+	    top= 77;
+	    keys { { <DOWN>, "ARRW" } };
+	};
+    }; // End of "Editing" section
+
+    section "Keypad" {
+	top= 54;
+	left= 320;
+	row {
+	    top= 1;
+	    keys { <HOME>, <HELP>, <KPSU>, <KPDV> };
+	};
+	row {
+	    top= 20;
+	    keys { <KP7>, <KP8>, <KP9>, <KPMU> };
+	};
+	row {
+	    top= 39;
+	    keys { <KP4>, <KP5>, <KP6>, <KPAD> };
+	};
+	row {
+	    top= 58;
+	    keys { <KP1>, <KP2>, <KP3>, <KPEQ> };
+	};
+	row {
+	    top= 77;
+	    keys { <KP0>, <KPSP>, <KPDC>, <KPEN> };
+	};
+    }; // End of "Keypad" section
+
+}; // End of "pc98" geometry

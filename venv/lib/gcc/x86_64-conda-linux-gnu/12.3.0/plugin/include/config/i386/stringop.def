@@ -1,0 +1,28 @@
+/* Definitions for stringop strategy for IA-32.
+   Copyright (C) 2013-2022 Free Software Foundation, Inc.
+
+This file is part of GCC.
+
+GCC is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3, or (at your option)
+any later version.
+
+GCC is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License 
+along with GCC; see the files COPYING3.  If not,
+see <http://www.gnu.org/licenses/>.  */
+
+DEF_ALG (no_stringop, no_stringop)
+DEF_ALG (libcall, libcall)
+DEF_ALG (rep_prefix_1_byte, rep_byte)
+DEF_ALG (rep_prefix_4_byte, rep_4byte)
+DEF_ALG (rep_prefix_8_byte, rep_8byte)
+DEF_ALG (loop_1_byte, byte_loop)
+DEF_ALG (loop, loop)
+DEF_ALG (unrolled_loop, unrolled_loop)
+DEF_ALG (vector_loop, vector_loop)

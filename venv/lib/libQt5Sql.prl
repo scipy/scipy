@@ -1,0 +1,7 @@
+QMAKE_PRL_BUILD_DIR = /home/conda/feedstock_root/build_artifacts/qt-main_1684749422691/work/qt-build/qtbase/src/sql
+QMAKE_PRO_INPUT = sql.pro
+QMAKE_PRL_TARGET = libQt5Sql.so.5.15.8
+QMAKE_PRL_CONFIG = lex yacc depend_includepath testcase_targets import_plugins import_qpa_plugin prepare_docs qt_docs_targets qt_build_extra file_copies qmake_use qt warn_on release link_prl incremental shared shared release linux unix posix gcc sse2 aesni compile_examples enable_new_dtags largefile precompile_header rdrnd rdseed shani sse3 ssse3 sse4_1 sse4_2 x86SimdAlways prefix_build force_independent utf8_source create_prl link_prl no_private_qt_headers_warning QTDIR_build qt_example_installs exceptions_off testcase_exceptions explicitlib warning_clean generated_privates relative_qt_rpath target_qt c++11 strict_c++ c++14 c++1z c99 c11 bsymbolic_functions hide_symbols split_incpath qt_install_headers need_fwd_pri qt_install_module create_cmake compiler_supports_fpmath create_pc create_libtool have_target dll thread moc resources
+QMAKE_PRL_VERSION = 5.15.8
+QMAKE_PRL_LIBS = -L$$[QT_INSTALL_LIBS] -L$(CONDA_BUILD_SYSROOT)/usr/lib64 -L$(CONDA_BUILD_SYSROOT)/usr/lib $$[QT_INSTALL_LIBS]/libQt5Core.so -lpthread
+QMAKE_PRL_LIBS_FOR_CMAKE = -L$$[QT_INSTALL_LIBS];-L$(CONDA_BUILD_SYSROOT)/usr/lib64;-L$(CONDA_BUILD_SYSROOT)/usr/lib;$$[QT_INSTALL_LIBS]/libQt5Core.so;-lpthread;

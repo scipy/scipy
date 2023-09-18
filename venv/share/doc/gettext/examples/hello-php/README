@@ -1,0 +1,5 @@
+The gettext/PHP binding has a limitation: While it works fine for standalone
+PHP programs, it cannot be used inside a web server, to translate parts of web
+pages into the preferred encoding of user that makes a HTTP connection. The
+reason is that a web server usually is multithreaded, and the gettext() API
+relies on the process' global locale.

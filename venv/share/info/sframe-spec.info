@@ -1,0 +1,623 @@
+This is sframe-spec.info, produced by makeinfo version 6.8 from
+sframe-spec.texi.
+
+Copyright (C) 2021-2023 Free Software Foundation, Inc.
+
+   Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU General Public License, Version 3 or any
+later version published by the Free Software Foundation.  A copy of the
+license is included in the section entitled "GNU General Public
+License".
+
+INFO-DIR-SECTION Software development
+START-INFO-DIR-ENTRY
+* SFrame: (sframe-spec).         The Simple Frame format.
+END-INFO-DIR-ENTRY
+
+
+File: sframe-spec.info,  Node: Top,  Next: Overview,  Up: (dir)
+
+The SFrame format
+*****************
+
+This manual describes version 1 of the SFrame file format.  SFrame
+stands for Simple Frame format.  SFrame format keeps track of the
+minimal necessary information needed for stack unwinding:
+
+   - Canonical Frame Address (CFA).
+   - Frame Pointer (FP).
+   - Return Address (RA).
+
+   The reason for existence of the SFrame format is to support fast,
+online backtracing using a simple unwinder.
+
+* Menu:
+
+* Overview::
+* SFrame section::
+* Index::
+
+
+File: sframe-spec.info,  Node: Overview,  Next: SFrame section,  Prev: Top,  Up: Top
+
+Overview
+********
+
+The SFrame unwind information is provided in a loaded section, known as
+the '.sframe' section.  When available, the '.sframe' section appears in
+a new segment of its own, PT_GNU_SFRAME.
+
+   The SFrame format is currently supported only for select ABIs,
+namely, AMD64 and AAPCS64.
+
+   The contents of the SFrame section are stored in the target
+endianness, i.e., in the endianness of the system on which the section
+is targetted to be used.  An SFrame section reader may use the magic
+number in the SFrame header to identify the endianness of the SFrame
+section.
+
+   Addresses in this specification are expressed in bytes.
+
+   The associated API to decode, probe and encode the SFrame section,
+provided via 'libsframe', is not accompanied here at this time.  This
+will be added later.
+
+   This document is intended to be in sync with the C code in
+'sframe.h'.  Please report descrepancies between the two, if any.
+
+
+File: sframe-spec.info,  Node: SFrame section,  Next: Index,  Prev: Overview,  Up: Top
+
+1 SFrame section
+****************
+
+The SFrame section consists of an SFrame header, starting with a
+preamble, and two other sub-sections, namely the SFrame Function
+Descriptor Entry (SFrame FDE) sub-section, and the SFrame Frame Row
+Entry (SFrame FRE) sub-section.
+
+* Menu:
+
+* SFrame Preamble::
+* SFrame Header::
+* SFrame Function Descriptor Entries::
+* SFrame Frame Row Entries::
+
+
+File: sframe-spec.info,  Node: SFrame Preamble,  Next: SFrame Header,  Up: SFrame section
+
+1.1 SFrame Preamble
+===================
+
+The preamble is a 32-bit packed structure; the only part of the SFrame
+whose format cannot vary between versions.
+
+     typedef struct sframe_preamble
+     {
+       uint16_t sfp_magic;
+       uint8_t sfp_version;
+       uint8_t sfp_flags;
+     } ATTRIBUTE_PACKED sframe_preamble;
+
+   All values are stored in the endianness of the target system for
+which the SFrame section is intended.  Further details:
+
+Offset   Name                    Description
+-----------------------------------------------------------------------------------------
+0x00     'uint16_t sfp_magic'    The magic number for SFrame section: 0xdee2.  Defined
+                                 as a macro 'SFRAME_MAGIC'.
+                                 
+0x02     'uint8_t sfp_version'   The version number of this SFrame section.
+                                 *Note SFrame version::, for the set of valid values.
+                                 Current version is 'SFRAME_VERSION_1'.
+                                 
+0x03     'uint8_t sfp_flags'     Flags (section-wide) for this SFrame section.
+                                 *Note SFrame flags::, for the set of valid values.
+
+* Menu:
+
+* SFrame endianness::
+* SFrame version::
+* SFrame flags::
+
+
+File: sframe-spec.info,  Node: SFrame endianness,  Next: SFrame version,  Up: SFrame Preamble
+
+1.1.1 SFrame endianness
+-----------------------
+
+SFrame sections are stored in the target endianness of the system that
+consumes them.  The SFrame library ('libsframe') can, however, detect
+whether to endian-flip an SFrame section at decode time, by inspecting
+the 'sfp_magic' field in the SFrame header (If it appears as 0xe2de,
+endian-flipping is needed).
+
+
+File: sframe-spec.info,  Node: SFrame version,  Next: SFrame flags,  Prev: SFrame endianness,  Up: SFrame Preamble
+
+1.1.2 SFrame version
+--------------------
+
+The version of the SFrame format can be determined by inspecting
+'sfp_version'.  The following versions are currently valid:
+
+Version            Number   Description
+----------------------------------------------------------------
+'SFRAME_VERSION_1' 1        First version, under development.
+
+   This section documents 'SFRAME_VERSION_1'.
+
+
+File: sframe-spec.info,  Node: SFrame flags,  Prev: SFrame version,  Up: SFrame Preamble
+
+1.1.3 SFrame flags
+------------------
+
+The preamble contains bitflags in its 'sfp_flags' field that describe
+various section-wide properties.
+
+   The following flags are currently defined.
+
+Flag                       Versions   Value   Meaning
+----------------------------------------------------------------------------
+'SFRAME_F_FDE_SORTED'      All        0x1     Function Descriptor Entries
+                                              are sorted on PC.
+'SFRAME_F_FRAME_POINTER'   All        0x2     Functions preserve
+                                              frame-pointer.
+
+   Further flags may be added in future.
+
+
+File: sframe-spec.info,  Node: SFrame Header,  Next: SFrame Function Descriptor Entries,  Prev: SFrame Preamble,  Up: SFrame section
+
+1.2 SFrame Header
+=================
+
+The SFrame header is the first part of an SFrame section.  It begins
+with the SFrame preamble.  All parts of it other than the preamble
+(*note SFrame Preamble::) can vary between SFrame file versions.  It
+contains things that apply to the section as a whole, and offsets to the
+various other sub-sections defined in the format.  As with the rest of
+the SFrame section, all values are stored in the endianness of the
+target system.
+
+   The two sub-sections tile the SFrame section: each section runs from
+the offset given until the start of the next section.  An explicit
+length is given for the last sub-section, the SFrame Frame Row Entry
+(SFrame FRE) sub-section.
+
+     typedef struct sframe_header
+     {
+       sframe_preamble sfh_preamble;
+       uint8_t sfh_abi_arch;
+       int8_t sfh_cfa_fixed_fp_offset;
+       int8_t sfh_cfa_fixed_ra_offset;
+       uint8_t sfh_auxhdr_len;
+       uint32_t sfh_num_fdes;
+       uint32_t sfh_num_fres;
+       uint32_t sfh_fre_len;
+       uint32_t sfh_fdeoff;
+       uint32_t sfh_freoff;
+     } ATTRIBUTE_PACKED sframe_header;
+
+   The sub-section offsets, namely 'sfh_fdeoff' and 'sfh_freoff', in the
+SFrame header are relative to the _end_ of the SFrame header; they are
+each an offset in bytes into the SFrame section where the SFrame FDE
+sub-section and the SFrame FRE sub-section respectively start.
+
+   SFrame header allows specifying explicitly the fixed offsets from
+CFA, if any, from which FP or RA may be recovered.  For example, in
+AMD64, the stack offset of the return address is 'CFA - 8'.  Since this
+offset is in close vicinity with the CFA in most ABIs,
+'sfh_cfa_fixed_fp_offset' and 'sfh_cfa_fixed_ra_offset' are limited to
+signed 8-bit integers.
+
+   SFrame format has provisioned for future ABIs/architectures that it
+may support.  The 'sframe_header' structure provides an unsigned 8-bit
+integral field to denote the size of an auxilliary SFrame header.  The
+auxilliary SFrame header follows right after the 'sframe_header'
+structure.  As for the offset calculations, the _end_ of SFrame header
+must be the end of the auxilliary SFrame header, if the latter is
+present.
+
+   Tieing it all together:
+
+Offset   Name                               Description
+----------------------------------------------------------------------------------
+0x00     'sframe_preamble sfh_preamble'     The SFrame preamble.
+                                            *Note SFrame Preamble::.
+                                            
+0x04     'uint8_t sfh_abi_arch'             The ABI/arch identifier.
+                                            *Note SFrame ABI/arch identifier::.
+                                            
+0x05     'int8_t sfh_cfa_fixed_fp_offset'   The CFA fixed FP offset, if any.
+                                            
+0x06     'int8_t sfh_cfa_fixed_ra_offset'   The CFA fixed RA offset, if any.
+                                            
+0x07     'uint8_t sfh_auxhdr_len'           Size in bytes of the auxilliary
+                                            header that follows the
+                                            'sframe_header' structure.
+                                            
+0x08     'uint32_t sfh_num_fdes'            The number of SFrame FDEs in the
+                                            section.
+                                            
+0xc      'uint32_t sfh_num_fres'            The number of SFrame FREs in the
+                                            section.
+                                            
+0x10     'uint32_t sfh_fre_len'             The length in bytes of the SFrame
+                                            FRE sub-section.
+                                            
+0x14     'uint32_t sfh_fdeoff'              The offset in bytes of the SFrame
+                                            FDE sub-section.  This sub-section
+                                            contains 'sfh_num_fdes' number of
+                                            fixed-length array elements.  The
+                                            array element is of type SFrame
+                                            function desciptor entry, each
+                                            providing a high-level function
+                                            description for backtracing.
+                                            *Note SFrame Function Descriptor Entries::.
+                                            
+0x18     'uint32_t sfh_freoff'              The offset in bytes of the SFrame
+                                            FRE sub-section, the core of the
+                                            SFrame section, which describes the
+                                            unwind information using
+                                            variable-length array elements.
+                                            *Note SFrame Frame Row Entries::.
+                                            
+
+* Menu:
+
+* SFrame ABI/arch identifier::
+
+
+File: sframe-spec.info,  Node: SFrame ABI/arch identifier,  Up: SFrame Header
+
+1.2.1 SFrame ABI/arch identifier
+--------------------------------
+
+SFrame header identifies the ABI/arch of the target system for which the
+executable and it's unwind information is intended.  There are currently
+three identifiable ABI/arch values in the format.
+
+ABI/arch Identifier                Value   Description
+                                           
+---------------------------------------------------------------------
+'SFRAME_ABI_AARCH64_ENDIAN_BIG'    1       AARCH64 big-endian
+                                           
+'SFRAME_ABI_AARCH64_ENDIAN_LITTLE' 2       AARCH64 little-endian
+                                           
+'SFRAME_ABI_AMD64_ENDIAN_LITTLE'   3       AMD64 little-endian
+                                           
+
+   The presence of an explicit identification of ABI/arch in SFrame may
+allow unwinders to make certain ABI-specific decisions.
+
+
+File: sframe-spec.info,  Node: SFrame Function Descriptor Entries,  Next: SFrame Frame Row Entries,  Prev: SFrame Header,  Up: SFrame section
+
+1.3 SFrame FDE
+==============
+
+The SFrame Function Descriptor Entry sub-section is a sorted array of
+fixed-length SFrame function descriptor entries (SFrame FDEs).  Each
+SFrame FDE is a packed structure which contains information to describe
+a function's unwind information at a high-level.
+
+     typedef struct sframe_func_desc_entry
+     {
+       int32_t sfde_func_start_address;
+       uint32_t sfde_func_size;
+       uint32_t sfde_func_start_fre_off;
+       uint32_t sfde_func_num_fres;
+       uint8_t sfde_func_info;
+     } ATTRIBUTE_PACKED sframe_func_desc_entry;
+
+   'sfde_func_start_fre_off' is the offset to the first SFrame FRE for
+the function.  This offset is relative to the _end of the SFrame FDE_
+sub-section (unlike the offsets in the SFrame header, which are relative
+to the _end_ of the SFrame header).
+
+   'sfde_func_info' is the "info word", containing information on the
+FRE type and the FDE type for the function *Note The SFrame FDE info
+word::.
+
+   Following table describes each component of the SFrame FDE structure:
+
+Offset   Name                                 Description
+------------------------------------------------------------------------------------
+0x00     'int32_t sfde_func_start_address'    Signed 32-bit integral field
+                                              denoting the virtual memory address
+                                              of the described function.
+                                              
+0x04     'uint32_t sfde_func_size'            Unsigned 32-bit integral field
+                                              specifying the size of the function
+                                              in bytes.
+                                              
+0x08     'uint32_t sfde_func_start_fre_off'   Unsigned 32-bit integral field
+                                              specifying the offset in bytes of
+                                              the function's first SFrame FRE in
+                                              the SFrame section.
+                                              
+0x0c     'uint32_t sfde_func_num_fres'        Unsigned 32-bit integral field
+                                              specifying the total number of
+                                              SFrame FREs used for the function.
+                                              
+0x10     'uint8_t sfde_func_info'             The SFrame FDE info word.
+                                              *Note The SFrame FDE info word::.
+                                              
+
+* Menu:
+
+* The SFrame FDE info word::
+* The SFrame FDE types::
+* The SFrame FRE types::
+
+
+File: sframe-spec.info,  Node: The SFrame FDE info word,  Next: The SFrame FDE types,  Up: SFrame Function Descriptor Entries
+
+1.3.1 The SFrame FDE info word
+------------------------------
+
+The info word is a bitfield split into three parts.  From MSB to LSB:
+
+Bit offset   Name       Description
+------------------------------------------------------------------------------------------
+7-6          'unused'   Unused bits.
+                        
+5            'pauth_key'Specify which key is used for signing the return addresses in
+                        the SFrame FDE. Two possible values: SFRAME_AARCH64_PAUTH_KEY_A
+                        (0) or SFRAME_AARCH64_PAUTH_KEY_B (1).
+                        
+4            'fdetype'  SFRAME_FDE_TYPE_PCMASK (1) or SFRAME_FDE_TYPE_PCINC (0).
+                        *Note The SFrame FDE types::.
+                        
+0-3          'fretype'  Choice of three SFrame FRE types.
+                        *Note The SFrame FRE types::.
+
+
+File: sframe-spec.info,  Node: The SFrame FDE types,  Next: The SFrame FRE types,  Prev: The SFrame FDE info word,  Up: SFrame Function Descriptor Entries
+
+1.3.2 The SFrame FDE types
+--------------------------
+
+SFrame format defines two types of FDE entries.  The choice of which
+SFrame FDE type to use is made based on the instruction patterns in the
+relevant program stub.
+
+   An SFrame FDE of type 'SFRAME_FDE_TYPE_PCINC' is an indication that
+the PCs in the FREs should be treated as increments in bytes.  This is
+used fo the the bulk of the executable code of a program, which contains
+instructions with no specific pattern.
+
+   In contrast, an SFrame FDE of type 'SFRAME_FDE_TYPE_PCMASK' is an
+indication that the PCs in the FREs should be treated as masks.  This
+type is useful for the cases where a small pattern of instructions in a
+program stub is used repeatedly for a specific functionality.  Typical
+usecases are pltN entries and trampolines.
+
+Name of SFrame FDE type   Value   Description
+                                  
+-------------------------------------------------------------------------------
+SFRAME_FDE_TYPE_PCINC     0       Unwinders perform a (PC >= FRE_START_ADDR)
+                                  to look up a matching FRE.
+                                  
+SFRAME_FDE_TYPE_PCMASK    1       Unwinders perform a (PC &
+                                  FRE_START_ADDR_AS_MASK >=
+                                  FRE_START_ADDR_AS_MASK) to look up a
+                                  matching FRE.
+                                  
+
+
+File: sframe-spec.info,  Node: The SFrame FRE types,  Prev: The SFrame FDE types,  Up: SFrame Function Descriptor Entries
+
+1.3.3 The SFrame FRE types
+--------------------------
+
+A real world application can have functions of size big and small.
+SFrame format defines three types of SFrame FRE entries to represent the
+unwind information for such a variety of function sizes.  These
+representations vary in the number of bits needed to encode the start
+address offset in the SFrame FRE.
+
+   The following constants are defined and used to identify the SFrame
+FRE types:
+
+Name                    Value     Description
+                                  
+--------------------------------------------------------------------------
+'SFRAME_FRE_TYPE_ADDR1' 0         The start address offset (in bytes)
+                                  of the SFrame FRE is an unsigned
+                                  8-bit value.
+                                  
+'SFRAME_FRE_TYPE_ADDR2' 1         The start address offset (in bytes)
+                                  of the SFrame FRE is an unsigned
+                                  16-bit value.
+                                  
+'SFRAME_FRE_TYPE_ADDR4' 2         The start address offset (in bytes)
+                                  of the SFrame FRE is an unsigned
+                                  32-bit value.
+
+   A single function must use the same type of FRE throughout.  The
+choice of which SFrame FRE is used to encode the unwind information of a
+function, is stored in the *Note The SFrame FDE info word::.
+
+
+File: sframe-spec.info,  Node: SFrame Frame Row Entries,  Prev: SFrame Function Descriptor Entries,  Up: SFrame section
+
+1.4 SFrame FRE
+==============
+
+The SFrame Frame Row Entry sub-section contains the core of the unwind
+information.
+
+   An SFrame Frame Row Entry is a self-sufficient record containing
+SFrame unwind info for a range of contiguous addresses, starting at the
+specified offset from the start of the function.  Each SFrame Frame Row
+Entry is followed by S*N bytes, where:
+
+   - 'S' is the size of the stack frame offset for the FRE, and
+   - 'N' is the number of stack frame offsets in the FRE
+
+   The stack offsets, following the FRE, are interpreted in order as
+follows:
+
+   - The first offset is always used to locate the CFA, by interpreting
+     it as: CFA = 'BASE_REG' + offset1.
+   - If RA is being tracked, the second offset is always used to locate
+     the RA, by interpreting it as: RA = CFA + offset2.  If RA is _not_
+     being tracked _and_ FP is being tracked, the second offset will be
+     used to locate the FP, by interpreting it as: FP = CFA + offset2.
+   - If both RA and FP are being tracked, the third offset will be used
+     to locate the FP, by interpreting it as FP = CFA + offset3.
+
+   The entities 'S', 'N' and 'BASE_REG' are identified using the SFrame
+FRE info word, a.k.a.  the 'sframe_fre_info' *Note The SFrame FRE info
+word::.
+
+   Following are the definitions of the allowed SFrame FRE:
+
+     typedef struct sframe_frame_row_entry_addr1
+     {
+       uint8_t sfre_start_address;
+       sframe_fre_info sfre_info;
+     } ATTRIBUTE_PACKED sframe_frame_row_entry_addr1;
+
+     typedef struct sframe_frame_row_entry_addr2
+     {
+       uint16_t sfre_start_address;
+       sframe_fre_info sfre_info;
+     } ATTRIBUTE_PACKED sframe_frame_row_entry_addr2;
+
+     typedef struct sframe_frame_row_entry_addr4
+     {
+       uint32_t sfre_start_address;
+       sframe_fre_info sfre_info;
+     } ATTRIBUTE_PACKED sframe_frame_row_entry_addr4;
+
+   'sfre_start_address' is an unsigned 8-bit/16-bit/32-bit integral
+field identifies the start address of the range of program counters, for
+which the SFrame FRE applies.  The value encoded in the
+'sfre_start_address' field is the offset in bytes of the start address
+of the SFrame FRE, from the start address of the function.
+
+   Further FRE types may be added in future.
+
+* Menu:
+
+* The SFrame FRE info word::
+
+
+File: sframe-spec.info,  Node: The SFrame FRE info word,  Up: SFrame Frame Row Entries
+
+1.4.1 The SFrame FRE info word
+------------------------------
+
+The SFrame FRE info word is a bitfield split into four parts.  From MSB
+to LSB:
+
+Bit offset   Name                    Description
+-------------------------------------------------------------------------------------
+7            'fre_mangled_ra_p'      Indicate whether the return address is
+                                     mangled with any authorization bits (signed
+                                     RA).
+                                     
+5-6          'fre_offset_size'       Size of stack offsets in bytes.  Valid values
+                                     are SFRAME_FRE_OFFSET_1B,
+                                     SFRAME_FRE_OFFSET_2B, and
+                                     SFRAME_FRE_OFFSET_4B.
+                                     
+1-4          'fre_offset_count'      A value of upto 3 is allowed to track all
+                                     three of CFA, FP and RA.
+                                     
+0            'fre_cfa_base_reg_id'   Distinguish between SP or FP based CFA
+                                     recovery.
+                                     
+
+Name                   Value     Description
+                                 
+--------------------------------------------------------------------------------
+'SFRAME_FRE_OFFSET_1B' 0         All stack offsets following the fixed-length
+                                 FRE structure are 1 byte long.
+                                 
+'SFRAME_FRE_OFFSET_2B' 1         All stack offsets following the fixed-length
+                                 FRE structure are 2 bytes long.
+                                 
+'SFRAME_FRE_OFFSET_4B' 2         All stack offsets following the fixed-length
+                                 FRE structure are 4 bytes long.
+                                 
+
+
+File: sframe-spec.info,  Node: Index,  Prev: SFrame section,  Up: Top
+
+Index
+*****
+
+ [index ]
+* Menu:
+
+* endianness:                            SFrame endianness.    (line  6)
+* Overview:                              Overview.             (line  6)
+* PT_GNU_SFRAME:                         Overview.             (line  6)
+* SFrame ABI/arch identifier:            SFrame ABI/arch identifier.
+                                                               (line  6)
+* SFrame FDE:                            SFrame Function Descriptor Entries.
+                                                               (line  6)
+* SFrame flags:                          SFrame flags.         (line  6)
+* SFrame FRE:                            SFrame Frame Row Entries.
+                                                               (line  6)
+* SFrame header:                         SFrame Header.        (line  6)
+* SFrame preamble:                       SFrame Preamble.      (line  6)
+* SFrame section:                        SFrame section.       (line  6)
+* SFrame versions:                       SFrame version.       (line  9)
+* SFRAME_ABI_AARCH64_ENDIAN_BIG:         SFrame ABI/arch identifier.
+                                                               (line 12)
+* SFRAME_ABI_AARCH64_ENDIAN_LITTLE:      SFrame ABI/arch identifier.
+                                                               (line 15)
+* SFRAME_ABI_AMD64_ENDIAN_LITTLE:        SFrame ABI/arch identifier.
+                                                               (line 17)
+* SFRAME_FDE_TYPE_PCINC:                 The SFrame FDE types. (line  6)
+* SFRAME_FDE_TYPE_PCMASK:                The SFrame FDE types. (line  6)
+* SFRAME_FRE_OFFSET_1B:                  The SFrame FRE info word.
+                                                               (line 29)
+* SFRAME_FRE_OFFSET_2B:                  The SFrame FRE info word.
+                                                               (line 33)
+* SFRAME_FRE_OFFSET_4B:                  The SFrame FRE info word.
+                                                               (line 36)
+* SFRAME_FRE_TYPE_ADDR1:                 The SFrame FRE types. (line 17)
+* SFRAME_FRE_TYPE_ADDR2:                 The SFrame FRE types. (line 22)
+* SFRAME_FRE_TYPE_ADDR4:                 The SFrame FRE types. (line 26)
+* SFRAME_F_FDE_SORTED:                   SFrame flags.         (line 11)
+* SFRAME_F_FRAME_POINTER:                SFrame flags.         (line 14)
+* SFRAME_MAGIC:                          SFrame Preamble.      (line 22)
+* SFRAME_VERSION_1:                      SFrame version.       (line  9)
+* The SFrame FDE info word:              SFrame Function Descriptor Entries.
+                                                               (line 59)
+* The SFrame FRE info word:              SFrame Frame Row Entries.
+                                                               (line 64)
+
+
+
+Tag Table:
+Node: Top564
+Node: Overview1114
+Node: SFrame section2135
+Node: SFrame Preamble2607
+Node: SFrame endianness3963
+Node: SFrame version4419
+Node: SFrame flags4921
+Node: SFrame Header5641
+Node: SFrame ABI/arch identifier10812
+Node: SFrame Function Descriptor Entries11778
+Node: The SFrame FDE info word14571
+Node: The SFrame FDE types15558
+Node: The SFrame FRE types17126
+Node: SFrame Frame Row Entries18682
+Node: The SFrame FRE info word21079
+Node: Index23023
+
+End Tag Table
+
+
+Local Variables:
+coding: utf-8
+End:

@@ -1,0 +1,333 @@
+escape_char  /
+comment_char  %
+
+% Luganda language locale for Uganda
+% Source: Akademe ya Luganda
+% Address: c/o P.O. Box 5190 Kampala,
+%          Uganda
+% Contact: Kizito Birabwa
+% Email: kompyuta@kizito.uklinux.net
+% Tel: +41 - (0)1772 724325
+% Fax:
+% Language: lg
+% Territory: UG
+% Revision: 1.0
+% Date: 2001-11-04
+% Users: general
+% Repertoiremap: mnemonic.ds
+% Charset: ISO-8859-10
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title      "Luganda locale for Uganda"
+source     "Akademe ya Luganda"
+address    "c/o P.O. Box 5190 Kampala, Uganda"
+contact    "Kizito Birabwa"
+email      "kompyuta@kizito.uklinux.net"
+tel        ""
+fax        ""
+language   "Luganda"
+territory  "Uganda"
+revision   "1.0"
+date       "2001-11-04"
+%
+category  "lg_UG:2001";LC_IDENTIFICATION
+category  "lg_UG:2001";LC_CTYPE
+category  "lg_UG:2001";LC_COLLATE
+category  "lg_UG:2001";LC_TIME
+category  "lg_UG:2001";LC_NUMERIC
+category  "lg_UG:2001";LC_MONETARY
+category  "lg_UG:2001";LC_MESSAGES
+category  "lg_UG:2001";LC_PAPER
+category  "lg_UG:2001";LC_NAME
+category  "lg_UG:2001";LC_ADDRESS
+category  "lg_UG:2001";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_CTYPE
+% Use the characters described in the charmap file "i18n.tgz"
+%
+copy "i18n"
+
+translit_start
+include  "translit_combining";""
+translit_end
+END LC_CTYPE
+
+LC_COLLATE
+% Copy the template from ISO/IEC 14651 i.e.
+% use the rules there when making ordered lists of words.
+%
+copy "iso14651_t1"
+END LC_COLLATE
+
+LC_MONETARY
+int_curr_symbol         "<U0055><U0047><U0058><U0020>"
+% International currency symbol "UGX"
+%
+currency_symbol         "<U002F><U002D>"
+% Local currency symbol "/-"
+%
+mon_decimal_point       "<U002E>"
+% Sign for a monetary decimal point "."
+%
+mon_thousands_sep       "<U002C>"
+% Sign for thousands separator in money ","
+%
+mon_grouping            3;3
+% For money there are three numbers to the between each
+% pair of thousands separators, e.g. "123,456,786"
+%
+positive_sign           ""
+% No sign in front of positive money values.
+%
+negative_sign           "<U002D>"
+% "-" in front of negative money values.
+%
+int_frac_digits         2
+% Allow 2 decimal places for international
+% representation of fractional money values.
+%
+frac_digits             2
+% Allow 2 decimal places for local
+% representation of fractional money values.
+%
+p_cs_precedes           0
+% The "0" means that the "/-" comes after positive monetary
+% values.
+%
+p_sep_by_space          0
+% The "0" means that there is no space between the numbers and
+% the "/-" sign for positive monetary values.
+%
+n_cs_precedes           0
+% The "0" means that the "/-" comes after negative monetary
+% values.
+%
+n_sep_by_space          0
+% The "0" means that there is no space between the numbers and
+% the "/-" sign for negative monetary values.
+%
+p_sign_posn             1
+% The "1" means that, if a "+" sign is present in a monetary
+% value,it comes before the % "USh", "/-", and the numbers.
+%
+n_sign_posn             1
+% The "1" means that, if a "-" sign is present in a monetary
+% value,it comes before the % "USh", "/-", and the numbers.
+%
+END LC_MONETARY
+
+LC_NUMERIC
+decimal_point           "<U002E>"
+% For normal numbers, the decomal point is a "."
+%
+thousands_sep           "<U002C>"
+% For normal numbers, the thousands separator is a ","
+%
+grouping                3;3
+% For normal numbers, there are three numbers between each
+% pair of thousands separators, e.g. 123,456,789
+%
+END LC_NUMERIC
+
+LC_TIME
+abday       "<U0053><U0061><U0062>";"<U0042><U0061><U006C>";/
+            "<U004C><U0077><U0032>";"<U004C><U0077><U0033>";/
+            "<U004C><U0077><U0034>";"<U004C><U0077><U0035>";/
+            "<U004C><U0077><U0036>"
+% The abbreviations for the week days - Sab, Bal, Lw2, Lw3, Lw4,
+%                                      Lw5, Lw6
+%
+day         "<U0053><U0061><U0062><U0069><U0069><U0074><U0069>";/
+            "<U0042><U0061><U006C><U0061><U007A><U0061>";/
+            "<U004C><U0077><U0061><U006B><U0075><U0062><U0069><U0072><U0069>";/
+            "<U004C><U0077><U0061><U006B><U0075><U0073><U0061><U0074><U0075>";/
+            "<U004C><U0077><U0061><U006B><U0075><U006E><U0061>";/
+            "<U004C><U0077><U0061><U006B><U0075><U0074><U0061><U0061><U006E><U006F>";/
+            "<U004C><U0077><U0061><U006D><U0075><U006B><U0061><U0061><U0067><U0061>"
+% The full names of the week days - Sabiiti, Balaza, Lwakubiri, Lwakusatu, Lwakuna
+%                                   Lwakutaano, Lwamukaaga.
+%
+abmon       "<U004A><U0061><U006E>";"<U0046><U0065><U0062>";/
+            "<U004D><U0061><U0072>";"<U0041><U0070><U0075>";/
+            "<U004D><U0061><U0061>";"<U004A><U0075><U006E>";/
+            "<U004A><U0075><U006C>";"<U0041><U0067><U0075>";/
+            "<U0053><U0065><U0062>";"<U004F><U006B><U0069>";/
+            "<U004E><U006F><U0076>";"<U0044><U0065><U0073>"
+% The abbreviations for the months - Jan, Feb, Mar, Apu, Maa,
+%                                    Juu, Jul, Agu, Seb, Oki,
+%                                    Nov, Des
+%
+mon         "<U004A><U0061><U006E><U0077><U0061><U006C><U0069><U0079><U006F>";/
+            "<U0046><U0065><U0062><U0077><U0061><U006C><U0069><U0079><U006F>";/
+            "<U004D><U0061><U0072><U0069><U0073><U0069>";/
+            "<U0041><U0070><U0075><U006C><U0069>";/
+            "<U004D><U0061><U0061><U0079><U0069>";/
+            "<U004A><U0075><U0075><U006E><U0069>";/
+            "<U004A><U0075><U006C><U0061><U0061><U0069>";/
+            "<U0041><U0067><U0075><U0073><U0069><U0074><U006F>";/
+            "<U0053><U0065><U0062><U0075><U0074><U0074><U0065><U006D><U0062><U0061>";/
+            "<U004F><U006B><U0069><U0074><U006F><U0062><U0062><U0061>";/
+            "<U004E><U006F><U0076><U0065><U006D><U0062><U0061>";/
+            "<U0044><U0065><U0073><U0065><U006D><U0062><U0061>"
+% The full names of the months - Janwaliyo, Febwaliyo, Marisi, Apuli, Maayi,
+%                                    Juuni, Julaayi, Agusito, Sebuttemba,
+%                                    Okitobba, Novemba, Desemba
+%
+d_t_fmt     "<U0025><U0061><U0020><U0025><U0064><U0020><U0025><U0062><U0020><U0025><U0059><U0020><U0025><U0054><U0020><U0025><U005A>"
+% Abreviated date and time representation to be referenced by the "%c" field descriptor -
+% "%a" (weekday name),
+% "%d" (day of month as a decimal number),
+% "%b" (month name),
+% "%Y" (year with century as a decimal number),
+% "%T" (24-hour clock time in format HH:MM:SS),
+% "%Z" (Time zone name)
+%
+d_fmt   "<U0025><U0064><U002F><U0025><U006D><U002F><U0025><U0079>"
+% Date representation to be referenced by the "%x" field % descriptor -
+% "%d/%m/%y", day/month/year as decimal numbers (01/01/00 to 31/12/99).
+%
+t_fmt       "<U0025><U0054>"
+% Time representation to be referenced by the "%X" field descriptor -
+% "%T" (24-hour clock time in format HH:MM:SS)
+%
+am_pm       "";""
+% Define representation of ante meridiem and post meridiem strings -
+% The ""s mean 'default to "AM" and "PM".
+%
+t_fmt_ampm  ""
+% Define time representation in 12-hour format with "am_pm", to be referenced by the "%r"
+% field descriptor -
+% The "" means that this format is not supported.
+%
+date_fmt "<U0025><U0061><U0020><U0025><U0062><U0020><U0025><U0065>/
+<U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U0020>/
+<U0025><U005A><U0020><U0025><U0059>"
+% Date representation not described in ISO/IEC 14652. Comes out as -
+% "%a %b %e %H:%M:%S %Z %Y" which is
+% abbreviated weekday name,
+% day of month as a decimal number (01 to 31),
+% day of month as a decimal number with leading space (1 to 31),
+% hour (24-hour clock) as a decimal number (00 to 23),
+% minute as a decimal number (00 to 59),
+% seconds as a decimal number (00 to 59),
+% time-zone name,
+% year with century as a decimal number,e.g. 2001.
+%
+END LC_TIME
+
+LC_MESSAGES
+yesexpr     "<U005E><U005B><U0079><U0059><U005D>"
+% The affirmative response -
+% "^[yY]"
+%
+noexpr      "<U005E><U005B><U006E><U004E><U005D>"
+% The negative response -
+% "^[nN]"
+%
+END LC_MESSAGES
+
+LC_PAPER
+height   297
+width    210
+% Default paper size - A4
+%
+END LC_PAPER
+
+LC_TELEPHONE
+tel_int_fmt    "<U002B><U0025><U0063><U0020><U0025><U0061><U0020><U0025>/
+<U006C>"
+% Representation of telephone number for international use -
+% "+%c %a %l", which is
+% "+country code",
+% "area code without the prefix (often 0)",
+% "local number".
+%
+tel_dom_fmt    "<U0025><U0061><U0020><U0025><U006C>"
+% Represntation of telephone number for domestic use -
+% "%a %l", which is
+% "area code, local number".
+%
+int_select     "<U0030><U0030>"
+% Digits used in Uganda to dial international - "00".
+%
+int_prefix     "<U0032><U0035><U0036>"
+% International prefix for Uganda - "256"
+%
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+measurement    1
+END LC_MEASUREMENT
+
+LC_NAME
+name_fmt    "<U0025><U0064><U0025><U0074><U0025><U0067><U0025><U0074>/
+<U0025><U006D><U0025><U0074><U0025><U0066>"
+% Format for addressing a person.
+% "%d%t%g%t%m%t%f"
+% "Salutation",
+% "Empty string, or <Space>",
+% "First given name",
+% "Empty string, or <Space>",
+% "Middle names",
+% "Empty string, or <Space>",
+% "Clan names"
+%
+name_miss   "<U004D><U006C><U0061>"
+% Salutation for unmarried females - "Mla"
+%
+name_mr     "<U004D><U0077>"
+% Salutation for males - "Mw"
+%
+name_mrs    "<U004D><U006C><U0061>"
+% Salutation for married females - "Mla"
+%
+name_ms     "<U004D><U006C><U0061>"
+% Salutation valid for all females - "Mla"
+END LC_NAME
+
+LC_ADDRESS
+country_name "<U0059><U0075><U0067><U0061><U006E><U0064><U0061>"
+% Country name in Luganda - "Yuganda"
+%
+country_post "<U0055><U0047>"
+% Abbreviated country postal name - "UG"
+%
+country_ab2 "<U0055><U0047>"
+% ISO 3166 two letter country abbreviation - "UG"
+%
+postal_fmt    "<U0025><U0066><U0025><U004E><U0025><U0061><U0025><U004E>/
+<U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E><U0025><U0073>/
+<U0020><U0025><U0068><U0020><U0025><U0065><U0020><U0025><U0072><U0025>/
+<U004E><U0025><U007A><U0020><U0025><U0054><U0025>/
+<U004E><U0025><U0063><U0025><U004E>"
+% Representation of postal addresses (minus the addressee's name) in Uganda.
+% "%f%N%a%N%d%N%b%N%s %h %e %r%N%z %T%N%c%N", which gives -
+% "firm name",
+% "end of line",
+% "C/O address",
+% "end of line",
+% "department name",
+% "Building name",
+% "end of line",
+% "street or block name",
+% "space",
+% "house number or designation",
+% "space",
+% "floor number",
+% "space",
+% "room number, door designation",
+% "end of line",
+% "postal code",
+% "space",
+% "town, city",
+% "end of line",
+% "country designation for the <country_post> keyword",
+% "end of line
+%
+country_ab3 "<U0055><U0047><U0041>"
+country_num 800
+END LC_ADDRESS

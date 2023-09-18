@@ -1,0 +1,157 @@
+.TH CAP_CLEAR 3 "2022-10-16" "" "Linux Programmer's Manual"
+.SH NAME
+cap_clear, cap_clear_flag, cap_get_flag, cap_set_flag, cap_fill_flag, cap_fill, cap_compare, cap_max_bits \- capability data object manipulation
+.SH SYNOPSIS
+.nf
+#include <sys/capability.h>
+
+int cap_clear(cap_t cap_p);
+int cap_clear_flag(cap_t cap_p, cap_flag_t flag);
+int cap_get_flag(cap_t cap_p, cap_value_t cap,
+                 cap_flag_t flag, cap_flag_value_t *value_p);
+int cap_set_flag(cap_t cap_p, cap_flag_t flag, int ncap,
+                 const cap_value_t *caps, cap_flag_value_t value);
+int cap_fill_flag(cap_t cap_p, cap_flag_t to,
+                  const cap_t ref, cap_flag_t from);
+int cap_fill(cap_t cap_p, cap_flag_t to, cap_flag_t from);
+int cap_compare(cap_t cap_a, cap_t cap_b);
+cap_value_t cap_max_bits();
+.fi
+.sp
+Link with \fI\-lcap\fP.
+.SH DESCRIPTION
+These functions work on a capability state held in working storage.
+A
+.I cap_t
+holds information about the capabilities in each of the three flags,
+Permitted, Inheritable, and Effective.
+Each capability in a set may be clear (disabled, 0) or set (enabled, 1).
+.PP
+These functions work with the following data types:
+.TP 18
+.I cap_value_t
+identifies a capability, such as
+.BR CAP_CHOWN .
+.TP
+.I cap_flag_t
+identifies one of the three flags associated with a capability
+(i.e., it identifies one of the three capability dimensions).
+Valid values for this type are
+.BR CAP_EFFECTIVE ,
+.B CAP_INHERITABLE
+or
+.BR CAP_PERMITTED .
+.TP
+.I cap_flag_value_t
+identifies the setting of a particular capability flag
+(i.e, the value of a capability in a set).
+Valid values for this type are
+.B CAP_CLEAR
+(0) or
+.B CAP_SET
+(1).
+.PP
+.BR cap_clear ()
+initializes the capability state in working storage identified by
+.I cap_p
+so that all capability flags are cleared.
+.PP
+.BR cap_clear_flag ()
+clears all of the capabilities of the specified capability flag,
+.IR flag .
+.PP
+.BR cap_get_flag ()
+obtains the current value of the capability flag,
+.IR flag ,
+of the capability,
+.IR cap ,
+from the capability state identified by
+.I cap_p
+and places it in the location pointed to by
+.IR value_p .
+.PP
+.BR cap_set_flag ()
+sets the flag,
+.IR flag ,
+of each capability in the array
+.I caps
+in the capability state identified by
+.I cap_p
+to
+.IR value .
+The argument,
+.IR ncap ,
+is used to specify the number of capabilities in the array,
+.IR caps .
+.PP
+.BR cap_fill_flag ()
+fills the to flag of one capability set, with the values in the from
+flag of a reference capability set.
+.PP
+.BR cap_fill ()
+fills the to flag values by copying all of the from flag values.
+.PP
+.BR cap_compare ()
+compares two full capability sets and, in the spirit of
+.BR memcmp (),
+returns zero if the two capability sets are identical. A positive
+return
+.I value
+indicates there is a difference between them. The returned
+.I value
+carries further information about the
+.BI "cap_flag_t " flag
+differences. Specifically, the macro
+.B CAP_DIFFERS
+.RI ( value ", " flag )
+evaluates to non-zero if the returned
+.I value
+differs in its
+.I flag
+components.
+.PP
+.BR cap_max_bits ()
+returns the number of capability values known to the running
+kernel. This may differ from libcap's list known at compilation
+time. Unnamed, at compilation time, capabilites can be referred to
+numerically and libcap will handle them appropriately. Note, the
+running kernel wins and it gets to define what "all" capabilities
+means.
+.SH "RETURN VALUE"
+.BR cap_clear (),
+.BR cap_clear_flag (),
+.BR cap_get_flag ()
+.BR cap_set_flag ()
+and
+.BR cap_compare ()
+return zero on success, and \-1 on failure. Other return values for
+.BR cap_compare ()
+are described above. The function
+.BR cap_max_bits ()
+returns a numeric value of type
+.B cap_value_t
+that is one larger than the largest actual value known to the running
+kernel.
+.PP
+On failure,
+.I errno
+is set to 
+.BR EINVAL ,
+indicating that one of the arguments is invalid.
+.SH "CONFORMING TO"
+These functions are mostly as per specified in the withdrawn POSIX.1e
+draft specification.  The following are Linux extensions:
+.BR cap_fill (),
+.BR cap_fill_flag (),
+.BR cap_clear_flag (),
+.BR cap_compare ()
+and
+.BR cap_max_bits ().
+.SH "SEE ALSO"
+.BR libcap (3),
+.BR cap_copy_ext (3),
+.BR cap_from_text (3),
+.BR cap_get_file (3),
+.BR cap_get_proc (3),
+.BR cap_init (3),
+.BR capabilities (7)

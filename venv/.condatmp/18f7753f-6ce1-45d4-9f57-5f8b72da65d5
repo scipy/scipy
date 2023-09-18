@@ -1,0 +1,14 @@
+prefix=/workspaces/scipy/venv
+exec_prefix=/workspaces/scipy/venv
+libdir=/workspaces/scipy/venv/lib
+includedir=/workspaces/scipy/venv/include
+
+Name: FreeType 2
+URL: https://freetype.org
+Description: A free, high-quality, and portable font engine.
+Version: 24.3.18
+Requires: 
+Requires.private: zlib, libpng
+Libs: -L/workspaces/scipy/venv/lib -lfreetype
+Libs.private: 
+Cflags: -I${includedir}/freetype2

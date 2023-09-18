@@ -1,0 +1,221 @@
+// Keyboard layouts for Romania.
+
+// The first two layouts conform to the Romanian standard SR 13392:2004,
+// adopted in 2004 by ASRO, "Asociația de Standardizare din România".
+//
+// The default layout is the Programmers layout because keyboards that are
+// engraved according to the primary layout from the standard are lacking.
+// The "std" variant, further down, implements the primary layout.
+//
+// Diacritics with cedillas, as in ISO-8859-2, are no longer supported. This
+// error has been corrected in ISO-889-16 through using commabelow accents.
+// Pre-Vista MS-compatible layout ("winkeys" variant) generates commabelow
+// accents too now.
+//
+// Created by Cristian Gafton, <gafton@redhat.com> (C) 2000
+// Modified by Marius Andreiana, <mandreiana@yahoo.com> (C) 2001
+// Completed by Dumitru Moldovan, <dumol@gnome.org> (C) 2001, 2004-2008, 2020
+
+
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+    // This Programmers/RO_US layout has always been the "de facto" standard
+    // in the Linux/Unix world, and is therefore the default here, although
+    // it is the secondary layout in the Romanian standard.  It is fully
+    // compatible with a US keyboard (ignoring the Euro on AltGr+5).
+
+    include "us"
+
+    name[Group1]="Romanian";
+
+    key <AE01>	{[            1,      exclam,       dead_tilde              ]};
+    key <AE02>	{[            2,          at,       dead_caron              ]};
+    key <AE03>	{[            3,  numbersign,  dead_circumflex              ]};
+    key <AE04>	{[            4,      dollar,       dead_breve              ]};
+    key <AE05>	{[            5,     percent,   dead_abovering              ]};
+    key <AE06>	{[            6, asciicircum,      dead_ogonek              ]};
+    key <AE07>	{[            7,   ampersand,       dead_grave              ]};
+    key <AE08>	{[            8,    asterisk,    dead_abovedot              ]};
+    key <AE09>	{[            9,   parenleft,       dead_acute              ]};
+    key <AE10>	{[            0,  parenright, dead_doubleacute              ]};
+    key <AE11>	{[        minus,  underscore,   dead_diaeresis,      endash ]};
+    key <AE12>	{[        equal,        plus,     dead_cedilla,   plusminus ]};
+
+    key <AD01>	{[            q,           Q,      acircumflex, Acircumflex ]};
+    key <AD02>	{[            w,           W,           ssharp,       U1e9e ]};
+    key <AD03>	{[            e,           E,         EuroSign              ]};
+    key <AD05>	{[            t,           T,            U021b,       U021a ]}; // ț Ț
+    key <AD08>	{[            i,           I,      icircumflex, Icircumflex ]};
+    key <AD10>	{[            p,           P,          section              ]};
+    key <AD11>	{[  bracketleft,   braceleft, doublelowquotemark            ]};
+    key <AD12>	{[ bracketright,  braceright, rightdoublequotemark          ]};
+
+    key <AC01>	{[            a,           A,           abreve,      Abreve ]};
+    key <AC02>	{[            s,           S,            U0219,       U0218 ]}; // ș Ș
+    key <AC03>	{[            d,           D,          dstroke,     Dstroke ]};
+    key <AC09>	{[            l,           L,          lstroke,     Lstroke ]};
+
+    key <LSGT>	{[    backslash,         bar                                ]};
+    key <AB03>	{[            c,           C,        copyright              ]};
+    key <AB08>	{[        comma,        less,    guillemotleft              ]};
+    key <AB09>	{[       period,     greater,   guillemotright              ]};
+
+    key <KPDL>	{[    KP_Delete,  KP_Decimal,    KP_Separator, KP_Separator ]};
+
+    include "level3(ralt_switch)"
+};
+
+
+partial alphanumeric_keys
+xkb_symbols "std" {
+
+    // Primary layout in the Romanian standard, implemented here as a variant
+    // because Romanian users prefer the secondary layout of the standard.
+
+    include "us"
+
+    name[Group1]="Romanian (standard)";
+
+    key <TLDE>	{[doublelowquotemark,rightdoublequotemark, grave, asciitilde]};
+    key <AE01>	{[            1,      exclam,       dead_tilde              ]};
+    key <AE02>	{[            2,          at,       dead_caron              ]};
+    key <AE03>	{[            3,  numbersign,  dead_circumflex              ]};
+    key <AE04>	{[            4,      dollar,       dead_breve              ]};
+    key <AE05>	{[            5,     percent,   dead_abovering              ]};
+    key <AE06>	{[            6, asciicircum,      dead_ogonek              ]};
+    key <AE07>	{[            7,   ampersand,       dead_grave              ]};
+    key <AE08>	{[            8,    asterisk,    dead_abovedot              ]};
+    key <AE09>	{[            9,   parenleft,       dead_acute              ]};
+    key <AE10>	{[            0,  parenright, dead_doubleacute              ]};
+    key <AE11>	{[        minus,  underscore,   dead_diaeresis,      endash ]};
+    key <AE12>	{[        equal,        plus,     dead_cedilla,   plusminus ]};
+
+    key <AD03>	{[            e,           E,         EuroSign              ]};
+    key <AD10>	{[            p,           P,          section              ]};
+    key <AD11>	{[       abreve,      Abreve,      bracketleft,   braceleft ]};
+    key <AD12>	{[  icircumflex, Icircumflex,     bracketright,  braceright ]};
+    key <BKSL>	{[  acircumflex, Acircumflex,        backslash,         bar ]};
+
+    key <AC02>	{[            s,           S,           ssharp,       U1e9e ]};
+    key <AC03>	{[            d,           D,          dstroke,     Dstroke ]};
+    key <AC09>	{[            l,           L,          lstroke,     Lstroke ]};
+    key <AC10>	{[        U0219,       U0218,        semicolon,       colon ]}; // ș Ș
+    key <AC11>	{[        U021b,       U021a,       apostrophe,    quotedbl ]}; // ț Ț
+
+    key <LSGT>	{[    backslash,         bar                                ]};
+    key <AB03>	{[            c,           C,        copyright              ]};
+    key <AB08>	{[        comma,   semicolon,           less, guillemotleft ]};
+    key <AB09>	{[       period,       colon,       greater, guillemotright ]};
+
+    key <KPDL>	{[    KP_Delete, KP_Separator,      KP_Decimal,  KP_Decimal ]};
+
+    include "level3(ralt_switch)"
+};
+
+
+partial alphanumeric_keys
+xkb_symbols "winkeys" {
+
+    // Romanian (legacy) QWERTZ keyboard layout, as available on Windows 10,
+    // but with the correct commabelow accents and the Euro sign on AltGr+e.
+    // Some Romanian hardware keyboards are still built like this.
+    // Older Romanian hardware keyboards might be slightly different.
+    // Created by Manfred Pohler, <Manfred.Pohler@t-online.de> (C) 2003
+    // Updated by Dumitru Moldovan, <dumol@gnome.org> (C) 2020
+
+    include "us"
+
+    name[Group1]="Romanian (Windows)";
+
+    key <TLDE>	{[ bracketright, bracketleft                                ]};
+    key <AE01>	{[            1,      exclam,       asciitilde              ]};
+    key <AE02>	{[            2,    quotedbl,       dead_caron              ]};
+    key <AE03>	{[            3,  numbersign,  dead_circumflex              ]};
+    key <AE04>	{[            4,    currency,       dead_breve              ]};
+    key <AE05>	{[            5,     percent,   dead_abovering              ]};
+    key <AE06>	{[            6,   ampersand,      dead_ogonek              ]};
+    key <AE07>	{[            7,       slash,       dead_grave              ]};
+    key <AE08>	{[            8,   parenleft,    dead_abovedot              ]};
+    key <AE09>	{[            9,  parenright,       dead_acute              ]};
+    key <AE10>	{[            0,       equal, dead_doubleacute              ]};
+    key <AE11>	{[         plus,    question,   dead_diaeresis              ]};
+    key <AE12>	{[   apostrophe,    asterisk,     dead_cedilla              ]};
+
+    key <AD01>	{[            q,           Q,        backslash              ]};
+    key <AD02>	{[            w,           W,              bar              ]};
+    key <AD03>	{[            e,           E,         EuroSign              ]};
+    key <AD06>	{[            z,           Z                                ]};
+    key <AD11>	{[       abreve,      Abreve,         division              ]};
+    key <AD12>	{[  icircumflex, Icircumflex,         multiply              ]};
+
+    key <AC02>	{[            s,           S,          dstroke              ]};
+    key <AC03>	{[            d,           D,          Dstroke              ]};
+    key <AC08>	{[            k,           K,          lstroke              ]};
+    key <AC09>	{[            l,           L,          Lstroke              ]};
+    key <AC10>	{[        U0219,       U0218,           dollar              ]}; // ș Ș
+    key <AC11>	{[        U021b,       U021a,           ssharp              ]}; // ț Ț
+    key <BKSL>	{[  acircumflex, Acircumflex                                ]};
+
+    key <LSGT>	{[         less,     greater                                ]};
+    key <AB01>	{[            y,           Y                                ]};
+    key <AB04>	{[            v,           V,               at              ]};
+    key <AB05>	{[            b,           B,        braceleft              ]};
+    key <AB06>	{[            n,           N,       braceright              ]};
+    key <AB07>	{[            m,           M,          section              ]};
+    key <AB08>	{[        comma,   semicolon,             less              ]};
+    key <AB09>	{[       period,       colon,          greater              ]};
+    key <AB10>	{[        minus,  underscore                                ]};
+
+    key <KPDL>	{[    KP_Delete, KP_Separator,      KP_Decimal,  KP_Decimal ]};
+
+    include "level3(ralt_switch)"
+};
+
+
+// EXTRAS:
+
+
+partial
+xkb_symbols "crh_dobruja" {
+    // Romania-specific Crimean Tatar (Crimean Turkish) Q layout, not yet standard.
+    // Reşat SABIQ <tilde.birlik @ gmail . com>, 2009, 2011
+    // Özgür Qarahan <qarahan @ gmail . com>, 2009
+
+    include "ua(crh)"
+
+    name[Group1]="Crimean Tatar (Dobruja Q)";
+
+    key <AD02>	{[            w,           W,           abreve,      Abreve ]};
+    key <AD05>	{[            t,           T,            U021b,       U021a ]}; // ț Ț
+    key <AD10>	{[            p,           P,          section              ]};
+    key <AC02>	{[            s,           S,            U0219,       U0218 ]}; // ș Ș
+    key <AC07>	{[       ibreve,      Ibreve,                j,           J ]};
+    key <AB07>	{[            m,           M,        trademark,   masculine ]};
+};
+
+
+partial alphanumeric_keys
+xkb_symbols "ergonomic" {
+    // This layout is optimized for fast touch-typing in Romanian on a
+    // US keyboard, and works by swapping out symbols infrequently used
+    // in written Romanian (q, w, y, k) in favor of native ones, thus
+    // reducing the need to use modifier keys.
+    // Created by Gabriel Somlo, <somlo@cmu.edu> (C) 2011
+
+    include "ro(basic)"
+
+    name[Group1]="Romanian (ergonomic Touchtype)";
+
+    key <AD01>	{[       abreve,      Abreve,                q,           Q ]};
+    key <AD02>	{[        U0219,       U0218,                w,           W ]};
+    key <AD06>	{[        U021b,       U021a,                y,           Y ]};
+    key <AC01>	{[            a,           A,      acircumflex, Acircumflex ]};
+    key <AC08>	{[  icircumflex, Icircumflex,                k,           K ]};
+};
+
+
+partial alphanumeric_keys
+xkb_symbols "sun_type6" {
+    include "sun_vndr/ro(sun_type6)"
+};

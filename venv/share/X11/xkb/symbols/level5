@@ -1,0 +1,109 @@
+// These variants assign ISO_Level5_Shift to various keys
+// so that levels 5 to 8 can be reached.
+
+// The right Ctrl key (while pressed) chooses the fifth shift level.
+partial modifier_keys
+xkb_symbols "rctrl_switch" {
+  key <RCTL> {[  ISO_Level5_Shift  ], type[group1]="ONE_LEVEL" };
+};
+
+// The Less/Greater key (while pressed) chooses the fifth shift level.
+partial modifier_keys
+xkb_symbols "lsgt_switch" {
+  key <LSGT> {[  ISO_Level5_Shift  ], type[group1]="ONE_LEVEL" };
+};
+
+// The right Alt key (while pressed) chooses the fifth shift level.
+partial modifier_keys
+xkb_symbols "ralt_switch" {
+  key <RALT> {[  ISO_Level5_Shift  ], type[group1]="ONE_LEVEL" };
+};
+
+// The CapsLock key (while pressed) chooses the fifth shift level.
+partial modifier_keys
+xkb_symbols "caps_switch" {
+  key <CAPS> {[  ISO_Level5_Shift  ], type[group1]="ONE_LEVEL" };
+};
+
+// The Menu key (while pressed) chooses the fifth shift level.
+partial modifier_keys
+xkb_symbols "menu_switch" {
+  key <MENU> {[  ISO_Level5_Shift  ], type[group1]="ONE_LEVEL" };
+};
+
+
+// This adds the definitions needed to create a level5-locking behaviour,
+// using the virtual modifier NumLock (mapped to Mod2) as lock indicator.
+// See also types/level5 (EIGHT_LEVEL_WITH_LEVEL5_LOCK) and compat/level5 (level5_lock).
+partial modifier_keys
+xkb_symbols "lock" {
+  replace key <HYPR> {[  NoSymbol  ], type[group1] = "ONE_LEVEL", vmods = NumLock,
+                                      actions[group1] = [ SetMods(modifiers=NumLock) ]};
+  modifier_map Mod2 { <HYPR> };
+};
+
+// Below are eight variants for assigning extra keys for choosing/locking the fifth level.
+
+partial modifier_keys
+xkb_symbols "lsgt_switch_lock" {
+  include "level5(lock)"
+  key <LSGT> {[  ISO_Level5_Shift, ISO_Level5_Shift, ISO_Level5_Shift, ISO_Level5_Shift,
+                 ISO_Level5_Lock, ISO_Level5_Lock, ISO_Level5_Lock, ISO_Level5_Lock  ],
+                 type[group1] = "EIGHT_LEVEL" };
+};
+
+partial modifier_keys
+xkb_symbols "lwin_switch_lock" {
+  include "level5(lock)"
+  key <LWIN> {[  ISO_Level5_Shift, ISO_Level5_Shift, ISO_Level5_Shift, ISO_Level5_Shift,
+                 ISO_Level5_Lock, ISO_Level5_Lock, ISO_Level5_Lock, ISO_Level5_Lock  ],
+                 type[group1] = "EIGHT_LEVEL" };
+};
+
+partial modifier_keys
+xkb_symbols "ralt_switch_lock" {
+  include "level5(lock)"
+  key <RALT> {[  ISO_Level5_Shift, ISO_Level5_Shift, ISO_Level5_Shift, ISO_Level5_Shift,
+                 ISO_Level5_Lock, ISO_Level5_Lock, ISO_Level5_Lock, ISO_Level5_Lock  ],
+                 type[group1] = "EIGHT_LEVEL" };
+};
+
+partial modifier_keys
+xkb_symbols "rwin_switch_lock" {
+  include "level5(lock)"
+  key <RWIN> {[  ISO_Level5_Shift, ISO_Level5_Shift, ISO_Level5_Shift, ISO_Level5_Shift,
+                 ISO_Level5_Lock, ISO_Level5_Lock, ISO_Level5_Lock, ISO_Level5_Lock  ],
+                 type[group1] = "EIGHT_LEVEL" };
+};
+
+partial modifier_keys
+xkb_symbols "lsgt_switch_lock_cancel" {
+  include "level5(lock)"
+  key <LSGT> {[  ISO_Level5_Shift, ISO_Level5_Shift, ISO_Level5_Shift, ISO_Level5_Shift,
+                 ISO_Level5_Lock, ISO_Level5_Lock, ISO_Level5_Lock, ISO_Level5_Lock  ],
+                 type[group1] = "EIGHT_LEVEL_WITH_LEVEL5_LOCK" };
+};
+
+partial modifier_keys
+xkb_symbols "lwin_switch_lock_cancel" {
+  include "level5(lock)"
+  key <LWIN> {[  ISO_Level5_Shift, ISO_Level5_Shift, ISO_Level5_Shift, ISO_Level5_Shift,
+                 ISO_Level5_Lock, ISO_Level5_Lock, ISO_Level5_Lock, ISO_Level5_Lock  ],
+                 type[group1] = "EIGHT_LEVEL_WITH_LEVEL5_LOCK" };
+};
+
+partial modifier_keys
+xkb_symbols "ralt_switch_lock_cancel" {
+  include "level5(lock)"
+  key <RALT> {[  ISO_Level5_Shift, ISO_Level5_Shift, ISO_Level5_Shift, ISO_Level5_Shift,
+                 ISO_Level5_Lock, ISO_Level5_Lock, ISO_Level5_Lock, ISO_Level5_Lock  ],
+                 type[group1] = "EIGHT_LEVEL_WITH_LEVEL5_LOCK" };
+};
+
+partial modifier_keys
+xkb_symbols "rwin_switch_lock_cancel" {
+  include "level5(lock)"
+  key <RWIN> {[  ISO_Level5_Shift, ISO_Level5_Shift, ISO_Level5_Shift, ISO_Level5_Shift,
+                 ISO_Level5_Lock, ISO_Level5_Lock, ISO_Level5_Lock, ISO_Level5_Lock  ],
+                 type[group1] = "EIGHT_LEVEL_WITH_LEVEL5_LOCK" };
+};

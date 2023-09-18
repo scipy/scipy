@@ -1,0 +1,46 @@
+{
+  "build": "default_h4d60ac6_1",
+  "build_number": 1,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [],
+  "depends": [
+    "libgcc-ng >=12",
+    "libllvm16 >=16.0.6,<16.1.0a0",
+    "libstdcxx-ng >=12"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/libclang13-16.0.6-default_h4d60ac6_1",
+  "features": "",
+  "files": [
+    "lib/libclang.so.13"
+  ],
+  "fn": "libclang13-16.0.6-default_h4d60ac6_1.conda",
+  "license": "Apache-2.0 WITH LLVM-exception",
+  "license_family": "Apache",
+  "link": {
+    "source": "/opt/conda/pkgs/libclang13-16.0.6-default_h4d60ac6_1",
+    "type": 1
+  },
+  "md5": "d4f1b86334951062797b483a01b0c765",
+  "name": "libclang13",
+  "package_tarball_full_path": "/opt/conda/pkgs/libclang13-16.0.6-default_h4d60ac6_1.conda",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "lib/libclang.so.13",
+        "path_type": "hardlink",
+        "sha256": "6afd8196320388c1ef0c850b6a55eef7a51c6e8f1be77ad58a3b5a22b1ecd7e0",
+        "sha256_in_prefix": "6afd8196320388c1ef0c850b6a55eef7a51c6e8f1be77ad58a3b5a22b1ecd7e0",
+        "size_in_bytes": 44452696
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "c75b74cce26d393be38b82ae16261db89b1eebf7ee95208965117fc615135fa5",
+  "size": 10264271,
+  "subdir": "linux-64",
+  "timestamp": 1690050166345,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/libclang13-16.0.6-default_h4d60ac6_1.conda",
+  "version": "16.0.6"
+}

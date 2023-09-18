@@ -1,0 +1,16 @@
+This example relies on YaST2 (SuSE Linux: package yast2-core).
+
+Before "make install", you need to make the locale directory writable:
+  chmod a+w /usr/share/YaST2/locale
+  chmod a+w /usr/share/YaST2/locale/*/LC_MESSAGES
+Unfortunately this directory is hardwired in YaST; there is no way to
+put the message catalogs elsewhere.
+
+Installation:
+  ./autogen.sh
+  ./configure --prefix=/some/prefix
+  make
+  make install
+Cleanup:
+  make distclean
+  ./autoclean.sh

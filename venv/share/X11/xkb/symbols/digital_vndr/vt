@@ -1,0 +1,158 @@
+//
+//Copyright (c) 1996  Digital Equipment Corporation
+//
+//Permission is hereby granted, free of charge, to any person obtaining
+//a copy of this software and associated documentation files (the
+//"Software"), to deal in the Software without restriction, including
+//without limitation the rights to use, copy, modify, merge, publish,
+//distribute, sublicense, and sell copies of the Software, and to
+//permit persons to whom the Software is furnished to do so, subject to
+//the following conditions:
+//
+//The above copyright notice and this permission notice shall be included
+//in all copies or substantial portions of the Software.
+//
+//THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+//OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+//MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+//IN NO EVENT SHALL DIGITAL EQUIPMENT CORPORATION BE LIABLE FOR ANY CLAIM,
+//DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+//OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+//THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+//Except as contained in this notice, the name of the Digital Equipment 
+//Corporation shall not be used in advertising or otherwise to promote
+//the sale, use or other dealings in this Software without prior written
+//authorization from Digital Equipment Corporation.
+//
+// HISTORY
+// Log
+// Revision 1.2  1996/06/18  09:10:19  erik
+// use flags correctly, assorted cleanups and consortium fixes
+//
+// Revision 1.1.6.2  1995/12/19  19:56:39  William_Walker
+// 	Update to XKB 0.65
+// 	[1995/12/17  02:37:47  William_Walker]
+//
+// Revision 1.1.2.5  1995/07/11  21:20:50  William_Walker
+// 	Make RALT act as RALT
+// 	[1995/07/11  21:18:28  William_Walker]
+// 
+// Revision 1.1.2.4  1995/06/27  12:18:41  William_Walker
+// 	Add LK201 and LK450 support as well as TW and DP variants.
+// 	[1995/06/26  20:30:37  William_Walker]
+// 
+// Revision 1.1.2.3  1995/06/09	 20:55:21  William_Walker
+// 	Add VT105 layout support and ISO group support
+// 	[1995/06/09  20:43:09  William_Walker]
+// 
+// Revision 1.1.2.2  1995/06/05	 19:25:04  William_Walker
+// 	New file.  I love keymaps.
+// 	[1995/06/05  18:17:58  William_Walker]
+// 
+// EndLog
+// 
+// @(#)RCSfile: vt  Revision: /main/3  (DEC) Date: 1996/01/24 12:15:08 
+// 
+xkb_symbols "vt105" {
+
+    // Modifier mappings
+    //
+    modifier_map Shift		{ Shift_L, Shift_R		};
+    modifier_map Lock		{ Caps_Lock			};
+    modifier_map Control	{ Control_L, Control_R		};
+    modifier_map Mod1		{ Alt_L, Alt_R, Meta_L, Meta_R	};
+    modifier_map Mod3		{ Mode_switch			};
+
+    // Common keys
+    //
+    key <BKSP> {       [	  Delete ] };
+    key	 <TAB> {       [	     Tab ] };
+    key <RTRN> {       [	  Return ] };
+    key <LCTL> {       [       Control_L ] };
+    key <CAPS> {       [       Caps_Lock ] };
+    key <LFSH> {       [	 Shift_L ] };
+    key <RTSH> {       [	 Shift_R ] };
+    key <LCMP> {       [   Alt_L, Meta_L ] };
+    key <SPCE> {       [	   space ] };
+
+    // "Function" keys
+    //
+    key <FK01> {       [	       F1 ] };
+    key <FK02> {       [	       F2 ] };
+    key <FK03> {       [	       F3 ] };
+    key <FK04> {       [	       F4 ] };
+    key <FK05> {       [	       F5 ] };
+    key <FK06> {       [	       F6 ] };
+    key <FK07> {       [	       F7 ] };
+    key <FK08> {       [	       F8 ] };
+    key <FK09> {       [	       F9 ] };
+    key <FK10> {       [	      F10 ] };
+    key <FK11> {       [	   Escape,	      F11 ] };
+    key <FK12> {       [	      F12 ] };
+    key <FK13> {       [	      F13 ] };
+    key <FK14> {       [	      F14 ] };
+    key <FK17> {       [	      F17 ] };
+    key <FK18> {       [	      F18 ] };
+    key <FK19> {       [	      F19 ] };
+    key <FK20> {       [	      F20 ] };
+
+    // "Editing" keys
+    //
+    key <HELP> {       [	    Help ] };
+    key	  <DO> {       [	    Menu ] };
+    key <FIND> {       [	    Find ] };
+    key	 <INS> {       [	  Insert ] };
+    key <DELE> {       [       apLineDel ] };
+    key <SELE> {       [	  Select ] };
+    key <PGUP> {       [	   Prior ] };
+    key <PGDN> {       [	    Next ] };
+
+    key	  <UP> {       [	      Up ] };
+    key <LEFT> {       [	    Left ] };
+    key <DOWN> {       [	    Down ] };
+    key <RGHT> {       [	   Right ] };
+
+    // "Keypad" keys
+    //
+    key <KPF1> {
+	type= "SHIFT+ALT",
+	symbols[Group1]= [	     KP_F1,Pointer_EnableKeys ]
+    };
+    key <KPF2> {       [	   KP_F2 ] };
+    key <KPF3> {       [	   KP_F3 ] };
+    key <KPF4> {       [	   KP_F4 ] };
+
+    key	 <KP7> {       [	    KP_7 ] };
+    key	 <KP8> {       [	    KP_8 ] };
+    key	 <KP9> {       [	    KP_9 ] };
+    key <KPSU> {       [     KP_Subtract ] };
+
+    key	 <KP4> {       [	    KP_4 ] };
+    key	 <KP5> {       [	    KP_5 ] };
+    key	 <KP6> {       [	    KP_6 ] };
+    key <KPCO> {       [    KP_Separator ] };
+
+    key	 <KP1> {       [	    KP_1 ] };
+    key	 <KP2> {       [	    KP_2 ] };
+    key	 <KP3> {       [	    KP_3 ] };
+    key <KPEN> {       [	KP_Enter ] };
+
+    key	 <KP0> {       [	    KP_0 ] };
+    key <KPDL> {       [      KP_Decimal ] };
+
+    // Key to support Lock-Down Modifier descriptions for R5
+    //
+    key	 <LDM> {       [	NoSymbol ] };
+};
+
+xkb_symbols "vt108" {
+
+    include "digital_vndr/vt(vt105)"
+
+    replace key <LCMP> { [ Mode_switch ] };
+
+    key <LALT> {       [	   Alt_L,	   Meta_L ] };
+    key <RALT> {       [	   Alt_R,	   Meta_R ] };
+    key <RCMP> {       [       Multi_key ] };
+};

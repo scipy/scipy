@@ -1,0 +1,23 @@
+// Most keyboards have the EuroSign engraved on the E key
+partial
+xkb_symbols "e" {
+    key <AD03>	{ [  NoSymbol,   NoSymbol,   EuroSign,	NoSymbol ]	};
+};
+
+// Many Apple keyboards have the EuroSign engraved on the 2 key
+partial
+xkb_symbols "2" {
+    key <AE02>	{ [  NoSymbol,   NoSymbol,   EuroSign,	NoSymbol ]	};
+};
+
+// Some keyboards have the EuroSign engraved on the 4 key
+partial
+xkb_symbols "4" {
+    key <AE04>	{ [  NoSymbol,   NoSymbol,   EuroSign,	NoSymbol ]	};
+};
+
+// Many keyboards have the EuroSign engraved on the 5 key
+partial
+xkb_symbols "5" {
+    key <AE05>	{ [  NoSymbol,   NoSymbol,   EuroSign,	NoSymbol ]	};
+};

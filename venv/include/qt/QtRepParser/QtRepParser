@@ -1,0 +1,6 @@
+#ifndef QT_QTREPPARSER_MODULE_H
+#define QT_QTREPPARSER_MODULE_H
+#include <QtRepParser/QtRepParserDepends>
+#include "qregexparser.h"
+#include "qtrepparserversion.h"
+#endif

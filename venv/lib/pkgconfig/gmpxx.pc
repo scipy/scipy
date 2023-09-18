@@ -1,0 +1,12 @@
+prefix=/workspaces/scipy/venv
+exec_prefix=${prefix}
+includedir=${prefix}/include
+libdir=${exec_prefix}/lib
+
+Name: GNU MP C++
+Description: GNU Multiple Precision Arithmetic Library (C++ bindings)
+URL: https://gmplib.org
+Version: 6.2.1
+Requires: gmp
+Cflags: -I${includedir}
+Libs: -L${libdir} -lgmpxx

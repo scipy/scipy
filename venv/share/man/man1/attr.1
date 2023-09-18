@@ -1,0 +1,214 @@
+.\" Copyright (C) 2001, 2002, 2006, 2007  Silicon Graphics, Inc.
+.\" All rights reserved.
+.\"
+.\" This is free documentation; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License as
+.\" published by the Free Software Foundation; either version 2 of
+.\" the License, or (at your option) any later version.
+.\"
+.\" The GNU General Public License's references to "object code"
+.\" and "executables" are to be interpreted as the output of any
+.\" document formatting or typesetting system, including
+.\" intermediate and printed output.
+.\"
+.\" This manual is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public
+.\" License along with this manual.  If not, see
+.\" <http://www.gnu.org/licenses/>.
+.\"
+.TH ATTR 1 "Extended Attributes" "Dec 2001" "XFS Compatibility API"
+.SH NAME
+attr \- extended attributes on XFS filesystem objects
+.SH SYNOPSIS
+.nf
+\f3attr\f1 [ \f3\-LRSq\f1 ] \f3\-s attrname\f1 [ \f3\-V attrvalue\f1 ] \c
+\f3pathname\f1
+.sp .8v
+\f3attr\f1 [ \f3\-LRSq\f1 ] \f3\-g attrname pathname\f1
+.sp .8v
+\f3attr\f1 [ \f3\-LRSq\f1 ] \f3\-r attrname pathname\f1
+.sp .8v
+\f3attr\f1 [ \f3\-LRSq\f1 ] \f3\-l pathname\f1
+.sp .8v
+.fi
+.SH OVERVIEW
+Extended attributes implement the ability for a user to attach
+name:value pairs to objects within the XFS filesystem.
+.PP
+This document describes the
+.I attr
+command, which is mostly compatible with the IRIX command of the same name.
+It is thus aimed specifically at users of the XFS filesystem - for
+filesystem independent extended attribute manipulation, consult the
+.IR getfattr (1)
+and 
+.IR setfattr (1)
+documentation.
+.PP
+Extended attributes can be used to store meta-information about the file.
+For example "character-set=kanji" could tell a document browser to
+use the Kanji character set when displaying that document
+and "thumbnail=..." could provide a reduced resolution overview of a
+high resolution graphic image.
+.PP
+In the XFS filesystem, the
+.I names
+can be up to 256 bytes in length, terminated by the first 0 byte.
+The intent is that they be printable ASCII (or other character set)
+names for the attribute.
+The
+.I values
+can be up to 64KB of arbitrary binary data.
+.PP
+Attributes can be attached to all types of XFS inodes:
+regular files, directories, symbolic links, device nodes, etc.
+.PP
+XFS uses 2 disjoint attribute name spaces associated with every
+filesystem object.
+They are the
+.B root
+and
+.B user
+address spaces.
+The
+.B root
+address space is accessible only to the superuser,
+and then only by specifying a flag argument to the function call.
+Other users will not see or be able to modify attributes in the
+.B root
+address space.
+The
+.B user
+address space is protected by the normal file permissions mechanism,
+so the owner of the file can decide who is able to see and/or modify
+the value of attributes on any particular file.
+.SH DESCRIPTION
+The
+.I attr
+utility allows the manipulation of extended attributes associated with
+filesystem objects from within shell scripts.
+.PP
+There are four main operations that
+.I attr
+can perform:
+.TP
+.B GET
+The
+.B \-g attrname
+option tells
+.I attr
+to search the named object and print (to \f4stdout\fP) the value
+associated with that attribute name.
+With the
+.B \-q
+flag, \f4stdout\fP will be exactly and only the value of the attribute,
+suitable for storage directly into a file or processing via a piped command.
+.TP
+.B LIST
+The
+.B \-l
+option tells
+.I attr
+to list the names of all the attributes that are associated with the object,
+and the number of bytes in the value of each of those attributes.
+With the
+.B \-q
+flag, \f4stdout\fP will be a simple list of only the attribute names,
+one per line, suitable for input into a script.
+.TP
+.B REMOVE
+The
+.B \-r attrname
+option tells
+.I attr
+to remove an attribute with the given name from the object if the
+attribute exists.
+There is no output on successful completion.
+.TP
+.B SET/CREATE
+The
+.B \-s attrname
+option tells
+.I attr
+to set the named attribute of the object to the value read from \f4stdin\fP.
+If an attribute with that name already exists,
+its value will be replaced with this one.
+If an attribute with that name does not already exist,
+one will be created with this value.
+With the
+.B \-V attrvalue
+flag, the attribute will be set to have a value of
+.B attrvalue
+and \f4stdin\fP will not be read.
+With the
+.B \-q
+flag, \f4stdout\fP will not be used.
+Without the
+.B \-q
+flag, a message showing the attribute name and the entire value
+will be printed.
+.PP
+When the
+.B \-L
+option is given and the named object is a symbolic link,
+operate on the attributes of the object referenced by the symbolic link.
+Without this option, operate on the attributes of the symbolic link itself.
+.PP
+When the
+.B \-R
+option is given and the process has appropriate privileges,
+operate in the
+.I root
+attribute namespace rather that the
+.I USER
+attribute namespace.
+.PP
+The
+.B \-S
+option is similar, except it specifies use of the
+.I security
+attribute namespace.
+.PP
+When the
+.B \-q
+option is given
+.I attr
+will try to keep quiet.
+It will output error messages (to \f4stderr\fP)
+but will not print status messages (to \f4stdout\fP).
+.SH "NOTES"
+The standard file interchange/archive programs
+.IR tar (1),
+and
+.IR cpio (1)
+will not archive or restore extended attributes,
+while the
+.IR xfsdump (8)
+program will.
+.SH "CAVEATS"
+The list option present in the IRIX version of this command is not supported.
+.I getfattr
+provides a mechanism to retrieve all of the attribute names.
+.SH AUTHOR
+Andreas Gruenbacher,
+.RI < andreas.gruenbacher@gmail.com >
+and the SGI XFS development team,
+.RI < linux-xfs@oss.sgi.com >.
+.P
+Please send your bug reports or comments to
+.RI < https://savannah.nongnu.org/bugs/?group=attr >
+or
+.RI < acl-devel@nongnu.org >.
+.SH "SEE ALSO"
+.BR getfattr (1),
+.BR setfattr (1),
+.BR attr_get (3),
+.BR attr_set (3),
+.BR attr_multi (3),
+.BR attr_remove (3),
+.BR attr (5),
+.BR xfsdump (8)

@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<!--
+  Copyright (C) 2015 Free Software Foundation, Inc.
+  This file was written by Daiki Ueno <ueno@gnu.org>, 2015.
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+<its:rules xmlns:its="http://www.w3.org/2005/11/its"
+           xmlns:gt="https://www.gnu.org/s/gettext/ns/its/extensions/1.0"
+           version="2.0">
+  <its:translateRule selector="/schemalist" translate="no"/>
+
+  <its:translateRule selector="//summary | //description" translate="yes"/>
+
+  <its:translateRule selector="//default[@l10n]" translate="yes"/>
+  <gt:contextRule selector="//default[@context]" contextPointer="@context"/>
+  <gt:escapeRule selector="//default/@context" escape="no"/>
+
+  <gt:preserveSpaceRule selector="//default" space="trim"/>
+  <gt:escapeRule selector="/schemalist" escape="no"/>
+</its:rules>

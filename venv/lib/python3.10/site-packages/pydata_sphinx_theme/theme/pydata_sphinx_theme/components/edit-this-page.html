@@ -1,0 +1,8 @@
+{% if sourcename is defined and theme_use_edit_page_button==true and page_source_suffix %}
+{% set src = sourcename.split('.') %}
+<div class="tocsection editthispage">
+    <a href="{{ get_edit_url() }}">
+        <i class="fas fa-pencil-alt"></i> {{ _("Edit this page") }}
+    </a>
+</div>
+{% endif %}

@@ -1,0 +1,91 @@
+// The keys that are common to all standard layouts.
+default partial alphanumeric_keys modifier_keys
+xkb_symbols "pc105" {
+
+    key  <ESC> {[  Escape  ]};
+    key  <TAB> {[  Tab,  ISO_Left_Tab  ]};
+    key <CAPS> {[  Caps_Lock  ]};
+
+    key <BKSP> {[  BackSpace,  BackSpace  ]};
+    key <BKSL> {[  backslash,  bar  ]};
+    key <RTRN> {[  Return  ]};
+
+    // The extra key on many European keyboards:
+    key <LSGT> {[  less,  greater,    bar,  brokenbar  ]};
+
+    key <SPCE> {[  space  ]};
+
+    key <LFSH> {[  Shift_L    ]};
+    key <RTSH> {[  Shift_R    ]};
+    key <LCTL> {[  Control_L  ]};
+    key <RCTL> {[  Control_R  ]};
+    key <LALT> {[  Alt_L,  Meta_L  ]};
+    key <RALT> {[  Alt_R,  Meta_R  ]};
+    key <LWIN> {[  Super_L    ]};
+    key <RWIN> {[  Super_R    ]};
+
+    key <MENU> {[  Menu  ]};
+
+    modifier_map Shift   { Shift_L, Shift_R };
+    modifier_map Lock    { Caps_Lock };
+    modifier_map Control { Control_L, Control_R };
+    modifier_map Mod1    { Alt_L, Alt_R, Meta_L, Meta_R };
+    modifier_map Mod2    { Num_Lock };
+    modifier_map Mod4    { Super_L, Super_R };
+
+    // Six fake keys for virtual<->real modifiers mapping:
+    key <LVL3> {[  ISO_Level3_Shift  ]};
+    modifier_map Mod5  { <LVL3> };
+
+    key <LVL5> {[  ISO_Level5_Shift  ]};
+    modifier_map Mod3  { <LVL5> };
+
+    key  <ALT> {[  NoSymbol, Alt_L  ]};
+    modifier_map Mod1  { <ALT> };
+
+    key <META> {[  NoSymbol, Meta_L  ]};
+    modifier_map Mod1  { <META> };
+
+    key <SUPR> {[  NoSymbol, Super_L  ]};
+    modifier_map Mod4  { <SUPR> };
+
+    key <HYPR> {[  NoSymbol, Hyper_L  ]};
+    modifier_map Mod4  { <HYPR> };
+
+    include "srvr_ctrl(fkey2vt)"
+
+    key <PRSC> {[  Print,  Sys_Req  ], type="PC_ALT_LEVEL2" };
+    key <SCLK> {[  Scroll_Lock  ]};
+    key <PAUS> {[  Pause,  Break  ], type="PC_CONTROL_LEVEL2" };
+
+    key  <INS> {[  Insert  ]};
+    key <DELE> {[  Delete  ]};
+    key <HOME> {[  Home    ]};
+    key  <END> {[  End     ]};
+    key <PGUP> {[  Prior   ]};
+    key <PGDN> {[  Next    ]};
+
+    key   <UP> {[  Up      ]};
+    key <DOWN> {[  Down    ]};
+    key <LEFT> {[  Left    ]};
+    key <RGHT> {[  Right   ]};
+
+    key <NMLK> {[  Num_Lock  ]};
+    include "keypad(x11)"
+
+    // Extra Japanese keys:
+    key <MUHE> {[  Muhenkan           ]};
+    key <HENK> {[  Henkan             ]};
+    key <HKTG> {[  Hiragana_Katakana  ]};
+    key <HIRA> {[  Hiragana           ]}; // This key and the next are rare.
+    key <KATA> {[  Katakana           ]};
+
+    // Extra Korean keys:
+    key <HNGL> {[  Hangul        ]};
+    key <HJCV> {[  Hangul_Hanja  ]};
+
+    key <OUTP> {[  XF86Display  ]};
+    key <KITG> {[  XF86KbdLightOnOff  ]};
+    key <KIDN> {[  XF86KbdBrightnessDown  ]};
+    key <KIUP> {[  XF86KbdBrightnessUp  ]};
+};

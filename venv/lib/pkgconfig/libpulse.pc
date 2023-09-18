@@ -1,0 +1,12 @@
+prefix=/workspaces/scipy/venv
+exec_prefix=/workspaces/scipy/venv
+libdir=/workspaces/scipy/venv/lib
+includedir=/workspaces/scipy/venv/include
+modlibexecdir=/workspaces/scipy/venv/lib/pulseaudio/modules
+
+Name: libpulse
+Description: PulseAudio Client Interface
+Version: 16.1
+Libs: -L${libdir} -lpulse -pthread
+Libs.private: -L${libdir}/pulseaudio -lpulsecommon-16.1
+Cflags: -I${includedir} -D_REENTRANT

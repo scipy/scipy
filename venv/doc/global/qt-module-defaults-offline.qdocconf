@@ -1,0 +1,17 @@
+#The default configuration for a Qt 5 module, including Add-Ons and Tools.
+#Include this file for a standard Qt 5 module; builds with the offline style.
+
+#include standard set of macros and C++ defines and ignores
+include(macros.qdocconf)
+include(qt-cpp-defines.qdocconf)
+include(compat.qdocconf)
+include(manifest-meta.qdocconf)
+include(fileextensions.qdocconf)
+
+include(qt-html-templates-offline.qdocconf)
+
+#extra configuration data such as file extensions
+include(config.qdocconf)
+
+# Show Qt version as part of the navigation bar
+buildversion = "Qt $QT_VERSION Reference Documentation"

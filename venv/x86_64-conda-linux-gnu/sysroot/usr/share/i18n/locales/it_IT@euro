@@ -1,0 +1,83 @@
+comment_char %
+escape_char  /
+%
+% Italian Language Locale for Italy with Euro
+% Language: it
+% Territory: IT
+% Option: euro
+% Date: 2000-08-20
+% Users: general
+% Charset: ISO-8859-15
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title      "Italian locale for Italy with Euro"
+source     "Free Software Foundation, Inc."
+address    "59 Temple Place - Suite 330, Boston, MA 02111-1307, USA"
+contact    ""
+email      "bug-glibc-locales@gnu.org"
+tel        ""
+fax        ""
+language   "Italian"
+territory  "Italy"
+revision   "1.0"
+date       "2000-08-20"
+%
+category  "it_IT@euro:2000";LC_IDENTIFICATION
+category  "it_IT@euro:2000";LC_CTYPE
+category  "it_IT@euro:2000";LC_COLLATE
+category  "it_IT@euro:2000";LC_TIME
+category  "it_IT@euro:2000";LC_NUMERIC
+category  "it_IT@euro:2000";LC_MONETARY
+category  "it_IT@euro:2000";LC_MESSAGES
+category  "it_IT@euro:2000";LC_PAPER
+category  "it_IT@euro:2000";LC_NAME
+category  "it_IT@euro:2000";LC_ADDRESS
+category  "it_IT@euro:2000";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_COLLATE
+copy "iso14651_t1"
+END LC_COLLATE
+
+LC_CTYPE
+copy "it_IT"
+END LC_CTYPE
+
+LC_MESSAGES
+copy "it_IT"
+END LC_MESSAGES
+
+LC_MONETARY
+copy "it_IT"
+END LC_MONETARY
+
+LC_NUMERIC
+copy "it_IT"
+END LC_NUMERIC
+
+LC_TIME
+copy "it_IT"
+END LC_TIME
+
+LC_PAPER
+copy "it_IT"
+END LC_PAPER
+
+LC_TELEPHONE
+copy "it_IT"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+copy "it_IT"
+END LC_MEASUREMENT
+
+LC_NAME
+copy "it_IT"
+END LC_NAME
+
+LC_ADDRESS
+copy "it_IT"
+END LC_ADDRESS

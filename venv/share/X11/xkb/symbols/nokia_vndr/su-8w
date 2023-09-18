@@ -1,0 +1,490 @@
+partial alphanumeric_keys default
+xkb_symbols "no" {
+
+    include "nokia_vndr/su-8w(base)"
+
+    name[Group1]= "Norwegian/Danish";
+
+    key <AE01> { [ 1,            exclam,         dead_circumflex                       ] };
+    key <AE02> { [ 2,            quotedbl,       at                                    ] };
+    key <AE03> { [ 3,            numbersign,     EuroSign                              ] };
+    key <AE04> { [ 4,            currency,       dollar                                ] };
+    key <AE05> { [ 5,            percent,        sterling                              ] };
+    key <AE06> { [ 6,            ampersand                                             ] };
+    key <AE07> { [ 7,            slash,          braceleft                             ] };
+    key <AE08> { [ 8,            parenleft,      bracketleft                           ] };
+    key <AE09> { [ 9,            parenright,     bracketright                          ] };
+    key <AE10> { [ 0,            equal,          braceright                            ] };
+    key <AE11> { [ plus,         question                                              ] };
+    key <AE12> { [ dead_acute,   dead_grave,     backslash                             ] };
+
+    key <AD01> { [ q,            Q,              dead_circumflex                       ] };
+    key <AD02> { [ w,            W,              at                                    ] };
+    key <AD03> { [ e,            E,              EuroSign                              ] };
+    key <AD04> { [ r,            R,              dollar                                ] };
+    key <AD05> { [ t,            T,              sterling                              ] };
+    key <AD06> { [ y,            Y                                                     ] };
+    key <AD07> { [ u,            U,              braceleft                             ] };
+    key <AD08> { [ i,            I,              bracketleft                           ] };
+    key <AD09> { [ o,            O,              bracketright                          ] };
+    key <AD10> { [ p,            P,              braceright                            ] };
+    key <AD11> { [ aring,        Aring                                                 ] };
+    key <AD12> { [ ssharp,       U1E9E,          backslash                             ] };
+
+    key <AC01> { [ a,            A                                                     ] };
+    key <AC02> { [ s,            S                                                     ] };
+    key <AC03> { [ d,            D                                                     ] };
+    key <AC04> { [ f,            F                                                     ] };
+    key <AC05> { [ g,            G                                                     ] };
+    key <AC06> { [ h,            H                                                     ] };
+    key <AC07> { [ j,            J                                                     ] };
+    key <AC08> { [ k,            K                                                     ] };
+    key <AC09> { [ l,            L                                                     ] };
+    key <AC10> { [ oslash,       Oslash                                                ] };
+    key <AC11> { [ ae,           AE                                                    ] };
+
+    key <AB01> { [ z,            Z                                                     ] };
+    key <AB02> { [ x,            X                                                     ] };
+    key <AB03> { [ c,            C                                                     ] };
+    key <AB04> { [ v,            V                                                     ] };
+    key <AB05> { [ b,            B                                                     ] };
+    key <AB06> { [ n,            N                                                     ] };
+    key <AB07> { [ m,            M                                                     ] };
+    key <AB08> { [ comma,        semicolon,      less                                  ] };
+    key <AB09> { [ period,       colon,          greater                               ] };
+    key <AB10> { [ minus,        underscore,     dead_diaeresis                        ] };
+
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "no_nodeadkeys" {
+
+    include "nokia_vndr/su-8w(no)"
+
+    name[Group1] = "Norwegian/Danish (no dead keys)";
+
+    key <AE01> { [ 1,            exclam,         asciicircum                           ] };
+    key <AE12> { [ acute,        grave,          backslash                             ] };
+    key <AD01> { [ q,            Q,              asciicircum                           ] };
+};
+
+partial alphanumeric_keys default
+xkb_symbols "dk" {
+    include "nokia_vndr/su-8w(no)"
+};
+
+partial alphanumeric_keys default
+xkb_symbols "dk_nodeadkeys" {
+    include "nokia_vndr/su-8w(no_nodeadkeys)"
+};
+
+
+
+partial alphanumeric_keys default
+xkb_symbols "de" {
+
+    include "nokia_vndr/su-8w(base)"
+
+    name[Group1]= "German";
+
+    key <AE01> { [ 1,            exclam,         dead_circumflex                       ] };
+    key <AE02> { [ 2,            quotedbl,       at                                    ] };
+    key <AE03> { [ 3,            numbersign,     EuroSign                              ] };
+    key <AE04> { [ 4,            currency,       dollar                                ] };
+    key <AE05> { [ 5,            percent,        sterling                              ] };
+    key <AE06> { [ 6,            ampersand                                             ] };
+    key <AE07> { [ 7,            slash,          braceleft                             ] };
+    key <AE08> { [ 8,            parenleft,      bracketleft                           ] };
+    key <AE09> { [ 9,            parenright,     bracketright                          ] };
+    key <AE10> { [ 0,            equal,          braceright                            ] };
+    key <AE11> { [ plus,         question                                              ] };
+    key <AE12> { [ dead_acute,   dead_grave,     backslash                             ] };
+
+    key <AD01> { [ q,            Q,              dead_circumflex                       ] };
+    key <AD02> { [ w,            W,              at                                    ] };
+    key <AD03> { [ e,            E,              EuroSign                              ] };
+    key <AD04> { [ r,            R,              dollar                                ] };
+    key <AD05> { [ t,            T,              sterling                              ] };
+    key <AD06> { [ z,            Z                                                     ] };
+    key <AD07> { [ u,            U,              braceleft                             ] };
+    key <AD08> { [ i,            I,              bracketleft                           ] };
+    key <AD09> { [ o,            O,              bracketright                          ] };
+    key <AD10> { [ p,            P,              braceright                            ] };
+    key <AD11> { [ udiaeresis,   Udiaeresis                                            ] };
+    key <AD12> { [ ssharp,       U1E9E,          backslash                             ] };
+
+    key <AC01> { [ a,            A                                                     ] };
+    key <AC02> { [ s,            S                                                     ] };
+    key <AC03> { [ d,            D                                                     ] };
+    key <AC04> { [ f,            F                                                     ] };
+    key <AC05> { [ g,            G                                                     ] };
+    key <AC06> { [ h,            H                                                     ] };
+    key <AC07> { [ j,            J                                                     ] };
+    key <AC08> { [ k,            K                                                     ] };
+    key <AC09> { [ l,            L                                                     ] };
+    key <AC10> { [ odiaeresis,   Odiaeresis                                            ] };
+    key <AC11> { [ adiaeresis,   Adiaeresis                                            ] };
+
+    key <AB01> { [ y,            Y                                                     ] };
+    key <AB02> { [ x,            X                                                     ] };
+    key <AB03> { [ c,            C                                                     ] };
+    key <AB04> { [ v,            V                                                     ] };
+    key <AB05> { [ b,            B                                                     ] };
+    key <AB06> { [ n,            N                                                     ] };
+    key <AB07> { [ m,            M                                                     ] };
+    key <AB08> { [ comma,        semicolon,      less                                  ] };
+    key <AB09> { [ period,       colon,          greater                               ] };
+    // Inexplicably, the diaeresis is dead on other layouts, but not German.  Go figure.
+    key <AB10> { [ minus,        underscore,     diaeresis                             ] };
+
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "de_nodeadkeys" {
+
+    include "nokia_vndr/su-8w(de)"
+
+    name[Group1] = "German (no dead keys)";
+
+    key <AE01> { [ 1,            exclam,         asciicircum                           ] };
+    key <AE12> { [ acute,        grave,          backslash                             ] };
+    key <AD01> { [ q,            Q,              asciicircum                           ] };
+};
+
+
+
+partial alphanumeric_keys default
+xkb_symbols "se" {
+
+    include "nokia_vndr/su-8w(base)"
+
+    name[Group1]= "Finnish/Swedish";
+
+    key <AE01> { [ 1,            exclam,         dead_circumflex                       ] };
+    key <AE02> { [ 2,            quotedbl,       at                                    ] };
+    key <AE03> { [ 3,            numbersign,     EuroSign                              ] };
+    key <AE04> { [ 4,            currency,       dollar                                ] };
+    key <AE05> { [ 5,            percent,        sterling                              ] };
+    key <AE06> { [ 6,            ampersand                                             ] };
+    key <AE07> { [ 7,            slash,          braceleft                             ] };
+    key <AE08> { [ 8,            parenleft,      bracketleft                           ] };
+    key <AE09> { [ 9,            parenright,     bracketright                          ] };
+    key <AE10> { [ 0,            equal,          braceright                            ] };
+    key <AE11> { [ plus,         question                                              ] };
+    key <AE12> { [ dead_acute,   dead_grave,     backslash                             ] };
+
+    key <AD01> { [ q,            Q,              dead_circumflex                       ] };
+    key <AD02> { [ w,            W,              at                                    ] };
+    key <AD03> { [ e,            E,              EuroSign                              ] };
+    key <AD04> { [ r,            R,              dollar                                ] };
+    key <AD05> { [ t,            T,              sterling                              ] };
+    key <AD06> { [ y,            Y                                                     ] };
+    key <AD07> { [ u,            U,              braceleft                             ] };
+    key <AD08> { [ i,            I,              bracketleft                           ] };
+    key <AD09> { [ o,            O,              bracketright                          ] };
+    key <AD10> { [ p,            P,              braceright                            ] };
+    key <AD11> { [ aring,        Aring                                                 ] };
+    key <AD12> { [ ssharp,       U1E9E,          backslash                             ] };
+
+    key <AC01> { [ a,            A                                                     ] };
+    key <AC02> { [ s,            S                                                     ] };
+    key <AC03> { [ d,            D                                                     ] };
+    key <AC04> { [ f,            F                                                     ] };
+    key <AC05> { [ g,            G                                                     ] };
+    key <AC06> { [ h,            H                                                     ] };
+    key <AC07> { [ j,            J                                                     ] };
+    key <AC08> { [ k,            K                                                     ] };
+    key <AC09> { [ l,            L                                                     ] };
+    key <AC10> { [ odiaeresis,   Odiaeresis                                            ] };
+    key <AC11> { [ adiaeresis,   Adiaeresis                                            ] };
+
+    key <AB01> { [ z,            Z                                                     ] };
+    key <AB02> { [ x,            X                                                     ] };
+    key <AB03> { [ c,            C                                                     ] };
+    key <AB04> { [ v,            V                                                     ] };
+    key <AB05> { [ b,            B                                                     ] };
+    key <AB06> { [ n,            N                                                     ] };
+    key <AB07> { [ m,            M                                                     ] };
+    key <AB08> { [ comma,        semicolon,      less                                  ] };
+    key <AB09> { [ period,       colon,          greater                               ] };
+    key <AB10> { [ minus,        underscore,     dead_diaeresis                        ] };
+
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "se_nodeadkeys" {
+
+    include "nokia_vndr/su-8w(se)"
+
+    name[Group1] = "Finnish/Swedish (no dead keys)";
+
+    key <AE01> { [ 1,            exclam,         asciicircum                           ] };
+    key <AE12> { [ acute,        grave,          backslash                             ] };
+    key <AD01> { [ q,            Q,              asciicircum                           ] };
+    key <AB10> { [ minus,        underscore,     diaeresis                             ] };
+};
+
+partial alphanumeric_keys default
+xkb_symbols "fi" {
+    include "nokia_vndr/su-8w(se)"
+};
+
+xkb_symbols "fi_nodeadkeys" {
+    include "nokia_vndr/su-8w(se_nodeadkeys)"
+};
+
+
+
+partial alphanumeric_keys default
+xkb_symbols "ru" {
+
+    // Russian layout on first two levels, US layout on third and fourth.
+
+    include "nokia_vndr/su-8w(base)"
+
+    name[Group1]= "Russian";
+
+    key <TLDE> { [ Cyrillic_io,          Cyrillic_IO,          grave                        ] };
+    key <AE01> { [ 1,                    exclam,               exclam,        exclam        ] };
+    key <AE02> { [ 2,                    at,                   quotedbl,      at            ] };
+    key <AE03> { [ 3,                    numbersign,           numbersign,    numbersign    ] };
+    key <AE04> { [ 4,                    dollar,               currency,      dollar        ] };
+    key <AE05> { [ 5,                    percent,              percent,       percent       ] };
+    key <AE06> { [ 6,                    dead_circumflex,      ampersand,     asciicircum   ] };
+    key <AE07> { [ 7,                    ampersand,            slash,         ampersand     ] };
+    key <AE08> { [ 8,                    asterisk,             parenleft,     asterisk      ] };
+    key <AE09> { [ 9,                    parenleft,            parenright,    parenleft     ] };
+    key <AE10> { [ 0,                    parenright,           equal,         parenright    ] };
+    key <AE11> { [ minus,                underscore,           plus,          question      ] };
+    key <AE12> { [ equal,                plus,                 equal,         plus          ] };
+
+    key <AD01> { [ Cyrillic_shorti,      Cyrillic_SHORTI,      q,             Q             ] };
+    key <AD02> { [ Cyrillic_tse,         Cyrillic_TSE,         w,             W             ] };
+    key <AD03> { [ Cyrillic_u,           Cyrillic_U,           e,             E             ] };
+    key <AD04> { [ Cyrillic_ka,          Cyrillic_KA,          r,             R             ] };
+    key <AD05> { [ Cyrillic_ie,          Cyrillic_IE,          t,             T             ] };
+    key <AD06> { [ Cyrillic_en,          Cyrillic_EN,          y,             Y             ] };
+    key <AD07> { [ Cyrillic_ghe,         Cyrillic_GHE,         u,             U             ] };
+    key <AD08> { [ Cyrillic_sha,         Cyrillic_SHA,         i,             I             ] };
+    key <AD09> { [ Cyrillic_shcha,       Cyrillic_SHCHA,       o,             O             ] };
+    key <AD10> { [ Cyrillic_ze,          Cyrillic_ZE,          p,             P             ] };
+    key <AD11> { [ Cyrillic_ha,          Cyrillic_HA,          bracketleft,   braceleft     ] };
+    key <AD12> { [ Cyrillic_hardsign,    Cyrillic_HARDSIGN,    bracketright,  braceright    ] };
+
+    key <AC01> { [ Cyrillic_ef,          Cyrillic_EF,          a,             A             ] };
+    key <AC02> { [ Cyrillic_yeru,        Cyrillic_YERU,        s,             S             ] };
+    key <AC03> { [ Cyrillic_ve,          Cyrillic_VE,          d,             D             ] };
+    key <AC04> { [ Cyrillic_a,           Cyrillic_A,           f,             F             ] };
+    key <AC05> { [ Cyrillic_pe,          Cyrillic_PE,          g,             G             ] };
+    key <AC06> { [ Cyrillic_er,          Cyrillic_ER,          h,             H             ] };
+    key <AC07> { [ Cyrillic_o,           Cyrillic_O,           j,             J             ] };
+    key <AC08> { [ Cyrillic_el,          Cyrillic_EL,          k,             K             ] };
+    key <AC09> { [ Cyrillic_de,          Cyrillic_DE,          l,             L             ] };
+    key <AC10> { [ Cyrillic_zhe,         Cyrillic_ZHE,         semicolon,     colon         ] };
+    key <AC11> { [ Cyrillic_e,           Cyrillic_E,           apostrophe,    quotedbl      ] };
+
+    key <AB01> { [ Cyrillic_ya,          Cyrillic_YA,          z,             Z             ] };
+    key <AB02> { [ Cyrillic_che,         Cyrillic_CHE,         x,             X             ] };
+    key <AB03> { [ Cyrillic_es,          Cyrillic_ES,          c,             C             ] };
+    key <AB04> { [ Cyrillic_em,          Cyrillic_EM,          v,             V             ] };
+    key <AB05> { [ Cyrillic_i,           Cyrillic_I,           b,             B             ] };
+    key <AB06> { [ Cyrillic_te,          Cyrillic_TE,          n,             N             ] };
+    key <AB07> { [ Cyrillic_softsign,    Cyrillic_SOFTSIGN,    m,             M             ] };
+    key <AB08> { [ Cyrillic_be,          Cyrillic_BE,          comma,         less          ] };
+    key <AB09> { [ Cyrillic_yu,          Cyrillic_YU,          period,        greater       ] };
+    key <AB10> { [ slash,                question,             slash,         question      ] };
+
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "ru_nodeadkeys" {
+
+    include "nokia_vndr/su-8w(ru)"
+
+    name[Group1] = "Russian (no dead keys)";
+
+    key <AE06> { [ 6,                    asciicircum,          ampersand,     asciicircum   ] };
+};
+
+
+
+partial alphanumeric_keys default
+xkb_symbols "us" {
+
+    include "nokia_vndr/su-8w(base)"
+
+    name[Group1]= "U.S. English (international)";
+
+    key <AE01> { [ 1,            exclam,         exclamdown                            ] };
+    key <AE02> { [ 2,            at,             twosuperior                           ] };
+    key <AE03> { [ 3,            numbersign                                            ] };
+    key <AE04> { [ 4,            dollar,         currency                              ] };
+    key <AE05> { [ 5,            percent,        EuroSign                              ] };
+    key <AE06> { [ 6,            asciicircum,    onequarter                            ] };
+    key <AE07> { [ 7,            ampersand,      onehalf                               ] };
+    key <AE08> { [ 8,            asterisk,       threequarters                         ] };
+    key <AE09> { [ 9,            parenleft,      leftsinglequotemark                   ] };
+    key <AE10> { [ 0,            parenright,     rightsinglequotemark                  ] };
+    key <AE11> { [ minus,        underscore,     yen                                   ] };
+    key <AE12> { [ equal,        plus,           multiply                              ] };
+
+    key <AD01> { [ q,            Q,              adiaeresis,           Adiaeresis      ] };
+    key <AD02> { [ w,            W,              aring,                Aring           ] };
+    key <AD03> { [ e,            E,              eacute,               Eacute          ] };
+    key <AD04> { [ r,            R,              registered                            ] };
+    key <AD05> { [ t,            T,              thorn,                THORN           ] };
+    key <AD06> { [ y,            Y,              udiaeresis,           Udiaeresis      ] };
+    key <AD07> { [ u,            U,              uacute,               Uacute          ] };
+    key <AD08> { [ i,            I,              iacute,               Iacute          ] };
+    key <AD09> { [ o,            O,              oacute,               Oacute          ] };
+    key <AD10> { [ p,            P,              odiaeresis,           Odiaeresis      ] };
+    key <AD11> { [ bracketleft,  braceleft,      guillemotleft                         ] };
+    key <AD12> { [ bracketright, braceright,     guillemotright                        ] };
+
+    key <AC01> { [ a,            A,              aacute,               Aacute          ] };
+    key <AC02> { [ s,            S,              ssharp,               section         ] };
+    key <AC03> { [ d,            D,              eth,                  ETH             ] };
+    key <AC04> { [ f,            F                                                     ] };
+    key <AC05> { [ g,            G                                                     ] };
+    key <AC06> { [ h,            H                                                     ] };
+    key <AC07> { [ j,            J                                                     ] };
+    key <AC08> { [ k,            K                                                     ] };
+    key <AC09> { [ l,            L,              oslash,               Oslash          ] };
+    key <AC10> { [ semicolon,    colon,          paragraph,            degree          ] };
+    key <AC11> { [ dead_acute,   dead_diaeresis, apostrophe,           quotedbl        ] };
+
+    key <AB01> { [ z,            Z,              ae,                   AE              ] };
+    key <AB02> { [ x,            X                                                     ] };
+    key <AB03> { [ c,            C,              copyright                             ] };
+    key <AB04> { [ v,            V                                                     ] };
+    key <AB05> { [ b,            B                                                     ] };
+    key <AB06> { [ n,            N,              ntilde,               Ntilde          ] };
+    key <AB07> { [ m,            M,              mu                                    ] };
+    key <AB08> { [ comma,        less,           ccedilla,             Ccedilla        ] };
+    key <AB09> { [ period,       greater                                               ] };
+    key <AB10> { [ slash,        question,       questiondown                          ] };
+
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "us_nodeadkeys" {
+
+    include "nokia_vndr/su-8w(us)"
+
+    name[Group1] = "U.S. English (international, no dead keys)";
+
+    key <AC11> { [ apostrophe,    quotedbl,       dead_acute,           dead_diaeresis ] };
+};
+
+
+
+default partial alphanumeric_keys
+xkb_symbols "base" {
+
+    // Forked from pc(pc105) -- madness.
+
+    key <ESC>  {	[ Escape			]	};
+
+    key <LSGT> {	[ less,  greater,	bar,  brokenbar ]	};
+
+    key <BKSL> {	[ backslash,	bar		]	};
+    key <SPCE> {	[  space			]	};
+
+    key <BKSP> { [ BackSpace ] };
+
+    key  <TAB> {	[ Tab,	ISO_Left_Tab	]	};
+    key <RTRN> {	[ Return	]	};
+
+    // We don't ever generate this key, but the VKB needs it always.
+    key <KPEN> {        [ KP_Enter      ]       };
+    // This is generated from the headset, must always be in the map.
+    key <I29>  {        [ XF86Phone     ]       };
+
+    key <CAPS> {	[ Caps_Lock	]	};
+
+    key <NMLK> {	[ Num_Lock, Pointer_EnableKeys		]	};
+
+    key <LFSH> {	[ Shift_L	]	};
+    key <LCTL> {	[ Control_L	]	};
+    key <LALT> {	[ Alt_L,	Meta_L		]	};
+    key <LWIN> {	[ Super_L			]	};
+
+    key <RTSH> {	[ Shift_R	]	};
+    key <RCTL> {	[ Control_R	]	};
+    key <RALT> {	[ Alt_R,	Meta_R		]	};
+    key <RWIN> {	[ Super_R			]	};
+
+    key <MENU> {	[ Menu			]	};
+
+    key <FK01> { [ F1 ] };
+    key <FK02> { [ F2 ] };
+    key <FK03> { [ F3 ] };
+    key <FK04> { [ F4 ] };
+    key <FK05> { [ F5 ] };
+    key <FK06> { [ F6 ] };
+    key <FK07> { [ F7 ] };
+    key <FK08> { [ F8 ] };
+    key <FK09> { [ F9 ] };
+    key <FK10> { [ F11 ] };
+    key <FK11> { [ F10 ] };
+    key <FK12> { [ F12 ] };
+
+    modifier_map Shift  { Shift_L, Shift_R };
+    modifier_map Lock   { Caps_Lock };
+    modifier_map Control{ Control_L, Control_R };
+    modifier_map Mod2   { Num_Lock };
+
+    // Fake keys for virtual<->real modifiers mapping:
+    key <LVL3> {	[ ISO_Level3_Shift	]	};
+    modifier_map Mod5   { <LVL3> };
+
+    key <LVL5> {	[ ISO_Level5_Shift	]	};
+    modifier_map Mod3   { <LVL5> };
+
+    key <ALT>  {	[ NoSymbol, Alt_L	]	};
+    modifier_map Mod1   { <ALT>, <LALT> };
+
+    key <META> {	[ NoSymbol, Meta_L	]	};
+    modifier_map Mod1   { <META> };
+
+    key <SUPR> {	[ NoSymbol, Super_L	]	};
+    modifier_map Mod4   { <SUPR> };
+
+    key <HYPR> {	[ NoSymbol, Hyper_L	]	};
+    modifier_map Mod4   { <HYPR> };
+
+    key  <INS> {        [  Insert               ]       };
+    key <DELE> {        [  Delete               ]       };
+    key  <END> {        [  End                  ]       };
+    key   <UP> {	[  Up			]	};
+    key <LEFT> {	[  Left			]	};
+    key <DOWN> {	[  Down			]	};
+    key <RGHT> {	[  Right		]	};
+
+    // True for all layouts (except for ru).
+    key <TLDE> { [ grave, asterisk, asciitilde ] };
+
+    // SU-8W uses 140 for Home, not the normal keycode.  Very useful.
+    key <HOME> {        [       NoSymbol                ]       };
+    // Ditto LWIN/RWIN and Page Up/Page Down.
+    key <PGUP> {        [       none                ]       };
+    key <PGDN> {        [       NoSymbol                ]       };
+
+    // The Win keys correspond to the 'select left' and 'select right' keys.
+    key <LWIN> {	[	Prior		]	};
+    key <RWIN> {	[	Next		]	};
+
+    // <FRNT> = 140 ~ <I140>
+    key <FRNT> {	[	Home			]	};
+    // <PROP> = 138 ~ <I138>
+    key <PROP> {	[	Menu			]	};
+    key <I163> {	[	XF86Mail		]	};
+
+    // Power button.
+    key <I5E> {         [       Execute                 ]       };
+};

@@ -1,0 +1,146 @@
+// Esperanto keyboard maps -- "Ekverto"
+
+// Ekverto B ("basic") (2006-12-02)
+// Benno Schulenberg (Beno Sĥilenberĥ) <bensberg@justemail.net>
+// Chusslove Illich (Ĉaslavo Iliĉo) <caslav.ilic@gmx.net>
+
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+  include "us(basic)"
+
+  name[Group1]= "Esperanto";
+
+  key <AE05>  { [ 5,            percent,      EuroSign,      EuroSign   ] };
+
+  key <AD01>  { [ scircumflex,  Scircumflex,  q,             Q          ] };
+  key <AD02>  { [ gcircumflex,  Gcircumflex,  w,             W          ] };
+  key <AD06>  { [ ubreve,       Ubreve,       y,             Y          ] };
+  key <AD09>  { [ o,            O,            braceleft,     braceleft  ] };
+  key <AD10>  { [ p,            P,            braceright,    braceright ] };
+  key <AD11>  { [ jcircumflex,  Jcircumflex,  bracketleft,   braceleft  ] };
+  key <AD12>  { [ hcircumflex,  Hcircumflex,  bracketright,  braceright ] };
+
+  key <AC01>  { [ a,            A,     leftsinglequotemark,  NoSymbol   ] };
+  key <AC02>  { [ s,            S,    rightsinglequotemark,  NoSymbol   ] };
+  key <AC03>  { [ d,            D,     leftdoublequotemark,  NoSymbol   ] };
+  key <AC04>  { [ f,            F,    rightdoublequotemark,  NoSymbol   ] };
+
+  key <AB02>  { [ ccircumflex,  Ccircumflex,  x,             X          ] };
+  key <AB06>  { [ n,            N,            endash,        endash     ] };
+  key <AB07>  { [ m,            M,            emdash,        emdash     ] };
+  key <AB08>  { [ comma,        less,        guillemotleft,  U2039      ] }; // « ‹
+  key <AB09>  { [ period,       greater,    guillemotright,  U203A      ] }; // » ›
+
+  include "level3(ralt_switch)"
+};
+
+
+// Ekverto A ("legacy") (2004-01-10)
+// Chusslove Illich (Ĉaslavo Iliĉo) <caslav.ilic@gmx.net>
+
+partial alphanumeric_keys
+xkb_symbols "legacy" {
+
+  name[Group1]= "Esperanto (legacy)";
+
+  key.type[Group1] = "FOUR_LEVEL";
+
+  key <TLDE>  { [ grave,         asciitilde,  NoSymbol,  NoSymbol ] };
+  key <AE01>  { [ 1,             exclam,      NoSymbol,  NoSymbol ] };
+  key <AE02>  { [ 2,             quotedbl,    NoSymbol,  NoSymbol ] };
+  key <AE03>  { [ 3,             numbersign,  NoSymbol,  NoSymbol ] };
+  key <AE04>  { [ 4,             dollar,      NoSymbol,  NoSymbol ] };
+  key <AE05>  { [ 5,             percent,     NoSymbol,  NoSymbol ] };
+  key <AE06>  { [ 6,             apostrophe,  NoSymbol,  NoSymbol ] };
+  key <AE07>  { [ 7,             ampersand,   NoSymbol,  NoSymbol ] };
+  key <AE08>  { [ 8,             asterisk,    NoSymbol,  NoSymbol ] };
+  key <AE09>  { [ 9,             parenleft,   NoSymbol,  NoSymbol ] };
+  key <AE10>  { [ 0,             parenright,  NoSymbol,  NoSymbol ] };
+  key <AE11>  { [ minus,         underscore,  NoSymbol,  NoSymbol ] };
+  key <AE12>  { [ equal,         plus,        NoSymbol,  NoSymbol ] };
+
+  key <AB08>  { [ comma,         semicolon,   NoSymbol,  NoSymbol ] };
+  key <AB09>  { [ period,        colon,       NoSymbol,  NoSymbol ] };
+  key <AB10>  { [ slash,         question,    NoSymbol,  NoSymbol ] };
+
+  key <AD11>  { [ bracketleft,   braceleft,   NoSymbol,  NoSymbol ] };
+  key <AD12>  { [ bracketright,  braceright,  NoSymbol,  NoSymbol ] };
+
+  key <BKSL>  { [ backslash,     bar,         NoSymbol,  NoSymbol ] };
+  key <LSGT>  { [ NoSymbol,      NoSymbol,    NoSymbol,  NoSymbol ] };
+
+  key.type[Group1] = "FOUR_LEVEL_SEMIALPHABETIC";
+
+  key <AD01>  { [ scircumflex,  Scircumflex,  at,                    NoSymbol ] };
+  key <AD02>  { [ jcircumflex,  Jcircumflex,  asciicircum,           NoSymbol ] };
+  key <AD03>  { [ e,            E,            EuroSign,              NoSymbol ] };
+  key <AD04>  { [ r,            R,            emdash,                NoSymbol ] };
+  key <AD05>  { [ t,            T,            endash,                NoSymbol ] };
+  key <AD06>  { [ gcircumflex,  Gcircumflex,  NoSymbol,              NoSymbol ] };
+  key <AD07>  { [ u,            U,            NoSymbol,              NoSymbol ] };
+  key <AD08>  { [ i,            I,            NoSymbol,              NoSymbol ] };
+  key <AD09>  { [ o,            O,            NoSymbol,              NoSymbol ] };
+  key <AD10>  { [ p,            P,            NoSymbol,              NoSymbol ] };
+
+  key <AC01>  { [ a,            A,            less,                  NoSymbol ] };
+  key <AC02>  { [ s,            S,            greater,               NoSymbol ] };
+  key <AC03>  { [ d,            D,            leftdoublequotemark,   NoSymbol ] };
+  key <AC04>  { [ f,            F,            rightdoublequotemark,  NoSymbol ] };
+  key <AC05>  { [ g,            G,            NoSymbol,              NoSymbol ] };
+  key <AC06>  { [ h,            H,            NoSymbol,              NoSymbol ] };
+  key <AC07>  { [ j,            J,            NoSymbol,              NoSymbol ] };
+  key <AC08>  { [ k,            K,            NoSymbol,              NoSymbol ] };
+  key <AC09>  { [ l,            L,            NoSymbol,              NoSymbol ] };
+  key <AC10>  { [ ubreve,       Ubreve,       NoSymbol,              NoSymbol ] };
+  key <AC11>  { [ hcircumflex,  Hcircumflex,  NoSymbol,              NoSymbol ] };
+
+  key <AB01>  { [ z,            Z,            leftsinglequotemark,   NoSymbol ] };
+  key <AB02>  { [ ccircumflex,  Ccircumflex,  rightsinglequotemark,  NoSymbol ] };
+  key <AB03>  { [ c,            C,            NoSymbol,              NoSymbol ] };
+  key <AB04>  { [ v,            V,            NoSymbol,              NoSymbol ] };
+  key <AB05>  { [ b,            B,            NoSymbol,              NoSymbol ] };
+  key <AB06>  { [ n,            N,            NoSymbol,              NoSymbol ] };
+  key <AB07>  { [ m,            M,            NoSymbol,              NoSymbol ] };
+
+  include "level3(ralt_switch)"
+};
+
+
+// Add the Esperanto supersigned letters to their related keys on a Qwerty keyboard.
+// This is a generic "component" that is not used by the other layouts in this file,
+// but is meant to be applied to any Qwerty or Azerty or Qwertz layout.  If you have
+// any questions, ask J. Pablo Fernández <pupeno@pupeno.com>.
+partial
+xkb_symbols "qwerty" {
+    key <AB03> { [ NoSymbol, NoSymbol, ccircumflex, Ccircumflex ] };
+    key <AC05> { [ NoSymbol, NoSymbol, gcircumflex, Gcircumflex ] };
+    key <AC06> { [ NoSymbol, NoSymbol, hcircumflex, Hcircumflex ] };
+    key <AC07> { [ NoSymbol, NoSymbol, jcircumflex, Jcircumflex ] };
+    key <AC02> { [ NoSymbol, NoSymbol, scircumflex, Scircumflex ] };
+    key <AD07> { [ NoSymbol, NoSymbol,      ubreve,      Ubreve ] };
+};
+
+// Add the Esperanto supersigned letters to their related keys in a
+// Dvorak layout.  Similar comment as above applies.
+partial
+xkb_symbols "dvorak" {
+    key <AD08> { [ NoSymbol, NoSymbol, ccircumflex, Ccircumflex ] };
+    key <AD07> { [ NoSymbol, NoSymbol, gcircumflex, Gcircumflex ] };
+    key <AC07> { [ NoSymbol, NoSymbol, hcircumflex, Hcircumflex ] };
+    key <AB03> { [ NoSymbol, NoSymbol, jcircumflex, Jcircumflex ] };
+    key <AC10> { [ NoSymbol, NoSymbol, scircumflex, Scircumflex ] };
+    key <AC04> { [ NoSymbol, NoSymbol,      ubreve,      Ubreve ] };
+};
+
+// Add the Esperanto supersigned letters to their related keys in a
+// Colemak layout.  Similar comment as above applies.
+partial
+xkb_symbols "colemak" {
+    key <AB03> { [ NoSymbol, NoSymbol, ccircumflex, Ccircumflex ] };
+    key <AD05> { [ NoSymbol, NoSymbol, gcircumflex, Gcircumflex ] };
+    key <AC06> { [ NoSymbol, NoSymbol, hcircumflex, Hcircumflex ] };
+    key <AD06> { [ NoSymbol, NoSymbol, jcircumflex, Jcircumflex ] };
+    key <AC03> { [ NoSymbol, NoSymbol, scircumflex, Scircumflex ] };
+    key <AD08> { [ NoSymbol, NoSymbol,      ubreve,      Ubreve ] };
+};

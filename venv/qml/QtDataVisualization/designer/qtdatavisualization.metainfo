@@ -1,0 +1,44 @@
+MetaInfo {
+    Type {
+        name: "QtDataVisualization.Bars3D"
+        icon: "images/bars3d-icon16.png"
+
+        ItemLibraryEntry {
+            name: "Bars3D"
+            category: "Qt Data Visualization"
+            libraryIcon: "images/bars3d-icon.png"
+            version: "1.0"
+            requiredImport: "QtDataVisualization"
+
+            QmlSource { source: "default/Bars3D.qml" }
+        }
+    }
+    Type {
+        name: "QtDataVisualization.Scatter3D"
+        icon: "images/scatter3d-icon16.png"
+
+        ItemLibraryEntry {
+            name: "Scatter3D"
+            category: "Qt Data Visualization"
+            libraryIcon: "images/scatter3d-icon.png"
+            version: "1.0"
+            requiredImport: "QtDataVisualization"
+
+            QmlSource { source: "default/Scatter3D.qml" }
+        }
+    }
+    Type {
+        name: "QtDataVisualization.Surface3D"
+        icon: "images/surface3d-icon16.png"
+
+        ItemLibraryEntry {
+            name: "Surface3D"
+            category: "Qt Data Visualization"
+            libraryIcon: "images/surface3d-icon.png"
+            version: "1.0"
+            requiredImport: "QtDataVisualization"
+
+            QmlSource { source: "default/Surface3D.qml" }
+        }
+    }
+}

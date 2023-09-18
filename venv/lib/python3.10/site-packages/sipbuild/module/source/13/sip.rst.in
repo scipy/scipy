@@ -1,0 +1,407 @@
+The main purpose of the :py:mod:`~@SIP_MODULE_FQ_NAME@` module is to provide
+functionality common to all SIP generated bindings.  It is loaded automatically
+and most of the time you will completely ignore it.  However, it does expose
+some functionality that can be used by applications.
+
+
+.. py:class:: @SIP_MODULE_FQ_NAME@.array
+
+    This is the type object for the type SIP uses to represent an array of
+    wrapped C/C++ instances.  (It can also present an array of a limited number
+    of basic C/C++ types but such arrays cannot, at the moment, be created from
+    Python.)
+
+    Arrays can be indexed and elements can be modified in situ.  Arrays cannot
+    be resized.  Arrays support the buffer protocol.
+
+    .. py:method:: __init__(type, nr_elements)
+
+        :param type:
+            the type of an array element.
+        :param nr_elements:
+            the number of elements in the array.
+
+        For a C++ class each element of the array is created by calling the 
+        class's argumentless constructor.  For a C structure then the memory is
+        simply allocated on the heap.
+
+    .. py:method:: __getitem__(idx)
+
+        This returns the element at a given index.  It is not a copy of the
+        element.  If this is called a number of times for the same index then a
+        different Python object will be returned each time but each will refer
+        to the same C/C++ instance.
+
+        :param idx:
+            is the index which may either be an integer, an object that
+            implements ``__index__()`` or a slice object.
+        :return:
+            the element.  If the index is an integer then the item will be a
+            single object of the type of the array.  If the index is a slice
+            object then the item will be a new
+            :py:class:`~@SIP_MODULE_FQ_NAME@.array` object containing the
+            chosen subset of the original array.
+
+    .. py:method:: __len__()
+
+        This returns the length of the array.
+        
+        :return:
+            the number of elements in the array.
+
+    .. py:method:: __setitem__(idx, item)
+
+        This updates the array at a given index.
+
+        :param idx:
+            is the index which may either be an integer, an object that
+            implements ``__index__()`` or a slice object.
+        :param item:
+            is the item that will be assigned to the element currently at the
+            index.  It must have the same type as the element it is being
+            assigned to.
+
+
+.. py:function:: @SIP_MODULE_FQ_NAME@.assign(obj, other)
+
+    This does the Python equivalent of invoking the assignment operator of a
+    C++ instance (i.e. ``*obj = other``).
+
+    :param obj:
+        the Python object being assigned to.
+    :param other:
+        the Python object being assigned.
+
+
+.. py:function:: @SIP_MODULE_FQ_NAME@.cast(obj, type)
+
+    This does the Python equivalent of casting a C++ instance to one of its
+    sub or super-class types.
+
+    :param obj:
+        the Python object.
+    :param type type:
+        the type.
+    :return:
+        a new Python object is that wraps the same C++ instance as *obj*, but
+        has the type *type*.
+
+
+.. py:function:: @SIP_MODULE_FQ_NAME@.delete(obj)
+
+    For C++ instances this calls the C++ destructor.  For C structures it
+    returns the structure's memory to the heap.
+
+    :param obj:
+        the Python object.
+
+
+.. py:function:: @SIP_MODULE_FQ_NAME@.dump(obj)
+
+    This displays various bits of useful information about the internal state
+    of the Python object that wraps a C++ instance or C structure.  Note that
+    the reference count that is displayed has the same caveat as that of
+    :py:func:`sys.getrefcount`.
+
+    :param obj:
+        the Python object.
+
+
+.. py:function:: @SIP_MODULE_FQ_NAME@.enableautoconversion(type, enable)
+
+    Instances of some classes may be automatically converted to other Python
+    objects even though the class has been wrapped.  This allows that behaviour
+    to be suppressed so that an instances of the wrapped class is returned
+    instead.  By default it is enabled.
+
+    :param type type:
+        the Python type object.
+    :param bool enable:
+        is ``True`` if auto-conversion should be enabled for the type.
+    :return:
+        ``True`` or ``False`` depending on whether or not auto-conversion was
+        previously enabled for the type.  This allows the previous state to be
+        restored later on.
+
+
+.. py:function:: @SIP_MODULE_FQ_NAME@.isdeleted(obj)
+
+    This checks if the C++ instance or C structure has been deleted and
+    returned to the heap.
+
+    :param obj:
+        the Python object.
+    :return:
+        ``True`` if the C/C++ instance has been deleted.
+
+
+.. py:function:: @SIP_MODULE_FQ_NAME@.ispycreated(obj)
+
+    This checks if the C++ instance or C structure was created by Python.  If
+    it was then it is possible to call a C++ instance's protected methods.
+
+    :param obj:
+        the Python object.
+    :return:
+        ``True`` if the C/C++ instance was created by Python.
+
+
+.. py:function:: @SIP_MODULE_FQ_NAME@.ispyowned(obj)
+
+    This checks if the C++ instance or C structure is owned by Python.
+
+    :param obj:
+        the Python object.
+    :return:
+        ``True`` if the C/C++ instance is owned by Python.
+
+
+.. py:function:: @SIP_MODULE_FQ_NAME@.setdeleted(obj)
+
+    This marks the C++ instance or C structure as having been deleted and
+    returned to the heap so that future references to it raise an exception
+    rather than cause a program crash.  Normally SIP handles such things
+    automatically, but there may be circumstances where this isn't possible.
+
+    :param obj:
+        the Python object.
+
+
+.. py:function:: @SIP_MODULE_FQ_NAME@.settracemask(mask)
+
+    If the bindings have been created with tracing enabled then the generated
+    code will include debugging statements that trace the execution of the
+    code.  (It is particularly useful when trying to understand the operation
+    of a C++ library's virtual function calls.)
+
+    :param int mask:
+        the mask that determines which debugging statements are enabled.
+
+    Debugging statements are generated at the following points:
+
+    - in a C++ virtual function (*mask* is ``0x0001``)
+    - in a C++ constructor (*mask* is ``0x0002``)
+    - in a C++ destructor (*mask* is ``0x0004``)
+    - in a Python type's __init__ method (*mask* is ``0x0008``)
+    - in a Python type's __del__ method (*mask* is ``0x0010``)
+    - in a Python type's ordinary method (*mask* is ``0x0020``).
+
+    By default the trace mask is zero and all debugging statements are
+    disabled.
+
+
+.. py:class:: @SIP_MODULE_FQ_NAME@.simplewrapper
+
+    This is an alternative type object than can be used as the base type of an
+    instance wrapped by SIP.  Objects using this are smaller than those that
+    use the default :py:class:`~@SIP_MODULE_FQ_NAME@.wrapper` type but do not
+    support the concept of object ownership.
+
+    .. py:method:: __dtor__
+
+        If the wrapped instance is a C++ class with a virtual destructor then
+        this is called by the destructor.
+
+
+.. py:data:: @SIP_MODULE_FQ_NAME@.SIP_VERSION
+
+    This is a Python integer object that represents the SIP version number as
+    a 3 part hexadecimal number (e.g. v5.0.0 is represented as ``0x050000``).
+    Note that it is not the version number of the
+    :py:mod:`~@SIP_MODULE_FQ_NAME@` module.
+
+
+.. py:data:: @SIP_MODULE_FQ_NAME@.SIP_VERSION_STR
+
+    This is a Python string object that defines the SIP version number as
+    represented as a string.  For development versions it will contain 
+    ``.dev``.  Note that it is not the version number of the
+    :py:mod:`~@SIP_MODULE_FQ_NAME@` module.
+
+
+.. py:function:: @SIP_MODULE_FQ_NAME@.transferback(obj)
+
+    This transfers ownership of a C++ instance or C structure to Python.
+
+    :param obj:
+        the Python object.
+
+
+.. py:function:: @SIP_MODULE_FQ_NAME@.transferto(obj, owner)
+
+    This transfers ownership of a C++ instance or C structure to C/C++.
+
+    :param obj:
+        the Python object.
+    :param owner:
+        an optional wrapped instance that *obj* becomes associated with with
+        regard to the cyclic garbage collector.  If *owner* is ``None`` then no
+        such association is made.  If *owner* is the same value as *obj* then
+        any reference cycles involving *obj* can never be detected or broken by
+        the cyclic garbage collector.  Responsibility for destroying the C++
+        instance’s destructor or freeing the C structure is always transfered
+        to C/C++.
+
+
+.. py:function:: @SIP_MODULE_FQ_NAME@.unwrapinstance(obj)
+
+    This returns the address, as an integer, of a wrapped C/C++ structure or
+    class instance.
+
+    :param obj:
+        the Python object.
+    :return:
+        an integer that is the address of the C/C++ instance.
+
+
+.. py:class:: @SIP_MODULE_FQ_NAME@.voidptr
+
+    This is the type object for the type SIP uses to represent a C/C++
+    ``void *``.  It may have a size associated with the address in which case
+    the Python buffer interface is supported.  The type has the following
+    methods.
+
+    .. py:method:: __init__(address, size=-1, writeable=True)
+
+        :param address:
+            the address, either another
+            :py:class:`~@SIP_MODULE_FQ_NAME@.voidptr`, ``None``, a Python
+            Capsule, an object that implements the buffer protocol or an
+            integer.
+        :param int size:
+            the optional associated size of the block of memory and is negative
+            if the size is not known.
+        :param bool writeable:
+            set if the memory is writeable.  If it is not specified, and
+            *address* is a :py:class:`~@SIP_MODULE_FQ_NAME@.voidptr` instance
+            then its value will be used.
+
+    .. py:method:: __getitem__(idx)
+
+        This returns the item at a given index.  An exception will be raised if
+        the address does not have an associated size.  In this way it behaves
+        like a Python ``memoryview`` object.
+
+        :param idx:
+            is the index which may either be an integer, an object that
+            implements ``__index__()`` or a slice object.
+        :return:
+            the item.  If the index is an integer then the item will be a bytes
+            object containing the single byte at that index.  If the index is a
+            slice object then the item will be a new
+            :py:class:`~@SIP_MODULE_FQ_NAME@.voidptr` object defining the
+            subset of the memory corresponding to the slice.
+
+    .. py:method:: __int__()
+
+        This returns the address as an integer.
+
+        :return:
+            the integer address.
+
+    .. py:method:: __len__()
+
+        This returns the size associated with the address.
+        
+        :return:
+            the associated size.  An exception will be raised if there is none.
+
+    .. py:method:: __setitem__(idx, item)
+
+        This updates the memory at a given index.  An exception will be raised
+        if the address does not have an associated size or is not writable.  In
+        this way it behaves like a Python ``memoryview`` object.
+
+        :param idx:
+            is the index which may either be an integer, an object that
+            implements ``__index__()`` or a slice object.
+        :param item:
+            is the data that will update the memory defined by the index.  It
+            must implement the buffer interface and be the same size as the
+            data that is being updated.
+
+    .. py:method:: asarray(size=-1)
+
+        This returns the block of memory as an
+        :py:class:`~@SIP_MODULE_FQ_NAME@.array` object.  The memory is **not**
+        copied.
+        
+        :param int size:
+            the size of the array.  If it is negative then the size associated
+            with the address is used.  If there is no associated size then an
+            exception is raised.
+        :return:
+            the :py:class:`~@SIP_MODULE_FQ_NAME@.array` object.
+
+    .. py:method:: ascapsule()
+
+        This returns the address as an unnamed Python Capsule.
+
+        :return:
+            the Capsule.
+
+    .. py:method:: asstring(size=-1)
+
+        This returns a copy of the block of memory as a bytes object.
+        
+        :param int size:
+            the number of bytes to copy.  If it is negative then the size
+            associated with the address is used.  If there is no associated
+            size then an exception is raised.
+        :return:
+            the bytes object.
+
+    .. py:method:: getsize()
+
+        This returns the size associated with the address.
+        
+        :return:
+            the associated size which will be negative if there is none.
+
+    .. py:method:: setsize(size)
+
+        This sets the size associated with the address.
+
+        :param int size:
+            the size to associate.  If it is negative then no size is
+            associated.
+
+    .. py:method:: getwriteable()
+
+        This returns the writeable state of the memory.
+
+        :return:
+            ``True`` if the memory is writeable.
+
+    .. py:method:: setwriteable(writeable)
+
+        This sets the writeable state of the memory.
+
+        :param bool writeable:
+            the writeable state to set.
+
+
+.. py:function:: @SIP_MODULE_FQ_NAME@.wrapinstance(addr, type)
+
+    This wraps a C structure or C++ class instance in a Python object.  If the
+    instance has already been wrapped then a new reference to the existing
+    object is returned.
+    
+    :param int addr:
+        the address of the instance as a number.
+    :param type type:
+        the Python type of the instance.
+    :return:
+        the Python object that wraps the instance.
+
+
+.. py:class:: @SIP_MODULE_FQ_NAME@.wrapper
+
+    This is the type object of the default base type of all instances wrapped
+    by SIP.
+
+
+.. py:class:: @SIP_MODULE_FQ_NAME@.wrappertype
+
+    This is the type object of the metatype of the
+    :py:class:`~@SIP_MODULE_FQ_NAME@.wrapper` type.

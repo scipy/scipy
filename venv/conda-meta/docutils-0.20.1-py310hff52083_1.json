@@ -1,0 +1,2798 @@
+{
+  "build": "py310hff52083_1",
+  "build_number": 1,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [],
+  "depends": [
+    "python >=3.10,<3.11.0a0",
+    "python_abi 3.10.* *_cp310"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/docutils-0.20.1-py310hff52083_1",
+  "features": "",
+  "files": [
+    "bin/docutils",
+    "bin/rst2html.py",
+    "bin/rst2html4.py",
+    "bin/rst2html5.py",
+    "bin/rst2latex.py",
+    "bin/rst2man.py",
+    "bin/rst2odt.py",
+    "bin/rst2odt_prepstyles.py",
+    "bin/rst2pseudoxml.py",
+    "bin/rst2s5.py",
+    "bin/rst2xetex.py",
+    "bin/rst2xml.py",
+    "bin/rstpep2html.py",
+    "lib/python3.10/site-packages/docutils-0.20.1.dist-info/COPYING.txt",
+    "lib/python3.10/site-packages/docutils-0.20.1.dist-info/INSTALLER",
+    "lib/python3.10/site-packages/docutils-0.20.1.dist-info/METADATA",
+    "lib/python3.10/site-packages/docutils-0.20.1.dist-info/RECORD",
+    "lib/python3.10/site-packages/docutils-0.20.1.dist-info/REQUESTED",
+    "lib/python3.10/site-packages/docutils-0.20.1.dist-info/WHEEL",
+    "lib/python3.10/site-packages/docutils-0.20.1.dist-info/direct_url.json",
+    "lib/python3.10/site-packages/docutils-0.20.1.dist-info/entry_points.txt",
+    "lib/python3.10/site-packages/docutils-0.20.1.dist-info/top_level.txt",
+    "lib/python3.10/site-packages/docutils/__init__.py",
+    "lib/python3.10/site-packages/docutils/__main__.py",
+    "lib/python3.10/site-packages/docutils/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/__pycache__/__main__.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/__pycache__/core.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/__pycache__/examples.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/__pycache__/frontend.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/__pycache__/io.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/__pycache__/nodes.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/__pycache__/statemachine.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/core.py",
+    "lib/python3.10/site-packages/docutils/examples.py",
+    "lib/python3.10/site-packages/docutils/frontend.py",
+    "lib/python3.10/site-packages/docutils/io.py",
+    "lib/python3.10/site-packages/docutils/languages/__init__.py",
+    "lib/python3.10/site-packages/docutils/languages/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/languages/__pycache__/af.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/languages/__pycache__/ar.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/languages/__pycache__/ca.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/languages/__pycache__/cs.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/languages/__pycache__/da.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/languages/__pycache__/de.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/languages/__pycache__/en.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/languages/__pycache__/eo.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/languages/__pycache__/es.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/languages/__pycache__/fa.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/languages/__pycache__/fi.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/languages/__pycache__/fr.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/languages/__pycache__/gl.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/languages/__pycache__/he.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/languages/__pycache__/it.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/languages/__pycache__/ja.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/languages/__pycache__/ko.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/languages/__pycache__/lt.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/languages/__pycache__/lv.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/languages/__pycache__/nl.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/languages/__pycache__/pl.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/languages/__pycache__/pt_br.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/languages/__pycache__/ru.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/languages/__pycache__/sk.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/languages/__pycache__/sv.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/languages/__pycache__/uk.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/languages/__pycache__/zh_cn.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/languages/__pycache__/zh_tw.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/languages/af.py",
+    "lib/python3.10/site-packages/docutils/languages/ar.py",
+    "lib/python3.10/site-packages/docutils/languages/ca.py",
+    "lib/python3.10/site-packages/docutils/languages/cs.py",
+    "lib/python3.10/site-packages/docutils/languages/da.py",
+    "lib/python3.10/site-packages/docutils/languages/de.py",
+    "lib/python3.10/site-packages/docutils/languages/en.py",
+    "lib/python3.10/site-packages/docutils/languages/eo.py",
+    "lib/python3.10/site-packages/docutils/languages/es.py",
+    "lib/python3.10/site-packages/docutils/languages/fa.py",
+    "lib/python3.10/site-packages/docutils/languages/fi.py",
+    "lib/python3.10/site-packages/docutils/languages/fr.py",
+    "lib/python3.10/site-packages/docutils/languages/gl.py",
+    "lib/python3.10/site-packages/docutils/languages/he.py",
+    "lib/python3.10/site-packages/docutils/languages/it.py",
+    "lib/python3.10/site-packages/docutils/languages/ja.py",
+    "lib/python3.10/site-packages/docutils/languages/ko.py",
+    "lib/python3.10/site-packages/docutils/languages/lt.py",
+    "lib/python3.10/site-packages/docutils/languages/lv.py",
+    "lib/python3.10/site-packages/docutils/languages/nl.py",
+    "lib/python3.10/site-packages/docutils/languages/pl.py",
+    "lib/python3.10/site-packages/docutils/languages/pt_br.py",
+    "lib/python3.10/site-packages/docutils/languages/ru.py",
+    "lib/python3.10/site-packages/docutils/languages/sk.py",
+    "lib/python3.10/site-packages/docutils/languages/sv.py",
+    "lib/python3.10/site-packages/docutils/languages/uk.py",
+    "lib/python3.10/site-packages/docutils/languages/zh_cn.py",
+    "lib/python3.10/site-packages/docutils/languages/zh_tw.py",
+    "lib/python3.10/site-packages/docutils/nodes.py",
+    "lib/python3.10/site-packages/docutils/parsers/__init__.py",
+    "lib/python3.10/site-packages/docutils/parsers/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/__pycache__/commonmark_wrapper.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/__pycache__/null.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/__pycache__/recommonmark_wrapper.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/commonmark_wrapper.py",
+    "lib/python3.10/site-packages/docutils/parsers/null.py",
+    "lib/python3.10/site-packages/docutils/parsers/recommonmark_wrapper.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/__init__.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/__pycache__/roles.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/__pycache__/states.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/__pycache__/tableparser.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/directives/__init__.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/directives/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/directives/__pycache__/admonitions.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/directives/__pycache__/body.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/directives/__pycache__/html.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/directives/__pycache__/images.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/directives/__pycache__/misc.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/directives/__pycache__/parts.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/directives/__pycache__/references.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/directives/__pycache__/tables.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/directives/admonitions.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/directives/body.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/directives/html.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/directives/images.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/directives/misc.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/directives/parts.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/directives/references.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/directives/tables.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/include/README.txt",
+    "lib/python3.10/site-packages/docutils/parsers/rst/include/isoamsa.txt",
+    "lib/python3.10/site-packages/docutils/parsers/rst/include/isoamsb.txt",
+    "lib/python3.10/site-packages/docutils/parsers/rst/include/isoamsc.txt",
+    "lib/python3.10/site-packages/docutils/parsers/rst/include/isoamsn.txt",
+    "lib/python3.10/site-packages/docutils/parsers/rst/include/isoamso.txt",
+    "lib/python3.10/site-packages/docutils/parsers/rst/include/isoamsr.txt",
+    "lib/python3.10/site-packages/docutils/parsers/rst/include/isobox.txt",
+    "lib/python3.10/site-packages/docutils/parsers/rst/include/isocyr1.txt",
+    "lib/python3.10/site-packages/docutils/parsers/rst/include/isocyr2.txt",
+    "lib/python3.10/site-packages/docutils/parsers/rst/include/isodia.txt",
+    "lib/python3.10/site-packages/docutils/parsers/rst/include/isogrk1.txt",
+    "lib/python3.10/site-packages/docutils/parsers/rst/include/isogrk2.txt",
+    "lib/python3.10/site-packages/docutils/parsers/rst/include/isogrk3.txt",
+    "lib/python3.10/site-packages/docutils/parsers/rst/include/isogrk4-wide.txt",
+    "lib/python3.10/site-packages/docutils/parsers/rst/include/isogrk4.txt",
+    "lib/python3.10/site-packages/docutils/parsers/rst/include/isolat1.txt",
+    "lib/python3.10/site-packages/docutils/parsers/rst/include/isolat2.txt",
+    "lib/python3.10/site-packages/docutils/parsers/rst/include/isomfrk-wide.txt",
+    "lib/python3.10/site-packages/docutils/parsers/rst/include/isomfrk.txt",
+    "lib/python3.10/site-packages/docutils/parsers/rst/include/isomopf-wide.txt",
+    "lib/python3.10/site-packages/docutils/parsers/rst/include/isomopf.txt",
+    "lib/python3.10/site-packages/docutils/parsers/rst/include/isomscr-wide.txt",
+    "lib/python3.10/site-packages/docutils/parsers/rst/include/isomscr.txt",
+    "lib/python3.10/site-packages/docutils/parsers/rst/include/isonum.txt",
+    "lib/python3.10/site-packages/docutils/parsers/rst/include/isopub.txt",
+    "lib/python3.10/site-packages/docutils/parsers/rst/include/isotech.txt",
+    "lib/python3.10/site-packages/docutils/parsers/rst/include/mmlalias.txt",
+    "lib/python3.10/site-packages/docutils/parsers/rst/include/mmlextra-wide.txt",
+    "lib/python3.10/site-packages/docutils/parsers/rst/include/mmlextra.txt",
+    "lib/python3.10/site-packages/docutils/parsers/rst/include/s5defs.txt",
+    "lib/python3.10/site-packages/docutils/parsers/rst/include/xhtml1-lat1.txt",
+    "lib/python3.10/site-packages/docutils/parsers/rst/include/xhtml1-special.txt",
+    "lib/python3.10/site-packages/docutils/parsers/rst/include/xhtml1-symbol.txt",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/__init__.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/af.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/ar.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/ca.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/cs.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/da.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/de.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/en.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/eo.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/es.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/fa.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/fi.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/fr.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/gl.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/he.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/it.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/ja.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/ko.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/lt.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/lv.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/nl.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/pl.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/pt_br.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/ru.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/sk.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/sv.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/uk.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/zh_cn.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/zh_tw.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/af.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/ar.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/ca.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/cs.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/da.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/de.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/en.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/eo.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/es.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/fa.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/fi.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/fr.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/gl.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/he.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/it.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/ja.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/ko.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/lt.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/lv.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/nl.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/pl.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/pt_br.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/ru.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/sk.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/sv.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/uk.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/zh_cn.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/languages/zh_tw.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/roles.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/states.py",
+    "lib/python3.10/site-packages/docutils/parsers/rst/tableparser.py",
+    "lib/python3.10/site-packages/docutils/readers/__init__.py",
+    "lib/python3.10/site-packages/docutils/readers/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/readers/__pycache__/doctree.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/readers/__pycache__/pep.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/readers/__pycache__/standalone.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/readers/doctree.py",
+    "lib/python3.10/site-packages/docutils/readers/pep.py",
+    "lib/python3.10/site-packages/docutils/readers/standalone.py",
+    "lib/python3.10/site-packages/docutils/statemachine.py",
+    "lib/python3.10/site-packages/docutils/transforms/__init__.py",
+    "lib/python3.10/site-packages/docutils/transforms/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/transforms/__pycache__/components.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/transforms/__pycache__/frontmatter.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/transforms/__pycache__/misc.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/transforms/__pycache__/parts.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/transforms/__pycache__/peps.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/transforms/__pycache__/references.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/transforms/__pycache__/universal.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/transforms/__pycache__/writer_aux.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/transforms/components.py",
+    "lib/python3.10/site-packages/docutils/transforms/frontmatter.py",
+    "lib/python3.10/site-packages/docutils/transforms/misc.py",
+    "lib/python3.10/site-packages/docutils/transforms/parts.py",
+    "lib/python3.10/site-packages/docutils/transforms/peps.py",
+    "lib/python3.10/site-packages/docutils/transforms/references.py",
+    "lib/python3.10/site-packages/docutils/transforms/universal.py",
+    "lib/python3.10/site-packages/docutils/transforms/writer_aux.py",
+    "lib/python3.10/site-packages/docutils/utils/__init__.py",
+    "lib/python3.10/site-packages/docutils/utils/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/utils/__pycache__/code_analyzer.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/utils/__pycache__/error_reporting.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/utils/__pycache__/punctuation_chars.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/utils/__pycache__/roman.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/utils/__pycache__/smartquotes.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/utils/__pycache__/urischemes.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/utils/code_analyzer.py",
+    "lib/python3.10/site-packages/docutils/utils/error_reporting.py",
+    "lib/python3.10/site-packages/docutils/utils/math/__init__.py",
+    "lib/python3.10/site-packages/docutils/utils/math/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/utils/math/__pycache__/latex2mathml.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/utils/math/__pycache__/math2html.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/utils/math/__pycache__/tex2mathml_extern.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/utils/math/__pycache__/tex2unichar.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/utils/math/__pycache__/unichar2tex.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/utils/math/latex2mathml.py",
+    "lib/python3.10/site-packages/docutils/utils/math/math2html.py",
+    "lib/python3.10/site-packages/docutils/utils/math/tex2mathml_extern.py",
+    "lib/python3.10/site-packages/docutils/utils/math/tex2unichar.py",
+    "lib/python3.10/site-packages/docutils/utils/math/unichar2tex.py",
+    "lib/python3.10/site-packages/docutils/utils/punctuation_chars.py",
+    "lib/python3.10/site-packages/docutils/utils/roman.py",
+    "lib/python3.10/site-packages/docutils/utils/smartquotes.py",
+    "lib/python3.10/site-packages/docutils/utils/urischemes.py",
+    "lib/python3.10/site-packages/docutils/writers/__init__.py",
+    "lib/python3.10/site-packages/docutils/writers/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/writers/__pycache__/_html_base.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/writers/__pycache__/docutils_xml.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/writers/__pycache__/manpage.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/writers/__pycache__/null.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/writers/__pycache__/pseudoxml.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/writers/_html_base.py",
+    "lib/python3.10/site-packages/docutils/writers/docutils_xml.py",
+    "lib/python3.10/site-packages/docutils/writers/html4css1/__init__.py",
+    "lib/python3.10/site-packages/docutils/writers/html4css1/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/writers/html4css1/html4css1.css",
+    "lib/python3.10/site-packages/docutils/writers/html4css1/template.txt",
+    "lib/python3.10/site-packages/docutils/writers/html5_polyglot/__init__.py",
+    "lib/python3.10/site-packages/docutils/writers/html5_polyglot/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/writers/html5_polyglot/math.css",
+    "lib/python3.10/site-packages/docutils/writers/html5_polyglot/minimal.css",
+    "lib/python3.10/site-packages/docutils/writers/html5_polyglot/plain.css",
+    "lib/python3.10/site-packages/docutils/writers/html5_polyglot/responsive.css",
+    "lib/python3.10/site-packages/docutils/writers/html5_polyglot/template.txt",
+    "lib/python3.10/site-packages/docutils/writers/html5_polyglot/tuftig.css",
+    "lib/python3.10/site-packages/docutils/writers/latex2e/__init__.py",
+    "lib/python3.10/site-packages/docutils/writers/latex2e/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/writers/latex2e/default.tex",
+    "lib/python3.10/site-packages/docutils/writers/latex2e/docutils.sty",
+    "lib/python3.10/site-packages/docutils/writers/latex2e/titlepage.tex",
+    "lib/python3.10/site-packages/docutils/writers/latex2e/titlingpage.tex",
+    "lib/python3.10/site-packages/docutils/writers/latex2e/xelatex.tex",
+    "lib/python3.10/site-packages/docutils/writers/manpage.py",
+    "lib/python3.10/site-packages/docutils/writers/null.py",
+    "lib/python3.10/site-packages/docutils/writers/odf_odt/__init__.py",
+    "lib/python3.10/site-packages/docutils/writers/odf_odt/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/writers/odf_odt/__pycache__/prepstyles.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/writers/odf_odt/__pycache__/pygmentsformatter.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/writers/odf_odt/prepstyles.py",
+    "lib/python3.10/site-packages/docutils/writers/odf_odt/pygmentsformatter.py",
+    "lib/python3.10/site-packages/docutils/writers/odf_odt/styles.odt",
+    "lib/python3.10/site-packages/docutils/writers/pep_html/__init__.py",
+    "lib/python3.10/site-packages/docutils/writers/pep_html/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/writers/pep_html/pep.css",
+    "lib/python3.10/site-packages/docutils/writers/pep_html/template.txt",
+    "lib/python3.10/site-packages/docutils/writers/pseudoxml.py",
+    "lib/python3.10/site-packages/docutils/writers/s5_html/__init__.py",
+    "lib/python3.10/site-packages/docutils/writers/s5_html/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/docutils/writers/s5_html/themes/README.txt",
+    "lib/python3.10/site-packages/docutils/writers/s5_html/themes/big-black/__base__",
+    "lib/python3.10/site-packages/docutils/writers/s5_html/themes/big-black/framing.css",
+    "lib/python3.10/site-packages/docutils/writers/s5_html/themes/big-black/pretty.css",
+    "lib/python3.10/site-packages/docutils/writers/s5_html/themes/big-white/framing.css",
+    "lib/python3.10/site-packages/docutils/writers/s5_html/themes/big-white/pretty.css",
+    "lib/python3.10/site-packages/docutils/writers/s5_html/themes/default/framing.css",
+    "lib/python3.10/site-packages/docutils/writers/s5_html/themes/default/opera.css",
+    "lib/python3.10/site-packages/docutils/writers/s5_html/themes/default/outline.css",
+    "lib/python3.10/site-packages/docutils/writers/s5_html/themes/default/pretty.css",
+    "lib/python3.10/site-packages/docutils/writers/s5_html/themes/default/print.css",
+    "lib/python3.10/site-packages/docutils/writers/s5_html/themes/default/s5-core.css",
+    "lib/python3.10/site-packages/docutils/writers/s5_html/themes/default/slides.css",
+    "lib/python3.10/site-packages/docutils/writers/s5_html/themes/default/slides.js",
+    "lib/python3.10/site-packages/docutils/writers/s5_html/themes/medium-black/__base__",
+    "lib/python3.10/site-packages/docutils/writers/s5_html/themes/medium-black/pretty.css",
+    "lib/python3.10/site-packages/docutils/writers/s5_html/themes/medium-white/framing.css",
+    "lib/python3.10/site-packages/docutils/writers/s5_html/themes/medium-white/pretty.css",
+    "lib/python3.10/site-packages/docutils/writers/s5_html/themes/small-black/__base__",
+    "lib/python3.10/site-packages/docutils/writers/s5_html/themes/small-black/pretty.css",
+    "lib/python3.10/site-packages/docutils/writers/s5_html/themes/small-white/framing.css",
+    "lib/python3.10/site-packages/docutils/writers/s5_html/themes/small-white/pretty.css",
+    "lib/python3.10/site-packages/docutils/writers/xetex/__init__.py",
+    "lib/python3.10/site-packages/docutils/writers/xetex/__pycache__/__init__.cpython-310.pyc"
+  ],
+  "fn": "docutils-0.20.1-py310hff52083_1.conda",
+  "license": "LicenseRef-Public-Domain-Dedictation AND BSD-3-Clause AND BSD-2-Clause AND LicenseRef-PSF-2.1.1",
+  "link": {
+    "source": "/opt/conda/pkgs/docutils-0.20.1-py310hff52083_1",
+    "type": 1
+  },
+  "md5": "f0c2f7a552b9bb081221ec60bfb66e39",
+  "name": "docutils",
+  "package_tarball_full_path": "/opt/conda/pkgs/docutils-0.20.1-py310hff52083_1.conda",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "bin/docutils",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/docutils_1694622781492/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pl",
+        "sha256": "c309296363cc50c96e2f4ef4e58a55bb93dd962d2e3d61211784d11a8b5e4d3d",
+        "sha256_in_prefix": "aa7a6a0f5b4e4e0cf861d5ce2ccff5198eacdf06b276f0f0d96e20e2ce10b616",
+        "size_in_bytes": 499
+      },
+      {
+        "_path": "bin/rst2html.py",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/docutils_1694622781492/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pl",
+        "sha256": "1250cf88fe85acb004ae409bd9a52b0b41e6c0c95ac09ecd1d084abd57c78877",
+        "sha256_in_prefix": "ae9fc73e2663f0d033d0951d390f10b6b84328257319c81ff669cddd063426f3",
+        "size_in_bytes": 852
+      },
+      {
+        "_path": "bin/rst2html4.py",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/docutils_1694622781492/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pl",
+        "sha256": "43ba7e752b8bddf92101632e3fc29a56dc47940d7596d5c5aeb2cf5cb0cf2e85",
+        "sha256_in_prefix": "c0bfdb37fe88710b1357c151bc99e066561334b06dc18a566f6dd33cdbb7274f",
+        "size_in_bytes": 974
+      },
+      {
+        "_path": "bin/rst2html5.py",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/docutils_1694622781492/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pl",
+        "sha256": "1c4c3101f7c092035902b6ea0b0226a1e3483f6e40ebe996c339b4f2bdf12f3f",
+        "sha256_in_prefix": "206f4437260d20e5536209216e679a05f4b2cc75797a34f88094a9cea840f282",
+        "size_in_bytes": 1309
+      },
+      {
+        "_path": "bin/rst2latex.py",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/docutils_1694622781492/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pl",
+        "sha256": "63dfe9f2d485871047073abb1e258fae4d173867916d535b519ba44188a2775d",
+        "sha256_in_prefix": "0aa3f9158c609dac0da25cf247c2d019e506484a1db7fde715515968d7309824",
+        "size_in_bytes": 1051
+      },
+      {
+        "_path": "bin/rst2man.py",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/docutils_1694622781492/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pl",
+        "sha256": "5f6fa6f568e9c45d99eb6ca7033bab26facd8e2dae0ee7dd793bafa4ac952f78",
+        "sha256_in_prefix": "0017f5d3e585e415ccc6bdb5dc38d9960c1eb529195197cd5c1cb9cdd5157d21",
+        "size_in_bytes": 874
+      },
+      {
+        "_path": "bin/rst2odt.py",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/docutils_1694622781492/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pl",
+        "sha256": "d138149258787c59bf47d646b5c92e58351eae8ce88b9cca9f4304af7abe3cc2",
+        "sha256_in_prefix": "238a24c3816b1e9fbe87cddcfaaeb686d620f1ee1db552f59783de7feb4de0f6",
+        "size_in_bytes": 1040
+      },
+      {
+        "_path": "bin/rst2odt_prepstyles.py",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/docutils_1694622781492/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pl",
+        "sha256": "ef547af6f069e8880eb732504b1cd58cf8c2381cf69519e4b10bdb4ece8aefd6",
+        "sha256_in_prefix": "ab318ce0058a9a44025dda40d646051c04015bf56af02499d193a077f4a2ddc1",
+        "size_in_bytes": 846
+      },
+      {
+        "_path": "bin/rst2pseudoxml.py",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/docutils_1694622781492/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pl",
+        "sha256": "c9b65cff893a4479ac7858e3699869191fe07c9d4d7228c5529c2eff460c2cb3",
+        "sha256_in_prefix": "c0606d9912f5ec4098fd72463cbe84aa1a5899a5ac3a8824ea8311c4fe9a825b",
+        "size_in_bytes": 859
+      },
+      {
+        "_path": "bin/rst2s5.py",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/docutils_1694622781492/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pl",
+        "sha256": "fce58fc131c49d97d970d5b06ec5a2cae0b276d9287c38f2808e2f23cef6a6b4",
+        "sha256_in_prefix": "6c2cbf139e0bd1ca64d88ad4aa8f0448440657d6418f941648a2cd10718a259e",
+        "size_in_bytes": 895
+      },
+      {
+        "_path": "bin/rst2xetex.py",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/docutils_1694622781492/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pl",
+        "sha256": "1e09d4d6156ffab71b51445ed1290fdca5c525c127b37236edf4ae37c3402f13",
+        "sha256_in_prefix": "34aa8dcf65c7f3cddbdf8803e20b036fcf797ce04ac80be8800f681634b37aa8",
+        "size_in_bytes": 1131
+      },
+      {
+        "_path": "bin/rst2xml.py",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/docutils_1694622781492/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pl",
+        "sha256": "aa63fee414fb1b9011154846a7f841e207e8649920f594f6b695036da351d00f",
+        "sha256_in_prefix": "8cf092d17cf746de2b8f547f4191d24bb6f653d7357a6518481139fd6c1f1712",
+        "size_in_bytes": 860
+      },
+      {
+        "_path": "bin/rstpep2html.py",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/docutils_1694622781492/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pl",
+        "sha256": "324fd2a1ba6857aa25e8e90a1bb49e99eee0f03c41572edd25417a94cf7ee8b1",
+        "sha256_in_prefix": "dce2c336b86b1e60368a2790d0a4e9ab98f0ca89f8a04953b4a87e63607c7df2",
+        "size_in_bytes": 928
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils-0.20.1.dist-info/COPYING.txt",
+        "path_type": "hardlink",
+        "sha256": "a0d7ee761e8d757c0b904518514f98233fd94f2398da3703130d15142ca47a77",
+        "sha256_in_prefix": "a0d7ee761e8d757c0b904518514f98233fd94f2398da3703130d15142ca47a77",
+        "size_in_bytes": 6292
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils-0.20.1.dist-info/INSTALLER",
+        "path_type": "hardlink",
+        "sha256": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "sha256_in_prefix": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "size_in_bytes": 5
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils-0.20.1.dist-info/METADATA",
+        "path_type": "hardlink",
+        "sha256": "579321e97d2c673cdc155e024eb70d3f3dc7ae418920c353798e5ad12519989c",
+        "sha256_in_prefix": "579321e97d2c673cdc155e024eb70d3f3dc7ae418920c353798e5ad12519989c",
+        "size_in_bytes": 2816
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils-0.20.1.dist-info/RECORD",
+        "path_type": "hardlink",
+        "sha256": "1315501c69d3659a895a10d005d3b8d1f5750058d5db11f7257f0712dc83a7f0",
+        "sha256_in_prefix": "1315501c69d3659a895a10d005d3b8d1f5750058d5db11f7257f0712dc83a7f0",
+        "size_in_bytes": 28360
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils-0.20.1.dist-info/REQUESTED",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256_in_prefix": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils-0.20.1.dist-info/WHEEL",
+        "path_type": "hardlink",
+        "sha256": "c903798389a0e00c9b4639208bef72cb889010589b1909a5cfbf0f8a4e4eafe0",
+        "sha256_in_prefix": "c903798389a0e00c9b4639208bef72cb889010589b1909a5cfbf0f8a4e4eafe0",
+        "size_in_bytes": 92
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils-0.20.1.dist-info/direct_url.json",
+        "path_type": "hardlink",
+        "sha256": "cd25485253df95ae0d958683d92965d7c68abe93044a354c7ae3139b137ed399",
+        "sha256_in_prefix": "cd25485253df95ae0d958683d92965d7c68abe93044a354c7ae3139b137ed399",
+        "size_in_bytes": 104
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils-0.20.1.dist-info/entry_points.txt",
+        "path_type": "hardlink",
+        "sha256": "18c800484d7fadc92cbd4c775a1edd7d8da35b562e6bdaa783d4edb08e020f3f",
+        "sha256_in_prefix": "18c800484d7fadc92cbd4c775a1edd7d8da35b562e6bdaa783d4edb08e020f3f",
+        "size_in_bytes": 52
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils-0.20.1.dist-info/top_level.txt",
+        "path_type": "hardlink",
+        "sha256": "74fab78d0a31a4c38486b675b50877ffef61aa176f3a352995275254301cf790",
+        "sha256_in_prefix": "74fab78d0a31a4c38486b675b50877ffef61aa176f3a352995275254301cf790",
+        "size_in_bytes": 9
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "70a66059fc003172e6184d0ea1176a1c9a74eab1ec0f5a9efd9735b3fbe2c8dc",
+        "sha256_in_prefix": "70a66059fc003172e6184d0ea1176a1c9a74eab1ec0f5a9efd9735b3fbe2c8dc",
+        "size_in_bytes": 10293
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/__main__.py",
+        "path_type": "hardlink",
+        "sha256": "1ef88b4496ffb7dd0cd5f390f2cf09d80e176574afc387181e4ac0b598d1d970",
+        "sha256_in_prefix": "1ef88b4496ffb7dd0cd5f390f2cf09d80e176574afc387181e4ac0b598d1d970",
+        "size_in_bytes": 3625
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "c17ee2e490995755f4b15f57a9873c8df60c7a3b85f90a6e58a659c7615e0181",
+        "sha256_in_prefix": "c17ee2e490995755f4b15f57a9873c8df60c7a3b85f90a6e58a659c7615e0181",
+        "size_in_bytes": 5435
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/__pycache__/__main__.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "1d25ab37b79ed16b0431637ef18c56fbc4159b532946668a06a483522374d884",
+        "sha256_in_prefix": "1d25ab37b79ed16b0431637ef18c56fbc4159b532946668a06a483522374d884",
+        "size_in_bytes": 2581
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/__pycache__/core.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "cd5fc8af2e1ce96d856b62da8d576518ac7b6cba80d3bb4c5cd1aa20b07dd847",
+        "sha256_in_prefix": "cd5fc8af2e1ce96d856b62da8d576518ac7b6cba80d3bb4c5cd1aa20b07dd847",
+        "size_in_bytes": 24871
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/__pycache__/examples.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "2b9cb1176e3211d61dbe9e04d6c1efe6e4a2415acdedd4563d695e7e5fac2533",
+        "sha256_in_prefix": "2b9cb1176e3211d61dbe9e04d6c1efe6e4a2415acdedd4563d695e7e5fac2533",
+        "size_in_bytes": 3439
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/__pycache__/frontend.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "f8de80f92e8a954d2b2058cfdc24a840ff717b8f91351c6120fb936335b6d128",
+        "sha256_in_prefix": "f8de80f92e8a954d2b2058cfdc24a840ff717b8f91351c6120fb936335b6d128",
+        "size_in_bytes": 29972
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/__pycache__/io.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "48d59df74d7805039e5fab5a0e9e2fe4ff1e8e54834b7bcc82130ccd89aedfc1",
+        "sha256_in_prefix": "48d59df74d7805039e5fab5a0e9e2fe4ff1e8e54834b7bcc82130ccd89aedfc1",
+        "size_in_bytes": 18629
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/__pycache__/nodes.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "47c536fcac489096ddc198f030d1368cdcfc5ac4a2c18797af6a46a08d693689",
+        "sha256_in_prefix": "47c536fcac489096ddc198f030d1368cdcfc5ac4a2c18797af6a46a08d693689",
+        "size_in_bytes": 80812
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/__pycache__/statemachine.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "3c5abd56281e9bd3b2ed86e99da9c332f2cc805918445f8e840262dd3ad3c8e0",
+        "sha256_in_prefix": "3c5abd56281e9bd3b2ed86e99da9c332f2cc805918445f8e840262dd3ad3c8e0",
+        "size_in_bytes": 48713
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/core.py",
+        "path_type": "hardlink",
+        "sha256": "2e6daac12a6989d803063a1942938b8a87432ad11b913fc2b0b1fddc8ab833a5",
+        "sha256_in_prefix": "2e6daac12a6989d803063a1942938b8a87432ad11b913fc2b0b1fddc8ab833a5",
+        "size_in_bytes": 33045
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/examples.py",
+        "path_type": "hardlink",
+        "sha256": "9cfed2f049d9938c373d88b66267aef7f514703222dfd94fd38f4f7ba8811025",
+        "sha256_in_prefix": "9cfed2f049d9938c373d88b66267aef7f514703222dfd94fd38f4f7ba8811025",
+        "size_in_bytes": 3961
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/frontend.py",
+        "path_type": "hardlink",
+        "sha256": "5d5f915e784f10ed05e56af8a2a24913584a338996da2f6bfdd1be1026df59bc",
+        "sha256_in_prefix": "5d5f915e784f10ed05e56af8a2a24913584a338996da2f6bfdd1be1026df59bc",
+        "size_in_bytes": 40002
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/io.py",
+        "path_type": "hardlink",
+        "sha256": "8266c32ec7adc1e0f29d6e931c8b1e779606f265a917723f16e45f9ef2abb010",
+        "sha256_in_prefix": "8266c32ec7adc1e0f29d6e931c8b1e779606f265a917723f16e45f9ef2abb010",
+        "size_in_bytes": 23958
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "23c8f47890f7263dd0d42e402ea8586be7fc9020900cfc66827d9574f793bac2",
+        "sha256_in_prefix": "23c8f47890f7263dd0d42e402ea8586be7fc9020900cfc66827d9574f793bac2",
+        "size_in_bytes": 2921
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "1bccbdcd78c1d2239014a29df82cdde0726ee579b3bb44faa88caf5685885a51",
+        "sha256_in_prefix": "1bccbdcd78c1d2239014a29df82cdde0726ee579b3bb44faa88caf5685885a51",
+        "size_in_bytes": 2420
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/__pycache__/af.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "636ae8e1b15029726666a5c400d5cc53c96fb7b5f7f61e9f35a981be778ebf38",
+        "sha256_in_prefix": "636ae8e1b15029726666a5c400d5cc53c96fb7b5f7f61e9f35a981be778ebf38",
+        "size_in_bytes": 1111
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/__pycache__/ar.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "cd4439be576cd531b4e745ca64cc4b7e44501049755783313db7ca460b6cf0be",
+        "sha256_in_prefix": "cd4439be576cd531b4e745ca64cc4b7e44501049755783313db7ca460b6cf0be",
+        "size_in_bytes": 1234
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/__pycache__/ca.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "376fbe7004c3f3fdce422d9fc05458e12cc32a466f28e7fe07f461b47126eaa8",
+        "sha256_in_prefix": "376fbe7004c3f3fdce422d9fc05458e12cc32a466f28e7fe07f461b47126eaa8",
+        "size_in_bytes": 1154
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/__pycache__/cs.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "0612671736bbf47d0d7a4963f5b0f0c7d527fead4511fbc7d7164818971d1af7",
+        "sha256_in_prefix": "0612671736bbf47d0d7a4963f5b0f0c7d527fead4511fbc7d7164818971d1af7",
+        "size_in_bytes": 1133
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/__pycache__/da.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "3725a8c7f981b639ba8ef46dc0766d5451e82150e45bdc985271c47e4e1fca7b",
+        "sha256_in_prefix": "3725a8c7f981b639ba8ef46dc0766d5451e82150e45bdc985271c47e4e1fca7b",
+        "size_in_bytes": 1133
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/__pycache__/de.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "1f272673b197ae2f6cd0936082515bd5bc698f0ef5ae7a356c1a443c50d17126",
+        "sha256_in_prefix": "1f272673b197ae2f6cd0936082515bd5bc698f0ef5ae7a356c1a443c50d17126",
+        "size_in_bytes": 1115
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/__pycache__/en.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "e24270d69d4385f8275aedae6b2b4ec9c078a6daf11fe642352a31ad08b66cca",
+        "sha256_in_prefix": "e24270d69d4385f8275aedae6b2b4ec9c078a6daf11fe642352a31ad08b66cca",
+        "size_in_bytes": 1066
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/__pycache__/eo.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "fe157ca46f5ca8a1aff6496be8a1bff71f263ddc51ef3ed4514d198a98f46a4d",
+        "sha256_in_prefix": "fe157ca46f5ca8a1aff6496be8a1bff71f263ddc51ef3ed4514d198a98f46a4d",
+        "size_in_bytes": 1126
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/__pycache__/es.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "08ae4b9003ec321dd1a0882ccc09a31c4861dbe1db10c19a2c149e8e746cff43",
+        "sha256_in_prefix": "08ae4b9003ec321dd1a0882ccc09a31c4861dbe1db10c19a2c149e8e746cff43",
+        "size_in_bytes": 1188
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/__pycache__/fa.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "6d331e15be97a6191b20978becf052ab67dc4b24aa0b86d4431cf472b3d731ec",
+        "sha256_in_prefix": "6d331e15be97a6191b20978becf052ab67dc4b24aa0b86d4431cf472b3d731ec",
+        "size_in_bytes": 1217
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/__pycache__/fi.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "2867de78c91ee3e058fd52718777f50170872f4fd89c195e3a83dd136890aa0c",
+        "sha256_in_prefix": "2867de78c91ee3e058fd52718777f50170872f4fd89c195e3a83dd136890aa0c",
+        "size_in_bytes": 1203
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/__pycache__/fr.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "4367576d52512f11a05db0a4a9bab731057be4b667f6fb976040a83c7155a45c",
+        "sha256_in_prefix": "4367576d52512f11a05db0a4a9bab731057be4b667f6fb976040a83c7155a45c",
+        "size_in_bytes": 1136
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/__pycache__/gl.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "b8e86f8eb9d274a4acbc4fd63ece616d6e17308f3aace27e03c31c17982da8a7",
+        "sha256_in_prefix": "b8e86f8eb9d274a4acbc4fd63ece616d6e17308f3aace27e03c31c17982da8a7",
+        "size_in_bytes": 1178
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/__pycache__/he.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "e6f555de8c01eef409f5e73576634655f37cda183d3827efbc05f99ea956169c",
+        "sha256_in_prefix": "e6f555de8c01eef409f5e73576634655f37cda183d3827efbc05f99ea956169c",
+        "size_in_bytes": 1201
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/__pycache__/it.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "f47e1f019cdfc5a63ea15d764773f3e1af5bcfa6e4294dc0613d18d3131b6ae0",
+        "sha256_in_prefix": "f47e1f019cdfc5a63ea15d764773f3e1af5bcfa6e4294dc0613d18d3131b6ae0",
+        "size_in_bytes": 1138
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/__pycache__/ja.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "a9e543f2a3e16b145ecde290674d19b1485569203a7402163024b99bf7c43c80",
+        "sha256_in_prefix": "a9e543f2a3e16b145ecde290674d19b1485569203a7402163024b99bf7c43c80",
+        "size_in_bytes": 1141
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/__pycache__/ko.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "92f52971273ced98cc346f4a513a597bcfc7970114b4adbb45af994c249a8458",
+        "sha256_in_prefix": "92f52971273ced98cc346f4a513a597bcfc7970114b4adbb45af994c249a8458",
+        "size_in_bytes": 1125
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/__pycache__/lt.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "f4e6aed5f5ae6e89231b584bb5a50f814090169c4804fd4b2f8b6b9102423b2b",
+        "sha256_in_prefix": "f4e6aed5f5ae6e89231b584bb5a50f814090169c4804fd4b2f8b6b9102423b2b",
+        "size_in_bytes": 1194
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/__pycache__/lv.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "e03015fad16b92c1c2da9cd41b3728942bfacbc235f598a5d6e97a7b6532e8a5",
+        "sha256_in_prefix": "e03015fad16b92c1c2da9cd41b3728942bfacbc235f598a5d6e97a7b6532e8a5",
+        "size_in_bytes": 1202
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/__pycache__/nl.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "f74ab49f5e4d1f247b13c6168c60642f33d166864f41714eae1882e7969dc6bd",
+        "sha256_in_prefix": "f74ab49f5e4d1f247b13c6168c60642f33d166864f41714eae1882e7969dc6bd",
+        "size_in_bytes": 1112
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/__pycache__/pl.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "7bbf12dc07e9b98f14c8615cebecaf2404afa7d5ec189c9e50dd5eaa89d5e368",
+        "sha256_in_prefix": "7bbf12dc07e9b98f14c8615cebecaf2404afa7d5ec189c9e50dd5eaa89d5e368",
+        "size_in_bytes": 1149
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/__pycache__/pt_br.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "d7ce26d277681cac54c3dc74ada2ab74e64f528b1a77d40485ca8af1f463802a",
+        "sha256_in_prefix": "d7ce26d277681cac54c3dc74ada2ab74e64f528b1a77d40485ca8af1f463802a",
+        "size_in_bytes": 1165
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/__pycache__/ru.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "ec55f7a194da097068e97cae91de284451ab268a9742eb4a302ff721929949dc",
+        "sha256_in_prefix": "ec55f7a194da097068e97cae91de284451ab268a9742eb4a302ff721929949dc",
+        "size_in_bytes": 1531
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/__pycache__/sk.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "609e44c91727c0df929fb7573aaa7728d249ebb7a848b9a2971d8d3de16c7617",
+        "sha256_in_prefix": "609e44c91727c0df929fb7573aaa7728d249ebb7a848b9a2971d8d3de16c7617",
+        "size_in_bytes": 1146
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/__pycache__/sv.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "fa675f31ab721d179bd23b8dd8129ca3d6b13cbbbfaf81afba8375aa6b985571",
+        "sha256_in_prefix": "fa675f31ab721d179bd23b8dd8129ca3d6b13cbbbfaf81afba8375aa6b985571",
+        "size_in_bytes": 1116
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/__pycache__/uk.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "5a5a1bc741563df1d125112fafcc2bf4eab558cf26b080ad1de248a508e1266c",
+        "sha256_in_prefix": "5a5a1bc741563df1d125112fafcc2bf4eab558cf26b080ad1de248a508e1266c",
+        "size_in_bytes": 1517
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/__pycache__/zh_cn.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "0c4dd2fc7219ad8c3bd7f9e14df47ff7ab363f518f87e71fa8d90f8c202815b1",
+        "sha256_in_prefix": "0c4dd2fc7219ad8c3bd7f9e14df47ff7ab363f518f87e71fa8d90f8c202815b1",
+        "size_in_bytes": 1156
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/__pycache__/zh_tw.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "f046a3792884e0a8dbc82bcb25a098632f32d867a4e8006681aa27bc38f8808e",
+        "sha256_in_prefix": "f046a3792884e0a8dbc82bcb25a098632f32d867a4e8006681aa27bc38f8808e",
+        "size_in_bytes": 1482
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/af.py",
+        "path_type": "hardlink",
+        "sha256": "6e32160ff70d640c99f5722aa84a106929635a5bcfd2fad08bca7c16ef4d8f6a",
+        "sha256_in_prefix": "6e32160ff70d640c99f5722aa84a106929635a5bcfd2fad08bca7c16ef4d8f6a",
+        "size_in_bytes": 1831
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/ar.py",
+        "path_type": "hardlink",
+        "sha256": "dc545b6f4092a573c7490aeef7a6ea3c318611d7275a1408506fe776999a71f8",
+        "sha256_in_prefix": "dc545b6f4092a573c7490aeef7a6ea3c318611d7275a1408506fe776999a71f8",
+        "size_in_bytes": 1943
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/ca.py",
+        "path_type": "hardlink",
+        "sha256": "6321f42df2189d393e4e5bf82e43588fc7a351ec65e84dd7e76cb5bb24f6025b",
+        "sha256_in_prefix": "6321f42df2189d393e4e5bf82e43588fc7a351ec65e84dd7e76cb5bb24f6025b",
+        "size_in_bytes": 1912
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/cs.py",
+        "path_type": "hardlink",
+        "sha256": "e38f23f80ace0236dec85fcc896f3ba9da829aaae60d9ba6f80376cb6a73ac8d",
+        "sha256_in_prefix": "e38f23f80ace0236dec85fcc896f3ba9da829aaae60d9ba6f80376cb6a73ac8d",
+        "size_in_bytes": 1900
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/da.py",
+        "path_type": "hardlink",
+        "sha256": "d5d6f41a2592d9860e22a5abbbd0467ae9fb13773e97002009603a7a99fa287e",
+        "sha256_in_prefix": "d5d6f41a2592d9860e22a5abbbd0467ae9fb13773e97002009603a7a99fa287e",
+        "size_in_bytes": 1856
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/de.py",
+        "path_type": "hardlink",
+        "sha256": "a1a1b39612ac138c852939c22ab66df27327c191aa43e3c34fdd94814c11633b",
+        "sha256_in_prefix": "a1a1b39612ac138c852939c22ab66df27327c191aa43e3c34fdd94814c11633b",
+        "size_in_bytes": 1728
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/en.py",
+        "path_type": "hardlink",
+        "sha256": "30e4d73a5b98127530487465908367057308f2c6c87c66a15c5f112f0b383529",
+        "sha256_in_prefix": "30e4d73a5b98127530487465908367057308f2c6c87c66a15c5f112f0b383529",
+        "size_in_bytes": 1854
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/eo.py",
+        "path_type": "hardlink",
+        "sha256": "75e0a8f35132eac662187f8e6631e58eefefdc9089906bf76182b1013a63e0c6",
+        "sha256_in_prefix": "75e0a8f35132eac662187f8e6631e58eefefdc9089906bf76182b1013a63e0c6",
+        "size_in_bytes": 1931
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/es.py",
+        "path_type": "hardlink",
+        "sha256": "d945fdae200063da47f830eb09efffd3ef41328ff7fd1c94ff3e5fc1d89d95b8",
+        "sha256_in_prefix": "d945fdae200063da47f830eb09efffd3ef41328ff7fd1c94ff3e5fc1d89d95b8",
+        "size_in_bytes": 1906
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/fa.py",
+        "path_type": "hardlink",
+        "sha256": "75784deea667cefd64b2747461be4bad280d2f05f2dfcec82e3f74bf98871c73",
+        "sha256_in_prefix": "75784deea667cefd64b2747461be4bad280d2f05f2dfcec82e3f74bf98871c73",
+        "size_in_bytes": 1958
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/fi.py",
+        "path_type": "hardlink",
+        "sha256": "d6ba6d96dec688b0b66c53bc938131c3754f5f3db97cfcf3a0476df7abc4e061",
+        "sha256_in_prefix": "d6ba6d96dec688b0b66c53bc938131c3754f5f3db97cfcf3a0476df7abc4e061",
+        "size_in_bytes": 1964
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/fr.py",
+        "path_type": "hardlink",
+        "sha256": "b7d5a078dfbc7517315c548abae5a990cdde224745b19258ab61aa4c115ac19e",
+        "sha256_in_prefix": "b7d5a078dfbc7517315c548abae5a990cdde224745b19258ab61aa4c115ac19e",
+        "size_in_bytes": 1831
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/gl.py",
+        "path_type": "hardlink",
+        "sha256": "9ffd3c40657f565056d2328b9986b7e21fe33b69ca076c31fed09d8def475f2f",
+        "sha256_in_prefix": "9ffd3c40657f565056d2328b9986b7e21fe33b69ca076c31fed09d8def475f2f",
+        "size_in_bytes": 1990
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/he.py",
+        "path_type": "hardlink",
+        "sha256": "f295b526cf1e3c807064b3c19bf959c7646e963f87d53d5d671e809148a743c5",
+        "sha256_in_prefix": "f295b526cf1e3c807064b3c19bf959c7646e963f87d53d5d671e809148a743c5",
+        "size_in_bytes": 2692
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/it.py",
+        "path_type": "hardlink",
+        "sha256": "6aa997762b770d83219e47b9326c9020055f09cac5b8acd69afd0be47d3a008f",
+        "sha256_in_prefix": "6aa997762b770d83219e47b9326c9020055f09cac5b8acd69afd0be47d3a008f",
+        "size_in_bytes": 1814
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/ja.py",
+        "path_type": "hardlink",
+        "sha256": "f02fa18ea07b7dafc0b1afae28a2a41d1a93e8d4e33b72098a292ce8900324d5",
+        "sha256_in_prefix": "f02fa18ea07b7dafc0b1afae28a2a41d1a93e8d4e33b72098a292ce8900324d5",
+        "size_in_bytes": 1890
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/ko.py",
+        "path_type": "hardlink",
+        "sha256": "7aa2a26fb916ea1f032a0ea29e85c0b496b77fc17281d4f7ede1aa88c89fcd95",
+        "sha256_in_prefix": "7aa2a26fb916ea1f032a0ea29e85c0b496b77fc17281d4f7ede1aa88c89fcd95",
+        "size_in_bytes": 1832
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/lt.py",
+        "path_type": "hardlink",
+        "sha256": "8b13c6eb5436c41e89d2e9344d74d70f07ca704420a88602f5373856b04c4046",
+        "sha256_in_prefix": "8b13c6eb5436c41e89d2e9344d74d70f07ca704420a88602f5373856b04c4046",
+        "size_in_bytes": 1919
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/lv.py",
+        "path_type": "hardlink",
+        "sha256": "a5267bcbde23e9858a2f3e14d7ab8157066c80aa5de235a4bdc020c269038efd",
+        "sha256_in_prefix": "a5267bcbde23e9858a2f3e14d7ab8157066c80aa5de235a4bdc020c269038efd",
+        "size_in_bytes": 1851
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/nl.py",
+        "path_type": "hardlink",
+        "sha256": "2ca5761e4ba1d241f5ef0fee919a00b53225bd64a8e620b783b9cf1431e80c36",
+        "sha256_in_prefix": "2ca5761e4ba1d241f5ef0fee919a00b53225bd64a8e620b783b9cf1431e80c36",
+        "size_in_bytes": 1871
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/pl.py",
+        "path_type": "hardlink",
+        "sha256": "be7a073ca3c702c5b2de3c0b5f4e77994cde8f7be7569772860bb2f764cda280",
+        "sha256_in_prefix": "be7a073ca3c702c5b2de3c0b5f4e77994cde8f7be7569772860bb2f764cda280",
+        "size_in_bytes": 1866
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/pt_br.py",
+        "path_type": "hardlink",
+        "sha256": "74ac180ad7b1d04a40b980cf205caa5098c559f13fe5d85aa3da9af5a4e68b9c",
+        "sha256_in_prefix": "74ac180ad7b1d04a40b980cf205caa5098c559f13fe5d85aa3da9af5a4e68b9c",
+        "size_in_bytes": 1929
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/ru.py",
+        "path_type": "hardlink",
+        "sha256": "040400fb54d911e1e92b8e0bfceb3d57e58a501b7d94f029465d6714cd733a1c",
+        "sha256_in_prefix": "040400fb54d911e1e92b8e0bfceb3d57e58a501b7d94f029465d6714cd733a1c",
+        "size_in_bytes": 2070
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/sk.py",
+        "path_type": "hardlink",
+        "sha256": "0119930f21cea606a62680d151b3ad2d3f533b204f140005819dd796438b6114",
+        "sha256_in_prefix": "0119930f21cea606a62680d151b3ad2d3f533b204f140005819dd796438b6114",
+        "size_in_bytes": 1832
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/sv.py",
+        "path_type": "hardlink",
+        "sha256": "1d7d9549c972457d9ecab8914106d0e17109f71ede048e8ecf408f13526093d6",
+        "sha256_in_prefix": "1d7d9549c972457d9ecab8914106d0e17109f71ede048e8ecf408f13526093d6",
+        "size_in_bytes": 1863
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/uk.py",
+        "path_type": "hardlink",
+        "sha256": "69b2d8a00d30da92569462c1825bd4bc49c6ae101581b4720c49a5c15e67b714",
+        "sha256_in_prefix": "69b2d8a00d30da92569462c1825bd4bc49c6ae101581b4720c49a5c15e67b714",
+        "size_in_bytes": 2062
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/zh_cn.py",
+        "path_type": "hardlink",
+        "sha256": "9fcc431e7f854bce792c81505c5596d4eef7bf38dfe52a3fa152fc4dab016786",
+        "sha256_in_prefix": "9fcc431e7f854bce792c81505c5596d4eef7bf38dfe52a3fa152fc4dab016786",
+        "size_in_bytes": 1974
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/languages/zh_tw.py",
+        "path_type": "hardlink",
+        "sha256": "55668519c3beecac4aca3ee76017c0415d5f8bf485feff23213eb4a026796077",
+        "sha256_in_prefix": "55668519c3beecac4aca3ee76017c0415d5f8bf485feff23213eb4a026796077",
+        "size_in_bytes": 2742
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/nodes.py",
+        "path_type": "hardlink",
+        "sha256": "eb9710e1fa99375d4954b83711484c2a51a446149b3882e0d080715345a2bea0",
+        "sha256_in_prefix": "eb9710e1fa99375d4954b83711484c2a51a446149b3882e0d080715345a2bea0",
+        "size_in_bytes": 81006
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "35e9d2b16ca743e1d4f39f014c383474c217ec4ad2feaac0268b7c29db47ca25",
+        "sha256_in_prefix": "35e9d2b16ca743e1d4f39f014c383474c217ec4ad2feaac0268b7c29db47ca25",
+        "size_in_bytes": 3724
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "8d2327d1e64cedb4c3162be207bba45b496f52ee50032ff6e1fcbdcc17df574c",
+        "sha256_in_prefix": "8d2327d1e64cedb4c3162be207bba45b496f52ee50032ff6e1fcbdcc17df574c",
+        "size_in_bytes": 2940
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/__pycache__/commonmark_wrapper.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "628997668b07e4425f4088e92b3ad851b034acfc59d7b53d8e5f4ff9ad4478ca",
+        "sha256_in_prefix": "628997668b07e4425f4088e92b3ad851b034acfc59d7b53d8e5f4ff9ad4478ca",
+        "size_in_bytes": 1145
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/__pycache__/null.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "f83a4e58c8a616a7f28fc07a95135c03d71aa26dda22d07d091c5d4d1b60f79b",
+        "sha256_in_prefix": "f83a4e58c8a616a7f28fc07a95135c03d71aa26dda22d07d091c5d4d1b60f79b",
+        "size_in_bytes": 631
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/__pycache__/recommonmark_wrapper.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "ea5d6ddf26c2a9c47e68973c4b35340c2d9efd39ea44aa2bfd66b96937c3c676",
+        "sha256_in_prefix": "ea5d6ddf26c2a9c47e68973c4b35340c2d9efd39ea44aa2bfd66b96937c3c676",
+        "size_in_bytes": 3872
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/commonmark_wrapper.py",
+        "path_type": "hardlink",
+        "sha256": "f84fe460441d7a2a743251f778f2fa00d97b3c26a80d9ba10206082bdc56f5fb",
+        "sha256_in_prefix": "f84fe460441d7a2a743251f778f2fa00d97b3c26a80d9ba10206082bdc56f5fb",
+        "size_in_bytes": 1765
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/null.py",
+        "path_type": "hardlink",
+        "sha256": "2ed3bb9fe13a94d3ace262d76764a24a10770badf44a827cd2e81df5f875bd72",
+        "sha256_in_prefix": "2ed3bb9fe13a94d3ace262d76764a24a10770badf44a827cd2e81df5f875bd72",
+        "size_in_bytes": 445
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/recommonmark_wrapper.py",
+        "path_type": "hardlink",
+        "sha256": "49b1520af05e4111fe7c341ccc780adaa17f1f0677810b09c7f098dadc57e37b",
+        "sha256_in_prefix": "49b1520af05e4111fe7c341ccc780adaa17f1f0677810b09c7f098dadc57e37b",
+        "size_in_bytes": 5426
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "13274641370978098941b0b03c4164efb900ecd8a8f95aaced1d0d30d91c6ffb",
+        "sha256_in_prefix": "13274641370978098941b0b03c4164efb900ecd8a8f95aaced1d0d30d91c6ffb",
+        "size_in_bytes": 15954
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "207494569ac7017bb5d213b205cb7a2d27754e5e95dee9d16fb8e5aa244718fc",
+        "sha256_in_prefix": "207494569ac7017bb5d213b205cb7a2d27754e5e95dee9d16fb8e5aa244718fc",
+        "size_in_bytes": 14738
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/__pycache__/roles.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "39840d5364118be08a77fe9d8e3aaa396d16c216c7d16252e9d21891893cced3",
+        "sha256_in_prefix": "39840d5364118be08a77fe9d8e3aaa396d16c216c7d16252e9d21891893cced3",
+        "size_in_bytes": 11824
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/__pycache__/states.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "3d3aa10f0fddfd316a2d278205ebbcb67da3e1b28e92db56685a4115c51ce321",
+        "sha256_in_prefix": "3d3aa10f0fddfd316a2d278205ebbcb67da3e1b28e92db56685a4115c51ce321",
+        "size_in_bytes": 91545
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/__pycache__/tableparser.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "466caecd5e48f2b91d4a93fe6a37e1fcb558cac9e6cac63e439aaeacaa5185f4",
+        "sha256_in_prefix": "466caecd5e48f2b91d4a93fe6a37e1fcb558cac9e6cac63e439aaeacaa5185f4",
+        "size_in_bytes": 17553
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/directives/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "84fd2d2a8358ab70c095795e04beca4706d6af0aaf709cd48eae5ba9631526dc",
+        "sha256_in_prefix": "84fd2d2a8358ab70c095795e04beca4706d6af0aaf709cd48eae5ba9631526dc",
+        "size_in_bytes": 14652
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/directives/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "9b465dc5dc02ea89c880a5c98ac315259ab0969aa37de5e1a1f975564abc834e",
+        "sha256_in_prefix": "9b465dc5dc02ea89c880a5c98ac315259ab0969aa37de5e1a1f975564abc834e",
+        "size_in_bytes": 13487
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/directives/__pycache__/admonitions.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "e2bec103f62aca4c461f58629a624ce1d7d27f2fd6527b3910a1ccf0338ea4c5",
+        "sha256_in_prefix": "e2bec103f62aca4c461f58629a624ce1d7d27f2fd6527b3910a1ccf0338ea4c5",
+        "size_in_bytes": 2893
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/directives/__pycache__/body.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "6861b32d61add6efb38298519fe62184f1036372745bd68578a0730302cd7556",
+        "sha256_in_prefix": "6861b32d61add6efb38298519fe62184f1036372745bd68578a0730302cd7556",
+        "size_in_bytes": 8029
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/directives/__pycache__/html.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "6c4b40674d31036409e8a9cfe1edc6b049816e57ca4f0232dd651dd36583d3f3",
+        "sha256_in_prefix": "6c4b40674d31036409e8a9cfe1edc6b049816e57ca4f0232dd651dd36583d3f3",
+        "size_in_bytes": 670
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/directives/__pycache__/images.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "c320aae4e0cc3c2718176094d1673a6c908fe3f97fb04fe9e311ea78a6fdb3f8",
+        "sha256_in_prefix": "c320aae4e0cc3c2718176094d1673a6c908fe3f97fb04fe9e311ea78a6fdb3f8",
+        "size_in_bytes": 4801
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/directives/__pycache__/misc.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "7b6e744f2659f2d42bedad8896ef7d4fbc3f1b4c47d53a0372da660ac5422ed9",
+        "sha256_in_prefix": "7b6e744f2659f2d42bedad8896ef7d4fbc3f1b4c47d53a0372da660ac5422ed9",
+        "size_in_bytes": 16687
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/directives/__pycache__/parts.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "e6f3bf53017dd687398877717eefb033dc1654e6341ee56204244d952cf888b6",
+        "sha256_in_prefix": "e6f3bf53017dd687398877717eefb033dc1654e6341ee56204244d952cf888b6",
+        "size_in_bytes": 3810
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/directives/__pycache__/references.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "332fcd1aae7ae94fc033d1b0ac336779ef8cb9064ea5835740d3e31d7f45bb80",
+        "sha256_in_prefix": "332fcd1aae7ae94fc033d1b0ac336779ef8cb9064ea5835740d3e31d7f45bb80",
+        "size_in_bytes": 994
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/directives/__pycache__/tables.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "9e129a0754a904a65f9c5c7ae76d13ce8d0cc7f791fda0716c4cd1cf4bb4b194",
+        "sha256_in_prefix": "9e129a0754a904a65f9c5c7ae76d13ce8d0cc7f791fda0716c4cd1cf4bb4b194",
+        "size_in_bytes": 15611
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/directives/admonitions.py",
+        "path_type": "hardlink",
+        "sha256": "d1f792d47332c26f89f0c63c05a3b84c3dd99f800082340574cda4b9613388b4",
+        "sha256_in_prefix": "d1f792d47332c26f89f0c63c05a3b84c3dd99f800082340574cda4b9613388b4",
+        "size_in_bytes": 2405
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/directives/body.py",
+        "path_type": "hardlink",
+        "sha256": "284529f6e6c3402984f93a258604a68451e43ab33db76d0783e163bb614aef57",
+        "sha256_in_prefix": "284529f6e6c3402984f93a258604a68451e43ab33db76d0783e163bb614aef57",
+        "size_in_bytes": 9883
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/directives/html.py",
+        "path_type": "hardlink",
+        "sha256": "69dc4815d9ce1e9a87d1049e5d3eeeb414b2ec5296574c75f336e75ed9a6ba1b",
+        "sha256_in_prefix": "69dc4815d9ce1e9a87d1049e5d3eeeb414b2ec5296574c75f336e75ed9a6ba1b",
+        "size_in_bytes": 695
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/directives/images.py",
+        "path_type": "hardlink",
+        "sha256": "4ae22d91b3d17b38678a3740002b37782e0b856692f5999caf8eebf26f05ca2b",
+        "sha256_in_prefix": "4ae22d91b3d17b38678a3740002b37782e0b856692f5999caf8eebf26f05ca2b",
+        "size_in_bytes": 6799
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/directives/misc.py",
+        "path_type": "hardlink",
+        "sha256": "683699c08d5f1acb928c14ab54420b2e91831f3e417b6a141400d5e9d98364ca",
+        "sha256_in_prefix": "683699c08d5f1acb928c14ab54420b2e91831f3e417b6a141400d5e9d98364ca",
+        "size_in_bytes": 26302
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/directives/parts.py",
+        "path_type": "hardlink",
+        "sha256": "9b960ec19a0f6b047a23e63743b08df70194cd69976bdbfe1ef8258761397df4",
+        "sha256_in_prefix": "9b960ec19a0f6b047a23e63743b08df70194cd69976bdbfe1ef8258761397df4",
+        "size_in_bytes": 4247
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/directives/references.py",
+        "path_type": "hardlink",
+        "sha256": "d58d7285efced8fa8bb50512972fa7cb6f759eb40a2604223b81eeed77b0f59a",
+        "sha256_in_prefix": "d58d7285efced8fa8bb50512972fa7cb6f759eb40a2604223b81eeed77b0f59a",
+        "size_in_bytes": 831
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/directives/tables.py",
+        "path_type": "hardlink",
+        "sha256": "75bfdf95872ec5f0137df9596f199f2c433e0464e9b71d0abb9e66373799718c",
+        "sha256_in_prefix": "75bfdf95872ec5f0137df9596f199f2c433e0464e9b71d0abb9e66373799718c",
+        "size_in_bytes": 23825
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/include/README.txt",
+        "path_type": "hardlink",
+        "sha256": "47763ef700f3610d233a18fd1409701ba8514611dc116399727da1305d437958",
+        "sha256_in_prefix": "47763ef700f3610d233a18fd1409701ba8514611dc116399727da1305d437958",
+        "size_in_bytes": 670
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/include/isoamsa.txt",
+        "path_type": "hardlink",
+        "sha256": "66a1ae2be47ec88c5ad980d2444b78f0317173c7e917e1d7e757a208a5c23e9e",
+        "sha256_in_prefix": "66a1ae2be47ec88c5ad980d2444b78f0317173c7e917e1d7e757a208a5c23e9e",
+        "size_in_bytes": 10925
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/include/isoamsb.txt",
+        "path_type": "hardlink",
+        "sha256": "dc22bcba6f568e13cc5601006de235eab93dd48cd6a965c56d1242e382273f70",
+        "sha256_in_prefix": "dc22bcba6f568e13cc5601006de235eab93dd48cd6a965c56d1242e382273f70",
+        "size_in_bytes": 7242
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/include/isoamsc.txt",
+        "path_type": "hardlink",
+        "sha256": "5c2236b9b00a68ef9e3908fcee16c131e62992a1ef7366f675a5024bd7a45335",
+        "sha256_in_prefix": "5c2236b9b00a68ef9e3908fcee16c131e62992a1ef7366f675a5024bd7a45335",
+        "size_in_bytes": 1723
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/include/isoamsn.txt",
+        "path_type": "hardlink",
+        "sha256": "5b1e784a3646798544077a0d9d18bb78660712344e662054161400403c5c54c4",
+        "sha256_in_prefix": "5b1e784a3646798544077a0d9d18bb78660712344e662054161400403c5c54c4",
+        "size_in_bytes": 6721
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/include/isoamso.txt",
+        "path_type": "hardlink",
+        "sha256": "445c47b39b3c0ed320bc369e02b9b09d264ffd0376d0ab2cbd6e5fe8a3288580",
+        "sha256_in_prefix": "445c47b39b3c0ed320bc369e02b9b09d264ffd0376d0ab2cbd6e5fe8a3288580",
+        "size_in_bytes": 3825
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/include/isoamsr.txt",
+        "path_type": "hardlink",
+        "sha256": "4cb1f780dba0a925f7fad1fa80335c80881b1a229efc6ba4c19f14d4c21e2424",
+        "sha256_in_prefix": "4cb1f780dba0a925f7fad1fa80335c80881b1a229efc6ba4c19f14d4c21e2424",
+        "size_in_bytes": 11763
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/include/isobox.txt",
+        "path_type": "hardlink",
+        "sha256": "34e459aaa0c87b0af4f823e8556a957d36c256b1993aa63cec2ae7f0ee0e528a",
+        "sha256_in_prefix": "34e459aaa0c87b0af4f823e8556a957d36c256b1993aa63cec2ae7f0ee0e528a",
+        "size_in_bytes": 3101
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/include/isocyr1.txt",
+        "path_type": "hardlink",
+        "sha256": "0760d6588119f1a27eb1c3813fda5baec2981269cd17c559f5ef4cbadd8c6735",
+        "sha256_in_prefix": "0760d6588119f1a27eb1c3813fda5baec2981269cd17c559f5ef4cbadd8c6735",
+        "size_in_bytes": 4241
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/include/isocyr2.txt",
+        "path_type": "hardlink",
+        "sha256": "b79d9c63447ef5b9e45a240f5d6d4d603ccee2e784ea881417d1e8e0044783b4",
+        "sha256_in_prefix": "b79d9c63447ef5b9e45a240f5d6d4d603ccee2e784ea881417d1e8e0044783b4",
+        "size_in_bytes": 1882
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/include/isodia.txt",
+        "path_type": "hardlink",
+        "sha256": "54c83c8c8d884288084aba624d2dcbf3c4e7b7188c7d2d1c125b2ba716751402",
+        "sha256_in_prefix": "54c83c8c8d884288084aba624d2dcbf3c4e7b7188c7d2d1c125b2ba716751402",
+        "size_in_bytes": 869
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/include/isogrk1.txt",
+        "path_type": "hardlink",
+        "sha256": "0e425cf8afe74e1f960e17ce40844c750e1a527b1829bfdeb7210425f53c486e",
+        "sha256_in_prefix": "0e425cf8afe74e1f960e17ce40844c750e1a527b1829bfdeb7210425f53c486e",
+        "size_in_bytes": 3010
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/include/isogrk2.txt",
+        "path_type": "hardlink",
+        "sha256": "d31f30fc382ba1521282c4cb50ebb22d93730cb4e1727b62dbb4fb4fb0f12fb8",
+        "sha256_in_prefix": "d31f30fc382ba1521282c4cb50ebb22d93730cb4e1727b62dbb4fb4fb0f12fb8",
+        "size_in_bytes": 1705
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/include/isogrk3.txt",
+        "path_type": "hardlink",
+        "sha256": "f1bee04122adc38ca12c454c67abc7f15693a2264c336fe40f6b2796a7de2101",
+        "sha256_in_prefix": "f1bee04122adc38ca12c454c67abc7f15693a2264c336fe40f6b2796a7de2101",
+        "size_in_bytes": 2880
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/include/isogrk4-wide.txt",
+        "path_type": "hardlink",
+        "sha256": "440770e377396405015aef0c3bf9490e65d55747061e156b932d07fdbab5784b",
+        "sha256_in_prefix": "440770e377396405015aef0c3bf9490e65d55747061e156b932d07fdbab5784b",
+        "size_in_bytes": 3035
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/include/isogrk4.txt",
+        "path_type": "hardlink",
+        "sha256": "150c4464026ed9dfd15f71b73df1e6e89942ff5a2c1d0a2178503cf3a30b7909",
+        "sha256_in_prefix": "150c4464026ed9dfd15f71b73df1e6e89942ff5a2c1d0a2178503cf3a30b7909",
+        "size_in_bytes": 372
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/include/isolat1.txt",
+        "path_type": "hardlink",
+        "sha256": "7787411923e8b2086e7488597cc3cdcec0492af1f59f25728ba9b9a74a16fc76",
+        "sha256_in_prefix": "7787411923e8b2086e7488597cc3cdcec0492af1f59f25728ba9b9a74a16fc76",
+        "size_in_bytes": 4397
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/include/isolat2.txt",
+        "path_type": "hardlink",
+        "sha256": "d91316c0707d7631efb1d9ca4afd9d48d1e505ce743f42581750d170adc75bcb",
+        "sha256_in_prefix": "d91316c0707d7631efb1d9ca4afd9d48d1e505ce743f42581750d170adc75bcb",
+        "size_in_bytes": 8466
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/include/isomfrk-wide.txt",
+        "path_type": "hardlink",
+        "sha256": "46c62b72ade65fe08cb95ea88a30887d44e751ef19eb0d0f1b47a9854f62b013",
+        "sha256_in_prefix": "46c62b72ade65fe08cb95ea88a30887d44e751ef19eb0d0f1b47a9854f62b013",
+        "size_in_bytes": 3334
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/include/isomfrk.txt",
+        "path_type": "hardlink",
+        "sha256": "638d195ced462cbcc77b3284249f30f0e045b471b0b5d8c4ac8ff4eb669bc02e",
+        "sha256_in_prefix": "638d195ced462cbcc77b3284249f30f0e045b471b0b5d8c4ac8ff4eb669bc02e",
+        "size_in_bytes": 519
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/include/isomopf-wide.txt",
+        "path_type": "hardlink",
+        "sha256": "9eb84d933c35e4774403e19ff13ef26ad09bb396fbcfbabb4fa4824cd2c1c89c",
+        "sha256_in_prefix": "9eb84d933c35e4774403e19ff13ef26ad09bb396fbcfbabb4fa4824cd2c1c89c",
+        "size_in_bytes": 1931
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/include/isomopf.txt",
+        "path_type": "hardlink",
+        "sha256": "97dad35eb75959fd9172184faf83a2d8cfb8c9960bb551feee474e9823f363f3",
+        "sha256_in_prefix": "97dad35eb75959fd9172184faf83a2d8cfb8c9960bb551feee474e9823f363f3",
+        "size_in_bytes": 639
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/include/isomscr-wide.txt",
+        "path_type": "hardlink",
+        "sha256": "54d7cacc44f59f4f24d8f51e2bd51e0da9a03f48fc88aa5aa2bade8106da3f7c",
+        "sha256_in_prefix": "54d7cacc44f59f4f24d8f51e2bd51e0da9a03f48fc88aa5aa2bade8106da3f7c",
+        "size_in_bytes": 3231
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/include/isomscr.txt",
+        "path_type": "hardlink",
+        "sha256": "1015a256f2d96219bd7b67398bb4f852bea2d5638397f04b8878dc580fc2e398",
+        "sha256_in_prefix": "1015a256f2d96219bd7b67398bb4f852bea2d5638397f04b8878dc580fc2e398",
+        "size_in_bytes": 776
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/include/isonum.txt",
+        "path_type": "hardlink",
+        "sha256": "ca0e0ff54c4133eef62511a40782957639913f20562ef90e9647a587caae0f37",
+        "sha256_in_prefix": "ca0e0ff54c4133eef62511a40782957639913f20562ef90e9647a587caae0f37",
+        "size_in_bytes": 4066
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/include/isopub.txt",
+        "path_type": "hardlink",
+        "sha256": "04592be6b45116e60cedad7d58f3fb95f06950a7ed9182998e73364872edcf06",
+        "sha256_in_prefix": "04592be6b45116e60cedad7d58f3fb95f06950a7ed9182998e73364872edcf06",
+        "size_in_bytes": 4613
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/include/isotech.txt",
+        "path_type": "hardlink",
+        "sha256": "d961aded348179132bda6d8306563ec62563c5e88d5dd4d925bd4325db6060a8",
+        "sha256_in_prefix": "d961aded348179132bda6d8306563ec62563c5e88d5dd4d925bd4325db6060a8",
+        "size_in_bytes": 9726
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/include/mmlalias.txt",
+        "path_type": "hardlink",
+        "sha256": "8d0e086d9c19009f6b5e66fb0deefb0d881d22532c580facf2e65fe36118b455",
+        "sha256_in_prefix": "8d0e086d9c19009f6b5e66fb0deefb0d881d22532c580facf2e65fe36118b455",
+        "size_in_bytes": 45428
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/include/mmlextra-wide.txt",
+        "path_type": "hardlink",
+        "sha256": "3328f800f5a5b556288482bb7f5bfcbab26e0d54f6fc8fd4eeb6ac9c1093b186",
+        "sha256_in_prefix": "3328f800f5a5b556288482bb7f5bfcbab26e0d54f6fc8fd4eeb6ac9c1093b186",
+        "size_in_bytes": 9010
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/include/mmlextra.txt",
+        "path_type": "hardlink",
+        "sha256": "0df5ad80103a067e13ce56689314eee6fa7bcc87f586a51e69e1a961b7c74808",
+        "sha256_in_prefix": "0df5ad80103a067e13ce56689314eee6fa7bcc87f586a51e69e1a961b7c74808",
+        "size_in_bytes": 6800
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/include/s5defs.txt",
+        "path_type": "hardlink",
+        "sha256": "ff924e3290ed6ae7e265b77187a40aa480aa2ef1a907d732a4733e484b77b0a0",
+        "sha256_in_prefix": "ff924e3290ed6ae7e265b77187a40aa480aa2ef1a907d732a4733e484b77b0a0",
+        "size_in_bytes": 1036
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/include/xhtml1-lat1.txt",
+        "path_type": "hardlink",
+        "sha256": "86dfc866b7a36827e01bde6c7cb35f0aed560335382f0a645a0cd16d9ffa380e",
+        "sha256_in_prefix": "86dfc866b7a36827e01bde6c7cb35f0aed560335382f0a645a0cd16d9ffa380e",
+        "size_in_bytes": 6112
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/include/xhtml1-special.txt",
+        "path_type": "hardlink",
+        "sha256": "bb860044a8d3ac80914edaa53030ce9a9611f317be0ca0d188d8f399742cee07",
+        "sha256_in_prefix": "bb860044a8d3ac80914edaa53030ce9a9611f317be0ca0d188d8f399742cee07",
+        "size_in_bytes": 1945
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/include/xhtml1-symbol.txt",
+        "path_type": "hardlink",
+        "sha256": "7ba18fe6b92648d717bac44126429fd8b49b484c9dd68157246fd6042601284f",
+        "sha256_in_prefix": "7ba18fe6b92648d717bac44126429fd8b49b484c9dd68157246fd6042601284f",
+        "size_in_bytes": 7028
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "6c013e610510f7943060954f9d6723cf96f0e8b39f5b93e06e1c26c29d35f8e6",
+        "sha256_in_prefix": "6c013e610510f7943060954f9d6723cf96f0e8b39f5b93e06e1c26c29d35f8e6",
+        "size_in_bytes": 1222
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "c1a2a8cfc6996c8a79f5386bfe30c621ec216b10e57d6c2f7f46f8088bfa16e5",
+        "sha256_in_prefix": "c1a2a8cfc6996c8a79f5386bfe30c621ec216b10e57d6c2f7f46f8088bfa16e5",
+        "size_in_bytes": 1287
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/af.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "6849e7562daa2c5ac625b41e9a9cb9bd92322b1ecb88bfe59a59d981d64328bf",
+        "sha256_in_prefix": "6849e7562daa2c5ac625b41e9a9cb9bd92322b1ecb88bfe59a59d981d64328bf",
+        "size_in_bytes": 2654
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/ar.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "22f7c7abc75e0d67e29c4d99e4b9a81bd26903082825c3742a807dcef8acb0f8",
+        "sha256_in_prefix": "22f7c7abc75e0d67e29c4d99e4b9a81bd26903082825c3742a807dcef8acb0f8",
+        "size_in_bytes": 2581
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/ca.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "c6c1cb497b27bf5411a89395ce4c92060e94e5e57003fec8b3ede8d3bec196dd",
+        "sha256_in_prefix": "c6c1cb497b27bf5411a89395ce4c92060e94e5e57003fec8b3ede8d3bec196dd",
+        "size_in_bytes": 3196
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/cs.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "9206cbfd1c6d24fff652d30eb9134834a9f1517ca1869935921f1deae6f776f1",
+        "sha256_in_prefix": "9206cbfd1c6d24fff652d30eb9134834a9f1517ca1869935921f1deae6f776f1",
+        "size_in_bytes": 3692
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/da.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "9be9c537954f8441137965971597122b022a9059ef61b30f2a119dfc5ffdce18",
+        "sha256_in_prefix": "9be9c537954f8441137965971597122b022a9059ef61b30f2a119dfc5ffdce18",
+        "size_in_bytes": 2677
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/de.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "ce2e86046a8f6d6d6c862253c413aa3d36339217c82d851a366e2555d81f6fc3",
+        "sha256_in_prefix": "ce2e86046a8f6d6d6c862253c413aa3d36339217c82d851a366e2555d81f6fc3",
+        "size_in_bytes": 2453
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/en.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "60f04fa2e13fa44a0ae4280394f92fddb04e5f03f6a764e3d5d591d54a88a434",
+        "sha256_in_prefix": "60f04fa2e13fa44a0ae4280394f92fddb04e5f03f6a764e3d5d591d54a88a434",
+        "size_in_bytes": 1826
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/eo.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "239253279741804ef130defa5c596acae6b7c65442891fa716773c0ea3748a83",
+        "sha256_in_prefix": "239253279741804ef130defa5c596acae6b7c65442891fa716773c0ea3748a83",
+        "size_in_bytes": 2751
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/es.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "e3a12e17ab079e124a4ee37c7beb33986561271d88d770d55e8b49bce8b45a68",
+        "sha256_in_prefix": "e3a12e17ab079e124a4ee37c7beb33986561271d88d770d55e8b49bce8b45a68",
+        "size_in_bytes": 2974
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/fa.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "01847433bde5f02aaecf957562a3d067365c8413f0c9add1e269c70b45024ef9",
+        "sha256_in_prefix": "01847433bde5f02aaecf957562a3d067365c8413f0c9add1e269c70b45024ef9",
+        "size_in_bytes": 2680
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/fi.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "77ebbdfe6206f7029f601b5c2c30f6183ad1827b16e210faf0cd1548e3d8f815",
+        "sha256_in_prefix": "77ebbdfe6206f7029f601b5c2c30f6183ad1827b16e210faf0cd1548e3d8f815",
+        "size_in_bytes": 2686
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/fr.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "b0d4b7abba5bc30b2bf526b57b96e0ee7b89619f79a25a2770fe054cecb3d5bb",
+        "sha256_in_prefix": "b0d4b7abba5bc30b2bf526b57b96e0ee7b89619f79a25a2770fe054cecb3d5bb",
+        "size_in_bytes": 2540
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/gl.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "04e4d64ed9c4babb9e3380c7cd88ac6179993007feb01f83e7b70f244daa9137",
+        "sha256_in_prefix": "04e4d64ed9c4babb9e3380c7cd88ac6179993007feb01f83e7b70f244daa9137",
+        "size_in_bytes": 2545
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/he.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "3415d416e56cbc9a842b9a6a555f9b5daf5193073a6eef6ff3a1c4f725dcedeb",
+        "sha256_in_prefix": "3415d416e56cbc9a842b9a6a555f9b5daf5193073a6eef6ff3a1c4f725dcedeb",
+        "size_in_bytes": 2039
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/it.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "a3b045dcd1898e1982747abb5998716a890a6a49dbb582afcb6e5de7af814fe7",
+        "sha256_in_prefix": "a3b045dcd1898e1982747abb5998716a890a6a49dbb582afcb6e5de7af814fe7",
+        "size_in_bytes": 2429
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/ja.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "69797268ccce83fd444fca18befc1c53aea8258aa87123d336a0db102d10628e",
+        "sha256_in_prefix": "69797268ccce83fd444fca18befc1c53aea8258aa87123d336a0db102d10628e",
+        "size_in_bytes": 2907
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/ko.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "bd11325c3f4fec76d275be59d19b65e63416989879aeff067c14b7e6588d2324",
+        "sha256_in_prefix": "bd11325c3f4fec76d275be59d19b65e63416989879aeff067c14b7e6588d2324",
+        "size_in_bytes": 2605
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/lt.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "520acf816684f247a71b01290f927109f2d749cf434aa2c7a9729657a2d7fa1f",
+        "sha256_in_prefix": "520acf816684f247a71b01290f927109f2d749cf434aa2c7a9729657a2d7fa1f",
+        "size_in_bytes": 2615
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/lv.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "98ba8a92254585f0d745916f06eb6d38e5071ba4231e2a33e2b175add98d762c",
+        "sha256_in_prefix": "98ba8a92254585f0d745916f06eb6d38e5071ba4231e2a33e2b175add98d762c",
+        "size_in_bytes": 2572
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/nl.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "e7796116f478b5e6717ba955769a4c045684043837eb1a2fa6f008beb7e15a7a",
+        "sha256_in_prefix": "e7796116f478b5e6717ba955769a4c045684043837eb1a2fa6f008beb7e15a7a",
+        "size_in_bytes": 2669
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/pl.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "1f12fc8e363e43071e5557952c5d03c5fe88a59c3078ef5d59615108f1a08adc",
+        "sha256_in_prefix": "1f12fc8e363e43071e5557952c5d03c5fe88a59c3078ef5d59615108f1a08adc",
+        "size_in_bytes": 2376
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/pt_br.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "4137dbf45be64a81607f91e1e754df1c9b50f115b7765ef6dedb0d6afeaffc20",
+        "sha256_in_prefix": "4137dbf45be64a81607f91e1e754df1c9b50f115b7765ef6dedb0d6afeaffc20",
+        "size_in_bytes": 2794
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/ru.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "683bff1b96b562af4b137d445227a26b0f50391e28fbda9e158c411837f31a6f",
+        "sha256_in_prefix": "683bff1b96b562af4b137d445227a26b0f50391e28fbda9e158c411837f31a6f",
+        "size_in_bytes": 3113
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/sk.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "8f3f635ad27daff4c2b46e9f81a76681530f7322cc1008fa2619e3e13969ad16",
+        "sha256_in_prefix": "8f3f635ad27daff4c2b46e9f81a76681530f7322cc1008fa2619e3e13969ad16",
+        "size_in_bytes": 3117
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/sv.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "922a517d6318238da21a70bd7b9a0a912a0f9395871920d29adcf9f2cf798a7b",
+        "sha256_in_prefix": "922a517d6318238da21a70bd7b9a0a912a0f9395871920d29adcf9f2cf798a7b",
+        "size_in_bytes": 2251
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/uk.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "bfa71587f7e2bc41b22dc71c3d99eeff2ffd48e32520c24f68a598694fb0b697",
+        "sha256_in_prefix": "bfa71587f7e2bc41b22dc71c3d99eeff2ffd48e32520c24f68a598694fb0b697",
+        "size_in_bytes": 3210
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/zh_cn.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "295f493956dd8f8cbd785ff51e39e9e8758dc56d38118efc6083f08741d94315",
+        "sha256_in_prefix": "295f493956dd8f8cbd785ff51e39e9e8758dc56d38118efc6083f08741d94315",
+        "size_in_bytes": 2983
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/__pycache__/zh_tw.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "b4bee2cfea0edfe8665f38f42ea48dd7268eba245c1ae376c4682a503ad1ab2a",
+        "sha256_in_prefix": "b4bee2cfea0edfe8665f38f42ea48dd7268eba245c1ae376c4682a503ad1ab2a",
+        "size_in_bytes": 3962
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/af.py",
+        "path_type": "hardlink",
+        "sha256": "7a6661919390bda104c7687624a1fe74447c57e61171b47a3b6aa0e541f41e9b",
+        "sha256_in_prefix": "7a6661919390bda104c7687624a1fe74447c57e61171b47a3b6aa0e541f41e9b",
+        "size_in_bytes": 3727
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/ar.py",
+        "path_type": "hardlink",
+        "sha256": "5e9218dd2335d1c72f16b3bf8fffd1122fc84ef2f14a61ae7ffcb40dcf99ffe8",
+        "sha256_in_prefix": "5e9218dd2335d1c72f16b3bf8fffd1122fc84ef2f14a61ae7ffcb40dcf99ffe8",
+        "size_in_bytes": 3051
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/ca.py",
+        "path_type": "hardlink",
+        "sha256": "a24de6e0bbe474c87046cbea1891528e17d9b42b527c5e685ee535b63dd85c9a",
+        "sha256_in_prefix": "a24de6e0bbe474c87046cbea1891528e17d9b42b527c5e685ee535b63dd85c9a",
+        "size_in_bytes": 4406
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/cs.py",
+        "path_type": "hardlink",
+        "sha256": "95052216ca0f87f5e733a6ff6a609bfaeff16861ee6254584347a50d67aacfb5",
+        "sha256_in_prefix": "95052216ca0f87f5e733a6ff6a609bfaeff16861ee6254584347a50d67aacfb5",
+        "size_in_bytes": 4808
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/da.py",
+        "path_type": "hardlink",
+        "sha256": "b511b4df441c65589ac95d14e8b11283b092c359c1d842e1d1ecbda91cfbd15b",
+        "sha256_in_prefix": "b511b4df441c65589ac95d14e8b11283b092c359c1d842e1d1ecbda91cfbd15b",
+        "size_in_bytes": 3719
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/de.py",
+        "path_type": "hardlink",
+        "sha256": "2233f191691ff9e39b00fbf1b3ade4ddf44834c401b221282978d2167ce99f2f",
+        "sha256_in_prefix": "2233f191691ff9e39b00fbf1b3ade4ddf44834c401b221282978d2167ce99f2f",
+        "size_in_bytes": 3547
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/en.py",
+        "path_type": "hardlink",
+        "sha256": "67f8b9a96157e68c8f8ea48cb5f5024b58e79daf618dfc10db73262f613f42ca",
+        "sha256_in_prefix": "67f8b9a96157e68c8f8ea48cb5f5024b58e79daf618dfc10db73262f613f42ca",
+        "size_in_bytes": 3514
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/eo.py",
+        "path_type": "hardlink",
+        "sha256": "278a42e62faa886c2e0d4e550ea681126aa32ba51c821965530d894037093fc5",
+        "sha256_in_prefix": "278a42e62faa886c2e0d4e550ea681126aa32ba51c821965530d894037093fc5",
+        "size_in_bytes": 3825
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/es.py",
+        "path_type": "hardlink",
+        "sha256": "585ad64d8fc1dc0940ace5c34f236d12b84d9449ef41ae4fa557284e3986c554",
+        "sha256_in_prefix": "585ad64d8fc1dc0940ace5c34f236d12b84d9449ef41ae4fa557284e3986c554",
+        "size_in_bytes": 4158
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/fa.py",
+        "path_type": "hardlink",
+        "sha256": "7daa7989f0152afa871a8dd2dbf1b898cac0f1fbce890dc13e2e33f1995ff783",
+        "sha256_in_prefix": "7daa7989f0152afa871a8dd2dbf1b898cac0f1fbce890dc13e2e33f1995ff783",
+        "size_in_bytes": 3171
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/fi.py",
+        "path_type": "hardlink",
+        "sha256": "46851639680add91b3ab49f7bf62d3379dc950760a2218aa334e876b5b99b7ea",
+        "sha256_in_prefix": "46851639680add91b3ab49f7bf62d3379dc950760a2218aa334e876b5b99b7ea",
+        "size_in_bytes": 3526
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/fr.py",
+        "path_type": "hardlink",
+        "sha256": "9f586b4df3cb03292790a9c925c349801c36ddcfe43694f0c24b73fceb45e939",
+        "sha256_in_prefix": "9f586b4df3cb03292790a9c925c349801c36ddcfe43694f0c24b73fceb45e939",
+        "size_in_bytes": 3782
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/gl.py",
+        "path_type": "hardlink",
+        "sha256": "e95a6b62aafb567377aa0d9c7661f9779b3c6a13482f8e5b374c3b6bbda2bb0f",
+        "sha256_in_prefix": "e95a6b62aafb567377aa0d9c7661f9779b3c6a13482f8e5b374c3b6bbda2bb0f",
+        "size_in_bytes": 3632
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/he.py",
+        "path_type": "hardlink",
+        "sha256": "350ee8929cb6f3ed42e85f962542033ea1f9b52c76a450f3a68a38136a9ad996",
+        "sha256_in_prefix": "350ee8929cb6f3ed42e85f962542033ea1f9b52c76a450f3a68a38136a9ad996",
+        "size_in_bytes": 3641
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/it.py",
+        "path_type": "hardlink",
+        "sha256": "d032fcf814db36f36d73fa5f6a19ab697b2f15cad148ab8d84b2dfa61276e467",
+        "sha256_in_prefix": "d032fcf814db36f36d73fa5f6a19ab697b2f15cad148ab8d84b2dfa61276e467",
+        "size_in_bytes": 3322
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/ja.py",
+        "path_type": "hardlink",
+        "sha256": "fcf948f47e6edf4d3f56562f5b9d94bd2cbf309e4e2e5326a0da353dce8f89bf",
+        "sha256_in_prefix": "fcf948f47e6edf4d3f56562f5b9d94bd2cbf309e4e2e5326a0da353dce8f89bf",
+        "size_in_bytes": 3776
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/ko.py",
+        "path_type": "hardlink",
+        "sha256": "2294b25e34e4a228f40bbf39f62d69d224a0cfd050629745ddf3534baa9c4350",
+        "sha256_in_prefix": "2294b25e34e4a228f40bbf39f62d69d224a0cfd050629745ddf3534baa9c4350",
+        "size_in_bytes": 3377
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/lt.py",
+        "path_type": "hardlink",
+        "sha256": "3c7ceb4003fe64071ba02c9cd63bc723997408c427adb044676f39316255cbdc",
+        "sha256_in_prefix": "3c7ceb4003fe64071ba02c9cd63bc723997408c427adb044676f39316255cbdc",
+        "size_in_bytes": 3519
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/lv.py",
+        "path_type": "hardlink",
+        "sha256": "a5f4c2483b5090e5985539d31635a1519a672495bbcae373556f71bc180ffeee",
+        "sha256_in_prefix": "a5f4c2483b5090e5985539d31635a1519a672495bbcae373556f71bc180ffeee",
+        "size_in_bytes": 3376
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/nl.py",
+        "path_type": "hardlink",
+        "sha256": "d896ccdc070a2adb2a2c941dc8f9c8234777a524ab91d24da269f7f1decda6fe",
+        "sha256_in_prefix": "d896ccdc070a2adb2a2c941dc8f9c8234777a524ab91d24da269f7f1decda6fe",
+        "size_in_bytes": 3761
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/pl.py",
+        "path_type": "hardlink",
+        "sha256": "a43b18c0d30c6712e92eac33b2b8e64eaeb797bce9edbe498318cbd38ac5e886",
+        "sha256_in_prefix": "a43b18c0d30c6712e92eac33b2b8e64eaeb797bce9edbe498318cbd38ac5e886",
+        "size_in_bytes": 3443
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/pt_br.py",
+        "path_type": "hardlink",
+        "sha256": "a8908ffbbe7b8b4222d40d0784061163d4171bfcd027e04c4b9c2b894819541e",
+        "sha256_in_prefix": "a8908ffbbe7b8b4222d40d0784061163d4171bfcd027e04c4b9c2b894819541e",
+        "size_in_bytes": 3960
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/ru.py",
+        "path_type": "hardlink",
+        "sha256": "b792b8ae534a21ca0e72155e0baf2c8c9f26af40a8c7f05ec82bdbd4c0e6f6d4",
+        "sha256_in_prefix": "b792b8ae534a21ca0e72155e0baf2c8c9f26af40a8c7f05ec82bdbd4c0e6f6d4",
+        "size_in_bytes": 3398
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/sk.py",
+        "path_type": "hardlink",
+        "sha256": "c056506f2065595003ac282691db9cbfd8a3d87a6ba4e529793ea1aa6b158d1a",
+        "sha256_in_prefix": "c056506f2065595003ac282691db9cbfd8a3d87a6ba4e529793ea1aa6b158d1a",
+        "size_in_bytes": 3947
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/sv.py",
+        "path_type": "hardlink",
+        "sha256": "1f1c84de4f77aa0270f9a0fa11add399fab3dd05f543b00921a53ae4cae42717",
+        "sha256_in_prefix": "1f1c84de4f77aa0270f9a0fa11add399fab3dd05f543b00921a53ae4cae42717",
+        "size_in_bytes": 3261
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/uk.py",
+        "path_type": "hardlink",
+        "sha256": "2c150759e2b015d1237e27f8086ecbb4c84189d978967eaee284ad276a2656c4",
+        "sha256_in_prefix": "2c150759e2b015d1237e27f8086ecbb4c84189d978967eaee284ad276a2656c4",
+        "size_in_bytes": 3441
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/zh_cn.py",
+        "path_type": "hardlink",
+        "sha256": "6040b7526638dcd688eecffa0dab4bfd542e8221ef4946c1ac7b9b82731f61b2",
+        "sha256_in_prefix": "6040b7526638dcd688eecffa0dab4bfd542e8221ef4946c1ac7b9b82731f61b2",
+        "size_in_bytes": 3925
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/languages/zh_tw.py",
+        "path_type": "hardlink",
+        "sha256": "89c9a6e7c5bdc0eebd2faa797704d0c238f8e6ec5eaf666b242aaf05b1119e44",
+        "sha256_in_prefix": "89c9a6e7c5bdc0eebd2faa797704d0c238f8e6ec5eaf666b242aaf05b1119e44",
+        "size_in_bytes": 5160
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/roles.py",
+        "path_type": "hardlink",
+        "sha256": "18b2557df6be4bf167deee914f1757266d4c5ddd4043b2316c2abdf4c9b12334",
+        "sha256_in_prefix": "18b2557df6be4bf167deee914f1757266d4c5ddd4043b2316c2abdf4c9b12334",
+        "size_in_bytes": 16119
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/states.py",
+        "path_type": "hardlink",
+        "sha256": "2d123f68c7c2088643dcfada822dcbcf4f638066123d45f4d03e4a49398650b7",
+        "sha256_in_prefix": "2d123f68c7c2088643dcfada822dcbcf4f638066123d45f4d03e4a49398650b7",
+        "size_in_bytes": 132550
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/parsers/rst/tableparser.py",
+        "path_type": "hardlink",
+        "sha256": "0f68edc74d264dd1ec9f6d132a4f462660a297021278a1def55a12cbc3d810bb",
+        "sha256_in_prefix": "0f68edc74d264dd1ec9f6d132a4f462660a297021278a1def55a12cbc3d810bb",
+        "size_in_bytes": 20912
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/readers/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "ae005066f79d79803c5196f6a582a82aa616023bd48bc66bcc6d6400d8e7c02e",
+        "sha256_in_prefix": "ae005066f79d79803c5196f6a582a82aa616023bd48bc66bcc6d6400d8e7c02e",
+        "size_in_bytes": 3520
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/readers/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "a1ebba969efee1c33ec82b0d05092811b659cc661468811f5ea7649327050ede",
+        "sha256_in_prefix": "a1ebba969efee1c33ec82b0d05092811b659cc661468811f5ea7649327050ede",
+        "size_in_bytes": 3424
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/readers/__pycache__/doctree.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "bdd5721b14fc4cac598706844e51e256412f752c5bbf55d0de7562df98655a04",
+        "sha256_in_prefix": "bdd5721b14fc4cac598706844e51e256412f752c5bbf55d0de7562df98655a04",
+        "size_in_bytes": 1495
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/readers/__pycache__/pep.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "86af1f7e1d8d14708965cf2d196fdc7e64f26b638cb7c308b82a7de94d5e0ce4",
+        "sha256_in_prefix": "86af1f7e1d8d14708965cf2d196fdc7e64f26b638cb7c308b82a7de94d5e0ce4",
+        "size_in_bytes": 1606
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/readers/__pycache__/standalone.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "872cfb54bd65228cc0dd0820928fa39e2f348eb183a227a32d92a20dcbca0e28",
+        "sha256_in_prefix": "872cfb54bd65228cc0dd0820928fa39e2f348eb183a227a32d92a20dcbca0e28",
+        "size_in_bytes": 1968
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/readers/doctree.py",
+        "path_type": "hardlink",
+        "sha256": "f5035393ff31e3ab0391c4a3cd08b2159c4dfa6f4204edd70396cb6abece0344",
+        "sha256_in_prefix": "f5035393ff31e3ab0391c4a3cd08b2159c4dfa6f4204edd70396cb6abece0344",
+        "size_in_bytes": 1607
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/readers/pep.py",
+        "path_type": "hardlink",
+        "sha256": "9b94673a329f3279b01d753cbecaf41df665a9ca87d989f8317b298cb3b41981",
+        "sha256_in_prefix": "9b94673a329f3279b01d753cbecaf41df665a9ca87d989f8317b298cb3b41981",
+        "size_in_bytes": 1523
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/readers/standalone.py",
+        "path_type": "hardlink",
+        "sha256": "107411ee8316a88fffebd85d5ce28f024c0977ad394619e493d750fa98e511a1",
+        "sha256_in_prefix": "107411ee8316a88fffebd85d5ce28f024c0977ad394619e493d750fa98e511a1",
+        "size_in_bytes": 2324
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/statemachine.py",
+        "path_type": "hardlink",
+        "sha256": "7cacd5a1d7f0e8111941fe07aae5dfa417cd47c37913cbb355e0e8240e5e151c",
+        "sha256_in_prefix": "7cacd5a1d7f0e8111941fe07aae5dfa417cd47c37913cbb355e0e8240e5e151c",
+        "size_in_bytes": 56956
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/transforms/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "ff2466071126fc753454be30b6d4167aeb55cdefd137c3290e64ad31a36ba140",
+        "sha256_in_prefix": "ff2466071126fc753454be30b6d4167aeb55cdefd137c3290e64ad31a36ba140",
+        "size_in_bytes": 6870
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/transforms/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "9e5ae4fb08bd8fef136b46a8926b24b9cf892a9f48e7e2ff8067563a3d976893",
+        "sha256_in_prefix": "9e5ae4fb08bd8fef136b46a8926b24b9cf892a9f48e7e2ff8067563a3d976893",
+        "size_in_bytes": 5696
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/transforms/__pycache__/components.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "7ff4b18d60e48e07117d870f9352b507dbd4864dd0e0e489ccbbddcca8cb72d3",
+        "sha256_in_prefix": "7ff4b18d60e48e07117d870f9352b507dbd4864dd0e0e489ccbbddcca8cb72d3",
+        "size_in_bytes": 2125
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/transforms/__pycache__/frontmatter.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "ad529b28572231bff35d214e02e774631a01f32a450126a14e6081dd848f4ee5",
+        "sha256_in_prefix": "ad529b28572231bff35d214e02e774631a01f32a450126a14e6081dd848f4ee5",
+        "size_in_bytes": 17063
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/transforms/__pycache__/misc.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "0f116232d84a3084ccf6e9e5212b2aaea506520f28e5b61964b00036d44837d9",
+        "sha256_in_prefix": "0f116232d84a3084ccf6e9e5212b2aaea506520f28e5b61964b00036d44837d9",
+        "size_in_bytes": 3731
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/transforms/__pycache__/parts.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "9ab2cca30eb29d1860192bbd84c3a47c1d27392aa4f42b54e12eff42793b0e8d",
+        "sha256_in_prefix": "9ab2cca30eb29d1860192bbd84c3a47c1d27392aa4f42b54e12eff42793b0e8d",
+        "size_in_bytes": 5899
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/transforms/__pycache__/peps.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "2bc9dd8f88f2deb994047908e2d81360efb084b79c9696f305362f9cbf13ecc3",
+        "sha256_in_prefix": "2bc9dd8f88f2deb994047908e2d81360efb084b79c9696f305362f9cbf13ecc3",
+        "size_in_bytes": 8999
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/transforms/__pycache__/references.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "943e71648e9bd63aa463567cbc05eb88fce81461cc15c2c45671fb0be632fdc3",
+        "sha256_in_prefix": "943e71648e9bd63aa463567cbc05eb88fce81461cc15c2c45671fb0be632fdc3",
+        "size_in_bytes": 24526
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/transforms/__pycache__/universal.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "cfa498d8722cd094923c0aa275d54a5919832767766fc96af1ecb55b8b7082c4",
+        "sha256_in_prefix": "cfa498d8722cd094923c0aa275d54a5919832767766fc96af1ecb55b8b7082c4",
+        "size_in_bytes": 9202
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/transforms/__pycache__/writer_aux.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "a51cc0d62eac00c25af1d578582e4147a1cbdf592f322873109376a34114ff90",
+        "sha256_in_prefix": "a51cc0d62eac00c25af1d578582e4147a1cbdf592f322873109376a34114ff90",
+        "size_in_bytes": 2944
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/transforms/components.py",
+        "path_type": "hardlink",
+        "sha256": "e2a3b5b71144f7c3c96b8b6a282a67967422fd420440353898c56ecf082a8b36",
+        "sha256_in_prefix": "e2a3b5b71144f7c3c96b8b6a282a67967422fd420440353898c56ecf082a8b36",
+        "size_in_bytes": 2151
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/transforms/frontmatter.py",
+        "path_type": "hardlink",
+        "sha256": "e1916d24ff3d2b77c4fb44cb3ec3ea4392764e62bab23df5bc2c3d0bb5b83732",
+        "sha256_in_prefix": "e1916d24ff3d2b77c4fb44cb3ec3ea4392764e62bab23df5bc2c3d0bb5b83732",
+        "size_in_bytes": 21371
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/transforms/misc.py",
+        "path_type": "hardlink",
+        "sha256": "061ca32f213c8f941110b83b09c4f4844c1dbe7509ba052a418c9c9335c3961d",
+        "sha256_in_prefix": "061ca32f213c8f941110b83b09c4f4844c1dbe7509ba052a418c9c9335c3961d",
+        "size_in_bytes": 4873
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/transforms/parts.py",
+        "path_type": "hardlink",
+        "sha256": "67fef659fda8a9c84271320f4ce801552d5ab80b40ecf3b0270c3511aa1e40f9",
+        "sha256_in_prefix": "67fef659fda8a9c84271320f4ce801552d5ab80b40ecf3b0270c3511aa1e40f9",
+        "size_in_bytes": 6912
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/transforms/peps.py",
+        "path_type": "hardlink",
+        "sha256": "ed3321830ab2a2992e51eb484e9b01c8dfadd194fc6d724ea9a0a55309621745",
+        "sha256_in_prefix": "ed3321830ab2a2992e51eb484e9b01c8dfadd194fc6d724ea9a0a55309621745",
+        "size_in_bytes": 11111
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/transforms/references.py",
+        "path_type": "hardlink",
+        "sha256": "7799c6e9c8bd9b81235df728b4298c6f94d415927f7fdfbacda20e5935f61fa3",
+        "sha256_in_prefix": "7799c6e9c8bd9b81235df728b4298c6f94d415927f7fdfbacda20e5935f61fa3",
+        "size_in_bytes": 36819
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/transforms/universal.py",
+        "path_type": "hardlink",
+        "sha256": "4b60e0bf5ea40d84821cba103faaec5ebab2cfd6fc1c85cc1ffc5c28285ad2c6",
+        "sha256_in_prefix": "4b60e0bf5ea40d84821cba103faaec5ebab2cfd6fc1c85cc1ffc5c28285ad2c6",
+        "size_in_bytes": 12548
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/transforms/writer_aux.py",
+        "path_type": "hardlink",
+        "sha256": "1bf5d7aa201c4aa5a714929646143ca04d2359c64f8cb8f25b64014e11355deb",
+        "sha256_in_prefix": "1bf5d7aa201c4aa5a714929646143ca04d2359c64f8cb8f25b64014e11355deb",
+        "size_in_bytes": 3057
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/utils/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "a45b7fa826eb909a0f78bcb01d55501f7a7eadbee3c3110ae686a8afd2fa4385",
+        "sha256_in_prefix": "a45b7fa826eb909a0f78bcb01d55501f7a7eadbee3c3110ae686a8afd2fa4385",
+        "size_in_bytes": 29382
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/utils/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "f5070f5a71a176b8c95925a8409f5bc6f38f92cb4ec9cb11943cf69edb7e2659",
+        "sha256_in_prefix": "f5070f5a71a176b8c95925a8409f5bc6f38f92cb4ec9cb11943cf69edb7e2659",
+        "size_in_bytes": 25631
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/utils/__pycache__/code_analyzer.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "33b2e2dff78f6fc8e26cb9b1faf6e24db2d85bed47256a0abf170e1a36384e08",
+        "sha256_in_prefix": "33b2e2dff78f6fc8e26cb9b1faf6e24db2d85bed47256a0abf170e1a36384e08",
+        "size_in_bytes": 4124
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/utils/__pycache__/error_reporting.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "03d135ee144ce9ef8b46e39801e5aa73dc2befc665f171d28b7cd63f857c9ebb",
+        "sha256_in_prefix": "03d135ee144ce9ef8b46e39801e5aa73dc2befc665f171d28b7cd63f857c9ebb",
+        "size_in_bytes": 6627
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/utils/__pycache__/punctuation_chars.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "df40cb8413398822c179c9687f1b2b56bbb6cd6a19264f8cae7834eecf582ac8",
+        "sha256_in_prefix": "df40cb8413398822c179c9687f1b2b56bbb6cd6a19264f8cae7834eecf582ac8",
+        "size_in_bytes": 3128
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/utils/__pycache__/roman.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "037243b60b9e423150931ec94493db35332115d6de4cefdcdeeb2749bfacf81a",
+        "sha256_in_prefix": "037243b60b9e423150931ec94493db35332115d6de4cefdcdeeb2749bfacf81a",
+        "size_in_bytes": 2811
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/utils/__pycache__/smartquotes.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "84f1040a17ff0369454b8355d09b7d14ea504b22c9ca751d2c60d7ec4b45e77b",
+        "sha256_in_prefix": "84f1040a17ff0369454b8355d09b7d14ea504b22c9ca751d2c60d7ec4b45e77b",
+        "size_in_bytes": 28830
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/utils/__pycache__/urischemes.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "494b5393f2740d4d37b3702d92fadb9a2d59db7bcce90a00b9e0801f0a54d2c4",
+        "sha256_in_prefix": "494b5393f2740d4d37b3702d92fadb9a2d59db7bcce90a00b9e0801f0a54d2c4",
+        "size_in_bytes": 5836
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/utils/code_analyzer.py",
+        "path_type": "hardlink",
+        "sha256": "3ba7949d63d8c99157b53b64f8db8d56fe24ecbf6c6f90491888da712653e13c",
+        "sha256_in_prefix": "3ba7949d63d8c99157b53b64f8db8d56fe24ecbf6c6f90491888da712653e13c",
+        "size_in_bytes": 4920
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/utils/error_reporting.py",
+        "path_type": "hardlink",
+        "sha256": "be31efa47bb4052a04d8bb66e05c987cb52c57955602305b4689e25ab27b091f",
+        "sha256_in_prefix": "be31efa47bb4052a04d8bb66e05c987cb52c57955602305b4689e25ab27b091f",
+        "size_in_bytes": 8105
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/utils/math/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "64e22d3f9069303f2e2d5550a55639153860fec87d56e5149681341552c83996",
+        "sha256_in_prefix": "64e22d3f9069303f2e2d5550a55639153860fec87d56e5149681341552c83996",
+        "size_in_bytes": 1825
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/utils/math/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "1c4e7bd1a409d79347bc0202320d17b3d8706567b7dbabb78c9943b3d4f7450e",
+        "sha256_in_prefix": "1c4e7bd1a409d79347bc0202320d17b3d8706567b7dbabb78c9943b3d4f7450e",
+        "size_in_bytes": 1606
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/utils/math/__pycache__/latex2mathml.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "576b73eedb3bece3443badbcb01e45753da53782096d26899ceecf4283503c82",
+        "sha256_in_prefix": "576b73eedb3bece3443badbcb01e45753da53782096d26899ceecf4283503c82",
+        "size_in_bytes": 27038
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/utils/math/__pycache__/math2html.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "ad1ed01d3a5a8a934994ba0ca0f9fa41e8bf962fb09d0363eca065ff4047cc05",
+        "sha256_in_prefix": "ad1ed01d3a5a8a934994ba0ca0f9fa41e8bf962fb09d0363eca065ff4047cc05",
+        "size_in_bytes": 106241
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/utils/math/__pycache__/tex2mathml_extern.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "624f317fba397f38e13235f1ee7f79eaafccfd262e901cef53f0668c541c58b0",
+        "sha256_in_prefix": "624f317fba397f38e13235f1ee7f79eaafccfd262e901cef53f0668c541c58b0",
+        "size_in_bytes": 4157
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/utils/math/__pycache__/tex2unichar.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "c804216b1085dc6f6cc3bcae55b3d1fdcdc4f5ad1095424c9e3120e0eba2e42d",
+        "sha256_in_prefix": "c804216b1085dc6f6cc3bcae55b3d1fdcdc4f5ad1095424c9e3120e0eba2e42d",
+        "size_in_bytes": 20523
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/utils/math/__pycache__/unichar2tex.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "89367109479eb657f75d0fe1d2153c6a30d27756edf7bec34e12237d9097a51c",
+        "sha256_in_prefix": "89367109479eb657f75d0fe1d2153c6a30d27756edf7bec34e12237d9097a51c",
+        "size_in_bytes": 32187
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/utils/math/latex2mathml.py",
+        "path_type": "hardlink",
+        "sha256": "ffe7273d62815cdf5671412517c2919428cd77a0a8311ff1d0693a62e166e492",
+        "sha256_in_prefix": "ffe7273d62815cdf5671412517c2919428cd77a0a8311ff1d0693a62e166e492",
+        "size_in_bytes": 51496
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/utils/math/math2html.py",
+        "path_type": "hardlink",
+        "sha256": "890e42915aecfe0de53577ff3128e3d207e451a5b44dd3249903f36a7cd63d54",
+        "sha256_in_prefix": "890e42915aecfe0de53577ff3128e3d207e451a5b44dd3249903f36a7cd63d54",
+        "size_in_bytes": 107993
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/utils/math/tex2mathml_extern.py",
+        "path_type": "hardlink",
+        "sha256": "b3ab7f10525c768ac5b208b893279f380bc6d8b70f30f53afad07e11eede46be",
+        "sha256_in_prefix": "b3ab7f10525c768ac5b208b893279f380bc6d8b70f30f53afad07e11eede46be",
+        "size_in_bytes": 6760
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/utils/math/tex2unichar.py",
+        "path_type": "hardlink",
+        "sha256": "6f86567d75f9a2c4be3cda0f799a018acb15c302f90f0448dbfa7d256c2edf4c",
+        "sha256_in_prefix": "6f86567d75f9a2c4be3cda0f799a018acb15c302f90f0448dbfa7d256c2edf4c",
+        "size_in_bytes": 37497
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/utils/math/unichar2tex.py",
+        "path_type": "hardlink",
+        "sha256": "43582fa94196a6b02331fa467ee8c0bb895d8c97afa051b69a8338e925b2e965",
+        "sha256_in_prefix": "43582fa94196a6b02331fa467ee8c0bb895d8c97afa051b69a8338e925b2e965",
+        "size_in_bytes": 18393
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/utils/punctuation_chars.py",
+        "path_type": "hardlink",
+        "sha256": "38c63b804c32fd3228d4c9e367d7274f7c00f4b99202995d2779522596c4b6e1",
+        "sha256_in_prefix": "38c63b804c32fd3228d4c9e367d7274f7c00f4b99202995d2779522596c4b6e1",
+        "size_in_bytes": 5747
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/utils/roman.py",
+        "path_type": "hardlink",
+        "sha256": "371ba2eb19d29275ae71c5872ce315744fdb5c624b7223a34d7190b9bdf4abd9",
+        "sha256_in_prefix": "371ba2eb19d29275ae71c5872ce315744fdb5c624b7223a34d7190b9bdf4abd9",
+        "size_in_bytes": 2695
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/utils/smartquotes.py",
+        "path_type": "hardlink",
+        "sha256": "c3a7bbcb5f0abcaac04e6b3a3fcb40b4e69b77c4a7fa884fd06f961b30edd1d7",
+        "sha256_in_prefix": "c3a7bbcb5f0abcaac04e6b3a3fcb40b4e69b77c4a7fa884fd06f961b30edd1d7",
+        "size_in_bytes": 38972
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/utils/urischemes.py",
+        "path_type": "hardlink",
+        "sha256": "e5d70b2a7f97a3995d0c271d4ed3bb97c50cfd8dca66b723c91dc0f115a9f755",
+        "sha256_in_prefix": "e5d70b2a7f97a3995d0c271d4ed3bb97c50cfd8dca66b723c91dc0f115a9f755",
+        "size_in_bytes": 6260
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "b09b997b0c0a92224797456402dc7e81e2a5b9785dff7e07f68dec838629e005",
+        "sha256_in_prefix": "b09b997b0c0a92224797456402dc7e81e2a5b9785dff7e07f68dec838629e005",
+        "size_in_bytes": 4945
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "1e087acb531a08d3e77f7c70e306487d27144060b64d65d36b7c2f8dcd8cdef9",
+        "sha256_in_prefix": "1e087acb531a08d3e77f7c70e306487d27144060b64d65d36b7c2f8dcd8cdef9",
+        "size_in_bytes": 4505
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/__pycache__/_html_base.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "146712e68071930b6debea27ec68ac43275df1a2acf4845b8eff5e70ebeaa38d",
+        "sha256_in_prefix": "146712e68071930b6debea27ec68ac43275df1a2acf4845b8eff5e70ebeaa38d",
+        "size_in_bytes": 60026
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/__pycache__/docutils_xml.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "ece2a9970ced8137ae0964e684a78b1408a81ce5db4e6e23eb5e62497f1a2ce1",
+        "sha256_in_prefix": "ece2a9970ced8137ae0964e684a78b1408a81ce5db4e6e23eb5e62497f1a2ce1",
+        "size_in_bytes": 5513
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/__pycache__/manpage.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "00e1e06a3163c402bb9b54b183dd853744196d1f9c5d7d58795ef3fdc802fb68",
+        "sha256_in_prefix": "00e1e06a3163c402bb9b54b183dd853744196d1f9c5d7d58795ef3fdc802fb68",
+        "size_in_bytes": 40118
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/__pycache__/null.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "417a456680bbcab367e5cff1cf2cd48ffce5c7b07a1995196a36e33ed000a884",
+        "sha256_in_prefix": "417a456680bbcab367e5cff1cf2cd48ffce5c7b07a1995196a36e33ed000a884",
+        "size_in_bytes": 703
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/__pycache__/pseudoxml.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "d5938a48b1085ff1ef6db063dd8034639a4ed22b08cea34cb2a7c6cee7e7bcfa",
+        "sha256_in_prefix": "d5938a48b1085ff1ef6db063dd8034639a4ed22b08cea34cb2a7c6cee7e7bcfa",
+        "size_in_bytes": 1159
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/_html_base.py",
+        "path_type": "hardlink",
+        "sha256": "325c94377da126b80f42d42f3362612580e01eb5d65a68a144a4cf798065eaf5",
+        "sha256_in_prefix": "325c94377da126b80f42d42f3362612580e01eb5d65a68a144a4cf798065eaf5",
+        "size_in_bytes": 70896
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/docutils_xml.py",
+        "path_type": "hardlink",
+        "sha256": "c6c03002fbb0b99e71f38bf2eae31943370ebeb8dbfc6571cf4499dad0a29822",
+        "sha256_in_prefix": "c6c03002fbb0b99e71f38bf2eae31943370ebeb8dbfc6571cf4499dad0a29822",
+        "size_in_bytes": 6763
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/html4css1/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "cd1405b85f510d6137b3c07676cad2baa95e4059c371f617ef64b67c14b48c78",
+        "sha256_in_prefix": "cd1405b85f510d6137b3c07676cad2baa95e4059c371f617ef64b67c14b48c78",
+        "size_in_bytes": 37675
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/html4css1/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "3623a4b8583f429f56543299744cba5efeeaa6da7d0af168e924956724ba9589",
+        "sha256_in_prefix": "3623a4b8583f429f56543299744cba5efeeaa6da7d0af168e924956724ba9589",
+        "size_in_bytes": 31931
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/html4css1/html4css1.css",
+        "path_type": "hardlink",
+        "sha256": "17798866891af73d312ef342a49113765df735e76c4e421a30b1544761599eb7",
+        "sha256_in_prefix": "17798866891af73d312ef342a49113765df735e76c4e421a30b1544761599eb7",
+        "size_in_bytes": 7219
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/html4css1/template.txt",
+        "path_type": "hardlink",
+        "sha256": "1c3cd453202fee04f87b01904ea7ce136ffd1ce5721aef7ec02460b26a029a34",
+        "sha256_in_prefix": "1c3cd453202fee04f87b01904ea7ce136ffd1ce5721aef7ec02460b26a029a34",
+        "size_in_bytes": 114
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/html5_polyglot/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "184071085acee438d7c8089798d20ab965f9803526d3460b428613d5ebc05c1f",
+        "sha256_in_prefix": "184071085acee438d7c8089798d20ab965f9803526d3460b428613d5ebc05c1f",
+        "size_in_bytes": 16718
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/html5_polyglot/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "b920b1ce6a30802b9045016b898ddfe4676f66a5afa9de8f75322b971219a656",
+        "sha256_in_prefix": "b920b1ce6a30802b9045016b898ddfe4676f66a5afa9de8f75322b971219a656",
+        "size_in_bytes": 14063
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/html5_polyglot/math.css",
+        "path_type": "hardlink",
+        "sha256": "e973c963873e8b57fef15383afb85dc3e32b21f2701c5a82d603d0b58ff12cdf",
+        "sha256_in_prefix": "e973c963873e8b57fef15383afb85dc3e32b21f2701c5a82d603d0b58ff12cdf",
+        "size_in_bytes": 6261
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/html5_polyglot/minimal.css",
+        "path_type": "hardlink",
+        "sha256": "58c2e781b42c036a09d695c867416431155a00b7b370f69a011f40017ea2a6cf",
+        "sha256_in_prefix": "58c2e781b42c036a09d695c867416431155a00b7b370f69a011f40017ea2a6cf",
+        "size_in_bytes": 7388
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/html5_polyglot/plain.css",
+        "path_type": "hardlink",
+        "sha256": "781f2c5eb69d3ae4f00e84868652dbb223942e393bf60a57d32f31da2de5e7ae",
+        "sha256_in_prefix": "781f2c5eb69d3ae4f00e84868652dbb223942e393bf60a57d32f31da2de5e7ae",
+        "size_in_bytes": 7749
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/html5_polyglot/responsive.css",
+        "path_type": "hardlink",
+        "sha256": "37fccdf4d09f1ab63b0c5fd9d9e3ce82a520384fd4384ff929e6679eb806472f",
+        "sha256_in_prefix": "37fccdf4d09f1ab63b0c5fd9d9e3ce82a520384fd4384ff929e6679eb806472f",
+        "size_in_bytes": 11895
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/html5_polyglot/template.txt",
+        "path_type": "hardlink",
+        "sha256": "1c3cd453202fee04f87b01904ea7ce136ffd1ce5721aef7ec02460b26a029a34",
+        "sha256_in_prefix": "1c3cd453202fee04f87b01904ea7ce136ffd1ce5721aef7ec02460b26a029a34",
+        "size_in_bytes": 114
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/html5_polyglot/tuftig.css",
+        "path_type": "hardlink",
+        "sha256": "6b998d072cd532e5bdc2a9af9da94e6f2f27be391cce5e22ee804576e853fa94",
+        "sha256_in_prefix": "6b998d072cd532e5bdc2a9af9da94e6f2f27be391cce5e22ee804576e853fa94",
+        "size_in_bytes": 12023
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/latex2e/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "0d8ecfb2ed11a25dbebbe0a84df0b54c71c27a24266c1fd09d9564b3089379ef",
+        "sha256_in_prefix": "0d8ecfb2ed11a25dbebbe0a84df0b54c71c27a24266c1fd09d9564b3089379ef",
+        "size_in_bytes": 137132
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/latex2e/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "8b979c13f3b39d9b208718a9ec81f941eed71d420ca64bfcd7e0344a9f301cbb",
+        "sha256_in_prefix": "8b979c13f3b39d9b208718a9ec81f941eed71d420ca64bfcd7e0344a9f301cbb",
+        "size_in_bytes": 93986
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/latex2e/default.tex",
+        "path_type": "hardlink",
+        "sha256": "25c6899eb766284f6fab001397d7521ceb271a78c5d9d2d7e2fb22bbb92f5842",
+        "sha256_in_prefix": "25c6899eb766284f6fab001397d7521ceb271a78c5d9d2d7e2fb22bbb92f5842",
+        "size_in_bytes": 422
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/latex2e/docutils.sty",
+        "path_type": "hardlink",
+        "sha256": "7609eef7bf84e70feb3ab75a281600c3f3f09cc28048e14b5d5d3c935ec30014",
+        "sha256_in_prefix": "7609eef7bf84e70feb3ab75a281600c3f3f09cc28048e14b5d5d3c935ec30014",
+        "size_in_bytes": 5472
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/latex2e/titlepage.tex",
+        "path_type": "hardlink",
+        "sha256": "6a6a51897636dafb49db650f32feb59a63ee6c93c8b5dad2925f4c48039fb694",
+        "sha256_in_prefix": "6a6a51897636dafb49db650f32feb59a63ee6c93c8b5dad2925f4c48039fb694",
+        "size_in_bytes": 480
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/latex2e/titlingpage.tex",
+        "path_type": "hardlink",
+        "sha256": "3daf62c487fd632e912e58db4cf504826ad0c11cd8b32cebc65e0a4ab1c0dfb1",
+        "sha256_in_prefix": "3daf62c487fd632e912e58db4cf504826ad0c11cd8b32cebc65e0a4ab1c0dfb1",
+        "size_in_bytes": 424
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/latex2e/xelatex.tex",
+        "path_type": "hardlink",
+        "sha256": "35baed4e987282711a4e6c89133e47c2436e5826d5d628e587fd4ceff4d72eed",
+        "sha256_in_prefix": "35baed4e987282711a4e6c89133e47c2436e5826d5d628e587fd4ceff4d72eed",
+        "size_in_bytes": 672
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/manpage.py",
+        "path_type": "hardlink",
+        "sha256": "6c0cde081b23ddf4125eec477c76d5a1c83baa96cca43b35243bd3977174fd0d",
+        "sha256_in_prefix": "6c0cde081b23ddf4125eec477c76d5a1c83baa96cca43b35243bd3977174fd0d",
+        "size_in_bytes": 36654
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/null.py",
+        "path_type": "hardlink",
+        "sha256": "51eee48b393aff5186ac29988a5b60f4cad835eb4cc8733ecaf42f351adc94df",
+        "sha256_in_prefix": "51eee48b393aff5186ac29988a5b60f4cad835eb4cc8733ecaf42f351adc94df",
+        "size_in_bytes": 568
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/odf_odt/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "855f0c35887313d45c0e4c85aa3d811c8d6b6616adf20f01330b704320014785",
+        "sha256_in_prefix": "855f0c35887313d45c0e4c85aa3d811c8d6b6616adf20f01330b704320014785",
+        "size_in_bytes": 132358
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/odf_odt/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "76c0854da33b87b856bc6728a8ef1b8d1563d8963dcb4b2b4dbb39928a328e03",
+        "sha256_in_prefix": "76c0854da33b87b856bc6728a8ef1b8d1563d8963dcb4b2b4dbb39928a328e03",
+        "size_in_bytes": 92443
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/odf_odt/__pycache__/prepstyles.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "65009a9c89585cc8438b33b6c0dc87826c3dbcf3eb3c8962337a209b977b9ae6",
+        "sha256_in_prefix": "65009a9c89585cc8438b33b6c0dc87826c3dbcf3eb3c8962337a209b977b9ae6",
+        "size_in_bytes": 1913
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/odf_odt/__pycache__/pygmentsformatter.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "c83b6a602b9966c4e9c865af1dec502ab662b433bb6e38c86993d7366d20532c",
+        "sha256_in_prefix": "c83b6a602b9966c4e9c865af1dec502ab662b433bb6e38c86993d7366d20532c",
+        "size_in_bytes": 2790
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/odf_odt/prepstyles.py",
+        "path_type": "hardlink",
+        "sha256": "5f00b6f7211818aa4d013af9cae1891ff59890f041500915afc7cb68c128e98a",
+        "sha256_in_prefix": "5f00b6f7211818aa4d013af9cae1891ff59890f041500915afc7cb68c128e98a",
+        "size_in_bytes": 2142
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/odf_odt/pygmentsformatter.py",
+        "path_type": "hardlink",
+        "sha256": "8f57cc40f76fe5f75cccf91229bc988e887ae86f19fcc6614cde76fd77d18477",
+        "sha256_in_prefix": "8f57cc40f76fe5f75cccf91229bc988e887ae86f19fcc6614cde76fd77d18477",
+        "size_in_bytes": 4681
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/odf_odt/styles.odt",
+        "path_type": "hardlink",
+        "sha256": "c4abfdcf6b1dd6a371007dbc5fee6cb7926e0d9793c3a8f20cec57a21b05aca6",
+        "sha256_in_prefix": "c4abfdcf6b1dd6a371007dbc5fee6cb7926e0d9793c3a8f20cec57a21b05aca6",
+        "size_in_bytes": 16500
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/pep_html/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "992bff52391632ea2464f685f2a2b0be788d8b1e3381fdc5a1afb4c45c972228",
+        "sha256_in_prefix": "992bff52391632ea2464f685f2a2b0be788d8b1e3381fdc5a1afb4c45c972228",
+        "size_in_bytes": 3505
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/pep_html/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "90078618ccd446f8695ef34fa067490a666d7459f334ccb150a0999dddfc1d17",
+        "sha256_in_prefix": "90078618ccd446f8695ef34fa067490a666d7459f334ccb150a0999dddfc1d17",
+        "size_in_bytes": 3262
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/pep_html/pep.css",
+        "path_type": "hardlink",
+        "sha256": "0321d97ee76628a4eef999b2a0b6a284cfdee5b0f7fe008ee75846fcd3c40c0f",
+        "sha256_in_prefix": "0321d97ee76628a4eef999b2a0b6a284cfdee5b0f7fe008ee75846fcd3c40c0f",
+        "size_in_bytes": 6367
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/pep_html/template.txt",
+        "path_type": "hardlink",
+        "sha256": "48f738e08092360a6cd3c7c3b5569196eea094f3f0702731f66ab26f1e6ee96e",
+        "sha256_in_prefix": "48f738e08092360a6cd3c7c3b5569196eea094f3f0702731f66ab26f1e6ee96e",
+        "size_in_bytes": 1001
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/pseudoxml.py",
+        "path_type": "hardlink",
+        "sha256": "8239c1c4121760d767418b7f5d35e58d5ddf729f5d5b5124d0b139564188bc99",
+        "sha256_in_prefix": "8239c1c4121760d767418b7f5d35e58d5ddf729f5d5b5124d0b139564188bc99",
+        "size_in_bytes": 1032
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/s5_html/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "e30927d03ee6da439b51e3d70877b51f496aded47d3db1a7337472caa95631a6",
+        "sha256_in_prefix": "e30927d03ee6da439b51e3d70877b51f496aded47d3db1a7337472caa95631a6",
+        "size_in_bytes": 14517
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/s5_html/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "06e02675574d532b867216bd3805d7480fd188a37c79fc4e7dbd8d04ae2d8dfe",
+        "sha256_in_prefix": "06e02675574d532b867216bd3805d7480fd188a37c79fc4e7dbd8d04ae2d8dfe",
+        "size_in_bytes": 10497
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/s5_html/themes/README.txt",
+        "path_type": "hardlink",
+        "sha256": "c189eede2a268060faa1da593ad593cceca723575f20613a0151753034741556",
+        "sha256_in_prefix": "c189eede2a268060faa1da593ad593cceca723575f20613a0151753034741556",
+        "size_in_bytes": 278
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/s5_html/themes/big-black/__base__",
+        "path_type": "hardlink",
+        "sha256": "59e2a70a15c23e4ad70eced7afe4277f58be6e016391e68a27e8a55d5d11e653",
+        "sha256_in_prefix": "59e2a70a15c23e4ad70eced7afe4277f58be6e016391e68a27e8a55d5d11e653",
+        "size_in_bytes": 38
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/s5_html/themes/big-black/framing.css",
+        "path_type": "hardlink",
+        "sha256": "0ed128ec5b62f4901130b99c0b1d0d21f8abed0451db8fd637751b1be1321fae",
+        "sha256_in_prefix": "0ed128ec5b62f4901130b99c0b1d0d21f8abed0451db8fd637751b1be1321fae",
+        "size_in_bytes": 910
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/s5_html/themes/big-black/pretty.css",
+        "path_type": "hardlink",
+        "sha256": "50ff6bede197d2a1050880f229c4f96dc6b33310b0e373b6292aecd9e6c13f02",
+        "sha256_in_prefix": "50ff6bede197d2a1050880f229c4f96dc6b33310b0e373b6292aecd9e6c13f02",
+        "size_in_bytes": 3605
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/s5_html/themes/big-white/framing.css",
+        "path_type": "hardlink",
+        "sha256": "99e041c9e68a21dbae75f1420f1570e2ecd23a3f2afd9240ae7c29f286754bc8",
+        "sha256_in_prefix": "99e041c9e68a21dbae75f1420f1570e2ecd23a3f2afd9240ae7c29f286754bc8",
+        "size_in_bytes": 905
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/s5_html/themes/big-white/pretty.css",
+        "path_type": "hardlink",
+        "sha256": "46543b099b8df9632b47c0a609e43e53c5959998fbebdcf6cf1d857cbc134b8f",
+        "sha256_in_prefix": "46543b099b8df9632b47c0a609e43e53c5959998fbebdcf6cf1d857cbc134b8f",
+        "size_in_bytes": 3565
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/s5_html/themes/default/framing.css",
+        "path_type": "hardlink",
+        "sha256": "49b879c2bc9e8a8c43319fa4245c3328dce23bedc246f2c1306eeb7098d32e65",
+        "sha256_in_prefix": "49b879c2bc9e8a8c43319fa4245c3328dce23bedc246f2c1306eeb7098d32e65",
+        "size_in_bytes": 1002
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/s5_html/themes/default/opera.css",
+        "path_type": "hardlink",
+        "sha256": "82e3d93a0fc120dbfe2e357dfc800cec82c543e7ca00b36394fd62d3a7b97660",
+        "sha256_in_prefix": "82e3d93a0fc120dbfe2e357dfc800cec82c543e7ca00b36394fd62d3a7b97660",
+        "size_in_bytes": 261
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/s5_html/themes/default/outline.css",
+        "path_type": "hardlink",
+        "sha256": "cf70022625b7fe09c6f1716f5fad363cc4d8bca85b4726ea09ea169773bfa40d",
+        "sha256_in_prefix": "cf70022625b7fe09c6f1716f5fad363cc4d8bca85b4726ea09ea169773bfa40d",
+        "size_in_bytes": 648
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/s5_html/themes/default/pretty.css",
+        "path_type": "hardlink",
+        "sha256": "893ff9d5b20f2d393584516cde109aae7c89aad6c1e08f3a04daf1953d6bddea",
+        "sha256_in_prefix": "893ff9d5b20f2d393584516cde109aae7c89aad6c1e08f3a04daf1953d6bddea",
+        "size_in_bytes": 4383
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/s5_html/themes/default/print.css",
+        "path_type": "hardlink",
+        "sha256": "20d85844cb18ef2db077da7bb6a8dc0d60511171d430efb6029016bc84f27ad2",
+        "sha256_in_prefix": "20d85844cb18ef2db077da7bb6a8dc0d60511171d430efb6029016bc84f27ad2",
+        "size_in_bytes": 818
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/s5_html/themes/default/s5-core.css",
+        "path_type": "hardlink",
+        "sha256": "0f85833dbe7cd4efbf1b98e1ce9008c08f3c075662f32de758107cac2c60ce58",
+        "sha256_in_prefix": "0f85833dbe7cd4efbf1b98e1ce9008c08f3c075662f32de758107cac2c60ce58",
+        "size_in_bytes": 450
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/s5_html/themes/default/slides.css",
+        "path_type": "hardlink",
+        "sha256": "54a610d4e7bc959f0b1f1ccfa89894efd274cf6f799e49886f3b172fe37f75f4",
+        "sha256_in_prefix": "54a610d4e7bc959f0b1f1ccfa89894efd274cf6f799e49886f3b172fe37f75f4",
+        "size_in_bytes": 283
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/s5_html/themes/default/slides.js",
+        "path_type": "hardlink",
+        "sha256": "e415d43398d25aef6151049584666131312f91d09882aace24ede58f00e0c562",
+        "sha256_in_prefix": "e415d43398d25aef6151049584666131312f91d09882aace24ede58f00e0c562",
+        "size_in_bytes": 15801
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/s5_html/themes/medium-black/__base__",
+        "path_type": "hardlink",
+        "sha256": "f36d8b246f8badd05963a080ef0b0b142173b187f16f2cf69abd63eaba5bd540",
+        "sha256_in_prefix": "f36d8b246f8badd05963a080ef0b0b142173b187f16f2cf69abd63eaba5bd540",
+        "size_in_bytes": 41
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/s5_html/themes/medium-black/pretty.css",
+        "path_type": "hardlink",
+        "sha256": "39d2f5c49f5ffc5135a664bb5f4b34cb1c889759f6bd405068639c26b4f6b2f8",
+        "sha256_in_prefix": "39d2f5c49f5ffc5135a664bb5f4b34cb1c889759f6bd405068639c26b4f6b2f8",
+        "size_in_bytes": 4029
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/s5_html/themes/medium-white/framing.css",
+        "path_type": "hardlink",
+        "sha256": "045e589d12c6461a1b3b4eb10deb7ed0a658a51d7422046345b50b3d59b73cc3",
+        "sha256_in_prefix": "045e589d12c6461a1b3b4eb10deb7ed0a658a51d7422046345b50b3d59b73cc3",
+        "size_in_bytes": 943
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/s5_html/themes/medium-white/pretty.css",
+        "path_type": "hardlink",
+        "sha256": "666f8f824dd22c01a6193445dbb9ebaafa416ff2c7db2439148a433ccde9d18d",
+        "sha256_in_prefix": "666f8f824dd22c01a6193445dbb9ebaafa416ff2c7db2439148a433ccde9d18d",
+        "size_in_bytes": 3989
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/s5_html/themes/small-black/__base__",
+        "path_type": "hardlink",
+        "sha256": "5a6881f34cf8f517ccb32ffbb45234e3601f520cb3b4be4e5c8ded6a9f447d03",
+        "sha256_in_prefix": "5a6881f34cf8f517ccb32ffbb45234e3601f520cb3b4be4e5c8ded6a9f447d03",
+        "size_in_bytes": 40
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/s5_html/themes/small-black/pretty.css",
+        "path_type": "hardlink",
+        "sha256": "7e673bde4c7eccea748db8b2e06026a70d97773f50ffe5b379bb200c9594268b",
+        "sha256_in_prefix": "7e673bde4c7eccea748db8b2e06026a70d97773f50ffe5b379bb200c9594268b",
+        "size_in_bytes": 4028
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/s5_html/themes/small-white/framing.css",
+        "path_type": "hardlink",
+        "sha256": "ab0354833aa7ad78285f8ed275d6d520a119c100e31a74c6038ebc8c71c85ea7",
+        "sha256_in_prefix": "ab0354833aa7ad78285f8ed275d6d520a119c100e31a74c6038ebc8c71c85ea7",
+        "size_in_bytes": 940
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/s5_html/themes/small-white/pretty.css",
+        "path_type": "hardlink",
+        "sha256": "a94f163a163c4d3e9963a7172970016fb4fb260a4940e4734d9261b809b48068",
+        "sha256_in_prefix": "a94f163a163c4d3e9963a7172970016fb4fb260a4940e4734d9261b809b48068",
+        "size_in_bytes": 3999
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/xetex/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "a36e61a5a48f2fd7ab1147b5f062336956cfd90b98b636744b04a40de5df67a9",
+        "sha256_in_prefix": "a36e61a5a48f2fd7ab1147b5f062336956cfd90b98b636744b04a40de5df67a9",
+        "size_in_bytes": 5736
+      },
+      {
+        "_path": "lib/python3.10/site-packages/docutils/writers/xetex/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "hardlink",
+        "sha256": "e89669fbc2a4ea8252fe00a499158376f8b184dc9b60a180efedbdf771568721",
+        "sha256_in_prefix": "e89669fbc2a4ea8252fe00a499158376f8b184dc9b60a180efedbdf771568721",
+        "size_in_bytes": 4059
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "202cf951f475a15cbb32edf1c2d239157f8b7ffda509262ab573b4c5e6eeb2a4",
+  "size": 721612,
+  "subdir": "linux-64",
+  "timestamp": 1694622965495,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/docutils-0.20.1-py310hff52083_1.conda",
+  "version": "0.20.1"
+}

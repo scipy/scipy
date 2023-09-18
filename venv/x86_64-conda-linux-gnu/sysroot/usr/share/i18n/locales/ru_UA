@@ -1,0 +1,178 @@
+comment_char %
+escape_char  /
+%
+% Russian Language Locale for Ukraine
+% Source: RFC 2319
+% Contact: Denis V. Dmitrienko
+% Email: denis@denix.org
+% Language: ru
+% Territory: UA
+% Revision: 1.2
+% Date: 1998-05-03
+% Application: general
+% Users: general
+% Charset: KOI8-U
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title      "Russian locale for Ukraine"
+source     "RFC 2319"
+address    ""
+contact    ""
+email      "bug-glibc-locales@gnu.org"
+tel        ""
+fax        ""
+language   "Russian"
+territory  "Ukraine"
+revision   "1.0"
+date       "2000-06-29"
+%
+category  "ru_UA:2000";LC_IDENTIFICATION
+category  "ru_UA:2000";LC_CTYPE
+category  "ru_UA:2000";LC_COLLATE
+category  "ru_UA:2000";LC_TIME
+category  "ru_UA:2000";LC_NUMERIC
+category  "ru_UA:2000";LC_MONETARY
+category  "ru_UA:2000";LC_MESSAGES
+category  "ru_UA:2000";LC_PAPER
+category  "ru_UA:2000";LC_NAME
+category  "ru_UA:2000";LC_ADDRESS
+category  "ru_UA:2000";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_CTYPE
+copy "ru_RU"
+END LC_CTYPE
+
+LC_COLLATE
+copy "iso14651_t1"
+
+% iso14651_t1 is missing Ukrainian ghe
+collating-symbol <UKR-GHE>
+
+reorder-after <CYR-GZHE>
+<UKR-GHE>
+
+reorder-after <U0453>
+<U0491> <UKR-GHE>;<BAS>;<MIN>;IGNORE
+
+reorder-after <U0403>
+<U0490> <UKR-GHE>;<BAS>;<CAP>;IGNORE
+
+reorder-end
+END LC_COLLATE
+
+LC_MESSAGES
+yesexpr "<U005E><U005B><U0414><U0434><U0059><U0079><U005D><U002E><U002A>"
+noexpr  "<U005E><U005B><U041D><U043D><U004E><U006E><U005D><U002E><U002A>"
+END LC_MESSAGES
+
+LC_MONETARY
+int_curr_symbol           "<U0055><U0041><U0048><U0020>"
+currency_symbol           "<U0433><U0440>"
+mon_decimal_point         "<U002E>"
+mon_thousands_sep         "<U0020>"
+mon_grouping              3;3
+positive_sign             ""
+negative_sign             "<U002D>"
+int_frac_digits           2
+frac_digits               2
+p_cs_precedes             0
+p_sep_by_space            1
+n_cs_precedes             0
+n_sep_by_space            1
+p_sign_posn               1
+n_sign_posn               1
+END LC_MONETARY
+
+LC_NUMERIC
+decimal_point             "<U002C>"
+thousands_sep             "<U002E>"
+grouping                  3;3
+END LC_NUMERIC
+
+LC_TIME
+day     "<U0412><U043E><U0441><U043A><U0440><U0435><U0441><U0435><U043D><U044C><U0435>";/
+        "<U041F><U043E><U043D><U0435><U0434><U0435><U043B><U044C><U043D><U0438><U043A>";/
+        "<U0412><U0442><U043E><U0440><U043D><U0438><U043A>";/
+        "<U0421><U0440><U0435><U0434><U0430>";/
+        "<U0427><U0435><U0442><U0432><U0435><U0440><U0433>";/
+        "<U041F><U044F><U0442><U043D><U0438><U0446><U0430>";/
+        "<U0421><U0443><U0431><U0431><U043E><U0442><U0430>"
+abday   "<U0412><U0441><U043A>";/
+        "<U041F><U043D><U0434>";/
+        "<U0412><U0442><U043E>";/
+        "<U0421><U0440><U0434>";/
+        "<U0427><U0442><U0432>";/
+        "<U041F><U0442><U043D>";/
+        "<U0421><U0443><U0431>"
+mon     "<U042F><U043D><U0432><U0430><U0440><U044C>";/
+        "<U0424><U0435><U0432><U0440><U0430><U043B><U044C>";/
+        "<U041C><U0430><U0440><U0442>";/
+        "<U0410><U043F><U0440><U0435><U043B><U044C>";/
+        "<U041C><U0430><U0439>";/
+        "<U0418><U044E><U043D><U044C>";/
+        "<U0418><U044E><U043B><U044C>";/
+        "<U0410><U0432><U0433><U0443><U0441><U0442>";/
+        "<U0421><U0435><U043D><U0442><U044F><U0431><U0440><U044C>";/
+        "<U041E><U043A><U0442><U044F><U0431><U0440><U044C>";/
+        "<U041D><U043E><U044F><U0431><U0440><U044C>";/
+        "<U0414><U0435><U043A><U0430><U0431><U0440><U044C>"
+abmon   "<U042F><U043D><U0432>";/
+        "<U0424><U0435><U0432>";/
+        "<U041C><U0430><U0440>";/
+        "<U0410><U043F><U0440>";/
+        "<U041C><U0430><U0439>";/
+        "<U0418><U044E><U043D>";/
+        "<U0418><U044E><U043B>";/
+        "<U0410><U0432><U0433>";/
+        "<U0421><U0435><U043D>";/
+        "<U041E><U043A><U0442>";/
+        "<U041D><U043E><U044F>";/
+        "<U0414><U0435><U043A>"
+d_t_fmt "<U0025><U0061><U0020><U0025><U0064><U0020><U0025><U0062>/
+<U0020><U0025><U0059><U0020><U0025><U0054>"
+d_fmt     "<U0025><U0064><U002E><U0025><U006D><U002E><U0025><U0059>"
+t_fmt     "<U0025><U0054>"
+am_pm     "";""
+t_fmt_ampm ""
+date_fmt       "<U0025><U0061><U0020><U0025><U0062><U0020><U0025><U0065>/
+<U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U0020>/
+<U0025><U005A><U0020><U0025><U0059>"
+END LC_TIME
+
+LC_PAPER
+% FIXME
+height   297
+% FIXME
+width    210
+END LC_PAPER
+
+LC_TELEPHONE
+tel_int_fmt    "<U002B><U0025><U0063><U0020><U0025><U0061><U0020><U0025>/
+<U006C>"
+int_prefix     "<U0033><U0038><U0030>"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+% FIXME
+measurement    1
+END LC_MEASUREMENT
+
+LC_NAME
+name_fmt    "<U0025><U0064><U0025><U0074><U0025><U0067><U0025><U0074>/
+<U0025><U006D><U0025><U0074><U0025><U0066>"
+END LC_NAME
+
+LC_ADDRESS
+postal_fmt    "<U0025><U0066><U0025><U004E><U0025><U0061><U0025><U004E>/
+<U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E><U0025><U0073>/
+<U0020><U0025><U0068><U0020><U0025><U0065><U0020><U0025><U0072><U0025>/
+<U004E><U0025><U007A><U0020><U0025><U0054><U0025>/
+<U004E><U0025><U0063><U0025><U004E>"
+country_ab2 "<U0055><U0041>"
+country_ab3 "<U0055><U004B><U0052>"
+country_num 804
+END LC_ADDRESS

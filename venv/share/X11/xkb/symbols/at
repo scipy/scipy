@@ -1,0 +1,25 @@
+// Keyboard layouts for Austria.
+
+default
+xkb_symbols "basic" {
+
+    include "de(basic)"
+
+    name[Group1]="German (Austria)";
+};
+
+partial alphanumeric_keys
+xkb_symbols "nodeadkeys" {
+
+    include "de(nodeadkeys)"
+
+    name[Group1]="German (Austria, no dead keys)";
+};
+
+partial alphanumeric_keys
+xkb_symbols "mac" {
+
+    include "de(mac)"
+
+    name[Group1]= "German (Austria, Macintosh)";
+};

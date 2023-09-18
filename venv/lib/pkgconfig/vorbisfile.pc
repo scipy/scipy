@@ -1,0 +1,14 @@
+# libvorbisfile pkg-config source file
+
+prefix=/workspaces/scipy/venv
+exec_prefix=/workspaces/scipy/venv/bin
+libdir=/workspaces/scipy/venv/lib
+includedir=/workspaces/scipy/venv/include
+
+Name: vorbisfile
+Description: vorbisfile is a library that provides a convenient high-level API for decoding and basic manipulation of all Vorbis I audio streams
+Version: 1.3.7
+Requires.private: vorbis
+Conflicts:
+Libs: -L${libdir} -lvorbisfile
+Cflags: -I${includedir}

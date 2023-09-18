@@ -1,0 +1,448 @@
+comment_char %
+escape_char  /
+%
+% Turkmen Language Locale for Turkmenistan (latin)
+% Source: Gurban M. Tewekgeli
+% Contact: Pablo Saratxaga & Gurban M. Tewekgeli
+% Email: <pablo@mandriva.com & gmtavakkoli@yahoo.com>
+% Language: tk
+% Territory: TM
+% Revision: 0.4
+% Date: 2004-06-10
+% Application: general
+% Users: general
+% Charset: UTF-8
+% Distribution and use is free, also
+% for commercial purposes.
+%
+
+% needed extra chars: ä, ö, ü, ý, ç, ş, ň, ž
+% cyrillic extra chars: җ (z%,=), ң (n,=), ө (o-=), ү (u'=), ә (sw=)
+
+LC_IDENTIFICATION
+
+title     "Turkmen locale for Turkmenistan"
+source    "Gurban M. Tewekgeli"
+address   ""
+contact   "Pablo Saratxaga & Gurban M. Tewekgeli"
+email     "pablo@mandriva.com & gmtavakkoli@yahoo.com"
+tel       ""
+fax       ""
+language  "Turkmen"
+territory "Turkmenistan"
+revision  "0.3"
+date      "2004-06-08"
+
+category "tk_TM:2004";LC_IDENTIFICATION
+category "tk_TM:2004";LC_CTYPE
+category "tk_TM:2004";LC_COLLATE
+category "tk_TM:2004";LC_TIME
+category "tk_TM:2004";LC_NUMERIC
+category "tk_TM:2004";LC_MONETARY
+category "tk_TM:2004";LC_MEASUREMENT
+category "tk_TM:2004";LC_MESSAGES
+category "tk_TM:2004";LC_PAPER
+category "tk_TM:2004";LC_NAME
+category "tk_TM:2004";LC_ADDRESS
+category "tk_TM:2004";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_CTYPE
+copy "i18n"
+
+translit_start
+include "translit_combining";""
+
+% cyrillic -> latin
+% lower case letters
+
+<U0430> "<U0061>"        % a=   -> a
+<U0431> "<U0062>"        % b=   -> b
+<U0432> "<U0077>"        % v=   -> w
+<U0433> "<U0067>"        % g=   -> g
+<U0434> "<U0064>"        % d=   -> d
+<U0435> "<U0065>"        % e=   -> e (y'e also, but context dependent)
+<U0451> "<U00FD><U006F>" % io   -> y'o
+<U0436> "<U017E>"        % z%   -> z<
+<U0497> "<U006A>"        % z%,  -> j
+<U0437> "<U007A>"        % z=   -> z
+<U0438> "<U0069>"        % i=   -> i
+<U0439> "<U00FD>"        % j=   -> y'
+<U043A> "<U006B>"        % k=   -> k
+<U043B> "<U006C>"        % l=   -> l
+<U043C> "<U006D>"        % m=   -> m
+<U043D> "<U006E>"        % n=   -> n
+<U04A3> "<U0148>"        % n,=  -> n<
+<U043E> "<U006F>"        % o=   -> o
+<U04E9> "<U00F6>"        % o-=  -> o:
+<U043F> "<U0070>"        % p=   -> p
+<U0440> "<U0072>"        % r=   -> r
+<U0441> "<U0073>"        % s=   -> s
+<U0442> "<U0074>"        % t=   -> t
+<U0443> "<U0075>"        % u=   -> u
+<U04AF> "<U00FC>"        % u'=  -> u:
+<U0444> "<U0066>"        % f=   -> f
+<U0445> "<U0068>"        % h=   -> h
+<U0446> "<U0074><U0073>" % c=   -> ts
+<U0447> "<U00E7>"        % c%   -> c,
+<U0448> "<U015F>"        % s%   -> s,
+<U044A> ""               % hard sign omitted
+<U044B> "<U0079>"        % yeru -> y
+<U044C> ""               % soft sign omitted.
+<U044D> "<U0065>"        % je=  -> e 
+<U04D9> "<U00E4>"        % sw=  -> a:
+<U044E> "<U00FD><U0075>" % ju   -> y'u
+<U044F> "<U00FD><U0061>" % ja   -> y'a
+
+% upper case letters
+
+<U0410> "<U0041>"        % a=   -> a
+<U0411> "<U0042>"        % b=   -> b
+<U0412> "<U0057>"        % v=   -> w
+<U0413> "<U0047>"        % g=   -> g
+<U0414> "<U0044>"        % d=   -> d
+<U0415> "<U0045>"        % e=   -> e (y'e also, but context dependent)
+<U0401> "<U00DD><U006F>" % io   -> y'o
+<U0416> "<U017D>"        % z%   -> z<
+<U0496> "<U004A>"        % z%,  -> j
+<U0417> "<U005A>"        % z=   -> z
+<U0418> "<U0049>"        % i=   -> i
+<U0419> "<U00DD>"        % j=   -> y'
+<U041A> "<U004B>"        % k=   -> k
+<U041B> "<U004C>"        % l=   -> l
+<U041C> "<U004D>"        % m=   -> m
+<U041D> "<U004E>"        % n=   -> n
+<U04A2> "<U0147>"        % n,=  -> n<
+<U041E> "<U004F>"        % o=   -> o
+<U04E8> "<U00D6>"        % o-=  -> o:
+<U041F> "<U0050>"        % p=   -> p
+<U0420> "<U0052>"        % r=   -> r
+<U0421> "<U0053>"        % s=   -> s
+<U0422> "<U0054>"        % t=   -> t
+<U0423> "<U0055>"        % u=   -> u
+<U04AE> "<U00DC>"        % u'=  -> u:
+<U0424> "<U0046>"        % f=   -> f
+<U0425> "<U0048>"        % h=   -> h
+<U0426> "<U0054><U0073>" % c=   -> ts
+<U0427> "<U00C7>"        % c%   -> c,
+<U0428> "<U015E>"        % s%   -> s,
+<U042A> ""               % hard sign omitted
+<U042B> "<U0059>"        % yeru -> y
+<U042C> ""               % soft sign omitted.
+<U042D> "<U0045>"        % je=  -> e 
+<U04D8> "<U00C4>"        % sw=  -> a:
+<U042E> "<U00DD><U0075>" % ju   -> y'u
+<U042F> "<U00DD><U0061>" % ja   -> y'a
+
+translit_end
+
+END LC_CTYPE
+
+LC_COLLATE
+
+%
+% The turkmen latin alphabet order is:
+% (letters in parenthesis are not used in tk)
+% <a>, <b>, <c,> (<c>), <d>, <e>, <a:> (<sw>), <f>, <g>, <h>, <i>
+% <j>, <z<>, <k>, <l>, <m>, <n>, <n<> (<n?> <ng>), <o>, <o:>, <p>, (<q>),
+% <r>, <s>, <s,>, <t>, <u>, <u:>, (<v>) <w>, (<x>), <y>, <y'> (<y:>), <z>
+%
+% cyrillic alphabet order:
+% <a=>, <b=>, <v=>, <g=>, <d=>, <e=>, <io>, <z%>, <z%,=>, <z=>, <i=>,
+% <j=>, <k=>, <l=>, <m=>, <n=>, <n,=>, <o=>, <o-=>, <p=>, <r=>, <s=>,
+% <t=>, <u=>, <u'=>, <f=>, <h=>, <c=>, <c%>, <s%>, <='>, <y=>, <%'>,
+% <je>, <sw=>, <ju>, <ja> 
+%
+copy "iso14651_t1"
+
+collating-symbol <c,>
+collating-symbol <a:>
+collating-symbol <z<>
+collating-symbol <n<>
+collating-symbol <o:>
+collating-symbol <s,>
+collating-symbol <u:>
+collating-symbol <y'>
+%
+collating-symbol <z,=>
+collating-symbol <n,=>
+collating-symbol <o-=>
+collating-symbol <u'=>
+collating-symbol <sw=>
+
+% priority given to Turkmen accents
+reorder-after <BAS>
+<CDI>
+<CAR>
+<ACA>
+<REU>
+
+reorder-after <b>
+<c,>
+reorder-after <e>
+<a:>
+reorder-after <j>
+<z<>
+reorder-after <n>
+<n<>
+reorder-after <o>
+<o:>
+reorder-after <s>
+<s,>
+reorder-after <u>
+<u:>
+reorder-after <y>
+<y'>
+
+reorder-after <CYR-ZHE>
+<z,=>
+reorder-after <CYR-EN>
+<n,=>
+reorder-after <CYR-O>
+<o-=>
+reorder-after <CYR-OUBRE>
+<u'=>
+reorder-after <CYR-E>
+<sw=>
+
+reorder-after <U0062>
+<U00E7> <c,>;<BAS>;<MIN>;IGNORE
+<U0063> <c,>;<BAS>;<MIN>;<c>
+reorder-after <U0042>
+<U00C7> <c,>;<BAS>;<CAP>;IGNORE
+<U0043> <c,>;<BAS>;<CAP>;<c>
+
+reorder-after <U0065>
+<U00E4> <a:>;<REU>;<MIN>;IGNORE
+<U0259> <a:>;<PCL>;<MIN>;IGNORE
+reorder-after <U0045>
+<U00C4> <a:>;<REU>;<CAP>;IGNORE
+<U018F> <a:>;<PCL>;<CAP>;IGNORE
+
+reorder-after <U006A>
+<U017E> <z<>;<CAR>;<MIN>;IGNORE
+reorder-after <U004A>
+<U017D> <z<>;<CAR>;<CAP>;IGNORE
+
+reorder-after <U006E>
+<U0147> <n<>;<CAR>;<MIN>;IGNORE
+<U00F1> <n<>;<TIL>;<MIN>;IGNORE
+<U014B> <n<>;<PCL>;<MIN>;IGNORE
+reorder-after <U004E>
+<U0148> <n<>;<CAR>;<CAP>;IGNORE
+<U00D1> <n<>;<TIL>;<CAP>;IGNORE
+<U014A> <n<>;<PCL>;<CAP>;IGNORE
+
+reorder-after <U006F>
+<U00F6> <o:>;<REU>;<MIN>;IGNORE
+reorder-after <U004F>
+<U00D6> <o:>;<REU>;<CAP>;IGNORE
+
+reorder-after <U0073>
+<U015F> <s,>;<CDI>;<MIN>;IGNORE
+reorder-after <U0053>
+<U015E> <s,>;<CDI>;<CAP>;IGNORE
+
+reorder-after <U0075>
+<U00FC> <u:>;<REU>;<MIN>;IGNORE
+<U0056> <w>;<BAS>;<CAP>;<v>
+<U0057> <w>;<BAS>;<CAP>;<w>
+reorder-after <U0055>
+<U00DC> <u:>;<REU>;<CAP>;IGNORE
+<U0076> <w>;<BAS>;<MIN>;<v>
+<U0077> <w>;<BAS>;<MIN>;<w>
+
+reorder-after <U0079>
+<U00FD> <y'>;<ACA>;<MIN>;IGNORE
+<U00FF> <y'>;<REU>;<MIN>;IGNORE
+reorder-after <U0059>
+<U00DD> <y'>;<ACA>;<CAP>;IGNORE
+<U0178> <y'>;<REU>;<CAP>;IGNORE
+
+reorder-after <U0436>
+<U0497> <z,=>;<PCL>;<MIN>;IGNORE
+reorder-after <U0416>
+<U0496> <z,=>;<PCL>;<CAP>;IGNORE
+
+reorder-after <U043D>
+<U04A3> <n,=>;<PCL>;<MIN>;IGNORE
+reorder-after <U041D>
+<U04A2> <n,=>;<PCL>;<CAP>;IGNORE
+
+reorder-after <U043E>
+<U04E9> <o-=>;<PCL>;<MIN>;IGNORE
+reorder-after <U041E>
+<U04E8> <o-=>;<PCL>;<CAP>;IGNORE
+
+reorder-after <U0443>
+<U04AF> <u'=>;<PCL>;<MIN>;IGNORE
+reorder-after <U0423>
+<U04AE> <u'=>;<PCL>;<CAP>;IGNORE
+
+reorder-after <U044D>
+<U04D9> <sw=>;<PCL>;<MIN>;IGNORE
+reorder-after <U042D>
+<U04D8> <sw=>;<PCL>;<CAP>;IGNORE
+
+reorder-end
+
+END LC_COLLATE
+
+LC_TIME
+
+% Turkmen days are
+% Monday    => Baş Gün
+% Tuesday   => Yaş Gün
+% Wednesday => Hoş Gün
+% Thursday  => Sogap Gün
+% Friday    => Anna Gün
+% Saturday  => Ruh Gün
+% Sunday    => Dynç Gün
+
+day     "<U0044><U0079><U006E><U00E7><U0020><U0047><U00FC><U006E>";/
+        "<U0042><U0061><U015F><U0020><U0047><U00FC><U006E>";/
+        "<U0059><U0061><U015F><U0020><U0047><U00FC><U006E>";/
+        "<U0048><U006F><U015F><U0020><U0047><U00FC><U006E>";/
+        "<U0053><U006F><U0067><U0061><U0070><U0020><U0047><U00FC><U006E>";/
+        "<U0041><U006E><U006E><U0061><U0020><U0047><U00FC><U006E>";/
+        "<U0052><U0075><U0068><U0020><U0047><U00FC><U006E>"
+abday   "<U0044><U0079><U006E>";"<U0042><U0061><U015F>";/
+        "<U0059><U0061><U015F>";"<U0048><U006F><U015F>";/
+        "<U0053><U006F><U0067>";"<U0041><U006E><U006E>";/
+        "<U0052><U0075><U0068>"
+
+% Turkmen monthes are
+% January   => Türkmenbaşy
+% February  => Baýdak
+% March     => Nowruz
+% April     => Gurbansoltan Eje
+% May       => Magtymguly
+% June      => Oguz
+% July      => Gorkut
+% August    => Alp Arslan
+% September => Ruhnama
+% October   => Garaşsyzlyk
+% November  => Sanjar
+% December  => Bitaraplyk
+
+mon     "<U0054><U00FC><U0072><U006B><U006D><U0065><U006E><U0062><U0061><U015F><U0079>";/
+        "<U0042><U0061><U00FD><U0064><U0061><U006B>";/
+        "<U004E><U006F><U0077><U0072><U0075><U007A>";/
+        "U0047><U0075><U0072><U0062><U0061><U006E><U0073><U006F>/
+<U006C><U0074><U0061><U006E><U0020><U0045><U006A><U0065>";/
+        "<U004D><U0061><U0067><U0074><U0079><U006D><U0067><U0075><U006C><U0079>";/
+        "<U004F><U0067><U0075><U007A>";/
+        "<U0047><U006F><U0072><U006B><U0075><U0074>";/
+        "<U0041><U006C><U0070><U0020><U0041><U0072><U0073><U006C><U0061><U006E>";/
+        "<U0052><U0075><U0068><U006E><U0061><U006D><U0061>";/
+        "<U0047><U0061><U0072><U0061><U015F><U0073><U0079><U007A><U006C><U0079><U006B>";/
+        "<U0053><U0061><U006E><U006A><U0061><U0072>";/
+        "<U0042><U0069><U0074><U0061><U0072><U0061><U0070><U006C><U0079><U006B>"
+abmon   "<U0054><U00FC><U0072>";"<U0042><U0061><U00FD>";/
+        "<U004E><U006F><U0077>";"<U0047><U0075><U0072>";/
+        "<U004D><U0061><U0067>";"<U004F><U0067><U0075>";/
+        "<U0047><U006F><U0072>";"<U0041><U006C><U0070>";/
+        "<U0052><U0075><U0068>";"<U0047><U0061><U0072>";/
+        "<U0053><U0061><U006E>";"<U0042><U0069><U0074>"
+%
+% Turkmen date and time format
+% date  dd.mm.yyyy %d.%m.%Y %T
+% time  hh:mm:ss (24 hour - no am/pm)
+%
+d_t_fmt "<U0025><U0064><U002E><U0025><U006D><U002E><U0025><U0059>/
+<U0020><U0025><U0054>"
+d_fmt     "<U0025><U0064><U002E><U0025><U006D><U002E><U0025><U0059>"
+t_fmt     "<U0025><U0054>"
+am_pm     "";""
+t_fmt_ampm ""
+END LC_TIME
+
+LC_NUMERIC
+decimal_point             "<U002E>" % .
+thousands_sep             "<U002C>" % ,
+grouping                  3;3
+END LC_NUMERIC
+
+LC_MONETARY
+int_curr_symbol           "<U0054><U004D><U004D><U0020>"        % TMM
+currency_symbol           "<U004D><U0041><U004E><U0041><U0054>" % MANAT
+mon_decimal_point         "<U002E>"                             % .
+mon_thousands_sep         "<U002C>"                             % ,
+mon_grouping              3;3
+positive_sign             ""
+negative_sign             "<U002D>"                             % -
+int_frac_digits           2
+frac_digits               2
+p_cs_precedes             0
+p_sep_by_space            1
+n_cs_precedes             0
+n_sep_by_space            1
+p_sign_posn               1
+n_sign_posn               1
+END LC_MONETARY
+
+LC_MEASUREMENT
+measurement 1
+END LC_MEASUREMENT
+
+LC_MESSAGES
+%%%%%%%%
+% NOTE:
+% there is a possible conflict between English and Turkmen for letter "y"
+% (used for "yes" in English, but corresponding to "no" in Turkmen (well,
+%  ý actually)
+%%%%%%%%
+yesstr  "<U0068><U0061><U0077><U0061>" % hawa
+nostr   "<U00FD><U006F><U006B>"        % ýok
+yesexpr "<U005E><U005B><U0068><U0048>/
+<U005D><U002E><U002A>"                 % [hH]
+noexpr  "<U005E><U005B><U00FD><U00DD>/
+<U006E><U004E><U005D><U002E><U002A>"   % [ýÝnN]
+END LC_MESSAGES
+
+LC_PAPER
+%
+% A4 Paper
+%
+height 297
+width  210
+END LC_PAPER
+
+LC_NAME
+% TODO: complete me
+name_fmt  "<U0025><U0064><U0025><U0074><U0025><U0067><U0025><U0074>/
+<U0025><U006D><U0025><U0074><U0025><U0066>"
+name_gen  ""
+name_mr   ""
+name_mrs  ""
+name_miss ""
+name_ms   ""
+END LC_NAME
+
+LC_ADDRESS
+% TODO: fix me
+
+postal_fmt   "<U0025><U0066><U0025><U004E><U0025><U0061><U0025><U004E><U0025>/
+<U0064><U0025><U004E><U0025><U0062><U0025><U004E><U0025><U0073><U0020><U0025>/
+<U0068><U0020><U0025><U0065><U0020><U0025><U0072><U0025><U004E><U0025>/
+<U007A><U0020><U0025><U0054><U0025><U004E><U0025><U0063><U0025><U004E>"
+
+country_name "<U0054><U00FC><U0072><U006B><U006D>/
+<U0065><U006E><U0069><U0073><U0074><U0061><U006E>" % Türkmenistan
+country_post "<U0054><U004D>"                      % TM
+country_car  "<U0054><U004D>"                      % TM
+country_num  795
+country_ab2 "<U0054><U004D>"                       % TM
+country_ab3 "<U0054><U004B><U004D>"                % TKM
+lang_name   "<U0054><U00FC><U0072><U006B><U006D>/
+<U0065><U006E><U00E7><U0065>"                      % Türkmençe
+lang_term   "<U0074><U0075><U006B>"                % tuk
+lang_lib    "<U0074><U0075><U006B>"                % tuk
+lang_ab     "<U0074><U006B>"                       % tk
+END LC_ADDRESS
+
+LC_TELEPHONE
+% TODO: complete me
+tel_int_fmt "<U002B><U0025><U0063><U0020><U0025><U0061><U0020><U0025><U006C>"
+END LC_TELEPHONE

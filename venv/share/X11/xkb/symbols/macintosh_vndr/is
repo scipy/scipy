@@ -1,0 +1,127 @@
+//
+// This file describes the differences between a Macintosh US Extended
+// keymap and an Icelandic keyboard layout in the style of Mac OS and Mac OS X
+//
+// Copyright (C) 2004, 2006 Ævar Arnfjörð Bjarmason <avarab@gmail.com>
+//
+// Permission to use, copy, modify, distribute, and sell this software and its
+// documentation for any purpose is hereby granted without fee, provided that
+// the above copyright notice appear in all copies and that both that
+// copyright notice and this permission notice appear in supporting
+// documentation.
+//
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+// IN NO EVENT SHALL THE OPEN GROUP BE LIABLE FOR ANY CLAIM, DAMAGES OR
+// OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+// ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+// OTHER DEALINGS IN THE SOFTWARE.
+//
+// Except as contained in this notice, the name of a copyright holder shall
+// not be used in advertising or otherwise to promote the sale, use or
+// other dealings in this Software without prior written authorization of
+// the copyright holder.
+//
+// = HISTORY
+// * 2004-09-28:
+//   Initial cleanroom writing of the keymap, I just booted Mac OS X, opened
+//   TextEdit.app and wrote down what the value produced by each key was when I
+//   pressed it, a for a, A for shift + a, å for lalt + a etc and made the
+//   keymap from that information
+//
+// * 2006-01-14:
+//   Revised the comments in the file
+//
+// = NOTES
+// * 20 characters in this keymap have no named character defined in
+//   include/keysymdef.h and as a result their Unicode code points in
+//   hexadecimal are listed here, these can be generated with the following
+//   perl command:
+//     $ perl -CA -e 'printf "U%x\n", ord shift' Æ
+//   and converted back like:
+//     $ perl -CO -le '$_=shift;s/[^a-f0-9]//ig;print chr hex' Uc6
+// * The Apple logo appears twice on this keymap like the Mac OS and Mac OS X
+//   keymaps. In the MacRoman encoding it has the code point 0xF0 (240) but it
+//   has no assigned code point in Unicode, the code point Apple uses for it is
+//   U+F8FF (63743) which is in the BMP's Private Use Area (U+E000–U+F8FF)
+// * This keymap has only been tested on a PowerBook6,5 (iBook G4) but it
+//   should work on other Apple laptop models which use the same keyboard
+//   layout. It will probably work on standard sized keyboards with little or
+//   no modification but it might not support them fully, please report if
+//   you're able to get it running with such a keyboard
+
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+    name[Group1]= "Iceland - Mac";
+
+	//-- Row 5 (E) --//
+	key <TLDE> {	[	sterling,	section, 	UF8FF,		apostrophe	]	};
+	key <AE01> {	[	1,		exclam, 	exclamdown,	VoidSymbol	]	};
+	key <AE02> {	[	2,		quotedbl, 	at,		VoidSymbol	]	};
+	key <AE03> {	[	3,		numbersign, 	U2122,		sterling	]	};
+	key <AE04> {	[	4,		dollar, 	U00A2,		EuroSign	]	};
+	key <AE05> {	[	5,		percent, 	U2030,		infinity	]	};
+	key <AE06> {	[	6,		ampersand, 	asciicircum,	U2044		]	};
+	key <AE07> {	[	7,		slash, 	backslash,	U00F7		]	};
+	key <AE08> {	[	8,		parenleft, 	bracketleft,	braceleft	]	};
+	key <AE09> {	[	9,		parenright, 	bracketright,	braceright	]	};
+	key <AE10> {	[	0,		equal, 	U2260,		U2248		]	};
+	key <AE11> {	[	odiaeresis,	Odiaeresis, 	oslash,		Oslash		]	};
+	key <AE12> {	[	minus,		underscore, 	endash,		emdash		]	};
+
+	
+	//-- Row 4 (D) --//
+	key <AD01> {	[	q,		Q, 	paragraph,	VoidSymbol	]	};
+	key <AD02> {	[	w,		W, 	U2211,		VoidSymbol	]	};
+	key <AD03> {	[	e,		E, 	dead_grave,	VoidSymbol	]	};
+	key <AD04> {	[	r,		R, 	registered,	VoidSymbol	]	};
+	key <AD05> {	[	t,		T, 	degree,		VoidSymbol	]	};
+	key <AD06> {	[	y,		Y, 	yen,		VoidSymbol	]	};
+	key <AD07> {	[	u,		U, 	dead_diaeresis,	VoidSymbol	]	};
+	key <AD08> {	[	i,		I, 	U0131,		U00AA		]	};
+	key <AD09> {	[	o,		O, 	dead_circumflex,U00BA		]	};
+	key <AD10> {	[	p,		P, 	Greek_pi,	Greek_PI	]	};
+	key <AD11> {	[	eth,		ETH,		U201e,		U201c		]	};
+	key <AD12> {	[	apostrophe,	question, 	questiondown,	U00B7		]	};
+	
+	
+	//-- Row 3 (C) --//
+	key <AC01> {	[	a,		A, 	aring,		Aring		]	};
+	key <AC02> {	[	s,		S, 	ssharp,		abovedot	]	};
+	key <AC03> {	[	d,		D, 	U2202,		U2DA		]	};
+	key <AC04> {	[	f,		F, 	U192,		macron		]	};
+	key <AC05> {	[	g,		G, 	copyright,	breve		]	};
+	key <AC06> {	[	h,		H, 	bar,		VoidSymbol	]	};
+	key <AC07> {	[	j,		J, 	U2206,		U2dd		]	};
+	key <AC08> {	[	k,		K, 	U00AC,		VoidSymbol	]	};
+	key <AC09> {	[	l,		L, 	U2026,		caron		]	};
+	key <AC10> {	[	ae,		AE, 	oe,		OE		]	};
+	key <AC11> {	[	dead_acute,	dead_diaeresis, 	U201A,		U2018		]	};
+	key <BKSL> {	[	plus,		asterisk, 	U2022,		plusminus	]	};
+	
+	
+	//-- Row 2  (B) --//
+	key <LSGT> {	[	less,		greater, 	section,	UF8FF		]	};
+	key <AB01> {	[	z,		Z, 	U3A9,		VoidSymbol	]	};
+	key <AB02> {	[	x,		X, 	asciitilde,	VoidSymbol	]	};
+	key <AB03> {	[	c,		C, 	ccedilla,	Ccedilla	]	};
+	key <AB04> {	[	v,		V, 	U221A,		U25CA		]	};
+	key <AB05> {	[	b,		B, 	U222B,		VoidSymbol	]	};
+	key <AB06> {	[	n,		N, 	dead_tilde,	VoidSymbol	]	};
+	key <AB07> {	[	m,		M, 	U00B5,		VoidSymbol	]	};
+	key <AB08> {	[	comma,		semicolon, 	lessthanequal,	guillemotleft	]	};
+	key <AB09> {	[	period,		colon, 	greaterthanequal,guillemotright	]	};
+	key <AB10> {	[	thorn,		THORN, 	U2019,		U201d		]	};
+
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "nodeadkeys" {
+    include	"macintosh_vndr/is(basic)" // for consistent naming
+    name[Group1]= "Iceland - Mac, no dead keys";
+};

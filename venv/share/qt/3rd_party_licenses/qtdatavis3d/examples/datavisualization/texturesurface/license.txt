@@ -1,0 +1,77 @@
+License information regarding the data obtained from National Land Survey of
+Finland http://www.maanmittauslaitos.fi/en
+- topographic model from Elevation model 2 m (U4421B, U4421D, U4422A and
+  U4422C) 08/2014
+- map image extracted from Topographic map raster 1:50 000 (U442) 08/2014
+
+National Land Survey open data licence - version 1.0 - 1 May 2012
+
+1. General information
+
+The National Land Survey of Finland (hereinafter the Licensor), as the holder
+of the immaterial rights to the data, has granted on the terms mentioned below
+the right to use a copy (hereinafter data or dataset(s)) of the data (or a part
+of it).
+
+The Licensee is a natural or legal person who makes use of the data covered by
+this licence. The Licensee accepts the terms of this licence by receiving the
+dataset(s) covered by the licence.
+
+This Licence agreement does not create a co-operation or business relationship
+between the Licensee and the Licensor.
+
+2. Terms of the licence
+
+2.1. Right of use
+
+This licence grants a worldwide, free of charge and irrevocable parallel right
+of use to open data. According to the terms of the licence, data received by
+the Licensee can be freely:
+ - copied, distributed and published,
+ - modified and utilised commercially and non-commercially,
+ - inserted into other products and
+ - used as a part of a software application or service.
+
+2.2. Duties and responsibilities of the Licensee
+
+Through reasonable means suitable to the distribution medium or method which is
+used in conjunction with a product containing data or a service utilising data
+covered by this licence or while distributing data, the Licensee shall:
+ - mention the name of the Licensor, the name of the dataset(s) and the time
+   when the National Land Survey has delivered the dataset(s) (e.g.: contains
+   data from the National Land Survey of Finland Topographic Database 06/2012)
+ - provide a copy of this licence or a link to it, as well as
+ - require third parties to provide the same information when granting rights
+   to copies of dataset(s) or products and services containing such data and
+ - remove the name of the Licensor from the product or service, if required to
+   do so by the Licensor.
+
+The terms of this licence do not allow the Licensee to state in conjunction
+with the use of dataset(s) that the Licensor supports or recommends such use.
+
+2.3. Duties and responsibilities of the Licensor
+
+The Licensor shall ensure that
+ - the Licensor has the right to grant rights to the dataset(s) in accordance
+   with this licence.
+
+The data has been licensed "as is" and the Licensor
+ - shall not be held responsible for any errors or omissions in the data,
+   disclaims any warranty for the validity or up to date status of the data and
+   shall be free from liability for direct or consequential damages arising
+   from the use of data provided by the Licensor,
+ - and is not obligated to ensure the continuous availability of the data, nor
+   to announce in advance the interruption or cessation of availability, and
+   the Licensor shall be free from liability for direct or consequential
+   damages arising from any such interruption or cessation.
+
+3. Jurisdiction
+
+Finnish law shall apply to this licence.
+
+4. Changes to this licence
+
+The Licensor may at any time change the terms of the licence or apply a
+different licence to the data. The terms of this licence shall, however, still
+apply to such data that has been received prior to the change of the terms of
+the licence or the licence itself.

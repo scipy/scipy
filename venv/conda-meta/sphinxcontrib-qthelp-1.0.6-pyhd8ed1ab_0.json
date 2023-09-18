@@ -1,0 +1,908 @@
+{
+  "build": "pyhd8ed1ab_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/noarch",
+  "constrains": [],
+  "depends": [
+    "python >=3.9",
+    "sphinx >=5"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/sphinxcontrib-qthelp-1.0.6-pyhd8ed1ab_0",
+  "features": "",
+  "files": [
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/__init__.py",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/.tx/config",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/ar/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/ar/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/bn/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/bn/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/ca/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/ca/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/cs/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/cs/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/cy/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/cy/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/da/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/da/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/de/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/de/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/el/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/el/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/eo/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/eo/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/es/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/es/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/et/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/et/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/eu/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/eu/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/fa/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/fa/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/fi/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/fi/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/fr/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/fr/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/he/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/he/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/hi/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/hi/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/hi_IN/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/hi_IN/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/hr/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/hr/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/hu/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/hu/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/id/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/id/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/it/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/it/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/ja/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/ja/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/ko/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/ko/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/lt/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/lt/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/lv/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/lv/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/mk/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/mk/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/nb_NO/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/nb_NO/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/ne/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/ne/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/nl/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/nl/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/pl/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/pl/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/pt/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/pt/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/pt_BR/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/pt_BR/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/pt_PT/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/pt_PT/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/ro/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/ro/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/ru/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/ru/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/si/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/si/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/sk/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/sk/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/sl/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/sl/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/sphinxcontrib.qthelp.pot",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/sr/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/sr/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/sr@latin/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/sr@latin/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/sv/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/sv/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/ta/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/ta/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/tr/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/tr/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/uk_UA/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/uk_UA/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/vi/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/vi/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/zh_CN/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/zh_CN/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/zh_TW/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/locales/zh_TW/LC_MESSAGES/sphinxcontrib.qthelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/templates/project.qhcp",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/templates/project.qhp",
+    "lib/python3.10/site-packages/sphinxcontrib_qthelp-1.0.6.dist-info/INSTALLER",
+    "lib/python3.10/site-packages/sphinxcontrib_qthelp-1.0.6.dist-info/LICENSE",
+    "lib/python3.10/site-packages/sphinxcontrib_qthelp-1.0.6.dist-info/METADATA",
+    "lib/python3.10/site-packages/sphinxcontrib_qthelp-1.0.6.dist-info/RECORD",
+    "lib/python3.10/site-packages/sphinxcontrib_qthelp-1.0.6.dist-info/REQUESTED",
+    "lib/python3.10/site-packages/sphinxcontrib_qthelp-1.0.6.dist-info/WHEEL",
+    "lib/python3.10/site-packages/sphinxcontrib_qthelp-1.0.6.dist-info/direct_url.json",
+    "lib/python3.10/site-packages/sphinxcontrib/qthelp/__pycache__/__init__.cpython-310.pyc"
+  ],
+  "fn": "sphinxcontrib-qthelp-1.0.6-pyhd8ed1ab_0.conda",
+  "license": "BSD-2-Clause",
+  "license_family": "BSD",
+  "link": {
+    "source": "/opt/conda/pkgs/sphinxcontrib-qthelp-1.0.6-pyhd8ed1ab_0",
+    "type": 1
+  },
+  "md5": "cf5c9649272c677a964a7313279e3a9b",
+  "name": "sphinxcontrib-qthelp",
+  "noarch": "python",
+  "package_tarball_full_path": "/opt/conda/pkgs/sphinxcontrib-qthelp-1.0.6-pyhd8ed1ab_0.conda",
+  "package_type": "noarch_python",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "ccb84197ff9cbe6004f0d163fed85d4b23d365e7605d52f37fae4e7c11b4df6d",
+        "sha256_in_prefix": "ccb84197ff9cbe6004f0d163fed85d4b23d365e7605d52f37fae4e7c11b4df6d",
+        "size_in_bytes": 10683
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/.tx/config",
+        "path_type": "hardlink",
+        "sha256": "674b6bf8d12679650dc93e5b224df80f0440fbf5f4de309b34f0d7dcf9e8e0bb",
+        "sha256_in_prefix": "674b6bf8d12679650dc93e5b224df80f0440fbf5f4de309b34f0d7dcf9e8e0bb",
+        "size_in_bytes": 218
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/ar/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "f1b2c4f81a41b552d98ebab79411b8a39c6fd6819d6083029d35e08583a9688b",
+        "sha256_in_prefix": "f1b2c4f81a41b552d98ebab79411b8a39c6fd6819d6083029d35e08583a9688b",
+        "size_in_bytes": 1194
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/ar/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "bf12319a25f104ad210e20f87b702e473d1d3253ac70b21e21c321cf240c3f06",
+        "sha256_in_prefix": "bf12319a25f104ad210e20f87b702e473d1d3253ac70b21e21c321cf240c3f06",
+        "size_in_bytes": 1273
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/bn/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "2fb7d6a510c776ce4b5e6eaa254b360537124f360677ef72ccb90cbf1e400fd8",
+        "sha256_in_prefix": "2fb7d6a510c776ce4b5e6eaa254b360537124f360677ef72ccb90cbf1e400fd8",
+        "size_in_bytes": 1112
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/bn/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "317ddb3a748234f2439141e9a47a6802fba7b2dc040ee0f925290699897a1ae8",
+        "sha256_in_prefix": "317ddb3a748234f2439141e9a47a6802fba7b2dc040ee0f925290699897a1ae8",
+        "size_in_bytes": 1191
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/ca/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "981a9ad6e75a7d1a96de5538ca04491451fe4a82e4025c2ca95da1268f0743ee",
+        "sha256_in_prefix": "981a9ad6e75a7d1a96de5538ca04491451fe4a82e4025c2ca95da1268f0743ee",
+        "size_in_bytes": 1112
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/ca/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "7921e086fdb842f54c76c6bd747a6c11a83b1094ca9f9aa2a3a7ee89d181cb0f",
+        "sha256_in_prefix": "7921e086fdb842f54c76c6bd747a6c11a83b1094ca9f9aa2a3a7ee89d181cb0f",
+        "size_in_bytes": 1191
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/cs/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "7be36ee424a61b77d41f7b87f08e36f08bb6c3df4e60ffaff7887d2591ebcba2",
+        "sha256_in_prefix": "7be36ee424a61b77d41f7b87f08e36f08bb6c3df4e60ffaff7887d2591ebcba2",
+        "size_in_bytes": 1190
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/cs/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "932fe775fa0dc36d63f2ab27c7a8762332ea6971cb30984898c7aa820f3b6142",
+        "sha256_in_prefix": "932fe775fa0dc36d63f2ab27c7a8762332ea6971cb30984898c7aa820f3b6142",
+        "size_in_bytes": 1269
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/cy/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "25b88b391e19c11e2ea6f55a180928f13e16aca72b727607cb59ac4c4b88b73e",
+        "sha256_in_prefix": "25b88b391e19c11e2ea6f55a180928f13e16aca72b727607cb59ac4c4b88b73e",
+        "size_in_bytes": 1155
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/cy/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "2014cbb7260467f625fd3d9671f047148d11208eced5101397e77efca6efd3f3",
+        "sha256_in_prefix": "2014cbb7260467f625fd3d9671f047148d11208eced5101397e77efca6efd3f3",
+        "size_in_bytes": 1234
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/da/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "ce4872d6d1f5b44ba76b81d394ce437bb47f2d6b10fe2a8ef68cfdb9179149f7",
+        "sha256_in_prefix": "ce4872d6d1f5b44ba76b81d394ce437bb47f2d6b10fe2a8ef68cfdb9179149f7",
+        "size_in_bytes": 1111
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/da/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "8acb0258f294337ba27db4b8018723bed720b9b03cb6f68aeacf9310a4d43111",
+        "sha256_in_prefix": "8acb0258f294337ba27db4b8018723bed720b9b03cb6f68aeacf9310a4d43111",
+        "size_in_bytes": 1190
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/de/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "d940ad7d36961b168106a84fbbc534df56524f4eee821c7d8135be9c53c96bf2",
+        "sha256_in_prefix": "d940ad7d36961b168106a84fbbc534df56524f4eee821c7d8135be9c53c96bf2",
+        "size_in_bytes": 1111
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/de/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "51b63b2752b2cbcf0ca9cf76b86085d1b37c6aefd6b4952cf12e9e9853f24821",
+        "sha256_in_prefix": "51b63b2752b2cbcf0ca9cf76b86085d1b37c6aefd6b4952cf12e9e9853f24821",
+        "size_in_bytes": 1190
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/el/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "ef531810f6e46c31a239aedf157c61dc34e1c8c2ee1a2334105e071b78204882",
+        "sha256_in_prefix": "ef531810f6e46c31a239aedf157c61dc34e1c8c2ee1a2334105e071b78204882",
+        "size_in_bytes": 1110
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/el/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "3fabfe8ca3d7e4ea9295c4d46f1a8c9643e94150b76e2cea0f7721c3c39d9a2f",
+        "sha256_in_prefix": "3fabfe8ca3d7e4ea9295c4d46f1a8c9643e94150b76e2cea0f7721c3c39d9a2f",
+        "size_in_bytes": 1189
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/eo/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "e6046bae0eeae1c9ba01fb0463546f0aa1c6e0d303fa349dadb34648d836b6aa",
+        "sha256_in_prefix": "e6046bae0eeae1c9ba01fb0463546f0aa1c6e0d303fa349dadb34648d836b6aa",
+        "size_in_bytes": 1114
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/eo/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "81492fe8d81a543fca57ab7eba1ef6caa89f60dfae69f0ee26e1d228dcb95418",
+        "sha256_in_prefix": "81492fe8d81a543fca57ab7eba1ef6caa89f60dfae69f0ee26e1d228dcb95418",
+        "size_in_bytes": 1193
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/es/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "a2297137da812d1e46c5b0fd64fbcc2db163a4341c2868685711d7f1d1a1401b",
+        "sha256_in_prefix": "a2297137da812d1e46c5b0fd64fbcc2db163a4341c2868685711d7f1d1a1401b",
+        "size_in_bytes": 1128
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/es/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "1a2989ca061692ea5be8f923cbee9e105c196d33d9f22d695a2007bb75f51470",
+        "sha256_in_prefix": "1a2989ca061692ea5be8f923cbee9e105c196d33d9f22d695a2007bb75f51470",
+        "size_in_bytes": 1328
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/et/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "cc8813a04d2fe41eff2642f4f47bd180a8d2d093c0e97918c8a2fd918aa8ebdc",
+        "sha256_in_prefix": "cc8813a04d2fe41eff2642f4f47bd180a8d2d093c0e97918c8a2fd918aa8ebdc",
+        "size_in_bytes": 1134
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/et/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "2cdac679621c9e6f99298e84678fbbfac972eb1ec7ec0eefd6b0c0b51f7e333e",
+        "sha256_in_prefix": "2cdac679621c9e6f99298e84678fbbfac972eb1ec7ec0eefd6b0c0b51f7e333e",
+        "size_in_bytes": 1371
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/eu/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "1eef8a162622e2ca15007f4c3d49e7092b301708936ee6d42cd22c6cb5e56f93",
+        "sha256_in_prefix": "1eef8a162622e2ca15007f4c3d49e7092b301708936ee6d42cd22c6cb5e56f93",
+        "size_in_bytes": 1111
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/eu/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "dfbdf632978ce741c2cccee7c99e66045e1326816aed53a62c898b13d2c0a6bc",
+        "sha256_in_prefix": "dfbdf632978ce741c2cccee7c99e66045e1326816aed53a62c898b13d2c0a6bc",
+        "size_in_bytes": 1190
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/fa/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "3a97151d29e8abe099cd314fe39c7809958b502cf3e15f7eb83ba0b724115b78",
+        "sha256_in_prefix": "3a97151d29e8abe099cd314fe39c7809958b502cf3e15f7eb83ba0b724115b78",
+        "size_in_bytes": 1111
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/fa/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "39c69e754fa24b6a0e907e7823504ed62a63be7bc1130d5633ca1daa933ef33b",
+        "sha256_in_prefix": "39c69e754fa24b6a0e907e7823504ed62a63be7bc1130d5633ca1daa933ef33b",
+        "size_in_bytes": 1190
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/fi/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "84dcdcba89fcd21431b9a2ad330f4b2778a5d90762e0a8a61b6a5429a8c3bafa",
+        "sha256_in_prefix": "84dcdcba89fcd21431b9a2ad330f4b2778a5d90762e0a8a61b6a5429a8c3bafa",
+        "size_in_bytes": 1112
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/fi/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "060c8108958b10aa2da47d9f7affcd01ece1254b773481d62a06cd28ee5b886f",
+        "sha256_in_prefix": "060c8108958b10aa2da47d9f7affcd01ece1254b773481d62a06cd28ee5b886f",
+        "size_in_bytes": 1191
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/fr/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "3711e6fc44104cae838e1dc5093d30ed969987a9b458079bf15158820b82b5db",
+        "sha256_in_prefix": "3711e6fc44104cae838e1dc5093d30ed969987a9b458079bf15158820b82b5db",
+        "size_in_bytes": 1140
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/fr/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "b415014dd2db7038a7eb2e4fc06b75d8a494b61243ec0a7429f967b6d8a3840f",
+        "sha256_in_prefix": "b415014dd2db7038a7eb2e4fc06b75d8a494b61243ec0a7429f967b6d8a3840f",
+        "size_in_bytes": 1350
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/he/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "9949fc25e268ef006afc4278045e1aec637145adc5a7dc97c3d77f49ee27c0d8",
+        "sha256_in_prefix": "9949fc25e268ef006afc4278045e1aec637145adc5a7dc97c3d77f49ee27c0d8",
+        "size_in_bytes": 1205
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/he/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "ae927b710a03f256bb9e82bc5382270ec94dbd6cf1d6bdaedc3f315f0f24893a",
+        "sha256_in_prefix": "ae927b710a03f256bb9e82bc5382270ec94dbd6cf1d6bdaedc3f315f0f24893a",
+        "size_in_bytes": 1284
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/hi/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "3440509f4e221ed34f1dbfa0895b49e972b79b5fa9e06ae29ac1fb0bfd7910d7",
+        "sha256_in_prefix": "3440509f4e221ed34f1dbfa0895b49e972b79b5fa9e06ae29ac1fb0bfd7910d7",
+        "size_in_bytes": 1110
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/hi/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "a4f5b466ae0f90cbfc50960556dcb41aa363e06cb9d78cee81e658574eb9bd69",
+        "sha256_in_prefix": "a4f5b466ae0f90cbfc50960556dcb41aa363e06cb9d78cee81e658574eb9bd69",
+        "size_in_bytes": 1189
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/hi_IN/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "b9bd40148d318c7a6f78dba2370111cb4d5057e9f503ed327cdc8da9bb0c52b7",
+        "sha256_in_prefix": "b9bd40148d318c7a6f78dba2370111cb4d5057e9f503ed327cdc8da9bb0c52b7",
+        "size_in_bytes": 1124
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/hi_IN/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "9d832cab6dd9e7c7b2e151202fc42ed35d2d3c39fdebee0d8dbd371b75589ca2",
+        "sha256_in_prefix": "9d832cab6dd9e7c7b2e151202fc42ed35d2d3c39fdebee0d8dbd371b75589ca2",
+        "size_in_bytes": 1203
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/hr/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "8faea6c6cdf3351616d81cbb818ba1d5243b2269fe2d3232527b543f5c290e53",
+        "sha256_in_prefix": "8faea6c6cdf3351616d81cbb818ba1d5243b2269fe2d3232527b543f5c290e53",
+        "size_in_bytes": 1185
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/hr/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "69d7b27b399e2fdf17d7755a33193761191b6059f8ee9c113275d16a160e2ca7",
+        "sha256_in_prefix": "69d7b27b399e2fdf17d7755a33193761191b6059f8ee9c113275d16a160e2ca7",
+        "size_in_bytes": 1264
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/hu/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "501c0c1f14444a30d17ac9b225e50ee663138261379007b9665f18514c04b0e4",
+        "sha256_in_prefix": "501c0c1f14444a30d17ac9b225e50ee663138261379007b9665f18514c04b0e4",
+        "size_in_bytes": 1114
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/hu/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "09504ebee5d0c9e1f6593ca861a3c1c1a3bcaf2700cba5f8540862b99389d192",
+        "sha256_in_prefix": "09504ebee5d0c9e1f6593ca861a3c1c1a3bcaf2700cba5f8540862b99389d192",
+        "size_in_bytes": 1193
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/id/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "b0427fc607bfe57df28985bcae1432e95cae0568e5cd1f913759fc57554f49c8",
+        "sha256_in_prefix": "b0427fc607bfe57df28985bcae1432e95cae0568e5cd1f913759fc57554f49c8",
+        "size_in_bytes": 1117
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/id/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "708cc4a747eb699f2af167daed17858a4e2c99ebcd9ceb9e1191a6634fd8e1a6",
+        "sha256_in_prefix": "708cc4a747eb699f2af167daed17858a4e2c99ebcd9ceb9e1191a6634fd8e1a6",
+        "size_in_bytes": 1579
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/it/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "0fea45ef3a3395ff7dc20c07b2a8cde64501563417414dfd52a48f8055c5fb3c",
+        "sha256_in_prefix": "0fea45ef3a3395ff7dc20c07b2a8cde64501563417414dfd52a48f8055c5fb3c",
+        "size_in_bytes": 1112
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/it/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "7a67dc6741f38266b8d2c9f5a92322f9f4525d4f95470e78e633172484c69351",
+        "sha256_in_prefix": "7a67dc6741f38266b8d2c9f5a92322f9f4525d4f95470e78e633172484c69351",
+        "size_in_bytes": 1191
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/ja/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "1b4c7f854f335bf2df1b4babc57bddb4654eecea5697ba2477ad6f4b69dcb85f",
+        "sha256_in_prefix": "1b4c7f854f335bf2df1b4babc57bddb4654eecea5697ba2477ad6f4b69dcb85f",
+        "size_in_bytes": 1106
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/ja/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "e45c82452ee00afc5b906db64b4c77869ef32cafbcbb1c163fd4e052081479a9",
+        "sha256_in_prefix": "e45c82452ee00afc5b906db64b4c77869ef32cafbcbb1c163fd4e052081479a9",
+        "size_in_bytes": 1185
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/ko/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "69170ae9aee6f9e4553a4c31b407cec1cebd6f954eb0ef63f677df99eff3d8de",
+        "sha256_in_prefix": "69170ae9aee6f9e4553a4c31b407cec1cebd6f954eb0ef63f677df99eff3d8de",
+        "size_in_bytes": 1115
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/ko/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "505a3b79647625a11377656e54805ddb6a859a2203a64ca41d608cae8c3a5cfc",
+        "sha256_in_prefix": "505a3b79647625a11377656e54805ddb6a859a2203a64ca41d608cae8c3a5cfc",
+        "size_in_bytes": 1311
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/lt/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "caf97c0a1b43440ed2a1d96577519921ce800866cd74d835b3d93bc4593d7cec",
+        "sha256_in_prefix": "caf97c0a1b43440ed2a1d96577519921ce800866cd74d835b3d93bc4593d7cec",
+        "size_in_bytes": 1246
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/lt/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "c381b954e250ae049b15a6ce3a398de182a84e35bc59f686cf1b62c8bd28c876",
+        "sha256_in_prefix": "c381b954e250ae049b15a6ce3a398de182a84e35bc59f686cf1b62c8bd28c876",
+        "size_in_bytes": 1325
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/lv/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "614fe17d9504d3f1bdfa73920111ee1bacc64f670865cc96c3770a5c881ed347",
+        "sha256_in_prefix": "614fe17d9504d3f1bdfa73920111ee1bacc64f670865cc96c3770a5c881ed347",
+        "size_in_bytes": 1147
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/lv/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "49916f895a90015d8cc0a9ee8748105d2492eb3484a0900c1543485633aa9d4a",
+        "sha256_in_prefix": "49916f895a90015d8cc0a9ee8748105d2492eb3484a0900c1543485633aa9d4a",
+        "size_in_bytes": 1226
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/mk/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "7ee57fdba1a751c0aa44f994a70dd349d2ec3364f6eb25b780b8392d698de07a",
+        "sha256_in_prefix": "7ee57fdba1a751c0aa44f994a70dd349d2ec3364f6eb25b780b8392d698de07a",
+        "size_in_bytes": 1145
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/mk/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "3f4bf47bf09badd11f47a3ca0e2f7ef0e95dd70d2e079d5c2a777b8ae1749dae",
+        "sha256_in_prefix": "3f4bf47bf09badd11f47a3ca0e2f7ef0e95dd70d2e079d5c2a777b8ae1749dae",
+        "size_in_bytes": 1224
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/nb_NO/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "b7670d00fc9598d4aec043234e6fc410954ff3b84b797c23cfa712e127875ccf",
+        "sha256_in_prefix": "b7670d00fc9598d4aec043234e6fc410954ff3b84b797c23cfa712e127875ccf",
+        "size_in_bytes": 1137
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/nb_NO/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "6bdf1ea4677df8e2691ce97f1fcaa2acd4feda7b5ed29b128fac35d2cee573fd",
+        "sha256_in_prefix": "6bdf1ea4677df8e2691ce97f1fcaa2acd4feda7b5ed29b128fac35d2cee573fd",
+        "size_in_bytes": 1216
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/ne/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "7d15be0bd2a29a16623750211630ae464041464bca021bbe83acde637225a8ec",
+        "sha256_in_prefix": "7d15be0bd2a29a16623750211630ae464041464bca021bbe83acde637225a8ec",
+        "size_in_bytes": 1111
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/ne/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "cb634e2085604fdc9520a86b6b69c74f4cea039ed140a1fb1e06b2c88a13f9d3",
+        "sha256_in_prefix": "cb634e2085604fdc9520a86b6b69c74f4cea039ed140a1fb1e06b2c88a13f9d3",
+        "size_in_bytes": 1190
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/nl/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "ba8137b2471af12d5d33403e4a85c168381ced469f3e18acd5f8e0c6016e6ee7",
+        "sha256_in_prefix": "ba8137b2471af12d5d33403e4a85c168381ced469f3e18acd5f8e0c6016e6ee7",
+        "size_in_bytes": 1110
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/nl/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "5248566db64fc5048b4ef39162289bcc88662dccd13deeecebed30bb55acf3ae",
+        "sha256_in_prefix": "5248566db64fc5048b4ef39162289bcc88662dccd13deeecebed30bb55acf3ae",
+        "size_in_bytes": 1189
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/pl/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "3dd2ffe3eddff9320886903656f45228be41d1d8a1b9eca362157d5028666e8b",
+        "sha256_in_prefix": "3dd2ffe3eddff9320886903656f45228be41d1d8a1b9eca362157d5028666e8b",
+        "size_in_bytes": 1249
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/pl/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "a3cb0083051a51f33c499da6a0ba8b34691ef37fabac585d697e219865c3675e",
+        "sha256_in_prefix": "a3cb0083051a51f33c499da6a0ba8b34691ef37fabac585d697e219865c3675e",
+        "size_in_bytes": 1430
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/pt/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "40e573dafb44e0dab91c522b59f52a4399b408305ef68ec61434ef7af022a843",
+        "sha256_in_prefix": "40e573dafb44e0dab91c522b59f52a4399b408305ef68ec61434ef7af022a843",
+        "size_in_bytes": 1115
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/pt/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "17818bde2cfad7dc2f7c21e932339807233ee780ed85f8ea786632d9abb86c8d",
+        "sha256_in_prefix": "17818bde2cfad7dc2f7c21e932339807233ee780ed85f8ea786632d9abb86c8d",
+        "size_in_bytes": 1194
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/pt_BR/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "d10720913625145306acbcf4b4c9fa507748923c3dd9f83ab90a3403fa1c2dfd",
+        "sha256_in_prefix": "d10720913625145306acbcf4b4c9fa507748923c3dd9f83ab90a3403fa1c2dfd",
+        "size_in_bytes": 1129
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/pt_BR/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "014f2bc63b94186c4ffe259aca99abbc8071828f0800712c06d01cd6cd61ff7a",
+        "sha256_in_prefix": "014f2bc63b94186c4ffe259aca99abbc8071828f0800712c06d01cd6cd61ff7a",
+        "size_in_bytes": 1208
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/pt_PT/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "be3d2e4ebbbeb085871f0bd69a581814d95205c70dc7ae5bc8327c31c38adc76",
+        "sha256_in_prefix": "be3d2e4ebbbeb085871f0bd69a581814d95205c70dc7ae5bc8327c31c38adc76",
+        "size_in_bytes": 1132
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/pt_PT/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "596d46ac4e44ada8b0fa0f68a084d54642f73bbd32302d1d45529f2ff6d35739",
+        "sha256_in_prefix": "596d46ac4e44ada8b0fa0f68a084d54642f73bbd32302d1d45529f2ff6d35739",
+        "size_in_bytes": 1211
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/ro/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "821e9404eea1848193b6e473af39502ad7dde86883d4995cd22fbf7df39bac88",
+        "sha256_in_prefix": "821e9404eea1848193b6e473af39502ad7dde86883d4995cd22fbf7df39bac88",
+        "size_in_bytes": 1154
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/ro/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "035cd9042960acd3f495e02f95e00266f6b7f87ef30ca60dfa4921e6c5d475b7",
+        "sha256_in_prefix": "035cd9042960acd3f495e02f95e00266f6b7f87ef30ca60dfa4921e6c5d475b7",
+        "size_in_bytes": 1233
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/ru/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "227cdb7d49be1151fe4fa779ff2faafd59094e96e8bd6d3059aaf196976e8454",
+        "sha256_in_prefix": "227cdb7d49be1151fe4fa779ff2faafd59094e96e8bd6d3059aaf196976e8454",
+        "size_in_bytes": 1250
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/ru/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "c95aa6c84e3f45008bb1f3739574dec5087654bd7314ca67af97f139be7da2a0",
+        "sha256_in_prefix": "c95aa6c84e3f45008bb1f3739574dec5087654bd7314ca67af97f139be7da2a0",
+        "size_in_bytes": 1329
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/si/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "2dcddb61df6680c84dffee26579332600f83725e167bf1af90392954c4bb4e21",
+        "sha256_in_prefix": "2dcddb61df6680c84dffee26579332600f83725e167bf1af90392954c4bb4e21",
+        "size_in_bytes": 1112
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/si/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "e3c565c25e7564230dc41b4585c85d0b7752bd6d477881cc02531075291cd12f",
+        "sha256_in_prefix": "e3c565c25e7564230dc41b4585c85d0b7752bd6d477881cc02531075291cd12f",
+        "size_in_bytes": 1191
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/sk/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "ab9fb9a866fcf52c7defb97efb34e6fc1a9aa7f2853bd8e9d36c0109d1f4906d",
+        "sha256_in_prefix": "ab9fb9a866fcf52c7defb97efb34e6fc1a9aa7f2853bd8e9d36c0109d1f4906d",
+        "size_in_bytes": 1186
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/sk/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "266d310f19d3fcaeabcf5ae63ab3222ce73a1672204645bda32aea69d907e188",
+        "sha256_in_prefix": "266d310f19d3fcaeabcf5ae63ab3222ce73a1672204645bda32aea69d907e188",
+        "size_in_bytes": 1265
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/sl/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "7804faeded0795b64e01342d9b4abbe1765b3f7f6639a78e08917e7f92b1196b",
+        "sha256_in_prefix": "7804faeded0795b64e01342d9b4abbe1765b3f7f6639a78e08917e7f92b1196b",
+        "size_in_bytes": 1166
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/sl/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "799f2e7c000bcb9486933163e50e44c2f80e47fec675d7a6726af31389f2b631",
+        "sha256_in_prefix": "799f2e7c000bcb9486933163e50e44c2f80e47fec675d7a6726af31389f2b631",
+        "size_in_bytes": 1245
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/sphinxcontrib.qthelp.pot",
+        "path_type": "hardlink",
+        "sha256": "7f8e60e814b6db756c54c62ea2df5436bd994e9855a839df4e5e4a9266e89811",
+        "sha256_in_prefix": "7f8e60e814b6db756c54c62ea2df5436bd994e9855a839df4e5e4a9266e89811",
+        "size_in_bytes": 1135
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/sr/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "2641e2ce9c483db7006d3fd7f0249bb291d5cd4c89568fc969ca3e551543fe5d",
+        "sha256_in_prefix": "2641e2ce9c483db7006d3fd7f0249bb291d5cd4c89568fc969ca3e551543fe5d",
+        "size_in_bytes": 1186
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/sr/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "9595b27ffdd0d5179b816d3961c2bf22b2f057f74e43a43bacd999bf15b7c5da",
+        "sha256_in_prefix": "9595b27ffdd0d5179b816d3961c2bf22b2f057f74e43a43bacd999bf15b7c5da",
+        "size_in_bytes": 1265
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/sr@latin/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "ecabeb6cd715b245f8d3fc99163a753f50c861adfe632fede42dbdd7f9a6c668",
+        "sha256_in_prefix": "ecabeb6cd715b245f8d3fc99163a753f50c861adfe632fede42dbdd7f9a6c668",
+        "size_in_bytes": 1208
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/sr@latin/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "c34ee716588345e0b44ebb55d37a63be042d338096af63ae5a2d6956a26a70f7",
+        "sha256_in_prefix": "c34ee716588345e0b44ebb55d37a63be042d338096af63ae5a2d6956a26a70f7",
+        "size_in_bytes": 1287
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/sv/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "f877e2830989744087581dd7e8590bf0bafd8908c2ff4b546ebd6df5b4429d4c",
+        "sha256_in_prefix": "f877e2830989744087581dd7e8590bf0bafd8908c2ff4b546ebd6df5b4429d4c",
+        "size_in_bytes": 1112
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/sv/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "498c89f00c76fcc00761d4fb18e46c83811fcf14c2879c9c561150a7d53f7509",
+        "sha256_in_prefix": "498c89f00c76fcc00761d4fb18e46c83811fcf14c2879c9c561150a7d53f7509",
+        "size_in_bytes": 1191
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/ta/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "506c1bae07ffb0dc3b5ac39def131d7bc1bf488452f9afe881103e1be7d90844",
+        "sha256_in_prefix": "506c1bae07ffb0dc3b5ac39def131d7bc1bf488452f9afe881103e1be7d90844",
+        "size_in_bytes": 1110
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/ta/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "51243945138c391c21b3f417660f980d4e3767b44829d1c2de1d1774e881107c",
+        "sha256_in_prefix": "51243945138c391c21b3f417660f980d4e3767b44829d1c2de1d1774e881107c",
+        "size_in_bytes": 1189
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/tr/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "7429dc31c800cc869903e310da9fc96a71096216beb7bd8c09eed8de130b01ff",
+        "sha256_in_prefix": "7429dc31c800cc869903e310da9fc96a71096216beb7bd8c09eed8de130b01ff",
+        "size_in_bytes": 1111
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/tr/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "0fc761f1eea05ccb43e70199d0960193b8c4ccea2648df6a57993fb380518ed8",
+        "sha256_in_prefix": "0fc761f1eea05ccb43e70199d0960193b8c4ccea2648df6a57993fb380518ed8",
+        "size_in_bytes": 1190
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/uk_UA/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "a4cbfc352bcccece68edcd0bdf81ffaa3eb8bb3404f58d7bf17c4ea3fc9b91b5",
+        "sha256_in_prefix": "a4cbfc352bcccece68edcd0bdf81ffaa3eb8bb3404f58d7bf17c4ea3fc9b91b5",
+        "size_in_bytes": 1352
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/uk_UA/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "3198f2d3e2935880c2717adb9136dbb689cb587edd8dc4560302444ac46b81e2",
+        "sha256_in_prefix": "3198f2d3e2935880c2717adb9136dbb689cb587edd8dc4560302444ac46b81e2",
+        "size_in_bytes": 1431
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/vi/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "6b52c489818a2f566583745a11b4445f08ddf57be80211f52948f1cefbfa481d",
+        "sha256_in_prefix": "6b52c489818a2f566583745a11b4445f08ddf57be80211f52948f1cefbfa481d",
+        "size_in_bytes": 1108
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/vi/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "925616ee55df259223908ba923c43cd64fb50efcce953067098881629314a28d",
+        "sha256_in_prefix": "925616ee55df259223908ba923c43cd64fb50efcce953067098881629314a28d",
+        "size_in_bytes": 1187
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/zh_CN/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "998bc54a06011191852e406e313dd079e4cdadc2cc92c65ab2aa3c89b0095d5b",
+        "sha256_in_prefix": "998bc54a06011191852e406e313dd079e4cdadc2cc92c65ab2aa3c89b0095d5b",
+        "size_in_bytes": 1158
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/zh_CN/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "411c65ea624d0fa2ed4fcdfb6922ec1f5c2ac46c17f13f629edaef7f5be9cf2c",
+        "sha256_in_prefix": "411c65ea624d0fa2ed4fcdfb6922ec1f5c2ac46c17f13f629edaef7f5be9cf2c",
+        "size_in_bytes": 1637
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/zh_TW/LC_MESSAGES/sphinxcontrib.qthelp.mo",
+        "path_type": "hardlink",
+        "sha256": "2f913436a21a7e68bd7231ecae3e6dea2bcd9eacd77b57e0f27c5be4ad107d7e",
+        "sha256_in_prefix": "2f913436a21a7e68bd7231ecae3e6dea2bcd9eacd77b57e0f27c5be4ad107d7e",
+        "size_in_bytes": 1120
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/locales/zh_TW/LC_MESSAGES/sphinxcontrib.qthelp.po",
+        "path_type": "hardlink",
+        "sha256": "540bd6fa4c2e119e38ffe918d5bff04e81e52832ae58c61bf0151c9b5799f198",
+        "sha256_in_prefix": "540bd6fa4c2e119e38ffe918d5bff04e81e52832ae58c61bf0151c9b5799f198",
+        "size_in_bytes": 1199
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/templates/project.qhcp",
+        "path_type": "hardlink",
+        "sha256": "e679d599e00aa8fc5ede2c712a24f2e5dfa6224554b1ae0b91f5a2ffd988b783",
+        "sha256_in_prefix": "e679d599e00aa8fc5ede2c712a24f2e5dfa6224554b1ae0b91f5a2ffd988b783",
+        "size_in_bytes": 567
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/qthelp/templates/project.qhp",
+        "path_type": "hardlink",
+        "sha256": "92a6b5425bddc6017be1a78f94384725ed7f681d0eca77d83d6877a0eb2b6b38",
+        "sha256_in_prefix": "92a6b5425bddc6017be1a78f94384725ed7f681d0eca77d83d6877a0eb2b6b38",
+        "size_in_bytes": 863
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_qthelp-1.0.6.dist-info/INSTALLER",
+        "path_type": "hardlink",
+        "sha256": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "sha256_in_prefix": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "size_in_bytes": 5
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_qthelp-1.0.6.dist-info/LICENSE",
+        "path_type": "hardlink",
+        "sha256": "27b1953612e4740d49737ff7dfe12c11aa9151da8e7f4a8224b5247d07a37695",
+        "sha256_in_prefix": "27b1953612e4740d49737ff7dfe12c11aa9151da8e7f4a8224b5247d07a37695",
+        "size_in_bytes": 1435
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_qthelp-1.0.6.dist-info/METADATA",
+        "path_type": "hardlink",
+        "sha256": "75f93b365b06c0a32f4e6e4701ebf0a369683c5227dd6a9977da367e98d23806",
+        "sha256_in_prefix": "75f93b365b06c0a32f4e6e4701ebf0a369683c5227dd6a9977da367e98d23806",
+        "size_in_bytes": 2179
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_qthelp-1.0.6.dist-info/RECORD",
+        "path_type": "hardlink",
+        "sha256": "dbc9875ae04672dfa5067f6448448e2f36b68d8558c2bddd21b69d977bdb0582",
+        "sha256_in_prefix": "dbc9875ae04672dfa5067f6448448e2f36b68d8558c2bddd21b69d977bdb0582",
+        "size_in_bytes": 13273
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_qthelp-1.0.6.dist-info/REQUESTED",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256_in_prefix": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_qthelp-1.0.6.dist-info/WHEEL",
+        "path_type": "hardlink",
+        "sha256": "1196c6921ec87b83e865f450f08d19b8ff5592537f4ef719e83484e546abe33e",
+        "sha256_in_prefix": "1196c6921ec87b83e865f450f08d19b8ff5592537f4ef719e83484e546abe33e",
+        "size_in_bytes": 81
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_qthelp-1.0.6.dist-info/direct_url.json",
+        "path_type": "hardlink",
+        "sha256": "dcffc5dbf05e5c881f1c6020ce588249cf8b99de8bec3564adee14e707a0cdc4",
+        "sha256_in_prefix": "dcffc5dbf05e5c881f1c6020ce588249cf8b99de8bec3564adee14e707a0cdc4",
+        "size_in_bytes": 116
+      },
+      {
+        "_path": "lib/python3.10/site-packages/sphinxcontrib/qthelp/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "9ba5cea9cbab64106e8b5a9b19add855dcb52b8fbb1674398c715bccdbc04471",
+  "size": 26952,
+  "subdir": "noarch",
+  "timestamp": 1692039698081,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/noarch/sphinxcontrib-qthelp-1.0.6-pyhd8ed1ab_0.conda",
+  "version": "1.0.6"
+}

@@ -1,0 +1,202 @@
+{
+  "build": "h166bdaf_1003",
+  "build_number": 1003,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [],
+  "depends": [
+    "libgcc-ng >=12"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/lame-3.100-h166bdaf_1003",
+  "features": "",
+  "files": [
+    "bin/lame",
+    "include/lame/lame.h",
+    "lib/libmp3lame.a",
+    "lib/libmp3lame.so",
+    "lib/libmp3lame.so.0",
+    "lib/libmp3lame.so.0.0.0",
+    "share/doc/lame/html/about.html",
+    "share/doc/lame/html/abr.html",
+    "share/doc/lame/html/cbr.html",
+    "share/doc/lame/html/contact.html",
+    "share/doc/lame/html/contributors.html",
+    "share/doc/lame/html/detailed.html",
+    "share/doc/lame/html/history.html",
+    "share/doc/lame/html/index.html",
+    "share/doc/lame/html/introduction.html",
+    "share/doc/lame/html/links.html",
+    "share/doc/lame/html/list.html",
+    "share/doc/lame/html/ms_stereo.html",
+    "share/doc/lame/html/usage.html",
+    "share/doc/lame/html/vbr.html",
+    "share/man/man1/lame.1"
+  ],
+  "fn": "lame-3.100-h166bdaf_1003.tar.bz2",
+  "license": "LGPL-2.0-only",
+  "license_family": "LGPL",
+  "link": {
+    "source": "/opt/conda/pkgs/lame-3.100-h166bdaf_1003",
+    "type": 1
+  },
+  "md5": "a8832b479f93521a9e7b5b743803be51",
+  "name": "lame",
+  "package_tarball_full_path": "/opt/conda/pkgs/lame-3.100-h166bdaf_1003.tar.bz2",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "bin/lame",
+        "path_type": "hardlink",
+        "sha256": "e97a9dd8b02ad220670b2a57c1053d55dd4bef4c78b08deb7e777431efca2328",
+        "sha256_in_prefix": "e97a9dd8b02ad220670b2a57c1053d55dd4bef4c78b08deb7e777431efca2328",
+        "size_in_bytes": 383168
+      },
+      {
+        "_path": "include/lame/lame.h",
+        "path_type": "hardlink",
+        "sha256": "b30e4d3f5bb247bad2781758d90604f29cc44dd5bd79fee130aaef7c7d25bcf0",
+        "sha256_in_prefix": "b30e4d3f5bb247bad2781758d90604f29cc44dd5bd79fee130aaef7c7d25bcf0",
+        "size_in_bytes": 50053
+      },
+      {
+        "_path": "lib/libmp3lame.a",
+        "path_type": "hardlink",
+        "sha256": "290f0d7ef88e837967df7574fb23962392d4340fe3ace1ce019b6bb45d18343c",
+        "sha256_in_prefix": "290f0d7ef88e837967df7574fb23962392d4340fe3ace1ce019b6bb45d18343c",
+        "size_in_bytes": 538768
+      },
+      {
+        "_path": "lib/libmp3lame.so",
+        "path_type": "softlink",
+        "sha256": "ee71cd2b3a432a27d688117984acc673fe9d397812789daf4ffbbf8622aabd6f",
+        "size_in_bytes": 328552
+      },
+      {
+        "_path": "lib/libmp3lame.so.0",
+        "path_type": "softlink",
+        "sha256": "ee71cd2b3a432a27d688117984acc673fe9d397812789daf4ffbbf8622aabd6f",
+        "size_in_bytes": 328552
+      },
+      {
+        "_path": "lib/libmp3lame.so.0.0.0",
+        "path_type": "hardlink",
+        "sha256": "ee71cd2b3a432a27d688117984acc673fe9d397812789daf4ffbbf8622aabd6f",
+        "sha256_in_prefix": "ee71cd2b3a432a27d688117984acc673fe9d397812789daf4ffbbf8622aabd6f",
+        "size_in_bytes": 328552
+      },
+      {
+        "_path": "share/doc/lame/html/about.html",
+        "path_type": "hardlink",
+        "sha256": "171efcde38c81f48f83b044e8f0100205d3560eeb842a62a7b7578c5af4d1ce7",
+        "sha256_in_prefix": "171efcde38c81f48f83b044e8f0100205d3560eeb842a62a7b7578c5af4d1ce7",
+        "size_in_bytes": 5268
+      },
+      {
+        "_path": "share/doc/lame/html/abr.html",
+        "path_type": "hardlink",
+        "sha256": "f07c9c7ca7f95ea9e88a19ac3a4884a5a23d57631728a3ca1005a1fe6cc26f39",
+        "sha256_in_prefix": "f07c9c7ca7f95ea9e88a19ac3a4884a5a23d57631728a3ca1005a1fe6cc26f39",
+        "size_in_bytes": 4238
+      },
+      {
+        "_path": "share/doc/lame/html/cbr.html",
+        "path_type": "hardlink",
+        "sha256": "74c6683047701dad19ad688df92e351b8e260362e17edbdb33c4b5e3196ef672",
+        "sha256_in_prefix": "74c6683047701dad19ad688df92e351b8e260362e17edbdb33c4b5e3196ef672",
+        "size_in_bytes": 4542
+      },
+      {
+        "_path": "share/doc/lame/html/contact.html",
+        "path_type": "hardlink",
+        "sha256": "cea8aa1265624b49025321d4f331af66855ae5959819895046227f2cfaa21db3",
+        "sha256_in_prefix": "cea8aa1265624b49025321d4f331af66855ae5959819895046227f2cfaa21db3",
+        "size_in_bytes": 4394
+      },
+      {
+        "_path": "share/doc/lame/html/contributors.html",
+        "path_type": "hardlink",
+        "sha256": "d95de6177a11d8e9626ef1ce5a6aaa1903155b617674bb427c53146fe32d2693",
+        "sha256_in_prefix": "d95de6177a11d8e9626ef1ce5a6aaa1903155b617674bb427c53146fe32d2693",
+        "size_in_bytes": 5808
+      },
+      {
+        "_path": "share/doc/lame/html/detailed.html",
+        "path_type": "hardlink",
+        "sha256": "b7d79d1e5a8ffb576f3ca85b9071688a0a95263ec729863792a32104bf623706",
+        "sha256_in_prefix": "b7d79d1e5a8ffb576f3ca85b9071688a0a95263ec729863792a32104bf623706",
+        "size_in_bytes": 53795
+      },
+      {
+        "_path": "share/doc/lame/html/history.html",
+        "path_type": "hardlink",
+        "sha256": "9a0e569256aa5f76c14a45cf2877bc4a3f64526dd0b88333ad85aa1332fda69f",
+        "sha256_in_prefix": "9a0e569256aa5f76c14a45cf2877bc4a3f64526dd0b88333ad85aa1332fda69f",
+        "size_in_bytes": 104620
+      },
+      {
+        "_path": "share/doc/lame/html/index.html",
+        "path_type": "hardlink",
+        "sha256": "65c5837b67c97c2c71c929b53f7ae2e1547355f8a7d023c49e5dbe14155b1bfa",
+        "sha256_in_prefix": "65c5837b67c97c2c71c929b53f7ae2e1547355f8a7d023c49e5dbe14155b1bfa",
+        "size_in_bytes": 2825
+      },
+      {
+        "_path": "share/doc/lame/html/introduction.html",
+        "path_type": "hardlink",
+        "sha256": "e88c7d5d97223cf62faf40480c93e78ea4f0b09539b4edb0ec23bb901cc57625",
+        "sha256_in_prefix": "e88c7d5d97223cf62faf40480c93e78ea4f0b09539b4edb0ec23bb901cc57625",
+        "size_in_bytes": 7606
+      },
+      {
+        "_path": "share/doc/lame/html/links.html",
+        "path_type": "hardlink",
+        "sha256": "11124b10a2c8c3594797f75fd1188617bc9be79f1f37401b54eb5b450c3f9fd8",
+        "sha256_in_prefix": "11124b10a2c8c3594797f75fd1188617bc9be79f1f37401b54eb5b450c3f9fd8",
+        "size_in_bytes": 25832
+      },
+      {
+        "_path": "share/doc/lame/html/list.html",
+        "path_type": "hardlink",
+        "sha256": "59a02176eb827d1360ab49a6bd5d78e6fac75e1e0ab5fa25e09c3d5a76b74dfa",
+        "sha256_in_prefix": "59a02176eb827d1360ab49a6bd5d78e6fac75e1e0ab5fa25e09c3d5a76b74dfa",
+        "size_in_bytes": 2464
+      },
+      {
+        "_path": "share/doc/lame/html/ms_stereo.html",
+        "path_type": "hardlink",
+        "sha256": "65a8d6f7c7209c501ea000f81d4538052534b8790c51165e727590e5a84dc165",
+        "sha256_in_prefix": "65a8d6f7c7209c501ea000f81d4538052534b8790c51165e727590e5a84dc165",
+        "size_in_bytes": 5514
+      },
+      {
+        "_path": "share/doc/lame/html/usage.html",
+        "path_type": "hardlink",
+        "sha256": "5b2fc12907736b1b514d0b4ccdf6165038d12bea40d63f0fdb69d3bfceb9ccc8",
+        "sha256_in_prefix": "5b2fc12907736b1b514d0b4ccdf6165038d12bea40d63f0fdb69d3bfceb9ccc8",
+        "size_in_bytes": 5898
+      },
+      {
+        "_path": "share/doc/lame/html/vbr.html",
+        "path_type": "hardlink",
+        "sha256": "ce536abf2a399bb3cf6fbf6108f6149f27baa8f895ddced2fe798a729bbf84c4",
+        "sha256_in_prefix": "ce536abf2a399bb3cf6fbf6108f6149f27baa8f895ddced2fe798a729bbf84c4",
+        "size_in_bytes": 3339
+      },
+      {
+        "_path": "share/man/man1/lame.1",
+        "path_type": "hardlink",
+        "sha256": "2b21b5986f15a6451f8c15c11d0309db6c067978048d7bc8a4683246ace7aa55",
+        "sha256_in_prefix": "2b21b5986f15a6451f8c15c11d0309db6c067978048d7bc8a4683246ace7aa55",
+        "size_in_bytes": 28086
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "aad2a703b9d7b038c0f745b853c6bb5f122988fe1a7a096e0e606d9cbec4eaab",
+  "size": 508258,
+  "subdir": "linux-64",
+  "timestamp": 1664996250081,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/lame-3.100-h166bdaf_1003.tar.bz2",
+  "version": "3.100"
+}

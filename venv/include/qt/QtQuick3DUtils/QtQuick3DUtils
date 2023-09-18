@@ -1,0 +1,5 @@
+#ifndef QT_QTQUICK3DUTILS_MODULE_H
+#define QT_QTQUICK3DUTILS_MODULE_H
+#include <QtQuick3DUtils/QtQuick3DUtilsDepends>
+#include "qtquick3dutilsversion.h"
+#endif

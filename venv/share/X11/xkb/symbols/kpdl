@@ -1,0 +1,102 @@
+// The <KPDL> key is a mess.
+// It was probably originally meant to be a decimal separator.
+// Except since it was declared by USA people it didn't use the original
+// SI separator "," but a "." (since then the USA managed to f-up the SI
+// by making "." an accepted alternative, but standards still use "," as
+// default)
+// As a result users of SI-abiding countries expect either a "." or a ","
+// or a "decimal_separator" which may or may not be translated in one of the
+// above depending on applications.
+// It's not possible to define a default per-country since user expectations
+// depend on the conflicting choices of their most-used applications,
+// operating system, etc. Therefore it needs to be a configuration setting
+// Copyright © 2007 Nicolas Mailhot <nicolas.mailhot @ laposte.net>
+
+
+// Legacy <KPDL> #1
+// This assumes KP_Decimal will be translated in a dot
+partial keypad_keys
+xkb_symbols "dot" {
+
+    key.type[Group1]="KEYPAD" ;
+
+    key <KPDL> { [ KP_Delete, KP_Decimal ] }; // <delete> <separator>
+};
+
+
+// Legacy <KPDL> #2
+// This assumes KP_Separator will be translated in a comma
+partial keypad_keys
+xkb_symbols "comma" {
+
+    key.type[Group1]="KEYPAD" ;
+
+    key <KPDL> { [ KP_Delete, KP_Separator ] }; // <delete> <separator>
+};
+
+
+// Period <KPDL>, usual keyboard serigraphy in most countries
+partial keypad_keys
+xkb_symbols "dotoss" {
+
+    key.type[Group1]="FOUR_LEVEL_MIXED_KEYPAD" ;
+
+    key <KPDL> { [ KP_Delete, period, comma, 0x100202F ] }; // <delete> . , ⍽ (narrow no-break space)
+};
+
+
+// Period <KPDL>, usual keyboard serigraphy in most countries, latin-9 restriction
+partial keypad_keys
+xkb_symbols "dotoss_latin9" {
+
+    key.type[Group1]="FOUR_LEVEL_MIXED_KEYPAD" ;
+
+    key <KPDL> { [ KP_Delete, period, comma, nobreakspace ] }; // <delete> . , ⍽ (no-break space)
+};
+
+
+// Comma <KPDL>, what most non anglo-saxon people consider the real separator
+partial keypad_keys
+xkb_symbols "commaoss" {
+
+    key.type[Group1]="FOUR_LEVEL_MIXED_KEYPAD" ;
+
+    key <KPDL> { [ KP_Delete, comma, period, 0x100202F ] }; // <delete> , . ⍽ (narrow no-break space)
+};
+
+
+// Momayyez <KPDL>: Bahrain, Iran, Iraq, Kuwait, Oman, Qatar, Saudi Arabia, Syria, UAE
+partial keypad_keys
+xkb_symbols "momayyezoss" {
+
+    key.type[Group1]="FOUR_LEVEL_MIXED_KEYPAD" ;
+
+    key <KPDL> { [ KP_Delete, 0x100066B, comma, 0x100202F ] }; // <delete> ? , ⍽ (narrow no-break space)
+};
+
+
+// Abstracted <KPDL>, pray everything will work out (it usually does not)
+partial keypad_keys
+xkb_symbols "kposs" {
+
+    key.type[Group1]="FOUR_LEVEL_MIXED_KEYPAD" ;
+
+    key <KPDL> { [ KP_Delete, KP_Decimal, KP_Separator, 0x100202F ] }; // <delete> ? ? ⍽ (narrow no-break space)
+};
+
+// Spreadsheets may be configured to use the dot as decimal
+// punctuation, comma as a thousands separator and then semi-colon as
+// the list separator. Of these, dot and semi-colon is most important
+// when entering data by the keyboard; the comma can then be inferred
+// and added to the presentation afterwards. Using semi-colon as a
+// general separator may in fact be preferred to avoid ambiguities
+// in data files. Most times a decimal separator is hard-coded, it
+// seems to be period, probably since this is the syntax used in
+// (most) programming languages.
+partial keypad_keys
+xkb_symbols "semi" {
+
+    key.type[Group1]="FOUR_LEVEL_MIXED_KEYPAD" ;
+
+    key <KPDL> { [ NoSymbol, NoSymbol, semicolon ] };
+};

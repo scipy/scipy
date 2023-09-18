@@ -1,0 +1,483 @@
+<!-- Creator     : groff version 1.22.3 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>XGETTEXT</title>
+
+</head>
+<body>
+
+<h1 align="center">XGETTEXT</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+<a href="#REPORTING BUGS">REPORTING BUGS</a><br>
+<a href="#COPYRIGHT">COPYRIGHT</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">xgettext
+- extract gettext strings from source</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>xgettext</b>
+[<i>OPTION</i>] [<i>INPUTFILE</i>]...</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Extract
+translatable strings from given input files.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Mandatory
+arguments to long options are mandatory for short options
+too. Similarly for optional arguments.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Input file
+location:</b> <br>
+INPUTFILE ...</p>
+
+<p style="margin-left:22%;">input files</p>
+
+<p style="margin-left:11%;"><b>-f</b>,
+<b>--files-from</b>=<i>FILE</i></p>
+
+<p style="margin-left:22%;">get list of input files from
+FILE</p>
+
+<p style="margin-left:11%;"><b>-D</b>,
+<b>--directory</b>=<i>DIRECTORY</i></p>
+
+<p style="margin-left:22%;">add DIRECTORY to list for input
+files search</p>
+
+<p style="margin-left:11%; margin-top: 1em">If input file
+is -, standard input is read.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Output file
+location: <br>
+-d</b>,
+<b>--default-domain</b>=<i>NAME</i></p>
+
+<p style="margin-left:22%;">use NAME.po for output (instead
+of messages.po)</p>
+
+<p style="margin-left:11%;"><b>-o</b>,
+<b>--output</b>=<i>FILE</i></p>
+
+<p style="margin-left:22%;">write output to specified
+file</p>
+
+<p style="margin-left:11%;"><b>-p</b>,
+<b>--output-dir</b>=<i>DIR</i></p>
+
+<p style="margin-left:22%;">output files will be placed in
+directory DIR</p>
+
+<p style="margin-left:11%; margin-top: 1em">If output file
+is -, output is written to standard output.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Choice of
+input file language: <br>
+-L</b>, <b>--language</b>=<i>NAME</i></p>
+
+<p style="margin-left:22%;">recognise the specified
+language (C, C++, ObjectiveC, PO, Shell, Python, Lisp,
+EmacsLisp, librep, Scheme, Smalltalk, Java, JavaProperties,
+C#, awk, YCP, Tcl, Perl, PHP, Ruby, GCC-source,
+NXStringTable, RST, RSJ, Glade, Lua, JavaScript, Vala,
+Desktop)</p>
+
+<p style="margin-left:11%;"><b>-C</b>,
+<b>--c</b>++</p>
+
+<p style="margin-left:22%;">shorthand for
+<b>--language</b>=<i>C</i>++</p>
+
+<p style="margin-left:11%; margin-top: 1em">By default the
+language is guessed depending on the input file name
+extension.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Input file
+interpretation: <br>
+--from-code</b>=<i>NAME</i></p>
+
+<p style="margin-left:22%;">encoding of input files (except
+for Python, Tcl, Glade)</p>
+
+<p style="margin-left:11%; margin-top: 1em">By default the
+input files are assumed to be in ASCII.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Operation
+mode: <br>
+-j</b>, <b>--join-existing</b></p>
+
+<p style="margin-left:22%;">join messages with existing
+file</p>
+
+<p style="margin-left:11%;"><b>-x</b>,
+<b>--exclude-file</b>=<i>FILE</i>.po</p>
+
+<p style="margin-left:22%;">entries from FILE.po are not
+extracted</p>
+
+<p style="margin-left:11%;"><b>-cTAG</b>,
+<b>--add-comments</b>=<i>TAG</i></p>
+
+<p style="margin-left:22%;">place comment blocks starting
+with TAG and preceding keyword lines in output file</p>
+
+<p style="margin-left:11%;"><b>-c</b>,
+<b>--add-comments</b></p>
+
+<p style="margin-left:22%;">place all comment blocks
+preceding keyword lines in output file</p>
+
+
+<p style="margin-left:11%;"><b>--check</b>=<i>NAME</i></p>
+
+<p style="margin-left:22%;">perform syntax check on
+messages (ellipsis-unicode, space-ellipsis,</p>
+
+
+<p style="margin-left:22%; margin-top: 1em">quote-unicode,
+bullet-unicode)</p>
+
+
+<p style="margin-left:11%;"><b>--sentence-end</b>=<i>TYPE</i></p>
+
+<p style="margin-left:22%;">type describing the end of
+sentence (single-space, which is the default,</p>
+
+<p style="margin-left:22%; margin-top: 1em">or
+double-space)</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Language
+specific options: <br>
+-a</b>, <b>--extract-all</b></p>
+
+<p style="margin-left:22%;">extract all strings (only
+languages C, C++, ObjectiveC, Shell, Python, Lisp,
+EmacsLisp, librep, Scheme, Java, C#, awk, Tcl, Perl, PHP,
+GCC-source, Glade, Lua, JavaScript, Vala)</p>
+
+<p style="margin-left:11%;"><b>-kWORD</b>,
+<b>--keyword</b>=<i>WORD</i></p>
+
+<p style="margin-left:22%;">look for WORD as an additional
+keyword</p>
+
+<p style="margin-left:11%;"><b>-k</b>,
+<b>--keyword</b></p>
+
+<p style="margin-left:22%;">do not to use default keywords
+(only languages C, C++, ObjectiveC, Shell, Python, Lisp,
+EmacsLisp, librep, Scheme, Java, C#, awk, Tcl, Perl, PHP,
+GCC-source, Glade, Lua, JavaScript, Vala, Desktop)</p>
+
+
+<p style="margin-left:11%;"><b>--flag</b>=<i>WORD</i>:ARG:FLAG</p>
+
+<p style="margin-left:22%;">additional flag for strings
+inside the argument number ARG of keyword WORD</p>
+
+<p style="margin-left:11%;">(only languages C, C++,
+ObjectiveC, Shell,</p>
+
+<p style="margin-left:22%;">Python, Lisp, EmacsLisp,
+librep, Scheme, Java, C#, awk, YCP, Tcl, Perl, PHP,
+GCC-source, Lua, JavaScript, Vala)</p>
+
+<p style="margin-left:11%;"><b>-T</b>,
+<b>--trigraphs</b></p>
+
+<p style="margin-left:22%;">understand ANSI C trigraphs for
+input (only languages C, C++, ObjectiveC)</p>
+
+
+<p style="margin-left:11%;"><b>--its</b>=<i>FILE</i></p>
+
+<p style="margin-left:22%;">apply ITS rules from FILE (only
+XML based languages)</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p><b>--qt</b></p></td>
+<td width="4%"></td>
+<td width="76%">
+
+
+<p>recognize Qt format strings (only language C++)</p></td>
+<td width="2%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p><b>--kde</b></p></td>
+<td width="4%"></td>
+<td width="76%">
+
+
+<p>recognize KDE 4 format strings (only language C++)</p></td>
+<td width="2%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>--boost</b></p>
+
+<p style="margin-left:22%;">recognize Boost format strings
+(only language C++)</p>
+
+<p style="margin-left:11%;"><b>--debug</b></p>
+
+<p style="margin-left:22%;">more detailed formatstring
+recognition result</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Output
+details: <br>
+--color</b></p>
+
+<p style="margin-left:22%;">use colors and other text
+attributes always</p>
+
+
+<p style="margin-left:11%;"><b>--color</b>=<i>WHEN</i></p>
+
+<p style="margin-left:22%;">use colors and other text
+attributes if WHEN. WHEN may be &rsquo;always&rsquo;,
+&rsquo;never&rsquo;, &rsquo;auto&rsquo;, or
+&rsquo;html&rsquo;.</p>
+
+
+<p style="margin-left:11%;"><b>--style</b>=<i>STYLEFILE</i></p>
+
+<p style="margin-left:22%;">specify CSS style rule file for
+<b>--color</b></p>
+
+<p style="margin-left:11%;"><b>-e</b>,
+<b>--no-escape</b></p>
+
+<p style="margin-left:22%;">do not use C escapes in output
+(default)</p>
+
+<p style="margin-left:11%;"><b>-E</b>,
+<b>--escape</b></p>
+
+<p style="margin-left:22%;">use C escapes in output, no
+extended chars</p>
+
+
+<p style="margin-left:11%;"><b>--force-po</b></p>
+
+<p style="margin-left:22%;">write PO file even if empty</p>
+
+<p style="margin-left:11%;"><b>-i</b>,
+<b>--indent</b></p>
+
+<p style="margin-left:22%;">write the .po file using
+indented style</p>
+
+
+<p style="margin-left:11%;"><b>--no-location</b></p>
+
+<p style="margin-left:22%;">do not write &rsquo;#:
+filename:line&rsquo; lines</p>
+
+<p style="margin-left:11%;"><b>-n</b>,
+<b>--add-location</b></p>
+
+<p style="margin-left:22%;">generate &rsquo;#:
+filename:line&rsquo; lines (default)</p>
+
+
+<p style="margin-left:11%;"><b>--strict</b></p>
+
+<p style="margin-left:22%;">write out strict Uniforum
+conforming .po file</p>
+
+
+<p style="margin-left:11%;"><b>--properties-output</b></p>
+
+<p style="margin-left:22%;">write out a Java .properties
+file</p>
+
+
+<p style="margin-left:11%;"><b>--stringtable-output</b></p>
+
+<p style="margin-left:22%;">write out a NeXTstep/GNUstep
+.strings file</p>
+
+
+<p style="margin-left:11%;"><b>--itstool</b></p>
+
+<p style="margin-left:22%;">write out itstool comments</p>
+
+<p style="margin-left:11%;"><b>-w</b>,
+<b>--width</b>=<i>NUMBER</i></p>
+
+<p style="margin-left:22%;">set output page width</p>
+
+
+<p style="margin-left:11%;"><b>--no-wrap</b></p>
+
+<p style="margin-left:22%;">do not break long message
+lines, longer than the output page width, into several
+lines</p>
+
+<p style="margin-left:11%;"><b>-s</b>,
+<b>--sort-output</b></p>
+
+<p style="margin-left:22%;">generate sorted output</p>
+
+<p style="margin-left:11%;"><b>-F</b>,
+<b>--sort-by-file</b></p>
+
+<p style="margin-left:22%;">sort output by file
+location</p>
+
+
+<p style="margin-left:11%;"><b>--omit-header</b></p>
+
+<p style="margin-left:22%;">don&rsquo;t write header with
+&rsquo;msgid &quot;&quot;&rsquo; entry</p>
+
+
+<p style="margin-left:11%;"><b>--copyright-holder</b>=<i>STRING</i></p>
+
+<p style="margin-left:22%;">set copyright holder in
+output</p>
+
+
+<p style="margin-left:11%;"><b>--foreign-user</b></p>
+
+<p style="margin-left:22%;">omit FSF copyright in output
+for foreign user</p>
+
+
+<p style="margin-left:11%;"><b>--package-name</b>=<i>PACKAGE</i></p>
+
+<p style="margin-left:22%;">set package name in output</p>
+
+
+<p style="margin-left:11%;"><b>--package-version</b>=<i>VERSION</i></p>
+
+<p style="margin-left:22%;">set package version in
+output</p>
+
+
+<p style="margin-left:11%;"><b>--msgid-bugs-address</b>=<i>EMAIL</i>@ADDRESS</p>
+
+<p style="margin-left:22%;">set report address for msgid
+bugs</p>
+
+<p style="margin-left:11%;"><b>-m[STRING]</b>,
+<b>--msgstr-prefix</b>[=<i>STRING</i>]</p>
+
+<p style="margin-left:22%;">use STRING or &quot;&quot; as
+prefix for msgstr values</p>
+
+<p style="margin-left:11%;"><b>-M[STRING]</b>,
+<b>--msgstr-suffix</b>[=<i>STRING</i>]</p>
+
+<p style="margin-left:22%;">use STRING or &quot;&quot; as
+suffix for msgstr values</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Informative
+output: <br>
+-h</b>, <b>--help</b></p>
+
+<p style="margin-left:22%;">display this help and exit</p>
+
+<p style="margin-left:11%;"><b>-V</b>,
+<b>--version</b></p>
+
+<p style="margin-left:22%;">output version information and
+exit</p>
+
+<p style="margin-left:11%;"><b>-v</b>,
+<b>--verbose</b></p>
+
+<p style="margin-left:22%;">increase verbosity level</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Written by
+Ulrich Drepper.</p>
+
+<h2>REPORTING BUGS
+<a name="REPORTING BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Report bugs in
+the bug tracker at
+&lt;https://savannah.gnu.org/projects/gettext&gt; or by
+email to &lt;bug-gettext@gnu.org&gt;.</p>
+
+<h2>COPYRIGHT
+<a name="COPYRIGHT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Copyright
+&copy; 1995-2022 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later
+&lt;https://gnu.org/licenses/gpl.html&gt; <br>
+This is free software: you are free to change and
+redistribute it. There is NO WARRANTY, to the extent
+permitted by law.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The full
+documentation for <b>xgettext</b> is maintained as a Texinfo
+manual. If the <b>info</b> and <b>xgettext</b> programs are
+properly installed at your site, the command</p>
+
+<p style="margin-left:22%; margin-top: 1em"><b>info
+xgettext</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">should give you
+access to the complete manual.</p>
+<hr>
+</body>
+</html>

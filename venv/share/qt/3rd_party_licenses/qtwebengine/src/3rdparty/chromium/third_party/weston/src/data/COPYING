@@ -1,0 +1,55 @@
+For the DMZ cursors:
+
+(c) 2007-2010 Novell, Inc.
+
+This work is licenced under the Creative Commons Attribution-Share Alike 3.0
+United States License. To view a copy of this licence, visit
+http://creativecommons.org/licenses/by-sa/3.0/ or send a letter to Creative
+Commons, 171 Second Street, Suite 300, San Francisco, California 94105, USA.
+
+The terminal icon is taken from the gnome-icon-theme collection which
+is also distributed under the Creative Commons BY-SA 3.0 license.
+
+
+(C) 2013 DENSO CORPORATION
+
+Permission to use, copy, modify, distribute, and sell following listed images
+for any purpose is hereby granted without fee, provided
+that the above copyright notice appear in all copies and that both that
+copyright notice and this permission notice appear in supporting
+documentation, and that the name of the copyright holders not be used in
+advertising or publicity pertaining to distribution of the images
+without specific, written prior permission.  The copyright holders make
+no representations about the suitability of these images for any
+purpose.  It is provided "as is" without express or implied warranty.
+
+background.png
+tiling.png
+fullscreen.png
+panel.png
+random.png
+sidebyside.png
+home.png
+icon_ivi_clickdot.png
+icon_ivi_flower.png
+icon_ivi_simple-egl.png
+icon_ivi_simple-shm.png
+icon_ivi_smoke.png
+
+
+For the SVG icons:
+
+© 2016 Samsung Electronics Co., Ltd
+
+This work is dual-licenced under both the MIT "Expat" License and the
+Creative Commons Attribution-Share Alike 3.0 United States License, and
+may be redistributed under either (or both) licenses as desired.  See
+Weston's COPYING for details of the MIT license.  To view a copy of the
+CC-SA-3.0 licence, visit http://creativecommons.org/licenses/by-sa/3.0/
+or send a letter to Creative Commons, 171 Second Street, Suite 300, San
+Francisco, California 94105, USA.
+
+icons.svg
+icon_terminal.png
+icon_editor.png
+icon_flower.png

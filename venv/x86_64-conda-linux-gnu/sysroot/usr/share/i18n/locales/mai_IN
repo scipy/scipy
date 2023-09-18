@@ -1,0 +1,84 @@
+comment_char    %
+escape_char     /
+% Maithili language locale for India.
+% Contributed by Rajesh Ranjan <rajeshkajha@yahoo.com> and
+% Sangeeta Kumari <sangeeta09@gmail.com>.
+
+LC_IDENTIFICATION
+title      "Maithili language locale for India"
+source     "Maithili Computing Research Center, Pune, India"
+address    "B-3/302, Lunkad Daffodills, Viman Nagar, Pune, India"
+contact    ""
+email      "rajeshkajha@yahoo.com"
+tel        ""
+fax        ""
+language   "Maithili"
+territory  "India"
+revision   "1.0"
+date       "2006-11-01"
+%
+category  "mai_IN:2006";LC_IDENTIFICATION
+category  "mai_IN:2006";LC_CTYPE
+category  "mai_IN:2006";LC_COLLATE
+category  "mai_IN:2006";LC_TIME
+category  "mai_IN:2006";LC_NUMERIC
+category  "mai_IN:2006";LC_MONETARY
+category  "mai_IN:2006";LC_MESSAGES
+category  "mai_IN:2006";LC_PAPER
+category  "mai_IN:2006";LC_NAME
+category  "mai_IN:2006";LC_ADDRESS
+category  "mai_IN:2006";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_CTYPE
+copy "hi_IN"
+END LC_CTYPE
+
+LC_COLLATE
+copy "hi_IN"
+END LC_COLLATE
+
+LC_MONETARY
+copy "hi_IN"
+END LC_MONETARY
+
+
+LC_NUMERIC
+copy "hi_IN"
+END LC_NUMERIC
+
+
+LC_TIME
+copy "hi_IN"
+END LC_TIME
+
+
+LC_MESSAGES
+copy "hi_IN"
+END LC_MESSAGES
+
+
+LC_PAPER
+copy "hi_IN"
+END LC_PAPER
+
+
+LC_NAME
+copy "hi_IN"
+END LC_NAME
+
+
+LC_ADDRESS
+copy "hi_IN"
+END LC_ADDRESS
+
+
+LC_TELEPHONE
+copy "hi_IN"
+END LC_TELEPHONE
+
+
+LC_MEASUREMENT
+copy "hi_IN"
+END LC_MEASUREMENT

@@ -1,0 +1,147 @@
+#!/bin/sh
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+prefix=/workspaces/scipy/venv
+
+major_version=4
+minor_version=35
+patch_version=0
+
+usage()
+{
+	cat <<EOF
+Usage: nspr-config [OPTIONS] [LIBRARIES]
+Options:
+	[--prefix[=DIR]]
+	[--exec-prefix[=DIR]]
+	[--includedir[=DIR]]
+	[--libdir[=DIR]]
+	[--version]
+	[--libs]
+	[--cflags]
+Libraries:
+	nspr
+	plc
+	plds
+EOF
+	exit $1
+}
+
+if test $# -eq 0; then
+	usage 1 1>&2
+fi
+
+lib_nspr=yes
+lib_plc=yes
+lib_plds=yes
+
+while test $# -gt 0; do
+  case "$1" in
+  -*=*) optarg=`echo "$1" | sed 's/[-_a-zA-Z0-9]*=//'` ;;
+  *) optarg= ;;
+  esac
+
+  case $1 in
+    --prefix=*)
+      prefix=$optarg
+      ;;
+    --prefix)
+      echo_prefix=yes
+      ;;
+    --exec-prefix=*)
+      exec_prefix=$optarg
+      ;;
+    --exec-prefix)
+      echo_exec_prefix=yes
+      ;;
+    --includedir=*)
+      includedir=$optarg
+      ;;
+    --includedir)
+      echo_includedir=yes
+      ;;
+    --libdir=*)
+      libdir=$optarg
+      ;;
+    --libdir)
+      echo_libdir=yes
+      ;;
+    --version)
+      echo ${major_version}.${minor_version}.${patch_version}
+      ;;
+    --cflags)
+      echo_cflags=yes
+      ;;
+    --libs)
+      echo_libs=yes
+      ;;
+    nspr)
+      lib_nspr=yes
+      ;;
+    plc)
+      lib_plc=yes
+      ;;
+    plds)
+      lib_plds=yes
+      ;;
+    *)
+      usage 1 1>&2
+      ;;
+  esac
+  shift
+done
+
+# Set variables that may be dependent upon other variables
+if test -z "$exec_prefix"; then
+    exec_prefix=${prefix}
+fi
+if test -z "$includedir"; then
+    includedir=${prefix}/include/nspr
+fi
+if test -z "$libdir"; then
+    libdir=${exec_prefix}/lib
+fi
+
+if test "$echo_prefix" = "yes"; then
+    echo $prefix
+fi
+
+if test "$echo_exec_prefix" = "yes"; then
+    echo $exec_prefix
+fi
+
+if test "$echo_includedir" = "yes"; then
+    echo $includedir
+fi
+
+if test "$echo_libdir" = "yes"; then
+    echo $libdir
+fi
+
+if test "$echo_cflags" = "yes"; then
+    echo -I$includedir
+fi
+
+if test "$echo_libs" = "yes"; then
+      libdirs=-L$libdir
+      if test -n "$lib_plds"; then
+	libdirs="$libdirs -lplds${major_version}"
+      fi
+      if test -n "$lib_plc"; then
+	libdirs="$libdirs -lplc${major_version}"
+      fi
+      if test -n "$lib_nspr"; then
+	libdirs="$libdirs -lnspr${major_version}"
+      fi
+      os_ldflags="-Wl,-O2 -Wl,--sort-common -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -Wl,--disable-new-dtags -Wl,--gc-sections -Wl,--allow-shlib-undefined -Wl,-rpath,/workspaces/scipy/venv/lib -Wl,-rpath-link,/workspaces/scipy/venv/lib -L/workspaces/scipy/venv/lib"
+      for i in $os_ldflags ; do
+	if echo $i | grep \^-L >/dev/null; then
+	  libdirs="$libdirs $i"
+        fi
+      done
+      echo $libdirs -lpthread -ldl 
+fi      
+

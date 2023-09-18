@@ -1,0 +1,815 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html401/loose.dtd">
+<html>
+<!-- Created on October, 9 2022 by texi2html 1.78a -->
+<!--
+Written by: Lionel Cons <Lionel.Cons@cern.ch> (original author)
+            Karl Berry  <karl@freefriends.org>
+            Olaf Bachmann <obachman@mathematik.uni-kl.de>
+            and many others.
+Maintained by: Many creative people.
+Send bugs and suggestions to <texi2html-bug@nongnu.org>
+
+-->
+<head>
+<title>GNU gettext utilities: 5. Making the PO Template File</title>
+
+<meta name="description" content="GNU gettext utilities: 5. Making the PO Template File">
+<meta name="keywords" content="GNU gettext utilities: 5. Making the PO Template File">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="texi2html 1.78a">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+pre.display {font-family: serif}
+pre.format {font-family: serif}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: serif; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: serif; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.roman {font-family:serif; font-weight:normal;}
+span.sansserif {font-family:sans-serif; font-weight:normal;}
+ul.toc {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="gettext_4.html#SEC17" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="gettext_6.html#SEC44" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_21.html#SEC387" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+
+<hr size="2">
+<a name="Template"></a>
+<a name="SEC34"></a>
+<h1 class="chapter"> <a href="gettext_toc.html#TOC28">5. Making the PO Template File</a> </h1>
+
+<p>After preparing the sources, the programmer creates a PO template file.
+This section explains how to use <code>xgettext</code> for this purpose.
+</p>
+<p><code>xgettext</code> creates a file named &lsquo;<tt><var>domainname</var>.po</tt>&rsquo;.  You
+should then rename it to &lsquo;<tt><var>domainname</var>.pot</tt>&rsquo;.  (Why doesn't
+<code>xgettext</code> create it under the name &lsquo;<tt><var>domainname</var>.pot</tt>&rsquo;
+right away?  The answer is: for historical reasons.  When <code>xgettext</code>
+was specified, the distinction between a PO file and PO file template
+was fuzzy, and the suffix &lsquo;<samp>.pot</samp>&rsquo; wasn't in use at that time.)
+</p>
+
+
+
+<a name="xgettext-Invocation"></a>
+<a name="SEC35"></a>
+<h2 class="section"> <a href="gettext_toc.html#TOC29">5.1 Invoking the <code>xgettext</code> Program</a> </h2>
+
+
+<table><tr><td>&nbsp;</td><td><pre class="example">xgettext [<var>option</var>] [<var>inputfile</var>] &hellip;
+</pre></td></tr></table>
+
+<p>The <code>xgettext</code> program extracts translatable strings from given
+input files.
+</p>
+
+<a name="SEC36"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC30">5.1.1 Input file location</a> </h3>
+
+<dl compact="compact">
+<dt> &lsquo;<samp><var>inputfile</var> &hellip;</samp>&rsquo;</dt>
+<dd><p>Input files.
+</p>
+</dd>
+<dt> &lsquo;<samp>-f <var>file</var></samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--files-from=<var>file</var></samp>&rsquo;</dt>
+<dd><a name="IDX140"></a>
+<a name="IDX141"></a>
+<p>Read the names of the input files from <var>file</var> instead of getting
+them from the command line.
+</p>
+</dd>
+<dt> &lsquo;<samp>-D <var>directory</var></samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--directory=<var>directory</var></samp>&rsquo;</dt>
+<dd><a name="IDX142"></a>
+<a name="IDX143"></a>
+<p>Add <var>directory</var> to the list of directories.  Source files are
+searched relative to this list of directories.  The resulting &lsquo;<tt>.po</tt>&rsquo;
+file will be written relative to the current directory, though.
+</p>
+</dd>
+</dl>
+
+<p>If <var>inputfile</var> is &lsquo;<samp>-</samp>&rsquo;, standard input is read.
+</p>
+
+<a name="SEC37"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC31">5.1.2 Output file location</a> </h3>
+
+<dl compact="compact">
+<dt> &lsquo;<samp>-d <var>name</var></samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--default-domain=<var>name</var></samp>&rsquo;</dt>
+<dd><a name="IDX144"></a>
+<a name="IDX145"></a>
+<p>Use &lsquo;<tt><var>name</var>.po</tt>&rsquo; for output (instead of &lsquo;<tt>messages.po</tt>&rsquo;).
+</p>
+</dd>
+<dt> &lsquo;<samp>-o <var>file</var></samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--output=<var>file</var></samp>&rsquo;</dt>
+<dd><a name="IDX146"></a>
+<a name="IDX147"></a>
+<p>Write output to specified file (instead of &lsquo;<tt><var>name</var>.po</tt>&rsquo; or
+&lsquo;<tt>messages.po</tt>&rsquo;).
+</p>
+</dd>
+<dt> &lsquo;<samp>-p <var>dir</var></samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--output-dir=<var>dir</var></samp>&rsquo;</dt>
+<dd><a name="IDX148"></a>
+<a name="IDX149"></a>
+<p>Output files will be placed in directory <var>dir</var>.
+</p>
+</dd>
+</dl>
+
+<a name="IDX150"></a>
+<p>If the output <var>file</var> is &lsquo;<samp>-</samp>&rsquo; or &lsquo;<samp>/dev/stdout</samp>&rsquo;, the output
+is written to standard output.
+</p>
+
+<a name="SEC38"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC32">5.1.3 Choice of input file language</a> </h3>
+
+<dl compact="compact">
+<dt> &lsquo;<samp>-L <var>name</var></samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--language=<var>name</var></samp>&rsquo;</dt>
+<dd><a name="IDX151"></a>
+<a name="IDX152"></a>
+<a name="IDX153"></a>
+<p>Specifies the language of the input files.  The supported languages
+are <code>C</code>, <code>C++</code>, <code>ObjectiveC</code>, <code>PO</code>, <code>Shell</code>,
+<code>Python</code>, <code>Lisp</code>, <code>EmacsLisp</code>, <code>librep</code>, <code>Scheme</code>,
+<code>Smalltalk</code>, <code>Java</code>, <code>JavaProperties</code>, <code>C#</code>, <code>awk</code>,
+<code>YCP</code>, <code>Tcl</code>, <code>Perl</code>, <code>PHP</code>, <code>Ruby</code>,
+<code>GCC-source</code>, <code>NXStringTable</code>, <code>RST</code>, <code>RSJ</code>, <code>Glade</code>,
+<code>Lua</code>, <code>JavaScript</code>, <code>Vala</code>, <code>GSettings</code>, <code>Desktop</code>.
+</p>
+</dd>
+<dt> &lsquo;<samp>-C</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--c++</samp>&rsquo;</dt>
+<dd><a name="IDX154"></a>
+<a name="IDX155"></a>
+<p>This is a shorthand for <code>--language=C++</code>.
+</p>
+</dd>
+</dl>
+
+<p>By default the language is guessed depending on the input file name
+extension.
+</p>
+
+<a name="SEC39"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC33">5.1.4 Input file interpretation</a> </h3>
+
+<dl compact="compact">
+<dt> &lsquo;<samp>--from-code=<var>name</var></samp>&rsquo;</dt>
+<dd><a name="IDX156"></a>
+<p>Specifies the encoding of the input files.  This option is needed only
+if some untranslated message strings or their corresponding comments
+contain non-ASCII characters.  Note that Tcl and Glade input files are
+always assumed to be in UTF-8, regardless of this option.
+</p>
+</dd>
+</dl>
+
+<p>By default the input files are assumed to be in ASCII.
+</p>
+
+<a name="SEC40"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC34">5.1.5 Operation mode</a> </h3>
+
+<dl compact="compact">
+<dt> &lsquo;<samp>-j</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--join-existing</samp>&rsquo;</dt>
+<dd><a name="IDX157"></a>
+<a name="IDX158"></a>
+<p>Join messages with existing file.
+</p>
+</dd>
+<dt> &lsquo;<samp>-x <var>file</var></samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--exclude-file=<var>file</var></samp>&rsquo;</dt>
+<dd><a name="IDX159"></a>
+<a name="IDX160"></a>
+<p>Entries from <var>file</var> are not extracted.  <var>file</var> should be a PO or
+POT file.
+</p>
+</dd>
+<dt> &lsquo;<samp>-c[<var>tag</var>]</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--add-comments[=<var>tag</var>]</samp>&rsquo;</dt>
+<dd><a name="IDX161"></a>
+<a name="IDX162"></a>
+<p>Place comment blocks starting with <var>tag</var> and preceding keyword lines
+in the output file.  Without a <var>tag</var>, the option means to put <em>all</em>
+comment blocks preceding keyword lines in the output file.
+</p>
+<p>Note that comment blocks supposed to be extracted must be adjacent to
+keyword lines.  For example, in the following C source code:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">/* This is the first comment.  */
+gettext (&quot;foo&quot;);
+
+/* This is the second comment: not extracted  */
+gettext (
+  &quot;bar&quot;);
+
+gettext (
+  /* This is the third comment.  */
+  &quot;baz&quot;);
+</pre></td></tr></table>
+
+<p>The second comment line will not be extracted, because there is one
+blank line between the comment line and the keyword.
+</p>
+</dd>
+<dt> &lsquo;<samp>--check[=<var>CHECK</var>]</samp>&rsquo;</dt>
+<dd><a name="IDX163"></a>
+<a name="IDX164"></a>
+<p>Perform a syntax check on msgid and msgid_plural.  The supported checks
+are:
+</p>
+<dl compact="compact">
+<dt> &lsquo;<samp>ellipsis-unicode</samp>&rsquo;</dt>
+<dd><p>Prefer Unicode ellipsis character over ASCII <code>...</code>
+</p>
+</dd>
+<dt> &lsquo;<samp>space-ellipsis</samp>&rsquo;</dt>
+<dd><p>Prohibit whitespace before an ellipsis character
+</p>
+</dd>
+<dt> &lsquo;<samp>quote-unicode</samp>&rsquo;</dt>
+<dd><p>Prefer Unicode quotation marks over ASCII <code>&quot;'`</code>
+</p>
+</dd>
+<dt> &lsquo;<samp>bullet-unicode</samp>&rsquo;</dt>
+<dd><p>Prefer Unicode bullet character over ASCII <code>*</code> or <code>-</code>
+</p>
+</dd>
+</dl>
+
+<p>The option has an effect on all input files.  To enable or disable
+checks for a certain string, you can mark it with an <code>xgettext:</code>
+special comment in the source file.  For example, if you specify the
+<code>--check=space-ellipsis</code> option, but want to suppress the check on
+a particular string, add the following comment:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">/* xgettext: no-space-ellipsis-check */
+gettext (&quot;We really want a space before ellipsis here ...&quot;);
+</pre></td></tr></table>
+
+<p>The <code>xgettext:</code> comment can be followed by flags separated with a
+comma.  The possible flags are of the form &lsquo;<samp>[no-]<var>name</var>-check</samp>&rsquo;,
+where <var>name</var> is the name of a valid syntax check.  If a flag is
+prefixed by <code>no-</code>, the meaning is negated.
+</p>
+<p>Some tests apply the checks to each sentence within the msgid, rather
+than the whole string.  xgettext detects the end of sentence by
+performing a pattern match, which usually looks for a period followed by
+a certain number of spaces.  The number is specified with the
+<code>--sentence-end</code> option.
+</p>
+</dd>
+<dt> &lsquo;<samp>--sentence-end[=<var>TYPE</var>]</samp>&rsquo;</dt>
+<dd><a name="IDX165"></a>
+<a name="IDX166"></a>
+<p>The supported values are:
+</p>
+<dl compact="compact">
+<dt> &lsquo;<samp>single-space</samp>&rsquo;</dt>
+<dd><p>Expect at least one whitespace after a period
+</p>
+</dd>
+<dt> &lsquo;<samp>double-space</samp>&rsquo;</dt>
+<dd><p>Expect at least two whitespaces after a period
+</p>
+</dd>
+</dl>
+
+</dd>
+</dl>
+
+
+<a name="SEC41"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC35">5.1.6 Language specific options</a> </h3>
+
+<dl compact="compact">
+<dt> &lsquo;<samp>-a</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--extract-all</samp>&rsquo;</dt>
+<dd><a name="IDX167"></a>
+<a name="IDX168"></a>
+<p>Extract all strings.
+</p>
+<p>This option has an effect with most languages, namely C, C++, ObjectiveC,
+Shell, Python, Lisp, EmacsLisp, librep, Java, C#, awk, Tcl, Perl, PHP,
+GCC-source, Glade, Lua, JavaScript, Vala, GSettings.
+</p>
+</dd>
+<dt> &lsquo;<samp>-k[<var>keywordspec</var>]</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--keyword[=<var>keywordspec</var>]</samp>&rsquo;</dt>
+<dd><a name="IDX169"></a>
+<a name="IDX170"></a>
+<p>Specify <var>keywordspec</var> as an additional keyword to be looked for.
+Without a <var>keywordspec</var>, the option means to not use default keywords.
+</p>
+<a name="IDX171"></a>
+<a name="IDX172"></a>
+<p>If <var>keywordspec</var> is a C identifier <var>id</var>, <code>xgettext</code> looks
+for strings in the first argument of each call to the function or macro
+<var>id</var>.  If <var>keywordspec</var> is of the form
+&lsquo;<samp><var>id</var>:<var>argnum</var></samp>&rsquo;, <code>xgettext</code> looks for strings in the
+<var>argnum</var>th argument of the call.  If <var>keywordspec</var> is of the form
+&lsquo;<samp><var>id</var>:<var>argnum1</var>,<var>argnum2</var></samp>&rsquo;, <code>xgettext</code> looks for
+strings in the <var>argnum1</var>st argument and in the <var>argnum2</var>nd argument
+of the call, and treats them as singular/plural variants for a message
+with plural handling.  Also, if <var>keywordspec</var> is of the form
+&lsquo;<samp><var>id</var>:<var>contextargnum</var>c,<var>argnum</var></samp>&rsquo; or
+&lsquo;<samp><var>id</var>:<var>argnum</var>,<var>contextargnum</var>c</samp>&rsquo;, <code>xgettext</code> treats
+strings in the <var>contextargnum</var>th argument as a context specifier.
+And, as a special-purpose support for GNOME, if <var>keywordspec</var> is of the
+form &lsquo;<samp><var>id</var>:<var>argnum</var>g</samp>&rsquo;, <code>xgettext</code> recognizes the
+<var>argnum</var>th argument as a string with context, using the GNOME <code>glib</code>
+syntax &lsquo;<samp>&quot;msgctxt|msgid&quot;</samp>&rsquo;.
+<br>
+Furthermore, if <var>keywordspec</var> is of the form
+&lsquo;<samp><var>id</var>:&hellip;,<var>totalnumargs</var>t</samp>&rsquo;, <code>xgettext</code> recognizes this
+argument specification only if the number of actual arguments is equal to
+<var>totalnumargs</var>.  This is useful for disambiguating overloaded function
+calls in C++.
+<br>
+Finally, if <var>keywordspec</var> is of the form
+&lsquo;<samp><var>id</var>:<var>argnum</var>...,&quot;<var>xcomment</var>&quot;</samp>&rsquo;, <code>xgettext</code>, when
+extracting a message from the specified argument strings, adds an extracted
+comment <var>xcomment</var> to the message.  Note that when used through a normal
+shell command line, the double-quotes around the <var>xcomment</var> need to be
+escaped.
+</p>
+<p>This option has an effect with most languages, namely C, C++, ObjectiveC,
+Shell, Python, Lisp, EmacsLisp, librep, Java, C#, awk, Tcl, Perl, PHP,
+GCC-source, Glade, Lua, JavaScript, Vala, GSettings, Desktop.
+</p>
+<p>The default keyword specifications, which are always looked for if not
+explicitly disabled, are language dependent.  They are:
+</p>
+<ul class="toc">
+<li>
+For C, C++, and GCC-source: <code>gettext</code>, <code>dgettext:2</code>,
+<code>dcgettext:2</code>, <code>ngettext:1,2</code>, <code>dngettext:2,3</code>,
+<code>dcngettext:2,3</code>, <code>gettext_noop</code>, and <code>pgettext:1c,2</code>,
+<code>dpgettext:2c,3</code>, <code>dcpgettext:2c,3</code>, <code>npgettext:1c,2,3</code>,
+<code>dnpgettext:2c,3,4</code>, <code>dcnpgettext:2c,3,4</code>.
+
+</li><li>
+For Objective C: Like for C, and also <code>NSLocalizedString</code>, <code>_</code>,
+<code>NSLocalizedStaticString</code>, <code>__</code>.
+
+</li><li>
+For Shell scripts: <code>gettext</code>, <code>ngettext:1,2</code>, <code>eval_gettext</code>,
+<code>eval_ngettext:1,2</code>, <code>eval_pgettext:1c,2</code>,
+<code>eval_npgettext:1c,2,3</code>.
+
+</li><li>
+For Python: <code>gettext</code>, <code>ugettext</code>, <code>dgettext:2</code>,
+<code>ngettext:1,2</code>, <code>ungettext:1,2</code>, <code>dngettext:2,3</code>, <code>_</code>.
+
+</li><li>
+For Lisp: <code>gettext</code>, <code>ngettext:1,2</code>, <code>gettext-noop</code>.
+
+</li><li>
+For EmacsLisp: <code>_</code>.
+
+</li><li>
+For librep: <code>_</code>.
+
+</li><li>
+For Scheme: <code>gettext</code>, <code>ngettext:1,2</code>, <code>gettext-noop</code>.
+
+</li><li>
+For Java: <code>GettextResource.gettext:2</code>,
+<code>GettextResource.ngettext:2,3</code>, <code>GettextResource.pgettext:2c,3</code>,
+<code>GettextResource.npgettext:2c,3,4</code>, <code>gettext</code>, <code>ngettext:1,2</code>,
+<code>pgettext:1c,2</code>, <code>npgettext:1c,2,3</code>, <code>getString</code>.
+
+</li><li>
+For C#: <code>GetString</code>, <code>GetPluralString:1,2</code>,
+<code>GetParticularString:1c,2</code>, <code>GetParticularPluralString:1c,2,3</code>.
+
+</li><li>
+For awk: <code>dcgettext</code>, <code>dcngettext:1,2</code>.
+
+</li><li>
+For Tcl: <code>::msgcat::mc</code>.
+
+</li><li>
+For Perl: <code>gettext</code>, <code>%gettext</code>, <code>$gettext</code>, <code>dgettext:2</code>,
+<code>dcgettext:2</code>, <code>ngettext:1,2</code>, <code>dngettext:2,3</code>,
+<code>dcngettext:2,3</code>, <code>gettext_noop</code>.
+
+</li><li>
+For PHP: <code>_</code>, <code>gettext</code>, <code>dgettext:2</code>, <code>dcgettext:2</code>,
+<code>ngettext:1,2</code>, <code>dngettext:2,3</code>, <code>dcngettext:2,3</code>.
+
+</li><li>
+For Glade 1: <code>label</code>, <code>title</code>, <code>text</code>, <code>format</code>,
+<code>copyright</code>, <code>comments</code>, <code>preview_text</code>, <code>tooltip</code>.
+
+</li><li>
+For Lua: <code>_</code>, <code>gettext.gettext</code>, <code>gettext.dgettext:2</code>,
+<code>gettext.dcgettext:2</code>, <code>gettext.ngettext:1,2</code>,
+<code>gettext.dngettext:2,3</code>, <code>gettext.dcngettext:2,3</code>.
+
+</li><li>
+For JavaScript: <code>_</code>, <code>gettext</code>, <code>dgettext:2</code>,
+<code>dcgettext:2</code>, <code>ngettext:1,2</code>, <code>dngettext:2,3</code>,
+<code>pgettext:1c,2</code>, <code>dpgettext:2c,3</code>.
+
+</li><li>
+For Vala: <code>_</code>, <code>Q_</code>, <code>N_</code>, <code>NC_</code>, <code>dgettext:2</code>,
+<code>dcgettext:2</code>, <code>ngettext:1,2</code>, <code>dngettext:2,3</code>,
+<code>dpgettext:2c,3</code>, <code>dpgettext2:2c,3</code>.
+
+</li><li>
+For Desktop: <code>Name</code>, <code>GenericName</code>, <code>Comment</code>,
+<code>Keywords</code>.
+</li></ul>
+
+<p>To disable the default keyword specifications, the option &lsquo;<samp>-k</samp>&rsquo; or
+&lsquo;<samp>--keyword</samp>&rsquo; or &lsquo;<samp>--keyword=</samp>&rsquo;, without a <var>keywordspec</var>, can be
+used.
+</p>
+</dd>
+<dt> &lsquo;<samp>--flag=<var>word</var>:<var>arg</var>:<var>flag</var></samp>&rsquo;</dt>
+<dd><a name="IDX173"></a>
+<p>Specifies additional flags for strings occurring as part of the <var>arg</var>th
+argument of the function <var>word</var>.  The possible flags are the possible
+format string indicators, such as &lsquo;<samp>c-format</samp>&rsquo;, and their negations,
+such as &lsquo;<samp>no-c-format</samp>&rsquo;, possibly prefixed with &lsquo;<samp>pass-</samp>&rsquo;.
+<br>
+<a name="IDX174"></a>
+The meaning of <code>--flag=<var>function</var>:<var>arg</var>:<var>lang</var>-format</code>
+is that in language <var>lang</var>, the specified <var>function</var> expects as
+<var>arg</var>th argument a format string.  (For those of you familiar with
+GCC function attributes, <code>--flag=<var>function</var>:<var>arg</var>:c-format</code> is
+roughly equivalent to the declaration
+&lsquo;<samp>__attribute__ ((__format__ (__printf__, <var>arg</var>, ...)))</samp>&rsquo; attached
+to <var>function</var> in a C source file.)
+For example, if you use the &lsquo;<samp>error</samp>&rsquo; function from GNU libc, you can
+specify its behaviour through <code>--flag=error:3:c-format</code>.  The effect of
+this specification is that <code>xgettext</code> will mark as format strings all
+<code>gettext</code> invocations that occur as <var>arg</var>th argument of
+<var>function</var>.
+This is useful when such strings contain no format string directives:
+together with the checks done by &lsquo;<samp>msgfmt -c</samp>&rsquo; it will ensure that
+translators cannot accidentally use format string directives that would
+lead to a crash at runtime.
+<br>
+<a name="IDX175"></a>
+The meaning of <code>--flag=<var>function</var>:<var>arg</var>:pass-<var>lang</var>-format</code>
+is that in language <var>lang</var>, if the <var>function</var> call occurs in a
+position that must yield a format string, then its <var>arg</var>th argument
+must yield a format string of the same type as well.  (If you know GCC
+function attributes, the <code>--flag=<var>function</var>:<var>arg</var>:pass-c-format</code>
+option is roughly equivalent to the declaration
+&lsquo;<samp>__attribute__ ((__format_arg__ (<var>arg</var>)))</samp>&rsquo; attached to <var>function</var>
+in a C source file.)
+For example, if you use the &lsquo;<samp>_</samp>&rsquo; shortcut for the <code>gettext</code> function,
+you should use <code>--flag=_:1:pass-c-format</code>.  The effect of this
+specification is that <code>xgettext</code> will propagate a format string
+requirement for a <code>_(&quot;string&quot;)</code> call to its first argument, the literal
+<code>&quot;string&quot;</code>, and thus mark it as a format string.
+This is useful when such strings contain no format string directives:
+together with the checks done by &lsquo;<samp>msgfmt -c</samp>&rsquo; it will ensure that
+translators cannot accidentally use format string directives that would
+lead to a crash at runtime.
+<br>
+This option has an effect with most languages, namely C, C++, ObjectiveC,
+Shell, Python, Lisp, EmacsLisp, librep, Scheme, Java, C#, awk, YCP, Tcl, Perl, PHP,
+GCC-source, Lua, JavaScript, Vala.
+</p>
+</dd>
+<dt> &lsquo;<samp>-T</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--trigraphs</samp>&rsquo;</dt>
+<dd><a name="IDX176"></a>
+<a name="IDX177"></a>
+<a name="IDX178"></a>
+<p>Understand ANSI C trigraphs for input.
+<br>
+This option has an effect only with the languages C, C++, ObjectiveC.
+</p>
+</dd>
+<dt> &lsquo;<samp>--qt</samp>&rsquo;</dt>
+<dd><a name="IDX179"></a>
+<a name="IDX180"></a>
+<p>Recognize Qt format strings.
+<br>
+This option has an effect only with the language C++.
+</p>
+</dd>
+<dt> &lsquo;<samp>--kde</samp>&rsquo;</dt>
+<dd><a name="IDX181"></a>
+<a name="IDX182"></a>
+<p>Recognize KDE 4 format strings.
+<br>
+This option has an effect only with the language C++.
+</p>
+</dd>
+<dt> &lsquo;<samp>--boost</samp>&rsquo;</dt>
+<dd><a name="IDX183"></a>
+<a name="IDX184"></a>
+<p>Recognize Boost format strings.
+<br>
+This option has an effect only with the language C++.
+</p>
+</dd>
+<dt> &lsquo;<samp>--debug</samp>&rsquo;</dt>
+<dd><a name="IDX185"></a>
+<a name="IDX186"></a>
+<p>Use the flags <code>c-format</code> and <code>possible-c-format</code> to show who was
+responsible for marking a message as a format string.  The latter form is
+used if the <code>xgettext</code> program decided, the former form is used if
+the programmer prescribed it.
+</p>
+<p>By default only the <code>c-format</code> form is used.  The translator should
+not have to care about these details.
+</p>
+</dd>
+</dl>
+
+<p>This implementation of <code>xgettext</code> is able to process a few awkward
+cases, like strings in preprocessor macros, ANSI concatenation of
+adjacent strings, and escaped end of lines for continued strings.
+</p>
+
+<a name="SEC42"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC36">5.1.7 Output details</a> </h3>
+
+
+<dl compact="compact">
+<dt> &lsquo;<samp>--color</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--color=<var>when</var></samp>&rsquo;</dt>
+<dd><a name="IDX187"></a>
+<p>Specify whether or when to use colors and other text attributes.
+See <a href="gettext_9.html#SEC157">The <code>--color</code> option</a> for details.
+</p>
+</dd>
+<dt> &lsquo;<samp>--style=<var>style_file</var></samp>&rsquo;</dt>
+<dd><a name="IDX188"></a>
+<p>Specify the CSS style rule file to use for <code>--color</code>.
+See <a href="gettext_9.html#SEC159">The <code>--style</code> option</a> for details.
+</p>
+</dd>
+<dt> &lsquo;<samp>--force-po</samp>&rsquo;</dt>
+<dd><a name="IDX189"></a>
+<p>Always write an output file even if no message is defined.
+</p>
+</dd>
+<dt> &lsquo;<samp>-i</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--indent</samp>&rsquo;</dt>
+<dd><a name="IDX190"></a>
+<a name="IDX191"></a>
+<p>Write the .po file using indented style.
+</p>
+</dd>
+<dt> &lsquo;<samp>--no-location</samp>&rsquo;</dt>
+<dd><a name="IDX192"></a>
+<p>Do not write &lsquo;<samp>#: <var>filename</var>:<var>line</var></samp>&rsquo; lines.  Note that using
+this option makes it harder for technically skilled translators to understand
+each message's context.
+</p>
+</dd>
+<dt> &lsquo;<samp>-n</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--add-location=<var>type</var></samp>&rsquo;</dt>
+<dd><a name="IDX193"></a>
+<a name="IDX194"></a>
+<p>Generate &lsquo;<samp>#: <var>filename</var>:<var>line</var></samp>&rsquo; lines (default).
+</p>
+<p>The optional <var>type</var> can be either &lsquo;<samp>full</samp>&rsquo;, &lsquo;<samp>file</samp>&rsquo;, or
+&lsquo;<samp>never</samp>&rsquo;.  If it is not given or &lsquo;<samp>full</samp>&rsquo;, it generates the
+lines with both file name and line number.  If it is &lsquo;<samp>file</samp>&rsquo;, the
+line number part is omitted.  If it is &lsquo;<samp>never</samp>&rsquo;, it completely
+suppresses the lines (same as <code>--no-location</code>).
+</p>
+</dd>
+<dt> &lsquo;<samp>--strict</samp>&rsquo;</dt>
+<dd><a name="IDX195"></a>
+<p>Write out a strict Uniforum conforming PO file.  Note that this
+Uniforum format should be avoided because it doesn't support the
+GNU extensions.
+</p>
+</dd>
+<dt> &lsquo;<samp>--properties-output</samp>&rsquo;</dt>
+<dd><a name="IDX196"></a>
+<p>Write out a Java ResourceBundle in Java <code>.properties</code> syntax.  Note
+that this file format doesn't support plural forms and silently drops
+obsolete messages.
+</p>
+</dd>
+<dt> &lsquo;<samp>--stringtable-output</samp>&rsquo;</dt>
+<dd><a name="IDX197"></a>
+<p>Write out a NeXTstep/GNUstep localized resource file in <code>.strings</code> syntax.
+Note that this file format doesn't support plural forms.
+</p>
+</dd>
+<dt> &lsquo;<samp>--its=<var>file</var></samp>&rsquo;</dt>
+<dd><a name="IDX198"></a>
+<p>Use ITS rules defined in <var>file</var>.
+Note that this is only effective with XML files.
+</p>
+</dd>
+<dt> &lsquo;<samp>--itstool</samp>&rsquo;</dt>
+<dd><a name="IDX199"></a>
+<p>Write out comments recognized by itstool (<a href="http://itstool.org">http://itstool.org</a>).
+Note that this is only effective with XML files.
+</p>
+</dd>
+<dt> &lsquo;<samp>-w <var>number</var></samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--width=<var>number</var></samp>&rsquo;</dt>
+<dd><a name="IDX200"></a>
+<a name="IDX201"></a>
+<p>Set the output page width.  Long strings in the output files will be
+split across multiple lines in order to ensure that each line's width
+(= number of screen columns) is less or equal to the given <var>number</var>.
+</p>
+</dd>
+<dt> &lsquo;<samp>--no-wrap</samp>&rsquo;</dt>
+<dd><a name="IDX202"></a>
+<p>Do not break long message lines.  Message lines whose width exceeds the
+output page width will not be split into several lines.  Only file reference
+lines which are wider than the output page width will be split.
+</p>
+</dd>
+<dt> &lsquo;<samp>-s</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--sort-output</samp>&rsquo;</dt>
+<dd><a name="IDX203"></a>
+<a name="IDX204"></a>
+<a name="IDX205"></a>
+<p>Generate sorted output.  Note that using this option makes it much harder
+for the translator to understand each message's context.
+</p>
+</dd>
+<dt> &lsquo;<samp>-F</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--sort-by-file</samp>&rsquo;</dt>
+<dd><a name="IDX206"></a>
+<a name="IDX207"></a>
+<p>Sort output by file location.
+</p>
+</dd>
+<dt> &lsquo;<samp>--omit-header</samp>&rsquo;</dt>
+<dd><a name="IDX208"></a>
+<p>Don't write header with &lsquo;<samp>msgid &quot;&quot;</samp>&rsquo; entry.
+</p>
+<a name="IDX209"></a>
+<p>This is useful for testing purposes because it eliminates a source
+of variance for generated <code>.gmo</code> files.  With <code>--omit-header</code>,
+two invocations of <code>xgettext</code> on the same files with the same
+options at different times are guaranteed to produce the same results.
+</p>
+<p>Note that using this option will lead to an error if the resulting file
+would not entirely be in ASCII.
+</p>
+</dd>
+<dt> &lsquo;<samp>--copyright-holder=<var>string</var></samp>&rsquo;</dt>
+<dd><a name="IDX210"></a>
+<p>Set the copyright holder in the output.  <var>string</var> should be the
+copyright holder of the surrounding package.  (Note that the msgstr
+strings, extracted from the package's sources, belong to the copyright
+holder of the package.)  Translators are expected to transfer or disclaim
+the copyright for their translations, so that package maintainers can
+distribute them without legal risk.  If <var>string</var> is empty, the output
+files are marked as being in the public domain; in this case, the translators
+are expected to disclaim their copyright, again so that package maintainers
+can distribute them without legal risk.
+</p>
+<p>The default value for <var>string</var> is the Free Software Foundation, Inc.,
+simply because <code>xgettext</code> was first used in the GNU project.
+</p>
+</dd>
+<dt> &lsquo;<samp>--foreign-user</samp>&rsquo;</dt>
+<dd><a name="IDX211"></a>
+<p>Omit FSF copyright in output.  This option is equivalent to
+&lsquo;<samp>--copyright-holder=''</samp>&rsquo;.  It can be useful for packages outside the GNU
+project that want their translations to be in the public domain.
+</p>
+</dd>
+<dt> &lsquo;<samp>--package-name=<var>package</var></samp>&rsquo;</dt>
+<dd><a name="IDX212"></a>
+<p>Set the package name in the header of the output.
+</p>
+</dd>
+<dt> &lsquo;<samp>--package-version=<var>version</var></samp>&rsquo;</dt>
+<dd><a name="IDX213"></a>
+<p>Set the package version in the header of the output.  This option has an
+effect only if the &lsquo;<samp>--package-name</samp>&rsquo; option is also used.
+</p>
+</dd>
+<dt> &lsquo;<samp>--msgid-bugs-address=<var>email@address</var></samp>&rsquo;</dt>
+<dd><a name="IDX214"></a>
+<p>Set the reporting address for msgid bugs.  This is the email address or URL
+to which the translators shall report bugs in the untranslated strings:
+</p>
+<ul class="toc">
+<li> -  Strings which are not entire sentences; see the maintainer guidelines
+in <a href="gettext_4.html#SEC20">Preparing Translatable Strings</a>.
+</li><li> -  Strings which use unclear terms or require additional context to be
+understood.
+</li><li> -  Strings which make invalid assumptions about notation of date, time or
+money.
+</li><li> -  Pluralisation problems.
+</li><li> -  Incorrect English spelling.
+</li><li> -  Incorrect formatting.
+</li></ul>
+
+<p>It can be your email address, or a mailing list address where translators
+can write to without being subscribed, or the URL of a web page through
+which the translators can contact you.
+</p>
+<p>The default value is empty, which means that translators will be clueless!
+Don't forget to specify this option.
+</p>
+</dd>
+<dt> &lsquo;<samp>-m[<var>string</var>]</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--msgstr-prefix[=<var>string</var>]</samp>&rsquo;</dt>
+<dd><a name="IDX215"></a>
+<a name="IDX216"></a>
+<p>Use <var>string</var> (or &quot;&quot; if not specified) as prefix for msgstr values.
+</p>
+</dd>
+<dt> &lsquo;<samp>-M[<var>string</var>]</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--msgstr-suffix[=<var>string</var>]</samp>&rsquo;</dt>
+<dd><a name="IDX217"></a>
+<a name="IDX218"></a>
+<p>Use <var>string</var> (or &quot;&quot; if not specified) as suffix for msgstr values.
+</p>
+</dd>
+</dl>
+
+
+<a name="SEC43"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC37">5.1.8 Informative output</a> </h3>
+
+<dl compact="compact">
+<dt> &lsquo;<samp>-h</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--help</samp>&rsquo;</dt>
+<dd><a name="IDX219"></a>
+<a name="IDX220"></a>
+<p>Display this help and exit.
+</p>
+</dd>
+<dt> &lsquo;<samp>-V</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--version</samp>&rsquo;</dt>
+<dd><a name="IDX221"></a>
+<a name="IDX222"></a>
+<p>Output version information and exit.
+</p>
+</dd>
+<dt> &lsquo;<samp>-v</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--verbose</samp>&rsquo;</dt>
+<dd><a name="IDX223"></a>
+<a name="IDX224"></a>
+<p>Increase verbosity level.
+</p>
+</dd>
+</dl>
+
+
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC34" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="gettext_6.html#SEC44" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_21.html#SEC387" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<p>
+ <font size="-1">
+  This document was generated by <em>Bruno Haible</em> on <em>October, 9 2022</em> using <a href="https://www.nongnu.org/texi2html/"><em>texi2html 1.78a</em></a>.
+ </font>
+ <br>
+
+</p>
+</body>
+</html>

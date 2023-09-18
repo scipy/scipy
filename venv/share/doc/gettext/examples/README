@@ -1,0 +1,86 @@
+This directory contains simple examples of the use of GNU gettext.
+Each example is a simple "hello world" program with a very small message
+catalog, written in a particular programming language for a particular
+environment.
+
+    Example                    Language          GUI Environment
+
+    hello-c                    C
+    hello-c-gnome              C                 GNOME (obsolete)
+    hello-c-gnome3             C                 GNOME 3.10 or later
+    hello-c++                  C++
+    hello-c++-qt               C++               Qt
+    hello-c++-kde              C++               KDE
+    hello-c++-gnome            C++               GNOME (obsolete)
+    hello-c++-wxwidgets        C++               wxWidgets
+    hello-objc                 ObjectiveC
+    hello-objc-gnustep         ObjectiveC        GNUstep
+    hello-objc-gnome           ObjectiveC        GNOME (obsolete)
+    hello-sh                   Shell
+    hello-python               Python
+    hello-clisp                Lisp
+    hello-librep               librep
+    hello-guile                Scheme
+    hello-smalltalk            Smalltalk
+    hello-java                 Java
+    hello-java-awt             Java              AWT
+    hello-java-swing           Java              Swing
+    hello-java-qtjambi         Java              Qt
+    hello-csharp               C#
+    hello-csharp-forms         C#                Forms
+    hello-gawk                 awk
+    hello-pascal               Pascal
+    hello-ycp                  YCP               libyui
+    hello-tcl                  Tcl
+    hello-tcl-tk               Tcl               Tk
+    hello-perl                 Perl
+    hello-php                  PHP
+
+Before building an example, you need to
+  1. Build and install the GNU gettext package, as described in the INSTALL
+     file.
+  2. cd to the example and do
+        ./autogen.sh
+  3. Then you can build the example as usual:
+        ./configure --prefix=/some/prefix
+        make
+        make install
+     and see it work by executing
+        /some/prefix/bin/hello
+
+The po/ directories of the examples use different binary catalog formats and
+Makefile types:
+
+    Example                    Binary catalog format   Makefile type
+
+    hello-c                    .gmo                    Makefile.in.in
+    hello-c-gnome              .gmo                    Makefile.in.in
+    hello-c-gnome3             .gmo                    Makefile.in.in
+    hello-c++                  .gmo                    Makefile.in.in
+    hello-c++-kde              .gmo                    Makefile.in.in
+    hello-c++-gnome            .gmo                    Makefile.in.in
+    hello-objc                 .gmo                    Makefile.in.in
+    hello-objc-gnome           .gmo                    Makefile.in.in
+    hello-c++-wxwidgets        .gmo                    Makefile.am
+    hello-sh                   .gmo                    Makefile.am
+    hello-python               .gmo                    Makefile.am
+    hello-clisp                .gmo                    Makefile.am
+    hello-librep               .gmo                    Makefile.am
+    hello-guile                .gmo                    Makefile.am
+    hello-smalltalk            .gmo                    Makefile.am
+    hello-gawk                 .gmo                    Makefile.am
+    hello-pascal               .gmo                    Makefile.am
+    hello-ycp                  .gmo                    Makefile.am
+    hello-perl                 .gmo                    Makefile.am
+    hello-php                  .gmo                    Makefile.am
+    hello-java                 .properties             Makefile.am
+    hello-java-awt             .properties             Makefile.am
+    hello-java-swing           .properties             Makefile.am
+    hello-java-qtjambi         .properties             Makefile.am
+    hello-csharp               .resources.dll          Makefile.am
+    hello-csharp-forms         .resources.dll          Makefile.am
+    hello-tcl                  .msg                    Makefile.am
+    hello-tcl-tk               .msg                    Makefile.am
+    hello-c++-qt               .qm                     Makefile.am
+    hello-objc-gnustep         .strings                GNUmakefile
+

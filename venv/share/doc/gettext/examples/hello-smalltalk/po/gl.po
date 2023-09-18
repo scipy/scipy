@@ -1,0 +1,31 @@
+# Galician translation for hello-smalltalk package.
+# Copyright (C) 2010 Yoyodyne, Inc. (msgids)
+# This file is distributed under the same license as the gettext package.
+#
+# Leandro Regueiro <leandro.regueiro@gmail.com>, 2010-2014.
+#
+# Proxecto Trasno - Adaptación do software libre á lingua galega:  Se desexas
+# colaborar connosco, podes atopar máis información en <http://trasno.net>
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: hello-smalltalk 0.19-rc1\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"PO-Revision-Date: 2014-05-10 16:34+0100\n"
+"Last-Translator: Leandro Regueiro <leandro.regueiro@gmail.com>\n"
+"Language-Team: Galician <proxecto@trasno.net>\n"
+"Language: gl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+
+#: hello.st.in:31
+msgid "Hello, world!"
+msgstr "Ola, mundo!"
+
+#: hello.st.in:32
+#, smalltalk-format
+msgid "This program is running as process number %1."
+msgstr "Este programa estase executando como o proceso número %1."

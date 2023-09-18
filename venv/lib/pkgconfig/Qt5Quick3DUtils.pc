@@ -1,0 +1,13 @@
+prefix=/workspaces/scipy/venv
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+includedir=${prefix}/include/qt
+
+
+Name: Qt5 Quick3DUtils
+Description: Qt Quick3DUtils module
+Version: 5.15.8
+Libs: -L${libdir} -lQt5Quick3DUtils 
+Cflags: -DQT_QUICK3DUTILS_LIB -I${includedir}/QtQuick3DUtils -I${includedir}
+Requires: Qt5Core Qt5Gui
+

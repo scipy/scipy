@@ -1,0 +1,174 @@
+comment_char %
+escape_char  /
+%
+% Serbian Language Locale for Serbia
+% Source: sr_YU, sr_CS locales
+% Address:
+%
+% Contact: Danilo Segan
+% Email: danilo@gnome.org
+% Tel: +381 63 323456
+% Fax: none
+% Language: sr
+% Territory: RS
+% Revision: 1.3
+% Date: 2006-10-09
+% Application: general
+% Users: general
+% Charset: UTF-8, ISO-8859-2
+% Distribution and use is free, also
+% for commercial purposes.
+%
+
+LC_IDENTIFICATION
+title      "Serbian Latin locale for Serbia"
+source     "sr_YU, sr_CS locale"
+address    ""
+contact    "Danilo Segan"
+email      "bug-glibc-locales@gnu.org"
+tel        ""
+fax        ""
+language   "Serbian"
+territory  "Serbia"
+revision   "1.3"
+date       "2006-10-09"
+audience   "general"
+application   "GNU locale"
+abbreviation  ""
+%
+category  "i18n:1997";LC_IDENTIFICATION
+category  "i18n:1997";LC_CTYPE
+category  "i18n:1997";LC_COLLATE
+category  "i18n:1997";LC_MONETARY
+category  "i18n:1997";LC_NUMERIC
+category  "i18n:1997";LC_TIME
+category  "i18n:1997";LC_MESSAGES
+category  "i18n:1997";LC_PAPER
+category  "i18n:1997";LC_NAME
+category  "i18n:1997";LC_ADDRESS
+category  "i18n:1997";LC_TELEPHONE
+category  "i18n:1997";LC_MEASUREMENT
+END LC_IDENTIFICATION
+
+LC_CTYPE
+copy "i18n"
+END LC_CTYPE
+
+LC_COLLATE
+copy "sr_RS"
+END LC_COLLATE
+
+LC_MONETARY
+int_curr_symbol           "<U0052><U0053><U0044><U0020>"
+currency_symbol           "<U0064><U0069><U006E>"
+mon_decimal_point         "<U002C>"
+mon_thousands_sep         "<U002E>"
+mon_grouping              3;3
+positive_sign             ""
+negative_sign             "<U002D>"
+int_frac_digits           0
+frac_digits               0
+p_cs_precedes             1
+p_sep_by_space            1
+n_cs_precedes             1
+n_sep_by_space            1
+p_sign_posn               1
+n_sign_posn               1
+END LC_MONETARY
+
+LC_NUMERIC
+copy "sr_RS"
+END LC_NUMERIC
+
+LC_TIME
+abday   "<U006E><U0065><U0064>";"<U0070><U006F><U006E>";/
+        "<U0075><U0074><U006F>";"<U0073><U0072><U0065>";/
+        "<U010D><U0065><U0074>";"<U0070><U0065><U0074>";/
+        "<U0073><U0075><U0062>"
+day     "<U006E><U0065><U0064><U0065><U006C><U006A><U0061>";/
+        "<U0070><U006F><U006E><U0065><U0064><U0065><U006C><U006A><U0061><U006B>";/
+        "<U0075><U0074><U006F><U0072><U0061><U006B>";/
+        "<U0073><U0072><U0065><U0064><U0061>";/
+        "<U010D><U0065><U0074><U0076><U0072><U0074><U0061><U006B>";/
+        "<U0070><U0065><U0074><U0061><U006B>";/
+        "<U0073><U0075><U0062><U006F><U0074><U0061>"
+abmon   "<U006A><U0061><U006E>";"<U0066><U0065><U0062>";/
+        "<U006D><U0061><U0072>";"<U0061><U0070><U0072>";/
+        "<U006D><U0061><U006A>";"<U006A><U0075><U006E>";/
+        "<U006A><U0075><U006C>";"<U0061><U0076><U0067>";/
+        "<U0073><U0065><U0070>";"<U006F><U006B><U0074>";/
+        "<U006E><U006F><U0076>";"<U0064><U0065><U0063>"
+mon     "<U006A><U0061><U006E><U0075><U0061><U0072>";/
+        "<U0066><U0065><U0062><U0072><U0075><U0061><U0072>";/
+        "<U006D><U0061><U0072><U0074>";/
+        "<U0061><U0070><U0072><U0069><U006C>";/
+        "<U006D><U0061><U006A>";/
+        "<U006A><U0075><U006E><U0069>";/
+        "<U006A><U0075><U006C><U0069>";/
+        "<U0061><U0076><U0067><U0075><U0073><U0074>";/
+        "<U0073><U0065><U0070><U0074><U0065><U006D><U0062><U0061><U0072>";/
+        "<U006F><U006B><U0074><U006F><U0062><U0061><U0072>";/
+        "<U006E><U006F><U0076><U0065><U006D><U0062><U0061><U0072>";/
+        "<U0064><U0065><U0063><U0065><U006D><U0062><U0061><U0072>"
+
+d_t_fmt "<U0025><U0041><U002C><U0020><U0025><U0064><U002E><U0020>/
+<U0025><U0042><U0020><U0025><U0059><U002E><U0020><U0025><U0054>/
+<U0020><U0025><U005A>"
+d_fmt   "<U0025><U0064><U002E><U0025><U006D><U002E><U0025><U0059><U002E>"
+t_fmt   "<U0025><U0054>"
+am_pm   "";""
+t_fmt_ampm "<U0025><U0054>"
+date_fmt  "<U0025><U0061><U002c><U0020><U0025><U0065><U002E><U0020>/
+<U0025><U0062><U0020><U0025><U0059><U002E><U0020><U0020><U0025><U0048>/
+<U003A><U0025><U004D><U003A><U0025><U0053><U0020><U0025><U005A><U000A>"
+week    7;19971130;4
+first_weekday 2
+first_workday 2
+END LC_TIME
+
+LC_MESSAGES
+yesexpr "<U005E><U005B><U0064><U0044><U0079><U0059><U005D>"
+noexpr  "<U005E><U005B><U006E><U004E><U005D>"
+END LC_MESSAGES
+
+LC_PAPER
+copy "sr_RS"
+END LC_PAPER
+
+LC_NAME
+name_fmt    "<U0025><U0064><U0025><U0074><U0025><U0067><U0025><U0074>/
+<U0025><U006D><U0025><U0074><U0025><U0066>"
+name_gen    ""
+name_mr     "<U0067><U002D><U0064><U0069><U006E>"
+name_mrs    "<U0067><U002D><U0111><U0061>"
+name_miss   "<U0067><U002D><U0111><U0069><U0063><U0061>"
+name_ms     "<U0067><U002D><U0111><U0061>"
+END LC_NAME
+
+LC_ADDRESS
+postal_fmt    "<U0025><U0066><U0025><U004E><U0025><U0061><U0025><U004E>/
+<U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E><U0025><U0073>/
+<U0020><U0025><U0068><U0020><U0025><U0065><U0020><U0025><U0072><U0025>/
+<U004E><U0025><U007A><U0020><U0025><U0054><U0025>/
+<U004E><U0025><U0063><U0025><U004E>"
+country_ab2   "<U0052><U0053>"
+country_ab3   "<U0053><U0052><U0042>"
+country_post  "<U0053><U0052><U0042>"
+country_name  "<U0053><U0072><U0062><U0069><U006A><U0061><U0020><U0069>/
+<U0020><U0043><U0072><U006E><U0061><U0020><U0047><U006F><U0072><U0061>"
+country_num   688
+country_car   "<U0053><U0052><U0042>"
+country_isbn  "<U0038><U0036>"
+lang_name     "<U0073><U0072><U0070><U0073><U006B><U0069>"
+lang_term     "<U0073><U0072><U0070>"
+lang_lib      "<U0073><U0063><U0063>"
+lang_ab	      "<U0073><U0072>"
+END LC_ADDRESS
+
+LC_TELEPHONE
+copy "sr_RS"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+copy "sr_RS"
+END LC_MEASUREMENT

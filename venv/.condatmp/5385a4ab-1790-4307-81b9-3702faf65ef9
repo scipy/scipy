@@ -1,0 +1,189 @@
+#! /bin/sh
+#
+# Copyright (C) 1995-1998, 2000, 2001 Free Software Foundation, Inc.
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, see <http://www.gnu.org/licenses/>.
+#
+
+# - Modified in October 2001 by jacob berkman <jacob@ximian.com> to
+# work with glib's Makefile.in.in and po2tbl.sed.in, to not copy in
+# intl/, and to not add ChangeLog entries to po/ChangeLog
+
+# This file is meant for authors or maintainers which want to
+# internationalize their package with the help of GNU gettext.  For
+# further information how to use it consult the GNU gettext manual.
+
+echo=echo
+progname=$0
+force=0
+configstatus=0
+origdir=`pwd`
+usage="\
+Usage: glib-gettextize [OPTION]... [package-dir]
+      --help           print this help and exit
+      --version        print version information and exit
+  -c, --copy           copy files instead of making symlinks
+  -f, --force          force writing of new files even if old exist
+Report bugs to https://gitlab.gnome.org/GNOME/glib/issues/new."
+package=glib
+version=2.78.0
+try_ln_s=:
+
+# Directory where the sources are stored.
+prefix=/workspaces/scipy/venv
+case `uname` in
+MINGW32*)
+    prefix="`dirname $0`/.."
+    ;;
+esac
+
+datarootdir=/workspaces/scipy/venv/share
+datadir=/workspaces/scipy/venv/share
+
+gettext_dir=$datadir/glib-2.0/gettext
+
+while test $# -gt 0; do
+  case "$1" in
+    -c | --copy | --c* )
+      shift
+      try_ln_s=false ;;
+    -f | --force | --f* )
+      shift
+      force=1 ;;
+    -r | --run | --r* )
+      shift
+      configstatus=1 ;;
+    --help | --h* )
+      $echo "$usage"; exit 0 ;;
+    --version | --v* )
+      echo "$progname (GNU $package) $version"
+      $echo "Copyright (C) 1995-1998, 2000, 2001 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
+      $echo "Written by" "Ulrich Drepper"
+      exit 0 ;;
+    -- )	# Stop option processing
+      shift; break ;;
+    -* )
+      $echo "glib-gettextize: unknown option $1"
+      $echo "Try \`glib-gettextize --help' for more information."; exit 1 ;;
+    * )
+      break ;;
+  esac
+done
+
+if test $# -gt 1; then
+  $echo "$usage"
+  exit 1
+fi
+
+# Fill in the command line options value.
+if test $# -eq 1; then
+  srcdir=$1
+  if cd "$srcdir"; then
+    srcdir=`pwd`
+  else
+    $echo "Cannot change directory to \`$srcdir'"
+    exit 1
+  fi
+else
+  srcdir=$origdir
+fi
+
+test -f configure.in || test -f configure.ac || {
+  $echo "Missing configure.in or configure.ac, please cd to your package first."
+  exit 1
+}
+
+configure_in=NONE
+if test -f configure.in; then
+  configure_in=configure.in
+else
+  if test -f configure.ac; then
+    configure_in=configure.ac
+  fi
+fi
+# Check in which directory config.rpath, mkinstalldirs etc. belong.
+auxdir=`cat "$configure_in" | grep '^AC_CONFIG_AUX_DIR' | sed -n -e 's/AC_CONFIG_AUX_DIR(\([^()]*\))/\1/p' | sed -e 's/^\[\(.*\)\]$/\1/' | sed -e 1q`
+if test -n "$auxdir"; then
+  auxdir="$auxdir/"
+fi
+
+if test -f po/Makefile.in.in && test $force -eq 0; then
+  $echo "\
+po/Makefile.in.in exists: use option -f if you really want to delete it."
+  exit 1
+fi
+
+test -d po || {
+  $echo "Creating po/ subdirectory"
+  mkdir po || {
+    $echo "failed to create po/ subdirectory"
+    exit 1
+  }
+}
+
+# For simplicity we changed to the gettext source directory.
+cd $gettext_dir || {
+   $echo "gettext source directory '${gettext_dir}' doesn't exist"
+   exit 1
+}
+
+# Now copy all files.  Take care for the destination directories.
+for file in *; do
+  case $file in
+    intl | po)
+      ;;
+    mkinstalldirs)
+      rm -f "$srcdir/$auxdir$file"
+      ($try_ln_s && ln -s $gettext_dir/$file "$srcdir/$auxdir$file" && $echo "Symlinking file $file") 2>/dev/null ||
+      { $echo "Copying file $file"; cp $file "$srcdir/$auxdir$file"; }
+      ;;
+    *)
+      rm -f "$srcdir/$file"
+      ($try_ln_s && ln -s $gettext_dir/$file "$srcdir/$file" && $echo "Symlinking file $file") 2>/dev/null ||
+      { $echo "Copying file $file"; cp $file "$srcdir/$file"; }
+      ;;
+  esac
+done
+
+# Copy files to po/ subdirectory.
+cd po
+for file in *; do
+  rm -f "$srcdir/po/$file"
+  ($try_ln_s && ln -s $gettext_dir/po/$file "$srcdir/po/$file" && $echo "Symlinking file po/$file") 2>/dev/null ||
+  { $echo "Copying file po/$file"; cp $file "$srcdir/po/$file"; }
+done
+if test -f "$srcdir/po/cat-id-tbl.c"; then
+  $echo "Removing po/cat-id-tbl.c"
+  rm -f "$srcdir/po/cat-id-tbl.c"
+fi
+if test -f "$srcdir/po/stamp-cat-id"; then
+  $echo "Removing po/stamp-cat-id"
+  rm -f "$srcdir/po/stamp-cat-id"
+fi
+
+echo
+echo "Please add the files"
+echo "  codeset.m4 gettext.m4 glibc21.m4 iconv.m4 isc-posix.m4 lcmessage.m4"
+echo "  progtest.m4"
+echo "from the $datadir/aclocal directory to your autoconf macro directory"
+echo "or directly to your aclocal.m4 file."
+echo "You will also need config.guess and config.sub, which you can get from"
+echo "ftp://ftp.gnu.org/pub/gnu/config/."
+echo
+
+exit 0

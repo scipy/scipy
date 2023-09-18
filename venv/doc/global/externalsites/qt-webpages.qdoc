@@ -1,0 +1,116 @@
+/****************************************************************************
+**
+** Copyright (C) 2016 The Qt Company Ltd.
+** Contact: https://www.qt.io/licensing/
+**
+** This file is part of the documentation of the Qt Toolkit.
+**
+** $QT_BEGIN_LICENSE:FDL$
+** Commercial License Usage
+** Licensees holding valid commercial Qt licenses may use this file in
+** accordance with the commercial license agreement provided with the
+** Software or, alternatively, in accordance with the terms contained in
+** a written agreement between you and The Qt Company. For licensing terms
+** and conditions see https://www.qt.io/terms-conditions. For further
+** information use the contact form at https://www.qt.io/contact-us.
+**
+** GNU Free Documentation License Usage
+** Alternatively, this file may be used under the terms of the GNU Free
+** Documentation License version 1.3 as published by the Free Software
+** Foundation and appearing in the file included in the packaging of
+** this file. Please review the following information to ensure
+** the GNU Free Documentation License version 1.3 requirements
+** will be met: https://www.gnu.org/licenses/fdl-1.3.html.
+** $QT_END_LICENSE$
+**
+****************************************************************************/
+/*!
+    \externalpage http://qt.io/
+    \title Qt Homepage
+*/
+/*!
+    \externalpage http://bugreports.qt.io
+    \title Qt Bug Tracker
+*/
+/*!
+    \externalpage http://qt.io/download
+    \title Downloads
+*/
+/*!
+    \externalpage http://www.qt.io/about-us/
+    \title The Qt Company
+*/
+/*!
+    \externalpage http://qt.io/licensing/
+    \title Qt Licensing Overview
+*/
+/*!
+    \externalpage http://doc.qt.io/archives/qq/
+    \title Qt Quarterly
+*/
+/*!
+    \externalpage http://doc.qt.io/archives/qq/qq19-plurals.html
+    \title Qt Quarterly: Plural Form in Translation
+*/
+/*!
+    \externalpage https://code.qt.io/
+    \title Public Qt Repository
+*/
+/*!
+    \externalpage https://code.qt.io/cgit/%7bnon-gerrit%7d/qt-labs/qtestlib-tools.git/
+    \title qtestlib-tools
+*/
+
+/*!
+    \externalpage http://wiki.qt.io/Qt_Coding_Style
+    \title Qt Coding Style
+*/
+/*!
+    \externalpage http://doc.qt.io/archives/qt-eclipse-1.6/index.html
+    \title Eclipse Plugin
+*/
+/*!
+    \externalpage http://doc.qt.io/archives/qq/qq11-events.html
+    \title Qt Quarterly: Another Look at Events
+*/
+/*!
+    \externalpage https://www.youtube.com/watch?v=P4kv-AoAJ-Q
+    \title Livecoding video effects with Qt5
+*/
+/*!
+    \externalpage http://blog.qt.io/2012/02/29/pimp-my-video-shader-effects-and-multimedia/
+    \title Pimp my video
+*/
+/*!
+    \externalpage http://wiki.qt.io/QtMediaHub
+    \title QtMediaHub
+*/
+/*!
+    \externalpage http://wiki.qt.io/Qt_RaspberryPi
+    \title QtonPi
+*/
+
+/*!
+    \externalpage http://wiki.qt.io/jom
+    \title jom
+*/
+
+/*!
+    \externalpage http://doc.qt.io/qt-4.8
+    \title Qt 4.8 Reference Documentation
+*/
+
+/*!
+    \externalpage http://doc.qt.io/qt-4.8/qtquick.html
+    \title Qt Quick 1 Reference Documentation
+*/
+
+/*!
+    \externalpage http://wiki.qt.io/Qt_Localization
+    \title external: Translating Qt Into Other Languages
+*/
+
+/*!
+    \externalpage http://wiki.qt.io/Qt_Multimedia_Backends
+    \title Qt Multimedia Backends
+*/

@@ -1,0 +1,129 @@
+/****************************************************************************
+**
+** Copyright (C) 2019 The Qt Company Ltd.
+** Contact: https://www.qt.io/licensing/
+**
+** This file is part of the documentation of the Qt Toolkit.
+**
+** $QT_BEGIN_LICENSE:FDL$
+** Commercial License Usage
+** Licensees holding valid commercial Qt licenses may use this file in
+** accordance with the commercial license agreement provided with the
+** Software or, alternatively, in accordance with the terms contained in
+** a written agreement between you and The Qt Company. For licensing terms
+** and conditions see https://www.qt.io/terms-conditions. For further
+** information use the contact form at https://www.qt.io/contact-us.
+**
+** GNU Free Documentation License Usage
+** Alternatively, this file may be used under the terms of the GNU Free
+** Documentation License version 1.3 as published by the Free Software
+** Foundation and appearing in the file included in the packaging of
+** this file. Please review the following information to ensure
+** the GNU Free Documentation License version 1.3 requirements
+** will be met: https://www.gnu.org/licenses/fdl-1.3.html.
+** $QT_END_LICENSE$
+**
+****************************************************************************/
+
+//! [displayName]
+
+    Returns a localized display name for the given location \a type
+    or an empty QString if no relevant location can be found.
+
+//! [displayName]
+
+
+//! [findExecutable]
+
+    Finds the executable named \a executableName in the specified
+    \a paths, or the system paths if paths is empty.
+
+    On most operating systems the system path is determined by the
+    \c PATH environment variable. The directories where to search for
+    the executable can be set in the paths argument. To search in
+    both your own paths and the system paths, call findExecutable
+    twice, once with paths set and once with paths empty.
+    Symlinks are not resolved in order to preserve behavior for the
+    case of executables whose behavior depends on the name they are
+    invoked with
+    .
+    \note On Windows, the usual executable extensions (from the PATHEXT
+    environment variable) are automatically appended. For example, the
+    findExecutable("foo") call finds \c foo.exe or \c foo.bat if
+    present.
+
+    Returns the absolute file path to the executable, or an empty
+    string if not found.
+
+//! [findExecutable]
+
+//! [locate]
+
+    Finds a file or directory called \a fileName in the standard
+    locations for \a type.
+
+    The \a options flag lets you specify whether to look for files
+    or directories. By default, this flag is set to \c LocateFile.
+
+    Returns the absolute path to the first file or directory found,
+    otherwise returns an empty string.
+
+//! [locate]
+
+//! [locateAll]
+
+    Finds all files or directories by the name, \a fileName, in the
+    standard locations for \a type.
+
+    The \a options flag lets you specify whether to look for files
+    or directories. By default, this flag is set to \c LocateFile.
+
+    Returns the list of all the files that were found.
+
+//! [locateAll]
+
+//! [setTestModeEnabled]
+
+    If \a testMode is \c true, this enables a special "test mode" in
+    QStandardPaths, which changes writable locations to point to
+    test directories. This prevents auto tests from reading
+    or writing to the current user's configuration.
+
+    It affects the locations into which test programs might write
+    files: \c GenericDataLocation, \c DataLocation, \c ConfigLocation,
+    \c GenericConfigLocation, \c AppConfigLocation,
+    \c GenericCacheLocation, and \c CacheLocation. Other locations
+    are not affected.
+
+    On Unix, \c XDG_DATA_HOME is set to \c{~/.qttest/share},
+    \c XDG_CONFIG_HOME is set to \c{~/.qttest/config}, and
+    \c XDG_CACHE_HOME is set to \c{~/.qttest/cache}.
+
+    On macOS, data goes to \c{~/.qttest/Application Support},
+    cache goes to \c{~/.qttest/Cache}, and config goes to
+    \c{~/.qttest/Preferences}.
+
+    On Windows, everything goes to a "qttest" directory under
+    \c{%APPDATA%}.
+
+//! [setTestModeEnabled]
+
+//! [standardLocations]
+
+    Returns all the directories where files of \a type belong.
+
+    The list of directories is sorted from high to low priority,
+    starting with writableLocation() if it can be determined.
+    This list is empty if no locations for type are defined.
+
+//! [standardLocations]
+
+//! [writableLocation]
+
+    Returns the directory where files of \a type should be written to,
+    or an empty string if the location cannot be determined.
+
+    \note The storage location returned may not exist; that is,
+    it may need to be created by the system or the user.
+
+//! [writableLocation]

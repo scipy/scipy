@@ -1,0 +1,116 @@
+{
+  "build": "hd590300_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [],
+  "depends": [
+    "libgcc-ng >=12"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/xorg-libice-1.1.1-hd590300_0",
+  "features": "",
+  "files": [
+    "include/X11/ICE/ICE.h",
+    "include/X11/ICE/ICEconn.h",
+    "include/X11/ICE/ICElib.h",
+    "include/X11/ICE/ICEmsg.h",
+    "include/X11/ICE/ICEproto.h",
+    "include/X11/ICE/ICEutil.h",
+    "lib/libICE.so",
+    "lib/libICE.so.6",
+    "lib/libICE.so.6.3.0",
+    "lib/pkgconfig/ice.pc"
+  ],
+  "fn": "xorg-libice-1.1.1-hd590300_0.conda",
+  "license": "MIT",
+  "license_family": "MIT",
+  "link": {
+    "source": "/opt/conda/pkgs/xorg-libice-1.1.1-hd590300_0",
+    "type": 1
+  },
+  "md5": "b462a33c0be1421532f28bfe8f4a7514",
+  "name": "xorg-libice",
+  "package_tarball_full_path": "/opt/conda/pkgs/xorg-libice-1.1.1-hd590300_0.conda",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "include/X11/ICE/ICE.h",
+        "path_type": "hardlink",
+        "sha256": "02c40f49cc04745ad83619036d8f8356f5933975c54c7a38d090bc21343d39fb",
+        "sha256_in_prefix": "02c40f49cc04745ad83619036d8f8356f5933975c54c7a38d090bc21343d39fb",
+        "size_in_bytes": 2512
+      },
+      {
+        "_path": "include/X11/ICE/ICEconn.h",
+        "path_type": "hardlink",
+        "sha256": "9e0e0f36d3237b7e2b0646e13ef2b437567500f09c00fc6ec467ce6618c8101a",
+        "sha256_in_prefix": "9e0e0f36d3237b7e2b0646e13ef2b437567500f09c00fc6ec467ce6618c8101a",
+        "size_in_bytes": 7413
+      },
+      {
+        "_path": "include/X11/ICE/ICElib.h",
+        "path_type": "hardlink",
+        "sha256": "23a5b0fd150903821238902d2f92eaab117e45745b0fbeebdfdca803a74b59fe",
+        "sha256_in_prefix": "23a5b0fd150903821238902d2f92eaab117e45745b0fbeebdfdca803a74b59fe",
+        "size_in_bytes": 9925
+      },
+      {
+        "_path": "include/X11/ICE/ICEmsg.h",
+        "path_type": "hardlink",
+        "sha256": "14987e1c06d31ada7a3e98c29e0b46e23ea6ba897218e2a15fc268be9321bb2c",
+        "sha256_in_prefix": "14987e1c06d31ada7a3e98c29e0b46e23ea6ba897218e2a15fc268be9321bb2c",
+        "size_in_bytes": 8620
+      },
+      {
+        "_path": "include/X11/ICE/ICEproto.h",
+        "path_type": "hardlink",
+        "sha256": "62ac0703108f067f3160f875fea16e7f231f3c52de69b569a2b0d1f888840be7",
+        "sha256_in_prefix": "62ac0703108f067f3160f875fea16e7f231f3c52de69b569a2b0d1f888840be7",
+        "size_in_bytes": 4604
+      },
+      {
+        "_path": "include/X11/ICE/ICEutil.h",
+        "path_type": "hardlink",
+        "sha256": "71fff2ccd589187c37a4b81a9c4aec4ee9242b5d57a3ec86355cb42ea9d5a9fb",
+        "sha256_in_prefix": "71fff2ccd589187c37a4b81a9c4aec4ee9242b5d57a3ec86355cb42ea9d5a9fb",
+        "size_in_bytes": 3155
+      },
+      {
+        "_path": "lib/libICE.so",
+        "path_type": "softlink",
+        "sha256": "e9df68da45565125af8222ef8070684f19b9dfdf48e49bf10e54e9da008b799c",
+        "size_in_bytes": 119064
+      },
+      {
+        "_path": "lib/libICE.so.6",
+        "path_type": "softlink",
+        "sha256": "e9df68da45565125af8222ef8070684f19b9dfdf48e49bf10e54e9da008b799c",
+        "size_in_bytes": 119064
+      },
+      {
+        "_path": "lib/libICE.so.6.3.0",
+        "path_type": "hardlink",
+        "sha256": "e9df68da45565125af8222ef8070684f19b9dfdf48e49bf10e54e9da008b799c",
+        "sha256_in_prefix": "e9df68da45565125af8222ef8070684f19b9dfdf48e49bf10e54e9da008b799c",
+        "size_in_bytes": 119064
+      },
+      {
+        "_path": "lib/pkgconfig/ice.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/xorg-libice_1685307371532/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold",
+        "sha256": "9feddb25bff6f7fa2e2d7cb40278e67bc6c11f6db5da50cde501c70b779f9788",
+        "sha256_in_prefix": "bc73d8d0e6e89712681537aa56f62155ab8878fedf1b0234f78c415d9342e725",
+        "size_in_bytes": 491
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "5aa9b3682285bb2bf1a8adc064cb63aff76ef9178769740d855abb42b0d24236",
+  "size": 58469,
+  "subdir": "linux-64",
+  "timestamp": 1685307573114,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/xorg-libice-1.1.1-hd590300_0.conda",
+  "version": "1.1.1"
+}

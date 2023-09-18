@@ -1,0 +1,86 @@
+{
+  "build": "h7f98852_1002",
+  "build_number": 1002,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [],
+  "depends": [
+    "libgcc-ng >=9.3.0"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/xorg-kbproto-1.0.7-h7f98852_1002",
+  "features": "",
+  "files": [
+    "include/X11/extensions/XKB.h",
+    "include/X11/extensions/XKBgeom.h",
+    "include/X11/extensions/XKBproto.h",
+    "include/X11/extensions/XKBsrv.h",
+    "include/X11/extensions/XKBstr.h",
+    "lib/pkgconfig/kbproto.pc"
+  ],
+  "fn": "xorg-kbproto-1.0.7-h7f98852_1002.tar.bz2",
+  "license": "MIT",
+  "license_family": "MIT",
+  "link": {
+    "source": "/opt/conda/pkgs/xorg-kbproto-1.0.7-h7f98852_1002",
+    "type": 1
+  },
+  "md5": "4b230e8381279d76131116660f5a241a",
+  "name": "xorg-kbproto",
+  "package_tarball_full_path": "/opt/conda/pkgs/xorg-kbproto-1.0.7-h7f98852_1002.tar.bz2",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "include/X11/extensions/XKB.h",
+        "path_type": "hardlink",
+        "sha256": "77db1eff73db5e27af9cc7055bf48035465b276331141250aa843644e71233ab",
+        "sha256_in_prefix": "77db1eff73db5e27af9cc7055bf48035465b276331141250aa843644e71233ab",
+        "size_in_bytes": 28241
+      },
+      {
+        "_path": "include/X11/extensions/XKBgeom.h",
+        "path_type": "hardlink",
+        "sha256": "1054ecba3189a444d36757a3243990578563f708ec3fadf63cf123b937d4f888",
+        "sha256_in_prefix": "1054ecba3189a444d36757a3243990578563f708ec3fadf63cf123b937d4f888",
+        "size_in_bytes": 15816
+      },
+      {
+        "_path": "include/X11/extensions/XKBproto.h",
+        "path_type": "hardlink",
+        "sha256": "3f17b3bda13d74e2232b5403d0f4641c20442804622abd1b9003dc9620ad3888",
+        "sha256_in_prefix": "3f17b3bda13d74e2232b5403d0f4641c20442804622abd1b9003dc9620ad3888",
+        "size_in_bytes": 30890
+      },
+      {
+        "_path": "include/X11/extensions/XKBsrv.h",
+        "path_type": "hardlink",
+        "sha256": "c9c1c0145d56d27a3b490442c7e2a2e7eb42f67f9c4e076cf22c5a1596343b99",
+        "sha256_in_prefix": "c9c1c0145d56d27a3b490442c7e2a2e7eb42f67f9c4e076cf22c5a1596343b99",
+        "size_in_bytes": 28029
+      },
+      {
+        "_path": "include/X11/extensions/XKBstr.h",
+        "path_type": "hardlink",
+        "sha256": "f6d346dff715aa5542850ca0bef83b50858af2cd6a3ab90a02850b0cefde0d35",
+        "sha256_in_prefix": "f6d346dff715aa5542850ca0bef83b50858af2cd6a3ab90a02850b0cefde0d35",
+        "size_in_bytes": 19643
+      },
+      {
+        "_path": "lib/pkgconfig/kbproto.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/xorg-kbproto_1610027635248/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehol",
+        "sha256": "52f1fc7b20cf73c3c563cd15364696b99bdac34721d44b63cc6af7fb0a7a3328",
+        "sha256_in_prefix": "fbf8501d3dd9222f70ac20732e5ff1e585df355bdba706912e2f1d8cbfbb42a5",
+        "size_in_bytes": 429
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "e90b0a6a5d41776f11add74aa030f789faf4efd3875c31964d6f9cfa63a10dd1",
+  "size": 27338,
+  "subdir": "linux-64",
+  "timestamp": 1610027759842,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/xorg-kbproto-1.0.7-h7f98852_1002.tar.bz2",
+  "version": "1.0.7"
+}

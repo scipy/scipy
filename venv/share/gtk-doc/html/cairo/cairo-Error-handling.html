@@ -1,0 +1,486 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Error handling: Cairo: A Vector Graphics Library</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<link rel="home" href="index.html" title="Cairo: A Vector Graphics Library">
+<link rel="up" href="cairo-support.html" title="Utilities">
+<link rel="prev" href="cairo-cairo-matrix-t.html" title="cairo_matrix_t">
+<link rel="next" href="cairo-Version-Information.html" title="Version Information">
+<meta name="generator" content="GTK-Doc V1.27 (XML mode)">
+<link rel="stylesheet" href="style.css" type="text/css">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<table class="navigation" id="top" width="100%" summary="Navigation header" cellpadding="2" cellspacing="5"><tr valign="middle">
+<td width="100%" align="left" class="shortcuts">
+<a href="#" class="shortcut">Top</a><span id="nav_description">  <span class="dim">|</span> 
+                  <a href="#cairo-Error-handling.description" class="shortcut">Description</a></span>
+</td>
+<td><a accesskey="h" href="index.html"><img src="home.png" width="16" height="16" border="0" alt="Home"></a></td>
+<td><a accesskey="u" href="cairo-support.html"><img src="up.png" width="16" height="16" border="0" alt="Up"></a></td>
+<td><a accesskey="p" href="cairo-cairo-matrix-t.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
+<td><a accesskey="n" href="cairo-Version-Information.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
+</tr></table>
+<div class="refentry">
+<a name="cairo-Error-handling"></a><div class="titlepage"></div>
+<div class="refnamediv"><table width="100%"><tr>
+<td valign="top">
+<h2><span class="refentrytitle"><a name="cairo-Error-handling.top_of_page"></a>Error handling</span></h2>
+<p>Error handling — Decoding cairo's status</p>
+</td>
+<td class="gallery_image" valign="top" align="right"></td>
+</tr></table></div>
+<div class="refsect1">
+<a name="cairo-Error-handling.functions"></a><h2>Functions</h2>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="functions_return">
+<col class="functions_name">
+</colgroup>
+<tbody>
+<tr>
+<td class="function_type">const <span class="returnvalue">char</span> *
+</td>
+<td class="function_name">
+<a class="link" href="cairo-Error-handling.html#cairo-status-to-string" title="cairo_status_to_string ()">cairo_status_to_string</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-Error-handling.html#cairo-debug-reset-static-data" title="cairo_debug_reset_static_data ()">cairo_debug_reset_static_data</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect1">
+<a name="cairo-Error-handling.other"></a><h2>Types and Values</h2>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="name">
+<col class="description">
+</colgroup>
+<tbody><tr>
+<td class="datatype_keyword">enum</td>
+<td class="function_name"><a class="link" href="cairo-Error-handling.html#cairo-status-t" title="enum cairo_status_t">cairo_status_t</a></td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect1">
+<a name="cairo-Error-handling.description"></a><h2>Description</h2>
+<p>Cairo uses a single status type to represent all kinds of errors.  A status
+value of <a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-SUCCESS:CAPS"><code class="literal">CAIRO_STATUS_SUCCESS</code></a> represents no error and has an integer value
+of zero.  All other status values represent an error.</p>
+<p>Cairo's error handling is designed to be easy to use and safe.  All major
+cairo objects <em class="firstterm">retain</em> an error status internally which
+can be queried anytime by the users using cairo*_status() calls.  In
+the mean time, it is safe to call all cairo functions normally even if the
+underlying object is in an error status.  This means that no error handling
+code is required before or after each individual cairo function call.</p>
+</div>
+<div class="refsect1">
+<a name="cairo-Error-handling.functions_details"></a><h2>Functions</h2>
+<div class="refsect2">
+<a name="cairo-status-to-string"></a><h3>cairo_status_to_string ()</h3>
+<pre class="programlisting">const <span class="returnvalue">char</span> *
+cairo_status_to_string (<em class="parameter"><code><a class="link" href="cairo-Error-handling.html#cairo-status-t" title="enum cairo_status_t"><span class="type">cairo_status_t</span></a> status</code></em>);</pre>
+<p>Provides a human-readable description of a <a class="link" href="cairo-Error-handling.html#cairo-status-t" title="enum cairo_status_t"><span class="type">cairo_status_t</span></a>.</p>
+<div class="refsect3">
+<a name="cairo-status-to-string.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>status</p></td>
+<td class="parameter_description"><p>a cairo status</p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-status-to-string.returns"></a><h4>Returns</h4>
+<p> a string representation of the status</p>
+</div>
+<p class="since">Since: 1.0</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-debug-reset-static-data"></a><h3>cairo_debug_reset_static_data ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_debug_reset_static_data (<em class="parameter"><code><span class="type">void</span></code></em>);</pre>
+<p>Resets all static data within cairo to its original state,
+(ie. identical to the state at the time of program invocation). For
+example, all caches within cairo will be flushed empty.</p>
+<p>This function is intended to be useful when using memory-checking
+tools such as valgrind. When valgrind's memcheck analyzes a
+cairo-using program without a call to <a class="link" href="cairo-Error-handling.html#cairo-debug-reset-static-data" title="cairo_debug_reset_static_data ()"><code class="function">cairo_debug_reset_static_data()</code></a>,
+it will report all data reachable via cairo's static objects as
+"still reachable". Calling <a class="link" href="cairo-Error-handling.html#cairo-debug-reset-static-data" title="cairo_debug_reset_static_data ()"><code class="function">cairo_debug_reset_static_data()</code></a> just prior
+to program termination will make it easier to get squeaky clean
+reports from valgrind.</p>
+<p>WARNING: It is only safe to call this function when there are no
+active cairo objects remaining, (ie. the appropriate destroy
+functions have been called as necessary). If there are active cairo
+objects, this call is likely to cause a crash, (eg. an assertion
+failure due to a hash table being destroyed when non-empty).</p>
+<p class="since">Since: 1.0</p>
+</div>
+</div>
+<div class="refsect1">
+<a name="cairo-Error-handling.other_details"></a><h2>Types and Values</h2>
+<div class="refsect2">
+<a name="cairo-status-t"></a><h3>enum cairo_status_t</h3>
+<p><a class="link" href="cairo-Error-handling.html#cairo-status-t" title="enum cairo_status_t"><span class="type">cairo_status_t</span></a> is used to indicate errors that can occur when
+using Cairo. In some cases it is returned directly by functions.
+but when using <a class="link" href="cairo-cairo-t.html#cairo-t" title="cairo_t"><span class="type">cairo_t</span></a>, the last error, if any, is stored in
+the context and can be retrieved with <a class="link" href="cairo-cairo-t.html#cairo-status" title="cairo_status ()"><code class="function">cairo_status()</code></a>.</p>
+<p>New entries may be added in future versions.  Use <a class="link" href="cairo-Error-handling.html#cairo-status-to-string" title="cairo_status_to_string ()"><code class="function">cairo_status_to_string()</code></a>
+to get a human-readable representation of an error message.</p>
+<div class="refsect3">
+<a name="cairo-status-t.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="300px" class="enum_members_name">
+<col class="enum_members_description">
+<col width="200px" class="enum_members_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-SUCCESS:CAPS"></a>CAIRO_STATUS_SUCCESS</p></td>
+<td class="enum_member_description">
+<p>no error has occurred (Since 1.0)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-NO-MEMORY:CAPS"></a>CAIRO_STATUS_NO_MEMORY</p></td>
+<td class="enum_member_description">
+<p>out of memory (Since 1.0)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-INVALID-RESTORE:CAPS"></a>CAIRO_STATUS_INVALID_RESTORE</p></td>
+<td class="enum_member_description">
+<p>cairo_restore() called without matching <a class="link" href="cairo-cairo-t.html#cairo-save" title="cairo_save ()"><code class="function">cairo_save()</code></a> (Since 1.0)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-INVALID-POP-GROUP:CAPS"></a>CAIRO_STATUS_INVALID_POP_GROUP</p></td>
+<td class="enum_member_description">
+<p>no saved group to pop, i.e. <a class="link" href="cairo-cairo-t.html#cairo-pop-group" title="cairo_pop_group ()"><code class="function">cairo_pop_group()</code></a> without matching <a class="link" href="cairo-cairo-t.html#cairo-push-group" title="cairo_push_group ()"><code class="function">cairo_push_group()</code></a> (Since 1.0)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-NO-CURRENT-POINT:CAPS"></a>CAIRO_STATUS_NO_CURRENT_POINT</p></td>
+<td class="enum_member_description">
+<p>no current point defined (Since 1.0)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-INVALID-MATRIX:CAPS"></a>CAIRO_STATUS_INVALID_MATRIX</p></td>
+<td class="enum_member_description">
+<p>invalid matrix (not invertible) (Since 1.0)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-INVALID-STATUS:CAPS"></a>CAIRO_STATUS_INVALID_STATUS</p></td>
+<td class="enum_member_description">
+<p>invalid value for an input <a class="link" href="cairo-Error-handling.html#cairo-status-t" title="enum cairo_status_t"><span class="type">cairo_status_t</span></a> (Since 1.0)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-NULL-POINTER:CAPS"></a>CAIRO_STATUS_NULL_POINTER</p></td>
+<td class="enum_member_description">
+<p><a href="/usr/share/gtk-doc/html/glib/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> pointer (Since 1.0)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-INVALID-STRING:CAPS"></a>CAIRO_STATUS_INVALID_STRING</p></td>
+<td class="enum_member_description">
+<p>input string not valid UTF-8 (Since 1.0)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-INVALID-PATH-DATA:CAPS"></a>CAIRO_STATUS_INVALID_PATH_DATA</p></td>
+<td class="enum_member_description">
+<p>input path data not valid (Since 1.0)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-READ-ERROR:CAPS"></a>CAIRO_STATUS_READ_ERROR</p></td>
+<td class="enum_member_description">
+<p>error while reading from input stream (Since 1.0)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-WRITE-ERROR:CAPS"></a>CAIRO_STATUS_WRITE_ERROR</p></td>
+<td class="enum_member_description">
+<p>error while writing to output stream (Since 1.0)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-SURFACE-FINISHED:CAPS"></a>CAIRO_STATUS_SURFACE_FINISHED</p></td>
+<td class="enum_member_description">
+<p>target surface has been finished (Since 1.0)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-SURFACE-TYPE-MISMATCH:CAPS"></a>CAIRO_STATUS_SURFACE_TYPE_MISMATCH</p></td>
+<td class="enum_member_description">
+<p>the surface type is not appropriate for the operation (Since 1.0)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-PATTERN-TYPE-MISMATCH:CAPS"></a>CAIRO_STATUS_PATTERN_TYPE_MISMATCH</p></td>
+<td class="enum_member_description">
+<p>the pattern type is not appropriate for the operation (Since 1.0)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-INVALID-CONTENT:CAPS"></a>CAIRO_STATUS_INVALID_CONTENT</p></td>
+<td class="enum_member_description">
+<p>invalid value for an input <a class="link" href="cairo-cairo-surface-t.html#cairo-content-t" title="enum cairo_content_t"><span class="type">cairo_content_t</span></a> (Since 1.0)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-INVALID-FORMAT:CAPS"></a>CAIRO_STATUS_INVALID_FORMAT</p></td>
+<td class="enum_member_description">
+<p>invalid value for an input <a class="link" href="cairo-Image-Surfaces.html#cairo-format-t" title="enum cairo_format_t"><span class="type">cairo_format_t</span></a> (Since 1.0)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-INVALID-VISUAL:CAPS"></a>CAIRO_STATUS_INVALID_VISUAL</p></td>
+<td class="enum_member_description">
+<p>invalid value for an input Visual* (Since 1.0)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-FILE-NOT-FOUND:CAPS"></a>CAIRO_STATUS_FILE_NOT_FOUND</p></td>
+<td class="enum_member_description">
+<p>file not found (Since 1.0)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-INVALID-DASH:CAPS"></a>CAIRO_STATUS_INVALID_DASH</p></td>
+<td class="enum_member_description">
+<p>invalid value for a dash setting (Since 1.0)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-INVALID-DSC-COMMENT:CAPS"></a>CAIRO_STATUS_INVALID_DSC_COMMENT</p></td>
+<td class="enum_member_description">
+<p>invalid value for a DSC comment (Since 1.2)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-INVALID-INDEX:CAPS"></a>CAIRO_STATUS_INVALID_INDEX</p></td>
+<td class="enum_member_description">
+<p>invalid index passed to getter (Since 1.4)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-CLIP-NOT-REPRESENTABLE:CAPS"></a>CAIRO_STATUS_CLIP_NOT_REPRESENTABLE</p></td>
+<td class="enum_member_description">
+<p>clip region not representable in desired format (Since 1.4)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-TEMP-FILE-ERROR:CAPS"></a>CAIRO_STATUS_TEMP_FILE_ERROR</p></td>
+<td class="enum_member_description">
+<p>error creating or writing to a temporary file (Since 1.6)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-INVALID-STRIDE:CAPS"></a>CAIRO_STATUS_INVALID_STRIDE</p></td>
+<td class="enum_member_description">
+<p>invalid value for stride (Since 1.6)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-FONT-TYPE-MISMATCH:CAPS"></a>CAIRO_STATUS_FONT_TYPE_MISMATCH</p></td>
+<td class="enum_member_description">
+<p>the font type is not appropriate for the operation (Since 1.8)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-USER-FONT-IMMUTABLE:CAPS"></a>CAIRO_STATUS_USER_FONT_IMMUTABLE</p></td>
+<td class="enum_member_description">
+<p>the user-font is immutable (Since 1.8)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-USER-FONT-ERROR:CAPS"></a>CAIRO_STATUS_USER_FONT_ERROR</p></td>
+<td class="enum_member_description">
+<p>error occurred in a user-font callback function (Since 1.8)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-NEGATIVE-COUNT:CAPS"></a>CAIRO_STATUS_NEGATIVE_COUNT</p></td>
+<td class="enum_member_description">
+<p>negative number used where it is not allowed (Since 1.8)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-INVALID-CLUSTERS:CAPS"></a>CAIRO_STATUS_INVALID_CLUSTERS</p></td>
+<td class="enum_member_description">
+<p>input clusters do not represent the accompanying text and glyph array (Since 1.8)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-INVALID-SLANT:CAPS"></a>CAIRO_STATUS_INVALID_SLANT</p></td>
+<td class="enum_member_description">
+<p>invalid value for an input <a class="link" href="cairo-text.html#cairo-font-slant-t" title="enum cairo_font_slant_t"><span class="type">cairo_font_slant_t</span></a> (Since 1.8)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-INVALID-WEIGHT:CAPS"></a>CAIRO_STATUS_INVALID_WEIGHT</p></td>
+<td class="enum_member_description">
+<p>invalid value for an input <a class="link" href="cairo-text.html#cairo-font-weight-t" title="enum cairo_font_weight_t"><span class="type">cairo_font_weight_t</span></a> (Since 1.8)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-INVALID-SIZE:CAPS"></a>CAIRO_STATUS_INVALID_SIZE</p></td>
+<td class="enum_member_description">
+<p>invalid value (typically too big) for the size of the input (surface, pattern, etc.) (Since 1.10)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-USER-FONT-NOT-IMPLEMENTED:CAPS"></a>CAIRO_STATUS_USER_FONT_NOT_IMPLEMENTED</p></td>
+<td class="enum_member_description">
+<p>user-font method not implemented (Since 1.10)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-DEVICE-TYPE-MISMATCH:CAPS"></a>CAIRO_STATUS_DEVICE_TYPE_MISMATCH</p></td>
+<td class="enum_member_description">
+<p>the device type is not appropriate for the operation (Since 1.10)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-DEVICE-ERROR:CAPS"></a>CAIRO_STATUS_DEVICE_ERROR</p></td>
+<td class="enum_member_description">
+<p>an operation to the device caused an unspecified error (Since 1.10)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-INVALID-MESH-CONSTRUCTION:CAPS"></a>CAIRO_STATUS_INVALID_MESH_CONSTRUCTION</p></td>
+<td class="enum_member_description">
+<p>a mesh pattern
+  construction operation was used outside of a
+  <a class="link" href="cairo-cairo-pattern-t.html#cairo-mesh-pattern-begin-patch" title="cairo_mesh_pattern_begin_patch ()"><code class="function">cairo_mesh_pattern_begin_patch()</code></a>/<a class="link" href="cairo-cairo-pattern-t.html#cairo-mesh-pattern-end-patch" title="cairo_mesh_pattern_end_patch ()"><code class="function">cairo_mesh_pattern_end_patch()</code></a>
+  pair (Since 1.12)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-DEVICE-FINISHED:CAPS"></a>CAIRO_STATUS_DEVICE_FINISHED</p></td>
+<td class="enum_member_description">
+<p>target device has been finished (Since 1.12)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-JBIG2-GLOBAL-MISSING:CAPS"></a>CAIRO_STATUS_JBIG2_GLOBAL_MISSING</p></td>
+<td class="enum_member_description">
+<p><a class="link" href="cairo-cairo-surface-t.html#CAIRO-MIME-TYPE-JBIG2-GLOBAL-ID:CAPS" title="CAIRO_MIME_TYPE_JBIG2_GLOBAL_ID"><code class="literal">CAIRO_MIME_TYPE_JBIG2_GLOBAL_ID</code></a> has been used on at least one image
+  but no image provided <a class="link" href="cairo-cairo-surface-t.html#CAIRO-MIME-TYPE-JBIG2-GLOBAL:CAPS" title="CAIRO_MIME_TYPE_JBIG2_GLOBAL"><code class="literal">CAIRO_MIME_TYPE_JBIG2_GLOBAL</code></a> (Since 1.14)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-PNG-ERROR:CAPS"></a>CAIRO_STATUS_PNG_ERROR</p></td>
+<td class="enum_member_description">
+<p>error occurred in libpng while reading from or writing to a PNG file (Since 1.16)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-FREETYPE-ERROR:CAPS"></a>CAIRO_STATUS_FREETYPE_ERROR</p></td>
+<td class="enum_member_description">
+<p>error occurred in libfreetype (Since 1.16)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-WIN32-GDI-ERROR:CAPS"></a>CAIRO_STATUS_WIN32_GDI_ERROR</p></td>
+<td class="enum_member_description">
+<p>error occurred in the Windows Graphics Device Interface (Since 1.16)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-TAG-ERROR:CAPS"></a>CAIRO_STATUS_TAG_ERROR</p></td>
+<td class="enum_member_description">
+<p>invalid tag name, attributes, or nesting (Since 1.16)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-STATUS-LAST-STATUS:CAPS"></a>CAIRO_STATUS_LAST_STATUS</p></td>
+<td class="enum_member_description">
+<p>this is a special value indicating the number of
+  status values defined in this enumeration.  When using this value, note
+  that the version of cairo at run-time may have additional status values
+  defined than the value of this symbol at compile-time. (Since 1.10)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.0</p>
+</div>
+</div>
+<div class="refsect1">
+<a name="cairo-Error-handling.see-also"></a><h2>See Also</h2>
+<p>cairo_status(), <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-status" title="cairo_surface_status ()"><code class="function">cairo_surface_status()</code></a>, <a class="link" href="cairo-cairo-pattern-t.html#cairo-pattern-status" title="cairo_pattern_status ()"><code class="function">cairo_pattern_status()</code></a>,
+           <a class="link" href="cairo-cairo-font-face-t.html#cairo-font-face-status" title="cairo_font_face_status ()"><code class="function">cairo_font_face_status()</code></a>, <a class="link" href="cairo-cairo-scaled-font-t.html#cairo-scaled-font-status" title="cairo_scaled_font_status ()"><code class="function">cairo_scaled_font_status()</code></a>,
+           <a class="link" href="cairo-Regions.html#cairo-region-status" title="cairo_region_status ()"><code class="function">cairo_region_status()</code></a></p>
+</div>
+</div>
+<div class="footer">
+<hr>Generated by GTK-Doc V1.27</div>
+</body>
+</html>

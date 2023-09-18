@@ -1,0 +1,83 @@
+escape_char  /
+comment_char  %
+
+% English language locale for Ireland with Euro
+% Language: en
+% Territory: IE
+% Option: euro
+% Date: 2000-08-20
+% Users: general
+% Charset: ISO-8859-15
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title      "English locale for Ireland with Euro"
+source     "Free Software Foundation, Inc."
+address    "59 Temple Place - Suite 330, Boston, MA 02111-1307, USA"
+contact    ""
+email      "bug-glibc-locales@gnu.org"
+tel        ""
+fax        ""
+language   "English"
+territory  "Ireland"
+revision   "1.0"
+date       "2000-08-20"
+%
+category  "en_IE@euro:2000";LC_IDENTIFICATION
+category  "en_IE@euro:2000";LC_CTYPE
+category  "en_IE@euro:2000";LC_COLLATE
+category  "en_IE@euro:2000";LC_TIME
+category  "en_IE@euro:2000";LC_NUMERIC
+category  "en_IE@euro:2000";LC_MONETARY
+category  "en_IE@euro:2000";LC_MESSAGES
+category  "en_IE@euro:2000";LC_PAPER
+category  "en_IE@euro:2000";LC_NAME
+category  "en_IE@euro:2000";LC_ADDRESS
+category  "en_IE@euro:2000";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_CTYPE
+copy "en_IE"
+END LC_CTYPE
+
+LC_COLLATE
+copy "iso14651_t1"
+END LC_COLLATE
+
+LC_MONETARY
+copy "en_IE"
+END LC_MONETARY
+
+LC_NUMERIC
+copy "en_GB"
+END LC_NUMERIC
+
+LC_TIME
+copy "en_IE"
+END LC_TIME
+
+LC_MESSAGES
+copy "en_IE"
+END LC_MESSAGES
+
+LC_PAPER
+copy "en_IE"
+END LC_PAPER
+
+LC_TELEPHONE
+copy "en_IE"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+copy "en_IE"
+END LC_MEASUREMENT
+
+LC_NAME
+copy "en_IE"
+END LC_NAME
+
+LC_ADDRESS
+copy "en_IE"
+END LC_ADDRESS

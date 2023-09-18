@@ -1,0 +1,66 @@
+default partial alphanumeric_keys 
+xkb_symbols "basic" {
+
+    // Describes the differences between a very simple en_US
+    // keyboard and a Danish keyboard with dead key support
+    // and all of ISO-8859-1 characters available.
+
+    include "latin"
+    name[Group1]= "Denmark - Mac";
+
+    key <TLDE> {	[  onehalf,         section,    threequarters,       paragraph	]};
+    key <LSGT> {	[     less,         greater,        backslash,         notsign	]};
+    key <SPCE> {	[    space,           space,     nobreakspace,    nobreakspace	]};
+    key <AE01> {	[        1,          exclam,       exclamdown,     onesuperior	]};
+    key <AE02> {	[        2,        quotedbl,               at,     twosuperior	]};
+    key <AE03> {	[        3,      numbersign,         sterling,   threesuperior	]};
+    key <AE04> {	[        4,        EuroSign,           dollar,      onequarter	]};
+    key <AE05> {	[        5,         percent,         NoSymbol,            cent	]};
+    key <AE06> {	[        6,       ampersand,              yen,        NoSymbol	]};
+    key <AE07> {	[        7,           slash,        braceleft,        division	]};
+    key <AE08> {	[        8,       parenleft,      bracketleft,   guillemotleft	]};
+    key <AE09> {	[        9,      parenright,     bracketright,  guillemotright	]};
+    key <AE10> {	[        0,           equal,       braceright,          degree	]};
+    key <AE11> {	[     plus,        question,        plusminus,    questiondown	]};
+    key <AE12> {   	[ dead_acute,    dead_grave,              bar,       brokenbar	]};
+    key <AB03> {	[        c,               C,        copyright,        NoSymbol	]};
+    key <AB08> {	[    comma,       semicolon,     dead_cedilla,     dead_ogonek	]};
+    key <AB09> {	[   period,           colon,   periodcentered,   dead_abovedot	]};
+    key <AB10> {	[    minus,      underscore,           hyphen,          macron	]};
+    key <AC01> {	[        a,               A,      ordfeminine,       masculine  ]};
+    key <AC03> {	[        d,               D,              eth,             ETH  ]};
+    key <AC10> {	[	ae,               AE	]};
+    key <AC11> {	[   oslash,          Oslash	]};
+    key <AD03> {	[        e,               E,         EuroSign,            cent  ]};
+    key <AD04> {	[        r,               R,       registered,        NoSymbol  ]};
+    key <AD05> {	[        t,               T,            thorn,           THORN  ]};
+    key <AD08> {	[        i,               I,         NoSymbol,        NoSymbol  ]};
+    key <AD09> {	[        o,               O,               oe,              OE  ]};
+    key <AD11> {	[    aring,           Aring 	]};
+    key <AD12> {	[ dead_diaeresis, dead_circumflex, dead_tilde,      dead_caron	]};
+    key <BKSL> {	[ apostrophe,      asterisk, dead_doubleacute,        multiply	]};
+
+    include "eurosign(e)"
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys 
+xkb_symbols "nodeadkeys" {
+    include "macintosh_vndr/dk(basic)"
+    name[Group1]= "Denmark - Mac, no dead keys";
+
+    key <AE12> {	[           acute,           grave,              bar,          ogonek	]	};
+    key <AD12> {	[       diaeresis,     asciicircum,       asciitilde,     dead_macron	]      	};
+};
+
+partial alphanumeric_keys
+xkb_symbols "macbookpro" {
+
+    include "level3(win_switch)"
+    include "macintosh_vndr/dk(basic)"
+
+    name[Group1]= "Denmark - Mac, MacBook Pro";
+
+    key <BKSL>  { [apostrophe, asterisk,        at,        at ] };
+    key <TLDE>  { [    dollar,  section,    dollar,    dollar ] };
+};

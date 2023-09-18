@@ -1,0 +1,89 @@
+// Keyboard layouts for Cambodia.
+
+// Khmer Unicode standard keyboard layout as designed by the National
+// Information Communications Technology Development Authority (NiDa)
+// of Cambodia -- http://www.nida.gov.kh/.
+//
+// Origial author:  Jens Herden  (jens at khmeros.info), 2005.
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+    name[Group1]= "Khmer (Cambodia)";
+
+//  Four levels:   normal	Shift		right Alt	Shift+right Alt
+
+    key <TLDE>	{[guillemotleft,guillemotright,	U200d,		none	]};
+    key <AE01>	{[ U17e1,	exclam,		U200c,		U17f1	]};
+    key <AE02>	{[ U17e2,	U17d7,		at,		U17f2	]};
+    key <AE03>	{[ U17e3,	quotedbl,	U17d1,		U17f3	]};
+    key <AE04>	{[ U17e4,	U17db,		dollar,		U17f4	]};
+    key <AE05>	{[ U17e5,	percent,	EuroSign,	U17f5	]};
+    key <AE06>	{[ U17e6,	U17cd,		U17d9,		U17f6	]};
+    key <AE07>	{[ U17e7,	U17d0,		U17da,		U17f7	]};
+    key <AE08>	{[ U17e8,	U17cf,		asterisk,	U17f8	]};
+    key <AE09>	{[ U17e9,	parenleft,	braceleft,	U17f9	]};
+    key <AE10>	{[ U17e0,	parenright,	braceright,	U17f0	]};
+    key <AE11>	{[ U17a5,	U17cc,		x,		none	]};
+    key <AE12>	{[ U17b2,	equal,		U17ce,		none	]};
+
+    key <AD01>	{[ U1786,	U1788,		U17dc,		U19e0	]};
+    key <AD02>	{[ U17b9,	U17ba,		U17dd,		U19e1	]};
+    key <AD03>	{[ U17c1,	U17c2,		U17af,		U19e2	]};
+    key <AD04>	{[ U179a,	U17ac,		U17ab,		U19e3	]};
+    key <AD05>	{[ U178f,	U1791,		U17a8,		U19e4	]};
+    key <AD06>	{[ U1799,	U17bd,		none,		U19e5	]};
+    key <AD07>	{[ U17bb,	U17bc,		none,		U19e6	]};
+    key <AD08>	{[ U17b7,	U17b8,		U17a6,		U19e7	]};
+    key <AD09>	{[ U17c4,	U17c5,		U17b1,		U19e8	]};
+    key <AD10>	{[ U1795,	U1797,		U17b0,		U19e9	]};
+    key <AD11>	{[ U17c0,	U17bf,		U17a9,		U19ea	]};
+    key <AD12>	{[ U17aa,	U17a7,		U17b3,		U19eb	]};
+
+    key <AC01>	{[ U17b6,	U17ff,		none,		U19ec	]};
+    key <AC02>	{[ U179f,	U17c3,		none,		U19ed	]};
+    key <AC03>	{[ U178a,	U178c,		none,		U19ee	]};
+    key <AC04>	{[ U1790,	U1792,		none,		U19ef	]};
+    key <AC05>	{[ U1784,	U17a2,		none,		U19f0	]};
+    key <AC06>	{[ U17a0,	U17c7,		none,		U19f1	]};
+    key <AC07>	{[ U17d2,	U1789,		none,		U19f2	]};
+    key <AC08>	{[ U1780,	U1782,		U179d,		U19f3	]};
+    key <AC09>	{[ U179b,	U17a1,		none,		U19f4	]};
+    key <AC10>	{[ U17be,	U17fe,		U17d6,		U19f5	]};
+    key <AC11>	{[ U17cb,	U17c9,		U17c8,		U19f6	]};
+    key <BKSL>	{[ U17ae,	U17ad,		backslash,	none	]};
+
+    key <AB01>	{[ U178b,	U178d,		none,		U19f7	]};
+    key <AB02>	{[ U1781,	U1783,		none,		U19f8	]};
+    key <AB03>	{[ U1785,	U1787,		none,		U19f9	]};
+    key <AB04>	{[ U179c,	U17fd,		none,		U19fa	]};
+    key <AB05>	{[ U1794,	U1796,		U179e,		U19fb	]};
+    key <AB06>	{[ U1793,	U178e,		none,		U19fc	]};
+    key <AB07>	{[ U1798,	U17c6,		none,		U19fd	]};
+    key <AB08>	{[ U17fc,	U17fb,		comma,		U19fe	]};
+    key <AB09>	{[ U17d4,	U17d5,		period,		U19ff	]};
+    key <AB10>	{[ U17ca,	question,	slash,		none	]};
+
+    key <SPCE>	{[ U200b,	space,		nobreakspace,	none	]};
+
+    // Third and fourth level with right Alt key (AltGr):
+    include "level3(ralt_switch)"
+};
+
+
+partial alphanumeric_keys
+xkb_symbols "olpc" {
+
+    include "kh(basic)"
+
+    // contact: Walter@laptop.org
+
+    key <AE01>	{[ U17e1,	U200c,		exclam,		U17f1	]};
+    key <AE03>	{[ U17e3,	U17d1,		quotedbl,	U17f3	]};
+    key <AE05>	{[ U17e5,	EuroSign,	percent,	U17f5	]};
+    key <AE12>	{[ U17b2,	U17ce,		equal,		none	]};
+
+    key <AC10>	{[ U17be,	U17c8,		U17d6,		U19f5	]};
+
+    // Language key:
+    include "group(olpc)"
+};

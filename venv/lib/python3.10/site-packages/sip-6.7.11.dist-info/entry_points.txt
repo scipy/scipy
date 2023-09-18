@@ -1,0 +1,7 @@
+[console_scripts]
+sip-build = sipbuild.tools.build:main
+sip-distinfo = sipbuild.distinfo.main:main
+sip-install = sipbuild.tools.install:main
+sip-module = sipbuild.module.main:main
+sip-sdist = sipbuild.tools.sdist:main
+sip-wheel = sipbuild.tools.wheel:main

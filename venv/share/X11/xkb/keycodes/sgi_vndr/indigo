@@ -1,0 +1,139 @@
+default xkb_keycodes "pc101" {
+    minimum= 8;
+    maximum= 255;
+
+    <TLDE> = 62;
+    <AE01> = 15;
+    <AE02> = 21;
+    <AE03> = 22;
+    <AE04> = 29;
+    <AE05> = 30;
+    <AE06> = 37;
+    <AE07> = 38;
+    <AE08> = 45;
+    <AE09> = 46;
+    <AE10> = 53;
+    <AE11> = 54;
+    <AE12> = 61;
+    <BKSP> = 68;
+
+    <TAB>  = 16;
+    <AD01> = 17;
+    <AD02> = 23;
+    <AD03> = 24;
+    <AD04> = 31;
+    <AD05> = 32;
+    <AD06> = 39;
+    <AD07> = 40;
+    <AD08> = 47;
+    <AD09> = 48;
+    <AD10> = 55;
+    <AD11> = 56;
+    <AD12> = 63;
+    <RTRN> = 58;
+
+    <CAPS> = 11;
+    <AC01> = 18;
+    <AC02> = 19;
+    <AC03> = 25;
+    <AC04> = 26;
+    <AC05> = 33;
+    <AC06> = 34;
+    <AC07> = 41;
+    <AC08> = 42;
+    <AC09> = 49;
+    <AC10> = 50;
+    <AC11> = 57;
+
+    <LFSH> = 13;
+    <AB01> = 27;
+    <AB02> = 28;
+    <AB03> = 35;
+    <AB04> = 36;
+    <AB05> = 43;
+    <AB06> = 44;
+    <AB07> = 51;
+    <AB08> = 52;
+    <AB09> = 59;
+    <AB10> = 60;
+    <RTSH> = 12;
+    <BKSL> = 64;
+
+    <LALT> = 91;
+    <LCTL> = 10;
+    <SPCE> = 90;
+    <RCTL> = 93;
+    <RALT> = 92;
+
+    <ESC>  = 14;
+    <FK01> = 94;
+    <FK02> = 95;
+    <FK03> = 96;
+    <FK04> = 97;
+    <FK05> = 98;
+    <FK06> = 99;
+    <FK07> = 100;
+    <FK08> = 101;
+    <FK09> = 102;
+    <FK10> = 103;
+    <FK11> = 104;
+    <FK12> = 105;
+
+    <PRSC> = 106;
+    <SCLK> = 107;
+    <PAUS> = 108;
+
+    <INS>  = 109;
+    <HOME> = 110;
+    <PGUP> = 111;
+    <DELE> = 69;
+    <END>  = 112;
+    <PGDN> = 113;
+
+    <UP>   = 88;
+    <LEFT> = 80;
+    <DOWN> = 81;
+    <RGHT> = 87;
+
+    <NMLK> = 114;
+    <KPDV> = 115;
+    <KPMU> = 116;
+    <KPSU> = 83;
+
+    <KP7>  = 74;
+    <KP8>  = 75;
+    <KP9>  = 82;
+    <KPAD> = 117;
+
+    <KP4>  = 70;
+    <KP5>  = 76;
+    <KP6>  = 77;
+
+    <KP1>  = 65;
+    <KP2>  = 71;
+    <KP3>  = 72;
+    <KPEN> = 89;
+
+    <KP0>  = 66;
+    <KPDL> = 73;
+
+    alias <AE00> = <TLDE>;
+    alias <AC00> = <CAPS>;
+    alias <AA00> = <LCTL>;
+    alias <AA01> = <LALT>;
+    alias <AA09> = <RALT>;
+    alias <ALGR> = <RALT>;
+    alias <AA12> = <RCTL>;
+
+    virtual indicator 1 = "L1";
+    virtual indicator 2 = "L2";
+    virtual indicator 3 = "L3";
+    virtual indicator 4 = "L4";
+    indicator 5 = "Caps Lock";
+    indicator 6 = "Num Lock";
+    indicator 7 = "Scroll Lock";
+};
+xkb_keycodes "pc102" {
+    include "sgi_vndr/indigo(pc101)"
+    <LSGT> = 118;
+};

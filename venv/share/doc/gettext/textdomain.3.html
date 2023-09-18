@@ -1,0 +1,140 @@
+<!-- Creator     : groff version 1.22.3 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>TEXTDOMAIN</title>
+
+</head>
+<body>
+
+<h1 align="center">TEXTDOMAIN</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">textdomain
+- set domain for future gettext() calls</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;libintl.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>char *
+textdomain (const char *</b> <i>domainname</i><b>);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>textdomain</b> function sets or retrieves the current
+message domain.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A message
+domain is a set of translatable <i>msgid</i> messages.
+Usually, every software package has its own message domain.
+The domain name is used to determine the message catalog
+where a translation is looked up; it must be a non-empty
+string.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The current
+message domain is used by the <b>gettext</b>,
+<b>ngettext</b> functions, and by the <b>dgettext</b>,
+<b>dcgettext</b>, <b>dngettext</b> and <b>dcngettext</b>
+functions when called with a NULL domainname argument.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<i>domainname</i> is not NULL, the current message domain is
+set to <i>domainname</i>. The string the function stores
+internally is a copy of the <i>domainname</i> argument.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<i>domainname</i> is NULL, the function returns the current
+message domain.</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">If successful,
+the <b>textdomain</b> function returns the current message
+domain, after possibly changing it. The resulting string is
+valid until the next <b>textdomain</b> call and must not be
+modified or freed. If a memory allocation failure occurs, it
+sets <b>errno</b> to <b>ENOMEM</b> and returns NULL.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+error can occur, among others:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOMEM</b></p></td>
+<td width="2%"></td>
+<td width="43%">
+
+
+<p>Not enough memory available.</p></td>
+<td width="35%">
+</td></tr>
+</table>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The return type
+ought to be <b>const char *</b>, but is <b>char *</b> to
+avoid warnings in C code predating ANSI C.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>gettext</b>(3),
+<b>ngettext</b>(3), <b>bindtextdomain</b>(3),
+<b>bind_textdomain_codeset</b>(3)</p>
+<hr>
+</body>
+</html>

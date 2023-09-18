@@ -1,0 +1,20 @@
+# Make the printer beep
+{
+	# The name of the test...
+	NAME "Identify Printer with Sound"
+
+	# The operation to use
+	OPERATION Identify-Printer
+
+	# Attributes, starting in the operation group...
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR keyword identify-actions sound
+
+	# What statuses are OK?
+	STATUS successful-ok
+	STATUS successful-ok-ignored-or-substituted-attributes
+}

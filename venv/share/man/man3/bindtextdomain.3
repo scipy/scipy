@@ -1,0 +1,69 @@
+.\" Copyright (c) Bruno Haible <haible@clisp.cons.org>
+.\"
+.\" This is free documentation; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License as
+.\" published by the Free Software Foundation; either version 2 of
+.\" the License, or (at your option) any later version.
+.\"
+.\" References consulted:
+.\"   GNU glibc-2 source code and manual
+.\"   GNU gettext source code and manual
+.\"   LI18NUX 2000 Globalization Specification
+.\"
+.TH BINDTEXTDOMAIN 3 "May 2001" "GNU gettext 20220912"
+.SH NAME
+bindtextdomain \- set directory containing message catalogs
+.SH SYNOPSIS
+.nf
+.B #include <libintl.h>
+.sp
+.BI "char * bindtextdomain (const char * " domainname ", const char * " dirname );
+.fi
+.SH DESCRIPTION
+The \fBbindtextdomain\fP function sets the base directory of the hierarchy
+containing message catalogs for a given message domain.
+.PP
+A message domain is a set of translatable \fImsgid\fP messages. Usually,
+every software package has its own message domain. The need for calling
+\fBbindtextdomain\fP arises because packages are not always installed with
+the same prefix as the <libintl.h> header and the libc/libintl libraries.
+.PP
+Message catalogs will be expected at the pathnames
+\fIdirname\fP/\fIlocale\fP/\fIcategory\fP/\fIdomainname\fP.mo,
+where \fIlocale\fP is a locale name and \fIcategory\fP is a locale facet such
+as \fBLC_MESSAGES\fP.
+.PP
+\fIdomainname\fP must be a non-empty string.
+.PP
+If \fIdirname\fP is not NULL, the base directory for message catalogs belonging
+to domain \fIdomainname\fP is set to \fIdirname\fP. The function makes copies
+of the argument strings as needed. If the program wishes to call the
+\fBchdir\fP function, it is important that \fIdirname\fP be an absolute
+pathname; otherwise it cannot be guaranteed that the message catalogs will
+be found.
+.PP
+If \fIdirname\fP is NULL, the function returns the previously set base
+directory for domain \fIdomainname\fP.
+.SH "RETURN VALUE"
+If successful, the \fBbindtextdomain\fP function returns the current base
+directory for domain \fIdomainname\fP, after possibly changing it. The
+resulting string is valid until the next \fBbindtextdomain\fP call for the
+same \fIdomainname\fP and must not be modified or freed. If a memory allocation
+failure occurs, it sets \fBerrno\fP to \fBENOMEM\fP and returns NULL.
+.SH ERRORS
+The following error can occur, among others:
+.TP
+.B ENOMEM
+Not enough memory available.
+.SH BUGS
+The return type ought to be \fBconst char *\fP, but is \fBchar *\fP to avoid
+warnings in C code predating ANSI C.
+.SH "SEE ALSO"
+.BR gettext (3),
+.BR dgettext (3),
+.BR dcgettext (3),
+.BR ngettext (3),
+.BR dngettext (3),
+.BR dcngettext (3),
+.BR textdomain (3),
+.BR realpath (3)

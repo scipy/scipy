@@ -1,0 +1,32 @@
+# Create a local (temporary) print queue
+#
+# Usage:
+#
+#    ipptool -tv -d name=... -d device=ipp://... ipp://localhost:port/ cups-create-local-printer.test
+{
+	# The name of the test...
+	NAME "Create local print queue"
+
+	# The operation to use
+	OPERATION CUPS-Create-Local-Printer
+
+	# Attributes, starting in the operation group...
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+
+	GROUP printer-attributes-tag
+	ATTR name printer-name $name
+	ATTR uri device-uri $device
+
+	# What statuses are OK?
+	STATUS successful-ok
+
+	# What attributes do we expect?
+	EXPECT printer-is-accepting-jobs OF-TYPE boolean
+	EXPECT printer-state OF-TYPE enum
+	EXPECT printer-state-reasons OF-TYPE keyword
+	EXPECT printer-uri-supported OF-TYPE uri
+}

@@ -1,0 +1,5 @@
+#ifndef QT_QTQUICK3DASSETIMPORT_MODULE_H
+#define QT_QTQUICK3DASSETIMPORT_MODULE_H
+#include <QtQuick3DAssetImport/QtQuick3DAssetImportDepends>
+#include "qtquick3dassetimportversion.h"
+#endif

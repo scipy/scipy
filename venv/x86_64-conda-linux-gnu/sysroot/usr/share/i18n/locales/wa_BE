@@ -1,0 +1,176 @@
+comment_char %
+escape_char  /
+% charset "UTF-8"
+% Distribution and use is free, also for commercial purposes.
+
+LC_IDENTIFICATION
+title "Walloon Language Locale for Belgium"
+source "Djan SACRE"
+contact "Pablo Saratxaga"
+email "pablo@mandrakesoft.com"
+address ""
+tel ""
+fax ""
+language "Walloon"
+territory "Belgium"
+revision "0.9"
+date "2003-08-25"
+
+category i18n:2000;LC_IDENTIFICATION
+category i18n:2000;LC_COLLATE
+category i18n:2000;LC_CTYPE
+category i18n:2000;LC_MESSAGES
+category i18n:2000;LC_MONETARY
+category i18n:2000;LC_NUMERIC
+category i18n:2000;LC_TIME
+category i18n:2000;LC_PAPER
+category i18n:2000;LC_MEASUREMENT
+category i18n:2000;LC_TELEPHONE
+category i18n:2000;LC_ADDRESS
+category i18n:2000;LC_NAME
+
+END LC_IDENTIFICATION
+
+LC_ADDRESS
+postal_fmt    "<U0025><U0066><U0025><U004E><U0025><U0061><U0025><U004E>/
+<U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E><U0025><U0073>/
+<U0020><U0025><U0068><U0020><U0025><U0065><U0020><U0025><U0072><U0025>/
+<U004E><U0025><U007A><U0020><U0025><U0054><U0025>/
+<U004E><U0025><U0063><U0025><U004E>"
+country_name "<U0042><U0065><U006C><U006A><U0069><U006B><U0065>"
+country_post "B"
+country_ab2 "BE"
+country_ab3 "BEL"
+country_num 56
+country_isbn "2"
+country_car "B"
+lang_name "<U0057><U0061><U006C><U006F><U006E>"
+lang_ab "wa"
+lang_term "wln"
+lang_lib "wln"
+END LC_ADDRESS
+
+LC_CTYPE
+copy "i18n"
+translit_start
+include "translit_combining";""
+
+% A-bole -> A-circonflecse -> AU
+<U00C5> "<U0041><U030A>";"<U0041>";"<U0041><U0055>"
+<U00E5> "<U0061><U030A>";"<U0061>";"<U0061><U0075>"
+
+translit_end
+END LC_CTYPE
+
+LC_COLLATE
+copy "fr_BE"
+END LC_COLLATE
+
+% COMINTAIRE : dj' a radjouté on "a" et on "w" po les yesexpr
+% pace ki "oyi" si pout dire ossi "awè" (Lîdje), ayi (Årdene)
+% et "way" (Nivele).
+LC_MESSAGES
+yesstr  "<U004F><U0079><U0069>"
+nostr   "<U004E><U0065><U006E><U0069>"
+yesexpr "<U005E><U005B><U006F><U004F><U0079><U0059><U0061><U0041><U0077><U0057><U005D><U002E><U002A>"
+noexpr  "<U005E><U005B><U006E><U004E><U005D><U002E><U002A>"
+END LC_MESSAGES
+
+% COMINTAIRE: doet esse li minme ki po fr_BE.
+LC_MONETARY
+copy "fr_BE"
+END LC_MONETARY
+
+% COMINTAIRE: doet esse li minme ki po fr_BE.
+LC_NUMERIC
+copy "fr_BE"
+END LC_NUMERIC
+
+% COMINTAIRE: doet esse li minme ki po fr_BE.
+LC_PAPER
+copy "fr_BE"
+END LC_PAPER
+
+% COMINTAIRE: doet esse li minme ki po fr_BE.
+LC_MEASUREMENT
+copy "fr_BE"
+END LC_MEASUREMENT
+
+% COMINTAIRE: doet esse li minme ki po fr_BE.
+LC_TELEPHONE
+copy "fr_BE"
+END LC_TELEPHONE
+
+% COMINTAIRE: a çu ki dji sai, i gn a nou rascourti _oficir_
+% po les moes et les djoûs.
+% Donk, dji fwai come ça _mi_ shonne lodjike.
+%
+% Po les rascoutis, on a metou "djn" po djun, et "djl" po djulete.
+
+LC_TIME
+abday   "<U0064><U0069><U006D>";"<U006C><U006F><U006E>";/
+        "<U006D><U00E5><U0072>";"<U006D><U0069><U0065>";/
+        "<U0064><U006A><U0075>";"<U0076><U00E9><U006E>";/
+        "<U0073><U0065><U006D>"
+day     "<U0064><U0069><U006D><U0065><U0067><U006E><U0065>";/
+        "<U006C><U006F><U006E><U0064><U0069>";/
+        "<U006D><U00E5><U0072><U0064><U0069>";/
+        "<U006D><U0069><U0065><U0072><U006B><U0069><U0064><U0069>";/
+        "<U0064><U006A><U0075><U0064><U0069>";/
+        "<U0076><U00E9><U006E><U0072><U0064><U0069>";/
+        "<U0073><U0065><U006D><U0064><U0069>"
+abmon   "<U0064><U006A><U0061>";"<U0066><U0065><U0076>";/
+        "<U006D><U00E5><U0073>";"<U0061><U0076><U0072>";/
+        "<U006D><U0061><U0079>";"<U0064><U006A><U006E>";/
+        "<U0064><U006A><U006C>";"<U0061><U0077><U006F>";/
+        "<U0073><U0065><U0074>";"<U006F><U0063><U0074>";/
+        "<U006E><U00F4><U0076>";"<U0064><U0065><U0063>"
+mon     "<U0064><U006A><U0061><U006E><U0076><U00EE>";/
+        "<U0066><U0065><U0076><U0072><U00EE>";/
+        "<U006D><U00E5><U0073><U0073>";/
+        "<U0061><U0076><U0072><U0069>";/
+        "<U006D><U0061><U0079>";/
+        "<U0064><U006A><U0075><U006E>";/
+        "<U0064><U006A><U0075><U006C><U0065><U0074><U0065>";/
+        "<U0061><U0077><U006F><U0075><U0073><U0073><U0065>";/
+        "<U0073><U0065><U0074><U0069><U006D><U0062><U0065>";/
+        "<U006F><U0063><U0074><U00F4><U0062><U0065>";/
+        "<U006E><U00F4><U0076><U0069><U006D><U0062><U0065>";/
+        "<U0064><U0065><U0063><U0069><U006D><U0062><U0065>"
+% Pol cogne des dates (li longue cogne), c' est on pô målåjhey, ca i fåt
+% stitchî on "di" ou on "d'" pa dvant li no do moes. Donk:
+% "Li prumî" ou "Li 1 di djanvî 1999"
+% di fevrî
+% di måss
+% d' avri
+% di may
+% di djun
+% di djulete
+% d' awousse
+% di setimbe
+% d' octôbe
+% di nôvimbe
+% di decimbe
+% Est çki c' est possibe d' aveur "di" ou "d'" sorlon ki li no do moes
+% cmince avou ene voyale ou ene cossoune?
+%
+% Neni :-(
+
+d_t_fmt "<U004C><U0069><U0020><U0025><U0041><U0020><U0025><U0064><U0020><U0064><U0069><U0020><U0025><U0042><U0020><U0025><U0059><U0020><U0025><U0054><U0020><U0025><U005A>"
+% Chal, ça va
+d_fmt   "<U0025><U0064><U002F><U0025><U006D><U002F><U0025><U0059>"
+t_fmt   "<U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053>"
+am_pm   "<U0041><U004D>";"<U0050><U004D>"
+t_fmt_ampm "<U0025><U0049><U003A><U0025><U004D><U003A><U0025><U0053><U0020><U0025><U0070>"
+% prumî djoû del samwinne (1=londi)
+first_weekday 1
+END LC_TIME
+
+LC_NAME
+name_fmt "<U0025><U0064><U0025><U0074><U0025><U0067><U0025><U0074><U0025><U006D><U0025><U0074><U0025><U0066>"
+name_gen ""
+name_mr "M."
+name_mrs "Mme"
+name_miss "Mle"
+name_ms "Mme"
+END LC_NAME

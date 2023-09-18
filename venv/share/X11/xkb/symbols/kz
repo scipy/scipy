@@ -1,0 +1,305 @@
+// Keyboard layouts for Kazachstan.
+
+// Based on http://www.sci.kz/~sairan/keyboard/kzkbd.html
+// Baurzhan Ismagulov <ibr@radix50.net>
+
+// TODO:
+// 1. AltGr with TLDE and LSGT.
+// 2. Dead key for ruskaz and kazrus.
+// 3. Ctrl + <key>.
+// 4. Alt-Tab.
+
+// RST KazSSR 903-90
+// levels 3 and 4 are non-standard extensions
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+    name[Group1] = "Kazakh";
+
+key.type[group1] = "FOUR_LEVEL";
+
+    key <TLDE> { [ parenleft,               parenright,              Cyrillic_io, Cyrillic_IO ] };
+    key <AE01> { [ quotedbl,      exclam ] };
+    key <AE06> { [ comma,                   semicolon ] };
+    key <AE07> { [ period,                  colon ] };
+    key <BKSL> { [ backslash,               slash ] };
+    key <AB10> { [ numerosign,              question ] };
+    key <LSGT> { [ less,                    greater,                 bar,         brokenbar ] };
+
+key.type[group1] = "ALPHABETIC";
+
+    key <AE02> { [ Cyrillic_schwa,          Cyrillic_SCHWA ] };
+    key <AE03> { [ Ukrainian_i,             Ukrainian_I ] };
+    key <AE04> { [ Cyrillic_en_descender,   Cyrillic_EN_descender ] };
+    key <AE05> { [ Cyrillic_ghe_bar,        Cyrillic_GHE_bar ] };
+    key <AE08> { [ Cyrillic_u_straight,     Cyrillic_U_straight ] };
+    key <AE09> { [ Cyrillic_u_straight_bar, Cyrillic_U_straight_bar ] };
+    key <AE10> { [ Cyrillic_ka_descender,   Cyrillic_KA_descender ] };
+    key <AE11> { [ Cyrillic_o_bar,          Cyrillic_O_bar ] };
+    key <AE12> { [ Cyrillic_shha,           Cyrillic_SHHA ] };
+
+    key <AD01> { [ Cyrillic_shorti,         Cyrillic_SHORTI ] };
+    key <AD02> { [ Cyrillic_tse,            Cyrillic_TSE ] };
+    key <AD03> { [ Cyrillic_u,              Cyrillic_U ] };
+    key <AD04> { [ Cyrillic_ka,             Cyrillic_KA ] };
+    key <AD05> { [ Cyrillic_ie,             Cyrillic_IE ] };
+    key <AD06> { [ Cyrillic_en,             Cyrillic_EN ] };
+    key <AD07> { [ Cyrillic_ghe,            Cyrillic_GHE ] };
+    key <AD08> { [ Cyrillic_sha,            Cyrillic_SHA ] };
+    key <AD09> { [ Cyrillic_shcha,          Cyrillic_SHCHA ] };
+    key <AD10> { [ Cyrillic_ze,             Cyrillic_ZE ] };
+    key <AD11> { [ Cyrillic_ha,             Cyrillic_HA ] };
+    key <AD12> { [ Cyrillic_hardsign,       Cyrillic_HARDSIGN ] };
+    key <AC01> { [ Cyrillic_ef,             Cyrillic_EF ] };
+    key <AC02> { [ Cyrillic_yeru,           Cyrillic_YERU ] };
+    key <AC03> { [ Cyrillic_ve,             Cyrillic_VE ] };
+    key <AC04> { [ Cyrillic_a,              Cyrillic_A ] };
+    key <AC05> { [ Cyrillic_pe,             Cyrillic_PE ] };
+    key <AC06> { [ Cyrillic_er,             Cyrillic_ER ] };
+    key <AC07> { [ Cyrillic_o,              Cyrillic_O ] };
+    key <AC08> { [ Cyrillic_el,             Cyrillic_EL ] };
+    key <AC09> { [ Cyrillic_de,             Cyrillic_DE ] };
+    key <AC10> { [ Cyrillic_zhe,            Cyrillic_ZHE ] };
+    key <AC11> { [ Cyrillic_e,              Cyrillic_E ] };
+    key <AB01> { [ Cyrillic_ya,             Cyrillic_YA ] };
+    key <AB02> { [ Cyrillic_che,            Cyrillic_CHE ] };
+    key <AB03> { [ Cyrillic_es,             Cyrillic_ES ] };
+    key <AB04> { [ Cyrillic_em,             Cyrillic_EM ] };
+    key <AB06> { [ Cyrillic_te,             Cyrillic_TE ] };
+    key <AB05> { [ Cyrillic_i,              Cyrillic_I ] };
+    key <AB07> { [ Cyrillic_softsign,       Cyrillic_SOFTSIGN ] };
+    key <AB08> { [ Cyrillic_be,             Cyrillic_BE ] };
+    key <AB09> { [ Cyrillic_yu,             Cyrillic_YU ] };
+};
+
+// Kikkarin KZ1
+partial alphanumeric_keys
+xkb_symbols "ruskaz" {
+
+    name[Group1] = "Russian (Kazakhstan, with Kazakh)";
+
+key.type[group1] = "FOUR_LEVEL";
+
+    key	<AE01> { [ 1,                       exclam ] };
+    key	<AE02> { [ 2,                       quotedbl,                at ] };
+    key	<AE03> { [ 3,                       numerosign,              numbersign ] };
+    key	<AE04> { [ 4,                       semicolon,               dollar ] };
+    key	<AE05> { [ 5,                       percent ] };
+    key	<AE06> { [ 6,                       colon,                   asciicircum ] };
+    key	<AE07> { [ 7,                       question,                ampersand ] };
+    key	<AE08> { [ 8,                       asterisk ] };
+    key	<AE09> { [ 9,                       parenleft ] };
+    key	<AE10> { [ 0,                       parenright ] };
+    key	<AE11> { [ minus,                   underscore ] };
+    key	<AE12> { [ equal,                   plus ] };
+    key	<BKSL> { [ backslash,               slash,                   bar ] };
+    key	<AB10> { [ period,                  comma,                   slash,                   question ] };
+    key <LSGT> { [ less,                    greater,                 bar,                     brokenbar ] };
+
+key.type[group1] = "FOUR_LEVEL_ALPHABETIC";
+
+    key	<TLDE> { [ Cyrillic_io,             Cyrillic_IO ] };
+    key	<AD01> { [ Cyrillic_shorti,         Cyrillic_SHORTI,         Cyrillic_u_straight_bar, Cyrillic_U_straight_bar ] };
+    key	<AD02> { [ Cyrillic_tse,            Cyrillic_TSE ] };
+    key	<AD03> { [ Cyrillic_u,              Cyrillic_U,              Cyrillic_u_straight,     Cyrillic_U_straight ] };
+    key	<AD04> { [ Cyrillic_ka,             Cyrillic_KA,             Cyrillic_ka_descender,   Cyrillic_KA_descender ] };
+    key	<AD05> { [ Cyrillic_ie,             Cyrillic_IE,             Cyrillic_io,             Cyrillic_IO ] };
+    key	<AD06> { [ Cyrillic_en,             Cyrillic_EN,             Cyrillic_en_descender,   Cyrillic_EN_descender ] };
+    key	<AD07> { [ Cyrillic_ghe,            Cyrillic_GHE,            Cyrillic_ghe_bar,        Cyrillic_GHE_bar ] };
+    key	<AD08> { [ Cyrillic_sha,            Cyrillic_SHA ] };
+    key	<AD09> { [ Cyrillic_shcha,          Cyrillic_SHCHA ] };
+    key	<AD10> { [ Cyrillic_ze,             Cyrillic_ZE ] };
+    key	<AD11> { [ Cyrillic_ha,             Cyrillic_HA,             Cyrillic_shha,           Cyrillic_SHHA ] };
+    key	<AD12> { [ Cyrillic_hardsign,       Cyrillic_HARDSIGN ] };
+    key	<AC01> { [ Cyrillic_ef,             Cyrillic_EF ] };
+    key	<AC02> { [ Cyrillic_yeru,           Cyrillic_YERU ] };
+    key	<AC03> { [ Cyrillic_ve,             Cyrillic_VE ] };
+    key	<AC04> { [ Cyrillic_a,              Cyrillic_A,              Cyrillic_schwa,          Cyrillic_SCHWA ] };
+    key	<AC05> { [ Cyrillic_pe,             Cyrillic_PE ] };
+    key	<AC06> { [ Cyrillic_er,             Cyrillic_ER ] };
+    key	<AC07> { [ Cyrillic_o,              Cyrillic_O,              Cyrillic_o_bar,          Cyrillic_O_bar ] };
+    key	<AC08> { [ Cyrillic_el,             Cyrillic_EL ] };
+    key	<AC09> { [ Cyrillic_de,             Cyrillic_DE ] };
+    key	<AC10> { [ Cyrillic_zhe,            Cyrillic_ZHE ] };
+    key	<AC11> { [ Cyrillic_e,              Cyrillic_E ] };
+    key	<AB01> { [ Cyrillic_ya,             Cyrillic_YA ] };
+    key	<AB02> { [ Cyrillic_che,            Cyrillic_CHE ] };
+    key	<AB03> { [ Cyrillic_es,             Cyrillic_ES ] };
+    key	<AB04> { [ Cyrillic_em,             Cyrillic_EM ] };
+    key	<AB06> { [ Cyrillic_te,             Cyrillic_TE ] };
+    key	<AB05> { [ Cyrillic_i,              Cyrillic_I,              Ukrainian_i,             Ukrainian_I ] };
+    key	<AB07> { [ Cyrillic_softsign,       Cyrillic_SOFTSIGN ] };
+    key	<AB08> { [ Cyrillic_be,             Cyrillic_BE ] };
+    key	<AB09> { [ Cyrillic_yu,             Cyrillic_YU ] };
+};
+
+// Kikkarin KZ2
+partial alphanumeric_keys
+xkb_symbols "kazrus" {
+
+    name[Group1] = "Kazakh (with Russian)";
+
+key.type[group1] = "FOUR_LEVEL";
+
+    key	<AE01> { [ 1,                       exclam ] };
+    key	<AE02> { [ 2,                       quotedbl,                at ] };
+    key	<AE03> { [ 3,                       numerosign,              numbersign ] };
+    key	<AE04> { [ 4,                       semicolon,               dollar ] };
+    key	<AE05> { [ 5,                       percent ] };
+    key	<AE06> { [ 6,                       colon,                   asciicircum ] };
+    key	<AE07> { [ 7,                       question,                ampersand ] };
+    key	<AE08> { [ 8,                       asterisk ] };
+    key	<AE09> { [ 9,                       parenleft ] };
+    key	<AE10> { [ 0,                       parenright ] };
+    key	<AE11> { [ minus,                   underscore ] };
+    key	<AE12> { [ equal,                   plus ] };
+    key	<BKSL> { [ backslash,               slash,                   bar ] };
+    key	<AB10> { [ period,                  comma,                   slash,                   question ] };
+    key <LSGT> { [ less,                    greater,                 bar,                     brokenbar ] };
+
+key.type[group1] = "FOUR_LEVEL_ALPHABETIC";
+
+    key	<TLDE> { [ Cyrillic_io,             Cyrillic_IO ] };
+    key	<AD01> { [ Cyrillic_shorti,         Cyrillic_SHORTI ] };
+    key	<AD02> { [ Cyrillic_en_descender,   Cyrillic_EN_descender,   Cyrillic_tse,            Cyrillic_TSE ] };
+    key	<AD03> { [ Cyrillic_u,              Cyrillic_U ] };
+    key	<AD04> { [ Cyrillic_ka,             Cyrillic_KA,             Cyrillic_ka_descender,    Cyrillic_KA_descender ] };
+    key	<AD05> { [ Cyrillic_ie,             Cyrillic_IE,             Cyrillic_io,             Cyrillic_IO ] };
+    key	<AD06> { [ Cyrillic_en,             Cyrillic_EN ] };
+    key	<AD07> { [ Cyrillic_ghe,            Cyrillic_GHE ] };
+    key	<AD08> { [ Cyrillic_sha,            Cyrillic_SHA ] };
+    key	<AD09> { [ Cyrillic_ghe_bar,        Cyrillic_GHE_bar,        Cyrillic_shcha,          Cyrillic_SHCHA ] };
+    key	<AD10> { [ Cyrillic_ze,             Cyrillic_ZE ] };
+    key	<AD11> { [ Cyrillic_ha,             Cyrillic_HA,             Cyrillic_shha,           Cyrillic_SHHA ] };
+    key	<AD12> { [ Cyrillic_u_straight_bar, Cyrillic_U_straight_bar, Cyrillic_hardsign,       Cyrillic_HARDSIGN ] };
+    key	<AC01> { [ Cyrillic_o_bar,          Cyrillic_O_bar,          Cyrillic_ef,             Cyrillic_EF ] };
+    key	<AC02> { [ Cyrillic_yeru,           Cyrillic_YERU ] };
+    key	<AC03> { [ Cyrillic_ka_descender,   Cyrillic_KA_descender,   Cyrillic_ve,             Cyrillic_VE ] };
+    key	<AC04> { [ Cyrillic_a,              Cyrillic_A ] };
+    key	<AC05> { [ Cyrillic_pe,             Cyrillic_PE ] };
+    key	<AC06> { [ Cyrillic_er,             Cyrillic_ER ] };
+    key	<AC07> { [ Cyrillic_o,              Cyrillic_O ] };
+    key	<AC08> { [ Cyrillic_el,             Cyrillic_EL ] };
+    key	<AC09> { [ Cyrillic_de,             Cyrillic_DE ] };
+    key	<AC10> { [ Cyrillic_zhe,            Cyrillic_ZHE ] };
+    key	<AC11> { [ Cyrillic_schwa,          Cyrillic_SCHWA,          Cyrillic_e,              Cyrillic_E ] };
+    key	<AB01> { [ Cyrillic_ya,             Cyrillic_YA ] };
+    key	<AB02> { [ Ukrainian_i,             Ukrainian_I,             Cyrillic_che,            Cyrillic_CHE ] };
+    key	<AB03> { [ Cyrillic_es,             Cyrillic_ES ] };
+    key	<AB04> { [ Cyrillic_em,             Cyrillic_EM ] };
+    key	<AB06> { [ Cyrillic_te,             Cyrillic_TE ] };
+    key	<AB05> { [ Cyrillic_i,              Cyrillic_I ] };
+    key	<AB07> { [ Cyrillic_u_straight,     Cyrillic_U_straight,     Cyrillic_softsign,       Cyrillic_SOFTSIGN ] };
+    key	<AB08> { [ Cyrillic_be,             Cyrillic_BE ] };
+    key	<AB09> { [ Cyrillic_yu,             Cyrillic_YU ] };
+};
+
+partial alphanumeric_keys
+xkb_symbols "olpc" {
+
+// Contact: Walter Bender <walter@laptop.org>
+
+// We moved the Cyrillic IO off of the Tilde Key as an Alt-GR character
+// and moved it onto the Backslash key, making Backslash and Bar available
+// through the Latin side of the keyboard.
+
+   include "kz(basic)"
+
+   key <TLDE> { [ parenleft,               parenright ] };
+   key <BKSL> { [ Cyrillic_io,             Cyrillic_IO ] };
+
+   include "group(olpc)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "ext" {
+
+// Levels 3 and 4 represent main keyboard's numeric part of US layout,
+// parens are duplicated for consistency.
+
+    include "kz(basic)"
+    name[Group1] = "Kazakh (extended)";
+
+key.type[group1] = "FOUR_LEVEL_ALPHABETIC";
+
+    key <TLDE> { [ Cyrillic_io,             Cyrillic_IO,             grave,  asciitilde ] };
+    key <AE01> { [ quotedbl,                exclam,                  1,      exclam ] };
+    key <AE02> { [ Cyrillic_schwa,          Cyrillic_SCHWA,          2,      at ] };
+    key <AE03> { [ Ukrainian_i,             Ukrainian_I,             3,      numbersign ] };
+    key <AE04> { [ Cyrillic_en_descender,   Cyrillic_EN_descender,   4,      dollar ] };
+    key <AE05> { [ Cyrillic_ghe_bar,        Cyrillic_GHE_bar,        5,      percent ] };
+    key <AE06> { [ comma,                   semicolon,               6,      asciicircum ] };
+    key <AE07> { [ period,                  colon,                   7,      ampersand ] };
+    key <AE08> { [ Cyrillic_u_straight,     Cyrillic_U_straight,     8,      asterisk ] };
+    key <AE09> { [ Cyrillic_u_straight_bar, Cyrillic_U_straight_bar, 9,      parenleft ] };
+    key <AE10> { [ Cyrillic_ka_descender,   Cyrillic_KA_descender,   0,      parenright ] };
+    key <AE11> { [ Cyrillic_o_bar,          Cyrillic_O_bar,          minus,  underscore  ] };
+    key <AE12> { [ Cyrillic_shha,           Cyrillic_SHHA,           equal,  plus ] };
+    key <BKSL> { [ backslash,               slash,                   bar,    brokenbar ] };
+    key <AD11> { [ Cyrillic_ha,             Cyrillic_HA,             bracketleft,  braceleft ] };
+    key <AD12> { [ Cyrillic_hardsign,       Cyrillic_HARDSIGN,       bracketright, braceright ] };
+    key <AC11> { [ Cyrillic_e,              Cyrillic_E,              apostrophe ] };
+    key <AB08> { [ Cyrillic_be,             Cyrillic_BE,             less    ] };
+    key <AB09> { [ Cyrillic_yu,             Cyrillic_YU,             greater ] };
+
+   include "level3(ralt_switch)"
+};
+
+// Kazakh Latin (based on Kazakh alphabet version of 2018)
+// levels 3 and 4 are non-standard extensions
+partial alphanumeric_keys
+xkb_symbols "latin" {
+
+// Contact: Galym Kerimbekov <housegregory299@gmail.com>
+
+    name[Group1] = "Kazakh (Latin)";
+
+key.type[group1] = "FOUR_LEVEL";
+
+    key <TLDE> { [ parenleft,               parenright ] };
+    key <AE01> { [ quotedbl,                exclam ] };
+    key <AE06> { [ comma,                   semicolon ] };
+    key <AE07> { [ period,                  colon ] };
+    key <BKSL> { [ backslash,               slash ] };
+    key <AB10> { [ numerosign,              question ] };
+    key <LSGT> { [ less,                    greater,                 bar,         brokenbar ] };
+
+key.type[group1] = "ALPHABETIC";
+
+    key <AE02> { [ aacute,                  Aacute ] };
+    key <AE03> { [ iacute,                  Iacute ] };
+    key <AE04> { [ nacute,                  Nacute ] };
+    key <AE05> { [ U01F5,                   U01F4 ] }; // gG with acute
+    key <AE08> { [ uacute,                  Uacute ] };
+    key <AE09> { [ yacute,                  Yacute ] };
+    key <AE10> { [ oacute,                  Oacute ] }; 
+    key <AE11> { [ sacute,                  Sacute ] }; 
+    key <AE12> { [ cacute,                  Cacute ] }; 
+
+    key <AD01> { [ q,                       Q ] };
+    key <AD02> { [ w,                       W ] };
+    key <AD03> { [ e,                       E ] };
+    key <AD04> { [ r,                       R ] };
+    key <AD05> { [ t,                       T ] };
+    key <AD06> { [ y,                       Y ] };
+    key <AD07> { [ u,                       U ] };
+    key <AD08> { [ i,                       I ] };
+    key <AD09> { [ o,                       O ] };
+    key <AD10> { [ p,                       P ] };
+    key <AC01> { [ a,                       A ] };
+    key <AC02> { [ s,                       S ] };
+    key <AC03> { [ d,                       D ] };
+    key <AC04> { [ f,                       F ] };
+    key <AC05> { [ g,                       G ] };
+    key <AC06> { [ h,                       H ] };
+    key <AC07> { [ j,                       J ] };
+    key <AC08> { [ k,                       K ] };
+    key <AC09> { [ l,                       L ] };
+    key <AB01> { [ z,                       Z ] };
+    key <AB02> { [ x,                       X ] };
+    key <AB03> { [ c,                       C ] };
+    key <AB04> { [ v,                       M ] };
+    key <AB05> { [ b,                       B ] };
+    key <AB06> { [ n,                       N ] };
+    key <AB07> { [ m,                       M ] };
+};

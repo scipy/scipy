@@ -1,0 +1,47 @@
+// Keyboard layouts for Turkmenistan.
+
+// Nazar Annagurban <nazar_xg@hotmail.com>, 2009
+
+// Default layout (based on Vista Turkmen layout).
+default partial
+xkb_symbols "basic" {
+
+    include "us"
+    name[Group1]="Turkmen";
+
+    key <TLDE> {[     zcaron,      Zcaron,         grave,  asciitilde  ]};
+
+    key <AD01> {[ adiaeresis,  Adiaeresis,             q,           Q  ]};
+    key <AD11> {[     ncaron,      Ncaron,   bracketleft,   braceleft  ]};
+    key <AD12> {[ odiaeresis,  Odiaeresis,  bracketright,  braceright  ]};
+
+    key <AB02> {[ udiaeresis,  Udiaeresis,             x,           X  ]};
+    key <AB03> {[   ccedilla,    Ccedilla,             c,           C  ]};
+    key <AB04> {[     yacute,      Yacute,             v,           V  ]};
+
+    key <BKSL> {[   scedilla,    Scedilla,     backslash,         bar  ]};
+
+    include "level3(ralt_switch)"
+};
+
+// Turkmen Alt-Q.
+// This layout provides the Turkmen letters via the AltGr key.
+partial
+xkb_symbols "alt" {
+
+    include "us"
+    name[Group1]="Turkmen (Alt-Q)";
+
+    key <AD06> {[  y,  Y,      yacute,      Yacute  ]};
+    key <AD07> {[  u,  U,  udiaeresis,  Udiaeresis  ]};
+    key <AD09> {[  o,  O,  odiaeresis,  Odiaeresis  ]};
+
+    key <AC01> {[  a,  A,  adiaeresis,  Adiaeresis  ]};
+    key <AC02> {[  s,  S,    scedilla,    Scedilla  ]};
+
+    key <AB01> {[  z,  Z,      zcaron,      Zcaron  ]};
+    key <AB03> {[  c,  C,    ccedilla,    Ccedilla  ]};
+    key <AB06> {[  n,  N,      ncaron,      Ncaron  ]};
+
+    include "level3(ralt_switch)"
+};

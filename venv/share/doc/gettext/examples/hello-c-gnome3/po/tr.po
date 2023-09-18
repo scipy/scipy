@@ -1,0 +1,61 @@
+# Turkish translation for hello-c-gnome3.
+# This file is distributed under the same license as the gettext package.
+# Copyright (C) 2017 Yoyodyne, Inc. (msgids)
+# Copyright (C) 2004 Free Software Foundation, Inc.
+# Nilgün Belma Bugüner <nilgun@superonline.com>, 2003,2004
+# Mehmet Kececi <mkececi@mehmetkececi.com>, 2017, 2019, 2020.
+msgid ""
+msgstr ""
+"Project-Id-Version: hello-c-gnome3 0.20.2\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"PO-Revision-Date: 2020-04-17 13:10+0300\n"
+"Last-Translator: Mehmet Kececi <mkececi@mehmetkececi.com>\n"
+"Language-Team: Turkish <gnu-tr-u12a@lists.sourceforge.net>\n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Poedit 2.3\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+
+#: hello.c:79
+#, c-format
+msgid ""
+"<big>Hello world!</big>\n"
+"This program is running as process number <b>%d</b>."
+msgstr ""
+"<big>Merhaba dünya!</big>\n"
+"Bu yazılım <b>%d</b> işlem numarası ile çalışıyor."
+
+#: hello.c:84
+msgid "<big><u>This is another text</u></big>"
+msgstr "<big><u>Bu diğer metindir</u></big>"
+
+#: hello.c:86
+msgid "<big><i>This is yet another text</i></big>"
+msgstr "<big><i>Bu henüz başka bir metindir</i></big>"
+
+#: hello.desktop.in.in:4
+msgid "Hello"
+msgstr "Merhaba"
+
+#: hello.desktop.in.in:5
+msgid "Hello, world!"
+msgstr "Merhaba, dünya!"
+
+#: hello.ui:6
+msgid "Example Application"
+msgstr "Örnek Uygulama"
+
+#: hello.ui:34
+msgid "Update text"
+msgstr "Metni güncelleştir"
+
+#: hello.gschema.xml:8
+msgid "Use XML markup"
+msgstr "XML betiğini kullan"
+
+#: hello.gschema.xml:9
+msgid "Whether to use XML markup in the text."
+msgstr "XML betiğinde kullanılıp kullanılmayacağını belirtir."

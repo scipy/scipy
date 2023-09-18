@@ -1,0 +1,11 @@
+default partial xkb_types "default" {
+
+    virtual_modifiers  Alt;
+
+    type "SHIFT+ALT" {
+	modifiers = Shift + Alt;
+	map[Shift+Alt] = Level2;
+	level_name[Level1] = "Base";
+	level_name[Level2] = "Shift+Alt";
+    };
+};

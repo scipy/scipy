@@ -1,0 +1,31 @@
+// Keyboard layouts for Iraq.
+
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+    include "ara(basic)"
+    name[Group1]= "Iraqi";
+};
+
+partial alphanumeric_keys
+xkb_symbols "ku" {
+    include "tr(ku)"
+    name[Group1]= "Kurdish (Iraq, Latin Q)";
+};
+
+partial alphanumeric_keys
+xkb_symbols "ku_f" {
+    include "tr(ku_f)"
+    name[Group1]= "Kurdish (Iraq, F)";
+};
+
+partial alphanumeric_keys
+xkb_symbols "ku_alt" {
+    include "tr(ku_alt)"
+    name[Group1]= "Kurdish (Iraq, Latin Alt-Q)";
+};
+
+partial alphanumeric_keys
+xkb_symbols "ku_ara" {
+    include "ir(ku_ara)"
+    name[Group1]= "Kurdish (Iraq, Arabic-Latin)";
+};

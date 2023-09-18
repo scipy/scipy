@@ -1,0 +1,138 @@
+<!-- Creator     : groff version 1.22.3 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>NGETTEXT</title>
+
+</head>
+<body>
+
+<h1 align="center">NGETTEXT</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">ngettext,
+dngettext, dcngettext - translate message and choose
+plural form</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;libintl.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>char *
+ngettext (const char *</b> <i>msgid</i><b>, const char *</b>
+<i>msgid_plural</i><b>, <br>
+unsigned long int</b> <i>n</i><b>); <br>
+char * dngettext (const char *</b> <i>domainname</i><b>,
+<br>
+const char *</b> <i>msgid</i><b>, const char *</b>
+<i>msgid_plural</i><b>, <br>
+unsigned long int</b> <i>n</i><b>); <br>
+char * dcngettext (const char *</b> <i>domainname</i><b>,
+<br>
+const char *</b> <i>msgid</i><b>, const char *</b>
+<i>msgid_plural</i><b>, <br>
+unsigned long int</b> <i>n</i><b>, int</b>
+<i>category</i><b>);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>ngettext</b>, <b>dngettext</b> and <b>dcngettext</b>
+functions attempt to translate a text string into the
+user&rsquo;s native language, by looking up the appropriate
+plural form of the translation in a message catalog.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Plural forms
+are grammatical variants depending on the a number. Some
+languages have two forms, called singular and plural. Other
+languages have three forms, called singular, dual and
+plural. There are also languages with four forms.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>ngettext</b>, <b>dngettext</b> and <b>dcngettext</b>
+functions work like the <b>gettext</b>, <b>dgettext</b> and
+<b>dcgettext</b> functions, respectively. Additionally, they
+choose the appropriate plural form, which depends on the
+number <i>n</i> and the language of the message catalog
+where the translation was found.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In the
+&quot;C&quot; locale, or if none of the used catalogs
+contain a translation for <i>msgid</i>, the <b>ngettext</b>,
+<b>dngettext</b> and <b>dcngettext</b> functions return
+<i>msgid</i> if <i>n</i> == 1, or <i>msgid_plural</i> if
+<i>n</i> != 1.</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">If a
+translation was found in one of the specified catalogs, the
+appropriate plural form is converted to the locale&rsquo;s
+codeset and returned. The resulting string is statically
+allocated and must not be modified or freed. Otherwise
+<i>msgid</i> or <i>msgid_plural</i> is returned, as
+described above.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>errno</b> is
+not modified.</p>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The return type
+ought to be <b>const char *</b>, but is <b>char *</b> to
+avoid warnings in C code predating ANSI C.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>gettext</b>(3),
+<b>dgettext</b>(3), <b>dcgettext</b>(3)</p>
+<hr>
+</body>
+</html>

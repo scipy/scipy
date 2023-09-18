@@ -1,0 +1,45 @@
+# Print a test page using print-job
+{
+	# The name of the test...
+	NAME "Print file using Print-Job"
+
+	# The operation to use
+	OPERATION Print-Job
+
+	# Attributes, starting in the operation group...
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR mimeMediaType document-format $filetype
+
+	GROUP job-attributes-tag
+	ATTR integer copies 1
+
+	FILE $filename
+
+	# What statuses are OK?
+	STATUS successful-ok
+	STATUS successful-ok-ignored-or-substituted-attributes
+
+	# What attributes do we expect?
+	EXPECT job-id
+	EXPECT job-uri
+}
+{
+	NAME "Wait for job to complete..."
+	OPERATION Get-Job-Attributes
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR integer job-id $job-id
+	ATTR name requesting-user-name $user
+
+	STATUS successful-ok
+	EXPECT job-id
+	EXPECT job-state WITH-VALUE >5 REPEAT-NO-MATCH
+	DISPLAY job-state
+	DISPLAY job-state-reasons
+}

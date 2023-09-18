@@ -1,0 +1,18 @@
+default partial xkb_compatibility "pc" {
+
+    // Sets the "Alt" virtual modifier.
+
+    virtual_modifiers  Alt;
+
+    setMods.clearLocks= True;
+
+    interpret Alt_L+Any {
+	virtualModifier= Alt;
+	action = SetMods(modifiers=modMapMods);
+    };
+
+    interpret Alt_R+Any {
+	virtualModifier= Alt;
+	action = SetMods(modifiers=modMapMods);
+    };
+};

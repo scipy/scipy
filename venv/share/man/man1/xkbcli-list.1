@@ -1,0 +1,39 @@
+.Dd November 1, 2021
+.Dt XKBCLI\-LIST 1
+.Os
+.
+.Sh NAME
+.Nm "xkbcli list"
+.Nd list available XKB models, layouts, variants and options
+.
+.Sh SYNOPSIS
+.Nm
+.Op Pa /path/to/xkbbase Oo Pa /path/to/xkbbase Oc ...
+.
+.Sh DESCRIPTION
+List available model, layout, variant and option (MLVO) values from the XKB registry.
+The output is in YAML 1.2 format.
+.
+.Pp
+Positional arguments are treated as XKB base directory installations.
+.
+.Bl -tag -width Ds
+.It Fl \-help
+Print help and exit
+.
+.It Fl \-verbose
+Increase verbosity, use multiple times for debugging output
+.
+.It Fl \-ruleset Ar name
+Load the ruleset with the given name
+.
+.It Fl \-skip\-default\-paths
+Do not load the default XKB include paths
+.
+.It Fl \-load\-exotic
+Load exotic (extra) layouts
+.El
+.
+.Sh SEE ALSO
+.Xr xkbcli 1 ,
+.Lk https://xkbcommon.org "The libxkbcommon online documentation"

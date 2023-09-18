@@ -1,0 +1,102 @@
+//
+// Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, and/or sell copies of the Software, and to permit persons
+// to whom the Software is furnished to do so, provided that the above
+// copyright notice(s) and this permission notice appear in all copies of
+// the Software and that both the above copyright notice(s) and this
+// permission notice appear in supporting documentation.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+// OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+// HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL
+// INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING
+// FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
+// NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
+// WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+// 
+// Except as contained in this notice, the name of a copyright holder
+// shall not be used in advertising or otherwise to promote the sale, use
+// or other dealings in this Software without prior written authorization
+// of the copyright holder.
+//
+
+default partial alphanumeric_keys
+xkb_symbols "sun_type6" {
+
+    name[Group1]="Norwegian (Sun Type 6/7)";
+
+	include "sun_vndr/us(sun_type6)"
+
+    key <TLDE> { [             bar,         section                ] };
+    key <LSGT> { [            less,         greater                ] };
+    key <BKSL> { [      apostrophe,        asterisk,  grave        ] };
+    key <AE02> { [               2,        quotedbl,  at           ] };
+    key <AE03> { [               3,      numbersign,  sterling     ] };
+    key <AE04> { [               4,        currency,  dollar       ] };
+    key <AE05> { [               5,         percent,  asciitilde   ] };
+    key <AE06> { [               6,       ampersand,  asciicircum  ] };
+    key <AE07> { [               7,           slash,  braceleft    ] };
+    key <AE08> { [               8,       parenleft,  bracketleft  ] };
+    key <AE09> { [               9,      parenright,  bracketright ] };
+    key <AE10> { [               0,           equal,  braceright   ] };
+    key <AE11> { [            plus,        question                ] };
+    key <AE12> { [       backslash,      dead_grave,  dead_acute   ] };
+    key <AD03> { [               e,               E,  EuroSign     ] };
+    key <AD11> { [           aring,           Aring                ] };
+    key <AD12> { [  dead_diaeresis, dead_circumflex,  dead_tilde   ] };
+    key <AC10> { [          oslash,          Oslash                ] }; 
+    key <AC11> { [              ae,              AE                ] };
+    key <AB08> { [           comma,       semicolon                ] };
+    key <AB09> { [          period,           colon                ] };
+    key <AB10> { [           minus,      underscore                ] };
+
+        include "level3(ralt_switch)"
+        include "kpdl(comma)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "basic" {
+	include "sun_vndr/no(sun_type6)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "nodeadkeys" {
+	include "no(nodeadkeys)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "dvorak" {
+	include "no(dvorak)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "smi" {
+	include "no(smi)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "smi_nodeadkeys" {
+	include "no(smi_nodeadkeys)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "mac" {
+	include "no(mac)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "mac_nodeadkeys" {
+	include "no(mac_nodeadkeys)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "colemak" {
+	include "no(colemak)"
+};

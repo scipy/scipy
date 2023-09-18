@@ -1,0 +1,71 @@
+// $NetBSD: sl-c3x00,v 1.1 2009/12/13 04:54:51 nonaka Exp $
+// $OpenBSD: zaurus,v 1.2 2008/03/05 17:24:55 matthieu Exp $
+
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+	name[Group1]= "Sharp SL-C3x00";
+
+	key <AE01> { [ 1, exclam ] };
+	key <AE02> { [ 2, quotedbl ] };
+	key <AE03> { [ 3, numbersign ] };
+	key <AE04> { [ 4, dollar ] };
+	key <AE05> { [ 5, percent ] };
+	key <AE06> { [ 6, ampersand ] };
+	key <AE07> { [ 7, apostrophe ] };
+	key <AE08> { [ 8, parenleft ] };
+	key <AE09> { [ 9, parenright ] };
+	key <AE10> { [ 0, asciitilde ] };
+	key <BKSP> { type="CTRL+ALT",
+		symbols[Group1]= [ BackSpace, Terminate_Server ] };
+
+	key <AD01> { [ q, Q ] };
+	key <AD02> { [ w, W, asciicircum ] };
+	key <AD03> { [ e, E, equal ] };
+	key <AD04> { [ r, R, plus ] };
+	key <AD05> { [ t, T, bracketleft ] };
+	key <AD06> { [ y, Y, bracketright ] };
+	key <AD07> { [ u, U, braceleft ] };
+	key <AD08> { [ i, I, braceright ] };
+	key <AD09> { [ o, O ] };
+	key <AD10> { [ p, P ] };
+	
+	key <TAB> { [ Tab, ISO_Left_Tab, Caps_Lock ] };
+
+	key <AC01> { [ a, A ] };
+	key <AC02> { [ s, S ] };
+	key <AC03> { [ d, D, grave ] };
+	key <AC04> { [ f, F, backslash ] };
+	key <AC05> { [ g, G, semicolon ] };
+	key <AC06> { [ h, H, colon ] };
+	key <AC07> { [ j, J, asterisk ] };
+	key <AC08> { [ k, K, yen ] };
+	key <AC09> { [ l, L, bar ] };
+
+	key <LFSH> { [ Shift_L ] };
+	key <AB01> { [ z, Z ] };
+	key <AB02> { [ x, X, SunCut ] };
+	key <AB03> { [ c, C, SunCopy ] };
+	key <AB04> { [ v, V, SunPaste ] };
+	key <AB05> { [ b, B, underscore ] };
+	key <AB06> { [ n, N ] };
+	key <AB07> { [ m, M ] };
+	key <RTSH> { [ Shift_R ] };
+	key <RTRN> { [ Return ] };
+	
+	key <RALT> { [ ISO_Level3_Shift ] };
+
+	key <LCTL> { [ Control_L ] };
+	key <AE11> { [ minus, minus, at ] };
+	key <SPCE> { [ space ] };
+	key <AB08> { [ comma, slash, less ] };
+	key <AB09> { [ period, question, greater ] };
+	
+	key <UP> { [ Up, Up, Prior ] };
+	key <LEFT> { [ Left, Left, Home ] };
+	key <DOWN> { [ Down, Down, Next ] };
+	key <RGHT> { [ Right, Right, End ] };
+
+	key <ESC> { [ Escape ] };
+
+	include "level3(ralt_switch)"
+};

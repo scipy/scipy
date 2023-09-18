@@ -1,0 +1,24 @@
+
+// OLPC's mechanical keyboard moves several keys to the AA row.  make
+// them easier to write symbol files naturally.
+
+// see http://wiki.laptop.org/go/OLPC_English_Non-membrane_Keyboard
+// and http://wiki.laptop.org/go/OLPC_Spanish_Non-membrane_Keyboard
+
+default
+xkb_keycodes "olpc" {
+
+   alias <AE00> = <TLDE>;	// many OLPC keyboards don't put tilde there
+   alias <AC12> = <BKSL>;	// on model olpc, physical position of BKSL
+
+};
+
+default
+xkb_keycodes "olpcm" {
+
+   alias <AE00> = <TLDE>;	// many OLPC keyboards don't put tilde there
+   alias <AA02> = <BKSL>;	// on model olpcm, new physical position of BKSL
+   alias <AA06> = <AE12>;	// on model olpcm, new physical position of =+
+   alias <AA07> = <AC11>;	// on model olpcm, new physical position of '"
+
+};

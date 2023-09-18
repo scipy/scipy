@@ -1,0 +1,39 @@
+.TH GStreamer 1 "May 2003"
+.SH "NAME"
+gst\-typefind\-1.0 \- print Media type of file
+.SH "SYNOPSIS"
+.B  gst\-typefind\-1.0 <file>
+.SH "DESCRIPTION"
+.PP
+\fIgst\-typefind\-1.0\fP uses the GStreamer type finding system to
+determine the relevant GStreamer plugin to parse or decode \fBfile\fP,
+and the corresponding media type.
+.
+.SH "OPTIONS"
+.l
+\fIgst\-typefind\-1.0\fP accepts the following options:
+.TP 8
+.B  \-\-help
+Print help synopsis and available FLAGS
+.TP 8
+.B  \-\-gst\-info\-mask=FLAGS
+\fIGStreamer\fP info flags to set (list with \-\-help)
+.TP 8
+.B  \-\-gst\-debug\-mask=FLAGS
+\fIGStreamer\fP debugging flags to set (list with \-\-help)
+.TP 8
+.B  \-\-gst\-mask=FLAGS
+\fIGStreamer\fP info and debugging flags to set (list with \-\-help)
+.TP 8
+.B  \-\-gst\-plugin\-spew
+\fIGStreamer\fP info flags to set
+Enable printout of errors while loading \fIGStreamer\fP plugins
+.TP 8
+.B  \-\-gst\-plugin\-path=PATH
+Add directories separated with ':' to the plugin search path
+.
+.SH "SEE ALSO"
+.BR gst\-inspect\-1.0 (1),
+.BR gst\-launch\-1.0 (1)
+.SH "AUTHOR"
+The GStreamer team at http://gstreamer.freedesktop.org/

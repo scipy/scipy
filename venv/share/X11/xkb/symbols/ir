@@ -1,0 +1,283 @@
+// Keyboard layouts for Iran.
+
+// Standard Persian layout, based on ISIRI 9147 (1st Edition),
+// "Layout of Persian Letters and Symbols on Computer Keyboards"
+// by the Institute of Standards and Industrial Research of Iran.
+// (http://www.isiri.org/UserStd/DownloadStd.aspx?id=9147)
+// https://persian-computing.org/archives/ISIRI/ISIRI-9147.pdf
+//
+// The standard is extended with ASCII digits on the fourth level of the top row,
+// and the letter He with Ye above (U+06C0) on the third level of the AC05 key.
+//
+// Original author: Behnam Esfahbod <behnam@esfahbod.info>
+
+default partial alphanumeric_keys
+xkb_symbols "pes" {
+    name[Group1]= "Persian";
+
+    // Persian and ASCII digits
+    key <AE01> { [ Farsi_1,	exclam,		grave,			1	] };
+    key <AE02> { [ Farsi_2,	U066C,		at,			2	] };
+    key <AE03> { [ Farsi_3,	U066B,		numbersign,		3	] };
+    key <AE04> { [ Farsi_4,	UFDFC,		dollar,			4	] }; // Rial sign
+    key <AE05> { [ Farsi_5,	U066A,		percent,		5	] };
+    key <AE06> { [ Farsi_6,	multiply,	asciicircum,		6	] };
+    key <AE07> { [ Farsi_7,	Arabic_comma,	ampersand,		7	] };
+    key <AE08> { [ Farsi_8,	asterisk,	enfilledcircbullet,	8	] };
+    key <AE09> { [ Farsi_9,	parenright,	U200E,			9	] }; // LRM
+    key <AE10> { [ Farsi_0,	parenleft,	U200F,			0	] }; // RLM
+
+    // Persian letters and symbols
+    key <AD01> { [ Arabic_dad,		Arabic_sukun,		degree		] };
+    key <AD02> { [ Arabic_sad,		Arabic_dammatan,	none		] };
+    key <AD03> { [ Arabic_theh,		Arabic_kasratan,	EuroSign	] };
+    key <AD04> { [ Arabic_qaf,		Arabic_fathatan,	none		] };
+    key <AD05> { [ Arabic_feh,		Arabic_damma,		none		] };
+    key <AD06> { [ Arabic_ghain,	Arabic_kasra,		none		] };
+    key <AD07> { [ Arabic_ain,		Arabic_fatha,		none		] };
+    key <AD08> { [ Arabic_heh,		Arabic_shadda,		U202D		] }; // LRO
+    key <AD09> { [ Arabic_khah,		bracketright,		U202E		] }; // RLO
+    key <AD10> { [ Arabic_hah,		bracketleft,		U202C		] }; // PDF
+    key <AD11> { [ Arabic_jeem,		braceright,		U202A		] }; // LRE
+    key <AD12> { [ Arabic_tcheh,	braceleft,		U202B		] }; // RLE
+
+    key <AC01> { [ Arabic_sheen,	Arabic_hamzaonwaw,	none		] };
+    key <AC02> { [ Arabic_seen,		Arabic_hamzaonyeh,	none		] };
+    key <AC03> { [ Farsi_yeh,		Arabic_yeh,		Arabic_alefmaksura ] };
+    key <AC04> { [ Arabic_beh,		Arabic_hamzaunderalef,	none		] };
+    key <AC05> { [ Arabic_lam,		Arabic_hamzaonalef,	U06C0		] };
+    key <AC06> { [ Arabic_alef,		Arabic_maddaonalef,	U0671		] };
+    key <AC07> { [ Arabic_teh,		Arabic_tehmarbuta,	none		] };
+    key <AC08> { [ Arabic_noon,		guillemotright,		UFD3E		] };
+    key <AC09> { [ Arabic_meem,		guillemotleft,		UFD3F		] };
+    key <AC10> { [ Arabic_keheh,	colon,			semicolon	] };
+    key <AC11> { [ Arabic_gaf,		Arabic_semicolon,	quotedbl	] };
+
+    key <AB01> { [ Arabic_zah,		Arabic_kaf,		none		] };
+    key <AB02> { [ Arabic_tah,		U0653,			none		] };
+    key <AB03> { [ Arabic_zain,		Arabic_jeh,		none		] };
+    key <AB04> { [ Arabic_ra,		Arabic_superscript_alef,U0656		] };
+    key <AB05> { [ Arabic_thal,		U200C,			U200D		] }; // ZWNJ, ZWJ
+    key <AB06> { [ Arabic_dal,		Arabic_hamza_above,	Arabic_hamza_below	] };
+    key <AB07> { [ Arabic_peh,		Arabic_hamza,		ellipsis	] };
+    key <AB08> { [ Arabic_waw,		greater,		comma		] };
+    key <AB09> { [ period,		less,			apostrophe	] };
+    key <AB10> { [ slash,		Arabic_question_mark,	question	] };
+
+    key <TLDE> { [ U200D,		division,		asciitilde	] }; // ZWJ
+    key <AE11> { [ minus,		Arabic_tatweel,		underscore	] };
+    key <AE12> { [ equal,		plus,			U2212		] }; // figure dash
+    key <BKSL> { [ backslash,		bar,			U2010		] }; // hyphen
+
+    include "nbsp(zwnj2nb3nnb4)"
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "pes_keypad" {
+
+    include "ir(pes)"
+
+    name[Group1]= "Persian (with Persian keypad)";
+
+    // Persian digits and Mathematical operators
+    key <KPDV> { [ division,	XF86_Ungrab	] };
+    key <KPMU> { [ multiply,	XF86_ClearGrab	] };
+    key <KPSU> { [ U2212,	XF86_Prev_VMode	] }; // minus sign
+    key <KPAD> { [ plus,	XF86_Next_VMode	] };
+
+    key <KPEN> { [ KP_Enter	] };
+    key <KPEQ> { [ equal	] };
+
+    key <KP7>  { [ KP_Home,	Farsi_7	] };
+    key <KP8>  { [ KP_Up,	Farsi_8	] };
+    key <KP9>  { [ KP_Prior,	Farsi_9	] };
+
+    key <KP4>  { [ KP_Left,	Farsi_4	] };
+    key <KP5>  { [ KP_Begin,	Farsi_5	] };
+    key <KP6>  { [ KP_Right,	Farsi_6	] };
+
+    key <KP1>  { [ KP_End,	Farsi_1	] };
+    key <KP2>  { [ KP_Down,	Farsi_2	] };
+    key <KP3>  { [ KP_Next,	Farsi_3	] };
+
+    key <KP0>  { [ KP_Insert,	Farsi_0	] };
+    key <KPDL> { [ KP_Delete,	U066B	] }; // Arabic decimal separator
+};
+
+
+// The legacy Windows layout that Iranian users are accustomed to,
+// extended with Farsi digits on the third level of the top row.
+
+partial alphanumeric_keys
+xkb_symbols "winkeys" {
+
+    name[Group1]= "Persian (Windows)";
+
+    key <TLDE> { [ division,	multiply	] };
+    key <AE01> { [ 1,		exclam,		Farsi_1,	U200D	] }; // ZWJ
+    key <AE02> { [ 2,		at,		Farsi_2,	U200C	] }; // ZWNJ
+    key <AE03> { [ 3,		numbersign,	Farsi_3,	U200E	] }; // LRM
+    key <AE04> { [ 4,		dollar,		Farsi_4,	U200F	] }; // RLM
+    key <AE05> { [ 5,		percent,	Farsi_5		] };
+    key <AE06> { [ 6,		asciicircum,	Farsi_6		] };
+    key <AE07> { [ 7,		ampersand,	Farsi_7		] };
+    key <AE08> { [ 8,		asterisk,	Farsi_8		] };
+    key <AE09> { [ 9,		parenright,	Farsi_9		] };
+    key <AE10> { [ 0,		parenleft,	Farsi_0		] };
+    key <AE11> { [ minus,	underscore	] };
+    key <AE12> { [ equal,	plus		] };
+
+    key <AD01> { [ Arabic_dad,		Arabic_fathatan		] };
+    key <AD02> { [ Arabic_sad,		Arabic_dammatan		] };
+    key <AD03> { [ Arabic_theh,		Arabic_kasratan		] };
+    key <AD04> { [ Arabic_qaf,		UFDFC			] }; // Rial sign
+    key <AD05> { [ Arabic_feh,		Arabic_comma		] };
+    key <AD06> { [ Arabic_ghain,	Arabic_semicolon	] };
+    key <AD07> { [ Arabic_ain,		comma			] };
+    key <AD08> { [ Arabic_heh,		bracketright		] };
+    key <AD09> { [ Arabic_khah,		bracketleft		] };
+    key <AD10> { [ Arabic_hah,		backslash		] };
+    key <AD11> { [ Arabic_jeem,		braceright		] };
+    key <AD12> { [ Arabic_tcheh,	braceleft		] };
+
+    key <AC01> { [ Arabic_sheen,	Arabic_fatha		] };
+    key <AC02> { [ Arabic_seen,		Arabic_damma		] };
+    key <AC03> { [ Farsi_yeh,		Arabic_kasra		] };
+    key <AC04> { [ Arabic_beh,		Arabic_shadda		] };
+    key <AC05> { [ Arabic_lam,		U06C0			] };
+    key <AC06> { [ Arabic_alef,		Arabic_maddaonalef	] };
+    key <AC07> { [ Arabic_teh,		Arabic_tatweel		] };
+    key <AC08> { [ Arabic_noon,		guillemotleft		] };
+    key <AC09> { [ Arabic_meem,		guillemotright		] };
+    key <AC10> { [ Arabic_keheh,	colon			] };
+    key <AC11> { [ Arabic_gaf,		quotedbl		] };
+    key <BKSL> { [ Arabic_peh,		bar			] };
+
+    key <LSGT> { [ Arabic_peh,		bar			] };
+    key <AB01> { [ Arabic_zah,		Arabic_tehmarbuta	] };
+    key <AB02> { [ Arabic_tah,		Arabic_yeh		] };
+    key <AB03> { [ Arabic_zain,		Arabic_jeh		] };
+    key <AB04> { [ Arabic_ra,		Arabic_hamzaonwaw	] };
+    key <AB05> { [ Arabic_thal,		Arabic_hamzaonalef	] };
+    key <AB06> { [ Arabic_dal,		Arabic_hamzaunderalef	] };
+    key <AB07> { [ Arabic_hamzaonyeh,	Arabic_hamza		] };
+    key <AB08> { [ Arabic_waw,		less			] };
+    key <AB09> { [ period,		greater			] };
+    key <AB10> { [ slash,		Arabic_question_mark	] };
+
+    include "level3(ralt_switch)"
+};
+
+
+// Symbols definition for South Azerbaijani keyboard layout.
+// 2022 - Alborz Jafari <alborz.jf@gmail.com>
+
+partial alphanumeric_keys
+xkb_symbols "azb"
+{
+    include "ir(pes)"
+    name[Group1]= "Azerbaijani (Iran)";
+
+    // Letters and symbols for South Azerbaijani
+    key <AD01> { [ Arabic_dad,  U06C7,           degree             ] };  // ۇ
+    key <AD02> { [ Arabic_sad,  U06C6,           Arabic_dammatan    ] };  // ۆ
+    key <AC03> { [ Farsi_yeh,   U063D,           Arabic_alefmaksura ] };  // ؽ
+    key <AB01> { [ Arabic_zah,  Arabic_sukun,    none               ] };
+    key <AB05> { [ Arabic_thal, Arabic_dammatan, none               ] };
+};
+
+
+// Kurdish layouts
+
+partial alphanumeric_keys
+xkb_symbols "ku" {
+    include "tr(ku)"
+    name[Group1]= "Kurdish (Iran, Latin Q)";
+};
+
+partial alphanumeric_keys
+xkb_symbols "ku_f" {
+    include "tr(ku_f)"
+    name[Group1]= "Kurdish (Iran, F)";
+};
+
+partial alphanumeric_keys
+xkb_symbols "ku_alt" {
+    include "tr(ku_alt)"
+    name[Group1]= "Kurdish (Iran, Latin Alt-Q)";
+};
+
+// Kurdish Soranî Bahdînî (Arabic) keyboard layout,
+// based on the Kurdî Soranî Bahdînî keyboard from KurdITGroup
+// which is based on National Iranian Keyboard Standard (ISIRI 2901:1994),
+// with additions.
+//
+// Copyright (C) 2006 Erdal Ronahî, published under the GPL v2
+//
+// Special copyright note: author explicitly permitted to license this
+// layout under MIT/X11 license, for details see
+// https://bugs.freedesktop.org/show_bug.cgi?id=9541
+//
+// Author: Erdal Ronahî  <erdal.ronahi@gmail.com>
+//
+// Kurdish Arabic-Latin Layout for Soranî
+
+partial alphanumeric_keys
+xkb_symbols "ku_ara" {
+    name[Group1]= "Kurdish (Iran, Arabic-Latin)";
+
+    key <TLDE> { [ U200D,	division,	asciitilde		] }; // ZWJ
+    key <AE01> { [ Arabic_1,	exclam,		1,	grave		] };
+    key <AE02> { [ Arabic_2,	at,		2,	at		] };
+    key <AE03> { [ Arabic_3,	numbersign,	3,	U066B		] };
+    key <AE04> { [ Arabic_4,	dollar,		4,	UFDFC		] }; // Rial sign
+    key <AE05> { [ Arabic_5,	percent,	5,	U066A		] };
+    key <AE06> { [ Arabic_6,	asciicircum,	6,	multiply	] };
+    key <AE07> { [ Arabic_7,	ampersand,	7,	Arabic_comma	] };
+    key <AE08> { [ Arabic_8,	asterisk,	8,	enfilledcircbullet	] };
+    key <AE09> { [ Arabic_9,	parenright,	9,	U200E		] }; // LRM
+    key <AE10> { [ Arabic_0,	parenleft,	0,	U200F		] }; // RLM
+    key <AE11> { [ minus,	Arabic_tatweel,	underscore		] };
+    key <AE12> { [ equal,	plus,		U2212			] }; // minus sign
+
+    key <AD01> { [ Arabic_qaf,	X,			q,  Q ] };
+    key <AD02> { [ Arabic_waw,	X,			w,  W ] };
+    key <AD03> { [ U06D5,	Arabic_heh,		e,  E ] };
+    key <AD04> { [ Arabic_ra,	U0695,			r,  R ] };
+    key <AD05> { [ Arabic_teh,	Arabic_tah,		t,  T ] };
+    key <AD06> { [ U06CC,	U06CE,			y,  Y ] };
+    key <AD07> { [ Arabic_hamzaonyeh, Arabic_hamza,	u,  U ] };
+    key <AD08> { [ Arabic_hah,	Arabic_ain,		i,  I ] };
+    key <AD09> { [ U06C6,	Arabic_hamzaonwaw,	o,  O ] };
+    key <AD10> { [ U067E,	Arabic_theh,		p,  P ] };
+    key <AD11> { [ bracketright,braceright,		ucircumflex, Ucircumflex	] };
+    key <AD12> { [ bracketleft,	braceleft,		scedilla,    Scedilla		] };
+
+    key <AC01> { [ Arabic_alef,	Arabic_maddaonalef,	a,  A	] };
+    key <AC02> { [ Arabic_seen,	Arabic_sheen,		s,  S	] };
+    key <AC03> { [ Arabic_dal,	Arabic_thal,		d,  D	] };
+    key <AC04> { [ Arabic_feh,	Arabic_hamzaunderalef,	f,  F	] };
+    key <AC05> { [ U06AF,	Arabic_ghain,		g,  G	] };
+    key <AC06> { [ Arabic_heh,	U200C,			h,  H	] }; // ZWNJ
+    key <AC07> { [ U0698,	Arabic_hamzaonalef,	j,  J	] };
+    key <AC08> { [ U06A9,	Arabic_kaf,		k,  K	] };
+    key <AC09> { [ Arabic_lam,	U06B5,			l,  L	] };
+    key <AC10> { [ Arabic_semicolon,	colon,		ecircumflex, Ecircumflex	] };
+    key <AC11> { [ apostrophe,	quotedbl,		icircumflex, Icircumflex	] };
+    key <BKSL> { [ backslash,	bar,			ccedilla,    Ccedilla		] };
+
+    key <AB01> { [ Arabic_zain,	Arabic_dad,		z,  Z	] };
+    key <AB02> { [ Arabic_khah,	Arabic_sad,		x,  X	] };
+    key <AB03> { [ Arabic_jeem,	U0686,			c,  C	] };
+    key <AB04> { [ U06A4,	Arabic_zah,		v,  V	] };
+    key <AB05> { [ Arabic_beh,	U0649,			b,  B	] };
+    key <AB06> { [ Arabic_noon,	Arabic_tehmarbuta,	n,  N	] };
+    key <AB07> { [ Arabic_meem,	Arabic_tatweel,		m,  M	] };
+    key <AB08> { [ Arabic_comma,greater,	comma		] };
+    key <AB09> { [ period,	less,		apostrophe	] };
+    key <AB10> { [ slash, Arabic_question_mark,	question	] };
+
+    include "nbsp(zwnj2nb3)"
+    include "level3(ralt_switch)"
+};

@@ -1,0 +1,36 @@
+// Keyboard layouts for Bosnia.
+
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+    include "rs(latin)"
+    name[Group1]="Bosnian";
+};
+
+partial alphanumeric_keys
+xkb_symbols "us" {
+
+    include "rs(latinyz)"
+    name[Group1]= "Bosnian (US)";
+};
+
+partial alphanumeric_keys
+xkb_symbols "alternatequotes" {
+
+    include "rs(latinalternatequotes)"
+    name[Group1]= "Bosnian (with guillemets)";
+};
+
+partial alphanumeric_keys
+xkb_symbols "unicode" {
+
+    include "rs(latinunicode)"
+    name[Group1]= "Bosnian (with Bosnian digraphs)";
+};
+
+partial alphanumeric_keys
+xkb_symbols "unicodeus" {
+
+    include "rs(latinunicodeyz)"
+    name[Group1]= "Bosnian (US, with Bosnian digraphs)";
+};

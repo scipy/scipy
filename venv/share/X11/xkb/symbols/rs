@@ -1,0 +1,324 @@
+// Keyboard layouts for Serbia.
+
+// Derived from "Danube" D.2 from 2003-05-12,
+// which is available at http://srpski.org/dunav/.
+//
+// Original authors:
+//   Danilo Segan (Данило Шеган) <danilo@kvota.net>
+//   Chusslove Illich (Часлав Илић) <caslav.ilic@gmx.net>
+
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+    name[Group1]= "Serbian";
+
+    include "rs(cyrlevel3)"
+    include "rs(common)"
+    include "rs(cyralpha)"
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "latin" {
+
+    name[Group1]= "Serbian (Latin)";
+
+    include "latin(type3)"
+    include "rs(latalpha)"
+    include "rs(latlevel3)"
+    include "rs(common)"
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "yz" {
+
+    include "rs(basic)"
+    name[Group1]= "Serbian (Cyrillic, ZE and ZHE swapped)";
+
+    key <AD06> { [ Cyrillic_zhe,    Cyrillic_ZHE ] }; // y
+    key <AB01> { [ Cyrillic_ze,     Cyrillic_ZE  ] }; // z
+};
+
+hidden partial alphanumeric_keys
+xkb_symbols "common" {
+    // "Common" keys: keys that are the same
+    // for both latin and cyrillic keyboards.
+
+    key <TLDE> { [ grave,          asciitilde    ] };
+    key <AE01> { [ 1,              exclam        ] };
+    key <AE02> { [ 2,              quotedbl      ] };
+    key <AE03> { [ 3,              numbersign    ] };
+    key <AE04> { [ 4,              dollar        ] };
+    key <AE05> { [ 5,              percent       ] };
+    key <AE06> { [ 6,              ampersand     ] };
+    key <AE07> { [ 7,              slash         ] };
+    key <AE08> { [ 8,              parenleft     ] };
+    key <AE09> { [ 9,              parenright    ] };
+    key <AE10> { [ 0,              equal         ] };
+    key <AE11> { [ apostrophe,     question      ] };
+    key <AE12> { [ plus,           asterisk      ] };
+
+    key <AB08> { [ comma,          semicolon     ] };
+    key <AB09> { [ period,         colon         ] };
+    key <AB10> { [ minus,          underscore    ] };
+
+    include "kpdl(comma)"
+};
+
+hidden partial alphanumeric_keys
+xkb_symbols "cyralpha" {
+
+    key <AD01> { [ Cyrillic_lje,   Cyrillic_LJE  ] }; // q
+    key <AD02> { [ Cyrillic_nje,   Cyrillic_NJE  ] }; // w
+    key <AD03> { [ Cyrillic_ie,    Cyrillic_IE   ] }; // e
+    key <AD04> { [ Cyrillic_er,    Cyrillic_ER   ] }; // r
+    key <AD05> { [ Cyrillic_te,    Cyrillic_TE   ] }; // t
+    key <AD06> { [ Cyrillic_ze,    Cyrillic_ZE   ] }; // y
+    key <AD07> { [ Cyrillic_u,     Cyrillic_U    ] }; // u
+    key <AD08> { [ Cyrillic_i,     Cyrillic_I    ] }; // i
+    key <AD09> { [ Cyrillic_o,     Cyrillic_O    ] }; // o
+    key <AD10> { [ Cyrillic_pe,    Cyrillic_PE   ] }; // p
+    key <AD11> { [ Cyrillic_sha,   Cyrillic_SHA  ] }; // [ {
+    key <AD12> { [ Serbian_dje,    Serbian_DJE   ] }; // ] }
+
+    key <AC01> { [ Cyrillic_a,     Cyrillic_A    ] }; // a
+    key <AC02> { [ Cyrillic_es,    Cyrillic_ES   ] }; // s
+    key <AC03> { [ Cyrillic_de,    Cyrillic_DE   ] }; // d
+    key <AC04> { [ Cyrillic_ef,    Cyrillic_EF   ] }; // f
+    key <AC05> { [ Cyrillic_ghe,   Cyrillic_GHE  ] }; // g
+    key <AC06> { [ Cyrillic_ha,    Cyrillic_HA   ] }; // h
+    key <AC07> { [ Cyrillic_je,    Cyrillic_JE   ] }; // j
+    key <AC08> { [ Cyrillic_ka,    Cyrillic_KA   ] }; // k
+    key <AC09> { [ Cyrillic_el,    Cyrillic_EL   ] }; // l
+    key <AC10> { [ Cyrillic_che,   Cyrillic_CHE  ] }; // ; :
+    key <AC11> { [ Serbian_tshe,   Serbian_TSHE  ] }; // ' "
+    key <BKSL> { [ Cyrillic_zhe,   Cyrillic_ZHE  ] }; // \ |
+
+    key <AB01> { [ Cyrillic_zhe,   Cyrillic_ZHE  ] }; // z
+    key <AB02> { [ Cyrillic_dzhe,  Cyrillic_DZHE ] }; // x
+    key <AB03> { [ Cyrillic_tse,   Cyrillic_TSE  ] }; // c
+    key <AB04> { [ Cyrillic_ve,    Cyrillic_VE   ] }; // v
+    key <AB05> { [ Cyrillic_be,    Cyrillic_BE   ] }; // b
+    key <AB06> { [ Cyrillic_en,    Cyrillic_EN   ] }; // n
+    key <AB07> { [ Cyrillic_em,    Cyrillic_EM   ] }; // m
+};
+
+
+hidden partial alphanumeric_keys
+xkb_symbols "latalpha" {
+
+    key <AD11> { [ scaron,         Scaron        ] }; // [ {
+    key <AD12> { [ dstroke,        Dstroke       ] }; // ] }
+
+    key <AC10> { [ ccaron,         Ccaron        ] }; // ; :
+    key <AC11> { [ cacute,         Cacute        ] }; // ' "
+    key <BKSL> { [ zcaron,         Zcaron        ] }; // \ |
+};
+
+hidden partial alphanumeric_keys
+xkb_symbols "twoletter" {
+
+    // Letters which are written in latin transcription with two characters.
+    key <AD01> { type[Group1] = "SEPARATE_CAPS_AND_SHIFT_ALPHABETIC",
+                 [ U01C9,          U01C8,         any,  U01C7 ] }; // ǉ ǈ . Ǉ
+    key <AD02> { type[Group1] = "SEPARATE_CAPS_AND_SHIFT_ALPHABETIC",
+                 [ U01CC,          U01CB,         any,  U01CA ] }; // ǌ ǋ . Ǌ
+    key <AB02> { type[Group1] = "SEPARATE_CAPS_AND_SHIFT_ALPHABETIC",
+                 [ U01C6,          U01C5,         any,  U01C4 ] }; // ǆ ǅ . Ǆ
+
+    // Also replace letter Y with Zcaron, since Y is of no use any longer.
+    key <AB01> { [ zcaron,         Zcaron        ] };
+};
+
+hidden partial alphanumeric_keys
+xkb_symbols "latlevel3" {
+    key <TLDE> { [ any, any,   notsign,             notsign          ] }; // ` ~
+    key <AE01> { [ any, any,   dead_tilde,          asciitilde       ] }; // 1 !
+    key <AE02> { [ any, any,   dead_caron,          caron            ] }; // 2 @
+    key <AE03> { [ any, any,   dead_circumflex,     asciicircum      ] }; // 3 #
+    key <AE04> { [ any, any,   dead_breve,          breve            ] }; // 4 $
+    key <AE05> { [ any, any,   dead_abovering,      degree           ] }; // 5 %
+    key <AE06> { [ any, any,   dead_ogonek,         ogonek           ] }; // 6 ^
+    key <AE07> { [ any, any,   dead_grave,          grave            ] }; // 7 &
+    key <AE08> { [ any, any,   dead_abovedot,       abovedot         ] }; // 8 *
+    key <AE09> { [ any, any,   dead_acute,          apostrophe       ] }; // 9 (
+    key <AE10> { [ any, any,   dead_doubleacute,    doubleacute      ] }; // 0 )
+    key <AE11> { [ any, any,   dead_diaeresis,      diaeresis        ] }; // - _
+    key <AE12> { [ any, any,   dead_cedilla,        cedilla          ] }; // = +
+
+    key <AD01> { [ any, any,   backslash,           Greek_OMEGA      ] }; // q
+    key <AD02> { [ any, any,   bar,                 Lstroke          ] }; // w
+    key <AD03> { [ any, any,   EuroSign,            EuroSign         ] }; // e
+    key <AD04> { [ any, any,   paragraph,           registered       ] }; // r
+    key <AD05> { type[Group1] = "FOUR_LEVEL_ALPHABETIC",
+                 [ any, any,   tslash,              Tslash           ] }; // t
+    key <AD06> { [ any, any,   leftarrow,           yen              ] }; // y
+    key <AD07> { [ any, any,   downarrow,           uparrow          ] }; // u
+    key <AD08> { [ any, any,   rightarrow,          idotless         ] }; // i
+    key <AD09> { type[Group1] = "FOUR_LEVEL_ALPHABETIC",
+                 [ any, any,   oslash,              Oslash           ] }; // o
+    key <AD10> { type[Group1] = "FOUR_LEVEL_ALPHABETIC",
+                 [ any, any,   thorn,               THORN            ] }; // p
+    key <AD11> { [ any, any,   division,            dead_abovering   ] }; // [
+    key <AD12> { [ any, any,   multiply,            dead_macron      ] }; // ]
+
+    key <AC01> { type[Group1] = "FOUR_LEVEL_ALPHABETIC",
+                 [ any, any,   ae,                  AE               ] }; // a
+    key <AC02> { [ any, any,   doublelowquotemark,  guillemotright   ] }; // s
+    key <AC03> { [ any, any,   leftdoublequotemark, guillemotleft    ] }; // d
+    key <AC04> { [ any, any,   bracketleft,         ordfeminine      ] }; // f
+    key <AC05> { [ any, any,   bracketright,        ENG              ] }; // g
+    key <AC06> { type[Group1] = "FOUR_LEVEL_ALPHABETIC",
+                 [ any, any,   hstroke,             Hstroke          ] }; // h
+    key <AC08> { [ any, any,   lstroke,             ampersand        ] }; // k
+    key <AC09> { [ any, any,   lstroke,             Lstroke          ] }; // l
+    key <AC10> { [ any, any,   dead_acute,          dead_doubleacute ] }; // ;
+    key <AC11> { [ any, any,   ssharp,              dead_caron       ] }; // '
+    key <BKSL> { [ any, any,   currency,            dead_breve       ] }; // \
+
+    key <AB01> { [ any, any,   leftsinglequotemark, guillemotright   ] }; // z
+    key <AB02> { [ any, any,   rightsinglequotemark,guillemotleft    ] }; // x
+    key <AB03> { [ any, any,   cent,                copyright        ] }; // c
+    key <AB04> { [ any, any,   at,                  grave            ] }; // v
+    key <AB05> { [ any, any,   braceleft,           apostrophe       ] }; // b
+    key <AB06> { [ any, any,   braceright,          braceright       ] }; // n
+    key <AB07> { [ any, any,   section,             masculine        ] }; // m
+    key <AB08> { [ any, any,   less,                multiply         ] }; // , <
+    key <AB09> { [ any, any,   greater,             division         ] }; // . >
+    key <AB10> { [ any, any,   emdash,              endash           ] }; // / ?
+};
+
+hidden partial alphanumeric_keys
+xkb_symbols "cyrlevel3" {
+    key <TLDE> { [ any, any,   degree,              notsign          ] }; // ` ~
+    key <AE03> { [ any, any,   dead_circumflex                       ] }; // 3 #
+    key <AE07> { [ any, any,   dead_grave                            ] }; // 7 &
+    key <AE08> { [ any, any,   dead_doublegrave                      ] }; // 8 *
+    key <AE09> { [ any, any,   dead_acute                            ] }; // 9 (
+    key <AE10> { [ any, any,   dead_invertedbreve                    ] }; // 0 )
+    key <AE11> { [ any, any,   dead_macron                           ] }; // - _
+
+    key <AD01> { [ any, any,   backslash                             ] }; // q
+    key <AD02> { [ any, any,   bar                                   ] }; // w
+    key <AD03> { [ any, any,   EuroSign,            sterling         ] }; // e
+    key <AD04> { [ any, any,   paragraph,           registered       ] }; // r
+    key <AD05> { [ any, any,   ellipsis                              ] }; // t
+    key <AD06> { [ any, any,   leftarrow,           yen              ] }; // y
+    key <AD07> { [ any, any,   downarrow,           uparrow          ] }; // u
+    key <AD08> { [ any, any,   rightarrow                            ] }; // i
+    key <AD09> { [ any, any,   section                               ] }; // o
+    key <AD11> { [ any, any,   division                              ] }; // [
+    key <AD12> { [ any, any,   multiply                              ] }; // ]
+
+    key <AC02> { [ any, any,   doublelowquotemark,  guillemotright   ] }; // s
+    key <AC03> { [ any, any,   leftdoublequotemark, guillemotleft    ] }; // d
+    key <AC04> { [ any, any,   bracketleft                           ] }; // f
+    key <AC05> { [ any, any,   bracketright                          ] }; // g
+    key <BKSL> { [ any, any,   currency                              ] }; // \
+
+    key <AB01> { [ any, any,   leftsinglequotemark                   ] }; // z
+    key <AB02> { [ any, any,   rightsinglequotemark                  ] }; // x
+    key <AB03> { [ any, any,   cent,                copyright        ] }; // c
+    key <AB04> { [ any, any,   at                                    ] }; // v
+    key <AB05> { [ any, any,   braceleft                             ] }; // b
+    key <AB06> { [ any, any,   braceright                            ] }; // n
+    key <AB07> { [ any, any,   asciicircum                           ] }; // m
+    key <AB08> { [ any, any,   less                                  ] }; // , <
+    key <AB09> { [ any, any,   greater                               ] }; // . >
+    key <AB10> { [ any, any,   emdash,              endash           ] }; // / ?
+};
+
+partial alphanumeric_keys
+xkb_symbols "latinunicode" {
+    // This mapping supports the Unicode characters 0x1c4-0x1cc (dz, lj, and nj
+    // as single character). You get the title form with AltGr+Shift.
+
+    include "rs(latin)"
+    name[Group1]= "Serbian (Latin, Unicode)";
+
+    include "rs(twoletter)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "latinyz" {
+    // For those who insist on using "english-position" Z and Y.
+
+    include "rs(latin)"
+    name[Group1]= "Serbian (Latin, QWERTY)";
+
+    key <AD06> { [ y,              Y             ] }; // y
+    key <AB01> { [ z,              Z             ] }; // z
+};
+
+partial alphanumeric_keys
+xkb_symbols "latinunicodeyz" {
+    // Unicode, ZHE and Z swapped.
+
+    include "rs(latinunicode)"
+    name[Group1]= "Serbian (Latin, Unicode, QWERTY)";
+
+    key <AD06> { [ zcaron,         Zcaron        ] }; // y
+    key <AB01> { [ z,              Z             ] }; // z
+};
+
+xkb_symbols "alternatequotes" {
+    // Another acceptable »pair of quotes« for Serbian.
+
+    include "rs(basic)"
+    name[Group1]= "Serbian (Cyrillic, with guillemets)";
+
+    key <AC02> { [ any, any,   guillemotright    ] }; // s
+    key <AC03> { [ any, any,   guillemotleft     ] }; // d
+};
+
+xkb_symbols "latinalternatequotes" {
+    // Another acceptable »pair of quotes« for Serbian.
+
+    include "rs(latin)"
+    name[Group1]= "Serbian (Latin, with guillemets)";
+
+    key <AC02> { [ any, any,   guillemotright    ] }; // s
+    key <AC03> { [ any, any,   guillemotleft     ] }; // d
+};
+
+xkb_symbols "rue" {
+    // Layout for Pannonian Rusyn (spoken mainly in Serbia and Croatia
+    // by the Rusyn people), based on Serbian Cyrillic layout.
+    // Authors:
+    //   Ljubomir J. Papuga (Любомир Я. Папуґа) <papuga@zoho.com>
+    //   Mihajlo Hornjak <smeceiotpad@gmail.com>
+
+    include "rs(basic)"
+    name[Group1]= "Pannonian Rusyn";
+
+    key <TLDE> { [ Cyrillic_softsign,         Cyrillic_SOFTSIGN         ] }; // `
+
+    key <AD01> { [ Cyrillic_ya,               Cyrillic_YA               ] }; // q
+    key <AD02> { [ Ukrainian_ie,              Ukrainian_IE              ] }; // w
+    key <AD12> { [ Cyrillic_shcha,            Cyrillic_SHCHA            ] }; // ]
+
+    key <AC05> { [ Ukrainian_ghe_with_upturn, Ukrainian_GHE_WITH_UPTURN ] }; // g
+    key <AC07> { [ Cyrillic_shorti,           Cyrillic_SHORTI           ] }; // j
+    key <AC11> { [ Cyrillic_ghe,              Cyrillic_GHE              ] }; // '
+
+    key <AB01> { [ Cyrillic_yu,               Cyrillic_YU               ] }; // z
+    key <AB02> { [ Ukrainian_yi,              Ukrainian_YI              ] }; // x
+};
+
+// EXTRAS:
+
+xkb_symbols "combiningkeys" {
+    // Raw combining characters instead of dead keys,
+    // especially good for post-accenting texts.
+
+    include "rs(basic)"
+    name[Group1]= "Serbian (combining accents instead of dead keys)";
+
+    key <AE03> { [ any, any,   U0302, dead_circumflex ] }; // 3, U0302 = COMBINING CIRCUMFLEX ACCENT
+    key <AE07> { [ any, any,   U0300                  ] }; // 7, U0300 = COMBINING GRAVE ACCENT
+    key <AE08> { [ any, any,   U030F                  ] }; // 8, U030F = COMBINING DOUBLE GRAVE ACCENT
+    key <AE09> { [ any, any,   U0301                  ] }; // 9, U0301 = COMBINING ACUTE ACCENT
+    key <AE10> { [ any, any,   U0311                  ] }; // 0, U0311 = COMBINING INVERTED BREVE
+    key <AE11> { [ any, any,   U0304                  ] }; // -, U0304 = COMBINING MACRON
+};

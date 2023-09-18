@@ -1,0 +1,39 @@
+qtPrepareTool(QMAKE_QSCXMLC, qscxmlc)
+
+isEmpty(QSCXMLC_DIR):QSCXMLC_DIR = .
+
+debug_and_release {
+    CONFIG(debug, debug|release):SUFFIX = /debug
+    CONFIG(release, debug|release):SUFFIX = /release
+}
+
+QSCXMLC_DIR = $$QSCXMLC_DIR$$SUFFIX
+
+{
+qscxmlc.name = QSCXMLC ${QMAKE_FILE_IN}.h
+qscxmlc.input = STATECHARTS
+qscxmlc.variable_out = QSCXMLC_HEADERS
+qscxmlc.commands = $$QMAKE_QSCXMLC ${QMAKE_FILE_IN} --header ${QMAKE_FILE_OUT} --impl $$QSCXMLC_DIR/${QMAKE_FILE_BASE}$${first(QMAKE_EXT_CPP)} $$QSCXMLC_ARGUMENTS
+!isEmpty(QSCXMLC_NAMESPACE): qscxmlc.commands = $${qscxmlc.commands} --namespace $$QSCXMLC_NAMESPACE
+qscxmlc.output = $$QSCXMLC_DIR/${QMAKE_FILE_BASE}$${first(QMAKE_EXT_H)}
+qscxmlc.CONFIG += target_predeps
+qscxmlc.depends += $$QMAKE_QSCXMLC_EXE
+
+QMAKE_EXTRA_COMPILERS += qscxmlc
+
+qscxmlc_sm.name = QSCXMLC ${QMAKE_FILE_IN}.cpp
+qscxmlc_sm.input = QSCXMLC_HEADERS
+qscxmlc_sm.variable_out = GENERATED_SOURCES
+qscxmlc_sm.commands = $$escape_expand(\\n) # force creation of rule
+qscxmlc_sm.output = $$QSCXMLC_DIR/${QMAKE_FILE_BASE}$${first(QMAKE_EXT_CPP)}
+qscxmlc_sm.CONFIG += target_predeps
+
+QMAKE_EXTRA_COMPILERS += qscxmlc_sm
+}
+
+!isEmpty(STATECHARTS) {
+    INCLUDEPATH += $$absolute_path($$QSCXMLC_DIR, $$OUT_PWD)
+}
+
+QMAKE_DIR_REPLACE += QSCXMLC_DIR
+QMAKE_DIR_REPLACE_SANE += QSCXMLC_DIR

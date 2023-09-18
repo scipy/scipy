@@ -1,0 +1,627 @@
+default xkb_geometry "teck227" {
+    description="Truly Ergonomic Computer Keyboard Model 227 with wide Alt. (Standard US layout)";
+
+    width=296;
+    height=155;
+
+    shape.cornerRadius=1;
+
+    shape "NORM" { { [ 18,18] }, { [2,1], [ 16,16] } };
+    shape "DBL" { { [36, 18] }, { [2,1], [ 34,16] } };
+    shape "RSUP" {
+	{ [ 2, 0], [ 12, 1] , [ 22, 0], [24, 18], [ 12, 19 ], [0, 18] },
+	{ [ 4, 1], [ 12, 2] , [ 20, 1], [22, 16], [ 12, 17 ], [2, 16] }
+    };
+    shape "DEL" {
+	{ [ 2, 0], [ 14, 1] , [ 26, 0], [28, 18], [ 14, 19 ], [0, 18] },
+	{ [ 4, 1], [ 14, 2] , [ 24, 1], [26, 16], [ 14, 17 ], [2, 16] }
+    };
+    shape "AE11" {
+	{ [ 2, 0], [ 16, 1] , [ 30, 0], [32, 18], [ 16, 19 ], [0, 18] },
+	{ [ 4, 1], [ 16, 2] , [ 28, 1], [30, 16], [ 16, 17 ], [2, 16] }
+    };
+    shape "BKSP" {
+	{ [ 2, 0], [ 18, 1] , [ 34, 0], [36, 18], [ 18, 19 ], [0, 18] },
+	{ [ 4, 1], [ 18, 2] , [ 32, 1], [34, 16], [ 18, 17 ], [2, 16] }
+    };
+    shape "RTRN" {
+	{ [ 2, 0], [ 20, 1] , [ 38, 0], [40, 18], [ 20, 19 ], [0, 18] },
+	{ [ 4, 1], [ 20, 2] , [ 36, 1], [38, 16], [ 20, 17 ], [2, 16] }
+    };
+
+    section "Function" {
+	left=17;
+	top=3;
+	row {
+	    keys { <ESC>,
+		   { <FK01>, 3 }, <FK02>, <FK03>, <FK04>,
+		   { <FK05>, 3 }, <FK06>, <FK07>, <FK08>,
+		   { <FK09>, 3 }, <FK10>, <FK11>, <FK12>,
+                   { <DELE>, 3 }
+	    };
+	};
+	overlay "FN" {
+	    <ESC>=<HIRA>,
+	    <FK01>=<I180>,
+	    <FK02>=<I163>,
+	    <FK03>=<I225>,
+	    <FK04>=<I152>,
+	    <FK05>=<I148>,
+	    <FK06>=<I179>,
+	    <FK07>=<I173>,
+	    <FK08>=<I172>,
+	    <FK09>=<I171>,
+	    <FK10>=<I121>,
+	    <FK11>=<I122>,
+	    <FK12>=<I123>,
+	    <DELE>=<I169>
+	};
+    };
+
+    section "Special Keys" {
+	top=22;
+	left=122;
+	row {
+	    keys {
+		<CAPS>, <FN>, <NMLK>
+	    };
+	};
+	overlay "MISC" {
+	    <CAPS>=<INS>,
+	    <NMLK>=<PRSC>
+	};
+    };
+
+    section "LeftNumbers" {
+	top=32;
+	left=12;
+        angle=6;
+	row {
+	    keys {
+		<TAB>, <TLDE>, <AE01>, <AE02>, <AE03>, <AE04>, <AE05>
+	    };
+	};
+    };
+
+    section "CenterNumbers" {
+	top=45;
+	left=136;
+	row {
+	    keys {
+		{ <RSUP>, "RSUP" }
+	    };
+	};
+    };
+
+    section "RightNumbers" {
+	top=45;
+	left=159;
+        angle=-6;
+	row {
+	    keys {
+		<AE06>, <AE07>, <AE08>, <AE09>, <AE10>, <AE12>, <RBSP>
+	    };
+	};
+	overlay "KPAD" {
+		<AE07>=<KP7>,
+		<AE08>=<KP8>,
+		<AE09>=<KP9>
+	};
+    };
+
+    section "LeftAlphaQWER" {
+	top=51;
+	left=10;
+	angle=6;
+	row {
+	    keys {
+		<AD11>, <AD12>, <AD01>, <AD02>, <AD03>, <AD04>, <AD05>
+	    };
+	};
+    };
+
+    section "CenterAlphaQWER" {
+	top=64;
+	left=134;
+	row {
+	    keys {
+		{ <DELE>, "DEL" }
+	    };
+	};
+    };
+
+    section "RightAlphaQWER" {
+	top=64;
+	left=161;
+	angle=-6;
+	row {
+	    keys {
+		<AD06>, <AD07>, <AD08>, <AD09>, <AD10>, <AC11>, <BKSL>
+	    };
+	};
+	overlay "KPAD" {
+	    <AD07>=<KP4>,
+	    <AD08>=<KP5>,
+	    <AD09>=<KP6>,
+	    <AD10>=<KPSU>,
+	    <AC11>=<KPAD>
+	};
+    };
+
+    section "LeftAlphaASDF" {
+	top=52;
+	left=10;
+	angle=6;
+	row {
+	    top=18;
+	    keys {
+		{ <LCTL>, "DBL" }, <AC01>, <AC02>, <AC03>, <AC04>, <AC05>
+	    };
+	};
+    };
+
+    section "CenterAlphaASDF" {
+	top=83;
+	left=132;
+	row {
+	    keys {
+		{ <AE11>, "AE11" }
+	    };
+	};
+    };
+
+    section "RightAlphaASDF" {
+	top=65;
+	left=161;
+	angle=-6;
+	row {
+	    top=18;
+	    keys {
+		<AC06>, <AC07>, <AC08>, <AC09>, <AC10>, { <RCTL>, "DBL" }
+	    };
+	};
+	overlay "KPAD" {
+	    <AC07>=<KP1>,
+	    <AC08>=<KP2>,
+	    <AC09>=<KP3>,
+	    <AC10>=<KPMU>
+	};
+    };
+
+    section "LeftAlphaZXCV" {
+	top=89;
+	left=6;
+	angle=6;
+	row {
+	    keys {
+		{ <LFSH>, "DBL" },
+		<AB01>, <AB02>, <AB03>, <AB04>, <AB05>
+	    };
+	};
+    };
+
+    section "CenterAlphaZXCV" {
+	top=102;
+	left=130;
+	row {
+	    keys {
+		{ <BKSP>, "BKSP" }
+	    };
+	};
+    };
+
+    section "RightAlphaZXCV" {
+	top=102;
+	left=165;
+	angle=-6;
+	row {
+	    keys {
+		<AB06>, <AB07>, <AB08>, <AB09>, <AB10>,
+		{ <RTSH>, "DBL" }
+	    };
+	};
+	overlay "KPAD" {
+	    <AB07>=<KP0>,
+	    <AB09>=<KPDL>,
+	    <AB10>=<KPDV>
+	};
+    };
+
+    section "LeftSpecial" {
+	top=108;
+	left=4;
+	angle=6;
+	row {
+	    keys {
+		{ <LALT>, "DBL" },
+		{ <SPCE>, "DBL", 54 }
+	    };
+	};
+    };
+
+    section "CenterSpecial" {
+	top=121;
+	left=128;
+	row {
+	    keys {
+		{ <RTRN>, "RTRN" }
+	    };
+	};
+    };
+
+    section "RightSpecial" {
+	top=121;
+	left=167;
+	angle=-6;
+	row {
+	    keys {
+		{ <SPCE>, "DBL" },
+		{ <RALT>, "DBL", 54 }
+	    };
+	};
+    };
+
+    section "pgup, pgdown, home and end" {
+	top=112;
+	left=40;
+	angle=6;
+	row {
+	    left=18;
+	    keys {
+		<PGUP>
+	    };
+	};
+	row {
+	    top=9;
+	    keys {
+		<HOME>, { <END>, 18 }
+	    };
+	};
+	row {
+	    top=18;
+	    left=18;
+	    keys {
+		<PGDN>
+	    };
+	};
+    };
+
+    section "Arrows" {
+	top=117;
+	left=203;
+	angle=-6;
+	row {
+	    left=18;
+	    keys {
+		 <UP>
+	    };
+	};
+	row {
+	    top=9;
+	    keys {
+		<LEFT>, { <RGHT>, 18 }
+	    };
+	};
+	row {
+	    top=18;
+	    left=18;
+	    keys {
+		 <DOWN>
+	    };
+	};
+    };
+};
+
+xkb_geometry "teck229" {
+    description="Truly Ergonomic Computer Keyboard Model 229 with standard sized Alt and an additional Menu and Super key. (Standard US layout)";
+
+    width=296;
+    height=155;
+
+    shape.cornerRadius=1;
+
+    shape "NORM" { { [ 18,18] }, { [2,1], [ 16,16] } };
+    shape "DBL" { { [36, 18] }, { [2,1], [ 34,16] } };
+    shape "RSUP" {
+	{ [ 2, 0], [ 12, 1] , [ 22, 0], [24, 18], [ 12, 19 ], [0, 18] },
+	{ [ 4, 1], [ 12, 2] , [ 20, 1], [22, 16], [ 12, 17 ], [2, 16] }
+    };
+    shape "DEL" {
+	{ [ 2, 0], [ 14, 1] , [ 26, 0], [28, 18], [ 14, 19 ], [0, 18] },
+	{ [ 4, 1], [ 14, 2] , [ 24, 1], [26, 16], [ 14, 17 ], [2, 16] }
+    };
+    shape "AE11" {
+	{ [ 2, 0], [ 16, 1] , [ 30, 0], [32, 18], [ 16, 19 ], [0, 18] },
+	{ [ 4, 1], [ 16, 2] , [ 28, 1], [30, 16], [ 16, 17 ], [2, 16] }
+    };
+    shape "BKSP" {
+	{ [ 2, 0], [ 18, 1] , [ 34, 0], [36, 18], [ 18, 19 ], [0, 18] },
+	{ [ 4, 1], [ 18, 2] , [ 32, 1], [34, 16], [ 18, 17 ], [2, 16] }
+    };
+    shape "RTRN" {
+	{ [ 2, 0], [ 20, 1] , [ 38, 0], [40, 18], [ 20, 19 ], [0, 18] },
+	{ [ 4, 1], [ 20, 2] , [ 36, 1], [38, 16], [ 20, 17 ], [2, 16] }
+    };
+
+    section "Function" {
+	left=17;
+	top=3;
+	row {
+	    keys { <ESC>,
+		   { <FK01>, 3 }, <FK02>, <FK03>, <FK04>,
+		   { <FK05>, 3 }, <FK06>, <FK07>, <FK08>,
+		   { <FK09>, 3 }, <FK10>, <FK11>, <FK12>,
+                   { <DELE>, 3 }
+	    };
+	};
+	overlay "FN" {
+	    <ESC>=<HIRA>,
+	    <FK01>=<I180>,
+	    <FK02>=<I163>,
+	    <FK03>=<I225>,
+	    <FK04>=<I152>,
+	    <FK05>=<I148>,
+	    <FK06>=<I179>,
+	    <FK07>=<I173>,
+	    <FK08>=<I172>,
+	    <FK09>=<I171>,
+	    <FK10>=<I121>,
+	    <FK11>=<I122>,
+	    <FK12>=<I123>,
+	    <DELE>=<I169>
+	};
+    };
+
+    section "Special Keys" {
+	top=22;
+	left=122;
+	row {
+	    keys {
+		<CAPS>, <FN>, <NMLK>
+	    };
+	};
+	overlay "MISC" {
+	    <CAPS>=<INS>,
+	    <NMLK>=<PRSC>
+	};
+    };
+
+    section "LeftNumbers" {
+	top=32;
+	left=12;
+        angle=6;
+	row {
+	    keys {
+		<TAB>, <TLDE>, <AE01>, <AE02>, <AE03>, <AE04>, <AE05>
+	    };
+	};
+    };
+
+    section "CenterNumbers" {
+	top=45;
+	left=136;
+	row {
+	    keys {
+		{ <RSUP>, "RSUP" }
+	    };
+	};
+    };
+
+    section "RightNumbers" {
+	top=45;
+	left=159;
+        angle=-6;
+	row {
+	    keys {
+		<AE06>, <AE07>, <AE08>, <AE09>, <AE10>, <AE12>, <RBSP>
+	    };
+	};
+	overlay "KPAD" {
+		<AE07>=<KP7>,
+		<AE08>=<KP8>,
+		<AE09>=<KP9>
+	};
+    };
+
+    section "LeftAlphaQWER" {
+	top=51;
+	left=10;
+	angle=6;
+	row {
+	    keys {
+		<AD11>, <AD12>, <AD01>, <AD02>, <AD03>, <AD04>, <AD05>
+	    };
+	};
+    };
+
+    section "CenterAlphaQWER" {
+	top=64;
+	left=134;
+	row {
+	    keys {
+		{ <DELE>, "DEL" }
+	    };
+	};
+    };
+
+    section "RightAlphaQWER" {
+	top=64;
+	left=161;
+	angle=-6;
+	row {
+	    keys {
+		<AD06>, <AD07>, <AD08>, <AD09>, <AD10>, <AC11>, <BKSL>
+	    };
+	};
+	overlay "KPAD" {
+	    <AD07>=<KP4>,
+	    <AD08>=<KP5>,
+	    <AD09>=<KP6>,
+	    <AD10>=<KPSU>,
+	    <AC11>=<KPAD>
+	};
+    };
+
+    section "LeftAlphaASDF" {
+	top=52;
+	left=10;
+	angle=6;
+	row {
+	    top=18;
+	    keys {
+		{ <LCTL>, "DBL" }, <AC01>, <AC02>, <AC03>, <AC04>, <AC05>
+	    };
+	};
+    };
+
+    section "CenterAlphaASDF" {
+	top=83;
+	left=132;
+	row {
+	    keys {
+		{ <AE11>, "AE11" }
+	    };
+	};
+    };
+
+    section "RightAlphaASDF" {
+	top=65;
+	left=161;
+	angle=-6;
+	row {
+	    top=18;
+	    keys {
+		<AC06>, <AC07>, <AC08>, <AC09>, <AC10>, { <RCTL>, "DBL" }
+	    };
+	};
+	overlay "KPAD" {
+	    <AC07>=<KP1>,
+	    <AC08>=<KP2>,
+	    <AC09>=<KP3>,
+	    <AC10>=<KPMU>
+	};
+    };
+
+    section "LeftAlphaZXCV" {
+	top=89;
+	left=6;
+	angle=6;
+	row {
+	    keys {
+		{ <LFSH>, "DBL" },
+		<AB01>, <AB02>, <AB03>, <AB04>, <AB05>
+	    };
+	};
+    };
+
+    section "CenterAlphaZXCV" {
+	top=102;
+	left=130;
+	row {
+	    keys {
+		{ <BKSP>, "BKSP" }
+	    };
+	};
+    };
+
+    section "RightAlphaZXCV" {
+	top=102;
+	left=165;
+	angle=-6;
+	row {
+	    keys {
+		<AB06>, <AB07>, <AB08>, <AB09>, <AB10>,
+		{ <RTSH>, "DBL" }
+	    };
+	};
+	overlay "KPAD" {
+	    <AB07>=<KP0>,
+	    <AB09>=<KPDL>,
+	    <AB10>=<KPDV>
+	};
+    };
+
+    section "LeftSpecial" {
+	top=108;
+	left=4;
+	angle=6;
+	row {
+	    keys {
+		<LSUP>, <LALT>,
+		{ <SPCE>, "DBL", 54 }
+	    };
+	};
+    };
+
+    section "CenterSpecial" {
+	top=121;
+	left=128;
+	row {
+	    keys {
+		{ <RTRN>, "RTRN" }
+	    };
+	};
+    };
+
+    section "RightSpecial" {
+	top=121;
+	left=167;
+	angle=-6;
+	row {
+	    keys {
+		{ <SPCE>, "DBL" },
+		{ <RALT>, 54 }, <MENU>
+	    };
+	};
+    };
+
+    section "pgup, pgdown, home and end" {
+	top=112;
+	left=40;
+	angle=6;
+	row {
+	    left=18;
+	    keys {
+		<PGUP>
+	    };
+	};
+	row {
+	    top=9;
+	    keys {
+		<HOME>, { <END>, 18 }
+	    };
+	};
+	row {
+	    top=18;
+	    left=18;
+	    keys {
+		<PGDN>
+	    };
+	};
+    };
+
+    section "Arrows" {
+	top=117;
+	left=203;
+	angle=-6;
+	row {
+	    left=18;
+	    keys {
+		 <UP>
+	    };
+	};
+	row {
+	    top=9;
+	    keys {
+		<LEFT>, { <RGHT>, 18 }
+	    };
+	};
+	row {
+	    top=18;
+	    left=18;
+	    keys {
+		 <DOWN>
+	    };
+	};
+    };
+};

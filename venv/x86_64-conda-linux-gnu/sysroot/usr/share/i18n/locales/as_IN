@@ -1,0 +1,173 @@
+comment_char %
+escape_char /
+
+% Assamese locale for India.
+
+%%%%%%%%%%%%%
+LC_IDENTIFICATION
+title       "Assamese language locale for India"
+source      "Amitakhya Phukan, Red Hat"
+address     ""
+contact     ""
+email       "bug-glibc@gnu.org"
+tel         ""
+fax         ""
+language    "Assamese"
+territory   "India"
+revision    "1.0"
+date        "2006-05-25"
+%
+category  "as_IN:2000";LC_IDENTIFICATION
+category  "as_IN:2000";LC_CTYPE
+category  "as_IN:2000";LC_COLLATE
+category  "as_IN:2000";LC_TIME
+category  "as_IN:2000";LC_NUMERIC
+category  "as_IN:2000";LC_MONETARY
+category  "as_IN:2000";LC_MESSAGES
+category  "as_IN:2000";LC_PAPER
+category  "as_IN:2000";LC_NAME
+category  "as_IN:2000";LC_ADDRESS
+category  "as_IN:2000";LC_TELEPHONE
+END LC_IDENTIFICATION
+
+%%%%%%%%%%%%%
+LC_CTYPE
+copy "bn_BD"
+END LC_CTYPE
+
+%%%%%%%%%%%%%
+LC_COLLATE
+
+% Copy the template from ISO/IEC 14651
+copy "iso14651_t1"
+
+END LC_COLLATE
+
+%%%%%%%%%%%%%
+LC_NUMERIC
+copy "en_IN"
+END LC_NUMERIC
+
+%%%%%%%%%%%%%
+LC_MONETARY
+int_curr_symbol       "<U0049><U004E><U0052><U0020>"
+currency_symbol       "<U20B9>"
+mon_decimal_point     "<U002E>"
+mon_thousands_sep     "<U002C>"
+mon_grouping          3;2
+positive_sign         ""
+negative_sign         "<U002D>"
+int_frac_digits       2
+frac_digits           2
+p_cs_precedes         1
+p_sep_by_space        1
+n_cs_precedes         1
+n_sep_by_space        1
+p_sign_posn           1
+n_sign_posn           1
+int_p_cs_precedes     1
+int_p_sep_by_space    1
+int_n_cs_precedes     1
+int_n_sep_by_space    1
+int_p_sign_posn       1
+int_n_sign_posn       1
+END LC_MONETARY
+
+%%%%%%%%%%%%%
+LC_TIME
+abday   "<U09A6><U09C7><U0993>";/
+        "<U09B8><U09CB><U09AE>";/
+        "<U09AE><U0999><U09CD><U0997><U09B2>";/
+        "<U09AC><U09C1><U09A7>";/
+        "<U09AC><U09C3><U09B9><U09B7><U09CD><U09AA><U09A4><U09BF>";/
+        "<U09B6><U09C1><U0995><U09CD><U09F0>";/
+        "<U09B6><U09A8><U09BF>"
+day     "<U09A6><U09C7><U0993><U09AC><U09BE><U09F0>";/
+        "<U09B8><U09CB><U09AE><U09AC><U09BE><U09F0>";/
+        "<U09AE><U0999><U09CD><U0997><U09B2><U09AC><U09BE><U09F0>";/
+        "<U09AC><U09C1><U09A7><U09AC><U09BE><U09F0>";/
+        "<U09AC><U09C3><U09B9><U09B7><U09CD><U09AA><U09A4><U09BF><U09AC><U09BE><U09F0>";/
+        "<U09B6><U09C1><U0995><U09CD><U09F0><U09AC><U09BE><U09F0>";/
+        "<U09B6><U09A8><U09BF><U09AC><U09BE><U09F0>"
+abmon   "<U099C><U09BE><U09A8><U09C1><U09F1><U09BE><U09F0><U09C0>";/
+        "<U09AB><U09C7><U09AC><U09CD><U09F0><U09C1><U09F1><U09BE><U09F0><U09C0>";/
+        "<U09AE><U09BE><U09F0><U09CD><U099A>";/
+        "<U098F><U09AA><U09CD><U09F0><U09BF><U09B2>";/
+        "<U09AE><U09C7>";/
+        "<U099C><U09C1><U09A8>";/
+        "<U099C><U09C1><U09B2><U09BE><U0987>";/
+        "<U0986><U0997>";/
+        "<U099A><U09C7><U09AA><U09CD><U09A4><U09C7><U09AE><U09CD><U09AC><U09F0>";/
+        "<U0985><U0995><U09CD><U099F><U09CB><U09AC><U09F0>";/
+        "<U09A8><U09AD><U09C7><U09AE><U09CD><U09AC><U09F0>";/
+        "<U09A1><U09BF><U099A><U09C7><U09AE><U09CD><U09AC><U09F0>"
+mon     "<U099C><U09BE><U09A8><U09C1><U09F1><U09BE><U09F0><U09C0>";/
+        "<U09AB><U09C7><U09AC><U09CD><U09F0><U09C1><U09F1><U09BE><U09F0><U09C0>";/
+        "<U09AE><U09BE><U09F0><U09CD><U099A>";/
+        "<U098F><U09AA><U09CD><U09F0><U09BF><U09B2>";/
+        "<U09AE><U09C7>";/
+        "<U099C><U09C1><U09A8>";/
+        "<U099C><U09C1><U09B2><U09BE><U0987>";/
+        "<U0986><U0997><U09B7><U09CD><U099F>";/
+        "<U099A><U09C7><U09AA><U09CD><U09A4><U09C7><U09AE><U09CD><U09AC><U09F0>";/
+        "<U0985><U0995><U09CD><U099F><U09CB><U09AC><U09F0>";/
+        "<U09A8><U09AD><U09C7><U09AE><U09CD><U09AC><U09F0>";/
+        "<U09A1><U09BF><U099A><U09C7><U09AE><U09CD><U09AC><U09F0>"
+% d_fmt  "%e-%m-%Y"
+d_fmt    "<U0025><U0065><U002D><U0025><U006D><U002D><U0025><U0059>"
+% t_fmt  "%I.%M.%S %p"
+t_fmt    "<U0025><U0049><U002E><U0025><U004D><U002E><U0025><U0053><U0020><U0025><U0070>"
+% d_t_fmt"%e %B, %Y %I.%M.%S %p %Z"
+d_t_fmt  "<U0025><U0065><U0020><U0025><U0042><U002C><U0020><U0025><U0059><U0020><U0025><U0049><U002E><U0025><U004D><U002E><U0025><U0053><U0020><U0025><U0070><U0020><U0025><U005A>"
+am_pm    "<U09AA><U09C2><U09F0><U09CD><U09AC><U09CD><U09AC><U09BE><U09B9><U09CD><U09A8>";"<U0985><U09AA><U09F0><U09BE><U09B9><U09CD><U09A8>"
+% t_fmt_ampm  "%I.%M.%S %p"
+t_fmt_ampm  "<U0025><U0049><U002E><U0025><U004D><U002E><U0025><U0053><U0020><U0025><U0070>"
+END LC_TIME
+
+%%%%%%%%%%%%%
+LC_MESSAGES
+yesstr   "<U09B9><U09DF>"
+nostr    "<U09A8><U09B9><U09DF>"
+yesexpr  "<U005E><U005B><U0079><U0059><U09B9><U005D><U002E><U002A>"
+noexpr   "<U005E><U005B><U006E><U004E><U09A8><U005D><U002E><U002A>"
+END LC_MESSAGES
+
+%%%%%%%%%%%%%
+LC_PAPER
+copy "hi_IN"
+END LC_PAPER
+
+%%%%%%%%%%%%%
+LC_NAME
+% This is the ISO_IEC TR14652 Locale definition for the
+% LC_NAME category.
+%
+name_fmt    "<U0025><U0070><U0025><U0074><U0025><U0066><U0025><U0074>/
+<U0025><U0067>"
+name_gen    ""
+name_mr     "<U09B6><U09CD><U09F0><U09C0>"
+name_mrs    "<U09B6><U09CD><U09F0><U09C0><U09AE><U09A4><U09C0>"
+name_miss   "<U0995><U09C1><U09AE><U09BE><U09F0><U09C0>"
+name_ms     "<U0995><U09C1><U09AE><U09BE><U09F0><U09C0>"
+END LC_NAME
+
+%%%%%%%%%%%%%
+LC_ADDRESS
+% This is the ISO_IEC TR14652 Locale definition for the
+% LC_ADDRESS
+postal_fmt  "<U0025><U007A><U0025><U0063><U0025><U0054><U0025><U0073>/
+<U0025><U0062><U0025><U0065><U0025><U0072>"
+END LC_ADDRESS
+
+%%%%%%%%%%%%%
+LC_TELEPHONE
+% This is the ISO_IEC TR14652 Locale definition for the
+tel_int_fmt "<U002B><U0025><U0063><U0020><U003B><U0025><U0061><U0020><U003B><U0025><U006C>"
+int_prefix  "<U0039><U0031>"
+int_select  "<U0030><U0030>"
+END LC_TELEPHONE
+
+%%%%%%%%%%%%%
+LC_MEASUREMENT
+copy "hi_IN"
+END LC_MEASUREMENT

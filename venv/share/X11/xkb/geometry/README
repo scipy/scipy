@@ -1,0 +1,6 @@
+The geometry component of a keyboard mapping specifies primarily the geometry of
+the keyboard. It contains the geometry symbolic name and the keyboard geometry
+description. The geometry component might also contain aliases for some keys or
+symbolic names for some indicators and might affect the set of indicators that
+are physically present. Key aliases defined in the geometry component of a
+keyboard mapping override those defined in the keycodes component.

@@ -1,0 +1,390 @@
+comment_char %
+escape_char  /
+%
+% Romanian Language Locale for Romania
+% Source: RAP
+% Address: Sankt Jo//rgens Alle 8
+%    DK-1615 Ko//benhavn V, Danmark
+% Contact: Keld Simonsen
+% Email: Keld.Simonsen@dkuug.dk
+% Tel: +45 - 31226543
+% Fax: +45 - 33256543
+% Language: ro
+% Territory: RO
+% Revision: 4.3
+% Date: 1996-10-15
+% Application: general
+% Users: general
+% Charset: UTF-8
+% Distribution and use is free, also
+% for commercial purposes.
+%
+% Corrections by:
+%  2006-01-07
+%  Eddy Petrisor <eddy.petrisor@gmail.com>
+
+LC_IDENTIFICATION
+title      "Romanian locale for Romania"
+source     "RAP"
+address    "Sankt Jorgens Alle 8, DK-1615 Kobenhavn V, Danmark"
+contact    ""
+email      "bug-glibc-locales@gnu.org"
+tel        ""
+fax        ""
+language   "Romanian"
+territory  "Romania"
+revision   "1.0"
+date       "2000-06-29"
+%
+category  "ro_RO:2000";LC_IDENTIFICATION
+category  "ro_RO:2000";LC_CTYPE
+category  "ro_RO:2000";LC_COLLATE
+category  "ro_RO:2000";LC_TIME
+category  "ro_RO:2000";LC_NUMERIC
+category  "ro_RO:2000";LC_MONETARY
+category  "ro_RO:2000";LC_MESSAGES
+category  "ro_RO:2000";LC_PAPER
+category  "ro_RO:2000";LC_NAME
+category  "ro_RO:2000";LC_ADDRESS
+category  "ro_RO:2000";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_COLLATE
+
+% Copy the template from ISO/IEC 14651
+copy "iso14651_t1"
+
+% The modern Romanian alphabet has 31 letters, ordered as below:
+% a a( a> b c d e f g h i i> j k l m n o p q r s s, t t, u v w x y z
+
+collating-symbol <a(>
+collating-symbol <a/>>
+collating-symbol <i/>>
+collating-symbol <s,>
+collating-symbol <t,>
+
+reorder-after <GRA>
+<CIR>
+<BRE>
+
+reorder-after <a>
+<a(>
+<a/>>
+reorder-after <i>
+<i/>>
+reorder-after <s>
+<s,>
+reorder-after <t>
+<t,>
+
+reorder-after <U0061>
+<U0103> <a(>;<BRE>;<MIN>;IGNORE
+<U00E2> <a/>>;<CIR>;<MIN>;IGNORE
+reorder-after <U0041>
+<U0102> <a(>;<BRE>;<CAP>;IGNORE
+<U00C2> <a/>>;<CIR>;<CAP>;IGNORE
+
+reorder-after <U0069>
+<U00EE> <i/>>;<CIR>;<MIN>;IGNORE
+reorder-after <U0049>
+<U00CE> <i/>>;<CIR>;<CAP>;IGNORE
+
+reorder-after <U0073>
+<U0219> <s,>;<CDI>;<MIN>;IGNORE
+<U015F> <s,>;<CDI>;<MIN>;IGNORE
+reorder-after <U0053>
+<U0218> <s,>;<CDI>;<CAP>;IGNORE
+<U015E> <s,>;<CDI>;<CAP>;IGNORE
+
+reorder-after <U0074>
+<U021B> <t,>;<CDI>;<MIN>;IGNORE
+<U0163> <t,>;<CDI>;<MIN>;IGNORE
+reorder-after <U0054>
+<U021A> <t,>;<CDI>;<CAP>;IGNORE
+<U0162> <t,>;<CDI>;<CAP>;IGNORE
+
+reorder-end
+
+END LC_COLLATE
+
+
+
+LC_CTYPE
+copy "i18n"
+
+%
+% Transliteration is _currently_ a good idea as most fonts/applications do not
+% have the correct diacritics for "t comma bellow" (U021A, U021B) and 
+% "s comma bellow" (U0218, U0219). Thus we currently use and compromise with
+% "t cedilla" (U0162, U0163) - which, actually, does not belong to any 
+% language - and "s cedilla" (U015E, U015F) - which is _not_ correct for
+% Romanian, but is correct for Turkish.
+%
+% This issue should be fixed in the future, when enough font and application
+% support will be provided in current operating systems.
+%
+translit_start
+include "translit_combining";""
+
+% if t/scomma is not available, try first t/scedilla
+<U0218> "<U015E>";"<U0053>"
+<U0219> "<U015F>";"<U0073>"
+<U021A> "<U0162>";"<U0054>"
+<U021B> "<U0163>";"<U0074>"
+
+% if t/scedilla is not available, try first t/scomma
+<U015E> "<U0218>";"<U0053>"
+<U015F> "<U0219>";"<U0073>"
+<U0162> "<U021A>";"<U0054>"
+<U0163> "<U021B>";"<U0074>"
+
+translit_end
+END LC_CTYPE
+
+
+
+LC_MESSAGES
+yesexpr "<U005E><U005B><U0044><U0064><U0059><U0079><U005D><U002E><U002A>"
+noexpr  "<U005E><U005B><U006E><U004E><U005D><U002E><U002A>"
+END LC_MESSAGES
+
+
+LC_MONETARY
+% Since the 1st of July 2005, the new currency is the ROmanian New leu
+% the symbol is RON and 1 RON = 10000 ROL (old ROmanian Leu)...
+int_curr_symbol           "<U0052><U004F><U004E><U0020>"
+% but representing counted coins is made in the same way as before.
+currency_symbol           "<U004C><U0065><U0069>"
+% decimal point is comma
+mon_decimal_point         "<U002C>"
+% the separation of digits is made in groups of three
+% and the separator between the groups is the full stop (dot)
+mon_thousands_sep         "<U002E>"
+mon_grouping              3;3
+% the positive sign is not usualy represented
+positive_sign             ""
+% while the negative one is
+negative_sign             "<U002D>"
+% usualy one will display only two digits after the decimal point
+int_frac_digits           2
+frac_digits               2
+p_cs_precedes             1
+p_sep_by_space            1
+n_cs_precedes             1
+n_sep_by_space            1
+p_sign_posn               1
+n_sign_posn               1
+END LC_MONETARY
+
+
+LC_NUMERIC
+% same rules as for monetary apply for regular figures:
+% decimal point is comma
+decimal_point             "<U002C>"
+% and the separator between groups is full stop
+thousands_sep             "<U002E>"
+% the separation of figures is made in groups of three
+grouping                  3;3
+END LC_NUMERIC
+
+
+LC_TIME
+% abbreviated day names are (starting from Monday): Lu Ma Mi Jo Vi Sb Du
+abday   "<U0044><U0075>";"<U004C><U0075>";"<U004D><U0061>";"<U004D><U0069>";/
+        "<U004A><U006F>";"<U0056><U0069>";"<U0053><U0062>"
+%
+% Because in 1992 the Romanian Academy stated that within words the
+% writing of the letter i> (i circumflex - U00EE) should be replaced
+% by a> (acircumflex - U00E2), we use the post92 writing.
+% Note: The actual rule is more complex, but the case which applies for 
+% Satruday is covered by the exposed explanation above.
+%
+% Day names are not capitalized:
+% duminic<abreve>, luni, mar<tcomma>i, 
+% miercuri, joi, vineri,
+% s<acircumflex>mb<abreve>t<abreve>
+%
+% Note that Tuesday Romanian day should be using t comma, not t cedilla,
+% but due to the low availability of the glyph (U021B) in fonts we use
+% the "so called t cedilla"
+day     "<U0064><U0075><U006D><U0069><U006E><U0069><U0063><U0103>";/
+        "<U006C><U0075><U006E><U0069>";/
+        "<U006D><U0061><U0072><U0163><U0069>";/
+        "<U006D><U0069><U0065><U0072><U0063><U0075><U0072><U0069>";/
+        "<U006A><U006F><U0069>";/
+        "<U0076><U0069><U006E><U0065><U0072><U0069>";/
+        "<U0073><U00E2><U006D><U0062><U0103><U0074><U0103>"
+%
+% All month abbreviations are composed of the first three letters of the full
+% Romanian names of the months, except for November, whose abbreviation comes
+% from the Latin month name, thus the abbreviation is "nov"
+%
+% Month names are not capitalized:
+% ian feb mar apr mai iun iul aug sep oct nov dec
+abmon   "<U0069><U0061><U006E>";"<U0066><U0065><U0062>";/
+        "<U006D><U0061><U0072>";"<U0061><U0070><U0072>";/
+        "<U006D><U0061><U0069>";"<U0069><U0075><U006E>";/
+        "<U0069><U0075><U006C>";"<U0061><U0075><U0067>";/
+        "<U0073><U0065><U0070>";"<U006F><U0063><U0074>";/
+        "<U006E><U006F><U0076>";"<U0064><U0065><U0063>"
+%
+% Month names are _not_ capitalized in Romanian:
+% ianuarie februarie martie
+% aprilie mai iunie
+% iulie august septembrie
+% octombrie noiembrie decembrie
+mon     "<U0069><U0061><U006E><U0075><U0061><U0072><U0069><U0065>";/
+        "<U0066><U0065><U0062><U0072><U0075><U0061><U0072><U0069><U0065>";/
+        "<U006D><U0061><U0072><U0074><U0069><U0065>";/
+        "<U0061><U0070><U0072><U0069><U006C><U0069><U0065>";/
+        "<U006D><U0061><U0069>";/
+        "<U0069><U0075><U006E><U0069><U0065>";/
+        "<U0069><U0075><U006C><U0069><U0065>";/
+        "<U0061><U0075><U0067><U0075><U0073><U0074>";/
+        "<U0073><U0065><U0070><U0074><U0065><U006D><U0062><U0072><U0069><U0065>";/
+        "<U006F><U0063><U0074><U006F><U006D><U0062><U0072><U0069><U0065>";/
+        "<U006E><U006F><U0069><U0065><U006D><U0062><U0072><U0069><U0065>";/
+        "<U0064><U0065><U0063><U0065><U006D><U0062><U0072><U0069><U0065>"
+% Appropriate date and time representation (%c)
+% Romania uses daylight saving and the names of the time zones are 
+% not widely known nor used
+%	"%a %d %b %Y %T %z"
+d_t_fmt "<U0025><U0061><U0020><U0025><U0064><U0020><U0025><U0062><U0020>/
+<U0025><U0059><U0020><U0025><U0054><U0020><U0025><U007A>"
+%
+% Appropriate date representation (%x)
+%	"%d.%m.%Y"
+d_fmt   "<U0025><U0064><U002E><U0025><U006D><U002E><U0025><U0059>"
+% 24 hour format is used,
+t_fmt   "<U0025><U0054>"
+%  thus no am/pm markers are defined/used
+am_pm   "";""
+% also am/pm hour display format is not used
+t_fmt_ampm ""
+% %A %-e %B %Y, %H:%M:%S %z
+date_fmt       "<U0025><U0041><U0020><U0025><U002D><U0065><U0020><U0025><U0042>/
+<U0020><U0025><U0059><U002C><U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U0020>/
+<U0025><U007A>"
+% First week day is Monday
+first_weekday 2
+% First work day is Monday
+first_workday 2
+END LC_TIME
+
+
+% Romania uses A4 paper format
+LC_PAPER
+height   297
+width    210
+END LC_PAPER
+
+
+LC_TELEPHONE
+tel_int_fmt    "<U002B><U0025><U0063><U0020><U0025><U0061><U0020><U0025>/
+<U006C>"
+int_prefix     "<U0034><U0030>"
+END LC_TELEPHONE
+
+
+% Romania uses the metric system
+LC_MEASUREMENT
+measurement    1
+END LC_MEASUREMENT
+
+
+LC_NAME
+% Format of a name, taken from the glibc locale for Ukrainian.
+% %f Family names.
+% %F Family names in uppercase. 
+% %g First given name.
+% %G First given initial.
+% %l First given name with Latin letters.
+% %o Other shorter name.
+% %m Additional given names.
+% %M Initials for additional given names.
+% %p Profession.
+% %s Salutation, such as "Doctor"
+% %S Abbreviated salutation, such as "Mr." or "Dr."
+% %d Salutation, using the FDCC-sets conventions
+%    1 for the name_gen
+%    2 for name_mr
+%    3 for name_mrs
+%    4 for name_miss
+%    5 for name_ms
+% %t If the preceding field descriptor resulted in an empty string,
+%    then the empty string, else a <space>.
+%
+% FIXME: There are two prefered ways:
+% %d%t%s%t%g%t%f and %d%t%s%t%f%t%g%t%m
+% The current tendency is to use the first form, while the second is the most
+% popular form, it is widespread and widely known.
+% Now we stick to the traditional/old/second form: %d%t%s%t%f%t%g%t%m
+name_fmt    "<U0025><U0064><U0025><U0074><U0025><U0073><U0025>/
+<U0074><U0025><U0066><U0025><U0074><U0025><U0067><U0025><U0074>/
+<U0025><U006D>"
+% Dl.
+name_mr     "<U0044><U006C><U002E>"
+% D-na.
+name_mrs    "<U0044><U002D><U006E><U0061><U002E>"
+% D-ra.
+name_miss     "<U0044><U002D><U0072><U0061><U002E>"
+END LC_NAME
+
+LC_ADDRESS
+% Format of an address. The fields have the following meaning
+% (inspired originaly by glibc locale for Ukranian):
+
+% %n Person's name, possibly constructed with the LC_NAME
+%    "name_fmt" keyword. (it appears to be invalid)
+% %a Care of person, or organization. 
+% %f Firm name. 
+% %d Department name. 
+% %b Building name. 
+% %s Street or block (eg. Japanese) name. 
+% %h House number or designation. 
+% %N Insert an <end-of-line> if the previous descriptor
+%    value was not an empty string; otherwise ignore.
+% %t Insert a <space> if the previous descriptor value
+%    was not an empty string; otherwise ignore.
+% %r Room number, door designation. 
+% %e Floor number. 
+% %C Country designation, from the <country_post> keyword. 
+% %l Local township within town or city. (it appears to be invalid)
+% %z Zip number, postal code. 
+% %T Town, city. 
+% %S State, province, or prefecture. 
+% %c Country, as taken from data record.
+%
+% FIXME: it appears that %n and %l are not working; correct form is:
+% %n%N%f%N%a%d%N%s%t%h%N%b%t%e%t%r%N%l%z%t%T%N%S%t%c%N
+% implemented form:
+% %f%N%a%d%N%s%t%h%N%b%t%e%t%r%N%z%t%T%N%S%t%c%N
+postal_fmt    "<U0025><U0066>/
+<U0025><U004E><U0025><U0061><U0025><U0064><U0025><U004E>/
+<U0025><U0073><U0025><U0074><U0025><U0068><U0025><U004E>/
+<U0025><U0062><U0025><U0074><U0025><U0065><U0025><U0074>/
+<U0025><U0072><U0025><U004E><U0025><U007A>/
+<U0025><U0074><U0025><U0054><U0025><U004E><U0025><U0053>/
+<U0025><U0074><U0025><U0063><U0025><U004E>"
+% Country names are capitalized: Roma>nia
+country_name "<U0052><U006F><U006D><U00E2><U006E><U0069><U0061>"
+country_ab2 "<U0052><U004F>"
+country_ab3 "<U0052><U004F><U0055>"
+country_num 642
+country_car "<U0052><U004F>"
+% ISBN code is 973
+% see: http://homepages.cwi.nl/~dik/english/codes/isbn.html
+% and other sources
+country_isbn 973
+% FIXME: is it really RO?
+country_post "<U0052><U004F>"
+% language names are not capitalized in Romanian ( roma>na( )
+lang_name "<U0072><U006F><U006D><U00E2><U006E><U0103>"
+lang_ab "<U0072><U006F>"
+% set the terminology code to "ron" as defined in iso639-2
+lang_term "<U0072><U006F><U006E>"
+% set the bibliographic code to "rum" as defined in iso639-2
+lang_lib "<U0072><U0075><U006D>"
+END LC_ADDRESS
+

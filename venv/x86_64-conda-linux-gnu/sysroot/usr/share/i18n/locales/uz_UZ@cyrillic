@@ -1,0 +1,323 @@
+escape_char  /
+comment_char  %
+
+% Uzbek language (cyrillic) locale for Uzbekistan
+% Source: Mashrab Kuvatov
+% Contact: Mashrab Kuvatov, Pablo Saratxaga
+% Email: kmashrab@uni-bremen.de, pablo@mandrakesoft.com
+% Tel:
+% Fax:
+% Language: uz
+% Territory: UZ
+% Revision: 0.1
+% Date: 2003-05-30
+% Users: general
+% Charset: UTF-8
+% Distribution and use is free, also
+% for commercial purposes.
+% History:
+%
+% 2003-05-30 Mashrab Kuvatov <kmashrab@uni-bremen.de>
+% Created.
+%
+% 2003-06-30 Mashrab Kuvatov <kmashrab@uni-bremen.de>
+% LC_CTYPE: Added transliteration from cyrillic to latin.
+% LC_COLLATE: Added reodering definition.
+% All credits to Pablo. :-)
+
+LC_IDENTIFICATION
+title      "Uzbek (cyrillic) locale for Uzbekistan"
+source     "Mashrab Kuvatov"
+address    ""
+contact    "Mashrab Kuvatov, Pablo Saratxaga"
+email      "kmashrab@uni-bremen.de, pablo@mandrakesoft.com"
+tel        ""
+fax        ""
+language   "Uzbek"
+territory  "Uzbekistan"
+revision   "0.1"
+date       "2003-05-30"
+%
+category  "uz_UZ:2000";LC_IDENTIFICATION
+category  "uz_UZ:2000";LC_CTYPE
+category  "uz_UZ:2000";LC_COLLATE
+category  "uz_UZ:2000";LC_TIME
+category  "uz_UZ:2000";LC_NUMERIC
+category  "uz_UZ:2000";LC_MONETARY
+category  "uz_UZ:2000";LC_MESSAGES
+category  "uz_UZ:2000";LC_PAPER
+category  "uz_UZ:2000";LC_NAME
+category  "uz_UZ:2000";LC_ADDRESS
+category  "uz_UZ:2000";LC_TELEPHONE
+category  "uz_UZ:2000";LC_MEASUREMENT
+
+END LC_IDENTIFICATION
+
+LC_CTYPE
+copy "i18n"
+translit_start
+include "translit_combining";""
+
+% cyrillic -> latin
+% lower case letters
+
+<U0430> "<U0061>" % a= -> a
+<U0431> "<U0062>" % b= -> b
+<U0432> "<U0076>" % v= -> v
+<U0433> "<U0067>" % g= -> g
+<U0434> "<U0064>" % d= -> d
+<U0435> "<U0065>" % e= -> e (ye also, but context dependent)
+<U0451> "<U0079><U006F>" % io -> yo
+<U0436> "<U006A>" % z% -> j
+<U0437> "<U007A>" % z= -> z
+<U0438> "<U0069>" % i= -> i
+<U0439> "<U0079>" % j= -> y
+<U043A> "<U006B>" % k= -> k
+<U043B> "<U006C>" % l= -> l
+<U043C> "<U006D>" % m= -> m
+<U043D> "<U006E>" % n= -> n
+<U043E> "<U006F>" % o= -> o
+<U043F> "<U0070>" % p= -> p
+<U0440> "<U0072>" % r= -> r
+<U0441> "<U0073>" % s= -> s
+<U0442> "<U0074>" % t= -> t
+<U0443> "<U0075>" % u= -> u
+<U0444> "<U0066>" % f= -> f
+<U0445> "<U0078>" % h= -> x
+<U0446> "<U0074><U0073>" % c= -> ts
+<U0447> "<U0063><U0068>" % c% -> ch
+<U0448> "<U0073><U0068>" % s% -> sh
+<U0449> "<U0073><U0068>" % shcha -> sh
+<U044A> "<U0027>"        % hard sign= -> ' 
+<U044B> "<U0069>"        % yeru -> 1
+<U044C> ""               % soft sign omitted. not in latin-uzbek alphabet. stupid, but it is a fact.
+<U044D> "<U0065>"        % je= -> e 
+<U044E> "<U0079><U0075>" % ju -> yu
+<U044F> "<U0079><U0061>" % ja -> ya
+<U045E> "<U006F><U0027>" % v% -> o'
+<U049B> "<U0071>"        % k,= -> q
+<U0493> "<U0067><U0027>" % g-= -> g'
+<U04B3> "<U0068>"        % h,= -> h
+
+% upper case letters
+
+<U0410> "<U0041>" % a= -> a
+<U0411> "<U0042>" % b= -> b
+<U0412> "<U0056>" % v= -> v
+<U0413> "<U0047>" % g= -> g
+<U0414> "<U0044>" % d= -> d
+<U0415> "<U0045>" % e= -> e (ye also, but context dependent)
+<U0401> "<U0059><U006F>" % io -> yo
+<U0416> "<U004A>" % z% -> j
+<U0417> "<U005A>" % z= -> z
+<U0418> "<U0049>" % i= -> i
+<U0419> "<U0059>" % j= -> y
+<U041A> "<U004B>" % k= -> k
+<U041B> "<U004C>" % l= -> l
+<U041C> "<U004D>" % m= -> m
+<U041D> "<U004E>" % n= -> n
+<U041E> "<U004F>" % o= -> o
+<U041F> "<U0050>" % p= -> p
+<U0420> "<U0052>" % r= -> r
+<U0421> "<U0053>" % s= -> s
+<U0422> "<U0054>" % t= -> t
+<U0423> "<U0055>" % u= -> u
+<U0424> "<U0046>" % f= -> f
+<U0425> "<U0058>" % h= -> x
+<U0426> "<U0054><U0073>" % c= -> ts
+<U0427> "<U0043><U0068>" % c% -> ch
+<U0428> "<U0053><U0068>" % s% -> sh
+<U0429> "<U0053><U0068>" % shcha -> sh
+<U042A> "<U0027>"        % hard sign= -> '
+<U042B> "<U0049>"        % yeru -> i
+<U042C> ""               % soft sign omitted. not in latin-uzbek alphabet. stupid, but it is a fact.
+<U042D> "<U0045>"        % je -> e
+<U042E> "<U0059><U0075>" % ju -> yu
+<U042F> "<U0059><U0061>" % ja -> ya
+<U040E> "<U004F><U0027>" % v% -> o'
+<U049A> "<U0051>"        % k,= -> q
+<U0492> "<U0047><U0027>" % g-= -> g'
+<U04B2> "<U0048>"        % h,= -> h
+translit_end
+END LC_CTYPE
+
+LC_COLLATE
+copy "iso14651_t1"
+%% a b c d e f g g' h i j k l m n o o' p q r s t u v x y z
+%% cyr: a=, b=, v=, g=, d=, e=, io, z%, z=, i=, j=, k=, l=, m=, n=, o=,
+%%	p=, r=, s=, t=, u=, f=, h=, c=, c%, s%, sc, =' , y=, je, ju, ja,
+%%	v%, k,=, g-=, h,=
+collating-symbol  <g-'-uz>
+collating-element <g-'> from "<U0067><U0027>"
+collating-element <G-'> from "<U0047><U0027>"
+collating-symbol  <o-'-uz>
+collating-element <o-'> from "<U006F><U0027>"
+collating-element <O-'> from "<U004F><U0027>"
+
+collating-symbol <k,=>
+collating-symbol <g-=>
+collating-symbol <h,=>
+
+reorder-after <g>
+<g-'-uz>
+reorder-after <o>
+<o-'-uz>
+reorder-after <CYR-YA>
+<CYR-OUBRE>
+<k,=>
+<g-=>
+<h,=>
+
+reorder-after <U0067>
+<g-'>	<g-'-uz>;<PCL>;<MIN>;IGNORE
+reorder-after <U0047>
+<G-'>	<g-'-uz>;<PCL>;<CAP>;IGNORE
+
+reorder-after <U006F>
+<o-'>	<o-'-uz>;<PCL>;<MIN>;IGNORE
+reorder-after <U004F>
+<O-'>	<o-'-uz>;<PCL>;<CAP>;IGNORE
+
+reorder-after <U044F>
+<U045E> <CYR-OUBRE>;<PCL>;<MIN>;IGNORE
+<U049B> <k,=>;<PCL>;<MIN>;IGNORE
+<U0493> <g-=>;<PCL>;<MIN>;IGNORE
+<U04B3> <h,=>;<PCL>;<MIN>;IGNORE
+
+reorder-after <U042F>
+<U040E> <CYR-OUBRE>;<PCL>;<CAP>;IGNORE
+<U049A> <k,=>;<PCL>;<CAP>;IGNORE
+<U0492> <g-=>;<PCL>;<CAP>;IGNORE
+<U04B2> <h,=>;<PCL>;<CAP>;IGNORE
+
+reorder-end
+
+END LC_COLLATE
+
+LC_MONETARY
+int_curr_symbol         "<U0055><U005A><U0053><U0020>"
+currency_symbol         "<U0441><U045E><U043C>"
+mon_decimal_point       "<U002E>"
+mon_thousands_sep       "<U002C>"
+mon_grouping            3;3
+positive_sign           ""
+negative_sign           "<U002D>"
+int_frac_digits         2
+frac_digits             2
+p_cs_precedes           1
+p_sep_by_space          0
+n_cs_precedes           1
+n_sep_by_space          0
+p_sign_posn             1
+n_sign_posn             1
+END LC_MONETARY
+
+LC_NUMERIC
+decimal_point           "<U002E>"
+thousands_sep           "<U002C>"
+grouping                3;3
+END LC_NUMERIC
+
+LC_TIME
+abday   "<U042F><U043A><U0448>";/
+        "<U0414><U0443><U0448>";/
+        "<U0421><U0435><U0448>";/
+        "<U0427><U043E><U0440>";/
+        "<U041F><U0430><U0439>";/
+        "<U0416><U0443><U043C>";/
+        "<U0428><U0430><U043D>"
+day     "<U042F><U043A><U0448><U0430><U043D><U0431><U0430>";/
+        "<U0414><U0443><U0448><U0430><U043D><U0431><U0430>";/
+        "<U0421><U0435><U0448><U0430><U043D><U0431><U0430>";/
+        "<U0427><U043E><U0440><U0448><U0430><U043D><U0431><U0430>";/
+        "<U041F><U0430><U0439><U0448><U0430><U043D><U0431><U0430>";/
+        "<U0416><U0443><U043C><U0430>";/
+        "<U0428><U0430><U043D><U0431><U0430>"
+abmon   "<U042F><U043D><U0432>";/
+        "<U0424><U0435><U0432>";/
+        "<U041C><U0430><U0440>";/
+        "<U0410><U043F><U0440>";/
+        "<U041C><U0430><U0439>";/
+        "<U0418><U044E><U043D>";/
+        "<U0418><U044E><U043B>";/
+        "<U0410><U0432><U0433>";/
+        "<U0421><U0435><U043D>";/
+        "<U041E><U043A><U0442>";/
+        "<U041D><U043E><U044F>";/
+        "<U0414><U0435><U043A>"
+mon     "<U042F><U043D><U0432><U0430><U0440><U044C>";/
+        "<U0424><U0435><U0432><U0440><U0430><U043B><U044C>";/
+        "<U041C><U0430><U0440><U0442>";/
+        "<U0410><U043F><U0440><U0435><U043B><U044C>";/
+        "<U041C><U0430><U0439>";/
+        "<U0418><U044E><U043D><U044C>";/
+        "<U0418><U044E><U043B><U044C>";/
+        "<U0410><U0432><U0433><U0443><U0441><U0442>";/
+        "<U0421><U0435><U043D><U0442><U044F><U0431><U0440><U044C>";/
+        "<U041E><U043A><U0442><U044F><U0431><U0440><U044C>";/
+        "<U041D><U043E><U044F><U0431><U0440><U044C>";/
+        "<U0414><U0435><U043A><U0430><U0431><U0440><U044C>"
+d_t_fmt "<U0025><U0054><U002C><U0020><U0025><U0064><U0020><U0025><U0042><U002C><U0020><U0025><U0059><U0020><U0439><U0438><U043B><U002C><U0020><U0025><U0041>"
+d_fmt       "<U0025><U0064><U002F><U0025><U006D><U002F><U0025><U0079>"
+t_fmt       "<U0025><U0054>"
+am_pm       "";""
+t_fmt_ampm  ""
+date_fmt    "<U0025><U0064><U0020><U0025><U0042><U002C><U0020><U0025><U0059><U0020><U0439><U0438><U043B><U002C><U0020><U0025><U0041>"
+END LC_TIME
+
+LC_MESSAGES
+yesstr  "<U04B2><U0430>"
+nostr   "<U0419><U045E><U049B>"
+yesexpr "<U005E><U005B><U04B2><U04B3><U0059><U0079><U005D><U002E><U002A>"
+noexpr  "<U005E><U005B><U0419><U0439><U004E><U006E><U005D><U002E><U002A>"
+END LC_MESSAGES
+
+LC_PAPER
+height   297
+width    210
+END LC_PAPER
+
+LC_TELEPHONE
+tel_int_fmt    "<U002B><U0025><U0063><U0020><U0025><U0061><U0020><U0025>/
+<U006C>"
+int_prefix     "<U0032><U0037>"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+measurement    1
+END LC_MEASUREMENT
+
+LC_NAME
+name_fmt    "<U0025><U0064><U0025><U0074><U0025><U0066><U0025><U0074>/
+<U0025><U0067><U0025><U0074><U0025><U006D>"
+name_gen    "<U04B2><U0443><U0440><U043C><U0430><U0442><U043B><U0438>"
+name_mr     "<U0416><U0430><U043D><U043E><U0431>"
+name_mrs    "<U0425><U043E><U043D><U0438><U043C>"
+% FIXME: what is miss ?
+name_miss   ""
+% FIXME: what is ms ?
+name_ms     ""
+END LC_NAME
+
+LC_ADDRESS
+% format: %C%N%S%N%T%N%s %h%N%f%N%b%N%d%N%e %r%N%a%N%z
+% but %S seems not recognized yet ? so %C%N%T%N%s %h%N%f%N%b%N%d%N%e %r%N%a%N%z
+% is used.
+postal_fmt    "<U0025><U0043><U0025><U004E>/
+<U0025><U0054><U0025><U004E><U0025><U0073><U0020><U0025><U0068><U0025>/
+<U004E><U0025><U0066><U0025><U004E><U0025><U0062><U0025><U004E><U0025>/
+<U0064><U0025><U004E><U0025><U0065><U0020><U0025><U0072><U0025><U004E>/
+<U0025><U0061><U0025><U004E><U0025><U007A>"
+country_name "<U040E><U0437><U0431><U0435><U043A><U0438><U0441><U0442><U043E><U043D>"
+country_post "<U0055><U005A>" % ??
+country_ab2  "<U0055><U005A>"
+country_ab3  "<U0055><U005A><U0042>"
+country_num  860
+% FIXME: ISBN number?
+%country_isbn ""
+country_car "<U0055><U005A>"
+lang_name   "<U040E><U0437><U0431><U0435><U043A><U0447><U0430>"
+lang_ab     "<U0075><U007A>"
+lang_term   "<U0075><U007A><U0062>"
+lang_lib    "<U0075><U007A><U0062>"
+END LC_ADDRESS

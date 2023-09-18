@@ -1,0 +1,165 @@
+escape_char /
+comment_char %
+% charset "GEORGIAN-PS"
+% Distribution and use is free, also for commercial purposes.
+
+LC_IDENTIFICATION
+title "Georgian language locale for Georgia"
+source ""
+address ""
+contact "Pablo Saratxaga"
+email "srtxg@chanae.alphanet.ch"
+tel ""
+fax ""
+language "Georgian"
+territory "Georgia"
+revision "0.6"
+date "2001-01-26"
+
+category ka_GE:2000;LC_IDENTIFICATION
+category ka_GE:2000;LC_CTYPE
+category ka_GE:2000;LC_COLLATE
+category ka_GE:2000;LC_TIME
+category ka_GE:2000;LC_NUMERIC
+category ka_GE:2000;LC_PAPER
+category ka_GE:2000;LC_NAME
+category ka_GE:2000;LC_ADDRESS
+category ka_GE:2000;LC_TELEPHONE
+category ka_GE:2000;LC_MEASUREMENT
+category ka_GE:2000;LC_MESSAGES
+category ka_GE:2000;LC_MONETARY
+
+% ISO/IEC 14652: Converted comments to LC_IDENTIFICATION
+%  added LC_PAPER, LC_MEASUREMENT, LC_TELEPHONE, LC_ADDRESS
+% -- mckinstry@computer.org, 2000-06-20
+
+END LC_IDENTIFICATION
+
+LC_ADDRESS
+postal_fmt "<U0025><U0064><U0025><U004E><U0025><U0066><U0025><U004E><U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E>/
+<U0025><U0073><U0020><U0025><U0068><U0020><U0035><U0065><U0020><U0025><U0072><U0025><U004E>/
+<U0025><U0043><U0025><U007A><U0020><U0025><U0054><U0025><U004E><U0025><U0063><U0025><U004E>"
+% FIXME country_name  'Georgia' in Georgian
+% country_post "GE" for Georgia ?
+country_ab2 "GE"
+country_ab3 "GEO"
+country_num 268
+country_car "GE"
+country_isbn "99928"
+% lang_name FIXME Georgian in Georgian
+lang_ab "ka"
+lang_term "kat"
+lang_lib "geo"
+END LC_ADDRESS
+
+LC_COLLATE
+copy "iso14651_t1"
+END LC_COLLATE
+
+LC_CTYPE
+copy "en_DK"
+END LC_CTYPE
+
+LC_MONETARY
+int_curr_symbol      "<U0047><U0045><U004C><U0020>"
+currency_symbol      "<U10DA>"
+mon_decimal_point    "<U002C>"
+mon_thousands_sep    "<U002E>"
+mon_grouping         3;3
+positive_sign        ""
+negative_sign        "<U002D>"
+int_frac_digits      2
+frac_digits          2
+p_cs_precedes        1
+p_sep_by_space       0
+n_cs_precedes        1
+n_sep_by_space       0
+p_sign_posn          1
+n_sign_posn          1
+END LC_MONETARY
+
+LC_NUMERIC
+decimal_point        "<U002C>"
+thousands_sep        "<U002E>"
+grouping             3;3
+END LC_NUMERIC
+
+LC_TIME
+abday	/
+"<U10D9><U10D5><U10D8>";/
+"<U10DD><U10E0><U10E8>";/
+"<U10E1><U10D0><U10DB>";/
+"<U10DD><U10D7><U10EE>";/
+"<U10EE><U10E3><U10D7>";/
+"<U10DE><U10D0><U10E0>";/
+"<U10E8><U10D0><U10D1>"
+day	/
+"<U10D9><U10D5><U10D8><U10E0><U10D0>";/
+"<U10DD><U10E0><U10E8><U10D0><U10D1><U10D0><U10D7><U10D8>";/
+"<U10E1><U10D0><U10DB><U10E8><U10D0><U10D1><U10D0><U10D7><U10D8>";/
+"<U10DD><U10D7><U10EE><U10E8><U10D0><U10D1><U10D0><U10D7><U10D8>";/
+"<U10EE><U10E3><U10D7><U10E8><U10D0><U10D1><U10D0><U10D7><U10D8>";/
+"<U10DE><U10D0><U10E0><U10D0><U10E1><U10D9><U10D4><U10D5><U10D8>";/
+"<U10E8><U10D0><U10D1><U10D0><U10D7><U10D8>"
+abmon	/
+"<U10D8><U10D0><U10DC>";/
+"<U10D7><U10D4><U10D1>";/
+"<U10DB><U10D0><U10E0>";/
+"<U10D0><U10DE><U10E0>";/
+"<U10DB><U10D0><U10D8>";/
+"<U10D8><U10D5><U10DC>";/
+"<U10D8><U10D5><U10DA>";/
+"<U10D0><U10D2><U10D5>";/
+"<U10E1><U10D4><U10E5>";/
+"<U10DD><U10E5><U10E2>";/
+"<U10DC><U10DD><U10D4>";/
+"<U10D3><U10D4><U10D9>"
+mon	/
+"<U10D8><U10D0><U10DC><U10D5><U10D0><U10E0><U10D8>";/
+"<U10D7><U10D4><U10D1><U10D4><U10E0><U10D5><U10D0><U10DA><U10D8>";/
+"<U10DB><U10D0><U10E0><U10E2><U10D8>";/
+"<U10D0><U10DE><U10E0><U10D8><U10DA><U10D8>";/
+"<U10DB><U10D0><U10D8><U10E1><U10D8>";/
+"<U10D8><U10D5><U10DC><U10D8><U10E1><U10D8>";/
+"<U10D8><U10D5><U10DA><U10D8><U10E1><U10D8>";/
+"<U10D0><U10D2><U10D5><U10D8><U10E1><U10E2><U10DD>";/
+"<U10E1><U10D4><U10E5><U10E2><U10D4><U10DB><U10D1><U10D4><U10E0><U10D8>";/
+"<U10DD><U10E5><U10E2><U10DD><U10DB><U10D1><U10D4><U10E0><U10D8>";/
+"<U10DC><U10DD><U10D4><U10DB><U10D1><U10D4><U10E0><U10D8>";/
+"<U10D3><U10D4><U10D9><U10D4><U10DB><U10D1><U10D4><U10E0><U10D8>"
+
+%"%Y ‹ »— %d %B"
+d_t_fmt  "<U0025><U0059><U0020><U10EC><U10DA><U10D8><U10E1><U0020><U0025><U0064><U0020><U0025><U0042><U002C><U0020><U0025><U0054><U0020><U0025><U005A>"
+d_fmt    "<U0025><U006D><U002F><U0025><U0064><U002F><U0025><U0059>"
+t_fmt    "<U0025><U0054>"
+am_pm    "";""
+t_fmt_ampm  ""
+END LC_TIME
+
+LC_MESSAGES
+yesexpr  "<U005E><U005B><U0031><U0079><U0059><U006B><U004B><U0078><U0058><U10EE><U005D><U002E><U002A>"
+noexpr   "<U005E><U005B><U0030><U006E><U004E><U0061><U0041><U10D0><U005D><U002E><U002A>"
+END LC_MESSAGES
+
+% Metric Measurement system (ISO 1000)
+LC_MEASUREMENT
+measurement 1
+END LC_MEASUREMENT
+
+% Default paper: A4
+LC_PAPER
+height 297
+width 210
+END LC_PAPER
+
+LC_TELEPHONE
+tel_int_fmt "<U002B><U0025><U0063><U0020><U0025><U0061><U0020><U0025><U006C>"
+% FIXME Find tel_dom_fmt
+int_select "<U0038><U007E><U0031><U0030>"
+int_prefix "<U0039><U0039><U0035>"
+END LC_TELEPHONE
+
+LC_NAME
+% FIXME
+copy "en_DK"
+END LC_NAME

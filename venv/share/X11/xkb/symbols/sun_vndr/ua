@@ -1,0 +1,135 @@
+//
+// Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, and/or sell copies of the Software, and to permit persons
+// to whom the Software is furnished to do so, provided that the above
+// copyright notice(s) and this permission notice appear in all copies of
+// the Software and that both the above copyright notice(s) and this
+// permission notice appear in supporting documentation.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+// OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+// HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL
+// INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING
+// FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
+// NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
+// WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+// 
+// Except as contained in this notice, the name of a copyright holder
+// shall not be used in advertising or otherwise to promote the sale, use
+// or other dealings in this Software without prior written authorization
+// of the copyright holder.
+//
+
+default partial alphanumeric_keys
+xkb_symbols "sun_type6" {
+
+    name[Group1]="Ukrainian (Sun Type 6)";
+
+	include "sun_vndr/us(sun_type6)"
+
+    key	<TLDE> {	[	    grave,	asciitilde,	apostrophe,	asciitilde	]	};
+    key	<AE01> {	[		1,	    exclam,	1,	    exclam 	]	};
+    key	<AE02> {	[		2,		at,	2,        quotedbl	]	};
+    key	<AE03> {	[		3,	numbersign,	3,      numbersign	]	};
+    key	<AE04> {	[		4,	    dollar,	4,        asterisk	]	};
+    key	<AE05> {	[		5,	   percent,	5,	     colon	]	};
+    key	<AE06> {	[		6,     asciicircum,	6,	     comma	]	};
+    key	<AE07> {	[		7,	 ampersand,	7,	    period	]	};
+    key	<AE08> {	[		8,	  asterisk,	8,	 semicolon	]	};
+    key	<AE09> {	[		9,	 parenleft,	9,	 parenleft	]	};
+    key	<AE10> {	[		0,	parenright,	0,	parenright	]	};
+    key	<AE11> {	[	    minus,	underscore,	minus,	underscore	]	};
+    key	<AE12> {	[	    equal,	      plus,	equal,	      plus	]	};
+
+    key	<AD01> {	[		q,		 Q,	Cyrillic_shorti, Cyrillic_SHORTI	]	};
+    key	<AD02> {	[		w,		 W,	Cyrillic_tse,    Cyrillic_TSE	]	};
+    key	<AD03> {	[		e,		 E,	Cyrillic_u,	Cyrillic_U	]	};
+    key	<AD04> {	[		r,		 R,	Cyrillic_ka,     Cyrillic_KA	]	};
+    key	<AD05> {	[		t,		 T,	Cyrillic_ie,     Cyrillic_IE	]	};
+    key	<AD06> {	[		y,		 Y,	Cyrillic_en,     Cyrillic_EN	]	};
+    key	<AD07> {	[		u,		 U,	Cyrillic_ghe,    Cyrillic_GHE	]	};
+    key	<AD08> {	[		i,		 I,	Cyrillic_sha,    Cyrillic_SHA	]	};
+    key	<AD09> {	[		o,		 O,	Cyrillic_shcha,  Cyrillic_SHCHA	]	};
+    key	<AD10> {	[		p,		 P,	Cyrillic_ze,     Cyrillic_ZE	]	};
+    key	<AD11> {	[     bracketleft,	 braceleft,	Cyrillic_ha,     Cyrillic_HA	]	};
+    key	<AD12> {	[    bracketright,	braceright,	Ukrainian_yi,    Ukrainian_YI	]	};
+
+    key	<AC01> {	[		a,		 A,	Cyrillic_ef,     Cyrillic_EF	]	};
+    key	<AC02> {	[		s,		 S,	Ukrainian_i,     Ukrainian_I	]	};
+    key	<AC03> {	[		d,		 D,	Cyrillic_ve,     Cyrillic_VE	]	};
+    key	<AC04> {	[		f,		 F,	Cyrillic_a,	Cyrillic_A	]	};
+    key	<AC05> {	[		g,		 G,	Cyrillic_pe,     Cyrillic_PE	]	};
+    key	<AC06> {	[		h,		 H,	Cyrillic_er,     Cyrillic_ER	]	};
+    key	<AC07> {	[		j,		 J,	Cyrillic_o,	Cyrillic_O	]	};
+    key	<AC08> {	[		k,		 K,	Cyrillic_el,     Cyrillic_EL	]	};
+    key	<AC09> {	[		l,		 L,	Cyrillic_de,     Cyrillic_DE	]	};
+    key	<AC10> {	[	semicolon,	     colon,	Cyrillic_zhe,    Cyrillic_ZHE	]	};
+    key	<AC11> {	[      apostrophe,	  quotedbl,	Ukrainian_ie,    Ukrainian_IE	]	};
+    key <BKSL> {        [       backslash,             bar,     Ukrainian_ghe_with_upturn, Ukrainian_GHE_WITH_UPTURN ] };
+
+    key <LSGT> {        [            less,         greater,     slash,           bar            ]       };
+    key	<AB01> {	[		z,		 Z,	Cyrillic_ya,     Cyrillic_YA	]	};
+    key	<AB02> {	[		x,		 X,	Cyrillic_che,    Cyrillic_CHE	]	};
+    key	<AB03> {	[		c,		 C,	Cyrillic_es,     Cyrillic_ES	]	};
+    key	<AB04> {	[		v,		 V,	Cyrillic_em,     Cyrillic_EM	]	};
+    key	<AB06> {	[		n,		 N,	Cyrillic_te,     Cyrillic_TE	]	};
+    key	<AB05> {	[		b,		 B,	Cyrillic_i,	Cyrillic_I	]	};
+    key	<AB07> {	[		m,		 M,	Cyrillic_softsign,Cyrillic_SOFTSIGN	]	};
+    key	<AB08> {	[	    comma,	      less,	Cyrillic_be,     Cyrillic_BE	]	};
+    key	<AB09> {	[	   period,	   greater,	Cyrillic_yu,     Cyrillic_YU	]	};
+    key	<AB10> {	[	    slash,	  question,	slash,	  question	        ]	};
+
+	include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "basic" {
+	include "sun_vndr/ua(sun_type6)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "unicode" {
+	include "ua(unicode)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "legacy" {
+	include "ua(legacy)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "winkeys" {
+	include "ua(winkeys)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "typewriter" {
+	include "ua(typewriter)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "phonetic" {
+	include "ua(phonetic)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "rstu" {
+	include "ua(rstu)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "rstu_ru" {
+	include "ua(rstu_ru)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "homophonic" {
+	include "ua(homophonic)"
+};

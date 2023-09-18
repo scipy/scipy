@@ -1,0 +1,88 @@
+// Keyboard layouts for Moldova.
+
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+    include "ro"
+
+    name[Group1]="Moldavian";
+};
+
+
+// ┌─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┲━━━━━━━━━┓
+// │ ~   │ !   │ "   │ #   │ ;   │ %   │ :   │ ?   │ *   │ (   │ )   │ -   │ +   ┃ ⌫ Back  ┃
+// │ `   │ 1   │ 2 @ │ 3   │ 4 $ │ 5 € │ 6 ^ │ 7 & │ 8   │ 9   │ 0   │ -   │ =   ┃  space  ┃
+// ┢━━━━━┷━┱───┴─┬───┴─┬───┴─┬───┴─┬───┴─┬───┴─┬───┴─┬───┴─┬───┴─┬───┴─┬───┴─┬───┺━┳━━━━━━━┫
+// ┃       ┃ Ţ Q │ Ê W │ E   │ R   │ T   │ Y   │ U   │ İ   │ O   │ P   │ Ö { │ Ü } ┃ Enter ┃
+// ┃Tab ↹  ┃ ţ q │ ê w │ e   │ r   │ t   │ y   │ u   │ i   │ o   │ p   │ ö [ │ ü ] ┃   ⏎   ┃
+// ┣━━━━━━━┻┱────┴┬────┴┬────┴┬────┴┬────┴┬────┴┬────┴┬────┴┬────┴┬────┴┬────┴┬────┺┓      ┃
+// ┃        ┃ A   │ S   │ D   │ F   │ G   │ H   │ J   │ K   │ L   │ Ş   │ I   │ |   ┃      ┃
+// ┃Caps ⇬  ┃ a   │ s   │ d   │ f   │ g   │ h   │ j   │ k   │ l   │ ş   │ ı ' │ \   ┃      ┃
+// ┣━━━━━━━━┹────┬┴────┬┴────┬┴────┬┴────┬┴────┬┴────┬┴────┬┴────┬┴────┬┴────┲┷━━━━━┻━━━━━━┫
+// ┃             │ Z   │ Ç X │ C   │ V   │ B   │ N   │ M   │ Ä   │ <   │ >   ┃             ┃
+// ┃Shift ⇧      │ z   │ ç x │ c   │ v   │ b   │ n   │ m   │ ä   │ ,   │ . / ┃Shift ⇧      ┃
+// ┣━━━━━━━┳━━━━━┷━┳━━━┷━━━┱─┴─────┴─────┴─────┴─────┴─────┴───┲━┷━━━━━╈━━━━━┻━┳━━━━━━━┳━━━┛
+// ┃       ┃       ┃       ┃ ␣                               ⍽ ┃       ┃       ┃       ┃
+// ┃Ctrl   ┃Meta   ┃Alt    ┃ ␣           Space               ⍽ ┃AltGr ⇮┃Menu   ┃Ctrl   ┃
+// ┗━━━━━━━┻━━━━━━━┻━━━━━━━┹───────────────────────────────────┺━━━━━━━┻━━━━━━━┻━━━━━━━┛
+
+// A, Ä, B, C, Ç, D, E, Ê, F, G, H, I, İ, J, K, L, M, N, O, Ö, P, R, S, Ş, T, Ţ, U, Ü, V, Y, Z.
+
+partial alphanumeric_keys
+xkb_symbols "gag" {
+
+    name[Group1]="Gagauz (Moldova)";
+
+    key <TLDE>	{[	grave,	asciitilde		]};
+    key <AE01>	{[	1,	exclam			]};
+    key <AE02>	{[	2,	quotedbl,		at		]};
+    key <AE03>	{[	3,	numbersign		]};
+    key <AE04>	{[	4,	semicolon,		dollar		]};
+    key <AE05>	{[	5,	percent,		EuroSign,	cent		]};
+    key <AE06>	{[	6,	colon,			asciicircum	]};
+    key <AE07>	{[	7,	question,		ampersand	]};
+    key <AE08>	{[	8,	asterisk		]};
+    key <AE09>	{[	9,	parenleft		]};
+    key <AE10>	{[	0,	parenright		]};
+    key <AE11>	{[	minus,	underscore		]};
+    key <AE12>	{[	equal,	plus			]};
+
+    key <AD01>	{[	tcedilla,	Tcedilla,	q,	Q	]};
+    key <AD02>	{[	ecircumflex,	Ecircumflex,	w,	W	]};
+    key <AD03>	{[	e,	E			]};
+    key <AD04>	{[	r,	R			]};
+    key <AD05>	{[	t,	T			]};
+    key <AD06>	{[	y,	Y			]};
+    key <AD07>	{[	u,	U			]};
+    key <AD08>	{[	i,	Iabovedot,		i,	I	]};
+    key <AD09>	{[	o,	O			]};
+    key <AD10>	{[	p,	P			]};
+    key <AD11>	{[	odiaeresis,	Odiaeresis,	bracketleft,	braceleft	]};
+    key <AD12>	{[	udiaeresis,	Udiaeresis,	bracketright,	braceright	]};
+
+    key <AC01>	{[	a,	A			]};
+    key <AC02>	{[	s,	S			]};
+    key <AC03>	{[	d,	D			]};
+    key <AC04>	{[	f,	F			]};
+    key <AC05>	{[	g,	G			]};
+    key <AC06>	{[	h,	H			]};
+    key <AC07>	{[	j,	J			]};
+    key <AC08>	{[	k,	K			]};
+    key <AC09>	{[	l,	L			]};
+    key <AC10>	{[	scedilla,	Scedilla	]};
+    key <AC11>	{[	idotless,	I,		apostrophe	]};
+    key <BKSL>	{[	backslash,	bar		]};
+
+    key <AB01>	{[	z,	Z			]};
+    key <AB02>	{[	ccedilla,	Ccedilla,	x,	X	]};
+    key <AB03>	{[	c,	C			]};
+    key <AB04>	{[	v,	V			]};
+    key <AB05>	{[	b,	B			]};
+    key <AB06>	{[	n,	N			]};
+    key <AB07>	{[	m,	M			]};
+    key <AB08>	{[	adiaeresis,	Adiaeresis	]};
+    key <AB09>	{[	comma,	less			]};
+    key <AB10>	{[	period,	greater,		slash		]};
+
+    include "level3(ralt_switch)"
+};

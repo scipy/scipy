@@ -1,0 +1,360 @@
+comment_char %
+escape_char  /
+%
+% Serbian Language Locale for Serbia
+% Source: sr_YU, sr_CS locales
+% Address:
+%
+% Contact: Danilo Segan
+% Email: danilo@gnome.org
+% Tel: +381 63 323456
+% Fax: none
+% Language: sr
+% Territory: RS
+% Revision: 1.3
+% Date: 2006-10-09
+% Application: general
+% Users: general
+% Charset: UTF-8
+% Distribution and use is free, also
+% for commercial purposes.
+%
+
+LC_IDENTIFICATION
+title      "Serbian locale for Serbia"
+source     "sr_YU, sr_CS locale"
+address    ""
+contact    "Danilo Segan"
+email      "bug-glibc-locales@gnu.org"
+tel        ""
+fax        ""
+language   "Serbian"
+territory  "Serbia"
+revision   "1.3"
+date       "2006-10-09"
+audience   "general"
+application   "GNU locale"
+abbreviation  ""
+%
+category  "i18n:1997";LC_IDENTIFICATION
+category  "i18n:1997";LC_CTYPE
+category  "i18n:1997";LC_COLLATE
+category  "i18n:1997";LC_MONETARY
+category  "i18n:1997";LC_NUMERIC
+category  "i18n:1997";LC_TIME
+category  "i18n:1997";LC_MESSAGES
+category  "i18n:1997";LC_PAPER
+category  "i18n:1997";LC_NAME
+category  "i18n:1997";LC_ADDRESS
+category  "i18n:1997";LC_TELEPHONE
+category  "i18n:1997";LC_MEASUREMENT
+END LC_IDENTIFICATION
+
+LC_CTYPE
+copy "i18n"
+translit_start
+include "translit_combining";""
+
+% cyrillic -> latin
+<U0452> "<U0111>";"<U0064><U006A>" % d-
+<U0453> "<U0067><U006A>" % gj
+<U0455> "<U0064><U007A>" % dz
+<U0458> "<U006A>" % j
+<U0459> "<U006C><U006A>" % lj
+<U045A> "<U006E><U006A>" % nj
+<U045B> "<U0107>";"<U0063>" % c'
+<U045C> "<U006B><U006A>" % kj
+<U045F> "<U0064><U017E>";"<U0064><U007A>" % dz<
+
+<U0402> "<U0110>";"<U0044><U006A>" % D-
+<U0403> "<U0047><U006A>" % Gj
+<U0405> "<U0044><U007A>" % Dz
+<U0408> "<U004A>" % J
+<U0409> "<U004C><U006A>" % Lj
+<U040A> "<U004E><U006A>" % Nj
+<U040B> "<U0106>";"<U0043>" % C'
+<U040C> "<U004B><U006A>" % Kj
+<U040F> "<U0044><U017E>";"<U0064><U007A>" % Dz<
+
+<U0430> "<U0061>"
+<U0431> "<U0062>"
+<U0446> "<U0063>"
+<U0434> "<U0064>"
+<U0435> "<U0065>"
+<U0444> "<U0066>"
+<U0433> "<U0067>"
+<U0445> "<U0068>"
+<U0438> "<U0069>"
+<U043A> "<U006B>"
+<U043B> "<U006C>"
+<U043C> "<U006D>"
+<U043D> "<U006E>"
+<U043E> "<U006F>"
+<U043F> "<U0070>"
+<U0440> "<U0072>"
+<U0441> "<U0073>"
+<U0442> "<U0074>"
+<U0443> "<U0075>"
+<U0432> "<U0076>"
+<U0437> "<U007A>"
+<U0436> "<U017E>";"<U007A>" % z<
+<U0448> "<U0161>";"<U0073>" % s<
+<U0447> "<U010D>";"<U0063>" % c<
+
+<U0410> "<U0041>"
+<U0411> "<U0042>"
+<U0426> "<U0043>"
+<U0414> "<U0044>"
+<U0415> "<U0045>"
+<U0424> "<U0046>"
+<U0413> "<U0047>"
+<U0425> "<U0048>"
+<U0418> "<U0049>"
+<U041A> "<U004B>"
+<U041B> "<U004C>"
+<U041C> "<U004D>"
+<U041D> "<U004E>"
+<U041E> "<U004F>"
+<U041F> "<U0050>"
+<U0420> "<U0052>"
+<U0421> "<U0053>"
+<U0422> "<U0054>"
+<U0423> "<U0055>"
+<U0412> "<U0056>"
+<U0417> "<U005A>"
+<U0416> "<U017D>";"<U005A>" % z<
+<U0428> "<U0160>";"<U0053>" % s<
+<U0427> "<U010C>";"<U0063>" % c<
+
+translit_end
+END LC_CTYPE
+
+
+LC_COLLATE
+
+copy "iso14651_t1"
+
+collating-element <D-Z<> from "<U0044><U017D>"
+collating-element <D-z<> from "<U0044><U017E>"
+collating-element <d-Z<> from "<U0064><U017D>"
+collating-element <d-z<> from "<U0064><U017E>"
+
+collating-element <L-J> from "<U004C><U004A>"
+collating-element <L-j> from "<U004C><U006A>"
+collating-element <l-J> from "<U006C><U004A>"
+collating-element <l-j> from "<U006C><U006A>"
+
+collating-element <N-J> from "<U004E><U004A>"
+collating-element <N-j> from "<U004E><U006A>"
+collating-element <n-J> from "<U006E><U004A>"
+collating-element <n-j> from "<U006E><U006A>"
+
+collating-symbol  <d-z-sh>
+collating-symbol  <l-j-sh>
+collating-symbol  <n-j-sh>
+
+collating-symbol <cacute>
+collating-symbol <ccaron>
+collating-symbol <d//>
+collating-symbol <scaron>
+collating-symbol <zcaron>
+
+collating-symbol <CAP-MIN>
+collating-symbol <MIN-CAP>
+
+reorder-after <MIN>
+<MIN-CAP>
+reorder-after <CAP>
+<CAP-MIN>
+
+reorder-after <c>
+<cacute>
+<ccaron>
+<d>
+<d-z-sh>
+<d//>
+reorder-after <l>
+<l-j-sh>
+reorder-after <n>
+<n-j-sh>
+reorder-after <s>
+<scaron>
+reorder-after <z>
+<zcaron>
+
+reorder-after <U0063>
+<U0107>	<cacute>;<PCT>;<MIN>;IGNORE
+<U010D>	<ccaron>;<PCT>;<MIN>;IGNORE
+reorder-after <U0043>
+<U0106>	<cacute>;<PCT>;<CAP>;IGNORE
+<U010C>	<ccaron>;<PCT>;<CAP>;IGNORE
+
+reorder-after <U0064>
+<d-z<>	<d-z-sh>;<PCT>;<MIN>;IGNORE
+<U01C6>	<d-z-sh>;<PCT>;<MIN>;IGNORE
+<d-Z<>	<d-z-sh>;<PCT>;<MIN-CAP>;IGNORE
+<U0111>	<d//>;<PCT>;<MIN>;IGNORE
+reorder-after <U0044>
+<D-Z<>	<d-z-sh>;<PCT>;<CAP>;IGNORE
+<U01C4>	<d-z-sh>;<PCT>;<CAP>;IGNORE
+<D-z<>	<d-z-sh>;<PCT>;<CAP-MIN>;IGNORE
+<U01C5>	<d-z-sh>;<PCT>;<CAP-MIN>;IGNORE
+<U0110>	<d//>;<PCT>;<CAP>;IGNORE
+
+reorder-after <U006C>
+<l-j>	<l-j-sh>;<PCT>;<MIN>;IGNORE
+<U01C9>	<l-j-sh>;<PCT>;<MIN>;IGNORE
+<l-J>	<l-j-sh>;<PCT>;<MIN-CAP>;IGNORE
+reorder-after <U004C>
+<L-J>	<l-j-sh>;<PCT>;<CAP>;IGNORE
+<U01C7>	<l-j-sh>;<PCT>;<CAP>;IGNORE
+<L-j>	<l-j-sh>;<PCT>;<CAP-MIN>;IGNORE
+<U01C8>	<l-j-sh>;<PCT>;<CAP-MIN>;IGNORE
+
+reorder-after <U006E>
+<n-j>	<n-j-sh>;<PCT>;<MIN>;IGNORE
+<U01CC>	<n-j-sh>;<PCT>;<MIN>;IGNORE
+<n-J>	<n-j-sh>;<PCT>;<MIN-CAP>;IGNORE
+reorder-after <U004E>
+<N-J>	<n-j-sh>;<PCT>;<CAP>;IGNORE
+<U01CA>	<n-j-sh>;<PCT>;<CAP>;IGNORE
+<N-j>	<n-j-sh>;<PCT>;<CAP-MIN>;IGNORE
+<U01CB>	<n-j-sh>;<PCT>;<CAP-MIN>;IGNORE
+
+reorder-after <U0073>
+<U0161>	<scaron>;<PCT>;<MIN>;IGNORE
+reorder-after <U0053>
+<U0160>	<scaron>;<PCT>;<CAP>;IGNORE
+
+reorder-after <U007A>
+<U017E>	<zcaron>;<PCT>;<MIN>;IGNORE
+reorder-after <U005A>
+<U017D>	<zcaron>;<PCT>;<CAP>;IGNORE
+
+reorder-end
+
+END LC_COLLATE
+
+LC_MONETARY
+int_curr_symbol           "<U0052><U0053><U0044><U0020>"
+currency_symbol           "<U0434><U0438><U043D>"
+mon_decimal_point         "<U002C>"
+mon_thousands_sep         "<U002E>"
+mon_grouping              3;3
+positive_sign             ""
+negative_sign             "<U002D>"
+int_frac_digits           2
+frac_digits               2
+p_cs_precedes             0
+p_sep_by_space            1
+n_cs_precedes             0
+n_sep_by_space            1
+p_sign_posn               1
+n_sign_posn               1
+END LC_MONETARY
+
+LC_NUMERIC
+decimal_point             "<U002C>"
+thousands_sep             ""
+grouping                  0;0
+END LC_NUMERIC
+
+LC_TIME
+
+abday   "<U043D><U0435><U0434>";"<U043F><U043E><U043D>";/
+        "<U0443><U0442><U043E>";"<U0441><U0440><U0435>";/
+        "<U0447><U0435><U0442>";"<U043F><U0435><U0442>";/
+        "<U0441><U0443><U0431>"
+day     "<U043D><U0435><U0434><U0435><U0459><U0430>";/
+        "<U043F><U043E><U043D><U0435><U0434><U0435><U0459><U0430><U043A>";/
+        "<U0443><U0442><U043E><U0440><U0430><U043A>";/
+        "<U0441><U0440><U0435><U0434><U0430>";/
+        "<U0447><U0435><U0442><U0432><U0440><U0442><U0430><U043A>";/
+        "<U043F><U0435><U0442><U0430><U043A>";/
+        "<U0441><U0443><U0431><U043E><U0442><U0430>"
+abmon   "<U0458><U0430><U043D>";"<U0444><U0435><U0431>";/
+        "<U043C><U0430><U0440>";"<U0430><U043F><U0440>";/
+        "<U043C><U0430><U0458>";"<U0458><U0443><U043D>";/
+        "<U0458><U0443><U043B>";"<U0430><U0432><U0433>";/
+        "<U0441><U0435><U043F>";"<U043E><U043A><U0442>";/
+        "<U043D><U043E><U0432>";"<U0434><U0435><U0446>"
+mon     "<U0458><U0430><U043D><U0443><U0430><U0440>";/
+        "<U0444><U0435><U0431><U0440><U0443><U0430><U0440>";/
+        "<U043C><U0430><U0440><U0442>";/
+        "<U0430><U043F><U0440><U0438><U043B>";/
+        "<U043C><U0430><U0458>";/
+        "<U0458><U0443><U043D>";/
+        "<U0458><U0443><U043B>";/
+        "<U0430><U0432><U0433><U0443><U0441><U0442>";/
+        "<U0441><U0435><U043F><U0442><U0435><U043C><U0431><U0430><U0440>";/
+        "<U043E><U043A><U0442><U043E><U0431><U0430><U0440>";/
+        "<U043D><U043E><U0432><U0435><U043C><U0431><U0430><U0440>";/
+        "<U0434><U0435><U0446><U0435><U043C><U0431><U0430><U0440>"
+
+d_t_fmt "<U0025><U0041><U002C><U0020><U0025><U0064><U002E><U0020>/
+<U0025><U0042><U0020><U0025><U0059><U002E><U0020><U0025><U0054>/
+<U0020><U0025><U005A>"
+d_fmt   "<U0025><U0064><U002E><U0025><U006D><U002E><U0025><U0059><U002E>"
+t_fmt   "<U0025><U0054>"
+am_pm   "";""
+t_fmt_ampm "<U0025><U0054>"
+date_fmt  "<U0025><U0061><U002C><U0020><U0025><U0065><U002E><U0020>/
+<U0025><U0062><U0020><U0025><U0059><U002E><U0020><U0020><U0025><U0048>/
+<U003A><U0025><U004D><U003A><U0025><U0053><U0020><U0025><U005A><U000A>"
+week    7;19971130;4
+first_weekday 2
+first_workday 2
+END LC_TIME
+
+LC_MESSAGES
+yesexpr "<U005E><U005B><U0414><U0434><U0044><U0064><U0059><U0079><U005D>"
+noexpr  "<U005E><U005B><U041D><U043D><U004E><U006E><U005D>"
+END LC_MESSAGES
+
+LC_PAPER
+height   297
+width    210
+END LC_PAPER
+
+LC_NAME
+name_fmt    "<U0025><U0064><U0025><U0074><U0025><U0067><U0025><U0074>/
+<U0025><U006D><U0025><U0074><U0025><U0066>"
+name_gen    ""
+name_mr     "<U0433><U002D><U0434><U0438><U043D>"
+name_mrs    "<U0433><U002D><U0452><U0430>"
+name_miss   "<U0433><U002D><U0452><U0438><U0446><U0430>"
+name_ms     "<U0433><U002D><U0452><U0430>"
+END LC_NAME
+
+LC_ADDRESS
+postal_fmt    "<U0025><U0066><U0025><U004E><U0025><U0061><U0025><U004E>/
+<U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E><U0025><U0073>/
+<U0020><U0025><U0068><U0020><U0025><U0065><U0020><U0025><U0072><U0025>/
+<U004E><U0025><U007A><U0020><U0025><U0054><U0025>/
+<U004E><U0025><U0063><U0025><U004E>"
+country_ab2   "<U0052><U0053>"
+country_ab3   "<U0053><U0052><U0042>"
+% FIXME: country_post is probably incorrect
+country_post  "<U0053><U0052><U0042>"
+country_name  "<U0421><U0440><U0431><U0438><U0458><U0430>"
+country_num   688
+country_car   "<U0053><U0052><U0042>"
+% FIXME: ISBN code is what? "86" that preceedes all the numbers?
+country_isbn  "<U0038><U0036>"
+lang_name     "<U0441><U0440><U043F><U0441><U043A><U0438>"
+lang_term     "<U0073><U0072><U0070>"
+lang_lib      "<U0073><U0063><U0063>"
+lang_ab	      "<U0073><U0072>"
+END LC_ADDRESS
+
+LC_TELEPHONE
+tel_int_fmt    "<U002B><U0025><U0063><U0020><U0025><U0061><U0020><U0025>/
+<U006C>"
+tel_dom_fmt    "<U0025><U0041><U0020><U0025><U006C>"
+int_prefix     "<U0033><U0038><U0031>"
+int_select     "<U0039><U0039>"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+measurement    1
+END LC_MEASUREMENT

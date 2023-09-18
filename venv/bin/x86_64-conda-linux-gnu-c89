@@ -1,0 +1,10 @@
+#!/bin/sh
+fl="-std=c89"
+for opt; do
+  case "$opt" in
+    -ansi|-std=c89|-std=iso9899:1990) fl="";;
+    -std=*) echo "`basename $0` called with non ANSI/ISO C option $opt" >&2
+      exit 1;;
+  esac
+done
+exec gcc $fl ${1+"$@"}

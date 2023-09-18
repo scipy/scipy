@@ -1,0 +1,13 @@
+prefix=/workspaces/scipy/venv
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+includedir=${prefix}/include/qt
+
+
+Name: Qt5 3DRender
+Description: Qt 3DRender module
+Version: 5.15.8
+Libs: -L${libdir} -lQt53DRender 
+Cflags: -DQT_3DRENDER_LIB -I${includedir}/Qt3DRender -I${includedir}
+Requires: Qt5Core Qt53DCore
+

@@ -1,0 +1,470 @@
+// -*- indent-tabs-mode: nil -*-
+
+// Created by Alexander Pohoyda <alexander.pohoyda@gmx.net>
+// Geometry specification for IBM ThinkPad keyboard.
+// Compatible Models: THINKPAD 560Z 2640-90U, THINKPAD 560Z 2640-91U,
+//    THINKPAD 560Z 2640-B0U, THINKPAD 560Z 2640-B1U, THINKPAD 560Z 2640-RR3,
+//    THINKPAD 600 2645-31U, THINKPAD 600 2645-35U, THINKPAD 600 2645-41U,
+//    THINKPAD 600 2645-42U, THINKPAD 600 2645-45U, THINKPAD 600 2645-48U,
+//    THINKPAD 600 2645-51U, THINKPAD 600 2645-85U, THINKPAD 600 2645-A1U,
+//    THINKPAD 600 2645-RR1, THINKPAD 600 2645-RR2, THINKPAD 600E 2645-3AU,
+//    THINKPAD 600E 2645-4AU, THINKPAD 600E 2645-4BU, THINKPAD 600E 2645-55U,
+//    THINKPAD 600E 2645-5AU, THINKPAD 600E 2645-5BU, THINKPAD 600E 2645-5JU,
+//    THINKPAD 600E 2645-8AO, THINKPAD 600E 2645-8AU, THINKPAD 600E 2645-8BU,
+//    THINKPAD 600E 2645-AAU, THINKPAD 600E 2645-RRB, THINKPAD 600E 2645-RRD,
+//    THINKPAD 600E 2645-RRF, THINKPAD 600E 2645-RRS, THINKPAD A22E 2645-45U
+
+xkb_geometry "common" {
+    width = 290;
+    height = 150;
+    baseColor = "grey80";
+    labelColor = "white";
+
+    shape "FN0"  { cornerRadius = 1, { [17, 12] }, { [2, 0], [15, 10] } };
+    shape "NORM" { cornerRadius = 1, { [18, 18] }, { [2.5, 0], [15.5, 14] } };
+    shape "BKSP" { cornerRadius = 1, { [37, 18] }, { [2.5, 0], [34.5, 14] } };
+    shape "TABK" { cornerRadius = 1, { [27, 18] }, { [2.5, 0], [24.5, 14] } };
+    shape "CAPS" { cornerRadius = 1, { [31, 18] }, { [1, 0], [30, 16] },
+				                   { [1, 0], [26, 16] },
+				                   { [2.5, 0], [24.5, 14] } };
+    shape "RTSH" { cornerRadius = 1, { [50, 18] }, { [2.5, 0], [46.5, 14] } };
+    shape "MODK" { cornerRadius = 1, { [27.5, 18] }, { [2.5, 0], [25, 14] } };
+    shape "SPCE" { cornerRadius = 1, { [100, 18] }, { [2.5, 0], [97.5, 14] } };
+    shape "ARRS" { cornerRadius = 1, { [16, 13] }, { [1.5, 0], [14.5, 11] } };
+
+    shape "LED"  { cornerRadius = 2, { [3, 3] } };
+
+    shape "KEYS" { cornerRadius = 2,
+                   { [0, 0], [19, 0], [19, 13], [172, 13],
+	             [172, 0], [286, 0], [286, 138], [216, 138],
+	             [216, 124], [0, 124] } };
+
+    solid "KeyPanel" {
+	shape = "KEYS";
+	left = 2;
+	top = 5;
+	color = "black";
+    };
+
+    shape "NULL1" { cornerRadius = 1,
+                    { [0, 0], [50, 0], [50, 18], [34, 18], [34, 4],
+		      [16, 4], [16, 18], [0, 18] } };
+
+    solid "NullPanel1" {
+	shape = "NULL1";
+	left = 237;
+	top = 110;
+	color = "grey80";
+    };
+
+    shape "NULL2" { cornerRadius = 1, { [17, 13] } };
+
+    solid "NullPanel2" {
+	shape = "NULL2";
+	left = 219;
+	top = 129;
+	color = "grey80";
+    };
+
+    shape "NULL3" { cornerRadius = 1,
+                    { [0, 26],
+		      [72, 26], [72, 13], [76, 13], [76, 26],
+		      [149, 26], [149, 13], [153, 13], [153, 26],
+		      [226, 26], [226, 0], [230, 0], [230, 26],
+		      [284, 26], [285, 27],
+		      [0, 27] } };
+
+    solid "NullPanel3" {
+	shape = "NULL3";
+	left = 3;
+	top = 6;
+	color = "grey80";
+    };
+
+    indicator.onColor = "green";
+    indicator.offColor = "grey10";
+    indicator.top = 4;
+    indicator.shape = "LED";
+    indicator "HDDActivity" { onColor = "red"; left = 100; };
+    indicator "Num Lock"     { left = 108; };
+    indicator "Caps Lock"    { left = 114; };
+    indicator "Scroll Lock"  { left = 120; };
+    indicator "Power"	     { left = 128; };
+
+    key.gap = 1;
+    key.color = "grey60";
+
+    section "Function" {
+	left = 2;
+	top = 5;
+	key.shape = "FN0";
+	row {
+	    top = 1;
+	    keys {  <ESC>, { <PRSC>, 155 }, <SCLK>, <PAUS> };
+	};
+	row {
+	    top = 14;
+	    keys {  <FK01>, <FK02>, <FK03>, <FK04>,
+		    { <FK05>, 6 }, <FK06>, <FK07>, <FK08>,
+		    { <FK09>, 6 }, <FK10>, <FK11>, <FK12>
+	    };
+	};
+    }; // End of "Function" section
+
+    section "Control" {
+	left= 2;
+	top = 109;
+	key.shape = "MODK";
+	row {
+	    top = 1;
+	    keys { { <FN>, "NORM" }, <LCTL>, <LALT>,
+		   { <SPCE>, "SPCE" }, <RALT>, <RCTL>
+	    };
+	};
+    }; // End of "Control" section
+
+    section "Editing" {
+	top = 5;
+	left = 233;
+        key.shape = "FN0";
+	row {
+	    top = 1;
+	    keys { <INS>, <HOME>, <PGUP> };
+	};
+        row {
+	    top = 14;
+	    keys { <DELE>, <END>, <PGDN> };
+	};
+    }; // End of "Editing" section
+
+    section "Navigation" {
+	top = 114;
+	left = 236;
+	key.shape = "ARRS";
+	row {
+	    top = 1;
+	    left = 17;
+	    keys { <UP> };
+	};
+	row {
+	    top = 15;
+	    keys { <LEFT>, <DOWN>, <RGHT> };
+	};
+    }; // End of "Navigation" section
+    
+    shape "STIK" { cornerRadius = 4, { [7, 7] } };
+
+    solid "STIK" {
+	priority = 255;
+	color = "red";
+	shape = "STIK";
+	top = 85;
+	left = 126;
+    };
+};
+
+// 85 keys
+// US/English (FRU 02K4785).
+xkb_geometry "us" {
+    include "thinkpad(common)"
+    description = "IBM ThinkPad 560Z/600/600E/A22E, US";
+
+    shape "RTRN" { cornerRadius = 1, { [43, 18] }, { [2.5, 0], [40.5, 14] } };
+    shape "LFSH" { cornerRadius = 1, { [43, 18] }, { [2.5, 0], [40.5, 14] } };
+    shape "BKSL" { cornerRadius = 1, { [28, 18] }, { [2.5, 0], [25.5, 14] } };
+
+    section "Alpha" {
+	left = 2;
+	top = 33;
+	key.gap = 1;
+	key.color = "grey60";
+	key.shape = "NORM";
+	row {
+	    top = 1;
+	    keys { <AE00>, <AE01>, <AE02>, <AE03>, <AE04>,
+		   <AE05>, <AE06>, <AE07>, <AE08>, <AE09>,
+		   <AE10>, <AE11>, <AE12>, { <BKSP>, "BKSP" }
+	    };
+	};
+	row {
+	    top = 20;
+	    keys { { <TAB>, "TABK" },
+		   <AD01>, <AD02>, <AD03>, <AD04>, <AD05>, 
+		   <AD06>, <AD07>, <AD08>, <AD09>, <AD10>, 
+		   <AD11>, <AD12>, { <BKSL>, "BKSL" }
+	    };
+	};
+	row {
+	    top = 39;
+	    keys { { <CAPS>, "CAPS" },
+		   <AC01>, <AC02>, <AC03>, <AC04>, <AC05>, 
+		   <AC06>, <AC07>, <AC08>, <AC09>, <AC10>, 
+		   <AC11>, { <RTRN>, "RTRN" }
+	    };
+	};
+	row {
+	    top = 58;
+	    keys { { <LFSH>, "LFSH" },
+		   <AB01>, <AB02>, <AB03>, <AB04>, <AB05>, 
+		   <AB06>, <AB07>, <AB08>, <AB09>, <AB10>,
+		   { <RTSH>, "RTSH" }
+	    };
+	};
+    }; // End of "Alpha" section
+};
+
+// 86 keys
+// Tested on: DE/German, UK/English (FRU 02K4787).
+xkb_geometry "intl" {
+    include "thinkpad(common)"
+    description = "IBM ThinkPad 560Z/600/600E/A22E, Intl";
+
+    shape "RTRN" { cornerRadius = 1, { [28, 0], [28, 37], [4, 37], [4, 18],
+                                       [0, 18], [0, 0] },
+                                     { [25.5, 0], [25.5, 33], [6.5, 33],
+				       [6.5, 14], [2.5, 14], [2.5, 0] } };
+    shape "LFSH" { cornerRadius = 1, { [24, 18] }, { [2.5, 0], [21.5, 14] } };
+
+    section "Alpha" {
+	left = 2;
+	top = 33;
+	key.gap = 1;
+	key.color = "grey60";
+	key.shape = "NORM";
+	row {
+	    top = 1;
+	    keys { <AE00>, <AE01>, <AE02>, <AE03>, <AE04>,
+		   <AE05>, <AE06>, <AE07>, <AE08>, <AE09>,
+		   <AE10>, <AE11>, <AE12>, { <BKSP>, "BKSP" }
+	    };
+	};
+	row {
+	    top = 20;
+	    keys { { <TAB>, "TABK" },
+		   <AD01>, <AD02>, <AD03>, <AD04>, <AD05>, 
+		   <AD06>, <AD07>, <AD08>, <AD09>, <AD10>, 
+		   <AD11>, <AD12>, { <RTRN>, "RTRN" }
+	    };
+	};
+	row {
+	    top = 39;
+	    keys { { <CAPS>, "CAPS" },
+		   <AC01>, <AC02>, <AC03>, <AC04>, <AC05>, 
+		   <AC06>, <AC07>, <AC08>, <AC09>, <AC10>, 
+		   <AC11>, <AC12>
+	    };
+	};
+	row {
+	    top = 58;
+	    keys { { <LFSH>, "LFSH" }, <AB00>,
+		   <AB01>, <AB02>, <AB03>, <AB04>, <AB05>, 
+		   <AB06>, <AB07>, <AB08>, <AB09>, <AB10>,
+		   { <RTSH>, "RTSH" }
+	    };
+	};
+    }; // End of "Alpha" section
+};
+
+xkb_geometry "60" {
+    width = 290;
+    height = 140;
+    baseColor = "grey80";
+    labelColor = "white";
+
+    shape "NORM" { cornerRadius = 1, { [18,   18] }, { [2, 0], [16, 16] } };
+
+    shape "ESC"  { cornerRadius = 1, { [17,   13] }, { [1.5, 0], [15.5, 12] } };
+    shape "FN0"  { cornerRadius = 1, { [17,   11] }, { [1.5, 0], [15.5, 10] } };
+
+    shape "BKSP" { cornerRadius = 1, { [37,   18] }, { [2, 0], [35, 16] } };
+
+    shape "TABK" { cornerRadius = 1, { [27.5, 18] }, { [2, 0], [25.5, 16] } };
+    shape "BKSL" { cornerRadius = 1, { [27.5, 18] }, { [2, 0], [25.5, 16] } };
+
+    shape "CAPS" { cornerRadius = 1, { [30.5, 18] }, { [2, 0], [28.5, 16] } };
+    shape "RTRN" { cornerRadius = 1, { [43.5, 18] }, { [2, 0], [41.5, 16] } };
+
+    shape "LFSH" { cornerRadius = 1, { [40,   18] }, { [2, 0], [38, 16] } };
+    shape "RTSH" { cornerRadius = 1, { [53,   18] }, { [2, 0], [51, 16] } };
+
+    shape "LCTL" { cornerRadius = 1, { [21,   18] }, { [2, 0], [19, 16] } };
+    shape "LWIN" { cornerRadius = 1, { [15,   18] }, { [1.5, 0], [13.5, 16] } };
+
+    shape "SPCE" { cornerRadius = 1, { [97,   18] }, { [2, 0], [95, 16] } };
+
+    shape "ARR1" { cornerRadius = 1, { [17,   13] }, { [1.5, 0], [15.5, 12] } };
+    shape "ARR2" { cornerRadius = 1, { [17,   11] }, { [1.5, 0], [15.5, 10] } };
+
+    shape "VOL"  { cornerRadius = 2.5, { [5, 5] } };
+    shape "TVTG" { cornerRadius = 0.5, { [0, 1], [17, 1], [17, 4], [0, 4] } };
+
+    shape "KEYS" { cornerRadius = 2,
+                   { [0, 0], [19, 0], [19, 16], [172, 16],
+	             [172, 4], [286, 4], [286, 133], [231, 133],
+	             [231, 126], [0, 126] } };
+
+    solid "KeyPanel" {
+	shape = "KEYS";
+	left = 2;
+	top = 3;
+	color = "black";
+    };
+
+    shape "NULL0" { cornerRadius = 0.5,
+                    { [0, 26],
+		      [72, 26], [72, 14], [76, 14], [76, 26],
+		      [149, 26], [149, 14], [153, 14], [153, 26],
+		      [226, 26], [226, 2], [230, 2], [230, 26],
+		      [284, 26], [284, 27],
+		      [0, 27] } };
+
+    solid "NullPanel0" {
+	shape = "NULL0";
+	left = 3;
+	top = 6;
+	color = "grey80";
+    };
+
+    shape "NULL1" { cornerRadius = 0.5, { [0, 12], [17, 12], [17, 13], [0, 13] } };
+
+    solid "NullPanel1" {
+	shape = "NULL1";
+	left = 3;
+	top = 6;
+	color = "grey80";
+    };
+
+    shape "MEDIA" { cornerRadius = 0.5, { [0, 0], [55, 0], [55, 10], [0, 10] } };
+
+    solid "MediaPanel" {
+	shape = "MEDIA";
+	left = 25.5;
+	top = 6;
+	color = "black";
+    };
+
+    section "Volume" {
+	left = 22;
+	top = 8.5;
+	key.shape = "VOL";
+	key.gap = 6;
+	key.color = "grey20";
+
+	row {
+	    keys { <MUTE>, <VOL->, <VOL+>, {<I1F>, "TVTG", color = "blue"} };
+	};
+    };
+
+    key.gap = 1;
+    key.color = "grey60";
+
+    section "Function" {
+	left = 2;
+	top = 3;
+	key.shape = "FN0";
+	row {
+	    key.shape = "ESC";
+	    top = 1;
+	    keys {  <ESC> };
+	};
+	row {
+	    top = 5;
+	    keys { { <PRSC>, 173 }, <SCLK>, <PAUS> };
+	};
+	row {
+	    top = 17;
+	    keys {  <FK01>, <FK02>, <FK03>, <FK04>,
+		    { <FK05>, 6 }, <FK06>, <FK07>, <FK08>,
+		    { <FK09>, 6 }, <FK10>, <FK11>, <FK12>
+	    };
+	};
+    }; // End of "Function" section
+
+    section "Control" {
+	left = 2;
+	top = 109;
+	key.shape = "NORM";
+	row {
+	    top = 1;
+	    keys { <FN>, { <LCTL>, "LCTL" }, { <LWIN>, "LWIN" }, <LALT>,
+		   { <SPCE>, "SPCE" }, <RALT>, <MENU>, <RCTL>
+	    };
+	};
+    }; // End of "Control" section
+
+    section "Editing" {
+	top = 7;
+	left = 233;
+        key.shape = "FN0";
+	row {
+	    top = 1;
+	    keys { <INS>, <HOME>, <PGUP> };
+	};
+        row {
+	    top = 13;
+	    keys { <DELE>, <END>, <PGDN> };
+	};
+    }; // End of "Editing" section
+
+    section "Navigation" {
+	top = 109;
+	left = 233;
+	row {
+	    key.shape = "ARR1";
+	    top = 1;
+	    keys { <I6A>, <UP>, <I69> };
+	};
+	row {
+	    key.shape = "ARR2";
+	    top = 15;
+	    keys { <LEFT>, <DOWN>, <RGHT> };
+	};
+    }; // End of "Navigation" section
+    
+    shape "STIK" { cornerRadius = 3.5, { [7, 7] } };
+
+    solid "STIK" {
+	priority = 255;
+	color = "red";
+	shape = "STIK";
+	top = 85.5;
+	left = 125.5;
+    };
+
+    section "Alpha" {
+	left = 2;
+	top = 33;
+	key.shape = "NORM";
+	row {
+	    top = 1;
+	    keys { <TLDE>, <AE01>, <AE02>, <AE03>, <AE04>,
+		   <AE05>, <AE06>, <AE07>, <AE08>, <AE09>,
+		   <AE10>, <AE11>, <AE12>, { <BKSP>, "BKSP" }
+	    };
+	};
+	row {
+	    top = 20;
+	    keys { { <TAB>, "TABK" },
+		   <AD01>, <AD02>, <AD03>, <AD04>, <AD05>, 
+		   <AD06>, <AD07>, <AD08>, <AD09>, <AD10>, 
+		   <AD11>, <AD12>, { <BKSL>, "BKSL" }
+	    };
+	};
+	row {
+	    top = 39;
+	    keys { { <CAPS>, "CAPS" },
+		   <AC01>, <AC02>, <AC03>, <AC04>, <AC05>, 
+		   <AC06>, <AC07>, <AC08>, <AC09>, <AC10>, 
+		   <AC11>, { <RTRN>, "RTRN", color = "blue" }
+	    };
+	};
+	row {
+	    top = 58;
+	    keys { { <LFSH>, "LFSH" },
+		   <AB01>, <AB02>, <AB03>, <AB04>, <AB05>, 
+		   <AB06>, <AB07>, <AB08>, <AB09>, <AB10>,
+		   { <RTSH>, "RTSH" }
+	    };
+	};
+    }; // End of "Alpha" section
+};

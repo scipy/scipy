@@ -1,0 +1,29 @@
+# Finnish messages for GNU Gettext examples.
+# This file is distributed under the same license as the gettext package.
+# Copyright © 2007, 2014, 2015 Yoyodyne, Inc. (msgids)
+# Lauri Nurmi <lanurmi@iki.fi>, 2007.
+# Jorma Karvonen <karvonen.jorma@gmail.com>, 2014-2015.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: hello-c++-gnome 0.19.4.73\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"PO-Revision-Date: 2015-09-01 16:59+0300\n"
+"Last-Translator: Jorma Karvonen <karvonen.jorma@gmail.com>\n"
+"Language-Team: Finnish <translation-team-fi@lists.sourceforge.net>\n"
+"Language: fi\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+"X-Generator: Poedit 1.5.4\n"
+
+# Tämä nimenomainen käännös valittu GNU Hellon mukaisesti.
+#: hello.cc:50
+msgid "Hello, world!"
+msgstr "Terve maailma!"
+
+#: hello.cc:55
+#, c-format
+msgid "This program is running as process number %d."
+msgstr "Tämän ohjelman prosessinumero on %d."

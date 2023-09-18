@@ -1,0 +1,83 @@
+comment_char %
+escape_char  /
+%
+% Spanish Language Locale for Spain with Euro
+% Language: es
+% Territory: ES
+% Option: euro
+% Date: 2000-08-20
+% Application: general
+% Users: general
+% Charset: ISO-8859-15
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title      "Spanish locale for Spain with Euro"
+source     "Free Software Foundation, Inc."
+address    "59 Temple Place - Suite 330, Boston, MA 02111-1307, USA"
+contact    ""
+email      "bug-glibc-locales@gnu.org"
+tel        ""
+fax        ""
+language   "Spanish"
+territory  "Spain"
+date       "2000-06-29"
+%
+category  "es_ES@euro:2000";LC_IDENTIFICATION
+category  "es_ES@euro:2000";LC_CTYPE
+category  "es_ES@euro:2000";LC_COLLATE
+category  "es_ES@euro:2000";LC_TIME
+category  "es_ES@euro:2000";LC_NUMERIC
+category  "es_ES@euro:2000";LC_MONETARY
+category  "es_ES@euro:2000";LC_MESSAGES
+category  "es_ES@euro:2000";LC_PAPER
+category  "es_ES@euro:2000";LC_NAME
+category  "es_ES@euro:2000";LC_ADDRESS
+category  "es_ES@euro:2000";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_COLLATE
+copy "es_ES"
+END LC_COLLATE
+
+LC_CTYPE
+copy "es_ES"
+END LC_CTYPE
+
+LC_MESSAGES
+copy "es_ES"
+END LC_MESSAGES
+
+LC_MONETARY
+copy "es_ES"
+END LC_MONETARY
+
+LC_NUMERIC
+copy "es_ES"
+END LC_NUMERIC
+
+LC_TIME
+copy "es_ES"
+END LC_TIME
+
+LC_PAPER
+copy "es_ES"
+END LC_PAPER
+
+LC_TELEPHONE
+copy "es_ES"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+copy "es_ES"
+END LC_MEASUREMENT
+
+LC_NAME
+copy "es_ES"
+END LC_NAME
+
+LC_ADDRESS
+copy "es_ES"
+END LC_ADDRESS

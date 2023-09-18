@@ -1,0 +1,56 @@
+<!--
+
+  Description: XKB configuration file DTD
+  Author: Sergey V. Udaltsov
+
+-->
+
+<!ELEMENT xkbConfigRegistry (modelList,layoutList,optionList)>
+
+<!ATTLIST xkbConfigRegistry 
+          version CDATA "1.1">
+
+<!ELEMENT modelList (model*)>
+
+<!ELEMENT model (configItem)>
+
+<!ELEMENT layoutList (layout*)>
+
+<!ELEMENT layout (configItem,variantList?)>
+
+<!ELEMENT optionList (group*)>
+
+<!ELEMENT variantList (variant*)>
+
+<!ELEMENT variant (configItem)>
+
+<!ELEMENT group (configItem,option*)>
+<!ATTLIST group
+          allowMultipleSelection (true|false) "false">
+
+<!ELEMENT option (configItem)>
+
+<!ELEMENT configItem (name,shortDescription?,description?,vendor?,countryList?,languageList?,hwList?)>
+
+<!ATTLIST configItem
+          popularity (standard|exotic) "standard">
+
+<!ELEMENT name (#PCDATA)>
+
+<!ELEMENT shortDescription (#PCDATA)>
+
+<!ELEMENT description (#PCDATA)>
+
+<!ELEMENT vendor (#PCDATA)>
+
+<!ELEMENT countryList (iso3166Id+)>
+
+<!ELEMENT iso3166Id (#PCDATA)>
+
+<!ELEMENT languageList (iso639Id+)>
+
+<!ELEMENT iso639Id (#PCDATA)>
+
+<!ELEMENT hwList (hwId+)>
+
+<!ELEMENT hwId (#PCDATA)>

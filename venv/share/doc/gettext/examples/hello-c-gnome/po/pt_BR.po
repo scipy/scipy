@@ -1,0 +1,30 @@
+# Brazilian Portuguese translations for gettext-example
+# Traduções em português brasileiro para gettext-example
+# Copyright (C) 2020 Yoyodyne, Inc. (msgids)
+# Copyright (C) 2020 Free Software Foundation, Inc.
+# This file is distributed under the same license as the gettext package.
+# Rafael Fontenelle <rafaelff@gnome.org>, 2013-2020.
+msgid ""
+msgstr ""
+"Project-Id-Version: hello-c-gnome 0.20.2\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"PO-Revision-Date: 2020-04-16 08:42-0300\n"
+"Last-Translator: Rafael Fontenelle <rafaelff@gnome.org>\n"
+"Language-Team: Brazilian Portuguese <ldpbr-translation@lists.sourceforge."
+"net>\n"
+"Language: pt_BR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Generator: Virtaal 1.0.0-beta1\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+
+#: hello.c:46
+msgid "Hello, world!"
+msgstr "Olá, mundo!"
+
+#: hello.c:51
+#, c-format
+msgid "This program is running as process number %d."
+msgstr "Este programa está executando com número de processo %d."

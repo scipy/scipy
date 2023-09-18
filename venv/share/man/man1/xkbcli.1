@@ -1,0 +1,69 @@
+.Dd July 27, 2020
+.Dt XKBCLI 1
+.Os
+.
+.Sh NAME
+.Nm xkbcli
+.Nd tool to interact with XKB keymaps
+.
+.Sh SYNOPSIS
+.Nm
+.Ar command Bo arguments Bc
+.
+.Nm
+.Op Fl \-help | Fl \-version
+.
+.Sh DESCRIPTION
+.Nm
+is a commandline tool to query, compile and test XKB keymaps, layouts and other elements.
+.
+.Bl -tag -width Ds
+.It Fl \-help
+Print help and exit
+.
+.It Fl \-version
+Print the version and exit
+.El
+.
+.Ss COMMANDS
+.Bl -tag -width Ds
+.It Ic compile\-keymap
+Compile an XKB keymap, see
+.Xr xkbcli\-compile\-keymap 1
+
+.It Ic how\-to\-type
+Show how to type a given Unicode codepoint, see
+.Xr xkbcli\-how\-to\-type 1
+.
+.It Ic interactive\-x11
+Interactive debugger for XKB keymaps for X11, see
+.Xr xkbcli\-interactive\-x11 1
+.
+.It Ic interactive\-wayland
+Interactive debugger for XKB keymaps for Wayland, see
+.Xr xkbcli\-interactive\-wayland 1
+.
+.It Ic interactive\-evdev
+Interactive debugger for XKB keymaps for evdev, see
+.Xr xkbcli\-interactive\-evdev 1
+.
+.It Ic list
+List available layouts and more, see
+.Xr xkbcli\-list 1
+.El
+.
+.Pp
+Note that not all tools may be available on your system.
+.
+.Sh EXIT STATUS
+.Bl -tag -compact -width Ds
+.It 0
+exited successfully
+.It 1
+an error occured
+.It 2
+program was called with invalid arguments
+.El
+.
+.Sh SEE ALSO
+.Lk https://xkbcommon.org "The libxkbcommon online documentation"

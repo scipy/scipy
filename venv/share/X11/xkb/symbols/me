@@ -1,0 +1,63 @@
+// Keyboard layouts for Montenegro.
+
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+  include "rs(latin)"
+  name[Group1]= "Montenegrin";
+
+  key <AD06> { [ any, any, zacute, Zacute ] }; // z
+  key <AC02> { [ any, any, sacute, Sacute ] }; // s
+};
+
+partial alphanumeric_keys
+xkb_symbols "cyrillic" {
+  include "rs(basic)"
+  name[Group1]= "Montenegrin (Cyrillic)";
+};
+
+partial alphanumeric_keys
+xkb_symbols "cyrillicyz" {
+  include "rs(yz)"
+  name[Group1]= "Montenegrin (Cyrillic, ZE and ZHE swapped)";
+};
+
+partial alphanumeric_keys
+xkb_symbols "latinunicode" {
+  include "rs(latinunicode)"
+  name[Group1]= "Montenegrin (Latin, Unicode)";
+
+  key <AD06> { [ any, any, zacute, Zacute ] }; // z
+  key <AC02> { [ any, any, sacute, Sacute ] }; // s
+};
+
+partial alphanumeric_keys
+xkb_symbols "latinyz" {
+  include "rs(latinyz)"
+  name[Group1]= "Montenegrin (Latin, QWERTY)";
+
+  key <AB02> { [ any, any, zacute, Zacute ] }; // z
+  key <AC02> { [ any, any, sacute, Sacute ] }; // s
+};
+
+partial alphanumeric_keys
+xkb_symbols "latinunicodeyz" {
+  include "rs(latinunicodeyz)"
+  name[Group1]= "Montenegrin (Latin, Unicode, QWERTY)";
+
+  key <AB02> { [ any, any, zacute, Zacute ] }; // z
+  key <AC02> { [ any, any, sacute, Sacute ] }; // s
+};
+
+xkb_symbols "cyrillicalternatequotes" {
+  include "rs(alternatequotes)"
+  name[Group1]= "Montenegrin (Cyrillic, with guillemets)";
+};
+
+xkb_symbols "latinalternatequotes" {
+  include "rs(latinalternatequotes)"
+  name[Group1]= "Montenegrin (Latin, with guillemets)";
+
+  key <AD06> { [ any, any, zacute,        Zacute         ] }; // z
+  key <AC02> { [ any, any, sacute,        Sacute         ] }; // s
+  key <LSGT> { [ any, any, guillemotleft, guillemotright ] }; // <
+};

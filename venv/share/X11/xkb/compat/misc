@@ -1,0 +1,114 @@
+default partial xkb_compatibility "misc" {
+
+    virtual_modifiers  Alt,Meta,Super,Hyper,ScrollLock;
+
+    // Interpretations for some other useful keys.
+
+    interpret Terminate_Server {
+	action = Terminate();
+    };
+
+    setMods.clearLocks= True;
+
+    // Set the "Alt" virtual modifier.
+
+    interpret Alt_L+Any {
+	virtualModifier= Alt;
+	action = SetMods(modifiers=modMapMods);
+    };
+
+    interpret Alt_L {
+	action = SetMods(modifiers=Alt);
+    };
+
+    interpret Alt_R+Any {
+	virtualModifier= Alt;
+	action = SetMods(modifiers=modMapMods);
+    };
+
+    interpret Alt_R {
+	action = SetMods(modifiers=Alt);
+    };
+
+    // Set the "Meta" virtual modifier.
+
+    interpret Meta_L+Any {
+	virtualModifier= Meta;
+	action = SetMods(modifiers=modMapMods);
+    };
+
+    interpret Meta_L {
+	action = SetMods(modifiers=Meta);
+    };
+
+    interpret Meta_R+Any {
+	virtualModifier= Meta;
+	action = SetMods(modifiers=modMapMods);
+    };
+
+    interpret Meta_R {
+	action = SetMods(modifiers=Meta);
+    };
+
+    // Set the "Super" virtual modifier.
+
+    interpret Super_L+Any {
+	virtualModifier= Super;
+	action = SetMods(modifiers=modMapMods);
+    };
+
+    interpret Super_L {
+	action = SetMods(modifiers=Super);
+    };
+
+    interpret Super_R+Any {
+	virtualModifier= Super;
+	action = SetMods(modifiers=modMapMods);
+    };
+
+    interpret Super_R {
+	action = SetMods(modifiers=Super);
+    };
+
+    // Set the "Hyper" virtual modifier.
+
+    interpret Hyper_L+Any {
+	virtualModifier= Hyper;
+	action = SetMods(modifiers=modMapMods);
+    };
+
+    interpret Hyper_L {
+	action = SetMods(modifiers=Hyper);
+    };
+
+    interpret Hyper_R+Any {
+	virtualModifier= Hyper;
+	action = SetMods(modifiers=modMapMods);
+    };
+
+    interpret Hyper_R {
+	action = SetMods(modifiers=Hyper);
+    };
+
+    // Sets the "ScrollLock" virtual modifier and
+    // makes it actually lock when pressed.  Sets
+    // up a map for the scroll lock indicator.
+    interpret Scroll_Lock+Any {
+	virtualModifier= ScrollLock;
+	action = LockMods(modifiers=modMapMods);
+    };
+
+    include "ledscroll"
+
+    include "misc(assign_shift_left_action)"
+};
+
+partial xkb_compatibility "assign_shift_left_action" {
+    // Because of the irrevertable modifier mapping in symbols/pc,
+    // <LFSH> is getting bound to the Lock modifier when using
+    // symbols/shift(both_capslock), creating unwanted behaviour.
+    // This is a quirk, to circumvent the problem.
+    interpret Shift_L {
+	action = SetMods(modifiers = Shift);
+    };
+};

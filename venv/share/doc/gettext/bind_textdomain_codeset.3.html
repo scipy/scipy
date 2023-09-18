@@ -1,0 +1,158 @@
+<!-- Creator     : groff version 1.22.3 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>BIND_TEXTDOMAIN_CODESET</title>
+
+</head>
+<body>
+
+<h1 align="center">BIND_TEXTDOMAIN_CODESET</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">bind_textdomain_codeset
+- set encoding of message translations</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;libintl.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>char *
+bind_textdomain_codeset (const char *</b>
+<i>domainname</i><b>, <br>
+const char *</b> <i>codeset</i><b>);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>bind_textdomain_codeset</b> function sets the output
+codeset for message catalogs for domain
+<i>domainname</i>.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A message
+domain is a set of translatable <i>msgid</i> messages.
+Usually, every software package has its own message
+domain.</p>
+
+<p style="margin-left:11%; margin-top: 1em">By default, the
+<b>gettext</b> family of functions returns translated
+messages in the locale&rsquo;s character encoding, which can
+be retrieved as <b>nl_langinfo(CODESET)</b>. The need for
+calling <b>bind_textdomain_codeset</b> arises for programs
+which store strings in a locale independent way (e.g. UTF-8)
+and want to avoid an extra character set conversion on the
+returned translated messages.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>domainname</i>
+must be a non-empty string.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<i>codeset</i> is not NULL, it must be a valid encoding name
+which can be used for the <b>iconv_open</b> function. The
+<b>bind_textdomain_codeset</b> function sets the output
+codeset for message catalogs belonging to domain
+<i>domainname</i> to <i>codeset</i>. The function makes
+copies of the argument strings as needed.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<i>codeset</i> is NULL, the function returns the previously
+set codeset for domain <i>domainname</i>. The default is
+NULL, denoting the locale&rsquo;s character encoding.</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">If successful,
+the <b>bind_textdomain_codeset</b> function returns the
+current codeset for domain <i>domainname</i>, after possibly
+changing it. The resulting string is valid until the next
+<b>bind_textdomain_codeset</b> call for the same
+<i>domainname</i> and must not be modified or freed. If a
+memory allocation failure occurs, it sets <b>errno</b> to
+<b>ENOMEM</b> and returns NULL. If no codeset has been set
+for domain <i>domainname</i>, it returns NULL.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+error can occur, among others:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOMEM</b></p></td>
+<td width="2%"></td>
+<td width="43%">
+
+
+<p>Not enough memory available.</p></td>
+<td width="35%">
+</td></tr>
+</table>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The return type
+ought to be <b>const char *</b>, but is <b>char *</b> to
+avoid warnings in C code predating ANSI C.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>gettext</b>(3),
+<b>dgettext</b>(3), <b>dcgettext</b>(3), <b>ngettext</b>(3),
+<b>dngettext</b>(3), <b>dcngettext</b>(3),
+<b>textdomain</b>(3), <b>nl_langinfo</b>(3),
+<b>iconv_open</b>(3)</p>
+<hr>
+</body>
+</html>

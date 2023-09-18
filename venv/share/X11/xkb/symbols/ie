@@ -1,0 +1,328 @@
+// Keyboard layouts for Ireland.
+
+// Support for Irish (old and new orthography), English, and Ogham.
+// Original author: Seamus O Ciardhuain <seoc@cnds.ucd.ie>, 2002.
+
+// The general idea is to provide the characters in ISO 8859-1,
+// ISO 8859-14, ISO 8859-15, CP1252 and "Extended Latin-8".
+// However, not all are accessible directly because there aren't
+// enough keys; some need dead keys to access them, others the
+// "Multi_key" compose sequences.
+
+// The basic layout is a modern keyboard, but dotted consonants are
+// accessible using a dead key (AltGr+H or AltGr+W).
+// If a proper Clo Gaelach keyboard is needed, then use the layout
+// defined below as ie(CloGaelach), which gives dotted consonants
+// without use of a dead key.
+
+
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+    // Modern keyboard for Irish and English
+    //  - acute-accented vowels as AltGr+vowel and AltGr+Shift+vowel
+    //  - euro currency sign as AltGr+4
+    //  - Comhartha Agus (Tironian Sign Et) as AltGr+Shift+7
+    //  - non-breaking space as AltGr+Space and AltGr+Shift+Space
+    //  - matches hardware (keys and engraved symbols) for Irish keyboards
+
+    name[Group1] = "Irish";
+
+    key <TLDE>	{[        grave,     notsign,            brokenbar,             NoSymbol ]};
+    key <AE01>	{[            1,      exclam,           exclamdown,          onesuperior ]};
+    key <AE02>	{[            2,    quotedbl,            trademark,          twosuperior ]};
+    key <AE03>	{[            3,    sterling,            copyright,        threesuperior ]};
+    key <AE04>	{[            4,      dollar,             EuroSign,                 cent ]};
+    key <AE05>	{[            5,     percent,              section,               dagger ]};
+    key <AE06>	{[            6, asciicircum,      dead_circumflex,             permille ]};
+    key <AE07>	{[            7,   ampersand,            paragraph,                U204A ]}; // Tironian Et
+    key <AE08>	{[            8,    asterisk,       dead_diaeresis,   enfilledcircbullet ]};
+    key <AE09>	{[            9,   parenleft,          ordfeminine,       periodcentered ]};
+    key <AE10>	{[            0,  parenright,            masculine,               degree ]};
+    key <AE11>	{[        minus,  underscore,               endash,               emdash ]};
+    key <AE12>	{[        equal,        plus,             notequal,            plusminus ]};
+
+    key <AD01>	{[            q,           Q,                   oe,                   OE ]};
+    key <AD02>	{[            w,           W,        dead_abovedot,        dead_abovedot ]};
+    key <AD03>	{[            e,           E,               eacute,               Eacute ]};
+    key <AD04>	{[            r,           R,           registered,             permille ]};
+    key <AD05>	{[            t,           T,                thorn,                THORN ]};
+    key <AD06>	{[            y,           Y,                  yen,                   mu ]};
+    key <AD07>	{[            u,           U,               uacute,               Uacute ]};
+    key <AD08>	{[            i,           I,               iacute,               Iacute ]};
+    key <AD09>	{[            o,           O,               oacute,               Oacute ]};
+    key <AD10>	{[            p,           P,   singlelowquotemark,             NoSymbol ]};
+    key <AD11>	{[  bracketleft,   braceleft,  leftdoublequotemark, rightdoublequotemark ]};
+    key <AD12>	{[ bracketright,  braceright,  leftsinglequotemark, rightsinglequotemark ]};
+
+    key <AC01>	{[            a,           A,               aacute,               Aacute ]};
+    key <AC02>	{[            s,           S,               ssharp,                U1E9E ]}; // ß ẞ
+    key <AC03>	{[            d,           D,                  eth,                  ETH ]};
+    key <AC04>	{[            f,           F,             function,             NoSymbol ]};
+    key <AC05>	{[            g,           G,            copyright,             NoSymbol ]};
+    key <AC06>	{[            h,           H,        dead_abovedot,        dead_abovedot ]};
+    key <AC07>	{[            j,           J,             idotless,           onequarter ]};
+    key <AC08>	{[            k,           K,       dead_abovering,              onehalf ]};
+    key <AC09>	{[            l,           L,                acute,        threequarters ]};
+    key <AC10>	{[    semicolon,       colon,             ellipsis,         doubledagger ]};
+    key <AC11>	{[   apostrophe,          at,                   ae,                   AE ]};
+    key <BKSL>	{[   numbersign,  asciitilde,        guillemotleft,       guillemotright ]};
+
+    key <LSGT>	{[    backslash,         bar,           dead_grave,           dead_acute ]};
+    key <AB01>	{[            z,           Z,     leftanglebracket,    rightanglebracket ]};
+    key <AB02>	{[            x,           X,             multiply,          approximate ]};
+    key <AB03>	{[            c,           C,         dead_cedilla,              cedilla ]};
+    key <AB04>	{[            v,           V,           dead_caron,             NoSymbol ]};
+    key <AB05>	{[            b,           B,            diaeresis,             NoSymbol ]};
+    key <AB06>	{[            n,           N,           dead_tilde,             NoSymbol ]};
+    key <AB07>	{[            m,           M,               macron,             NoSymbol ]};
+    key <AB08>	{[        comma,        less,        lessthanequal,   doublelowquotemark ]};
+    key <AB09>	{[       period,     greater,     greaterthanequal,   singlelowquotemark ]};
+    key <AB10>	{[        slash,    question,             division,         questiondown ]};
+
+    key <SPCE>	{[        space,       space,         nobreakspace,         nobreakspace ]};
+
+    include "level3(ralt_switch)"
+
+    include "compose(rwin)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "CloGaelach" {
+
+    // Adds support for Clo Gaelach (old orthography for Irish).
+    // Changes from "basic":
+    //  - dotted consonants as AltGr+consonant or AltGr+Shift+consonant (TPSDFGCBM)
+    //  - long lowercase r as AltGr+R
+    //  - long lowercase s as AltGr+Z
+    //  - long lowercase s dotted as AltGr+Shift+Z
+    //  - some symbols moved around to retain them
+    //  - several characters unlikely to be used are lost
+    // The long letters are needed only where the font provides
+    // both the long and short forms as different glyphs.
+
+    include "ie(basic)"
+
+    name[Group1] = "CloGaelach";
+
+    key <TLDE>	{[     grave, notsign,  brokenbar,       ssharp ]};
+    key <AD04>	{[         r,       R,      U027C,   registered ]}; // long r
+    key <AD05>	{[         t,       T,  tabovedot,    Tabovedot ]};
+    key <AD10>	{[         p,       P,  pabovedot,    Pabovedot ]};
+
+    key <AC02>	{[         s,       S,  sabovedot,    Sabovedot ]};
+    key <AC03>	{[         d,       D,  dabovedot,    Dabovedot ]};
+    key <AC04>	{[         f,       F,  fabovedot,    Fabovedot ]};
+    key <AC05>	{[         g,       G,  gabovedot,    Gabovedot ]};
+
+    key <AB01>	{[         z,       Z,      U017F,        U1E9B ]}; // long s, long s dot
+    key <AB03>	{[         c,       C,  cabovedot,    Cabovedot ]};
+    key <AB05>	{[         b,       B,  babovedot,    Babovedot ]};
+    key <AB07>	{[         m,       M,  mabovedot,    Mabovedot ]};
+
+    key <LSGT>	{[ backslash,     bar, dead_grave, dead_cedilla ]};
+};
+
+partial alphanumeric_keys
+xkb_symbols "UnicodeExpert" {
+
+    // This should eventually be a "Unicode Expert" layout like the Mac one.
+
+    name[Group1] = "Irish (UnicodeExpert)";
+
+    key <TLDE>	{[        grave,     notsign,        brokenbar,        brokenbar ]};
+    key <AE01>	{[            1,      exclam,         NoSymbol,         NoSymbol ]};
+    key <AE02>	{[            2,    quotedbl, dead_doubleacute, dead_doubleacute ]};
+    key <AE03>	{[            3,    sterling,         NoSymbol,         NoSymbol ]};
+    key <AE04>	{[            4,      dollar,         EuroSign,         EuroSign ]};
+    key <AE05>	{[            5,     percent,         NoSymbol,         NoSymbol ]};
+    key <AE06>	{[            6, asciicircum,  dead_circumflex,  dead_circumflex ]};
+    key <AE07>	{[            7,   ampersand,            U204A,            U204A ]}; // Tironian Et
+    key <AE08>	{[            8,    asterisk,   dead_abovering,   dead_abovering ]};
+    key <AE09>	{[            9,   parenleft,       dead_breve,       dead_breve ]};
+    key <AE10>	{[            0,  parenright,      dead_ogonek,      dead_ogonek ]};
+    key <AE11>	{[        minus,  underscore,      dead_macron,      dead_macron ]};
+    key <AE12>	{[        equal,        plus,         NoSymbol,         NoSymbol ]};
+
+    key <AD01>	{[            q,           Q,         NoSymbol,         NoSymbol ]};
+    key <AD02>	{[            w,           W,         NoSymbol,         NoSymbol ]};
+    key <AD03>	{[            e,           E,           eacute,           Eacute ]};
+    key <AD04>	{[            r,           R,            U027C,            U027C ]}; // long r
+    key <AD05>	{[            t,           T,         NoSymbol,         NoSymbol ]};
+    key <AD06>	{[            y,           Y,         NoSymbol,         NoSymbol ]};
+    key <AD07>	{[            u,           U,           uacute,           Uacute ]};
+    key <AD08>	{[            i,           I,           iacute,           Iacute ]};
+    key <AD09>	{[            o,           O,           oacute,           Oacute ]};
+    key <AD10>	{[            p,           P,         NoSymbol,         NoSymbol ]};
+    key <AD11>	{[  bracketleft,   braceleft,        dead_hook,        dead_hook ]};
+    key <AD12>	{[ bracketright,  braceright,        dead_horn,        dead_horn ]};
+
+    key <AC01>	{[            a,           A,           aacute,           Aacute ]};
+    key <AC02>	{[            s,           S,         NoSymbol,         NoSymbol ]};
+    key <AC03>	{[            d,           D,         NoSymbol,         NoSymbol ]};
+    key <AC04>	{[            f,           F,         NoSymbol,         NoSymbol ]};
+    key <AC05>	{[            g,           G,         NoSymbol,         NoSymbol ]};
+    key <AC06>	{[            h,           H,    dead_abovedot,    dead_abovedot ]};
+    key <AC07>	{[            j,           J,         NoSymbol,         NoSymbol ]};
+    key <AC08>	{[            k,           K,         NoSymbol,         NoSymbol ]};
+    key <AC09>	{[            l,           L,         NoSymbol,         NoSymbol ]};
+    key <AC10>	{[    semicolon,       colon,   dead_diaeresis,   dead_diaeresis ]};
+    key <AC11>	{[   apostrophe,          at,       dead_acute,       dead_acute ]};
+    key <BKSL>	{[   numbersign,  asciitilde,       dead_tilde,       dead_tilde ]};
+
+    key <LSGT>	{[    backslash,         bar,       dead_grave,       dead_grave ]};
+    key <AB01>	{[            z,           Z,            U017F,            U1E9B ]}; // long s, long s dot
+    key <AB02>	{[            x,           X,         NoSymbol,         NoSymbol ]};
+    key <AB03>	{[            c,           C,         NoSymbol,         NoSymbol ]};
+    key <AB04>	{[            v,           V,       dead_caron,       dead_caron ]};
+    key <AB05>	{[            b,           B,         NoSymbol,         NoSymbol ]};
+    key <AB06>	{[            n,           N,         NoSymbol,         NoSymbol ]};
+    key <AB07>	{[            m,           M,         NoSymbol,         NoSymbol ]};
+    key <AB08>	{[        comma,        less,     dead_cedilla,     dead_cedilla ]};
+    key <AB09>	{[       period,     greater,    dead_abovedot,    dead_abovedot ]};
+    key <AB10>	{[        slash,    question,    dead_belowdot,    dead_belowdot ]};
+
+    key <SPCE>	{[        space,       space,            space,     nobreakspace ]};
+
+    include "level3(ralt_switch)"
+
+    include "compose(rwin)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "ogam" {
+
+    // Ogham keyboard layout as recommended in I.S. 434:1999.
+
+    name[Group1] = "Ogham";
+
+    key.type[Group1] = "ONE_LEVEL";
+
+    key <TLDE>	{[  U169C  ]}; // OGHAM REVERSED FEATHER MARK
+
+    // Top row: QWERTYUIOP
+    key <AD01>	{[  U168A  ]};  // OGHAM LETTER CEIRT
+    key <AD02>	{[  U1695  ]};  // OGHAM LETTER EABHADH
+    key <AD03>	{[  U1693  ]};  // OGHAM LETTER EADHADH
+    key <AD04>	{[  U168F  ]};  // OGHAM LETTER RUIS
+    key <AD05>	{[  U1688  ]};  // OGHAM LETTER TINNE
+    key <AD06>	{[  U1698  ]};  // OGHAM LETTER IFIN
+    key <AD07>	{[  U1692  ]};  // OGHAM LETTER UR
+    key <AD08>	{[  U1694  ]};  // OGHAM LETTER IODHADH
+    key <AD09>	{[  U1691  ]};  // OGHAM LETTER ONN
+    key <AD10>	{[  U169A  ]};  // OGHAM LETTER PEITH
+
+    // Middle row: ASDFGHJKL
+    key <AC01>	{[  U1690  ]};  // OGHAM LETTER AILM
+    key <AC02>	{[  U1684  ]};  // OGHAM LETTER SAIL
+    key <AC03>	{[  U1687  ]};  // OGHAM LETTER DAIR
+    key <AC04>	{[  U1683  ]};  // OGHAM LETTER FEARN
+    key <AC05>	{[  U168C  ]};  // OGHAM LETTER GORT
+    key <AC06>	{[  U1686  ]};  // OGHAM LETTER UATH
+    key <AC07>	{[  U1697  ]};  // OGHAM LETTER UILLEANN
+    key <AC08>	{[  U1696  ]};  // OGHAM LETTER OR
+    key <AC09>	{[  U1682  ]};  // OGHAM LETTER LUIS
+
+    key <BKSL>	{[  U1680  ]}; // OGHAM SPACE MARK
+
+    key <LSGT>	{[  U169B,  U169C ], type[group1]="TWO_LEVEL" };
+                                // OGHAM FEATHER MARK, OGHAM REVERSED FEATHER MARK
+    // Bottom row: ZXCVBNM
+    key <AB01>	{[  U168E  ]};  // OGHAM LETTER STRAIF
+    key <AB02>	{[  U1699  ]};  // OGHAM LETTER EAMHANCHOLL
+    key <AB03>	{[  U1689  ]};  // OGHAM LETTER COLL
+    key <AB04>	{[  U168D  ]};  // OGHAM LETTER NGEADAL
+    key <AB05>	{[  U1681  ]};  // OGHAM LETTER BEITH
+    key <AB06>	{[  U1685  ]};  // OGHAM LETTER NION
+    key <AB07>	{[  U168B  ]};  // OGHAM LETTER MUIN
+
+    // As an extension because <BKSL> and <LSGT> may not be
+    // available or sensible. These are also a bit more
+    // intuitive on a standard Irish keyboard.
+    key <AB08>	{[  U169C  ]}; // OGHAM REVERSED FEATHER MARK
+    key <AB09>	{[  U169B  ]}; // OGHAM FEATHER MARK
+    key <AB10>	{[  U1680  ]}; // OGHAM SPACE MARK
+
+    key <SPCE>	{[  space  ]};
+
+    include "compose(rwin)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "ogam_is434" {
+
+    // This has the full layout of IS434 with an Irish QWERTY keyboard,
+    // and the Ogham characters accessed when CAPS LOCK is on.
+
+    name[Group1] = "Ogham (IS434)";
+
+    key.type[Group1] = "THREE_LEVEL";
+
+    key <TLDE>	{[ grave,     notsign,    U169C  ]}; // OGHAM REVERSED FEATHER MARK
+
+    key <AE01>	{[     1,      exclam            ], type[group1]="TWO_LEVEL" };
+    key <AE02>	{[     2,    quotedbl            ], type[group1]="TWO_LEVEL" };
+    key <AE03>	{[     3,    sterling            ], type[group1]="TWO_LEVEL" };
+    key <AE04>	{[     4,      dollar, EuroSign  ]};
+    key <AE05>	{[     5,     percent            ], type[group1]="TWO_LEVEL" };
+    key <AE06>	{[     6, asciicircum            ], type[group1]="TWO_LEVEL" };
+    key <AE07>	{[     7,   ampersand,    U204A  ]}; // Tironian Et
+    key <AE08>	{[     8,    asterisk            ], type[group1]="TWO_LEVEL" };
+    key <AE09>	{[     9,   parenleft            ], type[group1]="TWO_LEVEL" };
+    key <AE10>	{[     0,  parenright            ], type[group1]="TWO_LEVEL" };
+    key <AE11>	{[ minus,  underscore            ], type[group1]="TWO_LEVEL" };
+    key <AE12>	{[ equal,        plus            ], type[group1]="TWO_LEVEL" };
+
+    key <AD01>	{[  q,  Q,  U168A  ]};  // OGHAM LETTER CEIRT
+    key <AD02>	{[  w,  W,  U1695  ]};  // OGHAM LETTER EABHADH
+    key <AD03>	{[  e,  E,  U1693  ]};  // OGHAM LETTER EADHADH
+    key <AD04>	{[  r,  R,  U168F  ]};  // OGHAM LETTER RUIS
+    key <AD05>	{[  t,  T,  U1688  ]};  // OGHAM LETTER TINNE
+    key <AD06>	{[  y,  Y,  U1698  ]};  // OGHAM LETTER IFIN
+    key <AD07>	{[  u,  U,  U1692  ]};  // OGHAM LETTER UR
+    key <AD08>	{[  i,  I,  U1694  ]};  // OGHAM LETTER IODHADH
+    key <AD09>	{[  o,  O,  U1691  ]};  // OGHAM LETTER ONN
+    key <AD10>	{[  p,  P,  U169A  ]};  // OGHAM LETTER PEITH
+
+    key <AC01>	{[  a,  A,  U1690  ]};  // OGHAM LETTER AILM
+    key <AC02>	{[  s,  S,  U1684  ]};  // OGHAM LETTER SAIL
+    key <AC03>	{[  d,  D,  U1687  ]};  // OGHAM LETTER DAIR
+    key <AC04>	{[  f,  F,  U1683  ]};  // OGHAM LETTER FEARN
+    key <AC05>	{[  g,  G,  U168C  ]};  // OGHAM LETTER GORT
+    key <AC06>	{[  h,  H,  U1686  ]};  // OGHAM LETTER UATH
+    key <AC07>	{[  j,  J,  U1697  ]};  // OGHAM LETTER UILLEANN
+    key <AC08>	{[  k,  K,  U1696  ]};  // OGHAM LETTER OR
+    key <AC09>	{[  l,  L,  U1682  ]};  // OGHAM LETTER LUIS
+
+    key <BKSL>	{[  numbersign,  asciitilde,  U1680  ]}; // OGHAM SPACE MARK
+
+    key <LSGT>  {[  backslash,  bar,  U169B,  U169C  ], type[group1] = "FOUR_LEVEL_ALPHABETIC" };
+                                        // OGHAM FEATHER MARK, OGHAM REVERSED FEATHER MARK
+
+    key <AB01>	{[  z,  Z,  U168E  ]};  // OGHAM LETTER STRAIF
+    key <AB02>	{[  x,  X,  U1699  ]};  // OGHAM LETTER EAMHANCHOLL
+    key <AB03>	{[  c,  C,  U1689  ]};  // OGHAM LETTER COLL
+    key <AB04>	{[  v,  V,  U168D  ]};  // OGHAM LETTER NGEADAL
+    key <AB05>	{[  b,  B,  U1681  ]};  // OGHAM LETTER BEITH
+    key <AB06>	{[  n,  N,  U1685  ]};  // OGHAM LETTER NION
+    key <AB07>	{[  m,  M,  U168B  ]};  // OGHAM LETTER MUIN
+
+    key <AB08>	{[  comma,     less,  U169C ]}; // OGHAM REVERSED FEATHER MARK
+    key <AB09>	{[ period,  greater,  U169B ]}; // OGHAM FEATHER MARK
+    key <AB10>	{[  slash, question,  U1680 ]}; // OGHAM SPACE MARK
+
+    key <SPCE>	{[  space,    space,  space ]};
+
+    // The standard says the Ogham characters should be accessed when Caps Lock
+    // is down; not clear if this means it should lock but seems logical.
+    key <CAPS>  {[  ISO_Level3_Lock  ], type[group1] = "ONE_LEVEL" };
+
+    // Also allow access to Ogham characters using RALT, for convenience.
+    include "level3(ralt_switch)"
+
+    // Redefine Scroll Lock as locking shift, in case that's needed.
+    key <SCLK>	{[  Shift_Lock  ], type[group1] = "ONE_LEVEL" };
+    modifier_map Shift { Shift_Lock };
+
+    include "compose(rwin)"
+};

@@ -1,0 +1,85 @@
+// Include standard font and media definitions
+#include <font.defs>
+#include <media.defs>
+
+// Include ESC/P driver definitions
+#include <escp.h>
+
+// Specify that this driver uses the ESC/P driver...
+DriverType escp
+
+// Specify the driver options via the model number...
+ModelNumber ($ESCP_ESCK $ESCP_EXT_UNITS $ESCP_EXT_MARGINS $ESCP_USB
+             $ESCP_PAGE_SIZE $ESCP_RASTER_ESCI $ESCP_REMOTE)
+
+// List the fonts that are supported, in this case all standard
+// fonts...
+Font *
+
+// Manufacturer and driver version
+Manufacturer "Epson"
+Version 2.0
+
+// Supported page sizes and their margins
+HWMargins 0 0 0 0
+*MediaSize Letter
+MediaSize Legal
+MediaSize Executive
+MediaSize Statement
+MediaSize A4
+MediaSize A5
+MediaSize A6
+MediaSize B5
+MediaSize Env10
+MediaSize EnvC5
+MediaSize EnvDL
+MediaSize EnvISOB5
+MediaSize Postcard
+MediaSize DoublePostcard
+
+VariablePaperSize Yes
+MinSize 1in 4in
+MaxSize 8.5in 44in
+
+// Borderless printing offset...
+Attribute cupsESCPFP "" -80
+
+// Four color modes are supported...
+ColorModel Gray/Grayscale w chunky 1
+ColorModel Black k chunky 1
+*ColorModel RGB/Color rgb chunky 1
+ColorModel CMYK cmyk chunky 1
+
+// Supported resolutions
+Resolution - 8 90 0 103 "360dpi/360 DPI"
+*Resolution - 8 90 0 206 "720dpi/720 DPI"
+Resolution - 8 90 0 412 "1440dpi/1440 DPI"
+
+// Paper trays...
+*InputSlot 0 "Auto/Auto Select"
+InputSlot 1 "Manual/Manual Feed"
+
+Attribute cupsESCPPP 0 "1 255"
+Attribute cupsESCPPP 1 "2 1"
+
+// Very basic dithering settings
+Attribute cupsInkChannels "" 6
+Attribute cupsInkLimit "" 2.0
+
+Attribute cupsCyanLtDk "" "0.5 1.0"
+Attribute cupsMagentaLtDk "" "0.5 1.0"
+
+Attribute cupsAllDither 360dpi "0.5 0.75 1.0"
+Attribute cupsAllDither 720dpi "0.6 0.9 1.2"
+Attribute cupsAllDither 1440dpi "0.9 1.35"
+
+Attribute cupsESCPDotSize 360dpi 16
+Attribute cupsESCPDotSize 720dpi 17
+Attribute cupsESCPDotSize 1440dpi 18
+
+{
+  // EPSON Stylus Photo R300 Series
+  Throughput 1
+  ModelName "Epson Stylus Photo R300"
+  PCFileName "epspr302.ppd"
+}

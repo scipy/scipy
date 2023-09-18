@@ -1,0 +1,42 @@
+static {
+    message("QML cache generation ahead of time is not supported in static builds")
+    return()
+}
+
+qtPrepareTool(QML_CACHEGEN, qmlcachegen, _ARCH_CHECK)
+
+isEmpty(TARGETPATH): error("Must set TARGETPATH (QML import name) for ahead-of-time QML cache generation")
+
+load(qt_build_paths)
+
+prefix_build: QMLCACHE_DESTDIR = $$MODULE_BASE_OUTDIR/qml/$$TARGETPATH
+else: QMLCACHE_DESTDIR = $$[QT_INSTALL_QML]/$$TARGETPATH
+
+CACHEGEN_FILES=
+qmlcacheinst.files =
+for(qmlf, QML_FILES) {
+    contains(qmlf,.*\\.js$)|contains(qmlf,.*\\.qml$) {
+        CACHEGEN_FILES += $$absolute_path($$qmlf, $$_PRO_FILE_PWD_)
+        qmlcacheinst.files += $$QMLCACHE_DESTDIR/$$relative_path($$qmlf, $$_PRO_FILE_PWD_)c
+    }
+}
+
+defineReplace(qmlCacheOutputFileName) {
+    return($$relative_path($$QMLCACHE_DESTDIR/$$relative_path($$1, $$_PRO_FILE_PWD_)c, $$OUT_PWD))
+}
+
+qmlcacheinst.base = $$QMLCACHE_DESTDIR
+qmlcacheinst.path = $$[QT_INSTALL_QML]/$$TARGETPATH
+qmlcacheinst.CONFIG = no_check_exist
+
+qmlcachegen.input = CACHEGEN_FILES
+qmlcachegen.output = ${QMAKE_FUNC_FILE_IN_qmlCacheOutputFileName}
+qmlcachegen.CONFIG = no_link target_predeps
+qmlcachegen.commands = $$QML_CACHEGEN -o ${QMAKE_FILE_OUT} ${QMAKE_FILE_IN}
+qmlcachegen.name = Generate QML Cache ${QMAKE_FILE_IN}
+qmlcachegen.variable_out = GENERATED_FILES
+
+!debug_and_release|!build_all|CONFIG(release, debug|release) {
+    QMAKE_EXTRA_COMPILERS += qmlcachegen
+    INSTALLS += qmlcacheinst
+}

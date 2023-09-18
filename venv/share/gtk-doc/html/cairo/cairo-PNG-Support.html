@@ -1,0 +1,413 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>PNG Support: Cairo: A Vector Graphics Library</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<link rel="home" href="index.html" title="Cairo: A Vector Graphics Library">
+<link rel="up" href="cairo-surfaces.html" title="Surfaces">
+<link rel="prev" href="cairo-PDF-Surfaces.html" title="PDF Surfaces">
+<link rel="next" href="cairo-PostScript-Surfaces.html" title="PostScript Surfaces">
+<meta name="generator" content="GTK-Doc V1.27 (XML mode)">
+<link rel="stylesheet" href="style.css" type="text/css">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<table class="navigation" id="top" width="100%" summary="Navigation header" cellpadding="2" cellspacing="5"><tr valign="middle">
+<td width="100%" align="left" class="shortcuts">
+<a href="#" class="shortcut">Top</a><span id="nav_description">  <span class="dim">|</span> 
+                  <a href="#cairo-PNG-Support.description" class="shortcut">Description</a></span>
+</td>
+<td><a accesskey="h" href="index.html"><img src="home.png" width="16" height="16" border="0" alt="Home"></a></td>
+<td><a accesskey="u" href="cairo-surfaces.html"><img src="up.png" width="16" height="16" border="0" alt="Up"></a></td>
+<td><a accesskey="p" href="cairo-PDF-Surfaces.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
+<td><a accesskey="n" href="cairo-PostScript-Surfaces.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
+</tr></table>
+<div class="refentry">
+<a name="cairo-PNG-Support"></a><div class="titlepage"></div>
+<div class="refnamediv"><table width="100%"><tr>
+<td valign="top">
+<h2><span class="refentrytitle"><a name="cairo-PNG-Support.top_of_page"></a>PNG Support</span></h2>
+<p>PNG Support — Reading and writing PNG images</p>
+</td>
+<td class="gallery_image" valign="top" align="right"></td>
+</tr></table></div>
+<div class="refsect1">
+<a name="cairo-PNG-Support.functions"></a><h2>Functions</h2>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="functions_return">
+<col class="functions_name">
+</colgroup>
+<tbody>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="returnvalue">cairo_surface_t</span></a> *
+</td>
+<td class="function_name">
+<a class="link" href="cairo-PNG-Support.html#cairo-image-surface-create-from-png" title="cairo_image_surface_create_from_png ()">cairo_image_surface_create_from_png</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-Error-handling.html#cairo-status-t" title="enum cairo_status_t"><span class="returnvalue">cairo_status_t</span></a>
+</td>
+<td class="function_name">
+<span class="c_punctuation">(</span><a class="link" href="cairo-PNG-Support.html#cairo-read-func-t" title="cairo_read_func_t ()">*cairo_read_func_t</a><span class="c_punctuation">)</span> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="returnvalue">cairo_surface_t</span></a> *
+</td>
+<td class="function_name">
+<a class="link" href="cairo-PNG-Support.html#cairo-image-surface-create-from-png-stream" title="cairo_image_surface_create_from_png_stream ()">cairo_image_surface_create_from_png_stream</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-Error-handling.html#cairo-status-t" title="enum cairo_status_t"><span class="returnvalue">cairo_status_t</span></a>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-PNG-Support.html#cairo-surface-write-to-png" title="cairo_surface_write_to_png ()">cairo_surface_write_to_png</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-Error-handling.html#cairo-status-t" title="enum cairo_status_t"><span class="returnvalue">cairo_status_t</span></a>
+</td>
+<td class="function_name">
+<span class="c_punctuation">(</span><a class="link" href="cairo-PNG-Support.html#cairo-write-func-t" title="cairo_write_func_t ()">*cairo_write_func_t</a><span class="c_punctuation">)</span> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-Error-handling.html#cairo-status-t" title="enum cairo_status_t"><span class="returnvalue">cairo_status_t</span></a>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-PNG-Support.html#cairo-surface-write-to-png-stream" title="cairo_surface_write_to_png_stream ()">cairo_surface_write_to_png_stream</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect1">
+<a name="cairo-PNG-Support.other"></a><h2>Types and Values</h2>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="name">
+<col class="description">
+</colgroup>
+<tbody><tr>
+<td class="define_keyword">#define</td>
+<td class="function_name"><a class="link" href="cairo-PNG-Support.html#CAIRO-HAS-PNG-FUNCTIONS:CAPS" title="CAIRO_HAS_PNG_FUNCTIONS">CAIRO_HAS_PNG_FUNCTIONS</a></td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect1">
+<a name="cairo-PNG-Support.description"></a><h2>Description</h2>
+<p>The PNG functions allow reading PNG images into image surfaces, and writing
+any surface to a PNG file.</p>
+<p>It is a toy API. It only offers very simple support for reading and
+writing PNG files, which is sufficient for testing and
+demonstration purposes. Applications which need more control over
+the generated PNG file should access the pixel data directly, using
+<a class="link" href="cairo-Image-Surfaces.html#cairo-image-surface-get-data" title="cairo_image_surface_get_data ()"><code class="function">cairo_image_surface_get_data()</code></a> or a backend-specific access
+function, and process it with another library, e.g. gdk-pixbuf or
+libpng.</p>
+</div>
+<div class="refsect1">
+<a name="cairo-PNG-Support.functions_details"></a><h2>Functions</h2>
+<div class="refsect2">
+<a name="cairo-image-surface-create-from-png"></a><h3>cairo_image_surface_create_from_png ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="returnvalue">cairo_surface_t</span></a> *
+cairo_image_surface_create_from_png (<em class="parameter"><code>const <span class="type">char</span> *filename</code></em>);</pre>
+<p>Creates a new image surface and initializes the contents to the
+given PNG file.</p>
+<div class="refsect3">
+<a name="cairo-image-surface-create-from-png.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>filename</p></td>
+<td class="parameter_description"><p>name of PNG file to load. On Windows this filename
+is encoded in UTF-8.</p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-image-surface-create-from-png.returns"></a><h4>Returns</h4>
+<p> a new <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="type">cairo_surface_t</span></a> initialized with the contents
+of the PNG file, or a "nil" surface if any error occurred. A nil
+surface can be checked for with cairo_surface_status(surface) which
+may return one of the following values:</p>
+<p><a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-NO-MEMORY:CAPS"><code class="literal">CAIRO_STATUS_NO_MEMORY</code></a>
+<a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-FILE-NOT-FOUND:CAPS"><code class="literal">CAIRO_STATUS_FILE_NOT_FOUND</code></a>
+<a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-READ-ERROR:CAPS"><code class="literal">CAIRO_STATUS_READ_ERROR</code></a>
+<a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-PNG-ERROR:CAPS"><code class="literal">CAIRO_STATUS_PNG_ERROR</code></a></p>
+<p>Alternatively, you can allow errors to propagate through the drawing
+operations and check the status on the context upon completion
+using <a class="link" href="cairo-cairo-t.html#cairo-status" title="cairo_status ()"><code class="function">cairo_status()</code></a>.</p>
+</div>
+<p class="since">Since: 1.0</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-read-func-t"></a><h3>cairo_read_func_t ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-Error-handling.html#cairo-status-t" title="enum cairo_status_t"><span class="returnvalue">cairo_status_t</span></a>
+<span class="c_punctuation">(</span>*cairo_read_func_t<span class="c_punctuation">)</span> (<em class="parameter"><code><span class="type">void</span> *closure</code></em>,
+                      <em class="parameter"><code>unsigned <span class="type">char</span> *data</code></em>,
+                      <em class="parameter"><code>unsigned <span class="type">int</span> length</code></em>);</pre>
+<p><a class="link" href="cairo-PNG-Support.html#cairo-read-func-t" title="cairo_read_func_t ()"><span class="type">cairo_read_func_t</span></a> is the type of function which is called when a
+backend needs to read data from an input stream.  It is passed the
+closure which was specified by the user at the time the read
+function was registered, the buffer to read the data into and the
+length of the data in bytes.  The read function should return
+<a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-SUCCESS:CAPS"><code class="literal">CAIRO_STATUS_SUCCESS</code></a> if all the data was successfully read,
+<a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-READ-ERROR:CAPS"><code class="literal">CAIRO_STATUS_READ_ERROR</code></a> otherwise.</p>
+<div class="refsect3">
+<a name="cairo-read-func-t.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>closure</p></td>
+<td class="parameter_description"><p>the input closure</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>data</p></td>
+<td class="parameter_description"><p>the buffer into which to read the data</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>length</p></td>
+<td class="parameter_description"><p>the amount of data to read</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-read-func-t.returns"></a><h4>Returns</h4>
+<p> the status code of the read operation</p>
+</div>
+<p class="since">Since: 1.0</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-image-surface-create-from-png-stream"></a><h3>cairo_image_surface_create_from_png_stream ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="returnvalue">cairo_surface_t</span></a> *
+cairo_image_surface_create_from_png_stream
+                               (<em class="parameter"><code><a class="link" href="cairo-PNG-Support.html#cairo-read-func-t" title="cairo_read_func_t ()"><span class="type">cairo_read_func_t</span></a> read_func</code></em>,
+                                <em class="parameter"><code><span class="type">void</span> *closure</code></em>);</pre>
+<p>Creates a new image surface from PNG data read incrementally
+via the <em class="parameter"><code>read_func</code></em>
+ function.</p>
+<div class="refsect3">
+<a name="cairo-image-surface-create-from-png-stream.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>read_func</p></td>
+<td class="parameter_description"><p>function called to read the data of the file</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>closure</p></td>
+<td class="parameter_description"><p>data to pass to <em class="parameter"><code>read_func</code></em>
+.</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-image-surface-create-from-png-stream.returns"></a><h4>Returns</h4>
+<p> a new <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="type">cairo_surface_t</span></a> initialized with the contents
+of the PNG file or a "nil" surface if the data read is not a valid PNG image
+or memory could not be allocated for the operation.  A nil
+surface can be checked for with cairo_surface_status(surface) which
+may return one of the following values:</p>
+<p><a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-NO-MEMORY:CAPS"><code class="literal">CAIRO_STATUS_NO_MEMORY</code></a>
+<a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-READ-ERROR:CAPS"><code class="literal">CAIRO_STATUS_READ_ERROR</code></a>
+<a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-PNG-ERROR:CAPS"><code class="literal">CAIRO_STATUS_PNG_ERROR</code></a></p>
+<p>Alternatively, you can allow errors to propagate through the drawing
+operations and check the status on the context upon completion
+using <a class="link" href="cairo-cairo-t.html#cairo-status" title="cairo_status ()"><code class="function">cairo_status()</code></a>.</p>
+</div>
+<p class="since">Since: 1.0</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-surface-write-to-png"></a><h3>cairo_surface_write_to_png ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-Error-handling.html#cairo-status-t" title="enum cairo_status_t"><span class="returnvalue">cairo_status_t</span></a>
+cairo_surface_write_to_png (<em class="parameter"><code><a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="type">cairo_surface_t</span></a> *surface</code></em>,
+                            <em class="parameter"><code>const <span class="type">char</span> *filename</code></em>);</pre>
+<p>Writes the contents of <em class="parameter"><code>surface</code></em>
+ to a new file <em class="parameter"><code>filename</code></em>
+ as a PNG
+image.</p>
+<div class="refsect3">
+<a name="cairo-surface-write-to-png.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>surface</p></td>
+<td class="parameter_description"><p>a <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="type">cairo_surface_t</span></a> with pixel contents</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>filename</p></td>
+<td class="parameter_description"><p>the name of a file to write to; on Windows this filename
+is encoded in UTF-8.</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-surface-write-to-png.returns"></a><h4>Returns</h4>
+<p> <a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-SUCCESS:CAPS"><code class="literal">CAIRO_STATUS_SUCCESS</code></a> if the PNG file was written
+successfully. Otherwise, <a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-NO-MEMORY:CAPS"><code class="literal">CAIRO_STATUS_NO_MEMORY</code></a> if memory could not
+be allocated for the operation or
+<a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-SURFACE-TYPE-MISMATCH:CAPS"><code class="literal">CAIRO_STATUS_SURFACE_TYPE_MISMATCH</code></a> if the surface does not have
+pixel contents, or <a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-WRITE-ERROR:CAPS"><code class="literal">CAIRO_STATUS_WRITE_ERROR</code></a> if an I/O error occurs
+while attempting to write the file, or <a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-PNG-ERROR:CAPS"><code class="literal">CAIRO_STATUS_PNG_ERROR</code></a> if libpng
+returned an error.</p>
+</div>
+<p class="since">Since: 1.0</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-write-func-t"></a><h3>cairo_write_func_t ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-Error-handling.html#cairo-status-t" title="enum cairo_status_t"><span class="returnvalue">cairo_status_t</span></a>
+<span class="c_punctuation">(</span>*cairo_write_func_t<span class="c_punctuation">)</span> (<em class="parameter"><code><span class="type">void</span> *closure</code></em>,
+                       <em class="parameter"><code>const unsigned <span class="type">char</span> *data</code></em>,
+                       <em class="parameter"><code>unsigned <span class="type">int</span> length</code></em>);</pre>
+<p><a class="link" href="cairo-PNG-Support.html#cairo-write-func-t" title="cairo_write_func_t ()"><span class="type">cairo_write_func_t</span></a> is the type of function which is called when a
+backend needs to write data to an output stream.  It is passed the
+closure which was specified by the user at the time the write
+function was registered, the data to write and the length of the
+data in bytes.  The write function should return
+<a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-SUCCESS:CAPS"><code class="literal">CAIRO_STATUS_SUCCESS</code></a> if all the data was successfully written,
+<a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-WRITE-ERROR:CAPS"><code class="literal">CAIRO_STATUS_WRITE_ERROR</code></a> otherwise.</p>
+<div class="refsect3">
+<a name="cairo-write-func-t.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>closure</p></td>
+<td class="parameter_description"><p>the output closure</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>data</p></td>
+<td class="parameter_description"><p>the buffer containing the data to write</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>length</p></td>
+<td class="parameter_description"><p>the amount of data to write</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-write-func-t.returns"></a><h4>Returns</h4>
+<p> the status code of the write operation</p>
+</div>
+<p class="since">Since: 1.0</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-surface-write-to-png-stream"></a><h3>cairo_surface_write_to_png_stream ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-Error-handling.html#cairo-status-t" title="enum cairo_status_t"><span class="returnvalue">cairo_status_t</span></a>
+cairo_surface_write_to_png_stream (<em class="parameter"><code><a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="type">cairo_surface_t</span></a> *surface</code></em>,
+                                   <em class="parameter"><code><a class="link" href="cairo-PNG-Support.html#cairo-write-func-t" title="cairo_write_func_t ()"><span class="type">cairo_write_func_t</span></a> write_func</code></em>,
+                                   <em class="parameter"><code><span class="type">void</span> *closure</code></em>);</pre>
+<p>Writes the image surface to the write function.</p>
+<div class="refsect3">
+<a name="cairo-surface-write-to-png-stream.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>surface</p></td>
+<td class="parameter_description"><p>a <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="type">cairo_surface_t</span></a> with pixel contents</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>write_func</p></td>
+<td class="parameter_description"><p>a <a class="link" href="cairo-PNG-Support.html#cairo-write-func-t" title="cairo_write_func_t ()"><span class="type">cairo_write_func_t</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>closure</p></td>
+<td class="parameter_description"><p>closure data for the write function</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-surface-write-to-png-stream.returns"></a><h4>Returns</h4>
+<p> <a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-SUCCESS:CAPS"><code class="literal">CAIRO_STATUS_SUCCESS</code></a> if the PNG file was written
+successfully.  Otherwise, <a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-NO-MEMORY:CAPS"><code class="literal">CAIRO_STATUS_NO_MEMORY</code></a> is returned if
+memory could not be allocated for the operation,
+<a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-SURFACE-TYPE-MISMATCH:CAPS"><code class="literal">CAIRO_STATUS_SURFACE_TYPE_MISMATCH</code></a> if the surface does not have
+pixel contents, or <a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-PNG-ERROR:CAPS"><code class="literal">CAIRO_STATUS_PNG_ERROR</code></a> if libpng
+returned an error.</p>
+</div>
+<p class="since">Since: 1.0</p>
+</div>
+</div>
+<div class="refsect1">
+<a name="cairo-PNG-Support.other_details"></a><h2>Types and Values</h2>
+<div class="refsect2">
+<a name="CAIRO-HAS-PNG-FUNCTIONS:CAPS"></a><h3>CAIRO_HAS_PNG_FUNCTIONS</h3>
+<pre class="programlisting">#define CAIRO_HAS_PNG_FUNCTIONS 1
+</pre>
+<p>Defined if the PNG functions are available.
+This macro can be used to conditionally compile code using the cairo
+PNG functions.</p>
+<p class="since">Since: 1.0</p>
+</div>
+</div>
+<div class="refsect1">
+<a name="cairo-PNG-Support.see-also"></a><h2>See Also</h2>
+<p><a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="type">cairo_surface_t</span></a></p>
+</div>
+</div>
+<div class="footer">
+<hr>Generated by GTK-Doc V1.27</div>
+</body>
+</html>

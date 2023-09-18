@@ -1,0 +1,114 @@
+#!/usr/bin/perl -w
+
+use Shell qw(mv cp mkdir rm) ;
+use File::Find;
+use Cwd;
+
+$origPwd = `pwd`;
+chomp $origPwd;
+
+$kde_confdir		=	"/etc/kde3";
+$kde_prefix		=	"/usr";
+$kde_bindir		=	"$kde_prefix/bin";
+$kde_includedir		=	"$kde_prefix/include/kde";
+$kde_libdir		=	"$kde_prefix/lib";
+$kde_cgidir		=	"$kde_prefix/lib/cgi-bin";
+$kde_moduledir		=	"$kde_prefix/lib/kde3";
+$kde_appsdir		=	"$kde_prefix/share/applnk";
+$kde_datadir		=	"$kde_prefix/share/apps";
+$kde_htmldir		=	"$kde_prefix/share/doc/kde/HTML";
+$kde_icondir		=	"$kde_prefix/share/icons";
+$kde_locale		=	"$kde_prefix/share/locale";
+$kde_mimedir		=	"$kde_prefix/share/mimelnk";
+$kde_servicesdir	=	"$kde_prefix/share/services";
+$kde_servicetypesdir	=	"$kde_prefix/share/servicetypes";
+$kde_sounddir		=	"$kde_prefix/share/sounds";
+$kde_templatesdir	=	"$kde_prefix/share/templates";
+$kde_wallpaperdir	=	"$kde_prefix/share/wallpapers";
+
+$mandir			=	"$kde_prefix/share/man";
+$infodir		=	"$kde_prefix/share/info";
+$sysconfdir		=	"/etc";
+
+$QTDIR			=	"/usr/share/qt3";
+$IDL			=	"$kde_bindir/cuteidl";
+$DCOPIDL		=	"$kde_bindir/dcopidl";
+$DCOPIDL2CPP		=	"$kde_bindir/dcopidl2cpp";
+$KDB2HTML		=	"$kde_bindir/kdb2html";
+$MCOPIDL		=	"$kde_bindir/mcopidl";
+$ARTSCCONFIG		=	"$kde_bindir/artsc-config";
+
+if (defined $ENV{DEB_BUILD_OPTIONS} &&
+    $ENV{DEB_BUILD_OPTIONS} =~ /\bdebug\b/) {
+  $enable_debug="--enable-debug";
+  $enable_final="";
+}
+else {
+  $enable_debug="--disable-debug";
+  $enable_final="--enable-final";
+}
+
+if (@ARGV && $ARGV[0] eq 'echodirs') {
+  print STDOUT "export kde_confdir=$kde_confdir\n";
+  print STDOUT "export kde_prefix=$kde_prefix\n";
+  print STDOUT "export kde_bindir=$kde_bindir\n";
+  print STDOUT "export kde_includedir=$kde_includedir\n";
+  print STDOUT "export kde_libdir=$kde_libdir\n";
+  print STDOUT "export kde_cgidir=$kde_cgidir\n";
+  print STDOUT "export kde_moduledir=$kde_moduledir\n";
+  print STDOUT "export kde_appsdir=$kde_appsdir\n";
+  print STDOUT "export kde_datadir=$kde_datadir\n";
+  print STDOUT "export kde_htmldir=$kde_htmldir\n";
+  print STDOUT "export kde_icondir=$kde_icondir\n";
+  print STDOUT "export kde_locale=$kde_locale\n";
+  print STDOUT "export kde_mimedir=$kde_mimedir\n";
+  print STDOUT "export kde_servicesdir=$kde_servicesdir\n";
+  print STDOUT "export kde_servicetypesdir=$kde_servicetypesdir\n";
+  print STDOUT "export kde_sounddir=$kde_sounddir\n";
+  print STDOUT "export kde_templatesdir=$kde_templatesdir\n";
+  print STDOUT "export kde_wallpaperdir=$kde_wallpaperdir\n";
+
+  print STDOUT "export mandir=$mandir\n";
+  print STDOUT "export infodir=$infodir\n";
+  print STDOUT "export sysconfdir=$sysconfdir\n";
+
+  print STDOUT "export QTDIR=$QTDIR\n";
+  print STDOUT "export IDL=$IDL\n";
+  print STDOUT "export DCOPIDL=$DCOPIDL\n";
+  print STDOUT "export DCOPIDL2CPP=$DCOPIDL2CPP\n";
+  print STDOUT "export KDB2HTML=$KDB2HTML\n";
+  print STDOUT "export MCOPIDL=$MCOPIDL\n";
+  print STDOUT "export ARTSCCONFIG=$ARTSCCONFIG\n";
+  print STDOUT "export INSTALL_DATA=install -p -c -m 644\n";
+
+  print STDOUT "configkde=$enable_debug $enable_final --disable-rpath --prefix=\$(kde_prefix) --libexecdir=\$(kde_bindir) --sysconfdir=\$(sysconfdir) --libdir=\$(kde_libdir) --includedir=\$(kde_includedir) --with-qt-includes=/usr/include/qt3 --mandir=\$(mandir) --infodir=\$(infodir) --with-xinerama\n";
+  print STDOUT "configkdevelop=$enable_debug $enable_final --disable-rpath --enable-docbase --enable-kdoc2 --libdir=\$(kde_libdir) --includedir=\$(kde_includedir) --with-qt-includes=/usr/include/qt3 --mandir=\$(mandir) --with-kdelibsdoc-dir=/usr/share/doc/kdelibs3-doc/html --with-xinerama\n";
+  print STDOUT "configkdepim=$enable_debug $enable_final --disable-rpath --with-extra-includes=/usr/include/libpisock --enable-shared --prefix=\$(kde_prefix) --libexecdir=\$(kde_bindir) --with-qt-includes=/usr/include/qt3 --mandir=\$(mandir) --infodir=\$(infodir) --with-xinerama\n";
+
+  exit
+}
+
+if (@ARGV && $ARGV[0] eq 'echoglobals') {
+	print STDOUT "[Directories]\n";
+	print STDOUT "dir_config=$kde_confdir\n";
+	print STDOUT "dir_tmp=/tmp\n";
+	print STDOUT "dir_socket=/tmp\n";
+	print STDOUT "dir_exe=$kde_bindir\n";
+	print STDOUT "dir_lib=$kde_libdir\n";
+	print STDOUT "dir_cgi=$kde_cgidir\n";
+	print STDOUT "dir_module=$kde_moduledir\n";
+	print STDOUT "dir_apps=$kde_appsdir\n";
+	print STDOUT "dir_data=$kde_datadir\n";
+	print STDOUT "dir_html=$kde_htmldir\n";
+	print STDOUT "dir_icon=$kde_icondir\n";
+	print STDOUT "dir_locale=$kde_locale\n";
+	print STDOUT "dir_mime=$kde_mimedir\n";
+	print STDOUT "dir_services=$kde_servicesdir\n";
+	print STDOUT "dir_servicetypes=$kde_servicetypesdir\n";
+	print STDOUT "dir_sound=$kde_sounddir\n";
+	print STDOUT "dir_templates=$kde_templatesdir\n";
+	print STDOUT "dir_wallpaper=$kde_wallpaperdir\n";
+	print STDOUT "[General]\n";
+	print STDOUT "TerminalApplication=x-terminal-emulator\n";
+	exit
+}

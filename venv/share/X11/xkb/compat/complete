@@ -1,0 +1,10 @@
+default xkb_compatibility "complete" {
+    include "basic"
+    augment "iso9995"
+    augment "mousekeys"
+    augment "accessx(full)"
+    augment "misc"
+    augment "xfree86"
+    augment "level5"
+    augment "caps(caps_lock)"
+};

@@ -1,0 +1,24 @@
+/* Collapsing of the TOC sidebar while scrolling */
+/* Nav: hide second level (shown on .active) */
+.bd-toc .nav,
+.list-caption {
+  .nav {
+    display: none;
+
+    // So we can manually specify a level as visible in the config
+    &.visible {
+      display: block;
+    }
+  }
+
+  > .active > ul {
+    display: block;
+  }
+}
+
+.toc-entry > .nav-link.active {
+  font-weight: 600;
+  color: var(--pst-color-primary);
+  background-color: transparent;
+  border-left: 2px solid var(--pst-color-primary);
+}

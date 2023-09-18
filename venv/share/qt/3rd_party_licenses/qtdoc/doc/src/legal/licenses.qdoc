@@ -1,0 +1,371 @@
+/****************************************************************************
+**
+** Copyright (C) 2016 The Qt Company Ltd.
+** Contact: https://www.qt.io/licensing/
+**
+** This file is part of the documentation of the Qt Toolkit.
+**
+** $QT_BEGIN_LICENSE:FDL$
+** Commercial License Usage
+** Licensees holding valid commercial Qt licenses may use this file in
+** accordance with the commercial license agreement provided with the
+** Software or, alternatively, in accordance with the terms contained in
+** a written agreement between you and The Qt Company. For licensing terms
+** and conditions see https://www.qt.io/terms-conditions. For further
+** information use the contact form at https://www.qt.io/contact-us.
+**
+** GNU Free Documentation License Usage
+** Alternatively, this file may be used under the terms of the GNU Free
+** Documentation License version 1.3 as published by the Free Software
+** Foundation and appearing in the file included in the packaging of
+** this file. Please review the following information to ensure
+** the GNU Free Documentation License version 1.3 requirements
+** will be met: https://www.gnu.org/licenses/fdl-1.3.html.
+** $QT_END_LICENSE$
+**
+****************************************************************************/
+
+/*!
+    \page licensing.html
+    \title Qt Licensing
+    \brief Information about licenses and licensing issues.
+
+    Qt is available under different licensing options designed to accommodate
+    the needs of our various users:
+
+    \list
+      \li Qt licensed under \e commercial licenses is appropriate for
+          development of proprietary/commercial software where you do not want
+          to share any source code with third parties or otherwise cannot
+          comply with the terms of the GNU LGPL version 3.
+
+      \li Qt licensed under the \l{GNU Lesser General Public License (LGPL)}
+          version 3 is appropriate for the development of Qt applications
+          provided you can comply with the terms and conditions of the GNU LGPL
+          version 3 (or GNU GPL version 3).
+      \li Qt components licensed under the \l{Qt Marketplace License Agreement}
+          are appropriate for the development of Qt applications commonly with
+          Qt software components licensed under the commercial or GNU LGPL
+          version 3 (or GNU GPL version 3) terms and conditions.
+    \endlist
+
+    Qt contains also \l {Licenses Used in Qt}{third-party code} that is licensed
+    under specific open-source licenses from the original authors.
+
+    \note For open-source licensed Qt, some specific parts (modules) are not
+    available under the GNU LGPL version 3, but under the
+    \l {GNU General Public License (GPL)} instead. See
+    the list of \l {gpl-licensed-addons}{Qt modules} for details. For commercial
+    licensees, all modules are available under a single, commercial Qt
+    license.
+
+    \e {Qt documentation} is available under commercial licenses from
+    The Qt Company, and under the terms of the \l{GNU Free
+    Documentation License (FDL)} version 1.3, as published by the Free Software
+    Foundation.
+
+    \e {Qt examples} are available under commercial licenses from The Qt Company,
+    and under a \l{License of Qt examples}{BSD-3-clause} license.
+
+    See \l{http://qt.io/licensing/} for an overview of Qt licensing.
+
+    \section1 Purchasing and Sales Information
+
+    To purchase a Qt license, visit \l{http://www.qt.io/download/}.
+
+    For further information and assistance about Qt licensing, contact our
+    sales; see \l{http://www.qt.io/locations/} for contact details.
+
+    \section1 Licensed Code in Qt
+
+    The following page documents the open-source licenses used in different
+    parts of Qt:
+
+    \list
+        \li \l {Licenses Used in Qt}
+    \endlist
+*/
+
+/*!
+    \page licenses-used-in-qt.html
+    \keyword Third-Party Licenses Used in Qt
+    \title Licenses Used in Qt
+    \brief Information about other licenses and third-party code used in Qt.
+
+    Qt contains some code that is not provided under the
+    \l{GNU Lesser General Public License (LGPL)} or the
+    \l{Qt Commercial License}, but rather under specific licenses from the
+    original authors.
+
+    The Qt Company gratefully acknowledges these and other contributions to Qt.
+    We recommend that programs that use Qt also acknowledge these contributions,
+    and quote these license statements in an appendix to the documentation.
+
+    \note You only need to comply with (and acknowledge) the licenses of the
+          third-party components that you are using with your application.
+          Click the name of the component to see the licensing details.
+
+    \b {Third-party Licenses}
+
+    The following table lists parts (modules) of Qt \QtVersion that incorporate
+    code licensed under third-party open-source licenses:
+
+    \div {class="fixed"}
+    \generatelist annotatedattributions
+
+    \raw HTML
+    <h2 id="additional-information">Additional Information</h2>
+    \endraw
+
+    The following table lists related documents, such as information about Trademarks
+    and other licenses used in parts of Qt.
+
+    \annotatedlist licensing
+    \enddiv
+*/
+
+/*!
+    \page qt-attribution-cmake-macros.html
+    \title Macros for Building with CMake
+    \ingroup licensing
+    \brief BSD 3-clause "New" or "Revised" License
+
+    The following files contain macros that enable users to build Qt-based
+    projects using CMake.
+
+    \list
+        \li \c qtbase/src/corelib/Qt5CoreMacros.cmake
+        \li \c qtbase/src/dbus/Qt5DBusMacros.cmake
+        \li \c qtbase/src/widgets/Qt5WidgetsMacros.cmake
+        \li \c qttools/src/linguist/Qt5LinguistToolsMacros.cmake
+    \endlist
+
+    \badcode
+    Copyright 2005-2011 Kitware, Inc.
+    All rights reserved.
+    \endcode
+
+    \l {https://spdx.org/licenses/BSD-3-Clause.html}
+       {BSD 3-clause "New" or "Revised" License}
+
+    \badcode
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions
+    are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+
+    * Neither the name of Kitware, Inc. nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+    A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+    HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+    \endcode
+*/
+
+/*!
+    \page qt-attribution-llvmpipe.html
+    \title Mesa llvmpipe
+    \ingroup licensing
+    \brief MIT License
+
+    Mesa is a 3-D graphics library with an API which is very similar to that of OpenGL.
+    The llvmpipe software renderer allows running of OpenGL applications without any
+    hardware / driver support.
+
+    Shipped as part of the binary packages for Windows (opengl32sw.dll).
+
+    \badcode
+    Copyright (C) 1999-2007  Brian Paul.
+    \endcode
+
+    \l {https://spdx.org/licenses/MIT.html}
+       {MIT License}
+
+    \badcode
+    Copyright (C) 1999-2007  Brian Paul   All Rights Reserved.
+
+    Permission is hereby granted, free of charge, to any person obtaining a
+    copy of this software and associated documentation files (the "Software"),
+    to deal in the Software without restriction, including without limitation
+    the rights to use, copy, modify, merge, publish, distribute, sublicense,
+    and/or sell copies of the Software, and to permit persons to whom the
+    Software is furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included
+    in all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+    OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+    BRIAN PAUL BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN
+    AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+    \endcode
+*/
+
+/*!
+    \page qt-attribution-llvm.html
+    \title LLVM Attribution
+    \ingroup licensing
+    \brief University of Illinois/NCSA Open Source License, BSD licenses
+
+    The provided binaries of Qt include a static copy of LLVM inside the \c qdoc binary.
+
+    Most of LLVM is under the \e{University of Illinois/NCSA Open Source License}:
+
+    \badcode
+    University of Illinois/NCSA
+    Open Source License
+
+    Copyright (c) 2003-2017 University of Illinois at Urbana-Champaign.
+    All rights reserved.
+
+    Developed by:
+
+        LLVM Team
+
+        University of Illinois at Urbana-Champaign
+
+        http://llvm.org
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy of
+    this software and associated documentation files (the "Software"), to deal with
+    the Software without restriction, including without limitation the rights to
+    use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+    of the Software, and to permit persons to whom the Software is furnished to do
+    so, subject to the following conditions:
+
+        * Redistributions of source code must retain the above copyright notice,
+          this list of conditions and the following disclaimers.
+
+        * Redistributions in binary form must reproduce the above copyright notice,
+          this list of conditions and the following disclaimers in the
+          documentation and/or other materials provided with the distribution.
+
+        * Neither the names of the LLVM Team, University of Illinois at
+          Urbana-Champaign, nor the names of its contributors may be used to
+          endorse or promote products derived from this Software without specific
+          prior written permission.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+    FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+    CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS WITH THE
+    SOFTWARE.
+    \endcode
+
+    Furthermore, LLVM contains code from OpenBSD regex :
+
+    \badcode
+    $OpenBSD: COPYRIGHT,v 1.3 2003/06/02 20:18:36 millert Exp $
+
+    Copyright 1992, 1993, 1994 Henry Spencer.  All rights reserved.
+    This software is not subject to any license of the American Telephone
+    and Telegraph Company or of the Regents of the University of California.
+
+    Permission is granted to anyone to use this software for any purpose on
+    any computer system, and to alter it and redistribute it, subject
+    to the following restrictions:
+
+    1. The author is not responsible for the consequences of use of this
+       software, no matter how awful, even if they arise from flaws in it.
+
+    2. The origin of this software must not be misrepresented, either by
+       explicit claim or by omission.  Since few users ever read sources,
+       credits must appear in the documentation.
+
+    3. Altered versions must be plainly marked as such, and must not be
+       misrepresented as being the original software.  Since few users
+       ever read sources, credits must appear in the documentation.
+
+    4. This notice may not be removed or altered.
+    \endcode
+
+    \badcode
+    Copyright (c) 1994
+    The Regents of the University of California.  All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions
+    are met:
+    1. Redistributions of source code must retain the above copyright
+       notice, this list of conditions and the following disclaimer.
+    2. Redistributions in binary form must reproduce the above copyright
+       notice, this list of conditions and the following disclaimer in the
+       documentation and/or other materials provided with the distribution.
+    3. Neither the name of the University nor the names of its contributors
+       may be used to endorse or promote products derived from this software
+       without specific prior written permission.
+
+    THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+    ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+    ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+    FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+    DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+    OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+    HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+    LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+    OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+    SUCH DAMAGE.
+
+    @(#)COPYRIGHT    8.1 (Berkeley) 3/16/94
+    \endcode
+
+    Furthermore, LLVM contains code from md5:
+
+    \badcode
+    This is an OpenSSL-compatible implementation of the RSA Data Security, Inc.
+    MD5 Message-Digest Algorithm (RFC 1321).
+
+    Homepage:
+    http://openwall.info/wiki/people/solar/software/public-domain-source-code/md5
+
+    Author:
+    Alexander Peslyak, better known as Solar Designer <solar at openwall.com>
+
+    This software was written by Alexander Peslyak in 2001.  No copyright is
+    claimed, and the software is hereby placed in the public domain.
+    In case this attempt to disclaim copyright and place the software in the
+    public domain is deemed null and void, then the software is
+    Copyright (c) 2001 Alexander Peslyak and it is hereby released to the
+    general public under the following terms:
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted.
+
+    There's ABSOLUTELY NO WARRANTY, express or implied.
+
+    (This is a heavily cut-down "BSD license".)
+
+    This differs from Colin Plumb's older public domain implementation in that
+    no exactly 32-bit integer data type is required (any 32-bit or wider
+    unsigned integer data type will do), there's no compile-time endianness
+    configuration, and the function prototypes match OpenSSL's.  No code from
+    Colin Plumb's implementation has been reused; this comment merely compares
+    the properties of the two independent implementations.
+
+    The primary goals of this implementation are portability and ease of use.
+    It is meant to be fast, but not as fast as possible.  Some known
+    optimizations are not included to reduce source code size and avoid
+    compile-time configuration.
+    \endcode
+*/

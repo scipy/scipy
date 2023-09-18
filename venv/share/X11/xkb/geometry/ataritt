@@ -1,0 +1,251 @@
+default xkb_geometry "us" {
+
+    description= "Atari TT (us)";
+    width= 480;
+    height= 173;
+
+    shape.cornerRadius= 1;
+    shape "NORM" { { [ 18,18] }, { [2,1], [ 16,17] } };
+    shape "BKSP" { { [ 37,18] }, { [2,1], [ 35,17] } };
+    shape "TABK" { { [ 28,18] }, { [2,1], [ 26,17] } };
+    shape "RTRN" { approx = { [0,19], [32,37] },
+		   { [ 14, 0], [32, 0], [32,37], [0,37], [0,19], [14,19] },
+		   { [ 16, 1], [30, 1], [30,36], [2,36], [2,20], [16,20] } };
+    shape "CTRL" { { [ 32,18] }, { [2,1], [ 30,17] } };
+    shape "LFSH" { { [ 42,18] }, { [2,1], [ 40,17] } };
+    shape "RTSH" { { [ 52,18] }, { [2,1], [ 50,17] } };
+    shape "MODK" { { [ 28,18] }, { [2,1], [ 26,17] } };
+    shape "SPCE" { { [172,18] }, { [2,1], [170,17] } };
+    shape "FCTS" { { [ 28,10] }, { [2,1], [ 26,9] } };
+    shape "KP0"  { { [ 37,18] }, { [2,1], [ 35,17] } };
+    shape "KPEN" { { [ 18,37] }, { [2,1], [ 16,36] } };
+
+    section.left= 21;
+    row.left= 1;
+    key.shape = "NORM";
+    key.gap=  1;
+    section "Function" {
+	top= 36;
+	key.shape= "FCTS";
+	row {
+	    top= 1;
+	    keys { <FK01>, <FK02>, <FK03>, <FK04>,
+		   <FK05>, <FK06>, <FK07>, <FK08>,
+		   <FK09>, <FK10>
+	    };
+	};
+    }; // End of "Function" section
+
+    section "Alpha" {
+	top= 63;
+	row {
+	    top= 1;
+	    keys { <ESC>, <AE01>, <AE02>, <AE03>, <AE04>,
+		   <AE05>, <AE06>, <AE07>, <AE08>, <AE09>,
+		   <AE10>, <AE11>, <AE12>, <TLDE>,
+		   { <BKSP>, "BKSP" }
+	    };
+	};
+	row {
+	    top= 20;
+	    keys { { <TAB>, "TABK" },
+		   <AD01>, <AD02>, <AD03>, <AD04>, <AD05>, 
+		   <AD06>, <AD07>, <AD08>, <AD09>, <AD10>, 
+		   <AD11>, <AD12>, { <RTRN>, "RTRN", -13 }, <DELE>
+	    };
+	};
+	row {
+	    top= 39;
+	    keys { { <LCTL>, "CTRL" },
+		   <AC01>, <AC02>, <AC03>, <AC04>, <AC05>, 
+		   <AC06>, <AC07>, <AC08>, <AC09>, <AC10>, 
+		   <AC11>, { <BKSL>, 34 }
+	    };
+	};
+	row {
+	    top= 58;
+	    keys { { <LFSH>, "LFSH" },
+		    <AB01>, <AB02>, <AB03>, <AB04>, <AB05>, 
+		    <AB06>, <AB07>, <AB08>, <AB09>, <AB10>, 
+		    { <RTSH>, "RTSH" }
+	    };
+	};
+	row {
+	    top= 77;
+	    key.shape= "MODK";
+	    keys { { <ALT>, 24 },
+		   { <SPCE>, "SPCE" },
+		   <CAPS>
+	    };
+	};
+    }; // End of "Alpha" section
+
+    section "Editing" {
+	top= 63;
+	left= 319;
+	row {
+	    top= 1;
+	    key.shape = "BKSP";
+	    keys { <HELP>, <UNDO> };
+	};
+	row {
+	    top= 20;
+	    keys { <INS>, <UP>, <HOME> };
+	};
+	row {
+	    top= 39;
+	    keys { <LEFT>, <DOWN>, <RGHT> };
+	};
+    }; // End of "Editing" section
+
+    section "Keypad" {
+	top= 63;
+	left= 381;
+	row {
+	    top= 1;
+	    keys { <KPLP>, <KPRP>, <KPDV>, <KPMU> };
+	};
+	row {
+	    top= 20;
+	    keys { <KP7>, <KP8>, <KP9>, <KPSU> };
+	};
+	row {
+	    top= 39;
+	    keys { <KP4>, <KP5>, <KP6>, <KPAD> };
+	};
+	row {
+	    top= 58;
+	    keys { <KP1>, <KP2>, <KP3>, { <KPEN>, "KPEN" } };
+	};
+	row {
+	    top= 77;
+	    keys { { <KP0>, "KP0" }, <KPDC> };
+	};
+    }; // End of "Keypad" section
+
+};
+
+xkb_geometry "de" {
+
+    description= "Atari TT (de)";
+    width= 480;
+    height= 173;
+
+    shape.cornerRadius= 1;
+    shape "NORM" { { [ 18,18] }, { [2,1], [ 16,17] } };
+    shape "BKSP" { { [ 27,18] }, { [2,1], [ 25,17] } };
+    shape "TABK" { { [ 27,18] }, { [2,1], [ 25,17] } };
+    shape "RTRN" { approx = { [0,19], [32,37] },
+		   { [ 14, 0], [32, 0], [32,37], [0,37], [0,19], [14,19] },
+		   { [ 16, 1], [30, 1], [30,36], [2,36], [2,20], [16,20] } };
+    shape "CTRL" { { [ 32,18] }, { [2,1], [ 30,17] } };
+    shape "LFSH" { { [ 23,18] }, { [2,1], [ 21,17] } };
+    shape "RTSH" { { [ 28,18] }, { [2,1], [ 26,17] } };
+    shape "MODK" { { [ 28,18] }, { [2,1], [ 26,17] } };
+    shape "SPCE" { { [170,18] }, { [2,1], [168,17] } };
+    shape "FCTS" { { [ 28,11] }, { [2,1], [ 26,10] } };
+    shape "KP0"  { { [ 37,18] }, { [2,1], [ 35,17] } };
+    shape "KPEN" { { [ 18,37] }, { [2,1], [ 16,36] } };
+
+    section.left= 21;
+    row.left= 1;
+    key.shape = "NORM";
+    key.gap=  1;
+    section "Function" {
+	top= 36;
+	key.shape= "FCTS";
+	row {
+	    top= 1;
+	    keys { <FK01>, <FK02>, <FK03>, <FK04>,
+		   <FK05>, <FK06>, <FK07>, <FK08>,
+		   <FK09>, <FK10>
+	    };
+	};
+    }; // End of "Function" section
+
+    section "Alpha" {
+	top= 63;
+	row {
+	    top= 1;
+	    keys { <ESC>, <AE01>, <AE02>, <AE03>, <AE04>,
+		   <AE05>, <AE06>, <AE07>, <AE08>, <AE09>,
+		   <AE10>, <AE11>, <AE12>, <TLDE>,
+		   { <BKSP>, "BKSP" }
+	    };
+	};
+	row {
+	    top= 20;
+	    keys { { <TAB>, "TABK" },
+		   <AD01>, <AD02>, <AD03>, <AD04>, <AD05>, 
+		   <AD06>, <AD07>, <AD08>, <AD09>, <AD10>, 
+		   <AD11>, <AD12>, { <RTRN>, "RTRN", -13 }, <DELE>
+	    };
+	};
+	row {
+	    top= 39;
+	    keys { { <LCTL>, "CTRL" },
+		   <AC01>, <AC02>, <AC03>, <AC04>, <AC05>, 
+		   <AC06>, <AC07>, <AC08>, <AC09>, <AC10>, 
+		   <AC11>, { <BKSL>, 34 }
+	    };
+	};
+	row {
+	    top= 58;
+	    keys { { <LFSH>, "LFSH" }, <LSGT>, 
+		    <AB01>, <AB02>, <AB03>, <AB04>,
+		    <AB05>, <AB06>, <AB07>, <AB08>, <AB09>, <AB10>,
+		    { <RTSH>, "RTSH" }
+	    };
+	};
+	row {
+	    top= 77;
+	    key.shape= "MODK";
+	    keys { { <ALT>, 24 }, { <SPCE>, "SPCE" }, <CAPS>
+	    };
+	};
+    }; // End of "Alpha" section
+
+    section "Editing" {
+	top= 63;
+	left= 319;
+	row {
+	    top= 1;
+	    key.shape = "BKSP";
+	    keys { <HELP>, <UNDO> };
+	};
+	row {
+	    top= 20;
+	    keys { <INS>, <UP>, <HOME> };
+	};
+	row {
+	    top= 39;
+	    keys { <LEFT>, <DOWN>, <RGHT> };
+	};
+    }; // End of "Editing" section
+
+    section "Keypad" {
+	top= 63;
+	left= 381;
+	row {
+	    top= 1;
+	    keys { <KPLP>, <KPRP>, <KPDV>, <KPMU> };
+	};
+	row {
+	    top= 20;
+	    keys { <KP7>, <KP8>, <KP9>, <KPSU> };
+	};
+	row {
+	    top= 39;
+	    keys { <KP4>, <KP5>, <KP6>, <KPAD> };
+	};
+	row {
+	    top= 58;
+	    keys { <KP1>, <KP2>, <KP3>, { <KPEN>, "KPEN" } };
+	};
+	row {
+	    top= 77;
+	    keys { { <KP0>, "KP0" }, <KPDC> };
+	};
+    }; // End of "Keypad" section
+
+};

@@ -1,0 +1,3111 @@
+{
+  "build": "pyhd8ed1ab_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/noarch",
+  "constrains": [],
+  "depends": [
+    "ninja >=1.8.2",
+    "python >=3.5.2",
+    "setuptools"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/meson-1.2.1-pyhd8ed1ab_0",
+  "features": "",
+  "files": [
+    "share/man/man1/meson.1",
+    "share/polkit-1/actions/com.mesonbuild.install.policy",
+    "lib/python3.10/site-packages/meson-1.2.1.dist-info/COPYING",
+    "lib/python3.10/site-packages/meson-1.2.1.dist-info/INSTALLER",
+    "lib/python3.10/site-packages/meson-1.2.1.dist-info/METADATA",
+    "lib/python3.10/site-packages/meson-1.2.1.dist-info/RECORD",
+    "lib/python3.10/site-packages/meson-1.2.1.dist-info/REQUESTED",
+    "lib/python3.10/site-packages/meson-1.2.1.dist-info/WHEEL",
+    "lib/python3.10/site-packages/meson-1.2.1.dist-info/direct_url.json",
+    "lib/python3.10/site-packages/meson-1.2.1.dist-info/entry_points.txt",
+    "lib/python3.10/site-packages/meson-1.2.1.dist-info/top_level.txt",
+    "lib/python3.10/site-packages/mesonbuild/__init__.py",
+    "lib/python3.10/site-packages/mesonbuild/_pathlib.py",
+    "lib/python3.10/site-packages/mesonbuild/_typing.py",
+    "lib/python3.10/site-packages/mesonbuild/arglist.py",
+    "lib/python3.10/site-packages/mesonbuild/ast/__init__.py",
+    "lib/python3.10/site-packages/mesonbuild/ast/interpreter.py",
+    "lib/python3.10/site-packages/mesonbuild/ast/introspection.py",
+    "lib/python3.10/site-packages/mesonbuild/ast/postprocess.py",
+    "lib/python3.10/site-packages/mesonbuild/ast/printer.py",
+    "lib/python3.10/site-packages/mesonbuild/ast/visitor.py",
+    "lib/python3.10/site-packages/mesonbuild/backend/__init__.py",
+    "lib/python3.10/site-packages/mesonbuild/backend/backends.py",
+    "lib/python3.10/site-packages/mesonbuild/backend/ninjabackend.py",
+    "lib/python3.10/site-packages/mesonbuild/backend/nonebackend.py",
+    "lib/python3.10/site-packages/mesonbuild/backend/vs2010backend.py",
+    "lib/python3.10/site-packages/mesonbuild/backend/vs2012backend.py",
+    "lib/python3.10/site-packages/mesonbuild/backend/vs2013backend.py",
+    "lib/python3.10/site-packages/mesonbuild/backend/vs2015backend.py",
+    "lib/python3.10/site-packages/mesonbuild/backend/vs2017backend.py",
+    "lib/python3.10/site-packages/mesonbuild/backend/vs2019backend.py",
+    "lib/python3.10/site-packages/mesonbuild/backend/vs2022backend.py",
+    "lib/python3.10/site-packages/mesonbuild/backend/xcodebackend.py",
+    "lib/python3.10/site-packages/mesonbuild/build.py",
+    "lib/python3.10/site-packages/mesonbuild/cargo/__init__.py",
+    "lib/python3.10/site-packages/mesonbuild/cargo/builder.py",
+    "lib/python3.10/site-packages/mesonbuild/cargo/cfg.py",
+    "lib/python3.10/site-packages/mesonbuild/cargo/interpreter.py",
+    "lib/python3.10/site-packages/mesonbuild/cargo/manifest.py",
+    "lib/python3.10/site-packages/mesonbuild/cargo/version.py",
+    "lib/python3.10/site-packages/mesonbuild/cmake/__init__.py",
+    "lib/python3.10/site-packages/mesonbuild/cmake/common.py",
+    "lib/python3.10/site-packages/mesonbuild/cmake/data/__init__.py",
+    "lib/python3.10/site-packages/mesonbuild/cmake/data/preload.cmake",
+    "lib/python3.10/site-packages/mesonbuild/cmake/executor.py",
+    "lib/python3.10/site-packages/mesonbuild/cmake/fileapi.py",
+    "lib/python3.10/site-packages/mesonbuild/cmake/generator.py",
+    "lib/python3.10/site-packages/mesonbuild/cmake/interpreter.py",
+    "lib/python3.10/site-packages/mesonbuild/cmake/toolchain.py",
+    "lib/python3.10/site-packages/mesonbuild/cmake/traceparser.py",
+    "lib/python3.10/site-packages/mesonbuild/cmake/tracetargets.py",
+    "lib/python3.10/site-packages/mesonbuild/compilers/__init__.py",
+    "lib/python3.10/site-packages/mesonbuild/compilers/asm.py",
+    "lib/python3.10/site-packages/mesonbuild/compilers/c.py",
+    "lib/python3.10/site-packages/mesonbuild/compilers/c_function_attributes.py",
+    "lib/python3.10/site-packages/mesonbuild/compilers/compilers.py",
+    "lib/python3.10/site-packages/mesonbuild/compilers/cpp.py",
+    "lib/python3.10/site-packages/mesonbuild/compilers/cs.py",
+    "lib/python3.10/site-packages/mesonbuild/compilers/cuda.py",
+    "lib/python3.10/site-packages/mesonbuild/compilers/cython.py",
+    "lib/python3.10/site-packages/mesonbuild/compilers/d.py",
+    "lib/python3.10/site-packages/mesonbuild/compilers/detect.py",
+    "lib/python3.10/site-packages/mesonbuild/compilers/fortran.py",
+    "lib/python3.10/site-packages/mesonbuild/compilers/java.py",
+    "lib/python3.10/site-packages/mesonbuild/compilers/mixins/__init__.py",
+    "lib/python3.10/site-packages/mesonbuild/compilers/mixins/arm.py",
+    "lib/python3.10/site-packages/mesonbuild/compilers/mixins/ccrx.py",
+    "lib/python3.10/site-packages/mesonbuild/compilers/mixins/clang.py",
+    "lib/python3.10/site-packages/mesonbuild/compilers/mixins/clike.py",
+    "lib/python3.10/site-packages/mesonbuild/compilers/mixins/compcert.py",
+    "lib/python3.10/site-packages/mesonbuild/compilers/mixins/elbrus.py",
+    "lib/python3.10/site-packages/mesonbuild/compilers/mixins/emscripten.py",
+    "lib/python3.10/site-packages/mesonbuild/compilers/mixins/gnu.py",
+    "lib/python3.10/site-packages/mesonbuild/compilers/mixins/intel.py",
+    "lib/python3.10/site-packages/mesonbuild/compilers/mixins/islinker.py",
+    "lib/python3.10/site-packages/mesonbuild/compilers/mixins/metrowerks.py",
+    "lib/python3.10/site-packages/mesonbuild/compilers/mixins/pgi.py",
+    "lib/python3.10/site-packages/mesonbuild/compilers/mixins/ti.py",
+    "lib/python3.10/site-packages/mesonbuild/compilers/mixins/visualstudio.py",
+    "lib/python3.10/site-packages/mesonbuild/compilers/mixins/xc16.py",
+    "lib/python3.10/site-packages/mesonbuild/compilers/objc.py",
+    "lib/python3.10/site-packages/mesonbuild/compilers/objcpp.py",
+    "lib/python3.10/site-packages/mesonbuild/compilers/rust.py",
+    "lib/python3.10/site-packages/mesonbuild/compilers/swift.py",
+    "lib/python3.10/site-packages/mesonbuild/compilers/vala.py",
+    "lib/python3.10/site-packages/mesonbuild/coredata.py",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/__init__.py",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/base.py",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/boost.py",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/cmake.py",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/coarrays.py",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/configtool.py",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/cuda.py",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/data/CMakeLists.txt",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/data/CMakeListsLLVM.txt",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/data/CMakePathInfo.txt",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/data/__init__.py",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/detect.py",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/dev.py",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/dub.py",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/factory.py",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/framework.py",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/hdf5.py",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/misc.py",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/mpi.py",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/pkgconfig.py",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/platform.py",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/python.py",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/qt.py",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/scalapack.py",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/ui.py",
+    "lib/python3.10/site-packages/mesonbuild/depfile.py",
+    "lib/python3.10/site-packages/mesonbuild/envconfig.py",
+    "lib/python3.10/site-packages/mesonbuild/environment.py",
+    "lib/python3.10/site-packages/mesonbuild/interpreter/__init__.py",
+    "lib/python3.10/site-packages/mesonbuild/interpreter/compiler.py",
+    "lib/python3.10/site-packages/mesonbuild/interpreter/dependencyfallbacks.py",
+    "lib/python3.10/site-packages/mesonbuild/interpreter/interpreter.py",
+    "lib/python3.10/site-packages/mesonbuild/interpreter/interpreterobjects.py",
+    "lib/python3.10/site-packages/mesonbuild/interpreter/kwargs.py",
+    "lib/python3.10/site-packages/mesonbuild/interpreter/mesonmain.py",
+    "lib/python3.10/site-packages/mesonbuild/interpreter/primitives/__init__.py",
+    "lib/python3.10/site-packages/mesonbuild/interpreter/primitives/array.py",
+    "lib/python3.10/site-packages/mesonbuild/interpreter/primitives/boolean.py",
+    "lib/python3.10/site-packages/mesonbuild/interpreter/primitives/dict.py",
+    "lib/python3.10/site-packages/mesonbuild/interpreter/primitives/integer.py",
+    "lib/python3.10/site-packages/mesonbuild/interpreter/primitives/range.py",
+    "lib/python3.10/site-packages/mesonbuild/interpreter/primitives/string.py",
+    "lib/python3.10/site-packages/mesonbuild/interpreter/type_checking.py",
+    "lib/python3.10/site-packages/mesonbuild/interpreterbase/__init__.py",
+    "lib/python3.10/site-packages/mesonbuild/interpreterbase/_unholder.py",
+    "lib/python3.10/site-packages/mesonbuild/interpreterbase/baseobjects.py",
+    "lib/python3.10/site-packages/mesonbuild/interpreterbase/decorators.py",
+    "lib/python3.10/site-packages/mesonbuild/interpreterbase/disabler.py",
+    "lib/python3.10/site-packages/mesonbuild/interpreterbase/exceptions.py",
+    "lib/python3.10/site-packages/mesonbuild/interpreterbase/helpers.py",
+    "lib/python3.10/site-packages/mesonbuild/interpreterbase/interpreterbase.py",
+    "lib/python3.10/site-packages/mesonbuild/interpreterbase/operator.py",
+    "lib/python3.10/site-packages/mesonbuild/linkers/__init__.py",
+    "lib/python3.10/site-packages/mesonbuild/linkers/base.py",
+    "lib/python3.10/site-packages/mesonbuild/linkers/detect.py",
+    "lib/python3.10/site-packages/mesonbuild/linkers/linkers.py",
+    "lib/python3.10/site-packages/mesonbuild/mcompile.py",
+    "lib/python3.10/site-packages/mesonbuild/mconf.py",
+    "lib/python3.10/site-packages/mesonbuild/mdevenv.py",
+    "lib/python3.10/site-packages/mesonbuild/mdist.py",
+    "lib/python3.10/site-packages/mesonbuild/mesondata.py",
+    "lib/python3.10/site-packages/mesonbuild/mesonlib.py",
+    "lib/python3.10/site-packages/mesonbuild/mesonmain.py",
+    "lib/python3.10/site-packages/mesonbuild/minit.py",
+    "lib/python3.10/site-packages/mesonbuild/minstall.py",
+    "lib/python3.10/site-packages/mesonbuild/mintro.py",
+    "lib/python3.10/site-packages/mesonbuild/mlog.py",
+    "lib/python3.10/site-packages/mesonbuild/modules/__init__.py",
+    "lib/python3.10/site-packages/mesonbuild/modules/cmake.py",
+    "lib/python3.10/site-packages/mesonbuild/modules/cuda.py",
+    "lib/python3.10/site-packages/mesonbuild/modules/dlang.py",
+    "lib/python3.10/site-packages/mesonbuild/modules/external_project.py",
+    "lib/python3.10/site-packages/mesonbuild/modules/fs.py",
+    "lib/python3.10/site-packages/mesonbuild/modules/gnome.py",
+    "lib/python3.10/site-packages/mesonbuild/modules/hotdoc.py",
+    "lib/python3.10/site-packages/mesonbuild/modules/i18n.py",
+    "lib/python3.10/site-packages/mesonbuild/modules/icestorm.py",
+    "lib/python3.10/site-packages/mesonbuild/modules/java.py",
+    "lib/python3.10/site-packages/mesonbuild/modules/keyval.py",
+    "lib/python3.10/site-packages/mesonbuild/modules/modtest.py",
+    "lib/python3.10/site-packages/mesonbuild/modules/pkgconfig.py",
+    "lib/python3.10/site-packages/mesonbuild/modules/python.py",
+    "lib/python3.10/site-packages/mesonbuild/modules/python3.py",
+    "lib/python3.10/site-packages/mesonbuild/modules/qt.py",
+    "lib/python3.10/site-packages/mesonbuild/modules/qt4.py",
+    "lib/python3.10/site-packages/mesonbuild/modules/qt5.py",
+    "lib/python3.10/site-packages/mesonbuild/modules/qt6.py",
+    "lib/python3.10/site-packages/mesonbuild/modules/rust.py",
+    "lib/python3.10/site-packages/mesonbuild/modules/simd.py",
+    "lib/python3.10/site-packages/mesonbuild/modules/sourceset.py",
+    "lib/python3.10/site-packages/mesonbuild/modules/wayland.py",
+    "lib/python3.10/site-packages/mesonbuild/modules/windows.py",
+    "lib/python3.10/site-packages/mesonbuild/mparser.py",
+    "lib/python3.10/site-packages/mesonbuild/msetup.py",
+    "lib/python3.10/site-packages/mesonbuild/msubprojects.py",
+    "lib/python3.10/site-packages/mesonbuild/mtest.py",
+    "lib/python3.10/site-packages/mesonbuild/munstable_coredata.py",
+    "lib/python3.10/site-packages/mesonbuild/optinterpreter.py",
+    "lib/python3.10/site-packages/mesonbuild/programs.py",
+    "lib/python3.10/site-packages/mesonbuild/rewriter.py",
+    "lib/python3.10/site-packages/mesonbuild/scripts/__init__.py",
+    "lib/python3.10/site-packages/mesonbuild/scripts/clangformat.py",
+    "lib/python3.10/site-packages/mesonbuild/scripts/clangtidy.py",
+    "lib/python3.10/site-packages/mesonbuild/scripts/cleantrees.py",
+    "lib/python3.10/site-packages/mesonbuild/scripts/cmake_run_ctgt.py",
+    "lib/python3.10/site-packages/mesonbuild/scripts/cmd_or_ps.ps1",
+    "lib/python3.10/site-packages/mesonbuild/scripts/copy.py",
+    "lib/python3.10/site-packages/mesonbuild/scripts/coverage.py",
+    "lib/python3.10/site-packages/mesonbuild/scripts/delwithsuffix.py",
+    "lib/python3.10/site-packages/mesonbuild/scripts/depfixer.py",
+    "lib/python3.10/site-packages/mesonbuild/scripts/depscan.py",
+    "lib/python3.10/site-packages/mesonbuild/scripts/dirchanger.py",
+    "lib/python3.10/site-packages/mesonbuild/scripts/env2mfile.py",
+    "lib/python3.10/site-packages/mesonbuild/scripts/externalproject.py",
+    "lib/python3.10/site-packages/mesonbuild/scripts/gettext.py",
+    "lib/python3.10/site-packages/mesonbuild/scripts/gtkdochelper.py",
+    "lib/python3.10/site-packages/mesonbuild/scripts/hotdochelper.py",
+    "lib/python3.10/site-packages/mesonbuild/scripts/itstool.py",
+    "lib/python3.10/site-packages/mesonbuild/scripts/meson_exe.py",
+    "lib/python3.10/site-packages/mesonbuild/scripts/msgfmthelper.py",
+    "lib/python3.10/site-packages/mesonbuild/scripts/pycompile.py",
+    "lib/python3.10/site-packages/mesonbuild/scripts/python_info.py",
+    "lib/python3.10/site-packages/mesonbuild/scripts/regen_checker.py",
+    "lib/python3.10/site-packages/mesonbuild/scripts/run_tool.py",
+    "lib/python3.10/site-packages/mesonbuild/scripts/scanbuild.py",
+    "lib/python3.10/site-packages/mesonbuild/scripts/symbolextractor.py",
+    "lib/python3.10/site-packages/mesonbuild/scripts/tags.py",
+    "lib/python3.10/site-packages/mesonbuild/scripts/test_loaded_modules.py",
+    "lib/python3.10/site-packages/mesonbuild/scripts/uninstall.py",
+    "lib/python3.10/site-packages/mesonbuild/scripts/vcstagger.py",
+    "lib/python3.10/site-packages/mesonbuild/scripts/yasm.py",
+    "lib/python3.10/site-packages/mesonbuild/templates/__init__.py",
+    "lib/python3.10/site-packages/mesonbuild/templates/cpptemplates.py",
+    "lib/python3.10/site-packages/mesonbuild/templates/cstemplates.py",
+    "lib/python3.10/site-packages/mesonbuild/templates/ctemplates.py",
+    "lib/python3.10/site-packages/mesonbuild/templates/cudatemplates.py",
+    "lib/python3.10/site-packages/mesonbuild/templates/dlangtemplates.py",
+    "lib/python3.10/site-packages/mesonbuild/templates/fortrantemplates.py",
+    "lib/python3.10/site-packages/mesonbuild/templates/javatemplates.py",
+    "lib/python3.10/site-packages/mesonbuild/templates/mesontemplates.py",
+    "lib/python3.10/site-packages/mesonbuild/templates/objcpptemplates.py",
+    "lib/python3.10/site-packages/mesonbuild/templates/objctemplates.py",
+    "lib/python3.10/site-packages/mesonbuild/templates/rusttemplates.py",
+    "lib/python3.10/site-packages/mesonbuild/templates/samplefactory.py",
+    "lib/python3.10/site-packages/mesonbuild/templates/sampleimpl.py",
+    "lib/python3.10/site-packages/mesonbuild/templates/valatemplates.py",
+    "lib/python3.10/site-packages/mesonbuild/utils/__init__.py",
+    "lib/python3.10/site-packages/mesonbuild/utils/core.py",
+    "lib/python3.10/site-packages/mesonbuild/utils/platform.py",
+    "lib/python3.10/site-packages/mesonbuild/utils/posix.py",
+    "lib/python3.10/site-packages/mesonbuild/utils/universal.py",
+    "lib/python3.10/site-packages/mesonbuild/utils/vsenv.py",
+    "lib/python3.10/site-packages/mesonbuild/utils/win32.py",
+    "lib/python3.10/site-packages/mesonbuild/wrap/__init__.py",
+    "lib/python3.10/site-packages/mesonbuild/wrap/wrap.py",
+    "lib/python3.10/site-packages/mesonbuild/wrap/wraptool.py",
+    "lib/python3.10/site-packages/mesonbuild/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/__pycache__/_pathlib.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/__pycache__/_typing.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/__pycache__/arglist.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/ast/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/ast/__pycache__/interpreter.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/ast/__pycache__/introspection.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/ast/__pycache__/postprocess.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/ast/__pycache__/printer.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/ast/__pycache__/visitor.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/backend/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/backend/__pycache__/backends.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/backend/__pycache__/ninjabackend.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/backend/__pycache__/nonebackend.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/backend/__pycache__/vs2010backend.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/backend/__pycache__/vs2012backend.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/backend/__pycache__/vs2013backend.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/backend/__pycache__/vs2015backend.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/backend/__pycache__/vs2017backend.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/backend/__pycache__/vs2019backend.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/backend/__pycache__/vs2022backend.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/backend/__pycache__/xcodebackend.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/__pycache__/build.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/cargo/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/cargo/__pycache__/builder.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/cargo/__pycache__/cfg.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/cargo/__pycache__/interpreter.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/cargo/__pycache__/manifest.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/cargo/__pycache__/version.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/cmake/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/cmake/__pycache__/common.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/cmake/data/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/cmake/__pycache__/executor.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/cmake/__pycache__/fileapi.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/cmake/__pycache__/generator.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/cmake/__pycache__/interpreter.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/cmake/__pycache__/toolchain.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/cmake/__pycache__/traceparser.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/cmake/__pycache__/tracetargets.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/compilers/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/compilers/__pycache__/asm.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/compilers/__pycache__/c.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/compilers/__pycache__/c_function_attributes.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/compilers/__pycache__/compilers.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/compilers/__pycache__/cpp.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/compilers/__pycache__/cs.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/compilers/__pycache__/cuda.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/compilers/__pycache__/cython.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/compilers/__pycache__/d.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/compilers/__pycache__/detect.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/compilers/__pycache__/fortran.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/compilers/__pycache__/java.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/compilers/mixins/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/compilers/mixins/__pycache__/arm.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/compilers/mixins/__pycache__/ccrx.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/compilers/mixins/__pycache__/clang.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/compilers/mixins/__pycache__/clike.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/compilers/mixins/__pycache__/compcert.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/compilers/mixins/__pycache__/elbrus.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/compilers/mixins/__pycache__/emscripten.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/compilers/mixins/__pycache__/gnu.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/compilers/mixins/__pycache__/intel.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/compilers/mixins/__pycache__/islinker.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/compilers/mixins/__pycache__/metrowerks.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/compilers/mixins/__pycache__/pgi.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/compilers/mixins/__pycache__/ti.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/compilers/mixins/__pycache__/visualstudio.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/compilers/mixins/__pycache__/xc16.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/compilers/__pycache__/objc.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/compilers/__pycache__/objcpp.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/compilers/__pycache__/rust.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/compilers/__pycache__/swift.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/compilers/__pycache__/vala.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/__pycache__/coredata.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/base.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/boost.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/cmake.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/coarrays.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/configtool.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/cuda.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/data/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/detect.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/dev.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/dub.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/factory.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/framework.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/hdf5.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/misc.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/mpi.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/pkgconfig.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/platform.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/python.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/qt.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/scalapack.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/ui.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/__pycache__/depfile.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/__pycache__/envconfig.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/__pycache__/environment.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/interpreter/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/interpreter/__pycache__/compiler.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/interpreter/__pycache__/dependencyfallbacks.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/interpreter/__pycache__/interpreter.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/interpreter/__pycache__/interpreterobjects.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/interpreter/__pycache__/kwargs.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/interpreter/__pycache__/mesonmain.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/interpreter/primitives/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/interpreter/primitives/__pycache__/array.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/interpreter/primitives/__pycache__/boolean.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/interpreter/primitives/__pycache__/dict.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/interpreter/primitives/__pycache__/integer.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/interpreter/primitives/__pycache__/range.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/interpreter/primitives/__pycache__/string.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/interpreter/__pycache__/type_checking.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/interpreterbase/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/interpreterbase/__pycache__/_unholder.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/interpreterbase/__pycache__/baseobjects.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/interpreterbase/__pycache__/decorators.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/interpreterbase/__pycache__/disabler.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/interpreterbase/__pycache__/exceptions.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/interpreterbase/__pycache__/helpers.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/interpreterbase/__pycache__/interpreterbase.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/interpreterbase/__pycache__/operator.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/linkers/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/linkers/__pycache__/base.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/linkers/__pycache__/detect.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/linkers/__pycache__/linkers.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/__pycache__/mcompile.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/__pycache__/mconf.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/__pycache__/mdevenv.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/__pycache__/mdist.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/__pycache__/mesondata.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/__pycache__/mesonlib.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/__pycache__/mesonmain.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/__pycache__/minit.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/__pycache__/minstall.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/__pycache__/mintro.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/__pycache__/mlog.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/cmake.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/cuda.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/dlang.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/external_project.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/fs.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/gnome.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/hotdoc.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/i18n.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/icestorm.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/java.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/keyval.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/modtest.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/pkgconfig.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/python.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/python3.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/qt.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/qt4.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/qt5.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/qt6.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/rust.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/simd.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/sourceset.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/wayland.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/windows.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/__pycache__/mparser.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/__pycache__/msetup.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/__pycache__/msubprojects.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/__pycache__/mtest.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/__pycache__/munstable_coredata.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/__pycache__/optinterpreter.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/__pycache__/programs.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/__pycache__/rewriter.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/clangformat.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/clangtidy.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/cleantrees.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/cmake_run_ctgt.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/copy.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/coverage.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/delwithsuffix.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/depfixer.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/depscan.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/dirchanger.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/env2mfile.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/externalproject.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/gettext.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/gtkdochelper.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/hotdochelper.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/itstool.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/meson_exe.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/msgfmthelper.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/pycompile.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/python_info.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/regen_checker.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/run_tool.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/scanbuild.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/symbolextractor.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/tags.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/test_loaded_modules.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/uninstall.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/vcstagger.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/yasm.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/templates/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/templates/__pycache__/cpptemplates.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/templates/__pycache__/cstemplates.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/templates/__pycache__/ctemplates.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/templates/__pycache__/cudatemplates.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/templates/__pycache__/dlangtemplates.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/templates/__pycache__/fortrantemplates.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/templates/__pycache__/javatemplates.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/templates/__pycache__/mesontemplates.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/templates/__pycache__/objcpptemplates.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/templates/__pycache__/objctemplates.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/templates/__pycache__/rusttemplates.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/templates/__pycache__/samplefactory.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/templates/__pycache__/sampleimpl.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/templates/__pycache__/valatemplates.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/utils/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/utils/__pycache__/core.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/utils/__pycache__/platform.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/utils/__pycache__/posix.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/utils/__pycache__/universal.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/utils/__pycache__/vsenv.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/utils/__pycache__/win32.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/wrap/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/wrap/__pycache__/wrap.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonbuild/wrap/__pycache__/wraptool.cpython-310.pyc",
+    "bin/meson"
+  ],
+  "fn": "meson-1.2.1-pyhd8ed1ab_0.conda",
+  "license": "Apache-2.0",
+  "license_family": "APACHE",
+  "link": {
+    "source": "/opt/conda/pkgs/meson-1.2.1-pyhd8ed1ab_0",
+    "type": 1
+  },
+  "md5": "76e8901f84b6f566095d21a2b4ab0625",
+  "name": "meson",
+  "noarch": "python",
+  "package_tarball_full_path": "/opt/conda/pkgs/meson-1.2.1-pyhd8ed1ab_0.conda",
+  "package_type": "noarch_python",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "share/man/man1/meson.1",
+        "path_type": "hardlink",
+        "sha256": "7078c6188834762dcca6d8a78478978c45d4527f5216de6b4c7ef20c1c96a1fb",
+        "sha256_in_prefix": "7078c6188834762dcca6d8a78478978c45d4527f5216de6b4c7ef20c1c96a1fb",
+        "size_in_bytes": 5357
+      },
+      {
+        "_path": "share/polkit-1/actions/com.mesonbuild.install.policy",
+        "path_type": "hardlink",
+        "sha256": "263c29e1691b4fc8ed1dee7bc6b25e54f2377bef26571ecff4789743a45b1137",
+        "sha256_in_prefix": "263c29e1691b4fc8ed1dee7bc6b25e54f2377bef26571ecff4789743a45b1137",
+        "size_in_bytes": 896
+      },
+      {
+        "_path": "site-packages/meson-1.2.1.dist-info/COPYING",
+        "path_type": "hardlink",
+        "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "sha256_in_prefix": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "size_in_bytes": 11358
+      },
+      {
+        "_path": "site-packages/meson-1.2.1.dist-info/INSTALLER",
+        "path_type": "hardlink",
+        "sha256": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "sha256_in_prefix": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "size_in_bytes": 5
+      },
+      {
+        "_path": "site-packages/meson-1.2.1.dist-info/METADATA",
+        "path_type": "hardlink",
+        "sha256": "23355ca170b0faf87337baaf244c7b336c7ac5d377b446e1a11f3191d2842b8d",
+        "sha256_in_prefix": "23355ca170b0faf87337baaf244c7b336c7ac5d377b446e1a11f3191d2842b8d",
+        "size_in_bytes": 1712
+      },
+      {
+        "_path": "site-packages/meson-1.2.1.dist-info/RECORD",
+        "path_type": "hardlink",
+        "sha256": "d9d458773db86fb6df90095259f66d095522711d0cf72128b5f383a28fd3b926",
+        "sha256_in_prefix": "d9d458773db86fb6df90095259f66d095522711d0cf72128b5f383a28fd3b926",
+        "size_in_bytes": 35274
+      },
+      {
+        "_path": "site-packages/meson-1.2.1.dist-info/REQUESTED",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256_in_prefix": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "site-packages/meson-1.2.1.dist-info/WHEEL",
+        "path_type": "hardlink",
+        "sha256": "e6c5174a0f5ee1b8bb9532ce1dc9ba4046303b94c81754cd6d34951558dc25c7",
+        "sha256_in_prefix": "e6c5174a0f5ee1b8bb9532ce1dc9ba4046303b94c81754cd6d34951558dc25c7",
+        "size_in_bytes": 92
+      },
+      {
+        "_path": "site-packages/meson-1.2.1.dist-info/direct_url.json",
+        "path_type": "hardlink",
+        "sha256": "0b85318e1ae335f40723e99bc156129d4229819c01fdcad1f66c4acc11d93176",
+        "sha256_in_prefix": "0b85318e1ae335f40723e99bc156129d4229819c01fdcad1f66c4acc11d93176",
+        "size_in_bytes": 101
+      },
+      {
+        "_path": "site-packages/meson-1.2.1.dist-info/entry_points.txt",
+        "path_type": "hardlink",
+        "sha256": "859ed0521ea71dedf502723ac651199927ba938296299ec5052e785b20de018d",
+        "sha256_in_prefix": "859ed0521ea71dedf502723ac651199927ba938296299ec5052e785b20de018d",
+        "size_in_bytes": 52
+      },
+      {
+        "_path": "site-packages/meson-1.2.1.dist-info/top_level.txt",
+        "path_type": "hardlink",
+        "sha256": "72a640f5d33e597b8f6a6d74f9bb761619eb0ab3073cc13ad2328486172e39b0",
+        "sha256_in_prefix": "72a640f5d33e597b8f6a6d74f9bb761619eb0ab3073cc13ad2328486172e39b0",
+        "size_in_bytes": 11
+      },
+      {
+        "_path": "site-packages/mesonbuild/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256_in_prefix": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "site-packages/mesonbuild/_pathlib.py",
+        "path_type": "hardlink",
+        "sha256": "4ea8698cdee706d2544b2d991db6444745f65e55bfe9e0d2ae2d992e2363c56d",
+        "sha256_in_prefix": "4ea8698cdee706d2544b2d991db6444745f65e55bfe9e0d2ae2d992e2363c56d",
+        "size_in_bytes": 2384
+      },
+      {
+        "_path": "site-packages/mesonbuild/_typing.py",
+        "path_type": "hardlink",
+        "sha256": "e18b283cab4243316391fd9130b5223f2844fe4f1939fcad78450fcdf909c405",
+        "sha256_in_prefix": "e18b283cab4243316391fd9130b5223f2844fe4f1939fcad78450fcdf909c405",
+        "size_in_bytes": 2402
+      },
+      {
+        "_path": "site-packages/mesonbuild/arglist.py",
+        "path_type": "hardlink",
+        "sha256": "33e7bb27d3d8961d53582e3ec43360d7f159c0beb892a01ddb99504bc335501a",
+        "sha256_in_prefix": "33e7bb27d3d8961d53582e3ec43360d7f159c0beb892a01ddb99504bc335501a",
+        "size_in_bytes": 13433
+      },
+      {
+        "_path": "site-packages/mesonbuild/ast/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "1d5122bd9e143668f6939dcc7047ac06409f90cb2a67e73c6d2759a0eb401d92",
+        "sha256_in_prefix": "1d5122bd9e143668f6939dcc7047ac06409f90cb2a67e73c6d2759a0eb401d92",
+        "size_in_bytes": 1212
+      },
+      {
+        "_path": "site-packages/mesonbuild/ast/interpreter.py",
+        "path_type": "hardlink",
+        "sha256": "32f6ee52daa966f1c7effcceaa378852d89401422f0de6d5f2b5f36579248baf",
+        "sha256_in_prefix": "32f6ee52daa966f1c7effcceaa378852d89401422f0de6d5f2b5f36579248baf",
+        "size_in_bytes": 18502
+      },
+      {
+        "_path": "site-packages/mesonbuild/ast/introspection.py",
+        "path_type": "hardlink",
+        "sha256": "a87c279b9b008f47512e2216e19dc9a765532eb07b66f03ac1d57c47aae6875a",
+        "sha256_in_prefix": "a87c279b9b008f47512e2216e19dc9a765532eb07b66f03ac1d57c47aae6875a",
+        "size_in_bytes": 17195
+      },
+      {
+        "_path": "site-packages/mesonbuild/ast/postprocess.py",
+        "path_type": "hardlink",
+        "sha256": "05ca22b5590bcb45bad92c0ce2495b2e3a439165e0b4d0f079e7ef0a720a3a47",
+        "sha256_in_prefix": "05ca22b5590bcb45bad92c0ce2495b2e3a439165e0b4d0f079e7ef0a720a3a47",
+        "size_in_bytes": 3974
+      },
+      {
+        "_path": "site-packages/mesonbuild/ast/printer.py",
+        "path_type": "hardlink",
+        "sha256": "c3e0d6d55a00ac7e2ff9dc1879c8adbeb2fad8a6d6975c63b68b79057b2fffee",
+        "sha256_in_prefix": "c3e0d6d55a00ac7e2ff9dc1879c8adbeb2fad8a6d6975c63b68b79057b2fffee",
+        "size_in_bytes": 14803
+      },
+      {
+        "_path": "site-packages/mesonbuild/ast/visitor.py",
+        "path_type": "hardlink",
+        "sha256": "9a32fbe658733156791d6accc047ab6857fcc18f35f12ab7a639ff4ede07f22b",
+        "sha256_in_prefix": "9a32fbe658733156791d6accc047ab6857fcc18f35f12ab7a639ff4ede07f22b",
+        "size_in_bytes": 4981
+      },
+      {
+        "_path": "site-packages/mesonbuild/backend/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256_in_prefix": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "site-packages/mesonbuild/backend/backends.py",
+        "path_type": "hardlink",
+        "sha256": "7ca74cca59d05eb298970441987207ce0e7696e86e2f2769c5e3f599fc541531",
+        "sha256_in_prefix": "7ca74cca59d05eb298970441987207ce0e7696e86e2f2769c5e3f599fc541531",
+        "size_in_bytes": 98773
+      },
+      {
+        "_path": "site-packages/mesonbuild/backend/ninjabackend.py",
+        "path_type": "hardlink",
+        "sha256": "5a23b19316305eb63d38a48cfc29121c78c525c0b108c55a7b3179ded8f6176b",
+        "sha256_in_prefix": "5a23b19316305eb63d38a48cfc29121c78c525c0b108c55a7b3179ded8f6176b",
+        "size_in_bytes": 188364
+      },
+      {
+        "_path": "site-packages/mesonbuild/backend/nonebackend.py",
+        "path_type": "hardlink",
+        "sha256": "c3ab9a1d3f5583f0f47cfbc10bba56e1fc562a235bb2b69a1fb5289f52b86599",
+        "sha256_in_prefix": "c3ab9a1d3f5583f0f47cfbc10bba56e1fc562a235bb2b69a1fb5289f52b86599",
+        "size_in_bytes": 1487
+      },
+      {
+        "_path": "site-packages/mesonbuild/backend/vs2010backend.py",
+        "path_type": "hardlink",
+        "sha256": "5a1e4f4edeabb4bda5a0aeccc5163338ff9a28adcbbd91537e92219ab9bfdd17",
+        "sha256_in_prefix": "5a1e4f4edeabb4bda5a0aeccc5163338ff9a28adcbbd91537e92219ab9bfdd17",
+        "size_in_bytes": 123379
+      },
+      {
+        "_path": "site-packages/mesonbuild/backend/vs2012backend.py",
+        "path_type": "hardlink",
+        "sha256": "44d55bba71e4415e0607334bca183b776047efc8ac01557b1d3b1c2fcf0b6158",
+        "sha256_in_prefix": "44d55bba71e4415e0607334bca183b776047efc8ac01557b1d3b1c2fcf0b6158",
+        "size_in_bytes": 1817
+      },
+      {
+        "_path": "site-packages/mesonbuild/backend/vs2013backend.py",
+        "path_type": "hardlink",
+        "sha256": "688fa8bc97426657103b78383ecbd5b8d40dc2c3b984a56431bb2d5a42579866",
+        "sha256_in_prefix": "688fa8bc97426657103b78383ecbd5b8d40dc2c3b984a56431bb2d5a42579866",
+        "size_in_bytes": 1816
+      },
+      {
+        "_path": "site-packages/mesonbuild/backend/vs2015backend.py",
+        "path_type": "hardlink",
+        "sha256": "eaac948822a33ea0b6d48f580c5c7856ed56d94f3fdb4570ea2efa67a98d314e",
+        "sha256_in_prefix": "eaac948822a33ea0b6d48f580c5c7856ed56d94f3fdb4570ea2efa67a98d314e",
+        "size_in_bytes": 1815
+      },
+      {
+        "_path": "site-packages/mesonbuild/backend/vs2017backend.py",
+        "path_type": "hardlink",
+        "sha256": "46f2915358e047d6895294485307b1f01602f4a4313004809a1e365198b859ff",
+        "sha256_in_prefix": "46f2915358e047d6895294485307b1f01602f4a4313004809a1e365198b859ff",
+        "size_in_bytes": 2998
+      },
+      {
+        "_path": "site-packages/mesonbuild/backend/vs2019backend.py",
+        "path_type": "hardlink",
+        "sha256": "842204e78f482e0ed86ee63e14f5efd4238a611aac87a6e860a67d9d04553549",
+        "sha256_in_prefix": "842204e78f482e0ed86ee63e14f5efd4238a611aac87a6e860a67d9d04553549",
+        "size_in_bytes": 2746
+      },
+      {
+        "_path": "site-packages/mesonbuild/backend/vs2022backend.py",
+        "path_type": "hardlink",
+        "sha256": "f68778d9278f03bda52afb72204dcb93a5b8f04afb96b5b6fb2494926ff14614",
+        "sha256_in_prefix": "f68778d9278f03bda52afb72204dcb93a5b8f04afb96b5b6fb2494926ff14614",
+        "size_in_bytes": 2789
+      },
+      {
+        "_path": "site-packages/mesonbuild/backend/xcodebackend.py",
+        "path_type": "hardlink",
+        "sha256": "2517ca41549a89ac9bff86b5477123e5d1aa541adcb4eca6c26a4483e36c4a83",
+        "sha256_in_prefix": "2517ca41549a89ac9bff86b5477123e5d1aa541adcb4eca6c26a4483e36c4a83",
+        "size_in_bytes": 86555
+      },
+      {
+        "_path": "site-packages/mesonbuild/build.py",
+        "path_type": "hardlink",
+        "sha256": "84024da6988c63f11fc154018dd34114d449b29411c04fa192f9ce8dd30a5e8a",
+        "sha256_in_prefix": "84024da6988c63f11fc154018dd34114d449b29411c04fa192f9ce8dd30a5e8a",
+        "size_in_bytes": 136911
+      },
+      {
+        "_path": "site-packages/mesonbuild/cargo/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256_in_prefix": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "site-packages/mesonbuild/cargo/builder.py",
+        "path_type": "hardlink",
+        "sha256": "49cd0da55717f21ceef66d640db00a9681bd4af19a427dd17d1661f2711be47f",
+        "sha256_in_prefix": "49cd0da55717f21ceef66d640db00a9681bd4af19a427dd17d1661f2711be47f",
+        "size_in_bytes": 9115
+      },
+      {
+        "_path": "site-packages/mesonbuild/cargo/cfg.py",
+        "path_type": "hardlink",
+        "sha256": "1886f1cf9b227546c1caa7f728459eb245547813a404c624c38de3b9c3e45a7b",
+        "sha256_in_prefix": "1886f1cf9b227546c1caa7f728459eb245547813a404c624c38de3b9c3e45a7b",
+        "size_in_bytes": 7324
+      },
+      {
+        "_path": "site-packages/mesonbuild/cargo/interpreter.py",
+        "path_type": "hardlink",
+        "sha256": "0de6e6dc31f9d77ca2e8e4e7b4b734ef0f813f95d87ebe8be9c593f5b820f529",
+        "sha256_in_prefix": "0de6e6dc31f9d77ca2e8e4e7b4b734ef0f813f95d87ebe8be9c593f5b820f529",
+        "size_in_bytes": 15153
+      },
+      {
+        "_path": "site-packages/mesonbuild/cargo/manifest.py",
+        "path_type": "hardlink",
+        "sha256": "18640bd57460a842c647768dd41ffc2ec0137f99a7fde348ad80e44c7c4a4530",
+        "sha256_in_prefix": "18640bd57460a842c647768dd41ffc2ec0137f99a7fde348ad80e44c7c4a4530",
+        "size_in_bytes": 5255
+      },
+      {
+        "_path": "site-packages/mesonbuild/cargo/version.py",
+        "path_type": "hardlink",
+        "sha256": "e7a2d491e10e4f21dead3145eb802696d7856ff80403bf57745a21014924e2e5",
+        "sha256_in_prefix": "e7a2d491e10e4f21dead3145eb802696d7856ff80403bf57745a21014924e2e5",
+        "size_in_bytes": 4003
+      },
+      {
+        "_path": "site-packages/mesonbuild/cmake/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "be37bdc28986eb29047036639bd8361efc11b595e193daba4810c208a93a1933",
+        "sha256_in_prefix": "be37bdc28986eb29047036639bd8361efc11b595e193daba4810c208a93a1933",
+        "size_in_bytes": 1379
+      },
+      {
+        "_path": "site-packages/mesonbuild/cmake/common.py",
+        "path_type": "hardlink",
+        "sha256": "4e0d567fbcccb39324d7590d04c9ee951e2a67172b6bcde8cc40f85804bfd8ee",
+        "sha256_in_prefix": "4e0d567fbcccb39324d7590d04c9ee951e2a67172b6bcde8cc40f85804bfd8ee",
+        "size_in_bytes": 14591
+      },
+      {
+        "_path": "site-packages/mesonbuild/cmake/data/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256_in_prefix": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "site-packages/mesonbuild/cmake/data/preload.cmake",
+        "path_type": "hardlink",
+        "sha256": "ce8f30159aab25b92c26c58a219a427d47838bfa0739475221d6c8993b4946e5",
+        "sha256_in_prefix": "ce8f30159aab25b92c26c58a219a427d47838bfa0739475221d6c8993b4946e5",
+        "size_in_bytes": 2065
+      },
+      {
+        "_path": "site-packages/mesonbuild/cmake/executor.py",
+        "path_type": "hardlink",
+        "sha256": "ddaccecf37dc0e1e9e87ee4aa23e540c606ade9e5e5aa4c464d7085cdc25d95b",
+        "sha256_in_prefix": "ddaccecf37dc0e1e9e87ee4aa23e540c606ade9e5e5aa4c464d7085cdc25d95b",
+        "size_in_bytes": 11293
+      },
+      {
+        "_path": "site-packages/mesonbuild/cmake/fileapi.py",
+        "path_type": "hardlink",
+        "sha256": "ea348a2921bf8ea78607fb92f79bcb0587df64e2c6c439b95f02e4919868b2c2",
+        "sha256_in_prefix": "ea348a2921bf8ea78607fb92f79bcb0587df64e2c6c439b95f02e4919868b2c2",
+        "size_in_bytes": 12994
+      },
+      {
+        "_path": "site-packages/mesonbuild/cmake/generator.py",
+        "path_type": "hardlink",
+        "sha256": "1e5e37a474d38b7e398475d7bde4167be3a78ac58fa263aa70f3d13a2f668508",
+        "sha256_in_prefix": "1e5e37a474d38b7e398475d7bde4167be3a78ac58fa263aa70f3d13a2f668508",
+        "size_in_bytes": 6646
+      },
+      {
+        "_path": "site-packages/mesonbuild/cmake/interpreter.py",
+        "path_type": "hardlink",
+        "sha256": "49ceaa86632b1b3090ac58e05c6feeed35e59ee655133a667e6e5dd6f23eb0da",
+        "sha256_in_prefix": "49ceaa86632b1b3090ac58e05c6feeed35e59ee655133a667e6e5dd6f23eb0da",
+        "size_in_bytes": 56525
+      },
+      {
+        "_path": "site-packages/mesonbuild/cmake/toolchain.py",
+        "path_type": "hardlink",
+        "sha256": "4b9105a0695f3fb9e49621a3aba5fb4778fa224df3b94f814ae5fdb4a2b3e523",
+        "sha256_in_prefix": "4b9105a0695f3fb9e49621a3aba5fb4778fa224df3b94f814ae5fdb4a2b3e523",
+        "size_in_bytes": 10115
+      },
+      {
+        "_path": "site-packages/mesonbuild/cmake/traceparser.py",
+        "path_type": "hardlink",
+        "sha256": "0418358648e8cf1c0defade1eaaef3d145006046c9536818dbaf7cb78286c12c",
+        "sha256_in_prefix": "0418358648e8cf1c0defade1eaaef3d145006046c9536818dbaf7cb78286c12c",
+        "size_in_bytes": 34115
+      },
+      {
+        "_path": "site-packages/mesonbuild/cmake/tracetargets.py",
+        "path_type": "hardlink",
+        "sha256": "fa2fca2228e6894bc1890656cc037c92a66ef30b78f0f119763cd8c09795185b",
+        "sha256_in_prefix": "fa2fca2228e6894bc1890656cc037c92a66ef30b78f0f119763cd8c09795185b",
+        "size_in_bytes": 5000
+      },
+      {
+        "_path": "site-packages/mesonbuild/compilers/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "0ad423ab120b9822181f1d4aff5b8fa74488e7821996273b626aedbb76ad3c5c",
+        "sha256_in_prefix": "0ad423ab120b9822181f1d4aff5b8fa74488e7821996273b626aedbb76ad3c5c",
+        "size_in_bytes": 2420
+      },
+      {
+        "_path": "site-packages/mesonbuild/compilers/asm.py",
+        "path_type": "hardlink",
+        "sha256": "07c1a67fbbf9bf0f3a0ba92b915d20fe90549b674b4d5f71ece6939cbb992aa8",
+        "sha256_in_prefix": "07c1a67fbbf9bf0f3a0ba92b915d20fe90549b674b4d5f71ece6939cbb992aa8",
+        "size_in_bytes": 11967
+      },
+      {
+        "_path": "site-packages/mesonbuild/compilers/c.py",
+        "path_type": "hardlink",
+        "sha256": "9c6f144c68ff66f0413e59c033208a46ed7d1af456de5e386fee1b4318e2b031",
+        "sha256_in_prefix": "9c6f144c68ff66f0413e59c033208a46ed7d1af456de5e386fee1b4318e2b031",
+        "size_in_bytes": 35225
+      },
+      {
+        "_path": "site-packages/mesonbuild/compilers/c_function_attributes.py",
+        "path_type": "hardlink",
+        "sha256": "30fc105a4521a9be33caefdb5ec33edabcc0f5e2c8914e300d97aff82b84bebd",
+        "sha256_in_prefix": "30fc105a4521a9be33caefdb5ec33edabcc0f5e2c8914e300d97aff82b84bebd",
+        "size_in_bytes": 5400
+      },
+      {
+        "_path": "site-packages/mesonbuild/compilers/compilers.py",
+        "path_type": "hardlink",
+        "sha256": "ec09c2696780d54c70e4a4472f56702bfcc9653c87d5a23e34f44a9a2f1cac55",
+        "sha256_in_prefix": "ec09c2696780d54c70e4a4472f56702bfcc9653c87d5a23e34f44a9a2f1cac55",
+        "size_in_bytes": 60137
+      },
+      {
+        "_path": "site-packages/mesonbuild/compilers/cpp.py",
+        "path_type": "hardlink",
+        "sha256": "fa17b62066d445e522601b70143e8a621d3ed4f3449f6c1ec79045997c6dfcb6",
+        "sha256_in_prefix": "fa17b62066d445e522601b70143e8a621d3ed4f3449f6c1ec79045997c6dfcb6",
+        "size_in_bytes": 42995
+      },
+      {
+        "_path": "site-packages/mesonbuild/compilers/cs.py",
+        "path_type": "hardlink",
+        "sha256": "c8a09b82638c692c95bf235ffbfe05a3088da6929231d4c48f7239fc129e1cf7",
+        "sha256_in_prefix": "c8a09b82638c692c95bf235ffbfe05a3088da6929231d4c48f7239fc129e1cf7",
+        "size_in_bytes": 5244
+      },
+      {
+        "_path": "site-packages/mesonbuild/compilers/cuda.py",
+        "path_type": "hardlink",
+        "sha256": "9b74ed3f056df2d09e2ea1aa113bfd226b3d956b5d061be766f319d71e426b91",
+        "sha256_in_prefix": "9b74ed3f056df2d09e2ea1aa113bfd226b3d956b5d061be766f319d71e426b91",
+        "size_in_bytes": 41961
+      },
+      {
+        "_path": "site-packages/mesonbuild/compilers/cython.py",
+        "path_type": "hardlink",
+        "sha256": "01e1ce6abf463e45c38e07709fa58280fc8269a56fbf414d1f713241b7ecc101",
+        "sha256_in_prefix": "01e1ce6abf463e45c38e07709fa58280fc8269a56fbf414d1f713241b7ecc101",
+        "size_in_bytes": 3226
+      },
+      {
+        "_path": "site-packages/mesonbuild/compilers/d.py",
+        "path_type": "hardlink",
+        "sha256": "1c027e7717615c78dbe74f645b6930c452707727eb314e0746c7f3e1873d460b",
+        "sha256_in_prefix": "1c027e7717615c78dbe74f645b6930c452707727eb314e0746c7f3e1873d460b",
+        "size_in_bytes": 42899
+      },
+      {
+        "_path": "site-packages/mesonbuild/compilers/detect.py",
+        "path_type": "hardlink",
+        "sha256": "2ebb4dfe76554af2882c8def94a61f018074efa367b267029bb214911455230b",
+        "sha256_in_prefix": "2ebb4dfe76554af2882c8def94a61f018074efa367b267029bb214911455230b",
+        "size_in_bytes": 65877
+      },
+      {
+        "_path": "site-packages/mesonbuild/compilers/fortran.py",
+        "path_type": "hardlink",
+        "sha256": "e6ba8de9eccbbd7d89a91b01b0442ba598cc46d8fe60963fa33377bcbea503ff",
+        "sha256_in_prefix": "e6ba8de9eccbbd7d89a91b01b0442ba598cc46d8fe60963fa33377bcbea503ff",
+        "size_in_bytes": 23786
+      },
+      {
+        "_path": "site-packages/mesonbuild/compilers/java.py",
+        "path_type": "hardlink",
+        "sha256": "7ac0f1150df8fa567b8677d500725c7af5a954c48bb54dcd2db41b6614cccbd5",
+        "sha256_in_prefix": "7ac0f1150df8fa567b8677d500725c7af5a954c48bb54dcd2db41b6614cccbd5",
+        "size_in_bytes": 4678
+      },
+      {
+        "_path": "site-packages/mesonbuild/compilers/mixins/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256_in_prefix": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "site-packages/mesonbuild/compilers/mixins/arm.py",
+        "path_type": "hardlink",
+        "sha256": "a50e2a9a9a1732171033f3aa14227c18e08fb6e9ec5b5a4d11f5b97b33b9c945",
+        "sha256_in_prefix": "a50e2a9a9a1732171033f3aa14227c18e08fb6e9ec5b5a4d11f5b97b33b9c945",
+        "size_in_bytes": 7366
+      },
+      {
+        "_path": "site-packages/mesonbuild/compilers/mixins/ccrx.py",
+        "path_type": "hardlink",
+        "sha256": "aac98bd386a6d1e036cc320d110871f3529ce1eddbb0d1882d170ecfababaf80",
+        "sha256_in_prefix": "aac98bd386a6d1e036cc320d110871f3529ce1eddbb0d1882d170ecfababaf80",
+        "size_in_bytes": 4452
+      },
+      {
+        "_path": "site-packages/mesonbuild/compilers/mixins/clang.py",
+        "path_type": "hardlink",
+        "sha256": "984b5f4e025da60c96e6fef0fd9284e5998d0a33e524bef5730f8b98c25063b8",
+        "sha256_in_prefix": "984b5f4e025da60c96e6fef0fd9284e5998d0a33e524bef5730f8b98c25063b8",
+        "size_in_bytes": 8205
+      },
+      {
+        "_path": "site-packages/mesonbuild/compilers/mixins/clike.py",
+        "path_type": "hardlink",
+        "sha256": "aa25e7bb16c85c7ee886817057e2f3e8d23e66e9082c46fb29a3756981c92b9d",
+        "sha256_in_prefix": "aa25e7bb16c85c7ee886817057e2f3e8d23e66e9082c46fb29a3756981c92b9d",
+        "size_in_bytes": 62733
+      },
+      {
+        "_path": "site-packages/mesonbuild/compilers/mixins/compcert.py",
+        "path_type": "hardlink",
+        "sha256": "20ae42f44b5885f12cc0fd4ae2c43b83c8631c5e856adf24d81dfcb8164ffe91",
+        "sha256_in_prefix": "20ae42f44b5885f12cc0fd4ae2c43b83c8631c5e856adf24d81dfcb8164ffe91",
+        "size_in_bytes": 4524
+      },
+      {
+        "_path": "site-packages/mesonbuild/compilers/mixins/elbrus.py",
+        "path_type": "hardlink",
+        "sha256": "4938d72f47685605dbab8e84c5795d1ad6a1f28949c2c837a9b0b83758be2797",
+        "sha256_in_prefix": "4938d72f47685605dbab8e84c5795d1ad6a1f28949c2c837a9b0b83758be2797",
+        "size_in_bytes": 4367
+      },
+      {
+        "_path": "site-packages/mesonbuild/compilers/mixins/emscripten.py",
+        "path_type": "hardlink",
+        "sha256": "64d8a20c36ebe62371521cf60804fc423b9260ed879d62a34d2b9da1cc2be224",
+        "sha256_in_prefix": "64d8a20c36ebe62371521cf60804fc423b9260ed879d62a34d2b9da1cc2be224",
+        "size_in_bytes": 4082
+      },
+      {
+        "_path": "site-packages/mesonbuild/compilers/mixins/gnu.py",
+        "path_type": "hardlink",
+        "sha256": "36a71afb89ab38a6555ac7aaccb11e6ad82d33e094c9650c857d1b7e0349706a",
+        "sha256_in_prefix": "36a71afb89ab38a6555ac7aaccb11e6ad82d33e094c9650c857d1b7e0349706a",
+        "size_in_bytes": 21504
+      },
+      {
+        "_path": "site-packages/mesonbuild/compilers/mixins/intel.py",
+        "path_type": "hardlink",
+        "sha256": "f1a358b615bf3e6f8529ee7fa3caf479409526501f02a052e05b5a1d087ea0ad",
+        "sha256_in_prefix": "f1a358b615bf3e6f8529ee7fa3caf479409526501f02a052e05b5a1d087ea0ad",
+        "size_in_bytes": 7047
+      },
+      {
+        "_path": "site-packages/mesonbuild/compilers/mixins/islinker.py",
+        "path_type": "hardlink",
+        "sha256": "a371cf5ed961741293fe3e4f710029da722b64f2aa353c85f072896bf99efef8",
+        "sha256_in_prefix": "a371cf5ed961741293fe3e4f710029da722b64f2aa353c85f072896bf99efef8",
+        "size_in_bytes": 4748
+      },
+      {
+        "_path": "site-packages/mesonbuild/compilers/mixins/metrowerks.py",
+        "path_type": "hardlink",
+        "sha256": "4911eb3f7497006c3f216e55ebccdfbc37bf78cdf0b30bf04dc83c65d2dc430a",
+        "sha256_in_prefix": "4911eb3f7497006c3f216e55ebccdfbc37bf78cdf0b30bf04dc83c65d2dc430a",
+        "size_in_bytes": 9764
+      },
+      {
+        "_path": "site-packages/mesonbuild/compilers/mixins/pgi.py",
+        "path_type": "hardlink",
+        "sha256": "a422d7cf53bcecb10175fce7ad680ac7e3718779e057e1980bf569cd411e5754",
+        "sha256_in_prefix": "a422d7cf53bcecb10175fce7ad680ac7e3718779e057e1980bf569cd411e5754",
+        "size_in_bytes": 3744
+      },
+      {
+        "_path": "site-packages/mesonbuild/compilers/mixins/ti.py",
+        "path_type": "hardlink",
+        "sha256": "9a45f71df8274a6ef0d6ea701b17415ff2451a793dd69d9c64f862f5e1a2b151",
+        "sha256_in_prefix": "9a45f71df8274a6ef0d6ea701b17415ff2451a793dd69d9c64f862f5e1a2b151",
+        "size_in_bytes": 5010
+      },
+      {
+        "_path": "site-packages/mesonbuild/compilers/mixins/visualstudio.py",
+        "path_type": "hardlink",
+        "sha256": "f94cb536326f79d864b191431a773a46ca8320980e117a2dd32ce4e90b92d2b5",
+        "sha256_in_prefix": "f94cb536326f79d864b191431a773a46ca8320980e117a2dd32ce4e90b92d2b5",
+        "size_in_bytes": 19094
+      },
+      {
+        "_path": "site-packages/mesonbuild/compilers/mixins/xc16.py",
+        "path_type": "hardlink",
+        "sha256": "6d1efcd76fa24998fc707d8e7e20286aea76e1fc9faa3914af4d1d6616950367",
+        "sha256_in_prefix": "6d1efcd76fa24998fc707d8e7e20286aea76e1fc9faa3914af4d1d6616950367",
+        "size_in_bytes": 4302
+      },
+      {
+        "_path": "site-packages/mesonbuild/compilers/objc.py",
+        "path_type": "hardlink",
+        "sha256": "4450982376bf30a50ad3d4816fab402ba6b4f8335f6cdd284f32f5caa48621be",
+        "sha256_in_prefix": "4450982376bf30a50ad3d4816fab402ba6b4f8335f6cdd284f32f5caa48621be",
+        "size_in_bytes": 5207
+      },
+      {
+        "_path": "site-packages/mesonbuild/compilers/objcpp.py",
+        "path_type": "hardlink",
+        "sha256": "6a4092bf0287759e67bc4f4bd6126b2f8e3cc7c14f8ce414ca44c295d6585296",
+        "sha256_in_prefix": "6a4092bf0287759e67bc4f4bd6126b2f8e3cc7c14f8ce414ca44c295d6585296",
+        "size_in_bytes": 5272
+      },
+      {
+        "_path": "site-packages/mesonbuild/compilers/rust.py",
+        "path_type": "hardlink",
+        "sha256": "3f626c3ef946878874bd4e4e3ad4864242985db02b250cf0e8172573a93c9d72",
+        "sha256_in_prefix": "3f626c3ef946878874bd4e4e3ad4864242985db02b250cf0e8172573a93c9d72",
+        "size_in_bytes": 9270
+      },
+      {
+        "_path": "site-packages/mesonbuild/compilers/swift.py",
+        "path_type": "hardlink",
+        "sha256": "8ec69df8f99c0ccfd5db29fc3061c9f225b607908ae3036e380314adea8fd597",
+        "sha256_in_prefix": "8ec69df8f99c0ccfd5db29fc3061c9f225b607908ae3036e380314adea8fd597",
+        "size_in_bytes": 4918
+      },
+      {
+        "_path": "site-packages/mesonbuild/compilers/vala.py",
+        "path_type": "hardlink",
+        "sha256": "408d33ea9e6c1a215b20ca1937f9e74ef4c911b376c7609624d5d0d609c23adb",
+        "sha256_in_prefix": "408d33ea9e6c1a215b20ca1937f9e74ef4c911b376c7609624d5d0d609c23adb",
+        "size_in_bytes": 5566
+      },
+      {
+        "_path": "site-packages/mesonbuild/coredata.py",
+        "path_type": "hardlink",
+        "sha256": "a028c06535b2eed4c756e08fdff98e49b67e38007a7aaa2eae75605e214accbd",
+        "sha256_in_prefix": "a028c06535b2eed4c756e08fdff98e49b67e38007a7aaa2eae75605e214accbd",
+        "size_in_bytes": 59341
+      },
+      {
+        "_path": "site-packages/mesonbuild/dependencies/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "7570484b85b2992116d5e6bd092b38cb9dd17d0bb0c7fcaca492477214339212",
+        "sha256_in_prefix": "7570484b85b2992116d5e6bd092b38cb9dd17d0bb0c7fcaca492477214339212",
+        "size_in_bytes": 8716
+      },
+      {
+        "_path": "site-packages/mesonbuild/dependencies/base.py",
+        "path_type": "hardlink",
+        "sha256": "3846ba743966426f65c523d4cb1c3b685b688bd062668f3d2270ea2ae57c57ef",
+        "sha256_in_prefix": "3846ba743966426f65c523d4cb1c3b685b688bd062668f3d2270ea2ae57c57ef",
+        "size_in_bytes": 28612
+      },
+      {
+        "_path": "site-packages/mesonbuild/dependencies/boost.py",
+        "path_type": "hardlink",
+        "sha256": "1dd28b6ffd98c837c9e13e47beb2d2567fdf9f9fb34cea8f848126effddebcb2",
+        "sha256_in_prefix": "1dd28b6ffd98c837c9e13e47beb2d2567fdf9f9fb34cea8f848126effddebcb2",
+        "size_in_bytes": 39667
+      },
+      {
+        "_path": "site-packages/mesonbuild/dependencies/cmake.py",
+        "path_type": "hardlink",
+        "sha256": "aa9531ebaea402202b0cb1908e6392647655cb4990ccf0c2336a9322541b2968",
+        "sha256_in_prefix": "aa9531ebaea402202b0cb1908e6392647655cb4990ccf0c2336a9322541b2968",
+        "size_in_bytes": 29472
+      },
+      {
+        "_path": "site-packages/mesonbuild/dependencies/coarrays.py",
+        "path_type": "hardlink",
+        "sha256": "365a10c84a16c83cfae96b6d594e8fbf753e1bb71dd1e9eb25e57a16a1ef4d5c",
+        "sha256_in_prefix": "365a10c84a16c83cfae96b6d594e8fbf753e1bb71dd1e9eb25e57a16a1ef4d5c",
+        "size_in_bytes": 3664
+      },
+      {
+        "_path": "site-packages/mesonbuild/dependencies/configtool.py",
+        "path_type": "hardlink",
+        "sha256": "b7d943c86d1cef2e7a155b2ede96262711413cc1dcf3a8fbb5031b43f87cd5b6",
+        "sha256_in_prefix": "b7d943c86d1cef2e7a155b2ede96262711413cc1dcf3a8fbb5031b43f87cd5b6",
+        "size_in_bytes": 8191
+      },
+      {
+        "_path": "site-packages/mesonbuild/dependencies/cuda.py",
+        "path_type": "hardlink",
+        "sha256": "b1c4677af8f09be8e6530812f7e3646fa41754c0ebf50c55da704a237a0c54c5",
+        "sha256_in_prefix": "b1c4677af8f09be8e6530812f7e3646fa41754c0ebf50c55da704a237a0c54c5",
+        "size_in_bytes": 13442
+      },
+      {
+        "_path": "site-packages/mesonbuild/dependencies/data/CMakeLists.txt",
+        "path_type": "hardlink",
+        "sha256": "d829ec83b98397689f25f02ea9213f24f374b618fdfb3e7d9e23d5d7d55cd33f",
+        "sha256_in_prefix": "d829ec83b98397689f25f02ea9213f24f374b618fdfb3e7d9e23d5d7d55cd33f",
+        "size_in_bytes": 3033
+      },
+      {
+        "_path": "site-packages/mesonbuild/dependencies/data/CMakeListsLLVM.txt",
+        "path_type": "hardlink",
+        "sha256": "c5e5d3ece77b5e5aa447f950d51266fed168d2f5624ae34e90ab38e84ee31348",
+        "sha256_in_prefix": "c5e5d3ece77b5e5aa447f950d51266fed168d2f5624ae34e90ab38e84ee31348",
+        "size_in_bytes": 6178
+      },
+      {
+        "_path": "site-packages/mesonbuild/dependencies/data/CMakePathInfo.txt",
+        "path_type": "hardlink",
+        "sha256": "90da8b443982d9c87139b7dc84228eb58cab4315764949637208f25e2bda7db2",
+        "sha256_in_prefix": "90da8b443982d9c87139b7dc84228eb58cab4315764949637208f25e2bda7db2",
+        "size_in_bytes": 1170
+      },
+      {
+        "_path": "site-packages/mesonbuild/dependencies/data/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256_in_prefix": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "site-packages/mesonbuild/dependencies/detect.py",
+        "path_type": "hardlink",
+        "sha256": "de10ad1a23743d1d8896981e17f4ee2eb51bbba7ec344d54c4f77453d688d9dd",
+        "sha256_in_prefix": "de10ad1a23743d1d8896981e17f4ee2eb51bbba7ec344d54c4f77453d688d9dd",
+        "size_in_bytes": 9770
+      },
+      {
+        "_path": "site-packages/mesonbuild/dependencies/dev.py",
+        "path_type": "hardlink",
+        "sha256": "746deb167ad23ba7ec1f6d3fd605195c3f0d431f859a29c187ba8987944fbdd4",
+        "sha256_in_prefix": "746deb167ad23ba7ec1f6d3fd605195c3f0d431f859a29c187ba8987944fbdd4",
+        "size_in_bytes": 30147
+      },
+      {
+        "_path": "site-packages/mesonbuild/dependencies/dub.py",
+        "path_type": "hardlink",
+        "sha256": "0754a2ba049d3185f28b5f4d3c0b16f264b754ad08e79b537ff821a059836e2d",
+        "sha256_in_prefix": "0754a2ba049d3185f28b5f4d3c0b16f264b754ad08e79b537ff821a059836e2d",
+        "size_in_bytes": 18005
+      },
+      {
+        "_path": "site-packages/mesonbuild/dependencies/factory.py",
+        "path_type": "hardlink",
+        "sha256": "560d4aece3b7f8bb095fe7ddbe6d832753362e6d83a22506446191c2726ba6a7",
+        "sha256_in_prefix": "560d4aece3b7f8bb095fe7ddbe6d832753362e6d83a22506446191c2726ba6a7",
+        "size_in_bytes": 7008
+      },
+      {
+        "_path": "site-packages/mesonbuild/dependencies/framework.py",
+        "path_type": "hardlink",
+        "sha256": "2e6ee66a1323ae1969dd80953b29b0450d5cf98dd3bcacb9bb48b466af179d21",
+        "sha256_in_prefix": "2e6ee66a1323ae1969dd80953b29b0450d5cf98dd3bcacb9bb48b466af179d21",
+        "size_in_bytes": 5560
+      },
+      {
+        "_path": "site-packages/mesonbuild/dependencies/hdf5.py",
+        "path_type": "hardlink",
+        "sha256": "eab10d4dcb79429e98e8bdf0e59025b59c4273aa9b708e02c67fc72ecc799693",
+        "sha256_in_prefix": "eab10d4dcb79429e98e8bdf0e59025b59c4273aa9b708e02c67fc72ecc799693",
+        "size_in_bytes": 7684
+      },
+      {
+        "_path": "site-packages/mesonbuild/dependencies/misc.py",
+        "path_type": "hardlink",
+        "sha256": "6101b61ce0a1352b543081a3a9c1c50dcba4b45ae986acf519e602c6c0d5f7f9",
+        "sha256_in_prefix": "6101b61ce0a1352b543081a3a9c1c50dcba4b45ae986acf519e602c6c0d5f7f9",
+        "size_in_bytes": 25577
+      },
+      {
+        "_path": "site-packages/mesonbuild/dependencies/mpi.py",
+        "path_type": "hardlink",
+        "sha256": "608b0f582dff82e9579b67a2b0b25beb07f8ed5a6289f5346702c316dfc1845b",
+        "sha256_in_prefix": "608b0f582dff82e9579b67a2b0b25beb07f8ed5a6289f5346702c316dfc1845b",
+        "size_in_bytes": 8951
+      },
+      {
+        "_path": "site-packages/mesonbuild/dependencies/pkgconfig.py",
+        "path_type": "hardlink",
+        "sha256": "a78b8bc7d3d46a8b55130615f419e69d1ca8590e2b16a9bd3bf8dd70f84bf56a",
+        "sha256_in_prefix": "a78b8bc7d3d46a8b55130615f419e69d1ca8590e2b16a9bd3bf8dd70f84bf56a",
+        "size_in_bytes": 23859
+      },
+      {
+        "_path": "site-packages/mesonbuild/dependencies/platform.py",
+        "path_type": "hardlink",
+        "sha256": "9c1d666041ca282dbb971989f4d0c3bfa1abb3757969ef6e0442fbb3dd2a758e",
+        "sha256_in_prefix": "9c1d666041ca282dbb971989f4d0c3bfa1abb3757969ef6e0442fbb3dd2a758e",
+        "size_in_bytes": 2377
+      },
+      {
+        "_path": "site-packages/mesonbuild/dependencies/python.py",
+        "path_type": "hardlink",
+        "sha256": "084d1df4ace506bfd51ef79420c1226b986fd2a833c18f3f5555b944c77d39d6",
+        "sha256_in_prefix": "084d1df4ace506bfd51ef79420c1226b986fd2a833c18f3f5555b944c77d39d6",
+        "size_in_bytes": 18436
+      },
+      {
+        "_path": "site-packages/mesonbuild/dependencies/qt.py",
+        "path_type": "hardlink",
+        "sha256": "fb5057c32193a8c4c41c1d4b999ea294a79b17f9d75bd2372617f1a107cf5b9b",
+        "sha256_in_prefix": "fb5057c32193a8c4c41c1d4b999ea294a79b17f9d75bd2372617f1a107cf5b9b",
+        "size_in_bytes": 19983
+      },
+      {
+        "_path": "site-packages/mesonbuild/dependencies/scalapack.py",
+        "path_type": "hardlink",
+        "sha256": "3001bc56ba23041576fd231387238e6111517d400e861a9106a984e01d3add3c",
+        "sha256_in_prefix": "3001bc56ba23041576fd231387238e6111517d400e861a9106a984e01d3add3c",
+        "size_in_bytes": 6170
+      },
+      {
+        "_path": "site-packages/mesonbuild/dependencies/ui.py",
+        "path_type": "hardlink",
+        "sha256": "ded46e8af75273d6790c92492ac95114a23294965928485f5a530f3defa0c382",
+        "sha256_in_prefix": "ded46e8af75273d6790c92492ac95114a23294965928485f5a530f3defa0c382",
+        "size_in_bytes": 10939
+      },
+      {
+        "_path": "site-packages/mesonbuild/depfile.py",
+        "path_type": "hardlink",
+        "sha256": "2cdbb7ac7b126bd7d7b8f9ae8b8d755ea005b5fe8c8a7fc8ed8f2f1ee5b70316",
+        "sha256_in_prefix": "2cdbb7ac7b126bd7d7b8f9ae8b8d755ea005b5fe8c8a7fc8ed8f2f1ee5b70316",
+        "size_in_bytes": 2885
+      },
+      {
+        "_path": "site-packages/mesonbuild/envconfig.py",
+        "path_type": "hardlink",
+        "sha256": "1a1c95ada6ff240fecd880bf524a6a6b657547c2513e89eb374c48c5104d3fc0",
+        "sha256_in_prefix": "1a1c95ada6ff240fecd880bf524a6a6b657547c2513e89eb374c48c5104d3fc0",
+        "size_in_bytes": 14770
+      },
+      {
+        "_path": "site-packages/mesonbuild/environment.py",
+        "path_type": "hardlink",
+        "sha256": "d651345ad86db54c5d45564d0daa28781a8e2a70eb53529b1eb89c4c31bcd1d2",
+        "sha256_in_prefix": "d651345ad86db54c5d45564d0daa28781a8e2a70eb53529b1eb89c4c31bcd1d2",
+        "size_in_bytes": 39386
+      },
+      {
+        "_path": "site-packages/mesonbuild/interpreter/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "dd1f42edcb1940f6128a71e4d8533cdc852a121b45bc04e3a71ed0e5126701bd",
+        "sha256_in_prefix": "dd1f42edcb1940f6128a71e4d8533cdc852a121b45bc04e3a71ed0e5126701bd",
+        "size_in_bytes": 1810
+      },
+      {
+        "_path": "site-packages/mesonbuild/interpreter/compiler.py",
+        "path_type": "hardlink",
+        "sha256": "2d5e6d23a812fa1bbff15b459329077c15b676014db94603533726c2176d67f9",
+        "sha256_in_prefix": "2d5e6d23a812fa1bbff15b459329077c15b676014db94603533726c2176d67f9",
+        "size_in_bytes": 39379
+      },
+      {
+        "_path": "site-packages/mesonbuild/interpreter/dependencyfallbacks.py",
+        "path_type": "hardlink",
+        "sha256": "623b3ef3ece9e70ef2e7210be2cf49fc11e4563d89e2dd6a146450900507e8ee",
+        "sha256_in_prefix": "623b3ef3ece9e70ef2e7210be2cf49fc11e4563d89e2dd6a146450900507e8ee",
+        "size_in_bytes": 19624
+      },
+      {
+        "_path": "site-packages/mesonbuild/interpreter/interpreter.py",
+        "path_type": "hardlink",
+        "sha256": "cf448172611927377bd99aa6c61182413dd0931c5560ca6b93e5dfe9c99b7503",
+        "sha256_in_prefix": "cf448172611927377bd99aa6c61182413dd0931c5560ca6b93e5dfe9c99b7503",
+        "size_in_bytes": 172216
+      },
+      {
+        "_path": "site-packages/mesonbuild/interpreter/interpreterobjects.py",
+        "path_type": "hardlink",
+        "sha256": "bb645e447ea309395e0d79b116d9d2cea16af8dc96aa746e0c24032b9c0f2a7a",
+        "sha256_in_prefix": "bb645e447ea309395e0d79b116d9d2cea16af8dc96aa746e0c24032b9c0f2a7a",
+        "size_in_bytes": 45366
+      },
+      {
+        "_path": "site-packages/mesonbuild/interpreter/kwargs.py",
+        "path_type": "hardlink",
+        "sha256": "b2368a5641d7400804ae8ae2f492bde77f3196695bf2a5b6b0a20aab88019d03",
+        "sha256_in_prefix": "b2368a5641d7400804ae8ae2f492bde77f3196695bf2a5b6b0a20aab88019d03",
+        "size_in_bytes": 7589
+      },
+      {
+        "_path": "site-packages/mesonbuild/interpreter/mesonmain.py",
+        "path_type": "hardlink",
+        "sha256": "c4cbf2c14b870e0cb4728f13feb6e4df9308176337d385ae44f9f668bf9fcfe1",
+        "sha256_in_prefix": "c4cbf2c14b870e0cb4728f13feb6e4df9308176337d385ae44f9f668bf9fcfe1",
+        "size_in_bytes": 22901
+      },
+      {
+        "_path": "site-packages/mesonbuild/interpreter/primitives/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "94a4e6d070ffb92711b8a12b80602d0c24d3d1ddff16b6b7c483aa12cd0165e5",
+        "sha256_in_prefix": "94a4e6d070ffb92711b8a12b80602d0c24d3d1ddff16b6b7c483aa12cd0165e5",
+        "size_in_bytes": 743
+      },
+      {
+        "_path": "site-packages/mesonbuild/interpreter/primitives/array.py",
+        "path_type": "hardlink",
+        "sha256": "f6a24bd91501e66acc4232e90e65587a1eb578913fa2db58ef07113d2f2463db",
+        "sha256_in_prefix": "f6a24bd91501e66acc4232e90e65587a1eb578913fa2db58ef07113d2f2463db",
+        "size_in_bytes": 3769
+      },
+      {
+        "_path": "site-packages/mesonbuild/interpreter/primitives/boolean.py",
+        "path_type": "hardlink",
+        "sha256": "ce9e92db758be10db23fae0bda41e7af002ada508f14ed6c93812139b9c88fe8",
+        "sha256_in_prefix": "ce9e92db758be10db23fae0bda41e7af002ada508f14ed6c93812139b9c88fe8",
+        "size_in_bytes": 1871
+      },
+      {
+        "_path": "site-packages/mesonbuild/interpreter/primitives/dict.py",
+        "path_type": "hardlink",
+        "sha256": "d4fa92d908bf997958d5435e8c5fac1753396aea16f8cf4087addf59326ba1cf",
+        "sha256_in_prefix": "d4fa92d908bf997958d5435e8c5fac1753396aea16f8cf4087addf59326ba1cf",
+        "size_in_bytes": 2820
+      },
+      {
+        "_path": "site-packages/mesonbuild/interpreter/primitives/integer.py",
+        "path_type": "hardlink",
+        "sha256": "e3db1c9fdee2b436fea6fb25a923ef215e3ac82daa9f82a8e064c71d1af1c5e6",
+        "sha256_in_prefix": "e3db1c9fdee2b436fea6fb25a923ef215e3ac82daa9f82a8e064c71d1af1c5e6",
+        "size_in_bytes": 3213
+      },
+      {
+        "_path": "site-packages/mesonbuild/interpreter/primitives/range.py",
+        "path_type": "hardlink",
+        "sha256": "d6d7e6151b8c94f8e31ed0d460e7a868511ca08773ddc0f5cc19c8f9de3c5ded",
+        "sha256_in_prefix": "d6d7e6151b8c94f8e31ed0d460e7a868511ca08773ddc0f5cc19c8f9de3c5ded",
+        "size_in_bytes": 1063
+      },
+      {
+        "_path": "site-packages/mesonbuild/interpreter/primitives/string.py",
+        "path_type": "hardlink",
+        "sha256": "db71ca5825d5a2baca8ddf1505c9920ea14446e8e61fc105f842312270f59a24",
+        "sha256_in_prefix": "db71ca5825d5a2baca8ddf1505c9920ea14446e8e61fc105f842312270f59a24",
+        "size_in_bytes": 8882
+      },
+      {
+        "_path": "site-packages/mesonbuild/interpreter/type_checking.py",
+        "path_type": "hardlink",
+        "sha256": "98636ba125a65401806e0079fbcd054543198b785554b44e93defef179b5f018",
+        "sha256_in_prefix": "98636ba125a65401806e0079fbcd054543198b785554b44e93defef179b5f018",
+        "size_in_bytes": 18551
+      },
+      {
+        "_path": "site-packages/mesonbuild/interpreterbase/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "42ac5877006ccb42c81d50944cacf02697a6c5ae97aa32389380f7964057dc53",
+        "sha256_in_prefix": "42ac5877006ccb42c81d50944cacf02697a6c5ae97aa32389380f7964057dc53",
+        "size_in_bytes": 2990
+      },
+      {
+        "_path": "site-packages/mesonbuild/interpreterbase/_unholder.py",
+        "path_type": "hardlink",
+        "sha256": "03cf3fa959af38199dfc14f3dfa2f214449bc918087581aa3775375792ab9256",
+        "sha256_in_prefix": "03cf3fa959af38199dfc14f3dfa2f214449bc918087581aa3775375792ab9256",
+        "size_in_bytes": 1569
+      },
+      {
+        "_path": "site-packages/mesonbuild/interpreterbase/baseobjects.py",
+        "path_type": "hardlink",
+        "sha256": "dc51c638f3010c2c1d592e4e246de86504da5843bd98483d04666ea9bf6b8255",
+        "sha256_in_prefix": "dc51c638f3010c2c1d592e4e246de86504da5843bd98483d04666ea9bf6b8255",
+        "size_in_bytes": 8485
+      },
+      {
+        "_path": "site-packages/mesonbuild/interpreterbase/decorators.py",
+        "path_type": "hardlink",
+        "sha256": "f5d2f5c64a5d157a187af98cc15310b139ae4db80d16faf00836e2690274a954",
+        "sha256_in_prefix": "f5d2f5c64a5d157a187af98cc15310b139ae4db80d16faf00836e2690274a954",
+        "size_in_bytes": 38441
+      },
+      {
+        "_path": "site-packages/mesonbuild/interpreterbase/disabler.py",
+        "path_type": "hardlink",
+        "sha256": "cc102b93ad3107d08ee36f3b7fddd31f6fb6c720d1aa064a397c9ae01b1fee4e",
+        "sha256_in_prefix": "cc102b93ad3107d08ee36f3b7fddd31f6fb6c720d1aa064a397c9ae01b1fee4e",
+        "size_in_bytes": 1484
+      },
+      {
+        "_path": "site-packages/mesonbuild/interpreterbase/exceptions.py",
+        "path_type": "hardlink",
+        "sha256": "f3f985668ef4114e236e13a3132ec73fe988c8869591a592b6586c95149c225a",
+        "sha256_in_prefix": "f3f985668ef4114e236e13a3132ec73fe988c8869591a592b6586c95149c225a",
+        "size_in_bytes": 935
+      },
+      {
+        "_path": "site-packages/mesonbuild/interpreterbase/helpers.py",
+        "path_type": "hardlink",
+        "sha256": "3f10c1589d533c0cf6e954d042d0612d11470465edece945fce719832ac27ab5",
+        "sha256_in_prefix": "3f10c1589d533c0cf6e954d042d0612d11470465edece945fce719832ac27ab5",
+        "size_in_bytes": 2131
+      },
+      {
+        "_path": "site-packages/mesonbuild/interpreterbase/interpreterbase.py",
+        "path_type": "hardlink",
+        "sha256": "44dd051791b8040d7ea1d1a1f3f0066d45b54b41ff5d6d9e1d1cb4e83cb0f963",
+        "sha256_in_prefix": "44dd051791b8040d7ea1d1a1f3f0066d45b54b41ff5d6d9e1d1cb4e83cb0f963",
+        "size_in_bytes": 30961
+      },
+      {
+        "_path": "site-packages/mesonbuild/interpreterbase/operator.py",
+        "path_type": "hardlink",
+        "sha256": "31ce7eff6f6307ab2b712cfec261165c7cbe913527c0cd174789efc0bcdd8c64",
+        "sha256_in_prefix": "31ce7eff6f6307ab2b712cfec261165c7cbe913527c0cd174789efc0bcdd8c64",
+        "size_in_bytes": 554
+      },
+      {
+        "_path": "site-packages/mesonbuild/linkers/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "ec85a5c26db3ec89e4c2a857c58e64cd24854583c1c3df7357b3a3df9d411b35",
+        "sha256_in_prefix": "ec85a5c26db3ec89e4c2a857c58e64cd24854583c1c3df7357b3a3df9d411b35",
+        "size_in_bytes": 873
+      },
+      {
+        "_path": "site-packages/mesonbuild/linkers/base.py",
+        "path_type": "hardlink",
+        "sha256": "937c116f77b12718db0949a6dc095a48ce957f7b77b16ccc63a3ad18a47b4ac3",
+        "sha256_in_prefix": "937c116f77b12718db0949a6dc095a48ce957f7b77b16ccc63a3ad18a47b4ac3",
+        "size_in_bytes": 1473
+      },
+      {
+        "_path": "site-packages/mesonbuild/linkers/detect.py",
+        "path_type": "hardlink",
+        "sha256": "b1fc4b32bbb380c2cddcafe82e4868b0ba887c2a75f2af888418e3a6833f9e48",
+        "sha256_in_prefix": "b1fc4b32bbb380c2cddcafe82e4868b0ba887c2a75f2af888418e3a6833f9e48",
+        "size_in_bytes": 10654
+      },
+      {
+        "_path": "site-packages/mesonbuild/linkers/linkers.py",
+        "path_type": "hardlink",
+        "sha256": "a9122241dbb40d81704a8d6336e23edc007710b25e7a2b4511e457e4a57c4ebd",
+        "sha256_in_prefix": "a9122241dbb40d81704a8d6336e23edc007710b25e7a2b4511e457e4a57c4ebd",
+        "size_in_bytes": 57792
+      },
+      {
+        "_path": "site-packages/mesonbuild/mcompile.py",
+        "path_type": "hardlink",
+        "sha256": "4b06c2a0fbfa4ffe1596d7bb0e4871ffd67e8e5f973f198a5d22d24edd4513ee",
+        "sha256_in_prefix": "4b06c2a0fbfa4ffe1596d7bb0e4871ffd67e8e5f973f198a5d22d24edd4513ee",
+        "size_in_bytes": 13474
+      },
+      {
+        "_path": "site-packages/mesonbuild/mconf.py",
+        "path_type": "hardlink",
+        "sha256": "17f9af7b9bd7af3f80ff00f8106871ca3bffe2c4a72b2bba0c4f0598ce479c09",
+        "sha256_in_prefix": "17f9af7b9bd7af3f80ff00f8106871ca3bffe2c4a72b2bba0c4f0598ce479c09",
+        "size_in_bytes": 15547
+      },
+      {
+        "_path": "site-packages/mesonbuild/mdevenv.py",
+        "path_type": "hardlink",
+        "sha256": "4f54f4c4f3cd101a5f251ac7a465ac21a58a387788ef42f00e7d98becc910ee7",
+        "sha256_in_prefix": "4f54f4c4f3cd101a5f251ac7a465ac21a58a387788ef42f00e7d98becc910ee7",
+        "size_in_bytes": 10237
+      },
+      {
+        "_path": "site-packages/mesonbuild/mdist.py",
+        "path_type": "hardlink",
+        "sha256": "89ff5ccc8d78d8460323b67bc623cb287f61247810635221b757fb993ae2f72b",
+        "sha256_in_prefix": "89ff5ccc8d78d8460323b67bc623cb287f61247810635221b757fb993ae2f72b",
+        "size_in_bytes": 15965
+      },
+      {
+        "_path": "site-packages/mesonbuild/mesondata.py",
+        "path_type": "hardlink",
+        "sha256": "62c63e448188fd3cc7c132141f529b008eef875a3b24195ff6962d9b1f4b7d40",
+        "sha256_in_prefix": "62c63e448188fd3cc7c132141f529b008eef875a3b24195ff6962d9b1f4b7d40",
+        "size_in_bytes": 1762
+      },
+      {
+        "_path": "site-packages/mesonbuild/mesonlib.py",
+        "path_type": "hardlink",
+        "sha256": "00aa6b667b1adb14a0f4c271676191beca656cb5d2f33cdda96817dcd2fe6573",
+        "sha256_in_prefix": "00aa6b667b1adb14a0f4c271676191beca656cb5d2f33cdda96817dcd2fe6573",
+        "size_in_bytes": 1087
+      },
+      {
+        "_path": "site-packages/mesonbuild/mesonmain.py",
+        "path_type": "hardlink",
+        "sha256": "1a850c124445424b53be3469435a3f2b6196988524e737aa2ef97c11fca929bf",
+        "sha256_in_prefix": "1a850c124445424b53be3469435a3f2b6196988524e737aa2ef97c11fca929bf",
+        "size_in_bytes": 13409
+      },
+      {
+        "_path": "site-packages/mesonbuild/minit.py",
+        "path_type": "hardlink",
+        "sha256": "da94fbd6e6d73836fa7af803d25ef4e869998825385114d7fbdee0140ba2296a",
+        "sha256_in_prefix": "da94fbd6e6d73836fa7af803d25ef4e869998825385114d7fbdee0140ba2296a",
+        "size_in_bytes": 8345
+      },
+      {
+        "_path": "site-packages/mesonbuild/minstall.py",
+        "path_type": "hardlink",
+        "sha256": "f454553226d8afda1910a2df8921103da2909c62ba89fc8a6d4ad8f58758866e",
+        "sha256_in_prefix": "f454553226d8afda1910a2df8921103da2909c62ba89fc8a6d4ad8f58758866e",
+        "size_in_bytes": 39057
+      },
+      {
+        "_path": "site-packages/mesonbuild/mintro.py",
+        "path_type": "hardlink",
+        "sha256": "73bc38c33f02a3f9da24346fc0a231b5c5d8351c9a4ccbb0b3b450391ea8fa5a",
+        "sha256_in_prefix": "73bc38c33f02a3f9da24346fc0a231b5c5d8351c9a4ccbb0b3b450391ea8fa5a",
+        "size_in_bytes": 30934
+      },
+      {
+        "_path": "site-packages/mesonbuild/mlog.py",
+        "path_type": "hardlink",
+        "sha256": "9b4ca486b0eaa0279b571e4a4aef7087faa4db1d2d85530c0ff64100bf1fb20f",
+        "sha256_in_prefix": "9b4ca486b0eaa0279b571e4a4aef7087faa4db1d2d85530c0ff64100bf1fb20f",
+        "size_in_bytes": 19732
+      },
+      {
+        "_path": "site-packages/mesonbuild/modules/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "279adcfa5b6a0e3cdf2ca41c2643be3dae71c3fa1240f075460f457ff2085ffb",
+        "sha256_in_prefix": "279adcfa5b6a0e3cdf2ca41c2643be3dae71c3fa1240f075460f457ff2085ffb",
+        "size_in_bytes": 11079
+      },
+      {
+        "_path": "site-packages/mesonbuild/modules/cmake.py",
+        "path_type": "hardlink",
+        "sha256": "cf0610e330cf9465a67ed032d632a788cf677473955f958aa017178e0295ecb2",
+        "sha256_in_prefix": "cf0610e330cf9465a67ed032d632a788cf677473955f958aa017178e0295ecb2",
+        "size_in_bytes": 18718
+      },
+      {
+        "_path": "site-packages/mesonbuild/modules/cuda.py",
+        "path_type": "hardlink",
+        "sha256": "0e0200bbf5171c6d117048fb1c427581481f723fab2c44ddfa76ab72e0a77e14",
+        "sha256_in_prefix": "0e0200bbf5171c6d117048fb1c427581481f723fab2c44ddfa76ab72e0a77e14",
+        "size_in_bytes": 18759
+      },
+      {
+        "_path": "site-packages/mesonbuild/modules/dlang.py",
+        "path_type": "hardlink",
+        "sha256": "c544c0eb95a519bb4429ba72c4e9636684a0c0211b58605bdbad717c0efb955e",
+        "sha256_in_prefix": "c544c0eb95a519bb4429ba72c4e9636684a0c0211b58605bdbad717c0efb955e",
+        "size_in_bytes": 5147
+      },
+      {
+        "_path": "site-packages/mesonbuild/modules/external_project.py",
+        "path_type": "hardlink",
+        "sha256": "b9a4ca048d6d937e7c86cf150262ddda4fdd635dcd9c29b3bed9b0dee13f9983",
+        "sha256_in_prefix": "b9a4ca048d6d937e7c86cf150262ddda4fdd635dcd9c29b3bed9b0dee13f9983",
+        "size_in_bytes": 13722
+      },
+      {
+        "_path": "site-packages/mesonbuild/modules/fs.py",
+        "path_type": "hardlink",
+        "sha256": "140fbe223bbeb452e325f12781dffae1ac6af7431b7827f270223c59b4340874",
+        "sha256_in_prefix": "140fbe223bbeb452e325f12781dffae1ac6af7431b7827f270223c59b4340874",
+        "size_in_bytes": 12634
+      },
+      {
+        "_path": "site-packages/mesonbuild/modules/gnome.py",
+        "path_type": "hardlink",
+        "sha256": "d8831477bf83dc59ed89330998944bf10e950e36cd03ef133a0b28b70c6ced34",
+        "sha256_in_prefix": "d8831477bf83dc59ed89330998944bf10e950e36cd03ef133a0b28b70c6ced34",
+        "size_in_bytes": 103755
+      },
+      {
+        "_path": "site-packages/mesonbuild/modules/hotdoc.py",
+        "path_type": "hardlink",
+        "sha256": "0328269df4f643df7e6e37a53c1adc10563cdb85e04184a379faea66d802f009",
+        "sha256_in_prefix": "0328269df4f643df7e6e37a53c1adc10563cdb85e04184a379faea66d802f009",
+        "size_in_bytes": 19729
+      },
+      {
+        "_path": "site-packages/mesonbuild/modules/i18n.py",
+        "path_type": "hardlink",
+        "sha256": "0e80f66f5c2e5204c633dcb03becc71cc4c9b99479cf9dbb77dd02ae34707242",
+        "sha256_in_prefix": "0e80f66f5c2e5204c633dcb03becc71cc4c9b99479cf9dbb77dd02ae34707242",
+        "size_in_bytes": 15977
+      },
+      {
+        "_path": "site-packages/mesonbuild/modules/icestorm.py",
+        "path_type": "hardlink",
+        "sha256": "ff4e2c812644c90aab76f5b6561e46cbf07dd1ed6bad19586f9b351d4685c554",
+        "sha256_in_prefix": "ff4e2c812644c90aab76f5b6561e46cbf07dd1ed6bad19586f9b351d4685c554",
+        "size_in_bytes": 4604
+      },
+      {
+        "_path": "site-packages/mesonbuild/modules/java.py",
+        "path_type": "hardlink",
+        "sha256": "cd37cc6d1c99cdc67eff194640206c1a38a73698aaa983abb4722b5a6931432a",
+        "sha256_in_prefix": "cd37cc6d1c99cdc67eff194640206c1a38a73698aaa983abb4722b5a6931432a",
+        "size_in_bytes": 5012
+      },
+      {
+        "_path": "site-packages/mesonbuild/modules/keyval.py",
+        "path_type": "hardlink",
+        "sha256": "d613ca78b4c45570a8810216538a83acd9bccb04ba7e2cc815a025d380b04403",
+        "sha256_in_prefix": "d613ca78b4c45570a8810216538a83acd9bccb04ba7e2cc815a025d380b04403",
+        "size_in_bytes": 2610
+      },
+      {
+        "_path": "site-packages/mesonbuild/modules/modtest.py",
+        "path_type": "hardlink",
+        "sha256": "bb6241a4b801bb956979972b19edde2ffa1f63470aa71fe65330e679709a6b24",
+        "sha256_in_prefix": "bb6241a4b801bb956979972b19edde2ffa1f63470aa71fe65330e679709a6b24",
+        "size_in_bytes": 1418
+      },
+      {
+        "_path": "site-packages/mesonbuild/modules/pkgconfig.py",
+        "path_type": "hardlink",
+        "sha256": "50846763eea011a08c81b0acfa38c4fc2c9373fa4918434e4d71efd17af0a5e2",
+        "sha256_in_prefix": "50846763eea011a08c81b0acfa38c4fc2c9373fa4918434e4d71efd17af0a5e2",
+        "size_in_bytes": 38242
+      },
+      {
+        "_path": "site-packages/mesonbuild/modules/python.py",
+        "path_type": "hardlink",
+        "sha256": "cd39b7257ed8047533b4d2187281cc38077936a62aebe1dea3dde6815e508a32",
+        "sha256_in_prefix": "cd39b7257ed8047533b4d2187281cc38077936a62aebe1dea3dde6815e508a32",
+        "size_in_bytes": 21827
+      },
+      {
+        "_path": "site-packages/mesonbuild/modules/python3.py",
+        "path_type": "hardlink",
+        "sha256": "aee23e29c1094eaf5f894b2ebaeb535564982ea2d66f9346aa8c1079edcaefc5",
+        "sha256_in_prefix": "aee23e29c1094eaf5f894b2ebaeb535564982ea2d66f9346aa8c1079edcaefc5",
+        "size_in_bytes": 3323
+      },
+      {
+        "_path": "site-packages/mesonbuild/modules/qt.py",
+        "path_type": "hardlink",
+        "sha256": "52102450043dcd46a1d8305efd0dbeb14ca00345eccec51a091e0695c3ed724d",
+        "sha256_in_prefix": "52102450043dcd46a1d8305efd0dbeb14ca00345eccec51a091e0695c3ed724d",
+        "size_in_bytes": 30139
+      },
+      {
+        "_path": "site-packages/mesonbuild/modules/qt4.py",
+        "path_type": "hardlink",
+        "sha256": "59ac1fd8b33b09e5e87aabee30514b6c40d411d58216969aa86a3cf6fbacf2f7",
+        "sha256_in_prefix": "59ac1fd8b33b09e5e87aabee30514b6c40d411d58216969aa86a3cf6fbacf2f7",
+        "size_in_bytes": 1018
+      },
+      {
+        "_path": "site-packages/mesonbuild/modules/qt5.py",
+        "path_type": "hardlink",
+        "sha256": "ad6c6a1349b5c6b64ad176b4bf4e2fae8c4726890ac2b866eb73582b7305309d",
+        "sha256_in_prefix": "ad6c6a1349b5c6b64ad176b4bf4e2fae8c4726890ac2b866eb73582b7305309d",
+        "size_in_bytes": 1018
+      },
+      {
+        "_path": "site-packages/mesonbuild/modules/qt6.py",
+        "path_type": "hardlink",
+        "sha256": "92e6c0d05751cfd8f6a64dd29d76b250ff623bd75d54adcbee3af6492d9ebe22",
+        "sha256_in_prefix": "92e6c0d05751cfd8f6a64dd29d76b250ff623bd75d54adcbee3af6492d9ebe22",
+        "size_in_bytes": 1027
+      },
+      {
+        "_path": "site-packages/mesonbuild/modules/rust.py",
+        "path_type": "hardlink",
+        "sha256": "f35d47ccee58ba570942d41e2809fad452ca799c4d31f5657ccc19da23ff0348",
+        "sha256_in_prefix": "f35d47ccee58ba570942d41e2809fad452ca799c4d31f5657ccc19da23ff0348",
+        "size_in_bytes": 10469
+      },
+      {
+        "_path": "site-packages/mesonbuild/modules/simd.py",
+        "path_type": "hardlink",
+        "sha256": "55a0db0c0c6810c137e0563b309c427bfb714795eefacf2a1f647b44d2ca34e7",
+        "sha256_in_prefix": "55a0db0c0c6810c137e0563b309c427bfb714795eefacf2a1f647b44d2ca34e7",
+        "size_in_bytes": 3650
+      },
+      {
+        "_path": "site-packages/mesonbuild/modules/sourceset.py",
+        "path_type": "hardlink",
+        "sha256": "7c0ae8aaa28a3839ac43708bc9a6ca833b219f8f023951ceaaf129d4aa0a7685",
+        "sha256_in_prefix": "7c0ae8aaa28a3839ac43708bc9a6ca833b219f8f023951ceaaf129d4aa0a7685",
+        "size_in_bytes": 12100
+      },
+      {
+        "_path": "site-packages/mesonbuild/modules/wayland.py",
+        "path_type": "hardlink",
+        "sha256": "92f85d2b47b1ea7aabfac19535a7b1c72b5659588862866246fbe89928f446a5",
+        "sha256_in_prefix": "92f85d2b47b1ea7aabfac19535a7b1c72b5659588862866246fbe89928f446a5",
+        "size_in_bytes": 6130
+      },
+      {
+        "_path": "site-packages/mesonbuild/modules/windows.py",
+        "path_type": "hardlink",
+        "sha256": "00f70be2352a84f078f64ee5427da215de8ff9c35e07f3a8f24c32a8112f0aa9",
+        "sha256_in_prefix": "00f70be2352a84f078f64ee5427da215de8ff9c35e07f3a8f24c32a8112f0aa9",
+        "size_in_bytes": 9845
+      },
+      {
+        "_path": "site-packages/mesonbuild/mparser.py",
+        "path_type": "hardlink",
+        "sha256": "60ec0da14983c0a24a04e1931d1eaeaf26498c08bc37a715b243409951c79c25",
+        "sha256_in_prefix": "60ec0da14983c0a24a04e1931d1eaeaf26498c08bc37a715b243409951c79c25",
+        "size_in_bytes": 34377
+      },
+      {
+        "_path": "site-packages/mesonbuild/msetup.py",
+        "path_type": "hardlink",
+        "sha256": "a1f2c73a0dc50ab7051d7a5da8f578c57ee3f544ce1c30501570a928255d2920",
+        "sha256_in_prefix": "a1f2c73a0dc50ab7051d7a5da8f578c57ee3f544ce1c30501570a928255d2920",
+        "size_in_bytes": 19926
+      },
+      {
+        "_path": "site-packages/mesonbuild/msubprojects.py",
+        "path_type": "hardlink",
+        "sha256": "12237a8df79de71fd31e404919b66a52daaf73a38c13ca852b36da5c0de9818b",
+        "sha256_in_prefix": "12237a8df79de71fd31e404919b66a52daaf73a38c13ca852b36da5c0de9818b",
+        "size_in_bytes": 32241
+      },
+      {
+        "_path": "site-packages/mesonbuild/mtest.py",
+        "path_type": "hardlink",
+        "sha256": "db1f4734c1d4f6054eda2b401d935de696581ba98a1a17d60089ba877b9ca1c2",
+        "sha256_in_prefix": "db1f4734c1d4f6054eda2b401d935de696581ba98a1a17d60089ba877b9ca1c2",
+        "size_in_bytes": 88953
+      },
+      {
+        "_path": "site-packages/mesonbuild/munstable_coredata.py",
+        "path_type": "hardlink",
+        "sha256": "bc5396307c76d059be09ca29d1705c2f464eea01f98d67ebbbd9b4eb3e5c059a",
+        "sha256_in_prefix": "bc5396307c76d059be09ca29d1705c2f464eea01f98d67ebbbd9b4eb3e5c059a",
+        "size_in_bytes": 4622
+      },
+      {
+        "_path": "site-packages/mesonbuild/optinterpreter.py",
+        "path_type": "hardlink",
+        "sha256": "29ca2bae2a306a578d5226b7ab363f437ca53e0bb22a76624ac27eec6c746d2c",
+        "sha256_in_prefix": "29ca2bae2a306a578d5226b7ab363f437ca53e0bb22a76624ac27eec6c746d2c",
+        "size_in_bytes": 11524
+      },
+      {
+        "_path": "site-packages/mesonbuild/programs.py",
+        "path_type": "hardlink",
+        "sha256": "e8a93bf628fc0d7819a694978a6873e8b3777ea24d34030cf062790af3ea616f",
+        "sha256_in_prefix": "e8a93bf628fc0d7819a694978a6873e8b3777ea24d34030cf062790af3ea616f",
+        "size_in_bytes": 17111
+      },
+      {
+        "_path": "site-packages/mesonbuild/rewriter.py",
+        "path_type": "hardlink",
+        "sha256": "49815c1029dd18112852b69688f68c322e435c7ed5f0e65e644e6494e9f72df9",
+        "sha256_in_prefix": "49815c1029dd18112852b69688f68c322e435c7ed5f0e65e644e6494e9f72df9",
+        "size_in_bytes": 43536
+      },
+      {
+        "_path": "site-packages/mesonbuild/scripts/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "bddb0e047d3b0e4c6c008da723854ae7cb0ca0351e973ac1ec45adc675830195",
+        "sha256_in_prefix": "bddb0e047d3b0e4c6c008da723854ae7cb0ca0351e973ac1ec45adc675830195",
+        "size_in_bytes": 808
+      },
+      {
+        "_path": "site-packages/mesonbuild/scripts/clangformat.py",
+        "path_type": "hardlink",
+        "sha256": "5bbd22fb921084c27ccb26f1f2b821911454c609d048e08c6df8f1144a501663",
+        "sha256_in_prefix": "5bbd22fb921084c27ccb26f1f2b821911454c609d048e08c6df8f1144a501663",
+        "size_in_bytes": 2352
+      },
+      {
+        "_path": "site-packages/mesonbuild/scripts/clangtidy.py",
+        "path_type": "hardlink",
+        "sha256": "5996abeaabada045c241bb3efbd521f4c80c2955fb0c7910dcfffd7b5428f60a",
+        "sha256_in_prefix": "5996abeaabada045c241bb3efbd521f4c80c2955fb0c7910dcfffd7b5428f60a",
+        "size_in_bytes": 1230
+      },
+      {
+        "_path": "site-packages/mesonbuild/scripts/cleantrees.py",
+        "path_type": "hardlink",
+        "sha256": "493db05b6ddf7aba6bf6391204ca14be36aaf08c041a2ea199126989ffa7eb30",
+        "sha256_in_prefix": "493db05b6ddf7aba6bf6391204ca14be36aaf08c041a2ea199126989ffa7eb30",
+        "size_in_bytes": 1508
+      },
+      {
+        "_path": "site-packages/mesonbuild/scripts/cmake_run_ctgt.py",
+        "path_type": "hardlink",
+        "sha256": "917556686ac40ae4757e5e4cb9082f23795ebf34b8052168950e221bd89ab984",
+        "sha256_in_prefix": "917556686ac40ae4757e5e4cb9082f23795ebf34b8052168950e221bd89ab984",
+        "size_in_bytes": 3272
+      },
+      {
+        "_path": "site-packages/mesonbuild/scripts/cmd_or_ps.ps1",
+        "path_type": "hardlink",
+        "sha256": "a31e2d83b68c7220592a22314ee0e6db9bf2a63e7ccefb7f38c84782319e0f72",
+        "sha256_in_prefix": "a31e2d83b68c7220592a22314ee0e6db9bf2a63e7ccefb7f38c84782319e0f72",
+        "size_in_bytes": 510
+      },
+      {
+        "_path": "site-packages/mesonbuild/scripts/copy.py",
+        "path_type": "hardlink",
+        "sha256": "0f890b87db6f9dd59179461213b2073016b56aab32586500930808c499bbd7d5",
+        "sha256_in_prefix": "0f890b87db6f9dd59179461213b2073016b56aab32586500930808c499bbd7d5",
+        "size_in_bytes": 414
+      },
+      {
+        "_path": "site-packages/mesonbuild/scripts/coverage.py",
+        "path_type": "hardlink",
+        "sha256": "0ea4f4611168d187b3eb2244a656bd5f1cc1a39f5f26b803329278427042bee1",
+        "sha256_in_prefix": "0ea4f4611168d187b3eb2244a656bd5f1cc1a39f5f26b803329278427042bee1",
+        "size_in_bytes": 10057
+      },
+      {
+        "_path": "site-packages/mesonbuild/scripts/delwithsuffix.py",
+        "path_type": "hardlink",
+        "sha256": "e248a67589f3d12cd84a0e8fe30861c255cce4a6dc5bd54eb59ea611894ad6ca",
+        "sha256_in_prefix": "e248a67589f3d12cd84a0e8fe30861c255cce4a6dc5bd54eb59ea611894ad6ca",
+        "size_in_bytes": 1168
+      },
+      {
+        "_path": "site-packages/mesonbuild/scripts/depfixer.py",
+        "path_type": "hardlink",
+        "sha256": "e0a429c6fa93158a7354482f92070638cc277b58b015504a2d3e7a022269823a",
+        "sha256_in_prefix": "e0a429c6fa93158a7354482f92070638cc277b58b015504a2d3e7a022269823a",
+        "size_in_bytes": 20449
+      },
+      {
+        "_path": "site-packages/mesonbuild/scripts/depscan.py",
+        "path_type": "hardlink",
+        "sha256": "1fa9dfd1a9d61749de2800f6ea0eeda37bba41d957d9ad6c450e79c5c6c6e0a7",
+        "sha256_in_prefix": "1fa9dfd1a9d61749de2800f6ea0eeda37bba41d957d9ad6c450e79c5c6c6e0a7",
+        "size_in_bytes": 9654
+      },
+      {
+        "_path": "site-packages/mesonbuild/scripts/dirchanger.py",
+        "path_type": "hardlink",
+        "sha256": "ec862d5ce76e9f37a29bf8d363ea277fe1959ae2092ccffb2b2f8db505c750dc",
+        "sha256_in_prefix": "ec862d5ce76e9f37a29bf8d363ea277fe1959ae2092ccffb2b2f8db505c750dc",
+        "size_in_bytes": 977
+      },
+      {
+        "_path": "site-packages/mesonbuild/scripts/env2mfile.py",
+        "path_type": "hardlink",
+        "sha256": "983e38fd91c6d439a03cae48527a020ecfc9da066250e5ed9d763fcd624f60bb",
+        "sha256_in_prefix": "983e38fd91c6d439a03cae48527a020ecfc9da066250e5ed9d763fcd624f60bb",
+        "size_in_bytes": 16092
+      },
+      {
+        "_path": "site-packages/mesonbuild/scripts/externalproject.py",
+        "path_type": "hardlink",
+        "sha256": "baabb64fcc0c8457d9e6ce9c161f8338e86697565b4e9991ae7c5d388600b497",
+        "sha256_in_prefix": "baabb64fcc0c8457d9e6ce9c161f8338e86697565b4e9991ae7c5d388600b497",
+        "size_in_bytes": 4161
+      },
+      {
+        "_path": "site-packages/mesonbuild/scripts/gettext.py",
+        "path_type": "hardlink",
+        "sha256": "fb09754696d5cd52d5f72c7185b81ddd64ba9ebd206c9f59adcb6ae1e7a897b3",
+        "sha256_in_prefix": "fb09754696d5cd52d5f72c7185b81ddd64ba9ebd206c9f59adcb6ae1e7a897b3",
+        "size_in_bytes": 3957
+      },
+      {
+        "_path": "site-packages/mesonbuild/scripts/gtkdochelper.py",
+        "path_type": "hardlink",
+        "sha256": "bf71d25f4f3a1632f7e055d4b710968c0eeec614b829b43a80cb766c2ebdc1e3",
+        "sha256_in_prefix": "bf71d25f4f3a1632f7e055d4b710968c0eeec614b829b43a80cb766c2ebdc1e3",
+        "size_in_bytes": 11626
+      },
+      {
+        "_path": "site-packages/mesonbuild/scripts/hotdochelper.py",
+        "path_type": "hardlink",
+        "sha256": "f89136fad38133d94a077a7b3e1795afacf981285682541ce61631660d9319b9",
+        "sha256_in_prefix": "f89136fad38133d94a077a7b3e1795afacf981285682541ce61631660d9319b9",
+        "size_in_bytes": 1111
+      },
+      {
+        "_path": "site-packages/mesonbuild/scripts/itstool.py",
+        "path_type": "hardlink",
+        "sha256": "a333273b5f50fccfbe260ae38c731ec8a8e4153745918ec0d4745cd60e2bdc9e",
+        "sha256_in_prefix": "a333273b5f50fccfbe260ae38c731ec8a8e4153745918ec0d4745cd60e2bdc9e",
+        "size_in_bytes": 3094
+      },
+      {
+        "_path": "site-packages/mesonbuild/scripts/meson_exe.py",
+        "path_type": "hardlink",
+        "sha256": "a0bb12cee863c466e763bcf2b4305f51a417d8d23bd66a2f9d381e707a99dc65",
+        "sha256_in_prefix": "a0bb12cee863c466e763bcf2b4305f51a417d8d23bd66a2f9d381e707a99dc65",
+        "size_in_bytes": 4663
+      },
+      {
+        "_path": "site-packages/mesonbuild/scripts/msgfmthelper.py",
+        "path_type": "hardlink",
+        "sha256": "a814dac58eea350f65bc88ed043738e8a6879312d465210b956758f0b6d93d7c",
+        "sha256_in_prefix": "a814dac58eea350f65bc88ed043738e8a6879312d465210b956758f0b6d93d7c",
+        "size_in_bytes": 1441
+      },
+      {
+        "_path": "site-packages/mesonbuild/scripts/pycompile.py",
+        "path_type": "hardlink",
+        "sha256": "f49b17185add6a3e10f5530e4869710dac05cd043cb7b1031579df4822443aef",
+        "sha256_in_prefix": "f49b17185add6a3e10f5530e4869710dac05cd043cb7b1031579df4822443aef",
+        "size_in_bytes": 2327
+      },
+      {
+        "_path": "site-packages/mesonbuild/scripts/python_info.py",
+        "path_type": "hardlink",
+        "sha256": "d1c65b306cf3beb280ac585abe44fa7df65c81524b8f317f66d47972715a7ac1",
+        "sha256_in_prefix": "d1c65b306cf3beb280ac585abe44fa7df65c81524b8f317f66d47972715a7ac1",
+        "size_in_bytes": 2770
+      },
+      {
+        "_path": "site-packages/mesonbuild/scripts/regen_checker.py",
+        "path_type": "hardlink",
+        "sha256": "bcf3dd0f14f3c75e27a10c1a243a937a34a6755a35859755b08a6620600f3f69",
+        "sha256_in_prefix": "bcf3dd0f14f3c75e27a10c1a243a937a34a6755a35859755b08a6620600f3f69",
+        "size_in_bytes": 2651
+      },
+      {
+        "_path": "site-packages/mesonbuild/scripts/run_tool.py",
+        "path_type": "hardlink",
+        "sha256": "88453b0653d8df97d37e2c1799f66f10c9181839d62c8ee320f12606eaafecc4",
+        "sha256_in_prefix": "88453b0653d8df97d37e2c1799f66f10c9181839d62c8ee320f12606eaafecc4",
+        "size_in_bytes": 2497
+      },
+      {
+        "_path": "site-packages/mesonbuild/scripts/scanbuild.py",
+        "path_type": "hardlink",
+        "sha256": "e024e034bbfaaa9736dac8b241a74e0bdbf0f29b9ec9b4d17cab42204bac0c90",
+        "sha256_in_prefix": "e024e034bbfaaa9736dac8b241a74e0bdbf0f29b9ec9b4d17cab42204bac0c90",
+        "size_in_bytes": 2467
+      },
+      {
+        "_path": "site-packages/mesonbuild/scripts/symbolextractor.py",
+        "path_type": "hardlink",
+        "sha256": "30a09be746a14f7e4a5f959aaf13a0007f5b4bca83aa8f0c3628cf9f50dfb83c",
+        "sha256_in_prefix": "30a09be746a14f7e4a5f959aaf13a0007f5b4bca83aa8f0c3628cf9f50dfb83c",
+        "size_in_bytes": 13046
+      },
+      {
+        "_path": "site-packages/mesonbuild/scripts/tags.py",
+        "path_type": "hardlink",
+        "sha256": "20bf2ea665faab7925e713edbd2866323e7b7b6d019ef0d60c6393453237c586",
+        "sha256_in_prefix": "20bf2ea665faab7925e713edbd2866323e7b7b6d019ef0d60c6393453237c586",
+        "size_in_bytes": 1743
+      },
+      {
+        "_path": "site-packages/mesonbuild/scripts/test_loaded_modules.py",
+        "path_type": "hardlink",
+        "sha256": "22e32da4af4c8fdcc8487674c64a91172f53d508a46438c92cfadb990cf0922d",
+        "sha256_in_prefix": "22e32da4af4c8fdcc8487674c64a91172f53d508a46438c92cfadb990cf0922d",
+        "size_in_bytes": 306
+      },
+      {
+        "_path": "site-packages/mesonbuild/scripts/uninstall.py",
+        "path_type": "hardlink",
+        "sha256": "b5026664cd96d88128760638a1da2a7765740f585d78968caf3e29455f688ac5",
+        "sha256_in_prefix": "b5026664cd96d88128760638a1da2a7765740f585d78968caf3e29455f688ac5",
+        "size_in_bytes": 1675
+      },
+      {
+        "_path": "site-packages/mesonbuild/scripts/vcstagger.py",
+        "path_type": "hardlink",
+        "sha256": "40b742214942600d8305907fe95386d3e39a18b5b18036be5bb027196683d63f",
+        "sha256_in_prefix": "40b742214942600d8305907fe95386d3e39a18b5b18036be5bb027196683d63f",
+        "size_in_bytes": 1735
+      },
+      {
+        "_path": "site-packages/mesonbuild/scripts/yasm.py",
+        "path_type": "hardlink",
+        "sha256": "dfa0a5c5d424a71411a59b33125b01cdc4aeef5c05c09706d1d5e5b83d712fc5",
+        "sha256_in_prefix": "dfa0a5c5d424a71411a59b33125b01cdc4aeef5c05c09706d1d5e5b83d712fc5",
+        "size_in_bytes": 568
+      },
+      {
+        "_path": "site-packages/mesonbuild/templates/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256_in_prefix": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "site-packages/mesonbuild/templates/cpptemplates.py",
+        "path_type": "hardlink",
+        "sha256": "aac94d4c9bb398c289422f1b6dba629fb0c926cd96793b13657811615e07dd76",
+        "sha256_in_prefix": "aac94d4c9bb398c289422f1b6dba629fb0c926cd96793b13657811615e07dd76",
+        "size_in_bytes": 5531
+      },
+      {
+        "_path": "site-packages/mesonbuild/templates/cstemplates.py",
+        "path_type": "hardlink",
+        "sha256": "859a9612da1da1d2f667fbbf5d6f5dc685b66d9082b206d6a1740cc587da4c34",
+        "sha256_in_prefix": "859a9612da1da1d2f667fbbf5d6f5dc685b66d9082b206d6a1740cc587da4c34",
+        "size_in_bytes": 4593
+      },
+      {
+        "_path": "site-packages/mesonbuild/templates/ctemplates.py",
+        "path_type": "hardlink",
+        "sha256": "eefb6cfee2988890758aeef6a25e5f3b5362ffa118ef2cb973c812e564bad35d",
+        "sha256_in_prefix": "eefb6cfee2988890758aeef6a25e5f3b5362ffa118ef2cb973c812e564bad35d",
+        "size_in_bytes": 5226
+      },
+      {
+        "_path": "site-packages/mesonbuild/templates/cudatemplates.py",
+        "path_type": "hardlink",
+        "sha256": "bc094ca46c8d0dc34edfeb0b49fc33674822af56456e228e812a1e9c0794b82b",
+        "sha256_in_prefix": "bc094ca46c8d0dc34edfeb0b49fc33674822af56456e228e812a1e9c0794b82b",
+        "size_in_bytes": 5539
+      },
+      {
+        "_path": "site-packages/mesonbuild/templates/dlangtemplates.py",
+        "path_type": "hardlink",
+        "sha256": "4401f49a599e1f704b14e45b748edc4c04eb3c84a7416b02f10843e1724dd37b",
+        "sha256_in_prefix": "4401f49a599e1f704b14e45b748edc4c04eb3c84a7416b02f10843e1724dd37b",
+        "size_in_bytes": 4657
+      },
+      {
+        "_path": "site-packages/mesonbuild/templates/fortrantemplates.py",
+        "path_type": "hardlink",
+        "sha256": "2e8924e5b397506f2b4902e2e569fbe0dc41ede64086e0fddeb7b6f6b22e2de6",
+        "sha256_in_prefix": "2e8924e5b397506f2b4902e2e569fbe0dc41ede64086e0fddeb7b6f6b22e2de6",
+        "size_in_bytes": 4518
+      },
+      {
+        "_path": "site-packages/mesonbuild/templates/javatemplates.py",
+        "path_type": "hardlink",
+        "sha256": "d099e0e77bd35927202b2265dbbcb2bc44e60d6b110a59b22b0f6c818548bbd7",
+        "sha256_in_prefix": "d099e0e77bd35927202b2265dbbcb2bc44e60d6b110a59b22b0f6c818548bbd7",
+        "size_in_bytes": 4619
+      },
+      {
+        "_path": "site-packages/mesonbuild/templates/mesontemplates.py",
+        "path_type": "hardlink",
+        "sha256": "534df4611fdf69bbed9cfcfd78157716ead909ba05076d0c68793abc5466740f",
+        "sha256_in_prefix": "534df4611fdf69bbed9cfcfd78157716ead909ba05076d0c68793abc5466740f",
+        "size_in_bytes": 3527
+      },
+      {
+        "_path": "site-packages/mesonbuild/templates/objcpptemplates.py",
+        "path_type": "hardlink",
+        "sha256": "bb5c584345a104d6b1e867935e790f17a5371bdeab5c4ed17112530c231ac15c",
+        "sha256_in_prefix": "bb5c584345a104d6b1e867935e790f17a5371bdeab5c4ed17112530c231ac15c",
+        "size_in_bytes": 5393
+      },
+      {
+        "_path": "site-packages/mesonbuild/templates/objctemplates.py",
+        "path_type": "hardlink",
+        "sha256": "5538b38a019922e4f4f872290cc05d690a3158e08935bd2188fbea915e7bd658",
+        "sha256_in_prefix": "5538b38a019922e4f4f872290cc05d690a3158e08935bd2188fbea915e7bd658",
+        "size_in_bytes": 5291
+      },
+      {
+        "_path": "site-packages/mesonbuild/templates/rusttemplates.py",
+        "path_type": "hardlink",
+        "sha256": "0d900ac8847ec8b70acd25959258ad6a8d7b900dc05e5dfeccf09d8f4f1bf5e2",
+        "sha256_in_prefix": "0d900ac8847ec8b70acd25959258ad6a8d7b900dc05e5dfeccf09d8f4f1bf5e2",
+        "size_in_bytes": 4003
+      },
+      {
+        "_path": "site-packages/mesonbuild/templates/samplefactory.py",
+        "path_type": "hardlink",
+        "sha256": "dadd91635ae9beae678c8e319ccf2daa2b123ed59379b1240b62f78f1990d64b",
+        "sha256_in_prefix": "dadd91635ae9beae678c8e319ccf2daa2b123ed59379b1240b62f78f1990d64b",
+        "size_in_bytes": 1779
+      },
+      {
+        "_path": "site-packages/mesonbuild/templates/sampleimpl.py",
+        "path_type": "hardlink",
+        "sha256": "549fccff46ab54ab95b79e8ce2282259dcd744c131ea527ae6c9366bb253607d",
+        "sha256_in_prefix": "549fccff46ab54ab95b79e8ce2282259dcd744c131ea527ae6c9366bb253607d",
+        "size_in_bytes": 905
+      },
+      {
+        "_path": "site-packages/mesonbuild/templates/valatemplates.py",
+        "path_type": "hardlink",
+        "sha256": "110902667b3a36bba45d3a83469d3b1e2047452c054aa4eb8b4c99e41a0d9af5",
+        "sha256_in_prefix": "110902667b3a36bba45d3a83469d3b1e2047452c054aa4eb8b4c99e41a0d9af5",
+        "size_in_bytes": 4309
+      },
+      {
+        "_path": "site-packages/mesonbuild/utils/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256_in_prefix": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "site-packages/mesonbuild/utils/core.py",
+        "path_type": "hardlink",
+        "sha256": "005f27ac4c3642f18d9c80ccb4dc4be0242b8e015ce03602a4e7bc0fc23753ed",
+        "sha256_in_prefix": "005f27ac4c3642f18d9c80ccb4dc4be0242b8e015ce03602a4e7bc0fc23753ed",
+        "size_in_bytes": 6394
+      },
+      {
+        "_path": "site-packages/mesonbuild/utils/platform.py",
+        "path_type": "hardlink",
+        "sha256": "e1433a47f0ae4be033b8a4f1dc0a77f7f46f4fac3eb048004768b8c2aab2c711",
+        "sha256_in_prefix": "e1433a47f0ae4be033b8a4f1dc0a77f7f46f4fac3eb048004768b8c2aab2c711",
+        "size_in_bytes": 1231
+      },
+      {
+        "_path": "site-packages/mesonbuild/utils/posix.py",
+        "path_type": "hardlink",
+        "sha256": "8873e7128ee65807fc7f679ac3e00da80af3d7adacbe7684c41ef4eb84b86b33",
+        "sha256_in_prefix": "8873e7128ee65807fc7f679ac3e00da80af3d7adacbe7684c41ef4eb84b86b33",
+        "size_in_bytes": 1620
+      },
+      {
+        "_path": "site-packages/mesonbuild/utils/universal.py",
+        "path_type": "hardlink",
+        "sha256": "1f237ab7aac7205fdb138105c8850eba122a00e964994b748d54a10629f59081",
+        "sha256_in_prefix": "1f237ab7aac7205fdb138105c8850eba122a00e964994b748d54a10629f59081",
+        "size_in_bytes": 85397
+      },
+      {
+        "_path": "site-packages/mesonbuild/utils/vsenv.py",
+        "path_type": "hardlink",
+        "sha256": "5d52787252045ac69f5120c6bbccb599b6896d2a19dba524c5b5eaa4aa807824",
+        "sha256_in_prefix": "5d52787252045ac69f5120c6bbccb599b6896d2a19dba524c5b5eaa4aa807824",
+        "size_in_bytes": 3942
+      },
+      {
+        "_path": "site-packages/mesonbuild/utils/win32.py",
+        "path_type": "hardlink",
+        "sha256": "d3a81afacd0b8aaae6e9d16bf7e0eec1b3b2a67a567046c210a3a477a5550941",
+        "sha256_in_prefix": "d3a81afacd0b8aaae6e9d16bf7e0eec1b3b2a67a567046c210a3a477a5550941",
+        "size_in_bytes": 1492
+      },
+      {
+        "_path": "site-packages/mesonbuild/wrap/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "fda52df00809af960ad6b74a1712f1a91ad1d56b502960da09d20f09100a9a06",
+        "sha256_in_prefix": "fda52df00809af960ad6b74a1712f1a91ad1d56b502960da09d20f09100a9a06",
+        "size_in_bytes": 2070
+      },
+      {
+        "_path": "site-packages/mesonbuild/wrap/wrap.py",
+        "path_type": "hardlink",
+        "sha256": "d0c3b0f00bdb2ff0d3b66c0a44ed38dad28e246369f00fcdf9e22b354a547594",
+        "sha256_in_prefix": "d0c3b0f00bdb2ff0d3b66c0a44ed38dad28e246369f00fcdf9e22b354a547594",
+        "size_in_bytes": 37921
+      },
+      {
+        "_path": "site-packages/mesonbuild/wrap/wraptool.py",
+        "path_type": "hardlink",
+        "sha256": "40ce7f532cd1c601687c11797741576b17b069b8db6f46339206e33f7b74c700",
+        "sha256_in_prefix": "40ce7f532cd1c601687c11797741576b17b069b8db6f46339206e33f7b74c700",
+        "size_in_bytes": 10183
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/__pycache__/_pathlib.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/__pycache__/_typing.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/__pycache__/arglist.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/ast/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/ast/__pycache__/interpreter.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/ast/__pycache__/introspection.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/ast/__pycache__/postprocess.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/ast/__pycache__/printer.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/ast/__pycache__/visitor.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/backend/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/backend/__pycache__/backends.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/backend/__pycache__/ninjabackend.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/backend/__pycache__/nonebackend.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/backend/__pycache__/vs2010backend.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/backend/__pycache__/vs2012backend.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/backend/__pycache__/vs2013backend.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/backend/__pycache__/vs2015backend.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/backend/__pycache__/vs2017backend.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/backend/__pycache__/vs2019backend.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/backend/__pycache__/vs2022backend.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/backend/__pycache__/xcodebackend.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/__pycache__/build.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/cargo/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/cargo/__pycache__/builder.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/cargo/__pycache__/cfg.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/cargo/__pycache__/interpreter.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/cargo/__pycache__/manifest.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/cargo/__pycache__/version.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/cmake/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/cmake/__pycache__/common.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/cmake/data/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/cmake/__pycache__/executor.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/cmake/__pycache__/fileapi.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/cmake/__pycache__/generator.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/cmake/__pycache__/interpreter.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/cmake/__pycache__/toolchain.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/cmake/__pycache__/traceparser.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/cmake/__pycache__/tracetargets.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/compilers/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/compilers/__pycache__/asm.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/compilers/__pycache__/c.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/compilers/__pycache__/c_function_attributes.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/compilers/__pycache__/compilers.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/compilers/__pycache__/cpp.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/compilers/__pycache__/cs.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/compilers/__pycache__/cuda.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/compilers/__pycache__/cython.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/compilers/__pycache__/d.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/compilers/__pycache__/detect.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/compilers/__pycache__/fortran.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/compilers/__pycache__/java.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/compilers/mixins/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/compilers/mixins/__pycache__/arm.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/compilers/mixins/__pycache__/ccrx.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/compilers/mixins/__pycache__/clang.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/compilers/mixins/__pycache__/clike.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/compilers/mixins/__pycache__/compcert.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/compilers/mixins/__pycache__/elbrus.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/compilers/mixins/__pycache__/emscripten.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/compilers/mixins/__pycache__/gnu.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/compilers/mixins/__pycache__/intel.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/compilers/mixins/__pycache__/islinker.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/compilers/mixins/__pycache__/metrowerks.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/compilers/mixins/__pycache__/pgi.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/compilers/mixins/__pycache__/ti.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/compilers/mixins/__pycache__/visualstudio.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/compilers/mixins/__pycache__/xc16.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/compilers/__pycache__/objc.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/compilers/__pycache__/objcpp.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/compilers/__pycache__/rust.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/compilers/__pycache__/swift.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/compilers/__pycache__/vala.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/__pycache__/coredata.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/base.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/boost.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/cmake.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/coarrays.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/configtool.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/cuda.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/dependencies/data/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/detect.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/dev.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/dub.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/factory.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/framework.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/hdf5.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/misc.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/mpi.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/pkgconfig.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/platform.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/python.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/qt.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/scalapack.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/dependencies/__pycache__/ui.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/__pycache__/depfile.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/__pycache__/envconfig.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/__pycache__/environment.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/interpreter/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/interpreter/__pycache__/compiler.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/interpreter/__pycache__/dependencyfallbacks.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/interpreter/__pycache__/interpreter.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/interpreter/__pycache__/interpreterobjects.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/interpreter/__pycache__/kwargs.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/interpreter/__pycache__/mesonmain.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/interpreter/primitives/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/interpreter/primitives/__pycache__/array.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/interpreter/primitives/__pycache__/boolean.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/interpreter/primitives/__pycache__/dict.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/interpreter/primitives/__pycache__/integer.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/interpreter/primitives/__pycache__/range.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/interpreter/primitives/__pycache__/string.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/interpreter/__pycache__/type_checking.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/interpreterbase/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/interpreterbase/__pycache__/_unholder.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/interpreterbase/__pycache__/baseobjects.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/interpreterbase/__pycache__/decorators.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/interpreterbase/__pycache__/disabler.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/interpreterbase/__pycache__/exceptions.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/interpreterbase/__pycache__/helpers.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/interpreterbase/__pycache__/interpreterbase.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/interpreterbase/__pycache__/operator.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/linkers/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/linkers/__pycache__/base.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/linkers/__pycache__/detect.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/linkers/__pycache__/linkers.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/__pycache__/mcompile.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/__pycache__/mconf.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/__pycache__/mdevenv.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/__pycache__/mdist.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/__pycache__/mesondata.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/__pycache__/mesonlib.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/__pycache__/mesonmain.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/__pycache__/minit.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/__pycache__/minstall.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/__pycache__/mintro.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/__pycache__/mlog.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/cmake.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/cuda.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/dlang.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/external_project.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/fs.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/gnome.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/hotdoc.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/i18n.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/icestorm.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/java.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/keyval.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/modtest.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/pkgconfig.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/python.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/python3.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/qt.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/qt4.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/qt5.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/qt6.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/rust.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/simd.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/sourceset.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/wayland.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/modules/__pycache__/windows.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/__pycache__/mparser.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/__pycache__/msetup.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/__pycache__/msubprojects.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/__pycache__/mtest.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/__pycache__/munstable_coredata.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/__pycache__/optinterpreter.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/__pycache__/programs.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/__pycache__/rewriter.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/clangformat.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/clangtidy.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/cleantrees.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/cmake_run_ctgt.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/copy.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/coverage.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/delwithsuffix.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/depfixer.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/depscan.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/dirchanger.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/env2mfile.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/externalproject.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/gettext.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/gtkdochelper.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/hotdochelper.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/itstool.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/meson_exe.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/msgfmthelper.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/pycompile.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/python_info.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/regen_checker.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/run_tool.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/scanbuild.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/symbolextractor.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/tags.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/test_loaded_modules.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/uninstall.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/vcstagger.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/scripts/__pycache__/yasm.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/templates/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/templates/__pycache__/cpptemplates.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/templates/__pycache__/cstemplates.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/templates/__pycache__/ctemplates.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/templates/__pycache__/cudatemplates.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/templates/__pycache__/dlangtemplates.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/templates/__pycache__/fortrantemplates.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/templates/__pycache__/javatemplates.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/templates/__pycache__/mesontemplates.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/templates/__pycache__/objcpptemplates.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/templates/__pycache__/objctemplates.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/templates/__pycache__/rusttemplates.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/templates/__pycache__/samplefactory.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/templates/__pycache__/sampleimpl.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/templates/__pycache__/valatemplates.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/utils/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/utils/__pycache__/core.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/utils/__pycache__/platform.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/utils/__pycache__/posix.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/utils/__pycache__/universal.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/utils/__pycache__/vsenv.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/utils/__pycache__/win32.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/wrap/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/wrap/__pycache__/wrap.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonbuild/wrap/__pycache__/wraptool.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "bin/meson",
+        "path_type": "unix_python_entry_point"
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "meson[version='>=0.64.0']",
+  "sha256": "247b6a2b1c3f42402843471e171d0b6d6aea209d9e88da442339cfa622f83ed3",
+  "size": 616718,
+  "subdir": "noarch",
+  "timestamp": 1691536654973,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/noarch/meson-1.2.1-pyhd8ed1ab_0.conda",
+  "version": "1.2.1"
+}

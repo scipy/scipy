@@ -1,0 +1,151 @@
+//
+// Keyboard modification for Apple keyboards
+//
+
+default partial modifier_keys
+xkb_symbols "extended" {
+
+    key <KPEQ> { [ KP_Equal ] }; 
+
+// The key in the PC's Insert position is sometimes engraved Help (at least
+// in Switzerland and Great Britain), with Insert sometimes above. But in the
+// US and Canada, it remains Insert. So this should probably be an XkbOption,
+// but I have to do more research.
+// Perhaps Help should be the primary symbol with Insert in the 1st shift-level
+//    key  <INS> { [ Help, Insert ] };
+// The keys next to F12, labeled F13, F14, & F15 generate codes that XFree86
+// claims not to generate. I think they should be equivalent to the PC keys
+// Print Screen / SysRq, Scroll Lock, and Pause. Linux kernel bug?
+//    key <PRSC> { [ F13 ] }; // should be keycode 93 or
+//    key <FK13> { [ F13 ] }; // should be keycode 118
+//    key <SCLK> { [ F14 ] }; // should be keycode 123 or
+//    key <FK14> { [ F14 ] }; // should be keycode 119
+//    key <PAUS> { [ F15 ] }; // should be keycode 127 or
+//    key <FK15> { [ F15 ] }; // should be keycode 120
+};
+
+partial modifier_keys
+xkb_symbols "laptop" {
+
+    include "macintosh_vndr/apple(extended)"
+
+    // The real numlock key on the iBook (shared with F5) works internally to
+    // the keyboard. It illuminates the Num_Lock led and locks the fn-key to
+    // type only the keypad keys on the letter keys (U=4, I=5, O=6, P=*, etc.).
+    // The key in the Num_lock position is engraved with Clear.
+    override key <NMLK> { [ Clear ] };
+    // The key engraved Delete sends BKSP. To get Delete, use Shift-Delete
+    override key <BKSP> { [ BackSpace, Delete ] };
+    // These keyboards only generate a <RALT> when pressing fn+Alt. This makes
+    // it impossible to get to the third shift level on keys that are on
+    // the fn-keypad, so use the Enter key (right of <SPC>) for Mode_switch,
+    // and use fn+Enter (Apple's code for Menu) for KP_Enter.
+    replace key <KPEN> { [ ISO_Level3_Shift ] };
+    modifier_map Mod5  { ISO_Level3_Shift };	
+    // Linux kernel bug with Menu on macs means this does not work yet
+//    replace key <MENU> { [ KP_Enter ] }; // should be keycode 117
+};
+
+partial modifier_keys
+xkb_symbols "laptop_bad_switch" {
+    // Kept for backward compatibility
+    include "macintosh_vndr/apple(laptop)"
+};
+
+// Long Aluminium Keyboards
+partial function_keys
+xkb_symbols "alukbd" {
+    // The base is a inet PC keyboard
+    include "pc"
+
+    // Additional Fxx keys
+    key <FK13> { [ F13 ] };
+    key <FK14> { [ F14 ] };
+    key <FK15> { [ F15 ] };
+    key <FK16> { [ F16 ] };
+    key <FK17> { [ F17 ] };
+    key <FK18> { [ F18 ] };
+    key <FK19> { [ F19 ] };
+
+    // On aluminium keyboards, Num_Lock is replace by Clear
+    replace key <NMLK> { [ Clear ] };
+    // CAPS key is always Caps_Lock, even for JIS keyboards
+    replace key <CAPS> { [ Caps_Lock ] };
+
+    // F1..F12 are multimedia keys when used with the 'Fn' key
+    // Make those multimedia actions available via ISO_Level3_Shift too,
+    // it is useful when the Fn key is remapped to something else (e.g. Insert)
+    key <FK01> {
+      type= "FOUR_LEVEL_X",
+      symbols[Group1]= [ NoSymbol, XF86KbdBrightnessDown, NoSymbol, XF86_Switch_VT_1 ]
+    };
+    key <FK02> {
+      type= "FOUR_LEVEL_X",
+      symbols[Group1]= [ NoSymbol, XF86KbdBrightnessUp, NoSymbol, XF86_Switch_VT_2 ]
+    };
+    key <FK03> {
+      type= "FOUR_LEVEL_X",
+      symbols[Group1]= [ NoSymbol, NoSymbol, NoSymbol, XF86_Switch_VT_3 ]
+    };
+    key <FK04> {
+      type= "FOUR_LEVEL_X",
+      symbols[Group1]= [ NoSymbol, NoSymbol, NoSymbol, XF86_Switch_VT_4 ]
+    };
+    key <FK05> {
+      type= "FOUR_LEVEL_X",
+      symbols[Group1]= [ NoSymbol, NoSymbol, NoSymbol, XF86_Switch_VT_5 ]
+    };
+    key <FK06> {
+      type= "FOUR_LEVEL_X",
+      symbols[Group1]= [ NoSymbol, NoSymbol, NoSymbol, XF86_Switch_VT_6 ]
+    };
+    key <FK07> {
+      type= "FOUR_LEVEL_X",
+      symbols[Group1]= [ NoSymbol, XF86AudioPrev, NoSymbol, XF86_Switch_VT_7 ]
+    };
+    key <FK08> {
+      type= "FOUR_LEVEL_X",
+      symbols[Group1]= [ NoSymbol, XF86AudioPlay, NoSymbol, XF86_Switch_VT_8 ]
+    };
+    key <FK09> {
+      type= "FOUR_LEVEL_X",
+      symbols[Group1]= [ NoSymbol, XF86AudioNext, NoSymbol, XF86_Switch_VT_9 ]
+    };
+    key <FK10> {
+      type= "FOUR_LEVEL_X",
+      symbols[Group1]= [ NoSymbol, XF86AudioMute, NoSymbol, XF86_Switch_VT_10 ]
+    };
+    key <FK11> {
+      type= "FOUR_LEVEL_X",
+      symbols[Group1]= [ NoSymbol, XF86AudioLowerVolume, NoSymbol, XF86_Switch_VT_11 ]
+    };
+    key <FK12> {
+      type= "FOUR_LEVEL_X",
+      symbols[Group1]= [ NoSymbol, XF86AudioRaiseVolume, NoSymbol, XF86_Switch_VT_12 ]
+    };
+};
+
+// Aluminium Keyboard: make F13, F14, F15 PC-ish (Print, Scroll_Lock, Pause)
+partial function_keys keypad_keys
+xkb_symbols "alupckeys" {
+    key <FK13> {
+      type= "PC_ALT_LEVEL2",
+      symbols[Group1]= [ Print, Sys_Req ]
+    };
+    key <FK14> { [ Scroll_Lock ] };
+    key <FK15> {
+      type= "PC_CONTROL_LEVEL2",
+      symbols[Group1]= [ Pause, Break ]
+    };
+    override key <NMLK> { [ Num_Lock, Pointer_EnableKeys ] };
+};
+
+partial
+xkb_symbols "jp_oadg109a" {
+    replace key <AB11> { [ backslash, underscore ] };
+};
+
+partial
+xkb_symbols "jp_pc106" {
+    replace key <AB11> { [ backslash, bar ] };
+};

@@ -1,0 +1,932 @@
+{
+  "build": "pyhd8ed1ab_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/noarch",
+  "constrains": [],
+  "depends": [
+    "python >=3.9",
+    "sphinx >=5"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/sphinxcontrib-applehelp-1.0.7-pyhd8ed1ab_0",
+  "features": "",
+  "files": [
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/__init__.py",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/.tx/config",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/ar/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/ar/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/bn/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/bn/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/ca/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/ca/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/cak/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/cak/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/cs/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/cs/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/cy/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/cy/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/da/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/da/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/de/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/de/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/el/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/el/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/eo/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/eo/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/es/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/es/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/et/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/et/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/eu/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/eu/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/fa/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/fa/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/fi/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/fi/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/fr/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/fr/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/he/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/he/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/hi/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/hi/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/hi_IN/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/hi_IN/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/hr/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/hr/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/hu/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/hu/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/id/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/id/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/it/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/it/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/ja/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/ja/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/ko/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/ko/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/lt/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/lt/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/lv/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/lv/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/mk/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/mk/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/nb_NO/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/nb_NO/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/ne/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/ne/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/nl/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/nl/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/pl/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/pl/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/pt/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/pt/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/pt_BR/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/pt_BR/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/pt_PT/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/pt_PT/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/ro/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/ro/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/ru/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/ru/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/si/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/si/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/sk/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/sk/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/sl/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/sl/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/sphinxcontrib.applehelp.pot",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/sr/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/sr/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/sr@latin/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/sr@latin/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/sv/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/sv/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/ta/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/ta/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/tr/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/tr/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/uk_UA/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/uk_UA/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/ur/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/ur/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/vi/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/vi/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/zh_CN/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/zh_CN/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/zh_TW/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/locales/zh_TW/LC_MESSAGES/sphinxcontrib.applehelp.po",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/templates/_access.html_t",
+    "lib/python3.10/site-packages/sphinxcontrib_applehelp-1.0.7.dist-info/INSTALLER",
+    "lib/python3.10/site-packages/sphinxcontrib_applehelp-1.0.7.dist-info/LICENSE",
+    "lib/python3.10/site-packages/sphinxcontrib_applehelp-1.0.7.dist-info/METADATA",
+    "lib/python3.10/site-packages/sphinxcontrib_applehelp-1.0.7.dist-info/RECORD",
+    "lib/python3.10/site-packages/sphinxcontrib_applehelp-1.0.7.dist-info/REQUESTED",
+    "lib/python3.10/site-packages/sphinxcontrib_applehelp-1.0.7.dist-info/WHEEL",
+    "lib/python3.10/site-packages/sphinxcontrib_applehelp-1.0.7.dist-info/direct_url.json",
+    "lib/python3.10/site-packages/sphinxcontrib/applehelp/__pycache__/__init__.cpython-310.pyc"
+  ],
+  "fn": "sphinxcontrib-applehelp-1.0.7-pyhd8ed1ab_0.conda",
+  "license": "BSD-2-Clause",
+  "license_family": "BSD",
+  "link": {
+    "source": "/opt/conda/pkgs/sphinxcontrib-applehelp-1.0.7-pyhd8ed1ab_0",
+    "type": 1
+  },
+  "md5": "aebfabcb60c33a89c1f9290cab49bc93",
+  "name": "sphinxcontrib-applehelp",
+  "noarch": "python",
+  "package_tarball_full_path": "/opt/conda/pkgs/sphinxcontrib-applehelp-1.0.7-pyhd8ed1ab_0.conda",
+  "package_type": "noarch_python",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "72790878d01732946bdcab24ad54e72b177df23e08646075a246e5726ba12651",
+        "sha256_in_prefix": "72790878d01732946bdcab24ad54e72b177df23e08646075a246e5726ba12651",
+        "size_in_bytes": 10741
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/.tx/config",
+        "path_type": "hardlink",
+        "sha256": "851c985defc6dfabde4cda1c8fab634bd824ef8bf98454109ce4d49b31a3790c",
+        "sha256_in_prefix": "851c985defc6dfabde4cda1c8fab634bd824ef8bf98454109ce4d49b31a3790c",
+        "size_in_bytes": 227
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/ar/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "0c4977262583c11f0c222a5b683da8ed8443e5a96bd15b63e6ead6e05180b5c7",
+        "sha256_in_prefix": "0c4977262583c11f0c222a5b683da8ed8443e5a96bd15b63e6ead6e05180b5c7",
+        "size_in_bytes": 1881
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/ar/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "0240eebd81bc827bebc90d47ab12ddbe366a296179a80514f862fabb4eb77e7c",
+        "sha256_in_prefix": "0240eebd81bc827bebc90d47ab12ddbe366a296179a80514f862fabb4eb77e7c",
+        "size_in_bytes": 2338
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/bn/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "cd368f64a7d60411b8c9e9108fdad991235528c93628b35c913a7a1be1830e30",
+        "sha256_in_prefix": "cd368f64a7d60411b8c9e9108fdad991235528c93628b35c913a7a1be1830e30",
+        "size_in_bytes": 1799
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/bn/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "1bca5aed69542e63d4417ea0841c2e2e85c03ab527c841fc2a4eff54444f0782",
+        "sha256_in_prefix": "1bca5aed69542e63d4417ea0841c2e2e85c03ab527c841fc2a4eff54444f0782",
+        "size_in_bytes": 2256
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/ca/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "605aadcbfbb553dc7a5997ec79f77cf9feca77904df12b11e70d21cc926121c0",
+        "sha256_in_prefix": "605aadcbfbb553dc7a5997ec79f77cf9feca77904df12b11e70d21cc926121c0",
+        "size_in_bytes": 1799
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/ca/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "67f050509343fc3ee8fe7d7c97a34d82444ea9b7ad82cc7ba0ab5e4f150d1628",
+        "sha256_in_prefix": "67f050509343fc3ee8fe7d7c97a34d82444ea9b7ad82cc7ba0ab5e4f150d1628",
+        "size_in_bytes": 2256
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/cak/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "070ca23b6ec78af6c79357dc0329005930256dc4aa2deef55b14479a022f826b",
+        "sha256_in_prefix": "070ca23b6ec78af6c79357dc0329005930256dc4aa2deef55b14479a022f826b",
+        "size_in_bytes": 1761
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/cak/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "00688abe5acf3ff673c2182a653fcf2eead76f4ddb16eba18b90bb732642d010",
+        "sha256_in_prefix": "00688abe5acf3ff673c2182a653fcf2eead76f4ddb16eba18b90bb732642d010",
+        "size_in_bytes": 2260
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/cs/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "73009cf99ad717700c0c46b2837701db85f45390ec6736941307b3603c363eaa",
+        "sha256_in_prefix": "73009cf99ad717700c0c46b2837701db85f45390ec6736941307b3603c363eaa",
+        "size_in_bytes": 1877
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/cs/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "1f2ad1e60ab62eef7884f541ba5de292e3d217b4393a4e822c175cd00b906e93",
+        "sha256_in_prefix": "1f2ad1e60ab62eef7884f541ba5de292e3d217b4393a4e822c175cd00b906e93",
+        "size_in_bytes": 2334
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/cy/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "ea0cfb8c9f7091d7bd62b5680e5221b391ba7d63ded502222ee1f9ae70e4d42c",
+        "sha256_in_prefix": "ea0cfb8c9f7091d7bd62b5680e5221b391ba7d63ded502222ee1f9ae70e4d42c",
+        "size_in_bytes": 1842
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/cy/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "434e2bfdf84269b45c305c1a5f68af96a0037c7e852d640031575778845cac8d",
+        "sha256_in_prefix": "434e2bfdf84269b45c305c1a5f68af96a0037c7e852d640031575778845cac8d",
+        "size_in_bytes": 2299
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/da/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "b5b6c762120ebf802dc539ae29f255d70291fbd1ddde0afd731c574c57d76907",
+        "sha256_in_prefix": "b5b6c762120ebf802dc539ae29f255d70291fbd1ddde0afd731c574c57d76907",
+        "size_in_bytes": 1798
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/da/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "697d4efa278f36aaa47dc2b6c87069303851064b0494dc5c008678165e706af8",
+        "sha256_in_prefix": "697d4efa278f36aaa47dc2b6c87069303851064b0494dc5c008678165e706af8",
+        "size_in_bytes": 2255
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/de/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "e09c94a79f6ad6eece3eced78ae592f6bb74d698e747f00d4759fc574658cfff",
+        "sha256_in_prefix": "e09c94a79f6ad6eece3eced78ae592f6bb74d698e747f00d4759fc574658cfff",
+        "size_in_bytes": 1798
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/de/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "a7537b97c393bca5c4171ee5db20b7d8d282231292fb0a1693d58963cbc79e6e",
+        "sha256_in_prefix": "a7537b97c393bca5c4171ee5db20b7d8d282231292fb0a1693d58963cbc79e6e",
+        "size_in_bytes": 2255
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/el/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "f5fa58134aede1e34133040113925e13424590a10c43814db7d930513b3a0d92",
+        "sha256_in_prefix": "f5fa58134aede1e34133040113925e13424590a10c43814db7d930513b3a0d92",
+        "size_in_bytes": 1797
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/el/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "615b7932a1c79c19b7f7883b8927566cc0f95868f91fecd0b369b813590af1fe",
+        "sha256_in_prefix": "615b7932a1c79c19b7f7883b8927566cc0f95868f91fecd0b369b813590af1fe",
+        "size_in_bytes": 2254
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/eo/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "968ee8ed15f544e159fecb5f6537faf841eae18f1516a6954118c9bb0481a053",
+        "sha256_in_prefix": "968ee8ed15f544e159fecb5f6537faf841eae18f1516a6954118c9bb0481a053",
+        "size_in_bytes": 1801
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/eo/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "91afdb39a9b9bac3f6180a1f4a92e2e6c62fb55a054d4d4d4b94c9b15f411c12",
+        "sha256_in_prefix": "91afdb39a9b9bac3f6180a1f4a92e2e6c62fb55a054d4d4d4b94c9b15f411c12",
+        "size_in_bytes": 2258
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/es/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "0d49667332c8c4337c5f05b5a89d2a26aad7864d2b4a4392db4e829d05847968",
+        "sha256_in_prefix": "0d49667332c8c4337c5f05b5a89d2a26aad7864d2b4a4392db4e829d05847968",
+        "size_in_bytes": 1825
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/es/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "55e7fb013fedde591263bf18490ea5a1ddeb0f3133c0d92a21af3dbbba958606",
+        "sha256_in_prefix": "55e7fb013fedde591263bf18490ea5a1ddeb0f3133c0d92a21af3dbbba958606",
+        "size_in_bytes": 2445
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/et/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "e55ab872191ef12f7a39a7490db3819fda3be84116ab5b493f9028c9e4b8f38f",
+        "sha256_in_prefix": "e55ab872191ef12f7a39a7490db3819fda3be84116ab5b493f9028c9e4b8f38f",
+        "size_in_bytes": 1827
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/et/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "323ec1fdc8f86099bf1252ae1428b89d07e8f309ce8506ecb7747fefcf2d1236",
+        "sha256_in_prefix": "323ec1fdc8f86099bf1252ae1428b89d07e8f309ce8506ecb7747fefcf2d1236",
+        "size_in_bytes": 2450
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/eu/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "c735bd89b61616137fd24723d58a294cae02ea1434d517dce59c08cf42804861",
+        "sha256_in_prefix": "c735bd89b61616137fd24723d58a294cae02ea1434d517dce59c08cf42804861",
+        "size_in_bytes": 1798
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/eu/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "ba501d9a7a6a78b484e393fa1483c4582ce2254082c4b14cd1a14b03afb5b64e",
+        "sha256_in_prefix": "ba501d9a7a6a78b484e393fa1483c4582ce2254082c4b14cd1a14b03afb5b64e",
+        "size_in_bytes": 2255
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/fa/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "a1edeec150c38db9c0415a4ddd269a57ab9af2bca3b23debe4451a501e7f9785",
+        "sha256_in_prefix": "a1edeec150c38db9c0415a4ddd269a57ab9af2bca3b23debe4451a501e7f9785",
+        "size_in_bytes": 1798
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/fa/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "c7b9b243ab8689125000b9c55074b4c3b1aa2287ef52fd2478d33cb3b9f32cb4",
+        "sha256_in_prefix": "c7b9b243ab8689125000b9c55074b4c3b1aa2287ef52fd2478d33cb3b9f32cb4",
+        "size_in_bytes": 2255
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/fi/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "98ea0eb1b714795d6972d97a431a350dd956aa7b82a07360f2a34d6fb5e73e76",
+        "sha256_in_prefix": "98ea0eb1b714795d6972d97a431a350dd956aa7b82a07360f2a34d6fb5e73e76",
+        "size_in_bytes": 1799
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/fi/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "8ac2c58af857b74b5c63d639198cf0e4450c5c5cf2f8fa9302d9bf5cdbc2f891",
+        "sha256_in_prefix": "8ac2c58af857b74b5c63d639198cf0e4450c5c5cf2f8fa9302d9bf5cdbc2f891",
+        "size_in_bytes": 2256
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/fr/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "d935619466544d590b88ee6a8f14c9f99af075664951d73708d412f8c849ed12",
+        "sha256_in_prefix": "d935619466544d590b88ee6a8f14c9f99af075664951d73708d412f8c849ed12",
+        "size_in_bytes": 1910
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/fr/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "450f3e08c9f4cccd11e645eafc018742d3c4cb418ed6a0eb3d7ed3ebef89f994",
+        "sha256_in_prefix": "450f3e08c9f4cccd11e645eafc018742d3c4cb418ed6a0eb3d7ed3ebef89f994",
+        "size_in_bytes": 2879
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/he/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "d21a0a9e847e124c325ef4bd953745438f88e98b7f2548b6354035ff2bd2ead7",
+        "sha256_in_prefix": "d21a0a9e847e124c325ef4bd953745438f88e98b7f2548b6354035ff2bd2ead7",
+        "size_in_bytes": 1892
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/he/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "a004056cd46d09d9f27f9707667848850339944c87720f9bbf00433423acf1ab",
+        "sha256_in_prefix": "a004056cd46d09d9f27f9707667848850339944c87720f9bbf00433423acf1ab",
+        "size_in_bytes": 2349
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/hi/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "6d9eecb674763777d88f5b00ef6efdb70c2ca8062b8988f4faaed1116a14df44",
+        "sha256_in_prefix": "6d9eecb674763777d88f5b00ef6efdb70c2ca8062b8988f4faaed1116a14df44",
+        "size_in_bytes": 1797
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/hi/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "bcd717f79f6552dc5bd72a2d9912e9aa57e8214b388f8284f14fab183c1431d6",
+        "sha256_in_prefix": "bcd717f79f6552dc5bd72a2d9912e9aa57e8214b388f8284f14fab183c1431d6",
+        "size_in_bytes": 2254
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/hi_IN/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "7dd29770d5accaf0064413471e46dbe89fa363f76a64b444c883321677a6db4e",
+        "sha256_in_prefix": "7dd29770d5accaf0064413471e46dbe89fa363f76a64b444c883321677a6db4e",
+        "size_in_bytes": 1811
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/hi_IN/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "cffeaf3656d6acb3060ff4144935be1b96e976ab6940085f416343b5570dee64",
+        "sha256_in_prefix": "cffeaf3656d6acb3060ff4144935be1b96e976ab6940085f416343b5570dee64",
+        "size_in_bytes": 2268
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/hr/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "a4f86ec2b93ff5052f7b6f81a2db16634c8439212933f602f4d96db0b23ac077",
+        "sha256_in_prefix": "a4f86ec2b93ff5052f7b6f81a2db16634c8439212933f602f4d96db0b23ac077",
+        "size_in_bytes": 1872
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/hr/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "8b6afd712f8f81a3b3062daf5c51fb2f5e8578155d867e93548aed2c8ffa22c1",
+        "sha256_in_prefix": "8b6afd712f8f81a3b3062daf5c51fb2f5e8578155d867e93548aed2c8ffa22c1",
+        "size_in_bytes": 2329
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/hu/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "5c12063a4e3c87b63c24ed1f2210fda3371b67d244270e31a830974cce0f2832",
+        "sha256_in_prefix": "5c12063a4e3c87b63c24ed1f2210fda3371b67d244270e31a830974cce0f2832",
+        "size_in_bytes": 1801
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/hu/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "d4d9a6318e67513f7de11118797404ee0664b4ccc731aeb9bb2695b62315f84f",
+        "sha256_in_prefix": "d4d9a6318e67513f7de11118797404ee0664b4ccc731aeb9bb2695b62315f84f",
+        "size_in_bytes": 2258
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/id/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "6afffd307753a9d16fba40556620c8868f06bb8cad9895be14d2d1ee7e1a9635",
+        "sha256_in_prefix": "6afffd307753a9d16fba40556620c8868f06bb8cad9895be14d2d1ee7e1a9635",
+        "size_in_bytes": 1856
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/id/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "3f9d640733dc6a0a21e1b5a865759db9e2624b5641a67ce1b17fcaafa2848a37",
+        "sha256_in_prefix": "3f9d640733dc6a0a21e1b5a865759db9e2624b5641a67ce1b17fcaafa2848a37",
+        "size_in_bytes": 2850
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/it/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "dba8f602ebfaffbb4c411aa23db77610d225feb721dfd2bfdd197e56b2442048",
+        "sha256_in_prefix": "dba8f602ebfaffbb4c411aa23db77610d225feb721dfd2bfdd197e56b2442048",
+        "size_in_bytes": 1799
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/it/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "a099be2c92cec1b6cba204b80e6b6c79ce6e44855c230bbdfb9a91c00a9eb10c",
+        "sha256_in_prefix": "a099be2c92cec1b6cba204b80e6b6c79ce6e44855c230bbdfb9a91c00a9eb10c",
+        "size_in_bytes": 2256
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/ja/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "2bb05c225a54f1ee8c4c1da69501b3c7ad406aa91544d6fe776bb471ea019a5d",
+        "sha256_in_prefix": "2bb05c225a54f1ee8c4c1da69501b3c7ad406aa91544d6fe776bb471ea019a5d",
+        "size_in_bytes": 1793
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/ja/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "64447a25eea8a75bc599001261b4aa7cb4a4bcdeb54a2133d8a8a5f3918aa057",
+        "sha256_in_prefix": "64447a25eea8a75bc599001261b4aa7cb4a4bcdeb54a2133d8a8a5f3918aa057",
+        "size_in_bytes": 2250
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/ko/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "f68ec5cba2defbf7ad02b70ffda085b5bed217231f9dc090f9cb159857c95c66",
+        "sha256_in_prefix": "f68ec5cba2defbf7ad02b70ffda085b5bed217231f9dc090f9cb159857c95c66",
+        "size_in_bytes": 1992
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/ko/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "267c7db09164ac49e58597d5bcad0f7c6e759be6db287dbc969df4a5a0dc8b05",
+        "sha256_in_prefix": "267c7db09164ac49e58597d5bcad0f7c6e759be6db287dbc969df4a5a0dc8b05",
+        "size_in_bytes": 3071
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/lt/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "53a89c4bbc84bccbf773ee85c01726652b7cd8e49409725d13ddc7f22858e9dd",
+        "sha256_in_prefix": "53a89c4bbc84bccbf773ee85c01726652b7cd8e49409725d13ddc7f22858e9dd",
+        "size_in_bytes": 1933
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/lt/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "7c34cdfe6e61feba678645dc7bd91924606fa089adf03b01bf75f2314bbbeb8e",
+        "sha256_in_prefix": "7c34cdfe6e61feba678645dc7bd91924606fa089adf03b01bf75f2314bbbeb8e",
+        "size_in_bytes": 2390
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/lv/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "bcad2deafe3a2010ba735d7af3ad326a8b7395f7d03dcba3834db1fdfcfad1e2",
+        "sha256_in_prefix": "bcad2deafe3a2010ba735d7af3ad326a8b7395f7d03dcba3834db1fdfcfad1e2",
+        "size_in_bytes": 1834
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/lv/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "51d163d0795c547aa8e727ec77dab73452ba8f62b0b2a83d069dfcebfd6d78a2",
+        "sha256_in_prefix": "51d163d0795c547aa8e727ec77dab73452ba8f62b0b2a83d069dfcebfd6d78a2",
+        "size_in_bytes": 2291
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/mk/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "e7cdd1b2c15dbe481d36da1fda340d48418903c75e52cffef585f1a0e765501f",
+        "sha256_in_prefix": "e7cdd1b2c15dbe481d36da1fda340d48418903c75e52cffef585f1a0e765501f",
+        "size_in_bytes": 1832
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/mk/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "a3e9299d9e772863778713a131749b83c367823d11cba438d843d007b4d30f98",
+        "sha256_in_prefix": "a3e9299d9e772863778713a131749b83c367823d11cba438d843d007b4d30f98",
+        "size_in_bytes": 2289
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/nb_NO/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "c6608e70b728ad1054fc795dfca2cd18ed7d1aad76df70175fb6fce7d252e433",
+        "sha256_in_prefix": "c6608e70b728ad1054fc795dfca2cd18ed7d1aad76df70175fb6fce7d252e433",
+        "size_in_bytes": 1824
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/nb_NO/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "0d5c9d6edad811a986559e27b0f77b6868e370ce1c2c1e2b10ab055d24385b19",
+        "sha256_in_prefix": "0d5c9d6edad811a986559e27b0f77b6868e370ce1c2c1e2b10ab055d24385b19",
+        "size_in_bytes": 2281
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/ne/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "6ec070d80705da1696c896a3371f76cb7f126846e5836c74d70f11c189ff1bb0",
+        "sha256_in_prefix": "6ec070d80705da1696c896a3371f76cb7f126846e5836c74d70f11c189ff1bb0",
+        "size_in_bytes": 1798
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/ne/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "cde486ae2050dd384963df1a4699e2b6885868504a294cfdb1d79fc763c47e40",
+        "sha256_in_prefix": "cde486ae2050dd384963df1a4699e2b6885868504a294cfdb1d79fc763c47e40",
+        "size_in_bytes": 2255
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/nl/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "9d856d43e933abdedcec6cfa24b75a6322b0b2e318933d7f47018c05670ed50d",
+        "sha256_in_prefix": "9d856d43e933abdedcec6cfa24b75a6322b0b2e318933d7f47018c05670ed50d",
+        "size_in_bytes": 1797
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/nl/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "f6957a07c1429dbec512308432b2bdd767184aaeba8151d8c43764989b07e623",
+        "sha256_in_prefix": "f6957a07c1429dbec512308432b2bdd767184aaeba8151d8c43764989b07e623",
+        "size_in_bytes": 2254
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/pl/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "19cbe340de3ab2143e7eb2b8ed6992f659356f0d50bd4f99ba9cec43cfda0b3f",
+        "sha256_in_prefix": "19cbe340de3ab2143e7eb2b8ed6992f659356f0d50bd4f99ba9cec43cfda0b3f",
+        "size_in_bytes": 1966
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/pl/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "2ff10c30248aabc5e6491cb2d6110088d0bbbab9402cc79c0983d0a6c639c17d",
+        "sha256_in_prefix": "2ff10c30248aabc5e6491cb2d6110088d0bbbab9402cc79c0983d0a6c639c17d",
+        "size_in_bytes": 2579
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/pt/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "83556c36ef8b3719674c2728bacf2970fb016a4ca6f7f7e2d41744a1c1c647e7",
+        "sha256_in_prefix": "83556c36ef8b3719674c2728bacf2970fb016a4ca6f7f7e2d41744a1c1c647e7",
+        "size_in_bytes": 1802
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/pt/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "8ad3718a422bad960353f3a8372d6ed021afe27b99d4701698615bf29d159635",
+        "sha256_in_prefix": "8ad3718a422bad960353f3a8372d6ed021afe27b99d4701698615bf29d159635",
+        "size_in_bytes": 2259
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/pt_BR/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "90d10be3e86d99c0e704fa24fb86a382355f390974910bfbbafab519fc57c53d",
+        "sha256_in_prefix": "90d10be3e86d99c0e704fa24fb86a382355f390974910bfbbafab519fc57c53d",
+        "size_in_bytes": 1816
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/pt_BR/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "f7903e3acdb09da19564487f9babe418424acf7377e047097a432e4a1cf253e4",
+        "sha256_in_prefix": "f7903e3acdb09da19564487f9babe418424acf7377e047097a432e4a1cf253e4",
+        "size_in_bytes": 2273
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/pt_PT/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "473f1d899e3333efe1b66fdb3207d50ab4cf8896c9f78304b57adff52be3c034",
+        "sha256_in_prefix": "473f1d899e3333efe1b66fdb3207d50ab4cf8896c9f78304b57adff52be3c034",
+        "size_in_bytes": 1819
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/pt_PT/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "882c3f73d4e0050e16784dec4fd826414a65d7fe4ae176b628f02560c313a03a",
+        "sha256_in_prefix": "882c3f73d4e0050e16784dec4fd826414a65d7fe4ae176b628f02560c313a03a",
+        "size_in_bytes": 2276
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/ro/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "bf3846946fc9a6b5e9d636ece2633716cd2a7f78d8af737863202fd835d1a561",
+        "sha256_in_prefix": "bf3846946fc9a6b5e9d636ece2633716cd2a7f78d8af737863202fd835d1a561",
+        "size_in_bytes": 1841
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/ro/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "697ce7c9d1633b2ad14af8176c80149be98e8f552099b5bbda3258473b77afe6",
+        "sha256_in_prefix": "697ce7c9d1633b2ad14af8176c80149be98e8f552099b5bbda3258473b77afe6",
+        "size_in_bytes": 2298
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/ru/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "bbb699054db68692b43c8ed098f5ff08cc7b6530d8448bfd4ec2bab66860df33",
+        "sha256_in_prefix": "bbb699054db68692b43c8ed098f5ff08cc7b6530d8448bfd4ec2bab66860df33",
+        "size_in_bytes": 1937
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/ru/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "8ddb49129f90a956b54e4c2f583ab5cadc50ec4c56630d9946d4957db4c0ad24",
+        "sha256_in_prefix": "8ddb49129f90a956b54e4c2f583ab5cadc50ec4c56630d9946d4957db4c0ad24",
+        "size_in_bytes": 2394
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/si/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "eeca5629619d1c06ca2f79d3571e80989efbf08761b81a7483ba068f71f17528",
+        "sha256_in_prefix": "eeca5629619d1c06ca2f79d3571e80989efbf08761b81a7483ba068f71f17528",
+        "size_in_bytes": 1799
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/si/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "739bf37b18874a86ba865903b0d8626a8a1d0555795876e5718d5cb76093e76b",
+        "sha256_in_prefix": "739bf37b18874a86ba865903b0d8626a8a1d0555795876e5718d5cb76093e76b",
+        "size_in_bytes": 2256
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/sk/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "bbd333f16daa08f3199a7cd3992ab61907f497a0ebe08873a2180923ea3bd128",
+        "sha256_in_prefix": "bbd333f16daa08f3199a7cd3992ab61907f497a0ebe08873a2180923ea3bd128",
+        "size_in_bytes": 1873
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/sk/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "6c88d5398efbb9066fa3c7126565269565707fc5bd905aa22a80c923703f8ee2",
+        "sha256_in_prefix": "6c88d5398efbb9066fa3c7126565269565707fc5bd905aa22a80c923703f8ee2",
+        "size_in_bytes": 2330
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/sl/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "d2dcd0aca6ab3c2ea813992ff229a539b4bc3bebe84e6b03bb0cc50af86026b2",
+        "sha256_in_prefix": "d2dcd0aca6ab3c2ea813992ff229a539b4bc3bebe84e6b03bb0cc50af86026b2",
+        "size_in_bytes": 1853
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/sl/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "767d633c7fd8e348538d40226c92b8818883d5dff89f0c133cfb276213aa1734",
+        "sha256_in_prefix": "767d633c7fd8e348538d40226c92b8818883d5dff89f0c133cfb276213aa1734",
+        "size_in_bytes": 2310
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/sphinxcontrib.applehelp.pot",
+        "path_type": "hardlink",
+        "sha256": "dbd19c67af901543fab55f63e2544cc538ab47fd5273747f4e7aaed349cf9d4d",
+        "sha256_in_prefix": "dbd19c67af901543fab55f63e2544cc538ab47fd5273747f4e7aaed349cf9d4d",
+        "size_in_bytes": 2200
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/sr/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "be42f65800f9435901df41fb8ed373d0e1e17ca032d51634b0fe0e1f92629f44",
+        "sha256_in_prefix": "be42f65800f9435901df41fb8ed373d0e1e17ca032d51634b0fe0e1f92629f44",
+        "size_in_bytes": 1873
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/sr/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "60201d99e8b22af1bcd530e1f67da2a0a6231f0e1d7dd9fda2ebdaa19aaf415c",
+        "sha256_in_prefix": "60201d99e8b22af1bcd530e1f67da2a0a6231f0e1d7dd9fda2ebdaa19aaf415c",
+        "size_in_bytes": 2330
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/sr@latin/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "d1e93fdc76fd20fca5e698916f72ef5a39ff39da51da20eb3870c63e849fad65",
+        "sha256_in_prefix": "d1e93fdc76fd20fca5e698916f72ef5a39ff39da51da20eb3870c63e849fad65",
+        "size_in_bytes": 1895
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/sr@latin/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "d253fec4cf9b7da66ccef7ebb7f397c0ebfb2f8df3e8e8797a7a7cb712cae5a4",
+        "sha256_in_prefix": "d253fec4cf9b7da66ccef7ebb7f397c0ebfb2f8df3e8e8797a7a7cb712cae5a4",
+        "size_in_bytes": 2352
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/sv/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "ba23b388bc992b39604a3ece1ada5fb3b912c29d81ec10b8f9e2a3cc5d39c209",
+        "sha256_in_prefix": "ba23b388bc992b39604a3ece1ada5fb3b912c29d81ec10b8f9e2a3cc5d39c209",
+        "size_in_bytes": 1799
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/sv/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "220ad68d2a852fd6348896d7f733ae16f7628a6878c1f9c1e6cb0389bde3caa3",
+        "sha256_in_prefix": "220ad68d2a852fd6348896d7f733ae16f7628a6878c1f9c1e6cb0389bde3caa3",
+        "size_in_bytes": 2256
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/ta/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "849f122c34c9aa81c7343b25f575a93f8e409a35dc6127d3c8d654ebd68647a2",
+        "sha256_in_prefix": "849f122c34c9aa81c7343b25f575a93f8e409a35dc6127d3c8d654ebd68647a2",
+        "size_in_bytes": 1797
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/ta/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "e4ef18c46488692326d94060674799f810d31507cbd7a781302bbce93017897f",
+        "sha256_in_prefix": "e4ef18c46488692326d94060674799f810d31507cbd7a781302bbce93017897f",
+        "size_in_bytes": 2254
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/tr/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "73ce26dd6de25ee7891c7c0af0531283de00a08cc0e8095e5eeac60ae186a30e",
+        "sha256_in_prefix": "73ce26dd6de25ee7891c7c0af0531283de00a08cc0e8095e5eeac60ae186a30e",
+        "size_in_bytes": 1798
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/tr/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "728efc4b467d55fe109ce40d70f34dc28939afc9b53c813ba14bdc0bbf5aa6ca",
+        "sha256_in_prefix": "728efc4b467d55fe109ce40d70f34dc28939afc9b53c813ba14bdc0bbf5aa6ca",
+        "size_in_bytes": 2255
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/uk_UA/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "9249feb960d85c3fb55be92d3aba354fb168546bd485396dd43514997db53a7a",
+        "sha256_in_prefix": "9249feb960d85c3fb55be92d3aba354fb168546bd485396dd43514997db53a7a",
+        "size_in_bytes": 2039
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/uk_UA/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "ff5eb897f1585bbc50b88ceeb290f08e7879dc1544572cdfa3205c3b91aaec83",
+        "sha256_in_prefix": "ff5eb897f1585bbc50b88ceeb290f08e7879dc1544572cdfa3205c3b91aaec83",
+        "size_in_bytes": 2496
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/ur/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "c13662d11490b7b79239dd627898cc55f1ae4f4a47fc3b2924d103cf4cd011ad",
+        "sha256_in_prefix": "c13662d11490b7b79239dd627898cc55f1ae4f4a47fc3b2924d103cf4cd011ad",
+        "size_in_bytes": 1796
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/ur/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "3b6990704b6ce54e041ec4a5b90d964cc16efa1746ee0480f9893e8f838c343e",
+        "sha256_in_prefix": "3b6990704b6ce54e041ec4a5b90d964cc16efa1746ee0480f9893e8f838c343e",
+        "size_in_bytes": 2253
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/vi/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "f41e1b01d4c192acbdd3a59e5f491923bb2e221645e4cca3abed2f4f7c8f753d",
+        "sha256_in_prefix": "f41e1b01d4c192acbdd3a59e5f491923bb2e221645e4cca3abed2f4f7c8f753d",
+        "size_in_bytes": 1795
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/vi/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "317868d8d58393b8469e67d6822901646606971d498f7044f2e65df69aa7d08c",
+        "sha256_in_prefix": "317868d8d58393b8469e67d6822901646606971d498f7044f2e65df69aa7d08c",
+        "size_in_bytes": 2252
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/zh_CN/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "e18f6abce61c2a400b32713dc06d4f32f50cc5ce7466b9f5d77a6b60d8756cd2",
+        "sha256_in_prefix": "e18f6abce61c2a400b32713dc06d4f32f50cc5ce7466b9f5d77a6b60d8756cd2",
+        "size_in_bytes": 1817
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/zh_CN/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "d13bd2c973d3c140c862a1928fd7f9b3b60b753d8911dd73343b8f9a3185e8d6",
+        "sha256_in_prefix": "d13bd2c973d3c140c862a1928fd7f9b3b60b753d8911dd73343b8f9a3185e8d6",
+        "size_in_bytes": 2824
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/zh_TW/LC_MESSAGES/sphinxcontrib.applehelp.mo",
+        "path_type": "hardlink",
+        "sha256": "f6a0a80bccbb616f153cce7d8302d20e56a944386079b2cfa173d7ac9e26e666",
+        "sha256_in_prefix": "f6a0a80bccbb616f153cce7d8302d20e56a944386079b2cfa173d7ac9e26e666",
+        "size_in_bytes": 1807
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/locales/zh_TW/LC_MESSAGES/sphinxcontrib.applehelp.po",
+        "path_type": "hardlink",
+        "sha256": "e50114353313302a9222af4869c094f655151007fb1310394bda6592e8160472",
+        "sha256_in_prefix": "e50114353313302a9222af4869c094f655151007fb1310394bda6592e8160472",
+        "size_in_bytes": 2264
+      },
+      {
+        "_path": "site-packages/sphinxcontrib/applehelp/templates/_access.html_t",
+        "path_type": "hardlink",
+        "sha256": "be837126b9229b1214f9e80c09c91aaef32b450e460e85a83af35d30837ac745",
+        "sha256_in_prefix": "be837126b9229b1214f9e80c09c91aaef32b450e460e85a83af35d30837ac745",
+        "size_in_bytes": 403
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_applehelp-1.0.7.dist-info/INSTALLER",
+        "path_type": "hardlink",
+        "sha256": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "sha256_in_prefix": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "size_in_bytes": 5
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_applehelp-1.0.7.dist-info/LICENSE",
+        "path_type": "hardlink",
+        "sha256": "445e28ceb62ff34619a7031148aea9fce3560dc55fd8e15a719614b1fb8b956a",
+        "sha256_in_prefix": "445e28ceb62ff34619a7031148aea9fce3560dc55fd8e15a719614b1fb8b956a",
+        "size_in_bytes": 1441
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_applehelp-1.0.7.dist-info/METADATA",
+        "path_type": "hardlink",
+        "sha256": "bc9966fb5b27ed98ed47a68ba2c5a5825b2175a207e47fde91eacbf049a06f77",
+        "sha256_in_prefix": "bc9966fb5b27ed98ed47a68ba2c5a5825b2175a207e47fde91eacbf049a06f77",
+        "size_in_bytes": 2207
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_applehelp-1.0.7.dist-info/RECORD",
+        "path_type": "hardlink",
+        "sha256": "1e5faf4e1465da94d3b48d441d9eaa6f41d24a5b6a9a12bfe77934fbf8d38d85",
+        "sha256_in_prefix": "1e5faf4e1465da94d3b48d441d9eaa6f41d24a5b6a9a12bfe77934fbf8d38d85",
+        "size_in_bytes": 14317
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_applehelp-1.0.7.dist-info/REQUESTED",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256_in_prefix": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_applehelp-1.0.7.dist-info/WHEEL",
+        "path_type": "hardlink",
+        "sha256": "1196c6921ec87b83e865f450f08d19b8ff5592537f4ef719e83484e546abe33e",
+        "sha256_in_prefix": "1196c6921ec87b83e865f450f08d19b8ff5592537f4ef719e83484e546abe33e",
+        "size_in_bytes": 81
+      },
+      {
+        "_path": "site-packages/sphinxcontrib_applehelp-1.0.7.dist-info/direct_url.json",
+        "path_type": "hardlink",
+        "sha256": "29d0d5cf453246910d4b54c4bd495a7bf63a0bbecab11e3dfa149ad2536d83b0",
+        "sha256_in_prefix": "29d0d5cf453246910d4b54c4bd495a7bf63a0bbecab11e3dfa149ad2536d83b0",
+        "size_in_bytes": 119
+      },
+      {
+        "_path": "lib/python3.10/site-packages/sphinxcontrib/applehelp/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "67e2b386c7b3c858ead88fa71fe4fa5eb1f4f59d7994d167b3910a744db392d3",
+  "size": 29367,
+  "subdir": "noarch",
+  "timestamp": 1692039716106,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/noarch/sphinxcontrib-applehelp-1.0.7-pyhd8ed1ab_0.conda",
+  "version": "1.0.7"
+}

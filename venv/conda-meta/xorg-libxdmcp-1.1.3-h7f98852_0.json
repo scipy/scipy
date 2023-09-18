@@ -1,0 +1,76 @@
+{
+  "build": "h7f98852_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [],
+  "depends": [
+    "libgcc-ng >=9.3.0"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/xorg-libxdmcp-1.1.3-h7f98852_0",
+  "features": "",
+  "files": [
+    "include/X11/Xdmcp.h",
+    "lib/libXdmcp.so",
+    "lib/libXdmcp.so.6",
+    "lib/libXdmcp.so.6.0.0",
+    "lib/pkgconfig/xdmcp.pc"
+  ],
+  "fn": "xorg-libxdmcp-1.1.3-h7f98852_0.tar.bz2",
+  "license": "MIT",
+  "license_family": "MIT",
+  "link": {
+    "source": "/opt/conda/pkgs/xorg-libxdmcp-1.1.3-h7f98852_0",
+    "type": 1
+  },
+  "md5": "be93aabceefa2fac576e971aef407908",
+  "name": "xorg-libxdmcp",
+  "package_tarball_full_path": "/opt/conda/pkgs/xorg-libxdmcp-1.1.3-h7f98852_0.tar.bz2",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "include/X11/Xdmcp.h",
+        "path_type": "hardlink",
+        "sha256": "7326c6b4504939ba0ad61fece04238460020996ef230b8bd9e6b14e4ad5ca426",
+        "sha256_in_prefix": "7326c6b4504939ba0ad61fece04238460020996ef230b8bd9e6b14e4ad5ca426",
+        "size_in_bytes": 6371
+      },
+      {
+        "_path": "lib/libXdmcp.so",
+        "path_type": "softlink",
+        "sha256": "fe32fc2938b0d122e4b5ae1c7f3a3bc53cf1445edd090cebdc30b1c5582da87f",
+        "size_in_bytes": 31056
+      },
+      {
+        "_path": "lib/libXdmcp.so.6",
+        "path_type": "softlink",
+        "sha256": "fe32fc2938b0d122e4b5ae1c7f3a3bc53cf1445edd090cebdc30b1c5582da87f",
+        "size_in_bytes": 31056
+      },
+      {
+        "_path": "lib/libXdmcp.so.6.0.0",
+        "path_type": "hardlink",
+        "sha256": "fe32fc2938b0d122e4b5ae1c7f3a3bc53cf1445edd090cebdc30b1c5582da87f",
+        "sha256_in_prefix": "fe32fc2938b0d122e4b5ae1c7f3a3bc53cf1445edd090cebdc30b1c5582da87f",
+        "size_in_bytes": 31056
+      },
+      {
+        "_path": "lib/pkgconfig/xdmcp.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/xorg-libxdmcp_1610071640801/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placeho",
+        "sha256": "88ea3476e87080babae29889d4c1d7828e00cf1b80abbcb8241076d88ec0aea2",
+        "sha256_in_prefix": "42c9d26129ac7270112aaaf2299401be70c51ec0d0d8e2037805caf19aa547ce",
+        "size_in_bytes": 491
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "4df7c5ee11b8686d3453e7f3f4aa20ceef441262b49860733066c52cfd0e4a77",
+  "size": 19126,
+  "subdir": "linux-64",
+  "timestamp": 1610071769228,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/xorg-libxdmcp-1.1.3-h7f98852_0.tar.bz2",
+  "version": "1.1.3"
+}

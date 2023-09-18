@@ -1,0 +1,121 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Error handling: Cairo: A Vector Graphics Library</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<link rel="home" href="index.html" title="Cairo: A Vector Graphics Library">
+<link rel="up" href="language-bindings.html" title="Appendix A. Creating a language binding for cairo">
+<link rel="prev" href="bindings-streams.html" title="Streams and File I/O">
+<link rel="next" href="bindings-patterns.html" title="Patterns">
+<meta name="generator" content="GTK-Doc V1.27 (XML mode)">
+<link rel="stylesheet" href="style.css" type="text/css">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<table class="navigation" id="top" width="100%" summary="Navigation header" cellpadding="2" cellspacing="5"><tr valign="middle">
+<td width="100%" align="left" class="shortcuts"></td>
+<td><a accesskey="h" href="index.html"><img src="home.png" width="16" height="16" border="0" alt="Home"></a></td>
+<td><a accesskey="u" href="language-bindings.html"><img src="up.png" width="16" height="16" border="0" alt="Up"></a></td>
+<td><a accesskey="p" href="bindings-streams.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
+<td><a accesskey="n" href="bindings-patterns.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
+</tr></table>
+<div class="sect1">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="bindings-errors"></a>Error handling</h2></div></div></div>
+<p>
+      The error handling approach in C for Cairo has multiple
+      elements:
+    </p>
+<div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
+<li class="listitem"><p>
+	  When a method on an object fails, the object is put into
+	  an error state. Subsequent operations on the object do
+	  nothing. The status of the object can be queried with
+	  a function like <a class="link" href="cairo-cairo-t.html#cairo-status" title="cairo_status ()"><code class="function">status()</code></a>.
+      </p></li>
+<li class="listitem">
+<p>
+	  Constructors, rather than
+	  returning <code class="constant">NULL</code> on out-of-memory failure,
+	  return a special singleton object on which all
+	  operations do nothing. Retrieving the status of the
+	  singleton object returns <code class="constant">CAIRO_STATUS_NO_MEMORY</code>
+	  </p>
+<p class="remark"><em><span class="remark">
+	    Is this going to apply to
+	  <span class="type">cairo_surface_t</span> as well?
+	</span></em></p>
+<p class="remark"><em><span class="remark">
+	  What about cairo_copy_path_data()? It's probably going to
+	  have to return <code class="constant">NULL</code>.
+	</span></em></p>
+</li>
+<li class="listitem"><p>
+	  Errors propagate from object to object. Setting a pattern
+	  in an out-of-memory state as the source of a
+	  <span class="type">cairo_t</span> puts the type into an error state.
+      </p></li>
+</ul></div>
+<p class="remark"><em><span class="remark">Much of the above is not yet implemented at the time of
+      this writing</span></em></p>
+<p>
+      A language binding could copy the C approach, and for a 
+      language without exceptions, this is likely the right thing
+      to do. However, for a language with exceptions, exposing
+      a completely different style of error handling for cairo
+      would be strange. So, instead, status should be checked
+      after every call to cairo, and exceptions thrown as necessary.
+    </p>
+<p>
+      One problem that can arise with this, in languages
+      where handling exceptions is mandatory (like Java), is that almost
+      every cairo function can result in a status being set,
+      usually because of an out-of-memory condition. This could make
+      cairo hard to use. To resolve this problem, let's classify then
+      cairo status codes:
+    </p>
+<pre class="programlisting">
+/* Memory */      
+CAIRO_STATUS_NO_MEMORY,
+
+/* Programmer error */      
+CAIRO_STATUS_INVALID_RESTORE
+CAIRO_STATUS_INVALID_POP_GROUP
+CAIRO_STATUS_NO_CURRENT_POINT
+CAIRO_STATUS_INVALID_MATRIX
+CAIRO_STATUS_NO_TARGET_SURFACE
+CAIRO_STATUS_INVALID_STRING
+CAIRO_STATUS_SURFACE_FINISHED
+CAIRO_STATUS_BAD_NESTING
+
+/* Language binding implementation */
+CAIRO_STATUS_NULL_POINTER
+CAIRO_STATUS_INVALID_PATH_DATA
+CAIRO_STATUS_SURFACE_TYPE_MISMATCH
+
+/* Other */      
+CAIRO_STATUS_READ_ERROR
+CAIRO_STATUS_WRITE_ERROR
+</pre>
+<p>
+      If we look at these, the
+      <code class="constant">CAIRO_STATUS_NO_MEMORY</code>
+      should map to the native out-of-memory exception, which could
+      happen at any point in any case. Most of the others indicate
+      programmer error, and handling them in user code would be
+      silly. These should be mapped into whatever the language uses
+      for assertion failures, rather than errors that are normally
+      handled. (In Java, a subclass of Error rather than Exception,
+      perhaps.) And <code class="constant">CAIRO_STATUS_READ_ERROR</code>,
+      and <code class="constant">CAIRO_STATUS_WRITE_ERROR</code> can occur
+      only in very specific places. (In fact, as described
+      in <a class="xref" href="bindings-streams.html" title="Streams and File I/O">the section called “Streams and File I/O”</a>, these errors may be
+      mapped into the language's native I/O error types.)
+      So, there really aren't exceptions that the programmer must
+      handle at most points in the Cairo API.
+    </p>
+</div>
+<div class="footer">
+<hr>Generated by GTK-Doc V1.27</div>
+</body>
+</html>

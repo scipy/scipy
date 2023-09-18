@@ -1,0 +1,13 @@
+prefix=/workspaces/scipy/venv
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+includedir=${prefix}/include/qt
+
+
+Name: Qt5 Quick3DAssetImport
+Description: Qt Quick3DAssetImport module
+Version: 5.15.8
+Libs: -L${libdir} -lQt5Quick3DAssetImport 
+Cflags: -DQT_QUICK3DASSETIMPORT_LIB -I${includedir}/QtQuick3DAssetImport -I${includedir}
+Requires: Qt5Core Qt5Gui Qt5Qml Qt5Quick3DRender Qt5Quick3DUtils
+

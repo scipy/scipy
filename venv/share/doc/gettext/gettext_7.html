@@ -1,0 +1,429 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html401/loose.dtd">
+<html>
+<!-- Created on October, 9 2022 by texi2html 1.78a -->
+<!--
+Written by: Lionel Cons <Lionel.Cons@cern.ch> (original author)
+            Karl Berry  <karl@freefriends.org>
+            Olaf Bachmann <obachman@mathematik.uni-kl.de>
+            and many others.
+Maintained by: Many creative people.
+Send bugs and suggestions to <texi2html-bug@nongnu.org>
+
+-->
+<head>
+<title>GNU gettext utilities: 7. Updating Existing PO Files</title>
+
+<meta name="description" content="GNU gettext utilities: 7. Updating Existing PO Files">
+<meta name="keywords" content="GNU gettext utilities: 7. Updating Existing PO Files">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="texi2html 1.78a">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+pre.display {font-family: serif}
+pre.format {font-family: serif}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: serif; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: serif; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.roman {font-family:serif; font-weight:normal;}
+span.sansserif {font-family:sans-serif; font-weight:normal;}
+ul.toc {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="gettext_6.html#SEC44" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="gettext_8.html#SEC62" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_21.html#SEC387" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+
+<hr size="2">
+<a name="Updating"></a>
+<a name="SEC52"></a>
+<h1 class="chapter"> <a href="gettext_toc.html#TOC46">7. Updating Existing PO Files</a> </h1>
+
+
+
+<a name="msgmerge-Invocation"></a>
+<a name="SEC53"></a>
+<h2 class="section"> <a href="gettext_toc.html#TOC47">7.1 Invoking the <code>msgmerge</code> Program</a> </h2>
+
+
+<table><tr><td>&nbsp;</td><td><pre class="example">msgmerge [<var>option</var>] <var>def</var>.po <var>ref</var>.pot
+</pre></td></tr></table>
+
+<p>The <code>msgmerge</code> program merges two Uniforum style .po files together.
+The <var>def</var>.po file is an existing PO file with translations which will
+be taken over to the newly created file as long as they still match;
+comments will be preserved, but extracted comments and file positions will
+be discarded.  The <var>ref</var>.pot file is the last created PO file with
+up-to-date source references but old translations, or a PO Template file
+(generally created by <code>xgettext</code>); any translations or comments
+in the file will be discarded, however dot comments and file positions
+will be preserved.  Where an exact match cannot be found, fuzzy matching
+is used to produce better results.
+</p>
+
+<a name="SEC54"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC48">7.1.1 Input file location</a> </h3>
+
+<dl compact="compact">
+<dt> &lsquo;<samp><var>def</var>.po</samp>&rsquo;</dt>
+<dd><p>Translations referring to old sources.
+</p>
+</dd>
+<dt> &lsquo;<samp><var>ref</var>.pot</samp>&rsquo;</dt>
+<dd><p>References to the new sources.
+</p>
+</dd>
+<dt> &lsquo;<samp>-D <var>directory</var></samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--directory=<var>directory</var></samp>&rsquo;</dt>
+<dd><a name="IDX259"></a>
+<a name="IDX260"></a>
+<p>Add <var>directory</var> to the list of directories.  Source files are
+searched relative to this list of directories.  The resulting &lsquo;<tt>.po</tt>&rsquo;
+file will be written relative to the current directory, though.
+</p>
+</dd>
+<dt> &lsquo;<samp>-C <var>file</var></samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--compendium=<var>file</var></samp>&rsquo;</dt>
+<dd><a name="IDX261"></a>
+<a name="IDX262"></a>
+<p>Specify an additional library of message translations.  See section <a href="gettext_8.html#SEC79">Using Translation Compendia</a>.
+This option may be specified more than once.
+</p>
+</dd>
+</dl>
+
+
+<a name="SEC55"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC49">7.1.2 Operation mode</a> </h3>
+
+<dl compact="compact">
+<dt> &lsquo;<samp>-U</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--update</samp>&rsquo;</dt>
+<dd><a name="IDX263"></a>
+<a name="IDX264"></a>
+<p>Update <var>def</var>.po.  Do nothing if <var>def</var>.po is already up to date.
+</p>
+</dd>
+</dl>
+
+
+<a name="SEC56"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC50">7.1.3 Output file location</a> </h3>
+
+<dl compact="compact">
+<dt> &lsquo;<samp>-o <var>file</var></samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--output-file=<var>file</var></samp>&rsquo;</dt>
+<dd><a name="IDX265"></a>
+<a name="IDX266"></a>
+<p>Write output to specified file.
+</p>
+</dd>
+</dl>
+
+<a name="IDX267"></a>
+<p>The results are written to standard output if no output file is specified
+or if it is &lsquo;<samp>-</samp>&rsquo;.
+</p>
+
+<a name="SEC57"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC51">7.1.4 Output file location in update mode</a> </h3>
+
+<p>The result is written back to <var>def</var>.po.
+</p>
+<dl compact="compact">
+<dt> &lsquo;<samp>--backup=<var>control</var></samp>&rsquo;</dt>
+<dd><a name="IDX268"></a>
+<a name="IDX269"></a>
+<p>Make a backup of <var>def</var>.po
+</p>
+</dd>
+<dt> &lsquo;<samp>--suffix=<var>suffix</var></samp>&rsquo;</dt>
+<dd><a name="IDX270"></a>
+<p>Override the usual backup suffix.
+</p>
+</dd>
+</dl>
+
+<a name="IDX271"></a>
+<p>The version control method may be selected via the <code>--backup</code> option
+or through the <code>VERSION_CONTROL</code> environment variable.  Here are the
+values:
+</p>
+<dl compact="compact">
+<dt> &lsquo;<samp>none</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>off</samp>&rsquo;</dt>
+<dd><p>Never make backups (even if <code>--backup</code> is given).
+</p>
+</dd>
+<dt> &lsquo;<samp>numbered</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>t</samp>&rsquo;</dt>
+<dd><p>Make numbered backups.
+</p>
+</dd>
+<dt> &lsquo;<samp>existing</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>nil</samp>&rsquo;</dt>
+<dd><p>Make numbered backups if numbered backups for this file already exist,
+otherwise make simple backups.
+</p>
+</dd>
+<dt> &lsquo;<samp>simple</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>never</samp>&rsquo;</dt>
+<dd><p>Always make simple backups.
+</p>
+</dd>
+</dl>
+
+<p>The backup suffix is &lsquo;<samp>~</samp>&rsquo;, unless set with <code>--suffix</code> or the
+<code>SIMPLE_BACKUP_SUFFIX</code> environment variable.
+</p>
+
+<a name="SEC58"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC52">7.1.5 Operation modifiers</a> </h3>
+
+<dl compact="compact">
+<dt> &lsquo;<samp>-m</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--multi-domain</samp>&rsquo;</dt>
+<dd><a name="IDX272"></a>
+<a name="IDX273"></a>
+<p>Apply <var>ref</var>.pot to each of the domains in <var>def</var>.po.
+</p>
+</dd>
+<dt> &lsquo;<samp>--for-msgfmt</samp>&rsquo;</dt>
+<dd><a name="IDX274"></a>
+<p>Produce a PO file meant for <code>msgfmt</code> only, not for a translator.
+This option omits untranslated messages, fuzzy messages (except the header
+entry), and obsolete messages from the output.  Also, it omits translator
+comments and &lsquo;<samp>#: <var>filename</var>:<var>line</var></samp>&rsquo; lines from the output.
+In particular, this option implies &lsquo;<samp>--no-fuzzy-matching</samp>&rsquo;.
+</p>
+</dd>
+<dt> &lsquo;<samp>-N</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--no-fuzzy-matching</samp>&rsquo;</dt>
+<dd><a name="IDX275"></a>
+<a name="IDX276"></a>
+<p>Do not use fuzzy matching when an exact match is not found.  This may speed
+up the operation considerably.
+</p>
+</dd>
+<dt> &lsquo;<samp>--previous</samp>&rsquo;</dt>
+<dd><a name="IDX277"></a>
+<p>Keep the previous msgids of translated messages, marked with &lsquo;<samp>#|</samp>&rsquo;, when
+adding the fuzzy marker to such messages.
+</p></dd>
+</dl>
+
+
+<a name="SEC59"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC53">7.1.6 Input file syntax</a> </h3>
+
+<dl compact="compact">
+<dt> &lsquo;<samp>-P</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--properties-input</samp>&rsquo;</dt>
+<dd><a name="IDX278"></a>
+<a name="IDX279"></a>
+<p>Assume the input files are Java ResourceBundles in Java <code>.properties</code>
+syntax, not in PO file syntax.
+</p>
+</dd>
+<dt> &lsquo;<samp>--stringtable-input</samp>&rsquo;</dt>
+<dd><a name="IDX280"></a>
+<p>Assume the input files are NeXTstep/GNUstep localized resource files in
+<code>.strings</code> syntax, not in PO file syntax.
+</p>
+</dd>
+</dl>
+
+
+<a name="SEC60"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC54">7.1.7 Output details</a> </h3>
+
+
+<dl compact="compact">
+<dt> &lsquo;<samp>--lang=<var>catalogname</var></samp>&rsquo;</dt>
+<dd><a name="IDX281"></a>
+<p>Specify the &lsquo;<samp>Language</samp>&rsquo; field to be used in the header entry.  See
+<a href="gettext_6.html#SEC51">Filling in the Header Entry</a> for the meaning of this field.  Note: The
+&lsquo;<samp>Language-Team</samp>&rsquo; and &lsquo;<samp>Plural-Forms</samp>&rsquo; fields are left unchanged.
+If this option is not specified, the &lsquo;<samp>Language</samp>&rsquo; field is inferred, as
+best as possible, from the &lsquo;<samp>Language-Team</samp>&rsquo; field.
+</p>
+</dd>
+<dt> &lsquo;<samp>--color</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--color=<var>when</var></samp>&rsquo;</dt>
+<dd><a name="IDX282"></a>
+<p>Specify whether or when to use colors and other text attributes.
+See <a href="gettext_9.html#SEC157">The <code>--color</code> option</a> for details.
+</p>
+</dd>
+<dt> &lsquo;<samp>--style=<var>style_file</var></samp>&rsquo;</dt>
+<dd><a name="IDX283"></a>
+<p>Specify the CSS style rule file to use for <code>--color</code>.
+See <a href="gettext_9.html#SEC159">The <code>--style</code> option</a> for details.
+</p>
+</dd>
+<dt> &lsquo;<samp>--force-po</samp>&rsquo;</dt>
+<dd><a name="IDX284"></a>
+<p>Always write an output file even if it contains no message.
+</p>
+</dd>
+<dt> &lsquo;<samp>-i</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--indent</samp>&rsquo;</dt>
+<dd><a name="IDX285"></a>
+<a name="IDX286"></a>
+<p>Write the .po file using indented style.
+</p>
+</dd>
+<dt> &lsquo;<samp>--no-location</samp>&rsquo;</dt>
+<dd><a name="IDX287"></a>
+<p>Do not write &lsquo;<samp>#: <var>filename</var>:<var>line</var></samp>&rsquo; lines.
+</p>
+</dd>
+<dt> &lsquo;<samp>-n</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--add-location=<var>type</var></samp>&rsquo;</dt>
+<dd><a name="IDX288"></a>
+<p>Generate &lsquo;<samp>#: <var>filename</var>:<var>line</var></samp>&rsquo; lines (default).
+</p>
+<p>The optional <var>type</var> can be either &lsquo;<samp>full</samp>&rsquo;, &lsquo;<samp>file</samp>&rsquo;, or
+&lsquo;<samp>never</samp>&rsquo;.  If it is not given or &lsquo;<samp>full</samp>&rsquo;, it generates the
+lines with both file name and line number.  If it is &lsquo;<samp>file</samp>&rsquo;, the
+line number part is omitted.  If it is &lsquo;<samp>never</samp>&rsquo;, it completely
+suppresses the lines (same as <code>--no-location</code>).
+</p>
+</dd>
+<dt> &lsquo;<samp>--strict</samp>&rsquo;</dt>
+<dd><a name="IDX289"></a>
+<p>Write out a strict Uniforum conforming PO file.  Note that this
+Uniforum format should be avoided because it doesn't support the
+GNU extensions.
+</p>
+</dd>
+<dt> &lsquo;<samp>-p</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--properties-output</samp>&rsquo;</dt>
+<dd><a name="IDX290"></a>
+<a name="IDX291"></a>
+<p>Write out a Java ResourceBundle in Java <code>.properties</code> syntax.  Note
+that this file format doesn't support plural forms and silently drops
+obsolete messages.
+</p>
+</dd>
+<dt> &lsquo;<samp>--stringtable-output</samp>&rsquo;</dt>
+<dd><a name="IDX292"></a>
+<p>Write out a NeXTstep/GNUstep localized resource file in <code>.strings</code> syntax.
+Note that this file format doesn't support plural forms.
+</p>
+</dd>
+<dt> &lsquo;<samp>-w <var>number</var></samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--width=<var>number</var></samp>&rsquo;</dt>
+<dd><a name="IDX293"></a>
+<a name="IDX294"></a>
+<p>Set the output page width.  Long strings in the output files will be
+split across multiple lines in order to ensure that each line's width
+(= number of screen columns) is less or equal to the given <var>number</var>.
+</p>
+</dd>
+<dt> &lsquo;<samp>--no-wrap</samp>&rsquo;</dt>
+<dd><a name="IDX295"></a>
+<p>Do not break long message lines.  Message lines whose width exceeds the
+output page width will not be split into several lines.  Only file reference
+lines which are wider than the output page width will be split.
+</p>
+</dd>
+<dt> &lsquo;<samp>-s</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--sort-output</samp>&rsquo;</dt>
+<dd><a name="IDX296"></a>
+<a name="IDX297"></a>
+<a name="IDX298"></a>
+<p>Generate sorted output.  Note that using this option makes it much harder
+for the translator to understand each message's context.
+</p>
+</dd>
+<dt> &lsquo;<samp>-F</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--sort-by-file</samp>&rsquo;</dt>
+<dd><a name="IDX299"></a>
+<a name="IDX300"></a>
+<p>Sort output by file location.
+</p>
+</dd>
+</dl>
+
+
+<a name="SEC61"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC55">7.1.8 Informative output</a> </h3>
+
+<dl compact="compact">
+<dt> &lsquo;<samp>-h</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--help</samp>&rsquo;</dt>
+<dd><a name="IDX301"></a>
+<a name="IDX302"></a>
+<p>Display this help and exit.
+</p>
+</dd>
+<dt> &lsquo;<samp>-V</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--version</samp>&rsquo;</dt>
+<dd><a name="IDX303"></a>
+<a name="IDX304"></a>
+<p>Output version information and exit.
+</p>
+</dd>
+<dt> &lsquo;<samp>-v</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--verbose</samp>&rsquo;</dt>
+<dd><a name="IDX305"></a>
+<a name="IDX306"></a>
+<p>Increase verbosity level.
+</p>
+</dd>
+<dt> &lsquo;<samp>-q</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--quiet</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--silent</samp>&rsquo;</dt>
+<dd><a name="IDX307"></a>
+<a name="IDX308"></a>
+<a name="IDX309"></a>
+<p>Suppress progress indicators.
+</p>
+</dd>
+</dl>
+
+
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC52" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="gettext_8.html#SEC62" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_21.html#SEC387" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<p>
+ <font size="-1">
+  This document was generated by <em>Bruno Haible</em> on <em>October, 9 2022</em> using <a href="https://www.nongnu.org/texi2html/"><em>texi2html 1.78a</em></a>.
+ </font>
+ <br>
+
+</p>
+</body>
+</html>

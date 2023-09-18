@@ -1,0 +1,273 @@
+escape_char /
+comment_char %
+% Mongolian language (cyrillic) locale for Mongolia
+% Sanlig Badral <badral@chinggis.com>
+% Revision: 1.0 (2005-5-21)
+% Charsets: UTF-8
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title      "Mongolian locale for Mongolia"
+source     "Sanlig Badral"
+address    ""
+contact    ""
+email      "badral@chinggis.com"
+tel        ""
+fax        ""
+language   "Mongolian"
+territory  "Mongolia"
+revision   "1.0"
+date       "2005-05-21"
+audience   "general"
+application   "GNU locale"
+%
+category  "mn_MN:2000";LC_IDENTIFICATION
+category  "mn_MN:2000";LC_CTYPE
+category  "mn_MN:2000";LC_COLLATE
+category  "mn_MN:2000";LC_TIME
+category  "mn_MN:2000";LC_NUMERIC
+category  "mn_MN:2000";LC_MONETARY
+category  "mn_MN:2000";LC_MESSAGES
+category  "mn_MN:2000";LC_PAPER
+category  "mn_MN:2000";LC_NAME
+category  "mn_MN:2000";LC_ADDRESS
+category  "mn_MN:2000";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_COLLATE
+copy "iso14651_t1"
+
+% iso14651_t1 is missing Mongolian ue(straight u), oe(barred o)
+% like russian, but with <o-=> (<barred-o>) after <o=> and
+% <u'=>(straight u) after <u=>
+
+collating-symbol <o-=>
+collating-symbol <u'=>
+
+reorder-after <CYR-O>
+<o-=>
+reorder-after <CYR-OUBRE>
+<u'=>
+
+reorder-after <U043E>
+<U04E9> <o-=>;<PCL>;<MIN>;IGNORE
+reorder-after <U041E>
+<U04E8> <o-=>;<PCL>;<CAP>;IGNORE
+
+reorder-after <U0443>
+<U04AF> <u'=>;<PCL>;<MIN>;IGNORE
+reorder-after <U0423>
+<U04AE> <u'=>;<PCL>;<CAP>;IGNORE
+
+reorder-end
+END LC_COLLATE
+
+LC_CTYPE
+copy "i18n"
+translit_start
+include "translit_combining";""
+% cyrillic -> latin for mongolian
+% CYRILLIC CAPITAL LETTERS IN ALPHABETICAL ORDER.
+<U0410> "<U0041>"
+<U0411> "<U0042>"
+<U0412> "<U0056>"
+<U0413> "<U0047>"
+<U0414> "<U0044>"
+<U0415> "<U0059><U0065>" % Ye
+<U0401> "<U0059><U006F>" % Yo
+<U0416> "<U004A>"
+<U0417> "<U005A>"
+<U0418> "<U0049>"
+<U0419> "<U0049>"
+<U041A> "<U004B>"
+<U041B> "<U004C>"
+<U041C> "<U004D>"
+<U041D> "<U004E>"
+<U041E> "<U004F>"
+<U04E8> "<U004F><U0065>" % Oe
+<U041F> "<U0050>"
+<U0420> "<U0052>"
+<U0421> "<U0053>"
+<U0422> "<U0054>"
+<U0423> "<U0055>"
+<U04AE> "<U0055><U0065>" % Ue
+<U0424> "<U0046>"
+<U0425> "<U0048>"
+<U0426> "<U0043>"
+<U0427> "<U0043><U0068>" % Ch
+<U0428> "<U0053><U0068>" % Sh
+<U0429> "<U0053><U0068>" % Sh
+<U042A> "<U0022>" % "
+<U042B> "<U0059>"
+<U042C> "<U0027>" % '
+<U042D> "<U0045>"
+<U042E> "<U0059><U0075>" % Yu
+<U042F> "<U0059><U0061>" % Ya
+% CYRILLIC SMALL LETTERS IN ALPHABETICAL ORDER.
+<U0430> "<U0061>"
+<U0431> "<U0062>"
+<U0432> "<U0076>"
+<U0433> "<U0067>"
+<U0434> "<U0064>"
+<U0435> "<U0079><U0065>" %ye
+<U0451> "<U0079><U006F>" %yo
+<U0436> "<U006A>"
+<U0437> "<U007A>"
+<U0438> "<U0069>"
+<U0439> "<U0069>"
+<U043A> "<U006B>"
+<U043B> "<U006C>"
+<U043C> "<U006D>"
+<U043D> "<U006E>"
+<U043E> "<U006F>"
+<U04E9> "<U006F><U0065>" % oe
+<U043F> "<U0070>"
+<U0440> "<U0072>"
+<U0441> "<U0073>"
+<U0442> "<U0074>"
+<U0443> "<U0075>"
+<U04AF> "<U0075><U0065>" % ue
+<U0444> "<U0066>"
+<U0445> "<U0068>"
+<U0446> "<U0043>"
+<U0447> "<U0063><U0068>" % ch
+<U0448> "<U0073><U0068>" % sh
+<U0449> "<U0073><U0068>" % sh
+<U044A> "<U0022>" % "
+<U044B> "<U0079>"
+<U044C> "<U0027>" % '
+<U044D> "<U0065>"
+<U044E> "<U0079><U0075>" % yu
+<U044F> "<U0079><U0061>" % ya
+translit_end
+END LC_CTYPE
+
+LC_MONETARY
+int_curr_symbol     "<U004D><U004E><U0054><U0020>"
+currency_symbol     "<U20AE>"
+mon_decimal_point   "<U002E>"
+mon_thousands_sep   "<U0020>"
+mon_grouping        3;3
+positive_sign       ""
+negative_sign       "<U002D>"
+int_frac_digits     2
+frac_digits         2
+p_cs_precedes       0
+p_sep_by_space      1
+n_cs_precedes       0
+n_sep_by_space      1
+p_sign_posn         1
+n_sign_posn         1
+
+END LC_MONETARY
+
+LC_NUMERIC
+decimal_point   "<U002C>"
+thousands_sep   "<U002E>"
+grouping        3;3
+END LC_NUMERIC
+
+LC_TIME
+% Abbreviated weekday names (%a)
+abday "<U041D><U044F>";"<U0414><U0430>";/
+      "<U041C><U044F>";"<U041B><U0445>";/
+      "<U041F><U04AF>";"<U0411><U0430>";/
+      "<U0411><U044F>"
+% Full weekday names (%A)
+day   "<U041D><U044F><U043C>";/
+      "<U0414><U0430><U0432><U0430><U0430>";/
+      "<U041C><U044F><U0433><U043C><U0430><U0440>";/
+      "<U041B><U0445><U0430><U0433><U0432><U0430>";/
+      "<U041F><U04AF><U0440><U044D><U0432>";/
+      "<U0411><U0430><U0430><U0441><U0430><U043D>";/
+      "<U0411><U044F><U043C><U0431><U0430>"
+% Abbreviated month names (%b)
+abmon       "<U0425><U0443><U043B>";"<U04AE><U0445><U044D>";/
+            "<U0411><U0430><U0440>";"<U0422><U0443><U0443>";/
+            "<U041B><U0443><U0443>";"<U041C><U043E><U0433>";/
+            "<U041C><U043E><U0440>";"<U0425><U043E><U043D>";/
+            "<U0411><U0438><U0447>";"<U0422><U0430><U0445>";/
+            "<U041D><U043E><U0445>";"<U0413><U0430><U0445>"
+% Full month names (%B)
+mon         "<U0425><U0443><U043B><U0433><U0430><U043D><U0430><U0020><U0441><U0430><U0440><U044B><U043D>";/
+            "<U04AE><U0445><U044D><U0440><U0020><U0441><U0430><U0440><U044B><U043D>";/
+            "<U0411><U0430><U0440><U0020><U0441><U0430><U0440><U044B><U043D>";/
+            "<U0422><U0443><U0443><U043B><U0430><U0439><U0020><U0441><U0430><U0440><U044B><U043D>";/
+            "<U041B><U0443><U0443><U0020><U0441><U0430><U0440><U044B><U043D>";/
+            "<U041C><U043E><U0433><U043E><U0439><U0020><U0441><U0430><U0440><U044B><U043D>";/
+            "<U041C><U043E><U0440><U044C><U0020><U0441><U0430><U0440><U044B><U043D>";/
+            "<U0425><U043E><U043D><U044C><U0020><U0441><U0430><U0440><U044B><U043D>";/
+            "<U0411><U0438><U0447><U0020><U0441><U0430><U0440><U044B><U043D>";/
+            "<U0422><U0430><U0445><U0438><U0430><U0020><U0441><U0430><U0440><U044B><U043D>";/
+            "<U041D><U043E><U0445><U043E><U0439><U0020><U0441><U0430><U0440><U044B><U043D>";/
+            "<U0413><U0430><U0445><U0430><U0439><U0020><U0441><U0430><U0440><U044B><U043D>"
+% Appropriate date and time representation
+% "%Y %b %d, %a %T"
+d_t_fmt "<U0025><U0059><U0020><U0025><U0062><U0020><U0025><U0064><U002C><U0020><U0025><U0061><U0020><U0025><U0054>"
+
+% Appropriate date representation
+% "%Y.%m.%d"
+d_fmt   "<U0025><U0059><U002E><U0025><U006D><U002E><U0025><U0064>"
+% Appropriate time representation
+% "%T"
+t_fmt   "<U0025><U0054>"
+% Appropriate 12 h time representation (%r)
+am_pm   "";""
+t_fmt_ampm ""
+% Full date and time representation
+% "%Z %Y ony %B %e, %a %H:%M:%S"
+date_fmt  "<U0025><U005A><U0020><U0025><U0059><U0020><U043E><U043D><U044B><U0020><U0025><U0042><U0020>/
+<U0025><U0065><U002C><U0020><U0025><U0061><U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053>"
+END LC_TIME
+
+LC_MESSAGES
+yesexpr "<U005E><U005B><U0442><U0422><U0079><U0059><U005D><U002E><U002A>"
+noexpr  "<U005E><U005B><U04AF><U04AE><U006E><U004E><U005D><U002E><U002A>"
+END LC_MESSAGES
+
+% Paper format
+LC_PAPER
+height   297
+width    210
+END LC_PAPER
+
+LC_NAME
+name_fmt    "<U0025><U0064><U0025><U0074><U0025><U0067><U0025><U0074>/
+<U0025><U006D><U0025><U0074><U0025><U0066>"
+name_miss   "<U0425><U0430><U0442><U0430><U0433><U0442><U0430><U0439>"
+name_mr     "<U041D><U043E><U0451><U043D>"
+name_mrs    "<U0425><U0430><U0442><U0430><U0433><U0442><U0430><U0439>"
+name_ms     "<U0425><U0430><U0442><U0430><U0433><U0442><U0430><U0439>"
+END LC_NAME
+
+LC_ADDRESS
+postal_fmt    "<U0025><U0066><U0025><U004E><U0025><U0061><U0025><U004E>/
+<U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E><U0025><U0073>/
+<U0020><U0025><U0068><U0020><U0025><U0065><U0020><U0025><U0072><U0025>/
+<U004E><U0025><U007A><U0020><U0025><U0054><U0025>/
+<U004E><U0025><U0063><U0025><U004E>"
+country_name  "<U004D><U006F><U006E><U0067><U006F><U006C><U0069><U0061>"
+country_post  "<U004D><U004E>"
+country_ab2   "<U004D><U004E>"
+country_ab3   "<U004D><U004E><U0047>"
+country_num   496
+country_car   "<U004D><U0047><U004C>"
+country_isbn  99929
+lang_name     "<U004D><U006F><U006E><U0067><U006F><U006C><U0069><U0061><U006E>"
+lang_ab       "<U006D><U006E>"
+lang_term     "<U006D><U006F><U006E>"
+lang_lib      "<U006D><U006F><U006E>"
+END LC_ADDRESS
+
+LC_TELEPHONE
+tel_int_fmt    "<U0028><U002B><U0025><U0063><U0020><U0025><U0061><U0029><U0020><U0025><U006C>"
+tel_dom_fmt    "<U0028><U0030><U0025><U0061><U0029><U0020><U0025><U006C>"
+int_select     "<U0030><U0030>"
+int_prefix     "<U0039><U0037><U0036>"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+measurement    1
+END LC_MEASUREMENT

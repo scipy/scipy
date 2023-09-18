@@ -1,0 +1,6 @@
+#ifndef QT_QTWEBVIEW_MODULE_H
+#define QT_QTWEBVIEW_MODULE_H
+#include <QtWebView/QtWebViewDepends>
+#include "qtwebviewfunctions.h"
+#include "qtwebviewversion.h"
+#endif

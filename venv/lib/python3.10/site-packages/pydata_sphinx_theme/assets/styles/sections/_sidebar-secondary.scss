@@ -1,0 +1,83 @@
+/**
+ * Secondary sidebar on the right.
+ * e.g., in-page table of contents.
+ */
+// Each TOC item is wrapped in this
+.tocsection {
+  padding-left: 10px;
+  border-left: 1px solid var(--pst-color-border);
+  padding: 0.3rem 1.5rem;
+
+  i {
+    padding-right: 0.5rem;
+  }
+}
+
+// The list of in-page TOC
+.section-nav {
+  padding-left: 0;
+  border-left: 1px solid var(--pst-color-border);
+  border-bottom: none;
+
+  ul {
+    padding-left: 1rem;
+  }
+}
+
+.bd-toc {
+  -ms-flex-order: 2;
+  order: 2;
+  max-height: calc(100vh - 5rem);
+  overflow-y: auto;
+  top: var(--pst-header-height);
+  position: sticky;
+
+  .onthispage {
+    color: var(--pst-color-text-base);
+  }
+
+  @include scrollbar-style();
+  @include scrollbar-on-hover();
+}
+
+// Each entry of the in-page TOC
+.toc-entry {
+  display: block;
+
+  a {
+    display: block;
+    padding: 0.125rem 1.5rem;
+    color: var(--pst-color-text-muted);
+
+    @include media-breakpoint-up(xl) {
+      padding-right: 0;
+    }
+
+    &:hover {
+      color: var(--pst-color-primary);
+      text-decoration: none;
+    }
+  }
+}
+
+/* adjust toc font sizes to improve overview */
+.toc-h2 {
+  font-size: 0.85rem;
+}
+
+.toc-h3 {
+  font-size: 0.75rem;
+}
+
+.toc-h4 {
+  font-size: 0.65rem;
+}
+
+// Other components of the in-page TOC
+.editthispage {
+  padding-top: 2rem;
+
+  a {
+    color: var(--pst-color-primary);
+  }
+}

@@ -1,0 +1,199 @@
+//
+//Copyright (c) 1996  X Consortium
+//
+//Permission is hereby granted, free of charge, to any person obtaining
+//a copy of this software and associated documentation files (the
+//"Software"), to deal in the Software without restriction, including
+//without limitation the rights to use, copy, modify, merge, publish,
+//distribute, sublicense, and/or sell copies of the Software, and to
+//permit persons to whom the Software is furnished to do so, subject to
+//the following conditions:
+//
+//The above copyright notice and this permission notice shall be
+//included in all copies or substantial portions of the Software.
+//
+//THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+//EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+//MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+//IN NO EVENT SHALL THE X CONSORTIUM BE LIABLE FOR ANY CLAIM, DAMAGES OR
+//OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+//ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+//OTHER DEALINGS IN THE SOFTWARE.
+//
+//Except as contained in this notice, the name of the X Consortium shall
+//not be used in advertising or otherwise to promote the sale, use or
+//other dealings in this Software without prior written authorization
+//from the X Consortium.
+//
+//
+default xkb_keycodes "macintosh" {
+   include "xfree86"
+
+   <FK13> = 182;
+   <FK14> = 183;
+   <FK15> = 184;
+   <KPEQ> = 157;
+   
+};
+
+xkb_keycodes "old" {
+
+    minimum= 8;
+    maximum= 255;
+
+    <ESC>  = 61;
+    <TLDE> = 58;
+    <AE01> = 26;
+    <AE02> = 27;
+    <AE03> = 28;
+    <AE04> = 29;
+    <AE05> = 31;
+    <AE06> = 30;
+    <AE07> = 34;
+    <AE08> = 36;
+    <AE09> = 33;
+    <AE10> = 37;
+    <AE11> = 35;
+    <AE12> = 32;
+    <BKSP> = 59;
+
+    <TAB>  = 56;
+    <AD01> = 20;
+    <AD02> = 21;
+    <AD03> = 22;
+    <AD04> = 23;
+    <AD05> = 25;
+    <AD06> = 24;
+    <AD07> = 40;
+    <AD08> = 42;
+    <AD09> = 39;
+    <AD10> = 43;
+    <AD11> = 41;
+    <AD12> = 38;
+    <BKSL> = 50;
+
+    <CAPS> = 65;
+    <AC01> = 8;
+    <AC02> = 9;
+    <AC03> = 10;
+    <AC04> = 11;
+    <AC05> = 13;
+    <AC06> = 12;
+    <AC07> = 46;
+    <AC08> = 48;
+    <AC09> = 45;
+    <AC10> = 49;
+    <AC11> = 47;
+    <RTRN> = 44;
+
+    <LSGT> = 18;
+    <AB01> = 14;
+    <AB02> = 15;
+    <AB03> = 16;
+    <AB04> = 17;
+    <AB05> = 19;
+    <AB06> = 53;
+    <AB07> = 54;
+    <AB08> = 51;
+    <AB09> = 55;
+    <AB10> = 52;
+
+    <SPCE> = 57;
+
+    <LCTL> = 62;  // Left Control
+    <LALT> = 63;  // Left Option
+    <LFSH> = 64;  // Left Shift
+    <RALT> = 66;  // Left Command
+//    <RTSH> = 131; // Right Shift
+//    <RALT> = 132; // Right Command
+//    <RCTL> = 133; // Right Control
+//    <RMTA> = 134; // Right Option
+
+    <FK01> = 130;
+    <FK02> = 128;
+    <FK03> = 107;
+    <FK04> = 126;
+    <FK05> = 104;
+    <FK06> = 105;
+    <FK07> = 106;
+    <FK08> = 108;
+    <FK09> = 109;
+    <FK10> = 117;
+    <FK11> = 111;
+    <FK12> = 119;
+
+    <PRSC> = 113;
+    <SCLK> = 115;
+    <PAUS> = 121;
+
+    <INS>  = 122;
+    <HOME> = 123;
+    <PGUP> = 124;
+    <DELE> = 125;
+    <END>  = 127;
+    <PGDN> = 129;
+
+    <UP>   = 70;
+    <LEFT> = 67;
+    <DOWN> = 69;
+    <RGHT> = 68;
+
+    <NMLK> = 79;
+    <KPEQ> = 89;
+    <KPDV> = 83;
+    <KPMU> = 75;
+
+    <KP7>  = 97;
+    <KP8>  = 99;
+    <KP9>  = 100;
+    <KPSU> = 86;
+
+    <KP4>  = 94;
+    <KP5>  = 95;
+    <KP6>  = 96;
+    <KPAD> = 77;
+
+    <KP1>  = 91;
+    <KP2>  = 92;
+    <KP3>  = 93;
+    <KPEN> = 84;
+
+    <KP0>  = 90;
+    <KPDL> = 73;
+
+    indicator 3 = "Scroll Lock";
+    indicator 2 = "Num Lock";
+    indicator 1 = "Caps Lock";
+
+    alias <ALGR> = <RALT>;
+};
+
+xkb_keycodes "hhk" {
+   include "macintosh"
+
+    <AC12> = 51;
+
+    <LWIN> = 49;
+    <HJCV> = 131;
+    <HNGL> = 129;
+    <RWIN> = 208;
+
+    <FK13> = 111;
+    <FK14> = 78;
+    <FK15> = 110;
+};
+
+// Aluminium Keyboards
+xkb_keycodes "alukbd" {
+    include "xfree86"
+
+    // Fkeys missing in xfree86 keycodes
+    <FK18> = 129;
+    <FK19> = 130;
+
+    // Eject key that matches the geometry definition
+    alias <I169> = <K6C>;
+
+    // Japanese keypad separator (KPSP in base, JPCM in evdev)
+    alias <JPCM> = <KPDC>;
+};

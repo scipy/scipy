@@ -1,0 +1,6 @@
+#ifndef QT_QTQMLWORKERSCRIPT_MODULE_H
+#define QT_QTQMLWORKERSCRIPT_MODULE_H
+#include <QtQmlWorkerScript/QtQmlWorkerScriptDepends>
+#include "qtqmlworkerscriptglobal.h"
+#include "qtqmlworkerscriptversion.h"
+#endif

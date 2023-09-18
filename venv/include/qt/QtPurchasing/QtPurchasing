@@ -1,0 +1,9 @@
+#ifndef QT_QTPURCHASING_MODULE_H
+#define QT_QTPURCHASING_MODULE_H
+#include <QtPurchasing/QtPurchasingDepends>
+#include "qtpurchasingglobal.h"
+#include "qinappproduct.h"
+#include "qinappstore.h"
+#include "qinapptransaction.h"
+#include "qtpurchasingversion.h"
+#endif

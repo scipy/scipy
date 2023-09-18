@@ -1,0 +1,307 @@
+escape_char /
+comment_char %
+%
+% Hausa language locale for Nigeria
+% Source: 
+% Contact: Pablo Saratxaga
+% Email: pablo@mandriva.com
+% Language: ha
+% Territory: NG
+% Revision: 0.2
+% Date: 2006-02-01
+% Users: general
+% Charset: UTF-8
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title      "Hausa locale for Nigeria"
+source     ""
+address    ""
+contact    ""
+email      "pablo@mandriva.com"
+tel        ""
+fax        ""
+language   "Hausa"
+territory  "Nigeria"
+revision   "0.2"
+date       "2006-02-01"
+%
+category  "ha_NG:2000";LC_IDENTIFICATION
+category  "ha_NG:2000";LC_CTYPE
+category  "ha_NG:2000";LC_COLLATE
+category  "ha_NG:2000";LC_TIME
+category  "ha_NG:2000";LC_NUMERIC
+category  "ha_NG:2000";LC_MONETARY
+category  "ha_NG:2000";LC_MESSAGES
+category  "ha_NG:2000";LC_PAPER
+category  "ha_NG:2000";LC_NAME
+category  "ha_NG:2000";LC_ADDRESS
+category  "ha_NG:2000";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_COLLATE
+
+% Hausa uses the following extra letters:
+% bhook, dhook, khook, rtilde.
+% accent marks?%
+%
+% ' is used as glotal stop (should it count on sorting?)
+%
+% Hausa in Niger uses also yhook; implemented here too
+% so it sorts as 'y
+%
+% order: a, b, b+, c, d, d+, e, f, g, h, i, j, k, k+, l, m, n, o, p
+% q, r, r~, s, sh, t, ts, u, [v], w, [x], 'y, y, z
+
+copy "iso14651_t1"
+
+collating-symbol  <s-h-ha>
+collating-element <S-H> from "<U0053><U0048>"
+collating-element <s-h> from "<U0073><U0068>"
+collating-element <S-h> from "<U0053><U0068>"
+collating-element <s-H> from "<U0073><U0048>"
+collating-symbol  <t-s-ha>
+collating-element <T-S> from "<U0054><U0053>"
+collating-element <t-s> from "<U0074><U0073>"
+collating-element <T-s> from "<U0054><U0073>"
+collating-element <t-S> from "<U0074><U0053>"
+collating-symbol  <'-y-ha>
+collating-element <'1y> from "<U0027><U0079>"
+collating-element <'1Y> from "<U0027><U0059>"
+collating-element <'2y> from "<U2019><U0079>"
+collating-element <'2Y> from "<U2019><U0059>"
+collating-symbol  <rtilde> 
+collating-element <r?>  from "<U0072><U0303>"
+collating-element <R?>  from "<U0052><U0303>"
+collating-symbol  <bcurl>
+collating-symbol  <dcurl>
+collating-symbol  <kcurl>
+
+collating-symbol <CAP-MIN>
+collating-symbol <MIN-CAP>
+ 
+reorder-after <MIN>
+<MIN-CAP>
+ 
+reorder-after <CAP>
+<CAP-MIN>
+
+reorder-after <b>
+<bcurl>
+reorder-after <d>
+<dcurl>
+reorder-after <k>
+<kcurl>
+reorder-after <r>
+<rtilde>
+<s>
+<s-h-ha>
+<t>
+<t-s-ha>
+reorder-after <x>
+<'-y-ha>
+
+reorder-after <U0062>
+<U0253> <bcurl>;<BAS>;<MIN>;IGNORE
+reorder-after <U0042>
+<U0181> <bcurl>;<BAS>;<CAP>;IGNORE
+
+reorder-after <U0064>
+<U0257> <dcurl>;<BAS>;<MIN>;IGNORE
+reorder-after <U0044>
+<U018A> <dcurl>;<BAS>;<CAP>;IGNORE
+
+reorder-after <U006B>
+<U0199> <kcurl>;<BAS>;<MIN>;IGNORE
+reorder-after <U004B>
+<U0198> <kcurl>;<BAS>;<CAP>;IGNORE
+
+reorder-after <U0072>
+<r?>    <rtilde>;<ACA>;<MIN>;IGNORE
+reorder-after <U0052>
+<R?>    <rtilde>;<ACA>;<CAP>;IGNORE
+
+reorder-after <U0073>
+<s-h>   <s-h-ha>;<PCL>;<MIN>;IGNORE
+<s-H>   <s-h-ha>;<PCL>;<MIN-CAP>;IGNORE
+reorder-after <U0053>
+<S-H>   <s-h-ha>;<PCL>;<CAP>;IGNORE
+<S-h>   <s-h-ha>;<PCL>;<CAP-MIN>;IGNORE
+
+reorder-after <U0074>
+<t-s>   <t-s-ha>;<PCL>;<MIN>;IGNORE
+<t-S>   <t-s-ha>;<PCL>;<MIN-CAP>;IGNORE
+reorder-after <U0054>
+<T-S>   <t-s-ha>;<PCL>;<CAP>;IGNORE
+<T-s>   <t-s-ha>;<PCL>;<CAP-MIN>;IGNORE
+
+reorder-after <U0078>
+<'1y>   <'-y-ha>;<PCL>;<MIN>;IGNORE
+<'2y>   <'-y-ha>;<PCL>;<MIN>;IGNORE
+<U01B4> <'-y-ha>;<PCL>;<MIN>;IGNORE
+reorder-after <U0058>
+<'1Y>   <'-y-ha>;<PCL>;<CAP>;IGNORE
+<'2Y>   <'-y-ha>;<PCL>;<CAP>;IGNORE
+<U01B3> <'-y-ha>;<PCL>;<CAP>;IGNORE
+
+reorder-end
+
+END LC_COLLATE
+
+LC_CTYPE
+copy "en_NG"
+END LC_CTYPE
+
+LC_MONETARY
+copy "en_NG"
+END LC_MONETARY
+
+LC_NUMERIC
+copy "en_NG"
+END LC_NUMERIC
+
+LC_TELEPHONE
+copy "en_NG"
+END LC_TELEPHONE
+ 
+LC_TIME
+% Lah, Lit, Tal, Lar, Alh, Jum, Asa
+% maybe "Lhd" "Lrb" => "Lh"/"Lb" on 2letter tables?
+abday       "<U004C><U0061><U0068>";"<U004C><U0069><U0074>";/
+            "<U0054><U0061><U006C>";"<U004C><U0061><U0072>";/
+            "<U0041><U006C><U0068>";"<U004A><U0075><U006D>";/
+            "<U0041><U0073><U0061>"
+% Lahadi, Litini, Talata, Laraba, Alhamis, Juma'a, Asabar
+day         "<U004C><U0061><U0068><U0061><U0064><U0069>";/
+            "<U004C><U0069><U0074><U0069><U006E><U0069>";/
+            "<U0054><U0061><U006C><U0061><U0074><U0061>";/
+            "<U004C><U0061><U0072><U0061><U0062><U0061>";/
+            "<U0041><U006C><U0068><U0061><U006D><U0069><U0073>";/
+            "<U004A><U0075><U006D><U0061><U0027><U0061>";/
+            "<U0041><U0073><U0061><U0062><U0061><U0072>"
+% Jan, Fab, Mar, Afr, May, Yun, Yul, Agu, Sat, Okt, Nuw, Dis
+abmon       "<U004A><U0061><U006E>";"<U0046><U0061><U0062>";/
+            "<U004D><U0061><U0072>";"<U0041><U0066><U0072>";/
+            "<U004D><U0061><U0079>";"<U0059><U0075><U006E>";/
+            "<U0059><U0075><U006C>";"<U0041><U0067><U0075>";/
+            "<U0053><U0061><U0074>";"<U004F><U006B><U0074>";/
+            "<U004E><U0075><U0077>";"<U0044><U0069><U0073>"
+% Janairu, Fabrairu, Maris, Afrilu, Mayu, Yuni, 
+% Yuli, Agusta, Satumba, Oktoba, Nuwamba, Disamba
+mon         "<U004A><U0061><U006E><U0061><U0069><U0072><U0075>";/
+            "<U0046><U0061><U0062><U0072><U0061><U0069><U0072><U0075>";/
+            "<U004D><U0061><U0072><U0069><U0073>";/
+            "<U0041><U0066><U0072><U0069><U006C><U0075>";/
+            "<U004D><U0061><U0079><U0075>";/
+            "<U0059><U0075><U006E><U0069>";/
+            "<U0059><U0075><U006C><U0069>";/
+            "<U0041><U0067><U0075><U0073><U0074><U0061>";/
+            "<U0053><U0061><U0074><U0075><U006D><U0062><U0061>";/
+            "<U004F><U006B><U0074><U006F><U0062><U0061>";/
+            "<U004E><U0075><U0077><U0061><U006D><U0062><U0061>";/
+            "<U0044><U0069><U0073><U0061><U006D><U0062><U0061>"
+% ranar %A, %d ga %B cikin %Y %r %Z
+d_t_fmt     "<U0072><U0061><U006E><U0061><U0072><U0020><U0025><U0041><U002C><U0020><U0025><U0064><U0020><U0067><U0061><U0020><U0025><U0042><U0020><U0063><U0069><U006B><U0069><U006E><U0020><U0025><U0072><U0020><U0025><U005A>"
+d_fmt       "<U0025><U0064><U002F><U0025><U006D><U002F><U0025><U0079>"
+t_fmt       "<U0025><U0072>"
+am_pm       "<U0041><U004D>";"<U0050><U004D>"
+t_fmt_ampm  "<U0025><U0049><U003A><U0025><U004D><U003A><U0025><U0053><U0020><U0025><U0070>"
+END LC_TIME
+
+% FIXME
+LC_MESSAGES
+% yes: Toh, Ii
+yesstr      "<U0054><U006F><U0068>"
+% ^[TtIiYy].*
+yesexpr     "<U005E><U005B><U0054><U0074><U0069><U0049><U0059><U0079><U005D><U002E><U002A>"
+% no: Babu, A'a
+nostr       "<U0042><U0061><U0062><U0075>"
+% ^[BbAaNn].*
+noexpr      "<U005E><U005B><U0062><U0042><U0061><U0041><U006E><U004E><U005D><U002E><U002A>"
+END LC_MESSAGES
+
+LC_PAPER
+copy "en_NG"
+END LC_PAPER
+
+LC_MEASUREMENT
+copy "en_NG"
+END LC_MEASUREMENT
+
+LC_NAME
+% FIXME
+copy "en_NG"
+END LC_NAME
+
+% FIXME
+LC_ADDRESS
+% Representation of postal addresses (minus the addressee's name) in South
+% Africa. (Ignored for now)
+% "%f%N%a%N%d%N%b%N%s %h %e %r%N%z %T%N%c%N", which gives -
+%
+% "firm name",
+% "end of line",
+% "C/O address",
+% "end of line",
+% "department name",
+% "Building name",
+% "end of line",
+% "street or block name",
+% "space",
+% "house number or designation",
+% "space",
+% "floor number",
+% "space",
+% "room number, door designation",
+% "end of line",
+% "postal code",
+% "space",
+% "town, city",
+% "end of line",
+% "country designation for the <country_post> keyword",
+% "end of line
+postal_fmt    "<U0025><U0066><U0025><U004E><U0025><U0061><U0025><U004E>/
+<U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E><U0025><U0073>/
+<U0020><U0025><U0068><U0020><U0025><U0065><U0020><U0025><U0072><U0025>/
+<U004E><U0025><U007A><U0020><U0025><U0054><U0025>/
+<U004E><U0025><U0063><U0025><U004E>"
+
+% Country name in Hausa - "Nigeria"
+country_name  "<U004E><U0069><U0067><U0065><U0072><U0069><U0061>"
+
+% Language name in Hausa - "Hausa"
+lang_name     "<U0048><U0061><U0075><U0073><U0061>"
+
+% CEPT MAILCODES are suggested
+% Alternatively use the code found on your countries postal item tracking number
+% "NG"?
+%country_post   "<U004E><U0047>"
+
+% UN Geneve 1949:68 Distinguishing signs of vehicles in international traffic
+% http://www.unece.org/trans/conventn/Distsigns_Sept2003.pdf
+% "WAN"
+country_car   "<U0057><U0041><U004E>"
+
+% ISO 2108
+% http://www.isbn-international.org/
+country_isbn  978
+
+% ISO 639 language abbreviations:
+% 639-1 2 letter, 639-2 3 letter terminology
+% http://www.loc.gov/standards/iso639-2/englagn.html
+% "ha", "hau"
+lang_ab       "<U0068><U0061>"
+lang_term     "<U0068><U0061><U0075>"
+lang_lib      "<U0068><U0061><U0075>"
+
+% ISO 3166 country number and 2 and 3 letter abreviations
+% http://www.unicode.org/onlinedat/countries.html
+% "NG", "NGA"
+country_ab2   "<U004E><U0047>"
+country_ab3   "<U004E><U0047><U0041>"
+country_num   566
+
+END LC_ADDRESS
+

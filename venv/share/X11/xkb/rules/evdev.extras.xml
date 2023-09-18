@@ -1,0 +1,1820 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE xkbConfigRegistry SYSTEM "xkb.dtd">
+<xkbConfigRegistry>
+  <modelList/>
+  <layoutList>
+    <layout>
+      <configItem popularity="exotic">
+        <name>ancient</name>
+        <shortDescription>xx</shortDescription>
+        <description>Ancient</description>
+        <languageList>
+          <iso639Id>got</iso639Id>
+          <iso639Id>uga</iso639Id>
+          <iso639Id>ave</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>got</name>
+            <description>Gothic</description>
+            <languageList>
+              <iso639Id>got</iso639Id>
+            </languageList>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>uga</name>
+            <description>Ugaritic</description>
+            <languageList>
+              <iso639Id>uga</iso639Id>
+            </languageList>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>ave</name>
+            <description>Avestan</description>
+            <languageList>
+              <iso639Id>ave</iso639Id>
+            </languageList>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>apl</name>
+        <shortDescription>apl</shortDescription>
+        <description>APL</description>
+        <languageList>
+          <iso639Id>eng</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>dyalog</name>
+            <shortDescription>dlg</shortDescription>
+            <description>APL symbols (Dyalog APL)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>sax</name>
+            <shortDescription>sax</shortDescription>
+            <description>APL symbols (SAX, Sharp APL for Unix)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>unified</name>
+            <shortDescription>ufd</shortDescription>
+            <description>APL symbols (unified)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>apl2</name>
+            <shortDescription>apl2</shortDescription>
+            <description>APL symbols (IBM APL2)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>aplplusII</name>
+            <shortDescription>aplII</shortDescription>
+            <description>APL symbols (Manugistics APL*PLUS II)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>aplx</name>
+            <shortDescription>aplx</shortDescription>
+            <description>APL symbols (APLX unified)</description>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>bqn</name>
+        <shortDescription>bqn</shortDescription>
+        <description>BQN</description>
+        <languageList>
+          <iso639Id>eng</iso639Id>
+        </languageList>
+      </configItem>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>ca</name>
+        <shortDescription>fr</shortDescription>
+        <description>French (Canada)</description>
+        <countryList>
+          <iso3166Id>CA</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>fra</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>kut</name>
+            <shortDescription>kut</shortDescription>
+            <description>Kutenai</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>shs</name>
+            <shortDescription>shs</shortDescription>
+            <description>Secwepemctsin</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>sun_type6</name>
+            <description>Multilingual (Canada, Sun Type 6/7)</description>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>de</name>
+        <shortDescription>de</shortDescription>
+        <description>German</description>
+        <countryList>
+          <iso3166Id>DE</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>deu</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>hu</name>
+            <description>German (with Hungarian letters, no dead keys)</description>
+            <languageList>
+              <iso639Id>deu</iso639Id>
+              <iso639Id>hun</iso639Id>
+            </languageList>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>pl</name>
+            <description>Polish (Germany, no dead keys)</description>
+            <languageList>
+              <iso639Id>deu</iso639Id>
+              <iso639Id>pol</iso639Id>
+            </languageList>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>sun_type6</name>
+            <description>German (Sun Type 6/7)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>adnw</name>
+            <description>German (Aus der Neo-Welt)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>koy</name>
+            <description>German (KOY)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>bone</name>
+            <description>German (Bone)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>bone_eszett_home</name>
+            <description>German (Bone, eszett in the home row)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>neo_qwertz</name>
+            <description>German (Neo, QWERTZ)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>neo_qwerty</name>
+            <description>German (Neo, QWERTY)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>ru-recom</name>
+            <!-- Keyboard indicator for Russian layouts -->
+            <shortDescription>ru</shortDescription>
+            <description>Russian (Germany, recommended)</description>
+            <languageList>
+              <iso639Id>rus</iso639Id>
+            </languageList>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>ru-translit</name>
+            <!-- Keyboard indicator for Russian layouts -->
+            <shortDescription>ru</shortDescription>
+            <description>Russian (Germany, transliteration)</description>
+            <languageList>
+              <iso639Id>rus</iso639Id>
+            </languageList>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>lld</name>
+            <shortDescription>de_lld</shortDescription>
+            <description>German (Ladin)</description>
+            <languageList>
+              <iso639Id>deu</iso639Id>
+              <iso639Id>lld</iso639Id>
+            </languageList>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>eg</name>
+        <shortDescription>cop</shortDescription>
+        <description>Coptic</description>
+        <countryList>
+          <iso3166Id>EG</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>cop</iso639Id>
+          <iso639Id>egy</iso639Id>
+        </languageList>
+      </configItem>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>hu</name>
+        <shortDescription>hu</shortDescription>
+        <description>Hungarian</description>
+        <countryList>
+          <iso3166Id>HU</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>hun</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>oldhun</name>
+            <shortDescription>oldhun</shortDescription>
+            <description>Old Hungarian</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>oldhunlig</name>
+            <shortDescription>oldhun(lig)</shortDescription>
+            <description>Old Hungarian (for ligatures)</description>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>lt</name>
+        <shortDescription>lt</shortDescription>
+        <description>Lithuanian</description>
+        <countryList>
+          <iso3166Id>LT</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>lit</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>us_dvorak</name>
+            <description>Lithuanian (Dvorak)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>sun_type6</name>
+            <description>Lithuanian (Sun Type 6/7)</description>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>lv</name>
+        <shortDescription>lv</shortDescription>
+        <description>Latvian</description>
+        <countryList>
+          <iso3166Id>LV</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>lav</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>dvorak</name>
+            <description>Latvian (Dvorak)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>ykeydvorak</name>
+            <description>Latvian (Dvorak, with Y)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>minuskeydvorak</name>
+            <description>Latvian (Dvorak, with minus)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>dvorakprogr</name>
+            <description>Latvian (programmer Dvorak)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>ykeydvorakprogr</name>
+            <description>Latvian (programmer Dvorak, with Y)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>minuskeydvorakprogr</name>
+            <description>Latvian (programmer Dvorak, with minus)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>colemak</name>
+            <description>Latvian (Colemak)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>apostrophecolemak</name>
+            <description>Latvian (Colemak, with apostrophe)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>sun_type6</name>
+            <description>Latvian (Sun Type 6/7)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>apostrophe-deadquotes</name>
+            <description>Latvian (apostrophe, dead quotes)</description>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>us</name>
+        <shortDescription>en</shortDescription>
+        <description>English (US)</description>
+        <countryList>
+          <iso3166Id>US</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>eng</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>intl-unicode</name>
+            <description>English (US, intl., AltGr Unicode combining)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>alt-intl-unicode</name>
+            <description>English (US, intl., AltGr Unicode combining, alt.)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>ats</name>
+            <description>Atsina</description>
+            <!-- No ISO code in ISO639-2, only draft ISO693-3 -->
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>crd</name>
+            <description>Coeur d'Alene Salish</description>
+            <languageList>
+              <iso639Id>crd</iso639Id>
+            </languageList>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>cz_sk_de</name>
+            <description>Czech, Slovak and German (US)</description>
+            <languageList>
+              <iso639Id>eng</iso639Id>
+              <iso639Id>ces</iso639Id>
+              <iso639Id>slk</iso639Id>
+              <iso639Id>deu</iso639Id>
+            </languageList>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>cz_sk_pl_de_es_fi_sv</name>
+            <description>Czech, Slovak, Polish, Spanish, Finnish, Swedish and German (US)</description>
+            <languageList>
+              <iso639Id>eng</iso639Id>
+              <iso639Id>ces</iso639Id>
+              <iso639Id>slk</iso639Id>
+              <iso639Id>pol</iso639Id>
+              <iso639Id>deu</iso639Id>
+              <iso639Id>spa</iso639Id>
+              <iso639Id>fin</iso639Id>
+              <iso639Id>swe</iso639Id>
+            </languageList>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>drix</name>
+            <description>English (Drix)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>de_se_fi</name>
+            <description>German, Swedish and Finnish (US)</description>
+            <languageList>
+              <iso639Id>eng</iso639Id>
+              <iso639Id>deu</iso639Id>
+              <iso639Id>swe</iso639Id>
+              <iso639Id>fin</iso639Id>
+            </languageList>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>ibm238l</name>
+            <description>English (US, IBM Arabic 238_L)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>sun_type6</name>
+            <description>English (US, Sun Type 6/7)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>carpalx</name>
+            <description>English (Carpalx)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>carpalx-intl</name>
+            <description>English (Carpalx, intl., with dead keys)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>carpalx-altgr-intl</name>
+            <description>English (Carpalx, intl., with AltGr dead keys)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>carpalx-full</name>
+            <description>English (Carpalx, full optimization)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>carpalx-full-intl</name>
+            <description>English (Carpalx, full optimization, intl., with dead keys)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>carpalx-full-altgr-intl</name>
+            <description>English (Carpalx, full optimization, intl., with AltGr dead keys)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>3l</name>
+            <description>English (3l)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>3l-cros</name>
+            <description>English (3l, Chromebook)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>3l-emacs</name>
+            <description>English (3l, emacs)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>workman-p</name>
+            <shortDescription>workman-p</shortDescription>
+            <description>English (Workman-P)</description>
+            <languageList>
+              <iso639Id>eng</iso639Id>
+            </languageList>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>scn</name>
+            <description>Sicilian (US keyboard)</description>
+            <languageList>
+              <iso639Id>eng</iso639Id>
+              <iso639Id>ita</iso639Id>
+              <iso639Id>scn</iso639Id>
+            </languageList>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>altgr-weur</name>
+            <description>English (Western European AltGr dead keys)</description>
+            <languageList>
+              <iso639Id>eng</iso639Id>
+              <iso639Id>dan</iso639Id>
+              <iso639Id>deu</iso639Id>
+              <iso639Id>fin</iso639Id>
+              <iso639Id>fra</iso639Id>
+              <iso639Id>ita</iso639Id>
+              <iso639Id>nld</iso639Id>
+              <iso639Id>nor</iso639Id>
+              <iso639Id>por</iso639Id>
+              <iso639Id>spa</iso639Id>
+              <iso639Id>swe</iso639Id>
+            </languageList>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>pl</name>
+        <shortDescription>pl</shortDescription>
+        <description>Polish</description>
+        <countryList>
+          <iso3166Id>PL</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>pol</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>intl</name>
+            <description>Polish (intl., with dead keys)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>colemak</name>
+            <description>Polish (Colemak)</description>
+          </configItem>
+        </variant>
+	<variant>
+          <configItem popularity="exotic">
+            <name>colemak_dh_ansi</name>
+            <description>Polish (Colemak-DH)</description>
+          </configItem>
+        </variant>
+	<variant>
+          <configItem popularity="exotic">
+            <name>colemak_dh</name>
+            <description>Polish (Colemak-DH ISO)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>sun_type6</name>
+            <description>Polish (Sun Type 6/7)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>glagolica</name>
+            <description>Polish (Glagolica)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>lefty</name>
+            <description>Polish (lefty)</description>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>ro</name>
+        <shortDescription>ro</shortDescription>
+        <description>Romanian</description>
+        <countryList>
+          <iso3166Id>RO</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>ron</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>crh_dobruja</name>
+            <shortDescription>crh</shortDescription>
+            <description>Crimean Tatar (Dobruja Q)</description>
+            <languageList>
+              <iso639Id>crh</iso639Id>
+            </languageList>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>ergonomic</name>
+            <description>Romanian (ergonomic Touchtype)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>sun_type6</name>
+            <description>Romanian (Sun Type 6/7)</description>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>rs</name>
+        <shortDescription>sr</shortDescription>
+        <description>Serbian</description>
+        <countryList>
+          <iso3166Id>RS</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>srp</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>combiningkeys</name>
+            <description>Serbian (combining accents instead of dead keys)</description>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>ru</name>
+        <shortDescription>ru</shortDescription>
+        <description>Russian</description>
+        <countryList>
+          <iso3166Id>RU</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>rus</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>chu</name>
+            <description>Church Slavonic</description>
+            <languageList>
+              <iso639Id>chu</iso639Id>
+            </languageList>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>ruu</name>
+            <shortDescription>ru</shortDescription>
+            <description>Russian (plus Ukrainian and Belarusian letters)</description>
+            <languageList>
+              <iso639Id>rus</iso639Id>
+              <iso639Id>ukr</iso639Id>
+              <iso639Id>bel</iso639Id>
+            </languageList>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>rulemak</name>
+            <description>Russian (Rulemak, phonetic Colemak)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>phonetic_mac</name>
+            <description>Russian (phonetic Macintosh)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>sun_type6</name>
+            <description>Russian (Sun Type 6/7)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>unipunct</name>
+            <description>Russian (with US punctuation)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>gost-6431-75-48</name>
+            <description>Russian (GOST 6431-75)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>gost-14289-88</name>
+            <description>Russian (GOST 14289-88)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>prxn</name>
+            <shortDescription>ru</shortDescription>
+            <description>Russian (Polyglot and Reactionary)</description>
+            <countryList>
+              <iso3166Id>RU</iso3166Id>
+              <iso3166Id>RS</iso3166Id>
+              <iso3166Id>BA</iso3166Id>
+              <iso3166Id>ME</iso3166Id>
+              <iso3166Id>MK</iso3166Id>
+              <iso3166Id>BG</iso3166Id>
+              <iso3166Id>MD</iso3166Id>
+              <iso3166Id>UA</iso3166Id>
+              <iso3166Id>BY</iso3166Id>
+              <iso3166Id>KZ</iso3166Id>
+              <iso3166Id>MN</iso3166Id>
+              <iso3166Id>KG</iso3166Id>
+              <iso3166Id>TJ</iso3166Id>
+              <iso3166Id>UZ</iso3166Id>
+              <iso3166Id>TM</iso3166Id>
+              <iso3166Id>AZ</iso3166Id>
+            </countryList>
+            <languageList>
+              <iso639Id>rus</iso639Id>
+              <iso639Id>ukr</iso639Id>
+              <iso639Id>bel</iso639Id>
+              <iso639Id>srp</iso639Id>
+              <iso639Id>mkd</iso639Id>
+              <iso639Id>bul</iso639Id>
+              <iso639Id>chu</iso639Id>
+              <iso639Id>kaz</iso639Id>
+              <iso639Id>kir</iso639Id>
+              <iso639Id>uzb</iso639Id>
+              <iso639Id>bak</iso639Id>
+              <iso639Id>aze</iso639Id>
+              <iso639Id>tat</iso639Id>
+              <iso639Id>uig</iso639Id>
+              <iso639Id>kdr</iso639Id>
+              <iso639Id>tyv</iso639Id>
+              <iso639Id>kjh</iso639Id>
+              <iso639Id>crh</iso639Id>
+              <iso639Id>tgk</iso639Id>
+              <iso639Id>abk</iso639Id>
+              <iso639Id>sah</iso639Id>
+              <iso639Id>mon</iso639Id>
+              <iso639Id>kal</iso639Id>
+              <iso639Id>sjd</iso639Id>
+              <iso639Id>chv</iso639Id>
+              <iso639Id>oss</iso639Id>
+              <iso639Id>krl</iso639Id>
+              <iso639Id>ale</iso639Id>
+              <iso639Id>wbl</iso639Id>
+              <iso639Id>kur</iso639Id>
+              <iso639Id>niv</iso639Id>
+              <iso639Id>dng</iso639Id>
+              <iso639Id>kom</iso639Id>
+              <iso639Id>udm</iso639Id>
+              <iso639Id>sel</iso639Id>
+              <iso639Id>ulc</iso639Id>
+              <iso639Id>ude</iso639Id>
+              <iso639Id>oac</iso639Id>
+              <iso639Id>oaa</iso639Id>
+              <iso639Id>gld</iso639Id>
+              <iso639Id>eve</iso639Id>
+              <iso639Id>evn</iso639Id>
+              <iso639Id>kca</iso639Id>
+              <iso639Id>itl</iso639Id>
+              <iso639Id>yrk</iso639Id>
+              <iso639Id>neg</iso639Id>
+            </languageList>
+          </configItem>
+        </variant>        
+        <variant>
+          <configItem popularity="exotic">
+            <name>winkeys-p</name>
+            <shortDescription>winkeys-p</shortDescription>
+            <description>Russian (Programmer)</description>
+            <languageList>
+              <iso639Id>rus</iso639Id>
+            </languageList>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>typo</name>
+            <shortDescription>ru</shortDescription>
+            <description>Russian (plus typographic symbols)</description>
+            <countryList>
+              <iso3166Id>RU</iso3166Id>
+            </countryList>
+            <languageList>
+              <iso639Id>rus</iso639Id>
+            </languageList>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>rtu</name>
+            <shortDescription>ru</shortDescription>
+            <description>Russian (plus Tatar letters)</description>
+            <countryList>
+              <iso3166Id>RU</iso3166Id>
+            </countryList>
+            <languageList>
+              <iso639Id>rus</iso639Id>
+              <iso639Id>tat</iso639Id>
+            </languageList>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>am</name>
+        <shortDescription>hy</shortDescription>
+        <description>Armenian</description>
+        <countryList>
+          <iso3166Id>AM</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>hye</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>olpc-phonetic</name>
+            <description>Armenian (OLPC, phonetic)</description>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>il</name>
+        <shortDescription>he</shortDescription>
+        <description>Hebrew</description>
+        <countryList>
+          <iso3166Id>IL</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>heb</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>biblicalSIL</name>
+            <description>Hebrew (Biblical, SIL phonetic)</description>
+            <languageList>
+              <iso639Id>heb</iso639Id>
+            </languageList>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>ara</name>
+        <shortDescription>ar</shortDescription>
+        <description>Arabic</description>
+        <countryList>
+          <iso3166Id>AE</iso3166Id>
+          <iso3166Id>BH</iso3166Id>
+          <iso3166Id>DZ</iso3166Id>
+          <iso3166Id>EG</iso3166Id>
+          <iso3166Id>EH</iso3166Id>
+          <iso3166Id>JO</iso3166Id>
+          <iso3166Id>KW</iso3166Id>
+          <iso3166Id>LB</iso3166Id>
+          <iso3166Id>LY</iso3166Id>
+          <iso3166Id>MA</iso3166Id>
+          <iso3166Id>MR</iso3166Id>
+          <iso3166Id>OM</iso3166Id>
+          <iso3166Id>PS</iso3166Id>
+          <iso3166Id>QA</iso3166Id>
+          <iso3166Id>SA</iso3166Id>
+          <iso3166Id>SD</iso3166Id>
+          <iso3166Id>SY</iso3166Id>
+          <iso3166Id>TN</iso3166Id>
+          <iso3166Id>YE</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>ara</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>sun_type6</name>
+            <description>Arabic (Sun Type 6/7)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>basic_ext</name>
+            <description>Arabic (Arabic numerals, extensions in the 4th level)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>basic_ext_digits</name>
+            <description>Arabic (Eastern Arabic numerals, extensions in the 4th level)</description>
+          </configItem>
+        </variant>
+	<variant>
+          <configItem popularity="exotic">
+            <name>ergoarabic</name>
+            <description>Arabic (ErgoArabic)</description>
+          </configItem>
+	</variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>be</name>
+        <shortDescription>be</shortDescription>
+        <description>Belgian</description>
+        <countryList>
+          <iso3166Id>BE</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>deu</iso639Id>
+          <iso639Id>nld</iso639Id>
+          <iso639Id>fra</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>sun_type6</name>
+            <description>Belgian (Sun Type 6/7)</description>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>br</name>
+        <shortDescription>pt</shortDescription>
+        <description>Portuguese (Brazil)</description>
+        <countryList>
+          <iso3166Id>BR</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>por</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>sun_type6</name>
+            <description>Portuguese (Brazil, Sun Type 6/7)</description>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>cz</name>
+        <shortDescription>cs</shortDescription>
+        <description>Czech</description>
+        <countryList>
+          <iso3166Id>CZ</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>ces</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>sun_type6</name>
+            <description>Czech (Sun Type 6/7)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>prog</name>
+            <description>Czech (programming)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>prog_typo</name>
+            <description>Czech (programming, typographic)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>coder</name>
+            <description>Czech (coder)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>colemak-ucw</name>
+            <description>Czech (US, Colemak, UCW support)</description>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>dk</name>
+        <shortDescription>da</shortDescription>
+        <description>Danish</description>
+        <countryList>
+          <iso3166Id>DK</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>dan</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>sun_type6</name>
+            <description>Danish (Sun Type 6/7)</description>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>nl</name>
+        <shortDescription>nl</shortDescription>
+        <description>Dutch</description>
+        <countryList>
+          <iso3166Id>NL</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>nld</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>sun_type6</name>
+            <description>Dutch (Sun Type 6/7)</description>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>ee</name>
+        <shortDescription>et</shortDescription>
+        <description>Estonian</description>
+        <countryList>
+          <iso3166Id>EE</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>est</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>sun_type6</name>
+            <description>Estonian (Sun Type 6/7)</description>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>fi</name>
+        <shortDescription>fi</shortDescription>
+        <description>Finnish</description>
+        <countryList>
+          <iso3166Id>FI</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>fin</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>sun_type6</name>
+            <description>Finnish (Sun Type 6/7)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>das</name>
+            <description>Finnish (DAS)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>fidvorak</name>
+            <description>Finnish (Dvorak)</description>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>fr</name>
+        <shortDescription>fr</shortDescription>
+        <description>French</description>
+        <countryList>
+          <iso3166Id>FR</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>fra</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>sun_type6</name>
+            <description>French (Sun Type 6/7)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>us-alt</name>
+            <description>French (US with dead keys, alt.)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>us-azerty</name>
+            <description>French (US, AZERTY)</description>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>gr</name>
+        <shortDescription>gr</shortDescription>
+        <description>Greek</description>
+        <countryList>
+          <iso3166Id>GR</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>ell</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>sun_type6</name>
+            <description>Greek (Sun Type 6/7)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>colemak</name>
+            <description>Greek (Colemak)</description>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>it</name>
+        <shortDescription>it</shortDescription>
+        <description>Italian</description>
+        <countryList>
+          <iso3166Id>IT</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>ita</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>sun_type6</name>
+            <description>Italian (Sun Type 6/7)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>lld</name>
+            <shortDescription>it_lld</shortDescription>
+            <description>Italian (Ladin)</description>
+            <languageList>
+              <iso639Id>ita</iso639Id>
+              <iso639Id>lld</iso639Id>
+            </languageList>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>dvorak</name>
+            <description>Italian (Dvorak)</description>
+            <languageList>
+              <iso639Id>ita</iso639Id>
+            </languageList>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>jp</name>
+        <shortDescription>ja</shortDescription>
+        <description>Japanese</description>
+        <countryList>
+          <iso3166Id>JP</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>jpn</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>sun_type6</name>
+            <description>Japanese (Sun Type 6)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>sun_type7</name>
+            <description>Japanese (Sun Type 7, PC-compatible)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>sun_type7_suncompat</name>
+            <description>Japanese (Sun Type 7, Sun-compatible)</description>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>no</name>
+        <shortDescription>no</shortDescription>
+        <description>Norwegian</description>
+        <countryList>
+          <iso3166Id>NO</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>nor</iso639Id>
+          <iso639Id>nob</iso639Id>
+          <iso639Id>nno</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>sun_type6</name>
+            <description>Norwegian (Sun Type 6/7)</description>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>pk</name>
+        <shortDescription>ur</shortDescription>
+        <description>Urdu (Pakistan)</description>
+        <countryList>
+          <iso3166Id>PK</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>urd</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+          <name>urd-navees</name>
+          <description>Urdu (Pakistan, Navees)</description>
+            <languageList>
+              <iso639Id>urd</iso639Id>
+            </languageList>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>pt</name>
+        <shortDescription>pt</shortDescription>
+        <description>Portuguese</description>
+        <countryList>
+          <iso3166Id>PT</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>por</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>sun_type6</name>
+            <description>Portuguese (Sun Type 6/7)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>colemak</name>
+            <description>Portuguese (Colemak)</description>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>sk</name>
+        <shortDescription>sk</shortDescription>
+        <description>Slovak</description>
+        <countryList>
+          <iso3166Id>SK</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>slk</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>acc</name>
+            <description>Slovak (ACC layout, only accented letters)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>sun_type6</name>
+            <description>Slovak (Sun Type 6/7)</description>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>es</name>
+        <shortDescription>es</shortDescription>
+        <description>Spanish</description>
+        <countryList>
+          <iso3166Id>ES</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>spa</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>sun_type6</name>
+            <description>Spanish (Sun Type 6/7)</description>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>se</name>
+        <shortDescription>sv</shortDescription>
+        <description>Swedish</description>
+        <countryList>
+          <iso3166Id>SE</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>swe</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>dvorak_a5</name>
+            <description>Swedish (Dvorak A5)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>sun_type6</name>
+            <description>Swedish (Sun Type 6/7)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>ovd</name>
+            <description>Elfdalian (Swedish, with combining ogonek)</description>
+            <languageList>
+              <iso639Id>ovd</iso639Id>
+            </languageList>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>ch</name>
+        <shortDescription>de</shortDescription>
+        <description>German (Switzerland)</description>
+        <countryList>
+          <iso3166Id>CH</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>deu</iso639Id>
+          <iso639Id>gsw</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>sun_type6_de</name>
+            <description>German (Switzerland, Sun Type 6/7)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>sun_type6_fr</name>
+            <description>French (Switzerland, Sun Type 6/7)</description>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>tr</name>
+        <shortDescription>tr</shortDescription>
+        <description>Turkish</description>
+        <countryList>
+          <iso3166Id>TR</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>tur</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>sun_type6</name>
+            <description>Turkish (Sun Type 6/7)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>otk</name>
+            <description>Old Turkic</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>us</name>
+            <description>Turkish (Turkey, Latin Q, Swap i and ı)</description>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>ua</name>
+        <shortDescription>uk</shortDescription>
+        <description>Ukrainian</description>
+        <countryList>
+          <iso3166Id>UA</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>ukr</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>sun_type6</name>
+            <description>Ukrainian (Sun Type 6/7)</description>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>gb</name>
+        <shortDescription>en</shortDescription>
+        <description>English (UK)</description>
+        <countryList>
+          <iso3166Id>GB</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>eng</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>sun_type6</name>
+            <description>English (UK, Sun Type 6/7)</description>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>kr</name>
+        <shortDescription>ko</shortDescription>
+        <description>Korean</description>
+          <countryList>
+          <iso3166Id>KR</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>kor</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>sun_type6</name>
+            <description>Korean (Sun Type 6/7)</description>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>vn</name>
+        <!-- Keyboard indicator for Vietnamese layouts -->
+        <shortDescription>vi</shortDescription>
+        <description>Vietnamese</description>
+        <countryList>
+          <iso3166Id>VN</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>vie</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>aderty</name>
+            <description>Vietnamese (AÐERTY)</description>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>qderty</name>
+            <description>Vietnamese (QĐERTY)</description>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>eu</name>
+        <!-- Keyboard indicator for European layouts -->
+        <shortDescription>eu</shortDescription>
+        <description>EurKEY (US)</description>
+        <countryList>
+          <iso3166Id>US</iso3166Id>
+        </countryList>
+        <languageList>
+          <iso639Id>cat</iso639Id>
+          <iso639Id>dan</iso639Id>
+          <iso639Id>eng</iso639Id>
+          <iso639Id>est</iso639Id>
+          <iso639Id>fao</iso639Id>
+          <iso639Id>fin</iso639Id>
+          <iso639Id>deu</iso639Id>
+          <iso639Id>ell</iso639Id>
+          <iso639Id>gsw</iso639Id>
+          <iso639Id>ita</iso639Id>
+          <iso639Id>lav</iso639Id>
+          <iso639Id>lit</iso639Id>
+          <iso639Id>nld</iso639Id>
+          <iso639Id>nor</iso639Id>
+          <iso639Id>por</iso639Id>
+          <iso639Id>spa</iso639Id>
+          <iso639Id>swe</iso639Id>
+        </languageList>
+      </configItem>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>trans</name>
+        <!-- Keyboard layouts for transcription and transliteration systems -->
+        <shortDescription>ipa</shortDescription>
+        <description>International Phonetic Alphabet</description>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>qwerty</name>
+            <description>International Phonetic Alphabet (QWERTY)</description>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem popularity="exotic">
+        <name>in</name>
+        <!-- Keyboard indicator for Indian layouts -->
+        <shortDescription>in</shortDescription>
+        <description>Indian</description>
+        <countryList>
+          <iso3166Id>IN</iso3166Id>
+        </countryList>
+        <!-- from https://github.com/unicode-org/cldr/blob/main/common/supplemental/supplementalData.xml scripts="Deva" -->
+        <languageList>
+          <iso639Id>hin</iso639Id>
+          <iso639Id>anp</iso639Id>
+          <iso639Id>awa</iso639Id>
+          <iso639Id>bap</iso639Id>
+          <iso639Id>bfy</iso639Id>
+          <iso639Id>bgc</iso639Id>
+          <iso639Id>bhb</iso639Id>
+          <iso639Id>bhi</iso639Id>
+          <iso639Id>bho</iso639Id>
+          <iso639Id>bjj</iso639Id>
+          <iso639Id>bra</iso639Id>
+          <iso639Id>brx</iso639Id>
+          <iso639Id>btv</iso639Id>
+          <iso639Id>doi</iso639Id>
+          <iso639Id>dty</iso639Id>
+          <iso639Id>gbm</iso639Id>
+          <iso639Id>gom</iso639Id>
+          <iso639Id>gvr</iso639Id>
+          <iso639Id>hne</iso639Id>
+          <iso639Id>hoc</iso639Id>
+          <iso639Id>hoj</iso639Id>
+          <iso639Id>jml</iso639Id>
+          <iso639Id>kfr</iso639Id>
+          <iso639Id>kfy</iso639Id>
+          <iso639Id>khn</iso639Id>
+          <iso639Id>kok</iso639Id>
+          <iso639Id>kru</iso639Id>
+          <iso639Id>mag</iso639Id>
+          <iso639Id>mai</iso639Id>
+          <iso639Id>mar</iso639Id>
+          <iso639Id>mgp</iso639Id>
+          <iso639Id>mrd</iso639Id>
+          <iso639Id>mtr</iso639Id>
+          <iso639Id>mwr</iso639Id>
+          <iso639Id>nep</iso639Id>
+          <iso639Id>new</iso639Id>
+          <iso639Id>noe</iso639Id>
+          <iso639Id>raj</iso639Id>
+          <iso639Id>rjs</iso639Id>
+          <iso639Id>sck</iso639Id>
+          <iso639Id>srx</iso639Id>
+          <iso639Id>swv</iso639Id>
+          <iso639Id>taj</iso639Id>
+          <iso639Id>tdg</iso639Id>
+          <iso639Id>tdh</iso639Id>
+          <iso639Id>thl</iso639Id>
+          <iso639Id>thq</iso639Id>
+          <iso639Id>thr</iso639Id>
+          <iso639Id>tkt</iso639Id>
+          <iso639Id>wbr</iso639Id>
+          <iso639Id>wtm</iso639Id>
+          <iso639Id>xnr</iso639Id>
+          <iso639Id>xsr</iso639Id>
+        </languageList>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem popularity="exotic">
+            <name>modi-kagapa</name>
+            <shortDescription>mr</shortDescription>
+            <description>Modi (KaGaPa phonetic)</description>
+            <languageList>
+              <iso639Id>mar</iso639Id>
+            </languageList>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>san-misc</name>
+            <shortDescription>sas</shortDescription>
+            <description>Sanskrit symbols</description>
+            <languageList>
+              <iso639Id>san</iso639Id>
+            </languageList>
+          </configItem>
+        </variant>
+        <variant>
+          <configItem popularity="exotic">
+            <name>urd-navees</name>
+            <shortDescription>ur</shortDescription>
+            <description>Urdu (Navees)</description>
+            <languageList>
+              <iso639Id>urd</iso639Id>
+            </languageList>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+  </layoutList>
+  <optionList>
+    <group allowMultipleSelection="true">
+      <!-- The key combination used to choose the 3rd (and 4th, together with Shift)
+           level of symbols -->
+      <configItem popularity="exotic">
+        <name>lv3</name>
+        <description>Key to choose the 3rd level</description>
+      </configItem>
+      <option>
+        <configItem popularity="exotic">
+          <name>lv3:4_switch_isolated</name>
+          <description>Number key 4 when pressed in isolation</description>
+        </configItem>
+      </option>
+      <option>
+        <configItem popularity="exotic">
+          <name>lv3:9_switch_isolated</name>
+          <description>Number key 9 when pressed in isolation</description>
+        </configItem>
+      </option>
+    </group>
+    <group allowMultipleSelection="false">
+      <!-- Caps Lock tweaks.
+           "Internal" capitalization means capitalization using some internal tables.
+           Otherwise "as Shift" - means using next group. -->
+      <configItem popularity="exotic">
+        <name>caps</name>
+        <description>Caps Lock behavior</description>
+      </configItem>
+      <option>
+        <configItem popularity="exotic">
+          <name>caps:escape_shifted_compose</name>
+          <description>Make Caps Lock an additional Esc, and Shift + Caps Lock is the Compose</description>
+        </configItem>
+      </option>
+    </group>
+    <group allowMultipleSelection="true">
+      <!-- Tweaking the position of the "(" and ")" keys -->
+      <configItem popularity="exotic">
+        <name>parens</name>
+        <description>Parentheses position</description>
+      </configItem>
+      <option>
+        <configItem popularity="exotic">
+          <name>parens:swap_brackets</name>
+          <description>Swap with square brackets</description>
+        </configItem>
+      </option>
+    </group>
+  </optionList>
+</xkbConfigRegistry>

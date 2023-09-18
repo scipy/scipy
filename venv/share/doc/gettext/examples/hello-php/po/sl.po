@@ -1,0 +1,30 @@
+# -*- mode: po; coding: utf-8; -*- Slovenian message catalog for GNU gettext-example
+# Copyright (C) 2005 Yoyodyne, Inc. (msgids)
+# This file is distributed under the same license as the gettext package.
+#
+# Primož Peterlin <primoz.peterlin@biofiz.mf.uni-lj.si>, 2005, 2014, 2015.
+# $Id: hello-php-0.19.4.73.sl.po,v 1.1 2015/06/28 08:37:19 peterlin Exp $
+msgid ""
+msgstr ""
+"Project-Id-Version: hello-php 0.19.4.73\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"POT-Creation-Date: 2022-10-10 00:22+0200\n"
+"PO-Revision-Date: 2015-06-28 10:37+0200\n"
+"Last-Translator: Primož Peterlin <primozz.peterlin@gmail.com>\n"
+"Language-Team: Slovenian <translation-team-sl@lists.sourceforge.net>\n"
+"Language: sl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8-bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+"Plural-Forms: nplurals=4; plural=(n%100==1 ? 1 : n%100==2 ? 2 : n%100==3 || "
+"n%100==4 ? 3 : 0);\n"
+
+#: hello.php:12
+msgid "Hello, world!"
+msgstr "Pozdravljen, svet!"
+
+#: hello.php:14
+#, php-format
+msgid "This program is running as process number %d."
+msgstr "Ta program teče kot proces številka %d."

@@ -1,0 +1,756 @@
+// Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+//
+//Copyright 1996, 1998  The Open Group
+//
+//Permission to use, copy, modify, distribute, and sell this software and its
+//documentation for any purpose is hereby granted without fee, provided that
+//the above copyright notice appear in all copies and that both that
+//copyright notice and this permission notice appear in supporting
+//documentation.
+//
+//The above copyright notice and this permission notice shall be
+//included in all copies or substantial portions of the Software.
+//
+//THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+//EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+//MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+//IN NO EVENT SHALL THE OPEN GROUP BE LIABLE FOR ANY CLAIM, DAMAGES OR
+//OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+//ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+//OTHER DEALINGS IN THE SOFTWARE.
+//
+//Except as contained in this notice, the name of The Open Group shall
+//not be used in advertising or otherwise to promote the sale, use or
+//other dealings in this Software without prior written authorization
+//from The Open Group.
+//
+
+xkb_geometry "t6" {
+
+    // This is an approximate layout for a (US/ASCII) Sun Type6
+    // keyboard.  I just took a similar layout (101 key PC keyboard)
+    // and adjusted the sizes.
+
+    width= 515;
+    height= 170;
+
+    shape "EDGE" { cornerRadius= 2, { [ 515, 170 ] } };
+    shape.cornerRadius= 1;
+    shape "NORM" { { [ 18,18] }, { [2,1], [16,17] } };
+    shape "BKSP" { { [ 37,18] }, { [2,1], [35,17] } };
+    shape "TABK" { { [ 27,18] }, { [2,1], [25,17] } };
+    shape "BKSL" { { [ 27,18] }, { [2,1], [25,17] } };
+    shape "RTRN" { { [ 42,18] }, { [2,1], [40,17] } };
+    shape "CAPS" { { [ 32,18] }, { [2,1], [30,17] } };
+    shape "LFSH" { { [ 42,18] }, { [2,1], [40,17] } };
+    shape "RTSH" { { [ 51,18] }, { [2,1], [49,17] } };
+    shape "LCTL" { { [ 32,18] }, { [2,1], [30,17] } };
+    shape "MODK" { { [ 28,18] }, { [2,1], [26,17] } };
+    shape "SPCE" { { [136,18] }, { [2,1], [134,17] } };
+    shape "KP0"  { { [ 37,18] }, { [2,1], [35,17] } };
+    shape "KPAD" { { [ 18,37] }, { [2,1], [16,36] } };
+    shape "HELP" { { [ 37,18] }, { [2,1], [35,17] } };
+    shape "RMTA" { { [ 28,18] }, { [2,1], [26,17] } };
+    shape "LMTA" { { [ 28,18] }, { [2,1], [26,17] } };
+    shape "LOGO" { { [ 16,16] } };
+
+    outline "Edges" {
+	top= 0;
+	left= 0;
+	shape= "EDGE";
+    };
+
+    section.left= 14;
+    row.left= 1;
+    key.shape= "NORM";
+    key.gap=  1;
+    section "Function" {
+	top= 24;
+	row {
+	    top= 1;
+	    keys { { <HELP>, "HELP" }, { <ESC>, 9 },
+		   { <FK01>, 19 }, <FK02>, <FK03>, <FK04>,
+		   { <FK05>, 11 }, <FK06>, <FK07>, <FK08>,
+		   { <FK09>, 11 }, <FK10>, <FK11>, <FK12>,
+		   { <PRSC>,  9 }, <SCLK>, <PAUS>,
+		   { <MUTE>,  9 }, <VOL->, <VOL+>, <POWR>
+	    };
+	};
+    }; // End of "Function" section
+
+    section "Alpha" {
+	top= 61;
+	row {
+	    top= 1;
+	    keys { <STOP>, <AGAI>,
+		 { <TLDE>, 9}, <AE01>, <AE02>, <AE03>, <AE04>,
+		   <AE05>, <AE06>, <AE07>, <AE08>, <AE09>,
+		   <AE10>, <AE11>, <AE12>,
+		 { <BKSP>, "BKSP", color="grey20" }
+	    };
+	};
+	row {
+	    top= 20;
+	    keys { <PROP>, <UNDO>, { <TAB>, 9, shape="TABK" },
+		   <AD01>, <AD02>, <AD03>, <AD04>, <AD05>, 
+		   <AD06>, <AD07>, <AD08>, <AD09>, <AD10>, 
+		   <AD11>, <AD12>,
+		 { <BKSL>, "BKSL" }
+	    };
+	};
+	row {
+	    top= 39;
+	    keys { <FRNT>, <COPY>, { <CAPS>, 9, shape="CAPS" },
+		   <AC01>, <AC02>, <AC03>, <AC04>, <AC05>, 
+		   <AC06>, <AC07>, <AC08>, <AC09>, <AC10>, 
+		   <AC11>,
+		 { <RTRN>, "RTRN" }
+	    };
+	};
+	row {
+	    top= 58;
+	    keys { <OPEN>, <PAST>, { <LFSH>, 9 , shape="LFSH" }, 
+		   <AB01>, <AB02>, <AB03>, <AB04>, <AB05>, 
+		   <AB06>, <AB07>, <AB08>, <AB09>, <AB10>, 
+		 { <RTSH>, "RTSH", color="grey20" }
+	    };
+	};
+	row {
+	    top= 77;
+	    keys { <FIND>, <CUT>, { <LCTL>, 9, shape="LCTL" },
+		   <LALT>, { <LMTA>, "LMTA" },
+		 { <SPCE>, "SPCE" },
+		 { <RMTA>, "RMTA" }, <COMP>, <ALGR>
+	    };
+	};
+    }; // End of "Alpha" section
+
+    section "Editing" {
+	top= 61;
+	left= 352;
+	row {
+	    top= 1;
+	    keys { <INS>, <HOME>, <PGUP> };
+	};
+	row {
+	    top= 20;
+	    keys { <DELE>, <END>, <PGDN> };
+	};
+	row {
+	    top= 58;
+	    left= 20;
+	    keys { <UP> };
+	};
+	row {
+	    top= 77;
+	    keys { <LEFT>, <DOWN>, <RGHT> };
+	};
+    }; // End of "Editing" section
+
+    section "Keypad" {
+	top= 61;
+	left= 420;
+	row {
+	    top= 1;
+	    keys { <NMLK>, <KPDV>, <KPMU>, <KPSU> };
+	};
+	row {
+	    top= 20;
+	    keys { <KP7>, <KP8>, <KP9>, { <KPAD>, "KPAD", color= "grey20" } };
+	};
+	row {
+	    top= 39;
+	    keys { <KP4>, <KP5>, <KP6> };
+	};
+	row {
+	    top= 58;
+	    keys { <KP1>, <KP2>, <KP3>, { <KPEN>, "KPAD", color= "grey20" } };
+	};
+	row {
+	    top= 77;
+	    keys { { <KP0>, "KP0" }, <KPDL> };
+	};
+    }; // End of "Keypad" section
+
+    shape "LEDS" { cornerRadius= 0, { [ 78 ,21 ] } };
+    shape "LED"  { cornerRadius= 2, { [  3,  6 ] } };
+    solid "LedPanel" {
+	shape= "LEDS";
+	top=  1;
+	left= 218;
+    };
+    indicator.onColor= "green";
+    indicator.offColor= "green30";
+    indicator.top= 10;
+    indicator.shape= "LED";
+    indicator "CapsLock"	{ left= 243; };
+    indicator "Compose"	{ left= 281; };
+    indicator "ScrollLock"	{ left= 262; };
+    indicator "NumLock"	{ left= 224; };
+    text.top= 1;
+    text.color= "black";
+    text "CapsLockLabel"	{ left= 243; text="Caps\nLock"; };
+    text "ComposeLabel"		{ left= 281; text="Compose"; };
+    text "ScrollLockLabel"	{ left= 262; text="Scroll\nLock"; };
+    text "NumLockLabel"		{ left= 224; text="Num\nLock"; };
+
+};
+
+xkb_geometry "t6tuv" {
+
+    // This is an approximate layout for a (US/ASCII) Sun Type6
+    // keyboard.  I just took a similar layout (101 key PC keyboard)
+    // and adjusted the sizes.
+
+    width= 515;
+    height= 170;
+
+    shape "EDGE" { cornerRadius= 2, { [ 515, 170 ] } };
+    shape.cornerRadius= 1;
+    shape "NORM" { { [ 18,18] }, { [2,1], [16,17] } }; 
+    shape "BKSP" { { [ 37,18] }, { [2,1], [35,17] } };
+    shape "TABK" { { [ 27,18] }, { [2,1], [25,17] } };
+    shape "RTRN" { 
+        approx = { [ 0, 0], [28,37] },
+        { [ 0, 0], [28, 0], [28,37],
+          [ 5,37], [ 5,18], [ 0,18] },
+        { [ 1, 1], [26, 1], [26,36],
+          [ 7,36], [ 7,17], [ 1,17] }
+    };
+    shape "CAPS" { { [ 32,18] }, { [2,1], [30,17] } };
+    shape "LFSH" { { [ 24,18] }, { [2,1], [22,17] } };
+    shape "RTSH" { { [ 51,18] }, { [2,1], [49,17] } };
+    shape "LCTL" { { [ 32,18] }, { [2,1], [30,17] } };
+    shape "MODK" { { [ 28,18] }, { [2,1], [26,17] } };
+    shape "SPCE" { { [137,18] }, { [2,1], [135,17] } };
+    shape "KP0"  { { [ 37,18] }, { [2,1], [35,17] } };
+    shape "KPAD" { { [ 18,37] }, { [2,1], [16,36] } };
+    shape "RMTA" { { [ 28,18] }, { [2,1], [26,17] } };
+    shape "LMTA" { { [ 28,18] }, { [2,1], [26,17] } };
+    shape "HELP" { { [ 37,18] }, { [2,1], [35,17] } };
+    shape "LOGO" { { [ 16,16] } };
+
+    outline "Edges" {
+	top= 0;
+	left= 0;
+	shape= "EDGE";
+    };
+
+    section.left= 14;
+    row.left= 1;
+    key.shape= "NORM";
+    key.gap=  1;
+    section "Function" {
+	top= 24;
+	row {
+	    top= 1;
+	    keys { { <HELP>, "HELP" }, { <ESC>, 9 },
+		   { <FK01>, 19 }, <FK02>, <FK03>, <FK04>,
+		   { <FK05>, 11 }, <FK06>, <FK07>, <FK08>,
+		   { <FK09>, 11 }, <FK10>, <FK11>, <FK12>,
+		   { <PRSC>,  9 }, <SCLK>, <PAUS>,
+		   { <MUTE>,  9 }, <VOL->, <VOL+>, <POWR>
+	    };
+	};
+    }; // End of "Function" section
+
+    section "Alpha" {
+	top= 61;
+	row {
+	    top= 1;
+	    keys { <STOP>, <AGAI>,
+		 { <TLDE>, 9}, <AE01>, <AE02>, <AE03>, <AE04>,
+		   <AE05>, <AE06>, <AE07>, <AE08>, <AE09>,
+		   <AE10>, <AE11>, <AE12>,
+		 { <BKSP>, "BKSP", color="grey20" }
+	    };
+	};
+	row {
+	    top= 20;
+	    keys { <PROP>, <UNDO>, { <TAB>, 9, shape="TABK" },
+		   <AD01>, <AD02>, <AD03>, <AD04>, <AD05>, 
+		   <AD06>, <AD07>, <AD08>, <AD09>, <AD10>, 
+		   <AD11>, <AD12>, 
+		   { <RTRN>, "RTRN" }
+	    };
+	};
+	row {
+	    top= 39;
+	    keys { <FRNT>, <COPY>, { <CAPS>, 9, shape="CAPS" },
+		   <AC01>, <AC02>, <AC03>, <AC04>, <AC05>, 
+		   <AC06>, <AC07>, <AC08>, <AC09>, <AC10>, 
+		   <AC11>, <BKSL>
+	    };
+	};
+	row {
+	    top= 58;
+	    keys { <OPEN>, <PAST>, { <LFSH>, 9 , shape="LFSH" }, <LSGT>, 
+		   <AB01>, <AB02>, <AB03>, <AB04>, <AB05>, 
+		   <AB06>, <AB07>, <AB08>, <AB09>, <AB10>, 
+		 { <RTSH>, "RTSH", color="grey20" }
+	    };
+	};
+	row {
+	    top= 77;
+	    keys { <FIND>, <CUT>, { <LCTL>, 9, shape="LCTL" },
+		   <LALT>, { <LMTA>, "LMTA" },
+		 { <SPCE>, "SPCE" },
+		 { <RMTA>, "RMTA" }, <COMP>, <ALGR>
+	    };
+	};
+    }; // End of "Alpha" section
+
+    section "Editing" {
+	top= 61;
+	left= 352;
+	row {
+	    top= 1;
+	    keys { <INS>, <HOME>, <PGUP> };
+	};
+	row {
+	    top= 20;
+	    keys { <DELE>, <END>, <PGDN> };
+	};
+	row {
+	    top= 58;
+	    left= 20;
+	    keys { <UP> };
+	};
+	row {
+	    top= 77;
+	    keys { <LEFT>, <DOWN>, <RGHT> };
+	};
+    }; // End of "Editing" section
+
+    section "Keypad" {
+	top= 61;
+	left= 420;
+	row {
+	    top= 1;
+	    keys { <NMLK>, <KPDV>, <KPMU>, <KPSU> };
+	};
+	row {
+	    top= 20;
+	    keys { <KP7>, <KP8>, <KP9>, { <KPAD>, "KPAD", color= "grey20" } };
+	};
+	row {
+	    top= 39;
+	    keys { <KP4>, <KP5>, <KP6> };
+	};
+	row {
+	    top= 58;
+	    keys { <KP1>, <KP2>, <KP3>, { <KPEN>, "KPAD", color= "grey20" } };
+	};
+	row {
+	    top= 77;
+	    keys { { <KP0>, "KP0" }, <KPDL> };
+	};
+    }; // End of "Keypad" section
+
+    shape "LEDS" { cornerRadius= 0, { [ 78 ,21 ] } };
+    shape "LED"  { cornerRadius= 2, { [  3,  6 ] } };
+    solid "LedPanel" {
+	shape= "LEDS";
+	top=  1;
+	left= 218;
+    };
+    indicator.onColor= "green";
+    indicator.offColor= "green30";
+    indicator.top= 10;
+    indicator.shape= "LED";
+    indicator "CapsLock"	{ left= 243; };
+    indicator "Compose"	{ left= 281; };
+    indicator "ScrollLock"	{ left= 262; };
+    indicator "NumLock"	{ left= 224; };
+    text.top= 1;
+    text.color= "black";
+    text "CapsLockLabel"	{ left= 243; text="Caps\nLock"; };
+    text "ComposeLabel"		{ left= 281; text="Compose"; };
+    text "ScrollLockLabel"	{ left= 262; text="Scroll\nLock"; };
+    text "NumLockLabel"		{ left= 224; text="Num\nLock"; };
+
+};
+
+xkb_geometry "t6jp" {
+
+    // This is an approximate layout for a (US/ASCII) Sun Type6
+    // keyboard.  I just took a similar layout (101 key PC keyboard)
+    // and adjusted the sizes.
+
+    width= 515;
+    height= 170;
+
+    shape "EDGE" { cornerRadius= 2, { [ 515, 170 ] } };
+    shape.cornerRadius= 1;
+    shape "NORM" { { [ 18,18] }, { [2,1], [16,17] } };
+    shape "BKSP" { { [ 37,18] }, { [2,1], [35,17] } };
+    shape "TABK" { { [ 27,18] }, { [2,1], [25,17] } };
+    shape "KANJ" { { [ 27,18] }, { [2,1], [25,17] } };
+    shape "EXEC" { { [ 27,18] }, { [2,1], [25,17] } };
+    shape "RTRN" { 
+        approx = { [ 0, 0], [28,37] },
+        { [ 0, 0], [28, 0], [28,37],
+          [ 5,37], [ 5,18], [ 0,18] },
+        { [ 1, 1], [26, 1], [26,36],
+          [ 7,36], [ 7,17], [ 1,17] }
+    };
+    shape "CAPS" { { [ 32,18] }, { [2,1], [30,17] } };
+    shape "LFSH" { { [ 42,18] }, { [2,1], [40,17] } };
+    shape "RTSH" { { [ 33,18] }, { [2,1], [31,17] } };
+    shape "MODK" { { [ 28,18] }, { [2,1], [26,17] } };
+    shape "SPCE" { { [ 96,18] }, { [2,1], [94,17] } };
+    shape "KP0"  { { [ 37,18] }, { [2,1], [35,17] } };
+    shape "KPAD" { { [ 18,37] }, { [2,1], [16,36] } };
+    shape "HELP" { { [ 37,18] }, { [2,1], [35,17] } };
+    shape "LOGO" { { [ 16,16] } };
+
+    outline "Edges" {
+	top= 0;
+	left= 0;
+	shape= "EDGE";
+    };
+
+    section.left= 14;
+    row.left= 1;
+    key.shape= "NORM";
+    key.gap=  1;
+    section "Function" {
+	top= 24;
+	row {
+	    top= 1;
+	    keys { { <HELP>, "HELP" }, { <ESC>, 9 },
+		   { <FK01>, 19 }, <FK02>, <FK03>, <FK04>,
+		   { <FK05>, 11 }, <FK06>, <FK07>, <FK08>,
+		   { <FK09>, 11 }, <FK10>, <FK11>, <FK12>,
+		   { <PRSC>,  9 }, <SCLK>, <PAUS>,
+		   { <MUTE>,  9 }, <VOL->, <VOL+>, <POWR>
+	    };
+	};
+    }; // End of "Function" section
+
+    section "Alpha" {
+	top= 61;
+	row {
+	    top= 1;
+	    keys { <STOP>, <AGAI>,
+		 { <TLDE>, 9}, <AE01>, <AE02>, <AE03>, <AE04>,
+		   <AE05>, <AE06>, <AE07>, <AE08>, <AE09>,
+		   <AE10>, <AE11>, <AE12>,
+		 { <BKSP>, "BKSP", color="grey20" }
+	    };
+	};
+	row {
+	    top= 20;
+	    keys { <PROP>, <UNDO>, { <TAB>, 9, shape="TABK" },
+		   <AD01>, <AD02>, <AD03>, <AD04>, <AD05>, 
+		   <AD06>, <AD07>, <AD08>, <AD09>, <AD10>, 
+		   <AD11>, <AD12>, 
+		   { <RTRN>, "RTRN" }
+	    };
+	};
+	row {
+	    top= 39;
+	    keys { <FRNT>, <COPY>, { <CAPS>, 9, shape="CAPS" },
+		   <AC01>, <AC02>, <AC03>, <AC04>, <AC05>, 
+		   <AC06>, <AC07>, <AC08>, <AC09>, <AC10>, 
+		   <AC11>, <BKSL>
+	    };
+	};
+	row {
+	    top= 58;
+	    keys { <OPEN>, <PAST>, { <LFSH>, 9 , shape="LFSH" }, 
+		   <AB01>, <AB02>, <AB03>, <AB04>, <AB05>, 
+		   <AB06>, <AB07>, <AB08>, <AB09>, <AB10>, <UNDR>,
+		 { <RTSH>, "RTSH", color="grey20" }
+	    };
+	};
+	row {
+	    top= 77;
+	    keys { <FIND>, <CUT>, { <LCTL>, 9 },
+		   <LALT>, <LMTA>, { <EXEC>, "EXEC" },
+		 { <SPCE>, "SPCE" }, { <KANJ>, "KANJ" }, <HENK>,
+		   <RMTA>, <COMP>, <ALGR>
+	    };
+	};
+    }; // End of "Alpha" section
+
+    section "Editing" {
+	top= 61;
+	left= 352;
+	row {
+	    top= 1;
+	    keys { <INS>, <HOME>, <PGUP> };
+	};
+	row {
+	    top= 20;
+	    keys { <DELE>, <END>, <PGDN> };
+	};
+	row {
+	    top= 58;
+	    left= 20;
+	    keys { <UP> };
+	};
+	row {
+	    top= 77;
+	    keys { <LEFT>, <DOWN>, <RGHT> };
+	};
+    }; // End of "Editing" section
+
+    section "Keypad" {
+	top= 61;
+	left= 420;
+	row {
+	    top= 1;
+	    keys { <NMLK>, <KPDV>, <KPMU>, <KPSU> };
+	};
+	row {
+	    top= 20;
+	    keys { <KP7>, <KP8>, <KP9>, { <KPAD>, "KPAD", color= "grey20" } };
+	};
+	row {
+	    top= 39;
+	    keys { <KP4>, <KP5>, <KP6> };
+	};
+	row {
+	    top= 58;
+	    keys { <KP1>, <KP2>, <KP3>, { <KPEN>, "KPAD", color= "grey20" } };
+	};
+	row {
+	    top= 77;
+	    keys { { <KP0>, "KP0" }, <KPDL> };
+	};
+    }; // End of "Keypad" section
+
+    shape "LEDS" { cornerRadius= 0, { [ 78 ,21 ] } };
+    shape "LED"  { cornerRadius= 2, { [  3,  6 ] } };
+    solid "LedPanel" {
+	shape= "LEDS";
+	top=  1;
+	left= 218;
+    };
+    indicator.onColor= "green";
+    indicator.offColor= "green30";
+    indicator.top= 10;
+    indicator.shape= "LED";
+    indicator "CapsLock"	{ left= 243; };
+    indicator "Compose"	{ left= 281; };
+    indicator "ScrollLock"	{ left= 262; };
+    indicator "NumLock"	{ left= 224; };
+    text.top= 1;
+    text.color= "black";
+    text "CapsLockLabel"	{ left= 243; text="Caps\nLock"; };
+    text "ComposeLabel"		{ left= 281; text="Compose"; };
+    text "ScrollLockLabel"	{ left= 262; text="Scroll\nLock"; };
+    text "NumLockLabel"		{ left= 224; text="Num\nLock"; };
+
+};
+
+xkb_geometry "t6unix" {
+
+    // This is an approximate layout for a (US/ASCII) Sun Type6
+    // keyboard.  I just took a similar layout (101 key PC keyboard)
+    // and adjusted the sizes.
+
+    width= 515;
+    height= 170;
+
+    shape "EDGE" { cornerRadius= 2, { [ 515, 170 ] } };
+    shape.cornerRadius= 1;
+    shape "NORM" { { [ 18,18] }, { [2,1], [16,17] } };
+    shape "BKSP" { { [ 28,18] }, { [2,1], [26,17] } };
+    shape "TABK" { { [ 27,18] }, { [2,1], [25,17] } };
+    shape "RTRN" { { [ 42,18] }, { [2,1], [40,17] } };
+    shape "CAPS" { { [ 32,18] }, { [2,1], [30,17] } };
+    shape "LFSH" { { [ 42,18] }, { [2,1], [40,17] } };
+    shape "RTSH" { { [ 51,18] }, { [2,1], [49,17] } };
+    shape "LCTL" { { [ 32,18] }, { [2,1], [30,17] } };
+    shape "MODK" { { [ 28,18] }, { [2,1], [26,17] } };
+    shape "SPCE" { { [136,18] }, { [2,1], [134,17] } };
+    shape "KP0"  { { [ 37,18] }, { [2,1], [35,17] } };
+    shape "KPAD" { { [ 18,37] }, { [2,1], [16,36] } };
+    shape "HELP" { { [ 37,18] }, { [2,1], [35,17] } };
+    shape "RMTA" { { [ 28,18] }, { [2,1], [26,17] } };
+    shape "LMTA" { { [ 28,18] }, { [2,1], [26,17] } };
+    shape "LOGO" { { [ 16,16] } };
+
+    outline "Edges" {
+	top= 0;
+	left= 0;
+	shape= "EDGE";
+    };
+
+    section.left= 14;
+    row.left= 1;
+    key.shape= "NORM";
+    key.gap=  1;
+    section "Function" {
+	top= 24;
+	row {
+	    top= 1;
+	    keys { { <HELP>, "HELP" }, { <NONE>, 9 },
+		   { <FK01>, 19 }, <FK02>, <FK03>, <FK04>,
+		   { <FK05>, 11 }, <FK06>, <FK07>, <FK08>,
+		   { <FK09>, 11 }, <FK10>, <FK11>, <FK12>,
+		   { <PRSC>,  9 }, <SCLK>, <PAUS>,
+		   { <MUTE>,  9 }, <VOL->, <VOL+>, <POWR>
+	    };
+	};
+    }; // End of "Function" section
+
+    section "Alpha" {
+	top= 61;
+	row {
+	    top= 1;
+	    keys { <STOP>, <AGAI>,
+		 { <ESC>, 9}, <AE01>, <AE02>, <AE03>, <AE04>,
+		   <AE05>, <AE06>, <AE07>, <AE08>, <AE09>,
+		   <AE10>, <AE11>, <AE12>,
+		   <BKSL>, <TLDE>
+	    };
+	};
+	row {
+	    top= 20;
+	    keys { <PROP>, <UNDO>, { <TAB>, 9, shape="TABK" },
+		   <AD01>, <AD02>, <AD03>, <AD04>, <AD05>, 
+		   <AD06>, <AD07>, <AD08>, <AD09>, <AD10>, 
+		   <AD11>, <AD12>,
+		 { <BKSP>, "BKSP", color="grey20" }
+	    };
+	};
+	row {
+	    top= 39;
+	    keys { <FRNT>, <COPY>, { <CAPS>, 9, shape="CAPS" },
+		   <AC01>, <AC02>, <AC03>, <AC04>, <AC05>, 
+		   <AC06>, <AC07>, <AC08>, <AC09>, <AC10>, 
+		   <AC11>,
+		 { <RTRN>, "RTRN" }
+	    };
+	};
+	row {
+	    top= 58;
+	    keys { <OPEN>, <PAST>, { <LFSH>, 9 , shape="LFSH" }, 
+		   <AB01>, <AB02>, <AB03>, <AB04>, <AB05>, 
+		   <AB06>, <AB07>, <AB08>, <AB09>, <AB10>, 
+		 { <RTSH>, "RTSH", color="grey20" }
+	    };
+	};
+	row {
+	    top= 77;
+	    keys { <FIND>, <CUT>, { <LCTL>, 9, shape="LCTL" },
+		   <LALT>, {<LMTA>, "LMTA"},
+		 { <SPCE>, "SPCE" },
+		   {<RMTA>, "RMTA"}, <COMP>, <ALGR>
+	    };
+	};
+    }; // End of "Alpha" section
+
+    section "Editing" {
+	top= 61;
+	left= 352;
+	row {
+	    top= 1;
+	    keys { <INS>, <HOME>, <PGUP> };
+	};
+	row {
+	    top= 20;
+	    keys { <DELE>, <END>, <PGDN> };
+	};
+	row {
+	    top= 58;
+	    left= 20;
+	    keys { <UP> };
+	};
+	row {
+	    top= 77;
+	    keys { <LEFT>, <DOWN>, <RGHT> };
+	};
+    }; // End of "Editing" section
+
+    section "Keypad" {
+	top= 61;
+	left= 420;
+	row {
+	    top= 1;
+	    keys { <NMLK>, <KPDV>, <KPMU>, <KPSU> };
+	};
+	row {
+	    top= 20;
+	    keys { <KP7>, <KP8>, <KP9>, { <KPAD>, "KPAD", color= "grey20" } };
+	};
+	row {
+	    top= 39;
+	    keys { <KP4>, <KP5>, <KP6> };
+	};
+	row {
+	    top= 58;
+	    keys { <KP1>, <KP2>, <KP3>, { <KPEN>, "KPAD", color= "grey20" } };
+	};
+	row {
+	    top= 77;
+	    keys { { <KP0>, "KP0" }, <KPDL> };
+	};
+    }; // End of "Keypad" section
+
+    shape "LEDS" { cornerRadius= 0, { [ 78 ,21 ] } };
+    shape "LED"  { cornerRadius= 2, { [  3,  6 ] } };
+    solid "LedPanel" {
+	shape= "LEDS";
+	top=  1;
+	left= 218;
+    };
+    indicator.onColor= "green";
+    indicator.offColor= "green30";
+    indicator.top= 10;
+    indicator.shape= "LED";
+    indicator "CapsLock"	{ left= 243; };
+    indicator "Compose"	{ left= 281; };
+    indicator "ScrollLock"	{ left= 262; };
+    indicator "NumLock"	{ left= 224; };
+    text.top= 1;
+    text.color= "black";
+    text "CapsLockLabel"	{ left= 243; text="Caps\nLock"; };
+    text "ComposeLabel"		{ left= 281; text="Compose"; };
+    text "ScrollLockLabel"	{ left= 262; text="Scroll\nLock"; };
+    text "NumLockLabel"		{ left= 224; text="Num\nLock"; };
+};
+
+
+default xkb_geometry "type6" {
+    include "sun(t6)"
+    description= "Sun Type6 keyboard (US, Korea, Taiwan)";
+};
+
+xkb_geometry "type6jp" {
+    include "sun(t6jp)"
+    description= "Sun Type6 Japanese keyboard";
+};
+
+xkb_geometry "type6tuv" {
+    include "sun(t6tuv)"
+    description= "Sun Type6 TUV keyboard";
+};
+
+xkb_geometry "type6unix" {
+    include "sun(t6unix)"
+    description= "Sun Type6 Unix keyboard";
+};
+
+xkb_geometry "type7" {
+    include "sun(t6)"
+    description= "Sun Type7 keyboard (US, Korea, Taiwan)";
+};
+
+xkb_geometry "type7jp" {
+    include "sun(t6jp)"
+    description= "Sun Type7 Japanese keyboard";
+};
+
+xkb_geometry "type7tuv" {
+    include "sun(t6tuv)"
+    description= "Sun Type7 TUV keyboard";
+};
+
+xkb_geometry "type7unix" {
+    include "sun(t6unix)"
+    description= "Sun Type7 Unix keyboard";
+};

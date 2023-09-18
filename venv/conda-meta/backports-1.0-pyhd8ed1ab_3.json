@@ -1,0 +1,51 @@
+{
+  "build": "pyhd8ed1ab_3",
+  "build_number": 3,
+  "channel": "https://conda.anaconda.org/conda-forge/noarch",
+  "constrains": [],
+  "depends": [
+    "python >=2.7"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/backports-1.0-pyhd8ed1ab_3",
+  "features": "",
+  "files": [
+    "lib/python3.10/site-packages/backports/__init__.py",
+    "lib/python3.10/site-packages/backports/__pycache__/__init__.cpython-310.pyc"
+  ],
+  "fn": "backports-1.0-pyhd8ed1ab_3.conda",
+  "license": "BSD-3-Clause",
+  "license_family": "BSD",
+  "link": {
+    "source": "/opt/conda/pkgs/backports-1.0-pyhd8ed1ab_3",
+    "type": 1
+  },
+  "md5": "54ca2e08b3220c148a1d8329c2678e02",
+  "name": "backports",
+  "noarch": "python",
+  "package_tarball_full_path": "/opt/conda/pkgs/backports-1.0-pyhd8ed1ab_3.conda",
+  "package_type": "noarch_python",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "site-packages/backports/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256_in_prefix": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "lib/python3.10/site-packages/backports/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "711602276ae39276cb0faaca6fd0ac851fff0ca17151917569174841ef830bbd",
+  "size": 5950,
+  "subdir": "noarch",
+  "timestamp": 1669158729416,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/noarch/backports-1.0-pyhd8ed1ab_3.conda",
+  "version": "1.0"
+}

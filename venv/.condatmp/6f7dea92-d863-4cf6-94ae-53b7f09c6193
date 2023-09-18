@@ -1,0 +1,13 @@
+prefix=/workspaces/scipy/venv
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+includedir=${prefix}/include/qt
+
+
+Name: Qt5 Help
+Description: Qt Help module
+Version: 5.15.8
+Libs: -L${libdir} -lQt5Help 
+Cflags: -DQT_HELP_LIB -I${includedir}/QtHelp -I${includedir}
+Requires: Qt5Core Qt5Gui Qt5Widgets Qt5Sql
+

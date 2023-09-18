@@ -1,0 +1,34 @@
+{
+  "build": "h69a702a_1",
+  "build_number": 1,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [],
+  "depends": [
+    "libgfortran5 13.2.0 ha4646dd_1"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/libgfortran-ng-13.2.0-h69a702a_1",
+  "features": "",
+  "files": [],
+  "fn": "libgfortran-ng-13.2.0-h69a702a_1.conda",
+  "license": "GPL-3.0-only WITH GCC-exception-3.1",
+  "license_family": "GPL",
+  "link": {
+    "source": "/opt/conda/pkgs/libgfortran-ng-13.2.0-h69a702a_1",
+    "type": 1
+  },
+  "md5": "394218a92951499aed2ab1bafb30b570",
+  "name": "libgfortran-ng",
+  "package_tarball_full_path": "/opt/conda/pkgs/libgfortran-ng-13.2.0-h69a702a_1.conda",
+  "paths_data": {
+    "paths": [],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "08f9cd5830b5f498cbea2f32cdf755c1cdee8d3c48dd2c48d6dda142cdb5d473",
+  "size": 23359,
+  "subdir": "linux-64",
+  "timestamp": 1694846394024,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/libgfortran-ng-13.2.0-h69a702a_1.conda",
+  "version": "13.2.0"
+}

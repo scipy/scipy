@@ -1,0 +1,268 @@
+escape_char  /
+comment_char  %
+% charset "ISO-8859-14"
+% Distribution and use is free, also  for commercial purposes.
+
+LC_IDENTIFICATION
+title "Welsh language locale for Great Britain"
+source "thanks to Dafydd Tomos (dafydd@imaginet.co.uk)"
+address ""
+contact "Pablo Saratxaga"
+email "pablo@mandrakesoft.com"
+tel ""
+fax ""
+language "Welsh"
+territory "Great Britain"
+revision "0.9"
+date "2004-09-27"
+
+category cy_GB:2000;LC_IDENTIFICATION
+category cy_GB:2000;LC_CTYPE
+category cy_GB:2000;LC_COLLATE
+category cy_GB:2000;LC_TIME
+category cy_GB:2000;LC_NUMERIC
+category cy_GB:2000;LC_PAPER
+category cy_GB:2000;LC_TELEPHONE
+category cy_GB:2000;LC_MEASUREMENT
+category cy_GB:2000;LC_ADDRESS
+category cy_GB:2000;LC_MESSAGES
+category cy_GB:2000;LC_MONETARY
+
+END LC_IDENTIFICATION
+
+LC_ADDRESS
+postal_fmt "<U0025><U0064><U0025><U004E><U0025><U0066><U0025><U004E><U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E>/
+<U0025><U0073><U0020><U0025><U0068><U0020><U0035><U0065><U0020><U0025><U0072><U0025><U004E>/
+<U0025><U0043><U0025><U007A><U0020><U0025><U0054><U0025><U004E><U0025><U0063><U0025><U004E>"
+% country name is 'Wales' rather than United Kingdom. vague spec. :-)
+country_name "<U0043><U0079><U006D><U0072><U0075>"
+% FIXME country_post MAIL_CEPTCODE for country. 'GB' ?
+country_ab2 "<U0047><U0042>"
+country_ab3 "<U0047><U0042><U0052>"
+country_num 826
+country_isbn 0
+country_car "<U0047><U0042>"
+lang_name "<U0043><U0079><U006D><U0072><U0061><U0065><U0067>"
+lang_ab "<U0063><U0079>"
+lang_term "<U0063><U0079><U006D>"
+lang_lib "<U0077><U0065><U006C>"
+END LC_ADDRESS
+
+LC_PAPER
+copy "en_GB"
+END LC_PAPER
+
+LC_TELEPHONE
+copy "en_GB"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+copy "en_GB"
+END LC_MEASUREMENT
+
+LC_CTYPE
+copy "i18n"
+translit_start
+include "translit_combining";""
+translit_end
+END LC_CTYPE
+
+LC_COLLATE
+copy "iso14651_t1"
+
+% Welsh sorting order is:
+%   a b c ch d dd e f ff g ng h i l ll m n o p ph r rh s t th u w y
+
+collating-symbol  <c-h-cy>
+collating-element <C-H> from "<U0043><U0048>"
+collating-element <c-h> from "<U0063><U0068>"
+collating-element <C-h> from "<U0043><U0068>"
+collating-element <c-H> from "<U0063><U0048>"
+
+collating-symbol  <d-d-cy>
+collating-element <D-D> from "<U0044><U0044>"
+collating-element <d-d> from "<U0064><U0064>"
+collating-element <D-d> from "<U0044><U0064>"
+collating-element <d-D> from "<U0064><U0044>"
+
+collating-symbol  <f-f-cy>
+collating-element <F-F> from "<U0046><U0046>"
+collating-element <f-f> from "<U0066><U0066>"
+collating-element <F-f> from "<U0046><U0066>"
+collating-element <f-F> from "<U0066><U0046>"
+
+collating-symbol  <n-g-cy>
+collating-element <N-G> from "<U004E><U0047>"
+collating-element <n-g> from "<U006E><U0067>"
+collating-element <N-g> from "<U004E><U0067>"
+collating-element <n-G> from "<U006E><U0047>"
+
+collating-symbol  <l-l-cy>
+collating-element <L-L> from "<U004C><U004C>"
+collating-element <l-l> from "<U006C><U006C>"
+collating-element <L-l> from "<U004C><U006C>"
+collating-element <l-L> from "<U006C><U004C>"
+
+collating-symbol  <p-h-cy>
+collating-element <P-H> from "<U0050><U0048>"
+collating-element <p-h> from "<U0070><U0068>"
+collating-element <P-h> from "<U0050><U0068>"
+collating-element <p-H> from "<U0070><U0048>"
+
+collating-symbol  <r-h-cy>
+collating-element <R-H> from "<U0052><U0048>"
+collating-element <r-h> from "<U0072><U0068>"
+collating-element <R-h> from "<U0052><U0068>"
+collating-element <r-H> from "<U0072><U0048>"
+
+collating-symbol  <t-h-cy>
+collating-element <T-H> from "<U0054><U0048>"
+collating-element <t-h> from "<U0074><U0068>"
+collating-element <T-h> from "<U0054><U0068>"
+collating-element <t-H> from "<U0074><U0048>"
+
+collating-symbol <CAP-MIN>
+collating-symbol <MIN-CAP>
+
+reorder-after <MIN>
+<MIN-CAP>
+reorder-after <CAP>
+<CAP-MIN>
+
+reorder-after <c>
+<c-h-cy>
+<d>
+<d-d-cy>
+reorder-after <f>
+<f-f-cy>
+<g>
+<n-g-cy>
+reorder-after <l>
+<l-l-cy>
+reorder-after <p>
+<p-h-cy>
+reorder-after <r>
+<r-h-cy>
+reorder-after <t>
+<t-h-cy>
+
+reorder-after <U0063>
+<c-h>	<c-h-cy>;<PCT>;<MIN>;IGNORE
+<c-H>	<c-h-cy>;<PCT>;<MIN-CAP>;IGNORE
+reorder-after <U0043>
+<C-H>	<c-h-cy>;<PCT>;<CAP>;IGNORE
+<C-h>	<c-h-cy>;<PCT>;<CAP-MIN>;IGNORE
+
+reorder-after <U0064>
+<d-d>	<d-d-cy>;<PCT>;<MIN>;IGNORE
+<d-D>	<d-d-cy>;<PCT>;<MIN-CAP>;IGNORE
+reorder-after <U0044>
+<D-D>	<d-d-cy>;<PCT>;<CAP>;IGNORE
+<D-d>	<d-d-cy>;<PCT>;<CAP-MIN>;IGNORE
+
+reorder-after <U0066>
+<f-f>	<f-f-cy>;<PCT>;<MIN>;IGNORE
+<f-F>	<f-f-cy>;<PCT>;<MIN-CAP>;IGNORE
+reorder-after <U0046>
+<F-F>	<f-f-cy>;<PCT>;<CAP>;IGNORE
+<F-f>	<f-f-cy>;<PCT>;<CAP-MIN>;IGNORE
+
+reorder-after <U0067>
+<n-g>	<n-g-cy>;<PCT>;<MIN>;IGNORE
+<n-G>	<n-g-cy>;<PCT>;<MIN-CAP>;IGNORE
+reorder-after <U0047>
+<N-G>	<n-g-cy>;<PCT>;<CAP>;IGNORE
+<N-g>	<n-g-cy>;<PCT>;<CAP-MIN>;IGNORE
+
+reorder-after <U006C>
+<l-l>	<l-l-cy>;<PCT>;<MIN>;IGNORE
+<l-L>	<l-l-cy>;<PCT>;<MIN-CAP>;IGNORE
+reorder-after <U004C>
+<L-L>	<l-l-cy>;<PCT>;<CAP>;IGNORE
+<L-l>	<l-l-cy>;<PCT>;<CAP-MIN>;IGNORE
+
+reorder-after <U0070>
+<p-h>	<p-h-cy>;<PCT>;<MIN>;IGNORE
+<p-H>	<p-h-cy>;<PCT>;<MIN-CAP>;IGNORE
+reorder-after <U0050>
+<P-H>	<p-h-cy>;<PCT>;<CAP>;IGNORE
+<P-h>	<p-h-cy>;<PCT>;<CAP-MIN>;IGNORE
+
+reorder-after <U0072>
+<r-h>	<r-h-cy>;<PCT>;<MIN>;IGNORE
+<r-H>	<r-h-cy>;<PCT>;<MIN-CAP>;IGNORE
+reorder-after <U0052>
+<R-H>	<r-h-cy>;<PCT>;<CAP>;IGNORE
+<R-h>	<r-h-cy>;<PCT>;<CAP-MIN>;IGNORE
+
+reorder-after <U0074>
+<t-h>	<t-h-cy>;<PCT>;<MIN>;IGNORE
+<t-H>	<t-h-cy>;<PCT>;<MIN-CAP>;IGNORE
+reorder-after <U0054>
+<T-H>	<t-h-cy>;<PCT>;<CAP>;IGNORE
+<T-h>	<t-h-cy>;<PCT>;<CAP-MIN>;IGNORE
+
+reorder-end
+
+END LC_COLLATE
+
+LC_MONETARY
+copy "en_GB"
+END LC_MONETARY
+
+LC_NUMERIC
+copy "en_GB"
+END LC_NUMERIC
+
+
+LC_TIME
+abday       "<U0053><U0075><U006C>";"<U004C><U006C><U0075>";/
+            "<U004D><U0061><U0077>";"<U004D><U0065><U0072>";/
+            "<U0049><U0061><U0075>";"<U0047><U0077><U0065>";/
+            "<U0053><U0061><U0064>"
+day         "<U0053><U0075><U006C>";/
+            "<U004C><U006C><U0075><U006E>";/
+            "<U004D><U0061><U0077><U0072><U0074><U0068>";/
+            "<U004D><U0065><U0072><U0063><U0068><U0065><U0072>";/
+            "<U0049><U0061><U0075>";/
+            "<U0047><U0077><U0065><U006E><U0065><U0072>";/
+            "<U0053><U0061><U0064><U0077><U0072><U006E>"
+abmon       "<U0049><U006F><U006E>";"<U0043><U0068><U0077>";/
+            "<U004D><U0061><U0077>";"<U0045><U0062><U0072>";/
+            "<U004D><U0061><U0069>";"<U004D><U0065><U0068>";/
+            "<U0047><U006F><U0072>";"<U0041><U0077><U0073>";/
+            "<U004D><U0065><U0064>";"<U0048><U0079><U0064>";/
+            "<U0054><U0061><U0063><U0068>";"<U0052><U0068><U0061>"
+mon         "<U0049><U006F><U006E><U0061><U0077><U0072>";/
+            "<U0043><U0068><U0077><U0065><U0066><U0072><U006F><U0072>";/
+            "<U004D><U0061><U0077><U0072><U0074><U0068>";/
+            "<U0045><U0062><U0072><U0069><U006C><U006C>";/
+            "<U004D><U0061><U0069>";/
+            "<U004D><U0065><U0068><U0065><U0066><U0069><U006E>";/
+            "<U0047><U006F><U0072><U0066><U0066><U0065><U006E><U006E><U0061><U0066>";/
+            "<U0041><U0077><U0073><U0074>";/
+            "<U004D><U0065><U0064><U0069>";/
+            "<U0048><U0079><U0064><U0072><U0065><U0066>";/
+            "<U0054><U0061><U0063><U0068><U0077><U0065><U0064><U0064>";/
+            "<U0052><U0068><U0061><U0067><U0066><U0079><U0072>"
+d_t_fmt     "<U0044><U0079><U0064><U0064><U0020><U0025><U0041><U0020><U0025><U0064><U0020><U006d><U0069><U0073><U0020><U0025><U0042><U0020><U0025><U0059><U0020><U0025><U0054><U0020><U0025><U005A>"
+d_fmt       "<U0025><U0064><U002E><U0025><U006D><U002E><U0025><U0079>"
+t_fmt       "<U0025><U0054>"
+am_pm       "<U0041><U004D>";"<U0050><U004D>"
+t_fmt_ampm  "<U0025><U006C><U003A><U0025><U004D><U003A><U0025><U0053><U0020><U0025><U0050><U0020><U0025><U005A>"
+date_fmt    "<U0025><U0061><U0020><U0025><U0062><U0020><U0025><U0065>/
+<U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U0020>/
+<U0025><U005A><U0020><U0025><U0059>"
+END LC_TIME
+
+LC_MESSAGES
+yesexpr     "<U005E><U005B><U0069><U0049><U0074><U0054><U0079><U0059><U005D><U002E><U002A>"
+noexpr      "<U005E><U005B><U006E><U004E><U005D><U002E><U002A>"
+yesstr      "<U0069><U0065>"
+nostr       "<U006E><U0061>"
+END LC_MESSAGES
+
+LC_NAME
+% FIXME
+copy "en_GB"
+END LC_NAME

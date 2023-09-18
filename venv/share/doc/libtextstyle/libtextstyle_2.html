@@ -1,0 +1,441 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html401/loose.dtd">
+<html>
+<!-- Created on October, 9 2022 by texi2html 1.78a -->
+<!--
+Written by: Lionel Cons <Lionel.Cons@cern.ch> (original author)
+            Karl Berry  <karl@freefriends.org>
+            Olaf Bachmann <obachman@mathematik.uni-kl.de>
+            and many others.
+Maintained by: Many creative people.
+Send bugs and suggestions to <texi2html-bug@nongnu.org>
+
+-->
+<head>
+<title>GNU libtextstyle: 2. The end user's perspective</title>
+
+<meta name="description" content="GNU libtextstyle: 2. The end user's perspective">
+<meta name="keywords" content="GNU libtextstyle: 2. The end user's perspective">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="texi2html 1.78a">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+pre.display {font-family: serif}
+pre.format {font-family: serif}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: serif; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: serif; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.roman {font-family:serif; font-weight:normal;}
+span.sansserif {font-family:sans-serif; font-weight:normal;}
+ul.toc {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="libtextstyle_1.html#SEC1" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="libtextstyle_3.html#SEC15" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="libtextstyle_toc.html#SEC_Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="libtextstyle_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="libtextstyle_5.html#SEC45" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="libtextstyle_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+
+<hr size="2">
+<a name="The-user_0027s-view"></a>
+<a name="SEC4"></a>
+<h1 class="chapter"> <a href="libtextstyle_toc.html#TOC4">2. The end user's perspective</a> </h1>
+
+<p>Styled output can viewed fine in a console or terminal emulator window.
+</p>
+<p>The stylable program will typically have the following options:
+</p><dl compact="compact">
+<dt> <code>--color</code></dt>
+<dd><p>Use colors and other text attributes always.
+</p></dd>
+<dt> <code>--color=<var>when</var></code></dt>
+<dd><p>Use colors and other text attributes if <var>when</var>.  <var>when</var> may be
+<code>always</code>, <code>never</code>, <code>auto</code>, or <code>html</code>.
+</p></dd>
+<dt> <code>--style=<var>style-file</var></code></dt>
+<dd><p>Specify the CSS style rule file for <code>--color</code>.
+</p></dd>
+</dl>
+
+<p>For more details, see the sections <a href="#SEC11">The <code>--color</code> option</a> and
+<a href="#SEC12">The <code>--style</code> option</a> below.
+</p>
+<p>If the output does not fit on a screen, you can use &lsquo;<samp>less -R</samp>&rsquo; to
+scroll around in the styled output.  For example:
+</p><table><tr><td>&nbsp;</td><td><pre class="smallexample"><var>program</var> --color <var>arguments</var> | less -R
+</pre></td></tr></table>
+
+
+
+<a name="The-TERM-variable"></a>
+<a name="SEC5"></a>
+<h2 class="section"> <a href="libtextstyle_toc.html#TOC5">2.1 The environment variable <code>TERM</code></a> </h2>
+
+<p>The environment variable <code>TERM</code> contains a identifier for the text
+window's capabilities.  You can get a detailed list of these cababilities
+by using the &lsquo;<samp>infocmp</samp>&rsquo; command (for example: <code>infocmp -L1 xterm</code>),
+using &lsquo;<samp>man 5 terminfo</samp>&rsquo; as a reference.
+</p>
+<p>When producing text with embedded color directives, a
+<code>libtextstyle</code>-enabled program looks at the <code>TERM</code> variable.
+Text windows today typically support at least 8 colors.  Often, however,
+the text window supports 16 or more colors, even though the <code>TERM</code>
+variable is set to a identifier denoting only 8 supported colors.  It
+can be worth setting the <code>TERM</code> variable to a different value in
+these cases.
+</p>
+<p>After setting <code>TERM</code>, you can verify how well it works by invoking
+&lsquo;<samp><var>program</var> --color=test</samp>&rsquo;, where <code><var>program</var></code> is any
+<code>libtextstyle</code>-enabled program, and seeing whether the output looks
+like a reasonable color map.
+</p>
+
+
+<a name="Terminal-emulators"></a>
+<a name="SEC6"></a>
+<h3 class="subsection"> <a href="libtextstyle_toc.html#TOC6">2.1.1 Terminal emulator programs</a> </h3>
+
+<p>The following terminal emulator programs support 256 colors and set
+<code>TERM=xterm-256color</code> accordingly:
+</p>
+<ul>
+<li>
+In GNOME: <code>gnome-terminal</code>, <code>tilda</code>.
+</li><li>
+<code>rxvt-unicode</code> (sets <code>TERM=rxvt-unicode-256color</code>).
+</li><li>
+<code>st</code> (sets <code>TERM=st-256color</code>).
+</li><li>
+<code>QTerminal</code>.
+</li><li>
+On macOS: <code>Terminal</code>, <code>iTerm2</code>.
+</li></ul>
+
+<p>The following terminal emulator programs support 256 colors.  You only
+need to set <code>TERM=xterm-256color</code> or similar; the programs by default
+set <code>TERM</code> to a value that supports only 8 colors.
+</p>
+<ul>
+<li>
+<code>xterm</code> is in many cases built with support for 256 colors.  But it
+sets <code>TERM=xterm</code>.  You need to set <code>TERM=xterm-256color</code>.
+</li><li>
+In GNOME: <code>guake</code> (sets <code>TERM=xterm</code>).  You need to set
+<code>TERM=xterm-256color</code>.
+</li><li>
+In KDE: <code>konsole</code> (sets <code>TERM=xterm</code>).  You need to set
+<code>TERM=xterm-256color</code> or <code>TERM=konsole-256color</code>.
+</li><li>
+In KDE: <code>yakuake</code> (sets <code>TERM=xterm</code>).  You need to set
+<code>TERM=xterm-256color</code>.
+</li><li>
+In Enlightenment: <code>Eterm</code> (sets <code>TERM=Eterm</code>).  You need to set
+<code>TERM=Eterm-256color</code>.
+</li><li>
+<code>mlterm</code> (sets <code>TERM=mlterm</code>).  You need to set
+<code>TERM=mlterm-256color</code>.
+</li><li>
+On Windows: <code>PuTTY</code> (sets <code>TERM=xterm</code>).  You need to set
+<code>TERM=xterm-256color</code> or <code>TERM=putty-256color</code>.
+</li><li>
+On Windows: <code>TeraTerm</code> (sets <code>TERM=xterm</code>).  You need to set
+<code>TERM=xterm-256color</code>.
+</li></ul>
+
+<p>A couple of terminal emulator programs support even the entire RGB color
+space (16 million colors).  To get this to work, at this date (2019), you
+need three things:
+</p><ul>
+<li>
+The <code>ncurses</code> library version 6.1 or newer must be installed.
+</li><li>
+You need a recent version of the respective terminal emulator program.
+See <a href="https://gist.github.com/XVilka/8346728">https://gist.github.com/XVilka/8346728</a> for the most recent
+developments in this area.
+</li><li>
+You need to set the <code>TERM</code> environment variable to the corresponding
+value:
+<code>TERM=xterm-direct</code> instead of
+<code>TERM=xterm</code> or <code>TERM=xterm-256color</code>,
+<code>TERM=konsole-direct</code> in <code>konsole</code>,
+<code>TERM=st-direct</code> in <code>st</code>,
+<code>TERM=mlterm-direct</code> in <code>mlterm</code>,
+or <code>TERM=iterm2-direct</code> in <code>iTerm2</code> on macOS.
+</li></ul>
+
+
+<a name="Consoles"></a>
+<a name="SEC7"></a>
+<h3 class="subsection"> <a href="libtextstyle_toc.html#TOC7">2.1.2 Consoles</a> </h3>
+
+<p>On OpenBSD 6 consoles, <code>TERM=xterm</code> produces better results than the
+default <code>TERM=vt220</code>.
+</p>
+<p>On NetBSD 8 consoles, <code>TERM=netbsd6</code> produces better results than the
+default <code>TERM=vt100</code>.
+</p>
+<p>On Windows consoles, no <code>TERM</code> setting is needed.
+</p>
+
+<a name="The-NO_005fCOLOR-variable"></a>
+<a name="SEC8"></a>
+<h2 class="section"> <a href="libtextstyle_toc.html#TOC8">2.2 The environment variable <code>NO_COLOR</code></a> </h2>
+
+<p>The environment variable <code>NO_COLOR</code> can be used to suppress styling
+in the textual output.  When this environment variable is set (to any value),
+<code>libtextstyle</code>-enabled programs will not emit colors and other text
+styling.
+</p>
+<p>This environment variable can be overridden by passing the command-line option
+&lsquo;<samp>--color=always</samp>&rsquo; (see <a href="#SEC11">The <code>--color</code> option</a>).
+</p>
+
+<a name="The-NO_005fTERM_005fHYPERLINKS-variable"></a>
+<a name="SEC9"></a>
+<h2 class="section"> <a href="libtextstyle_toc.html#TOC9">2.3 The environment variable <code>NO_TERM_HYPERLINKS</code></a> </h2>
+
+<p>The environment variable <code>NO_TERM_HYPERLINKS</code> can be used to suppress
+hyperlinks in the textual output.  When this environment variable is set
+(to any value), <code>libtextstyle</code>-enabled programs will not emit
+hyperlinks.  This may be useful for terminal emulators which produce
+garbage output when they receive the escape sequence for a hyperlink.
+Currently (as of 2019), this affects some versions of
+<code>konsole</code>,    <code>emacs</code>,      <code>lxterminal</code>, <code>guake</code>,      <code>yakuake</code>,    <code>rxvt</code>.       </p>
+
+<a name="Emacs"></a>
+<a name="SEC10"></a>
+<h2 class="section"> <a href="libtextstyle_toc.html#TOC10">2.4 Emacs as a terminal emulator</a> </h2>
+
+<p>Emacs has several terminal emulators: <code>M-x shell</code> and
+<code>M-x term</code>.  <code>M-x term</code> has good support for styling, whereas
+in <code>M-x shell</code> most of the styling gets lost.
+</p>
+
+<a name="The-_002d_002dcolor-option"></a>
+<a name="SEC11"></a>
+<h2 class="section"> <a href="libtextstyle_toc.html#TOC11">2.5 The <code>--color</code> option</a> </h2>
+
+<p>The &lsquo;<samp>--color=<var>when</var></samp>&rsquo; option specifies under which conditions
+styled (colorized) output should be generated.  The <var>when</var> part can
+be one of the following:
+</p>
+<dl compact="compact">
+<dt> <code>always</code></dt>
+<dt> <code>yes</code></dt>
+<dd><p>The output will be colorized.
+</p>
+</dd>
+<dt> <code>never</code></dt>
+<dt> <code>no</code></dt>
+<dd><p>The output will not be colorized.
+</p>
+</dd>
+<dt> <code>auto</code></dt>
+<dt> <code>tty</code></dt>
+<dd><p>The output will be colorized if the output device is a tty, i.e. when
+the output goes directly to a text screen or terminal emulator window.
+</p>
+</dd>
+<dt> <code>html</code></dt>
+<dd><p>The output will be colorized and be in HTML format.  This value is only
+supported by some programs.
+</p>
+</dd>
+<dt> <code>test</code></dt>
+<dd><p>This is a special value, understood only by some programs.  It is
+explained in the section (<a href="#SEC5">The environment variable <code>TERM</code></a>) above.
+</p></dd>
+</dl>
+
+<p>&lsquo;<samp>--color</samp>&rsquo; is equivalent to &lsquo;<samp>--color=yes</samp>&rsquo;.  The default is
+&lsquo;<samp>--color=auto</samp>&rsquo;.
+</p>
+<p>Thus, a command that invokes a <code>libtextstyle</code>-enabled program will
+produce colorized output when called by itself in a command window.
+Whereas in a pipe, such as &lsquo;<samp><var>program</var> <var>arguments</var> | less -R</samp>&rsquo;,
+it will not produce colorized output.  To get colorized output in this
+situation nevertheless, use the command
+&lsquo;<samp><var>program</var> --color <var>arguments</var> | less -R</samp>&rsquo;.
+</p>
+<p>The &lsquo;<samp>--color=html</samp>&rsquo; option will produce output that can be viewed in
+a browser.  This can be useful, for example, for Indic languages,
+because the renderic of Indic scripts in browsers is usually better than
+in terminal emulators.
+</p>
+<p>Note that the output produced with the <code>--color</code> option is
+<em>not</em> consumable by programs that expect the raw text.  It contains
+additional terminal-specific escape sequences or HTML tags.  For example,
+an XML parser will give a syntax error when confronted with a colored XML
+output.  Except for the &lsquo;<samp>--color=html</samp>&rsquo; case, you therefore normally
+don't need to save output produced with the <code>--color</code> option in a
+file.
+</p>
+
+<a name="The-_002d_002dstyle-option"></a>
+<a name="SEC12"></a>
+<h2 class="section"> <a href="libtextstyle_toc.html#TOC12">2.6 The <code>--style</code> option</a> </h2>
+
+<p>The &lsquo;<samp>--style=<var>style_file</var></samp>&rsquo; option specifies the style file to
+use when colorizing.  It has an effect only when the <code>--color</code>
+option is effective.
+</p>
+<p>If the <code>--style</code> option is not specified, the program may consider
+the value of an environment variable.  It is meant to point to the user's
+preferred style for such output.  The name of such an environment
+variable, if supported, is documented in the documentation of the
+<code>libtextstyle</code>-enabled program.
+</p>
+<p>You can also design your own styles.  This is described in the next
+section.
+</p>
+
+
+<a name="Style-rules"></a>
+<a name="SEC13"></a>
+<h3 class="subsection"> <a href="libtextstyle_toc.html#TOC13">2.6.1 Creating your own style files</a> </h3>
+
+<p>The same style file can be used for styling a certain type of output, for
+terminal output and for HTML output.  It is written in CSS
+(Cascading Style Sheet) syntax.  See
+<a href="https://www.w3.org/TR/css2/cover.html">https://www.w3.org/TR/css2/cover.html</a> for a formal definition of
+CSS.  Many HTML authoring tutorials also contain explanations of CSS.
+</p>
+<p>In the case of HTML output, the style file is embedded in the HTML output.
+In the case of text output, the style file is interpreted by the
+<code>libtextstyle</code>-enabled program.
+</p>
+<p>You should avoid <code>@import</code> statements, because
+</p><ul class="toc">
+<li>-
+In the case of HTML output, the files referenced by the <code>@import</code>
+statements would not be embedded in the HTML output.  In fact, relative
+file names would be interpreted relative to the resulting HTML file.
+</li><li>-
+In the case of text output, <code>@import</code>s are not supported, due to a
+limitation in <code>libcroco</code>.
+</li></ul>
+
+<p>CSS rules are built up from selectors and declarations.  The declarations
+specify graphical properties; the selectors specify when they apply.
+</p>
+<p>GNU libtextstyle supports simple selectors based on &quot;CSS classes&quot;, see
+the CSS2 spec, section 5.8.3.  The set of CSS classes that are supported
+by a <code>libtextstyle</code>-enabled program are documented in the
+documentation of that program.
+</p>
+<p>These selectors can be combined to hierarchical selectors.  For example,
+assume a program supports the CSS classes <code>string</code> (that matches a
+string) and <code>non-ascii</code> (that matches a word with non-ASCII
+characters), you could write
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">.string .non-ascii { color: red; }
+</pre></td></tr></table>
+
+<p>to highlight only the non-ASCII words inside strings.
+</p>
+<p>In text mode, pseudo-classes (CSS2 spec, section 5.11) and
+pseudo-elements (CSS2 spec, section 5.12) are not supported.
+</p>
+<p>The declarations in HTML mode are not limited; any graphical attribute
+supported by the browsers can be used.
+</p>
+<p>The declarations in text mode are limited to the following properties.
+Other properties will be silently ignored.
+</p>
+<dl compact="compact">
+<dt> <code>color</code> (CSS2 spec, section 14.1)</dt>
+<dt> <code>background-color</code> (CSS2 spec, section 14.2.1)</dt>
+<dd><p>These properties are supported.  Colors will be adjusted to match the
+terminal's capabilities.  Note that many terminals support only 8 colors.
+</p>
+</dd>
+<dt> <code>font-weight</code> (CSS2 spec, section 15.2.3)</dt>
+<dd><p>This property is supported, but most terminals can only render two
+different weights: <code>normal</code> and <code>bold</code>.  Values &gt;= 600 are
+rendered as <code>bold</code>.
+</p>
+</dd>
+<dt> <code>font-style</code> (CSS2 spec, section 15.2.3)</dt>
+<dd><p>This property is supported.  The values <code>italic</code> and <code>oblique</code>
+are rendered the same way.
+</p>
+</dd>
+<dt> <code>text-decoration</code> (CSS2 spec, section 16.3.1)</dt>
+<dd><p>This property is supported, limited to the values <code>none</code> and
+<code>underline</code>.
+</p></dd>
+</dl>
+
+
+<a name="Debugging-style-files"></a>
+<a name="SEC14"></a>
+<h3 class="subsection"> <a href="libtextstyle_toc.html#TOC14">2.6.2 Debugging style files</a> </h3>
+
+<p>If you want to understand why the style rules in a style file produce
+the output that you see, you can do so in three steps:
+</p>
+<ol>
+<li>
+Run the program with the command-line option <code>--color=html</code>,
+redirecting the output to a file.
+</li><li>
+Open the resulting HTML file in a browser.
+</li><li>
+Use the browser's built-in CSS debugging tool.
+<ul>
+<li>
+In Firefox: From the pop-up menu, select &quot;Inspect Element&quot;.
+Click somewhere in the DOM tree (&quot;Inspector&quot; tab) and look at the
+CSS declarations in the &quot;Rules&quot; tab.
+</li><li>
+In Chromium: From the pop-up menu, select &quot;Inspect&quot;.
+Click somewhere in the DOM tree (&quot;Elements&quot; tab) and look at the
+CSS declarations in the &quot;Styles&quot; tab.
+</li></ul>
+</li></ol>
+
+<p>This technique allows you, in particular, to see which CSS declarations
+override which other CSS declarations from other CSS rules.
+</p>
+
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC4" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="libtextstyle_3.html#SEC15" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="libtextstyle_toc.html#SEC_Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="libtextstyle_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="libtextstyle_5.html#SEC45" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="libtextstyle_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<p>
+ <font size="-1">
+  This document was generated by <em>Bruno Haible</em> on <em>October, 9 2022</em> using <a href="https://www.nongnu.org/texi2html/"><em>texi2html 1.78a</em></a>.
+ </font>
+ <br>
+
+</p>
+</body>
+</html>

@@ -1,0 +1,335 @@
+.TH out123 1 "26 Apr 2020"
+.SH NAME
+out123 \- send raw PCM audio or a waveform pattern to an output device
+.SH SYNOPSIS
+\fBcat \fRaudio.raw \fR| \fBout123 \fR[ \fR- \fR] [ \fIoptions \fR ]
+
+\fBout123 \fR[ \fIoptions \fR] \fIfilename \fR[ \fIfilename \fR... ]
+
+\fBout123 \fR--wave-freq \fIfreq1\fR[,\fIfreq2\fR,...] [ \fIoptions \fR]
+
+\fBout123 \fR--source \fRgeiger \fR[ \fIoptions \fR]
+
+.SH DESCRIPTION
+.B out123
+reads raw PCM data (in host byte order) from standard input 
+and plays it on the audio device specified by given options.
+Alternatively, it can generate periodic or random signals for playback
+itself.
+.SH OPTIONS
+.B out123
+options may be either the traditional POSIX one letter options,
+or the GNU style long options.  POSIX style options start with a
+single '\-', while GNU long options start with '\-\^\-'.
+Option arguments (if needed) follow separated by whitespace (not '=').
+Note that some options can be absent from your installation when disabled in the build process.
+.TP
+\fB\-\^\-name \fIname
+Set the name of this instance, possibly used in various places. This sets the client name for JACK output.
+.TP
+\fB\-o \fImodule\fR, \-\^\-\fBoutput \fImodule\fR
+Select audio output module. You can provide a comma-separated list to use the first one that works.
+Also see \fB\-a\fR.
+.TP
+\fB\-\^\-list\-modules
+List the available modules.
+.TP
+\fB\-\^\-list\-devices
+List the available output devices for given output module. If there is no functionality
+to list devices in the chosen module, an error will be printed and out123 will exit with
+a non-zero code.
+.TP
+\fB\-a \fIdev\fR, \fB\-\^\-audiodevice \fIdev
+Specify the audio device to use.  The default as well as the possible values
+depend on the active output. For the JACK output, a comma-separated list
+of ports to connect to (for each channel) can be specified.  
+.TP
+.BR \-s ", " \-\^\-stdout
+The audio samples are written to standard output,
+instead of playing them through the audio device.
+The output format is the same as the input ... so in this mode, 
+.B out123
+acts similar the standard tool \fB cat\fR, possibly with some conversions
+involved.
+This shortcut is equivalent to '-o raw -a -'.
+.TP
+.BR \-S ", " \-\^\-STDOUT
+This variant additionally writes the data to stdout, while still
+playing it on the output device. So it is more like some flavour of
+\fBtee\fR than a \fBcat\fR.
+.TP
+\fB\-O \fIfile\fR, \fB\-\^\-outfile
+Write raw output into a file (instead of simply redirecting standard output to a file with the shell).
+This shortcut is equivalent to '-o raw -a \fIfile\fR'.
+.TP
+\fB\-w \fIfile\fR, \fB\-\^\-wav
+Write output as WAV file
+.I file
+, or standard output if
+.I -
+is or the empty string used as file name. You can also use
+.I --au
+and
+.I --cdr
+for AU and CDR format, respectively. Note that WAV/AU writing to non-seekable files or redirected stdout needs some thought. The header is written with the first actual data. The result of decoding nothing to WAV/AU is a file consisting just of the header when it is seekable and really nothing when not (not even a header). Correctly writing data with prophetic headers to stdout is no easy business.
+This shortcut is equivalent to '-o wav -a \fIfile\fR'.
+.TP
+\fB\-\^\-au \fIfile
+Write to
+.I file
+in SUN audio format.  If \- or the empty string is used as the filename, the AU file is
+written to stdout. See paragraph about WAV writing for header fun with non-seekable streams.
+This shortcut is equivalent to '-o au -a \fIfile\fR'.
+.TP
+\fB\-\^\-cdr \fIfile
+Write to
+.I file
+as a CDR (CD-ROM audio, more correctly CDDA for Compact Disc Digital Audio).
+If \- is or the empty string used as the filename, the CDR file is written
+to stdout.
+This shortcut is equivalent to '-o cdr -a \fIfile\fR'.
+.TP
+\fB\-r \fIrate\fR, \fB\-\^\-rate \fIrate
+Set sample rate in Hz (default: 44100). If this does not match the actual input
+sampling rate, you get changed pitch. Might be intentional;-)
+.TP
+\fB\-R \fIrate\fR, \fB\-\^\-inputrate \fIrate
+Set input sample rate to a different value. This triggers resampling if the output
+rate is indeed different. See \fB\-\^\-resample\fR.
+.TP
+\fB\-\^\-speed \fIfactor
+Speed up/down playback by that factor using resampling. See \fB\-\^\-resample\fR.
+.TP
+\fB\-\^\-resample \fImethod
+This chooses the method for resampling between differing sampling rates or to apply
+a change in tempo. You can choose between two variants of the syn123 resampler: fine
+(the default) and dirty. The fine one features 108 dB dynamic range and at worst-case 84%
+bandwidth. The dirty one uses a bit less CPU time (not that much, though) by reducing
+the dynamic range to 72 dB with worst-case bandwidth of 85%. The exact properties vary
+with the sampling rate ratio, as there is interpolation of filter coefficients involved.
+.TP
+\fB\-c \fIcount\fR, \fB\-\^\-channels \fIcount
+Set channel count to given value.
+.TP
+\fB\-C \fIcount\fR, \fB\-\^\-inputch \fIcount
+Set input channel count to a differnt value than for output. This probably means you want
+some remixing. Also see \fB\-\^\-mix\fR.
+.TP
+\fB\-e \fIenc\fR, \fB\-\^\-encoding \fIenc
+Choose output sample encoding. Possible values look like f32 (32-bit floating point), s32 (32-bit signed integer), u32 (32-bit unsigned integer) and the variants with different numbers of bits (s24, u24, s16, u16, s8, u8) and also special variants like ulaw and alaw 8-bit.
+See the output of \fBout123\fR's longhelp for actually available encodings.
+Default is s16.
+.TP
+\fB\-\^\-endian \fIchoice
+Select output endianess (byte order). Choice is big, little, or native, which is the default.
+The processing can only work in native mode, so you need to specify input or output byte order
+if that does not match your machine. This also sets the input endianess if that is
+not set separately. See also \fB\-\^\-inputend\fR and \fB\-\^\-byteswap\fR.
+.TP
+\fB\-E \fIenc\fR, \fB\-\^\-inputenc \fIenc
+Specify input encoding different from output encoding for conversion.
+.TP
+\fB\-\^\-inputend \fIchoice
+Select input endianess (byte order). By default it is the same as output byte order.
+See \fB\-\^\-endian\fR.
+.TP
+.BR \-\^\-byteswap
+A switch to trigger swapping of byte order just before output, after any other transformations.
+This works on top of any endianess you specify with 
+.TP
+.BR \-m ", " \-\^\-mono "
+Set for single-channel audio (default is two channels, stereo).
+.TP
+.BR \-\-stereo
+Select stereo output (2 channels, default).
+.TP
+.BR \-\^\-list\-encodings
+List known encoding short and long names to standard output.
+.TP
+\fB\-\^\-mix \fImatrix
+Specify a mixing matrix between input and output channels as linear factors, comma separated list for
+the input channel factors for output channel 1, then output channel 2, and so forth.
+The default is a unit matrix if channel counts match, so for 3 channels the equivalent of
+'\-\^\-mix 1,0,0,0,1,0,0,0,1'. For stereo to mono conversion, the default is mixing of
+both channels with halved amplitude, so '\-\^\-mix 0.5,0.5'. For splitting mono to stereo,
+it is '\-\^\-mix 1,1' top keep the symmetry.
+.TP
+\fB\-\^\-filter \fIcoeff
+Apply digital filter(s) before pre-amplification (see \fB\-\^\-preamp\fR) with the coefficient
+list coeff as
+.ce
+b_0,...,b_N,a_0,...,a_N
+where a_0=1 is mandatory and perhaps helps orientation a bit. Multiple filters are separated
+by ':'.
+.TP
+\fB\-P \fIdbvalue \fB\-\^\-preamp \fIdbvalue
+Enable a pre-amplification stage that amplifies the signal with the given value in dB before output.
+.TP
+\fB\-\^\-offset \fIvalue
+Apply a PCM offset (floating point value scaled in [-1:1] in the pre-amplification stage.
+Normally, you would do that to correct a known DC offset in a recording.
+.TP
+\fB\-\^\-clip \fImode
+Select clipping mode: 'soft' or 'hard' for forced clipping also for
+floating point output, 'implicit' (default) for implied hard clipping during
+conversion where necessary.
+.TP
+\fB\-\^\-dither
+Enable dithering for conversions to integer. If you insist.
+This is just some un-spectacular TPDF dither. For some people, that is not fancy enough.
+Most people cannot be bothered that way or the other.
+.TP
+.BR \-\^\-test\-format
+Check if given format is supported by given driver and device (in command line before
+encountering this), silently returning 0 as exit value if it is the case.
+.TP
+.BR \-\^\-test\-encodings
+Print out the short names of encodings supported with the current setup.
+.TP
+.BR \-\^\-query\-format
+If the selected driver and device communicate some default accepted format, print
+out a command line fragment for \fBout123\fR setting that format, always in that order:
+\-\^\-rate <r> -\^\-channels <c> -\^\-encoding <e>
+.TP
+.BR "\-o h" ", " \-\^\-headphones
+Direct audio output to the headphone connector (some hardware only; AIX, HP, SUN).
+.TP
+.BR "\-o s" ", " \-\^\-speaker
+Direct audio output to the speaker  (some hardware only; AIX, HP, SUN).
+.TP
+.BR "\-o l" ", " \-\^\-lineout
+Direct audio output to the line-out connector (some hardware only; AIX, HP, SUN).
+.TP
+\fB\-b \fIsize\fR, \fB\-\^\-buffer \fIsize
+Use an audio output buffer of
+.I size
+Kbytes.  This is useful to bypass short periods of heavy
+system activity, which would normally cause the audio output 
+to be interrupted.  
+You should specify a buffer size of at least 1024 
+(i.e. 1 Mb, which equals about 6 seconds of usual audio data) or more; 
+less than about 300 does not make much sense.  The default is 0, 
+which turns buffering off.
+.TP
+\fB\-\^\-preload \fIfraction
+Wait for the buffer to be filled to
+.I fraction
+before starting playback (fraction between 0 and 1). You can tune this prebuffering to either get sound faster to your ears or safer uninterrupted web radio.
+Default is 0.2 (changed from 1 since version 1.23).
+.TP
+\fB\-\^\-devbuffer \fIseconds
+Set device buffer in seconds; <= 0 means default value. This is the small buffer between the
+application and the audio backend, possibly directly related to hardware buffers.
+.TP
+\fB\-\^\-timelimit \fIsamples
+Set playback time limit in PCM samples if set to a value greater than zero.
+\fBout123\fR will stop reading from stdin or playing from the generated wave
+table after reaching that number of samples.
+.TP
+\fB\-\^\-seconds \fIseconds
+Set time limit in seconds instead.
+.TP
+\fB\-\^\-source \fIname
+Choose the signal source: 'file' (default) for playback of the given file(s) on the command line
+or standard input if there are none, or one of the generators 'wave' (see \fB\-\^\-wave\-freq\fR),
+'sweep' (see \fB\-\^\-wave\-sweep\fR), 'pink' (see \fB\-\^\-ping\-rows\fR),
+geiger (see \fB\-\^\-geiger\-activity\fR), or just 'white' for some white noise.
+.TP
+\fB\-\^\-wave\-freq \fIfrequencies
+Set wave generator frequency or list of those with comma separation for enabling
+a generated test signal instead of standard input. Empty values repeat the
+previous one.
+.TP
+\fB\-\^\-wave\-pat \fIpatterns
+Set the waveform patterns of the generated waves as comma-separated list.
+Choices include sine, square, triangle, sawtooth, gauss, pulse, and shot.
+Empty values repeat the previous one.
+.TP
+\fB\-\^\-wave\-phase \fIphases
+Set waveform phase shift(s) as comma-separated list, negative values
+inverting the pattern in time and empty value repeating the previous. There is
+also \fB\-\^\-wave\-direction\fR overriding the negative bit.
+.TP
+\fB\-\^\-wave\-direction\fR
+Set wave direction explicitly (the sign counts).
+.TP
+\fB\-\^\-wave\-sweep \fIfrequency
+Sweep a generated wave to the given frequency, from
+first one specified for \fB\-\^\-wave\-freq\fR, using the
+first wave pattern and direction, too.
+.TP
+\fB\-\^\-sweep\-time \fIseconds
+Set frequency sweep duration in seconds if > 0. This defaults
+to the configured time limit if set, otherwise one second, as endless
+sweeps are not sensible.
+.TP
+\fB\-\^\-sweep\-count \fIcount
+Set timelimit to exactly produce that many (smooth) sweeps
+.TP
+\fB\-\^\-sweep\-type \fItype
+Set sweep type: lin(ear) for linear, qua(d) (default) for quadratic, or exp(onential)
+for an exponential change of frequency with time.
+.TP
+\fB\-\^\-sweep\-hard
+Disable post-sweep smoothing for periodicity.
+.TP
+\fB\-\^\-genbuffer \fIbytes
+Set the buffer size (limit) for signal generators,
+if > 0 (default), this enforces a periodic
+buffer also for non-periodic signals, benefit:
+less runtime CPU overhead, as everything is precomputed as enforced periodic signal.
+.TP
+\fB\-\^\-wave\-limit \fIsamples
+This is an alias for \fB\-\^\-genbuffer\fR.
+.TP
+\fB\-\^\-pink\-rows \fInumber
+Activate pink noise source and choose rows for the algorithm (<1 chooses default).
+The generator follows code provided by Phil Burk (http://softsynth.com) and uses
+the Gardner method.
+.TP
+\fB\-\^\-geiger\-activity \fInumber
+This configures the simulation of a Geiger-Mueller counter as source, with the given
+numer as average events per second. Play with it. It's fun!
+.TP
+.BR \-t ", " \-\^\-test
+Test mode.  The audio stream is read, but no output occurs.
+.TP
+.BR \-v ", " \-\^\-verbose
+Increase the verbosity level.
+.TP
+.BR \-q ", " \-\^\-quiet
+Quiet.  Suppress diagnostic messages.
+.TP
+\fB\-\^\-aggressive
+Tries to get higher priority
+.TP
+.BR \-T ", " \-\-realtime
+Tries to gain realtime priority.  This option usually requires root
+privileges to have any effect.
+.TP
+.BR \-? ", " \-\^\-help
+Shows short usage instructions.
+.TP
+.BR \-\^\-longhelp
+Shows long usage instructions.
+.TP
+.BR \-\^\-version
+Print the version string.
+.SH AUTHORS
+.TP
+Maintainer:
+.br
+Thomas Orgis <maintainer@mpg123.org>, <thomas@orgis.org>
+.TP
+Creator (ancestry of code inside mpg123):
+.br
+Michael Hipp
+.TP
+Uses code or ideas from various people, see the AUTHORS file accompanying the source code.
+.SH LICENSE
+.B out123
+is licensed under the GNU Lesser/Library General Public License, LGPL, version 2.1 .
+.SH WEBSITE
+http://www.mpg123.org
+.br
+http://sourceforge.net/projects/mpg123

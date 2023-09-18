@@ -1,0 +1,1026 @@
+{
+  "build": "hebfc3b9_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [
+    "glib 2.78.0 *_0"
+  ],
+  "depends": [
+    "gettext >=0.21.1,<1.0a0",
+    "libffi >=3.4,<4.0a0",
+    "libgcc-ng >=12",
+    "libiconv >=1.17,<2.0a0",
+    "libstdcxx-ng >=12",
+    "libzlib >=1.2.13,<1.3.0a0",
+    "pcre2 >=10.40,<10.41.0a0"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/libglib-2.78.0-hebfc3b9_0",
+  "features": "",
+  "files": [
+    "etc/conda/activate.d/libglib_activate.sh",
+    "etc/conda/deactivate.d/libglib_deactivate.sh",
+    "lib/libgio-2.0.so.0",
+    "lib/libgio-2.0.so.0.7800.0",
+    "lib/libglib-2.0.so.0",
+    "lib/libglib-2.0.so.0.7800.0",
+    "lib/libgmodule-2.0.so.0",
+    "lib/libgmodule-2.0.so.0.7800.0",
+    "lib/libgobject-2.0.so.0",
+    "lib/libgobject-2.0.so.0.7800.0",
+    "lib/libgthread-2.0.so.0",
+    "lib/libgthread-2.0.so.0.7800.0",
+    "lib/pkgconfig/gio-2.0.pc",
+    "lib/pkgconfig/gio-unix-2.0.pc",
+    "lib/pkgconfig/glib-2.0.pc",
+    "lib/pkgconfig/gmodule-2.0.pc",
+    "lib/pkgconfig/gmodule-export-2.0.pc",
+    "lib/pkgconfig/gmodule-no-export-2.0.pc",
+    "lib/pkgconfig/gobject-2.0.pc",
+    "lib/pkgconfig/gthread-2.0.pc",
+    "libexec/gio-launch-desktop",
+    "share/locale/ab/LC_MESSAGES/glib20.mo",
+    "share/locale/af/LC_MESSAGES/glib20.mo",
+    "share/locale/am/LC_MESSAGES/glib20.mo",
+    "share/locale/an/LC_MESSAGES/glib20.mo",
+    "share/locale/ar/LC_MESSAGES/glib20.mo",
+    "share/locale/as/LC_MESSAGES/glib20.mo",
+    "share/locale/ast/LC_MESSAGES/glib20.mo",
+    "share/locale/az/LC_MESSAGES/glib20.mo",
+    "share/locale/be/LC_MESSAGES/glib20.mo",
+    "share/locale/be@latin/LC_MESSAGES/glib20.mo",
+    "share/locale/bg/LC_MESSAGES/glib20.mo",
+    "share/locale/bn/LC_MESSAGES/glib20.mo",
+    "share/locale/bn_IN/LC_MESSAGES/glib20.mo",
+    "share/locale/bs/LC_MESSAGES/glib20.mo",
+    "share/locale/ca/LC_MESSAGES/glib20.mo",
+    "share/locale/ca@valencia/LC_MESSAGES/glib20.mo",
+    "share/locale/cs/LC_MESSAGES/glib20.mo",
+    "share/locale/cy/LC_MESSAGES/glib20.mo",
+    "share/locale/da/LC_MESSAGES/glib20.mo",
+    "share/locale/de/LC_MESSAGES/glib20.mo",
+    "share/locale/dz/LC_MESSAGES/glib20.mo",
+    "share/locale/el/LC_MESSAGES/glib20.mo",
+    "share/locale/en@shaw/LC_MESSAGES/glib20.mo",
+    "share/locale/en_CA/LC_MESSAGES/glib20.mo",
+    "share/locale/en_GB/LC_MESSAGES/glib20.mo",
+    "share/locale/eo/LC_MESSAGES/glib20.mo",
+    "share/locale/es/LC_MESSAGES/glib20.mo",
+    "share/locale/et/LC_MESSAGES/glib20.mo",
+    "share/locale/eu/LC_MESSAGES/glib20.mo",
+    "share/locale/fa/LC_MESSAGES/glib20.mo",
+    "share/locale/fi/LC_MESSAGES/glib20.mo",
+    "share/locale/fr/LC_MESSAGES/glib20.mo",
+    "share/locale/fur/LC_MESSAGES/glib20.mo",
+    "share/locale/ga/LC_MESSAGES/glib20.mo",
+    "share/locale/gd/LC_MESSAGES/glib20.mo",
+    "share/locale/gl/LC_MESSAGES/glib20.mo",
+    "share/locale/gu/LC_MESSAGES/glib20.mo",
+    "share/locale/he/LC_MESSAGES/glib20.mo",
+    "share/locale/hi/LC_MESSAGES/glib20.mo",
+    "share/locale/hr/LC_MESSAGES/glib20.mo",
+    "share/locale/hu/LC_MESSAGES/glib20.mo",
+    "share/locale/hy/LC_MESSAGES/glib20.mo",
+    "share/locale/id/LC_MESSAGES/glib20.mo",
+    "share/locale/ie/LC_MESSAGES/glib20.mo",
+    "share/locale/is/LC_MESSAGES/glib20.mo",
+    "share/locale/it/LC_MESSAGES/glib20.mo",
+    "share/locale/ja/LC_MESSAGES/glib20.mo",
+    "share/locale/ka/LC_MESSAGES/glib20.mo",
+    "share/locale/kk/LC_MESSAGES/glib20.mo",
+    "share/locale/kn/LC_MESSAGES/glib20.mo",
+    "share/locale/ko/LC_MESSAGES/glib20.mo",
+    "share/locale/ku/LC_MESSAGES/glib20.mo",
+    "share/locale/lt/LC_MESSAGES/glib20.mo",
+    "share/locale/lv/LC_MESSAGES/glib20.mo",
+    "share/locale/mai/LC_MESSAGES/glib20.mo",
+    "share/locale/mg/LC_MESSAGES/glib20.mo",
+    "share/locale/mk/LC_MESSAGES/glib20.mo",
+    "share/locale/ml/LC_MESSAGES/glib20.mo",
+    "share/locale/mn/LC_MESSAGES/glib20.mo",
+    "share/locale/mr/LC_MESSAGES/glib20.mo",
+    "share/locale/ms/LC_MESSAGES/glib20.mo",
+    "share/locale/nb/LC_MESSAGES/glib20.mo",
+    "share/locale/nds/LC_MESSAGES/glib20.mo",
+    "share/locale/ne/LC_MESSAGES/glib20.mo",
+    "share/locale/nl/LC_MESSAGES/glib20.mo",
+    "share/locale/nn/LC_MESSAGES/glib20.mo",
+    "share/locale/oc/LC_MESSAGES/glib20.mo",
+    "share/locale/or/LC_MESSAGES/glib20.mo",
+    "share/locale/pa/LC_MESSAGES/glib20.mo",
+    "share/locale/pl/LC_MESSAGES/glib20.mo",
+    "share/locale/ps/LC_MESSAGES/glib20.mo",
+    "share/locale/pt/LC_MESSAGES/glib20.mo",
+    "share/locale/pt_BR/LC_MESSAGES/glib20.mo",
+    "share/locale/ro/LC_MESSAGES/glib20.mo",
+    "share/locale/ru/LC_MESSAGES/glib20.mo",
+    "share/locale/rw/LC_MESSAGES/glib20.mo",
+    "share/locale/si/LC_MESSAGES/glib20.mo",
+    "share/locale/sk/LC_MESSAGES/glib20.mo",
+    "share/locale/sl/LC_MESSAGES/glib20.mo",
+    "share/locale/sq/LC_MESSAGES/glib20.mo",
+    "share/locale/sr/LC_MESSAGES/glib20.mo",
+    "share/locale/sr@ije/LC_MESSAGES/glib20.mo",
+    "share/locale/sr@latin/LC_MESSAGES/glib20.mo",
+    "share/locale/sv/LC_MESSAGES/glib20.mo",
+    "share/locale/ta/LC_MESSAGES/glib20.mo",
+    "share/locale/te/LC_MESSAGES/glib20.mo",
+    "share/locale/tg/LC_MESSAGES/glib20.mo",
+    "share/locale/th/LC_MESSAGES/glib20.mo",
+    "share/locale/tl/LC_MESSAGES/glib20.mo",
+    "share/locale/tr/LC_MESSAGES/glib20.mo",
+    "share/locale/tt/LC_MESSAGES/glib20.mo",
+    "share/locale/ug/LC_MESSAGES/glib20.mo",
+    "share/locale/uk/LC_MESSAGES/glib20.mo",
+    "share/locale/vi/LC_MESSAGES/glib20.mo",
+    "share/locale/wa/LC_MESSAGES/glib20.mo",
+    "share/locale/xh/LC_MESSAGES/glib20.mo",
+    "share/locale/yi/LC_MESSAGES/glib20.mo",
+    "share/locale/zh_CN/LC_MESSAGES/glib20.mo",
+    "share/locale/zh_HK/LC_MESSAGES/glib20.mo",
+    "share/locale/zh_TW/LC_MESSAGES/glib20.mo"
+  ],
+  "fn": "libglib-2.78.0-hebfc3b9_0.conda",
+  "license": "LGPL-2.1-or-later",
+  "link": {
+    "source": "/opt/conda/pkgs/libglib-2.78.0-hebfc3b9_0",
+    "type": 1
+  },
+  "md5": "e618003da3547216310088478e475945",
+  "name": "libglib",
+  "package_tarball_full_path": "/opt/conda/pkgs/libglib-2.78.0-hebfc3b9_0.conda",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "etc/conda/activate.d/libglib_activate.sh",
+        "path_type": "hardlink",
+        "sha256": "7f972f0bd85732e0d85b15dfee7606127fa6d468db61342e4d59be4339254a16",
+        "sha256_in_prefix": "7f972f0bd85732e0d85b15dfee7606127fa6d468db61342e4d59be4339254a16",
+        "size_in_bytes": 136
+      },
+      {
+        "_path": "etc/conda/deactivate.d/libglib_deactivate.sh",
+        "path_type": "hardlink",
+        "sha256": "9f59969d1f46f2600c39da3dcbcbb10310b2c6bedf6893364883a6dccd7dbabb",
+        "sha256_in_prefix": "9f59969d1f46f2600c39da3dcbcbb10310b2c6bedf6893364883a6dccd7dbabb",
+        "size_in_bytes": 180
+      },
+      {
+        "_path": "lib/libgio-2.0.so.0",
+        "path_type": "softlink",
+        "sha256": "0d8da753f7a870d392cdd8a53b60dc4dd62d48dba064d1f7ee71db2c99c71cdc",
+        "size_in_bytes": 2357176
+      },
+      {
+        "_path": "lib/libgio-2.0.so.0.7800.0",
+        "file_mode": "binary",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/glib-split_1694380722068/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_",
+        "sha256": "0d8da753f7a870d392cdd8a53b60dc4dd62d48dba064d1f7ee71db2c99c71cdc",
+        "sha256_in_prefix": "a568a7277b094b8310f241fcd5355d26b0c57e23b79c6a59b97527e6e448baa0",
+        "size_in_bytes": 2357176
+      },
+      {
+        "_path": "lib/libglib-2.0.so.0",
+        "path_type": "softlink",
+        "sha256": "dd04f8a83fea012f8589ea1fb3e578c9ced67b2a7793dc62d9c89621564097a5",
+        "size_in_bytes": 1503272
+      },
+      {
+        "_path": "lib/libglib-2.0.so.0.7800.0",
+        "file_mode": "binary",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/glib-split_1694380722068/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_",
+        "sha256": "dd04f8a83fea012f8589ea1fb3e578c9ced67b2a7793dc62d9c89621564097a5",
+        "sha256_in_prefix": "0a217526938457c8da7b54086f951300fc792de903e0563bca4cd54c797fc80d",
+        "size_in_bytes": 1503272
+      },
+      {
+        "_path": "lib/libgmodule-2.0.so.0",
+        "path_type": "softlink",
+        "sha256": "f6a520a1f81a237fa2bf5e1d2c66e24277f7c864cbbbcc731e959531d4a1463e",
+        "size_in_bytes": 26080
+      },
+      {
+        "_path": "lib/libgmodule-2.0.so.0.7800.0",
+        "path_type": "hardlink",
+        "sha256": "f6a520a1f81a237fa2bf5e1d2c66e24277f7c864cbbbcc731e959531d4a1463e",
+        "sha256_in_prefix": "f6a520a1f81a237fa2bf5e1d2c66e24277f7c864cbbbcc731e959531d4a1463e",
+        "size_in_bytes": 26080
+      },
+      {
+        "_path": "lib/libgobject-2.0.so.0",
+        "path_type": "softlink",
+        "sha256": "0e165d9937997eda190f5fb4c29273345b7dde4878ef99a13ffa86cd815d7075",
+        "size_in_bytes": 469616
+      },
+      {
+        "_path": "lib/libgobject-2.0.so.0.7800.0",
+        "path_type": "hardlink",
+        "sha256": "0e165d9937997eda190f5fb4c29273345b7dde4878ef99a13ffa86cd815d7075",
+        "sha256_in_prefix": "0e165d9937997eda190f5fb4c29273345b7dde4878ef99a13ffa86cd815d7075",
+        "size_in_bytes": 469616
+      },
+      {
+        "_path": "lib/libgthread-2.0.so.0",
+        "path_type": "softlink",
+        "sha256": "f6a529f695b5ee654da6f20809c6a613ba53a909e6dd52fd15419e17c67102ac",
+        "size_in_bytes": 15304
+      },
+      {
+        "_path": "lib/libgthread-2.0.so.0.7800.0",
+        "path_type": "hardlink",
+        "sha256": "f6a529f695b5ee654da6f20809c6a613ba53a909e6dd52fd15419e17c67102ac",
+        "sha256_in_prefix": "f6a529f695b5ee654da6f20809c6a613ba53a909e6dd52fd15419e17c67102ac",
+        "size_in_bytes": 15304
+      },
+      {
+        "_path": "lib/pkgconfig/gio-2.0.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/glib-split_1694380722068/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_",
+        "sha256": "ccc628fa576203a0bb9140e302eab55f36864e91dc7e5bd17a7ba39dff5f44ad",
+        "sha256_in_prefix": "b3c70722f67fce7823fba8ce8ee6e41f97d9fe62139ff4f81b7fd1e55673478d",
+        "size_in_bytes": 971
+      },
+      {
+        "_path": "lib/pkgconfig/gio-unix-2.0.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/glib-split_1694380722068/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_",
+        "sha256": "3fe3098900876882777e3fdd9ccf2078cdb466572c0478c4c36cb35218a1f32c",
+        "sha256_in_prefix": "ce0daa9fe7ce89efeb5bbca99078660706cda25d626625313897259f8051cb57",
+        "size_in_bytes": 462
+      },
+      {
+        "_path": "lib/pkgconfig/glib-2.0.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/glib-split_1694380722068/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_",
+        "sha256": "ea1eb469f86870e776e65243c29e2a1ef024d8ea797a94d668dac26baf2d53ec",
+        "sha256_in_prefix": "080be2abb9d1c2036f7d002f472849dc4dcf985443ff428a1c0e9ae51b7a6857",
+        "size_in_bytes": 764
+      },
+      {
+        "_path": "lib/pkgconfig/gmodule-2.0.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/glib-split_1694380722068/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_",
+        "sha256": "30eb860988d23420a0e18dc50890d39bf42c2f9cd1d4f3ed1a587d22123f9fa6",
+        "sha256_in_prefix": "8eab802a1a497ec9b6feb61d96c45783c9b5c0164f954067e171bb094793e454",
+        "size_in_bytes": 505
+      },
+      {
+        "_path": "lib/pkgconfig/gmodule-export-2.0.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/glib-split_1694380722068/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_",
+        "sha256": "30eb860988d23420a0e18dc50890d39bf42c2f9cd1d4f3ed1a587d22123f9fa6",
+        "sha256_in_prefix": "8eab802a1a497ec9b6feb61d96c45783c9b5c0164f954067e171bb094793e454",
+        "size_in_bytes": 505
+      },
+      {
+        "_path": "lib/pkgconfig/gmodule-no-export-2.0.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/glib-split_1694380722068/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_",
+        "sha256": "9445b78c31ead1858882dd8b81572bfe3876c32be888e67429b9b76671db038c",
+        "sha256_in_prefix": "12de7b87c3e1feb15899970fc603c7ab7ed3cf2c893e362c6a0e87ce7bca81cc",
+        "size_in_bytes": 524
+      },
+      {
+        "_path": "lib/pkgconfig/gobject-2.0.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/glib-split_1694380722068/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_",
+        "sha256": "2356f08f32f751a5bc5dd4905d653900d955e1feb3e20f203afc842c8d692968",
+        "sha256_in_prefix": "89b196707ac23d5fa667625cb28485653251a4f9f5a97fa0c920939a2cd456a6",
+        "size_in_bytes": 515
+      },
+      {
+        "_path": "lib/pkgconfig/gthread-2.0.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/glib-split_1694380722068/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_",
+        "sha256": "c0643c6eae88a01617fbd251d42357a2da1e7918bfd6aa356380f8e5b24361ac",
+        "sha256_in_prefix": "e572f59fdd8c69d498d1b2e8e0ba1d1bb6c83d51d3dae83c1a2522bda14f17cc",
+        "size_in_bytes": 474
+      },
+      {
+        "_path": "libexec/gio-launch-desktop",
+        "path_type": "hardlink",
+        "sha256": "e19bb9a80682fb622d8decd74ba527a0cc99a39744700d977dc5b4f29ce9452c",
+        "sha256_in_prefix": "e19bb9a80682fb622d8decd74ba527a0cc99a39744700d977dc5b4f29ce9452c",
+        "size_in_bytes": 16928
+      },
+      {
+        "_path": "share/locale/ab/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "03fb6b4227877bab23030f34e97d3e5524906fd86ae6eaab2b70bdb06d3347c6",
+        "sha256_in_prefix": "03fb6b4227877bab23030f34e97d3e5524906fd86ae6eaab2b70bdb06d3347c6",
+        "size_in_bytes": 10614
+      },
+      {
+        "_path": "share/locale/af/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "0f7273b298bed1875b571f36be52802fca6a7aac10fd5ad86c87ccdd7740ff9e",
+        "sha256_in_prefix": "0f7273b298bed1875b571f36be52802fca6a7aac10fd5ad86c87ccdd7740ff9e",
+        "size_in_bytes": 9368
+      },
+      {
+        "_path": "share/locale/am/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "f26d29fbbaee5de11789584394a17724b6cdb8c4176288066cd677af4612eaa7",
+        "sha256_in_prefix": "f26d29fbbaee5de11789584394a17724b6cdb8c4176288066cd677af4612eaa7",
+        "size_in_bytes": 2655
+      },
+      {
+        "_path": "share/locale/an/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "a32f1baba1453020a6a8d076da2cbd1b202aba728ee10fc3d04ed40b02f6e0dd",
+        "sha256_in_prefix": "a32f1baba1453020a6a8d076da2cbd1b202aba728ee10fc3d04ed40b02f6e0dd",
+        "size_in_bytes": 100884
+      },
+      {
+        "_path": "share/locale/ar/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "3c45065c3b2d8877de674eafcb378e26b376706568654fa5ed6748c2de180b64",
+        "sha256_in_prefix": "3c45065c3b2d8877de674eafcb378e26b376706568654fa5ed6748c2de180b64",
+        "size_in_bytes": 48379
+      },
+      {
+        "_path": "share/locale/as/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "ef413ff0de40d316b06ebbb0b2114cf9fd8692ba817829b2e5cf111f38f01430",
+        "sha256_in_prefix": "ef413ff0de40d316b06ebbb0b2114cf9fd8692ba817829b2e5cf111f38f01430",
+        "size_in_bytes": 144513
+      },
+      {
+        "_path": "share/locale/ast/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "575196a770e745dbc9c94de662d05f8fa34e5eba5e1f3b72c24da3b9ee0b53fd",
+        "sha256_in_prefix": "575196a770e745dbc9c94de662d05f8fa34e5eba5e1f3b72c24da3b9ee0b53fd",
+        "size_in_bytes": 46590
+      },
+      {
+        "_path": "share/locale/az/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "8de2410ffd2dc00431d1ea35df6d91cc924d70ff8970bc67aa0e8f58e2756d7d",
+        "sha256_in_prefix": "8de2410ffd2dc00431d1ea35df6d91cc924d70ff8970bc67aa0e8f58e2756d7d",
+        "size_in_bytes": 12704
+      },
+      {
+        "_path": "share/locale/be/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "78ce64fb9fdef97219b90fa6089261bbeb3dcf3b9878bbd4bb18f517db2a46ad",
+        "sha256_in_prefix": "78ce64fb9fdef97219b90fa6089261bbeb3dcf3b9878bbd4bb18f517db2a46ad",
+        "size_in_bytes": 103847
+      },
+      {
+        "_path": "share/locale/be@latin/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "0113dc748ed79e6240cea3e67d5f1bfda1362457dc33dba4703bfef506fc04b0",
+        "sha256_in_prefix": "0113dc748ed79e6240cea3e67d5f1bfda1362457dc33dba4703bfef506fc04b0",
+        "size_in_bytes": 37326
+      },
+      {
+        "_path": "share/locale/bg/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "4db8d1967de33546c140c59b6eb6f66abfb89ab3698eb69a72d7207776058d00",
+        "sha256_in_prefix": "4db8d1967de33546c140c59b6eb6f66abfb89ab3698eb69a72d7207776058d00",
+        "size_in_bytes": 179822
+      },
+      {
+        "_path": "share/locale/bn/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "b2a89d37a76ccf789e22b37ad5fe6feebdc5804d1a71ad184eefa4c01c8c8b05",
+        "sha256_in_prefix": "b2a89d37a76ccf789e22b37ad5fe6feebdc5804d1a71ad184eefa4c01c8c8b05",
+        "size_in_bytes": 72564
+      },
+      {
+        "_path": "share/locale/bn_IN/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "769f1f8b2e3ba9d0d366e3be1f69c51865249b316228445f55fed443ce27f8ff",
+        "sha256_in_prefix": "769f1f8b2e3ba9d0d366e3be1f69c51865249b316228445f55fed443ce27f8ff",
+        "size_in_bytes": 152932
+      },
+      {
+        "_path": "share/locale/bs/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "5ffc12300fe0b422ef925042798b295a164fed2d5047864f75d0076ec1fc85e5",
+        "sha256_in_prefix": "5ffc12300fe0b422ef925042798b295a164fed2d5047864f75d0076ec1fc85e5",
+        "size_in_bytes": 100608
+      },
+      {
+        "_path": "share/locale/ca/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "d7b31724c9a3b610294e16cb46d3ae6839c2be9e708f1780fe781aed87ff61f4",
+        "sha256_in_prefix": "d7b31724c9a3b610294e16cb46d3ae6839c2be9e708f1780fe781aed87ff61f4",
+        "size_in_bytes": 143555
+      },
+      {
+        "_path": "share/locale/ca@valencia/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "c5cd583ce77aa25a66ed0b725ed17113b4ccedcadd838951bccb5d2917dbe74d",
+        "sha256_in_prefix": "c5cd583ce77aa25a66ed0b725ed17113b4ccedcadd838951bccb5d2917dbe74d",
+        "size_in_bytes": 130719
+      },
+      {
+        "_path": "share/locale/cs/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "6a4fdb3b2e27d9287868cf32c195f24c25305a073624f55f328c7e3146feeff4",
+        "sha256_in_prefix": "6a4fdb3b2e27d9287868cf32c195f24c25305a073624f55f328c7e3146feeff4",
+        "size_in_bytes": 137951
+      },
+      {
+        "_path": "share/locale/cy/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "f3642fe45ec4985d13a625d8b66a50bdfd68bcdac2f48a8702d6ddc384ed9865",
+        "sha256_in_prefix": "f3642fe45ec4985d13a625d8b66a50bdfd68bcdac2f48a8702d6ddc384ed9865",
+        "size_in_bytes": 27388
+      },
+      {
+        "_path": "share/locale/da/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "e258dd8aa38028fcb16f2996eb387bb37f9cfaf1dd760f93da6c2f8d4e9a8d6d",
+        "sha256_in_prefix": "e258dd8aa38028fcb16f2996eb387bb37f9cfaf1dd760f93da6c2f8d4e9a8d6d",
+        "size_in_bytes": 133982
+      },
+      {
+        "_path": "share/locale/de/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "8db0f85e9991627fe8d8f703a255c305a127468f98526c720ac62d77894646e1",
+        "sha256_in_prefix": "8db0f85e9991627fe8d8f703a255c305a127468f98526c720ac62d77894646e1",
+        "size_in_bytes": 141634
+      },
+      {
+        "_path": "share/locale/dz/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "2b0eac6316ac07d7846aa0ad1840ce3cabc91cab0d4e53e45cb69bd8376c110c",
+        "sha256_in_prefix": "2b0eac6316ac07d7846aa0ad1840ce3cabc91cab0d4e53e45cb69bd8376c110c",
+        "size_in_bytes": 34836
+      },
+      {
+        "_path": "share/locale/el/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "675b78010403f8a782d7cbbcea4a39787252c66085de680bfce7d71ab97f0299",
+        "sha256_in_prefix": "675b78010403f8a782d7cbbcea4a39787252c66085de680bfce7d71ab97f0299",
+        "size_in_bytes": 118601
+      },
+      {
+        "_path": "share/locale/en@shaw/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "7dc4a6ca9b27541ee580bc5c07b343cf32661b5dccea86b17d7155b0c7a5044c",
+        "sha256_in_prefix": "7dc4a6ca9b27541ee580bc5c07b343cf32661b5dccea86b17d7155b0c7a5044c",
+        "size_in_bytes": 69722
+      },
+      {
+        "_path": "share/locale/en_CA/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "07347de635ff077a24809e4db1aa236bcec71ed2e9920118110bd000db8f60c5",
+        "sha256_in_prefix": "07347de635ff077a24809e4db1aa236bcec71ed2e9920118110bd000db8f60c5",
+        "size_in_bytes": 80055
+      },
+      {
+        "_path": "share/locale/en_GB/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "aac9558fd4e84a7cdb83d8c6ab146217b4ba4a2129bbdf5167faf2d0a0d2befc",
+        "sha256_in_prefix": "aac9558fd4e84a7cdb83d8c6ab146217b4ba4a2129bbdf5167faf2d0a0d2befc",
+        "size_in_bytes": 129811
+      },
+      {
+        "_path": "share/locale/eo/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "f756c9fcb6d488da4781c1cfb0221ea4b2eee6836b6d946e4890c10adf8c30a7",
+        "sha256_in_prefix": "f756c9fcb6d488da4781c1cfb0221ea4b2eee6836b6d946e4890c10adf8c30a7",
+        "size_in_bytes": 60698
+      },
+      {
+        "_path": "share/locale/es/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "a2656b926e89f8d8fd7936f96e519842e225f6fb1bc39c7e80c8ea4358df441f",
+        "sha256_in_prefix": "a2656b926e89f8d8fd7936f96e519842e225f6fb1bc39c7e80c8ea4358df441f",
+        "size_in_bytes": 139848
+      },
+      {
+        "_path": "share/locale/et/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "c4a10d5de2c960b347180444ffdd53921ee6d820f98be1cb2f02a99145c86e64",
+        "sha256_in_prefix": "c4a10d5de2c960b347180444ffdd53921ee6d820f98be1cb2f02a99145c86e64",
+        "size_in_bytes": 50929
+      },
+      {
+        "_path": "share/locale/eu/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "36df7e6d0fc58215fde168a95d1452afe42fc086f27d391fb3c14ccfb9279adc",
+        "sha256_in_prefix": "36df7e6d0fc58215fde168a95d1452afe42fc086f27d391fb3c14ccfb9279adc",
+        "size_in_bytes": 138825
+      },
+      {
+        "_path": "share/locale/fa/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "df07dbd915c74d66e734ebf015e174acbdc1cb676e6cacf382fbba2229eee6e1",
+        "sha256_in_prefix": "df07dbd915c74d66e734ebf015e174acbdc1cb676e6cacf382fbba2229eee6e1",
+        "size_in_bytes": 115019
+      },
+      {
+        "_path": "share/locale/fi/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "81336ad87bcda81a2f5392cbfe80e59724790b9b7272fb41edac77ee2a0c3706",
+        "sha256_in_prefix": "81336ad87bcda81a2f5392cbfe80e59724790b9b7272fb41edac77ee2a0c3706",
+        "size_in_bytes": 54693
+      },
+      {
+        "_path": "share/locale/fr/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "520996d43b3fa82735b88815b56b8d65fdd8a4df8e777c68afd25df670de8a44",
+        "sha256_in_prefix": "520996d43b3fa82735b88815b56b8d65fdd8a4df8e777c68afd25df670de8a44",
+        "size_in_bytes": 147640
+      },
+      {
+        "_path": "share/locale/fur/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "5d4547b0540d459eb280c3dc089440a40a5c1cc15c5865326fa193d7aea92b6c",
+        "sha256_in_prefix": "5d4547b0540d459eb280c3dc089440a40a5c1cc15c5865326fa193d7aea92b6c",
+        "size_in_bytes": 120084
+      },
+      {
+        "_path": "share/locale/ga/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "2bd62bec51fed73df41e274f7e4ce4e54b55e8355fb890d6ded82d8053d1e747",
+        "sha256_in_prefix": "2bd62bec51fed73df41e274f7e4ce4e54b55e8355fb890d6ded82d8053d1e747",
+        "size_in_bytes": 14727
+      },
+      {
+        "_path": "share/locale/gd/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "9530cd6f5289885566a9e5746e9533032023a17a6b6aadefcab4495c57e44fe7",
+        "sha256_in_prefix": "9530cd6f5289885566a9e5746e9533032023a17a6b6aadefcab4495c57e44fe7",
+        "size_in_bytes": 11432
+      },
+      {
+        "_path": "share/locale/gl/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "ac4011b5f8d9891cb432a1064e0ea93430998cbaa94a615c8799a560634a866d",
+        "sha256_in_prefix": "ac4011b5f8d9891cb432a1064e0ea93430998cbaa94a615c8799a560634a866d",
+        "size_in_bytes": 140532
+      },
+      {
+        "_path": "share/locale/gu/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "8eb12885121c0f83693b52d5f23ba100cf49ac852f36f94d9426758dfbd4e148",
+        "sha256_in_prefix": "8eb12885121c0f83693b52d5f23ba100cf49ac852f36f94d9426758dfbd4e148",
+        "size_in_bytes": 146023
+      },
+      {
+        "_path": "share/locale/he/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "cb5d7b256071857f6f56f453087136f6e12edf6879c9ceab3c9624b56a409e47",
+        "sha256_in_prefix": "cb5d7b256071857f6f56f453087136f6e12edf6879c9ceab3c9624b56a409e47",
+        "size_in_bytes": 131108
+      },
+      {
+        "_path": "share/locale/hi/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "96bcc1bce1d62e56e0e3c281000f92f03143ac62cbfdae119e2cee9b9f4dd652",
+        "sha256_in_prefix": "96bcc1bce1d62e56e0e3c281000f92f03143ac62cbfdae119e2cee9b9f4dd652",
+        "size_in_bytes": 147327
+      },
+      {
+        "_path": "share/locale/hr/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "1a031b24f21b45caa91ea9ea96ed6af98c9aed2c7117b5502a004e38acba4acb",
+        "sha256_in_prefix": "1a031b24f21b45caa91ea9ea96ed6af98c9aed2c7117b5502a004e38acba4acb",
+        "size_in_bytes": 135478
+      },
+      {
+        "_path": "share/locale/hu/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "d24cfc3147b7050f02d175436e5a76231d14fb4a0290e67f12cf1b6ad285029e",
+        "sha256_in_prefix": "d24cfc3147b7050f02d175436e5a76231d14fb4a0290e67f12cf1b6ad285029e",
+        "size_in_bytes": 141808
+      },
+      {
+        "_path": "share/locale/hy/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "8c6d27d4a1fa5304ad16e60577a222e224c1a3a3400c0e8a86ab6a94cf236bda",
+        "sha256_in_prefix": "8c6d27d4a1fa5304ad16e60577a222e224c1a3a3400c0e8a86ab6a94cf236bda",
+        "size_in_bytes": 91532
+      },
+      {
+        "_path": "share/locale/id/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "a5b6535b80cc7e84a020da2e41acf138c4b3cef015d0c34ac6d0827eeb816679",
+        "sha256_in_prefix": "a5b6535b80cc7e84a020da2e41acf138c4b3cef015d0c34ac6d0827eeb816679",
+        "size_in_bytes": 132537
+      },
+      {
+        "_path": "share/locale/ie/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "5b971b516606ac21f3c75e9a9eae3c0b433003473647098525073062235f285f",
+        "sha256_in_prefix": "5b971b516606ac21f3c75e9a9eae3c0b433003473647098525073062235f285f",
+        "size_in_bytes": 4296
+      },
+      {
+        "_path": "share/locale/is/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "0650dd77a58290c433c1e3f09a33b40f7fe19cfd1e34bdbc9caad197fd7be9ce",
+        "sha256_in_prefix": "0650dd77a58290c433c1e3f09a33b40f7fe19cfd1e34bdbc9caad197fd7be9ce",
+        "size_in_bytes": 15106
+      },
+      {
+        "_path": "share/locale/it/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "d238b75ab1727371880b75f259b77c6f70caa3422f310b00390a4959bf565bf6",
+        "sha256_in_prefix": "d238b75ab1727371880b75f259b77c6f70caa3422f310b00390a4959bf565bf6",
+        "size_in_bytes": 139096
+      },
+      {
+        "_path": "share/locale/ja/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "c509dee29d0ba18034d4728df9b1ac45160e4de998c489fe6f8c6dcb5c153424",
+        "sha256_in_prefix": "c509dee29d0ba18034d4728df9b1ac45160e4de998c489fe6f8c6dcb5c153424",
+        "size_in_bytes": 134573
+      },
+      {
+        "_path": "share/locale/ka/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "6a0de633f11c93163d7acf4ede8fd3d1d1847e664347ff0dd7be8c1d95c7a163",
+        "sha256_in_prefix": "6a0de633f11c93163d7acf4ede8fd3d1d1847e664347ff0dd7be8c1d95c7a163",
+        "size_in_bytes": 159208
+      },
+      {
+        "_path": "share/locale/kk/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "b3a5ff17f2000d5ca7ad032b5d6f7ae59b63347268ba3fdeadc634416eb4cb10",
+        "sha256_in_prefix": "b3a5ff17f2000d5ca7ad032b5d6f7ae59b63347268ba3fdeadc634416eb4cb10",
+        "size_in_bytes": 30731
+      },
+      {
+        "_path": "share/locale/kn/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "7c5198ce8889d51fd1d08e401d218660af87abc501c97ad17be3f7f0146e761e",
+        "sha256_in_prefix": "7c5198ce8889d51fd1d08e401d218660af87abc501c97ad17be3f7f0146e761e",
+        "size_in_bytes": 163773
+      },
+      {
+        "_path": "share/locale/ko/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "cbcfd49185ba8e50f5d2c6464918edc51b719a576fd3127f861e5b3baba297df",
+        "sha256_in_prefix": "cbcfd49185ba8e50f5d2c6464918edc51b719a576fd3127f861e5b3baba297df",
+        "size_in_bytes": 146624
+      },
+      {
+        "_path": "share/locale/ku/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "5f3c2afac1cdde5006e30aa6816032fb6081c093e7b3eda37552b8f8bbcbc0d1",
+        "sha256_in_prefix": "5f3c2afac1cdde5006e30aa6816032fb6081c093e7b3eda37552b8f8bbcbc0d1",
+        "size_in_bytes": 2827
+      },
+      {
+        "_path": "share/locale/lt/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "c1d0c0dcb21e6a7841508109105f69309647327159296d62136f3b304cbb5859",
+        "sha256_in_prefix": "c1d0c0dcb21e6a7841508109105f69309647327159296d62136f3b304cbb5859",
+        "size_in_bytes": 135238
+      },
+      {
+        "_path": "share/locale/lv/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "8fef7491167d8267493343d9e606eed2f724b79b2e9ccff5b10d82718835f751",
+        "sha256_in_prefix": "8fef7491167d8267493343d9e606eed2f724b79b2e9ccff5b10d82718835f751",
+        "size_in_bytes": 134763
+      },
+      {
+        "_path": "share/locale/mai/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "597eea4ce9b35bee0c49f971cea36ca10bd48ee400602ff819d2f21f35ada12f",
+        "sha256_in_prefix": "597eea4ce9b35bee0c49f971cea36ca10bd48ee400602ff819d2f21f35ada12f",
+        "size_in_bytes": 43246
+      },
+      {
+        "_path": "share/locale/mg/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "ce2eaa709d4eb1edd66fe8cadce4e4adb6f0bc60eb0683d6cffb6cee5ea055d3",
+        "sha256_in_prefix": "ce2eaa709d4eb1edd66fe8cadce4e4adb6f0bc60eb0683d6cffb6cee5ea055d3",
+        "size_in_bytes": 19581
+      },
+      {
+        "_path": "share/locale/mk/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "3cac250d8061f750d26c2725677e85f854ee36f338544276dd07a1fa96455c5e",
+        "sha256_in_prefix": "3cac250d8061f750d26c2725677e85f854ee36f338544276dd07a1fa96455c5e",
+        "size_in_bytes": 48242
+      },
+      {
+        "_path": "share/locale/ml/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "a68aa650cc0a28e6802e9a560cf12cdded6dc2159bcf5e3af88040dc942f0bca",
+        "sha256_in_prefix": "a68aa650cc0a28e6802e9a560cf12cdded6dc2159bcf5e3af88040dc942f0bca",
+        "size_in_bytes": 98667
+      },
+      {
+        "_path": "share/locale/mn/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "b8be20d7b76cf94837dbdf28bd029ae0656aca17617352a68dfa31f12acfded7",
+        "sha256_in_prefix": "b8be20d7b76cf94837dbdf28bd029ae0656aca17617352a68dfa31f12acfded7",
+        "size_in_bytes": 19171
+      },
+      {
+        "_path": "share/locale/mr/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "2a597f9f5e1d3e8dbd18bc4c40057684aa9cbcbaf260d66854808b155b53bf0d",
+        "sha256_in_prefix": "2a597f9f5e1d3e8dbd18bc4c40057684aa9cbcbaf260d66854808b155b53bf0d",
+        "size_in_bytes": 146790
+      },
+      {
+        "_path": "share/locale/ms/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "2f20ae4426562735beccee1bd85eee65f03a36b9df181e4a96899354a2e340f2",
+        "sha256_in_prefix": "2f20ae4426562735beccee1bd85eee65f03a36b9df181e4a96899354a2e340f2",
+        "size_in_bytes": 126484
+      },
+      {
+        "_path": "share/locale/nb/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "3554acba534a8502f706e5f8a0a4abe35367e4a4c418573ac3cc24fca0443a64",
+        "sha256_in_prefix": "3554acba534a8502f706e5f8a0a4abe35367e4a4c418573ac3cc24fca0443a64",
+        "size_in_bytes": 113354
+      },
+      {
+        "_path": "share/locale/nds/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "cd96d5455a111800aa7da1880e70be425bcb4f89643086e6d2fb7db3e8be3d99",
+        "sha256_in_prefix": "cd96d5455a111800aa7da1880e70be425bcb4f89643086e6d2fb7db3e8be3d99",
+        "size_in_bytes": 6441
+      },
+      {
+        "_path": "share/locale/ne/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "4022dc547cff45c9d8956af9b6e6594eb96bc488b2e1fabd598f0f838995e861",
+        "sha256_in_prefix": "4022dc547cff45c9d8956af9b6e6594eb96bc488b2e1fabd598f0f838995e861",
+        "size_in_bytes": 126034
+      },
+      {
+        "_path": "share/locale/nl/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "a2e711fb5d6c19634a63babf2fd7bc63ca516dbaf8625b7ebb140f6fe5e2b26e",
+        "sha256_in_prefix": "a2e711fb5d6c19634a63babf2fd7bc63ca516dbaf8625b7ebb140f6fe5e2b26e",
+        "size_in_bytes": 89647
+      },
+      {
+        "_path": "share/locale/nn/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "e307542973c16da823bf95fb7b1635c82666e8d67d782ea3d372ff19b1a15c2c",
+        "sha256_in_prefix": "e307542973c16da823bf95fb7b1635c82666e8d67d782ea3d372ff19b1a15c2c",
+        "size_in_bytes": 36259
+      },
+      {
+        "_path": "share/locale/oc/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "2d22b1ebab3b8012faec7d960c5499d502df4aa53ccd3a8185ad005c21b79550",
+        "sha256_in_prefix": "2d22b1ebab3b8012faec7d960c5499d502df4aa53ccd3a8185ad005c21b79550",
+        "size_in_bytes": 109532
+      },
+      {
+        "_path": "share/locale/or/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "0da7053e02702e1296a7466774971015b53498f31cd4fb6ca9446e6748c25c3d",
+        "sha256_in_prefix": "0da7053e02702e1296a7466774971015b53498f31cd4fb6ca9446e6748c25c3d",
+        "size_in_bytes": 153879
+      },
+      {
+        "_path": "share/locale/pa/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "290ac763583be265fc54e5fe92ffdaf8c2dcf515d1cdc9e35dbc7d63f969f6ee",
+        "sha256_in_prefix": "290ac763583be265fc54e5fe92ffdaf8c2dcf515d1cdc9e35dbc7d63f969f6ee",
+        "size_in_bytes": 164107
+      },
+      {
+        "_path": "share/locale/pl/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "b25b8e9763ee0195f0fa71b27a19720a57bfe7dca78144f405e3a6f76e4a44b2",
+        "sha256_in_prefix": "b25b8e9763ee0195f0fa71b27a19720a57bfe7dca78144f405e3a6f76e4a44b2",
+        "size_in_bytes": 142501
+      },
+      {
+        "_path": "share/locale/ps/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "3660ccc84d35656539158727854ca0774008adae63b3a4e8d73e6498d2e047d7",
+        "sha256_in_prefix": "3660ccc84d35656539158727854ca0774008adae63b3a4e8d73e6498d2e047d7",
+        "size_in_bytes": 11590
+      },
+      {
+        "_path": "share/locale/pt/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "966d4ddbe72cd373d5a316e31ef2a503fb95e86c66eab2ea199cea88c1b30ef6",
+        "sha256_in_prefix": "966d4ddbe72cd373d5a316e31ef2a503fb95e86c66eab2ea199cea88c1b30ef6",
+        "size_in_bytes": 138536
+      },
+      {
+        "_path": "share/locale/pt_BR/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "6d20c00d4e01752a7bcc78d30038f346ae34629dc0e97f1618865188141b5d92",
+        "sha256_in_prefix": "6d20c00d4e01752a7bcc78d30038f346ae34629dc0e97f1618865188141b5d92",
+        "size_in_bytes": 138371
+      },
+      {
+        "_path": "share/locale/ro/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "514f9bb050d7c1d6782746e3790d63c95edaab3c7caf9d26765b0388ee228345",
+        "sha256_in_prefix": "514f9bb050d7c1d6782746e3790d63c95edaab3c7caf9d26765b0388ee228345",
+        "size_in_bytes": 141596
+      },
+      {
+        "_path": "share/locale/ru/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "4227cee79b936a0bc2346b142978c9a646864b49582f51e71db3a8606e638eca",
+        "sha256_in_prefix": "4227cee79b936a0bc2346b142978c9a646864b49582f51e71db3a8606e638eca",
+        "size_in_bytes": 178174
+      },
+      {
+        "_path": "share/locale/rw/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "75c08773d1b7632db631b2fe88fd0a3814ebd55c3959874a72f306e46d150dc2",
+        "sha256_in_prefix": "75c08773d1b7632db631b2fe88fd0a3814ebd55c3959874a72f306e46d150dc2",
+        "size_in_bytes": 2197
+      },
+      {
+        "_path": "share/locale/si/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "270e449c45b102b289228fe9bb37c0133c58ab4504b3d2cf5556a48b881f0ab1",
+        "sha256_in_prefix": "270e449c45b102b289228fe9bb37c0133c58ab4504b3d2cf5556a48b881f0ab1",
+        "size_in_bytes": 11379
+      },
+      {
+        "_path": "share/locale/sk/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "9ad42d625c646da3e93e33b50a35603c2d7bc1e80f6dc09a2ad1bf7a29645462",
+        "sha256_in_prefix": "9ad42d625c646da3e93e33b50a35603c2d7bc1e80f6dc09a2ad1bf7a29645462",
+        "size_in_bytes": 126718
+      },
+      {
+        "_path": "share/locale/sl/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "d4bae2d7b58ba83b2d45dae7dc72a84362780816f25e6c6c6033ced8c5d17abe",
+        "sha256_in_prefix": "d4bae2d7b58ba83b2d45dae7dc72a84362780816f25e6c6c6033ced8c5d17abe",
+        "size_in_bytes": 135181
+      },
+      {
+        "_path": "share/locale/sq/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "eecb65ba4e5b5d2fd5dd972d49f4688103db341db9159275b02722556b6c4204",
+        "sha256_in_prefix": "eecb65ba4e5b5d2fd5dd972d49f4688103db341db9159275b02722556b6c4204",
+        "size_in_bytes": 38114
+      },
+      {
+        "_path": "share/locale/sr/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "702ee29af0315a24e8449ceea1b8f67598754b137c5deeb64171bfc06e2fd6b6",
+        "sha256_in_prefix": "702ee29af0315a24e8449ceea1b8f67598754b137c5deeb64171bfc06e2fd6b6",
+        "size_in_bytes": 175004
+      },
+      {
+        "_path": "share/locale/sr@ije/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "93212a801da103e0a10edf53cf23ad599eb45a13c865b2118fb6722140ae8ee1",
+        "sha256_in_prefix": "93212a801da103e0a10edf53cf23ad599eb45a13c865b2118fb6722140ae8ee1",
+        "size_in_bytes": 15638
+      },
+      {
+        "_path": "share/locale/sr@latin/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "f5ab5b1d51cc4425131a3fe84fede61c95ce81973331385b4ec5df689ab07a7b",
+        "sha256_in_prefix": "f5ab5b1d51cc4425131a3fe84fede61c95ce81973331385b4ec5df689ab07a7b",
+        "size_in_bytes": 125979
+      },
+      {
+        "_path": "share/locale/sv/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "ad4b7151b270864582bc6611064103391e19f5d54f03bf5e1d007b28af08c8a8",
+        "sha256_in_prefix": "ad4b7151b270864582bc6611064103391e19f5d54f03bf5e1d007b28af08c8a8",
+        "size_in_bytes": 134371
+      },
+      {
+        "_path": "share/locale/ta/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "38ebf11f4fe243895659488eaccc1e6bd7f95dc5d58bcefb6f353a1aa442168c",
+        "sha256_in_prefix": "38ebf11f4fe243895659488eaccc1e6bd7f95dc5d58bcefb6f353a1aa442168c",
+        "size_in_bytes": 161163
+      },
+      {
+        "_path": "share/locale/te/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "1f425562583e563c7ef2b53265c182a126b37224c984708bdaa6ebf8d9fa87c0",
+        "sha256_in_prefix": "1f425562583e563c7ef2b53265c182a126b37224c984708bdaa6ebf8d9fa87c0",
+        "size_in_bytes": 152584
+      },
+      {
+        "_path": "share/locale/tg/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "485857faa06295c8f84c4153c1fc79daa37b31a697f3b3ad83a42171f77aa1fc",
+        "sha256_in_prefix": "485857faa06295c8f84c4153c1fc79daa37b31a697f3b3ad83a42171f77aa1fc",
+        "size_in_bytes": 5165
+      },
+      {
+        "_path": "share/locale/th/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "bbc51283591d5410987b93a882b5153b0eac544965bcabbfd657dfa767725b87",
+        "sha256_in_prefix": "bbc51283591d5410987b93a882b5153b0eac544965bcabbfd657dfa767725b87",
+        "size_in_bytes": 174848
+      },
+      {
+        "_path": "share/locale/tl/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "4856cd45b80b3c6599c829ea751403f837be50bb8cd432aedbb9b677748a3955",
+        "sha256_in_prefix": "4856cd45b80b3c6599c829ea751403f837be50bb8cd432aedbb9b677748a3955",
+        "size_in_bytes": 17881
+      },
+      {
+        "_path": "share/locale/tr/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "03cff2bde5073733452fb2cfcc0caec42ea4a491271b8e8c3aed1f0ab34f7a67",
+        "sha256_in_prefix": "03cff2bde5073733452fb2cfcc0caec42ea4a491271b8e8c3aed1f0ab34f7a67",
+        "size_in_bytes": 135951
+      },
+      {
+        "_path": "share/locale/tt/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "f28e14834e925948ad873f9c7b71fb513fe508e75c690ad8ac255b451d298779",
+        "sha256_in_prefix": "f28e14834e925948ad873f9c7b71fb513fe508e75c690ad8ac255b451d298779",
+        "size_in_bytes": 7076
+      },
+      {
+        "_path": "share/locale/ug/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "230c0fed5bf3f3cb15acafc338151dfea6650a68db2ac560ff1735757cd69f1f",
+        "sha256_in_prefix": "230c0fed5bf3f3cb15acafc338151dfea6650a68db2ac560ff1735757cd69f1f",
+        "size_in_bytes": 124524
+      },
+      {
+        "_path": "share/locale/uk/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "2c894a5ce2693aa0176ac891fb43f0055d5bcfa36cb0fb447271f241a9c9766b",
+        "sha256_in_prefix": "2c894a5ce2693aa0176ac891fb43f0055d5bcfa36cb0fb447271f241a9c9766b",
+        "size_in_bytes": 178860
+      },
+      {
+        "_path": "share/locale/vi/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "0dac862e110ebb74f31a9b3674f7108da81349a7bc1ba9917b477eb6b7ed73cd",
+        "sha256_in_prefix": "0dac862e110ebb74f31a9b3674f7108da81349a7bc1ba9917b477eb6b7ed73cd",
+        "size_in_bytes": 109755
+      },
+      {
+        "_path": "share/locale/wa/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "b881da4646e3a8a8123dc16322bdc0b62c626b29b663bb01beb66042bef1feca",
+        "sha256_in_prefix": "b881da4646e3a8a8123dc16322bdc0b62c626b29b663bb01beb66042bef1feca",
+        "size_in_bytes": 6350
+      },
+      {
+        "_path": "share/locale/xh/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "c0453713d44a35e7cf16ae4fbcc0e04979037433cc12e71eb8c9ce73ce4c1938",
+        "sha256_in_prefix": "c0453713d44a35e7cf16ae4fbcc0e04979037433cc12e71eb8c9ce73ce4c1938",
+        "size_in_bytes": 15950
+      },
+      {
+        "_path": "share/locale/yi/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "51c8c79caf3a90905961c664645fd64d8d1d144e9c18e2784f29729de3cb2a14",
+        "sha256_in_prefix": "51c8c79caf3a90905961c664645fd64d8d1d144e9c18e2784f29729de3cb2a14",
+        "size_in_bytes": 15877
+      },
+      {
+        "_path": "share/locale/zh_CN/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "2948692a3dcd3d4872ccf5be922af04e86e35a92cda3c0ada965781e1665a078",
+        "sha256_in_prefix": "2948692a3dcd3d4872ccf5be922af04e86e35a92cda3c0ada965781e1665a078",
+        "size_in_bytes": 125278
+      },
+      {
+        "_path": "share/locale/zh_HK/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "85e128e819f82b6eadf1f0798b1603e653f97b1f2ff071df30fd70c458505b71",
+        "sha256_in_prefix": "85e128e819f82b6eadf1f0798b1603e653f97b1f2ff071df30fd70c458505b71",
+        "size_in_bytes": 94873
+      },
+      {
+        "_path": "share/locale/zh_TW/LC_MESSAGES/glib20.mo",
+        "path_type": "hardlink",
+        "sha256": "d88503b1499413686f865337800ccce0a81acfaa2fabad075673eeaf96855ce4",
+        "sha256_in_prefix": "d88503b1499413686f865337800ccce0a81acfaa2fabad075673eeaf96855ce4",
+        "size_in_bytes": 123273
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "96ec4dc5e38f434aa5862cb46d74923cce1445de3cd0b9d61e3e63102b163af6",
+  "size": 2701539,
+  "subdir": "linux-64",
+  "timestamp": 1694381226310,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/libglib-2.78.0-hebfc3b9_0.conda",
+  "version": "2.78.0"
+}

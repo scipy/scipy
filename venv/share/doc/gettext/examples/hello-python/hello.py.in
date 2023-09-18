@@ -1,0 +1,14 @@
+# Example for use of GNU gettext.
+# This file is in the public domain.
+#
+# Source code of the Python program.
+
+import gettext
+import os
+
+gettext.textdomain('hello-python')
+gettext.bindtextdomain('hello-python', '@localedir@')
+
+print gettext.gettext("Hello, world!")
+print gettext.gettext("This program is running as process number %(pid)d.") \
+      % { 'pid': os.getpid() }

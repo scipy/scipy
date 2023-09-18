@@ -1,0 +1,1412 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html401/loose.dtd">
+<html>
+<!-- Created on October, 9 2022 by texi2html 1.78a -->
+<!--
+Written by: Lionel Cons <Lionel.Cons@cern.ch> (original author)
+            Karl Berry  <karl@freefriends.org>
+            Olaf Bachmann <obachman@mathematik.uni-kl.de>
+            and many others.
+Maintained by: Many creative people.
+Send bugs and suggestions to <texi2html-bug@nongnu.org>
+
+-->
+<head>
+<title>GNU gettext utilities: 11. The Programmer's View</title>
+
+<meta name="description" content="GNU gettext utilities: 11. The Programmer's View">
+<meta name="keywords" content="GNU gettext utilities: 11. The Programmer's View">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="texi2html 1.78a">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+pre.display {font-family: serif}
+pre.format {font-family: serif}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: serif; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: serif; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.roman {font-family:serif; font-weight:normal;}
+span.sansserif {font-family:sans-serif; font-weight:normal;}
+ul.toc {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="gettext_10.html#SEC172" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="gettext_12.html#SEC216" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_21.html#SEC387" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+
+<hr size="2">
+<a name="Programmers"></a>
+<a name="SEC196"></a>
+<h1 class="chapter"> <a href="gettext_toc.html#TOC190">11. The Programmer's View</a> </h1>
+
+
+<p>One aim of the current message catalog implementation provided by
+GNU <code>gettext</code> was to use the system's message catalog handling, if the
+installer wishes to do so.  So we perhaps should first take a look at
+the solutions we know about.  The people in the POSIX committee did not
+manage to agree on one of the semi-official standards which we'll
+describe below.  In fact they couldn't agree on anything, so they decided
+only to include an example of an interface.  The major Unix vendors
+are split in the usage of the two most important specifications: X/Open's
+catgets vs. Uniforum's gettext interface.  We'll describe them both and
+later explain our solution of this dilemma.
+</p>
+
+
+<a name="catgets"></a>
+<a name="SEC197"></a>
+<h2 class="section"> <a href="gettext_toc.html#TOC191">11.1 About <code>catgets</code></a> </h2>
+
+<p>The <code>catgets</code> implementation is defined in the X/Open Portability
+Guide, Volume 3, XSI Supplementary Definitions, Chapter 5.  But the
+process of creating this standard seemed to be too slow for some of
+the Unix vendors so they created their implementations on preliminary
+versions of the standard.  Of course this leads again to problems while
+writing platform independent programs: even the usage of <code>catgets</code>
+does not guarantee a unique interface.
+</p>
+<p>Another, personal comment on this that only a bunch of committee members
+could have made this interface.  They never really tried to program
+using this interface.  It is a fast, memory-saving implementation, an
+user can happily live with it.  But programmers hate it (at least I and
+some others do&hellip;)
+</p>
+<p>But we must not forget one point: after all the trouble with transferring
+the rights on Unix they at last came to X/Open, the very same who
+published this specification.  This leads me to making the prediction
+that this interface will be in future Unix standards (e.g. Spec1170) and
+therefore part of all Unix implementation (implementations, which are
+<em>allowed</em> to wear this name).
+</p>
+
+
+<a name="Interface-to-catgets"></a>
+<a name="SEC198"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC192">11.1.1 The Interface</a> </h3>
+
+<p>The interface to the <code>catgets</code> implementation consists of three
+functions which correspond to those used in file access: <code>catopen</code>
+to open the catalog for using, <code>catgets</code> for accessing the message
+tables, and <code>catclose</code> for closing after work is done.  Prototypes
+for the functions and the needed definitions are in the
+<code>&lt;nl_types.h&gt;</code> header file.
+</p>
+<a name="IDX1054"></a>
+<p><code>catopen</code> is used like in this:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">nl_catd catd = catopen (&quot;catalog_name&quot;, 0);
+</pre></td></tr></table>
+
+<p>The function takes as the argument the name of the catalog.  This usual
+refers to the name of the program or the package.  The second parameter
+is not further specified in the standard.  I don't even know whether it
+is implemented consistently among various systems.  So the common advice
+is to use <code>0</code> as the value.  The return value is a handle to the
+message catalog, equivalent to handles to file returned by <code>open</code>.
+</p>
+<a name="IDX1055"></a>
+<p>This handle is of course used in the <code>catgets</code> function which can
+be used like this:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">char *translation = catgets (catd, set_no, msg_id, &quot;original string&quot;);
+</pre></td></tr></table>
+
+<p>The first parameter is this catalog descriptor.  The second parameter
+specifies the set of messages in this catalog, in which the message
+described by <code>msg_id</code> is obtained.  <code>catgets</code> therefore uses a
+three-stage addressing:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="display">catalog name &rArr; set number &rArr; message ID &rArr; translation
+</pre></td></tr></table>
+
+
+<p>The fourth argument is not used to address the translation.  It is given
+as a default value in case when one of the addressing stages fail.  One
+important thing to remember is that although the return type of catgets
+is <code>char *</code> the resulting string <em>must not</em> be changed.  It
+should better be <code>const char *</code>, but the standard is published in
+1988, one year before ANSI C.
+</p>
+<a name="IDX1056"></a>
+<p>The last of these functions is used and behaves as expected:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">catclose (catd);
+</pre></td></tr></table>
+
+<p>After this no <code>catgets</code> call using the descriptor is legal anymore.
+</p>
+
+<a name="Problems-with-catgets"></a>
+<a name="SEC199"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC193">11.1.2 Problems with the <code>catgets</code> Interface?!</a> </h3>
+
+<p>Now that this description seemed to be really easy &mdash; where are the
+problems we speak of?  In fact the interface could be used in a
+reasonable way, but constructing the message catalogs is a pain.  The
+reason for this lies in the third argument of <code>catgets</code>: the unique
+message ID.  This has to be a numeric value for all messages in a single
+set.  Perhaps you could imagine the problems keeping such a list while
+changing the source code.  Add a new message here, remove one there.  Of
+course there have been developed a lot of tools helping to organize this
+chaos but one as the other fails in one aspect or the other.  We don't
+want to say that the other approach has no problems but they are far
+more easy to manage.
+</p>
+
+<a name="gettext"></a>
+<a name="SEC200"></a>
+<h2 class="section"> <a href="gettext_toc.html#TOC194">11.2 About <code>gettext</code></a> </h2>
+
+<p>The definition of the <code>gettext</code> interface comes from a Uniforum
+proposal.  It was submitted there by Sun, who had implemented the
+<code>gettext</code> function in SunOS 4, around 1990.  Nowadays, the
+<code>gettext</code> interface is specified by the OpenI18N standard.
+</p>
+<p>The main point about this solution is that it does not follow the
+method of normal file handling (open-use-close) and that it does not
+burden the programmer with so many tasks, especially the unique key handling.
+Of course here also a unique key is needed, but this key is the message
+itself (how long or short it is).  See <a href="#SEC208">Comparing the Two Interfaces</a> for a more
+detailed comparison of the two methods.
+</p>
+<p>The following section contains a rather detailed description of the
+interface.  We make it that detailed because this is the interface
+we chose for the GNU <code>gettext</code> Library.  Programmers interested
+in using this library will be interested in this description.
+</p>
+
+
+<a name="Interface-to-gettext"></a>
+<a name="SEC201"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC195">11.2.1 The Interface</a> </h3>
+
+<p>The minimal functionality an interface must have is a) to select a
+domain the strings are coming from (a single domain for all programs is
+not reasonable because its construction and maintenance is difficult,
+perhaps impossible) and b) to access a string in a selected domain.
+</p>
+<p>This is principally the description of the <code>gettext</code> interface.  It
+has a global domain which unqualified usages reference.  Of course this
+domain is selectable by the user.
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">char *textdomain (const char *domain_name);
+</pre></td></tr></table>
+
+<p>This provides the possibility to change or query the current status of
+the current global domain of the <code>LC_MESSAGE</code> category.  The
+argument is a null-terminated string, whose characters must be legal in
+the use in filenames.  If the <var>domain_name</var> argument is <code>NULL</code>,
+the function returns the current value.  If no value has been set
+before, the name of the default domain is returned: <em>messages</em>.
+Please note that although the return value of <code>textdomain</code> is of
+type <code>char *</code> no changing is allowed.  It is also important to know
+that no checks of the availability are made.  If the name is not
+available you will see this by the fact that no translations are provided.
+</p>
+<p>To use a domain set by <code>textdomain</code> the function
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">char *gettext (const char *msgid);
+</pre></td></tr></table>
+
+<p>is to be used.  This is the simplest reasonable form one can imagine.
+The translation of the string <var>msgid</var> is returned if it is available
+in the current domain.  If it is not available, the argument itself is
+returned.  If the argument is <code>NULL</code> the result is undefined.
+</p>
+<p>One thing which should come into mind is that no explicit dependency to
+the used domain is given.  The current value of the domain is used.
+If this changes between two
+executions of the same <code>gettext</code> call in the program, both calls
+reference a different message catalog.
+</p>
+<p>For the easiest case, which is normally used in internationalized
+packages, once at the beginning of execution a call to <code>textdomain</code>
+is issued, setting the domain to a unique name, normally the package
+name.  In the following code all strings which have to be translated are
+filtered through the gettext function.  That's all, the package speaks
+your language.
+</p>
+
+<a name="Ambiguities"></a>
+<a name="SEC202"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC196">11.2.2 Solving Ambiguities</a> </h3>
+
+<p>While this single name domain works well for most applications there
+might be the need to get translations from more than one domain.  Of
+course one could switch between different domains with calls to
+<code>textdomain</code>, but this is really not convenient nor is it fast.  A
+possible situation could be one case subject to discussion during this
+writing:  all
+error messages of functions in the set of common used functions should
+go into a separate domain <code>error</code>.  By this mean we would only need
+to translate them once.
+Another case are messages from a library, as these <em>have</em> to be
+independent of the current domain set by the application.
+</p>
+<p>For this reasons there are two more functions to retrieve strings:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">char *dgettext (const char *domain_name, const char *msgid);
+char *dcgettext (const char *domain_name, const char *msgid,
+                 int category);
+</pre></td></tr></table>
+
+<p>Both take an additional argument at the first place, which corresponds
+to the argument of <code>textdomain</code>.  The third argument of
+<code>dcgettext</code> allows to use another locale category but <code>LC_MESSAGES</code>.
+But I really don't know where this can be useful.  If the
+<var>domain_name</var> is <code>NULL</code> or <var>category</var> has an value beside
+the known ones, the result is undefined.  It should also be noted that
+this function is not part of the second known implementation of this
+function family, the one found in Solaris.
+</p>
+<p>A second ambiguity can arise by the fact, that perhaps more than one
+domain has the same name.  This can be solved by specifying where the
+needed message catalog files can be found.
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">char *bindtextdomain (const char *domain_name,
+                      const char *dir_name);
+</pre></td></tr></table>
+
+<p>Calling this function binds the given domain to a file in the specified
+directory (how this file is determined follows below).  Especially a
+file in the systems default place is not favored against the specified
+file anymore (as it would be by solely using <code>textdomain</code>).  A
+<code>NULL</code> pointer for the <var>dir_name</var> parameter returns the binding
+associated with <var>domain_name</var>.  If <var>domain_name</var> itself is
+<code>NULL</code> nothing happens and a <code>NULL</code> pointer is returned.  Here
+again as for all the other functions is true that none of the return
+value must be changed!
+</p>
+<p>It is important to remember that relative path names for the
+<var>dir_name</var> parameter can be trouble.  Since the path is always
+computed relative to the current directory different results will be
+achieved when the program executes a <code>chdir</code> command.  Relative
+paths should always be avoided to avoid dependencies and
+unreliabilities.
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">wchar_t *wbindtextdomain (const char *domain_name,
+                          const wchar_t *dir_name);
+</pre></td></tr></table>
+
+<p>This function is provided only on native Windows platforms.  It is like
+<code>bindtextdomain</code>, except that the <var>dir_name</var> parameter is a
+wide string (in UTF-16 encoding, as usual on Windows).
+</p>
+
+<a name="Locating-Catalogs"></a>
+<a name="SEC203"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC197">11.2.3 Locating Message Catalog Files</a> </h3>
+
+<p>Because many different languages for many different packages have to be
+stored we need some way to add these information to file message catalog
+files.  The way usually used in Unix environments is have this encoding
+in the file name.  This is also done here.  The directory name given in
+<code>bindtextdomain</code>s second argument (or the default directory),
+followed by the name of the locale, the locale category, and the domain name
+are concatenated:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example"><var>dir_name</var>/<var>locale</var>/LC_<var>category</var>/<var>domain_name</var>.mo
+</pre></td></tr></table>
+
+<p>The default value for <var>dir_name</var> is system specific.  For the GNU
+library, and for packages adhering to its conventions, it's:
+</p><table><tr><td>&nbsp;</td><td><pre class="example">/usr/local/share/locale
+</pre></td></tr></table>
+
+<p><var>locale</var> is the name of the locale category which is designated by
+<code>LC_<var>category</var></code>.  For <code>gettext</code> and <code>dgettext</code> this
+<code>LC_<var>category</var></code> is always <code>LC_MESSAGES</code>.<a name="DOCF3" href="gettext_fot.html#FOOT3">(3)</a>
+The name of the locale category is determined through
+<code>setlocale (LC_<var>category</var>, NULL)</code>.
+<a name="DOCF4" href="gettext_fot.html#FOOT4">(4)</a>
+When using the function <code>dcgettext</code>, you can specify the locale category
+through the third argument.
+</p>
+
+<a name="Charset-conversion"></a>
+<a name="SEC204"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC198">11.2.4 How to specify the output character set <code>gettext</code> uses</a> </h3>
+
+<p><code>gettext</code> not only looks up a translation in a message catalog.  It
+also converts the translation on the fly to the desired output character
+set.  This is useful if the user is working in a different character set
+than the translator who created the message catalog, because it avoids
+distributing variants of message catalogs which differ only in the
+character set.
+</p>
+<p>The output character set is, by default, the value of <code>nl_langinfo
+(CODESET)</code>, which depends on the <code>LC_CTYPE</code> part of the current
+locale.  But programs which store strings in a locale independent way
+(e.g. UTF-8) can request that <code>gettext</code> and related functions
+return the translations in that encoding, by use of the
+<code>bind_textdomain_codeset</code> function.
+</p>
+<p>Note that the <var>msgid</var> argument to <code>gettext</code> is not subject to
+character set conversion.  Also, when <code>gettext</code> does not find a
+translation for <var>msgid</var>, it returns <var>msgid</var> unchanged &ndash;
+independently of the current output character set.  It is therefore
+recommended that all <var>msgid</var>s be US-ASCII strings.
+</p>
+<dl>
+<dt><u>Function:</u> char * <b>bind_textdomain_codeset</b><i> (const&nbsp;char&nbsp;*<var>domainname</var>, const&nbsp;char&nbsp;*<var>codeset</var>)</i>
+<a name="IDX1057"></a>
+</dt>
+<dd><p>The <code>bind_textdomain_codeset</code> function can be used to specify the
+output character set for message catalogs for domain <var>domainname</var>.
+The <var>codeset</var> argument must be a valid codeset name which can be used
+for the <code>iconv_open</code> function, or a null pointer.
+</p>
+<p>If the <var>codeset</var> parameter is the null pointer,
+<code>bind_textdomain_codeset</code> returns the currently selected codeset
+for the domain with the name <var>domainname</var>.  It returns <code>NULL</code> if
+no codeset has yet been selected.
+</p>
+<p>The <code>bind_textdomain_codeset</code> function can be used several times. 
+If used multiple times with the same <var>domainname</var> argument, the
+later call overrides the settings made by the earlier one.
+</p>
+<p>The <code>bind_textdomain_codeset</code> function returns a pointer to a
+string containing the name of the selected codeset.  The string is
+allocated internally in the function and must not be changed by the
+user.  If the system went out of core during the execution of
+<code>bind_textdomain_codeset</code>, the return value is <code>NULL</code> and the
+global variable <var>errno</var> is set accordingly.
+</p></dd></dl>
+
+
+<a name="Contexts"></a>
+<a name="SEC205"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC199">11.2.5 Using contexts for solving ambiguities</a> </h3>
+
+<p>One place where the <code>gettext</code> functions, if used normally, have big
+problems is within programs with graphical user interfaces (GUIs).  The
+problem is that many of the strings which have to be translated are very
+short.  They have to appear in pull-down menus which restricts the
+length.  But strings which are not containing entire sentences or at
+least large fragments of a sentence may appear in more than one
+situation in the program but might have different translations.  This is
+especially true for the one-word strings which are frequently used in
+GUI programs.
+</p>
+<p>As a consequence many people say that the <code>gettext</code> approach is
+wrong and instead <code>catgets</code> should be used which indeed does not
+have this problem.  But there is a very simple and powerful method to
+handle this kind of problems with the <code>gettext</code> functions.
+</p>
+<p>Contexts can be added to strings to be translated.  A context dependent
+translation lookup is when a translation for a given string is searched,
+that is limited to a given context.  The translation for the same string
+in a different context can be different.  The different translations of
+the same string in different contexts can be stored in the in the same
+MO file, and can be edited by the translator in the same PO file.
+</p>
+<p>The &lsquo;<tt>gettext.h</tt>&rsquo; include file contains the lookup macros for strings
+with contexts.  They are implemented as thin macros and inline functions
+over the functions from <code>&lt;libintl.h&gt;</code>.
+</p>
+<a name="IDX1058"></a>
+<table><tr><td>&nbsp;</td><td><pre class="example">const char *pgettext (const char *msgctxt, const char *msgid);
+</pre></td></tr></table>
+
+<p>In a call of this macro, <var>msgctxt</var> and <var>msgid</var> must be string
+literals.  The macro returns the translation of <var>msgid</var>, restricted
+to the context given by <var>msgctxt</var>.
+</p>
+<p>The <var>msgctxt</var> string is visible in the PO file to the translator.
+You should try to make it somehow canonical and never changing.  Because
+every time you change an <var>msgctxt</var>, the translator will have to review
+the translation of <var>msgid</var>.
+</p>
+<p>Finding a canonical <var>msgctxt</var> string that doesn't change over time can
+be hard.  But you shouldn't use the file name or class name containing the
+<code>pgettext</code> call &ndash; because it is a common development task to rename
+a file or a class, and it shouldn't cause translator work.  Also you shouldn't
+use a comment in the form of a complete English sentence as <var>msgctxt</var> &ndash;
+because orthography or grammar changes are often applied to such sentences,
+and again, it shouldn't force the translator to do a review.
+</p>
+<p>The &lsquo;<samp>p</samp>&rsquo; in &lsquo;<samp>pgettext</samp>&rsquo; stands for &ldquo;particular&rdquo;: <code>pgettext</code>
+fetches a particular translation of the <var>msgid</var>.
+</p>
+<a name="IDX1059"></a>
+<a name="IDX1060"></a>
+<table><tr><td>&nbsp;</td><td><pre class="example">const char *dpgettext (const char *domain_name,
+                       const char *msgctxt, const char *msgid);
+const char *dcpgettext (const char *domain_name,
+                        const char *msgctxt, const char *msgid,
+                        int category);
+</pre></td></tr></table>
+
+<p>These are generalizations of <code>pgettext</code>.  They behave similarly to
+<code>dgettext</code> and <code>dcgettext</code>, respectively.  The <var>domain_name</var>
+argument defines the translation domain.  The <var>category</var> argument
+allows to use another locale category than <code>LC_MESSAGES</code>.
+</p>
+<p>As as example consider the following fictional situation.  A GUI program
+has a menu bar with the following entries:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">+------------+------------+--------------------------------------+
+| File       | Printer    |                                      |
++------------+------------+--------------------------------------+
+| Open     | | Select   |
+| New      | | Open     |
++----------+ | Connect  |
+             +----------+
+</pre></td></tr></table>
+
+<p>To have the strings <code>File</code>, <code>Printer</code>, <code>Open</code>,
+<code>New</code>, <code>Select</code>, and <code>Connect</code> translated there has to be
+at some point in the code a call to a function of the <code>gettext</code>
+family.  But in two places the string passed into the function would be
+<code>Open</code>.  The translations might not be the same and therefore we
+are in the dilemma described above.
+</p>
+<p>What distinguishes the two places is the menu path from the menu root to
+the particular menu entries:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">Menu|File
+Menu|Printer
+Menu|File|Open
+Menu|File|New
+Menu|Printer|Select
+Menu|Printer|Open
+Menu|Printer|Connect
+</pre></td></tr></table>
+
+<p>The context is thus the menu path without its last part.  So, the calls
+look like this:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">pgettext (&quot;Menu|&quot;, &quot;File&quot;)
+pgettext (&quot;Menu|&quot;, &quot;Printer&quot;)
+pgettext (&quot;Menu|File|&quot;, &quot;Open&quot;)
+pgettext (&quot;Menu|File|&quot;, &quot;New&quot;)
+pgettext (&quot;Menu|Printer|&quot;, &quot;Select&quot;)
+pgettext (&quot;Menu|Printer|&quot;, &quot;Open&quot;)
+pgettext (&quot;Menu|Printer|&quot;, &quot;Connect&quot;)
+</pre></td></tr></table>
+
+<p>Whether or not to use the &lsquo;<samp>|</samp>&rsquo; character at the end of the context is a
+matter of style.
+</p>
+<p>For more complex cases, where the <var>msgctxt</var> or <var>msgid</var> are not
+string literals, more general macros are available:
+</p>
+<a name="IDX1061"></a>
+<a name="IDX1062"></a>
+<a name="IDX1063"></a>
+<table><tr><td>&nbsp;</td><td><pre class="example">const char *pgettext_expr (const char *msgctxt, const char *msgid);
+const char *dpgettext_expr (const char *domain_name,
+                            const char *msgctxt, const char *msgid);
+const char *dcpgettext_expr (const char *domain_name,
+                             const char *msgctxt, const char *msgid,
+                             int category);
+</pre></td></tr></table>
+
+<p>Here <var>msgctxt</var> and <var>msgid</var> can be arbitrary string-valued expressions.
+These macros are more general.  But in the case that both argument expressions
+are string literals, the macros without the &lsquo;<samp>_expr</samp>&rsquo; suffix are more
+efficient.
+</p>
+
+<a name="Plural-forms"></a>
+<a name="SEC206"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC200">11.2.6 Additional functions for plural forms</a> </h3>
+
+<p>The functions of the <code>gettext</code> family described so far (and all the
+<code>catgets</code> functions as well) have one problem in the real world
+which have been neglected completely in all existing approaches.  What
+is meant here is the handling of plural forms.
+</p>
+<p>Looking through Unix source code before the time anybody thought about
+internationalization (and, sadly, even afterwards) one can often find
+code similar to the following:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">   printf (&quot;%d file%s deleted&quot;, n, n == 1 ? &quot;&quot; : &quot;s&quot;);
+</pre></td></tr></table>
+
+<p>After the first complaints from people internationalizing the code people
+either completely avoided formulations like this or used strings like
+<code>&quot;file(s)&quot;</code>.  Both look unnatural and should be avoided.  First
+tries to solve the problem correctly looked like this:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">   if (n == 1)
+     printf (&quot;%d file deleted&quot;, n);
+   else
+     printf (&quot;%d files deleted&quot;, n);
+</pre></td></tr></table>
+
+<p>But this does not solve the problem.  It helps languages where the
+plural form of a noun is not simply constructed by adding an
+‘s’
+but that is all.  Once again people fell into the trap of believing the
+rules their language is using are universal.  But the handling of plural
+forms differs widely between the language families.  For example,
+Rafal Maszkowski <code>&lt;rzm@mat.uni.torun.pl&gt;</code> reports:
+</p>
+<blockquote><p>In Polish we use e.g. plik (file) this way:
+</p><table><tr><td>&nbsp;</td><td><pre class="example">1 plik
+2,3,4 pliki
+5-21 pliko'w
+22-24 pliki
+25-31 pliko'w
+</pre></td></tr></table>
+<p>and so on (o' means 8859-2 oacute which should be rather okreska,
+similar to aogonek).
+</p></blockquote>
+
+<p>There are two things which can differ between languages (and even inside
+language families);
+</p>
+<ul>
+<li>
+The form how plural forms are built differs.  This is a problem with
+languages which have many irregularities.  German, for instance, is a
+drastic case.  Though English and German are part of the same language
+family (Germanic), the almost regular forming of plural noun forms
+(appending an
+‘s’)
+is hardly found in German.
+
+</li><li>
+The number of plural forms differ.  This is somewhat surprising for
+those who only have experiences with Romanic and Germanic languages
+since here the number is the same (there are two).
+
+<p>But other language families have only one form or many forms.  More
+information on this in an extra section.
+</p></li></ul>
+
+<p>The consequence of this is that application writers should not try to
+solve the problem in their code.  This would be localization since it is
+only usable for certain, hardcoded language environments.  Instead the
+extended <code>gettext</code> interface should be used.
+</p>
+<p>These extra functions are taking instead of the one key string two
+strings and a numerical argument.  The idea behind this is that using
+the numerical argument and the first string as a key, the implementation
+can select using rules specified by the translator the right plural
+form.  The two string arguments then will be used to provide a return
+value in case no message catalog is found (similar to the normal
+<code>gettext</code> behavior).  In this case the rules for Germanic language
+is used and it is assumed that the first string argument is the singular
+form, the second the plural form.
+</p>
+<p>This has the consequence that programs without language catalogs can
+display the correct strings only if the program itself is written using
+a Germanic language.  This is a limitation but since the GNU C library
+(as well as the GNU <code>gettext</code> package) are written as part of the
+GNU package and the coding standards for the GNU project require program
+being written in English, this solution nevertheless fulfills its
+purpose.
+</p>
+<dl>
+<dt><u>Function:</u> char * <b>ngettext</b><i> (const&nbsp;char&nbsp;*<var>msgid1</var>, const&nbsp;char&nbsp;*<var>msgid2</var>, unsigned&nbsp;long&nbsp;int&nbsp;<var>n</var>)</i>
+<a name="IDX1064"></a>
+</dt>
+<dd><p>The <code>ngettext</code> function is similar to the <code>gettext</code> function
+as it finds the message catalogs in the same way.  But it takes two
+extra arguments.  The <var>msgid1</var> parameter must contain the singular
+form of the string to be converted.  It is also used as the key for the
+search in the catalog.  The <var>msgid2</var> parameter is the plural form.
+The parameter <var>n</var> is used to determine the plural form.  If no
+message catalog is found <var>msgid1</var> is returned if <code>n == 1</code>,
+otherwise <code>msgid2</code>.
+</p>
+<p>An example for the use of this function is:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">printf (ngettext (&quot;%d file removed&quot;, &quot;%d files removed&quot;, n), n);
+</pre></td></tr></table>
+
+<p>Please note that the numeric value <var>n</var> has to be passed to the
+<code>printf</code> function as well.  It is not sufficient to pass it only to
+<code>ngettext</code>.
+</p>
+<p>In the English singular case, the number &ndash; always 1 &ndash; can be replaced with
+&quot;one&quot;:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">printf (ngettext (&quot;One file removed&quot;, &quot;%d files removed&quot;, n), n);
+</pre></td></tr></table>
+
+<p>This works because the &lsquo;<samp>printf</samp>&rsquo; function discards excess arguments that
+are not consumed by the format string.
+</p>
+<p>If this function is meant to yield a format string that takes two or more
+arguments, you can not use it like this:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">printf (ngettext (&quot;%d file removed from directory %s&quot;,
+                  &quot;%d files removed from directory %s&quot;,
+                  n),
+        n, dir);
+</pre></td></tr></table>
+
+<p>because in many languages the translators want to replace the &lsquo;<samp>%d</samp>&rsquo;
+with an explicit word in the singular case, just like &ldquo;one&rdquo; in English,
+and C format strings cannot consume the second argument but skip the first
+argument.  Instead, you have to reorder the arguments so that &lsquo;<samp>n</samp>&rsquo;
+comes last:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">printf (ngettext (&quot;%2$d file removed from directory %1$s&quot;,
+                  &quot;%2$d files removed from directory %1$s&quot;,
+                  n),
+        dir, n);
+</pre></td></tr></table>
+
+<p>See <a href="gettext_15.html#SEC266">C Format Strings</a> for details about this argument reordering syntax.
+</p>
+<p>When you know that the value of <code>n</code> is within a given range, you can
+specify it as a comment directed to the <code>xgettext</code> tool.  This
+information may help translators to use more adequate translations.  Like
+this:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">if (days &gt; 7 &amp;&amp; days &lt; 14)
+  /* xgettext: range: 1..6 */
+  printf (ngettext (&quot;one week and one day&quot;, &quot;one week and %d days&quot;,
+                    days - 7),
+          days - 7);
+</pre></td></tr></table>
+
+<p>It is also possible to use this function when the strings don't contain a
+cardinal number:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">puts (ngettext (&quot;Delete the selected file?&quot;,
+                &quot;Delete the selected files?&quot;,
+                n));
+</pre></td></tr></table>
+
+<p>In this case the number <var>n</var> is only used to choose the plural form.
+</p></dd></dl>
+
+<dl>
+<dt><u>Function:</u> char * <b>dngettext</b><i> (const&nbsp;char&nbsp;*<var>domain</var>, const&nbsp;char&nbsp;*<var>msgid1</var>, const&nbsp;char&nbsp;*<var>msgid2</var>, unsigned&nbsp;long&nbsp;int&nbsp;<var>n</var>)</i>
+<a name="IDX1065"></a>
+</dt>
+<dd><p>The <code>dngettext</code> is similar to the <code>dgettext</code> function in the
+way the message catalog is selected.  The difference is that it takes
+two extra parameter to provide the correct plural form.  These two
+parameters are handled in the same way <code>ngettext</code> handles them.
+</p></dd></dl>
+
+<dl>
+<dt><u>Function:</u> char * <b>dcngettext</b><i> (const&nbsp;char&nbsp;*<var>domain</var>, const&nbsp;char&nbsp;*<var>msgid1</var>, const&nbsp;char&nbsp;*<var>msgid2</var>, unsigned&nbsp;long&nbsp;int&nbsp;<var>n</var>, int&nbsp;<var>category</var>)</i>
+<a name="IDX1066"></a>
+</dt>
+<dd><p>The <code>dcngettext</code> is similar to the <code>dcgettext</code> function in the
+way the message catalog is selected.  The difference is that it takes
+two extra parameter to provide the correct plural form.  These two
+parameters are handled in the same way <code>ngettext</code> handles them.
+</p></dd></dl>
+
+<p>Now, how do these functions solve the problem of the plural forms?
+Without the input of linguists (which was not available) it was not
+possible to determine whether there are only a few different forms in
+which plural forms are formed or whether the number can increase with
+every new supported language.
+</p>
+<p>Therefore the solution implemented is to allow the translator to specify
+the rules of how to select the plural form.  Since the formula varies
+with every language this is the only viable solution except for
+hardcoding the information in the code (which still would require the
+possibility of extensions to not prevent the use of new languages).
+</p>
+<a name="IDX1067"></a>
+<a name="IDX1068"></a>
+<a name="IDX1069"></a>
+<p>The information about the plural form selection has to be stored in the
+header entry of the PO file (the one with the empty <code>msgid</code> string).
+The plural form information looks like this:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">Plural-Forms: nplurals=2; plural=n == 1 ? 0 : 1;
+</pre></td></tr></table>
+
+<p>The <code>nplurals</code> value must be a decimal number which specifies how
+many different plural forms exist for this language.  The string
+following <code>plural</code> is an expression which is using the C language
+syntax.  Exceptions are that no negative numbers are allowed, numbers
+must be decimal, and the only variable allowed is <code>n</code>.  Spaces are
+allowed in the expression, but backslash-newlines are not; in the
+examples below the backslash-newlines are present for formatting purposes
+only.  This expression will be evaluated whenever one of the functions
+<code>ngettext</code>, <code>dngettext</code>, or <code>dcngettext</code> is called.  The
+numeric value passed to these functions is then substituted for all uses
+of the variable <code>n</code> in the expression.  The resulting value then
+must be greater or equal to zero and smaller than the value given as the
+value of <code>nplurals</code>.
+</p>
+<a name="IDX1070"></a>
+<p>The following rules are known at this point.  The language with families
+are listed.  But this does not necessarily mean the information can be
+generalized for the whole family (as can be easily seen in the table
+below).<a name="DOCF5" href="gettext_fot.html#FOOT5">(5)</a>
+</p>
+<dl compact="compact">
+<dt> Only one form:</dt>
+<dd><p>Some languages only require one single form.  There is no distinction
+between the singular and plural form.  An appropriate header entry
+would look like this:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">Plural-Forms: nplurals=1; plural=0;
+</pre></td></tr></table>
+
+<p>Languages with this property include:
+</p>
+<dl compact="compact">
+<dt> Asian family</dt>
+<dd><p>Japanese, Vietnamese, Korean </p></dd>
+<dt> Tai-Kadai family</dt>
+<dd><p>Thai </p></dd>
+</dl>
+
+</dd>
+<dt> Two forms, singular used for one only</dt>
+<dd><p>This is the form used in most existing programs since it is what English
+is using.  A header entry would look like this:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">Plural-Forms: nplurals=2; plural=n != 1;
+</pre></td></tr></table>
+
+<p>(Note: this uses the feature of C expressions that boolean expressions
+have to value zero or one.)
+</p>
+<p>Languages with this property include:
+</p>
+<dl compact="compact">
+<dt> Germanic family</dt>
+<dd><p>English, German, Dutch, Swedish, Danish, Norwegian, Faroese </p></dd>
+<dt> Romanic family</dt>
+<dd><p>Spanish, Portuguese, Italian </p></dd>
+<dt> Latin/Greek family</dt>
+<dd><p>Greek </p></dd>
+<dt> Slavic family</dt>
+<dd><p>Bulgarian </p></dd>
+<dt> Finno-Ugric family</dt>
+<dd><p>Finnish, Estonian </p></dd>
+<dt> Semitic family</dt>
+<dd><p>Hebrew </p></dd>
+<dt> Austronesian family</dt>
+<dd><p>Bahasa Indonesian </p></dd>
+<dt> Artificial</dt>
+<dd><p>Esperanto </p></dd>
+</dl>
+
+<p>Other languages using the same header entry are:
+</p>
+<dl compact="compact">
+<dt> Finno-Ugric family</dt>
+<dd><p>Hungarian </p></dd>
+<dt> Turkic/Altaic family</dt>
+<dd><p>Turkish </p></dd>
+</dl>
+
+<p>Hungarian does not appear to have a plural if you look at sentences involving
+cardinal numbers.  For example, &ldquo;1 apple&rdquo; is &ldquo;1 alma&rdquo;, and &ldquo;123 apples&rdquo; is
+&ldquo;123 alma&rdquo;.  But when the number is not explicit, the distinction between
+singular and plural exists: &ldquo;the apple&rdquo; is &ldquo;az alma&rdquo;, and &ldquo;the apples&rdquo; is
+&ldquo;az alm&aacute;k&rdquo;.  Since <code>ngettext</code> has to support both types of sentences,
+it is classified here, under &ldquo;two forms&rdquo;.
+</p>
+<p>The same holds for Turkish: &ldquo;1 apple&rdquo; is &ldquo;1 elma&rdquo;, and &ldquo;123 apples&rdquo; is
+&ldquo;123 elma&rdquo;.  But when the number is omitted, the distinction between singular
+and plural exists: &ldquo;the apple&rdquo; is &ldquo;elma&rdquo;, and &ldquo;the apples&rdquo; is
+&ldquo;elmalar&rdquo;.
+</p>
+</dd>
+<dt> Two forms, singular used for zero and one</dt>
+<dd><p>Exceptional case in the language family.  The header entry would be:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">Plural-Forms: nplurals=2; plural=n&gt;1;
+</pre></td></tr></table>
+
+<p>Languages with this property include:
+</p>
+<dl compact="compact">
+<dt> Romanic family</dt>
+<dd><p>Brazilian Portuguese, French </p></dd>
+</dl>
+
+</dd>
+<dt> Three forms, special case for zero</dt>
+<dd><p>The header entry would be:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">Plural-Forms: nplurals=3; plural=n%10==1 &amp;&amp; n%100!=11 ? 0 : n != 0 ? 1 : 2;
+</pre></td></tr></table>
+
+<p>Languages with this property include:
+</p>
+<dl compact="compact">
+<dt> Baltic family</dt>
+<dd><p>Latvian </p></dd>
+</dl>
+
+</dd>
+<dt> Three forms, special cases for one and two</dt>
+<dd><p>The header entry would be:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">Plural-Forms: nplurals=3; plural=n==1 ? 0 : n==2 ? 1 : 2;
+</pre></td></tr></table>
+
+<p>Languages with this property include:
+</p>
+<dl compact="compact">
+<dt> Celtic</dt>
+<dd><p>Gaeilge (Irish) </p></dd>
+</dl>
+
+</dd>
+<dt> Three forms, special case for numbers ending in 00 or [2-9][0-9]</dt>
+<dd><p>The header entry would be:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">Plural-Forms: nplurals=3; \
+    plural=n==1 ? 0 : (n==0 || (n%100 &gt; 0 &amp;&amp; n%100 &lt; 20)) ? 1 : 2;
+</pre></td></tr></table>
+
+<p>Languages with this property include:
+</p>
+<dl compact="compact">
+<dt> Romanic family</dt>
+<dd><p>Romanian </p></dd>
+</dl>
+
+</dd>
+<dt> Three forms, special case for numbers ending in 1[2-9]</dt>
+<dd><p>The header entry would look like this:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">Plural-Forms: nplurals=3; \
+    plural=n%10==1 &amp;&amp; n%100!=11 ? 0 : \
+           n%10&gt;=2 &amp;&amp; (n%100&lt;10 || n%100&gt;=20) ? 1 : 2;
+</pre></td></tr></table>
+
+<p>Languages with this property include:
+</p>
+<dl compact="compact">
+<dt> Baltic family</dt>
+<dd><p>Lithuanian </p></dd>
+</dl>
+
+</dd>
+<dt> Three forms, special cases for numbers ending in 1 and 2, 3, 4, except those ending in 1[1-4]</dt>
+<dd><p>The header entry would look like this:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">Plural-Forms: nplurals=3; \
+    plural=n%10==1 &amp;&amp; n%100!=11 ? 0 : \
+           n%10&gt;=2 &amp;&amp; n%10&lt;=4 &amp;&amp; (n%100&lt;10 || n%100&gt;=20) ? 1 : 2;
+</pre></td></tr></table>
+
+<p>Languages with this property include:
+</p>
+<dl compact="compact">
+<dt> Slavic family</dt>
+<dd><p>Russian, Ukrainian, Belarusian, Serbian, Croatian </p></dd>
+</dl>
+
+</dd>
+<dt> Three forms, special cases for 1 and 2, 3, 4</dt>
+<dd><p>The header entry would look like this:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">Plural-Forms: nplurals=3; \
+    plural=(n==1) ? 0 : (n&gt;=2 &amp;&amp; n&lt;=4) ? 1 : 2;
+</pre></td></tr></table>
+
+<p>Languages with this property include:
+</p>
+<dl compact="compact">
+<dt> Slavic family</dt>
+<dd><p>Czech, Slovak </p></dd>
+</dl>
+
+</dd>
+<dt> Three forms, special case for one and some numbers ending in 2, 3, or 4</dt>
+<dd><p>The header entry would look like this:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">Plural-Forms: nplurals=3; \
+    plural=n==1 ? 0 : \
+           n%10&gt;=2 &amp;&amp; n%10&lt;=4 &amp;&amp; (n%100&lt;10 || n%100&gt;=20) ? 1 : 2;
+</pre></td></tr></table>
+
+<p>Languages with this property include:
+</p>
+<dl compact="compact">
+<dt> Slavic family</dt>
+<dd><p>Polish </p></dd>
+</dl>
+
+</dd>
+<dt> Four forms, special case for one and all numbers ending in 02, 03, or 04</dt>
+<dd><p>The header entry would look like this:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">Plural-Forms: nplurals=4; \
+    plural=n%100==1 ? 0 : n%100==2 ? 1 : n%100==3 || n%100==4 ? 2 : 3;
+</pre></td></tr></table>
+
+<p>Languages with this property include:
+</p>
+<dl compact="compact">
+<dt> Slavic family</dt>
+<dd><p>Slovenian </p></dd>
+</dl>
+
+</dd>
+<dt> Six forms, special cases for one, two, all numbers ending in 02, 03, &hellip; 10, all numbers ending in 11 &hellip; 99, and others</dt>
+<dd><p>The header entry would look like this:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">Plural-Forms: nplurals=6; \
+    plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100&gt;=3 &amp;&amp; n%100&lt;=10 ? 3 \
+    : n%100&gt;=11 ? 4 : 5;
+</pre></td></tr></table>
+
+<p>Languages with this property include:
+</p>
+<dl compact="compact">
+<dt> Afroasiatic family</dt>
+<dd><p>Arabic </p></dd>
+</dl>
+</dd>
+</dl>
+
+<p>You might now ask, <code>ngettext</code> handles only numbers <var>n</var> of type
+&lsquo;<samp>unsigned long</samp>&rsquo;.  What about larger integer types?  What about negative
+numbers?  What about floating-point numbers?
+</p>
+<p>About larger integer types, such as &lsquo;<samp>uintmax_t</samp>&rsquo; or 
+&lsquo;<samp>unsigned long long</samp>&rsquo;: they can be handled by reducing the value to a
+range that fits in an &lsquo;<samp>unsigned long</samp>&rsquo;.  Simply casting the value to
+&lsquo;<samp>unsigned long</samp>&rsquo; would not do the right thing, since it would treat
+<code>ULONG_MAX + 1</code> like zero, <code>ULONG_MAX + 2</code> like singular, and
+the like.  Here you can exploit the fact that all mentioned plural form
+formulas eventually become periodic, with a period that is a divisor of 100
+(or 1000 or 1000000).  So, when you reduce a large value to another one in
+the range [1000000, 1999999] that ends in the same 6 decimal digits, you
+can assume that it will lead to the same plural form selection.  This code
+does this:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">#include &lt;inttypes.h&gt;
+uintmax_t nbytes = ...;
+printf (ngettext (&quot;The file has %&quot;PRIuMAX&quot; byte.&quot;,
+                  &quot;The file has %&quot;PRIuMAX&quot; bytes.&quot;,
+                  (nbytes &gt; ULONG_MAX
+                   ? (nbytes % 1000000) + 1000000
+                   : nbytes)),
+        nbytes);
+</pre></td></tr></table>
+
+<p>Negative and floating-point values usually represent physical entities for
+which singular and plural don't clearly apply.  In such cases, there is no
+need to use <code>ngettext</code>; a simple <code>gettext</code> call with a form suitable
+for all values will do.  For example:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">printf (gettext (&quot;Time elapsed: %.3f seconds&quot;),
+        num_milliseconds * 0.001);
+</pre></td></tr></table>
+
+<p>Even if <var>num_milliseconds</var> happens to be a multiple of 1000, the output
+</p><table><tr><td>&nbsp;</td><td><pre class="smallexample">Time elapsed: 1.000 seconds
+</pre></td></tr></table>
+<p>is acceptable in English, and similarly for other languages.
+</p>
+<p>The translators' perspective regarding plural forms is explained in
+<a href="gettext_12.html#SEC227">Translating plural forms</a>.
+</p>
+
+<a name="Optimized-gettext"></a>
+<a name="SEC207"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC201">11.2.7 Optimization of the *gettext functions</a> </h3>
+
+<p>At this point of the discussion we should talk about an advantage of the
+GNU <code>gettext</code> implementation.  Some readers might have pointed out
+that an internationalized program might have a poor performance if some
+string has to be translated in an inner loop.  While this is unavoidable
+when the string varies from one run of the loop to the other it is
+simply a waste of time when the string is always the same.  Take the
+following example:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">{
+  while (&hellip;)
+    {
+      puts (gettext (&quot;Hello world&quot;));
+    }
+}
+</pre></td></tr></table>
+
+<p>When the locale selection does not change between two runs the resulting
+string is always the same.  One way to use this is:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">{
+  str = gettext (&quot;Hello world&quot;);
+  while (&hellip;)
+    {
+      puts (str);
+    }
+}
+</pre></td></tr></table>
+
+<p>But this solution is not usable in all situation (e.g. when the locale
+selection changes) nor does it lead to legible code.
+</p>
+<p>For this reason, GNU <code>gettext</code> caches previous translation results.
+When the same translation is requested twice, with no new message
+catalogs being loaded in between, <code>gettext</code> will, the second time,
+find the result through a single cache lookup.
+</p>
+
+<a name="Comparison"></a>
+<a name="SEC208"></a>
+<h2 class="section"> <a href="gettext_toc.html#TOC202">11.3 Comparing the Two Interfaces</a> </h2>
+
+
+<p>The following discussion is perhaps a little bit colored.  As said
+above we implemented GNU <code>gettext</code> following the Uniforum
+proposal and this surely has its reasons.  But it should show how we
+came to this decision.
+</p>
+<p>First we take a look at the developing process.  When we write an
+application using NLS provided by <code>gettext</code> we proceed as always.
+Only when we come to a string which might be seen by the users and thus
+has to be translated we use <code>gettext(&quot;&hellip;&quot;)</code> instead of
+<code>&quot;&hellip;&quot;</code>.  At the beginning of each source file (or in a central
+header file) we define
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">#define gettext(String) (String)
+</pre></td></tr></table>
+
+<p>Even this definition can be avoided when the system supports the
+<code>gettext</code> function in its C library.  When we compile this code the
+result is the same as if no NLS code is used.  When  you take a look at
+the GNU <code>gettext</code> code you will see that we use <code>_(&quot;&hellip;&quot;)</code>
+instead of <code>gettext(&quot;&hellip;&quot;)</code>.  This reduces the number of
+additional characters per translatable string to <em>3</em> (in words:
+three).
+</p>
+<p>When now a production version of the program is needed we simply replace
+the definition
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">#define _(String) (String)
+</pre></td></tr></table>
+
+<p>by
+</p>
+<a name="IDX1071"></a>
+<table><tr><td>&nbsp;</td><td><pre class="example">#include &lt;libintl.h&gt;
+#define _(String) gettext (String)
+</pre></td></tr></table>
+
+<p>Additionally we run the program &lsquo;<tt>xgettext</tt>&rsquo; on all source code file
+which contain translatable strings and that's it: we have a running
+program which does not depend on translations to be available, but which
+can use any that becomes available.
+</p>
+<a name="IDX1072"></a>
+<p>The same procedure can be done for the <code>gettext_noop</code> invocations
+(see section <a href="gettext_4.html#SEC30">Special Cases of Translatable Strings</a>).  One usually defines <code>gettext_noop</code> as a
+no-op macro.  So you should consider the following code for your project:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">#define gettext_noop(String) String
+#define N_(String) gettext_noop (String)
+</pre></td></tr></table>
+
+<p><code>N_</code> is a short form similar to <code>_</code>.  The &lsquo;<tt>Makefile</tt>&rsquo; in
+the &lsquo;<tt>po/</tt>&rsquo; directory of GNU <code>gettext</code> knows by default both of the
+mentioned short forms so you are invited to follow this proposal for
+your own ease.
+</p>
+<p>Now to <code>catgets</code>.  The main problem is the work for the
+programmer.  Every time he comes to a translatable string he has to
+define a number (or a symbolic constant) which has also be defined in
+the message catalog file.  He also has to take care for duplicate
+entries, duplicate message IDs etc.  If he wants to have the same
+quality in the message catalog as the GNU <code>gettext</code> program
+provides he also has to put the descriptive comments for the strings and
+the location in all source code files in the message catalog.  This is
+nearly a Mission: Impossible.
+</p>
+<p>But there are also some points people might call advantages speaking for
+<code>catgets</code>.  If you have a single word in a string and this string
+is used in different contexts it is likely that in one or the other
+language the word has different translations.  Example:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">printf (&quot;%s: %d&quot;, gettext (&quot;number&quot;), number_of_errors)
+
+printf (&quot;you should see %d %s&quot;, number_count,
+        number_count == 1 ? gettext (&quot;number&quot;) : gettext (&quot;numbers&quot;))
+</pre></td></tr></table>
+
+<p>Here we have to translate two times the string <code>&quot;number&quot;</code>.  Even
+if you do not speak a language beside English it might be possible to
+recognize that the two words have a different meaning.  In German the
+first appearance has to be translated to <code>&quot;Anzahl&quot;</code> and the second
+to <code>&quot;Zahl&quot;</code>.
+</p>
+<p>Now you can say that this example is really esoteric.  And you are
+right!  This is exactly how we felt about this problem and decide that
+it does not weight that much.  The solution for the above problem could
+be very easy:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">printf (&quot;%s %d&quot;, gettext (&quot;number:&quot;), number_of_errors)
+
+printf (number_count == 1 ? gettext (&quot;you should see %d number&quot;)
+                          : gettext (&quot;you should see %d numbers&quot;),
+        number_count)
+</pre></td></tr></table>
+
+<p>We believe that we can solve all conflicts with this method.  If it is
+difficult one can also consider changing one of the conflicting string a
+little bit.  But it is not impossible to overcome.
+</p>
+<p><code>catgets</code> allows same original entry to have different translations,
+but <code>gettext</code> has another, scalable approach for solving ambiguities
+of this kind: See section <a href="#SEC202">Solving Ambiguities</a>.
+</p>
+
+<a name="Using-libintl_002ea"></a>
+<a name="SEC209"></a>
+<h2 class="section"> <a href="gettext_toc.html#TOC203">11.4 Using libintl.a in own programs</a> </h2>
+
+<p>Starting with version 0.9.4 the library <code>libintl.h</code> should be
+self-contained.  I.e., you can use it in your own programs without
+providing additional functions.  The &lsquo;<tt>Makefile</tt>&rsquo; will put the header
+and the library in directories selected using the <code>$(prefix)</code>.
+</p>
+
+<a name="gettext-grok"></a>
+<a name="SEC210"></a>
+<h2 class="section"> <a href="gettext_toc.html#TOC204">11.5 Being a <code>gettext</code> grok</a> </h2>
+
+<p><strong> NOTE: </strong> This documentation section is outdated and needs to be
+revised.
+</p>
+<p>To fully exploit the functionality of the GNU <code>gettext</code> library it
+is surely helpful to read the source code.  But for those who don't want
+to spend that much time in reading the (sometimes complicated) code here
+is a list comments:
+</p>
+<ul>
+<li> Changing the language at runtime
+<a name="IDX1073"></a>
+
+<p>For interactive programs it might be useful to offer a selection of the
+used language at runtime.  To understand how to do this one need to know
+how the used language is determined while executing the <code>gettext</code>
+function.  The method which is presented here only works correctly
+with the GNU implementation of the <code>gettext</code> functions.
+</p>
+<p>In the function <code>dcgettext</code> at every call the current setting of
+the highest priority environment variable is determined and used.
+Highest priority means here the following list with decreasing
+priority:
+</p>
+<ol>
+<li><a name="IDX1074"></a>
+</li><li> <code>LANGUAGE</code>
+<a name="IDX1075"></a>
+</li><li> <code>LC_ALL</code>
+<a name="IDX1076"></a>
+<a name="IDX1077"></a>
+<a name="IDX1078"></a>
+<a name="IDX1079"></a>
+<a name="IDX1080"></a>
+<a name="IDX1081"></a>
+</li><li> <code>LC_xxx</code>, according to selected locale category
+<a name="IDX1082"></a>
+</li><li> <code>LANG</code>
+</li></ol>
+
+<p>Afterwards the path is constructed using the found value and the
+translation file is loaded if available.
+</p>
+<p>What happens now when the value for, say, <code>LANGUAGE</code> changes?  According
+to the process explained above the new value of this variable is found
+as soon as the <code>dcgettext</code> function is called.  But this also means
+the (perhaps) different message catalog file is loaded.  In other
+words: the used language is changed.
+</p>
+<p>But there is one little hook.  The code for gcc-2.7.0 and up provides
+some optimization.  This optimization normally prevents the calling of
+the <code>dcgettext</code> function as long as no new catalog is loaded.  But
+if <code>dcgettext</code> is not called the program also cannot find the
+<code>LANGUAGE</code> variable be changed (see section <a href="#SEC207">Optimization of the *gettext functions</a>).  A
+solution for this is very easy.  Include the following code in the
+language switching function.
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">  /* Change language.  */
+  setenv (&quot;LANGUAGE&quot;, &quot;fr&quot;, 1);
+
+  /* Make change known.  */
+  {
+    extern int  _nl_msg_cat_cntr;
+    ++_nl_msg_cat_cntr;
+  }
+</pre></td></tr></table>
+
+<a name="IDX1083"></a>
+<p>The variable <code>_nl_msg_cat_cntr</code> is defined in &lsquo;<tt>loadmsgcat.c</tt>&rsquo;.
+You don't need to know what this is for.  But it can be used to detect
+whether a <code>gettext</code> implementation is GNU gettext and not non-GNU
+system's native gettext implementation.
+</p>
+</li></ul>
+
+
+<a name="Temp-Programmers"></a>
+<a name="SEC211"></a>
+<h2 class="section"> <a href="gettext_toc.html#TOC205">11.6 Temporary Notes for the Programmers Chapter</a> </h2>
+
+<p><strong> NOTE: </strong> This documentation section is outdated and needs to be
+revised.
+</p>
+
+
+<a name="Temp-Implementations"></a>
+<a name="SEC212"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC206">11.6.1 Temporary - Two Possible Implementations</a> </h3>
+
+<p>There are two competing methods for language independent messages:
+the X/Open <code>catgets</code> method, and the Uniforum <code>gettext</code>
+method.  The <code>catgets</code> method indexes messages by integers; the
+<code>gettext</code> method indexes them by their English translations.
+The <code>catgets</code> method has been around longer and is supported
+by more vendors.  The <code>gettext</code> method is supported by Sun,
+and it has been heard that the COSE multi-vendor initiative is
+supporting it.  Neither method is a POSIX standard; the POSIX.1
+committee had a lot of disagreement in this area.
+</p>
+<p>Neither one is in the POSIX standard.  There was much disagreement
+in the POSIX.1 committee about using the <code>gettext</code> routines
+vs. <code>catgets</code> (XPG).  In the end the committee couldn't
+agree on anything, so no messaging system was included as part
+of the standard.  I believe the informative annex of the standard
+includes the XPG3 messaging interfaces, &ldquo;&hellip;as an example of
+a messaging system that has been implemented&hellip;&rdquo;
+</p>
+<p>They were very careful not to say anywhere that you should use one
+set of interfaces over the other.  For more on this topic please
+see the Programming for Internationalization FAQ.
+</p>
+
+<a name="Temp-catgets"></a>
+<a name="SEC213"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC207">11.6.2 Temporary - About <code>catgets</code></a> </h3>
+
+<p>There have been a few discussions of late on the use of
+<code>catgets</code> as a base.  I think it important to present both
+sides of the argument and hence am opting to play devil's advocate
+for a little bit.
+</p>
+<p>I'll not deny the fact that <code>catgets</code> could have been designed
+a lot better.  It currently has quite a number of limitations and
+these have already been pointed out.
+</p>
+<p>However there is a great deal to be said for consistency and
+standardization.  A common recurring problem when writing Unix
+software is the myriad portability problems across Unix platforms.
+It seems as if every Unix vendor had a look at the operating system
+and found parts they could improve upon.  Undoubtedly, these
+modifications are probably innovative and solve real problems.
+However, software developers have a hard time keeping up with all
+these changes across so many platforms.
+</p>
+<p>And this has prompted the Unix vendors to begin to standardize their
+systems.  Hence the impetus for Spec1170.  Every major Unix vendor
+has committed to supporting this standard and every Unix software
+developer waits with glee the day they can write software to this
+standard and simply recompile (without having to use autoconf)
+across different platforms.
+</p>
+<p>As I understand it, Spec1170 is roughly based upon version 4 of the
+X/Open Portability Guidelines (XPG4).  Because <code>catgets</code> and
+friends are defined in XPG4, I'm led to believe that <code>catgets</code>
+is a part of Spec1170 and hence will become a standardized component
+of all Unix systems.
+</p>
+
+<a name="Temp-WSI"></a>
+<a name="SEC214"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC208">11.6.3 Temporary - Why a single implementation</a> </h3>
+
+<p>Now it seems kind of wasteful to me to have two different systems
+installed for accessing message catalogs.  If we do want to remedy
+<code>catgets</code> deficiencies why don't we try to expand <code>catgets</code>
+(in a compatible manner) rather than implement an entirely new system.
+Otherwise, we'll end up with two message catalog access systems installed
+with an operating system - one set of routines for packages using GNU
+<code>gettext</code> for their internationalization, and another set of routines
+(catgets) for all other software.  Bloated?
+</p>
+<p>Supposing another catalog access system is implemented.  Which do
+we recommend?  At least for Linux, we need to attract as many
+software developers as possible.  Hence we need to make it as easy
+for them to port their software as possible.  Which means supporting
+<code>catgets</code>.  We will be implementing the <code>libintl</code> code
+within our <code>libc</code>, but does this mean we also have to incorporate
+another message catalog access scheme within our <code>libc</code> as well?
+And what about people who are going to be using the <code>libintl</code>
++ non-<code>catgets</code> routines.  When they port their software to
+other platforms, they're now going to have to include the front-end
+(<code>libintl</code>) code plus the back-end code (the non-<code>catgets</code>
+access routines) with their software instead of just including the
+<code>libintl</code> code with their software.
+</p>
+<p>Message catalog support is however only the tip of the iceberg.
+What about the data for the other locale categories?  They also have
+a number of deficiencies.  Are we going to abandon them as well and
+develop another duplicate set of routines (should <code>libintl</code>
+expand beyond message catalog support)?
+</p>
+<p>Like many parts of Unix that can be improved upon, we're stuck with balancing
+compatibility with the past with useful improvements and innovations for
+the future.
+</p>
+
+<a name="Temp-Notes"></a>
+<a name="SEC215"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC209">11.6.4 Temporary - Notes</a> </h3>
+
+<p>X/Open agreed very late on the standard form so that many
+implementations differ from the final form.  Both of my system (old
+Linux catgets and Ultrix-4) have a strange variation.
+</p>
+<p>OK.  After incorporating the last changes I have to spend some time on
+making the GNU/Linux <code>libc</code> <code>gettext</code> functions.  So in future
+Solaris is not the only system having <code>gettext</code>.
+</p>
+
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC196" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="gettext_12.html#SEC216" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_21.html#SEC387" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<p>
+ <font size="-1">
+  This document was generated by <em>Bruno Haible</em> on <em>October, 9 2022</em> using <a href="https://www.nongnu.org/texi2html/"><em>texi2html 1.78a</em></a>.
+ </font>
+ <br>
+
+</p>
+</body>
+</html>

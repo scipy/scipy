@@ -1,0 +1,148 @@
+{
+  "build": "h77eed37_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/noarch",
+  "constrains": [],
+  "depends": [],
+  "extracted_package_dir": "/opt/conda/pkgs/font-ttf-source-code-pro-2.038-h77eed37_0",
+  "features": "",
+  "files": [
+    "fonts/SourceCodePro-Black.ttf",
+    "fonts/SourceCodePro-BlackIt.ttf",
+    "fonts/SourceCodePro-Bold.ttf",
+    "fonts/SourceCodePro-BoldIt.ttf",
+    "fonts/SourceCodePro-ExtraLight.ttf",
+    "fonts/SourceCodePro-ExtraLightIt.ttf",
+    "fonts/SourceCodePro-It.ttf",
+    "fonts/SourceCodePro-Light.ttf",
+    "fonts/SourceCodePro-LightIt.ttf",
+    "fonts/SourceCodePro-Medium.ttf",
+    "fonts/SourceCodePro-MediumIt.ttf",
+    "fonts/SourceCodePro-Regular.ttf",
+    "fonts/SourceCodePro-Semibold.ttf",
+    "fonts/SourceCodePro-SemiboldIt.ttf"
+  ],
+  "fn": "font-ttf-source-code-pro-2.038-h77eed37_0.tar.bz2",
+  "license": "OFL-1.1",
+  "license_family": "Other",
+  "link": {
+    "source": "/opt/conda/pkgs/font-ttf-source-code-pro-2.038-h77eed37_0",
+    "type": 1
+  },
+  "md5": "4d59c254e01d9cde7957100457e2d5fb",
+  "name": "font-ttf-source-code-pro",
+  "noarch": "generic",
+  "package_tarball_full_path": "/opt/conda/pkgs/font-ttf-source-code-pro-2.038-h77eed37_0.tar.bz2",
+  "package_type": "noarch_generic",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "fonts/SourceCodePro-Black.ttf",
+        "path_type": "hardlink",
+        "sha256": "b6fd30448376bfb69fe26636a0c31b2c2030dbf36cfba92b7c732780f9d60b17",
+        "sha256_in_prefix": "b6fd30448376bfb69fe26636a0c31b2c2030dbf36cfba92b7c732780f9d60b17",
+        "size_in_bytes": 138384
+      },
+      {
+        "_path": "fonts/SourceCodePro-BlackIt.ttf",
+        "path_type": "hardlink",
+        "sha256": "1b72bb2408515c3841a4c914a75fbc3a8d116b986821d6937b140c1221c0a017",
+        "sha256_in_prefix": "1b72bb2408515c3841a4c914a75fbc3a8d116b986821d6937b140c1221c0a017",
+        "size_in_bytes": 116028
+      },
+      {
+        "_path": "fonts/SourceCodePro-Bold.ttf",
+        "path_type": "hardlink",
+        "sha256": "a937c8118b2271d090765fdb3575f659020cab8b2f40ffe630c49574d2733f44",
+        "sha256_in_prefix": "a937c8118b2271d090765fdb3575f659020cab8b2f40ffe630c49574d2733f44",
+        "size_in_bytes": 138268
+      },
+      {
+        "_path": "fonts/SourceCodePro-BoldIt.ttf",
+        "path_type": "hardlink",
+        "sha256": "b19216946d18da2fd6c432708571633b99a76641fcfcd6357c29691108828f81",
+        "sha256_in_prefix": "b19216946d18da2fd6c432708571633b99a76641fcfcd6357c29691108828f81",
+        "size_in_bytes": 116112
+      },
+      {
+        "_path": "fonts/SourceCodePro-ExtraLight.ttf",
+        "path_type": "hardlink",
+        "sha256": "c5b2acd80408604dc4608af5eaff4dbe3ca8a9c779bd157b7de3cdd8a6ccc6d9",
+        "sha256_in_prefix": "c5b2acd80408604dc4608af5eaff4dbe3ca8a9c779bd157b7de3cdd8a6ccc6d9",
+        "size_in_bytes": 139860
+      },
+      {
+        "_path": "fonts/SourceCodePro-ExtraLightIt.ttf",
+        "path_type": "hardlink",
+        "sha256": "ce0855c8364fbb44453b18c8ca9cd5fd2f36ba1250fa4ddea8c84864b243dc16",
+        "sha256_in_prefix": "ce0855c8364fbb44453b18c8ca9cd5fd2f36ba1250fa4ddea8c84864b243dc16",
+        "size_in_bytes": 117460
+      },
+      {
+        "_path": "fonts/SourceCodePro-It.ttf",
+        "path_type": "hardlink",
+        "sha256": "8529f2df1c810b80905a64ad3a1b6e48068bbd302a323a826e8fa65bb6743289",
+        "sha256_in_prefix": "8529f2df1c810b80905a64ad3a1b6e48068bbd302a323a826e8fa65bb6743289",
+        "size_in_bytes": 116740
+      },
+      {
+        "_path": "fonts/SourceCodePro-Light.ttf",
+        "path_type": "hardlink",
+        "sha256": "388b23a40b69adcb758d26a0470df28223c42ffbfa425cdfed3c3eeafa5a891d",
+        "sha256_in_prefix": "388b23a40b69adcb758d26a0470df28223c42ffbfa425cdfed3c3eeafa5a891d",
+        "size_in_bytes": 139508
+      },
+      {
+        "_path": "fonts/SourceCodePro-LightIt.ttf",
+        "path_type": "hardlink",
+        "sha256": "7f287fab6f791d871bcfcf8abd43b45580445bc5ab602f4f53a3813dbff6a9a8",
+        "sha256_in_prefix": "7f287fab6f791d871bcfcf8abd43b45580445bc5ab602f4f53a3813dbff6a9a8",
+        "size_in_bytes": 117404
+      },
+      {
+        "_path": "fonts/SourceCodePro-Medium.ttf",
+        "path_type": "hardlink",
+        "sha256": "6a1564c7b5469d310744770558657fe8c22187d4cab802a8696274772046b6ae",
+        "sha256_in_prefix": "6a1564c7b5469d310744770558657fe8c22187d4cab802a8696274772046b6ae",
+        "size_in_bytes": 138224
+      },
+      {
+        "_path": "fonts/SourceCodePro-MediumIt.ttf",
+        "path_type": "hardlink",
+        "sha256": "52ff4c7a38d4bbfd8bd8ba3f79f0a55b8f76e4317379f2e02a92cce8439faf05",
+        "sha256_in_prefix": "52ff4c7a38d4bbfd8bd8ba3f79f0a55b8f76e4317379f2e02a92cce8439faf05",
+        "size_in_bytes": 116376
+      },
+      {
+        "_path": "fonts/SourceCodePro-Regular.ttf",
+        "path_type": "hardlink",
+        "sha256": "f144137f557805c7327fc4b14d1d730f6e1822e0124170251ff1bcd723a693f1",
+        "sha256_in_prefix": "f144137f557805c7327fc4b14d1d730f6e1822e0124170251ff1bcd723a693f1",
+        "size_in_bytes": 138680
+      },
+      {
+        "_path": "fonts/SourceCodePro-Semibold.ttf",
+        "path_type": "hardlink",
+        "sha256": "1b61c980d75de8216228a2603bcabe51394013452df26a04c99326bbc035c5a5",
+        "sha256_in_prefix": "1b61c980d75de8216228a2603bcabe51394013452df26a04c99326bbc035c5a5",
+        "size_in_bytes": 138208
+      },
+      {
+        "_path": "fonts/SourceCodePro-SemiboldIt.ttf",
+        "path_type": "hardlink",
+        "sha256": "3919a7ea6ef6c5b314b87bf58b61c6e12bf928ae7a944e2c478c9593e96529db",
+        "sha256_in_prefix": "3919a7ea6ef6c5b314b87bf58b61c6e12bf928ae7a944e2c478c9593e96529db",
+        "size_in_bytes": 116272
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "00925c8c055a2275614b4d983e1df637245e19058d79fc7dd1a93b8d9fb4b139",
+  "size": 700814,
+  "subdir": "noarch",
+  "timestamp": 1620479612257,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/noarch/font-ttf-source-code-pro-2.038-h77eed37_0.tar.bz2",
+  "version": "2.038"
+}

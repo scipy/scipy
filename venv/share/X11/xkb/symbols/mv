@@ -1,0 +1,60 @@
+// Keyboard layout for the Maldives.
+
+// Layout for the Thaana script (for the Dhivehi language).
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+    name[Group1]="Dhivehi";
+
+    key <TLDE> {[        grave,   asciitilde ]};
+    key <AE01> {[            1,       exclam ]};
+    key <AE02> {[            2,           at ]};
+    key <AE03> {[            3,   numbersign ]};
+    key <AE04> {[            4,       dollar ]};
+    key <AE05> {[            5,      percent ]};
+    key <AE06> {[            6,  asciicircum ]};
+    key <AE07> {[            7,    ampersand ]};
+    key <AE08> {[            8,     asterisk ]};
+    key <AE09> {[            9,    parenleft ]};
+    key <AE10> {[            0,   parenright ]};
+    key <AE11> {[        minus,   underscore ]};
+    key <AE12> {[        equal,         plus ]};
+
+    key <AD01> {[        U07B0,        U07A4 ]};
+    key <AD02> {[        U0787,        U07A2 ]};
+    key <AD03> {[        U07AC,        U07AD ]};
+    key <AD04> {[        U0783,        U079C ]};
+    key <AD05> {[        U078C,        U0793 ]};
+    key <AD06> {[        U0794,        U07A0 ]};
+    key <AD07> {[        U07AA,        U07AB ]};
+    key <AD08> {[        U07A8,        U07A9 ]};
+    key <AD09> {[        U07AE,        U07AF ]};
+    key <AD10> {[        U0795,     division ]};
+    key <AD11> {[  bracketleft,    braceleft ]};
+    key <AD12> {[ bracketright,   braceright ]};
+
+    key <AC01> {[        U07A6,        U07A7 ]};
+    key <AC02> {[        U0790,        U0781 ]};
+    key <AC03> {[        U078B,        U0791 ]};
+    key <AC04> {[        U078A,        Ufdf2 ]};
+    key <AC05> {[        U078E,        U07A3 ]};
+    key <AC06> {[        U0780,        U0799 ]};
+    key <AC07> {[        U0796,        U079B ]};
+    key <AC08> {[        U0786,        U079A ]};
+    key <AC09> {[        U078D,        U0785 ]};
+    key <AC10> {[    semicolon,        colon ]};
+    key <AC11> {[   apostrophe,     quotedbl ]};
+    key <BKSL> {[    backslash,          bar ]};
+
+    key <LSGT> {[          bar,    brokenbar ]};
+    key <AB01> {[        U0792,        U07A1 ]};
+    key <AB02> {[     multiply,        U0798 ]};
+    key <AB03> {[        U0797,        U079D ]};
+    key <AB04> {[        U0788,        U07A5 ]};
+    key <AB05> {[        U0784,        U079E ]};
+    key <AB06> {[        U0782,        U078F ]};
+    key <AB07> {[        U0789,        U079F ]};
+    key <AB08> {[ Arabic_comma,         less ]};
+    key <AB09> {[       period,      greater ]};
+    key <AB10> {[        slash, Arabic_question_mark ]};
+};

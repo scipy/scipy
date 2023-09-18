@@ -1,0 +1,150 @@
+//
+//Copyright 1996, 1998  The Open Group
+//
+//Permission to use, copy, modify, distribute, and sell this software and its
+//documentation for any purpose is hereby granted without fee, provided that
+//the above copyright notice appear in all copies and that both that
+//copyright notice and this permission notice appear in supporting
+//documentation.
+//
+//The above copyright notice and this permission notice shall be
+//included in all copies or substantial portions of the Software.
+//
+//THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+//EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+//MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+//IN NO EVENT SHALL THE OPEN GROUP BE LIABLE FOR ANY CLAIM, DAMAGES OR
+//OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+//ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+//OTHER DEALINGS IN THE SOFTWARE.
+//
+//Except as contained in this notice, the name of The Open Group shall
+//not be used in advertising or otherwise to promote the sale, use or
+//other dealings in this Software without prior written authorization
+//from The Open Group.
+//
+xkb_keycodes "rs6k-101" {
+
+    <TLDE> = 9;
+    <AE01> = 10;
+    <AE02> = 11;
+    <AE03> = 12;
+    <AE04> = 13;
+    <AE05> = 14;
+    <AE06> = 15;
+    <AE07> = 16;
+    <AE08> = 17;
+    <AE09> = 18;
+    <AE10> = 19;
+    <AE11> = 20;
+    <AE12> = 21;
+    <BKSP> = 23;
+
+    <TAB>  = 24;
+    <AD01> = 25;
+    <AD02> = 26;
+    <AD03> = 27;
+    <AD04> = 28;
+    <AD05> = 29;
+    <AD06> = 30;
+    <AD07> = 31;
+    <AD08> = 32;
+    <AD09> = 33;
+    <AD10> = 34;
+    <AD11> = 35;
+    <AD12> = 36;
+    <BKSL> = 37;
+
+    <CAPS> = 38;
+    <AC01> = 39;
+    <AC02> = 40;
+    <AC03> = 41;
+    <AC04> = 42;
+    <AC05> = 43;
+    <AC06> = 44;
+    <AC07> = 45;
+    <AC08> = 46;
+    <AC09> = 47;
+    <AC10> = 48;
+    <AC11> = 49;
+    <RTRN> = 51;
+
+    <LFSH> = 52;
+    <AB01> = 54;
+    <AB02> = 55;
+    <AB03> = 56;
+    <AB04> = 57;
+    <AB05> = 58;
+    <AB06> = 59;
+    <AB07> = 60;
+    <AB08> = 61;
+    <AB09> = 62;
+    <AB10> = 63;
+    <RTSH> = 65;
+
+    <LCTL> = 66;
+    <LALT> = 68;
+    <SPCE> = 69;
+    <RALT> = 70;
+    <RCTL> = 72;
+
+    <ESC>  = 118;
+    <FK01> = 120;
+    <FK02> = 121;
+    <FK03> = 122;
+    <FK04> = 123;
+    <FK05> = 124;
+    <FK06> = 125;
+    <FK07> = 126;
+    <FK08> = 127;
+    <FK09> = 128;
+    <FK10> = 129;
+    <FK11> = 130;
+    <FK12> = 131;
+
+    <PRSC> = 132;
+    <SCLK> = 133;
+    <PAUS> = 134;
+
+    <INS>  = 83;
+    <HOME> = 88;
+    <PGUP> = 93;
+    <DELE> = 84;
+    <END>  = 89;
+    <PGDN> = 94;
+
+    <UP>   = 91;
+    <LEFT> = 87;
+    <DOWN> = 92;
+    <RGHT> = 97;
+
+    <NMLK> = 98;
+    <KPDV> = 103;
+    <KPMU> = 108;
+    <KPSU> = 113;
+
+     <KP7> = 99;
+     <KP8> = 104;
+     <KP9> = 109;
+    <KPAD> = 114;
+
+     <KP4> = 100;
+     <KP5> = 105;
+     <KP6> = 110;
+
+     <KP1> = 101;
+     <KP2> = 106;
+     <KP3> = 111;
+    <KPEN> = 116;
+
+     <KP0> = 107;
+    <KPDL> = 112;
+
+    indicator 1 = "Caps Lock";
+    indicator 2 = "Num Lock";
+    indicator 3 = "Scroll Lock";
+};
+xkb_keycodes "rs6k-102" {
+    include "ibm(rs6k-101)"
+    <LSGT> = 53;
+};

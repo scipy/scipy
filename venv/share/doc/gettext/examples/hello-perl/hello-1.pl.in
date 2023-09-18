@@ -1,0 +1,20 @@
+#!@PERL@
+# Example for use of GNU gettext.
+# This file is in the public domain.
+#
+# Source code of the Perl program, using the Locale::Messages API.
+
+use Locale::Messages qw (textdomain bindtextdomain gettext);
+use POSIX qw(getpid);
+
+binmode STDOUT, ':raw'; # Needed to make it work in UTF-8 locales in Perl-5.8.
+
+sub _ ($) { &gettext; }
+
+textdomain "hello-perl";
+bindtextdomain "hello-perl", "@localedir@";
+
+print _"Hello, world!";
+print "\n";
+printf _"This program is running as process number %d.", getpid();
+print "\n";

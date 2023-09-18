@@ -1,0 +1,335 @@
+{
+  "build": "pyhd8ed1ab_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/noarch",
+  "constrains": [
+    "psutil >=3.0"
+  ],
+  "depends": [
+    "execnet >=1.1",
+    "pytest >=6.2.0",
+    "python >=3.7"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/pytest-xdist-3.3.1-pyhd8ed1ab_0",
+  "features": "",
+  "files": [
+    "lib/python3.10/site-packages/pytest_xdist-3.3.1.dist-info/INSTALLER",
+    "lib/python3.10/site-packages/pytest_xdist-3.3.1.dist-info/LICENSE",
+    "lib/python3.10/site-packages/pytest_xdist-3.3.1.dist-info/METADATA",
+    "lib/python3.10/site-packages/pytest_xdist-3.3.1.dist-info/RECORD",
+    "lib/python3.10/site-packages/pytest_xdist-3.3.1.dist-info/REQUESTED",
+    "lib/python3.10/site-packages/pytest_xdist-3.3.1.dist-info/WHEEL",
+    "lib/python3.10/site-packages/pytest_xdist-3.3.1.dist-info/direct_url.json",
+    "lib/python3.10/site-packages/pytest_xdist-3.3.1.dist-info/entry_points.txt",
+    "lib/python3.10/site-packages/pytest_xdist-3.3.1.dist-info/top_level.txt",
+    "lib/python3.10/site-packages/xdist/__init__.py",
+    "lib/python3.10/site-packages/xdist/_path.py",
+    "lib/python3.10/site-packages/xdist/_version.py",
+    "lib/python3.10/site-packages/xdist/dsession.py",
+    "lib/python3.10/site-packages/xdist/looponfail.py",
+    "lib/python3.10/site-packages/xdist/newhooks.py",
+    "lib/python3.10/site-packages/xdist/plugin.py",
+    "lib/python3.10/site-packages/xdist/remote.py",
+    "lib/python3.10/site-packages/xdist/report.py",
+    "lib/python3.10/site-packages/xdist/scheduler/__init__.py",
+    "lib/python3.10/site-packages/xdist/scheduler/each.py",
+    "lib/python3.10/site-packages/xdist/scheduler/load.py",
+    "lib/python3.10/site-packages/xdist/scheduler/loadfile.py",
+    "lib/python3.10/site-packages/xdist/scheduler/loadgroup.py",
+    "lib/python3.10/site-packages/xdist/scheduler/loadscope.py",
+    "lib/python3.10/site-packages/xdist/scheduler/worksteal.py",
+    "lib/python3.10/site-packages/xdist/workermanage.py",
+    "lib/python3.10/site-packages/xdist/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/xdist/__pycache__/_path.cpython-310.pyc",
+    "lib/python3.10/site-packages/xdist/__pycache__/_version.cpython-310.pyc",
+    "lib/python3.10/site-packages/xdist/__pycache__/dsession.cpython-310.pyc",
+    "lib/python3.10/site-packages/xdist/__pycache__/looponfail.cpython-310.pyc",
+    "lib/python3.10/site-packages/xdist/__pycache__/newhooks.cpython-310.pyc",
+    "lib/python3.10/site-packages/xdist/__pycache__/plugin.cpython-310.pyc",
+    "lib/python3.10/site-packages/xdist/__pycache__/remote.cpython-310.pyc",
+    "lib/python3.10/site-packages/xdist/__pycache__/report.cpython-310.pyc",
+    "lib/python3.10/site-packages/xdist/scheduler/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/xdist/scheduler/__pycache__/each.cpython-310.pyc",
+    "lib/python3.10/site-packages/xdist/scheduler/__pycache__/load.cpython-310.pyc",
+    "lib/python3.10/site-packages/xdist/scheduler/__pycache__/loadfile.cpython-310.pyc",
+    "lib/python3.10/site-packages/xdist/scheduler/__pycache__/loadgroup.cpython-310.pyc",
+    "lib/python3.10/site-packages/xdist/scheduler/__pycache__/loadscope.cpython-310.pyc",
+    "lib/python3.10/site-packages/xdist/scheduler/__pycache__/worksteal.cpython-310.pyc",
+    "lib/python3.10/site-packages/xdist/__pycache__/workermanage.cpython-310.pyc"
+  ],
+  "fn": "pytest-xdist-3.3.1-pyhd8ed1ab_0.conda",
+  "license": "MIT",
+  "license_family": "MIT",
+  "link": {
+    "source": "/opt/conda/pkgs/pytest-xdist-3.3.1-pyhd8ed1ab_0",
+    "type": 1
+  },
+  "md5": "816073bb54ef59f33f0f26c14f88311b",
+  "name": "pytest-xdist",
+  "noarch": "python",
+  "package_tarball_full_path": "/opt/conda/pkgs/pytest-xdist-3.3.1-pyhd8ed1ab_0.conda",
+  "package_type": "noarch_python",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "site-packages/pytest_xdist-3.3.1.dist-info/INSTALLER",
+        "path_type": "hardlink",
+        "sha256": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "sha256_in_prefix": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "size_in_bytes": 5
+      },
+      {
+        "_path": "site-packages/pytest_xdist-3.3.1.dist-info/LICENSE",
+        "path_type": "hardlink",
+        "sha256": "e89eed1074d3a943198ba139b80844f5b445b860bba74a8aeadc0610566164ea",
+        "sha256_in_prefix": "e89eed1074d3a943198ba139b80844f5b445b860bba74a8aeadc0610566164ea",
+        "size_in_bytes": 1054
+      },
+      {
+        "_path": "site-packages/pytest_xdist-3.3.1.dist-info/METADATA",
+        "path_type": "hardlink",
+        "sha256": "cc3c830212cf88c90b7d0608ff129e8ea888a42ef9694fbe3436f5fe27c5e18c",
+        "sha256_in_prefix": "cc3c830212cf88c90b7d0608ff129e8ea888a42ef9694fbe3436f5fe27c5e18c",
+        "size_in_bytes": 3055
+      },
+      {
+        "_path": "site-packages/pytest_xdist-3.3.1.dist-info/RECORD",
+        "path_type": "hardlink",
+        "sha256": "d440163969c2ea8b92cc5d6ff90f1c0b4030a74af0321275b8f94e5e6442ca52",
+        "sha256_in_prefix": "d440163969c2ea8b92cc5d6ff90f1c0b4030a74af0321275b8f94e5e6442ca52",
+        "size_in_bytes": 2986
+      },
+      {
+        "_path": "site-packages/pytest_xdist-3.3.1.dist-info/REQUESTED",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256_in_prefix": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "site-packages/pytest_xdist-3.3.1.dist-info/WHEEL",
+        "path_type": "hardlink",
+        "sha256": "a6472d658cd44b8018567e9d27eef7ebb389662bc5d9ef1103d6ff6418e27f5f",
+        "sha256_in_prefix": "a6472d658cd44b8018567e9d27eef7ebb389662bc5d9ef1103d6ff6418e27f5f",
+        "size_in_bytes": 92
+      },
+      {
+        "_path": "site-packages/pytest_xdist-3.3.1.dist-info/direct_url.json",
+        "path_type": "hardlink",
+        "sha256": "1071389df3a67da43d92ad64d98569c21327b1c8cd6b19303b194622246e7775",
+        "sha256_in_prefix": "1071389df3a67da43d92ad64d98569c21327b1c8cd6b19303b194622246e7775",
+        "size_in_bytes": 108
+      },
+      {
+        "_path": "site-packages/pytest_xdist-3.3.1.dist-info/entry_points.txt",
+        "path_type": "hardlink",
+        "sha256": "a1e58a40c9a12dcae385a5c15979a046fdf183a0409f651917d3e8476150dfae",
+        "sha256_in_prefix": "a1e58a40c9a12dcae385a5c15979a046fdf183a0409f651917d3e8476150dfae",
+        "size_in_bytes": 68
+      },
+      {
+        "_path": "site-packages/pytest_xdist-3.3.1.dist-info/top_level.txt",
+        "path_type": "hardlink",
+        "sha256": "07d232eab031e94bf2f894c8bbd37b62ffee835f84cc3de75ff081fa87536ab6",
+        "sha256_in_prefix": "07d232eab031e94bf2f894c8bbd37b62ffee835f84cc3de75ff081fa87536ab6",
+        "size_in_bytes": 6
+      },
+      {
+        "_path": "site-packages/xdist/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "53845be66b00ce54100a48fb59c5f7127ff2dc1c064eac7b3c2e0543d300ae58",
+        "sha256_in_prefix": "53845be66b00ce54100a48fb59c5f7127ff2dc1c064eac7b3c2e0543d300ae58",
+        "size_in_bytes": 305
+      },
+      {
+        "_path": "site-packages/xdist/_path.py",
+        "path_type": "hardlink",
+        "sha256": "92dd4e3883641881ebb2b8c72285c18a3f9c366c33a0c04c1b8102a64fd70aff",
+        "sha256_in_prefix": "92dd4e3883641881ebb2b8c72285c18a3f9c366c33a0c04c1b8102a64fd70aff",
+        "size_in_bytes": 639
+      },
+      {
+        "_path": "site-packages/xdist/_version.py",
+        "path_type": "hardlink",
+        "sha256": "ff150982f4751cb9a8f91a1122b9611f31a605b10fde56eb0aee77d41393bbea",
+        "sha256_in_prefix": "ff150982f4751cb9a8f91a1122b9611f31a605b10fde56eb0aee77d41393bbea",
+        "size_in_bytes": 160
+      },
+      {
+        "_path": "site-packages/xdist/dsession.py",
+        "path_type": "hardlink",
+        "sha256": "2d2ee03e63d49edd3531734d380742affbee9b77978e001668ff9bec82713dc9",
+        "sha256_in_prefix": "2d2ee03e63d49edd3531734d380742affbee9b77978e001668ff9bec82713dc9",
+        "size_in_bytes": 19973
+      },
+      {
+        "_path": "site-packages/xdist/looponfail.py",
+        "path_type": "hardlink",
+        "sha256": "c1f6e19ab01c6c1cc7784698781c26dad842eb04243f61310b741b6576754468",
+        "sha256_in_prefix": "c1f6e19ab01c6c1cc7784698781c26dad842eb04243f61310b741b6576754468",
+        "size_in_bytes": 9357
+      },
+      {
+        "_path": "site-packages/xdist/newhooks.py",
+        "path_type": "hardlink",
+        "sha256": "93c38e8d17c21226d48804d55d4011a354f1fa3131541f6487682adf36c1c311",
+        "sha256_in_prefix": "93c38e8d17c21226d48804d55d4011a354f1fa3131541f6487682adf36c1c311",
+        "size_in_bytes": 2599
+      },
+      {
+        "_path": "site-packages/xdist/plugin.py",
+        "path_type": "hardlink",
+        "sha256": "011ebe37d0c1b79ee1a01c5067ae013763f84a8563a181d68ee9b990f23f4810",
+        "sha256_in_prefix": "011ebe37d0c1b79ee1a01c5067ae013763f84a8563a181d68ee9b990f23f4810",
+        "size_in_bytes": 11561
+      },
+      {
+        "_path": "site-packages/xdist/remote.py",
+        "path_type": "hardlink",
+        "sha256": "9d1c80c5aa4c784bcbc8c6dee165b6b11a73752a3375f2d538b3febf1d211163",
+        "sha256_in_prefix": "9d1c80c5aa4c784bcbc8c6dee165b6b11a73752a3375f2d538b3febf1d211163",
+        "size_in_bytes": 12100
+      },
+      {
+        "_path": "site-packages/xdist/report.py",
+        "path_type": "hardlink",
+        "sha256": "fbdf64b83bca827f197b59dac1a7160625240c8513490b9551081d1dfaf08e95",
+        "sha256_in_prefix": "fbdf64b83bca827f197b59dac1a7160625240c8513490b9551081d1dfaf08e95",
+        "size_in_bytes": 817
+      },
+      {
+        "_path": "site-packages/xdist/scheduler/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "f629573be5f4d3bbc6db5708c1948734590873a3d33daa87014a3249ac3ba6e4",
+        "sha256_in_prefix": "f629573be5f4d3bbc6db5708c1948734590873a3d33daa87014a3249ac3ba6e4",
+        "size_in_bytes": 377
+      },
+      {
+        "_path": "site-packages/xdist/scheduler/each.py",
+        "path_type": "hardlink",
+        "sha256": "95836812865f20ac0b57a828c10b3037d9de0dcbdb28ace56998e55e25afdc7a",
+        "sha256_in_prefix": "95836812865f20ac0b57a828c10b3037d9de0dcbdb28ace56998e55e25afdc7a",
+        "size_in_bytes": 5141
+      },
+      {
+        "_path": "site-packages/xdist/scheduler/load.py",
+        "path_type": "hardlink",
+        "sha256": "9a19c9e5fb14d8e5d2eeb3458c2ce00a53dd2f1bfd747ae708ed398f31a1b665",
+        "sha256_in_prefix": "9a19c9e5fb14d8e5d2eeb3458c2ce00a53dd2f1bfd747ae708ed398f31a1b665",
+        "size_in_bytes": 12269
+      },
+      {
+        "_path": "site-packages/xdist/scheduler/loadfile.py",
+        "path_type": "hardlink",
+        "sha256": "fb408f398db5fe399ea10366b1a54ef9db7816189f33a5e95686b3dd9232cd4c",
+        "sha256_in_prefix": "fb408f398db5fe399ea10366b1a54ef9db7816189f33a5e95686b3dd9232cd4c",
+        "size_in_bytes": 2172
+      },
+      {
+        "_path": "site-packages/xdist/scheduler/loadgroup.py",
+        "path_type": "hardlink",
+        "sha256": "d7af401188c3864e097d19a38de41138d0ec59deb81e2d51b9df817f0d51e44d",
+        "sha256_in_prefix": "d7af401188c3864e097d19a38de41138d0ec59deb81e2d51b9df817f0d51e44d",
+        "size_in_bytes": 2167
+      },
+      {
+        "_path": "site-packages/xdist/scheduler/loadscope.py",
+        "path_type": "hardlink",
+        "sha256": "aeacb77a53a62d1899bd9741c95249207cd65368e2861db3ae0dff76f9017ffc",
+        "sha256_in_prefix": "aeacb77a53a62d1899bd9741c95249207cd65368e2861db3ae0dff76f9017ffc",
+        "size_in_bytes": 14207
+      },
+      {
+        "_path": "site-packages/xdist/scheduler/worksteal.py",
+        "path_type": "hardlink",
+        "sha256": "124957af8c337da4deed55b19c9bcb3b2b73b012ba3d5f6dd57785d42a79ffe8",
+        "sha256_in_prefix": "124957af8c337da4deed55b19c9bcb3b2b73b012ba3d5f6dd57785d42a79ffe8",
+        "size_in_bytes": 11535
+      },
+      {
+        "_path": "site-packages/xdist/workermanage.py",
+        "path_type": "hardlink",
+        "sha256": "5aa07b08320d1bffa6eb6e141bfcf8b747f5e1e1c1264486b28f416e989d4c46",
+        "sha256_in_prefix": "5aa07b08320d1bffa6eb6e141bfcf8b747f5e1e1c1264486b28f416e989d4c46",
+        "size_in_bytes": 16552
+      },
+      {
+        "_path": "lib/python3.10/site-packages/xdist/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/xdist/__pycache__/_path.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/xdist/__pycache__/_version.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/xdist/__pycache__/dsession.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/xdist/__pycache__/looponfail.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/xdist/__pycache__/newhooks.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/xdist/__pycache__/plugin.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/xdist/__pycache__/remote.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/xdist/__pycache__/report.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/xdist/scheduler/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/xdist/scheduler/__pycache__/each.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/xdist/scheduler/__pycache__/load.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/xdist/scheduler/__pycache__/loadfile.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/xdist/scheduler/__pycache__/loadgroup.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/xdist/scheduler/__pycache__/loadscope.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/xdist/scheduler/__pycache__/worksteal.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/xdist/__pycache__/workermanage.cpython-310.pyc",
+        "path_type": "pyc_file"
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "pytest-xdist",
+  "sha256": "5df2d0f1e42041476cbdf12b808890d668e7f0272b51f0f3fa7aab84732150b6",
+  "size": 36169,
+  "subdir": "noarch",
+  "timestamp": 1684499962909,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/noarch/pytest-xdist-3.3.1-pyhd8ed1ab_0.conda",
+  "version": "3.3.1"
+}

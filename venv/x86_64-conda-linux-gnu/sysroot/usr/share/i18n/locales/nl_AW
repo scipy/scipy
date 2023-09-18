@@ -1,0 +1,100 @@
+escape_char /
+comment_char %
+% Dutch language locale for Aruba.
+% Contributed by Ulrich Drepper <drepper@redhat.com>, 2008
+
+LC_IDENTIFICATION
+title      "Dutch language locale for Aruba"
+source     "Free Software Foundation, Inc."
+address    "59 Temple Place - Suite 330, Boston, MA 02111-1307, USA"
+contact    ""
+email      "bug-glibc-locales@gnu.org"
+tel        ""
+fax        ""
+language   "Dutch"
+territory  "Aruba"
+revision   "1.0"
+date       "2008-09-16"
+%
+category  "nl_AW:2008";LC_IDENTIFICATION
+category  "nl_AW:2008";LC_CTYPE
+category  "nl_AW:2008";LC_COLLATE
+category  "nl_AW:2008";LC_TIME
+category  "nl_AW:2008";LC_NUMERIC
+category  "nl_AW:2008";LC_MONETARY
+category  "nl_AW:2008";LC_MESSAGES
+category  "nl_AW:2008";LC_PAPER
+category  "nl_AW:2008";LC_NAME
+category  "nl_AW:2008";LC_ADDRESS
+category  "nl_AW:2008";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_CTYPE
+copy "nl_NL"
+END LC_CTYPE
+
+LC_COLLATE
+copy "nl_NL"
+END LC_COLLATE
+
+LC_MONETARY
+int_curr_symbol     "<U0041><U0057><U0047><U0020>"
+currency_symbol     "<U0041><U0066><U006C><U002E>"
+mon_decimal_point   "<U002C>"
+mon_thousands_sep   "<U0020>"
+mon_grouping        3;3
+positive_sign       ""
+negative_sign       "<U002D>"
+int_frac_digits     2
+frac_digits         2
+p_cs_precedes       1
+p_sep_by_space      1
+n_cs_precedes       1
+n_sep_by_space      1
+p_sign_posn         1
+n_sign_posn         2
+END LC_MONETARY
+
+LC_NUMERIC
+copy "nl_NL"
+END LC_NUMERIC
+
+LC_TIME
+copy "nl_NL"
+END LC_TIME
+
+LC_MESSAGES
+copy "nl_NL"
+END LC_MESSAGES
+
+LC_PAPER
+copy "en_US"
+END LC_PAPER
+
+LC_NAME
+copy "nl_NL"
+END LC_NAME
+
+LC_ADDRESS
+postal_fmt    "<U0025><U0066><U0025><U004E><U0025><U0061><U0025><U004E>/
+<U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E><U0025><U0073>/
+<U0020><U0025><U0068><U0020><U0025><U0065><U0020><U0025><U0072><U0025>/
+<U004E><U0025><U0025><U007A><U0020><U0025><U0054><U0025>/
+<U004E><U0025><U0063><U0025><U004E>"
+country_ab2   "<U0041><U0057>"
+country_ab3   "<U0041><U0042><U0057>"
+country_num   533
+END LC_ADDRESS
+
+LC_TELEPHONE
+% FIXME
+tel_int_fmt    "<U002B><U0025><U0063><U0020><U0025><U0061><U0020><U0025>/
+<U006C>"
+int_prefix     "<U0032><U0039><U0037>"
+int_select     "<U0030><U0031><U0031>"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+copy "en_US"
+END LC_MEASUREMENT

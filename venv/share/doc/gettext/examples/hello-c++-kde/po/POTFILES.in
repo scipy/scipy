@@ -1,0 +1,6 @@
+# Example for use of GNU gettext.
+# This file is in the public domain.
+#
+# List of files which contain translatable strings.
+hello.cc
+hellowindow.cc

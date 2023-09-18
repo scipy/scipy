@@ -1,0 +1,359 @@
+// Keyboard layouts for Myanmar.
+
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+    name[Group1]= "Burmese";
+
+    key <TLDE> {[    grave,        U100E,       grave,  asciitilde  ]};
+    key <AE01> {[    U1041,        U100D,           1,      exclam  ]};
+    key <AE02> {[    U1042,        U1052,           2,          at  ]};
+    key <AE03> {[    U1043,        U100B,           3,  numbersign  ]};
+    key <AE04> {[    U1044,       dollar,           4,      dollar  ]};
+    key <AE05> {[    U1045,      percent,           5,     percent  ]};
+    key <AE06> {[    U1046,  asciicircum,           6, asciicircum  ]};
+    key <AE07> {[    U1047,        U101B,           7,   ampersand  ]};
+    key <AE08> {[    U1048,     asterisk,           8,    asterisk  ]};
+    key <AE09> {[    U1049,    parenleft,           9,   parenleft  ]};
+    key <AE10> {[    U1040,   parenright,           0,  parenright  ]};
+    key <AE11> {[    minus,   underscore                            ]};
+    key <AE12> {[    equal,         plus                            ]};
+
+    key <AD01> {[    U1006,        U1008,           q,           Q  ]};
+    key <AD02> {[    U1010,        U101D,           w,           W  ]};
+    key <AD03> {[    U1014,        U1023,           e,           E  ]};
+    key <AD04> {[    U1019,        U104E,           r,           R  ]};
+    key <AD05> {[    U1021,        U1024,           t,           T  ]};
+    key <AD06> {[    U1015,        U104C,           y,           Y  ]};
+    key <AD07> {[    U1000,        U1025,           u,           U  ]};
+    key <AD08> {[    U1004,        U104D,           i,           I  ]};
+    key <AD09> {[    U101E,        U103F,           o,           O  ]};
+    key <AD10> {[    U1005,        U100F,           p,           P  ]};
+    key <AD11> {[    U101F,        U1027,  bracketleft,  braceleft  ]};
+    key <AD12> {[    U1029,        U102A, bracketright, braceright  ]};
+
+    key <AC01> {[    U1031,        U1017,           a,           A  ]};
+    key <AC02> {[    U103B,        U103E,           s,           S  ]};
+    key <AC03> {[    U102D,        U102E,           d,           D  ]};
+    key <AC04> {[    U103A,        U1039,           f,           F  ]};
+    key <AC05> {[    U102B,        U103D,           g,           G  ]};
+    key <AC06> {[    U1037,        U1036,           h,           H  ]};
+    key <AC07> {[    U103C,        U1032,           j,           J  ]};
+    key <AC08> {[    U102F,        U1012,           k,           K  ]};
+    key <AC09> {[    U1030,        U1013,           l,           L  ]};
+    key <AC10> {[    U1038,        U1002,   semicolon,       colon  ]};
+    key <AC11> {[ apostrophe,   quotedbl                            ]};
+    key <BKSL> {[    U104F,    backslash,   backslash,         bar  ]};
+
+    key <AB01> {[    U1016,        U1007,           z,           Z  ]};
+    key <AB02> {[    U1011,        U100C,           x,           X  ]};
+    key <AB03> {[    U1001,        U1003,           c,           C  ]};
+    key <AB04> {[    U101C,        U1020,           v,           V  ]};
+    key <AB05> {[    U1018,        U101A,           b,           B  ]};
+    key <AB06> {[    U100A,        U1009,           n,           N  ]};
+    key <AB07> {[    U102C,        U1026,           m,           M  ]};
+    key <AB08> {[    comma,        U104A,       comma,        less  ]};
+    key <AB09> {[   period,        U104B,      period,     greater  ]};
+    key <AB10> {[    slash,     question                            ]};
+};
+
+partial alphanumeric_keys
+xkb_symbols "zawgyi" {
+
+	name[Group1]="Burmese Zawgyi";
+
+	include "mm(tilde_latch)"
+
+	key <AE01> {[ U1041, U100D, U100E, U106F ]};
+	key <AE02> {[ U1042, U1091, U106D ]};
+	key <AE03> {[ U1043, U100B, U106C ]};
+	key <AE04> {[ U1044, dollar, U104E, U1023 ]};
+	key <AE05> {[ U1045, percent, U1029, U102A ]};
+	key <AE06> {[ U1046, asciicircum ]};
+	key <AE07> {[ U1047, U101B, U1090 ]};
+	key <AE08> {[ U1048, U1002, U1062 ]};
+	key <AE09> {[ U1049, parenleft, U1026 ]};
+	key <AE10> {[ U1040, parenright ]};
+	key <AE11> {[ minus, underscore, U1097 ]};
+	key <AE12> {[ equal, plus, U106E ]};
+
+	key <AD01> {[ U1006, U103D, U1066, U1067 ]};
+	key <AD02> {[ U1010, U107D, U1071, U1072 ]};
+	key <AD03> {[ U1014, U108F, U1077, U1096 ]};
+	key <AD04> {[ U1019, U107D, U107C ]};
+	key <AD05> {[ U1021, U108A, U1024 ]};
+	key <AD06> {[ U1015, U1094, U1078, U104C ]};
+	key <AD07> {[ U1000, U1095, U1060, U1009 ]};
+	key <AD08> {[ U1004, U1088, U104D, U106A ]};
+	key <AD09> {[ U101E, U1025, U1086 ]};
+	key <AD10> {[ U1005, U100F, U1065, U1070 ]};
+	key <AD11> {[ U101F, U1027 ]};
+	key <AD12> {[ U104F, U1092 ]};
+
+	key <AC01> {[ U1031, U1017, U1008, U107A ]};
+	key <AC02> {[ U103A, U103D ]};
+	key <AC03> {[ U102D, U102E, U108E, U108C ]};
+	key <AC04> {[ U1039, U1064 ]};
+	key <AC05> {[ U102B, U103C ]};
+	key <AC06> {[ U1037, U1036 ]};
+	key <AC07> {[ U103B, U1032, U1083, U1084 ]};
+	key <AC08> {[ U102F, U1033, U1089 ]};
+	key <AC09> {[ U1030, U1034, U108D, U108B ]};
+	key <AC10> {[ U1038, U105A ]};
+	key <AC11> {[ U1012, U1013, U1075, U1076 ]};
+	key <BKSL> {[ U104F, U1092 ]};
+
+	key <AB01> {[ U1016, U1007, U1079, U1068 ]};
+	key <AB02> {[ U1011, U100C, U1073, U1074 ]};
+	key <AB03> {[ U1001, U1003, U1061, U1063 ]};
+	key <AB04> {[ U101C, U1020, U1085 ]};
+	key <AB05> {[ U1018, U1080, U1093 ]};
+	key <AB06> {[ U100A, U107F, U106B, U1069 ]};
+	key <AB07> {[ U102C, U107E, U1081, U1082 ]};
+	key <AB08> {[ U101A, U101D ]};
+	key <AB09> {[ period, U1008 ]};
+	key <AB10> {[ U104B, U104A ]};
+
+	include "level3(ralt_switch)"
+};
+
+// This fragment creates the "Tilde key" phenomenon.
+partial modifier_keys
+xkb_symbols "tilde_latch" {
+	key <TLDE> {[  ISO_Level3_Latch,  asciitilde,  grave  ]};
+	modifier_map Mod5  { ISO_Level3_Latch };
+};
+
+
+partial alphanumeric_keys
+xkb_symbols "mnw" {
+    name[Group1]= "Mon";
+
+    key <TLDE> {[    U105D,      U100E,        grave,  asciitilde  ]};
+    key <AE01> {[    U1041,      U100D,            1,      exclam  ]};
+    key <AE02> {[    U1042,      U1052,            2,          at  ]};
+    key <AE03> {[    U1043,      U100B,            3,  numbersign  ]};
+    key <AE04> {[    U1044,      U1053,            4,      dollar  ]};
+    key <AE05> {[    U1045,    percent,            5,     percent  ]};
+    key <AE06> {[    U1046,      U1035,            6, asciicircum  ]};
+    key <AE07> {[    U1047,      U101B,            7,   ampersand  ]};
+    key <AE08> {[    U1048,      U1002,            8,    asterisk  ]};
+    key <AE09> {[    U1049,  parenleft,            9,   parenleft  ]};
+    key <AE10> {[    U1040, parenright,            0,  parenright  ]};
+    key <AE11> {[    minus,   multiply,   underscore,        none  ]};
+    key <AE12> {[    equal,       plus,     division,        none  ]};
+
+    key <AD01> {[    U1006,      U105B,            q,           Q  ]};
+    key <AD02> {[    U1010,      U101D,            w,           W  ]};
+    key <AD03> {[    U1014,      U1023,            e,           E  ]};
+    key <AD04> {[    U1019,      U105F,            r,           R  ]};
+    key <AD05> {[    U1021,      U1033,            t,           T  ]};
+    key <AD06> {[    U1015,      U1060,            y,           Y  ]};
+    key <AD07> {[    U1000,      U1025,            u,           U  ]};
+    key <AD08> {[    U105A,      U104E,            i,           I  ]};
+    key <AD09> {[    U101E,      U103F,            o,           O  ]};
+    key <AD10> {[    U1005,      U100F,            p,           P  ]};
+    key <AD11> {[    U101F,      U1028,  bracketleft,   braceleft  ]};
+    key <AD12> {[    U1029,      slash, bracketright,  braceright  ]};
+
+    key <AC01> {[    U1031,      U1017,            a,           A  ]};
+    key <AC02> {[    U103B,      U103E,            s,           S  ]};
+    key <AC03> {[    U102D,      U102E,            d,           D  ]};
+    key <AC04> {[    U103A,      U1039,            f,           F  ]};
+    key <AC05> {[    U102B,      U103D,            g,           G  ]};
+    key <AC06> {[    U1034,      U1036,            h,           H  ]};
+    key <AC07> {[    U103C,      U1032,            j,           J  ]};
+    key <AC08> {[    U102F,      U1012,            k,           K  ]};
+    key <AC09> {[    U1030,      U1013,            l,           L  ]};
+    key <AC10> {[    U1038,      colon,    semicolon,       colon  ]};
+    key <AC11> {[ apostrophe, quotedbl                             ]};
+    key <BKSL> {[    U1051,        bar,    backslash,         bar  ]};
+
+    key <AB01> {[    U1016,       U1007,           z,           Z  ]};
+    key <AB02> {[    U1011,       U100C,           x,           X  ]};
+    key <AB03> {[    U1001,       U1003,           c,           C  ]};
+    key <AB04> {[    U101C,       U1020,           v,           V  ]};
+    key <AB05> {[    U1018,       U1050,           b,           B  ]};
+    key <AB06> {[    U100A,       U1009,           n,           N  ]};
+    key <AB07> {[    U102C,       U1054,           m,           M  ]};
+    key <AB08> {[    U101A,       U105E,       comma,        less  ]};
+    key <AB09> {[    U105C,       U1055,      period,     greater  ]};
+    key <AB10> {[    U104B,       U104A,       slash,    question  ]};
+};
+
+
+// Mon A1 layout, by Tao Mon Lae, (tamonlae@gmail.com), 12-August-2021
+
+partial alphanumeric_keys
+xkb_symbols "mnw-a1" {
+    name[Group1]= "Mon (A1)";
+
+    key <TLDE> {[    grave, asciitilde  ]};
+    key <AE01> {[    U1041,     exclam  ]};
+    key <AE02> {[    U1042,         at  ]};
+    key <AE03> {[    U1043,      U1053  ]};
+    key <AE04> {[    U1044,      U1029  ]};
+    key <AE05> {[    U1045,    percent  ]};
+    key <AE06> {[    U1046,      U1050  ]};
+    key <AE07> {[    U1047,      U1051  ]};
+    key <AE08> {[    U1048,   asterisk  ]};
+    key <AE09> {[    U1049,  parenleft  ]};
+    key <AE10> {[    U1040, parenright  ]};
+    key <AE11> {[    minus, underscore  ]};
+    key <AE12> {[    equal,       plus  ]};
+
+    key <AD01> {[    U101E,      U103F  ]};
+    key <AD02> {[    U101D,      U103D  ]};
+    key <AD03> {[    U1031,      U1035  ]};
+    key <AD04> {[    U101B,      U103C  ]};
+    key <AD05> {[    U1010,      U1011  ]};
+    key <AD06> {[    U101A,      U103B  ]};
+    key <AD07> {[    U102F,      U1030  ]};
+    key <AD08> {[    U102D,      U1033  ]};
+    key <AD09> {[    U1032,      U1034  ]};
+    key <AD10> {[    U1015,      U100F  ]};
+    key <AD11> {[    U100D,      U1028  ]};
+    key <AD12> {[    U100E,      U1054  ]};
+
+    key <AC01> {[    U1021,      U1023  ]};
+    key <AC02> {[    U1005,      U1006  ]};
+    key <AC03> {[    U1012,      U1013  ]};
+    key <AC04> {[    U1016,      U1039  ]};
+    key <AC05> {[    U1002,      U1003  ]};
+    key <AC06> {[    U101F,      U103E  ]};
+    key <AC07> {[    U103A,      U102E  ]};
+    key <AC08> {[    U1000,      U1001  ]};
+    key <AC09> {[    U101C,      U1060  ]};
+    key <AC10> {[    U1025,      U1020  ]};
+    key <AC11> {[ apostrophe, quotedbl  ]};
+    key <BKSL> {[    U105C,      U105D  ]};
+
+    key <AB01> {[    U1007,      U105B  ]};
+    key <AB02> {[    U100B,      U100C  ]};
+    key <AB03> {[    U105A,      U104E  ]};
+    key <AB04> {[    U100A,      U1009  ]};
+    key <AB05> {[    U1017,      U1018  ]};
+    key <AB06> {[    U1014,      U105E  ]};
+    key <AB07> {[    U1019,      U105F  ]};
+    key <AB08> {[    U1036,      U1038  ]};
+    key <AB09> {[    U102C,      U102B  ]};
+    key <AB10> {[    U104A,      U104B  ]};
+};
+
+
+partial alphanumeric_keys
+xkb_symbols "shn" {
+    name[Group1]= "Shan";
+
+    key <TLDE> {[      grave,  asciitilde  ]};
+    key <AE01> {[          1,      exclam  ]};
+    key <AE02> {[          2,          at  ]};
+    key <AE03> {[          3,  numbersign  ]};
+    key <AE04> {[          4,      dollar  ]};
+    key <AE05> {[          5,     percent  ]};
+    key <AE06> {[          6, asciicircum  ]};
+    key <AE07> {[          7,   ampersand  ]};
+    key <AE08> {[          8,    asterisk  ]};
+    key <AE09> {[          9,   parenleft  ]};
+    key <AE10> {[          0,  parenright  ]};
+    key <AE11> {[      minus,  underscore  ]};
+    key <AE12> {[      equal,        plus  ]};
+
+    key <AD01> {[      U1078,      UAA61,          q,       Q  ]};
+    key <AD02> {[      U1010,      U107B,          w,       W  ]};
+    key <AD03> {[      U107C,      UA9E3,          e,       E  ]};
+    key <AD04> {[      U1019,      U109E,          r,       R  ]};
+    key <AD05> {[      U1022,      U103C,          t,       T  ]};
+    key <AD06> {[      U1015,      U107F,          y,       Y  ]};
+    key <AD07> {[      U1075,      U1077,          u,       U  ]};
+    key <AD08> {[      U1004,      U101B,          i,       I  ]};
+    key <AD09> {[      U101D,      U101E,          o,       O  ]};
+    key <AD10> {[      U1081,      U1080,          p,       P  ]};
+    key <AD11> {[  bracketleft,  braceleft                     ]};
+    key <AD12> {[ bracketright, braceright                     ]};
+
+    key <AC01> {[      U1031,      U1035,          a,       A  ]};
+    key <AC02> {[      U1084,      U1085,          s,       S  ]};
+    key <AC03> {[      U102D,      U102E,          d,       D  ]};
+    key <AC04> {[      U103A,      U1082,          f,       F  ]};
+    key <AC05> {[      U103D,      U1082,          g,       G  ]};
+    key <AC06> {[      U1089,      U1037,          h,       H  ]};
+    key <AC07> {[      U1087,      U1086,          j,       J  ]};
+    key <AC08> {[      U102F,      U1012,          k,       K  ]};
+    key <AC09> {[      U1030,      U108A,          l,       L  ]};
+    key <AC10> {[      U1088,      U1038,  semicolon,   colon  ]};
+    key <AC11> {[ apostrophe,    quotedbl                      ]};
+    key <BKSL> {[  backslash,         bar                      ]};
+
+    key <AB01> {[      U107D,       U107E,         z,       Z  ]};
+    key <AB02> {[      U1011,       UAA6A,         x,       X  ]};
+    key <AB03> {[      U1076,       UA9E0,         c,       C  ]};
+    key <AB04> {[      U101C,       UAA6E,         v,       V  ]};
+    key <AB05> {[      U101A,       U103B,         b,       B  ]};
+    key <AB06> {[      U107A,       U109F,         n,       N  ]};
+    key <AB07> {[      U1062,       U1083,         m,       M  ]};
+    key <AB08> {[      comma,       U104A,     comma,    less  ]};
+    key <AB09> {[     period,       U104B,    period, greater  ]};
+    key <AB10> {[      slash,    question                      ]};
+};
+
+
+partial alphanumeric_keys
+xkb_symbols "zgt" {
+
+	name[Group1]="Shan (Zawgyi Tai)";
+
+	include "mm(tilde_latch)"
+
+	key <AE01> {[  U1041,       U100D,    U100E,    U106F  ]};
+	key <AE02> {[  U1042,       U1091,    U106D            ]};
+	key <AE03> {[  U1043,       U100B,    U106C            ]};
+	key <AE04> {[  U1044,      dollar,    U104E,    U1023  ]};
+	key <AE05> {[  U1045,     percent,    U1029,    U102A  ]};
+	key <AE06> {[  U1046, asciicircum                      ]};
+	key <AE07> {[  U1047,       U101B,    U1090            ]};
+	key <AE08> {[  U1048,       U1002,    U1062            ]};
+	key <AE09> {[  U1049,   parenleft,    U1026            ]};
+	key <AE10> {[  U1040,  parenright                      ]};
+	key <AE11> {[  minus,  underscore,    U1097            ]};
+	key <AE12> {[  equal,        plus,    U106E            ]};
+
+	key <AD01> {[  U1006,       U103D,    U1066,    U1067  ]};
+	key <AD02> {[  U1010,       U107D,    U1071,    U1072  ]};
+	key <AD03> {[  U1014,       U108F,    U1077,    U1096  ]};
+	key <AD04> {[  U1019,       U107D,    U107C            ]};
+	key <AD05> {[  U1021,       U108A,    U1024            ]};
+	key <AD06> {[  U1015,       U1094,    U1078,    U104C  ]};
+	key <AD07> {[  U1000,       U1095,    U1060,    U1009  ]};
+	key <AD08> {[  U1004,       U1088,    U104D,    U106A  ]};
+	key <AD09> {[  U101E,       U1025,    U1086            ]};
+	key <AD10> {[  U1005,       U100F,    U1065,    U1070  ]};
+	key <AD11> {[  U101F,       U1027                      ]};
+	key <AD12> {[  U104F,       U1092                      ]};
+
+	key <AC01> {[  U1031,       U1017,    U1008,    U107A  ]};
+	key <AC02> {[  U103A,       U103D                      ]};
+	key <AC03> {[  U102D,       U102E,    U108E,    U108C  ]};
+	key <AC04> {[  U1039,       U1064                      ]};
+	key <AC05> {[  U102B,       U103C                      ]};
+	key <AC06> {[  U1037,       U1036                      ]};
+	key <AC07> {[  U103B,       U1032,    U1083,    U1084  ]};
+	key <AC08> {[  U102F,       U1033,    U1089            ]};
+	key <AC09> {[  U1030,       U1034,    U108D,    U108B  ]};
+	key <AC10> {[  U1038,       U105A                      ]};
+	key <AC11> {[  U1012,       U1013,    U1075,    U1076  ]};
+	key <BKSL> {[  U104F,       U1092                      ]};
+
+	key <AB01> {[  U1016,       U1007,    U1079,    U1068  ]};
+	key <AB02> {[  U1011,       U100C,    U1073,    U1074  ]};
+	key <AB03> {[  U1001,       U1003,    U1061,    U1063  ]};
+	key <AB04> {[  U101C,       U1020,    U1085            ]};
+	key <AB05> {[  U1018,       U1080,    U1093            ]};
+	key <AB06> {[  U100A,       U107F,    U106B,    U1069  ]};
+	key <AB07> {[  U102C,       U107E,    U1081,    U1082  ]};
+	key <AB08> {[  U101A,       U101D                      ]};
+	key <AB09> {[ period,       U1008                      ]};
+	key <AB10> {[  U104B,       U104A                      ]};
+
+	include "level3(ralt_switch)"
+};
+

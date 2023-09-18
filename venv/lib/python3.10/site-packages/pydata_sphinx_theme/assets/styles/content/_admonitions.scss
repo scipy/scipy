@@ -1,0 +1,212 @@
+// Admonitions CSS originally inspired by https://squidfunk.github.io/mkdocs-material/getting-started/
+
+div.admonition,
+.admonition {
+  margin: 1.5625em auto;
+  padding: 0 0.6rem 0.8rem 0.6rem;
+  overflow: hidden;
+  page-break-inside: avoid;
+  border-left: 0.2rem solid;
+  border-color: var(--pst-color-info);
+  border-radius: 0.2rem;
+  box-shadow: 0 0.2rem 0.5rem var(--pst-color-shadow),
+    0 0 0.0625rem var(--pst-color-shadow);
+  background-color: var(--pst-color-on-background);
+
+  // Last item should have no spacing since we'll control that w/ padding
+  *:last-child {
+    margin-bottom: 0;
+  }
+
+  // Items after the title should be indented
+  p.admonition-title ~ * {
+    margin-left: 1.4rem;
+    margin-right: 1.4rem;
+  }
+
+  // Lists need to have left margin so they don't spill into it
+  > ol,
+  > ul {
+    margin-left: 1em;
+  }
+
+  // Defaults for all admonitions
+  > .admonition-title {
+    position: relative;
+    margin: 0 -0.6rem;
+    padding: 0.4rem 0.6rem 0.4rem 2rem;
+    font-weight: 700;
+
+    &:before {
+      position: absolute;
+      left: 0.6rem;
+      width: 1rem;
+      height: 1rem;
+      color: var(--pst-color-info);
+      font-family: "Font Awesome 5 Free";
+      font-weight: 900;
+      content: var(--pst-icon-admonition-default);
+      opacity: 1;
+    }
+
+    // This is a hack to control the opacity for admonitions with our color variables
+    // ref: https://stackoverflow.com/a/56951626/6734243
+    &:after {
+      content: "";
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      left: 0;
+      top: 0;
+      background-color: var(--pst-color-info);
+      opacity: 0.1;
+    }
+
+    // Next element after title needs some extra upper-space
+    + * {
+      margin-top: 0.4em;
+    }
+  }
+
+  &.attention {
+    border-color: var(--pst-color-warning);
+    > .admonition-title {
+      &:after {
+        background-color: var(--pst-color-warning);
+      }
+
+      &:before {
+        color: var(--pst-color-warning);
+        content: var(--pst-icon-admonition-attention);
+      }
+    }
+  }
+
+  &.caution {
+    border-color: var(--pst-color-warning);
+    > .admonition-title {
+      &:after {
+        background-color: var(--pst-color-warning);
+      }
+
+      &:before {
+        color: var(--pst-color-warning);
+        content: var(--pst-icon-admonition-caution);
+      }
+    }
+  }
+
+  &.warning {
+    border-color: var(--pst-color-warning);
+    > .admonition-title {
+      &:after {
+        background-color: var(--pst-color-warning);
+      }
+
+      &:before {
+        color: var(--pst-color-warning);
+        content: var(--pst-icon-admonition-warning);
+      }
+    }
+  }
+
+  &.danger {
+    border-color: var(--pst-color-danger);
+    > .admonition-title {
+      &:after {
+        background-color: var(--pst-color-danger);
+      }
+
+      &:before {
+        color: var(--pst-color-danger);
+        content: var(--pst-icon-admonition-danger);
+      }
+    }
+  }
+
+  &.error {
+    border-color: var(--pst-color-danger);
+    > .admonition-title {
+      &:after {
+        background-color: var(--pst-color-danger);
+      }
+
+      &:before {
+        color: var(--pst-color-danger);
+        content: var(--pst-icon-admonition-error);
+      }
+    }
+  }
+
+  &.hint {
+    border-color: var(--pst-color-success);
+    > .admonition-title {
+      &:after {
+        background-color: var(--pst-color-success);
+      }
+
+      &:before {
+        color: var(--pst-color-success);
+        content: var(--pst-icon-admonition-hint);
+      }
+    }
+  }
+
+  &.tip {
+    border-color: var(--pst-color-success);
+    > .admonition-title {
+      &:after {
+        background-color: var(--pst-color-success);
+      }
+
+      &:before {
+        color: var(--pst-color-success);
+        content: var(--pst-icon-admonition-tip);
+      }
+    }
+  }
+
+  &.important {
+    border-color: var(--pst-color-success);
+    > .admonition-title {
+      &:after {
+        background-color: var(--pst-color-success);
+      }
+
+      &:before {
+        color: var(--pst-color-success);
+        content: var(--pst-icon-admonition-important);
+      }
+    }
+  }
+
+  &.note {
+    border-color: var(--pst-color-info);
+    > .admonition-title {
+      &:after {
+        background-color: var(--pst-color-info);
+      }
+
+      &:before {
+        color: var(--pst-color-info);
+        content: var(--pst-icon-admonition-note);
+      }
+    }
+  }
+}
+
+// Similar content blocks that are not technically admonitions.
+.topic {
+  background-color: var(--pst-color-surface);
+  border-color: var(--pst-color-border);
+}
+
+aside.sidebar {
+  background-color: var(--pst-color-on-surface);
+  border-color: var(--pst-color-border);
+}
+
+.seealso dd {
+  margin-top: 0;
+  margin-bottom: 0;
+}

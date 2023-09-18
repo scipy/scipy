@@ -1,0 +1,176 @@
+// Modified for a real Latin American keyboard by Fabian Mandelbaum.
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+    include "latin(type4)"
+
+    name[Group1]="Spanish (Latin American)";
+
+    key <AE01>	{ [         1,     exclam,          bar,   exclamdown ]	};
+    key <AE03>	{ [         3, numbersign, periodcentered,   sterling ]	};
+    key <AE04>	{ [         4,     dollar,   asciitilde,       dollar ]	};
+    key <AE06>	{ [         6,  ampersand,      notsign,  fiveeighths ]	};
+    key <AE11>	{ [apostrophe,   question,    backslash, questiondown ]	};
+    key <AE12>	{ [questiondown, exclamdown, dead_cedilla, dead_ogonek]	};
+
+    key <AD11>	{ [dead_acute, dead_diaeresis, dead_diaeresis, dead_abovering ]	};
+    key <AD12>	{ [      plus,   asterisk,   asciitilde,  dead_macron ]	};
+
+    key <AC10>	{ [    ntilde,     Ntilde,   asciitilde, dead_doubleacute ] };
+    key <AC11>	{ [ braceleft, bracketleft, dead_circumflex, braceleft]	};
+    key <TLDE>	{ [       bar,     degree,      notsign,      notsign ]	};
+
+    key <BKSL>	{ [braceright, bracketright, dead_grave,   braceright ]	};
+
+    key <LSGT>	{ [      less,    greater,    backslash,          bar ] };
+
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "nodeadkeys" {
+
+    include "latam(basic)"
+
+    name[Group1]="Spanish (Latin American, no dead keys)";
+
+    key <AE12>	{ [questiondown, exclamdown,    cedilla,       ogonek ]	};
+    key <AD11>	{ [     grave, asciicircum, bracketleft,       degree ]	};
+    key <AD12>	{ [      plus,   asterisk, bracketright,       macron ]	};
+    key <AC10>	{ [    ntilde,     Ntilde,   asciitilde,  doubleacute ]	};
+    key <AC11>	{ [     acute,  diaeresis,    braceleft,    braceleft ]	};
+    key <BKSL>	{ [  ccedilla,   Ccedilla,   braceright,        breve ]	};
+    key <AB10>	{ [     minus, underscore, dead_belowdot,    abovedot ]	};
+};
+
+partial alphanumeric_keys
+xkb_symbols "deadtilde" {
+
+    include "latam(basic)"
+
+    name[Group1]="Spanish (Latin American, dead tilde)";
+
+    key <AD12>	{ [      plus,   asterisk,   dead_tilde,  dead_macron ]	};
+};
+
+// Latin American Spanish Dvorak mapping (note R-H exchange)
+partial alphanumeric_keys
+xkb_symbols "dvorak" {
+
+    name[Group1]="Spanish (Latin American, Dvorak)";
+
+    key <TLDE> {[          bar,     degree,        notsign,      notsign ]};
+    key <AE01> {[            1,     exclam,            bar,   exclamdown ]};
+    key <AE02> {[            2,   quotedbl,             at,    oneeighth ]};
+    key <AE03> {[            3, numbersign, periodcentered,     sterling ]};
+    key <AE04> {[            4,     dollar,     asciitilde,       dollar ]};
+    key <AE05> {[            5,    percent,        onehalf, threeeighths ]};
+    key <AE06> {[            6,  ampersand,        notsign,  fiveeighths ]};
+    key <AE07> {[            7,      slash,      braceleft, seveneighths ]};
+    key <AE08> {[            8,  parenleft,    bracketleft,    trademark ]};
+    key <AE09> {[            9, parenright,   bracketright,    plusminus ]};
+    key <AE10> {[            0,      equal,     braceright,       degree ]};
+    key <AE11> {[   apostrophe,   question,      backslash, questiondown ]};
+    key <AE12> {[ questiondown, exclamdown,   dead_cedilla,  dead_ogonek ]};
+
+    key <AD01> {[     period,          colon,             at                 ]};
+    key <AD02> {[      comma,      semicolon                                 ]};
+    key <AD03> {[     ntilde,         Ntilde,        lstroke,        Lstroke ]};
+    key <AD04> {[          p,              P,      paragraph                 ]};
+    key <AD05> {[          y,              Y,            yen                 ]};
+    key <AD06> {[          f,              F,         tslash,         Tslash ]};
+    key <AD07> {[          g,              G,        dstroke,        Dstroke ]};
+    key <AD08> {[          c,              C,           cent,      copyright ]};
+    key <AD09> {[          h,              H,        hstroke,        Hstroke ]};
+    key <AD10> {[          l,              L,       sterling                 ]};
+    key <AD11> {[ dead_acute, dead_diaeresis, dead_diaeresis, dead_abovering ]};
+    key <AD12> {[       plus,       asterisk,     asciitilde,    dead_macron ]};
+
+    key <AC01> {[          a,            A,              ae,         AE ]};
+    key <AC02> {[          o,            O,          oslash,     Oslash ]};
+    key <AC03> {[          e,            E,        EuroSign             ]};
+    key <AC04> {[          u,            U,           aring,      Aring ]};
+    key <AC05> {[          i,            I,              oe,         OE ]};
+    key <AC06> {[          d,            D,             eth,        ETH ]};
+    key <AC07> {[          r,            R,      registered,  trademark ]};
+    key <AC08> {[          t,            T,           thorn,      THORN ]};
+    key <AC09> {[          n,            N,             eng,        ENG ]};
+    key <AC10> {[          s,            S,          ssharp,    section ]};
+    key <AC11> {[  braceleft,  bracketleft, dead_circumflex,  braceleft ]};
+    key <BKSL> {[ braceright, bracketright,      dead_grave, braceright ]};
+
+    key <LSGT> {[       less,    greater, guillemotleft, guillemotright ]};
+    key <AB01> {[      minus, underscore,        hyphen, macron         ]};
+    key <AB02> {[          q,          Q,      currency                 ]};
+    key <AB03> {[          j,          J                                ]};
+    key <AB04> {[          k,          K,           kra                 ]};
+    key <AB05> {[          x,          X,       multiply, division      ]};
+    key <AB06> {[          b,          B                                ]};
+    key <AB07> {[          m,          M,            mu                 ]};
+    key <AB08> {[          w,          W                                ]};
+    key <AB09> {[          v,          V                                ]};
+    key <AB10> {[          z,          Z                                ]};
+
+    include "level3(ralt_switch)"
+};
+
+// Latin American Spanish Colemak mapping (inspired by DreymaR)
+partial alphanumeric_keys
+xkb_symbols "colemak" {
+
+    name[Group1]="Spanish (Latin American, Colemak)";
+
+    key <TLDE> {[          bar,     degree,        notsign,      notsign ]};
+    key <AE01> {[            1,     exclam,            bar,   exclamdown ]};
+    key <AE02> {[            2,   quotedbl,             at,    oneeighth ]};
+    key <AE03> {[            3, numbersign, periodcentered,     sterling ]};
+    key <AE04> {[            4,     dollar,     asciitilde,       dollar ]};
+    key <AE05> {[            5,    percent,        onehalf, threeeighths ]};
+    key <AE06> {[            6,  ampersand,        notsign,  fiveeighths ]};
+    key <AE07> {[            7,      slash,      braceleft, seveneighths ]};
+    key <AE08> {[            8,  parenleft,    bracketleft,    trademark ]};
+    key <AE09> {[            9, parenright,   bracketright,    plusminus ]};
+    key <AE10> {[            0,      equal,     braceright,       degree ]};
+    key <AE11> {[   apostrophe,   question,      backslash, questiondown ]};
+    key <AE12> {[ questiondown, exclamdown,   dead_cedilla,  dead_ogonek ]};
+
+    key <AD01> {[          q,              Q,         U201A,         U201E ]};
+    key <AD02> {[          w,              W,         U2018,         U201C ]};
+    key <AD03> {[          f,              F,         U2019,         U201D ]};
+    key <AD04> {[          p,              P,         U2293,      paragraph ]};
+    key <AD05> {[          g,              G,            eng,            ENG ]};
+    key <AD06> {[          j,              J,         U222B,         U03A3 ]};
+    key <AD07> {[          l,              L,        lstroke,        Lstroke ]};
+    key <AD08> {[          u,              U,         U2039,  guillemotleft ]};
+    key <AD09> {[          y,              Y,         U203A, guillemotright ]};
+    key <AD10> {[     ntilde,         Ntilde,     asciitilde,         U02EE ]};
+    key <AD11> {[ dead_acute, dead_diaeresis, dead_diaeresis, dead_abovering ]};
+    key <AD12> {[       plus,       asterisk,     asciitilde,    dead_macron ]};
+
+    key <AC01> {[          a,            A,              ae,         AE ]};
+    key <AC02> {[          r,            R,      registered,  trademark ]};
+    key <AC03> {[          s,            S,          ssharp,    section ]};
+    key <AC04> {[          t,            T,           thorn,      THORN ]};
+    key <AC05> {[          d,            D,             eth,        ETH ]};
+    key <AC06> {[          h,            H,         hstroke,    Hstroke ]};
+    key <AC07> {[          n,            N,          hyphen,     U2190 ]};
+    key <AC08> {[          e,            E,        EuroSign,     U2191 ]};
+    key <AC09> {[          i,            I,          U2015,     U2192 ]};
+    key <AC10> {[          o,            O,          U00BA,     U00AA ]};
+    key <AC11> {[  braceleft,  bracketleft, dead_circumflex,  braceleft ]};
+    key <BKSL> {[ braceright, bracketright,      dead_grave, braceright ]};
+
+    key <LSGT> {[       less,      greater,             bar,     U00A6 ]};
+    key <AB01> {[          z,            Z,          U0292,     U01B7 ]};
+    key <AB02> {[          x,            X,          U2020,     U2021 ]};
+    key <AB03> {[          c,            C,            cent,  copyright ]};
+    key <AB04> {[          v,            V,        division,     U03B3 ]};
+    key <AB05> {[          b,            B,          U2022,     U03B2 ]};
+    key <AB06> {[          k,            K,          U00E7,     U00C7 ]};
+    key <AB07> {[          m,            M,        multiply,     U2193 ]};
+    key <AB08> {[      comma,    semicolon,          hyphen,   multiply ]};
+    key <AB09> {[     period,        colon,          U0323,   division ]};
+    key <AB10> {[      minus,   underscore                              ]};
+
+    include "level3(ralt_switch)"
+};

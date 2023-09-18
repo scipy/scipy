@@ -1,0 +1,2340 @@
+#
+# IPP/1.1 test suite.
+#
+# Copyright © 2007-2017 by Apple Inc.
+# Copyright © 2001-2006 by Easy Software Products. All rights reserved.
+#
+# Licensed under Apache License v2.0.  See the file "LICENSE" for more
+# information.
+#
+# Usage:
+#
+#   ./ipptool -f filename [-d document-uri=SOMEURI] -t printer-uri ipp-1.1.test
+#   ./ipptool -f filename -d NOPRINT=1 -t printer-uri ipp-1.1.test
+#
+# The latter form disables all but the basic file printing.
+#
+
+# Regular expressions for URI schemes:
+#
+#   HTTP_URI_SCHEME - Matches strings beginning with http:// or https://
+#   IPP_URI_SCHEME  - Matches strings beginning with ipp:// or ipps://
+
+DEFINE HTTP_URI_SCHEME "/^https?://.+$$/"
+DEFINE IPP_URI_SCHEME "/^ipps?://.+$$/"
+
+# Test that a request-id value of 0 is not accepted.
+#
+# Required by: RFC 8011 section 4.1.1
+{
+	NAME "RFC 8011 section 4.1.1: Bad request-id value 0"
+	REQUEST-ID 0
+	OPERATION Get-Printer-Attributes
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+
+	STATUS client-error-bad-request
+	EXPECT !printer-uri-supported
+}
+
+
+# Test that the first two attributes must be attributes-charset and
+# attributes-natural-language.
+#
+# Required by: RFC 8011 section 4.1.4
+{
+	NAME "RFC 8011 section 4.1.4: No Operation Attributes"
+	REQUEST-ID random
+	OPERATION Get-Printer-Attributes
+	GROUP operation-attributes-tag
+
+	STATUS client-error-bad-request
+	EXPECT !printer-uri-supported
+}
+{
+	NAME "RFC 8011 section 4.1.4: attributes-charset"
+	OPERATION Get-Printer-Attributes
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR uri printer-uri $uri
+
+	STATUS client-error-bad-request
+	EXPECT !printer-uri-supported
+}
+{
+	NAME "RFC 8011 section 4.1.4: attributes-natural-language"
+	OPERATION Get-Printer-Attributes
+	GROUP operation-attributes-tag
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+
+	STATUS client-error-bad-request
+	EXPECT !printer-uri-supported
+}
+{
+	NAME "RFC 8011 section 4.1.4: attributes-natural-language + attributes-charset"
+	OPERATION Get-Printer-Attributes
+	GROUP operation-attributes-tag
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR charset attributes-charset utf-8
+	ATTR uri printer-uri $uri
+
+	STATUS client-error-bad-request
+	EXPECT !printer-uri-supported
+}
+{
+	NAME "RFC 8011 section 4.1.4: attributes-charset + attributes-natural-language"
+	OPERATION Get-Printer-Attributes
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+
+	STATUS successful-ok
+	EXPECT printer-uri-supported OF-TYPE uri WITH-ALL-VALUES "$IPP_URI_SCHEME"
+}
+
+
+# Test that bad IPP versions are not supported.
+#
+# Required by: RFC 8011 section 4.1.8
+{
+	# The name of the test...
+	NAME "RFC 8011 section 4.1.8: Unsupported IPP version 0.0"
+	VERSION 0.0
+	OPERATION Get-Printer-Attributes
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+
+	STATUS server-error-version-not-supported
+	EXPECT !printer-uri-supported
+}
+
+
+# Test that printer operations require the printer-uri operation attribute.
+#
+# Required by: RFC 8011 section 4.2
+{
+	NAME "RFC 8011 section 4.2: No printer-uri operation attribute"
+	OPERATION Get-Printer-Attributes
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+
+	STATUS client-error-bad-request
+	EXPECT !printer-uri-supported
+}
+
+
+# Test Print-Job operation
+#
+# Required by: RFC 8011 section 4.2.1
+{
+	NAME "RFC 8011 section 4.2.1: Print-Job Operation"
+	OPERATION Print-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name $filename
+	ATTR boolean ipp-attribute-fidelity false
+	ATTR name document-name $filename
+	ATTR keyword compression none
+	ATTR mimeMediaType document-format $filetype
+	FILE $filename
+
+	STATUS successful-ok
+	STATUS client-error-document-format-not-supported
+	STATUS server-error-job-canceled
+	STATUS server-error-busy REPEAT-MATCH REPEAT-LIMIT 30
+
+	EXPECT job-uri OF-TYPE uri COUNT 1 IN-GROUP job-attributes-tag WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-id OF-TYPE integer COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE >0
+	EXPECT job-state OF-TYPE unknown|enum COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE 3,4,5,6,7,8,9
+	EXPECT job-state WITH-VALUE 7,8,9 DEFINE-MATCH PRINT_JOB_COMPLETED
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer
+	       IN-GROUP job-attributes-tag WITH-VALUE >-1
+}
+
+# Test Validate-Job operation
+#
+# Required by: RFC 8011 section 4.2.3
+{
+	NAME "RFC 8011 section 4.2.3: Validate-Job Operation"
+	OPERATION Validate-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name $filename
+	ATTR boolean ipp-attribute-fidelity false
+	ATTR name document-name $filename
+	ATTR keyword compression none
+	ATTR mimeMediaType document-format $filetype
+
+	STATUS successful-ok
+}
+
+
+# Test Get-Printer-Attributes operation
+#
+# Required by: RFC 8011 section 4.2.5
+{
+	NAME "RFC 8011 section 4.2.5: Get-Printer-Attributes Operation (default)"
+	OPERATION Get-Printer-Attributes
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR mimeMediaType document-format $filetype
+
+	STATUS successful-ok
+
+	# Display some useful information to identify the test
+	DISPLAY color-supported
+	DISPLAY compression-supported
+	DISPLAY document-format-supported
+	DISPLAY finishings-supported
+	DISPLAY ipp-versions-supported
+	DISPLAY job-sheets-supported
+	DISPLAY media-supported
+	DISPLAY number-up-supported
+	DISPLAY operations-supported
+	DISPLAY pages-per-minute
+	DISPLAY pages-per-minute-color
+	DISPLAY print-quality-supported
+	DISPLAY printer-uri-supported
+	DISPLAY reference-uri-schemes-supported
+	DISPLAY sizes-supported
+	DISPLAY uri-authentication-supported
+	DISPLAY uri-security-supported
+
+	# Operations
+	EXPECT operations-supported OF-TYPE enum IN-GROUP printer-attributes-tag WITH-VALUE 0x0002 # Print-Job
+	EXPECT operations-supported WITH-VALUE 0x0003 DEFINE-MATCH OPTIONAL_PRINT_URI # Print-URI
+	EXPECT operations-supported WITH-VALUE 0x0004 # Validate-Job
+	EXPECT operations-supported WITH-VALUE 0x0005 DEFINE-MATCH OPTIONAL_CREATE_JOB # Create-Job
+	EXPECT operations-supported WITH-VALUE 0x0006 DEFINE-MATCH OPTIONAL_SEND_DOCUMENT # Send-Document
+	EXPECT operations-supported WITH-VALUE 0x0007 DEFINE-MATCH OPTIONAL_SEND_URI # Send-URI
+	EXPECT operations-supported WITH-VALUE 0x0008 # Cancel-Job
+	EXPECT operations-supported WITH-VALUE 0x0009 # Get-Job-Attributes
+	EXPECT operations-supported WITH-VALUE 0x000a # Get-Jobs
+	EXPECT operations-supported WITH-VALUE 0x000b # Get-Printer-Attributes
+	EXPECT operations-supported WITH-VALUE 0x000c DEFINE-MATCH OPTIONAL_HOLD_JOB # Hold-Job
+	EXPECT operations-supported WITH-VALUE 0x000d DEFINE-MATCH OPTIONAL_RELEASE_JOB # Release-Job
+	EXPECT operations-supported WITH-VALUE 0x000e DEFINE-MATCH OPTIONAL_RESTART_JOB # Restart-Job
+	EXPECT operations-supported WITH-VALUE 0x0010 DEFINE-MATCH OPTIONAL_PAUSE_PRINTER # Pause-Printer
+	EXPECT operations-supported WITH-VALUE 0x0011 DEFINE-MATCH OPTIONAL_RESUME_PRINTER # Resume-Printer
+	EXPECT operations-supported WITH-VALUE 0x0012 DEFINE-MATCH OPTIONAL_PURGE_JOBS # Purge-Jobs
+
+	# Job template attributes
+	EXPECT ?copies-default OF-TYPE integer IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE >0
+	EXPECT ?copies-supported OF-TYPE rangeOfInteger IN-GROUP printer-attributes-tag
+	EXPECT ?finishings-default OF-TYPE enum IN-GROUP printer-attributes-tag
+	EXPECT ?finishings-supported OF-TYPE enum IN-GROUP printer-attributes-tag WITH-VALUE 3
+	EXPECT ?job-hold-until-default OF-TYPE keyword|name IN-GROUP printer-attributes-tag COUNT 1
+	EXPECT ?job-hold-until-supported OF-TYPE keyword|name IN-GROUP printer-attributes-tag WITH-VALUE no-hold
+	EXPECT job-hold-until-default IF-DEFINED OPTIONAL_HOLD_JOB
+	EXPECT job-hold-until-supported IF-DEFINED OPTIONAL_HOLD_JOB
+	EXPECT ?job-priority-default OF-TYPE integer IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE >0,<101
+	EXPECT ?job-priority-supported OF-TYPE integer IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE >0,<101
+	EXPECT ?job-sheets-default OF-TYPE keyword|name IN-GROUP printer-attributes-tag
+	EXPECT ?job-sheets-supported OF-TYPE keyword|name IN-GROUP printer-attributes-tag WITH-VALUE none
+	EXPECT ?media-default OF-TYPE no-value|keyword|name IN-GROUP printer-attributes-tag COUNT 1
+	EXPECT ?media-ready OF-TYPE keyword|name IN-GROUP printer-attributes-tag
+	EXPECT ?media-supported OF-TYPE keyword|name IN-GROUP printer-attributes-tag
+	EXPECT ?multiple-document-handling-default OF-TYPE keyword IN-GROUP printer-attributes-tag WITH-VALUE "/^(single-document|separate-documents-uncollated-copies|separate-documents-collated-copies|single-document-new-sheet)$$/"
+	EXPECT ?multiple-document-handling-supported OF-TYPE keyword IN-GROUP printer-attributes-tag WITH-VALUE "/^(single-document|separate-documents-uncollated-copies|separate-documents-collated-copies|single-document-new-sheet)$$/"
+	EXPECT ?number-up-default OF-TYPE integer IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE >0
+	EXPECT ?number-up-supported OF-TYPE integer|rangeOfInteger IN-GROUP printer-attributes-tag WITH-VALUE >0
+	EXPECT ?number-up-supported WITH-VALUE 1
+	EXPECT ?orientation-requested-default OF-TYPE no-value|enum IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE 3,4,5,6
+	EXPECT ?orientation-requested-supported OF-TYPE enum IN-GROUP printer-attributes-tag WITH-VALUE 3,4,5,6
+	EXPECT ?pages-ranges-supported OF-TYPE boolean IN-GROUP printer-attributes-tag
+	EXPECT ?print-quality-default OF-TYPE enum IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE 3,4,5
+	EXPECT ?print-quality-supported OF-TYPE enum IN-GROUP printer-attributes-tag WITH-VALUE 3,4,5
+	EXPECT ?printer-resolution-default OF-TYPE resolution IN-GROUP printer-attributes-tag COUNT 1
+	EXPECT ?printer-resolution-supported OF-TYPE resolution IN-GROUP printer-attributes-tag
+	EXPECT ?sides-default OF-TYPE keyword IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE "/^(one-sided|two-sided-long-edge|two-sided-short-edge)$$/"
+	EXPECT ?sides-supported OF-TYPE keyword IN-GROUP printer-attributes-tag WITH-VALUE "/^(one-sided|two-sided-long-edge|two-sided-short-edge)$$/"
+
+	# Job template attributes for specific tests...
+	EXPECT copies-supported WITH-VALUE >1 DEFINE-MATCH OPTIONAL_COPIES
+	EXPECT document-format-supported WITH-VALUE "application/pdf" DEFINE-MATCH OPTIONAL_PDF
+	EXPECT document-format-supported WITH-VALUE "application/postscript" DEFINE-MATCH OPTIONAL_POSTSCRIPT
+	EXPECT document-format-supported WITH-VALUE "image/jpeg" DEFINE-MATCH OPTIONAL_JPEG
+	EXPECT job-sheets-supported WITH-VALUE "standard" DEFINE-MATCH OPTIONAL_STANDARD_SHEET
+	EXPECT media-supported WITH-VALUE "a4" DEFINE-VALUE OPTIONAL_A4_MEDIA
+	EXPECT media-supported WITH-VALUE "iso-a4" DEFINE-VALUE OPTIONAL_A4_MEDIA
+	EXPECT media-supported WITH-VALUE "iso_a4_210x297mm" DEFINE-VALUE OPTIONAL_A4_MEDIA
+	EXPECT media-supported WITH-VALUE "letter" DEFINE-VALUE OPTIONAL_LETTER_MEDIA
+	EXPECT media-supported WITH-VALUE "na-letter" DEFINE-VALUE OPTIONAL_LETTER_MEDIA
+	EXPECT media-supported WITH-VALUE "na_letter_8.5x11in" DEFINE-VALUE OPTIONAL_LETTER_MEDIA
+	EXPECT media-supported WITH-VALUE "index-4x6" DEFINE-VALUE OPTIONAL_4X6_MEDIA
+	EXPECT media-supported WITH-VALUE "na_index-4x6_4x6in" DEFINE-VALUE OPTIONAL_4X6_MEDIA
+	EXPECT number-up-supported WITH-VALUE 2 DEFINE-MATCH OPTIONAL_2UP
+	EXPECT print-quality WITH-VALUE 3 DEFINE-MATCH OPTIONAL_DRAFT_QUALITY
+	EXPECT print-quality WITH-VALUE 4 DEFINE-MATCH OPTIONAL_NORMAL_QUALITY
+	EXPECT print-quality WITH-VALUE 5 DEFINE-MATCH OPTIONAL_BEST_QUALITY
+	EXPECT sides-supported WITH-VALUE "two-sided-long-edge" DEFINE-MATCH OPTIONAL_DUPLEX
+
+	# Printer description attributes
+	EXPECT ?color-supported OF-TYPE boolean IN-GROUP printer-attributes-tag COUNT 1
+	EXPECT ?job-impressions-supported OF-TYPE rangeOfInteger IN-GROUP printer-attributes-tag COUNT 1
+	EXPECT ?job-k-octets-supported OF-TYPE rangeOfInteger IN-GROUP printer-attributes-tag COUNT 1
+	EXPECT ?job-media-sheets-supported OF-TYPE rangeOfInteger IN-GROUP printer-attributes-tag COUNT 1
+	EXPECT ?multiple-document-jobs-supported OF-TYPE boolean IN-GROUP printer-attributes-tag COUNT 1
+	EXPECT ?multiple-operation-time-out OF-TYPE integer IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE >0
+	EXPECT ?pages-per-minute OF-TYPE integer IN-GROUP printer-attributes-tag COUNT 1
+	EXPECT ?pages-per-minute-color OF-TYPE integer IN-GROUP printer-attributes-tag COUNT 1
+	EXPECT ?printer-driver-installer OF-TYPE uri IN-GROUP printer-attributes-tag COUNT 1
+	EXPECT ?printer-info OF-TYPE text IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE "/^.{0,127}$$/"
+	EXPECT ?printer-location OF-TYPE text IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE "/^.{0,127}$$/"
+	EXPECT ?printer-make-and-model OF-TYPE text IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE "/^.{0,127}$$/"
+	EXPECT ?printer-message-from-operator OF-TYPE text IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE "/^.{0,127}$$/"
+	EXPECT ?printer-more-info OF-TYPE uri IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE "$HTTP_URI_SCHEME"
+	EXPECT ?printer-more-info-manufacturer OF-TYPE uri IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE "$HTTP_URI_SCHEME"
+	EXPECT ?printer-state-message OF-TYPE text IN-GROUP printer-attributes-tag
+	EXPECT ?reference-uri-schemes-supported OF-TYPE uriScheme IN-GROUP printer-attributes-tag
+	EXPECT reference-uri-schemes-supported WITH-VALUE "ftp" IF-DEFINED OPTIONAL_PRINT_URI
+	EXPECT reference-uri-schemes-supported WITH-VALUE "ftp" IF-DEFINED OPTIONAL_SEND_URI IF-NOT-DEFINED OPTIONAL_PRINT_URI
+	EXPECT charset-configured OF-TYPE charset IN-GROUP printer-attributes-tag COUNT 1
+	EXPECT charset-supported OF-TYPE charset IN-GROUP printer-attributes-tag WITH-VALUE utf-8
+	EXPECT compression-supported OF-TYPE keyword IN-GROUP printer-attributes-tag WITH-VALUE none
+	EXPECT document-format-default OF-TYPE mimeMediaType IN-GROUP printer-attributes-tag COUNT 1
+	EXPECT document-format-supported OF-TYPE mimeMediaType IN-GROUP printer-attributes-tag
+	EXPECT generated-natural-language-supported OF-TYPE naturalLanguage IN-GROUP printer-attributes-tag
+	EXPECT ipp-versions-supported OF-TYPE keyword IN-GROUP printer-attributes-tag WITH-VALUE 1.1
+	EXPECT natural-language-configured OF-TYPE naturalLanguage IN-GROUP printer-attributes-tag COUNT 1
+	EXPECT pdl-override-supported OF-TYPE keyword IN-GROUP printer-attributes-tag COUNT 1
+	EXPECT printer-is-accepting-jobs OF-TYPE boolean IN-GROUP printer-attributes-tag COUNT 1
+	EXPECT printer-name OF-TYPE name IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE "/^.{0,127}$$/"
+	EXPECT printer-state OF-TYPE enum IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE 3,4,5
+	EXPECT printer-state-reasons OF-TYPE keyword IN-GROUP printer-attributes-tag
+	EXPECT printer-up-time OF-TYPE integer IN-GROUP printer-attributes-tag COUNT 1 WITH-VALUE >0
+	EXPECT printer-uri-supported OF-TYPE uri IN-GROUP printer-attributes-tag SAME-COUNT-AS uri-security-supported WITH-ALL-VALUES "$IPP_URI_SCHEME"
+	EXPECT queued-job-count OF-TYPE integer IN-GROUP printer-attributes-tag COUNT 1
+	EXPECT uri-authentication-supported OF-TYPE keyword IN-GROUP printer-attributes-tag
+	EXPECT uri-security-supported OF-TYPE keyword IN-GROUP printer-attributes-tag SAME-COUNT-AS uri-authentication-supported
+}
+
+
+# Test Get-Printer-Attributes operation with requested-attributes
+#
+# Required by: RFC 8011 section 4.2.5
+{
+	NAME "RFC 8011 section 4.2.5: Get-Printer-Attributes Operation (requested-attributes)"
+	OPERATION Get-Printer-Attributes
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR mimeMediaType document-format $filetype
+	ATTR keyword requested-attributes printer-uri-supported
+
+	STATUS successful-ok
+
+	EXPECT printer-uri-supported OF-TYPE uri IN-GROUP printer-attributes-tag WITH-ALL-VALUES "$IPP_URI_SCHEME"
+	EXPECT !printer-name
+}
+
+
+# Test Get-Jobs operation
+#
+# Required by: RFC 8011 section 4.2.6
+{
+	NAME "RFC 8011 section 4.2.6: Get-Jobs Operation (default)"
+	OPERATION Get-Jobs
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+
+	STATUS successful-ok
+	EXPECT ?job-id OF-TYPE integer IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE >0
+	EXPECT ?job-uri OF-TYPE uri IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT !job-printer-uri
+	EXPECT !job-more-info
+	EXPECT !job-name
+	EXPECT !job-originating-user-name
+	EXPECT !job-state
+	EXPECT !job-state-reasons
+	EXPECT !job-state-message
+	EXPECT !job-detailed-status-messages
+	EXPECT !number-of-documents
+	EXPECT !output-device-assigned
+	EXPECT !time-at-creation
+	EXPECT !time-at-processing
+	EXPECT !time-at-completed
+	EXPECT !job-printer-up-time
+	EXPECT !date-time-at-creation
+	EXPECT !date-time-at-processing
+	EXPECT !date-time-at-completed
+	EXPECT !number-of-intervening-jobs
+	EXPECT !job-message-from-operator
+	EXPECT !job-k-octets
+	EXPECT !job-impressions
+	EXPECT !job-media-sheets
+	EXPECT !job-k-octets-processed
+	EXPECT !job-impressions-completed
+	EXPECT !job-media-sheets-completed
+
+	EXPECT !copies
+	EXPECT !finishings
+	EXPECT !job-hold-until
+	EXPECT !job-priority
+	EXPECT !job-sheets
+	EXPECT !media
+	EXPECT !multiple-document-handling
+	EXPECT !number-up
+	EXPECT !orientation-requested
+	EXPECT !pages-ranges
+	EXPECT !print-quality
+	EXPECT !printer-resolution
+	EXPECT !sides
+}
+
+
+# Test Get-Jobs operation
+#
+# Required by: RFC 8011 section 4.2.6
+{
+	SKIP-IF-DEFINED PRINT_JOB_COMPLETED
+
+	NAME "RFC 8011 section 4.2.6: Get-Jobs Operation (requested-attributes)"
+	OPERATION Get-Jobs
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR keyword requested-attributes all
+
+	STATUS successful-ok
+	EXPECT ?job-id OF-TYPE integer IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE >0
+	EXPECT ?job-uri OF-TYPE uri IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT ?job-printer-uri OF-TYPE uri IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT ?job-more-info OF-TYPE uri IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE "$HTTP_URI_SCHEME"
+	EXPECT ?job-name OF-TYPE name IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?job-originating-user-name OF-TYPE name IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?job-state OF-TYPE unknown|enum IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE >2,<10
+	EXPECT ?job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?job-detailed-status-messages OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-documents OF-TYPE integer IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?output-device-assigned OF-TYPE name IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?time-at-creation OF-TYPE integer IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE >-1
+	EXPECT ?time-at-processing OF-TYPE no-value|integer IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE >-1
+	EXPECT ?time-at-completed OF-TYPE no-value|integer IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE >-1
+	EXPECT ?job-printer-up-time OF-TYPE no-value|integer IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?date-time-at-creation OF-TYPE no-value|dateTime IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?date-time-at-processing OF-TYPE no-value|dateTime IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?date-time-at-completed OF-TYPE no-value|dateTime IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?job-message-from-operator OF-TYPE text IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?job-k-octets OF-TYPE integer|no-value IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?job-impressions OF-TYPE integer|no-value IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?job-media-sheets OF-TYPE integer|no-value IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?job-k-octets-processed OF-TYPE integer|no-value IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?job-impressions-completed OF-TYPE integer|no-value IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?job-media-sheets-completed OF-TYPE integer|no-value IN-GROUP job-attributes-tag COUNT 1
+
+	EXPECT ?copies OF-TYPE integer IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE >0
+	EXPECT ?finishings OF-TYPE enum IN-GROUP job-attributes-tag
+	EXPECT ?job-hold-until OF-TYPE keyword|name IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?job-priority OF-TYPE integer IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE >0,<101
+	EXPECT ?job-sheets OF-TYPE keyword|name IN-GROUP job-attributes-tag
+	EXPECT ?media OF-TYPE keyword|name IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?multiple-document-handling OF-TYPE keyword IN-GROUP job-attributes-tag WITH-VALUE "/^(single-document|separate-documents-uncollated-copies|separate-documents-collated-copies|single-document-new-sheet)$$/"
+	EXPECT ?number-up OF-TYPE integer IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE >0
+	EXPECT ?orientation-requested OF-TYPE enum IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE 3,4,5,6
+	EXPECT ?pages-ranges OF-TYPE rangeOfInteger IN-GROUP job-attributes-tag
+	EXPECT ?print-quality OF-TYPE enum IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE 3,4,5
+	EXPECT ?printer-resolution OF-TYPE resolution IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?sides OF-TYPE keyword IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE "/^(one-sided|two-sided-long-edge|two-sided-short-edge)$$/"
+}
+
+
+# Test Get-Jobs operation
+#
+# Required by: RFC 8011 section 4.2.6
+{
+	SKIP-IF-DEFINED PRINT_JOB_COMPLETED
+
+	NAME "RFC 8011 section 4.2.6: Get-Jobs Operation (my-jobs)"
+	OPERATION Get-Jobs
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR boolean my-jobs true
+
+	STATUS successful-ok
+	EXPECT ?job-id OF-TYPE integer IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE >0
+	EXPECT ?job-uri OF-TYPE uri IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT !job-printer-uri
+	EXPECT !job-more-info
+	EXPECT !job-name
+	EXPECT !job-originating-user-name
+	EXPECT !job-state
+	EXPECT !job-state-reasons
+	EXPECT !job-state-message
+	EXPECT !job-detailed-status-messages
+	EXPECT !number-of-documents
+	EXPECT !output-device-assigned
+	EXPECT !time-at-creation
+	EXPECT !time-at-processing
+	EXPECT !time-at-completed
+	EXPECT !job-printer-up-time
+	EXPECT !date-time-at-creation
+	EXPECT !date-time-at-processing
+	EXPECT !date-time-at-completed
+	EXPECT !number-of-intervening-jobs
+	EXPECT !job-message-from-operator
+	EXPECT !job-k-octets
+	EXPECT !job-impressions
+	EXPECT !job-media-sheets
+	EXPECT !job-k-octets-processed
+	EXPECT !job-impressions-completed
+	EXPECT !job-media-sheets-completed
+
+	EXPECT !copies
+	EXPECT !finishings
+	EXPECT !job-hold-until
+	EXPECT !job-priority
+	EXPECT !job-sheets
+	EXPECT !media
+	EXPECT !multiple-document-handling
+	EXPECT !number-up
+	EXPECT !orientation-requested
+	EXPECT !pages-ranges
+	EXPECT !print-quality
+	EXPECT !printer-resolution
+	EXPECT !sides
+}
+
+
+# Test Get-Jobs operation
+#
+# Required by: RFC 8011 section 4.2.6
+{
+	SKIP-IF-DEFINED PRINT_JOB_COMPLETED
+
+	# Skip this test when doing authenticated printing since we'll always
+	# use the authenticated username over the requesting-user-name value.
+	SKIP-IF-DEFINED uriuser
+
+	NAME "RFC 8011 section 4.2.6: Get-Jobs Operation (my-jobs different user)"
+	OPERATION Get-Jobs
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name not-$user
+	ATTR boolean my-jobs true
+
+	STATUS successful-ok
+	EXPECT !job-id
+	EXPECT !job-uri
+	EXPECT !job-printer-uri
+	EXPECT !job-more-info
+	EXPECT !job-name
+	EXPECT !job-originating-user-name
+	EXPECT !job-state
+	EXPECT !job-state-reasons
+	EXPECT !job-state-message
+	EXPECT !job-detailed-status-messages
+	EXPECT !number-of-documents
+	EXPECT !output-device-assigned
+	EXPECT !time-at-creation
+	EXPECT !time-at-processing
+	EXPECT !time-at-completed
+	EXPECT !job-printer-up-time
+	EXPECT !date-time-at-creation
+	EXPECT !date-time-at-processing
+	EXPECT !date-time-at-completed
+	EXPECT !number-of-intervening-jobs
+	EXPECT !job-message-from-operator
+	EXPECT !job-k-octets
+	EXPECT !job-impressions
+	EXPECT !job-media-sheets
+	EXPECT !job-k-octets-processed
+	EXPECT !job-impressions-completed
+	EXPECT !job-media-sheets-completed
+
+	EXPECT !copies
+	EXPECT !finishings
+	EXPECT !job-hold-until
+	EXPECT !job-priority
+	EXPECT !job-sheets
+	EXPECT !media
+	EXPECT !multiple-document-handling
+	EXPECT !number-up
+	EXPECT !orientation-requested
+	EXPECT !pages-ranges
+	EXPECT !print-quality
+	EXPECT !printer-resolution
+	EXPECT !sides
+}
+
+
+# Test Get-Jobs operation
+#
+# Required by: RFC 8011 section 4.2.6
+{
+	SKIP-IF-DEFINED PRINT_JOB_COMPLETED
+
+	NAME "RFC 8011 section 4.2.6: Get-Jobs Operation (which-jobs=not-completed)"
+	OPERATION Get-Jobs
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR keyword which-jobs not-completed
+
+	STATUS successful-ok
+	EXPECT ?job-id OF-TYPE integer IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE >0
+	EXPECT ?job-uri OF-TYPE uri IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT !job-printer-uri
+	EXPECT !job-more-info
+	EXPECT !job-name
+	EXPECT !job-originating-user-name
+	EXPECT !job-state
+	EXPECT !job-state-reasons
+	EXPECT !job-state-message
+	EXPECT !job-detailed-status-messages
+	EXPECT !number-of-documents
+	EXPECT !output-device-assigned
+	EXPECT !time-at-creation
+	EXPECT !time-at-processing
+	EXPECT !time-at-completed
+	EXPECT !job-printer-up-time
+	EXPECT !date-time-at-creation
+	EXPECT !date-time-at-processing
+	EXPECT !date-time-at-completed
+	EXPECT !number-of-intervening-jobs
+	EXPECT !job-message-from-operator
+	EXPECT !job-k-octets
+	EXPECT !job-impressions
+	EXPECT !job-media-sheets
+	EXPECT !job-k-octets-processed
+	EXPECT !job-impressions-completed
+	EXPECT !job-media-sheets-completed
+
+	EXPECT !copies
+	EXPECT !finishings
+	EXPECT !job-hold-until
+	EXPECT !job-priority
+	EXPECT !job-sheets
+	EXPECT !media
+	EXPECT !multiple-document-handling
+	EXPECT !number-up
+	EXPECT !orientation-requested
+	EXPECT !pages-ranges
+	EXPECT !print-quality
+	EXPECT !printer-resolution
+	EXPECT !sides
+}
+
+
+# Wait for job to complete...
+{
+	SKIP-IF-NOT-DEFINED job-id
+
+	NAME "Get-Job-Attributes Until Job Complete"
+	OPERATION Get-Job-Attributes
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR integer job-id $job-id
+	ATTR name requesting-user-name $user
+
+	STATUS successful-ok
+	EXPECT job-state OF-TYPE unknown|enum IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE >6 REPEAT-NO-MATCH REPEAT-LIMIT 30
+	DISPLAY job-state
+}
+
+
+# Test Get-Jobs operation
+#
+# Required by: RFC 8011 section 4.2.6
+{
+	NAME "RFC 8011 section 4.2.6: Get-Jobs Operation (which-jobs=completed)"
+	OPERATION Get-Jobs
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR keyword which-jobs completed
+
+	STATUS successful-ok
+	EXPECT job-id OF-TYPE integer IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE >0
+	EXPECT job-uri OF-TYPE uri IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT !job-printer-uri
+	EXPECT !job-more-info
+	EXPECT !job-name
+	EXPECT !job-originating-user-name
+	EXPECT !job-state
+	EXPECT !job-state-reasons
+	EXPECT !job-state-message
+	EXPECT !job-detailed-status-messages
+	EXPECT !number-of-documents
+	EXPECT !output-device-assigned
+	EXPECT !time-at-creation
+	EXPECT !time-at-processing
+	EXPECT !time-at-completed
+	EXPECT !job-printer-up-time
+	EXPECT !date-time-at-creation
+	EXPECT !date-time-at-processing
+	EXPECT !date-time-at-completed
+	EXPECT !number-of-intervening-jobs
+	EXPECT !job-message-from-operator
+	EXPECT !job-k-octets
+	EXPECT !job-impressions
+	EXPECT !job-media-sheets
+	EXPECT !job-k-octets-processed
+	EXPECT !job-impressions-completed
+	EXPECT !job-media-sheets-completed
+
+	EXPECT !copies
+	EXPECT !finishings
+	EXPECT !job-hold-until
+	EXPECT !job-priority
+	EXPECT !job-sheets
+	EXPECT !media
+	EXPECT !multiple-document-handling
+	EXPECT !number-up
+	EXPECT !orientation-requested
+	EXPECT !pages-ranges
+	EXPECT !print-quality
+	EXPECT !printer-resolution
+	EXPECT !sides
+}
+
+
+# Test Get-Jobs operation
+#
+# Required by: RFC 8011 section 4.2.6
+{
+	SKIP-IF-DEFINED PRINT_JOB_COMPLETED
+
+	NAME "RFC 8011 section 4.2.6: Get-Jobs Operation (which-jobs, requested-attributes)"
+	OPERATION Get-Jobs
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR keyword requested-attributes all
+	ATTR keyword which-jobs completed
+
+	STATUS successful-ok
+	EXPECT job-id OF-TYPE integer IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE >0
+	EXPECT job-uri OF-TYPE uri IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-printer-uri OF-TYPE uri IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT ?job-more-info OF-TYPE uri IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE "$HTTP_URI_SCHEME"
+	EXPECT job-name OF-TYPE name IN-GROUP job-attributes-tag COUNT 1
+	EXPECT job-originating-user-name OF-TYPE name IN-GROUP job-attributes-tag COUNT 1
+	EXPECT job-state OF-TYPE unknown|enum IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE >2,<10
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?job-detailed-status-messages OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-documents OF-TYPE integer IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?output-device-assigned OF-TYPE name IN-GROUP job-attributes-tag COUNT 1
+	EXPECT time-at-creation OF-TYPE integer IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE >-1
+	EXPECT time-at-processing OF-TYPE no-value|integer IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE >-1
+	EXPECT time-at-completed OF-TYPE no-value|integer IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE >-1
+	EXPECT job-printer-up-time OF-TYPE no-value|integer IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?date-time-at-creation OF-TYPE no-value|dateTime IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?date-time-at-processing OF-TYPE no-value|dateTime IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?date-time-at-completed OF-TYPE no-value|dateTime IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?job-message-from-operator OF-TYPE text IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?job-k-octets OF-TYPE integer|no-value IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?job-impressions OF-TYPE integer|no-value IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?job-media-sheets OF-TYPE integer|no-value IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?job-k-octets-processed OF-TYPE integer|no-value IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?job-impressions-completed OF-TYPE integer|no-value IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?job-media-sheets-completed OF-TYPE integer|no-value IN-GROUP job-attributes-tag COUNT 1
+
+	EXPECT ?copies OF-TYPE integer IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE >0
+	EXPECT ?finishings OF-TYPE enum IN-GROUP job-attributes-tag
+	EXPECT ?job-hold-until OF-TYPE keyword|name IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?job-priority OF-TYPE integer IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE >0,<101
+	EXPECT ?job-sheets OF-TYPE keyword|name IN-GROUP job-attributes-tag
+	EXPECT ?media OF-TYPE keyword|name IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?multiple-document-handling OF-TYPE keyword IN-GROUP job-attributes-tag WITH-VALUE "/^(single-document|separate-documents-uncollated-copies|separate-documents-collated-copies|single-document-new-sheet)$$/"
+	EXPECT ?number-up OF-TYPE integer IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE >0
+	EXPECT ?orientation-requested OF-TYPE enum IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE 3,4,5,6
+	EXPECT ?pages-ranges OF-TYPE rangeOfInteger IN-GROUP job-attributes-tag
+	EXPECT ?print-quality OF-TYPE enum IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE 3,4,5
+	EXPECT ?printer-resolution OF-TYPE resolution IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?sides OF-TYPE keyword IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE "/^(one-sided|two-sided-long-edge|two-sided-short-edge)$$/"
+}
+
+
+# Test Cancel-Job operation
+#
+# Required by: RFC 8011 section 4.3.3
+{
+	NAME "RFC 8011 section 4.3.3: Cancel-Job Operation (completed job)"
+	OPERATION Cancel-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR integer job-id $job-id
+	ATTR name requesting-user-name $user
+
+	STATUS client-error-not-possible
+}
+
+
+# Test Print-Job operation
+#
+# Required by: RFC 8011 section 4.2.1
+{
+	NAME "RFC 8011 section 4.2.1: Print-Job Operation"
+	OPERATION Print-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name $filename
+	ATTR boolean ipp-attribute-fidelity false
+	ATTR name document-name $filename
+	ATTR keyword compression none
+	ATTR mimeMediaType document-format $filetype
+	FILE $filename
+
+	STATUS successful-ok
+	STATUS client-error-document-format-not-supported
+	STATUS server-error-job-canceled
+	STATUS server-error-busy REPEAT-MATCH REPEAT-LIMIT 30
+
+	EXPECT job-uri OF-TYPE uri COUNT 1 IN-GROUP job-attributes-tag WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-id OF-TYPE integer COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE >0
+	EXPECT job-state OF-TYPE unknown|enum COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE 3,4,5,6,7,8,9
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer
+	       IN-GROUP job-attributes-tag WITH-VALUE >-1
+}
+
+
+# Test Cancel-Job operation
+#
+# Required by: RFC 8011 section 4.3.3
+{
+	NAME "RFC 8011 section 4.3.3: Cancel-Job Operation (pending/processing job)"
+	OPERATION Cancel-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR integer job-id $job-id
+	ATTR name requesting-user-name $user
+
+	STATUS successful-ok
+	STATUS client-error-not-possible
+}
+
+
+# Test Get-Job-Attributes operation
+#
+# Required by: RFC 8011 section 4.3.4
+{
+	NAME "RFC 8011 section 4.3.4: Get-Job-Attributes Operation"
+	OPERATION Get-Job-Attributes
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR integer job-id $job-id
+	ATTR name requesting-user-name $user
+
+	STATUS successful-ok
+	EXPECT job-id OF-TYPE integer IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE >0
+	EXPECT job-uri OF-TYPE uri IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-printer-uri OF-TYPE uri IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT ?job-more-info OF-TYPE uri IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE "$HTTP_URI_SCHEME"
+	EXPECT job-name OF-TYPE name IN-GROUP job-attributes-tag COUNT 1
+	EXPECT job-originating-user-name OF-TYPE name IN-GROUP job-attributes-tag COUNT 1
+	EXPECT job-state OF-TYPE unknown|enum IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE >2,<10
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?job-detailed-status-messages OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-documents OF-TYPE integer IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?output-device-assigned OF-TYPE name IN-GROUP job-attributes-tag COUNT 1
+	EXPECT time-at-creation OF-TYPE integer IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE >-1
+	EXPECT time-at-processing OF-TYPE no-value|integer IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE >-1
+	EXPECT time-at-completed OF-TYPE no-value|integer IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE >-1
+	EXPECT job-printer-up-time OF-TYPE no-value|integer IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?date-time-at-creation OF-TYPE no-value|dateTime IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?date-time-at-processing OF-TYPE no-value|dateTime IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?date-time-at-completed OF-TYPE no-value|dateTime IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?job-message-from-operator OF-TYPE text IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?job-k-octets OF-TYPE integer|no-value IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?job-impressions OF-TYPE integer|no-value IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?job-media-sheets OF-TYPE integer|no-value IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?job-k-octets-processed OF-TYPE integer|no-value IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?job-impressions-completed OF-TYPE integer|no-value IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?job-media-sheets-completed OF-TYPE integer|no-value IN-GROUP job-attributes-tag COUNT 1
+
+	EXPECT ?copies OF-TYPE integer IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE >0
+	EXPECT ?finishings OF-TYPE enum IN-GROUP job-attributes-tag
+	EXPECT ?job-hold-until OF-TYPE keyword|name IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?job-priority OF-TYPE integer IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE >0,<101
+	EXPECT ?job-sheets OF-TYPE keyword|name IN-GROUP job-attributes-tag
+	EXPECT ?media OF-TYPE keyword|name IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?multiple-document-handling OF-TYPE keyword IN-GROUP job-attributes-tag WITH-VALUE "/^(single-document|separate-documents-uncollated-copies|separate-documents-collated-copies|single-document-new-sheet)$$/"
+	EXPECT ?number-up OF-TYPE integer IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE >0
+	EXPECT ?orientation-requested OF-TYPE enum IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE 3,4,5,6
+	EXPECT ?pages-ranges OF-TYPE rangeOfInteger IN-GROUP job-attributes-tag
+	EXPECT ?print-quality OF-TYPE enum IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE 3,4,5
+	EXPECT ?printer-resolution OF-TYPE resolution IN-GROUP job-attributes-tag COUNT 1
+	EXPECT ?sides OF-TYPE keyword IN-GROUP job-attributes-tag COUNT 1 WITH-VALUE "/^(one-sided|two-sided-long-edge|two-sided-short-edge)$$/"
+}
+
+
+# Test Print-URI operation
+#
+# Defined by: RFC 8011 section 4.2.2
+{
+	SKIP-IF-NOT-DEFINED OPTIONAL_PRINT_URI
+	SKIP-IF-NOT-DEFINED document-uri
+
+	NAME "RFC 8011 section 4.2.2: Print-URI Operation"
+	OPERATION Print-URI
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name $filename
+	ATTR boolean ipp-attribute-fidelity false
+	ATTR name document-name $filename
+	ATTR keyword compression none
+	ATTR uri document-uri $document-uri
+
+	STATUS successful-ok
+	STATUS server-error-job-canceled
+	STATUS server-error-busy REPEAT-MATCH REPEAT-LIMIT 30
+
+	EXPECT job-uri OF-TYPE uri COUNT 1 IN-GROUP job-attributes-tag WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-id OF-TYPE integer COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE >0
+	EXPECT job-state OF-TYPE unknown|enum COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE 3,4,5,6,7,8,9
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer
+	       IN-GROUP job-attributes-tag WITH-VALUE >-1
+}
+
+
+# Test Print-URI operation with bad document-uri
+#
+# Defined by: RFC 8011 section 4.2.2
+{
+	SKIP-IF-NOT-DEFINED OPTIONAL_PRINT_URI
+	SKIP-IF-NOT-DEFINED document-uri
+
+	NAME "Print-URI with bad URI: Print-URI Operation"
+	OPERATION Print-URI
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name $filename
+	ATTR boolean ipp-attribute-fidelity false
+	ATTR name document-name $filename
+	ATTR keyword compression none
+	ATTR uri document-uri "bogus://bogus"
+
+	STATUS client-error-uri-scheme-not-supported
+
+	EXPECT !job-uri
+	EXPECT !job-id
+	EXPECT !job-state
+	EXPECT !job-state-reasons
+	EXPECT !job-state-message
+}
+
+
+# Test Create-Job and Send-Document operations
+#
+# Defined by: RFC 8011 section 4.2.4 and 4.3.1
+{
+	SKIP-IF-NOT-DEFINED OPTIONAL_CREATE_JOB
+	SKIP-IF-NOT-DEFINED OPTIONAL_SEND_DOCUMENT
+
+	NAME "RFC 8011 section 4.2.4: Create-Job Operation"
+	OPERATION Create-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name $filename
+	ATTR boolean ipp-attribute-fidelity false
+
+	STATUS successful-ok
+
+	EXPECT job-uri OF-TYPE uri COUNT 1 IN-GROUP job-attributes-tag WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-id OF-TYPE integer COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE >0
+	EXPECT job-state OF-TYPE unknown|enum COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE 3,4,5,6,7,8,9
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer
+	       IN-GROUP job-attributes-tag WITH-VALUE >-1
+}
+
+{
+	SKIP-IF-NOT-DEFINED OPTIONAL_CREATE_JOB
+	SKIP-IF-NOT-DEFINED OPTIONAL_SEND_DOCUMENT
+	SKIP-PREVIOUS-ERROR yes
+
+	NAME "RFC 8011 section 4.3.1: Send-Document Operation"
+	OPERATION Send-Document
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR integer job-id $job-id
+	ATTR name requesting-user-name $user
+	ATTR boolean last-document true
+	ATTR name document-name $filename
+	ATTR keyword compression none
+	ATTR mimeMediaType document-format $filetype
+	FILE $filename
+
+	STATUS successful-ok
+	STATUS client-error-document-format-not-supported
+	STATUS server-error-job-canceled
+}
+
+# Test Create-Job and Send-Document operations (no last-document)
+#
+# Defined by: RFC 8011 section 4.2.4 and 4.3.1
+{
+	SKIP-IF-NOT-DEFINED OPTIONAL_CREATE_JOB
+	SKIP-IF-NOT-DEFINED OPTIONAL_SEND_DOCUMENT
+
+	NAME "Send-Document missing last-document: Create-Job Operation"
+	OPERATION Create-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name $filename
+	ATTR boolean ipp-attribute-fidelity false
+
+	STATUS successful-ok
+
+	EXPECT job-uri OF-TYPE uri COUNT 1 IN-GROUP job-attributes-tag WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-id OF-TYPE integer COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE >0
+	EXPECT job-state OF-TYPE unknown|enum COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE 3,4,5,6,7,8,9
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer
+	       IN-GROUP job-attributes-tag WITH-VALUE >-1
+}
+
+{
+	SKIP-IF-NOT-DEFINED OPTIONAL_CREATE_JOB
+	SKIP-IF-NOT-DEFINED OPTIONAL_SEND_DOCUMENT
+	SKIP-PREVIOUS-ERROR yes
+
+	NAME "Send-Document missing last-document: Send-Document Operation"
+	OPERATION Send-Document
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR integer job-id $job-id
+	ATTR name requesting-user-name $user
+	ATTR name document-name $filename
+	ATTR keyword compression none
+	ATTR mimeMediaType document-format $filetype
+	FILE $filename
+
+	STATUS client-error-bad-request
+}
+
+{
+	SKIP-IF-NOT-DEFINED OPTIONAL_CREATE_JOB
+	SKIP-IF-NOT-DEFINED OPTIONAL_SEND_DOCUMENT
+	SKIP-PREVIOUS-ERROR yes
+
+	NAME "RFC 8011 section 4.3.3: Cancel-Job Operation"
+	OPERATION Cancel-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR integer job-id $job-id
+	ATTR name requesting-user-name $user
+
+	STATUS successful-ok
+	STATUS server-error-job-canceled
+}
+
+# Test Create-Job and Send-URI operations
+#
+# Defined by: RFC 8011 section 4.2.4 and 4.3.2
+{
+	SKIP-IF-NOT-DEFINED OPTIONAL_CREATE_JOB
+	SKIP-IF-NOT-DEFINED OPTIONAL_SEND_URI
+	SKIP-IF-NOT-DEFINED document-uri
+
+	NAME "RFC 8011 section 4.2.4: Create-Job Operation"
+	OPERATION Create-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name $filename
+	ATTR boolean ipp-attribute-fidelity false
+
+	STATUS successful-ok
+
+	EXPECT job-uri OF-TYPE uri COUNT 1 IN-GROUP job-attributes-tag WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-id OF-TYPE integer COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE >0
+	EXPECT job-state OF-TYPE unknown|enum COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE 3,4,5,6,7,8,9
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer
+	       IN-GROUP job-attributes-tag WITH-VALUE >-1
+}
+
+{
+	SKIP-IF-NOT-DEFINED OPTIONAL_CREATE_JOB
+	SKIP-IF-NOT-DEFINED OPTIONAL_SEND_URI
+	SKIP-IF-NOT-DEFINED document-uri
+	SKIP-PREVIOUS-ERROR yes
+
+	NAME "RFC 8011 section 4.3.2: Send-URI Operation"
+	OPERATION Send-URI
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR integer job-id $job-id
+	ATTR name requesting-user-name $user
+	ATTR boolean last-document true
+	ATTR name document-name $filename
+	ATTR keyword compression none
+	ATTR uri document-uri $document-uri
+
+	STATUS successful-ok
+	STATUS server-error-job-canceled
+}
+
+
+# Test Create-Job and Send-URI operations (bad URI)
+#
+# Defined by: RFC 8011 section 4.2.4 and 4.3.2
+{
+	SKIP-IF-NOT-DEFINED OPTIONAL_CREATE_JOB
+	SKIP-IF-NOT-DEFINED OPTIONAL_SEND_URI
+
+	NAME "Send-URI with bad URI: Create-Job Operation"
+	OPERATION Create-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name $filename
+	ATTR boolean ipp-attribute-fidelity false
+
+	STATUS successful-ok
+
+	EXPECT job-uri OF-TYPE uri COUNT 1 IN-GROUP job-attributes-tag WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-id OF-TYPE integer COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE >0
+	EXPECT job-state OF-TYPE unknown|enum COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE 3,4,5,6,7,8,9
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer
+	       IN-GROUP job-attributes-tag WITH-VALUE >-1
+}
+
+{
+	SKIP-IF-NOT-DEFINED OPTIONAL_CREATE_JOB
+	SKIP-IF-NOT-DEFINED OPTIONAL_SEND_URI
+	SKIP-IF-NOT-DEFINED document-uri
+	SKIP-PREVIOUS-ERROR yes
+
+	NAME "Send-URI with bad URI: Send-URI Operation (bad URI)"
+	OPERATION Send-URI
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR integer job-id $job-id
+	ATTR name requesting-user-name $user
+	ATTR boolean last-document true
+	ATTR name document-name $filename
+	ATTR keyword compression none
+	ATTR mimeMediaType document-format $filetype
+	ATTR uri document-uri "bogus://bogus"
+
+	STATUS client-error-uri-scheme-not-supported
+}
+
+{
+	SKIP-IF-NOT-DEFINED OPTIONAL_CREATE_JOB
+	SKIP-IF-NOT-DEFINED OPTIONAL_SEND_URI
+	SKIP-PREVIOUS-ERROR yes
+
+	NAME "Send-URI with bad URI: Cancel-Job Operation"
+	OPERATION Cancel-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR integer job-id $job-id
+	ATTR name requesting-user-name $user
+
+	STATUS successful-ok
+	STATUS server-error-job-canceled
+}
+
+
+# Test multiple copy output
+{
+	SKIP-IF-NOT-DEFINED OPTIONAL_COPIES
+
+	NAME "Print-Job with copies"
+	OPERATION Print-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name $filename
+	ATTR boolean ipp-attribute-fidelity false
+	ATTR name document-name $filename
+	ATTR keyword compression none
+	ATTR mimeMediaType document-format $filetype
+	GROUP job-attributes-tag
+	ATTR integer copies 2
+	FILE $filename
+
+	STATUS successful-ok
+	STATUS client-error-document-format-not-supported
+	STATUS server-error-job-canceled
+	STATUS server-error-busy REPEAT-MATCH REPEAT-LIMIT 30
+
+	EXPECT job-uri OF-TYPE uri COUNT 1 IN-GROUP job-attributes-tag WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-id OF-TYPE integer COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE >0
+	EXPECT job-state OF-TYPE unknown|enum COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE 3,4,5,6,7,8,9
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer
+	       IN-GROUP job-attributes-tag WITH-VALUE >-1
+}
+
+
+# Test PDF output
+{
+	SKIP-IF-DEFINED NOPRINT
+	SKIP-IF-NOT-DEFINED OPTIONAL_PDF
+	SKIP-IF-NOT-DEFINED OPTIONAL_A4_MEDIA
+
+	NAME "Print-Job with A4 PDF"
+	OPERATION Print-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name "A4 Test Document"
+	ATTR boolean ipp-attribute-fidelity false
+	ATTR name document-name document-a4.pdf
+	ATTR keyword compression none
+	ATTR mimeMediaType document-format application/pdf
+	GROUP job-attributes-tag
+	ATTR keyword media $OPTIONAL_A4_MEDIA
+	FILE document-a4.pdf
+
+	STATUS successful-ok
+	STATUS server-error-job-canceled
+	STATUS server-error-busy REPEAT-MATCH REPEAT-LIMIT 30
+
+	EXPECT job-uri OF-TYPE uri COUNT 1 IN-GROUP job-attributes-tag WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-id OF-TYPE integer COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE >0
+	EXPECT job-state OF-TYPE unknown|enum COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE 3,4,5,6,7,8,9
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer
+	       IN-GROUP job-attributes-tag WITH-VALUE >-1
+}
+
+{
+	SKIP-IF-DEFINED NOPRINT
+	SKIP-IF-NOT-DEFINED OPTIONAL_PDF
+	SKIP-IF-NOT-DEFINED OPTIONAL_A4_MEDIA
+	SKIP-IF-NOT-DEFINED OPTIONAL_DUPLEX
+
+	NAME "Print-Job with A4 PDF, Duplex"
+	OPERATION Print-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name "A4 Test Document, Duplex"
+	ATTR boolean ipp-attribute-fidelity false
+	ATTR name document-name document-a4.pdf
+	ATTR keyword compression none
+	ATTR mimeMediaType document-format application/pdf
+	GROUP job-attributes-tag
+	ATTR keyword media $OPTIONAL_A4_MEDIA
+	ATTR keyword sides two-sided-long-edge
+	FILE document-a4.pdf
+
+	STATUS successful-ok
+	STATUS server-error-job-canceled
+	STATUS server-error-busy REPEAT-MATCH REPEAT-LIMIT 30
+
+	EXPECT job-uri OF-TYPE uri COUNT 1 IN-GROUP job-attributes-tag WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-id OF-TYPE integer COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE >0
+	EXPECT job-state OF-TYPE unknown|enum COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE 3,4,5,6,7,8,9
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer
+	       IN-GROUP job-attributes-tag WITH-VALUE >-1
+}
+
+{
+	SKIP-IF-DEFINED NOPRINT
+	SKIP-IF-NOT-DEFINED OPTIONAL_PDF
+	SKIP-IF-NOT-DEFINED OPTIONAL_LETTER_MEDIA
+
+	NAME "Print-Job with US Letter PDF"
+	OPERATION Print-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name "US Letter Test Document"
+	ATTR boolean ipp-attribute-fidelity false
+	ATTR name document-name document-letter.pdf
+	ATTR keyword compression none
+	ATTR mimeMediaType document-format application/pdf
+	GROUP job-attributes-tag
+	ATTR keyword media $OPTIONAL_LETTER_MEDIA
+	FILE document-letter.pdf
+
+	STATUS successful-ok
+	STATUS server-error-job-canceled
+	STATUS server-error-busy REPEAT-MATCH REPEAT-LIMIT 30
+
+	EXPECT job-uri OF-TYPE uri COUNT 1 IN-GROUP job-attributes-tag WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-id OF-TYPE integer COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE >0
+	EXPECT job-state OF-TYPE unknown|enum COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE 3,4,5,6,7,8,9
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer
+	       IN-GROUP job-attributes-tag WITH-VALUE >-1
+}
+
+{
+	SKIP-IF-DEFINED NOPRINT
+	SKIP-IF-NOT-DEFINED OPTIONAL_PDF
+	SKIP-IF-NOT-DEFINED OPTIONAL_LETTER_MEDIA
+	SKIP-IF-NOT-DEFINED OPTIONAL_DUPLEX
+
+	NAME "Print-Job with US Letter PDF, Duplex"
+	OPERATION Print-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name "US Letter Test Document, Duplex"
+	ATTR boolean ipp-attribute-fidelity false
+	ATTR name document-name document-letter.pdf
+	ATTR keyword compression none
+	ATTR mimeMediaType document-format application/pdf
+	GROUP job-attributes-tag
+	ATTR keyword media $OPTIONAL_LETTER_MEDIA
+	ATTR keyword sides two-sided-long-edge
+	FILE document-letter.pdf
+
+	STATUS successful-ok
+	STATUS server-error-job-canceled
+	STATUS server-error-busy REPEAT-MATCH REPEAT-LIMIT 30
+
+	EXPECT job-uri OF-TYPE uri COUNT 1 IN-GROUP job-attributes-tag WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-id OF-TYPE integer COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE >0
+	EXPECT job-state OF-TYPE unknown|enum COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE 3,4,5,6,7,8,9
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer
+	       IN-GROUP job-attributes-tag WITH-VALUE >-1
+}
+
+
+# Test PostScript output
+{
+	SKIP-IF-DEFINED NOPRINT
+	SKIP-IF-NOT-DEFINED OPTIONAL_POSTSCRIPT
+	SKIP-IF-NOT-DEFINED OPTIONAL_A4_MEDIA
+
+	NAME "Print-Job with A4 PostScript"
+	OPERATION Print-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name "A4 Test Document, Duplex"
+	ATTR boolean ipp-attribute-fidelity false
+	ATTR name document-name document-a4.ps
+	ATTR keyword compression none
+	ATTR mimeMediaType document-format application/postscript
+	GROUP job-attributes-tag
+	ATTR keyword media $OPTIONAL_LETTER_MEDIA
+	FILE document-a4.ps
+
+	STATUS successful-ok
+	STATUS server-error-job-canceled
+	STATUS server-error-busy REPEAT-MATCH REPEAT-LIMIT 30
+
+	EXPECT job-uri OF-TYPE uri COUNT 1 IN-GROUP job-attributes-tag WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-id OF-TYPE integer COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE >0
+	EXPECT job-state OF-TYPE unknown|enum COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE 3,4,5,6,7,8,9
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer
+	       IN-GROUP job-attributes-tag WITH-VALUE >-1
+}
+
+{
+	SKIP-IF-DEFINED NOPRINT
+	SKIP-IF-NOT-DEFINED OPTIONAL_POSTSCRIPT
+	SKIP-IF-NOT-DEFINED OPTIONAL_A4_MEDIA
+	SKIP-IF-NOT-DEFINED OPTIONAL_DUPLEX
+
+	NAME "Print-Job with A4 PostScript, Duplex"
+	OPERATION Print-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name "US Letter Test Document"
+	ATTR boolean ipp-attribute-fidelity false
+	ATTR name document-name document-a4.ps
+	ATTR keyword compression none
+	ATTR mimeMediaType document-format application/postscript
+	GROUP job-attributes-tag
+	ATTR keyword media $OPTIONAL_A4_MEDIA
+	ATTR keyword sides two-sided-long-edge
+	FILE document-a4.ps
+
+	STATUS successful-ok
+	STATUS server-error-job-canceled
+	STATUS server-error-busy REPEAT-MATCH REPEAT-LIMIT 30
+
+	EXPECT job-uri OF-TYPE uri COUNT 1 IN-GROUP job-attributes-tag WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-id OF-TYPE integer COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE >0
+	EXPECT job-state OF-TYPE unknown|enum COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE 3,4,5,6,7,8,9
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer
+	       IN-GROUP job-attributes-tag WITH-VALUE >-1
+}
+
+{
+	SKIP-IF-DEFINED NOPRINT
+	SKIP-IF-NOT-DEFINED OPTIONAL_POSTSCRIPT
+	SKIP-IF-NOT-DEFINED OPTIONAL_LETTER_MEDIA
+
+	NAME "Print-Job with US Letter PostScript"
+	OPERATION Print-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name "US Letter Test Document, Duplex"
+	ATTR boolean ipp-attribute-fidelity false
+	ATTR name document-name document-letter.ps
+	ATTR keyword compression none
+	ATTR mimeMediaType document-format application/postscript
+	GROUP job-attributes-tag
+	ATTR keyword media $OPTIONAL_LETTER_MEDIA
+	FILE document-letter.ps
+
+	STATUS successful-ok
+	STATUS server-error-job-canceled
+	STATUS server-error-busy REPEAT-MATCH REPEAT-LIMIT 30
+
+	EXPECT job-uri OF-TYPE uri COUNT 1 IN-GROUP job-attributes-tag WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-id OF-TYPE integer COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE >0
+	EXPECT job-state OF-TYPE unknown|enum COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE 3,4,5,6,7,8,9
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer
+	       IN-GROUP job-attributes-tag WITH-VALUE >-1
+}
+
+{
+	SKIP-IF-DEFINED NOPRINT
+	SKIP-IF-NOT-DEFINED OPTIONAL_POSTSCRIPT
+	SKIP-IF-NOT-DEFINED OPTIONAL_LETTER_MEDIA
+	SKIP-IF-NOT-DEFINED OPTIONAL_DUPLEX
+
+	NAME "Print-Job with US Letter PostScript, Duplex"
+	OPERATION Print-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name "A4 Test Document"
+	ATTR boolean ipp-attribute-fidelity false
+	ATTR name document-name document-letter.ps
+	ATTR keyword compression none
+	ATTR mimeMediaType document-format application/postscript
+	GROUP job-attributes-tag
+	ATTR keyword media $OPTIONAL_LETTER_MEDIA
+	ATTR keyword sides two-sided-long-edge
+	FILE document-letter.ps
+
+	STATUS successful-ok
+	STATUS server-error-job-canceled
+	STATUS server-error-busy REPEAT-MATCH REPEAT-LIMIT 30
+
+	EXPECT job-uri OF-TYPE uri COUNT 1 IN-GROUP job-attributes-tag WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-id OF-TYPE integer COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE >0
+	EXPECT job-state OF-TYPE unknown|enum COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE 3,4,5,6,7,8,9
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer
+	       IN-GROUP job-attributes-tag WITH-VALUE >-1
+}
+
+
+# Test JPEG output
+{
+	SKIP-IF-DEFINED NOPRINT
+	SKIP-IF-NOT-DEFINED OPTIONAL_JPEG
+	SKIP-IF-NOT-DEFINED OPTIONAL_A4_MEDIA
+
+	NAME "Print-Job with Color JPEG on A4"
+	OPERATION Print-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name "Color JPEG on A4"
+	ATTR boolean ipp-attribute-fidelity false
+	ATTR name document-name color.jpg
+	ATTR keyword compression none
+	ATTR mimeMediaType document-format image/jpeg
+	GROUP job-attributes-tag
+	ATTR keyword media $OPTIONAL_A4_MEDIA
+	FILE color.jpg
+
+	STATUS successful-ok
+	STATUS server-error-job-canceled
+	STATUS server-error-busy REPEAT-MATCH REPEAT-LIMIT 30
+
+	EXPECT job-uri OF-TYPE uri COUNT 1 IN-GROUP job-attributes-tag WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-id OF-TYPE integer COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE >0
+	EXPECT job-state OF-TYPE unknown|enum COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE 3,4,5,6,7,8,9
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer
+	       IN-GROUP job-attributes-tag WITH-VALUE >-1
+}
+
+{
+	SKIP-IF-DEFINED NOPRINT
+	SKIP-IF-NOT-DEFINED OPTIONAL_JPEG
+	SKIP-IF-NOT-DEFINED OPTIONAL_LETTER_MEDIA
+
+	NAME "Print-Job with Color JPEG on US Letter"
+	OPERATION Print-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name "Color JPEG on US Letter"
+	ATTR boolean ipp-attribute-fidelity false
+	ATTR name document-name color.jpg
+	ATTR keyword compression none
+	ATTR mimeMediaType document-format image/jpeg
+	GROUP job-attributes-tag
+	ATTR keyword media $OPTIONAL_LETTER_MEDIA
+	FILE color.jpg
+
+	STATUS successful-ok
+	STATUS server-error-job-canceled
+	STATUS server-error-busy REPEAT-MATCH REPEAT-LIMIT 30
+
+	EXPECT job-uri OF-TYPE uri COUNT 1 IN-GROUP job-attributes-tag WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-id OF-TYPE integer COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE >0
+	EXPECT job-state OF-TYPE unknown|enum COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE 3,4,5,6,7,8,9
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer
+	       IN-GROUP job-attributes-tag WITH-VALUE >-1
+}
+
+{
+	SKIP-IF-DEFINED NOPRINT
+	SKIP-IF-NOT-DEFINED OPTIONAL_JPEG
+	SKIP-IF-NOT-DEFINED OPTIONAL_4X6_MEDIA
+
+	NAME "Print-Job with Color JPEG on 4x6"
+	OPERATION Print-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name "Color JPEG on 4x6"
+	ATTR boolean ipp-attribute-fidelity false
+	ATTR name document-name color.jpg
+	ATTR keyword compression none
+	ATTR mimeMediaType document-format image/jpeg
+	GROUP job-attributes-tag
+	ATTR keyword media $OPTIONAL_4X6_MEDIA
+	FILE color.jpg
+
+	STATUS successful-ok
+	STATUS server-error-job-canceled
+	STATUS server-error-busy REPEAT-MATCH REPEAT-LIMIT 30
+
+	EXPECT job-uri OF-TYPE uri COUNT 1 IN-GROUP job-attributes-tag WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-id OF-TYPE integer COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE >0
+	EXPECT job-state OF-TYPE unknown|enum COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE 3,4,5,6,7,8,9
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer
+	       IN-GROUP job-attributes-tag WITH-VALUE >-1
+}
+
+{
+	SKIP-IF-DEFINED NOPRINT
+	SKIP-IF-NOT-DEFINED OPTIONAL_JPEG
+	SKIP-IF-NOT-DEFINED OPTIONAL_A4_MEDIA
+
+	NAME "Print-Job with Grayscale JPEG on A4"
+	OPERATION Print-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name "Grayscale JPEG on A4"
+	ATTR boolean ipp-attribute-fidelity false
+	ATTR name document-name gray.jpg
+	ATTR keyword compression none
+	ATTR mimeMediaType document-format image/jpeg
+	GROUP job-attributes-tag
+	ATTR keyword media $OPTIONAL_A4_MEDIA
+	FILE gray.jpg
+
+	STATUS successful-ok
+	STATUS server-error-job-canceled
+	STATUS server-error-busy REPEAT-MATCH REPEAT-LIMIT 30
+
+	EXPECT job-uri OF-TYPE uri COUNT 1 IN-GROUP job-attributes-tag WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-id OF-TYPE integer COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE >0
+	EXPECT job-state OF-TYPE unknown|enum COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE 3,4,5,6,7,8,9
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer
+	       IN-GROUP job-attributes-tag WITH-VALUE >-1
+}
+
+{
+	SKIP-IF-DEFINED NOPRINT
+	SKIP-IF-NOT-DEFINED OPTIONAL_JPEG
+	SKIP-IF-NOT-DEFINED OPTIONAL_LETTER_MEDIA
+
+	NAME "Print-Job with Grayscale JPEG on US Letter"
+	OPERATION Print-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name "Grayscale JPEG on US Letter"
+	ATTR boolean ipp-attribute-fidelity false
+	ATTR name document-name gray.jpg
+	ATTR keyword compression none
+	ATTR mimeMediaType document-format image/jpeg
+	GROUP job-attributes-tag
+	ATTR keyword media $OPTIONAL_LETTER_MEDIA
+	FILE gray.jpg
+
+	STATUS successful-ok
+	STATUS server-error-job-canceled
+	STATUS server-error-busy REPEAT-MATCH REPEAT-LIMIT 30
+
+	EXPECT job-uri OF-TYPE uri COUNT 1 IN-GROUP job-attributes-tag WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-id OF-TYPE integer COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE >0
+	EXPECT job-state OF-TYPE unknown|enum COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE 3,4,5,6,7,8,9
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer
+	       IN-GROUP job-attributes-tag WITH-VALUE >-1
+}
+
+{
+	SKIP-IF-DEFINED NOPRINT
+	SKIP-IF-NOT-DEFINED OPTIONAL_JPEG
+	SKIP-IF-NOT-DEFINED OPTIONAL_4X6_MEDIA
+
+	NAME "Print-Job with Grayscale JPEG on 4x6"
+	OPERATION Print-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name "Grayscale JPEG on 4x6"
+	ATTR boolean ipp-attribute-fidelity false
+	ATTR name document-name gray.jpg
+	ATTR keyword compression none
+	ATTR mimeMediaType document-format image/jpeg
+	GROUP job-attributes-tag
+	ATTR keyword media $OPTIONAL_4X6_MEDIA
+	FILE gray.jpg
+
+	STATUS successful-ok
+	STATUS server-error-job-canceled
+	STATUS server-error-busy REPEAT-MATCH REPEAT-LIMIT 30
+
+	EXPECT job-uri OF-TYPE uri COUNT 1 IN-GROUP job-attributes-tag WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-id OF-TYPE integer COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE >0
+	EXPECT job-state OF-TYPE unknown|enum COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE 3,4,5,6,7,8,9
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer
+	       IN-GROUP job-attributes-tag WITH-VALUE >-1
+}
+
+
+# Print-Job with job-sheets
+{
+	SKIP-IF-DEFINED NOPRINT
+	SKIP-IF-NOT-DEFINED OPTIONAL_PDF
+	SKIP-IF-NOT-DEFINED OPTIONAL_A4_MEDIA
+	SKIP-IF-NOT-DEFINED OPTIONAL_STANDARD_SHEET
+
+	NAME "Print-Job with A4 PDF and Standard Sheet"
+	OPERATION Print-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name "A4 Test Document w/Standard Sheet"
+	ATTR boolean ipp-attribute-fidelity false
+	ATTR name document-name document-a4.pdf
+	ATTR keyword compression none
+	ATTR mimeMediaType document-format application/pdf
+	GROUP job-attributes-tag
+	ATTR keyword media $OPTIONAL_A4_MEDIA
+	ATTR keyword job-sheets standard
+	FILE document-a4.pdf
+
+	STATUS successful-ok
+	STATUS server-error-job-canceled
+	STATUS server-error-busy REPEAT-MATCH REPEAT-LIMIT 30
+
+	EXPECT job-uri OF-TYPE uri COUNT 1 IN-GROUP job-attributes-tag WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-id OF-TYPE integer COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE >0
+	EXPECT job-state OF-TYPE unknown|enum COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE 3,4,5,6,7,8,9
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer
+	       IN-GROUP job-attributes-tag WITH-VALUE >-1
+}
+
+{
+	SKIP-IF-DEFINED NOPRINT
+	SKIP-IF-NOT-DEFINED OPTIONAL_PDF
+	SKIP-IF-NOT-DEFINED OPTIONAL_LETTER_MEDIA
+	SKIP-IF-NOT-DEFINED OPTIONAL_STANDARD_SHEET
+
+	NAME "Print-Job with US Letter PDF and Standard Sheet"
+	OPERATION Print-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name "US Letter Test Document w/Standard Sheet"
+	ATTR boolean ipp-attribute-fidelity false
+	ATTR name document-name document-a4.pdf
+	ATTR keyword compression none
+	ATTR mimeMediaType document-format application/pdf
+	GROUP job-attributes-tag
+	ATTR keyword media $OPTIONAL_LETTER_MEDIA
+	ATTR keyword job-sheets standard
+	FILE document-a4.pdf
+
+	STATUS successful-ok
+	STATUS server-error-job-canceled
+	STATUS server-error-busy REPEAT-MATCH REPEAT-LIMIT 30
+
+	EXPECT job-uri OF-TYPE uri COUNT 1 IN-GROUP job-attributes-tag WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-id OF-TYPE integer COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE >0
+	EXPECT job-state OF-TYPE unknown|enum COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE 3,4,5,6,7,8,9
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer
+	       IN-GROUP job-attributes-tag WITH-VALUE >-1
+}
+
+{
+	SKIP-IF-DEFINED NOPRINT
+	SKIP-IF-NOT-DEFINED OPTIONAL_POSTSCRIPT
+	SKIP-IF-NOT-DEFINED OPTIONAL_A4_MEDIA
+	SKIP-IF-NOT-DEFINED OPTIONAL_STANDARD_SHEET
+
+	NAME "Print-Job with A4 PDF and Standard Sheet"
+	OPERATION Print-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name "A4 Test Document w/Standard Sheet"
+	ATTR boolean ipp-attribute-fidelity false
+	ATTR name document-name document-a4.ps
+	ATTR keyword compression none
+	ATTR mimeMediaType document-format application/postscript
+	GROUP job-attributes-tag
+	ATTR keyword media $OPTIONAL_A4_MEDIA
+	ATTR keyword job-sheets standard
+	FILE document-a4.ps
+
+	STATUS successful-ok
+	STATUS server-error-job-canceled
+	STATUS server-error-busy REPEAT-MATCH REPEAT-LIMIT 30
+
+	EXPECT job-uri OF-TYPE uri COUNT 1 IN-GROUP job-attributes-tag WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-id OF-TYPE integer COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE >0
+	EXPECT job-state OF-TYPE unknown|enum COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE 3,4,5,6,7,8,9
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer
+	       IN-GROUP job-attributes-tag WITH-VALUE >-1
+}
+
+{
+	SKIP-IF-DEFINED NOPRINT
+	SKIP-IF-NOT-DEFINED OPTIONAL_POSTSCRIPT
+	SKIP-IF-NOT-DEFINED OPTIONAL_LETTER_MEDIA
+	SKIP-IF-NOT-DEFINED OPTIONAL_STANDARD_SHEET
+
+	NAME "Print-Job with US Letter PDF and Standard Sheet"
+	OPERATION Print-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name "US Letter Test Document w/Standard Sheet"
+	ATTR boolean ipp-attribute-fidelity false
+	ATTR name document-name document-a4.ps
+	ATTR keyword compression none
+	ATTR mimeMediaType document-format application/postscript
+	GROUP job-attributes-tag
+	ATTR keyword media $OPTIONAL_LETTER_MEDIA
+	ATTR keyword job-sheets standard
+	FILE document-a4.ps
+
+	STATUS successful-ok
+	STATUS server-error-job-canceled
+	STATUS server-error-busy REPEAT-MATCH REPEAT-LIMIT 30
+
+	EXPECT job-uri OF-TYPE uri COUNT 1 IN-GROUP job-attributes-tag WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-id OF-TYPE integer COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE >0
+	EXPECT job-state OF-TYPE unknown|enum COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE 3,4,5,6,7,8,9
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer
+	       IN-GROUP job-attributes-tag WITH-VALUE >-1
+}
+
+
+# Test number-up output
+{
+	SKIP-IF-DEFINED NOPRINT
+	SKIP-IF-NOT-DEFINED OPTIONAL_PDF
+	SKIP-IF-NOT-DEFINED OPTIONAL_A4_MEDIA
+	SKIP-IF-NOT-DEFINED OPTIONAL_2UP
+
+	NAME "Print-Job with A4 PDF, 2-Up"
+	OPERATION Print-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name "A4 Test Document; 2-Up"
+	ATTR boolean ipp-attribute-fidelity false
+	ATTR name document-name document-a4.pdf
+	ATTR keyword compression none
+	ATTR mimeMediaType document-format application/pdf
+	GROUP job-attributes-tag
+	ATTR keyword media $OPTIONAL_A4_MEDIA
+	ATTR integer number-up 2
+	FILE document-a4.pdf
+
+	STATUS successful-ok
+	STATUS server-error-job-canceled
+	STATUS server-error-busy REPEAT-MATCH REPEAT-LIMIT 30
+
+	EXPECT job-uri OF-TYPE uri COUNT 1 IN-GROUP job-attributes-tag WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-id OF-TYPE integer COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE >0
+	EXPECT job-state OF-TYPE unknown|enum COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE 3,4,5,6,7,8,9
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer
+	       IN-GROUP job-attributes-tag WITH-VALUE >-1
+}
+
+{
+	SKIP-IF-DEFINED NOPRINT
+	SKIP-IF-NOT-DEFINED OPTIONAL_PDF
+	SKIP-IF-NOT-DEFINED OPTIONAL_LETTER_MEDIA
+	SKIP-IF-NOT-DEFINED OPTIONAL_2UP
+
+	NAME "Print-Job with US Letter PDF, 2-Up"
+	OPERATION Print-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name "US Letter Test Document; 2-Up"
+	ATTR boolean ipp-attribute-fidelity false
+	ATTR name document-name document-letter.pdf
+	ATTR keyword compression none
+	ATTR mimeMediaType document-format application/pdf
+	GROUP job-attributes-tag
+	ATTR keyword media $OPTIONAL_LETTER_MEDIA
+	ATTR integer number-up 2
+	FILE document-letter.pdf
+
+	STATUS successful-ok
+	STATUS server-error-job-canceled
+	STATUS server-error-busy REPEAT-MATCH REPEAT-LIMIT 30
+
+	EXPECT job-uri OF-TYPE uri COUNT 1 IN-GROUP job-attributes-tag WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-id OF-TYPE integer COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE >0
+	EXPECT job-state OF-TYPE unknown|enum COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE 3,4,5,6,7,8,9
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer
+	       IN-GROUP job-attributes-tag WITH-VALUE >-1
+}
+
+{
+	SKIP-IF-DEFINED NOPRINT
+	SKIP-IF-NOT-DEFINED OPTIONAL_POSTSCRIPT
+	SKIP-IF-NOT-DEFINED OPTIONAL_A4_MEDIA
+	SKIP-IF-NOT-DEFINED OPTIONAL_2UP
+
+	NAME "Print-Job with A4 PDF, 2-Up"
+	OPERATION Print-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name "A4 Test Document; 2-Up"
+	ATTR boolean ipp-attribute-fidelity false
+	ATTR name document-name document-a4.ps
+	ATTR keyword compression none
+	ATTR mimeMediaType document-format application/postscript
+	GROUP job-attributes-tag
+	ATTR keyword media $OPTIONAL_A4_MEDIA
+	ATTR integer number-up 2
+	FILE document-a4.ps
+
+	STATUS successful-ok
+	STATUS server-error-job-canceled
+	STATUS server-error-busy REPEAT-MATCH REPEAT-LIMIT 30
+
+	EXPECT job-uri OF-TYPE uri COUNT 1 IN-GROUP job-attributes-tag WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-id OF-TYPE integer COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE >0
+	EXPECT job-state OF-TYPE unknown|enum COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE 3,4,5,6,7,8,9
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer
+	       IN-GROUP job-attributes-tag WITH-VALUE >-1
+}
+
+{
+	SKIP-IF-DEFINED NOPRINT
+	SKIP-IF-NOT-DEFINED OPTIONAL_POSTSCRIPT
+	SKIP-IF-NOT-DEFINED OPTIONAL_LETTER_MEDIA
+	SKIP-IF-NOT-DEFINED OPTIONAL_2UP
+
+	NAME "Print-Job with US Letter PDF, 2-Up"
+	OPERATION Print-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name "US Letter Test Document; 2-Up"
+	ATTR boolean ipp-attribute-fidelity false
+	ATTR name document-name document-letter.ps
+	ATTR keyword compression none
+	ATTR mimeMediaType document-format application/postscript
+	GROUP job-attributes-tag
+	ATTR keyword media $OPTIONAL_LETTER_MEDIA
+	ATTR integer number-up 2
+	FILE document-letter.ps
+
+	STATUS successful-ok
+	STATUS server-error-job-canceled
+	STATUS server-error-busy REPEAT-MATCH REPEAT-LIMIT 30
+
+	EXPECT job-uri OF-TYPE uri COUNT 1 IN-GROUP job-attributes-tag WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-id OF-TYPE integer COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE >0
+	EXPECT job-state OF-TYPE unknown|enum COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE 3,4,5,6,7,8,9
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer
+	       IN-GROUP job-attributes-tag WITH-VALUE >-1
+}
+
+
+# Test output with print-quality...
+{
+	SKIP-IF-DEFINED NOPRINT
+	SKIP-IF-NOT-DEFINED OPTIONAL_JPEG
+	SKIP-IF-NOT-DEFINED OPTIONAL_4X6_MEDIA
+	SKIP-IF-NOT-DEFINED OPTIONAL_DRAFT_QUALITY
+
+	NAME "Print-Job with JPEG on 4x6, Draft Quality"
+	OPERATION Print-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name "4x6 Color JPEG; Draft Quality"
+	ATTR boolean ipp-attribute-fidelity false
+	ATTR name document-name color.jpg
+	ATTR keyword compression none
+	ATTR mimeMediaType document-format image/jpeg
+	GROUP job-attributes-tag
+	ATTR keyword media $OPTIONAL_4X6_MEDIA
+	ATTR enum print-quality 3
+	FILE color.jpg
+
+	STATUS successful-ok
+	STATUS server-error-job-canceled
+	STATUS server-error-busy REPEAT-MATCH REPEAT-LIMIT 30
+
+	EXPECT job-uri OF-TYPE uri COUNT 1 IN-GROUP job-attributes-tag WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-id OF-TYPE integer COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE >0
+	EXPECT job-state OF-TYPE unknown|enum COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE 3,4,5,6,7,8,9
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer
+	       IN-GROUP job-attributes-tag WITH-VALUE >-1
+}
+
+{
+	SKIP-IF-DEFINED NOPRINT
+	SKIP-IF-NOT-DEFINED OPTIONAL_JPEG
+	SKIP-IF-NOT-DEFINED OPTIONAL_4X6_MEDIA
+	SKIP-IF-NOT-DEFINED OPTIONAL_NORMAL_QUALITY
+
+	NAME "Print-Job with JPEG on 4x6, Normal Quality"
+	OPERATION Print-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name "4x6 Color JPEG; Normal Quality"
+	ATTR boolean ipp-attribute-fidelity false
+	ATTR name document-name color.jpg
+	ATTR keyword compression none
+	ATTR mimeMediaType document-format image/jpeg
+	GROUP job-attributes-tag
+	ATTR keyword media $OPTIONAL_4X6_MEDIA
+	ATTR enum print-quality 4
+	FILE color.jpg
+
+	STATUS successful-ok
+	STATUS server-error-job-canceled
+	STATUS server-error-busy REPEAT-MATCH REPEAT-LIMIT 30
+
+	EXPECT job-uri OF-TYPE uri COUNT 1 IN-GROUP job-attributes-tag WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-id OF-TYPE integer COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE >0
+	EXPECT job-state OF-TYPE unknown|enum COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE 3,4,5,6,7,8,9
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer
+	       IN-GROUP job-attributes-tag WITH-VALUE >-1
+}
+
+{
+	SKIP-IF-DEFINED NOPRINT
+	SKIP-IF-NOT-DEFINED OPTIONAL_JPEG
+	SKIP-IF-NOT-DEFINED OPTIONAL_4X6_MEDIA
+	SKIP-IF-NOT-DEFINED OPTIONAL_HIGH_QUALITY
+
+	NAME "Print-Job with JPEG on 4x6, High Quality"
+	OPERATION Print-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name "4x6 Color JPEG; High Quality"
+	ATTR boolean ipp-attribute-fidelity false
+	ATTR name document-name color.jpg
+	ATTR keyword compression none
+	ATTR mimeMediaType document-format image/jpeg
+	GROUP job-attributes-tag
+	ATTR keyword media $OPTIONAL_4X6_MEDIA
+	ATTR enum print-quality 5
+	FILE color.jpg
+
+	STATUS successful-ok
+	STATUS server-error-job-canceled
+	STATUS server-error-busy REPEAT-MATCH REPEAT-LIMIT 30
+
+	EXPECT job-uri OF-TYPE uri COUNT 1 IN-GROUP job-attributes-tag WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-id OF-TYPE integer COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE >0
+	EXPECT job-state OF-TYPE unknown|enum COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE 3,4,5,6,7,8,9
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer
+	       IN-GROUP job-attributes-tag WITH-VALUE >-1
+}
+
+{
+	SKIP-IF-DEFINED NOPRINT
+	SKIP-IF-NOT-DEFINED OPTIONAL_PDF
+	SKIP-IF-NOT-DEFINED OPTIONAL_A4_MEDIA
+	SKIP-IF-NOT-DEFINED OPTIONAL_DRAFT_QUALITY
+
+	NAME "Print-Job with A4 PDF, Draft Quality"
+	OPERATION Print-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name "A4 Test Document; 2-Up"
+	ATTR boolean ipp-attribute-fidelity false
+	ATTR name document-name document-a4.pdf
+	ATTR keyword compression none
+	ATTR mimeMediaType document-format application/pdf
+	GROUP job-attributes-tag
+	ATTR keyword media $OPTIONAL_A4_MEDIA
+	ATTR enum print-quality 3
+	FILE document-a4.pdf
+
+	STATUS successful-ok
+	STATUS server-error-job-canceled
+	STATUS server-error-busy REPEAT-MATCH REPEAT-LIMIT 30
+
+	EXPECT job-uri OF-TYPE uri COUNT 1 IN-GROUP job-attributes-tag WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-id OF-TYPE integer COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE >0
+	EXPECT job-state OF-TYPE unknown|enum COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE 3,4,5,6,7,8,9
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer
+	       IN-GROUP job-attributes-tag WITH-VALUE >-1
+}
+
+{
+	SKIP-IF-DEFINED NOPRINT
+	SKIP-IF-NOT-DEFINED OPTIONAL_PDF
+	SKIP-IF-NOT-DEFINED OPTIONAL_LETTER_MEDIA
+	SKIP-IF-NOT-DEFINED OPTIONAL_DRAFT_QUALITY
+
+	NAME "Print-Job with US Letter PDF, Draft Quality"
+	OPERATION Print-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name "US Letter Test Document; 2-Up"
+	ATTR boolean ipp-attribute-fidelity false
+	ATTR name document-name document-letter.pdf
+	ATTR keyword compression none
+	ATTR mimeMediaType document-format application/pdf
+	GROUP job-attributes-tag
+	ATTR keyword media $OPTIONAL_LETTER_MEDIA
+	ATTR enum print-quality 3
+	FILE document-letter.pdf
+
+	STATUS successful-ok
+	STATUS server-error-job-canceled
+	STATUS server-error-busy REPEAT-MATCH REPEAT-LIMIT 30
+
+	EXPECT job-uri OF-TYPE uri COUNT 1 IN-GROUP job-attributes-tag WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-id OF-TYPE integer COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE >0
+	EXPECT job-state OF-TYPE unknown|enum COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE 3,4,5,6,7,8,9
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer
+	       IN-GROUP job-attributes-tag WITH-VALUE >-1
+}
+
+
+# Test hold/release in the context of Print-Job w/job-hold-until + Release-Job
+{
+	SKIP-IF-NOT-DEFINED OPTIONAL_HOLD_JOB
+
+	NAME "Print-Job with job-hold-until"
+	OPERATION Print-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR name job-name "Test Document w/Hold"
+	ATTR name document-name $filename
+	ATTR keyword compression none
+	ATTR mimeMediaType document-format $filetype
+	GROUP job-attributes-tag
+	ATTR keyword job-hold-until indefinite
+	FILE $filename
+
+	STATUS successful-ok
+	STATUS server-error-job-canceled
+	STATUS server-error-busy REPEAT-MATCH REPEAT-LIMIT 30
+
+	EXPECT job-uri OF-TYPE uri COUNT 1 IN-GROUP job-attributes-tag WITH-VALUE "$IPP_URI_SCHEME"
+	EXPECT job-id OF-TYPE integer COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE >0
+	EXPECT job-state OF-TYPE unknown|enum COUNT 1 IN-GROUP job-attributes-tag
+	       WITH-VALUE 3,4,5,6,7,8,9
+	EXPECT job-state-reasons OF-TYPE keyword IN-GROUP job-attributes-tag
+	EXPECT ?job-state-message OF-TYPE text IN-GROUP job-attributes-tag
+	EXPECT ?number-of-intervening-jobs OF-TYPE integer
+	       IN-GROUP job-attributes-tag WITH-VALUE >-1
+}
+
+{
+	SKIP-IF-NOT-DEFINED OPTIONAL_HOLD_JOB
+
+	NAME "Release-Job"
+	OPERATION Release-Job
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR naturalLanguage attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR integer job-id $job-id
+	ATTR name requesting-user-name $user
+
+	STATUS successful-ok
+	STATUS client-error-not-possible
+}

@@ -1,0 +1,183 @@
+// Keyboard layouts for Algeria.
+
+// Tamazight in Latin characters.
+// Original author: Noureddine LOUAHEDJ <louahedj@noureddine.me>
+//
+// ┌─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┲━━━━━━━━━┓
+// │ ³ ¸ │ 1 ̨  │ 2 É │ 3 ˘ │ 4 — │ 5 – │ 6 ‑ │ 7 È │ 8 ™ │ 9 Ç │ 0 À │ ° ≠ │ + ± ┃ ⌫ Retour┃
+// │ ² ¹ │ & ˇ │ é ~ │ " # │ ' { │ ( [ │ - | │ è ` │ _ \ │ ç ^ │ à @ │ ) ] │ = } ┃  arrière┃
+// ┢━━━━━┷━┱───┴─┬───┴─┬───┴─┬───┴─┬───┴─┬───┴─┬───┴─┬───┴─┬───┴─┬───┴─┬───┴─┬───┺━┳━━━━━━━┫
+// ┃       ┃ A Æ │ Z Â │ E ¢ │ R Ṛ │ T Ṭ │ Y Ÿ │ U Û │ I Î │ O Ɛ │ P Ô │ ¨ ˚ │ £ Ø ┃Entrée ┃
+// ┃Tab ↹  ┃ a æ │ z â │ e € │ r ṛ │ t ṭ │ y ÿ │ u û │ i î │ o ɛ │ p ô │ ^ ~ │ $ ø ┃   ⏎   ┃
+// ┣━━━━━━━┻┱────┴┬────┴┬────┴┬────┴┬────┴┬────┴┬────┴┬────┴┬────┴┬────┴┬────┴┬────┺┓      ┃
+// ┃        ┃ Q Ä │ S Ṣ │ D Ḍ │ F ‚ │ G Ǧ │ H Ḥ │ J Ü │ K Ï │ L Ŀ │ M Ö │ % Ù │ µ ̄  ┃      ┃
+// ┃Maj ⇬   ┃ q ä │ s ṣ │ d ḍ │ f ‘ │ g ǧ │ h ḥ │ j ü │ k ï │ l ŀ │ m ö │ ù ' │ * ` ┃      ┃
+// ┣━━━━━━━┳┹────┬┴────┬┴────┬┴────┬┴────┬┴────┬┴────┬┴────┬┴────┬┴────┬┴────┲┷━━━━━┻━━━━━━┫
+// ┃       ┃ > ≥ │ W “ │ X ” │ C Č │ V Ɣ │ B ↑ │ N → │ ? … │ . . │ / ∕ │ § − ┃             ┃
+// ┃Shift ⇧┃ < ≤ │ w « │ x » │ c č │ v ɣ │ b ↓ │ n ¬ │ , ¿ │ ; × │ : ÷ │ ! ¡ ┃Shift ⇧      ┃
+// ┣━━━━━━━╋━━━━━┷━┳━━━┷━━━┱─┴─────┴─────┴─────┴─────┴─────┴───┲━┷━━━━━╈━━━━━┻━┳━━━━━━━┳━━━┛
+// ┃       ┃       ┃       ┃ ␣         Espace fine insécable ⍽ ┃       ┃       ┃       ┃
+// ┃Ctrl   ┃Meta   ┃Alt    ┃ ␣ Espace       Espace insécable ⍽ ┃AltGr ⇮┃Menu   ┃Ctrl   ┃
+// ┗━━━━━━━┻━━━━━━━┻━━━━━━━┹───────────────────────────────────┺━━━━━━━┻━━━━━━━┻━━━━━━━┛
+
+default partial alphanumeric_keys
+xkb_symbols "la" {
+
+    include "fr(oss)"
+
+    name[Group1]="Berber (Algeria, Latin)";
+
+    key <AD02>	{[  z,  Z,  U1E93,  U1E92  ]}; // z Z ẓ Ẓ
+    key <AD04>	{[  r,  R,  U1E5B,  U1E5A  ]}; // r R ṛ Ṛ
+    key <AD05>	{[  t,  T,  U1E6D,  U1E6C  ]}; // t T ṭ Ṭ
+    key <AD09>	{[  o,  O,  U025B,  U0190  ]}; // o O ɛ Ɛ
+    key <AC02>	{[  s,  S,  U1E63,  U1E62  ]}; // s s ṣ Ṣ
+    key <AC03>	{[  d,  D,  U1E0D,  U1E0C  ]}; // d D ḍ Ḍ
+    key <AC05>	{[  g,  G,  U01E7,  U01E6  ]}; // g G ǧ Ǧ
+    key <AC06>	{[  h,  H,  U1E25,  U1E24  ]}; // h H ḥ Ḥ
+    key <AB03>	{[  c,  C,  U010D,  U010C  ]}; // c C č Č
+    key <AB04>	{[  v,  V,  U0263,  U0194  ]}; // v V ɣ Ɣ
+
+    include "level3(ralt_switch)"
+};
+
+// Kabyle keyboard with dead keys.
+// 2020 by Louis Gostiaux <louis.gostiaux@free.fr>
+partial alphanumeric_keys
+xkb_symbols "azerty-deadkeys" {
+
+    include "fr"
+
+    name[Group1]= "Kabyle (AZERTY, with dead keys)";
+
+    key <AD01>	{[      a,     A,      U025B,  U0190  ]}; // a A ɛ Ɛ
+    key <AD02>	{[      z,     Z,      U2D63          ]}; // ⵣ
+    key <AC01>	{[      q,     Q,      U0263,  U0194  ]}; // q Q ɣ Ɣ
+    key <AB01>	{[      w,     W,      U02B7          ]}; // ʷ
+    // With dead belowdot for ḍ, ṭ, ẓ, ḥ, and dead caron for č and ǧ.
+    key <AB08>	{[ semicolon, period,  dead_belowdot,  dead_caron]};
+
+    include "level3(ralt_switch)"
+};
+
+// Kabyle keyboard, US international with dead keys.
+// 2020 by Louis Gostiaux <louis.gostiaux@free.fr>
+partial alphanumeric_keys
+xkb_symbols "qwerty-gb-deadkeys" {
+
+    include "gb(intl)"
+
+    name[Group1]= "Kabyle (QWERTY, UK, with dead keys)";
+
+    key <AD01>	{[     q,       Q,     U0263,  U0194  ]}; // q Q ɣ Ɣ
+    key <AD02>	{[     w,       W,     U02B7          ]}; // ʷ
+    key <AC01>	{[     a,       A,     U025B,  U0190  ]}; // a A ɛ Ɛ
+    key <AB01>	{[     z,       Z,     U2D63          ]}; // ⵣ
+    key <AB09>	{[ period, greater,  dead_belowdot,  dead_caron]};
+
+    include "level3(ralt_switch)"
+};
+
+// Kabyle keyboard, US international with dead keys.
+// 2020 by Louis Gostiaux <louis.gostiaux@free.fr>
+partial alphanumeric_keys
+xkb_symbols "qwerty-us-deadkeys" {
+
+    include "us(intl)"
+
+    name[Group1]= "Kabyle (QWERTY, US, with dead keys)";
+
+    key <AD01>	{[      q,       Q,    U0263,  U0194  ]}; // q Q ɣ Ɣ
+    key <AD02>	{[      w,       W,    U02B7          ]}; // ʷ
+    key <AC01>	{[      a,       A,    U025B,  U0190  ]}; // a A ɛ Ɛ
+    key <AB01>	{[      z,       Z,    U2D63          ]}; // ⵣ
+    key <AB09>	{[ period, greater,  dead_belowdot,  dead_caron]};
+
+    include "level3(ralt_switch)"
+};
+
+
+// ┌─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┲━━━━━━━━━┓
+// │ ³ ¸ │ 1  ̨ │ 2 É │ 3  ̆ │ 4 — │ 5 – │ 6 ‑ │ 7 È │ 8 ™ │ 9 Ç │ 0 À │ ° ≠ │ + ± ┃ ⌫ Retour┃
+// │ ² ¹ │ &  ̌ │ é ~ │ " # │ ' { │ ( [ │ - | │ è ` │ _ \ │ ç ^ │ à @ │ ) ] │ = } ┃  arrière┃
+// ┢━━━━━┷━┱───┴─┬───┴─┬───┴─┬───┴─┬───┴─┬───┴─┬───┴─┬───┴─┬───┴─┬───┴─┬───┴─┬───┺━┳━━━━━━━┫
+// ┃       ┃     │ ⵥ   │ ⵦ   │ ⵕ   │ ⵟ   │     │     │     │ ⵧ   │     │     │ £ Ø ┃Entrée ┃
+// ┃Tab ↹  ┃ ⴰ   │ ⵣ ⵤ │ ⴻ   │ ⵔ   │ ⵜ ⵝ │ ⵢ   │ ⵓ   │ ⵉ   │ ⵄ   │ ⵃ   │ ⵯ   │ $ ø ┃   ⏎   ┃
+// ┣━━━━━━━┻┱────┴┬────┴┬────┴┬────┴┬────┴┬────┴┬────┴┬────┴┬────┴┬────┴┬────┴┬────┺┓      ┃
+// ┃        ┃ ⵈ   │ ⵚ   │ ⴹ ⴺ │     │ ⴵ ⴶ │ ⵁ   │ ⵋ   │ ⴿ   │     │     │ % Ù │ µ ¯ ┃      ┃
+// ┃Maj ⇬   ┃ ⵇ   │ ⵙ   │ ⴷ ⴸ │ ⴼ   │ ⴳ ⴴ │ ⵀ ⵂ │ ⵊ ⵌ │ ⴽ ⴾ │ ⵍ   │ ⵎ   │ ù ´ │ * ` ┃      ┃
+// ┣━━━━━━━┳┹────┬┴────┬┴────┬┴────┬┴────┬┴────┬┴────┬┴────┬┴────┬┴────┬┴────┲┷━━━━━┻━━━━━━┫
+// ┃       ┃ > ≥ │     │ ⵆ   │ ⵞ   │ ⵗ ⵠ │ ⴲ   │ ⵐ   │ ? … │ . ⋅ │ / ∕ │ § − ┃             ┃
+// ┃Shift ⇧┃ < ≤ │ ⵡ   │ ⵅ   │ ⵛ   │ ⵖ ⵘ │ ⴱ ⵒ │ ⵏ ⵑ │ , ¿ │ ; × │ : ÷ │ ! ¡ ┃Shift ⇧      ┃
+// ┣━━━━━━━╋━━━━━┷━┳━━━┷━━━┱─┴─────┴─────┴─────┴─────┴─────┴───┲━┷━━━━━╈━━━━━┻━┳━━━━━━━┳━━━┛
+// ┃       ┃       ┃       ┃ ␣                                 ┃       ┃       ┃       ┃
+// ┃Ctrl   ┃Meta   ┃Alt    ┃ ␣ Espace                          ┃AltGr ⇮┃Menu   ┃Ctrl   ┃
+// ┗━━━━━━━┻━━━━━━━┻━━━━━━━┹───────────────────────────────────┺━━━━━━━┻━━━━━━━┻━━━━━━━┛
+
+partial alphanumeric_keys
+xkb_symbols "ber" {
+
+    name[Group1]="Berber (Algeria, Tifinagh)";
+
+    key <TLDE>	{[ twosuperior, threesuperior,  onesuperior, dead_cedilla ]}; // ² ³ ¹ ¸
+    key <AE01>	{[ ampersand,  1,  dead_caron,  dead_ogonek ]}; // & 1 ˇ  ̨
+    key <AE02>	{[ eacute,     2,  asciitilde,  Eacute      ]}; // é 2 ~ É
+    key <AE03>	{[ quotedbl,   3,  numbersign,  dead_breve  ]}; // " 3 # ˘
+    key <AE04>	{[ apostrophe, 4,  braceleft,   U2014       ]}; // ' 4 { — (tiret cadratin)
+    key <AE05>	{[ parenleft,  5,  bracketleft, U2013       ]}; // ( 5 [ – (tiret demi-cadratin)
+    key <AE06>	{[ minus,      6,  bar,         U2011       ]}; // - 6 | ‑ (tiret insécable)
+    key <AE07>	{[ egrave,     7,  grave,       Egrave      ]}; // è 7 ` È
+    key <AE08>	{[ underscore, 8,  backslash,   trademark   ]}; // _ 8 \ ™
+    key <AE09>	{[ ccedilla,   9,  asciicircum, Ccedilla    ]}; // ç 9 ^ Ç
+    key <AE10>	{[ agrave,     0,  at,          Agrave      ]}; // à 0 @ À
+    key <AE11>	{[ parenright, degree, bracketright,notequal]}; // ) ° ] ≠
+    key <AE12>	{[ equal,      plus,   braceright, plusminus]}; // = + } ±
+
+    key <AD01>	{[ U2D30                           ]}; // ⴰ
+    key <AD02>	{[ U2D63,  U2D65,  U2D64           ]}; // ⵣ ⵥ ⵤ
+    key <AD03>	{[ U2D3B,  U2D66                   ]}; // ⴻ ⵦ
+    key <AD04>	{[ U2D54,  U2D55                   ]}; // ⵔ ⵕ
+    key <AD05>	{[ U2D5C,  U2D5F,  U2D5D           ]}; // ⵜ ⵟ ⵝ
+    key <AD06>	{[ U2D62                           ]}; // ⵢ
+    key <AD07>	{[ U2D53                           ]}; // ⵓ
+    key <AD08>	{[ U2D49                           ]}; // ⵉ
+    key <AD09>	{[ U2D44,  U2D67                   ]}; // ⵄ ⵧ
+    key <AD10>	{[ U2D43                           ]}; // ⵃ
+    key <AD11>	{[ U2D6F                           ]}; // ⵯ
+    key <AD12>	{[ dollar, sterling, oslash, Oslash]}; // $ £ ø Ø
+
+    key <AC01>	{[ U2D47,  U2D48                   ]}; // ⵇ ⵈ
+    key <AC02>	{[ U2D59,  U2D5A                   ]}; // ⵙ ⵚ
+    key <AC03>	{[ U2D37,  U2D39,  U2D38,  U2D3A   ]}; // ⴷ ⴹ ⴸ ⴺ
+    key <AC04>	{[ U2D3C                           ]}; // ⴼ
+    key <AC05>	{[ U2D33,  U2D35,  U2D34,  U2D36   ]}; // ⴳ ⴵ ⴴ ⴶ
+    key <AC06>	{[ U2D40,  U2D41,  U2D42           ]}; // ⵀ ⵁ ⵂ
+    key <AC07>	{[ U2D4A,  U2D4B,  U2D4C           ]}; // ⵊ ⵋ ⵌ
+    key <AC08>	{[ U2D3D,  U2D3F,  U2D3E           ]}; // ⴽ ⴿ ⴾ
+    key <AC09>	{[ U2D4D                           ]}; // ⵍ
+    key <AC10>	{[ U2D4E                           ]}; // ⵎ
+    key <AC11>	{[ ugrave, percent,  dead_acute, Ugrave  ]}; // ù % ' Ù
+    key <BKSL>	{[ asterisk, mu, dead_grave, dead_macron ]}; // * µ `  ̄
+
+    key <LSGT>	{[ less, greater,  lessthanequal, greaterthanequal ]}; // < > ≤ ≥
+    key <AB01>	{[ U2D61                           ]}; // ⵡ
+    key <AB02>	{[ U2D45,  U2D46                   ]}; // ⵅ ⵆ
+    key <AB03>	{[ U2D5B,  U2D5E                   ]}; // ⵛ ⵞ
+    key <AB04>	{[ U2D56,  U2D57,  U2D58,  U2D60   ]}; // ⵖ ⵗ ⵘ ⵠ
+    key <AB05>	{[ U2D31,  U2D32,  U2D52           ]}; // ⴱ ⴲ ⵒ
+    key <AB06>	{[ U2D4F,  U2D50,  U2D51           ]}; // ⵏ ⵐ ⵑ
+    key <AB07>	{[ comma, question,  questiondown, U2026 ]}; // , ? ¿ …
+    key <AB08>	{[ semicolon, period,    multiply, U22C5 ]}; // ; . × ⋅
+    key <AB09>	{[ colon, slash,         division, U2215 ]}; // : / ÷ ∕
+    key <AB10>	{[ exclam, section,    exclamdown, U2212 ]}; // ! § ¡ −
+
+    include "level3(ralt_switch)"
+};
+
+// Arabic AZERTY with modern Latin digits
+partial alphanumeric_keys
+xkb_symbols "ar" {
+    include "ara(azerty)"
+
+    name[Group1]="Arabic (Algeria)";
+};

@@ -1,0 +1,277 @@
+comment_char    %
+escape_char     /
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Afar language locale for Djibouti (Cadu/Laaqo Dialects).
+%
+% Charset: ISO-8859-1
+%
+% Afar terms provided by Mohamed Obakar <loubak@6sens.com> of the
+% Afar Civilization Researcher, Melka Werer Research Center.
+% Prepared and contributed to glibc by Daniel Yacob <locales@geez.org>.
+%
+% This locale data has been developed under the Yeha Project:
+%      http://yeha.sourceforge.net/
+%
+% build with: localedef -f ISO-8859-1 -i aa_DJ aa_DJ
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+LC_IDENTIFICATION
+%
+title      "Afar language locale for Djibouti (Cadu/Laaqo Dialects)."
+source     "Ge'ez Frontier Foundation"
+address    "7802 Solomon Seal Dr., Springfield, VA 22152, USA"
+contact    ""
+email      "locales@geez.org"
+tel        ""
+fax        ""
+language   "aa"
+territory  "DJ"
+revision   "0.20"
+date       "2003-07-05"
+%
+category  "i18n:2000";LC_IDENTIFICATION
+category  "i18n:2000";LC_COLLATE
+category  "i18n:2000";LC_CTYPE
+category  "i18n:2000";LC_MEASUREMENT
+category  "i18n:2000";LC_MONETARY
+category  "posix:1993";LC_NUMERIC
+category  "i18n:2000";LC_PAPER
+category  "i18n:2000";LC_TELEPHONE
+category  "i18n:2000";LC_ADDRESS
+category  "i18n:2000";LC_MESSAGES
+category  "i18n:2000";LC_NAME
+category  "i18n:2000";LC_TIME
+%
+END LC_IDENTIFICATION
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  Latin Character Set Specifc Data:
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+LC_COLLATE
+copy "iso14651_t1"
+END LC_COLLATE
+
+LC_CTYPE
+copy "i18n"
+
+translit_start
+include "translit_combining";""
+translit_end
+END LC_CTYPE
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  Djibouti Specifc and Shared Data:
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+LC_MEASUREMENT
+%
+% This is the ISO_IEC TR14652 Locale definition for the LC_MEASUREMENT category.
+%
+measurement 1
+%
+END LC_MEASUREMENT
+
+
+LC_MONETARY
+%
+int_curr_symbol       "<U0044><U004A><U0046><U0020>"
+currency_symbol       "<U0024>"
+mon_decimal_point     "<U002E>"
+mon_thousands_sep     "<U0020>"
+mon_grouping          3;3
+positive_sign         ""
+negative_sign         "<U002D>"
+int_frac_digits       2
+frac_digits           2
+p_cs_precedes         1
+p_sep_by_space        0
+n_cs_precedes         1
+n_sep_by_space        0
+p_sign_posn           1
+n_sign_posn           1
+%
+END LC_MONETARY
+
+
+LC_NUMERIC
+%
+% This is the POSIX Locale definition for the LC_NUMERIC category.
+%
+decimal_point          "<U002E>"
+thousands_sep          ""
+grouping               0;0
+%
+END LC_NUMERIC
+
+
+LC_PAPER
+%
+% This is the ISO_IEC TR14652 Locale definition for the LC_PAPER category.
+%
+height      297
+width       210
+%
+END LC_PAPER
+
+
+LC_TELEPHONE
+%
+% This is the ISO_IEC TR14652 Locale definition for the LC_TELEPHONE category.
+%
+tel_dom_fmt    "<U0025><U0061><U002D><U0025><U006C>"
+tel_int_fmt    "<U002B><U0025><U0063><U0020><U0025><U0061><U0020><U0025>/
+<U006C>"
+int_prefix     "<U0032><U0035><U0033>"
+int_select     "<U0030><U0030>"
+%
+END LC_TELEPHONE
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  Afar/DJ Specific Data:
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+LC_ADDRESS
+%
+% This is the ISO_IEC TR14652 Locale definition for the LC_ADDRESS category.
+%
+postal_fmt    "<U0025><U007A><U0025><U0063><U0025><U0054><U0025><U0073>/
+<U0025><U0062><U0025><U0065><U0025><U0072>"
+country_name  "<U0059><U0061><U0062><U0075><U0075><U0074><U0069>"
+country_post  "<U0044><U004A><U0049>"
+country_ab2   "<U0044><U004A>"
+country_ab3   "<U0044><U004A><U0049>"
+country_num   262
+% country_car   unknown
+% country_isbn  unknown, Need ISO 2108
+lang_name     "<U0051><U0061><U0066><U0061><U0072>"
+lang_ab       "<U0061><U0061>"
+lang_term     "<U0061><U0061><U0072>"
+lang_lib      "<U0061><U0061><U0072>"
+%
+END LC_ADDRESS
+
+
+LC_MESSAGES
+%
+yesexpr "<U005E><U005B><U006F><U004F><U0079><U0059><U005D><U002E><U002A>"
+noexpr  "<U005E><U005B><U006D><U006E><U004D><U004E><U005D><U002E><U002A>"
+%
+END LC_MESSAGES
+
+
+LC_NAME
+%
+% This is the ISO_IEC TR14652 Locale definition for the LC_NAME category.
+%
+name_fmt    "<U0025><U0064><U0025><U0074><U0025><U0067><U0025><U0074>/
+<U0025><U006D><U0025><U0074><U0025><U0066>"
+name_gen    ""
+name_mr     "<U0054><U006F><U006F><U0062><U006F><U006B><U006F><U0079><U0074><U0061>"
+name_mrs    "<U0047><U0069><U0073><U0074><U0069>"
+name_miss   "<U004D><U0061><U0071><U0061><U006E><U0078><U0061>"
+name_ms     ""
+%
+END LC_NAME
+
+
+LC_TIME
+%
+% Abbreviated weekday names (%a)
+%
+abday    "<U0061><U0063><U0061>";/
+         "<U0065><U0074><U006C>";/
+         "<U0074><U0061><U006C>";/
+         "<U0061><U0072><U0062>";/
+         "<U006B><U0061><U006D>";/
+         "<U0067><U0075><U006D>";/
+         "<U0073><U0061><U0062>"
+%
+% Full weekday names (%A)
+%
+day      "<U0041><U0063><U0061><U0061><U0064><U0061>";/
+         "<U0045><U0074><U006C><U0065><U0065><U006E><U0069>";/
+         "<U0054><U0061><U006C><U0061><U0061><U0074><U0061>";/
+         "<U0041><U0072><U0062><U0061><U0071><U0061>";/
+         "<U004B><U0061><U006D><U0069><U0069><U0073><U0069>";/
+         "<U0047><U0075><U006D><U0071><U0061><U0074><U0061>";/
+         "<U0053><U0061><U0062><U0074><U0069>"
+%
+% Abbreviated month names (%b)
+%
+abmon    "<U0071><U0075><U006E>";/
+         "<U006E><U0061><U0068>";/
+         "<U0063><U0069><U0067>";/
+         "<U0061><U0067><U0064>";/
+         "<U0063><U0061><U0078>";/
+         "<U0071><U0061><U0073>";/
+         "<U0071><U0061><U0064>";/
+         "<U006C><U0065><U0071>";/
+         "<U0077><U0061><U0079>";/
+         "<U0064><U0069><U0074>";/
+         "<U0078><U0069><U006D>";/
+         "<U006B><U0061><U0078>"
+%
+% Full month names (%B)
+%
+mon      "<U0051><U0075><U006E><U0078><U0061><U0020><U0047><U0061><U0072><U0061><U0062><U006C><U0075>";/
+         "<U004B><U0075><U0064><U006F>";/
+         "<U0043><U0069><U0067><U0067><U0069><U006C><U0074><U0061><U0020><U004B><U0075><U0064><U006F>";/
+         "<U0041><U0067><U0064><U0061><U0020><U0042><U0061><U0078><U0069><U0073><U0073><U006F>";/
+         "<U0043><U0061><U0078><U0061><U0068><U0020><U0041><U006C><U0073><U0061>";/
+         "<U0051><U0061><U0073><U0061><U0020><U0044><U0069><U0072><U0072><U0069>";/
+         "<U0051><U0061><U0064><U006F><U0020><U0044><U0069><U0072><U0072><U0069>";/
+         "<U004C><U0069><U0069><U0071><U0065><U006E>";/
+         "<U0057><U0061><U0079><U0073><U0075>";/
+         "<U0044><U0069><U0074><U0065><U006C><U0069>";/
+         "<U0058><U0069><U006D><U006F><U006C><U0069>";/
+         "<U004B><U0061><U0078><U0078><U0061><U0020><U0047><U0061><U0072><U0061><U0062><U006C><U0075>"
+%
+% Equivalent of AM PM
+%
+am_pm    "<U0073><U0061><U0061><U006B><U0075>";/
+         "<U0063><U0061><U0072><U0072><U0061>"
+%
+% Appropriate date representation (%x)
+%	"%d.%m.%Y"
+%
+d_fmt   "<U0025><U0064><U002E><U0025><U006D><U002E><U0025><U0059>"
+%
+% Appropriate time representation (%X)
+%	"%H:%M:%S"
+%
+t_fmt "<U0025><U006C><U003A><U0025><U004D><U003A><U0025><U0053>"
+%
+% Appropriate AM/PM time representation (%r)
+%	"%X %p"
+%
+t_fmt_ampm "<U0025><U0058><U0020><U0025><U0070>"
+%
+% Appropriate date and time representation (%c)
+%	"%a %d %b %Y %r %Z
+%
+d_t_fmt    "<U0025><U0061><U0020><U0025><U0064><U0020><U0025><U0062>/
+<U0020><U0025><U0059><U0020><U0025><U0072><U0020><U0025><U005A>"
+%
+% Appropriate date representation (date(1))
+%	"%a %b %e %r %Z %Y"
+%
+date_fmt    "<U0025><U0061><U0020><U0025><U0062><U0020><U0025><U0065>/
+<U0020><U0025><U0072><U0020><U0025><U005A><U0020><U0025><U0059>"
+%
+END LC_TIME
+%

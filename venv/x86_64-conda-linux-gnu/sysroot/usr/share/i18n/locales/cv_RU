@@ -1,0 +1,238 @@
+comment_char %
+escape_char  /
+%
+% Chuvash Language Locale for Russia
+% Language: cv
+% Territory: RU
+% Revision: 1.0
+% Date: 2009-10-13
+% Application: general
+% Users: general
+% Charset: UTF-8
+% Distribution and use is free, also
+% for commercial purposes.
+%
+% Based on the ru_RO
+% Modifed by:
+%    Adi Roiban <adi@roiban.ro>
+%    Ali Savatar
+%
+
+LC_IDENTIFICATION
+title      "Chuvash locale for Russia"
+source     "RAP"
+address    "Sankt Jorgens Alle 8, DK-1615 Kobenhavn V, Danmark"
+contact    ""
+email      "bug-glibc-locales@gnu.org"
+tel        ""
+fax        ""
+language   "Chuvash"
+territory  "Russia"
+revision   "1.0"
+date       "2000-06-29"
+%
+category  "cv_RU:2000";LC_IDENTIFICATION
+category  "cv_RU:2000";LC_CTYPE
+category  "cv_RU:2000";LC_COLLATE
+category  "cv_RU:2000";LC_TIME
+category  "cv_RU:2000";LC_NUMERIC
+category  "cv_RU:2000";LC_MONETARY
+category  "cv_RU:2000";LC_MESSAGES
+category  "cv_RU:2000";LC_PAPER
+category  "cv_RU:2000";LC_NAME
+category  "cv_RU:2000";LC_ADDRESS
+category  "cv_RU:2000";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_COLLATE
+copy "iso14651_t1"
+
+% The Chuvash alphabet has the following letters, ordered as below:
+% a a( c e e( h i j k l m n p r s< s s, t u u: v y
+
+collating-symbol <a(>
+collating-symbol <e(>
+collating-symbol <s<>
+collating-symbol <s,>
+collating-symbol <u-diaerisis>
+
+reorder-after <a>
+<a(>
+reorder-after <e>
+<e(>
+reorder-after <r>
+<s<>
+reorder-after <s>
+<s,>
+reorder-after <u>
+<u-diaerisis>
+
+reorder-after <U0061>
+<U0103> <a(>;<BRE>;<MIN>;IGNORE
+reorder-after <U0041>
+<U0102> <a(>;<BRE>;<CAP>;IGNORE
+
+reorder-after <U0065>
+<U0115> <e(>;<BRE>;<MIN>;IGNORE
+reorder-after <U0045>
+<U0114> <e(>;<BRE>;<CAP>;IGNORE
+
+reorder-after <U0072>
+<U0161> <s<>;<CAR>;<MIN>;IGNORE
+reorder-after <U0053>
+<U0160> <s<>;<CAR>;<CAP>;IGNORE
+
+reorder-after <U0073>
+<U0219> <s,>;<CDI>;<MIN>;IGNORE
+<U015F> <s,>;<CDI>;<MIN>;IGNORE
+reorder-after <U0053>
+<U0218> <s,>;<CDI>;<CAP>;IGNORE
+<U015E> <s,>;<CDI>;<CAP>;IGNORE
+
+reorder-after <U0074>
+<U00FC> <u-diaerisis>;<BAS>;<MIN>;IGNORE
+reorder-after <U0055>
+<U00DC> <u-diaerisis>;<BAS>;<CAP>;IGNORE
+
+reorder-end
+
+END LC_COLLATE
+
+LC_CTYPE
+copy "i18n"
+
+translit_start
+include  "translit_combining";""
+translit_end
+END LC_CTYPE
+
+LC_MESSAGES
+% "^[yY].*"
+yesexpr "<U005E><U005B><U0079><U0059><U005D><U002E><U002A>"
+% "^[nN].*"
+noexpr "<U005E><U005B><U006E><U004E><U005D><U002E><U002A>"
+END LC_MESSAGES
+
+LC_MONETARY
+int_curr_symbol           "<U0052><U0055><U0042><U0020>"
+
+% "t." - short for tenke(, Chuvash name for rouble
+currency_symbol "<U0074>"
+
+mon_decimal_point         "<U002E>"
+mon_thousands_sep         "<U00A0>"
+mon_grouping              3;3
+positive_sign             ""
+negative_sign             "<U002D>"
+int_frac_digits           2
+frac_digits               2
+p_cs_precedes             0
+p_sep_by_space            1
+n_cs_precedes             0
+n_sep_by_space            1
+p_sign_posn               1
+n_sign_posn               1
+END LC_MONETARY
+
+LC_NUMERIC
+copy "ru_RU"
+END LC_NUMERIC
+
+LC_TIME
+
+% Days of week:
+% vyrsarnikun (Sunday) - short vr
+% tuntikun (Monday) tn
+% ytlarikun (Tuesday) yt
+% junkun (Wednesday) jn
+% ke(s,nernikun (Thursday) ks,
+% ernekun (Friday) er
+% s<a(matkun (Saturday) s<m
+
+day 	"<U0076><U0079><U0072><U0073><U0061><U0072><U006E><U0069><U006B><U0075><U006E>";/
+	"<U0074><U0075><U006E><U0074><U0069><U006B><U0075><U006E>";/
+	"<U0079><U0074><U006C><U0061><U0072><U0069><U006B><U0075><U006E>";/
+	"<U006A><U0075><U006E><U006B><U0075><U006E>";/
+	"<U006B><U0115><U015F><U006E><U0065><U0072><U006E><U0069><U006B><U0075><U006E>";/
+	"<U0065><U0072><U006E><U0065><U006B><U0075><U006E>";/
+	"<U0161><U0103><U006D><U0061><U0074><U006B><U0075><U006E>"
+
+abday   "<U0076><U0072>";/
+	"<U0074><U006E>";/
+	"<U0079><U0074>";/
+	"<U006A><U006E>";/
+	"<U006B><U015F>";/
+	"<U0065><U0072>";/
+	"<U0161><U006D>"
+
+% Month names:
+% ka(rlac (January) - short KA(R
+% nara(s (February) NAR
+% pus< (March) PUS<
+% aka (April) AKA
+% s,u (May) S,U
+% s,e(rtme (June) S,E(R
+% uta( (July) UTA(
+% s,urla (August) S,UR
+% ava(n (September) AVA(
+% jupa (October) JUP
+% cu:k (November) CU:K
+% ras<tav (December) RAS<
+
+mon     "<U006B><U0103><U0072><U006C><U0061><U0063>";/
+	"<U006E><U0061><U0072><U0103><U0073>";/
+	"<U0070><U0075><U0161>";/
+	"<U0061><U006B><U0061>";/
+	"<U015F><U0075>";/
+	"<U015F><U0115><U0072><U0074><U006D><U0065>";/
+	"<U0075><U0074><U0103>";/
+	"<U015F><U0075><U0072><U006C><U0061>";/
+	"<U0061><U0076><U0103><U006E>";/
+	"<U006A><U0075><U0070><U0061>";/
+	"<U0063><U00FC><U006B>";/
+	"<U0072><U0061><U0161><U0074><U0061><U0076>"
+abmon   "<U004B><U0102><U0052>";/
+	"<U004E><U0041><U0052>";/
+	"<U0050><U0055><U0160>";/
+	"<U0041><U004B><U0041>";/
+	"<U015E><U0055>";/
+	"<U015E><U0114><U0052>";/
+	"<U0055><U0054><U0102>";/
+	"<U015E><U0055><U0052>";/
+	"<U0041><U0056><U0102>";/
+	"<U004A><U0055><U0050>";/
+	"<U0043><U00DC><U004B>";/
+	"<U0052><U0041><U0160>"
+d_t_fmt "<U0025><U0061><U0020><U0025><U0064><U0020><U0025><U0062>/
+<U0020><U0025><U0059><U0020><U0025><U0054>"
+d_fmt     "<U0025><U0064><U002E><U0025><U006D><U002E><U0025><U0059>"
+t_fmt     "<U0025><U0054>"
+am_pm     "";""
+t_fmt_ampm ""
+date_fmt       "<U0025><U0061><U0020><U0025><U0062><U0020><U0025><U0065>/
+<U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U0020>/
+<U0025><U005A><U0020><U0025><U0059>"
+first_weekday 2
+first_workday 2
+END LC_TIME
+
+LC_PAPER
+copy "ru_RU"
+END LC_PAPER
+
+LC_TELEPHONE
+copy "ru_RU"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+copy "ru_RU"
+END LC_MEASUREMENT
+
+LC_NAME
+copy "ru_RU"
+END LC_NAME
+
+LC_ADDRESS
+copy "ru_RU"
+END LC_ADDRESS

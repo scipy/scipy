@@ -1,0 +1,14 @@
+LC_COLLATE
+
+copy "iso14651_t1_common"
+
+script <HAN>
+
+order_start <HAN>;forward;forward;forward;forward,position
+<U4E00> <U4E00>;IGNORE;IGNORE;IGNORE
+.. ..;IGNORE;IGNORE;IGNORE
+<U9FA5> <U9FA5>;IGNORE;IGNORE;IGNORE
+#
+order_end
+#
+END LC_COLLATE

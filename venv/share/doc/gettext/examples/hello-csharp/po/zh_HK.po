@@ -1,0 +1,25 @@
+# Chinese (Hong Kong) translation of hello-csharp.
+# Copyright (C) 2006 Yoyodyne, Inc.
+# Abel Cheung <abelcheung@gmail.com>, 2006.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: hello-csharp 0.15-pre5\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"PO-Revision-Date: 2006-07-05 15:40+0800\n"
+"Last-Translator: Abel Cheung <abelcheung@gmail.com>\n"
+"Language-Team: Chinese (Hong Kong) <community@linuxhall.org>\n"
+"Language: zh_HK\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+
+#: hello.cs:14
+msgid "Hello, world!"
+msgstr "你好！"
+
+#: hello.cs:17
+#, csharp-format
+msgid "This program is running as process number {0}."
+msgstr "本程式正在執行中，進程編號為 {0}。"

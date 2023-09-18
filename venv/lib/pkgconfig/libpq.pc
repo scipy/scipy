@@ -1,0 +1,14 @@
+prefix=/workspaces/scipy/venv
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: libpq
+Description: PostgreSQL libpq library
+Url: https://www.postgresql.org/
+Version: 15.3
+Requires: 
+Requires.private: libssl libcrypto
+Cflags: -I${includedir}
+Libs: -L${libdir} -lpq
+Libs.private: -L/workspaces/scipy/venv/lib -lpgcommon -lpgport -lgssapi_krb5 -lm

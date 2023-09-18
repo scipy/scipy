@@ -1,0 +1,99 @@
+.TH GStreamer 1 "December 2005"
+.SH "NAME"
+gst\-inspect\-1.0 \- print info about a GStreamer plugin or element
+.SH "SYNOPSIS"
+.B  gst\-inspect\-1.0 [OPTION...] [PLUGIN|ELEMENT]
+.SH "DESCRIPTION"
+.PP
+\fIgst\-inspect\-1.0\fP is a tool that prints out information on
+available \fIGStreamer\fP plugins, information about a particular
+plugin, or information about a particular element.  When executed
+with no PLUGIN or ELEMENT argument, \fIgst\-inspect\-1.0\fP will print
+a list of all plugins and elements together with a summary.
+When executed with a PLUGIN or ELEMENT argument,
+\fIgst\-inspect\-1.0\fP will print information about that plug-in or
+element.
+.
+.SH "OPTIONS"
+.l
+\fIgst\-inspect\-1.0\fP accepts the following arguments and options:
+.TP 8
+.B  PLUGIN
+Name of a plugin
+.TP 8
+.B  ELEMENT
+Name of an element
+.TP 8
+.B  \-\-help
+Print help synopsis and available FLAGS
+.TP 8
+.B  \-\-gst\-info\-mask=FLAGS
+\fIGStreamer\fP info flags to set (list with \-\-help)
+.TP 8
+.B  \-a, \-\-print\-all
+Print all plugins and elements
+.TP 8
+.B  \-b, \-\-print\-blacklist
+Print list of blacklisted files
+.TP 8
+.B  \-\-plugin
+List the plugin contents
+.TP 8
+.B  \-\-types=Element/Types
+Allow inspecting only elements that match all the element types filtered
+in this slash (\'/\') separated list of element types. Those types correspond to
+what is also called \'klass\' which is a string describing the type of
+element, like \'Decoder\', \'Audio\', \'Encoder\' etc... This options
+implies that only elements will be printed (not typefind functions or
+tracers).
+.TP 8
+.B  \-\-exists
+Check if the specified element or plugin exists
+.TP 8
+.B  \-\-atleast\-version
+When checking if an element or plugin exists, also check that its version
+is at least the version specified
+.TP 8
+.B  \-u, \-\-uri\-handlers
+Print supported URI schemes, with the elements that implement them
+.TP 8
+.B  \-\-no\-colors
+Disable colors in output. You can also achieve the same by setting
+\'GST_INSPECT_NO_COLORS\' environment variable to any value.
+.TP 8
+.B  \-C, \-\-color
+Color output, even when not connected to a tty.
+.TP 8
+.B  \-\-print\-plugin\-auto\-install\-info
+Print a machine-parsable list of features the specified plugin provides.
+Useful in connection with external automatic plugin installation mechanisms.
+.TP 8
+.B  \-\-gst\-debug\-mask=FLAGS
+\fIGStreamer\fP debugging flags to set (list with \-\-help)
+.TP 8
+.B  \-\-gst\-mask=FLAGS
+\fIGStreamer\fP info and debugging flags to set (list with \-\-help)
+.TP 8
+.B  \-\-gst\-plugin\-spew
+\fIGStreamer\fP info flags to set
+Enable printout of errors while loading \fIGStreamer\fP plugins
+.TP 8
+.B  \-\-gst\-plugin\-path=PATH
+Add directories separated with ':' to the plugin search path
+.
+.SH "ENVIRONMENT VARIABLES"
+.l
+\fIgst\-inspect\-1.0\fP reads the following environment variables, in addition
+to the generic \fIGStreamer\fP environment variables also described in
+.BR gst\-launch\-1.0 (1):
+.TP 8
+.B GST_LESS
+Override the options passed to \fIless\fR (by default "RXF").
+.br
+See \fBless\fR(1) for more information.
+.
+.SH "SEE ALSO"
+.BR gst\-launch\-1.0 (1),
+.BR gst\-typefind\-1.0 (1)
+.SH "AUTHOR"
+The GStreamer team at http://gstreamer.freedesktop.org/

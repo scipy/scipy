@@ -1,0 +1,63 @@
+macro.aacute.HTML         = "&aacute;"
+macro.Aring.HTML          = "&Aring;"
+macro.aring.HTML          = "&aring;"
+macro.Auml.HTML           = "&Auml;"
+macro.author              = "\\b{Author:}"
+macro.BR.HTML             = "<br />"
+macro.copyright.HTML      = "&copy;"
+macro.eacute.HTML         = "&eacute;"
+macro.gui                 = "\\b"
+macro.HR.HTML             = "<hr />"
+macro.iacute.HTML         = "&iacute;"
+macro.key                 = "\\b"
+macro.macos               = "macOS"
+macro.menu                = "\\b"
+macro.oslash.HTML         = "&oslash;"
+macro.ouml.HTML           = "&ouml;"
+macro.nullptr             = "\\c{nullptr}"
+macro.QA                  = "\\e{Qt Assistant}"
+macro.QD                  = "\\e{Qt Designer}"
+macro.QL                  = "\\e{Qt Linguist}"
+macro.QQV                 = "\\e{Qt QML Viewer}"
+macro.QtVersion           = "$QT_VERSION"
+macro.QtVer               = "$QT_VER"
+macro.param               = "\\e"
+macro.raisedaster.HTML    = "<sup>*</sup>"
+macro.raisedaster.DocBook = "\\sup{*}"
+macro.rarrow.HTML         = "&rarr;"
+macro.reg.HTML            = "<sup>&reg;</sup>"
+macro.rego.DocBook         = "\\sup{&#174;}"
+macro.return              = "Returns"
+macro.starslash           = "\\c{*/}"
+macro.begincomment        = "\\c{/*}"
+macro.endcomment          = "\\c{*/}"
+macro.uuml.HTML           = "&uuml;"
+macro.mdash.HTML          = "&mdash;"
+macro.pi.HTML             = "&Pi;"
+macro.beginqdoc.HTML      = "/*!"
+macro.endqdoc.HTML        = "*/"
+macro.borderedimage       = "\\div {class=\"border\"} \\image \1\n\\enddiv"
+
+macro.beginfloatleft.HTML   = "<div style=\"float: left; margin-right: 2em\">"
+macro.beginfloatright.HTML  = "<div style=\"float: right; margin-left: 2em\">"
+macro.endfloat.HTML         = "</div>"
+macro.clearfloat.HTML       = "<br style=\"clear: both\" />"
+macro.emptyspan.HTML        = "<span></span>"
+
+# Expands to the minor version based on the QT_VER environment variable
+macro.QtMinorVersion        = "$QT_VER"
+macro.QtMinorVersion.match  = "\\d+\\.(\\d+)"
+
+# Embed YouTube content by video ID - Example: \youtube dQw4w9WgXcQ
+# Also requires a <ID>.jpg thumbnail for offline docs. In .qdocconf, add:
+#
+# HTML.extraimages           += images/dQw4w9WgXcQ.jpg
+# qhp.ProjectName.extraFiles += images/dQw4w9WgXcQ.jpg
+#
+macro.youtube.HTML = "<div class=\"video\">\n<span class=\"vspan\"></span>\n" \
+                     "<iframe src=\"https://www.youtube.com/embed/\1\"" \
+                     "frameborder=\"0\" allowfullscreen>\n" \
+                     "<a href=\"https://www.youtube.com/watch/?v=\1\">\n"\
+                     "<img src=\"images/\1.jpg\"" \
+                     "title=\"Click to play in a browser\" /></a>\n" \
+                     "</iframe></div>\n"

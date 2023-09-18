@@ -1,0 +1,14 @@
+# ogg pkg-config file
+
+prefix=/home/conda/feedstock_root/build_artifacts/libogg_1610381874777/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: ogg
+Description: ogg is a library for manipulating ogg bitstreams
+Version: 1.3.4
+Requires:
+Conflicts:
+Libs: -L${libdir} -logg
+Cflags: -I${includedir}

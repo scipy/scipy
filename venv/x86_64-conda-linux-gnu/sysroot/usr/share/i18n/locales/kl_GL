@@ -1,0 +1,146 @@
+escape_char /
+comment_char %
+
+% Greenlandic language locale for Greenland
+% Source: Danish Standards Association
+% Address: Kollegievej 6
+%  DK-2920 Charlottenlund, Danmark
+% Contact: Keld Simonsen
+% Email: Keld.Simonsen@dkuug.dk
+% Tel: +45 - 39966101
+% Fax: +45 - 39966102
+% Language: kl
+% Territory: GL
+% Revision: 4.3
+% Date: 1996-10-15
+% Users: general
+% Repertoiremap: mnemonic.ds
+% Charset: ISO-8859-1
+% Distribution and use is free, also
+% for commercial purposes.
+%
+% Only LC_TIME and LC_MESSAGES are
+% specified here, else the da_DK locale
+% is used.
+
+LC_IDENTIFICATION
+title      "Greenlandic locale for Greenland"
+source     "Danish Standards Association"
+address    "Kollegievej 6, DK-2920 Charlottenlund, Danmark"
+contact    ""
+email      "bug-glibc-locales@gnu.org"
+tel        ""
+fax        ""
+language   "Greenlandic"
+territory  "Greenland"
+revision   "1.0"
+date       "2000-06-29"
+%
+category  "kl_GL:2000";LC_IDENTIFICATION
+category  "kl_GL:2000";LC_CTYPE
+category  "kl_GL:2000";LC_COLLATE
+category  "kl_GL:2000";LC_TIME
+category  "kl_GL:2000";LC_NUMERIC
+category  "kl_GL:2000";LC_MONETARY
+category  "kl_GL:2000";LC_MESSAGES
+category  "kl_GL:2000";LC_PAPER
+category  "kl_GL:2000";LC_NAME
+category  "kl_GL:2000";LC_ADDRESS
+category  "kl_GL:2000";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_CTYPE
+copy "da_DK"
+END LC_CTYPE
+
+LC_COLLATE
+copy "da_DK"
+END LC_COLLATE
+
+LC_MONETARY
+copy "da_DK"
+END LC_MONETARY
+
+LC_NUMERIC
+copy "da_DK"
+END LC_NUMERIC
+
+LC_TIME
+abday    "<U0073><U0061><U0062>";"<U0061><U0074><U0061>";/
+         "<U006D><U0061><U0072>";"<U0070><U0069><U006E>";/
+         "<U0073><U0069><U0073>";"<U0074><U0061><U006C>";/
+         "<U0061><U0072><U0066>"
+day      "<U0073><U0061><U0062><U0061><U0061><U0074>";/
+         "<U0061><U0074><U0061><U0061><U0073><U0069><U006E><U006E><U0067><U006F><U0072><U006E><U0065><U0071>";/
+         "<U006D><U0061><U0072><U006C><U0075><U006E><U006E><U0067><U006F><U0072><U006E><U0065><U0071>";/
+         "<U0070><U0069><U006E><U0067><U0061><U0073><U0075><U006E><U006E><U0067><U006F><U0072><U006E><U0065><U0071>";/
+         "<U0073><U0069><U0073><U0061><U006D><U0061><U006E><U006E><U0067><U006F><U0072><U006E><U0065><U0071>";/
+         "<U0074><U0061><U006C><U006C><U0069><U006D><U0061><U006E><U006E><U0067><U006F><U0072><U006E><U0065><U0071>";/
+         "<U0061><U0072><U0066><U0069><U006E><U0069><U006E><U006E><U0067><U006F><U0072><U006E><U0065><U0071>"
+abmon    "<U006A><U0061><U006E>";"<U0066><U0065><U0062>";/
+         "<U006D><U0061><U0072>";"<U0061><U0070><U0072>";/
+         "<U006D><U0061><U006A>";"<U006A><U0075><U006E>";/
+         "<U006A><U0075><U006C>";"<U0061><U0075><U0067>";/
+         "<U0073><U0065><U0070>";"<U006F><U006B><U0074>";/
+         "<U006E><U006F><U0076>";"<U0064><U0065><U0063>"
+mon      "<U006A><U0061><U006E><U0075><U0061><U0072><U0069>";/
+         "<U0066><U0065><U0062><U0072><U0075><U0061><U0072><U0069>";/
+         "<U006D><U0061><U0072><U0074><U0073><U0069>";/
+         "<U0061><U0070><U0072><U0069><U006C><U0069>";/
+         "<U006D><U0061><U006A><U0069>";/
+         "<U006A><U0075><U006E><U0069>";/
+         "<U006A><U0075><U006C><U0069>";/
+         "<U0061><U0075><U0067><U0075><U0073><U0074><U0075><U0073><U0069>";/
+         "<U0073><U0065><U0070><U0074><U0065><U006D><U0062><U0065><U0072><U0069>";/
+         "<U006F><U006B><U0074><U006F><U0062><U0065><U0072><U0069>";/
+         "<U006E><U006F><U0076><U0065><U006D><U0062><U0065><U0072><U0069>";/
+         "<U0064><U0065><U0063><U0065><U006D><U0062><U0065><U0072><U0069>"
+d_t_fmt     "<U0025><U0061><U0020><U0025><U0064><U0020><U0025><U0062><U0020><U0025><U0059><U0020><U0025><U0054><U0020><U0025><U005A>"
+d_fmt       "<U0025><U0064><U0020><U0025><U0062><U0020><U0025><U0059>"
+t_fmt       "<U0025><U0054>"
+am_pm       "";""
+t_fmt_ampm  ""
+date_fmt       "<U0025><U0061><U0020><U0025><U0062><U0020><U0025><U0065>/
+<U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U0020>/
+<U0025><U005A><U0020><U0025><U0059>"
+END LC_TIME
+
+LC_MESSAGES
+yesexpr  "<U005E><U005B><U004A><U006A><U0059><U0079><U0041><U0061><U005D><U002E><U002A>"
+noexpr   "<U005E><U005B><U004E><U006E><U005D><U002E><U002A>"
+END LC_MESSAGES
+
+LC_PAPER
+% FIXME
+height   297
+% FIXME
+width    210
+END LC_PAPER
+
+LC_TELEPHONE
+tel_int_fmt    "<U002B><U0025><U0063><U0020><U0025><U0061><U0020><U0025>/
+<U006C>"
+int_prefix     "<U0032><U0039><U0039>"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+% FIXME
+measurement    1
+END LC_MEASUREMENT
+
+LC_NAME
+name_fmt    "<U0025><U0064><U0025><U0074><U0025><U0067><U0025><U0074>/
+<U0025><U006D><U0025><U0074><U0025><U0066>"
+END LC_NAME
+
+LC_ADDRESS
+postal_fmt    "<U0025><U0066><U0025><U004E><U0025><U0061><U0025><U004E>/
+<U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E><U0025><U0073>/
+<U0020><U0025><U0068><U0020><U0025><U0065><U0020><U0025><U0072><U0025>/
+<U004E><U0025><U007A><U0020><U0025><U0054><U0025>/
+<U004E><U0025><U0063><U0025><U004E>"
+country_ab2 "<U0047><U004C>"
+country_ab3 "<U0047><U0052><U004C>"
+country_num 304
+END LC_ADDRESS

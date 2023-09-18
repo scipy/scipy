@@ -1,0 +1,107 @@
+Open jobs for finishing GNU libc:
+---------------------------------
+Status: October 2004
+
+If you have time and talent to take over any of the jobs below please
+contact <bug-glibc@gnu.org>.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+[ 1] Port to new platforms or test current version on formerly supported
+     platforms.
+
+**** See http://www.gnu.org/software/libc/porting.html for more details.
+
+
+[ 2] Test compliance with standards.  If you have access to recent
+     standards (IEEE, ISO, ANSI, X/Open, ...) and/or test suites you
+     could do some checks as the goal is to be compliant with all
+     standards if they do not contradict each other.
+
+
+[ 3] The IMHO opinion most important task is to write a more complete
+     test suite.  We cannot get too many people working on this.  It is
+     not difficult to write a test, find a definition of the function
+     which I normally can provide, if necessary, and start writing tests
+     to test for compliance.  Beside this, take a look at the sources
+     and write tests which in total test as many paths of execution as
+     possible.
+
+
+[ 4] Write translations for the GNU libc message for the so far
+     unsupported languages.  GNU libc is fully internationalized and
+     users can immediately benefit from this.
+
+     Take a look at the matrix in
+	ftp://ftp.gnu.org/pub/gnu/ABOUT-NLS
+     for the current status (of course better use a mirror of ftp.gnu.org).
+
+
+[ 8] If you enjoy assembler programming (as I do --drepper :-) you might
+     be interested in writing optimized versions for some functions.
+     Especially the string handling functions can be optimized a lot.
+
+     Take a look at
+
+	Faster String Functions
+	Henry Spencer, University of Toronto
+	Usenix Winter '92, pp. 419--428
+
+     or just ask.  Currently mostly i?86 and Alpha optimized versions
+     exist.  Please ask before working on this to avoid duplicate
+     work.
+
+
+[11] Write access function for netmasks, bootparams, and automount
+     databases for nss_files, nss_nis, and nss_nisplus modules.
+     The functions should be embedded in the nss scheme.  This is not
+     hard and not all services must be supported at once.
+
+
+[15] Cleaning up the header files.  Ideally, each header style should
+     follow the "good examples".  Each variable and function should have
+     a short description of the function and its parameters.  The prototypes
+     should always contain variable names which can help to identify their
+     meaning; better than
+
+		int foo (int, int, int, int);
+
+     Blargh!
+
+***  The conformtest.pl tool helps cleaning the namespace.  As far as
+     known the prototypes all contain parameter names.  But maybe some
+     comments can be improved.
+
+
+[18] Based on the sprof program we need tools to analyze the output.  The
+     result should be a link map which specifies in which order the .o
+     files are placed in the shared object.  This should help to improve
+     code locality and result in a smaller footprint (in code and data
+     memory) since less pages are only used in small parts.
+
+
+[19] A user-level STREAMS implementation should be available if the
+     kernel does not provide the support.
+
+***  This is a much lower priority job now that STREAMS are optional in
+     XPG.
+
+
+[20] More conversion modules for iconv(3).  Existing modules should be
+     extended to do things like transliteration if this is wanted.
+     For often used conversion a direct conversion function should be
+     available.
+
+
+[23] The `strptime' function needs to be completed.  This includes among
+     other things that it must get teached about timezones.  The solution
+     envisioned is to extract the timezones from the ADO timezone
+     specifications.  Special care must be given names which are used
+     multiple times.  Here the precedence should (probably) be according
+     to the geograhical distance.  E.g., the timezone EST should be
+     treated as the `Eastern Australia Time' instead of the US `Eastern
+     Standard Time' if the current TZ variable is set to, say,
+     Australia/Canberra or if the current locale is en_AU.
+
+
+[27] ...deleted...

@@ -1,0 +1,133 @@
+#!/bin/sh
+#
+# Copyright (C) 2001 Free Software Foundation, Inc.
+# Written by Bruno Haible <bruno@clisp.org>, 2001.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+# Print the team's address (to stdout) and output additional instructions
+# (to stderr).
+
+projectsdir="$1"
+progdir="$2"
+catalog="$3"  # e.g. "pt_BR"
+language="$4" # e.g. "pt"
+
+url=`cat "$projectsdir/KDE/teams.url"`
+html=`"$progdir/urlget" "$url" "$projectsdir/KDE/teams.html"`
+# The HTML page says they are "presently switching from the 2-letter codes
+# to the 3-letter codes". So it is safest to use the English name and
+# translate ourselves...
+case "$catalog" in
+  af) english=Afrikaans;;
+  ar) english=Arabic;;
+  az) english=Azerbaijani;;
+  bg) english=Bulgarian;;
+  bn) english=Bengali;;
+  bo) english=Tibetan;;
+  br) english=Breton;;
+  bs) english=Bosnian;;
+  ca) english=Catalan;;
+  cs) english=Czech;;
+  cy) english=Welsh;;
+  da) english=Danish;;
+  de) english=German;;
+  el) english=Greek;;
+  en_GB) english="British English";;
+  eo) english=Esperanto;;
+  es) english=Spanish;;
+  et) english=Estonian;;
+  eu) english=Basque;;
+  fa) english=Farsi;;
+  fi) english=Finnish;;
+  fo) english=Faroese;;
+  fr) english=French;;
+  ga) english=Irish;;
+  gl) english=Gallegan;;
+  gu) english=Gujarati;;
+  he) english=Hebrew;;
+  hi) english=Hindi;;
+  hr) english=Croatian;;
+  hu) english=Hungarian;;
+  id) english=Indonesian;;
+  is) english=Icelandic;;
+  it) english=Italian;;
+  ja) english=Japanese;;
+  km) english=Khmer;;
+  ko) english=Korean;;
+  ku) english=Kurdish;;
+  lt) english=Lithuanian;;
+  lv) english=Latvian;;
+  mi) english=Maori;;
+  mk) english=Macedonian;;
+  mr) english=Marathi;;
+  mt) english=Maltese;;
+  nl) english=Dutch;;
+  no) english="Norwegian (Bokm";;
+  nn) english="Norwegian (Nynorsk)";;
+  oc) english=Occitan;;
+  pl) english=Polish;;
+  pt) english=Portuguese;;
+  pt_BR) english="Brazilian Portuguese";;
+  ro) english=Romanian;;
+  ru) english=Russian;;
+  sk) english=Slovak;;
+  sl) english=Slovenian;;
+  sr) english=Serbian;;
+  sv) english=Swedish;;
+  ta) english=Tamil;;
+  tg) english=Tajik;;
+  th) english=Thai;;
+  tr) english=Turkish;;
+  uk) english=Ukrainian;;
+  vi) english=Vietnamese;;
+  # ??) english=Walloon;;
+  xh) english=Xhosa;;
+  zh_CN) english="Simplified Chinese";;
+  zh_TW) english="Traditional Chinese";;
+  *) english=;;
+esac
+if test -n "$english"; then
+  (echo "Please consider joining your translation team, and visit"
+   sed_addnl='s,</TR>,</TR>\
+,g'
+   anchor=`echo "$html" | tr '\012' '|' | sed -e "$sed_addnl" | sed -n -e 's,^.*<TR.*<A NAME="\([^"]*\)">.*>'"$english"'[^<>]*team<.*</TR>$,\1,p'`
+   if test -n "$anchor"; then
+     echo "  $url#$anchor"
+   fi
+   echo "  $url"
+   echo "  https://l10n.kde.org/"
+  ) 1>&2
+  address1=`echo "$html" | tr '\012' '|' | sed -n -e 's,^.*>'"$english"'[^<>]*team<\(.*\)$,\1,p' | sed -e "$sed_addnl" | sed -e 2q -e 1d | sed -n -e 's,^.*mailing list\(.*\)$,\1,p' | sed -e 's,</LI>.*,,' | sed -e 's,</A>.*,</A>,' | sed -n -e 's,^.*HREF="\([^"]*\)">[^<>]*</A>.*$,\1,p'`
+  case "$address1" in
+    mailto:*) address1=`echo "$address1" | sed -e 's,^mailto:,<,' -e 's,$,>,'` ;;
+  esac
+  address1=`echo "$address1" | sed -e 's,-request@,@,'`
+  address2=`echo "$html" | tr '\012' '|' | sed -n -e 's,^.*>'"$english"'[^<>]*team<\(.*\)$,\1,p' | sed -e "$sed_addnl" | sed -e 2q -e 1d | sed -n -e 's,^.*web site\(.*\)$,\1,p' | sed -e 's,</LI>.*,,' | sed -e 's,</A>.*,</A>,' | sed -n -e 's,^.*HREF="\([^"]*\)">[^<>]*</A>.*$,\1,p'`
+  if test -n "$address1" && test -n "$address2"; then
+    address="$address1 $address2"
+  else
+    address="$address1$address2"
+  fi
+  # address can be empty or contain 1 or more space separated URLs.
+else
+  (echo "A translation team for your "`if test "$catalog" = "$language"; then echo "language ($language)"; else echo "local dialect ($catalog)"; fi`
+   echo "may not exist yet.  Please visit"
+   echo "  $url"
+   echo "  https://l10n.kde.org/"
+   echo "and decide whether you want to create a new translation team."
+  ) 1>&2
+  address=
+fi
+exit 0

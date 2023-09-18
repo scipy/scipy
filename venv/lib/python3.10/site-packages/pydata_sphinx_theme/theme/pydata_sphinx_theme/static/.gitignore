@@ -1,0 +1,6 @@
+scripts/pydata-sphinx-theme.js
+scripts/pydata-sphinx-theme.js.map
+styles/pydata-sphinx-theme.css
+styles/pydata-sphinx-theme.css.map
+webpack-macros.html
+vendor/*

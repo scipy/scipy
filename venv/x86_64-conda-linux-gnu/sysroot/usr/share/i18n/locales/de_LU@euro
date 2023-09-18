@@ -1,0 +1,83 @@
+comment_char %
+escape_char  /
+%
+% German Language Locale for Luxemburg with Euro
+% Language: de
+% Territory: LU
+% Option: euro
+% Date: 2000-08-20
+% Users: general
+% Charset: ISO-8859-15
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title      "German locale for Luxemburg with Euro"
+source     "Free Software Foundation, Inc."
+address    "59 Temple Place - Suite 330, Boston, MA 02111-1307, USA"
+contact    ""
+email      "bug-glibc-locales@gnu.org"
+tel        ""
+fax        ""
+language   "German"
+territory  "Luxemburg"
+revision   "1.0"
+date       "2000-08-20"
+%
+category  "de_LU:2000@euro";LC_IDENTIFICATION
+category  "de_LU:2000@euro";LC_CTYPE
+category  "de_LU:2000@euro";LC_COLLATE
+category  "de_LU:2000@euro";LC_TIME
+category  "de_LU:2000@euro";LC_NUMERIC
+category  "de_LU:2000@euro";LC_MONETARY
+category  "de_LU:2000@euro";LC_MESSAGES
+category  "de_LU:2000@euro";LC_PAPER
+category  "de_LU:2000@euro";LC_NAME
+category  "de_LU:2000@euro";LC_ADDRESS
+category  "de_LU:2000@euro";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_COLLATE
+copy "iso14651_t1"
+END LC_COLLATE
+
+LC_CTYPE
+copy "de_LU"
+END LC_CTYPE
+
+LC_MESSAGES
+copy "de_DE"
+END LC_MESSAGES
+
+LC_MONETARY
+copy "de_LU"
+END LC_MONETARY
+
+LC_NUMERIC
+copy "de_DE"
+END LC_NUMERIC
+
+LC_TIME
+copy "de_LU"
+END LC_TIME
+
+LC_PAPER
+copy "de_LU"
+END LC_PAPER
+
+LC_TELEPHONE
+copy "de_LU"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+copy "de_LU"
+END LC_MEASUREMENT
+
+LC_NAME
+copy "de_LU"
+END LC_NAME
+
+LC_ADDRESS
+copy "de_LU"
+END LC_ADDRESS

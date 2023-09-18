@@ -1,0 +1,233 @@
+comment_char %
+escape_char  /
+%
+% Tajik Language Locale for Tajikistan
+% Source:
+% Contact: Pablo Saratxaga, Roger Kovacs
+% Email: <pablo@mandrakesoft.com>, <ROGERKO@micromotion.com>
+% Language: tg
+% Territory: TJ
+% Revision: 0.4
+% Date: 2004-01-09
+% Application: general
+% Users: general
+% Charset: UTF-8
+% Distribution and use is free, also
+% for commercial purposes.
+
+%
+% TODO: check LC_COLLATE
+% TODO: fix LC_TIME
+%
+% needed extra chars: <U0493>, <U04E3>, <U049B>, <U04EF>, <U04B3>, <U04B7>
+
+LC_IDENTIFICATION
+title "Tajik language locale for Tajikistan"
+source "Roger Kovacs"
+address ""
+contact "Pablo Saratxaga, Roger Kovacs"
+email "pablo@mandrakesoft.com, ROGERKO@micromotion.com"
+tel ""
+fax ""
+language "Tajik"
+territory "Tajikistan"
+revision "0.4"
+date "2004-01-09"
+
+category "tg_TJ:2000";LC_IDENTIFICATION
+category "tg_TJ:2000";LC_CTYPE
+category "tg_TJ:2000";LC_COLLATE
+category "tg_TJ:2000";LC_TIME
+category "tg_TJ:2000";LC_NUMERIC
+category "tg_TJ:2000";LC_PAPER
+category "tg_TJ:2000";LC_TELEPHONE
+category "tg_TJ:2000";LC_MEASUREMENT
+category "tg_TJ:2000";LC_ADDRESS
+category "tg_TJ:2000";LC_MONETARY
+category "tg_TJ:2000";LC_MESSAGES
+
+END LC_IDENTIFICATION
+
+LC_CTYPE
+copy "i18n"
+
+translit_start
+include  "translit_combining";""
+translit_end
+END LC_CTYPE
+
+LC_COLLATE
+
+% Tadjik cyrillic alphabet is:
+% <U0430>, <U0431>, <U0432>, <U0433>, <U0493> (cyr ghe with stroke), <U0434>, <U0435>,
+% <U0451>, <U0436>, <U0437>, <U0438>, <U04E3> (cyr i with macron), <U0439>, <U043A>,
+% <U049B> (cyr k with descender), <U043B>, <U043C>, <U043D>, <U043E>, <U043F>, <U0440>,
+% <U0441>, <U0442>, <U0443>, <U04EF> (cyr u with macron), <U0444>, <U0445>,
+% <U04B3> (cyr ha with descender), <U0447>, <U04B7> (cyr che with descender),
+% <U0448>, <U044A> (cyr hard sign), <U044D>, <U044E>, <U044F>
+
+copy "iso14651_t1"
+
+collating-symbol <g-=>
+collating-symbol <i-=>
+collating-symbol <k,=>
+collating-symbol <u-=>
+collating-symbol <h,=>
+collating-symbol <c%,=>
+
+reorder-after <CYR-GHE>
+<g-=>
+reorder-after <CYR-I>
+<i-=>
+reorder-after <CYR-KA>
+<k,=>
+reorder-after <CYR-OU>
+<u-=>
+reorder-after <CYR-HA>
+<h,=>
+reorder-after <CYR-CHE>
+<c%,=>
+
+reorder-after <U0433>
+<U0493> <g-=>;<PCL>;<MIN>;IGNORE
+reorder-after <U0413>
+<U0492> <g-=>;<PCL>;<CAP>;IGNORE
+
+reorder-after <U0438>
+<U04E3> <i-=>;<PCL>;<MIN>;IGNORE
+reorder-after <U0418>
+<U04E2> <i-=>;<PCL>;<CAP>;IGNORE
+
+reorder-after <U043A>
+<U049B> <k,=>;<PCL>;<MIN>;IGNORE
+reorder-after <U041A>
+<U049A> <k,=>;<PCL>;<CAP>;IGNORE
+
+reorder-after <U0443>
+<U04EF> <u-=>;<PCL>;<MIN>;IGNORE
+reorder-after <U0423>
+<U04EE> <u-=>;<PCL>;<CAP>;IGNORE
+
+reorder-after <U0445>
+<U04B3> <h,=>;<PCL>;<MIN>;IGNORE
+reorder-after <U0425>
+<U04B2> <h,=>;<PCL>;<CAP>;IGNORE
+
+reorder-after <U0447>
+<U04B7> <c%,=>;<PCL>;<MIN>;IGNORE
+reorder-after <U0427>
+<U04B6> <c%,=>;<PCL>;<CAP>;IGNORE
+
+reorder-end
+
+END LC_COLLATE
+
+LC_MESSAGES
+yesstr  "<U0434><U0430>"
+nostr   "<U043D><U0435><U0442>"
+yesexpr "<U005E><U005B><U04B2><U04B3><U0425><U0445><U0414><U0434><U0059><U0079><U005D><U002E><U002A>"
+noexpr  "<U005E><U005B><U041D><U043D><U004E><U006E><U005D><U002E><U002A>"
+END LC_MESSAGES
+
+LC_MONETARY
+int_curr_symbol           "<U0054><U004A><U0053><U0020>"
+currency_symbol           "<U0440><U0443><U0431>"
+mon_decimal_point         "<U002E>"
+mon_thousands_sep         "<U0020>"
+mon_grouping              3;3
+positive_sign             ""
+negative_sign             "<U002D>"
+int_frac_digits           2
+frac_digits               2
+p_cs_precedes             0
+p_sep_by_space            1
+n_cs_precedes             0
+n_sep_by_space            1
+p_sign_posn               1
+n_sign_posn               1
+END LC_MONETARY
+
+LC_NUMERIC
+decimal_point             "<U002C>"
+thousands_sep             "<U002E>"
+grouping                  3;3
+END LC_NUMERIC
+
+LC_TIME
+day     "<U0412><U043E><U0441><U043A><U0440><U0435><U0441><U0435><U043D><U044C><U0435>";/
+        "<U041F><U043E><U043D><U0435><U0434><U0435><U043B><U044C><U043D><U0438><U043A>";/
+        "<U0412><U0442><U043E><U0440><U043D><U0438><U043A>";/
+        "<U0421><U0440><U0435><U0434><U0430>";/
+        "<U0427><U0435><U0442><U0432><U0435><U0440><U0433>";/
+        "<U041F><U044F><U0442><U043D><U0438><U0446><U0430>";/
+        "<U0421><U0443><U0431><U0431><U043E><U0442><U0430>"
+abday   "<U0412><U0441><U043A>";/
+        "<U041F><U043D><U0434>";/
+        "<U0412><U0442><U0440>";/
+        "<U0421><U0440><U0434>";/
+        "<U0427><U0442><U0432>";/
+        "<U041F><U0442><U043D>";/
+        "<U0421><U0431><U0442>"
+mon     "<U042F><U043D><U0432><U0430><U0440><U044F>";/
+        "<U0424><U0435><U0432><U0440><U0430><U043B><U044F>";/
+        "<U041C><U0430><U0440><U0442><U0430>";/
+        "<U0410><U043F><U0440><U0435><U043B><U044F>";/
+        "<U041C><U0430><U044F>";/
+        "<U0418><U044E><U043D><U044F>";/
+        "<U0418><U044E><U043B><U044F>";/
+        "<U0410><U0432><U0433><U0443><U0441><U0442><U0430>";/
+        "<U0421><U0435><U043D><U0442><U044F><U0431><U0440><U044F>";/
+        "<U041E><U043A><U0442><U044F><U0431><U0440><U044F>";/
+        "<U041D><U043E><U044F><U0431><U0440><U044F>";/
+        "<U0414><U0435><U043A><U0430><U0431><U0440><U044F>"
+abmon   "<U042F><U043D><U0432>";/
+        "<U0424><U0435><U0432>";/
+        "<U041C><U0430><U0440>";/
+        "<U0410><U043F><U0440>";/
+        "<U041C><U0430><U0439>";/
+        "<U0418><U044E><U043D>";/
+        "<U0418><U044E><U043B>";/
+        "<U0410><U0432><U0433>";/
+        "<U0421><U0435><U043D>";/
+        "<U041E><U043A><U0442>";/
+        "<U041D><U043E><U044F>";/
+        "<U0414><U0435><U043A>"
+d_t_fmt "<U0025><U0061><U0020><U0025><U0064><U0020><U0025><U0062>/
+<U0020><U0025><U0059><U0020><U0025><U0054>"
+d_fmt     "<U0025><U0064><U002E><U0025><U006D><U002E><U0025><U0059>"
+t_fmt     "<U0025><U0054>"
+am_pm     "";""
+t_fmt_ampm ""
+END LC_TIME
+
+LC_PAPER
+height      297
+width       210
+END LC_PAPER
+
+LC_MEASUREMENT
+measurement 1
+END LC_MEASUREMENT
+
+LC_NAME
+% FIXME
+copy "en_DK"
+END LC_NAME
+
+LC_ADDRESS
+% FIXME
+postal_fmt    "<U0025><U0061><U0025><U004E><U0025><U0066><U0025><U004E>/
+<U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E><U0025><U0068>/
+<U0020><U0025><U0073><U0020><U0025><U0065><U0020><U0025><U0072><U0025>/
+<U004E><U0025><U0054><U0020><U0025><U007A><U0025>/
+<U004E><U0025><U0063><U0025><U004E>"
+
+country_ab2 "<U0054><U004A>"
+country_ab3 "<U0054><U004A><U004B>"
+country_num 762
+END LC_ADDRESS
+
+LC_TELEPHONE
+% FIXME
+copy "en_DK"
+END LC_TELEPHONE

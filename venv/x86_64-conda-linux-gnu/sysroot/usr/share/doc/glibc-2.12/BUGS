@@ -1,0 +1,69 @@
+	    List of known bugs (certainly very incomplete)
+	    ----------------------------------------------
+
+Time-stamp: <2007-10-27 18:37:51 drepper>
+
+This following list contains those bugs which I'm aware of.  Please
+make sure that bugs you report are not listed here.  If you can fix one
+of these bugs/limitations I'll certainly be glad to receive a patch.
+
+Another source of information about bugs is the problem data base of the
+GNU project.  There is an easy to use WWW interface available at
+
+       http://sourceware.org/bugzilla/
+
+I would appreciate it very much if you could verify the problem was
+not reported before by looking through the database. Before reporting
+a bug please check the FAQ since it discusses also a lot of
+problematic situations.
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Severity: [  *] to [***]
+
+[ **]  Closing shared objects in statically linked binaries most of the
+       times leads to crashes during the dlopen().  Hard to fix.
+
+[ **]  The RPC code is not 64 bit clean.  This is getting slowly fixed
+       but expect incompatible changes on 64 bit platforms like Alpha.
+
+[  *]  The precision of the `sinhl' and/or `asinhl' function do not seem
+       to be the best.
+
+[  *]  On Linux, there should be a way to prevent defining the symbol
+       NGROUPS_MAX in the <linux/limits.h> header file.  In glibc it
+       is defined in <posix1_lim.h> which must not make the other
+       symbols in <linux/limits.h> available.
+       [PR libc/140]
+
+[  *]  The libm-ieee `gamma' function gives wrong results (at least for
+       -0.5).
+
+[  *]  The libm-ieee `scalb' function gives wrong results for
+       non-integral second parameters.
+
+[  *]  Several (most?) collation specifications are broken.  The code which
+       is currently there is in most cases inherited from the originial
+       author (in case there is a LC_COLLATE specification in the locale
+       file) or is defined using the default (if iso14651_t1 is included).
+
+       In any case we are missing information to correct the specification.
+       If you find the specification for your language be faulty please
+       send a report with instruction on what to fix.  You don't have to
+       fix the specification yourself.
+
+       The way it finally should look like (if the generic specification
+       is not correct) can be seen in the sv_SE file.  Quite a few changes
+       on top of the generic specification can be made without duplication
+       of the whole LC_COLLATE description.
+
+[  *]  Some of the functions which also handled IPv6 are currently broken.
+       IPv6 and IPv4 lookups occasionally happen when not needed.  This
+       happens in getaddrinfo() and getnameinfo().  IPv4 handling of
+       these functions is OK though and there are patches available to fix
+       the IPv6 code as well.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Ulrich Drepper
+drepper@redhat.com

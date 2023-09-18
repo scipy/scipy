@@ -1,0 +1,821 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>cairo_device_t: Cairo: A Vector Graphics Library</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<link rel="home" href="index.html" title="Cairo: A Vector Graphics Library">
+<link rel="up" href="cairo-surfaces.html" title="Surfaces">
+<link rel="prev" href="cairo-surfaces.html" title="Surfaces">
+<link rel="next" href="cairo-cairo-surface-t.html" title="cairo_surface_t">
+<meta name="generator" content="GTK-Doc V1.27 (XML mode)">
+<link rel="stylesheet" href="style.css" type="text/css">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<table class="navigation" id="top" width="100%" summary="Navigation header" cellpadding="2" cellspacing="5"><tr valign="middle">
+<td width="100%" align="left" class="shortcuts">
+<a href="#" class="shortcut">Top</a><span id="nav_description">  <span class="dim">|</span> 
+                  <a href="#cairo-cairo-device-t.description" class="shortcut">Description</a></span>
+</td>
+<td><a accesskey="h" href="index.html"><img src="home.png" width="16" height="16" border="0" alt="Home"></a></td>
+<td><a accesskey="u" href="cairo-surfaces.html"><img src="up.png" width="16" height="16" border="0" alt="Up"></a></td>
+<td><a accesskey="p" href="cairo-surfaces.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
+<td><a accesskey="n" href="cairo-cairo-surface-t.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
+</tr></table>
+<div class="refentry">
+<a name="cairo-cairo-device-t"></a><div class="titlepage"></div>
+<div class="refnamediv"><table width="100%"><tr>
+<td valign="top">
+<h2><span class="refentrytitle"><a name="cairo-cairo-device-t.top_of_page"></a>cairo_device_t</span></h2>
+<p>cairo_device_t — interface to underlying rendering system</p>
+</td>
+<td class="gallery_image" valign="top" align="right"></td>
+</tr></table></div>
+<div class="refsect1">
+<a name="cairo-cairo-device-t.functions"></a><h2>Functions</h2>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="functions_return">
+<col class="functions_name">
+</colgroup>
+<tbody>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="returnvalue">cairo_device_t</span></a> *
+</td>
+<td class="function_name">
+<a class="link" href="cairo-cairo-device-t.html#cairo-device-reference" title="cairo_device_reference ()">cairo_device_reference</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-cairo-device-t.html#cairo-device-destroy" title="cairo_device_destroy ()">cairo_device_destroy</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-Error-handling.html#cairo-status-t" title="enum cairo_status_t"><span class="returnvalue">cairo_status_t</span></a>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-cairo-device-t.html#cairo-device-status" title="cairo_device_status ()">cairo_device_status</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-cairo-device-t.html#cairo-device-finish" title="cairo_device_finish ()">cairo_device_finish</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-cairo-device-t.html#cairo-device-flush" title="cairo_device_flush ()">cairo_device_flush</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-cairo-device-t.html#cairo-device-type-t" title="enum cairo_device_type_t"><span class="returnvalue">cairo_device_type_t</span></a>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-cairo-device-t.html#cairo-device-get-type" title="cairo_device_get_type ()">cairo_device_get_type</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">unsigned <span class="returnvalue">int</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-cairo-device-t.html#cairo-device-get-reference-count" title="cairo_device_get_reference_count ()">cairo_device_get_reference_count</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-Error-handling.html#cairo-status-t" title="enum cairo_status_t"><span class="returnvalue">cairo_status_t</span></a>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-cairo-device-t.html#cairo-device-set-user-data" title="cairo_device_set_user_data ()">cairo_device_set_user_data</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span> *
+</td>
+<td class="function_name">
+<a class="link" href="cairo-cairo-device-t.html#cairo-device-get-user-data" title="cairo_device_get_user_data ()">cairo_device_get_user_data</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-Error-handling.html#cairo-status-t" title="enum cairo_status_t"><span class="returnvalue">cairo_status_t</span></a>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-cairo-device-t.html#cairo-device-acquire" title="cairo_device_acquire ()">cairo_device_acquire</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-cairo-device-t.html#cairo-device-release" title="cairo_device_release ()">cairo_device_release</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">double</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-cairo-device-t.html#cairo-device-observer-elapsed" title="cairo_device_observer_elapsed ()">cairo_device_observer_elapsed</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">double</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-cairo-device-t.html#cairo-device-observer-fill-elapsed" title="cairo_device_observer_fill_elapsed ()">cairo_device_observer_fill_elapsed</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">double</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-cairo-device-t.html#cairo-device-observer-glyphs-elapsed" title="cairo_device_observer_glyphs_elapsed ()">cairo_device_observer_glyphs_elapsed</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">double</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-cairo-device-t.html#cairo-device-observer-mask-elapsed" title="cairo_device_observer_mask_elapsed ()">cairo_device_observer_mask_elapsed</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">double</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-cairo-device-t.html#cairo-device-observer-paint-elapsed" title="cairo_device_observer_paint_elapsed ()">cairo_device_observer_paint_elapsed</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-Error-handling.html#cairo-status-t" title="enum cairo_status_t"><span class="returnvalue">cairo_status_t</span></a>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-cairo-device-t.html#cairo-device-observer-print" title="cairo_device_observer_print ()">cairo_device_observer_print</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">double</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-cairo-device-t.html#cairo-device-observer-stroke-elapsed" title="cairo_device_observer_stroke_elapsed ()">cairo_device_observer_stroke_elapsed</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect1">
+<a name="cairo-cairo-device-t.other"></a><h2>Types and Values</h2>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="name">
+<col class="description">
+</colgroup>
+<tbody>
+<tr>
+<td class="typedef_keyword">typedef</td>
+<td class="function_name"><a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t">cairo_device_t</a></td>
+</tr>
+<tr>
+<td class="datatype_keyword">enum</td>
+<td class="function_name"><a class="link" href="cairo-cairo-device-t.html#cairo-device-type-t" title="enum cairo_device_type_t">cairo_device_type_t</a></td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect1">
+<a name="cairo-cairo-device-t.description"></a><h2>Description</h2>
+<p>Devices are the abstraction Cairo employs for the rendering system
+used by a <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="type">cairo_surface_t</span></a>. You can get the device of a surface using
+<a class="link" href="cairo-cairo-surface-t.html#cairo-surface-get-device" title="cairo_surface_get_device ()"><code class="function">cairo_surface_get_device()</code></a>.</p>
+<p>Devices are created using custom functions specific to the rendering
+system you want to use. See the documentation for the surface types
+for those functions.</p>
+<p>An important function that devices fulfill is sharing access to the
+rendering system between Cairo and your application. If you want to
+access a device directly that you used to draw to with Cairo, you must
+first call <a class="link" href="cairo-cairo-device-t.html#cairo-device-flush" title="cairo_device_flush ()"><code class="function">cairo_device_flush()</code></a> to ensure that Cairo finishes all
+operations on the device and resets it to a clean state.</p>
+<p>Cairo also provides the functions <a class="link" href="cairo-cairo-device-t.html#cairo-device-acquire" title="cairo_device_acquire ()"><code class="function">cairo_device_acquire()</code></a> and
+<a class="link" href="cairo-cairo-device-t.html#cairo-device-release" title="cairo_device_release ()"><code class="function">cairo_device_release()</code></a> to synchronize access to the rendering system
+in a multithreaded environment. This is done internally, but can also
+be used by applications.</p>
+<p>Putting this all together, a function that works with devices should
+look something like this:</p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc kwb">void</span>
+<span class="function">my_device_modifying_function</span> <span class="gtkdoc opt">(</span>cairo_device_t <span class="gtkdoc opt">*</span>device<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  cairo_status_t status<span class="gtkdoc opt">;</span>
+
+  <span class="gtkdoc slc">// Ensure the device is properly reset</span>
+  <span class="function"><a href="cairo-cairo-device-t.html#cairo-device-flush">cairo_device_flush</a></span> <span class="gtkdoc opt">(</span>device<span class="gtkdoc opt">);</span>
+  <span class="gtkdoc slc">// Try to acquire the device</span>
+  status <span class="gtkdoc opt">=</span> <span class="function"><a href="cairo-cairo-device-t.html#cairo-device-acquire">cairo_device_acquire</a></span> <span class="gtkdoc opt">(</span>device<span class="gtkdoc opt">);</span>
+  <span class="keyword">if</span> <span class="gtkdoc opt">(</span>status <span class="gtkdoc opt">!=</span> CAIRO_STATUS_SUCCESS<span class="gtkdoc opt">) {</span>
+    <span class="function">printf</span> <span class="gtkdoc opt">(</span><span class="string">&quot;Failed to acquire the device: %s</span><span class="gtkdoc esc">\n</span><span class="string">&quot;</span><span class="gtkdoc opt">,</span> <span class="function"><a href="cairo-Error-handling.html#cairo-status-to-string">cairo_status_to_string</a></span> <span class="gtkdoc opt">(</span>status<span class="gtkdoc opt">));</span>
+    <span class="keyword">return</span><span class="gtkdoc opt">;</span>
+  <span class="gtkdoc opt">}</span>
+
+  <span class="gtkdoc slc">// Do the custom operations on the device here.</span>
+  <span class="gtkdoc slc">// But do not call any Cairo functions that might acquire devices.</span>
+  
+  <span class="gtkdoc slc">// Release the device when done.</span>
+  <span class="function"><a href="cairo-cairo-device-t.html#cairo-device-release">cairo_device_release</a></span> <span class="gtkdoc opt">(</span>device<span class="gtkdoc opt">);</span>
+<span class="gtkdoc opt">}</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="note"><p>Please refer to the documentation of each backend for
+additional usage requirements, guarantees provided, and
+interactions with existing surface API of the device functions for
+surfaces of that type.
+</p></div>
+</div>
+<div class="refsect1">
+<a name="cairo-cairo-device-t.functions_details"></a><h2>Functions</h2>
+<div class="refsect2">
+<a name="cairo-device-reference"></a><h3>cairo_device_reference ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="returnvalue">cairo_device_t</span></a> *
+cairo_device_reference (<em class="parameter"><code><a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> *device</code></em>);</pre>
+<p>Increases the reference count on <em class="parameter"><code>device</code></em>
+ by one. This prevents
+<em class="parameter"><code>device</code></em>
+ from being destroyed until a matching call to
+<a class="link" href="cairo-cairo-device-t.html#cairo-device-destroy" title="cairo_device_destroy ()"><code class="function">cairo_device_destroy()</code></a> is made.</p>
+<p>Use <a class="link" href="cairo-cairo-device-t.html#cairo-device-get-reference-count" title="cairo_device_get_reference_count ()"><code class="function">cairo_device_get_reference_count()</code></a> to get the number of references
+to a <a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a>.</p>
+<div class="refsect3">
+<a name="cairo-device-reference.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>device</p></td>
+<td class="parameter_description"><p>a <a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-device-reference.returns"></a><h4>Returns</h4>
+<p> the referenced <a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a>.</p>
+</div>
+<p class="since">Since: 1.10</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-device-destroy"></a><h3>cairo_device_destroy ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_device_destroy (<em class="parameter"><code><a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> *device</code></em>);</pre>
+<p>Decreases the reference count on <em class="parameter"><code>device</code></em>
+ by one. If the result is
+zero, then <em class="parameter"><code>device</code></em>
+ and all associated resources are freed.  See
+<a class="link" href="cairo-cairo-device-t.html#cairo-device-reference" title="cairo_device_reference ()"><code class="function">cairo_device_reference()</code></a>.</p>
+<p>This function may acquire devices if the last reference was dropped.</p>
+<div class="refsect3">
+<a name="cairo-device-destroy.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>device</p></td>
+<td class="parameter_description"><p>a <a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.10</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-device-status"></a><h3>cairo_device_status ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-Error-handling.html#cairo-status-t" title="enum cairo_status_t"><span class="returnvalue">cairo_status_t</span></a>
+cairo_device_status (<em class="parameter"><code><a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> *device</code></em>);</pre>
+<p>Checks whether an error has previously occurred for this
+device.</p>
+<div class="refsect3">
+<a name="cairo-device-status.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>device</p></td>
+<td class="parameter_description"><p>a <a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-device-status.returns"></a><h4>Returns</h4>
+<p> <a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-SUCCESS:CAPS"><code class="literal">CAIRO_STATUS_SUCCESS</code></a> on success or an error code if
+the device is in an error state.</p>
+</div>
+<p class="since">Since: 1.10</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-device-finish"></a><h3>cairo_device_finish ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_device_finish (<em class="parameter"><code><a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> *device</code></em>);</pre>
+<p>This function finishes the device and drops all references to
+external resources. All surfaces, fonts and other objects created
+for this <em class="parameter"><code>device</code></em>
+ will be finished, too.
+Further operations on the <em class="parameter"><code>device</code></em>
+ will not affect the <em class="parameter"><code>device</code></em>
+ but
+will instead trigger a <a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-DEVICE-FINISHED:CAPS"><code class="literal">CAIRO_STATUS_DEVICE_FINISHED</code></a> error.</p>
+<p>When the last call to <a class="link" href="cairo-cairo-device-t.html#cairo-device-destroy" title="cairo_device_destroy ()"><code class="function">cairo_device_destroy()</code></a> decreases the
+reference count to zero, cairo will call <a class="link" href="cairo-cairo-device-t.html#cairo-device-finish" title="cairo_device_finish ()"><code class="function">cairo_device_finish()</code></a> if
+it hasn't been called already, before freeing the resources
+associated with the device.</p>
+<p>This function may acquire devices.</p>
+<div class="refsect3">
+<a name="cairo-device-finish.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>device</p></td>
+<td class="parameter_description"><p>the <a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> to finish</p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.10</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-device-flush"></a><h3>cairo_device_flush ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_device_flush (<em class="parameter"><code><a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> *device</code></em>);</pre>
+<p>Finish any pending operations for the device and also restore any
+temporary modifications cairo has made to the device's state.
+This function must be called before switching from using the 
+device with Cairo to operating on it directly with native APIs.
+If the device doesn't support direct access, then this function
+does nothing.</p>
+<p>This function may acquire devices.</p>
+<div class="refsect3">
+<a name="cairo-device-flush.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>device</p></td>
+<td class="parameter_description"><p>a <a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.10</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-device-get-type"></a><h3>cairo_device_get_type ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-cairo-device-t.html#cairo-device-type-t" title="enum cairo_device_type_t"><span class="returnvalue">cairo_device_type_t</span></a>
+cairo_device_get_type (<em class="parameter"><code><a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> *device</code></em>);</pre>
+<p>This function returns the type of the device. See <a class="link" href="cairo-cairo-device-t.html#cairo-device-type-t" title="enum cairo_device_type_t"><span class="type">cairo_device_type_t</span></a>
+for available types.</p>
+<div class="refsect3">
+<a name="cairo-device-get-type.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>device</p></td>
+<td class="parameter_description"><p>a <a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-device-get-type.returns"></a><h4>Returns</h4>
+<p> The type of <em class="parameter"><code>device</code></em>
+.</p>
+</div>
+<p class="since">Since: 1.10</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-device-get-reference-count"></a><h3>cairo_device_get_reference_count ()</h3>
+<pre class="programlisting">unsigned <span class="returnvalue">int</span>
+cairo_device_get_reference_count (<em class="parameter"><code><a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> *device</code></em>);</pre>
+<p>Returns the current reference count of <em class="parameter"><code>device</code></em>
+.</p>
+<div class="refsect3">
+<a name="cairo-device-get-reference-count.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>device</p></td>
+<td class="parameter_description"><p>a <a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-device-get-reference-count.returns"></a><h4>Returns</h4>
+<p> the current reference count of <em class="parameter"><code>device</code></em>
+.  If the
+object is a nil object, 0 will be returned.</p>
+</div>
+<p class="since">Since: 1.10</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-device-set-user-data"></a><h3>cairo_device_set_user_data ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-Error-handling.html#cairo-status-t" title="enum cairo_status_t"><span class="returnvalue">cairo_status_t</span></a>
+cairo_device_set_user_data (<em class="parameter"><code><a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> *device</code></em>,
+                            <em class="parameter"><code>const <a class="link" href="cairo-Types.html#cairo-user-data-key-t" title="cairo_user_data_key_t"><span class="type">cairo_user_data_key_t</span></a> *key</code></em>,
+                            <em class="parameter"><code><span class="type">void</span> *user_data</code></em>,
+                            <em class="parameter"><code><a class="link" href="cairo-Types.html#cairo-destroy-func-t" title="cairo_destroy_func_t ()"><span class="type">cairo_destroy_func_t</span></a> destroy</code></em>);</pre>
+<p>Attach user data to <em class="parameter"><code>device</code></em>
+.  To remove user data from a surface,
+call this function with the key that was used to set it and <a href="/usr/share/gtk-doc/html/glib/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>
+for <em class="parameter"><code>data</code></em>
+.</p>
+<div class="refsect3">
+<a name="cairo-device-set-user-data.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>device</p></td>
+<td class="parameter_description"><p>a <a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>key</p></td>
+<td class="parameter_description"><p>the address of a <a class="link" href="cairo-Types.html#cairo-user-data-key-t" title="cairo_user_data_key_t"><span class="type">cairo_user_data_key_t</span></a> to attach the user data to</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>user_data</p></td>
+<td class="parameter_description"><p>the user data to attach to the <a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>destroy</p></td>
+<td class="parameter_description"><p>a <a class="link" href="cairo-Types.html#cairo-destroy-func-t" title="cairo_destroy_func_t ()"><span class="type">cairo_destroy_func_t</span></a> which will be called when the
+<a class="link" href="cairo-cairo-t.html#cairo-t" title="cairo_t"><span class="type">cairo_t</span></a> is destroyed or when new user data is attached using the
+same key.</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-device-set-user-data.returns"></a><h4>Returns</h4>
+<p> <a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-SUCCESS:CAPS"><code class="literal">CAIRO_STATUS_SUCCESS</code></a> or <a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-NO-MEMORY:CAPS"><code class="literal">CAIRO_STATUS_NO_MEMORY</code></a> if a
+slot could not be allocated for the user data.</p>
+</div>
+<p class="since">Since: 1.10</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-device-get-user-data"></a><h3>cairo_device_get_user_data ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span> *
+cairo_device_get_user_data (<em class="parameter"><code><a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> *device</code></em>,
+                            <em class="parameter"><code>const <a class="link" href="cairo-Types.html#cairo-user-data-key-t" title="cairo_user_data_key_t"><span class="type">cairo_user_data_key_t</span></a> *key</code></em>);</pre>
+<p>Return user data previously attached to <em class="parameter"><code>device</code></em>
+ using the
+specified key.  If no user data has been attached with the given
+key this function returns <a href="/usr/share/gtk-doc/html/glib/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>.</p>
+<div class="refsect3">
+<a name="cairo-device-get-user-data.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>device</p></td>
+<td class="parameter_description"><p>a <a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>key</p></td>
+<td class="parameter_description"><p>the address of the <a class="link" href="cairo-Types.html#cairo-user-data-key-t" title="cairo_user_data_key_t"><span class="type">cairo_user_data_key_t</span></a> the user data was
+attached to</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-device-get-user-data.returns"></a><h4>Returns</h4>
+<p> the user data previously attached or <a href="/usr/share/gtk-doc/html/glib/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>.</p>
+</div>
+<p class="since">Since: 1.10</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-device-acquire"></a><h3>cairo_device_acquire ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-Error-handling.html#cairo-status-t" title="enum cairo_status_t"><span class="returnvalue">cairo_status_t</span></a>
+cairo_device_acquire (<em class="parameter"><code><a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> *device</code></em>);</pre>
+<p>Acquires the <em class="parameter"><code>device</code></em>
+ for the current thread. This function will block
+until no other thread has acquired the device.</p>
+<p>If the return value is <a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-SUCCESS:CAPS"><code class="literal">CAIRO_STATUS_SUCCESS</code></a>, you successfully acquired the
+device. From now on your thread owns the device and no other thread will be
+able to acquire it until a matching call to <a class="link" href="cairo-cairo-device-t.html#cairo-device-release" title="cairo_device_release ()"><code class="function">cairo_device_release()</code></a>. It is
+allowed to recursively acquire the device multiple times from the same
+thread.</p>
+<div class="note"><p>You must never acquire two different devices at the same time
+unless this is explicitly allowed. Otherwise the possibility of deadlocks
+exist.
+
+As various Cairo functions can acquire devices when called, these functions
+may also cause deadlocks when you call them with an acquired device. So you
+must not have a device acquired when calling them. These functions are
+marked in the documentation.
+</p></div>
+<div class="refsect3">
+<a name="cairo-device-acquire.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>device</p></td>
+<td class="parameter_description"><p>a <a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-device-acquire.returns"></a><h4>Returns</h4>
+<p> <a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-SUCCESS:CAPS"><code class="literal">CAIRO_STATUS_SUCCESS</code></a> on success or an error code if
+the device is in an error state and could not be
+acquired. After a successful call to <a class="link" href="cairo-cairo-device-t.html#cairo-device-acquire" title="cairo_device_acquire ()"><code class="function">cairo_device_acquire()</code></a>,
+a matching call to <a class="link" href="cairo-cairo-device-t.html#cairo-device-release" title="cairo_device_release ()"><code class="function">cairo_device_release()</code></a> is required.</p>
+</div>
+<p class="since">Since: 1.10</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-device-release"></a><h3>cairo_device_release ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_device_release (<em class="parameter"><code><a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> *device</code></em>);</pre>
+<p>Releases a <em class="parameter"><code>device</code></em>
+ previously acquired using <a class="link" href="cairo-cairo-device-t.html#cairo-device-acquire" title="cairo_device_acquire ()"><code class="function">cairo_device_acquire()</code></a>. See
+that function for details.</p>
+<div class="refsect3">
+<a name="cairo-device-release.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>device</p></td>
+<td class="parameter_description"><p>a <a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.10</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-device-observer-elapsed"></a><h3>cairo_device_observer_elapsed ()</h3>
+<pre class="programlisting"><span class="returnvalue">double</span>
+cairo_device_observer_elapsed (<em class="parameter"><code><a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> *device</code></em>);</pre>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-device-observer-fill-elapsed"></a><h3>cairo_device_observer_fill_elapsed ()</h3>
+<pre class="programlisting"><span class="returnvalue">double</span>
+cairo_device_observer_fill_elapsed (<em class="parameter"><code><a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> *device</code></em>);</pre>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-device-observer-glyphs-elapsed"></a><h3>cairo_device_observer_glyphs_elapsed ()</h3>
+<pre class="programlisting"><span class="returnvalue">double</span>
+cairo_device_observer_glyphs_elapsed (<em class="parameter"><code><a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> *device</code></em>);</pre>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-device-observer-mask-elapsed"></a><h3>cairo_device_observer_mask_elapsed ()</h3>
+<pre class="programlisting"><span class="returnvalue">double</span>
+cairo_device_observer_mask_elapsed (<em class="parameter"><code><a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> *device</code></em>);</pre>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-device-observer-paint-elapsed"></a><h3>cairo_device_observer_paint_elapsed ()</h3>
+<pre class="programlisting"><span class="returnvalue">double</span>
+cairo_device_observer_paint_elapsed (<em class="parameter"><code><a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> *device</code></em>);</pre>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-device-observer-print"></a><h3>cairo_device_observer_print ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-Error-handling.html#cairo-status-t" title="enum cairo_status_t"><span class="returnvalue">cairo_status_t</span></a>
+cairo_device_observer_print (<em class="parameter"><code><a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> *device</code></em>,
+                             <em class="parameter"><code><a class="link" href="cairo-PNG-Support.html#cairo-write-func-t" title="cairo_write_func_t ()"><span class="type">cairo_write_func_t</span></a> write_func</code></em>,
+                             <em class="parameter"><code><span class="type">void</span> *closure</code></em>);</pre>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-device-observer-stroke-elapsed"></a><h3>cairo_device_observer_stroke_elapsed ()</h3>
+<pre class="programlisting"><span class="returnvalue">double</span>
+cairo_device_observer_stroke_elapsed (<em class="parameter"><code><a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> *device</code></em>);</pre>
+</div>
+</div>
+<div class="refsect1">
+<a name="cairo-cairo-device-t.other_details"></a><h2>Types and Values</h2>
+<div class="refsect2">
+<a name="cairo-device-t"></a><h3>cairo_device_t</h3>
+<pre class="programlisting">typedef struct _cairo_device cairo_device_t;
+</pre>
+<p>A <a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> represents the driver interface for drawing
+operations to a <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="type">cairo_surface_t</span></a>.  There are different subtypes of
+<a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> for different drawing backends; for example,
+<code class="function">cairo_egl_device_create()</code> creates a device that wraps an EGL display and
+context.</p>
+<p>The type of a device can be queried with <a class="link" href="cairo-cairo-device-t.html#cairo-device-get-type" title="cairo_device_get_type ()"><code class="function">cairo_device_get_type()</code></a>.</p>
+<p>Memory management of <a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> is done with
+<a class="link" href="cairo-cairo-device-t.html#cairo-device-reference" title="cairo_device_reference ()"><code class="function">cairo_device_reference()</code></a> and <a class="link" href="cairo-cairo-device-t.html#cairo-device-destroy" title="cairo_device_destroy ()"><code class="function">cairo_device_destroy()</code></a>.</p>
+<p class="since">Since: 1.10</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-device-type-t"></a><h3>enum cairo_device_type_t</h3>
+<p><a class="link" href="cairo-cairo-device-t.html#cairo-device-type-t" title="enum cairo_device_type_t"><span class="type">cairo_device_type_t</span></a> is used to describe the type of a given
+device. The devices types are also known as "backends" within cairo.</p>
+<p>The device type can be queried with <a class="link" href="cairo-cairo-device-t.html#cairo-device-get-type" title="cairo_device_get_type ()"><code class="function">cairo_device_get_type()</code></a></p>
+<p>The various <a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> functions can be used with devices of
+any type, but some backends also provide type-specific functions
+that must only be called with a device of the appropriate
+type. These functions have names that begin with
+<code class="literal">cairo_<span class="emphasis"><em>type</em></span>_device</code> such as
+<a class="link" href="cairo-XCB-Surfaces.html#cairo-xcb-device-debug-cap-xrender-version" title="cairo_xcb_device_debug_cap_xrender_version ()"><code class="function">cairo_xcb_device_debug_cap_xrender_version()</code></a>.</p>
+<p>The behavior of calling a type-specific function with a device of
+the wrong type is undefined.</p>
+<p>New entries may be added in future versions.</p>
+<div class="refsect3">
+<a name="cairo-device-type-t.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="300px" class="enum_members_name">
+<col class="enum_members_description">
+<col width="200px" class="enum_members_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-DEVICE-TYPE-DRM:CAPS"></a>CAIRO_DEVICE_TYPE_DRM</p></td>
+<td class="enum_member_description">
+<p>The device is of type Direct Render Manager, since 1.10</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-DEVICE-TYPE-GL:CAPS"></a>CAIRO_DEVICE_TYPE_GL</p></td>
+<td class="enum_member_description">
+<p>The device is of type OpenGL, since 1.10</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-DEVICE-TYPE-SCRIPT:CAPS"></a>CAIRO_DEVICE_TYPE_SCRIPT</p></td>
+<td class="enum_member_description">
+<p>The device is of type script, since 1.10</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-DEVICE-TYPE-XCB:CAPS"></a>CAIRO_DEVICE_TYPE_XCB</p></td>
+<td class="enum_member_description">
+<p>The device is of type xcb, since 1.10</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-DEVICE-TYPE-XLIB:CAPS"></a>CAIRO_DEVICE_TYPE_XLIB</p></td>
+<td class="enum_member_description">
+<p>The device is of type xlib, since 1.10</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-DEVICE-TYPE-XML:CAPS"></a>CAIRO_DEVICE_TYPE_XML</p></td>
+<td class="enum_member_description">
+<p>The device is of type XML, since 1.10</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-DEVICE-TYPE-COGL:CAPS"></a>CAIRO_DEVICE_TYPE_COGL</p></td>
+<td class="enum_member_description">
+<p>The device is of type cogl, since 1.12</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-DEVICE-TYPE-WIN32:CAPS"></a>CAIRO_DEVICE_TYPE_WIN32</p></td>
+<td class="enum_member_description">
+<p>The device is of type win32, since 1.12</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-DEVICE-TYPE-INVALID:CAPS"></a>CAIRO_DEVICE_TYPE_INVALID</p></td>
+<td class="enum_member_description">
+<p>The device is invalid, since 1.10</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.10</p>
+</div>
+</div>
+<div class="refsect1">
+<a name="cairo-cairo-device-t.see-also"></a><h2>See Also</h2>
+<p><a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="type">cairo_surface_t</span></a></p>
+</div>
+</div>
+<div class="footer">
+<hr>Generated by GTK-Doc V1.27</div>
+</body>
+</html>

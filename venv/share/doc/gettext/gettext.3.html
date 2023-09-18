@@ -1,0 +1,182 @@
+<!-- Creator     : groff version 1.22.3 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>GETTEXT</title>
+
+</head>
+<body>
+
+<h1 align="center">GETTEXT</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">gettext,
+dgettext, dcgettext - translate message</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;libintl.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>char *
+gettext (const char *</b> <i>msgid</i><b>); <br>
+char * dgettext (const char *</b> <i>domainname</i><b>,
+const char *</b> <i>msgid</i><b>); <br>
+char * dcgettext (const char *</b> <i>domainname</i><b>,
+const char *</b> <i>msgid</i><b>, <br>
+int</b> <i>category</i><b>);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>gettext</b>, <b>dgettext</b> and <b>dcgettext</b>
+functions attempt to translate a text string into the
+user&rsquo;s native language, by looking up the translation
+in a message catalog.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<i>msgid</i> argument identifies the message to be
+translated. By convention, it is the English version of the
+message, with non-ASCII characters replaced by ASCII
+approximations. This choice allows the translators to work
+with message catalogs, called PO files, that contain both
+the English and the translated versions of each message, and
+can be installed using the <b>msgfmt</b> utility.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A message
+domain is a set of translatable <i>msgid</i> messages.
+Usually, every software package has its own message domain.
+The domain name is used to determine the message catalog
+where the translation is looked up; it must be a non-empty
+string. For the <b>gettext</b> function, it is specified
+through a preceding <b>textdomain</b> call. For the
+<b>dgettext</b> and <b>dcgettext</b> functions, it is passed
+as the <i>domainname</i> argument; if this argument is NULL,
+the domain name specified through a preceding
+<b>textdomain</b> call is used instead.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Translation
+lookup operates in the context of the current locale. For
+the <b>gettext</b> and <b>dgettext</b> functions, the
+<b>LC_MESSAGES</b> locale facet is used. It is determined by
+a preceding call to the <b>setlocale</b> function.
+<b>setlocale(LC_ALL,&quot;&quot;)</b> initializes the
+<b>LC_MESSAGES</b> locale based on the first nonempty value
+of the three environment variables <b>LC_ALL</b>,
+<b>LC_MESSAGES</b>, <b>LANG</b>; see <b>setlocale</b>(3).
+For the <b>dcgettext</b> function, the locale facet is
+determined by the <i>category</i> argument, which should be
+one of the <b>LC_xxx</b> constants defined in the
+&lt;locale.h&gt; header, excluding <b>LC_ALL</b>. In both
+cases, the functions also use the <b>LC_CTYPE</b> locale
+facet in order to convert the translated message from the
+translator&rsquo;s codeset to the current locale&rsquo;s
+codeset, unless overridden by a prior call to the
+<b>bind_textdomain_codeset</b> function.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The message
+catalog used by the functions is at the pathname
+<i>dirname</i>/<i>locale</i>/<i>category</i>/<i>domainname</i>.mo.
+Here <i>dirname</i> is the directory specified through
+<b>bindtextdomain</b>. Its default is system and
+configuration dependent; typically it is
+<i>prefix</i>/share/locale, where <i>prefix</i> is the
+installation prefix of the package. <i>locale</i> is the
+name of the current locale facet; the GNU implementation
+also tries generalizations, such as the language name
+without the territory name. <i>category</i> is
+<b>LC_MESSAGES</b> for the <b>gettext</b> and
+<b>dgettext</b> functions, or the argument passed to the
+<b>dcgettext</b> function.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If the
+<b>LANGUAGE</b> environment variable is set to a nonempty
+value, and the locale is not the &quot;C&quot; locale, the
+value of <b>LANGUAGE</b> is assumed to contain a colon
+separated list of locale names. The functions will attempt
+to look up a translation of <i>msgid</i> in each of the
+locales in turn. This is a GNU extension.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In the
+&quot;C&quot; locale, or if none of the used catalogs
+contain a translation for <i>msgid</i>, the <b>gettext</b>,
+<b>dgettext</b> and <b>dcgettext</b> functions return
+<i>msgid</i>.</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">If a
+translation was found in one of the specified catalogs, it
+is converted to the locale&rsquo;s codeset and returned. The
+resulting string is statically allocated and must not be
+modified or freed. Otherwise <i>msgid</i> is returned.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>errno</b> is
+not modified.</p>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The return type
+ought to be <b>const char *</b>, but is <b>char *</b> to
+avoid warnings in C code predating ANSI C.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When an empty
+string is used for <i>msgid</i>, the functions may return a
+nonempty string.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>ngettext</b>(3),
+<b>dngettext</b>(3), <b>dcngettext</b>(3),
+<b>setlocale</b>(3), <b>textdomain</b>(3),
+<b>bindtextdomain</b>(3), <b>bind_textdomain_codeset</b>(3),
+<b>msgfmt</b>(1)</p>
+<hr>
+</body>
+</html>

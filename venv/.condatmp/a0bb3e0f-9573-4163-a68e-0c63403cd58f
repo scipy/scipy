@@ -1,0 +1,12 @@
+prefix=/workspaces/scipy/venv
+exec_prefix=/workspaces/scipy/venv
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: alsa
+Description: Advanced Linux Sound Architecture (ALSA) - Library
+Version: 1.2.8
+Requires: 
+Libs: -L${libdir} -lasound
+Libs.private: -lm -ldl -lpthread -lrt
+Cflags: -I${includedir}

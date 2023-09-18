@@ -1,0 +1,19 @@
+prefix=/workspaces/scipy/venv
+datadir=${prefix}/share
+includedir=${prefix}/include
+libdir=${prefix}/lib
+libexecdir=${prefix}/libexec
+
+exec_prefix=${prefix}
+toolsdir=${exec_prefix}/bin
+pluginsdir=${libdir}/gstreamer-1.0
+girdir=${datadir}/gir-1.0
+typelibdir=${libdir}/girepository-1.0
+pluginscannerdir=${libexecdir}/gstreamer-1.0
+
+Name: gstreamer-app-1.0
+Description: Helper functions and base classes for application integration
+Version: 1.22.3
+Requires: gstreamer-1.0 >=  1.22.0, gstreamer-base-1.0 >=  1.22.0
+Libs: -L${libdir} -lgstapp-1.0
+Cflags: -I${includedir}/gstreamer-1.0

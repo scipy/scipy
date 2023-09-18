@@ -1,0 +1,21 @@
+# Make the printer display a message
+{
+	# The name of the test...
+	NAME "Identify Printer with Message"
+
+	# The operation to use
+	OPERATION Identify-Printer
+
+	# Attributes, starting in the operation group...
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR keyword identify-actions display
+	ATTR text message "Hello\, World!"
+
+	# What statuses are OK?
+	STATUS successful-ok
+	STATUS successful-ok-ignored-or-substituted-attributes
+}

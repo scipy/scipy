@@ -1,0 +1,195 @@
+/**
+ * The primary sidebar on the left.
+ * e.g., between-pages navigation.
+ */
+.bd-sidebar {
+  padding-top: 1em;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+
+  @include media-breakpoint-up(md) {
+    border-right: 1px solid var(--pst-color-border);
+    position: sticky;
+    top: var(--pst-header-height);
+    z-index: 1000;
+    max-height: calc(100vh - var(--pst-header-height));
+  }
+
+  @include scrollbar-style();
+  @include scrollbar-on-hover();
+
+  &.no-sidebar {
+    border-right: 0;
+  }
+
+  .sidebar-end-items {
+    margin-top: auto;
+    margin-bottom: 1em;
+  }
+  .list-caption {
+    list-style: none;
+    padding-left: 0px;
+  }
+  li {
+    position: relative;
+    // If it has children, add a bit more padding to wrap the content to avoid
+    // overlapping with the <label>
+    &.has-children {
+      > .reference {
+        padding-right: 30px;
+      }
+    }
+  }
+  label {
+    position: absolute;
+    top: 0;
+    right: 0;
+    // height: var(--sidebar-item-height);
+    height: 30px;
+    width: 30px;
+    // width: var(--sidebar-expander-width);
+
+    cursor: pointer;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    &:hover {
+      background: var(--pst-color-surface);
+    }
+
+    i {
+      display: inline-block;
+      font-size: 0.75rem;
+      text-align: center;
+      &:hover {
+        color: var(--pst-color-primary);
+      }
+    }
+  }
+  .label-parts {
+    width: 100%;
+    height: 100%;
+    &:hover {
+      background: none;
+    }
+    i {
+      width: 30px;
+      position: absolute;
+      top: 0.3em; // aligning chevron with text
+      right: 0em; // aligning chevron to the right
+    }
+  }
+}
+
+/* Between-page links and captions */
+nav.bd-links {
+  font-size: var(--pst-sidebar-primary-font-size);
+
+  ul {
+    list-style: none;
+    padding: 0 0 0 1.5rem;
+  }
+
+  li > a {
+    display: block;
+    padding: 0.25rem 1.5rem;
+    color: var(--pst-color-text-muted);
+
+    &:hover {
+      color: var(--pst-color-primary);
+      text-decoration: none;
+      background-color: transparent;
+    }
+
+    &.reference.external {
+      &:after {
+        font-family: "Font Awesome 5 Free";
+        font-weight: 900;
+        content: "\f35d";
+        font-size: 0.75em;
+        margin-left: 0.3em;
+      }
+    }
+  }
+
+  .active {
+    > a,
+    &:hover > a {
+      font-weight: 600;
+      color: var(--pst-color-primary);
+    }
+  }
+
+  // Toctree captions
+  p.caption {
+    font-size: var(--pst-sidebar-primary-caption-font-size);
+    text-transform: uppercase;
+    font-weight: bold;
+    position: relative;
+    margin-top: 1.25em;
+    margin-bottom: 0.5em;
+    padding: 0 1.5rem;
+    color: var(--pst-color-text-base);
+    &:first-child {
+      margin-top: 0;
+    }
+  }
+}
+
+// Navigatation items on the left
+.bd-sidenav {
+  display: none;
+}
+
+.bd-toc-item.active {
+  margin-bottom: 1rem;
+
+  &:not(:first-child) {
+    margin-top: 1rem;
+  }
+
+  > .bd-sidenav {
+    display: block;
+  }
+}
+
+// Top-level between-page toc container
+.bd-links {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  margin-right: -15px;
+  margin-left: -15px;
+
+  @include media-breakpoint-up(md) {
+    display: block;
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Togglable expand/collapse
+////////////////////////////////////////////////////////////////////////////////
+
+.toctree-checkbox {
+  position: absolute;
+  display: none;
+}
+
+.toctree-checkbox {
+  ~ ul {
+    display: none;
+  }
+  ~ label i {
+    transform: rotate(0deg);
+  }
+}
+.toctree-checkbox:checked {
+  ~ ul {
+    display: block;
+  }
+  ~ label i {
+    transform: rotate(180deg);
+  }
+}

@@ -1,0 +1,197 @@
+// Keyboard layouts for Thailand.
+
+// Conversion to Thai keysyms by Pablo Saratxaga <pablo@mandrakesoft.com>.
+
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+    name[Group1]= "Thai";
+
+    key <TLDE>	{[ underscore,		percent		]};
+    key <AE01>	{[ Thai_lakkhangyao,	plus		]};
+    key <AE02>	{[ slash,		Thai_leknung	]};
+    key <AE03>	{[ minus,		Thai_leksong	]};
+    key <AE04>	{[ Thai_phosamphao,	Thai_leksam	]};
+    key <AE05>	{[ Thai_thothung,	Thai_leksi	]};
+    key <AE06>	{[ Thai_sarau,		Thai_sarauu	]};
+    key <AE07>	{[ Thai_saraue,		Thai_baht	]};
+    key <AE08>	{[ Thai_khokhwai,	Thai_lekha	]};
+    key <AE09>	{[ Thai_totao,		Thai_lekhok	]};
+    key <AE10>	{[ Thai_chochan,	Thai_lekchet	]};
+    key <AE11>	{[ Thai_khokhai,	Thai_lekpaet	]};
+    key <AE12>	{[ Thai_chochang,	Thai_lekkao	]};
+
+    key <AD01>	{[ Thai_maiyamok,	Thai_leksun	]};
+    key <AD02>	{[ Thai_saraaimaimalai,	quotedbl	]};
+    key <AD03>	{[ Thai_saraam,		Thai_dochada	]};
+    key <AD04>	{[ Thai_phophan,	Thai_thonangmontho ]};
+    key <AD05>	{[ Thai_saraa,		Thai_thothong	]};
+    key <AD06>	{[ Thai_maihanakat,	Thai_nikhahit	]};
+    key <AD07>	{[ Thai_saraii,		Thai_maitri	]};
+    key <AD08>	{[ Thai_rorua,		Thai_nonen	]};
+    key <AD09>	{[ Thai_nonu,		Thai_paiyannoi	]};
+    key <AD10>	{[ Thai_yoyak,		Thai_yoying	]};
+    key <AD11>	{[ Thai_bobaimai,	Thai_thothan	]};
+    key <AD12>	{[ Thai_loling,		comma		]};
+
+    key <AC01>	{[ Thai_fofan,		Thai_ru		]};
+    key <AC02>	{[ Thai_hohip,		Thai_khorakhang	]};
+    key <AC03>	{[ Thai_kokai,		Thai_topatak	]};
+    key <AC04>	{[ Thai_dodek,		Thai_sarao	]};
+    key <AC05>	{[ Thai_sarae,		Thai_chochoe	]};
+    key <AC06>	{[ Thai_maitho,		Thai_maitaikhu	]};
+    key <AC07>	{[ Thai_maiek,		Thai_maichattawa]};
+    key <AC08>	{[ Thai_saraaa,		Thai_sorusi	]};
+    key <AC09>	{[ Thai_sosua,		Thai_sosala	]};
+    key <AC10>	{[ Thai_wowaen,		Thai_soso	]};
+    key <AC11>	{[ Thai_ngongu,		period		]};
+    key <BKSL>	{[ Thai_khokhuat,	Thai_khokhon	]};
+
+    key <AB01>	{[ Thai_phophung,	parenleft	]};
+    key <AB02>	{[ Thai_popla,		parenright	]};
+    key <AB03>	{[ Thai_saraae,		Thai_choching	]};
+    key <AB04>	{[ Thai_oang,		Thai_honokhuk	]};
+    key <AB05>	{[ Thai_sarai,		Thai_phinthu	]};
+    key <AB06>	{[ Thai_sarauee,	Thai_thanthakhat]};
+    key <AB07>	{[ Thai_thothahan,	question	]};
+    key <AB08>	{[ Thai_moma,		Thai_thophuthao	]};
+    key <AB09>	{[ Thai_saraaimaimuan,	Thai_lochula	]};
+    key <AB10>	{[ Thai_fofa,		Thai_lu		]};
+};
+
+
+// Pattachote layout, by Visanu Euarchukiati <visanu@inet.co.th>.
+partial alphanumeric_keys
+xkb_symbols "pat" {
+
+    name[Group1]= "Thai (Pattachote)";
+
+    key <TLDE>	{[ underscore,		Thai_baht	]};
+    key <AE01>	{[ equal,		plus		]};
+    key <AE02>	{[ Thai_leksong,	quotedbl	]};
+    key <AE03>	{[ Thai_leksam,		slash		]};
+    key <AE04>	{[ Thai_leksi,		comma		]};
+    key <AE05>	{[ Thai_lekha,		question	]};
+    key <AE06>	{[ Thai_sarauu,		Thai_sarau	]};
+    key <AE07>	{[ Thai_lekchet,	underscore	]};
+    key <AE08>	{[ Thai_lekpaet,	period		]};
+    key <AE09>	{[ Thai_lekkao,		parenleft	]};
+    key <AE10>	{[ Thai_leksun,		parenright	]};
+    key <AE11>	{[ Thai_leknung,	minus		]};
+    key <AE12>	{[ Thai_lekhok,		percent		]};
+
+    key <AD01>	{[ Thai_maitaikhu,	Thai_maitri	]};
+    key <AD02>	{[ Thai_totao,		Thai_ru		]};
+    key <AD03>	{[ Thai_yoyak,		Thai_maiyamok	]};
+    key <AD04>	{[ Thai_oang,		Thai_yoying	]};
+    key <AD05>	{[ Thai_rorua,		Thai_sorusi	]};
+    key <AD06>	{[ Thai_maiek,		Thai_saraue	]};
+    key <AD07>	{[ Thai_dodek,		Thai_fofa	]};
+    key <AD08>	{[ Thai_moma,		Thai_soso	]};
+    key <AD09>	{[ Thai_wowaen,		Thai_thothung	]};
+    key <AD10>	{[ Thai_saraae,		Thai_thophuthao	]};
+    key <AD11>	{[ Thai_saraaimaimuan,	Thai_paiyannoi	]};
+    key <AD12>	{[ Thai_chochoe,	Thai_lu		]};
+
+    key <AC01>	{[ Thai_maitho,		Thai_maichattawa]};
+    key <AC02>	{[ Thai_thothahan,	Thai_thothong	]};
+    key <AC03>	{[ Thai_ngongu,		Thai_saraam	]};
+    key <AC04>	{[ Thai_kokai,		Thai_nonen	]};
+    key <AC05>	{[ Thai_maihanakat,	Thai_thanthakhat]};
+    key <AC06>	{[ Thai_saraii,		Thai_sarauee	]};
+    key <AC07>	{[ Thai_saraaa,		Thai_phophung	]};
+    key <AC08>	{[ Thai_nonu,		Thai_chochang	]};
+    key <AC09>	{[ Thai_sarae,		Thai_sarao	]};
+    key <AC10>	{[ Thai_saraaimaimalai,	Thai_khorakhang	]};
+    key <AC11>	{[ Thai_khokhai,	Thai_thonangmontho ]};
+    key <BKSL>	{[ Thai_lakkhangyao,	Thai_nikhahit	]};
+
+    key <AB01>	{[ Thai_bobaimai,	Thai_dochada	]};
+    key <AB02>	{[ Thai_popla,		Thai_topatak	]};
+    key <AB03>	{[ Thai_loling,		Thai_thothan	]};
+    key <AB04>	{[ Thai_hohip,		Thai_phosamphao	]};
+    key <AB05>	{[ Thai_sarai,		Thai_phinthu	]};
+    key <AB06>	{[ Thai_khokhwai,	Thai_sosala	]};
+    key <AB07>	{[ Thai_sosua,		Thai_honokhuk	]};
+    key <AB08>	{[ Thai_saraa,		Thai_fofan	]};
+    key <AB09>	{[ Thai_chochan,	Thai_choching	]};
+    key <AB10>	{[ Thai_phophan,	Thai_lochula	]};
+};
+
+
+// Official standard (Kedmanee), by Theppitak Karoonboonyanan <thep@linux.thai.net>.
+partial alphanumeric_keys
+xkb_symbols "tis" {
+
+    include "th(basic)"
+
+    name[Group1]= "Thai (TIS-820.2538)";
+
+    key <TLDE>	{[ U0e4f,		U0e5b		]}; // ๏ ๛
+    key <AE01>	{[ Thai_baht,		Thai_lakkhangyao]};
+    key <AE07>	{[ Thai_saraue,		U0e4e		]}; //  ๎
+    key <AD09>	{[ Thai_nonu,		Thai_paiyannoi,    U0e5a], type[group1]="THREE_LEVEL"}; // ๚
+    key <BKSL>	{[ Thai_khokhon,	Thai_khokhuat	]};
+};
+
+
+partial alphanumeric_keys
+xkb_symbols "olpc" {
+
+    // #HW-SPECIFIC
+
+    name[Group1]= "Thai";
+
+    key <TLDE>	{[  U0E4F,     U0E5B  ]};
+    key <AE01>	{[  U0E3F,     U0E45  ]};
+    key <AE02>	{[  slash,     U0E51  ]};
+    key <AE03>	{[  minus,     U0E52  ]};
+    key <AE04>	{[  U0E20,     U0E53  ]};
+    key <AE05>	{[  U0E16,     U0E54  ]};
+    key <AE06>	{[  U0E38,     U0E39  ]};
+    key <AE07>	{[  U0E36,     U0E4E  ]};
+    key <AE08>	{[  U0E04,     U0E55  ]};
+    key <AE09>	{[  U0E15,     U0E56  ]};
+    key <AE10>	{[  U0E08,     U0E57  ]};
+    key <AE11>	{[  U0E02,     U0E58  ]};
+    key <AE12>	{[  U0E0A,     U0E59  ]};
+
+    key <AD01>	{[  U0E46,     U0E50  ]};
+    key <AD02>	{[  U0E44,  quotedbl  ]};
+    key <AD03>	{[  U0E33,     U0E0E  ]};
+    key <AD04>	{[  U0E1E,     U0E11  ]};
+    key <AD05>	{[  U0E30,     U0E18  ]};
+    key <AD06>	{[  U0E31,     U0E4D  ]};
+    key <AD07>	{[  U0E35,     U0E4A  ]};
+    key <AD08>	{[  U0E23,     U0E13  ]};
+    key <AD09>	{[  U0E19,     U0E2F  ]};
+    key <AD10>	{[  U0E22,     U0E0D  ]};
+    key <AD11>	{[  U0E1A,     U0E10  ]};
+    key <AD12>	{[  U0E25,     comma  ]};
+
+    key <AC01>	{[  U0E1F,     U0E24  ]};
+    key <AC02>	{[  U0E2B,     U0E06  ]};
+    key <AC03>	{[  U0E01,     U0E0F  ]};
+    key <AC04>	{[  U0E14,     U0E42  ]};
+    key <AC05>	{[  U0E40,     U0E0C  ]};
+    key <AC06>	{[  U0E49,     U0E47  ]};
+    key <AC07>	{[  U0E48,     U0E4B  ]};
+    key <AC08>	{[  U0E32,     U0E29  ]};
+    key <AC09>	{[  U0E2A,     U0E28  ]};
+    key <AC10>	{[  U0E27,     U0E0B  ]};
+    key <AC11>	{[  U0E07,    period  ]};
+    key <BKSL>	{[  U0E05,     U0E03  ]};
+
+    key <AB01>	{[  U0E1C,  parenleft ]};
+    key <AB02>	{[  U0E1B, parenright ]};
+    key <AB03>	{[  U0E41,     U0E09  ]};
+    key <AB04>	{[  U0E2D,     U0E2E  ]};
+    key <AB05>	{[  U0E34,     U0E3A  ]};
+    key <AB06>	{[  U0E37,     U0E4C  ]};
+    key <AB07>	{[  U0E17,  question  ]};
+    key <AB08>	{[  U0E21,     U0E12  ]};
+    key <AB09>	{[  U0E43,     U0E2C  ]};
+    key <AB10>	{[  U0E1D,     U0E26  ]};
+
+    include "group(olpc)"
+};

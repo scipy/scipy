@@ -1,0 +1,131 @@
+//
+// Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, and/or sell copies of the Software, and to permit persons
+// to whom the Software is furnished to do so, provided that the above
+// copyright notice(s) and this permission notice appear in all copies of
+// the Software and that both the above copyright notice(s) and this
+// permission notice appear in supporting documentation.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+// OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+// HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL
+// INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING
+// FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
+// NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
+// WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+// 
+// Except as contained in this notice, the name of a copyright holder
+// shall not be used in advertising or otherwise to promote the sale, use
+// or other dealings in this Software without prior written authorization
+// of the copyright holder.
+//
+
+default partial alphanumeric_keys
+xkb_symbols "sun_type6" {
+
+    name[Group1]= "Arabic (Sun Type 6/7)";
+
+	include "sun_vndr/us(sun_type6)"
+
+    key <TLDE> { [ Arabic_thal, Arabic_shadda, grave,  asciitilde ] };
+    key <AE01> { [   0x1000661,        exclam, 1,          exclam ] };
+    key <AE02> { [   0x1000662,            at, 2,              at ] };
+    key <AE03> { [   0x1000663,    numbersign, 3,      numbersign ] };
+    key <AE04> { [   0x1000664,        dollar, 4,          dollar ] };
+    key <AE05> { [   0x1000665,       percent, 5,         percent ] };
+    key <AE06> { [   0x1000666,   asciicircum, 6,     asciicircum ] };
+    key <AE07> { [   0x1000667,     ampersand, 7,       ampersand ] };
+    key <AE08> { [   0x1000668,      asterisk, 8,        asterisk ] };
+    key <AE09> { [   0x1000669,    parenright, 9,      parenright ] };
+    key <AE10> { [   0x1000660,     parenleft, 0,       parenleft ] };
+    key <AE11> { [       minus,    underscore, minus,  underscore ] };
+    key <AE12> { [       equal,          plus, equal,        plus ] };
+						
+    key <AD01> { [   Arabic_dad, Arabic_fatha,          q,            Q          ] };
+    key <AD02> { [   Arabic_sad, Arabic_fathatan,       w,            W          ] };
+    key <AD03> { [  Arabic_theh, Arabic_damma,          e,            E          ] };
+    key <AD04> { [   Arabic_qaf, Arabic_dammatan,       r,            R          ] };
+    key <AD05> { [   Arabic_feh, 0x100fef9,             t,            T          ] };
+    key <AD06> { [ Arabic_ghain, Arabic_hamzaunderalef, y,            Y          ] };
+    key <AD07> { [   Arabic_ain, grave,                 u,            U          ] };
+    key <AD08> { [    Arabic_ha, division,              i,            I          ] };
+    key <AD09> { [  Arabic_khah, multiply,              o,            O          ] };
+    key <AD10> { [   Arabic_hah, Arabic_semicolon,      p,            P          ] };
+    key <AD11> { [  Arabic_jeem, greater,               bracketleft,  braceleft  ] };
+    key <AD12> { [   Arabic_dal, less,                  bracketright, braceright ] };
+
+    key <AC01> { [ Arabic_sheen, Arabic_kasra,       a,          A        ] };
+    key <AC02> { [  Arabic_seen, Arabic_kasratan,    s,          S        ] };
+    key <AC03> { [   Arabic_yeh, bracketright,       d,          D        ] };
+    key <AC04> { [   Arabic_beh, bracketleft,        f,          F        ] };
+    key <AC05> { [   Arabic_lam, 0x100fef7,          g,          G        ] };
+    key <AC06> { [  Arabic_alef, Arabic_hamzaonalef, h,          H        ] };
+    key <AC07> { [   Arabic_teh, Arabic_tatweel,     j,          J        ] };
+    key <AC08> { [  Arabic_noon, Arabic_comma,       k,          K        ] };
+    key <AC09> { [  Arabic_meem, slash,              l,          L        ] };
+    key <AC10> { [   Arabic_kaf, colon,              semicolon,  colon    ] };
+    key <AC11> { [   Arabic_tah, quotedbl,           apostrophe, quotedbl ] };
+    key <BKSL> { [    backslash, bar,                backslash,  bar      ] };
+
+    key <LSGT> { [                bar,            brokenbar,    bar, brokenbar ] };
+    key <AB01> { [  Arabic_hamzaonyeh,           asciitilde,      z, Z         ] };
+    key <AB02> { [       Arabic_hamza,         Arabic_sukun,      x, X         ] };
+    key <AB03> { [  Arabic_hamzaonwaw,           braceright,      c, C         ] };
+    key <AB04> { [          Arabic_ra,            braceleft,      v, V         ] };
+    key <AB05> { [          0x100fefb,            0x100fef5,      b, B         ] };
+    key <AB06> { [ Arabic_alefmaksura,   Arabic_maddaonalef,      n, N         ] };
+    key <AB07> { [  Arabic_tehmarbuta,           apostrophe,      m, M         ] };
+    key <AB08> { [         Arabic_waw,                comma,  comma, less      ] };
+    key <AB09> { [        Arabic_zain,               period, period, greater   ] };
+    key <AB10> { [         Arabic_zah, Arabic_question_mark,  slash, question  ] };
+
+	include "level3(ralt_switch)"
+
+};
+
+partial alphanumeric_keys
+	xkb_symbols "basic" {
+	include "sun_vndr/ara(sun_type6)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "qwerty" {
+	include "ara(qwerty)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "azerty" {
+	include "ara(azerty)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "digits" {
+	include "ara(digits)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "qwerty_digits" {
+	include "ara(qwerty_digits)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "azerty_digits" {
+	include "ara(azerty_digits)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "buckwalter" {
+	include "ara(buckwalter)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "olpc" {
+	include "ara(olpc)"
+};

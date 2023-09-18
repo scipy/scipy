@@ -1,0 +1,10 @@
+This example relies on librep.
+
+Installation:
+  ./autogen.sh
+  ./configure --prefix=/some/prefix
+  make
+  make install
+Cleanup:
+  make distclean
+  ./autoclean.sh

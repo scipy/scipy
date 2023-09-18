@@ -1,0 +1,1127 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html401/loose.dtd">
+<html>
+<!-- Created on October, 9 2022 by texi2html 1.78a -->
+<!--
+Written by: Lionel Cons <Lionel.Cons@cern.ch> (original author)
+            Karl Berry  <karl@freefriends.org>
+            Olaf Bachmann <obachman@mathematik.uni-kl.de>
+            and many others.
+Maintained by: Many creative people.
+Send bugs and suggestions to <texi2html-bug@nongnu.org>
+
+-->
+<head>
+<title>GNU gettext utilities: 4. Preparing Program Sources</title>
+
+<meta name="description" content="GNU gettext utilities: 4. Preparing Program Sources">
+<meta name="keywords" content="GNU gettext utilities: 4. Preparing Program Sources">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="texi2html 1.78a">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+pre.display {font-family: serif}
+pre.format {font-family: serif}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: serif; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: serif; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.roman {font-family:serif; font-weight:normal;}
+span.sansserif {font-family:sans-serif; font-weight:normal;}
+ul.toc {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="gettext_3.html#SEC16" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="gettext_5.html#SEC34" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_21.html#SEC387" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+
+<hr size="2">
+<a name="Sources"></a>
+<a name="SEC17"></a>
+<h1 class="chapter"> <a href="gettext_toc.html#TOC17">4. Preparing Program Sources</a> </h1>
+
+
+<p>For the programmer, changes to the C source code fall into three
+categories.  First, you have to make the localization functions
+known to all modules needing message translation.  Second, you should
+properly trigger the operation of GNU <code>gettext</code> when the program
+initializes, usually from the <code>main</code> function.  Last, you should
+identify, adjust and mark all constant strings in your program
+needing translation.
+</p>
+
+
+<a name="Importing"></a>
+<a name="SEC18"></a>
+<h2 class="section"> <a href="gettext_toc.html#TOC18">4.1 Importing the <code>gettext</code> declaration</a> </h2>
+
+<p>Presuming that your set of programs, or package, has been adjusted
+so all needed GNU <code>gettext</code> files are available, and your
+&lsquo;<tt>Makefile</tt>&rsquo; files are adjusted (see section <a href="gettext_13.html#SEC229">The Maintainer's View</a>), each C module
+having translated C strings should contain the line:
+</p>
+<a name="IDX114"></a>
+<table><tr><td>&nbsp;</td><td><pre class="example">#include &lt;libintl.h&gt;
+</pre></td></tr></table>
+
+<p>Similarly, each C module containing <code>printf()</code>/<code>fprintf()</code>/...
+calls with a format string that could be a translated C string (even if
+the C string comes from a different C module) should contain the line:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">#include &lt;libintl.h&gt;
+</pre></td></tr></table>
+
+
+<a name="Triggering"></a>
+<a name="SEC19"></a>
+<h2 class="section"> <a href="gettext_toc.html#TOC19">4.2 Triggering <code>gettext</code> Operations</a> </h2>
+
+<p>The initialization of locale data should be done with more or less
+the same code in every program, as demonstrated below:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">int
+main (int argc, char *argv[])
+{
+  &hellip;
+  setlocale (LC_ALL, &quot;&quot;);
+  bindtextdomain (PACKAGE, LOCALEDIR);
+  textdomain (PACKAGE);
+  &hellip;
+}
+</pre></td></tr></table>
+
+<p><var>PACKAGE</var> and <var>LOCALEDIR</var> should be provided either by
+&lsquo;<tt>config.h</tt>&rsquo; or by the Makefile.  For now consult the <code>gettext</code>
+or <code>hello</code> sources for more information.
+</p>
+<a name="IDX115"></a>
+<a name="IDX116"></a>
+<p>The use of <code>LC_ALL</code> might not be appropriate for you.
+<code>LC_ALL</code> includes all locale categories and especially
+<code>LC_CTYPE</code>.  This latter category is responsible for determining
+character classes with the <code>isalnum</code> etc. functions from
+&lsquo;<tt>ctype.h</tt>&rsquo; which could especially for programs, which process some
+kind of input language, be wrong.  For example this would mean that a
+source code using the &ccedil; (c-cedilla character) is runnable in
+France but not in the U.S.
+</p>
+<p>Some systems also have problems with parsing numbers using the
+<code>scanf</code> functions if an other but the <code>LC_ALL</code> locale category is
+used.  The standards say that additional formats but the one known in the
+<code>&quot;C&quot;</code> locale might be recognized.  But some systems seem to reject
+numbers in the <code>&quot;C&quot;</code> locale format.  In some situation, it might
+also be a problem with the notation itself which makes it impossible to
+recognize whether the number is in the <code>&quot;C&quot;</code> locale or the local
+format.  This can happen if thousands separator characters are used.
+Some locales define this character according to the national
+conventions to <code>'.'</code> which is the same character used in the
+<code>&quot;C&quot;</code> locale to denote the decimal point.
+</p>
+<p>So it is sometimes necessary to replace the <code>LC_ALL</code> line in the
+code above by a sequence of <code>setlocale</code> lines
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">{
+  &hellip;
+  setlocale (LC_CTYPE, &quot;&quot;);
+  setlocale (LC_MESSAGES, &quot;&quot;);
+  &hellip;
+}
+</pre></td></tr></table>
+
+<a name="IDX117"></a>
+<a name="IDX118"></a>
+<a name="IDX119"></a>
+<a name="IDX120"></a>
+<a name="IDX121"></a>
+<a name="IDX122"></a>
+<a name="IDX123"></a>
+<p>On all POSIX conformant systems the locale categories <code>LC_CTYPE</code>,
+<code>LC_MESSAGES</code>, <code>LC_COLLATE</code>, <code>LC_MONETARY</code>,
+<code>LC_NUMERIC</code>, and <code>LC_TIME</code> are available.  On some systems
+which are only ISO C compliant, <code>LC_MESSAGES</code> is missing, but
+a substitute for it is defined in GNU gettext's <code>&lt;libintl.h&gt;</code> and
+in GNU gnulib's <code>&lt;locale.h&gt;</code>.
+</p>
+<p>Note that changing the <code>LC_CTYPE</code> also affects the functions
+declared in the <code>&lt;ctype.h&gt;</code> standard header and some functions
+declared in the <code>&lt;string.h&gt;</code> and <code>&lt;stdlib.h&gt;</code> standard headers.
+If this is not
+desirable in your application (for example in a compiler's parser),
+you can use a set of substitute functions which hardwire the C locale,
+such as found in the modules &lsquo;<samp>c-ctype</samp>&rsquo;, &lsquo;<samp>c-strcase</samp>&rsquo;,
+&lsquo;<samp>c-strcasestr</samp>&rsquo;, &lsquo;<samp>c-strtod</samp>&rsquo;, &lsquo;<samp>c-strtold</samp>&rsquo; in the GNU gnulib
+source distribution.
+</p>
+<p>It is also possible to switch the locale forth and back between the
+environment dependent locale and the C locale, but this approach is
+normally avoided because a <code>setlocale</code> call is expensive,
+because it is tedious to determine the places where a locale switch
+is needed in a large program's source, and because switching a locale
+is not multithread-safe.
+</p>
+
+<a name="Preparing-Strings"></a>
+<a name="SEC20"></a>
+<h2 class="section"> <a href="gettext_toc.html#TOC20">4.3 Preparing Translatable Strings</a> </h2>
+
+<p>Before strings can be marked for translations, they sometimes need to
+be adjusted.  Usually preparing a string for translation is done right
+before marking it, during the marking phase which is described in the
+next sections.  What you have to keep in mind while doing that is the
+following.
+</p>
+<ul>
+<li>
+Decent English style.
+
+</li><li>
+Entire sentences.
+
+</li><li>
+Split at paragraphs.
+
+</li><li>
+Use format strings instead of string concatenation.
+
+</li><li>
+Use placeholders in format strings instead of embedded URLs.
+
+</li><li>
+Avoid unusual markup and unusual control characters.
+</li></ul>
+
+<p>Let's look at some examples of these guidelines.
+</p>
+<a name="SEC21"></a>
+<h3 class="subheading"> Decent English style </h3>
+
+<p>Translatable strings should be in good English style.  If slang language
+with abbreviations and shortcuts is used, often translators will not
+understand the message and will produce very inappropriate translations.
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">&quot;%s: is parameter\n&quot;
+</pre></td></tr></table>
+
+<p>This is nearly untranslatable: Is the displayed item <em>a</em> parameter or
+<em>the</em> parameter?
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">&quot;No match&quot;
+</pre></td></tr></table>
+
+<p>The ambiguity in this message makes it unintelligible: Is the program
+attempting to set something on fire? Does it mean &quot;The given object does
+not match the template&quot;? Does it mean &quot;The template does not fit for any
+of the objects&quot;?
+</p>
+<a name="IDX124"></a>
+<p>In both cases, adding more words to the message will help both the
+translator and the English speaking user.
+</p>
+<a name="SEC22"></a>
+<h3 class="subheading"> Entire sentences </h3>
+
+<p>Translatable strings should be entire sentences.  It is often not possible
+to translate single verbs or adjectives in a substitutable way.
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">printf (&quot;File %s is %s protected&quot;, filename, rw ? &quot;write&quot; : &quot;read&quot;);
+</pre></td></tr></table>
+
+<p>Most translators will not look at the source and will thus only see the
+string <code>&quot;File %s is %s protected&quot;</code>, which is unintelligible.  Change
+this to
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">printf (rw ? &quot;File %s is write protected&quot; : &quot;File %s is read protected&quot;,
+        filename);
+</pre></td></tr></table>
+
+<p>This way the translator will not only understand the message, she will
+also be able to find the appropriate grammatical construction.  A French
+translator for example translates &quot;write protected&quot; like &quot;protected
+against writing&quot;.
+</p>
+<p>Entire sentences are also important because in many languages, the
+declination of some word in a sentence depends on the gender or the
+number (singular/plural) of another part of the sentence.  There are
+usually more interdependencies between words than in English.  The
+consequence is that asking a translator to translate two half-sentences
+and then combining these two half-sentences through dumb string concatenation
+will not work, for many languages, even though it would work for English.
+That's why translators need to handle entire sentences.
+</p>
+<p>Often sentences don't fit into a single line.  If a sentence is output
+using two subsequent <code>printf</code> statements, like this
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">printf (&quot;Locale charset \&quot;%s\&quot; is different from\n&quot;, lcharset);
+printf (&quot;input file charset \&quot;%s\&quot;.\n&quot;, fcharset);
+</pre></td></tr></table>
+
+<p>the translator would have to translate two half sentences, but nothing
+in the POT file would tell her that the two half sentences belong together.
+It is necessary to merge the two <code>printf</code> statements so that the
+translator can handle the entire sentence at once and decide at which
+place to insert a line break in the translation (if at all):
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">printf (&quot;Locale charset \&quot;%s\&quot; is different from\n\
+input file charset \&quot;%s\&quot;.\n&quot;, lcharset, fcharset);
+</pre></td></tr></table>
+
+<p>You may now ask: how about two or more adjacent sentences? Like in this case:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">puts (&quot;Apollo 13 scenario: Stack overflow handling failed.&quot;);
+puts (&quot;On the next stack overflow we will crash!!!&quot;);
+</pre></td></tr></table>
+
+<p>Should these two statements merged into a single one? I would recommend to
+merge them if the two sentences are related to each other, because then it
+makes it easier for the translator to understand and translate both.  On
+the other hand, if one of the two messages is a stereotypic one, occurring
+in other places as well, you will do a favour to the translator by not
+merging the two.  (Identical messages occurring in several places are
+combined by xgettext, so the translator has to handle them once only.)
+</p>
+<a name="SEC23"></a>
+<h3 class="subheading"> Split at paragraphs </h3>
+
+<p>Translatable strings should be limited to one paragraph; don't let a
+single message be longer than ten lines.  The reason is that when the
+translatable string changes, the translator is faced with the task of
+updating the entire translated string.  Maybe only a single word will
+have changed in the English string, but the translator doesn't see that
+(with the current translation tools), therefore she has to proofread
+the entire message.
+</p>
+<a name="IDX125"></a>
+<p>Many GNU programs have a &lsquo;<samp>--help</samp>&rsquo; output that extends over several
+screen pages.  It is a courtesy towards the translators to split such a
+message into several ones of five to ten lines each.  While doing that,
+you can also attempt to split the documented options into groups,
+such as the input options, the output options, and the informative
+output options.  This will help every user to find the option he is
+looking for.
+</p>
+<a name="SEC24"></a>
+<h3 class="subheading"> No string concatenation </h3>
+
+<p>Hardcoded string concatenation is sometimes used to construct English
+strings:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">strcpy (s, &quot;Replace &quot;);
+strcat (s, object1);
+strcat (s, &quot; with &quot;);
+strcat (s, object2);
+strcat (s, &quot;?&quot;);
+</pre></td></tr></table>
+
+<p>In order to present to the translator only entire sentences, and also
+because in some languages the translator might want to swap the order
+of <code>object1</code> and <code>object2</code>, it is necessary to change this
+to use a format string:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">sprintf (s, &quot;Replace %s with %s?&quot;, object1, object2);
+</pre></td></tr></table>
+
+<a name="IDX126"></a>
+<p>A similar case is compile time concatenation of strings.  The ISO C 99
+include file <code>&lt;inttypes.h&gt;</code> contains a macro <code>PRId64</code> that
+can be used as a formatting directive for outputting an &lsquo;<samp>int64_t</samp>&rsquo;
+integer through <code>printf</code>.  It expands to a constant string, usually
+&quot;d&quot; or &quot;ld&quot; or &quot;lld&quot; or something like this, depending on the platform.
+Assume you have code like
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">printf (&quot;The amount is %0&quot; PRId64 &quot;\n&quot;, number);
+</pre></td></tr></table>
+
+<p>The <code>gettext</code> tools and library have special support for these
+<code>&lt;inttypes.h&gt;</code> macros.  You can therefore simply write
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">printf (gettext (&quot;The amount is %0&quot; PRId64 &quot;\n&quot;), number);
+</pre></td></tr></table>
+
+<p>The PO file will contain the string &quot;The amount is %0&lt;PRId64&gt;\n&quot;.
+The translators will provide a translation containing &quot;%0&lt;PRId64&gt;&quot;
+as well, and at runtime the <code>gettext</code> function's result will
+contain the appropriate constant string, &quot;d&quot; or &quot;ld&quot; or &quot;lld&quot;.
+</p>
+<p>This works only for the predefined <code>&lt;inttypes.h&gt;</code> macros.  If
+you have defined your own similar macros, let's say &lsquo;<samp>MYPRId64</samp>&rsquo;,
+that are not known to <code>xgettext</code>, the solution for this problem
+is to change the code like this:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">char buf1[100];
+sprintf (buf1, &quot;%0&quot; MYPRId64, number);
+printf (gettext (&quot;The amount is %s\n&quot;), buf1);
+</pre></td></tr></table>
+
+<p>This means, you put the platform dependent code in one statement, and the
+internationalization code in a different statement.  Note that a buffer length
+of 100 is safe, because all available hardware integer types are limited to
+128 bits, and to print a 128 bit integer one needs at most 54 characters,
+regardless whether in decimal, octal or hexadecimal.
+</p>
+<a name="IDX127"></a>
+<a name="IDX128"></a>
+<p>All this applies to other programming languages as well.  For example, in
+Java and C#, string concatenation is very frequently used, because it is a
+compiler built-in operator.  Like in C, in Java, you would change
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">System.out.println(&quot;Replace &quot;+object1+&quot; with &quot;+object2+&quot;?&quot;);
+</pre></td></tr></table>
+
+<p>into a statement involving a format string:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">System.out.println(
+    MessageFormat.format(&quot;Replace {0} with {1}?&quot;,
+                         new Object[] { object1, object2 }));
+</pre></td></tr></table>
+
+<p>Similarly, in C#, you would change
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">Console.WriteLine(&quot;Replace &quot;+object1+&quot; with &quot;+object2+&quot;?&quot;);
+</pre></td></tr></table>
+
+<p>into a statement involving a format string:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">Console.WriteLine(
+    String.Format(&quot;Replace {0} with {1}?&quot;, object1, object2));
+</pre></td></tr></table>
+
+<a name="SEC25"></a>
+<h3 class="subheading"> No embedded URLs </h3>
+
+<p>It is good to not embed URLs in translatable strings, for several reasons:
+</p><ul>
+<li>
+It avoids possible mistakes during copy and paste.
+</li><li>
+Translators cannot translate the URLs or, by mistake, use the URLs from
+other packages that are present in their compendium.
+</li><li>
+When the URLs change, translators don't need to revisit the translation
+of the string.
+</li></ul>
+
+<p>The same holds for email addresses.
+</p>
+<p>So, you would change
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">fputs (_(&quot;GNU GPL version 3 &lt;https://gnu.org/licenses/gpl.html&gt;\n&quot;),
+       stream);
+</pre></td></tr></table>
+
+<p>to
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">fprintf (stream, _(&quot;GNU GPL version 3 &lt;%s&gt;\n&quot;),
+         &quot;https://gnu.org/licenses/gpl.html&quot;);
+</pre></td></tr></table>
+
+<a name="SEC26"></a>
+<h3 class="subheading"> No unusual markup </h3>
+
+<p>Unusual markup or control characters should not be used in translatable
+strings.  Translators will likely not understand the particular meaning
+of the markup or control characters.
+</p>
+<p>For example, if you have a convention that &lsquo;<samp>|</samp>&rsquo; delimits the
+left-hand and right-hand part of some GUI elements, translators will
+often not understand it without specific comments.  It might be
+better to have the translator translate the left-hand and right-hand
+part separately.
+</p>
+<p>Another example is the &lsquo;<samp>argp</samp>&rsquo; convention to use a single &lsquo;<samp>\v</samp>&rsquo;
+(vertical tab) control character to delimit two sections inside a
+string.  This is flawed.  Some translators may convert it to a simple
+newline, some to blank lines.  With some PO file editors it may not be
+easy to even enter a vertical tab control character.  So, you cannot
+be sure that the translation will contain a &lsquo;<samp>\v</samp>&rsquo; character, at the
+corresponding position.  The solution is, again, to let the translator
+translate two separate strings and combine at run-time the two translated
+strings with the &lsquo;<samp>\v</samp>&rsquo; required by the convention.
+</p>
+<p>HTML markup, however, is common enough that it's probably ok to use in
+translatable strings.  But please bear in mind that the GNU gettext tools
+don't verify that the translations are well-formed HTML.
+</p>
+
+<a name="Mark-Keywords"></a>
+<a name="SEC27"></a>
+<h2 class="section"> <a href="gettext_toc.html#TOC21">4.4 How Marks Appear in Sources</a> </h2>
+
+<p>All strings requiring translation should be marked in the C sources.  Marking
+is done in such a way that each translatable string appears to be
+the sole argument of some function or preprocessor macro.  There are
+only a few such possible functions or macros meant for translation,
+and their names are said to be marking keywords.  The marking is
+attached to strings themselves, rather than to what we do with them.
+This approach has more uses.  A blatant example is an error message
+produced by formatting.  The format string needs translation, as
+well as some strings inserted through some &lsquo;<samp>%s</samp>&rsquo; specification
+in the format, while the result from <code>sprintf</code> may have so many
+different instances that it is impractical to list them all in some
+&lsquo;<samp>error_string_out()</samp>&rsquo; routine, say.
+</p>
+<p>This marking operation has two goals.  The first goal of marking
+is for triggering the retrieval of the translation, at run time.
+The keyword is possibly resolved into a routine able to dynamically
+return the proper translation, as far as possible or wanted, for the
+argument string.  Most localizable strings are found in executable
+positions, that is, attached to variables or given as parameters to
+functions.  But this is not universal usage, and some translatable
+strings appear in structured initializations.  See section <a href="#SEC30">Special Cases of Translatable Strings</a>.
+</p>
+<p>The second goal of the marking operation is to help <code>xgettext</code>
+at properly extracting all translatable strings when it scans a set
+of program sources and produces PO file templates.
+</p>
+<p>The canonical keyword for marking translatable strings is
+&lsquo;<samp>gettext</samp>&rsquo;, it gave its name to the whole GNU <code>gettext</code>
+package.  For packages making only light use of the &lsquo;<samp>gettext</samp>&rsquo;
+keyword, macro or function, it is easily used <em>as is</em>.  However,
+for packages using the <code>gettext</code> interface more heavily, it
+is usually more convenient to give the main keyword a shorter, less
+obtrusive name.  Indeed, the keyword might appear on a lot of strings
+all over the package, and programmers usually do not want nor need
+their program sources to remind them forcefully, all the time, that they
+are internationalized.  Further, a long keyword has the disadvantage
+of using more horizontal space, forcing more indentation work on
+sources for those trying to keep them within 79 or 80 columns.
+</p>
+<a name="IDX129"></a>
+<p>Many packages use &lsquo;<samp>_</samp>&rsquo; (a simple underline) as a keyword,
+and write &lsquo;<samp>_(&quot;Translatable string&quot;)</samp>&rsquo; instead of &lsquo;<samp>gettext
+(&quot;Translatable string&quot;)</samp>&rsquo;.  Further, the coding rule, from GNU standards,
+wanting that there is a space between the keyword and the opening
+parenthesis is relaxed, in practice, for this particular usage.
+So, the textual overhead per translatable string is reduced to
+only three characters: the underline and the two parentheses.
+However, even if GNU <code>gettext</code> uses this convention internally,
+it does not offer it officially.  The real, genuine keyword is truly
+&lsquo;<samp>gettext</samp>&rsquo; indeed.  It is fairly easy for those wanting to use
+&lsquo;<samp>_</samp>&rsquo; instead of &lsquo;<samp>gettext</samp>&rsquo; to declare:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">#include &lt;libintl.h&gt;
+#define _(String) gettext (String)
+</pre></td></tr></table>
+
+<p>instead of merely using &lsquo;<samp>#include &lt;libintl.h&gt;</samp>&rsquo;.
+</p>
+<p>The marking keywords &lsquo;<samp>gettext</samp>&rsquo; and &lsquo;<samp>_</samp>&rsquo; take the translatable
+string as sole argument.  It is also possible to define marking functions
+that take it at another argument position.  It is even possible to make
+the marked argument position depend on the total number of arguments of
+the function call; this is useful in C++.  All this is achieved using
+<code>xgettext</code>'s &lsquo;<samp>--keyword</samp>&rsquo; option.  How to pass such an option
+to <code>xgettext</code>, assuming that <code>gettextize</code> is used, is described
+in <a href="gettext_13.html#SEC236">&lsquo;<tt>Makevars</tt>&rsquo; in &lsquo;<tt>po/</tt>&rsquo;</a> and <a href="gettext_13.html#SEC251">AM_XGETTEXT_OPTION in &lsquo;<tt>po.m4</tt>&rsquo;</a>.
+</p>
+<p>Note also that long strings can be split across lines, into multiple
+adjacent string tokens.  Automatic string concatenation is performed
+at compile time according to ISO C and ISO C++; <code>xgettext</code> also
+supports this syntax.
+</p>
+<p>Later on, the maintenance is relatively easy.  If, as a programmer,
+you add or modify a string, you will have to ask yourself if the
+new or altered string requires translation, and include it within
+&lsquo;<samp>_()</samp>&rsquo; if you think it should be translated.  For example, &lsquo;<samp>&quot;%s&quot;</samp>&rsquo;
+is an example of string <em>not</em> requiring translation.  But
+&lsquo;<samp>&quot;%s: %d&quot;</samp>&rsquo; <em>does</em> require translation, because in French, unlike
+in English, it's customary to put a space before a colon.
+</p>
+
+<a name="Marking"></a>
+<a name="SEC28"></a>
+<h2 class="section"> <a href="gettext_toc.html#TOC22">4.5 Marking Translatable Strings</a> </h2>
+
+<p>In PO mode, one set of features is meant more for the programmer than
+for the translator, and allows him to interactively mark which strings,
+in a set of program sources, are translatable, and which are not.
+Even if it is a fairly easy job for a programmer to find and mark
+such strings by other means, using any editor of his choice, PO mode
+makes this work more comfortable.  Further, this gives translators
+who feel a little like programmers, or programmers who feel a little
+like translators, a tool letting them work at marking translatable
+strings in the program sources, while simultaneously producing a set of
+translation in some language, for the package being internationalized.
+</p>
+<a name="IDX130"></a>
+<p>The set of program sources, targeted by the PO mode commands describe
+here, should have an Emacs tags table constructed for your project,
+prior to using these PO file commands.  This is easy to do.  In any
+shell window, change the directory to the root of your project, then
+execute a command resembling:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">etags src/*.[hc] lib/*.[hc]
+</pre></td></tr></table>
+
+<p>presuming here you want to process all &lsquo;<tt>.h</tt>&rsquo; and &lsquo;<tt>.c</tt>&rsquo; files
+from the &lsquo;<tt>src/</tt>&rsquo; and &lsquo;<tt>lib/</tt>&rsquo; directories.  This command will
+explore all said files and create a &lsquo;<tt>TAGS</tt>&rsquo; file in your root
+directory, somewhat summarizing the contents using a special file
+format Emacs can understand.
+</p>
+<a name="IDX131"></a>
+<p>For packages following the GNU coding standards, there is
+a make goal <code>tags</code> or <code>TAGS</code> which constructs the tag files in
+all directories and for all files containing source code.
+</p>
+<p>Once your &lsquo;<tt>TAGS</tt>&rsquo; file is ready, the following commands assist
+the programmer at marking translatable strings in his set of sources.
+But these commands are necessarily driven from within a PO file
+window, and it is likely that you do not even have such a PO file yet.
+This is not a problem at all, as you may safely open a new, empty PO
+file, mainly for using these commands.  This empty PO file will slowly
+fill in while you mark strings as translatable in your program sources.
+</p>
+<dl compact="compact">
+<dt> <kbd>,</kbd></dt>
+<dd><a name="IDX132"></a>
+<p>Search through program sources for a string which looks like a
+candidate for translation (<code>po-tags-search</code>).
+</p>
+</dd>
+<dt> <kbd>M-,</kbd></dt>
+<dd><a name="IDX133"></a>
+<p>Mark the last string found with &lsquo;<samp>_()</samp>&rsquo; (<code>po-mark-translatable</code>).
+</p>
+</dd>
+<dt> <kbd>M-.</kbd></dt>
+<dd><a name="IDX134"></a>
+<p>Mark the last string found with a keyword taken from a set of possible
+keywords.  This command with a prefix allows some management of these
+keywords (<code>po-select-mark-and-mark</code>).
+</p>
+</dd>
+</dl>
+
+<a name="IDX135"></a>
+<p>The <kbd>,</kbd> (<code>po-tags-search</code>) command searches for the next
+occurrence of a string which looks like a possible candidate for
+translation, and displays the program source in another Emacs window,
+positioned in such a way that the string is near the top of this other
+window.  If the string is too big to fit whole in this window, it is
+positioned so only its end is shown.  In any case, the cursor
+is left in the PO file window.  If the shown string would be better
+presented differently in different native languages, you may mark it
+using <kbd>M-,</kbd> or <kbd>M-.</kbd>.  Otherwise, you might rather ignore it
+and skip to the next string by merely repeating the <kbd>,</kbd> command.
+</p>
+<p>A string is a good candidate for translation if it contains a sequence
+of three or more letters.  A string containing at most two letters in
+a row will be considered as a candidate if it has more letters than
+non-letters.  The command disregards strings containing no letters,
+or isolated letters only.  It also disregards strings within comments,
+or strings already marked with some keyword PO mode knows (see below).
+</p>
+<p>If you have never told Emacs about some &lsquo;<tt>TAGS</tt>&rsquo; file to use, the
+command will request that you specify one from the minibuffer, the
+first time you use the command.  You may later change your &lsquo;<tt>TAGS</tt>&rsquo;
+file by using the regular Emacs command <kbd>M-x visit-tags-table</kbd>,
+which will ask you to name the precise &lsquo;<tt>TAGS</tt>&rsquo; file you want
+to use.  See <a href="../emacs/Tags.html#Tags">(emacs)Tags</a> section `Tag Tables' in <cite>The Emacs Editor</cite>.
+</p>
+<p>Each time you use the <kbd>,</kbd> command, the search resumes from where it was
+left by the previous search, and goes through all program sources,
+obeying the &lsquo;<tt>TAGS</tt>&rsquo; file, until all sources have been processed.
+However, by giving a prefix argument to the command (<kbd>C-u
+,</kbd>), you may request that the search be restarted all over again
+from the first program source; but in this case, strings that you
+recently marked as translatable will be automatically skipped.
+</p>
+<p>Using this <kbd>,</kbd> command does not prevent using of other regular
+Emacs tags commands.  For example, regular <code>tags-search</code> or
+<code>tags-query-replace</code> commands may be used without disrupting the
+independent <kbd>,</kbd> search sequence.  However, as implemented, the
+<em>initial</em> <kbd>,</kbd> command (or the <kbd>,</kbd> command is used with a
+prefix) might also reinitialize the regular Emacs tags searching to the
+first tags file, this reinitialization might be considered spurious.
+</p>
+<a name="IDX136"></a>
+<a name="IDX137"></a>
+<p>The <kbd>M-,</kbd> (<code>po-mark-translatable</code>) command will mark the
+recently found string with the &lsquo;<samp>_</samp>&rsquo; keyword.  The <kbd>M-.</kbd>
+(<code>po-select-mark-and-mark</code>) command will request that you type
+one keyword from the minibuffer and use that keyword for marking
+the string.  Both commands will automatically create a new PO file
+untranslated entry for the string being marked, and make it the
+current entry (making it easy for you to immediately proceed to its
+translation, if you feel like doing it right away).  It is possible
+that the modifications made to the program source by <kbd>M-,</kbd> or
+<kbd>M-.</kbd> render some source line longer than 80 columns, forcing you
+to break and re-indent this line differently.  You may use the <kbd>O</kbd>
+command from PO mode, or any other window changing command from
+Emacs, to break out into the program source window, and do any
+needed adjustments.  You will have to use some regular Emacs command
+to return the cursor to the PO file window, if you want command
+<kbd>,</kbd> for the next string, say.
+</p>
+<p>The <kbd>M-.</kbd> command has a few built-in speedups, so you do not
+have to explicitly type all keywords all the time.  The first such
+speedup is that you are presented with a <em>preferred</em> keyword,
+which you may accept by merely typing <kbd>&lt;RET&gt;</kbd> at the prompt.
+The second speedup is that you may type any non-ambiguous prefix of the
+keyword you really mean, and the command will complete it automatically
+for you.  This also means that PO mode has to <em>know</em> all
+your possible keywords, and that it will not accept mistyped keywords.
+</p>
+<p>If you reply <kbd>?</kbd> to the keyword request, the command gives a
+list of all known keywords, from which you may choose.  When the
+command is prefixed by an argument (<kbd>C-u M-.</kbd>), it inhibits
+updating any program source or PO file buffer, and does some simple
+keyword management instead.  In this case, the command asks for a
+keyword, written in full, which becomes a new allowed keyword for
+later <kbd>M-.</kbd> commands.  Moreover, this new keyword automatically
+becomes the <em>preferred</em> keyword for later commands.  By typing
+an already known keyword in response to <kbd>C-u M-.</kbd>, one merely
+changes the <em>preferred</em> keyword and does nothing more.
+</p>
+<p>All keywords known for <kbd>M-.</kbd> are recognized by the <kbd>,</kbd> command
+when scanning for strings, and strings already marked by any of those
+known keywords are automatically skipped.  If many PO files are opened
+simultaneously, each one has its own independent set of known keywords.
+There is no provision in PO mode, currently, for deleting a known
+keyword, you have to quit the file (maybe using <kbd>q</kbd>) and reopen
+it afresh.  When a PO file is newly brought up in an Emacs window, only
+&lsquo;<samp>gettext</samp>&rsquo; and &lsquo;<samp>_</samp>&rsquo; are known as keywords, and &lsquo;<samp>gettext</samp>&rsquo;
+is preferred for the <kbd>M-.</kbd> command.  In fact, this is not useful to
+prefer &lsquo;<samp>_</samp>&rsquo;, as this one is already built in the <kbd>M-,</kbd> command.
+</p>
+
+<a name="c_002dformat-Flag"></a>
+<a name="SEC29"></a>
+<h2 class="section"> <a href="gettext_toc.html#TOC23">4.6 Special Comments preceding Keywords</a> </h2>
+
+
+<p>In C programs strings are often used within calls of functions from the
+<code>printf</code> family.  The special thing about these format strings is
+that they can contain format specifiers introduced with <kbd>%</kbd>.  Assume
+we have the code
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">printf (gettext (&quot;String `%s' has %d characters\n&quot;), s, strlen (s));
+</pre></td></tr></table>
+
+<p>A possible German translation for the above string might be:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">&quot;%d Zeichen lang ist die Zeichenkette `%s'&quot;
+</pre></td></tr></table>
+
+<p>A C programmer, even if he cannot speak German, will recognize that
+there is something wrong here.  The order of the two format specifiers
+is changed but of course the arguments in the <code>printf</code> don't have.
+This will most probably lead to problems because now the length of the
+string is regarded as the address.
+</p>
+<p>To prevent errors at runtime caused by translations, the <code>msgfmt</code>
+tool can check statically whether the arguments in the original and the
+translation string match in type and number.  If this is not the case
+and the &lsquo;<samp>-c</samp>&rsquo; option has been passed to <code>msgfmt</code>, <code>msgfmt</code>
+will give an error and refuse to produce a MO file.  Thus consistent
+use of &lsquo;<samp>msgfmt -c</samp>&rsquo; will catch the error, so that it cannot cause
+problems at runtime.
+</p>
+<p>If the word order in the above German translation would be correct one
+would have to write
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">&quot;%2$d Zeichen lang ist die Zeichenkette `%1$s'&quot;
+</pre></td></tr></table>
+
+<p>The routines in <code>msgfmt</code> know about this special notation.
+</p>
+<p>Because not all strings in a program will be format strings, it is not
+useful for <code>msgfmt</code> to test all the strings in the &lsquo;<tt>.po</tt>&rsquo; file.
+This might cause problems because the string might contain what looks
+like a format specifier, but the string is not used in <code>printf</code>.
+</p>
+<p>Therefore <code>xgettext</code> adds a special tag to those messages it
+thinks might be a format string.  There is no absolute rule for this,
+only a heuristic.  In the &lsquo;<tt>.po</tt>&rsquo; file the entry is marked using the
+<code>c-format</code> flag in the <code>#,</code> comment line (see section <a href="gettext_3.html#SEC16">The Format of PO Files</a>).
+</p>
+<a name="IDX138"></a>
+<a name="IDX139"></a>
+<p>The careful reader now might say that this again can cause problems.
+The heuristic might guess it wrong.  This is true and therefore
+<code>xgettext</code> knows about a special kind of comment which lets
+the programmer take over the decision.  If in the same line as or
+the immediately preceding line to the <code>gettext</code> keyword
+the <code>xgettext</code> program finds a comment containing the words
+<code>xgettext:c-format</code>, it will mark the string in any case with
+the <code>c-format</code> flag.  This kind of comment should be used when
+<code>xgettext</code> does not recognize the string as a format string but
+it really is one and it should be tested.  Please note that when the
+comment is in the same line as the <code>gettext</code> keyword, it must be
+before the string to be translated.
+</p>
+<p>This situation happens quite often.  The <code>printf</code> function is often
+called with strings which do not contain a format specifier.  Of course
+one would normally use <code>fputs</code> but it does happen.  In this case
+<code>xgettext</code> does not recognize this as a format string but what
+happens if the translation introduces a valid format specifier?  The
+<code>printf</code> function will try to access one of the parameters but none
+exists because the original code does not pass any parameters.
+</p>
+<p><code>xgettext</code> of course could make a wrong decision the other way
+round, i.e. a string marked as a format string actually is not a format
+string.  In this case the <code>msgfmt</code> might give too many warnings and
+would prevent translating the &lsquo;<tt>.po</tt>&rsquo; file.  The method to prevent
+this wrong decision is similar to the one used above, only the comment
+to use must contain the string <code>xgettext:no-c-format</code>.
+</p>
+<p>If a string is marked with <code>c-format</code> and this is not correct the
+user can find out who is responsible for the decision.  See
+<a href="gettext_5.html#SEC35">Invoking the <code>xgettext</code> Program</a> to see how the <code>--debug</code> option can be
+used for solving this problem.
+</p>
+
+<a name="Special-cases"></a>
+<a name="SEC30"></a>
+<h2 class="section"> <a href="gettext_toc.html#TOC24">4.7 Special Cases of Translatable Strings</a> </h2>
+
+<p>The attentive reader might now point out that it is not always possible
+to mark translatable string with <code>gettext</code> or something like this.
+Consider the following case:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">{
+  static const char *messages[] = {
+    &quot;some very meaningful message&quot;,
+    &quot;and another one&quot;
+  };
+  const char *string;
+  &hellip;
+  string
+    = index &gt; 1 ? &quot;a default message&quot; : messages[index];
+
+  fputs (string);
+  &hellip;
+}
+</pre></td></tr></table>
+
+<p>While it is no problem to mark the string <code>&quot;a default message&quot;</code> it
+is not possible to mark the string initializers for <code>messages</code>.
+What is to be done?  We have to fulfill two tasks.  First we have to mark the
+strings so that the <code>xgettext</code> program (see section <a href="gettext_5.html#SEC35">Invoking the <code>xgettext</code> Program</a>)
+can find them, and second we have to translate the string at runtime
+before printing them.
+</p>
+<p>The first task can be fulfilled by creating a new keyword, which names a
+no-op.  For the second we have to mark all access points to a string
+from the array.  So one solution can look like this:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">#define gettext_noop(String) String
+
+{
+  static const char *messages[] = {
+    gettext_noop (&quot;some very meaningful message&quot;),
+    gettext_noop (&quot;and another one&quot;)
+  };
+  const char *string;
+  &hellip;
+  string
+    = index &gt; 1 ? gettext (&quot;a default message&quot;) : gettext (messages[index]);
+
+  fputs (string);
+  &hellip;
+}
+</pre></td></tr></table>
+
+<p>Please convince yourself that the string which is written by
+<code>fputs</code> is translated in any case.  How to get <code>xgettext</code> know
+the additional keyword <code>gettext_noop</code> is explained in <a href="gettext_5.html#SEC35">Invoking the <code>xgettext</code> Program</a>.
+</p>
+<p>The above is of course not the only solution.  You could also come along
+with the following one:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">#define gettext_noop(String) String
+
+{
+  static const char *messages[] = {
+    gettext_noop (&quot;some very meaningful message&quot;),
+    gettext_noop (&quot;and another one&quot;)
+  };
+  const char *string;
+  &hellip;
+  string
+    = index &gt; 1 ? gettext_noop (&quot;a default message&quot;) : messages[index];
+
+  fputs (gettext (string));
+  &hellip;
+}
+</pre></td></tr></table>
+
+<p>But this has a drawback.  The programmer has to take care that
+he uses <code>gettext_noop</code> for the string <code>&quot;a default message&quot;</code>.
+A use of <code>gettext</code> could have in rare cases unpredictable results.
+</p>
+<p>One advantage is that you need not make control flow analysis to make
+sure the output is really translated in any case.  But this analysis is
+generally not very difficult.  If it should be in any situation you can
+use this second method in this situation.
+</p>
+
+<a name="Bug-Report-Address"></a>
+<a name="SEC31"></a>
+<h2 class="section"> <a href="gettext_toc.html#TOC25">4.8 Letting Users Report Translation Bugs</a> </h2>
+
+<p>Code sometimes has bugs, but translations sometimes have bugs too.  The
+users need to be able to report them.  Reporting translation bugs to the
+programmer or maintainer of a package is not very useful, since the
+maintainer must never change a translation, except on behalf of the
+translator.  Hence the translation bugs must be reported to the
+translators.
+</p>
+<p>Here is a way to organize this so that the maintainer does not need to
+forward translation bug reports, nor even keep a list of the addresses of
+the translators or their translation teams.
+</p>
+<p>Every program has a place where is shows the bug report address.  For
+GNU programs, it is the code which handles the &ldquo;&ndash;help&rdquo; option,
+typically in a function called &ldquo;usage&rdquo;.  In this place, instruct the
+translator to add her own bug reporting address.  For example, if that
+code has a statement
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">printf (_(&quot;Report bugs to &lt;%s&gt;.\n&quot;), PACKAGE_BUGREPORT);
+</pre></td></tr></table>
+
+<p>you can add some translator instructions like this:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">/* TRANSLATORS: The placeholder indicates the bug-reporting address
+   for this package.  Please add _another line_ saying
+   &quot;Report translation bugs to &lt;...&gt;\n&quot; with the address for translation
+   bugs (typically your translation team's web or email address).  */
+printf (_(&quot;Report bugs to &lt;%s&gt;.\n&quot;), PACKAGE_BUGREPORT);
+</pre></td></tr></table>
+
+<p>These will be extracted by &lsquo;<samp>xgettext</samp>&rsquo;, leading to a .pot file that
+contains this:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">#. TRANSLATORS: The placeholder indicates the bug-reporting address
+#. for this package.  Please add _another line_ saying
+#. &quot;Report translation bugs to &lt;...&gt;\n&quot; with the address for translation
+#. bugs (typically your translation team's web or email address).
+#: src/hello.c:178
+#, c-format
+msgid &quot;Report bugs to &lt;%s&gt;.\n&quot;
+msgstr &quot;&quot;
+</pre></td></tr></table>
+
+
+<a name="Names"></a>
+<a name="SEC32"></a>
+<h2 class="section"> <a href="gettext_toc.html#TOC26">4.9 Marking Proper Names for Translation</a> </h2>
+
+<p>Should names of persons, cities, locations etc. be marked for translation
+or not?  People who only know languages that can be written with Latin
+letters (English, Spanish, French, German, etc.) are tempted to say &ldquo;no&rdquo;,
+because names usually do not change when transported between these languages.
+However, in general when translating from one script to another, names
+are translated too, usually phonetically or by transliteration.  For
+example, Russian or Greek names are converted to the Latin alphabet when
+being translated to English, and English or French names are converted
+to the Katakana script when being translated to Japanese.  This is
+necessary because the speakers of the target language in general cannot
+read the script the name is originally written in.
+</p>
+<p>As a programmer, you should therefore make sure that names are marked
+for translation, with a special comment telling the translators that it
+is a proper name and how to pronounce it.  In its simple form, it looks
+like this:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">printf (_(&quot;Written by %s.\n&quot;),
+        /* TRANSLATORS: This is a proper name.  See the gettext
+           manual, section Names.  Note this is actually a non-ASCII
+           name: The first name is (with Unicode escapes)
+           &quot;Fran\u00e7ois&quot; or (with HTML entities) &quot;Fran&amp;ccedil;ois&quot;.
+           Pronunciation is like &quot;fraa-swa pee-nar&quot;.  */
+        _(&quot;Francois Pinard&quot;));
+</pre></td></tr></table>
+
+<p>The GNU gnulib library offers a module &lsquo;<samp>propername</samp>&rsquo;
+(<a href="https://www.gnu.org/software/gnulib/MODULES.html#module=propername">https://www.gnu.org/software/gnulib/MODULES.html#module=propername</a>)
+which takes care to automatically append the original name, in parentheses,
+to the translated name.  For names that cannot be written in ASCII, it
+also frees the translator from the task of entering the appropriate non-ASCII
+characters if no script change is needed.  In this more comfortable form,
+it looks like this:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">printf (_(&quot;Written by %s and %s.\n&quot;),
+        proper_name (&quot;Ulrich Drepper&quot;),
+        /* TRANSLATORS: This is a proper name.  See the gettext
+           manual, section Names.  Note this is actually a non-ASCII
+           name: The first name is (with Unicode escapes)
+           &quot;Fran\u00e7ois&quot; or (with HTML entities) &quot;Fran&amp;ccedil;ois&quot;.
+           Pronunciation is like &quot;fraa-swa pee-nar&quot;.  */
+        proper_name_utf8 (&quot;Francois Pinard&quot;, &quot;Fran\303\247ois Pinard&quot;));
+</pre></td></tr></table>
+
+<p>You can also write the original name directly in Unicode (rather than with
+Unicode escapes or HTML entities) and denote the pronunciation using the
+International Phonetic Alphabet (see
+<a href="https://en.wikipedia.org/wiki/International_Phonetic_Alphabet">https://en.wikipedia.org/wiki/International_Phonetic_Alphabet</a>).
+</p>
+<p>As a translator, you should use some care when translating names, because
+it is frustrating if people see their names mutilated or distorted.
+</p>
+<p>If your language uses the Latin script, all you need to do is to reproduce
+the name as perfectly as you can within the usual character set of your
+language.  In this particular case, this means to provide a translation
+containing the c-cedilla character.  If your language uses a different
+script and the people speaking it don't usually read Latin words, it means
+transliteration.  If the programmer used the simple case, you should still
+give, in parentheses, the original writing of the name &ndash; for the sake of
+the people that do read the Latin script.  If the programmer used the
+&lsquo;<samp>propername</samp>&rsquo; module mentioned above, you don't need to give the original
+writing of the name in parentheses, because the program will already do so.
+Here is an example, using Greek as the target script:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">#. This is a proper name.  See the gettext
+#. manual, section Names.  Note this is actually a non-ASCII
+#. name: The first name is (with Unicode escapes)
+#. &quot;Fran\u00e7ois&quot; or (with HTML entities) &quot;Fran&amp;ccedil;ois&quot;.
+#. Pronunciation is like &quot;fraa-swa pee-nar&quot;.
+msgid &quot;Francois Pinard&quot;
+msgstr &quot;\phi\rho\alpha\sigma\omicron\alpha \pi\iota\nu\alpha\rho&quot;
+       &quot; (Francois Pinard)&quot;
+</pre></td></tr></table>
+
+<p>Because translation of names is such a sensitive domain, it is a good
+idea to test your translation before submitting it.
+</p>
+
+<a name="Libraries"></a>
+<a name="SEC33"></a>
+<h2 class="section"> <a href="gettext_toc.html#TOC27">4.10 Preparing Library Sources</a> </h2>
+
+<p>When you are preparing a library, not a program, for the use of
+<code>gettext</code>, only a few details are different.  Here we assume that
+the library has a translation domain and a POT file of its own.  (If
+it uses the translation domain and POT file of the main program, then
+the previous sections apply without changes.)
+</p>
+<ol>
+<li>
+The library code doesn't call <code>setlocale (LC_ALL, &quot;&quot;)</code>.  It's the
+responsibility of the main program to set the locale.  The library's
+documentation should mention this fact, so that developers of programs
+using the library are aware of it.
+
+</li><li>
+The library code doesn't call <code>textdomain (PACKAGE)</code>, because it
+would interfere with the text domain set by the main program.
+
+</li><li>
+The initialization code for a program was
+
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">  setlocale (LC_ALL, &quot;&quot;);
+  bindtextdomain (PACKAGE, LOCALEDIR);
+  textdomain (PACKAGE);
+</pre></td></tr></table>
+
+<p>For a library it is reduced to
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">  bindtextdomain (PACKAGE, LOCALEDIR);
+</pre></td></tr></table>
+
+<p>If your library's API doesn't already have an initialization function,
+you need to create one, containing at least the <code>bindtextdomain</code>
+invocation.  However, you usually don't need to export and document this
+initialization function: It is sufficient that all entry points of the
+library call the initialization function if it hasn't been called before.
+The typical idiom used to achieve this is a static boolean variable that
+indicates whether the initialization function has been called.  If the
+library is meant to be used in multithreaded applications, this variable
+needs to be marked <code>volatile</code>, so that its value get propagated
+between threads. Like this:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">static volatile bool libfoo_initialized;
+
+static void
+libfoo_initialize (void)
+{
+  bindtextdomain (PACKAGE, LOCALEDIR);
+  libfoo_initialized = true;
+}
+
+/* This function is part of the exported API.  */
+struct foo *
+create_foo (...)
+{
+  /* Must ensure the initialization is performed.  */
+  if (!libfoo_initialized)
+    libfoo_initialize ();
+  ...
+}
+
+/* This function is part of the exported API.  The argument must be
+   non-NULL and have been created through create_foo().  */
+int
+foo_refcount (struct foo *argument)
+{
+  /* No need to invoke the initialization function here, because
+     create_foo() must already have been called before.  */
+  ...
+}
+</pre></td></tr></table>
+
+<p>The more general solution for initialization functions, POSIX
+<code>pthread_once</code>, is not needed in this case.
+</p>
+</li><li>
+The usual declaration of the &lsquo;<samp>_</samp>&rsquo; macro in each source file was
+
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">#include &lt;libintl.h&gt;
+#define _(String) gettext (String)
+</pre></td></tr></table>
+
+<p>for a program.  For a library, which has its own translation domain,
+it reads like this:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">#include &lt;libintl.h&gt;
+#define _(String) dgettext (PACKAGE, String)
+</pre></td></tr></table>
+
+<p>In other words, <code>dgettext</code> is used instead of <code>gettext</code>.
+Similarly, the <code>dngettext</code> function should be used in place of the
+<code>ngettext</code> function.
+</p></li></ol>
+
+
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC17" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="gettext_5.html#SEC34" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_21.html#SEC387" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<p>
+ <font size="-1">
+  This document was generated by <em>Bruno Haible</em> on <em>October, 9 2022</em> using <a href="https://www.nongnu.org/texi2html/"><em>texi2html 1.78a</em></a>.
+ </font>
+ <br>
+
+</p>
+</body>
+</html>

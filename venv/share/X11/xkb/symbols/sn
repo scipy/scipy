@@ -1,0 +1,43 @@
+// Keyboard layout for Senegal.
+
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+    include "latin"
+
+    name[Group1]="Wolof";
+
+    key <TLDE>	{[twosuperior,    percent,      notsign,      notsign ]};
+    key <AE01>	{[  ampersand,          1,          bar,     NoSymbol ]};
+    key <AE02>	{[     eacute,          2,   asciitilde,       Eacute ]};
+    key <AE03>	{[   quotedbl,          3,   numbersign,      cedilla ]};
+    key <AE04>	{[ apostrophe,          4,    braceleft,        acute ]};
+    key <AE05>	{[  parenleft,          5,  bracketleft,    diaeresis ]};
+    key <AE06>	{[      minus,          6,          bar,    brokenbar ]};
+    key <AE07>	{[     egrave,          7,   dead_grave,       Egrave ]};
+    key <AE08>	{[ underscore,          8,    backslash,       macron ]};
+    key <AE09>	{[   ccedilla,          9,  asciicircum,     Ccedilla ]};
+    key <AE10>	{[     agrave,          0,           at,       Agrave ]};
+    key <AE11>	{[ parenright,     degree, bracketright,   ydiaeresis ]};
+    key <AE12>	{[      equal,       plus,   braceright,threequarters ]};
+
+    key <AD01>	{[          a,          A,           ae,           AE ]};
+    key <AD02>	{[          z,          Z, guillemotleft,        less ]};
+    key <AD03>	{[          e,          E,     EuroSign,         cent ]};
+    key <AD11>	{[        eng,        ENG,  bracketleft, bracketright ]};
+    key <AD12>	{[     dollar,   sterling,     currency,  ecircumflex ]};
+
+    key <AC01>	{[          q,          Q,           at,  Greek_OMEGA ]};
+    key <AC10>	{[          m,          M,           mu,    masculine ]};
+    key <AC11>	{[     ntilde,     Ntilde,        acute,   dead_acute ]};
+    key <BKSL>	{[         mu,   sterling,        grave,   dead_grave ]};
+
+    key <LSGT>	{[       less,    greater,          bar,     NoSymbol ]};
+    key <AB01>	{[          w,          W,      lstroke,      Lstroke ]};
+    key <AB07>	{[      comma,   question, questiondown,     NoSymbol ]};
+    key <AB08>	{[  semicolon,     period,        U2022,     multiply ]}; // bullet
+    key <AB09>	{[      colon,      slash, periodcentered,   division ]};
+    key <AB10>	{[     exclam,    section,   exclamdown,     NoSymbol ]};
+
+    include "level3(ralt_switch)"
+};

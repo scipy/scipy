@@ -1,0 +1,565 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html401/loose.dtd">
+<html>
+<!-- Created on October, 9 2022 by texi2html 1.78a -->
+<!--
+Written by: Lionel Cons <Lionel.Cons@cern.ch> (original author)
+            Karl Berry  <karl@freefriends.org>
+            Olaf Bachmann <obachman@mathematik.uni-kl.de>
+            and many others.
+Maintained by: Many creative people.
+Send bugs and suggestions to <texi2html-bug@nongnu.org>
+
+-->
+<head>
+<title>GNU gettext utilities: 3. The Format of PO Files</title>
+
+<meta name="description" content="GNU gettext utilities: 3. The Format of PO Files">
+<meta name="keywords" content="GNU gettext utilities: 3. The Format of PO Files">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="texi2html 1.78a">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+pre.display {font-family: serif}
+pre.format {font-family: serif}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: serif; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: serif; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.roman {font-family:serif; font-weight:normal;}
+span.sansserif {font-family:sans-serif; font-weight:normal;}
+ul.toc {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="gettext_2.html#SEC7" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="gettext_4.html#SEC17" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_21.html#SEC387" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+
+<hr size="2">
+<a name="PO-Files"></a>
+<a name="SEC16"></a>
+<h1 class="chapter"> <a href="gettext_toc.html#TOC16">3. The Format of PO Files</a> </h1>
+
+<p>The GNU <code>gettext</code> toolset helps programmers and translators
+at producing, updating and using translation files, mainly those
+PO files which are textual, editable files.  This chapter explains
+the format of PO files.
+</p>
+<p>A PO file is made up of many entries, each entry holding the relation
+between an original untranslated string and its corresponding
+translation.  All entries in a given PO file usually pertain
+to a single project, and all translations are expressed in a single
+target language.  One PO file <em>entry</em> has the following schematic
+structure:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example"><var>white-space</var>
+#  <var>translator-comments</var>
+#. <var>extracted-comments</var>
+#: <var>reference</var>&hellip;
+#, <var>flag</var>&hellip;
+#| msgid <var>previous-untranslated-string</var>
+msgid <var>untranslated-string</var>
+msgstr <var>translated-string</var>
+</pre></td></tr></table>
+
+<p>The general structure of a PO file should be well understood by
+the translator.  When using PO mode, very little has to be known
+about the format details, as PO mode takes care of them for her.
+</p>
+<p>A simple entry can look like this:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">#: lib/error.c:116
+msgid &quot;Unknown system error&quot;
+msgstr &quot;Error desconegut del sistema&quot;
+</pre></td></tr></table>
+
+<a name="IDX43"></a>
+<a name="IDX44"></a>
+<a name="IDX45"></a>
+<p>Entries begin with some optional white space.  Usually, when generated
+through GNU <code>gettext</code> tools, there is exactly one blank line
+between entries.  Then comments follow, on lines all starting with the
+character <code>#</code>.  There are two kinds of comments: those which have
+some white space immediately following the <code>#</code> - the <var>translator
+comments</var> -, which comments are created and maintained exclusively by the
+translator, and those which have some non-white character just after the
+<code>#</code> - the <var>automatic comments</var> -, which comments are created and
+maintained automatically by GNU <code>gettext</code> tools.  Comment lines
+starting with <code>#.</code> contain comments given by the programmer, directed
+at the translator; these comments are called <var>extracted comments</var>
+because the <code>xgettext</code> program extracts them from the program's
+source code.  Comment lines starting with <code>#:</code> contain references to
+the program's source code.  Comment lines starting with <code>#,</code> contain
+flags; more about these below.  Comment lines starting with <code>#|</code>
+contain the previous untranslated string for which the translator gave
+a translation.
+</p>
+<p>All comments, of either kind, are optional.
+</p>
+<a name="IDX46"></a>
+<a name="IDX47"></a>
+<p>After white space and comments, entries show two strings, namely
+first the untranslated string as it appears in the original program
+sources, and then, the translation of this string.  The original
+string is introduced by the keyword <code>msgid</code>, and the translation,
+by <code>msgstr</code>.  The two strings, untranslated and translated,
+are quoted in various ways in the PO file, using <code>&quot;</code>
+delimiters and <code>\</code> escapes, but the translator does not really
+have to pay attention to the precise quoting format, as PO mode fully
+takes care of quoting for her.
+</p>
+<p>The <code>msgid</code> strings, as well as automatic comments, are produced
+and managed by other GNU <code>gettext</code> tools, and PO mode does not
+provide means for the translator to alter these.  The most she can
+do is merely deleting them, and only by deleting the whole entry.
+On the other hand, the <code>msgstr</code> string, as well as translator
+comments, are really meant for the translator, and PO mode gives her
+the full control she needs.
+</p>
+<p>The comment lines beginning with <code>#,</code> are special because they are
+not completely ignored by the programs as comments generally are.  The
+comma separated list of <var>flag</var>s is used by the <code>msgfmt</code>
+program to give the user some better diagnostic messages.  Currently
+there are two forms of flags defined:
+</p>
+<dl compact="compact">
+<dt> <code>fuzzy</code></dt>
+<dd><a name="IDX48"></a>
+<p>This flag can be generated by the <code>msgmerge</code> program or it can be
+inserted by the translator herself.  It shows that the <code>msgstr</code>
+string might not be a correct translation (anymore).  Only the translator
+can judge if the translation requires further modification, or is
+acceptable as is.  Once satisfied with the translation, she then removes
+this <code>fuzzy</code> attribute.  The <code>msgmerge</code> program inserts this
+when it combined the <code>msgid</code> and <code>msgstr</code> entries after fuzzy
+search only.  See section <a href="gettext_8.html#SEC71">Fuzzy Entries</a>.
+</p>
+</dd>
+<dt> <code>c-format</code></dt>
+<dd><a name="IDX49"></a>
+</dd>
+<dt> <code>no-c-format</code></dt>
+<dd><a name="IDX50"></a>
+<p>These flags should not be added by a human.  Instead only the
+<code>xgettext</code> program adds them.  In an automated PO file processing
+system as proposed here, the user's changes would be thrown away again as
+soon as the <code>xgettext</code> program generates a new template file.
+</p>
+<p>The <code>c-format</code> flag indicates that the untranslated string and the
+translation are supposed to be C format strings.  The <code>no-c-format</code>
+flag indicates that they are not C format strings, even though the untranslated
+string happens to look like a C format string (with &lsquo;<samp>%</samp>&rsquo; directives).
+</p>
+<p>When the <code>c-format</code> flag is given for a string the <code>msgfmt</code>
+program does some more tests to check the validity of the translation.
+See section <a href="gettext_10.html#SEC173">Invoking the <code>msgfmt</code> Program</a>, <a href="gettext_4.html#SEC29">Special Comments preceding Keywords</a> and <a href="gettext_15.html#SEC266">C Format Strings</a>.
+</p>
+</dd>
+<dt> <code>objc-format</code></dt>
+<dd><a name="IDX51"></a>
+</dd>
+<dt> <code>no-objc-format</code></dt>
+<dd><a name="IDX52"></a>
+<p>Likewise for Objective C, see <a href="gettext_15.html#SEC267">Objective C Format Strings</a>.
+</p>
+</dd>
+<dt> <code>python-format</code></dt>
+<dd><a name="IDX53"></a>
+</dd>
+<dt> <code>no-python-format</code></dt>
+<dd><a name="IDX54"></a>
+<p>Likewise for Python, see <a href="gettext_15.html#SEC268">Python Format Strings</a>.
+</p>
+</dd>
+<dt> <code>python-brace-format</code></dt>
+<dd><a name="IDX55"></a>
+</dd>
+<dt> <code>no-python-brace-format</code></dt>
+<dd><a name="IDX56"></a>
+<p>Likewise for Python brace, see <a href="gettext_15.html#SEC268">Python Format Strings</a>.
+</p>
+</dd>
+<dt> <code>java-format</code></dt>
+<dd><a name="IDX57"></a>
+</dd>
+<dt> <code>no-java-format</code></dt>
+<dd><a name="IDX58"></a>
+<p>Likewise for Java <code>MessageFormat</code> format strings, see <a href="gettext_15.html#SEC269">Java Format Strings</a>.
+</p>
+</dd>
+<dt> <code>java-printf-format</code></dt>
+<dd><a name="IDX59"></a>
+</dd>
+<dt> <code>no-java-printf-format</code></dt>
+<dd><a name="IDX60"></a>
+<p>Likewise for Java <code>printf</code> format strings, see <a href="gettext_15.html#SEC269">Java Format Strings</a>.
+</p>
+</dd>
+<dt> <code>csharp-format</code></dt>
+<dd><a name="IDX61"></a>
+</dd>
+<dt> <code>no-csharp-format</code></dt>
+<dd><a name="IDX62"></a>
+<p>Likewise for C#, see <a href="gettext_15.html#SEC270">C# Format Strings</a>.
+</p>
+</dd>
+<dt> <code>javascript-format</code></dt>
+<dd><a name="IDX63"></a>
+</dd>
+<dt> <code>no-javascript-format</code></dt>
+<dd><a name="IDX64"></a>
+<p>Likewise for JavaScript, see <a href="gettext_15.html#SEC271">JavaScript Format Strings</a>.
+</p>
+</dd>
+<dt> <code>scheme-format</code></dt>
+<dd><a name="IDX65"></a>
+</dd>
+<dt> <code>no-scheme-format</code></dt>
+<dd><a name="IDX66"></a>
+<p>Likewise for Scheme, see <a href="gettext_15.html#SEC272">Scheme Format Strings</a>.
+</p>
+</dd>
+<dt> <code>lisp-format</code></dt>
+<dd><a name="IDX67"></a>
+</dd>
+<dt> <code>no-lisp-format</code></dt>
+<dd><a name="IDX68"></a>
+<p>Likewise for Lisp, see <a href="gettext_15.html#SEC273">Lisp Format Strings</a>.
+</p>
+</dd>
+<dt> <code>elisp-format</code></dt>
+<dd><a name="IDX69"></a>
+</dd>
+<dt> <code>no-elisp-format</code></dt>
+<dd><a name="IDX70"></a>
+<p>Likewise for Emacs Lisp, see <a href="gettext_15.html#SEC274">Emacs Lisp Format Strings</a>.
+</p>
+</dd>
+<dt> <code>librep-format</code></dt>
+<dd><a name="IDX71"></a>
+</dd>
+<dt> <code>no-librep-format</code></dt>
+<dd><a name="IDX72"></a>
+<p>Likewise for librep, see <a href="gettext_15.html#SEC275">librep Format Strings</a>.
+</p>
+</dd>
+<dt> <code>ruby-format</code></dt>
+<dd><a name="IDX73"></a>
+</dd>
+<dt> <code>no-ruby-format</code></dt>
+<dd><a name="IDX74"></a>
+<p>Likewise for Ruby, see <a href="gettext_15.html#SEC276">Ruby Format Strings</a>.
+</p>
+</dd>
+<dt> <code>sh-format</code></dt>
+<dd><a name="IDX75"></a>
+</dd>
+<dt> <code>no-sh-format</code></dt>
+<dd><a name="IDX76"></a>
+<p>Likewise for Shell, see <a href="gettext_15.html#SEC277">Shell Format Strings</a>.
+</p>
+</dd>
+<dt> <code>awk-format</code></dt>
+<dd><a name="IDX77"></a>
+</dd>
+<dt> <code>no-awk-format</code></dt>
+<dd><a name="IDX78"></a>
+<p>Likewise for awk, see <a href="gettext_15.html#SEC278">awk Format Strings</a>.
+</p>
+</dd>
+<dt> <code>lua-format</code></dt>
+<dd><a name="IDX79"></a>
+</dd>
+<dt> <code>no-lua-format</code></dt>
+<dd><a name="IDX80"></a>
+<p>Likewise for Lua, see <a href="gettext_15.html#SEC279">Lua Format Strings</a>.
+</p>
+</dd>
+<dt> <code>object-pascal-format</code></dt>
+<dd><a name="IDX81"></a>
+</dd>
+<dt> <code>no-object-pascal-format</code></dt>
+<dd><a name="IDX82"></a>
+<p>Likewise for Object Pascal, see <a href="gettext_15.html#SEC280">Object Pascal Format Strings</a>.
+</p>
+</dd>
+<dt> <code>smalltalk-format</code></dt>
+<dd><a name="IDX83"></a>
+</dd>
+<dt> <code>no-smalltalk-format</code></dt>
+<dd><a name="IDX84"></a>
+<p>Likewise for Smalltalk, see <a href="gettext_15.html#SEC281">Smalltalk Format Strings</a>.
+</p>
+</dd>
+<dt> <code>qt-format</code></dt>
+<dd><a name="IDX85"></a>
+</dd>
+<dt> <code>no-qt-format</code></dt>
+<dd><a name="IDX86"></a>
+<p>Likewise for Qt, see <a href="gettext_15.html#SEC282">Qt Format Strings</a>.
+</p>
+</dd>
+<dt> <code>qt-plural-format</code></dt>
+<dd><a name="IDX87"></a>
+</dd>
+<dt> <code>no-qt-plural-format</code></dt>
+<dd><a name="IDX88"></a>
+<p>Likewise for Qt plural forms, see <a href="gettext_15.html#SEC283">Qt Format Strings</a>.
+</p>
+</dd>
+<dt> <code>kde-format</code></dt>
+<dd><a name="IDX89"></a>
+</dd>
+<dt> <code>no-kde-format</code></dt>
+<dd><a name="IDX90"></a>
+<p>Likewise for KDE, see <a href="gettext_15.html#SEC284">KDE Format Strings</a>.
+</p>
+</dd>
+<dt> <code>boost-format</code></dt>
+<dd><a name="IDX91"></a>
+</dd>
+<dt> <code>no-boost-format</code></dt>
+<dd><a name="IDX92"></a>
+<p>Likewise for Boost, see <a href="gettext_15.html#SEC286">Boost Format Strings</a>.
+</p>
+</dd>
+<dt> <code>tcl-format</code></dt>
+<dd><a name="IDX93"></a>
+</dd>
+<dt> <code>no-tcl-format</code></dt>
+<dd><a name="IDX94"></a>
+<p>Likewise for Tcl, see <a href="gettext_15.html#SEC287">Tcl Format Strings</a>.
+</p>
+</dd>
+<dt> <code>perl-format</code></dt>
+<dd><a name="IDX95"></a>
+</dd>
+<dt> <code>no-perl-format</code></dt>
+<dd><a name="IDX96"></a>
+<p>Likewise for Perl, see <a href="gettext_15.html#SEC288">Perl Format Strings</a>.
+</p>
+</dd>
+<dt> <code>perl-brace-format</code></dt>
+<dd><a name="IDX97"></a>
+</dd>
+<dt> <code>no-perl-brace-format</code></dt>
+<dd><a name="IDX98"></a>
+<p>Likewise for Perl brace, see <a href="gettext_15.html#SEC288">Perl Format Strings</a>.
+</p>
+</dd>
+<dt> <code>php-format</code></dt>
+<dd><a name="IDX99"></a>
+</dd>
+<dt> <code>no-php-format</code></dt>
+<dd><a name="IDX100"></a>
+<p>Likewise for PHP, see <a href="gettext_15.html#SEC289">PHP Format Strings</a>.
+</p>
+</dd>
+<dt> <code>gcc-internal-format</code></dt>
+<dd><a name="IDX101"></a>
+</dd>
+<dt> <code>no-gcc-internal-format</code></dt>
+<dd><a name="IDX102"></a>
+<p>Likewise for the GCC sources, see <a href="gettext_15.html#SEC290">GCC internal Format Strings</a>.
+</p>
+</dd>
+<dt> <code>gfc-internal-format</code></dt>
+<dd><a name="IDX103"></a>
+</dd>
+<dt> <code>no-gfc-internal-format</code></dt>
+<dd><a name="IDX104"></a>
+<p>Likewise for the GNU Fortran Compiler sources, see <a href="gettext_15.html#SEC291">GFC internal Format Strings</a>.
+</p>
+</dd>
+<dt> <code>ycp-format</code></dt>
+<dd><a name="IDX105"></a>
+</dd>
+<dt> <code>no-ycp-format</code></dt>
+<dd><a name="IDX106"></a>
+<p>Likewise for YCP, see <a href="gettext_15.html#SEC292">YCP Format Strings</a>.
+</p>
+</dd>
+</dl>
+
+<a name="IDX107"></a>
+<a name="IDX108"></a>
+<p>It is also possible to have entries with a context specifier. They look like
+this:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example"><var>white-space</var>
+#  <var>translator-comments</var>
+#. <var>extracted-comments</var>
+#: <var>reference</var>&hellip;
+#, <var>flag</var>&hellip;
+#| msgctxt <var>previous-context</var>
+#| msgid <var>previous-untranslated-string</var>
+msgctxt <var>context</var>
+msgid <var>untranslated-string</var>
+msgstr <var>translated-string</var>
+</pre></td></tr></table>
+
+<p>The context serves to disambiguate messages with the same
+<var>untranslated-string</var>.  It is possible to have several entries with
+the same <var>untranslated-string</var> in a PO file, provided that they each
+have a different <var>context</var>.  Note that an empty <var>context</var> string
+and an absent <code>msgctxt</code> line do not mean the same thing.
+</p>
+<a name="IDX109"></a>
+<a name="IDX110"></a>
+<p>A different kind of entries is used for translations which involve
+plural forms.
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example"><var>white-space</var>
+#  <var>translator-comments</var>
+#. <var>extracted-comments</var>
+#: <var>reference</var>&hellip;
+#, <var>flag</var>&hellip;
+#| msgid <var>previous-untranslated-string-singular</var>
+#| msgid_plural <var>previous-untranslated-string-plural</var>
+msgid <var>untranslated-string-singular</var>
+msgid_plural <var>untranslated-string-plural</var>
+msgstr[0] <var>translated-string-case-0</var>
+...
+msgstr[N] <var>translated-string-case-n</var>
+</pre></td></tr></table>
+
+<p>Such an entry can look like this:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">#: src/msgcmp.c:338 src/po-lex.c:699
+#, c-format
+msgid &quot;found %d fatal error&quot;
+msgid_plural &quot;found %d fatal errors&quot;
+msgstr[0] &quot;s'ha trobat %d error fatal&quot;
+msgstr[1] &quot;s'han trobat %d errors fatals&quot;
+</pre></td></tr></table>
+
+<p>Here also, a <code>msgctxt</code> context can be specified before <code>msgid</code>,
+like above.
+</p>
+<p>Here, additional kinds of flags can be used:
+</p>
+<dl compact="compact">
+<dt> <code>range:</code></dt>
+<dd><a name="IDX111"></a>
+<p>This flag is followed by a range of non-negative numbers, using the syntax
+<code>range: <var>minimum-value</var>..<var>maximum-value</var></code>.  It designates the
+possible values that the numeric parameter of the message can take.  In some
+languages, translators may produce slightly better translations if they know
+that the value can only take on values between 0 and 10, for example.
+</p></dd>
+</dl>
+
+<p>The <var>previous-untranslated-string</var> is optionally inserted by the
+<code>msgmerge</code> program, at the same time when it marks a message fuzzy.
+It helps the translator to see which changes were done by the developers
+on the <var>untranslated-string</var>.
+</p>
+<p>It happens that some lines, usually whitespace or comments, follow the
+very last entry of a PO file.  Such lines are not part of any entry,
+and will be dropped when the PO file is processed by the tools, or may
+disturb some PO file editors.
+</p>
+<p>The remainder of this section may be safely skipped by those using
+a PO file editor, yet it may be interesting for everybody to have a better
+idea of the precise format of a PO file.  On the other hand, those
+wishing to modify PO files by hand should carefully continue reading on.
+</p>
+<p>An empty <var>untranslated-string</var> is reserved to contain the header
+entry with the meta information (see section <a href="gettext_6.html#SEC51">Filling in the Header Entry</a>).  This header
+entry should be the first entry of the file.  The empty
+<var>untranslated-string</var> is reserved for this purpose and must
+not be used anywhere else.
+</p>
+<p>Each of <var>untranslated-string</var> and <var>translated-string</var> respects
+the C syntax for a character string, including the surrounding quotes
+and embedded backslashed escape sequences, except that universal character
+escape sequences (<code>\u</code> and <code>\U</code>) are not allowed.  When the time
+comes to write multi-line strings, one should not use escaped newlines.
+Instead, a closing quote should follow the last character on the
+line to be continued, and an opening quote should resume the string
+at the beginning of the following PO file line.  For example:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">msgid &quot;&quot;
+&quot;Here is an example of how one might continue a very long string\n&quot;
+&quot;for the common case the string represents multi-line output.\n&quot;
+</pre></td></tr></table>
+
+<p>In this example, the empty string is used on the first line, to
+allow better alignment of the <code>H</code> from the word &lsquo;<samp>Here</samp>&rsquo;
+over the <code>f</code> from the word &lsquo;<samp>for</samp>&rsquo;.  In this example, the
+<code>msgid</code> keyword is followed by three strings, which are meant
+to be concatenated.  Concatenating the empty string does not change
+the resulting overall string, but it is a way for us to comply with
+the necessity of <code>msgid</code> to be followed by a string on the same
+line, while keeping the multi-line presentation left-justified, as
+we find this to be a cleaner disposition.  The empty string could have
+been omitted, but only if the string starting with &lsquo;<samp>Here</samp>&rsquo; was
+promoted on the first line, right after <code>msgid</code>.<a name="DOCF2" href="gettext_fot.html#FOOT2">(2)</a> It was not really necessary
+either to switch between the two last quoted strings immediately after
+the newline &lsquo;<samp>\n</samp>&rsquo;, the switch could have occurred after <em>any</em>
+other character, we just did it this way because it is neater.
+</p>
+<a name="IDX112"></a>
+<p>One should carefully distinguish between end of lines marked as
+&lsquo;<samp>\n</samp>&rsquo; <em>inside</em> quotes, which are part of the represented
+string, and end of lines in the PO file itself, outside string quotes,
+which have no incidence on the represented string.
+</p>
+<a name="IDX113"></a>
+<p>Outside strings, white lines and comments may be used freely.
+Comments start at the beginning of a line with &lsquo;<samp>#</samp>&rsquo; and extend
+until the end of the PO file line.  Comments written by translators
+should have the initial &lsquo;<samp>#</samp>&rsquo; immediately followed by some white
+space.  If the &lsquo;<samp>#</samp>&rsquo; is not immediately followed by white space,
+this comment is most likely generated and managed by specialized GNU
+tools, and might disappear or be replaced unexpectedly when the PO
+file is given to <code>msgmerge</code>.
+</p>
+<p>For a PO file to be valid, no two entries without <code>msgctxt</code> may have
+the same <var>untranslated-string</var> or <var>untranslated-string-singular</var>.
+Similarly, no two entries may have the same <code>msgctxt</code> and the same
+<var>untranslated-string</var> or <var>untranslated-string-singular</var>.
+</p>
+
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="gettext_2.html#SEC7" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="gettext_4.html#SEC17" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_21.html#SEC387" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<p>
+ <font size="-1">
+  This document was generated by <em>Bruno Haible</em> on <em>October, 9 2022</em> using <a href="https://www.nongnu.org/texi2html/"><em>texi2html 1.78a</em></a>.
+ </font>
+ <br>
+
+</p>
+</body>
+</html>

@@ -1,0 +1,17 @@
+default partial alphanumeric_keys 
+xkb_symbols "basic" {
+
+    // Describes the differences between a very simple en_US
+    // keyboard and a very simple U.K. keyboard layout
+
+    include "macintosh_vndr/us"
+
+    name[Group1]= "United Kingdom - Mac";
+
+    key <AE02> {	[               2,              at,         EuroSign	]	};
+    key <AE03> {	[               3,        sterling,       numbersign	]	};
+    key <TLDE> {	[         section,       plusminus ]	};
+    key <LSGT> {	[           grave,      asciitilde ]	};
+    
+    include "level3(ralt_switch)"
+};

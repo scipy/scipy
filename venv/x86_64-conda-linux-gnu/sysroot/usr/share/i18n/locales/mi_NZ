@@ -1,0 +1,169 @@
+comment_char %
+escape_char  /
+%
+% Maori language locale for New Zealand
+% Source: James Gasson
+% Contact: James Gasson, Pablo Saratxaga
+% Email: <james.gasson@clear.net.nz>, <pablo@mandrakesoft.com>
+% Language: mi
+% Territory: NZ
+% Revision: 0.3
+% Date: 2001-01-28
+% Users: general
+% Repertoiremap: mnemonic,ds
+% Charset: ISO-8859-13
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title "Maori language locale for New Zealand"
+source "James Gasson"
+address ""
+contact "James Gasson, Pablo Saratxaga"
+email "james.gasson@clear.net.nz, pablo@mandrakesoft.com"
+tel ""
+fax ""
+language "Maori"
+territory "New Zealand"
+revision "0.3"
+date "2001-01-28"
+
+category mi_NZ:2000;LC_IDENTIFICATION
+category mi_NZ:2000;LC_CTYPE
+category mi_NZ:2000;LC_COLLATE
+category mi_NZ:2000;LC_TIME
+category mi_NZ:2000;LC_NUMERIC
+category mi_NZ:2000;LC_PAPER
+category mi_NZ:2000;LC_TELEPHONE
+category mi_NZ:2000;LC_MEASUREMENT
+category mi_NZ:2000;LC_ADDRESS
+category mi_NZ:2000;LC_MESSAGES
+category mi_NZ:2000;LC_MONETARY
+
+END LC_IDENTIFICATION
+
+LC_CTYPE
+copy "en_DK"
+END LC_CTYPE
+
+LC_COLLATE
+copy "iso14651_t1"
+
+%% a b c d e f g h i j k l m n ng o p q r s t u v w wh x y z
+
+collating-symbol  <n-g-mi>
+collating-element <N-G> from "<U004E><U0047>"
+collating-element <n-g> from "<U006E><U0067>"
+collating-element <N-g> from "<U004E><U0067>"
+collating-element <n-G> from "<U006E><U0047>"
+collating-symbol  <w-h-mi>
+collating-element <W-H> from "<U0057><U0048>"
+collating-element <w-h> from "<U0077><U0068>"
+collating-element <W-h> from "<U0057><U0068>"
+collating-element <w-H> from "<U0077><U0048>"
+
+collating-symbol <CAP-MIN>
+collating-symbol <MIN-CAP>
+
+reorder-after <MIN>
+<MIN-CAP>
+reorder-after <CAP>
+<CAP-MIN>
+
+reorder-after <n>
+<n-g-mi>
+reorder-after <w>
+<w-h-mi>
+
+reorder-after <U006E>
+<n-g>	<n-g-mi>;<PCT>;<MIN>;IGNORE
+<n-G>	<n-g-mi>;<PCT>;<MIN-CAP>;IGNORE
+reorder-after <U004E>
+<N-G>	<n-g-mi>;<PCT>;<CAP>;IGNORE
+<N-g>	<n-g-mi>;<PCT>;<CAP-MIN>;IGNORE
+
+reorder-after <U0077>
+<w-h>	<w-h-mi>;<PCT>;<MIN>;IGNORE
+<w-H>	<w-h-mi>;<PCT>;<MIN-CAP>;IGNORE
+reorder-after <U0057>
+<W-H>	<w-h-mi>;<PCT>;<CAP>;IGNORE
+<W-h>	<w-h-mi>;<PCT>;<CAP-MIN>;IGNORE
+
+reorder-end
+
+END LC_COLLATE
+
+LC_MONETARY
+copy "en_NZ"
+END LC_MONETARY
+
+LC_NUMERIC
+copy "en_NZ"
+END LC_NUMERIC
+
+LC_TIME
+abday    "<U0054><U0061>";"<U004D><U0061>";/
+         "<U0054><U016B>";"<U0057><U0065>";/
+         "<U0054><U0101><U0069>";"<U0050><U0061>";/
+         "<U0048><U0101>"
+day      "<U0052><U0101><U0074><U0061><U0070><U0075>";/
+         "<U004D><U0061><U006E><U0065>";/
+         "<U0054><U016B><U0072><U0065><U0069>";/
+         "<U0057><U0065><U006E><U0065><U0072><U0065><U0069>";/
+         "<U0054><U0101><U0069><U0074><U0065>";/
+         "<U0050><U0061><U0072><U0061><U0069><U0072><U0065>";/
+         "<U0048><U0101><U0074><U0061><U0072><U0065><U0069>"
+abmon    "<U004B><U006F><U0068><U0069>";"<U0048><U0075><U0069>";/
+         "<U0050><U006F><U0075>";"<U0050><U0061><U0065>";/
+         "<U0048><U0061><U0072><U0061>";"<U0050><U0069><U0070><U0069>";/
+         "<U0048><U014D><U006E><U0067><U006F><U0069>";"<U0048><U0065><U0072><U0065>";/
+         "<U004D><U0061><U0068><U0075>";"<U0057><U0068><U0069><U002D><U006E><U0075>";/
+         "<U0057><U0068><U0069><U002D><U0072><U0061>";"<U0048><U0061><U006B><U0069>"
+mon      "<U004B><U006F><U0068><U0069><U002D><U0074><U0101><U0074><U0065><U0061>";/
+         "<U0048><U0075><U0069><U002D><U0074><U0061><U006E><U0067><U0075><U0072><U0075>";/
+         "<U0050><U006F><U0075><U0074><U016B><U002D><U0074><U0065><U002D><U0072><U0061><U006E><U0067><U0069>";/
+         "<U0050><U0061><U0065><U006E><U0067><U0061><U002D><U0077><U0068><U0101><U0077><U0068><U0101>";/
+         "<U0048><U0061><U0072><U0061><U0074><U0075><U0061>";/
+         "<U0050><U0069><U0070><U0069><U0072><U0069>";/
+         "<U0048><U014D><U006E><U0067><U006F><U0069><U006E><U0067><U006F><U0069>";/
+         "<U0048><U0065><U0072><U0065><U002D><U0074><U0075><U0072><U0069><U002D><U006B><U014D><U006B><U0101>";/
+         "<U004D><U0061><U0068><U0075><U0072><U0075>";/
+         "<U0057><U0068><U0069><U0072><U0069><U006E><U0067><U0061><U002D><U0101><U002D><U006E><U0075><U006B><U0075>";/
+         "<U0057><U0068><U0069><U0072><U0069><U006E><U0067><U0061><U002D><U0101><U002D><U0072><U0061><U006E><U0067><U0069>";/
+         "<U0048><U0061><U006B><U0069><U0068><U0065><U0061>"
+d_t_fmt     "<U0054><U0065><U0020><U0025><U0041><U002C><U0020><U0074><U0065><U0020><U0025><U0064><U0020><U006F><U0020><U0025><U0042><U002C><U0020><U0025><U0059><U0020><U0025><U0054><U0020><U0025><U005A>"
+d_fmt       "<U0025><U0064><U002F><U0025><U006D><U002F><U0025><U0079>"
+t_fmt       "<U0025><U0054>"
+am_pm       "";""
+t_fmt_ampm  ""
+END LC_TIME
+
+LC_MESSAGES
+yesstr  "<U0101><U0065>"
+nostr    "<U006B><U0101><U006F><U0072><U0065>"
+yesexpr  "<U005E><U005B><U0031><U0079><U0059><U0101><U0100><U00E4><U00C4><U0061><U0041><U005D><U002E><U002A>"
+noexpr   "<U005E><U005B><U0030><U006E><U004E><U006B><U004B><U005D><U002E><U002A>"
+END LC_MESSAGES
+
+LC_PAPER
+copy "en_NZ"
+END LC_PAPER
+
+LC_MEASUREMENT
+measurement 1
+END LC_MEASUREMENT
+
+LC_NAME
+% FIXME
+copy "en_NZ"
+END LC_NAME
+
+LC_ADDRESS
+% FIXME
+copy "en_NZ"
+END LC_ADDRESS
+
+LC_TELEPHONE
+% FIXME
+copy "en_NZ"
+END LC_TELEPHONE

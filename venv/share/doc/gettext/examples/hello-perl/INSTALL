@@ -1,0 +1,12 @@
+This example relies on:
+  - Perl (perl)
+  - libintl-perl 1.09 or newer
+
+Installation:
+  ./autogen.sh
+  ./configure --prefix=/some/prefix
+  make
+  make install
+Cleanup:
+  make distclean
+  ./autoclean.sh

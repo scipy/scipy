@@ -1,0 +1,47 @@
+.TH pulse-client.conf 5 User Manuals
+.SH NAME
+pulse-client.conf \- PulseAudio client configuration file
+.SH SYNOPSIS
+\fB\fI~/.config/pulse/client.conf\fB
+
+\fI~/.config/pulse/client.conf.d/*.conf\fB
+
+\fI/workspaces/scipy/venv/etc/pulse/client.conf\fB
+
+\fI/workspaces/scipy/venv/etc/pulse/client.conf.d/*.conf\fB
+\f1
+.SH DESCRIPTION
+The PulseAudio client library reads configuration directives from a configuration file on startup. If the per-user file \fI~/.config/pulse/client.conf\f1 exists, it is used, otherwise the system configuration file \fI/workspaces/scipy/venv/etc/pulse/client.conf\f1 is used. In addition to those main files, configuration directives can also be put in files under directories \fI~/.config/pulse/client.conf.d/\f1 and \fI/workspaces/scipy/venv/etc/pulse/client.conf.d/\f1. Those files have to have the .conf file name extension, but otherwise the file names can be chosen freely. The files under client.conf.d are processed in alphabetical order. In case the same option is set in multiple files, the last file to set an option overrides earlier files. The main client.conf file is processed first, so options set in files under client.conf.d override the main file.
+
+The configuration file is a simple collection of variable declarations. If the configuration file parser encounters either ; or # it ignores the rest of the line until its end.
+
+For the settings that take a boolean argument the values \fBtrue\f1, \fByes\f1, \fBon\f1 and \fB1\f1 are equivalent, resp. \fBfalse\f1, \fBno\f1, \fBoff\f1, \fB0\f1.
+.SH DIRECTIVES
+.TP
+\fBdefault-sink=\f1 The default sink to connect to. If specified overwrites the setting in the daemon. The environment variable \fB$PULSE_SINK\f1 however takes precedence.
+.TP
+\fBdefault-source=\f1 The default source to connect to. If specified overwrites the setting in the daemon. The environment variable \fB$PULSE_SOURCE\f1 however takes precedence.
+.TP
+\fBdefault-server=\f1 The default server to connect to. The environment variable \fB$PULSE_SERVER\f1 takes precedence.
+.TP
+\fBautospawn=\f1 Autospawn a PulseAudio daemon when needed. Takes a boolean value, defaults to \fByes\f1. Note that setting this to "no" doesn't disable the systemd service. The autospawn option is only meant to be used on systems without systemd. If you use systemd to start PulseAudio, use "systemctl --user stop pulseaudio.service pulseaudio.socket" to stop the daemon temporarily, or "systemctl --user mask pulseaudio.service pulseaudio.socket" to permanently disable the units (the "disable" command of systemctl probably won't work, because the pulseaudio.socket unit is often installed to /usr/lib/systemd/user/sockets.target.wants/, which makes it impossible to disable the unit with the "disable" command).
+.TP
+\fBdaemon-binary=\f1 Path to the PulseAudio daemon to run when autospawning. Defaults to a path configured at compile time.
+.TP
+\fBextra-arguments=\f1 Extra arguments to pass to the PulseAudio daemon when autospawning. Defaults to \fB--log-target=syslog\f1
+.TP
+\fBcookie-file=\f1 Specify the path to the PulseAudio authentication cookie. Defaults to \fI~/.config/pulse/cookie\f1.
+.TP
+\fBenable-shm=\f1 Enable data transfer via POSIX or memfd shared memory. Takes a boolean argument, defaults to \fByes\f1. If set to \fBno\f1, communication with the server will be exclusively done through data-copy over sockets.
+.TP
+\fBenable-memfd=\f1. Enable data transfer via memfd shared memory. Takes a boolean argument, defaults to \fByes\f1.
+.TP
+\fBshm-size-bytes=\f1 Sets the shared memory segment size for clients, in bytes. If left unspecified or is set to 0 it will default to some system-specific default, usually 64 MiB. Please note that usually there is no need to change this value, unless you are running an OS kernel that does not do memory overcommit.
+.TP
+\fBauto-connect-localhost=\f1 Automatically try to connect to localhost via IP. Enabling this is a potential security hole since connections are only authenticated one-way and a rogue server might hence fool a client into sending it its private (e.g. VoIP call) data. This was enabled by default on PulseAudio version 0.9.21 and older. Defaults to \fBno\f1.
+.TP
+\fBauto-connect-display=\f1 Automatically try to connect to the host X11's $DISPLAY variable is set to. The same security issues apply as to \fBauto-connect-localhost=\f1. Defaults to \fBno\f1.
+.SH AUTHORS
+The PulseAudio Developers <pulseaudio-discuss (at) lists (dot) freedesktop (dot) org>; PulseAudio is available from \fBhttp://pulseaudio.org/\f1
+.SH SEE ALSO
+\fBpulse-daemon.conf(5)\f1, \fBpulseaudio(1)\f1

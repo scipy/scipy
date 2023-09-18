@@ -1,0 +1,191 @@
+.TH CAP_LAUNCH 3 "2021-08-01" "" "Linux Programmer's Manual"
+.SH NAME
+cap_new_launcher, cap_func_launcher, cap_launcher_callback, \
+cap_launcher_set_mode, cap_launcher_set_iab, cap_launcher_set_chroot, \
+cap_launch, cap_launcher_setuid, cap_launcher_setgroups \
+\- libcap launch functionality
+.SH SYNOPSYS
+.nf
+#include <sys/capability.h>
+
+cap_launch_t cap_new_launcher(const char *arg0, const char *const *argv,
+    const char *const *envp);
+
+cap_launch_t cap_func_launcher(int (callback_fn)(void *detail));
+
+int cap_launcher_callback(cap_launch_t attr,
+    int (callback_fn)(void *detail));
+int cap_launcher_set_mode(cap_launch_t attr, cap_mode_t flavor);
+cap_iab_t cap_launcher_set_iab(cap_launch_t attr, cap_iab_t iab);
+int cap_launcher_set_chroot(cap_launch_t attr, const char *chroot);
+
+#include <sys/types.h>
+
+pid_t cap_launch(cap_launch_t attr, void *detail);
+int cap_launcher_setuid(cap_launch_t attr, uid_t uid);
+int cap_launcher_setgroups(cap_launch_t attr, gid_t gid,
+    int ngroups, const gid_t *groups);
+.fi
+.sp
+Link with \fI\-lcap\fP.
+.SH DESCRIPTION
+A launcher provides a mechanism for code to execute a callback
+function and/or a program executable in an environment with a modified
+security context. Essentially it provides a mechanism for a program to
+.BR fork (2)
+a new context from that of the main program manipulate capability and other privileged state in that
+.BR fork (2)d
+process before (optionally)
+.BR execve (2)ing
+a new program. When the application links to \fI\-lpsx\fP this support
+is needed to robustly execute the launched code without modifying the
+privilge of the whole (POSIX semantics honoring) main application.
+.PP
+A launcher is defined by one of these two functions:
+.BR cap_new_launcher ()
+or
+.BR cap_func_launcher ().
+The return value being of opaque type
+.B cap_launch_t
+a return value of NULL implies an error has occurred.
+.PP
+Once defined, a
+.B cap_launch_t
+value can be used with
+.BR cap_launch ()
+to execute that \fIlauncher\fP. In such cases, a non-negative return
+value indicates success: zero meaning success without a program being
+invoked; non-zero being equal to the process ID
+.RB ( pid_t )
+of the newly launched program.
+.PP
+A
+.B cap_launch_t
+occupies allocated memory and should be freed with
+.BR cap_free (3).
+Before being
+.BR cap_free (3)d
+a
+.B cap_value_t
+value may be reused for multiple independent launches. The
+.I detail
+argument to
+.BR cap_launch (),
+in conjunction with the launcher's callback function, can be used to
+customize the invocation of the launch. Care must be taken to leverage
+custom shared memory (see
+.BR mmap (2))
+or some other IPC to return values to the main program via
+.I detail
+since the callback and any subsequent program execution will occur
+outside the main process of the calling application. An example of
+this would be to allocate detail as follows:
+.nf
+
+   const char *args[] = { "echo", "hello", NULL };
+   cap_launch_t cmd = cap_new_launcher("/usr/bin/echo", args, NULL);
+   int *detail = mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE,
+                      MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+   cap_launcher_callback(cmd, &answer_detail_fn);
+   *detail = 41;
+   pid_t pid = cap_launch(cmd, detail);
+   printf("launcher callback set detail to %d\\n", *detail);
+   munmap(detail, sizeof(int));
+
+.fi
+.PP
+Unless modified by the callback function, the launched code will
+execute with the capability and other security context of the
+application.
+
+If the callback function returns anything other than zero, a
+.BR cap_launch ()
+will be aborted. If detail of the failure is important to the caller,
+it should be communicated via the
+.I detail
+argument.
+
+The following functions can be used to instruct the launcher to modify
+the security state of the invoked program without altering the state
+of the calling program. Such modifications must be performed prior to
+calling \fBcap_launch\fP() if they are to have the desired
+effect. Further, they are only invoked after any installed callback
+has completed. For example, one can drop or modify capabilities,
+\fIjust\fP for executing a file.
+.PP
+The following functions instruct the launcher to do some common tasks
+of this sort (note some require permitted capability bits to succeed):
+.sp
+.BR cap_launcher_callback ()
+can be used to install or replace the currently installed callback
+function of the launcher.
+.sp
+.BR cap_launcher_set_mode ()
+can be used to ensure that the libcap-mode of the launched program is
+the desired one.
+.sp
+.BR cap_launcher_set_iab ()
+This function returns the \fBcap_iab_t\fP previously associated with
+the launcher. Calling this function with an IAB value of NULL will
+configure the launcher to not set an IAB value (the default).  See
+\fBcap_iab\fP(3) for details on the IAB set. Note, the launcher is
+associated directly with the supplied \fIiab\fP value, and does not
+make a copy of it. This iab value is locked to the laucher and cannot
+be modified while associated with the launcher. Set with NULL to
+regain control over the memory associated with that IAB value,
+otherwise the IAB value will be \fBcap_free\fI()\fP'd when the
+launcher is.
+.sp
+.BR cap_launcher_set_chroot ()
+This function causes the launched program executable to be invoked
+inside a chroot \fIroot\fP directory.
+.sp
+.BR cap_launcher_setuid ()
+This function causes the launched program executable to be invoked
+with the specified user identifier (\fIuid_t\fP).
+.sp
+.BR cap_launcher_setgroups ()
+This function causes the launched program executable to be invoked
+with the specified primary and supplementary group IDs.
+.sp
+.PP
+Note, if any of the launcher enhancements made by the above functions
+should fail to take effect (typically for a lack of sufficient
+privilege), the launch will fail and return -1.
+
+.SH "ERRORS"
+A return of NULL for a
+.B cap_launch_t
+should be considered an error.
+.PP
+.BR cap_launch ()
+returns -1 in the case of an error.
+.PP
+In all such cases a return value of 0 implies success. In other cases,
+consult
+.BR errno (3)
+for further details.
+.SH "HISTORY"
+The \fBcap_launch\fP() family of functions were introduced in libcap
+2.33. It primarily addresses a complexity with \fI-lpsx\fP linked
+pthreads(7) applications that use capabilities but also honor POSIX
+semantics.
+
+Using \fI\-lcap\fP and \fI\-lpthread\fP together without the POSIX
+semantics support from \fI\-lpsx\fP introduces a subtle class of
+exposure to privilege escalation. (See
+https://sites.google.com/site/fullycapable/who-ordered-libpsx for an
+explanation.)
+.SH "SEE ALSO"
+.BR libpsx (3),
+.BR psx_syscall (3),
+.BR libcap (3),
+.BR cap_mode (3),
+.BR cap_iab (3),
+.BR capabilities (7),
+.BR errno (3),
+.BR fork (2),
+.BR mmap (2),
+.BR chroot (2),
+and
+.BR munmap (2).

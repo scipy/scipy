@@ -1,0 +1,105 @@
+comment_char    %
+escape_char     /
+% Albanian language locale for Macedonia.
+% Contributed by Agron Selimaj <linuxmaster@verizon.net>
+
+LC_IDENTIFICATION
+title      "Albanian language locale for Macedonia"
+source     "Albanian Language Team"
+address    "465 4th St. 2nd Floor, Palisades Park, NJ 07650, U.S.A."
+contact    ""
+email      "bug-glibc-locales@gnu.org"
+tel        ""
+fax        ""
+language   "Albanian"
+territory  "Macedonia"
+revision   "0.01"
+date       "2010-04-06"
+%
+category  "sq_MK:2000";LC_IDENTIFICATION
+category  "sq_MK:2000";LC_CTYPE
+category  "sq_MK:2000";LC_COLLATE
+category  "sq_MK:2000";LC_TIME
+category  "sq_MK:2000";LC_NUMERIC
+category  "sq_MK:2000";LC_MONETARY
+category  "sq_MK:2000";LC_MESSAGES
+category  "sq_MK:2000";LC_PAPER
+category  "sq_MK:2000";LC_NAME
+category  "sq_MK:2000";LC_ADDRESS
+category  "sq_MK:2000";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_CTYPE
+copy "sq_AL"
+END LC_CTYPE
+
+LC_COLLATE
+copy "sq_AL"
+END LC_COLLATE
+
+LC_MONETARY
+% This is the POSIX Locale definition the LC_MONETARY category.
+% These are generated based on XML base Locale definition file
+% for IBM Class for Unicode/Java
+%
+int_curr_symbol           "<U004D><U004B><U0044><U0020>"
+currency_symbol           "<U0064><U0065><U006E>"
+mon_decimal_point         "<U002C>"
+mon_thousands_sep         "<U0020>"
+mon_grouping              3;3
+positive_sign             ""
+negative_sign             "<U002D>"
+int_frac_digits           2
+frac_digits               2
+p_cs_precedes             0
+p_sep_by_space            1
+n_cs_precedes             0
+n_sep_by_space            1
+p_sign_posn               1
+n_sign_posn               1
+%
+END LC_MONETARY
+
+
+LC_NUMERIC
+copy "sq_AL"
+END LC_NUMERIC
+
+
+LC_TIME
+copy "sq_AL"
+END LC_TIME
+
+
+LC_MESSAGES
+copy "sq_AL"
+END LC_MESSAGES
+
+
+LC_PAPER
+copy "mk_MK"
+END LC_PAPER
+
+
+LC_NAME
+copy "sq_AL"
+END LC_NAME
+
+
+LC_ADDRESS
+copy "mk_MK"
+END LC_ADDRESS
+
+
+LC_TELEPHONE
+copy "mk_MK"
+END LC_TELEPHONE
+
+
+LC_MEASUREMENT
+% This is the ISO_IEC TR14652 Locale definition for the
+%
+measurement 1
+
+END LC_MEASUREMENT

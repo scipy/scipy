@@ -1,0 +1,10 @@
+default partial xkb_types "Shift_Cancels_Caps" {
+
+    override type "TWO_LEVEL" {
+	modifiers = Shift + Lock;
+	map[Shift] = Level2;
+	preserve[Lock] = Lock;
+	level_name[Level1] = "Base";
+	level_name[Level2] = "Shift";
+    };
+};

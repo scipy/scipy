@@ -1,0 +1,4 @@
+The language used by the program is not the one set by the environment variables
+LANG, LC_MESSAGES, LC_ALL, but rather a setting set in the KDE control center.
+The latter may be overridden through the KDE_LANG environment variable, whose
+value should be a locale name.

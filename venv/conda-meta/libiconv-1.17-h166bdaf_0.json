@@ -1,0 +1,529 @@
+{
+  "build": "h166bdaf_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [],
+  "depends": [
+    "libgcc-ng >=10.3.0"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/libiconv-1.17-h166bdaf_0",
+  "features": "",
+  "files": [
+    "bin/iconv",
+    "include/iconv.h",
+    "include/libcharset.h",
+    "include/localcharset.h",
+    "lib/libcharset.a",
+    "lib/libcharset.so",
+    "lib/libcharset.so.1",
+    "lib/libcharset.so.1.0.0",
+    "lib/libiconv.a",
+    "lib/libiconv.so",
+    "lib/libiconv.so.2",
+    "lib/libiconv.so.2.6.1",
+    "share/doc/iconv.1.html",
+    "share/doc/iconv.3.html",
+    "share/doc/iconv_close.3.html",
+    "share/doc/iconv_open.3.html",
+    "share/doc/iconv_open_into.3.html",
+    "share/doc/iconvctl.3.html",
+    "share/locale/af/LC_MESSAGES/libiconv.mo",
+    "share/locale/bg/LC_MESSAGES/libiconv.mo",
+    "share/locale/ca/LC_MESSAGES/libiconv.mo",
+    "share/locale/cs/LC_MESSAGES/libiconv.mo",
+    "share/locale/da/LC_MESSAGES/libiconv.mo",
+    "share/locale/de/LC_MESSAGES/libiconv.mo",
+    "share/locale/el/LC_MESSAGES/libiconv.mo",
+    "share/locale/eo/LC_MESSAGES/libiconv.mo",
+    "share/locale/es/LC_MESSAGES/libiconv.mo",
+    "share/locale/et/LC_MESSAGES/libiconv.mo",
+    "share/locale/fi/LC_MESSAGES/libiconv.mo",
+    "share/locale/fr/LC_MESSAGES/libiconv.mo",
+    "share/locale/ga/LC_MESSAGES/libiconv.mo",
+    "share/locale/gl/LC_MESSAGES/libiconv.mo",
+    "share/locale/hr/LC_MESSAGES/libiconv.mo",
+    "share/locale/hu/LC_MESSAGES/libiconv.mo",
+    "share/locale/id/LC_MESSAGES/libiconv.mo",
+    "share/locale/it/LC_MESSAGES/libiconv.mo",
+    "share/locale/ja/LC_MESSAGES/libiconv.mo",
+    "share/locale/ko/LC_MESSAGES/libiconv.mo",
+    "share/locale/lt/LC_MESSAGES/libiconv.mo",
+    "share/locale/nl/LC_MESSAGES/libiconv.mo",
+    "share/locale/pl/LC_MESSAGES/libiconv.mo",
+    "share/locale/pt_BR/LC_MESSAGES/libiconv.mo",
+    "share/locale/rm/LC_MESSAGES/libiconv.mo",
+    "share/locale/ro/LC_MESSAGES/libiconv.mo",
+    "share/locale/ru/LC_MESSAGES/libiconv.mo",
+    "share/locale/sk/LC_MESSAGES/libiconv.mo",
+    "share/locale/sl/LC_MESSAGES/libiconv.mo",
+    "share/locale/sq/LC_MESSAGES/libiconv.mo",
+    "share/locale/sr/LC_MESSAGES/libiconv.mo",
+    "share/locale/sv/LC_MESSAGES/libiconv.mo",
+    "share/locale/tr/LC_MESSAGES/libiconv.mo",
+    "share/locale/uk/LC_MESSAGES/libiconv.mo",
+    "share/locale/vi/LC_MESSAGES/libiconv.mo",
+    "share/locale/wa/LC_MESSAGES/libiconv.mo",
+    "share/locale/zh_CN/LC_MESSAGES/libiconv.mo",
+    "share/locale/zh_TW/LC_MESSAGES/libiconv.mo",
+    "share/man/man1/iconv.1",
+    "share/man/man3/iconv.3",
+    "share/man/man3/iconv_close.3",
+    "share/man/man3/iconv_open.3",
+    "share/man/man3/iconv_open_into.3",
+    "share/man/man3/iconvctl.3"
+  ],
+  "fn": "libiconv-1.17-h166bdaf_0.tar.bz2",
+  "license": "GPL and LGPL",
+  "link": {
+    "source": "/opt/conda/pkgs/libiconv-1.17-h166bdaf_0",
+    "type": 1
+  },
+  "md5": "b62b52da46c39ee2bc3c162ac7f1804d",
+  "name": "libiconv",
+  "package_tarball_full_path": "/opt/conda/pkgs/libiconv-1.17-h166bdaf_0.tar.bz2",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "bin/iconv",
+        "file_mode": "binary",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/libiconv_1652700625153/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pl",
+        "sha256": "e9c3348a7c3bf6d9c035ed6e75b6fd2d77aa849cea207151a74a419b90a497bc",
+        "sha256_in_prefix": "1d77093d640f30de75d9858c9febaa53298fc7038ce86ec57afe2ab7965fd101",
+        "size_in_bytes": 44640
+      },
+      {
+        "_path": "include/iconv.h",
+        "path_type": "hardlink",
+        "sha256": "e91292216b94f7c6f249414260e827f11c051ed148a57ee3d6dac77bc5116c18",
+        "sha256_in_prefix": "e91292216b94f7c6f249414260e827f11c051ed148a57ee3d6dac77bc5116c18",
+        "size_in_bytes": 9248
+      },
+      {
+        "_path": "include/libcharset.h",
+        "path_type": "hardlink",
+        "sha256": "180d05ba6adb348e150c6973ab795fe422da0b05e09f8ba7c369746ed1901702",
+        "sha256_in_prefix": "180d05ba6adb348e150c6973ab795fe422da0b05e09f8ba7c369746ed1901702",
+        "size_in_bytes": 1510
+      },
+      {
+        "_path": "include/localcharset.h",
+        "path_type": "hardlink",
+        "sha256": "67f01a81a41eab468313b34fb153aa11fe273b829c529e3a820a3877438d20e4",
+        "sha256_in_prefix": "67f01a81a41eab468313b34fb153aa11fe273b829c529e3a820a3877438d20e4",
+        "size_in_bytes": 6338
+      },
+      {
+        "_path": "lib/libcharset.a",
+        "path_type": "hardlink",
+        "sha256": "813232724494159a5cf12f511eb2434a64c8b0a024e7348d8f059d90edda21e3",
+        "sha256_in_prefix": "813232724494159a5cf12f511eb2434a64c8b0a024e7348d8f059d90edda21e3",
+        "size_in_bytes": 3416
+      },
+      {
+        "_path": "lib/libcharset.so",
+        "path_type": "softlink",
+        "sha256": "71c065fcf2dd8dec1714ae8be0550c3d14564d350a6eb015295836911b14e21f",
+        "size_in_bytes": 15456
+      },
+      {
+        "_path": "lib/libcharset.so.1",
+        "path_type": "softlink",
+        "sha256": "71c065fcf2dd8dec1714ae8be0550c3d14564d350a6eb015295836911b14e21f",
+        "size_in_bytes": 15456
+      },
+      {
+        "_path": "lib/libcharset.so.1.0.0",
+        "path_type": "hardlink",
+        "sha256": "71c065fcf2dd8dec1714ae8be0550c3d14564d350a6eb015295836911b14e21f",
+        "sha256_in_prefix": "71c065fcf2dd8dec1714ae8be0550c3d14564d350a6eb015295836911b14e21f",
+        "size_in_bytes": 15456
+      },
+      {
+        "_path": "lib/libiconv.a",
+        "path_type": "hardlink",
+        "sha256": "407bc43bcab40fa21b9f989da70a294219889b63007598ee5189f9d50b7f4898",
+        "sha256_in_prefix": "407bc43bcab40fa21b9f989da70a294219889b63007598ee5189f9d50b7f4898",
+        "size_in_bytes": 1067742
+      },
+      {
+        "_path": "lib/libiconv.so",
+        "path_type": "softlink",
+        "sha256": "8711e124e9f101d82a53490c5cbb97ed37e22321947117e759fc317baef596d0",
+        "size_in_bytes": 984296
+      },
+      {
+        "_path": "lib/libiconv.so.2",
+        "path_type": "softlink",
+        "sha256": "8711e124e9f101d82a53490c5cbb97ed37e22321947117e759fc317baef596d0",
+        "size_in_bytes": 984296
+      },
+      {
+        "_path": "lib/libiconv.so.2.6.1",
+        "path_type": "hardlink",
+        "sha256": "8711e124e9f101d82a53490c5cbb97ed37e22321947117e759fc317baef596d0",
+        "sha256_in_prefix": "8711e124e9f101d82a53490c5cbb97ed37e22321947117e759fc317baef596d0",
+        "size_in_bytes": 984296
+      },
+      {
+        "_path": "share/doc/iconv.1.html",
+        "path_type": "hardlink",
+        "sha256": "04ccd138b47beafeec1f8f3d76dde244cff865c56eddcdd9134c57c73de17b05",
+        "sha256_in_prefix": "04ccd138b47beafeec1f8f3d76dde244cff865c56eddcdd9134c57c73de17b05",
+        "size_in_bytes": 6438
+      },
+      {
+        "_path": "share/doc/iconv.3.html",
+        "path_type": "hardlink",
+        "sha256": "4cd69e9b4af572e0c15d2103fade823daf63e28ee669a0944cb7cac380791ea0",
+        "sha256_in_prefix": "4cd69e9b4af572e0c15d2103fade823daf63e28ee669a0944cb7cac380791ea0",
+        "size_in_bytes": 6335
+      },
+      {
+        "_path": "share/doc/iconv_close.3.html",
+        "path_type": "hardlink",
+        "sha256": "734221f2cb9f36fabce70db745e63f962b407d994c596d29da5ebc9131479fa4",
+        "sha256_in_prefix": "734221f2cb9f36fabce70db745e63f962b407d994c596d29da5ebc9131479fa4",
+        "size_in_bytes": 2054
+      },
+      {
+        "_path": "share/doc/iconv_open.3.html",
+        "path_type": "hardlink",
+        "sha256": "346a3afb79e306312fbd119925d740c7f2ebd5b6120e06eb428963b649f73771",
+        "sha256_in_prefix": "346a3afb79e306312fbd119925d740c7f2ebd5b6120e06eb428963b649f73771",
+        "size_in_bytes": 9093
+      },
+      {
+        "_path": "share/doc/iconv_open_into.3.html",
+        "path_type": "hardlink",
+        "sha256": "8e88aee5f85b2ea44e3884c7b20d081de7c561b9b3eb607cd7a9a5c4046d174d",
+        "sha256_in_prefix": "8e88aee5f85b2ea44e3884c7b20d081de7c561b9b3eb607cd7a9a5c4046d174d",
+        "size_in_bytes": 3406
+      },
+      {
+        "_path": "share/doc/iconvctl.3.html",
+        "path_type": "hardlink",
+        "sha256": "014e9090c71736e5e3bd3171fe26e9a98e2d4c4425751549fb42816edb45e2fd",
+        "sha256_in_prefix": "014e9090c71736e5e3bd3171fe26e9a98e2d4c4425751549fb42816edb45e2fd",
+        "size_in_bytes": 4399
+      },
+      {
+        "_path": "share/locale/af/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "4209ee467043d7cf96dde0681e22cf130135e9748591bdfd95b164f6a22f141e",
+        "sha256_in_prefix": "4209ee467043d7cf96dde0681e22cf130135e9748591bdfd95b164f6a22f141e",
+        "size_in_bytes": 733
+      },
+      {
+        "_path": "share/locale/bg/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "3165e7408489c7449e3daf6423ffdce55c88cffbf2f17e5b49a7aea98bbbcf64",
+        "sha256_in_prefix": "3165e7408489c7449e3daf6423ffdce55c88cffbf2f17e5b49a7aea98bbbcf64",
+        "size_in_bytes": 9074
+      },
+      {
+        "_path": "share/locale/ca/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "f5dda5ff165aeacc90668235607c4a613dd1222bbe196b5f3516904e40010e31",
+        "sha256_in_prefix": "f5dda5ff165aeacc90668235607c4a613dd1222bbe196b5f3516904e40010e31",
+        "size_in_bytes": 756
+      },
+      {
+        "_path": "share/locale/cs/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "e0feece2052c7394b02c795f4ed241d082d64bf7d63df55b301bdb4ff178763f",
+        "sha256_in_prefix": "e0feece2052c7394b02c795f4ed241d082d64bf7d63df55b301bdb4ff178763f",
+        "size_in_bytes": 7245
+      },
+      {
+        "_path": "share/locale/da/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "15e97d86ba252f50799e484dce7c489f9291fa3938ca9e3d09fe7b56b644280b",
+        "sha256_in_prefix": "15e97d86ba252f50799e484dce7c489f9291fa3938ca9e3d09fe7b56b644280b",
+        "size_in_bytes": 6218
+      },
+      {
+        "_path": "share/locale/de/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "2a2ec0523db7b73db698a47adcc556e55447cad52b9d01a7e518eda66b9ef29b",
+        "sha256_in_prefix": "2a2ec0523db7b73db698a47adcc556e55447cad52b9d01a7e518eda66b9ef29b",
+        "size_in_bytes": 7467
+      },
+      {
+        "_path": "share/locale/el/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "c4a8666611c6e0dd5eed56e6daf0243e78fa2b28c724d0ce7d4d173ae11f1ba0",
+        "sha256_in_prefix": "c4a8666611c6e0dd5eed56e6daf0243e78fa2b28c724d0ce7d4d173ae11f1ba0",
+        "size_in_bytes": 775
+      },
+      {
+        "_path": "share/locale/eo/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "225bc48fc91dbc00b2add91980d47b4742b53a58807fb2ae15c468183129882f",
+        "sha256_in_prefix": "225bc48fc91dbc00b2add91980d47b4742b53a58807fb2ae15c468183129882f",
+        "size_in_bytes": 6171
+      },
+      {
+        "_path": "share/locale/es/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "e976ac955f520e8a1ea6a309c54ef6a7ff63999eb35da56494dc17d66a39a15d",
+        "sha256_in_prefix": "e976ac955f520e8a1ea6a309c54ef6a7ff63999eb35da56494dc17d66a39a15d",
+        "size_in_bytes": 6372
+      },
+      {
+        "_path": "share/locale/et/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "31f0ca25a3b0bafd8aa108129a06657232eaee3b8b9626b2332219dbc23c7fd2",
+        "sha256_in_prefix": "31f0ca25a3b0bafd8aa108129a06657232eaee3b8b9626b2332219dbc23c7fd2",
+        "size_in_bytes": 6079
+      },
+      {
+        "_path": "share/locale/fi/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "7c8e77b0e3ad914a3b8a4d2dce4a96d0899a1902500f078f88a83e5532a87e7e",
+        "sha256_in_prefix": "7c8e77b0e3ad914a3b8a4d2dce4a96d0899a1902500f078f88a83e5532a87e7e",
+        "size_in_bytes": 6214
+      },
+      {
+        "_path": "share/locale/fr/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "09e2ad32a6362b463302d64ebc0e3ed6deff2ff321672ca3e1bf070f881a2397",
+        "sha256_in_prefix": "09e2ad32a6362b463302d64ebc0e3ed6deff2ff321672ca3e1bf070f881a2397",
+        "size_in_bytes": 6460
+      },
+      {
+        "_path": "share/locale/ga/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "9b040428fe3166b72c2a8189d3a476912a6c9f618760c3f3a3395f0759a65ca0",
+        "sha256_in_prefix": "9b040428fe3166b72c2a8189d3a476912a6c9f618760c3f3a3395f0759a65ca0",
+        "size_in_bytes": 6793
+      },
+      {
+        "_path": "share/locale/gl/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "c23c85f0207641bbb649e4c6ec582b7359759465aca70fd0c07fae12184d917d",
+        "sha256_in_prefix": "c23c85f0207641bbb649e4c6ec582b7359759465aca70fd0c07fae12184d917d",
+        "size_in_bytes": 6462
+      },
+      {
+        "_path": "share/locale/hr/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "703ba2ce42fc1620e9cd8b3074caad906eab9ce56f7300f8635287e8f15cc522",
+        "sha256_in_prefix": "703ba2ce42fc1620e9cd8b3074caad906eab9ce56f7300f8635287e8f15cc522",
+        "size_in_bytes": 6232
+      },
+      {
+        "_path": "share/locale/hu/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "1da3b432b1cf9ece27b2a6d678349611e5aa0e755fd0b40d0a4c7933bae24c1f",
+        "sha256_in_prefix": "1da3b432b1cf9ece27b2a6d678349611e5aa0e755fd0b40d0a4c7933bae24c1f",
+        "size_in_bytes": 6731
+      },
+      {
+        "_path": "share/locale/id/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "c486ed0b1e87790c8ca339d3c8cc75b6419e4c3dbbc89d635c307c4b961791a5",
+        "sha256_in_prefix": "c486ed0b1e87790c8ca339d3c8cc75b6419e4c3dbbc89d635c307c4b961791a5",
+        "size_in_bytes": 6841
+      },
+      {
+        "_path": "share/locale/it/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "f6f47365ffe0c9b75af38b937eb15f95ff9d72d6a6ccdaacd5c56044a6148ba5",
+        "sha256_in_prefix": "f6f47365ffe0c9b75af38b937eb15f95ff9d72d6a6ccdaacd5c56044a6148ba5",
+        "size_in_bytes": 6427
+      },
+      {
+        "_path": "share/locale/ja/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "7f6cf72f01eb1063af3d32de3bc7db2ce2039dd0bb909bc50124fe79b086449d",
+        "sha256_in_prefix": "7f6cf72f01eb1063af3d32de3bc7db2ce2039dd0bb909bc50124fe79b086449d",
+        "size_in_bytes": 6746
+      },
+      {
+        "_path": "share/locale/ko/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "9c39073cbbe767c5e551fd664bbb85529cc3df9112dec1328fabec803dcf9c47",
+        "sha256_in_prefix": "9c39073cbbe767c5e551fd664bbb85529cc3df9112dec1328fabec803dcf9c47",
+        "size_in_bytes": 7108
+      },
+      {
+        "_path": "share/locale/lt/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "1a0ccccb94b15de407429b976b96e54c0f0f55f75cf73c6b32bad4540238fb8b",
+        "sha256_in_prefix": "1a0ccccb94b15de407429b976b96e54c0f0f55f75cf73c6b32bad4540238fb8b",
+        "size_in_bytes": 4223
+      },
+      {
+        "_path": "share/locale/nl/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "d6e4c2528de5c872b33af838318b5d2f67e72889cce8912579d34a78036ba3f2",
+        "sha256_in_prefix": "d6e4c2528de5c872b33af838318b5d2f67e72889cce8912579d34a78036ba3f2",
+        "size_in_bytes": 6918
+      },
+      {
+        "_path": "share/locale/pl/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "5343a7fb679b57245ac140febb67933d29ba4885822a5cfb0d6d1c660f096073",
+        "sha256_in_prefix": "5343a7fb679b57245ac140febb67933d29ba4885822a5cfb0d6d1c660f096073",
+        "size_in_bytes": 7174
+      },
+      {
+        "_path": "share/locale/pt_BR/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "28de4e4ad3887b1733016938d699fee4c4f5270ceb8d5e4df12a36473377d660",
+        "sha256_in_prefix": "28de4e4ad3887b1733016938d699fee4c4f5270ceb8d5e4df12a36473377d660",
+        "size_in_bytes": 6549
+      },
+      {
+        "_path": "share/locale/rm/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "b312e7917da6ba4189f4407229d48e71e882ca4dfbb754379ab95de8f2164886",
+        "sha256_in_prefix": "b312e7917da6ba4189f4407229d48e71e882ca4dfbb754379ab95de8f2164886",
+        "size_in_bytes": 750
+      },
+      {
+        "_path": "share/locale/ro/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "49aaa5fb7f89a17629aacc9911d998195ade20dd5deb69660d5e1681ac30eb44",
+        "sha256_in_prefix": "49aaa5fb7f89a17629aacc9911d998195ade20dd5deb69660d5e1681ac30eb44",
+        "size_in_bytes": 7529
+      },
+      {
+        "_path": "share/locale/ru/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "a89832b57947b3ddf93113914de004dcd89fcb90412a37fa5818eabefb044dc5",
+        "sha256_in_prefix": "a89832b57947b3ddf93113914de004dcd89fcb90412a37fa5818eabefb044dc5",
+        "size_in_bytes": 9082
+      },
+      {
+        "_path": "share/locale/sk/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "c6e5a2a4ac296fa2fafd3327214bd98c7f31641e50d5787840a79d2680e4cd4e",
+        "sha256_in_prefix": "c6e5a2a4ac296fa2fafd3327214bd98c7f31641e50d5787840a79d2680e4cd4e",
+        "size_in_bytes": 7262
+      },
+      {
+        "_path": "share/locale/sl/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "589a3fed97599d5e740ea8f857e72f99592b2068a58cc5d1fc49b87f92e09ef9",
+        "sha256_in_prefix": "589a3fed97599d5e740ea8f857e72f99592b2068a58cc5d1fc49b87f92e09ef9",
+        "size_in_bytes": 6267
+      },
+      {
+        "_path": "share/locale/sq/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "2f1765206d3b77bf09abaa3b1fddb1b144216863e62057bb870ba47106c24ebc",
+        "sha256_in_prefix": "2f1765206d3b77bf09abaa3b1fddb1b144216863e62057bb870ba47106c24ebc",
+        "size_in_bytes": 757
+      },
+      {
+        "_path": "share/locale/sr/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "646560ac9aa2db899deb7e7ef6be736f2ea879ba9bdaaa3f515c77185be6713c",
+        "sha256_in_prefix": "646560ac9aa2db899deb7e7ef6be736f2ea879ba9bdaaa3f515c77185be6713c",
+        "size_in_bytes": 8417
+      },
+      {
+        "_path": "share/locale/sv/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "602cc1bbab4df293f0514a18d7c2be87ff94124f44ff1d994355e6dd8bdd4bde",
+        "sha256_in_prefix": "602cc1bbab4df293f0514a18d7c2be87ff94124f44ff1d994355e6dd8bdd4bde",
+        "size_in_bytes": 6918
+      },
+      {
+        "_path": "share/locale/tr/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "8c8b4125d658b29ce31a9248bef95f2d12f7484fddb5d3ab927bc89cfb24578c",
+        "sha256_in_prefix": "8c8b4125d658b29ce31a9248bef95f2d12f7484fddb5d3ab927bc89cfb24578c",
+        "size_in_bytes": 750
+      },
+      {
+        "_path": "share/locale/uk/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "78b1eda8e94fd02d3592de930c31e04c804e5c333a3771f99d6fbfd65ee83f7a",
+        "sha256_in_prefix": "78b1eda8e94fd02d3592de930c31e04c804e5c333a3771f99d6fbfd65ee83f7a",
+        "size_in_bytes": 9664
+      },
+      {
+        "_path": "share/locale/vi/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "5b5327ba3620c3b657b7cdb7c8b03cc629877a3962cbfb929f0663856bcb71e7",
+        "sha256_in_prefix": "5b5327ba3620c3b657b7cdb7c8b03cc629877a3962cbfb929f0663856bcb71e7",
+        "size_in_bytes": 7473
+      },
+      {
+        "_path": "share/locale/wa/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "e5196d6ed13bac907f6809127f16357648fc770d08b09b1d0361291ec493560d",
+        "sha256_in_prefix": "e5196d6ed13bac907f6809127f16357648fc770d08b09b1d0361291ec493560d",
+        "size_in_bytes": 6848
+      },
+      {
+        "_path": "share/locale/zh_CN/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "0aa9781dd830769d42050546f2729bd266d1ee533b8419d1836e8c98dedb3499",
+        "sha256_in_prefix": "0aa9781dd830769d42050546f2729bd266d1ee533b8419d1836e8c98dedb3499",
+        "size_in_bytes": 6504
+      },
+      {
+        "_path": "share/locale/zh_TW/LC_MESSAGES/libiconv.mo",
+        "path_type": "hardlink",
+        "sha256": "6b8d38878e8254309f226a7dc0d0015b9a13bc35dfe1ab7885967ee660ece3a6",
+        "sha256_in_prefix": "6b8d38878e8254309f226a7dc0d0015b9a13bc35dfe1ab7885967ee660ece3a6",
+        "size_in_bytes": 6439
+      },
+      {
+        "_path": "share/man/man1/iconv.1",
+        "path_type": "hardlink",
+        "sha256": "ebf2471df5e491515a2f5895365256900483139ecffaddbfbdb6944e740f6fb7",
+        "sha256_in_prefix": "ebf2471df5e491515a2f5895365256900483139ecffaddbfbdb6944e740f6fb7",
+        "size_in_bytes": 4231
+      },
+      {
+        "_path": "share/man/man3/iconv.3",
+        "path_type": "hardlink",
+        "sha256": "a2fa74a5953761e665a145974447d46611fc87dc630ba79308731102e56f0104",
+        "sha256_in_prefix": "a2fa74a5953761e665a145974447d46611fc87dc630ba79308731102e56f0104",
+        "size_in_bytes": 4239
+      },
+      {
+        "_path": "share/man/man3/iconv_close.3",
+        "path_type": "hardlink",
+        "sha256": "dd551c417a6ba805987735de4eddf37920f6b369c06b076a723062c3219c2ceb",
+        "sha256_in_prefix": "dd551c417a6ba805987735de4eddf37920f6b369c06b076a723062c3219c2ceb",
+        "size_in_bytes": 1044
+      },
+      {
+        "_path": "share/man/man3/iconv_open.3",
+        "path_type": "hardlink",
+        "sha256": "a4bde285d63e008dd2f1502202c78a25429f93a9db3519a601b03369df1ebde3",
+        "sha256_in_prefix": "a4bde285d63e008dd2f1502202c78a25429f93a9db3519a601b03369df1ebde3",
+        "size_in_bytes": 5286
+      },
+      {
+        "_path": "share/man/man3/iconv_open_into.3",
+        "path_type": "hardlink",
+        "sha256": "5c710423e822a4ddbec2c0e39c4a536096efc4c8975fcb2ab8a14e8ceada6360",
+        "sha256_in_prefix": "5c710423e822a4ddbec2c0e39c4a536096efc4c8975fcb2ab8a14e8ceada6360",
+        "size_in_bytes": 1822
+      },
+      {
+        "_path": "share/man/man3/iconvctl.3",
+        "path_type": "hardlink",
+        "sha256": "1b5390b90fbd831aeea0915857b27a408c1ca47f2fd93158585cb44c3f92e56a",
+        "sha256_in_prefix": "1b5390b90fbd831aeea0915857b27a408c1ca47f2fd93158585cb44c3f92e56a",
+        "size_in_bytes": 2385
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "6a81ebac9f1aacdf2b4f945c87ad62b972f0f69c8e0981d68e111739e6720fd7",
+  "size": 1450368,
+  "subdir": "linux-64",
+  "timestamp": 1652700749886,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/libiconv-1.17-h166bdaf_0.tar.bz2",
+  "version": "1.17"
+}

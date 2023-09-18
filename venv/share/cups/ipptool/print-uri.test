@@ -1,0 +1,27 @@
+# Print a file using Print-URI
+{
+	# The name of the test...
+	NAME "Print file using Print-URI"
+
+	# The operation to use
+	OPERATION Print-URI
+
+	# Attributes, starting in the operation group...
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR uri document-uri file://$filename
+
+	GROUP job-attributes-tag
+	ATTR integer copies 1
+
+	# What statuses are OK?
+	STATUS successful-ok
+	STATUS successful-ok-ignored-or-substituted-attributes
+
+	# What attributes do we expect?
+	EXPECT job-id
+	EXPECT job-uri
+}

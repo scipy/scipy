@@ -1,0 +1,116 @@
+// Keyboard layouts for Malaysia.
+
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+    name[Group1]= "Malay (Jawi, Arabic Keyboard)";
+
+    key <AE01> {[  U0661,           exclam,  1  ]};
+    key <AE02> {[  U0662,               at,  2  ]};
+    key <AE03> {[  U0663,       numbersign,  3  ]};
+    key <AE04> {[  U0664,           dollar,  4  ]};
+    key <AE05> {[  U0665,   Arabic_percent,  5  ]};
+    key <AE06> {[  U0666,      asciicircum,  6  ]};
+    key <AE07> {[  U0667,        ampersand,  7  ]};
+    key <AE08> {[  U0668,         asterisk,  8  ]};
+    key <AE09> {[  U0669,       parenright,  9  ]};
+    key <AE10> {[  U0660,        parenleft,  0  ]};
+    key <AE11> {[  minus,       underscore      ]};
+    key <AE12> {[  equal,             plus      ]};
+
+    key <AD01> {[    Arabic_dad,     U0686      ]};
+    key <AD02> {[    Arabic_sad,     U06A0      ]};
+    key <AD03> {[   Arabic_theh,     U06AC      ]};
+    key <AD04> {[    Arabic_qaf,     U0640      ]};
+    key <AD05> {[    Arabic_feh,     UFEF9,              U06A4  ]};
+    key <AD06> {[  Arabic_ghain,Arabic_hamzaunderalef]};
+    key <AD07> {[    Arabic_ain,     grave      ]};
+    key <AD08> {[     Arabic_ha,  division      ]};
+    key <AD09> {[   Arabic_khah,  multiply      ]};
+    key <AD10> {[         U06A9,Arabic_semicolon]};
+    key <AD11> {[   Arabic_jeem,      less,              U0686  ]};
+    key <AD12> {[    Arabic_dal,   greater      ]};
+
+    key <AC01> {[  Arabic_sheen,              U06CF  ]};
+    key <AC02> {[   Arabic_seen,              U06A8  ]};
+    key <AC03> {[    Arabic_yeh,       bracketright  ]};
+    key <AC04> {[    Arabic_beh,        bracketleft,     U067E  ]};
+    key <AC05> {[    Arabic_lam,              UFEF7  ]};
+    key <AC06> {[   Arabic_alef, Arabic_hamzaonalef  ]};
+    key <AC07> {[    Arabic_teh,     Arabic_tatweel  ]};
+    key <AC08> {[   Arabic_noon,       Arabic_comma  ]};
+    key <AC09> {[   Arabic_meem,              slash  ]};
+    key <AC10> {[         U06A9,              colon,     U06AF  ]};
+    key <AC11> {[    Arabic_tah,           quotedbl  ]};
+
+    key <LSGT> {[               bar,      brokenbar  ]};
+    key <AB01> {[ Arabic_hamzaonyeh,     asciitilde,     guillemotright  ]};
+    key <AB02> {[      Arabic_hamza,          U06BD,     guillemotleft   ]};
+    key <AB03> {[ Arabic_hamzaonwaw,     braceright  ]};
+    key <AB04> {[         Arabic_ra,      braceleft  ]};
+    key <AB05> {[             UFEFB,          UFEF5  ]};
+    key <AB06> {[Arabic_alefmaksura, Arabic_maddaonalef]};
+    key <AB07> {[ Arabic_tehmarbuta,     apostrophe  ]};
+    key <AB08> {[        Arabic_waw,          U200C,     comma  ]};
+    key <AB09> {[       Arabic_zain,         period  ]};
+    key <AB10> {[        Arabic_zah, Arabic_question_mark]};
+
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "phonetic"
+{
+    name[Group1] = "Malay (Jawi, phonetic)";
+
+    key <AE01> {[  U0661,                exclam,  1  ]};
+    key <AE02> {[  U0662,          Arabic_hamza,  2  ]};
+    key <AE03> {[  U0663,    Arabic_hamzaonalef,  3  ]};
+    key <AE04> {[  U0664,    Arabic_maddaonalef,  4  ]};
+    key <AE05> {[  U0665, Arabic_hamzaunderalef,  5  ]};
+    key <AE06> {[  U0666,     Arabic_hamzaonyeh,  6  ]};
+    key <AE07> {[  U0667,     Arabic_hamzaonwaw,  7  ]};
+    key <AE08> {[  U0668,              NoSymbol,  8  ]};
+    key <AE09> {[  U0669,            parenright,  9  ]};
+    key <AE10> {[  U0660,             parenleft,  0  ]};
+    key <AE11> {[  minus,            underscore      ]};
+    key <AE12> {[  equal,                  plus      ]};
+
+    key <AD01> {[  Arabic_qaf,  Arabic_veh          ]};
+    key <AD02> {[  Arabic_waw,  Arabic_shadda       ]};
+    key <AD03> {[  Arabic_ain,  Arabic_ghain        ]};
+    key <AD04> {[   Arabic_ra,  Arabic_ghain        ]};
+    key <AD05> {[  Arabic_teh,  Arabic_tehmarbuta   ]};
+    key <AD06> {[  Arabic_yeh,  Arabic_alefmaksura  ]};
+    key <AD07> {[  Arabic_waw,  Arabic_tah          ]};
+    key <AD08> {[  Arabic_yeh,  Arabic_tatweel      ]};
+    key <AD09> {[  Arabic_ain,  U200C               ]}; // ZWNJ
+    key <AD10> {[  Arabic_veh,  Arabic_teh          ]};
+    key <AD11> {[bracketright,  braceright          ]};
+    key <AD12> {[ bracketleft,  braceleft           ]};
+
+    key <AC01> {[ Arabic_alef,  Arabic_maddaonalef  ]};
+    key <AC02> {[ Arabic_seen,  Arabic_sheen        ]};
+    key <AC03> {[  Arabic_dal,  Arabic_dad          ]};
+    key <AC04> {[  Arabic_feh,  Arabic_veh          ]};
+    key <AC05> {[       U06AC,  U06A0               ]};
+    key <AC06> {[   Arabic_ha,  Arabic_hah          ]};
+    key <AC07> {[ Arabic_jeem,  Arabic_tcheh        ]};
+    key <AC08> {[  Arabic_kaf,  Arabic_qaf          ]};
+    key <AC09> {[  Arabic_lam,  UFEFB               ]};
+    key <AC10> {[Arabic_semicolon,  colon           ]};
+    key <AC11> {[  apostrophe,  quotedbl            ]};
+
+    key <LSGT> {[         bar,  brokenbar           ]};
+    key <AB01> {[ Arabic_zain,  Arabic_thal         ]};
+    key <AB02> {[ Arabic_khah,  Arabic_hah          ]};
+    key <AB03> {[Arabic_tcheh,  UFEB9               ]};
+    key <AB04> {[       U06CF,  Arabic_zah          ]};
+    key <AB05> {[  Arabic_beh,  Arabic_peh          ]};
+    key <AB06> {[ Arabic_noon,  U06BD               ]};
+    key <AB07> {[ Arabic_meem,  Arabic_maddaonalef  ]};
+    key <AB08> {[Arabic_comma,  greater             ]};
+    key <AB09> {[      period,  less                ]};
+    key <AB10> {[       slash,  Arabic_question_mark]};
+
+    include "level3(ralt_switch)"
+};

@@ -1,0 +1,36 @@
+{
+  "build": "ha770c72_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [],
+  "depends": [
+    "c-compiler 1.6.0 hd590300_0",
+    "cxx-compiler 1.6.0 h00ab1b0_0",
+    "fortran-compiler 1.6.0 heb67821_0"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/compilers-1.6.0-ha770c72_0",
+  "features": "",
+  "files": [],
+  "fn": "compilers-1.6.0-ha770c72_0.conda",
+  "license": "BSD-3-Clause",
+  "license_family": "BSD",
+  "link": {
+    "source": "/opt/conda/pkgs/compilers-1.6.0-ha770c72_0",
+    "type": 1
+  },
+  "md5": "e2259de4640a51a28c21931ae98e4975",
+  "name": "compilers",
+  "package_tarball_full_path": "/opt/conda/pkgs/compilers-1.6.0-ha770c72_0.conda",
+  "paths_data": {
+    "paths": [],
+    "paths_version": 1
+  },
+  "requested_spec": "compilers",
+  "sha256": "05bce88c6f89327746ffcf53801994bce3eca758875e3c542594e12c09cb6db9",
+  "size": 6983,
+  "subdir": "linux-64",
+  "timestamp": 1689097491629,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/compilers-1.6.0-ha770c72_0.conda",
+  "version": "1.6.0"
+}

@@ -1,0 +1,13 @@
+LICENSE
+
+Lipi core toolkit is licensed under the MIT license.
+
+- MIT-Style License
+http://www.opensource.org/licenses/mit-license.php
+
+This is the weakest license, meaning it applies the least restrictions. It is used for 
+most parts of the Lipi Toolkit, and especially for libraries which are potentially 
+included (by copying) into other libraries (as sub-components). The intention is to make 
+sure the covered software can be used really everywhere and for every reason without any 
+real restrictions. 
+

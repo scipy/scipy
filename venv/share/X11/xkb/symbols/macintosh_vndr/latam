@@ -1,0 +1,35 @@
+default partial alphanumeric_keys 
+xkb_symbols "basic" {
+
+    // Describes the differences between a very simple mac_US
+    // keyboard and a very simple Spanish keyboard.
+
+    include "latin"
+    name[Group1]= "Latin American - Mac";
+
+    key <TLDE> {	[     bracketleft,    bracketright,        braceleft,      braceright	]	};
+    key <LSGT> {	[            less,         greater,      bracketleft,       braceleft	]	};
+    key <AE01> {	[               1,      exclamdown 	]	};
+    key <AE02> {	[               2,          exclam,               at,       oneeighth	]	};
+    key <AE03> {	[               3,      numbersign,    guillemotleft,  guillemotright	]	};
+    key <AE04> {	[               4,          dollar,              yen,     Icircumflex	]	};
+    key <AE05> {	[               5,         percent	]	};
+    key <AE06> {	[               6,           slash,        backslash,      Idiaeresis	]	};
+    key <AE07> {	[               7,       ampersand,              bar,          Iacute	]	};
+    key <AE08> {	[               8,        asterisk,           degree	]	};
+    key <AE09> {	[               9,       parenleft,         sterling,     Ocircumflex	]	};
+    key <AE10> {	[               0,      parenright     	]	};
+    key <AE11> {	[           minus,      underscore	]	};
+    key <AE12> {	[           equal,            plus,        plusminus	]	};
+    key <AD11> {	[      dead_grave,          degree 	]	};
+    key <AD12> {	[      dead_acute,  dead_diaeresis,              bar	]	};
+
+    key <AB08> {	[           comma,    questiondown   	]	};
+    key <AB09> {	[          period,        question     	]	};
+    key <AB10> {	[        ccedilla,        Ccedilla     	]	};
+    key	<AC10> {	[	   ntilde,          Ntilde,       asciitilde, dead_doubleacute	]	};
+    key <AC11> {	[       semicolon,    	     colon 	]	};
+    key <BKSL> {	[      apostrophe,        quotedbl	]	};
+
+    include "level3(ralt_switch)"
+};

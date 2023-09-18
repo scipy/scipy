@@ -1,0 +1,27 @@
+#ifndef QT_QT3DINPUT_MODULE_H
+#define QT_QT3DINPUT_MODULE_H
+#include <Qt3DInput/Qt3DInputDepends>
+#include "qabstractactioninput.h"
+#include "qabstractaxisinput.h"
+#include "qabstractphysicaldevice.h"
+#include "qaction.h"
+#include "qactioninput.h"
+#include "qanalogaxisinput.h"
+#include "qaxis.h"
+#include "qaxisaccumulator.h"
+#include "qaxissetting.h"
+#include "qbuttonaxisinput.h"
+#include "qinputaspect.h"
+#include "qinputchord.h"
+#include "qinputsequence.h"
+#include "qinputsettings.h"
+#include "qkeyboarddevice.h"
+#include "qkeyboardhandler.h"
+#include "qkeyevent.h"
+#include "qlogicaldevice.h"
+#include "qmousedevice.h"
+#include "qmouseevent.h"
+#include "qmousehandler.h"
+#include "qphysicaldevicecreatedchange.h"
+#include "qt3dinputversion.h"
+#endif

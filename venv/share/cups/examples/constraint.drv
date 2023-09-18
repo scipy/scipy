@@ -1,0 +1,48 @@
+// Include standard font and media definitions
+#include <font.defs>
+#include <media.defs>
+
+// List the fonts that are supported, in this case all standard
+// fonts...
+Font *
+
+// Manufacturer, model name, and version
+Manufacturer "Foo"
+ModelName "FooJet 2000"
+Version 1.0
+
+// Each filter provided by the driver...
+Filter application/vnd.cups-raster 100 rastertofoo
+
+// Supported page sizes
+*MediaSize Letter
+MediaSize A4
+
+// Supported resolutions
+*Resolution k 8 0 0 0 "600dpi/600 DPI"
+
+// Installable Option Group
+Group "InstallableOptions/Options Installed"
+
+  // Duplexing unit option
+  Option "Option1/Duplexing Unit" Boolean AnySetup 10
+    Choice True/Installed ""
+    *Choice "False/Not Installed" ""
+
+// General Option Group
+Group General
+
+  // Duplexing option
+  Option "Duplex/Two-Sided Printing" PickOne AnySetup 10
+    *Choice "None/No" "<</Duplex false>>setpagedevice"
+    Choice "DuplexNoTumble/Long Edge Binding"
+           "<</Duplex true/Tumble false>>setpagedevice"
+    Choice "DuplexTumble/Short Edge Binding"
+           "<</Duplex true/Tumble true>>setpagedevice"
+
+// Only allow duplexing if the duplexer is installed
+UIConstraints "*Duplex *Option1 False"
+
+// Specify the name of the PPD file we want to generate...
+PCFileName "foojet2k.ppd"
+

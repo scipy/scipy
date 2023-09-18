@@ -1,0 +1,37 @@
+# Print a test page using print-job
+{
+	# The name of the test...
+	NAME "Print file using Print-Job"
+
+	# The operation to use
+	OPERATION Print-Job
+
+	# Attributes, starting in the operation group...
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR mimeMediaType document-format $filetype
+
+	GROUP job-attributes-tag
+	ATTR integer copies 1
+        ATTR collection media-col {
+                MEMBER keyword media-source manual
+                MEMBER collection media-size {
+                        MEMBER integer x-dimension 21590
+                        MEMBER integer y-dimension 27940
+                }
+        }
+        ATTR keyword print-scaling none
+
+	FILE $filename
+
+	# What statuses are OK?
+	STATUS successful-ok
+	STATUS successful-ok-ignored-or-substituted-attributes
+
+	# What attributes do we expect?
+	EXPECT job-id
+	EXPECT job-uri
+}

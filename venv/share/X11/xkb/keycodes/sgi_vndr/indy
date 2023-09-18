@@ -1,0 +1,202 @@
+default xkb_keycodes "universal" {
+    minimum= 8;
+    maximum= 255;
+    include "sgi_vndr/indy(pc105)"
+    alternate <BKSL> = 91;
+    alternate <BKSL> = 100;
+    alternate <BKSL> = 101;
+};
+xkb_keycodes "pc101" {
+    minimum= 8;
+    maximum= 255;
+
+    <TLDE> = 22;
+    <AE01> = 30;
+    <AE02> = 38;
+    <AE03> = 46;
+    <AE04> = 45;
+    <AE05> = 54;
+    <AE06> = 62;
+    <AE07> = 69;
+    <AE08> = 70;
+    <AE09> = 78;
+    <AE10> = 77;
+    <AE11> = 86;
+    <AE12> = 93;
+    <BKSP> = 110;
+
+    <TAB>  = 21;
+    <AD01> = 29;
+    <AD02> = 37;
+    <AD03> = 44;
+    <AD04> = 53;
+    <AD05> = 52;
+    <AD06> = 61;
+    <AD07> = 68;
+    <AD08> = 75;
+    <AD09> = 76;
+    <AD10> = 85;
+    <AD11> = 92;
+    <AD12> = 99;
+    <RTRN> = 98;
+
+    <CAPS> = 28;
+    <AC01> = 36;
+    <AC02> = 35;
+    <AC03> = 43;
+    <AC04> = 51;
+    <AC05> = 60;
+    <AC06> = 59;
+    <AC07> = 67;
+    <AC08> = 74;
+    <AC09> = 83;
+    <AC10> = 84;
+    <AC11> = 90;
+
+    <LFSH> = 26;
+    <AB01> = 34;
+    <AB02> = 42;
+    <AB03> = 41;
+    <AB04> = 50;
+    <AB05> = 58;
+    <AB06> = 57;
+    <AB07> = 66;
+    <AB08> = 73;
+    <AB09> = 81;
+    <AB10> = 82;
+    <RTSH> = 97;
+    <BKSL> = 100;
+
+    <LALT> = 33;
+    <LCTL> = 25;
+    <SPCE> = 49;
+    <RCTL> = 96;
+    <RALT> = 65;
+
+    <ESC>  = 16;
+    <FK01> = 15;
+    <FK02> = 23;
+    <FK03> = 31;
+    <FK04> = 39;
+    <FK05> = 47;
+    <FK06> = 55;
+    <FK07> = 63;
+    <FK08> = 71;
+    <FK09> = 79;
+    <FK10> = 87;
+    <FK11> = 94;
+    <FK12> = 102;
+
+    <PRSC> = 95;
+    <SCLK> = 103;
+    <PAUS> = 106;
+
+    <INS>  = 111;
+    <HOME> = 118;
+    <PGUP> = 119;
+    <DELE> = 108;
+    <END>  = 109;
+    <PGDN> = 117;
+
+    <UP>   = 107;
+    <LEFT> = 105;
+    <DOWN> = 104;
+    <RGHT> = 114;
+
+    <NMLK> = 126;
+    <KPDV> = 127;
+    <KPMU> = 134;
+    <KPSU> = 140;
+
+    <KP7>  = 116;
+    <KP8>  = 125;
+    <KP9>  = 133;
+    <KPAD> = 132;
+
+    <KP4>  = 115;
+    <KP5>  = 123;
+    <KP6>  = 124;
+
+    <KP1>  = 113;
+    <KP2>  = 122;
+    <KP3>  = 130;
+    <KPEN> = 129;
+
+    <KP0>  = 120;
+    <KPDL> = 121;
+
+    alias <AE00> = <TLDE>;
+    alias <AC00> = <CAPS>;
+    alias <AA00> = <LCTL>;
+    alias <AA01> = <LALT>;
+    alias <AA09> = <RALT>;
+    alias <ALGR> = <RALT>;
+    alias <AA12> = <RCTL>;
+
+    virtual indicator 1 = "L1";
+    virtual indicator 2 = "L2";
+    virtual indicator 3 = "L3";
+    virtual indicator 4 = "L4";
+    indicator 5 = "Caps Lock";
+    indicator 6 = "Num Lock";
+    indicator 7 = "Scroll Lock";
+
+};
+xkb_keycodes "pc102" {
+    <BKSL> = 91;
+    <LSGT> = 27;
+    augment "sgi_vndr/indy(pc101)"
+    maximum= 255;
+    minimum= 8;
+};
+xkb_keycodes "pc104" {
+    include "sgi_vndr/indy(pc101)"
+    minimum= 8;
+    maximum= 255;
+
+    // These key names are here to support so-called "Windows95"
+    // keyboards like the Microsoft Natural keyboard.
+    <LWIN> = 147;
+    <RWIN> = 148;
+    <MENU> = 149;
+};
+xkb_keycodes "pc105" {
+    <LSGT> = 27;
+    augment "sgi_vndr/indy(pc104)"
+    minimum= 8;
+    maximum= 255;
+};
+xkb_keycodes "jp106" {
+    <HZTG> = 22;
+    <AB11> = 89;
+    <AC12> = 91;
+    <NFER> = 141;
+    <XFER> = 142;
+    <HKTG> = 143;
+    alias <TLDE> = <HZTG>;
+    alias <AE00> = <HZTG>;
+    alias <AE13> = <BKSL>;
+    augment "sgi_vndr/indy(pc101)"
+    minimum= 8;
+    maximum= 255;
+};
+// can be combined with any other "indy" keycode
+// description to add virtual keys which can be
+// used to implement an overlay-based numeric
+// keypad.
+partial hidden xkb_keycodes "overlayKeypad" {
+    <KO7> = 17;
+    <KO8> = 18;
+    <KO9> = 19;
+    <KO6> = 146;
+    <KO5> = 145;
+    <KO4> = 144;
+    <KO1> = 136;
+    <KO2> = 137;
+    <KO3> = 138;
+    <KO0> = 135;
+    <KODL> = 139;
+};
+partial hidden xkb_keycodes "shiftLock" {
+    indicator 5 = "Shift Lock";
+};

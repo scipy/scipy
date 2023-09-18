@@ -1,0 +1,58 @@
+" Example for use of GNU gettext.
+  This file is in the public domain.
+
+  Source code of the GNU Smalltalk program.
+"
+
+"Unfortunately the PackageLoader method fileInPackage: is extra verbose:
+ It outputs 'Loading package I18N'. This will be fixed in smalltalk-2.2.
+
+PackageLoader fileInPackage: 'I18N' !
+
+In the meantime, we use this workaround."
+
+| saved sink |
+saved := Transcript message.
+sink := WriteStream with: String new.
+Transcript message: sink -> #nextPutAll:.
+PackageLoader fileInPackage: 'I18N'.
+Transcript message: saved.
+!
+
+Object subclass: #Main
+  instanceVariableNames: ''
+  classVariableNames: 'NLS' 
+  poolDictionaries: ''
+  category: 'Program'
+!
+!Main methodsFor: 'running'!
+run
+  NLS := I18N Locale default messages domain: 'hello-smalltalk' localeDirectory: '@localedir@'.
+  Transcript showCr: (NLS ? 'Hello, world!').
+  Transcript showCr: ((NLS ? 'This program is running as process number %1.') bindWith: self getpid).
+!
+
+
+"Unfortunately I cannot define getpid like this - it gives
+ 'C function getpid not defined'.
+
+SystemDictionary defineCFunc: 'getpid'
+  withSelectorArgs: 'getpid'
+  returning: #int
+  args: #()
+!
+
+So let's define it through an external process."
+
+!Main methodsFor: 'auxiliary stuff'!
+getpid
+  | stream pid |
+  stream := FileDescriptor popen: 'echo $PPID' dir: #read.
+  pid := stream contents asNumber.
+  stream close.
+  ^ pid
+!
+!
+
+
+Main new run!

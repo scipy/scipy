@@ -1,0 +1,101 @@
+body {
+	background : black ;
+	color : white ;
+	font-family : arial, helvetica, sans-serif ;
+	line-height: 1.5 ;
+	margin-left: 6%;
+	margin-right: 6%;
+}
+td {
+	font-family : arial, helvetica, sans-serif ;
+	background : black ;
+	color : white ;
+}
+center {
+	font-family : arial, helvetica, sans-serif ;
+}
+p {
+	font-family : arial, helvetica, sans-serif ;
+	text-align : left ;
+}
+.indent_block {
+	font-family : arial, helvetica, sans-serif ;
+	text-align : left ;
+}
+br {
+	font-family : arial, helvetica, sans-serif ;
+}
+form {
+	font-family : arial, helvetica, sans-serif ;
+}
+ul {
+	font-family : arial, helvetica, sans-serif ;
+	text-align : left ;
+}
+ol {
+	font-family : arial, helvetica, sans-serif ;
+	text-align : left ;
+}
+dl {
+	font-family : arial, helvetica, sans-serif ;
+	text-align : left ;
+}
+h1 {
+	font-size : xx-large ;
+	background : black ;
+	color : #5050FF ;
+	text-align : left ;
+}
+h2 {
+	font-size : x-large ;
+	background : black ;
+	color : #5050FF ;
+	text-align : left ;
+}
+h3 {
+	font-size : large ;
+	background : black ;
+	color : #5050FF ;
+	text-align : left ;
+}
+h4 {
+	font-size : medium ;
+	background : black ;
+	color : #5050FF ;
+	text-align : left ;
+}
+pre {
+	font-family : courier, monospace ;
+	font-size : medium ;
+}
+code,
+kbd,
+samp,
+var {
+	font-family: "Courier New", monospace, serif;
+	font-size: 1em;
+}
+a:link { color : #9090FF ; }
+a:visited { color : #5050FF ; }
+a:active { color : #FF00FF ; }
+a:hover { background-color : #202080 ; }
+
+table.formats-table {
+	text-align: center;
+	font-size: small;
+	border-collapse: collapse;
+}
+
+table.formats-table, table.formats-table th, table.formats-table td {
+	border: 1px solid white;
+}
+
+.image-logo {
+	display: block;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+nav {
+	text-align: center;
+}

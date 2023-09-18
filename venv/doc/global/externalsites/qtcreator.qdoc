@@ -1,0 +1,627 @@
+/****************************************************************************
+**
+** Copyright (C) 2019 The Qt Company Ltd.
+** Contact: https://www.qt.io/licensing/
+**
+** This file is part of the documentation of the Qt Toolkit.
+**
+** $QT_BEGIN_LICENSE:FDL$
+** Commercial License Usage
+** Licensees holding valid commercial Qt licenses may use this file in
+** accordance with the commercial license agreement provided with the
+** Software or, alternatively, in accordance with the terms contained in
+** a written agreement between you and The Qt Company. For licensing terms
+** and conditions see https://www.qt.io/terms-conditions. For further
+** information use the contact form at https://www.qt.io/contact-us.
+**
+** GNU Free Documentation License Usage
+** Alternatively, this file may be used under the terms of the GNU Free
+** Documentation License version 1.3 as published by the Free Software
+** Foundation and appearing in the file included in the packaging of
+** this file. Please review the following information to ensure
+** the GNU Free Documentation License version 1.3 requirements
+** will be met: https://www.gnu.org/licenses/fdl-1.3.html.
+** $QT_END_LICENSE$
+**
+****************************************************************************/
+
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-deployment-qnx.html
+    \title Qt Creator: Deploying Applications to QNX Neutrino Devices
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-developing-baremetal.html
+    \title Qt Creator: Connecting Bare Metal Devices
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-developing-qnx.html
+    \title Qt Creator: Connecting QNX Devices
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-developing-generic-linux.html
+    \title Qt Creator: Connecting Embedded Linux Devices
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-deployment-embedded-linux.html
+    \title Qt Creator: Deploying Applications to Embedded Linux Devices
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-faq.html
+    \title Qt Creator: FAQ
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-tips.html
+    \title Qt Creator: Tips and Tricks
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-help.html
+    \title Qt Creator: Using the Help Mode
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-quick-tour.html
+    \title Qt Creator: User Interface
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-modes.html
+    \title Qt Creator: Selecting Modes
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-sidebar-views.html
+    \title Qt Creator: Browsing Project Contents
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-output-panes.html
+    \title Qt Creator: Viewing Output
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-cli.html
+    \title Qt Creator: Using Command Line Options
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-task-lists.html
+    \title Qt Creator: Showing Task List Files in Issues Pane
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-project-managing-sessions.html
+    \title Qt Creator: Managing Sessions
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-editor-external.html
+    \title Qt Creator: Using External Tools
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-version-control.html
+    \title Qt Creator: Using Version Control Systems
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-vcs-bazaar.html
+    \title Qt Creator: Using Bazaar
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-vcs-clearcase.html
+    \title Qt Creator: Using ClearCase
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-vcs-cvs.html
+    \title Qt Creator: Using CVS
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-vcs-git.html
+    \title Qt Creator: Using Git
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-vcs-mercurial.html
+    \title Qt Creator: Using Mercurial
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-vcs-perforce.html
+    \title Qt Creator: Using Perforce
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-vcs-subversion.html
+    \title Qt Creator: Using Subversion
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-keyboard-shortcuts.html
+    \title Qt Creator: Keyboard Shortcuts
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/qmldesigner-pathview-editor.html
+    \title Qt Creator: Editing PathView Properties
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/qmldesigner-connections.html
+    \title Qt Creator: Adding Connections
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/quick-signals.html
+    \title Qt Creator: Connecting Objects to Signals
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/quick-dynamic-properties.html
+    \title Qt Creator: Specifying Dynamic Properties
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/quick-property-bindings.html
+    \title Qt Creator: Adding Bindings Between Properties
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/quick-connections-backend.html
+    \title Qt Creator: Managing C++ Backend Objects
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/qtcreator-transitions-example.html
+    \title Qt Creator: Creating a Qt Quick Application
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/qtquick-iso-icon-browser.html
+    \title Qt Creator: Browsing ISO 7000 Icons
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/quick-export-to-qml.html
+    \title Qt Creator: Exporting Designs from Graphics Software
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-qml-modules-with-plugins.html
+    \title Qt Creator: Using QML Modules with Plugins
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/quick-converting-ui-projects.html
+    \title Qt Creator: Converting UI Projects to Applications
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-visual-editor.html
+    \title Qt Creator: Developing Qt Quick Applications
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-using-qt-quick-designer.html
+    \title Qt Creator: Editing QML Files in Design Mode
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/quick-projects.html
+    \title Qt Creator: Creating Qt Quick Projects
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/quick-components.html
+    \title Qt Creator: Creating Components
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/qt-quick-toolbars.html
+    \title Qt Creator: Using Qt Quick Toolbars
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/quick-buttons.html
+    \title Qt Creator: Creating Buttons
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/quick-scalable-image.html
+    \title Qt Creator: Creating Scalable Buttons and Borders
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-editor-options.html
+    \title Qt Creator: Configuring the Editor
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-editor-functions.html
+    \title Qt Creator: Writing Code
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-coding-navigating.html
+    \title Qt Creator: Working in Edit Mode
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-highlighting.html
+    \title Qt Creator: Semantic Highlighting
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-checking-code-syntax.html
+    \title Qt Creator: Checking Code Syntax
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-completing-code.html
+    \title Qt Creator: Completing Code
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-editor-codepasting.html
+    \title Qt Creator: Pasting and Fetching Code Snippets
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-macros.html
+    \title Qt Creator: Using Text Editing Macros
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-editor-fakevim.html
+    \title Qt Creator: Using FakeVim Mode
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-indenting-code.html
+    \title Qt Creator: Indenting Text or Code
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-editor-finding.html
+    \title Qt Creator: Finding and Replacing
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-editor-refactoring.html
+    \title Qt Creator: Refactoring
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-editor-locator.html
+    \title Qt Creator: Searching with the Locator
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-coding.html
+    \title Qt Creator: Coding
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-editor-options-text.html
+    \title Qt Creator: Specifying Text Editor Settings
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-finding-overview.html
+    \title Qt Creator: Finding
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-mime-types.html
+    \title Qt Creator: Editing MIME Types
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-modeling.html
+    \title Qt Creator: Modeling
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-qml-debugging-example.html
+    \title Qt Creator: Debugging a Qt Quick Example Application
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-debugging-example.html
+    \title Qt Creator: Debugging a C++ Example Application
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-debugger-engines.html
+    \title Qt Creator: Setting Up Debugger
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-debugging-qml.html
+    \title Qt Creator: Debugging Qt Quick Projects
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-debugging.html
+    \title Qt Creator: Debugging
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-debugger-operating-modes.html
+    \title Qt Creator: Launching the Debugger
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-debug-mode.html
+    \title Qt Creator: Interacting with the Debugger
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-debugging-helpers.html
+    \title Qt Creator: Using Debugging Helpers
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-troubleshooting-debugging.html
+    \title Qt Creator: Troubleshooting Debugger
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/index.html
+    \title Qt Creator Manual
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-advanced.html
+    \title Qt Creator: Advanced Use
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-os-supported-platforms.html
+    \title Qt Creator: Supported Platforms
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-connecting-mobile.html
+    \title Qt Creator: Connecting Devices
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-usability.html
+    \title Qt Creator: Optimizing Applications for Mobile Devices
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-acknowledgements.html
+    \title Qt Creator: Acknowledgements
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-help-overview.html
+    \title Qt Creator: Getting Help
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/technical-support.html
+    \title Qt Creator: Technical Support
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-overview.html
+    \title Qt Creator: IDE Overview
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-testing.html
+    \title Qt Creator: Testing
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-deployment.html
+    \title Qt Creator: Deploying to Devices
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-tutorials.html
+    \title Qt Creator: Tutorials
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-known-issues.html
+    \title Qt Creator: Known Issues
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-design-mode.html
+    \title Qt Creator: Designing User Interfaces
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-glossary.html
+    \title Qt Creator: Glossary
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-getting-started.html
+    \title Qt Creator: Getting Started
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-analyzer.html
+    \title Qt Creator: Detecting Memory Leaks with Memcheck
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-cache-profiler.html
+    \title Qt Creator: Profiling Function Execution
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-running-valgrind-remotely.html
+    \title Qt Creator: Running Valgrind Tools on External Applications
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-valgrind-overview.html
+    \title Qt Creator: Using Valgrind Code Analysis Tools
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-analyze-mode.html
+    \title Qt Creator: Analyzing Code
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-qml-performance-monitor.html
+    \title Qt Creator: Profiling QML Applications
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-deploying-android.html
+    \title Qt Creator: Deploying Applications to Android Devices
+*/
+
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-developing-ios.html
+    \title Qt Creator: Connecting iOS devices
+*/
+
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-developing-android.html
+    \title Qt Creator: Connecting Android Devices
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-build-example-application.html
+    \title Qt Creator: Building and Running an Example
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-project-generic.html
+    \title Qt Creator: Setting Up a Generic Project
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-sharing-project-settings.html
+    \title Qt Creator: Sharing Project Settings
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-project-opening.html
+    \title Qt Creator: Opening Projects
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-project-managing.html
+    \title Qt Creator: Managing Projects
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-project-cmake.html
+    \title Qt Creator: Setting Up CMake
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-targets.html
+    \title Qt Creator: Adding Kits
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-tool-chains.html
+    \title Qt Creator: Adding Compilers
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-project-qbs.html
+    \title Qt Creator: Setting Up Qbs
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-project-creating.html
+    \title Qt Creator: Creating Projects
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-project-wizards.html
+    \title Qt Creator: Adding New Custom Wizards
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-project-wizards-json.html
+    \title Qt Creator: Adding JSON-Based Wizards
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-project-wizards-xml.html
+    \title Qt Creator: Adding XML-Based Wizards
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-projects-autotools.html
+    \title Qt Creator: Setting Up an Autotools Project
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-configuring-projects.html
+    \title Qt Creator: Configuring Projects
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-build-process-customizing.html
+    \title Qt Creator:  Customizing the Build Process
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-build-settings.html
+    \title Qt Creator: Specifying Build Settings
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-code-style-settings.html
+    \title Qt Creator: Specifying Code Style Settings
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-run-settings.html
+    \title Qt Creator: Specifying Run Settings
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-project-qmake-libraries.html
+    \title Qt Creator: Adding Libraries to Projects
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-project-other.html
+    \title Qt Creator: Using Other Build Systems
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-running-targets.html
+    \title Qt Creator: Running on Multiple Platforms
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-build-dependencies.html
+    \title Qt Creator: Specifying Dependencies
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-building-running.html
+    \title Qt Creator: Building and Running
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-editor-settings.html
+    \title Qt Creator: Specifying Editor Settings
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-project-qmake.html
+    \title Qt Creator: Adding Qt Versions
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-building-targets.html
+    \title Qt Creator: Building for Multiple Platforms
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-using-qt-designer.html
+    \title Qt Creator: Developing Widget Based Applications
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-writing-program.html
+    \title Qt Creator: Creating a Qt Widget Based Application
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/adding-plugins.html
+    \title Qt Creator: Adding Qt Designer Plugins
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-configuring.html
+    \title Qt Creator: Configuring Qt Creator
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-debuggers.html
+    \title Qt Creator: Adding Debuggers
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/qt-creator-accelbubble-example.html
+    \title Qt Creator: Creating a Mobile Application
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-diff-editor.html
+    \title Qt Creator: Comparing Files
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-beautifier.html
+    \title Qt Creator: Beautifying Source Code
+*/
+
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-clang-codemodel.html
+    \title Qt Creator: Parsing C++ Files with the Clang Code Model
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-quick-ui-forms.html
+    \title Qt Creator: Qt Quick UI Forms
+*/
+
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-clang-tools.html
+    \title Qt Creator: Using Clang Tools
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-heob.html
+    \title Qt Creator: Detecting Memory Leaks with Heob
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-cpu-usage-analyzer.html
+    \title Qt Creator: Analyzing CPU Usage
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-cppcheck.html
+    \title Qt Creator: Analyzing Code with Cppcheck
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-autotest.html
+    \title Qt Creator: Running Autotests
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-project-creating.html#creating-c-classes
+    \title Qt Creator: Creating C++ Classes
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-writing-program.html
+    \title Creating a Qt Widget Based Application
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/qtquick-navigator.html
+    \title Qt Creator: Managing Item Hierarchy
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/qtquick-properties.html
+    \title Qt Creator: Specifying Item Properties
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/quick-states.html
+    \title Qt Creator: Adding States
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-scxml.html
+    \title Qt Creator: Editing State Charts
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/studio-timeline.html
+    \title Qt Creator: Creating Animations
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-language-servers.html
+    \title Qt Creator: Using Language Servers
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/qtcreator-toc.html
+    \title Qt Creator: All Topics
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-live-preview.html
+    \title Qt Creator: Previewing
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-live-preview-desktop.html
+    \title Qt Creator: Previewing on Desktop
+*/
+/*!
+    \externalpage http://doc.qt.io/qtcreator/creator-live-preview-devices.html
+    \title Qt Creator: Previewing on Devices
+*/

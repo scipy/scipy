@@ -1,0 +1,15 @@
+// For consistency, add bracket around footnotes/citations which are
+// cited more than once. E.g. [Newton](1,2) instead of Newton(1,2)
+dt.label > span.brackets:not(:only-child):before {
+  content: "[";
+}
+
+dt.label > span.brackets:not(:only-child):after {
+  content: "]";
+}
+
+// Make footnote as a supercript
+a.footnote-reference {
+  vertical-align: super;
+  font-size: small;
+}

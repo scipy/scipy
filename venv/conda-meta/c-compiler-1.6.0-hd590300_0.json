@@ -1,0 +1,35 @@
+{
+  "build": "hd590300_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [],
+  "depends": [
+    "binutils",
+    "gcc",
+    "gcc_linux-64 12.*"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/c-compiler-1.6.0-hd590300_0",
+  "features": "",
+  "files": [],
+  "fn": "c-compiler-1.6.0-hd590300_0.conda",
+  "license": "BSD",
+  "link": {
+    "source": "/opt/conda/pkgs/c-compiler-1.6.0-hd590300_0",
+    "type": 1
+  },
+  "md5": "ea6c792f792bdd7ae6e7e2dee32f0a48",
+  "name": "c-compiler",
+  "package_tarball_full_path": "/opt/conda/pkgs/c-compiler-1.6.0-hd590300_0.conda",
+  "paths_data": {
+    "paths": [],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "d741ff93d5f71a83a9be0f592682f31ca2d468c37177f18a8d1a2469bb821c05",
+  "size": 6184,
+  "subdir": "linux-64",
+  "timestamp": 1689097480051,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/c-compiler-1.6.0-hd590300_0.conda",
+  "version": "1.6.0"
+}

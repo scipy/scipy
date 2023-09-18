@@ -1,0 +1,139 @@
+// Keyboard layouts for the Netherlands.
+
+// Basic layout, based on converted file, from keytable file to xkb/symbols/ file
+// with mk_xkb by root@linux.chanae.stben.be Tue Sep 30 00:53:29 MET DST 1997
+//
+// Converted from the nl-latin.map of the Linux kbd package by
+// Pablo Saratxaga <srtxg@f2219.n293.z2.fidonet.org>
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+    include "latin"
+
+    name[Group1]="Dutch";
+
+    key <TLDE>	{ [        at,    section,      notsign,      notsign ]	};
+    key <AE02>	{ [         2,   quotedbl,  twosuperior,    oneeighth ]	};
+    key <AE06>	{ [         6,  ampersand, threequarters, fiveeighths ]	};
+    key <AE07>	{ [         7, underscore,     sterling, seveneighths ]	};
+    key <AE08>	{ [         8,  parenleft,    braceleft,  bracketleft ]	};
+    key <AE09>	{ [         9, parenright,   braceright, bracketright ]	};
+    key <AE10>	{ [         0, apostrophe,       degree,    trademark ]	};
+    key <AE11>	{ [     slash,   question,    backslash, questiondown ]	};
+    key <AE12>	{ [    degree, dead_tilde, dead_cedilla,  dead_ogonek ]	};
+
+    key <AD03>	{ [         e,          E,     EuroSign,         cent ] };
+    key <AD05>	{ [         t,          T,        thorn,        THORN ]	};
+    key <AD06>	{ [         y,          Y,   ydiaeresis,          yen ]	};
+    key <AD07>	{ [         u,          U,   udiaeresis,   Udiaeresis ]	};
+    key <AD08>	{ [         i,          I,   idiaeresis,   Idiaeresis ]	};
+    key <AD09>	{ [         o,          O,       ograve,       Ograve ]	};
+    key <AD10>	{ [         p,          P,    paragraph,        THORN ]	};
+    key <AD11>	{ [dead_diaeresis, dead_circumflex, asciitilde, asciicircum]	};
+    key <AD12>	{ [  asterisk,        bar,   dead_tilde,  dead_macron ]	};
+
+    key <AC01>	{ [         a,          A,       aacute,       Aacute ]	};
+    key <AC04>	{ [         f,          F,  ordfeminine,  ordfeminine ]	};
+    key <AC10>	{ [      plus,  plusminus,   dead_acute, dead_doubleacute ] };
+    key <AC11>	{ [dead_acute, dead_grave,   apostrophe,        grave ] };
+    key <BKSL>	{ [      less,    greater,   dead_grave,   dead_breve ]	};
+
+    key <LSGT>	{ [bracketright, bracketleft,       bar,    brokenbar ]	};
+    key <AB04>	{ [         v,          V, leftdoublequotemark, leftsinglequotemark ]	};
+    key <AB05>	{ [         b,          B, rightdoublequotemark, rightsinglequotemark ] };
+    key <AB06>	{ [         n,          N,       ntilde,       Ntilde ]	};
+    key <AB07>	{ [         m,          M,     Greek_mu,    masculine ]	};
+    key <AB08>	{ [     comma,  semicolon,      cedilla, guillemotleft]	};
+    key <AB09>	{ [    period,      colon, periodcentered, guillemotright ] };
+    key <AB10>	{ [     minus,      equal,       hyphen, dead_abovedot]	};
+
+    include "level3(ralt_switch)"
+};
+
+
+// Official layout, by Benno Schulenberg <bensberg@justemail.net>, January 2007,
+// based on ftp://ftp.software.ibm.com/software/globalization/keyboards/KBD143.pdf.
+partial alphanumeric_keys
+xkb_symbols "std" {
+
+    name[Group1]= "Dutch (standard)";
+
+    key <TLDE>  { [             at,        section,        notsign ] };
+    key <AE01>  { [              1,         exclam,    onesuperior ] };
+    key <AE02>  { [              2,       quotedbl,    twosuperior ] };
+    key <AE03>  { [              3,     numbersign,  threesuperior ] };
+    key <AE04>  { [              4,         dollar,     onequarter ] };
+    key <AE05>  { [              5,        percent,        onehalf ] };
+    key <AE06>  { [              6,      ampersand,  threequarters ] };
+    key <AE07>  { [              7,     underscore,       sterling ] };
+    key <AE08>  { [              8,      parenleft,      braceleft ] };
+    key <AE09>  { [              9,     parenright,     braceright ] };
+    key <AE10>  { [              0,     apostrophe                 ] };
+    key <AE11>  { [          slash,       question,      backslash ] };
+    key <AE12>  { [         degree,     dead_tilde,   dead_cedilla ] };
+
+    key <AD01>  { [              q,              Q                 ] };
+    key <AD02>  { [              w,              W                 ] };
+    key <AD03>  { [              e,              E,       EuroSign ] };
+    key <AD04>  { [              r,              R,      paragraph ] };
+    key <AD05>  { [              t,              T                 ] };
+    key <AD06>  { [              y,              Y                 ] };
+    key <AD07>  { [              u,              U                 ] };
+    key <AD08>  { [              i,              I                 ] };
+    key <AD09>  { [              o,              O                 ] };
+    key <AD10>  { [              p,              P                 ] };
+    key <AD11>  { [ dead_diaeresis, dead_circumflex                ] };
+    key <AD12>  { [       asterisk,            bar                 ] };
+
+    key <AC01>  { [              a,              A                 ] };
+    key <AC02>  { [              s,              S,         ssharp ] };
+    key <AC03>  { [              d,              D                 ] };
+    key <AC04>  { [              f,              F                 ] };
+    key <AC05>  { [              g,              G                 ] };
+    key <AC06>  { [              h,              H                 ] };
+    key <AC07>  { [              j,              J                 ] };
+    key <AC08>  { [              k,              K                 ] };
+    key <AC09>  { [              l,              L                 ] };
+    key <AC10>  { [           plus,      plusminus                 ] };
+    key <AC11>  { [     dead_acute,     dead_grave                 ] };
+    key <BKSL>  { [           less,        greater                 ] };
+
+    key <LSGT>  { [   bracketright,    bracketleft,      brokenbar ] };
+    key <AB01>  { [              z,              Z,  guillemotleft ] };
+    key <AB02>  { [              x,              X, guillemotright ] };
+    key <AB03>  { [              c,              C,           cent ] };
+    key <AB04>  { [              v,              V                 ] };
+    key <AB05>  { [              b,              B                 ] };
+    key <AB06>  { [              n,              N                 ] };
+    key <AB07>  { [              m,              M,             mu ] };
+    key <AB08>  { [          comma,      semicolon                 ] };
+    key <AB09>  { [         period,          colon, periodcentered ] };
+    key <AB10>  { [          minus,          equal                 ] };
+
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "us" {
+    include "us(euro)"
+
+    name[Group1]= "Dutch (US)";
+};
+
+// Copied from macintosh_vndr/nl
+partial alphanumeric_keys
+xkb_symbols "mac" {
+
+    include "latin"
+
+    name[Group1]= "Dutch (Macintosh)";
+
+    include "level3(ralt_switch)"
+};
+
+// EXTRAS:
+
+partial alphanumeric_keys
+	xkb_symbols "sun_type6" {
+	include "sun_vndr/nl(sun_type6)"
+};

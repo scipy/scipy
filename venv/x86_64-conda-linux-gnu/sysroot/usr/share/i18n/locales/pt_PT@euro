@@ -1,0 +1,83 @@
+comment_char %
+escape_char  /
+%
+% Portuguese Language Locale for Portugal with Euro
+% Language: pt
+% Territory: PT
+% Option: euro
+% Date: 2000-08-20
+% Users: general
+% Charset: ISO-8859-15
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title      "Portuguese locale for Portugal with Euro"
+source     "Free Software Foundation, Inc."
+address    "59 Temple Place - Suite 330, Boston, MA 02111-1307, USA"
+contact    ""
+email      "bug-glibc-locales@gnu.org"
+tel        ""
+fax        ""
+language   "Portuguese"
+territory  "Portugal"
+revision   "1.0"
+date       "2000-08-20"
+%
+category  "pt_PT@euro:2000";LC_IDENTIFICATION
+category  "pt_PT@euro:2000";LC_CTYPE
+category  "pt_PT@euro:2000";LC_COLLATE
+category  "pt_PT@euro:2000";LC_TIME
+category  "pt_PT@euro:2000";LC_NUMERIC
+category  "pt_PT@euro:2000";LC_MONETARY
+category  "pt_PT@euro:2000";LC_MESSAGES
+category  "pt_PT@euro:2000";LC_PAPER
+category  "pt_PT@euro:2000";LC_NAME
+category  "pt_PT@euro:2000";LC_ADDRESS
+category  "pt_PT@euro:2000";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_COLLATE
+copy "iso14651_t1"
+END LC_COLLATE
+
+LC_MESSAGES
+copy "pt_PT"
+END LC_MESSAGES
+
+LC_MONETARY
+copy "pt_PT"
+END LC_MONETARY
+
+LC_CTYPE
+copy "pt_PT"
+END LC_CTYPE
+
+LC_NUMERIC
+copy "pt_PT"
+END LC_NUMERIC
+
+LC_TIME
+copy "pt_PT"
+END LC_TIME
+
+LC_PAPER
+copy "pt_PT"
+END LC_PAPER
+
+LC_TELEPHONE
+copy "pt_PT"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+copy "pt_PT"
+END LC_MEASUREMENT
+
+LC_NAME
+copy "pt_PT"
+END LC_NAME
+
+LC_ADDRESS
+copy "pt_PT"
+END LC_ADDRESS

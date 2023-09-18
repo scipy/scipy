@@ -1,0 +1,194 @@
+{
+  "build": "pyhd8ed1ab_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/noarch",
+  "constrains": [],
+  "depends": [
+    "coverage >=5.2.1",
+    "pytest >=4.6",
+    "python >=3.7",
+    "toml"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/pytest-cov-4.1.0-pyhd8ed1ab_0",
+  "features": "",
+  "files": [
+    "lib/python3.10/site-packages/pytest-cov.pth",
+    "lib/python3.10/site-packages/pytest_cov-4.1.0.dist-info/AUTHORS.rst",
+    "lib/python3.10/site-packages/pytest_cov-4.1.0.dist-info/INSTALLER",
+    "lib/python3.10/site-packages/pytest_cov-4.1.0.dist-info/LICENSE",
+    "lib/python3.10/site-packages/pytest_cov-4.1.0.dist-info/METADATA",
+    "lib/python3.10/site-packages/pytest_cov-4.1.0.dist-info/RECORD",
+    "lib/python3.10/site-packages/pytest_cov-4.1.0.dist-info/REQUESTED",
+    "lib/python3.10/site-packages/pytest_cov-4.1.0.dist-info/WHEEL",
+    "lib/python3.10/site-packages/pytest_cov-4.1.0.dist-info/direct_url.json",
+    "lib/python3.10/site-packages/pytest_cov-4.1.0.dist-info/entry_points.txt",
+    "lib/python3.10/site-packages/pytest_cov-4.1.0.dist-info/top_level.txt",
+    "lib/python3.10/site-packages/pytest_cov/__init__.py",
+    "lib/python3.10/site-packages/pytest_cov/compat.py",
+    "lib/python3.10/site-packages/pytest_cov/embed.py",
+    "lib/python3.10/site-packages/pytest_cov/engine.py",
+    "lib/python3.10/site-packages/pytest_cov/plugin.py",
+    "lib/python3.10/site-packages/pytest_cov/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/pytest_cov/__pycache__/compat.cpython-310.pyc",
+    "lib/python3.10/site-packages/pytest_cov/__pycache__/embed.cpython-310.pyc",
+    "lib/python3.10/site-packages/pytest_cov/__pycache__/engine.cpython-310.pyc",
+    "lib/python3.10/site-packages/pytest_cov/__pycache__/plugin.cpython-310.pyc"
+  ],
+  "fn": "pytest-cov-4.1.0-pyhd8ed1ab_0.conda",
+  "license": "MIT",
+  "license_family": "MIT",
+  "link": {
+    "source": "/opt/conda/pkgs/pytest-cov-4.1.0-pyhd8ed1ab_0",
+    "type": 1
+  },
+  "md5": "06eb685a3a0b146347a58dda979485da",
+  "name": "pytest-cov",
+  "noarch": "python",
+  "package_tarball_full_path": "/opt/conda/pkgs/pytest-cov-4.1.0-pyhd8ed1ab_0.conda",
+  "package_type": "noarch_python",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "site-packages/pytest-cov.pth",
+        "path_type": "hardlink",
+        "sha256": "f47446a60fdf5905e84e7d7c892baf92f8d5a3226d0da1599b9c014eab6c7ddb",
+        "sha256_in_prefix": "f47446a60fdf5905e84e7d7c892baf92f8d5a3226d0da1599b9c014eab6c7ddb",
+        "size_in_bytes": 377
+      },
+      {
+        "_path": "site-packages/pytest_cov-4.1.0.dist-info/AUTHORS.rst",
+        "path_type": "hardlink",
+        "sha256": "f9485efbddd9842ca22b50dcfdaf52d860f420b770e5762706aefa39e12e9641",
+        "sha256_in_prefix": "f9485efbddd9842ca22b50dcfdaf52d860f420b770e5762706aefa39e12e9641",
+        "size_in_bytes": 2742
+      },
+      {
+        "_path": "site-packages/pytest_cov-4.1.0.dist-info/INSTALLER",
+        "path_type": "hardlink",
+        "sha256": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "sha256_in_prefix": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "size_in_bytes": 5
+      },
+      {
+        "_path": "site-packages/pytest_cov-4.1.0.dist-info/LICENSE",
+        "path_type": "hardlink",
+        "sha256": "835586ae156766a24e3c103fbc55d9af6b1a16df57ca932c97482a2737fd83d5",
+        "sha256_in_prefix": "835586ae156766a24e3c103fbc55d9af6b1a16df57ca932c97482a2737fd83d5",
+        "size_in_bytes": 1071
+      },
+      {
+        "_path": "site-packages/pytest_cov-4.1.0.dist-info/METADATA",
+        "path_type": "hardlink",
+        "sha256": "0bacf746cc72843bcaab0d2c99673a0f6924a9863b9c1a8c44b968931f7a3095",
+        "sha256_in_prefix": "0bacf746cc72843bcaab0d2c99673a0f6924a9863b9c1a8c44b968931f7a3095",
+        "size_in_bytes": 26710
+      },
+      {
+        "_path": "site-packages/pytest_cov-4.1.0.dist-info/RECORD",
+        "path_type": "hardlink",
+        "sha256": "c1f147b87381b36fc37b9292d57555be84feba84120d908a7a494e82621b3b2f",
+        "sha256_in_prefix": "c1f147b87381b36fc37b9292d57555be84feba84120d908a7a494e82621b3b2f",
+        "size_in_bytes": 1590
+      },
+      {
+        "_path": "site-packages/pytest_cov-4.1.0.dist-info/REQUESTED",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256_in_prefix": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "site-packages/pytest_cov-4.1.0.dist-info/WHEEL",
+        "path_type": "hardlink",
+        "sha256": "a6472d658cd44b8018567e9d27eef7ebb389662bc5d9ef1103d6ff6418e27f5f",
+        "sha256_in_prefix": "a6472d658cd44b8018567e9d27eef7ebb389662bc5d9ef1103d6ff6418e27f5f",
+        "size_in_bytes": 92
+      },
+      {
+        "_path": "site-packages/pytest_cov-4.1.0.dist-info/direct_url.json",
+        "path_type": "hardlink",
+        "sha256": "cd81794f7ebfd204533d8b83c84d28abc5fffdba2de94404fac12d555be7cead",
+        "sha256_in_prefix": "cd81794f7ebfd204533d8b83c84d28abc5fffdba2de94404fac12d555be7cead",
+        "size_in_bytes": 106
+      },
+      {
+        "_path": "site-packages/pytest_cov-4.1.0.dist-info/entry_points.txt",
+        "path_type": "hardlink",
+        "sha256": "d56c77a63602636bf80130f976195037a4daf82e0b2a605ad5f5e18845fa0bc0",
+        "sha256_in_prefix": "d56c77a63602636bf80130f976195037a4daf82e0b2a605ad5f5e18845fa0bc0",
+        "size_in_bytes": 42
+      },
+      {
+        "_path": "site-packages/pytest_cov-4.1.0.dist-info/top_level.txt",
+        "path_type": "hardlink",
+        "sha256": "1ef607b00155e0c79350d53085ac18fc32afae9136958adab531d7fd4e39a015",
+        "sha256_in_prefix": "1ef607b00155e0c79350d53085ac18fc32afae9136958adab531d7fd4e39a015",
+        "size_in_bytes": 11
+      },
+      {
+        "_path": "site-packages/pytest_cov/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "a2bfc31e40c6a0191bdcc122be7c137355e8ab1dfee1a61b0e3c76eb3bc6b9ce",
+        "sha256_in_prefix": "a2bfc31e40c6a0191bdcc122be7c137355e8ab1dfee1a61b0e3c76eb3bc6b9ce",
+        "size_in_bytes": 93
+      },
+      {
+        "_path": "site-packages/pytest_cov/compat.py",
+        "path_type": "hardlink",
+        "sha256": "b3599d17b86d05241db0baf2d99f0df26f2fa5518853d6a900939c8fee48cf8f",
+        "sha256_in_prefix": "b3599d17b86d05241db0baf2d99f0df26f2fa5518853d6a900939c8fee48cf8f",
+        "size_in_bytes": 560
+      },
+      {
+        "_path": "site-packages/pytest_cov/embed.py",
+        "path_type": "hardlink",
+        "sha256": "b14ca203a789a65210ed1207fdf0e57300c2faf3fb70c0dc9f3f61582869c9e3",
+        "sha256_in_prefix": "b14ca203a789a65210ed1207fdf0e57300c2faf3fb70c0dc9f3f61582869c9e3",
+        "size_in_bytes": 3556
+      },
+      {
+        "_path": "site-packages/pytest_cov/engine.py",
+        "path_type": "hardlink",
+        "sha256": "59c6477ed14e36df6eb0e0f1ca10ee7dc4c219d81eaf3baecc5e4a0502b6c81f",
+        "sha256_in_prefix": "59c6477ed14e36df6eb0e0f1ca10ee7dc4c219d81eaf3baecc5e4a0502b6c81f",
+        "size_in_bytes": 15880
+      },
+      {
+        "_path": "site-packages/pytest_cov/plugin.py",
+        "path_type": "hardlink",
+        "sha256": "a238d9698aa098dcb68c7167c92f9259b7d8723286545b1aec23423e2714b0d4",
+        "sha256_in_prefix": "a238d9698aa098dcb68c7167c92f9259b7d8723286545b1aec23423e2714b0d4",
+        "size_in_bytes": 15268
+      },
+      {
+        "_path": "lib/python3.10/site-packages/pytest_cov/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/pytest_cov/__pycache__/compat.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/pytest_cov/__pycache__/embed.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/pytest_cov/__pycache__/engine.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/pytest_cov/__pycache__/plugin.cpython-310.pyc",
+        "path_type": "pyc_file"
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "pytest-cov",
+  "sha256": "f07d3b44cabbed7843de654c4a6990a08475ce3b708bb735c7da9842614586f2",
+  "size": 25436,
+  "subdir": "noarch",
+  "timestamp": 1684965001294,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/noarch/pytest-cov-4.1.0-pyhd8ed1ab_0.conda",
+  "version": "4.1.0"
+}

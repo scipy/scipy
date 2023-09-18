@@ -1,0 +1,856 @@
+The following functions for the `long double' versions of the libm
+function have to be written:
+
+e_acosl.c
+e_asinl.c
+e_atan2l.c
+e_expl.c
+e_fmodl.c
+e_hypotl.c
+e_j0l.c
+e_j1l.c
+e_jnl.c
+e_lgammal_r.c
+e_logl.c
+e_log10l.c
+e_powl.c
+e_rem_pio2l.c
+e_sinhl.c
+e_sqrtl.c
+
+k_cosl.c
+k_rem_pio2l.c
+k_sinl.c
+k_tanl.c
+
+s_atanl.c
+s_erfl.c
+s_expm1l.c
+s_log1pl.c
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			       Methods
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+arcsin
+~~~~~~
+ *	Since  asin(x) = x + x^3/6 + x^5*3/40 + x^7*15/336 + ...
+ *	we approximate asin(x) on [0,0.5] by
+ *		asin(x) = x + x*x^2*R(x^2)
+ *	where
+ *		R(x^2) is a rational approximation of (asin(x)-x)/x^3
+ *	and its remez error is bounded by
+ *		|(asin(x)-x)/x^3 - R(x^2)| < 2^(-58.75)
+ *
+ *	For x in [0.5,1]
+ *		asin(x) = pi/2-2*asin(sqrt((1-x)/2))
+ *	Let y = (1-x), z = y/2, s := sqrt(z), and pio2_hi+pio2_lo=pi/2;
+ *	then for x>0.98
+ *		asin(x) = pi/2 - 2*(s+s*z*R(z))
+ *			= pio2_hi - (2*(s+s*z*R(z)) - pio2_lo)
+ *	For x<=0.98, let pio4_hi = pio2_hi/2, then
+ *		f = hi part of s;
+ *		c = sqrt(z) - f = (z-f*f)/(s+f) 	...f+c=sqrt(z)
+ *	and
+ *		asin(x) = pi/2 - 2*(s+s*z*R(z))
+ *			= pio4_hi+(pio4-2s)-(2s*z*R(z)-pio2_lo)
+ *			= pio4_hi+(pio4-2f)-(2s*z*R(z)-(pio2_lo+2c))
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+arccos
+~~~~~~
+ * Method :
+ *	acos(x)  = pi/2 - asin(x)
+ *	acos(-x) = pi/2 + asin(x)
+ * For |x|<=0.5
+ *	acos(x) = pi/2 - (x + x*x^2*R(x^2))	(see asin.c)
+ * For x>0.5
+ * 	acos(x) = pi/2 - (pi/2 - 2asin(sqrt((1-x)/2)))
+ *		= 2asin(sqrt((1-x)/2))
+ *		= 2s + 2s*z*R(z) 	...z=(1-x)/2, s=sqrt(z)
+ *		= 2f + (2c + 2s*z*R(z))
+ *     where f=hi part of s, and c = (z-f*f)/(s+f) is the correction term
+ *     for f so that f+c ~ sqrt(z).
+ * For x<-0.5
+ *	acos(x) = pi - 2asin(sqrt((1-|x|)/2))
+ *		= pi - 0.5*(s+s*z*R(z)), where z=(1-|x|)/2,s=sqrt(z)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+atan2
+~~~~~
+ * Method :
+ *	1. Reduce y to positive by atan2(y,x)=-atan2(-y,x).
+ *	2. Reduce x to positive by (if x and y are unexceptional):
+ *		ARG (x+iy) = arctan(y/x)   	   ... if x > 0,
+ *		ARG (x+iy) = pi - arctan[y/(-x)]   ... if x < 0,
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+atan
+~~~~
+ * Method
+ *   1. Reduce x to positive by atan(x) = -atan(-x).
+ *   2. According to the integer k=4t+0.25 chopped, t=x, the argument
+ *      is further reduced to one of the following intervals and the
+ *      arctangent of t is evaluated by the corresponding formula:
+ *
+ *      [0,7/16]      atan(x) = t-t^3*(a1+t^2*(a2+...(a10+t^2*a11)...)
+ *      [7/16,11/16]  atan(x) = atan(1/2) + atan( (t-0.5)/(1+t/2) )
+ *      [11/16.19/16] atan(x) = atan( 1 ) + atan( (t-1)/(1+t) )
+ *      [19/16,39/16] atan(x) = atan(3/2) + atan( (t-1.5)/(1+1.5t) )
+ *      [39/16,INF]   atan(x) = atan(INF) + atan( -1/t )
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+exp
+~~~
+ * Method
+ *   1. Argument reduction:
+ *      Reduce x to an r so that |r| <= 0.5*ln2 ~ 0.34658.
+ *	Given x, find r and integer k such that
+ *
+ *               x = k*ln2 + r,  |r| <= 0.5*ln2.
+ *
+ *      Here r will be represented as r = hi-lo for better
+ *	accuracy.
+ *
+ *   2. Approximation of exp(r) by a special rational function on
+ *	the interval [0,0.34658]:
+ *	Write
+ *	    R(r**2) = r*(exp(r)+1)/(exp(r)-1) = 2 + r*r/6 - r**4/360 + ...
+ *      We use a special Reme algorithm on [0,0.34658] to generate
+ * 	a polynomial of degree 5 to approximate R. The maximum error
+ *	of this polynomial approximation is bounded by 2**-59. In
+ *	other words,
+ *	    R(z) ~ 2.0 + P1*z + P2*z**2 + P3*z**3 + P4*z**4 + P5*z**5
+ *  	(where z=r*r, and the values of P1 to P5 are listed below)
+ *	and
+ *	    |                  5          |     -59
+ *	    | 2.0+P1*z+...+P5*z   -  R(z) | <= 2
+ *	    |                             |
+ *	The computation of exp(r) thus becomes
+ *                             2*r
+ *		exp(r) = 1 + -------
+ *		              R - r
+ *                                 r*R1(r)
+ *		       = 1 + r + ----------- (for better accuracy)
+ *		                  2 - R1(r)
+ *	where
+ *			         2       4             10
+ *		R1(r) = r - (P1*r  + P2*r  + ... + P5*r   ).
+ *
+ *   3. Scale back to obtain exp(x):
+ *	From step 1, we have
+ *	   exp(x) = 2^k * exp(r)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+hypot
+~~~~~
+ *	If (assume round-to-nearest) z=x*x+y*y
+ *	has error less than sqrt(2)/2 ulp, than
+ *	sqrt(z) has error less than 1 ulp (exercise).
+ *
+ *	So, compute sqrt(x*x+y*y) with some care as
+ *	follows to get the error below 1 ulp:
+ *
+ *	Assume x>y>0;
+ *	(if possible, set rounding to round-to-nearest)
+ *	1. if x > 2y  use
+ *		x1*x1+(y*y+(x2*(x+x1))) for x*x+y*y
+ *	where x1 = x with lower 32 bits cleared, x2 = x-x1; else
+ *	2. if x <= 2y use
+ *		t1*y1+((x-y)*(x-y)+(t1*y2+t2*y))
+ *	where t1 = 2x with lower 32 bits cleared, t2 = 2x-t1,
+ *	y1= y with lower 32 bits chopped, y2 = y-y1.
+ *
+ *	NOTE: scaling may be necessary if some argument is too
+ *	      large or too tiny
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+j0/y0
+~~~~~
+ * Method -- j0(x):
+ *	1. For tiny x, we use j0(x) = 1 - x^2/4 + x^4/64 - ...
+ *	2. Reduce x to |x| since j0(x)=j0(-x),  and
+ *	   for x in (0,2)
+ *		j0(x) = 1-z/4+ z^2*R0/S0,  where z = x*x;
+ *	   (precision:  |j0-1+z/4-z^2R0/S0 |<2**-63.67 )
+ *	   for x in (2,inf)
+ * 		j0(x) = sqrt(2/(pi*x))*(p0(x)*cos(x0)-q0(x)*sin(x0))
+ * 	   where x0 = x-pi/4. It is better to compute sin(x0),cos(x0)
+ *	   as follow:
+ *		cos(x0) = cos(x)cos(pi/4)+sin(x)sin(pi/4)
+ *			= 1/sqrt(2) * (cos(x) + sin(x))
+ *		sin(x0) = sin(x)cos(pi/4)-cos(x)sin(pi/4)
+ *			= 1/sqrt(2) * (sin(x) - cos(x))
+ * 	   (To avoid cancellation, use
+ *		sin(x) +- cos(x) = -cos(2x)/(sin(x) -+ cos(x))
+ * 	    to compute the worse one.)
+ *
+ * Method -- y0(x):
+ *	1. For x<2.
+ *	   Since
+ *		y0(x) = 2/pi*(j0(x)*(ln(x/2)+Euler) + x^2/4 - ...)
+ *	   therefore y0(x)-2/pi*j0(x)*ln(x) is an even function.
+ *	   We use the following function to approximate y0,
+ *		y0(x) = U(z)/V(z) + (2/pi)*(j0(x)*ln(x)), z= x^2
+ *	   where
+ *		U(z) = u00 + u01*z + ... + u06*z^6
+ *		V(z) = 1  + v01*z + ... + v04*z^4
+ *	   with absolute approximation error bounded by 2**-72.
+ *	   Note: For tiny x, U/V = u0 and j0(x)~1, hence
+ *		y0(tiny) = u0 + (2/pi)*ln(tiny), (choose tiny<2**-27)
+ *	2. For x>=2.
+ * 		y0(x) = sqrt(2/(pi*x))*(p0(x)*cos(x0)+q0(x)*sin(x0))
+ * 	   where x0 = x-pi/4. It is better to compute sin(x0),cos(x0)
+ *	   by the method mentioned above.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+j1/y1
+~~~~~
+ * Method -- j1(x):
+ *	1. For tiny x, we use j1(x) = x/2 - x^3/16 + x^5/384 - ...
+ *	2. Reduce x to |x| since j1(x)=-j1(-x),  and
+ *	   for x in (0,2)
+ *		j1(x) = x/2 + x*z*R0/S0,  where z = x*x;
+ *	   (precision:  |j1/x - 1/2 - R0/S0 |<2**-61.51 )
+ *	   for x in (2,inf)
+ * 		j1(x) = sqrt(2/(pi*x))*(p1(x)*cos(x1)-q1(x)*sin(x1))
+ * 		y1(x) = sqrt(2/(pi*x))*(p1(x)*sin(x1)+q1(x)*cos(x1))
+ * 	   where x1 = x-3*pi/4. It is better to compute sin(x1),cos(x1)
+ *	   as follow:
+ *		cos(x1) =  cos(x)cos(3pi/4)+sin(x)sin(3pi/4)
+ *			=  1/sqrt(2) * (sin(x) - cos(x))
+ *		sin(x1) =  sin(x)cos(3pi/4)-cos(x)sin(3pi/4)
+ *			= -1/sqrt(2) * (sin(x) + cos(x))
+ * 	   (To avoid cancellation, use
+ *		sin(x) +- cos(x) = -cos(2x)/(sin(x) -+ cos(x))
+ * 	    to compute the worse one.)
+ *
+ * Method -- y1(x):
+ *	1. screen out x<=0 cases: y1(0)=-inf, y1(x<0)=NaN
+ *	2. For x<2.
+ *	   Since
+ *		y1(x) = 2/pi*(j1(x)*(ln(x/2)+Euler)-1/x-x/2+5/64*x^3-...)
+ *	   therefore y1(x)-2/pi*j1(x)*ln(x)-1/x is an odd function.
+ *	   We use the following function to approximate y1,
+ *		y1(x) = x*U(z)/V(z) + (2/pi)*(j1(x)*ln(x)-1/x), z= x^2
+ *	   where for x in [0,2] (abs err less than 2**-65.89)
+ *		U(z) = U0[0] + U0[1]*z + ... + U0[4]*z^4
+ *		V(z) = 1  + v0[0]*z + ... + v0[4]*z^5
+ *	   Note: For tiny x, 1/x dominate y1 and hence
+ *		y1(tiny) = -2/pi/tiny, (choose tiny<2**-54)
+ *	3. For x>=2.
+ * 		y1(x) = sqrt(2/(pi*x))*(p1(x)*sin(x1)+q1(x)*cos(x1))
+ * 	   where x1 = x-3*pi/4. It is better to compute sin(x1),cos(x1)
+ *	   by method mentioned above.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+jn/yn
+~~~~~
+ * Note 2. About jn(n,x), yn(n,x)
+ *	For n=0, j0(x) is called,
+ *	for n=1, j1(x) is called,
+ *	for n<x, forward recursion us used starting
+ *	from values of j0(x) and j1(x).
+ *	for n>x, a continued fraction approximation to
+ *	j(n,x)/j(n-1,x) is evaluated and then backward
+ *	recursion is used starting from a supposed value
+ *	for j(n,x). The resulting value of j(0,x) is
+ *	compared with the actual value to correct the
+ *	supposed value of j(n,x).
+ *
+ *	yn(n,x) is similar in all respects, except
+ *	that forward recursion is used for all
+ *	values of n>1.
+
+jn:
+    /* (x >> n**2)
+     *	    Jn(x) = cos(x-(2n+1)*pi/4)*sqrt(2/x*pi)
+     *	    Yn(x) = sin(x-(2n+1)*pi/4)*sqrt(2/x*pi)
+     *	    Let s=sin(x), c=cos(x),
+     *		xn=x-(2n+1)*pi/4, sqt2 = sqrt(2),then
+     *
+     *		   n	sin(xn)*sqt2	cos(xn)*sqt2
+     *		----------------------------------
+     *		   0	 s-c		 c+s
+     *		   1	-s-c 		-c+s
+     *		   2	-s+c		-c-s
+     *		   3	 s+c		 c-s
+...
+    /* x is tiny, return the first Taylor expansion of J(n,x)
+     * J(n,x) = 1/n!*(x/2)^n  - ...
+...
+		/* use backward recurrence */
+		/* 			x      x^2      x^2
+		 *  J(n,x)/J(n-1,x) =  ----   ------   ------   .....
+		 *			2n  - 2(n+1) - 2(n+2)
+		 *
+		 * 			1      1        1
+		 *  (for large x)   =  ----  ------   ------   .....
+		 *			2n   2(n+1)   2(n+2)
+		 *			-- - ------ - ------ -
+		 *			 x     x         x
+		 *
+		 * Let w = 2n/x and h=2/x, then the above quotient
+		 * is equal to the continued fraction:
+		 *		    1
+		 *	= -----------------------
+		 *		       1
+		 *	   w - -----------------
+		 *			  1
+		 * 	        w+h - ---------
+		 *		       w+2h - ...
+		 *
+		 * To determine how many terms needed, let
+		 * Q(0) = w, Q(1) = w(w+h) - 1,
+		 * Q(k) = (w+k*h)*Q(k-1) - Q(k-2),
+		 * When Q(k) > 1e4	good for single
+		 * When Q(k) > 1e9	good for double
+		 * When Q(k) > 1e17	good for quadruple
+
+...
+		/*  estimate log((2/x)^n*n!) = n*log(2/x)+n*ln(n)
+		 *  Hence, if n*(log(2n/x)) > ...
+		 *  single 8.8722839355e+01
+		 *  double 7.09782712893383973096e+02
+		 *  long double 1.1356523406294143949491931077970765006170e+04
+		 *  then recurrent value may overflow and the result is
+		 *  likely underflow to zero
+
+yn:
+    /* (x >> n**2)
+     *	    Jn(x) = cos(x-(2n+1)*pi/4)*sqrt(2/x*pi)
+     *	    Yn(x) = sin(x-(2n+1)*pi/4)*sqrt(2/x*pi)
+     *	    Let s=sin(x), c=cos(x),
+     *		xn=x-(2n+1)*pi/4, sqt2 = sqrt(2),then
+     *
+     *		   n	sin(xn)*sqt2	cos(xn)*sqt2
+     *		----------------------------------
+     *		   0	 s-c		 c+s
+     *		   1	-s-c 		-c+s
+     *		   2	-s+c		-c-s
+     *		   3	 s+c		 c-s
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+lgamma
+~~~~~~
+ * Method:
+ *   1. Argument Reduction for 0 < x <= 8
+ * 	Since gamma(1+s)=s*gamma(s), for x in [0,8], we may
+ * 	reduce x to a number in [1.5,2.5] by
+ * 		lgamma(1+s) = log(s) + lgamma(s)
+ *	for example,
+ *		lgamma(7.3) = log(6.3) + lgamma(6.3)
+ *			    = log(6.3*5.3) + lgamma(5.3)
+ *			    = log(6.3*5.3*4.3*3.3*2.3) + lgamma(2.3)
+ *   2. Polynomial approximation of lgamma around its
+ *	minimun ymin=1.461632144968362245 to maintain monotonicity.
+ *	On [ymin-0.23, ymin+0.27] (i.e., [1.23164,1.73163]), use
+ *		Let z = x-ymin;
+ *		lgamma(x) = -1.214862905358496078218 + z^2*poly(z)
+ *	where
+ *		poly(z) is a 14 degree polynomial.
+ *   2. Rational approximation in the primary interval [2,3]
+ *	We use the following approximation:
+ *		s = x-2.0;
+ *		lgamma(x) = 0.5*s + s*P(s)/Q(s)
+ *	with accuracy
+ *		|P/Q - (lgamma(x)-0.5s)| < 2**-61.71
+ *	Our algorithms are based on the following observation
+ *
+ *                             zeta(2)-1    2    zeta(3)-1    3
+ * lgamma(2+s) = s*(1-Euler) + --------- * s  -  --------- * s  + ...
+ *                                 2                 3
+ *
+ *	where Euler = 0.5771... is the Euler constant, which is very
+ *	close to 0.5.
+ *
+ *   3. For x>=8, we have
+ *	lgamma(x)~(x-0.5)log(x)-x+0.5*log(2pi)+1/(12x)-1/(360x**3)+....
+ *	(better formula:
+ *	   lgamma(x)~(x-0.5)*(log(x)-1)-.5*(log(2pi)-1) + ...)
+ *	Let z = 1/x, then we approximation
+ *		f(z) = lgamma(x) - (x-0.5)(log(x)-1)
+ *	by
+ *	  			    3       5             11
+ *		w = w0 + w1*z + w2*z  + w3*z  + ... + w6*z
+ *	where
+ *		|w - f(z)| < 2**-58.74
+ *
+ *   4. For negative x, since (G is gamma function)
+ *		-x*G(-x)*G(x) = pi/sin(pi*x),
+ * 	we have
+ * 		G(x) = pi/(sin(pi*x)*(-x)*G(-x))
+ *	since G(-x) is positive, sign(G(x)) = sign(sin(pi*x)) for x<0
+ *	Hence, for x<0, signgam = sign(sin(pi*x)) and
+ *		lgamma(x) = log(|Gamma(x)|)
+ *			  = log(pi/(|x*sin(pi*x)|)) - lgamma(-x);
+ *	Note: one should avoid compute pi*(-x) directly in the
+ *	      computation of sin(pi*(-x)).
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+log
+~~~
+ * Method :
+ *   1. Argument Reduction: find k and f such that
+ *			x = 2^k * (1+f),
+ *	   where  sqrt(2)/2 < 1+f < sqrt(2) .
+ *
+ *   2. Approximation of log(1+f).
+ *	Let s = f/(2+f) ; based on log(1+f) = log(1+s) - log(1-s)
+ *		 = 2s + 2/3 s**3 + 2/5 s**5 + .....,
+ *	     	 = 2s + s*R
+ *      We use a special Reme algorithm on [0,0.1716] to generate
+ * 	a polynomial of degree 14 to approximate R The maximum error
+ *	of this polynomial approximation is bounded by 2**-58.45. In
+ *	other words,
+ *		        2      4      6      8      10      12      14
+ *	    R(z) ~ Lg1*s +Lg2*s +Lg3*s +Lg4*s +Lg5*s  +Lg6*s  +Lg7*s
+ *  	(the values of Lg1 to Lg7 are listed in the program)
+ *	and
+ *	    |      2          14          |     -58.45
+ *	    | Lg1*s +...+Lg7*s    -  R(z) | <= 2
+ *	    |                             |
+ *	Note that 2s = f - s*f = f - hfsq + s*hfsq, where hfsq = f*f/2.
+ *	In order to guarantee error in log below 1ulp, we compute log
+ *	by
+ *		log(1+f) = f - s*(f - R)	(if f is not too large)
+ *		log(1+f) = f - (hfsq - s*(hfsq+R)).	(better accuracy)
+ *
+ *	3. Finally,  log(x) = k*ln2 + log(1+f).
+ *			    = k*ln2_hi+(f-(hfsq-(s*(hfsq+R)+k*ln2_lo)))
+ *	   Here ln2 is split into two floating point number:
+ *			ln2_hi + ln2_lo,
+ *	   where n*ln2_hi is always exact for |n| < 2000.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+log10
+~~~~~
+ * Method :
+ *	Let log10_2hi = leading 40 bits of log10(2) and
+ *	    log10_2lo = log10(2) - log10_2hi,
+ *	    ivln10   = 1/log(10) rounded.
+ *	Then
+ *		n = ilogb(x),
+ *		if(n<0)  n = n+1;
+ *		x = scalbn(x,-n);
+ *		log10(x) := n*log10_2hi + (n*log10_2lo + ivln10*log(x))
+ *
+ * Note 1:
+ *	To guarantee log10(10**n)=n, where 10**n is normal, the rounding
+ *	mode must set to Round-to-Nearest.
+ * Note 2:
+ *	[1/log(10)] rounded to 53 bits has error  .198   ulps;
+ *	log10 is monotonic at all binary break points.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+pow
+~~~
+ * Method:  Let x =  2   * (1+f)
+ *	1. Compute and return log2(x) in two pieces:
+ *		log2(x) = w1 + w2,
+ *	   where w1 has 53-24 = 29 bit trailing zeros.
+ *	2. Perform y*log2(x) = n+y' by simulating muti-precision
+ *	   arithmetic, where |y'|<=0.5.
+ *	3. Return x**y = 2**n*exp(y'*log2)
+ *
+ * Special cases:
+ *	1.  (anything) ** 0  is 1
+ *	2.  (anything) ** 1  is itself
+ *	3.  (anything) ** NAN is NAN
+ *	4.  NAN ** (anything except 0) is NAN
+ *	5.  +-(|x| > 1) **  +INF is +INF
+ *	6.  +-(|x| > 1) **  -INF is +0
+ *	7.  +-(|x| < 1) **  +INF is +0
+ *	8.  +-(|x| < 1) **  -INF is +INF
+ *	9.  +-1         ** +-INF is NAN
+ *	10. +0 ** (+anything except 0, NAN)               is +0
+ *	11. -0 ** (+anything except 0, NAN, odd integer)  is +0
+ *	12. +0 ** (-anything except 0, NAN)               is +INF
+ *	13. -0 ** (-anything except 0, NAN, odd integer)  is +INF
+ *	14. -0 ** (odd integer) = -( +0 ** (odd integer) )
+ *	15. +INF ** (+anything except 0,NAN) is +INF
+ *	16. +INF ** (-anything except 0,NAN) is +0
+ *	17. -INF ** (anything)  = -0 ** (-anything)
+ *	18. (-anything) ** (integer) is (-1)**(integer)*(+anything**integer)
+ *	19. (-anything except 0 and inf) ** (non-integer) is NAN
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+rem_pio2	return the remainder of x rem pi/2 in y[0]+y[1]
+~~~~~~~~
+This is one of the basic functions which is written with highest accuracy
+in mind.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+sinh
+~~~~
+ * Method :
+ * mathematically sinh(x) if defined to be (exp(x)-exp(-x))/2
+ *	1. Replace x by |x| (sinh(-x) = -sinh(x)).
+ *	2.
+ *		                                    E + E/(E+1)
+ *	    0        <= x <= 22     :  sinh(x) := --------------, E=expm1(x)
+ *			       			        2
+ *
+ *	    22       <= x <= lnovft :  sinh(x) := exp(x)/2
+ *	    lnovft   <= x <= ln2ovft:  sinh(x) := exp(x/2)/2 * exp(x/2)
+ *	    ln2ovft  <  x	    :  sinh(x) := x*shuge (overflow)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+sqrt
+~~~~
+ * Method:
+ *   Bit by bit method using integer arithmetic. (Slow, but portable)
+ *   1. Normalization
+ *	Scale x to y in [1,4) with even powers of 2:
+ *	find an integer k such that  1 <= (y=x*2^(-2k)) < 4, then
+ *		sqrt(x) = 2^k * sqrt(y)
+ *   2. Bit by bit computation
+ *	Let q  = sqrt(y) truncated to i bit after binary point (q = 1),
+ *	     i							 0
+ *                                     i+1         2
+ *	    s  = 2*q , and	y  =  2   * ( y - q  ).		(1)
+ *	     i      i            i                 i
+ *
+ *	To compute q    from q , one checks whether
+ *		    i+1       i
+ *
+ *			      -(i+1) 2
+ *			(q + 2      ) <= y.			(2)
+ *     			  i
+ *							      -(i+1)
+ *	If (2) is false, then q   = q ; otherwise q   = q  + 2      .
+ *		 	       i+1   i             i+1   i
+ *
+ *	With some algebric manipulation, it is not difficult to see
+ *	that (2) is equivalent to
+ *                             -(i+1)
+ *			s  +  2       <= y			(3)
+ *			 i                i
+ *
+ *	The advantage of (3) is that s  and y  can be computed by
+ *				      i      i
+ *	the following recurrence formula:
+ *	    if (3) is false
+ *
+ *	    s     =  s  ,	y    = y   ;			(4)
+ *	     i+1      i		 i+1    i
+ *
+ *	    otherwise,
+ *                         -i                     -(i+1)
+ *	    s	  =  s  + 2  ,  y    = y  -  s  - 2  		(5)
+ *           i+1      i          i+1    i     i
+ *
+ *	One may easily use induction to prove (4) and (5).
+ *	Note. Since the left hand side of (3) contain only i+2 bits,
+ *	      it does not necessary to do a full (53-bit) comparison
+ *	      in (3).
+ *   3. Final rounding
+ *	After generating the 53 bits result, we compute one more bit.
+ *	Together with the remainder, we can decide whether the
+ *	result is exact, bigger than 1/2ulp, or less than 1/2ulp
+ *	(it will never equal to 1/2ulp).
+ *	The rounding mode can be detected by checking whether
+ *	huge + tiny is equal to huge, and whether huge - tiny is
+ *	equal to huge for some floating point number "huge" and "tiny".
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+cos
+~~~
+ * kernel cos function on [-pi/4, pi/4], pi/4 ~ 0.785398164
+ * Input x is assumed to be bounded by ~pi/4 in magnitude.
+ * Input y is the tail of x.
+ *
+ * Algorithm
+ *	1. Since cos(-x) = cos(x), we need only to consider positive x.
+ *	2. if x < 2^-27 (hx<0x3e400000 0), return 1 with inexact if x!=0.
+ *	3. cos(x) is approximated by a polynomial of degree 14 on
+ *	   [0,pi/4]
+ *		  	                 4            14
+ *	   	cos(x) ~ 1 - x*x/2 + C1*x + ... + C6*x
+ *	   where the remez error is
+ *
+ * 	|              2     4     6     8     10    12     14 |     -58
+ * 	|cos(x)-(1-.5*x +C1*x +C2*x +C3*x +C4*x +C5*x  +C6*x  )| <= 2
+ * 	|    					               |
+ *
+ * 	               4     6     8     10    12     14
+ *	4. let r = C1*x +C2*x +C3*x +C4*x +C5*x  +C6*x  , then
+ *	       cos(x) = 1 - x*x/2 + r
+ *	   since cos(x+y) ~ cos(x) - sin(x)*y
+ *			  ~ cos(x) - x*y,
+ *	   a correction term is necessary in cos(x) and hence
+ *		cos(x+y) = 1 - (x*x/2 - (r - x*y))
+ *	   For better accuracy when x > 0.3, let qx = |x|/4 with
+ *	   the last 32 bits mask off, and if x > 0.78125, let qx = 0.28125.
+ *	   Then
+ *		cos(x+y) = (1-qx) - ((x*x/2-qx) - (r-x*y)).
+ *	   Note that 1-qx and (x*x/2-qx) is EXACT here, and the
+ *	   magnitude of the latter is at least a quarter of x*x/2,
+ *	   thus, reducing the rounding error in the subtraction.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+sin
+~~~
+ * kernel sin function on [-pi/4, pi/4], pi/4 ~ 0.7854
+ * Input x is assumed to be bounded by ~pi/4 in magnitude.
+ * Input y is the tail of x.
+ * Input iy indicates whether y is 0. (if iy=0, y assume to be 0).
+ *
+ * Algorithm
+ *	1. Since sin(-x) = -sin(x), we need only to consider positive x.
+ *	2. if x < 2^-27 (hx<0x3e400000 0), return x with inexact if x!=0.
+ *	3. sin(x) is approximated by a polynomial of degree 13 on
+ *	   [0,pi/4]
+ *		  	         3            13
+ *	   	sin(x) ~ x + S1*x + ... + S6*x
+ *	   where
+ *
+ * 	|sin(x)         2     4     6     8     10     12  |     -58
+ * 	|----- - (1+S1*x +S2*x +S3*x +S4*x +S5*x  +S6*x   )| <= 2
+ * 	|  x 					           |
+ *
+ *	4. sin(x+y) = sin(x) + sin'(x')*y
+ *		    ~ sin(x) + (1-x*x/2)*y
+ *	   For better accuracy, let
+ *		     3      2      2      2      2
+ *		r = x *(S2+x *(S3+x *(S4+x *(S5+x *S6))))
+ *	   then                   3    2
+ *		sin(x) = x + (S1*x + (x *(r-y/2)+y))
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+tan
+~~~
+ * kernel tan function on [-pi/4, pi/4], pi/4 ~ 0.7854
+ * Input x is assumed to be bounded by ~pi/4 in magnitude.
+ * Input y is the tail of x.
+ * Input k indicates whether tan (if k=1) or
+ * -1/tan (if k= -1) is returned.
+ *
+ * Algorithm
+ *	1. Since tan(-x) = -tan(x), we need only to consider positive x.
+ *	2. if x < 2^-28 (hx<0x3e300000 0), return x with inexact if x!=0.
+ *	3. tan(x) is approximated by a odd polynomial of degree 27 on
+ *	   [0,0.67434]
+ *		  	         3             27
+ *	   	tan(x) ~ x + T1*x + ... + T13*x
+ *	   where
+ *
+ * 	        |tan(x)         2     4            26   |     -59.2
+ * 	        |----- - (1+T1*x +T2*x +.... +T13*x    )| <= 2
+ * 	        |  x 					|
+ *
+ *	   Note: tan(x+y) = tan(x) + tan'(x)*y
+ *		          ~ tan(x) + (1+x*x)*y
+ *	   Therefore, for better accuracy in computing tan(x+y), let
+ *		     3      2      2       2       2
+ *		r = x *(T2+x *(T3+x *(...+x *(T12+x *T13))))
+ *	   then
+ *		 		    3    2
+ *		tan(x+y) = x + (T1*x + (x *(r+y)+y))
+ *
+ *      4. For x in [0.67434,pi/4],  let y = pi/4 - x, then
+ *		tan(x) = tan(pi/4-y) = (1-tan(y))/(1+tan(y))
+ *		       = 1 - 2*(tan(y) - (tan(y)^2)/(1+tan(y)))
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+atan
+~~~~
+ * Method
+ *   1. Reduce x to positive by atan(x) = -atan(-x).
+ *   2. According to the integer k=4t+0.25 chopped, t=x, the argument
+ *      is further reduced to one of the following intervals and the
+ *      arctangent of t is evaluated by the corresponding formula:
+ *
+ *      [0,7/16]      atan(x) = t-t^3*(a1+t^2*(a2+...(a10+t^2*a11)...)
+ *      [7/16,11/16]  atan(x) = atan(1/2) + atan( (t-0.5)/(1+t/2) )
+ *      [11/16.19/16] atan(x) = atan( 1 ) + atan( (t-1)/(1+t) )
+ *      [19/16,39/16] atan(x) = atan(3/2) + atan( (t-1.5)/(1+1.5t) )
+ *      [39/16,INF]   atan(x) = atan(INF) + atan( -1/t )
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+erf
+~~~
+ *			     x
+ *		      2      |\
+ *     erf(x)  =  ---------  | exp(-t*t)dt
+ *	 	   sqrt(pi) \|
+ *			     0
+ *
+ *     erfc(x) =  1-erf(x)
+ *  Note that
+ *		erf(-x) = -erf(x)
+ *		erfc(-x) = 2 - erfc(x)
+ *
+ * Method:
+ *	1. For |x| in [0, 0.84375]
+ *	    erf(x)  = x + x*R(x^2)
+ *          erfc(x) = 1 - erf(x)           if x in [-.84375,0.25]
+ *                  = 0.5 + ((0.5-x)-x*R)  if x in [0.25,0.84375]
+ *	   where R = P/Q where P is an odd poly of degree 8 and
+ *	   Q is an odd poly of degree 10.
+ *						 -57.90
+ *			| R - (erf(x)-x)/x | <= 2
+ *
+ *
+ *	   Remark. The formula is derived by noting
+ *          erf(x) = (2/sqrt(pi))*(x - x^3/3 + x^5/10 - x^7/42 + ....)
+ *	   and that
+ *          2/sqrt(pi) = 1.128379167095512573896158903121545171688
+ *	   is close to one. The interval is chosen because the fix
+ *	   point of erf(x) is near 0.6174 (i.e., erf(x)=x when x is
+ *	   near 0.6174), and by some experiment, 0.84375 is chosen to
+ * 	   guarantee the error is less than one ulp for erf.
+ *
+ *      2. For |x| in [0.84375,1.25], let s = |x| - 1, and
+ *         c = 0.84506291151 rounded to single (24 bits)
+ *         	erf(x)  = sign(x) * (c  + P1(s)/Q1(s))
+ *         	erfc(x) = (1-c)  - P1(s)/Q1(s) if x > 0
+ *			  1+(c+P1(s)/Q1(s))    if x < 0
+ *         	|P1/Q1 - (erf(|x|)-c)| <= 2**-59.06
+ *	   Remark: here we use the taylor series expansion at x=1.
+ *		erf(1+s) = erf(1) + s*Poly(s)
+ *			 = 0.845.. + P1(s)/Q1(s)
+ *	   That is, we use rational approximation to approximate
+ *			erf(1+s) - (c = (single)0.84506291151)
+ *	   Note that |P1/Q1|< 0.078 for x in [0.84375,1.25]
+ *	   where
+ *		P1(s) = degree 6 poly in s
+ *		Q1(s) = degree 6 poly in s
+ *
+ *      3. For x in [1.25,1/0.35(~2.857143)],
+ *         	erfc(x) = (1/x)*exp(-x*x-0.5625+R1/S1)
+ *         	erf(x)  = 1 - erfc(x)
+ *	   where
+ *		R1(z) = degree 7 poly in z, (z=1/x^2)
+ *		S1(z) = degree 8 poly in z
+ *
+ *      4. For x in [1/0.35,28]
+ *         	erfc(x) = (1/x)*exp(-x*x-0.5625+R2/S2) if x > 0
+ *			= 2.0 - (1/x)*exp(-x*x-0.5625+R2/S2) if -6<x<0
+ *			= 2.0 - tiny		(if x <= -6)
+ *         	erf(x)  = sign(x)*(1.0 - erfc(x)) if x < 6, else
+ *         	erf(x)  = sign(x)*(1.0 - tiny)
+ *	   where
+ *		R2(z) = degree 6 poly in z, (z=1/x^2)
+ *		S2(z) = degree 7 poly in z
+ *
+ *      Note1:
+ *	   To compute exp(-x*x-0.5625+R/S), let s be a single
+ *	   precision number and s := x; then
+ *		-x*x = -s*s + (s-x)*(s+x)
+ *	        exp(-x*x-0.5626+R/S) =
+ *			exp(-s*s-0.5625)*exp((s-x)*(s+x)+R/S);
+ *      Note2:
+ *	   Here 4 and 5 make use of the asymptotic series
+ *			  exp(-x*x)
+ *		erfc(x) ~ ---------- * ( 1 + Poly(1/x^2) )
+ *			  x*sqrt(pi)
+ *	   We use rational approximation to approximate
+ *      	g(s)=f(1/x^2) = log(erfc(x)*x) - x*x + 0.5625
+ *	   Here is the error bound for R1/S1 and R2/S2
+ *      	|R1/S1 - f(x)|  < 2**(-62.57)
+ *      	|R2/S2 - f(x)|  < 2**(-61.52)
+ *
+ *      5. For inf > x >= 28
+ *         	erf(x)  = sign(x) *(1 - tiny)  (raise inexact)
+ *         	erfc(x) = tiny*tiny (raise underflow) if x > 0
+ *			= 2 - tiny if x<0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+expm1	Returns exp(x)-1, the exponential of x minus 1
+~~~~~
+ * Method
+ *   1. Argument reduction:
+ *	Given x, find r and integer k such that
+ *
+ *               x = k*ln2 + r,  |r| <= 0.5*ln2 ~ 0.34658
+ *
+ *      Here a correction term c will be computed to compensate
+ *	the error in r when rounded to a floating-point number.
+ *
+ *   2. Approximating expm1(r) by a special rational function on
+ *	the interval [0,0.34658]:
+ *	Since
+ *	    r*(exp(r)+1)/(exp(r)-1) = 2+ r^2/6 - r^4/360 + ...
+ *	we define R1(r*r) by
+ *	    r*(exp(r)+1)/(exp(r)-1) = 2+ r^2/6 * R1(r*r)
+ *	That is,
+ *	    R1(r**2) = 6/r *((exp(r)+1)/(exp(r)-1) - 2/r)
+ *		     = 6/r * ( 1 + 2.0*(1/(exp(r)-1) - 1/r))
+ *		     = 1 - r^2/60 + r^4/2520 - r^6/100800 + ...
+ *      We use a special Reme algorithm on [0,0.347] to generate
+ * 	a polynomial of degree 5 in r*r to approximate R1. The
+ *	maximum error of this polynomial approximation is bounded
+ *	by 2**-61. In other words,
+ *	    R1(z) ~ 1.0 + Q1*z + Q2*z**2 + Q3*z**3 + Q4*z**4 + Q5*z**5
+ *	where 	Q1  =  -1.6666666666666567384E-2,
+ * 		Q2  =   3.9682539681370365873E-4,
+ * 		Q3  =  -9.9206344733435987357E-6,
+ * 		Q4  =   2.5051361420808517002E-7,
+ * 		Q5  =  -6.2843505682382617102E-9;
+ *  	(where z=r*r, and the values of Q1 to Q5 are listed below)
+ *	with error bounded by
+ *	    |                  5           |     -61
+ *	    | 1.0+Q1*z+...+Q5*z   -  R1(z) | <= 2
+ *	    |                              |
+ *
+ *	expm1(r) = exp(r)-1 is then computed by the following
+ * 	specific way which minimize the accumulation rounding error:
+ *			       2     3
+ *			      r     r    [ 3 - (R1 + R1*r/2)  ]
+ *	      expm1(r) = r + --- + --- * [--------------------]
+ *		              2     2    [ 6 - r*(3 - R1*r/2) ]
+ *
+ *	To compensate the error in the argument reduction, we use
+ *		expm1(r+c) = expm1(r) + c + expm1(r)*c
+ *			   ~ expm1(r) + c + r*c
+ *	Thus c+r*c will be added in as the correction terms for
+ *	expm1(r+c). Now rearrange the term to avoid optimization
+ * 	screw up:
+ *		        (      2                                    2 )
+ *		        ({  ( r    [ R1 -  (3 - R1*r/2) ]  )  }    r  )
+ *	 expm1(r+c)~r - ({r*(--- * [--------------------]-c)-c} - --- )
+ *	                ({  ( 2    [ 6 - r*(3 - R1*r/2) ]  )  }    2  )
+ *                      (                                             )
+ *
+ *		   = r - E
+ *   3. Scale back to obtain expm1(x):
+ *	From step 1, we have
+ *	   expm1(x) = either 2^k*[expm1(r)+1] - 1
+ *		    = or     2^k*[expm1(r) + (1-2^-k)]
+ *   4. Implementation notes:
+ *	(A). To save one multiplication, we scale the coefficient Qi
+ *	     to Qi*2^i, and replace z by (x^2)/2.
+ *	(B). To achieve maximum accuracy, we compute expm1(x) by
+ *	  (i)   if x < -56*ln2, return -1.0, (raise inexact if x!=inf)
+ *	  (ii)  if k=0, return r-E
+ *	  (iii) if k=-1, return 0.5*(r-E)-0.5
+ *        (iv)	if k=1 if r < -0.25, return 2*((r+0.5)- E)
+ *	       	       else	     return  1.0+2.0*(r-E);
+ *	  (v)   if (k<-2||k>56) return 2^k(1-(E-r)) - 1 (or exp(x)-1)
+ *	  (vi)  if k <= 20, return 2^k((1-2^-k)-(E-r)), else
+ *	  (vii) return 2^k(1-((E+2^-k)-r))
+ *
+ * Special cases:
+ *	expm1(INF) is INF, expm1(NaN) is NaN;
+ *	expm1(-INF) is -1, and
+ *	for finite argument, only expm1(0)=0 is exact.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+log1p
+~~~~~
+ * Method :
+ *   1. Argument Reduction: find k and f such that
+ *			1+x = 2^k * (1+f),
+ *	   where  sqrt(2)/2 < 1+f < sqrt(2) .
+ *
+ *      Note. If k=0, then f=x is exact. However, if k!=0, then f
+ *	may not be representable exactly. In that case, a correction
+ *	term is need. Let u=1+x rounded. Let c = (1+x)-u, then
+ *	log(1+x) - log(u) ~ c/u. Thus, we proceed to compute log(u),
+ *	and add back the correction term c/u.
+ *	(Note: when x > 2**53, one can simply return log(x))
+ *
+ *   2. Approximation of log1p(f).
+ *	Let s = f/(2+f) ; based on log(1+f) = log(1+s) - log(1-s)
+ *		 = 2s + 2/3 s**3 + 2/5 s**5 + .....,
+ *	     	 = 2s + s*R
+ *      We use a special Reme algorithm on [0,0.1716] to generate
+ * 	a polynomial of degree 14 to approximate R The maximum error
+ *	of this polynomial approximation is bounded by 2**-58.45. In
+ *	other words,
+ *		        2      4      6      8      10      12      14
+ *	    R(z) ~ Lp1*s +Lp2*s +Lp3*s +Lp4*s +Lp5*s  +Lp6*s  +Lp7*s
+ *  	(the values of Lp1 to Lp7 are listed in the program)
+ *	and
+ *	    |      2          14          |     -58.45
+ *	    | Lp1*s +...+Lp7*s    -  R(z) | <= 2
+ *	    |                             |
+ *	Note that 2s = f - s*f = f - hfsq + s*hfsq, where hfsq = f*f/2.
+ *	In order to guarantee error in log below 1ulp, we compute log
+ *	by
+ *		log1p(f) = f - (hfsq - s*(hfsq+R)).
+ *
+ *	3. Finally, log1p(x) = k*ln2 + log1p(f).
+ *		 	     = k*ln2_hi+(f-(hfsq-(s*(hfsq+R)+k*ln2_lo)))
+ *	   Here ln2 is split into two floating point number:
+ *			ln2_hi + ln2_lo,
+ *	   where n*ln2_hi is always exact for |n| < 2000.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

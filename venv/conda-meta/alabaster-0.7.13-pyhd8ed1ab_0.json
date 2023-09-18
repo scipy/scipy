@@ -1,0 +1,213 @@
+{
+  "build": "pyhd8ed1ab_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/noarch",
+  "constrains": [],
+  "depends": [
+    "python >=3.6"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/alabaster-0.7.13-pyhd8ed1ab_0",
+  "features": "",
+  "files": [
+    "lib/python3.10/site-packages/alabaster-0.7.13.dist-info/INSTALLER",
+    "lib/python3.10/site-packages/alabaster-0.7.13.dist-info/LICENSE",
+    "lib/python3.10/site-packages/alabaster-0.7.13.dist-info/METADATA",
+    "lib/python3.10/site-packages/alabaster-0.7.13.dist-info/RECORD",
+    "lib/python3.10/site-packages/alabaster-0.7.13.dist-info/REQUESTED",
+    "lib/python3.10/site-packages/alabaster-0.7.13.dist-info/WHEEL",
+    "lib/python3.10/site-packages/alabaster-0.7.13.dist-info/direct_url.json",
+    "lib/python3.10/site-packages/alabaster-0.7.13.dist-info/entry_points.txt",
+    "lib/python3.10/site-packages/alabaster-0.7.13.dist-info/top_level.txt",
+    "lib/python3.10/site-packages/alabaster/__init__.py",
+    "lib/python3.10/site-packages/alabaster/_version.py",
+    "lib/python3.10/site-packages/alabaster/about.html",
+    "lib/python3.10/site-packages/alabaster/donate.html",
+    "lib/python3.10/site-packages/alabaster/layout.html",
+    "lib/python3.10/site-packages/alabaster/navigation.html",
+    "lib/python3.10/site-packages/alabaster/relations.html",
+    "lib/python3.10/site-packages/alabaster/static/alabaster.css_t",
+    "lib/python3.10/site-packages/alabaster/static/custom.css",
+    "lib/python3.10/site-packages/alabaster/support.py",
+    "lib/python3.10/site-packages/alabaster/theme.conf",
+    "lib/python3.10/site-packages/alabaster/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/alabaster/__pycache__/_version.cpython-310.pyc",
+    "lib/python3.10/site-packages/alabaster/__pycache__/support.cpython-310.pyc"
+  ],
+  "fn": "alabaster-0.7.13-pyhd8ed1ab_0.conda",
+  "license": "BSD-3-Clause",
+  "license_family": "BSD",
+  "link": {
+    "source": "/opt/conda/pkgs/alabaster-0.7.13-pyhd8ed1ab_0",
+    "type": 1
+  },
+  "md5": "06006184e203b61d3525f90de394471e",
+  "name": "alabaster",
+  "noarch": "python",
+  "package_tarball_full_path": "/opt/conda/pkgs/alabaster-0.7.13-pyhd8ed1ab_0.conda",
+  "package_type": "noarch_python",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "site-packages/alabaster-0.7.13.dist-info/INSTALLER",
+        "path_type": "hardlink",
+        "sha256": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "sha256_in_prefix": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "size_in_bytes": 5
+      },
+      {
+        "_path": "site-packages/alabaster-0.7.13.dist-info/LICENSE",
+        "path_type": "hardlink",
+        "sha256": "8253f0abaad05a7dee1a08a43705ac2de1f73bd7d44cfe01010ecc104cc42851",
+        "sha256_in_prefix": "8253f0abaad05a7dee1a08a43705ac2de1f73bd7d44cfe01010ecc104cc42851",
+        "size_in_bytes": 1555
+      },
+      {
+        "_path": "site-packages/alabaster-0.7.13.dist-info/METADATA",
+        "path_type": "hardlink",
+        "sha256": "651b23f5511f910007a6a40670f7c5e3232e2058c45416c5b49c4369c8269fc3",
+        "sha256_in_prefix": "651b23f5511f910007a6a40670f7c5e3232e2058c45416c5b49c4369c8269fc3",
+        "size_in_bytes": 2953
+      },
+      {
+        "_path": "site-packages/alabaster-0.7.13.dist-info/RECORD",
+        "path_type": "hardlink",
+        "sha256": "d3a01871deda4852f34aae48981a1ccc0f1612473d17a19f3efe42ef5b2243b2",
+        "sha256_in_prefix": "d3a01871deda4852f34aae48981a1ccc0f1612473d17a19f3efe42ef5b2243b2",
+        "size_in_bytes": 1818
+      },
+      {
+        "_path": "site-packages/alabaster-0.7.13.dist-info/REQUESTED",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256_in_prefix": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "site-packages/alabaster-0.7.13.dist-info/WHEEL",
+        "path_type": "hardlink",
+        "sha256": "db07a93359e4e034b8785a58ad6d534ea3dca0635f1e184efe2e66e1c3a299ba",
+        "sha256_in_prefix": "db07a93359e4e034b8785a58ad6d534ea3dca0635f1e184efe2e66e1c3a299ba",
+        "size_in_bytes": 92
+      },
+      {
+        "_path": "site-packages/alabaster-0.7.13.dist-info/direct_url.json",
+        "path_type": "hardlink",
+        "sha256": "7730cf419c5dc28b9fb94ebd8e0ddbbcbd88ae28f0e9bf36185428c7143f618f",
+        "sha256_in_prefix": "7730cf419c5dc28b9fb94ebd8e0ddbbcbd88ae28f0e9bf36185428c7143f618f",
+        "size_in_bytes": 105
+      },
+      {
+        "_path": "site-packages/alabaster-0.7.13.dist-info/entry_points.txt",
+        "path_type": "hardlink",
+        "sha256": "af6b7d6c4ce0d36acac476a7f255cab727c820ef7f91802553e51396e9dd82a3",
+        "sha256_in_prefix": "af6b7d6c4ce0d36acac476a7f255cab727c820ef7f91802553e51396e9dd82a3",
+        "size_in_bytes": 43
+      },
+      {
+        "_path": "site-packages/alabaster-0.7.13.dist-info/top_level.txt",
+        "path_type": "hardlink",
+        "sha256": "bc320e66ec7ad8e0ef1fcedbc929c04b3a6c86d1ff4a27f2b4a60948ce778833",
+        "sha256_in_prefix": "bc320e66ec7ad8e0ef1fcedbc929c04b3a6c86d1ff4a27f2b4a60948ce778833",
+        "size_in_bytes": 10
+      },
+      {
+        "_path": "site-packages/alabaster/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "ff0e61a26c54e103ea5ad8e0c7a6bbbc714825e7d5da764e3202e5229d099ae6",
+        "sha256_in_prefix": "ff0e61a26c54e103ea5ad8e0c7a6bbbc714825e7d5da764e3202e5229d099ae6",
+        "size_in_bytes": 681
+      },
+      {
+        "_path": "site-packages/alabaster/_version.py",
+        "path_type": "hardlink",
+        "sha256": "065ef90cc407fde6ad4cc27dc73961f46b07c00a07770f311361300c678527d6",
+        "sha256_in_prefix": "065ef90cc407fde6ad4cc27dc73961f46b07c00a07770f311361300c678527d6",
+        "size_in_bytes": 81
+      },
+      {
+        "_path": "site-packages/alabaster/about.html",
+        "path_type": "hardlink",
+        "sha256": "3ca58a7890f8606c2796df6ba4370b10b5f8270793cf2cc44ff07910cd5af12a",
+        "sha256_in_prefix": "3ca58a7890f8606c2796df6ba4370b10b5f8270793cf2cc44ff07910cd5af12a",
+        "size_in_bytes": 1881
+      },
+      {
+        "_path": "site-packages/alabaster/donate.html",
+        "path_type": "hardlink",
+        "sha256": "475b7c2fe09d8f483f25f4fcf6bef8c336233540a2a88a67d173cfc4fe4f8f89",
+        "sha256_in_prefix": "475b7c2fe09d8f483f25f4fcf6bef8c336233540a2a88a67d173cfc4fe4f8f89",
+        "size_in_bytes": 866
+      },
+      {
+        "_path": "site-packages/alabaster/layout.html",
+        "path_type": "hardlink",
+        "sha256": "c8fb47bafee7f257f361b6485ae68299ef642e6f17b16aacffbdff65155ebf38",
+        "sha256_in_prefix": "c8fb47bafee7f257f361b6485ae68299ef642e6f17b16aacffbdff65155ebf38",
+        "size_in_bytes": 4285
+      },
+      {
+        "_path": "site-packages/alabaster/navigation.html",
+        "path_type": "hardlink",
+        "sha256": "e82edc42c003914b254ef305728df8dab0c228cd8af762fa1b8da7421c8f4a9a",
+        "sha256_in_prefix": "e82edc42c003914b254ef305728df8dab0c228cd8af762fa1b8da7421c8f4a9a",
+        "size_in_bytes": 323
+      },
+      {
+        "_path": "site-packages/alabaster/relations.html",
+        "path_type": "hardlink",
+        "sha256": "e4b1a2944c590d666e4bb1d767e3cb51237099e68fd7e9fbf7e9c3fdccbc57e9",
+        "sha256_in_prefix": "e4b1a2944c590d666e4bb1d767e3cb51237099e68fd7e9fbf7e9c3fdccbc57e9",
+        "size_in_bytes": 621
+      },
+      {
+        "_path": "site-packages/alabaster/static/alabaster.css_t",
+        "path_type": "hardlink",
+        "sha256": "47d5c4dcdfb375ca1b2f6f78c9f1552195bf9a2068989192b7432f84557dc2ef",
+        "sha256_in_prefix": "47d5c4dcdfb375ca1b2f6f78c9f1552195bf9a2068989192b7432f84557dc2ef",
+        "size_in_bytes": 15693
+      },
+      {
+        "_path": "site-packages/alabaster/static/custom.css",
+        "path_type": "hardlink",
+        "sha256": "39f23a6561786e3cb4e33e4a96562a1305a8b74c0d45dc215a64018692cd5d4c",
+        "sha256_in_prefix": "39f23a6561786e3cb4e33e4a96562a1305a8b74c0d45dc215a64018692cd5d4c",
+        "size_in_bytes": 42
+      },
+      {
+        "_path": "site-packages/alabaster/support.py",
+        "path_type": "hardlink",
+        "sha256": "05891b14554bf705eb1104f97bec38ebb17fdddaf862d90d5de00bc789e87a13",
+        "sha256_in_prefix": "05891b14554bf705eb1104f97bec38ebb17fdddaf862d90d5de00bc789e87a13",
+        "size_in_bytes": 3963
+      },
+      {
+        "_path": "site-packages/alabaster/theme.conf",
+        "path_type": "hardlink",
+        "sha256": "7a867be0c02879a864c95cbdcf5613e371c3823149c05d425eb933eb9f9b0020",
+        "sha256_in_prefix": "7a867be0c02879a864c95cbdcf5613e371c3823149c05d425eb933eb9f9b0020",
+        "size_in_bytes": 2346
+      },
+      {
+        "_path": "lib/python3.10/site-packages/alabaster/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/alabaster/__pycache__/_version.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/alabaster/__pycache__/support.cpython-310.pyc",
+        "path_type": "pyc_file"
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "b2d160a050996950434c6e87a174fc01c4a937cbeffbdd20d1b46126b4478a95",
+  "size": 18154,
+  "subdir": "noarch",
+  "timestamp": 1673645756302,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/noarch/alabaster-0.7.13-pyhd8ed1ab_0.conda",
+  "version": "0.7.13"
+}

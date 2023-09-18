@@ -1,0 +1,73 @@
+// Import Bootstrap core
+// Override bootstrap variables
+$spacer: 1rem;
+
+$container-max-widths: (
+  sm: 540px,
+  md: 720px,
+  lg: 960px,
+  xl: 1400px,
+);
+
+$grid-breakpoints: (
+  xs: 0,
+  sm: 540px,
+  md: 720px,
+  lg: 960px,
+  xl: 1200px,
+);
+@import "~bootstrap/scss/bootstrap";
+
+// re-usable SCSS functions
+@import "abstracts/mixins";
+
+// Variables
+@import "variables/layout";
+@import "variables/fonts";
+@import "variables/icons";
+@import "variables/admonitions";
+@import "variables/versionmodified";
+@import "variables/color";
+
+// Basic styling applied throughout site
+@import "./base/base";
+
+// Major theme layout, skeleton, and whitespace
+@import "./sections/container";
+@import "./sections/article";
+@import "./sections/footer";
+@import "./sections/footer-article";
+@import "./sections/header";
+@import "./sections/sidebar-primary";
+@import "./sections/sidebar-secondary";
+
+// Re-usable components across the theme
+@import "./components/icon-links";
+@import "./components/header/header-logo";
+@import "./components/prev-next";
+@import "./components/search";
+@import "./components/switcher-theme";
+@import "./components/switcher-version";
+@import "./components/toc-inpage";
+@import "./components/versionmodified";
+
+// Content blocks in standard Sphinx
+@import "./content/admonitions";
+@import "./content/api";
+@import "./content/footnotes";
+@import "./content/hacks";
+@import "./content/lists";
+@import "./content/quotes";
+@import "./content/spans";
+@import "./content/tables";
+@import "./content/toctree";
+
+// Content blocks from Sphinx extensions
+@import "./extensions/bootstrap";
+@import "./extensions/ethical-ads";
+@import "./extensions/pydata";
+@import "./extensions/sphinx_design";
+@import "./extensions/sphinx_panels";
+
+// Page-specific CSS
+@import "./pages/search";

@@ -1,0 +1,202 @@
+{
+  "build": "pyhd8ed1ab_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/noarch",
+  "constrains": [],
+  "depends": [
+    "doit",
+    "python >=3.8"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/pydevtool-0.3.0-pyhd8ed1ab_0",
+  "features": "",
+  "files": [
+    "lib/python3.10/site-packages/pydevtool-0.3.0.dist-info/AUTHORS",
+    "lib/python3.10/site-packages/pydevtool-0.3.0.dist-info/INSTALLER",
+    "lib/python3.10/site-packages/pydevtool-0.3.0.dist-info/LICENSE",
+    "lib/python3.10/site-packages/pydevtool-0.3.0.dist-info/METADATA",
+    "lib/python3.10/site-packages/pydevtool-0.3.0.dist-info/RECORD",
+    "lib/python3.10/site-packages/pydevtool-0.3.0.dist-info/REQUESTED",
+    "lib/python3.10/site-packages/pydevtool-0.3.0.dist-info/WHEEL",
+    "lib/python3.10/site-packages/pydevtool-0.3.0.dist-info/direct_url.json",
+    "lib/python3.10/site-packages/pydevtool-0.3.0.dist-info/top_level.txt",
+    "lib/python3.10/site-packages/pydevtool/__init__.py",
+    "lib/python3.10/site-packages/pydevtool/cli.py",
+    "lib/python3.10/site-packages/pydevtool/lint_flake8.py",
+    "lib/python3.10/site-packages/pydevtool/lint_pycodestyle.py",
+    "lib/python3.10/site-packages/pydevtool/lint_pyflakes.py",
+    "lib/python3.10/site-packages/pydevtool/path.py",
+    "lib/python3.10/site-packages/pydevtool/reporter.py",
+    "lib/python3.10/site-packages/pydevtool/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/pydevtool/__pycache__/cli.cpython-310.pyc",
+    "lib/python3.10/site-packages/pydevtool/__pycache__/lint_flake8.cpython-310.pyc",
+    "lib/python3.10/site-packages/pydevtool/__pycache__/lint_pycodestyle.cpython-310.pyc",
+    "lib/python3.10/site-packages/pydevtool/__pycache__/lint_pyflakes.cpython-310.pyc",
+    "lib/python3.10/site-packages/pydevtool/__pycache__/path.cpython-310.pyc",
+    "lib/python3.10/site-packages/pydevtool/__pycache__/reporter.cpython-310.pyc"
+  ],
+  "fn": "pydevtool-0.3.0-pyhd8ed1ab_0.tar.bz2",
+  "license": "MIT",
+  "license_family": "MIT",
+  "link": {
+    "source": "/opt/conda/pkgs/pydevtool-0.3.0-pyhd8ed1ab_0",
+    "type": 1
+  },
+  "md5": "e357fb5ecdaae7474f523094e8339dc5",
+  "name": "pydevtool",
+  "noarch": "python",
+  "package_tarball_full_path": "/opt/conda/pkgs/pydevtool-0.3.0-pyhd8ed1ab_0.tar.bz2",
+  "package_type": "noarch_python",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "site-packages/pydevtool-0.3.0.dist-info/AUTHORS",
+        "path_type": "hardlink",
+        "sha256": "ac5b1f26de0eaab832286dc06808dc89cca9eefab197418fb2e30907aac5fac8",
+        "sha256_in_prefix": "ac5b1f26de0eaab832286dc06808dc89cca9eefab197418fb2e30907aac5fac8",
+        "size_in_bytes": 81
+      },
+      {
+        "_path": "site-packages/pydevtool-0.3.0.dist-info/INSTALLER",
+        "path_type": "hardlink",
+        "sha256": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "sha256_in_prefix": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "size_in_bytes": 5
+      },
+      {
+        "_path": "site-packages/pydevtool-0.3.0.dist-info/LICENSE",
+        "path_type": "hardlink",
+        "sha256": "a78a10addfc625d291f4b49632306e9c3ba5a5ef142e745a00edd3a05147de41",
+        "sha256_in_prefix": "a78a10addfc625d291f4b49632306e9c3ba5a5ef142e745a00edd3a05147de41",
+        "size_in_bytes": 1095
+      },
+      {
+        "_path": "site-packages/pydevtool-0.3.0.dist-info/METADATA",
+        "path_type": "hardlink",
+        "sha256": "3cc08e956b74d40460cf7303263b49b9b6adf3b44f17fd6e816b89ccae80177f",
+        "sha256_in_prefix": "3cc08e956b74d40460cf7303263b49b9b6adf3b44f17fd6e816b89ccae80177f",
+        "size_in_bytes": 934
+      },
+      {
+        "_path": "site-packages/pydevtool-0.3.0.dist-info/RECORD",
+        "path_type": "hardlink",
+        "sha256": "d90083ca58ac590c13443c51233927ec372b169c3a761e5fcc6332036340a9e0",
+        "sha256_in_prefix": "d90083ca58ac590c13443c51233927ec372b169c3a761e5fcc6332036340a9e0",
+        "size_in_bytes": 1681
+      },
+      {
+        "_path": "site-packages/pydevtool-0.3.0.dist-info/REQUESTED",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256_in_prefix": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "site-packages/pydevtool-0.3.0.dist-info/WHEEL",
+        "path_type": "hardlink",
+        "sha256": "1b5e87e00dc87a84269cead8578b9e6462928e18a95f1f3373c9eef451a5bcc0",
+        "sha256_in_prefix": "1b5e87e00dc87a84269cead8578b9e6462928e18a95f1f3373c9eef451a5bcc0",
+        "size_in_bytes": 92
+      },
+      {
+        "_path": "site-packages/pydevtool-0.3.0.dist-info/direct_url.json",
+        "path_type": "hardlink",
+        "sha256": "ba64896c03b3fab8eaa7c25311018fc5dbb926c0a937d7d997e4eb50f6adedde",
+        "sha256_in_prefix": "ba64896c03b3fab8eaa7c25311018fc5dbb926c0a937d7d997e4eb50f6adedde",
+        "size_in_bytes": 105
+      },
+      {
+        "_path": "site-packages/pydevtool-0.3.0.dist-info/top_level.txt",
+        "path_type": "hardlink",
+        "sha256": "f10f01b0f9279c739fbc3fe1b408b89206536c1794cfd60d78f0a7b104f78959",
+        "sha256_in_prefix": "f10f01b0f9279c739fbc3fe1b408b89206536c1794cfd60d78f0a7b104f78959",
+        "size_in_bytes": 10
+      },
+      {
+        "_path": "site-packages/pydevtool/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "59570dbb7b2041bebc09a66bb17e8ba98c9f49221d8f648156fcd9534d52aa0b",
+        "sha256_in_prefix": "59570dbb7b2041bebc09a66bb17e8ba98c9f49221d8f648156fcd9534d52aa0b",
+        "size_in_bytes": 24
+      },
+      {
+        "_path": "site-packages/pydevtool/cli.py",
+        "path_type": "hardlink",
+        "sha256": "b212524f0240f9bd3294d18d044ea17ba61f4a74623c8c87309c89c7be4f214b",
+        "sha256_in_prefix": "b212524f0240f9bd3294d18d044ea17ba61f4a74623c8c87309c89c7be4f214b",
+        "size_in_bytes": 7696
+      },
+      {
+        "_path": "site-packages/pydevtool/lint_flake8.py",
+        "path_type": "hardlink",
+        "sha256": "418452b5951644471f7cbca8fe30e63c6c719795848206afa0a66a6eeb7f4eac",
+        "sha256_in_prefix": "418452b5951644471f7cbca8fe30e63c6c719795848206afa0a66a6eeb7f4eac",
+        "size_in_bytes": 2006
+      },
+      {
+        "_path": "site-packages/pydevtool/lint_pycodestyle.py",
+        "path_type": "hardlink",
+        "sha256": "014da6db5f18f22d5577a21894f8ed7e49d9ff2c9f26421446b2c639ec604895",
+        "sha256_in_prefix": "014da6db5f18f22d5577a21894f8ed7e49d9ff2c9f26421446b2c639ec604895",
+        "size_in_bytes": 2054
+      },
+      {
+        "_path": "site-packages/pydevtool/lint_pyflakes.py",
+        "path_type": "hardlink",
+        "sha256": "fc4e6a7f421177e8d5518c9b57ef14477e58da047acb4fd65e7bee66fe0599d5",
+        "sha256_in_prefix": "fc4e6a7f421177e8d5518c9b57ef14477e58da047acb4fd65e7bee66fe0599d5",
+        "size_in_bytes": 7481
+      },
+      {
+        "_path": "site-packages/pydevtool/path.py",
+        "path_type": "hardlink",
+        "sha256": "8dca8888907d09e3733e857a75876bd4de470fae384d3a44eb7495b9f3d0aa0c",
+        "sha256_in_prefix": "8dca8888907d09e3733e857a75876bd4de470fae384d3a44eb7495b9f3d0aa0c",
+        "size_in_bytes": 394
+      },
+      {
+        "_path": "site-packages/pydevtool/reporter.py",
+        "path_type": "hardlink",
+        "sha256": "2b6474e919b77f49e542827743055f173a4cd45c33e7f0c0082ba0bd36d03f80",
+        "sha256_in_prefix": "2b6474e919b77f49e542827743055f173a4cd45c33e7f0c0082ba0bd36d03f80",
+        "size_in_bytes": 5380
+      },
+      {
+        "_path": "lib/python3.10/site-packages/pydevtool/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/pydevtool/__pycache__/cli.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/pydevtool/__pycache__/lint_flake8.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/pydevtool/__pycache__/lint_pycodestyle.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/pydevtool/__pycache__/lint_pyflakes.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/pydevtool/__pycache__/path.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/pydevtool/__pycache__/reporter.cpython-310.pyc",
+        "path_type": "pyc_file"
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "pydevtool",
+  "sha256": "4171325c030b75bba1f5f83465a2ed0f71bcfbcf90f779844a71a54d18bd407c",
+  "size": 15067,
+  "subdir": "noarch",
+  "timestamp": 1659947454808,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/noarch/pydevtool-0.3.0-pyhd8ed1ab_0.tar.bz2",
+  "version": "0.3.0"
+}

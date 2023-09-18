@@ -1,0 +1,5 @@
+#ifndef QT_QTGLXSUPPORT_MODULE_H
+#define QT_QTGLXSUPPORT_MODULE_H
+#include <QtGlxSupport/QtGlxSupportDepends>
+#include "qtglxsupportversion.h"
+#endif

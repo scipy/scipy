@@ -1,0 +1,44 @@
+xkb_symbols "jp106" {
+
+    name[group1]="Japan/ASCII";
+
+    key <HZTG> {         [ Zenkaku_Hankaku 		    ] };
+    key <AE01> {         [               1,          exclam ] };
+    key <AE02> {         [               2,        quotedbl ] };
+    key <AE03> {         [               3,      numbersign ] };
+    key <AE04> {         [               4,          dollar ] };
+    key <AE05> {         [               5,         percent ] };
+    key <AE06> {         [               6,       ampersand ] };
+    key <AE07> {         [               7,      apostrophe ] };
+    key <AE08> {         [               8,       parenleft ] };
+    key <AE09> {         [               9,      parenright ] };
+    key <AE10> {         [               0,      asciitilde ] };
+    key <AE11> {         [           minus,           equal ] };
+    key <AE12> {         [     asciicircum,          macron ] };
+    key <AE13> {         [             yen,             bar ] };
+
+    // keys <TAB> and <AD01> - <AD10> are identical to US/ASCII keyboard
+    key <AD11> {         [              at,           grave ] };
+    key <AD12> {         [     bracketleft,       braceleft ] };
+
+    key <CAPS> {         [      Eisu_Shift,       Caps_Lock ] };
+    // keys <AC01> - <AC09> are identical to US/ASCII keyboard
+    key <AC10> {         [       semicolon,            plus ] };
+    key <AC11> {         [           colon,        asterisk ] };
+    key <AC12> {         [    bracketright,      braceright ] };
+
+    // keys <LFSH> and <AB01> - <AB10> are identical to US/ASCII keyboard
+    key <AB11> {         [       backslash,      underscore ] };
+
+    key <NFER> {         [        Muhenkan ] };
+    key <XFER> {         [           Kanji ] };
+    key <HKTG> {         [ Hiragana_Katakana ] };
+};
+
+xkb_symbols "alternate106" {
+    key <AE10> {         [               0,          macron ] };
+    key <AE12> {         [     asciicircum,      asciitilde ] };
+    key <AE13> {         [       backslash,             bar ] };
+    key <AB11> {         [      underscore,      underscore ] };
+    augment "sgi/jp(jp106)"
+};

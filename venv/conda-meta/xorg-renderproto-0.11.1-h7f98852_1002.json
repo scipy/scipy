@@ -1,0 +1,62 @@
+{
+  "build": "h7f98852_1002",
+  "build_number": 1002,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [],
+  "depends": [
+    "libgcc-ng >=9.3.0"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/xorg-renderproto-0.11.1-h7f98852_1002",
+  "features": "",
+  "files": [
+    "include/X11/extensions/render.h",
+    "include/X11/extensions/renderproto.h",
+    "lib/pkgconfig/renderproto.pc"
+  ],
+  "fn": "xorg-renderproto-0.11.1-h7f98852_1002.tar.bz2",
+  "license": "MIT",
+  "license_family": "MIT",
+  "link": {
+    "source": "/opt/conda/pkgs/xorg-renderproto-0.11.1-h7f98852_1002",
+    "type": 1
+  },
+  "md5": "06feff3d2634e3097ce2fe681474b534",
+  "name": "xorg-renderproto",
+  "package_tarball_full_path": "/opt/conda/pkgs/xorg-renderproto-0.11.1-h7f98852_1002.tar.bz2",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "include/X11/extensions/render.h",
+        "path_type": "hardlink",
+        "sha256": "ef3f4aede97e1143656f9169868429d3b180fb8dfb0cbd4aa853e4f9a97a7a52",
+        "sha256_in_prefix": "ef3f4aede97e1143656f9169868429d3b180fb8dfb0cbd4aa853e4f9a97a7a52",
+        "size_in_bytes": 7020
+      },
+      {
+        "_path": "include/X11/extensions/renderproto.h",
+        "path_type": "hardlink",
+        "sha256": "f34edcf5d8f289b810596ba7f646c4d07e14aa50590a11e1462993e5bccd732c",
+        "sha256_in_prefix": "f34edcf5d8f289b810596ba7f646c4d07e14aa50590a11e1462993e5bccd732c",
+        "size_in_bytes": 14081
+      },
+      {
+        "_path": "lib/pkgconfig/renderproto.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/xorg-renderproto_1614866169432/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac",
+        "sha256": "c78e3f4db3afdf57a61e3d98e631c0be4cbc4120c935281c97b23825298f3727",
+        "sha256_in_prefix": "1f7c29e295842309df0c8906b2f04c57ef1b657c95ecd6cd566829c407da955f",
+        "size_in_bytes": 438
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "38942930f233d1898594dd9edf4b0c0786f3dbc12065a0c308634c37fd936034",
+  "size": 9621,
+  "subdir": "linux-64",
+  "timestamp": 1614866326326,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/xorg-renderproto-0.11.1-h7f98852_1002.tar.bz2",
+  "version": "0.11.1"
+}

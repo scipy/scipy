@@ -1,0 +1,43 @@
+.TH padsp 1 User Manuals
+.SH NAME
+padsp \- PulseAudio OSS Wrapper
+.SH SYNOPSIS
+\fBpadsp [\fIoptions\fB] \fIPROGRAM\fB [\fIARGUMENTS ...\fB]
+
+padsp -h\fB
+\f1
+.SH DESCRIPTION
+\fIpadsp\f1 starts the specified program and redirects its access to OSS compatible audio devices (\fI/dev/dsp\f1 and auxiliary devices) to a PulseAudio sound server.
+
+\fIpadsp\f1 uses the $LD_PRELOAD environment variable that is interpreted by \fBld.so(8)\f1 and thus does not work for SUID binaries and statically built executables.
+
+Equivalent to using \fIpadsp\f1 is starting an application with $LD_PRELOAD set to \fIlibpulsedsp.so\f1
+.SH OPTIONS
+.TP
+\fB-h | --help\f1
+Show help.
+.TP
+\fB-s\f1 \fISERVER\f1
+Set the PulseAudio server to connect to.
+.TP
+\fB-n\f1 \fINAME\f1
+The client application name that shall be passed to the server when connecting.
+.TP
+\fB-m\f1 \fINAME\f1
+The stream name that shall be passed to the server when creating a stream.
+.TP
+\fB-M\f1
+Disable \fI/dev/mixer\f1 emulation.
+.TP
+\fB-S\f1
+Disable \fI/dev/sndstat\f1 emulation.
+.TP
+\fB-D\f1
+Disable \fI/dev/dsp\f1 emulation.
+.TP
+\fB-d\f1
+Enable debug output.
+.SH AUTHORS
+The PulseAudio Developers <pulseaudio-discuss (at) lists (dot) freedesktop (dot) org>; PulseAudio is available from \fBhttp://pulseaudio.org/\f1
+.SH SEE ALSO
+\fBpulseaudio(1)\f1, \fBpasuspender(1)\f1, \fBld.so(8)\f1

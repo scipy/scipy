@@ -1,0 +1,292 @@
+.\" Copyright (C) 2001, 2002, 2003, 2006 Silicon Graphics, Inc.
+.\" All rights reserved.
+.\"
+.\" This is free documentation; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License as
+.\" published by the Free Software Foundation; either version 2 of
+.\" the License, or (at your option) any later version.
+.\"
+.\" The GNU General Public License's references to "object code"
+.\" and "executables" are to be interpreted as the output of any
+.\" document formatting or typesetting system, including
+.\" intermediate and printed output.
+.\"
+.\" This manual is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public
+.\" License along with this manual.  If not, see
+.\" <http://www.gnu.org/licenses/>.
+.\"
+.TH ATTR_MULTI 3 "Extended Attributes" "Dec 2001" "XFS Compatibility API"
+.SH NAME
+attr_multi, attr_multif \- manipulate multiple user attributes on a filesystem object at once
+.SH C SYNOPSIS
+.PP
+.sp
+.nf
+.B #include <attr/attributes.h>
+.sp
+.B "int attr_multi (const char *\f2path\f3, attr_multiop_t *\f2oplist\f3, "
+.B "                int \f2count\f3, int \f2flags\f3);"
+.PP
+.B "int attr_multif (int \f2fd\f3, attr_multiop_t *\f2oplist\f3, "
+.B "                 int \f2count\f3, int \f2flags\f3);"
+.Op
+.SH DESCRIPTION
+The
+.B attr_multi
+and
+.B attr_multif
+functions provide a way to operate on multiple attributes of a
+filesystem object at once.
+.P
+.I Path
+points to a path name for a filesystem object, and
+.I fd
+refers to the file descriptor associated with a file.
+The
+.I oplist
+is an array of \f4attr_multiop_t\fP structures.
+Each element in that array describes a single attribute operation
+and provides all the information required to carry out that operation
+and to check for success or failure of that operation.
+.I Count
+tells how many elements are in the
+.I oplist
+array.
+.PP
+.Op c p a
+The contents of an \f4attr_multiop_t\fP structure include
+the following members:
+.P
+.RS 3
+.nf
+.ft 4
+.ta 9n 22n
+int am_opcode; /* which operation to perform (see below) */
+int am_error; /* [out arg] result of this sub-op (an errno) */
+char *am_attrname; /* attribute name to work with */
+char *am_attrvalue; /* [in/out arg] attribute value (raw bytes) */
+int am_length; /* [in/out arg] length of value */
+int am_flags; /* flags (bit-wise OR of #defines below) */
+.ft 1
+.fi
+.RE
+.PP
+The
+.I am_opcode
+field defines how the remaining fields are to be interpreted
+and can take on one of the following values:
+.P
+.RS 3
+.nf
+.ft 4
+.ta 9n 22n
+ATTR_OP_GET /* return the indicated attr's value */
+ATTR_OP_SET /* set/create the indicated attr/value pair */
+ATTR_OP_REMOVE /* remove the indicated attr */
+.ft 1
+.fi
+.RE
+.PP
+The
+.I am_error
+field will contain the appropriate error result code
+if that sub-operation fails.
+The result codes for a given sub-operation are a subset of
+the result codes that are possible from the corresponding
+single-attribute function call.
+For example, the result code possible from an \f4ATTR_OP_GET\fP
+sub-operation are a subset of those that can be returned from an
+.B attr_get
+function call.
+.PP
+The
+.I am_attrname
+field is a pointer to a NULL terminated string giving the attribute name
+that the sub-operation should operate on.
+.PP
+The
+.I am_attrvalue,
+.I am_length
+and
+.I am_flags
+fields are used to store the value of the named attribute,
+and some control flags for that sub-operation, respectively.
+Their use varies depending on the value of the
+.I am_opcode
+field.
+.TP
+.SM
+.B \%ATTR_OP_GET
+The
+.I am_attrvalue
+field is a pointer to a empty buffer that will be overwritten
+with the value of the named attribute.
+The
+.I am_length
+field is initially the total size of the memory buffer that the
+.I am_attrvalue
+field points to.
+After the operation, the
+.I am_length
+field contains the actual size of the attribute\'s value.
+The
+.I am_flags
+field may be set to the \f4ATTR_ROOT\fP flag.
+If the process has appropriate priviledges,
+the ROOT namespace will be searched for the named attribute,
+otherwise the USER namespace will be searched.
+.TP
+.SM
+.B \%ATTR_OP_SET
+The
+.I am_attrvalue
+and
+.I am_length
+fields contain the new value for the given attribute name and its length.
+The \f4ATTR_ROOT\fP flag may be set in the
+.I am_flags
+field.
+If the process has appropriate priviledges,
+the ROOT namespace will be searched for the named attribute,
+otherwise the USER namespace will be searched.
+The \f4ATTR_CREATE\fP and the \f4ATTR_REPLACE\fP flags
+may also be set in the
+.I am_flags
+field (but not simultaneously).
+If the \f4ATTR_CREATE\fP flag is set,
+the sub-operation will set the
+.I am_error
+field to EEXIST if the named attribute already exists.
+If the \f4ATTR_REPLACE\fP flag is set,
+the sub-operation will set the
+.I am_error
+field to ENOATTR if the named attribute does not already exist.
+If neither of those two flags are set and the attribute does not exist,
+then the attribute will be created with the given value.
+If neither of those two flags are set and the attribute already exists,
+then the value will be replaced with the given value.
+.TP
+.SM
+.B \%ATTR_OP_REMOVE
+The
+.I am_attrvalue
+and
+.I am_length
+fields are not used and are ignored.
+The
+.I am_flags
+field may be set to the \f4ATTR_ROOT\fP flag.
+If the process has appropriate priviledges,
+the ROOT namespace will be searched for the named attribute,
+otherwise the USER namespace will be searched.
+.PP
+The
+.I flags
+argument to the
+.B attr_multi
+call is used to control following of symbolic links in the
+.I path
+argument.
+The default is to follow symbolic links,
+.I flags
+should be set to ATTR_DONTFOLLOW to not follow symbolic links.
+.PP
+.B attr_multi
+will fail if one or more of the following are true:
+.TP 17
+.SM
+\%[ENOENT]
+The named file does not exist.
+.TP
+.SM
+\%[EPERM]
+The effective user
+.SM ID
+does not match the owner of the file
+and the effective user
+.SM ID
+is not super-user.
+.TP
+.SM
+\%[ENOTDIR]
+A component of the
+path prefix
+is not a directory.
+.TP
+.SM
+\%[EACCES]
+Search permission is denied on a
+component of the
+path prefix.
+.TP
+.SM
+\%[EINVAL]
+A bit other than ATTR_DONTFOLLOW was set in the
+.I flag
+argument.
+.TP
+.SM
+\%[EFAULT]
+.I Path,
+or
+.I oplist
+points outside the allocated address space of the process.
+.TP
+.SM
+\%[ELOOP]
+A path name lookup involved too many symbolic links.
+.TP
+.SM
+\%[ENAMETOOLONG]
+The length of
+.I path
+exceeds
+.SM
+.RI { MAXPATHLEN },
+or a pathname component is longer than
+.SM
+.RI { MAXNAMELEN }.
+.PP
+.B attr_multif
+will fail if:
+.TP 15
+.SM
+\%[EINVAL]
+A bit was set in the
+.I flag
+argument, or
+.I fd\^
+refers to a socket, not a file.
+.TP
+.SM
+\%[EFAULT]
+.I Oplist
+points outside the allocated address space of the process.
+.TP
+.SM
+\%[EBADF]
+.I Fd\^
+does not refer to a valid descriptor.
+.SH "DIAGNOSTICS"
+On success, zero is returned.  On error, \-1 is returned, and
+.I errno
+is set appropriately.
+Note that the individual operations listed in the
+.I oplist
+array each have their own error return fields.
+The
+.I errno
+variable only records the result of the
+.I attr_multi
+call itself, not the result of any of the sub-operations.
+.SH "SEE ALSO"
+.BR attr (1),
+.BR attr_get (3),
+.BR attr_list (3),
+.BR attr_remove (3),
+.BR attr_set (3)

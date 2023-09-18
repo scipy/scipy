@@ -1,0 +1,332 @@
+escape_char /
+comment_char %
+%
+% Uyghur language locale for China
+% Source:
+% Contact: Pablo Saratxaga
+% Email: pablo@mandriva.com
+% Language: ug
+% Territory: CN
+% Revision: 0.1
+% Date: 2005-11-08
+% Users: general
+% Charset: UTF-8
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title      "Uyghur locale for China"
+source     ""
+address    ""
+contact    ""
+email      "pablo@mandriva.com"
+tel        ""
+fax        ""
+language   "Uyghur"
+territory  "China"
+revision   "0.1"
+date       "2005-11-08"
+%
+category  "ug_CN:2000";LC_IDENTIFICATION
+category  "ug_CN:2000";LC_CTYPE
+category  "ug_CN:2000";LC_COLLATE
+category  "ug_CN:2000";LC_TIME
+category  "ug_CN:2000";LC_NUMERIC
+category  "ug_CN:2000";LC_MONETARY
+category  "ug_CN:2000";LC_MESSAGES
+category  "ug_CN:2000";LC_PAPER
+category  "ug_CN:2000";LC_NAME
+category  "ug_CN:2000";LC_ADDRESS
+category  "ug_CN:2000";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_COLLATE
+
+% letters list and sort order from
+% http://en.wikipedia.org/wiki/Uyghur_language
+% sorting order guessed for old latin writting
+%
+% old latin writting is based in pinyin, with some extra letters:
+% <schwa>, <z with tail>, <gh>, <k with tail>, <h with tail>,
+% <barred o> (they seem inspired from cyrillic)
+% tail letters can be written with base letter + combining tail U+0321
+% there are also reserved codepoints U+2C67-U+2C6C for them in
+% unicode 5.0 proposal.
+% U+0224, U+0225 are also similar to ztail and are sorted the same.
+%
+% new arabic writting uses some extra letters too.
+% all vowels are noted, and in beginning of the word there is a
+% "yeh with hamza" (U+0626) in the front; should it be ignored
+% in sorting?
+%
+% arabic     old latin       turkic (from azeri, which has same phonemes)
+% ========== =============== ======
+% alef  0627 a               a
+% ae    06d5 schwa 018F,0259 ä
+% beh   0628 b               b
+% peh   067e p               p
+% teh   062a t               t
+% jeem  062c j               c <
+% tcheh 0686 q               ç <
+% khah  062e h               x <
+% dal   062f d               d
+% reh   0631 r               r
+% zain  0632 z               z
+% jeh   0698 ztail 0224,0225 j <
+% seen  0633 s               s
+% sheen 0634 x               ş
+% ghain 063a gh 01a2,01a3    ğ <
+% feh   0641 f               f
+% qaf   0642 ktail           q <
+% kaf   0643 k               k
+% ng    06ad ng              ñ <
+% gaf   06af g               g
+% lam   0644 l               l
+% meem  0645 m               m
+% noon  0646 n               n
+% heh   0647 htail           h <
+% waw   0648 o               o
+% u     06c7 u               u
+% oe    06c6 obar 019f,0275  ö <
+% yu    06c8 ü               ü
+% ve    06cb v               v
+% e     06d0 e               e
+% f.yeh 06cc i               i      (or alef maqsura 0649?)
+% yeh   064a y               y
+% (<): differences between old latin and turkic writting
+
+copy "iso14651_t1"
+
+collating-symbol  <schwa>
+collating-symbol  <gh>
+collating-symbol  <ng>
+collating-symbol  <ccedilla>
+collating-symbol  <scedilla>
+collating-symbol  <htail>
+collating-symbol  <ktail>
+collating-symbol  <ztail>
+collating-symbol  <obar>
+collating-symbol  <udiaeresis>
+
+collating-element <h,> from "<U0068><U0321>"
+collating-element <H,> from "<U0048><U0321>"
+collating-element <k,> from "<U006B><U0321>"
+collating-element <K,> from "<U004B><U0321>"
+collating-element <z,> from "<U007A><U0321>"
+collating-element <Z,> from "<U005A><U0321>"
+
+collating-symbol  <ar_ae>
+collating-symbol  <ar_ng>
+collating-symbol  <ar_u>
+collating-symbol  <ar_oe>
+collating-symbol  <ar_yu>
+collating-symbol  <ar_ve>
+collating-symbol  <ar_e>
+collating-symbol  <ar_i>
+collating-symbol  <ar_y>
+
+% latin
+reorder-after <a>
+<schwa>
+reorder-after <c>
+<ccedilla>
+reorder-after <g>
+<gh>
+reorder-after <h>
+<htail>
+reorder-after <k>
+<ktail>
+reorder-after <n>
+<ng>
+reorder-after <o>
+<obar>
+reorder-after <s>
+<scedilla>
+reorder-after <u>
+<udiaeresis>
+reorder-after <z>
+<ztail>
+
+reorder-after <U0061>
+<U0259>   <schwa>;<PCL>;<MIN>;IGNORE
+<U00E4>   <schwa>;<REU>;<MIN>;IGNORE
+reorder-after <U0041>
+<U018F>   <schwa>;<PCL>;<CAP>;IGNORE
+<U00C4>   <schwa>;<REU>;<CAP>;IGNORE
+
+reorder-after <U0063>
+<U00E7> <ccedilla>;<CDI>;<MIN>;IGNORE
+reorder-after <U0043>
+<U00C7> <ccedilla>;<CDI>;<CAP>;IGNORE
+
+reorder-after <U0067>
+<U01A3>   <gh>;<PCL>;<MIN>;IGNORE
+<U011F>   <gh>;<BRE>;<MIN>;IGNORE
+reorder-after <U0047>
+<U01A2>   <gh>;<PCL>;<CAP>;IGNORE
+<U011E>   <gh>;<BRE>;<CAP>;IGNORE
+
+reorder-after <U0068>
+<U2C68> <htail>;<PCL>;<MIN>;IGNORE
+<h,>    <htail>;<PCL>;<MIN>;IGNORE
+reorder-after <U0048>
+<U2C67> <htail>;<PCL>;<CAP>;IGNORE
+<H,>    <htail>;<PCL>;<CAP>;IGNORE
+
+reorder-after <U006B>
+<U2C6A> <ktail>;<PCL>;<MIN>;IGNORE
+<k,>    <ktail>;<PCL>;<MIN>;IGNORE
+reorder-after <U004B>
+<U2C69> <ktail>;<PCL>;<CAP>;IGNORE
+<K,>    <ktail>;<PCL>;<CAP>;IGNORE
+
+reorder-after <U006E>
+<U00F1> <ng>;<TIL>;<MIN>;IGNORE
+reorder-after <U004E>
+<U00D1> <ng>;<TIL>;<CAP>;IGNORE
+
+reorder-after <U006F>
+<U0275> <obar>;<PCL>;<MIN>;IGNORE
+<U00F6> <obar>;<REU>;<MIN>;IGNORE
+reorder-after <U004F>
+<U019F> <obar>;<PCL>;<CAP>;IGNORE
+<U00D6> <obar>;<REU>;<CAP>;IGNORE
+
+reorder-after <U0073>
+<U015F> <scedilla>;<CDI>;<MIN>;IGNORE
+reorder-after <U0053>
+<U015E> <scedilla>;<CDI>;<CAP>;IGNORE
+
+reorder-after <U0075>
+<U00FC> <udiaeresis>;<REU>;<MIN>;IGNORE
+reorder-after <U0055>
+<U00DC> <udiaeresis>;<REU>;<CAP>;IGNORE
+
+reorder-after <U007A>
+<U2C6C> <ztail>;<PCL>;<MIN>;IGNORE
+<z,>    <ztail>;<PCL>;<MIN>;IGNORE
+<U0225> <ztail>;<PCL>;<MIN>;IGNORE
+reorder-after <U005A>
+<U2C6B> <ztail>;<PCL>;<CAP>;IGNORE
+<Z,>    <ztail>;<PCL>;<CAP>;IGNORE
+<U0224> <ztail>;<PCL>;<CAP>;IGNORE
+
+% arabic
+reorder-after <alef>
+<ar_ae>
+reorder-after <keheh>
+<ar_ng>
+reorder-after <waw>
+<ar_u>
+<ar_oe>
+<ar_yu>
+<ar_ve>
+<ar_e>
+<ar_i>
+<ar_y>
+
+reorder-after <U0627>
+<U06D5> <ar_ae>;<BAS>;<MIN>;IGNORE
+reorder-after <U06A9>
+<U06AD> <ar_ng>;<BAS>;<MIN>;IGNORE
+reorder-after <U0648>
+<U06C7> <ar_u>;<BAS>;<MIN>;IGNORE
+<U06C6> <ar_oe>;<BAS>;<MIN>;IGNORE
+<U06C8> <ar_yu>;<BAS>;<MIN>;IGNORE
+<U06CB> <ar_ve>;<BAS>;<MIN>;IGNORE
+<U06D0> <ar_e>;<BAS>;<MIN>;IGNORE
+<U06CC> <ar_i>;<BAS>;<MIN>;IGNORE
+<U064A> <ar_y>;<BAS>;<MIN>;IGNORE
+
+reorder-end
+
+END LC_COLLATE
+
+LC_CTYPE
+% FIXME
+copy "en_DK"
+END LC_CTYPE
+
+LC_MONETARY
+copy "zh_CN"
+END LC_MONETARY
+
+LC_NUMERIC
+copy "zh_CN"
+END LC_NUMERIC
+
+LC_TELEPHONE
+copy "zh_CN"
+END LC_TELEPHONE
+
+LC_TIME
+% FIXME
+abday    "<U0053><U0075><U006E>";"<U004D><U006F><U006E>";/
+         "<U0054><U0075><U0065>";"<U0057><U0065><U0064>";/
+         "<U0054><U0068><U0075>";"<U0046><U0072><U0069>";/
+         "<U0053><U0061><U0074>"
+day      "<U0053><U0075><U006E><U0064><U0061><U0079>";/
+         "<U004D><U006F><U006E><U0064><U0061><U0079>";/
+         "<U0054><U0075><U0065><U0073><U0064><U0061><U0079>";/
+         "<U0057><U0065><U0064><U006E><U0065><U0073><U0064><U0061><U0079>";/
+         "<U0054><U0068><U0075><U0072><U0073><U0064><U0061><U0079>";/
+         "<U0046><U0072><U0069><U0064><U0061><U0079>";/
+         "<U0053><U0061><U0074><U0075><U0072><U0064><U0061><U0079>"
+abmon    "<U004A><U0061><U006E>";"<U0046><U0065><U0062>";/
+         "<U004D><U0061><U0072>";"<U0041><U0070><U0072>";/
+         "<U004D><U0061><U0079>";"<U004A><U0075><U006E>";/
+         "<U004A><U0075><U006C>";"<U0041><U0075><U0067>";/
+         "<U0053><U0065><U0070>";"<U004F><U0063><U0074>";/
+         "<U004E><U006F><U0076>";"<U0044><U0065><U0063>"
+mon      "<U004A><U0061><U006E><U0075><U0061><U0072><U0079>";/
+         "<U0046><U0065><U0062><U0072><U0075><U0061><U0072><U0079>";/
+         "<U004D><U0061><U0072><U0063><U0068>";/
+         "<U0041><U0070><U0072><U0069><U006C>";/
+         "<U004D><U0061><U0079>";/
+         "<U004A><U0075><U006E><U0065>";/
+         "<U004A><U0075><U006C><U0079>";/
+         "<U0041><U0075><U0067><U0075><U0073><U0074>";/
+         "<U0053><U0065><U0070><U0074><U0065><U006D><U0062><U0065><U0072>";/
+         "<U004F><U0063><U0074><U006F><U0062><U0065><U0072>";/
+         "<U004E><U006F><U0076><U0065><U006D><U0062><U0065><U0072>";/
+         "<U0044><U0065><U0063><U0065><U006D><U0062><U0065><U0072>"
+% date formats following ISO 8601-1988
+d_t_fmt  "<U0025><U0059><U002D><U0025><U006D><U002D><U0025><U0064><U0054><U0025><U0054><U0020><U0025><U005A>"
+d_fmt    "<U0025><U0059><U002D><U0025><U006D><U002D><U0025><U0064>"
+t_fmt    "<U0025><U0054>"
+am_pm    "";""
+t_fmt_ampm  ""
+date_fmt	"<U0025><U0061><U0020><U0025><U0062><U0020><U0025><U0065>/
+<U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U0020>/
+<U0025><U005A><U0020><U0025><U0059>"
+END LC_TIME
+
+LC_MESSAGES
+% FIXME
+yesexpr  "<U005E><U005B><U0031><U004A><U006A><U0073><U0053><U0079><U0059><U006F><U004F><U005D><U002E><U002A>"
+noexpr   "<U005E><U005B><U0030><U006E><U004E><U005D><U002E><U002A>"
+yesstr      "yes"
+nostr       "no"
+END LC_MESSAGES
+
+% Default paper: A4
+LC_PAPER
+height 297
+width 210
+END LC_PAPER
+
+% Metric System (ISO 1000)
+LC_MEASUREMENT
+measurement 1
+END LC_MEASUREMENT
+
+LC_NAME
+% FIXME
+copy "en_DK"
+END LC_NAME
+
+LC_ADDRESS
+% FIXME
+copy "en_DK"
+END LC_ADDRESS

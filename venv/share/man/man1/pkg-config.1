@@ -1,0 +1,651 @@
+.\" 
+.\" pkg-config manual page.
+.\" (C) Red Hat, Inc. based on gnome-config man page (C) Miguel de Icaza (miguel@gnu.org)
+.\"
+.
+.TH pkg-config 1
+.SH NAME
+pkg-config \- Return metainformation about installed libraries
+.SH SYNOPSIS
+.PP
+.B pkg-config
+[\-\-modversion] [\-\-version] [\-\-help]
+[\-\-atleast-pkgconfig-version=VERSION]
+[\-\-print-errors] [\-\-short-errors]
+[\-\-silence-errors] [\-\-errors-to-stdout] [\-\-debug]
+[\-\-cflags] [\-\-libs] [\-\-libs-only-L]
+[\-\-libs-only-l] [\-\-cflags-only-I]
+[\-\-libs-only-other] [\-\-cflags-only-other]
+[\-\-variable=VARIABLENAME]
+[\-\-define-variable=VARIABLENAME=VARIABLEVALUE]
+[\-\-print-variables]
+[\-\-uninstalled]
+[\-\-exists] [\-\-atleast-version=VERSION] [\-\-exact-version=VERSION]
+[\-\-max-version=VERSION] [\-\-validate] [\-\-list\-all] [\-\-print-provides]
+[\-\-print-requires] [\-\-print-requires-private] [LIBRARIES...]
+.SH DESCRIPTION
+
+The \fIpkg-config\fP program is used to retrieve information about
+installed libraries in the system.  It is typically used to compile
+and link against one or more libraries.  Here is a typical usage
+scenario in a Makefile:
+.PP
+.nf
+program: program.c
+	cc program.c `pkg-config --cflags --libs gnomeui`
+.fi
+.PP
+.I pkg-config
+retrieves information about packages from special metadata
+files. These files are named after the package, and has a
+.I .pc
+extension.  On most systems, \fIpkg-config\fP looks in
+.I /usr/lib/pkgconfig, /usr/share/pkgconfig, /usr/local/lib/pkgconfig
+and
+.I /usr/local/share/pkgconfig
+for these files.  It will additionally look in the colon-separated
+(on Windows, semicolon-separated) list of directories specified by the
+PKG_CONFIG_PATH environment variable.
+.PP
+The package name specified on the \fIpkg-config\fP command line is
+defined to be the name of the metadata file, minus the \fI.pc\fP
+extension. If a library can install multiple versions simultaneously,
+it must give each version its own name (for example, GTK 1.2 might
+have the package name "gtk+" while GTK 2.0 has "gtk+-2.0").
+.PP
+In addition to specifying a package name on the command line, the full
+path to a given \fI.pc\fP file may be given instead. This allows a
+user to directly query a particular \fI.pc\fP file.
+.\"
+.SH OPTIONS
+The following options are supported:
+.TP
+.I "--modversion"
+Requests that the version information of the libraries specified on
+the command line be displayed.  If \fIpkg-config\fP can find all the
+libraries on the command line, each library's version string is
+printed to stdout, one version per line. In this case \fIpkg-config\fP
+exits successfully. If one or more libraries is unknown,
+.I pkg-config
+exits with a nonzero code, and the contents of stdout are undefined.
+.TP
+.I "--version"
+Displays the version of
+.I pkg-config
+and terminates.
+.TP
+.I "--atleast-pkgconfig-version=VERSION"
+Requires at least the given version of pkg-config.
+.TP
+.I "--help"
+Displays a help message and terminates.
+.TP
+.I "--print-errors"
+If one or more of the modules on the command line, or their
+dependencies, are not found, or if an error occurs in parsing
+a \fI.pc\fP file, then this option will cause errors explaining the
+problem to be printed. With "predicate" options such as "--exists"
+.I "pkg-config"
+runs silently by default, because it's usually used
+in scripts that want to control what's output. This option can be used
+alone (to just print errors encountered locating modules on the 
+command line) or with other options. The PKG_CONFIG_DEBUG_SPEW
+environment variable overrides this option.
+.TP
+.I "--short-errors"
+Print short error messages.
+.TP
+.I "--silence-errors"
+If one or more of the modules on the command line, or their
+dependencies, are not found, or if an error occurs in parsing a
+a \fI.pc\fP file, then this option will keep errors explaining the
+problem from being printed. With "predicate" options such as
+"--exists" \fIpkg-config\fP runs silently by default, because it's
+usually used in scripts that want to control what's output. So this
+option is only useful with options such as "--cflags" or
+"--modversion" that print errors by default. The PKG_CONFIG_DEBUG_SPEW
+environment variable overrides this option.
+.TP
+.I "--errors-to-stdout"
+If printing errors, print them to stdout rather than the default stderr
+.TP
+.I "--debug"
+Print debugging information. This is slightly different than the
+PKG_CONFIG_DEBUG_SPEW environment variable, which also enable
+"--print-errors".
+
+.PP
+The following options are used to compile and link programs:
+.TP
+.I "--cflags"
+This prints pre-processor and compile flags required to compile the
+packages on the command line, including flags for all their
+dependencies. Flags are "compressed" so that each identical flag
+appears only once. \fIpkg-config\fP exits with a nonzero code if it
+can't find metadata for one or more of the packages on the command
+line.
+.TP
+.I "--cflags-only-I"
+This prints the -I part of "--cflags". That is, it defines the header
+search path but doesn't specify anything else.
+.TP
+.I "--cflags-only-other"
+This prints parts of "--cflags" not covered by "--cflags-only-I".
+.TP
+.I "--libs"
+This option is identical to "--cflags", only it prints the link
+flags. As with "--cflags", duplicate flags are merged (maintaining
+proper ordering), and flags for dependencies are included in the
+output.
+.TP
+.I "--libs-only-L"
+This prints the -L/-R part of "--libs". That is, it defines the 
+library search path but doesn't specify which libraries to link with.
+.TP
+.I "--libs-only-l"
+This prints the -l part of "--libs" for the libraries specified on
+the command line. Note that the union of "--libs-only-l" and
+"--libs-only-L" may be smaller than "--libs", due to flags such as
+-rdynamic.
+.TP
+.I "--libs-only-other"
+This prints the parts of "--libs" not covered by "--libs-only-L" and
+"--libs-only-l", such as "--pthread".
+.TP
+.I "--variable=VARIABLENAME"
+This returns the value of a variable defined in a package's \fI.pc\fP
+file. Most packages define the variable "prefix", for example, so you 
+can say:
+.nf
+  $ pkg-config --variable=prefix glib-2.0
+  /usr/
+.fi
+.TP
+.I "--define-variable=VARIABLENAME=VARIABLEVALUE"
+This sets a global value for a variable, overriding the value in any
+.I .pc
+files. Most packages define the variable "prefix", for example, so you
+can say:
+.nf
+  $ pkg-config --print-errors --define-variable=prefix=/foo \e
+               --variable=prefix glib-2.0
+  /foo
+.fi
+.TP
+.I "--print-variables"
+Returns a list of all variables defined in the package.
+
+.TP
+.I "--uninstalled"
+Normally if you request the package "foo" and the package
+"foo-uninstalled" exists, \fIpkg-config\fP will prefer the 
+"-uninstalled" variant. This allows compilation/linking against
+uninstalled packages. If you specify the "--uninstalled" option,
+.I pkg-config
+will return successfully if any "-uninstalled" packages are being
+used, and return failure (false) otherwise.  (The
+PKG_CONFIG_DISABLE_UNINSTALLED environment variable keeps
+.I pkg-config
+from implicitly choosing "-uninstalled" packages, so if that variable
+is set, they will only have been used if you pass a name like
+"foo-uninstalled" on the command line explicitly.)
+.TP
+.I "--exists"
+.TP
+.I "--atleast-version=VERSION"
+.TP
+.I "--exact-version=VERSION"
+.TP
+.I "--max-version=VERSION"
+These options test whether the package or list of packages on the
+command line are known to \fIpkg-config\fP, and optionally whether the
+version number of a package meets certain constraints.  If all packages
+exist and meet the specified version constraints,
+.I pkg-config
+exits successfully. Otherwise it exits unsuccessfully. Only the first
+VERSION comparing option will be honored. Subsequent options of this
+type will be ignored.
+
+Rather than using the version-test options, you can simply give a version
+constraint after each package name, for example:
+.nf
+  $ pkg-config --exists 'glib-2.0 >= 1.3.4 libxml = 1.8.3'
+.fi
+Remember to use \-\-print-errors if you want error messages. When no
+output options are supplied to \fIpkg-config\fP, \-\-exists is implied.
+.TP
+.I "--validate"
+Checks the syntax of a package's
+.I .pc
+file for validity. This is the same as \-\-exists except that
+dependencies are not verified. This can be useful for package developers
+to test their
+.I .pc
+file prior to release:
+.nf
+  $ pkg-config --validate ./my-package.pc
+.fi
+.TP
+.I "--msvc-syntax"
+This option is available only on Windows. It causes \fIpkg-config\fP
+to output -l and -L flags in the form recognized by the Microsoft
+Visual C++ command-line compiler, \fIcl\fP. Specifically, instead of
+.I -Lx:/some/path
+it prints \fI/libpath:x/some/path\fP, and instead of \fI-lfoo\fP it
+prints \fIfoo.lib\fP. Note that the --libs output consists of flags
+for the linker, and should be placed on the cl command line after a
+/link switch.
+.TP
+.I "--define-prefix"
+.TQ
+.I "--dont-define-prefix"
+These options control whether
+.I pkg-config
+overrides the value of the variable
+.I prefix
+in each .pc file. With \-\-define-prefix,
+.I pkg-config
+uses the installed location of the .pc file to determine the
+prefix. \-\-dont-define-prefix prevents this behavior. The default is
+usually \-\-define-prefix.
+
+When this feature is enabled and a .pc file is found in a directory named
+.IR pkgconfig ,
+the prefix for that package is assumed to be the grandparent of the
+directory where the file was found, and the
+.I prefix
+variable is overridden for that file accordingly.
+
+If the value of a variable in a .pc file begins with the original,
+non-overridden, value of the
+.I prefix
+variable, then the overridden value of
+.I prefix
+is used instead. This allows the feature to work even when the variables
+have been expanded in the .pc file.
+.TP
+.I "--prefix-variable=PREFIX"
+Set the name of the variable that
+.I pkg-config
+overrides instead of
+.I prefix
+when using the \-\-define-prefix feature.
+.TP
+.I "--static"
+Output libraries suitable for static linking.  That means including
+any private libraries in the output.  This relies on proper tagging in
+the .pc files, else a too large number of libraries will ordinarily be
+output.
+.TP
+.I "--list-all"
+List all modules found in the \fIpkg-config\fP path.
+.TP
+.I "--print-provides"
+List all modules the given packages provides.
+.TP
+.I "--print-requires"
+List all modules the given packages requires.
+.TP
+.I "--print-requires-private"
+List all modules the given packages requires for static linking (see --static).
+.\"
+.SH ENVIRONMENT VARIABLES
+.TP
+.I "PKG_CONFIG_PATH"
+A colon-separated (on Windows, semicolon-separated) list of
+directories to search for .pc files.  The default directory will
+always be searched after searching the path; the default is
+.I \%libdir/\fPpkgconfig:\fIdatadir\fP/pkgconfig where \fIlibdir\fP is
+the libdir for \fIpkg-config\fP and \fIdatadir\fP is the datadir
+for \fIpkg-config\fP when it was installed.
+.TP
+.I "PKG_CONFIG_DEBUG_SPEW"
+If set, causes \fIpkg-config\fP to print all kinds of
+debugging information and report all errors.
+.TP
+.I "PKG_CONFIG_TOP_BUILD_DIR"
+A value to set for the magic variable \fIpc_top_builddir\fP
+which may appear in \fI.pc\fP files. If the environment variable is
+not set, the default value '$(top_builddir)' will be used. This
+variable should refer to the top builddir of the Makefile where the 
+compile/link flags reported by \fIpkg-config\fP will be used.
+This only matters when compiling/linking against a package that hasn't
+yet been installed.
+.TP
+.I "PKG_CONFIG_DISABLE_UNINSTALLED"
+Normally if you request the package "foo" and the package
+"foo-uninstalled" exists, \fIpkg-config\fP will prefer the 
+"-uninstalled" variant. This allows compilation/linking against
+uninstalled packages.  If this environment variable is set, it
+disables said behavior.
+.TP
+.I "PKG_CONFIG_SYSTEM_INCLUDE_PATH"
+A path variable containing system directories searched by the compiler.
+This is normally
+.IR /usr/include .
+.TP
+.I "CPATH"
+.TQ
+.I "C_INCLUDE_PATH"
+.TQ
+.I "CPLUS_INCLUDE_PATH"
+Additional paths to append to
+.IR "PKG_CONFIG_SYSTEM_INCLUDE_PATH" .
+These correspond to environment variables used by many compilers to
+affect the header search path. These are ignored on Windows builds when
+\-\-msvc-syntax is in use.
+.TP
+.I "INCLUDE"
+Additional paths to append to
+.IR "PKG_CONFIG_SYSTEM_INCLUDE_PATH"
+on Windows builds when \-\-msvc-syntax is in use. This corresponds to
+the environment variable used by MSVC to add directories to the include
+file search path.
+.TP
+.I "PKG_CONFIG_ALLOW_SYSTEM_CFLAGS"
+Don't strip system paths out of Cflags. See
+.I "PKG_CONFIG_SYSTEM_INCLUDE_PATH"
+for the definition of system paths.
+.TP
+.I "PKG_CONFIG_SYSTEM_LIBRARY_PATH"
+A path variable containing system directories searched by the linker.
+This is normally
+.I /usr/lib:/lib
+but is dependent on the
+.I pkg-config
+build and can contain other directories such as
+.IR /usr/lib64 .
+.TP
+.I "PKG_CONFIG_ALLOW_SYSTEM_LIBS"
+Don't strip system paths out of Libs. See
+.I "PKG_CONFIG_SYSTEM_LIBRARY_PATH"
+for the definition of system paths.
+.TP
+.I "PKG_CONFIG_SYSROOT_DIR"
+Modify -I and -L to use the directories located in target sysroot.
+this option is useful when cross-compiling packages that use pkg-config
+to determine CFLAGS and LDFLAGS. -I and -L are modified to point to 
+the new system root. this means that a -I/usr/include/libfoo will
+become -I/var/target/usr/include/libfoo with a PKG_CONFIG_SYSROOT_DIR
+equal to /var/target (same rule apply to -L)
+.TP
+.I "PKG_CONFIG_LIBDIR"
+Replaces the default
+.I pkg-config
+search directory, usually
+.IR /usr/lib/pkgconfig : /usr/share/pkgconfig .
+.TP
+.I "PKG_CONFIG_$PACKAGE_$VARIABLE"
+Overrides the variable VARIABLE in the package PACKAGE. The environment
+variable should have the package name and package variable upper cased
+with non-alphanumeric characters converted to underscores. For example,
+setting PKG_CONFIG_GLADEUI_2_0_CATALOGDIR will override the variable
+"catalogdir" in the "gladeui-2.0" package.
+.\"
+.SH PKG-CONFIG DERIVED VARIABLES
+.I pkg-config
+sets a few metadata variables that can be used in .pc files or queried
+at runtime.
+.TP
+.I pc_path
+The default search path used by
+.I pkg-config
+when searching for .pc files. This can be used in a query for the
+.I pkg-config
+module itself itself:
+.nf
+  $ pkg-config --variable pc_path pkg-config
+.fi
+.TP
+.I pcfiledir
+The installed location of the .pc file. This can be used to query the
+location of the .pc file for a particular module, but it can also be
+used to make .pc files relocatable. For instance:
+.nf
+prefix=${pcfiledir}/../..
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+.fi
+.TP
+.I pc_sysrootdir
+The sysroot directory set by the user. When the sysroot directory has
+not been set, this value is
+.IR / .
+See the
+.I PKG_CONFIG_SYSROOT_DIR
+environment variable for more details.
+.TP
+.I pc_top_builddir
+Location of the user's top build directory when calling
+.IR pkg-config.
+This is useful to dynamically set paths in uninstalled .pc files. See
+the
+.I PKG_CONFIG_TOP_BUILD_DIR
+environment variable for more details.
+.\"
+.SH WINDOWS SPECIALITIES
+The
+.I pkg-config
+default search path is ignored on Windows. Instead, the search path is
+constructed by using the installed directory of
+.I pkg-config
+and then appending
+.I lib\epkgconfig
+and
+.IR share\epkgconfig .
+This can be augmented or replaced using the standard environment
+variables described above.
+.\"
+.SH AUTOCONF MACROS
+.TP
+.I "PKG_CHECK_MODULES(VARIABLE-PREFIX, MODULES [,ACTION-IF-FOUND [,ACTION-IF-NOT-FOUND]])"
+
+The macro PKG_CHECK_MODULES can be used in \fIconfigure.ac\fP to 
+check whether modules exist. A typical usage would be:
+.nf
+ PKG_CHECK_MODULES([MYSTUFF], [gtk+-2.0 >= 1.3.5 libxml = 1.8.4])
+.fi
+
+This would result in MYSTUFF_LIBS and MYSTUFF_CFLAGS substitution
+variables, set to the libs and cflags for the given module list. 
+If a module is missing or has the wrong version, by default configure
+will abort with a message. To replace the default action, 
+specify an \%ACTION-IF-NOT-FOUND. \%PKG_CHECK_MODULES will not print any
+error messages if you specify your own ACTION-IF-NOT-FOUND.
+However, it will set the variable MYSTUFF_PKG_ERRORS, which you can 
+use to display what went wrong.
+
+Note that if there is a possibility the first call to
+PKG_CHECK_MODULES might not happen, you should be sure to include an
+explicit call to PKG_PROG_PKG_CONFIG in your configure.ac.
+
+Also note that repeated usage of VARIABLE-PREFIX is not recommended.
+After the first successful usage, subsequent calls with the same
+VARIABLE-PREFIX will simply use the _LIBS and _CFLAGS variables set from
+the previous usage without calling \fIpkg-config\fP again.
+.\"
+.TP
+.I "PKG_PREREQ(MIN-VERSION)"
+Checks that the version of the pkg-config autoconf macros in use is at
+least MIN-VERSION. This can be used to ensure a particular pkg-config
+macro will be available.
+.\"
+.TP
+.I "PKG_PROG_PKG_CONFIG([MIN-VERSION])"
+
+Defines the PKG_CONFIG variable to the best pkg-config available,
+useful if you need pkg-config but don't want to use PKG_CHECK_MODULES.
+
+If the first call to PKG_PROG_PKG_CONFIG is conditional, then it will
+not work correctly in all cases. Since many of the other macros such as
+PKG_CHECK_MODULES require PKG_PROG_PKG_CONFIG to know which pkg-config
+program to run, PKG_PROG_PKG_CONFIG may be run for the first time from a
+conditional from one of these macros. Therefore, if any of the
+pkg-config macros will be used under a conditional, it's best to run
+PKG_PROG_PKG_CONFIG before any of the other macros are used.
+
+.TP
+.I "PKG_CHECK_MODULES_STATIC(VARIABLE-PREFIX, MODULES [,ACTION-IF-FOUND [,ACTION-IF-NOT-FOUND]])"
+Enables static linking through --static prior to calling
+PKG_CHECK_MODULES.
+.TP
+.I "PKG_CHECK_EXISTS(MODULES, [ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND])"
+
+Check to see whether a particular set of modules exists.  Similar
+to PKG_CHECK_MODULES(), but does not set variables or print errors.
+
+Similar to PKG_CHECK_MODULES, make sure that the first instance of this
+or PKG_CHECK_MODULES is called, or make sure to call PKG_PROG_PKGCONFIG
+manually.
+
+.TP
+.I "PKG_INSTALLDIR(DIRECTORY)"
+
+Substitutes the variable pkgconfigdir as the location where a module
+should install pkg-config .pc files. By default the directory is
+$libdir/pkgconfig, but the default can be changed by passing DIRECTORY.
+The user can override through the --with-pkgconfigdir parameter.
+.TP
+.I "PKG_NOARCH_INSTALLDIR(DIRECTORY)"
+
+Substitutes the variable noarch_pkgconfigdir as the location where a
+module should install arch-independent pkg-config .pc files. By default
+the directory is $datadir/pkgconfig, but the default can be changed by
+passing DIRECTORY. The user can override through the
+--with-noarch-pkgconfigdir parameter.
+.TP
+.I "PKG_CHECK_VAR(VARIABLE, MODULE, CONFIG-VARIABLE, [ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND])"
+
+Retrieves the value of the pkg-config variable CONFIG-VARIABLE from
+MODULE and stores it in VARIABLE. Note that repeated usage of VARIABLE
+is not recommended as the check will be skipped if the variable is
+already set.
+
+.SH METADATA FILE SYNTAX
+To add a library to the set of packages \fIpkg-config\fP knows about,
+simply install a \fI.pc\fP file. You should install this file to 
+.I libdir\fP/pkgconfig.
+.PP
+Here is an example file:
+.nf
+# This is a comment
+prefix=/home/hp/unst   # this defines a variable
+exec_prefix=${prefix}  # defining another variable in terms of the first
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: GObject                            # human-readable name
+Description: Object/type system for GLib # human-readable description
+Version: 1.3.1
+URL: http://www.gtk.org
+Requires: glib-2.0 = 1.3.1
+Conflicts: foobar <= 4.5
+Libs: -L${libdir} -lgobject-1.3
+Libs.private: -lm
+Cflags: -I${includedir}/glib-2.0 -I${libdir}/glib/include 
+.fi
+.PP
+You would normally generate the file using configure, so that the
+prefix, etc. are set to the proper values.  The GNU Autoconf manual
+recommends generating files like .pc files at build time rather than
+configure time, so when you build the .pc file is a matter of taste
+and preference.
+.PP
+Files have two kinds of line: keyword lines start with a keyword plus
+a colon, and variable definitions start with an alphanumeric string
+plus an equals sign. Keywords are defined in advance and have special
+meaning to \fIpkg-config\fP; variables do not, you can have any
+variables that you wish (however, users may expect to retrieve the
+usual directory name variables).
+.PP
+Note that variable references are written "${foo}"; you can escape
+literal "${" as "$${".
+.TP
+.I "Name:"
+This field should be a human-readable name for the package. Note that
+it is not the name passed as an argument to \fIpkg-config\fP.
+.TP
+.I "Description:"
+This should be a brief description of the package
+.TP
+.I "URL:"
+An URL where people can get more information about and download the package
+.TP
+.I "Version:"
+This should be the most-specific-possible package version string.
+.TP
+.I "Requires:"
+This is a comma-separated list of packages that are required by your
+package. Flags from dependent packages will be merged in to the flags
+reported for your package. Optionally, you can specify the version 
+of the required package (using the operators =, <, >, >=, <=);
+specifying a version allows \fIpkg-config\fP to perform extra sanity
+checks. You may only mention the same package one time on the 
+.I "Requires:"
+line. If the version of a package is unspecified, any version will
+be used with no checking.
+.TP
+.I Requires.private:
+A list of packages required by this package. The difference from
+.I Requires
+is that the packages listed under
+.I Requires.private
+are not taken into account when a flag list is computed for
+dynamically linked executable (i.e., when \-\-static was not
+specified).  In the situation where each .pc file corresponds to a
+library,
+.I Requires.private
+shall be used exclusively to specify the dependencies between the
+libraries.
+.TP
+.I "Conflicts:"
+This optional line allows \fIpkg-config\fP to perform additional
+sanity checks, primarily to detect broken user installations.  The
+syntax is the same as
+.I "Requires:"
+except that
+you can list the same package more than once here, for example 
+"foobar = 1.2.3, foobar = 1.2.5, foobar >= 1.3", if you have reason to
+do so. If a version isn't specified, then your package conflicts with
+all versions of the mentioned package. 
+If a user tries to use your package and a conflicting package at the
+same time, then \fIpkg-config\fP will complain.
+.TP
+.I "Libs:"
+This line should give the link flags specific to your package. 
+Don't add any flags for required packages; \fIpkg-config\fP will 
+add those automatically.
+.TP
+.I "Libs.private:"
+This line should list any private libraries in use.  Private libraries
+are libraries which are not exposed through your library, but are
+needed in the case of static linking. This differs from
+.I Requires.private
+in that it references libraries that do not have package files
+installed.
+.TP
+.I "Cflags:"
+This line should list the compile flags specific to your package. 
+Don't add any flags for required packages; \fIpkg-config\fP will 
+add those automatically.
+.\"
+.SH AUTHOR
+
+.I pkg-config
+was written by James Henstridge, rewritten by Martijn van Beers, and
+rewritten again by Havoc Pennington. Tim Janik, Owen Taylor, and Raja
+Harinath submitted suggestions and some code.
+.I gnome-config
+was written by Miguel de Icaza, Raja Harinath and various hackers in
+the GNOME team.  It was inspired by Owen Taylor's \fIgtk-config\fP
+program.
+.\"
+.SH BUGS
+
+\fIpkg-config\fP does not handle mixing of parameters with and without
+= well.  Stick with one.
+
+Bugs can be reported at http://bugs.freedesktop.org/ under the
+.I pkg-config
+component.

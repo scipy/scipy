@@ -1,0 +1,154 @@
+<!-- Creator     : groff version 1.22.3 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>BINDTEXTDOMAIN</title>
+
+</head>
+<body>
+
+<h1 align="center">BINDTEXTDOMAIN</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#RETURN VALUE">RETURN VALUE</a><br>
+<a href="#ERRORS">ERRORS</a><br>
+<a href="#BUGS">BUGS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">bindtextdomain
+- set directory containing message catalogs</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>#include
+&lt;libintl.h&gt;</b></p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>char *
+bindtextdomain (const char *</b> <i>domainname</i><b>, const
+char *</b> <i>dirname</i><b>);</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>bindtextdomain</b> function sets the base directory of
+the hierarchy containing message catalogs for a given
+message domain.</p>
+
+<p style="margin-left:11%; margin-top: 1em">A message
+domain is a set of translatable <i>msgid</i> messages.
+Usually, every software package has its own message domain.
+The need for calling <b>bindtextdomain</b> arises because
+packages are not always installed with the same prefix as
+the &lt;libintl.h&gt; header and the libc/libintl
+libraries.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Message
+catalogs will be expected at the pathnames
+<i>dirname</i>/<i>locale</i>/<i>category</i>/<i>domainname</i>.mo,
+where <i>locale</i> is a locale name and <i>category</i> is
+a locale facet such as <b>LC_MESSAGES</b>.</p>
+
+
+<p style="margin-left:11%; margin-top: 1em"><i>domainname</i>
+must be a non-empty string.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<i>dirname</i> is not NULL, the base directory for message
+catalogs belonging to domain <i>domainname</i> is set to
+<i>dirname</i>. The function makes copies of the argument
+strings as needed. If the program wishes to call the
+<b>chdir</b> function, it is important that <i>dirname</i>
+be an absolute pathname; otherwise it cannot be guaranteed
+that the message catalogs will be found.</p>
+
+<p style="margin-left:11%; margin-top: 1em">If
+<i>dirname</i> is NULL, the function returns the previously
+set base directory for domain <i>domainname</i>.</p>
+
+<h2>RETURN VALUE
+<a name="RETURN VALUE"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">If successful,
+the <b>bindtextdomain</b> function returns the current base
+directory for domain <i>domainname</i>, after possibly
+changing it. The resulting string is valid until the next
+<b>bindtextdomain</b> call for the same <i>domainname</i>
+and must not be modified or freed. If a memory allocation
+failure occurs, it sets <b>errno</b> to <b>ENOMEM</b> and
+returns NULL.</p>
+
+<h2>ERRORS
+<a name="ERRORS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+error can occur, among others:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>ENOMEM</b></p></td>
+<td width="2%"></td>
+<td width="43%">
+
+
+<p>Not enough memory available.</p></td>
+<td width="35%">
+</td></tr>
+</table>
+
+<h2>BUGS
+<a name="BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The return type
+ought to be <b>const char *</b>, but is <b>char *</b> to
+avoid warnings in C code predating ANSI C.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>gettext</b>(3),
+<b>dgettext</b>(3), <b>dcgettext</b>(3), <b>ngettext</b>(3),
+<b>dngettext</b>(3), <b>dcngettext</b>(3),
+<b>textdomain</b>(3), <b>realpath</b>(3)</p>
+<hr>
+</body>
+</html>

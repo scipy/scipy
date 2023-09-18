@@ -1,0 +1,20 @@
+# Get PPD file using CUPS-get-ppd
+{
+	# The name of the test...
+	NAME "Get PPD file using CUPS-get-ppd"
+
+	# The resource to use for the POST
+	# RESOURCE /admin
+
+	# The operation to use
+	OPERATION CUPS-get-ppd
+
+	# Attributes, starting in the operation group...
+	GROUP operation
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+	ATTR name ppd-name $ENV[ppd-name]
+
+	# What statuses are OK?
+	STATUS successful-ok
+}

@@ -1,0 +1,103 @@
+.TH "GStreamer" "1" "April 2014" "" ""
+.SH "NAME"
+gst\-play\-1.0 \- Simple command line playback testing tool
+.SH "SYNOPSIS"
+\fBgst\-play\-1.0\fR \fIFILE|DIRECTORY|URI [FILE2|DIRECTORY2|URI2]\fR
+.SH "DESCRIPTION"
+.LP
+\fIgst\-play\-1.0\fP is a command line tool that can be used to test
+basic playback using the playbin element. You can pass it individual files,
+URIs or whole directories (in which case it will recurse into sub-directories
+as well).
+
+.SH "OPTIONS"
+.l
+\fIgst\-play\-1.0\fP accepts the following options:
+.TP 8
+.B  \-\-help
+Print help synopsis and available command line options
+.TP 8
+.B  \-\-version
+Print version and exit
+.TP 8
+.B  \-\-audiosink=SOMESINK
+Use the SOMESINK element as audio sink instead of autoaudiosink
+.TP 8
+.B  \-\-videosink=SOMESINK
+Use the SOMESINK element as video sink instead of autovideosink
+.TP 8
+.B  \-\-volume=VOLUME
+Set initial playback volume to VOLUME, where 0.0=silent and 1.0=unchanged
+.TP 8
+.B  \-\-shuffle
+Shuffle playlist (play files in random order)
+.TP 8
+.B  \-\-no-interactive
+Disable control through keyboard interaction in terminal (see below)
+.TP 8
+.B  \-\-gapless
+Enable gapless playback
+.TP 8
+.B  \-v, \-\-flags
+Control playback behaviour setting playbin 'flags' property
+.TP 8
+.B  \-v, \-\-verbose
+Output status information and property notifications
+.TP 8
+.B  \-q, \-\-quiet
+Do not print any output (apart from errors)
+.TP 8
+.B  \-\-use\-playbin3
+Use playbin3 pipeline (default varies depending on 'USE_PLAYBIN' env variable)
+.TP 8
+.B  \-\-wait\-on\-eos
+Keep showing the last frame on EOS until quit or playlist change command (gapless is ignored)
+
+.SH "INTERACTIVE KEYBOARD CONTROL"
+.l
+.TP 8
+.B  SPACE
+Pause/Resume playback
+.TP 8
+.B  ARROW UP/DOWN
+Volume up/down
+.TP 8
+.B  ARROW LEFT/RIGHT
+Seek back/forward
+.TP 8
+.B  +/-
+Increase/decrease playback rate
+.TP 8
+.B  d
+Reverse playback direction
+.TP 8
+.B  t
+Cycle through trick modes
+.TP 8
+.B  a
+Switch audio track
+.TP 8
+.B  s
+Switch subtitle track
+.TP 8
+.B  v
+Switch video track
+.TP 8
+.B  > or n
+Skip to next item in playlist
+.TP 8
+.B  < or b
+Go back to previous item in playlist
+.TP 8
+.B  0
+Seek back to beginning of current track
+.TP 8
+.B  Q, ESC
+Quit
+
+.SH "SEE ALSO"
+.BR gst\-inspect\-1.0 (1),
+.BR gst\-launch\-1.0 (1),
+.BR gst\-discoverer\-1.0 (1),
+.SH "AUTHOR"
+The GStreamer team at http://gstreamer.freedesktop.org/

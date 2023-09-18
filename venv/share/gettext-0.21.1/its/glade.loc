@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<!--
+  Copyright (C) 2015-2016 Free Software Foundation, Inc.
+  This file was written by Daiki Ueno <ueno@gnu.org>, 2015.
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+<locatingRules>
+  <locatingRule name="Glade" pattern="*.glade">
+    <documentRule localName="GTK-Interface" target="glade1.its"/>
+    <documentRule localName="glade-interface" target="glade2.its"/>
+    <documentRule localName="interface" target="gtkbuilder.its"/>
+  </locatingRule>
+  <locatingRule name="Glade" pattern="*.glade2">
+    <documentRule localName="glade-interface" target="glade2.its"/>
+  </locatingRule>
+  <locatingRule name="Glade" pattern="*.ui">
+    <documentRule localName="interface" target="gtkbuilder.its"/>
+  </locatingRule>
+</locatingRules>

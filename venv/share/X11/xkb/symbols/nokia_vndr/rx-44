@@ -1,0 +1,303 @@
+partial alphanumeric_keys
+xkb_symbols "us" {
+    name[Group1] = "U.S. English";
+    
+    include "nokia_vndr/rx-44(base)"
+
+    key <AC01>	{	[	a,		A,		exclam,		exclam		]	};
+    key <AC02>	{	[	s,		S,		quotedbl,	quotedbl	]	};
+    key <AC03>	{	[	d,		D,		at,		at		]	};
+    key <AC04>	{	[	f,		F,		numbersign,	numbersign	]	};
+    key <AC05>	{	[	g,		G,		backslash,	backslash	]	};
+    key <AC06>	{	[	h,		H,		slash,		slash		]	};
+    key <AC07>	{	[	j,		J,		parenleft,	parenleft	]	};
+    key <AC08>	{	[	k,		K,		parenright,	parenright	]	};
+    key <AC09>	{	[	l,		L,		asterisk,	asterisk	]	};
+    key <AC11>  {       [       apostrophe,     question,       question,	question	]	};
+
+    key <AB01>	{	[	z,		Z,		yen,		yen		]	};
+    key <AB02>	{	[	x,		X,		asciicircum,	asciicircum	]	};
+    key <AB03>	{	[	c,		C,		asciitilde,	asciitilde	]	};
+    key <AB04>	{	[	v,		V,		percent,	percent		]	};
+    key <AB05>	{	[	b,		B,		ampersand,	ampersand	]	};
+    key <AB06>	{	[	n,		N,		dollar,		dollar		]	};
+    key <AB07>	{	[	m,		M,		EuroSign,	EuroSign	]	};
+    key <AC10>  {       [       semicolon,      colon,          sterling,	sterling	]	};
+    key <AE11>  {       [       minus,          underscore,     underscore,	underscore	]	};
+    key <AE12>  {       [       plus,           equal,          equal,		equal		]	};
+
+    key <AB08>  {       [       comma,          less,           comma,		less		]	};
+    key <AB09>  {       [       period,         greater,        period,		greater		]	};
+};
+
+
+
+partial alphanumeric_keys
+xkb_symbols "fisenoda" {
+    name[Group1] = "Finnish/Swedish/Norwegian/Danish";
+
+    include "nokia_vndr/rx-44(base)"
+
+    key <AC01>	{	[	a,		A,		exclam,		exclam		]	};
+    key <AC02>	{	[	s,		S,		quotedbl,	quotedbl	]	};
+    key <AC03>	{	[	d,		D,		at,		at		]	};
+    key <AC04>	{	[	f,		F,		numbersign,	numbersign	]	};
+    key <AC05>	{	[	g,		G,		asterisk,	asterisk	]	};
+    key <AC06>	{	[	h,		H,		backslash,	backslash	]	};
+    key <AC07>	{	[	j,		J,		slash,		slash		]	};
+    key <AC08>	{	[	k,		K,		parenleft,	parenleft	]	};
+    key <AC09>	{	[	l,		L,		parenright,	parenright	]	};
+    key <AC11>  {       [       aring,          Aring,          question,	question	]	};
+
+    key <AB01>	{	[	z,		Z,		EuroSign,	EuroSign	]	};
+    key <AB02>	{	[	x,		X,		asciitilde,	asciitilde	]	};
+    key <AB03>	{	[	c,		C,		percent,	percent		]	};
+    key <AB04>	{	[	v,		V,		ampersand,	ampersand	]	};
+    key <AB05>	{	[	b,		B,		plus,		plus		]	};
+    key <AB06>	{	[	n,		N,		less,		less		]	};
+    key <AB07>	{	[	m,		M,		greater,	greater		]	};
+    key <AC10>  {       type="EIGHT_LEVEL", [       oslash,     Oslash,		equal,		equal,		odiaeresis,		Odiaeresis,	equal,		equal		]       };
+    key <AE11>  {       type="EIGHT_LEVEL", [       ae,		AE,		apostrophe,	apostrophe,	adiaeresis,		Adiaeresis,	apostrophe,	apostrophe	]       };
+    key <AE12>  {       [       minus,          underscore,     underscore,	underscore	]       };
+
+    key <AB08>  {       [       comma,          semicolon,      comma,		semicolon	]       };
+    key <AB09>  {       [       period,         colon,          period,		colon		]       };
+};
+
+
+
+partial alphanumeric_keys
+xkb_symbols "ptes" {
+    name[Group1] = "Portuguese/Spanish";
+
+    include "nokia_vndr/rx-44(base)"
+
+    key <AC01>	{	[	a,		A,		exclam,		exclam		]	};
+    key <AC02>	{	[	s,		S,		quotedbl,	quotedbl	]	};
+    key <AC03>	{	[	d,		D,		at,		at		]	};
+    key <AC04>	{	[	f,		F,		numbersign,	numbersign	]	};
+    key <AC05>	{	[	g,		G,		asterisk,	asterisk	]	};
+    key <AC06>	{	[	h,		H,		backslash,	backslash	]	};
+    key <AC07>	{	[	j,		J,		slash,		slash		]	};
+    key <AC08>	{	[	k,		K,		parenleft,	parenleft	]	};
+    key <AC09>	{	[	l,		L,		parenright,	parenright	]	};
+    key <AC11>  {       [       dead_acute,     dead_grave,     dead_diaeresis,	dead_diaeresis	]	};
+
+    key <AB01>	{	[	z,		Z,		EuroSign,	EuroSign	]	};
+    key <AB02>	{	[	x,		X,		percent,	percent 	]	};
+    key <AB03>	{	[	c,		C,		ampersand,	ampersand	]	};
+    key <AB04>	{	[	v,		V,		exclamdown,	exclamdown	]	};
+    key <AB05>	{	[	b,		B,		apostrophe,	apostrophe	]	};
+    key <AB06>	{	[	n,		N,		plus,		plus		]	};
+    key <AB07>	{	[	m,		M,		equal,		equal		]	};
+    key <AC10>  {       [       ccedilla,       Ccedilla,       questiondown,	questiondown	]	};
+    key <AE11>  {       [       ntilde,         Ntilde,         question,	question	]	};
+    key <AE12>  {       [       dead_tilde,     dead_circumflex, dead_circumflex, dead_circumflex ]	};
+
+    key <AB08>  {       [	comma,		semicolon,	minus,		minus		]	};
+    key <AB09>  {       [	period,		colon,		underscore,	underscore	]	};
+};
+
+
+
+partial alphanumeric_keys
+xkb_symbols "fr" {
+    name[Group1] = "French";
+
+    include "nokia_vndr/rx-44(base)"
+
+    key <AD01>	{	[	a,		A,		1,              1               ]	};
+    key <AD02>	{	[	z,		Z,		2,              2               ]	};
+
+    key <AC01>	{	[	q,		Q,		at,             at              ]	};
+    key <AC02>	{	[	s,		S,		percent,        percent         ]	};
+    key <AC03>	{	[	d,		D,		ecircumflex,    Ecircumflex	]	};
+    key <AC04>	{	[	f,		F,		eacute,  	Eacute          ]	};
+    key <AC05>	{	[	g,		G,		egrave,    	Egrave          ]	};
+    key <AC06>	{	[	h,		H,		oe,             OE      	]	};
+    key <AC07>	{	[	j,		J,		parenleft,      parenleft   	]	};
+    key <AC08>	{	[	k,		K,		parenright,     parenright	]	};
+    key <AC09>	{	[	l,		L,		agrave,         Agrave      	]	};
+    key <AC11>  {       [       m,              M,              ugrave,         Ugrave          ]       };
+
+    key <AB01>	{	[	w,		w,		EuroSign,       EuroSign	]	};
+    key <AB02>	{	[	x,		X,		numbersign,     numbersign 	]	};
+    key <AB03>	{	[	c,		C,		ccedilla,       Ccedilla	]	};
+    key <AB04>	{	[	v,		V,		plus,           plus	        ]	};
+    key <AB05>	{	[	b,		B,		equal,          equal   	]	};
+    key <AB06>	{	[	n,		N,		quotedbl,       quotedbl	]	};
+    key <AB07>	{	[	comma,		question,       backslash,      backslash	]	};
+    key <AC10>  {       [       semicolon,      period,         minus,          minus           ]       };
+    key <AE11>  {       [       colon,          slash,          underscore,     underscore      ]       };
+    key <AE12>  {       [       apostrophe,     apostrophe,     mu,             mu              ]       };
+
+    key <AB08>  {       [       less,		greater,	less,		greater		]	};
+    key <AB09>  {       [       exclam,		section,	asterisk,	asterisk        ]       };
+};
+
+
+
+partial alphanumeric_keys
+xkb_symbols "de" {
+    name[Group1] = "German";
+
+    include "nokia_vndr/rx-44(base)"
+
+    key <AD06>	{	[	z,		Z,		6,		6		]	};
+
+    key <AC01>	{	[	a,		A,		exclam,		exclam		]	};
+    key <AC02>	{	[	s,		S,		quotedbl,	quotedbl	]	};
+    key <AC03>	{	[	d,		D,		at,		at		]	};
+    key <AC04>	{	[	f,		F,		numbersign,	numbersign	]	};
+    key <AC05>	{	[	g,		G,		percent,	percent    	]	};
+    key <AC06>	{	[	h,		H,		backslash,	backslash	]	};
+    key <AC07>	{	[	j,		J,		slash,		slash	  	]	};
+    key <AC08>	{	[	k,		K,		parenleft,	parenleft	]	};
+    key <AC09>	{	[	l,		L,		parenright,	parenright	]	};
+    key <AC11>  {	[       udiaeresis,     Udiaeresis,     question,	question	]       };
+
+    key <AB01>	{	[	y,		Y,		EuroSign,	EuroSign	]	};
+    key <AB02>	{	[	x,		X,		asciitilde,	asciitilde	]	};
+    key <AB03>	{	[	c,		C,		asterisk,	asterisk	]	};
+    key <AB04>	{	[	v,		V,		ampersand,	ampersand	]	};
+    key <AB05>	{	[	b,		B,		plus,		plus		]	};
+    key <AB06>	{	[	n,		N,		less,		less		]	};
+    key <AB07>	{	[	m,		M,		greater,	greater		]	};
+    key <AC10>  {	[       odiaeresis,     Odiaeresis,     equal,		equal		]       };
+    key <AE11>  {	[       adiaeresis,     Adiaeresis,     apostrophe,	apostrophe	]       };
+    key <AE12>  {	[       minus,          underscore,     ssharp,		U1E9E		]       };
+
+    key <AB08>  {       [       comma,          semicolon,      comma,		semicolon	]	};
+    key <AB09>  {       [       period,         colon,          period,		colon		]	};
+};
+
+
+// Levels 5-8 are Russian, levels 1-4 US English, for shortcut reasons.
+partial alphanumeric_keys
+xkb_symbols "ru" {
+    name[Group1] = "Russian";
+
+    include "nokia_vndr/rx-44(base)"
+
+    key <AD01>	{	type="EIGHT_LEVEL", [	q,			Q,			1,			1,			Cyrillic_shorti,	Cyrillic_SHORTI,	1,			1			]	};
+    key <AD02>	{	type="EIGHT_LEVEL", [	w,			W,			2,			2,			Cyrillic_tse,	Cyrillic_TSE,	2,			2			]	};
+    key <AD03>	{	type="EIGHT_LEVEL", [	e,			E,			3,			3,			Cyrillic_u,	Cyrillic_U,	3,			3			]	};
+    key <AD04>	{	type="EIGHT_LEVEL", [	r,			R,			4,			4,			Cyrillic_ka,	Cyrillic_KA,	4,			4			]	};
+    key <AD05>	{	type="EIGHT_LEVEL", [	t,			T,			5,			5,			Cyrillic_ie,	Cyrillic_IE,	5,			5			]	};
+    key <AD06>	{	type="EIGHT_LEVEL", [	y,			Y,			6,			6,			Cyrillic_en,	Cyrillic_EN,	6,			6			]	};
+    key <AD07>	{	type="EIGHT_LEVEL", [	u,			U,			7,			7,			Cyrillic_ghe,	Cyrillic_GHE,	7,			7			]	};
+    key <AD08>	{	type="EIGHT_LEVEL", [	i,			I,			8,			8,			Cyrillic_sha,	Cyrillic_SHA,	8,			8			]	};
+    key <AD09>	{	type="EIGHT_LEVEL", [	o,			O,			9,			9,			Cyrillic_shcha,	Cyrillic_SHCHA,	9,			9			]	};
+    key <AD10>	{	type="EIGHT_LEVEL", [	p,			P,			0,			0,			Cyrillic_ze,	Cyrillic_ZE,	0,			0			]	};
+
+    key <AC01>	{	type="EIGHT_LEVEL", [	a,			A,			exclam,			exclam,			Cyrillic_ef,	Cyrillic_EF,	exclam,			exclam			]	};
+    key <AC02>	{	type="EIGHT_LEVEL", [	s,			S,			quotedbl,		quotedbl,		Cyrillic_yeru,	Cyrillic_YERU,	quotedbl,		quotedbl		]	};
+    key <AC03>	{	type="EIGHT_LEVEL", [	d,			D,			at,			at,			Cyrillic_ve,	Cyrillic_VE,	at,			at			]	};
+    key <AC04>	{	type="EIGHT_LEVEL", [	f,			F,			numbersign,		numbersign,		Cyrillic_a,	Cyrillic_A,	numbersign,		numbersign		]	};
+    key <AC05>	{	type="EIGHT_LEVEL", [	g,			G,			backslash,		backslash,		Cyrillic_pe,	Cyrillic_PE,	backslash,		backslash		]	};
+    key <AC06>	{	type="EIGHT_LEVEL", [	h,			H,			slash,			slash,			Cyrillic_er,	Cyrillic_ER,	slash,			slash			]	};
+    key <AC07>	{	type="EIGHT_LEVEL", [	j,			J,			parenleft,		parenleft,		Cyrillic_o,	Cyrillic_O,	parenleft,		parenleft		]	};
+    key <AC08>	{	type="EIGHT_LEVEL", [	k,			K,			parenright,		parenright,		Cyrillic_el,	Cyrillic_EL,	parenright,		parenright		]	};
+    key <AC09>	{	type="EIGHT_LEVEL", [	l,			L,			colon,			colon,			Cyrillic_de,	Cyrillic_DE,	colon,			colon			]	};
+    key <AC11>	{	type="EIGHT_LEVEL", [	NoSymbol,		NoSymbol,		semicolon,		semicolon,		Cyrillic_zhe,	Cyrillic_ZHE,	semicolon,		semicolon		]	};
+
+    key <AB01>	{	type="EIGHT_LEVEL", [	z,			Z,			underscore,		underscore,		Cyrillic_ya,	Cyrillic_YA,	minus,			minus			]	};
+    key <AB02>	{	type="EIGHT_LEVEL", [	x,			X,			percent,		percent,		Cyrillic_che,	Cyrillic_CHE,	percent,		percent			]	};
+    key <AB03>	{	type="EIGHT_LEVEL", [	c,			C,			0x1002116,		0x1002116,		Cyrillic_es,	Cyrillic_ES,	0x1002116,		0x1002116		]	};
+    key <AB04>	{	type="EIGHT_LEVEL", [	v,			V,			equal,			equal,			Cyrillic_em,	Cyrillic_EM,	equal,			equal			]	};
+    key <AB05>	{	type="EIGHT_LEVEL", [	b,			B,			ampersand,		ampersand,		Cyrillic_i,	Cyrillic_I,	ampersand,		ampersand		]	};
+    key <AB06>	{	type="EIGHT_LEVEL", [	n,			N,			asterisk,		asterisk,		Cyrillic_te,	Cyrillic_TE,	asterisk,		asterisk		]	};
+    key <AB07>	{	type="EIGHT_LEVEL", [	m,			M,			apostrophe,		apostrophe,		Cyrillic_softsign,	Cyrillic_SOFTSIGN,	apostrophe,		apostrophe		]	};
+    key <AC10>	{	type="EIGHT_LEVEL", [	NoSymbol,		NoSymbol,		minus,			minus,			Cyrillic_be,	Cyrillic_BE,	minus,			minus			]	};
+    key <AE11>	{	type="EIGHT_LEVEL", [	NoSymbol,		NoSymbol,		question,		question,		Cyrillic_yu,	Cyrillic_YU,	question,		question		]	};
+    key <AE12>	{	type="EIGHT_LEVEL", [	NoSymbol,		NoSymbol,		Cyrillic_hardsign,	Cyrillic_HARDSIGN,	Cyrillic_ha,	Cyrillic_HA,	Cyrillic_hardsign,	Cyrillic_HARDSIGN	]	};
+
+    key <AB08>	{	type="EIGHT_LEVEL", [	period,			comma,			period,			comma,			period,		comma,		period,			comma			]	};
+    key <AB09>	{	type="EIGHT_LEVEL", [	NoSymbol,		NoSymbol,		Cyrillic_io,		Cyrillic_IO,		Cyrillic_e,	Cyrillic_E,	Cyrillic_io,		Cyrillic_IO		]	};
+};
+
+
+
+partial alphanumeric_keys
+xkb_symbols "it" {
+    name[Group1] = "Italian";
+
+    include "nokia_vndr/rx-44(base)"
+
+    key <AC01>	{	[	a,		A,		exclam,		exclam		]	};
+    key <AC02>	{	[	s,		S,		quotedbl,	quotedbl	]	};
+    key <AC03>	{	[	d,		D,		at,		at		]	};
+    key <AC04>	{	[	f,		F,		numbersign,	numbersign	]	};
+    key <AC05>	{	[	g,		G,		asterisk,	asterisk	]	};
+    key <AC06>	{	[	h,		H,		backslash,	backslash	]	};
+    key <AC07>	{	[	j,		J,		slash,		slash		]	};
+    key <AC08>	{	[	k,		K,		parenleft,	parenleft	]	};
+    key <AC09>	{	[	l,		L,		parenright,	parenright	]	};
+    key <AC11>  {       [       apostrophe,     question,       igrave,         Igrave		]       };
+
+    key <AB01>	{	[	z,		Z,		EuroSign,	EuroSign	]	};
+    key <AB02>	{	[	x,		X,		asciitilde,	asciitilde	]	};
+    key <AB03>	{	[	c,		C,		ampersand,	ampersand	]	};
+    key <AB04>	{	[	v,		V,		equal,		equal		]	};
+    key <AB05>	{	[	b,		B,		less,		less		]	};
+    key <AB06>	{	[	n,		N,		greater,	greater		]	};
+    key <AB07>	{	[	m,		M,		plus,		plus		]	};
+    key <AC10>  {       [       eacute,         Eacute,         ograve,         Ograve          ]       };
+    key <AE11>  {       [       egrave,         Egrave,         agrave,         Agrave          ]       };
+    key <AE12>  {       [       minus,          underscore,     ugrave,         Ugrave          ]       };
+
+    key <AB08>  {       [       comma,          semicolon,      comma,		semicolon	]       };
+    key <AB09>  {       [       period,         colon,          period,		colon		]       };
+};
+
+default partial alphanumeric_keys
+xkb_symbols "base" {
+    key <AD01>	{	[	q,			Q,			1,			1			]	};
+    key <AD02>	{	[	w,			W,			2,			2			]	};
+    key <AD03>	{	[	e,			E,			3,			3			]	};
+    key <AD04>	{	[	r,			R,			4,			4			]	};
+    key <AD05>	{	[	t,			T,			5,			5			]	};
+    key <AD06>	{	[	y,			Y,			6,			6			]	};
+    key <AD07>	{	[	u,			U,			7,			7			]	};
+    key <AD08>	{	[	i,			I,			8,			8			]	};
+    key <AD09>	{	[	o,			O,			9,			9			]	};
+    key <AD10>	{	[	p,			P,			0,			0			]	};
+    key <BKSP>	{	[	BackSpace,		BackSpace,		BackSpace,		BackSpace		]	};
+
+    // broken UI spec.
+    key <RTRN>	{	[	KP_Enter,		KP_Enter,		KP_Enter,		KP_Enter		]	};
+
+    key <COMP>	{	[	Multi_key,		Multi_key,		Multi_key,		Multi_key		]	};
+    key <LFSH>	{	[	Shift_L,		Shift_L,		Shift_L,		Shift_L			]	};
+    key <FN>	{	[	ISO_Level3_Shift,	ISO_Level3_Shift,	ISO_Level3_Shift,	ISO_Level3_Shift	]	};
+    key <SPCE>	{	[	space,			space,			space,			space			]	};
+    key <RCTL>	{	[	Control_R,		Control_R,		Control_R,		Control_R		]	};
+    key <TAB>	{	[	Tab,			Tab,			Tab,			Tab			]	};
+
+    modifier_map Shift { Shift_L };
+    modifier_map Mod5 { ISO_Level3_Shift };
+    modifier_map Control { Control_R };
+
+    key <KPEN>	{	[	Return		]	};
+    key <UP>	{	[	Up		]	};
+    key <DOWN>	{	[	Down		]	};
+    key <LEFT>	{	[	Left		]	};
+    key <RGHT>	{	[	Right		]	};
+
+    key <ESC>	{	[	Escape		]	};
+    key <FK01>	{	[	F1		]	};
+    key <FK02>	{	[	F2		]	};
+    key <FK03>	{	[	F3		]	};
+    key <FK04>	{	[	F4		]	};
+    key <FK05>	{	[	F5		]	};
+    key <FK06>	{	[	F6		]	};
+    key <FK07>	{	[	F7		]	};
+    key <FK08>	{	[	F8		]	};
+    key <FK09>	{	[	F9		]	};
+    key <FK10>	{	[	F10		]	};
+    key <FK11>	{	[	F11		]	};
+    key <FK12>	{	[	F12		]	};
+
+    // generated from the headset, must always be in the map.
+    key <I29>  {	[	XF86Phone	]	};
+};

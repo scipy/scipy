@@ -1,0 +1,13 @@
+prefix=/workspaces/scipy/venv
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+includedir=${prefix}/include/qt
+
+
+Name: Qt5 Gamepad
+Description: Qt Gamepad module
+Version: 5.15.8
+Libs: -L${libdir} -lQt5Gamepad 
+Cflags: -DQT_GAMEPAD_LIB -I${includedir}/QtGamepad -I${includedir}
+Requires: Qt5Core Qt5Gui
+

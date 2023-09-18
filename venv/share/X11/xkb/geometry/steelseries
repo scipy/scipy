@@ -1,0 +1,223 @@
+//
+//Copyright 1996, 1998  The Open Group
+//
+//Permission to use, copy, modify, distribute, and sell this software and its
+//documentation for any purpose is hereby granted without fee, provided that
+//the above copyright notice appear in all copies and that both that
+//copyright notice and this permission notice appear in supporting
+//documentation.
+//
+//The above copyright notice and this permission notice shall be
+//included in all copies or substantial portions of the Software.
+//
+//THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+//EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+//MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+//IN NO EVENT SHALL THE OPEN GROUP BE LIABLE FOR ANY CLAIM, DAMAGES OR
+//OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+//ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+//OTHER DEALINGS IN THE SOFTWARE.
+//
+//Except as contained in this notice, the name of The Open Group shall
+//not be used in advertising or otherwise to promote the sale, use or
+//other dealings in this Software without prior written authorization
+//from The Open Group.
+//
+
+
+
+// modified from /usr/share/X11/xkb/geometry/pc(pc104)
+//
+// The Apex 300 (Apex RAW) has 21 additional keys and
+// <RWIN> is replaced by a hardware <FN> key.  These
+// additions to the basic PC104 layout are shown in red.
+//
+// Currently the kernel doesn't initialize these keys; a userspace
+// tool is needed (apexctl: https://github.com/tuxmark5/ApexCtl).
+// With this tool or a proper driver, the extra keys (except FN)
+// can be assigned keycodes via udev-hwdb.
+//
+// FIXME: Keycodes shown here should be changed to match
+//        kernel defaults when a driver is developed.
+//
+// The additional keys are in 4 groups:
+// 1)  L1-L2 left of Escape (column)         <I156>,<I157>
+// 2)  M1-M12 above F1-F12 (row)             <FK13>-<FK24>
+// 3)  MX1-MX5 left of alpha keys (column)   <I171>-<I175>
+// 4)  LeftUp, RightUp with regular arrows   <I160>,<I159>
+//
+// Known <FN> key functions:
+// <FN>+<F5> = kbd backlight step dimmer (NoSymbol)
+// <FN>+<F6> = kbd backlight step brighter (NoSymbol)
+// <FN>+<F7> = <I173> (AudioPrev)
+// <FN>+<F8> = <I172> (AudioPlay, AudioPause)
+// <FN>+<F9> = <I171> (AudioNext)
+// <FN>+<F10> = <MUTE> (AudioMute)
+// <FN>+<F10> = <VOL+> (VolumeUp)
+// <FN>+<F11> = <VOL-> (VolumeDown)
+//
+// And yes, the spacebar really is that ridiculous.
+//
+// 2017.April
+//
+default xkb_geometry "apex300" {
+
+    description= "SteelSeries Apex 300 (Apex RAW)";
+    width= 450;
+    height= 150;
+
+    shape.cornerRadius= 1;
+    shape "NORM" { { [ 18,18] }, { [2,1], [ 16,16] } };
+    shape "BKSP" { { [ 38,18] }, { [2,1], [ 36,16] } };
+    shape "TABK" { { [ 28,18] }, { [2,1], [ 26,16] } };
+    shape "BKSL" { { [ 28,18] }, { [2,1], [ 26,16] } };
+    shape "RTRN" { { [ 42,18] }, { [2,1], [ 40,16] } };
+    shape "CAPS" { { [ 33,18] }, { [2,1], [ 31,16] } };
+    shape "LFSH" { { [ 42,18] }, { [2,1], [ 40,16] } };
+    shape "RTSH" { { [ 52,18] }, { [2,1], [ 50,16] } };
+    shape "MODK" { { [ 27,18] }, { [2,1], [ 25,16] } };
+    shape "SMOD" { { [ 23,18] }, { [2,1], [ 21,16] } };
+    shape "SPCE" { { [113,37] }, { [2,1], [111,35] } };
+    shape "KP0"  { { [ 37,18] }, { [2,1], [ 35,16] } };
+    shape "KPAD" { { [ 18,37] }, { [2,1], [ 16,35] } };
+    shape "MKEY" { { [  18,8] }, { [2,1], [  16,7] } };
+    shape "ESCA" { { [ 18,28] }, { [2,1], [ 16,27] } };
+    shape "LKEY" { { [ 18,14] }, { [2,1], [ 16,13] } };
+    shape "LEDS" { cornerRadius= 0, { [ 54,  6 ] } };
+    shape "LED"  { cornerRadius= 0, { [  4,  1 ] } };
+
+
+    solid "LedPanel" {
+        shape= "LEDS";
+        top=  2;
+        left= 315;
+        color= "grey10";
+    };
+
+
+    indicator.onColor= "red";
+    indicator.offColor= "red";
+    indicator.top= 7;
+    indicator.shape= "LED";
+    indicator "Num Lock"     { left= 321; };
+    indicator "Caps Lock"    { left= 340; };
+    indicator "Scroll Lock"  { left= 359; };
+    text.top= 2;
+    text.color= "black";
+    text "NumLockLabel"      { left= 322; text="N"; };
+    text "CapsLockLabel"     { left= 341; text="C"; };
+    text "ScrollLockLabel"   { left= 360; text="S"; };
+    text "SteelSeriesLogo"   { top=  10; left= 400; text="SteelSeries"; };
+    text "FNLogoKeyLabel"    { top= 130; left= 248; text="FN"; };
+
+    key.shape= "NORM";
+    key.gap=  1;
+    key.color= "grey10";
+
+
+    section "Lkeys" {
+        key.shape= "LKEY";
+        key.color= "red";
+        row { top= 1;  keys { <I156> }; };
+        row { top= 15; keys { <I157> }; };
+    }; // end of "Lkeys" section
+
+
+    section "MXkeys" {
+        key.shape= "NORM";
+        key.color= "red";
+        row { top= 35;  keys { <I171> }; }; // 40 59 78 97 116
+        row { top= 54;  keys { <I172> }; }; // 35 54 73 92 111
+        row { top= 73;  keys { <I173> }; };
+        row { top= 92;  keys { <I174> }; };
+        row { top=111;  keys { <I175> }; };
+    }; // end of "MXkeys" section
+
+
+    section "Escape" {
+        left= 23;
+        key.shape= "ESCA";
+        key.color= "grey30";
+        row { top=  1;  keys { <ESC> }; };
+    }; // end of "Escape" section
+
+
+    section "Mkeys" {
+        left= 61;
+        key.color= "red";
+        key.shape= "MKEY";
+        row { top=  1;
+              keys { <FK13>,       <FK14>, <FK15>, <FK16>,
+                   { <FK17>, 11 }, <FK18>, <FK19>, <FK20>,
+                   { <FK21>, 11 }, <FK22>, <FK23>, <FK24> }; };
+    }; // end of "Mkeys" section
+
+
+    section "Function" {
+        left= 61;
+        key.color= "grey30";
+        row { top= 10;
+              keys { <FK01>,       <FK02>, <FK03>, <FK04>,
+                   { <FK05>, 11 }, <FK06>, <FK07>, <FK08>,
+                   { <FK09>, 11 }, <FK10>, <FK11>, <FK12>,
+                   { <PRSC>,  5 }, <SCLK>, <PAUS> }; };
+    }; // end of "Function" section
+
+
+    section "Alpha" {
+        top= 35;
+        left= 23;
+        key.color= "grey10";
+        row { keys { <TLDE>, <AE01>, <AE02>, <AE03>, <AE04>,
+                     <AE05>, <AE06>, <AE07>, <AE08>, <AE09>,
+                     <AE10>, <AE11>, <AE12>,
+                   { <BKSP>, "BKSP", color="grey30" } }; };
+        row { top= 19;
+              keys { { <TAB>, "TABK", color="grey30" },
+                      <AD01>, <AD02>, <AD03>, <AD04>, <AD05>,
+                      <AD06>, <AD07>, <AD08>, <AD09>, <AD10>,
+                      <AD11>, <AD12>, { <BKSL>, "BKSL" } }; };
+        row { top= 38;
+              keys { { <CAPS>, "CAPS", color="grey30" },
+                       <AC01>, <AC02>, <AC03>, <AC04>, <AC05>,
+                       <AC06>, <AC07>, <AC08>, <AC09>, <AC10>,
+                       <AC11>, { <RTRN>, "RTRN", color="grey30" } }; };
+        row { top= 57;
+              keys { { <LFSH>, "LFSH", color="grey30" },
+                       <AB01>, <AB02>, <AB03>, <AB04>, <AB05>,
+                       <AB06>, <AB07>, <AB08>, <AB09>, <AB10>,
+                     { <RTSH>, "RTSH", color="grey30" } }; };
+        row { top= 76;
+              key.shape= "SMOD";
+              key.color= "grey30";
+              keys { { <LCTL>, "MODK" }, <LWIN>, <LALT>, { <SPCE>, "SPCE" },
+                       <RALT>, { <I248>, color="red" }, <MENU>, <RCTL> }; };
+    }; // end of "Alpha" section
+
+
+    section "Editing" {
+        top= 35;
+        left= 313;
+        key.color= "grey30";
+        row {           keys {    <INS>, <HOME>, <PGUP> }; };
+        row { top= 19;  keys {   <DELE>,  <END>, <PGDN> }; };
+        row { top= 57;  keys { { <I160>, color="red" }, <UP>, { <I159>, color="red" } }; };
+        row { top= 76;  keys {   <LEFT>, <DOWN>, <RGHT> }; };
+    }; // end of "Editing" section
+
+
+    section "Keypad" {
+        top= 35;
+        left= 373;
+        key.color= "grey10";
+        row {           keys {  <NMLK>, <KPDV>,  <KPMU>,   <KPSU>           }; };
+        row { top= 19;  keys {   <KP7>,  <KP8>,   <KP9>, { <KPAD>, "KPAD" } }; };
+        row { top= 38;  keys {   <KP4>,  <KP5>,   <KP6>                     }; };
+        row { top= 57;  keys {   <KP1>,  <KP2>,   <KP3>, { <KPEN>, "KPAD" } }; };
+        row { top= 76;  keys { { <KP0>, "KP0" }, <KPDL>                     }; };
+    }; // end of "Keypad" section
+
+    alias <AC00> = <CAPS>;
+    alias <AA00> = <LCTL>;
+
+}; // end of "apex300" geometry

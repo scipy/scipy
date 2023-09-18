@@ -1,0 +1,31 @@
+# Mensajes en español para GNU gettext.
+# Copyright (C) 2014 Yoyodyne, Inc. (msgids)
+#
+# This file is distributed under the same license as the gettext package.
+#
+# Max de Mendizábal <max@upn.mx>, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004.
+# Antonio Ceballos <aceballos@gmail.com>, 2014, 2015
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: hello-tcl-0.19.4.73\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"POT-Creation-Date: 2022-10-10 00:21+0200\n"
+"PO-Revision-Date: 2015-06-23 22:44+0200\n"
+"Last-Translator: Antonio Ceballos <aceballos@gmail.com>\n"
+"Language-Team: Spanish <es@tp.org.es>\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: hello.tcl:11
+msgid "Hello, world!"
+msgstr "¡Hola, mundo!"
+
+#: hello.tcl:12
+#, tcl-format
+msgid "This program is running as process number %d."
+msgstr "Este programa está corriendo como el proceso número %d."

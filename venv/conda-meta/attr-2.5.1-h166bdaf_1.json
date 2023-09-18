@@ -1,0 +1,343 @@
+{
+  "build": "h166bdaf_1",
+  "build_number": 1,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [],
+  "depends": [
+    "libgcc-ng >=12"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/attr-2.5.1-h166bdaf_1",
+  "features": "",
+  "files": [
+    "bin/attr",
+    "bin/getfattr",
+    "bin/setfattr",
+    "etc/xattr.conf",
+    "include/attr/attributes.h",
+    "include/attr/error_context.h",
+    "include/attr/libattr.h",
+    "lib/libattr.so",
+    "lib/libattr.so.1",
+    "lib/libattr.so.1.1.2501",
+    "lib/pkgconfig/libattr.pc",
+    "share/doc/attr/CHANGES",
+    "share/doc/attr/COPYING",
+    "share/doc/attr/COPYING.LGPL",
+    "share/doc/attr/PORTING",
+    "share/locale/cs/LC_MESSAGES/attr.mo",
+    "share/locale/de/LC_MESSAGES/attr.mo",
+    "share/locale/en@boldquot/LC_MESSAGES/attr.mo",
+    "share/locale/en@quot/LC_MESSAGES/attr.mo",
+    "share/locale/es/LC_MESSAGES/attr.mo",
+    "share/locale/fr/LC_MESSAGES/attr.mo",
+    "share/locale/gl/LC_MESSAGES/attr.mo",
+    "share/locale/nl/LC_MESSAGES/attr.mo",
+    "share/locale/pl/LC_MESSAGES/attr.mo",
+    "share/locale/sv/LC_MESSAGES/attr.mo",
+    "share/man/man1/attr.1",
+    "share/man/man1/getfattr.1",
+    "share/man/man1/setfattr.1",
+    "share/man/man3/attr_get.3",
+    "share/man/man3/attr_getf.3",
+    "share/man/man3/attr_list.3",
+    "share/man/man3/attr_listf.3",
+    "share/man/man3/attr_multi.3",
+    "share/man/man3/attr_multif.3",
+    "share/man/man3/attr_remove.3",
+    "share/man/man3/attr_removef.3",
+    "share/man/man3/attr_set.3",
+    "share/man/man3/attr_setf.3"
+  ],
+  "fn": "attr-2.5.1-h166bdaf_1.tar.bz2",
+  "license": "GPL-2.0-or-later",
+  "license_family": "GPL",
+  "link": {
+    "source": "/opt/conda/pkgs/attr-2.5.1-h166bdaf_1",
+    "type": 1
+  },
+  "md5": "d9c69a24ad678ffce24c6543a0176b00",
+  "name": "attr",
+  "package_tarball_full_path": "/opt/conda/pkgs/attr-2.5.1-h166bdaf_1.tar.bz2",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "bin/attr",
+        "file_mode": "binary",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/attr_1660065405074/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placeh",
+        "sha256": "c5904b04f51f86c86705fa1e17fa8f7b79d2b9e5a4f2494ea241b20a88f0d8ad",
+        "sha256_in_prefix": "edabc432f6da5666f3909732ca4d54967d4b1303bf50d5132c9b2595ca8384b0",
+        "size_in_bytes": 17024
+      },
+      {
+        "_path": "bin/getfattr",
+        "file_mode": "binary",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/attr_1660065405074/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placeh",
+        "sha256": "42394195635320528c24b3ff87b5946243faf6cc4856728a49d99cd981864c9f",
+        "sha256_in_prefix": "0c45cc1a94402c1ac8ed9ee401a0cb53a4d19fb4efdb384d7ae1c1b2f03af094",
+        "size_in_bytes": 27712
+      },
+      {
+        "_path": "bin/setfattr",
+        "file_mode": "binary",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/attr_1660065405074/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placeh",
+        "sha256": "fe727a93095338d3b28e55135b7ed20b36fbb8ac4af8a6c6117ba5c9359d7679",
+        "sha256_in_prefix": "a5b791e33e9c232503a1bfa5fa37be0bf2fae480d24b6d1e0d29c5cb5a9d56d6",
+        "size_in_bytes": 26808
+      },
+      {
+        "_path": "etc/xattr.conf",
+        "path_type": "hardlink",
+        "sha256": "0fc794a9826011c88b118c5ff4e30dfcbebd73518e64b0cda7aaec3ad7e578bd",
+        "sha256_in_prefix": "0fc794a9826011c88b118c5ff4e30dfcbebd73518e64b0cda7aaec3ad7e578bd",
+        "size_in_bytes": 681
+      },
+      {
+        "_path": "include/attr/attributes.h",
+        "path_type": "hardlink",
+        "sha256": "328ce9601d8669e0ae5299a82d3867a3115b18199976968ce3896000132822a4",
+        "sha256_in_prefix": "328ce9601d8669e0ae5299a82d3867a3115b18199976968ce3896000132822a4",
+        "size_in_bytes": 8004
+      },
+      {
+        "_path": "include/attr/error_context.h",
+        "path_type": "hardlink",
+        "sha256": "0e698be1f3635b6edb0eeb6206255dac43280d6c173dcd94cae53e4fb6407a59",
+        "sha256_in_prefix": "0e698be1f3635b6edb0eeb6206255dac43280d6c173dcd94cae53e4fb6407a59",
+        "size_in_bytes": 1569
+      },
+      {
+        "_path": "include/attr/libattr.h",
+        "path_type": "hardlink",
+        "sha256": "b5b1ae8d0ea51c85a51ab7da9d28f0e0078272f7d1d5ade1ee8400ca75c5cddc",
+        "sha256_in_prefix": "b5b1ae8d0ea51c85a51ab7da9d28f0e0078272f7d1d5ade1ee8400ca75c5cddc",
+        "size_in_bytes": 1411
+      },
+      {
+        "_path": "lib/libattr.so",
+        "path_type": "softlink",
+        "sha256": "a57bb87d36431b01201a55fdd43cae3e5269f03a60fe3f0b47d54b6a86dee66d",
+        "size_in_bytes": 26248
+      },
+      {
+        "_path": "lib/libattr.so.1",
+        "path_type": "softlink",
+        "sha256": "a57bb87d36431b01201a55fdd43cae3e5269f03a60fe3f0b47d54b6a86dee66d",
+        "size_in_bytes": 26248
+      },
+      {
+        "_path": "lib/libattr.so.1.1.2501",
+        "file_mode": "binary",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/attr_1660065405074/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placeh",
+        "sha256": "a57bb87d36431b01201a55fdd43cae3e5269f03a60fe3f0b47d54b6a86dee66d",
+        "sha256_in_prefix": "36608c82aa86a6e2389316f9aa687f82cf61fc3bf9dab5640aa6236808d6fd66",
+        "size_in_bytes": 26248
+      },
+      {
+        "_path": "lib/pkgconfig/libattr.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/attr_1660065405074/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placeh",
+        "sha256": "21db0d009a4f01d754046554fb33b20f0afe0775f4cd5371e87a596efb02bc45",
+        "sha256_in_prefix": "9dc233eee9eed5c57de98cfbed2a1605b6581086e870691c23b90ee2c3bec4a8",
+        "size_in_bytes": 487
+      },
+      {
+        "_path": "share/doc/attr/CHANGES",
+        "path_type": "hardlink",
+        "sha256": "1aa0695b72941ed34ffefd14eea796d339eb5fc206ad5abdaaf91df58df381cf",
+        "sha256_in_prefix": "1aa0695b72941ed34ffefd14eea796d339eb5fc206ad5abdaaf91df58df381cf",
+        "size_in_bytes": 12426
+      },
+      {
+        "_path": "share/doc/attr/COPYING",
+        "path_type": "hardlink",
+        "sha256": "98f318493be6b08bff3cd295791cde06c54e17882a3c74a1ed245eaa02533d52",
+        "sha256_in_prefix": "98f318493be6b08bff3cd295791cde06c54e17882a3c74a1ed245eaa02533d52",
+        "size_in_bytes": 18312
+      },
+      {
+        "_path": "share/doc/attr/COPYING.LGPL",
+        "path_type": "hardlink",
+        "sha256": "5decad7e58d90d44335bf2f45ce27563bd911065c6a1a02dfa7647c4efee75c8",
+        "sha256_in_prefix": "5decad7e58d90d44335bf2f45ce27563bd911065c6a1a02dfa7647c4efee75c8",
+        "size_in_bytes": 26763
+      },
+      {
+        "_path": "share/doc/attr/PORTING",
+        "path_type": "hardlink",
+        "sha256": "6b217e89c2114feab549e19df1e26a47f07b548eedd70dd0186c32dd36267edd",
+        "sha256_in_prefix": "6b217e89c2114feab549e19df1e26a47f07b548eedd70dd0186c32dd36267edd",
+        "size_in_bytes": 3221
+      },
+      {
+        "_path": "share/locale/cs/LC_MESSAGES/attr.mo",
+        "path_type": "hardlink",
+        "sha256": "faf09c67ead2eb1c76bfd6f724a51f64934c2c3e4f7704739f38618870e13a88",
+        "sha256_in_prefix": "faf09c67ead2eb1c76bfd6f724a51f64934c2c3e4f7704739f38618870e13a88",
+        "size_in_bytes": 3860
+      },
+      {
+        "_path": "share/locale/de/LC_MESSAGES/attr.mo",
+        "path_type": "hardlink",
+        "sha256": "24a1f4b12a04e6f60abedd42bf50dc071a39f310aa7457a8b8f6d66724cebc0c",
+        "sha256_in_prefix": "24a1f4b12a04e6f60abedd42bf50dc071a39f310aa7457a8b8f6d66724cebc0c",
+        "size_in_bytes": 6268
+      },
+      {
+        "_path": "share/locale/en@boldquot/LC_MESSAGES/attr.mo",
+        "path_type": "hardlink",
+        "sha256": "61627b8cc0f62fef555c2fd8817c90fe9c2176413942f3b2e736afa4833c568f",
+        "sha256_in_prefix": "61627b8cc0f62fef555c2fd8817c90fe9c2176413942f3b2e736afa4833c568f",
+        "size_in_bytes": 6214
+      },
+      {
+        "_path": "share/locale/en@quot/LC_MESSAGES/attr.mo",
+        "path_type": "hardlink",
+        "sha256": "41836c941d3f0017f43c8b379f898fab2cf70dfcc7b7bad559fb8b45aedf3385",
+        "sha256_in_prefix": "41836c941d3f0017f43c8b379f898fab2cf70dfcc7b7bad559fb8b45aedf3385",
+        "size_in_bytes": 6114
+      },
+      {
+        "_path": "share/locale/es/LC_MESSAGES/attr.mo",
+        "path_type": "hardlink",
+        "sha256": "f93d1179eba4e3a728e43547f0246d36e73522f19073b02c3529efb2e16f5316",
+        "sha256_in_prefix": "f93d1179eba4e3a728e43547f0246d36e73522f19073b02c3529efb2e16f5316",
+        "size_in_bytes": 3688
+      },
+      {
+        "_path": "share/locale/fr/LC_MESSAGES/attr.mo",
+        "path_type": "hardlink",
+        "sha256": "28c4bbc1ae93d7546f4c5ea6367b0de4b920e01d8ec14e6db150770ff7ea1682",
+        "sha256_in_prefix": "28c4bbc1ae93d7546f4c5ea6367b0de4b920e01d8ec14e6db150770ff7ea1682",
+        "size_in_bytes": 2481
+      },
+      {
+        "_path": "share/locale/gl/LC_MESSAGES/attr.mo",
+        "path_type": "hardlink",
+        "sha256": "3473f9cd57ba5cb36783f06773bbf245fc16012c3c25054d590e52188228e96f",
+        "sha256_in_prefix": "3473f9cd57ba5cb36783f06773bbf245fc16012c3c25054d590e52188228e96f",
+        "size_in_bytes": 3666
+      },
+      {
+        "_path": "share/locale/nl/LC_MESSAGES/attr.mo",
+        "path_type": "hardlink",
+        "sha256": "f453b2b690052711bc50d479bced6b1be6d45afbcd37770dc9e22b9864eb73a6",
+        "sha256_in_prefix": "f453b2b690052711bc50d479bced6b1be6d45afbcd37770dc9e22b9864eb73a6",
+        "size_in_bytes": 2372
+      },
+      {
+        "_path": "share/locale/pl/LC_MESSAGES/attr.mo",
+        "path_type": "hardlink",
+        "sha256": "4ef1b2a2c060d97ef1d8c674d1b44ed40d6b2a12c577ad17c5e42c00e0fb34c5",
+        "sha256_in_prefix": "4ef1b2a2c060d97ef1d8c674d1b44ed40d6b2a12c577ad17c5e42c00e0fb34c5",
+        "size_in_bytes": 3696
+      },
+      {
+        "_path": "share/locale/sv/LC_MESSAGES/attr.mo",
+        "path_type": "hardlink",
+        "sha256": "ded837b49ef65bc545069b5712ba47484e97231e5df8a594e7ce07aeabaf2357",
+        "sha256_in_prefix": "ded837b49ef65bc545069b5712ba47484e97231e5df8a594e7ce07aeabaf2357",
+        "size_in_bytes": 2278
+      },
+      {
+        "_path": "share/man/man1/attr.1",
+        "path_type": "hardlink",
+        "sha256": "4fa1806e938368cbe809e485a4af12ffe69524adae9c8a42504549ffd65ad634",
+        "sha256_in_prefix": "4fa1806e938368cbe809e485a4af12ffe69524adae9c8a42504549ffd65ad634",
+        "size_in_bytes": 6138
+      },
+      {
+        "_path": "share/man/man1/getfattr.1",
+        "path_type": "hardlink",
+        "sha256": "bdc4a16f571d634f5c524ba9ed2d8042a40576a83c2c78b6acdabb1dcbfa7feb",
+        "sha256_in_prefix": "bdc4a16f571d634f5c524ba9ed2d8042a40576a83c2c78b6acdabb1dcbfa7feb",
+        "size_in_bytes": 4428
+      },
+      {
+        "_path": "share/man/man1/setfattr.1",
+        "path_type": "hardlink",
+        "sha256": "d3fa349fc64edc8c5dfcdd62c5ce4d9b019361d5f454a7698f4a00c2e9a3d0c9",
+        "sha256_in_prefix": "d3fa349fc64edc8c5dfcdd62c5ce4d9b019361d5f454a7698f4a00c2e9a3d0c9",
+        "size_in_bytes": 3913
+      },
+      {
+        "_path": "share/man/man3/attr_get.3",
+        "path_type": "hardlink",
+        "sha256": "0d91415af478c37bd493f4a77d0f196e8abcd403a164677d2c053f89285986ea",
+        "sha256_in_prefix": "0d91415af478c37bd493f4a77d0f196e8abcd403a164677d2c053f89285986ea",
+        "size_in_bytes": 4678
+      },
+      {
+        "_path": "share/man/man3/attr_getf.3",
+        "path_type": "softlink",
+        "sha256": "0d91415af478c37bd493f4a77d0f196e8abcd403a164677d2c053f89285986ea",
+        "size_in_bytes": 4678
+      },
+      {
+        "_path": "share/man/man3/attr_list.3",
+        "path_type": "hardlink",
+        "sha256": "9273d680d0dff7dc43f549753dddf9d2dbe0506803829f8ab1e853ec6e6b214b",
+        "sha256_in_prefix": "9273d680d0dff7dc43f549753dddf9d2dbe0506803829f8ab1e853ec6e6b214b",
+        "size_in_bytes": 6502
+      },
+      {
+        "_path": "share/man/man3/attr_listf.3",
+        "path_type": "softlink",
+        "sha256": "9273d680d0dff7dc43f549753dddf9d2dbe0506803829f8ab1e853ec6e6b214b",
+        "size_in_bytes": 6502
+      },
+      {
+        "_path": "share/man/man3/attr_multi.3",
+        "path_type": "hardlink",
+        "sha256": "c82210ce253eab9bc65f8cc69fc70fc7bb1028e4a413d156dd9e459f5945fe29",
+        "sha256_in_prefix": "c82210ce253eab9bc65f8cc69fc70fc7bb1028e4a413d156dd9e459f5945fe29",
+        "size_in_bytes": 7342
+      },
+      {
+        "_path": "share/man/man3/attr_multif.3",
+        "path_type": "softlink",
+        "sha256": "c82210ce253eab9bc65f8cc69fc70fc7bb1028e4a413d156dd9e459f5945fe29",
+        "size_in_bytes": 7342
+      },
+      {
+        "_path": "share/man/man3/attr_remove.3",
+        "path_type": "hardlink",
+        "sha256": "1ac0ab093d99cef5023740fb87e8396c43156f774546a2348420f43b88122b76",
+        "sha256_in_prefix": "1ac0ab093d99cef5023740fb87e8396c43156f774546a2348420f43b88122b76",
+        "size_in_bytes": 3702
+      },
+      {
+        "_path": "share/man/man3/attr_removef.3",
+        "path_type": "softlink",
+        "sha256": "1ac0ab093d99cef5023740fb87e8396c43156f774546a2348420f43b88122b76",
+        "size_in_bytes": 3702
+      },
+      {
+        "_path": "share/man/man3/attr_set.3",
+        "path_type": "hardlink",
+        "sha256": "5923f1a2e3b7e6fd31cc55260b575700426e3814d94d589a9398a5b30a95bd04",
+        "sha256_in_prefix": "5923f1a2e3b7e6fd31cc55260b575700426e3814d94d589a9398a5b30a95bd04",
+        "size_in_bytes": 5830
+      },
+      {
+        "_path": "share/man/man3/attr_setf.3",
+        "path_type": "softlink",
+        "sha256": "5923f1a2e3b7e6fd31cc55260b575700426e3814d94d589a9398a5b30a95bd04",
+        "size_in_bytes": 5830
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "82c13b1772c21fc4a17441734de471d3aabf82b61db9b11f4a1bd04a9c4ac324",
+  "size": 71042,
+  "subdir": "linux-64",
+  "timestamp": 1660065501192,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/attr-2.5.1-h166bdaf_1.tar.bz2",
+  "version": "2.5.1"
+}

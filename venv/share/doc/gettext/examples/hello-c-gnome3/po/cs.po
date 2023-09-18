@@ -1,0 +1,60 @@
+# The Czech translation for the gettext package.
+# Copyright (C) 2011 Yoyodyne, Inc. (msgids)
+# This file is distributed under the same license as the gettext package.
+#
+# Marek Černocký <marek@manet.cz>, 2011.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: hello-c-gnome3 0.19.4.73\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"PO-Revision-Date: 2015-06-26 08:43+0200\n"
+"Last-Translator: Marek Černocký <marek@manet.cz>\n"
+"Language-Team: Czech <translation-team-cs@lists.sourceforge.net>\n"
+"Language: cs\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+
+#: hello.c:79
+#, c-format
+msgid ""
+"<big>Hello world!</big>\n"
+"This program is running as process number <b>%d</b>."
+msgstr ""
+"<big>Ahoj světe!</big>\n"
+"Tento program běží jako proces číslo <b>%d</b>."
+
+#: hello.c:84
+msgid "<big><u>This is another text</u></big>"
+msgstr "<big><u>Toto je nějaký další text</u></big>"
+
+#: hello.c:86
+msgid "<big><i>This is yet another text</i></big>"
+msgstr "<big><u>Toto je nějaký ještě další text</u></big>"
+
+#: hello.desktop.in.in:4
+msgid "Hello"
+msgstr "Ahoj"
+
+#: hello.desktop.in.in:5
+msgid "Hello, world!"
+msgstr "Ahoj světe!"
+
+#: hello.ui:6
+msgid "Example Application"
+msgstr "Ukázková aplikace"
+
+#: hello.ui:34
+msgid "Update text"
+msgstr "Aktualizovat text"
+
+#: hello.gschema.xml:8
+msgid "Use XML markup"
+msgstr "Používat značkovací jazyk XML"
+
+#: hello.gschema.xml:9
+msgid "Whether to use XML markup in the text."
+msgstr "Zda v textu používat značkovací jazyk XML."

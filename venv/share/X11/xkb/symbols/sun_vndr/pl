@@ -1,0 +1,129 @@
+//
+// Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, and/or sell copies of the Software, and to permit persons
+// to whom the Software is furnished to do so, provided that the above
+// copyright notice(s) and this permission notice appear in all copies of
+// the Software and that both the above copyright notice(s) and this
+// permission notice appear in supporting documentation.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+// OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+// HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL
+// INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING
+// FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
+// NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
+// WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+// 
+// Except as contained in this notice, the name of a copyright holder
+// shall not be used in advertising or otherwise to promote the sale, use
+// or other dealings in this Software without prior written authorization
+// of the copyright holder.
+//
+
+default partial alphanumeric_keys
+xkb_symbols "sun_type6" {
+
+    name[Group1]="Polish (Sun Type 6/7)";
+
+	include "sun_vndr/us(sun_type6)"
+
+    key <TLDE> { [ grave, 	 asciitilde					] };
+    key <AE01> { [ 1,		 exclam						] };
+    key <AE02> { [ 2,		 at						] };
+    key <AE03> { [ 3,		 numbersign 					] };
+    key <AE04> { [ 4,		 dollar	 					] };
+    key <AE05> { [ 5,		 percent 					] };
+    key <AE06> { [ 6,		 asciicircum					] };
+    key <AE07> { [ 7,		 ampersand					] };
+    key <AE08> { [ 8,		 asterisk					] };
+    key <AE09> { [ 9,		 parenleft					] };
+    key <AE10> { [ 0,		 parenright					] };
+    key <AE11> { [ minus,	 underscore 					] };
+    key <AE12> { [ equal,	 plus	 					] };
+
+    key <AD03> { [ e,		 E,		eogonek,	Eogonek		] };       
+    key <AD07> { [ u,		 U,		EuroSign			] };
+    key <AD09> { [ o,		 O,		oacute,		Oacute		] };
+    key <AD11> { [ bracketleft,  braceleft					] };
+    key <AD12> { [ bracketright, braceright					] };
+
+    key <AC01> { [ a,		 A,		aogonek,	Aogonek		] };
+    key <AC02> { [ s,		 S,		sacute,		Sacute		] };
+    key <AC09> { [ l,		 L,		lstroke,        Lstroke		] };
+    key <AC10> { [ semicolon,	 colon						] };
+    key <AC11> { [ apostrophe,	 quotedbl 					] };
+    key <BKSL> { [ backslash,	 bar,		brokenbar			] };
+
+    key <LSGT> { [ less,         greater,       bar,            brokenbar	] };
+    key <AB01> { [ z, 		 Z,		zabovedot,	Zabovedot	] };
+    key <AB02> { [ x,		 X,		zacute,		Zacute		] };
+    key <AB03> { [ c,		 C,		cacute,		Cacute		] };
+    key <AB06> { [ n,		 N,		nacute,		Nacute		] };
+    key <AB08> { [ comma,	 less 						] };
+    key <AB09> { [ period,	 greater				 	] };
+    key <AB10> { [ slash,	 question					] };
+
+	include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "basic" {
+	include "sun_vndr/pl(sun_type6)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "legacy" {
+	include "pl(legacy)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "qwertz" {
+	include "pl(qwertz)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "intl" {
+	include "pl(intl)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "dvorak" {
+	include "pl(dvorak)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "dvorak_quotes" {
+	include "pl(dvorak_quotes)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "dvorak_altquotes" {
+	include "pl(dvorak_altquotes)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "dvp" {
+	include "pl(dvp)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "szl" {
+	include "pl(szl)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "csb" {
+	include "pl(csb)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "ru_phonetic_dvorak" {
+	include "pl(ru_phonetic_dvorak)"
+};

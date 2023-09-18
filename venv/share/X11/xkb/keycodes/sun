@@ -1,0 +1,246 @@
+// Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+//
+//Copyright 1996, 1998  The Open Group
+//
+//Permission to use, copy, modify, distribute, and sell this software and its
+//documentation for any purpose is hereby granted without fee, provided that
+//the above copyright notice appear in all copies and that both that
+//copyright notice and this permission notice appear in supporting
+//documentation.
+//
+//The above copyright notice and this permission notice shall be
+//included in all copies or substantial portions of the Software.
+//
+//THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+//EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+//MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+//IN NO EVENT SHALL THE OPEN GROUP BE LIABLE FOR ANY CLAIM, DAMAGES OR
+//OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+//ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+//OTHER DEALINGS IN THE SOFTWARE.
+//
+//Except as contained in this notice, the name of The Open Group shall
+//not be used in advertising or otherwise to promote the sale, use or
+//other dealings in this Software without prior written authorization
+//from The Open Group.
+//
+
+xkb_keycodes "type6" {
+
+    minimum= 8;
+    maximum= 132;
+
+    <ESC>  = 36;
+    <AE01> = 37;
+    <AE02> = 38;
+    <AE03> = 39;
+    <AE04> = 40;
+    <AE05> = 41;
+    <AE06> = 42;
+    <AE07> = 43;
+    <AE08> = 44;
+    <AE09> = 45;
+    <AE10> = 46;
+    <AE11> = 47;
+    <AE12> = 48;
+    <TLDE> = 49;
+    <BKSP> = 50;
+
+    <TAB>  = 60;
+    <AD01> = 61;
+    <AD02> = 62;
+    <AD03> = 63;
+    <AD04> = 64;
+    <AD05> = 65;
+    <AD06> = 66;
+    <AD07> = 67;
+    <AD08> = 68;
+    <AD09> = 69;
+    <AD10> = 70;
+    <AD11> = 71;
+    <AD12> = 72;
+    <DELE> = 73;
+    <COMP> = 74;
+    <ALGR> = 20;
+    alias <RALT> = <ALGR>;
+
+    <LCTL> = 83;
+    <AC01> = 84;
+    <AC02> = 85;
+    <AC03> = 86;
+    <AC04> = 87;
+    <AC05> = 88;
+    <AC06> = 89;
+    <AC07> = 90;
+    <AC08> = 91;
+    <AC09> = 92;
+    <AC10> = 93;
+    <AC11> = 94;
+    <BKSL> = 95;
+    <RTRN> = 96;
+
+    <LFSH> = 106;
+    <AB01> = 107;
+    <AB02> = 108;
+    <AB03> = 109;
+    <AB04> = 110;
+    <AB05> = 111;
+    <AB06> = 112;
+    <AB07> = 113;
+    <AB08> = 114;
+    <AB09> = 115;
+    <AB10> = 116;
+    <RTSH> = 117;
+
+    <LALT> = 26;
+    <CAPS> = 126;
+    <LMTA> = 127;
+    <SPCE> = 128;
+    <RMTA> = 129;
+
+    <FK01> = 12;
+    <FK02> = 13;
+    <FK03> = 15;
+    <FK04> = 17;
+    <FK05> = 19;
+    <FK06> = 21;
+    <FK07> = 23;
+    <FK08> = 24;
+    <FK09> = 25;
+    <FK10> = 14;
+    <FK11> = 16;
+    <FK12> = 18;
+    <STOP> = 8;
+    <AGAI> = 10;
+    <PROP> = 32;
+    <UNDO> = 33;
+    <FRNT> = 56;
+    <COPY> = 58;
+    <OPEN> = 79;
+    <PAST> = 80;
+    <FIND> = 102;
+    <CUT>  = 104;
+
+    <PRSC> = 29;
+    <SCLK> = 30;
+    <PAUS> = 28;
+
+    <NMLK> = 105;
+    <KPDV> = 53;
+    <KPMU> = 54;
+    <KPSU> = 78;
+
+    <KP7>  = 75;
+    <KP8>  = 76;
+    <KP9>  = 77;
+    <KPAD> = 132;
+
+    <KP4>  = 98;
+    <KP5>  = 99;
+    <KP6>  = 100;
+
+    <KP1>  = 119;
+    <KP2>  = 120;
+    <KP3>  = 121;
+    <KPEN> = 97;
+
+    <KP0>  = 101;
+    <KPDL> = 57;
+
+    <UP>   = 27;
+    <LEFT> = 31;
+    <DOWN> = 34;
+    <RGHT> = 35;
+
+    <INS>  = 51;
+    <HOME> = 59;
+    <END>  = 81;
+    <PGUP> = 103;
+    <PGDN> = 130;
+    <HELP> = 125;
+
+    <MUTE> = 52;
+    <VOL-> = 9;
+    <VOL+> = 11;
+    <POWR> = 55;
+    indicator 4 = "Caps Lock";
+    indicator 3 = "Compose";
+    indicator 2 = "Scroll Lock";
+    indicator 1 = "Num Lock";
+};
+
+
+xkb_keycodes "type6tuv" {
+    include "sun(type6)"
+    <LSGT> = 131;
+};
+
+xkb_keycodes "type6_jp" {
+    include "sun(type6)"
+    <EXEC> = 122;
+    <KANJ> = 123;
+    <HENK> = 124;
+    <UNDR> = 118;
+};
+
+xkb_keycodes "type6_euro" {
+    include "sun(type6)"
+    <LSGT> = 131;
+};
+
+xkb_keycodes "type6unix" {
+    include "sun(type6)"
+};
+
+// Even though this is labeled as _usb, I verified these keycodes as accurate
+// on my type5 serial and type6 serial keyboards as well on linux-2.6 boxes.
+// I'm not sure where the "type6" keycodes above are coming from...
+default xkb_keycodes "type6_usb" {
+    include "xfree86"
+
+//    <STOP> = 232;
+//    <AGAI> = 133;
+//    <PROP> = 134;
+//    <UNDO> = 135;
+//    <FRNT> = 140;
+//    <COPY> = 248;
+//    <OPEN> = 191;
+//    <PAST> = 192;
+//    <FIND> = 122;
+//    <CUT>  = 188;
+
+ //   <HELP> = 245;
+
+    // The blank has keycode 239 on my type6 serial kb, but 134 on
+    // my type6 usb keyboard (same as <PROP>)
+//    <BLNK> = 239;
+
+    // AltGr + PrScr actually sends a different keycode
+//    <SYRQ> = 92;
+
+//    <MUTE> = 160;
+//    <VOL-> = 174;
+//    <VOL+> = 176;
+//    <POWR> = 222;
+
+      <I150> = 155;
+      <I160> = 160;
+      <I235> = 235;
+
+    indicator 4 = "Compose";
+};
+
+xkb_keycodes "type6tuv_usb" {
+    include "sun(type6_usb)"
+//    <LSGT> = 94;
+//    <BKSL> = 51;
+};
+
+xkb_keycodes "type6_jp_usb" {
+    include "sun(type6_usb)"
+    alias <UNDR> = <KPDC>;  // 123
+    alias <EXEC> = <NFER>;  // 131
+    alias <KANJ> = <XFER>;  // 129
+    alias <HENK> = <HKTG>;  // 208
+    indicator 5 = "Kana";
+};

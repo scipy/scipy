@@ -1,0 +1,161 @@
+//
+//Copyright 1996, 1998  The Open Group
+//
+//Permission to use, copy, modify, distribute, and sell this software and its
+//documentation for any purpose is hereby granted without fee, provided that
+//the above copyright notice appear in all copies and that both that
+//copyright notice and this permission notice appear in supporting
+//documentation.
+//
+//The above copyright notice and this permission notice shall be
+//included in all copies or substantial portions of the Software.
+//
+//THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+//EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+//MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+//IN NO EVENT SHALL THE OPEN GROUP BE LIABLE FOR ANY CLAIM, DAMAGES OR
+//OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+//ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+//OTHER DEALINGS IN THE SOFTWARE.
+//
+//Except as contained in this notice, the name of The Open Group shall
+//not be used in advertising or otherwise to promote the sale, use or
+//other dealings in this Software without prior written authorization
+//from The Open Group.
+//
+// symbols for a NEC PC98 keyboard
+default xkb_symbols "pc98" {
+
+    key <ESC>  { [ Escape		]	};
+
+    // Alphanumeric section
+    key <AE01> { [ 1, exclam 		], [ kana_NU		]	};
+    key <AE02> { [ 2, quotedbl		], [ kana_FU		]	};
+    key <AE03> { [ 3, numbersign	], [ kana_A, kana_a	]	};
+    key <AE04> { [ 4, dollar		], [ kana_U, kana_u	]	};
+    key <AE05> { [ 5, percent		], [ kana_E, kana_e	]	};
+    key <AE06> { [ 6, ampersand		], [ kana_O, kana_o	]	};
+    key <AE07> { [ 7, apostrophe	], [ kana_YA, kana_ya	]	};
+    key <AE08> { [ 8, parenleft		], [ kana_YU, kana_yu	]	};
+    key <AE09> { [ 9, parenright	], [ kana_YO, kana_yo	]	};
+    key <AE10> { [ 0 			], [ kana_WA, kana_WO	]	};
+    key <AE11> { [ minus, equal		], [ kana_HO		]	};
+    key <AE12> { [ asciicircum, grave 	], [ kana_HE		]	};
+    key <BKSL> { [ backslash, bar 	], [ prolongedsound	]	};
+    key <BKSP> { [ BackSpace		]	};
+
+    key  <TAB> { [ Tab,	ISO_Left_Tab	]	};
+    key <AD01> { [ q, Q 		], [ kana_TA		]	};
+    key <AD02> { [ w, W			], [ kana_TE		]	};
+    key <AD03> { [ e, E			], [ kana_I, kana_i	]	};
+    key <AD04> { [ r, R			], [ kana_SU		]	};
+    key <AD05> { [ t, T			], [ kana_KA		]	};
+    key <AD06> { [ y, Y			], [ kana_N		]	};
+    key <AD07> { [ u, U			], [ kana_NA		]	};
+    key <AD08> { [ i, I			], [ kana_NI		]	};
+    key <AD09> { [ o, O			], [ kana_RA		]	};
+    key <AD10> { [ p, P			], [ kana_SE		]	};
+    key <AD11> { [ at, asciitilde	], [ voicedsound	]	};
+    key <AD12> { [ bracketleft,	braceleft ], [ semivoicedsound, kana_openingbracket ] };
+    key <RTRN> { [ Return		]	};
+
+    key <LCTL> { [ Control_L		]	};
+    key <CAPS> { [ Caps_Lock		]	};
+    key <AC01> { [ a, A 		], [ kana_CHI		]	};
+    key <AC02> { [ s, S			], [ kana_TO		]	};
+    key <AC03> { [ d, D			], [ kana_SHI		]	};
+    key <AC04> { [ f, F			], [ kana_HA		]	};
+    key <AC05> { [ g, G			], [ kana_KI		]	};
+    key <AC06> { [ h, H			], [ kana_KU		]	};
+    key <AC07> { [ j, J			], [ kana_MA		]	};
+    key <AC08> { [ k, K			], [ kana_NO		]	};
+    key <AC09> { [ l, L			], [ kana_RI		]	};
+    key <AC10> { [ semicolon, plus	], [ kana_RE		]	};
+    key <AC11> { [ colon, asterisk	], [ kana_KE		]	};
+    key <AC12> { [ bracketright, braceright ], [ kana_MU, kana_closingbracket ] };
+
+    key <LFSH> { [ Shift_L		]	};
+    key <AB01> { [ z, Z 		], [ kana_TSU, kana_tsu	]	};
+    key <AB02> { [ x, X			], [ kana_SA		]	};
+    key <AB03> { [ c, C			], [ kana_SO		]	};
+    key <AB04> { [ v, V			], [ kana_HI		]	};
+    key <AB05> { [ b, B			], [ kana_KO		]	};
+    key <AB06> { [ n, N			], [ kana_MI		]	};
+    key <AB07> { [ m, M			], [ kana_MO		]	};
+    key <AB08> { [ comma, less		], [ kana_NE, kana_comma ]	};
+    key <AB09> { [ period, greater	], [ kana_RU, kana_fullstop ]	};
+    key <AB10> { [ slash, question	], [ kana_ME, kana_middledot ]	};
+    key <AB11> { [ NoSymbol, underscore	], [ kana_RO		]	};
+//    key <RTSH> { [ Shift_R		]	};
+
+    key <ALGR> { [ Mode_switch		]	};
+    key <LALT> { [ Alt_L		]	};
+    key <NFER> { [ Muhenkan		]	};
+    key <SPCE> { [ space		]	};
+    key <XFER> { [ Henkan, Kanji	]	};
+    // End alphanumeric section
+
+    // Begin "Function" section
+    key <BRK>  { [ Break		]	};
+    key <PRSC> { [ Print		]	};
+    key <FK01> { [ F1			]	};
+    key <FK02> { [ F2			]	};
+    key <FK03> { [ F3			]	};
+    key <FK04> { [ F4			]	};
+    key <FK05> { [ F5			]	};
+    key <FK06> { [ F6			]	};
+    key <FK07> { [ F7			]	};
+    key <FK08> { [ F8			]	};
+    key <FK09> { [ F9			]	};
+    key <FK10> { [ F10			]	};
+    key <FK11> { [ F11			]	};
+    key <FK12> { [ F12			]	};
+    key <FK13> { [ F13			]	};
+    key <FK14> { [ F14			]	};
+    key <FK15> { [ F15			]	};
+    // End "Function" section
+
+    // Begin "Editing" section
+    key <INS>  { [ Insert		]	};
+    key <DELE> { [ Delete		]	};
+    key <PGUP> { [ Prior		]	};
+    key <PGDN> { [ Next			]	};
+    key <UP>   { [ Up			]	};
+    key <LEFT> { [ Left			]	};
+    key <RGHT> { [ Right		]	};
+    key <DOWN> { [ Down			]	};
+    // End "Editing" section
+
+    // Begin "Keypad" section
+    key <HOME> { [ Clear, Home		]	 };
+    key <HELP> { [ Help			]	};
+    key <KPSU> { [ KP_Subtract		]	};
+    key <KPDV> { [ KP_Divide		]	};
+
+    key  <KP7> { [ KP_7			]	};
+    key  <KP8> { [ KP_8			]	};
+    key  <KP9> { [ KP_9			]	};
+    key <KPMU> { [ KP_Multiply		]	};
+
+    key  <KP4> { [ KP_4			]	};
+    key  <KP5> { [ KP_5			]	};
+    key  <KP6> { [ KP_6			]	};
+    key <KPAD> { [ KP_Add		]	};
+
+    key  <KP1> { [ KP_1			]	};
+    key  <KP2> { [ KP_2			]	};
+    key  <KP3> { [ KP_3			]	};
+    key <KPEQ> { [ KP_Equal 		]	};
+
+    key  <KP0> { [ KP_0			]	};
+    key <KPSP> { [ KP_Separator		]	};
+    key <KPDC> { [ KP_Decimal		]	};
+//    key <KPEN> { [ KP_Enter		]	}; 
+    // End "Keypad" section
+
+    modifier_map Shift  { Shift_L };
+    modifier_map Lock   { Caps_Lock };
+    modifier_map Control{ Control_L };
+    modifier_map Mod1   { Alt_L };
+    modifier_map Mod2   { Mode_switch };
+};

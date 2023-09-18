@@ -1,0 +1,190 @@
+{
+  "build": "hfcedea8_1",
+  "build_number": 1,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [],
+  "depends": [
+    "gcc_impl_linux-64 >=12.3.0",
+    "libgcc-ng >=12.3.0",
+    "libgcc-ng >=4.9",
+    "libgfortran5 >=12.3.0",
+    "libstdcxx-ng >=4.9",
+    "sysroot_linux-64"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/gfortran_impl_linux-64-12.3.0-hfcedea8_1",
+  "features": "",
+  "files": [
+    "bin/x86_64-conda-linux-gnu-f95",
+    "bin/x86_64-conda-linux-gnu-gfortran",
+    "bin/x86_64-conda_cos6-linux-gnu-f95",
+    "bin/x86_64-conda_cos6-linux-gnu-gfortran",
+    "lib/gcc/x86_64-conda-linux-gnu/12.3.0/finclude/ieee_arithmetic.mod",
+    "lib/gcc/x86_64-conda-linux-gnu/12.3.0/finclude/ieee_exceptions.mod",
+    "lib/gcc/x86_64-conda-linux-gnu/12.3.0/finclude/ieee_features.mod",
+    "lib/gcc/x86_64-conda-linux-gnu/12.3.0/finclude/omp_lib.f90",
+    "lib/gcc/x86_64-conda-linux-gnu/12.3.0/finclude/omp_lib.h",
+    "lib/gcc/x86_64-conda-linux-gnu/12.3.0/finclude/omp_lib.mod",
+    "lib/gcc/x86_64-conda-linux-gnu/12.3.0/finclude/omp_lib_kinds.mod",
+    "lib/gcc/x86_64-conda-linux-gnu/12.3.0/finclude/openacc.f90",
+    "lib/gcc/x86_64-conda-linux-gnu/12.3.0/finclude/openacc.mod",
+    "lib/gcc/x86_64-conda-linux-gnu/12.3.0/finclude/openacc_kinds.mod",
+    "lib/gcc/x86_64-conda-linux-gnu/12.3.0/finclude/openacc_lib.h",
+    "libexec/gcc/x86_64-conda-linux-gnu/12.3.0/f951",
+    "share/licenses/gcc-fortran/RUNTIME.LIBRARY.EXCEPTION",
+    "x86_64-conda-linux-gnu/lib/libgfortran.a",
+    "x86_64-conda-linux-gnu/lib/libgfortran.spec"
+  ],
+  "fn": "gfortran_impl_linux-64-12.3.0-hfcedea8_1.conda",
+  "license": "GPL-3.0-only WITH GCC-exception-3.1",
+  "license_family": "GPL",
+  "link": {
+    "source": "/opt/conda/pkgs/gfortran_impl_linux-64-12.3.0-hfcedea8_1",
+    "type": 1
+  },
+  "md5": "d7f523db90829829dd1b219fae1e5be0",
+  "name": "gfortran_impl_linux-64",
+  "package_tarball_full_path": "/opt/conda/pkgs/gfortran_impl_linux-64-12.3.0-hfcedea8_1.conda",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "bin/x86_64-conda-linux-gnu-f95",
+        "path_type": "softlink",
+        "sha256": "3b9d1039379217db37df6c6c29f176b171d7645f4a66dceffcdd2d98c0550e6b",
+        "size_in_bytes": 1313304
+      },
+      {
+        "_path": "bin/x86_64-conda-linux-gnu-gfortran",
+        "path_type": "hardlink",
+        "sha256": "3b9d1039379217db37df6c6c29f176b171d7645f4a66dceffcdd2d98c0550e6b",
+        "sha256_in_prefix": "3b9d1039379217db37df6c6c29f176b171d7645f4a66dceffcdd2d98c0550e6b",
+        "size_in_bytes": 1313304
+      },
+      {
+        "_path": "bin/x86_64-conda_cos6-linux-gnu-f95",
+        "path_type": "softlink",
+        "sha256": "3b9d1039379217db37df6c6c29f176b171d7645f4a66dceffcdd2d98c0550e6b",
+        "size_in_bytes": 1313304
+      },
+      {
+        "_path": "bin/x86_64-conda_cos6-linux-gnu-gfortran",
+        "path_type": "softlink",
+        "sha256": "3b9d1039379217db37df6c6c29f176b171d7645f4a66dceffcdd2d98c0550e6b",
+        "size_in_bytes": 1313304
+      },
+      {
+        "_path": "lib/gcc/x86_64-conda-linux-gnu/12.3.0/finclude/ieee_arithmetic.mod",
+        "path_type": "hardlink",
+        "sha256": "9e578174c3c37ad5559ef000b87a951a4572173e6ed4d1a79dc7cd071a356eca",
+        "sha256_in_prefix": "9e578174c3c37ad5559ef000b87a951a4572173e6ed4d1a79dc7cd071a356eca",
+        "size_in_bytes": 10264
+      },
+      {
+        "_path": "lib/gcc/x86_64-conda-linux-gnu/12.3.0/finclude/ieee_exceptions.mod",
+        "path_type": "hardlink",
+        "sha256": "ee4e70388e5a3b1b2d0d765d2d85ceea297104b9f1ce878c3e5671ff3ed916b4",
+        "sha256_in_prefix": "ee4e70388e5a3b1b2d0d765d2d85ceea297104b9f1ce878c3e5671ff3ed916b4",
+        "size_in_bytes": 1997
+      },
+      {
+        "_path": "lib/gcc/x86_64-conda-linux-gnu/12.3.0/finclude/ieee_features.mod",
+        "path_type": "hardlink",
+        "sha256": "2fe0ea2081edb0e367f1705b0fade6eb9dcc8aca108b92198514a4268d1b2c59",
+        "sha256_in_prefix": "2fe0ea2081edb0e367f1705b0fade6eb9dcc8aca108b92198514a4268d1b2c59",
+        "size_in_bytes": 1069
+      },
+      {
+        "_path": "lib/gcc/x86_64-conda-linux-gnu/12.3.0/finclude/omp_lib.f90",
+        "path_type": "hardlink",
+        "sha256": "a4bc99aac6a474354af8bb7be4d81c7d0356cedb6cf3c1df2b21e987aab6ab4c",
+        "sha256_in_prefix": "a4bc99aac6a474354af8bb7be4d81c7d0356cedb6cf3c1df2b21e987aab6ab4c",
+        "size_in_bytes": 32837
+      },
+      {
+        "_path": "lib/gcc/x86_64-conda-linux-gnu/12.3.0/finclude/omp_lib.h",
+        "path_type": "hardlink",
+        "sha256": "6ad11834e948d5cfa9a878439720ff432da90172aebf431cfec558ac2fe18d70",
+        "sha256_in_prefix": "6ad11834e948d5cfa9a878439720ff432da90172aebf431cfec558ac2fe18d70",
+        "size_in_bytes": 18150
+      },
+      {
+        "_path": "lib/gcc/x86_64-conda-linux-gnu/12.3.0/finclude/omp_lib.mod",
+        "path_type": "hardlink",
+        "sha256": "53912a2384e62b6961c6151614bc37647be313414cad50dce267c9670cfd9ddd",
+        "sha256_in_prefix": "53912a2384e62b6961c6151614bc37647be313414cad50dce267c9670cfd9ddd",
+        "size_in_bytes": 7747
+      },
+      {
+        "_path": "lib/gcc/x86_64-conda-linux-gnu/12.3.0/finclude/omp_lib_kinds.mod",
+        "path_type": "hardlink",
+        "sha256": "4b261e8557c0cfbce854eb33e0784be06f15c3cf6f321805a54c1774938ae424",
+        "sha256_in_prefix": "4b261e8557c0cfbce854eb33e0784be06f15c3cf6f321805a54c1774938ae424",
+        "size_in_bytes": 2609
+      },
+      {
+        "_path": "lib/gcc/x86_64-conda-linux-gnu/12.3.0/finclude/openacc.f90",
+        "path_type": "hardlink",
+        "sha256": "ba981fa4f45c508ee8c4a90d36bad875f8aac4fba828197b91b8e97845ae25aa",
+        "sha256_in_prefix": "ba981fa4f45c508ee8c4a90d36bad875f8aac4fba828197b91b8e97845ae25aa",
+        "size_in_bytes": 52221
+      },
+      {
+        "_path": "lib/gcc/x86_64-conda-linux-gnu/12.3.0/finclude/openacc.mod",
+        "path_type": "hardlink",
+        "sha256": "f23c5d7a36508da5a44e6c2e19ff104ed5ad632c65ce6b900b461acd7f89ce50",
+        "sha256_in_prefix": "f23c5d7a36508da5a44e6c2e19ff104ed5ad632c65ce6b900b461acd7f89ce50",
+        "size_in_bytes": 3533
+      },
+      {
+        "_path": "lib/gcc/x86_64-conda-linux-gnu/12.3.0/finclude/openacc_kinds.mod",
+        "path_type": "hardlink",
+        "sha256": "b01c3c030b397244a83c4f29fe0f8144c3511ee77fad598c613372a545dd97dd",
+        "sha256_in_prefix": "b01c3c030b397244a83c4f29fe0f8144c3511ee77fad598c613372a545dd97dd",
+        "size_in_bytes": 711
+      },
+      {
+        "_path": "lib/gcc/x86_64-conda-linux-gnu/12.3.0/finclude/openacc_lib.h",
+        "path_type": "hardlink",
+        "sha256": "1fa69cf9c185adc6ffbeb969db8fc7eeffe3ffa8b6a3a06200bc0d6db58dce2b",
+        "sha256_in_prefix": "1fa69cf9c185adc6ffbeb969db8fc7eeffe3ffa8b6a3a06200bc0d6db58dce2b",
+        "size_in_bytes": 20561
+      },
+      {
+        "_path": "libexec/gcc/x86_64-conda-linux-gnu/12.3.0/f951",
+        "path_type": "hardlink",
+        "sha256": "93421cc527439cfe20b9a865813102983bb3c0eae24b9221be3a9d94f6afb55e",
+        "sha256_in_prefix": "93421cc527439cfe20b9a865813102983bb3c0eae24b9221be3a9d94f6afb55e",
+        "size_in_bytes": 37352064
+      },
+      {
+        "_path": "share/licenses/gcc-fortran/RUNTIME.LIBRARY.EXCEPTION",
+        "path_type": "hardlink",
+        "sha256": "9d6b43ce4d8de0c878bf16b54d8e7a10d9bd42b75178153e3af6a815bdc90f74",
+        "sha256_in_prefix": "9d6b43ce4d8de0c878bf16b54d8e7a10d9bd42b75178153e3af6a815bdc90f74",
+        "size_in_bytes": 3324
+      },
+      {
+        "_path": "x86_64-conda-linux-gnu/lib/libgfortran.a",
+        "path_type": "hardlink",
+        "sha256": "16164f8953760aa7e572aa739ce7dcf02936eec4c22c17b8cb350e96eb2b8a4d",
+        "sha256_in_prefix": "16164f8953760aa7e572aa739ce7dcf02936eec4c22c17b8cb350e96eb2b8a4d",
+        "size_in_bytes": 12121852
+      },
+      {
+        "_path": "x86_64-conda-linux-gnu/lib/libgfortran.spec",
+        "path_type": "hardlink",
+        "sha256": "03f410e434a7f6e683eaba5b04ab02cdad936f293c1182fa7fbf96a0350965e6",
+        "sha256_in_prefix": "03f410e434a7f6e683eaba5b04ab02cdad936f293c1182fa7fbf96a0350965e6",
+        "size_in_bytes": 269
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "b6f2891afa9a283d2c744c338614e93c5f10181c25add7adbf879d359e016922",
+  "size": 15387665,
+  "subdir": "linux-64",
+  "timestamp": 1694846372044,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/gfortran_impl_linux-64-12.3.0-hfcedea8_1.conda",
+  "version": "12.3.0"
+}

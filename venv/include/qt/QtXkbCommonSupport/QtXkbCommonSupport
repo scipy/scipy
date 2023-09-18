@@ -1,0 +1,5 @@
+#ifndef QT_QTXKBCOMMONSUPPORT_MODULE_H
+#define QT_QTXKBCOMMONSUPPORT_MODULE_H
+#include <QtXkbCommonSupport/QtXkbCommonSupportDepends>
+#include "qtxkbcommonsupportversion.h"
+#endif

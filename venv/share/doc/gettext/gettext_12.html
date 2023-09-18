@@ -1,0 +1,710 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html401/loose.dtd">
+<html>
+<!-- Created on October, 9 2022 by texi2html 1.78a -->
+<!--
+Written by: Lionel Cons <Lionel.Cons@cern.ch> (original author)
+            Karl Berry  <karl@freefriends.org>
+            Olaf Bachmann <obachman@mathematik.uni-kl.de>
+            and many others.
+Maintained by: Many creative people.
+Send bugs and suggestions to <texi2html-bug@nongnu.org>
+
+-->
+<head>
+<title>GNU gettext utilities: 12. The Translator's View</title>
+
+<meta name="description" content="GNU gettext utilities: 12. The Translator's View">
+<meta name="keywords" content="GNU gettext utilities: 12. The Translator's View">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="texi2html 1.78a">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+pre.display {font-family: serif}
+pre.format {font-family: serif}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: serif; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: serif; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.roman {font-family:serif; font-weight:normal;}
+span.sansserif {font-family:sans-serif; font-weight:normal;}
+ul.toc {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="gettext_11.html#SEC196" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="gettext_13.html#SEC229" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_21.html#SEC387" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+
+<hr size="2">
+<a name="Translators"></a>
+<a name="SEC216"></a>
+<h1 class="chapter"> <a href="gettext_toc.html#TOC210">12. The Translator's View</a> </h1>
+
+
+
+
+<a name="Trans-Intro-0"></a>
+<a name="SEC217"></a>
+<h2 class="section"> <a href="gettext_toc.html#TOC211">12.1 Introduction 0</a> </h2>
+
+<p><strong> NOTE: </strong> This documentation section is outdated and needs to be
+revised.
+</p>
+<p>Free software is going international!  The Translation Project is a way
+to get maintainers, translators and users all together, so free software
+will gradually become able to speak many native languages.
+</p>
+<p>The GNU <code>gettext</code> tool set contains <em>everything</em> maintainers
+need for internationalizing their packages for messages.  It also
+contains quite useful tools for helping translators at localizing
+messages to their native language, once a package has already been
+internationalized.
+</p>
+<p>To achieve the Translation Project, we need many interested
+people who like their own language and write it well, and who are also
+able to synergize with other translators speaking the same language.
+If you'd like to volunteer to <em>work</em> at translating messages,
+please send mail to your translating team.
+</p>
+<p>Each team has its own mailing list, courtesy of Linux
+International.  You may reach your translating team at the address
+&lsquo;<tt><var>ll</var>@li.org</tt>&rsquo;, replacing <var>ll</var> by the two-letter ISO 639
+code for your language.  Language codes are <em>not</em> the same as
+country codes given in ISO 3166.  The following translating teams
+exist:
+</p>
+<blockquote><p>Chinese <code>zh</code>, Czech <code>cs</code>, Danish <code>da</code>, Dutch <code>nl</code>,
+Esperanto <code>eo</code>, Finnish <code>fi</code>, French <code>fr</code>, Irish
+<code>ga</code>, German <code>de</code>, Greek <code>el</code>, Italian <code>it</code>,
+Japanese <code>ja</code>, Indonesian <code>in</code>, Norwegian <code>no</code>, Polish
+<code>pl</code>, Portuguese <code>pt</code>, Russian <code>ru</code>, Spanish <code>es</code>,
+Swedish <code>sv</code> and Turkish <code>tr</code>.
+</p></blockquote>
+
+<p>For example, you may reach the Chinese translating team by writing to
+&lsquo;<tt>zh@li.org</tt>&rsquo;.  When you become a member of the translating team
+for your own language, you may subscribe to its list.  For example,
+Swedish people can send a message to &lsquo;<tt>sv-request@li.org</tt>&rsquo;,
+having this message body:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">subscribe
+</pre></td></tr></table>
+
+<p>Keep in mind that team members should be interested in <em>working</em>
+at translations, or at solving translational difficulties, rather than
+merely lurking around.  If your team does not exist yet and you want to
+start one, please write to &lsquo;<tt>coordinator@translationproject.org</tt>&rsquo;;
+you will then reach the coordinator for all translator teams.
+</p>
+<p>A handful of GNU packages have already been adapted and provided
+with message translations for several languages.  Translation
+teams have begun to organize, using these packages as a starting
+point.  But there are many more packages and many languages for
+which we have no volunteer translators.  If you would like to
+volunteer to work at translating messages, please send mail to
+&lsquo;<tt>coordinator@translationproject.org</tt>&rsquo; indicating what language(s)
+you can work on.
+</p>
+
+<a name="Trans-Intro-1"></a>
+<a name="SEC218"></a>
+<h2 class="section"> <a href="gettext_toc.html#TOC212">12.2 Introduction 1</a> </h2>
+
+<p><strong> NOTE: </strong> This documentation section is outdated and needs to be
+revised.
+</p>
+<p>This is now official, GNU is going international!  Here is the
+announcement submitted for the January 1995 GNU Bulletin:
+</p>
+<blockquote><p>A handful of GNU packages have already been adapted and provided
+with message translations for several languages.  Translation
+teams have begun to organize, using these packages as a starting
+point.  But there are many more packages and many languages
+for which we have no volunteer translators.  If you'd like to
+volunteer to work at translating messages, please send mail to
+&lsquo;<samp>coordinator@translationproject.org</samp>&rsquo; indicating what language(s)
+you can work on.
+</p></blockquote>
+
+<p>This document should answer many questions for those who are curious about
+the process or would like to contribute.  Please at least skim over it,
+hoping to cut down a little of the high volume of e-mail generated by this
+collective effort towards internationalization of free software.
+</p>
+<p>Most free programming which is widely shared is done in English, and
+currently, English is used as the main communicating language between
+national communities collaborating to free software.  This very document
+is written in English.  This will not change in the foreseeable future.
+</p>
+<p>However, there is a strong appetite from national communities for
+having more software able to write using national language and habits,
+and there is an on-going effort to modify free software in such a way
+that it becomes able to do so.  The experiments driven so far raised
+an enthusiastic response from pretesters, so we believe that
+internationalization of free software is dedicated to succeed.
+</p>
+<p>For suggestion clarifications, additions or corrections to this
+document, please e-mail to &lsquo;<tt>coordinator@translationproject.org</tt>&rsquo;.
+</p>
+
+<a name="Discussions"></a>
+<a name="SEC219"></a>
+<h2 class="section"> <a href="gettext_toc.html#TOC213">12.3 Discussions</a> </h2>
+
+<p><strong> NOTE: </strong> This documentation section is outdated and needs to be
+revised.
+</p>
+<p>Facing this internationalization effort, a few users expressed their
+concerns.  Some of these doubts are presented and discussed, here.
+</p>
+<ul>
+<li> Smaller groups
+
+<p>Some languages are not spoken by a very large number of people, so people
+speaking them sometimes consider that there may not be all that much
+demand such versions of free software packages.  Moreover, many people
+being <em>into computers</em>, in some countries, generally seem to prefer
+English versions of their software.
+</p>
+<p>On the other end, people might enjoy their own language a lot, and be
+very motivated at providing to themselves the pleasure of having their
+beloved free software speaking their mother tongue.  They do themselves
+a personal favor, and do not pay that much attention to the number of
+people benefiting of their work.
+</p>
+</li><li> Misinterpretation
+
+<p>Other users are shy to push forward their own language, seeing in this
+some kind of misplaced propaganda.  Someone thought there must be some
+users of the language over the networks pestering other people with it.
+</p>
+<p>But any spoken language is worth localization, because there are
+people behind the language for whom the language is important and
+dear to their hearts.
+</p>
+</li><li> Odd translations
+
+<p>The biggest problem is to find the right translations so that
+everybody can understand the messages.  Translations are usually a
+little odd.  Some people get used to English, to the extent they may
+find translations into their own language &ldquo;rather pushy, obnoxious
+and sometimes even hilarious.&rdquo;  As a French speaking man, I have
+the experience of those instruction manuals for goods, so poorly
+translated in French in Korea or Taiwan&hellip;
+</p>
+<p>The fact is that we sometimes have to create a kind of national
+computer culture, and this is not easy without the collaboration of
+many people liking their mother tongue.  This is why translations are
+better achieved by people knowing and loving their own language, and
+ready to work together at improving the results they obtain.
+</p>
+</li><li> Dependencies over the GPL or LGPL
+
+<p>Some people wonder if using GNU <code>gettext</code> necessarily brings their
+package under the protective wing of the GNU General Public License or
+the GNU Lesser General Public License, when they do not want to make
+their program free, or want other kinds of freedom.  The simplest
+answer is &ldquo;normally not&rdquo;.
+</p>
+<p>The <code>gettext-runtime</code> part of GNU <code>gettext</code>, i.e. the
+contents of <code>libintl</code>, is covered by the GNU Lesser General Public
+License.  The <code>gettext-tools</code> part of GNU <code>gettext</code>, i.e. the
+rest of the GNU <code>gettext</code> package, is covered by the GNU General
+Public License.
+</p>
+<p>The mere marking of localizable strings in a package, or conditional
+inclusion of a few lines for initialization, is not really including
+GPL'ed or LGPL'ed code.  However, since the localization routines in
+<code>libintl</code> are under the LGPL, the LGPL needs to be considered.
+It gives the right to distribute the complete unmodified source of
+<code>libintl</code> even with non-free programs.  It also gives the right
+to use <code>libintl</code> as a shared library, even for non-free programs.
+But it gives the right to use <code>libintl</code> as a static library or
+to incorporate <code>libintl</code> into another library only to free
+software.
+</p>
+</li></ul>
+
+
+<a name="Organization"></a>
+<a name="SEC220"></a>
+<h2 class="section"> <a href="gettext_toc.html#TOC214">12.4 Organization</a> </h2>
+
+<p><strong> NOTE: </strong> This documentation section is outdated and needs to be
+revised.
+</p>
+<p>On a larger scale, the true solution would be to organize some kind of
+fairly precise set up in which volunteers could participate.  I gave
+some thought to this idea lately, and realize there will be some
+touchy points.  I thought of writing to Richard Stallman to launch
+such a project, but feel it might be good to shake out the ideas
+between ourselves first.  Most probably that Linux International has
+some experience in the field already, or would like to orchestrate
+the volunteer work, maybe.  Food for thought, in any case!
+</p>
+<p>I guess we have to setup something early, somehow, that will help
+many possible contributors of the same language to interlock and avoid
+work duplication, and further be put in contact for solving together
+problems particular to their tongue (in most languages, there are many
+difficulties peculiar to translating technical English).  My Swedish
+contributor acknowledged these difficulties, and I'm well aware of
+them for French.
+</p>
+<p>This is surely not a technical issue, but we should manage so the
+effort of locale contributors be maximally useful, despite the national
+team layer interface between contributors and maintainers.
+</p>
+<p>The Translation Project needs some setup for coordinating language
+coordinators.  Localizing evolving programs will surely
+become a permanent and continuous activity in the free software community,
+once well started.
+The setup should be minimally completed and tested before GNU
+<code>gettext</code> becomes an official reality.  The e-mail address
+&lsquo;<tt>coordinator@translationproject.org</tt>&rsquo; has been set up for receiving
+offers from volunteers and general e-mail on these topics.  This address
+reaches the Translation Project coordinator.
+</p>
+
+
+<a name="Central-Coordination"></a>
+<a name="SEC221"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC215">12.4.1 Central Coordination</a> </h3>
+
+<p>I also think GNU will need sooner than it thinks, that someone set up
+a way to organize and coordinate these groups.  Some kind of group
+of groups.  My opinion is that it would be good that GNU delegates
+this task to a small group of collaborating volunteers, shortly.
+Perhaps in &lsquo;<tt>gnu.announce</tt>&rsquo; a list of this national committee's
+can be published.
+</p>
+<p>My role as coordinator would simply be to refer to Ulrich any German
+speaking volunteer interested to localization of free software packages, and
+maybe helping national groups to initially organize, while maintaining
+national registries for until national groups are ready to take over.
+In fact, the coordinator should ease volunteers to get in contact with
+one another for creating national teams, which should then select
+one coordinator per language, or country (regionalized language).
+If well done, the coordination should be useful without being an
+overwhelming task, the time to put delegations in place.
+</p>
+
+<a name="National-Teams"></a>
+<a name="SEC222"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC216">12.4.2 National Teams</a> </h3>
+
+<p>I suggest we look for volunteer coordinators/editors for individual
+languages.  These people will scan contributions of translation files
+for various programs, for their own languages, and will ensure high
+and uniform standards of diction.
+</p>
+<p>From my current experience with other people in these days, those who
+provide localizations are very enthusiastic about the process, and are
+more interested in the localization process than in the program they
+localize, and want to do many programs, not just one.  This seems
+to confirm that having a coordinator/editor for each language is a
+good idea.
+</p>
+<p>We need to choose someone who is good at writing clear and concise
+prose in the language in question.  That is hard&mdash;we can't check
+it ourselves.  So we need to ask a few people to judge each others'
+writing and select the one who is best.
+</p>
+<p>I announce my prerelease to a few dozen people, and you would not
+believe all the discussions it generated already.  I shudder to think
+what will happen when this will be launched, for true, officially,
+world wide.  Who am I to arbitrate between two Czekolsovak users
+contradicting each other, for example?
+</p>
+<p>I assume that your German is not much better than my French so that
+I would not be able to judge about these formulations.  What I would
+suggest is that for each language there is a group for people who
+maintain the PO files and judge about changes.  I suspect there will
+be cultural differences between how such groups of people will behave.
+Some will have relaxed ways, reach consensus easily, and have anyone
+of the group relate to the maintainers, while others will fight to
+death, organize heavy administrations up to national standards, and
+use strict channels.
+</p>
+<p>The German team is putting out a good example.  Right now, they are
+maybe half a dozen people revising translations of each other and
+discussing the linguistic issues.  I do not even have all the names.
+Ulrich Drepper is taking care of coordinating the German team.
+He subscribed to all my pretest lists, so I do not even have to warn
+him specifically of incoming releases.
+</p>
+<p>I'm sure, that is a good idea to get teams for each language working
+on translations.  That will make the translations better and more
+consistent.
+</p>
+
+
+<a name="Sub_002dCultures"></a>
+<a name="SEC223"></a>
+<h4 class="subsubsection"> <a href="gettext_toc.html#TOC217">12.4.2.1 Sub-Cultures</a> </h4>
+
+<p>Taking French for example, there are a few sub-cultures around computers
+which developed diverging vocabularies.  Picking volunteers here and
+there without addressing this problem in an organized way, soon in the
+project, might produce a distasteful mix of internationalized programs,
+and possibly trigger endless quarrels among those who really care.
+</p>
+<p>Keeping some kind of unity in the way French localization of
+internationalized programs is achieved is a difficult (and delicate) job.
+Knowing the latin character of French people (:-), if we take this
+the wrong way, we could end up nowhere, or spoil a lot of energies.
+Maybe we should begin to address this problem seriously <em>before</em>
+GNU <code>gettext</code> become officially published.  And I suspect that this
+means soon!
+</p>
+
+<a name="Organizational-Ideas"></a>
+<a name="SEC224"></a>
+<h4 class="subsubsection"> <a href="gettext_toc.html#TOC218">12.4.2.2 Organizational Ideas</a> </h4>
+
+<p>I expect the next big changes after the official release.  Please note
+that I use the German translation of the short GPL message.  We need
+to set a few good examples before the localization goes out for true
+in the free software community.  Here are a few points to discuss:
+</p>
+<ul>
+<li>
+Each group should have one FTP server (at least one master).
+
+</li><li>
+The files on the server should reflect the latest version (of
+course!) and it should also contain a RCS directory with the
+corresponding archives (I don't have this now).
+
+</li><li>
+There should also be a ChangeLog file (this is more useful than the
+RCS archive but can be generated automatically from the later by
+Emacs).
+
+</li><li>
+A <em>core group</em> should judge about questionable changes (for now
+this group consists solely by me but I ask some others occasionally;
+this also seems to work).
+
+</li></ul>
+
+
+<a name="Mailing-Lists"></a>
+<a name="SEC225"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC219">12.4.3 Mailing Lists</a> </h3>
+
+<p>If we get any inquiries about GNU <code>gettext</code>, send them on to:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">&lsquo;<tt>coordinator@translationproject.org</tt>&rsquo;
+</pre></td></tr></table>
+
+<p>The &lsquo;<tt>*-pretest</tt>&rsquo; lists are quite useful to me, maybe the idea could
+be generalized to many GNU, and non-GNU packages.  But each maintainer
+his/her way!
+</p>
+<p>Fran&ccedil;ois, we have a mechanism in place here at
+&lsquo;<tt>gnu.ai.mit.edu</tt>&rsquo; to track teams, support mailing lists for
+them and log members.  We have a slight preference that you use it.
+If this is OK with you, I can get you clued in.
+</p>
+<p>Things are changing!  A few years ago, when Daniel Fekete and I
+asked for a mailing list for GNU localization, nested at the FSF, we
+were politely invited to organize it anywhere else, and so did we.
+For communicating with my pretesters, I later made a handful of
+mailing lists located at iro.umontreal.ca and administrated by
+<code>majordomo</code>.  These lists have been <em>very</em> dependable
+so far&hellip;
+</p>
+<p>I suspect that the German team will organize itself a mailing list
+located in Germany, and so forth for other countries.  But before they
+organize for true, it could surely be useful to offer mailing lists
+located at the FSF to each national team.  So yes, please explain me
+how I should proceed to create and handle them.
+</p>
+<p>We should create temporary mailing lists, one per country, to help
+people organize.  Temporary, because once regrouped and structured, it
+would be fair the volunteers from country bring back <em>their</em> list
+in there and manage it as they want.  My feeling is that, in the long
+run, each team should run its own list, from within their country.
+There also should be some central list to which all teams could
+subscribe as they see fit, as long as each team is represented in it.
+</p>
+
+<a name="Information-Flow"></a>
+<a name="SEC226"></a>
+<h2 class="section"> <a href="gettext_toc.html#TOC220">12.5 Information Flow</a> </h2>
+
+<p><strong> NOTE: </strong> This documentation section is outdated and needs to be
+revised.
+</p>
+<p>There will surely be some discussion about this messages after the
+packages are finally released.  If people now send you some proposals
+for better messages, how do you proceed?  Jim, please note that
+right now, as I put forward nearly a dozen of localizable programs, I
+receive both the translations and the coordination concerns about them.
+</p>
+<p>If I put one of my things to pretest, Ulrich receives the announcement
+and passes it on to the German team, who make last minute revisions.
+Then he submits the translation files to me <em>as the maintainer</em>.
+For free packages I do not maintain, I would not even hear about it.
+This scheme could be made to work for the whole Translation Project,
+I think.  For security reasons, maybe Ulrich (national coordinators,
+in fact) should update central registry kept at the Translation Project
+(Jim, me, or Len's recruits) once in a while.
+</p>
+<p>In December/January, I was aggressively ready to internationalize
+all of GNU, giving myself the duty of one small GNU package per week
+or so, taking many weeks or months for bigger packages.  But it does
+not work this way.  I first did all the things I'm responsible for.
+I've nothing against some missionary work on other maintainers, but
+I'm also losing a lot of energy over it&mdash;same debates over again.
+</p>
+<p>And when the first localized packages are released we'll get a lot of
+responses about ugly translations :-).  Surely, and we need to have
+beforehand a fairly good idea about how to handle the information
+flow between the national teams and the package maintainers.
+</p>
+<p>Please start saving somewhere a quick history of each PO file.  I know
+for sure that the file format will change, allowing for comments.
+It would be nice that each file has a kind of log, and references for
+those who want to submit comments or gripes, or otherwise contribute.
+I sent a proposal for a fast and flexible format, but it is not
+receiving acceptance yet by the GNU deciders.  I'll tell you when I
+have more information about this.
+</p>
+
+<a name="Translating-plural-forms"></a>
+<a name="SEC227"></a>
+<h2 class="section"> <a href="gettext_toc.html#TOC221">12.6 Translating plural forms</a> </h2>
+
+<p>Suppose you are translating a PO file, and it contains an entry like this:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">#, c-format
+msgid &quot;One file removed&quot;
+msgid_plural &quot;%d files removed&quot;
+msgstr[0] &quot;&quot;
+msgstr[1] &quot;&quot;
+</pre></td></tr></table>
+
+<p>What does this mean? How do you fill it in?
+</p>
+<p>Such an entry denotes a message with plural forms, that is, a message where
+the text depends on a cardinal number.  The general form of the message,
+in English, is the <code>msgid_plural</code> line.  The <code>msgid</code> line is the
+English singular form, that is, the form for when the number is equal to 1.
+More details about plural forms are explained in <a href="gettext_11.html#SEC206">Additional functions for plural forms</a>.
+</p>
+<p>The first thing you need to look at is the <code>Plural-Forms</code> line in the
+header entry of the PO file.  It contains the number of plural forms and a
+formula.  If the PO file does not yet have such a line, you have to add it.
+It only depends on the language into which you are translating.  You can
+get this info by using the <code>msginit</code> command (see <a href="gettext_6.html#SEC44">Creating a New PO File</a>) &ndash;
+it contains a database of known plural formulas &ndash; or by asking other
+members of your translation team.
+</p>
+<p>Suppose the line looks as follows:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">&quot;Plural-Forms: nplurals=3; plural=n%10==1 &amp;&amp; n%100!=11 ? 0 : n%10&gt;=2 &amp;&amp; n&quot;
+&quot;%10&lt;=4 &amp;&amp; (n%100&lt;10 || n%100&gt;=20) ? 1 : 2;\n&quot;
+</pre></td></tr></table>
+
+<p>It's logically one line; recall that the PO file formatting is allowed to
+break long lines so that each physical line fits in 80 monospaced columns.
+</p>
+<p>The value of <code>nplurals</code> here tells you that there are three plural
+forms.  The first thing you need to do is to ensure that the entry contains
+an <code>msgstr</code> line for each of the forms:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">#, c-format
+msgid &quot;One file removed&quot;
+msgid_plural &quot;%d files removed&quot;
+msgstr[0] &quot;&quot;
+msgstr[1] &quot;&quot;
+msgstr[2] &quot;&quot;
+</pre></td></tr></table>
+
+<p>Then translate the <code>msgid_plural</code> line and fill it in into each
+<code>msgstr</code> line:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">#, c-format
+msgid &quot;One file removed&quot;
+msgid_plural &quot;%d files removed&quot;
+msgstr[0] &quot;%d slika uklonjenih&quot;
+msgstr[1] &quot;%d slika uklonjenih&quot;
+msgstr[2] &quot;%d slika uklonjenih&quot;
+</pre></td></tr></table>
+
+<p>Now you can refine the translation so that it matches the plural form.
+According to the formula above, <code>msgstr[0]</code> is used when the number
+ends in 1 but does not end in 11; <code>msgstr[1]</code> is used when the number
+ends in 2, 3, 4, but not in 12, 13, 14; and <code>msgstr[2]</code> is used in
+all other cases.  With this knowledge, you can refine the translations:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">#, c-format
+msgid &quot;One file removed&quot;
+msgid_plural &quot;%d files removed&quot;
+msgstr[0] &quot;%d slika je uklonjena&quot;
+msgstr[1] &quot;%d datoteke uklonjenih&quot;
+msgstr[2] &quot;%d slika uklonjenih&quot;
+</pre></td></tr></table>
+
+<p>You noticed that in the English singular form (<code>msgid</code>) the number
+placeholder could be omitted and replaced by the numeral word &ldquo;one&rdquo;.
+Can you do this in your translation as well?
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">msgstr[0] &quot;jednom datotekom je uklonjen&quot;
+</pre></td></tr></table>
+
+<p>Well, it depends on whether <code>msgstr[0]</code> applies only to the number 1,
+or to other numbers as well.  If, according to the plural formula,
+<code>msgstr[0]</code> applies only to <code>n == 1</code>, then you can use the
+specialized translation without the number placeholder.  In our case,
+however, <code>msgstr[0]</code> also applies to the numbers 21, 31, 41, etc.,
+and therefore you cannot omit the placeholder.
+</p>
+
+<a name="Prioritizing-messages"></a>
+<a name="SEC228"></a>
+<h2 class="section"> <a href="gettext_toc.html#TOC222">12.7 Prioritizing messages: How to determine which messages to translate first</a> </h2>
+
+<p>A translator sometimes has only a limited amount of time per week to
+spend on a package, and some packages have quite large message catalogs
+(over 1000 messages).  Therefore she wishes to translate the messages
+first that are the most visible to the user, or that occur most frequently.
+This section describes how to determine these &quot;most urgent&quot; messages.
+It also applies to determine the &quot;next most urgent&quot; messages after the
+message catalog has already been partially translated.
+</p>
+<p>In a first step, she uses the programs like a user would do.  While she
+does this, the GNU <code>gettext</code> library logs into a file the not yet
+translated messages for which a translation was requested from the program.
+</p>
+<p>In a second step, she uses the PO mode to translate precisely this set
+of messages.
+</p>
+<a name="IDX1084"></a>
+<p>Here are more details.  The GNU <code>libintl</code> library (but not the
+corresponding functions in GNU <code>libc</code>) supports an environment variable
+<code>GETTEXT_LOG_UNTRANSLATED</code>.  The GNU <code>libintl</code> library will
+log into this file the messages for which <code>gettext()</code> and related
+functions couldn't find the translation.  If the file doesn't exist, it
+will be created as needed.  On systems with GNU <code>libc</code> a shared library
+&lsquo;<samp>preloadable_libintl.so</samp>&rsquo; is provided that can be used with the ELF
+&lsquo;<samp>LD_PRELOAD</samp>&rsquo; mechanism.
+</p>
+<p>So, in the first step, the translator uses these commands on systems with
+GNU <code>libc</code>:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">$ LD_PRELOAD=/usr/local/lib/preloadable_libintl.so
+$ export LD_PRELOAD
+$ GETTEXT_LOG_UNTRANSLATED=$HOME/gettextlogused
+$ export GETTEXT_LOG_UNTRANSLATED
+</pre></td></tr></table>
+
+<p>and these commands on other systems:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">$ GETTEXT_LOG_UNTRANSLATED=$HOME/gettextlogused
+$ export GETTEXT_LOG_UNTRANSLATED
+</pre></td></tr></table>
+
+<p>Then she uses and peruses the programs.  (It is a good and recommended
+practice to use the programs for which you provide translations: it
+gives you the needed context.)  When done, she removes the environment
+variables:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">$ unset LD_PRELOAD
+$ unset GETTEXT_LOG_UNTRANSLATED
+</pre></td></tr></table>
+
+<p>The second step starts with removing duplicates:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">$ msguniq $HOME/gettextlogused &gt; missing.po
+</pre></td></tr></table>
+
+<p>The result is a PO file, but needs some preprocessing before a PO file editor
+can be used with it.  First, it is a multi-domain PO file, containing
+messages from many translation domains.  Second, it lacks all translator
+comments and source references.  Here is how to get a list of the affected
+translation domains:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">$ sed -n -e 's,^domain &quot;\(.*\)&quot;$,\1,p' &lt; missing.po | sort | uniq
+</pre></td></tr></table>
+
+<p>Then the translator can handle the domains one by one.  For simplicity,
+let's use environment variables to denote the language, domain and source
+package.
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">$ lang=nl             # your language
+$ domain=coreutils    # the name of the domain to be handled
+$ package=/usr/src/gnu/coreutils-4.5.4   # the package where it comes from
+</pre></td></tr></table>
+
+<p>She takes the latest copy of &lsquo;<tt>$lang.po</tt>&rsquo; from the Translation Project,
+or from the package (in most cases, &lsquo;<tt>$package/po/$lang.po</tt>&rsquo;), or
+creates a fresh one if she's the first translator (see <a href="gettext_6.html#SEC44">Creating a New PO File</a>).
+She then uses the following commands to mark the not urgent messages as
+&quot;obsolete&quot;.  (This doesn't mean that these messages - translated and
+untranslated ones - will go away.  It simply means that the PO file editor
+will ignore them in the following editing session.)
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">$ msggrep --domain=$domain missing.po | grep -v '^domain' \
+  &gt; $domain-missing.po
+$ msgattrib --set-obsolete --ignore-file $domain-missing.po $domain.$lang.po \
+  &gt; $domain.$lang-urgent.po
+</pre></td></tr></table>
+
+<p>The she translates &lsquo;<tt>$domain.$lang-urgent.po</tt>&rsquo; by use of a PO file editor
+(see section <a href="gettext_8.html#SEC62">Editing PO Files</a>).
+(FIXME: I don't know whether <code>KBabel</code> and <code>gtranslator</code> also
+preserve obsolete messages, as they should.)
+Finally she restores the not urgent messages (with their earlier
+translations, for those which were already translated) through this command:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="smallexample">$ msgmerge --no-fuzzy-matching $domain.$lang-urgent.po $package/po/$domain.pot \
+  &gt; $domain.$lang.po
+</pre></td></tr></table>
+
+<p>Then she can submit &lsquo;<tt>$domain.$lang.po</tt>&rsquo; and proceed to the next domain.
+</p>
+
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC216" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="gettext_13.html#SEC229" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_21.html#SEC387" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<p>
+ <font size="-1">
+  This document was generated by <em>Bruno Haible</em> on <em>October, 9 2022</em> using <a href="https://www.nongnu.org/texi2html/"><em>texi2html 1.78a</em></a>.
+ </font>
+ <br>
+
+</p>
+</body>
+</html>

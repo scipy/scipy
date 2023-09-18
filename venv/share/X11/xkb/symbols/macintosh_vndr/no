@@ -1,0 +1,48 @@
+default partial alphanumeric_keys 
+xkb_symbols "basic" {
+
+    // Describes the differences between a very simple en_US
+    // keyboard and a very simple Norwegian keyboard.
+
+    include "latin"
+
+    name[Group1]= "Norway - Mac";
+
+    key <TLDE> {	[             bar,         section      ]	};
+    key <AE02> {	[               2,        quotedbl, 	       at,	 oneeighth	]	};
+    key <AE03> {	[               3,	numbersign,      sterling,        sterling	]	};
+    key <AE04> {	[	        4,        currency, 	   dollar,	    dollar	]	};
+    key <AE06> {	[               6,       ampersand     	]	};
+    key <AE07> {	[               7,           slash, 	      bar,       backslash	]  	};
+    key <AE08> {	[               8,       parenleft,   bracketleft,	 braceleft	]	};
+    key <AE09> {	[               9,      parenright,  bracketright,	braceright	]	};
+    key <AE10> {	[               0,           equal     	]	};
+    key <AE11> {	[            plus,        question      ]	};
+    key <AE12> {	[      dead_grave,      dead_acute, 	    acute,     dead_ogonek 	]	};
+
+    key <AB08> {	[           comma,       semicolon     	]	};
+    key <AB09> {	[          period,           colon     	]	};
+    key <AB10> {	[           minus,      underscore     	]	};
+    key <AC10> {	[	   oslash,          Oslash,       odiaeresis,   Odiaeresis	]	};
+    key <AC11> {	[              ae,              AE 	]	};
+    key <AD11> {	[	    aring,           Aring     	]	};
+    key <AD12> {	[       diaeresis,     asciicircum,       asciitilde,  dead_macron     	]      	};
+    key <BKSL> {	[              at,        asterisk	]	};
+    key <LSGT> {	[            less,         greater	]	};
+
+    include "eurosign(e)"
+    include "level3(ralt_switch)"
+};
+
+
+partial alphanumeric_keys 
+xkb_symbols "nodeadkeys" {
+
+    // Modifies the basic Norwegian layout to no dead keys
+    include "macintosh_vndr/no(basic)"
+    name[Group1]= "Norway - Mac, no dead keys";
+
+    key <AE12> {	[           grave,           acute, 	    acute,          ogonek 	]	};
+    key <AD12> {	[       diaeresis,     asciicircum,    asciitilde,          macron     	]      	};
+
+};

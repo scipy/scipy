@@ -1,0 +1,223 @@
+// Keyboard layouts for Indonesia.
+
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+    include "us(basic)"
+
+    name[Group1]= "Indonesian (Latin)";
+};
+
+// A layout for the Javanese script, usable for
+// Javanese, Sundanese, Madurese, and others.
+partial alphanumeric_keys
+xkb_symbols "javanese" {
+    name[Group1]= "Javanese";
+
+    key <TLDE> {[  UA9DE,  UA9DF      ]}; // pada tirta tumetes, PADA ISEN-ISEN
+    key <AE01> {[  UA9D1,  UA9C6      ]}; // PADA WINDU
+    key <AE02> {[  UA9D2,  UA9CF      ]}; // PANGRANGKEP
+    key <AE03> {[  UA9D3,  UA9C3      ]}; // ANDAP
+    key <AE04> {[  UA9D4,  UA9C4      ]}; // MADYA
+    key <AE05> {[  UA9D5,  UA9C5      ]}; // LUHUR
+    key <AE06> {[  UA9D6,  UA9BF      ]}; // CAKRA (ra)
+    key <AE07> {[  UA9D7,  UA9BD      ]}; // KERET (rae)
+    key <AE08> {[  UA9D8,  UA9B3      ]}; // CECAK TELU (nukta)
+    key <AE09> {[  UA9D9,  UA9C1      ]}; // Left RERENGAN
+    key <AE10> {[  UA9D0,  UA9C2      ]}; // Right RERENGAN
+    key <AE11> {[  UA98E,  underscore ]}; // o
+    key <AE12> {[  UA989,  UA98B      ]}; // cerek (rae), NGA LELET RASWADI (loe)
+
+    key <AD01> {[  UA990,  UA9B0      ]}; // ka sasak (qa), SA MAHAPRANA (ssa)
+    key <AD02> {[  UA9AE,  UA98D      ]}; // wa, AI
+    key <AD03> {[  UA9BC,  UA98C      ]}; // pepet (ae), E
+    key <AD04> {[  UA9AB,  UA9AC      ]}; // ra, RA AGUNG
+    key <AD05> {[  UA9A0,  UA9A1      ]}; // ta, TA MURDA (tha)
+    key <AD06> {[  UA9AA,  UA9BE      ]}; // ya, PENGKAL
+    key <AD07> {[  UA9B8,  UA9B9      ]}; // suku (u), SUKU MENDUT (uu)
+    key <AD08> {[  UA9B6,  UA9B7      ]}; // wulu (i), WULU MELIK (ii)
+    key <AD09> {[  UA9BA,  UA9B4      ]}; // taling (e), TARUNG (aa)
+    key <AD10> {[  UA9A5,  UA9A6      ]}; // pa, PA MURDA (pha)
+    key <AD11> {[  UA9CA,  UA9CB      ]}; // pada adeg, PADA ADEG ADEG
+    key <AD12> {[  UA9CC,  UA9CD      ]}; // pada piseleh, Turned PADA PISELEH
+
+    key <AC01> {[  UA9BB,  UA984      ]}; // ai, A
+    key <AC02> {[  UA9B1,  UA9AF      ]}; // sa, SA MURDA (sha)
+    key <AC03> {[  UA9A2,  UA9A3      ]}; // da, DA MAHAPRANA (dha)
+    key <AC04> {[  UA99D,  UA99E      ]}; // dda, DDA MAHAPRANA (ddha)
+    key <AC05> {[  UA992,  UA993      ]}; // ga, GA MURDA (gha)
+    key <AC06> {[  UA9B2,  UA983      ]}; // ha, WIGNYAN
+    key <AC07> {[  UA997,  UA999      ]}; // ja, JA MAHAPRANA (jha)
+    key <AC08> {[  UA98F,  UA991      ]}; // ka, KA MURDA (kha)
+    key <AC09> {[  UA9AD,  UA98A      ]}; // la, NGA LELET
+    key <AC10> {[  UA9C7,  UA988      ]}; // pada pangkat, U
+    key <AC11> {[  UA9B5,  quotedbl   ]}; // tolong (o)
+
+    key <BKSL> {[  UA9C0,  UA985      ]}; // pangkon, I KAWI
+
+    key <LSGT> {[    bar,  brokenbar  ]};
+
+    key <AB01> {[  UA994,  UA981      ]}; // nga, CECAK (ng)
+    key <AB02> {[  UA99A,  UA998      ]}; // nya, NYA MURDA (jnya)
+    key <AB03> {[  UA995,  UA996      ]}; // ca, CA MURDA (cha)
+    key <AB04> {[  UA99B,  UA99C      ]}; // tta, TTA MAHAPRANA (ttha)
+    key <AB05> {[  UA9A7,  UA9A8      ]}; // ba, BA MURDA (bha)
+    key <AB06> {[  UA9A4,  UA99F      ]}; // na, NA MURDA (nna)
+    key <AB07> {[  UA9A9,  UA980      ]}; // ma, CANDRABINDU
+    key <AB08> {[  UA9C8,  UA986      ]}; // lingsa, I
+    key <AB09> {[  UA9C9,  UA987      ]}; // lungsi, II
+    key <AB10> {[  UA982,  question   ]}; // layar (r)
+};
+
+//
+// Default phonetic layout for Arab Melayu script.
+//
+partial alphanumeric_keys
+xkb_symbols "melayu-phonetic" {
+
+    name[Group1]= "Indonesian (Arab Melayu, phonetic)";
+
+    key <TLDE> {[  grave,     asciitilde,      VoidSymbol,  VoidSymbol  ]};
+    key <AE01> {[  Arabic_1,  exclam,          1,           VoidSymbol  ]};
+    key <AE02> {[  Arabic_2,  at,              2,           VoidSymbol  ]};
+    key <AE03> {[  Arabic_3,  numbersign,      3,           VoidSymbol  ]};
+    key <AE04> {[  Arabic_4,  VoidSymbol,      4,           dollar      ]};
+    key <AE05> {[  Arabic_5,  Arabic_percent,  5,           percent     ]};
+    key <AE06> {[  Arabic_6,  asciicircum,     6,           VoidSymbol  ]};
+    key <AE07> {[  Arabic_7,  ampersand,       7,           VoidSymbol  ]};
+    key <AE08> {[  Arabic_8,  asterisk,        8,           VoidSymbol  ]};
+    key <AE09> {[  Arabic_9,  parenright,      9,           VoidSymbol  ]};
+    key <AE10> {[  Arabic_0,  parenleft,       0,           VoidSymbol  ]};
+    key <AE11> {[  minus,     Arabic_tatweel,  VoidSymbol,  underscore  ]};
+    key <AE12> {[  equal,     plus,            VoidSymbol,  VoidSymbol  ]};
+
+    key <AD01> {[  Arabic_qaf,          Arabic_maddaonalef,     VoidSymbol,  VoidSymbol  ]};
+    key <AD02> {[  Arabic_waw,          VoidSymbol,             VoidSymbol,  VoidSymbol  ]};
+    key <AD03> {[  Arabic_alefmaksura,  Arabic_ain,             VoidSymbol,  VoidSymbol  ]};
+    key <AD04> {[  Arabic_ra,           VoidSymbol,             VoidSymbol,  VoidSymbol  ]};
+    key <AD05> {[  Arabic_teh,          Arabic_tehmarbuta,      Arabic_tah,  VoidSymbol  ]};
+    key <AD06> {[  Arabic_yeh,          VoidSymbol,             VoidSymbol,  VoidSymbol  ]};
+    key <AD07> {[  Arabic_hamzaonwaw,   VoidSymbol,             VoidSymbol,  VoidSymbol  ]};
+    key <AD08> {[  Arabic_hamzaonyeh,   Arabic_hamzaunderalef,  VoidSymbol,  VoidSymbol  ]};
+    key <AD09> {[  Arabic_hamza,        U0674,                  VoidSymbol,  VoidSymbol  ]}; // high_hamza
+    key <AD10> {[  Arabic_veh,          VoidSymbol,             VoidSymbol,  VoidSymbol  ]}; // p
+    key <AD11> {[  bracketright,        braceright,             VoidSymbol,  VoidSymbol  ]};
+    key <AD12> {[  bracketleft,         braceleft,              VoidSymbol,  VoidSymbol  ]};
+    key <BKSL> {[  backslash,           bar,                    VoidSymbol,  VoidSymbol  ]};
+
+    key <AC01> {[  Arabic_alef,       Arabic_hamzaonalef,  VoidSymbol,       VoidSymbol  ]};
+    key <AC02> {[  Arabic_seen,       Arabic_sheen,        Arabic_sad,       Arabic_theh ]};
+    key <AC03> {[  Arabic_dal,        VoidSymbol,          Arabic_dad,       VoidSymbol  ]};
+    key <AC04> {[  Arabic_feh,        VoidSymbol,          VoidSymbol,       VoidSymbol  ]};
+    key <AC05> {[  U0762,             U06A0,               Arabic_ghain,     U06AF       ]}; // g, ng, gaf (Tausug)
+    key <AC06> {[  Arabic_ha,         Arabic_hah,          VoidSymbol,       VoidSymbol  ]};
+    key <AC07> {[  Arabic_jeem,       VoidSymbol,          VoidSymbol,       VoidSymbol  ]};
+    key <AC08> {[  Arabic_keheh,      Arabic_kaf,          VoidSymbol,       VoidSymbol  ]}; // k
+    key <AC09> {[  Arabic_lam,        VoidSymbol,          VoidSymbol,       VoidSymbol  ]};
+    key <AC10> {[  Arabic_semicolon,  colon,               semicolon,        VoidSymbol  ]};
+    key <AC11> {[  guillemotleft,     guillemotright,      apostrophe,       quotedbl    ]};
+
+    key <LSGT> {[  bar,             brokenbar,             VoidSymbol,       VoidSymbol  ]};
+    key <AB01> {[  Arabic_zain,     Arabic_thal,           Arabic_zah,       VoidSymbol  ]};
+    key <AB02> {[  Arabic_khah,     VoidSymbol,            VoidSymbol,       VoidSymbol  ]};
+    key <AB03> {[  Arabic_tcheh,    VoidSymbol,            VoidSymbol,       VoidSymbol  ]}; // c
+    key <AB04> {[  Arabic_theh,     VoidSymbol,            VoidSymbol,       U06CF       ]}; // waw_with_dot_above (Malay)
+    key <AB05> {[  Arabic_beh,      VoidSymbol,            VoidSymbol,       VoidSymbol  ]};
+    key <AB06> {[  Arabic_noon,     U06BD,                 VoidSymbol,       VoidSymbol  ]}; // ny
+    key <AB07> {[  Arabic_meem,     VoidSymbol,            VoidSymbol,       VoidSymbol  ]};
+    key <AB08> {[  Arabic_comma,    greater,               comma,            U066B       ]}; // decimal_separator
+    key <AB09> {[  period,          less,                  Arabic_fullstop,  U066C       ]}; // thousands_separator
+    key <AB10> {[  slash,           Arabic_question_mark,  U060D,            question    ]}; // date_separator
+
+    include "level3(ralt_switch)"
+};
+
+//
+// Extended phonetic layout for Arab Melayu, with extra, non-standard characters.
+//
+partial alphanumeric_keys
+xkb_symbols "melayu-phoneticx" {
+
+    include "id(melayu-phonetic)"
+    name[Group1]= "Indonesian (Arab Melayu, extended phonetic)";
+
+    key <AE01> {[  NoSymbol,  NoSymbol,  NoSymbol,       Arabic_superscript_alef  ]};
+    key <AE09> {[  NoSymbol,  NoSymbol,  NoSymbol,       UFD3E                    ]}; // ornate_left
+    key <AE10> {[  NoSymbol,  NoSymbol,  NoSymbol,       UFD3F                    ]}; // ornate_right
+
+    key <AD02> {[  NoSymbol,  NoSymbol,  Arabic_shadda,  NoSymbol                 ]};
+    key <AD03> {[  NoSymbol,  NoSymbol,  U08E6,          U08E4                    ]}; // curly_kasra, curly_fatha
+    key <AD07> {[  NoSymbol,  NoSymbol,  Arabic_damma,   Arabic_dammatan          ]};
+    key <AD08> {[  NoSymbol,  NoSymbol,  Arabic_kasra,   Arabic_kasratan          ]};
+    key <AD09> {[  NoSymbol,  NoSymbol,  U065D,          NoSymbol                 ]}; // reversed_damma
+
+    key <AC01> {[  NoSymbol,  NoSymbol,  Arabic_fatha,   Arabic_fathatan          ]};
+    key <AC07> {[  NoSymbol,  NoSymbol,  U08F8,          NoSymbol                 ]}; // right_arrowhead_above
+
+    key <AB02> {[  NoSymbol,  NoSymbol,  U065B,          U065C                    ]}; // inverted_small_v_above, dot_below
+    key <AB03> {[  NoSymbol,  NoSymbol,  Arabic_sukun,   U06E1                    ]}; // small_high_dotless_head_of_khah
+};
+
+//
+// Phonetic layout for Pegon script.
+//
+partial alphanumeric_keys
+xkb_symbols "pegon-phonetic" {
+
+    name[Group1]= "Indonesian (Arab Pegon, phonetic)";
+
+    key <TLDE> {[  grave,     asciitilde,      VoidSymbol,  VoidSymbol  ]};
+    key <AE01> {[  Arabic_1,  exclam,          1,           VoidSymbol  ]};
+    key <AE02> {[  Arabic_2,  at,              2,           VoidSymbol  ]};
+    key <AE03> {[  Arabic_3,  numbersign,      3,           VoidSymbol  ]};
+    key <AE04> {[  Arabic_4,  VoidSymbol,      4,           dollar      ]};
+    key <AE05> {[  Arabic_5,  Arabic_percent,  5,           percent     ]};
+    key <AE06> {[  Arabic_6,  asciicircum,     6,           VoidSymbol  ]};
+    key <AE07> {[  Arabic_7,  ampersand,       7,           VoidSymbol  ]};
+    key <AE08> {[  Arabic_8,  asterisk,        8,           VoidSymbol  ]};
+    key <AE09> {[  Arabic_9,  parenright,      9,           VoidSymbol  ]};
+    key <AE10> {[  Arabic_0,  parenleft,       0,           VoidSymbol  ]};
+    key <AE11> {[  minus,     Arabic_tatweel,  VoidSymbol,  underscore  ]};
+    key <AE12> {[  equal,     plus,            VoidSymbol,  VoidSymbol  ]};
+
+    key <AD01> {[  Arabic_qaf,          Arabic_maddaonalef,     VoidSymbol,  VoidSymbol  ]};
+    key <AD02> {[  Arabic_waw,          VoidSymbol,             VoidSymbol,  VoidSymbol  ]};
+    key <AD03> {[  Arabic_alefmaksura,  Arabic_ain,             VoidSymbol,  VoidSymbol  ]};
+    key <AD04> {[  Arabic_ra,           VoidSymbol,             VoidSymbol,  VoidSymbol  ]};
+    key <AD05> {[  Arabic_teh,          U069F,                  Arabic_tah,  Arabic_tehmarbuta ]}; // th
+    key <AD06> {[  Arabic_yeh,          VoidSymbol,             VoidSymbol,  VoidSymbol  ]};
+    key <AD07> {[  Arabic_hamzaonwaw,   VoidSymbol,             VoidSymbol,  VoidSymbol  ]};
+    key <AD08> {[  Arabic_hamzaonyeh,   Arabic_hamzaunderalef,  VoidSymbol,  VoidSymbol  ]};
+    key <AD09> {[  Arabic_hamza,        VoidSymbol,             VoidSymbol,  VoidSymbol  ]};
+    key <AD10> {[  Arabic_veh,          VoidSymbol,             VoidSymbol,  VoidSymbol  ]}; // p
+    key <AD11> {[  bracketright,        braceright,             VoidSymbol,  VoidSymbol  ]};
+    key <AD12> {[  bracketleft,         braceleft,              VoidSymbol,  VoidSymbol  ]};
+    key <BKSL> {[  backslash,           bar,                    VoidSymbol,  VoidSymbol  ]};
+
+    key <AC01> {[  Arabic_alef,       Arabic_hamzaonalef,  VoidSymbol,       VoidSymbol  ]};
+    key <AC02> {[  Arabic_seen,       Arabic_sheen,        Arabic_sad,       Arabic_theh ]};
+    key <AC03> {[  Arabic_dal,        U068E,               Arabic_dad,       VoidSymbol  ]}; // dh
+    key <AC04> {[  Arabic_feh,        VoidSymbol,          VoidSymbol,       VoidSymbol  ]};
+    key <AC05> {[  U06AE,             U06A0,               Arabic_ghain,     VoidSymbol  ]}; // g, ng
+    key <AC06> {[  Arabic_ha,         Arabic_hah,          VoidSymbol,       VoidSymbol  ]};
+    key <AC07> {[  Arabic_jeem,       VoidSymbol,          VoidSymbol,       VoidSymbol  ]};
+    key <AC08> {[  Arabic_kaf,        VoidSymbol,          VoidSymbol,       VoidSymbol  ]};
+    key <AC09> {[  Arabic_lam,        VoidSymbol,          VoidSymbol,       VoidSymbol  ]};
+    key <AC10> {[  Arabic_semicolon,  colon,               semicolon,        VoidSymbol  ]};
+    key <AC11> {[  guillemotleft,     guillemotright,      apostrophe,       quotedbl    ]};
+
+    key <LSGT> {[  bar,             brokenbar,             VoidSymbol,       VoidSymbol  ]};
+    key <AB01> {[  Arabic_zain,     Arabic_thal,           Arabic_zah,       VoidSymbol  ]};
+    key <AB02> {[  Arabic_khah,     VoidSymbol,            VoidSymbol,       VoidSymbol  ]};
+    key <AB03> {[  Arabic_tcheh,    VoidSymbol,            VoidSymbol,       VoidSymbol  ]}; // c
+    key <AB04> {[  Arabic_theh,     VoidSymbol,            VoidSymbol,       U06CF       ]}; // v
+    key <AB05> {[  Arabic_beh,      VoidSymbol,            VoidSymbol,       VoidSymbol  ]};
+    key <AB06> {[  Arabic_noon,     U06D1,                 VoidSymbol,       VoidSymbol  ]}; // ny
+    key <AB07> {[  Arabic_meem,     VoidSymbol,            VoidSymbol,       VoidSymbol  ]};
+    key <AB08> {[  Arabic_comma,    greater,               comma,            U066B       ]}; // decimal_separator
+    key <AB09> {[  period,          less,                  Arabic_fullstop,  U066C       ]}; // thousands_separator
+    key <AB10> {[  slash,           Arabic_question_mark,  U060D,            question    ]}; // date_separator
+
+    include "level3(ralt_switch)"
+};
+

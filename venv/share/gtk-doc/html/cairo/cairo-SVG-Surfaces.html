@@ -1,0 +1,576 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>SVG Surfaces: Cairo: A Vector Graphics Library</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<link rel="home" href="index.html" title="Cairo: A Vector Graphics Library">
+<link rel="up" href="cairo-surfaces.html" title="Surfaces">
+<link rel="prev" href="cairo-Win32-Surfaces.html" title="Win32 Surfaces">
+<link rel="next" href="cairo-Quartz-Surfaces.html" title="Quartz Surfaces">
+<meta name="generator" content="GTK-Doc V1.27 (XML mode)">
+<link rel="stylesheet" href="style.css" type="text/css">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<table class="navigation" id="top" width="100%" summary="Navigation header" cellpadding="2" cellspacing="5"><tr valign="middle">
+<td width="100%" align="left" class="shortcuts">
+<a href="#" class="shortcut">Top</a><span id="nav_description">  <span class="dim">|</span> 
+                  <a href="#cairo-SVG-Surfaces.description" class="shortcut">Description</a></span>
+</td>
+<td><a accesskey="h" href="index.html"><img src="home.png" width="16" height="16" border="0" alt="Home"></a></td>
+<td><a accesskey="u" href="cairo-surfaces.html"><img src="up.png" width="16" height="16" border="0" alt="Up"></a></td>
+<td><a accesskey="p" href="cairo-Win32-Surfaces.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
+<td><a accesskey="n" href="cairo-Quartz-Surfaces.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
+</tr></table>
+<div class="refentry">
+<a name="cairo-SVG-Surfaces"></a><div class="titlepage"></div>
+<div class="refnamediv"><table width="100%"><tr>
+<td valign="top">
+<h2><span class="refentrytitle"><a name="cairo-SVG-Surfaces.top_of_page"></a>SVG Surfaces</span></h2>
+<p>SVG Surfaces — Rendering SVG documents</p>
+</td>
+<td class="gallery_image" valign="top" align="right"></td>
+</tr></table></div>
+<div class="refsect1">
+<a name="cairo-SVG-Surfaces.functions"></a><h2>Functions</h2>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="functions_return">
+<col class="functions_name">
+</colgroup>
+<tbody>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="returnvalue">cairo_surface_t</span></a> *
+</td>
+<td class="function_name">
+<a class="link" href="cairo-SVG-Surfaces.html#cairo-svg-surface-create" title="cairo_svg_surface_create ()">cairo_svg_surface_create</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="returnvalue">cairo_surface_t</span></a> *
+</td>
+<td class="function_name">
+<a class="link" href="cairo-SVG-Surfaces.html#cairo-svg-surface-create-for-stream" title="cairo_svg_surface_create_for_stream ()">cairo_svg_surface_create_for_stream</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-SVG-Surfaces.html#cairo-svg-unit-t" title="enum cairo_svg_unit_t"><span class="returnvalue">cairo_svg_unit_t</span></a>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-SVG-Surfaces.html#cairo-svg-surface-get-document-unit" title="cairo_svg_surface_get_document_unit ()">cairo_svg_surface_get_document_unit</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-SVG-Surfaces.html#cairo-svg-surface-set-document-unit" title="cairo_svg_surface_set_document_unit ()">cairo_svg_surface_set_document_unit</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-SVG-Surfaces.html#cairo-svg-surface-restrict-to-version" title="cairo_svg_surface_restrict_to_version ()">cairo_svg_surface_restrict_to_version</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-SVG-Surfaces.html#cairo-svg-get-versions" title="cairo_svg_get_versions ()">cairo_svg_get_versions</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">const <span class="returnvalue">char</span> *
+</td>
+<td class="function_name">
+<a class="link" href="cairo-SVG-Surfaces.html#cairo-svg-version-to-string" title="cairo_svg_version_to_string ()">cairo_svg_version_to_string</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect1">
+<a name="cairo-SVG-Surfaces.other"></a><h2>Types and Values</h2>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="name">
+<col class="description">
+</colgroup>
+<tbody>
+<tr>
+<td class="define_keyword">#define</td>
+<td class="function_name"><a class="link" href="cairo-SVG-Surfaces.html#CAIRO-HAS-SVG-SURFACE:CAPS" title="CAIRO_HAS_SVG_SURFACE">CAIRO_HAS_SVG_SURFACE</a></td>
+</tr>
+<tr>
+<td class="datatype_keyword">enum</td>
+<td class="function_name"><a class="link" href="cairo-SVG-Surfaces.html#cairo-svg-version-t" title="enum cairo_svg_version_t">cairo_svg_version_t</a></td>
+</tr>
+<tr>
+<td class="datatype_keyword">enum</td>
+<td class="function_name"><a class="link" href="cairo-SVG-Surfaces.html#cairo-svg-unit-t" title="enum cairo_svg_unit_t">cairo_svg_unit_t</a></td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect1">
+<a name="cairo-SVG-Surfaces.description"></a><h2>Description</h2>
+<p>The SVG surface is used to render cairo graphics to
+SVG files and is a multi-page vector surface backend.</p>
+</div>
+<div class="refsect1">
+<a name="cairo-SVG-Surfaces.functions_details"></a><h2>Functions</h2>
+<div class="refsect2">
+<a name="cairo-svg-surface-create"></a><h3>cairo_svg_surface_create ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="returnvalue">cairo_surface_t</span></a> *
+cairo_svg_surface_create (<em class="parameter"><code>const <span class="type">char</span> *filename</code></em>,
+                          <em class="parameter"><code><span class="type">double</span> width_in_points</code></em>,
+                          <em class="parameter"><code><span class="type">double</span> height_in_points</code></em>);</pre>
+<p>Creates a SVG surface of the specified size in points to be written
+to <em class="parameter"><code>filename</code></em>
+.</p>
+<p>The SVG surface backend recognizes the following MIME types for the
+data attached to a surface (see <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-set-mime-data" title="cairo_surface_set_mime_data ()"><code class="function">cairo_surface_set_mime_data()</code></a>) when
+it is used as a source pattern for drawing on this surface:
+<a class="link" href="cairo-cairo-surface-t.html#CAIRO-MIME-TYPE-JPEG:CAPS" title="CAIRO_MIME_TYPE_JPEG"><code class="literal">CAIRO_MIME_TYPE_JPEG</code></a>, <a class="link" href="cairo-cairo-surface-t.html#CAIRO-MIME-TYPE-PNG:CAPS" title="CAIRO_MIME_TYPE_PNG"><code class="literal">CAIRO_MIME_TYPE_PNG</code></a>,
+<a class="link" href="cairo-cairo-surface-t.html#CAIRO-MIME-TYPE-URI:CAPS" title="CAIRO_MIME_TYPE_URI"><code class="literal">CAIRO_MIME_TYPE_URI</code></a>. If any of them is specified, the SVG backend
+emits a href with the content of MIME data instead of a surface
+snapshot (PNG, Base64-encoded) in the corresponding image tag.</p>
+<p>The unofficial MIME type <a class="link" href="cairo-cairo-surface-t.html#CAIRO-MIME-TYPE-URI:CAPS" title="CAIRO_MIME_TYPE_URI"><code class="literal">CAIRO_MIME_TYPE_URI</code></a> is examined
+first. If present, the URI is emitted as is: assuring the
+correctness of URI is left to the client code.</p>
+<p>If <a class="link" href="cairo-cairo-surface-t.html#CAIRO-MIME-TYPE-URI:CAPS" title="CAIRO_MIME_TYPE_URI"><code class="literal">CAIRO_MIME_TYPE_URI</code></a> is not present, but <a class="link" href="cairo-cairo-surface-t.html#CAIRO-MIME-TYPE-JPEG:CAPS" title="CAIRO_MIME_TYPE_JPEG"><code class="literal">CAIRO_MIME_TYPE_JPEG</code></a>
+or <a class="link" href="cairo-cairo-surface-t.html#CAIRO-MIME-TYPE-PNG:CAPS" title="CAIRO_MIME_TYPE_PNG"><code class="literal">CAIRO_MIME_TYPE_PNG</code></a> is specified, the corresponding data is
+Base64-encoded and emitted.</p>
+<p>If <a class="link" href="cairo-cairo-surface-t.html#CAIRO-MIME-TYPE-UNIQUE-ID:CAPS" title="CAIRO_MIME_TYPE_UNIQUE_ID"><code class="literal">CAIRO_MIME_TYPE_UNIQUE_ID</code></a> is present, all surfaces with the same
+unique identifier will only be embedded once.</p>
+<div class="refsect3">
+<a name="cairo-svg-surface-create.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>filename</p></td>
+<td class="parameter_description"><p>a filename for the SVG output (must be writable), <a href="/usr/share/gtk-doc/html/glib/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> may be
+used to specify no output. This will generate a SVG surface that
+may be queried and used as a source, without generating a
+temporary file.</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>width_in_points</p></td>
+<td class="parameter_description"><p>width of the surface, in points (1 point == 1/72.0 inch)</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>height_in_points</p></td>
+<td class="parameter_description"><p>height of the surface, in points (1 point == 1/72.0 inch)</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-svg-surface-create.returns"></a><h4>Returns</h4>
+<p> a pointer to the newly created surface. The caller
+owns the surface and should call <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-destroy" title="cairo_surface_destroy ()"><code class="function">cairo_surface_destroy()</code></a> when done
+with it.</p>
+<p>This function always returns a valid pointer, but it will return a
+pointer to a "nil" surface if an error such as out of memory
+occurs. You can use <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-status" title="cairo_surface_status ()"><code class="function">cairo_surface_status()</code></a> to check for this.</p>
+</div>
+<p class="since">Since: 1.2</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-svg-surface-create-for-stream"></a><h3>cairo_svg_surface_create_for_stream ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="returnvalue">cairo_surface_t</span></a> *
+cairo_svg_surface_create_for_stream (<em class="parameter"><code><a class="link" href="cairo-PNG-Support.html#cairo-write-func-t" title="cairo_write_func_t ()"><span class="type">cairo_write_func_t</span></a> write_func</code></em>,
+                                     <em class="parameter"><code><span class="type">void</span> *closure</code></em>,
+                                     <em class="parameter"><code><span class="type">double</span> width_in_points</code></em>,
+                                     <em class="parameter"><code><span class="type">double</span> height_in_points</code></em>);</pre>
+<p>Creates a SVG surface of the specified size in points to be written
+incrementally to the stream represented by <em class="parameter"><code>write_func</code></em>
+ and <em class="parameter"><code>closure</code></em>
+.</p>
+<div class="refsect3">
+<a name="cairo-svg-surface-create-for-stream.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>write_func</p></td>
+<td class="parameter_description"><p>a <a class="link" href="cairo-PNG-Support.html#cairo-write-func-t" title="cairo_write_func_t ()"><span class="type">cairo_write_func_t</span></a> to accept the output data, may be <a href="/usr/share/gtk-doc/html/glib/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>
+to indicate a no-op <em class="parameter"><code>write_func</code></em>
+. With a no-op <em class="parameter"><code>write_func</code></em>
+,
+the surface may be queried or used as a source without
+generating any temporary files.</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>closure</p></td>
+<td class="parameter_description"><p>the closure argument for <em class="parameter"><code>write_func</code></em>
+</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>width_in_points</p></td>
+<td class="parameter_description"><p>width of the surface, in points (1 point == 1/72.0 inch)</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>height_in_points</p></td>
+<td class="parameter_description"><p>height of the surface, in points (1 point == 1/72.0 inch)</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-svg-surface-create-for-stream.returns"></a><h4>Returns</h4>
+<p> a pointer to the newly created surface. The caller
+owns the surface and should call <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-destroy" title="cairo_surface_destroy ()"><code class="function">cairo_surface_destroy()</code></a> when done
+with it.</p>
+<p>This function always returns a valid pointer, but it will return a
+pointer to a "nil" surface if an error such as out of memory
+occurs. You can use <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-status" title="cairo_surface_status ()"><code class="function">cairo_surface_status()</code></a> to check for this.</p>
+</div>
+<p class="since">Since: 1.2</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-svg-surface-get-document-unit"></a><h3>cairo_svg_surface_get_document_unit ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-SVG-Surfaces.html#cairo-svg-unit-t" title="enum cairo_svg_unit_t"><span class="returnvalue">cairo_svg_unit_t</span></a>
+cairo_svg_surface_get_document_unit (<em class="parameter"><code><a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="type">cairo_surface_t</span></a> *surface</code></em>);</pre>
+<p>Get the unit of the SVG surface.</p>
+<p>If the surface passed as an argument is not a SVG surface, the function
+sets the error status to CAIRO_STATUS_SURFACE_TYPE_MISMATCH and returns
+CAIRO_SVG_UNIT_USER.</p>
+<div class="refsect3">
+<a name="cairo-svg-surface-get-document-unit.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>surface</p></td>
+<td class="parameter_description"><p>a SVG <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="type">cairo_surface_t</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-svg-surface-get-document-unit.returns"></a><h4>Returns</h4>
+<p> the SVG unit of the SVG surface.</p>
+</div>
+<p class="since">Since: 1.16</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-svg-surface-set-document-unit"></a><h3>cairo_svg_surface_set_document_unit ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_svg_surface_set_document_unit (<em class="parameter"><code><a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="type">cairo_surface_t</span></a> *surface</code></em>,
+                                     <em class="parameter"><code><a class="link" href="cairo-SVG-Surfaces.html#cairo-svg-unit-t" title="enum cairo_svg_unit_t"><span class="type">cairo_svg_unit_t</span></a> unit</code></em>);</pre>
+<p>Use the specified unit for the width and height of the generated SVG file.
+See <a class="link" href="cairo-SVG-Surfaces.html#cairo-svg-unit-t" title="enum cairo_svg_unit_t"><span class="type">cairo_svg_unit_t</span></a> for a list of available unit values that can be used
+here.</p>
+<p>This function can be called at any time before generating the SVG file.</p>
+<p>However to minimize the risk of ambiguities it's recommended to call it
+before any drawing operations have been performed on the given surface, to
+make it clearer what the unit used in the drawing operations is.</p>
+<p>The simplest way to do this is to call this function immediately after
+creating the SVG surface.</p>
+<p>Note if this function is never called, the default unit for SVG documents
+generated by cairo will be "pt". This is for historical reasons.</p>
+<div class="refsect3">
+<a name="cairo-svg-surface-set-document-unit.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>surface</p></td>
+<td class="parameter_description"><p>a SVG <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="type">cairo_surface_t</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>unit</p></td>
+<td class="parameter_description"><p>SVG unit</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.16</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-svg-surface-restrict-to-version"></a><h3>cairo_svg_surface_restrict_to_version ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_svg_surface_restrict_to_version (<em class="parameter"><code><a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="type">cairo_surface_t</span></a> *surface</code></em>,
+                                       <em class="parameter"><code><a class="link" href="cairo-SVG-Surfaces.html#cairo-svg-version-t" title="enum cairo_svg_version_t"><span class="type">cairo_svg_version_t</span></a> version</code></em>);</pre>
+<p>Restricts the generated SVG file to <em class="parameter"><code>version</code></em>
+. See <a class="link" href="cairo-SVG-Surfaces.html#cairo-svg-get-versions" title="cairo_svg_get_versions ()"><code class="function">cairo_svg_get_versions()</code></a>
+for a list of available version values that can be used here.</p>
+<p>This function should only be called before any drawing operations
+have been performed on the given surface. The simplest way to do
+this is to call this function immediately after creating the
+surface.</p>
+<div class="refsect3">
+<a name="cairo-svg-surface-restrict-to-version.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>surface</p></td>
+<td class="parameter_description"><p>a SVG <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="type">cairo_surface_t</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>version</p></td>
+<td class="parameter_description"><p>SVG version</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.2</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-svg-get-versions"></a><h3>cairo_svg_get_versions ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_svg_get_versions (<em class="parameter"><code><a class="link" href="cairo-SVG-Surfaces.html#cairo-svg-version-t" title="enum cairo_svg_version_t"><span class="type">cairo_svg_version_t</span></a> const **versions</code></em>,
+                        <em class="parameter"><code><span class="type">int</span> *num_versions</code></em>);</pre>
+<p>Used to retrieve the list of supported versions. See
+<a class="link" href="cairo-SVG-Surfaces.html#cairo-svg-surface-restrict-to-version" title="cairo_svg_surface_restrict_to_version ()"><code class="function">cairo_svg_surface_restrict_to_version()</code></a>.</p>
+<div class="refsect3">
+<a name="cairo-svg-get-versions.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>versions</p></td>
+<td class="parameter_description"><p>supported version list</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>num_versions</p></td>
+<td class="parameter_description"><p>list length</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.2</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-svg-version-to-string"></a><h3>cairo_svg_version_to_string ()</h3>
+<pre class="programlisting">const <span class="returnvalue">char</span> *
+cairo_svg_version_to_string (<em class="parameter"><code><a class="link" href="cairo-SVG-Surfaces.html#cairo-svg-version-t" title="enum cairo_svg_version_t"><span class="type">cairo_svg_version_t</span></a> version</code></em>);</pre>
+<p>Get the string representation of the given <em class="parameter"><code>version</code></em>
+ id. This function
+will return <a href="/usr/share/gtk-doc/html/glib/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if <em class="parameter"><code>version</code></em>
+ isn't valid. See <a class="link" href="cairo-SVG-Surfaces.html#cairo-svg-get-versions" title="cairo_svg_get_versions ()"><code class="function">cairo_svg_get_versions()</code></a>
+for a way to get the list of valid version ids.</p>
+<div class="refsect3">
+<a name="cairo-svg-version-to-string.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>version</p></td>
+<td class="parameter_description"><p>a version id</p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-svg-version-to-string.returns"></a><h4>Returns</h4>
+<p> the string associated to given version.</p>
+</div>
+<p class="since">Since: 1.2</p>
+</div>
+</div>
+<div class="refsect1">
+<a name="cairo-SVG-Surfaces.other_details"></a><h2>Types and Values</h2>
+<div class="refsect2">
+<a name="CAIRO-HAS-SVG-SURFACE:CAPS"></a><h3>CAIRO_HAS_SVG_SURFACE</h3>
+<pre class="programlisting">#define CAIRO_HAS_SVG_SURFACE 1
+</pre>
+<p>Defined if the SVG surface backend is available.
+This macro can be used to conditionally compile backend-specific code.</p>
+<p class="since">Since: 1.2</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-svg-version-t"></a><h3>enum cairo_svg_version_t</h3>
+<p><a class="link" href="cairo-SVG-Surfaces.html#cairo-svg-version-t" title="enum cairo_svg_version_t"><span class="type">cairo_svg_version_t</span></a> is used to describe the version number of the SVG
+specification that a generated SVG file will conform to.</p>
+<div class="refsect3">
+<a name="cairo-svg-version-t.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="300px" class="enum_members_name">
+<col class="enum_members_description">
+<col width="200px" class="enum_members_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-SVG-VERSION-1-1:CAPS"></a>CAIRO_SVG_VERSION_1_1</p></td>
+<td class="enum_member_description">
+<p>The version 1.1 of the SVG specification. (Since 1.2)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-SVG-VERSION-1-2:CAPS"></a>CAIRO_SVG_VERSION_1_2</p></td>
+<td class="enum_member_description">
+<p>The version 1.2 of the SVG specification. (Since 1.2)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.2</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-svg-unit-t"></a><h3>enum cairo_svg_unit_t</h3>
+<p><em class="parameter"><code>CAIRO_SVG_UNIT_USER</code></em>
+: User unit, a value in the current coordinate system.
+  If used in the root element for the initial coordinate systems it
+  corresponds to pixels. (Since 1.16)
+<em class="parameter"><code>CAIRO_SVG_UNIT_EM</code></em>
+: The size of the element's font. (Since 1.16)
+<em class="parameter"><code>CAIRO_SVG_UNIT_EX</code></em>
+: The x-height of the element’s font. (Since 1.16)
+<em class="parameter"><code>CAIRO_SVG_UNIT_PX</code></em>
+: Pixels (1px = 1/96th of 1in). (Since 1.16)
+<em class="parameter"><code>CAIRO_SVG_UNIT_IN</code></em>
+: Inches (1in = 2.54cm = 96px). (Since 1.16)
+<em class="parameter"><code>CAIRO_SVG_UNIT_CM</code></em>
+: Centimeters (1cm = 96px/2.54). (Since 1.16)
+<em class="parameter"><code>CAIRO_SVG_UNIT_MM</code></em>
+: Millimeters (1mm = 1/10th of 1cm). (Since 1.16)
+<em class="parameter"><code>CAIRO_SVG_UNIT_PT</code></em>
+: Points (1pt = 1/72th of 1in). (Since 1.16)
+<em class="parameter"><code>CAIRO_SVG_UNIT_PC</code></em>
+: Picas (1pc = 1/6th of 1in). (Since 1.16)
+<em class="parameter"><code>CAIRO_SVG_UNIT_PERCENT</code></em>
+: Percent, a value that is some fraction of another
+  reference value. (Since 1.16)</p>
+<p><a class="link" href="cairo-SVG-Surfaces.html#cairo-svg-unit-t" title="enum cairo_svg_unit_t"><span class="type">cairo_svg_unit_t</span></a> is used to describe the units valid for coordinates and
+lengths in the SVG specification.</p>
+<p>See also:
+https://www.w3.org/TR/SVG/coords.html<span class="type">Units</span>
+https://www.w3.org/TR/SVG/types.html<span class="type">DataTypeLength</span>
+https://www.w3.org/TR/css-values-3/<span class="type">lengths</span></p>
+<div class="refsect3">
+<a name="cairo-svg-unit-t.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="300px" class="enum_members_name">
+<col class="enum_members_description">
+<col width="200px" class="enum_members_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-SVG-UNIT-USER:CAPS"></a>CAIRO_SVG_UNIT_USER</p></td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-SVG-UNIT-EM:CAPS"></a>CAIRO_SVG_UNIT_EM</p></td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-SVG-UNIT-EX:CAPS"></a>CAIRO_SVG_UNIT_EX</p></td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-SVG-UNIT-PX:CAPS"></a>CAIRO_SVG_UNIT_PX</p></td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-SVG-UNIT-IN:CAPS"></a>CAIRO_SVG_UNIT_IN</p></td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-SVG-UNIT-CM:CAPS"></a>CAIRO_SVG_UNIT_CM</p></td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-SVG-UNIT-MM:CAPS"></a>CAIRO_SVG_UNIT_MM</p></td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-SVG-UNIT-PT:CAPS"></a>CAIRO_SVG_UNIT_PT</p></td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-SVG-UNIT-PC:CAPS"></a>CAIRO_SVG_UNIT_PC</p></td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-SVG-UNIT-PERCENT:CAPS"></a>CAIRO_SVG_UNIT_PERCENT</p></td>
+<td> </td>
+<td> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.16</p>
+</div>
+</div>
+<div class="refsect1">
+<a name="cairo-SVG-Surfaces.see-also"></a><h2>See Also</h2>
+<p><a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="type">cairo_surface_t</span></a></p>
+</div>
+</div>
+<div class="footer">
+<hr>Generated by GTK-Doc V1.27</div>
+</body>
+</html>

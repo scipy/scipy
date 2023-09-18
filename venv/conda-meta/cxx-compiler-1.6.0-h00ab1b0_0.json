@@ -1,0 +1,35 @@
+{
+  "build": "h00ab1b0_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [],
+  "depends": [
+    "c-compiler 1.6.0 hd590300_0",
+    "gxx",
+    "gxx_linux-64 12.*"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/cxx-compiler-1.6.0-h00ab1b0_0",
+  "features": "",
+  "files": [],
+  "fn": "cxx-compiler-1.6.0-h00ab1b0_0.conda",
+  "license": "BSD",
+  "link": {
+    "source": "/opt/conda/pkgs/cxx-compiler-1.6.0-h00ab1b0_0",
+    "type": 1
+  },
+  "md5": "364c6ae36c4e36fcbd4d273cf4db78af",
+  "name": "cxx-compiler",
+  "package_tarball_full_path": "/opt/conda/pkgs/cxx-compiler-1.6.0-h00ab1b0_0.conda",
+  "paths_data": {
+    "paths": [],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "472b6b7f967df1db634c67d71c6b31cd186d18b5d0548196c2e426833ff17d99",
+  "size": 6179,
+  "subdir": "linux-64",
+  "timestamp": 1689097484095,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/cxx-compiler-1.6.0-h00ab1b0_0.conda",
+  "version": "1.6.0"
+}

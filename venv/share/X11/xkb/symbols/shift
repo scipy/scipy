@@ -1,0 +1,70 @@
+// Cancel CapsLock when a Shift key is pressed.
+partial modifier_keys
+xkb_symbols "breaks_caps" {
+    key <LFSH> {
+	type[group1] = "ALPHABETIC",
+	actions[group1] = [ SetMods(modifiers=Shift),
+			    SetMods(modifiers=Shift+Lock,clearLocks) ]
+    };
+    key <RTSH> {
+	type[group1] = "ALPHABETIC",
+	actions[group1] = [ SetMods(modifiers=Shift),
+			    SetMods(modifiers=Shift+Lock,clearLocks) ]
+    };
+};
+
+
+// Toggle CapsLock when pressed together with the other Shift key.
+partial modifier_keys
+xkb_symbols "lshift_both_capslock" {
+    key <LFSH> {[  Shift_L,  Caps_Lock  ], type[group1]="TWO_LEVEL" };
+};
+
+// Toggle CapsLock when pressed together with the other Shift key.
+partial modifier_keys
+xkb_symbols "rshift_both_capslock" {
+    key <RTSH> {[  Shift_R,  Caps_Lock  ], type[group1]="TWO_LEVEL" };
+};
+partial modifier_keys
+xkb_symbols "both_capslock" {
+    include "shift(lshift_both_capslock)"
+    include "shift(rshift_both_capslock)"
+};
+
+
+// Set CapsLock when pressed with the other Shift key, release it when pressed alone.
+partial modifier_keys
+xkb_symbols "lshift_both_capslock_cancel" {
+    key <LFSH> {[  Shift_L,  Caps_Lock  ], type[group1]="ALPHABETIC" };
+};
+
+// Set CapsLock when pressed with the other Shift key, release it when pressed alone.
+partial modifier_keys
+xkb_symbols "rshift_both_capslock_cancel" {
+    key <RTSH> {[  Shift_R,  Caps_Lock  ], type[group1]="ALPHABETIC" };
+};
+
+partial modifier_keys
+xkb_symbols "both_capslock_cancel" {
+    include "shift(lshift_both_capslock_cancel)"
+    include "shift(rshift_both_capslock_cancel)"
+};
+
+
+// Toggle ShiftLock when pressed together with the other Shift key.
+partial modifier_keys
+xkb_symbols "lshift_both_shiftlock" {
+    key <LFSH> {[  Shift_L,  Shift_Lock  ], type[group1]="TWO_LEVEL" };
+};
+
+// Toggle ShiftLock when pressed together with the other Shift key.
+partial modifier_keys
+xkb_symbols "rshift_both_shiftlock" {
+    key <RTSH> {[  Shift_R,  Shift_Lock  ], type[group1]="TWO_LEVEL" };
+};
+
+partial modifier_keys
+xkb_symbols "both_shiftlock" {
+    include "shift(lshift_both_shiftlock)"
+    include "shift(rshift_both_shiftlock)"
+};

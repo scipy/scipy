@@ -1,0 +1,356 @@
+<HTML>
+<HEAD>
+<TITLE>GNU.Gettext.GettextResourceSet Class</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+<H3>GNU.Gettext.GettextResourceSet Class</H3>
+
+<BLOCKQUOTE>
+<TABLE COLS="1" ROWS="1" WIDTH="100%">
+<TR><TD BGCOLOR="#C0C0C0"><PRE>public class GettextResourceSet: System.Resources.ResourceSet</PRE></TD></TR>
+</TABLE>
+</BLOCKQUOTE>
+
+<H4>Base Types</H4>
+
+<BLOCKQUOTE>
+System.Resources.ResourceSet<BR>
+&nbsp;&nbsp;GettextResourceSet<P>
+
+</BLOCKQUOTE>
+
+<H4>Library</H4>
+
+<BLOCKQUOTE>
+GNU.Gettext
+</BLOCKQUOTE>
+
+<H4>Summary</H4>
+
+<BLOCKQUOTE>
+
+Each instance of this class encapsulates a single PO file.
+<P>
+
+
+This API of this class is not meant to be used directly; use
+<CODE>GettextResourceManager</CODE> instead.
+<P>
+
+</BLOCKQUOTE>
+
+<H4>See Also</H4>
+
+<BLOCKQUOTE>
+<A HREF="GNU_Gettext.html" TARGET="members">GNU.Gettext Namespace</A>
+</BLOCKQUOTE>
+
+<H4>Members</H4>
+
+<BLOCKQUOTE>
+<P>
+
+GettextResourceSet Constructors<P>
+
+<A HREF="#GettextResourceSet%28%29%20Constructor" TARGET="contents">GettextResourceSet() Constructor</A><BR>
+<A HREF="#GettextResourceSet%28System.Resources.IResourceReader%29%20Constructor" TARGET="contents">GettextResourceSet(System.Resources.IResourceReader) Constructor</A><BR>
+<A HREF="#GettextResourceSet%28System.IO.Stream%29%20Constructor" TARGET="contents">GettextResourceSet(System.IO.Stream) Constructor</A><BR>
+<A HREF="#GettextResourceSet%28System.String%29%20Constructor" TARGET="contents">GettextResourceSet(System.String) Constructor</A><BR>
+<P>
+
+GettextResourceSet Methods<P>
+
+<A HREF="#GettextResourceSet.GetPluralString%20Method" TARGET="contents">GettextResourceSet.GetPluralString Method</A><BR>
+<A HREF="#GettextResourceSet.GetString%28System.String%29%20Method" TARGET="contents">GettextResourceSet.GetString(System.String) Method</A><BR>
+<A HREF="#GettextResourceSet.GetString%28System.String%2C%20bool%29%20Method" TARGET="contents">GettextResourceSet.GetString(System.String, bool) Method</A><BR>
+<A HREF="#GettextResourceSet.PluralEval%20Method" TARGET="contents">GettextResourceSet.PluralEval Method</A><BR>
+<P>
+
+GettextResourceSet Properties<P>
+
+<A HREF="#GettextResourceSet.Keys%20Property" TARGET="contents">GettextResourceSet.Keys Property</A><BR>
+</BLOCKQUOTE>
+
+<HR>
+
+<A NAME="GettextResourceSet%28%29%20Constructor"><H3>GettextResourceSet() Constructor</H3>
+
+<BLOCKQUOTE>
+<TABLE COLS="1" ROWS="1" WIDTH="100%">
+<TR><TD BGCOLOR="#C0C0C0"><PRE>protected GettextResourceSet();</PRE></TD></TR>
+</TABLE>
+</BLOCKQUOTE>
+
+<H4>Summary</H4>
+
+<BLOCKQUOTE>
+
+Creates a new message catalog. When using this constructor, you
+must override the <CODE>ReadResources</CODE> method, in order to initialize
+the <CODE>Table</CODE> property. The message catalog will support plural
+forms only if the <CODE>ReadResources</CODE> method installs values of type
+<CODE>String[]</CODE> and if the <CODE>PluralEval</CODE> method is overridden.
+</BLOCKQUOTE>
+
+<H4>See Also</H4>
+
+<BLOCKQUOTE>
+<A HREF="GNU_Gettext_GettextResourceSet.html" TARGET="contents">GNU.Gettext.GettextResourceSet Class</A>, <A HREF="GNU_Gettext.html" TARGET="members">GNU.Gettext Namespace</A>
+</BLOCKQUOTE>
+
+<HR>
+
+<A NAME="GettextResourceSet%28System.Resources.IResourceReader%29%20Constructor"><H3>GettextResourceSet(System.Resources.IResourceReader) Constructor</H3>
+
+<BLOCKQUOTE>
+<TABLE COLS="1" ROWS="1" WIDTH="100%">
+<TR><TD BGCOLOR="#C0C0C0"><PRE>public GettextResourceSet(System.Resources.IResourceReader reader);</PRE></TD></TR>
+</TABLE>
+</BLOCKQUOTE>
+
+<H4>Summary</H4>
+
+<BLOCKQUOTE>
+
+Creates a new message catalog, by reading the string/value pairs from
+the given <I>reader</I>. The message catalog will support
+plural forms only if the reader can produce values of type
+<CODE>String[]</CODE> and if the <CODE>PluralEval</CODE> method is overridden.
+</BLOCKQUOTE>
+
+<H4>See Also</H4>
+
+<BLOCKQUOTE>
+<A HREF="GNU_Gettext_GettextResourceSet.html" TARGET="contents">GNU.Gettext.GettextResourceSet Class</A>, <A HREF="GNU_Gettext.html" TARGET="members">GNU.Gettext Namespace</A>
+</BLOCKQUOTE>
+
+<HR>
+
+<A NAME="GettextResourceSet%28System.IO.Stream%29%20Constructor"><H3>GettextResourceSet(System.IO.Stream) Constructor</H3>
+
+<BLOCKQUOTE>
+<TABLE COLS="1" ROWS="1" WIDTH="100%">
+<TR><TD BGCOLOR="#C0C0C0"><PRE>public GettextResourceSet(System.IO.Stream stream);</PRE></TD></TR>
+</TABLE>
+</BLOCKQUOTE>
+
+<H4>Summary</H4>
+
+<BLOCKQUOTE>
+
+Creates a new message catalog, by reading the string/value pairs from
+the given <I>stream</I>, which should have the format of
+a <CODE>.resources</CODE> file. The message catalog will not support plural
+forms.
+</BLOCKQUOTE>
+
+<H4>See Also</H4>
+
+<BLOCKQUOTE>
+<A HREF="GNU_Gettext_GettextResourceSet.html" TARGET="contents">GNU.Gettext.GettextResourceSet Class</A>, <A HREF="GNU_Gettext.html" TARGET="members">GNU.Gettext Namespace</A>
+</BLOCKQUOTE>
+
+<HR>
+
+<A NAME="GettextResourceSet%28System.String%29%20Constructor"><H3>GettextResourceSet(System.String) Constructor</H3>
+
+<BLOCKQUOTE>
+<TABLE COLS="1" ROWS="1" WIDTH="100%">
+<TR><TD BGCOLOR="#C0C0C0"><PRE>public GettextResourceSet(System.String fileName);</PRE></TD></TR>
+</TABLE>
+</BLOCKQUOTE>
+
+<H4>Summary</H4>
+
+<BLOCKQUOTE>
+
+Creates a new message catalog, by reading the string/value pairs from
+the file with the given <I>fileName</I>. The file should
+be in the format of a <CODE>.resources</CODE> file. The message catalog will
+not support plural forms.
+</BLOCKQUOTE>
+
+<H4>See Also</H4>
+
+<BLOCKQUOTE>
+<A HREF="GNU_Gettext_GettextResourceSet.html" TARGET="contents">GNU.Gettext.GettextResourceSet Class</A>, <A HREF="GNU_Gettext.html" TARGET="members">GNU.Gettext Namespace</A>
+</BLOCKQUOTE>
+
+<HR>
+
+<A NAME="GettextResourceSet.GetPluralString%20Method"><H3>GettextResourceSet.GetPluralString Method</H3>
+
+<BLOCKQUOTE>
+<TABLE COLS="1" ROWS="1" WIDTH="100%">
+<TR><TD BGCOLOR="#C0C0C0"><PRE>public virtual System.String GetPluralString(System.String msgid, System.String msgidPlural, long n);</PRE></TD></TR>
+</TABLE>
+</BLOCKQUOTE>
+
+<H4>Summary</H4>
+
+<BLOCKQUOTE>
+
+Returns the translation of <I>msgid</I> and
+<I>msgidPlural</I>, choosing the right plural form
+depending on the number <I>n</I>.
+</BLOCKQUOTE>
+
+<H4>Parameters</H4>
+
+<BLOCKQUOTE>
+<DL>
+<DT>msgid</DT>
+<DD>the key string to be translated, an ASCII
+                    string</DD>
+<DT>msgidPlural</DT>
+<DD>the English plural of <I>msgid</I>,
+                          an ASCII string</DD>
+<DT>n</DT>
+<DD>the number, should be &gt;= 0</DD>
+</DL>
+</BLOCKQUOTE>
+
+<H4>Return Value</H4>
+
+<BLOCKQUOTE>
+the translation, or <CODE>null</CODE> if none is found
+</BLOCKQUOTE>
+
+<H4>See Also</H4>
+
+<BLOCKQUOTE>
+<A HREF="GNU_Gettext_GettextResourceSet.html" TARGET="contents">GNU.Gettext.GettextResourceSet Class</A>, <A HREF="GNU_Gettext.html" TARGET="members">GNU.Gettext Namespace</A>
+</BLOCKQUOTE>
+
+<HR>
+
+<A NAME="GettextResourceSet.GetString%28System.String%29%20Method"><H3>GettextResourceSet.GetString(System.String) Method</H3>
+
+<BLOCKQUOTE>
+<TABLE COLS="1" ROWS="1" WIDTH="100%">
+<TR><TD BGCOLOR="#C0C0C0"><PRE>public override System.String GetString(System.String msgid);</PRE></TD></TR>
+</TABLE>
+</BLOCKQUOTE>
+
+<H4>Summary</H4>
+
+<BLOCKQUOTE>
+
+Returns the translation of <I>msgid</I>.
+</BLOCKQUOTE>
+
+<H4>Parameters</H4>
+
+<BLOCKQUOTE>
+<DL>
+<DT>msgid</DT>
+<DD>the key string to be translated, an ASCII
+                    string</DD>
+</DL>
+</BLOCKQUOTE>
+
+<H4>Return Value</H4>
+
+<BLOCKQUOTE>
+the translation of <I>msgid</I>, or <CODE>null</CODE> if
+         none is found
+</BLOCKQUOTE>
+
+<H4>See Also</H4>
+
+<BLOCKQUOTE>
+<A HREF="GNU_Gettext_GettextResourceSet.html" TARGET="contents">GNU.Gettext.GettextResourceSet Class</A>, <A HREF="GNU_Gettext.html" TARGET="members">GNU.Gettext Namespace</A>
+</BLOCKQUOTE>
+
+<HR>
+
+<A NAME="GettextResourceSet.GetString%28System.String%2C%20bool%29%20Method"><H3>GettextResourceSet.GetString(System.String, bool) Method</H3>
+
+<BLOCKQUOTE>
+<TABLE COLS="1" ROWS="1" WIDTH="100%">
+<TR><TD BGCOLOR="#C0C0C0"><PRE>public override System.String GetString(System.String msgid, bool ignoreCase);</PRE></TD></TR>
+</TABLE>
+</BLOCKQUOTE>
+
+<H4>Summary</H4>
+
+<BLOCKQUOTE>
+
+Returns the translation of <I>msgid</I>, with possibly
+case-insensitive lookup.
+</BLOCKQUOTE>
+
+<H4>Parameters</H4>
+
+<BLOCKQUOTE>
+<DL>
+<DT>msgid</DT>
+<DD>the key string to be translated, an ASCII
+                    string</DD>
+</DL>
+</BLOCKQUOTE>
+
+<H4>Return Value</H4>
+
+<BLOCKQUOTE>
+the translation of <I>msgid</I>, or <CODE>null</CODE> if
+         none is found
+</BLOCKQUOTE>
+
+<H4>See Also</H4>
+
+<BLOCKQUOTE>
+<A HREF="GNU_Gettext_GettextResourceSet.html" TARGET="contents">GNU.Gettext.GettextResourceSet Class</A>, <A HREF="GNU_Gettext.html" TARGET="members">GNU.Gettext Namespace</A>
+</BLOCKQUOTE>
+
+<HR>
+
+<A NAME="GettextResourceSet.PluralEval%20Method"><H3>GettextResourceSet.PluralEval Method</H3>
+
+<BLOCKQUOTE>
+<TABLE COLS="1" ROWS="1" WIDTH="100%">
+<TR><TD BGCOLOR="#C0C0C0"><PRE>protected virtual long PluralEval(long n);</PRE></TD></TR>
+</TABLE>
+</BLOCKQUOTE>
+
+<H4>Summary</H4>
+
+<BLOCKQUOTE>
+
+Returns the index of the plural form to be chosen for a given number.
+The default implementation is the Germanic plural formula:
+zero for <I>n</I> == 1, one for <I>n</I> != 1.
+</BLOCKQUOTE>
+
+<H4>See Also</H4>
+
+<BLOCKQUOTE>
+<A HREF="GNU_Gettext_GettextResourceSet.html" TARGET="contents">GNU.Gettext.GettextResourceSet Class</A>, <A HREF="GNU_Gettext.html" TARGET="members">GNU.Gettext Namespace</A>
+</BLOCKQUOTE>
+
+<HR>
+
+<A NAME="GettextResourceSet.Keys%20Property"><H3>GettextResourceSet.Keys Property</H3>
+
+<BLOCKQUOTE>
+<TABLE COLS="1" ROWS="1" WIDTH="100%">
+<TR><TD BGCOLOR="#C0C0C0"><PRE>public virtual System.Collections.ICollection Keys { get; }</PRE></TD></TR>
+</TABLE>
+</BLOCKQUOTE>
+
+<H4>Summary</H4>
+
+<BLOCKQUOTE>
+
+Returns the keys of this resource set, i.e. the strings for which
+<CODE>GetObject()</CODE> can return a non-null value.
+</BLOCKQUOTE>
+
+<H4>See Also</H4>
+
+<BLOCKQUOTE>
+<A HREF="GNU_Gettext_GettextResourceSet.html" TARGET="contents">GNU.Gettext.GettextResourceSet Class</A>, <A HREF="GNU_Gettext.html" TARGET="members">GNU.Gettext Namespace</A>
+</BLOCKQUOTE>
+
+</BODY>
+</HTML>

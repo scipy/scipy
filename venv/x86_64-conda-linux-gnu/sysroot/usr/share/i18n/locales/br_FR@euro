@@ -1,0 +1,83 @@
+comment_char %
+escape_char  /
+%
+% Breton Language Locale for France with Euro
+% Language: br
+% Territory: FR
+% Option: euro
+% Date: 2000-08-20
+% Users: general
+% Charset: ISO-8859-15
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title      "Breton locale for France with Euro"
+source     "Free Software Foundation, Inc."
+address    "59 Temple Place - Suite 330, Boston, MA 02111-1307, USA"
+email      "bug-glibc-locales@gnu.org"
+tel        ""
+fax        ""
+language   "Breton"
+territory  "France"
+revision   "1.0"
+date       "2002-02-28"
+%
+category  "br_FR@euro:2000";LC_IDENTIFICATION
+category  "br_FR@euro:2000";LC_CTYPE
+category  "br_FR@euro:2000";LC_COLLATE
+category  "br_FR@euro:2000";LC_TIME
+category  "br_FR@euro:2000";LC_NUMERIC
+category  "br_FR@euro:2000";LC_MONETARY
+category  "br_FR@euro:2000";LC_MESSAGES
+category  "br_FR@euro:2000";LC_PAPER
+category  "br_FR@euro:2000";LC_NAME
+category  "br_FR@euro:2000";LC_ADDRESS
+category  "br_FR@euro:2000";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_CTYPE
+copy "br_FR"
+END LC_CTYPE
+
+LC_COLLATE
+% Copy the template from ISO/IEC 14651
+copy "iso14651_t1"
+END LC_COLLATE
+
+LC_MESSAGES
+copy "br_FR"
+END LC_MESSAGES
+
+LC_MONETARY
+copy "br_FR"
+END LC_MONETARY
+
+LC_NUMERIC
+copy "br_FR"
+END LC_NUMERIC
+
+LC_TIME
+copy "br_FR"
+END LC_TIME
+
+LC_PAPER
+copy "br_FR"
+END LC_PAPER
+
+LC_TELEPHONE
+copy "br_FR"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+copy "br_FR"
+END LC_MEASUREMENT
+
+LC_NAME
+copy "br_FR"
+END LC_NAME
+
+LC_ADDRESS
+copy "br_FR"
+END LC_ADDRESS

@@ -1,0 +1,200 @@
+.\" Copyright (C) 2001, 2002, 2003, 2006, 2008 Silicon Graphics, Inc.
+.\" All rights reserved.
+.\"
+.\" This is free documentation; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License as
+.\" published by the Free Software Foundation; either version 2 of
+.\" the License, or (at your option) any later version.
+.\"
+.\" The GNU General Public License's references to "object code"
+.\" and "executables" are to be interpreted as the output of any
+.\" document formatting or typesetting system, including
+.\" intermediate and printed output.
+.\"
+.\" This manual is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public
+.\" License along with this manual.  If not, see
+.\" <http://www.gnu.org/licenses/>.
+.\"
+.TH ATTR_GET 3 "Extended Attributes" "Dec 2001" "XFS Compatibility API"
+.SH NAME
+attr_get, attr_getf \- get the value of a user attribute of a filesystem object
+.SH C SYNOPSIS
+.PP
+.sp
+.nf
+.B #include <attr/attributes.h>
+.sp
+.B "int attr_get (const char *\f2path\f3, const char *\f2attrname\f3, "
+.B "              char *\f2attrvalue\f3, int *\f2valuelength\f3, int \f2flags\f3);"
+.PP
+.B "int attr_getf (int \f2fd\f3, const char *\f2attrname\f3, "
+.B "               char *\f2attrvalue\f3, int *\f2valuelength\f3, int \f2flags\f3);"
+.Op
+.SH DESCRIPTION
+The
+.B attr_get
+and
+.B attr_getf
+functions provide a way to retrieve the value of an attribute.
+.P
+.I Path\^
+points to a path name for a filesystem object, and
+.I fd\^
+refers to the file descriptor associated with a file.
+If the attribute
+.I attrname
+exists, the value associated with it will be copied into the
+.I attrvalue
+buffer.
+The
+.I valuelength
+argument is an input/output argument that on the call to
+.B attr_get
+should contain the maximum size of attribute value the
+process is willing to accept.
+On return, the
+.I valuelength
+will have been modified to show the actual size of the
+attribute value returned.
+The
+.I flags
+argument can contain the following symbols bitwise OR'ed together:
+.TP
+.SM
+\%ATTR_ROOT
+Look for
+.I attrname
+in the
+.B root
+address space, not in the
+.B user
+address space.
+(limited to use by super-user only)
+.TP
+.SM
+\%ATTR_DONTFOLLOW
+Do not follow symbolic links when resolving a
+.I path
+on an
+.B attr_get
+function call.
+The default is to follow symbolic links.
+.PP
+.B attr_get
+will fail if one or more of the following are true:
+.TP 17
+.SM
+\%[ENOATTR]
+The attribute name given is not associated with the indicated
+filesystem object.
+.TP
+.SM
+\%[E2BIG]
+The value of the given attribute is too large to fit into the buffer.
+The integer that the
+.I valuelength
+argument points to has been modified to show the actual number
+of bytes that would be required to store the value of that attribute.
+.TP
+.SM
+\%[ENOENT]
+The named file does not exist.
+.TP
+.SM
+\%[EPERM]
+The effective user
+.SM ID
+does not match the owner of the file and the effective user
+.SM ID
+is not super-user.
+.TP
+.SM
+\%[ENOTDIR]
+A component of the path prefix is not a directory.
+.TP
+.SM
+\%[EACCES]
+Search permission is denied on a component of the path prefix.
+.TP
+.SM
+\%[EINVAL]
+A bit was set in the
+.I flag
+argument that is not defined for this system call.
+.TP
+.SM
+\%[EFAULT]
+.I Path,
+.I attrname,
+.I attrvalue,
+or
+.I valuelength
+points outside the allocated address space of the process.
+.TP
+.SM
+\%[ELOOP]
+A path name lookup involved too many symbolic links.
+.TP
+.SM
+\%[ENAMETOOLONG]
+The length of
+.I path
+exceeds
+.SM
+.RI { MAXPATHLEN },
+or a pathname component is longer than
+.SM
+.RI { MAXNAMELEN }.
+.PP
+.B attr_getf\^
+will fail if:
+.TP 15
+.SM
+\%[ENOATTR]
+The attribute name given is not associated with the indicated
+filesystem object.
+.TP
+.SM
+\%[E2BIG]
+The value of the given attribute is too large to fit into the buffer.
+The integer that the
+.I valuelength
+argument points to has been modified to show the actual number
+of bytes that would be required to store the value of that attribute.
+.TP
+.SM
+\%[EINVAL]
+A bit was set in the
+.I flag
+argument that is not defined for this system call,
+or
+.I fd\^
+refers to a socket, not a file.
+.TP
+.SM
+\%[EFAULT]
+.I Attrname,
+.I attrvalue,
+or
+.I valuelength
+points outside the allocated address space of the process.
+.TP
+.SM
+\%[EBADF]
+.I Fd\^
+does not refer to a valid descriptor.
+.SH "DIAGNOSTICS"
+On success, zero is returned.  On error, \-1 is returned, and
+.I errno
+is set appropriately.
+.SH "SEE ALSO"
+.BR attr (1),
+.BR attr_list (3),
+.BR attr_multi (3),
+.BR attr_remove (3),
+.BR attr_set (3)

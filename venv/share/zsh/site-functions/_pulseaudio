@@ -1,0 +1,755 @@
+#compdef pulseaudio pactl pacmd pacat paplay parec parecord padsp pasuspender
+
+_set_remote() {
+    for (( i = 0; i < ${#words[@]}; i++ )) do
+        if [[ ${words[$i]} == -s || ${words[$i]} == --server ]]; then
+            remote="-s ${words[$i+1]}"
+            break;
+        elif [[ ${words[$i]} == --server=* ]]; then
+            remote=${words[$i]}
+        fi
+    done
+}
+
+_devices() {
+    local -a _device_list
+    local cmd _device _device_description
+
+    if [[ $service == pactl  || $service == pacmd ]]; then
+        case $words[$((CURRENT - 1))] in
+            set-sink-input-*) cmd=('sink-inputs');;
+            set-sink-*) cmd=('sinks');;
+            set-default-sink) cmd=('sinks');;
+            set-default-source) cmd=('sources');;
+            set-source-output-*) cmd=('source-outputs');;
+            set-source-*) cmd=('sources');;
+            suspend-sink) cmd=('sinks');;
+            suspend-source) cmd=('sources');;
+            move-sink-input) cmd=('sink-inputs');;
+            move-source-output) cmd=('source-outputs');;
+            kill-sink-input) cmd=('sink-inputs');;
+            kill-source-output) cmd=('source-outputs');;
+        esac
+
+        case $words[$((CURRENT - 2))] in
+            move-sink-input) cmd=('sinks');;
+            move-source-output) cmd=('sources');;
+            play-sample) cmd=('sinks');;
+        esac
+
+    elif [[ $service == (pacat|paplay|parec|parecord) ]]; then
+        case $words[$((CURRENT))] in
+            --device=*)
+                if [[ $words == *(--playback|-p)[[:space:]]* ||
+                    $service == paplay ]]; then
+                    cmd=('sinks')
+                elif [[ $words == *(--record|-r)[[:space:]]* ||
+                    $service == (parec|parecord) ]]; then
+                    cmd=('sources')
+                else
+                    cmd=('sinks' 'sources')
+                fi
+                ;;
+            --monitor-stream=*) cmd=('sink-inputs');;
+        esac
+
+        case $words[$((CURRENT - 1))] in
+            -d)
+                if [[ $words == *(--playback|-p)[[:space:]]* ||
+                    $service == paplay ]]; then
+                    cmd=('sinks')
+                elif [[ $words == *(--record|-r)[[:space:]]* ||
+                    $service == (parec|parecord) ]]; then
+                    cmd=('sources')
+                else
+                    cmd=('sinks' 'sources')
+                fi
+                ;;
+        esac
+
+    fi
+
+    for target in $cmd; do
+        for device_info in ${(ps:\n\n:)"$(_call_program device_tag "pactl $remote list $target 2> /dev/null")"}; do
+            for line in ${(f)device_info}; do
+                if [[ $target == (sink-inputs|source-outputs) ]]; then
+                    if [[ $line == (Sink*Input|Source*Output)* ]]; then
+                        _device=${line#*\#}
+                    elif [[ $line == *application.name* ]]; then
+                        _device_description=${line#*= }
+                    fi
+
+                else
+                    if [[ $words[$((CURRENT - 1))] == *set-sink-formats* ]]; then
+                        if [[ $line == Sink* ]]; then
+                            _device=${line#*\#}
+                        elif [[ $line == *Description:* ]]; then
+                            _device_description=${line#*: }
+                        fi
+
+                    else
+                        if [[ $line == *Name:* ]]; then
+                            _device=${line#*: }
+                        elif [[ $line == *Description:* ]]; then
+                            _device_description=${line#*: }
+                        fi
+                    fi
+                fi
+            done
+            _device_list+=($_device:$_device_description)
+        done
+    done
+
+    _describe 'device list' _device_list
+}
+
+_profiles() {
+    local -a _profile_list
+    local _current_card _raw_profiles _profile_name _profile_description
+
+    _current_card=$words[$((CURRENT - 1))]
+
+    for card in ${(ps:\n\n:)"$(_call_program profiles_tag "pactl $remote list cards 2> /dev/null")"}; do
+        if [[ $card == *$_current_card* ]]; then
+            _raw_profiles=${card##*Profiles:}
+            _raw_profiles=${_raw_profiles%%Active Profile:*}
+            for profile in ${(f)_raw_profiles}; do
+                if [[ $profile != [[:blank:]] ]]; then
+                    _profile_name=${profile%%: *}
+                    _profile_name=${_profile_name//[[:blank:]]/}
+                    _profile_name=${_profile_name//:/\\:}
+                    _profile_description=${profile#*: }
+                    _profile_list+=($_profile_name:$_profile_description)
+                fi
+            done
+        fi
+    done
+
+    _describe 'profile list' _profile_list
+}
+
+_ports() {
+    local -a _port_list
+    local _raw_ports _port_name _port_description _current_device
+
+    case $words[$((CURRENT - 2))] in
+        set-sink-port) cmd="sinks";;
+        set-source-port) cmd="sources";;
+        set-port-latency-offset) cmd="cards";;
+    esac
+
+    _current_device=$words[$((CURRENT - 1))]
+
+    for device in ${(ps:\n\n:)"$(_call_program port_tag "pactl $remote list $cmd 2> /dev/null")"}; do
+        if [[ $device == *Ports:* && $device == *$_current_device* ]]; then
+            _raw_ports=${device##*Ports:}
+            _raw_ports=${_raw_ports%%Active Port:*}
+            for line in ${(f)_raw_ports}; do
+                if [[ $line != [[:blank:]] &&
+                    $line != (*Part?of*|*Properties:*|*device.icon_name*) ]]; then
+                    _port_name=${line%%: *}
+                    _port_name=${_port_name##[[:blank:]]#}
+                    _port_description=${line#*: }
+                    _port_list+=($_port_name:$_port_description)
+                fi
+            done
+        fi
+    done
+
+    _describe 'port list' _port_list
+}
+
+_sample_names() {
+    local -a _sample_names
+    sample_names=(${${${(f)"$(_call_program samples_tag "pactl $remote list samples short 2> /dev/null")"}##[[:digit:]]#[[:blank:]]#}%%[[:blank:]]*})
+
+    _wanted pactl-samples expl 'sample list' compadd $sample_names
+}
+
+_cards(){
+    local -a _card_list
+    local _card _cad_name
+
+    for card_info in ${(ps:\n\n:)"$(_call_program card_tag "pactl $remote list cards 2> /dev/null")"}; do
+        for line in ${(f)card_info}; do
+            if [[ $line == *Name:* ]]; then
+                _card=${line#*: }
+            elif [[ $line == *alsa.long_card_name* ]]; then
+                _card_name=${line#*= \"}
+                _card_name=${_card_name%at*}
+            fi
+        done
+        _card_list+=($_card:$_card_name)
+    done
+
+    _describe 'card list' _card_list
+}
+
+_all_modules(){
+    local -a _all_modules_list
+    for module in ${(f)"$(_call_program modules_tag "pulseaudio --dump-modules 2> /dev/null")"}; do
+        _all_modules_list+=${module%% *}
+    done
+    _describe 'module list' _all_modules_list
+}
+
+_loaded_modules(){
+    local -a _loaded_modules_list
+
+    for module in ${(f)"$(_call_program modules_tag "pactl $remote list modules short 2> /dev/null")"}; do
+        _loaded_modules_list+=(${${(ps:\t:)module}[1]}:${${(ps:\t:)module}[2]})
+    done
+    _describe 'module list' _loaded_modules_list
+}
+
+_resample_methods() {
+    local -a _resample_method_list
+    for method in ${(f)"$(_call_program modules_tag "pulseaudio --dump-resample-methods 2> /dev/null")"}; do
+        _resample_method_list+=$method
+    done
+    _describe 'resample method list' _resample_method_list
+}
+
+_clients() {
+    local -a _client_list
+    local _client _client_description
+
+    for client_info in ${(ps:\n\n:)"$(_call_program clients_tag "pactl $remote list clients 2> /dev/null")"}; do
+        for line in ${(f)client_info}; do
+            if [[ $line == Client[[:space:]]#* ]]; then
+                _client=${line#*\#}
+            elif [[ $line == *application.name* ]]; then
+                _client_description=${line#*=}
+            fi
+        done
+        _client_list+=($_client:$_client_description)
+    done
+    _describe 'client list' _client_list
+}
+
+_pacat_file_formats() {
+    local -a _file_format_list
+    for format in ${(f)"$(_call_program fformats_tag "pacat --list-file-formats")"}; do
+        _file_format_list+=(${${(ps:\t:)format}[1]}:${${(ps:\t:)format}[2]})
+    done
+    _describe 'file format list' _file_format_list
+}
+
+_pactl_completion() {
+    _set_remote
+
+    _pactl_command(){
+        local -a _pactl_commands
+
+        _pactl_commands=(
+            'help: show help and exit'
+            'stat: dump statistics about the PulseAudio daemon'
+            'info: dump info about the PulseAudio daemon'
+            'list: list modules/sources/streams/cards etc...'
+            'exit: ask the PulseAudio daemon to exit'
+            'upload-sample: upload a sound from a file into the sample cache'
+            'play-sample: play the specified sample from the sample cache'
+            'remove-sample: remove the specified sample from the sample cache'
+            'load-module: load a module'
+            'unload-module: unload a module'
+            'move-sink-input: move a stream to a sink'
+            'move-source-output: move a recording stream to a source'
+            'suspend-sink: suspend or resume a sink'
+            'suspend-source: suspend or resume a source'
+            'set-card-profile: set a card profile'
+            'set-default-sink: set the default sink'
+            'set-default-source: set the default source'
+            'set-sink-port: set the sink port of a sink'
+            'set-source-port: set the source port of a source'
+            'set-port-latency-offset: set a latency offset on a port'
+            'set-sink-volume: set the volume of a sink'
+            'set-source-volume: set the volume of a source'
+            'set-sink-input-volume: set the volume of a stream'
+            'set-source-output-volume: set the volume of a recording stream'
+            'set-sink-mute: mute a sink'
+            'set-source-mute: mute a source'
+            'set-sink-input-mute: mute a stream'
+            'set-source-output-mute: mute a recording stream'
+            'set-sink-formats: set supported formats of a sink'
+            'send-message: send a message to a pulseaudio object'
+            'subscribe: subscribe to events'
+        )
+
+        _describe 'pactl commands' _pactl_commands
+    }
+
+    _pactl_command_parameter() {
+        local _command
+
+        _list_parameter() {
+            local -a _objects;
+
+            _objects=(
+                'modules: list loaded modules'
+                'sinks: list available sinks'
+                'sources: list available sources'
+                'sink-inputs: list connected sink inputs'
+                'source-outputs: list connected source outputs'
+                'clients: list connected clients'
+                'samples: list samples'
+                'cards: list available cards'
+                'message-handlers: list available message-handlers'
+            )
+
+            if ((CURRENT == 2)); then
+                # We're completing the first parameter after "list".
+                # "pactl list cards short" and "pactl list short cards" are
+                # treated as equivalent by pactl, but here we only support the
+                # first form, so "short" isn't a valid completion.
+                _describe 'objects' _objects
+            elif ((CURRENT == 3)); then
+                # We're completing the second parameter after "list". As
+                # explained in the previous comment, we only support the
+                # "pactl list cards short" form, so "short" is the only valid
+                # completion here.
+                compadd short
+            fi
+        }
+
+        _play_sample_parameter() {
+            if ((CURRENT == 2)); then
+                # We're completing the first parameter after "play-sample".
+                _sample_names
+            elif ((CURRENT == 3)); then
+                # We're completing the second parameter after "play-sample".
+                _devices
+            fi
+        }
+
+        _load_module_parameter() {
+            if ((CURRENT == 2)); then
+                # We're completing the first parameter after "load-module".
+                _all_modules
+            else
+                # We're completing the second or later parameter after
+                # "load-module", i.e. the module arguments.
+                # TODO: Implement module argument completion.
+            fi
+        }
+
+        _move_sink_input_parameter() {
+            if ((CURRENT == 2)); then
+                # We're completing the first parameter after "move-sink-input".
+                # Even though the function name is "_devices", it actually
+                # completes the sink input index. _devices is magical like
+                # that.
+                _devices
+            elif ((CURRENT == 3)); then
+                # We're completing the second parameter after
+                # "move-sink-input".
+                _devices
+            fi
+        }
+
+        _move_source_output_parameter() {
+            if ((CURRENT == 2)); then
+                # We're completing the first parameter after
+                # "move-source-output". Even though the function name is
+                # "_devices", it actually completes the source output index.
+                # _devices is magical like that.
+                _devices
+            elif ((CURRENT == 3)); then
+                # We're completing the second parameter after
+                # "move-source-output".
+                _devices
+            fi
+        }
+
+        _suspend_sink_parameter() {
+            if ((CURRENT == 2)); then
+                # We're completing the first parameter after "suspend-sink".
+                _devices
+            elif ((CURRENT == 3)); then
+                # We're completing the second parameter after "suspend-sink".
+                compadd true false
+            fi
+        }
+
+        _suspend_source_parameter() {
+            if ((CURRENT == 2)); then
+                # We're completing the first parameter after "suspend-source".
+                _devices
+            elif ((CURRENT == 3)); then
+                # We're completing the second parameter after "suspend-source".
+                compadd true false
+            fi
+        }
+
+        _set_card_profile_parameter() {
+            if ((CURRENT == 2)); then
+                # We're completing the first parameter after
+                # "set-card-profile".
+                _cards
+            elif ((CURRENT == 3)); then
+                # We're completing the second parameter after
+                # "set-card-profile".
+                _profiles
+            fi
+        }
+
+        _set_sink_port_parameter() {
+            if ((CURRENT == 2)); then
+                # We're completing the first parameter after "set-sink-port".
+                _devices
+            elif ((CURRENT == 3)); then
+                # We're completing the second parameter after "set-sink-port".
+                _ports
+            fi
+        }
+
+        _set_source_port_parameter() {
+            if ((CURRENT == 2)); then
+                # We're completing the first parameter after "set-source-port".
+                _devices
+            elif ((CURRENT == 3)); then
+                # We're completing the second parameter after
+                # "set-source-port".
+                _ports
+            fi
+        }
+
+        _set_sink_mute_parameter() {
+            if ((CURRENT == 2)); then
+                # We're completing the first parameter after "set-sink-mute".
+                _devices
+            elif ((CURRENT == 3)); then
+                # We're completing the second parameter after "set-sink-mute".
+                compadd true false toggle
+            fi
+        }
+
+        _set_source_mute_parameter() {
+            if ((CURRENT == 2)); then
+                # We're completing the first parameter after "set-source-mute".
+                _devices
+            elif ((CURRENT == 3)); then
+                # We're completing the second parameter after
+                # "set-source-mute".
+                compadd true false toggle
+            fi
+        }
+
+        _set_sink_input_mute_parameter() {
+            if ((CURRENT == 2)); then
+                # We're completing the first parameter after
+                # "set-sink-input-mute". Even though the function name is
+                # "_devices", it actually completes the sink input index.
+                # _devices is magical like that.
+                _devices
+            elif ((CURRENT == 3)); then
+                # We're completing the second parameter after
+                # "set-sink-input-mute".
+                compadd true false toggle
+            fi
+        }
+
+        _set_source_output_mute_parameter() {
+            if ((CURRENT == 2)); then
+                # We're completing the first parameter after
+                # "set-source-output-mute". Even though the function name is
+                # "_devices", it actually completes the source output index.
+                # _devices is magical like that.
+                _devices
+            elif ((CURRENT == 3)); then
+                # We're completing the second parameter after
+                # "set-source-output-mute".
+                compadd true false toggle
+            fi
+        }
+
+        _set_port_latency_offset_parameter() {
+            if ((CURRENT == 2)); then
+                # We're completing the first parameter after
+                # "set-port-latency-offset".
+                _cards
+            elif ((CURRENT == 3)); then
+                # We're completing the second parameter after
+                # "set-port-latency-offset".
+                _ports
+            fi
+        }
+
+        _command=$words[1]
+
+        case $_command in
+            list)                                  _list_parameter;;
+            upload-sample)                         if ((CURRENT == 2)); then _files; fi;;
+            play-sample)                           _play_sample_parameter;;
+            remove-sample)                         if ((CURRENT == 2)); then _sample_names; fi;;
+            load-module)                           _load_module_parameter;;
+            unload-module)                         if ((CURRENT == 2)); then _loaded_modules; fi;;
+            move-sink-input)                       _move_sink_input_parameter;;
+            move-source-output)                    _move_source_output_parameter;;
+            suspend-sink)                          _suspend_sink_parameter;;
+            suspend-source)                        _suspend_source_parameter;;
+            set-card-profile)                      _set_card_profile_parameter;;
+            set-default-sink)                      if ((CURRENT == 2)); then _devices; fi;;
+            set-default-source)                    if ((CURRENT == 2)); then _devices; fi;;
+            set-sink-port)                         _set_sink_port_parameter;;
+            set-source-port)                       _set_source_port_parameter;;
+            set-sink-volume)                       if ((CURRENT == 2)); then _devices; fi;;
+            set-source-volume)                     if ((CURRENT == 2)); then _devices; fi;;
+            set-sink-input-volume)                 if ((CURRENT == 2)); then _devices; fi;;
+            set-source-output-volume)              if ((CURRENT == 2)); then _devices; fi;;
+            set-sink-mute)                         _set_sink_mute_parameter;;
+            set-source-mute)                       _set_source_mute_parameter;;
+            set-sink-input-mute)                   _set_sink_input_mute_parameter;;
+            set-source-output-mute)                _set_source_output_mute_parameter;;
+            set-sink-formats)                      if ((CURRENT == 2)); then _devices; fi;;
+            set-port-latency-offset)               _set_port_latency_offset_parameter;;
+        esac
+    }
+
+    _arguments -C -S -A '-*' \
+        {-h,--help}'[display help and exit]' \
+        '--version[show version and exit]' \
+        {-s,--server=}'[name of server to connect to]:host:_hosts' \
+        {-n,--client-name=}'[client name to use]:name' \
+        '::pactl command:_pactl_command' \
+        '*::pactl command parameter:_pactl_command_parameter'
+}
+
+_pacmd_completion() {
+    _pacmd_command(){
+        _pacmd_commands=(
+            'help: show help and exit'
+            'list-modules: list modules'
+            'list-cards: list cards'
+            'list-sinks: list sinks'
+            'list-sources: list sources'
+            'list-clients: list clients'
+            'list-sink-inputs: list sink-inputs'
+            'list-source-outputs: list source-outputs'
+            'stat: dump statistics about the PulseAudio daemon'
+            'info: dump info about the PulseAudio daemon'
+            'load-module: load a module'
+            'unload-module: unload a module'
+            'describe-module: print info for a module'
+            'set-sink-volume: set the volume of a sink'
+            'set-source-volume: set the volume of a source'
+            'set-sink-mute: mute a sink'
+            'set-source-mute: mute a source'
+            'set-sink-input-volume: set the volume of a stream'
+            'set-source-output-volume: set the volume of a recording stream'
+            'set-sink-input-mute: mute a stream'
+            'set-source-output-mute: mute a recording stream'
+            'set-default-sink: set the default sink'
+            'set-default-source: set the default source'
+            'set-card-profile: set a card profile'
+            'set-sink-port: set the sink port of a sink'
+            'set-source-port: set the source port of a source'
+            'set-port-latency-offset: set a latency offset on a port'
+            'suspend-sink: suspend or resume a sink'
+            'suspend-source: suspend or resume a source'
+            'suspend: suspend all sinks and sources'
+            'move-sink-input: move a stream to a sink'
+            'move-source-output: move a recording stream to a source'
+            'update-sink-proplist: update the properties of a sink'
+            'update-source-proplist: update the properties of a source'
+            'update-sink-input-proplist: update the properties of a sink-input'
+            'update-source-output-proplist: update the properties of a source-output'
+            'list-samples: list samples'
+            'play-sample: play the specified sample from the sample cache' # TODO
+            'remove-sample: remove the specified sample from the sample cache' # TODO
+            'load-sample: upload a sound from a file into the sample cache'
+            'load-sample-lazy: lazily upload a sound file into the sample cache'
+            'load-sample-dir-lazy: lazily upload all sound files in a directory into the sample cache'
+            'kill-client: kill a client'
+            'kill-sink-input: kill a sink input'
+            'kill-source-output: kill a source output'
+            'set-log-target: change the log target'
+            'set-log-level: change the log level'
+            'set-log-meta: show source code location in log messages'
+            'set-log-time: show timestamps in log messages'
+            'set-log-backtrace: show backtrace in log messages'
+            'play-file: play a sound file'
+            'dump: show daemon configuration'
+            'dump-volumes: show the state of all volumes'
+            'shared: show shared properties'
+            'send-message: send a message to a pulseaudio object'
+            'exit: ask the PulseAudio daemon to exit'
+        )
+        _describe 'pacmd commands' _pacmd_commands
+    }
+
+    _arguments -C -S -A "-*" \
+        {-h,--help}'[display help and exit]' \
+        '--version[show version and exit]' \
+        '::pacmd commands:_pacmd_command' \
+
+    case $words[$((CURRENT - 1))] in
+        set-card-profile) _cards;;
+        set-sink-*) _devices;;
+        set-source-*) _devices;;
+        load-module) _all_modules;;
+        describe-module) _all_modules;;
+        unload-module) _loaded_modules;;
+        suspend-*) _devices;;
+        move-*) _devices;;
+        set-port-latency-offset) _cards;;
+        load-sample*) _files;;
+        kill-client) _clients;;
+        kill-(sink|source)-*) _devices;;
+        set-log-target) compadd null auto syslog stderr file:;;
+        set-log-*) compadd true false;;
+        play-file) _files;;
+    esac
+
+    case $words[$((CURRENT - 2))] in
+        set-card-profile) _profiles;;
+        set-(sink|source)-port) _ports;;
+        set-port-latency-offset) _ports;;
+        set-*-mute) compadd true false;;
+        suspend-*) compadd true false;;
+        move-*) _devices;;
+    esac
+}
+
+_pasuspender_completion() {
+    # parenthesis expressions specify which options should not get suggested afterwards
+    # e.g. after -s, help and version will not get suggested, -- remains the only valid argument
+    # after "--" external commands get suggested
+    _arguments -C \
+        '(-)'{-h,--help}'[display help and exit]' \
+        '(-)--version[show version and exit]' \
+        '(-h --help --version -s --server)'{-s,--server=}'[name of server to connect to]:host:_hosts' \
+        '(-)--[program]:program: _command_names -e' && return 0
+    # check if "--" is one of the words in the command line
+    # if so, ${words[(i)--]} is the position of "--"
+    # shift the arguments and reduce CURRENT, such that further completions see only what follows "--"
+    if [[ ${words[(r)--]} == "--" ]]; then
+        for ((j = ${words[(i)--]}; j > 0; j--));
+        do
+            shift words
+            (( CURRENT-- ))
+        done
+        # proceed with normal completion
+        _normal
+    fi
+}
+
+_padsp_completion() {
+    _arguments -C -S -A "-*" \
+        '-h[display help and exit]' \
+        '-s[name of server to connect to]:host:_hosts' \
+        '-n[client name to use]:name:' \
+        '-m[stream name to use]:name:' \
+        '-M[disable /dev/mixer emulation]' \
+        '-S[disable /dev/sndstat emulation]' \
+        '-D[disable /dev/dsp emulation]' \
+        '-d[enable debug output]' \
+        '--[disable further command line parsing]' \
+}
+
+# TODO channel map completion
+_pacat_completion() {
+    _set_remote
+
+    _pacat_sample_formats=('s16le' 's16be' 'u8' 'float32le' 'float32be'
+        'ulaw' 'alaw' 's32le' 's32be' 's24le' 's24-32le' 's24-32be')
+
+    _arguments -C -S -A "-*" \
+        {-h,--help}'[display this help and exit]' \
+        '--version[show version and exit]' \
+        {-r,--record}'[create a connection for recording]' \
+        {-p,--playback}'[create a connection for playback]' \
+        {-s,--server=}'[name of server to connect to]:host:_hosts' \
+        {-d,--device=}'[name of sink/source to connect to]:device:_devices' \
+        '--monitor-stream=[index of the sink input to record from]:device:_devices' \
+        {-n,--client-name=}'[client name to use]:name' \
+        '--stream-name=[how to call this stream]:name' \
+        '--volume=[initial volume to use]:volume' \
+        '--rate=[sample rate to use]:rate:(44100 48000 96000)' \
+        '--format=[sample type to use]:format:((${(q)_pacat_sample_formats}))' \
+        '--channels=[number of channels to use]:number:(1 2)' \
+        '--channel-map=[channel map to use]:map' \
+        '--fix-format[use the sample format of the sink]' \
+        '--fix-rate[use the rate of the sink]' \
+        '--fix-channels[channel map of the sink]' \
+        '--no-remix[do not upmix or downmix channels]' \
+        '--no-remap[map channels by index instead of name]' \
+        '--latency=[request the specified latency]:bytes' \
+        '--process-time=[request the specified process time]:bytes' \
+        '--latency-msec=[request the specified latency in msec]:msec' \
+        '--process-time-msec=[request the specified process time in msec]:msec' \
+        '--property=[set the specified property]:property' \
+        '--raw[record/play raw PCM data]' \
+        '--passthrough[passthrough data]' \
+        '--file-format=[record/play formatted PCM data]:format:_pacat_file_formats' \
+        '--list-file-formats[list available formats]' \
+        '::files:_files' \
+}
+
+# TODO log-target file completion
+_pulseaudio_completion() {
+    _arguments -C \
+        {-h,--help}'[display this help and exit]' \
+        '--version[show version and exit]' \
+        '--dump-conf[show default configuration]' \
+        '--dump-modules[show available modules]' \
+        '--dump-resample-methods[show available resample methods]' \
+        '--cleanup-shm[cleanup shared memory]' \
+        '--start[start the daemon]' \
+        {-k,--kill}'[kill a running daemon]' \
+        '--check[check for a running daemon]' \
+        '--system=[run as systemd-wide daemon]:bool:(true false)' \
+        {-D,--daemonize=}'[daemonize after startup]:bool:(true false)' \
+        '--fail=[quit when startup fails]:bool:(true false)' \
+        '--high-priority=[try to set high nice level]:bool:(true false)' \
+        '--realtime=[try to enable rt scheduling]:bool:(true false)' \
+        '--disallow-module-loading=[disallow module loading]:bool:(true false)' \
+        '--disallow-exit=[disallow user requested exit]' \
+        '--exit-idle-time=[terminate the daemon on passed idle time]:time' \
+        '--scache-idle-time=[unload autoloaded samples on passed idle time]:time' \
+        '--log-level=[set the verbosity level]:level' \
+        '-v[increase the verbosity level]' \
+        '--log-target=[set the log target]:target:(auto syslog stderr file\: new_file\:):file' \
+        '--log-meta=[include code location in log messages]:bool:(true false)' \
+        '--log-time=[include timestamps in log messages]:bool:(true false)' \
+        '--log-backtrace=[include backtrace in log messages]:frames' \
+        {-p,--dl-search-path=}'[set the search path for plugins]:dir:_files' \
+        '--resample-method=[set the resample method]:method:_resample_methods' \
+        '--use-pid-file=[create a PID file]:bool:(true false)' \
+        '--no-cpu-limit=[do not install CPU load limiter]:bool:(true false)' \
+        '--disable-shm=[disable shared memory support]:bool:(true false)' \
+        '--enable-memfd=[enable memfd shared memory support]:bool:(true false)' \
+        {-L,--load=}'[load the specified module]:modules:_all_modules' \
+        {-F,--file=}'[run the specified script]:file:_files' \
+        '-C[open a command line on the running tty]' \
+        '-n[do not load the default script file]' \
+}
+
+_pulseaudio() {
+    local state line curcontext="$curcontext"
+
+    # Some commands, like pactl and pacat, have an option for specifying the
+    # server address, like "--server=somehost". If that option is set, then the
+    # helper commands that are run as part of the autocompletion need to use
+    # that same option. The option is saved in this variable in _set_remote(),
+    # which is called in the beginning of _pactl_completion() and others. The
+    # autocompletion commands can then find the option in that variable if the
+    # option is set.
+    local remote
+
+    case $service in
+        pulseaudio) _pulseaudio_completion;;
+        pactl) _pactl_completion;;
+        pacmd) _pacmd_completion;;
+        pacat) _pacat_completion;;
+        paplay)_pacat_completion;;
+        parec) _pacat_completion;;
+        parecord)_pacat_completion;;
+        padsp) _padsp_completion;;
+        pasuspender) _pasuspender_completion;;
+        *) _message "Err";;
+    esac
+}
+
+_pulseaudio "$@"
+
+#vim: set ft=zsh sw=4 ts=4 noet

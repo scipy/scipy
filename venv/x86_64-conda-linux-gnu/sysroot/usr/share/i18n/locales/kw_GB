@@ -1,0 +1,165 @@
+escape_char  /
+comment_char  %
+
+% Cornish language locale for Britain
+% WARNING: UNOFFICIAL; EXPERIMENTAL. CHECK WITH Keld Simonsen
+% to see if there is an offical release.
+
+% Cornish language locale for Britain
+% Source: Alastair McKinstry
+% Address: Croí Lár, Ballinahalla, Maigh Cuilinn,
+%    Co. Gaillimh, Ireland
+% Contact: Alastair McKinstry
+% Email: mckinstry@computer.org
+% Tel: +353 91 556177
+% Language: kl
+% Territory: GB
+% Revision: 1.0
+% Date: 1999-08-09
+% Users: general
+% Repertoiremap: mnemonic,ds
+% Charset: ISO-8859-1
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title      "Cornish locale for Britain"
+source     "Alastair McKinstry"
+address    "Croí Lár, Ballinahalla, Maigh Cuilinn,, Co. Gaillimh, Ireland"
+contact    ""
+email      "bug-glibc-locales@gnu.org"
+tel        ""
+fax        ""
+language   "Cornish"
+territory  "Britain"
+revision   "1.0"
+date       "2000-06-29"
+%
+category  "kw_GB:2000";LC_IDENTIFICATION
+category  "kw_GB:2000";LC_CTYPE
+category  "kw_GB:2000";LC_COLLATE
+category  "kw_GB:2000";LC_TIME
+category  "kw_GB:2000";LC_NUMERIC
+category  "kw_GB:2000";LC_MONETARY
+category  "kw_GB:2000";LC_MESSAGES
+category  "kw_GB:2000";LC_PAPER
+category  "kw_GB:2000";LC_NAME
+category  "kw_GB:2000";LC_ADDRESS
+category  "kw_GB:2000";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_CTYPE
+copy "i18n"
+
+translit_start
+include  "translit_combining";""
+translit_end
+END LC_CTYPE
+
+LC_COLLATE
+copy "iso14651_t1"
+END LC_COLLATE
+
+LC_MONETARY
+int_curr_symbol         "<U0047><U0042><U0050><U0020>"
+currency_symbol         "<U00A3>"
+mon_decimal_point       "<U002E>"
+mon_thousands_sep       "<U002C>"
+mon_grouping            3;3
+positive_sign           ""
+negative_sign           "<U002D>"
+int_frac_digits         2
+frac_digits             2
+p_cs_precedes           1
+p_sep_by_space          0
+n_cs_precedes           1
+n_sep_by_space          0
+p_sign_posn             1
+n_sign_posn             1
+END LC_MONETARY
+
+LC_NUMERIC
+decimal_point           "<U002E>"
+thousands_sep           "<U002C>"
+grouping                3;3
+END LC_NUMERIC
+
+LC_TIME
+abday       "<U0053><U0075><U006C>";"<U004C><U0075><U006E>";/
+            "<U004D><U0074><U0068>";"<U004D><U0068><U0072>";/
+            "<U0059><U006F><U0077>";"<U0047><U0077><U0065>";/
+            "<U0053><U0061><U0064>"
+day         "<U0044><U0065><U0020><U0053><U0075><U006C>";/
+            "<U0044><U0065><U0020><U004C><U0075><U006E>";/
+            "<U0044><U0065><U0020><U004D><U0065><U0072><U0074><U0068>";/
+            "<U0044><U0065><U0020><U004D><U0065><U0072><U0068><U0065><U0072>";/
+            "<U0044><U0065><U0020><U0059><U006F><U0077>";/
+            "<U0044><U0065><U0020><U0047><U0077><U0065><U006E><U0065><U0072>";/
+            "<U0044><U0065><U0020><U0053><U0061><U0064><U006F><U0072><U006E>"
+abmon       "<U0047><U0065><U006E>";"<U0057><U0068><U0065>>";/
+            "<U004D><U0065><U0072>";"<U0045><U0062><U0072>";/
+            "<U004D><U0065>";"<U0045><U0076><U006E>";/
+            "<U0047><U006F><U0072>";"<U0045><U0073><U0074>";/
+            "<U0047><U0077><U006E>";"<U0048><U0065><U0064>";/
+            "<U0044><U0075>";"<U004B><U0065><U0076>"
+mon         "<U004D><U0079><U0073><U0020><U0047><U0065><U006E><U0076><U0065><U0072>";/
+            "<U004D><U0079><U0073><U0020><U0057><U0068><U0065><U0076><U0072><U0065><U006C>";/
+            "<U004D><U0079><U0073><U0020><U004D><U0065><U0072><U0074><U0068>";/
+            "<U004D><U0079><U0073><U0020><U0045><U0062><U0072><U0065><U006C>";/
+            "<U004D><U0079><U0073><U0020><U004D><U0065>";/
+            "<U004D><U0079><U0073><U0020><U0045><U0076><U0061><U006E>";/
+            "<U004D><U0079><U0073><U0020><U0047><U006F><U0072><U0074><U0068><U0065><U0072><U0065><U006E>";/
+            "<U004D><U0079><U0065><U0020><U0045><U0073><U0074>";/
+            "<U004D><U0079><U0073><U0020><U0047><U0077><U0079><U006E><U0067><U0061><U006C><U0061>";/
+            "<U004D><U0079><U0073><U0020><U0048><U0065><U0064><U0072><U0061>";/
+            "<U004D><U0079><U0073><U0020><U0044><U0075>";/
+            "<U004D><U0079><U0073><U0020><U004B><U0065><U0076><U0061><U0072><U0064><U0068><U0075>"
+d_t_fmt     "<U0025><U0061><U0020><U0025><U0064><U0020><U0025><U0062><U0020><U0025><U0059><U0020><U0025><U0054><U0020><U0025><U005A>"
+d_fmt       "<U0025><U0064><U002F><U0025><U006D><U002F><U0025><U0079>"
+t_fmt       "<U0025><U0054>"
+am_pm       "";""
+t_fmt_ampm  ""
+date_fmt       "<U0025><U0061><U0020><U0025><U0062><U0020><U0025><U0065>/
+<U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U0020>/
+<U0025><U005A><U0020><U0025><U0059>"
+END LC_TIME
+
+LC_MESSAGES
+yesexpr     "<U005E><U005B><U0065><U0045><U0079><U0059><U005D><U002E><U002A>"
+noexpr      "<U005E><U005B><U006E><U004E><U005D><U002E><U002A>"
+END LC_MESSAGES
+
+LC_PAPER
+% FIXME
+height   297
+% FIXME
+width    210
+END LC_PAPER
+
+LC_TELEPHONE
+tel_int_fmt    "<U002B><U0025><U0063><U0020><U0025><U0061><U0020><U0025>/
+<U006C>"
+int_prefix     "<U0034><U0034>"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+% FIXME
+measurement    1
+END LC_MEASUREMENT
+
+LC_NAME
+name_fmt    "<U0025><U0064><U0025><U0074><U0025><U0067><U0025><U0074>/
+<U0025><U006D><U0025><U0074><U0025><U0066>"
+END LC_NAME
+
+LC_ADDRESS
+postal_fmt    "<U0025><U0066><U0025><U004E><U0025><U0061><U0025><U004E>/
+<U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E><U0025><U0073>/
+<U0020><U0025><U0068><U0020><U0025><U0065><U0020><U0025><U0072><U0025>/
+<U004E><U0025><U007A><U0020><U0025><U0054><U0025>/
+<U004E><U0025><U0063><U0025><U004E>"
+country_ab2 "<U0047><U0042>"
+country_ab3 "<U0047><U0042><U0052>"
+country_num 826
+END LC_ADDRESS

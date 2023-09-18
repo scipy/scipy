@@ -1,0 +1,48 @@
+.TH "GStreamer" "1" "June 2014" "" ""
+.SH "NAME"
+gst\-device\-monitor\-1.0 \- Simple command line testing tool for GStreamer device monitors
+.SH "SYNOPSIS"
+\fBgst\-device\-monitor\-1.0\fR \fI[DEVICE_CLASSES[:FILTER_CAPS]] [DEVICE_CLASSES[:FILTER_CAPS]]\fR
+.SH "DESCRIPTION"
+.LP
+\fIgst\-device\-monitor\-1.0\fP is a command line tool that can be used to test
+GStreamer's device monitoring functionality. By default it will just print a
+list of all devices found and exit, but you can also make it wait around for
+more devices by passing the \-\-follow option. You can also pass it one or
+more filter arguments to filter the kind of devices you are interested in.
+
+.SH "OPTIONS"
+.l
+\fIgst\-device\-monitor\-1.0\fP accepts the following options:
+.TP 8
+.B  \-\-help
+Print help synopsis and available command line options
+.TP 8
+.B  \-\-version
+Print version and exit
+.TP 8
+.B  \-f, \-\-follow
+Don't exit after showing the initial device list, but wait for devices to be added or removed
+.TP 8
+.B  \-i, \-\-include\-hidden
+Include devices from hidden device providers.
+
+.SH "EXAMPLES"
+.l
+.B  gst\-device\-monitor\-1.0
+.TP 8
+.B  gst\-device\-monitor\-1.0 --follow
+.TP 8
+.B  gst\-device\-monitor\-1.0 Audio/Source
+.TP 8
+.B  gst\-device\-monitor\-1.0 Video/Source:video/x-raw
+.TP 8
+.B  gst-device-monitor-1.0 -i Audio/Sink
+
+.SH "SEE ALSO"
+.BR gst\-inspect\-1.0 (1),
+.BR gst\-launch\-1.0 (1),
+.BR gst\-discoverer\-1.0 (1),
+.BR gst\-play\-1.0 (1),
+.SH "AUTHOR"
+The GStreamer team at http://gstreamer.freedesktop.org/

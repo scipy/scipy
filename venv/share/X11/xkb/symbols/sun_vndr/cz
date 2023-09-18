@@ -1,0 +1,111 @@
+//
+// Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, and/or sell copies of the Software, and to permit persons
+// to whom the Software is furnished to do so, provided that the above
+// copyright notice(s) and this permission notice appear in all copies of
+// the Software and that both the above copyright notice(s) and this
+// permission notice appear in supporting documentation.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+// OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+// HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL
+// INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING
+// FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
+// NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
+// WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+// 
+// Except as contained in this notice, the name of a copyright holder
+// shall not be used in advertising or otherwise to promote the sale, use
+// or other dealings in this Software without prior written authorization
+// of the copyright holder.
+//
+
+
+default partial alphanumeric_keys
+xkb_symbols "sun_type6" {
+
+    name[Group1]="Czech (Sun Type 6/7";
+
+	include "sun_vndr/us(sun_type6)"
+
+    key <TLDE>	{ [ semicolon, dead_abovering,	grave,          asciitilde 	]	};
+    key <AE01>	{ [      plus,          1,	exclam,     asciitilde	 	]	};
+    key <AE02>	{ [    ecaron,          2,	at,     dead_caron 		]	};
+    key <AE03>	{ [    scaron,          3,	numbersign,  dead_circumflex 	] 	};
+    key <AE04>	{ [    ccaron,          4,	dollar,     dead_breve 		]	};
+    key <AE05>	{ [    rcaron,          5,	percent, dead_abovering 	] 	};
+    key <AE06>	{ [    zcaron,          6,	asciicircum,  dead_ogonek 	]	};
+    key <AE07>	{ [    yacute,          7,	ampersand,          grave 	]	};
+    key <AE08>	{ [    aacute,          8,	asterisk,  dead_abovedot	]	};
+    key <AE09>	{ [    iacute,          9,	parenleft,    dead_acute    	]	};
+    key <AE10>	{ [    eacute,          0,	parenright, dead_doubleacute	]	};
+    key <AE11>	{ [     equal,    percent,	dead_diaeresis, backslash 	]	};
+    key <AE12>	{ [ dead_acute, dead_caron,	dead_cedilla, minus 		]	};
+
+    key <AD01>	{ [         q,          Q,	backslash 		]	};
+    key <AD02>	{ [         w,          W,	bar 			]	};
+    key <AD03>	{ [         e,          E,	EuroSign 		]	};
+    key <AD06>	{ [         z,          Z 				]	};
+    key <AD11>	{ [    uacute,      slash,	division 		]	};
+    key <AD12>	{ [parenright,  parenleft,	multiply 		]	};
+
+    key <AC02>	{ [         s,          S,	dstroke			]	};
+    key <AC03>	{ [         d,          D,	Dstroke 		]	};
+    key <AC04>	{ [         f,          F,	bracketleft 		]	};
+    key <AC05>	{ [         g,          G,	bracketright 		]	};
+    key <AC08>	{ [         k,          K,	lstroke 		]	};
+    key <AC09>	{ [         l,          L,	Lstroke 		]	};              
+    key <AC10>	{ [      uring,       quotedbl,	dollar 			]	};
+    key <AC11>	{ [    section,         exclam,	ssharp,       currency	]	};
+    key <BKSL>	{ [ dead_diaeresis, apostrophe,	backslash,         bar	]	};
+
+    key <LSGT>	{ [  backslash,       asterisk,	slash,	     brokenbar	]	};
+    key <AB01>	{ [          y,          Y,	less	 		]	};
+    key <AB02>	{ [          x,          X,	greater,    numbersign  ]	};
+    key <AB04>	{ [          v,          V,	at 			]	};
+    key <AB05>	{ [          b,          B,	braceleft 		]	};
+    key <AB06>	{ [          n,          N,	braceright	 	]	};
+    key <AB08>	{ [      comma,       question,	less			]	};
+    key <AB09>	{ [     period,          colon,	greater			]	};
+    key <AB10>	{ [      minus,     underscore                   	]	};
+
+	include "level3(ralt_switch)"
+
+};
+
+partial alphanumeric_keys
+	xkb_symbols "basic" {
+	include "sun_vndr/cz(sun_type6)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "bksl" {
+	include "cz(bksl)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "qwerty" {
+	include "cz(qwerty)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "qwerty_bksl" {
+	include "cz(qwerty_bksl)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "ucw" {
+	include "cz(ucw)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "dvorak-ucw" {
+	include "cz(dvorak-ucw)"
+};

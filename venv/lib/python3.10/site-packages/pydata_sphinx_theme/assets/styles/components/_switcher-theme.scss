@@ -1,0 +1,28 @@
+// the icons for theme change
+#theme-switch {
+  border-color: var(--pst-color-primary);
+  margin-right: 0.4rem;
+
+  a {
+    color: var(--pst-color-primary);
+    display: none;
+  }
+
+  &:hover {
+    background-color: var(--pst-color-primary);
+
+    a {
+      color: var(--pst-color-on-background);
+    }
+  }
+}
+
+html[data-mode="auto"] #theme-switch a[data-mode="auto"] {
+  display: block;
+}
+html[data-mode="light"] #theme-switch a[data-mode="light"] {
+  display: block;
+}
+html[data-mode="dark"] #theme-switch a[data-mode="dark"] {
+  display: block;
+}

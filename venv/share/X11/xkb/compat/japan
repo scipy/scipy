@@ -1,0 +1,45 @@
+// Japanese keyboards need the Eisu and Kana Shift
+// and Lock keys, which are typically bound to the
+// second shift level of some other modifier key.
+// These interpretations disable the default
+// interpretation (which would have these keys set
+// to the same modifier as the level one symbol).
+
+default partial xkb_compatibility "japan" {
+
+    interpret.repeat= False;
+
+    interpret Eisu_Shift+Lock {
+	action= NoAction();
+    };
+
+    interpret Eisu_toggle+Lock {
+	action= NoAction();
+    };
+
+    interpret Kana_Shift+Lock {
+	action= NoAction();
+    };
+
+    interpret Kana_Lock+Lock {
+	action= NoAction();
+    };
+};
+
+// Some Japanese keyboards have an explict
+// Kana Lock key and matching LED.
+partial xkb_compatibility "kana_lock" {
+
+    virtual_modifiers  Kana_Lock;
+
+    interpret Kana_Lock+AnyOfOrNone(all) {
+	virtualModifier= Kana_Lock;
+	useModMapMods=level1;
+	action= LockGroup(group=+1);
+    };
+
+    indicator "Kana" {
+	!allowExplicit;
+	groups= All-Group1;
+    };
+};

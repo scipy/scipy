@@ -1,0 +1,59 @@
+# La teksto por la mesaĝoj de la programo "gettext".
+# Copyright (C) 2006, 2016 Yoyodyne, Inc. (msgids)
+# This file is distributed under the same license as the gettext package.
+# Edmund GRIMLEY EVANS <edmundo@rano.org>, 2006.
+# Felipe CASTRO <fefcas@gmail.com>, 2016.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: hello-c-gnome3 0.19.4.73\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"PO-Revision-Date: 2016-02-22 08:54-0300\n"
+"Last-Translator: Felipe Castro <fefcas@gmail.com>\n"
+"Language-Team: Esperanto <translation-team-eo@lists.sourceforge.net>\n"
+"Language: eo\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+
+#: hello.c:79
+#, c-format
+msgid ""
+"<big>Hello world!</big>\n"
+"This program is running as process number <b>%d</b>."
+msgstr ""
+"<big>Saluton mondo!</big>\n"
+"Ĉi tiu programo rulas kiel procezo kun numero <b>%d</b>."
+
+#: hello.c:84
+msgid "<big><u>This is another text</u></big>"
+msgstr "<big><u>Tio ĉi estas alia teksto</u></big>"
+
+#: hello.c:86
+msgid "<big><i>This is yet another text</i></big>"
+msgstr "<big><i>Tio ĉi estas pli alia teksto</i></big>"
+
+#: hello.desktop.in.in:4
+msgid "Hello"
+msgstr "Saluton"
+
+#: hello.desktop.in.in:5
+msgid "Hello, world!"
+msgstr "Saluton, mondo!"
+
+#: hello.ui:6
+msgid "Example Application"
+msgstr "Ekzempla aplikaĵo"
+
+#: hello.ui:34
+msgid "Update text"
+msgstr "Ĝisdatigi tekston"
+
+#: hello.gschema.xml:8
+msgid "Use XML markup"
+msgstr "Uzi marklingvon XML"
+
+#: hello.gschema.xml:9
+msgid "Whether to use XML markup in the text."
+msgstr "Ĉu uzi marklingvon XML en la teksto."

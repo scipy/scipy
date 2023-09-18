@@ -1,0 +1,148 @@
+{
+  "build": "hab24e00_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/noarch",
+  "constrains": [],
+  "depends": [],
+  "extracted_package_dir": "/opt/conda/pkgs/font-ttf-ubuntu-0.83-hab24e00_0",
+  "features": "",
+  "files": [
+    "fonts/Ubuntu-B.ttf",
+    "fonts/Ubuntu-BI.ttf",
+    "fonts/Ubuntu-C.ttf",
+    "fonts/Ubuntu-L.ttf",
+    "fonts/Ubuntu-LI.ttf",
+    "fonts/Ubuntu-M.ttf",
+    "fonts/Ubuntu-MI.ttf",
+    "fonts/Ubuntu-R.ttf",
+    "fonts/Ubuntu-RI.ttf",
+    "fonts/Ubuntu-Th.ttf",
+    "fonts/UbuntuMono-B.ttf",
+    "fonts/UbuntuMono-BI.ttf",
+    "fonts/UbuntuMono-R.ttf",
+    "fonts/UbuntuMono-RI.ttf"
+  ],
+  "fn": "font-ttf-ubuntu-0.83-hab24e00_0.tar.bz2",
+  "license": "Ubuntu Font Licence Version 1.0",
+  "license_family": "Other",
+  "link": {
+    "source": "/opt/conda/pkgs/font-ttf-ubuntu-0.83-hab24e00_0",
+    "type": 1
+  },
+  "md5": "19410c3df09dfb12d1206132a1d357c5",
+  "name": "font-ttf-ubuntu",
+  "noarch": "generic",
+  "package_tarball_full_path": "/opt/conda/pkgs/font-ttf-ubuntu-0.83-hab24e00_0.tar.bz2",
+  "package_type": "noarch_generic",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "fonts/Ubuntu-B.ttf",
+        "path_type": "hardlink",
+        "sha256": "c90e629e932f768909bdce1481ccd259d8aff1490a4bc1cf94d5413492317336",
+        "sha256_in_prefix": "c90e629e932f768909bdce1481ccd259d8aff1490a4bc1cf94d5413492317336",
+        "size_in_bytes": 333612
+      },
+      {
+        "_path": "fonts/Ubuntu-BI.ttf",
+        "path_type": "hardlink",
+        "sha256": "2c33de34d51065a5e56bae5e1c7c13cd128268b26569838a38db038e6ac9723d",
+        "sha256_in_prefix": "2c33de34d51065a5e56bae5e1c7c13cd128268b26569838a38db038e6ac9723d",
+        "size_in_bytes": 356980
+      },
+      {
+        "_path": "fonts/Ubuntu-C.ttf",
+        "path_type": "hardlink",
+        "sha256": "6c1f68d2e85832feae9ea30d2a6c0ea71ea623e8ea342bf00a414f6493ccf720",
+        "sha256_in_prefix": "6c1f68d2e85832feae9ea30d2a6c0ea71ea623e8ea342bf00a414f6493ccf720",
+        "size_in_bytes": 350444
+      },
+      {
+        "_path": "fonts/Ubuntu-L.ttf",
+        "path_type": "hardlink",
+        "sha256": "b7ec9b9f7cf293ecbc832e998ca4a802adeceb77c661c43ebd23eba1adc3e584",
+        "sha256_in_prefix": "b7ec9b9f7cf293ecbc832e998ca4a802adeceb77c661c43ebd23eba1adc3e584",
+        "size_in_bytes": 415552
+      },
+      {
+        "_path": "fonts/Ubuntu-LI.ttf",
+        "path_type": "hardlink",
+        "sha256": "c5c2d884000930242b3052dd13f3bd250fe53e85b6f75046a53e92dd3de2b51c",
+        "sha256_in_prefix": "c5c2d884000930242b3052dd13f3bd250fe53e85b6f75046a53e92dd3de2b51c",
+        "size_in_bytes": 409608
+      },
+      {
+        "_path": "fonts/Ubuntu-M.ttf",
+        "path_type": "hardlink",
+        "sha256": "e801a0867295367000c6dd3c337622ae4aaff85786ddbfbdb985ce774fe3cd62",
+        "sha256_in_prefix": "e801a0867295367000c6dd3c337622ae4aaff85786ddbfbdb985ce774fe3cd62",
+        "size_in_bytes": 341324
+      },
+      {
+        "_path": "fonts/Ubuntu-MI.ttf",
+        "path_type": "hardlink",
+        "sha256": "810029281da01d548a914899ec643c4ae54ee9a165dfcf731f1aa8551b226350",
+        "sha256_in_prefix": "810029281da01d548a914899ec643c4ae54ee9a165dfcf731f1aa8551b226350",
+        "size_in_bytes": 366992
+      },
+      {
+        "_path": "fonts/Ubuntu-R.ttf",
+        "path_type": "hardlink",
+        "sha256": "52c1afa489ae7bfd893af6cdd9f1af258005703600449e70d338caabcff507e5",
+        "sha256_in_prefix": "52c1afa489ae7bfd893af6cdd9f1af258005703600449e70d338caabcff507e5",
+        "size_in_bytes": 353824
+      },
+      {
+        "_path": "fonts/Ubuntu-RI.ttf",
+        "path_type": "hardlink",
+        "sha256": "0626647f11d9c911f934715d1060b590744887224601abaeb22ac8f582b57118",
+        "sha256_in_prefix": "0626647f11d9c911f934715d1060b590744887224601abaeb22ac8f582b57118",
+        "size_in_bytes": 386440
+      },
+      {
+        "_path": "fonts/Ubuntu-Th.ttf",
+        "path_type": "hardlink",
+        "sha256": "b7b61aa1c9a8873f19767a2c8e0f16d355c66733b6e7aa5e329e6abe9a698eeb",
+        "sha256_in_prefix": "b7b61aa1c9a8873f19767a2c8e0f16d355c66733b6e7aa5e329e6abe9a698eeb",
+        "size_in_bytes": 240020
+      },
+      {
+        "_path": "fonts/UbuntuMono-B.ttf",
+        "path_type": "hardlink",
+        "sha256": "11f15c3a6bbd998a8695fdefb3475931c3789aa035d7546f2efe78e83b352f6b",
+        "sha256_in_prefix": "11f15c3a6bbd998a8695fdefb3475931c3789aa035d7546f2efe78e83b352f6b",
+        "size_in_bytes": 191400
+      },
+      {
+        "_path": "fonts/UbuntuMono-BI.ttf",
+        "path_type": "hardlink",
+        "sha256": "bd255784bb87b5c41513a12a86f0f9cf061bce4e8256d3bfe7234611002e8f48",
+        "sha256_in_prefix": "bd255784bb87b5c41513a12a86f0f9cf061bce4e8256d3bfe7234611002e8f48",
+        "size_in_bytes": 216208
+      },
+      {
+        "_path": "fonts/UbuntuMono-R.ttf",
+        "path_type": "hardlink",
+        "sha256": "b35dd9d2131d5d83a9b87fe9ad22c6288fa3d17688d43302c14da29812417d63",
+        "sha256_in_prefix": "b35dd9d2131d5d83a9b87fe9ad22c6288fa3d17688d43302c14da29812417d63",
+        "size_in_bytes": 205748
+      },
+      {
+        "_path": "fonts/UbuntuMono-RI.ttf",
+        "path_type": "hardlink",
+        "sha256": "960b2bc286c2ff7d49073303858c65e1fc9013c17a971b61123b02c39454ef75",
+        "sha256_in_prefix": "960b2bc286c2ff7d49073303858c65e1fc9013c17a971b61123b02c39454ef75",
+        "size_in_bytes": 210216
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "470d5db54102bd51dbb0c5990324a2f4a0bc976faa493b22193338adb9882e2e",
+  "size": 1961279,
+  "subdir": "noarch",
+  "timestamp": 1566932680646,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/noarch/font-ttf-ubuntu-0.83-hab24e00_0.tar.bz2",
+  "version": "0.83"
+}

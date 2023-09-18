@@ -1,0 +1,354 @@
+// Keyboard layouts for Morocco.
+
+// Arabic AZERTY with modern Latin digits
+default partial alphanumeric_keys
+xkb_symbols "arabic" {
+    include "ara(azerty)"
+
+    name[Group1]="Arabic (Morocco)";
+};
+
+// French AZERTY keyboard used when typing French
+partial alphanumeric_keys
+xkb_symbols "french" {
+    include "fr(basic)"
+
+    name[Group1]="French (Morocco)";
+};
+
+// Clavier unicode tifinaghe de base réalisé par l'IRCAM (Institut Royal de la Culture Amazighe du Maroc) http://www.ircam.ma/
+// Support des lettres unicode tifinaghe-IRCAM, néotifinaghes & touarègues.
+// Les caractères tifinaghes sont accessibles en SHIFT positions pour le niveau 2, en ALTGR positions pour le niveau 3
+// Polices tifinaghes Unicode à télécharger depuis :
+// http://www.ircam.ma/documents/policesclavierunicode/hapaxber.ttf (licence non libre, libre téléchargement et distribution uniquement)
+// Minihowto ici: http://perso.menara.ma/~kebdani/tamazgha/gnu_amazigh.html
+
+partial alphanumeric_keys
+xkb_symbols "tifinagh" {
+
+    name[Group1]="Berber (Morocco, Tifinagh)";
+
+    key <TLDE>	{ [ twosuperior, NoSymbol ]	};
+    key <AE01>	{ [ ampersand,          1 ]	};
+    key <AE02>	{ [ NoSymbol,          2, asciitilde	]	};
+    key <AE03>	{ [  quotedbl,          3, numbersign	]	};
+    key <AE04>	{ [apostrophe,          4, braceleft	]	};
+    key <AE05>	{ [ parenleft,          5, bracketleft	]	};
+    key <AE06>	{ [     minus,          6, bar	]	};
+    key <AE07>	{ [         NoSymbol ,  7 ]	};
+    key <AE08>	{ [underscore,          8, backslash	]	};
+    key <AE09>	{ [NoSymbol,         9, asciicircum	]	};
+    key <AE10>	{ [       NoSymbol ,          0, at		]	};
+    key <AE11>	{ [parenright,     degree, bracketright	]	};
+    key <AE12>	{ [     equal,       plus, braceright	]	};
+
+    key <AD01>	{ [ 0x1002d30 ]	};
+    key <AD02>	{ [ 0x1002d63, 0x1002d65 ]	};
+    key <AD03>	{ [ 0x1002d3b, NoSymbol,0x10020ac ]	};
+    key <AD04>	{ [ 0x1002d54, 0x1002d55 ]	};
+    key <AD05>	{ [ 0x1002d5c, 0x1002d5f ]	};
+    key <AD06>	{ [ 0x1002d62 ]	};
+    key <AD07>	{ [ 0x1002d53 ]	};
+    key <AD08>	{ [ 0x1002d49 ]	};
+    key <AD09>	{ [ 0x1002d44 ]	};
+    key <AD10>	{ [ 0x1002d43 ]	};
+    key <AD11>	{ [ 0x1002d6f ]   };
+    key <AD12>	{ [    dollar,   sterling,   currency ] };
+
+    key <AC01>	{ [ 0x1002d47 ]	};
+    key <AC02>	{ [ 0x1002d59, 0x1002d5a ]	};
+    key <AC03>	{ [ 0x1002d37, 0x1002d39 ]	};
+    key <AC04>	{ [ 0x1002d3c ]	};
+    key <AC05>	{ [ 0x1002d33, 0x1002d33]	};
+    key <AC06>	{ [ 0x1002d40 ]	};
+    key <AC07>	{ [ 0x1002d4a ]	};
+    key <AC08>	{ [ 0x1002d3d,  0x1002d3d  ]	};
+    key <AC09>	{ [ 0x1002d4d ]	};
+    key <AC10>	{ [ 0x1002d4e ]	};
+    key <AC11>	{ [    NoSymbol ,   percent ]	};
+    key <BKSL>	{ [  asterisk,         mu ]	};
+
+    key <AB01>	{ [ 0x1002d61 ]	};
+    key <AB02>	{ [ 0x1002d45 ]	};
+    key <AB03>	{ [ 0x1002d5b ]	};
+    key <AB04>	{ [ 0x1002d56 ]	};
+    key <AB05>	{ [ 0x1002d31 ]	};
+    key <AB06>	{ [ 0x1002d4f ]	};
+    key <AB07>	{ [     comma,   question ] };
+    key <AB08>	{ [ semicolon,     period ] };
+    key <AB09>	{ [     colon,      slash ] };
+    key <AB10>	{ [    exclam,    section ] };
+
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "tifinagh-phonetic" {
+    include "ma(tifinagh)"
+
+    name[Group1]="Berber (Morocco, Tifinagh phonetic)";
+
+    key <LatA>	{ [ 0x1002d30 ]	};
+    key <LatZ>	{ [ 0x1002d63, 0x1002d65 ]	};
+    key <LatE>	{ [ 0x1002d3b, NoSymbol,0x10020ac ]	};
+    key <LatR>	{ [ 0x1002d54, 0x1002d55 ]	};
+    key <LatT>	{ [ 0x1002d5c, 0x1002d5f ]	};
+    key <LatY>	{ [ 0x1002d62 ]	};
+    key <LatU>	{ [ 0x1002d53 ]	};
+    key <LatI>	{ [ 0x1002d49 ]	};
+    key <LatO>	{ [ 0x1002d44 ]	};
+    key <LatP>	{ [ 0x1002d43 ]	};
+
+    key <LatQ>	{ [ 0x1002d47 ]	};
+    key <LatS>	{ [ 0x1002d59, 0x1002d5a ]	};
+    key <LatD>	{ [ 0x1002d37, 0x1002d39 ]	};
+    key <LatF>	{ [ 0x1002d3c ]	};
+    key <LatG>	{ [ 0x1002d33 ]	};
+    key <LatH>	{ [ 0x1002d40 ]	};
+    key <LatJ>	{ [ 0x1002d4a ]	};
+    key <LatK>	{ [ 0x1002d3d ]	};
+    key <LatL>	{ [ 0x1002d4d ]	};
+    key <LatM>	{ [ 0x1002d4e ]	};
+
+    key <LatW>	{ [ 0x1002d61,0x1002d6f ]	};
+    key <LatX>	{ [ 0x1002d45 ]	};
+    key <LatC>	{ [ 0x1002d5b ]	};
+    key <LatV>	{ [ 0x1002d56 ]	};
+    key <LatB>	{ [ 0x1002d31 ]	};
+    key <LatN>	{ [ 0x1002d4f ]	};
+
+    include "level3(ralt_switch)"
+};
+
+// Clavier unicode tifinaghe étendu réalisé par l'IRCAM (Institut Royal de la Culture Amazighe du Maroc) http://www.ircam.ma/
+// Support des lettres unicode tifinaghe-IRCAM, néotifinaghes & touarègues.
+// Les caractères tifinaghes sont accessibles en SHIFT positions pour le niveau 2, en ALTGR positions pour le niveau 3
+// Polices tifinaghes Unicode à télécharger depuis :
+// http://www.ircam.ma/documents/policesclavierunicode/hapaxber.ttf (licence non libre, libre téléchargement et distribution uniquement)
+// Minihowto ici: http://perso.menara.ma/~kebdani/tamazgha/gnu_amazigh.html
+
+partial alphanumeric_keys
+xkb_symbols "tifinagh-extended" {
+
+    name[Group1]="Berber (Morocco, Tifinagh extended)";
+
+    key <TLDE>	{ [ twosuperior,0x100200C ]	};
+    key <AE01>	{ [ ampersand,          1 ]	};
+    key <AE02>	{ [0x1002d52,          2, asciitilde	]	};
+    key <AE03>	{ [  quotedbl,          3, numbersign	]	};
+    key <AE04>	{ [apostrophe,          4, braceleft	]	};
+    key <AE05>	{ [ parenleft,          5, bracketleft	]	};
+    key <AE06>	{ [ minus,          6, bar		]	};
+    key <AE07>	{ [ 0x1002d64 ,  7 ]	};
+    key <AE08>	{ [underscore,          8, backslash	]	};
+    key <AE09>	{ [ 0x1002014,         9, asciicircum	]	};
+    key <AE10>	{ [ 0x100200d,          0, at	]	};
+    key <AE11>	{ [parenright,   degree, bracketright	]	};
+    key <AE12>	{ [     equal,       plus, braceright	]	};
+
+    key <AD01>	{ [ 0x1002d30, 0x1002d36 ]	};
+    key <AD02>	{ [ 0x1002d63, 0x1002d65 ]	};
+    key <AD03>	{ [ 0x1002d3b, 0x1002d57, 0x10020ac ]	};
+    key <AD04>	{ [ 0x1002d54, 0x1002d55 ]	};
+    key <AD05>	{ [ 0x1002d5c, 0x1002d5f ]	};
+    key <AD06>	{ [ 0x1002d62, 0x1002d42 ]	};
+    key <AD07>	{ [ 0x1002d53, 0x1002d4c ]	};
+    key <AD08>	{ [ 0x1002d49, 0x1002d58 ]	};
+    key <AD09>	{ [ 0x1002d44, 0x1002d5d ]	};
+    key <AD10>	{ [ 0x1002d43, 0x1002d5e ]	};
+    key <AD11>	{ [ 0x1002d6f, 0x1002d60 ]   };
+    key <AD12>	{ [    dollar,   sterling,   currency ] };
+
+    key <AC01>	{ [ 0x1002d47, 0x1002d48 ]	};
+    key <AC02>	{ [ 0x1002d59, 0x1002d5a ]	};
+    key <AC03>	{ [ 0x1002d37, 0x1002d39 ]	};
+    key <AC04>	{ [ 0x1002d3c, 0x1002d35 ]	};
+    key <AC05>	{ [ 0x1002d33, 0x1002d33 ]	};
+    key <AC06>	{ [ 0x1002d40, 0x1002d41 ]	};
+    key <AC07>	{ [ 0x1002d4a, 0x1002d4b ]	};
+    key <AC08>	{ [ 0x1002d3d, 0x1002d3d ]	};
+    key <AC09>	{ [ 0x1002d4d, 0x1002d38 ]	};
+    key <AC10>	{ [ 0x1002d4e, 0x1002d3a ]	};
+    key <AC11>	{ [ 0x1002d51,  percent  ]	};
+    key <BKSL>	{ [ asterisk,   mu       ]	};
+
+    key <AB01>	{ [ 0x1002d61, 0x1002d3e ]	};
+    key <AB02>	{ [ 0x1002d45, 0x1002d46 ]	};
+    key <AB03>	{ [ 0x1002d5b, 0x1002d3f ]	};
+    key <AB04>	{ [ 0x1002d56, 0x1002d34 ]	};
+    key <AB05>	{ [ 0x1002d31, 0x1002d32 ]	};
+    key <AB06>	{ [ 0x1002d4f, 0x1002d50 ]	};
+    key <AB07>	{ [     comma,  question ]    };
+    key <AB08>	{ [ semicolon,    period ]    };
+    key <AB09>	{ [     colon,     slash ]    };
+    key <AB10>	{ [    exclam,   section ]    };
+
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "tifinagh-extended-phonetic" {
+    include "ma(tifinagh-extended)"
+
+    name[Group1]="Berber (Morocco, Tifinagh extended phonetic)";
+
+    key <LatA>	{ [ 0x1002d30 ]	};
+    key <LatZ>	{ [ 0x1002d63, 0x1002d65 ]	};
+    key <LatE>	{ [ 0x1002d3b, NoSymbol,0x10020ac ]	};
+    key <LatR>	{ [ 0x1002d54, 0x1002d55 ]	};
+    key <LatT>	{ [ 0x1002d5c, 0x1002d5f ]	};
+    key <LatY>	{ [ 0x1002d62 ]	};
+    key <LatU>	{ [ 0x1002d53 ]	};
+    key <LatI>	{ [ 0x1002d49 ]	};
+    key <LatO>	{ [ 0x1002d44 ]	};
+    key <LatP>	{ [ 0x1002d43 ]	};
+
+    key <LatQ>	{ [ 0x1002d47 ]	};
+    key <LatS>	{ [ 0x1002d59, 0x1002d5a ]	};
+    key <LatD>	{ [ 0x1002d37, 0x1002d39 ]	};
+    key <LatF>	{ [ 0x1002d3c ]	};
+    key <LatG>	{ [ 0x1002d33 ]	};
+    key <LatH>	{ [ 0x1002d40 ]	};
+    key <LatJ>	{ [ 0x1002d4a ]	};
+    key <LatK>	{ [ 0x1002d3d ]	};
+    key <LatL>	{ [ 0x1002d4d ]	};
+    key <LatM>	{ [ 0x1002d4e ]	};
+
+    key <LatW>	{ [ 0x1002d61 ]	};
+    key <LatX>	{ [ 0x1002d45 ]	};
+    key <LatC>	{ [ 0x1002d5b ]	};
+    key <LatV>	{ [ 0x1002d56 ]	};
+    key <LatB>	{ [ 0x1002d31 ]	};
+    key <LatN>	{ [ 0x1002d4f ]	};
+
+    include "level3(ralt_switch)"
+};
+
+// Tifinagh keyboard; improved from the IRCAM layout to make all
+// tifinagh chars in unicode accessible (in shift positions for most
+// touareg letters; in altgr position for spirants.
+
+partial alphanumeric_keys
+xkb_symbols "tifinagh-alt" {
+
+    name[Group1]="Berber (Morocco, Tifinagh alt.)";
+
+    key <TLDE>	{ [ twosuperior, asciitilde ]	};
+    key <AE01>	{ [ ampersand,          1 ]	};
+    key <AE02>	{ [asciitilde,          2, asciitilde	]	};
+    key <AE03>	{ [  quotedbl,          3, numbersign	]	};
+    key <AE04>	{ [apostrophe,          4, braceleft	]	};
+    key <AE05>	{ [ parenleft,          5, bracketleft	]	};
+    key <AE06>	{ [     minus,          6, bar		]	};
+    key <AE07>	{ [     grave,          7, grave	]	};
+    key <AE08>	{ [underscore,          8, backslash	]	};
+    key <AE09>	{ [asciicircum,         9, asciicircum	]	};
+    key <AE10>	{ [        at,          0, at		]	};
+    key <AE11>	{ [parenright,     degree, bracketright	]	};
+    key <AE12>	{ [     equal,       plus, braceright	]	};
+
+    key <AD01>	{ [ 0x1002d30 ]	};
+    key <AD02>	{ [ 0x1002d63, 0x1002d65, 0x1002d64 ]	};
+    key <AD03>	{ [ 0x1002d3b ]	};
+    key <AD04>	{ [ 0x1002d54, 0x1002d55 ]	};
+    key <AD05>	{ [ 0x1002d5c, 0x1002d5f, 0x1002d5d ]	};
+    key <AD06>	{ [ 0x1002d62 ]	};
+    key <AD07>	{ [ 0x1002d53 ]	};
+    key <AD08>	{ [ 0x1002d49 ]	};
+    key <AD09>	{ [ 0x1002d44 ]	};
+    key <AD10>	{ [ 0x1002d43, 0x1002d52 ]	};
+    key <AD11>	{ [ dead_circumflex ] };
+    key <AD12>	{ [    dollar,   sterling ]	};
+
+    key <AC01>	{ [ 0x1002d47, 0x1002d48 ]	};
+    key <AC02>	{ [ 0x1002d59, 0x1002d5a ]	};
+    key <AC03>	{ [ 0x1002d37, 0x1002d39, 0x1002d38, 0x1002d3a ]	};
+    key <AC04>	{ [ 0x1002d3c ]	};
+    key <AC05>	{ [ 0x1002d33, 0x1002d36, 0x1002d34, 0x1002d35 ]	};
+    key <AC06>	{ [ 0x1002d40, 0x1002d42, 0x1002d41 ]	};
+    key <AC07>	{ [ 0x1002d4a, 0x1002d4c, 0x1002d4b ]	};
+    key <AC08>	{ [ 0x1002d3d, 0x1002d3e, 0x1002d3f ]	};
+    key <AC09>	{ [ 0x1002d4d ]	};
+    key <AC10>	{ [ 0x1002d4e ]	};
+    key <AC11>	{ [ percent ]	};
+    key <BKSL>	{ [  asterisk,         mu ]	};
+
+    key <AB01>	{ [ 0x1002d61, 0x1002d6f, 0x1002d60 ]	};
+    key <AB02>	{ [ 0x1002d45, 0x1002d46 ]	};
+    key <AB03>	{ [ 0x1002d5b, 0x1002d5e ]	};
+    key <AB04>	{ [ 0x1002d56, 0x1002d57, 0x1002d58 ]	};
+    key <AB05>	{ [ 0x1002d31, 0x1002d31, 0x1002d32 ]	};
+    key <AB06>	{ [ 0x1002d4f, 0x1002d50, 0x1002d51 ]	};
+    key <AB07>	{ [     comma,   question ] };
+    key <AB08>	{ [ semicolon,     period ] };
+    key <AB09>	{ [     colon,      slash ] };
+    key <AB10>	{ [    exclam,    section ] };
+
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "tifinagh-alt-phonetic" {
+    include "ma(tifinagh-alt)"
+
+    name[Group1]="Berber (Morocco, Tifinagh phonetic, alt.)";
+
+    key <LatA>	{ [ 0x1002d30 ]	};
+    key <LatZ>	{ [ 0x1002d63, 0x1002d65, 0x1002d64 ]	};
+    key <LatE>	{ [ 0x1002d3b ]	};
+    key <LatR>	{ [ 0x1002d54, 0x1002d55 ]	};
+    key <LatT>	{ [ 0x1002d5c, 0x1002d5f, 0x1002d5d ]	};
+    key <LatY>	{ [ 0x1002d62 ]	};
+    key <LatU>	{ [ 0x1002d53 ]	};
+    key <LatI>	{ [ 0x1002d49 ]	};
+    key <LatO>	{ [ 0x1002d44 ]	};
+    key <LatP>	{ [ 0x1002d43, 0x1002d52 ]	};
+
+    key <LatQ>	{ [ 0x1002d47, 0x1002d48 ]	};
+    key <LatS>	{ [ 0x1002d59, 0x1002d5a ]	};
+    key <LatD>	{ [ 0x1002d37, 0x1002d39, 0x1002d38, 0x1002d3a ]	};
+    key <LatF>	{ [ 0x1002d3c ]	};
+    key <LatG>	{ [ 0x1002d33, 0x1002d36, 0x1002d34, 0x1002d35 ]	};
+    key <LatH>	{ [ 0x1002d40, 0x1002d42, 0x1002d41 ]	};
+    key <LatJ>	{ [ 0x1002d4a, 0x1002d4c, 0x1002d4b ]	};
+    key <LatK>	{ [ 0x1002d3d, 0x1002d3e, 0x1002d3f ]	};
+    key <LatL>	{ [ 0x1002d4d ]	};
+    key <LatM>	{ [ 0x1002d4e ]	};
+
+    key <LatW>	{ [ 0x1002d61, 0x1002d6f, 0x1002d60 ]	};
+    key <LatX>	{ [ 0x1002d45, 0x1002d46 ]	};
+    key <LatC>	{ [ 0x1002d5b, 0x1002d5e ]	};
+    key <LatV>	{ [ 0x1002d56, 0x1002d57, 0x1002d58 ]	};
+    key <LatB>	{ [ 0x1002d31, 0x1002d31, 0x1002d32 ]	};
+    key <LatN>	{ [ 0x1002d4f, 0x1002d50, 0x1002d51 ]	};
+
+    include "level3(ralt_switch)"
+};
+
+// Latin Tarifit keyboard. Used by the riffian community
+// Tarifit characters are accessed using ALTGR
+
+
+partial alphanumeric_keys
+xkb_symbols "rif" {
+     // Tarifit keyboard (QWERTY varient)   
+     // By Ilyahoo Proshel <ip@ipshel.com> 2021
+     // Only "ʷ ɛ ṭ ḍ γ ḥ ẓ ṣ" are supported by Rif Community.
+
+    include "us"
+
+    name[Group1]= "Tarifit"; 
+    
+    key <AD02>	{[	w,	W,		U02B7 	]}; // ʷ
+    key <AD03>	{[	e,	E,		U025B,		U0190	]}; // e E ɛ Ɛ
+    key <AD05>	{[	t,	T,		U1E6D,		U1E6C	]}; // t T ṭ Ṭ
+    key <AC02>  {[	s,	S,		U1E63,		U1E62	]}; // s S ṣ Ṣ
+    key <AC03>	{[	d,	D,		U1E0D,		U1E0C	]}; // d D ḍ Ḍ
+    key <AC05>	{[	g,	G,		U0263,		U0194	]}; // g G ɣ Ɣ
+    key <AC06>	{[	h,	H,		U1E25,		U1E24	]}; // h H ḥ Ḥ
+    key <AB01>	{[	z,	Z,		U1E93,		U1E92   ]}; // z Z ẓ Ẓ
+
+
+    include "level3(ralt_switch)"
+};
+

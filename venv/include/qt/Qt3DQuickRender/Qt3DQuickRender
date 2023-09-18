@@ -1,0 +1,5 @@
+#ifndef QT_QT3DQUICKRENDER_MODULE_H
+#define QT_QT3DQUICKRENDER_MODULE_H
+#include <Qt3DQuickRender/Qt3DQuickRenderDepends>
+#include "qt3dquickrenderversion.h"
+#endif

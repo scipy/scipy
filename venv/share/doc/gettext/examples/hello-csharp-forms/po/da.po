@@ -1,0 +1,29 @@
+# Danish messages for hello-csharp-forms.
+# Copyright (C) 2015 Yoyodyne, Inc. (msgids)
+# This file is distributed under the same license as the gettext package.
+# Jan Djærv <jan.h.d@swipnet.se>, 2003, 2006.
+# Keld Simonsen <keld@keldix.com>, 2011.
+# Joe Hansen <joedalton2@yahoo.dk>, 2015.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: hello-csharp-forms 0.19.4.73\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"POT-Creation-Date: 2022-10-10 00:21+0200\n"
+"PO-Revision-Date: 2015-06-27 12:39+0100\n"
+"Last-Translator: Joe Hansen <joedalton2@yahoo.dk>\n"
+"Language-Team: Danish <dansk@dansk-gruppen.dk>\n"
+"Language: da\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+
+#: hello.cs:29
+msgid "Hello, world!"
+msgstr "Hej verden!"
+
+#: hello.cs:36
+#, csharp-format
+msgid "This program is running as process number {0}."
+msgstr "Dette program kører som proces nummer {0}."

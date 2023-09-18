@@ -1,0 +1,195 @@
+<!-- Creator     : groff version 1.22.3 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>MSGCMP</title>
+
+</head>
+<body>
+
+<h1 align="center">MSGCMP</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+<a href="#REPORTING BUGS">REPORTING BUGS</a><br>
+<a href="#COPYRIGHT">COPYRIGHT</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">msgcmp -
+compare message catalog and template</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>msgcmp</b>
+[<i>OPTION</i>] <i>def.po ref.pot</i></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Compare two
+Uniforum style .po files to check that both contain the same
+set of msgid strings. The def.po file is an existing PO file
+with the translations. The ref.pot file is the last created
+PO file, or a PO Template file (generally created by
+xgettext). This is useful for checking that you have
+translated each and every message in your program. Where an
+exact match cannot be found, fuzzy matching is used to
+produce better diagnostics.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Mandatory
+arguments to long options are mandatory for short options
+too.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Input file
+location:</b></p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>def.po</p></td>
+<td width="2%"></td>
+<td width="18%">
+
+
+<p>translations</p></td>
+<td width="60%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;">ref.pot</p>
+
+<p style="margin-left:22%;">references to the sources</p>
+
+<p style="margin-left:11%;"><b>-D</b>,
+<b>--directory</b>=<i>DIRECTORY</i></p>
+
+<p style="margin-left:22%;">add DIRECTORY to list for input
+files search</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Operation
+modifiers: <br>
+-m</b>, <b>--multi-domain</b></p>
+
+<p style="margin-left:22%;">apply ref.pot to each of the
+domains in def.po</p>
+
+<p style="margin-left:11%;"><b>-N</b>,
+<b>--no-fuzzy-matching</b></p>
+
+<p style="margin-left:22%;">do not use fuzzy matching</p>
+
+
+<p style="margin-left:11%;"><b>--use-fuzzy</b></p>
+
+<p style="margin-left:22%;">consider fuzzy entries</p>
+
+
+<p style="margin-left:11%;"><b>--use-untranslated</b></p>
+
+<p style="margin-left:22%;">consider untranslated
+entries</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Input file
+syntax: <br>
+-P</b>,
+<b>--properties-input</b></p>
+
+<p style="margin-left:22%;">input files are in Java
+.properties syntax</p>
+
+
+<p style="margin-left:11%;"><b>--stringtable-input</b></p>
+
+<p style="margin-left:22%;">input files are in
+NeXTstep/GNUstep .strings syntax</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Informative
+output: <br>
+-h</b>, <b>--help</b></p>
+
+<p style="margin-left:22%;">display this help and exit</p>
+
+<p style="margin-left:11%;"><b>-V</b>,
+<b>--version</b></p>
+
+<p style="margin-left:22%;">output version information and
+exit</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Written by
+Peter Miller.</p>
+
+<h2>REPORTING BUGS
+<a name="REPORTING BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Report bugs in
+the bug tracker at
+&lt;https://savannah.gnu.org/projects/gettext&gt; or by
+email to &lt;bug-gettext@gnu.org&gt;.</p>
+
+<h2>COPYRIGHT
+<a name="COPYRIGHT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Copyright
+&copy; 1995-2022 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later
+&lt;https://gnu.org/licenses/gpl.html&gt; <br>
+This is free software: you are free to change and
+redistribute it. There is NO WARRANTY, to the extent
+permitted by law.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The full
+documentation for <b>msgcmp</b> is maintained as a Texinfo
+manual. If the <b>info</b> and <b>msgcmp</b> programs are
+properly installed at your site, the command</p>
+
+<p style="margin-left:22%; margin-top: 1em"><b>info
+msgcmp</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">should give you
+access to the complete manual.</p>
+<hr>
+</body>
+</html>

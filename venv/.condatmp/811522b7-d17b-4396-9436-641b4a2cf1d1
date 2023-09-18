@@ -1,0 +1,16 @@
+#libevent pkg-config source file
+
+prefix=/workspaces/scipy/venv
+exec_prefix=/workspaces/scipy/venv
+libdir=/workspaces/scipy/venv/lib
+includedir=/workspaces/scipy/venv/include
+
+Name: libevent_core
+Description: libevent_core
+Version: 2.1.12
+Requires:
+Conflicts:
+Libs: -L${libdir} -levent_core
+Libs.private: 
+Cflags: -I${includedir}
+

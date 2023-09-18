@@ -1,0 +1,189 @@
+// -*- indent-tabs-mode: nil -*-
+
+// Created by Alexander Pohoyda <alexander.pohoyda@gmx.net>
+// Geometry specification for Chicony KB-9820 keyboard.
+
+// 86 keys
+default xkb_geometry "us" {
+    description = "Chicony KB-9820 infra-red keyboard";
+    width = 350;
+    height = 180;
+    //baseColor = "grey60";
+    labelColor = "white";
+
+    shape "EDGE" { cornerRadius = 25,
+                   { [0, 8], [142.5, 0], [202.5, 0], [347, 8],
+                     [347, 60], [327, 100], [322, 160],
+                     [202.5, 165], [142.5, 165],
+                     [25, 160], [20, 100], [0, 60] } };
+    shape "KEYS" { cornerRadius = 2, { [271, 109] } };
+    shape "MOUS" { cornerRadius = 12, { [24, 24] } };
+    shape "MOUS2" { cornerRadius = 9, { [18, 18] } };
+    shape "BTNS"  { cornerRadius = 5, { [10, 10] } };
+
+    solid "Edges" {
+        top = 0;
+        left = 0;
+        shape = "EDGE";
+	color = "grey60";
+    };
+
+    solid "KeyPanel" {
+	shape = "KEYS";
+	left = 38;
+	top = 22;
+	color = "black";
+    };
+
+    solid "Mouse" {
+        shape = "MOUS";
+        left = 315;
+        top = 30;
+        color = "grey30";
+    };
+
+    outline "Mouse2" {
+        shape = "MOUS2";
+        left = 318;
+        top = 33;
+        color = "black";
+    };
+    
+    solid "Button1" {
+        shape = "BTNS";
+        left = 10;
+        top = 32;
+        color = "grey30";
+    };
+
+    solid "Button2" {
+        shape = "BTNS";
+        left = 20;
+        top = 42;
+        color = "grey30";
+    };
+
+    outline "Buttons" {
+        shape = "MOUS";
+        left = 8;
+        top = 30;
+        color = "black";
+    };
+
+    shape.cornerRadius = 1;
+    shape "ESC"    { { [17, 12] }, { [1.5, 0], [15.5, 10] } };
+    shape "SMALL"  { { [15, 12] }, { [1.5, 0], [13.5, 10] } };
+    shape "THIN"   { { [14, 18] }, { [2, 0], [12, 15] } };
+    shape "NARR"   { { [16, 18] }, { [2, 0], [14, 15] } };
+    shape "NORM"   { { [17, 18] }, { [2, 0], [15, 15] } };
+    shape "WIDER"  { { [18, 18] }, { [2, 0], [16, 15] } };
+    shape "CAPS"   { { [22, 18] }, { [2, 0], [20, 15] } };
+    shape "RTSH"   { { [23, 18] }, { [2, 0], [21, 15] } };
+    shape "WIDEST" { { [30, 18] }, { [2, 0], [28, 15] } };
+    shape "SPCE"   { { [68, 18] }, { [2, 0], [66, 15] } };
+
+    section "Function" {
+	key.shape = "SMALL";
+	key.gap = 0.79;
+	key.color = "grey60";
+	left = 38;
+	top = 22;
+	row {
+	    top = 1;
+	    keys {  { <ESC>, shape="ESC", 1 },
+	    	    { <FK01>, 1.5 }, <FK02>, <FK03>, <FK04>,
+		    <FK05>, <FK06>, <FK07>, <FK08>,
+		    <FK09>, <FK10>, <FK11>, <FK12>,
+		    <NMLK>, <PRSC>, <SCLK>, <PAUS>
+	    };
+	};
+    }; // End of "Function" section
+
+    section "Control" {
+	key.shape = "NORM";
+	key.gap = 1;
+	key.color = "grey60";
+        left = 38;
+	top = 111;
+	row {
+	    top = 1;
+	    keys { <EASY>, <LCTL>, <LWIN>, <LALT>,
+	           { <SPCE>, shape="SPCE" },
+                   <RALT>,
+                   { <RWIN>, shape="THIN" },
+                   { <MENU>, shape="THIN" },
+                   { <INS>, shape="THIN" },
+                   { <DELE>, shape="THIN" } };
+	};
+    }; // End of "Control" section
+
+    section "Editing" {
+        key.shape = "NORM";
+	key.gap = 1;
+	key.color = "grey60";
+	left = 291;
+	top = 34;
+        row.vertical = True;
+	row {
+	    top = 1;
+	    keys { <HOME>, <PGUP>, <PGDN>, <END> };
+	};
+    }; // End of "Editing" section
+
+    section "Navigation" {
+	key.gap = 1;
+	key.shape = "NARR";
+	key.color = "grey60";
+	left = 257;
+	top = 92;
+	row {
+	    left = 16;
+	    top = 1;
+	    keys { <UP> };
+	};
+	row {
+	    top = 20;
+	    keys { <LEFT>, <DOWN>, <RGHT> };
+	};
+    }; // End of "Navigation" section
+
+    section "Alpha" {
+	key.gap = 1;
+	key.shape = "NORM";
+	key.color = "grey60";
+        left = 38;
+	top = 35;
+	row {
+	    top = 1;
+	    keys { { <TLDE>, shape="NARR" },
+                   <AE01>, <AE02>, <AE03>, <AE04>,
+		   <AE05>, <AE06>, <AE07>, <AE08>, <AE09>,
+		   <AE10>, <AE11>, <AE12>, { <BKSP>, shape="WIDER" }
+	    };
+	};
+	row {
+	    top = 20;
+	    keys { <TAB>,
+		   <AD01>, <AD02>, <AD03>, <AD04>, <AD05>, 
+		   <AD06>, <AD07>, <AD08>, <AD09>, <AD10>, 
+		   <AD11>, <AD12>, <AD13>
+	    };
+	};
+	row {
+	    top = 39;
+	    keys { { <CAPS>, shape="CAPS" },
+		   <AC01>, <AC02>, <AC03>, <AC04>, <AC05>, 
+		   <AC06>, <AC07>, <AC08>, <AC09>, <AC10>, 
+		   <AC11>, { <RTRN>, shape="WIDEST" }
+	    };
+	};
+	row {
+	    top = 58;
+	    keys { { <LFSH>, shape="WIDEST" },
+		    <AB01>, <AB02>, <AB03>, <AB04>, <AB05>, 
+		    <AB06>, <AB07>, <AB08>, <AB09>, <AB10>,
+		    { <RTSH>, shape="RTSH" }
+	    };
+	};
+    }; // End of "Alpha" section
+};

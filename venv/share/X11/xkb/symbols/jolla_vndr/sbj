@@ -1,0 +1,54 @@
+// Instructions
+//
+// 1. Set basic layout by:
+//    setxkbmap -rules evdev -model jollasbj -layout cz
+//
+// 2. Set variant by:
+//    setxkbmap -rules evdev -model jollasbj -layout cz -variant qwerty
+//
+// 3. Set multilayout by:
+//    setxkbmap -rules evdev -model jollasbj -layout "us,cz" -variant ",qwerty" -option grp:ctrl_shift_toggle
+//    This sets the basic us layout active. You can switch to qwerty
+//    variant of cz layout by pressing ctrl+shift.
+//
+// Pitfalls
+//
+// 1. Many to one mappings
+//
+// Higher level input method components don't necessarily handle many to
+// one mappings correctly. They may assume that there exists only a one
+// to one mapping between a hardware key and a symbol. Therefore you
+// should take care not to introduce many to one mappings for keys that
+// are going to be reverse mapped from a symbol to a hardware key.
+//
+// Currently at least the modifier keys are affected. Clients may set
+// states, such as autorepeat, for hardware keys by reverse mapping a
+// modifier symbol to a hardware key and then setting the state for the
+// first hardware key that maps to the symbol. The correct way would be
+// to modify the state of all hardware keys mapping to a given symbol.
+//
+// We are nice and keep the mappings one to one for clients that don't
+// choose to handle many to one mappings.
+
+
+
+default partial alphanumeric_keys
+xkb_symbols "common" {
+    include "pc(pc105)"
+    include "jolla_vndr/sbj(common-keys)"
+
+    // This section should not be included by any other section. It's
+    // referenced only once by rule file to allow multiple layout
+    // configurations.
+};
+
+partial hidden alphanumeric_keys
+xkb_symbols "common-keys" {
+
+    // These keycodes are beyond the X11 255 limit value so it would
+    // only be valid for the use with SW which supports extended keycodes,
+    // like xkbcommon.
+
+    // generated from the headset, must always be in the map.
+    key <I264>	{ [	XF86Phone							] };
+};

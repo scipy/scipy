@@ -1,0 +1,990 @@
+{
+  "build": "pyhd8ed1ab_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/noarch",
+  "constrains": [],
+  "depends": [
+    "mdurl >=0.1,<1",
+    "python >=3.8"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/markdown-it-py-3.0.0-pyhd8ed1ab_0",
+  "features": "",
+  "files": [
+    "lib/python3.10/site-packages/markdown_it/__init__.py",
+    "lib/python3.10/site-packages/markdown_it/_compat.py",
+    "lib/python3.10/site-packages/markdown_it/_punycode.py",
+    "lib/python3.10/site-packages/markdown_it/cli/__init__.py",
+    "lib/python3.10/site-packages/markdown_it/cli/parse.py",
+    "lib/python3.10/site-packages/markdown_it/common/__init__.py",
+    "lib/python3.10/site-packages/markdown_it/common/entities.py",
+    "lib/python3.10/site-packages/markdown_it/common/html_blocks.py",
+    "lib/python3.10/site-packages/markdown_it/common/html_re.py",
+    "lib/python3.10/site-packages/markdown_it/common/normalize_url.py",
+    "lib/python3.10/site-packages/markdown_it/common/utils.py",
+    "lib/python3.10/site-packages/markdown_it/helpers/__init__.py",
+    "lib/python3.10/site-packages/markdown_it/helpers/parse_link_destination.py",
+    "lib/python3.10/site-packages/markdown_it/helpers/parse_link_label.py",
+    "lib/python3.10/site-packages/markdown_it/helpers/parse_link_title.py",
+    "lib/python3.10/site-packages/markdown_it/main.py",
+    "lib/python3.10/site-packages/markdown_it/parser_block.py",
+    "lib/python3.10/site-packages/markdown_it/parser_core.py",
+    "lib/python3.10/site-packages/markdown_it/parser_inline.py",
+    "lib/python3.10/site-packages/markdown_it/port.yaml",
+    "lib/python3.10/site-packages/markdown_it/presets/__init__.py",
+    "lib/python3.10/site-packages/markdown_it/presets/commonmark.py",
+    "lib/python3.10/site-packages/markdown_it/presets/default.py",
+    "lib/python3.10/site-packages/markdown_it/presets/zero.py",
+    "lib/python3.10/site-packages/markdown_it/py.typed",
+    "lib/python3.10/site-packages/markdown_it/renderer.py",
+    "lib/python3.10/site-packages/markdown_it/ruler.py",
+    "lib/python3.10/site-packages/markdown_it/rules_block/__init__.py",
+    "lib/python3.10/site-packages/markdown_it/rules_block/blockquote.py",
+    "lib/python3.10/site-packages/markdown_it/rules_block/code.py",
+    "lib/python3.10/site-packages/markdown_it/rules_block/fence.py",
+    "lib/python3.10/site-packages/markdown_it/rules_block/heading.py",
+    "lib/python3.10/site-packages/markdown_it/rules_block/hr.py",
+    "lib/python3.10/site-packages/markdown_it/rules_block/html_block.py",
+    "lib/python3.10/site-packages/markdown_it/rules_block/lheading.py",
+    "lib/python3.10/site-packages/markdown_it/rules_block/list.py",
+    "lib/python3.10/site-packages/markdown_it/rules_block/paragraph.py",
+    "lib/python3.10/site-packages/markdown_it/rules_block/reference.py",
+    "lib/python3.10/site-packages/markdown_it/rules_block/state_block.py",
+    "lib/python3.10/site-packages/markdown_it/rules_block/table.py",
+    "lib/python3.10/site-packages/markdown_it/rules_core/__init__.py",
+    "lib/python3.10/site-packages/markdown_it/rules_core/block.py",
+    "lib/python3.10/site-packages/markdown_it/rules_core/inline.py",
+    "lib/python3.10/site-packages/markdown_it/rules_core/linkify.py",
+    "lib/python3.10/site-packages/markdown_it/rules_core/normalize.py",
+    "lib/python3.10/site-packages/markdown_it/rules_core/replacements.py",
+    "lib/python3.10/site-packages/markdown_it/rules_core/smartquotes.py",
+    "lib/python3.10/site-packages/markdown_it/rules_core/state_core.py",
+    "lib/python3.10/site-packages/markdown_it/rules_core/text_join.py",
+    "lib/python3.10/site-packages/markdown_it/rules_inline/__init__.py",
+    "lib/python3.10/site-packages/markdown_it/rules_inline/autolink.py",
+    "lib/python3.10/site-packages/markdown_it/rules_inline/backticks.py",
+    "lib/python3.10/site-packages/markdown_it/rules_inline/balance_pairs.py",
+    "lib/python3.10/site-packages/markdown_it/rules_inline/emphasis.py",
+    "lib/python3.10/site-packages/markdown_it/rules_inline/entity.py",
+    "lib/python3.10/site-packages/markdown_it/rules_inline/escape.py",
+    "lib/python3.10/site-packages/markdown_it/rules_inline/fragments_join.py",
+    "lib/python3.10/site-packages/markdown_it/rules_inline/html_inline.py",
+    "lib/python3.10/site-packages/markdown_it/rules_inline/image.py",
+    "lib/python3.10/site-packages/markdown_it/rules_inline/link.py",
+    "lib/python3.10/site-packages/markdown_it/rules_inline/linkify.py",
+    "lib/python3.10/site-packages/markdown_it/rules_inline/newline.py",
+    "lib/python3.10/site-packages/markdown_it/rules_inline/state_inline.py",
+    "lib/python3.10/site-packages/markdown_it/rules_inline/strikethrough.py",
+    "lib/python3.10/site-packages/markdown_it/rules_inline/text.py",
+    "lib/python3.10/site-packages/markdown_it/token.py",
+    "lib/python3.10/site-packages/markdown_it/tree.py",
+    "lib/python3.10/site-packages/markdown_it/utils.py",
+    "lib/python3.10/site-packages/markdown_it_py-3.0.0.dist-info/INSTALLER",
+    "lib/python3.10/site-packages/markdown_it_py-3.0.0.dist-info/LICENSE",
+    "lib/python3.10/site-packages/markdown_it_py-3.0.0.dist-info/LICENSE.markdown-it",
+    "lib/python3.10/site-packages/markdown_it_py-3.0.0.dist-info/METADATA",
+    "lib/python3.10/site-packages/markdown_it_py-3.0.0.dist-info/RECORD",
+    "lib/python3.10/site-packages/markdown_it_py-3.0.0.dist-info/REQUESTED",
+    "lib/python3.10/site-packages/markdown_it_py-3.0.0.dist-info/WHEEL",
+    "lib/python3.10/site-packages/markdown_it_py-3.0.0.dist-info/direct_url.json",
+    "lib/python3.10/site-packages/markdown_it_py-3.0.0.dist-info/entry_points.txt",
+    "lib/python3.10/site-packages/markdown_it/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/__pycache__/_compat.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/__pycache__/_punycode.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/cli/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/cli/__pycache__/parse.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/common/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/common/__pycache__/entities.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/common/__pycache__/html_blocks.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/common/__pycache__/html_re.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/common/__pycache__/normalize_url.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/common/__pycache__/utils.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/helpers/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/helpers/__pycache__/parse_link_destination.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/helpers/__pycache__/parse_link_label.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/helpers/__pycache__/parse_link_title.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/__pycache__/main.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/__pycache__/parser_block.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/__pycache__/parser_core.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/__pycache__/parser_inline.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/presets/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/presets/__pycache__/commonmark.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/presets/__pycache__/default.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/presets/__pycache__/zero.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/__pycache__/renderer.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/__pycache__/ruler.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_block/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_block/__pycache__/blockquote.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_block/__pycache__/code.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_block/__pycache__/fence.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_block/__pycache__/heading.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_block/__pycache__/hr.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_block/__pycache__/html_block.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_block/__pycache__/lheading.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_block/__pycache__/list.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_block/__pycache__/paragraph.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_block/__pycache__/reference.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_block/__pycache__/state_block.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_block/__pycache__/table.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_core/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_core/__pycache__/block.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_core/__pycache__/inline.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_core/__pycache__/linkify.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_core/__pycache__/normalize.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_core/__pycache__/replacements.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_core/__pycache__/smartquotes.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_core/__pycache__/state_core.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_core/__pycache__/text_join.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_inline/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_inline/__pycache__/autolink.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_inline/__pycache__/backticks.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_inline/__pycache__/balance_pairs.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_inline/__pycache__/emphasis.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_inline/__pycache__/entity.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_inline/__pycache__/escape.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_inline/__pycache__/fragments_join.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_inline/__pycache__/html_inline.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_inline/__pycache__/image.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_inline/__pycache__/link.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_inline/__pycache__/linkify.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_inline/__pycache__/newline.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_inline/__pycache__/state_inline.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_inline/__pycache__/strikethrough.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/rules_inline/__pycache__/text.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/__pycache__/token.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/__pycache__/tree.cpython-310.pyc",
+    "lib/python3.10/site-packages/markdown_it/__pycache__/utils.cpython-310.pyc",
+    "bin/markdown-it"
+  ],
+  "fn": "markdown-it-py-3.0.0-pyhd8ed1ab_0.conda",
+  "license": "MIT",
+  "license_family": "MIT",
+  "link": {
+    "source": "/opt/conda/pkgs/markdown-it-py-3.0.0-pyhd8ed1ab_0",
+    "type": 1
+  },
+  "md5": "93a8e71256479c62074356ef6ebf501b",
+  "name": "markdown-it-py",
+  "noarch": "python",
+  "package_tarball_full_path": "/opt/conda/pkgs/markdown-it-py-3.0.0-pyhd8ed1ab_0.conda",
+  "package_type": "noarch_python",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "site-packages/markdown_it/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "f6fdef083ed7409ba37192d4d85d784fc3bcf0924ef77ad9694a0abbb728707f",
+        "sha256_in_prefix": "f6fdef083ed7409ba37192d4d85d784fc3bcf0924ef77ad9694a0abbb728707f",
+        "size_in_bytes": 113
+      },
+      {
+        "_path": "site-packages/markdown_it/_compat.py",
+        "path_type": "hardlink",
+        "sha256": "99f85a94fa1b1e997cb98b7657a482399ab71ea6869563fc323202c03bd2ff11",
+        "sha256_in_prefix": "99f85a94fa1b1e997cb98b7657a482399ab71ea6869563fc323202c03bd2ff11",
+        "size_in_bytes": 246
+      },
+      {
+        "_path": "site-packages/markdown_it/_punycode.py",
+        "path_type": "hardlink",
+        "sha256": "63f9be7f3739132fcac34f4c3cd3794d43273d79b6700094644feac1491f16b3",
+        "sha256_in_prefix": "63f9be7f3739132fcac34f4c3cd3794d43273d79b6700094644feac1491f16b3",
+        "size_in_bytes": 2364
+      },
+      {
+        "_path": "site-packages/markdown_it/cli/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256_in_prefix": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "site-packages/markdown_it/cli/parse.py",
+        "path_type": "hardlink",
+        "sha256": "6624d2c7ab7b9cb93bac602d222d1ad36101f6c0c6267ed82e328ab6e7ddc0d0",
+        "sha256_in_prefix": "6624d2c7ab7b9cb93bac602d222d1ad36101f6c0c6267ed82e328ab6e7ddc0d0",
+        "size_in_bytes": 2901
+      },
+      {
+        "_path": "site-packages/markdown_it/common/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256_in_prefix": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "site-packages/markdown_it/common/entities.py",
+        "path_type": "hardlink",
+        "sha256": "eae9448c1016607e655686e0a67e650a13d884f2a474fc951e9353eced7fc7dd",
+        "sha256_in_prefix": "eae9448c1016607e655686e0a67e650a13d884f2a474fc951e9353eced7fc7dd",
+        "size_in_bytes": 156
+      },
+      {
+        "_path": "site-packages/markdown_it/common/html_blocks.py",
+        "path_type": "hardlink",
+        "sha256": "d5c301a7a8c8757a821ef12cda6a49a951aa4ee162e84c4be153bbe78ca4b205",
+        "sha256_in_prefix": "d5c301a7a8c8757a821ef12cda6a49a951aa4ee162e84c4be153bbe78ca4b205",
+        "size_in_bytes": 932
+      },
+      {
+        "_path": "site-packages/markdown_it/common/html_re.py",
+        "path_type": "hardlink",
+        "sha256": "d2ae501644a75ff97b39bdfb3034a3d94613d289c23f3ff4ee15287762be6ba0",
+        "sha256_in_prefix": "d2ae501644a75ff97b39bdfb3034a3d94613d289c23f3ff4ee15287762be6ba0",
+        "size_in_bytes": 929
+      },
+      {
+        "_path": "site-packages/markdown_it/common/normalize_url.py",
+        "path_type": "hardlink",
+        "sha256": "6af3979cb77dc70e63535ab93cb7ed8c033da6f1b1f25f500c4926652cab3208",
+        "sha256_in_prefix": "6af3979cb77dc70e63535ab93cb7ed8c033da6f1b1f25f500c4926652cab3208",
+        "size_in_bytes": 2568
+      },
+      {
+        "_path": "site-packages/markdown_it/common/utils.py",
+        "path_type": "hardlink",
+        "sha256": "976ca952ea7b8d507019925bf0cda5c659664d6abcc0de53315e3432776abb50",
+        "sha256_in_prefix": "976ca952ea7b8d507019925bf0cda5c659664d6abcc0de53315e3432776abb50",
+        "size_in_bytes": 10728
+      },
+      {
+        "_path": "site-packages/markdown_it/helpers/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "f56ec6c9ca5972adaea7509d55c52974defb8bd565e0dd024f7cb7a8c9138d8e",
+        "sha256_in_prefix": "f56ec6c9ca5972adaea7509d55c52974defb8bd565e0dd024f7cb7a8c9138d8e",
+        "size_in_bytes": 253
+      },
+      {
+        "_path": "site-packages/markdown_it/helpers/parse_link_destination.py",
+        "path_type": "hardlink",
+        "sha256": "c21268128e36466822569c9cd939936fbde73cadcbf8366e66a7c4d9ff01db44",
+        "sha256_in_prefix": "c21268128e36466822569c9cd939936fbde73cadcbf8366e66a7c4d9ff01db44",
+        "size_in_bytes": 1977
+      },
+      {
+        "_path": "site-packages/markdown_it/helpers/parse_link_label.py",
+        "path_type": "hardlink",
+        "sha256": "1d70271a500bfb63a9e88fa57debb30482418c4482459c2ceb128a4b794a1528",
+        "sha256_in_prefix": "1d70271a500bfb63a9e88fa57debb30482418c4482459c2ceb128a4b794a1528",
+        "size_in_bytes": 1036
+      },
+      {
+        "_path": "site-packages/markdown_it/helpers/parse_link_title.py",
+        "path_type": "hardlink",
+        "sha256": "e61e5872d0143e669e06a025083cf3076db4fa2eb81f1632276eee8bec4c067d",
+        "sha256_in_prefix": "e61e5872d0143e669e06a025083cf3076db4fa2eb81f1632276eee8bec4c067d",
+        "size_in_bytes": 1425
+      },
+      {
+        "_path": "site-packages/markdown_it/main.py",
+        "path_type": "hardlink",
+        "sha256": "ec16009016c39a06dd54636ba4069667ffaedbe0e862c382b575a0e6ebf71af8",
+        "sha256_in_prefix": "ec16009016c39a06dd54636ba4069667ffaedbe0e862c382b575a0e6ebf71af8",
+        "size_in_bytes": 12772
+      },
+      {
+        "_path": "site-packages/markdown_it/parser_block.py",
+        "path_type": "hardlink",
+        "sha256": "d5bbd930321d7c162b44d1e964fce65fa5b81975da1540eaab689ac4358ff813",
+        "sha256_in_prefix": "d5bbd930321d7c162b44d1e964fce65fa5b81975da1540eaab689ac4358ff813",
+        "size_in_bytes": 3911
+      },
+      {
+        "_path": "site-packages/markdown_it/parser_core.py",
+        "path_type": "hardlink",
+        "sha256": "6ac3c79ef2f4b24da8a960baf5533c380a8ab3e0e4fbe1911e11b06689cb9bab",
+        "sha256_in_prefix": "6ac3c79ef2f4b24da8a960baf5533c380a8ab3e0e4fbe1911e11b06689cb9bab",
+        "size_in_bytes": 1010
+      },
+      {
+        "_path": "site-packages/markdown_it/parser_inline.py",
+        "path_type": "hardlink",
+        "sha256": "d19022471d86910df9bdad504710de0d9be96b8e30641367545b06cc2ca3fcfa",
+        "sha256_in_prefix": "d19022471d86910df9bdad504710de0d9be96b8e30641367545b06cc2ca3fcfa",
+        "size_in_bytes": 4997
+      },
+      {
+        "_path": "site-packages/markdown_it/port.yaml",
+        "path_type": "hardlink",
+        "sha256": "17a5afb431718ee679a3436d9893b43fc4a41ba39f38d0a3fe080a831e226165",
+        "sha256_in_prefix": "17a5afb431718ee679a3436d9893b43fc4a41ba39f38d0a3fe080a831e226165",
+        "size_in_bytes": 2446
+      },
+      {
+        "_path": "site-packages/markdown_it/presets/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "b4b73da1de625c1124291eb06d73953c2e52e6f90660afbaeed42c9615aeecb6",
+        "sha256_in_prefix": "b4b73da1de625c1124291eb06d73953c2e52e6f90660afbaeed42c9615aeecb6",
+        "size_in_bytes": 970
+      },
+      {
+        "_path": "site-packages/markdown_it/presets/commonmark.py",
+        "path_type": "hardlink",
+        "sha256": "a6a5673a73260a6899587bcd9d7c78135152f15574ee372a516d44b07baff6b1",
+        "sha256_in_prefix": "a6a5673a73260a6899587bcd9d7c78135152f15574ee372a516d44b07baff6b1",
+        "size_in_bytes": 2868
+      },
+      {
+        "_path": "site-packages/markdown_it/presets/default.py",
+        "path_type": "hardlink",
+        "sha256": "4e0aa78e31d7e9259c125939ca35b58683fcb76f84499d10cab987a6b9882f5f",
+        "sha256_in_prefix": "4e0aa78e31d7e9259c125939ca35b58683fcb76f84499d10cab987a6b9882f5f",
+        "size_in_bytes": 1810
+      },
+      {
+        "_path": "site-packages/markdown_it/presets/zero.py",
+        "path_type": "hardlink",
+        "sha256": "daf113411456d6ff548374ec75184cf6beb081946e4dcbe88f072a0dcb197e42",
+        "sha256_in_prefix": "daf113411456d6ff548374ec75184cf6beb081946e4dcbe88f072a0dcb197e42",
+        "size_in_bytes": 2112
+      },
+      {
+        "_path": "site-packages/markdown_it/py.typed",
+        "path_type": "hardlink",
+        "sha256": "f0f8f2675695a10a5156fb7bd66bafbaae6a13e8d315990af862c792175e6e67",
+        "sha256_in_prefix": "f0f8f2675695a10a5156fb7bd66bafbaae6a13e8d315990af862c792175e6e67",
+        "size_in_bytes": 26
+      },
+      {
+        "_path": "site-packages/markdown_it/renderer.py",
+        "path_type": "hardlink",
+        "sha256": "8d9eb6a0afb2faa6b3f28f130f109432f4b939abeb689dbed6e69656aad40afd",
+        "sha256_in_prefix": "8d9eb6a0afb2faa6b3f28f130f109432f4b939abeb689dbed6e69656aad40afd",
+        "size_in_bytes": 9970
+      },
+      {
+        "_path": "site-packages/markdown_it/ruler.py",
+        "path_type": "hardlink",
+        "sha256": "275f0faeeeeeefb92a25f9cc0b9a22156827c3fe7cbe46df9398564018040fbb",
+        "sha256_in_prefix": "275f0faeeeeeefb92a25f9cc0b9a22156827c3fe7cbe46df9398564018040fbb",
+        "size_in_bytes": 9199
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_block/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "f2cbb5b4ec43c3f211f4949d82a7e419948d758a59642042f4c32614e0dd6e61",
+        "sha256_in_prefix": "f2cbb5b4ec43c3f211f4949d82a7e419948d758a59642042f4c32614e0dd6e61",
+        "size_in_bytes": 553
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_block/blockquote.py",
+        "path_type": "hardlink",
+        "sha256": "eeeca64b7e9d72b9de7770ec21a45ca9c6c5535365ca686fb19a445d30f7fe7f",
+        "sha256_in_prefix": "eeeca64b7e9d72b9de7770ec21a45ca9c6c5535365ca686fb19a445d30f7fe7f",
+        "size_in_bytes": 8887
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_block/code.py",
+        "path_type": "hardlink",
+        "sha256": "0120278ac838852d918673ffeffd7fa63c7835b152626aecea51c382d1cf5c8a",
+        "sha256_in_prefix": "0120278ac838852d918673ffeffd7fa63c7835b152626aecea51c382d1cf5c8a",
+        "size_in_bytes": 859
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_block/fence.py",
+        "path_type": "hardlink",
+        "sha256": "049814f8fa99e2f0250aa19cadcf14b5d2e9249c8c79158df86f8ea7ecf1acc7",
+        "sha256_in_prefix": "049814f8fa99e2f0250aa19cadcf14b5d2e9249c8c79158df86f8ea7ecf1acc7",
+        "size_in_bytes": 2537
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_block/heading.py",
+        "path_type": "hardlink",
+        "sha256": "7bd367bd72db6356efa30abf3dde12fa0e8b6d5837882c76eaacf0bf78cb5321",
+        "sha256_in_prefix": "7bd367bd72db6356efa30abf3dde12fa0e8b6d5837882c76eaacf0bf78cb5321",
+        "size_in_bytes": 1746
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_block/hr.py",
+        "path_type": "hardlink",
+        "sha256": "7cf27eb6e6c52a3c49c6128f89303154ffbf2c761b02adf6899e76279b05c4e5",
+        "sha256_in_prefix": "7cf27eb6e6c52a3c49c6128f89303154ffbf2c761b02adf6899e76279b05c4e5",
+        "size_in_bytes": 1226
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_block/html_block.py",
+        "path_type": "hardlink",
+        "sha256": "c00f296f7e0bb59af50642004e018a4012065f98d034e930665f54184aaf6f93",
+        "sha256_in_prefix": "c00f296f7e0bb59af50642004e018a4012065f98d034e930665f54184aaf6f93",
+        "size_in_bytes": 2721
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_block/lheading.py",
+        "path_type": "hardlink",
+        "sha256": "7d6a04b94a3b4b6b2faf950c2a6c9032487486179800783680c336eba32882ce",
+        "sha256_in_prefix": "7d6a04b94a3b4b6b2faf950c2a6c9032487486179800783680c336eba32882ce",
+        "size_in_bytes": 2625
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_block/list.py",
+        "path_type": "hardlink",
+        "sha256": "808a1d900245c8e2322826428f994094bee3223e64033ac36fe2bed8c14da656",
+        "sha256_in_prefix": "808a1d900245c8e2322826428f994094bee3223e64033ac36fe2bed8c14da656",
+        "size_in_bytes": 9668
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_block/paragraph.py",
+        "path_type": "hardlink",
+        "sha256": "a50a939fcc980c8ebf9965fefe6e8f5d8e30bc3401d67678755529de02aed460",
+        "sha256_in_prefix": "a50a939fcc980c8ebf9965fefe6e8f5d8e30bc3401d67678755529de02aed460",
+        "size_in_bytes": 1818
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_block/reference.py",
+        "path_type": "hardlink",
+        "sha256": "ab347e289ffad16f19ceec1818b94ed5b8071d540fe2a9581b8c85a4ea4d96c0",
+        "sha256_in_prefix": "ab347e289ffad16f19ceec1818b94ed5b8071d540fe2a9581b8c85a4ea4d96c0",
+        "size_in_bytes": 6168
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_block/state_block.py",
+        "path_type": "hardlink",
+        "sha256": "1e8c2c432cb98465226c7e0745958a7cb2255de0d49ee58bee4a45d3ead2c283",
+        "sha256_in_prefix": "1e8c2c432cb98465226c7e0745958a7cb2255de0d49ee58bee4a45d3ead2c283",
+        "size_in_bytes": 8422
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_block/table.py",
+        "path_type": "hardlink",
+        "sha256": "66391cd37efc42d7d0ceb86b3560b691562c1a738b699c83ddd5c6d6e81f5feb",
+        "sha256_in_prefix": "66391cd37efc42d7d0ceb86b3560b691562c1a738b699c83ddd5c6d6e81f5feb",
+        "size_in_bytes": 6987
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_core/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "25934ea4b6788b5bd1e7a4ad89d51af80fc0b355ed6c3c1047488412b397c8e2",
+        "sha256_in_prefix": "25934ea4b6788b5bd1e7a4ad89d51af80fc0b355ed6c3c1047488412b397c8e2",
+        "size_in_bytes": 394
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_core/block.py",
+        "path_type": "hardlink",
+        "sha256": "d3f258d42532f87d8ea2816d204640002b6ea0650ca21831a3867a03f5229d28",
+        "sha256_in_prefix": "d3f258d42532f87d8ea2816d204640002b6ea0650ca21831a3867a03f5229d28",
+        "size_in_bytes": 372
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_core/inline.py",
+        "path_type": "hardlink",
+        "sha256": "f685a67818491c4ef1e3ba0970df72a7a52c019b6b118fc0f9599fa0cbca95de",
+        "sha256_in_prefix": "f685a67818491c4ef1e3ba0970df72a7a52c019b6b118fc0f9599fa0cbca95de",
+        "size_in_bytes": 325
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_core/linkify.py",
+        "path_type": "hardlink",
+        "sha256": "9a342aa64fe51cb876371c3850568bc5ae3b1608be3879e60da9a58179e19afd",
+        "sha256_in_prefix": "9a342aa64fe51cb876371c3850568bc5ae3b1608be3879e60da9a58179e19afd",
+        "size_in_bytes": 5141
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_core/normalize.py",
+        "path_type": "hardlink",
+        "sha256": "a959013b87a58ad3f3c8ffec404361a3ec9c525f2ce1e359d7366bb11d800209",
+        "sha256_in_prefix": "a959013b87a58ad3f3c8ffec404361a3ec9c525f2ce1e359d7366bb11d800209",
+        "size_in_bytes": 402
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_core/replacements.py",
+        "path_type": "hardlink",
+        "sha256": "3472fd30eb849cfb8c14f2c3b536032bdca3ec5d854a578cafa6cfae8f9c89a4",
+        "sha256_in_prefix": "3472fd30eb849cfb8c14f2c3b536032bdca3ec5d854a578cafa6cfae8f9c89a4",
+        "size_in_bytes": 3470
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_core/smartquotes.py",
+        "path_type": "hardlink",
+        "sha256": "0ad6b011c4c7620cc8599c31206b3c7bca122a19b407bb61db7d3923714d11cd",
+        "sha256_in_prefix": "0ad6b011c4c7620cc8599c31206b3c7bca122a19b407bb61db7d3923714d11cd",
+        "size_in_bytes": 7443
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_core/state_core.py",
+        "path_type": "hardlink",
+        "sha256": "1ea599094af97d6ef11ba8de4190dd3b4844f61c71ca5dfff9b6b080ecb9ec76",
+        "sha256_in_prefix": "1ea599094af97d6ef11ba8de4190dd3b4844f61c71ca5dfff9b6b080ecb9ec76",
+        "size_in_bytes": 570
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_core/text_join.py",
+        "path_type": "hardlink",
+        "sha256": "255baaff6ecba08d088c90e60973ae4624ecd6b99216115452387a31d17f6029",
+        "sha256_in_prefix": "255baaff6ecba08d088c90e60973ae4624ecd6b99216115452387a31d17f6029",
+        "size_in_bytes": 1172
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_inline/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "66f97c3fc57cdf4bc385c40a12578b299fe9682fb2a539fb796a6615af72c924",
+        "sha256_in_prefix": "66f97c3fc57cdf4bc385c40a12578b299fe9682fb2a539fb796a6615af72c924",
+        "size_in_bytes": 696
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_inline/autolink.py",
+        "path_type": "hardlink",
+        "sha256": "978118ece2f3b9d6b7e74713e83bbf760804c1c6fde93bc3ed83d77f61fa3f53",
+        "sha256_in_prefix": "978118ece2f3b9d6b7e74713e83bbf760804c1c6fde93bc3ed83d77f61fa3f53",
+        "size_in_bytes": 2079
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_inline/backticks.py",
+        "path_type": "hardlink",
+        "sha256": "27b6dece38cdc625e52aabc77347c99076701fbfb69c1b1756370ac9d93c1383",
+        "sha256_in_prefix": "27b6dece38cdc625e52aabc77347c99076701fbfb69c1b1756370ac9d93c1383",
+        "size_in_bytes": 2037
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_inline/balance_pairs.py",
+        "path_type": "hardlink",
+        "sha256": "be27dab269ded36b0d681070b99b00e32234daf9afd60bd5378a91f9bf66eb61",
+        "sha256_in_prefix": "be27dab269ded36b0d681070b99b00e32234daf9afd60bd5378a91f9bf66eb61",
+        "size_in_bytes": 4851
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_inline/emphasis.py",
+        "path_type": "hardlink",
+        "sha256": "eda0cb671d0995e92ebdbbb7b845130e1269d346743e3ea0e02dfe54b848f02a",
+        "sha256_in_prefix": "eda0cb671d0995e92ebdbbb7b845130e1269d346743e3ea0e02dfe54b848f02a",
+        "size_in_bytes": 3123
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_inline/entity.py",
+        "path_type": "hardlink",
+        "sha256": "084f00206322e62b046b6e1136c7a8d304664d36a3e582db81315d0e605eb005",
+        "sha256_in_prefix": "084f00206322e62b046b6e1136c7a8d304664d36a3e582db81315d0e605eb005",
+        "size_in_bytes": 1651
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_inline/escape.py",
+        "path_type": "hardlink",
+        "sha256": "e4311aecee81c947d775766e75c17b259c0bc571b59e302e5c8394b0d0cf3ea5",
+        "sha256_in_prefix": "e4311aecee81c947d775766e75c17b259c0bc571b59e302e5c8394b0d0cf3ea5",
+        "size_in_bytes": 1658
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_inline/fragments_join.py",
+        "path_type": "hardlink",
+        "sha256": "ff725bc16609cfbe2044779993a4fc79d5494f62154ac8bb15f98926589e4250",
+        "sha256_in_prefix": "ff725bc16609cfbe2044779993a4fc79d5494f62154ac8bb15f98926589e4250",
+        "size_in_bytes": 1493
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_inline/html_inline.py",
+        "path_type": "hardlink",
+        "sha256": "48183a1d1d0746a09dae491e73475f398b90740ab27de2d114b790820b608ef8",
+        "sha256_in_prefix": "48183a1d1d0746a09dae491e73475f398b90740ab27de2d114b790820b608ef8",
+        "size_in_bytes": 1130
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_inline/image.py",
+        "path_type": "hardlink",
+        "sha256": "00c3bb925b3973e0b803f4b6ac188894a0fc050f2f220c96517eef0a95f2fd0b",
+        "sha256_in_prefix": "00c3bb925b3973e0b803f4b6ac188894a0fc050f2f220c96517eef0a95f2fd0b",
+        "size_in_bytes": 4135
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_inline/link.py",
+        "path_type": "hardlink",
+        "sha256": "c117533318cd605895eaea2e64c30bddf20fbf216b3ed3075b324d0507102d5d",
+        "sha256_in_prefix": "c117533318cd605895eaea2e64c30bddf20fbf216b3ed3075b324d0507102d5d",
+        "size_in_bytes": 4318
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_inline/linkify.py",
+        "path_type": "hardlink",
+        "sha256": "8261f0e7d4ac3102c89afeafd5190363d95c40099337e519e06c1116247c8e58",
+        "sha256_in_prefix": "8261f0e7d4ac3102c89afeafd5190363d95c40099337e519e06c1116247c8e58",
+        "size_in_bytes": 1704
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_inline/newline.py",
+        "path_type": "hardlink",
+        "sha256": "2c4221041ff73cf2de08081a0b69da85e3235b937a6fd51a001eac878ec2933f",
+        "sha256_in_prefix": "2c4221041ff73cf2de08081a0b69da85e3235b937a6fd51a001eac878ec2933f",
+        "size_in_bytes": 1296
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_inline/state_inline.py",
+        "path_type": "hardlink",
+        "sha256": "ad798c5f43f4a427febfed35dd8076e0c050c4c9f674986849940c358019f074",
+        "sha256_in_prefix": "ad798c5f43f4a427febfed35dd8076e0c050c4c9f674986849940c358019f074",
+        "size_in_bytes": 5101
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_inline/strikethrough.py",
+        "path_type": "hardlink",
+        "sha256": "a7070f972864879a6a155c51092add5b974d0883ad5387838aded35434cf2150",
+        "sha256_in_prefix": "a7070f972864879a6a155c51092add5b974d0883ad5387838aded35434cf2150",
+        "size_in_bytes": 3214
+      },
+      {
+        "_path": "site-packages/markdown_it/rules_inline/text.py",
+        "path_type": "hardlink",
+        "sha256": "1b098c559ce2026863e3c97d55a5c05f0cf350a0e485a035e2d86ff9309a4b63",
+        "sha256_in_prefix": "1b098c559ce2026863e3c97d55a5c05f0cf350a0e485a035e2d86ff9309a4b63",
+        "size_in_bytes": 901
+      },
+      {
+        "_path": "site-packages/markdown_it/token.py",
+        "path_type": "hardlink",
+        "sha256": "344beea1801e0e1f3feb34fa7ee9337689dcbac54e8f250ac36ce3b0d8199a9e",
+        "sha256_in_prefix": "344beea1801e0e1f3feb34fa7ee9337689dcbac54e8f250ac36ce3b0d8199a9e",
+        "size_in_bytes": 6439
+      },
+      {
+        "_path": "site-packages/markdown_it/tree.py",
+        "path_type": "hardlink",
+        "sha256": "6314aaab7a92ba11c79b59d0a4f521c83038548587bbf1bff766ca7547175c63",
+        "sha256_in_prefix": "6314aaab7a92ba11c79b59d0a4f521c83038548587bbf1bff766ca7547175c63",
+        "size_in_bytes": 11421
+      },
+      {
+        "_path": "site-packages/markdown_it/utils.py",
+        "path_type": "hardlink",
+        "sha256": "ccfa10f2586fc6d25f83a88d4a29b42dc9c02f46385e75771b80c820a98bf0e5",
+        "sha256_in_prefix": "ccfa10f2586fc6d25f83a88d4a29b42dc9c02f46385e75771b80c820a98bf0e5",
+        "size_in_bytes": 5365
+      },
+      {
+        "_path": "site-packages/markdown_it_py-3.0.0.dist-info/INSTALLER",
+        "path_type": "hardlink",
+        "sha256": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "sha256_in_prefix": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "size_in_bytes": 5
+      },
+      {
+        "_path": "site-packages/markdown_it_py-3.0.0.dist-info/LICENSE",
+        "path_type": "hardlink",
+        "sha256": "4a2260d6e2cd0f5a151a1e86dbfe7d3ed552b1e2beabf9941c1ba5c49cbce484",
+        "sha256_in_prefix": "4a2260d6e2cd0f5a151a1e86dbfe7d3ed552b1e2beabf9941c1ba5c49cbce484",
+        "size_in_bytes": 1078
+      },
+      {
+        "_path": "site-packages/markdown_it_py-3.0.0.dist-info/LICENSE.markdown-it",
+        "path_type": "hardlink",
+        "sha256": "792c48c5a849a15fdf9e37e8bcf9e6d1dd13b32b46c642a748a0a46a9919d473",
+        "sha256_in_prefix": "792c48c5a849a15fdf9e37e8bcf9e6d1dd13b32b46c642a748a0a46a9919d473",
+        "size_in_bytes": 1073
+      },
+      {
+        "_path": "site-packages/markdown_it_py-3.0.0.dist-info/METADATA",
+        "path_type": "hardlink",
+        "sha256": "d3e90c1382903520863f37d210581073c32151de5c986f8b3b4d3b045937fdfc",
+        "sha256_in_prefix": "d3e90c1382903520863f37d210581073c32151de5c986f8b3b4d3b045937fdfc",
+        "size_in_bytes": 6940
+      },
+      {
+        "_path": "site-packages/markdown_it_py-3.0.0.dist-info/RECORD",
+        "path_type": "hardlink",
+        "sha256": "d9c7f8d730564c6290a50055de4b535c72d98dbf598e5ef56d1c3766c218e4d9",
+        "sha256_in_prefix": "d9c7f8d730564c6290a50055de4b535c72d98dbf598e5ef56d1c3766c218e4d9",
+        "size_in_bytes": 11025
+      },
+      {
+        "_path": "site-packages/markdown_it_py-3.0.0.dist-info/REQUESTED",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256_in_prefix": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "site-packages/markdown_it_py-3.0.0.dist-info/WHEEL",
+        "path_type": "hardlink",
+        "sha256": "1196c6921ec87b83e865f450f08d19b8ff5592537f4ef719e83484e546abe33e",
+        "sha256_in_prefix": "1196c6921ec87b83e865f450f08d19b8ff5592537f4ef719e83484e546abe33e",
+        "size_in_bytes": 81
+      },
+      {
+        "_path": "site-packages/markdown_it_py-3.0.0.dist-info/direct_url.json",
+        "path_type": "hardlink",
+        "sha256": "24a9b8bb24a385a0bd70dba2fb442cae63616d8cda616e921538c134401e1906",
+        "sha256_in_prefix": "24a9b8bb24a385a0bd70dba2fb442cae63616d8cda616e921538c134401e1906",
+        "size_in_bytes": 110
+      },
+      {
+        "_path": "site-packages/markdown_it_py-3.0.0.dist-info/entry_points.txt",
+        "path_type": "hardlink",
+        "sha256": "4fcd65edf1d0de9965a50e3052d40ae9af20fe9eb0c506e78ca5470a4d96306e",
+        "sha256_in_prefix": "4fcd65edf1d0de9965a50e3052d40ae9af20fe9eb0c506e78ca5470a4d96306e",
+        "size_in_bytes": 58
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/__pycache__/_compat.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/__pycache__/_punycode.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/cli/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/cli/__pycache__/parse.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/common/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/common/__pycache__/entities.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/common/__pycache__/html_blocks.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/common/__pycache__/html_re.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/common/__pycache__/normalize_url.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/common/__pycache__/utils.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/helpers/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/helpers/__pycache__/parse_link_destination.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/helpers/__pycache__/parse_link_label.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/helpers/__pycache__/parse_link_title.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/__pycache__/main.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/__pycache__/parser_block.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/__pycache__/parser_core.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/__pycache__/parser_inline.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/presets/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/presets/__pycache__/commonmark.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/presets/__pycache__/default.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/presets/__pycache__/zero.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/__pycache__/renderer.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/__pycache__/ruler.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_block/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_block/__pycache__/blockquote.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_block/__pycache__/code.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_block/__pycache__/fence.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_block/__pycache__/heading.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_block/__pycache__/hr.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_block/__pycache__/html_block.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_block/__pycache__/lheading.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_block/__pycache__/list.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_block/__pycache__/paragraph.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_block/__pycache__/reference.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_block/__pycache__/state_block.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_block/__pycache__/table.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_core/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_core/__pycache__/block.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_core/__pycache__/inline.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_core/__pycache__/linkify.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_core/__pycache__/normalize.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_core/__pycache__/replacements.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_core/__pycache__/smartquotes.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_core/__pycache__/state_core.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_core/__pycache__/text_join.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_inline/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_inline/__pycache__/autolink.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_inline/__pycache__/backticks.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_inline/__pycache__/balance_pairs.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_inline/__pycache__/emphasis.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_inline/__pycache__/entity.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_inline/__pycache__/escape.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_inline/__pycache__/fragments_join.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_inline/__pycache__/html_inline.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_inline/__pycache__/image.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_inline/__pycache__/link.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_inline/__pycache__/linkify.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_inline/__pycache__/newline.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_inline/__pycache__/state_inline.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_inline/__pycache__/strikethrough.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/rules_inline/__pycache__/text.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/__pycache__/token.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/__pycache__/tree.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/markdown_it/__pycache__/utils.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "bin/markdown-it",
+        "path_type": "unix_python_entry_point"
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "c041b0eaf7a6af3344d5dd452815cdc148d6284fec25a4fa3f4263b3a021e962",
+  "size": 64356,
+  "subdir": "noarch",
+  "timestamp": 1686175179621,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/noarch/markdown-it-py-3.0.0-pyhd8ed1ab_0.conda",
+  "version": "3.0.0"
+}

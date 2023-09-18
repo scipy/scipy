@@ -1,0 +1,10 @@
+This example relies on libstdc++, gettext-runtime.
+
+Installation:
+  ./autogen.sh
+  ./configure --prefix=/some/prefix --with-libasprintf-prefix=/previous/gettext/install/prefix
+  make
+  make install
+Cleanup:
+  make distclean
+  ./autoclean.sh

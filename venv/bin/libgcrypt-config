@@ -1,0 +1,201 @@
+#!/bin/sh
+# Copyright (C) 1999, 2002, 2003, 2004, 2011 Free Software Foundation, Inc.
+#
+# This file is free software; as a special exception the author gives
+# unlimited permission to copy and/or distribute it, with or without
+# modifications, as long as this notice is preserved.
+#
+# This file is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
+# implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# File: src/libgcrypt-config.  Generated from libgcrypt-config.in by configure.
+
+# General.
+prefix="/workspaces/scipy/venv"
+exec_prefix="${prefix}"
+version="1.10.1"
+includedir="${prefix}/include"
+libdir="${exec_prefix}/lib"
+gpg_error_libs="-L/workspaces/scipy/venv/lib -lgpg-error"
+gpg_error_cflags="-I/workspaces/scipy/venv/include"
+
+# libgcrypt values.
+libs="-lgcrypt"
+cflags=""
+
+# API info
+api_version="1"
+
+# Configured for host
+my_host="x86_64-conda-linux-gnu"
+
+# Misc information.
+symmetric_ciphers="arcfour blowfish cast5 des aes twofish serpent rfc2268 seed camellia idea salsa20 gost28147 chacha20 sm4"
+asymmetric_ciphers="dsa elgamal rsa ecc"
+digests="crc gostr3411-94  md4 md5 rmd160 sha1 sha256 sha512 sha3 tiger whirlpool stribog blake2 sm3"
+
+# State variables.
+echo_libs=no
+echo_cflags=no
+echo_prefix=no
+echo_algorithms=no
+echo_exec_prefix=no
+echo_version=no
+echo_api_version=no
+echo_host=no
+
+# Prints usage information.
+usage()
+{
+    cat <<EOF
+Usage: $0 [OPTIONS]
+Options:
+	[--prefix]
+	[--exec-prefix]
+	[--version]
+        [--api-version]
+	[--libs]
+	[--cflags]
+	[--algorithms]
+        [--host]
+EOF
+    exit $1
+}
+
+if test $# -eq 0; then
+    # Nothing to do.
+    usage 1 1>&2
+fi
+
+while test $# -gt 0; do
+    case "$1" in
+	# Set up `optarg'.
+	--*=*)
+	    optarg=`echo "$1" | sed 's/[-_a-zA-Z0-9]*=//'`
+	    ;;
+	*)
+	    optarg=""
+	    ;;
+    esac
+
+    case $1 in
+	--thread=*)
+	    echo "$0: --thread option obsolete: use the thread callback interface" 1>&2
+	    exit 1
+	    ;;
+        --prefix=*)
+            # For compatibility reasons with old M4 macros, we ignore
+            # setting of prefix.
+            ;;
+	--prefix)
+	    echo_prefix=yes
+	    ;;
+        --exec-prefix=*)
+            ;;
+	--exec-prefix)
+	    echo_exec_prefix=yes
+	    ;;
+        --variable=*)
+            case "${1#*=}" in
+                prefix) echo "$prefix" ;;
+                exec_prefix) echo "$exec_prefix" ;;
+                host) echo "$my_host" ;;
+                api_version) echo "$api_version" ;;
+		symmetric_ciphers) echo "$symmetric_ciphers" ;;
+		asymmetric_ciphers) echo "$asymmetric_ciphers" ;;
+		digests) echo "$digests" ;;
+            esac
+            exit 0
+            ;;
+	--modversion|--version)
+	    echo_version=yes
+	    ;;
+        --api-version)
+            echo_api_version=yes
+            ;;
+	--cflags)
+	    echo_cflags=yes
+	    ;;
+	--libs)
+	    echo_libs=yes
+	    ;;
+	--algorithms)
+	    echo_algorithms=yes
+	    ;;
+        --host)
+            echo_host=yes
+            ;;
+	*)
+	    usage 1 1>&2
+	    ;;
+    esac
+    shift
+done
+
+if test "$echo_prefix" = "yes"; then
+    echo "$prefix"
+fi
+
+if test "$echo_exec_prefix" = "yes"; then
+    echo "$exec_prefix"
+fi
+
+if test "$echo_cflags" = "yes"; then
+    includes=""
+    cflags_final="$cflags"
+
+    # Set up `includes'.
+    if test "x$includedir" != "x/usr/include" -a "x$includedir" != "x/include"; then
+	includes="-I$includedir"
+    fi
+    # Set up `cflags_final'.
+    cflags_final="$cflags_final $gpg_error_cflags"
+
+    tmp=""
+    for i in $includes $cflags_final; do
+       if echo "$tmp" | fgrep -v -- "$i" >/dev/null; then
+           tmp="$tmp $i"
+       fi
+    done
+    echo $tmp
+fi
+
+if test "$echo_libs" = "yes"; then
+    libdirs=""
+    libs_final="$libs"
+
+    # Set up `libdirs'.
+    if test "x$libdir" != "x/usr/lib" -a "x$libdir" != "x/lib"; then
+	libdirs="-L$libdir"
+    fi
+
+    # Set up `libs_final'.
+    libs_final="$libs_final $gpg_error_libs"
+
+    tmp=""
+    for i in $libdirs $libs_final; do
+       if echo "$tmp" | fgrep -v -- "$i" >/dev/null; then
+           tmp="$tmp $i"
+       fi
+    done
+    echo $tmp
+fi
+
+if test "$echo_version" = "yes"; then
+    echo "$version"
+fi
+
+if test "$echo_api_version" = "yes"; then
+    echo "$api_version"
+fi
+
+if test "$echo_host" = "yes"; then
+    echo "$my_host"
+fi
+
+if test "$echo_algorithms" = "yes"; then
+    echo "Symmetric cipher algorithms: $symmetric_ciphers"
+    echo "Public-key cipher algorithms: $asymmetric_ciphers"
+    echo "Message digest algorithms: $digests"
+fi

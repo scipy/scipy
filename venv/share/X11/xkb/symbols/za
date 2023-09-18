@@ -1,0 +1,42 @@
+// Keyboard layout for South Africa.
+
+// Dead keys and letters with diacritics on the upper levels.
+// Original author: Dwayne Bailey (dwayne@translate.org.za).
+default partial alphanumeric_keys modifier_keys
+xkb_symbols "basic" {
+
+    include "latin"
+
+    name[Group1]="English (South Africa)";
+
+    key <TLDE>  { [     grave, asciitilde,  dead_grave                ] };
+    key <AE02>  { [         2,         at,         yen                ] };
+    key <AE03>  { [         3, numbersign,    sterling                ] };
+    key <AE04>  { [         4,     dollar,      dollar                ] };
+    key <AE05>  { [         5,    percent,    EuroSign                ] };
+    key <AE06>  { [         6,asciicircum, dead_circumflex            ] };
+
+    key <AD03>  { [         e,          E,  ediaeresis,    Ediaeresis ] };
+    key <AD04>  { [         r,          R, ecircumflex,   Ecircumflex ] };
+    key <AD05>  { [         t,          T,       U1e71,         U1e70 ] };
+    key <AD06>  { [         y,          Y, ucircumflex,   Ucircumflex ] };
+    key <AD07>  { [         u,          U,  udiaeresis,    Udiaeresis ] };
+    key <AD08>  { [         i,          I,  idiaeresis,    Idiaeresis ] };
+    key <AD09>  { [         o,          O,  odiaeresis,    Odiaeresis ] };
+    key <AD10>  { [         p,          P, ocircumflex,   Ocircumflex ] };
+
+    key <AC01>  { [         a,          A,  adiaeresis,    Adiaeresis ] };
+    key <AC02>  { [         s,          S,      scaron,        Scaron ] };
+    key <AC03>  { [         d,          D,       U1e13,         U1e12 ] };
+    key <AC09>  { [         l,          L,       U1e3d,         U1e3c ] };
+    key <AC10>  { [ semicolon,      colon, dead_diaeresis             ] };
+    key <AC11>  { [apostrophe,   quotedbl,  dead_acute                ] };
+
+    key <AB04>  { [         v,          V, doublelowquotemark, leftsinglequotemark ] };
+    key <AB05>  { [         b,          B, rightdoublequotemark, leftdoublequotemark ] };
+    key <AB06>  { [         n,          N,       U1e4b,         U1e4a ] };
+    key <AB07>  { [         m,          M,       U1e45,         U1e44 ] };
+    key <AB09>  { [    period,    greater, dead_abovedot              ] };
+
+    include "level3(ralt_switch)"
+};

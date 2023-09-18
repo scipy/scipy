@@ -1,0 +1,24 @@
+# Get drv-based PPD files using CUPS-Get-PPDs
+{
+	# The name of the test...
+	NAME "Get drv-based PPD files using CUPS-Get-PPDs"
+
+	# The resource to use for the POST
+	# RESOURCE /admin
+
+	# The operation to use
+	OPERATION CUPS-Get-PPDs
+
+	# Attributes, starting in the operation group...
+	GROUP operation
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name include-schemes drv
+
+	# What statuses are OK?
+	STATUS successful-ok
+	STATUS successful-ok-ignored-or-substituted-attributes
+
+	EXPECT ppd-name
+}

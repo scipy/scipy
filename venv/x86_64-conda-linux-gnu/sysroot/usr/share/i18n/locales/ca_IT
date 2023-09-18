@@ -1,0 +1,85 @@
+comment_char %
+escape_char  /
+%
+% Catalan Language Locale for Italy (L'Alguer)
+% Language: ca
+% Territory: IT
+% Option: euro
+% Revision: 1.0
+% Date: 2006-01-16
+% Application: general
+% Users: general
+% Charset: ISO-8859-15
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title      "Catalan locale for Italy (L'Alguer) "
+source     "Robert Millan"
+address    ""
+contact    ""
+email      ""
+tel        ""
+fax        ""
+language   "Catalan"
+territory  "Italy (L'Alguer)"
+revision   "1.0"
+date       "2006-01-16"
+%
+category  "ca_IT:2000";LC_IDENTIFICATION
+category  "ca_IT:2000";LC_CTYPE
+category  "ca_IT:2000";LC_COLLATE
+category  "ca_IT:2000";LC_TIME
+category  "ca_IT:2000";LC_NUMERIC
+category  "ca_IT:2000";LC_MONETARY
+category  "ca_IT:2000";LC_MESSAGES
+category  "ca_IT:2000";LC_PAPER
+category  "ca_IT:2000";LC_NAME
+category  "ca_IT:2000";LC_ADDRESS
+category  "ca_IT:2000";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_COLLATE
+copy "ca_ES"
+END LC_COLLATE
+
+LC_CTYPE
+copy "ca_ES"
+END LC_CTYPE
+
+LC_MESSAGES
+copy "ca_ES"
+END LC_MESSAGES
+
+LC_MONETARY
+copy "ca_ES"
+END LC_MONETARY
+
+LC_NUMERIC
+copy "ca_ES"
+END LC_NUMERIC
+
+LC_TIME
+copy "ca_ES"
+END LC_TIME
+
+LC_PAPER
+copy "it_IT"
+END LC_PAPER
+
+LC_TELEPHONE
+copy "it_IT"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+copy "it_IT"
+END LC_MEASUREMENT
+
+LC_NAME
+copy "ca_ES"
+END LC_NAME
+
+LC_ADDRESS
+copy "it_IT"
+END LC_ADDRESS

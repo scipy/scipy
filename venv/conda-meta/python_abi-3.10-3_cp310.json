@@ -1,0 +1,34 @@
+{
+  "build": "3_cp310",
+  "build_number": 3,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [
+    "python 3.10.* *_cpython"
+  ],
+  "depends": [],
+  "extracted_package_dir": "/opt/conda/pkgs/python_abi-3.10-3_cp310",
+  "features": "",
+  "files": [],
+  "fn": "python_abi-3.10-3_cp310.conda",
+  "license": "BSD-3-Clause",
+  "license_family": "BSD",
+  "link": {
+    "source": "/opt/conda/pkgs/python_abi-3.10-3_cp310",
+    "type": 1
+  },
+  "md5": "4eb33d14d794b0f4be116443ffed3853",
+  "name": "python_abi",
+  "package_tarball_full_path": "/opt/conda/pkgs/python_abi-3.10-3_cp310.conda",
+  "paths_data": {
+    "paths": [],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "bcb15db27eb6fbc0fe15d23aa60dcfa58ef451d92771441068d4a911aea7bb9f",
+  "size": 5677,
+  "subdir": "linux-64",
+  "timestamp": 1669071721839,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/python_abi-3.10-3_cp310.conda",
+  "version": "3.10"
+}

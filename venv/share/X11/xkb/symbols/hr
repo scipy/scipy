@@ -1,0 +1,75 @@
+// Keyboard layouts for Croatia.
+
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+    include "rs(latin)"
+    name[Group1]="Croatian";
+
+    // Swap the third and fourth level for four dead keys, for easier access
+    // to the non-dead symbols, and to match the XFree86 Croatian layout.
+    key <AE01> { [     1,     exclam,    asciitilde,      dead_tilde ] };
+    key <AE03> { [     3, numbersign,   asciicircum, dead_circumflex ] };
+    key <AE05> { [     5,    percent,        degree,  dead_abovering ] };
+    key <AE07> { [     7,      slash,         grave,      dead_grave ] };
+
+    // Provide the correct closing double quote mark.
+    key <AC03> { [   any,        any, rightdoublequotemark, guillemotleft ] };
+
+    key <AB10> { [ minus, underscore, dead_belowdot,   dead_abovedot ] };
+};
+
+partial alphanumeric_keys
+xkb_symbols "us" {
+
+    include "us"
+    name[Group1]= "Croatian (US)";
+
+    key <AD01> { [  any,  any,  backslash               ] };
+    key <AD02> { [  any,  any,  bar                     ] };
+    key <AD03> { [  any,  any,  EuroSign                ] };
+    key <AD06> { [  any,  any,  z,           Z          ] };
+    key <AD11> { [  any,  any,  scaron,      Scaron     ] };
+    key <AD12> { [  any,  any,  dstroke,     Dstroke    ] };
+
+    key <AC04> { [  any,  any,  bracketleft             ] };
+    key <AC05> { [  any,  any,  bracketright            ] };
+    key <AC08> { [  any,  any,  lstroke                 ] };
+    key <AC09> { [  any,  any,  Lstroke                 ] };
+    key <AC10> { [  any,  any,  ccaron,      Ccaron     ] };
+    key <AC11> { [  any,  any,  cacute,      Cacute     ] };
+    key <BKSL> { [  any,  any,  zcaron,      Zcaron     ] };
+
+    key <LSGT> { [  any,  any,  bar                     ] };
+    key <AB01> { [  any,  any,  y,           Y          ] };
+    key <AB04> { [  any,  any,  at                      ] };
+    key <AB05> { [  any,  any,  braceleft               ] };
+    key <AB06> { [  any,  any,  braceright              ] };
+    key <AB07> { [  any,  any,  section                 ] };
+    key <AB08> { [  any,  any,  semicolon               ] };
+    key <AB09> { [  any,  any,  colon                   ] };
+    key <AB10> { [  any,  any,  minus,       underscore ] };
+
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "alternatequotes" {
+
+    include "rs(latinalternatequotes)"
+    name[Group1]= "Croatian (with guillemets)";
+};
+
+partial alphanumeric_keys
+xkb_symbols "unicode" {
+
+    include "rs(latinunicode)"
+    name[Group1]= "Croatian (with Croatian digraphs)";
+};
+
+partial alphanumeric_keys
+xkb_symbols "unicodeus" {
+
+    include "rs(latinunicodeyz)"
+    name[Group1]= "Croatian (US, with Croatian digraphs)";
+};

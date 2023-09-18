@@ -1,0 +1,9 @@
+default partial alphanumeric_keys 
+xkb_symbols "basic" {
+
+    include "latin"
+
+    name[Group1]= "Netherlands - Mac";
+
+    include "level3(ralt_switch)"
+};

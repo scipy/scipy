@@ -1,0 +1,465 @@
+<!-- Creator     : groff version 1.22.3 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>MSGFMT</title>
+
+</head>
+<body>
+
+<h1 align="center">MSGFMT</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+<a href="#REPORTING BUGS">REPORTING BUGS</a><br>
+<a href="#COPYRIGHT">COPYRIGHT</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">msgfmt -
+compile message catalog to binary format</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>msgfmt</b>
+[<i>OPTION</i>] <i>filename.po</i> ...</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Generate binary
+message catalog from textual translation description.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Mandatory
+arguments to long options are mandatory for short options
+too. Similarly for optional arguments.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Input file
+location:</b> <br>
+filename.po ...</p>
+
+<p style="margin-left:22%;">input files</p>
+
+<p style="margin-left:11%;"><b>-D</b>,
+<b>--directory</b>=<i>DIRECTORY</i></p>
+
+<p style="margin-left:22%;">add DIRECTORY to list for input
+files search</p>
+
+<p style="margin-left:11%; margin-top: 1em">If input file
+is -, standard input is read.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Operation
+mode: <br>
+-j</b>, <b>--java</b></p>
+
+<p style="margin-left:22%;">Java mode: generate a Java
+ResourceBundle class</p>
+
+<p style="margin-left:11%;"><b>--java2</b></p>
+
+<p style="margin-left:22%;">like <b>--java</b>,
+and assume Java2 (JDK 1.2 or higher)</p>
+
+
+<p style="margin-left:11%;"><b>--csharp</b></p>
+
+<p style="margin-left:22%;">C# mode: generate a .NET .dll
+file</p>
+
+
+<p style="margin-left:11%;"><b>--csharp-resources</b></p>
+
+<p style="margin-left:22%;">C# resources mode: generate a
+.NET .resources file</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p><b>--tcl</b></p></td>
+<td width="4%"></td>
+<td width="63%">
+
+
+<p>Tcl mode: generate a tcl/msgcat .msg file</p></td>
+<td width="15%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p><b>--qt</b></p></td>
+<td width="4%"></td>
+<td width="63%">
+
+
+<p>Qt mode: generate a Qt .qm file</p></td>
+<td width="15%">
+</td></tr>
+</table>
+
+
+<p style="margin-left:11%;"><b>--desktop</b></p>
+
+<p style="margin-left:22%;">Desktop Entry mode: generate a
+.desktop file</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p><b>--xml</b></p></td>
+<td width="4%"></td>
+<td width="41%">
+
+
+<p>XML mode: generate XML file</p></td>
+<td width="37%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Output file
+location: <br>
+-o</b>,
+<b>--output-file</b>=<i>FILE</i></p>
+
+<p style="margin-left:22%;">write output to specified
+file</p>
+
+
+<p style="margin-left:11%;"><b>--strict</b></p>
+
+<p style="margin-left:22%;">enable strict Uniforum mode</p>
+
+<p style="margin-left:11%; margin-top: 1em">If output file
+is -, output is written to standard output.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Output file
+location in Java mode: <br>
+-r</b>,
+<b>--resource</b>=<i>RESOURCE</i></p>
+
+<p style="margin-left:22%;">resource name</p>
+
+<p style="margin-left:11%;"><b>-l</b>,
+<b>--locale</b>=<i>LOCALE</i></p>
+
+<p style="margin-left:22%;">locale name, either language or
+language_COUNTRY</p>
+
+
+<p style="margin-left:11%;"><b>--source</b></p>
+
+<p style="margin-left:22%;">produce a .java file, instead
+of a .class file</p>
+
+<p style="margin-left:11%;"><b>-d</b> DIRECTORY</p>
+
+<p style="margin-left:22%;">base directory of classes
+directory hierarchy</p>
+
+<p style="margin-left:11%; margin-top: 1em">The class name
+is determined by appending the locale name to the resource
+name, separated with an underscore. The <b>-d</b>
+option is mandatory. The class is written under the
+specified directory.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Output file
+location in C# mode: <br>
+-r</b>,
+<b>--resource</b>=<i>RESOURCE</i></p>
+
+<p style="margin-left:22%;">resource name</p>
+
+<p style="margin-left:11%;"><b>-l</b>,
+<b>--locale</b>=<i>LOCALE</i></p>
+
+<p style="margin-left:22%;">locale name, either language or
+language_COUNTRY</p>
+
+<p style="margin-left:11%;"><b>-d</b> DIRECTORY</p>
+
+<p style="margin-left:22%;">base directory for locale
+dependent .dll files</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>-l</b> and <b>-d</b> options are mandatory.
+The .dll file is written in a subdirectory of the specified
+directory whose name depends on the locale.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Output file
+location in Tcl mode: <br>
+-l</b>, <b>--locale</b>=<i>LOCALE</i></p>
+
+<p style="margin-left:22%;">locale name, either language or
+language_COUNTRY</p>
+
+<p style="margin-left:11%;"><b>-d</b> DIRECTORY</p>
+
+<p style="margin-left:22%;">base directory of .msg message
+catalogs</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>-l</b> and <b>-d</b> options are mandatory.
+The .msg file is written in the specified directory.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Desktop
+Entry mode options: <br>
+-l</b>, <b>--locale</b>=<i>LOCALE</i></p>
+
+<p style="margin-left:22%;">locale name, either language or
+language_COUNTRY</p>
+
+<p style="margin-left:11%;"><b>-o</b>,
+<b>--output-file</b>=<i>FILE</i></p>
+
+<p style="margin-left:22%;">write output to specified
+file</p>
+
+
+<p style="margin-left:11%;"><b>--template</b>=<i>TEMPLATE</i></p>
+
+<p style="margin-left:22%;">a .desktop file used as a
+template</p>
+
+<p style="margin-left:11%;"><b>-d</b> DIRECTORY</p>
+
+<p style="margin-left:22%;">base directory of .po files</p>
+
+<p style="margin-left:11%;"><b>-kWORD</b>,
+<b>--keyword</b>=<i>WORD</i></p>
+
+<p style="margin-left:22%;">look for WORD as an additional
+keyword</p>
+
+<p style="margin-left:11%;"><b>-k</b>,
+<b>--keyword</b></p>
+
+<p style="margin-left:22%;">do not to use default
+keywords</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>-l</b>, <b>-o</b>, and
+<b>--template</b> options are mandatory. If
+<b>-D</b> is specified, input files are read from the
+directory instead of the command line arguments.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>XML mode
+options: <br>
+-l</b>, <b>--locale</b>=<i>LOCALE</i></p>
+
+<p style="margin-left:22%;">locale name, either language or
+language_COUNTRY</p>
+
+<p style="margin-left:11%;"><b>-L</b>,
+<b>--language</b>=<i>NAME</i></p>
+
+<p style="margin-left:22%;">recognise the specified XML
+language</p>
+
+<p style="margin-left:11%;"><b>-o</b>,
+<b>--output-file</b>=<i>FILE</i></p>
+
+<p style="margin-left:22%;">write output to specified
+file</p>
+
+
+<p style="margin-left:11%;"><b>--template</b>=<i>TEMPLATE</i></p>
+
+<p style="margin-left:22%;">an XML file used as a
+template</p>
+
+<p style="margin-left:11%;"><b>-d</b> DIRECTORY</p>
+
+<p style="margin-left:22%;">base directory of .po files</p>
+
+<p style="margin-left:11%; margin-top: 1em">The
+<b>-l</b>, <b>-o</b>, and
+<b>--template</b> options are mandatory. If
+<b>-D</b> is specified, input files are read from the
+directory instead of the command line arguments.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Input file
+syntax: <br>
+-P</b>,
+<b>--properties-input</b></p>
+
+<p style="margin-left:22%;">input files are in Java
+.properties syntax</p>
+
+
+<p style="margin-left:11%;"><b>--stringtable-input</b></p>
+
+<p style="margin-left:22%;">input files are in
+NeXTstep/GNUstep .strings syntax</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Input file
+interpretation: <br>
+-c</b>, <b>--check</b></p>
+
+<p style="margin-left:22%;">perform all the checks implied
+by <b>--check-format</b>,
+<b>--check-header</b>,
+<b>--check-domain</b></p>
+
+
+<p style="margin-left:11%;"><b>--check-format</b></p>
+
+<p style="margin-left:22%;">check language dependent format
+strings</p>
+
+
+<p style="margin-left:11%;"><b>--check-header</b></p>
+
+<p style="margin-left:22%;">verify presence and contents of
+the header entry</p>
+
+
+<p style="margin-left:11%;"><b>--check-domain</b></p>
+
+<p style="margin-left:22%;">check for conflicts between
+domain directives and the
+<b>--output-file</b> option</p>
+
+<p style="margin-left:11%;"><b>-C</b>,
+<b>--check-compatibility</b></p>
+
+<p style="margin-left:22%;">check that GNU msgfmt behaves
+like X/Open msgfmt</p>
+
+
+<p style="margin-left:11%;"><b>--check-accelerators</b>[=<i>CHAR</i>]</p>
+
+<p style="margin-left:22%;">check presence of keyboard
+accelerators for menu items</p>
+
+<p style="margin-left:11%;"><b>-f</b>,
+<b>--use-fuzzy</b></p>
+
+<p style="margin-left:22%;">use fuzzy entries in output</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Output
+details: <br>
+-a</b>,
+<b>--alignment</b>=<i>NUMBER</i></p>
+
+<p style="margin-left:22%;">align strings to NUMBER bytes
+(default: 1)</p>
+
+
+<p style="margin-left:11%;"><b>--endianness</b>=<i>BYTEORDER</i></p>
+
+<p style="margin-left:22%;">write out 32-bit numbers
+in the given byte order (big or little, default depends on
+platform)</p>
+
+
+<p style="margin-left:11%;"><b>--no-hash</b></p>
+
+<p style="margin-left:22%;">binary file will not include
+the hash table</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Informative
+output: <br>
+-h</b>, <b>--help</b></p>
+
+<p style="margin-left:22%;">display this help and exit</p>
+
+<p style="margin-left:11%;"><b>-V</b>,
+<b>--version</b></p>
+
+<p style="margin-left:22%;">output version information and
+exit</p>
+
+
+<p style="margin-left:11%;"><b>--statistics</b></p>
+
+<p style="margin-left:22%;">print statistics about
+translations</p>
+
+<p style="margin-left:11%;"><b>-v</b>,
+<b>--verbose</b></p>
+
+<p style="margin-left:22%;">increase verbosity level</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Written by
+Ulrich Drepper.</p>
+
+<h2>REPORTING BUGS
+<a name="REPORTING BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Report bugs in
+the bug tracker at
+&lt;https://savannah.gnu.org/projects/gettext&gt; or by
+email to &lt;bug-gettext@gnu.org&gt;.</p>
+
+<h2>COPYRIGHT
+<a name="COPYRIGHT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Copyright
+&copy; 1995-2022 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later
+&lt;https://gnu.org/licenses/gpl.html&gt; <br>
+This is free software: you are free to change and
+redistribute it. There is NO WARRANTY, to the extent
+permitted by law.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The full
+documentation for <b>msgfmt</b> is maintained as a Texinfo
+manual. If the <b>info</b> and <b>msgfmt</b> programs are
+properly installed at your site, the command</p>
+
+<p style="margin-left:22%; margin-top: 1em"><b>info
+msgfmt</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">should give you
+access to the complete manual.</p>
+<hr>
+</body>
+</html>

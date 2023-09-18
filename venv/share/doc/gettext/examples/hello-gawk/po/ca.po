@@ -1,0 +1,28 @@
+# Catalan messages for GNU hello-gawk.
+# Copyright (C) 2003, 2014, 2015 Yoyodyne, Inc. (msgids)
+# This file is distributed under the same license as the gettext package.
+# Ivan Vilata i Balaguer <ivan@selidor.net>, 2003, 2014, 2015.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: hello-gawk 0.19.4.73\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"POT-Creation-Date: 2022-10-10 00:21+0200\n"
+"PO-Revision-Date: 2015-06-24 18:48+0200\n"
+"Last-Translator: Ivan Vilata i Balaguer <ivan@selidor.net>\n"
+"Language-Team: Catalan <ca@dodds.net>\n"
+"Language: ca\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: hello.awk:11
+msgid "Hello, world!"
+msgstr "Hola, món!"
+
+#: hello.awk:12
+#, awk-format
+msgid "This program is running as process number %d."
+msgstr "Aquest programa està corrent amb el número de procés %d."

@@ -1,0 +1,53 @@
+/* This file contains the definitions and documentation for the
+   coroutines builtins used in GCC.
+
+   Copyright (C) 2018-2022 Free Software Foundation, Inc.
+
+ Contributed by Iain Sandoe <iain@sandoe.co.uk> under contract to Facebook.
+
+This file is part of GCC.
+
+GCC is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free
+Software Foundation; either version 3, or (at your option) any later
+version.
+
+GCC is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+for more details.
+
+You should have received a copy of the GNU General Public License
+along with GCC; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.  */
+
+/* Before including this file, you should define a macro:
+
+     DEF_BUILTIN_STUB(ENUM, NAME)
+     DEF_COROUTINE_BUILTIN (ENUM, NAME, TYPE, ATTRS)
+
+   See builtins.def for details.
+   The builtins are created used by library implementations of C++
+   coroutines.  */
+
+/* This has to come before all the coroutine builtins.  */
+DEF_BUILTIN_STUB (BEGIN_COROUTINE_BUILTINS, (const char *) 0)
+
+/* These are the builtins that are externally-visible and used by the
+   standard library implementation of the coroutine header.  */
+
+DEF_COROUTINE_BUILTIN (BUILT_IN_CORO_PROMISE, "promise",
+		       BT_FN_PTR_PTR_CONST_SIZE_BOOL,
+		       ATTR_CONST_NOTHROW_LEAF_LIST)
+
+DEF_COROUTINE_BUILTIN (BUILT_IN_CORO_RESUME, "resume", BT_FN_VOID_PTR,
+		       ATTR_NULL)
+
+DEF_COROUTINE_BUILTIN (BUILT_IN_CORO_DESTROY, "destroy", BT_FN_VOID_PTR,
+		       ATTR_NULL)
+
+DEF_COROUTINE_BUILTIN (BUILT_IN_CORO_DONE, "done", BT_FN_BOOL_PTR,
+		       ATTR_NOTHROW_LEAF_LIST)
+
+/* This has to come after all the coroutine builtins.  */
+DEF_BUILTIN_STUB (END_COROUTINE_BUILTINS, (const char *) 0)

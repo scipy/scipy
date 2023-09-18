@@ -1,0 +1,532 @@
+default xkb_geometry "natural" {
+
+    // Approximate layout for a Microsoft Natural
+    description= "Microsoft Natural";
+    width= 550;
+    height= 190;
+
+    shape.cornerRadius= 1;
+    shape "LDEF" { { [ 18,18] }, { [2,1], [15,15] } };
+    shape "TABK" { { [ 26,18] }, { [2,1], [23,15] } }; 
+    shape "CAPS" { { [ 30,18] }, { [2,1], [23,15] } }; 
+    shape "LFSH" { { [ 41,18] }, { [2,1], [38,15] } };
+    shape "KEY6" { { [ 22,18] }, { [2,1], [15,15] } };
+    shape "KEYT" { { [ 33,18] }, { [2,1], [15,15] } };
+    shape "KEYG" { { [ 29,18] }, { [2,1], [15,15] } };
+    shape "LCTL" { 
+	approx= { [ 32, 22 ] },
+	{ [  0, 0], [ 32, 0 ], [ 32, 23 ], [ 0, 22 ] },
+	{ [  2, 1], [ 29, 1 ], [ 29, 17 ], [ 2, 15 ] } 
+    };
+    shape "LWIN" { 
+	approx= { [ 32, 23 ] },
+	{ [  0, 0], [ 32, 0 ], [ 32, 24 ], [ 0, 23 ] },
+	{ [  2, 1], [ 29, 1 ], [ 29, 18 ], [ 2, 17 ] } 
+    };
+    shape "LALT" { 
+	approx= { [ 32, 24 ] },
+	{ [  0, 0], [ 32, 0 ], [ 32, 25 ], [ 0, 24 ] },
+	{ [  2, 1], [ 29, 1 ], [ 29, 20 ], [ 2, 19 ] } 
+    };
+    shape "RDEF" { { [ 18,18] }, { [3,1], [15,15] } };
+    shape "KEY7" {	{ [ 28, 18 ] }, { [ 14, 1], [26, 15] } };
+    shape "KEYH" {	{ [ 24, 18 ] }, { [ 10, 1], [22, 15] } };
+    shape "KEYN" {	{ [ 32, 18 ] }, { [ 18, 1], [30, 15] } };
+    shape "BKSP" {	{ [ 41, 18 ] }, { [  3, 1], [39, 15] } };
+    shape "BKSL" {	{ [ 24, 18 ] }, { [  3, 1], [22, 15] } };
+    shape "RTRN" {	{ [ 37, 18 ] }, { [  3, 1], [35, 15] } };
+    shape "RTSH" {	{ [ 43, 18 ] }, { [  3, 1], [41, 15] } };
+    shape "RALT" { 
+	approx= { [ 27, 24 ] },
+	{ [  0, 0], [ 27, 0 ], [ 27, 24 ], [ 0, 25 ] },
+	{ [  3, 1], [ 25, 1 ], [ 25, 19 ], [ 3, 20 ] } 
+    };
+    shape "RWIN" { 
+	approx= { [ 27, 23 ] },
+	{ [  0, 0], [ 27, 0 ], [ 27, 23 ], [ 0, 24 ] },
+	{ [  3, 1], [ 25, 1 ], [ 25, 18 ], [ 3, 19 ] } 
+    };
+    shape "MENU" { 
+	approx= { [ 27, 21 ] },
+	{ [  0, 0], [ 27, 0 ], [ 27, 21 ], [ 0, 23 ] },
+	{ [  3, 1], [ 25, 1 ], [ 25, 16 ], [ 3, 17 ] } 
+    };
+    shape "RCTL" { 
+	approx= { [ 27, 19 ] },
+	{ [  0, 0], [ 27, 0 ], [ 27, 19 ], [ 0, 21 ] },
+	{ [  3, 1], [ 25, 1 ], [ 25, 14 ], [ 3, 15 ] } 
+    };
+    shape "KPAD" { { [ 18, 37 ] },	{ [ 3, 1 ], [ 16, 34 ] } };
+    shape "KP0"  { { [ 37, 18 ] },	{ [ 3, 1 ], [ 35, 15 ] } };
+    shape "SPCE" {
+	{ [  4, 3], [42,10], [44, 0], [88, 0], [90,10], [130, 3], 
+	  [134,26], [99,30], [67,33], [33,30], [  0,26] },
+	{ [  6, 4.5], [43,11], [45, 1], [87, 1], [89,11], [128, 4.5], 
+	  [131,23], [99,28], [67,32], [33,28], [  3,23] }
+    };
+
+    shape "EDGE" {
+	cornerRadius= 2,
+	{ [  25,   0 ],  [ 177,  17 ],  [ 329,   0 ], [ 542,   0 ],
+	  [ 542, 150 ],  [ 354, 150 ],  [ 177, 185 ], [   0, 150 ] }
+    };
+    outline "Edges" {
+	top= 0;
+	left= 0;
+	shape= "EDGE";
+    };
+
+    row.left= 1;
+    key.shape= "LDEF";
+    key.gap=  1;
+    section "LeftFunction" {
+	top= 10;
+	left= 40;
+	angle= 10;
+	row {
+	    top= 1;
+	    keys {  <ESC>, { <FK01>, 12 }, <FK02>, <FK03>, <FK04>, <FK05> };
+	};
+    }; // End of "LeftFunction" section
+
+    section "LeftAlpha" {
+	top= 47;
+	left= 30;
+	angle= 10;
+	row {
+	    top= 1;
+	    keys {	<AE00>, <AE01>, <AE02>, <AE03>, <AE04>,
+			<AE05>, { <AE06>, "KEY6" }
+	    };
+	};
+	row {
+	    top= 20;
+	    keys {	{ <TAB>, "TABK" },
+			<AD01>, <AD02>, <AD03>, <AD04>, { <AD05>, "KEYT" }
+	    };
+	};
+	row {
+	    top= 39;
+	    keys { 	{ <CAPS>, "CAPS" },
+			<AC01>, <AC02>, <AC03>, <AC04>, { <AC05>, "KEYG" }
+	    };
+	};
+	row {
+	    top= 58;
+	    keys { 	{ <LFSH>, "LFSH" }, 
+			<AB01>, <AB02>, <AB03>, <AB04>, <AB05>
+	    };
+	};
+	row {
+	    top= 77;
+	    keys {  { <LCTL>, "LCTL" }, { <LWIN>, "LWIN" }, { <LALT>, "LALT" } };
+	};
+    }; // End of "LeftAlpha" section
+
+    key.shape= "RDEF";
+    section "RightFunction" {
+	top= 32;
+	left= 195;
+	angle= -10;
+	row {
+	    top= 1;
+	    left= 1;
+	    keys {  <FK06>, <FK07>, <FK08>, <FK09>, <FK10>, <FK11>, <FK12> };
+	};
+    }; // End of "RightFunction" section
+
+    section "RightAlpha" {
+	top= 71;
+	left= 190;
+	angle= -10;
+	row.left= 1;
+	row {
+	    top= 1;
+	    keys {	{ <AE07>, "KEY7" },
+			<AE08>, <AE09>, <AE10>, <AE11>, <AE12>, 
+			{ <BKSP>, "BKSP" }
+	    };
+	};
+	row {
+	    top= 20;
+	    keys { 
+		<AD06>, <AD07>, <AD08>, <AD09>, <AD10>, <AD11>, <AD12>,
+		{ <BKSL>, "BKSL" }
+	    };
+	};
+	row {
+	    top= 39;
+	    keys {	{ <AC06>, "KEYH" },
+			<AC07>, <AC08>, <AC09>, <AC10>, <AC11>,
+			{ <RTRN>, "RTRN" }
+	    };
+	};
+	row {
+	    top= 58;
+	    keys {	{ <AB06>, "KEYN" },
+			<AB07>, <AB08>, <AB09>, <AB10>,
+			{ <RTSH>, "RTSH" }
+	    };
+	};
+	row {
+	    top= 77;
+	    left= 40;
+	    keys { 	{ <RALT>, "RALT" }, { <RWIN>, "RWIN" }, 
+			{ <MENU>, "MENU" }, { <RCTL>, "RCTL" }
+	    };
+	};
+    }; // End of "RightAlpha" section
+
+    section "SpaceBar" {
+	top= 139;
+	left= 111;
+	key.shape= "SPCE";
+	row { keys { <SPCE> }; };
+    };
+
+    section "Editing" {
+	top= 15;
+	left= 385;
+	row {
+	    top= 1;
+	    keys { <PRSC>, <SCLK>, <PAUS> };
+	};
+	row {
+	    top= 33;
+	    keys { <INS>, <HOME>, <PGUP> };
+	};
+	row {
+	    top= 53;
+	    keys { <DELE>, <END>, <PGDN> };
+	};
+	row {
+	    top= 91;
+	    left= 20;
+	    keys { <UP> };
+    	};
+	row {
+	    top= 109;
+	    keys { <LEFT>, <DOWN>, <RGHT> };
+	};
+    }; // End of "Editing" section
+
+    shape "LED"  { 
+	cornerRadius= 0,
+	{ [  3,  1 ] }
+    };
+    indicator.onColor= "green";
+    indicator.offColor= "green30";
+    indicator.left= 177;
+    indicator.shape= "LED";
+    indicator "Num Lock"     { top= 90; };
+    indicator "Caps Lock"    { top= 107; };
+    indicator "Scroll Lock"  { top= 127; };
+    
+    section "Keypad" {
+	top= 47;
+	left= 456;
+	row {
+	    top= 1;
+	    keys { <NMLK>, <KPDV>, <KPMU>, <KPSU> };
+	};
+	row {
+	    top= 20;
+	    keys { <KP7>, <KP8>, <KP9>, { <KPAD>, "KPAD" } };
+	};
+	row {
+	    top= 39;
+	    keys { <KP4>, <KP5>, <KP6> };
+	};
+	row {
+	    top= 58;
+	    keys { <KP1>, <KP2>, <KP3>, { <KPEN>, "KPAD" } };
+	};
+	row {
+	    top= 77;
+	    keys { { <KP0>, "KP0" }, <KPDL> };
+	};
+    }; // End of "Keypad" section
+
+    alias <AC00> = <CAPS>;
+    alias <AA00> = <LCTL>;
+};
+
+// Approximate layout for a Microsoft Natural(R) Keyboard Elite
+// 
+// Modified by Pavel Kurashov <pavell@mail.ru> Mon Oct  8 22:08:20 NOVST 2007
+//
+// * Function, editing and navigation keys are reduced in height
+// * Navigation keys are repositioned in two columns
+// * Leds are enlarged for better look
+// * "BKSP" is aligned with "BKSL" and "RTRN"
+// * Outline edges are slightly modified
+//
+xkb_geometry "elite" {
+
+    // Approximate layout for a Microsoft Natural(R) Keyboard Elite
+    description= "Microsoft Natural(r) Keyboard Elite";
+    width= 495;
+    height= 190;
+
+    shape.cornerRadius= 1;
+    shape "LDEF" { { [ 18,18] }, { [2,1], [15,15] } };
+    shape "FKEY" { { [ 18,13] }, { [2,1], [15,10] } };
+    shape "TABK" { { [ 26,18] }, { [2,1], [23,15] } }; 
+    shape "CAPS" { { [ 30,18] }, { [2,1], [23,15] } }; 
+    shape "LFSH" { { [ 41,18] }, { [2,1], [38,15] } };
+    shape "KEY6" { { [ 22,18] }, { [2,1], [15,15] } };
+    shape "KEYT" { { [ 33,18] }, { [2,1], [15,15] } };
+    shape "KEYG" { { [ 29,18] }, { [2,1], [15,15] } };
+    shape "LCTL" { 
+	approx= { [ 32, 22 ] },
+	{ [  0, 0], [ 32, 0 ], [ 32, 23 ], [ 0, 22 ] },
+	{ [  2, 1], [ 29, 1 ], [ 29, 17 ], [ 2, 15 ] } 
+    };
+    shape "LWIN" { 
+	approx= { [ 32, 23 ] },
+	{ [  0, 0], [ 32, 0 ], [ 32, 24 ], [ 0, 23 ] },
+	{ [  2, 1], [ 29, 1 ], [ 29, 18 ], [ 2, 17 ] } 
+    };
+    shape "LALT" { 
+	approx= { [ 32, 24 ] },
+	{ [  0, 0], [ 32, 0 ], [ 32, 25 ], [ 0, 24 ] },
+	{ [  2, 1], [ 29, 1 ], [ 29, 20 ], [ 2, 19 ] } 
+    };
+    shape "RDEF" { 	{ [ 18,18  ] }, { [  2, 1], [15, 15] } };
+    shape "KEY7" {	{ [ 28, 18 ] }, { [ 14, 1], [26, 15] } };
+    shape "KEYH" {	{ [ 24, 18 ] }, { [ 10, 1], [22, 15] } };
+    shape "KEYN" {	{ [ 32, 18 ] }, { [ 18, 1], [30, 15] } };
+    shape "BKSP" {	{ [ 32, 18 ] }, { [  2, 1], [30, 15] } };
+    shape "BKSL" {	{ [ 24, 18 ] }, { [  2, 1], [22, 15] } };
+    shape "RTRN" {	{ [ 37, 18 ] }, { [  2, 1], [35, 15] } };
+    shape "RTSH" {	{ [ 43, 18 ] }, { [  2, 1], [41, 15] } };
+    shape "RALT" { 
+	approx= { [ 27, 24 ] },
+	{ [  0, 0], [ 27, 0 ], [ 27, 24 ], [ 0, 25 ] },
+	{ [  3, 1], [ 25, 1 ], [ 25, 19 ], [ 3, 20 ] } 
+    };
+    shape "RWIN" { 
+	approx= { [ 27, 23 ] },
+	{ [  0, 0], [ 27, 0 ], [ 27, 23 ], [ 0, 24 ] },
+	{ [  3, 1], [ 25, 1 ], [ 25, 18 ], [ 3, 19 ] } 
+    };
+    shape "MENU" { 
+	approx= { [ 27, 21 ] },
+	{ [  0, 0], [ 27, 0 ], [ 27, 21 ], [ 0, 23 ] },
+	{ [  3, 1], [ 25, 1 ], [ 25, 16 ], [ 3, 17 ] } 
+    };
+    shape "RCTL" { 
+	approx= { [ 27, 19 ] },
+	{ [  0, 0], [ 27, 0 ], [ 27, 19 ], [ 0, 21 ] },
+	{ [  3, 1], [ 25, 1 ], [ 25, 14 ], [ 3, 15 ] } 
+    };
+    shape "KPAD" { { [ 18, 37 ] },	{ [ 3, 1 ], [ 16, 34 ] } };
+    shape "KP0"  { { [ 37, 18 ] },	{ [ 3, 1 ], [ 35, 15 ] } };
+    shape "SPCE" {
+	{ [  4, 3], [42,10], [44, 0], [88, 0], [90,10], [130, 3], 
+	  [134,26], [99,30], [67,33], [33,30], [  0,26] },
+	{ [  6, 4.5], [43,11], [45, 1], [87, 1], [89,11], [128, 4.5], 
+	  [131,23], [99,28], [67,32], [33,28], [  3,23] }
+    };
+
+    shape "EDGE" {
+	cornerRadius= 3,
+	{ [  32,   15 ],  [140, 33],[ 220,  33 ],  [ 329,   15 ], [ 493,   15 ],
+	  [ 493, 150 ],  [ 354, 150 ],  [200, 180], [ 153, 180 ], [   7, 150 ] }
+    };
+    outline "Edges" {
+	top= 0;
+	left= 0;
+	shape= "EDGE";
+    };
+
+    row.left= 1;
+    key.shape= "FKEY";
+    key.gap=  1;
+    section "LeftFunction" {
+	top= 26;
+	left= 40;
+	angle= 10;
+	row {
+	    top= 1;
+	    keys {  <ESC>, { <FK01>, 12 }, <FK02>, <FK03>, <FK04>, <FK05> };
+	};
+    }; // End of "LeftFunction" section
+
+    key.shape= "LDEF";
+    section "LeftAlpha" {
+	top= 47;
+	left= 30;
+	angle= 10;
+	row {
+	    top= 1;
+	    keys {	<TLDE>, <AE01>, <AE02>, <AE03>, <AE04>,
+			<AE05>, { <AE06>, "KEY6" }
+	    };
+	};
+	row {
+	    top= 20;
+	    keys {	{ <TAB>, "TABK" },
+			<AD01>, <AD02>, <AD03>, <AD04>, { <AD05>, "KEYT" }
+	    };
+	};
+	row {
+	    top= 39;
+	    keys { 	{ <CAPS>, "CAPS" },
+			<AC01>, <AC02>, <AC03>, <AC04>, { <AC05>, "KEYG" }
+	    };
+	};
+	row {
+	    top= 58;
+	    keys { 	{ <LFSH>, "LFSH" }, 
+			<AB01>, <AB02>, <AB03>, <AB04>, <AB05>
+	    };
+	};
+	row {
+	    top= 77;
+	    keys {  { <LCTL>, "LCTL" }, { <LWIN>, "LWIN" }, { <LALT>, "LALT" } };
+	};
+    }; // End of "LeftAlpha" section
+
+    key.shape= "FKEY";
+    section "RightFunction" {
+	top= 48;
+	left= 195;
+	angle= -10;
+	row {
+	    top= 1;
+	    left= 1;
+	    keys {  <FK06>, <FK07>, <FK08>, <FK09>, <FK10>, <FK11>, <FK12> };
+	};
+    }; // End of "RightFunction" section
+
+    key.shape= "RDEF";
+    section "RightAlpha" {
+	top= 71;
+	left= 190;
+	angle= -10;
+	row.left= 1;
+	row {
+	    top= 1;
+	    keys {	{ <AE07>, "KEY7" },
+			<AE08>, <AE09>, <AE10>, <AE11>, <AE12>, 
+			{ <BKSP>, "BKSP" }
+	    };
+	};
+	row {
+	    top= 20;
+	    keys { 
+		<AD06>, <AD07>, <AD08>, <AD09>, <AD10>, <AD11>, <AD12>,
+		{ <BKSL>, "BKSL" }
+	    };
+	};
+	row {
+	    top= 39;
+	    keys {	{ <AC06>, "KEYH" },
+			<AC07>, <AC08>, <AC09>, <AC10>, <AC11>,
+			{ <RTRN>, "RTRN" }
+	    };
+	};
+	row {
+	    top= 58;
+	    keys {	{ <AB06>, "KEYN" },
+			<AB07>, <AB08>, <AB09>, <AB10>,
+			{ <RTSH>, "RTSH" }
+	    };
+	};
+	row {
+	    top= 77;
+	    left= 40;
+	    keys { 	{ <RALT>, "RALT" }, { <RWIN>, "RWIN" }, 
+			{ <MENU>, "MENU" }, { <RCTL>, "RCTL" }
+	    };
+	};
+    }; // End of "RightAlpha" section
+
+    section "SpaceBar" {
+	top= 139;
+	left= 111;
+	key.shape= "SPCE";
+	row { keys { <SPCE> }; };
+    };
+
+    section "Editing" {
+	key.shape="FKEY";
+	top= 23;
+	left= 348;
+	row {
+	    top= 0;
+	    keys { <PRSC>, <SCLK>, <PAUS> };
+	};
+	row {
+	    top= 22;
+	    left=20;	
+	    keys { <HOME>, <PGUP> };
+	};
+	row {
+	    top= 36;
+	    left=20;	
+	    keys {  <END>, <PGDN> };
+	};
+	row {
+	    top= 50;
+	    left=20;	
+	    keys { <DELE>, <INS> };
+	};
+	row {
+	    top= 75;
+	    left= 29;
+	    keys { <UP> };
+    	};
+	row {
+	    top= 89;
+	    left=20;	
+	    keys { <LEFT>, <RGHT> };
+	};
+	row {
+	    top= 103;
+	    left=29;	
+	    keys { <DOWN> };
+	};
+    }; // End of "Editing" section
+
+    shape "LED"  { 
+	cornerRadius= 1,
+	{ [  7,  2 ] }
+    };
+    indicator.onColor= "green";
+    indicator.offColor= "green30";
+    indicator.left= 177;
+    indicator.shape= "LED";
+    indicator "Num Lock"     { top= 90; };
+    indicator "Caps Lock"    { top= 107; };
+    indicator "Scroll Lock"  { top= 127; };
+    
+    section "Keypad" {
+	top= 44;
+	left= 412;
+	row {
+	    top= 1;
+	    keys { <NMLK>, <KPDV>, <KPMU>, <KPSU> };
+	};
+	row {
+	    top= 20;
+	    keys { <KP7>, <KP8>, <KP9>, { <KPAD>, "KPAD" } };
+	};
+	row {
+	    top= 39;
+	    keys { <KP4>, <KP5>, <KP6> };
+	};
+	row {
+	    top= 58;
+	    keys { <KP1>, <KP2>, <KP3>, { <KPEN>, "KPAD" } };
+	};
+	row {
+	    top= 77;
+	    keys { { <KP0>, "KP0" }, <KPDL> };
+	};
+    }; // End of "Keypad" section
+
+    alias <AC00> = <CAPS>;
+    alias <AA00> = <LCTL>;
+};

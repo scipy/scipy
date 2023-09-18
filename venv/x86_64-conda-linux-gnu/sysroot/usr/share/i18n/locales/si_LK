@@ -1,0 +1,220 @@
+escape_char  /
+comment_char %
+% Sinhala language locale for Sri Lanka.
+% Charset: UTF-8
+% Contributed by Anuradha Ratnaweera <anuradha at gnu org>
+% and Himira Ratnatilake <himira at linux lk>
+
+LC_IDENTIFICATION
+title      "Sinhala language locale for Sri Lanka"
+source     "Lanka Linux User Group (LKLUG) www.lug.lk, sinhala.linux.lk"
+address    ""
+contact    ""
+email      "libc-locales@sources.redhat.com"
+tel        ""
+fax        ""
+language   "Sinhala"
+territory  "Sri Lanka"
+revision   "0.9"
+date       "2004.10.01"
+%
+category  "i18n:2002";LC_IDENTIFICATION
+category  "i18n:2002";LC_CTYPE
+category  "i18n:2002";LC_COLLATE
+category  "i18n:2002";LC_TIME
+category  "i18n:2002";LC_NUMERIC
+category  "i18n:2002";LC_MONETARY
+category  "i18n:2002";LC_MESSAGES
+category  "i18n:2002";LC_PAPER
+category  "i18n:2002";LC_NAME
+category  "i18n:2002";LC_ADDRESS
+category  "i18n:2002";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_CTYPE
+copy "i18n"
+
+translit_start
+include  "translit_combining";""
+translit_end
+END LC_CTYPE
+
+LC_COLLATE
+
+% Copy the template from ISO/IEC 14651
+copy "iso14651_t1"
+
+END LC_COLLATE
+
+
+LC_MONETARY
+% This is the POSIX Locale definition the LC_MONETARY category
+%
+int_curr_symbol       "<U004C><U004B><U0052><U0020>"
+currency_symbol       "<U20A8>"
+mon_decimal_point     "<U002E>"
+mon_thousands_sep     "<U002C>"
+mon_grouping          3
+positive_sign         ""
+negative_sign         "<U002D>"
+int_frac_digits       2
+frac_digits           2
+p_cs_precedes         1
+p_sep_by_space        1
+n_cs_precedes         1
+n_sep_by_space        1
+p_sign_posn           1
+n_sign_posn           1
+%
+END LC_MONETARY
+
+
+LC_NUMERIC
+% This is the POSIX Locale definition for the LC_NUMERIC  category.
+%
+decimal_point          "<U002E>"
+thousands_sep          "<U002C>"
+grouping               3
+%
+END LC_NUMERIC
+
+
+LC_TIME
+% This is the POSIX Locale definition for the LC_TIME  category.
+%
+% Abbreviated weekday names (%a)
+abday       "<U0D89>";"<U0DC3>";/
+            "<U0D85>";"<U0DB6>";/
+            "<U0DB6><U0DCA><U200D><U0DBB>";"<U0DC3><U0DD2>";/
+            "<U0DC3><U0DD9>"
+%
+% Full weekday names (%A)
+day         "<U0D89><U0DBB><U0DD2><U0DAF><U0DCF>";/
+            "<U0DC3><U0DB3><U0DD4><U0DAF><U0DCF>";/
+            "<U0D85><U0D9F><U0DC4><U0DBB><U0DD4><U0DC0><U0DCF><U0DAF><U0DCF>";/
+            "<U0DB6><U0DAF><U0DCF><U0DAF><U0DCF>";/
+            "<U0DB6><U0DCA><U200D><U0DBB><U0DC4><U0DC3><U0DCA><U0DB4><U0DAD><U0DD2><U0DB1><U0DCA><U0DAF><U0DCF>";/
+	    "<U0DC3><U0DD2><U0D9A><U0DD4><U0DBB><U0DCF><U0DAF><U0DCF>";/
+            "<U0DC3><U0DD9><U0DB1><U0DC3><U0DD4><U0DBB><U0DCF><U0DAF><U0DCF>"
+%
+% Abbreviated month names (%b)
+abmon       "<U0DA2><U0DB1>";/
+            "<U0DB4><U0DD9><U0DB6>";/
+            "<U0DB8><U0DCF><U0DBB><U0DCA>";/
+            "<U0D85><U0DB4><U0DCA><U200D><U0DBB><U0DD2>";/
+            "<U0DB8><U0DD0><U0DBA><U0DD2>";/
+            "<U0DA2><U0DD6><U0DB1><U0DD2>";/
+            "<U0DA2><U0DD6><U0DBD><U0DD2>";/
+            "<U0D85><U0D9C><U0DDD>";/
+            "<U0DC3><U0DD0><U0DB4><U0DCA>";/
+            "<U0D94><U0D9A><U0DCA>";/
+            "<U0DB1><U0DD9><U0DC0><U0DD0>";/
+            "<U0DAF><U0DD9><U0DC3><U0DD0>"
+%
+% Full month names (%B)
+mon         "<U0DA2><U0DB1><U0DC0><U0DCF><U0DBB><U0DD2>";/
+	    "<U0DB4><U0DD9><U0DB6><U0DBB><U0DC0><U0DCF><U0DBB><U0DD2>";/
+            "<U0DB8><U0DCF><U0DBB><U0DCA><U0DAD><U0DD4>";/
+            "<U0D85><U0DB4><U0DCA><U200D><U0DBB><U0DD2><U0DBA><U0DD9><U0DBD><U0DCA>";/
+            "<U0DB8><U0DD0><U0DBA><U0DD2>";/
+            "<U0DA2><U0DD6><U0DB1><U0DD2>";/
+            "<U0DA2><U0DD6><U0DBD><U0DD2>";/
+            "<U0D85><U0D9C><U0DDD><U0DC3><U0DCA><U0DAD><U0DD4>";/
+            "<U0DC3><U0DD0><U0DB4><U0DCA><U0DAD><U0DD0><U0DB8><U0DCA><U0DB6><U0DBB><U0DCA>";/
+            "<U0D94><U0D9A><U0DCA><U0DAD><U0DDD><U0DB6><U0DBB><U0DCA>";/
+            "<U0DB1><U0DDC><U0DC0><U0DD0><U0DB8><U0DCA><U0DB6><U0DBB><U0DCA>";/
+            "<U0DAF><U0DD9><U0DC3><U0DD0><U0DB8><U0DCA><U0DB6><U0DBB><U0DCA>"
+%
+% Equivalent of AM PM
+am_pm       "<U0DB4><U0DD9><U002E><U0DC0><U002E>";"<U0DB4><U002E><U0DC0><U002E>"
+%
+% Appropriate date and time representation (use the same as ISO)
+% %Y-%m-%d %H:%M:%S %z
+d_t_fmt     "<U0025><U0059><U002D><U0025><U006D><U002D><U0025><U0064><U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U0020><U0025><U007A>"
+%
+% Appropriate date representation (use the same as ISO)
+% %Y-%m-%d
+d_fmt "<U0025><U0059><U002D><U0025><U006D><U002D><U0025><U0064>"
+%
+% Appropriate time representation
+% %H:%M:%S
+t_fmt       "<U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053>"
+%
+% Appropriate 12 h time representation
+% %p %I:%M:%S
+t_fmt_ampm  "<U0025><U0070><U0020><U0025><U0049><U003A><U0025><U004D><U003A><U0025><U0053>"
+%
+% Appropriate date and time (date(1))
+% %Y %B %e %A %H:%M:%S %z
+date_fmt     "<U0025><U0059><U0020><U0025><U0042><U0020><U0025><U0065><U0020><U0DC0><U0DD0><U0DB1><U0DD2><U0020><U0025><U0041><U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U0020><U0025><U007A>"
+%
+END LC_TIME
+
+
+LC_MESSAGES
+% This is the POSIX Locale definition for the LC_MESSAGES category
+%
+% ^[\u0d94\u0059\u0079]
+yesexpr     "<U005E><U005B><U0D94><U0059><U0079><U005D>"
+%
+% ^[\u0db1\u004e\u006e]
+noexpr      "<U005E><U005B><U0DB1><U004E><U006E><U005D>"
+%
+yesstr      "<U0D94><U0DC0><U0DCA>"
+%
+nostr       "<U0DB1><U0DD0><U0DAD>"
+%
+END LC_MESSAGES
+
+
+LC_PAPER
+% This is the ISO_IEC TR14652 Locale definition for the LC_PAPER category
+% Paper size is A4
+%
+height      297
+width       210
+
+END LC_PAPER
+
+
+LC_NAME
+% This is the ISO_IEC TR14652 Locale definition for the LC_NAME category
+%
+name_fmt    "<U0025><U0067><U0025><U0074><U0025><U006D><U0025><U0074><U0025><U0066><U0025><U0074><U0025><U0073>"
+name_gen    ""
+name_mr     "<U0DB8><U0DBA><U0DCF>"
+name_mrs    "<U0DB8><U0DD2><U0DBA>"
+name_miss   "<U0DB8><U0DD2><U0DBA>"
+name_ms     "<U0DB8><U0DD2><U0DBA>"
+
+END LC_NAME
+
+
+LC_ADDRESS
+% This is the ISO_IEC TR14652 Locale definition for the LC_ADDRESS category
+%
+postal_fmt  "<U0025><U007A><U0025><U0063><U0025><U0054><U0025><U0073><U0025><U0062><U0025><U0065><U0025><U0072>"
+
+END LC_ADDRESS
+
+
+LC_TELEPHONE
+% This is the ISO_IEC TR14652 Locale definition for the LC_TELEPHONE
+%
+tel_int_fmt    "<U002B><U0025><U0063><U0020><U0028><U0025><U0061><U0029>/
+<U0020><U0025><U006C>"
+tel_dom_fmt    "<U0028><U0025><U0061><U0029><U0020><U0025><U006C>"
+int_select     "<U0030><U0030>"
+int_prefix     "<U0039><U0034>"
+
+END LC_TELEPHONE
+
+
+LC_MEASUREMENT
+% This is the ISO_IEC TR14652 Locale definition for the LC_MEASUREMENT
+% 1 is ISO 1000 (metric)
+%
+measurement 1
+
+END LC_MEASUREMENT

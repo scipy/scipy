@@ -1,0 +1,73 @@
+// Keyboard layouts for Ethiopia.
+
+// Designed as a part of OLPC project.
+//
+// 2007 Sergey Udaltsov <svu@gnome.org>
+
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+    include "et(olpc)"
+    name[Group1]="Amharic";
+};
+
+partial alphanumeric_keys
+xkb_symbols "olpc" {
+
+    // #HW-SPECIFIC
+
+    name[Group1]="Amharic";
+
+    key <AE01>	{ [        0x01001369,  0x01001372 ] }; // 1
+    key <AE02>	{ [        0x0100136a,  0x01001373 ] }; // 2
+    key <AE03>	{ [        0x0100136b,  0x01001374 ] }; // 3
+    key <AE04>	{ [        0x0100136c,  0x01001375 ] }; // 4
+    key <AE05>	{ [        0x0100136d,  0x01001376 ] }; // 5
+    key <AE06>	{ [        0x0100136e,  0x01001377 ] }; // 6
+    key <AE07>	{ [        0x0100136f,  0x01001378 ] }; // 7
+    key <AE08>	{ [        0x01001370,  0x01001379 ] }; // 8
+    key <AE09>	{ [        0x01001371,  0x0100137a ] }; // 9
+    key <AE10>	{ [        0x0100137b,  0x0100137c ] }; // 0
+    key <AE11>	{ [        minus,       underscore ] }; // -_
+    key <AE12>	{ [        equal,       plus       ] }; // =+
+
+    key <AD01>	{ [        0x01001240,  0x01001250 ]	}; // q
+    key <AD02>	{ [        0x010012C8,  VoidSymbol ]	}; // w
+    key <AD03>	{ [        dead_e,      dead_E     ]	};
+    key <AD04>	{ [        0x01001228,  VoidSymbol ]	}; // r
+    key <AD05>	{ [        0x01001270,  0x01001320 ]	}; // t
+    key <AD06>	{ [        0x010012E8,  VoidSymbol ]	}; // y
+    key <AD07>	{ [        dead_u,      dead_U     ]	};
+    key <AD08>	{ [        dead_i,      dead_I     ]	};
+    key <AD09>	{ [        dead_o,      dead_O     ]	};
+    key <AD10>	{ [        0x01001350,  0x01001330 ]	}; // p
+    key <AD11>	{ [        0x01001340,  0x01001338 ]	}; // [
+    key <AD12>	{ [        0x01001328,  0x01001280 ]	}; // ]
+
+    key <AC01>	{ [        dead_a,      dead_A     ]	};
+    key <AC02>	{ [        0x01001230,  0x01001220 ]	}; // s
+    key <AC03>	{ [        0x010012F0,  0x010012F8 ]	}; // d
+    key <AC04>	{ [        0x01001348,  VoidSymbol ]	}; // f
+    key <AC05>	{ [        0x01001308,  0x01001318 ]	}; // g
+    key <AC06>	{ [        0x01001200,  0x01001210 ]	}; // h
+    key <AC07>	{ [        0x01001300,  VoidSymbol ]	}; // j
+    key <AC08>	{ [        0x010012A8,  0x010012B8 ]	}; // k
+    key <AC09>	{ [        0x01001208,  VoidSymbol ]	}; // l
+
+    key <AC10>	{ [        0x01001362,  0x01001361 ]	}; // :;
+    key <AC11>  { [        0x01001366,  0x01001365 ]    }; // '"
+    key <BKSL> {  [        VoidSymbol,  0x01002010 ]    }; // bksl
+
+    key <AB01>	{ [        0x010012D8,  0x010012E0 ]	}; // z
+    key <AB02>	{ [        0x010012A0,  0x010012D0 ]	}; // x
+    key <AB03>	{ [        0x01001278,  dead_capital_schwa]};
+    key <AB04>	{ [        0x01001238,  0x01001268 ]	}; // v
+    key <AB05>	{ [        0x01001260,  VoidSymbol ]	}; // b
+    key <AB06>	{ [        0x01001290,  0x01001298 ]	}; // n
+    key <AB07>	{ [        0x01001218,  VoidSymbol ]	}; // m
+
+    key <AB08>	{ [        0x01001363,  VoidSymbol ]	}; // <
+    key <AB09>	{ [        0x01001364,  VoidSymbol ]	}; // >
+    key <AB10>  { [        0x01001367,  question   ]    }; // ?
+
+    include "group(olpc)"
+};

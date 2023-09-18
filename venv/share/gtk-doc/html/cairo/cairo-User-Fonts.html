@@ -1,0 +1,827 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>User Fonts: Cairo: A Vector Graphics Library</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<link rel="home" href="index.html" title="Cairo: A Vector Graphics Library">
+<link rel="up" href="cairo-fonts.html" title="Fonts">
+<link rel="prev" href="cairo-Quartz-(CGFont)-Fonts.html" title="Quartz (CGFont) Fonts">
+<link rel="next" href="cairo-surfaces.html" title="Surfaces">
+<meta name="generator" content="GTK-Doc V1.27 (XML mode)">
+<link rel="stylesheet" href="style.css" type="text/css">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<table class="navigation" id="top" width="100%" summary="Navigation header" cellpadding="2" cellspacing="5"><tr valign="middle">
+<td width="100%" align="left" class="shortcuts">
+<a href="#" class="shortcut">Top</a><span id="nav_description">  <span class="dim">|</span> 
+                  <a href="#cairo-User-Fonts.description" class="shortcut">Description</a></span>
+</td>
+<td><a accesskey="h" href="index.html"><img src="home.png" width="16" height="16" border="0" alt="Home"></a></td>
+<td><a accesskey="u" href="cairo-fonts.html"><img src="up.png" width="16" height="16" border="0" alt="Up"></a></td>
+<td><a accesskey="p" href="cairo-Quartz-(CGFont)-Fonts.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
+<td><a accesskey="n" href="cairo-surfaces.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
+</tr></table>
+<div class="refentry">
+<a name="cairo-User-Fonts"></a><div class="titlepage"></div>
+<div class="refnamediv"><table width="100%"><tr>
+<td valign="top">
+<h2><span class="refentrytitle"><a name="cairo-User-Fonts.top_of_page"></a>User Fonts</span></h2>
+<p>User Fonts — Font support with font data provided by the user</p>
+</td>
+<td class="gallery_image" valign="top" align="right"></td>
+</tr></table></div>
+<div class="refsect1">
+<a name="cairo-User-Fonts.functions"></a><h2>Functions</h2>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="functions_return">
+<col class="functions_name">
+</colgroup>
+<tbody>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-Error-handling.html#cairo-status-t" title="enum cairo_status_t"><span class="returnvalue">cairo_status_t</span></a>
+</td>
+<td class="function_name">
+<span class="c_punctuation">(</span><a class="link" href="cairo-User-Fonts.html#cairo-user-scaled-font-init-func-t" title="cairo_user_scaled_font_init_func_t ()">*cairo_user_scaled_font_init_func_t</a><span class="c_punctuation">)</span> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-Error-handling.html#cairo-status-t" title="enum cairo_status_t"><span class="returnvalue">cairo_status_t</span></a>
+</td>
+<td class="function_name">
+<span class="c_punctuation">(</span><a class="link" href="cairo-User-Fonts.html#cairo-user-scaled-font-render-glyph-func-t" title="cairo_user_scaled_font_render_glyph_func_t ()">*cairo_user_scaled_font_render_glyph_func_t</a><span class="c_punctuation">)</span> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-Error-handling.html#cairo-status-t" title="enum cairo_status_t"><span class="returnvalue">cairo_status_t</span></a>
+</td>
+<td class="function_name">
+<span class="c_punctuation">(</span><a class="link" href="cairo-User-Fonts.html#cairo-user-scaled-font-text-to-glyphs-func-t" title="cairo_user_scaled_font_text_to_glyphs_func_t ()">*cairo_user_scaled_font_text_to_glyphs_func_t</a><span class="c_punctuation">)</span> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-Error-handling.html#cairo-status-t" title="enum cairo_status_t"><span class="returnvalue">cairo_status_t</span></a>
+</td>
+<td class="function_name">
+<span class="c_punctuation">(</span><a class="link" href="cairo-User-Fonts.html#cairo-user-scaled-font-unicode-to-glyph-func-t" title="cairo_user_scaled_font_unicode_to_glyph_func_t ()">*cairo_user_scaled_font_unicode_to_glyph_func_t</a><span class="c_punctuation">)</span> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-cairo-font-face-t.html#cairo-font-face-t" title="cairo_font_face_t"><span class="returnvalue">cairo_font_face_t</span></a> *
+</td>
+<td class="function_name">
+<a class="link" href="cairo-User-Fonts.html#cairo-user-font-face-create" title="cairo_user_font_face_create ()">cairo_user_font_face_create</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-User-Fonts.html#cairo-user-font-face-set-init-func" title="cairo_user_font_face_set_init_func ()">cairo_user_font_face_set_init_func</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-User-Fonts.html#cairo-user-scaled-font-init-func-t" title="cairo_user_scaled_font_init_func_t ()"><span class="returnvalue">cairo_user_scaled_font_init_func_t</span></a>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-User-Fonts.html#cairo-user-font-face-get-init-func" title="cairo_user_font_face_get_init_func ()">cairo_user_font_face_get_init_func</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-User-Fonts.html#cairo-user-font-face-set-render-glyph-func" title="cairo_user_font_face_set_render_glyph_func ()">cairo_user_font_face_set_render_glyph_func</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-User-Fonts.html#cairo-user-scaled-font-render-glyph-func-t" title="cairo_user_scaled_font_render_glyph_func_t ()"><span class="returnvalue">cairo_user_scaled_font_render_glyph_func_t</span></a>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-User-Fonts.html#cairo-user-font-face-get-render-glyph-func" title="cairo_user_font_face_get_render_glyph_func ()">cairo_user_font_face_get_render_glyph_func</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-User-Fonts.html#cairo-user-font-face-set-unicode-to-glyph-func" title="cairo_user_font_face_set_unicode_to_glyph_func ()">cairo_user_font_face_set_unicode_to_glyph_func</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-User-Fonts.html#cairo-user-scaled-font-unicode-to-glyph-func-t" title="cairo_user_scaled_font_unicode_to_glyph_func_t ()"><span class="returnvalue">cairo_user_scaled_font_unicode_to_glyph_func_t</span></a>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-User-Fonts.html#cairo-user-font-face-get-unicode-to-glyph-func" title="cairo_user_font_face_get_unicode_to_glyph_func ()">cairo_user_font_face_get_unicode_to_glyph_func</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-User-Fonts.html#cairo-user-font-face-set-text-to-glyphs-func" title="cairo_user_font_face_set_text_to_glyphs_func ()">cairo_user_font_face_set_text_to_glyphs_func</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-User-Fonts.html#cairo-user-scaled-font-text-to-glyphs-func-t" title="cairo_user_scaled_font_text_to_glyphs_func_t ()"><span class="returnvalue">cairo_user_scaled_font_text_to_glyphs_func_t</span></a>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-User-Fonts.html#cairo-user-font-face-get-text-to-glyphs-func" title="cairo_user_font_face_get_text_to_glyphs_func ()">cairo_user_font_face_get_text_to_glyphs_func</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect1">
+<a name="cairo-User-Fonts.other"></a><h2>Types and Values</h2>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="name">
+<col class="description">
+</colgroup>
+<tbody><tr>
+<td class="define_keyword">#define</td>
+<td class="function_name"><a class="link" href="cairo-User-Fonts.html#CAIRO-HAS-USER-FONT:CAPS" title="CAIRO_HAS_USER_FONT">CAIRO_HAS_USER_FONT</a></td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect1">
+<a name="cairo-User-Fonts.description"></a><h2>Description</h2>
+<p>The user-font feature allows the cairo user to provide drawings for glyphs
+in a font.  This is most useful in implementing fonts in non-standard
+formats, like SVG fonts and Flash fonts, but can also be used by games and
+other application to draw "funky" fonts.</p>
+</div>
+<div class="refsect1">
+<a name="cairo-User-Fonts.functions_details"></a><h2>Functions</h2>
+<div class="refsect2">
+<a name="cairo-user-scaled-font-init-func-t"></a><h3>cairo_user_scaled_font_init_func_t ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-Error-handling.html#cairo-status-t" title="enum cairo_status_t"><span class="returnvalue">cairo_status_t</span></a>
+<span class="c_punctuation">(</span>*cairo_user_scaled_font_init_func_t<span class="c_punctuation">)</span> (<em class="parameter"><code><a class="link" href="cairo-cairo-scaled-font-t.html#cairo-scaled-font-t" title="cairo_scaled_font_t"><span class="type">cairo_scaled_font_t</span></a> *scaled_font</code></em>,
+                                       <em class="parameter"><code><a class="link" href="cairo-cairo-t.html#cairo-t" title="cairo_t"><span class="type">cairo_t</span></a> *cr</code></em>,
+                                       <em class="parameter"><code><a class="link" href="cairo-cairo-scaled-font-t.html#cairo-font-extents-t" title="cairo_font_extents_t"><span class="type">cairo_font_extents_t</span></a> *extents</code></em>);</pre>
+<p><a class="link" href="cairo-User-Fonts.html#cairo-user-scaled-font-init-func-t" title="cairo_user_scaled_font_init_func_t ()"><span class="type">cairo_user_scaled_font_init_func_t</span></a> is the type of function which is
+called when a scaled-font needs to be created for a user font-face.</p>
+<p>The cairo context <em class="parameter"><code>cr</code></em>
+ is not used by the caller, but is prepared in font
+space, similar to what the cairo contexts passed to the render_glyph
+method will look like.  The callback can use this context for extents
+computation for example.  After the callback is called, <em class="parameter"><code>cr</code></em>
+ is checked
+for any error status.</p>
+<p>The <em class="parameter"><code>extents</code></em>
+ argument is where the user font sets the font extents for
+<em class="parameter"><code>scaled_font</code></em>
+.  It is in font space, which means that for most cases its
+ascent and descent members should add to 1.0.  <em class="parameter"><code>extents</code></em>
+ is preset to
+hold a value of 1.0 for ascent, height, and max_x_advance, and 0.0 for
+descent and max_y_advance members.</p>
+<p>The callback is optional.  If not set, default font extents as described
+in the previous paragraph will be used.</p>
+<p>Note that <em class="parameter"><code>scaled_font</code></em>
+ is not fully initialized at this
+point and trying to use it for text operations in the callback will result
+in deadlock.</p>
+<div class="refsect3">
+<a name="cairo-user-scaled-font-init-func-t.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>scaled_font</p></td>
+<td class="parameter_description"><p>the scaled-font being created</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>cr</p></td>
+<td class="parameter_description"><p>a cairo context, in font space</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>extents</p></td>
+<td class="parameter_description"><p>font extents to fill in, in font space</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-user-scaled-font-init-func-t.returns"></a><h4>Returns</h4>
+<p> <a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-SUCCESS:CAPS"><code class="literal">CAIRO_STATUS_SUCCESS</code></a> upon success, or an error status on error.</p>
+</div>
+<p class="since">Since: 1.8</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-user-scaled-font-render-glyph-func-t"></a><h3>cairo_user_scaled_font_render_glyph_func_t ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-Error-handling.html#cairo-status-t" title="enum cairo_status_t"><span class="returnvalue">cairo_status_t</span></a>
+<span class="c_punctuation">(</span>*cairo_user_scaled_font_render_glyph_func_t<span class="c_punctuation">)</span>
+                               (<em class="parameter"><code><a class="link" href="cairo-cairo-scaled-font-t.html#cairo-scaled-font-t" title="cairo_scaled_font_t"><span class="type">cairo_scaled_font_t</span></a> *scaled_font</code></em>,
+                                <em class="parameter"><code><span class="type">unsigned long </span> glyph</code></em>,
+                                <em class="parameter"><code><a class="link" href="cairo-cairo-t.html#cairo-t" title="cairo_t"><span class="type">cairo_t</span></a> *cr</code></em>,
+                                <em class="parameter"><code><a class="link" href="cairo-cairo-scaled-font-t.html#cairo-text-extents-t" title="cairo_text_extents_t"><span class="type">cairo_text_extents_t</span></a> *extents</code></em>);</pre>
+<p><a class="link" href="cairo-User-Fonts.html#cairo-user-scaled-font-render-glyph-func-t" title="cairo_user_scaled_font_render_glyph_func_t ()"><span class="type">cairo_user_scaled_font_render_glyph_func_t</span></a> is the type of function which
+is called when a user scaled-font needs to render a glyph.</p>
+<p>The callback is mandatory, and expected to draw the glyph with code <em class="parameter"><code>glyph</code></em>
+ to
+the cairo context <em class="parameter"><code>cr</code></em>
+.  <em class="parameter"><code>cr</code></em>
+ is prepared such that the glyph drawing is done in
+font space.  That is, the matrix set on <em class="parameter"><code>cr</code></em>
+ is the scale matrix of <em class="parameter"><code>scaled_font</code></em>
+,
+The <em class="parameter"><code>extents</code></em>
+ argument is where the user font sets the font extents for
+<em class="parameter"><code>scaled_font</code></em>
+.  However, if user prefers to draw in user space, they can
+achieve that by changing the matrix on <em class="parameter"><code>cr</code></em>
+.  All cairo rendering operations
+to <em class="parameter"><code>cr</code></em>
+ are permitted, however, the result is undefined if any source other
+than the default source on <em class="parameter"><code>cr</code></em>
+ is used.  That means, glyph bitmaps should
+be rendered using <a class="link" href="cairo-cairo-t.html#cairo-mask" title="cairo_mask ()"><code class="function">cairo_mask()</code></a> instead of <a class="link" href="cairo-cairo-t.html#cairo-paint" title="cairo_paint ()"><code class="function">cairo_paint()</code></a>.</p>
+<p>Other non-default settings on <em class="parameter"><code>cr</code></em>
+ include a font size of 1.0 (given that
+it is set up to be in font space), and font options corresponding to
+<em class="parameter"><code>scaled_font</code></em>
+.</p>
+<p>The <em class="parameter"><code>extents</code></em>
+ argument is preset to have <code class="literal">x_bearing</code>,
+<code class="literal">width</code>, and <code class="literal">y_advance</code> of zero,
+<code class="literal">y_bearing</code> set to <code class="literal">-font_extents.ascent</code>,
+<code class="literal">height</code> to <code class="literal">font_extents.ascent+font_extents.descent</code>,
+and <code class="literal">x_advance</code> to <code class="literal">font_extents.max_x_advance</code>.
+The only field user needs to set in majority of cases is
+<code class="literal">x_advance</code>.
+If the <code class="literal">width</code> field is zero upon the callback returning
+(which is its preset value), the glyph extents are automatically computed
+based on the drawings done to <em class="parameter"><code>cr</code></em>
+.  This is in most cases exactly what the
+desired behavior is.  However, if for any reason the callback sets the
+extents, it must be ink extents, and include the extents of all drawing
+done to <em class="parameter"><code>cr</code></em>
+ in the callback.</p>
+<div class="refsect3">
+<a name="cairo-user-scaled-font-render-glyph-func-t.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>scaled_font</p></td>
+<td class="parameter_description"><p>user scaled-font</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>glyph</p></td>
+<td class="parameter_description"><p>glyph code to render</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>cr</p></td>
+<td class="parameter_description"><p>cairo context to draw to, in font space</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>extents</p></td>
+<td class="parameter_description"><p>glyph extents to fill in, in font space</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-user-scaled-font-render-glyph-func-t.returns"></a><h4>Returns</h4>
+<p> <a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-SUCCESS:CAPS"><code class="literal">CAIRO_STATUS_SUCCESS</code></a> upon success, or
+<a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-USER-FONT-ERROR:CAPS"><code class="literal">CAIRO_STATUS_USER_FONT_ERROR</code></a> or any other error status on error.</p>
+</div>
+<p class="since">Since: 1.8</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-user-scaled-font-text-to-glyphs-func-t"></a><h3>cairo_user_scaled_font_text_to_glyphs_func_t ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-Error-handling.html#cairo-status-t" title="enum cairo_status_t"><span class="returnvalue">cairo_status_t</span></a>
+<span class="c_punctuation">(</span>*cairo_user_scaled_font_text_to_glyphs_func_t<span class="c_punctuation">)</span>
+                               (<em class="parameter"><code><a class="link" href="cairo-cairo-scaled-font-t.html#cairo-scaled-font-t" title="cairo_scaled_font_t"><span class="type">cairo_scaled_font_t</span></a> *scaled_font</code></em>,
+                                <em class="parameter"><code>const <span class="type">char</span> *utf8</code></em>,
+                                <em class="parameter"><code><span class="type">int</span> utf8_len</code></em>,
+                                <em class="parameter"><code><a class="link" href="cairo-text.html#cairo-glyph-t" title="cairo_glyph_t"><span class="type">cairo_glyph_t</span></a> **glyphs</code></em>,
+                                <em class="parameter"><code><span class="type">int</span> *num_glyphs</code></em>,
+                                <em class="parameter"><code><a class="link" href="cairo-text.html#cairo-text-cluster-t" title="cairo_text_cluster_t"><span class="type">cairo_text_cluster_t</span></a> **clusters</code></em>,
+                                <em class="parameter"><code><span class="type">int</span> *num_clusters</code></em>,
+                                <em class="parameter"><code><a class="link" href="cairo-text.html#cairo-text-cluster-flags-t" title="enum cairo_text_cluster_flags_t"><span class="type">cairo_text_cluster_flags_t</span></a> *cluster_flags</code></em>);</pre>
+<p><a class="link" href="cairo-User-Fonts.html#cairo-user-scaled-font-text-to-glyphs-func-t" title="cairo_user_scaled_font_text_to_glyphs_func_t ()"><span class="type">cairo_user_scaled_font_text_to_glyphs_func_t</span></a> is the type of function which
+is called to convert input text to an array of glyphs.  This is used by the
+<a class="link" href="cairo-text.html#cairo-show-text" title="cairo_show_text ()"><code class="function">cairo_show_text()</code></a> operation.</p>
+<p>Using this callback the user-font has full control on glyphs and their
+positions.  That means, it allows for features like ligatures and kerning,
+as well as complex <em class="firstterm">shaping</em> required for scripts like
+Arabic and Indic.</p>
+<p>The <em class="parameter"><code>num_glyphs</code></em>
+ argument is preset to the number of glyph entries available
+in the <em class="parameter"><code>glyphs</code></em>
+ buffer. If the <em class="parameter"><code>glyphs</code></em>
+ buffer is <a href="/usr/share/gtk-doc/html/glib/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>, the value of
+<em class="parameter"><code>num_glyphs</code></em>
+ will be zero.  If the provided glyph array is too short for
+the conversion (or for convenience), a new glyph array may be allocated
+using <a class="link" href="cairo-text.html#cairo-glyph-allocate" title="cairo_glyph_allocate ()"><code class="function">cairo_glyph_allocate()</code></a> and placed in <em class="parameter"><code>glyphs</code></em>
+.  Upon return,
+<em class="parameter"><code>num_glyphs</code></em>
+ should contain the number of generated glyphs.  If the value
+<em class="parameter"><code>glyphs</code></em>
+ points at has changed after the call, the caller will free the
+allocated glyph array using <a class="link" href="cairo-text.html#cairo-glyph-free" title="cairo_glyph_free ()"><code class="function">cairo_glyph_free()</code></a>.  The caller will also free
+the original value of <em class="parameter"><code>glyphs</code></em>
+, so the callback shouldn't do so.
+The callback should populate the glyph indices and positions (in font space)
+assuming that the text is to be shown at the origin.</p>
+<p>If <em class="parameter"><code>clusters</code></em>
+ is not <a href="/usr/share/gtk-doc/html/glib/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>, <em class="parameter"><code>num_clusters</code></em>
+ and <em class="parameter"><code>cluster_flags</code></em>
+ are also
+non-<a href="/usr/share/gtk-doc/html/glib/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>, and cluster mapping should be computed. The semantics of how
+cluster array allocation works is similar to the glyph array.  That is,
+if <em class="parameter"><code>clusters</code></em>
+ initially points to a non-<a href="/usr/share/gtk-doc/html/glib/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> value, that array may be used
+as a cluster buffer, and <em class="parameter"><code>num_clusters</code></em>
+ points to the number of cluster
+entries available there.  If the provided cluster array is too short for
+the conversion (or for convenience), a new cluster array may be allocated
+using <a class="link" href="cairo-text.html#cairo-text-cluster-allocate" title="cairo_text_cluster_allocate ()"><code class="function">cairo_text_cluster_allocate()</code></a> and placed in <em class="parameter"><code>clusters</code></em>
+.  In this case,
+the original value of <em class="parameter"><code>clusters</code></em>
+ will still be freed by the caller.  Upon
+return, <em class="parameter"><code>num_clusters</code></em>
+ should contain the number of generated clusters.
+If the value <em class="parameter"><code>clusters</code></em>
+ points at has changed after the call, the caller
+will free the allocated cluster array using <a class="link" href="cairo-text.html#cairo-text-cluster-free" title="cairo_text_cluster_free ()"><code class="function">cairo_text_cluster_free()</code></a>.</p>
+<p>The callback is optional.  If <em class="parameter"><code>num_glyphs</code></em>
+ is negative upon
+the callback returning or if the return value
+is <a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-USER-FONT-NOT-IMPLEMENTED:CAPS"><code class="literal">CAIRO_STATUS_USER_FONT_NOT_IMPLEMENTED</code></a>, the unicode_to_glyph callback
+is tried.  See <a class="link" href="cairo-User-Fonts.html#cairo-user-scaled-font-unicode-to-glyph-func-t" title="cairo_user_scaled_font_unicode_to_glyph_func_t ()"><span class="type">cairo_user_scaled_font_unicode_to_glyph_func_t</span></a>.</p>
+<p>Note: While cairo does not impose any limitation on glyph indices,
+some applications may assume that a glyph index fits in a 16-bit
+unsigned integer.  As such, it is advised that user-fonts keep their
+glyphs in the 0 to 65535 range.  Furthermore, some applications may
+assume that glyph 0 is a special glyph-not-found glyph.  User-fonts
+are advised to use glyph 0 for such purposes and do not use that
+glyph value for other purposes.</p>
+<div class="refsect3">
+<a name="cairo-user-scaled-font-text-to-glyphs-func-t.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>scaled_font</p></td>
+<td class="parameter_description"><p>the scaled-font being created</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>utf8</p></td>
+<td class="parameter_description"><p>a string of text encoded in UTF-8</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>utf8_len</p></td>
+<td class="parameter_description"><p>length of <em class="parameter"><code>utf8</code></em>
+in bytes</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>glyphs</p></td>
+<td class="parameter_description"><p>pointer to array of glyphs to fill, in font space</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>num_glyphs</p></td>
+<td class="parameter_description"><p>pointer to number of glyphs</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>clusters</p></td>
+<td class="parameter_description"><p>pointer to array of cluster mapping information to fill, or <a href="/usr/share/gtk-doc/html/glib/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>num_clusters</p></td>
+<td class="parameter_description"><p>pointer to number of clusters</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>cluster_flags</p></td>
+<td class="parameter_description"><p>pointer to location to store cluster flags corresponding to the
+output <em class="parameter"><code>clusters</code></em>
+</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-user-scaled-font-text-to-glyphs-func-t.returns"></a><h4>Returns</h4>
+<p> <a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-SUCCESS:CAPS"><code class="literal">CAIRO_STATUS_SUCCESS</code></a> upon success,
+<a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-USER-FONT-NOT-IMPLEMENTED:CAPS"><code class="literal">CAIRO_STATUS_USER_FONT_NOT_IMPLEMENTED</code></a> if fallback options should be tried,
+or <a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-USER-FONT-ERROR:CAPS"><code class="literal">CAIRO_STATUS_USER_FONT_ERROR</code></a> or any other error status on error.</p>
+</div>
+<p class="since">Since: 1.8</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-user-scaled-font-unicode-to-glyph-func-t"></a><h3>cairo_user_scaled_font_unicode_to_glyph_func_t ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-Error-handling.html#cairo-status-t" title="enum cairo_status_t"><span class="returnvalue">cairo_status_t</span></a>
+<span class="c_punctuation">(</span>*cairo_user_scaled_font_unicode_to_glyph_func_t<span class="c_punctuation">)</span>
+                               (<em class="parameter"><code><a class="link" href="cairo-cairo-scaled-font-t.html#cairo-scaled-font-t" title="cairo_scaled_font_t"><span class="type">cairo_scaled_font_t</span></a> *scaled_font</code></em>,
+                                <em class="parameter"><code><span class="type">unsigned long </span> unicode</code></em>,
+                                <em class="parameter"><code>unsigned <span class="type">long</span> *glyph_index</code></em>);</pre>
+<p><a class="link" href="cairo-User-Fonts.html#cairo-user-scaled-font-unicode-to-glyph-func-t" title="cairo_user_scaled_font_unicode_to_glyph_func_t ()"><span class="type">cairo_user_scaled_font_unicode_to_glyph_func_t</span></a> is the type of function which
+is called to convert an input Unicode character to a single glyph.
+This is used by the <a class="link" href="cairo-text.html#cairo-show-text" title="cairo_show_text ()"><code class="function">cairo_show_text()</code></a> operation.</p>
+<p>This callback is used to provide the same functionality as the
+text_to_glyphs callback does (see <a class="link" href="cairo-User-Fonts.html#cairo-user-scaled-font-text-to-glyphs-func-t" title="cairo_user_scaled_font_text_to_glyphs_func_t ()"><span class="type">cairo_user_scaled_font_text_to_glyphs_func_t</span></a>)
+but has much less control on the output,
+in exchange for increased ease of use.  The inherent assumption to using
+this callback is that each character maps to one glyph, and that the
+mapping is context independent.  It also assumes that glyphs are positioned
+according to their advance width.  These mean no ligatures, kerning, or
+complex scripts can be implemented using this callback.</p>
+<p>The callback is optional, and only used if text_to_glyphs callback is not
+set or fails to return glyphs.  If this callback is not set or if it returns
+<a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-USER-FONT-NOT-IMPLEMENTED:CAPS"><code class="literal">CAIRO_STATUS_USER_FONT_NOT_IMPLEMENTED</code></a>, an identity mapping from Unicode
+code-points to glyph indices is assumed.</p>
+<p>Note: While cairo does not impose any limitation on glyph indices,
+some applications may assume that a glyph index fits in a 16-bit
+unsigned integer.  As such, it is advised that user-fonts keep their
+glyphs in the 0 to 65535 range.  Furthermore, some applications may
+assume that glyph 0 is a special glyph-not-found glyph.  User-fonts
+are advised to use glyph 0 for such purposes and do not use that
+glyph value for other purposes.</p>
+<div class="refsect3">
+<a name="cairo-user-scaled-font-unicode-to-glyph-func-t.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>scaled_font</p></td>
+<td class="parameter_description"><p>the scaled-font being created</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>unicode</p></td>
+<td class="parameter_description"><p>input unicode character code-point</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>glyph_index</p></td>
+<td class="parameter_description"><p>output glyph index</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-user-scaled-font-unicode-to-glyph-func-t.returns"></a><h4>Returns</h4>
+<p> <a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-SUCCESS:CAPS"><code class="literal">CAIRO_STATUS_SUCCESS</code></a> upon success,
+<a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-USER-FONT-NOT-IMPLEMENTED:CAPS"><code class="literal">CAIRO_STATUS_USER_FONT_NOT_IMPLEMENTED</code></a> if fallback options should be tried,
+or <a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-USER-FONT-ERROR:CAPS"><code class="literal">CAIRO_STATUS_USER_FONT_ERROR</code></a> or any other error status on error.</p>
+</div>
+<p class="since">Since: 1.8</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-user-font-face-create"></a><h3>cairo_user_font_face_create ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-cairo-font-face-t.html#cairo-font-face-t" title="cairo_font_face_t"><span class="returnvalue">cairo_font_face_t</span></a> *
+cairo_user_font_face_create (<em class="parameter"><code><span class="type">void</span></code></em>);</pre>
+<p>Creates a new user font-face.</p>
+<p>Use the setter functions to associate callbacks with the returned
+user font.  The only mandatory callback is render_glyph.</p>
+<p>After the font-face is created, the user can attach arbitrary data
+(the actual font data) to it using <a class="link" href="cairo-cairo-font-face-t.html#cairo-font-face-set-user-data" title="cairo_font_face_set_user_data ()"><code class="function">cairo_font_face_set_user_data()</code></a>
+and access it from the user-font callbacks by using
+<a class="link" href="cairo-cairo-scaled-font-t.html#cairo-scaled-font-get-font-face" title="cairo_scaled_font_get_font_face ()"><code class="function">cairo_scaled_font_get_font_face()</code></a> followed by
+<a class="link" href="cairo-cairo-font-face-t.html#cairo-font-face-get-user-data" title="cairo_font_face_get_user_data ()"><code class="function">cairo_font_face_get_user_data()</code></a>.</p>
+<div class="refsect3">
+<a name="cairo-user-font-face-create.returns"></a><h4>Returns</h4>
+<p> a newly created <a class="link" href="cairo-cairo-font-face-t.html#cairo-font-face-t" title="cairo_font_face_t"><span class="type">cairo_font_face_t</span></a>. Free with
+<a class="link" href="cairo-cairo-font-face-t.html#cairo-font-face-destroy" title="cairo_font_face_destroy ()"><code class="function">cairo_font_face_destroy()</code></a> when you are done using it.</p>
+</div>
+<p class="since">Since: 1.8</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-user-font-face-set-init-func"></a><h3>cairo_user_font_face_set_init_func ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_user_font_face_set_init_func (<em class="parameter"><code><a class="link" href="cairo-cairo-font-face-t.html#cairo-font-face-t" title="cairo_font_face_t"><span class="type">cairo_font_face_t</span></a> *font_face</code></em>,
+                                    <em class="parameter"><code><a class="link" href="cairo-User-Fonts.html#cairo-user-scaled-font-init-func-t" title="cairo_user_scaled_font_init_func_t ()"><span class="type">cairo_user_scaled_font_init_func_t</span></a> init_func</code></em>);</pre>
+<p>Sets the scaled-font initialization function of a user-font.
+See <a class="link" href="cairo-User-Fonts.html#cairo-user-scaled-font-init-func-t" title="cairo_user_scaled_font_init_func_t ()"><span class="type">cairo_user_scaled_font_init_func_t</span></a> for details of how the callback
+works.</p>
+<p>The font-face should not be immutable or a <a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-USER-FONT-IMMUTABLE:CAPS"><code class="literal">CAIRO_STATUS_USER_FONT_IMMUTABLE</code></a>
+error will occur.  A user font-face is immutable as soon as a scaled-font
+is created from it.</p>
+<div class="refsect3">
+<a name="cairo-user-font-face-set-init-func.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>font_face</p></td>
+<td class="parameter_description"><p>A user font face</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>init_func</p></td>
+<td class="parameter_description"><p>The init callback, or <a href="/usr/share/gtk-doc/html/glib/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.8</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-user-font-face-get-init-func"></a><h3>cairo_user_font_face_get_init_func ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-User-Fonts.html#cairo-user-scaled-font-init-func-t" title="cairo_user_scaled_font_init_func_t ()"><span class="returnvalue">cairo_user_scaled_font_init_func_t</span></a>
+cairo_user_font_face_get_init_func (<em class="parameter"><code><a class="link" href="cairo-cairo-font-face-t.html#cairo-font-face-t" title="cairo_font_face_t"><span class="type">cairo_font_face_t</span></a> *font_face</code></em>);</pre>
+<p>Gets the scaled-font initialization function of a user-font.</p>
+<div class="refsect3">
+<a name="cairo-user-font-face-get-init-func.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>font_face</p></td>
+<td class="parameter_description"><p>A user font face</p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-user-font-face-get-init-func.returns"></a><h4>Returns</h4>
+<p> The init callback of <em class="parameter"><code>font_face</code></em>
+or <a href="/usr/share/gtk-doc/html/glib/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if none set or an error has occurred.</p>
+</div>
+<p class="since">Since: 1.8</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-user-font-face-set-render-glyph-func"></a><h3>cairo_user_font_face_set_render_glyph_func ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_user_font_face_set_render_glyph_func
+                               (<em class="parameter"><code><a class="link" href="cairo-cairo-font-face-t.html#cairo-font-face-t" title="cairo_font_face_t"><span class="type">cairo_font_face_t</span></a> *font_face</code></em>,
+                                <em class="parameter"><code><a class="link" href="cairo-User-Fonts.html#cairo-user-scaled-font-render-glyph-func-t" title="cairo_user_scaled_font_render_glyph_func_t ()"><span class="type">cairo_user_scaled_font_render_glyph_func_t</span></a> render_glyph_func</code></em>);</pre>
+<p>Sets the glyph rendering function of a user-font.
+See <a class="link" href="cairo-User-Fonts.html#cairo-user-scaled-font-render-glyph-func-t" title="cairo_user_scaled_font_render_glyph_func_t ()"><span class="type">cairo_user_scaled_font_render_glyph_func_t</span></a> for details of how the callback
+works.</p>
+<p>The font-face should not be immutable or a <a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-USER-FONT-IMMUTABLE:CAPS"><code class="literal">CAIRO_STATUS_USER_FONT_IMMUTABLE</code></a>
+error will occur.  A user font-face is immutable as soon as a scaled-font
+is created from it.</p>
+<p>The render_glyph callback is the only mandatory callback of a user-font.
+If the callback is <a href="/usr/share/gtk-doc/html/glib/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> and a glyph is tried to be rendered using
+<em class="parameter"><code>font_face</code></em>
+, a <a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-USER-FONT-ERROR:CAPS"><code class="literal">CAIRO_STATUS_USER_FONT_ERROR</code></a> will occur.</p>
+<div class="refsect3">
+<a name="cairo-user-font-face-set-render-glyph-func.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>font_face</p></td>
+<td class="parameter_description"><p>A user font face</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>render_glyph_func</p></td>
+<td class="parameter_description"><p>The render_glyph callback, or <a href="/usr/share/gtk-doc/html/glib/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.8</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-user-font-face-get-render-glyph-func"></a><h3>cairo_user_font_face_get_render_glyph_func ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-User-Fonts.html#cairo-user-scaled-font-render-glyph-func-t" title="cairo_user_scaled_font_render_glyph_func_t ()"><span class="returnvalue">cairo_user_scaled_font_render_glyph_func_t</span></a>
+cairo_user_font_face_get_render_glyph_func
+                               (<em class="parameter"><code><a class="link" href="cairo-cairo-font-face-t.html#cairo-font-face-t" title="cairo_font_face_t"><span class="type">cairo_font_face_t</span></a> *font_face</code></em>);</pre>
+<p>Gets the glyph rendering function of a user-font.</p>
+<div class="refsect3">
+<a name="cairo-user-font-face-get-render-glyph-func.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>font_face</p></td>
+<td class="parameter_description"><p>A user font face</p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-user-font-face-get-render-glyph-func.returns"></a><h4>Returns</h4>
+<p> The render_glyph callback of <em class="parameter"><code>font_face</code></em>
+or <a href="/usr/share/gtk-doc/html/glib/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if none set or an error has occurred.</p>
+</div>
+<p class="since">Since: 1.8</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-user-font-face-set-unicode-to-glyph-func"></a><h3>cairo_user_font_face_set_unicode_to_glyph_func ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_user_font_face_set_unicode_to_glyph_func
+                               (<em class="parameter"><code><a class="link" href="cairo-cairo-font-face-t.html#cairo-font-face-t" title="cairo_font_face_t"><span class="type">cairo_font_face_t</span></a> *font_face</code></em>,
+                                <em class="parameter"><code><a class="link" href="cairo-User-Fonts.html#cairo-user-scaled-font-unicode-to-glyph-func-t" title="cairo_user_scaled_font_unicode_to_glyph_func_t ()"><span class="type">cairo_user_scaled_font_unicode_to_glyph_func_t</span></a> unicode_to_glyph_func</code></em>);</pre>
+<p>Sets the unicode-to-glyph conversion function of a user-font.
+See <a class="link" href="cairo-User-Fonts.html#cairo-user-scaled-font-unicode-to-glyph-func-t" title="cairo_user_scaled_font_unicode_to_glyph_func_t ()"><span class="type">cairo_user_scaled_font_unicode_to_glyph_func_t</span></a> for details of how the callback
+works.</p>
+<p>The font-face should not be immutable or a <a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-USER-FONT-IMMUTABLE:CAPS"><code class="literal">CAIRO_STATUS_USER_FONT_IMMUTABLE</code></a>
+error will occur.  A user font-face is immutable as soon as a scaled-font
+is created from it.</p>
+<div class="refsect3">
+<a name="cairo-user-font-face-set-unicode-to-glyph-func.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>font_face</p></td>
+<td class="parameter_description"><p>A user font face</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>unicode_to_glyph_func</p></td>
+<td class="parameter_description"><p>The unicode_to_glyph callback, or <a href="/usr/share/gtk-doc/html/glib/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.8</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-user-font-face-get-unicode-to-glyph-func"></a><h3>cairo_user_font_face_get_unicode_to_glyph_func ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-User-Fonts.html#cairo-user-scaled-font-unicode-to-glyph-func-t" title="cairo_user_scaled_font_unicode_to_glyph_func_t ()"><span class="returnvalue">cairo_user_scaled_font_unicode_to_glyph_func_t</span></a>
+cairo_user_font_face_get_unicode_to_glyph_func
+                               (<em class="parameter"><code><a class="link" href="cairo-cairo-font-face-t.html#cairo-font-face-t" title="cairo_font_face_t"><span class="type">cairo_font_face_t</span></a> *font_face</code></em>);</pre>
+<p>Gets the unicode-to-glyph conversion function of a user-font.</p>
+<div class="refsect3">
+<a name="cairo-user-font-face-get-unicode-to-glyph-func.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>font_face</p></td>
+<td class="parameter_description"><p>A user font face</p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-user-font-face-get-unicode-to-glyph-func.returns"></a><h4>Returns</h4>
+<p> The unicode_to_glyph callback of <em class="parameter"><code>font_face</code></em>
+or <a href="/usr/share/gtk-doc/html/glib/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if none set or an error occurred.</p>
+</div>
+<p class="since">Since: 1.8</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-user-font-face-set-text-to-glyphs-func"></a><h3>cairo_user_font_face_set_text_to_glyphs_func ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_user_font_face_set_text_to_glyphs_func
+                               (<em class="parameter"><code><a class="link" href="cairo-cairo-font-face-t.html#cairo-font-face-t" title="cairo_font_face_t"><span class="type">cairo_font_face_t</span></a> *font_face</code></em>,
+                                <em class="parameter"><code><a class="link" href="cairo-User-Fonts.html#cairo-user-scaled-font-text-to-glyphs-func-t" title="cairo_user_scaled_font_text_to_glyphs_func_t ()"><span class="type">cairo_user_scaled_font_text_to_glyphs_func_t</span></a> text_to_glyphs_func</code></em>);</pre>
+<p>Sets th text-to-glyphs conversion function of a user-font.
+See <a class="link" href="cairo-User-Fonts.html#cairo-user-scaled-font-text-to-glyphs-func-t" title="cairo_user_scaled_font_text_to_glyphs_func_t ()"><span class="type">cairo_user_scaled_font_text_to_glyphs_func_t</span></a> for details of how the callback
+works.</p>
+<p>The font-face should not be immutable or a <a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-USER-FONT-IMMUTABLE:CAPS"><code class="literal">CAIRO_STATUS_USER_FONT_IMMUTABLE</code></a>
+error will occur.  A user font-face is immutable as soon as a scaled-font
+is created from it.</p>
+<div class="refsect3">
+<a name="cairo-user-font-face-set-text-to-glyphs-func.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>font_face</p></td>
+<td class="parameter_description"><p>A user font face</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>text_to_glyphs_func</p></td>
+<td class="parameter_description"><p>The text_to_glyphs callback, or <a href="/usr/share/gtk-doc/html/glib/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.8</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-user-font-face-get-text-to-glyphs-func"></a><h3>cairo_user_font_face_get_text_to_glyphs_func ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-User-Fonts.html#cairo-user-scaled-font-text-to-glyphs-func-t" title="cairo_user_scaled_font_text_to_glyphs_func_t ()"><span class="returnvalue">cairo_user_scaled_font_text_to_glyphs_func_t</span></a>
+cairo_user_font_face_get_text_to_glyphs_func
+                               (<em class="parameter"><code><a class="link" href="cairo-cairo-font-face-t.html#cairo-font-face-t" title="cairo_font_face_t"><span class="type">cairo_font_face_t</span></a> *font_face</code></em>);</pre>
+<p>Gets the text-to-glyphs conversion function of a user-font.</p>
+<div class="refsect3">
+<a name="cairo-user-font-face-get-text-to-glyphs-func.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>font_face</p></td>
+<td class="parameter_description"><p>A user font face</p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-user-font-face-get-text-to-glyphs-func.returns"></a><h4>Returns</h4>
+<p> The text_to_glyphs callback of <em class="parameter"><code>font_face</code></em>
+or <a href="/usr/share/gtk-doc/html/glib/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if none set or an error occurred.</p>
+</div>
+<p class="since">Since: 1.8</p>
+</div>
+</div>
+<div class="refsect1">
+<a name="cairo-User-Fonts.other_details"></a><h2>Types and Values</h2>
+<div class="refsect2">
+<a name="CAIRO-HAS-USER-FONT:CAPS"></a><h3>CAIRO_HAS_USER_FONT</h3>
+<pre class="programlisting">#define CAIRO_HAS_USER_FONT 1
+</pre>
+<p>Defined if the user font backend is available.
+This macro can be used to conditionally compile backend-specific code.
+The user font backend is always built in versions of cairo that support
+this feature (1.8 and later).</p>
+<p class="since">Since: 1.8</p>
+</div>
+</div>
+</div>
+<div class="footer">
+<hr>Generated by GTK-Doc V1.27</div>
+</body>
+</html>

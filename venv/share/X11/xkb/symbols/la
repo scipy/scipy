@@ -1,0 +1,130 @@
+// Keyboard layouts for Laos.
+
+// This layout is (kind of) widely used in Laos.
+// Original author: Anousak Souphavanh <anousak@muanglao.com>
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+    name[Group1]= "Lao";
+
+    key <TLDE>	{[  U200d              ]}; // ZWJ
+    key <AE01>	{[  U0ea2,  U0ed1      ]};
+    key <AE01>	{[  U0ea2,  U0ed1      ]};
+    key <AE02>	{[  U0e9f,  U0ed2      ]};
+    key <AE03>	{[  U0ec2,  U0ed3      ]};
+    key <AE04>	{[  U0e96,  U0ed4      ]};
+    key <AE05>	{[  U0eb8,  U0ecc      ]};
+    key <AE06>	{[  U0eb9,  U0ebc      ]};
+    key <AE07>	{[  U0e84,  U0ed5      ]};
+    key <AE08>	{[  U0e95,  U0ed6      ]};
+    key <AE09>	{[  U0e88,  U0ed7      ]};
+    key <AE10>	{[  U0e82,  U0ed8      ]};
+    key <AE11>	{[  U0e8a,  U0ed9      ]};
+    key <AE12>	{[  U0ecd              ]};
+
+    key <AD01>	{[  U0ebb              ]};
+    key <AD02>	{[  U0ec4,  U0ed0      ]};
+    key <AD03>	{[  U0eb3              ]};
+    key <AD04>	{[  U0e9e,  underscore ]};
+    key <AD05>	{[  U0eb0,  plus       ]};
+    key <AD06>	{[  U0eb4              ]};
+    key <AD07>	{[  U0eb5              ]};
+    key <AD08>	{[  U0ea3,  U0eae      ]};
+    key <AD09>	{[  U0e99              ]};
+    key <AD10>	{[  U0e8d,  U0ebd      ]};
+    key <AD11>	{[  U0e9a,  minus      ]};
+    key <AD12>	{[  U0ea5,  braceright ]};
+    key <BKSL>	{[  U0edc,  U0edd      ]};
+
+    key <AC01>	{[  U0eb1              ]};
+    key <AC02>	{[  U0eab,  semicolon  ]};
+    key <AC03>	{[  U0e81,  period     ]};
+    key <AC04>	{[  U0e94,  comma      ]};
+    key <AC05>	{[  U0ec0,  colon      ]};
+    key <AC06>	{[  U0ec9,  U0eca      ]};
+    key <AC07>	{[  U0ec8,  U0ecb      ]};
+    key <AC08>	{[  U0eb2,  exclam     ]};
+    key <AC09>	{[  U0eaa,  question   ]};
+    key <AC10>	{[  U0ea7,  percent    ]};
+    key <AC11>	{[  U0e87,  equal      ]};
+
+    key <AB01>	{[  U0e9c,  U20ad      ]};
+    key <AB02>	{[  U0e9b,  parenleft  ]};
+    key <AB03>	{[  U0ec1,  U0eaf      ]};
+    key <AB04>	{[  U0ead              ]};
+    key <AB05>	{[  U0eb6              ]};
+    key <AB06>	{[  U0eb7              ]};
+    key <AB07>	{[  U0e97,  U0ec6      ]};
+    key <AB08>	{[  U0ea1,  grave      ]};
+    key <AB09>	{[  U0ec3,  dollar     ]};
+    key <AB10>	{[  U0e9d,  parenright ]};
+};
+
+
+partial
+xkb_symbols "stea" {
+
+    // This keymap describes the standard Lao keyboard proposed
+    // by the Science Technology and Environment Agency of Laos.
+    // Caveat: assigning multiple codepoints to a single key
+    // does not work in XKB.  Therefore the combined codepoint
+    // assignments have been omitted.
+
+    name[Group1]= "Lao (STEA)";
+
+    key <TLDE>	{[quotedbl, apostrophe        ]};
+    key <AE01>	{[  U0ea2,  1,         U0ed1  ]};
+    key <AE02>	{[  U0e9f,  2,         U0ed2  ]};
+    key <AE03>	{[  U0ec2,  3,         U0ed3  ]};
+    key <AE04>	{[  U0e96,  4,         U0ed4  ]};
+    key <AE05>	{[  U0eb8,  U0ecc,     U0ed5  ]};
+    key <AE06>	{[  U0eb9,  U0ebc,     U0ed6  ]};
+    key <AE07>	{[  U0e84,  5,         U0ed7  ]};
+    key <AE08>	{[  U0e95,  6,         U0ed8  ]};
+    key <AE09>	{[  U0e88,  7,         U0ed9  ]};
+    key <AE10>	{[  U0e82,  8,         U0ed0  ]};
+    key <AE11>	{[  U0e8a,  9                 ]};
+    key <AE12>	{[  U0ecd                     ]};
+
+    key <AD01>	{[  U0ebb              ]};
+    key <AD02>	{[  U0ec4,  0          ]};
+    key <AD03>	{[  U0eb3,  asterisk   ]};
+    key <AD04>	{[  U0e9e,  underscore ]};
+    key <AD05>	{[  U0eb0,  plus       ]};
+    key <AD06>	{[  U0eb4              ]};
+    key <AD07>	{[  U0eb5              ]};
+    key <AD08>	{[  U0eae,  U0ea3      ]};
+    key <AD09>	{[  U0e99,  U0edc      ]};
+    key <AD10>	{[  U0e8d,  U0ebd      ]};
+    key <AD11>	{[  U0e9a,  minus      ]};
+    key <AD12>	{[  U0ea5              ]};
+    key <BKSL>	{[  slash,  backslash  ]};
+
+    key <AC01>	{[  U0eb1              ]};
+    key <AC02>	{[  U0eab,  semicolon  ]};
+    key <AC03>	{[  U0e81,  period     ]};
+    key <AC04>	{[  U0e94,  comma      ]};
+    key <AC05>	{[  U0ec0,  colon      ]};
+    key <AC06>	{[  U0ec9,  U0eca      ]};
+    key <AC07>	{[  U0ec8,  U0ecb      ]};
+    key <AC08>	{[  U0eb2,  exclam     ]};
+    key <AC09>	{[  U0eaa,  question   ]};
+    key <AC10>	{[  U0ea7,  percent    ]};
+    key <AC11>	{[  U0e87,  equal      ]};
+
+    key <AB01>	{[  U0e9c,  U20ad      ]};
+    key <AB02>	{[  U0e9b,  parenleft  ]};
+    key <AB03>	{[  U0ec1,  U0eaf      ]};
+    key <AB04>	{[  U0ead,  x          ]};
+    key <AB05>	{[  U0eb6              ]};
+    key <AB06>	{[  U0eb7              ]};
+    key <AB07>	{[  U0e97,  U0ec6      ]};
+    key <AB08>	{[  U0ea1,  U0edd      ]};
+    key <AB09>	{[  U0ec3,  dollar     ]};
+    key <AB10>	{[  U0e9d,  parenright ]};
+
+    key <SPCE>	{[  space,  nobreakspace,  nobreakspace ]};
+
+    key <KPDL>	{[  comma,  period     ]};
+
+    include "level3(ralt_switch)"
+};

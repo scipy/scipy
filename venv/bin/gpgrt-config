@@ -1,0 +1,723 @@
+#!/bin/sh
+#                          -*- mode: shell-script; sh-shell: "/bin/sh" -*-
+# Copyright (C) 2018, 2021, 2022 g10 Code GmbH
+#
+# This file is free software; as a special exception the author gives
+# unlimited permission to copy and/or distribute it, with or without
+# modifications, as long as this notice is preserved.
+#
+# This file is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
+# implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# SPDX-License-Identifier: FSFULLR
+
+#### start of functions for this script
+
+#
+# Bourne shell functions for config file in pkg-config style, so that
+# we can share such a config file between pkg-config and script
+#
+
+#
+# get_var: Get the variable value of NAME
+#
+# Variables are recorded in the shell variables named "VAR_<NAME>"
+#
+get_var () {
+    ___name=$1
+
+    eval echo \$VAR_$___name
+}
+
+#
+# get_attr: Get the attribute value of KEY
+#
+# Attributes are recorded in the shell variables named "ATTR_<KEY>"
+#
+get_attr () {
+    ___name=$1
+
+    eval echo \$ATTR_$___name
+}
+
+# variant of get_attr for list (separated by ',')
+get_attr_l () {
+    (IFS=', '; echo "$(get_attr $1)")
+}
+
+# Remove ${varname} part in the beginning of a string.
+remove_var_expr () {
+    ___varname=$1
+    shift
+
+    expr "$*" : "\${$___varname}\\(.*\\)"
+}
+
+# Given a string, substitute variables.
+substitute_vars () {
+    __string="$1"
+    __varname=""
+    __result=""
+
+    while [ -n "$__string" ]; do
+	case "$__string" in
+	    \$\$*)
+		__result="$__result\$"
+		__string="${__string#\$\$}"
+		;;
+	    \${*}*)
+		__varname="${__string#\$\{}"
+		__varname="${__varname%%\}*}"
+		__result="$__result$(get_var $__varname)"
+		__string=$(remove_var_expr $__varname $__string)
+		;;
+	    *)
+		__result="$__result$(printf %c "$__string")"
+		__string="${__string#$(printf %c "$__string")}"
+		;;
+	esac
+    done
+
+    echo "$__result"
+}
+
+#
+# Read a config from stdin
+#
+# Variables:
+# For VAR=VALUE, value is stored in the shell variable VAR_*.
+#
+# Attributes:
+# For KEY: VALUE, value is stored in the shell variable ATTR_*.
+#
+read_config_from_stdin () {
+    _filename=$1
+    _line=""
+    _varname=""
+    _value=""
+    _key=""
+    _reading_attrs=""
+
+    while read _line; do
+	if [ -z "$_line" ]; then
+	    _reading_attrs=yes
+	    continue
+	elif [ -z "$_reading_attrs" ]; then
+	    case "$_line" in
+		*=*)
+		    _varname="${_line%%=*}"
+		    _value="${_line#*=}"
+		    VAR_list="$VAR_list${VAR_list:+ }VAR_$_varname"
+		    read VAR_$_varname <<EOF1
+$(substitute_vars "$_value")
+EOF1
+		    continue
+		    ;;
+		*) _reading_attrs=yes ;;
+	    esac
+	fi
+	if [ -n "$_reading_attrs" ]; then
+	    case "$_line" in
+		*:\ *)
+		    _key="${_line%%:\ *}"
+		    _value="${_line#*:\ }"
+		    if expr "$_key" : ".*\..*" >/dev/null; then
+			_key="${_key%.*}_${_key#*.}"
+		    fi
+		    ATTR_list="$ATTR_list${ATTR_list:+ }ATTR_$_key"
+		    read ATTR_$_key <<EOF2
+$(substitute_vars "$_value")
+EOF2
+		    ;;
+		*:|*:\ ) ;;
+		*)
+		    echo "Error reading $_filename: $_line" 1>&2
+		    exit 1
+		    ;;
+	    esac
+	fi
+    done
+}
+
+
+find_file_in_path () {
+    _f=$1
+    _p=$2
+    _saved_IFS="$IFS"
+    _arg=""
+    IFS=":"		# On Windows it should be ";"???
+
+    for _arg in $_p; do
+	if [ -r $_arg/$_f ]; then
+	    RESULT="$_arg/$_f"
+	    IFS="$_saved_IFS"
+	    return 0
+	fi
+    done
+    IFS="$_saved_IFS"
+    RESULT=""
+    return 1
+}
+
+read_config_file () {
+    if ! find_file_in_path $1.pc $2; then
+	if [ -z "$want_exists" ]; then
+	    echo "Can't find $1.pc" 1>&2
+	fi
+	exit 1
+    fi
+    read_config_from_stdin $RESULT < $RESULT
+}
+
+cleanup_vars_attrs () {
+    eval unset $VAR_list VAR_list
+    eval unset $ATTR_list ATTR_list
+}
+
+not_listed_yet () {
+    ___m=$1
+    ___arg=""
+    shift
+
+    for ___arg; do
+	if [ $___m = $___arg ]; then
+	    return 1
+	fi
+    done
+
+    return 0
+}
+
+list_only_once () {
+    __result=""
+    __arg=""
+
+    for __arg; do
+	case "$__arg" in
+	    -I/usr/include|-I/include) ;;
+	    *)
+                if not_listed_yet $__arg $__result; then
+	            __result="$__result${__result:+ }$__arg"
+	        fi
+                ;;
+	esac
+    done
+
+    echo $__result
+}
+
+list_only_once_for_libs () {
+    __result=""
+    __rev_list=""
+    __arg=""
+
+    # Scan the list and eliminate duplicates for non-"-lxxx"
+    # the resulted list is in reverse order
+    for __arg; do
+	case "$__arg" in
+	    -L/usr/lib|-L/usr/lib64|-L/lib|-L/lib64) ;;
+	    -l*)
+		# As-is
+		__rev_list="$__arg${__rev_list:+ }$__rev_list"
+		;;
+	    *)
+		if not_listed_yet $__arg $__rev_list; then
+		    __rev_list="$__arg${__rev_list:+ }$__rev_list"
+		fi
+		;;
+	esac
+    done
+
+    # Scan again
+    for __arg in $__rev_list; do
+	case "$__arg" in
+	    -l*)
+		if not_listed_yet $__arg $__result; then
+		    __result="$__arg${__result:+ }$__result"
+		fi
+		;;
+	    *)
+		# As-is
+		__result="$__arg${__result:+ }$__result"
+		;;
+	esac
+    done
+
+    echo $__result
+}
+
+arg1_is_same () {
+    [ "$1" = "=" -o "$1" = ">=" -o "$1" = "<=" ]
+}
+
+arg1_is_less () {
+    [ "$1" = "!=" -o "$1" = "<" -o "$1" = "<=" ]
+}
+
+arg1_is_great () {
+    [ "$1" = "!=" -o "$1" = ">" -o "$1" = ">=" ]
+}
+
+#
+# Evaluate comparison between versions in RPM way
+#
+eval_compare_version () {
+    ___str1="$1"
+    ___cmp="$2"
+    ___str2="$3"
+    ___char1=""
+    ___char2=""
+    ___chunk1=""
+    ___chunk2=""
+
+    while [ -n "$___str1" -a -n "$___str2" ]; do
+	# Trim anything that's not alnum or tilde from the front
+	___str1="$(expr "$___str1" : '[^0-9A-Za-z~]*\(.*\)')"
+	___str2="$(expr "$___str2" : '[^0-9A-Za-z~]*\(.*\)')"
+
+	# Get the first character
+	___char1=${___str1%${___str1#?}}
+	___char2=${___str2%${___str2#?}}
+
+	if [ "$___char1" = ~ -o "$___char2" = ~ ]; then
+	    if [ "$___char1" != ~ ]; then
+		arg1_is_great $___cmp
+		return
+	    fi
+	    if [ "$___char2" != ~ ]; then
+		arg1_is_less $___cmp
+		return
+	    fi
+	    ___str1=${___str1#~}
+	    ___str2=${___str2#~}
+	    continue
+	fi
+
+	if [ -z "$___char1" -o -z "$___char2" ]; then
+	    break
+	fi
+
+	case "$___char1$___char2" in
+	    [0-9][A-Za-z])
+		arg1_is_great $___cmp
+		return
+		;;
+	    [A-Za-z][0-9])
+		arg1_is_less $___cmp
+		return
+		;;
+	    [0-9][0-9])
+		___chunk1="$(expr "$___str1" : '\([0-9]*\)')"
+		___chunk2="$(expr "$___str2" : '\([0-9]*\)')"
+		;;
+	    [A-Za-z][A-Za-z])
+		___chunk1="$(expr "$___str1" : '\([A-Za-z]*\)')"
+		___chunk2="$(expr "$___str2" : '\([A-Za-z]*\)')"
+		;;
+	esac
+
+	# Compare chunks numerically if digits, or lexicographically
+	if expr "$___chunk1" "!=" "$___chunk2" >/dev/null; then
+	    if expr "$___chunk1" ">" "$___chunk2" >/dev/null; then
+		arg1_is_great $___cmp
+		return
+	    else
+		arg1_is_less $___cmp
+		return
+	    fi
+	fi
+
+	# Remove the chunk
+	___str1="${___str1#$___chunk1}"
+	___str2="${___str2#$___chunk2}"
+    done
+
+    # Either STR1, STR2 or both is empty here
+    if [ -n "$___str1" ]; then
+	case "$___str1" in
+	    ~*) arg1_is_less $___cmp ;;
+	    *)  arg1_is_great $___cmp ;;
+	esac
+    elif [ -n "$___str2" ]; then
+	case "$___str2" in
+	    ~*) arg1_is_great $___cmp ;;
+	    *)  arg1_is_less $___cmp ;;
+	esac
+    else
+	arg1_is_same $___cmp
+    fi
+}
+
+#
+# Recursively solve package dependencies
+#
+# Result is in the PKG_LIST variable
+#
+all_required_config_files () {
+    all_list=""
+    new_list=""
+    p=""
+    pkg=""
+    cmp=""
+
+    list=$*
+    while [ -n "$list" ]; do
+	for p in $list; do
+	    if [ -z "$pkg" ]; then
+		pkg=$p
+	    elif [ -z "$cmp" ]; then
+		case "$p" in
+		    "="|"!="|"<"|">"|"<="|">=") cmp=$p ;;
+		    *)
+			read_config_file $pkg $PKG_CONFIG_PATH
+			all_list="$all_list${all_list:+ }$pkg"
+			new_list="$new_list${new_list:+ }$(get_attr_l Requires)"
+			if [ -n "$enable_static" ]; then
+			    new_list="$new_list${new_list:+ }$(get_attr_l Requires_private)"
+			fi
+			cleanup_vars_attrs
+			pkg=$p
+			;;
+		esac
+	    else
+		read_config_file $pkg $PKG_CONFIG_PATH
+		if ! eval_compare_version "$(get_attr Version)" $cmp $p; then
+		    echo "Version mismatch for $pkg $cmp $p: $(get_attr Version)" 1>&2
+		    exit 1
+		fi
+		all_list="$all_list${all_list:+ }$pkg"
+		new_list="$new_list${new_list:+ }$(get_attr_l Requires)"
+		if [ -n "$enable_static" ]; then
+		    new_list="$new_list${new_list:+ }$(get_attr_l Requires_private)"
+		fi
+		cleanup_vars_attrs
+		pkg=""
+		cmp=""
+	    fi
+	done
+	if [ -n "$cmp" ]; then
+	    echo "No version after comparison operator ($cmp): $pkg" 1>&2
+	    exit 1
+	elif [ -n "$pkg" ]; then
+	    read_config_file $pkg $PKG_CONFIG_PATH
+	    all_list="$all_list${all_list:+ }$pkg"
+	    new_list="$new_list${new_list:+ }$(get_attr_l Requires)"
+	    if [ -n "$enable_static" ]; then
+		new_list="$new_list${new_list:+ }$(get_attr_l Requires_private)"
+	    fi
+	    cleanup_vars_attrs
+	fi
+
+	list="$new_list"
+	new_list=""
+    done
+
+    PKG_LIST=$(list_only_once $all_list)
+}
+
+#
+# Modify -I or -L by PKG_CONFIG_SYSROOT_DIR variable
+#
+sysroot () {
+    _opt="$1"
+    _result=""
+    shift
+
+    while [ $# -gt 0 ]; do
+	if [ $1 = $_opt ]; then
+	    _result="$_result${_result:+ }$_opt"
+	    shift
+	    _result="$_result $PKG_CONFIG_SYSROOT_DIR$1"
+	elif expr "x$1" : "^x$_opt" >/dev/null; then
+	    _result="$_result${_result:+ }$_opt$PKG_CONFIG_SYSROOT_DIR$(expr "x$1" : "^x$_opt\(.*\)")"
+	else
+	    _result="$_result${_result:+ }$1"
+	fi
+	shift
+    done
+    echo "$_result"
+}
+
+# Show usage
+usage () {
+    cat <<EOF
+Usage: gpgrt-config [--libdir=LIBDIR] [OPTIONS] MODULES
+Options:
+	[--exists]
+	[--modversion]
+	[--libs]
+	[--cflags]
+	[--static]
+	[--variable=VARNAME]
+EOF
+    exit $1
+}
+
+# Determine gpgrt_libdir
+determine_gpgrt_libdir () {
+    GPGRT_CONFIG="$0"
+    #
+    # Get the prefix of gpgrt-config assuming it's something like:
+    #   <PREFIX>/bin/gpgrt-config
+    gpgrt_prefix=${GPGRT_CONFIG%/*/*}
+    possible_libdir1=${gpgrt_prefix}/lib
+    # Determine by using system libdir-format with CC, it's like:
+    #   Normal style: /usr/lib
+    #   GNU cross style: /usr/<triplet>/lib
+    #   Debian style: /usr/lib/<multiarch-name>
+    #   Fedora/openSUSE style: /usr/lib, /usr/lib32 or /usr/lib64
+    # It is assumed that CC is specified to the one of host on cross build.
+    if libdir_candidates=$(${CC:-cc} -print-search-dirs | \
+          sed -n -e "/^libraries/{s/libraries: =//;s/:/\\
+/g;p;}"); then
+      # From the output of -print-search-dirs, select valid pkgconfig dirs.
+      libdir_candidates=$(for dir in $libdir_candidates; do
+        if p=$(cd $dir 2>/dev/null && pwd); then
+          test -d "$p/pkgconfig" && echo $p;
+        fi
+      done)
+
+      for possible_libdir0 in $libdir_candidates; do
+        # possible_libdir0:
+        #   Fallback candidate, the one of system-installed (by $CC)
+        #   (/usr/<triplet>/lib, /usr/lib/<multiarch-name> or /usr/lib32)
+        # possible_libdir1:
+        #   Another candidate, user-locally-installed
+        #   (<gpgrt_prefix>/lib)
+        # possible_libdir2
+        #   Most preferred
+        #   (<gpgrt_prefix>/<triplet>/lib,
+        #    <gpgrt_prefix>/lib/<multiarch-name> or <gpgrt_prefix>/lib32)
+        if test "${possible_libdir0##*/}" = "lib"; then
+          possible_prefix0=${possible_libdir0%/lib}
+          possible_prefix0_triplet=${possible_prefix0##*/}
+          if test -z "$possible_prefix0_triplet"; then
+            continue
+          fi
+          possible_libdir2=${gpgrt_prefix}/$possible_prefix0_triplet/lib
+        else
+          possible_prefix0=${possible_libdir0%%/lib*}
+          possible_libdir2=${gpgrt_prefix}${possible_libdir0#$possible_prefix0}
+        fi
+        if test -f ${possible_libdir2}/pkgconfig/gpg-error.pc; then
+          gpgrt_libdir=${possible_libdir2}
+        elif test -f ${possible_libdir1}/pkgconfig/gpg-error.pc; then
+          gpgrt_libdir=${possible_libdir1}
+        elif test -f ${possible_libdir0}/pkgconfig/gpg-error.pc; then
+          gpgrt_libdir=${possible_libdir0}
+        fi
+        if test -n "$gpgrt_libdir"; then break; fi
+      done
+      if test -z "$libdir_candidates"; then
+        # No valid pkgconfig dir in any of the system directories, fallback
+        gpgrt_libdir=${possible_libdir1}
+      fi
+    else
+      # When we cannot determine system libdir-format, use this:
+      gpgrt_libdir=${possible_libdir1}
+    fi
+}
+#### end of functions for this script
+
+myname=${0##*/}
+if [ $myname = gpgrt-config ]; then
+  default_module="gpg-error"
+else
+  default_module=${myname%-config}
+fi
+
+# First stage to process --libdir option
+
+libdir=""
+while test $# -gt 0; do
+    case $1 in
+	--libdir=*)
+	    libdir=${1#--libdir=}
+	    shift
+	    ;;
+	*)
+	    break
+	    ;;
+    esac
+done
+
+if env | grep '^PKG_CONFIG_LIBDIR=$' >/dev/null 2>&1; then
+  # The variable set as empty, we use PKG_CONFIG_PATH in this case,
+  # ignoring --libdir option
+  if [ -z "$PKG_CONFIG_PATH"  ]; then
+    echo "Please have valid PKG_CONFIG_PATH if PKG_CONFIG_LIBDIR is empty" 1>&2
+    exit 1
+  fi
+else
+  if [ -n "$libdir" ]; then
+    # --libdir option is available, it overrides existing PKG_CONFIG_LIBDIR
+    PKG_CONFIG_LIBDIR=$libdir/pkgconfig
+  fi
+  if [ -z "$PKG_CONFIG_LIBDIR" ]; then
+    if [ -z "$PKG_CONFIG_PATH" ]; then
+      # It used to fail as:
+      #
+      # echo "Please use --libdir=LIBDIR option or set PKG_CONFIG_LIBDIR" 1>&2
+      # echo "Or set PKG_CONFIG_PATH" 1>&2
+      #
+      # Now, we try a fallback.
+      determine_gpgrt_libdir
+      PKG_CONFIG_PATH="${gpgrt_libdir}/pkgconfig"
+    fi
+  else
+    # PKG_CONFIG_LIBDIR is available here
+    # Modify PKG_CONFIG_PATH, prepending PKG_CONFIG_LIBDIR
+    PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR${PKG_CONFIG_PATH:+:}$PKG_CONFIG_PATH"
+  fi
+fi
+# PKG_CONFIG_PATH is ready here
+
+#
+
+if test $# -eq 0; then
+    usage 1 1>&2
+fi
+
+
+# Second stage to do the main functionality
+
+module_list=""
+want_var=""
+want_attr=""
+want_cflags=""
+want_libs=""
+want_exists=""
+enable_static=""
+
+cflags=""
+libs=""
+mtcflags=""
+mtlibs=""
+
+output=""
+
+mt="no"
+
+VAR_list=VAR_pc_sysrootdir
+if [ -z "$PKG_CONFIG_SYSROOT_DIR" ]; then
+    VAR_pc_sysrootdir="/"
+else
+    VAR_pc_sysrootdir="$PKG_CONFIG_SYSROOT_DIR"
+fi
+
+while test $# -gt 0; do
+    case $1 in
+	#### pkg-config incompatible options: begin
+	--prefix)
+	    # In future, use --variable=prefix instead.
+	    want_var=prefix
+	    ;;
+	--exec-prefix)
+	    # In future, use --variable=exec_prefix instead.
+	    want_var=exec_prefix
+	    ;;
+	--version)
+	    # In future, use --modversion instead.
+	    want_attr=Version
+	    ;;
+	--api-version)
+	    # In future, use --variable=api_version instead.
+	    want_var=api_version
+	    ;;
+	--host)
+	    # In future, use --variable=host instead.
+	    want_var=host
+	    ;;
+	--mt)
+	    # In future, use --variable=mtcflags or --variable=mtlibs.
+	    mt=yes
+	    ;;
+	#### pkg-config incompatible options: end
+	--modversion)
+	    want_attr=Version
+	    ;;
+	--exists)
+	    want_exists=yes
+	    ;;
+	--cflags)
+	    want_cflags=yes
+	    ;;
+	--libs)
+	    want_libs=yes
+	    ;;
+	--static)
+	    enable_static=yes
+	    ;;
+	--variable=*)
+	    want_var=${1#*=}
+	    ;;
+	--help)
+	    usage 0
+	    ;;
+	--*)
+	    usage 1 1>&2
+	    ;;
+	*)
+	    # Modules
+	    module_list="$module_list${module_list:+ }$1"
+	    ;;
+    esac
+
+    shift
+done
+
+
+if [ -z "$module_list" ]; then
+    module_list=$default_module
+elif expr "$module_list" : "=\|!=\|<\|>\|<=\|>=" >/dev/null; then
+    module_list="$default_module $module_list"
+fi
+
+all_required_config_files $module_list
+
+for p in $PKG_LIST; do
+    read_config_file $p $PKG_CONFIG_PATH
+    # For want_var or want_attr, get it from the first package
+    if [ -n "$want_var" ]; then
+	output="$(get_var $want_var)"
+	break
+    elif [ -n "$want_attr" ]; then
+	output="$(get_attr $want_attr)"
+	break
+    else
+	cflags="$cflags${cflags:+ }$(get_attr Cflags)"
+	libs="$libs${libs:+ }$(get_attr Libs)"
+	if [ -n "$enable_static" ]; then
+	    libs="$libs${libs:+ }$(get_attr Libs_private)"
+	fi
+
+	if [ $p = "gpg-error" ]; then
+	    mtcflags="$(get_var mtcflags)"
+	    mtlibs="$(get_var mtlibs)"
+	fi
+    fi
+    cleanup_vars_attrs
+done
+
+if [ -z "$want_var" -a -z "$want_attr" ]; then
+    if [ -n "$want_cflags" ]; then
+	output="$output${output:+ }$(sysroot -I $(list_only_once $cflags))"
+	# Backward compatibility to old gpg-error-config
+	if [ $mt = yes -a -n "$mtcflags" ]; then
+	    output="$output${output:+ }$mtcflags"
+	fi
+    fi
+    if [ -n "$want_libs" ]; then
+	output="$output${output:+ }$(sysroot -L $(list_only_once_for_libs $libs))"
+	# Backward compatibility to old gpg-error-config
+	if [ $mt = yes -a -n "$mtlibs" ]; then
+	    output="$output${output:+ }$mtlibs"
+	fi
+    fi
+fi
+
+if [ -z "$want_exists" ]; then
+  echo "$output"
+fi
+
+exit 0

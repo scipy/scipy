@@ -1,0 +1,28 @@
+# Translation of 'hello-c++-gnome' messages to Kirghiz.
+# Copyright (C) 2004 Yoyodyne, Inc. (msgids)
+# This file is distributed under the same license as the gettext package.
+# Ilyas Bakirov <just_ilyas@yahoo.com>, 2007.
+# Ilyas Bakirov <i.bakirov@gmail.com>, 2018.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: hello-c++-gnome 0.19.4.73\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"PO-Revision-Date: 2018-02-15 18:26+0600\n"
+"Last-Translator: Ilyas Bakirov <just_ilyas@yahoo.com>\n"
+"Language-Team: Kirghiz <i18n-team-ky-kyrgyz@lists.sourceforge.net>\n"
+"Language: ky\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+"X-Generator: Poedit 2.0.6\n"
+
+#: hello.cc:50
+msgid "Hello, world!"
+msgstr "Салам дүйнө!"
+
+#: hello.cc:55
+#, c-format
+msgid "This program is running as process number %d."
+msgstr "Бул программа %d процесс номери катары иштеп жатат."

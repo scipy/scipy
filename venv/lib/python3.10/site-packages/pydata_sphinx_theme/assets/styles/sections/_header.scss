@@ -1,0 +1,102 @@
+.navbar {
+  position: fixed;
+  min-height: var(--pst-header-height);
+  width: 100%;
+  padding: 0;
+
+  .container-xl {
+    height: 100%;
+  }
+
+  #navbar-end,
+  #navbar-center,
+  #navbar-start {
+    display: flex;
+    align-items: center;
+  }
+
+  // On smaller screens, add margin to the navbar start/stop
+  @include media-breakpoint-down(lg) {
+    #navbar-start {
+      margin-left: 1em;
+    }
+
+    button.navbar-toggler {
+      margin-right: 1em;
+      border-color: var(--pst-color-text-muted);
+      color: var(--pst-color-text-muted);
+    }
+
+    #navbar-end {
+      margin-bottom: 0.5em;
+    }
+
+    #navbar-center,
+    #navbar-end {
+      > * {
+        margin-top: 0.5em;
+      }
+    }
+  }
+}
+
+// If we want the shadow to only point downward in the future, set
+// box-shadow to: 0 0.125rem 0.25rem -0.125rem rgba(0, 0, 0, 0.11);
+.bd-header.navbar-light#navbar-main {
+  // Overrides bootstrap
+  background: var(--pst-color-on-background) !important;
+  box-shadow: 0 0.125rem 0.25rem 0 var(--pst-color-shadow); //rgba(0, 0, 0, 0.11);
+
+  .navbar-nav {
+    li a.nav-link {
+      padding: 0 0.5rem;
+      color: var(--pst-color-text-muted);
+
+      &:hover {
+        color: var(--pst-color-primary);
+      }
+
+      &:focus {
+        color: var(--pst-color-primary);
+      }
+    }
+
+    > .active > .nav-link {
+      font-weight: 600;
+      color: var(--pst-color-primary);
+    }
+  }
+}
+
+// overwrite bootstrap coloring
+.bd-header#navbar-main {
+  background-color: var(--pst-color-navbar-background) !important;
+}
+
+.navbar-header a {
+  padding: 0 15px;
+}
+
+// inline the element in the navbar as long as they fit and use display block when colapsing
+@include media-breakpoint-up(md) {
+  .navbar-center-item {
+    display: inline-block;
+  }
+}
+
+.toc-entry > .nav-link.active {
+  font-weight: 600;
+  color: var(--pst-color-primary);
+  background-color: transparent;
+  border-left: 2px solid var(--pst-color-primary);
+}
+
+.nav-link:hover {
+  border-style: none;
+}
+
+#navbar-main-elements li.nav-item i {
+  font-size: 0.7rem;
+  padding-left: 2px;
+  vertical-align: middle;
+}

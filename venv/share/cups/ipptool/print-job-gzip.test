@@ -1,0 +1,31 @@
+# Print a test page using print-job and compression=gzip
+{
+	# The name of the test...
+	NAME "Print file using Print-Job and compression=gzip"
+
+	# The operation to use
+	OPERATION Print-Job
+
+	# Attributes, starting in the operation group...
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR mimeMediaType document-format $filetype
+	ATTR keyword compression gzip
+
+	GROUP job-attributes-tag
+	ATTR integer copies 1
+
+	COMPRESSION gzip
+	FILE $filename
+
+	# What statuses are OK?
+	STATUS successful-ok
+	STATUS successful-ok-ignored-or-substituted-attributes
+
+	# What attributes do we expect?
+	EXPECT job-id
+	EXPECT job-uri
+}

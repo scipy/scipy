@@ -1,0 +1,311 @@
+comment_char %
+escape_char  /
+%
+% Amazigh Language Locale for Algeria (latin)
+% Source: 
+% Contact: Pablo Saratxaga
+% Email: <pablo@mandrakesoft.com>
+% Language: ber
+% Territory: DZ
+% Revision: 0.1
+% Date: 2002-04-16
+% Application: general
+% Users: general
+% Charset: UTF-8
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title "Amazigh language locale for Algeria (latin)"
+source ""
+address ""
+contact "Pablo Saratxaga"
+email "pablo@mandrakesoft.com"
+tel ""
+fax ""
+language "Amazigh"
+territory "Algeria"
+revision "0.1"
+date "2002-04-16"
+
+category ber_DZ:2000;LC_IDENTIFICATION
+category ber_DZ:2000;LC_CTYPE
+category ber_DZ:2000;LC_COLLATE
+category ber_DZ:2000;LC_TIME
+category ber_DZ:2000;LC_NUMERIC
+category ber_DZ:2000;LC_PAPER
+category ber_DZ:2000;LC_TELEPHONE
+category ber_DZ:2000;LC_MEASUREMENT
+category ber_DZ:2000;LC_ADDRESS
+category ber_DZ:2000;LC_MONETARY
+category ber_DZ:2000;LC_MESSAGES
+
+END LC_IDENTIFICATION
+
+%
+% TODO: check LC_COLLATE
+% TODO: fix LC_TIME, LC_MONETARY, LC_MESSAGES, LC_NAME, LC_ADDRESS
+
+LC_COLLATE
+% The latin amazigh alphabet is:       
+% <a>, <eps>, <b>, <b*>, <c>, <c<>, <d>, <d-.>, <e>, <f>, <g>, <g*>, <g(>, 
+% <h>, <h-.>, <i>, <j>, <k>, <k*>, <l>, <m>, <n>, <q>, <q*>, <gam>, <gam*>,
+% <r>, <r-.>, <s>, <s-.>, <t>, <t-.>, <u>, <w>, <x>, <x*>, <y>, <z>, <z-.>
+%
+% arabic alphabet:
+
+copy "iso14651_t1"
+
+collating-symbol <eps>
+%collating-symbol <b*>
+collating-symbol <c<>
+collating-symbol <d-.>
+%collating-symbol <g*>
+collating-symbol <g(>
+collating-symbol <h-.>
+%collating-symbol <k*>
+%collating-symbol <q*>
+collating-symbol <gam>
+%collating-symbol <gam*>
+collating-symbol <r-.>
+collating-symbol <s-.>
+collating-symbol <t-.>
+%collating-symbol <x*>
+collating-symbol <z-.>
+
+reorder-after <a>
+<eps>
+%reorder-after <b>
+%<b*>
+reorder-after <c>
+<c<>
+reorder-after <d>
+<d-.>
+reorder-after <g>
+%<g*>
+<g(>
+reorder-after <h>
+<h-.>
+%reorder-after <k>
+%<k*>
+reorder-after <q>
+%<q*>
+<gam>
+%<gam*>
+reorder-after <r>
+<r-.>
+reorder-after <s>
+<s-.>
+reorder-after <t>
+<t-.>
+%reorder-after <x>
+%<x*>
+reorder-after <z>
+<z-.>
+
+reorder-after <U0061>
+<U025B> <eps>;<PCL>;<MIN>;IGNORE
+reorder-after <U0041>
+<U0190> <eps>;<PCL>;<CAP>;IGNORE
+
+reorder-after <U0063>
+<U010D> <c<>;<CAR>;<MIN>;IGNORE
+reorder-after <U0043>
+<U010C> <c<>;<CAR>;<CAP>;IGNORE
+
+reorder-after <U0064>
+<U1E0D> <d-.>;<PCT>;<MIN>;IGNORE
+reorder-after <U0044>
+<U1E0C> <d-.>;<PCT>;<CAP>;IGNORE
+
+reorder-after <U0067>
+<U011F> <g(>;<BRE>;<MIN>;IGNORE
+reorder-after <U0047>
+<U011E> <g(>;<BRE>;<CAP>;IGNORE
+
+reorder-after <U0068>
+<U1E25> <h-.>;<PCT>;<MIN>;IGNORE
+reorder-after <U0048>
+<U1E24> <h-.>;<PCT>;<CAP>;IGNORE
+
+reorder-after <U0071>
+<U0263> <gam>;<PCL>;<MIN>;IGNORE
+reorder-after <U0051>
+<U0194> <gam>;<PCL>;<CAP>;IGNORE
+
+reorder-after <U0072>
+<U1E5B> <r-.>;<PCT>;<MIN>;IGNORE
+reorder-after <U0052>
+<U1E5A> <r-.>;<PCT>;<CAP>;IGNORE
+
+reorder-after <U0073>
+<U1E63> <s-.>;<PCT>;<MIN>;IGNORE
+reorder-after <U0053>
+<U1E62> <s-.>;<PCT>;<CAP>;IGNORE
+
+reorder-after <U0074>
+<U1E6D> <t-.>;<PCT>;<MIN>;IGNORE
+reorder-after <U0054>
+<U1E6C> <t-.>;<PCT>;<CAP>;IGNORE
+
+reorder-after <U007A>
+<U1E93> <z-.>;<PCT>;<MIN>;IGNORE
+reorder-after <U005A>
+<U1E92> <z-.>;<PCT>;<CAP>;IGNORE
+
+reorder-end
+
+END LC_COLLATE
+
+LC_CTYPE
+copy "i18n"
+
+translit_start
+include "translit_combining";""
+translit_end
+END LC_CTYPE
+
+LC_MESSAGES
+% FIXME: yes/no
+yesstr  "<U0062><U0259><U006C><U0069>"
+nostr   "<U0079><U006F><U0078>"
+yesexpr "<U005E><U005B><U0042><U0062><U005D><U002E><U002A>"
+noexpr  "<U005E><U005B><U0059><U0079><U004E><U006E><U005D><U002E><U002A>"
+END LC_MESSAGES
+
+LC_MONETARY
+% This is the POSIX Locale definition the LC_MONETARY category.
+% These are generated based on XML base Locale definition file
+% for IBM Class for Unicode/Java
+%
+int_curr_symbol       "<U0044><U005A><U0044><U0020>"
+currency_symbol       "<U062F><U002E><U062C><U002E>"
+mon_decimal_point     "<U002E>"
+mon_thousands_sep     "<U002C>"
+mon_grouping          3
+positive_sign         ""
+negative_sign         "<U002D>"
+int_frac_digits       3
+frac_digits           3
+p_cs_precedes         1
+p_sep_by_space        1
+n_cs_precedes         1
+n_sep_by_space        1
+p_sign_posn           1
+n_sign_posn           2
+%
+END LC_MONETARY
+
+
+LC_NUMERIC
+% This is the POSIX Locale definition for the LC_NUMERIC  category.
+%
+decimal_point          "<U002E>"
+thousands_sep          "<U002C>"
+grouping               3
+%
+END LC_NUMERIC
+
+% FIXME
+LC_TIME
+day     "<U0062><U0061><U007A><U0061><U0072><U0020><U0067><U00FC><U006E><U00FC>";/
+        "<U0062><U0069><U0072><U0069><U006E><U0063><U0069><U0020><U0067><U00FC><U006E>";/
+        "<U0069><U006B><U0069><U006E><U0063><U0069><U0020><U0067><U00FC><U006E>";/
+        "<U00FC><U00E7><U00FC><U006E><U0063><U00FC><U0020><U0067><U00FC><U006E>";/
+        "<U0064><U00F6><U0072><U0064><U00FC><U006E><U0063><U00FC><U0020><U0067><U00FC><U006E>";/
+        "<U0062><U0065><U015F><U0069><U006E><U0063><U0069><U0020><U0067><U00FC><U006E>";/
+        "<U0061><U006C><U0074><U0131><U006E><U0063><U0131><U0020><U0067><U00FC><U006E>"
+abday   "<U0062><U0061><U007A>";/
+        "<U0062><U0069><U0072>";/
+        "<U0069><U006B><U0069>";/
+        "<U00FC><U00E7><U00FC>";/
+        "<U0064><U00F6><U0072>";/
+        "<U0062><U0065><U015F>";/
+        "<U0061><U006C><U0074>"
+mon     "<U0079><U0061><U006E><U0076><U0061><U0072>";/
+        "<U0066><U0065><U0076><U0072><U0061><U006C>";/
+        "<U006D><U0061><U0072><U0074>";/
+        "<U0061><U0070><U0072><U0065><U006C>";/
+        "<U006D><U0061><U0079>";/
+        "<U0069><U0079><U0075><U006E>";/
+        "<U0069><U0079><U0075><U006C>";/
+        "<U0061><U0076><U0071><U0075><U0073><U0074>";/
+        "<U0073><U0065><U006E><U0074><U0079><U0061><U0062><U0072>";/
+        "<U006F><U006B><U0074><U0079><U0061><U0062><U0072>";/
+        "<U006E><U006F><U0079><U0061><U0062><U0072>";/
+        "<U0064><U0065><U006B><U0061><U0062><U0072>"
+abmon   "<U0059><U0061><U006E>";/
+        "<U0046><U0065><U0076>";/
+        "<U004D><U0061><U0072>";/
+        "<U0041><U0070><U0072>";/
+        "<U004D><U0061><U0079>";/
+        "<U0130><U0079><U006E>";/
+        "<U0130><U0079><U006C>";/
+        "<U0041><U0076><U0071>";/
+        "<U0053><U0065><U006E>";/
+        "<U004F><U006B><U0074>";/
+        "<U004E><U006F><U0079>";/
+        "<U0044><U0065><U006B>"
+d_t_fmt "<U0025><U0041><U002C><U0020><U0025><U0064><U0020><U0025><U0042><U0020><U0025><U0059><U0020><U0025><U0054>"
+d_fmt     "<U0025><U0064><U002E><U0025><U006D><U002E><U0025><U0059>"
+t_fmt     "<U0025><U0054>"
+am_pm     "";""
+t_fmt_ampm ""
+END LC_TIME
+
+LC_PAPER
+height      297
+width       210
+END LC_PAPER
+
+LC_MEASUREMENT
+measurement 1
+END LC_MEASUREMENT
+
+LC_NAME
+% This is the ISO_IEC TR14652 Locale definition for the
+% LC_NAME category.
+%
+name_fmt    "<U0025><U0070><U0025><U0074><U0025><U0066><U0025><U0074>/
+<U0025><U0067>"
+name_gen    "<U002D><U0073><U0061><U006E>"
+name_mr     "<U004D><U0072><U002E>"
+name_mrs    "<U004D><U0072><U0073><U002E>"
+name_miss   "<U004D><U0069><U0073><U0073><U002E>"
+name_ms     "<U004D><U0073><U002E>"
+
+END LC_NAME
+
+
+LC_ADDRESS
+% This is the ISO_IEC TR14652 Locale definition for the
+% LC_ADDRESS
+postal_fmt  "<U0025><U007A><U0025><U0063><U0025><U0054><U0025><U0073>/
+<U0025><U0062><U0025><U0065><U0025><U0072>"
+
+%country_name ""
+%country_post ""
+country_ab2 "<U0044><U005A>"
+country_ab3 "<U0044><U005A><U0041>"
+country_num 12
+%country_isbn ""
+%country_car ""
+lang_name "<U0074><U0061><U006D><U0061><U007A><U0069><U0067><U0068><U0074>"
+%lang_ab 
+lang_term "<U0062><U0065><U0072>"
+lang_lib "<U0062><U0065><U0072>"
+
+
+END LC_ADDRESS
+
+
+LC_TELEPHONE
+% This is the ISO_IEC TR14652 Locale definition for the
+%
+tel_int_fmt "<U002B><U0025><U0063><U0020><U003B><U0025><U0061><U0020>/
+<U003B><U0025><U006C>"
+int_prefix  "<U0032><U0031><U0033>"
+
+END LC_TELEPHONE
+
+

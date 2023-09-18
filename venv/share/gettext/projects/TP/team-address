@@ -1,0 +1,81 @@
+#!/bin/sh
+#
+# Copyright (C) 2001, 2007, 2019 Free Software Foundation, Inc.
+# Written by Bruno Haible <bruno@clisp.org>, 2001.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+# Print the team's address (to stdout) and output additional instructions
+# (to stderr).
+
+projectsdir="$1"
+progdir="$2"
+catalog="$3"  # e.g. "pt_BR"
+language="$4" # e.g. "pt"
+
+url=`cat "$projectsdir/TP/teams.url"`
+url_parent=`echo "$url" | sed -e 's,/[^/]*\$,/,'`
+url_grandparent=`echo "$url" | sed -e 's,/[^/]*/[^/]*\$,/,'`
+sed_absolute_dotdot_urls="s,href=\"\\.\\./,href=${url_grandparent},g"
+html=`"$progdir/urlget" "$url" "$projectsdir/TP/teams.html" | sed -e "$sed_absolute_dotdot_urls"`
+sed_addnl='s,</tr>,</tr>\
+,g'
+address=`echo "$html" | tr '\012' '|' | sed -e "$sed_addnl" | sed -n -e "s,^.*<td>$catalog</td>[^<>]*<td><a href=\"\\([^\"]*\\)\">[^<>]*</a></td>.*\$,\\1,p" | sed 1q`
+if test -n "$address"; then
+  case "$address" in
+    mailto:*) address=`echo "$address" | sed -e 's,^mailto:,<,' -e 's,$,>,'` ;;
+  esac
+  (echo "Please visit your translation team's homepage at"
+   echo "  ${url_parent}"`echo "$html" | tr '\012' '|' | sed -e "$sed_addnl" | sed -n -e "s,^.*<td><a href=\"\\([^\"]*\\)\">[^<>]*</a></td>[^<>]*<td>$catalog</td>.*\$,\\1,p" | sed 1q`
+   echo "  https://translationproject.org/team/index.html"
+   echo "  https://translationproject.org/html/translators.html"
+   echo "  https://translationproject.org/html/welcome.html"
+   echo "and consider joining your translation team's mailing list"
+   echo "  $address"
+  ) 1>&2
+  echo "$address"
+  exit 0
+fi
+address=`echo "$html" | tr '\012' '|' | sed -e "$sed_addnl" | sed -n -e "s,^.*<td>$language</td>[^<>]*<td><a href=\"\\([^\"]*\\)\">[^<>]*</a></td>.*\$,\\1,p" | sed 1q`
+if test -n "$address"; then
+  case "$address" in
+    mailto:*) address=`echo "$address" | sed -e 's,^mailto:,<,' -e 's,$,>,'` ;;
+  esac
+  (echo "A translation team exists for your language ($language) but not for"
+   echo "your local dialect ($catalog).  You can either join the existing"
+   echo "translation team for $language or create a new translation team for $catalog."
+   echo
+   echo "Please visit the existing translation team's homepage at"
+   echo "  ${url_parent}"`echo "$html" | tr '\012' '|' | sed -e "$sed_addnl" | sed -n -e "s,^.*<td><a href=\"\\([^\"]*\\)\">[^<>]*</a></td>[^<>]*<td>$language</td>.*\$,\\1,p" | sed 1q`
+   echo "  https://translationproject.org/team/index.html"
+   echo "  https://translationproject.org/html/translators.html"
+   echo "  https://translationproject.org/html/welcome.html"
+   echo "and consider joining the translation team's mailing list"
+   echo "  $address"
+   echo
+   echo "If you want to create a new translation team for $catalog, please visit"
+   echo "  https://translationproject.org/team/index.html"
+   echo "  https://translationproject.org/html/leaders.html"
+   echo "  https://translationproject.org/html/welcome.html"
+  ) 1>&2
+  echo "$address"
+  exit 0
+fi
+(echo "A translation team for your language ($language) does not exist yet."
+ echo "If you want to create a new translation team for $language"`test "$catalog" = "$language" || echo " or $catalog"`", please visit"
+ echo "  https://translationproject.org/team/index.html"
+ echo "  https://translationproject.org/html/leaders.html"
+ echo "  https://translationproject.org/html/welcome.html"
+) 1>&2
+exit 0

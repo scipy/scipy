@@ -1,0 +1,171 @@
+// CapsLock uses internal capitalization rules,
+// Shift "pauses" CapsLock.
+partial xkb_types "internal" {
+    type "ALPHABETIC" {
+	modifiers = Shift + Lock;
+	map[Shift] = Level2;
+	preserve[Lock] = Lock;
+	level_name[Level1] = "Base";
+	level_name[Level2] = "Caps";
+    };
+
+    type "FOUR_LEVEL_ALPHABETIC" {
+	modifiers = Shift + Lock + LevelThree;
+	map[None] = Level1;
+	map[Shift] = Level2;
+	preserve[Lock] = Lock;
+	map[LevelThree] = Level3;
+	map[Shift+LevelThree] = Level4;
+	map[Lock+LevelThree] = Level3;
+	map[Shift+Lock+LevelThree] = Level3;
+	preserve[Lock+LevelThree] = Lock;
+	level_name[Level1] = "Base";
+	level_name[Level2] = "Shift";
+	level_name[Level3] = "AltGr";
+	level_name[Level4] = "Shift AltGr";
+    };
+
+    type "FOUR_LEVEL_SEMIALPHABETIC" {
+	modifiers = Shift + Lock + LevelThree;
+	map[None] = Level1;
+	map[Shift] = Level2;
+	preserve[Lock] = Lock;
+	map[LevelThree] = Level3;
+	map[Shift+LevelThree] = Level4;
+	map[Lock+LevelThree] = Level3;
+	map[Shift+Lock+LevelThree] = Level4;
+	preserve[Lock+LevelThree] = Lock;
+	preserve[Shift+Lock+LevelThree] = Lock;
+	level_name[Level1] = "Base";
+	level_name[Level2] = "Shift";
+	level_name[Level3] = "AltGr";
+	level_name[Level4] = "Shift AltGr";
+    };
+};
+
+// CapsLock uses internal capitalization rules,
+// Shift does not cancel CapsLock.
+partial xkb_types "internal_nocancel" {
+    type "ALPHABETIC" {
+	modifiers = Shift;
+	map[Shift] = Level2;
+	level_name[Level1] = "Base";
+	level_name[Level2] = "Caps";
+    };
+
+    type "FOUR_LEVEL_ALPHABETIC" {
+	modifiers = Shift + LevelThree;
+	map[None] = Level1;
+	map[Shift] = Level2;
+	map[LevelThree] = Level3;
+	map[Shift+LevelThree] = Level4;
+	level_name[Level1] = "Base";
+	level_name[Level2] = "Shift";
+	level_name[Level3] = "AltGr";
+	level_name[Level4] = "Shift AltGr";
+    };
+
+    type "FOUR_LEVEL_SEMIALPHABETIC" {
+        // the same as FOUR_LEVEL_ALPHABETIC
+	modifiers = Shift + LevelThree;
+	map[None] = Level1;
+	map[Shift] = Level2;
+	map[LevelThree] = Level3;
+	map[Shift+LevelThree] = Level4;
+	level_name[Level1] = "Base";
+	level_name[Level2] = "Shift";
+	level_name[Level3] = "AltGr";
+	level_name[Level4] = "Shift AltGr";
+    };
+};
+
+// CapsLock acts as Shift with locking,
+// Shift "pauses" CapsLock.
+partial xkb_types "shift" {
+    type "ALPHABETIC" {
+	modifiers = Shift + Lock;
+	map[Shift] = Level2;
+	map[Lock] = Level2;
+	level_name[Level1] = "Base";
+	level_name[Level2] = "Caps";
+    };
+
+    type "FOUR_LEVEL_ALPHABETIC" {
+	modifiers = Shift + Lock + LevelThree;
+	map[None] = Level1;
+	map[Shift] = Level2;
+	map[Lock] = Level2;
+	map[LevelThree] = Level3;
+	map[Shift+LevelThree] = Level4;
+	map[Lock+LevelThree] = Level4;
+	map[Shift+Lock+LevelThree] = Level3;
+	level_name[Level1] = "Base";
+	level_name[Level2] = "Shift";
+	level_name[Level3] = "AltGr";
+	level_name[Level4] = "Shift AltGr";
+    };
+
+    type "FOUR_LEVEL_SEMIALPHABETIC" {
+	modifiers = Shift + Lock + LevelThree;
+	map[None] = Level1;
+	map[Shift] = Level2;
+	map[Lock] = Level2;
+	map[LevelThree] = Level3;
+	map[Shift+LevelThree] = Level4;
+	map[Lock+LevelThree] = Level3;
+	map[Shift+Lock+LevelThree] = Level4;
+	preserve[Lock+LevelThree] = Lock;
+	preserve[Shift+Lock+LevelThree] = Lock;
+	level_name[Level1] = "Base";
+	level_name[Level2] = "Shift";
+	level_name[Level3] = "AltGr";
+	level_name[Level4] = "Shift AltGr";
+    };
+};
+
+// CapsLock acts as Shift with locking,
+// Shift does not cancel CapsLock.
+partial xkb_types "shift_nocancel" {
+    type "ALPHABETIC" {
+	modifiers = Shift + Lock;
+	map[Shift] = Level2;
+	map[Lock] = Level2;
+	map[Shift+Lock] = Level2;
+	level_name[Level1] = "Base";
+	level_name[Level2] = "Caps";
+    };
+
+    type "FOUR_LEVEL_ALPHABETIC" {
+	modifiers = Shift + Lock + LevelThree;
+	map[None] = Level1;
+	map[Shift] = Level2;
+	map[Lock] = Level2;
+	map[Shift+Lock] = Level2;
+	map[LevelThree] = Level3;
+	map[Shift+LevelThree] = Level4;
+	map[Lock+LevelThree] = Level4;
+	map[Shift+Lock+LevelThree] = Level4;
+	level_name[Level1] = "Base";
+	level_name[Level2] = "Shift";
+	level_name[Level3] = "AltGr";
+	level_name[Level4] = "Shift AltGr";
+    };
+
+    type "FOUR_LEVEL_SEMIALPHABETIC" {
+	modifiers = Shift + Lock + LevelThree;
+	map[None] = Level1;
+	map[Shift] = Level2;
+	map[Lock] = Level2;
+	map[Shift+Lock] = Level2;
+	map[LevelThree] = Level3;
+	map[Shift+LevelThree] = Level4;
+	map[Lock+LevelThree] = Level3;
+	map[Shift+Lock+LevelThree] = Level4;
+	preserve[Lock+LevelThree] = Lock;
+	preserve[Shift+Lock+LevelThree] = Lock;
+	level_name[Level1] = "Base";
+	level_name[Level2] = "Shift";
+	level_name[Level3] = "AltGr";
+	level_name[Level4] = "Shift AltGr";
+    };
+};

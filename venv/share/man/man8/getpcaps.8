@@ -1,0 +1,59 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.TH GETPCAPS 8 "2020-08-29"
+.\" Please adjust this date whenever revising the manpage.
+.SH NAME
+getpcaps \- display process capabilities
+.SH SYNOPSIS
+.BR getpcaps " [optional args]"
+.IR pid ...
+.SH DESCRIPTION
+.B getpcaps
+displays the capabilities on the processes indicated by the
+.I pid
+value(s) given on the command line.
+A
+.I pid
+of 0 displays the capabilities of the process that is running
+.B getpcaps
+itself.
+.PP
+The capabilities are displayed in
+the
+.BR cap_from_text (3)
+format.
+.PP
+Optional arguments:
+.TP
+.BR \-\-help " or " \-\-usage
+Displays usage information and exits.
+.TP
+.BR \-\-ugly " or " \-\-legacy
+Displays output in a somewhat ugly legacy format.
+.TP
+.B \-\-verbose
+Displays usage in a legacy-like format but not quite so ugly in modern
+default terminal fonts.
+.TP
+.B \-\-iab
+Displays IAB tuple capabilities from the process. The output format
+here is the text format described in \fBcap_iab\fR(3). Double
+quotes encase the regular process capabilities and square brackets
+encase the IAB tuple. This format is also used by \fBcaptree\fR(8).
+.SH "REPORTING BUGS"
+Please report bugs via:
+.TP
+https://bugzilla.kernel.org/buglist.cgi?component=libcap&list_id=1090757
+.SH SEE ALSO
+.BR capsh (1),
+.BR cap_from_text (3),
+.BR cap_iab (3),
+.BR capabilities (7),
+.BR captree (8),
+.BR getcap (8),
+and
+.BR setcap (8).
+.SH AUTHOR
+This manual page was originally written by Robert Bihlmeyer
+<robbe@debian.org>, for the Debian GNU/Linux system (but may be used
+by others).
+

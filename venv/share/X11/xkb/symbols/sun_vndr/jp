@@ -1,0 +1,179 @@
+//
+// Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, and/or sell copies of the Software, and to permit persons
+// to whom the Software is furnished to do so, provided that the above
+// copyright notice(s) and this permission notice appear in all copies of
+// the Software and that both the above copyright notice(s) and this
+// permission notice appear in supporting documentation.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+// OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+// HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL
+// INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING
+// FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
+// NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
+// WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+// 
+// Except as contained in this notice, the name of a copyright holder
+// shall not be used in advertising or otherwise to promote the sale, use
+// or other dealings in this Software without prior written authorization
+// of the copyright holder.
+//
+
+default partial alphanumeric_keys modifier_keys
+xkb_symbols "sun_type6_suncompat" {
+
+	include "inet(evdev)"
+	include "sun_vndr/us(sunbasic)"
+
+    key <AE13> { [ backslash, bar       ], [ prolongedsound     ]       };
+    key <AE01> { [ 1, exclam       ], [ kana_NU        ]   };
+    key <AE02> { [ 2, quotedbl     ], [ kana_FU        ]   };
+    key <AE03> { [ 3, numbersign   ], [ kana_A, kana_a ]   };
+    key <AE04> { [ 4, dollar       ], [ kana_U, kana_u ]   };
+    key <AE05> { [ 5, percent      ], [ kana_E, kana_e ]   };
+    key <AE06> { [ 6, ampersand        ], [ kana_O, kana_o ]   };
+    key <AE07> { [ 7, apostrophe   ], [ kana_YA, kana_ya   ]   };
+    key <AE08> { [ 8, parenleft        ], [ kana_YU, kana_yu   ]   };
+    key <AE09> { [ 9, parenright   ], [ kana_YO, kana_yo   ]   };
+    key <AE10> { [ 0           ], [ kana_WA, kana_WO   ]   };
+    key <AE11> { [ minus, equal        ], [ kana_HO        ]   };
+    key <AE12> { [ asciicircum,    asciitilde], [ kana_HE      ]   };
+
+    key <AD01> { [ q, Q            ], [ kana_TA        ]   };
+    key <AD02> { [ w, W            ], [ kana_TE        ]   };
+    key <AD03> { [ e, E            ], [ kana_I, kana_i ]   };
+    key <AD04> { [ r, R            ], [ kana_SU        ]   };
+    key <AD05> { [ t, T            ], [ kana_KA        ]   };
+    key <AD06> { [ y, Y            ], [ kana_N     ]   };
+    key <AD07> { [ u, U            ], [ kana_NA        ]   };
+    key <AD08> { [ i, I            ], [ kana_NI        ]   };
+    key <AD09> { [ o, O            ], [ kana_RA        ]   };
+    key <AD10> { [ p, P            ], [ kana_SE        ]   };
+    key <AD11> { [ at, grave       ], [ voicedsound    ]   };
+    key <AD12> { [ bracketleft,    braceleft ], [ semivoicedsound, kana_openingbracket ] };
+
+    key <AC01> { [ a, A            ], [ kana_CHI       ]   };
+    key <AC02> { [ s, S            ], [ kana_TO        ]   };
+    key <AC03> { [ d, D            ], [ kana_SHI       ]   };
+    key <AC04> { [ f, F            ], [ kana_HA        ]   };
+    key <AC05> { [ g, G            ], [ kana_KI        ]   };
+    key <AC06> { [ h, H            ], [ kana_KU        ]   };
+    key <AC07> { [ j, J            ], [ kana_MA        ]   };
+    key <AC08> { [ k, K            ], [ kana_NO        ]   };
+    key <AC09> { [ l, L            ], [ kana_RI        ]   };
+    key <AC10> { [ semicolon, plus ], [ kana_RE        ]   };
+    key <AC11> { [ colon, asterisk ], [ kana_KE        ]   };
+    key <BKSL> { [ bracketright, braceright ], [ kana_MU, kana_closingbracket ] };
+
+    key <AB01> { [ z, Z            ], [ kana_TSU, kana_tsu ]   };
+    key <AB02> { [ x, X            ], [ kana_SA        ]   };
+    key <AB03> { [ c, C            ], [ kana_SO        ]   };
+    key <AB04> { [ v, V            ], [ kana_HI        ]   };
+    key <AB05> { [ b, B            ], [ kana_KO        ]   };
+    key <AB06> { [ n, N            ], [ kana_MI        ]   };
+    key <AB07> { [ m, M            ], [ kana_MO        ]   };
+    key <AB08> { [ comma, less     ], [ kana_NE, kana_comma ]  };
+    key <AB09> { [ period, greater ], [ kana_RU, kana_fullstop ]   };
+    key <AB10> { [ slash, question ], [ kana_ME, kana_conjunctive ]};
+    key <AB11> { [ backslash, underscore], [ kana_RO       ]   };
+    key <UNDR> { [ backslash, underscore], [ kana_RO       ]   };
+
+    key <EXEC> { [ Execute		            ]	};
+    key <KANJ> { [ Kanji		            ]	};
+    key <HENK> { [ Henkan_Mode		        ]	};
+    key <ALGR> { [ Kana_Lock, Mode_switch   ]	};
+
+	key <COMP> { [ Multi_key				]	};
+	key <SYRQ> { [ SunSys_Req				]	};
+
+	modifier_map Mod3 { Kana_Lock };
+
+};
+
+partial alphanumeric_keys
+xkb_symbols "sun_type6" {
+
+    // include "jp"
+    // type6 based on "jp" should be provided later
+
+    include "sun_vndr/jp(sun_type6_suncompat)"
+
+};
+
+partial alphanumeric_keys
+xkb_symbols "sun_type7_suncompat" {
+
+    include "sun_vndr/jp(sun_type6_suncompat)"
+
+    key <AE10> { [ 0, asciitilde, kana_WA, kana_WO      ]   };
+    key <TLDE> { [ Henkan_Mode                          ]   };
+    key <HENK> { [ Kana_Lock, Mode_switch               ]   };
+    key <ALGR> { [ Alt_R, Alt_R                         ]   };
+
+};
+
+partial alphanumeric_keys
+xkb_symbols "suncompat" {
+
+    include "sun_vndr/jp(sun_type7_suncompat)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "sun_type7" {
+
+    include "jp"
+
+};
+
+partial alphanumeric_keys
+	xkb_symbols "106" {
+	include "jp(106)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "common" {
+	include "jp(common)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "OADG109A" {
+	include "jp(OADG109A)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "kana86" {
+	include "jp(kana86)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "kana" {
+	include "jp(kana)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "nicola_f_bs" {
+	include "jp(nicola_f_bs)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "mac" {
+	include "jp(mac)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "hztg_escape" {
+	include "jp(hztg_escape)"
+};
+
+partial alphanumeric_keys
+	xkb_symbols "dvorak" {
+	include "jp(dvorak)"
+};

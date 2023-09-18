@@ -1,0 +1,75 @@
+<!ELEMENT schemalist (schema|enum|flags)* >
+<!ATTLIST schemalist gettext-domain CDATA #IMPLIED >
+
+<!ELEMENT schema (key|child|override)* >
+<!ATTLIST schema id             CDATA #REQUIRED
+                 path           CDATA #IMPLIED
+                 gettext-domain CDATA #IMPLIED
+                 extends        CDATA #IMPLIED
+                 list-of        CDATA #IMPLIED >
+
+<!-- enumerated and flags types -->
+<!-- each value element maps a nick to a numeric value -->
+<!ELEMENT enum (value*) >
+<!ATTLIST enum id CDATA #REQUIRED >
+
+<!ELEMENT flags (value*) >
+<!ATTLIST flags id CDATA #REQUIRED >
+
+<!ELEMENT value EMPTY >
+<!-- nick must be at least 2 characters long -->
+<!-- value must be parsable as a 32-bit integer -->
+<!ATTLIST value nick  CDATA #REQUIRED
+                value CDATA #REQUIRED >
+
+<!ELEMENT key (default|summary?|description?|range?|choices?|aliases?)* >
+<!-- name can only contain lowercase letters, numbers and '-' -->
+<!-- type must be a GVariant type string -->
+<!-- enum must be the id of an enum type that has been defined earlier -->
+<!-- flags must be the id of a flags type that has been defined earlier -->
+<!-- exactly one of type, enum or flags must be given -->
+<!ATTLIST key name  CDATA #REQUIRED
+              type  CDATA #IMPLIED
+              enum  CDATA #IMPLIED
+              flags CDATA #IMPLIED >
+
+<!-- the default value is specified as a serialized GVariant,
+     i.e. you have to include the quotes when specifying a string -->
+<!ELEMENT default (#PCDATA) >
+<!-- the presence of the l10n attribute marks a default value for
+     translation, its value is the gettext category to use -->
+<!-- if context is present, it specifies msgctxt to use -->
+<!ATTLIST default l10n    (messages|time) #IMPLIED
+                  context CDATA           #IMPLIED >
+
+<!ELEMENT summary (#PCDATA) >
+<!ELEMENT description (#PCDATA) >
+
+<!-- range is only allowed for keys with numeric type -->
+<!ELEMENT range EMPTY >
+<!-- min and max must be parseable as values of the key type and
+     min must be less than or equal to max -->
+<!ATTLIST range min CDATA #IMPLIED
+                max CDATA #IMPLIED >
+
+<!-- choices is only allowed for keys with string or string array type -->
+<!ELEMENT choices (choice+) >
+<!-- each choice element specifies one possible value -->
+<!ELEMENT choice EMPTY >
+<!ATTLIST choice value CDATA #REQUIRED >
+
+<!-- aliases is only allowed for keys with enumerated type or with choices -->
+<!ELEMENT aliases (alias+) >
+<!-- each alias element specifies an alias for one of the possible values -->
+<!ELEMENT alias EMPTY >
+<!ATTLIST alias value  CDATA #REQUIRED
+                target CDATA #REQUIRED >
+
+<!ELEMENT child EMPTY >
+<!ATTLIST child name   CDATA #REQUIRED
+                schema CDATA #REQUIRED >
+
+<!ELEMENT override (#PCDATA) >
+<!ATTLIST override name    CDATA #REQUIRED
+                   l10n    CDATA #IMPLIED
+                   context CDATA #IMPLIED >

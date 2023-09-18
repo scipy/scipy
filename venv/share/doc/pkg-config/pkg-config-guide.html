@@ -1,0 +1,424 @@
+<!--
+Copyright (C) 2010  Dan Nicholson.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the
+Free Software Foundation; either version 2 of the License, or (at your
+option) any later version.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+-->
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <style type="text/css">
+    pre { background-color: #f0f0f0; padding: 0.4cm; }
+  </style>
+
+  <title>Guide to pkg-config</title>
+</head>
+
+<body>
+  <h1><a name="top">Guide to pkg-config</a></h1>
+
+  <h3>Dan Nicholson</h3>
+
+  <ul>
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#why">Why?</a></li>
+    <li><a href="#concepts">Concepts</a></li>
+    <li><a href="#writing">Writing pkg-config files</a></li>
+    <li><a href="#using">Using pkg-config files</a></li>
+    <!--<li><a href="#examples">Examples</a></li>-->
+    <li><a href="#faq">Frequently asked questions</a></li>
+  </ul>
+
+  <h2><a name="overview">Overview</a></h2>
+
+  <p>This document aims to give an overview to using the <tt>pkg-config</tt>
+  tool from the perspective of both a user and a developer. It reviews the
+  concepts behind <tt>pkg-config</tt>, how to write <tt>pkg-config</tt> files
+  to support your project, and how to use <tt>pkg-config</tt> to integrate
+  with 3rd party projects.</p>
+
+  <p>More information on <tt>pkg-config</tt> can be found at the
+  <a href="http://pkg-config.freedesktop.org/">website</a> and in the
+  <tt>pkg-config(1)</tt> manual page.</p>
+
+  <p>This document assumes usage of <tt>pkg-config</tt> on a Unix-like
+  operating system such as Linux. Some of the details may be different on
+  other platforms.</p>
+
+  <h2><a name="why">Why?</a></h2>
+
+  <p>Modern computer systems use many layered components to provide
+  applications to the user. One of the difficulties in assembling these parts
+  is properly integrating them. <tt>pkg-config</tt> collects metadata about
+  the installed libraries on the system and easily provides it to the user.
+  </p>
+
+  <p>Without a metadata system such as <tt>pkg-config</tt>, it can be very
+  difficult to locate and obtain details about the services provided on a
+  given computer. For a developer, installing <tt>pkg-config</tt> files with
+  your package greatly eases adoption of your API.</p>
+
+  <h2><a name="concepts">Concepts</a></h2>
+
+  <p>The primary use of <tt>pkg-config</tt> is to provide the necessary
+  details for compiling and linking a program to a library. This metadata is
+  stored in <tt>pkg-config</tt> files. These files have the suffix
+  <tt>.pc</tt> and reside in specific locations known to the
+  <tt>pkg-config</tt> tool. This will be described in more detail later.</p>
+
+  <p>The file format contains predefined metadata keywords and freeform
+  variables. An example may be illustrative:<p>
+
+<pre>prefix=/usr/local
+exec_prefix=${prefix}
+includedir=${prefix}/include
+libdir=${exec_prefix}/lib
+
+Name: foo
+Description: The foo library
+Version: 1.0.0
+Cflags: -I${includedir}/foo
+Libs: -L${libdir} -lfoo</pre>
+
+  <p>The keyword definitions such as <tt>Name:</tt> begin with a keyword
+  followed by a colon and the value. The variables such as <tt>prefix=</tt>
+  are a string and value separated by an equals sign. The keywords are defined
+  and exported by <tt>pkg-config</tt>. The variables are not necessary, but
+  can be used by the keyword definitions for flexibility or to store data not
+  covered by <tt>pkg-config</tt>.</p>
+
+  <p>Here is a short description of the keyword fields. A more in depth
+  description of these fields and how to use them effectively will be given in
+  the <a href="#writing">Writing pkg-config files</a> section.</p>
+
+  <ul>
+    <li><b>Name</b>: A human-readable name for the library or package. This
+    does not affect usage of the <tt>pkg-config</tt> tool, which uses the name
+    of the <tt>.pc</tt> file.</li>
+
+    <li><b>Description</b>: A brief description of the package.</li>
+
+    <li><b>URL</b>: An URL where people can get more information about and
+    download the package.</li>
+
+    <li><b>Version</b>: A string specifically defining the version of the
+    package.</li>
+
+    <li><b>Requires</b>: A list of packages required by this package. The
+    versions of these packages may be specified using the comparison operators
+    =, &lt;, &gt;, &lt;= or &gt;=.</li>
+
+    <li><b>Requires.private</b>: A list of private packages required by this
+    package but not exposed to applications. The version specific rules from
+    the <tt>Requires</tt> field also apply here.</li>
+
+    <li><b>Conflicts</b>: An optional field describing packages that this one
+    conflicts with. The version specific rules from the <tt>Requires</tt>
+    field also apply here. This field also takes multiple instances of the
+    same package. E.g., <tt>Conflicts: bar < 1.2.3, bar >= 1.3.0</tt>.</li>
+
+    <li><b>Cflags</b>: The compiler flags specific to this package and any
+    required libraries that don't support <tt>pkg-config</tt>. If the required
+    libraries support <tt>pkg-config</tt>, they should be added to
+    <tt>Requires</tt> or <tt>Requires.private</tt>.</li>
+
+    <li><b>Libs</b>: The link flags specific to this package and any required
+    libraries that don't support <tt>pkg-config</tt>. The same rule as
+    <tt>Cflags</tt> applies here.</li>
+
+    <li><b>Libs.private</b>: The link flags for private libraries required by
+    this package but not exposed to applications. The same rule as
+    <tt>Cflags</tt> applies here.</li>
+  </ul>
+
+  <h2><a name="writing">Writing pkg-config files</a></h2>
+
+  <p>When creating <tt>pkg-config</tt> files for a package, it is first
+  necessary to decide how they will be distributed. Each file is best used to
+  describe a single library, so each package should have at least as many
+  <tt>pkg-config</tt> files as they do installed libraries.</p>
+
+  <p>The package name is determined through the filename of the
+  <tt>pkg-config</tt> metadata file. This is the portion of the filename prior
+  to the <tt>.pc</tt> suffix. A common choice is to match the library name to
+  the <tt>.pc</tt> name. For instance, a package installing <tt>libfoo.so</tt>
+  would have a corresponding <tt>libfoo.pc</tt> file containing the
+  <tt>pkg-config</tt> metadata. This choice is not necessary; the <tt>.pc</tt>
+  file should simply be a unique identifier for your library. Following the
+  above example, <tt>foo.pc</tt> or <tt>foolib.pc</tt> would probably work
+  just as well.</p>
+
+  <p>The <tt>Name</tt>, <tt>Description</tt> and <tt>URL</tt> fields are
+  purely informational and should be easy to fill in. The <tt>Version</tt>
+  field is a bit trickier to ensure that it is usable by consumers of the
+  data. <tt>pkg-config</tt> uses the algorithm from
+  <a href="http://rpm.org/">RPM</a> for version comparisons. This works best
+  with a dotted decimal number such as <tt>1.2.3</tt> since letters can cause
+  unexpected results. The number should be monotonically increasing and be
+  as specific as possible in describing the library. Usually it's sufficient
+  to use the package's version number here since it's easy for consumers to
+  track.</p>
+
+  <p>Before describing the more useful fields, it will be helpful to
+  demonstrate variable definitions. The most common usage is to define the
+  installation paths so that they don't clutter the metadata fields. Since
+  the variables are expanded recursively, this is very helpful when used in
+  conjunction with autoconf derived paths.</p>
+
+<pre>prefix=/usr/local
+includedir=${prefix}/include
+
+Cflags: -I${includedir}/foo</pre>
+
+  <p>The most important <tt>pkg-config</tt> metadata fields are
+  <tt>Requires</tt>, <tt>Requires.private</tt>, <tt>Cflags</tt>, <tt>Libs</tt>
+  and <tt>Libs.private</tt>. They will define the metadata used by external
+  projects to compile and link with the library.</p>
+
+  <p><tt>Requires</tt> and <tt>Requires.private</tt> define other modules
+  needed by the library. It is usually preferred to use the private variant of
+  <tt>Requires</tt> to avoid exposing unnecessary libraries to the program
+  that is linking with your library. If the program will not be using the
+  symbols of the required library, it should not be linking directly to that
+  library. See the discussion of
+  <a href="https://wiki.openmandriva.org/en/Overlinking_issues_in_packaging">overlinking</a>
+  for a more thorough explanation.</p>
+
+  <p>Since <tt>pkg-config</tt> always exposes the link flags of the
+  <tt>Requires</tt> libraries, these modules will become direct dependencies
+  of the program. On the other hand, libraries from <tt>Requires.private</tt>
+  will only be included when static linking. For this reason, it is usually
+  only appropriate to add modules from the same package in <tt>Requires</tt>.
+  </p>
+
+  <p>The <tt>Libs</tt> field contains the link flags necessary to use that
+  library. In addition, <tt>Libs</tt> and <tt>Libs.private</tt> contain link
+  flags for other libraries not supported by <tt>pkg-config</tt>. Similar to
+  the <tt>Requires</tt> field, it is preferred to add link flags for external
+  libraries to the <tt>Libs.private</tt> field so programs do not acquire an
+  additional direct dependency.</p>
+
+  <p>Finally, the <tt>Cflags</tt> contains the compiler flags for using the
+  library. Unlike the <tt>Libs</tt> field, there is not a private variant of
+  <tt>Cflags</tt>. This is because the data types and macro definitions are
+  needed regardless of the linking scenario.</p>
+
+  <h2><a name="using">Using pkg-config files</a></h2>
+
+  <p>Assuming that there are <tt>.pc</tt> files installed on the system, the
+  <tt>pkg-config</tt> tool is used to extract the metadata for usage. A short
+  description of the options can be seen by executing
+  <tt>pkg-config --help</tt>. A more in depth discussion can be found in the
+  <tt>pkg-config(1)</tt> manual page. This section will provide a brief
+  explanation of common usages.</tt>
+
+  <p>Consider a system with two modules, <tt>foo</tt> and <tt>bar</tt>.
+  Their <tt>.pc</tt> files might look like this:</p>
+
+<pre>foo.pc:
+prefix=/usr
+exec_prefix=${prefix}
+includedir=${prefix}/include
+libdir=${exec_prefix}/lib
+
+Name: foo
+Description: The foo library
+Version: 1.0.0
+Cflags: -I${includedir}/foo
+Libs: -L${libdir} -lfoo
+
+bar.pc:
+prefix=/usr
+exec_prefix=${prefix}
+includedir=${prefix}/include
+libdir=${exec_prefix}/lib
+
+Name: bar
+Description: The bar library
+Version: 2.1.2
+Requires.private: foo >= 0.7
+Cflags: -I${includedir}
+Libs: -L${libdir} -lbar</pre>
+
+  <p>The version of the modules can be obtained with the <tt>--modversion</tt>
+  option.</p>
+
+<pre>$ pkg-config --modversion foo
+1.0.0
+$ pkg-config --modversion bar
+2.1.2</pre>
+
+  <p>To print the link flags needed for each module, use the <tt>--libs</tt>
+  option.</p>
+
+<pre>$ pkg-config --libs foo
+-lfoo
+$ pkg-config --libs bar
+-lbar</pre>
+
+  <p>Notice that <tt>pkg-config</tt> has suppressed part of the <tt>Libs</tt>
+  field for both modules. This is because it treats the <tt>-L</tt> flag
+  specially and knows that the <tt>${libdir}</tt> directory <tt>/usr/lib</tt>
+  is part of the system linker search path. This keeps <tt>pkg-config</tt>
+  from interfering with the linker operation.</p>
+
+  <p>Also, although <tt>foo</tt> is required by <tt>bar</tt>, the link flags
+  for <tt>foo</tt> are not output. This is because <tt>foo</tt> is not
+  directly needed by an application that only wants to use the <tt>bar</tt>
+  library. For statically linking a <tt>bar</tt> application, we need both
+  sets of linker flags:</p>
+
+<pre>$ pkg-config --libs --static bar
+-lbar -lfoo</pre>
+
+  <p><tt>pkg-config</tt> needs to output both sets of link flags in this case
+  to ensure that the statically linked application will find all the necessary
+  symbols. On the other hand, it will always output all the <tt>Cflags</tt>.
+  </p>
+
+<pre>$ pkg-config --cflags bar
+-I/usr/include/foo
+$ pkg-config --cflags --static bar
+-I/usr/include/foo</pre>
+
+  <p>Another useful option, <tt>--exists</tt>, can be used to test for a
+  module's availability.</p>
+
+<pre>$ pkg-config --exists foo
+$ echo $?
+0</pre>
+
+  <p>One of the nicest features of <tt>pkg-config</tt> is providing version
+  checking. It can be used to determine if a sufficient version is available.
+  </p>
+
+<pre>$ pkg-config --libs "bar >= 2.7"
+Requested 'bar >= 2.7' but version of bar is 2.1.2</pre>
+
+  <p>Some commands will provide more verbose output when combined with the
+  <tt>--print-errors</tt> option.</p>
+
+<pre>$ pkg-config --exists --print-errors xoxo
+Package xoxo was not found in the pkg-config search path.
+Perhaps you should add the directory containing `xoxo.pc'
+to the PKG_CONFIG_PATH environment variable
+No package 'xoxo' found</pre>
+
+  <p>The message above references the <tt>PKG_CONFIG_PATH</tt> environment
+  variable. This variable is used to augment <tt>pkg-config</tt>'s search
+  path. On a typical Unix system, it will search in the directories
+  <tt>/usr/lib/pkgconfig</tt> and <tt>/usr/share/pkgconfig</tt>. This will
+  usually cover system installed modules. However, some local modules may be
+  installed in a different prefix such as <tt>/usr/local</tt>. In that case,
+  it's necessary to prepend the search path so that <tt>pkg-config</tt> can
+  locate the <tt>.pc</tt> files.</p>
+
+<pre>$ pkg-config --modversion hello
+Package hello was not found in the pkg-config search path.
+Perhaps you should add the directory containing `hello.pc'
+to the PKG_CONFIG_PATH environment variable
+No package 'hello' found
+$ export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
+$ pkg-config --modversion hello
+1.0.0</pre>
+
+  <p>A few <a href="http://www.gnu.org/software/autoconf/">autoconf</a> macros
+  are also provided to ease integration of <tt>pkg-config</tt> modules into
+  projects.</p>
+
+  <ul>
+    <li><b>PKG_PREREQ(MIN-VERSION)</b>: Ensures that the version of the
+    <tt>pkg-config</tt> <tt>autoconf</tt> macros in use is at least
+    <tt>MIN-VERSION</tt>.</li>
+
+    <li><b>PKG_PROG_PKG_CONFIG([MIN-VERSION])</b>: Locates the
+    <tt>pkg-config</tt> tool on the system and checks the version for
+    compatibility.</li>
+
+    <li><b>PKG_CHECK_EXISTS(MODULES, [ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND])</b>:
+    Checks to see whether a particular set of modules exists.</li>
+
+    <li><b>PKG_CHECK_MODULES(VARIABLE-PREFIX, MODULES, [ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND])</b>:
+    Checks to see whether a particular set of modules exists. If so, it sets
+    <tt>&lt;VARIABLE-PREFIX&gt;_CFLAGS</tt> and
+    <tt>&lt;VARIABLE-PREFIX&gt;_LIBS</tt> according to the output from
+    <tt>pkg-config --cflags</tt> and <tt>pkg-config --libs</tt>.</li>
+  </ul>
+
+  <!--<h2><a name="examples">Examples</a></h2>-->
+  <h2><a name="faq">Frequently asked questions</a></h2>
+
+  <ol>
+    <li>My program uses library <tt>x</tt>. What do I do?</li>
+
+    <p>The <tt>pkg-config</tt> output can easily be used on the compiler
+    command line. Assuming the <tt>x</tt> library has a <tt>x.pc</tt>
+    <tt>pkg-config</tt> file:</p>
+
+<pre>cc `pkg-config --cflags --libs x` -o myapp myapp.c</pre>
+
+    <p>The integration can be more robust when used with
+    <a href="http://www.gnu.org/software/autoconf/">autoconf</a> and
+    <a href="http://www.gnu.org/software/automake/">automake</a>. By using the
+    supplied <tt>PKG_CHECK_MODULES</tt> macro, the metadata is easily accessed
+    in the build process.</p>
+
+<pre>configure.ac:
+PKG_CHECK_MODULES([X], [x])
+
+Makefile.am:
+myapp_CFLAGS = $(X_CFLAGS)
+myapp_LDADD = $(X_LIBS)</pre>
+
+    <p>If the <tt>x</tt> module is found, the macro will fill and substitute
+    the <tt>X_CFLAGS</tt> and <tt>X_LIBS</tt> variables. If the module is not
+    found, an error will be produced. Optional 3rd and 4th arguments can be
+    supplied to <tt>PKG_CHECK_MODULES</tt> to control actions when the module
+    is found or not.</p>
+
+    <li>My library <tt>z</tt> installs header files which include <tt>libx</tt>
+    headers. What do I put in my <tt>z.pc</tt> file?</li>
+
+    <p>If the <tt>x</tt> library has <tt>pkg-config</tt> support, add it to
+    the <tt>Requires.private</tt> field. If it does not, augment the
+    <tt>Cflags</tt> field with the necessary compiler flags for using the
+    <tt>libx</tt> headers. In either case, <tt>pkg-config</tt> will output
+    the compiler flags when <tt>--static</tt> is used or not.</p>
+
+    <li>My library <tt>z</tt> uses <tt>libx</tt> internally, but does not
+    expose <tt>libx</tt> data types in its public API. What do I put in my
+    <tt>z.pc</tt> file?</li>
+
+    <p>Again, add the module to <tt>Requires.private</tt> if it supports
+    <tt>pkg-config</tt>. In this case, the compiler flags will be emitted
+    unnecessarily, but it ensures that the linker flags will be present when
+    linking statically. If <tt>libx</tt> does not support <tt>pkg-config</tt>,
+    add the necessary linker flags to <tt>Libs.private</tt>.</p>
+  </ol>
+
+  <hr/>
+
+  <address>Dan Nicholson &lt;dbn.lists (at) gmail (dot) com&gt;</address>
+
+  <p>Copyright (C) 2010  Dan Nicholson.<br/>
+  This document is licensed under the
+  <a href="http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt">GNU General Public License, Version 2</a>
+  or any later version.</p>
+
+</body>
+</html>

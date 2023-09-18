@@ -1,0 +1,1312 @@
+#! /bin/sh
+#
+# Copyright (C) 1995-1998, 2000-2022 Free Software Foundation, Inc.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+
+# This file is meant for authors or maintainers which want to
+# internationalize their package with the help of GNU gettext.  For
+# further information how to use it consult the GNU gettext manual.
+
+progname=$0
+package=gettext-tools
+version=0.21.1
+archive_version=0.21.1
+
+# Set variables
+# - gettext_datadir     directory where the data files are stored.
+prefix="/workspaces/scipy/venv"
+datarootdir="${prefix}/share"
+: ${gettext_datadir="${datarootdir}/gettext"}
+: ${AUTOM4TE=autom4te}
+
+# func_tmpdir
+# creates a temporary directory.
+# Sets variable
+# - tmp             pathname of freshly created temporary directory
+func_tmpdir ()
+{
+  # Use the environment variable TMPDIR, falling back to /tmp. This allows
+  # users to specify a different temporary directory, for example, if their
+  # /tmp is filled up or too small.
+  : ${TMPDIR=/tmp}
+  {
+    # Use the mktemp program if available. If not available, hide the error
+    # message.
+    tmp=`(umask 077 && mktemp -d "$TMPDIR/gtXXXXXX") 2>/dev/null` &&
+    test -n "$tmp" && test -d "$tmp"
+  } ||
+  {
+    # Use a simple mkdir command. It is guaranteed to fail if the directory
+    # already exists.  $RANDOM is bash specific and expands to empty in shells
+    # other than bash, ksh and zsh.  Its use does not increase security;
+    # rather, it minimizes the probability of failure in a very cluttered /tmp
+    # directory.
+    tmp=$TMPDIR/gt$$-$RANDOM
+    (umask 077 && mkdir "$tmp")
+  } ||
+  {
+    echo "$0: cannot create a temporary directory in $TMPDIR" >&2
+    { (exit 1); exit 1; }
+  }
+}
+
+# Support for relocatability.
+func_find_curr_installdir ()
+{
+  # Determine curr_installdir, even taking into account symlinks.
+  curr_executable="$0"
+  case "$curr_executable" in
+    */* | *\\*) ;;
+    *) # Need to look in the PATH.
+      save_IFS="$IFS"; IFS="${PATH_SEPARATOR=':'}"
+      for dir in $PATH; do
+        IFS="$save_IFS"
+        test -z "$dir" && dir=.
+        for exec_ext in ''; do
+          if test -f "$dir/$curr_executable$exec_ext"; then
+            curr_executable="$dir/$curr_executable$exec_ext"
+            break 2
+          fi
+        done
+      done
+      IFS="$save_IFS"
+      ;;
+  esac
+  # Make absolute.
+  case "$curr_executable" in
+    /* | ?:/* | ?:\\*) ;;
+    *) curr_executable=`pwd`/"$curr_executable" ;;
+  esac
+  # Resolve symlinks.
+  sed_dirname='s,/[^/]*$,,'
+  sed_linkdest='s,^.* -> \(.*\),\1,p'
+  while : ; do
+    lsline=`LC_ALL=C ls -l "$curr_executable"`
+    case "$lsline" in
+      *" -> "*)
+        linkdest=`echo "$lsline" | sed -n -e "$sed_linkdest"`
+        case "$linkdest" in
+          /* | ?:/* | ?:\\*) curr_executable="$linkdest" ;;
+          *) curr_executable=`echo "$curr_executable" | sed -e "$sed_dirname"`/"$linkdest" ;;
+        esac ;;
+      *) break ;;
+    esac
+  done
+  curr_installdir=`echo "$curr_executable" | sed -e 's,/[^/]*$,,'`
+  # Canonicalize.
+  curr_installdir=`cd "$curr_installdir" && pwd`
+}
+func_find_prefixes ()
+{
+  # Compute the original/current installation prefixes by stripping the
+  # trailing directories off the original/current installation directories.
+  orig_installprefix="$orig_installdir"
+  curr_installprefix="$curr_installdir"
+  while true; do
+    orig_last=`echo "$orig_installprefix" | sed -n -e 's,^.*/\([^/]*\)$,\1,p'`
+    curr_last=`echo "$curr_installprefix" | sed -n -e 's,^.*/\([^/]*\)$,\1,p'`
+    if test -z "$orig_last" || test -z "$curr_last"; then
+      break
+    fi
+    if test "$orig_last" != "$curr_last"; then
+      break
+    fi
+    orig_installprefix=`echo "$orig_installprefix" | sed -e 's,/[^/]*$,,'`
+    curr_installprefix=`echo "$curr_installprefix" | sed -e 's,/[^/]*$,,'`
+  done
+}
+if test "no" = yes; then
+  exec_prefix="${prefix}"
+  bindir="${exec_prefix}/bin"
+  orig_installdir="$bindir" # see Makefile.am's *_SCRIPTS variables
+  func_find_curr_installdir # determine curr_installdir
+  func_find_prefixes
+  # Relocate the directory variables that we use.
+  gettext_datadir=`echo "$gettext_datadir/" | sed -e "s%^${orig_installprefix}/%${curr_installprefix}/%" | sed -e 's,/$,,'`
+fi
+
+# func_trace_autoconf macro configure.ac
+# traces an Autoconf macro call and outputs the arguments to stdout,
+# using autom4te.
+func_trace_autoconf ()
+{
+  echo '\
+dnl replace macros which may abort autom4te with a no-op variant
+m4_pushdef([m4_assert])
+m4_pushdef([m4_fatal])
+m4_pushdef([m4_warn])
+m4_pushdef([m4_errprintn])
+m4_pushdef([m4_exit])
+m4_pushdef([m4_include])
+m4_pushdef([m4_esyscmd])
+' \
+  | "$AUTOM4TE" --no-cache --language=Autoconf-without-aclocal-m4 \
+    --trace="$1":\$% - "$2" 2>/dev/null
+}
+
+# func_trace_sed macro configure.ac
+# traces an Autoconf macro call and outputs the arguments to stdout,
+# using sed.
+func_trace_sed ()
+{
+  sed_extract_arguments='
+s,#.*$,,; s,^dnl .*$,,; s, dnl .*$,,;
+/'"$1"'(/ {
+  ta
+  :a
+    s/)/)/
+    tb
+    s/\\$//
+    N
+    ba
+  :b
+  s,^.*'"$1"'([[ ]*\([^]"$`\\)]*\).*$,\1,p
+}
+d'
+  sed -e "$sed_extract_arguments" "$2"
+}
+
+# func_usage
+# outputs to stdout the --help usage message.
+func_usage ()
+{
+  echo "\
+Usage: gettextize [OPTION]... [package-dir]
+
+Prepares a source package to use gettext.
+
+Options:
+      --help           print this help and exit
+      --version        print version information and exit
+  -f, --force          force writing of new files even if old exist
+      --po-dir=DIR     specify directory with PO files
+      --no-changelog   don't update or create ChangeLog files
+      --symlink        make symbolic links instead of copying files
+  -n, --dry-run        print modifications but don't perform them
+
+Report bugs in the bug tracker at <https://savannah.gnu.org/projects/gettext>
+or by email to <bug-gettext@gnu.org>."
+}
+
+# func_version
+# outputs to stdout the --version message.
+func_version ()
+{
+  echo "$progname (GNU $package) $version"
+  echo "Copyright (C) 1995-2022 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law."
+  echo "Written by" "Ulrich Drepper"
+}
+
+# func_fatal_error message
+# outputs to stderr a fatal error message, and terminates the program.
+func_fatal_error ()
+{
+  echo "gettextize: *** $1" 1>&2
+  echo "gettextize: *** Stop." 1>&2
+  exit 1
+}
+
+# Nuisances.
+(unset CDPATH) >/dev/null 2>&1 && unset CDPATH
+
+# Unset more variables known to interfere with behavior of common tools.
+CLICOLOR_FORCE= GREP_OPTIONS=
+unset CLICOLOR_FORCE GREP_OPTIONS
+
+# Command-line option processing.
+# Removes the OPTIONS from the arguments. Sets the variables:
+# - force           1 if --force was given, 0 otherwise
+# - intldir         yes if --intl was given, empty otherwise
+# - podirs          list of directories specified with --po-dir
+# - try_ln_s        : if --symlink was given, false otherwise
+# - do_changelog    false if --no-changelog was given, : otherwise
+# - doit            false if --dry-run was given, : otherwise
+{
+  force=0
+  intldir=
+  podirs=
+  try_ln_s=false
+  do_changelog=:
+  doit=:
+
+  while test $# -gt 0; do
+    case "$1" in
+      -c | --copy | --cop | --co | --c ) # accepted for backward compatibility
+        shift ;;
+      -n | --dry-run | --dry-ru | --dry-r | --dry- | --dry | --dr | --d )
+        shift
+        doit=false ;;
+      -f | --force | --forc | --for | --fo | --f )
+        shift
+        force=1 ;;
+      --help | --hel | --he | --h )
+        func_usage; exit 0 ;;
+      --intl | --int | --in | --i )
+        shift
+        intldir=yes ;;
+      --po-dir | --po-di | --po-d | --po- | --po | --p )
+        shift 
+        if test $# = 0; then
+          func_fatal_error "missing argument for --po-dir"
+        fi
+        case "$1" in
+          -*) func_fatal_error "missing argument for --po-dir" ;;
+        esac
+        podirs="$podirs $1"
+        shift ;;
+      --po-dir=* )
+        arg=`echo "X$1" | sed -e 's/^X--po-dir=//'`
+        podirs="$podirs $arg"
+        shift ;;
+      --no-changelog | --no-changelo | --no-changel | --no-change | --no-chang | --no-chan | --no-cha | --no-ch | --no-c )
+        shift
+        do_changelog=false ;;
+      --symlink | --symlin | --symli | --syml | --sym | --sy | --s )
+        shift
+        try_ln_s=: ;;
+      --version | --versio | --versi | --vers | --ver | --ve | --v )
+        func_version
+        exit 0 ;;
+      -- ) # Stop option prcessing
+        shift; break ;;
+      -* )
+        echo "gettextize: unknown option $1" 1>&2
+        echo "Try 'gettextize --help' for more information." 1>&2
+        exit 1 ;;
+      * )
+        break ;;
+    esac
+  done
+  # podirs defaults to "po".
+  test -n "$podirs" || podirs="po"
+}
+
+# Warn about deprecated options.
+if test -n "$intldir"; then
+  func_fatal_error "The option '--intl' is no longer available."
+fi
+
+# Require automake 1.9 or newer.
+have_automake19=
+if (aclocal --version) >/dev/null 2>/dev/null; then
+  aclocal_version=`aclocal --version | sed -n -e 1p | sed -e 's/^[^0-9]*//'`
+  case $aclocal_version in
+    1.9* | 1.[1-9][0-9]* | [2-9]*) have_automake19=yes ;;
+  esac
+fi
+if test -z "$have_automake19"; then
+  func_fatal_error "You need the 'aclocal' program from automake 1.9 or newer."
+fi
+min_automake_version=1.9
+
+# Command-line argument processing.
+# Analyzes the remaining arguments.
+# Sets the variables
+# - origdir         to the original directory,
+# - srcdir          to the package directory, and cd-s into it.
+{
+  if test $# -gt 1; then
+    func_usage 1>&2
+    exit 1
+  fi
+  origdir=`pwd`
+  if test $# -eq 1; then
+    srcdir=$1
+    if cd "$srcdir"; then
+      srcdir=`pwd`
+    else
+      func_fatal_error "Cannot change directory to '$srcdir'."
+    fi
+  else
+    srcdir=$origdir
+  fi
+}
+
+# The current directory is now $srcdir.
+
+# Check integrity of package: A configure.in/ac must be present. Sets variable
+# - configure_in    name of configure.in/ac file.
+test -f configure.in || test -f configure.ac ||
+  func_fatal_error "Missing configure.in or configure.ac, please cd to your package first."
+configure_in=NONE
+if test -f configure.in; then
+  configure_in=configure.in
+else
+  if test -f configure.ac; then
+    configure_in=configure.ac
+  fi
+fi
+
+# Check whether the --force option is needed but has not been specified.
+if test $force -eq 0; then
+  if test -d intl; then
+    func_fatal_error "intl/ subdirectory exists: use option -f if you really want to delete it."
+  fi
+  for podir in $podirs; do
+    if test -f "$podir/Makefile.in.in"; then
+      func_fatal_error "$podir/Makefile.in.in exists: use option -f if you really want to delete it."
+    fi
+  done
+  if test -f ABOUT-NLS; then
+    func_fatal_error "ABOUT-NLS exists: use option -f if you really want to delete it."
+  fi
+fi
+
+# Select the method for Autoconf macro tracing.  func_trace_autoconf
+# is more accurate than func_trace_sed, but it only works with
+# autoconf >= 2.69.
+if echo "AC_PREREQ([2.69])" \
+  | "$AUTOM4TE" --no-cache --language=Autoconf-without-aclocal-m4 - 2>&1; then
+  func_trace=func_trace_autoconf
+else
+  func_trace=func_trace_sed
+fi
+
+# Check in which directory config.rpath etc. belong.
+auxdir=`"$func_trace" AC_CONFIG_AUX_DIR "$configure_in"`
+if test -n "$auxdir"; then
+  auxdir="$auxdir/"
+fi
+
+# Check in which directory gettext.m4 etc. belong.
+macrodirs=`"$func_trace" AC_CONFIG_MACRO_DIR_TRACE "$configure_in"`
+if test -z "$macrodirs"; then
+  macrodirs=`"$func_trace" AC_CONFIG_MACRO_DIR "$configure_in"`
+fi
+for arg in $macrodirs; do
+  m4dir="$arg"
+  break
+done
+
+# For simplicity we change to the gettext source directory.
+cd "$gettext_datadir" ||
+  func_fatal_error "gettext source directory '${gettext_datadir}' doesn't exist"
+
+# Variables which keep track what has been modified.
+added_directories=
+removed_directory=
+added_extradist=
+added_acoutput=
+removed_acoutput=" intl/intlh.inst"
+
+# Variable:
+# - please          accumulates instructions for the user.
+please=
+
+# Variable:
+# - date            current date, for use in ChangeLog entries.
+date=`date +%Y-%m-%d`
+
+# func_copy from to
+# copies a file.
+# 'from' is a relative pathname, relative to the current directory.
+# 'to' is a relative pathname, relative to $srcdir.
+func_copy ()
+{
+  if $doit; then
+    rm -f "$srcdir/$2"
+    echo "Copying file $2"
+    cp "$1" "$srcdir/$2"
+  else
+    echo "Copy file $2"
+  fi
+}
+
+# func_linkorcopy from absfrom to
+# links or copies a file.
+# 'from' is a relative pathname, relative to the current directory.
+# 'absfrom' is the corresponding absolute pathname.
+# 'to' is a relative pathname, relative to $srcdir.
+func_linkorcopy ()
+{
+  if $doit; then
+    rm -f "$srcdir/$3"
+    ($try_ln_s && ln -s "$2" "$srcdir/$3" && echo "Symlinking file $3") 2>/dev/null ||
+    { echo "Copying file $3"; cp "$1" "$srcdir/$3"; }
+  else
+    if $try_ln_s; then
+      echo "Symlink file $3"
+    else
+      echo "Copy file $3"
+    fi
+  fi
+}
+
+# func_backup to
+# makes a backup of a file that is about to be overwritten or replaced.
+# 'to' is a relative pathname, relative to $srcdir.
+func_backup ()
+{
+  if $doit; then
+    if test -f "$srcdir/$1"; then
+      rm -f "$srcdir/$1~"
+      cp -p "$srcdir/$1" "$srcdir/$1~"
+    fi
+  fi
+}
+
+# func_remove to
+# removes a file.
+# 'to' is a relative pathname, relative to $srcdir.
+func_remove ()
+{
+  if $doit; then
+    echo "Removing $1"
+    rm -f "$srcdir/$1"
+  else
+    echo "Remove $1"
+  fi
+}
+
+# func_ChangeLog_init
+# func_ChangeLog_add_entry line
+# func_ChangeLog_finish
+# manage the ChangeLog file, relative to $srcdir.
+func_ChangeLog_init ()
+{
+  modified_ChangeLog=
+}
+func_ChangeLog_add_entry ()
+{
+  if $doit; then
+    if test -z "$modified_ChangeLog"; then
+      echo "$date  gettextize  <bug-gnu-gettext@gnu.org>" > "$srcdir/ChangeLog.tmp"
+      echo >> "$srcdir/ChangeLog.tmp"
+      modified_ChangeLog=yes
+    fi
+    echo "$1" >> "$srcdir/ChangeLog.tmp"
+  else
+    modified_ChangeLog=yes
+  fi
+}
+func_ChangeLog_finish ()
+{
+  if test -n "$modified_ChangeLog"; then
+    if $doit; then
+      echo >> "$srcdir/ChangeLog.tmp"
+      if test -f "$srcdir/ChangeLog"; then
+        echo "Adding an entry to ChangeLog (backup is in ChangeLog~)"
+        cat "$srcdir/ChangeLog" >> "$srcdir/ChangeLog.tmp"
+        rm -f "$srcdir/ChangeLog~"
+        cp -p "$srcdir/ChangeLog" "$srcdir/ChangeLog~"
+      else
+        echo "Creating ChangeLog"
+      fi
+      cp "$srcdir/ChangeLog.tmp" "$srcdir/ChangeLog"
+      rm -f "$srcdir/ChangeLog.tmp"
+    else
+      if test -f "$srcdir/ChangeLog"; then
+        echo "Add an entry to ChangeLog"
+      else
+        echo "Create ChangeLog"
+      fi
+    fi
+  fi
+}
+
+# func_poChangeLog_init
+# func_poChangeLog_add_entry line
+# func_poChangeLog_finish
+# manage the $podir/ChangeLog file, relative to $srcdir.
+func_poChangeLog_init ()
+{
+  modified_poChangeLog=
+}
+func_poChangeLog_add_entry ()
+{
+  if $doit; then
+    if test -z "$modified_poChangeLog"; then
+      echo "$date  gettextize  <bug-gnu-gettext@gnu.org>" > "$srcdir/$podir/ChangeLog.tmp"
+      echo >> "$srcdir/$podir/ChangeLog.tmp"
+      modified_poChangeLog=yes
+    fi
+    echo "$1" >> "$srcdir/$podir/ChangeLog.tmp"
+  else
+    modified_poChangeLog=yes
+  fi
+}
+func_poChangeLog_finish ()
+{
+  if test -n "$modified_poChangeLog"; then
+    if $doit; then
+      echo >> "$srcdir/$podir/ChangeLog.tmp"
+      if test -f "$srcdir/$podir/ChangeLog"; then
+        echo "Adding an entry to $podir/ChangeLog (backup is in $podir/ChangeLog~)"
+        cat "$srcdir/$podir/ChangeLog" >> "$srcdir/$podir/ChangeLog.tmp"
+        rm -f "$srcdir/$podir/ChangeLog~"
+        cp -p "$srcdir/$podir/ChangeLog" "$srcdir/$podir/ChangeLog~"
+      else
+        echo "Creating $podir/ChangeLog"
+      fi
+      cp "$srcdir/$podir/ChangeLog.tmp" "$srcdir/$podir/ChangeLog"
+      rm -f "$srcdir/$podir/ChangeLog.tmp"
+    else
+      if test -f "$srcdir/$podir/ChangeLog"; then
+        echo "Add an entry to $podir/ChangeLog"
+      else
+        echo "Create $podir/ChangeLog"
+      fi
+    fi
+  fi
+}
+
+# func_m4ChangeLog_init
+# func_m4ChangeLog_add_entry line
+# func_m4ChangeLog_finish
+# manage the $m4dir/ChangeLog file, relative to $srcdir.
+func_m4ChangeLog_init ()
+{
+  if test -n "$using_m4ChangeLog"; then
+    modified_m4ChangeLog=
+    created_m4ChangeLog=
+  fi
+}
+func_m4ChangeLog_add_entry ()
+{
+  if test -n "$using_m4ChangeLog"; then
+    if $doit; then
+      if test -z "$modified_m4ChangeLog"; then
+        echo "$date  gettextize  <bug-gnu-gettext@gnu.org>" > "$srcdir/$m4dir/ChangeLog.tmp"
+        echo >> "$srcdir/$m4dir/ChangeLog.tmp"
+        modified_m4ChangeLog=yes
+      fi
+      echo "$1" >> "$srcdir/$m4dir/ChangeLog.tmp"
+    else
+      modified_m4ChangeLog=yes
+    fi
+  else
+    line="$1"
+    line=`echo "$line" | sed -e "s%^	\\* %	* $m4dir/%"`
+    func_ChangeLog_add_entry "$line"
+  fi
+}
+func_m4ChangeLog_finish ()
+{
+  if test -n "$using_m4ChangeLog"; then
+    if test -n "$modified_m4ChangeLog"; then
+      if $doit; then
+        echo >> "$srcdir/$m4dir/ChangeLog.tmp"
+        if test -f "$srcdir/$m4dir/ChangeLog"; then
+          echo "Adding an entry to $m4dir/ChangeLog (backup is in $m4dir/ChangeLog~)"
+          cat "$srcdir/$m4dir/ChangeLog" >> "$srcdir/$m4dir/ChangeLog.tmp"
+          rm -f "$srcdir/$m4dir/ChangeLog~"
+          cp -p "$srcdir/$m4dir/ChangeLog" "$srcdir/$m4dir/ChangeLog~"
+        else
+          echo "Creating $m4dir/ChangeLog"
+          created_m4ChangeLog=yes
+        fi
+        cp "$srcdir/$m4dir/ChangeLog.tmp" "$srcdir/$m4dir/ChangeLog"
+        rm -f "$srcdir/$m4dir/ChangeLog.tmp"
+      else
+        if test -f "$srcdir/$m4dir/ChangeLog"; then
+          echo "Add an entry to $m4dir/ChangeLog"
+        else
+          echo "Create $m4dir/ChangeLog"
+          created_m4ChangeLog=yes
+        fi
+      fi
+    fi
+  fi
+}
+using_m4ChangeLog=yes
+
+if test -f "$srcdir/intl/Makefile.in"; then
+  removed_acoutput="$removed_acoutput intl/Makefile"
+fi
+if test -d "$srcdir/intl"; then
+  # Remove everything inside intl except for RCS and CVS subdirs and invisible
+  # files.
+  if $doit; then
+    echo "Wiping out intl/ subdirectory"
+    (cd "$srcdir/intl" &&
+     for f in *; do
+       if test CVS != "$f" && test RCS != "$f"; then
+         rm -rf "$f"
+       fi
+     done)
+  else
+    echo "Wipe out intl/ subdirectory"
+  fi
+  removed_directory=intl
+fi
+
+$do_changelog && func_ChangeLog_init
+
+for podir in $podirs; do
+  test -d "$srcdir/$podir" || {
+    if $doit; then
+      echo "Creating $podir/ subdirectory"
+      mkdir "$srcdir/$podir" || func_fatal_error "failed to create $podir/ subdirectory"
+    else
+      echo "Create $podir/ subdirectory"
+    fi
+    added_directories="$added_directories $podir"
+  }
+done
+
+# Create the directory for config.rpath, if needed.
+# This is for consistency with autoreconf and automake.
+# Note that $auxdir is either empty or ends in a slash.
+test -d "$srcdir/$auxdir" || {
+  if $doit; then
+    echo "Creating $auxdir subdirectory"
+    mkdir "$srcdir/$auxdir" || func_fatal_error "failed to create $auxdir subdirectory"
+  else
+    echo "Create $auxdir subdirectory"
+  fi
+}
+
+# Now copy all files.  Take care for the destination directories.
+for file in *; do
+  case $file in
+    ABOUT-NLS)
+      func_linkorcopy $file "$gettext_datadir/$file" $file
+      ;;
+    config.rpath)
+      func_linkorcopy $file "$gettext_datadir/$file" "$auxdir$file"
+      ;;
+  esac
+done
+
+# Tell the user what to put into configure.ac, if it is not already there.
+external=
+# Need to use func_trace_sed instead of $func_trace, since
+# AM_GNU_GETTEXT is not a standard Autoconf trace.
+xargs=`func_trace_sed AM_GNU_GETTEXT "$srcdir/$configure_in"`
+save_IFS="$IFS"; IFS=:
+for arg in $xargs; do
+  if test 'external' = "$arg"; then
+    external=yes
+    break
+  fi
+done
+IFS="$save_IFS"
+if test -z "$external"; then
+  please="$please
+Please use AM_GNU_GETTEXT([external]) in order to cause autoconfiguration
+to look for an external libintl.
+"
+fi
+
+# Tell the user to remove invocations of macros that no longer exist.
+if sed -e 's,#.*$,,; s,^dnl .*$,,; s, dnl .*$,,' "$srcdir/$configure_in" | grep AM_GNU_GETTEXT_INTL_SUBDIR >/dev/null; then
+  please="$please
+Please remove the invocation of AM_GNU_GETTEXT_INTL_SUBDIR.
+"
+fi
+
+# Copy files to po/ subdirectory.
+cd po
+for podir in $podirs; do
+  $do_changelog && func_poChangeLog_init
+  for file in Makefile.in.in; do
+    same=no
+    if test -f "$srcdir/$podir/$file"; then
+      if cmp -s $file "$srcdir/$podir/$file"; then
+        same=yes
+      fi
+    else
+      added_acoutput="$added_acoutput $podir/Makefile.in"
+    fi
+    if $do_changelog && test $same = no; then
+      if test -f "$srcdir/$podir/$file"; then
+        func_poChangeLog_add_entry "	* $file: Upgrade to gettext-${version}."
+      else
+        func_poChangeLog_add_entry "	* $file: New file, from gettext-${version}."
+      fi
+    fi
+    func_backup "$podir/$file"
+    func_linkorcopy $file "$gettext_datadir/po/$file" "$podir/$file"
+  done
+  for file in *; do
+    case $file in
+      Makefile.in.in)
+        # Already handled above.
+        ;;
+      Makevars.template)
+        func_linkorcopy Makevars.template "$gettext_datadir/po/Makevars.template" "$podir/Makevars.template"
+        if test -f "$srcdir/po/Makevars"; then
+          LC_ALL=C sed -n -e 's/[ 	]*\([A-Za-z0-9_]*\)[ 	]*=.*/\1/p' < "$srcdir/$podir/Makevars" | LC_ALL=C sort > "$srcdir/$podir/Makevars.tmp1"
+          LC_ALL=C sed -n -e 's/[ 	]*\([A-Za-z0-9_]*\)[ 	]*=.*/\1/p' < "$gettext_datadir/po/Makevars.template" | LC_ALL=C sort > "$srcdir/$podir/Makevars.tmp2"
+          missingvars=`LC_ALL=C comm -13 "$srcdir/$podir/Makevars.tmp1" "$srcdir/$podir/Makevars.tmp2"`
+          rm -f "$srcdir/$podir/Makevars.tmp1" "$srcdir/$podir/Makevars.tmp2"
+          if test -n "$missingvars"; then
+            please="$please
+Please update $podir/Makevars so that it defines all the variables mentioned
+in $podir/Makevars.template.
+You can then remove $podir/Makevars.template.
+"
+          fi
+        else
+          please="$please
+Please create $podir/Makevars from the template in $podir/Makevars.template.
+You can then remove $podir/Makevars.template.
+"
+        fi
+        ;;
+      *)
+        same=no
+        if test -f "$srcdir/$podir/$file"; then
+          if cmp -s $file "$srcdir/$podir/$file"; then
+            same=yes
+          fi
+        fi
+        if $do_changelog && test $same = no; then
+          if test -f "$srcdir/$podir/$file"; then
+            func_poChangeLog_add_entry "	* $file: Upgrade to gettext-${version}."
+          else
+            func_poChangeLog_add_entry "	* $file: New file, from gettext-${version}."
+          fi
+        fi
+        func_backup "$podir/$file"
+        func_linkorcopy $file "$gettext_datadir/po/$file" "$podir/$file"
+        ;;
+    esac
+  done
+  if test -f "$srcdir/$podir/cat-id-tbl.c"; then
+    func_remove "$podir/cat-id-tbl.c"
+    $do_changelog && func_poChangeLog_add_entry "	* cat-id-tbl.c: Remove file."
+  fi
+  if test -f "$srcdir/$podir/stamp-cat-id"; then
+    func_remove "$podir/stamp-cat-id"
+    $do_changelog && func_poChangeLog_add_entry "	* stamp-cat-id: Remove file."
+  fi
+  if test ! -f "$srcdir/$podir/POTFILES.in"; then
+    if $doit; then
+      echo "Creating initial $podir/POTFILES.in"
+      echo '# List of source files which contain translatable strings.' > "$srcdir/$podir/POTFILES.in"
+    else
+      echo "Create initial $podir/POTFILES.in"
+    fi
+    $do_changelog && func_poChangeLog_add_entry "	* POTFILES.in: New file."
+    please="$please
+Please fill $podir/POTFILES.in as described in the documentation.
+"
+  fi
+  $do_changelog && func_poChangeLog_finish
+done
+
+m4filelist='
+  gettext.m4
+  host-cpu-c-abi.m4
+  iconv.m4
+  intlmacosx.m4
+  lib-ld.m4 lib-link.m4 lib-prefix.m4
+  nls.m4
+  po.m4 progtest.m4'
+
+# All sorts of bugs could occur if the configure file was remade with the wrong
+# version of gettext.m4 et al. (because then the configure and the po/Makefile.in.in
+# don't fit together). It is therefore important that the package carries the
+# right versions of gettext.m4 et al. with it.
+if test -f "$srcdir/Makefile.am"; then
+  # A package using automake.
+
+  # Determine whether it's using automake 1.8 or newer.
+  have_automake18=
+  if (aclocal --version) >/dev/null 2>/dev/null; then
+    aclocal_version=`aclocal --version | sed -n -e 1p | sed -e 's/^[^0-9]*//'`
+    case $aclocal_version in
+      1.[8-9]* | 1.[1-9][0-9]* | [2-9]*) have_automake18=yes ;;
+    esac
+  fi
+
+  if test -z "$m4dir"; then
+    # Extract the macro directory name from Makefile.am.
+    aclocal_amflags=`grep '^ACLOCAL_AMFLAGS[ 	]*=' "$srcdir/Makefile.am" | sed -e 's/^ACLOCAL_AMFLAGS[ 	]*=\(.*\)$/\1/'`
+    m4dir_is_next=
+    for arg in $aclocal_amflags; do
+      if test -n "$m4dir_is_next"; then
+        # Ignore absolute directory pathnames, like /usr/local/share/aclocal.
+        case "$arg" in
+          /*) ;;
+          *)
+            test -z "$m4dir" || m4dir="$arg"
+            macrodirs="$macrodirs $arg"
+            ;;
+        esac
+        m4dir_is_next=
+      else
+        if test "X$arg" = "X-I"; then
+          m4dir_is_next=yes
+        else
+          m4dir_is_next=
+        fi
+      fi
+    done
+    for arg in $macrodirs; do
+      m4dir="$arg"
+      break
+    done
+  fi
+
+  if test -z "$m4dir"; then
+    m4dir=m4
+    m4dir_defaulted=yes
+  fi
+
+  # Decide whether to use $m4dir/ChangeLog, or to use ChangeLog instead.
+  if test -d "$srcdir/$m4dir" && test -f "$srcdir/ChangeLog" && test ! -f "$srcdir/$m4dir/ChangeLog"; then
+    # The programmer has no $m4dir/ChangeLog so far. Don't introduce one.
+    using_m4ChangeLog=
+  fi
+
+  # Update the *.m4 files and the corresponding Makefile.am.
+  $do_changelog && func_m4ChangeLog_init
+  added_m4dir=
+  added_m4files=
+  if test -d "$srcdir/$m4dir"; then
+    :
+  else
+    if $doit; then
+      echo "Creating directory $m4dir"
+      mkdir "$srcdir/$m4dir"
+    else
+      echo "Create directory $m4dir"
+    fi
+    added_m4dir=yes
+  fi
+  for file in $m4filelist; do
+    same=no
+    if test -f "$srcdir/$m4dir/$file"; then
+      if cmp -s "${datarootdir}/aclocal/$file" "$srcdir/$m4dir/$file"; then
+        same=yes
+      fi
+    else
+      added_m4files="$added_m4files $file"
+    fi
+    if $do_changelog && test $same = no; then
+      if test -f "$srcdir/$m4dir/$file"; then
+        func_m4ChangeLog_add_entry "	* $file: Upgrade to gettext-${version}."
+      else
+        func_m4ChangeLog_add_entry "	* $file: New file, from gettext-${version}."
+      fi
+    fi
+    func_backup "$m4dir/$file"
+    func_linkorcopy "${datarootdir}/aclocal/$file" "${datarootdir}/aclocal/$file" "$m4dir/$file"
+  done
+  missing_m4Makefileam=
+  if test -n "$added_m4files"; then
+    if test -f "$srcdir/$m4dir/Makefile.am"; then
+      if $doit; then
+        echo "Updating EXTRA_DIST in $m4dir/Makefile.am (backup is in $m4dir/Makefile.am~)"
+        func_backup "$m4dir/Makefile.am"
+        rm -f "$srcdir/$m4dir/Makefile.am"
+        if grep '^EXTRA_DIST[ 	]*=' "$srcdir/$m4dir/Makefile.am~" > /dev/null; then
+          sed -e "s%^\(EXTRA_DIST[ 	]*=\) \\?%\\1$added_m4files %" < "$srcdir/$m4dir/Makefile.am~" > "$srcdir/$m4dir/Makefile.am"
+          $do_changelog && func_m4ChangeLog_add_entry "	* Makefile.am (EXTRA_DIST): Add the new files."
+        else
+          (cat "$srcdir/$m4dir/Makefile.am~"; echo; echo "EXTRA_DIST =$added_m4files") > "$srcdir/$m4dir/Makefile.am"
+          $do_changelog && func_m4ChangeLog_add_entry "	* Makefile.am (EXTRA_DIST): New variable."
+        fi
+      else
+        echo "Update EXTRA_DIST in $m4dir/Makefile.am"
+        $do_changelog && func_m4ChangeLog_add_entry "	* Makefile.am (EXTRA_DIST)."
+      fi
+    else
+      # $m4dir/Makefile.am is not needed any more when aclocal 1.8 or newer
+      # is used.
+      if test -z "$have_automake18"; then
+        if $doit; then
+          echo "Creating $m4dir/Makefile.am"
+          echo "EXTRA_DIST =$added_m4files" > "$srcdir/$m4dir/Makefile.am"
+        else
+          echo "Create $m4dir/Makefile.am"
+        fi
+        $do_changelog && func_m4ChangeLog_add_entry "	* Makefile.am: New file."
+        added_acoutput="$added_acoutput $m4dir/Makefile"
+      else
+        missing_m4Makefileam=yes
+      fi
+    fi
+  fi
+  if test -n "$added_m4dir" && test -z "$missing_m4Makefileam"; then
+    added_directories="$added_directories $m4dir"
+  fi
+  $do_changelog && func_m4ChangeLog_finish
+  # automake will arrange for $m4dir/ChangeLog to be distributed if a
+  # $m4dir/Makefile.am exists. If not, we need to add it to Makefile.am's
+  # EXTRA_DIST explicitly.
+  if test -n "$created_m4ChangeLog" && test -n "$missing_m4Makefileam"; then
+    added_extradist="$added_extradist $m4dir/ChangeLog"
+  fi
+
+  # Update the top-level Makefile.am.
+  modified_Makefile_am=
+  # func_modify_Makefile_am changelog_comment
+  # assumes a modified copy of $srcdir/Makefile.am in $srcdir/Makefile.am.tmp
+  # and replaces the original Makefile.am file with the modified one if
+  # the two files differ. Then it removes the modified copy.
+  func_modify_Makefile_am ()
+  {
+    if cmp -s "$srcdir/Makefile.am" "$srcdir/Makefile.am.tmp"; then
+      :
+    else
+      if test -z "$modified_Makefile_am"; then
+        if $doit; then
+          echo "Updating Makefile.am (backup is in Makefile.am~)"
+          func_backup Makefile.am
+        else
+          echo "Update Makefile.am"
+        fi
+      fi
+      if $doit; then
+        rm -f "$srcdir/Makefile.am"
+        cp "$srcdir/Makefile.am.tmp" "$srcdir/Makefile.am"
+      fi
+      if $do_changelog; then
+        if test -z "$modified_Makefile_am"; then
+          func_ChangeLog_add_entry "	* Makefile.am $1"
+        else
+          func_ChangeLog_add_entry "	$1"
+        fi
+      fi
+      modified_Makefile_am=yes
+    fi
+    rm -f "$srcdir/Makefile.am.tmp"
+  }
+
+  if test -n "$added_directories"; then
+    if grep '^SUBDIRS[ 	]*=' "$srcdir/Makefile.am" > /dev/null; then
+      sed -e "s%^\(SUBDIRS[ 	]*=\) \\?%\\1$added_directories %" < "$srcdir/Makefile.am" > "$srcdir/Makefile.am.tmp"
+      added_directories_pretty=`echo $added_directories | sed -e 's/ /, /g'`
+      func_modify_Makefile_am "(SUBDIRS): Add $added_directories_pretty."
+    else
+      (cat "$srcdir/Makefile.am"; echo; echo "SUBDIRS =$added_directories") > "$srcdir/Makefile.am.tmp"
+      func_modify_Makefile_am "(SUBDIRS): New variable."
+    fi
+  fi
+  if test -n "$removed_directory"; then
+    sed -e '/^SUBDIRS[ 	]*=/ {
+        :a
+        s%\([ 	]\)'"$removed_directory"'[ 	]%\1%
+        s%[ 	]'"$removed_directory"'$%%
+        tb
+        :b
+        s%\\$%\\%
+        tc
+        bd
+        :c
+        n
+        ba
+      :d
+    }' < "$srcdir/Makefile.am" > "$srcdir/Makefile.am.tmp"
+    func_modify_Makefile_am "(SUBDIRS): Remove $removed_directory."
+  fi
+  if test -n "$added_directories"; then
+    if grep '^DIST_SUBDIRS[ 	]*=' "$srcdir/Makefile.am" > /dev/null; then
+      sed -e "s%^\(DIST_SUBDIRS[ 	]*=\) \\?%\\1$added_directories %" < "$srcdir/Makefile.am" > "$srcdir/Makefile.am.tmp"
+      added_directories_pretty=`echo $added_directories | sed -e 's/ /, /g'`
+      func_modify_Makefile_am "(DIST_SUBDIRS): Add $added_directories_pretty."
+    fi
+  fi
+  if test -n "$removed_directory"; then
+    sed -e '/^DIST_SUBDIRS[ 	]*=/ {
+        :a
+        s%\([ 	]\)'"$removed_directory"'[ 	]%\1%
+        s%[ 	]'"$removed_directory"'$%%
+        tb
+        :b
+        s%\\$%\\%
+        tc
+        bd
+        :c
+        n
+        ba
+      :d
+    }' < "$srcdir/Makefile.am" > "$srcdir/Makefile.am.tmp"
+    func_modify_Makefile_am "(DIST_SUBDIRS): Remove $removed_directory."
+  fi
+  if test -n "$m4dir_defaulted"; then
+    if grep '^ACLOCAL_AMFLAGS[ 	]*=' "$srcdir/Makefile.am" > /dev/null; then
+      sed -e "s%^\(ACLOCAL_AMFLAGS[ 	]*=\) \\?%\\1 -I $m4dir %" < "$srcdir/Makefile.am" > "$srcdir/Makefile.am.tmp"
+      func_modify_Makefile_am "(ACLOCAL_AMFLAGS): Add -I $m4dir."
+    else
+      (cat "$srcdir/Makefile.am"; echo; echo "ACLOCAL_AMFLAGS = -I $m4dir") > "$srcdir/Makefile.am.tmp"
+      func_modify_Makefile_am "(ACLOCAL_AMFLAGS): New variable."
+    fi
+    # Also update Makefile.in and, if existent, Makefile. Otherwise they
+    # would take into account the new flags only after a few rounds of
+    # "./configure", "make", "touch configure.in", "make distclean".
+    if $doit; then
+      for file in Makefile.in Makefile; do
+        if test -f "$srcdir/$file"; then
+          func_backup $file
+          rm -f "$srcdir/$file"
+          sed -e "s%(ACLOCAL)%(ACLOCAL) -I $m4dir%" < "$srcdir/$file~" > "$srcdir/$file"
+        fi
+      done
+    fi
+  fi
+  if test -n "$added_extradist"; then
+    if grep '^EXTRA_DIST[ 	]*=' "$srcdir/Makefile.am" > /dev/null; then
+      sed -e "s%^\(EXTRA_DIST[ 	]*=\)%\\1$added_extradist %" < "$srcdir/Makefile.am" > "$srcdir/Makefile.am.tmp"
+      added_extradist_pretty=`echo $added_extradist | sed -e 's/ /, /g'`
+      func_modify_Makefile_am "(EXTRA_DIST): Add $added_extradist_pretty."
+    else
+      (cat "$srcdir/Makefile.am"; echo; echo "EXTRA_DIST =$added_extradist") > "$srcdir/Makefile.am.tmp"
+      func_modify_Makefile_am "(EXTRA_DIST): New variable."
+    fi
+  fi
+  # Extract the aclocal options name from Makefile.am.
+  aclocal_options=
+  for arg in $macrodirs; do
+    aclocal_options="$aclocal_options -I $arg"
+  done
+  please="$please
+Please run 'aclocal$aclocal_options' to regenerate the aclocal.m4 file.
+You need aclocal from GNU automake $min_automake_version (or newer) to do this.
+Then run 'autoconf' to regenerate the configure file.
+"
+
+  # Also create $m4dir/Makefile.in from $m4dir/Makefile.am, because automake
+  # doesn't do it by itself.
+  if $doit; then
+    case "$added_acoutput" in
+      *" $m4dir/Makefile")
+        (cd "$srcdir" && automake "$m4dir/Makefile") 2>/dev/null ||
+        please="$please
+Please run 'automake $m4dir/Makefile' to create $m4dir/Makefile.in
+"
+        ;;
+    esac
+  fi
+else
+  please="$please
+Please add the files
+$m4filelist
+from the ${datarootdir}/aclocal directory to your aclocal.m4 file.
+"
+fi
+
+modified_configure_in=
+# func_modify_configure_in changelog_comment
+# assumes a modified copy of $srcdir/$configure_in in $srcdir/$configure_in.tmp
+# and replaces the original configure.in/ac file with the modified one if
+# the two files differ. Then it removes the modified copy.
+func_modify_configure_in ()
+{
+  if cmp -s "$srcdir/$configure_in" "$srcdir/$configure_in.tmp"; then
+    :
+  else
+    if test -z "$modified_configure_in"; then
+      if $doit; then
+        echo "Updating $configure_in (backup is in $configure_in~)"
+        func_backup $configure_in
+      else
+        echo "Update $configure_in"
+      fi
+    fi
+    if $doit; then
+      rm -f "$srcdir/$configure_in"
+      cp "$srcdir/$configure_in.tmp" "$srcdir/$configure_in"
+    fi
+    if $do_changelog; then
+      if test -z "$modified_configure_in"; then
+        func_ChangeLog_add_entry "	* $configure_in $1"
+      else
+        func_ChangeLog_add_entry "	$1"
+      fi
+    fi
+    modified_configure_in=yes
+  fi
+  rm -f "$srcdir/$configure_in.tmp"
+}
+
+if test -n "$added_acoutput"; then
+  if grep '^AC_CONFIG_FILES(' "$srcdir/$configure_in" > /dev/null; then
+    sedprog='
+ta
+b
+:a
+n
+ba'
+    sed -e "s%^\\(AC_CONFIG_FILES([^])\\,]*\\)%\\1$added_acoutput%$sedprog" < "$srcdir/$configure_in" > "$srcdir/$configure_in.tmp"
+    added_acoutput_pretty=`echo $added_acoutput | sed -e 's/ /, /g'`
+    func_modify_configure_in "(AC_CONFIG_FILES): Add $added_acoutput_pretty."
+  else
+    if grep '^AC_OUTPUT(' "$srcdir/$configure_in" > /dev/null; then
+      sed -e "s%^\\(AC_OUTPUT([^])\\,]*\\)%\\1$added_acoutput%" < "$srcdir/$configure_in" > "$srcdir/$configure_in.tmp"
+      added_acoutput_pretty=`echo $added_acoutput | sed -e 's/ /, /g'`
+      func_modify_configure_in "(AC_OUTPUT): Add $added_acoutput_pretty."
+    else
+      please="$please
+Please add$added_acoutput to the AC_OUTPUT or AC_CONFIG_FILES invocation in the $configure_in file.
+"
+    fi
+  fi
+fi
+if test -n "$removed_acoutput"; then
+  for file in $removed_acoutput; do
+    tag=
+    sedprog='{
+      s%\([[ 	]\)'"$file"'[ 	]%\1%
+      s%\([[ 	]\)'"$file"'\([]),]\)%\1\2%
+      s%[[ 	]'"$file"'$%%
+        :a
+        tb
+        :b
+        s%\\$%\\%
+        tc
+        bd
+        :c
+        n
+        s%\([ 	]\)'"$file"'[ 	]%\1%
+        s%\([ 	]\)'"$file"'\([]),]\)%\1\2%
+        s%[ 	]'"$file"'$%%
+        ba
+      :d
+    }'
+    sed -e '/^AC_CONFIG_FILES(/'"$sedprog" < "$srcdir/$configure_in" > "$srcdir/$configure_in.tmp"
+    if cmp -s "$srcdir/$configure_in" "$srcdir/$configure_in.tmp"; then
+      sed -e '/^AC_OUTPUT(/'"$sedprog" < "$srcdir/$configure_in" > "$srcdir/$configure_in.tmp"
+      if cmp -s "$srcdir/$configure_in" "$srcdir/$configure_in.tmp"; then
+        :
+      else
+        tag=AC_OUTPUT
+      fi
+    else
+      tag=AC_CONFIG_FILES
+    fi
+    if test -n "$tag"; then
+      func_modify_configure_in "($tag): Remove $file."
+    else
+      rm -f "$srcdir/$configure_in.tmp"
+      if test "$file" != intl/intlh.inst; then
+        please="$please
+Please remove $file from the AC_OUTPUT or AC_CONFIG_FILES invocation
+in the $configure_in file.
+"
+      fi
+    fi
+  done
+fi
+sed -e 's%sed -e "/POTFILES =/r po/POTFILES" po/Makefile\.in > po/Makefile *;* *%%' < "$srcdir/$configure_in" > "$srcdir/$configure_in.tmp"
+func_modify_configure_in "(AC_OUTPUT): Remove command that created po/Makefile."
+sed -e '/^\(dnl \|\)AC_LINK_FILES(\$nls_cv_header_libgt, \$nls_cv_header_intl)$/d' < "$srcdir/$configure_in" > "$srcdir/$configure_in.tmp"
+func_modify_configure_in "(AC_LINK_FILES): Remove invocation."
+# AM_GNU_GETTEXT_VERSION may not be present, when AM_GNU_GETTEXT_REQUIRE_VERSION is used.
+if grep '^AM_GNU_GETTEXT_VERSION(' "$srcdir/$configure_in" >/dev/null; then
+  sed -e 's/^AM_GNU_GETTEXT_VERSION([^()]*)/AM_GNU_GETTEXT_VERSION(['"$archive_version"'])/' < "$srcdir/$configure_in" > "$srcdir/$configure_in.tmp"
+  func_modify_configure_in "(AM_GNU_GETTEXT_VERSION): Bump to $archive_version."
+fi
+$do_changelog && func_ChangeLog_finish
+
+# Recommend replacement for deprecated Makefile variables.
+use_libtool=`cat "$srcdir/$configure_in" | grep '^A[CM]_PROG_LIBTOOL'`
+for file in `(cd "$srcdir"; find . -name Makefile.am -print; find . -name Makefile.in -print) | sed -e 's,^\./,,'`; do
+  if test -f "$srcdir/$file"; then
+    if test `echo "$file" | sed -e 's,^.*/,,'` = Makefile.in && grep automake "$srcdir/$file" >/dev/null 2>&1; then
+      continue;
+    fi
+    # INTLLIBS is deprecated because it doesn't distinguish the two
+    # cases: with libtool, without libtool.
+    if grep '@''INTLLIBS''@' "$srcdir/$file" >/dev/null; then
+      if test -n "$use_libtool"; then
+        please="$please
+Please change $file to use @""LTLIBINTL""@ or @""LIBINTL""@ instead of
+@""INTLLIBS""@. Which one, depends whether it is used with libtool or not.
+@""INTLLIBS""@ will go away.
+"
+      else
+        please="$please
+Please change $file to use @""LIBINTL""@ instead of @""INTLLIBS""@.
+@""INTLLIBS""@ will go away.
+"
+      fi
+    fi
+    # DATADIRNAME is deprecated because we install only .gmo files nowadays,
+    # which can be stored in the platform independent $prefix/share hierarchy.
+    if grep '@''DATADIRNAME''@' "$srcdir/$file" >/dev/null; then
+      please="$please
+Please change $file to use the constant string \"share\" instead of
+@""DATADIRNAME""@. @""DATADIRNAME""@ will go away.
+"
+    fi
+    # INSTOBJEXT is deprecated because we install only .gmo files nowadays,
+    # no catgets .cat catalogs.
+    if grep '@''INSTOBJEXT''@' "$srcdir/$file" >/dev/null; then
+      please="$please
+Please change $file to use the constant string \".mo\" instead of
+@""INSTOBJEXT""@. @""INSTOBJEXT""@ will go away.
+"
+    fi
+    # GENCAT is deprecated because we install no catgets catalogs anymore.
+    if grep '@''GENCAT''@' "$srcdir/$file" >/dev/null; then
+      please="$please
+Please change $file to use the constant string \"gencat\" instead of
+@""GENCAT""@. @""GENCAT""@ will go away. Maybe you don't even need it any more?
+"
+    fi
+    # POSUB is deprecated because it causes "./configure --disable-nls", "make",
+    # "make dist" to create a buggy tarfile.
+    if grep '@''POSUB''@' "$srcdir/$file" >/dev/null; then
+      please="$please
+Please change $file to use the constant string \"po\" instead of
+@""POSUB""@. @""POSUB""@ will go away.
+"
+    fi
+  fi
+done
+
+# Recommend replacement for deprecated configure variables.
+if grep '\$nls_cv_header_' "$srcdir/$configure_in" >/dev/null; then
+  please="$please
+Please stop using \$nls_cv_header_intl or \$nls_cv_header_libgt in the
+$configure_in file. Both will go away. Use <libintl.h> or \"gettext.h\" instead.
+"
+fi
+
+# Recommend fetching config.guess and config.sub.
+if test -f "$srcdir/$auxdir"config.guess && test -f "$srcdir/$auxdir"config.sub; then
+  :
+else
+  please="$please
+You will also need config.guess and config.sub, which you can get from the CVS
+of the 'config' project at https://savannah.gnu.org/. The commands to fetch them
+are
+\$ wget 'https://savannah.gnu.org/cgi-bin/viewcvs/*checkout*/config/config/config.guess'
+\$ wget 'https://savannah.gnu.org/cgi-bin/viewcvs/*checkout*/config/config/config.sub'
+"
+fi
+
+if $doit; then
+  echo "$please"
+  echo "You might also want to copy the convenience header file gettext.h"
+  echo "from the $gettext_datadir directory into your package."
+  echo "It is a wrapper around <libintl.h> that implements the configure --disable-nls"
+  echo "option."
+  echo
+  count=`echo "$please" | grep '^$' | wc -l`
+  count=`echo "$count" | sed -e 's/[ 	]//g'`
+  case "$count" in
+    1) count="paragraph";;
+    2) count="two paragraphs";;
+    3) count="three paragraphs";;
+    4) count="four paragraphs";;
+    5) count="five paragraphs";;
+    *) count="$count paragraphs";;
+  esac
+  echo "Press Return to acknowledge the previous $count."
+  # Read from /dev/tty, not stdin, so that gettextize cannot be abused by
+  # non-interactive tools.
+  read dummy < /dev/tty
+fi
+
+exit 0

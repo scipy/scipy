@@ -1,0 +1,122 @@
+// Eliminate CapsLock, making it another Ctrl.
+partial modifier_keys
+xkb_symbols "nocaps" {
+    replace key <CAPS> { [ Control_L ], type[group1] = "ONE_LEVEL" };
+    modifier_map Control { <CAPS> };
+};
+
+// Make the left Ctrl key a left Meta.
+xkb_symbols "lctrl_meta" {
+    replace key <LCTL> { [ Meta_L ] };
+    modifier_map Mod4 { <LCTL> };
+};
+
+// Swap the functions of the CapsLock key and the left Ctrl key.
+partial modifier_keys
+xkb_symbols "swapcaps" {
+    replace key <CAPS> { [ Control_L ], type[group1] = "ONE_LEVEL" };
+    replace key <LCTL> { [ Caps_Lock ] };
+    modifier_map Control { <CAPS> };
+    modifier_map Lock    { <LCTL> };
+};
+
+// Make the left Ctrl key a left Hyper,
+// and the CapsLock key a left Control.
+partial modifier_keys
+xkb_symbols "hyper_capscontrol" {
+    replace key <CAPS> { [ Control_L ], type[group1] = "ONE_LEVEL" };
+    replace key <LCTL> { [ Hyper_L ] };
+    modifier_map Control { <CAPS> };
+    modifier_map Mod4    { <LCTL> };
+};
+
+// Move Ctrl to the leftmost key on the middle row and CapsLock to the
+// leftmost key on the bottom row.  Only works if the geometry or keycodes
+// file has defined appropriate aliases for the keys in question.
+partial modifier_keys
+xkb_symbols "ac_ctrl" {
+    replace key <AC00> { [ Control_L ], type[group1] = "ONE_LEVEL" };
+    replace key <AA00> { [ Caps_Lock ] };
+    modifier_map Control { <AC00> };
+    modifier_map Lock    { <AA00> };
+};
+
+// Move Ctrl to the leftmost key on the bottom row and CapsLock to the
+// leftmost key on the middle row.  Only works if the geometry or keycodes
+// file has defined appropriate aliases for the keys in question.
+partial modifier_keys
+xkb_symbols "aa_ctrl" {
+    replace key <AA00> { [ Control_L ] };
+    replace key <AC00> { [ Caps_Lock ] };
+    modifier_map Control { <AA00> };
+    modifier_map Lock    { <AC00> };
+};
+
+// Right Ctrl functions as another right Alt.
+partial modifier_keys
+xkb_symbols "rctrl_ralt" {
+    key <RCTL> { [ Alt_R ] };
+    modifier_map Mod1 { <RCTL> };
+};
+
+// Menu key functions as another right Ctrl.
+partial modifier_keys
+xkb_symbols "menu_rctrl" {
+    key <MENU> { [ Control_R ] };
+    modifier_map Control { <MENU> };
+};
+
+// Right Alt key functions as another right Ctrl.
+partial modifier_keys
+xkb_symbols "ralt_rctrl" {
+    replace key <RALT> { [ Control_R, Control_R ], type[group1] = "TWO_LEVEL" };
+    modifier_map Control { <RALT> };
+};
+
+// Swap the functions of the left Alt key and the left Ctrl key.
+partial modifier_keys
+xkb_symbols "swap_lalt_lctl" {
+    replace key <LALT> { [ Control_L, Control_L ] };
+    replace key <LCTL> { [ Alt_L, Meta_L ] };
+    modifier_map Mod1    { <LCTL> };
+    modifier_map Control { <LALT> };
+};
+
+// Swap the functions of the right Alt key and the right Ctrl key.
+partial modifier_keys
+xkb_symbols "swap_ralt_rctl" {
+    replace key <RALT> { [ Control_R, Control_R ] };
+    replace key <RCTL> { [ Alt_R, Meta_R ] };
+    modifier_map Mod1    { <RCTL> };
+    modifier_map Control { <RALT> };
+};
+
+// Swap the functions of the left Win key and the left Ctrl key.
+partial modifier_keys
+xkb_symbols "swap_lwin_lctl" {
+    replace key <LWIN> { [ Control_L ] };
+    replace key <LCTL> { [ Super_L ] };
+    modifier_map Mod4    { <LCTL> };
+    modifier_map Control { <LWIN> };
+};
+
+// Swap the functions of the right Win key and the right Ctrl key.
+partial modifier_keys
+xkb_symbols "swap_rwin_rctl" {
+    replace key <RWIN> { [ Control_R ] };
+    replace key <RCTL> { [ Super_R ] };
+    modifier_map Mod4    { <RCTL> };
+    modifier_map Control { <RWIN> };
+};
+
+// Map Ctrl to the left Alt key, Alt to the left Win key,
+// and Super to the left Ctrl key.
+partial modifier_keys
+xkb_symbols "swap_lalt_lctl_lwin" {
+    replace key <LALT> { [ Control_L, Control_L ] };
+    replace key <LWIN> { [ Alt_L, Meta_L ] };
+    replace key <LCTL> { [ Super_L ] };
+    modifier_map Mod1    { <LWIN> };
+    modifier_map Mod4    { <LCTL> };
+    modifier_map Control { <LALT> };
+};

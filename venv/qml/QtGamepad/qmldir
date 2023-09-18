@@ -1,0 +1,4 @@
+module QtGamepad
+plugin declarative_gamepad
+typeinfo plugins.qmltypes
+classname QGamepadModule

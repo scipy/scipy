@@ -1,0 +1,24 @@
+// Use the Scroll Lock LED to show either
+// Scroll Lock, Group, or Shift Lock state.
+
+default partial xkb_compatibility "scroll_lock" {
+    indicator "Scroll Lock" {
+	allowExplicit;
+	whichModState= Locked;
+	modifiers= ScrollLock;
+    };
+};
+
+partial xkb_compatibility "group_lock" {
+    indicator "Scroll Lock" {
+	modifiers= None;
+	groups=All-group1;
+    };
+};
+
+partial xkb_compatibility "shift_lock" {
+    indicator "Scroll Lock" {
+	whichModState= Locked;
+	modifiers= Shift;
+    };
+};

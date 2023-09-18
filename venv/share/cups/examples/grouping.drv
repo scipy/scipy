@@ -1,0 +1,36 @@
+// Include standard font and media definitions
+#include <font.defs>
+#include <media.defs>
+
+// List the fonts that are supported, in this case all standard
+// fonts...
+Font *
+
+// Manufacturer and version
+Manufacturer "Foo"
+Version 1.0
+
+// Each filter provided by the driver...
+Filter application/vnd.cups-raster 100 rastertofoo
+
+// Supported page sizes
+*MediaSize Letter
+MediaSize A4
+
+{
+  // Supported resolutions
+  *Resolution k 8 0 0 0 "600dpi/600 DPI"
+
+  // Specify the model name and filename...
+  ModelName "FooJet 2000"
+  PCFileName "foojet2k.ppd"
+}
+
+{
+  // Supported resolutions
+  *Resolution k 8 0 0 0 "1200dpi/1200 DPI"
+
+  // Specify the model name and filename...
+  ModelName "FooJet 2001"
+  PCFileName "foojt2k1.ppd"
+}

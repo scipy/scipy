@@ -1,0 +1,4 @@
+default xkb_keycodes "empty" {
+    minimum= 8;
+    maximum= 255;
+};

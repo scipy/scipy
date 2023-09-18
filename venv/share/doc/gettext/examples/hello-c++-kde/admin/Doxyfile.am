@@ -1,0 +1,163 @@
+## generate API documentation with doxygen
+apidox-am-yes:
+	@if test "$(subdir)" != "."; then \
+		$(mkinstalldirs) $(top_builddir)/apidocs/$(subdir) ;\
+		if test ! -x $(top_builddir)/apidocs/common; then \
+			if test -d $(top_srcdir)/doc/common; then \
+			   common_dir=`cd $(top_srcdir)/doc/common && pwd` ;\
+			else \
+	   		   common_dir=$(kde_libs_htmldir)/en/common ;\
+			fi ;\
+			$(LN_S) $$common_dir $(top_builddir)/apidocs/common; \
+		fi ;\
+		cp $(top_srcdir)/admin/Doxyfile.global Doxyfile; \
+		echo "PROJECT_NAME           = \"$(subdir) Library\"" >> Doxyfile; \
+		echo "PROJECT_NUMBER         = \"Version $(VERSION)\"" >> Doxyfile; \
+		echo "INPUT                  = $(srcdir)" >> Doxyfile; \
+		echo "IMAGE_PATH             = $(top_srcdir)/doc/api" >> Doxyfile ;\
+		echo "OUTPUT_DIRECTORY       = $(top_builddir)/apidocs" >> Doxyfile; \
+		echo "HTML_OUTPUT            = $(subdir)/html" >> Doxyfile; \
+		echo "LATEX_OUTPUT           = $(subdir)/latex" >> Doxyfile; \
+		echo "RTF_OUTPUT             = $(subdir)/rtf" >> Doxyfile; \
+		echo "MAN_OUTPUT             = $(subdir)/man" >> Doxyfile; \
+		echo "GENERATE_HTML          = $(GENERATE_FLAG)" >> Doxyfile ;\
+		echo "GENERATE_MAN          = $(GENERATE_FLAG)" >> Doxyfile ;\
+		echo "GENERATE_LATEX          = $(GENERATE_FLAG)" >> Doxyfile ;\
+		if test -n "$(DOXYGEN_EXCLUDE)"; then \
+			echo "EXCLUDE_PATTERNS      += $(DOXYGEN_EXCLUDE)" >> Doxyfile; \
+		fi ;\
+		echo "TAGFILES = \\" >> Doxyfile; \
+		tags='$(DOXYGEN_REFERENCES) qt'; for tag in $$tags; do \
+			tagpath= ;\
+			path="../../$$tag" ;\
+			if test -f $(top_builddir)/apidocs/$$tag/$$tag.tag; then \
+				tagpath="$(top_builddir)/apidocs/$$tag/$$tag.tag" ;\
+			else \
+				tagpath=`ls -1 $(kde_htmldir)/en/*-apidocs/$$tag/$$tag.tag 2> /dev/null` ;\
+				if test -n "$$tagpath"; then \
+					path=`echo $$tagpath | sed -e "s,.*/\([^/]*-apidocs\)/$$tag/$$tag.tag,../../../\1/$$tag,"` ;\
+				fi ;\
+			fi ;\
+			if test "$$tag" = qt; then \
+				echo $$tagpath=$(QTDOCDIR) >> Doxyfile ;\
+			else if test -n "$$tagpath"; then \
+				echo "$$tagpath=$$path/html \\" >> Doxyfile ;\
+			    fi ;\
+			fi ;\
+		done ;\
+		echo "GENERATE_TAGFILE       = $(top_builddir)/apidocs/$(subdir)/$(subdir).tag" >> Doxyfile ;\
+		echo "IGNORE_PREFIX          = K" >> Doxyfile ;\
+		echo "HAVE_DOT = $(KDE_HAVE_DOT)" >> Doxyfile ;\
+		$(DOXYGEN) Doxyfile ;\
+	fi
+
+apidox-am-no:
+
+install-data-local: install-apidox
+
+## install API documentation
+install-apidox:
+	@if test "$(subdir)" != "."; then \
+		$(mkinstalldirs) $(DESTDIR)$(kde_htmldir)/en/$(PACKAGE)-apidocs/$(subdir)/html ; \
+		if test -f $(top_builddir)/apidocs/$(subdir)/$(subdir).tag; then \
+		echo $(INSTALL_DATA) $(top_builddir)/apidocs/$(subdir)/$(subdir).tag $(DESTDIR)$(kde_htmldir)/en/$(PACKAGE)-apidocs/$(subdir); \
+		$(INSTALL_DATA) $(top_builddir)/apidocs/$(subdir)/$(subdir).tag $(DESTDIR)$(kde_htmldir)/en/$(PACKAGE)-apidocs/$(subdir); \
+		fi; \
+		if test -d $(top_builddir)/apidocs/$(subdir)/html; then \
+			list=`ls $(top_builddir)/apidocs/$(subdir)/html`; \
+			for file in $$list; do \
+				echo $(INSTALL_DATA) $(top_builddir)/apidocs/$(subdir)/html/$$file $(DESTDIR)$(kde_htmldir)/en/$(PACKAGE)-apidocs/$(subdir)/html; \
+					$(INSTALL_DATA) $(top_builddir)/apidocs/$(subdir)/html/$$file $(DESTDIR)$(kde_htmldir)/en/$(PACKAGE)-apidocs/$(subdir)/html; \
+		done; \
+		fi; \
+		rm -f $(DESTDIR)$(kde_htmldir)/en/$(PACKAGE)-apidocs/common; \
+		$(LN_S) $(kde_libs_htmldir)/en/common $(DESTDIR)$(kde_htmldir)/en/$(PACKAGE)-apidocs/common; \
+	else\
+		if test -d $(top_builddir)/apidocs; then \
+		$(mkinstalldirs) $(DESTDIR)$(kde_htmldir)/en/$(PACKAGE)-apidocs ;\
+		list=`cd $(top_builddir)/apidocs && ls -1`; \
+		for file in $$list; do \
+			if test -f $(top_builddir)/apidocs/$$file; then \
+				echo $(INSTALL_DATA) $(top_builddir)/apidocs/$$file $(DESTDIR)$(kde_htmldir)/en/$(PACKAGE)-apidocs; \
+				$(INSTALL_DATA) $(top_builddir)/apidocs/$$file $(DESTDIR)$(kde_htmldir)/en/$(PACKAGE)-apidocs; \
+			fi; \
+		done ; fi; \
+	fi
+
+uninstall-local: uninstall-apidox
+
+## uninstall API documentation
+uninstall-apidox:
+	@if test "$(subdir)" != "."; then \
+		if test -d $(DESTDIR)$(kde_htmldir)/en/$(PACKAGE)-apidocs/$(subdir); then \
+			rm -rfv $(DESTDIR)$(kde_htmldir)/en/$(PACKAGE)-apidocs/$(subdir); \
+		fi\
+	else\
+		if test -d $(DESTDIR)$(kde_htmldir)/en/$(PACKAGE)-apidocs; then \
+			rm -rfv $(DESTDIR)$(kde_htmldir)/en/$(PACKAGE)-apidocs; \
+		fi\
+	fi
+
+apidox:
+	@if test "$(subdir)" != "."; then \
+		$(MAKE) apidox-am-@KDE_HAS_DOXYGEN@ ;\
+	else \
+		$(MAKE) apidox-am-toplevel-@KDE_HAS_DOXYGEN@ ;\
+	fi
+	@set fnord $(MAKEFLAGS); amf=$$2; if test -n '$(SUBDIRS)'; then \
+	    list='$(SUBDIRS)'; \
+	    for subdir in $$list; do \
+		if grep '^include .*Doxyfile.am' $(srcdir)/$$subdir/Makefile.am; then \
+		echo "Making apidox in $$subdir"; \
+		if test "$$subdir" != "."; then \
+			(cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) GENERATE_FLAG=no apidox) || exit 1; \
+		fi ; fi ;\
+	    done; \
+	    for subdir in $$list; do \
+		if grep '^include .*Doxyfile.am' $(srcdir)/$$subdir/Makefile.am; then \
+		echo "Making apidox in $$subdir"; \
+		if test "$$subdir" != "."; then \
+			(cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) GENERATE_FLAG=yes apidox) || exit 1; \
+		fi ; fi ;\
+	    done; \
+	fi
+
+apidox-am-toplevel-no:
+apidox-am-toplevel-yes:
+	@echo "*** Creating API documentation main page"; \
+	cp $(top_srcdir)/admin/Doxyfile.global Doxyfile; \
+	echo "PROJECT_NAME           = $(DOXYGEN_PROJECT_NAME)" >> Doxyfile ; \
+	echo "PROJECT_NUMBER         = $(DOXYGEN_PROJECT_NUMBER)" >> Doxyfile ; \
+	echo "INPUT                  = $(top_srcdir)" >> Doxyfile ; \
+	echo "OUTPUT_DIRECTORY       = $(top_builddir)/apidocs" >> Doxyfile ; \
+	echo "FILE_PATTERNS          = *.dox" >> Doxyfile ; \
+	echo "RECURSIVE              = NO" >> Doxyfile ; \
+	echo "SOURCE_BROWSER         = NO" >> Doxyfile ; \
+	echo "ALPHABETICAL_INDEX     = NO" >> Doxyfile ; \
+	echo "HTML_OUTPUT            = ." >> Doxyfile ; \
+	echo "HTML_HEADER            = apidocs/common/mainheader.html" >> Doxyfile ; \
+	echo "HTML_FOOTER            = apidocs/common/mainfooter.html" >> Doxyfile ; \
+	echo "HTML_STYLESHEET        = apidocs/common/doxygen.css" >> Doxyfile ; \
+	echo "GENERATE_LATEX         = NO" >> Doxyfile ; \
+	echo "GENERATE_RTF           = NO" >> Doxyfile ; \
+	echo "GENERATE_MAN           = NO" >> Doxyfile ; \
+	echo "GENERATE_XML           = NO" >> Doxyfile ; \
+	echo "GENERATE_AUTOGEN_DEF   = NO" >> Doxyfile ; \
+	echo "ENABLE_PREPROCESSING   = NO" >> Doxyfile ; \
+	echo "CLASS_DIAGRAMS         = NO" >> Doxyfile ; \
+	echo "HAVE_DOT               = NO" >> Doxyfile ; \
+	echo "GENERATE_HTML          = YES" >> Doxyfile ;\
+	$(mkinstalldirs) $(top_builddir)/apidocs ; \
+	rm -f $(top_builddir)/apidocs/common ; \
+	if test -d $(top_srcdir)/doc/common; then \
+	   common_dir=`cd $(top_srcdir)/doc/common && pwd` ;\
+	else \
+	   common_dir=$(kde_libs_htmldir)/en/common ;\
+	fi ;\
+	$(LN_S) $$common_dir $(top_builddir)/apidocs/common ;\
+	doxygen Doxyfile; \
+	rm -f Doxyfile
+
+# Local Variables:
+# mode: makefile
+# End:

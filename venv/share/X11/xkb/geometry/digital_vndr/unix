@@ -1,0 +1,227 @@
+//
+//Copyright (c) 1996  Digital Equipment Corporation
+//
+//Permission is hereby granted, free of charge, to any person obtaining
+//a copy of this software and associated documentation files (the
+//"Software"), to deal in the Software without restriction, including
+//without limitation the rights to use, copy, modify, merge, publish,
+//distribute, sublicense, and sell copies of the Software, and to
+//permit persons to whom the Software is furnished to do so, subject to
+//the following conditions:
+//
+//The above copyright notice and this permission notice shall be included
+//in all copies or substantial portions of the Software.
+//
+//THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+//OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+//MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+//IN NO EVENT SHALL DIGITAL EQUIPMENT CORPORATION BE LIABLE FOR ANY CLAIM,
+//DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+//OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+//THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+//Except as contained in this notice, the name of the Digital Equipment 
+//Corporation shall not be used in advertising or otherwise to promote
+//the sale, use or other dealings in this Software without prior written
+//authorization from Digital Equipment Corporation.
+//
+// HISTORY
+// Log: unix,v 
+// Revision 1.2  1996/06/18  09:12:53  erik
+// use flags correctly, assorted cleanups and consortium fixes
+//
+// Revision 1.1.2.3  1995/06/27  12:17:30  William_Walker
+// 	Rename <TLDE> to ISO9995 compliant <AE00>.
+// 	[1995/06/26  20:23:12  William_Walker]
+//
+// Revision 1.1.2.2  1995/06/05  19:21:23  William_Walker
+// 	New file.  I love keymaps.
+// 	[1995/06/05  18:05:56  William_Walker]
+// 
+// EndLog
+// 
+// @(#)RCSfile: unix,v  Revision: 1.2  (DEC) Date: 1996/01/24 12:16:
+// 
+xkb_geometry "unix" {
+
+    width		= 340;
+    height		= 160;
+    shape.cornerRadius 	= 1;
+
+    shape "NORM" { primary = { [18,19] }, { [3,2], [15,16] } };
+    shape "AE00" { primary = { [28,19] }, { [3,2], [25,16] } };
+    shape "BKSP" { primary = { [46,19] }, { [3,2], [43,16] } };
+    shape "TABK" { primary = { [37,19] }, { [3,2], [34,16] } };
+    shape "CTRL" { primary = { [46,19] }, { [3,2], [43,16] } };
+    shape "RTRN" { primary = { [46,19] }, { [3,2], [43,16] } };
+    shape "SHFT" { primary = { [56,19] }, { [3,2], [53,16] } };
+    shape "MODK" { primary = { [37,19] }, { [3,2], [34,16] } };
+    shape "SPCE" { primary = { [132,19] },{ [3,2], [129,16]} };
+
+    section.left= 17;
+    row.left	= 1;
+    key.shape	= "NORM";
+    key.gap	=  1;
+
+    text.color      = "black";
+    text "Logo" {left = 20; top = 10; text="digital\n"; };
+
+    section "Function" { top = 30;
+        row { top = 1;
+	    keys {  <FK01>, <FK02>, <FK03>, <FK04>, <FK05>, 
+		    { <FK06>, 20 }, <FK07>, <FK08>, <FK09>, <FK10>,
+		    { <LEFT>, 20 }, <DOWN>, <UP>, <RGHT>
+	    };
+        };
+    };
+
+    section "Alpha" { top = 50;
+        row { top = 1;
+	    keys {  { <AE00>, "AE00" }, 
+		    <AE01>, <AE02>, <AE03>, <AE04>, <AE05>, <AE06>, 
+		    <AE07>, <AE08>, <AE09>, <AE10>, <AE11>, <AE12>, 
+		    { <BKSP>, "BKSP" }
+	    };
+        };
+        row { top = 21;
+	    keys {  { <TAB>, "TABK" },
+		    <AD01>, <AD02>, <AD03>, <AD04>, <AD05>, <AD06>, 
+		    <AD07>, <AD08>, <AD09>, <AD10>, <AD11>, <AD12>, 
+		    <BKSL>, <AB00>
+	    };
+
+        };
+        row { top = 41; left = -4;
+	    keys {  { <LCTL>, "CTRL" },
+		    <AC01>, <AC02>, <AC03>, <AC04>, <AC05>, <AC06>, 
+		    <AC07>, <AC08>, <AC09>, <AC10>, <AC11>, 
+		    { <RTRN>, "RTRN" }
+	    };
+        };
+        row { top = 61; left = -4;
+	    keys {  { <LFSH>, "SHFT" },
+		    <AB01>, <AB02>, <AB03>, <AB04>, <AB05>, <AB06>, 
+		    <AB07>, <AB08>, <AB09>, <AB10>,
+		    { <RTSH>, "SHFT" }
+	    };
+        };
+        solid "ExtendKey" { top = 81; left= 1;
+            shape= "NORM";
+            color= "grey20";
+        };
+        text.top = 89;
+        text.color = "black";
+        text "ExtendLabel" {left = 6; text="Ext\nend"; };
+        row { top = 81; left = 19;
+	    key.shape = "MODK";
+	    keys {  { <LCMP>, "NORM" }, <LALT>,
+		    { <SPCE>, "SPCE" },
+		    <RALT>, <RCMP> 
+	    };
+        };
+    };
+};
+
+xkb_geometry "lk421jj" {
+
+    width		= 315;
+    height		= 170;
+    shape.cornerRadius  = 1;
+
+    shape "NORM" { { [18,19] }, { [3,2], [15,16] } };
+    shape "RTRN" {
+	approx = { [0,0],[28,23] },
+        { [0,0], [28,0], [28,39], [5,39], [5,19], [0,19] },
+        { [3,2], [25,2], [25,36], [8,36], [8,16], [3,16] }
+    };
+    shape "LONG"  { { [37,19] }, { [3,2], [34,16] } };
+    shape "LONG1" { { [32,19] }, { [3,2], [29,16] } };
+    shape "TALL" { { [18,39] }, { [3,2], [15,36] } };
+    shape "MED" { { [23,19] }, { [3,2], [20,16] } };
+    shape "CTRL" { { [43,19] }, { [3,2], [38,16] } };
+    shape "SPCE" { { [55,19] },{ [3,2], [53,16]} };
+    shape "LEDS" { [ 56,15] };
+    shape "LED"  { [  5, 2] };
+
+    section.left	= 5;
+    row.left	= 1;
+    key.shape	= "NORM";
+    key.gap		=  1;
+
+    text "Logo" {left = 7; top = 10; text="digital\n"; };
+
+    section "Function" { top = 45;
+        row { top = 1; left = 7;
+	    keys {  <FK01>, <FK02>, <FK03>, <FK04>, <FK05>,
+		    { <FK06>, 18 }, <FK07>, <FK08>, <FK09>, <FK10>
+	    };
+        };
+    };
+
+    section "Editing" { top = 45; left= 230;
+        row { top = 1;
+	    keys { <LEFT>, <DOWN>, <UP>, <RGHT> };
+        };
+    };
+
+    section "Alpha" { top = 65;
+        row { top = 1; left = 7;
+	    keys {  { <AE00>, "MED" }, 
+		    <AE01>, <AE02>, <AE03>, <AE04>, <AE05>, <AE06>, 
+		    <AE07>, <AE08>, <AE09>, <AE10>, <AE11>, <AE12>, 
+		    <AB00>, { <BKSP>, "MED" }
+	    };
+        };
+        row { top = 21;	left = 7;
+	    keys {  { <TAB>, "LONG1" },
+		    <AD01>, <AD02>, <AD03>, <AD04>, <AD05>, <AD06>, 
+		    <AD07>, <AD08>, <AD09>, <AD10>, <AD11>, <AD12>, 
+		    { <RTRN>, "RTRN" }
+	    };
+        };
+        row { top = 41;
+	    keys {  { <LCTL>, "CTRL" },
+		    <AC01>, <AC02>, <AC03>, <AC04>, <AC05>, <AC06>, 
+		    <AC07>, <AC08>, <AC09>, <AC10>, <AC11>, <BKSL>
+	    };
+        };
+        row { top = 61;
+	    keys {  <CAPS>, { <LFSH>, "LONG1" },
+		    <AB01>, <AB02>, <AB03>, <AB04>, <AB05>, 
+		    <AB06>, <AB07>, <AB08>, <AB09>, <AB10>,
+		    <AB11>, { <RTSH>, "LONG1" }
+	    };
+        };
+        row { top = 81;	left = 7;
+	    keys {  <AA00>, <LCMP>,
+		    { <LALT>, "LONG" },
+		    { <MUHE>, "LONG" },
+		    { <SPCE>, "SPCE" },
+		    { <KANJ>, "LONG" },
+		    { <HIRA>, "LONG" },
+		    <RALT>, <RCMP>
+	    };
+        };
+    };
+
+    section.left = 233;
+    section.top  = 20;
+
+    section "Indicators" {
+        solid "led_panel" { top = 0; left = 0;
+	    cornerRadius = 1;
+	    shape = "LEDS";
+	    color = "grey";
+        };
+        indicator.onColor = "#00ff00";
+        indicator.offColor= "#001000";
+        indicator.top = 11;
+        indicator.shape= "LED";
+        indicator "Scroll Lock" { left = 6;  };
+        indicator "Caps Lock"   { left = 26; };
+        text.top = 3;
+        text.color = "black";
+        text "ScrollLockLabel" {left = 3; text="Scroll\nLock"; };
+        text "CapsLockLabel" {left = 22; text="Caps\nLock"; };
+    };
+};

@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+
+function _guess_prefix() {
+  local _GUESS_FILE
+  if [ -n "${BASH_SOURCE[0]}" ]; then
+    _GUESS_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
+  elif [ -n "${(%):-%x}" ]; then
+    # in zsh use prompt-style expansion to introspect the same information
+    # see http://stackoverflow.com/questions/9901210/bash-source0-equivalent-in-zsh
+    _GUESS_FILE="$(cd "$(dirname "${(%):-%x}")" && pwd)/$(basename "${(%):-%x}")"
+  else
+    # This case will be hit outside of conda-build or a properly activated
+    # conda environment when not using bash nor zsh. This is a corner case
+    _GUESS_FILE="${PWD}/bin/unknown"
+  fi
+  echo $(dirname $(dirname ${_GUESS_FILE}))
+}
+
+function _run_pkg_config() {
+  local PC_PREFIX=$(_guess_prefix)
+  local PC_PATH_BUILD="$(${PC_PREFIX}/bin/pkg-config.bin --variable pc_path pkg-config)"
+  local PC_PATH_HOST=${PC_PATH_BUILD//$PC_PREFIX/${PREFIX:-${CONDA_PREFIX:-$PC_PREFIX}}}
+
+  # conda customization for CDT packages; are we targeting Linux with a cross compiler
+  if [[ ${HOST} =~ .*linux.* ]] && [[ $(basename ${CC}) =~ .*-.*-.* ]]; then
+    # From https://cgit.freedesktop.org/pkg-config/tree/main.c#n520
+    # it can be seen that the logic is:
+    # PKG_CONFIG_PATH, if set, always comes first
+    # if PKG_CONFIG_LIBDIR is set it comes next
+    # .. otherwise PC_PATH_HOST comes next.
+    # If we tried to send sysroot paths in via PKG_CONFIG_PATH they would
+    # get precedence over PREFIX (pkg_config_pc_path). We never want that.
+    # Instead pass PKG_CONFIG_LIBDIR as PC_PATH:SYSROOT and allow the user
+    # to take precedence over all that iff PKG_CONFIG_PATH is set.
+    if [[ ${HOST} =~ .*x86_64.* ]] || [[ ${HOST} =~ .*powerpc64le.* ]] || [[ ${HOST} =~ .*aarch64.* ]]; then
+      SRLIBDIR=":$(${CC} -print-sysroot)/usr/lib/pkgconfig"
+      SRLIBDIR64=":$(${CC} -print-sysroot)/usr/lib64/pkgconfig"
+    else
+      SRLIBDIR=":$(${CC} -print-sysroot)/usr/lib/pkgconfig"
+      SRLIBDIR64=
+    fi
+    if [[ ${CONDA_BUILD_PKG_CONFIG_LOG} == yes ]]; then
+      echo "Calling: PKG_CONFIG_LIBDIR=${PC_PATH_HOST}:$(${CC} -print-sysroot)/usr/share/pkgconfig${SRLIBDIR}${SRLIBDIR64} \
+        ${PC_PREFIX}/bin/pkg-config.bin --define-prefix --debug "$@" > /tmp/pkg-config-$$.log"
+      PKG_CONFIG_LIBDIR="${PC_PATH_HOST}":"$(${CC} -print-sysroot)/usr/share/pkgconfig${SRLIBDIR}${SRLIBDIR64}" \
+        ${PC_PREFIX}/bin/pkg-config.bin --define-prefix --debug "$@" >> /tmp/pkg-config-$$.log 2>&1 || true
+    fi
+    PKG_CONFIG_LIBDIR="${PC_PATH_HOST}":"$(${CC} -print-sysroot)/usr/share/pkgconfig${SRLIBDIR}${SRLIBDIR64}" \
+      ${PC_PREFIX}/bin/pkg-config.bin --define-prefix "$@"
+  else
+    # We might need --define-prefix here sometimes, but would be better off ensuring /usr is replaced by ${prefix}
+    # in all source .pc files in our packages. TODO :: Make conda-build / conda-verify detect this.
+    PC_PATH_SYSROOT=${PC_PATH_BUILD//$PC_PREFIX//usr$CONDA_BUILD_SYSROOT}
+    if [[ ${CONDA_BUILD_PKG_CONFIG_LOG} == yes ]]; then
+      echo "Calling: PKG_CONFIG_LIBDIR=${PC_PATH_HOST}:${PC_PATH_SYSROOT} \
+        ${PC_PREFIX}/bin/pkg-config.bin --define-prefix --debug $@ > /tmp/pkg-config-$$.log"
+      PKG_CONFIG_LIBDIR="${PC_PATH_HOST}:${PC_PATH_SYSROOT}" \
+        ${PC_PREFIX}/bin/pkg-config.bin --define-prefix --debug "$@" >> /tmp/pkg-config-$$.log 2>&1 || true
+    fi
+    PKG_CONFIG_LIBDIR="${PC_PATH_HOST}:${PC_PATH_SYSROOT}" \
+      ${PC_PREFIX}/bin/pkg-config.bin --define-prefix "$@"
+  fi
+}
+
+_run_pkg_config "$@"

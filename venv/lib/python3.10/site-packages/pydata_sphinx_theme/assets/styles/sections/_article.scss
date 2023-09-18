@@ -1,0 +1,22 @@
+/**
+ * Main content area
+ */
+.bd-content {
+  display: flex;
+  flex-direction: column;
+  // Give a bit more verticle spacing on wide screens
+  padding: 3rem 1.5rem 2rem 3rem;
+  @include media-breakpoint-down(md) {
+    padding: 3rem 1rem 1rem 1rem;
+  }
+
+  .section {
+    max-width: 100%;
+
+    // make every overflowing elements in main content scrollable
+    table {
+      display: block;
+      overflow: auto;
+    }
+  }
+}

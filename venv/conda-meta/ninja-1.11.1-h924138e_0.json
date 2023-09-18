@@ -1,0 +1,45 @@
+{
+  "build": "h924138e_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [],
+  "depends": [
+    "libgcc-ng >=12",
+    "libstdcxx-ng >=12"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/ninja-1.11.1-h924138e_0",
+  "features": "",
+  "files": [
+    "bin/ninja"
+  ],
+  "fn": "ninja-1.11.1-h924138e_0.conda",
+  "license": "Apache-2.0",
+  "license_family": "Apache",
+  "link": {
+    "source": "/opt/conda/pkgs/ninja-1.11.1-h924138e_0",
+    "type": 1
+  },
+  "md5": "73a4953a2d9c115bdc10ff30a52f675f",
+  "name": "ninja",
+  "package_tarball_full_path": "/opt/conda/pkgs/ninja-1.11.1-h924138e_0.conda",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "bin/ninja",
+        "path_type": "hardlink",
+        "sha256": "28a31100e23764b3b03d097ed918c7facc186b23455f1153510fcedb5825227a",
+        "sha256_in_prefix": "28a31100e23764b3b03d097ed918c7facc186b23455f1153510fcedb5825227a",
+        "size_in_bytes": 9404280
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "ninja",
+  "sha256": "b555247ac8859b4ff311e3d708a0640f1bfe9fae7125c485b444072474a84c41",
+  "size": 2251263,
+  "subdir": "linux-64",
+  "timestamp": 1676837602636,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/ninja-1.11.1-h924138e_0.conda",
+  "version": "1.11.1"
+}

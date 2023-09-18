@@ -1,0 +1,478 @@
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+    name[Group1]= "Arabic";
+
+    key.type[Group1]="FOUR_LEVEL";
+
+    key <TLDE> {[     Arabic_thal,        Arabic_shadda,           Arabic_percent,   U0609 ]};  // ‎ذ‎ ‎◌ّ‎     ‎٪‎ ‎؉‎
+    key <AE01> {[               1,               exclam,                 Arabic_1,     any ]};  // 1 !     ١
+    key <AE02> {[               2,                   at,                 Arabic_2,     any ]};  // 2 @     ٢
+    key <AE03> {[               3,           numbersign,                 Arabic_3,     any ]};  // 3 #     ٣
+    key <AE04> {[               4,               dollar,                 Arabic_4,     any ]};  // 4 $     ٤
+    key <AE05> {[               5,              percent,                 Arabic_5,   U2030 ]};  // 5 %     ٥ ‰
+    key <AE06> {[               6,          asciicircum,                 Arabic_6,     any ]};  // 6 ^     ٦
+    key <AE07> {[               7,            ampersand,                 Arabic_7,     any ]};  // 7 &     ٧
+    key <AE08> {[               8,             asterisk,                 Arabic_8,     any ]};  // 8 *     ٨
+    key <AE09> {[               9,           parenright,                 Arabic_9,     any ]};  // 9 )     ٩
+    key <AE10> {[               0,            parenleft,                 Arabic_0,     any ]};  // 0 (      ٠
+    key <AE11> {[           minus,           underscore,                   endash,   U2011 ]};  // - _     – Non-Breaking-Hyphen
+    key <AE12> {[           equal,                 plus,                 notequal,   U2248 ]};  // = +     ≠ ≈
+
+    key <AD01> {[      Arabic_dad,         Arabic_fatha,                      any,   U2066 ]};  // ‎ض‎ ‎◌َ       LEFT‑TO‑RIGHT ISOLATE
+    key <AD02> {[      Arabic_sad,      Arabic_fathatan,                      any,   U2067 ]};  // ‎ص‎ ‎◌ً       RIGHT‑TO‑LEFT ISOLATE
+    key <AD03> {[     Arabic_theh,         Arabic_damma,                      any,   U2068 ]};  // ‎ث‎ ‎◌ُ       FIRST STRONG ISOLATE
+    key <AD04> {[      Arabic_qaf,      Arabic_dammatan,                      any,   U2069 ]};  // ‎ق‎ ‎◌ٌ       POP DIRECTIONAL ISOLATE
+    key <AD05> {[      Arabic_feh,                UFEF9,               Arabic_veh,     any ]};  // ‎ف‎ ‎ﻹ     ‎ڤ
+    key <AD06> {[    Arabic_ghain,Arabic_hamzaunderalef,                      any,   U202A ]};  // ‎غ‎ ‎إ‎       LEFT-TO-RIGHT-EMBEDDING
+    key <AD07> {[      Arabic_ain,                grave,                      any,   U202B ]};  // ‎ع‎ `       RIGHT-TO-LEFT EMBEDDING
+    key <AD08> {[       Arabic_ha,             division,                      any,   U202C ]};  // ‎ه‎ ÷       POP DIRECTIONAL FORMATTING
+    key <AD09> {[     Arabic_khah,             multiply,                      any,     any ]};  // ‎خ‎ ×
+    key <AD10> {[      Arabic_hah,     Arabic_semicolon,                      any,   U200E ]};  // ‎ح‎ ؛       LEFT-TO-RIGHT MARK
+    key <AD11> {[     Arabic_jeem,                 less,             Arabic_tcheh,   U200F ]};  // ‎ج‎ <     ‎چ‎ RIGHT-TO-LEFT MARK
+    key <AD12> {[      Arabic_dal,              greater,                      any,   U061C ]};  // ‎د‎ >       ARABIC LETTER MARK
+
+    key <AC01> {[    Arabic_sheen,         Arabic_kasra,                      any,     any ]};  // ‎ش‎ ‎◌ِ‎
+    key <AC02> {[     Arabic_seen,      Arabic_kasratan,                      any,     any ]};  // ‎س‎ ‎◌ٍ‎
+    key <AC03> {[      Arabic_yeh,         bracketright,                      any,     any ]};  // ‎ي‎ ]
+    key <AC04> {[      Arabic_beh,          bracketleft,               Arabic_peh,     any ]};  // ‎ب‎ [     ‎پ‎
+    key <AC05> {[      Arabic_lam,               U0FEF7,                      any,     any ]};  // ‎ل‎ ‎ﻷ‎
+    key <AC06> {[     Arabic_alef,   Arabic_hamzaonalef,                    U0671,     any ]};  // ‎ا‎ ‎أ     ‎ٱ‎
+    key <AC07> {[      Arabic_teh,       Arabic_tatweel,                      any,     any ]};  // ‎ت‎ ‎ـ‎
+    key <AC08> {[     Arabic_noon,         Arabic_comma,                    U066B,     any ]};  // ‎ن‎ ‎،‎     ‎٫‎
+    key <AC09> {[     Arabic_meem,                slash,                      any,     any ]};  // ‎م‎ /
+    key <AC10> {[      Arabic_kaf,                colon,               Arabic_gaf,     any ]};  // ‎ك‎ :     ‎گ‎
+    key <AC11> {[      Arabic_tah,             quotedbl,                    U27E9,   U200D ]};  // ‎ط‎ "     ⟩ ZWJ
+    key <BKSL> {[       backslash,                  bar,                    U27E8,   U202F ]};  // \ |     ⟨ NNBSP
+
+    key <LSGT> {[             bar,             ellipsis,                brokenbar,     any ]};  // | …     ¦
+    key <AB01> {[Arabic_hamzaonyeh,          asciitilde,           guillemotright,   U203A ]};  // ‎ئ‎ ~     » ›
+    key <AB02> {[    Arabic_hamza,         Arabic_sukun,            guillemotleft,   U2039 ]};  // ‎ء‎ ◌ْ     « ‹
+    key <AB03> {[Arabic_hamzaonwaw,          braceright,                      any,     any ]};  // ‎ؤ }
+    key <AB04> {[       Arabic_ra,            braceleft,                      any,     any ]};  // ‎ر‎ {
+    key <AB05> {[           UFEFB,                UFEF5,                      any,     any ]};  // ‎ﻻ‎ ‎ﻵ‎
+    key <AB06> {[Arabic_alefmaksura, Arabic_maddaonalef,  Arabic_superscript_alef,     any ]};  // ‎ى‎ ‎آ‎     ‎◌ٰ‎
+    key <AB07> {[Arabic_tehmarbuta,          apostrophe,                      any,     any ]};  // ‎ة‎ '
+    key <AB08> {[      Arabic_waw,                comma,                    U066C,     any ]};  // ‎و‎ ,     ‎٬
+    key <AB09> {[     Arabic_zain,               period,               Arabic_jeh,     any ]};  // ‎ز‎ .     ‎ژ‎
+    key <AB10> {[      Arabic_zah, Arabic_question_mark,                    U066D,   U200C ]};  // ‎ظ‎ ‎؟‎     ‎٭‎ ZWNJ
+
+    include "level3(ralt_switch)"
+};
+
+// Synonym for the default.
+partial alphanumeric_keys
+xkb_symbols "qwerty" {
+    include "ara(basic)"
+    name[Group1]= "Arabic (QWERTY)";
+};
+
+
+// Replaces the Western numeral signs with Arabic-script digits on the keypad,
+// pushing the Western digits to the third level accessible by the right Alt key.
+// Additionally, the fourth level gives the Persian digits.
+hidden partial keypad_keys
+xkb_symbols "digits_KP" {
+
+    key.type[Group1]="FOUR_LEVEL_MIXED_KEYPAD";
+
+    key <KP7>  {[ KP_Home,   Arabic_7,  7, Farsi_7 ]};
+    key <KP8>  {[ KP_Up,     Arabic_8,  8, Farsi_8 ]};
+    key <KP9>  {[ KP_Prior,  Arabic_9,  9, Farsi_9 ]};
+
+    key <KP4>  {[ KP_Left,   Arabic_4,  4, Farsi_4 ]};
+    key <KP5>  {[ KP_Begin,  Arabic_5,  5, Farsi_5 ]};
+    key <KP6>  {[ KP_Right,  Arabic_6,  6, Farsi_6 ]};
+
+    key <KP1>  {[ KP_End,    Arabic_1,  1, Farsi_1 ]};
+    key <KP2>  {[ KP_Down,   Arabic_2,  2, Farsi_2 ]};
+    key <KP3>  {[ KP_Next,   Arabic_3,  3, Farsi_3 ]};
+
+    key <KP0>  {[ KP_Insert, Arabic_0,  0, Farsi_0 ]};
+
+    include "kpdl(momayyezoss)"
+};
+
+// Replaces the Western numeral signs with Arabic-script digits on the numeric row,
+// pushing the Western digits to the third level accessible by the right Alt key.
+partial alphanumeric_keys
+xkb_symbols "digits" {
+
+    include "ara(basic)"
+
+    name[Group1]= "Arabic (Eastern Arabic numerals)";
+
+    key <TLDE> {[Arabic_thal,  Arabic_shadda,  percent, U2030 ]};
+    key <AE01> {[   Arabic_1,         exclam,  1,         any ]};
+    key <AE02> {[   Arabic_2,             at,  2,         any ]};
+    key <AE03> {[   Arabic_3,     numbersign,  3,         any ]};
+    key <AE04> {[   Arabic_4,         dollar,  4,         any ]};
+    key <AE05> {[   Arabic_5, Arabic_percent,  5,       U0609 ]};
+    key <AE06> {[   Arabic_6,    asciicircum,  6,         any ]};
+    key <AE07> {[   Arabic_7,      ampersand,  7,         any ]};
+    key <AE08> {[   Arabic_8,       asterisk,  8,         any ]};
+    key <AE09> {[   Arabic_9,     parenright,  9,         any ]};
+    key <AE10> {[   Arabic_0,      parenleft,  0,         any ]};
+
+    include "ara(digits_KP)"
+};
+
+// Synonym for the layout with the Latin-script and Arabic-script digits switched.
+partial alphanumeric_keys
+xkb_symbols "qwerty_digits" {
+    include "ara(digits)"
+    name[Group1]= "Arabic (QWERTY, Eastern Arabic numerals)";
+};
+
+
+partial alphanumeric_keys
+xkb_symbols "azerty" {
+    include "ara(basic)"
+    name[Group1]= "Arabic (AZERTY)";
+
+	// The North African Arabic keyboard differs from the Middle East one
+	// by the numeric row; it follows French keyboard style.
+	//
+	// PROBLEM: some characters are inaccessible: ! @ # $ % ^ *
+	// Should they go elsewhere?  Replacing " ' that are now doubled?
+	// Also, dead_circumflex and dead_diaeresis from French keyboard
+	// as well as ugrave are missing, which questions the utility of the
+	// other accentuated Latin letters. Maybe this is useful only with
+	// a French keyboard in Group1? Then, shouldn't Group1 be filled?
+
+    key <AE01> {[  ampersand,       1 ]};
+    key <AE02> {[     eacute,       2 ]};
+    key <AE03> {[   quotedbl,       3 ]};
+    key <AE04> {[ apostrophe,       4 ]};
+    key <AE05> {[  parenleft,       5 ]};
+    key <AE06> {[      minus,       6 ]};
+    key <AE07> {[     egrave,       7 ]};
+    key <AE08> {[ underscore,       8 ]};
+    key <AE09> {[   ccedilla,       9 ]};
+    key <AE10> {[     agrave,       0 ]};
+    key <AE11> {[ parenright,  degree ]};
+};
+
+partial alphanumeric_keys
+xkb_symbols "azerty_digits" {
+    include "ara(azerty)"
+    name[Group1]= "Arabic (AZERTY, Eastern Arabic numerals)";
+
+    key <AE01> {[      ampersand, Arabic_1,  1, any ]};
+    key <AE02> {[         eacute, Arabic_2,  2, any ]};
+    key <AE03> {[       quotedbl, Arabic_3,  3, any ]};
+    key <AE04> {[     apostrophe, Arabic_4,  4, any ]};
+    key <AE05> {[      parenleft, Arabic_5,  5, any ]};
+    key <AE06> {[          minus, Arabic_6,  6, any ]};
+    key <AE07> {[         egrave, Arabic_7,  7, any ]};
+    key <AE08> {[     underscore, Arabic_8,  8, any ]};
+    key <AE09> {[       ccedilla, Arabic_9,  9, any ]};
+    key <AE10> {[         agrave, Arabic_0,  0, any ]};
+};
+
+
+// Arabic keyboard using Buckwalter transliteration
+// http://www.qamus.org/transliteration.htm
+// Martin Vidner
+
+partial alphanumeric_keys
+xkb_symbols "buckwalter" {
+    name[Group1]= "Arabic (Buckwalter)";
+
+    // ARABIC LETTER SUPERSCRIPT ALEF
+    key <TLDE> {[       0x1000670,  Arabic_shadda       ]       };
+
+    // Arabic_0 .. Arabic_9 do not work in Kate,
+    // Unicode never seems to work worse.
+    key <AE01> {[       0x1000661,   VoidSymbol         ]       };
+    key <AE02> {[       0x1000662,   VoidSymbol         ]       };
+    key <AE03> {[       0x1000663,   VoidSymbol         ]       };
+    key <AE04> {[       0x1000664,   Arabic_sheen       ]       };
+    key <AE05> {[       0x1000665,   Arabic_percent     ]       };
+    key <AE06> {[       0x1000666,   VoidSymbol         ]       };
+    key <AE07> {[       0x1000667,   Arabic_hamzaonwaw  ]       };
+    key <AE08> {[       0x1000668,   Arabic_thal        ]       };
+    // ORNATE LEFT PARENTHESIS
+    key <AE09> {[       0x1000669,   0x100fd3e          ]       };
+    // ORNATE RIGHT PARENTHESIS
+    key <AE10> {[       0x1000660,   0x100fd3f          ]       };
+    key <AE11> {[       minus,       Arabic_tatweel     ]       };
+    key <AE12> {[       equal,       plus               ]       };
+
+    key <AD01> {[      Arabic_qaf,   VoidSymbol         ]       };
+    key <AD02> {[      Arabic_waw,   Arabic_hamzaonwaw  ]       };
+    key <AD03> {[      VoidSymbol,   Arabic_ain         ]       };
+    key <AD04> {[      Arabic_ra,    VoidSymbol         ]       };
+    key <AD05> {[      Arabic_teh,   Arabic_tah         ]       };
+    key <AD06> {[      Arabic_yeh,   Arabic_alefmaksura ]       };
+    key <AD07> {[      Arabic_damma, VoidSymbol         ]       };
+    key <AD08> {[      Arabic_kasra, Arabic_hamzaunderalef ]    };
+    key <AD09> {[      Arabic_sukun, Arabic_hamzaonalef ]       };
+    key <AD10> {[      Arabic_tehmarbuta, VoidSymbol    ]       };
+    // ARABIC LETTER ALEF WASLA
+    key <AD11> {[      VoidSymbol,   0x1000671          ]       };
+    key <AD12> {[      VoidSymbol,   Arabic_hamzaonyeh  ]       };
+
+    key <AC01> {[    Arabic_fatha,   Arabic_alef        ]       };
+    key <AC02> {[    Arabic_seen,    Arabic_sad         ]       };
+    key <AC03> {[    Arabic_dal,     Arabic_dad         ]       };
+    key <AC04> {[    Arabic_feh,     Arabic_fathatan    ]       };
+    key <AC05> {[    Arabic_ghain,   VoidSymbol         ]       };
+    key <AC06> {[    Arabic_ha,      Arabic_hah         ]       };
+    key <AC07> {[    Arabic_jeem,    VoidSymbol         ]       };
+    key <AC08> {[    Arabic_kaf,     Arabic_kasratan    ]       };
+    key <AC09> {[    Arabic_lam,     VoidSymbol         ]       };
+    key <AC10> {[    Arabic_semicolon, VoidSymbol       ]       };
+    key <AC11> {[    Arabic_hamza,   VoidSymbol         ]       };
+
+    key <BKSL> {[    VoidSymbol,     Arabic_maddaonalef ]       };
+
+    key <AB01> {[    Arabic_zain,    Arabic_zah         ]       };
+    key <AB02> {[    Arabic_khah,    VoidSymbol         ]       };
+    key <AB03> {[    VoidSymbol,     VoidSymbol         ]       };
+    key <AB04> {[    Arabic_theh,    VoidSymbol         ]       };
+    key <AB05> {[    Arabic_beh,     VoidSymbol         ]       };
+    key <AB06> {[    Arabic_noon,    Arabic_dammatan    ]       };
+    key <AB07> {[    Arabic_meem,    VoidSymbol         ]       };
+    key <AB08> {[    Arabic_comma,   Arabic_hamzaunderalef ]    };
+    // ARABIC FULL STOP (Urdu)
+    key <AB09> {[    0x10006d4,      Arabic_hamzaonalef ]       };
+    key <AB10> {[    VoidSymbol,     Arabic_question_mark ]     };
+};
+
+partial alphanumeric_keys
+xkb_symbols "olpc" {
+
+    include "ara(basic)"
+
+    name[Group1]= "Arabic (OLPC)";
+
+    // This OLPC layout comprises the following changes in comparison to the default Arabic one:
+    //  ‣ Arabic and European digits are swapped (which entails swapping of the percent and permille signs).
+    //  ‣ Lām-ʾalif is eliminated. People type as they pronounce, and lam-alef is just a visual formatting of the
+    //    sequence and thus arguably not used on the keyboard. This frees four slots which are used for the following three changes.
+    //  ‣ The <TLDE> characters move:
+    //     • Thal from <TLDE> to <AB05>
+    //     • Shadda from <TLDE> to <AD05>
+    //  ‣ £ and € obtain the <AE06> and <AE07> keys, the ^ and & signs previously occupying them take seat at <AB05> and <AC05>.
+    //  ‣ The <TLDE> key gets grave ` and asciitilde ~ as on English keyboards.
+    //  ‣ In sum the grave and asciitilde are present twice, as their erstwhile places are not removed.
+    //  ‣ The braces }{ take the place of the less-than and greater-than >< signs,
+    //    but these the place of kasra and kasratan which establish themselves in the braces’ former steads.
+    //  ‣ The … character on <BKSL> is replaced by |, because OLPC laptops have no <LSGT> key installed where the bar is else placed.
+
+    key <TLDE> {[           grave,      asciitilde, percent, U2030     ]};
+
+    key <AE01> {[       Arabic_1,          exclam,  1                  ]};
+    key <AE02> {[       Arabic_2,              at,  2                  ]};
+    key <AE03> {[       Arabic_3,      numbersign,  3                  ]};
+    key <AE04> {[       Arabic_4,          dollar,  4                  ]};
+    key <AE05> {[       Arabic_5,  Arabic_percent,  5,       U0609     ]};
+    key <AE06> {[       Arabic_6,        sterling,  6                  ]};
+    key <AE07> {[       Arabic_7,        EuroSign,  7                  ]};
+    key <AE08> {[       Arabic_8,        asterisk,  8                  ]};
+    key <AE09> {[       Arabic_9,      parenright,  9                  ]};
+    key <AE10> {[       Arabic_0,       parenleft,  0                  ]};
+
+    key <AD05> {[      Arabic_feh,   Arabic_shadda  ]};
+
+    key <AD11> {[     Arabic_jeem,      braceright  ]};
+    key <AD12> {[      Arabic_dal,       braceleft  ]};
+
+    key <AC01> {[    Arabic_sheen,         greater  ]};
+    key <AC02> {[     Arabic_seen,            less  ]};
+    key <AC05> {[      Arabic_lam,       ampersand  ]};
+    key <BKSL> {[       backslash,             bar  ]};
+
+    key <AB03> {[ Arabic_hamzaonwaw,   Arabic_kasra ]};
+    key <AB04> {[       Arabic_ra,  Arabic_kasratan ]};
+    key <AB05> {[     Arabic_thal,      asciicircum ]};
+
+    include "group(olpc)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "mac" {
+
+    // This layout is compatible with macbooks.
+
+    include "ara(digits)"
+
+    name[Group1]= "Arabic (Macintosh)";
+
+    key <TLDE> {[   Arabic_tatweel,  none               ]};
+    key <AE11> {[            minus,  underscore         ]};
+    key <AE12> {[            equal,  plus               ]};
+
+    key <AD03> {[      Arabic_theh,  Arabic_kasra       ]};
+    key <AD04> {[       Arabic_qaf,  Arabic_kasratan    ]};
+    key <AD05> {[       Arabic_feh,  Arabic_damma       ]};
+    key <AD06> {[     Arabic_ghain,  Arabic_dammatan    ]};
+    key <AD07> {[       Arabic_ain,  Arabic_sukun       ]};
+    key <AD08> {[        Arabic_ha,  Arabic_shadda      ]};
+    key <AD09> {[      Arabic_khah,  bracketright       ]};
+    key <AD10> {[       Arabic_hah,  bracketleft        ]};
+    key <AD11> {[      Arabic_jeem,  braceright         ]};
+    key <AD12> {[Arabic_tehmarbuta,  braceleft          ]};
+
+    key <AC01> {[     Arabic_sheen,  guillemotright     ]};
+    key <AC02> {[      Arabic_seen,  guillemotleft      ]};
+    key <AC03> {[       Arabic_yeh,  Arabic_alefmaksura ]};
+    key <AC04> {[       Arabic_beh,  0x1000670          ]};
+    key <AC05> {[       Arabic_lam,  none               ]};
+    key <AC06> {[      Arabic_alef,  Arabic_maddaonalef ]};
+    key <AC07> {[       Arabic_teh,  0x1000671          ]};
+    key <AC08> {[      Arabic_noon,  none               ]};
+    key <AC09> {[      Arabic_meem,  none               ]};
+    key <AC10> {[       Arabic_kaf,  colon              ]};
+    key <AC11> {[ Arabic_semicolon,  quotedbl           ]};
+    key <BKSL> {[        backslash,  bar                ]};
+
+    key <LSGT> {[   Arabic_tatweel,  none               ]};
+    key <AB01> {[       Arabic_zah,  none               ]};
+    key <AB02> {[       Arabic_tah,  none               ]};
+    key <AB03> {[      Arabic_thal,  Arabic_hamzaonyeh  ]};
+    key <AB04> {[       Arabic_dal,  Arabic_hamza       ]};
+    key <AB05> {[      Arabic_zain,  Arabic_hamzaonalef    ]};
+    key <AB06> {[        Arabic_ra,  Arabic_hamzaunderalef ]};
+    key <AB07> {[       Arabic_waw,  Arabic_hamzaonwaw     ]};
+    key <AB08> {[     Arabic_comma,  greater               ]};
+    key <AB09> {[           period,  less                  ]};
+    key <AB10> {[            slash,  Arabic_question_mark  ]};
+};
+
+// EXTRAS:
+
+partial alphanumeric_keys
+	xkb_symbols "sun_type6" {
+	include "sun_vndr/ara(sun_type6)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "basic_ext" {
+
+    name[Group1]= "Arabic (Arabic numerals, extensions in the 4th level)";
+
+    key.type[Group1]="FOUR_LEVEL";
+
+    key <TLDE> {[     Arabic_thal,        Arabic_shadda,            Arabic_percent,         Arabic_ddal ]};  // ‎ذ‎ ‎◌ّ‎      ‎٪‎ ‎ڈ‎
+    key <AE01> {[               1,               exclam,                  Arabic_1,             Farsi_1 ]};  // 1 !      ١ ۱
+    key <AE02> {[               2,                   at,                  Arabic_2,             Farsi_2 ]};  // 2 @      ٢ ۲
+    key <AE03> {[               3,           numbersign,                  Arabic_3,             Farsi_3 ]};  // 3 #      ٣ ۳
+    key <AE04> {[               4,               dollar,                  Arabic_4,             Farsi_4 ]};  // 4 $      ٤ ۴
+    key <AE05> {[               5,              percent,                  Arabic_5,             Farsi_5 ]};  // 5 %      ٥ ۵
+    key <AE06> {[               6,            Farsi_yeh,                  Arabic_6,             Farsi_6 ]};  // 6 ‎ی‎      ٦ ۶
+    key <AE07> {[               7,            ampersand,                  Arabic_7,             Farsi_7 ]};  // 7 &      ٧ ۷
+    key <AE08> {[               8,             asterisk,                  Arabic_8,             Farsi_8 ]};  // 8 *      ٨ ۸
+    key <AE09> {[               9,           parenright,                  Arabic_9,             Farsi_9 ]};  // 9 )      ٩ ۹
+    key <AE10> {[               0,            parenleft,                  Arabic_0,             Farsi_0 ]};  // 0 (      ٠ ۰
+    key <AE11> {[           minus,           underscore,                    endash,               U2011 ]};  // - _     – Non-Breaking-Hyphen
+    key <AE12> {[           equal,                 plus,                  notequal,               U2248 ]};  // = +     ≠ ≈
+
+    key <AD01> {[      Arabic_dad,         Arabic_fatha,                     U0689,               U2066 ]};  // ‎ض‎ ‎◌َ     ډ LEFT‑TO‑RIGHT ISOLATE
+    key <AD02> {[      Arabic_sad,      Arabic_fathatan,                     U06D5,               U2067 ]};  // ‎ص‎ ‎◌ً     ە RIGHT‑TO‑LEFT ISOLATE
+    key <AD03> {[     Arabic_theh,         Arabic_damma,                     U067F,               U2068 ]};  // ‎ث‎ ‎◌ُ     ٿ FIRST STRONG ISOLATE
+    key <AD04> {[      Arabic_qaf,      Arabic_dammatan,                     U06A6,               U2069 ]};  // ‎ق‎ ‎◌ٌ     ڦ POP DIRECTIONAL ISOLATE
+    key <AD05> {[      Arabic_feh,                UFEF9,                Arabic_veh,               U068D ]};  // ‎ف‎ ‎ﻹ     ‎ڤ ‎ڍ‎
+    key <AD06> {[    Arabic_ghain,Arabic_hamzaunderalef,                     U0685,               U202A ]};  // ‎غ‎ ‎إ‎     ‎څ‎ LEFT-TO-RIGHT-EMBEDDING
+    key <AD07> {[      Arabic_ain,          Arabic_rreh,           Arabic_heh_goal,               U202B ]};  // ‎ع‎ ‎ڑ‎     ‎ہ‎ RIGHT-TO-LEFT EMBEDDING
+    key <AD08> {[       Arabic_ha,             division,    Arabic_heh_doachashmee,               U202C ]};  // ‎ه‎ ÷     ‎ھ‎ POP DIRECTIONAL FORMATTING
+    key <AD09> {[     Arabic_khah,             multiply,                     U0681,               U0687 ]};  // ‎خ‎ ×     ‎ځ‎ ‎ڇ‎
+    key <AD10> {[      Arabic_hah,     Arabic_semicolon,                     U0683,               U200E ]};  // ‎ح‎ ؛     ‎ڃ‎ LEFT-TO-RIGHT MARK
+    key <AD11> {[     Arabic_jeem,                 less,              Arabic_tcheh,               U200F ]};  // ‎ج‎ <     ‎چ‎ RIGHT-TO-LEFT MARK
+    key <AD12> {[      Arabic_dal,              greater,                     U0684,               U061C ]};  // ‎د‎ >     ‎ڄ‎ ARABIC LETTER MARK
+
+    key <AC01> {[    Arabic_sheen,         Arabic_kasra,                     U06C6,               U06C9 ]};  // ‎ش‎ ‎◌ِ‎     ‎ۆ‎ ‎ۉ‎
+    key <AC02> {[     Arabic_seen,      Arabic_kasratan,                     U067C,               U0680 ]};  // ‎س‎ ‎◌ٍ‎     ‎ټ‎ ‎ڀ‎
+    key <AC03> {[      Arabic_yeh,         bracketright,                     U06D0,               U06CD ]};  // ‎ي‎ ]     ‎ې‎ ‎ۍ‎
+    key <AC04> {[      Arabic_beh,          bracketleft,                Arabic_peh,               U067B ]};  // ‎ب‎ [     ‎پ‎ ‎ٻ‎
+    key <AC05> {[      Arabic_lam,               U0FEF7,                     U076A,               U0658 ]};  // ‎ل‎ ‎ﻷ‎     ‎ݪ‎  ٘‎◌‎
+    key <AC06> {[     Arabic_alef,   Arabic_hamzaonalef,                     U0671,  Arabic_noon_ghunna ]};  // ‎ا‎ ‎أ     ‎ٱ‎ ‎ں‎
+    key <AC07> {[      Arabic_teh,       Arabic_tatweel,                     U067D,               U067A ]};  // ‎ت‎ ‎ـ‎     ‎ٽ‎ ٺ‎
+    key <AC08> {[     Arabic_noon,         Arabic_comma,                     U066B,               U06BB ]};  // ‎ن‎ ‎،‎     ‎٫‎ ڻ‎
+    key <AC09> {[     Arabic_meem,                slash,                     U06B3,               U06B1 ]};  // ‎م‎ /     ‎ڳ‎ ‎ڱ‎
+    key <AC10> {[      Arabic_kaf,                colon,                Arabic_gaf,        Arabic_keheh ]};  // ‎ك‎ :     ‎گ‎ ‎ک‎
+    key <AC11> {[      Arabic_tah,             quotedbl,                     U27E9,               U200D ]};  // ‎ط‎ "     ⟩ ZWJ
+    key <BKSL> {[       backslash,                  bar,                     U27E8,               U202F ]};  // \ |     ⟨ NNBSP
+
+    key <LSGT> {[             bar,             ellipsis,                     U06C0,               U0620 ]};  // | …     ‎ۀ‎ ‎ؠ‎
+    key <AB01> {[Arabic_hamzaonyeh,          asciitilde,            guillemotright,               U203A ]};  // ‎ئ‎ ~     » ›
+    key <AB02> {[    Arabic_hamza,         Arabic_sukun,             guillemotleft,               U2039 ]};  // ‎ء‎ ◌ْ     « ‹
+    key <AB03> {[Arabic_hamzaonwaw,          braceright,                     U06C7,               U0677 ]};  // ‎ؤ }     ‎ۇ‎ ‎ٷ‎
+    key <AB04> {[       Arabic_ra,            braceleft,                     U0693,               U0699 ]};  // ‎ر‎ {     ‎ړ ‎ڙ‎
+    key <AB05> {[           UFEFB,                UFEF5,                     U06AB,               U06AD ]};  // ‎ﻻ‎ ‎ﻵ‎     ‎ګ‎ ‎ڭ‎
+    key <AB06> {[Arabic_alefmaksura, Arabic_maddaonalef,   Arabic_superscript_alef,    Arabic_yeh_baree ]};  // ‎ى‎ ‎آ‎     ‎◌ٰ‎ ‎ے‎
+    key <AB07> {[Arabic_tehmarbuta,          apostrophe,           Arabic_fullstop,               U06AA ]};  // ‎ة‎ '     ۔ ‎ڪ‎
+    key <AB08> {[      Arabic_waw,                comma,                     U066C,               U06CB ]};  // ‎و‎ ,     ‎٬‎ ‎ۋ‎
+    key <AB09> {[     Arabic_zain,               period,                Arabic_jeh,               U0696 ]};  // ‎ز‎ .     ‎ژ‎ ‎ږ‎
+    key <AB10> {[      Arabic_zah, Arabic_question_mark,               Arabic_tteh,               U200C ]};  // ‎ظ‎ ‎؟‎     ‎ٹ‎ ZWNJ
+
+    include "level3(ralt_switch)"
+};
+
+
+// Replaces the Western numeral signs with Arabic-script digits on the numeric row,
+// pushing the Western digits to the third level accessible by the right alt key.
+// The alternative numeral glyphs used in some languages that employ the Arabic script
+// are featured in the fourth layer.
+partial alphanumeric_keys
+xkb_symbols "basic_ext_digits" {
+
+    include "ara(basic_ext)"
+
+    name[Group1]= "Arabic (Eastern Arabic numerals, extensions in the 4th level)";
+
+    key <TLDE> {[Arabic_thal,  Arabic_shadda, percent, Arabic_ddal ]};
+    key <AE01> {[   Arabic_1,         exclam,       1,     Farsi_1 ]};
+    key <AE02> {[   Arabic_2,             at,       2,     Farsi_2 ]};
+    key <AE03> {[   Arabic_3,     numbersign,       3,     Farsi_3 ]};
+    key <AE04> {[   Arabic_4,         dollar,       4,     Farsi_4 ]};
+    key <AE05> {[   Arabic_5, Arabic_percent,       5,     Farsi_5 ]};
+    key <AE06> {[   Arabic_6,      Farsi_yeh,       6,     Farsi_6 ]};
+    key <AE07> {[   Arabic_7,      ampersand,       7,     Farsi_7 ]};
+    key <AE08> {[   Arabic_8,       asterisk,       8,     Farsi_8 ]};
+    key <AE09> {[   Arabic_9,     parenright,       9,     Farsi_9 ]};
+    key <AE10> {[   Arabic_0,      parenleft,       0,     Farsi_0 ]};
+
+    include "ara(digits_KP)"
+};
+
+// An Ergonomic implementation of the basic Arabic keyboard (PC). Brings all letters to the middle 30 keys.
+xkb_symbols "ergoarabic" {
+    include "ara(basic)"
+    name[Group1]= "Arabic (ErgoArabic)";
+
+    key <TLDE> {[             grave,            asciitilde,                    any,     any ]};
+
+    key <AD01> {[        Arabic_dal,           Arabic_thal,                    any,   U2066 ]};
+    key <AD02> {[        Arabic_sad,            Arabic_dad,                    any,   U2067 ]};
+    key <AD05> {[        Arabic_feh,         Arabic_shadda,             Arabic_veh,     any ]};
+    key <AD06> {[      Arabic_hamza, Arabic_hamzaunderalef,                    any,   U202A ]};
+    key <AD07> {[        Arabic_ain,          Arabic_ghain,                    any,   U202B ]};
+    key <AD08> {[         Arabic_ha,              division,                    any,   U202C ]};
+    key <AD09> {[        Arabic_waw,     Arabic_hamzaonwaw,                    any,     any ]};
+    key <AD10> {[ Arabic_tehmarbuta,      Arabic_semicolon,                    any,   U200E ]};
+    key <AD11> {[      bracketright,            braceright,                    any,   U200F ]};
+    key <AD12> {[       bracketleft,             braceleft,                    any,   U061C ]};
+
+    key <AC03> {[        Arabic_yeh,          Arabic_fatha,                    any,     any ]};
+    key <AC04> {[        Arabic_beh,       Arabic_fathatan,             Arabic_peh,     any ]};
+    key <AC05> {[        Arabic_lam,    Arabic_maddaonalef,Arabic_superscript_alef,     any ]};
+    key <AC07> {[        Arabic_teh,        Arabic_tatweel,                    any,     any ]};
+    key <AC08> {[       Arabic_noon,              multiply,                  U066B,     any ]};
+    key <AC09> {[       Arabic_meem,                 comma,                    any,     any ]};
+    key <AC10> {[        Arabic_kaf,                 colon,             Arabic_gaf,     any ]};
+    key <AC11> {[        apostrophe,              quotedbl,                  U27E9,   U200D ]};
+    key <BKSL> {[         backslash,                   bar,                  U27E8,   U202F ]};
+
+    key <AB01> {[ Arabic_hamzaonyeh,                   any,                  U203A,     any ]};
+    key <AB02> {[Arabic_alefmaksura,          Arabic_sukun,                  U2039,     any ]};
+    key <AB03> {[        Arabic_tah,            Arabic_zah,                    any,     any ]};
+    key <AB04> {[         Arabic_ra,           Arabic_zain,             Arabic_jeh,     any ]};
+    key <AB05> {[       Arabic_khah,              ellipsis,                    any,     any ]};
+    key <AB06> {[        Arabic_hah,        guillemotright,                    any,     any ]};
+    key <AB07> {[       Arabic_jeem,         guillemotleft,           Arabic_tcheh,     any ]};
+    key <AB08> {[      Arabic_comma,               greater,                    any,     any ]};
+    key <AB09> {[            period,                  less,                    any,     any ]};
+    key <AB10> {[             slash,  Arabic_question_mark,                  U066D,   U200C ]};
+};

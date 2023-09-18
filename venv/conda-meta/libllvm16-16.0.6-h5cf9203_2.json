@@ -1,0 +1,64 @@
+{
+  "build": "h5cf9203_2",
+  "build_number": 2,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [],
+  "depends": [
+    "libgcc-ng >=12",
+    "libstdcxx-ng >=12",
+    "libxml2 >=2.11.4,<2.12.0a0",
+    "libzlib >=1.2.13,<1.3.0a0",
+    "zstd >=1.5.2,<1.6.0a0"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/libllvm16-16.0.6-h5cf9203_2",
+  "features": "",
+  "files": [
+    "lib/libLLVM-16.so",
+    "lib/libLTO.so.16",
+    "lib/libRemarks.so.16"
+  ],
+  "fn": "libllvm16-16.0.6-h5cf9203_2.conda",
+  "license": "Apache-2.0 WITH LLVM-exception",
+  "license_family": "Apache",
+  "link": {
+    "source": "/opt/conda/pkgs/libllvm16-16.0.6-h5cf9203_2",
+    "type": 1
+  },
+  "md5": "dbfb446bd165f61f9c82aed9188e297a",
+  "name": "libllvm16",
+  "package_tarball_full_path": "/opt/conda/pkgs/libllvm16-16.0.6-h5cf9203_2.conda",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "lib/libLLVM-16.so",
+        "path_type": "hardlink",
+        "sha256": "865b65212a71b245491eafe5bca5d92c9539eb5a48a1015ef4b2a25ef57c9607",
+        "sha256_in_prefix": "865b65212a71b245491eafe5bca5d92c9539eb5a48a1015ef4b2a25ef57c9607",
+        "size_in_bytes": 151889960
+      },
+      {
+        "_path": "lib/libLTO.so.16",
+        "path_type": "hardlink",
+        "sha256": "733249f93d22e033a7811f4130b8d06b88b27de115ef83d660d7a97de54ac1e5",
+        "sha256_in_prefix": "733249f93d22e033a7811f4130b8d06b88b27de115ef83d660d7a97de54ac1e5",
+        "size_in_bytes": 109080
+      },
+      {
+        "_path": "lib/libRemarks.so.16",
+        "path_type": "hardlink",
+        "sha256": "a51ba0b739abe84fde2ef975b027ccb2acc95d4b1aabcf0420a0506e6269c49e",
+        "sha256_in_prefix": "a51ba0b739abe84fde2ef975b027ccb2acc95d4b1aabcf0420a0506e6269c49e",
+        "size_in_bytes": 15072
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "38b6b4e5aa4784feeb4c7c1887f2facfc18a5996720d35c1b8c3a6e3eeff7687",
+  "size": 35432923,
+  "subdir": "linux-64",
+  "timestamp": 1691576970516,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/libllvm16-16.0.6-h5cf9203_2.conda",
+  "version": "16.0.6"
+}

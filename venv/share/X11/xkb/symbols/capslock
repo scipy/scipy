@@ -1,0 +1,84 @@
+default  hidden partial modifier_keys
+xkb_symbols "capslock" {
+    replace key <CAPS> { [ Caps_Lock ], type[group1] = "ONE_LEVEL" };
+    modifier_map Lock { Caps_Lock };
+};
+
+hidden partial modifier_keys
+xkb_symbols "shiftlock" {
+    replace key <CAPS> { [ Shift_Lock ], type[group1] = "ONE_LEVEL" };
+    modifier_map Shift { Shift_Lock };
+};
+
+hidden partial modifier_keys
+xkb_symbols "swapescape" {
+    key <CAPS> { [ Escape ], type[group1] = "ONE_LEVEL" };
+    key <ESC>  { [ Caps_Lock ] };
+};
+
+hidden partial modifier_keys
+xkb_symbols "escape" {
+    key <CAPS> { [ Escape ], type[group1] = "ONE_LEVEL" };
+};
+
+hidden partial modifier_keys
+xkb_symbols "escape_shifted_capslock" {
+    key <CAPS> {
+        type[Group1] = "TWO_LEVEL",
+        symbols[Group1] = [ Escape, Caps_Lock ],
+        actions[Group1] = [ NoAction(), LockMods(modifiers = Lock) ]
+    };
+};
+
+hidden partial modifier_keys
+xkb_symbols "escape_shifted_compose" {
+    key <CAPS> {
+        type[Group1] = "TWO_LEVEL",
+        symbols[Group1] = [ Escape, Multi_key ],
+        actions[Group1] = [ NoAction(), NoAction() ]
+    };
+};
+
+hidden partial modifier_keys
+xkb_symbols "backspace" {
+    key <CAPS> { [ BackSpace ], type[group1] = "ONE_LEVEL" };
+};
+
+hidden partial modifier_keys
+xkb_symbols "super" {
+    key <CAPS> { [ Super_L ], type[group1] = "ONE_LEVEL" };
+    modifier_map Mod4 { <CAPS> };
+};
+
+hidden partial modifier_keys
+xkb_symbols "hyper" {
+    key <CAPS> { [ Hyper_L ], type[group1] = "ONE_LEVEL" };
+    modifier_map Mod4 { <CAPS> };
+};
+
+hidden partial modifier_keys
+xkb_symbols "menu" {
+    key <CAPS> { [ Menu ], type[group1] = "ONE_LEVEL" };
+};
+
+hidden partial modifier_keys
+xkb_symbols "numlock" {
+    key <CAPS> { [ Num_Lock ], type[group1] = "ONE_LEVEL" };
+};
+
+// This changes the <CAPS> key to become a Control modifier,
+// but it will still produce the Caps_Lock keysym.
+hidden partial modifier_keys
+xkb_symbols "ctrl_modifier" {
+    replace key <CAPS> {
+        type[Group1] = "ONE_LEVEL",
+        symbols[Group1] = [ Caps_Lock ],
+        actions[Group1] = [ SetMods(modifiers=Control) ]
+    };
+    modifier_map Control { <CAPS> };
+};
+
+hidden partial modifier_keys
+xkb_symbols "none" {
+    key <CAPS> { [ VoidSymbol ], type[group1] = "ONE_LEVEL" };
+};

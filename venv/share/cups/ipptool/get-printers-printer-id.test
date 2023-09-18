@@ -1,0 +1,27 @@
+# Get printer attributes using CUPS-Get-Printers
+#
+# Usage:
+#
+#   ipptool -t -d printer_id=N ipp://localhost:port/ get-printers-printer-id.test
+#
+{
+	# The name of the test...
+	NAME "CUPS-Get-Printers w/printer-id"
+
+	# The resource to use for the POST
+	# RESOURCE /admin
+
+	# The operation to use
+	OPERATION CUPS-Get-Printers
+
+	# Attributes, starting in the operation group...
+	GROUP operation
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+	ATTR integer printer-id $printer_id
+
+	# What statuses are OK?
+	STATUS successful-ok
+	EXPECT printer-name
+	DISPLAY printer-name
+}

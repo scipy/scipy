@@ -1,0 +1,5 @@
+#ifndef QT_QTQUICKTEMPLATES2_MODULE_H
+#define QT_QTQUICKTEMPLATES2_MODULE_H
+#include <QtQuickTemplates2/QtQuickTemplates2Depends>
+#include "qtquicktemplates2version.h"
+#endif

@@ -1,0 +1,95 @@
+partial modifier_keys
+xkb_symbols "ralt" {
+    key <RALT>	{ type[Group1]="TWO_LEVEL", [ Multi_key, Multi_key ] };
+};
+
+partial modifier_keys
+xkb_symbols "lwin" {
+    key <LWIN>	{ type[Group1]="TWO_LEVEL", [ Multi_key, Multi_key ] };
+};
+
+partial modifier_keys
+xkb_symbols "lwin-altgr" {
+    key <LWIN>	{ type[Group1]="FOUR_LEVEL", [ Super_L, Super_L, Multi_key, Multi_key ] };
+};
+
+partial modifier_keys
+xkb_symbols "rwin" {
+    key <RWIN>	{ type[Group1]="TWO_LEVEL", [ Multi_key, Multi_key ] };
+};
+
+partial modifier_keys
+xkb_symbols "rwin-altgr" {
+    key <RWIN>	{ type[Group1]="FOUR_LEVEL", [ Super_R, Super_R, Multi_key, Multi_key ] };
+};
+
+partial modifier_keys
+xkb_symbols "menu" {
+    key <MENU>	{ type[Group1]="TWO_LEVEL", [ Multi_key, Multi_key ] };
+};
+
+partial modifier_keys
+xkb_symbols "menu-altgr" {
+    key <MENU>	{ type[Group1]="FOUR_LEVEL", [ Menu, Menu, Multi_key, Multi_key ] };
+};
+
+partial modifier_keys
+xkb_symbols "rctrl" {
+    key <RCTL> { type[Group1]="TWO_LEVEL", [ Multi_key, Multi_key ] };
+};
+
+partial modifier_keys
+xkb_symbols "rctrl-altgr" {
+    key <RCTL> { type[Group1]="FOUR_LEVEL", [ Control_R, Control_R, Multi_key, Multi_key ] };
+};
+
+partial modifier_keys
+xkb_symbols "lctrl" {
+    key <LCTL> { type[Group1]="TWO_LEVEL", [ Multi_key, Multi_key ] };
+};
+
+partial modifier_keys
+xkb_symbols "lctrl-altgr" {
+    key <LCTL> { type[Group1]="FOUR_LEVEL", [ Control_L, Control_L, Multi_key, Multi_key ] };
+};
+
+partial modifier_keys
+xkb_symbols "caps" {
+    key <CAPS> { type[Group1]="TWO_LEVEL", [ Multi_key, Multi_key ] };
+};
+
+partial modifier_keys
+xkb_symbols "caps-altgr" {
+    key <CAPS> { type[Group1]="FOUR_LEVEL", [ Caps_Lock, Caps_Lock, Multi_key, Multi_key ] };
+};
+
+partial modifier_keys
+xkb_symbols "102" {
+    key <LSGT> { type[Group1]="TWO_LEVEL", [ Multi_key, Multi_key ] };
+};
+
+partial modifier_keys
+xkb_symbols "102-altgr" {
+    key <LSGT> { type[Group1]="FOUR_LEVEL", [ less, greater, Multi_key, Multi_key ] };
+};
+
+// Make plain Insert do Compose, while Shift+Insert remains Insert.
+partial modifier_keys
+xkb_symbols "ins" {
+    key  <INS> { type[Group1]="TWO_LEVEL", [ Multi_key, Insert ] };
+};
+
+partial modifier_keys
+xkb_symbols "paus" {
+    key <PAUS> { type[Group1]="TWO_LEVEL", [ Multi_key, Multi_key ] };
+};
+
+partial modifier_keys
+xkb_symbols "prsc" {
+    key <PRSC> { type[Group1]="TWO_LEVEL", [ Multi_key, Multi_key ] };
+};
+
+partial modifier_keys
+xkb_symbols "sclk" {
+    key <SCLK> { type[Group1]="TWO_LEVEL", [ Multi_key, Multi_key ] };
+};

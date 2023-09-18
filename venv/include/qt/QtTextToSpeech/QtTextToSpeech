@@ -1,0 +1,9 @@
+#ifndef QT_QTTEXTTOSPEECH_MODULE_H
+#define QT_QTTEXTTOSPEECH_MODULE_H
+#include <QtTextToSpeech/QtTextToSpeechDepends>
+#include "qtexttospeech.h"
+#include "qtexttospeechengine.h"
+#include "qtexttospeechplugin.h"
+#include "qvoice.h"
+#include "qttexttospeechversion.h"
+#endif

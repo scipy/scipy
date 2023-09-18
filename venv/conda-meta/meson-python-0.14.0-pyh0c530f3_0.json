@@ -1,0 +1,190 @@
+{
+  "build": "pyh0c530f3_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/noarch",
+  "constrains": [],
+  "depends": [
+    "colorama",
+    "meson >=0.63.3",
+    "ninja",
+    "pyproject-metadata >=0.7.1",
+    "python >=3.7",
+    "tomli >=1.0.0"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/meson-python-0.14.0-pyh0c530f3_0",
+  "features": "",
+  "files": [
+    "lib/python3.10/site-packages/meson_python-0.14.0.dist-info/INSTALLER",
+    "lib/python3.10/site-packages/meson_python-0.14.0.dist-info/METADATA",
+    "lib/python3.10/site-packages/meson_python-0.14.0.dist-info/MIT.txt",
+    "lib/python3.10/site-packages/meson_python-0.14.0.dist-info/RECORD",
+    "lib/python3.10/site-packages/meson_python-0.14.0.dist-info/REQUESTED",
+    "lib/python3.10/site-packages/meson_python-0.14.0.dist-info/WHEEL",
+    "lib/python3.10/site-packages/meson_python-0.14.0.dist-info/direct_url.json",
+    "lib/python3.10/site-packages/mesonpy/__init__.py",
+    "lib/python3.10/site-packages/mesonpy/_compat.py",
+    "lib/python3.10/site-packages/mesonpy/_editable.py",
+    "lib/python3.10/site-packages/mesonpy/_rpath.py",
+    "lib/python3.10/site-packages/mesonpy/_tags.py",
+    "lib/python3.10/site-packages/mesonpy/_util.py",
+    "lib/python3.10/site-packages/mesonpy/_wheelfile.py",
+    "lib/python3.10/site-packages/mesonpy/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonpy/__pycache__/_compat.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonpy/__pycache__/_editable.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonpy/__pycache__/_rpath.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonpy/__pycache__/_tags.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonpy/__pycache__/_util.cpython-310.pyc",
+    "lib/python3.10/site-packages/mesonpy/__pycache__/_wheelfile.cpython-310.pyc"
+  ],
+  "fn": "meson-python-0.14.0-pyh0c530f3_0.conda",
+  "license": "MIT",
+  "license_family": "MIT",
+  "link": {
+    "source": "/opt/conda/pkgs/meson-python-0.14.0-pyh0c530f3_0",
+    "type": 1
+  },
+  "md5": "494eb14c7c3bcb91a79740f1c44cdb0f",
+  "name": "meson-python",
+  "noarch": "python",
+  "package_tarball_full_path": "/opt/conda/pkgs/meson-python-0.14.0-pyh0c530f3_0.conda",
+  "package_type": "noarch_python",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "site-packages/meson_python-0.14.0.dist-info/INSTALLER",
+        "path_type": "hardlink",
+        "sha256": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "sha256_in_prefix": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "size_in_bytes": 5
+      },
+      {
+        "_path": "site-packages/meson_python-0.14.0.dist-info/METADATA",
+        "path_type": "hardlink",
+        "sha256": "0659bd4492096a317b11e25a2810488cafa60dfbf7fb9758a364abcaf60ee576",
+        "sha256_in_prefix": "0659bd4492096a317b11e25a2810488cafa60dfbf7fb9758a364abcaf60ee576",
+        "size_in_bytes": 4052
+      },
+      {
+        "_path": "site-packages/meson_python-0.14.0.dist-info/MIT.txt",
+        "path_type": "hardlink",
+        "sha256": "8f82ea9ef9a55b47f4170536d02e48b5bc33fc5135e5b4a1b5f8d6404833ec9b",
+        "sha256_in_prefix": "8f82ea9ef9a55b47f4170536d02e48b5bc33fc5135e5b4a1b5f8d6404833ec9b",
+        "size_in_bytes": 1155
+      },
+      {
+        "_path": "site-packages/meson_python-0.14.0.dist-info/RECORD",
+        "path_type": "hardlink",
+        "sha256": "cf5dc0c8dd3234c92ebb5ae5d231e803c168999dd3e4f550700bdeb9ff04c1ad",
+        "sha256_in_prefix": "cf5dc0c8dd3234c92ebb5ae5d231e803c168999dd3e4f550700bdeb9ff04c1ad",
+        "size_in_bytes": 1477
+      },
+      {
+        "_path": "site-packages/meson_python-0.14.0.dist-info/REQUESTED",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256_in_prefix": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "site-packages/meson_python-0.14.0.dist-info/WHEEL",
+        "path_type": "hardlink",
+        "sha256": "e49e277a813b93a2cc831e05cf514780188edd87af8491ad350de6b83add2d03",
+        "sha256_in_prefix": "e49e277a813b93a2cc831e05cf514780188edd87af8491ad350de6b83add2d03",
+        "size_in_bytes": 75
+      },
+      {
+        "_path": "site-packages/meson_python-0.14.0.dist-info/direct_url.json",
+        "path_type": "hardlink",
+        "sha256": "2a3eef15de6a4b4dba0e8359aa86384852887993157c8f835513157f95896bb1",
+        "sha256_in_prefix": "2a3eef15de6a4b4dba0e8359aa86384852887993157c8f835513157f95896bb1",
+        "size_in_bytes": 108
+      },
+      {
+        "_path": "site-packages/mesonpy/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "e5e87bed198aa70e95e6b0ed3fc4f483e6b6536c8629194dbad2d0e9a14e669d",
+        "sha256_in_prefix": "e5e87bed198aa70e95e6b0ed3fc4f483e6b6536c8629194dbad2d0e9a14e669d",
+        "size_in_bytes": 42531
+      },
+      {
+        "_path": "site-packages/mesonpy/_compat.py",
+        "path_type": "hardlink",
+        "sha256": "62185b1cd915295e1c800e4edb15c843f3eda187b96bbb6b317fae47940681f8",
+        "sha256_in_prefix": "62185b1cd915295e1c800e4edb15c843f3eda187b96bbb6b317fae47940681f8",
+        "size_in_bytes": 1571
+      },
+      {
+        "_path": "site-packages/mesonpy/_editable.py",
+        "path_type": "hardlink",
+        "sha256": "59a6edc8856621abc37dd3bf9a9a705b77cfcb2075869ff3c4d707672a7e0873",
+        "sha256_in_prefix": "59a6edc8856621abc37dd3bf9a9a705b77cfcb2075869ff3c4d707672a7e0873",
+        "size_in_bytes": 10438
+      },
+      {
+        "_path": "site-packages/mesonpy/_rpath.py",
+        "path_type": "hardlink",
+        "sha256": "cc84e7a9c91b061e15ec5650e12605255ac7c343b78aaaa5c4e7bf3e5e53e1fa",
+        "sha256_in_prefix": "cc84e7a9c91b061e15ec5650e12605255ac7c343b78aaaa5c4e7bf3e5e53e1fa",
+        "size_in_bytes": 2078
+      },
+      {
+        "_path": "site-packages/mesonpy/_tags.py",
+        "path_type": "hardlink",
+        "sha256": "79bb5404bb1115fabcd4469cceed059c54abf3b738d2f2dc2f033d00171b265a",
+        "sha256_in_prefix": "79bb5404bb1115fabcd4469cceed059c54abf3b738d2f2dc2f033d00171b265a",
+        "size_in_bytes": 6114
+      },
+      {
+        "_path": "site-packages/mesonpy/_util.py",
+        "path_type": "hardlink",
+        "sha256": "8f3704a41d1d74f50547c9478e9f5e36a5d84611ad66905c4b8a6c2ca3e18298",
+        "sha256_in_prefix": "8f3704a41d1d74f50547c9478e9f5e36a5d84611ad66905c4b8a6c2ca3e18298",
+        "size_in_bytes": 1837
+      },
+      {
+        "_path": "site-packages/mesonpy/_wheelfile.py",
+        "path_type": "hardlink",
+        "sha256": "2fea116f9cc869bd84351752b0ea28613eeadf9985a093abfa86008e00a8d99f",
+        "sha256_in_prefix": "2fea116f9cc869bd84351752b0ea28613eeadf9985a093abfa86008e00a8d99f",
+        "size_in_bytes": 4051
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonpy/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonpy/__pycache__/_compat.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonpy/__pycache__/_editable.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonpy/__pycache__/_rpath.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonpy/__pycache__/_tags.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonpy/__pycache__/_util.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/mesonpy/__pycache__/_wheelfile.cpython-310.pyc",
+        "path_type": "pyc_file"
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "meson-python",
+  "sha256": "74a4260fb728bdc48e9983eaf372fc58fe6525c11cb5c91768aabddfa68270a2",
+  "size": 69256,
+  "subdir": "noarch",
+  "timestamp": 1693919705173,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/noarch/meson-python-0.14.0-pyh0c530f3_0.conda",
+  "version": "0.14.0"
+}

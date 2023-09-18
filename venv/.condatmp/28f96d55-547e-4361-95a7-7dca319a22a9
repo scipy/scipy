@@ -1,0 +1,8 @@
+prefix=/workspaces/scipy/venv
+includedir=${prefix}/include
+
+Name: gstreamer-gl-prototypes-1.0
+Description: Streaming media framework, OpenGL plugins libraries (OpenGL Prototypes)
+Version: 1.22.3
+Requires: gstreamer-gl-1.0, gl
+Cflags: -I${includedir}/gstreamer-1.0

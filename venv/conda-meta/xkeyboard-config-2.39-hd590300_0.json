@@ -1,0 +1,2727 @@
+{
+  "build": "hd590300_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [],
+  "depends": [
+    "libgcc-ng >=12",
+    "xorg-libx11 >=1.8.5,<2.0a0"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/xkeyboard-config-2.39-hd590300_0",
+  "features": "",
+  "files": [
+    "share/X11/xkb/compat/README",
+    "share/X11/xkb/compat/accessx",
+    "share/X11/xkb/compat/basic",
+    "share/X11/xkb/compat/caps",
+    "share/X11/xkb/compat/complete",
+    "share/X11/xkb/compat/iso9995",
+    "share/X11/xkb/compat/japan",
+    "share/X11/xkb/compat/ledcaps",
+    "share/X11/xkb/compat/ledcompose",
+    "share/X11/xkb/compat/lednum",
+    "share/X11/xkb/compat/ledscroll",
+    "share/X11/xkb/compat/level5",
+    "share/X11/xkb/compat/misc",
+    "share/X11/xkb/compat/mousekeys",
+    "share/X11/xkb/compat/olpc",
+    "share/X11/xkb/compat/pc",
+    "share/X11/xkb/compat/pc98",
+    "share/X11/xkb/compat/xfree86",
+    "share/X11/xkb/compat/xtest",
+    "share/X11/xkb/geometry/README",
+    "share/X11/xkb/geometry/amiga",
+    "share/X11/xkb/geometry/ataritt",
+    "share/X11/xkb/geometry/chicony",
+    "share/X11/xkb/geometry/dell",
+    "share/X11/xkb/geometry/digital_vndr/lk",
+    "share/X11/xkb/geometry/digital_vndr/pc",
+    "share/X11/xkb/geometry/digital_vndr/unix",
+    "share/X11/xkb/geometry/everex",
+    "share/X11/xkb/geometry/fujitsu",
+    "share/X11/xkb/geometry/hhk",
+    "share/X11/xkb/geometry/hp",
+    "share/X11/xkb/geometry/keytronic",
+    "share/X11/xkb/geometry/kinesis",
+    "share/X11/xkb/geometry/macintosh",
+    "share/X11/xkb/geometry/microsoft",
+    "share/X11/xkb/geometry/nec",
+    "share/X11/xkb/geometry/nokia",
+    "share/X11/xkb/geometry/northgate",
+    "share/X11/xkb/geometry/pc",
+    "share/X11/xkb/geometry/sanwa",
+    "share/X11/xkb/geometry/sgi_vndr/O2",
+    "share/X11/xkb/geometry/sgi_vndr/indigo",
+    "share/X11/xkb/geometry/sgi_vndr/indy",
+    "share/X11/xkb/geometry/sony",
+    "share/X11/xkb/geometry/steelseries",
+    "share/X11/xkb/geometry/sun",
+    "share/X11/xkb/geometry/teck",
+    "share/X11/xkb/geometry/thinkpad",
+    "share/X11/xkb/geometry/typematrix",
+    "share/X11/xkb/geometry/winbook",
+    "share/X11/xkb/keycodes/README",
+    "share/X11/xkb/keycodes/aliases",
+    "share/X11/xkb/keycodes/amiga",
+    "share/X11/xkb/keycodes/ataritt",
+    "share/X11/xkb/keycodes/digital_vndr/lk",
+    "share/X11/xkb/keycodes/digital_vndr/pc",
+    "share/X11/xkb/keycodes/empty",
+    "share/X11/xkb/keycodes/evdev",
+    "share/X11/xkb/keycodes/fujitsu",
+    "share/X11/xkb/keycodes/hp",
+    "share/X11/xkb/keycodes/ibm",
+    "share/X11/xkb/keycodes/jolla",
+    "share/X11/xkb/keycodes/macintosh",
+    "share/X11/xkb/keycodes/olpc",
+    "share/X11/xkb/keycodes/sgi_vndr/indigo",
+    "share/X11/xkb/keycodes/sgi_vndr/indy",
+    "share/X11/xkb/keycodes/sgi_vndr/iris",
+    "share/X11/xkb/keycodes/sony",
+    "share/X11/xkb/keycodes/sun",
+    "share/X11/xkb/keycodes/xfree86",
+    "share/X11/xkb/keycodes/xfree98",
+    "share/X11/xkb/rules/README",
+    "share/X11/xkb/rules/base",
+    "share/X11/xkb/rules/base.extras.xml",
+    "share/X11/xkb/rules/base.lst",
+    "share/X11/xkb/rules/base.xml",
+    "share/X11/xkb/rules/evdev",
+    "share/X11/xkb/rules/evdev.extras.xml",
+    "share/X11/xkb/rules/evdev.lst",
+    "share/X11/xkb/rules/evdev.xml",
+    "share/X11/xkb/rules/xfree98",
+    "share/X11/xkb/rules/xkb.dtd",
+    "share/X11/xkb/symbols/af",
+    "share/X11/xkb/symbols/al",
+    "share/X11/xkb/symbols/altwin",
+    "share/X11/xkb/symbols/am",
+    "share/X11/xkb/symbols/ancient",
+    "share/X11/xkb/symbols/apl",
+    "share/X11/xkb/symbols/ara",
+    "share/X11/xkb/symbols/at",
+    "share/X11/xkb/symbols/au",
+    "share/X11/xkb/symbols/az",
+    "share/X11/xkb/symbols/ba",
+    "share/X11/xkb/symbols/bd",
+    "share/X11/xkb/symbols/be",
+    "share/X11/xkb/symbols/bg",
+    "share/X11/xkb/symbols/bqn",
+    "share/X11/xkb/symbols/br",
+    "share/X11/xkb/symbols/brai",
+    "share/X11/xkb/symbols/bt",
+    "share/X11/xkb/symbols/bw",
+    "share/X11/xkb/symbols/by",
+    "share/X11/xkb/symbols/ca",
+    "share/X11/xkb/symbols/capslock",
+    "share/X11/xkb/symbols/cd",
+    "share/X11/xkb/symbols/ch",
+    "share/X11/xkb/symbols/cm",
+    "share/X11/xkb/symbols/cn",
+    "share/X11/xkb/symbols/compose",
+    "share/X11/xkb/symbols/ctrl",
+    "share/X11/xkb/symbols/cz",
+    "share/X11/xkb/symbols/de",
+    "share/X11/xkb/symbols/digital_vndr/lk",
+    "share/X11/xkb/symbols/digital_vndr/pc",
+    "share/X11/xkb/symbols/digital_vndr/us",
+    "share/X11/xkb/symbols/digital_vndr/vt",
+    "share/X11/xkb/symbols/dk",
+    "share/X11/xkb/symbols/dz",
+    "share/X11/xkb/symbols/ee",
+    "share/X11/xkb/symbols/eg",
+    "share/X11/xkb/symbols/empty",
+    "share/X11/xkb/symbols/epo",
+    "share/X11/xkb/symbols/es",
+    "share/X11/xkb/symbols/et",
+    "share/X11/xkb/symbols/eu",
+    "share/X11/xkb/symbols/eurosign",
+    "share/X11/xkb/symbols/fi",
+    "share/X11/xkb/symbols/fo",
+    "share/X11/xkb/symbols/fr",
+    "share/X11/xkb/symbols/fujitsu_vndr/jp",
+    "share/X11/xkb/symbols/fujitsu_vndr/us",
+    "share/X11/xkb/symbols/gb",
+    "share/X11/xkb/symbols/ge",
+    "share/X11/xkb/symbols/gh",
+    "share/X11/xkb/symbols/gn",
+    "share/X11/xkb/symbols/gr",
+    "share/X11/xkb/symbols/group",
+    "share/X11/xkb/symbols/hp_vndr/us",
+    "share/X11/xkb/symbols/hr",
+    "share/X11/xkb/symbols/hu",
+    "share/X11/xkb/symbols/id",
+    "share/X11/xkb/symbols/ie",
+    "share/X11/xkb/symbols/il",
+    "share/X11/xkb/symbols/in",
+    "share/X11/xkb/symbols/inet",
+    "share/X11/xkb/symbols/iq",
+    "share/X11/xkb/symbols/ir",
+    "share/X11/xkb/symbols/is",
+    "share/X11/xkb/symbols/it",
+    "share/X11/xkb/symbols/jolla_vndr/sbj",
+    "share/X11/xkb/symbols/jp",
+    "share/X11/xkb/symbols/ke",
+    "share/X11/xkb/symbols/keypad",
+    "share/X11/xkb/symbols/kg",
+    "share/X11/xkb/symbols/kh",
+    "share/X11/xkb/symbols/kpdl",
+    "share/X11/xkb/symbols/kr",
+    "share/X11/xkb/symbols/kz",
+    "share/X11/xkb/symbols/la",
+    "share/X11/xkb/symbols/latam",
+    "share/X11/xkb/symbols/latin",
+    "share/X11/xkb/symbols/level2",
+    "share/X11/xkb/symbols/level3",
+    "share/X11/xkb/symbols/level5",
+    "share/X11/xkb/symbols/lk",
+    "share/X11/xkb/symbols/lt",
+    "share/X11/xkb/symbols/lv",
+    "share/X11/xkb/symbols/ma",
+    "share/X11/xkb/symbols/macintosh_vndr/apple",
+    "share/X11/xkb/symbols/macintosh_vndr/ch",
+    "share/X11/xkb/symbols/macintosh_vndr/de",
+    "share/X11/xkb/symbols/macintosh_vndr/dk",
+    "share/X11/xkb/symbols/macintosh_vndr/fi",
+    "share/X11/xkb/symbols/macintosh_vndr/fr",
+    "share/X11/xkb/symbols/macintosh_vndr/gb",
+    "share/X11/xkb/symbols/macintosh_vndr/is",
+    "share/X11/xkb/symbols/macintosh_vndr/it",
+    "share/X11/xkb/symbols/macintosh_vndr/jp",
+    "share/X11/xkb/symbols/macintosh_vndr/latam",
+    "share/X11/xkb/symbols/macintosh_vndr/nl",
+    "share/X11/xkb/symbols/macintosh_vndr/no",
+    "share/X11/xkb/symbols/macintosh_vndr/pt",
+    "share/X11/xkb/symbols/macintosh_vndr/se",
+    "share/X11/xkb/symbols/macintosh_vndr/us",
+    "share/X11/xkb/symbols/mao",
+    "share/X11/xkb/symbols/md",
+    "share/X11/xkb/symbols/me",
+    "share/X11/xkb/symbols/mk",
+    "share/X11/xkb/symbols/ml",
+    "share/X11/xkb/symbols/mm",
+    "share/X11/xkb/symbols/mn",
+    "share/X11/xkb/symbols/mt",
+    "share/X11/xkb/symbols/mv",
+    "share/X11/xkb/symbols/my",
+    "share/X11/xkb/symbols/nbsp",
+    "share/X11/xkb/symbols/nec_vndr/jp",
+    "share/X11/xkb/symbols/ng",
+    "share/X11/xkb/symbols/nl",
+    "share/X11/xkb/symbols/no",
+    "share/X11/xkb/symbols/nokia_vndr/rx-44",
+    "share/X11/xkb/symbols/nokia_vndr/rx-51",
+    "share/X11/xkb/symbols/nokia_vndr/su-8w",
+    "share/X11/xkb/symbols/np",
+    "share/X11/xkb/symbols/olpc",
+    "share/X11/xkb/symbols/parens",
+    "share/X11/xkb/symbols/pc",
+    "share/X11/xkb/symbols/ph",
+    "share/X11/xkb/symbols/pk",
+    "share/X11/xkb/symbols/pl",
+    "share/X11/xkb/symbols/pt",
+    "share/X11/xkb/symbols/ro",
+    "share/X11/xkb/symbols/rs",
+    "share/X11/xkb/symbols/ru",
+    "share/X11/xkb/symbols/rupeesign",
+    "share/X11/xkb/symbols/se",
+    "share/X11/xkb/symbols/sgi_vndr/jp",
+    "share/X11/xkb/symbols/sharp_vndr/sl-c3x00",
+    "share/X11/xkb/symbols/sharp_vndr/ws003sh",
+    "share/X11/xkb/symbols/sharp_vndr/ws007sh",
+    "share/X11/xkb/symbols/sharp_vndr/ws011sh",
+    "share/X11/xkb/symbols/sharp_vndr/ws020sh",
+    "share/X11/xkb/symbols/shift",
+    "share/X11/xkb/symbols/si",
+    "share/X11/xkb/symbols/sk",
+    "share/X11/xkb/symbols/sn",
+    "share/X11/xkb/symbols/sony_vndr/us",
+    "share/X11/xkb/symbols/srvr_ctrl",
+    "share/X11/xkb/symbols/sun_vndr/ara",
+    "share/X11/xkb/symbols/sun_vndr/be",
+    "share/X11/xkb/symbols/sun_vndr/br",
+    "share/X11/xkb/symbols/sun_vndr/ca",
+    "share/X11/xkb/symbols/sun_vndr/ch",
+    "share/X11/xkb/symbols/sun_vndr/cz",
+    "share/X11/xkb/symbols/sun_vndr/de",
+    "share/X11/xkb/symbols/sun_vndr/dk",
+    "share/X11/xkb/symbols/sun_vndr/ee",
+    "share/X11/xkb/symbols/sun_vndr/es",
+    "share/X11/xkb/symbols/sun_vndr/fi",
+    "share/X11/xkb/symbols/sun_vndr/fr",
+    "share/X11/xkb/symbols/sun_vndr/gb",
+    "share/X11/xkb/symbols/sun_vndr/gr",
+    "share/X11/xkb/symbols/sun_vndr/it",
+    "share/X11/xkb/symbols/sun_vndr/jp",
+    "share/X11/xkb/symbols/sun_vndr/kr",
+    "share/X11/xkb/symbols/sun_vndr/lt",
+    "share/X11/xkb/symbols/sun_vndr/lv",
+    "share/X11/xkb/symbols/sun_vndr/nl",
+    "share/X11/xkb/symbols/sun_vndr/no",
+    "share/X11/xkb/symbols/sun_vndr/pl",
+    "share/X11/xkb/symbols/sun_vndr/pt",
+    "share/X11/xkb/symbols/sun_vndr/ro",
+    "share/X11/xkb/symbols/sun_vndr/ru",
+    "share/X11/xkb/symbols/sun_vndr/se",
+    "share/X11/xkb/symbols/sun_vndr/sk",
+    "share/X11/xkb/symbols/sun_vndr/solaris",
+    "share/X11/xkb/symbols/sun_vndr/tr",
+    "share/X11/xkb/symbols/sun_vndr/tw",
+    "share/X11/xkb/symbols/sun_vndr/ua",
+    "share/X11/xkb/symbols/sun_vndr/us",
+    "share/X11/xkb/symbols/sy",
+    "share/X11/xkb/symbols/terminate",
+    "share/X11/xkb/symbols/tg",
+    "share/X11/xkb/symbols/th",
+    "share/X11/xkb/symbols/tj",
+    "share/X11/xkb/symbols/tm",
+    "share/X11/xkb/symbols/tr",
+    "share/X11/xkb/symbols/trans",
+    "share/X11/xkb/symbols/tw",
+    "share/X11/xkb/symbols/typo",
+    "share/X11/xkb/symbols/tz",
+    "share/X11/xkb/symbols/ua",
+    "share/X11/xkb/symbols/us",
+    "share/X11/xkb/symbols/uz",
+    "share/X11/xkb/symbols/vn",
+    "share/X11/xkb/symbols/xfree68_vndr/amiga",
+    "share/X11/xkb/symbols/xfree68_vndr/ataritt",
+    "share/X11/xkb/symbols/za",
+    "share/X11/xkb/types/README",
+    "share/X11/xkb/types/basic",
+    "share/X11/xkb/types/cancel",
+    "share/X11/xkb/types/caps",
+    "share/X11/xkb/types/complete",
+    "share/X11/xkb/types/default",
+    "share/X11/xkb/types/extra",
+    "share/X11/xkb/types/iso9995",
+    "share/X11/xkb/types/level5",
+    "share/X11/xkb/types/mousekeys",
+    "share/X11/xkb/types/nokia",
+    "share/X11/xkb/types/numpad",
+    "share/X11/xkb/types/pc",
+    "share/locale/af/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/ar/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/az/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/bg/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/ca/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/crh/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/cs/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/da/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/de/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/el/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/en_GB/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/eo/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/es/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/fi/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/fr/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/fur/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/gl/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/he/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/hr/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/hu/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/id/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/it/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/ja/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/ka/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/ko/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/ky/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/lt/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/nb/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/nl/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/pl/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/pt/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/pt_BR/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/ro/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/ru/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/rw/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/sk/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/sl/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/sq/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/sr/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/sv/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/tr/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/uk/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/vi/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/zh_CN/LC_MESSAGES/xkeyboard-config.mo",
+    "share/locale/zh_TW/LC_MESSAGES/xkeyboard-config.mo",
+    "share/pkgconfig/xkeyboard-config.pc"
+  ],
+  "fn": "xkeyboard-config-2.39-hd590300_0.conda",
+  "license": "MIT",
+  "license_family": "MIT",
+  "link": {
+    "source": "/opt/conda/pkgs/xkeyboard-config-2.39-hd590300_0",
+    "type": 1
+  },
+  "md5": "d88c7fc8a11858fb14761832e4da1954",
+  "name": "xkeyboard-config",
+  "package_tarball_full_path": "/opt/conda/pkgs/xkeyboard-config-2.39-hd590300_0.conda",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "share/X11/xkb/compat/README",
+        "path_type": "hardlink",
+        "sha256": "ab88a02b01ce646a5a3965a05f1876b70b97b24e4d6409973126a0baa59126a5",
+        "sha256_in_prefix": "ab88a02b01ce646a5a3965a05f1876b70b97b24e4d6409973126a0baa59126a5",
+        "size_in_bytes": 1712
+      },
+      {
+        "_path": "share/X11/xkb/compat/accessx",
+        "path_type": "hardlink",
+        "sha256": "e7f0630dbf09f3bb3adf3bb8e8d2464afbd6e616fe0075dbef29b7e82bd2a50d",
+        "sha256_in_prefix": "e7f0630dbf09f3bb3adf3bb8e8d2464afbd6e616fe0075dbef29b7e82bd2a50d",
+        "size_in_bytes": 1121
+      },
+      {
+        "_path": "share/X11/xkb/compat/basic",
+        "path_type": "hardlink",
+        "sha256": "381cdef43f910f7f4ddb476b2ff258afe3af6881051f9c71efa5554108c30b4a",
+        "sha256_in_prefix": "381cdef43f910f7f4ddb476b2ff258afe3af6881051f9c71efa5554108c30b4a",
+        "size_in_bytes": 996
+      },
+      {
+        "_path": "share/X11/xkb/compat/caps",
+        "path_type": "hardlink",
+        "sha256": "d001767068fe2791a48f829153820a8717f659e08c9a061759cd66e9e37a3833",
+        "sha256_in_prefix": "d001767068fe2791a48f829153820a8717f659e08c9a061759cd66e9e37a3833",
+        "size_in_bytes": 507
+      },
+      {
+        "_path": "share/X11/xkb/compat/complete",
+        "path_type": "hardlink",
+        "sha256": "11d1fd1f5364ef778eb0edc36b4f1955ca165c1900703f163c1406aa8ae767cd",
+        "sha256_in_prefix": "11d1fd1f5364ef778eb0edc36b4f1955ca165c1900703f163c1406aa8ae767cd",
+        "size_in_bytes": 228
+      },
+      {
+        "_path": "share/X11/xkb/compat/iso9995",
+        "path_type": "hardlink",
+        "sha256": "bfb9feee868fde37f9f5f4ba43924f2b70f621ebe058e1d4c7cef6f7aa4278ca",
+        "sha256_in_prefix": "bfb9feee868fde37f9f5f4ba43924f2b70f621ebe058e1d4c7cef6f7aa4278ca",
+        "size_in_bytes": 1492
+      },
+      {
+        "_path": "share/X11/xkb/compat/japan",
+        "path_type": "hardlink",
+        "sha256": "6a3c404ed599ee6d1ac25dcec0f7c924a7ee715e45555f9a851d52cf3d86716b",
+        "sha256_in_prefix": "6a3c404ed599ee6d1ac25dcec0f7c924a7ee715e45555f9a851d52cf3d86716b",
+        "size_in_bytes": 979
+      },
+      {
+        "_path": "share/X11/xkb/compat/ledcaps",
+        "path_type": "hardlink",
+        "sha256": "7d3882ccecb24b1621975fde25fc7e90e5c1c00197cf67820622458f35bb34ae",
+        "sha256_in_prefix": "7d3882ccecb24b1621975fde25fc7e90e5c1c00197cf67820622458f35bb34ae",
+        "size_in_bytes": 469
+      },
+      {
+        "_path": "share/X11/xkb/compat/ledcompose",
+        "path_type": "hardlink",
+        "sha256": "20fa02f9fe45d9a5f81cca79255755ca7836433c455c727b05f0d3e99b21ae61",
+        "sha256_in_prefix": "20fa02f9fe45d9a5f81cca79255755ca7836433c455c727b05f0d3e99b21ae61",
+        "size_in_bytes": 287
+      },
+      {
+        "_path": "share/X11/xkb/compat/lednum",
+        "path_type": "hardlink",
+        "sha256": "24c54410578e535f6284801c3f1bd342203eb766836bec18b3d40646d165f33d",
+        "sha256_in_prefix": "24c54410578e535f6284801c3f1bd342203eb766836bec18b3d40646d165f33d",
+        "size_in_bytes": 466
+      },
+      {
+        "_path": "share/X11/xkb/compat/ledscroll",
+        "path_type": "hardlink",
+        "sha256": "4deb4eb4390d48791e27840e564b4c0737598252101063dc0a5b5471b7968da5",
+        "sha256_in_prefix": "4deb4eb4390d48791e27840e564b4c0737598252101063dc0a5b5471b7968da5",
+        "size_in_bytes": 486
+      },
+      {
+        "_path": "share/X11/xkb/compat/level5",
+        "path_type": "hardlink",
+        "sha256": "e07406a8982fa3fc94c9bbedbd6a3e3a0159d3e7426960e3b60d7f5bcb8bba1a",
+        "sha256_in_prefix": "e07406a8982fa3fc94c9bbedbd6a3e3a0159d3e7426960e3b60d7f5bcb8bba1a",
+        "size_in_bytes": 1273
+      },
+      {
+        "_path": "share/X11/xkb/compat/misc",
+        "path_type": "hardlink",
+        "sha256": "8e6d15af462a072a41b57082f8c151ae5810dcfc5bd0383370092fbe72d05c44",
+        "sha256_in_prefix": "8e6d15af462a072a41b57082f8c151ae5810dcfc5bd0383370092fbe72d05c44",
+        "size_in_bytes": 2456
+      },
+      {
+        "_path": "share/X11/xkb/compat/mousekeys",
+        "path_type": "hardlink",
+        "sha256": "b4de6898f10617c8172f9a35aae362def187793e1d995f5bb646e0c220b31255",
+        "sha256_in_prefix": "b4de6898f10617c8172f9a35aae362def187793e1d995f5bb646e0c220b31255",
+        "size_in_bytes": 4578
+      },
+      {
+        "_path": "share/X11/xkb/compat/olpc",
+        "path_type": "hardlink",
+        "sha256": "ca4f6a2a5228e120b0f89af67a0c9c0e0cc605f99912e017134981726993fbec",
+        "sha256_in_prefix": "ca4f6a2a5228e120b0f89af67a0c9c0e0cc605f99912e017134981726993fbec",
+        "size_in_bytes": 1001
+      },
+      {
+        "_path": "share/X11/xkb/compat/pc",
+        "path_type": "hardlink",
+        "sha256": "6e1fc869ac431eaa287475c434be6bb1d9eaba79f9592e1949aea60e5605dc96",
+        "sha256_in_prefix": "6e1fc869ac431eaa287475c434be6bb1d9eaba79f9592e1949aea60e5605dc96",
+        "size_in_bytes": 341
+      },
+      {
+        "_path": "share/X11/xkb/compat/pc98",
+        "path_type": "hardlink",
+        "sha256": "5a38d69bc01936edcb19ac2013af10258c020d45bb3391abd0bea59edb88c9c5",
+        "sha256_in_prefix": "5a38d69bc01936edcb19ac2013af10258c020d45bb3391abd0bea59edb88c9c5",
+        "size_in_bytes": 1094
+      },
+      {
+        "_path": "share/X11/xkb/compat/xfree86",
+        "path_type": "hardlink",
+        "sha256": "ade96d0e9fa4427c48e50ec708407bbd94c1bf4560fd05581391647e5f9ee9bb",
+        "sha256_in_prefix": "ade96d0e9fa4427c48e50ec708407bbd94c1bf4560fd05581391647e5f9ee9bb",
+        "size_in_bytes": 1842
+      },
+      {
+        "_path": "share/X11/xkb/compat/xtest",
+        "path_type": "hardlink",
+        "sha256": "978f3f50180025e7de1bbd3b6cd93fab05e1dfa28d48bcf30b8d10eaddb0363d",
+        "sha256_in_prefix": "978f3f50180025e7de1bbd3b6cd93fab05e1dfa28d48bcf30b8d10eaddb0363d",
+        "size_in_bytes": 1399
+      },
+      {
+        "_path": "share/X11/xkb/geometry/README",
+        "path_type": "hardlink",
+        "sha256": "f0d444a24488ccc5e905ff5fc0e8190a613c3938851cb14641660c466a983297",
+        "sha256_in_prefix": "f0d444a24488ccc5e905ff5fc0e8190a613c3938851cb14641660c466a983297",
+        "size_in_bytes": 461
+      },
+      {
+        "_path": "share/X11/xkb/geometry/amiga",
+        "path_type": "hardlink",
+        "sha256": "30c221ba7eaddcb16c5ca7f982a521e552f901adf06002e387f48c301060b751",
+        "sha256_in_prefix": "30c221ba7eaddcb16c5ca7f982a521e552f901adf06002e387f48c301060b751",
+        "size_in_bytes": 6228
+      },
+      {
+        "_path": "share/X11/xkb/geometry/ataritt",
+        "path_type": "hardlink",
+        "sha256": "b43af41ae3f50342760c8d7f6a2e53c10b6c04f47cd5f7693cd579b16cbe0395",
+        "sha256_in_prefix": "b43af41ae3f50342760c8d7f6a2e53c10b6c04f47cd5f7693cd579b16cbe0395",
+        "size_in_bytes": 5775
+      },
+      {
+        "_path": "share/X11/xkb/geometry/chicony",
+        "path_type": "hardlink",
+        "sha256": "644bd4df8c9a816a871ff5acd5cf47bbccc3a6727b6838d4b22c78d3aa2c2b51",
+        "sha256_in_prefix": "644bd4df8c9a816a871ff5acd5cf47bbccc3a6727b6838d4b22c78d3aa2c2b51",
+        "size_in_bytes": 4540
+      },
+      {
+        "_path": "share/X11/xkb/geometry/dell",
+        "path_type": "hardlink",
+        "sha256": "15f5476f05ab289dd3cd2cc44d9786a011bf7754a400af8e1c7c678de621167c",
+        "sha256_in_prefix": "15f5476f05ab289dd3cd2cc44d9786a011bf7754a400af8e1c7c678de621167c",
+        "size_in_bytes": 20245
+      },
+      {
+        "_path": "share/X11/xkb/geometry/digital_vndr/lk",
+        "path_type": "hardlink",
+        "sha256": "426427361388fc73a8094fda2cf591e1ae1674332a6acaef62be1ea293e460e2",
+        "sha256_in_prefix": "426427361388fc73a8094fda2cf591e1ae1674332a6acaef62be1ea293e460e2",
+        "size_in_bytes": 20636
+      },
+      {
+        "_path": "share/X11/xkb/geometry/digital_vndr/pc",
+        "path_type": "hardlink",
+        "sha256": "85de5df45bfd20e6a41e2d08d7eee56c1b6b5acc75f97e261432284c5a8ed77c",
+        "sha256_in_prefix": "85de5df45bfd20e6a41e2d08d7eee56c1b6b5acc75f97e261432284c5a8ed77c",
+        "size_in_bytes": 10864
+      },
+      {
+        "_path": "share/X11/xkb/geometry/digital_vndr/unix",
+        "path_type": "hardlink",
+        "sha256": "d0fc8e398b613067ecc1880cf2e48f88d476705ee679044044acba10d6162e27",
+        "sha256_in_prefix": "d0fc8e398b613067ecc1880cf2e48f88d476705ee679044044acba10d6162e27",
+        "size_in_bytes": 7169
+      },
+      {
+        "_path": "share/X11/xkb/geometry/everex",
+        "path_type": "hardlink",
+        "sha256": "287bcaaeca49daf5a18fcfd913e3f271fbef2c4327b860c145e8507e5fa45f4d",
+        "sha256_in_prefix": "287bcaaeca49daf5a18fcfd913e3f271fbef2c4327b860c145e8507e5fa45f4d",
+        "size_in_bytes": 3839
+      },
+      {
+        "_path": "share/X11/xkb/geometry/fujitsu",
+        "path_type": "hardlink",
+        "sha256": "6127f0cfa9cac59b79900d21ac116b8f6708b4bb57812137b511275a7bf65614",
+        "sha256_in_prefix": "6127f0cfa9cac59b79900d21ac116b8f6708b4bb57812137b511275a7bf65614",
+        "size_in_bytes": 7781
+      },
+      {
+        "_path": "share/X11/xkb/geometry/hhk",
+        "path_type": "hardlink",
+        "sha256": "ca45ee77b81111e721b8f05c4eaec3838b85f1083494a191818bb4ea3f9d5dd0",
+        "sha256_in_prefix": "ca45ee77b81111e721b8f05c4eaec3838b85f1083494a191818bb4ea3f9d5dd0",
+        "size_in_bytes": 5457
+      },
+      {
+        "_path": "share/X11/xkb/geometry/hp",
+        "path_type": "hardlink",
+        "sha256": "da21977d91df78344906167dba287adbdff60339c48254ad3f71dfb4cae8e212",
+        "sha256_in_prefix": "da21977d91df78344906167dba287adbdff60339c48254ad3f71dfb4cae8e212",
+        "size_in_bytes": 17353
+      },
+      {
+        "_path": "share/X11/xkb/geometry/keytronic",
+        "path_type": "hardlink",
+        "sha256": "077238e18a2a33ac71b10fbca54f6ab8e60d58d9ec96a0bfa23e8eabee711956",
+        "sha256_in_prefix": "077238e18a2a33ac71b10fbca54f6ab8e60d58d9ec96a0bfa23e8eabee711956",
+        "size_in_bytes": 6500
+      },
+      {
+        "_path": "share/X11/xkb/geometry/kinesis",
+        "path_type": "hardlink",
+        "sha256": "f59a35cf325f9df41959249385c51b93aa207dfbc1c2529f0f50c3ff43c05a18",
+        "sha256_in_prefix": "f59a35cf325f9df41959249385c51b93aa207dfbc1c2529f0f50c3ff43c05a18",
+        "size_in_bytes": 4036
+      },
+      {
+        "_path": "share/X11/xkb/geometry/macintosh",
+        "path_type": "hardlink",
+        "sha256": "00443f48d41858d73b23785ed22abf28332db00f8923c6a638ae66202f05db4f",
+        "sha256_in_prefix": "00443f48d41858d73b23785ed22abf28332db00f8923c6a638ae66202f05db4f",
+        "size_in_bytes": 41055
+      },
+      {
+        "_path": "share/X11/xkb/geometry/microsoft",
+        "path_type": "hardlink",
+        "sha256": "b5f943d1cbdb478778bc86ee42db6fc01e29a9ccaa12888628b8c9f749527a2e",
+        "sha256_in_prefix": "b5f943d1cbdb478778bc86ee42db6fc01e29a9ccaa12888628b8c9f749527a2e",
+        "size_in_bytes": 12607
+      },
+      {
+        "_path": "share/X11/xkb/geometry/nec",
+        "path_type": "hardlink",
+        "sha256": "5f9154a1dd54715cfdac75492e517b083af551850b3b4bb1de9e27a1690c14ae",
+        "sha256_in_prefix": "5f9154a1dd54715cfdac75492e517b083af551850b3b4bb1de9e27a1690c14ae",
+        "size_in_bytes": 4152
+      },
+      {
+        "_path": "share/X11/xkb/geometry/nokia",
+        "path_type": "hardlink",
+        "sha256": "9f442dbc1742a738e44ecb2566ee5f41832c5ba19f351d040f3a6823af8deef2",
+        "sha256_in_prefix": "9f442dbc1742a738e44ecb2566ee5f41832c5ba19f351d040f3a6823af8deef2",
+        "size_in_bytes": 1264
+      },
+      {
+        "_path": "share/X11/xkb/geometry/northgate",
+        "path_type": "hardlink",
+        "sha256": "8df7bc0fca08e596ab197502f04392484de5d90962bfe4183faba8fec1e87214",
+        "sha256_in_prefix": "8df7bc0fca08e596ab197502f04392484de5d90962bfe4183faba8fec1e87214",
+        "size_in_bytes": 4017
+      },
+      {
+        "_path": "share/X11/xkb/geometry/pc",
+        "path_type": "hardlink",
+        "sha256": "18841483150a614b750ddcddf9cc71b5959f68129b42fd5a59cb3437e4e62e81",
+        "sha256_in_prefix": "18841483150a614b750ddcddf9cc71b5959f68129b42fd5a59cb3437e4e62e81",
+        "size_in_bytes": 25780
+      },
+      {
+        "_path": "share/X11/xkb/geometry/sanwa",
+        "path_type": "hardlink",
+        "sha256": "e8a2e1347479a910d2da18aa09a53e992802106f415d349f40e691d0d32de7b2",
+        "sha256_in_prefix": "e8a2e1347479a910d2da18aa09a53e992802106f415d349f40e691d0d32de7b2",
+        "size_in_bytes": 5878
+      },
+      {
+        "_path": "share/X11/xkb/geometry/sgi_vndr/O2",
+        "path_type": "hardlink",
+        "sha256": "afeb24d94dbd5190dac1381f3b85ce1cc0a997e19eda0bb58a0605fe38caa29e",
+        "sha256_in_prefix": "afeb24d94dbd5190dac1381f3b85ce1cc0a997e19eda0bb58a0605fe38caa29e",
+        "size_in_bytes": 15323
+      },
+      {
+        "_path": "share/X11/xkb/geometry/sgi_vndr/indigo",
+        "path_type": "hardlink",
+        "sha256": "2842902a07adab76a7430462daec6442e405f2dbb76b3d1beff1fdc58317420b",
+        "sha256_in_prefix": "2842902a07adab76a7430462daec6442e405f2dbb76b3d1beff1fdc58317420b",
+        "size_in_bytes": 10401
+      },
+      {
+        "_path": "share/X11/xkb/geometry/sgi_vndr/indy",
+        "path_type": "hardlink",
+        "sha256": "f146cd089136f7765da7dcd74820dec46ca5ce468a64be29898c2d7b191993cb",
+        "sha256_in_prefix": "f146cd089136f7765da7dcd74820dec46ca5ce468a64be29898c2d7b191993cb",
+        "size_in_bytes": 14976
+      },
+      {
+        "_path": "share/X11/xkb/geometry/sony",
+        "path_type": "hardlink",
+        "sha256": "260bed9d9d3e495828f91bd47426cce2aa4a42a7655570deea3591578f169f3a",
+        "sha256_in_prefix": "260bed9d9d3e495828f91bd47426cce2aa4a42a7655570deea3591578f169f3a",
+        "size_in_bytes": 4961
+      },
+      {
+        "_path": "share/X11/xkb/geometry/steelseries",
+        "path_type": "hardlink",
+        "sha256": "d1b3a84216e73c5279044c72002c9f3ebc7b3b79364e496294272172843f19c4",
+        "sha256_in_prefix": "d1b3a84216e73c5279044c72002c9f3ebc7b3b79364e496294272172843f19c4",
+        "size_in_bytes": 8282
+      },
+      {
+        "_path": "share/X11/xkb/geometry/sun",
+        "path_type": "hardlink",
+        "sha256": "25d4f0d4425ed26ed62f7f6d8d8cc054bd759b7f25eb7c2b0aac2ae32ae0d622",
+        "sha256_in_prefix": "25d4f0d4425ed26ed62f7f6d8d8cc054bd759b7f25eb7c2b0aac2ae32ae0d622",
+        "size_in_bytes": 19823
+      },
+      {
+        "_path": "share/X11/xkb/geometry/teck",
+        "path_type": "hardlink",
+        "sha256": "90b60ffb32d3c8465756b7563579ef57542f9c9747b17925f5c05c05122db91a",
+        "sha256_in_prefix": "90b60ffb32d3c8465756b7563579ef57542f9c9747b17925f5c05c05122db91a",
+        "size_in_bytes": 9728
+      },
+      {
+        "_path": "share/X11/xkb/geometry/thinkpad",
+        "path_type": "hardlink",
+        "sha256": "bc87c1cdbe1dcaeb46b7e9fb862124de6b833fa15da0a17a4259676593285bd6",
+        "sha256_in_prefix": "bc87c1cdbe1dcaeb46b7e9fb862124de6b833fa15da0a17a4259676593285bd6",
+        "size_in_bytes": 12135
+      },
+      {
+        "_path": "share/X11/xkb/geometry/typematrix",
+        "path_type": "hardlink",
+        "sha256": "12b99ee4a0ce181af768d23d464ed48f4927acbea778980543856cc9b1f89877",
+        "sha256_in_prefix": "12b99ee4a0ce181af768d23d464ed48f4927acbea778980543856cc9b1f89877",
+        "size_in_bytes": 21188
+      },
+      {
+        "_path": "share/X11/xkb/geometry/winbook",
+        "path_type": "hardlink",
+        "sha256": "f96e59f44427be04f8baa9cf8860fcde3d101410bb61d95f1d37df998d68db3b",
+        "sha256_in_prefix": "f96e59f44427be04f8baa9cf8860fcde3d101410bb61d95f1d37df998d68db3b",
+        "size_in_bytes": 2766
+      },
+      {
+        "_path": "share/X11/xkb/keycodes/README",
+        "path_type": "hardlink",
+        "sha256": "e074717ddf8dbfda1e911efb80cf22ebad64e30c74766c0da24a084b1261056b",
+        "sha256_in_prefix": "e074717ddf8dbfda1e911efb80cf22ebad64e30c74766c0da24a084b1261056b",
+        "size_in_bytes": 416
+      },
+      {
+        "_path": "share/X11/xkb/keycodes/aliases",
+        "path_type": "hardlink",
+        "sha256": "85f774170fc1526e8a909a1e2952423dae3891b721abc293a27dc450818dcc6d",
+        "sha256_in_prefix": "85f774170fc1526e8a909a1e2952423dae3891b721abc293a27dc450818dcc6d",
+        "size_in_bytes": 2176
+      },
+      {
+        "_path": "share/X11/xkb/keycodes/amiga",
+        "path_type": "hardlink",
+        "sha256": "d8469bc1c9375625b62c93847e6e1505598d825bb29d176a5a5f028f0e6a45d0",
+        "sha256_in_prefix": "d8469bc1c9375625b62c93847e6e1505598d825bb29d176a5a5f028f0e6a45d0",
+        "size_in_bytes": 3401
+      },
+      {
+        "_path": "share/X11/xkb/keycodes/ataritt",
+        "path_type": "hardlink",
+        "sha256": "8d39211d4948fe77c483d45f953ea983c0e11c120ababe634fdc696300106fa2",
+        "sha256_in_prefix": "8d39211d4948fe77c483d45f953ea983c0e11c120ababe634fdc696300106fa2",
+        "size_in_bytes": 1839
+      },
+      {
+        "_path": "share/X11/xkb/keycodes/digital_vndr/lk",
+        "path_type": "hardlink",
+        "sha256": "1f5937d4c1735e2f87b1fc722378f29deeffc4cc9767d7c9e42d2f707e8bf79b",
+        "sha256_in_prefix": "1f5937d4c1735e2f87b1fc722378f29deeffc4cc9767d7c9e42d2f707e8bf79b",
+        "size_in_bytes": 6133
+      },
+      {
+        "_path": "share/X11/xkb/keycodes/digital_vndr/pc",
+        "path_type": "hardlink",
+        "sha256": "3894eee02955f0c3253d1ce1303035f8e5e342be81660c2044215cebe6d8e932",
+        "sha256_in_prefix": "3894eee02955f0c3253d1ce1303035f8e5e342be81660c2044215cebe6d8e932",
+        "size_in_bytes": 6102
+      },
+      {
+        "_path": "share/X11/xkb/keycodes/empty",
+        "path_type": "hardlink",
+        "sha256": "69997f35044955d76a14361f4751a5aca361d3edca6ba2007368ee7c7e8c024f",
+        "sha256_in_prefix": "69997f35044955d76a14361f4751a5aca361d3edca6ba2007368ee7c7e8c024f",
+        "size_in_bytes": 68
+      },
+      {
+        "_path": "share/X11/xkb/keycodes/evdev",
+        "path_type": "hardlink",
+        "sha256": "4089be321b3a984718655cb36e2b7a6e498b615958c47b1a17a99b3ae33fe385",
+        "sha256_in_prefix": "4089be321b3a984718655cb36e2b7a6e498b615958c47b1a17a99b3ae33fe385",
+        "size_in_bytes": 24525
+      },
+      {
+        "_path": "share/X11/xkb/keycodes/fujitsu",
+        "path_type": "hardlink",
+        "sha256": "8526ca756290d468e390f0c3b8b06c56068c1ea71c7d0f44bffd95a2efb66a43",
+        "sha256_in_prefix": "8526ca756290d468e390f0c3b8b06c56068c1ea71c7d0f44bffd95a2efb66a43",
+        "size_in_bytes": 3715
+      },
+      {
+        "_path": "share/X11/xkb/keycodes/hp",
+        "path_type": "hardlink",
+        "sha256": "2410b73208fdb5addbf85c6f245207c07b1e4f0f0d3771c7a297413205f93161",
+        "sha256_in_prefix": "2410b73208fdb5addbf85c6f245207c07b1e4f0f0d3771c7a297413205f93161",
+        "size_in_bytes": 4971
+      },
+      {
+        "_path": "share/X11/xkb/keycodes/ibm",
+        "path_type": "hardlink",
+        "sha256": "a49eb0ebdcd564a3050bd0df6158f8586791e1ba9a2fc63ff8109e8b9b6a492f",
+        "sha256_in_prefix": "a49eb0ebdcd564a3050bd0df6158f8586791e1ba9a2fc63ff8109e8b9b6a492f",
+        "size_in_bytes": 3146
+      },
+      {
+        "_path": "share/X11/xkb/keycodes/jolla",
+        "path_type": "hardlink",
+        "sha256": "7f1a36f508f43c9f5613e0b167f4cebec3e6efba4c24e09eff2473fa7261f1d2",
+        "sha256_in_prefix": "7f1a36f508f43c9f5613e0b167f4cebec3e6efba4c24e09eff2473fa7261f1d2",
+        "size_in_bytes": 283
+      },
+      {
+        "_path": "share/X11/xkb/keycodes/macintosh",
+        "path_type": "hardlink",
+        "sha256": "007d7ba845cd6eac3c4823ac4cc1e0432bc2e59c412d8f2265748180bddcbffe",
+        "sha256_in_prefix": "007d7ba845cd6eac3c4823ac4cc1e0432bc2e59c412d8f2265748180bddcbffe",
+        "size_in_bytes": 4123
+      },
+      {
+        "_path": "share/X11/xkb/keycodes/olpc",
+        "path_type": "hardlink",
+        "sha256": "b0ccc40066ba04bba9afd68a002ace2b1adedde2f16caa044b7b5b1d2c167b26",
+        "sha256_in_prefix": "b0ccc40066ba04bba9afd68a002ace2b1adedde2f16caa044b7b5b1d2c167b26",
+        "size_in_bytes": 762
+      },
+      {
+        "_path": "share/X11/xkb/keycodes/sgi_vndr/indigo",
+        "path_type": "hardlink",
+        "sha256": "e7567e5fc5892eb1c23b82d3bcfc2a1e2c8eb6e499bac24e641ff300a066cbe3",
+        "sha256_in_prefix": "e7567e5fc5892eb1c23b82d3bcfc2a1e2c8eb6e499bac24e641ff300a066cbe3",
+        "size_in_bytes": 2311
+      },
+      {
+        "_path": "share/X11/xkb/keycodes/sgi_vndr/indy",
+        "path_type": "hardlink",
+        "sha256": "a8e49f04133afdbbcf18b1039f9b9fdd912729ce5d6dc89eacecde2a8263a82c",
+        "sha256_in_prefix": "a8e49f04133afdbbcf18b1039f9b9fdd912729ce5d6dc89eacecde2a8263a82c",
+        "size_in_bytes": 3683
+      },
+      {
+        "_path": "share/X11/xkb/keycodes/sgi_vndr/iris",
+        "path_type": "hardlink",
+        "sha256": "ce07fdaefbf422068d81ad11db84e97e5293e623815707b1bff37ee5089a38f8",
+        "sha256_in_prefix": "ce07fdaefbf422068d81ad11db84e97e5293e623815707b1bff37ee5089a38f8",
+        "size_in_bytes": 260
+      },
+      {
+        "_path": "share/X11/xkb/keycodes/sony",
+        "path_type": "hardlink",
+        "sha256": "d139cbf6038f8b03e870727a101aa89a7891bc745e92aaf15ba0bbb6007c084c",
+        "sha256_in_prefix": "d139cbf6038f8b03e870727a101aa89a7891bc745e92aaf15ba0bbb6007c084c",
+        "size_in_bytes": 2954
+      },
+      {
+        "_path": "share/X11/xkb/keycodes/sun",
+        "path_type": "hardlink",
+        "sha256": "82a6c5dd6b6a0804efa2fc0f301705d86742198db6773fe5df926c2e53cff3dd",
+        "sha256_in_prefix": "82a6c5dd6b6a0804efa2fc0f301705d86742198db6773fe5df926c2e53cff3dd",
+        "size_in_bytes": 5076
+      },
+      {
+        "_path": "share/X11/xkb/keycodes/xfree86",
+        "path_type": "hardlink",
+        "sha256": "1688a7210feec43e947d4bb7ee200b1ec9698d674f732c5a0b456f082f6772a1",
+        "sha256_in_prefix": "1688a7210feec43e947d4bb7ee200b1ec9698d674f732c5a0b456f082f6772a1",
+        "size_in_bytes": 8752
+      },
+      {
+        "_path": "share/X11/xkb/keycodes/xfree98",
+        "path_type": "hardlink",
+        "sha256": "cd7b8343937d98653b3a2f698fcc5dc3aff3a6b523d2cce5307d6eead5006602",
+        "sha256_in_prefix": "cd7b8343937d98653b3a2f698fcc5dc3aff3a6b523d2cce5307d6eead5006602",
+        "size_in_bytes": 3204
+      },
+      {
+        "_path": "share/X11/xkb/rules/README",
+        "path_type": "hardlink",
+        "sha256": "808e2a1f26cbfd2e26830f26179365312d0a167bfc11365cd553c8670718279d",
+        "sha256_in_prefix": "808e2a1f26cbfd2e26830f26179365312d0a167bfc11365cd553c8670718279d",
+        "size_in_bytes": 91
+      },
+      {
+        "_path": "share/X11/xkb/rules/base",
+        "path_type": "hardlink",
+        "sha256": "8ca2f797fb19f807214e578aa325d704a063b2d6cf47a26a5c9693e0ddc3cc22",
+        "sha256_in_prefix": "8ca2f797fb19f807214e578aa325d704a063b2d6cf47a26a5c9693e0ddc3cc22",
+        "size_in_bytes": 38467
+      },
+      {
+        "_path": "share/X11/xkb/rules/base.extras.xml",
+        "path_type": "hardlink",
+        "sha256": "1bee78a399d40e0475a2a3c847a61b2d2daf29cabea856b89e2f1efb356867df",
+        "sha256_in_prefix": "1bee78a399d40e0475a2a3c847a61b2d2daf29cabea856b89e2f1efb356867df",
+        "size_in_bytes": 58890
+      },
+      {
+        "_path": "share/X11/xkb/rules/base.lst",
+        "path_type": "hardlink",
+        "sha256": "8eb200f0798bfa64ff9fb6806a8a858a0a6539ae331451a15b6aac21d363b35e",
+        "sha256_in_prefix": "8eb200f0798bfa64ff9fb6806a8a858a0a6539ae331451a15b6aac21d363b35e",
+        "size_in_bytes": 46541
+      },
+      {
+        "_path": "share/X11/xkb/rules/base.xml",
+        "path_type": "hardlink",
+        "sha256": "9e78c122586cf327e2ff06e8305dcff472ec5a2988417a01a675fddb0f84c163",
+        "sha256_in_prefix": "9e78c122586cf327e2ff06e8305dcff472ec5a2988417a01a675fddb0f84c163",
+        "size_in_bytes": 253165
+      },
+      {
+        "_path": "share/X11/xkb/rules/evdev",
+        "path_type": "hardlink",
+        "sha256": "c3ae279e67bbc031fa31f9cd521869782a7f629f2468cb6eaf892a2a72543324",
+        "sha256_in_prefix": "c3ae279e67bbc031fa31f9cd521869782a7f629f2468cb6eaf892a2a72543324",
+        "size_in_bytes": 33414
+      },
+      {
+        "_path": "share/X11/xkb/rules/evdev.extras.xml",
+        "path_type": "hardlink",
+        "sha256": "1bee78a399d40e0475a2a3c847a61b2d2daf29cabea856b89e2f1efb356867df",
+        "sha256_in_prefix": "1bee78a399d40e0475a2a3c847a61b2d2daf29cabea856b89e2f1efb356867df",
+        "size_in_bytes": 58890
+      },
+      {
+        "_path": "share/X11/xkb/rules/evdev.lst",
+        "path_type": "hardlink",
+        "sha256": "8eb200f0798bfa64ff9fb6806a8a858a0a6539ae331451a15b6aac21d363b35e",
+        "sha256_in_prefix": "8eb200f0798bfa64ff9fb6806a8a858a0a6539ae331451a15b6aac21d363b35e",
+        "size_in_bytes": 46541
+      },
+      {
+        "_path": "share/X11/xkb/rules/evdev.xml",
+        "path_type": "hardlink",
+        "sha256": "9e78c122586cf327e2ff06e8305dcff472ec5a2988417a01a675fddb0f84c163",
+        "sha256_in_prefix": "9e78c122586cf327e2ff06e8305dcff472ec5a2988417a01a675fddb0f84c163",
+        "size_in_bytes": 253165
+      },
+      {
+        "_path": "share/X11/xkb/rules/xfree98",
+        "path_type": "hardlink",
+        "sha256": "e445de8c6c39e12bea2c1ec0c2de374d50560f7db281fd45a5de084eba674508",
+        "sha256_in_prefix": "e445de8c6c39e12bea2c1ec0c2de374d50560f7db281fd45a5de084eba674508",
+        "size_in_bytes": 864
+      },
+      {
+        "_path": "share/X11/xkb/rules/xkb.dtd",
+        "path_type": "hardlink",
+        "sha256": "7e4bb292bd76f1d5fd4b7ce46dc53a315d1e08091b7125adf8664ff9f9325cae",
+        "sha256_in_prefix": "7e4bb292bd76f1d5fd4b7ce46dc53a315d1e08091b7125adf8664ff9f9325cae",
+        "size_in_bytes": 1086
+      },
+      {
+        "_path": "share/X11/xkb/symbols/af",
+        "path_type": "hardlink",
+        "sha256": "5228f9e07a9f3a41c7d403b93b31bbe855f67d58a4f34491c4a1f5eb79c6d05c",
+        "sha256_in_prefix": "5228f9e07a9f3a41c7d403b93b31bbe855f67d58a4f34491c4a1f5eb79c6d05c",
+        "size_in_bytes": 22269
+      },
+      {
+        "_path": "share/X11/xkb/symbols/al",
+        "path_type": "hardlink",
+        "sha256": "c770eee74ef2ee313c6f2f1202f046843848eb84b46f7a3c0f16442884a0616d",
+        "sha256_in_prefix": "c770eee74ef2ee313c6f2f1202f046843848eb84b46f7a3c0f16442884a0616d",
+        "size_in_bytes": 5915
+      },
+      {
+        "_path": "share/X11/xkb/symbols/altwin",
+        "path_type": "hardlink",
+        "sha256": "6a19dc93d2b274ca05d631c1afb0e35db50387c3d223a845d4d0025b55a904e7",
+        "sha256_in_prefix": "6a19dc93d2b274ca05d631c1afb0e35db50387c3d223a845d4d0025b55a904e7",
+        "size_in_bytes": 3667
+      },
+      {
+        "_path": "share/X11/xkb/symbols/am",
+        "path_type": "hardlink",
+        "sha256": "ceccbcf803a4b144bcb306d7118d930b2b681d4610c2ed9683678de30e1e582f",
+        "sha256_in_prefix": "ceccbcf803a4b144bcb306d7118d930b2b681d4610c2ed9683678de30e1e582f",
+        "size_in_bytes": 9466
+      },
+      {
+        "_path": "share/X11/xkb/symbols/ancient",
+        "path_type": "hardlink",
+        "sha256": "0bc3bc3db200d4f5e6c00cb41930dfe9b902d06dca46597a6d271eb94f5100ff",
+        "sha256_in_prefix": "0bc3bc3db200d4f5e6c00cb41930dfe9b902d06dca46597a6d271eb94f5100ff",
+        "size_in_bytes": 8468
+      },
+      {
+        "_path": "share/X11/xkb/symbols/apl",
+        "path_type": "hardlink",
+        "sha256": "1545240117d393783f438cf05fa8a5e3f43bf727484e985462d0999d7664c1c3",
+        "sha256_in_prefix": "1545240117d393783f438cf05fa8a5e3f43bf727484e985462d0999d7664c1c3",
+        "size_in_bytes": 52186
+      },
+      {
+        "_path": "share/X11/xkb/symbols/ara",
+        "path_type": "hardlink",
+        "sha256": "33d39b649b6ac0f924d50bc3912a5385c19c071f484b6cae42058c83dc52d0c8",
+        "sha256_in_prefix": "33d39b649b6ac0f924d50bc3912a5385c19c071f484b6cae42058c83dc52d0c8",
+        "size_in_bytes": 30619
+      },
+      {
+        "_path": "share/X11/xkb/symbols/at",
+        "path_type": "hardlink",
+        "sha256": "e878e22e81bc7e0dd1f04aabbc7981e6605eee94f64150822f209eb1f31017fc",
+        "sha256_in_prefix": "e878e22e81bc7e0dd1f04aabbc7981e6605eee94f64150822f209eb1f31017fc",
+        "size_in_bytes": 392
+      },
+      {
+        "_path": "share/X11/xkb/symbols/au",
+        "path_type": "hardlink",
+        "sha256": "6d54de90977bd0e50751a9413247b338a237e16bd91ac7d588c9340aae60604e",
+        "sha256_in_prefix": "6d54de90977bd0e50751a9413247b338a237e16bd91ac7d588c9340aae60604e",
+        "size_in_bytes": 222
+      },
+      {
+        "_path": "share/X11/xkb/symbols/az",
+        "path_type": "hardlink",
+        "sha256": "244f3748072dd88d1ff2e597b21f7d3e896b551ffcb003432960ee0ca9c29a2d",
+        "sha256_in_prefix": "244f3748072dd88d1ff2e597b21f7d3e896b551ffcb003432960ee0ca9c29a2d",
+        "size_in_bytes": 3946
+      },
+      {
+        "_path": "share/X11/xkb/symbols/ba",
+        "path_type": "hardlink",
+        "sha256": "fde993c5a87ca245efd331948d4a1212805107aeebe720b1233c855c045c42d3",
+        "sha256_in_prefix": "fde993c5a87ca245efd331948d4a1212805107aeebe720b1233c855c045c42d3",
+        "size_in_bytes": 690
+      },
+      {
+        "_path": "share/X11/xkb/symbols/bd",
+        "path_type": "hardlink",
+        "sha256": "fc21d55bac4ef2fdb96f92f52aa9f3633653ebcadf907f785d0ab3c6d49a7b12",
+        "sha256_in_prefix": "fc21d55bac4ef2fdb96f92f52aa9f3633653ebcadf907f785d0ab3c6d49a7b12",
+        "size_in_bytes": 3325
+      },
+      {
+        "_path": "share/X11/xkb/symbols/be",
+        "path_type": "hardlink",
+        "sha256": "3631bf761e8091ba196f1153faa1cf2d6862c663003c3d9759992d2e7fbaa6ce",
+        "sha256_in_prefix": "3631bf761e8091ba196f1153faa1cf2d6862c663003c3d9759992d2e7fbaa6ce",
+        "size_in_bytes": 10629
+      },
+      {
+        "_path": "share/X11/xkb/symbols/bg",
+        "path_type": "hardlink",
+        "sha256": "35e9de46ed3ad251150965f96055c8d7091cd246616ccd3d38b3077542d23d4d",
+        "sha256_in_prefix": "35e9de46ed3ad251150965f96055c8d7091cd246616ccd3d38b3077542d23d4d",
+        "size_in_bytes": 18901
+      },
+      {
+        "_path": "share/X11/xkb/symbols/bqn",
+        "path_type": "hardlink",
+        "sha256": "d22cb1cd606d450430f07f4b485aaed40a033782c731c09ff38454300268c76e",
+        "sha256_in_prefix": "d22cb1cd606d450430f07f4b485aaed40a033782c731c09ff38454300268c76e",
+        "size_in_bytes": 5301
+      },
+      {
+        "_path": "share/X11/xkb/symbols/br",
+        "path_type": "hardlink",
+        "sha256": "28a26901d739b0ed8c3e02c33555c2b48d24970e4b3b78480b9e375652a0fc9a",
+        "sha256_in_prefix": "28a26901d739b0ed8c3e02c33555c2b48d24970e4b3b78480b9e375652a0fc9a",
+        "size_in_bytes": 19036
+      },
+      {
+        "_path": "share/X11/xkb/symbols/brai",
+        "path_type": "hardlink",
+        "sha256": "d4de99d29c79da17d1c0bd5177833abc74d6f79b1465e19d57d697fc0f26af63",
+        "sha256_in_prefix": "d4de99d29c79da17d1c0bd5177833abc74d6f79b1465e19d57d697fc0f26af63",
+        "size_in_bytes": 2510
+      },
+      {
+        "_path": "share/X11/xkb/symbols/bt",
+        "path_type": "hardlink",
+        "sha256": "a14842315c52340a6f8273a610b255bfe3af765bdf669117c94d4e9f227652d7",
+        "sha256_in_prefix": "a14842315c52340a6f8273a610b255bfe3af765bdf669117c94d4e9f227652d7",
+        "size_in_bytes": 3681
+      },
+      {
+        "_path": "share/X11/xkb/symbols/bw",
+        "path_type": "hardlink",
+        "sha256": "d038072be9eee7b2ce64079f9bcc95bbc0b91009e3d1c8ed9049e65e5a35da21",
+        "sha256_in_prefix": "d038072be9eee7b2ce64079f9bcc95bbc0b91009e3d1c8ed9049e65e5a35da21",
+        "size_in_bytes": 950
+      },
+      {
+        "_path": "share/X11/xkb/symbols/by",
+        "path_type": "hardlink",
+        "sha256": "54bba08ab6b920ab145d51a7e1e3feb9d8e702e4f4d5df42fea588dc95180861",
+        "sha256_in_prefix": "54bba08ab6b920ab145d51a7e1e3feb9d8e702e4f4d5df42fea588dc95180861",
+        "size_in_bytes": 4417
+      },
+      {
+        "_path": "share/X11/xkb/symbols/ca",
+        "path_type": "hardlink",
+        "sha256": "3c7a55a158984dcb9b24103b8ad9af343532cc55a283c1039f5dbfc7595b714b",
+        "sha256_in_prefix": "3c7a55a158984dcb9b24103b8ad9af343532cc55a283c1039f5dbfc7595b714b",
+        "size_in_bytes": 17126
+      },
+      {
+        "_path": "share/X11/xkb/symbols/capslock",
+        "path_type": "hardlink",
+        "sha256": "1fe187515174b87f0636e88d199afc84acac59e3a36319d39b625a4ff525bc67",
+        "sha256_in_prefix": "1fe187515174b87f0636e88d199afc84acac59e3a36319d39b625a4ff525bc67",
+        "size_in_bytes": 2238
+      },
+      {
+        "_path": "share/X11/xkb/symbols/cd",
+        "path_type": "hardlink",
+        "sha256": "5f9aa09e6692cd1ca0b0257a94ec9b63a8c3253f97568e724fba6ffe7ae41496",
+        "sha256_in_prefix": "5f9aa09e6692cd1ca0b0257a94ec9b63a8c3253f97568e724fba6ffe7ae41496",
+        "size_in_bytes": 4069
+      },
+      {
+        "_path": "share/X11/xkb/symbols/ch",
+        "path_type": "hardlink",
+        "sha256": "71b2bab94965f21dd656a149432518bbce8148a969463965604ae2a3dd5f7e80",
+        "sha256_in_prefix": "71b2bab94965f21dd656a149432518bbce8148a969463965604ae2a3dd5f7e80",
+        "size_in_bytes": 6801
+      },
+      {
+        "_path": "share/X11/xkb/symbols/cm",
+        "path_type": "hardlink",
+        "sha256": "5800bdfa333310b9028b116d31757952d60fa64bfb2669b178e520da88712fbd",
+        "sha256_in_prefix": "5800bdfa333310b9028b116d31757952d60fa64bfb2669b178e520da88712fbd",
+        "size_in_bytes": 28179
+      },
+      {
+        "_path": "share/X11/xkb/symbols/cn",
+        "path_type": "hardlink",
+        "sha256": "b296dc2bff116f3d6198536111acca540b766b2ffeb5ae0ff44b20aa9afe0348",
+        "sha256_in_prefix": "b296dc2bff116f3d6198536111acca540b766b2ffeb5ae0ff44b20aa9afe0348",
+        "size_in_bytes": 37393
+      },
+      {
+        "_path": "share/X11/xkb/symbols/compose",
+        "path_type": "hardlink",
+        "sha256": "10947142db6939e7adf1004b5cde6b190d577706ff4b7c0f0ca0a0ddb57262d9",
+        "sha256_in_prefix": "10947142db6939e7adf1004b5cde6b190d577706ff4b7c0f0ca0a0ddb57262d9",
+        "size_in_bytes": 2485
+      },
+      {
+        "_path": "share/X11/xkb/symbols/ctrl",
+        "path_type": "hardlink",
+        "sha256": "f483e41594282730c37a4aa2b623df15790df8e1711a7e63ae5b49ef21f45e2f",
+        "sha256_in_prefix": "f483e41594282730c37a4aa2b623df15790df8e1711a7e63ae5b49ef21f45e2f",
+        "size_in_bytes": 3947
+      },
+      {
+        "_path": "share/X11/xkb/symbols/cz",
+        "path_type": "hardlink",
+        "sha256": "277b83f2628ddd3fec3661931c1e490477039f78ef41923910605685c453ebcc",
+        "sha256_in_prefix": "277b83f2628ddd3fec3661931c1e490477039f78ef41923910605685c453ebcc",
+        "size_in_bytes": 27594
+      },
+      {
+        "_path": "share/X11/xkb/symbols/de",
+        "path_type": "hardlink",
+        "sha256": "1fb857dd1282616a90ecedecbc970db765f3984fb7953f6190ff253770c08a60",
+        "sha256_in_prefix": "1fb857dd1282616a90ecedecbc970db765f3984fb7953f6190ff253770c08a60",
+        "size_in_bytes": 91041
+      },
+      {
+        "_path": "share/X11/xkb/symbols/digital_vndr/lk",
+        "path_type": "hardlink",
+        "sha256": "3e89a73619c17c7dc97e80c7c8a9c283ca08a62c5db0a7304725805967583c88",
+        "sha256_in_prefix": "3e89a73619c17c7dc97e80c7c8a9c283ca08a62c5db0a7304725805967583c88",
+        "size_in_bytes": 4361
+      },
+      {
+        "_path": "share/X11/xkb/symbols/digital_vndr/pc",
+        "path_type": "hardlink",
+        "sha256": "90db0a1345504db8df4ab2552691d6e00736f3e55fe7ec031877e714af4b07c3",
+        "sha256_in_prefix": "90db0a1345504db8df4ab2552691d6e00736f3e55fe7ec031877e714af4b07c3",
+        "size_in_bytes": 6199
+      },
+      {
+        "_path": "share/X11/xkb/symbols/digital_vndr/us",
+        "path_type": "hardlink",
+        "sha256": "73ce2b3b3c803733f5e3d980ff02a81bdf66e4eae7366f9303d5349a4367fca9",
+        "sha256_in_prefix": "73ce2b3b3c803733f5e3d980ff02a81bdf66e4eae7366f9303d5349a4367fca9",
+        "size_in_bytes": 7959
+      },
+      {
+        "_path": "share/X11/xkb/symbols/digital_vndr/vt",
+        "path_type": "hardlink",
+        "sha256": "88b0673c4fbf9f3b8bf4f8993c16c2b6be3faa296caa3db48b82cb60ff01d992",
+        "sha256_in_prefix": "88b0673c4fbf9f3b8bf4f8993c16c2b6be3faa296caa3db48b82cb60ff01d992",
+        "size_in_bytes": 5462
+      },
+      {
+        "_path": "share/X11/xkb/symbols/dk",
+        "path_type": "hardlink",
+        "sha256": "7fb03abcaf042dcf08642b16882c91adcd06390ecfd116a372ccc5de4ef58c2c",
+        "sha256_in_prefix": "7fb03abcaf042dcf08642b16882c91adcd06390ecfd116a372ccc5de4ef58c2c",
+        "size_in_bytes": 2434
+      },
+      {
+        "_path": "share/X11/xkb/symbols/dz",
+        "path_type": "hardlink",
+        "sha256": "dd386fe1f35be1f9d6cc1f45e3d451003468850a159d66873064ef41f14e6bb5",
+        "sha256_in_prefix": "dd386fe1f35be1f9d6cc1f45e3d451003468850a159d66873064ef41f14e6bb5",
+        "size_in_bytes": 12452
+      },
+      {
+        "_path": "share/X11/xkb/symbols/ee",
+        "path_type": "hardlink",
+        "sha256": "9e87387836b740f3c994f5872a6494ca24b373a5f6ca179d847ddb6968f9f11c",
+        "sha256_in_prefix": "9e87387836b740f3c994f5872a6494ca24b373a5f6ca179d847ddb6968f9f11c",
+        "size_in_bytes": 4849
+      },
+      {
+        "_path": "share/X11/xkb/symbols/eg",
+        "path_type": "hardlink",
+        "sha256": "b75c48242584994e9f85cd1ce788bdd73ca3a646bcd1b78f64ac143c1ae68604",
+        "sha256_in_prefix": "b75c48242584994e9f85cd1ce788bdd73ca3a646bcd1b78f64ac143c1ae68604",
+        "size_in_bytes": 2101
+      },
+      {
+        "_path": "share/X11/xkb/symbols/empty",
+        "path_type": "hardlink",
+        "sha256": "887e05c9d27f1269ee87908c81bccef237b34e22f5db7e30ff8c3381691c6ac8",
+        "sha256_in_prefix": "887e05c9d27f1269ee87908c81bccef237b34e22f5db7e30ff8c3381691c6ac8",
+        "size_in_bytes": 121
+      },
+      {
+        "_path": "share/X11/xkb/symbols/epo",
+        "path_type": "hardlink",
+        "sha256": "e8978a60f6f5bf13aace45098f0f0530c0487f10b1ab200b46171e5963d90078",
+        "sha256_in_prefix": "e8978a60f6f5bf13aace45098f0f0530c0487f10b1ab200b46171e5963d90078",
+        "size_in_bytes": 7654
+      },
+      {
+        "_path": "share/X11/xkb/symbols/es",
+        "path_type": "hardlink",
+        "sha256": "897d63029a9d90fee65e121c2625954f357c690cab87517517144bc54c1ad676",
+        "sha256_in_prefix": "897d63029a9d90fee65e121c2625954f357c690cab87517517144bc54c1ad676",
+        "size_in_bytes": 9884
+      },
+      {
+        "_path": "share/X11/xkb/symbols/et",
+        "path_type": "hardlink",
+        "sha256": "6ce888f95ecdd5020669245ccb0c28369ff0f83c83c6677613572a8ca6557f80",
+        "sha256_in_prefix": "6ce888f95ecdd5020669245ccb0c28369ff0f83c83c6677613572a8ca6557f80",
+        "size_in_bytes": 3117
+      },
+      {
+        "_path": "share/X11/xkb/symbols/eu",
+        "path_type": "hardlink",
+        "sha256": "9080d6de013f2d61e1d34fd64bbc8715c7ee217ebc95e2d681b15bc2b50bb343",
+        "sha256_in_prefix": "9080d6de013f2d61e1d34fd64bbc8715c7ee217ebc95e2d681b15bc2b50bb343",
+        "size_in_bytes": 5018
+      },
+      {
+        "_path": "share/X11/xkb/symbols/eurosign",
+        "path_type": "hardlink",
+        "sha256": "ec63fd5afa4e85b86c9502f8ad4f1b087afd40967d24a3b01f8046f1a2407d63",
+        "sha256_in_prefix": "ec63fd5afa4e85b86c9502f8ad4f1b087afd40967d24a3b01f8046f1a2407d63",
+        "size_in_bytes": 629
+      },
+      {
+        "_path": "share/X11/xkb/symbols/fi",
+        "path_type": "hardlink",
+        "sha256": "ce36b971b79a22a3b10c16c95184fc99339748d36712e7e91be64fae2e4d4444",
+        "sha256_in_prefix": "ce36b971b79a22a3b10c16c95184fc99339748d36712e7e91be64fae2e4d4444",
+        "size_in_bytes": 24893
+      },
+      {
+        "_path": "share/X11/xkb/symbols/fo",
+        "path_type": "hardlink",
+        "sha256": "05ce10ad23cbce68765c78aa1670a2ca0c01533cf4b95faa2f6eb153f59bb608",
+        "sha256_in_prefix": "05ce10ad23cbce68765c78aa1670a2ca0c01533cf4b95faa2f6eb153f59bb608",
+        "size_in_bytes": 2032
+      },
+      {
+        "_path": "share/X11/xkb/symbols/fr",
+        "path_type": "hardlink",
+        "sha256": "4d20fcdd95b5d7fea8907b263f5572218e73c7a8cc1af16ffaa64addefbdc710",
+        "sha256_in_prefix": "4d20fcdd95b5d7fea8907b263f5572218e73c7a8cc1af16ffaa64addefbdc710",
+        "size_in_bytes": 95588
+      },
+      {
+        "_path": "share/X11/xkb/symbols/fujitsu_vndr/jp",
+        "path_type": "hardlink",
+        "sha256": "24f935a057fafb5819e17567c88f49d62108e1e83153931be3ecfe8ea81f6809",
+        "sha256_in_prefix": "24f935a057fafb5819e17567c88f49d62108e1e83153931be3ecfe8ea81f6809",
+        "size_in_bytes": 4113
+      },
+      {
+        "_path": "share/X11/xkb/symbols/fujitsu_vndr/us",
+        "path_type": "hardlink",
+        "sha256": "0415a1754f1fff9ab140d061cdd9943ae16c2de43ad796959be96820edb1be9d",
+        "sha256_in_prefix": "0415a1754f1fff9ab140d061cdd9943ae16c2de43ad796959be96820edb1be9d",
+        "size_in_bytes": 4391
+      },
+      {
+        "_path": "share/X11/xkb/symbols/gb",
+        "path_type": "hardlink",
+        "sha256": "842b199111596158be00c48159cb0bea157f01adc8fc322f020c6ba7603b1ffc",
+        "sha256_in_prefix": "842b199111596158be00c48159cb0bea157f01adc8fc322f020c6ba7603b1ffc",
+        "size_in_bytes": 9475
+      },
+      {
+        "_path": "share/X11/xkb/symbols/ge",
+        "path_type": "hardlink",
+        "sha256": "c373d734fe34bdea78569ae8dee654cabbcbc84803f57344a10d8e11db473bf0",
+        "sha256_in_prefix": "c373d734fe34bdea78569ae8dee654cabbcbc84803f57344a10d8e11db473bf0",
+        "size_in_bytes": 12641
+      },
+      {
+        "_path": "share/X11/xkb/symbols/gh",
+        "path_type": "hardlink",
+        "sha256": "941562710691f1738e32360c2071c9cbb0ba6f77c43ec26fce22607222aacc3c",
+        "sha256_in_prefix": "941562710691f1738e32360c2071c9cbb0ba6f77c43ec26fce22607222aacc3c",
+        "size_in_bytes": 6530
+      },
+      {
+        "_path": "share/X11/xkb/symbols/gn",
+        "path_type": "hardlink",
+        "sha256": "7aed3035f7298571a2ce93029d2fcd7f515be9cf0daca97ccb0e81b0b23893a9",
+        "sha256_in_prefix": "7aed3035f7298571a2ce93029d2fcd7f515be9cf0daca97ccb0e81b0b23893a9",
+        "size_in_bytes": 2171
+      },
+      {
+        "_path": "share/X11/xkb/symbols/gr",
+        "path_type": "hardlink",
+        "sha256": "3b3bb621184e434080d012cfa6a528173e991e815949ee855fb3ce48665ef800",
+        "sha256_in_prefix": "3b3bb621184e434080d012cfa6a528173e991e815949ee855fb3ce48665ef800",
+        "size_in_bytes": 14137
+      },
+      {
+        "_path": "share/X11/xkb/symbols/group",
+        "path_type": "hardlink",
+        "sha256": "d962772859c00eb77223056cf3ec22e12c11b31ae8204760ca94e1c31f220000",
+        "sha256_in_prefix": "d962772859c00eb77223056cf3ec22e12c11b31ae8204760ca94e1c31f220000",
+        "size_in_bytes": 9891
+      },
+      {
+        "_path": "share/X11/xkb/symbols/hp_vndr/us",
+        "path_type": "hardlink",
+        "sha256": "a7f93af2035754867de8bd129d14cb4f19f153cca52c88be3f71601501cbc9fc",
+        "sha256_in_prefix": "a7f93af2035754867de8bd129d14cb4f19f153cca52c88be3f71601501cbc9fc",
+        "size_in_bytes": 3321
+      },
+      {
+        "_path": "share/X11/xkb/symbols/hr",
+        "path_type": "hardlink",
+        "sha256": "0891f79bed0f754db251fa6a381ac05b96b060e91206c9612c49e3614e49ee11",
+        "sha256_in_prefix": "0891f79bed0f754db251fa6a381ac05b96b060e91206c9612c49e3614e49ee11",
+        "size_in_bytes": 2726
+      },
+      {
+        "_path": "share/X11/xkb/symbols/hu",
+        "path_type": "hardlink",
+        "sha256": "9923de9ab792c98929e7b9925745be4429c82d0dd819993a70568c65588995f0",
+        "sha256_in_prefix": "9923de9ab792c98929e7b9925745be4429c82d0dd819993a70568c65588995f0",
+        "size_in_bytes": 23359
+      },
+      {
+        "_path": "share/X11/xkb/symbols/id",
+        "path_type": "hardlink",
+        "sha256": "17b663be72a1a886e50280561626c30a61708c89fe4816194ca0bd0f1f9efdbd",
+        "sha256_in_prefix": "17b663be72a1a886e50280561626c30a61708c89fe4816194ca0bd0f1f9efdbd",
+        "size_in_bytes": 13938
+      },
+      {
+        "_path": "share/X11/xkb/symbols/ie",
+        "path_type": "hardlink",
+        "sha256": "e841894f01c499f3598c3fbb09f930b6b0cca703b65bbc984ea7a8dcbe5408b9",
+        "sha256_in_prefix": "e841894f01c499f3598c3fbb09f930b6b0cca703b65bbc984ea7a8dcbe5408b9",
+        "size_in_bytes": 17971
+      },
+      {
+        "_path": "share/X11/xkb/symbols/il",
+        "path_type": "hardlink",
+        "sha256": "68517553f417687a055e67eff2169ed15d0db356e08c4e4c0787c6b2be359307",
+        "sha256_in_prefix": "68517553f417687a055e67eff2169ed15d0db356e08c4e4c0787c6b2be359307",
+        "size_in_bytes": 16690
+      },
+      {
+        "_path": "share/X11/xkb/symbols/in",
+        "path_type": "hardlink",
+        "sha256": "768be5ad35cc8494921a606a2f73d2605a0fd014f772297e160ffe07979d3649",
+        "sha256_in_prefix": "768be5ad35cc8494921a606a2f73d2605a0fd014f772297e160ffe07979d3649",
+        "size_in_bytes": 113184
+      },
+      {
+        "_path": "share/X11/xkb/symbols/inet",
+        "path_type": "hardlink",
+        "sha256": "77955b6abc9bd55fad21453b13325049a392ad4eb046ab2a2f653ab52ee48fa4",
+        "sha256_in_prefix": "77955b6abc9bd55fad21453b13325049a392ad4eb046ab2a2f653ab52ee48fa4",
+        "size_in_bytes": 78920
+      },
+      {
+        "_path": "share/X11/xkb/symbols/iq",
+        "path_type": "hardlink",
+        "sha256": "1a8af3e3477a77d8cd6157410e442b45b690a724becce67dfe6608975985615f",
+        "sha256_in_prefix": "1a8af3e3477a77d8cd6157410e442b45b690a724becce67dfe6608975985615f",
+        "size_in_bytes": 625
+      },
+      {
+        "_path": "share/X11/xkb/symbols/ir",
+        "path_type": "hardlink",
+        "sha256": "5bcf4a91c0392a969d7ae851b251499ce0ba4d6777186c23291dbdb34fd58d69",
+        "sha256_in_prefix": "5bcf4a91c0392a969d7ae851b251499ce0ba4d6777186c23291dbdb34fd58d69",
+        "size_in_bytes": 11783
+      },
+      {
+        "_path": "share/X11/xkb/symbols/is",
+        "path_type": "hardlink",
+        "sha256": "73988588c32583a7a27f299c6de610f40e49deca6266bd3076caa2df9934b6c7",
+        "sha256_in_prefix": "73988588c32583a7a27f299c6de610f40e49deca6266bd3076caa2df9934b6c7",
+        "size_in_bytes": 11128
+      },
+      {
+        "_path": "share/X11/xkb/symbols/it",
+        "path_type": "hardlink",
+        "sha256": "28bf02ad3f90730900e9db5fbaf7b898dc7bb0fbf4558a921c378b78cc0b18c3",
+        "sha256_in_prefix": "28bf02ad3f90730900e9db5fbaf7b898dc7bb0fbf4558a921c378b78cc0b18c3",
+        "size_in_bytes": 17850
+      },
+      {
+        "_path": "share/X11/xkb/symbols/jolla_vndr/sbj",
+        "path_type": "hardlink",
+        "sha256": "3ef5c6a29a7d25956eca1f900f045d861d5bdfe6b85cbf09a28a05cf61a31286",
+        "sha256_in_prefix": "3ef5c6a29a7d25956eca1f900f045d861d5bdfe6b85cbf09a28a05cf61a31286",
+        "size_in_bytes": 1958
+      },
+      {
+        "_path": "share/X11/xkb/symbols/jp",
+        "path_type": "hardlink",
+        "sha256": "d73a3ceec9ec8bf55bc81385ce57efbdc9c96b9599c1fa81fd080303ed353937",
+        "sha256_in_prefix": "d73a3ceec9ec8bf55bc81385ce57efbdc9c96b9599c1fa81fd080303ed353937",
+        "size_in_bytes": 7407
+      },
+      {
+        "_path": "share/X11/xkb/symbols/ke",
+        "path_type": "hardlink",
+        "sha256": "4b771f265338d3629d597b3adff4ba74b2dbb86d99447a25b027d1cf530ac8c8",
+        "sha256_in_prefix": "4b771f265338d3629d597b3adff4ba74b2dbb86d99447a25b027d1cf530ac8c8",
+        "size_in_bytes": 4512
+      },
+      {
+        "_path": "share/X11/xkb/symbols/keypad",
+        "path_type": "hardlink",
+        "sha256": "1e4c121750d9139e39def3cc9dd1eb50e0206abc3d6e5e4af9f78933cc541a2d",
+        "sha256_in_prefix": "1e4c121750d9139e39def3cc9dd1eb50e0206abc3d6e5e4af9f78933cc541a2d",
+        "size_in_bytes": 23910
+      },
+      {
+        "_path": "share/X11/xkb/symbols/kg",
+        "path_type": "hardlink",
+        "sha256": "cd40dc467f0d6634bdf0afd3c7abc09366c1bbf2ddc83989a6528909429bed99",
+        "sha256_in_prefix": "cd40dc467f0d6634bdf0afd3c7abc09366c1bbf2ddc83989a6528909429bed99",
+        "size_in_bytes": 6077
+      },
+      {
+        "_path": "share/X11/xkb/symbols/kh",
+        "path_type": "hardlink",
+        "sha256": "e49599f6871af00a457f60206621ef2f1916415756a08cabe44750778c13c0a6",
+        "sha256_in_prefix": "e49599f6871af00a457f60206621ef2f1916415756a08cabe44750778c13c0a6",
+        "size_in_bytes": 3430
+      },
+      {
+        "_path": "share/X11/xkb/symbols/kpdl",
+        "path_type": "hardlink",
+        "sha256": "b81ef8aa7cfa4b3272986272150fd445b8effeff986c2097cd88fba880fed1bb",
+        "sha256_in_prefix": "b81ef8aa7cfa4b3272986272150fd445b8effeff986c2097cd88fba880fed1bb",
+        "size_in_bytes": 3398
+      },
+      {
+        "_path": "share/X11/xkb/symbols/kr",
+        "path_type": "hardlink",
+        "sha256": "303d93a6d16950ec7f0d8f8efb11b6ee17dd7c664d0acb5b8dadb1ab9b80acb6",
+        "sha256_in_prefix": "303d93a6d16950ec7f0d8f8efb11b6ee17dd7c664d0acb5b8dadb1ab9b80acb6",
+        "size_in_bytes": 1200
+      },
+      {
+        "_path": "share/X11/xkb/symbols/kz",
+        "path_type": "hardlink",
+        "sha256": "45d93503377b12832e33326fa296c83bbb53983027e4f1481fe6e70f90497207",
+        "sha256_in_prefix": "45d93503377b12832e33326fa296c83bbb53983027e4f1481fe6e70f90497207",
+        "size_in_bytes": 16432
+      },
+      {
+        "_path": "share/X11/xkb/symbols/la",
+        "path_type": "hardlink",
+        "sha256": "3f0adb95edd2b8bb03204f6896781820fbd9c3fdba1c50cca389007b136d6de8",
+        "sha256_in_prefix": "3f0adb95edd2b8bb03204f6896781820fbd9c3fdba1c50cca389007b136d6de8",
+        "size_in_bytes": 4819
+      },
+      {
+        "_path": "share/X11/xkb/symbols/latam",
+        "path_type": "hardlink",
+        "sha256": "f433cb0a39990993653cdac81e4e5066fc335ca3018f6d49647f38c9b662b59f",
+        "sha256_in_prefix": "f433cb0a39990993653cdac81e4e5066fc335ca3018f6d49647f38c9b662b59f",
+        "size_in_bytes": 9928
+      },
+      {
+        "_path": "share/X11/xkb/symbols/latin",
+        "path_type": "hardlink",
+        "sha256": "93711129cae51eda27058c78e038172ca9232e97106783aff854c534b736534e",
+        "sha256_in_prefix": "93711129cae51eda27058c78e038172ca9232e97106783aff854c534b736534e",
+        "size_in_bytes": 14669
+      },
+      {
+        "_path": "share/X11/xkb/symbols/level2",
+        "path_type": "hardlink",
+        "sha256": "ab1f791d69969eb8444f9661138cf5e28b38420dbd14bcac1adb1cda70742180",
+        "sha256_in_prefix": "ab1f791d69969eb8444f9661138cf5e28b38420dbd14bcac1adb1cda70742180",
+        "size_in_bytes": 209
+      },
+      {
+        "_path": "share/X11/xkb/symbols/level3",
+        "path_type": "hardlink",
+        "sha256": "775805819eba62046d0b0e32f2aa5edaa69831ef4dd906e6fc839b25b710e192",
+        "sha256_in_prefix": "775805819eba62046d0b0e32f2aa5edaa69831ef4dd906e6fc839b25b710e192",
+        "size_in_bytes": 4480
+      },
+      {
+        "_path": "share/X11/xkb/symbols/level5",
+        "path_type": "hardlink",
+        "sha256": "d5a6af25714fa768177862b3ffbc5e38d9ec22784aae962f4a4e43f60221036d",
+        "sha256_in_prefix": "d5a6af25714fa768177862b3ffbc5e38d9ec22784aae962f4a4e43f60221036d",
+        "size_in_bytes": 4195
+      },
+      {
+        "_path": "share/X11/xkb/symbols/lk",
+        "path_type": "hardlink",
+        "sha256": "881d6d40a3964c766af10874618ca342c610656e7a1bba598f8c1cbefeca98af",
+        "sha256_in_prefix": "881d6d40a3964c766af10874618ca342c610656e7a1bba598f8c1cbefeca98af",
+        "size_in_bytes": 7827
+      },
+      {
+        "_path": "share/X11/xkb/symbols/lt",
+        "path_type": "hardlink",
+        "sha256": "d6966215ed6147b1dcc5bc0b944aacd7d9602b1eb7607829df9ec5862fdb36ca",
+        "sha256_in_prefix": "d6966215ed6147b1dcc5bc0b944aacd7d9602b1eb7607829df9ec5862fdb36ca",
+        "size_in_bytes": 20156
+      },
+      {
+        "_path": "share/X11/xkb/symbols/lv",
+        "path_type": "hardlink",
+        "sha256": "224696a845f246d46bb4a5a5c43bc487c3aa9aa764b4b677b1a0949458e3dbd9",
+        "sha256_in_prefix": "224696a845f246d46bb4a5a5c43bc487c3aa9aa764b4b677b1a0949458e3dbd9",
+        "size_in_bytes": 22101
+      },
+      {
+        "_path": "share/X11/xkb/symbols/ma",
+        "path_type": "hardlink",
+        "sha256": "835c9c1fac4a223b8fb737032fb637b366e83e60ea80f098ec757a2f272b2956",
+        "sha256_in_prefix": "835c9c1fac4a223b8fb737032fb637b366e83e60ea80f098ec757a2f272b2956",
+        "size_in_bytes": 13406
+      },
+      {
+        "_path": "share/X11/xkb/symbols/macintosh_vndr/apple",
+        "path_type": "hardlink",
+        "sha256": "53f8f2382fed030542301fd3ef71296dc6100ea79e5998a7b26f1e62287cf582",
+        "sha256_in_prefix": "53f8f2382fed030542301fd3ef71296dc6100ea79e5998a7b26f1e62287cf582",
+        "size_in_bytes": 5283
+      },
+      {
+        "_path": "share/X11/xkb/symbols/macintosh_vndr/ch",
+        "path_type": "hardlink",
+        "sha256": "4bca0aba6bcc3443037eccf965986565c8542cbdfdcd5823735e52433dbfddcd",
+        "sha256_in_prefix": "4bca0aba6bcc3443037eccf965986565c8542cbdfdcd5823735e52433dbfddcd",
+        "size_in_bytes": 3797
+      },
+      {
+        "_path": "share/X11/xkb/symbols/macintosh_vndr/de",
+        "path_type": "hardlink",
+        "sha256": "b4a11e5aab24cf5406c9e8bd584ca07bd2fe18911f8535750b4be095db9d4f5a",
+        "sha256_in_prefix": "b4a11e5aab24cf5406c9e8bd584ca07bd2fe18911f8535750b4be095db9d4f5a",
+        "size_in_bytes": 4042
+      },
+      {
+        "_path": "share/X11/xkb/symbols/macintosh_vndr/dk",
+        "path_type": "hardlink",
+        "sha256": "abab3895d3ae8e656a66232734d49441fcb32007bbcc46eab9c751c4edf4acbb",
+        "sha256_in_prefix": "abab3895d3ae8e656a66232734d49441fcb32007bbcc46eab9c751c4edf4acbb",
+        "size_in_bytes": 3507
+      },
+      {
+        "_path": "share/X11/xkb/symbols/macintosh_vndr/fi",
+        "path_type": "hardlink",
+        "sha256": "290f74beb3cd74818c359b1053d8f3e52ff453b785a53ab00f43db74f1bb34fd",
+        "sha256_in_prefix": "290f74beb3cd74818c359b1053d8f3e52ff453b785a53ab00f43db74f1bb34fd",
+        "size_in_bytes": 330
+      },
+      {
+        "_path": "share/X11/xkb/symbols/macintosh_vndr/fr",
+        "path_type": "hardlink",
+        "sha256": "67ed2663383608bfa772f75d2d9385f4ff2f899482b791d39f5af21a12087c9a",
+        "sha256_in_prefix": "67ed2663383608bfa772f75d2d9385f4ff2f899482b791d39f5af21a12087c9a",
+        "size_in_bytes": 5566
+      },
+      {
+        "_path": "share/X11/xkb/symbols/macintosh_vndr/gb",
+        "path_type": "hardlink",
+        "sha256": "826402a57c59e5f5b8b00ea7d576d9d273e5b9924a49146921d37bb7e8ac85f7",
+        "sha256_in_prefix": "826402a57c59e5f5b8b00ea7d576d9d273e5b9924a49146921d37bb7e8ac85f7",
+        "size_in_bytes": 557
+      },
+      {
+        "_path": "share/X11/xkb/symbols/macintosh_vndr/is",
+        "path_type": "hardlink",
+        "sha256": "4f925ca68e40a5e116c082c49785361d1d2a0a7e1af14d5408278f28440199ee",
+        "sha256_in_prefix": "4f925ca68e40a5e116c082c49785361d1d2a0a7e1af14d5408278f28440199ee",
+        "size_in_bytes": 5713
+      },
+      {
+        "_path": "share/X11/xkb/symbols/macintosh_vndr/it",
+        "path_type": "hardlink",
+        "sha256": "ed70d1dfc2bc531cdec7965e2033935b0004f1695e0850aa090e737ac491254e",
+        "sha256_in_prefix": "ed70d1dfc2bc531cdec7965e2033935b0004f1695e0850aa090e737ac491254e",
+        "size_in_bytes": 2742
+      },
+      {
+        "_path": "share/X11/xkb/symbols/macintosh_vndr/jp",
+        "path_type": "hardlink",
+        "sha256": "9693f30a3abd68c85d2159bf42401edcf7c01cfc8f6655c138ddb9b132c90a41",
+        "sha256_in_prefix": "9693f30a3abd68c85d2159bf42401edcf7c01cfc8f6655c138ddb9b132c90a41",
+        "size_in_bytes": 763
+      },
+      {
+        "_path": "share/X11/xkb/symbols/macintosh_vndr/latam",
+        "path_type": "hardlink",
+        "sha256": "7fdc59ffbd76bd2efdbb0de366fb32a90e48acf29b566c239f2c33f23414e1d4",
+        "sha256_in_prefix": "7fdc59ffbd76bd2efdbb0de366fb32a90e48acf29b566c239f2c33f23414e1d4",
+        "size_in_bytes": 1913
+      },
+      {
+        "_path": "share/X11/xkb/symbols/macintosh_vndr/nl",
+        "path_type": "hardlink",
+        "sha256": "168188898c01003887d3cc27504a29a4cbd836f4a2cc572c9f2e83a1448206e0",
+        "sha256_in_prefix": "168188898c01003887d3cc27504a29a4cbd836f4a2cc572c9f2e83a1448206e0",
+        "size_in_bytes": 156
+      },
+      {
+        "_path": "share/X11/xkb/symbols/macintosh_vndr/no",
+        "path_type": "hardlink",
+        "sha256": "a5f28685f0a4e3c4f3402090e11a1d02f0ec0cee3f4cc0f0e1f07fdb98aaa72d",
+        "sha256_in_prefix": "a5f28685f0a4e3c4f3402090e11a1d02f0ec0cee3f4cc0f0e1f07fdb98aaa72d",
+        "size_in_bytes": 2118
+      },
+      {
+        "_path": "share/X11/xkb/symbols/macintosh_vndr/pt",
+        "path_type": "hardlink",
+        "sha256": "1d3372ebb0e92eaf410fe6751659a22701b1daada66e6c3ebdcf71bcfc5f7178",
+        "sha256_in_prefix": "1d3372ebb0e92eaf410fe6751659a22701b1daada66e6c3ebdcf71bcfc5f7178",
+        "size_in_bytes": 2563
+      },
+      {
+        "_path": "share/X11/xkb/symbols/macintosh_vndr/se",
+        "path_type": "hardlink",
+        "sha256": "7488c609cadbd81b5b2ceb277f835411a974d226efa0b562b4565dec1ecb9eca",
+        "sha256_in_prefix": "7488c609cadbd81b5b2ceb277f835411a974d226efa0b562b4565dec1ecb9eca",
+        "size_in_bytes": 2085
+      },
+      {
+        "_path": "share/X11/xkb/symbols/macintosh_vndr/us",
+        "path_type": "hardlink",
+        "sha256": "fa87a54d94055a91e7a049229bd69e8b61748c357dc1d40c3dde29eaec960292",
+        "sha256_in_prefix": "fa87a54d94055a91e7a049229bd69e8b61748c357dc1d40c3dde29eaec960292",
+        "size_in_bytes": 4004
+      },
+      {
+        "_path": "share/X11/xkb/symbols/mao",
+        "path_type": "hardlink",
+        "sha256": "d4f9d30354fbe5361d404ead6610c755c2e30440e3cb03ecf62b22eeea6973a8",
+        "sha256_in_prefix": "d4f9d30354fbe5361d404ead6610c755c2e30440e3cb03ecf62b22eeea6973a8",
+        "size_in_bytes": 593
+      },
+      {
+        "_path": "share/X11/xkb/symbols/md",
+        "path_type": "hardlink",
+        "sha256": "27585ef75113257fc6436a92f90c50c955a2ecc27f8415dbd6fbdf70bc2db8da",
+        "sha256_in_prefix": "27585ef75113257fc6436a92f90c50c955a2ecc27f8415dbd6fbdf70bc2db8da",
+        "size_in_bytes": 4950
+      },
+      {
+        "_path": "share/X11/xkb/symbols/me",
+        "path_type": "hardlink",
+        "sha256": "691b7050e5b415d95d59ff60d7a1ceb173f48cc677f00bbfe6872fe6dcea0907",
+        "sha256_in_prefix": "691b7050e5b415d95d59ff60d7a1ceb173f48cc677f00bbfe6872fe6dcea0907",
+        "size_in_bytes": 1706
+      },
+      {
+        "_path": "share/X11/xkb/symbols/mk",
+        "path_type": "hardlink",
+        "sha256": "6d3a9e38a8e04fbf7b6054a1408399f75ac17f1612362a1985866279e7a3f88f",
+        "sha256_in_prefix": "6d3a9e38a8e04fbf7b6054a1408399f75ac17f1612362a1985866279e7a3f88f",
+        "size_in_bytes": 3110
+      },
+      {
+        "_path": "share/X11/xkb/symbols/ml",
+        "path_type": "hardlink",
+        "sha256": "f437f0f5dd3c3f5217358b342528cc34d748b2c8cdb8c3574a7091b2949c0a28",
+        "sha256_in_prefix": "f437f0f5dd3c3f5217358b342528cc34d748b2c8cdb8c3574a7091b2949c0a28",
+        "size_in_bytes": 2083
+      },
+      {
+        "_path": "share/X11/xkb/symbols/mm",
+        "path_type": "hardlink",
+        "sha256": "96b2e2a21f60cdedf6f2986600f77a5866dcc0500fdce98320dc7f758493a516",
+        "sha256_in_prefix": "96b2e2a21f60cdedf6f2986600f77a5866dcc0500fdce98320dc7f758493a516",
+        "size_in_bytes": 17261
+      },
+      {
+        "_path": "share/X11/xkb/symbols/mn",
+        "path_type": "hardlink",
+        "sha256": "e4cd56da6ba817e6ef50ceb431c3d6be07e10a24358011634849452acb353c27",
+        "sha256_in_prefix": "e4cd56da6ba817e6ef50ceb431c3d6be07e10a24358011634849452acb353c27",
+        "size_in_bytes": 4309
+      },
+      {
+        "_path": "share/X11/xkb/symbols/mt",
+        "path_type": "hardlink",
+        "sha256": "7f783ac5138aa04990552b2e82d0cf513c1adf6e986a3c0ef7a3c5e1cb94e9c4",
+        "sha256_in_prefix": "7f783ac5138aa04990552b2e82d0cf513c1adf6e986a3c0ef7a3c5e1cb94e9c4",
+        "size_in_bytes": 5670
+      },
+      {
+        "_path": "share/X11/xkb/symbols/mv",
+        "path_type": "hardlink",
+        "sha256": "812bd0d66f8c88dcaae408eac78a078dabaf2151df53a620b571337c86c4ec1c",
+        "sha256_in_prefix": "812bd0d66f8c88dcaae408eac78a078dabaf2151df53a620b571337c86c4ec1c",
+        "size_in_bytes": 2550
+      },
+      {
+        "_path": "share/X11/xkb/symbols/my",
+        "path_type": "hardlink",
+        "sha256": "4f8971b7a72d64457cfbe075403d3cd33cd255ef55dc282518f426d6ed9a3db9",
+        "sha256_in_prefix": "4f8971b7a72d64457cfbe075403d3cd33cd255ef55dc282518f426d6ed9a3db9",
+        "size_in_bytes": 5537
+      },
+      {
+        "_path": "share/X11/xkb/symbols/nbsp",
+        "path_type": "hardlink",
+        "sha256": "fcdebe89f88e385ca2ba178274cd3b04c0e7066afa10395e8c30671997baa441",
+        "sha256_in_prefix": "fcdebe89f88e385ca2ba178274cd3b04c0e7066afa10395e8c30671997baa441",
+        "size_in_bytes": 2680
+      },
+      {
+        "_path": "share/X11/xkb/symbols/nec_vndr/jp",
+        "path_type": "hardlink",
+        "sha256": "9b053cf9b94208a99ad25f0cdc625054952e618da3f8a41f5e0ddf5239651d96",
+        "sha256_in_prefix": "9b053cf9b94208a99ad25f0cdc625054952e618da3f8a41f5e0ddf5239651d96",
+        "size_in_bytes": 6076
+      },
+      {
+        "_path": "share/X11/xkb/symbols/ng",
+        "path_type": "hardlink",
+        "sha256": "a44bb469226af83ab9dc344f31e38395c3957d51179c5a1d7b77bfeafb487a8b",
+        "sha256_in_prefix": "a44bb469226af83ab9dc344f31e38395c3957d51179c5a1d7b77bfeafb487a8b",
+        "size_in_bytes": 6298
+      },
+      {
+        "_path": "share/X11/xkb/symbols/nl",
+        "path_type": "hardlink",
+        "sha256": "a61e97302f6a73a56553417db6852f5a31bc2bd392de8d0f9060770890ce4211",
+        "sha256_in_prefix": "a61e97302f6a73a56553417db6852f5a31bc2bd392de8d0f9060770890ce4211",
+        "size_in_bytes": 6941
+      },
+      {
+        "_path": "share/X11/xkb/symbols/no",
+        "path_type": "hardlink",
+        "sha256": "31b0fa3beedf98222de9cb15e4988140abd08ec39e620cfd1cb7176280b267fd",
+        "sha256_in_prefix": "31b0fa3beedf98222de9cb15e4988140abd08ec39e620cfd1cb7176280b267fd",
+        "size_in_bytes": 12213
+      },
+      {
+        "_path": "share/X11/xkb/symbols/nokia_vndr/rx-44",
+        "path_type": "hardlink",
+        "sha256": "1fe09e71f493846415a566b6d2f71212255db52ca2c5484681b8cf8e9601e4b3",
+        "sha256_in_prefix": "1fe09e71f493846415a566b6d2f71212255db52ca2c5484681b8cf8e9601e4b3",
+        "size_in_bytes": 15165
+      },
+      {
+        "_path": "share/X11/xkb/symbols/nokia_vndr/rx-51",
+        "path_type": "hardlink",
+        "sha256": "07f75f436338e40b0f4c0b0a24c1cc65094dfe119add099ee351772ed393acf9",
+        "sha256_in_prefix": "07f75f436338e40b0f4c0b0a24c1cc65094dfe119add099ee351772ed393acf9",
+        "size_in_bytes": 71842
+      },
+      {
+        "_path": "share/X11/xkb/symbols/nokia_vndr/su-8w",
+        "path_type": "hardlink",
+        "sha256": "ea0ae2e0e7d6c172beffd3d3364635c875e6c39b7b627d3027879a9aa4c27e30",
+        "sha256_in_prefix": "ea0ae2e0e7d6c172beffd3d3364635c875e6c39b7b627d3027879a9aa4c27e30",
+        "size_in_bytes": 27441
+      },
+      {
+        "_path": "share/X11/xkb/symbols/np",
+        "path_type": "hardlink",
+        "sha256": "3bdc658d1739df8a5e8ed0649d02ab73e59b2006c78f4fee2a85992b7f5cd5d6",
+        "sha256_in_prefix": "3bdc658d1739df8a5e8ed0649d02ab73e59b2006c78f4fee2a85992b7f5cd5d6",
+        "size_in_bytes": 6317
+      },
+      {
+        "_path": "share/X11/xkb/symbols/olpc",
+        "path_type": "hardlink",
+        "sha256": "5dd585565e873ed7ea2d264e186ab6c90bda7528a9de05180efd8a21ca8f0151",
+        "sha256_in_prefix": "5dd585565e873ed7ea2d264e186ab6c90bda7528a9de05180efd8a21ca8f0151",
+        "size_in_bytes": 930
+      },
+      {
+        "_path": "share/X11/xkb/symbols/parens",
+        "path_type": "hardlink",
+        "sha256": "67295705ae19cf0bc047a4f1e975dce4535329cf62319b5401534a60e3a2ec33",
+        "sha256_in_prefix": "67295705ae19cf0bc047a4f1e975dce4535329cf62319b5401534a60e3a2ec33",
+        "size_in_bytes": 389
+      },
+      {
+        "_path": "share/X11/xkb/symbols/pc",
+        "path_type": "hardlink",
+        "sha256": "4b2fe0b0f106bc6233c6626e9a0da2f25b1f5f56a05656bfde3b19bf4a11885c",
+        "sha256_in_prefix": "4b2fe0b0f106bc6233c6626e9a0da2f25b1f5f56a05656bfde3b19bf4a11885c",
+        "size_in_bytes": 2726
+      },
+      {
+        "_path": "share/X11/xkb/symbols/ph",
+        "path_type": "hardlink",
+        "sha256": "dbd2de17df7d4ced641eb402b361ad027212b0b9f27bca1e58847bfd60fcf1d3",
+        "sha256_in_prefix": "dbd2de17df7d4ced641eb402b361ad027212b0b9f27bca1e58847bfd60fcf1d3",
+        "size_in_bytes": 76021
+      },
+      {
+        "_path": "share/X11/xkb/symbols/pk",
+        "path_type": "hardlink",
+        "sha256": "56a5c5abedd099b782ae824be31b673e7650edfe155179db338880bfa7c6f0a0",
+        "sha256_in_prefix": "56a5c5abedd099b782ae824be31b673e7650edfe155179db338880bfa7c6f0a0",
+        "size_in_bytes": 20325
+      },
+      {
+        "_path": "share/X11/xkb/symbols/pl",
+        "path_type": "hardlink",
+        "sha256": "1adcd126d02d7a4f1f19cae7c2c09c00f181b0c660e9db0997df175446b0f74a",
+        "sha256_in_prefix": "1adcd126d02d7a4f1f19cae7c2c09c00f181b0c660e9db0997df175446b0f74a",
+        "size_in_bytes": 27766
+      },
+      {
+        "_path": "share/X11/xkb/symbols/pt",
+        "path_type": "hardlink",
+        "sha256": "f75d43b35b3a06ae1c892057b184ed6fedc97a1175dd59a5385437002279fd87",
+        "sha256_in_prefix": "f75d43b35b3a06ae1c892057b184ed6fedc97a1175dd59a5385437002279fd87",
+        "size_in_bytes": 11686
+      },
+      {
+        "_path": "share/X11/xkb/symbols/ro",
+        "path_type": "hardlink",
+        "sha256": "166cee49aeadfe304716d35f636aaa4b85f67c0660c910dad45680966e102b88",
+        "sha256_in_prefix": "166cee49aeadfe304716d35f636aaa4b85f67c0660c910dad45680966e102b88",
+        "size_in_bytes": 11343
+      },
+      {
+        "_path": "share/X11/xkb/symbols/rs",
+        "path_type": "hardlink",
+        "sha256": "f4ea954781d210ea558db5a8deaa1a6ed77e6446e4c4bed8cf592a92da864a13",
+        "sha256_in_prefix": "f4ea954781d210ea558db5a8deaa1a6ed77e6446e4c4bed8cf592a92da864a13",
+        "size_in_bytes": 15173
+      },
+      {
+        "_path": "share/X11/xkb/symbols/ru",
+        "path_type": "hardlink",
+        "sha256": "b61d4cbe149d96e1fd47ecf2d175fd6cf52d57fd5c61d688eaf0f1faf0e54488",
+        "sha256_in_prefix": "b61d4cbe149d96e1fd47ecf2d175fd6cf52d57fd5c61d688eaf0f1faf0e54488",
+        "size_in_bytes": 79948
+      },
+      {
+        "_path": "share/X11/xkb/symbols/rupeesign",
+        "path_type": "hardlink",
+        "sha256": "24dde1d4fca8228394270b3b2cf71ab029466f8353a0345f8129ad4e56c59c93",
+        "sha256_in_prefix": "24dde1d4fca8228394270b3b2cf71ab029466f8353a0345f8129ad4e56c59c93",
+        "size_in_bytes": 131
+      },
+      {
+        "_path": "share/X11/xkb/symbols/se",
+        "path_type": "hardlink",
+        "sha256": "2aeba98d7fc1f2327cbc64b84f8381f42c79f564716ec3d4edb0a3825cea12ed",
+        "sha256_in_prefix": "2aeba98d7fc1f2327cbc64b84f8381f42c79f564716ec3d4edb0a3825cea12ed",
+        "size_in_bytes": 17025
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sgi_vndr/jp",
+        "path_type": "hardlink",
+        "sha256": "c8ac68bf4f797bb230f3b2765ff9ee21b68b76dd72b274b00de9d747f4c0a6d1",
+        "sha256_in_prefix": "c8ac68bf4f797bb230f3b2765ff9ee21b68b76dd72b274b00de9d747f4c0a6d1",
+        "size_in_bytes": 2094
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sharp_vndr/sl-c3x00",
+        "path_type": "hardlink",
+        "sha256": "f844b17596fb5996e79d36a58c4805c74022d93b7902e8e2f228332275d29c9c",
+        "sha256_in_prefix": "f844b17596fb5996e79d36a58c4805c74022d93b7902e8e2f228332275d29c9c",
+        "size_in_bytes": 2056
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sharp_vndr/ws003sh",
+        "path_type": "hardlink",
+        "sha256": "2f4f73476ddcc63c2162c48f5ba87931ebefc8aa2c752f3a95e6a380c2c9f00a",
+        "sha256_in_prefix": "2f4f73476ddcc63c2162c48f5ba87931ebefc8aa2c752f3a95e6a380c2c9f00a",
+        "size_in_bytes": 1926
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sharp_vndr/ws007sh",
+        "path_type": "hardlink",
+        "sha256": "dbfa125fee0bdda78a91869f88feb770b1b053cf3efb374a92a58810afadbfbb",
+        "sha256_in_prefix": "dbfa125fee0bdda78a91869f88feb770b1b053cf3efb374a92a58810afadbfbb",
+        "size_in_bytes": 1926
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sharp_vndr/ws011sh",
+        "path_type": "hardlink",
+        "sha256": "7932d358b4350a03b07c35784cacbe6bed68f66a5885978d1708b7d9f625a8e1",
+        "sha256_in_prefix": "7932d358b4350a03b07c35784cacbe6bed68f66a5885978d1708b7d9f625a8e1",
+        "size_in_bytes": 2073
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sharp_vndr/ws020sh",
+        "path_type": "hardlink",
+        "sha256": "b5dc172035ce829cd4277a0aed2c8ee69c085aa75724bafee4ac5c84bebdaad5",
+        "sha256_in_prefix": "b5dc172035ce829cd4277a0aed2c8ee69c085aa75724bafee4ac5c84bebdaad5",
+        "size_in_bytes": 1849
+      },
+      {
+        "_path": "share/X11/xkb/symbols/shift",
+        "path_type": "hardlink",
+        "sha256": "8bd3a36b2e5e0c246613cd00af5600b6d2cc5c9a02f490be5c8d8a7790240c6b",
+        "sha256_in_prefix": "8bd3a36b2e5e0c246613cd00af5600b6d2cc5c9a02f490be5c8d8a7790240c6b",
+        "size_in_bytes": 2115
+      },
+      {
+        "_path": "share/X11/xkb/symbols/si",
+        "path_type": "hardlink",
+        "sha256": "8ea12df796d51f64e688ef876ca50b0f77eee77daf2eb36d7b6797da7962cdae",
+        "sha256_in_prefix": "8ea12df796d51f64e688ef876ca50b0f77eee77daf2eb36d7b6797da7962cdae",
+        "size_in_bytes": 625
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sk",
+        "path_type": "hardlink",
+        "sha256": "0be33f3e625f8071d8a30e9cdb9393f48a8b31da57bca2253cee90d4f824d015",
+        "sha256_in_prefix": "0be33f3e625f8071d8a30e9cdb9393f48a8b31da57bca2253cee90d4f824d015",
+        "size_in_bytes": 6718
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sn",
+        "path_type": "hardlink",
+        "sha256": "08e1ad5524f54a9ef776a8dbf60c33228cccb5dced3873f0573ceb6020f236c6",
+        "sha256_in_prefix": "08e1ad5524f54a9ef776a8dbf60c33228cccb5dced3873f0573ceb6020f236c6",
+        "size_in_bytes": 2233
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sony_vndr/us",
+        "path_type": "hardlink",
+        "sha256": "75af4776410d500bb5429691f71a2357cffae95b4608be087743653e08ef83b0",
+        "sha256_in_prefix": "75af4776410d500bb5429691f71a2357cffae95b4608be087743653e08ef83b0",
+        "size_in_bytes": 2892
+      },
+      {
+        "_path": "share/X11/xkb/symbols/srvr_ctrl",
+        "path_type": "hardlink",
+        "sha256": "652d16838143dbeb218aff2997cc603f9e9731e1e55e2300dee910d167e25d85",
+        "sha256_in_prefix": "652d16838143dbeb218aff2997cc603f9e9731e1e55e2300dee910d167e25d85",
+        "size_in_bytes": 1803
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sun_vndr/ara",
+        "path_type": "hardlink",
+        "sha256": "34a4537ee1f569fe3673fcad9f645f541a06f702c2396a2abe1d09c5ee475717",
+        "sha256_in_prefix": "34a4537ee1f569fe3673fcad9f645f541a06f702c2396a2abe1d09c5ee475717",
+        "size_in_bytes": 6261
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sun_vndr/be",
+        "path_type": "hardlink",
+        "sha256": "396399d2c4755aab8334393ea68632040d528ebeb39ede155bd83bcd1dbaf068",
+        "sha256_in_prefix": "396399d2c4755aab8334393ea68632040d528ebeb39ede155bd83bcd1dbaf068",
+        "size_in_bytes": 4511
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sun_vndr/br",
+        "path_type": "hardlink",
+        "sha256": "964beba9414743cf80e3da4ad8751a7c98feabebd20a5753496a9c1190117b9e",
+        "sha256_in_prefix": "964beba9414743cf80e3da4ad8751a7c98feabebd20a5753496a9c1190117b9e",
+        "size_in_bytes": 5245
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sun_vndr/ca",
+        "path_type": "hardlink",
+        "sha256": "665990517c09fffcf04c7443556f550bf1c6741a7f34011402b464f824d2d795",
+        "sha256_in_prefix": "665990517c09fffcf04c7443556f550bf1c6741a7f34011402b464f824d2d795",
+        "size_in_bytes": 4812
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sun_vndr/ch",
+        "path_type": "hardlink",
+        "sha256": "ea8ed849b64fc19be1f5f032c25fb89e52338a46c69053c76a68c72fd141aca8",
+        "sha256_in_prefix": "ea8ed849b64fc19be1f5f032c25fb89e52338a46c69053c76a68c72fd141aca8",
+        "size_in_bytes": 6579
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sun_vndr/cz",
+        "path_type": "hardlink",
+        "sha256": "79be7be5cc133c0ff6431f7fea45968810ac2d8667c331d33fcbc0964ccfd6e4",
+        "sha256_in_prefix": "79be7be5cc133c0ff6431f7fea45968810ac2d8667c331d33fcbc0964ccfd6e4",
+        "size_in_bytes": 4682
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sun_vndr/de",
+        "path_type": "hardlink",
+        "sha256": "28b0df9fdb5d9077902609b552458cfa9fa9d1daa1098d634036559ac14251db",
+        "sha256_in_prefix": "28b0df9fdb5d9077902609b552458cfa9fa9d1daa1098d634036559ac14251db",
+        "size_in_bytes": 5418
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sun_vndr/dk",
+        "path_type": "hardlink",
+        "sha256": "084bda50393f45e7091882cd36ba4bf43e9da7f73c844b4b7675b4f5f076fa90",
+        "sha256_in_prefix": "084bda50393f45e7091882cd36ba4bf43e9da7f73c844b4b7675b4f5f076fa90",
+        "size_in_bytes": 3797
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sun_vndr/ee",
+        "path_type": "hardlink",
+        "sha256": "88ec8f0c76085a9685e3954be47f875fbdf29d01d29dd393e92cae1d85e90c91",
+        "sha256_in_prefix": "88ec8f0c76085a9685e3954be47f875fbdf29d01d29dd393e92cae1d85e90c91",
+        "size_in_bytes": 5815
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sun_vndr/es",
+        "path_type": "hardlink",
+        "sha256": "db959f2227fe293ce412f4eca0d907d1f1ed846a5309ab60b323736c99d05a7d",
+        "sha256_in_prefix": "db959f2227fe293ce412f4eca0d907d1f1ed846a5309ab60b323736c99d05a7d",
+        "size_in_bytes": 4275
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sun_vndr/fi",
+        "path_type": "hardlink",
+        "sha256": "a3cbf7ad9cde215e89f6866c8aecfa77d818df61e84e07cac0ef609b01bf4bba",
+        "sha256_in_prefix": "a3cbf7ad9cde215e89f6866c8aecfa77d818df61e84e07cac0ef609b01bf4bba",
+        "size_in_bytes": 4416
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sun_vndr/fr",
+        "path_type": "hardlink",
+        "sha256": "3c19f92990c8b2c1f5a145cb28a7f07ba026b5f78f1b35a8fe5c87cfc4facb61",
+        "sha256_in_prefix": "3c19f92990c8b2c1f5a145cb28a7f07ba026b5f78f1b35a8fe5c87cfc4facb61",
+        "size_in_bytes": 5378
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sun_vndr/gb",
+        "path_type": "hardlink",
+        "sha256": "18d3fc905c0dee24efa4bafa5e9dcde3a2fc111ae2fff223681d6bc550f949fc",
+        "sha256_in_prefix": "18d3fc905c0dee24efa4bafa5e9dcde3a2fc111ae2fff223681d6bc550f949fc",
+        "size_in_bytes": 2800
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sun_vndr/gr",
+        "path_type": "hardlink",
+        "sha256": "92ed479e3cc18a5eeb7aa533ad206ac8536e161ea85560bacb3dfb02ab7d9525",
+        "sha256_in_prefix": "92ed479e3cc18a5eeb7aa533ad206ac8536e161ea85560bacb3dfb02ab7d9525",
+        "size_in_bytes": 5276
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sun_vndr/it",
+        "path_type": "hardlink",
+        "sha256": "dbc28b18c1d4f239e3f4b8ecbdd7cd3b76706632a31a7bf2739f474ce73361a0",
+        "sha256_in_prefix": "dbc28b18c1d4f239e3f4b8ecbdd7cd3b76706632a31a7bf2739f474ce73361a0",
+        "size_in_bytes": 4081
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sun_vndr/jp",
+        "path_type": "hardlink",
+        "sha256": "a753450573db19547ed24d48ecfeb1c7de8aa7fe5ed9e63d445a07203a91a7aa",
+        "sha256_in_prefix": "a753450573db19547ed24d48ecfeb1c7de8aa7fe5ed9e63d445a07203a91a7aa",
+        "size_in_bytes": 6606
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sun_vndr/kr",
+        "path_type": "hardlink",
+        "sha256": "4e05936bfac8cdc3674a9ebb82f4b1345fe8c053d1f99474469ac8366fb47e04",
+        "sha256_in_prefix": "4e05936bfac8cdc3674a9ebb82f4b1345fe8c053d1f99474469ac8366fb47e04",
+        "size_in_bytes": 2559
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sun_vndr/lt",
+        "path_type": "hardlink",
+        "sha256": "d7e39d79c9333e24a6e7a97dd970c2c2529b7a2f4b7f62f1ef434850c75c304f",
+        "sha256_in_prefix": "d7e39d79c9333e24a6e7a97dd970c2c2529b7a2f4b7f62f1ef434850c75c304f",
+        "size_in_bytes": 5735
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sun_vndr/lv",
+        "path_type": "hardlink",
+        "sha256": "0d17016f5ed444965aa31caab4f410de2aa5e976635bb10afb8fd2574a759d9c",
+        "sha256_in_prefix": "0d17016f5ed444965aa31caab4f410de2aa5e976635bb10afb8fd2574a759d9c",
+        "size_in_bytes": 6727
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sun_vndr/nl",
+        "path_type": "hardlink",
+        "sha256": "9083c2e975a6f180d1d92f9b6160d890fe01ec264a758966ec0f090226cb8fe9",
+        "sha256_in_prefix": "9083c2e975a6f180d1d92f9b6160d890fe01ec264a758966ec0f090226cb8fe9",
+        "size_in_bytes": 4211
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sun_vndr/no",
+        "path_type": "hardlink",
+        "sha256": "4556d614cdf00c2fe20d062e6a21434eb517f5df88bb01a3f83c3958c597a535",
+        "sha256_in_prefix": "4556d614cdf00c2fe20d062e6a21434eb517f5df88bb01a3f83c3958c597a535",
+        "size_in_bytes": 4038
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sun_vndr/pl",
+        "path_type": "hardlink",
+        "sha256": "9542e4339b65a9be93c40531f949e5a9b6039e8db581731bd9cf39421c7d4a5d",
+        "sha256_in_prefix": "9542e4339b65a9be93c40531f949e5a9b6039e8db581731bd9cf39421c7d4a5d",
+        "size_in_bytes": 4199
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sun_vndr/pt",
+        "path_type": "hardlink",
+        "sha256": "2e8b2aa126a27a47242acdd2e4dbdd8462f0001e0b940a51e81639aa65740932",
+        "sha256_in_prefix": "2e8b2aa126a27a47242acdd2e4dbdd8462f0001e0b940a51e81639aa65740932",
+        "size_in_bytes": 4244
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sun_vndr/ro",
+        "path_type": "hardlink",
+        "sha256": "0739894aafd123535ef36ff55dca86774058ee9f6b674d9c0bdefbe15fc7fc79",
+        "sha256_in_prefix": "0739894aafd123535ef36ff55dca86774058ee9f6b674d9c0bdefbe15fc7fc79",
+        "size_in_bytes": 4535
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sun_vndr/ru",
+        "path_type": "hardlink",
+        "sha256": "7672bb2bde27fac7876d6bf27e4878e9a664d3dd77084703b9de834e22805cd8",
+        "sha256_in_prefix": "7672bb2bde27fac7876d6bf27e4878e9a664d3dd77084703b9de834e22805cd8",
+        "size_in_bytes": 6530
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sun_vndr/se",
+        "path_type": "hardlink",
+        "sha256": "8fcb00f7ad4933c7bf215f113d23db8cdecd87e03be4249ffc0ecb5e017ddd7d",
+        "sha256_in_prefix": "8fcb00f7ad4933c7bf215f113d23db8cdecd87e03be4249ffc0ecb5e017ddd7d",
+        "size_in_bytes": 4081
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sun_vndr/sk",
+        "path_type": "hardlink",
+        "sha256": "e1fd2a0bd45a27d89f85b8f31235402678b8b7e259209867b5cb2531d376781c",
+        "sha256_in_prefix": "e1fd2a0bd45a27d89f85b8f31235402678b8b7e259209867b5cb2531d376781c",
+        "size_in_bytes": 5106
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sun_vndr/solaris",
+        "path_type": "hardlink",
+        "sha256": "364f88f9d81591d0cfb2a7d137cc31a2e27b0b12028ffadc64b6903f9e84dc97",
+        "sha256_in_prefix": "364f88f9d81591d0cfb2a7d137cc31a2e27b0b12028ffadc64b6903f9e84dc97",
+        "size_in_bytes": 4304
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sun_vndr/tr",
+        "path_type": "hardlink",
+        "sha256": "c78d5ab11d30f185cf4a90f6ead0f1f73de26779a1000f3dc63b934954eaad15",
+        "sha256_in_prefix": "c78d5ab11d30f185cf4a90f6ead0f1f73de26779a1000f3dc63b934954eaad15",
+        "size_in_bytes": 4192
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sun_vndr/tw",
+        "path_type": "hardlink",
+        "sha256": "a1a7fda154271e2925ec8656140fad5e1504e4389af8d74b47d03c9538bb1bee",
+        "sha256_in_prefix": "a1a7fda154271e2925ec8656140fad5e1504e4389af8d74b47d03c9538bb1bee",
+        "size_in_bytes": 2186
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sun_vndr/ua",
+        "path_type": "hardlink",
+        "sha256": "a55865a177e3985a19aa63022fa3cbf52667413537085acf80d09dc84482e7fe",
+        "sha256_in_prefix": "a55865a177e3985a19aa63022fa3cbf52667413537085acf80d09dc84482e7fe",
+        "size_in_bytes": 5624
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sun_vndr/us",
+        "path_type": "hardlink",
+        "sha256": "f6b9bd144c6702129634b8b4a4aa61c4c12296cd1cb6418fb6034730e9602cdf",
+        "sha256_in_prefix": "f6b9bd144c6702129634b8b4a4aa61c4c12296cd1cb6418fb6034730e9602cdf",
+        "size_in_bytes": 5763
+      },
+      {
+        "_path": "share/X11/xkb/symbols/sy",
+        "path_type": "hardlink",
+        "sha256": "e7e1843e8b9b28b438a79109ac622f7814860ef8ca744afafe7bcf6d0771aede",
+        "sha256_in_prefix": "e7e1843e8b9b28b438a79109ac622f7814860ef8ca744afafe7bcf6d0771aede",
+        "size_in_bytes": 4782
+      },
+      {
+        "_path": "share/X11/xkb/symbols/terminate",
+        "path_type": "hardlink",
+        "sha256": "0bf67addb6f096da3de29be0c8fd2ca7546e9164a4d0e874202d95c34d745598",
+        "sha256_in_prefix": "0bf67addb6f096da3de29be0c8fd2ca7546e9164a4d0e874202d95c34d745598",
+        "size_in_bytes": 199
+      },
+      {
+        "_path": "share/X11/xkb/symbols/tg",
+        "path_type": "hardlink",
+        "sha256": "e5c809d98c545ef1a1c66b462526ce8ed62a97432f13464ed74f96341e505778",
+        "sha256_in_prefix": "e5c809d98c545ef1a1c66b462526ce8ed62a97432f13464ed74f96341e505778",
+        "size_in_bytes": 3748
+      },
+      {
+        "_path": "share/X11/xkb/symbols/th",
+        "path_type": "hardlink",
+        "sha256": "d79780232cab492ca0ae2c55e6fcd15631051852a1f68aaffb7cdcfa51e47a4d",
+        "sha256_in_prefix": "d79780232cab492ca0ae2c55e6fcd15631051852a1f68aaffb7cdcfa51e47a4d",
+        "size_in_bytes": 7429
+      },
+      {
+        "_path": "share/X11/xkb/symbols/tj",
+        "path_type": "hardlink",
+        "sha256": "86998ddb19288374722a120ae597d25d381f81027fa0a9a4143942f4a5138521",
+        "sha256_in_prefix": "86998ddb19288374722a120ae597d25d381f81027fa0a9a4143942f4a5138521",
+        "size_in_bytes": 9868
+      },
+      {
+        "_path": "share/X11/xkb/symbols/tm",
+        "path_type": "hardlink",
+        "sha256": "6d909052fdb7b4eb19c18ffecf9a78162d7432a2f2cc9011d1efe5dd069d5be5",
+        "sha256_in_prefix": "6d909052fdb7b4eb19c18ffecf9a78162d7432a2f2cc9011d1efe5dd069d5be5",
+        "size_in_bytes": 1519
+      },
+      {
+        "_path": "share/X11/xkb/symbols/tr",
+        "path_type": "hardlink",
+        "sha256": "bb72b14499ea9e691a48fa8d97900eca1aaea72a758a6f779487c1e6204ef3dd",
+        "sha256_in_prefix": "bb72b14499ea9e691a48fa8d97900eca1aaea72a758a6f779487c1e6204ef3dd",
+        "size_in_bytes": 32409
+      },
+      {
+        "_path": "share/X11/xkb/symbols/trans",
+        "path_type": "hardlink",
+        "sha256": "471d549573a8a2c4fb720c9134d23dda1e29df2b4164d003d01b41332e65c15c",
+        "sha256_in_prefix": "471d549573a8a2c4fb720c9134d23dda1e29df2b4164d003d01b41332e65c15c",
+        "size_in_bytes": 16578
+      },
+      {
+        "_path": "share/X11/xkb/symbols/tw",
+        "path_type": "hardlink",
+        "sha256": "9021512e53f36526c57b07481d47dd63711f690e8ffe616efff4921856eb265c",
+        "sha256_in_prefix": "9021512e53f36526c57b07481d47dd63711f690e8ffe616efff4921856eb265c",
+        "size_in_bytes": 3338
+      },
+      {
+        "_path": "share/X11/xkb/symbols/typo",
+        "path_type": "hardlink",
+        "sha256": "9c3afd247ffd61a96e34003695741e35a0fa66153b4e3af9f6e7f8a8756f1414",
+        "sha256_in_prefix": "9c3afd247ffd61a96e34003695741e35a0fa66153b4e3af9f6e7f8a8756f1414",
+        "size_in_bytes": 4522
+      },
+      {
+        "_path": "share/X11/xkb/symbols/tz",
+        "path_type": "hardlink",
+        "sha256": "b4a7387fafe914426f7f677c9432e30ddd02b7b12843b4a6cec9dec8d0c4ba2b",
+        "sha256_in_prefix": "b4a7387fafe914426f7f677c9432e30ddd02b7b12843b4a6cec9dec8d0c4ba2b",
+        "size_in_bytes": 3271
+      },
+      {
+        "_path": "share/X11/xkb/symbols/ua",
+        "path_type": "hardlink",
+        "sha256": "3a91ab745a41f3214b04258192a7f91a3b2fba40c54bf0adf6015710d3bb4a2f",
+        "sha256_in_prefix": "3a91ab745a41f3214b04258192a7f91a3b2fba40c54bf0adf6015710d3bb4a2f",
+        "size_in_bytes": 16265
+      },
+      {
+        "_path": "share/X11/xkb/symbols/us",
+        "path_type": "hardlink",
+        "sha256": "e021cf70f52454d9f041d230b4df00103b8a9633eb9978c908799fcbc954f210",
+        "sha256_in_prefix": "e021cf70f52454d9f041d230b4df00103b8a9633eb9978c908799fcbc954f210",
+        "size_in_bytes": 117927
+      },
+      {
+        "_path": "share/X11/xkb/symbols/uz",
+        "path_type": "hardlink",
+        "sha256": "7fe72abc792fd38e7b17dd0636aab83c603d5d4af093e3fd9c0ac896469f782e",
+        "sha256_in_prefix": "7fe72abc792fd38e7b17dd0636aab83c603d5d4af093e3fd9c0ac896469f782e",
+        "size_in_bytes": 3177
+      },
+      {
+        "_path": "share/X11/xkb/symbols/vn",
+        "path_type": "hardlink",
+        "sha256": "4ef686847cbde54e030af22e50d37e7d91f0524c1178b2943769061220933907",
+        "sha256_in_prefix": "4ef686847cbde54e030af22e50d37e7d91f0524c1178b2943769061220933907",
+        "size_in_bytes": 6140
+      },
+      {
+        "_path": "share/X11/xkb/symbols/xfree68_vndr/amiga",
+        "path_type": "hardlink",
+        "sha256": "5076bc17b2083f346a05dd13b3ebf44cbd4526064bd5ec48154343a133dbda8b",
+        "sha256_in_prefix": "5076bc17b2083f346a05dd13b3ebf44cbd4526064bd5ec48154343a133dbda8b",
+        "size_in_bytes": 3899
+      },
+      {
+        "_path": "share/X11/xkb/symbols/xfree68_vndr/ataritt",
+        "path_type": "hardlink",
+        "sha256": "7ca65f17d920a17376755778cc210342fd612015c9593fddc49ff7eabfcae1db",
+        "sha256_in_prefix": "7ca65f17d920a17376755778cc210342fd612015c9593fddc49ff7eabfcae1db",
+        "size_in_bytes": 4672
+      },
+      {
+        "_path": "share/X11/xkb/symbols/za",
+        "path_type": "hardlink",
+        "sha256": "1e765c9f7f5391e369cdbe64e4020c292478022f9da24f3ace11ce2d96d46527",
+        "sha256_in_prefix": "1e765c9f7f5391e369cdbe64e4020c292478022f9da24f3ace11ce2d96d46527",
+        "size_in_bytes": 2241
+      },
+      {
+        "_path": "share/X11/xkb/types/README",
+        "path_type": "hardlink",
+        "sha256": "025721133e20380f998c5c6dce07aea624baad997855cba6e389ca3c26fe05b1",
+        "sha256_in_prefix": "025721133e20380f998c5c6dce07aea624baad997855cba6e389ca3c26fe05b1",
+        "size_in_bytes": 246
+      },
+      {
+        "_path": "share/X11/xkb/types/basic",
+        "path_type": "hardlink",
+        "sha256": "4c18eb87250a3ba92b9d9881a4f07316bcda47d186c5f4e9c76e6d4fcbfbf948",
+        "sha256_in_prefix": "4c18eb87250a3ba92b9d9881a4f07316bcda47d186c5f4e9c76e6d4fcbfbf948",
+        "size_in_bytes": 596
+      },
+      {
+        "_path": "share/X11/xkb/types/cancel",
+        "path_type": "hardlink",
+        "sha256": "047acba53c463dc55d40d664210b5ffee85ba061aeb06949c56473ca012c2a68",
+        "sha256_in_prefix": "047acba53c463dc55d40d664210b5ffee85ba061aeb06949c56473ca012c2a68",
+        "size_in_bytes": 226
+      },
+      {
+        "_path": "share/X11/xkb/types/caps",
+        "path_type": "hardlink",
+        "sha256": "5523bd14fa8c51362e946c108d817f2f01a551a7afb25a057e0b4730c0113a63",
+        "sha256_in_prefix": "5523bd14fa8c51362e946c108d817f2f01a551a7afb25a057e0b4730c0113a63",
+        "size_in_bytes": 4535
+      },
+      {
+        "_path": "share/X11/xkb/types/complete",
+        "path_type": "hardlink",
+        "sha256": "038d66c8861dbc797b7d2226bc9135698e62adf3d6d9f99f1be60b768f591aee",
+        "sha256_in_prefix": "038d66c8861dbc797b7d2226bc9135698e62adf3d6d9f99f1be60b768f591aee",
+        "size_in_bytes": 179
+      },
+      {
+        "_path": "share/X11/xkb/types/default",
+        "path_type": "hardlink",
+        "sha256": "205a4131e04cf5ecb1c4d831c61594c56db731ef46d0eb5844b1c744666b3677",
+        "sha256_in_prefix": "205a4131e04cf5ecb1c4d831c61594c56db731ef46d0eb5844b1c744666b3677",
+        "size_in_bytes": 178
+      },
+      {
+        "_path": "share/X11/xkb/types/extra",
+        "path_type": "hardlink",
+        "sha256": "14a3fc9749313ce38a8559c3fc48775c7705a04af89519062f0c0856350856b6",
+        "sha256_in_prefix": "14a3fc9749313ce38a8559c3fc48775c7705a04af89519062f0c0856350856b6",
+        "size_in_bytes": 4431
+      },
+      {
+        "_path": "share/X11/xkb/types/iso9995",
+        "path_type": "hardlink",
+        "sha256": "37dc0a4905d8eae972fb8e4eb87a2f5b3050a86aa2fcbe217630647163aea975",
+        "sha256_in_prefix": "37dc0a4905d8eae972fb8e4eb87a2f5b3050a86aa2fcbe217630647163aea975",
+        "size_in_bytes": 432
+      },
+      {
+        "_path": "share/X11/xkb/types/level5",
+        "path_type": "hardlink",
+        "sha256": "faabfcdb7c1324c3787846fb82e03746a0644d58e671907bd4e8ede308a4e652",
+        "sha256_in_prefix": "faabfcdb7c1324c3787846fb82e03746a0644d58e671907bd4e8ede308a4e652",
+        "size_in_bytes": 7674
+      },
+      {
+        "_path": "share/X11/xkb/types/mousekeys",
+        "path_type": "hardlink",
+        "sha256": "8cd68606f38aa725915ea7a0de775f322a27b5b79bcd871569ac72b31b93585f",
+        "sha256_in_prefix": "8cd68606f38aa725915ea7a0de775f322a27b5b79bcd871569ac72b31b93585f",
+        "size_in_bytes": 218
+      },
+      {
+        "_path": "share/X11/xkb/types/nokia",
+        "path_type": "hardlink",
+        "sha256": "a63b9d10e7898c5f78d12777675bed2d0d1b723b13c18692fb46e44f85ea082e",
+        "sha256_in_prefix": "a63b9d10e7898c5f78d12777675bed2d0d1b723b13c18692fb46e44f85ea082e",
+        "size_in_bytes": 303
+      },
+      {
+        "_path": "share/X11/xkb/types/numpad",
+        "path_type": "hardlink",
+        "sha256": "4a064b2cabb2099c93dc2c5073bda7c373baac48c49f55205d640142a5c1041d",
+        "sha256_in_prefix": "4a064b2cabb2099c93dc2c5073bda7c373baac48c49f55205d640142a5c1041d",
+        "size_in_bytes": 1658
+      },
+      {
+        "_path": "share/X11/xkb/types/pc",
+        "path_type": "hardlink",
+        "sha256": "316c9cfb47ee6fb9901ee99cead1c6c59fe24fe0c58c250272515a0429c786d7",
+        "sha256_in_prefix": "316c9cfb47ee6fb9901ee99cead1c6c59fe24fe0c58c250272515a0429c786d7",
+        "size_in_bytes": 1107
+      },
+      {
+        "_path": "share/locale/af/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "be70acdae92a3e29e5afed5e755f93e75fd8598b66d6d8d77ad63c3ad4baadbd",
+        "sha256_in_prefix": "be70acdae92a3e29e5afed5e755f93e75fd8598b66d6d8d77ad63c3ad4baadbd",
+        "size_in_bytes": 21669
+      },
+      {
+        "_path": "share/locale/ar/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "c8483f7ff3d5d409b71ef28446fa9dc91d1c8f3008732330581f261ac078688d",
+        "sha256_in_prefix": "c8483f7ff3d5d409b71ef28446fa9dc91d1c8f3008732330581f261ac078688d",
+        "size_in_bytes": 106097
+      },
+      {
+        "_path": "share/locale/az/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "849c44ce7997611f4dac1b0bca126875d3e9fccd086865dc1d26a2d83816b91a",
+        "sha256_in_prefix": "849c44ce7997611f4dac1b0bca126875d3e9fccd086865dc1d26a2d83816b91a",
+        "size_in_bytes": 22376
+      },
+      {
+        "_path": "share/locale/bg/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "a8e717026b3b4dc90366e25198d8a644cb56b8e4d30523f1dbe015d4c2d89758",
+        "sha256_in_prefix": "a8e717026b3b4dc90366e25198d8a644cb56b8e4d30523f1dbe015d4c2d89758",
+        "size_in_bytes": 110760
+      },
+      {
+        "_path": "share/locale/ca/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "37b1a12b24eaf167c99d49082d6d98f79b480c1c9bfba8bf44716c5a76d1f353",
+        "sha256_in_prefix": "37b1a12b24eaf167c99d49082d6d98f79b480c1c9bfba8bf44716c5a76d1f353",
+        "size_in_bytes": 86370
+      },
+      {
+        "_path": "share/locale/crh/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "8c00f2e10f61b264fe6d449e8f8528a1589a5e4199209ef4c929b25c6c00c18c",
+        "sha256_in_prefix": "8c00f2e10f61b264fe6d449e8f8528a1589a5e4199209ef4c929b25c6c00c18c",
+        "size_in_bytes": 44647
+      },
+      {
+        "_path": "share/locale/cs/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "e23b4510c79bbe26a22fdf7fcb94da9374633eb47c4461eb35f673021768b720",
+        "sha256_in_prefix": "e23b4510c79bbe26a22fdf7fcb94da9374633eb47c4461eb35f673021768b720",
+        "size_in_bytes": 91151
+      },
+      {
+        "_path": "share/locale/da/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "3b2c70f242c5b86adb552c21ec67af8a2f2f1d1d3297b07279dc5e304cce517b",
+        "sha256_in_prefix": "3b2c70f242c5b86adb552c21ec67af8a2f2f1d1d3297b07279dc5e304cce517b",
+        "size_in_bytes": 80287
+      },
+      {
+        "_path": "share/locale/de/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "dc3cc356cd5b87d57e718d6219776060c044ac89f97f8e6ebc640024f65c094a",
+        "sha256_in_prefix": "dc3cc356cd5b87d57e718d6219776060c044ac89f97f8e6ebc640024f65c094a",
+        "size_in_bytes": 91193
+      },
+      {
+        "_path": "share/locale/el/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "ad63106a9933489d57f098504dc660bcc8ccd8cb9ea5b98a8a0f41b48b0fb2b8",
+        "sha256_in_prefix": "ad63106a9933489d57f098504dc660bcc8ccd8cb9ea5b98a8a0f41b48b0fb2b8",
+        "size_in_bytes": 93326
+      },
+      {
+        "_path": "share/locale/en_GB/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "664237bf119fb21e5749a473e4136b2fd7401014524cb381480c6e4bfed0f27a",
+        "sha256_in_prefix": "664237bf119fb21e5749a473e4136b2fd7401014524cb381480c6e4bfed0f27a",
+        "size_in_bytes": 23149
+      },
+      {
+        "_path": "share/locale/eo/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "7a61d2706d225b926c57dad0f81d2d12881bf472a73c954b0c21c31c56364338",
+        "sha256_in_prefix": "7a61d2706d225b926c57dad0f81d2d12881bf472a73c954b0c21c31c56364338",
+        "size_in_bytes": 85624
+      },
+      {
+        "_path": "share/locale/es/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "6e48a8bbfe7f92c7b5e71c1bb2e97548c79818c431f54f76bfc4b0792a2313bf",
+        "sha256_in_prefix": "6e48a8bbfe7f92c7b5e71c1bb2e97548c79818c431f54f76bfc4b0792a2313bf",
+        "size_in_bytes": 88279
+      },
+      {
+        "_path": "share/locale/fi/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "45487fc2a1186ace56ba2121691c87ec68fda2c3dd535826e04921046df5838a",
+        "sha256_in_prefix": "45487fc2a1186ace56ba2121691c87ec68fda2c3dd535826e04921046df5838a",
+        "size_in_bytes": 91900
+      },
+      {
+        "_path": "share/locale/fr/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "bc4149f19bf9853e44d8c8c01a3e41f39b9c3be1b4eacef5de883fb7f5444c25",
+        "sha256_in_prefix": "bc4149f19bf9853e44d8c8c01a3e41f39b9c3be1b4eacef5de883fb7f5444c25",
+        "size_in_bytes": 87876
+      },
+      {
+        "_path": "share/locale/fur/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "1b02fcff05aee00d91d23d8f90a1fafabbc352040ccf08d008331bc91ad87065",
+        "sha256_in_prefix": "1b02fcff05aee00d91d23d8f90a1fafabbc352040ccf08d008331bc91ad87065",
+        "size_in_bytes": 87149
+      },
+      {
+        "_path": "share/locale/gl/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "94cdbfc22ea894002ea69f61ad6d68cef15991998faa7b1de6fcec33eb63551e",
+        "sha256_in_prefix": "94cdbfc22ea894002ea69f61ad6d68cef15991998faa7b1de6fcec33eb63551e",
+        "size_in_bytes": 83892
+      },
+      {
+        "_path": "share/locale/he/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "be534b55fabd3b6f885df81862eba123c591e30391aeda0ac7f3cb6059580344",
+        "sha256_in_prefix": "be534b55fabd3b6f885df81862eba123c591e30391aeda0ac7f3cb6059580344",
+        "size_in_bytes": 98154
+      },
+      {
+        "_path": "share/locale/hr/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "8ea179d53bb54d02d0c5249e3164f0f7d255f6ccb04963e85bd5c9cc3849b0cc",
+        "sha256_in_prefix": "8ea179d53bb54d02d0c5249e3164f0f7d255f6ccb04963e85bd5c9cc3849b0cc",
+        "size_in_bytes": 87492
+      },
+      {
+        "_path": "share/locale/hu/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "b2f43146c3c0828a4b9358fc00b949a4eb95f3995f00acc0cd004ecbabec09ed",
+        "sha256_in_prefix": "b2f43146c3c0828a4b9358fc00b949a4eb95f3995f00acc0cd004ecbabec09ed",
+        "size_in_bytes": 85975
+      },
+      {
+        "_path": "share/locale/id/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "555b5dd76f3e7022831fc3b531990b0922474b3dd0bdc4c5fc69da2fbf7d0dc7",
+        "sha256_in_prefix": "555b5dd76f3e7022831fc3b531990b0922474b3dd0bdc4c5fc69da2fbf7d0dc7",
+        "size_in_bytes": 85142
+      },
+      {
+        "_path": "share/locale/it/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "445ce2ccda515443772d09c1e136bed2ca363960f6b113041c68a03457c1736a",
+        "sha256_in_prefix": "445ce2ccda515443772d09c1e136bed2ca363960f6b113041c68a03457c1736a",
+        "size_in_bytes": 83962
+      },
+      {
+        "_path": "share/locale/ja/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "4ac513c9041a85a0916f09ae7d6470603c404058227904990b50e54cbc5f02ec",
+        "sha256_in_prefix": "4ac513c9041a85a0916f09ae7d6470603c404058227904990b50e54cbc5f02ec",
+        "size_in_bytes": 74250
+      },
+      {
+        "_path": "share/locale/ka/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "11d8533f35f8782333b364b2336b0759cd6208cc10f744c0a81658172056b3a3",
+        "sha256_in_prefix": "11d8533f35f8782333b364b2336b0759cd6208cc10f744c0a81658172056b3a3",
+        "size_in_bytes": 66910
+      },
+      {
+        "_path": "share/locale/ko/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "446eb93cafc7b57c94d66e0ed188dd1843e1c84fe50157a53c135830e4cd25f3",
+        "sha256_in_prefix": "446eb93cafc7b57c94d66e0ed188dd1843e1c84fe50157a53c135830e4cd25f3",
+        "size_in_bytes": 93097
+      },
+      {
+        "_path": "share/locale/ky/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "3c8f43720ecec2a87d9644e3cff9387c6ae28a793c3a5ecbec17507444f0aa69",
+        "sha256_in_prefix": "3c8f43720ecec2a87d9644e3cff9387c6ae28a793c3a5ecbec17507444f0aa69",
+        "size_in_bytes": 39990
+      },
+      {
+        "_path": "share/locale/lt/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "69750533836df8610458eaa43dd82c924c66bf6132423696a27b5148954c6408",
+        "sha256_in_prefix": "69750533836df8610458eaa43dd82c924c66bf6132423696a27b5148954c6408",
+        "size_in_bytes": 90709
+      },
+      {
+        "_path": "share/locale/nb/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "2c8cd470e104622dc2f1ecea96a189c112d0848130dafd85a3a2d667d145b2e1",
+        "sha256_in_prefix": "2c8cd470e104622dc2f1ecea96a189c112d0848130dafd85a3a2d667d145b2e1",
+        "size_in_bytes": 5751
+      },
+      {
+        "_path": "share/locale/nl/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "b2f0e1b87ba9e6a36f131d211229b3f317d5d10cac26b232295f251c1836a896",
+        "sha256_in_prefix": "b2f0e1b87ba9e6a36f131d211229b3f317d5d10cac26b232295f251c1836a896",
+        "size_in_bytes": 87373
+      },
+      {
+        "_path": "share/locale/pl/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "5ad1b2586775e4217cc51c2e1431244cd26a1fc7aa6c3794a8d0faf5b67591e3",
+        "sha256_in_prefix": "5ad1b2586775e4217cc51c2e1431244cd26a1fc7aa6c3794a8d0faf5b67591e3",
+        "size_in_bytes": 88195
+      },
+      {
+        "_path": "share/locale/pt/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "18fb23fd7e24ea6b00b26eee43c3d6fae41363058f20b04ab64f65bff97537b7",
+        "sha256_in_prefix": "18fb23fd7e24ea6b00b26eee43c3d6fae41363058f20b04ab64f65bff97537b7",
+        "size_in_bytes": 82998
+      },
+      {
+        "_path": "share/locale/pt_BR/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "326cc6b59599f2c867edaa005209961c1866ee8c77f48306fa8df9aabf070b64",
+        "sha256_in_prefix": "326cc6b59599f2c867edaa005209961c1866ee8c77f48306fa8df9aabf070b64",
+        "size_in_bytes": 84883
+      },
+      {
+        "_path": "share/locale/ro/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "b2de1686ba6209d404fb038f07cafc5f507bfc5cfba3b5fa8f6422aa7dc2cab0",
+        "sha256_in_prefix": "b2de1686ba6209d404fb038f07cafc5f507bfc5cfba3b5fa8f6422aa7dc2cab0",
+        "size_in_bytes": 89658
+      },
+      {
+        "_path": "share/locale/ru/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "53e7bc815d836de631153d7300fe716970cbd13cc27e69aaa84fafbbe447bb67",
+        "sha256_in_prefix": "53e7bc815d836de631153d7300fe716970cbd13cc27e69aaa84fafbbe447bb67",
+        "size_in_bytes": 107897
+      },
+      {
+        "_path": "share/locale/rw/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "054ce2a9381228c0918b03d66f50ca499beea7ce5c7c709b1c65a2fd77ea3acb",
+        "sha256_in_prefix": "054ce2a9381228c0918b03d66f50ca499beea7ce5c7c709b1c65a2fd77ea3acb",
+        "size_in_bytes": 3517
+      },
+      {
+        "_path": "share/locale/sk/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "3983a4c45d27916ed20d41a3ae79f26530ef291db71aa6ea97c6a57e1e384529",
+        "sha256_in_prefix": "3983a4c45d27916ed20d41a3ae79f26530ef291db71aa6ea97c6a57e1e384529",
+        "size_in_bytes": 19399
+      },
+      {
+        "_path": "share/locale/sl/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "5b50ed9296f2f23acb20e1eeb2b2e128184f80aa05bd044e841ebfa847dab6d5",
+        "sha256_in_prefix": "5b50ed9296f2f23acb20e1eeb2b2e128184f80aa05bd044e841ebfa847dab6d5",
+        "size_in_bytes": 69913
+      },
+      {
+        "_path": "share/locale/sq/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "fce9a4996ab6507fb90402bd1a34029c0fb33e4d70605f672067c6156d78a4a2",
+        "sha256_in_prefix": "fce9a4996ab6507fb90402bd1a34029c0fb33e4d70605f672067c6156d78a4a2",
+        "size_in_bytes": 86677
+      },
+      {
+        "_path": "share/locale/sr/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "abc6bee2f20a8f2ad494443597d4a32e7fc7061b388cd7b1024442b565831a89",
+        "sha256_in_prefix": "abc6bee2f20a8f2ad494443597d4a32e7fc7061b388cd7b1024442b565831a89",
+        "size_in_bytes": 104848
+      },
+      {
+        "_path": "share/locale/sv/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "e20d315e280bfcaf77bbb2120d4d86a2046def8ae616824fad3e57f992a2d32b",
+        "sha256_in_prefix": "e20d315e280bfcaf77bbb2120d4d86a2046def8ae616824fad3e57f992a2d32b",
+        "size_in_bytes": 87673
+      },
+      {
+        "_path": "share/locale/tr/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "0ce9d9f0e8862f726e54a086dc298705801021fd17355b17fe094c3602c5894d",
+        "sha256_in_prefix": "0ce9d9f0e8862f726e54a086dc298705801021fd17355b17fe094c3602c5894d",
+        "size_in_bytes": 87664
+      },
+      {
+        "_path": "share/locale/uk/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "0e29c21ab663876063a66fe9aed876091d039aca7058a80f7ecd2c547cc213f6",
+        "sha256_in_prefix": "0e29c21ab663876063a66fe9aed876091d039aca7058a80f7ecd2c547cc213f6",
+        "size_in_bytes": 107776
+      },
+      {
+        "_path": "share/locale/vi/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "6291e74ae02ac060e35191d196c02bdc8180b0c7c3c561ffd6eeae05860dfed9",
+        "sha256_in_prefix": "6291e74ae02ac060e35191d196c02bdc8180b0c7c3c561ffd6eeae05860dfed9",
+        "size_in_bytes": 87164
+      },
+      {
+        "_path": "share/locale/zh_CN/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "06831b713215ec1bf55eb85e5d52f49237cdf6c7891e2482f3abccc8964fb7a5",
+        "sha256_in_prefix": "06831b713215ec1bf55eb85e5d52f49237cdf6c7891e2482f3abccc8964fb7a5",
+        "size_in_bytes": 89199
+      },
+      {
+        "_path": "share/locale/zh_TW/LC_MESSAGES/xkeyboard-config.mo",
+        "path_type": "hardlink",
+        "sha256": "d22b497d74c873fca33265e8b706f74a56d102dc8ad2d5297c15d964efa4d44f",
+        "sha256_in_prefix": "d22b497d74c873fca33265e8b706f74a56d102dc8ad2d5297c15d964efa4d44f",
+        "size_in_bytes": 73887
+      },
+      {
+        "_path": "share/pkgconfig/xkeyboard-config.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/xkeyboard-config_1686533396691/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac",
+        "sha256": "3b175c3ee76c6f736b9b7c40d2f83176cffc4b8272711a37bc288b45d65d7a6c",
+        "sha256_in_prefix": "3fa6483e0d4d373b3fd907b73afa5bfaf24ccf03c28fa7ccbf393fe74a7cb70d",
+        "size_in_bytes": 630
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "364dd7781383336d701bf3f2e10662079b30094b5a9d2a679edeeea9d11cf059",
+  "size": 880593,
+  "subdir": "linux-64",
+  "timestamp": 1686533532648,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/xkeyboard-config-2.39-hd590300_0.conda",
+  "version": "2.39"
+}

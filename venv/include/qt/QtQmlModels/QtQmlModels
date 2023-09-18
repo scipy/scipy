@@ -1,0 +1,6 @@
+#ifndef QT_QTQMLMODELS_MODULE_H
+#define QT_QTQMLMODELS_MODULE_H
+#include <QtQmlModels/QtQmlModelsDepends>
+#include "qtqmlmodelsglobal.h"
+#include "qtqmlmodelsversion.h"
+#endif

@@ -1,0 +1,5 @@
+#ifndef QT_QTMULTIMEDIAQUICK_MODULE_H
+#define QT_QTMULTIMEDIAQUICK_MODULE_H
+#include <QtMultimediaQuick/QtMultimediaQuickDepends>
+#include "qtmultimediaquickversion.h"
+#endif

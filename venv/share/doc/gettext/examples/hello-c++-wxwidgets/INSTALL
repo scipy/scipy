@@ -1,0 +1,12 @@
+This example relies on:
+  - wxWidgets (libwx_*) and its dependencies
+  - the C++ runtime libraries (libstdc++)
+
+Installation:
+  ./autogen.sh
+  ./configure --prefix=/some/prefix --with-wx-prefix=/opt/wxw
+  make
+  make install
+Cleanup:
+  make distclean
+  ./autoclean.sh

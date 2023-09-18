@@ -1,0 +1,282 @@
+escape_char /
+comment_char %
+
+%%%%%%%%%%%%%%%%%%%%%%% locale definition file "ps_AF"  %%%%%%%%%%%%%%%%%%%%%%
+
+% Pashto Locale for Afghanistan
+% Filename: ps_AF
+% Locale name: ps_AF.UTF-8
+% Language: Pashto
+% Territory: Afghanistan
+% Charset: UTF-8
+% Revision: 0.1
+% By: Nasir Gulzade<nasirgulzade@hotmail.com>
+% Creation Date: Thu, 15 Jan 2009 18:16:15 +0500 GMT
+% Last Modification Date: Fri, 16 Jan 2009 20:33:40 +0500 GMT
+%
+
+
+LC_IDENTIFICATION
+	title      "Pashto locale for Afghanistan"
+	source     "Nasir Gulzade"
+	address    "see e-mail."
+	contact    "Nasir Gulzade"
+	email      "nasirgulzade@hotmail.com"
+	tel        "+93 700530286"
+	fax        ""
+	language   "Pashto"
+	territory  "Afghanistan"
+	revision   "0.2"
+	date       "2009-01-16"
+
+	category  "ps_AF:2007";LC_IDENTIFICATION
+	category  "ps_AF:2007";LC_CTYPE
+	category  "ps_AF:2007";LC_COLLATE
+	category  "ps_AF:2007";LC_TIME
+	category  "ps_AF:2007";LC_NUMERIC
+	category  "ps_AF:2007";LC_MONETARY
+	category  "ps_AF:2007";LC_MESSAGES
+	category  "ps_AF:2007";LC_MEASUREMENT
+	category  "ps_AF:2007";LC_PAPER
+	category  "ps_AF:2007";LC_NAME
+	category  "ps_AF:2007";LC_ADDRESS
+	category  "ps_AF:2007";LC_TELEPHONE
+END LC_IDENTIFICATION
+
+LC_CTYPE
+	copy	"i18n"
+	outdigit	<U0660>..<U0663>;<U06F4>;<U0665>..<U0669>
+	map to_outpunct;  (<U002E>,<U066B>);(<U002C>,<U066C>)
+END LC_CTYPE
+
+LC_COLLATE
+% Collation rules updated as per requirement of glibc by Pravin Satpute <psatpute@redhat.com>
+% see rh bug 482881
+copy "iso14651_t1"
+
+collating-symbol  <teh_with_ring>
+collating-symbol  <hah_with_hamza_above>
+collating-symbol  <hah_with_three_dots>
+collating-symbol  <dal_with_ring>
+collating-symbol  <reh_with_ring>
+collating-symbol <reh_with_dot_below_and_above>
+collating-symbol  <seen_with_dot_below_and_above>
+collating-symbol  <kaaf_with_ring>
+collating-symbol  <noon_with_ring>
+collating-symbol  <farsi_yeh>
+collating-symbol  <arabic_letter_e>
+collating-symbol  <yeh_with_tail>
+
+reorder-after <teh>
+<teh_with_ring>
+
+reorder-after <jeem>
+<hah_with_hamza_above>
+
+reorder-after <tcheh>
+<hah_with_three_dots>
+
+reorder-after <dal>
+<dal_with_ring>
+
+reorder-after <reh>
+<reh_with_ring>
+
+reorder-after <jeh>
+<reh_with_dot_below_and_above>
+
+reorder-after <sheen>
+<seen_with_dot_below_and_above>
+
+reorder-after <keheh>
+<kaaf_with_ring>
+
+reorder-after <noon>
+<noon_with_ring>
+
+reorder-after <heh>
+<farsi_yeh>
+
+reorder-after <alef_maksura>
+<arabic_letter_e>
+<yeh_with_tail>
+
+
+reorder-after <U062A>
+<U067C>  <teh_with_ring>;<BAS>;<MIN>;IGNORE
+
+reorder-after <U062C>
+<U0681> <hah_with_hamza_above>;<BAS>;<MIN>;IGNORE
+
+reorder-after <U0686>
+<U0685> <hah_with_three_dots>;<BAS>;<MIN>;IGNORE
+
+reorder-after  <U062F>
+<U0689> <dal_with_ring>;<BAS>;<MIN>;IGNORE
+
+reorder-after <U0631>
+<U0693> <reh_with_ring>;<BAS>;<MIN>;IGNORE
+
+reorder-after <U0698>
+<U0696> <reh_with_dot_below_and_above>;<BAS>;<MIN>;IGNORE
+
+reorder-after <U0634>
+<U069A> <seen_with_dot_below_and_above>;<BAS>;<MIN>;IGNORE
+
+reorder-after <U06A9>
+<U06AB> <kaaf_with_ring>;<BAS>;<MIN>;IGNORE
+
+reorder-after  <U0646>
+<U06BC> <noon_with_ring>;<BAS>;<MIN>;IGNORE
+
+reorder-after <U0648>
+<U0647> <heh>;<BAS>;<MIN>;IGNORE
+<U06CC> <farsi_yeh>;<BAS>;<MIN>;IGNORE
+
+reorder-after <U064A>
+<U06D0> <arabic_letter_e>;<AYE>;<MIN>;IGNORE
+<U0626> "<alef_maksura><hamza>";"<BAS><BAS>";"<MIN><MIN>";IGNORE
+<U06CD> <yeh_with_tail>;<AYE>;<MIN>;IGNORE
+
+reorder-end
+
+END LC_COLLATE
+
+LC_TIME
+	abday	"<U06CC><U002E>";/
+		"<U062F><U002E>";/
+		"<U0633><U002E>";/
+		"<U0686><U002E>";/
+		"<U067E><U002E>";/
+		"<U062C><U002E>";/
+		"<U0634><U002E>"
+	day	"<U06CC><U06A9><U0634><U0646><U0628><U0647>";/
+		"<U062F><U0648><U0634><U0646><U0628><U0647>";/
+		"<U0633><U0647><U200C><U0634><U0646><U0628><U0647>";/
+		"<U0686><U0627><U0631><U0634><U0646><U0628><U0647>";/
+		"<U067E><U0646><U062C><U0634><U0646><U0628><U0647>";/
+		"<U062C><U0645><U0639><U0647>";/
+		"<U0634><U0646><U0628><U0647>"
+	abmon	"<U062C><U0646><U0648>";/
+		"<U0641><U0628><U0631>";/
+		"<U0645><U0627><U0631>";/
+		"<U0627><U067E><U0631>";/
+		"<U0645><U0640><U06D0>";/
+		"<U062C><U0648><U0646>";/
+		"<U062C><U0648><U0644>";/
+		"<U0627><U06AB><U0633>";/
+		"<U0633><U067E><U062A>";/
+		"<U0627><U06A9><U062A>";/
+		"<U0646><U0648><U0645>";/
+		"<U062F><U0633><U0645>"
+	mon	"<U062C><U0646><U0648><U0631><U064A>";/
+		"<U0641><U0628><U0631><U0648><U0631><U064A>";/
+		"<U0645><U0627><U0631><U0686>";/
+		"<U0627><U067E><U0631><U06CC><U0644>";/
+		"<U0645><U06D0>";/
+		"<U062C><U0648><U0646>";/
+		"<U062C><U0648><U0644><U0627><U064A>";/
+		"<U0627><U06AB><U0633><U062A>";/
+		"<U0633><U067E><U062A><U0645><U0628><U0631>";/
+		"<U0627><U06A9><U062A><U0648><U0628><U0631>";/
+		"<U0646><U0648><U0645><U0628><U0631>";/
+		"<U062F><U0633><U0645><U0628><U0631>"
+	d_t_fmt	"<U0025><U0041><U0020><U062F><U0020><U0025><U0059>/
+<U0020><U062F><U0020><U0025><U0042><U0020><U0025><U0065><U060C>/
+<U0020><U0025><U005A><U0020><U0025><U0048><U003A><U0025><U004D>/
+<U003A><U0025><U0053>"
+	d_fmt	"<U062F><U0020><U0025><U0059><U0020><U062F><U0020>/
+<U0025><U0042><U0020><U0025><U0065>"
+	t_fmt	"<U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053>"
+	am_pm	"<U063A><U002E><U0645><U002E>";/
+		"<U063A><U002E><U0648><U002E>"
+	t_fmt_ampm	"<U202B><U0025><U0049><U003A><U0025><U004D><U003A>/
+<U0025><U0053><U0020><U0025><U0070><U202C>"
+	first_weekday	7
+	first_workday	7
+	cal_direction	3
+END LC_TIME
+
+LC_NUMERIC
+	decimal_point	"<U066B>"
+	thousands_sep	"<U066C>"
+	grouping	3
+END LC_NUMERIC
+
+LC_MONETARY
+	int_curr_symbol	"<U0041><U0046><U004E><U0020>"
+	currency_symbol	"<U0627><U0641><U063A><U0627><U0646><U06CD>"
+	mon_decimal_point	"<U066B>"
+	mon_thousands_sep	"<U066C>"
+	mon_grouping	3
+	positive_sign	""
+	negative_sign	"<U002D>"
+	int_frac_digits	0
+	frac_digits	0
+	p_cs_precedes	0
+	p_sep_by_space	1
+	n_cs_precedes	0
+	n_sep_by_space	1
+	p_sign_posn	1
+	n_sign_posn	1
+END LC_MONETARY
+
+LC_MESSAGES
+	yesexpr "<U005E><U005B><U0079><U0059><U0628>/
+<U0066><U005D><U002E><U002A>"
+	noexpr  "<U005E><U005B><U006E><U004E><U062E>/
+<U0646><U006F><U005D><U002E><U002A>"
+END LC_MESSAGES
+
+LC_MEASUREMENT
+	measurement	1
+END LC_MEASUREMENT
+
+LC_PAPER
+	height	297
+	width	210
+END LC_PAPER
+
+LC_NAME
+	name_fmt	"<U0025><U0073><U0025><U0074><U0025><U0070><U0025>/
+<U0074><U0025><U0067><U0025><U0074><U0025><U006D><U0025><U0074><U0025><U0066>"
+	name_gen	"" % No general salutation for all persons in Pashto.
+	name_mr	"<U069A><U0627><U063A><U0644><U06D0>"
+	name_mrs	"<U0628><U064A><U0020><U0628><U064A>"
+	name_miss	"<U0628><U064A><U0020><U0628><U064A>"
+	name_ms	"<U0628><U064A><U0020><U0628><U064A>"
+END LC_NAME
+
+LC_ADDRESS
+	postal_fmt	"<U0025><U0061><U0025><U004E><U0025><U0066><U0025>/
+<U004E><U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E><U0025>/
+<U0073><U0020><U0025><U0068><U0020><U0025><U0065><U0020><U0025><U0072>/
+<U0025><U004E><U0025><U0043><U002D><U0025><U007A><U0020><U0025><U0054>/
+<U0025><U004E><U0025><U0063><U0025><U004E>"
+	country_name	"<U0627><U0641><U063A><U0627><U0646>/
+<U0633><U062A><U0627><U0646>"
+	%country_post	"<U0041><U0046><U0047>" % FIXME: Not confirmed.
+	country_ab2	"<U0041><U0046>"
+	country_ab3	"<U0041><U0046><U0047>"
+	country_num	004
+	country_car	"<U0041><U0046><U0047>"
+
+	%country_isbn	"" % Unfortunately not yet assigned :-(
+			   % Since to date there is no ISBN agency working
+			   % in Afghanistan.
+
+	lang_name	"<U067E><U069A><U062A><U0648>"
+	lang_ab	"<U0070><U0073>"
+	lang_term	"<U0070><U0075><U0073>"
+	lang_lib	"<U0070><U0075><U0073>"
+END LC_ADDRESS
+
+LC_TELEPHONE
+	tel_int_fmt	"<U002B><U0025><U0063><U0020><U0025><U0061><U0020>/
+<U0025><U006C>"
+	tel_dom_fmt	"<U0025><U0041><U2012><U0025><U006C>"
+	int_select	"<U0030><U0030>"
+	int_prefix	"<U0039><U0033>"
+END LC_TELEPHONE
+
+%%%%%%%%%%%%%%%%%%%% locale definition file "ps_AF" ends %%%%%%%%%%%%%%%%%%%%%

@@ -1,0 +1,18 @@
+include(repcclient.pri)
+include(repcserver.pri)
+include(repcmerged.pri)
+
+!isEmpty(QOBJECT_REP) {
+    qtPrepareTool(QMAKE_REPC, repc)
+
+    for (path, QT.remoteobjects.includes) {
+        REPC_INCLUDEPATH += -I $$shell_quote($$path)
+    }
+
+    source2rep.input = QOBJECT_REP
+    source2rep.output = ${QMAKE_FILE_BASE}.rep
+    source2rep.commands = $$QMAKE_REPC $$REPC_INCLUDEPATH -o rep -i src ${QMAKE_FILE_NAME} ${QMAKE_FILE_OUT}
+    source2rep.depends = ${QMAKE_FILE_NAME} $$QT_TOOL.repc.binary
+    source2rep.CONFIG += target_predeps no_link
+    QMAKE_EXTRA_COMPILERS += source2rep
+}

@@ -1,0 +1,284 @@
+.\" Copyright (C) 2001, 2002, 2006 Silicon Graphics, Inc.
+.\" All rights reserved.
+.\"
+.\" This is free documentation; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License as
+.\" published by the Free Software Foundation; either version 2 of
+.\" the License, or (at your option) any later version.
+.\"
+.\" The GNU General Public License's references to "object code"
+.\" and "executables" are to be interpreted as the output of any
+.\" document formatting or typesetting system, including
+.\" intermediate and printed output.
+.\"
+.\" This manual is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public
+.\" License along with this manual.  If not, see
+.\" <http://www.gnu.org/licenses/>.
+.\"
+.TH ATTR_LIST 3 "Extended Attributes" "Dec 2005" "XFS Compatibility API"
+.SH NAME
+attr_list, attr_listf \- list the names of the user attributes of a filesystem object
+.SH C SYNOPSIS
+.PP
+.sp
+.nf
+.B #include <attr/attributes.h>
+.sp
+.B "int attr_list (const char \(**path, char \(**buffer, "
+.B "               const int buffersize, int flags,"
+.B "               attrlist_cursor_t \(**cursor);"
+.PP
+.B "int attr_listf (int fd, char \(**buffer, "
+.B "                const int buffersize, int flags,"
+.B "                attrlist_cursor_t \(**cursor);"
+.Op
+.SH DESCRIPTION
+The
+.B attr_list
+and
+.B attr_listf
+functions provide a way to list the existing attributes of a
+filesystem object.
+.P
+.I Path\^
+points to a path name for a filesystem object, and
+.I fd\^
+refers to the file descriptor associated with a file.
+The
+.I buffer
+will be filled with a structure describing at least a portion of the
+attributes associated with the given filesystem object.
+.I Buffer
+will be overwritten with an \f4attrlist_t\fP structure
+containing a list of the attributes associated with
+that filesystem object, up to a maximum of
+.I buffersize
+bytes.
+The
+.I buffer
+must be sufficiently large to hold the appropriate data structures
+plus at least one maximally sized attribute name,
+but cannot be more than ATTR_MAX_VALUELEN (currently 64KB) bytes in length.
+.PP
+.Op c p a
+The contents of an \f4attrlist_t\fP structure include the following members:
+.P
+.RS 3
+.nf
+.ft 4
+.ta 9n 22n
+int32_t al_count; /\(** number of entries in attrlist \(**/
+int32_t al_more; /\(** T/F: more attrs (do syscall again) \(**/
+int32_t al_offset[1]; /\(** byte offsets of attrs [var-sized] \(**/
+.ft 1
+.fi
+.RE
+.PP
+The
+.I al_count
+field shows the number of attributes represented in this buffer,
+which is also the number of elements in the
+.I al_offset
+array.
+The
+.I al_more
+field will be non-zero if another
+.B attr_list
+call would result in more attributes.
+The
+.I al_offset
+array contains the byte offset within the
+.I buffer
+of the structure describing each of the attributes,
+an \f4attrlist_ent_t\fP structure.
+The \f4ATTR_ENTRY(buffer, index)\fP macro will help with decoding the list.
+It takes a pointer to the
+.I buffer
+and an
+.I index
+into the
+.I al_offset
+array and returns a pointer to the corresponding
+\f4attrlist_ent_t\fP structure.
+.PP
+The contents of an \f4attrlist_ent_t\fP structure
+include the following members:
+.P
+.RS 3
+.nf
+.ft 4
+.ta 9n 22n
+uint32_t a_valuelen; /\(** number bytes in value of attr \(**/
+char a_name[]; /\(** attr name (NULL terminated) \(**/
+.ft 1
+.fi
+.Op
+.RE
+.PP
+The
+.I a_valuelen
+field shows the size in bytes of the value
+associated with the attribute whose name is stored in the
+.I a_name
+field.
+The name is a NULL terminated string.
+.PP
+Note that the value of the attribute cannot be obtained through
+this interface, the
+.B attr_get
+call should be used to get the value.
+The
+.B attr_list
+interface tells the calling process how large of a buffer
+it must have in order to get the attribute\'s value.
+.PP
+The
+.I flags
+argument can contain the following symbols bitwise OR\'ed together:
+.TP
+.SM
+\%ATTR_ROOT
+List the attributes that are in the
+.B root
+address space, not in the
+.B user
+address space.
+(limited to use by super-user only)
+.TP
+.SM
+\%ATTR_DONTFOLLOW
+Do not follow symbolic links when resolving a
+.I path
+on an
+.B attr_list
+function call.
+The default is to follow symbolic links.
+.PP
+The
+.I cursor
+argument is a pointer to an opaque data structure that the kernel uses
+to track the calling process\'s position in the attribute list.
+The only valid operations on a
+.I cursor
+are to pass it into an
+.B attr_list
+function call or to zero it out.
+It should be zero\'ed out before the first
+.B attr_list
+call.
+Note that multi-threaded applications may keep more than one
+.I cursor
+in order to serve multiple contexts, ie: the
+.B attr_list
+call is "thread-safe".
+.PP
+.B attr_list
+will fail if one or more of the following are true:
+.TP 17
+.SM
+\%[ENOENT]
+The named file does not exist.
+.TP
+.SM
+\%[EPERM]
+The effective user
+.SM ID
+does not match the owner of the file
+and the effective user
+.SM ID
+is not super-user.
+.TP
+.SM
+\%[ENOTDIR]
+A component of the
+path prefix
+is not a directory.
+.TP
+.SM
+\%[EACCES]
+Search permission is denied on a
+component of the
+path prefix.
+.TP
+.SM
+\%[EINVAL]
+A bit was set in the
+.I flag
+argument that is not defined for this system call,
+or the buffer was too small or too large.
+.TP
+.SM
+\%[EFAULT]
+Either
+.I Path
+or
+.I buffer
+points outside the allocated address space of the process, or
+.I buffer
+or
+.I bufsize
+are not 32bit aligned.
+.TP
+.SM
+\%[ELOOP]
+A path name lookup involved too many symbolic links.
+.TP
+.SM
+\%[ENAMETOOLONG]
+The length of
+.I path
+exceeds
+.SM
+.RI { MAXPATHLEN },
+or a pathname component is longer than
+.SM
+.RI { MAXNAMELEN }.
+.TP
+.SM
+\%[ENOATTR]
+.I attribute\^
+does not exist for this file.
+.PP
+.B attr_listf\^
+will fail if:
+.TP 15
+.SM
+\%[EINVAL]
+A bit was set in the
+.I flag
+argument that is not defined for this system call, or
+.I fd\^
+refers to a socket, not a file,
+or the buffer was too small or too large.
+.TP
+.SM
+\%[EFAULT]
+Either
+.I Path
+or
+.I buffer
+points outside the allocated address space of the process, or
+.I buffer
+or
+.I bufsize
+are not 32bit aligned.
+.TP
+.SM
+\%[EBADF]
+.I Fd\^
+does not refer to a valid descriptor.
+.SH "DIAGNOSTICS"
+Upon successful completion, a value of 0 is returned.
+Otherwise, a value of \-1 is returned and
+.I errno\^
+is set to indicate the error.
+.SH "SEE ALSO"
+.BR attr (1),
+.BR attr_multi (3),
+.BR attr_remove (3),
+.BR attr_set (3)

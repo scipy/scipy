@@ -1,0 +1,14 @@
+<!--
+  SPDX-License-Identifier: LGPL-2.1-or-later
+  SPDX-FileCopyrightText: 2023 JCWasmx86
+-->
+
+<!ELEMENT gresources (gresource)* >
+
+<!ELEMENT gresource (file)* >
+<!ATTLIST gresource prefix CDATA #IMPLIED >
+
+<!ELEMENT file (#PCDATA) >
+<!ATTLIST file alias      CDATA                                         #IMPLIED
+               compressed (true|false)                                  #IMPLIED
+               preprocess (xml-stripblanks|to-pixdata|json-stripblanks) #IMPLIED >

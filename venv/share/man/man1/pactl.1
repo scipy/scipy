@@ -1,0 +1,144 @@
+.TH pactl 1 User Manuals
+.SH NAME
+pactl \- Control a running PulseAudio sound server
+.SH SYNOPSIS
+\fBpactl [\fIoptions\fB] \fICOMMAND\fB [\fIARGS ...\fB]
+
+pactl --help\fB
+
+pactl --version\fB
+\f1
+.SH DESCRIPTION
+\fIpactl\f1 can be used to issue control commands to the PulseAudio sound server.
+
+\fIpactl\f1 only exposes a subset of the available operations. For the full set use the \fBpacmd(1)\f1.
+.SH OPTIONS
+.TP
+\fB-h | --help\f1
+Show help.
+.TP
+\fB--version\f1
+Show version information.
+.TP
+\fB-s | --server\f1\fI=SERVER\f1
+Choose the server to connect to.
+.TP
+\fB-f | --format\f1\fI=FORMAT\f1
+Choose output format, available options are "text" or "json".
+.TP
+\fB-n | --client-name\f1\fI=NAME\f1
+Specify the client name \fIpactl\f1 shall pass to the server when connecting.
+.SH COMMANDS
+When supplied as arguments to the commands below, the special names @DEFAULT_SINK@, @DEFAULT_SOURCE@ and @DEFAULT_MONITOR@ can be used to specify the default sink, source and monitor respectively. 
+.TP
+\fBstat\f1
+Dump a few statistics about the memory usage of the PulseAudio daemon.
+.TP
+\fBinfo\f1
+Dump some info about the PulseAudio daemon.
+.TP
+\fBlist\f1 [\fIshort\f1] [\fITYPE\f1]
+Dump all currently loaded modules, available sinks, sources, streams, etc. \fITYPE\f1 must be one of: modules, sinks, sources, sink-inputs, source-outputs, clients, samples, cards, message-handlers. If not specified, all info is listed with the exception of the message-handlers. If short is given, output is in a tabular format, for easy parsing by scripts.
+.TP
+\fBexit\f1
+Asks the PulseAudio server to terminate.
+.TP
+\fBupload-sample\f1 \fIFILENAME\f1 [\fINAME\f1]
+Upload a sound from the specified audio file into the sample cache. The file types supported are those understood by \fIlibsndfile\f1. The sample in the cache is named after the audio file, unless the name is explicitly specified.
+.TP
+\fBplay-sample\f1 \fINAME\f1 [\fISINK\f1]
+Play the specified sample from the sample cache. It is played on the default sink, unless the symbolic name or the numerical index of the sink to play it on is specified.
+.TP
+\fBremove-sample\f1 \fINAME\f1
+Remove the specified sample from the sample cache.
+.TP
+\fBload-module\f1 \fINAME\f1 [\fIARGUMENTS ...\f1]
+Load the specified module with the specified arguments into the running sound server. Prints the numeric index of the module just loaded to STDOUT. You can use it to unload the module later.
+.TP
+\fBunload-module\f1 \fIID|NAME\f1
+Unload the module instance identified by the specified numeric index or unload all modules by the specified name.
+.TP
+\fBmove-sink-input\f1 \fIID\f1 \fISINK\f1
+Move the specified playback stream (identified by its numerical index) to the specified sink (identified by its symbolic name or numerical index).
+.TP
+\fBmove-source-output\f1 \fIID\f1 \fISOURCE\f1
+Move the specified recording stream (identified by its numerical index) to the specified source (identified by its symbolic name or numerical index).
+.TP
+\fBsuspend-sink\f1 \fISINK\f1 \fItrue|false\f1
+Suspend or resume the specified sink (which may be specified either by its symbolic name or numerical index), depending whether true (suspend) or false (resume) is passed as last argument. Suspending a sink will pause all playback. Depending on the module implementing the sink this might have the effect that the underlying device is closed, making it available for other applications to use. The exact behaviour depends on the module. 
+.TP
+\fBsuspend-source\f1 \fISOURCE\f1 \fItrue|false\f1
+Suspend or resume the specified source (which may be specified either by its symbolic name or numerical index), depending whether true (suspend) or false (resume) is passed as last argument. Suspending a source will pause all capturing. Depending on the module implementing the source this might have the effect that the underlying device is closed, making it available for other applications to use. The exact behaviour depends on the module. 
+.TP
+\fBset-card-profile\f1 \fICARD\f1 \fIPROFILE\f1
+Set the specified card (identified by its symbolic name or numerical index) to the specified profile (identified by its symbolic name).
+.TP
+\fBget-default-sink\f1
+Returns the symbolic name of the default sink.
+.TP
+\fBset-default-sink\f1 \fISINK\f1
+Make the specified sink (identified by its symbolic name or numerical index) the default sink.
+.TP
+\fBset-sink-port\f1 \fISINK\f1 \fIPORT\f1
+Set the specified sink (identified by its symbolic name or numerical index) to the specified port (identified by its symbolic name).
+.TP
+\fBget-default-source\f1
+Returns the symbolic name of the default source.
+.TP
+\fBset-default-source\f1 \fISOURCE\f1
+Make the specified source (identified by its symbolic name or numerical index) the default source.
+.TP
+\fBset-source-port\f1 \fISOURCE\f1 \fIPORT\f1
+Set the specified source (identified by its symbolic name or numerical index) to the specified port (identified by its symbolic name).
+.TP
+\fBset-port-latency-offset\f1 \fICARD\f1 \fIPORT\f1 \fIOFFSET\f1
+Set a latency offset to a specified port (identified by its symbolic name) that belongs to a card (identified by its symbolic name or numerical index). \fIOFFSET\f1 is a number which represents the latency offset in microseconds
+.TP
+\fBget-sink-volume\f1 \fISINK\f1
+Get the volume of the specified sink (identified by its symbolic name or numerical index) displayed in the same format as the `info` command.
+.TP
+\fBset-sink-volume\f1 \fISINK\f1 \fIVOLUME [VOLUME ...]\f1
+Set the volume of the specified sink (identified by its symbolic name or numerical index). \fIVOLUME\f1 can be specified as an integer (e.g. 2000, 16384), a linear factor (e.g. 0.4, 1.100), a percentage (e.g. 10%, 100%) or a decibel value (e.g. 0dB, 20dB). If the volume specification start with a + or - the volume adjustment will be relative to the current sink volume. A single volume value affects all channels; if multiple volume values are given their number has to match the sink's number of channels.
+.TP
+\fBget-source-volume\f1 \fISOURCE\f1
+``` Get the volume of the specified source (identified by its symbolic name or numerical index) displayed in the same format as the `info` command.
+.TP
+\fBset-source-volume\f1 \fISOURCE\f1 \fIVOLUME [VOLUME ...]\f1
+Set the volume of the specified source (identified by its symbolic name or numerical index). \fIVOLUME\f1 can be specified as an integer (e.g. 2000, 16384), a linear factor (e.g. 0.4, 1.100), a percentage (e.g. 10%, 100%) or a decibel value (e.g. 0dB, 20dB). If the volume specification start with a + or - the volume adjustment will be relative to the current source volume. A single volume value affects all channels; if multiple volume values are given their number has to match the source's number of channels.
+.TP
+\fBset-sink-input-volume\f1 \fIINPUT\f1 \fIVOLUME [VOLUME ...]\f1
+Set the volume of the specified sink input (identified by its numerical index). \fIVOLUME\f1 can be specified as an integer (e.g. 2000, 16384), a linear factor (e.g. 0.4, 1.100), a percentage (e.g. 10%, 100%) or a decibel value (e.g. 0dB, 20dB). If the volume specification start with a + or - the volume adjustment will be relative to the current sink input volume. A single volume value affects all channels; if multiple volume values are given their number has to match the sink input's number of channels.
+.TP
+\fBset-source-output-volume\f1 \fIOUTPUT\f1 \fIVOLUME [VOLUME ...]\f1
+Set the volume of the specified source output (identified by its numerical index). \fIVOLUME\f1 can be specified as an integer (e.g. 2000, 16384), a linear factor (e.g. 0.4, 1.100), a percentage (e.g. 10%, 100%) or a decibel value (e.g. 0dB, 20dB). If the volume specification start with a + or - the volume adjustment will be relative to the current source output volume. A single volume value affects all channels; if multiple volume values are given their number has to match the source output's number of channels.
+.TP
+\fBget-sink-mute\f1 \fISINK\f1
+Get the mute status of the specified sink (identified by its symbolic name or numerical index).
+.TP
+\fBset-sink-mute\f1 \fISINK\f1 \fI1|0|toggle\f1
+Set the mute status of the specified sink (identified by its symbolic name or numerical index).
+.TP
+\fBget-source-mute\f1 \fISOURCE\f1
+Get the mute status of the specified source (identified by its symbolic name or numerical index).
+.TP
+\fBset-source-mute\f1 \fISOURCE\f1 \fI1|0|toggle\f1
+Set the mute status of the specified source (identified by its symbolic name or numerical index).
+.TP
+\fBset-sink-input-mute\f1 \fIINPUT\f1 \fI1|0|toggle\f1
+Set the mute status of the specified sink input (identified by its numerical index).
+.TP
+\fBset-source-output-mute\f1 \fIOUTPUT\f1 \fI1|0|toggle\f1
+Set the mute status of the specified source output (identified by its numerical index).
+.TP
+\fBset-sink-formats\f1 \fISINK\f1 \fIFORMATS\f1
+Set the supported formats of the specified sink (identified by its numerical index) if supported by the sink. \fIFORMATS\f1 is specified as a semi-colon (;) separated list of formats in the form 'encoding[, key1=value1, key2=value2, ...]' (for example, AC3 at 32000, 44100 and 48000 Hz would be specified as 'ac3-iec61937, format.rate = "[ 32000, 44100, 48000 ]"'). See https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/User/SupportedAudioFormats/ for possible encodings. 
+.TP
+\fBsend-message\f1 \fIRECIPIENT\f1 \fIMESSAGE\f1 \fIMESSAGE_PARAMETERS\f1
+Send a message to the specified recipient object. If applicable an additional string containing message parameters can be specified. A string is returned as a response to the message. For available messages see https://cgit.freedesktop.org/pulseaudio/pulseaudio/tree/doc/messaging_api.txt.
+.TP
+\fBsubscribe\f1
+Subscribe to events, pactl does not exit by itself, but keeps waiting for new events.
+.SH AUTHORS
+The PulseAudio Developers <pulseaudio-discuss (at) lists (dot) freedesktop (dot) org>; PulseAudio is available from \fBhttp://pulseaudio.org/\f1
+.SH SEE ALSO
+\fBpulseaudio(1)\f1, \fBpacmd(1)\f1

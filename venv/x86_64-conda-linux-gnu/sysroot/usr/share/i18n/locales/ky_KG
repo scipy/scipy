@@ -1,0 +1,207 @@
+escape_char /
+comment_char %
+% charset "UTF-8"
+
+%
+%
+% needed extra chars: <U04A2>, <U04A3>, <U04E8>, <U04E9>, <U04AE>, <U04AF>
+%
+LC_IDENTIFICATION
+title "Kyrgyz Language Locale for Kyrgyzstan"
+source "Timur Jamakeev"
+address ""
+contact "Pablo Saratxaga, Timur Jamakeev"
+email "srtxg@mandrakesoft.com, ztimur@mail.ru"
+tel ""
+fax ""
+language "Kyrgyz"
+territory "Kyrgyzstan"
+revision "0.2"
+date "2004-10-14"
+%
+category  "ky_KG:2000";LC_IDENTIFICATION
+category  "ky_KG:2000";LC_CTYPE
+category  "ky_KG:2000";LC_COLLATE
+category  "ky_KG:2000";LC_TIME
+category  "ky_KG:2000";LC_NUMERIC
+category  "ky_KG:2000";LC_MONETARY
+category  "ky_KG:2000";LC_MESSAGES
+category  "ky_KG:2000";LC_PAPER
+category  "ky_KG:2000";LC_NAME
+category  "ky_KG:2000";LC_ADDRESS
+category  "ky_KG:2000";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_COLLATE
+
+% The kyrgyz cyrillic alphabet is:
+% a=, b=, v=, g=, d=, e=, io, z%, z=, i=, j=, k=, l=, m=, n=, n,=,
+% o=, o-=, p=, r=, s=, t=, u=, u'=, f=, h=, c=, c%, s%, sc, =', y=, %',
+% je, ju, ja
+%
+% special letters are:
+% n,=: <U04A2>, <U04A3>
+% o-=: <U04E8>, <U04E9>
+% u'=: <U04AE>, <U04AF>
+
+copy "<U0069><U0073><U006F><U0031><U0034><U0036><U0035><U0031><U005F><U0074><U0031>"
+
+collating-symbol <o-=>
+collating-symbol <u'=>
+collating-symbol <n,=>
+
+reorder-after <CYR-EN>
+<n,=>
+reorder-after <CYR-O>
+<o-=>
+reorder-after <CYR-OUBRE>
+<u'=>
+
+reorder-after <U043D>
+<U04A3> <n,=>;<PCL>;<MIN>;IGNORE
+reorder-after <U041D>
+<U04A2> <n,=>;<PCL>;<CAP>;IGNORE
+
+reorder-after <U043E>
+<U04E9> <o-=>;<PCL>;<MIN>;IGNORE
+reorder-after <U041E>
+<U04E8> <o-=>;<PCL>;<CAP>;IGNORE
+
+reorder-after <U0443>
+<U04AF> <u'=>;<PCL>;<MIN>;IGNORE
+reorder-after <U0423>
+<U04AE> <u'=>;<PCL>;<CAP>;IGNORE
+
+reorder-end
+
+END LC_COLLATE
+
+LC_CTYPE
+copy "i18n"
+
+translit_start
+include  "translit_combining";""
+translit_end
+END LC_CTYPE
+
+LC_MESSAGES
+% FIXED AND CHECKED by Timur 2004/10/14
+yesstr  "<U041E><U043E><U0431><U0430>"
+nostr   "<U0416><U043E><U043A>"
+yesexpr "<U005E><U005B><U041E><U043E><U0059><U0079><U005D><U002E><U002A>"
+noexpr  "<U005E><U005B><U0416><U0436><U004E><U006E><U005D><U002E><U002A>"
+END LC_MESSAGES
+
+LC_MONETARY
+% FIXED AND CHECKED by Timur 2004/10/14
+int_curr_symbol           "<U004B><U0047><U0053><U0020>"
+currency_symbol           "<U0441><U043E><U043C>"
+mon_decimal_point         "<U002E>"
+mon_thousands_sep         "<U0020>"
+mon_grouping              3;3
+positive_sign             ""
+negative_sign             "<U002D>"
+int_frac_digits           2
+frac_digits               2
+p_cs_precedes             0
+p_sep_by_space            1
+n_cs_precedes             0
+n_sep_by_space            1
+p_sign_posn               1
+n_sign_posn               1
+END LC_MONETARY
+
+LC_NUMERIC
+decimal_point             "<U002C>"
+thousands_sep             "<U0020>"
+grouping                  3;3
+END LC_NUMERIC
+
+LC_TIME
+day     "<U0436><U0435><U043A><U0448><U0435><U043C><U0431><U0438>";/
+        "<U0434><U04AF><U0439><U0448><U04E9><U043C><U0431><U04AF>";/
+        "<U0448><U0435><U0439><U0448><U0435><U043C><U0431><U0438>";/
+        "<U0448><U0430><U0440><U0448><U0435><U043C><U0431><U0438>";/
+        "<U0431><U0435><U0439><U0448><U0435><U043C><U0431><U0438>";/
+        "<U0436><U0443><U043C><U0430>";/
+        "<U0438><U0448><U0435><U043C><U0431><U0438>"
+% FIXED by Timur 2004/10/12
+abday   "<U0436><U043A>";/
+        "<U0434><U0448>";/
+        "<U0448><U0435>";/
+        "<U0448><U0430>";/
+        "<U0431><U0448>";/
+        "<U0436><U043C>";/
+        "<U0438><U0448>"
+mon     "<U044F><U043D><U0432><U0430><U0440><U044C>";/
+        "<U0444><U0435><U0432><U0440><U0430><U043B><U044C>";/
+        "<U043C><U0430><U0440><U0442>";/
+        "<U0430><U043F><U0440><U0435><U043B><U044C>";/
+        "<U043C><U0430><U0439>";/
+        "<U0438><U044E><U043D><U044C>";/
+        "<U0438><U044E><U043B><U044C>";/
+        "<U0430><U0432><U0433><U0443><U0441><U0442>";/
+        "<U0441><U0435><U043D><U0442><U044F><U0431><U0440><U044C>";/
+        "<U043E><U043A><U0442><U044F><U0431><U0440><U044C>";/
+        "<U043D><U043E><U044F><U0431><U0440><U044C>";/
+        "<U0434><U0435><U043A><U0430><U0431><U0440><U044C>"
+abmon   "<U044F><U043D><U0432>";/
+        "<U0444><U0435><U0432>";/
+        "<U043C><U0430><U0440>";/
+        "<U0430><U043F><U0440>";/
+        "<U043C><U0430><U0439>";/
+        "<U0438><U044E><U043D>";/
+        "<U0438><U044E><U043B>";/
+        "<U0430><U0432><U0433>";/
+        "<U0441><U0435><U043D>";/
+        "<U043E><U043A><U0442>";/
+        "<U043D><U043E><U044F>";/
+        "<U0434><U0435><U043A>"
+% CHECKED AND FIXED by Timur
+d_t_fmt "<U0025><U0061><U0020><U0025><U0064><U0020><U0025><U0062>/
+<U0020><U0025><U0059><U0020><U0025><U0054>"
+% %d.%m.%Y FIXED by Timur 2004.10.11
+d_fmt     "<U0025><U0064><U002E><U0025><U006D><U002E><U0025><U0059>"
+% %T
+t_fmt     "<U0025><U0054>"
+am_pm     "";""
+t_fmt_ampm ""
+% %d-%B, %Y-<U0436>, %A
+%date_fmt       "<U0025><U0064><U002D><U0025><U0042><U002C><U0020><U0025><U0059>/
+%<U002D><U0436><U002C><U0020><U0025><U0041>"
+date_fmt       "<U0025><U0061><U002C><U0020><U0025><U0065><U002D><U0025><U0062><U0020><U0025><U0059><U0020><U0436>/
+<U002C><U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U0020>/
+<U0025><U005A>"
+END LC_TIME
+
+LC_PAPER
+height   297
+width    210
+END LC_PAPER
+
+LC_TELEPHONE
+tel_int_fmt    "<U002B><U0025><U0063><U0020><U0025><U0061><U0020><U0025>/
+<U006C>"
+int_prefix     "<U0039><U0039><U0036>"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+measurement    1
+END LC_MEASUREMENT
+
+LC_NAME
+name_fmt    "<U0025><U0064><U0025><U0074><U0025><U0067><U0025><U0074>/
+<U0025><U006D><U0025><U0074><U0025><U0066>"
+END LC_NAME
+
+LC_ADDRESS
+postal_fmt    "<U0025><U0066><U0025><U004E><U0025><U0061><U0025><U004E>/
+<U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E><U0025><U0073>/
+<U0020><U0025><U0068><U0020><U0025><U0065><U0020><U0025><U0072><U0025>/
+<U004E><U0025><U007A><U0020><U0025><U0054><U0025>/
+<U004E><U0025><U0063><U0025><U004E>"
+country_ab2 "<U004B><U0059>"
+country_ab3 "<U004B><U0059><U0052>"
+%country_num 643
+END LC_ADDRESS

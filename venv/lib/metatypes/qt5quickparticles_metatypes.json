@@ -1,0 +1,4958 @@
+[
+    {
+        "classes": [
+            {
+                "classInfos": [
+                    {
+                        "name": "QML.Element",
+                        "value": "AngleDirection"
+                    }
+                ],
+                "className": "QQuickAngleDirection",
+                "object": true,
+                "properties": [
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "angle",
+                        "notify": "angleChanged",
+                        "read": "angle",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setAngle"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "magnitude",
+                        "notify": "magnitudeChanged",
+                        "read": "magnitude",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setMagnitude"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "angleVariation",
+                        "notify": "angleVariationChanged",
+                        "read": "angleVariation",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setAngleVariation"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "magnitudeVariation",
+                        "notify": "magnitudeVariationChanged",
+                        "read": "magnitudeVariation",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setMagnitudeVariation"
+                    }
+                ],
+                "qualifiedClassName": "QQuickAngleDirection",
+                "signals": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "angleChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "magnitudeChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "angleVariationChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "magnitudeVariationChanged",
+                        "returnType": "void"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setAngle",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setMagnitude",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setAngleVariation",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setMagnitudeVariation",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QQuickDirection"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "qquickangledirection_p.h",
+        "outputRevision": 67
+    },
+    {
+        "classes": [
+            {
+                "classInfos": [
+                    {
+                        "name": "QML.Element",
+                        "value": "Affector"
+                    }
+                ],
+                "className": "QQuickCustomAffector",
+                "object": true,
+                "properties": [
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "relative",
+                        "notify": "relativeChanged",
+                        "read": "relative",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "bool",
+                        "user": false,
+                        "write": "setRelative"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "position",
+                        "notify": "positionChanged",
+                        "read": "position",
+                        "required": false,
+                        "reset": "positionReset()",
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QQuickDirection*",
+                        "user": false,
+                        "write": "setPosition"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "velocity",
+                        "notify": "velocityChanged",
+                        "read": "velocity",
+                        "required": false,
+                        "reset": "velocityReset()",
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QQuickDirection*",
+                        "user": false,
+                        "write": "setVelocity"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "acceleration",
+                        "notify": "accelerationChanged",
+                        "read": "acceleration",
+                        "required": false,
+                        "reset": "accelerationReset()",
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QQuickDirection*",
+                        "user": false,
+                        "write": "setAcceleration"
+                    }
+                ],
+                "qualifiedClassName": "QQuickCustomAffector",
+                "signals": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "particles",
+                                "type": "QJSValue"
+                            },
+                            {
+                                "name": "dt",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "affectParticles",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QQuickDirection*"
+                            }
+                        ],
+                        "name": "positionChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QQuickDirection*"
+                            }
+                        ],
+                        "name": "velocityChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QQuickDirection*"
+                            }
+                        ],
+                        "name": "accelerationChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "relativeChanged",
+                        "returnType": "void"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QQuickDirection*"
+                            }
+                        ],
+                        "name": "setPosition",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QQuickDirection*"
+                            }
+                        ],
+                        "name": "setVelocity",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QQuickDirection*"
+                            }
+                        ],
+                        "name": "setAcceleration",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "setRelative",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QQuickParticleAffector"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "qquickcustomaffector_p.h",
+        "outputRevision": 67
+    },
+    {
+        "classes": [
+            {
+                "classInfos": [
+                    {
+                        "name": "QML.Element",
+                        "value": "EllipseShape"
+                    }
+                ],
+                "className": "QQuickEllipseExtruder",
+                "object": true,
+                "properties": [
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "fill",
+                        "notify": "fillChanged",
+                        "read": "fill",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "bool",
+                        "user": false,
+                        "write": "setFill"
+                    }
+                ],
+                "qualifiedClassName": "QQuickEllipseExtruder",
+                "signals": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "fillChanged",
+                        "returnType": "void"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "setFill",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QQuickParticleExtruder"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "qquickellipseextruder_p.h",
+        "outputRevision": 67
+    },
+    {
+        "classes": [
+            {
+                "classInfos": [
+                    {
+                        "name": "QML.Element",
+                        "value": "TrailEmitter"
+                    }
+                ],
+                "className": "QQuickTrailEmitter",
+                "enums": [
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "EmitSize",
+                        "values": [
+                            "ParticleSize"
+                        ]
+                    }
+                ],
+                "object": true,
+                "properties": [
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "follow",
+                        "notify": "followChanged",
+                        "read": "follow",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QString",
+                        "user": false,
+                        "write": "setFollow"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "emitRatePerParticle",
+                        "notify": "particlesPerParticlePerSecondChanged",
+                        "read": "particlesPerParticlePerSecond",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "int",
+                        "user": false,
+                        "write": "setParticlesPerParticlePerSecond"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "emitShape",
+                        "notify": "emissionShapeChanged",
+                        "read": "emissonShape",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QQuickParticleExtruder*",
+                        "user": false,
+                        "write": "setEmissionShape"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "emitHeight",
+                        "notify": "emitterYVariationChanged",
+                        "read": "emitterYVariation",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setEmitterYVariation"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "emitWidth",
+                        "notify": "emitterXVariationChanged",
+                        "read": "emitterXVariation",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setEmitterXVariation"
+                    }
+                ],
+                "qualifiedClassName": "QQuickTrailEmitter",
+                "signals": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "particles",
+                                "type": "QJSValue"
+                            },
+                            {
+                                "name": "followed",
+                                "type": "QJSValue"
+                            }
+                        ],
+                        "name": "emitFollowParticles",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "int"
+                            }
+                        ],
+                        "name": "particlesPerParticlePerSecondChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "emitterXVariationChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "emitterYVariationChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "followChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QQuickParticleExtruder*"
+                            }
+                        ],
+                        "name": "emissionShapeChanged",
+                        "returnType": "void"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "int"
+                            }
+                        ],
+                        "name": "setParticlesPerParticlePerSecond",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setEmitterXVariation",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setEmitterYVariation",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "setFollow",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QQuickParticleExtruder*"
+                            }
+                        ],
+                        "name": "setEmissionShape",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "name": "recalcParticlesPerSecond",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QQuickParticleEmitter"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "qquicktrailemitter_p.h",
+        "outputRevision": 67
+    },
+    {
+        "classes": [
+            {
+                "classInfos": [
+                    {
+                        "name": "QML.Element",
+                        "value": "Friction"
+                    }
+                ],
+                "className": "QQuickFrictionAffector",
+                "object": true,
+                "properties": [
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "factor",
+                        "notify": "factorChanged",
+                        "read": "factor",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setFactor"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "threshold",
+                        "notify": "thresholdChanged",
+                        "read": "threshold",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setThreshold"
+                    }
+                ],
+                "qualifiedClassName": "QQuickFrictionAffector",
+                "signals": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "factorChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "thresholdChanged",
+                        "returnType": "void"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setFactor",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setThreshold",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QQuickParticleAffector"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "qquickfriction_p.h",
+        "outputRevision": 67
+    },
+    {
+        "classes": [
+            {
+                "classInfos": [
+                    {
+                        "name": "QML.Element",
+                        "value": "Gravity"
+                    }
+                ],
+                "className": "QQuickGravityAffector",
+                "object": true,
+                "properties": [
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "magnitude",
+                        "notify": "magnitudeChanged",
+                        "read": "magnitude",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setMagnitude"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "acceleration",
+                        "notify": "magnitudeChanged",
+                        "read": "magnitude",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setAcceleration"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "angle",
+                        "notify": "angleChanged",
+                        "read": "angle",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setAngle"
+                    }
+                ],
+                "qualifiedClassName": "QQuickGravityAffector",
+                "signals": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "magnitudeChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "angleChanged",
+                        "returnType": "void"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setMagnitude",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setAcceleration",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setAngle",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QQuickParticleAffector"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "qquickgravity_p.h",
+        "outputRevision": 67
+    },
+    {
+        "classes": [
+            {
+                "classInfos": [
+                    {
+                        "name": "QML.Element",
+                        "value": "ImageParticle"
+                    }
+                ],
+                "className": "QQuickImageParticle",
+                "enums": [
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "Status",
+                        "values": [
+                            "Null",
+                            "Ready",
+                            "Loading",
+                            "Error"
+                        ]
+                    },
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "EntryEffect",
+                        "values": [
+                            "None",
+                            "Fade",
+                            "Scale"
+                        ]
+                    }
+                ],
+                "object": true,
+                "properties": [
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "source",
+                        "notify": "imageChanged",
+                        "read": "image",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QUrl",
+                        "user": false,
+                        "write": "setImage"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "sprites",
+                        "read": "sprites",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QQmlListProperty<QQuickSprite>",
+                        "user": false
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "status",
+                        "notify": "statusChanged",
+                        "read": "status",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "Status",
+                        "user": false
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "colorTable",
+                        "notify": "colortableChanged",
+                        "read": "colortable",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QUrl",
+                        "user": false,
+                        "write": "setColortable"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "sizeTable",
+                        "notify": "sizetableChanged",
+                        "read": "sizetable",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QUrl",
+                        "user": false,
+                        "write": "setSizetable"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "opacityTable",
+                        "notify": "opacitytableChanged",
+                        "read": "opacitytable",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QUrl",
+                        "user": false,
+                        "write": "setOpacitytable"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "color",
+                        "notify": "colorChanged",
+                        "read": "color",
+                        "required": false,
+                        "reset": "resetColor()",
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QColor",
+                        "user": false,
+                        "write": "setColor"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "colorVariation",
+                        "notify": "colorVariationChanged",
+                        "read": "colorVariation",
+                        "required": false,
+                        "reset": "resetColor()",
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setColorVariation"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "redVariation",
+                        "notify": "redVariationChanged",
+                        "read": "redVariation",
+                        "required": false,
+                        "reset": "resetColor()",
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setRedVariation"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "greenVariation",
+                        "notify": "greenVariationChanged",
+                        "read": "greenVariation",
+                        "required": false,
+                        "reset": "resetColor()",
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setGreenVariation"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "blueVariation",
+                        "notify": "blueVariationChanged",
+                        "read": "blueVariation",
+                        "required": false,
+                        "reset": "resetColor()",
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setBlueVariation"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "alpha",
+                        "notify": "alphaChanged",
+                        "read": "alpha",
+                        "required": false,
+                        "reset": "resetColor()",
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setAlpha"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "alphaVariation",
+                        "notify": "alphaVariationChanged",
+                        "read": "alphaVariation",
+                        "required": false,
+                        "reset": "resetColor()",
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setAlphaVariation"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "rotation",
+                        "notify": "rotationChanged",
+                        "read": "rotation",
+                        "required": false,
+                        "reset": "resetRotation()",
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setRotation"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "rotationVariation",
+                        "notify": "rotationVariationChanged",
+                        "read": "rotationVariation",
+                        "required": false,
+                        "reset": "resetRotation()",
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setRotationVariation"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "rotationVelocity",
+                        "notify": "rotationVelocityChanged",
+                        "read": "rotationVelocity",
+                        "required": false,
+                        "reset": "resetRotation()",
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setRotationVelocity"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "rotationVelocityVariation",
+                        "notify": "rotationVelocityVariationChanged",
+                        "read": "rotationVelocityVariation",
+                        "required": false,
+                        "reset": "resetRotation()",
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setRotationVelocityVariation"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "autoRotation",
+                        "notify": "autoRotationChanged",
+                        "read": "autoRotation",
+                        "required": false,
+                        "reset": "resetRotation()",
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "bool",
+                        "user": false,
+                        "write": "setAutoRotation"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "xVector",
+                        "notify": "xVectorChanged",
+                        "read": "xVector",
+                        "required": false,
+                        "reset": "resetDeformation()",
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QQuickDirection*",
+                        "user": false,
+                        "write": "setXVector"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "yVector",
+                        "notify": "yVectorChanged",
+                        "read": "yVector",
+                        "required": false,
+                        "reset": "resetDeformation()",
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QQuickDirection*",
+                        "user": false,
+                        "write": "setYVector"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "spritesInterpolate",
+                        "notify": "spritesInterpolateChanged",
+                        "read": "spritesInterpolate",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "bool",
+                        "user": false,
+                        "write": "setSpritesInterpolate"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "entryEffect",
+                        "notify": "entryEffectChanged",
+                        "read": "entryEffect",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "EntryEffect",
+                        "user": false,
+                        "write": "setEntryEffect"
+                    }
+                ],
+                "qualifiedClassName": "QQuickImageParticle",
+                "signals": [
+                    {
+                        "access": "public",
+                        "name": "imageChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "colortableChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "sizetableChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "opacitytableChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "colorChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "colorVariationChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "alphaVariationChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "alphaChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "redVariationChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "greenVariationChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "blueVariationChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "rotationChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "rotationVariationChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "rotationVelocityChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "rotationVelocityVariationChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "autoRotationChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QQuickDirection*"
+                            }
+                        ],
+                        "name": "xVectorChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QQuickDirection*"
+                            }
+                        ],
+                        "name": "yVectorChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "spritesInterpolateChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "bypassOptimizationsChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "EntryEffect"
+                            }
+                        ],
+                        "name": "entryEffectChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "Status"
+                            }
+                        ],
+                        "name": "statusChanged",
+                        "returnType": "void"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "c",
+                                "type": "Color4ub"
+                            },
+                            {
+                                "name": "d",
+                                "type": "QQuickParticleData*"
+                            }
+                        ],
+                        "name": "reloadColor",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setAlphaVariation",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setAlpha",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setRedVariation",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setGreenVariation",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setBlueVariation",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setRotation",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setRotationVariation",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setRotationVelocity",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setRotationVelocityVariation",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "setAutoRotation",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QQuickDirection*"
+                            }
+                        ],
+                        "name": "setXVector",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QQuickDirection*"
+                            }
+                        ],
+                        "name": "setYVector",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "setSpritesInterpolate",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "setBypassOptimizations",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "EntryEffect"
+                            }
+                        ],
+                        "name": "setEntryEffect",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "name": "createEngine",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "arguments": [
+                            {
+                                "name": "spriteIndex",
+                                "type": "int"
+                            }
+                        ],
+                        "name": "spriteAdvance",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "arguments": [
+                            {
+                                "name": "time",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "spritesUpdate",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "name": "spritesUpdate",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "name": "mainThreadFetchImageData",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "arguments": [
+                            {
+                                "name": "n",
+                                "type": "QSGNode**"
+                            }
+                        ],
+                        "name": "finishBuildParticleNodes",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QQuickParticlePainter"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "qquickimageparticle_p.h",
+        "outputRevision": 67
+    },
+    {
+        "classes": [
+            {
+                "classInfos": [
+                    {
+                        "name": "QML.Element",
+                        "value": "ItemParticle"
+                    },
+                    {
+                        "name": "QML.Attached",
+                        "value": "QQuickItemParticleAttached"
+                    }
+                ],
+                "className": "QQuickItemParticle",
+                "object": true,
+                "properties": [
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "fade",
+                        "notify": "fadeChanged",
+                        "read": "fade",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "bool",
+                        "user": false,
+                        "write": "setFade"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "delegate",
+                        "notify": "delegateChanged",
+                        "read": "delegate",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QQmlComponent*",
+                        "user": false,
+                        "write": "setDelegate"
+                    }
+                ],
+                "qualifiedClassName": "QQuickItemParticle",
+                "signals": [
+                    {
+                        "access": "public",
+                        "name": "fadeChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QQmlComponent*"
+                            }
+                        ],
+                        "name": "delegateChanged",
+                        "returnType": "void"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "item",
+                                "type": "QQuickItem*"
+                            }
+                        ],
+                        "name": "freeze",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "item",
+                                "type": "QQuickItem*"
+                            }
+                        ],
+                        "name": "unfreeze",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "item",
+                                "type": "QQuickItem*"
+                            },
+                            {
+                                "name": "prioritize",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "take",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "item",
+                                "type": "QQuickItem*"
+                            }
+                        ],
+                        "name": "take",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "item",
+                                "type": "QQuickItem*"
+                            }
+                        ],
+                        "name": "give",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "setFade",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QQmlComponent*"
+                            }
+                        ],
+                        "name": "setDelegate",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QQuickParticlePainter"
+                    }
+                ]
+            },
+            {
+                "className": "QQuickItemParticleAttached",
+                "object": true,
+                "properties": [
+                    {
+                        "constant": true,
+                        "designable": true,
+                        "final": false,
+                        "name": "particle",
+                        "read": "particle",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QQuickItemParticle*",
+                        "user": false
+                    }
+                ],
+                "qualifiedClassName": "QQuickItemParticleAttached",
+                "signals": [
+                    {
+                        "access": "public",
+                        "name": "detached",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "attached",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QObject"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "qquickitemparticle_p.h",
+        "outputRevision": 67
+    },
+    {
+        "classes": [
+            {
+                "classInfos": [
+                    {
+                        "name": "QML.Element",
+                        "value": "Age"
+                    }
+                ],
+                "className": "QQuickAgeAffector",
+                "object": true,
+                "properties": [
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "lifeLeft",
+                        "notify": "lifeLeftChanged",
+                        "read": "lifeLeft",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "int",
+                        "user": false,
+                        "write": "setLifeLeft"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "advancePosition",
+                        "notify": "advancePositionChanged",
+                        "read": "advancePosition",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "bool",
+                        "user": false,
+                        "write": "setAdvancePosition"
+                    }
+                ],
+                "qualifiedClassName": "QQuickAgeAffector",
+                "signals": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "int"
+                            }
+                        ],
+                        "name": "lifeLeftChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "advancePositionChanged",
+                        "returnType": "void"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "int"
+                            }
+                        ],
+                        "name": "setLifeLeft",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "setAdvancePosition",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QQuickParticleAffector"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "qquickage_p.h",
+        "outputRevision": 67
+    },
+    {
+        "classes": [
+            {
+                "classInfos": [
+                    {
+                        "name": "QML.Element",
+                        "value": "LineShape"
+                    }
+                ],
+                "className": "QQuickLineExtruder",
+                "object": true,
+                "properties": [
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "mirrored",
+                        "notify": "mirroredChanged",
+                        "read": "mirrored",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "bool",
+                        "user": false,
+                        "write": "setMirrored"
+                    }
+                ],
+                "qualifiedClassName": "QQuickLineExtruder",
+                "signals": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "mirroredChanged",
+                        "returnType": "void"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "setMirrored",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QQuickParticleExtruder"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "qquicklineextruder_p.h",
+        "outputRevision": 67
+    },
+    {
+        "classes": [
+            {
+                "classInfos": [
+                    {
+                        "name": "QML.Element",
+                        "value": "MaskShape"
+                    }
+                ],
+                "className": "QQuickMaskExtruder",
+                "object": true,
+                "properties": [
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "source",
+                        "notify": "sourceChanged",
+                        "read": "source",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QUrl",
+                        "user": false,
+                        "write": "setSource"
+                    }
+                ],
+                "qualifiedClassName": "QQuickMaskExtruder",
+                "signals": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QUrl"
+                            }
+                        ],
+                        "name": "sourceChanged",
+                        "returnType": "void"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QUrl"
+                            }
+                        ],
+                        "name": "setSource",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "name": "startMaskLoading",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "name": "finishMaskLoading",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QQuickParticleExtruder"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "qquickmaskextruder_p.h",
+        "outputRevision": 67
+    },
+    {
+        "classes": [
+            {
+                "classInfos": [
+                    {
+                        "name": "QML.Element",
+                        "value": "ParticleAffector"
+                    },
+                    {
+                        "name": "QML.Creatable",
+                        "value": "false"
+                    },
+                    {
+                        "name": "QML.UncreatableReason",
+                        "value": "Abstract type. Use one of the inheriting types instead."
+                    }
+                ],
+                "className": "QQuickParticleAffector",
+                "object": true,
+                "properties": [
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "system",
+                        "notify": "systemChanged",
+                        "read": "system",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QQuickParticleSystem*",
+                        "user": false,
+                        "write": "setSystem"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "groups",
+                        "notify": "groupsChanged",
+                        "read": "groups",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QStringList",
+                        "user": false,
+                        "write": "setGroups"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "whenCollidingWith",
+                        "notify": "whenCollidingWithChanged",
+                        "read": "whenCollidingWith",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QStringList",
+                        "user": false,
+                        "write": "setWhenCollidingWith"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "enabled",
+                        "notify": "enabledChanged",
+                        "read": "enabled",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "bool",
+                        "user": false,
+                        "write": "setEnabled"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "once",
+                        "notify": "onceChanged",
+                        "read": "onceOff",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "bool",
+                        "user": false,
+                        "write": "setOnceOff"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "shape",
+                        "notify": "shapeChanged",
+                        "read": "shape",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QQuickParticleExtruder*",
+                        "user": false,
+                        "write": "setShape"
+                    }
+                ],
+                "qualifiedClassName": "QQuickParticleAffector",
+                "signals": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QQuickParticleSystem*"
+                            }
+                        ],
+                        "name": "systemChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QStringList"
+                            }
+                        ],
+                        "name": "groupsChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "enabledChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "onceChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QQuickParticleExtruder*"
+                            }
+                        ],
+                        "name": "shapeChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "x",
+                                "type": "qreal"
+                            },
+                            {
+                                "name": "y",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "affected",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QStringList"
+                            }
+                        ],
+                        "name": "whenCollidingWithChanged",
+                        "returnType": "void"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QQuickParticleSystem*"
+                            }
+                        ],
+                        "name": "setSystem",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QStringList"
+                            }
+                        ],
+                        "name": "setGroups",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "setEnabled",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "setOnceOff",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QQuickParticleExtruder*"
+                            }
+                        ],
+                        "name": "setShape",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QStringList"
+                            }
+                        ],
+                        "name": "setWhenCollidingWith",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "updateOffsets",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QQuickItem"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "qquickparticleaffector_p.h",
+        "outputRevision": 67
+    },
+    {
+        "classes": [
+            {
+                "classInfos": [
+                    {
+                        "name": "QML.Element",
+                        "value": "Emitter"
+                    }
+                ],
+                "className": "QQuickParticleEmitter",
+                "enums": [
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "Lifetime",
+                        "values": [
+                            "InfiniteLife"
+                        ]
+                    }
+                ],
+                "object": true,
+                "properties": [
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "system",
+                        "notify": "systemChanged",
+                        "read": "system",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QQuickParticleSystem*",
+                        "user": false,
+                        "write": "setSystem"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "group",
+                        "notify": "groupChanged",
+                        "read": "group",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QString",
+                        "user": false,
+                        "write": "setGroup"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "shape",
+                        "notify": "extruderChanged",
+                        "read": "extruder",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QQuickParticleExtruder*",
+                        "user": false,
+                        "write": "setExtruder"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "enabled",
+                        "notify": "enabledChanged",
+                        "read": "enabled",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "bool",
+                        "user": false,
+                        "write": "setEnabled"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "startTime",
+                        "notify": "startTimeChanged",
+                        "read": "startTime",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "int",
+                        "user": false,
+                        "write": "setStartTime"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "emitRate",
+                        "notify": "particlesPerSecondChanged",
+                        "read": "particlesPerSecond",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setParticlesPerSecond"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "lifeSpan",
+                        "notify": "particleDurationChanged",
+                        "read": "particleDuration",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "int",
+                        "user": false,
+                        "write": "setParticleDuration"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "lifeSpanVariation",
+                        "notify": "particleDurationVariationChanged",
+                        "read": "particleDurationVariation",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "int",
+                        "user": false,
+                        "write": "setParticleDurationVariation"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "maximumEmitted",
+                        "notify": "maximumEmittedChanged",
+                        "read": "maxParticleCount",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "int",
+                        "user": false,
+                        "write": "setMaxParticleCount"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "size",
+                        "notify": "particleSizeChanged",
+                        "read": "particleSize",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setParticleSize"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "endSize",
+                        "notify": "particleEndSizeChanged",
+                        "read": "particleEndSize",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setParticleEndSize"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "sizeVariation",
+                        "notify": "particleSizeVariationChanged",
+                        "read": "particleSizeVariation",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setParticleSizeVariation"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "velocity",
+                        "notify": "velocityChanged",
+                        "read": "velocity",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QQuickDirection*",
+                        "user": false,
+                        "write": "setVelocity"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "acceleration",
+                        "notify": "accelerationChanged",
+                        "read": "acceleration",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QQuickDirection*",
+                        "user": false,
+                        "write": "setAcceleration"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "velocityFromMovement",
+                        "notify": "velocityFromMovementChanged",
+                        "read": "velocityFromMovement",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setVelocityFromMovement"
+                    }
+                ],
+                "qualifiedClassName": "QQuickParticleEmitter",
+                "signals": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "particles",
+                                "type": "QJSValue"
+                            }
+                        ],
+                        "name": "emitParticles",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "particlesPerSecondChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "type": "int"
+                            }
+                        ],
+                        "name": "particleDurationChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "enabledChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QQuickParticleSystem*"
+                            }
+                        ],
+                        "name": "systemChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "groupChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "int"
+                            }
+                        ],
+                        "name": "particleDurationVariationChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QQuickParticleExtruder*"
+                            }
+                        ],
+                        "name": "extruderChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "particleSizeChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "particleEndSizeChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "particleSizeVariationChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QQuickDirection*"
+                            }
+                        ],
+                        "name": "velocityChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QQuickDirection*"
+                            }
+                        ],
+                        "name": "accelerationChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "int"
+                            }
+                        ],
+                        "name": "maximumEmittedChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "particleCountChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "velocityFromMovementChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "int"
+                            }
+                        ],
+                        "name": "startTimeChanged",
+                        "returnType": "void"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "milliseconds",
+                                "type": "int"
+                            }
+                        ],
+                        "name": "pulse",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "num",
+                                "type": "int"
+                            }
+                        ],
+                        "name": "burst",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "num",
+                                "type": "int"
+                            },
+                            {
+                                "name": "x",
+                                "type": "qreal"
+                            },
+                            {
+                                "name": "y",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "burst",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "setEnabled",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setParticlesPerSecond",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "int"
+                            }
+                        ],
+                        "name": "setParticleDuration",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QQuickParticleSystem*"
+                            }
+                        ],
+                        "name": "setSystem",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "setGroup",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "int"
+                            }
+                        ],
+                        "name": "setParticleDurationVariation",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QQuickParticleExtruder*"
+                            }
+                        ],
+                        "name": "setExtruder",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setParticleSize",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setParticleEndSize",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setParticleSizeVariation",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QQuickDirection*"
+                            }
+                        ],
+                        "name": "setVelocity",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QQuickDirection*"
+                            }
+                        ],
+                        "name": "setAcceleration",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "int"
+                            }
+                        ],
+                        "name": "setMaxParticleCount",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "int"
+                            }
+                        ],
+                        "name": "setStartTime",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "reset",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QQuickItem"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "qquickparticleemitter_p.h",
+        "outputRevision": 67
+    },
+    {
+        "classes": [
+            {
+                "classInfos": [
+                    {
+                        "name": "QML.Element",
+                        "value": "ParticleExtruder"
+                    },
+                    {
+                        "name": "QML.Creatable",
+                        "value": "false"
+                    },
+                    {
+                        "name": "QML.UncreatableReason",
+                        "value": "Abstract type. Use one of the inheriting types instead."
+                    }
+                ],
+                "className": "QQuickParticleExtruder",
+                "object": true,
+                "qualifiedClassName": "QQuickParticleExtruder",
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QObject"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "qquickparticleextruder_p.h",
+        "outputRevision": 67
+    },
+    {
+        "classes": [
+            {
+                "classInfos": [
+                    {
+                        "name": "QML.Element",
+                        "value": "ParticlePainter"
+                    },
+                    {
+                        "name": "QML.Creatable",
+                        "value": "false"
+                    },
+                    {
+                        "name": "QML.UncreatableReason",
+                        "value": "Abstract type. Use one of the inheriting types instead."
+                    }
+                ],
+                "className": "QQuickParticlePainter",
+                "object": true,
+                "properties": [
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "system",
+                        "notify": "systemChanged",
+                        "read": "system",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QQuickParticleSystem*",
+                        "user": false,
+                        "write": "setSystem"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "groups",
+                        "notify": "groupsChanged",
+                        "read": "groups",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QStringList",
+                        "user": false,
+                        "write": "setGroups"
+                    }
+                ],
+                "qualifiedClassName": "QQuickParticlePainter",
+                "signals": [
+                    {
+                        "access": "public",
+                        "name": "countChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QQuickParticleSystem*"
+                            }
+                        ],
+                        "name": "systemChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QStringList"
+                            }
+                        ],
+                        "name": "groupsChanged",
+                        "returnType": "void"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QQuickParticleSystem*"
+                            }
+                        ],
+                        "name": "setSystem",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QStringList"
+                            }
+                        ],
+                        "name": "setGroups",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "resetPending",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "calcSystemOffset",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "calcSystemOffset",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "name": "sceneGraphInvalidated",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QQuickItem"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "qquickparticlepainter_p.h",
+        "outputRevision": 67
+    },
+    {
+        "classes": [
+            {
+                "classInfos": [
+                    {
+                        "name": "QML.Element",
+                        "value": "ParticleSystem"
+                    }
+                ],
+                "className": "QQuickParticleSystem",
+                "object": true,
+                "properties": [
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "running",
+                        "notify": "runningChanged",
+                        "read": "isRunning",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "bool",
+                        "user": false,
+                        "write": "setRunning"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "paused",
+                        "notify": "pausedChanged",
+                        "read": "isPaused",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "bool",
+                        "user": false,
+                        "write": "setPaused"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "empty",
+                        "notify": "emptyChanged",
+                        "read": "isEmpty",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "bool",
+                        "user": false
+                    }
+                ],
+                "qualifiedClassName": "QQuickParticleSystem",
+                "signals": [
+                    {
+                        "access": "public",
+                        "name": "systemInitialized",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "runningChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "pausedChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "emptyChanged",
+                        "returnType": "void"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "public",
+                        "name": "start",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "stop",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "restart",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "pause",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "resume",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "reset",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "setRunning",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "setPaused",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "duration",
+                        "returnType": "int"
+                    },
+                    {
+                        "access": "private",
+                        "name": "emittersChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "arguments": [
+                            {
+                                "name": "p",
+                                "type": "QQuickParticlePainter*"
+                            }
+                        ],
+                        "name": "loadPainter",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "name": "createEngine",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "arguments": [
+                            {
+                                "name": "idx",
+                                "type": "int"
+                            }
+                        ],
+                        "name": "particleStateChange",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QQuickItem"
+                    }
+                ]
+            },
+            {
+                "className": "QQuickParticleSystemAnimation",
+                "object": true,
+                "qualifiedClassName": "QQuickParticleSystemAnimation",
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QAbstractAnimation"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "qquickparticlesystem_p.h",
+        "outputRevision": 67
+    },
+    {
+        "classes": [
+            {
+                "classInfos": [
+                    {
+                        "name": "QML.Element",
+                        "value": "Attractor"
+                    }
+                ],
+                "className": "QQuickAttractorAffector",
+                "enums": [
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "Proportion",
+                        "values": [
+                            "Constant",
+                            "Linear",
+                            "Quadratic",
+                            "InverseLinear",
+                            "InverseQuadratic"
+                        ]
+                    },
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "AffectableParameters",
+                        "values": [
+                            "Position",
+                            "Velocity",
+                            "Acceleration"
+                        ]
+                    }
+                ],
+                "object": true,
+                "properties": [
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "strength",
+                        "notify": "strengthChanged",
+                        "read": "strength",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setStrength"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "pointX",
+                        "notify": "pointXChanged",
+                        "read": "pointX",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setPointX"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "pointY",
+                        "notify": "pointYChanged",
+                        "read": "pointY",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setPointY"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "affectedParameter",
+                        "notify": "affectedParameterChanged",
+                        "read": "affectedParameter",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "AffectableParameters",
+                        "user": false,
+                        "write": "setAffectedParameter"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "proportionalToDistance",
+                        "notify": "proportionalToDistanceChanged",
+                        "read": "proportionalToDistance",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "Proportion",
+                        "user": false,
+                        "write": "setProportionalToDistance"
+                    }
+                ],
+                "qualifiedClassName": "QQuickAttractorAffector",
+                "signals": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "strengthChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "pointXChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "pointYChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "AffectableParameters"
+                            }
+                        ],
+                        "name": "affectedParameterChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "Proportion"
+                            }
+                        ],
+                        "name": "proportionalToDistanceChanged",
+                        "returnType": "void"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setStrength",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setPointX",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setPointY",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "AffectableParameters"
+                            }
+                        ],
+                        "name": "setAffectedParameter",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "Proportion"
+                            }
+                        ],
+                        "name": "setProportionalToDistance",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QQuickParticleAffector"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "qquickpointattractor_p.h",
+        "outputRevision": 67
+    },
+    {
+        "classes": [
+            {
+                "classInfos": [
+                    {
+                        "name": "QML.Element",
+                        "value": "PointDirection"
+                    }
+                ],
+                "className": "QQuickPointDirection",
+                "object": true,
+                "properties": [
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "x",
+                        "notify": "xChanged",
+                        "read": "x",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setX"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "y",
+                        "notify": "yChanged",
+                        "read": "y",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setY"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "xVariation",
+                        "notify": "xVariationChanged",
+                        "read": "xVariation",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setXVariation"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "yVariation",
+                        "notify": "yVariationChanged",
+                        "read": "yVariation",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setYVariation"
+                    }
+                ],
+                "qualifiedClassName": "QQuickPointDirection",
+                "signals": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "xChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "yChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "xVariationChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "yVariationChanged",
+                        "returnType": "void"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setX",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setY",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setXVariation",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setYVariation",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QQuickDirection"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "qquickpointdirection_p.h",
+        "outputRevision": 67
+    },
+    {
+        "classes": [
+            {
+                "classInfos": [
+                    {
+                        "name": "QML.Element",
+                        "value": "SpriteGoal"
+                    }
+                ],
+                "className": "QQuickSpriteGoalAffector",
+                "object": true,
+                "properties": [
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "goalState",
+                        "notify": "goalStateChanged",
+                        "read": "goalState",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QString",
+                        "user": false,
+                        "write": "setGoalState"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "jump",
+                        "notify": "jumpChanged",
+                        "read": "jump",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "bool",
+                        "user": false,
+                        "write": "setJump"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "systemStates",
+                        "notify": "systemStatesChanged",
+                        "read": "systemStates",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "bool",
+                        "user": false,
+                        "write": "setSystemStates"
+                    }
+                ],
+                "qualifiedClassName": "QQuickSpriteGoalAffector",
+                "signals": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "goalStateChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "jumpChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "systemStatesChanged",
+                        "returnType": "void"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "setGoalState",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "setJump",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "setSystemStates",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QQuickParticleAffector"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "qquickspritegoal_p.h",
+        "outputRevision": 67
+    },
+    {
+        "classes": [
+            {
+                "classInfos": [
+                    {
+                        "name": "QML.Element",
+                        "value": "NullVector"
+                    },
+                    {
+                        "name": "QML.Creatable",
+                        "value": "false"
+                    },
+                    {
+                        "name": "QML.UncreatableReason",
+                        "value": "Abstract type. Use one of the inheriting types instead."
+                    }
+                ],
+                "className": "QQuickDirection",
+                "object": true,
+                "qualifiedClassName": "QQuickDirection",
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QObject"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "qquickdirection_p.h",
+        "outputRevision": 67
+    },
+    {
+        "classes": [
+            {
+                "classInfos": [
+                    {
+                        "name": "QML.Element",
+                        "value": "TargetDirection"
+                    }
+                ],
+                "className": "QQuickTargetDirection",
+                "object": true,
+                "properties": [
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "targetX",
+                        "notify": "targetXChanged",
+                        "read": "targetX",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setTargetX"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "targetY",
+                        "notify": "targetYChanged",
+                        "read": "targetY",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setTargetY"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "targetItem",
+                        "notify": "targetItemChanged",
+                        "read": "targetItem",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QQuickItem*",
+                        "user": false,
+                        "write": "setTargetItem"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "targetVariation",
+                        "notify": "targetVariationChanged",
+                        "read": "targetVariation",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setTargetVariation"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "proportionalMagnitude",
+                        "notify": "proprotionalMagnitudeChanged",
+                        "read": "proportionalMagnitude",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "bool",
+                        "user": false,
+                        "write": "setProportionalMagnitude"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "magnitude",
+                        "notify": "magnitudeChanged",
+                        "read": "magnitude",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setMagnitude"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "magnitudeVariation",
+                        "notify": "magnitudeVariationChanged",
+                        "read": "magnitudeVariation",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setMagnitudeVariation"
+                    }
+                ],
+                "qualifiedClassName": "QQuickTargetDirection",
+                "signals": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "targetXChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "targetYChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "targetVariationChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "magnitudeChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "proprotionalMagnitudeChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "magnitudeVariationChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QQuickItem*"
+                            }
+                        ],
+                        "name": "targetItemChanged",
+                        "returnType": "void"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setTargetX",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setTargetY",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setTargetVariation",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setMagnitude",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "setProportionalMagnitude",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setMagnitudeVariation",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QQuickItem*"
+                            }
+                        ],
+                        "name": "setTargetItem",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QQuickDirection"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "qquicktargetdirection_p.h",
+        "outputRevision": 67
+    },
+    {
+        "classes": [
+            {
+                "classInfos": [
+                    {
+                        "name": "QML.Element",
+                        "value": "Turbulence"
+                    }
+                ],
+                "className": "QQuickTurbulenceAffector",
+                "object": true,
+                "properties": [
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "strength",
+                        "notify": "strengthChanged",
+                        "read": "strength",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setStrength"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "noiseSource",
+                        "notify": "noiseSourceChanged",
+                        "read": "noiseSource",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QUrl",
+                        "user": false,
+                        "write": "setNoiseSource"
+                    }
+                ],
+                "qualifiedClassName": "QQuickTurbulenceAffector",
+                "signals": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "strengthChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QUrl"
+                            }
+                        ],
+                        "name": "noiseSourceChanged",
+                        "returnType": "void"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setStrength",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QUrl"
+                            }
+                        ],
+                        "name": "setNoiseSource",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QQuickParticleAffector"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "qquickturbulence_p.h",
+        "outputRevision": 67
+    },
+    {
+        "classes": [
+            {
+                "classInfos": [
+                    {
+                        "name": "QML.Element",
+                        "value": "Wander"
+                    }
+                ],
+                "className": "QQuickWanderAffector",
+                "enums": [
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "AffectableParameters",
+                        "values": [
+                            "Position",
+                            "Velocity",
+                            "Acceleration"
+                        ]
+                    }
+                ],
+                "object": true,
+                "properties": [
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "pace",
+                        "notify": "paceChanged",
+                        "read": "pace",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setPace"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "xVariance",
+                        "notify": "xVarianceChanged",
+                        "read": "xVariance",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setXVariance"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "yVariance",
+                        "notify": "yVarianceChanged",
+                        "read": "yVariance",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qreal",
+                        "user": false,
+                        "write": "setYVariance"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "affectedParameter",
+                        "notify": "affectedParameterChanged",
+                        "read": "affectedParameter",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "AffectableParameters",
+                        "user": false,
+                        "write": "setAffectedParameter"
+                    }
+                ],
+                "qualifiedClassName": "QQuickWanderAffector",
+                "signals": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "xVarianceChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "yVarianceChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "paceChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "AffectableParameters"
+                            }
+                        ],
+                        "name": "affectedParameterChanged",
+                        "returnType": "void"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setXVariance",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setYVariance",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "qreal"
+                            }
+                        ],
+                        "name": "setPace",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "AffectableParameters"
+                            }
+                        ],
+                        "name": "setAffectedParameter",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QQuickParticleAffector"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "qquickwander_p.h",
+        "outputRevision": 67
+    },
+    {
+        "classes": [
+            {
+                "classInfos": [
+                    {
+                        "name": "DefaultProperty",
+                        "value": "directions"
+                    },
+                    {
+                        "name": "QML.Element",
+                        "value": "CumulativeDirection"
+                    }
+                ],
+                "className": "QQuickCumulativeDirection",
+                "object": true,
+                "properties": [
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "directions",
+                        "read": "directions",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QQmlListProperty<QQuickDirection>",
+                        "user": false
+                    }
+                ],
+                "qualifiedClassName": "QQuickCumulativeDirection",
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QQuickDirection"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "qquickcumulativedirection_p.h",
+        "outputRevision": 67
+    },
+    {
+        "classes": [
+            {
+                "classInfos": [
+                    {
+                        "name": "QML.Element",
+                        "value": "RectangleShape"
+                    }
+                ],
+                "className": "QQuickRectangleExtruder",
+                "object": true,
+                "properties": [
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "fill",
+                        "notify": "fillChanged",
+                        "read": "fill",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "bool",
+                        "user": false,
+                        "write": "setFill"
+                    }
+                ],
+                "qualifiedClassName": "QQuickRectangleExtruder",
+                "signals": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "fillChanged",
+                        "returnType": "void"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "setFill",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QQuickParticleExtruder"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "qquickrectangleextruder_p.h",
+        "outputRevision": 67
+    },
+    {
+        "classes": [
+            {
+                "classInfos": [
+                    {
+                        "name": "DefaultProperty",
+                        "value": "particleChildren"
+                    },
+                    {
+                        "name": "QML.Element",
+                        "value": "ParticleGroup"
+                    }
+                ],
+                "className": "QQuickParticleGroup",
+                "interfaces": [
+                    [
+                        {
+                            "className": "QQmlParserStatus",
+                            "id": "\"org.qt-project.Qt.QQmlParserStatus\""
+                        }
+                    ]
+                ],
+                "object": true,
+                "properties": [
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "system",
+                        "notify": "systemChanged",
+                        "read": "system",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QQuickParticleSystem*",
+                        "user": false,
+                        "write": "setSystem"
+                    },
+                    {
+                        "constant": false,
+                        "designable": false,
+                        "final": false,
+                        "name": "particleChildren",
+                        "read": "particleChildren",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QQmlListProperty<QObject>",
+                        "user": false
+                    }
+                ],
+                "qualifiedClassName": "QQuickParticleGroup",
+                "signals": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "int"
+                            }
+                        ],
+                        "name": "maximumAliveChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QQuickParticleSystem*"
+                            }
+                        ],
+                        "name": "systemChanged",
+                        "returnType": "void"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "int"
+                            }
+                        ],
+                        "name": "setMaximumAlive",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QQuickParticleSystem*"
+                            }
+                        ],
+                        "name": "setSystem",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "obj",
+                                "type": "QObject*"
+                            }
+                        ],
+                        "name": "delayRedirect",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QQuickStochasticState"
+                    },
+                    {
+                        "access": "public",
+                        "name": "QQmlParserStatus"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "qquickparticlegroup_p.h",
+        "outputRevision": 67
+    },
+    {
+        "classes": [
+            {
+                "classInfos": [
+                    {
+                        "name": "QML.Element",
+                        "value": "GroupGoal"
+                    }
+                ],
+                "className": "QQuickGroupGoalAffector",
+                "object": true,
+                "properties": [
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "goalState",
+                        "notify": "goalStateChanged",
+                        "read": "goalState",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QString",
+                        "user": false,
+                        "write": "setGoalState"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "jump",
+                        "notify": "jumpChanged",
+                        "read": "jump",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "bool",
+                        "user": false,
+                        "write": "setJump"
+                    }
+                ],
+                "qualifiedClassName": "QQuickGroupGoalAffector",
+                "signals": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "goalStateChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "jumpChanged",
+                        "returnType": "void"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "setGoalState",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "arg",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "setJump",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QQuickParticleAffector"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "qquickgroupgoal_p.h",
+        "outputRevision": 67
+    },
+    {
+        "classes": [
+            {
+                "classInfos": [
+                    {
+                        "name": "QML.Element",
+                        "value": "CustomParticle"
+                    }
+                ],
+                "className": "QQuickCustomParticle",
+                "object": true,
+                "properties": [
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "fragmentShader",
+                        "notify": "fragmentShaderChanged",
+                        "read": "fragmentShader",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QByteArray",
+                        "user": false,
+                        "write": "setFragmentShader"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "name": "vertexShader",
+                        "notify": "vertexShaderChanged",
+                        "read": "vertexShader",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QByteArray",
+                        "user": false,
+                        "write": "setVertexShader"
+                    }
+                ],
+                "qualifiedClassName": "QQuickCustomParticle",
+                "signals": [
+                    {
+                        "access": "public",
+                        "name": "fragmentShaderChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "vertexShaderChanged",
+                        "returnType": "void"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "private",
+                        "arguments": [
+                            {
+                                "name": "object",
+                                "type": "QObject*"
+                            }
+                        ],
+                        "name": "sourceDestroyed",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QQuickParticlePainter"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "qquickcustomparticle_p.h",
+        "outputRevision": 67
+    }
+]

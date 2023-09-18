@@ -1,0 +1,416 @@
+// "standard" XFree86 codes
+// It seems that the "default" must be the first entry in the file.
+
+default xkb_keycodes "xfree86" {
+    include "xfree86(basic)"
+    <BKSL> =  51;
+    alias <AC12> = <BKSL>;
+    <LSGT> =  94;
+};
+
+xkb_keycodes "basic" {
+
+    minimum= 8;
+    maximum= 255;
+
+    <TLDE> =  49;
+    alias <AE00> = <TLDE>;	// Some geometries use AE00
+    <AE01> =  10;
+    <AE02> =  11;
+    <AE03> =  12;
+    <AE04> =  13;
+    <AE05> =  14;
+    <AE06> =  15;
+    <AE07> =  16;
+    <AE08> =  17;
+    <AE09> =  18;
+    <AE10> =  19;
+    <AE11> =  20;
+    <AE12> =  21;
+    <BKSP> =  22;
+
+    <TAB>  =  23;
+    <AD01> =  24;
+    <AD02> =  25;
+    <AD03> =  26;
+    <AD04> =  27;
+    <AD05> =  28;
+    <AD06> =  29;
+    <AD07> =  30;
+    <AD08> =  31;
+    <AD09> =  32;
+    <AD10> =  33;
+    <AD11> =  34;
+    <AD12> =  35;
+    <RTRN> =  36;
+
+    <CAPS> =  66;
+    <AC01> =  38;
+    <AC02> =  39;
+    <AC03> =  40;
+    <AC04> =  41;
+    <AC05> =  42;
+    <AC06> =  43;
+    <AC07> =  44;
+    <AC08> =  45;
+    <AC09> =  46;
+    <AC10> =  47;
+    <AC11> =  48;
+
+    <LFSH> =  50;
+    <AB01> =  52;
+    <AB02> =  53;
+    <AB03> =  54;
+    <AB04> =  55;
+    <AB05> =  56;
+    <AB06> =  57;
+    <AB07> =  58;
+    <AB08> =  59;
+    <AB09> =  60;
+    <AB10> =  61;
+    <RTSH> =  62;
+
+    <LALT> =  64;
+    <LCTL> =  37;
+    <SPCE> =  65;
+    <RCTL> = 109;
+    <RALT> = 113;
+    // Microsoft keyboard extra keys
+    <LWIN> = 115;
+    <RWIN> = 116;
+    <MENU> = 117;
+
+    <ESC>  =   9;
+    <FK01> =  67;
+    <FK02> =  68;
+    <FK03> =  69;
+    <FK04> =  70;
+    <FK05> =  71;
+    <FK06> =  72;
+    <FK07> =  73;
+    <FK08> =  74;
+    <FK09> =  75;
+    <FK10> =  76;
+    <FK11> =  95;
+    <FK12> =  96;
+
+    <PRSC> = 111;
+    <SYRQ> =  92;
+    <SCLK> =  78;
+    <PAUS> = 110;
+    <BRK>  = 114;
+
+    <INS>  = 106;
+    <HOME> =  97;
+    <PGUP> =  99;
+    <DELE> = 107;
+    <END>  = 103;
+    <PGDN> = 105;
+
+    <UP>   =  98;
+    <LEFT> = 100;
+    <DOWN> = 104;
+    <RGHT> = 102;
+
+    <NMLK> =  77;
+    <KPDV> = 112;
+    <KPMU> =  63;
+    <KPSU> =  82;
+
+    <KP7>  =  79;
+    <KP8>  =  80;
+    <KP9>  =  81;
+    <KPAD> =  86;
+
+    <KP4>  =  83;
+    <KP5>  =  84;
+    <KP6>  =  85;
+
+    <KP1>  =  87;
+    <KP2>  =  88;
+    <KP3>  =  89;
+    <KPEN> = 108;
+
+    <KP0>  =  90;
+    <KPDL> =  91;
+    <KPEQ> = 126;
+
+    <FK13> =  118;
+    <FK14> =  119;
+    <FK15> =  120;
+    <FK16> =  121;
+    <FK17> =  122;
+    <KPDC> =  123;
+
+    // Keys that are generated on Japanese keyboards
+
+    alias <HZTG> = <TLDE>;	// Hankaku_Zenkaku toggle
+    <HKTG> =   208;		// Hiragana_Katakana toggle
+    <AB11> =   211;		// backslash/underscore
+    <XFER> =   129;		// Henkan
+    <NFER> =   131;		// Muhenkan
+    <AE13> =   133;		// Yen
+
+    // Keys that are generated on Japanese and Korean keyboards
+
+    // USB HID Usage Tables 1.3 Lang1.
+    // IME On on Japanese keyboards.
+    // Hangul Latin toggle on Korean keyboards.
+    <HNGL> =  209;
+
+    // USB HID Usage Tables 1.3 Lang2.
+    // IME Off on Japanese keyboards.
+    // Hangul to Hanja conversion on Korean keyboards.
+    <HJCV> =  210;
+
+    // Extended keys that may be generated on "Internet" keyboards.
+    // These are not standardised, hence the meaningless names.
+    // The entries commented out are never generated because the raw codes
+    // in those positions are already used for well-defined keys.
+
+    <I02> =   130;
+    <I04> =   132;
+    alias <I05> = <AE13>;
+    <I06> =   134;
+    <I07> =   135;
+    <I08> =   136;
+    <I09> =   137;
+    <I0A> =   138;
+    <I0B> =   139;
+    <I0C> =   140;
+    <I0D> =   141;
+    <I0E> =   142;
+    <I0F> =   143;
+    <I10> =   144;
+    <I11> =   145;
+    <I12> =   146;
+    <I13> =   147;
+    <I14> =   148;
+    <I15> =   149;
+    <I16> =   150;
+    <I17> =   151;
+    <I18> =   152;
+    <I19> =   153;
+    <I1A> =   154;
+    <I1B> =   155;
+    // <I1C> =   156;	<META>
+    // <I1D> =   157;	<K59>
+    <I1E> =   158;
+    <I1F> =   159;
+    <I20> =   160;
+    <I21> =   161;
+    <I22> =   162;
+    <I23> =   163;
+    <I24> =   164;
+    <I25> =   165;
+    <I26> =   166;
+    <I27> =   167;
+    <I28> =   168;
+    <I29> =   169;
+    // <I2A> =   170;	<K5A>
+    <I2B> =   171;
+    <I2C> =   172;
+    <I2D> =   173;
+    <I2E> =   174;
+    <I2F> =   175;
+    <I30> =   176;
+    <I31> =   177;
+    <I32> =   178;
+    <I33> =   179;
+    <I34> =   180;
+    // <I35> =   181;	<K5B>
+    // <I36> =   182;	<K5D>
+    // <I37> =   183;	<K5E>
+    // <I38> =   184;	<K5F>
+    <I39> =   185;
+    <I3A> =   186;
+    <I3B> =   187;
+    <I3C> =   188;
+    // <I3D> =   189;	<K62>
+    // <I3E> =   190;	<K63>
+    // <I3F> =   191;	<K64>
+    // <I40> =   192;	<K65>
+    // <I41> =   193;	<K66>
+    <I42> =   194;
+    <I43> =   195;
+    <I44> =   196;
+    <I45> =   197;
+    // <I46> =   198;	<K67>
+    // <I47> =   199;	<K68>
+    // <I48> =   200;	<K69>
+    // <I49> =   201;	<K6A>
+    <I4A> =   202;
+    // <I4B> =   203;	<K6B>
+    // <I4C> =   204;	<K6C>
+    // <I4D> =   205;	<K6D>
+    // <I4E> =   206;	<K6E>
+    // <I4F> =   207;	<K6F>
+    // <I50> =   208;	<K70>
+    // <I51> =   209;	<K71>
+    // <I52> =   210;	<K72>
+    // <I53> =   211;	<K73>
+    <I54> =   212;
+    <I55> =   213;
+    <I56> =   214;
+    <I57> =   215;
+    <I58> =   216;
+    <I59> =   217;
+    <I5A> =   218;
+    // <I5B> =   219;	<K74>
+    // <I5C> =   220;	<K75>
+    // <I5D> =   221;	<K76>
+    <I5E> =   222;
+    <I5F> =   223;
+    <I60> =   224;
+    <I61> =   225;
+    <I62> =   226;
+    <I63> =   227;
+    <I64> =   228;
+    <I65> =   229;
+    <I66> =   230;
+    <I67> =   231;
+    <I68> =   232;
+    <I69> =   233;
+    <I6A> =   234;
+    <I6B> =   235;
+    <I6C> =   236;
+    <I6D> =   237;
+    <I6E> =   238;
+    <I6F> =   239;
+    <I70> =   240;
+    <I71> =   241;
+    <I72> =   242;
+    <I73> =   243;
+    <I74> =   244;
+    <I75> =   245;
+    <I76> =   246;
+    <I77> =   247;
+    <I78> =   248;
+    <I79> =   249;
+    <I7A> =   250;
+    <I7B> =   251;
+    <I7C> =   252;
+    alias <IR7C> = <I7C>;
+    <I7D> =   253;
+    alias <IR7D> = <I7D>;
+    <I7E> =   254;
+    <I7F> =   255;
+
+    // MacBooks generate 0x65 for the lower brightness key
+    <II65> =  101;
+
+    // Required for apple/logitech_g15 keyboard
+    <II5D> = 93;
+
+    // Codes generated for scancodes 0x59-0x5f, 0x62-0x76
+    <K59> =   157;		// <I1D>
+    <K5A> =   170;		// <I2A>
+    <K5B> =   181;		// <I35>
+    alias <K5C> = <KPEQ>;
+    <K5D> =   182;		// <I36>
+    <K5E> =   183;		// <I37>
+    <K5F> =   184;		// <I38>
+    <K62> =   189;		// <I3D>
+    <K63> =   190;		// <I3E>
+    <K64> =   191;		// <I3F>
+    <K65> =   192;		// <I40>
+    <K66> =   193;		// <I41>
+    <K67> =   198;		// <I46>
+    <K68> =   199;		// <I47>
+    <K69> =   200;		// <I48>
+    <K6A> =   201;		// <I49>
+    <K6B> =   203;		// <I4B>
+    <K6C> =   204;		// <I4C>
+    <K6D> =   205;		// <I4D>
+    <K6E> =   206;		// <I4E>
+    <K6F> =   207;		// <I4F>
+    alias <K70> = <HKTG>;	// <I50>
+    alias <K71> = <HNGL>;	// <I51>
+    alias <K72> = <HJCV>;	// <I52>
+    alias <K73> = <AB11>;	// <I53>
+    <K74> =   219;		// <I5B>
+    <K75> =   220;		// <I5C>
+    <K76> =   221;		// <I5D>
+   
+    // Solaris compatibility
+
+    alias <LMTA> = <LWIN>;
+    alias <RMTA> = <RWIN>;
+    alias <COMP> = <MENU>;
+    alias <POWR> = <I0C>;
+    alias <MUTE> = <I0D>;
+    alias <VOL-> = <I0E>;
+    alias <VOL+> = <I0F>;
+    alias <HELP> = <I10>;
+    alias <STOP> = <I11>;
+    alias <AGAI> = <I12>;
+    alias <PROP> = <I13>;
+    alias <UNDO> = <I14>;
+    alias <FRNT> = <I15>;
+    alias <COPY> = <I16>;
+    alias <OPEN> = <I17>;
+    alias <PAST> = <I18>;
+    alias <FIND> = <I19>;
+    alias <CUT>  = <I1A>;
+    alias <OUTP> = <I56>;
+    alias <KITG> = <I57>;
+    alias <KIDN> = <I58>;
+    alias <KIUP> = <I59>;
+
+    // Other codes never generated.  The XFree86 ddx never generates
+    // these codes.
+    // Thus we can use them as fake keys
+    <LVL5> =     8;
+    alias <MDSW> = <LVL5>;
+    <LVL3> =   124; // <U7C>
+    <ALT>  =   125; // <U7D>
+    <META> =   156; // <I1C>
+    <SUPR> =   127; // <U7F>
+    <HYPR> =   128; // <U80>
+
+    indicator 1 = "Caps Lock";
+    indicator 2 = "Num Lock";
+    indicator 3 = "Scroll Lock";
+
+    alias <ALGR> = <RALT>;
+
+    // For Brazilian ABNT2
+    alias <KPPT> = <I06>;
+};
+
+// What keyboard is this?
+
+xkb_keycodes "102" {
+    include "xfree86(xfree86)"
+
+    // There will be warnings from xkbcomp because of multiple definitions.
+
+    <RALT> = 122;
+    <RCTL> = 123;
+
+    <PRSC> = 121;
+    <PAUS> = 118;
+
+    <INS>  = 131;
+    <HOME> = 135;
+    <PGUP> = 119;
+    <DELE> = 129;
+    <END>  = 130;
+    <PGDN> = 134;
+
+    <UP>   = 128;
+    <LEFT> = 132;
+    <DOWN> = 120;
+    <RGHT> = 133;
+
+    <KPDV> = 125;
+
+    <KPEN> = 124;
+};
+
+
+// IBM ThinkPad Z60m/Z60t/Z61m/Z61t
+xkb_keycodes "thinkpadz60" {
+    include "xfree86(xfree86)"
+    <MENU> = 227;
+};

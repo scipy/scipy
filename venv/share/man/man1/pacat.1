@@ -1,0 +1,111 @@
+.TH pacat 1 User Manuals
+.SH NAME
+pacat \- Play back or record raw or encoded audio streams on a PulseAudio sound server
+.SH SYNOPSIS
+\fBpaplay [\fIoptions\fB] [\fIFILE\fB]
+
+parecord [\fIoptions\fB] [\fIFILE\fB]
+
+pacat [\fIoptions\fB] [\fIFILE\fB]
+
+parec [\fIoptions\fB] [\fIFILE\fB]
+
+pamon [\fIoptions\fB] [\fIFILE\fB]
+
+pacat --help\fB
+
+pacat --version\fB
+\f1
+.SH DESCRIPTION
+\fIpacat\f1 is a simple tool for playing back or capturing raw or encoded audio files on a PulseAudio sound server. It understands all audio file formats supported by \fIlibsndfile\f1.
+.SH OPTIONS
+.TP
+\fB-h | --help\f1
+Show help.
+.TP
+\fB--version\f1
+Show version information.
+.TP
+\fB-r | --record\f1
+Capture audio data and write it to the specified file or to STDOUT if none is specified. If the tool is called under the name \fIparec\f1 this is the default.
+.TP
+\fB-p | --playback\f1
+Read audio data from the specified file or STDIN if none is specified, and play it back. If the tool is called under the name \fIpacat\f1 this is the default.
+.TP
+\fB-v | --verbose\f1
+Enable verbose operation. Dumps the current playback time to STDERR during playback/capturing.
+.TP
+\fB-s | --server\f1\fI=SERVER\f1
+Choose the server to connect to.
+.TP
+\fB-d | --device\f1\fI=SINKORSOURCE\f1
+Specify the symbolic name of the sink/source to play/record this stream on/from. The special names , and can be used to specify the default sink, source and monitor respectively.
+.TP
+\fB--monitor-stream\f1\fI=INDEX\f1
+Record from the sink input with index INDEX.
+.TP
+\fB-n | --client-name\f1\fI=NAME\f1
+Specify the client name \fIpaplay\f1 shall pass to the server when connecting.
+.TP
+\fB--stream-name\f1\fI=NAME\f1
+Specify the stream name \fIpaplay\f1 shall pass to the server when creating the stream.
+.TP
+\fB--volume\f1\fI=VOLUME\f1
+Specify the initial playback volume to use. Choose a value between 0 (silent) and 65536 (100% volume).
+.TP
+\fB--rate\f1\fI=SAMPLERATE\f1
+Capture or play back audio with the specified sample rate. Defaults to 44100 Hz.
+.TP
+\fB--format\f1\fI=FORMAT\f1
+Capture or play back audio with the specified sample format. See https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/User/SupportedAudioFormats/ for supported values. Defaults to s16ne.
+.TP
+\fB--channels\f1\fI=CHANNELS\f1
+Capture or play back audio with the specified number of channels. If more than two channels are used it is recommended to use the \fB--channel-map\f1 option below. Defaults to 2.
+.TP
+\fB--channel-map\f1\fI=CHANNELMAP\f1
+Explicitly choose a channel map when playing back this stream. The argument should be a comma separated list of channel names: \fBfront-left\f1, \fBfront-right\f1, \fBmono\f1, \fBfront-center\f1, \fBrear-left\f1, \fBrear-right\f1, \fBrear-center\f1, \fBlfe\f1, \fBfront-left-of-center\f1, \fBfront-right-of-center\f1, \fBside-left\f1, \fBside-right\f1, \fBtop-center\f1, \fBtop-front-center\f1, \fBtop-front-left\f1, \fBtop-front-right\f1, \fBtop-rear-left\f1, \fBtop-rear-right\f1, \fBtop-rear-center\f1, or any of the 32 auxiliary channel names \fBaux0\f1 to \fBaux31\f1.
+.TP
+\fB--fix-format\f1
+If passed, the sample format of the stream is changed to the native format of the sink the stream is connected to.
+.TP
+\fB--fix-rate\f1
+If passed, the sampling rate of the stream is changed to the native rate of the sink the stream is connected to.
+.TP
+\fB--fix-channels\f1
+If passed, the number of channels and the channel map of the stream is changed to the native number of channels and the native channel map of the sink the stream is connected to.
+.TP
+\fB--no-remix\f1
+Never upmix or downmix channels.
+.TP
+\fB--no-remap\f1
+Never remap channels. Instead of mapping channels by their name this will match them solely by their index/order.
+.TP
+\fB--latency\f1\fI=BYTES\f1
+Explicitly configure the latency, with a time specified in bytes in the selected sample format. If left out the server will pick the latency, usually relatively high for power saving reasons. Use either this option or \fB--latency-msec\f1, but not both.
+.TP
+\fB--latency-msec\f1\fI=MSEC\f1
+Explicitly configure the latency, with a time specified in milliseconds. If left out the server will pick the latency, usually relatively high for power saving reasons. Use either this option or \fB--latency\f1, but not both.
+.TP
+\fB--process-time\f1\fI=BYTES\f1
+Explicitly configure the process time, with a time specified in bytes in the selected sample format. If left out the server will pick the process time. Use either this option or \fB--process-time-msec\f1, but not both.
+.TP
+\fB--process-time-msec\f1\fI=MSEC\f1
+Explicitly configure the process time, with a time specified in milliseconds. If left out the server will pick the process time. Use either this option or \fB--process-time\f1, but not both.
+.TP
+\fB--property\f1\fI=PROPERTY=VALUE\f1
+Attach a property to the client and stream. May be used multiple times
+.TP
+\fB--raw\f1
+Play/record raw audio data. This is the default if this program is invoked as \fIpacat\f1, \fIparec\f1 or \fIpamon\f1.
+.TP
+\fB--file-format\f1\fI[=FFORMAT]\f1
+Play/record encoded audio data in the file format specified. This is the default if this program is invoked as \fIpaplay\f1 and \fIparecord\f1.
+.TP
+\fB--list-file-formats\f1
+List supported file formats.
+.SH LIMITATIONS
+Due to a limitation in \fIlibsndfile\f1 \fIpaplay\f1 currently does not always set the correct channel mapping for playback of multichannel (i.e. surround) audio files, even if the channel mapping information is available in the audio file.
+.SH AUTHORS
+The PulseAudio Developers <pulseaudio-discuss (at) lists (dot) freedesktop (dot) org>; PulseAudio is available from \fBhttp://pulseaudio.org/\f1
+.SH SEE ALSO
+\fBpulseaudio(1)\f1, \fBpactl(1)\f1

@@ -1,0 +1,136 @@
+#!/bin/sh
+
+prefix=/workspaces/scipy/venv
+exec_prefix=${prefix}
+
+nofile=
+flush=
+nocallers=
+nomarkdirty=
+compress=
+
+usage() {
+cat << EOF
+usage: cairo-trace [--no-file] command
+cairo-trace will generate a log of all calls made by command to
+cairo. This log will be stored in a file in the local directory
+called command.pid.trace.
+Whatever else happens is driven by its argument:
+  --flush         - Flush the output trace after every call.
+  --no-file       - Disable the creation of an output file. Outputs to the
+                    terminal instead.
+  --no-callers    - Do not lookup the caller address/symbol/line whilst tracing.
+  --mark-dirty    - Record image data for cairo_mark_dirty() [default]
+  --no-mark-dirty - Do not record image data for cairo_mark_dirty()
+  --compress      - Compress the output with LZMA
+  --profile       - Combine --no-callers and --no-mark-dirty and --compress
+
+Environment variables understood by cairo-trace:
+  CAIRO_TRACE_FLUSH - flush the output after every function call.
+  CAIRO_TRACE_LINE_INFO - emit line information for most function calls.
+EOF
+exit
+}
+
+skip=1
+while test $skip -eq 1; do
+    skip=0
+    case $1 in
+    --flush)
+	skip=1
+	flush=1
+	;;
+    --no-file)
+	skip=1
+	nofile=1
+	;;
+    --no-callers)
+	skip=1
+	nocallers=1
+	;;
+    --mark-dirty)
+	skip=1
+	nomarkdirty=
+	;;
+    --no-mark-dirty)
+	skip=1
+	nomarkdirty=1
+	;;
+    --compress)
+	skip=1
+	compress=1
+	nofile=1
+	;;
+    --profile)
+	skip=1
+	compress=1
+	nomarkdirty=1
+	nocallers=1
+	nofile=1
+	;;
+    --version)
+	echo "cairo-trace, version 1.16.0."
+	exit
+	;;
+    --help)
+	usage
+	;;
+    esac
+    if test $skip -eq 1; then
+	shift
+    fi
+done
+
+if test $# -eq 0; then
+    usage
+fi
+
+CAIRO_TRACE_PROG_NAME="$1"
+export CAIRO_TRACE_PROG_NAME
+
+if test "x$CAIRO_TRACE_SO" = "x"; then
+    CAIRO_TRACE_SO=""
+    for lib in ${exec_prefix}/lib/cairo/libcairo-trace.so ${exec_prefix}/lib/cairo/libcairo-trace.so* ${exec_prefix}/lib/cairo/libcairo-trace.*.so ; do
+	if test -h "$lib" -o -f "$lib"; then
+	    CAIRO_TRACE_SO="$lib"
+	    break
+	fi
+    done
+fi
+if test "x$CAIRO_TRACE_SO" = "x"; then
+    echo "Could not find the cairo-trace shared library in ${exec_prefix}/lib/cairo/." >&2
+    echo "Set the CAIRO_TRACE_SO environment variable to the full path of the library." >&2
+    exit 15
+fi
+
+LD_PRELOAD="$CAIRO_TRACE_SO"
+DYLD_INSERT_LIBRARIES="$CAIRO_TRACE_SO"
+DYLD_FORCE_FLAT_NAMESPACE=1
+export LD_PRELOAD
+export DYLD_INSERT_LIBRARIES
+export DYLD_FORCE_FLAT_NAMESPACE
+
+if test -n "$nocallers"; then
+    CAIRO_TRACE_LINE_INFO=0
+    export CAIRO_TRACE_LINE_INFO
+fi
+
+if test -n "$nomarkdirty"; then
+    CAIRO_TRACE_MARK_DIRTY=0
+    export CAIRO_TRACE_MARK_DIRTY
+fi
+
+if test -n "$flush"; then
+    CAIRO_TRACE_FLUSH=1
+    export CAIRO_TRACE_FLUSH
+fi
+
+if test -z "$nofile"; then
+    CAIRO_TRACE_OUTDIR=`pwd` "$@"
+elif test -n "$compress"; then
+    name=`basename $1`
+    echo Generating compressed trace file $name.$$.lzma
+    CAIRO_TRACE_FD=3 "$@" 3>&1 >/dev/null | lzma -cz9 > $name.$$.lzma
+else
+    CAIRO_TRACE_FD=3 "$@" 3>&1 >/dev/null
+fi

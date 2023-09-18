@@ -1,0 +1,83 @@
+comment_char %
+escape_char  /
+%
+% Swedish Language Locale for Finland with Euro
+% Language: sv
+% Territory: FI
+% Option: euro
+% Date: 2000-08-21
+% Users: general
+% Charset: ISO-8859-15
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title      "Swedish locale for Finland with Euro"
+source     "Free Software Foundation, Inc."
+address    "59 Temple Place - Suite 330, Boston, MA 02111-1307, USA"
+contact    ""
+email      "bug-glibc-locales@gnu.org"
+tel        ""
+fax        ""
+language   "Swedish"
+territory  "Finland"
+revision   "1.0"
+date       "2000-08-21"
+%
+category  "sv_FI@euro:2000";LC_IDENTIFICATION
+category  "sv_FI@euro:2000";LC_CTYPE
+category  "sv_FI@euro:2000";LC_COLLATE
+category  "sv_FI@euro:2000";LC_TIME
+category  "sv_FI@euro:2000";LC_NUMERIC
+category  "sv_FI@euro:2000";LC_MONETARY
+category  "sv_FI@euro:2000";LC_MESSAGES
+category  "sv_FI@euro:2000";LC_PAPER
+category  "sv_FI@euro:2000";LC_NAME
+category  "sv_FI@euro:2000";LC_ADDRESS
+category  "sv_FI@euro:2000";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_CTYPE
+copy "sv_FI"
+END LC_CTYPE
+
+LC_COLLATE
+copy "fi_FI"
+END LC_COLLATE
+
+LC_MESSAGES
+copy "sv_FI"
+END LC_MESSAGES
+
+LC_MONETARY
+copy "fi_FI@euro"
+END LC_MONETARY
+
+LC_NUMERIC
+copy "fi_FI"
+END LC_NUMERIC
+
+LC_TIME
+copy "sv_FI"
+END LC_TIME
+
+LC_PAPER
+copy "sv_FI"
+END LC_PAPER
+
+LC_TELEPHONE
+copy "sv_FI"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+copy "sv_FI"
+END LC_MEASUREMENT
+
+LC_NAME
+copy "sv_FI"
+END LC_NAME
+
+LC_ADDRESS
+copy "sv_FI"
+END LC_ADDRESS

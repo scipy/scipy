@@ -1,0 +1,733 @@
+// -*- indent-tabs-mode: nil -*-
+
+// Created by Frédéric Boiteux <fboiteux (at) free (dot) fr>
+// and Gildas Cotomale <gildas (dot) cotomale (at) gmail (dot) com>
+
+// Note : the special/multimedia keys (Calc, WWW, Desktop…) have a keycode
+// <I[XX]>, found in definition file /usr/share/X11/xkb/keycodes/evdev.
+// Fn           = <I120>;
+// Calc         = <I148>;
+// WWW          = <I158>;
+// CycleWindows = <I162>;
+// Mail         = <I163>;
+// PlayPause    = <I172>;
+// Desktop      = <I243>;
+
+
+xkb_geometry "tm2020" {
+    description = "TypeMatrix EZ-Reach 2020";
+
+    // Keyboard total size :
+    width  = 308;
+    height = 152;
+    // Background / foreground colours
+    baseColor  = "white";
+    labelColor = "black";
+
+    // Key shapes: base key = 16 mm each side
+    shape "NORM" { cornerRadius=1, { [16,    16]   }, { [1,   1], [15,   15] }};
+    shape "ALPL" { cornerRadius=1, { [24.25, 16]   }, { [1,   1], [23,   15] }};
+    shape "DHAL" { cornerRadius=1, { [24.25, 32.5] }, { [1,   1], [23, 31.5] }};
+    shape "FUNC" { cornerRadius=1, { [16,    12]   }, { [2.5, 0], [13.5, 10] }};
+    shape "FUNL" { cornerRadius=1, { [24.25, 12]   }, { [2.5, 0], [21.5, 10] }};
+    shape "SPCE" { cornerRadius=1, { [57,    26]   }, { [2.5, 1], [54.5, 24] }};
+    shape "DBLA" { cornerRadius=1, { [32.5,  16]   }, { [1,   1], [31,   15] }};
+    shape "LED"  { cornerRadius=2, { [4,      4]   }};
+    shape "DECO" { cornerRadius=1, { [3,     18]   }};
+
+    section "Function" {
+        left = 4;
+        top  = 24;
+        key.gap = 0.5;
+        key.color = "grey10";
+        key.shape = "FUNC";
+        row {
+            keys { { <ESC>,  "FUNL" },
+                   <FK01>, <FK02>, <FK03>, <FK04>, <FK05> };
+            key.color = "grey20";
+            keys { { <NMLK>, "FUNL" } };
+        };
+        row {
+            left = 150;
+            key.color = "red";
+            keys { { <DELE>, "FUNL" } };
+            key.color = "grey10";
+            keys { <FK06>, <FK07>, <FK08>, <FK09>, <FK10>, <FK11>,
+                   { <FK12>, "FUNL" } };
+        };
+    };
+
+    section "Alpha" {
+        left = 4;
+        top  = 36.5;
+        key.gap = 0.5;
+        key.color = "grey10";
+        key.shape = "NORM";
+        row {
+            top  = 0;
+            keys { { <TLDE>, "ALPL" },
+                   <AE01>, <AE02>, <AE03>, <AE04>, <AE05>,
+                   { <BKSP>, "DHAL" } };
+        };
+        row {
+            top  = 16.5;
+            keys { { <TAB>, "ALPL" },
+                   <AD01>, <AD02>, <AD03>, <AD04>, <AD05> };
+        };
+        row {
+            top  = 33;
+            keys { { <LFSH>, "DHAL" },
+                   <AC01>, <AC02>, <AC03>, <AC04>, <AC05>,
+                   { <TAB>,  "DHAL" } };
+        };
+        row {
+            top  = 49.5;
+            left = 24.5;
+            keys { <AB01>, <AB02>, <AB03>, <AB04>, <AB05> };
+        };
+        row {
+            top  = 0;
+            left = 150;
+            keys { { <BKSP>, "DHAL" },
+                   <AE06>, <AE07>, <AE08> };
+            key.color = "grey20";
+            keys { <AE09>, <AE10>, <AE11>, { <AE12>, "ALPL" } };
+        };
+        row {
+            top  = 16.5;
+            left = 174.5;
+            keys { <AD06>, <AD07>, <AD08> };
+            key.color = "grey20";
+            keys { <AD09>, <AD10>, <AD11>, { <AD12>, "ALPL" } };
+        };
+        row {
+            top  = 33;
+            left = 150;
+            keys { { <RTRN>, "DHAL" },
+                   <AC06>, <AC07>, <AC08> };
+            key.color = "grey20";
+            keys { <AC09>, <AC10>, <AC11>, { <RTSH>, "DHAL" } };
+        };
+        row {
+            top  = 49.5;
+            left = 174.5;
+            keys { <AB06>, <AB07>, <AB08> };
+            key.color = "grey20";
+            keys { <AB09>, <AB10>, <BKSL> };
+        };
+    };
+
+    section "Control" {
+        left = 4;
+        top  = 102.5;
+        key.gap = 0.5;
+        key.color = "grey10";
+        key.shape = "ALPL";
+        row {
+            top  = 0;
+            keys { <LCTL>, <LALT>, <CAPS> };
+            keys { { <SPCE>, "SPCE"} };
+        };
+        row {
+            top  = 16.5;
+            keys { <I120>, <LWIN>, <MENU> };
+        };
+        row {
+            top  = 0;
+            left = 150;
+            key.shape = "NORM";
+            keys { { <SPCE>, "SPCE"}, <RALT> };
+            key.color = "grey20";
+            keys { <RCTL>, <UP>, <I162>, { <KPEN>, "DHAL" } };
+        };
+        row {
+            top  = 16.5;
+            left = 207.5;
+            key.shape = "NORM";
+            key.color = "grey20";
+            keys { { <LEFT>, "DBLA" }, <DOWN>, <RGHT> };
+        };
+    };
+
+    // Leds
+    indicator.top      = 12;
+    indicator.onColor  = "green";
+    indicator.offColor = "grey10";
+    indicator.shape    = "LED";
+    indicator "Num Lock"   { left = 252; };
+    indicator "Caps Lock"  { left = 266; };
+    indicator "Misc"       { left = 280; };
+    text.top= 5;
+    text.color= "black";
+    text "NumLockLabel"		{ left= 252; text="1"; };
+    text "CapsLockLabel"	{ left= 266; text="A"; };
+    text "MiscLabel"    	{ left= 280; text="D"; };
+
+    text "Logo" { left = 29; top = 10; text="TypeMatrix™"; };
+
+    // Other decorations: drawings
+    solid "rainure1"  { shape = "DECO"; top = 1; left = 110; color = "grey10";};
+    solid "rainure2"  { shape = "DECO"; top = 1; left = 115; color = "grey10";};
+    solid "rainure3"  { shape = "DECO"; top = 1; left = 120; color = "grey10";};
+    solid "rainure4"  { shape = "DECO"; top = 1; left = 125; color = "grey10";};
+    solid "rainure5"  { shape = "DECO"; top = 1; left = 130; color = "grey10";};
+    solid "rainure6"  { shape = "DECO"; top = 1; left = 135; color = "grey10";};
+    solid "rainure7"  { shape = "DECO"; top = 1; left = 140; color = "grey10";};
+    solid "rainure8"  { shape = "DECO"; top = 1; left = 145; color = "grey10";};
+    solid "rainure9"  { shape = "DECO"; top = 1; left = 150; color = "grey10";};
+    solid "rainure10" { shape = "DECO"; top = 1; left = 155; color = "grey10";};
+    solid "rainure11" { shape = "DECO"; top = 1; left = 160; color = "grey10";};
+    solid "rainure12" { shape = "DECO"; top = 1; left = 165; color = "grey10";};
+    solid "rainure13" { shape = "DECO"; top = 1; left = 170; color = "grey10";};
+}; // geometry tm2020
+
+
+xkb_geometry "tm2030_shape" {
+    // Keyboard total size
+    width  = 320;
+    height = 130;
+    // Background / foreground colours
+    baseColor  = "white";
+    labelColor = "black";
+
+    // Key shapes: base key = 20 mm each side
+    shape "NORM" { cornerRadius=1, { [18,   18] }, { [1.5, 1.5], [16.5, 14] } };
+    shape "FUNC" { cornerRadius=1, { [18,   12] }, { [2.5,   0], [15.5, 10] } };
+    shape "LFSH" { cornerRadius=1, { [18, 36.5] }, { [2.5,   0], [15.5, 30] } };
+    shape "ALT1" { cornerRadius=1, { [27.5, 18] }, { [2.5,   0], [23.5, 14] } };
+    shape "BKSP" { cornerRadius=1, { [18, 30.5] }, { [1.5, 1.5], [16.5, 29] } };
+    shape "SPCE" { cornerRadius=1, { [92,   25] }, { [1.5, 1.5], [90.5, 22] } };
+    shape "LED"  { cornerRadius=2, { [4,     4] } };
+    shape "PAN1" { cornerRadius=1, { [27, 126.5] } };
+    shape "PAN2" { cornerRadius=1, { [92,   13] } };
+
+    // Other decorations: panels
+    solid "panneau1" {
+        shape = "PAN1";
+        left  = 0;
+        top   = 0;
+        color = "grey40";
+    };
+    solid "panneau2" {
+        shape = "PAN2";
+        left = 101.5;
+        top = 113.5;
+        color = "grey40";
+    };
+
+    // Leds: they must be put after panels, otherwise the panels overwrite them
+    indicator.left     = 6;
+    indicator.onColor  = "green";
+    indicator.offColor = "grey10";
+    indicator.shape    = "LED";
+
+    indicator "Num Lock"     { top = 11  ; };
+    indicator "Caps Lock"    { top = 27.5; };
+    indicator "Scroll Lock"  { top = 44  ; };
+
+    text.left          = 12;
+    text.color         = "black";
+    text "NumLockLabel"		{ top = 11;   text="num";           };
+    text "CapsLockLabel"	{ top = 27.5; text="caps";          };
+    text "SrollLockLabel"	{ top = 44;   text="scroll";        };
+}; // geometry tm2030_shape
+
+
+xkb_geometry "tm2030_MiscDiod_dvk" {
+    text "ModeLabel" { left = 12; top = 58; color = "black";  text="Dvorak"; };
+};
+
+xkb_geometry "tm2030_MiscDiod_102" {
+    text "ModeLabel" { left = 12; top = 58; color = "black";  text="102"; };
+};
+
+xkb_geometry "tm2030_MiscDiod_106" {
+    text "ModeLabel" { left = 12; top = 58; color = "black";  text="106"; };
+};
+
+xkb_geometry "tm2030_MiscDiod_off" {
+    indicator "Misc" { left = 6; top = 60.5; shape = "LED";
+                       offColor = "grey10"; onColor = "grey10"; };
+};
+
+xkb_geometry "tm2030_MiscDiod_on" {
+    indicator "Misc" { left = 6; top = 60.5; shape = "LED";
+                       offColor = "green"; onColor = "green"; };
+};
+
+
+xkb_geometry "tm2030USB_func" {
+    section "Function" {
+        left      = 27;
+        top       = 1.5;
+        key.gap   = 0.5;
+        key.color = "grey30";
+        key.shape = "FUNC";
+        row {
+            keys { <ESC>,  <FK01>, <FK02>, <FK03>, <FK04>, <FK05> };
+        };
+        row {
+            left = 129.5;
+            keys { <FK06>, <FK07>, <FK08>, <FK09>, <FK10>, <FK11>,
+                   <FK12>, <NMLK> };
+        };
+    };
+}; // geometry tm2030USB_func
+
+
+xkb_geometry "tm2030USB_alpha" {
+    section "Alpha" {
+        left = 27;
+        top  = 14;
+        key.gap = 0.5;
+        key.color = "grey10";
+        key.shape = "NORM";
+        row {
+            top  = 0;
+            keys { <TLDE>,             <AE01>, <AE02>, <AE03>, <AE04>, <AE05> };
+        };
+        row {
+            top  = 18.5;
+            keys { <TAB>,              <AD01>, <AD02>, <AD03>, <AD04>, <AD05> };
+        };
+        row {
+            top  = 37;
+            keys { { <LFSH>, "LFSH" }, <AC01>, <AC02>, <AC03>, <AC04>, <AC05> };
+        };
+        row {
+            top  = 55.5;
+            left = 18.5;
+            keys {                     <AB01>, <AB02>, <AB03>, <AB04>, <AB05> };
+        };
+
+        row {
+            top  = 0;
+            left = 129.5;
+            keys { <AE06>, <AE07>, <AE08>, <AE09>, <AE10>, <AE11>, <AE12>, <I148> };
+        };
+        row {
+            top  = 18.5;
+            left = 129.5;
+            keys { <AD06>, <AD07>, <AD08>, <AD09>, <AD10>, <AD11>, <AD12>, <I163> };
+        };
+        row {
+            top  = 37;
+            left = 129.5;
+            keys { <AC06>, <AC07>, <AC08>, <AC09>, <AC10>, <AC11>, { <RTSH>, "LFSH" }, <CAPS> };
+        };
+        row {
+            top  = 55.5;
+            left = 129.5;
+            keys { <AB06>, <AB07>, <AB08>, <AB09>, <AB10>, <BKSL> };
+        };
+        row {
+            top  = 55.5;
+            left = 259;
+            keys { <I158> };
+        };
+        row {
+            top  = 74;
+            left = 74;
+            keys { { <SPCE>, "SPCE" } };
+        };
+    };
+}; // geometry tm2030USB_alpha
+
+
+xkb_geometry "tm2030USB_ctrl" {
+    section "Control" {
+        left = 27;
+        top  = 0;
+        key.gap = 0.5;
+        key.color = "grey30";
+        key.shape = "NORM";
+        row {
+            top  = 88;
+            keys { <LCTL>, <I172>, <MENU>, <I162> };
+        };
+        row {
+            top = 106.5;
+            keys { <I120>, { <LWIN>, "ALT1" }, { <LALT>, "ALT1" } };
+        };
+        row {
+            top  = 88;
+            left = 166.5;
+            keys { <I243>, <HOME>, <UP>, <END>, { <RCTL>, "LFSH"}, <PGUP> };
+        };
+        row {
+            top = 106.5;
+            left = 166.5;
+            keys { <RALT>, <LEFT>, <DOWN>, <RGHT> };
+        };
+        row {
+            top = 106.5;
+            left = 259;
+            keys { <PGDN> };
+        };
+        row {
+            top  = 1;
+            left = 111.5;
+            vertical = true;
+            keys { <DELE>, { <BKSP>, "BKSP" }, { <RTRN>, "LFSH" } };
+        };
+    };
+}; // geometry tm2030USB_ctrl
+
+
+xkb_geometry "tm2030PS2" {
+    include "typematrix(tm2030_shape)"
+    include "typematrix(tm2030_MiscDiod_dvk)"
+    include "typematrix(tm2030_MiscDiod_off)"
+
+    description = "TypeMatrix EZ-Reach 2030 PS2";
+
+    section "Function" {
+        left = 27;
+        top  = 1.5;
+        key.gap = 0.5;
+        key.color = "grey10";
+        key.shape = "FUNC";
+        row {
+            key.color = "grey30";
+            keys { <ESC> };
+        };
+        row {
+            left = 18.5;
+            keys { <FK01>, <FK02>, <FK03>, <FK04> };
+        };
+        row {
+            left = 92.5;
+            key.color = "grey30";
+            keys { <FK05> };
+        };
+        row {
+            left = 129.5;
+            key.color = "grey30";
+            keys { <FK06>, <FK07>, <FK08> };
+        };
+        row {
+            left = 185;
+            keys { <FK09>, <FK10>, <FK11>, <FK12> };
+        };
+        row {
+            left = 259;
+            key.color = "grey30";
+            keys { <NMLK> };
+        };
+    };
+
+    section "Alpha" {
+        left = 27;
+        top  = 14;
+        key.gap = 0.5;
+        key.color = "grey10";
+        key.shape = "NORM";
+        row {
+            top  = 0;
+            keys { <TLDE>,             <AE01>, <AE02>, <AE03>, <AE04>, <AE05> };
+        };
+        row {
+            top  = 18.5;
+            keys { <TAB>,              <AD01>, <AD02>, <AD03>, <AD04>, <AD05> };
+        };
+        row {
+            top  = 37;
+            keys { { <LFSH>, "LFSH" }, <AC01>, <AC02>, <AC03>, <AC04>, <AC05> };
+        };
+        row {
+            top  = 55.5;
+            left = 18.5;
+            keys {                     <AB01>, <AB02>, <AB03>, <AB04>, <AB05> };
+        };
+
+        row {
+            top  = 0;
+            left = 129.5;
+            keys { <AE06>, <AE07>, <AE08>, <AE09>, <AE10>, <AE11>, <AE12>, <I120> };
+        };
+        row {
+            top  = 18.5;
+            left = 129.5;
+            keys { <AD06>, <AD07>, <AD08> };
+        };
+        row {
+            top  = 18.5;
+            left = 185;
+            key.color = "grey30";
+            keys { <AD09>, <AD10>, <AD11>, <AD12>};
+        };
+        row {
+            top  = 18.5;
+            left = 259;
+            keys { <BKSP> };
+        };
+        row {
+            top  = 37;
+            left = 129.5;
+            keys { <AC06>, <AC07>, <AC08> };
+        };
+        row {
+            top  = 37;
+            left = 185;
+            key.color = "grey30";
+            keys { <AC09>, <AC10>, <AC11>, { <RTSH>, "LFSH" },
+                   {<DELE>, key.color="red"} };
+        };
+        row {
+            top  = 55.5;
+            left = 129.5;
+            keys { <AB06>, <AB07>, <AB08> };
+        };
+        row {
+            top  = 55.5;
+            left = 185;
+            key.color = "grey30";
+            keys { <AB09>, <AB10>, <BKSL> };
+        };
+        row {
+            top  = 55.5;
+            left = 259;
+            keys { <INS> };
+        };
+        row {
+            top  = 74;
+            left = 74;
+            keys { { <SPCE>, "SPCE" } };
+        };
+    };
+
+    section "Control" {
+        left = 27;
+        top  = 0;
+        key.gap = 0.5;
+        key.color = "grey10";
+        key.shape = "NORM";
+        row {
+            top  = 88;
+            keys { <I120>, <LWIN>, <MENU>, <I162> };
+        };
+        row {
+            top = 106.5;
+            keys { <LCTL>, { <LALT>, "ALT1" }, { <LTSH>, "ALT1" } };
+        };
+        row {
+            top  = 88;
+            left = 166.5;
+            keys { <PGUP> };
+        };
+        row {
+            top  = 88;
+            left = 185;
+            key.color = "grey30";
+            keys { <HOME>, <UP>, <END>, { <KPEN>, "LFSH"} };
+        };
+        row {
+            top  = 88;
+            left = 259;
+            keys { <RCTL> };
+        };
+        row {
+            top = 106.5;
+            left = 166.5;
+            keys { <PGDN> };
+        };
+        row {
+            top = 106.5;
+            left = 185;
+            key.color = "grey30";
+            keys { <LEFT>, <DOWN>, <RGHT> };
+        };
+        row {
+            top = 106.5;
+            left = 259;
+            keys { <RALT> };
+        };
+        row {
+            top  = 1;
+            left = 111.5;
+            key.color = "grey10";
+            vertical = true;
+            keys { <CAPS>, { <BKSP>, "BKSP" }, { <RTRN>, "LFSH" } };
+        };
+    };
+}; // geometry tm2030PS2
+
+
+xkb_geometry "tm2030USB" {
+    include "typematrix(tm2030_shape)"
+    include "typematrix(tm2030_MiscDiod_102)"
+    include "typematrix(tm2030_MiscDiod_off)"
+
+    description = "TypeMatrix EZ-Reach 2030 USB";
+
+    include "typematrix(tm2030USB_func)"
+    include "typematrix(tm2030USB_alpha)"
+    include "typematrix(tm2030USB_ctrl)"
+}; // geometry tm2030USB
+
+
+// European 102/105 keys mode.
+// Same as the standard keyboard, except for one key: Play becomes LSGT.
+xkb_geometry "tm2030USB-102" {
+    include "typematrix(tm2030_shape)"
+    include "typematrix(tm2030_MiscDiod_102)"
+    include "typematrix(tm2030_MiscDiod_on)"
+
+    description = "TypeMatrix EZ-Reach 2030 USB (102/105:EU mode)";
+
+    include "typematrix(tm2030USB_func)"
+    include "typematrix(tm2030USB_alpha)"
+
+    section "Control" {
+        left = 27;
+        top  = 0;
+        key.gap = 0.5;
+        key.color = "grey30";
+        key.shape = "NORM";
+        row {
+            top  = 88;
+            keys { <LCTL>, <LSGT>, <MENU>, <I162> };
+        };
+        row {
+            top = 106.5;
+            keys { <I120>, { <LWIN>, "ALT1" }, { <LALT>, "ALT1" } };
+        };
+        row {
+            top  = 88;
+            left = 166.5;
+            keys { <I243>, <HOME>, <UP>, <END>, { <RCTL>, "LFSH"}, <PGUP> };
+        };
+        row {
+            top = 106.5;
+            left = 166.5;
+            keys { <RALT>, <LEFT>, <DOWN>, <RGHT> };
+        };
+        row {
+            top = 106.5;
+            left = 259;
+            keys { <PGDN> };
+        };
+        row {
+            top  = 1;
+            left = 111.5;
+            vertical = true;
+            keys { <DELE>, { <BKSP>, "BKSP" }, { <RTRN>, "LFSH" } };
+        };
+    };
+}; // geometry tm2030USB-102
+
+
+// Japan / Korean 106 keys mode.
+// Same as the standard keyboard, except for the following keys:
+// – <TLDE> is replaced by <HZTG>
+// – WWW key becomes <HKTG>
+// — Calc key becomes <AE13>
+// — <BKSL> key becomes <AB11>
+// — and Mail key becomes <BKSL>
+
+// About control keys:
+// NFER/MEHU and XFER/KANJ: TMx keeps LWIN (and RWIN if it happens to exist).
+// HKTG/HIRA: TMx keeps MENU/COMP, but locates this key in alpha section (see above).
+
+xkb_geometry "tm2030USB-106" {
+    include "typematrix(tm2030_shape)"
+    include "typematrix(tm2030_MiscDiod_106)"
+    include "typematrix(tm2030_MiscDiod_on)"
+
+    description = "TypeMatrix EZ-Reach 2030 USB (106:JP mode)";
+
+    include "typematrix(tm2030USB_func)"
+
+    section "Alpha" {
+        left = 27;
+        top  = 14;
+        key.gap = 0.5;
+        key.color = "grey10";
+        key.shape = "NORM";
+        row {
+            top  = 0;
+            keys { <HZTG>,             <AE01>, <AE02>, <AE03>, <AE04>, <AE05> };
+        };
+        row {
+            top  = 18.5;
+            keys { <TAB>,              <AD01>, <AD02>, <AD03>, <AD04>, <AD05> };
+        };
+        row {
+            top  = 37;
+            keys { { <LFSH>, "LFSH" }, <AC01>, <AC02>, <AC03>, <AC04>, <AC05> };
+        };
+        row {
+            top  = 55.5;
+            left = 18.5;
+            keys {                     <AB01>, <AB02>, <AB03>, <AB04>, <AB05> };
+        };
+
+        row {
+            top  = 0;
+            left = 129.5;
+            keys { <AE06>, <AE07>, <AE08>, <AE09>, <AE10>, <AE11>, <AE12>, <AE13> };
+        };
+        row {
+            top  = 18.5;
+            left = 129.5;
+            keys { <AD06>, <AD07>, <AD08>, <AD09>, <AD10>, <AD11>, <AD12>, <BKSL> };
+        };
+        row {
+            top  = 37;
+            left = 129.5;
+            keys { <AC06>, <AC07>, <AC08>, <AC09>, <AC10>, <AC11>, { <RTSH>, "LFSH" }, <CAPS> };
+        };
+        row {
+            top  = 55.5;
+            left = 129.5;
+            keys { <AB06>, <AB07>, <AB08>, <AB09>, <AB10>, <AB11> };
+        };
+        row {
+            top  = 55.5;
+            left = 259;
+            keys { <HKTG> };
+        };
+        row {
+            top  = 74;
+            left = 74;
+            keys { { <SPCE>, "SPCE" } };
+        };
+    };
+
+    section "Control" {
+        left = 27;
+        top  = 0;
+        key.gap = 0.5;
+        key.color = "grey30";
+        key.shape = "NORM";
+        row {
+            top  = 88;
+            keys { <LCTL>, <I172>, <MENU>, <I162> };
+        };
+        row {
+            top = 106.5;
+            keys { <I120>, { <LWIN>, "ALT1" }, { <LALT>, "ALT1" } };
+        };
+        row {
+            top  = 88;
+            left = 166.5;
+            keys { <I243>, <HOME>, <UP>, <END>, { <RCTL>, "LFSH"}, <PGUP> };
+        };
+        row {
+            top = 106.5;
+            left = 166.5;
+            keys { <RALT>, <LEFT>, <DOWN>, <RGHT> };
+        };
+        row {
+            top = 106.5;
+            left = 259;
+            keys { <PGDN> };
+        };
+        row {
+            top  = 1;
+            left = 111.5;
+            vertical = true;
+            keys { <DELE>, { <BKSP>, "BKSP" }, { <RTRN>, "LFSH" } };
+        };
+    };
+}; // geometry tm2030USB-106

@@ -1,0 +1,11 @@
+This example relies on:
+  - a Java implementation with AWT
+
+Installation:
+  ./autogen.sh
+  ./configure --prefix=/some/prefix
+  make
+  make install
+Cleanup:
+  make distclean
+  ./autoclean.sh

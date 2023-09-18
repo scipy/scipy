@@ -1,0 +1,536 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html401/loose.dtd">
+<html>
+<!-- Created on October, 9 2022 by texi2html 1.78a -->
+<!--
+Written by: Lionel Cons <Lionel.Cons@cern.ch> (original author)
+            Karl Berry  <karl@freefriends.org>
+            Olaf Bachmann <obachman@mathematik.uni-kl.de>
+            and many others.
+Maintained by: Many creative people.
+Send bugs and suggestions to <texi2html-bug@nongnu.org>
+
+-->
+<head>
+<title>GNU gettext utilities: 6. Creating a New PO File</title>
+
+<meta name="description" content="GNU gettext utilities: 6. Creating a New PO File">
+<meta name="keywords" content="GNU gettext utilities: 6. Creating a New PO File">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="texi2html 1.78a">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+pre.display {font-family: serif}
+pre.format {font-family: serif}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: serif; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: serif; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.roman {font-family:serif; font-weight:normal;}
+span.sansserif {font-family:sans-serif; font-weight:normal;}
+ul.toc {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="gettext_5.html#SEC34" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="gettext_7.html#SEC52" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_21.html#SEC387" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+
+<hr size="2">
+<a name="Creating"></a>
+<a name="SEC44"></a>
+<h1 class="chapter"> <a href="gettext_toc.html#TOC38">6. Creating a New PO File</a> </h1>
+
+<p>When starting a new translation, the translator creates a file called
+&lsquo;<tt><var>LANG</var>.po</tt>&rsquo;, as a copy of the &lsquo;<tt><var>package</var>.pot</tt>&rsquo; template
+file with modifications in the initial comments (at the beginning of the file)
+and in the header entry (the first entry, near the beginning of the file).
+</p>
+<p>The easiest way to do so is by use of the &lsquo;<samp>msginit</samp>&rsquo; program.
+For example:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">$ cd <var>PACKAGE</var>-<var>VERSION</var>
+$ cd po
+$ msginit
+</pre></td></tr></table>
+
+<p>The alternative way is to do the copy and modifications by hand.
+To do so, the translator copies &lsquo;<tt><var>package</var>.pot</tt>&rsquo; to
+&lsquo;<tt><var>LANG</var>.po</tt>&rsquo;.  Then she modifies the initial comments and
+the header entry of this file.
+</p>
+
+
+<a name="msginit-Invocation"></a>
+<a name="SEC45"></a>
+<h2 class="section"> <a href="gettext_toc.html#TOC39">6.1 Invoking the <code>msginit</code> Program</a> </h2>
+
+
+<table><tr><td>&nbsp;</td><td><pre class="example">msginit [<var>option</var>]
+</pre></td></tr></table>
+
+<a name="IDX225"></a>
+<a name="IDX226"></a>
+<p>The <code>msginit</code> program creates a new PO file, initializing the meta
+information with values from the user's environment.
+</p>
+<p>Here are more details.  The following header fields of a PO file are
+automatically filled, when possible.
+</p>
+<dl compact="compact">
+<dt> &lsquo;<samp>Project-Id-Version</samp>&rsquo;</dt>
+<dd><p>The value is guessed from the <code>configure</code> script or any other files
+in the current directory.
+</p>
+</dd>
+<dt> &lsquo;<samp>PO-Revision-Date</samp>&rsquo;</dt>
+<dd><p>The value is taken from the <code>PO-Creation-Data</code> in the input POT
+file, or the current date is used.
+</p>
+</dd>
+<dt> &lsquo;<samp>Last-Translator</samp>&rsquo;</dt>
+<dd><p>The value is taken from user's password file entry and the mailer
+configuration files.
+</p>
+</dd>
+<dt> &lsquo;<samp>Language-Team, Language</samp>&rsquo;</dt>
+<dd><p>These values are set according to the current locale and the predefined
+list of translation teams.
+</p>
+</dd>
+<dt> &lsquo;<samp>MIME-Version, Content-Type, Content-Transfer-Encoding</samp>&rsquo;</dt>
+<dd><p>These values are set according to the content of the POT file and the
+current locale.  If the POT file contains charset=UTF-8, it means that
+the POT file contains non-ASCII characters, and we keep the UTF-8
+encoding.  Otherwise, when the POT file is plain ASCII, we use the
+locale's encoding.
+</p>
+</dd>
+<dt> &lsquo;<samp>Plural-Forms</samp>&rsquo;</dt>
+<dd><p>The value is first looked up from the embedded table.
+</p>
+<p>As an experimental feature, you can instruct <code>msginit</code> to use the
+information from Unicode CLDR, by setting the <code>GETTEXTCLDRDIR</code>
+environment variable.  The program will look for a file named
+<code>common/supplemental/plurals.xml</code> under that directory.  You can
+get the CLDR data from <a href="http://cldr.unicode.org/">http://cldr.unicode.org/</a>.
+</p>
+</dd>
+</dl>
+
+
+<a name="SEC46"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC40">6.1.1 Input file location</a> </h3>
+
+<dl compact="compact">
+<dt> &lsquo;<samp>-i <var>inputfile</var></samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--input=<var>inputfile</var></samp>&rsquo;</dt>
+<dd><a name="IDX227"></a>
+<a name="IDX228"></a>
+<p>Input POT file.
+</p>
+</dd>
+</dl>
+
+<p>If no <var>inputfile</var> is given, the current directory is searched for the
+POT file.  If it is &lsquo;<samp>-</samp>&rsquo;, standard input is read.
+</p>
+
+<a name="SEC47"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC41">6.1.2 Output file location</a> </h3>
+
+<dl compact="compact">
+<dt> &lsquo;<samp>-o <var>file</var></samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--output-file=<var>file</var></samp>&rsquo;</dt>
+<dd><a name="IDX229"></a>
+<a name="IDX230"></a>
+<p>Write output to specified PO file.
+</p>
+</dd>
+</dl>
+
+<p>If no output file is given, it depends on the &lsquo;<samp>--locale</samp>&rsquo; option or the
+user's locale setting.  If it is &lsquo;<samp>-</samp>&rsquo;, the results are written to
+standard output.
+</p>
+
+<a name="SEC48"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC42">6.1.3 Input file syntax</a> </h3>
+
+<dl compact="compact">
+<dt> &lsquo;<samp>-P</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--properties-input</samp>&rsquo;</dt>
+<dd><a name="IDX231"></a>
+<a name="IDX232"></a>
+<p>Assume the input file is a Java ResourceBundle in Java <code>.properties</code>
+syntax, not in PO file syntax.
+</p>
+</dd>
+<dt> &lsquo;<samp>--stringtable-input</samp>&rsquo;</dt>
+<dd><a name="IDX233"></a>
+<p>Assume the input file is a NeXTstep/GNUstep localized resource file in
+<code>.strings</code> syntax, not in PO file syntax.
+</p>
+</dd>
+</dl>
+
+
+<a name="SEC49"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC43">6.1.4 Output details</a> </h3>
+
+<dl compact="compact">
+<dt> &lsquo;<samp>-l <var>ll_CC[.encoding]</var></samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--locale=<var>ll_CC[.encoding]</var></samp>&rsquo;</dt>
+<dd><a name="IDX234"></a>
+<a name="IDX235"></a>
+<p>Set target locale.  <var>ll</var> should be a language code, and <var>CC</var> should
+be a country code.  The optional part <var>.encoding</var> specifies the encoding
+of the locale; most often this part is <code>.UTF-8</code>.
+The command &lsquo;<samp>locale -a</samp>&rsquo; can be used to output a list
+of all installed locales.  The default is the user's locale setting.
+</p>
+</dd>
+<dt> &lsquo;<samp>--no-translator</samp>&rsquo;</dt>
+<dd><a name="IDX236"></a>
+<p>Declares that the PO file will not have a human translator and is instead
+automatically generated.
+</p>
+</dd>
+<dt> &lsquo;<samp>--color</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--color=<var>when</var></samp>&rsquo;</dt>
+<dd><a name="IDX237"></a>
+<p>Specify whether or when to use colors and other text attributes.
+See <a href="gettext_9.html#SEC157">The <code>--color</code> option</a> for details.
+</p>
+</dd>
+<dt> &lsquo;<samp>--style=<var>style_file</var></samp>&rsquo;</dt>
+<dd><a name="IDX238"></a>
+<p>Specify the CSS style rule file to use for <code>--color</code>.
+See <a href="gettext_9.html#SEC159">The <code>--style</code> option</a> for details.
+</p>
+</dd>
+<dt> &lsquo;<samp>-p</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--properties-output</samp>&rsquo;</dt>
+<dd><a name="IDX239"></a>
+<a name="IDX240"></a>
+<p>Write out a Java ResourceBundle in Java <code>.properties</code> syntax.  Note
+that this file format doesn't support plural forms and silently drops
+obsolete messages.
+</p>
+</dd>
+<dt> &lsquo;<samp>--stringtable-output</samp>&rsquo;</dt>
+<dd><a name="IDX241"></a>
+<p>Write out a NeXTstep/GNUstep localized resource file in <code>.strings</code> syntax.
+Note that this file format doesn't support plural forms.
+</p>
+</dd>
+<dt> &lsquo;<samp>-w <var>number</var></samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--width=<var>number</var></samp>&rsquo;</dt>
+<dd><a name="IDX242"></a>
+<a name="IDX243"></a>
+<p>Set the output page width.  Long strings in the output files will be
+split across multiple lines in order to ensure that each line's width
+(= number of screen columns) is less or equal to the given <var>number</var>.
+</p>
+</dd>
+<dt> &lsquo;<samp>--no-wrap</samp>&rsquo;</dt>
+<dd><a name="IDX244"></a>
+<p>Do not break long message lines.  Message lines whose width exceeds the
+output page width will not be split into several lines.  Only file reference
+lines which are wider than the output page width will be split.
+</p>
+</dd>
+</dl>
+
+
+<a name="SEC50"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC44">6.1.5 Informative output</a> </h3>
+
+<dl compact="compact">
+<dt> &lsquo;<samp>-h</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--help</samp>&rsquo;</dt>
+<dd><a name="IDX245"></a>
+<a name="IDX246"></a>
+<p>Display this help and exit.
+</p>
+</dd>
+<dt> &lsquo;<samp>-V</samp>&rsquo;</dt>
+<dt> &lsquo;<samp>--version</samp>&rsquo;</dt>
+<dd><a name="IDX247"></a>
+<a name="IDX248"></a>
+<p>Output version information and exit.
+</p>
+</dd>
+</dl>
+
+
+<a name="Header-Entry"></a>
+<a name="SEC51"></a>
+<h2 class="section"> <a href="gettext_toc.html#TOC45">6.2 Filling in the Header Entry</a> </h2>
+
+<p>The initial comments &quot;SOME DESCRIPTIVE TITLE&quot;, &quot;YEAR&quot; and
+&quot;FIRST AUTHOR &lt;EMAIL@ADDRESS&gt;, YEAR&quot; ought to be replaced by sensible
+information.  This can be done in any text editor; if Emacs is used
+and it switched to PO mode automatically (because it has recognized
+the file's suffix), you can disable it by typing <kbd>M-x fundamental-mode</kbd>.
+</p>
+<p>Modifying the header entry can already be done using PO mode: in Emacs,
+type <kbd>M-x po-mode RET</kbd> and then <kbd>RET</kbd> again to start editing the
+entry.  You should fill in the following fields.
+</p>
+<dl compact="compact">
+<dt> Project-Id-Version</dt>
+<dd><p>This is the name and version of the package.  Fill it in if it has not
+already been filled in by <code>xgettext</code>.
+</p>
+</dd>
+<dt> Report-Msgid-Bugs-To</dt>
+<dd><p>This has already been filled in by <code>xgettext</code>.  It contains an email
+address or URL where you can report bugs in the untranslated strings:
+</p>
+<ul class="toc">
+<li> -  Strings which are not entire sentences, see the maintainer guidelines
+in <a href="gettext_4.html#SEC20">Preparing Translatable Strings</a>.
+</li><li> -  Strings which use unclear terms or require additional context to be
+understood.
+</li><li> -  Strings which make invalid assumptions about notation of date, time or
+money.
+</li><li> -  Pluralisation problems.
+</li><li> -  Incorrect English spelling.
+</li><li> -  Incorrect formatting.
+</li></ul>
+
+</dd>
+<dt> POT-Creation-Date</dt>
+<dd><p>This has already been filled in by <code>xgettext</code>.
+</p>
+</dd>
+<dt> PO-Revision-Date</dt>
+<dd><p>You don't need to fill this in.  It will be filled by the PO file editor
+when you save the file.
+</p>
+</dd>
+<dt> Last-Translator</dt>
+<dd><p>Fill in your name and email address (without double quotes).
+</p>
+</dd>
+<dt> Language-Team</dt>
+<dd><p>Fill in the English name of the language, and the email address or
+homepage URL of the language team you are part of.
+</p>
+<p>Before starting a translation, it is a good idea to get in touch with
+your translation team, not only to make sure you don't do duplicated work,
+but also to coordinate difficult linguistic issues.
+</p>
+<a name="IDX249"></a>
+<p>In the Free Translation Project, each translation team has its own mailing
+list.  The up-to-date list of teams can be found at the Free Translation
+Project's homepage, <a href="https://translationproject.org/">https://translationproject.org/</a>, in the &quot;Teams&quot;
+area.
+</p>
+</dd>
+<dt> Language</dt>
+<dd><p>Fill in the language code of the language.  This can be in one of three
+forms:
+</p>
+<ul class="toc">
+<li> - 
+&lsquo;<samp><var>ll</var></samp>&rsquo;, an ISO 639 two-letter language code (lowercase).
+See <a href="gettext_18.html#SEC371">Language Codes</a> for the list of codes.
+
+</li><li> - 
+&lsquo;<samp><var>ll</var>_<var>CC</var></samp>&rsquo;, where &lsquo;<samp><var>ll</var></samp>&rsquo; is an ISO 639 two-letter
+language code (lowercase) and &lsquo;<samp><var>CC</var></samp>&rsquo; is an ISO 3166 two-letter
+country code (uppercase).  The country code specification is not redundant:
+Some languages have dialects in different countries.  For example,
+&lsquo;<samp>de_AT</samp>&rsquo; is used for Austria, and &lsquo;<samp>pt_BR</samp>&rsquo; for Brazil.  The country
+code serves to distinguish the dialects. See <a href="gettext_18.html#SEC371">Language Codes</a> and
+<a href="gettext_19.html#SEC374">Country Codes</a> for the lists of codes.
+
+</li><li> - 
+&lsquo;<samp><var>ll</var>_<var>CC</var>@<var>variant</var></samp>&rsquo;, where &lsquo;<samp><var>ll</var></samp>&rsquo; is an
+ISO 639 two-letter language code (lowercase), &lsquo;<samp><var>CC</var></samp>&rsquo; is an
+ISO 3166 two-letter country code (uppercase), and &lsquo;<samp><var>variant</var></samp>&rsquo; is
+a variant designator. The variant designator (lowercase) can be a script
+designator, such as &lsquo;<samp>latin</samp>&rsquo; or &lsquo;<samp>cyrillic</samp>&rsquo;.
+</li></ul>
+
+<p>The naming convention &lsquo;<samp><var>ll</var>_<var>CC</var></samp>&rsquo; is also the way locales are
+named on systems based on GNU libc.  But there are three important differences:
+</p>
+<ul>
+<li>
+In this PO file field, but not in locale names, &lsquo;<samp><var>ll</var>_<var>CC</var></samp>&rsquo;
+combinations denoting a language's main dialect are abbreviated as
+&lsquo;<samp><var>ll</var></samp>&rsquo;.  For example, &lsquo;<samp>de</samp>&rsquo; is equivalent to &lsquo;<samp>de_DE</samp>&rsquo;
+(German as spoken in Germany), and &lsquo;<samp>pt</samp>&rsquo; to &lsquo;<samp>pt_PT</samp>&rsquo; (Portuguese as
+spoken in Portugal) in this context.
+
+</li><li>
+In this PO file field, suffixes like &lsquo;<samp>.<var>encoding</var></samp>&rsquo; are not used.
+
+</li><li>
+In this PO file field, variant designators that are not relevant to message
+translation, such as &lsquo;<samp>@euro</samp>&rsquo;, are not used.
+</li></ul>
+
+<p>So, if your locale name is &lsquo;<samp>de_DE.UTF-8</samp>&rsquo;, the language specification in
+PO files is just &lsquo;<samp>de</samp>&rsquo;.
+</p>
+</dd>
+<dt> Content-Type</dt>
+<dd><a name="IDX250"></a>
+<a name="IDX251"></a>
+<p>Replace &lsquo;<samp>CHARSET</samp>&rsquo; with the character encoding used for your language,
+in your locale, or UTF-8.  This field is needed for correct operation of the
+<code>msgmerge</code> and <code>msgfmt</code> programs, as well as for users whose
+locale's character encoding differs from yours (see <a href="gettext_11.html#SEC204">How to specify the output character set <code>gettext</code> uses</a>).
+</p>
+<a name="IDX252"></a>
+<p>You get the character encoding of your locale by running the shell command
+&lsquo;<samp>locale charmap</samp>&rsquo;.  If the result is &lsquo;<samp>C</samp>&rsquo; or &lsquo;<samp>ANSI_X3.4-1968</samp>&rsquo;,
+which is equivalent to &lsquo;<samp>ASCII</samp>&rsquo; (= &lsquo;<samp>US-ASCII</samp>&rsquo;), it means that your
+locale is not correctly configured.  In this case, ask your translation
+team which charset to use.  &lsquo;<samp>ASCII</samp>&rsquo; is not usable for any language
+except Latin.
+</p>
+<a name="IDX253"></a>
+<p>Because the PO files must be portable to operating systems with less advanced
+internationalization facilities, the character encodings that can be used
+are limited to those supported by both GNU <code>libc</code> and GNU
+<code>libiconv</code>.  These are:
+<code>ASCII</code>, <code>ISO-8859-1</code>, <code>ISO-8859-2</code>, <code>ISO-8859-3</code>,
+<code>ISO-8859-4</code>, <code>ISO-8859-5</code>, <code>ISO-8859-6</code>, <code>ISO-8859-7</code>,
+<code>ISO-8859-8</code>, <code>ISO-8859-9</code>, <code>ISO-8859-13</code>, <code>ISO-8859-14</code>,
+<code>ISO-8859-15</code>,
+<code>KOI8-R</code>, <code>KOI8-U</code>, <code>KOI8-T</code>,
+<code>CP850</code>, <code>CP866</code>, <code>CP874</code>,
+<code>CP932</code>, <code>CP949</code>, <code>CP950</code>, <code>CP1250</code>, <code>CP1251</code>,
+<code>CP1252</code>, <code>CP1253</code>, <code>CP1254</code>, <code>CP1255</code>, <code>CP1256</code>,
+<code>CP1257</code>, <code>GB2312</code>, <code>EUC-JP</code>, <code>EUC-KR</code>, <code>EUC-TW</code>,
+<code>BIG5</code>, <code>BIG5-HKSCS</code>, <code>GBK</code>, <code>GB18030</code>, <code>SHIFT_JIS</code>,
+<code>JOHAB</code>, <code>TIS-620</code>, <code>VISCII</code>, <code>GEORGIAN-PS</code>, <code>UTF-8</code>.
+</p>
+<a name="IDX254"></a>
+<p>In the GNU system, the following encodings are frequently used for the
+corresponding languages.
+</p>
+<a name="IDX255"></a>
+<ul class="toc">
+<li> <code>ISO-8859-1</code> for
+Afrikaans, Albanian, Basque, Breton, Catalan, Cornish, Danish, Dutch,
+English, Estonian, Faroese, Finnish, French, Galician, German,
+Greenlandic, Icelandic, Indonesian, Irish, Italian, Malay, Manx,
+Norwegian, Occitan, Portuguese, Spanish, Swedish, Tagalog, Uzbek,
+Walloon,
+</li><li> <code>ISO-8859-2</code> for
+Bosnian, Croatian, Czech, Hungarian, Polish, Romanian, Serbian, Slovak,
+Slovenian,
+</li><li> <code>ISO-8859-3</code> for Maltese,
+</li><li> <code>ISO-8859-5</code> for Macedonian, Serbian,
+</li><li> <code>ISO-8859-6</code> for Arabic,
+</li><li> <code>ISO-8859-7</code> for Greek,
+</li><li> <code>ISO-8859-8</code> for Hebrew,
+</li><li> <code>ISO-8859-9</code> for Turkish,
+</li><li> <code>ISO-8859-13</code> for Latvian, Lithuanian, Maori,
+</li><li> <code>ISO-8859-14</code> for Welsh,
+</li><li> <code>ISO-8859-15</code> for
+Basque, Catalan, Dutch, English, Finnish, French, Galician, German, Irish,
+Italian, Portuguese, Spanish, Swedish, Walloon,
+</li><li> <code>KOI8-R</code> for Russian,
+</li><li> <code>KOI8-U</code> for Ukrainian,
+</li><li> <code>KOI8-T</code> for Tajik,
+</li><li> <code>CP1251</code> for Bulgarian, Belarusian,
+</li><li> <code>GB2312</code>, <code>GBK</code>, <code>GB18030</code>
+for simplified writing of Chinese,
+</li><li> <code>BIG5</code>, <code>BIG5-HKSCS</code>
+for traditional writing of Chinese,
+</li><li> <code>EUC-JP</code> for Japanese,
+</li><li> <code>EUC-KR</code> for Korean,
+</li><li> <code>TIS-620</code> for Thai,
+</li><li> <code>GEORGIAN-PS</code> for Georgian,
+</li><li> <code>UTF-8</code> for any language, including those listed above.
+</li></ul>
+
+<a name="IDX256"></a>
+<a name="IDX257"></a>
+<p>When single quote characters or double quote characters are used in
+translations for your language, and your locale's encoding is one of the
+ISO-8859-* charsets, it is best if you create your PO files in UTF-8
+encoding, instead of your locale's encoding.  This is because in UTF-8
+the real quote characters can be represented (single quote characters:
+U+2018, U+2019, double quote characters: U+201C, U+201D), whereas none of
+ISO-8859-* charsets has them all.  Users in UTF-8 locales will see the
+real quote characters, whereas users in ISO-8859-* locales will see the
+vertical apostrophe and the vertical double quote instead (because that's
+what the character set conversion will transliterate them to).
+</p>
+<a name="IDX258"></a>
+<p>To enter such quote characters under X11, you can change your keyboard
+mapping using the <code>xmodmap</code> program.  The X11 names of the quote
+characters are &quot;leftsinglequotemark&quot;, &quot;rightsinglequotemark&quot;,
+&quot;leftdoublequotemark&quot;, &quot;rightdoublequotemark&quot;, &quot;singlelowquotemark&quot;,
+&quot;doublelowquotemark&quot;.
+</p>
+<p>Note that only recent versions of GNU Emacs support the UTF-8 encoding:
+Emacs 20 with Mule-UCS, and Emacs 21.  As of January 2001, XEmacs doesn't
+support the UTF-8 encoding.
+</p>
+<p>The character encoding name can be written in either upper or lower case.
+Usually upper case is preferred.
+</p>
+</dd>
+<dt> Content-Transfer-Encoding</dt>
+<dd><p>Set this to <code>8bit</code>.
+</p>
+</dd>
+<dt> Plural-Forms</dt>
+<dd><p>This field is optional.  It is only needed if the PO file has plural forms.
+You can find them by searching for the &lsquo;<samp>msgid_plural</samp>&rsquo; keyword.  The
+format of the plural forms field is described in <a href="gettext_11.html#SEC206">Additional functions for plural forms</a> and
+<a href="gettext_12.html#SEC227">Translating plural forms</a>.
+</p></dd>
+</dl>
+
+
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC44" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="gettext_7.html#SEC52" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_21.html#SEC387" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<p>
+ <font size="-1">
+  This document was generated by <em>Bruno Haible</em> on <em>October, 9 2022</em> using <a href="https://www.nongnu.org/texi2html/"><em>texi2html 1.78a</em></a>.
+ </font>
+ <br>
+
+</p>
+</body>
+</html>

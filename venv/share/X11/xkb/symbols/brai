@@ -1,0 +1,92 @@
+// 10-dot patterns on the home row + v and n
+default partial alphanumeric_keys
+xkb_symbols "home_row" {
+    include "brai(keypad)"
+
+    name[Group1]="Braille";
+
+    key <AC04>	{ [ braille_dot_1 ] };
+    key <AC03>	{ [ braille_dot_2 ] };
+    key <AC02>	{ [ braille_dot_3 ] };
+    key <AC07>	{ [ braille_dot_4 ] };
+    key <AC08>	{ [ braille_dot_5 ] };
+    key <AC09>	{ [ braille_dot_6 ] };
+    key <AC01>	{ [ braille_dot_7 ] };
+    key <AC10>	{ [ braille_dot_8 ] };
+    key <AB04>	{ [ braille_dot_9 ] };
+    key <AB06>	{ [ braille_dot_10 ] };
+};
+
+// 6-dot patterns for the left hand
+partial alphanumeric_keys
+xkb_symbols "left_hand" {
+    include "brai(keypad_left)"
+
+    name[Group1]="Braille (left-handed)";
+
+    key <AC03>	{ [ braille_dot_1 ] };
+    key <AC02>	{ [ braille_dot_2 ] };
+    key <AC01>	{ [ braille_dot_3 ] };
+    key <AC04>	{ [ braille_dot_4 ] };
+    key <AB04>	{ [ braille_dot_5 ] };
+    key <AB05>	{ [ braille_dot_6 ] };
+};
+
+// 6-dot patterns for the left hand
+partial alphanumeric_keys
+xkb_symbols "left_hand_invert" {
+    include "brai(left_hand)"
+
+    name[Group1]="Braille (left-handed inverted thumb)";
+
+    key <AB05>	{ [ braille_dot_5 ] };
+    key <AB04>	{ [ braille_dot_6 ] };
+};
+
+// 6-dot patterns for the right hand
+partial alphanumeric_keys
+xkb_symbols "right_hand" {
+    include "brai(keypad)"
+
+    name[Group1]="Braille (right-handed)";
+
+    key <AC07>	{ [ braille_dot_1 ] };
+    key <AB06>	{ [ braille_dot_2 ] };
+    key <AB05>	{ [ braille_dot_3 ] };
+    key <AC08>	{ [ braille_dot_4 ] };
+    key <AC10>	{ [ braille_dot_5 ] };
+    key <AC09>	{ [ braille_dot_6 ] };
+};
+
+// 6-dot patterns for the right hand
+partial alphanumeric_keys
+xkb_symbols "right_hand_invert" {
+    include "brai(right_hand)"
+
+    name[Group1]="Braille (right-handed inverted thumb)";
+
+    key <AB05>	{ [ braille_dot_2 ] };
+    key <AB06>	{ [ braille_dot_3 ] };
+};
+
+// 6-dot patterns on the keypad
+hidden partial keypad_keys
+xkb_symbols "keypad" {
+    key <KP4>	{ [ braille_dot_1 ] };
+    key <KP1>	{ [ braille_dot_2 ] };
+    key <KP0>	{ [ braille_dot_3 ] };
+    key <KP5>	{ [ braille_dot_4 ] };
+    key <KP6>	{ [ braille_dot_5 ] };
+    key <KPAD>	{ [ braille_dot_6 ] };
+};
+
+// 6-dot patterns on the keypad with left hand
+hidden partial keypad_keys
+xkb_symbols "keypad_left" {
+    key <KPMU>	{ [ braille_dot_1 ] };
+    key <KPDV>	{ [ braille_dot_2 ] };
+    key <NMLK>	{ [ braille_dot_3 ] };
+    key <KPSU>	{ [ braille_dot_4 ] };
+    key <KPAD>	{ [ braille_dot_5 ] };
+    key <KPEN>	{ [ braille_dot_6 ] };
+};

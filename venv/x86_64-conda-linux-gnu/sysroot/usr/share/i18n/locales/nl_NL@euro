@@ -1,0 +1,83 @@
+comment_char %
+escape_char  /
+%
+% Dutch Language Locale for the Netherlands with Euro
+% Language: nl
+% Territory: NL
+% Option: euro
+% Date: 2000-08-20
+% Users: general
+% Charset: ISO-8859-15
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title      "Dutch locale for the Netherlands with Euro"
+source     "Free Software Foundation, Inc."
+address    "59 Temple Place - Suite 330, Boston, MA 02111-1307, USA"
+contact    ""
+email      "bug-glibc-locales@gnu.org"
+tel        ""
+fax        ""
+language   "Dutch"
+territory  "Netherlands"
+revision   "1.0"
+date       "2000-08-20"
+%
+category  "nl_NL@euro:2000";LC_IDENTIFICATION
+category  "nl_NL@euro:2000";LC_CTYPE
+category  "nl_NL@euro:2000";LC_COLLATE
+category  "nl_NL@euro:2000";LC_TIME
+category  "nl_NL@euro:2000";LC_NUMERIC
+category  "nl_NL@euro:2000";LC_MONETARY
+category  "nl_NL@euro:2000";LC_MESSAGES
+category  "nl_NL@euro:2000";LC_PAPER
+category  "nl_NL@euro:2000";LC_NAME
+category  "nl_NL@euro:2000";LC_ADDRESS
+category  "nl_NL@euro:2000";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_CTYPE
+copy "nl_NL"
+END LC_CTYPE
+
+LC_COLLATE
+copy "iso14651_t1"
+END LC_COLLATE
+
+LC_MESSAGES
+copy "nl_NL"
+END LC_MESSAGES
+
+LC_MONETARY
+copy "nl_NL"
+END LC_MONETARY
+
+LC_NUMERIC
+copy "nl_NL"
+END LC_NUMERIC
+
+LC_TIME
+copy "nl_NL"
+END LC_TIME
+
+LC_PAPER
+copy "nl_NL"
+END LC_PAPER
+
+LC_TELEPHONE
+copy "nl_NL"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+copy "nl_NL"
+END LC_MEASUREMENT
+
+LC_NAME
+copy "nl_NL"
+END LC_NAME
+
+LC_ADDRESS
+copy "nl_NL"
+END LC_ADDRESS

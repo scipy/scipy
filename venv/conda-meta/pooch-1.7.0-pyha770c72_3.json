@@ -1,0 +1,449 @@
+{
+  "build": "pyha770c72_3",
+  "build_number": 3,
+  "channel": "https://conda.anaconda.org/conda-forge/noarch",
+  "constrains": [],
+  "depends": [
+    "packaging >=20.0",
+    "platformdirs >=2.5.0",
+    "python >=3.7",
+    "requests >=2.19.0"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/pooch-1.7.0-pyha770c72_3",
+  "features": "",
+  "files": [
+    "lib/python3.10/site-packages/pooch-1.7.0.dist-info/INSTALLER",
+    "lib/python3.10/site-packages/pooch-1.7.0.dist-info/LICENSE.txt",
+    "lib/python3.10/site-packages/pooch-1.7.0.dist-info/METADATA",
+    "lib/python3.10/site-packages/pooch-1.7.0.dist-info/RECORD",
+    "lib/python3.10/site-packages/pooch-1.7.0.dist-info/REQUESTED",
+    "lib/python3.10/site-packages/pooch-1.7.0.dist-info/WHEEL",
+    "lib/python3.10/site-packages/pooch-1.7.0.dist-info/direct_url.json",
+    "lib/python3.10/site-packages/pooch-1.7.0.dist-info/top_level.txt",
+    "lib/python3.10/site-packages/pooch-1.7.0.dist-info/zip-safe",
+    "lib/python3.10/site-packages/pooch/__init__.py",
+    "lib/python3.10/site-packages/pooch/_version.py",
+    "lib/python3.10/site-packages/pooch/core.py",
+    "lib/python3.10/site-packages/pooch/downloaders.py",
+    "lib/python3.10/site-packages/pooch/hashes.py",
+    "lib/python3.10/site-packages/pooch/processors.py",
+    "lib/python3.10/site-packages/pooch/tests/__init__.py",
+    "lib/python3.10/site-packages/pooch/tests/data/large-data.txt",
+    "lib/python3.10/site-packages/pooch/tests/data/registry-custom-url.txt",
+    "lib/python3.10/site-packages/pooch/tests/data/registry-invalid.txt",
+    "lib/python3.10/site-packages/pooch/tests/data/registry-spaces.txt",
+    "lib/python3.10/site-packages/pooch/tests/data/registry.txt",
+    "lib/python3.10/site-packages/pooch/tests/data/registry_comments.txt",
+    "lib/python3.10/site-packages/pooch/tests/data/store.tar.gz",
+    "lib/python3.10/site-packages/pooch/tests/data/store.zip",
+    "lib/python3.10/site-packages/pooch/tests/data/store/subdir/tiny-data.txt",
+    "lib/python3.10/site-packages/pooch/tests/data/store/tiny-data.txt",
+    "lib/python3.10/site-packages/pooch/tests/data/tiny-data.tar.gz",
+    "lib/python3.10/site-packages/pooch/tests/data/tiny-data.txt",
+    "lib/python3.10/site-packages/pooch/tests/data/tiny-data.txt.bz2",
+    "lib/python3.10/site-packages/pooch/tests/data/tiny-data.txt.gz",
+    "lib/python3.10/site-packages/pooch/tests/data/tiny-data.txt.xz",
+    "lib/python3.10/site-packages/pooch/tests/data/tiny-data.zip",
+    "lib/python3.10/site-packages/pooch/tests/test_core.py",
+    "lib/python3.10/site-packages/pooch/tests/test_downloaders.py",
+    "lib/python3.10/site-packages/pooch/tests/test_hashes.py",
+    "lib/python3.10/site-packages/pooch/tests/test_integration.py",
+    "lib/python3.10/site-packages/pooch/tests/test_processors.py",
+    "lib/python3.10/site-packages/pooch/tests/test_utils.py",
+    "lib/python3.10/site-packages/pooch/tests/test_version.py",
+    "lib/python3.10/site-packages/pooch/tests/utils.py",
+    "lib/python3.10/site-packages/pooch/utils.py",
+    "lib/python3.10/site-packages/pooch/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/pooch/__pycache__/_version.cpython-310.pyc",
+    "lib/python3.10/site-packages/pooch/__pycache__/core.cpython-310.pyc",
+    "lib/python3.10/site-packages/pooch/__pycache__/downloaders.cpython-310.pyc",
+    "lib/python3.10/site-packages/pooch/__pycache__/hashes.cpython-310.pyc",
+    "lib/python3.10/site-packages/pooch/__pycache__/processors.cpython-310.pyc",
+    "lib/python3.10/site-packages/pooch/tests/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/pooch/tests/__pycache__/test_core.cpython-310.pyc",
+    "lib/python3.10/site-packages/pooch/tests/__pycache__/test_downloaders.cpython-310.pyc",
+    "lib/python3.10/site-packages/pooch/tests/__pycache__/test_hashes.cpython-310.pyc",
+    "lib/python3.10/site-packages/pooch/tests/__pycache__/test_integration.cpython-310.pyc",
+    "lib/python3.10/site-packages/pooch/tests/__pycache__/test_processors.cpython-310.pyc",
+    "lib/python3.10/site-packages/pooch/tests/__pycache__/test_utils.cpython-310.pyc",
+    "lib/python3.10/site-packages/pooch/tests/__pycache__/test_version.cpython-310.pyc",
+    "lib/python3.10/site-packages/pooch/tests/__pycache__/utils.cpython-310.pyc",
+    "lib/python3.10/site-packages/pooch/__pycache__/utils.cpython-310.pyc"
+  ],
+  "fn": "pooch-1.7.0-pyha770c72_3.conda",
+  "license": "BSD-3-Clause",
+  "license_family": "BSD",
+  "link": {
+    "source": "/opt/conda/pkgs/pooch-1.7.0-pyha770c72_3",
+    "type": 1
+  },
+  "md5": "5936894aade8240c867d292aa0d980c6",
+  "name": "pooch",
+  "noarch": "python",
+  "package_tarball_full_path": "/opt/conda/pkgs/pooch-1.7.0-pyha770c72_3.conda",
+  "package_type": "noarch_python",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "site-packages/pooch-1.7.0.dist-info/INSTALLER",
+        "path_type": "hardlink",
+        "sha256": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "sha256_in_prefix": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "size_in_bytes": 5
+      },
+      {
+        "_path": "site-packages/pooch-1.7.0.dist-info/LICENSE.txt",
+        "path_type": "hardlink",
+        "sha256": "af0482d59fc7a9d68d9f64682c74ce6e8a4684406bb3a21a191ae329950916b4",
+        "sha256_in_prefix": "af0482d59fc7a9d68d9f64682c74ce6e8a4684406bb3a21a191ae329950916b4",
+        "size_in_bytes": 1496
+      },
+      {
+        "_path": "site-packages/pooch-1.7.0.dist-info/METADATA",
+        "path_type": "hardlink",
+        "sha256": "cf6c3bae5b4cf7c9287ebf74e64cfc2ae360139c8dd126b43cb1022f95addad8",
+        "sha256_in_prefix": "cf6c3bae5b4cf7c9287ebf74e64cfc2ae360139c8dd126b43cb1022f95addad8",
+        "size_in_bytes": 9781
+      },
+      {
+        "_path": "site-packages/pooch-1.7.0.dist-info/RECORD",
+        "path_type": "hardlink",
+        "sha256": "f04653281f93d5a411cecd15dc6dfee5e7625c5ba891b00605aef4931669fb9c",
+        "sha256_in_prefix": "f04653281f93d5a411cecd15dc6dfee5e7625c5ba891b00605aef4931669fb9c",
+        "size_in_bytes": 4283
+      },
+      {
+        "_path": "site-packages/pooch-1.7.0.dist-info/REQUESTED",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256_in_prefix": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "site-packages/pooch-1.7.0.dist-info/WHEEL",
+        "path_type": "hardlink",
+        "sha256": "a6472d658cd44b8018567e9d27eef7ebb389662bc5d9ef1103d6ff6418e27f5f",
+        "sha256_in_prefix": "a6472d658cd44b8018567e9d27eef7ebb389662bc5d9ef1103d6ff6418e27f5f",
+        "size_in_bytes": 92
+      },
+      {
+        "_path": "site-packages/pooch-1.7.0.dist-info/direct_url.json",
+        "path_type": "hardlink",
+        "sha256": "f44b3bdb9f211ccb88f6c3ed2ffe2ca4d721427528e08da5dae5de1b2ea7573b",
+        "sha256_in_prefix": "f44b3bdb9f211ccb88f6c3ed2ffe2ca4d721427528e08da5dae5de1b2ea7573b",
+        "size_in_bytes": 101
+      },
+      {
+        "_path": "site-packages/pooch-1.7.0.dist-info/top_level.txt",
+        "path_type": "hardlink",
+        "sha256": "a1ba26e5554c46e6ec161146349a43e26004900541a846bec52550e6ec4d3505",
+        "sha256_in_prefix": "a1ba26e5554c46e6ec161146349a43e26004900541a846bec52550e6ec4d3505",
+        "size_in_bytes": 6
+      },
+      {
+        "_path": "site-packages/pooch-1.7.0.dist-info/zip-safe",
+        "path_type": "hardlink",
+        "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        "sha256_in_prefix": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        "size_in_bytes": 1
+      },
+      {
+        "_path": "site-packages/pooch/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "bb00b39e104e72e7baa7924485d210f2f7732c8827f43720c709870168d4a716",
+        "sha256_in_prefix": "bb00b39e104e72e7baa7924485d210f2f7732c8827f43720c709870168d4a716",
+        "size_in_bytes": 1882
+      },
+      {
+        "_path": "site-packages/pooch/_version.py",
+        "path_type": "hardlink",
+        "sha256": "c44b2a971d85eebad8bf7f8b9cf9a73dbfd23124b994aa2b5254498cdbd5d0ee",
+        "sha256_in_prefix": "c44b2a971d85eebad8bf7f8b9cf9a73dbfd23124b994aa2b5254498cdbd5d0ee",
+        "size_in_bytes": 160
+      },
+      {
+        "_path": "site-packages/pooch/core.py",
+        "path_type": "hardlink",
+        "sha256": "bab970ae7c8ea1c7c1012068e6c1c8bb3b3a33209f7e1e7130be101b4130ae64",
+        "sha256_in_prefix": "bab970ae7c8ea1c7c1012068e6c1c8bb3b3a33209f7e1e7130be101b4130ae64",
+        "size_in_bytes": 32234
+      },
+      {
+        "_path": "site-packages/pooch/downloaders.py",
+        "path_type": "hardlink",
+        "sha256": "ef96cbf3569bbc920bce9bf764fec8d925dd852f4b4c9fe1be8706cca53468a8",
+        "sha256_in_prefix": "ef96cbf3569bbc920bce9bf764fec8d925dd852f4b4c9fe1be8706cca53468a8",
+        "size_in_bytes": 37048
+      },
+      {
+        "_path": "site-packages/pooch/hashes.py",
+        "path_type": "hardlink",
+        "sha256": "c4578ef74ee0790b06995fb655e1373289ade1a77e0b925853331dd3bfb9505b",
+        "sha256_in_prefix": "c4578ef74ee0790b06995fb655e1373289ade1a77e0b925853331dd3bfb9505b",
+        "size_in_bytes": 6783
+      },
+      {
+        "_path": "site-packages/pooch/processors.py",
+        "path_type": "hardlink",
+        "sha256": "79d5b728095525fc8b3c5d791a87f1cdc141a304dc8772cc4ba0b7d22908f911",
+        "sha256_in_prefix": "79d5b728095525fc8b3c5d791a87f1cdc141a304dc8772cc4ba0b7d22908f911",
+        "size_in_bytes": 14493
+      },
+      {
+        "_path": "site-packages/pooch/tests/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "3267491c52f387b940776d0fc45f58121119050e5d5fbb19f08c5a38108d777c",
+        "sha256_in_prefix": "3267491c52f387b940776d0fc45f58121119050e5d5fbb19f08c5a38108d777c",
+        "size_in_bytes": 225
+      },
+      {
+        "_path": "site-packages/pooch/tests/data/large-data.txt",
+        "path_type": "hardlink",
+        "sha256": "98de171fb320da82982e6bf0f3994189fff4b42b23328769afce12bdd340444a",
+        "sha256_in_prefix": "98de171fb320da82982e6bf0f3994189fff4b42b23328769afce12bdd340444a",
+        "size_in_bytes": 102077
+      },
+      {
+        "_path": "site-packages/pooch/tests/data/registry-custom-url.txt",
+        "path_type": "hardlink",
+        "sha256": "426c19aebe552f85ff39e0f2fa74356cf70aa38519c809e34566fa30c653b0f7",
+        "sha256_in_prefix": "426c19aebe552f85ff39e0f2fa74356cf70aa38519c809e34566fa30c653b0f7",
+        "size_in_bytes": 838
+      },
+      {
+        "_path": "site-packages/pooch/tests/data/registry-invalid.txt",
+        "path_type": "hardlink",
+        "sha256": "44d3c7ca1edb427d2b09360aeb21d8066ea3a275d98454fa82101ee9ccc04073",
+        "sha256_in_prefix": "44d3c7ca1edb427d2b09360aeb21d8066ea3a275d98454fa82101ee9ccc04073",
+        "size_in_bytes": 136
+      },
+      {
+        "_path": "site-packages/pooch/tests/data/registry-spaces.txt",
+        "path_type": "hardlink",
+        "sha256": "024d5f0c546af8b272ac241b54cbde41153e7e6bda09858d953e4f93b21c81a4",
+        "sha256_in_prefix": "024d5f0c546af8b272ac241b54cbde41153e7e6bda09858d953e4f93b21c81a4",
+        "size_in_bytes": 177
+      },
+      {
+        "_path": "site-packages/pooch/tests/data/registry.txt",
+        "path_type": "hardlink",
+        "sha256": "700629ad582327027ee10942da5e71b5d80be9736f1fbfbe25de8e8c69096f95",
+        "sha256_in_prefix": "700629ad582327027ee10942da5e71b5d80be9736f1fbfbe25de8e8c69096f95",
+        "size_in_bytes": 808
+      },
+      {
+        "_path": "site-packages/pooch/tests/data/registry_comments.txt",
+        "path_type": "hardlink",
+        "sha256": "19d00bdb48756da06ebf627d4d0b5b0539b7f32b3f684a23afb970bfbf1b8ea1",
+        "sha256_in_prefix": "19d00bdb48756da06ebf627d4d0b5b0539b7f32b3f684a23afb970bfbf1b8ea1",
+        "size_in_bytes": 855
+      },
+      {
+        "_path": "site-packages/pooch/tests/data/store.tar.gz",
+        "path_type": "hardlink",
+        "sha256": "088c7f4e0f1859b1c769bb6065de24376f366374817ede8691a6ac2e49f29511",
+        "sha256_in_prefix": "088c7f4e0f1859b1c769bb6065de24376f366374817ede8691a6ac2e49f29511",
+        "size_in_bytes": 243
+      },
+      {
+        "_path": "site-packages/pooch/tests/data/store.zip",
+        "path_type": "hardlink",
+        "sha256": "0498d2a001e71051bbd2acd2346f38da7cbd345a633cb7bf0f8a20938714b51a",
+        "sha256_in_prefix": "0498d2a001e71051bbd2acd2346f38da7cbd345a633cb7bf0f8a20938714b51a",
+        "size_in_bytes": 780
+      },
+      {
+        "_path": "site-packages/pooch/tests/data/store/subdir/tiny-data.txt",
+        "path_type": "hardlink",
+        "sha256": "baee0894dba14b12085eacb204284b97e362f4f3e5a5807693cc90ef415c1b2d",
+        "sha256_in_prefix": "baee0894dba14b12085eacb204284b97e362f4f3e5a5807693cc90ef415c1b2d",
+        "size_in_bytes": 59
+      },
+      {
+        "_path": "site-packages/pooch/tests/data/store/tiny-data.txt",
+        "path_type": "hardlink",
+        "sha256": "baee0894dba14b12085eacb204284b97e362f4f3e5a5807693cc90ef415c1b2d",
+        "sha256_in_prefix": "baee0894dba14b12085eacb204284b97e362f4f3e5a5807693cc90ef415c1b2d",
+        "size_in_bytes": 59
+      },
+      {
+        "_path": "site-packages/pooch/tests/data/tiny-data.tar.gz",
+        "path_type": "hardlink",
+        "sha256": "41503f083814f43a01a8e9a30c28d7a9fe96839a99727a7fdd0acf7cd5bab63b",
+        "sha256_in_prefix": "41503f083814f43a01a8e9a30c28d7a9fe96839a99727a7fdd0acf7cd5bab63b",
+        "size_in_bytes": 176
+      },
+      {
+        "_path": "site-packages/pooch/tests/data/tiny-data.txt",
+        "path_type": "hardlink",
+        "sha256": "baee0894dba14b12085eacb204284b97e362f4f3e5a5807693cc90ef415c1b2d",
+        "sha256_in_prefix": "baee0894dba14b12085eacb204284b97e362f4f3e5a5807693cc90ef415c1b2d",
+        "size_in_bytes": 59
+      },
+      {
+        "_path": "site-packages/pooch/tests/data/tiny-data.txt.bz2",
+        "path_type": "hardlink",
+        "sha256": "753663687a4040c90c8578061867d1df623e6aa8011c870a5dbd88ee3c82e306",
+        "sha256_in_prefix": "753663687a4040c90c8578061867d1df623e6aa8011c870a5dbd88ee3c82e306",
+        "size_in_bytes": 91
+      },
+      {
+        "_path": "site-packages/pooch/tests/data/tiny-data.txt.gz",
+        "path_type": "hardlink",
+        "sha256": "2e2da6161291657617c32192dba95635706af80c6e7335750812907b58fd4b52",
+        "sha256_in_prefix": "2e2da6161291657617c32192dba95635706af80c6e7335750812907b58fd4b52",
+        "size_in_bytes": 91
+      },
+      {
+        "_path": "site-packages/pooch/tests/data/tiny-data.txt.xz",
+        "path_type": "hardlink",
+        "sha256": "99dcb5c32a6e916344bacb4badcbc2f2b6ee196977d1d8187610c21e7e607765",
+        "sha256_in_prefix": "99dcb5c32a6e916344bacb4badcbc2f2b6ee196977d1d8187610c21e7e607765",
+        "size_in_bytes": 116
+      },
+      {
+        "_path": "site-packages/pooch/tests/data/tiny-data.zip",
+        "path_type": "hardlink",
+        "sha256": "0d49e94f07bc1866ec57e7fd1b93a351fba36842ec9b13dd50bf94e8dfa35cbb",
+        "sha256_in_prefix": "0d49e94f07bc1866ec57e7fd1b93a351fba36842ec9b13dd50bf94e8dfa35cbb",
+        "size_in_bytes": 235
+      },
+      {
+        "_path": "site-packages/pooch/tests/test_core.py",
+        "path_type": "hardlink",
+        "sha256": "dcbd11cd6b2088460e6015bbbf108feda9446071373f4b76626d47c8080f0ed4",
+        "sha256_in_prefix": "dcbd11cd6b2088460e6015bbbf108feda9446071373f4b76626d47c8080f0ed4",
+        "size_in_bytes": 26439
+      },
+      {
+        "_path": "site-packages/pooch/tests/test_downloaders.py",
+        "path_type": "hardlink",
+        "sha256": "47ea6847ceda8b64f34b78725f7e930144aa6a8d3071f0f7790fb4102a78de65",
+        "sha256_in_prefix": "47ea6847ceda8b64f34b78725f7e930144aa6a8d3071f0f7790fb4102a78de65",
+        "size_in_bytes": 13681
+      },
+      {
+        "_path": "site-packages/pooch/tests/test_hashes.py",
+        "path_type": "hardlink",
+        "sha256": "a89583246c8dcb8eeee5984f268132f26f8f7790cef7977986eab2c375e72b6d",
+        "sha256_in_prefix": "a89583246c8dcb8eeee5984f268132f26f8f7790cef7977986eab2c375e72b6d",
+        "size_in_bytes": 7192
+      },
+      {
+        "_path": "site-packages/pooch/tests/test_integration.py",
+        "path_type": "hardlink",
+        "sha256": "a74653532644cbd46baee122e3aac4c05be4bce5775453d0ff28b8f53e070a51",
+        "sha256_in_prefix": "a74653532644cbd46baee122e3aac4c05be4bce5775453d0ff28b8f53e070a51",
+        "size_in_bytes": 1668
+      },
+      {
+        "_path": "site-packages/pooch/tests/test_processors.py",
+        "path_type": "hardlink",
+        "sha256": "bb3736b90eccc90f3cf9985644edd0ec7f8ee8c4d4d64e1cfc3aadeab23a48b0",
+        "sha256_in_prefix": "bb3736b90eccc90f3cf9985644edd0ec7f8ee8c4d4d64e1cfc3aadeab23a48b0",
+        "size_in_bytes": 10066
+      },
+      {
+        "_path": "site-packages/pooch/tests/test_utils.py",
+        "path_type": "hardlink",
+        "sha256": "473851a40c433809a478a23bfd36b21e9ce382bbaca2c208e13a1a299d5655c5",
+        "sha256_in_prefix": "473851a40c433809a478a23bfd36b21e9ce382bbaca2c208e13a1a299d5655c5",
+        "size_in_bytes": 6380
+      },
+      {
+        "_path": "site-packages/pooch/tests/test_version.py",
+        "path_type": "hardlink",
+        "sha256": "455c373295b0e8fea3075029d92871eb8cc4b356ba3413f6711153d3ded70f2f",
+        "sha256_in_prefix": "455c373295b0e8fea3075029d92871eb8cc4b356ba3413f6711153d3ded70f2f",
+        "size_in_bytes": 545
+      },
+      {
+        "_path": "site-packages/pooch/tests/utils.py",
+        "path_type": "hardlink",
+        "sha256": "706389509a39b73f59b739824cac3046438139c29d412dbc6c1187861c0eea24",
+        "sha256_in_prefix": "706389509a39b73f59b739824cac3046438139c29d412dbc6c1187861c0eea24",
+        "size_in_bytes": 6748
+      },
+      {
+        "_path": "site-packages/pooch/utils.py",
+        "path_type": "hardlink",
+        "sha256": "8bf2bde1ebc20c9058b5f373c0c9a9efab150758017e4c658357d632c440b285",
+        "sha256_in_prefix": "8bf2bde1ebc20c9058b5f373c0c9a9efab150758017e4c658357d632c440b285",
+        "size_in_bytes": 10505
+      },
+      {
+        "_path": "lib/python3.10/site-packages/pooch/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/pooch/__pycache__/_version.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/pooch/__pycache__/core.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/pooch/__pycache__/downloaders.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/pooch/__pycache__/hashes.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/pooch/__pycache__/processors.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/pooch/tests/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/pooch/tests/__pycache__/test_core.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/pooch/tests/__pycache__/test_downloaders.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/pooch/tests/__pycache__/test_hashes.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/pooch/tests/__pycache__/test_integration.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/pooch/tests/__pycache__/test_processors.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/pooch/tests/__pycache__/test_utils.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/pooch/tests/__pycache__/test_version.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/pooch/tests/__pycache__/utils.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/pooch/__pycache__/utils.cpython-310.pyc",
+        "path_type": "pyc_file"
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "pooch",
+  "sha256": "64e4d633803df2e36fd141d9bf269568fbe179a313248e1dac4d364c02debdef",
+  "size": 50857,
+  "subdir": "noarch",
+  "timestamp": 1679580483278,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/noarch/pooch-1.7.0-pyha770c72_3.conda",
+  "version": "1.7.0"
+}

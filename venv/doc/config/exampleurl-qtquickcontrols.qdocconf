@@ -1,0 +1,1 @@
+url.examples = "https://code.qt.io/cgit/qt/qtquickcontrols.git/tree/examples/\1?h=$QT_VER"

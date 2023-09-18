@@ -1,0 +1,553 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>FreeType Fonts: Cairo: A Vector Graphics Library</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<link rel="home" href="index.html" title="Cairo: A Vector Graphics Library">
+<link rel="up" href="cairo-fonts.html" title="Fonts">
+<link rel="prev" href="cairo-cairo-font-options-t.html" title="cairo_font_options_t">
+<link rel="next" href="cairo-Win32-Fonts.html" title="Win32 Fonts">
+<meta name="generator" content="GTK-Doc V1.27 (XML mode)">
+<link rel="stylesheet" href="style.css" type="text/css">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<table class="navigation" id="top" width="100%" summary="Navigation header" cellpadding="2" cellspacing="5"><tr valign="middle">
+<td width="100%" align="left" class="shortcuts">
+<a href="#" class="shortcut">Top</a><span id="nav_description">  <span class="dim">|</span> 
+                  <a href="#cairo-FreeType-Fonts.description" class="shortcut">Description</a></span>
+</td>
+<td><a accesskey="h" href="index.html"><img src="home.png" width="16" height="16" border="0" alt="Home"></a></td>
+<td><a accesskey="u" href="cairo-fonts.html"><img src="up.png" width="16" height="16" border="0" alt="Up"></a></td>
+<td><a accesskey="p" href="cairo-cairo-font-options-t.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
+<td><a accesskey="n" href="cairo-Win32-Fonts.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
+</tr></table>
+<div class="refentry">
+<a name="cairo-FreeType-Fonts"></a><div class="titlepage"></div>
+<div class="refnamediv"><table width="100%"><tr>
+<td valign="top">
+<h2><span class="refentrytitle"><a name="cairo-FreeType-Fonts.top_of_page"></a>FreeType Fonts</span></h2>
+<p>FreeType Fonts — Font support for FreeType</p>
+</td>
+<td class="gallery_image" valign="top" align="right"></td>
+</tr></table></div>
+<div class="refsect1">
+<a name="cairo-FreeType-Fonts.functions"></a><h2>Functions</h2>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="functions_return">
+<col class="functions_name">
+</colgroup>
+<tbody>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-cairo-font-face-t.html#cairo-font-face-t" title="cairo_font_face_t"><span class="returnvalue">cairo_font_face_t</span></a> *
+</td>
+<td class="function_name">
+<a class="link" href="cairo-FreeType-Fonts.html#cairo-ft-font-face-create-for-ft-face" title="cairo_ft_font_face_create_for_ft_face ()">cairo_ft_font_face_create_for_ft_face</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-cairo-font-face-t.html#cairo-font-face-t" title="cairo_font_face_t"><span class="returnvalue">cairo_font_face_t</span></a> *
+</td>
+<td class="function_name">
+<a class="link" href="cairo-FreeType-Fonts.html#cairo-ft-font-face-create-for-pattern" title="cairo_ft_font_face_create_for_pattern ()">cairo_ft_font_face_create_for_pattern</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-FreeType-Fonts.html#cairo-ft-font-options-substitute" title="cairo_ft_font_options_substitute ()">cairo_ft_font_options_substitute</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">FT_Face</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-FreeType-Fonts.html#cairo-ft-scaled-font-lock-face" title="cairo_ft_scaled_font_lock_face ()">cairo_ft_scaled_font_lock_face</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-FreeType-Fonts.html#cairo-ft-scaled-font-unlock-face" title="cairo_ft_scaled_font_unlock_face ()">cairo_ft_scaled_font_unlock_face</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">unsigned <span class="returnvalue">int</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-FreeType-Fonts.html#cairo-ft-font-face-get-synthesize" title="cairo_ft_font_face_get_synthesize ()">cairo_ft_font_face_get_synthesize</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-FreeType-Fonts.html#cairo-ft-font-face-set-synthesize" title="cairo_ft_font_face_set_synthesize ()">cairo_ft_font_face_set_synthesize</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-FreeType-Fonts.html#cairo-ft-font-face-unset-synthesize" title="cairo_ft_font_face_unset_synthesize ()">cairo_ft_font_face_unset_synthesize</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect1">
+<a name="cairo-FreeType-Fonts.other"></a><h2>Types and Values</h2>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="name">
+<col class="description">
+</colgroup>
+<tbody>
+<tr>
+<td class="define_keyword">#define</td>
+<td class="function_name"><a class="link" href="cairo-FreeType-Fonts.html#CAIRO-HAS-FT-FONT:CAPS" title="CAIRO_HAS_FT_FONT">CAIRO_HAS_FT_FONT</a></td>
+</tr>
+<tr>
+<td class="define_keyword">#define</td>
+<td class="function_name"><a class="link" href="cairo-FreeType-Fonts.html#CAIRO-HAS-FC-FONT:CAPS" title="CAIRO_HAS_FC_FONT">CAIRO_HAS_FC_FONT</a></td>
+</tr>
+<tr>
+<td class="datatype_keyword">enum</td>
+<td class="function_name"><a class="link" href="cairo-FreeType-Fonts.html#cairo-ft-synthesize-t" title="enum cairo_ft_synthesize_t">cairo_ft_synthesize_t</a></td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect1">
+<a name="cairo-FreeType-Fonts.description"></a><h2>Description</h2>
+<p>The FreeType font backend is primarily used to render text on GNU/Linux
+systems, but can be used on other platforms too.</p>
+</div>
+<div class="refsect1">
+<a name="cairo-FreeType-Fonts.functions_details"></a><h2>Functions</h2>
+<div class="refsect2">
+<a name="cairo-ft-font-face-create-for-ft-face"></a><h3>cairo_ft_font_face_create_for_ft_face ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-cairo-font-face-t.html#cairo-font-face-t" title="cairo_font_face_t"><span class="returnvalue">cairo_font_face_t</span></a> *
+cairo_ft_font_face_create_for_ft_face (<em class="parameter"><code><span class="type">FT_Face</span> face</code></em>,
+                                       <em class="parameter"><code><span class="type">int</span> load_flags</code></em>);</pre>
+<p>Creates a new font face for the FreeType font backend from a
+pre-opened FreeType face. This font can then be used with
+<a class="link" href="cairo-text.html#cairo-set-font-face" title="cairo_set_font_face ()"><code class="function">cairo_set_font_face()</code></a> or <a class="link" href="cairo-cairo-scaled-font-t.html#cairo-scaled-font-create" title="cairo_scaled_font_create ()"><code class="function">cairo_scaled_font_create()</code></a>. The
+<a class="link" href="cairo-cairo-scaled-font-t.html#cairo-scaled-font-t" title="cairo_scaled_font_t"><span class="type">cairo_scaled_font_t</span></a> returned from <a class="link" href="cairo-cairo-scaled-font-t.html#cairo-scaled-font-create" title="cairo_scaled_font_create ()"><code class="function">cairo_scaled_font_create()</code></a> is
+also for the FreeType backend and can be used with functions such
+as <a class="link" href="cairo-FreeType-Fonts.html#cairo-ft-scaled-font-lock-face" title="cairo_ft_scaled_font_lock_face ()"><code class="function">cairo_ft_scaled_font_lock_face()</code></a>. Note that Cairo may keep a reference
+to the FT_Face alive in a font-cache and the exact lifetime of the reference
+depends highly upon the exact usage pattern and is subject to external
+factors. You must not call <code class="function">FT_Done_Face()</code> before the last reference to the
+<a class="link" href="cairo-cairo-font-face-t.html#cairo-font-face-t" title="cairo_font_face_t"><span class="type">cairo_font_face_t</span></a> has been dropped.</p>
+<p>As an example, below is how one might correctly couple the lifetime of
+the FreeType face object to the <a class="link" href="cairo-cairo-font-face-t.html#cairo-font-face-t" title="cairo_font_face_t"><span class="type">cairo_font_face_t</span></a>.</p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc kwb">static const</span> cairo_user_data_key_t key<span class="gtkdoc opt">;</span>
+
+font_face <span class="gtkdoc opt">=</span> <span class="function"><a href="cairo-FreeType-Fonts.html#cairo-ft-font-face-create-for-ft-face">cairo_ft_font_face_create_for_ft_face</a></span> <span class="gtkdoc opt">(</span>ft_face<span class="gtkdoc opt">,</span> <span class="number">0</span><span class="gtkdoc opt">);</span>
+status <span class="gtkdoc opt">=</span> <span class="function"><a href="cairo-cairo-font-face-t.html#cairo-font-face-set-user-data">cairo_font_face_set_user_data</a></span> <span class="gtkdoc opt">(</span>font_face<span class="gtkdoc opt">, &amp;</span>key<span class="gtkdoc opt">,</span>
+                               ft_face<span class="gtkdoc opt">, (</span>cairo_destroy_func_t<span class="gtkdoc opt">)</span> FT_Done_Face<span class="gtkdoc opt">);</span>
+<span class="keyword">if</span> <span class="gtkdoc opt">(</span>status<span class="gtkdoc opt">) {</span>
+   <span class="function"><a href="cairo-cairo-font-face-t.html#cairo-font-face-destroy">cairo_font_face_destroy</a></span> <span class="gtkdoc opt">(</span>font_face<span class="gtkdoc opt">);</span>
+   <span class="function">FT_Done_Face</span> <span class="gtkdoc opt">(</span>ft_face<span class="gtkdoc opt">);</span>
+   <span class="keyword">return</span> ERROR<span class="gtkdoc opt">;</span>
+<span class="gtkdoc opt">}</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="refsect3">
+<a name="cairo-ft-font-face-create-for-ft-face.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>face</p></td>
+<td class="parameter_description"><p>A FreeType face object, already opened. This must
+be kept around until the face's ref_count drops to
+zero and it is freed. Since the face may be referenced
+internally to Cairo, the best way to determine when it
+is safe to free the face is to pass a
+<a class="link" href="cairo-Types.html#cairo-destroy-func-t" title="cairo_destroy_func_t ()"><span class="type">cairo_destroy_func_t</span></a> to <a class="link" href="cairo-cairo-font-face-t.html#cairo-font-face-set-user-data" title="cairo_font_face_set_user_data ()"><code class="function">cairo_font_face_set_user_data()</code></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>load_flags</p></td>
+<td class="parameter_description"><p>flags to pass to FT_Load_Glyph when loading
+glyphs from the font. These flags are OR'ed together with
+the flags derived from the <a class="link" href="cairo-cairo-font-options-t.html#cairo-font-options-t" title="cairo_font_options_t"><span class="type">cairo_font_options_t</span></a> passed
+to <a class="link" href="cairo-cairo-scaled-font-t.html#cairo-scaled-font-create" title="cairo_scaled_font_create ()"><code class="function">cairo_scaled_font_create()</code></a>, so only a few values such
+as <code class="literal">FT_LOAD_VERTICAL_LAYOUT</code>, and <code class="literal">FT_LOAD_FORCE_AUTOHINT</code>
+are useful. You should not pass any of the flags affecting
+the load target, such as <code class="literal">FT_LOAD_TARGET_LIGHT</code>.</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-ft-font-face-create-for-ft-face.returns"></a><h4>Returns</h4>
+<p> a newly created <a class="link" href="cairo-cairo-font-face-t.html#cairo-font-face-t" title="cairo_font_face_t"><span class="type">cairo_font_face_t</span></a>. Free with
+<a class="link" href="cairo-cairo-font-face-t.html#cairo-font-face-destroy" title="cairo_font_face_destroy ()"><code class="function">cairo_font_face_destroy()</code></a> when you are done using it.</p>
+</div>
+<p class="since">Since: 1.0</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-ft-font-face-create-for-pattern"></a><h3>cairo_ft_font_face_create_for_pattern ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-cairo-font-face-t.html#cairo-font-face-t" title="cairo_font_face_t"><span class="returnvalue">cairo_font_face_t</span></a> *
+cairo_ft_font_face_create_for_pattern (<em class="parameter"><code><span class="type">FcPattern</span> *pattern</code></em>);</pre>
+<p>Creates a new font face for the FreeType font backend based on a
+fontconfig pattern. This font can then be used with
+<a class="link" href="cairo-text.html#cairo-set-font-face" title="cairo_set_font_face ()"><code class="function">cairo_set_font_face()</code></a> or <a class="link" href="cairo-cairo-scaled-font-t.html#cairo-scaled-font-create" title="cairo_scaled_font_create ()"><code class="function">cairo_scaled_font_create()</code></a>. The
+<a class="link" href="cairo-cairo-scaled-font-t.html#cairo-scaled-font-t" title="cairo_scaled_font_t"><span class="type">cairo_scaled_font_t</span></a> returned from <a class="link" href="cairo-cairo-scaled-font-t.html#cairo-scaled-font-create" title="cairo_scaled_font_create ()"><code class="function">cairo_scaled_font_create()</code></a> is
+also for the FreeType backend and can be used with functions such
+as <a class="link" href="cairo-FreeType-Fonts.html#cairo-ft-scaled-font-lock-face" title="cairo_ft_scaled_font_lock_face ()"><code class="function">cairo_ft_scaled_font_lock_face()</code></a>.</p>
+<p>Font rendering options are represented both here and when you
+call <a class="link" href="cairo-cairo-scaled-font-t.html#cairo-scaled-font-create" title="cairo_scaled_font_create ()"><code class="function">cairo_scaled_font_create()</code></a>. Font options that have a representation
+in a <span class="type">FcPattern</span> must be passed in here; to modify <span class="type">FcPattern</span>
+appropriately to reflect the options in a <a class="link" href="cairo-cairo-font-options-t.html#cairo-font-options-t" title="cairo_font_options_t"><span class="type">cairo_font_options_t</span></a>, call
+<a class="link" href="cairo-FreeType-Fonts.html#cairo-ft-font-options-substitute" title="cairo_ft_font_options_substitute ()"><code class="function">cairo_ft_font_options_substitute()</code></a>.</p>
+<p>The pattern's FC_FT_FACE element is inspected first and if that is set,
+that will be the FreeType font face associated with the returned cairo
+font face.  Otherwise the FC_FILE element is checked.  If it's set,
+that and the value of the FC_INDEX element (defaults to zero) of <em class="parameter"><code>pattern</code></em>
+
+are used to load a font face from file.</p>
+<p>If both steps from the previous paragraph fails, <em class="parameter"><code>pattern</code></em>
+ will be passed
+to FcConfigSubstitute, FcDefaultSubstitute, and finally FcFontMatch,
+and the resulting font pattern is used.</p>
+<p>If the FC_FT_FACE element of <em class="parameter"><code>pattern</code></em>
+ is set, the user is responsible
+for making sure that the referenced FT_Face remains valid for the life
+time of the returned <a class="link" href="cairo-cairo-font-face-t.html#cairo-font-face-t" title="cairo_font_face_t"><span class="type">cairo_font_face_t</span></a>.  See
+<a class="link" href="cairo-FreeType-Fonts.html#cairo-ft-font-face-create-for-ft-face" title="cairo_ft_font_face_create_for_ft_face ()"><code class="function">cairo_ft_font_face_create_for_ft_face()</code></a> for an example of how to couple
+the life time of the FT_Face to that of the cairo font-face.</p>
+<div class="refsect3">
+<a name="cairo-ft-font-face-create-for-pattern.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>pattern</p></td>
+<td class="parameter_description"><p>A fontconfig pattern.  Cairo makes a copy of the pattern
+if it needs to.  You are free to modify or free <em class="parameter"><code>pattern</code></em>
+after this call.</p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-ft-font-face-create-for-pattern.returns"></a><h4>Returns</h4>
+<p> a newly created <a class="link" href="cairo-cairo-font-face-t.html#cairo-font-face-t" title="cairo_font_face_t"><span class="type">cairo_font_face_t</span></a>. Free with
+<a class="link" href="cairo-cairo-font-face-t.html#cairo-font-face-destroy" title="cairo_font_face_destroy ()"><code class="function">cairo_font_face_destroy()</code></a> when you are done using it.</p>
+</div>
+<p class="since">Since: 1.0</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-ft-font-options-substitute"></a><h3>cairo_ft_font_options_substitute ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_ft_font_options_substitute (<em class="parameter"><code>const <a class="link" href="cairo-cairo-font-options-t.html#cairo-font-options-t" title="cairo_font_options_t"><span class="type">cairo_font_options_t</span></a> *options</code></em>,
+                                  <em class="parameter"><code><span class="type">FcPattern</span> *pattern</code></em>);</pre>
+<p>Add options to a <span class="type">FcPattern</span> based on a <a class="link" href="cairo-cairo-font-options-t.html#cairo-font-options-t" title="cairo_font_options_t"><span class="type">cairo_font_options_t</span></a> font
+options object. Options that are already in the pattern, are not overridden,
+so you should call this function after calling <code class="function">FcConfigSubstitute()</code> (the
+user's settings should override options based on the surface type), but
+before calling <code class="function">FcDefaultSubstitute()</code>.</p>
+<div class="refsect3">
+<a name="cairo-ft-font-options-substitute.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>options</p></td>
+<td class="parameter_description"><p>a <a class="link" href="cairo-cairo-font-options-t.html#cairo-font-options-t" title="cairo_font_options_t"><span class="type">cairo_font_options_t</span></a> object</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>pattern</p></td>
+<td class="parameter_description"><p>an existing <span class="type">FcPattern</span></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.0</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-ft-scaled-font-lock-face"></a><h3>cairo_ft_scaled_font_lock_face ()</h3>
+<pre class="programlisting"><span class="returnvalue">FT_Face</span>
+cairo_ft_scaled_font_lock_face (<em class="parameter"><code><a class="link" href="cairo-cairo-scaled-font-t.html#cairo-scaled-font-t" title="cairo_scaled_font_t"><span class="type">cairo_scaled_font_t</span></a> *scaled_font</code></em>);</pre>
+<p>cairo_ft_scaled_font_lock_face() gets the <span class="type">FT_Face</span> object from a FreeType
+backend font and scales it appropriately for the font and applies OpenType
+font variations if applicable. You must
+release the face with <a class="link" href="cairo-FreeType-Fonts.html#cairo-ft-scaled-font-unlock-face" title="cairo_ft_scaled_font_unlock_face ()"><code class="function">cairo_ft_scaled_font_unlock_face()</code></a>
+when you are done using it.  Since the <span class="type">FT_Face</span> object can be
+shared between multiple <a class="link" href="cairo-cairo-scaled-font-t.html#cairo-scaled-font-t" title="cairo_scaled_font_t"><span class="type">cairo_scaled_font_t</span></a> objects, you must not
+lock any other font objects until you unlock this one. A count is
+kept of the number of times <a class="link" href="cairo-FreeType-Fonts.html#cairo-ft-scaled-font-lock-face" title="cairo_ft_scaled_font_lock_face ()"><code class="function">cairo_ft_scaled_font_lock_face()</code></a> is
+called. <a class="link" href="cairo-FreeType-Fonts.html#cairo-ft-scaled-font-unlock-face" title="cairo_ft_scaled_font_unlock_face ()"><code class="function">cairo_ft_scaled_font_unlock_face()</code></a> must be called the same number
+of times.</p>
+<p>You must be careful when using this function in a library or in a
+threaded application, because freetype's design makes it unsafe to
+call freetype functions simultaneously from multiple threads, (even
+if using distinct FT_Face objects). Because of this, application
+code that acquires an FT_Face object with this call must add its
+own locking to protect any use of that object, (and which also must
+protect any other calls into cairo as almost any cairo function
+might result in a call into the freetype library).</p>
+<div class="refsect3">
+<a name="cairo-ft-scaled-font-lock-face.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>scaled_font</p></td>
+<td class="parameter_description"><p>A <a class="link" href="cairo-cairo-scaled-font-t.html#cairo-scaled-font-t" title="cairo_scaled_font_t"><span class="type">cairo_scaled_font_t</span></a> from the FreeType font backend. Such an
+object can be created by calling <a class="link" href="cairo-cairo-scaled-font-t.html#cairo-scaled-font-create" title="cairo_scaled_font_create ()"><code class="function">cairo_scaled_font_create()</code></a> on a
+FreeType backend font face (see <a class="link" href="cairo-FreeType-Fonts.html#cairo-ft-font-face-create-for-pattern" title="cairo_ft_font_face_create_for_pattern ()"><code class="function">cairo_ft_font_face_create_for_pattern()</code></a>,
+<a class="link" href="cairo-FreeType-Fonts.html#cairo-ft-font-face-create-for-ft-face" title="cairo_ft_font_face_create_for_ft_face ()"><code class="function">cairo_ft_font_face_create_for_ft_face()</code></a>).</p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-ft-scaled-font-lock-face.returns"></a><h4>Returns</h4>
+<p> The <span class="type">FT_Face</span> object for <em class="parameter"><code>font</code></em>
+, scaled appropriately,
+or <a href="/usr/share/gtk-doc/html/glib/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if <em class="parameter"><code>scaled_font</code></em>
+is in an error state (see
+<a class="link" href="cairo-cairo-scaled-font-t.html#cairo-scaled-font-status" title="cairo_scaled_font_status ()"><code class="function">cairo_scaled_font_status()</code></a>) or there is insufficient memory.</p>
+</div>
+<p class="since">Since: 1.0</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-ft-scaled-font-unlock-face"></a><h3>cairo_ft_scaled_font_unlock_face ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_ft_scaled_font_unlock_face (<em class="parameter"><code><a class="link" href="cairo-cairo-scaled-font-t.html#cairo-scaled-font-t" title="cairo_scaled_font_t"><span class="type">cairo_scaled_font_t</span></a> *scaled_font</code></em>);</pre>
+<p>Releases a face obtained with <a class="link" href="cairo-FreeType-Fonts.html#cairo-ft-scaled-font-lock-face" title="cairo_ft_scaled_font_lock_face ()"><code class="function">cairo_ft_scaled_font_lock_face()</code></a>.</p>
+<div class="refsect3">
+<a name="cairo-ft-scaled-font-unlock-face.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>scaled_font</p></td>
+<td class="parameter_description"><p>A <a class="link" href="cairo-cairo-scaled-font-t.html#cairo-scaled-font-t" title="cairo_scaled_font_t"><span class="type">cairo_scaled_font_t</span></a> from the FreeType font backend. Such an
+object can be created by calling <a class="link" href="cairo-cairo-scaled-font-t.html#cairo-scaled-font-create" title="cairo_scaled_font_create ()"><code class="function">cairo_scaled_font_create()</code></a> on a
+FreeType backend font face (see <a class="link" href="cairo-FreeType-Fonts.html#cairo-ft-font-face-create-for-pattern" title="cairo_ft_font_face_create_for_pattern ()"><code class="function">cairo_ft_font_face_create_for_pattern()</code></a>,
+<a class="link" href="cairo-FreeType-Fonts.html#cairo-ft-font-face-create-for-ft-face" title="cairo_ft_font_face_create_for_ft_face ()"><code class="function">cairo_ft_font_face_create_for_ft_face()</code></a>).</p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.0</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-ft-font-face-get-synthesize"></a><h3>cairo_ft_font_face_get_synthesize ()</h3>
+<pre class="programlisting">unsigned <span class="returnvalue">int</span>
+cairo_ft_font_face_get_synthesize (<em class="parameter"><code><a class="link" href="cairo-cairo-font-face-t.html#cairo-font-face-t" title="cairo_font_face_t"><span class="type">cairo_font_face_t</span></a> *font_face</code></em>);</pre>
+<p>See <a class="link" href="cairo-FreeType-Fonts.html#cairo-ft-synthesize-t" title="enum cairo_ft_synthesize_t"><span class="type">cairo_ft_synthesize_t</span></a>.</p>
+<div class="refsect3">
+<a name="cairo-ft-font-face-get-synthesize.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>font_face</p></td>
+<td class="parameter_description"><p>The <span class="type">cairo_ft_font_face_t</span> object to query</p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-ft-font-face-get-synthesize.returns"></a><h4>Returns</h4>
+<p> the current set of synthesis options.</p>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-ft-font-face-set-synthesize"></a><h3>cairo_ft_font_face_set_synthesize ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_ft_font_face_set_synthesize (<em class="parameter"><code><a class="link" href="cairo-cairo-font-face-t.html#cairo-font-face-t" title="cairo_font_face_t"><span class="type">cairo_font_face_t</span></a> *font_face</code></em>,
+                                   <em class="parameter"><code>unsigned <span class="type">int</span> synth_flags</code></em>);</pre>
+<p>FreeType provides the ability to synthesize different glyphs from a base
+font, which is useful if you lack those glyphs from a true bold or oblique
+font. See also <a class="link" href="cairo-FreeType-Fonts.html#cairo-ft-synthesize-t" title="enum cairo_ft_synthesize_t"><span class="type">cairo_ft_synthesize_t</span></a>.</p>
+<div class="refsect3">
+<a name="cairo-ft-font-face-set-synthesize.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>font_face</p></td>
+<td class="parameter_description"><p>The <span class="type">cairo_ft_font_face_t</span> object to modify</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>synth_flags</p></td>
+<td class="parameter_description"><p>the set of synthesis options to enable</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-ft-font-face-unset-synthesize"></a><h3>cairo_ft_font_face_unset_synthesize ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_ft_font_face_unset_synthesize (<em class="parameter"><code><a class="link" href="cairo-cairo-font-face-t.html#cairo-font-face-t" title="cairo_font_face_t"><span class="type">cairo_font_face_t</span></a> *font_face</code></em>,
+                                     <em class="parameter"><code>unsigned <span class="type">int</span> synth_flags</code></em>);</pre>
+<p>See <a class="link" href="cairo-FreeType-Fonts.html#cairo-ft-font-face-set-synthesize" title="cairo_ft_font_face_set_synthesize ()"><code class="function">cairo_ft_font_face_set_synthesize()</code></a>.</p>
+<div class="refsect3">
+<a name="cairo-ft-font-face-unset-synthesize.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>font_face</p></td>
+<td class="parameter_description"><p>The <span class="type">cairo_ft_font_face_t</span> object to modify</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>synth_flags</p></td>
+<td class="parameter_description"><p>the set of synthesis options to disable</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+</div>
+<div class="refsect1">
+<a name="cairo-FreeType-Fonts.other_details"></a><h2>Types and Values</h2>
+<div class="refsect2">
+<a name="CAIRO-HAS-FT-FONT:CAPS"></a><h3>CAIRO_HAS_FT_FONT</h3>
+<pre class="programlisting">#define CAIRO_HAS_FT_FONT 1
+</pre>
+<p>Defined if the FreeType font backend is available.
+This macro can be used to conditionally compile backend-specific code.</p>
+<p class="since">Since: 1.0</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="CAIRO-HAS-FC-FONT:CAPS"></a><h3>CAIRO_HAS_FC_FONT</h3>
+<pre class="programlisting">#define CAIRO_HAS_FC_FONT 1
+</pre>
+<p>Defined if the Fontconfig-specific functions of the FreeType font backend
+are available.
+This macro can be used to conditionally compile backend-specific code.</p>
+<p class="since">Since: 1.10</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-ft-synthesize-t"></a><h3>enum cairo_ft_synthesize_t</h3>
+<p>A set of synthesis options to control how FreeType renders the glyphs
+for a particular font face.</p>
+<p>Individual synthesis features of a <span class="type">cairo_ft_font_face_t</span> can be set
+using <a class="link" href="cairo-FreeType-Fonts.html#cairo-ft-font-face-set-synthesize" title="cairo_ft_font_face_set_synthesize ()"><code class="function">cairo_ft_font_face_set_synthesize()</code></a>, or disabled using
+<a class="link" href="cairo-FreeType-Fonts.html#cairo-ft-font-face-unset-synthesize" title="cairo_ft_font_face_unset_synthesize ()"><code class="function">cairo_ft_font_face_unset_synthesize()</code></a>. The currently enabled set of
+synthesis options can be queried with <a class="link" href="cairo-FreeType-Fonts.html#cairo-ft-font-face-get-synthesize" title="cairo_ft_font_face_get_synthesize ()"><code class="function">cairo_ft_font_face_get_synthesize()</code></a>.</p>
+<p>Note: that when synthesizing glyphs, the font metrics returned will only
+be estimates.</p>
+<div class="refsect3">
+<a name="cairo-ft-synthesize-t.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="300px" class="enum_members_name">
+<col class="enum_members_description">
+<col width="200px" class="enum_members_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-FT-SYNTHESIZE-BOLD:CAPS"></a>CAIRO_FT_SYNTHESIZE_BOLD</p></td>
+<td class="enum_member_description">
+<p>Embolden the glyphs (redraw with a pixel offset)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-FT-SYNTHESIZE-OBLIQUE:CAPS"></a>CAIRO_FT_SYNTHESIZE_OBLIQUE</p></td>
+<td class="enum_member_description">
+<p>Slant the glyph outline by 12 degrees to the
+right.</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+</div>
+<div class="refsect1">
+<a name="cairo-FreeType-Fonts.see-also"></a><h2>See Also</h2>
+<p><a class="link" href="cairo-cairo-font-face-t.html#cairo-font-face-t" title="cairo_font_face_t"><span class="type">cairo_font_face_t</span></a></p>
+</div>
+</div>
+<div class="footer">
+<hr>Generated by GTK-Doc V1.27</div>
+</body>
+</html>

@@ -1,0 +1,10 @@
+module QtQuick.VirtualKeyboard
+plugin qtquickvirtualkeyboardplugin
+classname QtQuickVirtualKeyboardPlugin
+typeinfo plugins.qmltypes
+depends QtQuick 2.0
+depends QtQuick.Window 2.2
+depends QtQuick.Layouts 1.0
+depends Qt.labs.folderlistmodel 2.1
+depends QtQuick.VirtualKeyboard.Settings 2.2
+depends QtQuick.VirtualKeyboard.Styles 2.2

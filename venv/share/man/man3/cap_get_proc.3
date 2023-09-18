@@ -1,0 +1,418 @@
+.TH CAP_GET_PROC 3 "2022-04-28" "" "Linux Programmer's Manual"
+.SH NAME
+cap_get_proc, cap_set_proc, capgetp, cap_get_bound, cap_drop_bound, \
+cap_get_ambient, cap_set_ambient, cap_reset_ambient, \
+cap_get_secbits, cap_set_secbits, cap_get_mode, cap_set_mode, \
+cap_mode_name, cap_get_pid, cap_setuid, cap_prctl, cap_prctlw, cap_setgroups \
+\- capability manipulation on processes
+.SH SYNOPSIS
+.nf
+#include <sys/capability.h>
+
+cap_t cap_get_proc(void);
+int cap_set_proc(cap_t cap_p);
+
+int cap_get_bound(cap_value_t cap);
+CAP_IS_SUPPORTED(cap_value_t cap);
+
+int cap_drop_bound(cap_value_t cap);
+int cap_get_ambient(cap_value_t cap);
+int cap_set_ambient(cap_value_t cap, cap_flag_value_t value);
+int cap_reset_ambient(void);
+CAP_AMBIENT_SUPPORTED();
+
+unsigned cap_get_secbits(void);
+int cap_set_secbits(unsigned bits);
+cap_mode_t cap_get_mode(void);
+const char *cap_mode_name(cap_mode_t mode);
+int cap_prctl(long int pr_cmd, long int arg1, long int arg2,
+	      long int arg3, long int arg4, long int arg5);
+int cap_prctlw(long int pr_cmd, long int arg1, long int arg2,
+	       long int arg3, long int arg4, long int arg5);
+int cap_set_mode(cap_mode_t mode);
+
+#include <sys/types.h>
+
+cap_t cap_get_pid(pid_t pid);
+int cap_setuid(uid_t uid);
+int cap_setgroups(gid_t gid, size_t ngroups, const gid_t groups);
+.fi
+.sp
+Link with \fI\-lcap\fP.
+.SH DESCRIPTION
+.BR cap_get_proc ()
+allocates a capability state in working storage, sets its state to
+that of the calling process, and returns a pointer to this newly
+created capability state.  The caller should free any releasable
+memory, when the capability state in working storage is no longer
+required, by calling
+.BR cap_free ()
+with the
+.I cap_t
+as an argument.
+.PP
+.BR cap_set_proc ()
+sets the values for all capability flags for all capabilities to the
+capability state identified by
+.IR cap_p .
+The new capability state of the process will be completely determined by
+the contents of
+.I cap_p
+upon successful return from this function.  If any flag in
+.I cap_p
+is set for any capability not currently permitted for the calling process,
+the function will fail, and the capability state of the process will remain
+unchanged.
+.PP
+.BR cap_get_pid ()
+returns a
+.IR cap_t ,
+see 
+.BR cap_init (3),
+with the process capabilities of the process known to the caller as
+.IR pid .
+If
+.I pid
+is 0, then the calling process's capabilities are returned.
+This information can also be obtained from the
+.I /proc/<pid>/status
+file. (The entries in that file can be translated with the
+.BI "capsh \-\-decode=" XXX
+command line.) When the caller is operating within a
+.RB ( CLONE_NEWPID )
+namespace, the numerical
+.I pid
+argument is interpreted in the range of that namespace. As such, the
+caller's idea of the target
+.I pid
+may differ from that of the target process when they are operating in
+different pid namespaces. See
+.BR pid_namespaces (7)
+for details.
+Further, the returned
+.I cap_t
+value holds the capabilities that the target
+.I pid
+thinks it has. If the target is operating in a
+.RB ( CLONE_NEWUSER )
+namespace, the system wide privilege of those user namespace
+capabilities my be substantially reduced. See
+.BR user_namespaces (7)
+for details.
+.PP
+.BR cap_get_bound ()
+with a
+.I  cap
+as an argument returns the current value of this bounding set
+capability flag in effect for the calling process. This operation is
+unprivileged. Note, a macro function
+.BR "CAP_IS_SUPPORTED(cap_value_t " cap )
+is provided that evaluates to true (1) if the system supports the
+specified capability,
+.IR cap .
+If the system does not support the capability, this function returns
+0. This macro works by testing for an error condition with
+.BR cap_get_bound ().
+.PP
+.BR cap_drop_bound ()
+can be used to lower the specified bounding set capability,
+.BR cap .
+To complete successfully, the prevailing
+.I effective
+capability set must have a raised
+.BR CAP_SETPCAP .
+.PP
+.BR cap_get_ambient ()
+returns the prevailing value of the specified ambient capability, or
+-1 if the capability is not supported by the running kernel.  A macro
+.BR CAP_AMBIENT_SUPPORTED ()
+uses this function to determine if ambient capabilities are supported
+by the kernel.
+.PP
+.BR cap_set_ambient ()
+sets the specified ambient capability to a specific value. To complete
+successfully, the prevailing
+.I effective
+capability set must have a raised
+.BR CAP_SETPCAP .
+Further, to raise a specific ambient capability the
+.IR inheritable " and " permitted
+sets of the calling process must contain the specified capability, and
+raised ambient bits will only be retained as long as this remains true.
+.PP
+.BR cap_reset_ambient ()
+resets all of the ambient capabilities for the calling process to
+their lowered value. Note, the ambient set is intended to operate in a
+legacy environment where the application has limited awareness of
+capabilities in general. Executing a file, with associated filesystem
+capabilities, the kernel will implicitly reset the ambient set of the
+process. Further, changes to the inheritable set by the program code
+without explicitly fixing up the ambient set can also drop ambient
+bits.
+.PP
+.BR cap_get_secbits ()
+returns the securebits of the calling process. These bits affect the
+way in which the calling process implements things like setuid-root
+fixup and ambient capabilities.
+.PP
+.BR cap_set_secbits ()
+attempts to modify the securebits of the calling process. Note
+.B CAP_SETPCAP
+must be in the effective capability set for this to be effective. Some
+settings lock the sub-states of the securebits, so attempts to set values
+may be denied by the kernel even when the
+.B CAP_SETPCAP
+capability is raised.
+.PP
+To help manage the complexity of the securebits, libcap provides a
+combined securebit and capability set concept called a libcap mode.
+.BR cap_get_mode ()
+attempts to summarize the prevailing security environment in the form
+of a numerical
+.B cap_mode_t
+value. A text representation of the mode can be obtained via the
+.BR cap_mode_name ()
+function. The vast majority of combinations of these values are not well
+defined in terms of a libcap mode, and for these states
+.BR cap_get_mode ()
+returns
+.RB ( cap_mode_t )0
+which
+.BR cap_get_name ()
+identifies as
+.RI `` UNCERTAIN ''.
+Supported modes are:
+.BR CAP_MODE_NOPRIV ", " CAP_MODE_PURE1E_INIT " and " CAP_MODE_PURE1E .
+.PP
+.BR cap_prctl ()
+can be used to read state via the \fBprctl\fI()\fP system call.
+.PP
+.BR cap_prctlw ()
+can be used to write state via the \fBprctl\fI()\fP system call.
+.PP
+.BR cap_set_mode ()
+can be used to set the desired mode. The permitted capability
+.B CAP_SETPCAP
+is required for this function to succeed.
+.PP
+.BR cap_setuid ()
+is a convenience function for the
+.BR setuid (2)
+system call. Where
+.BR cap_setuid ()
+arranges for the right effective capability to be raised in order to
+perform the system call, and also arranges to preserve the
+availability of permitted capabilities after the uid has
+changed. Following this call all effective capabilities are lowered.
+.PP
+.BR cap_setgroups ()
+is a convenience function for performing both
+.BR setgid (2)
+and
+.BR setgroups (2)
+calls in one call. The
+.BR cap_setgroups ()
+call raises the right effective capability for the duration of the
+call, and empties the effective capability set before returning.
+.SH "RETURN VALUE"
+The functions
+.BR cap_get_proc ()
+and
+.BR cap_get_pid ()
+return a non-NULL value on success, and NULL on failure.
+.PP
+The function
+.BR cap_get_bound ()
+returns \-1 if the requested capability is unknown, otherwise the
+return value reflects the current state of that capability in the
+prevailing bounding set. Note, a macro function,
+.PP
+The all of the setting functions such as
+.BR cap_set_proc ()
+and
+.BR cap_drop_bound ()
+return zero for success, and \-1 on failure.
+.PP
+On failure,
+.I errno
+is set to
+.BR EINVAL ,
+.BR EPERM ,
+or
+.BR ENOMEM .
+.SH "CONFORMING TO"
+.BR cap_set_proc ()
+and
+.BR cap_get_proc ()
+are specified in the withdrawn POSIX.1e draft specification.
+.BR cap_get_pid ()
+is a Linux extension.
+.SH "NOTES"
+Neither glibc, nor the Linux kernel honors POSIX semantics for setting
+capabilities and securebits in the presence of pthreads. That is,
+changing capability sets, by default, only affect the running
+thread. To be meaningfully secure, however, the capability sets should
+be mirrored by all threads within a common program because threads are
+not memory isolated. As a workaround for this,
+.B libcap
+is packaged with a separate POSIX semantics system call library:
+.BR libpsx .
+If your program uses POSIX threads, to achieve meaningful POSIX
+semantics capability manipulation, you should link your program with:
+.sp
+.B ld ... \-lcap \-lpsx \-lpthread \-\-wrap=pthread_create
+.sp
+or,
+.sp
+.B gcc ... \-lcap \-lpsx \-lpthread \-Wl,\-wrap,pthread_create
+.sp
+When linked this way, due to linker magic, libcap uses
+.BR psx_syscall "(3) and " psx_syscall6 (3)
+to perform state setting system calls. Notably, this also ensures that
+.BI cap_prctlw ()
+can be used to ensure process control bits are shared over all threads
+of a single process.
+.SS capgetp() and capsetp()
+The library also supports the deprecated functions:
+.PP
+.BI "int capgetp(pid_t " pid ", cap_t " cap_d );
+.PP
+.BI "int capsetp(pid_t " pid ", cap_t " cap_d );
+.PP
+.BR capgetp ()
+attempts to obtain the capabilities of some other process; storing the
+capabilities in a pre-allocated
+.IR cap_d .
+See
+.BR cap_init ()
+for information on allocating an empty capability set. This function
+is deprecated; you should use
+.BR cap_get_pid ().
+.PP
+.BR capsetp ()
+attempts to set the capabilities of the calling process or of
+some other process(es),
+.IR pid .
+Note that setting capabilities of another process is only possible on older
+kernels that do not provide VFS support for setting file capabilities.
+See
+.BR capset (2)
+for information on which kernels provide such support.
+.PP
+If
+.I pid
+is positive it refers to a specific process;  if it is zero, it refers
+to the calling process; \-1 refers to all processes other than the
+calling process and process '1' (typically 
+.BR init (8));
+other negative values refer to the
+.I \-pid
+process group.
+.PP
+In order to use this function, the kernel must support
+it and the calling process must have
+.B CAP_SETPCAP
+raised in its Effective capability set. The capabilities set in the
+target process(es) are those contained in
+.IR cap_d .
+.PP
+Kernels that support filesystem capabilities redefine the semantics of
+.B CAP_SETPCAP
+and on such systems,
+.BR capsetp ()
+will always fail for any target not
+equal to the calling process.
+.BR capsetp ()
+returns zero for success, and \-1 on failure.
+.PP
+On kernels where it is (was) supported,
+.BR capsetp ()
+should be used with care.  It existed, primarily, to overcome an early
+lack of support for capabilities in the filesystems supported by
+Linux.  Note that on older kernels where
+.BR capsetp ()
+could be used to set the capabilities of another process,
+the only processes that had
+.B CAP_SETPCAP
+available to them by default were processes started as kernel threads.
+(Typically this includes
+.BR init (8),
+kflushd and kswapd.) A kernel recompilation was needed to modify
+this default.
+.SH EXAMPLE
+The code segment below raises the
+.B CAP_FOWNER
+and
+.B CAP_SETFCAP
+effective capabilities for the caller:
+.nf
+
+    ...
+    cap_t caps;
+    const cap_value_t cap_list[2] = {CAP_FOWNER, CAP_SETFCAP};
+
+    if (!CAP_IS_SUPPORTED(CAP_SETFCAP))
+        /* handle error */
+
+    caps = cap_get_proc();
+    if (caps == NULL)
+        /* handle error */;
+
+    if (cap_set_flag(caps, CAP_EFFECTIVE, 2, cap_list, CAP_SET) == \-1)
+        /* handle error */;
+
+    if (cap_set_proc(caps) == \-1)
+        /* handle error */;
+
+    if (cap_free(caps) == \-1)
+        /* handle error */;
+    ...
+
+.fi
+Alternatively, to completely drop privilege in a program launched
+setuid-root but wanting to run as a specific user ID etc. in such a
+way that neither it, nor any of its children can acquire privilege
+again:
+.nf
+
+    ...
+    uid_t nobody = 65534;
+    const gid_t groups[] = {65534};
+
+    if (cap_setgroups(groups[0], 1, groups) != 0)
+        /* handle error */;
+    if (cap_setuid(nobody) != 0)
+        /* handle error */;
+
+    /*
+     * privilege is still available here
+     */
+
+    if (cap_set_mode(CAP_MODE_NOPRIV) != 0)
+        /* handle error */
+    ...
+
+.fi
+Note, the above sequence can be performed by the
+.B capsh
+tool as follows:
+.sp
+.B sudo capsh \-\-user=nobody \-\-mode=NOPRIV \-\-print
+.sp
+where
+.B \-\-print
+displays the resulting privilege state.
+.SH "SEE ALSO"
+.BR libcap (3),
+.BR libpsx (3),
+.BR capsh (1),
+.BR cap_clear (3),
+.BR cap_copy_ext (3),
+.BR cap_from_text (3),
+.BR cap_get_file (3),
+.BR cap_init (3),
+.BR namespaces (7),
+.BR pid_namespaces (7),
+.BR user_namespaces (7),
+.BR psx_syscall (3),
+.BR capabilities (7).

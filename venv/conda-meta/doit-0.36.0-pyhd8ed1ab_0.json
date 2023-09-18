@@ -1,0 +1,502 @@
+{
+  "build": "pyhd8ed1ab_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/noarch",
+  "constrains": [],
+  "depends": [
+    "cloudpickle",
+    "importlib-metadata >=4.4",
+    "python >=3.8"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/doit-0.36.0-pyhd8ed1ab_0",
+  "features": "",
+  "files": [
+    "lib/python3.10/site-packages/doit-0.36.0.dist-info/AUTHORS",
+    "lib/python3.10/site-packages/doit-0.36.0.dist-info/INSTALLER",
+    "lib/python3.10/site-packages/doit-0.36.0.dist-info/LICENSE",
+    "lib/python3.10/site-packages/doit-0.36.0.dist-info/METADATA",
+    "lib/python3.10/site-packages/doit-0.36.0.dist-info/RECORD",
+    "lib/python3.10/site-packages/doit-0.36.0.dist-info/REQUESTED",
+    "lib/python3.10/site-packages/doit-0.36.0.dist-info/WHEEL",
+    "lib/python3.10/site-packages/doit-0.36.0.dist-info/direct_url.json",
+    "lib/python3.10/site-packages/doit-0.36.0.dist-info/entry_points.txt",
+    "lib/python3.10/site-packages/doit-0.36.0.dist-info/top_level.txt",
+    "lib/python3.10/site-packages/doit/__init__.py",
+    "lib/python3.10/site-packages/doit/__main__.py",
+    "lib/python3.10/site-packages/doit/action.py",
+    "lib/python3.10/site-packages/doit/api.py",
+    "lib/python3.10/site-packages/doit/cmd_base.py",
+    "lib/python3.10/site-packages/doit/cmd_clean.py",
+    "lib/python3.10/site-packages/doit/cmd_completion.py",
+    "lib/python3.10/site-packages/doit/cmd_dumpdb.py",
+    "lib/python3.10/site-packages/doit/cmd_forget.py",
+    "lib/python3.10/site-packages/doit/cmd_help.py",
+    "lib/python3.10/site-packages/doit/cmd_ignore.py",
+    "lib/python3.10/site-packages/doit/cmd_info.py",
+    "lib/python3.10/site-packages/doit/cmd_list.py",
+    "lib/python3.10/site-packages/doit/cmd_resetdep.py",
+    "lib/python3.10/site-packages/doit/cmd_run.py",
+    "lib/python3.10/site-packages/doit/cmd_strace.py",
+    "lib/python3.10/site-packages/doit/cmdparse.py",
+    "lib/python3.10/site-packages/doit/control.py",
+    "lib/python3.10/site-packages/doit/dependency.py",
+    "lib/python3.10/site-packages/doit/doit_cmd.py",
+    "lib/python3.10/site-packages/doit/exceptions.py",
+    "lib/python3.10/site-packages/doit/globals.py",
+    "lib/python3.10/site-packages/doit/loader.py",
+    "lib/python3.10/site-packages/doit/plugin.py",
+    "lib/python3.10/site-packages/doit/reporter.py",
+    "lib/python3.10/site-packages/doit/runner.py",
+    "lib/python3.10/site-packages/doit/task.py",
+    "lib/python3.10/site-packages/doit/tools.py",
+    "lib/python3.10/site-packages/doit/version.py",
+    "lib/python3.10/site-packages/doit/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/doit/__pycache__/__main__.cpython-310.pyc",
+    "lib/python3.10/site-packages/doit/__pycache__/action.cpython-310.pyc",
+    "lib/python3.10/site-packages/doit/__pycache__/api.cpython-310.pyc",
+    "lib/python3.10/site-packages/doit/__pycache__/cmd_base.cpython-310.pyc",
+    "lib/python3.10/site-packages/doit/__pycache__/cmd_clean.cpython-310.pyc",
+    "lib/python3.10/site-packages/doit/__pycache__/cmd_completion.cpython-310.pyc",
+    "lib/python3.10/site-packages/doit/__pycache__/cmd_dumpdb.cpython-310.pyc",
+    "lib/python3.10/site-packages/doit/__pycache__/cmd_forget.cpython-310.pyc",
+    "lib/python3.10/site-packages/doit/__pycache__/cmd_help.cpython-310.pyc",
+    "lib/python3.10/site-packages/doit/__pycache__/cmd_ignore.cpython-310.pyc",
+    "lib/python3.10/site-packages/doit/__pycache__/cmd_info.cpython-310.pyc",
+    "lib/python3.10/site-packages/doit/__pycache__/cmd_list.cpython-310.pyc",
+    "lib/python3.10/site-packages/doit/__pycache__/cmd_resetdep.cpython-310.pyc",
+    "lib/python3.10/site-packages/doit/__pycache__/cmd_run.cpython-310.pyc",
+    "lib/python3.10/site-packages/doit/__pycache__/cmd_strace.cpython-310.pyc",
+    "lib/python3.10/site-packages/doit/__pycache__/cmdparse.cpython-310.pyc",
+    "lib/python3.10/site-packages/doit/__pycache__/control.cpython-310.pyc",
+    "lib/python3.10/site-packages/doit/__pycache__/dependency.cpython-310.pyc",
+    "lib/python3.10/site-packages/doit/__pycache__/doit_cmd.cpython-310.pyc",
+    "lib/python3.10/site-packages/doit/__pycache__/exceptions.cpython-310.pyc",
+    "lib/python3.10/site-packages/doit/__pycache__/globals.cpython-310.pyc",
+    "lib/python3.10/site-packages/doit/__pycache__/loader.cpython-310.pyc",
+    "lib/python3.10/site-packages/doit/__pycache__/plugin.cpython-310.pyc",
+    "lib/python3.10/site-packages/doit/__pycache__/reporter.cpython-310.pyc",
+    "lib/python3.10/site-packages/doit/__pycache__/runner.cpython-310.pyc",
+    "lib/python3.10/site-packages/doit/__pycache__/task.cpython-310.pyc",
+    "lib/python3.10/site-packages/doit/__pycache__/tools.cpython-310.pyc",
+    "lib/python3.10/site-packages/doit/__pycache__/version.cpython-310.pyc",
+    "bin/doit"
+  ],
+  "fn": "doit-0.36.0-pyhd8ed1ab_0.tar.bz2",
+  "license": "MIT",
+  "license_family": "MIT",
+  "link": {
+    "source": "/opt/conda/pkgs/doit-0.36.0-pyhd8ed1ab_0",
+    "type": 1
+  },
+  "md5": "fc5e53d070f1ee7bb38c2ece282dcb82",
+  "name": "doit",
+  "noarch": "python",
+  "package_tarball_full_path": "/opt/conda/pkgs/doit-0.36.0-pyhd8ed1ab_0.tar.bz2",
+  "package_type": "noarch_python",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "site-packages/doit-0.36.0.dist-info/AUTHORS",
+        "path_type": "hardlink",
+        "sha256": "fd6b491f7546a12f91eb279003ff0d98fa88847616088cd5f18bd6916b076e03",
+        "sha256_in_prefix": "fd6b491f7546a12f91eb279003ff0d98fa88847616088cd5f18bd6916b076e03",
+        "size_in_bytes": 1575
+      },
+      {
+        "_path": "site-packages/doit-0.36.0.dist-info/INSTALLER",
+        "path_type": "hardlink",
+        "sha256": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "sha256_in_prefix": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "size_in_bytes": 5
+      },
+      {
+        "_path": "site-packages/doit-0.36.0.dist-info/LICENSE",
+        "path_type": "hardlink",
+        "sha256": "d4af33f3d435ab72c9c28abb14ed4a64bb3036c6ebcd54576f4619ff9d50c439",
+        "sha256_in_prefix": "d4af33f3d435ab72c9c28abb14ed4a64bb3036c6ebcd54576f4619ff9d50c439",
+        "size_in_bytes": 1095
+      },
+      {
+        "_path": "site-packages/doit-0.36.0.dist-info/METADATA",
+        "path_type": "hardlink",
+        "sha256": "d9d6ef40ebef1610ae8cb82e633cd61a288aaf20cda281ef49093c34e54258a7",
+        "sha256_in_prefix": "d9d6ef40ebef1610ae8cb82e633cd61a288aaf20cda281ef49093c34e54258a7",
+        "size_in_bytes": 4909
+      },
+      {
+        "_path": "site-packages/doit-0.36.0.dist-info/RECORD",
+        "path_type": "hardlink",
+        "sha256": "c6c068483261c6bd878be4dcc078d8f2d70a2da04fb515e4e69dca1983f5508d",
+        "sha256_in_prefix": "c6c068483261c6bd878be4dcc078d8f2d70a2da04fb515e4e69dca1983f5508d",
+        "size_in_bytes": 4357
+      },
+      {
+        "_path": "site-packages/doit-0.36.0.dist-info/REQUESTED",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256_in_prefix": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "site-packages/doit-0.36.0.dist-info/WHEEL",
+        "path_type": "hardlink",
+        "sha256": "1b5e87e00dc87a84269cead8578b9e6462928e18a95f1f3373c9eef451a5bcc0",
+        "sha256_in_prefix": "1b5e87e00dc87a84269cead8578b9e6462928e18a95f1f3373c9eef451a5bcc0",
+        "size_in_bytes": 92
+      },
+      {
+        "_path": "site-packages/doit-0.36.0.dist-info/direct_url.json",
+        "path_type": "hardlink",
+        "sha256": "dbd2d6af8e004341cdd99d6482a2098a7e3838e519dd88be9c90dee3edfe6903",
+        "sha256_in_prefix": "dbd2d6af8e004341cdd99d6482a2098a7e3838e519dd88be9c90dee3edfe6903",
+        "size_in_bytes": 106
+      },
+      {
+        "_path": "site-packages/doit-0.36.0.dist-info/entry_points.txt",
+        "path_type": "hardlink",
+        "sha256": "908b8d6636339759754cf13b17df27faf8ff88e61738688894e702bfd41e75d6",
+        "sha256_in_prefix": "908b8d6636339759754cf13b17df27faf8ff88e61738688894e702bfd41e75d6",
+        "size_in_bytes": 44
+      },
+      {
+        "_path": "site-packages/doit-0.36.0.dist-info/top_level.txt",
+        "path_type": "hardlink",
+        "sha256": "55454a9968624eda699ab81d875b9e8a43a7744d80852a5f823885dbe0367022",
+        "sha256_in_prefix": "55454a9968624eda699ab81d875b9e8a43a7744d80852a5f823885dbe0367022",
+        "size_in_bytes": 5
+      },
+      {
+        "_path": "site-packages/doit/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "0dd6b67d3e5b4ac20a71ecaa1f6fa9d0e0787f42799ded3f55782cd4f0f1f4c9",
+        "sha256_in_prefix": "0dd6b67d3e5b4ac20a71ecaa1f6fa9d0e0787f42799ded3f55782cd4f0f1f4c9",
+        "size_in_bytes": 1658
+      },
+      {
+        "_path": "site-packages/doit/__main__.py",
+        "path_type": "hardlink",
+        "sha256": "327360d435ed9c2a4110c471a890375a13941e0f11cd96f335b523fb70f97b27",
+        "sha256_in_prefix": "327360d435ed9c2a4110c471a890375a13941e0f11cd96f335b523fb70f97b27",
+        "size_in_bytes": 246
+      },
+      {
+        "_path": "site-packages/doit/action.py",
+        "path_type": "hardlink",
+        "sha256": "05d9f8d26b9a7296f6dbc497c1b931e88d7d650ac25970a568c5383950a2db16",
+        "sha256_in_prefix": "05d9f8d26b9a7296f6dbc497c1b931e88d7d650ac25970a568c5383950a2db16",
+        "size_in_bytes": 19401
+      },
+      {
+        "_path": "site-packages/doit/api.py",
+        "path_type": "hardlink",
+        "sha256": "0800711c5c7597dbffd4e40d11bce88aecaa345a535eb9f310685ebd9b1f609f",
+        "sha256_in_prefix": "0800711c5c7597dbffd4e40d11bce88aecaa345a535eb9f310685ebd9b1f609f",
+        "size_in_bytes": 1623
+      },
+      {
+        "_path": "site-packages/doit/cmd_base.py",
+        "path_type": "hardlink",
+        "sha256": "4bd3ab539007095b0ca0f361a17122c9294e11a81ad091fb0c7b215674e0b220",
+        "sha256_in_prefix": "4bd3ab539007095b0ca0f361a17122c9294e11a81ad091fb0c7b215674e0b220",
+        "size_in_bytes": 20630
+      },
+      {
+        "_path": "site-packages/doit/cmd_clean.py",
+        "path_type": "hardlink",
+        "sha256": "3f7a1bac12c1181790cd9d4fd4ef35a4f3669d77e8cae7a39e9c65a1fff86092",
+        "sha256_in_prefix": "3f7a1bac12c1181790cd9d4fd4ef35a4f3669d77e8cae7a39e9c65a1fff86092",
+        "size_in_bytes": 6111
+      },
+      {
+        "_path": "site-packages/doit/cmd_completion.py",
+        "path_type": "hardlink",
+        "sha256": "c200cd91a214f4d53f9000eb4390aac270bb7c5c3a81c355b2cd10a11a78fd0b",
+        "sha256_in_prefix": "c200cd91a214f4d53f9000eb4390aac270bb7c5c3a81c355b2cd10a11a78fd0b",
+        "size_in_bytes": 11814
+      },
+      {
+        "_path": "site-packages/doit/cmd_dumpdb.py",
+        "path_type": "hardlink",
+        "sha256": "57cc4fe27c12ee6bd9dae28d97439e756a06d3a316ea1f6516cec6ef501a945f",
+        "sha256_in_prefix": "57cc4fe27c12ee6bd9dae28d97439e756a06d3a316ea1f6516cec6ef501a945f",
+        "size_in_bytes": 1538
+      },
+      {
+        "_path": "site-packages/doit/cmd_forget.py",
+        "path_type": "hardlink",
+        "sha256": "743cbeb99016fa17dfdf6e5553596ceefb33cf410c4bce8e937dfd20d9b2138c",
+        "sha256_in_prefix": "743cbeb99016fa17dfdf6e5553596ceefb33cf410c4bce8e937dfd20d9b2138c",
+        "size_in_bytes": 2165
+      },
+      {
+        "_path": "site-packages/doit/cmd_help.py",
+        "path_type": "hardlink",
+        "sha256": "4e0879cab35bce4bc589eef1db62443fca3d3ff531a0d3f1dfda9fb1ca17f7ce",
+        "sha256_in_prefix": "4e0879cab35bce4bc589eef1db62443fca3d3ff531a0d3f1dfda9fb1ca17f7ce",
+        "size_in_bytes": 5595
+      },
+      {
+        "_path": "site-packages/doit/cmd_ignore.py",
+        "path_type": "hardlink",
+        "sha256": "565638038df457b96d9f2af32ba2037e66d97542ea630251c6d3bbaa9bf5e256",
+        "sha256_in_prefix": "565638038df457b96d9f2af32ba2037e66d97542ea630251c6d3bbaa9bf5e256",
+        "size_in_bytes": 1162
+      },
+      {
+        "_path": "site-packages/doit/cmd_info.py",
+        "path_type": "hardlink",
+        "sha256": "b80db8998196462461d8621c7cb876f1e894e4894dc3dbff2d756bdd2e9b6e48",
+        "sha256_in_prefix": "b80db8998196462461d8621c7cb876f1e894e4894dc3dbff2d756bdd2e9b6e48",
+        "size_in_bytes": 4191
+      },
+      {
+        "_path": "site-packages/doit/cmd_list.py",
+        "path_type": "hardlink",
+        "sha256": "57e16ee433ad5596f870aad49528eff3f873fa0c8a1d9f7cd62e93df5027c7bf",
+        "sha256_in_prefix": "57e16ee433ad5596f870aad49528eff3f873fa0c8a1d9f7cd62e93df5027c7bf",
+        "size_in_bytes": 4859
+      },
+      {
+        "_path": "site-packages/doit/cmd_resetdep.py",
+        "path_type": "hardlink",
+        "sha256": "ac12684c6a43a885c10ec1715e6326c2145eaac17f73f46c6e39a851be82484d",
+        "sha256_in_prefix": "ac12684c6a43a885c10ec1715e6326c2145eaac17f73f46c6e39a851be82484d",
+        "size_in_bytes": 2922
+      },
+      {
+        "_path": "site-packages/doit/cmd_run.py",
+        "path_type": "hardlink",
+        "sha256": "d49c004c8be66cd6589a268f9d2b6502fd4db3eeb1d0e5ba9dedd567cfc20168",
+        "sha256_in_prefix": "d49c004c8be66cd6589a268f9d2b6502fd4db3eeb1d0e5ba9dedd567cfc20168",
+        "size_in_bytes": 7839
+      },
+      {
+        "_path": "site-packages/doit/cmd_strace.py",
+        "path_type": "hardlink",
+        "sha256": "49f80ecdce1fdd84b26a98f8da484da071c796ffa17bdd76e5166211863ff9c2",
+        "sha256_in_prefix": "49f80ecdce1fdd84b26a98f8da484da071c796ffa17bdd76e5166211863ff9c2",
+        "size_in_bytes": 4892
+      },
+      {
+        "_path": "site-packages/doit/cmdparse.py",
+        "path_type": "hardlink",
+        "sha256": "1e2435d13cef593f196f305b19aaf9c2639b52764b6fa8d98b15217002e43383",
+        "sha256_in_prefix": "1e2435d13cef593f196f305b19aaf9c2639b52764b6fa8d98b15217002e43383",
+        "size_in_bytes": 13039
+      },
+      {
+        "_path": "site-packages/doit/control.py",
+        "path_type": "hardlink",
+        "sha256": "033cd569017a02cf683a3d5baf0c131353e6d3798a545a5a1bc350d2a29c1519",
+        "sha256_in_prefix": "033cd569017a02cf683a3d5baf0c131353e6d3798a545a5a1bc350d2a29c1519",
+        "size_in_bytes": 24900
+      },
+      {
+        "_path": "site-packages/doit/dependency.py",
+        "path_type": "hardlink",
+        "sha256": "0eb5f7855996f265b7c76a7e5a8878266179414d5f180594912389d2760b48d0",
+        "sha256_in_prefix": "0eb5f7855996f265b7c76a7e5a8878266179414d5f180594912389d2760b48d0",
+        "size_in_bytes": 24642
+      },
+      {
+        "_path": "site-packages/doit/doit_cmd.py",
+        "path_type": "hardlink",
+        "sha256": "efdabd7767039035cfeb6e9ef908dc9f5c8b0fc70da772ffecc9932247580627",
+        "sha256_in_prefix": "efdabd7767039035cfeb6e9ef908dc9f5c8b0fc70da772ffecc9932247580627",
+        "size_in_bytes": 10747
+      },
+      {
+        "_path": "site-packages/doit/exceptions.py",
+        "path_type": "hardlink",
+        "sha256": "aca46169ad1dd3f039a709058691ea0286f26ce1cfd5527fc6a5c0154b7aa0f9",
+        "sha256_in_prefix": "aca46169ad1dd3f039a709058691ea0286f26ce1cfd5527fc6a5c0154b7aa0f9",
+        "size_in_bytes": 3303
+      },
+      {
+        "_path": "site-packages/doit/globals.py",
+        "path_type": "hardlink",
+        "sha256": "0200c341c9d90488bfa17868862da229e20232474f3b60c542e4d06a2576751e",
+        "sha256_in_prefix": "0200c341c9d90488bfa17868862da229e20232474f3b60c542e4d06a2576751e",
+        "size_in_bytes": 261
+      },
+      {
+        "_path": "site-packages/doit/loader.py",
+        "path_type": "hardlink",
+        "sha256": "4a047c89034aec75e60f0bf875452a0b7f6939e867496652e6ec7aa57ca52d4f",
+        "sha256_in_prefix": "4a047c89034aec75e60f0bf875452a0b7f6939e867496652e6ec7aa57ca52d4f",
+        "size_in_bytes": 15284
+      },
+      {
+        "_path": "site-packages/doit/plugin.py",
+        "path_type": "hardlink",
+        "sha256": "5db6402eac5ace2c577c37d0df5468f454b537969dd370c41158460f330ea4e5",
+        "sha256_in_prefix": "5db6402eac5ace2c577c37d0df5468f454b537969dd370c41158460f330ea4e5",
+        "size_in_bytes": 3868
+      },
+      {
+        "_path": "site-packages/doit/reporter.py",
+        "path_type": "hardlink",
+        "sha256": "31e206e17034351650fdb086d3c203b2b94554f6f1200dde7f0900896be747bc",
+        "sha256_in_prefix": "31e206e17034351650fdb086d3c203b2b94554f6f1200dde7f0900896be747bc",
+        "size_in_bytes": 9941
+      },
+      {
+        "_path": "site-packages/doit/runner.py",
+        "path_type": "hardlink",
+        "sha256": "6fd06ea5bbc0cef7617947d535a826868927a082aa79179f51eda7c168858ec1",
+        "sha256_in_prefix": "6fd06ea5bbc0cef7617947d535a826868927a082aa79179f51eda7c168858ec1",
+        "size_in_bytes": 20307
+      },
+      {
+        "_path": "site-packages/doit/task.py",
+        "path_type": "hardlink",
+        "sha256": "2016756c0f0962feccc5ae7dd840ea55914f1845ddb3a6ef7bcdb0c26228ba74",
+        "sha256_in_prefix": "2016756c0f0962feccc5ae7dd840ea55914f1845ddb3a6ef7bcdb0c26228ba74",
+        "size_in_bytes": 24353
+      },
+      {
+        "_path": "site-packages/doit/tools.py",
+        "path_type": "hardlink",
+        "sha256": "8a156d3d0cfbc080fa53cb23ae2225a99267cd6ccd755aac5599313b279312c3",
+        "sha256_in_prefix": "8a156d3d0cfbc080fa53cb23ae2225a99267cd6ccd755aac5599313b279312c3",
+        "size_in_bytes": 10101
+      },
+      {
+        "_path": "site-packages/doit/version.py",
+        "path_type": "hardlink",
+        "sha256": "2da50ee7178e780fa9615486f36a2c3676a8c5869904c107bb5730b3f59da43b",
+        "sha256_in_prefix": "2da50ee7178e780fa9615486f36a2c3676a8c5869904c107bb5730b3f59da43b",
+        "size_in_bytes": 96
+      },
+      {
+        "_path": "lib/python3.10/site-packages/doit/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/doit/__pycache__/__main__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/doit/__pycache__/action.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/doit/__pycache__/api.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/doit/__pycache__/cmd_base.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/doit/__pycache__/cmd_clean.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/doit/__pycache__/cmd_completion.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/doit/__pycache__/cmd_dumpdb.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/doit/__pycache__/cmd_forget.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/doit/__pycache__/cmd_help.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/doit/__pycache__/cmd_ignore.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/doit/__pycache__/cmd_info.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/doit/__pycache__/cmd_list.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/doit/__pycache__/cmd_resetdep.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/doit/__pycache__/cmd_run.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/doit/__pycache__/cmd_strace.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/doit/__pycache__/cmdparse.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/doit/__pycache__/control.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/doit/__pycache__/dependency.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/doit/__pycache__/doit_cmd.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/doit/__pycache__/exceptions.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/doit/__pycache__/globals.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/doit/__pycache__/loader.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/doit/__pycache__/plugin.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/doit/__pycache__/reporter.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/doit/__pycache__/runner.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/doit/__pycache__/task.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/doit/__pycache__/tools.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/doit/__pycache__/version.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "bin/doit",
+        "path_type": "unix_python_entry_point"
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "doit[version='>=0.36.0']",
+  "sha256": "268abd6a52e5ea839233f5f5754d9bf959b16289b6a891cb50ffb65c9a47306a",
+  "size": 67197,
+  "subdir": "noarch",
+  "timestamp": 1650645336234,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/noarch/doit-0.36.0-pyhd8ed1ab_0.tar.bz2",
+  "version": "0.36.0"
+}

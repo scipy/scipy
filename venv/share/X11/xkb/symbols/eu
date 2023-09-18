@@ -1,0 +1,64 @@
+// Keyboard layout for Western Europe.
+
+// Letters and symbols from Western European languages on levels three and four
+// of a basic American layout.  Based on <https://eurkey.steffen.bruentjen.eu>.
+// Copyright 2012 Steffen Bruentjen (eurkey (at) steffen dot bruentjen dot de)
+
+default partial alphanumeric_keys modifier_keys
+xkb_symbols "basic"  {
+
+    name[Group1] = "EurKEY (US)";
+
+    key <TLDE>	{[        grave,      asciitilde,           dead_grave,           dead_tilde  ]};
+    key <AE01>	{[            1,          exclam,           exclamdown,          onesuperior  ]};
+    key <AE02>	{[            2,              at,          ordfeminine,          twosuperior  ]};
+    key <AE03>	{[            3,      numbersign,            masculine,        threesuperior  ]};
+    key <AE04>	{[            4,          dollar,             sterling,                  yen  ]};
+    key <AE05>	{[            5,         percent,             EuroSign,                 cent  ]};
+    key <AE06>	{[            6,     asciicircum,      dead_circumflex,           dead_caron  ]};
+    key <AE07>	{[            7,       ampersand,       dead_abovering,          dead_macron  ]};
+    key <AE08>	{[            8,        asterisk,   doublelowquotemark,   singlelowquotemark  ]};
+    key <AE09>	{[            9,       parenleft,  leftdoublequotemark,  leftsinglequotemark  ]};
+    key <AE10>	{[            0,      parenright, rightdoublequotemark, rightsinglequotemark  ]};
+    key <AE11>	{[        minus,      underscore,               endash,               emdash  ]};
+    key <AE12>	{[        equal,            plus,             multiply,             division  ]};
+
+    key <AD01>	{[            q,               Q,                   ae,                   AE  ]};
+    key <AD02>	{[            w,               W,                aring,                Aring  ]};
+    key <AD03>	{[            e,               E,           ediaeresis,           Ediaeresis  ]};
+    key <AD04>	{[            r,               R,               yacute,               Yacute  ]};
+    key <AD05>	{[            t,               T,                thorn,                THORN  ]};
+    key <AD06>	{[            y,               Y,           ydiaeresis,           Ydiaeresis  ]};
+    key <AD07>	{[            u,               U,           udiaeresis,           Udiaeresis  ]};
+    key <AD08>	{[            i,               I,           idiaeresis,           Idiaeresis  ]};
+    key <AD09>	{[            o,               O,           odiaeresis,           Odiaeresis  ]};
+    key <AD10>	{[            p,               P,                   oe,                   OE  ]};
+    key <AD11>	{[  bracketleft,       braceleft,        guillemotleft,                U2039  ]}; // ‹
+    key <AD12>	{[ bracketright,      braceright,       guillemotright,                U203A  ]}; // ›
+    key <BKSL>	{[    backslash,             bar,              notsign,            brokenbar  ]};
+
+    key <AC01>	{[            a,               A,           adiaeresis,           Adiaeresis  ]};
+    key <AC02>	{[            s,               S,               ssharp,              section  ]};
+    key <AC03>	{[            d,               D,                  eth,                  ETH  ]};
+    key <AC04>	{[            f,               F,               egrave,               Egrave  ]};
+    key <AC05>	{[            g,               G,               eacute,               Eacute  ]};
+    key <AC06>	{[            h,               H,               ugrave,               Ugrave  ]};
+    key <AC07>	{[            j,               J,               uacute,               Uacute  ]};
+    key <AC08>	{[            k,               K,                U0133,                U0132  ]}; // ĳ, Ĳ
+    key <AC09>	{[            l,               L,               oslash,               Oslash  ]};
+    key <AC10>	{[    semicolon,           colon,               degree,       periodcentered  ]};
+    key <AC11>	{[   apostrophe,        quotedbl,           dead_acute,       dead_diaeresis  ]};
+
+    key <AB01>	{[            z,               Z,               agrave,               Agrave  ]};
+    key <AB02>	{[            x,               X,               aacute,               Aacute  ]};
+    key <AB03>	{[            c,               C,             ccedilla,             Ccedilla  ]};
+    key <AB04>	{[            v,               V,               igrave,               Igrave  ]};
+    key <AB05>	{[            b,               B,               iacute,               Iacute  ]};
+    key <AB06>	{[            n,               N,               ntilde,               Ntilde  ]};
+    key <AB07>	{[            m,               M,           dead_greek,            Multi_key  ]};
+    key <AB08>	{[        comma,            less,               ograve,               Ograve  ]};
+    key <AB09>	{[       period,         greater,               oacute,               Oacute  ]};
+    key <AB10>	{[        slash,        question,         questiondown,                U2026  ]}; // …
+
+    include "level3(ralt_switch)"
+};

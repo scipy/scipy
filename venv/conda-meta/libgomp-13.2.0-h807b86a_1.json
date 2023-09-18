@@ -1,0 +1,59 @@
+{
+  "build": "h807b86a_1",
+  "build_number": 1,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [],
+  "depends": [
+    "_libgcc_mutex 0.1 conda_forge"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/libgomp-13.2.0-h807b86a_1",
+  "features": "",
+  "files": [
+    "lib/libgomp.so",
+    "lib/libgomp.so.1.0.0",
+    "share/licenses/gcc-libs/RUNTIME.LIBRARY.EXCEPTION.gomp_copy"
+  ],
+  "fn": "libgomp-13.2.0-h807b86a_1.conda",
+  "license": "GPL-3.0-only WITH GCC-exception-3.1",
+  "license_family": "GPL",
+  "link": {
+    "source": "/opt/conda/pkgs/libgomp-13.2.0-h807b86a_1",
+    "type": 1
+  },
+  "md5": "8bb001683321dcbde117a7337b5aace7",
+  "name": "libgomp",
+  "package_tarball_full_path": "/opt/conda/pkgs/libgomp-13.2.0-h807b86a_1.conda",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "lib/libgomp.so",
+        "path_type": "softlink",
+        "sha256": "9e66b5c50ef60c8a9993c346aa2b2a35ad1b85817bdbc0cf5528496d22cc8b8f",
+        "size_in_bytes": 1082544
+      },
+      {
+        "_path": "lib/libgomp.so.1.0.0",
+        "path_type": "hardlink",
+        "sha256": "9e66b5c50ef60c8a9993c346aa2b2a35ad1b85817bdbc0cf5528496d22cc8b8f",
+        "sha256_in_prefix": "9e66b5c50ef60c8a9993c346aa2b2a35ad1b85817bdbc0cf5528496d22cc8b8f",
+        "size_in_bytes": 1082544
+      },
+      {
+        "_path": "share/licenses/gcc-libs/RUNTIME.LIBRARY.EXCEPTION.gomp_copy",
+        "path_type": "hardlink",
+        "sha256": "9d6b43ce4d8de0c878bf16b54d8e7a10d9bd42b75178153e3af6a815bdc90f74",
+        "sha256_in_prefix": "9d6b43ce4d8de0c878bf16b54d8e7a10d9bd42b75178153e3af6a815bdc90f74",
+        "size_in_bytes": 3324
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "cc9b25e3a0329326936164ca666861738e2833460cd1e0bb2086acb5781a7795",
+  "size": 420668,
+  "subdir": "linux-64",
+  "timestamp": 1694846133842,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/libgomp-13.2.0-h807b86a_1.conda",
+  "version": "13.2.0"
+}

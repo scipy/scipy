@@ -1,0 +1,10 @@
+This example relies just on sh and gettext-runtime.
+
+Installation:
+  ./autogen.sh
+  ./configure --prefix=/some/prefix
+  make
+  make install
+Cleanup:
+  make distclean
+  ./autoclean.sh

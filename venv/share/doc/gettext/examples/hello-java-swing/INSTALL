@@ -1,0 +1,12 @@
+This example relies on:
+  - a Java implementation with AWT and Swing
+    (i.e. when using Sun's JDK: at least JDK 1.2)
+
+Installation:
+  ./autogen.sh
+  ./configure --prefix=/some/prefix
+  make
+  make install
+Cleanup:
+  make distclean
+  ./autoclean.sh

@@ -1,0 +1,26 @@
+# Afrikaans translation for Silky 
+# Copyright (C) 2004 Free Software Foundation, Inc.
+# This file is distributed under the same license as the silky package.
+# Hanlie Pretorius <hpretorius@pnp.co.za>, 2004.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: hello-c++-gnome-0.13.1\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"PO-Revision-Date: 2003-12-31 10:30+2\n"
+"Last-Translator: Ysbeer <ysbeer@af.org.za>\n"
+"Language-Team: Afrikaans <i18n@af.org.za>\n"
+"Language: af\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+
+#: hello.cc:50
+msgid "Hello, world!"
+msgstr "Hallo wêreld!"
+
+#: hello.cc:55
+#, c-format
+msgid "This program is running as process number %d."
+msgstr "Hierdie program loop as prosesnommer %d."

@@ -1,0 +1,143 @@
+default xkb_geometry "XP5" {
+
+    description= "WinBook XP5";
+    width= 281;
+    height= 180;
+
+    shape.cornerRadius= 1;
+
+    shape "NORM" { 
+	{ [17,17] },
+	{ [ 2, 1], [ 15, 15 ] }
+    };
+    shape "FKEY" {
+	{ [ 15, 10 ] },
+	{ [  1,  0 ], [ 14, 9.5 ] }
+    };
+    shape "ONE" {
+	{ [ 28, 17 ] },
+	{ [ 11, 0 ], [ 28, 17 ] },
+	{ [ 13, 1 ], [ 26, 15 ] }
+    };
+    shape "WIDE" {	// backspace, caps lock, ctrl alt ?
+	{ [  24.5, 17 ] },
+	{ [   2,  1 ], [ 22.5, 15 ] }
+    };
+    shape "WIDR" { // backslash, left shift
+	{ [ 35, 17 ] },
+	{ [ 2, 1 ], [ 33, 15 ] }
+    };
+    shape "RTRN" {
+	{ [  45, 17 ] },
+	{ [  2,  1 ], [ 43, 15 ] }
+    };
+    shape "SPCE" {
+	{ [  90, 17 ] },
+	{ [  2,  1 ], [ 88, 15 ] }
+    };
+    shape "STIK" {
+	cornerRadius= 4,
+	{ [  8,  8 ] }
+    };
+    shape "BTN" {
+	{ [ 31, 6 ] }
+    };
+
+    section.left= 2;
+    row.left= 1;
+    key.shape= "NORM";
+    key.gap=  0.5;
+
+    key.color= "grey10";
+    labelColor= "white";
+    baseColor= "grey20";
+
+    section "Whole" {
+	top= 10;
+	row {
+	    top= 11; 
+	    key.shape= "FKEY";
+	    keys { 
+	    	<ESC>,  
+	    	<FK01>, <FK02>, <FK03>, <FK04>, <FK05>, <FK06>,
+		<FK07>, <FK08>, <FK09>, <FK10>, <FK11>, <FK12>,
+		<PAUS>, <HOME>, <END>, <PGUP>
+	    };
+	};
+	row {
+	    top= 22;
+	    keys { 
+	    	{ <AEO1>, "ONE" },
+		<AE02>, <AE03>, <AE04>, <AE05>, <AE06>,
+		<AE07>, <AE08>, <AE09>, <AE10>, <AE11>, <AE12>,
+		{ <BKSP>, shape="WIDE" }, 
+		<PGDN>
+	    };
+	};
+	row {
+	    top= 40;
+	    keys { 
+	    	<TAB>, <AD01>, <AD02>, <AD03>, <AD04>, <AD05>, <AD06>,
+		<AD07>, <AD08>, <AD09>, <AD10>, <AD11>, <AD12>,
+		{ <BKSL>, "WIDR" }
+	    };
+	};
+	row {
+	    top= 58;
+	    keys { { <CAPS>, shape="WIDE" },
+		<AC01>, <AC02>, <AC03>, <AC04>, <AC05>, 
+		<AC06>, <AC07>, <AC08>, <AC09>, <AC10>, 
+		<AC11>, 
+		{ <RTRN>, shape="RTRN" }
+	    };
+	};
+	row {
+	    top= 76;
+	    keys { 
+		{ <LFSH>, shape="WIDR" },
+		<AB01>, <AB02>, <AB03>, <AB04>, <AB05>, 
+		<AB06>, <AB07>, <AB08>, <AB09>, <AB10>, 
+		<RTSH>, <UP>, <NMLK> 
+	    };
+	};
+	row {
+	    top= 94;
+	    keys { 
+		{ <LCTL>, "WIDE" }, <FUNC>, { <LALT>, "WIDE" }, 
+		<TLDE>, { <SPCE>, shape="SPCE" }, <INS>, <DELE>, 
+		<LEFT>, <DOWN>, <RGHT>
+	    };
+	};
+	overlay "KPAD" {
+	    <AE07>=<KP7>,  <AE08>=<KP8>, <AE09>=<KP9>,  <AE10>=<KPMU>,
+	    <AD07>=<KP4>,  <AD08>=<KP5>, <AD09>=<KP6>,  <AD10>=<KPSU>,
+	    <AC07>=<KP1>,  <AC08>=<KP2>, <AC09>=<KP3>,  <AC10>=<KPAD>,
+	    <AB07>=<KP0>,                <AB09>=<KPDL>, <AB10>=<KPSL>
+	};
+    }; // End of "Whole" section
+
+    solid "STIK" {
+	color= "red";
+	shape= "STIK";
+	top= 81;
+	left= 112;
+    };
+
+    solid "BTN1" {
+    	color= "red";
+	shape= "BTN";
+	top= 137;
+	left= 93;
+    };
+
+    solid "BTN2" {
+	color= "red";
+	shape= "BTN";
+	top= 137;
+	left= 127;
+    };
+
+    alias <AC00> = <CAPS>;
+    alias <AA00> = <LCTL>;
+
+};

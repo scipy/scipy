@@ -1,0 +1,92 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Surfaces: Cairo: A Vector Graphics Library</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<link rel="home" href="index.html" title="Cairo: A Vector Graphics Library">
+<link rel="up" href="language-bindings.html" title="Appendix A. Creating a language binding for cairo">
+<link rel="prev" href="bindings-patterns.html" title="Patterns">
+<link rel="next" href="bindings-fonts.html" title="Fonts">
+<meta name="generator" content="GTK-Doc V1.27 (XML mode)">
+<link rel="stylesheet" href="style.css" type="text/css">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<table class="navigation" id="top" width="100%" summary="Navigation header" cellpadding="2" cellspacing="5"><tr valign="middle">
+<td width="100%" align="left" class="shortcuts"></td>
+<td><a accesskey="h" href="index.html"><img src="home.png" width="16" height="16" border="0" alt="Home"></a></td>
+<td><a accesskey="u" href="language-bindings.html"><img src="up.png" width="16" height="16" border="0" alt="Up"></a></td>
+<td><a accesskey="p" href="bindings-patterns.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
+<td><a accesskey="n" href="bindings-fonts.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
+</tr></table>
+<div class="sect1">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="bindings-surfaces"></a>Surfaces</h2></div></div></div>
+<p>
+      Like patterns, surfaces, which use only the
+      <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="type">cairo_surface_t</span></a>
+      type in the C API should be broken up into a hierarchy of types
+      in a language binding.
+    </p>
+<pre class="programlisting">
+cairo_surface_t
+    cairo_image_surface_t
+    cairo_atsui_surface_t
+    cairo_win32_surface_t
+    cairo_xlib_surface_t
+    cairo_beos_surface_t
+    </pre>
+<p>
+      Unlike patterns, the constructors and methods on these types are
+      clearly named, and can be trivially associated with the
+      appropriate subtype. Many language bindings will want to avoid
+      binding the platform-specific subtypes at all, since the
+      methods on these types are not useful without passing in native
+      C types. Unless there is a language binding for Xlib available,
+      there is no way to represent a XLib <span class="type">Display</span> * in
+      that language.
+    </p>
+<p>
+      This doesn't mean that platform-specific surface types can't
+      be used in a language binding that doesn't bind the constructor.
+      A very common situation is to use a cairo language binding in
+      combination with a binding for a higher level system like
+      the <a class="ulink" href="http://www.gtk.org/" target="_top">GTK+</a> widget
+      toolkit. In such a situation, the higher level toolkit provides
+      ways to get references to platform specific surfaces.
+    </p>
+<p>
+      The <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-set-user-data" title="cairo_surface_set_user_data ()"><code class="function">cairo_surface_set_user_data()</code></a>,
+      and <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-get-user-data" title="cairo_surface_get_user_data ()"><code class="function">cairo_surface_get_user_data()</code></a>
+      methods are provided for use in language bindings, and should
+      not be directly exposed to applications. One example of the use
+      of these functions in a language binding is creating a binding for:
+    </p>
+<pre class="programlisting">
+cairo_surface_t *
+<a class="link" href="cairo-Image-Surfaces.html#cairo-image-surface-create-for-data" title="cairo_image_surface_create_for_data ()"><code class="function">cairo_image_surface_create_for_data</code></a> (unsigned char	       *data,
+				     cairo_format_t		format,
+				     int			width,
+				     int			height,
+				     int			stride);
+</pre>
+<p>
+      The memory block passed in for <em class="parameter"><code>data</code></em> must be
+      kept around until the surface is destroyed, so the language
+      binding must have some way of determining when that happens. The
+      way to do this is to use the <em class="parameter"><code>destroy</code></em>
+      argument to <code class="function">cairo_surface_set_user_data()</code>.
+    </p>
+<p class="remark"><em><span class="remark">
+      Some languages may not have a suitable “pointer to a block of
+      data” type to pass in for <em class="parameter"><code>data</code></em>. And even
+      where a language does have such a type, the user will be
+      frequently able to cause the backing store to be reallocated
+      to a different location or truncated. Should we recommend a
+      standard type name and binding for a buffer object here?
+    </span></em></p>
+</div>
+<div class="footer">
+<hr>Generated by GTK-Doc V1.27</div>
+</body>
+</html>

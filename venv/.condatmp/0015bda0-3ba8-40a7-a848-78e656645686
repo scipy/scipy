@@ -1,0 +1,16 @@
+#libevent pkg-config source file
+
+prefix=/workspaces/scipy/venv
+exec_prefix=/workspaces/scipy/venv
+libdir=/workspaces/scipy/venv/lib
+includedir=/workspaces/scipy/venv/include
+
+Name: libevent_openssl
+Description: libevent_openssl adds openssl-based TLS support to libevent
+Version: 2.1.12
+Requires: libevent
+Conflicts:
+Libs: -L${libdir} -levent_openssl
+Libs.private:   -L/workspaces/scipy/venv/lib/libssl.so -L/workspaces/scipy/venv/lib/libcrypto.so
+Cflags: -I${includedir} 
+

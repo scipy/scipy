@@ -1,0 +1,108 @@
+if(qtc_run|lupdate_run): return()
+
+!contains(QT, qml) {
+    qt_modules = \
+        $$replace(QT, -private$, _private) \
+        $$replace(QT_PRIVATE, -private$, _private)
+    qt_modules = $$resolve_depends(qt_modules, "QT.", ".depends" ".run_depends")
+    !contains(qt_modules, qml): \
+        return()
+    unset(qt_modules)
+}
+
+qtPrepareTool(QML_CACHEGEN, qmlcachegen, _FILTER)
+qtPrepareTool(QMAKE_RCC, rcc, _DEP)
+
+isEmpty(QMLCACHE_DIR): QMLCACHE_DIR = .
+
+defineReplace(qmlCacheResourceFileOutputName) {
+    name = $$relative_path($$1, $$_PRO_FILE_PWD_)
+    contains(name, ^\\.\\..*): name = $$relative_path($$1, $$OUT_PWD)
+    name = $$replace(name, \\.qrc$, _qmlcache.qrc)
+    name = $$replace(name,\.\.,)
+    name = $$replace(name,[/\-:],_)
+    name = $$absolute_path($$name, $$OUT_PWD)
+    return($${name})
+}
+
+defineTest(qtQuickSkippedResourceFile) {
+    for(skippedRes, QTQUICK_COMPILER_SKIPPED_RESOURCES) {
+        equals(1, $$skippedRes): return(true)
+    }
+    return(false)
+}
+
+# Flatten RESOURCES that may contain individual files or objects
+load(resources_functions)
+qtFlattenResources()
+qtEnsurePluginResourcesCpp()
+
+NEWRESOURCES =
+QMLCACHE_RESOURCE_FILES =
+
+for(res, RESOURCES) {
+    qtQuickSkippedResourceFile($$res) {
+        NEWRESOURCES += $$res
+        next()
+    }
+
+    absRes = $$absolute_path($$res, $$_PRO_FILE_PWD_)
+    rccContents = $$system($$QMAKE_RCC_DEP -list $$system_quote($$absRes),lines)
+    contains(rccContents,.*\\.js$)|contains(rccContents,.*\\.qml$)|contains(rccContents,.*\\.mjs$) {
+        new_resource = $$qmlCacheResourceFileOutputName($$res)
+        mkpath($$dirname(new_resource))
+        dummy = $$system($$QML_CACHEGEN_FILTER --filter-resource-file -o $$system_quote($$new_resource) $$system_quote($$absRes))
+        NEWRESOURCES += $$new_resource
+        QMLCACHE_LOADER_FLAGS += --resource-file-mapping=$$shell_quote($$absRes=$$new_resource)
+
+        QMLCACHE_RESOURCE_FILES += $$absRes
+
+        for(candidate, rccContents) {
+            contains(candidate,.*\\.js$)|contains(candidate,.*\\.qml$)|contains(candidate,.*\\.mjs$) {
+                QMLCACHE_FILES += $$candidate
+            }
+        }
+    } else {
+        NEWRESOURCES += $$res
+    }
+}
+
+RESOURCES = $$NEWRESOURCES
+
+QMLCACHE_RESOURCE_FLAGS =
+for(res, QMLCACHE_RESOURCE_FILES) {
+    QMLCACHE_RESOURCE_FLAGS += --resource=$$shell_quote($$res)
+}
+
+defineReplace(qmlCacheOutputName) {
+    name = $$absolute_path($$1, $$OUT_PWD)
+    name = $$relative_path($$name, $$_PRO_FILE_PWD_)
+    name = $$replace(name, \\.qml$, _qml)
+    name = $$replace(name, \\.js$, _js)
+    name = $$replace(name, \\.mjs$, _mjs)
+    name = $$replace(name,/,_)
+    name = $$QMLCACHE_DIR/$${name}
+    return($${name})
+}
+
+qmlcache.input = QMLCACHE_FILES
+qmlcache.output = ${QMAKE_FUNC_FILE_IN_qmlCacheOutputName}$${first(QMAKE_EXT_CPP)}
+qmlcache.commands = $$QML_CACHEGEN $$QMLCACHE_RESOURCE_FLAGS $$QMLCACHE_FLAGS -o ${QMAKE_FILE_OUT} ${QMAKE_FILE_IN}
+qmlcache.name = qmlcachegen ${QMAKE_FILE_IN}
+qmlcache.variable_out = GENERATED_SOURCES
+qmlcache.dependency_type = TYPE_C
+
+qmlcache_loader.input = QMLCACHE_RESOURCE_FILES
+qmlcache_loader.output = $$QMLCACHE_DIR/qmlcache_loader.cpp
+qmlcache_loader.commands = $$QML_CACHEGEN $$QMLCACHE_LOADER_FLAGS $$QMLCACHE_FLAGS -o ${QMAKE_FILE_OUT} ${QMAKE_FILE_IN}
+qmlcache_loader.name = qmlcachengen_loader ${QMAKE_FILE_IN}
+qmlcache_loader.variable_out = SOURCES
+qmlcache_loader.dependency_type = TYPE_C
+qmlcache_loader.CONFIG = combine
+
+unix:!no_qmlcache_depend {
+    qmlcache.depends += $$QML_CACHEGEN
+    qmlcache_loader.depends += $$QML_CACHEGEN
+}
+
+QMAKE_EXTRA_COMPILERS += qmlcache qmlcache_loader

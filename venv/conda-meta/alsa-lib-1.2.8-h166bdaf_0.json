@@ -1,0 +1,1124 @@
+{
+  "build": "h166bdaf_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [],
+  "depends": [
+    "libgcc-ng >=12"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/alsa-lib-1.2.8-h166bdaf_0",
+  "features": "",
+  "files": [
+    "bin/aserver",
+    "include/alsa/asoundef.h",
+    "include/alsa/asoundlib.h",
+    "include/alsa/conf.h",
+    "include/alsa/control.h",
+    "include/alsa/control_external.h",
+    "include/alsa/control_plugin.h",
+    "include/alsa/error.h",
+    "include/alsa/global.h",
+    "include/alsa/hwdep.h",
+    "include/alsa/input.h",
+    "include/alsa/mixer.h",
+    "include/alsa/mixer_abst.h",
+    "include/alsa/output.h",
+    "include/alsa/pcm.h",
+    "include/alsa/pcm_external.h",
+    "include/alsa/pcm_extplug.h",
+    "include/alsa/pcm_ioplug.h",
+    "include/alsa/pcm_old.h",
+    "include/alsa/pcm_plugin.h",
+    "include/alsa/pcm_rate.h",
+    "include/alsa/rawmidi.h",
+    "include/alsa/seq.h",
+    "include/alsa/seq_event.h",
+    "include/alsa/seq_midi_event.h",
+    "include/alsa/seqmid.h",
+    "include/alsa/sound/asoc.h",
+    "include/alsa/sound/asound_fm.h",
+    "include/alsa/sound/emu10k1.h",
+    "include/alsa/sound/hdsp.h",
+    "include/alsa/sound/hdspm.h",
+    "include/alsa/sound/sb16_csp.h",
+    "include/alsa/sound/sscape_ioctl.h",
+    "include/alsa/sound/tlv.h",
+    "include/alsa/sound/type_compat.h",
+    "include/alsa/sound/uapi/asoc.h",
+    "include/alsa/sound/uapi/asound_fm.h",
+    "include/alsa/sound/uapi/emu10k1.h",
+    "include/alsa/sound/uapi/hdsp.h",
+    "include/alsa/sound/uapi/hdspm.h",
+    "include/alsa/sound/uapi/sb16_csp.h",
+    "include/alsa/sound/uapi/sscape_ioctl.h",
+    "include/alsa/sound/uapi/tlv.h",
+    "include/alsa/timer.h",
+    "include/alsa/topology.h",
+    "include/alsa/use-case.h",
+    "include/alsa/version.h",
+    "include/asoundlib.h",
+    "include/sys/asoundlib.h",
+    "lib/libasound.so",
+    "lib/libasound.so.2",
+    "lib/libasound.so.2.0.0",
+    "lib/libatopology.so",
+    "lib/libatopology.so.2",
+    "lib/libatopology.so.2.0.0",
+    "lib/pkgconfig/alsa-topology.pc",
+    "lib/pkgconfig/alsa.pc",
+    "share/aclocal/alsa.m4",
+    "share/alsa/alsa.conf",
+    "share/alsa/cards/AACI.conf",
+    "share/alsa/cards/ATIIXP-MODEM.conf",
+    "share/alsa/cards/ATIIXP-SPDMA.conf",
+    "share/alsa/cards/ATIIXP.conf",
+    "share/alsa/cards/AU8810.conf",
+    "share/alsa/cards/AU8820.conf",
+    "share/alsa/cards/AU8830.conf",
+    "share/alsa/cards/Audigy.conf",
+    "share/alsa/cards/Audigy2.conf",
+    "share/alsa/cards/Aureon51.conf",
+    "share/alsa/cards/Aureon71.conf",
+    "share/alsa/cards/CA0106.conf",
+    "share/alsa/cards/CMI8338-SWIEC.conf",
+    "share/alsa/cards/CMI8338.conf",
+    "share/alsa/cards/CMI8738-MC6.conf",
+    "share/alsa/cards/CMI8738-MC8.conf",
+    "share/alsa/cards/CMI8788.conf",
+    "share/alsa/cards/CS46xx.conf",
+    "share/alsa/cards/EMU10K1.conf",
+    "share/alsa/cards/EMU10K1X.conf",
+    "share/alsa/cards/ENS1370.conf",
+    "share/alsa/cards/ENS1371.conf",
+    "share/alsa/cards/ES1968.conf",
+    "share/alsa/cards/Echo_Echo3G.conf",
+    "share/alsa/cards/FM801.conf",
+    "share/alsa/cards/FWSpeakers.conf",
+    "share/alsa/cards/FireWave.conf",
+    "share/alsa/cards/GUS.conf",
+    "share/alsa/cards/HDA-Intel.conf",
+    "share/alsa/cards/HdmiLpeAudio.conf",
+    "share/alsa/cards/ICE1712.conf",
+    "share/alsa/cards/ICE1724.conf",
+    "share/alsa/cards/ICH-MODEM.conf",
+    "share/alsa/cards/ICH.conf",
+    "share/alsa/cards/ICH4.conf",
+    "share/alsa/cards/Loopback.conf",
+    "share/alsa/cards/Maestro3.conf",
+    "share/alsa/cards/NFORCE.conf",
+    "share/alsa/cards/PC-Speaker.conf",
+    "share/alsa/cards/PMac.conf",
+    "share/alsa/cards/PMacToonie.conf",
+    "share/alsa/cards/PS3.conf",
+    "share/alsa/cards/RME9636.conf",
+    "share/alsa/cards/RME9652.conf",
+    "share/alsa/cards/SB-XFi.conf",
+    "share/alsa/cards/SI7018.conf",
+    "share/alsa/cards/TRID4DWAVENX.conf",
+    "share/alsa/cards/USB-Audio.conf",
+    "share/alsa/cards/VIA686A.conf",
+    "share/alsa/cards/VIA8233.conf",
+    "share/alsa/cards/VIA8233A.conf",
+    "share/alsa/cards/VIA8237.conf",
+    "share/alsa/cards/VX222.conf",
+    "share/alsa/cards/VXPocket.conf",
+    "share/alsa/cards/VXPocket440.conf",
+    "share/alsa/cards/YMF744.conf",
+    "share/alsa/cards/aliases.conf",
+    "share/alsa/cards/pistachio-card.conf",
+    "share/alsa/cards/vc4-hdmi.conf",
+    "share/alsa/ctl/default.conf",
+    "share/alsa/pcm/center_lfe.conf",
+    "share/alsa/pcm/default.conf",
+    "share/alsa/pcm/dmix.conf",
+    "share/alsa/pcm/dpl.conf",
+    "share/alsa/pcm/dsnoop.conf",
+    "share/alsa/pcm/front.conf",
+    "share/alsa/pcm/hdmi.conf",
+    "share/alsa/pcm/iec958.conf",
+    "share/alsa/pcm/modem.conf",
+    "share/alsa/pcm/rear.conf",
+    "share/alsa/pcm/side.conf",
+    "share/alsa/pcm/surround21.conf",
+    "share/alsa/pcm/surround40.conf",
+    "share/alsa/pcm/surround41.conf",
+    "share/alsa/pcm/surround50.conf",
+    "share/alsa/pcm/surround51.conf",
+    "share/alsa/pcm/surround71.conf"
+  ],
+  "fn": "alsa-lib-1.2.8-h166bdaf_0.tar.bz2",
+  "license": "LGPL-2.1-or-later",
+  "license_family": "GPL",
+  "link": {
+    "source": "/opt/conda/pkgs/alsa-lib-1.2.8-h166bdaf_0",
+    "type": 1
+  },
+  "md5": "be733e69048951df1e4b4b7bb8c7666f",
+  "name": "alsa-lib",
+  "package_tarball_full_path": "/opt/conda/pkgs/alsa-lib-1.2.8-h166bdaf_0.tar.bz2",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "bin/aserver",
+        "path_type": "hardlink",
+        "sha256": "dd4d97be9bbb9fda142d6a94ec62481a3d3fd9c94a219de151432eabb0ced885",
+        "sha256_in_prefix": "dd4d97be9bbb9fda142d6a94ec62481a3d3fd9c94a219de151432eabb0ced885",
+        "size_in_bytes": 42976
+      },
+      {
+        "_path": "include/alsa/asoundef.h",
+        "path_type": "hardlink",
+        "sha256": "91e404147fe06bdb002a543ebac52e0da70cb24018f72a780f98b8d99eb576aa",
+        "sha256_in_prefix": "91e404147fe06bdb002a543ebac52e0da70cb24018f72a780f98b8d99eb576aa",
+        "size_in_bytes": 20709
+      },
+      {
+        "_path": "include/alsa/asoundlib.h",
+        "path_type": "hardlink",
+        "sha256": "8d0ba13f07ec38681704d24caebb3f47ab9287c5e41c41e4e862e4ebdd7ec63b",
+        "sha256_in_prefix": "8d0ba13f07ec38681704d24caebb3f47ab9287c5e41c41e4e862e4ebdd7ec63b",
+        "size_in_bytes": 1853
+      },
+      {
+        "_path": "include/alsa/conf.h",
+        "path_type": "hardlink",
+        "sha256": "d57c60678d1db937aab4a9cf8edd3f0a169de04b23fca2216258690d0c410317",
+        "sha256_in_prefix": "d57c60678d1db937aab4a9cf8edd3f0a169de04b23fca2216258690d0c410317",
+        "size_in_bytes": 9429
+      },
+      {
+        "_path": "include/alsa/control.h",
+        "path_type": "hardlink",
+        "sha256": "7eba1353bd69f1da0cb3c1c979ff3e9043341afab7cb76c1a18eddf6fe934123",
+        "sha256_in_prefix": "7eba1353bd69f1da0cb3c1c979ff3e9043341afab7cb76c1a18eddf6fe934123",
+        "size_in_bytes": 34849
+      },
+      {
+        "_path": "include/alsa/control_external.h",
+        "path_type": "hardlink",
+        "sha256": "94af01a9903606372ba6b222ceca39673e27f13e26e0a1f25c7e9d6edb20ad5c",
+        "sha256_in_prefix": "94af01a9903606372ba6b222ceca39673e27f13e26e0a1f25c7e9d6edb20ad5c",
+        "size_in_bytes": 8793
+      },
+      {
+        "_path": "include/alsa/control_plugin.h",
+        "path_type": "hardlink",
+        "sha256": "efb297e769ca8c6e0cace66c412c0de96176f60528ad23ac69c0a609b7049e94",
+        "sha256_in_prefix": "efb297e769ca8c6e0cace66c412c0de96176f60528ad23ac69c0a609b7049e94",
+        "size_in_bytes": 1939
+      },
+      {
+        "_path": "include/alsa/error.h",
+        "path_type": "hardlink",
+        "sha256": "711c31f25f8222370e3be7c3bf1cdb24bbcf04206a3fb74158bb7d77ec1ac6fe",
+        "sha256_in_prefix": "711c31f25f8222370e3be7c3bf1cdb24bbcf04206a3fb74158bb7d77ec1ac6fe",
+        "size_in_bytes": 3226
+      },
+      {
+        "_path": "include/alsa/global.h",
+        "path_type": "hardlink",
+        "sha256": "50356003dc15de9ec0e70ea8d928b969d94d71c7ea515d146756d1a81478b47b",
+        "sha256_in_prefix": "50356003dc15de9ec0e70ea8d928b969d94d71c7ea515d146756d1a81478b47b",
+        "size_in_bytes": 5249
+      },
+      {
+        "_path": "include/alsa/hwdep.h",
+        "path_type": "hardlink",
+        "sha256": "a07a8e1dc0c8fc0bbd85cd15253e9f5b6c68830a5ec95dd07deb0f93b62a5414",
+        "sha256_in_prefix": "a07a8e1dc0c8fc0bbd85cd15253e9f5b6c68830a5ec95dd07deb0f93b62a5414",
+        "size_in_bytes": 7504
+      },
+      {
+        "_path": "include/alsa/input.h",
+        "path_type": "hardlink",
+        "sha256": "826b2d776984a8088b1240ac2d48cd34fa6a5a33e05eb7b2698b096b97389910",
+        "sha256_in_prefix": "826b2d776984a8088b1240ac2d48cd34fa6a5a33e05eb7b2698b096b97389910",
+        "size_in_bytes": 2613
+      },
+      {
+        "_path": "include/alsa/mixer.h",
+        "path_type": "hardlink",
+        "sha256": "947a28c463f4d298c809d2bf7a2a58c3701c5b78c7977684ebb9f9258217cbec",
+        "sha256_in_prefix": "947a28c463f4d298c809d2bf7a2a58c3701c5b78c7977684ebb9f9258217cbec",
+        "size_in_bytes": 14476
+      },
+      {
+        "_path": "include/alsa/mixer_abst.h",
+        "path_type": "hardlink",
+        "sha256": "f5c045051f4a5793d92ced073c0f61f1be538b5d776a16bb38c1df1a3efe76db",
+        "sha256_in_prefix": "f5c045051f4a5793d92ced073c0f61f1be538b5d776a16bb38c1df1a3efe76db",
+        "size_in_bytes": 4220
+      },
+      {
+        "_path": "include/alsa/output.h",
+        "path_type": "hardlink",
+        "sha256": "a0c9adc7368899215ef753323f361f30209a619ee53437c2fb9b39cb62037e98",
+        "sha256_in_prefix": "a0c9adc7368899215ef753323f361f30209a619ee53437c2fb9b39cb62037e98",
+        "size_in_bytes": 2847
+      },
+      {
+        "_path": "include/alsa/pcm.h",
+        "path_type": "hardlink",
+        "sha256": "b9fd5ca72a12731efd401b0902674c23c5a5fe212b2723e200124b074877f458",
+        "sha256_in_prefix": "b9fd5ca72a12731efd401b0902674c23c5a5fe212b2723e200124b074877f458",
+        "size_in_bytes": 62324
+      },
+      {
+        "_path": "include/alsa/pcm_external.h",
+        "path_type": "hardlink",
+        "sha256": "58421a16ba366227985bbe2c2b794e1e76d794eea9e98f74fa9cbba14b0c98a2",
+        "sha256_in_prefix": "58421a16ba366227985bbe2c2b794e1e76d794eea9e98f74fa9cbba14b0c98a2",
+        "size_in_bytes": 1927
+      },
+      {
+        "_path": "include/alsa/pcm_extplug.h",
+        "path_type": "hardlink",
+        "sha256": "87159b959d7456d2fdd7572f76235947df59b4387e5ae59be5e8167bd9b4f580",
+        "sha256_in_prefix": "87159b959d7456d2fdd7572f76235947df59b4387e5ae59be5e8167bd9b4f580",
+        "size_in_bytes": 6334
+      },
+      {
+        "_path": "include/alsa/pcm_ioplug.h",
+        "path_type": "hardlink",
+        "sha256": "28d1abf20ca1b2b6c4de580fba8710ade939ee795a4a9ca72d9d21cd6dc9c3b8",
+        "sha256_in_prefix": "28d1abf20ca1b2b6c4de580fba8710ade939ee795a4a9ca72d9d21cd6dc9c3b8",
+        "size_in_bytes": 8003
+      },
+      {
+        "_path": "include/alsa/pcm_old.h",
+        "path_type": "hardlink",
+        "sha256": "b3cb1f2bb55518dc2d72bf220fd92e33562197ceb51cc069639e625cf536ac92",
+        "sha256_in_prefix": "b3cb1f2bb55518dc2d72bf220fd92e33562197ceb51cc069639e625cf536ac92",
+        "size_in_bytes": 20071
+      },
+      {
+        "_path": "include/alsa/pcm_plugin.h",
+        "path_type": "hardlink",
+        "sha256": "a48e2476848a937bbacdf961966ed48525765050e3a4c8291d44950d20b621ba",
+        "sha256_in_prefix": "a48e2476848a937bbacdf961966ed48525765050e3a4c8291d44950d20b621ba",
+        "size_in_bytes": 7062
+      },
+      {
+        "_path": "include/alsa/pcm_rate.h",
+        "path_type": "hardlink",
+        "sha256": "75db665e8ced307f321a0618d52e3b6cf8a46cb9a98730e5caf38c4b5f4d6d7b",
+        "sha256_in_prefix": "75db665e8ced307f321a0618d52e3b6cf8a46cb9a98730e5caf38c4b5f4d6d7b",
+        "size_in_bytes": 6138
+      },
+      {
+        "_path": "include/alsa/rawmidi.h",
+        "path_type": "hardlink",
+        "sha256": "ad566d8d3f3a4805c1d6b04be37ac20f1854d28a14d71a2ce178340b4c601c02",
+        "sha256_in_prefix": "ad566d8d3f3a4805c1d6b04be37ac20f1854d28a14d71a2ce178340b4c601c02",
+        "size_in_bytes": 8119
+      },
+      {
+        "_path": "include/alsa/seq.h",
+        "path_type": "hardlink",
+        "sha256": "a9822f8f0be9da7e700e9b49c1dac84a20a34e29d19dc3d19184719751a20b22",
+        "sha256_in_prefix": "a9822f8f0be9da7e700e9b49c1dac84a20a34e29d19dc3d19184719751a20b22",
+        "size_in_bytes": 32477
+      },
+      {
+        "_path": "include/alsa/seq_event.h",
+        "path_type": "hardlink",
+        "sha256": "893feea7c087216bdb3afad9b4dbd01fcb23ad9f99c1e702ea1e24091706aea7",
+        "sha256_in_prefix": "893feea7c087216bdb3afad9b4dbd01fcb23ad9f99c1e702ea1e24091706aea7",
+        "size_in_bytes": 11795
+      },
+      {
+        "_path": "include/alsa/seq_midi_event.h",
+        "path_type": "hardlink",
+        "sha256": "5ced8e67e400f5dafcfb4d5d92c790b2181a9c64b33c1e0029c1dc7704959af0",
+        "sha256_in_prefix": "5ced8e67e400f5dafcfb4d5d92c790b2181a9c64b33c1e0029c1dc7704959af0",
+        "size_in_bytes": 2390
+      },
+      {
+        "_path": "include/alsa/seqmid.h",
+        "path_type": "hardlink",
+        "sha256": "050159232aa3bfc7e9886de647bdf34a879fb400d318323ae452a39bda96a724",
+        "sha256_in_prefix": "050159232aa3bfc7e9886de647bdf34a879fb400d318323ae452a39bda96a724",
+        "size_in_bytes": 14435
+      },
+      {
+        "_path": "include/alsa/sound/asoc.h",
+        "path_type": "hardlink",
+        "sha256": "9ef022d710add1ad71f734a260ddbceca42ba398339746b010a69e08c4611536",
+        "sha256_in_prefix": "9ef022d710add1ad71f734a260ddbceca42ba398339746b010a69e08c4611536",
+        "size_in_bytes": 34
+      },
+      {
+        "_path": "include/alsa/sound/asound_fm.h",
+        "path_type": "hardlink",
+        "sha256": "01f2d13ac23b001b49497ab9c8b0c21a03354203385600e1cfa3d50d5cb6082b",
+        "sha256_in_prefix": "01f2d13ac23b001b49497ab9c8b0c21a03354203385600e1cfa3d50d5cb6082b",
+        "size_in_bytes": 39
+      },
+      {
+        "_path": "include/alsa/sound/emu10k1.h",
+        "path_type": "hardlink",
+        "sha256": "9050c100201fb687fe5cf76c52d95d7c333b6e54148ab2e172135413896a7c0d",
+        "sha256_in_prefix": "9050c100201fb687fe5cf76c52d95d7c333b6e54148ab2e172135413896a7c0d",
+        "size_in_bytes": 526
+      },
+      {
+        "_path": "include/alsa/sound/hdsp.h",
+        "path_type": "hardlink",
+        "sha256": "330512b43c88c03a1aabefae4aa7ce0deeb7a08b523d3b6eb479373f4931557f",
+        "sha256_in_prefix": "330512b43c88c03a1aabefae4aa7ce0deeb7a08b523d3b6eb479373f4931557f",
+        "size_in_bytes": 447
+      },
+      {
+        "_path": "include/alsa/sound/hdspm.h",
+        "path_type": "hardlink",
+        "sha256": "2e438eb4e304b6033b75e12f275046ebef5f00dbf3df899d42778eecbdb8eac6",
+        "sha256_in_prefix": "2e438eb4e304b6033b75e12f275046ebef5f00dbf3df899d42778eecbdb8eac6",
+        "size_in_bytes": 386
+      },
+      {
+        "_path": "include/alsa/sound/sb16_csp.h",
+        "path_type": "hardlink",
+        "sha256": "37a252053cece111c87dc93f8156b273a2d03e77fd2c953981f56a232028c120",
+        "sha256_in_prefix": "37a252053cece111c87dc93f8156b273a2d03e77fd2c953981f56a232028c120",
+        "size_in_bytes": 169
+      },
+      {
+        "_path": "include/alsa/sound/sscape_ioctl.h",
+        "path_type": "hardlink",
+        "sha256": "e3acc4c5a19601f01002631238ad6574dc62207b20462d9caa054de9a9ed83f4",
+        "sha256_in_prefix": "e3acc4c5a19601f01002631238ad6574dc62207b20462d9caa054de9a9ed83f4",
+        "size_in_bytes": 42
+      },
+      {
+        "_path": "include/alsa/sound/tlv.h",
+        "path_type": "hardlink",
+        "sha256": "6d8e48e2241af43dbd7ff999eacdf300e4fb0a4624069d7cbb292c4bb268f544",
+        "sha256_in_prefix": "6d8e48e2241af43dbd7ff999eacdf300e4fb0a4624069d7cbb292c4bb268f544",
+        "size_in_bytes": 33
+      },
+      {
+        "_path": "include/alsa/sound/type_compat.h",
+        "path_type": "hardlink",
+        "sha256": "9d62e0ccbae2a774960625e79e2ada246827d94eaaf9148e8f88120e808c2051",
+        "sha256_in_prefix": "9d62e0ccbae2a774960625e79e2ada246827d94eaaf9148e8f88120e808c2051",
+        "size_in_bytes": 1241
+      },
+      {
+        "_path": "include/alsa/sound/uapi/asoc.h",
+        "path_type": "hardlink",
+        "sha256": "2896a6d2f9bb0cebd5f0bb56ef73de7a586f397c874c0fafe97067bcb0083767",
+        "sha256_in_prefix": "2896a6d2f9bb0cebd5f0bb56ef73de7a586f397c874c0fafe97067bcb0083767",
+        "size_in_bytes": 22580
+      },
+      {
+        "_path": "include/alsa/sound/uapi/asound_fm.h",
+        "path_type": "hardlink",
+        "sha256": "dd2cded7238c17ae02fb2979b41c6869426e4908131e106c2c8cd86b35137136",
+        "sha256_in_prefix": "dd2cded7238c17ae02fb2979b41c6869426e4908131e106c2c8cd86b35137136",
+        "size_in_bytes": 4377
+      },
+      {
+        "_path": "include/alsa/sound/uapi/emu10k1.h",
+        "path_type": "hardlink",
+        "sha256": "c702ef6b307392c5eca43f51edcfa2fca1ed7b23326ce8db24a3356294d193eb",
+        "sha256_in_prefix": "c702ef6b307392c5eca43f51edcfa2fca1ed7b23326ce8db24a3356294d193eb",
+        "size_in_bytes": 17340
+      },
+      {
+        "_path": "include/alsa/sound/uapi/hdsp.h",
+        "path_type": "hardlink",
+        "sha256": "b877d369f30eb33ac39a5f07e13ec4eb3746e11a0ce49ed9b13a65c91b72d537",
+        "sha256_in_prefix": "b877d369f30eb33ac39a5f07e13ec4eb3746e11a0ce49ed9b13a65c91b72d537",
+        "size_in_bytes": 2802
+      },
+      {
+        "_path": "include/alsa/sound/uapi/hdspm.h",
+        "path_type": "hardlink",
+        "sha256": "2c03f4b26b41847cdf06eb3fa313b12715519cc52e27acf170c0c01b509fcb93",
+        "sha256_in_prefix": "2c03f4b26b41847cdf06eb3fa313b12715519cc52e27acf170c0c01b509fcb93",
+        "size_in_bytes": 5211
+      },
+      {
+        "_path": "include/alsa/sound/uapi/sb16_csp.h",
+        "path_type": "hardlink",
+        "sha256": "54f17a953fb06f8e716bff74a4d2798ce0b3a84f9f42d55da41b2ece2c4a4035",
+        "sha256_in_prefix": "54f17a953fb06f8e716bff74a4d2798ce0b3a84f9f42d55da41b2ece2c4a4035",
+        "size_in_bytes": 4304
+      },
+      {
+        "_path": "include/alsa/sound/uapi/sscape_ioctl.h",
+        "path_type": "hardlink",
+        "sha256": "8fd02d38cd2a9938b3433f8d51ffcd97721ab67a998bd885012975b3a2eec1a6",
+        "sha256_in_prefix": "8fd02d38cd2a9938b3433f8d51ffcd97721ab67a998bd885012975b3a2eec1a6",
+        "size_in_bytes": 368
+      },
+      {
+        "_path": "include/alsa/sound/uapi/tlv.h",
+        "path_type": "hardlink",
+        "sha256": "e82097410a5806f19be94884aaa6895006bc0f80ef03d133e80efd398a5d149d",
+        "sha256_in_prefix": "e82097410a5806f19be94884aaa6895006bc0f80ef03d133e80efd398a5d149d",
+        "size_in_bytes": 4601
+      },
+      {
+        "_path": "include/alsa/timer.h",
+        "path_type": "hardlink",
+        "sha256": "89e74470485445d6733a95a8b7e16da52853e20df639ed3dfcdca9ef7b72c24b",
+        "sha256_in_prefix": "89e74470485445d6733a95a8b7e16da52853e20df639ed3dfcdca9ef7b72c24b",
+        "size_in_bytes": 11382
+      },
+      {
+        "_path": "include/alsa/topology.h",
+        "path_type": "hardlink",
+        "sha256": "60b043ef3449a20327bd3bebd8cb14274a9a6342a84dd8fc2caa1647810596f0",
+        "sha256_in_prefix": "60b043ef3449a20327bd3bebd8cb14274a9a6342a84dd8fc2caa1647810596f0",
+        "size_in_bytes": 36819
+      },
+      {
+        "_path": "include/alsa/use-case.h",
+        "path_type": "hardlink",
+        "sha256": "9d366bf1ac4d55baa2097ebd304c42b48644f2aedf998a12e6d2fc820e5a15a0",
+        "sha256_in_prefix": "9d366bf1ac4d55baa2097ebd304c42b48644f2aedf998a12e6d2fc820e5a15a0",
+        "size_in_bytes": 22739
+      },
+      {
+        "_path": "include/alsa/version.h",
+        "path_type": "hardlink",
+        "sha256": "b72c68f9bebe40ffff6dad4f6ddc1f93eb65b3e34a280e7a18010f3e65ff28fc",
+        "sha256_in_prefix": "b72c68f9bebe40ffff6dad4f6ddc1f93eb65b3e34a280e7a18010f3e65ff28fc",
+        "size_in_bytes": 549
+      },
+      {
+        "_path": "include/asoundlib.h",
+        "path_type": "hardlink",
+        "sha256": "2cb0b535355ac5c311b712d2136e963e349a27b1b7f75649622d077f500e7161",
+        "sha256_in_prefix": "2cb0b535355ac5c311b712d2136e963e349a27b1b7f75649622d077f500e7161",
+        "size_in_bytes": 96
+      },
+      {
+        "_path": "include/sys/asoundlib.h",
+        "path_type": "hardlink",
+        "sha256": "2cb0b535355ac5c311b712d2136e963e349a27b1b7f75649622d077f500e7161",
+        "sha256_in_prefix": "2cb0b535355ac5c311b712d2136e963e349a27b1b7f75649622d077f500e7161",
+        "size_in_bytes": 96
+      },
+      {
+        "_path": "lib/libasound.so",
+        "path_type": "softlink",
+        "sha256": "5b43807f861e35c41e9c52446310ba3debbea4b3f9347f4085367d848fa80758",
+        "size_in_bytes": 1156640
+      },
+      {
+        "_path": "lib/libasound.so.2",
+        "path_type": "softlink",
+        "sha256": "5b43807f861e35c41e9c52446310ba3debbea4b3f9347f4085367d848fa80758",
+        "size_in_bytes": 1156640
+      },
+      {
+        "_path": "lib/libasound.so.2.0.0",
+        "file_mode": "binary",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/alsa-lib_1666698898910/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pl",
+        "sha256": "5b43807f861e35c41e9c52446310ba3debbea4b3f9347f4085367d848fa80758",
+        "sha256_in_prefix": "8569ee9dd972c7975fe4721c60d11de2a8903b3dcdbec236c4bd713a9941b506",
+        "size_in_bytes": 1156640
+      },
+      {
+        "_path": "lib/libatopology.so",
+        "path_type": "softlink",
+        "sha256": "67e9cabd602d66e0986a01babfd12a8ea452601f0400c4a74e3cab9f67afd7a9",
+        "size_in_bytes": 140544
+      },
+      {
+        "_path": "lib/libatopology.so.2",
+        "path_type": "softlink",
+        "sha256": "67e9cabd602d66e0986a01babfd12a8ea452601f0400c4a74e3cab9f67afd7a9",
+        "size_in_bytes": 140544
+      },
+      {
+        "_path": "lib/libatopology.so.2.0.0",
+        "path_type": "hardlink",
+        "sha256": "67e9cabd602d66e0986a01babfd12a8ea452601f0400c4a74e3cab9f67afd7a9",
+        "sha256_in_prefix": "67e9cabd602d66e0986a01babfd12a8ea452601f0400c4a74e3cab9f67afd7a9",
+        "size_in_bytes": 140544
+      },
+      {
+        "_path": "lib/pkgconfig/alsa-topology.pc",
+        "path_type": "hardlink",
+        "sha256": "815c1ad45d3c977b050c784b72dd27e82c6372254100fd66249758b4fcce61c9",
+        "sha256_in_prefix": "815c1ad45d3c977b050c784b72dd27e82c6372254100fd66249758b4fcce61c9",
+        "size_in_bytes": 150
+      },
+      {
+        "_path": "lib/pkgconfig/alsa.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/alsa-lib_1666698898910/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pl",
+        "sha256": "359c11fada4b60ee610235e34eec31d2160e155de8c92b9060eecbcbd03ed272",
+        "sha256_in_prefix": "c8fcf72451544486eced72eb1420ce62a0e2f26dfeb3ece07120ae0e1839c6f4",
+        "size_in_bytes": 777
+      },
+      {
+        "_path": "share/aclocal/alsa.m4",
+        "path_type": "hardlink",
+        "sha256": "e9e523f0494ea6af65311b94a3277a8d057c13a09cdd6f0a2a8b8e1e4a113207",
+        "sha256_in_prefix": "e9e523f0494ea6af65311b94a3277a8d057c13a09cdd6f0a2a8b8e1e4a113207",
+        "size_in_bytes": 6063
+      },
+      {
+        "_path": "share/alsa/alsa.conf",
+        "path_type": "hardlink",
+        "sha256": "fbcae1033c90a32bbda2d88296ba104ee0527dcbe2fec4380b1cee65f895b89c",
+        "sha256_in_prefix": "fbcae1033c90a32bbda2d88296ba104ee0527dcbe2fec4380b1cee65f895b89c",
+        "size_in_bytes": 10119
+      },
+      {
+        "_path": "share/alsa/cards/AACI.conf",
+        "path_type": "hardlink",
+        "sha256": "c6e894381791831b01df3403c5493027bcc22b11b9c018c32df93a8f17794ffe",
+        "sha256_in_prefix": "c6e894381791831b01df3403c5493027bcc22b11b9c018c32df93a8f17794ffe",
+        "size_in_bytes": 669
+      },
+      {
+        "_path": "share/alsa/cards/ATIIXP-MODEM.conf",
+        "path_type": "hardlink",
+        "sha256": "8ec8c18a874dc42f6cf925dff57b9cd8b86f0cda3e8ae9de0c6b382811ee4286",
+        "sha256_in_prefix": "8ec8c18a874dc42f6cf925dff57b9cd8b86f0cda3e8ae9de0c6b382811ee4286",
+        "size_in_bytes": 302
+      },
+      {
+        "_path": "share/alsa/cards/ATIIXP-SPDMA.conf",
+        "path_type": "hardlink",
+        "sha256": "753be05a4280bd8bbe50a04f5a54371886f9867798ee0968eb21156b770337f7",
+        "sha256_in_prefix": "753be05a4280bd8bbe50a04f5a54371886f9867798ee0968eb21156b770337f7",
+        "size_in_bytes": 2237
+      },
+      {
+        "_path": "share/alsa/cards/ATIIXP.conf",
+        "path_type": "hardlink",
+        "sha256": "626f6b628f29714ca8925b67a7a337ab12ec2cdd39c2fc5098ff8dd3865ad678",
+        "sha256_in_prefix": "626f6b628f29714ca8925b67a7a337ab12ec2cdd39c2fc5098ff8dd3865ad678",
+        "size_in_bytes": 2483
+      },
+      {
+        "_path": "share/alsa/cards/AU8810.conf",
+        "path_type": "hardlink",
+        "sha256": "ca5b2b36906ef6f4322df049e44148d2c5657768dcbc21c55e696eebe5eeb0fe",
+        "sha256_in_prefix": "ca5b2b36906ef6f4322df049e44148d2c5657768dcbc21c55e696eebe5eeb0fe",
+        "size_in_bytes": 437
+      },
+      {
+        "_path": "share/alsa/cards/AU8820.conf",
+        "path_type": "hardlink",
+        "sha256": "f396368a200d99288919481bc398996b52e278ebb65f64974bc741dccdf1723a",
+        "sha256_in_prefix": "f396368a200d99288919481bc398996b52e278ebb65f64974bc741dccdf1723a",
+        "size_in_bytes": 159
+      },
+      {
+        "_path": "share/alsa/cards/AU8830.conf",
+        "path_type": "hardlink",
+        "sha256": "5824b33f63d8884f927688111f38b9b8943747a2ee203646f8bc23ec5a40eae4",
+        "sha256_in_prefix": "5824b33f63d8884f927688111f38b9b8943747a2ee203646f8bc23ec5a40eae4",
+        "size_in_bytes": 520
+      },
+      {
+        "_path": "share/alsa/cards/Audigy.conf",
+        "path_type": "hardlink",
+        "sha256": "e78233f0d6b831a3df306b1d0152ac1e48da18efc4013c26b85051d38bf8bcc2",
+        "sha256_in_prefix": "e78233f0d6b831a3df306b1d0152ac1e48da18efc4013c26b85051d38bf8bcc2",
+        "size_in_bytes": 5899
+      },
+      {
+        "_path": "share/alsa/cards/Audigy2.conf",
+        "path_type": "hardlink",
+        "sha256": "205716b7e174b9b8bfab499d17be19610a1207ea0b49765aced98729c848c6c6",
+        "sha256_in_prefix": "205716b7e174b9b8bfab499d17be19610a1207ea0b49765aced98729c848c6c6",
+        "size_in_bytes": 7807
+      },
+      {
+        "_path": "share/alsa/cards/Aureon51.conf",
+        "path_type": "hardlink",
+        "sha256": "049002e88438628c145792a7059855d08c14c7f33b290a5547eb9203deffb7d2",
+        "sha256_in_prefix": "049002e88438628c145792a7059855d08c14c7f33b290a5547eb9203deffb7d2",
+        "size_in_bytes": 2369
+      },
+      {
+        "_path": "share/alsa/cards/Aureon71.conf",
+        "path_type": "hardlink",
+        "sha256": "b27ede016371d8b5202ad22092618da188e9509b889882e1f619e746321fe3c6",
+        "sha256_in_prefix": "b27ede016371d8b5202ad22092618da188e9509b889882e1f619e746321fe3c6",
+        "size_in_bytes": 2499
+      },
+      {
+        "_path": "share/alsa/cards/CA0106.conf",
+        "path_type": "hardlink",
+        "sha256": "0dff9acb89c5772ddd5bdf60bc11ce75d73e9097dd5214f2579ac2097834fc2a",
+        "sha256_in_prefix": "0dff9acb89c5772ddd5bdf60bc11ce75d73e9097dd5214f2579ac2097834fc2a",
+        "size_in_bytes": 3848
+      },
+      {
+        "_path": "share/alsa/cards/CMI8338-SWIEC.conf",
+        "path_type": "hardlink",
+        "sha256": "7120140996a1a2037f0edb4a9d39c1f1074fd7d6072b6132014c0cb314c52301",
+        "sha256_in_prefix": "7120140996a1a2037f0edb4a9d39c1f1074fd7d6072b6132014c0cb314c52301",
+        "size_in_bytes": 1784
+      },
+      {
+        "_path": "share/alsa/cards/CMI8338.conf",
+        "path_type": "hardlink",
+        "sha256": "db64d0d74de40d5c975dbceecf64feff164a4cc709ccbfa67958b457a2615218",
+        "sha256_in_prefix": "db64d0d74de40d5c975dbceecf64feff164a4cc709ccbfa67958b457a2615218",
+        "size_in_bytes": 1911
+      },
+      {
+        "_path": "share/alsa/cards/CMI8738-MC6.conf",
+        "path_type": "hardlink",
+        "sha256": "aff8b0c75abbfe770cb2aab21612b5f404b5468a858d6bf333a535e40ee5611c",
+        "sha256_in_prefix": "aff8b0c75abbfe770cb2aab21612b5f404b5468a858d6bf333a535e40ee5611c",
+        "size_in_bytes": 2131
+      },
+      {
+        "_path": "share/alsa/cards/CMI8738-MC8.conf",
+        "path_type": "hardlink",
+        "sha256": "010df70a0dbf4fcfc3b19b43a9af30d58fa7e1121da8069573857336a62a889c",
+        "sha256_in_prefix": "010df70a0dbf4fcfc3b19b43a9af30d58fa7e1121da8069573857336a62a889c",
+        "size_in_bytes": 2982
+      },
+      {
+        "_path": "share/alsa/cards/CMI8788.conf",
+        "path_type": "hardlink",
+        "sha256": "554b97e9bd91ca8debe8517e19f01dfb1bdf0e95e8bbffa431556457a1554557",
+        "sha256_in_prefix": "554b97e9bd91ca8debe8517e19f01dfb1bdf0e95e8bbffa431556457a1554557",
+        "size_in_bytes": 1641
+      },
+      {
+        "_path": "share/alsa/cards/CS46xx.conf",
+        "path_type": "hardlink",
+        "sha256": "79bd52df908894e3eca05c52db832a0996732556b038aba3b17a7738e7eda274",
+        "sha256_in_prefix": "79bd52df908894e3eca05c52db832a0996732556b038aba3b17a7738e7eda274",
+        "size_in_bytes": 2945
+      },
+      {
+        "_path": "share/alsa/cards/EMU10K1.conf",
+        "path_type": "hardlink",
+        "sha256": "5a5a1a8ef42aa35db0a0cc9a29bc570647ae11bcc3697aa56e26fac722624cd3",
+        "sha256_in_prefix": "5a5a1a8ef42aa35db0a0cc9a29bc570647ae11bcc3697aa56e26fac722624cd3",
+        "size_in_bytes": 5672
+      },
+      {
+        "_path": "share/alsa/cards/EMU10K1X.conf",
+        "path_type": "hardlink",
+        "sha256": "37fe34f7ddc7a7758863cfd8f32718b1434acee5b5a93548ff5605629468648d",
+        "sha256_in_prefix": "37fe34f7ddc7a7758863cfd8f32718b1434acee5b5a93548ff5605629468648d",
+        "size_in_bytes": 2754
+      },
+      {
+        "_path": "share/alsa/cards/ENS1370.conf",
+        "path_type": "hardlink",
+        "sha256": "7e4f5a1d3007a5938c67b7faf2269cbc6c7bf7487797e5c8111574525c75f8bb",
+        "sha256_in_prefix": "7e4f5a1d3007a5938c67b7faf2269cbc6c7bf7487797e5c8111574525c75f8bb",
+        "size_in_bytes": 1367
+      },
+      {
+        "_path": "share/alsa/cards/ENS1371.conf",
+        "path_type": "hardlink",
+        "sha256": "72f5b63f7016d076fc59087ab28b60eba988e9bc41814759fc430b364f42997d",
+        "sha256_in_prefix": "72f5b63f7016d076fc59087ab28b60eba988e9bc41814759fc430b364f42997d",
+        "size_in_bytes": 1806
+      },
+      {
+        "_path": "share/alsa/cards/ES1968.conf",
+        "path_type": "hardlink",
+        "sha256": "fa3218152521ad798b5770aad93363fd57557c84dd32d630bf273041c21fa5dc",
+        "sha256_in_prefix": "fa3218152521ad798b5770aad93363fd57557c84dd32d630bf273041c21fa5dc",
+        "size_in_bytes": 152
+      },
+      {
+        "_path": "share/alsa/cards/Echo_Echo3G.conf",
+        "path_type": "hardlink",
+        "sha256": "b6df2b1986dbc8cc543130f6fe07c58e8c0f96f360891081096df1d3b4bd865f",
+        "sha256_in_prefix": "b6df2b1986dbc8cc543130f6fe07c58e8c0f96f360891081096df1d3b4bd865f",
+        "size_in_bytes": 4399
+      },
+      {
+        "_path": "share/alsa/cards/FM801.conf",
+        "path_type": "hardlink",
+        "sha256": "022ca9b10d7cc8a32f60b0aff3960fdd9fb06a68a2cecb2a54da5426d64f1903",
+        "sha256_in_prefix": "022ca9b10d7cc8a32f60b0aff3960fdd9fb06a68a2cecb2a54da5426d64f1903",
+        "size_in_bytes": 1227
+      },
+      {
+        "_path": "share/alsa/cards/FWSpeakers.conf",
+        "path_type": "hardlink",
+        "sha256": "eab3789ba81a6800f11fb01a386e32ae397b0d225f4d7144f486e3ee393ad0bb",
+        "sha256_in_prefix": "eab3789ba81a6800f11fb01a386e32ae397b0d225f4d7144f486e3ee393ad0bb",
+        "size_in_bytes": 333
+      },
+      {
+        "_path": "share/alsa/cards/FireWave.conf",
+        "path_type": "hardlink",
+        "sha256": "f4123f0f106c0baf213020ef8cb5aed19e79a2d896fb9e6603d43c001a704254",
+        "sha256_in_prefix": "f4123f0f106c0baf213020ef8cb5aed19e79a2d896fb9e6603d43c001a704254",
+        "size_in_bytes": 702
+      },
+      {
+        "_path": "share/alsa/cards/GUS.conf",
+        "path_type": "hardlink",
+        "sha256": "97942d9546bca7fa50841e74168d7e1e8f62468ff8cb9fc3794dd7e3770d8ace",
+        "sha256_in_prefix": "97942d9546bca7fa50841e74168d7e1e8f62468ff8cb9fc3794dd7e3770d8ace",
+        "size_in_bytes": 217
+      },
+      {
+        "_path": "share/alsa/cards/HDA-Intel.conf",
+        "path_type": "hardlink",
+        "sha256": "3a5951177ede3e7afc7259dca02a4f62080a9f388d6489eefe98cd1b74bc0fe8",
+        "sha256_in_prefix": "3a5951177ede3e7afc7259dca02a4f62080a9f388d6489eefe98cd1b74bc0fe8",
+        "size_in_bytes": 8074
+      },
+      {
+        "_path": "share/alsa/cards/HdmiLpeAudio.conf",
+        "path_type": "hardlink",
+        "sha256": "58caca46430a262b1f5707275217e97418ae97839c714fecd1509a3c37dc8c10",
+        "sha256_in_prefix": "58caca46430a262b1f5707275217e97418ae97839c714fecd1509a3c37dc8c10",
+        "size_in_bytes": 1509
+      },
+      {
+        "_path": "share/alsa/cards/ICE1712.conf",
+        "path_type": "hardlink",
+        "sha256": "31761fd7920b74f976eb545f356c835d82cdd4d266812aca8c49c1575c642c85",
+        "sha256_in_prefix": "31761fd7920b74f976eb545f356c835d82cdd4d266812aca8c49c1575c642c85",
+        "size_in_bytes": 2409
+      },
+      {
+        "_path": "share/alsa/cards/ICE1724.conf",
+        "path_type": "hardlink",
+        "sha256": "88fcf5d6019e425f849f9d2aa67a5620203235982fe80993f0d6c6c9bb65a18e",
+        "sha256_in_prefix": "88fcf5d6019e425f849f9d2aa67a5620203235982fe80993f0d6c6c9bb65a18e",
+        "size_in_bytes": 2891
+      },
+      {
+        "_path": "share/alsa/cards/ICH-MODEM.conf",
+        "path_type": "hardlink",
+        "sha256": "3b455ac43aeaf36887eec1300c2580fe645499c8f6ef277f193635b0bd5b26c3",
+        "sha256_in_prefix": "3b455ac43aeaf36887eec1300c2580fe645499c8f6ef277f193635b0bd5b26c3",
+        "size_in_bytes": 192
+      },
+      {
+        "_path": "share/alsa/cards/ICH.conf",
+        "path_type": "hardlink",
+        "sha256": "f846aba377c4930fa524fda0ef149b51f519065c9980403e1698371ae7a418fa",
+        "sha256_in_prefix": "f846aba377c4930fa524fda0ef149b51f519065c9980403e1698371ae7a418fa",
+        "size_in_bytes": 3054
+      },
+      {
+        "_path": "share/alsa/cards/ICH4.conf",
+        "path_type": "hardlink",
+        "sha256": "f5f2ddbc85bd703a0fea9c677e9043bb98cd95b8578064092b67ae4c2b557b3c",
+        "sha256_in_prefix": "f5f2ddbc85bd703a0fea9c677e9043bb98cd95b8578064092b67ae4c2b557b3c",
+        "size_in_bytes": 2886
+      },
+      {
+        "_path": "share/alsa/cards/Loopback.conf",
+        "path_type": "hardlink",
+        "sha256": "48d733a429b58b0721895b5c28a9df4aba7f6804c5cfb9df484b801660aa672c",
+        "sha256_in_prefix": "48d733a429b58b0721895b5c28a9df4aba7f6804c5cfb9df484b801660aa672c",
+        "size_in_bytes": 1272
+      },
+      {
+        "_path": "share/alsa/cards/Maestro3.conf",
+        "path_type": "hardlink",
+        "sha256": "9291749b971d36f4f436127d105641031b44dde0da9ea0411937fb4e34897f24",
+        "sha256_in_prefix": "9291749b971d36f4f436127d105641031b44dde0da9ea0411937fb4e34897f24",
+        "size_in_bytes": 558
+      },
+      {
+        "_path": "share/alsa/cards/NFORCE.conf",
+        "path_type": "hardlink",
+        "sha256": "812eda76155dfa495eb1d743356a2471fe02add40bea1d669188ee3f083b5dc4",
+        "sha256_in_prefix": "812eda76155dfa495eb1d743356a2471fe02add40bea1d669188ee3f083b5dc4",
+        "size_in_bytes": 4803
+      },
+      {
+        "_path": "share/alsa/cards/PC-Speaker.conf",
+        "path_type": "hardlink",
+        "sha256": "d6c8185b9a3bcfa829632ea2238ea1804f9eb7568d2047bdaf8e519e883146ee",
+        "sha256_in_prefix": "d6c8185b9a3bcfa829632ea2238ea1804f9eb7568d2047bdaf8e519e883146ee",
+        "size_in_bytes": 657
+      },
+      {
+        "_path": "share/alsa/cards/PMac.conf",
+        "path_type": "hardlink",
+        "sha256": "c79d68b2205708c68f073c4b3e86006c0b1fcbe2d93026f69f3b0671fcf97a29",
+        "sha256_in_prefix": "c79d68b2205708c68f073c4b3e86006c0b1fcbe2d93026f69f3b0671fcf97a29",
+        "size_in_bytes": 486
+      },
+      {
+        "_path": "share/alsa/cards/PMacToonie.conf",
+        "path_type": "hardlink",
+        "sha256": "778ac126c680298a4ca4f9e004098466bf51298433b91ca8ba850647e6b3e680",
+        "sha256_in_prefix": "778ac126c680298a4ca4f9e004098466bf51298433b91ca8ba850647e6b3e680",
+        "size_in_bytes": 705
+      },
+      {
+        "_path": "share/alsa/cards/PS3.conf",
+        "path_type": "hardlink",
+        "sha256": "cddd47a62dcb70aa209d2788f743c469a3d799a0e1093fea5d200837a5ea6f9a",
+        "sha256_in_prefix": "cddd47a62dcb70aa209d2788f743c469a3d799a0e1093fea5d200837a5ea6f9a",
+        "size_in_bytes": 1152
+      },
+      {
+        "_path": "share/alsa/cards/RME9636.conf",
+        "path_type": "hardlink",
+        "sha256": "4c372e8777d554e4cf9b10ece78d967ef06daadaa0362d46468f927d9062ef5f",
+        "sha256_in_prefix": "4c372e8777d554e4cf9b10ece78d967ef06daadaa0362d46468f927d9062ef5f",
+        "size_in_bytes": 780
+      },
+      {
+        "_path": "share/alsa/cards/RME9652.conf",
+        "path_type": "hardlink",
+        "sha256": "8a065a1bc0f7e9843e54fc098ccebb049dc85981d93f7e1a24db26f958f33339",
+        "sha256_in_prefix": "8a065a1bc0f7e9843e54fc098ccebb049dc85981d93f7e1a24db26f958f33339",
+        "size_in_bytes": 780
+      },
+      {
+        "_path": "share/alsa/cards/SB-XFi.conf",
+        "path_type": "hardlink",
+        "sha256": "14751edd67a1b842be0c44a8104ba132acc85e619a4ffdf3cfb094656b345daa",
+        "sha256_in_prefix": "14751edd67a1b842be0c44a8104ba132acc85e619a4ffdf3cfb094656b345daa",
+        "size_in_bytes": 1502
+      },
+      {
+        "_path": "share/alsa/cards/SI7018.conf",
+        "path_type": "hardlink",
+        "sha256": "0d351ba328e6d216857cd0f73632b1e5b929fd9aafc622d7089d44ba78f3b549",
+        "sha256_in_prefix": "0d351ba328e6d216857cd0f73632b1e5b929fd9aafc622d7089d44ba78f3b549",
+        "size_in_bytes": 2278
+      },
+      {
+        "_path": "share/alsa/cards/TRID4DWAVENX.conf",
+        "path_type": "hardlink",
+        "sha256": "1e62875ffadcc69a78cee0146314121aa51317af113ff9782071875d23b22249",
+        "sha256_in_prefix": "1e62875ffadcc69a78cee0146314121aa51317af113ff9782071875d23b22249",
+        "size_in_bytes": 1792
+      },
+      {
+        "_path": "share/alsa/cards/USB-Audio.conf",
+        "path_type": "hardlink",
+        "sha256": "4cbb7af90ac60667508e41c369ea1c5221f489d33f82f82d761c1777773b2d07",
+        "sha256_in_prefix": "4cbb7af90ac60667508e41c369ea1c5221f489d33f82f82d761c1777773b2d07",
+        "size_in_bytes": 9742
+      },
+      {
+        "_path": "share/alsa/cards/VIA686A.conf",
+        "path_type": "hardlink",
+        "sha256": "13d828536619f7b9aa16d00b6d8231e5e26266aa417dec1c5f293c9d6263e5ce",
+        "sha256_in_prefix": "13d828536619f7b9aa16d00b6d8231e5e26266aa417dec1c5f293c9d6263e5ce",
+        "size_in_bytes": 1199
+      },
+      {
+        "_path": "share/alsa/cards/VIA8233.conf",
+        "path_type": "hardlink",
+        "sha256": "2ee6d46c2bda0be75a42bf29f9bf242ebfd3502dbee57a5bd08c0cae4b48d097",
+        "sha256_in_prefix": "2ee6d46c2bda0be75a42bf29f9bf242ebfd3502dbee57a5bd08c0cae4b48d097",
+        "size_in_bytes": 2756
+      },
+      {
+        "_path": "share/alsa/cards/VIA8233A.conf",
+        "path_type": "hardlink",
+        "sha256": "c405ae909d53f9dcb71546c46bde37e63d76c6fed2bbd1f0e272ea26c69e832e",
+        "sha256_in_prefix": "c405ae909d53f9dcb71546c46bde37e63d76c6fed2bbd1f0e272ea26c69e832e",
+        "size_in_bytes": 2812
+      },
+      {
+        "_path": "share/alsa/cards/VIA8237.conf",
+        "path_type": "hardlink",
+        "sha256": "8fe2eb01c92038c0b50f98f0386c435db852fe131323a585f529d89f81fb2ba7",
+        "sha256_in_prefix": "8fe2eb01c92038c0b50f98f0386c435db852fe131323a585f529d89f81fb2ba7",
+        "size_in_bytes": 2586
+      },
+      {
+        "_path": "share/alsa/cards/VX222.conf",
+        "path_type": "hardlink",
+        "sha256": "39f4fedef3fdab641b954608f8f5f2c1d3ed4c1bb919929286b87a668f586529",
+        "sha256_in_prefix": "39f4fedef3fdab641b954608f8f5f2c1d3ed4c1bb919929286b87a668f586529",
+        "size_in_bytes": 830
+      },
+      {
+        "_path": "share/alsa/cards/VXPocket.conf",
+        "path_type": "hardlink",
+        "sha256": "c5d14491b5de612c7bbc69b4b5989fd1002d93f6fd6a3a672249951f9367a515",
+        "sha256_in_prefix": "c5d14491b5de612c7bbc69b4b5989fd1002d93f6fd6a3a672249951f9367a515",
+        "size_in_bytes": 839
+      },
+      {
+        "_path": "share/alsa/cards/VXPocket440.conf",
+        "path_type": "hardlink",
+        "sha256": "600ac09279191aded92809840171fdf6184663c6bc8e0c188df255862536e8e7",
+        "sha256_in_prefix": "600ac09279191aded92809840171fdf6184663c6bc8e0c188df255862536e8e7",
+        "size_in_bytes": 1480
+      },
+      {
+        "_path": "share/alsa/cards/YMF744.conf",
+        "path_type": "hardlink",
+        "sha256": "d024c523af4e2dbcf967e88b2101ce340bc8dd1c1fa5f5ef3746fffe4ec11d7f",
+        "sha256_in_prefix": "d024c523af4e2dbcf967e88b2101ce340bc8dd1c1fa5f5ef3746fffe4ec11d7f",
+        "size_in_bytes": 1357
+      },
+      {
+        "_path": "share/alsa/cards/aliases.conf",
+        "path_type": "hardlink",
+        "sha256": "8bad941984949f531c03fd813941ad055afd5883e3be0c0408fd4dea7feab5d8",
+        "sha256_in_prefix": "8bad941984949f531c03fd813941ad055afd5883e3be0c0408fd4dea7feab5d8",
+        "size_in_bytes": 1487
+      },
+      {
+        "_path": "share/alsa/cards/pistachio-card.conf",
+        "path_type": "hardlink",
+        "sha256": "39ab71393579ea7ed4ad20b58cc61579462b4ac0db559e871840b218dc712fc5",
+        "sha256_in_prefix": "39ab71393579ea7ed4ad20b58cc61579462b4ac0db559e871840b218dc712fc5",
+        "size_in_bytes": 1889
+      },
+      {
+        "_path": "share/alsa/cards/vc4-hdmi.conf",
+        "path_type": "hardlink",
+        "sha256": "5189377924d34b4442151489b76ec877d19a9676a1332d1bb7e4b20c0281b745",
+        "sha256_in_prefix": "5189377924d34b4442151489b76ec877d19a9676a1332d1bb7e4b20c0281b745",
+        "size_in_bytes": 1428
+      },
+      {
+        "_path": "share/alsa/ctl/default.conf",
+        "path_type": "hardlink",
+        "sha256": "6ab4a977ee780c466ab09ce5b3eb11a81e829a07cc277e108416be5fb57360f8",
+        "sha256_in_prefix": "6ab4a977ee780c466ab09ce5b3eb11a81e829a07cc277e108416be5fb57360f8",
+        "size_in_bytes": 539
+      },
+      {
+        "_path": "share/alsa/pcm/center_lfe.conf",
+        "path_type": "hardlink",
+        "sha256": "d7c6d1582e910445db3bdacdce95d57f5833373d57944b92d3604478df992663",
+        "sha256_in_prefix": "d7c6d1582e910445db3bdacdce95d57f5833373d57944b92d3604478df992663",
+        "size_in_bytes": 803
+      },
+      {
+        "_path": "share/alsa/pcm/default.conf",
+        "path_type": "hardlink",
+        "sha256": "751d2fdecf36464d11f5b0895f020d5875265ca53423d20eae532d4ce72ecb57",
+        "sha256_in_prefix": "751d2fdecf36464d11f5b0895f020d5875265ca53423d20eae532d4ce72ecb57",
+        "size_in_bytes": 760
+      },
+      {
+        "_path": "share/alsa/pcm/dmix.conf",
+        "path_type": "hardlink",
+        "sha256": "68b8d7f66f991d7612cdaf379504bf4ca1ee75fefb3cc3a0479177287d655242",
+        "sha256_in_prefix": "68b8d7f66f991d7612cdaf379504bf4ca1ee75fefb3cc3a0479177287d655242",
+        "size_in_bytes": 1708
+      },
+      {
+        "_path": "share/alsa/pcm/dpl.conf",
+        "path_type": "hardlink",
+        "sha256": "ccec7c194270433c2dcdf3622b2ef25e3197020da800662c6111ff8b8638f30b",
+        "sha256_in_prefix": "ccec7c194270433c2dcdf3622b2ef25e3197020da800662c6111ff8b8638f30b",
+        "size_in_bytes": 645
+      },
+      {
+        "_path": "share/alsa/pcm/dsnoop.conf",
+        "path_type": "hardlink",
+        "sha256": "c2ac63498263b277b6adc2f19caf5463ce49f4ef8f8612fa17ac71433e5d008c",
+        "sha256_in_prefix": "c2ac63498263b277b6adc2f19caf5463ce49f4ef8f8612fa17ac71433e5d008c",
+        "size_in_bytes": 1590
+      },
+      {
+        "_path": "share/alsa/pcm/front.conf",
+        "path_type": "hardlink",
+        "sha256": "f9c8750ab61549d15b24adccc39587459e1fd6a448f259625d3c31fb0e46f8db",
+        "sha256_in_prefix": "f9c8750ab61549d15b24adccc39587459e1fd6a448f259625d3c31fb0e46f8db",
+        "size_in_bytes": 802
+      },
+      {
+        "_path": "share/alsa/pcm/hdmi.conf",
+        "path_type": "hardlink",
+        "sha256": "4d0708b1417921f72bece0217547b3b41ca348f93804496a5061f20c92c073f0",
+        "sha256_in_prefix": "4d0708b1417921f72bece0217547b3b41ca348f93804496a5061f20c92c073f0",
+        "size_in_bytes": 1186
+      },
+      {
+        "_path": "share/alsa/pcm/iec958.conf",
+        "path_type": "hardlink",
+        "sha256": "30e4411fb010b64f1c570534c805ce4ce9be98ed1bbad95a2cdb7e6ed8bb1bcd",
+        "sha256_in_prefix": "30e4411fb010b64f1c570534c805ce4ce9be98ed1bbad95a2cdb7e6ed8bb1bcd",
+        "size_in_bytes": 1218
+      },
+      {
+        "_path": "share/alsa/pcm/modem.conf",
+        "path_type": "hardlink",
+        "sha256": "56eaca2008cdef9a8b94f1e622f10b6c21cc1496b9b4e570ff989b19369e85b8",
+        "sha256_in_prefix": "56eaca2008cdef9a8b94f1e622f10b6c21cc1496b9b4e570ff989b19369e85b8",
+        "size_in_bytes": 1312
+      },
+      {
+        "_path": "share/alsa/pcm/rear.conf",
+        "path_type": "hardlink",
+        "sha256": "663ebadd34cf94e8b5780fa51159c62d7cce503cf955f585a44b05eb9e390022",
+        "sha256_in_prefix": "663ebadd34cf94e8b5780fa51159c62d7cce503cf955f585a44b05eb9e390022",
+        "size_in_bytes": 742
+      },
+      {
+        "_path": "share/alsa/pcm/side.conf",
+        "path_type": "hardlink",
+        "sha256": "de6aa38da3163709d3b81cc8a56c4afed3e76788cc0cd912c14ec6c5b2a0761a",
+        "sha256_in_prefix": "de6aa38da3163709d3b81cc8a56c4afed3e76788cc0cd912c14ec6c5b2a0761a",
+        "size_in_bytes": 742
+      },
+      {
+        "_path": "share/alsa/pcm/surround21.conf",
+        "path_type": "hardlink",
+        "sha256": "4849b4b523b4995d5d700370787511ab4cd73db447f8fc02dd6e0bb221025120",
+        "sha256_in_prefix": "4849b4b523b4995d5d700370787511ab4cd73db447f8fc02dd6e0bb221025120",
+        "size_in_bytes": 923
+      },
+      {
+        "_path": "share/alsa/pcm/surround40.conf",
+        "path_type": "hardlink",
+        "sha256": "f32c9810643fe2a371ff0e3c62011b4fbb544702e08424425983f74146989394",
+        "sha256_in_prefix": "f32c9810643fe2a371ff0e3c62011b4fbb544702e08424425983f74146989394",
+        "size_in_bytes": 901
+      },
+      {
+        "_path": "share/alsa/pcm/surround41.conf",
+        "path_type": "hardlink",
+        "sha256": "8ee8178f092294ff94ce2e065126888992eeb35cd5119e53487fd0b55fc8be32",
+        "sha256_in_prefix": "8ee8178f092294ff94ce2e065126888992eeb35cd5119e53487fd0b55fc8be32",
+        "size_in_bytes": 1004
+      },
+      {
+        "_path": "share/alsa/pcm/surround50.conf",
+        "path_type": "hardlink",
+        "sha256": "7d028550074f0e1d14c9a09bb76a6498771c2ca8660a8cebbf61b6c19d5e70da",
+        "sha256_in_prefix": "7d028550074f0e1d14c9a09bb76a6498771c2ca8660a8cebbf61b6c19d5e70da",
+        "size_in_bytes": 1003
+      },
+      {
+        "_path": "share/alsa/pcm/surround51.conf",
+        "path_type": "hardlink",
+        "sha256": "6ee4124c414833fdfd24dbb584092b77564aaa3481a4b73f34c301ac79636428",
+        "sha256_in_prefix": "6ee4124c414833fdfd24dbb584092b77564aaa3481a4b73f34c301ac79636428",
+        "size_in_bytes": 954
+      },
+      {
+        "_path": "share/alsa/pcm/surround71.conf",
+        "path_type": "hardlink",
+        "sha256": "615c9e0a739902b304787ea3cb202800ac861727fb2e1501eaa409f4c6a9fc40",
+        "sha256_in_prefix": "615c9e0a739902b304787ea3cb202800ac861727fb2e1501eaa409f4c6a9fc40",
+        "size_in_bytes": 1002
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "2c0a618d0fa695e4e01a30e7ff31094be540c52e9085cbd724edb132c65cf9cd",
+  "size": 592320,
+  "subdir": "linux-64",
+  "timestamp": 1666699031168,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/alsa-lib-1.2.8-h166bdaf_0.tar.bz2",
+  "version": "1.2.8"
+}

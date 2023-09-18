@@ -1,0 +1,94 @@
+/****************************************************************************
+**
+** Copyright (C) 2016 The Qt Company Ltd.
+** Contact: https://www.qt.io/licensing/
+**
+** This file is part of the documentation of the Qt Toolkit.
+**
+** $QT_BEGIN_LICENSE:FDL$
+** Commercial License Usage
+** Licensees holding valid commercial Qt licenses may use this file in
+** accordance with the commercial license agreement provided with the
+** Software or, alternatively, in accordance with the terms contained in
+** a written agreement between you and The Qt Company. For licensing terms
+** and conditions see https://www.qt.io/terms-conditions. For further
+** information use the contact form at https://www.qt.io/contact-us.
+**
+** GNU Free Documentation License Usage
+** Alternatively, this file may be used under the terms of the GNU Free
+** Documentation License version 1.3 as published by the Free Software
+** Foundation and appearing in the file included in the packaging of
+** this file. Please review the following information to ensure
+** the GNU Free Documentation License version 1.3 requirements
+** will be met: https://www.gnu.org/licenses/fdl-1.3.html.
+** $QT_END_LICENSE$
+**
+****************************************************************************/
+
+/*!
+    \externalpage http://www.ietf.org/rfc/rfc1179.txt
+    \title RFC 1179
+    \keyword lpr
+*/
+
+/*!
+    \externalpage http://www.rfc-editor.org/rfc/rfc1738.txt
+    \title RFC 1738
+*/
+
+/*!
+    \externalpage http://www.rfc-editor.org/rfc/rfc1928.txt
+    \title RFC 1928
+*/
+
+/*!
+    \externalpage http://www.rfc-editor.org/rfc/rfc1929.txt
+    \title RFC 1929
+*/
+
+/*!
+    \externalpage http://www.rfc-editor.org/rfc/rfc2045.txt
+    \title RFC 2045
+*/
+
+/*!
+    \externalpage http://www.rfc-editor.org/rfc/rfc2109.txt
+    \title RFC 2109
+    HTTP State Management Mechanism
+*/
+
+/*!
+    \externalpage http://www.rfc-editor.org/rfc/rfc2965.txt
+    \title RFC 2965
+    HTTP State Management Mechanism
+*/
+
+/*!
+    \externalpage http://www.rfc-editor.org/rfc/rfc3174.txt
+    \title RFC 3174
+*/
+
+/*!
+    \externalpage http://www.rfc-editor.org/rfc/rfc3491.txt
+    \title RFC 3491
+*/
+
+/*!
+    \externalpage http://www.rfc-editor.org/rfc/rfc3986.txt
+    \title RFC 3986
+*/
+
+/*!
+    \externalpage http://www.rfc-editor.org/rfc/rfc2822.txt
+    \title RFC 2822
+*/
+
+/*!
+    \externalpage http://www.rfc-editor.org/rfc/rfc1036.txt
+    \title RFC 1036
+*/
+
+/*!
+    \externalpage http://www.rfc-editor.org/rfc/rfc850.txt
+    \title RFC 850
+*/

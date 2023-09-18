@@ -1,0 +1,13 @@
+prefix=/workspaces/scipy/venv
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+includedir=${prefix}/include/qt
+
+
+Name: Qt5 X11Extras
+Description: Qt X11Extras module
+Version: 5.15.8
+Libs: -L${libdir} -lQt5X11Extras 
+Cflags: -DQT_X11EXTRAS_LIB -I${includedir}/QtX11Extras -I${includedir}
+Requires: Qt5Core Qt5Gui
+

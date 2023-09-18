@@ -1,0 +1,73 @@
+/**
+ * Special-cases for the sphinx-design lib
+ * Mainly to make it compatible with the dark/light themes of pydata-sphinx-theme
+ */
+
+/*******************************************************************************
+ * shadows
+ */
+.sd-shadow-xs,
+.sd-shadow-sm,
+.sd-shadow-md,
+.sd-shadow-lg {
+  box-shadow: 0 0.5rem 1rem var(--pst-color-shadow);
+}
+
+/*******************************************************************************
+ * cards
+ */
+
+.bd-content .sd-card {
+  border: 1px solid var(--pst-color-preformatted-border);
+
+  .sd-card-header {
+    background-color: var(--pst-color-panel-background);
+    border-bottom: 1px solid var(--pst-color-preformatted-border);
+  }
+  .sd-card-footer {
+    background-color: var(--pst-color-panel-background);
+    border-top: 1px solid var(--pst-color-preformatted-border);
+  }
+
+  .sd-card-body {
+    background-color: var(--pst-color-panel-background);
+  }
+}
+
+.bd-content details {
+  &.sd-dropdown:not([open]) > .sd-card-header {
+    border: none;
+  }
+}
+/*******************************************************************************
+ * tabs
+ */
+
+.bd-content .sd-tab-set {
+  > input {
+    // Active tab label
+    &:checked + label {
+      border-color: var(--pst-color-active-navigation);
+      color: var(--pst-color-active-navigation);
+    }
+
+    // hover label
+    &:not(:checked) + label:hover {
+      border-color: var(--pst-color-active-navigation);
+      color: var(--pst-color-active-navigation);
+      opacity: 0.5;
+    }
+  }
+
+  // Tab label
+  > label {
+    color: var(--pst-color-deactive-navigation);
+
+    // Hovered label
+    html &:hover {
+      color: var(--pst-color-active-navigation);
+      border-color: var(--pst-color-active-navigation);
+      opacity: 0.5;
+    }
+  }
+}

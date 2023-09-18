@@ -1,0 +1,69 @@
+/**
+ * Special-cases for the sphinx-panels lib
+ * Mainly to make it compatible with the dark/light themes of pydata-sphinx-theme
+ * DEPRECATE after 0.10
+ */
+
+/*******************************************************************************
+ * sphinx-panels includes Bootstrap 4, which uses .container which can conflict
+ * with docutils' `.. container::` directive.
+ */
+.container[role="main"] {
+  max-width: initial;
+  padding-left: initial;
+  padding-right: initial;
+}
+
+/*******************************************************************************
+ * cards
+ */
+
+.sphinx-bs .card {
+  border: 1px solid var(--pst-color-preformatted-border);
+  background-color: var(--pst-color-panel-background);
+
+  .card-header {
+    border-bottom: 1px solid var(--pst-color-preformatted-border);
+  }
+
+  .card-footer {
+    border-top: 1px solid var(--pst-color-preformatted-border);
+  }
+}
+
+/*******************************************************************************
+ * tabs
+ */
+
+.bd-content .tabbed-set {
+  > input {
+    // Active tab label
+    &:checked + label {
+      border-color: var(--pst-color-active-navigation);
+      color: var(--pst-color-active-navigation);
+    }
+
+    // hover label
+    &:not(:checked) + label:hover {
+      border-color: var(--pst-color-active-navigation);
+      color: var(--pst-color-active-navigation);
+      opacity: 0.5;
+    }
+  }
+
+  // Tab label
+  > label {
+    color: var(--pst-color-deactive-navigation);
+
+    // Hovered label
+    html &:hover {
+      color: var(--pst-color-active-navigation);
+      border-color: var(--pst-color-active-navigation);
+      opacity: 0.5;
+    }
+  }
+
+  > .tabbed-content {
+    border-color: var(pst-color-border);
+  }
+}

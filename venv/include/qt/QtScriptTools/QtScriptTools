@@ -1,0 +1,6 @@
+#ifndef QT_QTSCRIPTTOOLS_MODULE_H
+#define QT_QTSCRIPTTOOLS_MODULE_H
+#include <QtScriptTools/QtScriptToolsDepends>
+#include "qscriptenginedebugger.h"
+#include "qtscripttoolsversion.h"
+#endif

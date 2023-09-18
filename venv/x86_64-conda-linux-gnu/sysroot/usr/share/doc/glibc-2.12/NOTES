@@ -1,0 +1,223 @@
+Feature Test Macros
+-------------------
+
+The exact set of features available when you compile a source file is
+controlled by which "feature test macros" you define.
+
+   If you compile your programs using `gcc -ansi', you get only the
+ISO C library features, unless you explicitly request additional
+features by defining one or more of the feature macros.  *Note GNU CC
+Command Options: (gcc.info)Invoking GCC, for more information about GCC
+options.
+
+   You should define these macros by using `#define' preprocessor
+directives at the top of your source code files.  These directives
+_must_ come before any `#include' of a system header file.  It is best
+to make them the very first thing in the file, preceded only by
+comments.  You could also use the `-D' option to GCC, but it's better
+if you make the source files indicate their own meaning in a
+self-contained way.
+
+   This system exists to allow the library to conform to multiple
+standards.  Although the different standards are often described as
+supersets of each other, they are usually incompatible because larger
+standards require functions with names that smaller ones reserve to the
+user program.  This is not mere pedantry -- it has been a problem in
+practice.  For instance, some non-GNU programs define functions named
+`getline' that have nothing to do with this library's `getline'.  They
+would not be compilable if all features were enabled indiscriminately.
+
+   This should not be used to verify that a program conforms to a
+limited standard.  It is insufficient for this purpose, as it will not
+protect you from including header files outside the standard, or
+relying on semantics undefined within the standard.
+
+ -- Macro: _POSIX_SOURCE
+     If you define this macro, then the functionality from the POSIX.1
+     standard (IEEE Standard 1003.1) is available, as well as all of the
+     ISO C facilities.
+
+     The state of `_POSIX_SOURCE' is irrelevant if you define the macro
+     `_POSIX_C_SOURCE' to a positive integer.
+
+ -- Macro: _POSIX_C_SOURCE
+     Define this macro to a positive integer to control which POSIX
+     functionality is made available.  The greater the value of this
+     macro, the more functionality is made available.
+
+     If you define this macro to a value greater than or equal to `1',
+     then the functionality from the 1990 edition of the POSIX.1
+     standard (IEEE Standard 1003.1-1990) is made available.
+
+     If you define this macro to a value greater than or equal to `2',
+     then the functionality from the 1992 edition of the POSIX.2
+     standard (IEEE Standard 1003.2-1992) is made available.
+
+     If you define this macro to a value greater than or equal to
+     `199309L', then the functionality from the 1993 edition of the
+     POSIX.1b standard (IEEE Standard 1003.1b-1993) is made available.
+
+     Greater values for `_POSIX_C_SOURCE' will enable future extensions.
+     The POSIX standards process will define these values as necessary,
+     and the GNU C Library should support them some time after they
+     become standardized.  The 1996 edition of POSIX.1 (ISO/IEC 9945-1:
+     1996) states that if you define `_POSIX_C_SOURCE' to a value
+     greater than or equal to `199506L', then the functionality from
+     the 1996 edition is made available.
+
+ -- Macro: _BSD_SOURCE
+     If you define this macro, functionality derived from 4.3 BSD Unix
+     is included as well as the ISO C, POSIX.1, and POSIX.2 material.
+
+     Some of the features derived from 4.3 BSD Unix conflict with the
+     corresponding features specified by the POSIX.1 standard.  If this
+     macro is defined, the 4.3 BSD definitions take precedence over the
+     POSIX definitions.
+
+     Due to the nature of some of the conflicts between 4.3 BSD and
+     POSIX.1, you need to use a special "BSD compatibility library"
+     when linking programs compiled for BSD compatibility.  This is
+     because some functions must be defined in two different ways, one
+     of them in the normal C library, and one of them in the
+     compatibility library.  If your program defines `_BSD_SOURCE', you
+     must give the option `-lbsd-compat' to the compiler or linker when
+     linking the program, to tell it to find functions in this special
+     compatibility library before looking for them in the normal C
+     library.  
+
+ -- Macro: _SVID_SOURCE
+     If you define this macro, functionality derived from SVID is
+     included as well as the ISO C, POSIX.1, POSIX.2, and X/Open
+     material.
+
+ -- Macro: _XOPEN_SOURCE
+ -- Macro: _XOPEN_SOURCE_EXTENDED
+     If you define this macro, functionality described in the X/Open
+     Portability Guide is included.  This is a superset of the POSIX.1
+     and POSIX.2 functionality and in fact `_POSIX_SOURCE' and
+     `_POSIX_C_SOURCE' are automatically defined.
+
+     As the unification of all Unices, functionality only available in
+     BSD and SVID is also included.
+
+     If the macro `_XOPEN_SOURCE_EXTENDED' is also defined, even more
+     functionality is available.  The extra functions will make all
+     functions available which are necessary for the X/Open Unix brand.
+
+     If the macro `_XOPEN_SOURCE' has the value 500 this includes all
+     functionality described so far plus some new definitions from the
+     Single Unix Specification, version 2.
+
+ -- Macro: _LARGEFILE_SOURCE
+     If this macro is defined some extra functions are available which
+     rectify a few shortcomings in all previous standards.
+     Specifically, the functions `fseeko' and `ftello' are available.
+     Without these functions the difference between the ISO C interface
+     (`fseek', `ftell') and the low-level POSIX interface (`lseek')
+     would lead to problems.
+
+     This macro was introduced as part of the Large File Support
+     extension (LFS).
+
+ -- Macro: _LARGEFILE64_SOURCE
+     If you define this macro an additional set of functions is made
+     available which enables 32 bit systems to use files of sizes beyond
+     the usual limit of 2GB.  This interface is not available if the
+     system does not support files that large.  On systems where the
+     natural file size limit is greater than 2GB (i.e., on 64 bit
+     systems) the new functions are identical to the replaced functions.
+
+     The new functionality is made available by a new set of types and
+     functions which replace the existing ones.  The names of these new
+     objects contain `64' to indicate the intention, e.g., `off_t' vs.
+     `off64_t' and `fseeko' vs. `fseeko64'.
+
+     This macro was introduced as part of the Large File Support
+     extension (LFS).  It is a transition interface for the period when
+     64 bit offsets are not generally used (see `_FILE_OFFSET_BITS').
+
+ -- Macro: _FILE_OFFSET_BITS
+     This macro determines which file system interface shall be used,
+     one replacing the other.  Whereas `_LARGEFILE64_SOURCE' makes the
+     64 bit interface available as an additional interface,
+     `_FILE_OFFSET_BITS' allows the 64 bit interface to replace the old
+     interface.
+
+     If `_FILE_OFFSET_BITS' is undefined, or if it is defined to the
+     value `32', nothing changes.  The 32 bit interface is used and
+     types like `off_t' have a size of 32 bits on 32 bit systems.
+
+     If the macro is defined to the value `64', the large file interface
+     replaces the old interface.  I.e., the functions are not made
+     available under different names (as they are with
+     `_LARGEFILE64_SOURCE').  Instead the old function names now
+     reference the new functions, e.g., a call to `fseeko' now indeed
+     calls `fseeko64'.
+
+     This macro should only be selected if the system provides
+     mechanisms for handling large files.  On 64 bit systems this macro
+     has no effect since the `*64' functions are identical to the
+     normal functions.
+
+     This macro was introduced as part of the Large File Support
+     extension (LFS).
+
+ -- Macro: _ISOC99_SOURCE
+     Until the revised ISO C standard is widely adopted the new features
+     are not automatically enabled.  The GNU libc nevertheless has a
+     complete implementation of the new standard and to enable the new
+     features the macro `_ISOC99_SOURCE' should be defined.
+
+ -- Macro: _GNU_SOURCE
+     If you define this macro, everything is included: ISO C89,
+     ISO C99, POSIX.1, POSIX.2, BSD, SVID, X/Open, LFS, and GNU
+     extensions.  In the cases where POSIX.1 conflicts with BSD, the
+     POSIX definitions take precedence.
+
+     If you want to get the full effect of `_GNU_SOURCE' but make the
+     BSD definitions take precedence over the POSIX definitions, use
+     this sequence of definitions:
+
+          #define _GNU_SOURCE
+          #define _BSD_SOURCE
+          #define _SVID_SOURCE
+
+     Note that if you do this, you must link your program with the BSD
+     compatibility library by passing the `-lbsd-compat' option to the
+     compiler or linker.  *Note:* If you forget to do this, you may get
+     very strange errors at run time.
+
+ -- Macro: _REENTRANT
+ -- Macro: _THREAD_SAFE
+     If you define one of these macros, reentrant versions of several
+     functions get declared.  Some of the functions are specified in
+     POSIX.1c but many others are only available on a few other systems
+     or are unique to GNU libc.  The problem is the delay in the
+     standardization of the thread safe C library interface.
+
+     Unlike on some other systems, no special version of the C library
+     must be used for linking.  There is only one version but while
+     compiling this it must have been specified to compile as thread
+     safe.
+
+   We recommend you use `_GNU_SOURCE' in new programs.  If you don't
+specify the `-ansi' option to GCC and don't define any of these macros
+explicitly, the effect is the same as defining `_POSIX_C_SOURCE' to 2
+and `_POSIX_SOURCE', `_SVID_SOURCE', and `_BSD_SOURCE' to 1.
+
+   When you define a feature test macro to request a larger class of
+features, it is harmless to define in addition a feature test macro for
+a subset of those features.  For example, if you define
+`_POSIX_C_SOURCE', then defining `_POSIX_SOURCE' as well has no effect.
+Likewise, if you define `_GNU_SOURCE', then defining either
+`_POSIX_SOURCE' or `_POSIX_C_SOURCE' or `_SVID_SOURCE' as well has no
+effect.
+
+   Note, however, that the features of `_BSD_SOURCE' are not a subset of
+any of the other feature test macros supported.  This is because it
+defines BSD features that take precedence over the POSIX features that
+are requested by the other macros.  For this reason, defining
+`_BSD_SOURCE' in addition to the other feature test macros does have an
+effect: it causes the BSD features to take priority over the conflicting
+POSIX features.
+

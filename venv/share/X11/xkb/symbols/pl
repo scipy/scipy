@@ -1,0 +1,578 @@
+// Keyboard layouts for Poland.
+
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+    // Visualisation and description: http://podziemie.net/xkb/pl
+    // Contact: Michał Górny <zrchos+freedesktop@gmail.com>
+
+    include "latin"
+
+    name[Group1]="Polish";
+
+    key <TLDE>	{ [     grave, asciitilde,      notsign,    logicalor ]	};
+    key <AE01>	{ [         1,     exclam,     notequal,   exclamdown ]	};
+    key <AE02>	{ [         2,         at,  twosuperior, questiondown ]	};
+    key <AE04>	{ [         4,     dollar,         cent,   onequarter ]	};
+    key <AE05>	{ [         5,    percent,     EuroSign,        U2030 ]	};
+    key <AE06>	{ [         6, asciicircum,     onehalf,   logicaland ]	};
+    key <AE07>	{ [         7,  ampersand,      section,        U2248 ]	};
+    key <AE08>	{ [         8,   asterisk, periodcentered, threequarters ] };
+    key <AE09>	{ [         9,  parenleft, guillemotleft,   plusminus ]	};
+    key <AE10>	{ [         0, parenright, guillemotright,     degree ]	};
+    key <AE11>	{ [     minus, underscore,       endash,       emdash ]	};
+
+    key <AD01>	{ [         q,          Q,     Greek_pi,  Greek_OMEGA ]	};
+    key <AD02>	{ [         w,          W,           oe,           OE ]	};
+    key <AD03>	{ [         e,          E,      eogonek,      Eogonek ]	};
+    key <AD04>	{ [         r,          R,    copyright,   registered ]	};
+    key <AD05>	{ [         t,          T,       ssharp,    trademark ]	};
+    key <AD08>	{ [         i,          I,   rightarrow,        U2194 ]	};
+    key <AD09>	{ [         o,          O,       oacute,       Oacute ]	};
+
+    key <AC01>	{ [         a,          A,      aogonek,      Aogonek ]	};
+    key <AC02>	{ [         s,          S,       sacute,       Sacute ]	};
+    key <AC04>	{ [         f,          F,           ae,           AE ]	};
+    key <AC06>	{ [         h,          H, rightsinglequotemark, U2022 ] };
+    key <AC07>	{ [         j,          J,        schwa,        SCHWA ]	};
+    key <AC08>	{ [         k,          K,     ellipsis,  dead_stroke ]	};
+
+    key <AB01>	{ [         z,          Z,    zabovedot,    Zabovedot ]	};
+    key <AB02>	{ [         x,          X,       zacute,       Zacute ]	};
+    key <AB03>	{ [         c,          C,       cacute,       Cacute ]	};
+    key <AB04>	{ [         v,          V, doublelowquotemark, leftsinglequotemark ] };
+    key <AB05>	{ [         b,          B, rightdoublequotemark, leftdoublequotemark ] };
+    key <AB06>	{ [         n,          N,       nacute,       Nacute ]	};
+    key <AB07>	{ [         m,          M,           mu,     infinity ]	};
+    key <AB08>	{ [     comma,       less, lessthanequal,    multiply ]	};
+    key <AB09>	{ [    period,    greater, greaterthanequal, division ]	};
+
+    key <SPCE>	{ [     space,      space, nobreakspace, nobreakspace ]	};
+
+    include "kpdl(comma)"
+
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "legacy" {
+
+    include "latin"
+
+    name[Group1]="Polish (legacy)";
+
+    key <AD03>	{ [         e,          E,      eogonek,      Eogonek ]	};
+    key <AD07>  { [         u,          U,	EuroSign,     cent    ] };
+    key <AD09>	{ [         o,          O,       oacute,       Oacute ]	};
+
+    key <AC01>	{ [         a,          A,      aogonek,      Aogonek ]	};
+    key <AC02>	{ [         s,          S,       sacute,       Sacute ]	};
+
+    key <AB01>	{ [         z,          Z,    zabovedot,    Zabovedot ]	};
+    key <AB02>	{ [         x,          X,       zacute,       Zacute ]	};
+    key <AB03>	{ [         c,          C,       cacute,       Cacute ]	};
+    key <AB04>	{ [         v,          V, doublelowquotemark, leftsinglequotemark ] };
+    key <AB05>	{ [         b,          B, rightdoublequotemark, leftdoublequotemark ] };
+    key <AB06>	{ [         n,          N,       nacute,       Nacute ]	};
+
+    include "kpdl(comma)"
+
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "lefty" {
+    // 2020 by Simon Zelazny.
+    // Places  Ó, Ł, and Ń under the left typing hand.
+    // For description and rationale, see: https://pzel.name/pl-lefty.html
+    include "pl(basic)"
+
+    name[Group1]="Polish (lefty)";
+    key <AD01>	{ [         q,          Q,      oacute,        Oacute ]	};
+    key <AD02>	{ [         w,          W,     lstroke,       Lstroke ]	};
+    key <AC03>	{ [         d,          D,      nacute,        Nacute ]	};
+};
+
+
+partial alphanumeric_keys
+xkb_symbols "qwertz" {
+
+    include "latin(type3)"
+
+    name[Group1]="Polish (QWERTZ)";
+
+    key <TLDE>	{ [  abovedot, dead_ogonek,     notsign,      notsign ]	};
+    key <AE01>	{ [         1,     exclam,   asciitilde,   exclamdown ]	};
+    key <AE02>	{ [         2,   quotedbl,   dead_caron,    oneeighth ]	};
+    key <AE03>	{ [         3, numbersign, dead_circumflex,  sterling ]	};
+    key <AE04>	{ [         4,     dollar,   dead_breve,       dollar ]	};
+    key <AE05>	{ [         5,    percent,       degree, threeeighths ]	};
+    key <AE06>	{ [         6,  ampersand,  dead_ogonek,  fiveeighths ]	};
+    key <AE07>	{ [         7,      slash,   dead_grave, seveneighths ]	};
+    key <AE08>	{ [         8,  parenleft, dead_abovedot,   trademark ]	};
+    key <AE09>	{ [         9, parenright,   dead_acute,    plusminus ]	};
+    key <AE10>	{ [         0,      equal, dead_doubleacute,   degree ]	};
+    key <AE11>	{ [      plus,   question, dead_diaeresis, questiondown ] };
+    key <AE12>	{ [apostrophe,   asterisk, dead_cedilla,  dead_ogonek ]	};
+
+    key <AD03>	{ [         e,          E,     EuroSign,         cent ]	};
+    key <AD11>	{ [ zabovedot,     nacute,     division, dead_abovering ] };
+    key <AD12>	{ [    sacute,     cacute,     multiply,  dead_macron ]	};
+
+    key <AC02>	{ [         s,          S,      dstroke,      section ]	};
+    key <AC03>	{ [         d,          D,      Dstroke,          ETH ]	};
+    key <AC08>	{ [         k,          K,          kra,    ampersand ]	};
+    key <AC09>	{ [         l,          L,      lstroke,      Lstroke ]	};
+    key <AC10>	{ [   lstroke,    Lstroke,       dollar, dead_doubleacute ] };
+    key <AC11>	{ [   aogonek,    eogonek,       ssharp,   dead_caron ]	};
+    key <BKSL>	{ [    oacute,     zacute,   dead_grave,   dead_breve ]	};
+
+    key <AB03>	{ [         c,          C,         cent,    copyright ]	};
+    key <AB10>  { [     minus, underscore, dead_belowdot, dead_abovedot ] };
+
+    include "kpdl(comma)"
+
+    include "level3(ralt_switch)"
+};
+
+// Polish Dvorak keymaps
+// by Rafal Rzepecki <divide@users.sf.net>
+
+// The base keymap "pl" places Polish quotes on quotemark key and 
+// moves the dead symbols from there to "1/!" key. If you are used to common 
+// dead keys placement, you could use "pl_altquotes"; in this layout 
+// dead keys remain in the old place, whereas Polish quotes are placed on the
+// "1/!" key. If you do not use Polish quotes at all, you can use "pl_basic" map.
+
+// Basic Polish keymap (without Polish quotes)
+partial alphanumeric_keys
+xkb_symbols "dvorak" {
+    include "us(dvorak)"
+
+    name[Group1] = "Polish (Dvorak)";
+
+    key <AD08> { [	    c,	C,	cacute,	Cacute		]	};
+    key <AD10> { [	    l,	L,     lstroke, Lstroke		]	};
+    key <AC01> { [	    a,	A,     aogonek, Aogonek		]	};
+    key <AC02> { [	    o,	O,      oacute, Oacute		]	};
+    key <AC03> { [	    e,	E,     eogonek, Eogonek		]	};
+    key <AC09> { [	    n,	N,      nacute, Nacute		]	};
+    key <AC10> { [	    s,	S,      sacute, Sacute		]	};
+    key <AB09> { [	    v,	V,      zacute, Zacute		]	};
+    key <AB10> { [	    z,	Z,   zabovedot, Zabovedot	]	};
+
+    include "kpdl(comma)"
+
+    include "level3(ralt_switch)"
+};
+
+// Default Polish keymap with Polish quotes on quotemark key
+partial alphanumeric_keys
+xkb_symbols "dvorak_quotes" {
+    include "pl(dvorak)"
+
+    name[Group1] = "Polish (Dvorak, with Polish quotes on quotemark key)";
+
+    key <AD01> { [  apostrophe,	quotedbl, doublelowquotemark, rightdoublequotemark	] };
+
+    // Dead symbols moved to this key
+    key <AE01> { [	    1,	exclam, dead_acute, dead_diaeresis 		]	};
+};
+
+// Polish keymap with Polish quotes on key "1/!"
+partial alphanumeric_keys
+xkb_symbols "dvorak_altquotes" {
+    include "pl(dvorak)"
+
+    name[Group1] = "Polish (Dvorak, with Polish quotes on key 1)";
+
+    key <AE01> { [	    1,	exclam, doublelowquotemark, rightdoublequotemark	]	};
+};
+
+// Polish programmer Dvorak keymap  by Michal Nazarewicz <mina86@mina86.com>
+// based on programmer Dvorak  by Roland Kaufmann <rlndkfmn at gmail dot com>
+//      and Polish Dvorak keymaps  by Rafal Rzepecki <divide@users.sf.net
+//      and latin(basic)
+//
+// * Numbers are in shift position (like French).
+// * Symbols have been placed in locations that give good
+//   hand-alternation and finger rolling with symbols that usually
+//   follows.
+// * Polish diacritics on AltGr+"acelnosxz" (same as in basic pl(basic)).
+// * Aditionaly, zacute on AltGr+"v" so that both zacute and zabovedot
+//   next to each other same as in pl(basic).
+// * Polish open and close quotes on AltGr+& (same location as in
+//   pl(dvp_altquotes)).
+// * English open quote on AltGr+k (same location as in latin(basic))
+// * English/Polish close quote on AltGr+b (similar location as in
+//   latin(basic) but moved right because AltGr+x is taken for zacute).
+// * Polish open and close quote on AltGr+j.
+//
+// Those rules overwrite only the following rules from us(dvp):
+// * ccedilla on AltGr+c
+// * aring on Alt+a
+// * oslash on Alt+o
+// * ae on Alt+e
+// * ntilde on Alt+n
+//
+partial alphanumeric_keys
+xkb_symbols "dvp" {
+    include "us(dvp)"
+
+    name[Group1] = "Polish (programmer Dvorak)";
+
+    //             Unmodified    Shift           AltGr            Shift+AltGr
+    key <AE01> { [ ampersand,    percent,        doublelowquotemark, rightdoublequotemark ] };
+
+    // upper row, right side
+    key <AD08> { [ c,            C,              cacute,          Cacute     ] };
+    key <AD10> { [ l,            L,              lstroke,         Lstroke    ] };
+
+    // home row, left side
+    key <AC01> { [ a,            A,              aogonek,         Aogonek    ] };
+    key <AC02> { [ o,            O,              oacute,          Oacute     ] };
+    key <AC03> { [ e,            E,              eogonek,         Eogonek    ] };
+
+    // home row, right side
+    key <AC09> { [ n,            N,              nacute,          Nacute     ] };
+    key <AC10> { [ s,            S,              sacute,          Sacute     ] };
+
+    // lower row, left side
+    key <AB03> { [ j,            J,              doublelowquotemark, rightdoublequotemark ] };
+    key <AB04> { [ k,            K,              leftdoublequotemark, leftsinglequotemark ] };
+    key <AB05> { [ x,            X,              zacute,          Zacute     ] };
+
+    // lower row, right side
+    key <AB06> { [ b,            B,              rightdoublequotemark, rightsinglequotemark ] };
+    key <AB09> { [ v,            V,              zacute,          Zacute     ] };
+    key <AB10> { [ z,            Z,              zabovedot,       Zabovedot  ] };
+
+    include "kpdl(comma)"
+
+    include "level3(ralt_switch)"
+};
+
+// Silesian letters on the third and fourth level,
+// by Grzegorz Kulik <poslunsku@gmail.com> and Przemysław Buczkowski <przemub@yahoo.pl>.
+//
+partial alphanumeric_keys
+xkb_symbols "szl" {
+
+    include "latin"
+
+    name[Group1]="Silesian";
+
+    key <AD03>	{ [         e,          E,       atilde,       Atilde ]	};
+    key <AD09>	{ [         o,          O,  ocircumflex,  Ocircumflex ]	};
+    key <AD07>	{ [         u,          U,      omacron,      Omacron ]	};
+    key <AD10>	{ [         p,          P,       otilde,       Otilde ]	};
+
+    key <AC01>	{ [         a,          A,        U014F,        U014E ]	};  // ŏ Ŏ
+    key <AC02>	{ [         s,          S,       sacute,       Sacute ]	};
+
+    key <AB01>	{ [         z,          Z,    zabovedot,    Zabovedot ]	};
+    key <AB02>	{ [         x,          X,       zacute,       Zacute ]	};
+    key <AB03>	{ [         c,          C,       cacute,       Cacute ]	};
+    key <AB04>	{ [         v,          V,   doublelowquotemark, leftsinglequotemark ] };
+    key <AB05>	{ [         b,          B, rightdoublequotemark, leftdoublequotemark ] };
+    key <AB06>	{ [         n,          N,       nacute,       Nacute ]	};
+
+    include "kpdl(comma)"
+
+    include "level3(ralt_switch)"
+};
+
+// Kashubian letters on the third and fourth level.
+//
+partial alphanumeric_keys
+xkb_symbols "csb" {
+
+    include "latin"
+
+    name[Group1]="Kashubian";
+
+    key <AD03>	{ [         e,          E,       eacute,       Eacute ]	};
+    key <AD04>	{ [         r,          R,   ediaeresis,   Ediaeresis ]	};
+    key <AD06>	{ [         y,          Y,     EuroSign,         cent ]	};
+    key <AD07>	{ [         u,          U,       ugrave,       Ugrave ]	};
+    key <AD08>	{ [         i,          I,       ograve,       Ograve ]	};
+    key <AD09>	{ [         o,          O,       oacute,       Oacute ]	};
+    key <AD10>	{ [         p,          P,  ocircumflex,  Ocircumflex ]	};
+
+    key <AC01>	{ [         a,          A,      aogonek,      Aogonek ]	};
+    key <AC02>	{ [         s,          S,       atilde,       Atilde ]	};
+    key <AC09>	{ [         l,          L,      lstroke,      Lstroke ]	};
+
+    key <AB01>	{ [         z,          Z,    zabovedot,    Zabovedot ]	};
+    key <AB04>	{ [         v,          V,   doublelowquotemark, leftsinglequotemark ] };
+    key <AB05>	{ [         b,          B, rightdoublequotemark, leftdoublequotemark ] };
+    key <AB06>	{ [         n,          N,       nacute,       Nacute ]	};
+
+    include "kpdl(comma)"
+
+    include "level3(ralt_switch)"
+};
+
+// Russian Polish-phonetic Dvorak
+// by Adrian Dziubek <adrian.dziubek@gmail.com>
+//
+// This layout aims to enable Polish Dvorak users to type with Russian
+// Cyrillic alphabet by using the sound correspondence between Polish and
+// Russian languages.
+//
+// This keyboard should be intuitive. Please let me know, if my intuition
+// lets You down.
+//
+// The guidelines used:
+// - no Cyrillic symbols are placed on punctuation symbols,
+// - visual similarities are ignored if there is a sound correspondence:
+//   no Cyrillic_es on c, no Cyrillic_er on p, no Cyrillic_ha on x etc.,
+// - the Latin symbols that have close sound correspondence (as read in Polish)
+//   to Cyrillic symbols (as read in Russian) are mapped respectively:
+//         * j -> Cyrillic_shorti,
+//         * k -> Cyrillic_ka,
+//         * b -> Cyrillic_be,
+//         * m -> Cyrillic_em,
+//         * w -> Cyrillic_ve,
+//         * z -> Cyrillic_ze
+//         * a -> Cyrillic_a,
+//         * o -> Cyrillic_o,
+//         * u -> Cyrillic_u,
+//         * i -> Cyrillic_i,
+//         * d -> Cyrillic_de,
+//         * h -> Cyrillic_ha,
+//         * t -> Cyrillic_te,
+//         * n -> Cyrillic_en,
+//         * s -> Cyrillic_es,
+//         * p -> Cyrillic_pe,
+//         * y -> Cyrillic_yeru,
+//         * f -> Cyrillic_ef,
+//         * g -> Cyrillic_ghe,
+//         * c -> Cyrillic_tse,
+//         * r -> Cyrillic_er,
+//         * l -> Cyrillic_el,
+// - ...and little more distant:
+//         * AltGr + s (sacute) -> Cyrillic_sha,
+//         * AltGr + z (zabovedot) -> Cyrillic_zhe,
+//         * AltGr + c (cacute) -> Cyrillic_che,
+// - the soft versions of Russian vowels are accessible through AltGr + vowel:
+//         * AltGr + a -> Cyrillic_ya,
+//         * AltGr + o -> Cyrillic_io,
+//         * AltGr + u -> Cyrillic_yu,
+// - ...except for Cyrillic_ie which is more frequently used than Cyrillic_e:
+//         * AltGr + e -> Cyrillic_e,
+//         * e -> Cyrillic_ie,
+// - q is also mapped to Cyrillic_ya, following the US phonetic keyboard
+//   choice, as Cyrillic_ya and Cyrillic_a are both often used:
+//         * q -> Cyrillic_ya,
+// - the soft and hard symbols that have no Polish counterparts are mapped
+//   to rarely used in Polish x character:
+//         * x -> Cyrillic_softsign
+//         * AltGr + x -> Cyrillic_hardsign,
+// - the soft sign is additionally available as AltGr + consonant combination
+//   for every consonant that can be softened or separated by soft sign:
+//         * AltGr + l -> Cyrillic_softsign,
+//         * AltGr + d -> Cyrillic_softsign,
+//         * AltGr + n -> Cyrillic_softsign,
+//         * AltGr + r -> Cyrillic_softsign,
+//         * AltGr + t -> Cyrillic_softsign,
+//         * AltGr + p -> Cyrillic_softsign,
+// - ...and also because of visual similarity under level3 b:
+//         * AltGr + b -> Cyrillic_softsign,
+//         * Shift + AltGr + b -> Cyrillic_hardsign,
+// - the Cyrillic_shcha symbol is placed under AltGr + w (visual similarity):
+//         * AltGr + w -> Cyrillic_shcha
+// - v, also rarely unused in Polish is mapped like w:
+//         * v -> Cyrillic_ve,
+//
+partial alphanumeric_keys
+xkb_symbols "ru_phonetic_dvorak" {
+   include "us(dvorak)"
+
+   name[Group1] = "Russian (Poland, phonetic Dvorak)";
+
+   // lower row
+   key <AB02> { [ Cyrillic_ya, Cyrillic_YA ] };
+   key <AB03> { [ Cyrillic_shorti, Cyrillic_SHORTI ] };
+   key <AB04> { [ Cyrillic_ka, Cyrillic_KA ] };
+   key <AB05> { [ Cyrillic_shcha, Cyrillic_SHCHA ] };
+   key <AB06> { [ Cyrillic_be, Cyrillic_BE, Cyrillic_hardsign, Cyrillic_HARDSIGN ] };
+   key <AB07> { [ Cyrillic_em, Cyrillic_EM ] };
+   key <AB08> { [ Cyrillic_ve, Cyrillic_VE, Cyrillic_shcha, Cyrillic_SHCHA ] };
+   key <AB09> { [ Cyrillic_ve, Cyrillic_VE, Cyrillic_shcha, Cyrillic_SHCHA ] };
+   key <AB10> { [ Cyrillic_ze, Cyrillic_ZE, Cyrillic_zhe, Cyrillic_ZHE ] };
+   // home row
+   key <AC01> { [ Cyrillic_a, Cyrillic_A, Cyrillic_ya, Cyrillic_YA  ] };
+   key <AC02> { [ Cyrillic_o, Cyrillic_O, Cyrillic_io, Cyrillic_IO ] };
+   key <AC03> { [ Cyrillic_ie, Cyrillic_IE, Cyrillic_e, Cyrillic_E ] };
+   key <AC04> { [ Cyrillic_u, Cyrillic_U, Cyrillic_yu, Cyrillic_YU  ] };
+   key <AC05> { [ Cyrillic_i, Cyrillic_I ] };
+   key <AC06> { [ Cyrillic_de, Cyrillic_DE, Cyrillic_softsign, Cyrillic_SOFTSIGN ] };
+   key <AC07> { [ Cyrillic_ha, Cyrillic_HA ] };
+   key <AC08> { [ Cyrillic_te, Cyrillic_TE, Cyrillic_softsign, Cyrillic_SOFTSIGN ] };
+   key <AC09> { [ Cyrillic_en, Cyrillic_EN, Cyrillic_softsign, Cyrillic_SOFTSIGN ] };
+   key <AC10> { [ Cyrillic_es, Cyrillic_ES, Cyrillic_sha, Cyrillic_SHA ] };
+   // upper row
+   key <AD04> { [ Cyrillic_pe, Cyrillic_PE, Cyrillic_softsign, Cyrillic_SOFTSIGN ] };
+   key <AD05> { [ Cyrillic_yeru, Cyrillic_YERU ] };
+   key <AD06> { [ Cyrillic_ef, Cyrillic_EF ] };
+   key <AD07> { [ Cyrillic_ghe, Cyrillic_GHE ] };
+   key <AD08> { [ Cyrillic_tse, Cyrillic_TSE, Cyrillic_che, Cyrillic_CHE ] };
+   key <AD09> { [ Cyrillic_er, Cyrillic_ER, Cyrillic_softsign, Cyrillic_SOFTSIGN ] };
+   key <AD10> { [ Cyrillic_el, Cyrillic_EL, Cyrillic_softsign, Cyrillic_SOFTSIGN ] };
+
+   include "kpdl(comma)"
+
+   include "level3(ralt_switch)"
+};
+
+// EXTRAS:
+
+// A Polish keymap with a comprehensive set of quotes, dashes, and dead accents
+// 
+// See http://marcinwolinski.pl/keyboard/ for a description.
+//
+// ┌────┐
+// │ 2 4│   2 = Shift,  4 = Level3 + Shift
+// │ 1 3│   1 = Normal, 3 = Level3
+// └────┘
+// ┌─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┲━━━━━━━━━┓
+// │ ~ ~ │ ! ' │ @ " │ # ˝ │ $ ¸ │ % ˇ │ ^ ^ │ & ˘ │ * ˙ │ ( ̣ │ ) ° │ _ ¯ │ + ˛ ┃ ⌫ Back  ┃
+// │ ` ` │ 1 ¡ │ 2 © │ 3 • │ 4 § │ 5 € │ 6 ¢ │ 7 − │ 8 × │ 9 ÷ │ 0 ° │ - – │ = — ┃  space  ┃
+// ┢━━━━━┷━┱───┴─┬───┴─┬───┴─┬───┴─┬───┴─┬───┴─┬───┴─┬───┴─┬───┴─┬───┴─┬───┴─┬───┺━┳━━━━━━━┫
+// ┃       ┃ Q   │ W   │ E Ę │ R   │ T   │ Y   │ U   │ I   │ O Ó │ P   │ { « │ } » ┃ Enter ┃
+// ┃Tab ↹  ┃ q   │ w   │ e ę │ r   │ t   │ y   │ u   │ i   │ o ó │ p   │ [ ‹ │ ] › ┃   ⏎   ┃
+// ┣━━━━━━━┻┱────┴┬────┴┬────┴┬────┴┬────┴┬────┴┬────┴┬────┴┬────┴┬────┴┬────┴┬────┺┓      ┃
+// ┃        ┃ A Ą │ S Ś │ D   │ F   │ G   │ H   │ J   │ K   │ L Ł │ : “ │ " ” │ | ¶ ┃      ┃
+// ┃Caps ⇬  ┃ a ą │ s ś │ d   │ f   │ g   │ h   │ j   │ k   │ l ł │ ; ‘ │ ' ’ │ \   ┃      ┃
+// ┣━━━━━━━━┹────┬┴────┬┴────┬┴────┬┴────┬┴────┬┴────┬┴────┬┴────┬┴────┬┴────┲┷━━━━━┻━━━━━━┫
+// ┃             │ Z Ż │ X Ź │ C Ć │ V   │ B   │ N Ń │ M   │ < „ │ > · │ ? ¿ ┃             ┃
+// ┃Shift ⇧      │ z ż │ x ź │ c ć │ v   │ b   │ n ń │ m   │ , ‚ │ . … │ / ⁄ ┃Shift ⇧      ┃
+// ┣━━━━━━━┳━━━━━┷━┳━━━┷━━━┱─┴─────┴─────┴─────┴─────┴─────┴───┲━┷━━━━━╈━━━━━┻━┳━━━━━━━┳━━━┛
+// ┃       ┃       ┃       ┃ ␣                               ⍽ ┃       ┃       ┃       ┃
+// ┃Ctrl   ┃Meta   ┃Alt    ┃ ␣           Space               ⍽ ┃AltGr ⇮┃Menu   ┃Ctrl   ┃
+// ┗━━━━━━━┻━━━━━━━┻━━━━━━━┹───────────────────────────────────┺━━━━━━━┻━━━━━━━┻━━━━━━━┛
+
+partial alphanumeric_keys
+xkb_symbols "intl" {
+
+    include "latin(intl)"
+
+    name[Group1]="Polish (intl., with dead keys)";
+
+    key <AD03>	{ [         e,          E,      eogonek,      Eogonek ]	};
+    key <AD09>	{ [         o,          O,       oacute,       Oacute ]	};
+
+    key <AC01>	{ [         a,          A,      aogonek,      Aogonek ]	};
+    key <AC02>	{ [         s,          S,       sacute,       Sacute ]	};
+    key <AC09>	{ [         l,          L,      lstroke,      Lstroke ]	};
+
+    key <AB01>	{ [         z,          Z,    zabovedot,    Zabovedot ]	};
+    key <AB02>	{ [         x,          X,       zacute,       Zacute ]	};
+    key <AB03>	{ [         c,          C,       cacute,       Cacute ]	};
+    key <AB06>	{ [         n,          N,       nacute,       Nacute ]	};
+
+    include "kpdl(comma)"
+
+    include "level3(ralt_switch)"
+};
+
+// Polish Colemak
+// by Tomek Piotrowski <tomek.piotrowski@atteo.com>
+//
+partial alphanumeric_keys
+xkb_symbols "colemak" {
+    include "us(colemak)"
+    name[Group1]= "Polish (Colemak)";
+
+    key <AB01> { [            z,            Z,       zabovedot,        Zabovedot ] };
+    key <AB02> { [            x,            X,          zacute,           Zacute ] };
+    key <AB03> { [            c,            C,          cacute,           Cacute ] };
+    key <AC01> { [            a,            A,         aogonek,          Aogonek ] };
+    key <AC03> { [            s,            S,          sacute,           Sacute ] };
+    key <AC07> { [            n,            N,          nacute,           Nacute ] };
+    key <AC08> { [            e,            E,         eogonek,          Eogonek ] };
+    key <AC10> { [            o,            O,          oacute,           Oacute ] };
+    key <AD01> { [            q,            Q,              ae,               AE ] };
+    key <AD02> { [            w,            W, dead_circumflex,       asciitilde ] };
+    key <AD03> { [            f,            F,          ssharp,        0x1001e9e ] };
+    key <AD07> { [            l,            L,         lstroke,          Lstroke ] };
+};
+
+// Colemak-DH (ANSI), Polish variant, https://colemakmods.github.io/mod-dh/
+partial alphanumeric_keys
+xkb_symbols "colemak_dh_ansi" {
+    include "us(colemak_dh)"
+    name[Group1]= "Polish (Colemak-DH)";
+
+    key <AB01> { [            x,            X,          zacute,           Zacute ] };
+    key <AB02> { [            c,            C,          cacute,           Cacute ] };
+    key <AB05> { [            z,            Z,       zabovedot,        Zabovedot ] };
+    key <AC01> { [            a,            A,         aogonek,          Aogonek ] };
+    key <AC03> { [            s,            S,          sacute,           Sacute ] };
+    key <AC07> { [            n,            N,          nacute,           Nacute ] };
+    key <AC08> { [            e,            E,         eogonek,          Eogonek ] };
+    key <AC10> { [            o,            O,          oacute,           Oacute ] };
+    key <AD01> { [            q,            Q,              ae,               AE ] };
+    key <AD02> { [            w,            W, dead_circumflex,       asciitilde ] };
+    key <AD03> { [            f,            F,          ssharp,        0x1001e9e ] };
+    key <AD07> { [            l,            L,         lstroke,          Lstroke ] };
+};
+
+// Colemak-DH (ISO), Polish variant, https://colemakmods.github.io/mod-dh/
+partial alphanumeric_keys
+xkb_symbols "colemak_dh" {
+    include "pl(colemak_dh_ansi)"
+    name[Group1]= "Polish (Colemak-DH ISO)";
+
+    key <LSGT> { [            z,            Z,       zabovedot,        Zabovedot ] };
+    key <AB05> { [    backslash,          bar,      asciitilde,        brokenbar ] };
+};
+
+partial alphanumeric_keys
+xkb_symbols "sun_type6" {
+       include "sun_vndr/pl(sun_type6)"
+};
+
+//Glagolica
+partial alphanumeric_keys
+xkb_symbols "glagolica"
+{
+    name[Group1] = "Polish (Glagolica)";
+
+    key <AD01> { [ U2C21, U2C23, any, any ] };//q/Q/Ⱑ/Ⱓ
+    key <AD02> { [ U2C02, U2C19, any, any ] };//w/W/Ⰲ/Ⱉ/
+    key <AD03> { [ U2C05, U2C27, U2C24, U2C25 ] };//e/E/Ⰵ/Ⱗ/Ⱔ/Ⱕ
+    key <AD04> { [ U2C13, U2C13, any, any ] };//r/R/Ⱃ/Ⱃ
+    key <AD05> { [ U2C15, U2C15, any, any ] };//t/T/Ⱅ/Ⱅ
+    key <AD06> { [ U2C09, U2C0A, U2C20, any ] };//y/Y/Ⰹ/Ⰺ/Ⱐ
+    key <AD07> { [ U2C16, U2C16, any, any ] };//u/U/Ⱆ/
+    key <AD08> { [ U2C0B, U2C09, any, any ] };//i/I/Ⰻ/Ⰹ
+    key <AD09> { [ U2C11, U2C19, U2C41, any ] };//o/O/Ⱁ/Ⱉ/ⱁ
+    key <AD10> { [ U2C12, U2C1A, any, any ] };//p/P/Ⱂ/Ⱊ
+    key <AD11> { [ U2C1E, U2C26, any, any ] };//[/{/Ⱎ/Ⱖ
+    key <AD12> { [ U2C1B, U2C29, any, any ] };//]/}/Ⱋ/Ⱙ
+    key <AC01> { [ U2C00, U2C00, U2C28, U2C29 ] };//a/A/Ⰰ/Ⰰ/Ⱘ/Ⱙ
+    key <AC02> { [ U2C14, U2C1E, any, any ] };//[/{/Ⱄ/Ⱎ
+    key <AC03> { [ U2C04, U2C04, any, any ] };//d/D/Ⰴ/Ⰴ
+    key <AC04> { [ U2C17, U2C2A, any, any ] };//f/F/Ⱇ/Ⱚ
+    key <AC05> { [ U2C03, U2C03, any, any ] };//g/G/Ⰳ/Ⰳ
+    key <AC06> { [ U2C18, U2C18, any, any ] };//h/H/Ⱈ/Ⱈ
+    key <AC07> { [ U2C0A, U2C0A, any, any ] };//j/J/Ⰺ/Ⰺ
+    key <AC08> { [ U2C0D, U2C0D, any, any ] };//k/K/Ⰽ/Ⰽ
+    key <AC09> { [ U2C0E, U2C0E, any, any ] };//l/L/Ⰾ/Ⰾ
+    key <AC10> { [ U2C28, U2C24, any, any ] };//;/:/Ⱘ/Ⱔ
+    key <AC11> { [ U2C06, any, any, any ] };//'/"/Ⰶ
+    key <AC12> { [ U2C0C, any, any, any ] };//\/|/Ⰼ
+    key <AB01> { [ U2C08, U2C07, any, any ] };//z/Z/Ⰸ/Ⰷ
+    key <AB02> { [ U2C20, U2C1F, any, any ] };//x/X/Ⱐ/Ⱏ
+    key <AB03> { [ U2C1C, U2C1D, any, any] };//c/C/Ⱌ/Ⱍ
+    key <AB04> { [ U2C02, U2C2B, any, any ] };//v/V/Ⰲ/Ⱛ
+    key <AB05> { [ U2C01, U2C01, any, any ] };//b/B/Ⰱ/Ⰱ
+    key <AB06> { [ U2C10, U2C10, any, any ] };//n/N/Ⱀ/Ⱀ
+    key <AB07> { [ U2C0F, U2C0F, any, any ] };//m/M/Ⰿ/Ⰿ
+
+    include "kpdl(comma)"
+
+    include "level3(ralt_switch)"
+};

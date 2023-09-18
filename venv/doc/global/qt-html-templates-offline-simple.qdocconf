@@ -1,0 +1,29 @@
+# Specify a custom CSS file used by this template
+HTML.stylesheets  += template/style/offline-simple.css
+qhp.extraFiles    += style/offline-simple.css
+
+# Override the header styles
+HTML.headerstyles  = \
+    "  <link rel=\"stylesheet\" type=\"text/css\" href=\"style/offline-simple.css\" />\n" \
+    "  <script type=\"text/javascript\">\n" \
+    "    document.getElementsByTagName(\"link\").item(0).setAttribute(\"href\", \"style/offline.css\");\n" \
+    "    // loading style sheet breaks anchors that were jumped to before\n" \
+    "    // so force jumping to anchor again\n" \
+    "    setTimeout(function() {\n" \
+    "        var anchor = location.hash;\n" \
+    "        // need to jump to different anchor first (e.g. none)\n" \
+    "        location.hash = \"#\";\n" \
+    "        setTimeout(function() {\n" \
+    "            location.hash = anchor;\n" \
+    "        }, 0);\n" \
+    "    }, 0);\n" \
+    "  </script>\n"
+
+HTML.navigationseparator = \
+    "<span class=\"naviSeparator\">  &#9702;  </span>\n"
+
+# Add some padding around code snippets, as we cannot
+# currectly style them for QTextBrowser using only CSS.
+codeindent         = 1
+codeprefix         = "\n"
+codesuffix         = "\n"

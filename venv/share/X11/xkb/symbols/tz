@@ -1,0 +1,59 @@
+// Keyboard layout for Tanzania.
+
+// Layout for Swahili in Arabic script.
+// Based on Martin Vidner's Buckwalter transliteration variant of the Arabic keyboard.
+// Please notify Kevin Donnelly (kevin@dotmon.com) of any corrections or omission.
+default partial alphanumeric_keys
+xkb_symbols "swa" {
+
+    name[Group1]= "Swahili (Tanzania)";
+
+    key <TLDE>	{[  U0670,             VoidSymbol             ]};
+    key <AE01>	{[  U0661,             VoidSymbol             ]};
+    key <AE02>	{[  U0662,             VoidSymbol             ]};
+    key <AE03>	{[  U0663,             VoidSymbol             ]};
+    key <AE04>	{[  U0664,             VoidSymbol             ]};
+    key <AE05>	{[  U0665,             Arabic_percent         ]};
+    key <AE06>	{[  U0666,             VoidSymbol             ]};
+    key <AE07>	{[  U0667,             VoidSymbol             ]};
+    key <AE08>	{[  U0668,             VoidSymbol             ]};
+    key <AE09>	{[  U0669,             Ufd3E                  ]};
+    key <AE10>	{[  U0660,             Ufd3F                  ]};
+    key <AE11>	{[  minus,             Arabic_tatweel         ]};
+    key <AE12>	{[  equal,             plus                   ]};
+
+    key <AD01>	{[  Arabic_qaf,        Arabic_gaf             ]};
+    key <AD02>	{[  Arabic_waw,        Arabic_hamzaonwaw      ]};
+    key <AD03>	{[  U0656,             Arabic_ain             ]};
+    key <AD04>	{[  Arabic_ra,         Arabic_tteh            ]};
+    key <AD05>	{[  Arabic_teh,        Arabic_tah             ]};
+    key <AD06>	{[  Arabic_yeh,        Arabic_alefmaksura     ]};
+    key <AD07>	{[  Arabic_damma,      Arabic_dammatan        ]};
+    key <AD08>	{[  Arabic_kasra,      Arabic_hamzaonyeh      ]};
+    key <AD09>	{[  Arabic_sukun,      U0657                  ]};
+    key <AD10>	{[  Arabic_peh,        Arabic_tehmarbuta      ]};
+    key <AD12>	{[  VoidSymbol,        VoidSymbol             ]};
+
+    key <AC01>	{[  Arabic_fatha,      Arabic_alef            ]};
+    key <AC02>	{[  Arabic_seen,       Arabic_sad             ]};
+    key <AC03>	{[  Arabic_dal,        Arabic_dad             ]};
+    key <AC04>	{[  Arabic_feh,        Arabic_fathatan        ]};
+    key <AC05>	{[  U06A0,             Arabic_ghain           ]};
+    key <AC06>	{[  Arabic_ha,         Arabic_hah             ]};
+    key <AC07>	{[  Arabic_jeem,       VoidSymbol             ]};
+    key <AC08>	{[  Arabic_kaf,        Arabic_kasratan        ]};
+    key <AC09>	{[  Arabic_lam,        Arabic_shadda          ]};
+    key <AC10>	{[  Arabic_semicolon,  VoidSymbol             ]};
+    key <AC11>	{[  Arabic_hamza,      VoidSymbol             ]};
+
+    key <AB01>	{[  Arabic_zain,       Arabic_zah             ]};
+    key <AB02>	{[  Arabic_khah,       VoidSymbol             ]};
+    key <AB03>	{[  Arabic_tcheh,      Arabic_sheen           ]};
+    key <AB04>	{[  U06A8,             Arabic_theh            ]};
+    key <AB05>	{[  Arabic_beh,        Arabic_thal            ]};
+    key <AB06>	{[  Arabic_noon,       VoidSymbol             ]};
+    key <AB07>	{[  Arabic_meem,       VoidSymbol             ]};
+    key <AB08>	{[  Arabic_comma,      Arabic_hamzaunderalef  ]};
+    key <AB09>	{[  U06D4,             Arabic_hamzaonalef     ]};
+    key <AB10>	{[  VoidSymbol,        Arabic_question_mark   ]};
+};

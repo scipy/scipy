@@ -1,0 +1,939 @@
+{
+  "build": "h36d4200_3",
+  "build_number": 3,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [],
+  "depends": [
+    "krb5 >=1.20.1,<1.21.0a0",
+    "libgcc-ng >=12",
+    "libstdcxx-ng >=12",
+    "libzlib >=1.2.13,<1.3.0a0"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/libcups-2.3.3-h36d4200_3",
+  "features": "",
+  "files": [
+    "bin/cups-config",
+    "bin/ippeveprinter",
+    "bin/ipptool",
+    "include/cups/adminutil.h",
+    "include/cups/array.h",
+    "include/cups/backend.h",
+    "include/cups/cups.h",
+    "include/cups/dir.h",
+    "include/cups/file.h",
+    "include/cups/http.h",
+    "include/cups/ipp.h",
+    "include/cups/language.h",
+    "include/cups/ppd.h",
+    "include/cups/pwg.h",
+    "include/cups/raster.h",
+    "include/cups/sidechannel.h",
+    "include/cups/transcode.h",
+    "include/cups/versioning.h",
+    "lib/cups/command/ippevepcl",
+    "lib/cups/command/ippeveps",
+    "lib/libcups.so",
+    "lib/libcups.so.2",
+    "lib/libcupsimage.so",
+    "lib/libcupsimage.so.2",
+    "share/cups/examples/color.drv",
+    "share/cups/examples/constraint.drv",
+    "share/cups/examples/custom.drv",
+    "share/cups/examples/grouping.drv",
+    "share/cups/examples/laserjet-basic.drv",
+    "share/cups/examples/laserjet-pjl.drv",
+    "share/cups/examples/minimum.drv",
+    "share/cups/examples/postscript.drv",
+    "share/cups/examples/r300-basic.drv",
+    "share/cups/examples/r300-colorman.drv",
+    "share/cups/examples/r300-remote.drv",
+    "share/cups/ipptool/cancel-current-job.test",
+    "share/cups/ipptool/color.jpg",
+    "share/cups/ipptool/create-job-format.test",
+    "share/cups/ipptool/create-job-sheets.test",
+    "share/cups/ipptool/create-job-timeout.test",
+    "share/cups/ipptool/create-job.test",
+    "share/cups/ipptool/create-printer-subscription.test",
+    "share/cups/ipptool/cups-create-local-printer.test",
+    "share/cups/ipptool/document-a4.pdf",
+    "share/cups/ipptool/document-a4.ps",
+    "share/cups/ipptool/document-letter.pdf",
+    "share/cups/ipptool/document-letter.ps",
+    "share/cups/ipptool/fax-job.test",
+    "share/cups/ipptool/get-completed-jobs.test",
+    "share/cups/ipptool/get-devices.test",
+    "share/cups/ipptool/get-job-attributes.test",
+    "share/cups/ipptool/get-job-attributes2.test",
+    "share/cups/ipptool/get-job-template-attributes.test",
+    "share/cups/ipptool/get-jobs.test",
+    "share/cups/ipptool/get-notifications.test",
+    "share/cups/ipptool/get-ppd-printer.test",
+    "share/cups/ipptool/get-ppd.test",
+    "share/cups/ipptool/get-ppds-drv-only.test",
+    "share/cups/ipptool/get-ppds-language.test",
+    "share/cups/ipptool/get-ppds-make-and-model.test",
+    "share/cups/ipptool/get-ppds-make.test",
+    "share/cups/ipptool/get-ppds-product.test",
+    "share/cups/ipptool/get-ppds-psversion.test",
+    "share/cups/ipptool/get-ppds.test",
+    "share/cups/ipptool/get-printer-attributes-suite.test",
+    "share/cups/ipptool/get-printer-attributes.test",
+    "share/cups/ipptool/get-printer-description-attributes.test",
+    "share/cups/ipptool/get-printers-printer-id.test",
+    "share/cups/ipptool/get-printers.test",
+    "share/cups/ipptool/get-subscriptions.test",
+    "share/cups/ipptool/gray.jpg",
+    "share/cups/ipptool/identify-printer-display.test",
+    "share/cups/ipptool/identify-printer-multiple.test",
+    "share/cups/ipptool/identify-printer.test",
+    "share/cups/ipptool/ipp-1.1.test",
+    "share/cups/ipptool/ipp-2.0.test",
+    "share/cups/ipptool/ipp-2.1.test",
+    "share/cups/ipptool/ipp-2.2.test",
+    "share/cups/ipptool/ipp-backend.test",
+    "share/cups/ipptool/ipp-everywhere.test",
+    "share/cups/ipptool/onepage-a4.pdf",
+    "share/cups/ipptool/onepage-a4.ps",
+    "share/cups/ipptool/onepage-letter.pdf",
+    "share/cups/ipptool/onepage-letter.ps",
+    "share/cups/ipptool/print-job-and-wait.test",
+    "share/cups/ipptool/print-job-deflate.test",
+    "share/cups/ipptool/print-job-gzip.test",
+    "share/cups/ipptool/print-job-hold.test",
+    "share/cups/ipptool/print-job-letter.test",
+    "share/cups/ipptool/print-job-manual.test",
+    "share/cups/ipptool/print-job-media-col.test",
+    "share/cups/ipptool/print-job-password.test",
+    "share/cups/ipptool/print-job.test",
+    "share/cups/ipptool/print-uri.test",
+    "share/cups/ipptool/set-attrs-hold.test",
+    "share/cups/ipptool/testfile.jpg",
+    "share/cups/ipptool/testfile.pcl",
+    "share/cups/ipptool/testfile.pdf",
+    "share/cups/ipptool/testfile.ps",
+    "share/cups/ipptool/testfile.txt",
+    "share/cups/ipptool/validate-job.test",
+    "share/locale/ca/cups_ca.po",
+    "share/locale/cs/cups_cs.po",
+    "share/locale/de/cups_de.po",
+    "share/locale/en/cups_en.po",
+    "share/locale/es/cups_es.po",
+    "share/locale/fr/cups_fr.po",
+    "share/locale/it/cups_it.po",
+    "share/locale/ja/cups_ja.po",
+    "share/locale/pt_BR/cups_pt_BR.po",
+    "share/locale/ru/cups_ru.po",
+    "share/locale/zh_CN/cups_zh_CN.po"
+  ],
+  "fn": "libcups-2.3.3-h36d4200_3.conda",
+  "license": "Apache-2.0",
+  "license_family": "Apache",
+  "link": {
+    "source": "/opt/conda/pkgs/libcups-2.3.3-h36d4200_3",
+    "type": 1
+  },
+  "md5": "c9f4416a34bc91e0eb029f912c68f81f",
+  "name": "libcups",
+  "package_tarball_full_path": "/opt/conda/pkgs/libcups-2.3.3-h36d4200_3.conda",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "bin/cups-config",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/libcups_1671147947655/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pla",
+        "sha256": "89875810b5c91b0aeab626bf62ea9cb30ee396c8bc3e2a1218b7420bac3124e8",
+        "sha256_in_prefix": "36a5723a6bd0bebdde3ba458875dab740d5b983d6b637171359a11bc7bbada60",
+        "size_in_bytes": 6963
+      },
+      {
+        "_path": "bin/ippeveprinter",
+        "path_type": "hardlink",
+        "sha256": "3f714525516db306e413ab7605657191325c220252263a343f3eefb52508d560",
+        "sha256_in_prefix": "3f714525516db306e413ab7605657191325c220252263a343f3eefb52508d560",
+        "size_in_bytes": 125008
+      },
+      {
+        "_path": "bin/ipptool",
+        "path_type": "hardlink",
+        "sha256": "a2a2f585a5e82dd1ec57a2202ecd7e379ac680a632a1895fc1c38dc73e8dd983",
+        "sha256_in_prefix": "a2a2f585a5e82dd1ec57a2202ecd7e379ac680a632a1895fc1c38dc73e8dd983",
+        "size_in_bytes": 79864
+      },
+      {
+        "_path": "include/cups/adminutil.h",
+        "path_type": "hardlink",
+        "sha256": "f16f44065e16b57beec7022a0741232ea699eccde1471aae8829c619821f2f10",
+        "sha256_in_prefix": "f16f44065e16b57beec7022a0741232ea699eccde1471aae8829c619821f2f10",
+        "size_in_bytes": 2321
+      },
+      {
+        "_path": "include/cups/array.h",
+        "path_type": "hardlink",
+        "sha256": "4d17b6b23f2e481039e11ad717708af3699ce05d94a89830390cd4141701715c",
+        "sha256_in_prefix": "4d17b6b23f2e481039e11ad717708af3699ce05d94a89830390cd4141701715c",
+        "size_in_bytes": 2702
+      },
+      {
+        "_path": "include/cups/backend.h",
+        "path_type": "hardlink",
+        "sha256": "cf7637acda22eb9140aeebad081b32c8e6e8ce39ab93974b955ca37f387a6b99",
+        "sha256_in_prefix": "cf7637acda22eb9140aeebad081b32c8e6e8ce39ab93974b955ca37f387a6b99",
+        "size_in_bytes": 1595
+      },
+      {
+        "_path": "include/cups/cups.h",
+        "path_type": "hardlink",
+        "sha256": "4a1c1825d0b0e2886af05c3730b17343f17662e754aaa6d675987d2580db28f9",
+        "sha256_in_prefix": "4a1c1825d0b0e2886af05c3730b17343f17662e754aaa6d675987d2580db28f9",
+        "size_in_bytes": 25587
+      },
+      {
+        "_path": "include/cups/dir.h",
+        "path_type": "hardlink",
+        "sha256": "a620f1cb5c48abd966e70f26cb34fcee6cd7fbdfd187adebf12d7f0ed44ee8a1",
+        "sha256_in_prefix": "a620f1cb5c48abd966e70f26cb34fcee6cd7fbdfd187adebf12d7f0ed44ee8a1",
+        "size_in_bytes": 1158
+      },
+      {
+        "_path": "include/cups/file.h",
+        "path_type": "hardlink",
+        "sha256": "a053904dbbd79ef825602fd7611a6ec27a40e8594e50a342a269c8a6ce1396ac",
+        "sha256_in_prefix": "a053904dbbd79ef825602fd7611a6ec27a40e8594e50a342a269c8a6ce1396ac",
+        "size_in_bytes": 3393
+      },
+      {
+        "_path": "include/cups/http.h",
+        "path_type": "hardlink",
+        "sha256": "8a30f89a15dc81390455144f305a90c4bbfdac036282d1d56a479fe507fe749e",
+        "sha256_in_prefix": "8a30f89a15dc81390455144f305a90c4bbfdac036282d1d56a479fe507fe749e",
+        "size_in_bytes": 29732
+      },
+      {
+        "_path": "include/cups/ipp.h",
+        "path_type": "hardlink",
+        "sha256": "e93b5b0c6c17d8b1a486e5c2c300cc238d291f2acc116ee7652909d571bb96f7",
+        "sha256_in_prefix": "e93b5b0c6c17d8b1a486e5c2c300cc238d291f2acc116ee7652909d571bb96f7",
+        "size_in_bytes": 53610
+      },
+      {
+        "_path": "include/cups/language.h",
+        "path_type": "hardlink",
+        "sha256": "c4feea00ed25dec2a90b0e9975dd9b2a6516fe7ab6805fc40f6ec0901f416166",
+        "sha256_in_prefix": "c4feea00ed25dec2a90b0e9975dd9b2a6516fe7ab6805fc40f6ec0901f416166",
+        "size_in_bytes": 3188
+      },
+      {
+        "_path": "include/cups/ppd.h",
+        "path_type": "hardlink",
+        "sha256": "6271c92aca049703bc69aa2300421b02adaa921eab02f3cd22143c6e358a5685",
+        "sha256_in_prefix": "6271c92aca049703bc69aa2300421b02adaa921eab02f3cd22143c6e358a5685",
+        "size_in_bytes": 21801
+      },
+      {
+        "_path": "include/cups/pwg.h",
+        "path_type": "hardlink",
+        "sha256": "5a72ad58146596f5a00c5df81ef3e3578d7c6642786e8e7f45990e99256f5c37",
+        "sha256_in_prefix": "5a72ad58146596f5a00c5df81ef3e3578d7c6642786e8e7f45990e99256f5c37",
+        "size_in_bytes": 2076
+      },
+      {
+        "_path": "include/cups/raster.h",
+        "path_type": "hardlink",
+        "sha256": "a3c8d097c7aa7e495ab632e6c956503c3a6cbf92fc682d5e7e4640088b2b47a2",
+        "sha256_in_prefix": "a3c8d097c7aa7e495ab632e6c956503c3a6cbf92fc682d5e7e4640088b2b47a2",
+        "size_in_bytes": 17805
+      },
+      {
+        "_path": "include/cups/sidechannel.h",
+        "path_type": "hardlink",
+        "sha256": "ca236503592bab4acc0c9d2d50443032538881132ee25fab14ef074dff9f56c0",
+        "sha256_in_prefix": "ca236503592bab4acc0c9d2d50443032538881132ee25fab14ef074dff9f56c0",
+        "size_in_bytes": 5045
+      },
+      {
+        "_path": "include/cups/transcode.h",
+        "path_type": "hardlink",
+        "sha256": "1c5e0c0742885f8eb92307f1a214b5a3bc1c5e9b3a98ce854cc2070cb5668fad",
+        "sha256_in_prefix": "1c5e0c0742885f8eb92307f1a214b5a3bc1c5e9b3a98ce854cc2070cb5668fad",
+        "size_in_bytes": 1672
+      },
+      {
+        "_path": "include/cups/versioning.h",
+        "path_type": "hardlink",
+        "sha256": "106dc7f54c48baeea7c2fcdda0c9d9a46a2c8cff512bb5fbd1e79a1623791e15",
+        "sha256_in_prefix": "106dc7f54c48baeea7c2fcdda0c9d9a46a2c8cff512bb5fbd1e79a1623791e15",
+        "size_in_bytes": 10888
+      },
+      {
+        "_path": "lib/cups/command/ippevepcl",
+        "path_type": "hardlink",
+        "sha256": "c643a17657f060f6c939db8c4ccb977c982dab3cee0b79324bf16e94e702f59c",
+        "sha256_in_prefix": "c643a17657f060f6c939db8c4ccb977c982dab3cee0b79324bf16e94e702f59c",
+        "size_in_bytes": 18424
+      },
+      {
+        "_path": "lib/cups/command/ippeveps",
+        "file_mode": "binary",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/libcups_1671147947655/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pla",
+        "sha256": "d3fdff63973468bede26f8b801f607536cc511757479a2782e659999aeb9db33",
+        "sha256_in_prefix": "26513046a6d58aa4b962440c73b51c8b30a1effcb6d4c1ed1c1bb053d9c9c816",
+        "size_in_bytes": 30712
+      },
+      {
+        "_path": "lib/libcups.so",
+        "path_type": "softlink",
+        "sha256": "017f3e4ef7af656f2c8f82b2f463a0ea9a933396bb5076635f50f38cd1e1be25",
+        "size_in_bytes": 645352
+      },
+      {
+        "_path": "lib/libcups.so.2",
+        "file_mode": "binary",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/libcups_1671147947655/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pla",
+        "sha256": "017f3e4ef7af656f2c8f82b2f463a0ea9a933396bb5076635f50f38cd1e1be25",
+        "sha256_in_prefix": "cd4cd25abb04332d625eeccfdec2145a7626a2f237ffeb39801ea8349ac716f7",
+        "size_in_bytes": 645352
+      },
+      {
+        "_path": "lib/libcupsimage.so",
+        "path_type": "softlink",
+        "sha256": "d881c1c1c19600df300be126eef90135b268883483579ef8b629e6f78034573b",
+        "size_in_bytes": 16272
+      },
+      {
+        "_path": "lib/libcupsimage.so.2",
+        "path_type": "hardlink",
+        "sha256": "d881c1c1c19600df300be126eef90135b268883483579ef8b629e6f78034573b",
+        "sha256_in_prefix": "d881c1c1c19600df300be126eef90135b268883483579ef8b629e6f78034573b",
+        "size_in_bytes": 16272
+      },
+      {
+        "_path": "share/cups/examples/color.drv",
+        "path_type": "hardlink",
+        "sha256": "4c7b4fd1c471c8fe2cd110fc3de6aea960b3115dd4992efd34ed972c7fc003b5",
+        "sha256_in_prefix": "4c7b4fd1c471c8fe2cd110fc3de6aea960b3115dd4992efd34ed972c7fc003b5",
+        "size_in_bytes": 921
+      },
+      {
+        "_path": "share/cups/examples/constraint.drv",
+        "path_type": "hardlink",
+        "sha256": "0ad7ddcaefbaef53424385c7b5909306815f7903d11589bcb6d3b7c68389fd67",
+        "sha256_in_prefix": "0ad7ddcaefbaef53424385c7b5909306815f7903d11589bcb6d3b7c68389fd67",
+        "size_in_bytes": 1263
+      },
+      {
+        "_path": "share/cups/examples/custom.drv",
+        "path_type": "hardlink",
+        "sha256": "d1bce647676d16b3a306d14c88bfe851b751a55382cf23f3a22267064dc2b3fb",
+        "sha256_in_prefix": "d1bce647676d16b3a306d14c88bfe851b751a55382cf23f3a22267064dc2b3fb",
+        "size_in_bytes": 1202
+      },
+      {
+        "_path": "share/cups/examples/grouping.drv",
+        "path_type": "hardlink",
+        "sha256": "1b037ce17bb97f9a40ade0bef63903feae6f776aea5e25a7e4b1d0d409ca1fb2",
+        "sha256_in_prefix": "1b037ce17bb97f9a40ade0bef63903feae6f776aea5e25a7e4b1d0d409ca1fb2",
+        "size_in_bytes": 729
+      },
+      {
+        "_path": "share/cups/examples/laserjet-basic.drv",
+        "path_type": "hardlink",
+        "sha256": "0fe58f80424feb6b250058a0e708f843d023c8eb5b22577099a2362eecc3c647",
+        "sha256_in_prefix": "0fe58f80424feb6b250058a0e708f843d023c8eb5b22577099a2362eecc3c647",
+        "size_in_bytes": 1940
+      },
+      {
+        "_path": "share/cups/examples/laserjet-pjl.drv",
+        "path_type": "hardlink",
+        "sha256": "3d07983a75b8057e483177aea6c3843201c7421c4da15253e1a4110b96354151",
+        "sha256_in_prefix": "3d07983a75b8057e483177aea6c3843201c7421c4da15253e1a4110b96354151",
+        "size_in_bytes": 2326
+      },
+      {
+        "_path": "share/cups/examples/minimum.drv",
+        "path_type": "hardlink",
+        "sha256": "a1dada793ffba52279519ca74e229a3925e75a99c3d4998388949da7cc2305c3",
+        "sha256_in_prefix": "a1dada793ffba52279519ca74e229a3925e75a99c3d4998388949da7cc2305c3",
+        "size_in_bytes": 572
+      },
+      {
+        "_path": "share/cups/examples/postscript.drv",
+        "path_type": "hardlink",
+        "sha256": "9115bc4baeb8e4af663769da11ffd0e123fd83285e578c3587263b4e24d90151",
+        "sha256_in_prefix": "9115bc4baeb8e4af663769da11ffd0e123fd83285e578c3587263b4e24d90151",
+        "size_in_bytes": 1228
+      },
+      {
+        "_path": "share/cups/examples/r300-basic.drv",
+        "path_type": "hardlink",
+        "sha256": "c06c3e6675e5e88009ebd819a0ed1f81b45b400a1ac38201bd8de96b050ee723",
+        "sha256_in_prefix": "c06c3e6675e5e88009ebd819a0ed1f81b45b400a1ac38201bd8de96b050ee723",
+        "size_in_bytes": 1751
+      },
+      {
+        "_path": "share/cups/examples/r300-colorman.drv",
+        "path_type": "hardlink",
+        "sha256": "cd59963be6f942583463977da3ed718b7023ae8e8868e0e135484e679ed079f4",
+        "sha256_in_prefix": "cd59963be6f942583463977da3ed718b7023ae8e8868e0e135484e679ed079f4",
+        "size_in_bytes": 1971
+      },
+      {
+        "_path": "share/cups/examples/r300-remote.drv",
+        "path_type": "hardlink",
+        "sha256": "7d7db2e6eba068876f550bbd112a0879e0eae3ce0b3ee5b069e5a15b6dd42c8d",
+        "sha256_in_prefix": "7d7db2e6eba068876f550bbd112a0879e0eae3ce0b3ee5b069e5a15b6dd42c8d",
+        "size_in_bytes": 1973
+      },
+      {
+        "_path": "share/cups/ipptool/cancel-current-job.test",
+        "path_type": "hardlink",
+        "sha256": "e8890c10df36ba60f97da95690a774752a5afa29afbc9f5d4b276ae6b392e332",
+        "sha256_in_prefix": "e8890c10df36ba60f97da95690a774752a5afa29afbc9f5d4b276ae6b392e332",
+        "size_in_bytes": 1003
+      },
+      {
+        "_path": "share/cups/ipptool/color.jpg",
+        "path_type": "hardlink",
+        "sha256": "f4305caa5b51277526eb351fb736de07b6ef2c8bb3a1d13c1502efe48cbb1854",
+        "sha256_in_prefix": "f4305caa5b51277526eb351fb736de07b6ef2c8bb3a1d13c1502efe48cbb1854",
+        "size_in_bytes": 117704
+      },
+      {
+        "_path": "share/cups/ipptool/create-job-format.test",
+        "path_type": "hardlink",
+        "sha256": "591c334d636f6891dca0e8763bdfa925ac7dea5a88f6ceb428c894a41745d51d",
+        "sha256_in_prefix": "591c334d636f6891dca0e8763bdfa925ac7dea5a88f6ceb428c894a41745d51d",
+        "size_in_bytes": 1318
+      },
+      {
+        "_path": "share/cups/ipptool/create-job-sheets.test",
+        "path_type": "hardlink",
+        "sha256": "6425846b1bb884d4afd04fa112d62b25934c5745d3b9fbe3a135097cc2f0dc9d",
+        "sha256_in_prefix": "6425846b1bb884d4afd04fa112d62b25934c5745d3b9fbe3a135097cc2f0dc9d",
+        "size_in_bytes": 1267
+      },
+      {
+        "_path": "share/cups/ipptool/create-job-timeout.test",
+        "path_type": "hardlink",
+        "sha256": "476ab229f00eedf4d4efae3be471d94beec8122b6d87af6d0fbabd7b46c77e3d",
+        "sha256_in_prefix": "476ab229f00eedf4d4efae3be471d94beec8122b6d87af6d0fbabd7b46c77e3d",
+        "size_in_bytes": 1227
+      },
+      {
+        "_path": "share/cups/ipptool/create-job.test",
+        "path_type": "hardlink",
+        "sha256": "0be3baefda1638b239dec29e768a65667686187ed1a7637b7cf02fc8f528171b",
+        "sha256_in_prefix": "0be3baefda1638b239dec29e768a65667686187ed1a7637b7cf02fc8f528171b",
+        "size_in_bytes": 1152
+      },
+      {
+        "_path": "share/cups/ipptool/create-printer-subscription.test",
+        "path_type": "hardlink",
+        "sha256": "8acfbd33b8e75058a1468446d091a360ee54eaf74c17c9ec8c67aa642601dc81",
+        "sha256_in_prefix": "8acfbd33b8e75058a1468446d091a360ee54eaf74c17c9ec8c67aa642601dc81",
+        "size_in_bytes": 1458
+      },
+      {
+        "_path": "share/cups/ipptool/cups-create-local-printer.test",
+        "path_type": "hardlink",
+        "sha256": "ac20fdc45c6245c9e8acdac1b56bee7958f33bb88b00f1784f0488d16f651fcf",
+        "sha256_in_prefix": "ac20fdc45c6245c9e8acdac1b56bee7958f33bb88b00f1784f0488d16f651fcf",
+        "size_in_bytes": 860
+      },
+      {
+        "_path": "share/cups/ipptool/document-a4.pdf",
+        "path_type": "hardlink",
+        "sha256": "40960c3818f0d61cdbd20c57351383bf180fe071b37c08033ac821c5769fac5d",
+        "sha256_in_prefix": "40960c3818f0d61cdbd20c57351383bf180fe071b37c08033ac821c5769fac5d",
+        "size_in_bytes": 273985
+      },
+      {
+        "_path": "share/cups/ipptool/document-a4.ps",
+        "path_type": "hardlink",
+        "sha256": "46c02373072b03e7909ca46f7f8799dd4f6e18c4bcffb2ab80effb66a68a9742",
+        "sha256_in_prefix": "46c02373072b03e7909ca46f7f8799dd4f6e18c4bcffb2ab80effb66a68a9742",
+        "size_in_bytes": 1088024
+      },
+      {
+        "_path": "share/cups/ipptool/document-letter.pdf",
+        "path_type": "hardlink",
+        "sha256": "a39a92d4df2bc14142e29fa77aa96c10d9a03c4ebc423df7a112d89ad8d7fc30",
+        "sha256_in_prefix": "a39a92d4df2bc14142e29fa77aa96c10d9a03c4ebc423df7a112d89ad8d7fc30",
+        "size_in_bytes": 476396
+      },
+      {
+        "_path": "share/cups/ipptool/document-letter.ps",
+        "path_type": "hardlink",
+        "sha256": "fc3ba88b0ffb958d31a43a8edb5c80eaec5f54223ab0d7b3e62c7601f4960cdd",
+        "sha256_in_prefix": "fc3ba88b0ffb958d31a43a8edb5c80eaec5f54223ab0d7b3e62c7601f4960cdd",
+        "size_in_bytes": 1466776
+      },
+      {
+        "_path": "share/cups/ipptool/fax-job.test",
+        "path_type": "hardlink",
+        "sha256": "b921b16f24e4115d412b0db4af0707be7fcae9f9e7f5c36c948014419e5d7f09",
+        "sha256_in_prefix": "b921b16f24e4115d412b0db4af0707be7fcae9f9e7f5c36c948014419e5d7f09",
+        "size_in_bytes": 1509
+      },
+      {
+        "_path": "share/cups/ipptool/get-completed-jobs.test",
+        "path_type": "hardlink",
+        "sha256": "14a40928275f5bff27de6d5e6db65f8878f0cf61b6e28224e85a93fdddeacdb0",
+        "sha256_in_prefix": "14a40928275f5bff27de6d5e6db65f8878f0cf61b6e28224e85a93fdddeacdb0",
+        "size_in_bytes": 775
+      },
+      {
+        "_path": "share/cups/ipptool/get-devices.test",
+        "path_type": "hardlink",
+        "sha256": "8144f1080a7a52e18334b47da5486e0abbf99308a4edab5571c866d6c919ea45",
+        "sha256_in_prefix": "8144f1080a7a52e18334b47da5486e0abbf99308a4edab5571c866d6c919ea45",
+        "size_in_bytes": 504
+      },
+      {
+        "_path": "share/cups/ipptool/get-job-attributes.test",
+        "path_type": "hardlink",
+        "sha256": "8519d18c3212cc21b66475f24baaf9d6c0e071995891143df2c4e20ea66f8753",
+        "sha256_in_prefix": "8519d18c3212cc21b66475f24baaf9d6c0e071995891143df2c4e20ea66f8753",
+        "size_in_bytes": 705
+      },
+      {
+        "_path": "share/cups/ipptool/get-job-attributes2.test",
+        "path_type": "hardlink",
+        "sha256": "c46002f011cc8f5aff3bcf8330c16dacc9a35a4778651add7eb2f82a8be02913",
+        "sha256_in_prefix": "c46002f011cc8f5aff3bcf8330c16dacc9a35a4778651add7eb2f82a8be02913",
+        "size_in_bytes": 621
+      },
+      {
+        "_path": "share/cups/ipptool/get-job-template-attributes.test",
+        "path_type": "hardlink",
+        "sha256": "d19562c8796a3af4dd9358cfaed51fcd3da947359cc17cd2616abfeb8fefbe32",
+        "sha256_in_prefix": "d19562c8796a3af4dd9358cfaed51fcd3da947359cc17cd2616abfeb8fefbe32",
+        "size_in_bytes": 705
+      },
+      {
+        "_path": "share/cups/ipptool/get-jobs.test",
+        "path_type": "hardlink",
+        "sha256": "126aa45db9c207620825847bc63400d6aadc351c2e680dbdacc47cd8ca2bfb13",
+        "sha256_in_prefix": "126aa45db9c207620825847bc63400d6aadc351c2e680dbdacc47cd8ca2bfb13",
+        "size_in_bytes": 877
+      },
+      {
+        "_path": "share/cups/ipptool/get-notifications.test",
+        "path_type": "hardlink",
+        "sha256": "1d3acb2b58801e753e63e83c88f38c69134cda58260ba47b3451ea0baa2095d2",
+        "sha256_in_prefix": "1d3acb2b58801e753e63e83c88f38c69134cda58260ba47b3451ea0baa2095d2",
+        "size_in_bytes": 811
+      },
+      {
+        "_path": "share/cups/ipptool/get-ppd-printer.test",
+        "path_type": "hardlink",
+        "sha256": "a0a7ab9e55443a23564fd408202f59539348cb4502439e8afb26da4dd9dd51e2",
+        "sha256_in_prefix": "a0a7ab9e55443a23564fd408202f59539348cb4502439e8afb26da4dd9dd51e2",
+        "size_in_bytes": 454
+      },
+      {
+        "_path": "share/cups/ipptool/get-ppd.test",
+        "path_type": "hardlink",
+        "sha256": "ff41c27690963e0f8b0c8a47b500d8641c30f279fa03eb2999cd2cd2780f8cc8",
+        "sha256_in_prefix": "ff41c27690963e0f8b0c8a47b500d8641c30f279fa03eb2999cd2cd2780f8cc8",
+        "size_in_bytes": 446
+      },
+      {
+        "_path": "share/cups/ipptool/get-ppds-drv-only.test",
+        "path_type": "hardlink",
+        "sha256": "692fc2b82991af63655d102adf8e9cda76861e1188da0e6c96e35ecb9cd3c78b",
+        "sha256_in_prefix": "692fc2b82991af63655d102adf8e9cda76861e1188da0e6c96e35ecb9cd3c78b",
+        "size_in_bytes": 568
+      },
+      {
+        "_path": "share/cups/ipptool/get-ppds-language.test",
+        "path_type": "hardlink",
+        "sha256": "7321278b84e2e58414c244c89a5f76324585619e1189d54a87bda0038d89d1c7",
+        "sha256_in_prefix": "7321278b84e2e58414c244c89a5f76324585619e1189d54a87bda0038d89d1c7",
+        "size_in_bytes": 520
+      },
+      {
+        "_path": "share/cups/ipptool/get-ppds-make-and-model.test",
+        "path_type": "hardlink",
+        "sha256": "7e6f5d1765185e25f3b80c6d903d024d7f06553c3717dcbde8cb041fac1c0d67",
+        "sha256_in_prefix": "7e6f5d1765185e25f3b80c6d903d024d7f06553c3717dcbde8cb041fac1c0d67",
+        "size_in_bytes": 505
+      },
+      {
+        "_path": "share/cups/ipptool/get-ppds-make.test",
+        "path_type": "hardlink",
+        "sha256": "6fb4a76498323531aa2471611a131d0fa106234851e0dbb1a4279ebda930c610",
+        "sha256_in_prefix": "6fb4a76498323531aa2471611a131d0fa106234851e0dbb1a4279ebda930c610",
+        "size_in_bytes": 492
+      },
+      {
+        "_path": "share/cups/ipptool/get-ppds-product.test",
+        "path_type": "hardlink",
+        "sha256": "e57991352e1724a82476825d9784b80482ac50904bc55f18b542c24b143fa8e0",
+        "sha256_in_prefix": "e57991352e1724a82476825d9784b80482ac50904bc55f18b542c24b143fa8e0",
+        "size_in_bytes": 504
+      },
+      {
+        "_path": "share/cups/ipptool/get-ppds-psversion.test",
+        "path_type": "hardlink",
+        "sha256": "5f9be1ad927e4e72bd66f9819bc89df7a60124dad714462f4cc7de38e0145d18",
+        "sha256_in_prefix": "5f9be1ad927e4e72bd66f9819bc89df7a60124dad714462f4cc7de38e0145d18",
+        "size_in_bytes": 512
+      },
+      {
+        "_path": "share/cups/ipptool/get-ppds.test",
+        "path_type": "hardlink",
+        "sha256": "3dc20c7003aa55169c22ee094d2e98df7a11a31c705eb70b02c5460c0ad97956",
+        "sha256_in_prefix": "3dc20c7003aa55169c22ee094d2e98df7a11a31c705eb70b02c5460c0ad97956",
+        "size_in_bytes": 499
+      },
+      {
+        "_path": "share/cups/ipptool/get-printer-attributes-suite.test",
+        "path_type": "hardlink",
+        "sha256": "0bd1b2392fd8a08e0cfb1c6176dc78aaf291618c917132e848ec480925d2677e",
+        "sha256_in_prefix": "0bd1b2392fd8a08e0cfb1c6176dc78aaf291618c917132e848ec480925d2677e",
+        "size_in_bytes": 31885
+      },
+      {
+        "_path": "share/cups/ipptool/get-printer-attributes.test",
+        "path_type": "hardlink",
+        "sha256": "af763536d250d29c786a0b121d37eb9d04a94a5c4259413c1fe70717580f30d2",
+        "sha256_in_prefix": "af763536d250d29c786a0b121d37eb9d04a94a5c4259413c1fe70717580f30d2",
+        "size_in_bytes": 1264
+      },
+      {
+        "_path": "share/cups/ipptool/get-printer-description-attributes.test",
+        "path_type": "hardlink",
+        "sha256": "a37550a39010b2fd72776c2f4c6fd36139e53d81c2289bb50e2700a8e86ee370",
+        "sha256_in_prefix": "a37550a39010b2fd72776c2f4c6fd36139e53d81c2289bb50e2700a8e86ee370",
+        "size_in_bytes": 1269
+      },
+      {
+        "_path": "share/cups/ipptool/get-printers-printer-id.test",
+        "path_type": "hardlink",
+        "sha256": "2dd133971154573fd91b8c4a1bc9d143b19bb551b974ded3a64b6bb81f8903cc",
+        "sha256_in_prefix": "2dd133971154573fd91b8c4a1bc9d143b19bb551b974ded3a64b6bb81f8903cc",
+        "size_in_bytes": 607
+      },
+      {
+        "_path": "share/cups/ipptool/get-printers.test",
+        "path_type": "hardlink",
+        "sha256": "59c48b51b8b149f06692da6f9a8f0a042ecbd2d12e082d78a7657cb1e6e94968",
+        "sha256_in_prefix": "59c48b51b8b149f06692da6f9a8f0a042ecbd2d12e082d78a7657cb1e6e94968",
+        "size_in_bytes": 422
+      },
+      {
+        "_path": "share/cups/ipptool/get-subscriptions.test",
+        "path_type": "hardlink",
+        "sha256": "3fff7b893a880da7ea7f0b31df456f6f89ab745705c27f73fe2d6946c5656baf",
+        "sha256_in_prefix": "3fff7b893a880da7ea7f0b31df456f6f89ab745705c27f73fe2d6946c5656baf",
+        "size_in_bytes": 519
+      },
+      {
+        "_path": "share/cups/ipptool/gray.jpg",
+        "path_type": "hardlink",
+        "sha256": "b3969b4e62a00ad2b81dd7150b482847772ebdbea6db59a35d96fbb9d4fc4ba6",
+        "sha256_in_prefix": "b3969b4e62a00ad2b81dd7150b482847772ebdbea6db59a35d96fbb9d4fc4ba6",
+        "size_in_bytes": 132284
+      },
+      {
+        "_path": "share/cups/ipptool/identify-printer-display.test",
+        "path_type": "hardlink",
+        "sha256": "3e5721876604c61920a0d9ae913d6e6139dd3100326649258d5ec8e4b17093ff",
+        "sha256_in_prefix": "3e5721876604c61920a0d9ae913d6e6139dd3100326649258d5ec8e4b17093ff",
+        "size_in_bytes": 571
+      },
+      {
+        "_path": "share/cups/ipptool/identify-printer-multiple.test",
+        "path_type": "hardlink",
+        "sha256": "a172a76f7db12900d69c1e928aebb10dae24db2b9a85fd9587e2676682c78b86",
+        "sha256_in_prefix": "a172a76f7db12900d69c1e928aebb10dae24db2b9a85fd9587e2676682c78b86",
+        "size_in_bytes": 595
+      },
+      {
+        "_path": "share/cups/ipptool/identify-printer.test",
+        "path_type": "hardlink",
+        "sha256": "e0597367ee3d5f7279db0e01de95da4e9f530835af738ef129b992a4416e3f04",
+        "sha256_in_prefix": "e0597367ee3d5f7279db0e01de95da4e9f530835af738ef129b992a4416e3f04",
+        "size_in_bytes": 518
+      },
+      {
+        "_path": "share/cups/ipptool/ipp-1.1.test",
+        "path_type": "hardlink",
+        "sha256": "335404fb94ac2d31661b7b38714f32a599e638c40bfea74244f7a3f1a4347a73",
+        "sha256_in_prefix": "335404fb94ac2d31661b7b38714f32a599e638c40bfea74244f7a3f1a4347a73",
+        "size_in_bytes": 89127
+      },
+      {
+        "_path": "share/cups/ipptool/ipp-2.0.test",
+        "path_type": "hardlink",
+        "sha256": "b9dbb68248a625cb19a530413a806b930699d38ae0dab8f3e26c3f3b1a7d6ab2",
+        "sha256_in_prefix": "b9dbb68248a625cb19a530413a806b930699d38ae0dab8f3e26c3f3b1a7d6ab2",
+        "size_in_bytes": 7414
+      },
+      {
+        "_path": "share/cups/ipptool/ipp-2.1.test",
+        "path_type": "hardlink",
+        "sha256": "3400a85ba9ef6391089d750b57c9af348b59f71668e1b230e82dbcfbd943b350",
+        "sha256_in_prefix": "3400a85ba9ef6391089d750b57c9af348b59f71668e1b230e82dbcfbd943b350",
+        "size_in_bytes": 4487
+      },
+      {
+        "_path": "share/cups/ipptool/ipp-2.2.test",
+        "path_type": "hardlink",
+        "sha256": "42e32bd2a0b331288d2b73bc23dfc13588115c2941c0e9c56a0eb80ef394c810",
+        "sha256_in_prefix": "42e32bd2a0b331288d2b73bc23dfc13588115c2941c0e9c56a0eb80ef394c810",
+        "size_in_bytes": 3815
+      },
+      {
+        "_path": "share/cups/ipptool/ipp-backend.test",
+        "path_type": "hardlink",
+        "sha256": "94c1ea7bcd835c5c4505d782939ef375ffe25341eaa9799861adcc5bd23f8826",
+        "sha256_in_prefix": "94c1ea7bcd835c5c4505d782939ef375ffe25341eaa9799861adcc5bd23f8826",
+        "size_in_bytes": 811
+      },
+      {
+        "_path": "share/cups/ipptool/ipp-everywhere.test",
+        "path_type": "hardlink",
+        "sha256": "54dbc5c4b2c32fa835a811bdf7da30ed395e14a581f50aa432874f62c571a2b1",
+        "sha256_in_prefix": "54dbc5c4b2c32fa835a811bdf7da30ed395e14a581f50aa432874f62c571a2b1",
+        "size_in_bytes": 310135
+      },
+      {
+        "_path": "share/cups/ipptool/onepage-a4.pdf",
+        "path_type": "hardlink",
+        "sha256": "0016b8eeb5787e773e1c5759640942e2b82c3a6f9e442f2fc652b1b1b87e3993",
+        "sha256_in_prefix": "0016b8eeb5787e773e1c5759640942e2b82c3a6f9e442f2fc652b1b1b87e3993",
+        "size_in_bytes": 22935
+      },
+      {
+        "_path": "share/cups/ipptool/onepage-a4.ps",
+        "path_type": "hardlink",
+        "sha256": "0a0b4484c674263d08e295b2c777bfa8a553a1ccf241ce2d241d06bb6e7f6ba6",
+        "sha256_in_prefix": "0a0b4484c674263d08e295b2c777bfa8a553a1ccf241ce2d241d06bb6e7f6ba6",
+        "size_in_bytes": 43433
+      },
+      {
+        "_path": "share/cups/ipptool/onepage-letter.pdf",
+        "path_type": "hardlink",
+        "sha256": "45c47132fd6b116b614c7cc240b1ac8dc730061a3f2eb5bc1b2feb827b04f1fc",
+        "sha256_in_prefix": "45c47132fd6b116b614c7cc240b1ac8dc730061a3f2eb5bc1b2feb827b04f1fc",
+        "size_in_bytes": 22883
+      },
+      {
+        "_path": "share/cups/ipptool/onepage-letter.ps",
+        "path_type": "hardlink",
+        "sha256": "5636fd03d10b73cd50905536db5db82274fe32f6d750e2e8783a24d9b10764bf",
+        "sha256_in_prefix": "5636fd03d10b73cd50905536db5db82274fe32f6d750e2e8783a24d9b10764bf",
+        "size_in_bytes": 41428
+      },
+      {
+        "_path": "share/cups/ipptool/print-job-and-wait.test",
+        "path_type": "hardlink",
+        "sha256": "57313638e65e96d6b93726d453defdba93257c5bd7534cb08d5fe277e7255ce6",
+        "sha256_in_prefix": "57313638e65e96d6b93726d453defdba93257c5bd7534cb08d5fe277e7255ce6",
+        "size_in_bytes": 1076
+      },
+      {
+        "_path": "share/cups/ipptool/print-job-deflate.test",
+        "path_type": "hardlink",
+        "sha256": "f9c8398523f5de6d7dfdfca180ede5186b6960c1147ba5c3b259f6307791cf56",
+        "sha256_in_prefix": "f9c8398523f5de6d7dfdfca180ede5186b6960c1147ba5c3b259f6307791cf56",
+        "size_in_bytes": 763
+      },
+      {
+        "_path": "share/cups/ipptool/print-job-gzip.test",
+        "path_type": "hardlink",
+        "sha256": "d965b5fe17d59883d446078f334b6dd78ec5112a0bbf028dff74f4c38ef83c09",
+        "sha256_in_prefix": "d965b5fe17d59883d446078f334b6dd78ec5112a0bbf028dff74f4c38ef83c09",
+        "size_in_bytes": 754
+      },
+      {
+        "_path": "share/cups/ipptool/print-job-hold.test",
+        "path_type": "hardlink",
+        "sha256": "bf6ab8177d9eda5bef1e607bc91d524a944c8690d9f92aec3347b6c7b94c83d0",
+        "sha256_in_prefix": "bf6ab8177d9eda5bef1e607bc91d524a944c8690d9f92aec3347b6c7b94c83d0",
+        "size_in_bytes": 965
+      },
+      {
+        "_path": "share/cups/ipptool/print-job-letter.test",
+        "path_type": "hardlink",
+        "sha256": "090736b101b7d0c11d1558c58d186a378db05cddfb6df0f1ed82336eb53da735",
+        "sha256_in_prefix": "090736b101b7d0c11d1558c58d186a378db05cddfb6df0f1ed82336eb53da735",
+        "size_in_bytes": 702
+      },
+      {
+        "_path": "share/cups/ipptool/print-job-manual.test",
+        "path_type": "hardlink",
+        "sha256": "851bcd13de2c7cf0808d7b156a2edf1e6d5ee629d5cb07d79094c99fb29c094c",
+        "sha256_in_prefix": "851bcd13de2c7cf0808d7b156a2edf1e6d5ee629d5cb07d79094c99fb29c094c",
+        "size_in_bytes": 979
+      },
+      {
+        "_path": "share/cups/ipptool/print-job-media-col.test",
+        "path_type": "hardlink",
+        "sha256": "c8f8eeca35f53347d1522072bc3a52c2d925f7d5daddfad7bf0c80f71e6c2875",
+        "sha256_in_prefix": "c8f8eeca35f53347d1522072bc3a52c2d925f7d5daddfad7bf0c80f71e6c2875",
+        "size_in_bytes": 1139
+      },
+      {
+        "_path": "share/cups/ipptool/print-job-password.test",
+        "path_type": "hardlink",
+        "sha256": "682aeded60f0f1efc5fb67f3c3f6d0583a6875d1d59510260e054147eb429012",
+        "sha256_in_prefix": "682aeded60f0f1efc5fb67f3c3f6d0583a6875d1d59510260e054147eb429012",
+        "size_in_bytes": 742
+      },
+      {
+        "_path": "share/cups/ipptool/print-job.test",
+        "path_type": "hardlink",
+        "sha256": "0c7e489bb59e45d58c7845f44408b7ab69d037c335d9e165408b79b649071a9b",
+        "sha256_in_prefix": "0c7e489bb59e45d58c7845f44408b7ab69d037c335d9e165408b79b649071a9b",
+        "size_in_bytes": 663
+      },
+      {
+        "_path": "share/cups/ipptool/print-uri.test",
+        "path_type": "hardlink",
+        "sha256": "afa1119903b303960e5005e8f5858a069dee79c37acf3777ba4f399e22749dab",
+        "sha256_in_prefix": "afa1119903b303960e5005e8f5858a069dee79c37acf3777ba4f399e22749dab",
+        "size_in_bytes": 635
+      },
+      {
+        "_path": "share/cups/ipptool/set-attrs-hold.test",
+        "path_type": "hardlink",
+        "sha256": "f325a44cf68d26edb42992380c1b2b484faedc6a9cac8c575394c6b8f3488034",
+        "sha256_in_prefix": "f325a44cf68d26edb42992380c1b2b484faedc6a9cac8c575394c6b8f3488034",
+        "size_in_bytes": 3918
+      },
+      {
+        "_path": "share/cups/ipptool/testfile.jpg",
+        "path_type": "hardlink",
+        "sha256": "d9f0a4a21680d63fb669ff9eb23cb74516281ea40fccdfc6dfbae660507f9062",
+        "sha256_in_prefix": "d9f0a4a21680d63fb669ff9eb23cb74516281ea40fccdfc6dfbae660507f9062",
+        "size_in_bytes": 197669
+      },
+      {
+        "_path": "share/cups/ipptool/testfile.pcl",
+        "path_type": "hardlink",
+        "sha256": "0e306627de59664d1b6d19e93dfc8d13e5c9df1b114f3bbf865734397bdc574a",
+        "sha256_in_prefix": "0e306627de59664d1b6d19e93dfc8d13e5c9df1b114f3bbf865734397bdc574a",
+        "size_in_bytes": 146
+      },
+      {
+        "_path": "share/cups/ipptool/testfile.pdf",
+        "path_type": "hardlink",
+        "sha256": "7bceabdfea81a34172d0e0bdb5a25ebf5cb3683056e860177fadb88ac16155d8",
+        "sha256_in_prefix": "7bceabdfea81a34172d0e0bdb5a25ebf5cb3683056e860177fadb88ac16155d8",
+        "size_in_bytes": 55225
+      },
+      {
+        "_path": "share/cups/ipptool/testfile.ps",
+        "path_type": "hardlink",
+        "sha256": "42f344bd6d94133a4a4bdd922a6b972a0ec8970c5cc98f514a38a7846b00fce0",
+        "sha256_in_prefix": "42f344bd6d94133a4a4bdd922a6b972a0ec8970c5cc98f514a38a7846b00fce0",
+        "size_in_bytes": 4153
+      },
+      {
+        "_path": "share/cups/ipptool/testfile.txt",
+        "path_type": "hardlink",
+        "sha256": "46200c0b14acb5793f4f041ddecef4bfa7589c6e87c32c926da66fad1b137fc0",
+        "sha256_in_prefix": "46200c0b14acb5793f4f041ddecef4bfa7589c6e87c32c926da66fad1b137fc0",
+        "size_in_bytes": 137
+      },
+      {
+        "_path": "share/cups/ipptool/validate-job.test",
+        "path_type": "hardlink",
+        "sha256": "210cee02373cf4d93cf76e25520466bd083f7c5b468238aceaf108dcf0b4f9fb",
+        "sha256_in_prefix": "210cee02373cf4d93cf76e25520466bd083f7c5b468238aceaf108dcf0b4f9fb",
+        "size_in_bytes": 603
+      },
+      {
+        "_path": "share/locale/ca/cups_ca.po",
+        "path_type": "hardlink",
+        "sha256": "055516d00a18d2f5199560392fda55b67d0f75bb0c21a5a2a9c70180310ca5c8",
+        "sha256_in_prefix": "055516d00a18d2f5199560392fda55b67d0f75bb0c21a5a2a9c70180310ca5c8",
+        "size_in_bytes": 338672
+      },
+      {
+        "_path": "share/locale/cs/cups_cs.po",
+        "path_type": "hardlink",
+        "sha256": "f2e7e711109a5c118b5ee7fb6f97315ce6023f8ae84bb955b302380ac8d30b0f",
+        "sha256_in_prefix": "f2e7e711109a5c118b5ee7fb6f97315ce6023f8ae84bb955b302380ac8d30b0f",
+        "size_in_bytes": 297899
+      },
+      {
+        "_path": "share/locale/de/cups_de.po",
+        "path_type": "hardlink",
+        "sha256": "e70b450df7c7f9ab03b048e67b87d62f15fe9ac694f92a747e60e6bc8c8e555e",
+        "sha256_in_prefix": "e70b450df7c7f9ab03b048e67b87d62f15fe9ac694f92a747e60e6bc8c8e555e",
+        "size_in_bytes": 328589
+      },
+      {
+        "_path": "share/locale/en/cups_en.po",
+        "path_type": "hardlink",
+        "sha256": "dc4b32db73d1d8b2a6f23e146a6c15fb5b0d2d39ba474c9ba1a8034bb0a52f2b",
+        "sha256_in_prefix": "dc4b32db73d1d8b2a6f23e146a6c15fb5b0d2d39ba474c9ba1a8034bb0a52f2b",
+        "size_in_bytes": 385673
+      },
+      {
+        "_path": "share/locale/es/cups_es.po",
+        "path_type": "hardlink",
+        "sha256": "50b53ab3fb0f4f6f1d5484971103bf45782fa474b731d3c01e275c48e0de724b",
+        "sha256_in_prefix": "50b53ab3fb0f4f6f1d5484971103bf45782fa474b731d3c01e275c48e0de724b",
+        "size_in_bytes": 343148
+      },
+      {
+        "_path": "share/locale/fr/cups_fr.po",
+        "path_type": "hardlink",
+        "sha256": "5de1d469b0ecd8f8c8cc151a6112feedd3babe0e38b066ce1c34d2224b9f63de",
+        "sha256_in_prefix": "5de1d469b0ecd8f8c8cc151a6112feedd3babe0e38b066ce1c34d2224b9f63de",
+        "size_in_bytes": 306359
+      },
+      {
+        "_path": "share/locale/it/cups_it.po",
+        "path_type": "hardlink",
+        "sha256": "7d56350d17c6a6aedcfa647f8eaf3fe18725d05d68b03800f0aa973c24383227",
+        "sha256_in_prefix": "7d56350d17c6a6aedcfa647f8eaf3fe18725d05d68b03800f0aa973c24383227",
+        "size_in_bytes": 340622
+      },
+      {
+        "_path": "share/locale/ja/cups_ja.po",
+        "path_type": "hardlink",
+        "sha256": "77828b56dfa6f267cf4c0fe3d0f28be33a91653f792266be44e51078eb4ce30f",
+        "sha256_in_prefix": "77828b56dfa6f267cf4c0fe3d0f28be33a91653f792266be44e51078eb4ce30f",
+        "size_in_bytes": 355002
+      },
+      {
+        "_path": "share/locale/pt_BR/cups_pt_BR.po",
+        "path_type": "hardlink",
+        "sha256": "e0f8eb9bf6c6ea50bec60d857dc3b8ed00c0ad312fd7420a7ac2ac55a869338c",
+        "sha256_in_prefix": "e0f8eb9bf6c6ea50bec60d857dc3b8ed00c0ad312fd7420a7ac2ac55a869338c",
+        "size_in_bytes": 341220
+      },
+      {
+        "_path": "share/locale/ru/cups_ru.po",
+        "path_type": "hardlink",
+        "sha256": "dd646fdb09e62b150f92081c0ff06d6739a63350157c355c88e97a610981dd28",
+        "sha256_in_prefix": "dd646fdb09e62b150f92081c0ff06d6739a63350157c355c88e97a610981dd28",
+        "size_in_bytes": 358666
+      },
+      {
+        "_path": "share/locale/zh_CN/cups_zh_CN.po",
+        "path_type": "hardlink",
+        "sha256": "4abd471d58d18de7cf390d6794f947a3904177ed1b1b3464853ac70bf94b2c49",
+        "sha256_in_prefix": "4abd471d58d18de7cf390d6794f947a3904177ed1b1b3464853ac70bf94b2c49",
+        "size_in_bytes": 341488
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "0ccd610207807f53328f137b2adc99c413f8e1dcd1302f0325412796a94eaaf7",
+  "size": 4519779,
+  "subdir": "linux-64",
+  "timestamp": 1671148111233,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/libcups-2.3.3-h36d4200_3.conda",
+  "version": "2.3.3"
+}

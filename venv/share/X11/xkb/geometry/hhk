@@ -1,0 +1,266 @@
+//
+//	XKB geometry for the Happy Hacking (Lite).
+//	Different variants correspond to different switch
+//	settings on the HHK.
+//
+//  Copyright (c) Doug Palmer <doug@charvolant.org>, 2002
+//
+//Permission is hereby granted, free of charge, to any person obtaining a copy
+//of this software and associated documentation files (the "Software"), to deal
+//in the Software without restriction, including without limitation the rights
+//to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+//copies of the Software, and to permit persons to whom the Software is
+//furnished to do so, subject to the following conditions:
+//
+//The above copyright notice and this permission notice shall be included in
+//all copies or substantial portions of the Software.
+//
+//THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+//IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+//FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+//AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+//LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+//OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+//THE SOFTWARE.
+
+// SW = 100 Default layout with windows keys
+default xkb_geometry "win1" {
+	include "hhk(basic)"
+
+	key.gap = 1;
+	section "Space" {
+		top = 86;
+		left = 30;
+		row {
+			top = 1;
+			keys {
+				<LALT>,
+				{ <LWIN>, "DIAM" },
+				{ <SPCE>, "SPCE" },
+				{ <RWIN>, "DIAM" },
+				<RALT>
+			};
+		};
+	};
+};
+
+// SW = 101 Layout with windows and alt keys swapped
+xkb_geometry "win2" {
+	include "hhk(basic)"
+
+	key.gap = 1;
+	section "Space" {
+		top = 86;
+		left = 30;
+		row {
+			top = 1;
+			keys {
+				<LWIN>,
+				{ <LALT>, "DIAM" },
+				{ <SPCE>, "SPCE" },
+				{ <RALT>, "DIAM" },
+				<RWIN>
+			};
+		};
+	};
+};
+
+// SW = 110 Default layout with windows keys, and left diamond = Fn key
+xkb_geometry "win3" {
+	include "hhk(basic)"
+
+	key.gap = 1;
+	section "Space" {
+		top = 86;
+		left = 30;
+		row {
+			top = 1;
+			keys {
+				<LALT>,
+				{ <FN>, "DIAM" },
+				{ <SPCE>, "SPCE" },
+				{ <RWIN>, "DIAM" },
+				<RALT>
+			};
+		};
+	};
+};
+
+// SW = 101 Layout with windows and alt keys swapped and left-Alt = Fn key
+xkb_geometry "win4" {
+	include "hhk(basic)"
+
+	key.gap = 1;
+	section "Space" {
+		top = 86;
+		left = 30;
+		row {
+			top = 1;
+			keys {
+				<FN>,
+				{ <LALT>, "DIAM" },
+				{ <SPCE>, "SPCE" },
+				{ <RALT>, "DIAM" },
+				<RWIN>
+			};
+		};
+	};
+};
+
+// SW = 000 Layout with Muhenkan and Henkan keys
+xkb_geometry "jp1" {
+	include "hhk(basic)"
+
+	key.gap = 1;
+	section "Space" {
+		top = 86;
+		left = 30;
+		row {
+			top = 1;
+			keys {
+				<LALT>,
+				{ <NFER>, "DIAM" },
+				{ <SPCE>, "SPCE" },
+				{ <XFER>, "DIAM" },
+				<RALT>
+			};
+		};
+	};
+};
+
+// SW = 001 Layout with Muhenkan and Henkan keys swapped with Alt
+xkb_geometry "jp2" {
+	include "hhk(basic)"
+
+	key.gap = 1;
+	section "Space" {
+		top = 86;
+		left = 30;
+		row {
+			top = 1;
+			keys {
+				<NFER>,
+				{ <LALT>, "DIAM" },
+				{ <SPCE>, "SPCE" },
+				{ <RALT>, "DIAM" },
+				<XFER>
+			};
+		};
+	};
+};
+
+// SW = 010 Layout with Henkan key and left-diamond as Fn
+xkb_geometry "jp3" {
+	include "hhk(basic)"
+
+	key.gap = 1;
+	section "Space" {
+		top = 86;
+		left = 30;
+		row {
+			top = 1;
+			keys {
+				<LALT>,
+				{ <FN>, "DIAM" },
+				{ <SPCE>, "SPCE" },
+				{ <XFER>, "DIAM" },
+				<RALT>
+			};
+		};
+	};
+};
+
+// SW = 001 Layout with Henkan key swapped with Alt and left-Alt as Fn
+xkb_geometry "jp4" {
+	include "hhk(basic)"
+
+	key.gap = 1;
+	section "Space" {
+		top = 86;
+		left = 30;
+		row {
+			top = 1;
+			keys {
+				<FN>,
+				{ <LALT>, "DIAM" },
+				{ <SPCE>, "SPCE" },
+				{ <RALT>, "DIAM" },
+				<XFER>
+			};
+		};
+	};
+};
+
+// Basic layout for non-switchable keys
+partial hidden xkb_geometry "basic" {
+
+	description = "Happy Hacking";
+	width = 290;
+	height = 106;
+	
+	shape.cornerRadius = 1;
+	shape "NORM" { { [18, 18] }, { [2, 1], [14, 14] } };
+	shape "BKSP" { { [28, 18] }, { [2, 1], [24, 14] } };
+	shape "TABK" { { [28, 18] }, { [2, 1], [24, 14] } };
+	shape "CTRL" { { [32, 18] }, { [2, 1], [28, 14] } };
+	shape "RTRN" { { [42, 18] }, { [2, 1], [38, 14] } };
+	shape "LFSH" { { [42, 18] }, { [2, 1], [38, 14] } };
+	shape "RTSH" { { [32, 18] }, { [2, 1], [28, 14] } };
+	shape "DIAM" { { [28, 18] }, { [2, 1], [24, 14] } };
+	shape "SPCE" { { [114, 18] }, { [2, 1], [110, 14] } };
+
+	text.color = "black";
+	text "PFULabel" { left = 16; top = 2; fontsize = 20; text = "PFU"; };
+	text "HHKLabel" { left = 254; top = 90; text = "Happy Hacking\nKeyboard"; };
+
+	section.left = 1;
+	row.left = 1;
+	key.shape = "NORM";
+	key.gap = 1;
+
+	section "Alphanumeric" {
+		top = 10;
+		row {
+			top = 1;
+			keys {
+				 <ESC>, 
+				<AE01>, <AE02>, <AE03>, <AE04>, <AE05>, 
+				<AE06>, <AE07>, <AE08>, <AE09>, <AE10>, 
+				<AE11>, <AE12>, 
+				<BKSL>, <TLDE>
+			};
+		};
+		row {
+			top = 20;
+			keys {
+				{ <TAB>, "TABK" },
+				<AD01>, <AD02>, <AD03>, <AD04>, <AD05>,
+				<AD06>, <AD07>, <AD08>, <AD09>, <AD10>,
+				<AD11>, <AD12>,
+				{ <BKSP>, "BKSP" }
+			};
+		};
+		row {
+			top = 39;
+			keys {
+				{ <LCTL>, "CTRL" },
+				<AC01>, <AC02>, <AC03>, <AC04>, <AC05>,
+				<AC06>, <AC07>, <AC08>, <AC09>, <AC10>,
+				<AC11>, 
+				{ <RTRN>, "RTRN" }
+			};
+		};
+		row {
+			top = 58;
+			keys {
+				{ <LFSH>, "LFSH" },
+				<AB01>, <AB02>, <AB03>, <AB04>, <AB05>,
+				<AB06>, <AB07>, <AB08>, <AB09>, <AB10>,
+				{ <RTSH>, "RTSH" },
+				{ <FN>, color = "grey20" }
+			};
+		};
+	};
+
+	alias <AC00> = <LCTL>;
+};

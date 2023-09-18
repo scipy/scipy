@@ -1,0 +1,83 @@
+comment_char %
+escape_char  /
+%
+% Walloon Language Locale for Belgium with Euro
+% Language: wa
+% Territory: BE
+% Option: euro
+% Date: 2002-02-23
+% Users: general
+% Charset: ISO-8859-15
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title      "Walloon locale for Belgium with Euro"
+source     "Free Software Foundation, Inc."
+address    "59 Temple Place - Suite 330, Boston, MA 02111-1307, USA"
+contact    ""
+email      "bug-glibc-locales@gnu.org"
+tel        ""
+fax        ""
+language   "Walloon"
+territory  "Belgium"
+revision   "1.0"
+date       "2002-02-23"
+%
+category  "wa_BE@euro:2000";LC_IDENTIFICATION
+category  "wa_BE@euro:2000";LC_CTYPE
+category  "wa_BE@euro:2000";LC_COLLATE
+category  "wa_BE@euro:2000";LC_TIME
+category  "wa_BE@euro:2000";LC_NUMERIC
+category  "wa_BE@euro:2000";LC_MONETARY
+category  "wa_BE@euro:2000";LC_MESSAGES
+category  "wa_BE@euro:2000";LC_PAPER
+category  "wa_BE@euro:2000";LC_NAME
+category  "wa_BE@euro:2000";LC_ADDRESS
+category  "wa_BE@euro:2000";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_CTYPE
+copy "wa_BE"
+END LC_CTYPE
+
+LC_COLLATE
+copy "wa_BE"
+END LC_COLLATE
+
+LC_MESSAGES
+copy "wa_BE"
+END LC_MESSAGES
+
+LC_MONETARY
+copy "fr_BE@euro"
+END LC_MONETARY
+
+LC_NUMERIC
+copy "wa_BE"
+END LC_NUMERIC
+
+LC_TIME
+copy "wa_BE"
+END LC_TIME
+
+LC_PAPER
+copy "wa_BE"
+END LC_PAPER
+
+LC_TELEPHONE
+copy "wa_BE"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+copy "wa_BE"
+END LC_MEASUREMENT
+
+LC_NAME
+copy "wa_BE"
+END LC_NAME
+
+LC_ADDRESS
+copy "wa_BE"
+END LC_ADDRESS

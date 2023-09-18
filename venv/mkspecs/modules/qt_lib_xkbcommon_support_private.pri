@@ -1,0 +1,15 @@
+QT.xkbcommon_support_private.VERSION = 5.15.8
+QT.xkbcommon_support_private.name = QtXkbCommonSupport
+QT.xkbcommon_support_private.module = Qt5XkbCommonSupport
+QT.xkbcommon_support_private.libs = $$QT_MODULE_LIB_BASE
+QT.xkbcommon_support_private.includes = $$QT_MODULE_INCLUDE_BASE $$QT_MODULE_INCLUDE_BASE/QtXkbCommonSupport $$QT_MODULE_INCLUDE_BASE/QtXkbCommonSupport/5.15.8 $$QT_MODULE_INCLUDE_BASE/QtXkbCommonSupport/5.15.8/QtXkbCommonSupport
+QT.xkbcommon_support_private.frameworks =
+QT.xkbcommon_support_private.bins = $$QT_MODULE_BIN_BASE
+QT.xkbcommon_support_private.depends = core_private gui_private
+QT.xkbcommon_support_private.uses = xkbcommon
+QT.xkbcommon_support_private.module_config = v2 staticlib internal_module
+QT.xkbcommon_support_private.DEFINES = QT_XKBCOMMON_SUPPORT_LIB
+QT.xkbcommon_support_private.enabled_features =
+QT.xkbcommon_support_private.disabled_features =
+QT_CONFIG +=
+QT_MODULES += xkbcommon_support

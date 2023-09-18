@@ -1,0 +1,812 @@
+{
+  "build": "pyhd8ed1ab_1",
+  "build_number": 1,
+  "channel": "https://conda.anaconda.org/conda-forge/noarch",
+  "constrains": [],
+  "depends": [
+    "beautifulsoup4",
+    "docutils !=0.17.0",
+    "packaging",
+    "python >=3.7",
+    "sphinx >=4.0.2"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/pydata-sphinx-theme-0.9.0-pyhd8ed1ab_1",
+  "features": "",
+  "files": [
+    "lib/python3.10/site-packages/pydata_sphinx_theme-0.9.0.dist-info/INSTALLER",
+    "lib/python3.10/site-packages/pydata_sphinx_theme-0.9.0.dist-info/LICENSE",
+    "lib/python3.10/site-packages/pydata_sphinx_theme-0.9.0.dist-info/METADATA",
+    "lib/python3.10/site-packages/pydata_sphinx_theme-0.9.0.dist-info/RECORD",
+    "lib/python3.10/site-packages/pydata_sphinx_theme-0.9.0.dist-info/REQUESTED",
+    "lib/python3.10/site-packages/pydata_sphinx_theme-0.9.0.dist-info/WHEEL",
+    "lib/python3.10/site-packages/pydata_sphinx_theme-0.9.0.dist-info/entry_points.txt",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/__init__.py",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/scripts/index.js",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/abstracts/_mixins.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/base/_base.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/components/_icon-links.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/components/_prev-next.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/components/_search.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/components/_switcher-theme.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/components/_switcher-version.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/components/_toc-inpage.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/components/_versionmodified.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/components/header/_header-logo.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/content/_admonitions.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/content/_api.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/content/_footnotes.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/content/_hacks.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/content/_lists.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/content/_quotes.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/content/_spans.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/content/_tables.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/content/_toctree.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/extensions/_bootstrap.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/extensions/_ethical-ads.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/extensions/_pydata.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/extensions/_sphinx_design.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/extensions/_sphinx_panels.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/index.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/pages/_search.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/sections/_article.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/sections/_container.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/sections/_footer-article.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/sections/_footer.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/sections/_header.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/sections/_sidebar-primary.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/sections/_sidebar-secondary.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/variables/_admonitions.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/variables/_color.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/variables/_fonts.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/variables/_icons.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/variables/_layout.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/assets/styles/variables/_versionmodified.scss",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/bootstrap_html_translator.py",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/components/copyright.html",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/components/edit-this-page.html",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/components/footer-article/prev-next.html",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/components/icon-links.html",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/components/last-updated.html",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/components/navbar-icon-links.html",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/components/navbar-logo.html",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/components/navbar-nav.html",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/components/page-toc.html",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/components/search-field.html",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/components/sidebar-ethical-ads.html",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/components/sidebar-nav-bs.html",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/components/sphinx-version.html",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/components/theme-switcher.html",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/components/version-switcher.html",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/layout.html",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/sections/announcement.html",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/sections/article.html",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/sections/footer-article.html",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/sections/footer.html",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/sections/header.html",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/sections/sidebar-primary.html",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/sections/sidebar-secondary.html",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/.gitignore",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/scripts/pydata-sphinx-theme.js",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/styles/pydata-sphinx-theme.css",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/styles/theme.css",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/vendor/fontawesome/5.13.0/LICENSE.txt",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/vendor/fontawesome/5.13.0/css/all.min.css",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.eot",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.svg",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.ttf",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/vendor/fontawesome/5.13.0/webfonts/fa-regular-400.eot",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/vendor/fontawesome/5.13.0/webfonts/fa-regular-400.svg",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/vendor/fontawesome/5.13.0/webfonts/fa-regular-400.ttf",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/vendor/fontawesome/5.13.0/webfonts/fa-regular-400.woff",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/vendor/fontawesome/5.13.0/webfonts/fa-regular-400.woff2",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.eot",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.svg",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.ttf",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/webpack-macros.html",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/theme.conf",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/__pycache__/__init__.cpython-310.pyc",
+    "lib/python3.10/site-packages/pydata_sphinx_theme/__pycache__/bootstrap_html_translator.cpython-310.pyc"
+  ],
+  "fn": "pydata-sphinx-theme-0.9.0-pyhd8ed1ab_1.tar.bz2",
+  "license": "BSD-3-Clause",
+  "license_family": "BSD",
+  "link": {
+    "source": "/opt/conda/pkgs/pydata-sphinx-theme-0.9.0-pyhd8ed1ab_1",
+    "type": 1
+  },
+  "md5": "ed5f1236283219a21207813d387b44bd",
+  "name": "pydata-sphinx-theme",
+  "noarch": "python",
+  "package_tarball_full_path": "/opt/conda/pkgs/pydata-sphinx-theme-0.9.0-pyhd8ed1ab_1.tar.bz2",
+  "package_type": "noarch_python",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "site-packages/pydata_sphinx_theme-0.9.0.dist-info/INSTALLER",
+        "path_type": "hardlink",
+        "sha256": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "sha256_in_prefix": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "size_in_bytes": 5
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme-0.9.0.dist-info/LICENSE",
+        "path_type": "hardlink",
+        "sha256": "d92fc698623827d7204139dee7874fbd7447f9256b8199acbd71cf8ee53d6f64",
+        "sha256_in_prefix": "d92fc698623827d7204139dee7874fbd7447f9256b8199acbd71cf8ee53d6f64",
+        "size_in_bytes": 1506
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme-0.9.0.dist-info/METADATA",
+        "path_type": "hardlink",
+        "sha256": "2706f480f68636a4d5bca864699933c3c19ccacc88e448f12dd23c59585d7a2c",
+        "sha256_in_prefix": "2706f480f68636a4d5bca864699933c3c19ccacc88e448f12dd23c59585d7a2c",
+        "size_in_bytes": 4390
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme-0.9.0.dist-info/RECORD",
+        "path_type": "hardlink",
+        "sha256": "31ae89af2f00a085bd55edab6fa86ee9259bde9b8315249b3b58353aecb61c14",
+        "sha256_in_prefix": "31ae89af2f00a085bd55edab6fa86ee9259bde9b8315249b3b58353aecb61c14",
+        "size_in_bytes": 14073
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme-0.9.0.dist-info/REQUESTED",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256_in_prefix": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme-0.9.0.dist-info/WHEEL",
+        "path_type": "hardlink",
+        "sha256": "8eb71fb07eb46735ef3f36730cc6abc96fd94a4e242531f72f1d5c061031f57d",
+        "sha256_in_prefix": "8eb71fb07eb46735ef3f36730cc6abc96fd94a4e242531f72f1d5c061031f57d",
+        "size_in_bytes": 85
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme-0.9.0.dist-info/entry_points.txt",
+        "path_type": "hardlink",
+        "sha256": "82260528bce449a13da14b6389ea713070dd5a8e98731394a70e0556380e8b86",
+        "sha256_in_prefix": "82260528bce449a13da14b6389ea713070dd5a8e98731394a70e0556380e8b86",
+        "size_in_bytes": 62
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "19060f6ca73bb2c583c4d47b76f5b4bef830abb3ed4fd430c0cd95e8e7023202",
+        "sha256_in_prefix": "19060f6ca73bb2c583c4d47b76f5b4bef830abb3ed4fd430c0cd95e8e7023202",
+        "size_in_bytes": 26232
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/scripts/index.js",
+        "path_type": "hardlink",
+        "sha256": "37103d999690715c9973b9c40b4300010f43cf1568988994486e61aa8bddf7d2",
+        "sha256_in_prefix": "37103d999690715c9973b9c40b4300010f43cf1568988994486e61aa8bddf7d2",
+        "size_in_bytes": 5499
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/abstracts/_mixins.scss",
+        "path_type": "hardlink",
+        "sha256": "01917b10937a857d56c5bf40f241fe704c495800aee2123c0072df1f19280f47",
+        "sha256_in_prefix": "01917b10937a857d56c5bf40f241fe704c495800aee2123c0072df1f19280f47",
+        "size_in_bytes": 666
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/base/_base.scss",
+        "path_type": "hardlink",
+        "sha256": "d229f9a0c9cdab87de557f27b43cbe3460dd70a67e3bcc0a19f96ccea7782e59",
+        "sha256_in_prefix": "d229f9a0c9cdab87de557f27b43cbe3460dd70a67e3bcc0a19f96ccea7782e59",
+        "size_in_bytes": 2870
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/components/_icon-links.scss",
+        "path_type": "hardlink",
+        "sha256": "affbb8f2e6be4fa69e909a0c2231b7cc31916656e052f52b98a28b95fc29011a",
+        "sha256_in_prefix": "affbb8f2e6be4fa69e909a0c2231b7cc31916656e052f52b98a28b95fc29011a",
+        "size_in_bytes": 708
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/components/_prev-next.scss",
+        "path_type": "hardlink",
+        "sha256": "3be4818898136460b25afd98cd2d1941d76cbb18803478aa18b7463d97fde01e",
+        "sha256_in_prefix": "3be4818898136460b25afd98cd2d1941d76cbb18803478aa18b7463d97fde01e",
+        "size_in_bytes": 896
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/components/_search.scss",
+        "path_type": "hardlink",
+        "sha256": "9326c3700d12d5e20b7cbdd8c4f150ecb7989eb125e98d4175cf3d9ff8594ca3",
+        "sha256_in_prefix": "9326c3700d12d5e20b7cbdd8c4f150ecb7989eb125e98d4175cf3d9ff8594ca3",
+        "size_in_bytes": 700
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/components/_switcher-theme.scss",
+        "path_type": "hardlink",
+        "sha256": "c4b2863f5204225945d6cf333d116a5c6ef9d1c58c99b2b13d0dc6eb1ebce4de",
+        "sha256_in_prefix": "c4b2863f5204225945d6cf333d116a5c6ef9d1c58c99b2b13d0dc6eb1ebce4de",
+        "size_in_bytes": 546
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/components/_switcher-version.scss",
+        "path_type": "hardlink",
+        "sha256": "89216bee9fa1012e4bb7177e683a8c45600a40a516943c369680e667b0fa809d",
+        "sha256_in_prefix": "89216bee9fa1012e4bb7177e683a8c45600a40a516943c369680e667b0fa809d",
+        "size_in_bytes": 299
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/components/_toc-inpage.scss",
+        "path_type": "hardlink",
+        "sha256": "463faac86c11a8f29468286a12a78d7cb7ab3678fbcbfe2377d181937d933557",
+        "sha256_in_prefix": "463faac86c11a8f29468286a12a78d7cb7ab3678fbcbfe2377d181937d933557",
+        "size_in_bytes": 494
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/components/_versionmodified.scss",
+        "path_type": "hardlink",
+        "sha256": "61ee7b55ab85fb39a3d2239819e84261e0807adc81ac126bdf8761ff00955ced",
+        "sha256_in_prefix": "61ee7b55ab85fb39a3d2239819e84261e0807adc81ac126bdf8761ff00955ced",
+        "size_in_bytes": 2010
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/components/header/_header-logo.scss",
+        "path_type": "hardlink",
+        "sha256": "d5e73878868a29d04d2d371dd6baf6f7af35f1608a7f5d73ac4697523cb09d02",
+        "sha256_in_prefix": "d5e73878868a29d04d2d371dd6baf6f7af35f1608a7f5d73ac4697523cb09d02",
+        "size_in_bytes": 386
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/content/_admonitions.scss",
+        "path_type": "hardlink",
+        "sha256": "3b98ff0683acbd71947ec71f9bdaf54724467791e9f53d79b182003d44e706ac",
+        "sha256_in_prefix": "3b98ff0683acbd71947ec71f9bdaf54724467791e9f53d79b182003d44e706ac",
+        "size_in_bytes": 4651
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/content/_api.scss",
+        "path_type": "hardlink",
+        "sha256": "56eae65373dac25b238b8e7f6c0706ff355671dedb7d2842faa0e8565869c413",
+        "sha256_in_prefix": "56eae65373dac25b238b8e7f6c0706ff355671dedb7d2842faa0e8565869c413",
+        "size_in_bytes": 1907
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/content/_footnotes.scss",
+        "path_type": "hardlink",
+        "sha256": "9d24bdd404b1f25faa7224a3c23a16ac0aa09c5d5e0784dcb4618dc8d6fa325b",
+        "sha256_in_prefix": "9d24bdd404b1f25faa7224a3c23a16ac0aa09c5d5e0784dcb4618dc8d6fa325b",
+        "size_in_bytes": 378
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/content/_hacks.scss",
+        "path_type": "hardlink",
+        "sha256": "c6ba6513410ff07a997b19da3375933ca9452416c5683ed4f6d41f3423e21d83",
+        "sha256_in_prefix": "c6ba6513410ff07a997b19da3375933ca9452416c5683ed4f6d41f3423e21d83",
+        "size_in_bytes": 484
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/content/_lists.scss",
+        "path_type": "hardlink",
+        "sha256": "370c07cd3da10c45a56dbf864471b409e75d0a4d6676dc1b8e2b65cb5e4a833e",
+        "sha256_in_prefix": "370c07cd3da10c45a56dbf864471b409e75d0a4d6676dc1b8e2b65cb5e4a833e",
+        "size_in_bytes": 348
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/content/_quotes.scss",
+        "path_type": "hardlink",
+        "sha256": "bcc392a87c52cf4d0687ea17385e095d23a2ad31b9ae7eca194d66b193798e37",
+        "sha256_in_prefix": "bcc392a87c52cf4d0687ea17385e095d23a2ad31b9ae7eca194d66b193798e37",
+        "size_in_bytes": 162
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/content/_spans.scss",
+        "path_type": "hardlink",
+        "sha256": "199456c957db939c162f562d396df9bb59bc9cadc6657cdb02baf3c90325cd60",
+        "sha256_in_prefix": "199456c957db939c162f562d396df9bb59bc9cadc6657cdb02baf3c90325cd60",
+        "size_in_bytes": 581
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/content/_tables.scss",
+        "path_type": "hardlink",
+        "sha256": "247dab74101e3797f018ed3d1a3af46bb3eb1ed1587d9c534536269903972afa",
+        "sha256_in_prefix": "247dab74101e3797f018ed3d1a3af46bb3eb1ed1587d9c534536269903972afa",
+        "size_in_bytes": 372
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/content/_toctree.scss",
+        "path_type": "hardlink",
+        "sha256": "3ea6b48643a27edfcab1f86ee3641bba0d626176a2e28c46c3407ffc6d121ada",
+        "sha256_in_prefix": "3ea6b48643a27edfcab1f86ee3641bba0d626176a2e28c46c3407ffc6d121ada",
+        "size_in_bytes": 506
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/extensions/_bootstrap.scss",
+        "path_type": "hardlink",
+        "sha256": "dec98a3432702ff601f3d5caccbb2503957e2006a3be53e1e4537ce09bf76291",
+        "sha256_in_prefix": "dec98a3432702ff601f3d5caccbb2503957e2006a3be53e1e4537ce09bf76291",
+        "size_in_bytes": 330
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/extensions/_ethical-ads.scss",
+        "path_type": "hardlink",
+        "sha256": "1f726ef77a36b95996597d0f690f767174e5dfffe66f3eed9b9965e1d3b28b6c",
+        "sha256_in_prefix": "1f726ef77a36b95996597d0f690f767174e5dfffe66f3eed9b9965e1d3b28b6c",
+        "size_in_bytes": 567
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/extensions/_pydata.scss",
+        "path_type": "hardlink",
+        "sha256": "556fe7faa9301cac309ba4a218505a9ddab61cb710b230595d22f482744f558d",
+        "sha256_in_prefix": "556fe7faa9301cac309ba4a218505a9ddab61cb710b230595d22f482744f558d",
+        "size_in_bytes": 151
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/extensions/_sphinx_design.scss",
+        "path_type": "hardlink",
+        "sha256": "d54fa03d73e90265e0a36d6dab8b122743336674a6fbcaa8c0c3eb2e5b81a3fc",
+        "sha256_in_prefix": "d54fa03d73e90265e0a36d6dab8b122743336674a6fbcaa8c0c3eb2e5b81a3fc",
+        "size_in_bytes": 1731
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/extensions/_sphinx_panels.scss",
+        "path_type": "hardlink",
+        "sha256": "110622689ef5307b7afc90f521724101c24e423e865126428d7b2f8dda822997",
+        "sha256_in_prefix": "110622689ef5307b7afc90f521724101c24e423e865126428d7b2f8dda822997",
+        "size_in_bytes": 1681
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/index.scss",
+        "path_type": "hardlink",
+        "sha256": "43402620b0b323e54d2062377988992550731f7b2736741e87fb40a8e1308803",
+        "sha256_in_prefix": "43402620b0b323e54d2062377988992550731f7b2736741e87fb40a8e1308803",
+        "size_in_bytes": 1777
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/pages/_search.scss",
+        "path_type": "hardlink",
+        "sha256": "c97b17b86cda0d4c3286d9699406f68ccc3266e7c9f8328c669b20a2d793dada",
+        "sha256_in_prefix": "c97b17b86cda0d4c3286d9699406f68ccc3266e7c9f8328c669b20a2d793dada",
+        "size_in_bytes": 370
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/sections/_article.scss",
+        "path_type": "hardlink",
+        "sha256": "36076afbb9479a94693ab7b1460e2e43cb968e0698e7c1818fc1f35a19593136",
+        "sha256_in_prefix": "36076afbb9479a94693ab7b1460e2e43cb968e0698e7c1818fc1f35a19593136",
+        "size_in_bytes": 421
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/sections/_container.scss",
+        "path_type": "hardlink",
+        "sha256": "58744804d83f84e34b3583ccafbcaa8ee95e56f460af4f7f8847312b8f42fe1e",
+        "sha256_in_prefix": "58744804d83f84e34b3583ccafbcaa8ee95e56f460af4f7f8847312b8f42fe1e",
+        "size_in_bytes": 125
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/sections/_footer-article.scss",
+        "path_type": "hardlink",
+        "sha256": "e744e109066461986a3081979ab29af6e148067a52ee681a31b8c4b7538699c1",
+        "sha256_in_prefix": "e744e109066461986a3081979ab29af6e148067a52ee681a31b8c4b7538699c1",
+        "size_in_bytes": 60
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/sections/_footer.scss",
+        "path_type": "hardlink",
+        "sha256": "027c2bfd70cb82a34529651afcd56953c4d5cd9b46ec8d295224e578af53d4fe",
+        "sha256_in_prefix": "027c2bfd70cb82a34529651afcd56953c4d5cd9b46ec8d295224e578af53d4fe",
+        "size_in_bytes": 148
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/sections/_header.scss",
+        "path_type": "hardlink",
+        "sha256": "657beda64a6e15c312ff2dde13a9b8679809902b82d7ed215c53c7def28adc03",
+        "sha256_in_prefix": "657beda64a6e15c312ff2dde13a9b8679809902b82d7ed215c53c7def28adc03",
+        "size_in_bytes": 2057
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/sections/_sidebar-primary.scss",
+        "path_type": "hardlink",
+        "sha256": "aa7333a6ef301279629e21f7d68b84682891ac38356732818add2c672f43622e",
+        "sha256_in_prefix": "aa7333a6ef301279629e21f7d68b84682891ac38356732818add2c672f43622e",
+        "size_in_bytes": 3600
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/sections/_sidebar-secondary.scss",
+        "path_type": "hardlink",
+        "sha256": "87bd1ef4889f699314a119693f9e001ac02de188aa3216b9a9824f56061b6d36",
+        "sha256_in_prefix": "87bd1ef4889f699314a119693f9e001ac02de188aa3216b9a9824f56061b6d36",
+        "size_in_bytes": 1324
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/variables/_admonitions.scss",
+        "path_type": "hardlink",
+        "sha256": "361d87f080b2ed8f4545dbf27c9225f08ec56a2e45ef2f40638c4a4e30e74e2d",
+        "sha256_in_prefix": "361d87f080b2ed8f4545dbf27c9225f08ec56a2e45ef2f40638c4a4e30e74e2d",
+        "size_in_bytes": 763
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/variables/_color.scss",
+        "path_type": "hardlink",
+        "sha256": "ff7e6b26cd249d1b459ebdf1cdc9a03d5115e75e3bb205fc9be2f0776a8c9e24",
+        "sha256_in_prefix": "ff7e6b26cd249d1b459ebdf1cdc9a03d5115e75e3bb205fc9be2f0776a8c9e24",
+        "size_in_bytes": 3863
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/variables/_fonts.scss",
+        "path_type": "hardlink",
+        "sha256": "fbadba5d3fa419a6aae285180431bf40290c42028d20b81eb9d5003e590d70f9",
+        "sha256_in_prefix": "fbadba5d3fa419a6aae285180431bf40290c42028d20b81eb9d5003e590d70f9",
+        "size_in_bytes": 1182
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/variables/_icons.scss",
+        "path_type": "hardlink",
+        "sha256": "cc717aa51b135cb3b25df6b58e099cb79e986e70fbb1a5fa945ed96abf4b9c91",
+        "sha256_in_prefix": "cc717aa51b135cb3b25df6b58e099cb79e986e70fbb1a5fa945ed96abf4b9c91",
+        "size_in_bytes": 504
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/variables/_layout.scss",
+        "path_type": "hardlink",
+        "sha256": "557bd4b8cee20d76c3cc20989d08bd5d369b22e34da9dbe813b09a67fb0ab1bf",
+        "sha256_in_prefix": "557bd4b8cee20d76c3cc20989d08bd5d369b22e34da9dbe813b09a67fb0ab1bf",
+        "size_in_bytes": 154
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/assets/styles/variables/_versionmodified.scss",
+        "path_type": "hardlink",
+        "sha256": "8a62235dcf2c7408c3fbc701fc15851aed213f3b50f957f7fa189373dbb74490",
+        "sha256_in_prefix": "8a62235dcf2c7408c3fbc701fc15851aed213f3b50f957f7fa189373dbb74490",
+        "size_in_bytes": 415
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/bootstrap_html_translator.py",
+        "path_type": "hardlink",
+        "sha256": "ac9a87096fbf631b74dfeb42804a5e2e2cbb81a5a0b6d44e126774084aaee50f",
+        "sha256_in_prefix": "ac9a87096fbf631b74dfeb42804a5e2e2cbb81a5a0b6d44e126774084aaee50f",
+        "size_in_bytes": 2061
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/components/copyright.html",
+        "path_type": "hardlink",
+        "sha256": "1eab17f3b27c8bde50fd041dc3d31b6f05e6e20f3fb30fa488ed874b77169290",
+        "sha256_in_prefix": "1eab17f3b27c8bde50fd041dc3d31b6f05e6e20f3fb30fa488ed874b77169290",
+        "size_in_bytes": 311
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/components/edit-this-page.html",
+        "path_type": "hardlink",
+        "sha256": "698f4ab340c8d809b27b6ccaa7e59546e3b69558c1e478f089b07341ca4a3e86",
+        "sha256_in_prefix": "698f4ab340c8d809b27b6ccaa7e59546e3b69558c1e478f089b07341ca4a3e86",
+        "size_in_bytes": 299
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/components/footer-article/prev-next.html",
+        "path_type": "hardlink",
+        "sha256": "a57bb08c9ef588303e0a4e827693f58ad640c38331ab60079a29014ab18aa092",
+        "sha256_in_prefix": "a57bb08c9ef588303e0a4e827693f58ad640c38331ab60079a29014ab18aa092",
+        "size_in_bytes": 785
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/components/icon-links.html",
+        "path_type": "hardlink",
+        "sha256": "7871fd7004108ff9ce2e5c17e681b2afac50c34e109e39ba17d7ad5fe7f6b2cb",
+        "sha256_in_prefix": "7871fd7004108ff9ce2e5c17e681b2afac50c34e109e39ba17d7ad5fe7f6b2cb",
+        "size_in_bytes": 1617
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/components/last-updated.html",
+        "path_type": "hardlink",
+        "sha256": "3c94a49492f2dbf552eb537f77dd69ed4ef251eeb7ffeaa30661be826dc7aa2c",
+        "sha256_in_prefix": "3c94a49492f2dbf552eb537f77dd69ed4ef251eeb7ffeaa30661be826dc7aa2c",
+        "size_in_bytes": 123
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/components/navbar-icon-links.html",
+        "path_type": "hardlink",
+        "sha256": "497ad88fee93a70aae4d1c69db5c7df8e520912a56be6b6338c699cc721c5e9e",
+        "sha256_in_prefix": "497ad88fee93a70aae4d1c69db5c7df8e520912a56be6b6338c699cc721c5e9e",
+        "size_in_bytes": 88
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/components/navbar-logo.html",
+        "path_type": "hardlink",
+        "sha256": "2222958cda65039acac83f6a07ef8280d50727a1db0b5273229a42dbb61713be",
+        "sha256_in_prefix": "2222958cda65039acac83f6a07ef8280d50727a1db0b5273229a42dbb61713be",
+        "size_in_bytes": 970
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/components/navbar-nav.html",
+        "path_type": "hardlink",
+        "sha256": "2aa814756807db7b500025e92f0d31892955ddce638fbfbbed9f3f5682583018",
+        "sha256_in_prefix": "2aa814756807db7b500025e92f0d31892955ddce638fbfbbed9f3f5682583018",
+        "size_in_bytes": 408
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/components/page-toc.html",
+        "path_type": "hardlink",
+        "sha256": "6c6c0e19589d8f359947e5dd5836f3280d67256eb40cd5b5cb1ef5d2a60ae44b",
+        "sha256_in_prefix": "6c6c0e19589d8f359947e5dd5836f3280d67256eb40cd5b5cb1ef5d2a60ae44b",
+        "size_in_bytes": 251
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/components/search-field.html",
+        "path_type": "hardlink",
+        "sha256": "946a4b28f763bd2235631bc3888aefab9004ecfba15039e345d3dfc7cd182fc5",
+        "sha256_in_prefix": "946a4b28f763bd2235631bc3888aefab9004ecfba15039e345d3dfc7cd182fc5",
+        "size_in_bytes": 319
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/components/sidebar-ethical-ads.html",
+        "path_type": "hardlink",
+        "sha256": "d3a17928963457aca4d5e9dffebccf13e4c4dd6942705ed17f34e7c327713a00",
+        "sha256_in_prefix": "d3a17928963457aca4d5e9dffebccf13e4c4dd6942705ed17f34e7c327713a00",
+        "size_in_bytes": 184
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/components/sidebar-nav-bs.html",
+        "path_type": "hardlink",
+        "sha256": "915a01c5c19828ff1ac36bbb5700888e766a913c355c338506a86c53a7d57846",
+        "sha256_in_prefix": "915a01c5c19828ff1ac36bbb5700888e766a913c355c338506a86c53a7d57846",
+        "size_in_bytes": 454
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/components/sphinx-version.html",
+        "path_type": "hardlink",
+        "sha256": "21bb7ff9bb430249f11e06368516cdeb94b58d7652791edb64354c162e31f745",
+        "sha256_in_prefix": "21bb7ff9bb430249f11e06368516cdeb94b58d7652791edb64354c162e31f745",
+        "size_in_bytes": 173
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/components/theme-switcher.html",
+        "path_type": "hardlink",
+        "sha256": "723ce79c12a53664aa07de8c3e2e802a0826bc9a915ffec852d376e3e0228f49",
+        "sha256_in_prefix": "723ce79c12a53664aa07de8c3e2e802a0826bc9a915ffec852d376e3e0228f49",
+        "size_in_bytes": 331
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/components/version-switcher.html",
+        "path_type": "hardlink",
+        "sha256": "b5ac3a5dbb65d799ca3c1097287d3c456f8a28f15f054ced93d348e6074fe96e",
+        "sha256_in_prefix": "b5ac3a5dbb65d799ca3c1097287d3c456f8a28f15f054ced93d348e6074fe96e",
+        "size_in_bytes": 3777
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/layout.html",
+        "path_type": "hardlink",
+        "sha256": "bdacf1dcb2466410cc602fc8047b06d04c0389e767f5e21d42a23e4606d0d839",
+        "sha256_in_prefix": "bdacf1dcb2466410cc602fc8047b06d04c0389e767f5e21d42a23e4606d0d839",
+        "size_in_bytes": 2644
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/sections/announcement.html",
+        "path_type": "hardlink",
+        "sha256": "1f46253b3d84eb9201f0a7676983ab7dc9bd21a7bb97a8a067456692409c3c96",
+        "sha256_in_prefix": "1f46253b3d84eb9201f0a7676983ab7dc9bd21a7bb97a8a067456692409c3c96",
+        "size_in_bytes": 108
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/sections/article.html",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256_in_prefix": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/sections/footer-article.html",
+        "path_type": "hardlink",
+        "sha256": "2558fe0e0b3f03bde0b61732b7762c96b5704a17f53132a334fcd9e66f7915d1",
+        "sha256_in_prefix": "2558fe0e0b3f03bde0b61732b7762c96b5704a17f53132a334fcd9e66f7915d1",
+        "size_in_bytes": 57
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/sections/footer.html",
+        "path_type": "hardlink",
+        "sha256": "db71f12a321f777f0d2fda876631157e403cbbdcb03a9dd15fda5c8c993371b6",
+        "sha256_in_prefix": "db71f12a321f777f0d2fda876631157e403cbbdcb03a9dd15fda5c8c993371b6",
+        "size_in_bytes": 176
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/sections/header.html",
+        "path_type": "hardlink",
+        "sha256": "0f1cf100f38502686fc3709beba0fde657dbc67f22c60e6d633b2c89b4b10859",
+        "sha256_in_prefix": "0f1cf100f38502686fc3709beba0fde657dbc67f22c60e6d633b2c89b4b10859",
+        "size_in_bytes": 1004
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/sections/sidebar-primary.html",
+        "path_type": "hardlink",
+        "sha256": "c658e5890879b42a712f03c55d728d778acad2b95c1e8c4ff721247e5a0bfc42",
+        "sha256_in_prefix": "c658e5890879b42a712f03c55d728d778acad2b95c1e8c4ff721247e5a0bfc42",
+        "size_in_bytes": 610
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/sections/sidebar-secondary.html",
+        "path_type": "hardlink",
+        "sha256": "ee55636e93a4dfd97251695567f31f29f4032dad217d1a14736ed7cb092216f5",
+        "sha256_in_prefix": "ee55636e93a4dfd97251695567f31f29f4032dad217d1a14736ed7cb092216f5",
+        "size_in_bytes": 499
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/.gitignore",
+        "path_type": "hardlink",
+        "sha256": "f9f21d3ca0244d1e31bbf885498a6f96a922fd606f379a22759ace72a3dc66dd",
+        "sha256_in_prefix": "f9f21d3ca0244d1e31bbf885498a6f96a922fd606f379a22759ace72a3dc66dd",
+        "size_in_bytes": 161
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/scripts/pydata-sphinx-theme.js",
+        "path_type": "hardlink",
+        "sha256": "1524f84b093c9af9d0c5704ef321c237dfdb411d1f6a45012d5eb5a3186bb5cd",
+        "sha256_in_prefix": "1524f84b093c9af9d0c5704ef321c237dfdb411d1f6a45012d5eb5a3186bb5cd",
+        "size_in_bytes": 88212
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/styles/pydata-sphinx-theme.css",
+        "path_type": "hardlink",
+        "sha256": "f8835db3dc6849e03ec2ec72cbd10e0c0ae44e7318123205b71fc412e1e37d21",
+        "sha256_in_prefix": "f8835db3dc6849e03ec2ec72cbd10e0c0ae44e7318123205b71fc412e1e37d21",
+        "size_in_bytes": 171194
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/styles/theme.css",
+        "path_type": "hardlink",
+        "sha256": "c5ad46e4d126fbddecf0ece57fc8345279fac39110306ac7e643f0d4505423f7",
+        "sha256_in_prefix": "c5ad46e4d126fbddecf0ece57fc8345279fac39110306ac7e643f0d4505423f7",
+        "size_in_bytes": 106
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/vendor/fontawesome/5.13.0/LICENSE.txt",
+        "path_type": "hardlink",
+        "sha256": "e779748dfe75e84f974df3c7bc07f842011a100159158b0f1f49b2f2a5a515cb",
+        "sha256_in_prefix": "e779748dfe75e84f974df3c7bc07f842011a100159158b0f1f49b2f2a5a515cb",
+        "size_in_bytes": 1548
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/vendor/fontawesome/5.13.0/css/all.min.css",
+        "path_type": "hardlink",
+        "sha256": "876d023d9d10c97941b80c3b03e2a5b94631ff7a4af9cee5604a6a2d39718d84",
+        "sha256_in_prefix": "876d023d9d10c97941b80c3b03e2a5b94631ff7a4af9cee5604a6a2d39718d84",
+        "size_in_bytes": 58578
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.eot",
+        "path_type": "hardlink",
+        "sha256": "811e1577184066108ceca86d5a624a9012303df5206c5cb0b27d5e3fedcba5a3",
+        "sha256_in_prefix": "811e1577184066108ceca86d5a624a9012303df5206c5cb0b27d5e3fedcba5a3",
+        "size_in_bytes": 133034
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.svg",
+        "path_type": "hardlink",
+        "sha256": "02340ba1789d09bcc507563c89c4a847ba537bb8132082777a50519cf74bcb5b",
+        "sha256_in_prefix": "02340ba1789d09bcc507563c89c4a847ba537bb8132082777a50519cf74bcb5b",
+        "size_in_bytes": 715890
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.ttf",
+        "path_type": "hardlink",
+        "sha256": "a0c145382acfe59767d1487d6505f349665b685c2885cd91b621d141a292b0f8",
+        "sha256_in_prefix": "a0c145382acfe59767d1487d6505f349665b685c2885cd91b621d141a292b0f8",
+        "size_in_bytes": 132728
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff",
+        "path_type": "hardlink",
+        "sha256": "e836c5d5dfc13e18170c5bddefb4fdac7c65ac0ad43a4b431acdc4a98865a260",
+        "sha256_in_prefix": "e836c5d5dfc13e18170c5bddefb4fdac7c65ac0ad43a4b431acdc4a98865a260",
+        "size_in_bytes": 89824
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2",
+        "path_type": "hardlink",
+        "sha256": "5d9190292acdd48ba0fc35080f7e7448f3cdf0d79199a4d23f0f49b5341fdf29",
+        "sha256_in_prefix": "5d9190292acdd48ba0fc35080f7e7448f3cdf0d79199a4d23f0f49b5341fdf29",
+        "size_in_bytes": 76612
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/vendor/fontawesome/5.13.0/webfonts/fa-regular-400.eot",
+        "path_type": "hardlink",
+        "sha256": "01f4416f5db59e2dd6b6fbd9dc32336d99db18f7eb623a49f584d04afd279473",
+        "sha256_in_prefix": "01f4416f5db59e2dd6b6fbd9dc32336d99db18f7eb623a49f584d04afd279473",
+        "size_in_bytes": 34390
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/vendor/fontawesome/5.13.0/webfonts/fa-regular-400.svg",
+        "path_type": "hardlink",
+        "sha256": "865fd23de13b1920280e182359579e09eff7a09eb24676eceec7552838559f55",
+        "sha256_in_prefix": "865fd23de13b1920280e182359579e09eff7a09eb24676eceec7552838559f55",
+        "size_in_bytes": 144322
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/vendor/fontawesome/5.13.0/webfonts/fa-regular-400.ttf",
+        "path_type": "hardlink",
+        "sha256": "f32b94a29060dfec0c797a1dfe111357eb1d682f1aca4ac4b95cf0f4c3e2bfa9",
+        "sha256_in_prefix": "f32b94a29060dfec0c797a1dfe111357eb1d682f1aca4ac4b95cf0f4c3e2bfa9",
+        "size_in_bytes": 34092
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/vendor/fontawesome/5.13.0/webfonts/fa-regular-400.woff",
+        "path_type": "hardlink",
+        "sha256": "8e2d96198711b63752e5f2f5987b8ffc536df6156a065bdbe28cb7231cad793d",
+        "sha256_in_prefix": "8e2d96198711b63752e5f2f5987b8ffc536df6156a065bdbe28cb7231cad793d",
+        "size_in_bytes": 16800
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/vendor/fontawesome/5.13.0/webfonts/fa-regular-400.woff2",
+        "path_type": "hardlink",
+        "sha256": "6a8c8e9e1e7f692c21af1956de163f3d026778e6449fe93a09a671847ca1ae65",
+        "sha256_in_prefix": "6a8c8e9e1e7f692c21af1956de163f3d026778e6449fe93a09a671847ca1ae65",
+        "size_in_bytes": 13584
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.eot",
+        "path_type": "hardlink",
+        "sha256": "32501727bb23fc77615b1ec76b5f298ec22198c0f3d6a3e7d6fe4ac3cf315db9",
+        "sha256_in_prefix": "32501727bb23fc77615b1ec76b5f298ec22198c0f3d6a3e7d6fe4ac3cf315db9",
+        "size_in_bytes": 202902
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.svg",
+        "path_type": "hardlink",
+        "sha256": "e768539808757f7eec20f09c9ee9b36b0e6c5636e90c9ee697995cbbc6ee0555",
+        "sha256_in_prefix": "e768539808757f7eec20f09c9ee9b36b0e6c5636e90c9ee697995cbbc6ee0555",
+        "size_in_bytes": 897426
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.ttf",
+        "path_type": "hardlink",
+        "sha256": "231d68cefbc6846fb78cafca8467401a4f371e226418662e8900e3d52adc00ab",
+        "sha256_in_prefix": "231d68cefbc6846fb78cafca8467401a4f371e226418662e8900e3d52adc00ab",
+        "size_in_bytes": 202616
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff",
+        "path_type": "hardlink",
+        "sha256": "352f8ead280419dd953d2bc7843386bb9430e8152c2dbd2c2d2494f6b9567ee7",
+        "sha256_in_prefix": "352f8ead280419dd953d2bc7843386bb9430e8152c2dbd2c2d2494f6b9567ee7",
+        "size_in_bytes": 103300
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2",
+        "path_type": "hardlink",
+        "sha256": "7f4d3fd0a705dbf8403298aad91d5de6972e6b5d536068eba8b24954a5a0a8c7",
+        "sha256_in_prefix": "7f4d3fd0a705dbf8403298aad91d5de6972e6b5d536068eba8b24954a5a0a8c7",
+        "size_in_bytes": 79444
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/static/webpack-macros.html",
+        "path_type": "hardlink",
+        "sha256": "0b3bc49a0acd2d60f7fdfda61db4f313c86e0044e28e24d458332ba60a3f15e7",
+        "sha256_in_prefix": "0b3bc49a0acd2d60f7fdfda61db4f313c86e0044e28e24d458332ba60a3f15e7",
+        "size_in_bytes": 1361
+      },
+      {
+        "_path": "site-packages/pydata_sphinx_theme/theme/pydata_sphinx_theme/theme.conf",
+        "path_type": "hardlink",
+        "sha256": "8234b2659a07f25a1a43031f194d73c4aef1b48553775122235ac98cb94afe31",
+        "sha256_in_prefix": "8234b2659a07f25a1a43031f194d73c4aef1b48553775122235ac98cb94afe31",
+        "size_in_bytes": 1093
+      },
+      {
+        "_path": "lib/python3.10/site-packages/pydata_sphinx_theme/__pycache__/__init__.cpython-310.pyc",
+        "path_type": "pyc_file"
+      },
+      {
+        "_path": "lib/python3.10/site-packages/pydata_sphinx_theme/__pycache__/bootstrap_html_translator.cpython-310.pyc",
+        "path_type": "pyc_file"
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "pydata-sphinx-theme==0.9.0",
+  "sha256": "11d56e0953a8f880d265d18eb3b3adc2f0ba182a33409088141dc84e22dba50c",
+  "size": 1394827,
+  "subdir": "noarch",
+  "timestamp": 1654781370656,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/noarch/pydata-sphinx-theme-0.9.0-pyhd8ed1ab_1.tar.bz2",
+  "version": "0.9.0"
+}

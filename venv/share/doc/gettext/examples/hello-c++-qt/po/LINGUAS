@@ -1,0 +1,5 @@
+# Example for use of GNU gettext.
+# This file is in the public domain.
+#
+# Set of available languages.
+af ast bg ca cs da de el eo es fi fr ga gl hr hu id it ja ka ky lv ms mt nb nl nn pl pt pt_BR ro ru sk sl sq sr sv ta tr uk vi zh_CN zh_HK zh_TW

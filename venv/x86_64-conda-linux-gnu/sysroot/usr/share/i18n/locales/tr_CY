@@ -1,0 +1,114 @@
+comment_char %
+escape_char  /
+%
+% Turkish Language Locale for Cyprus
+% Language: tr
+% Territory: CY
+% Revision: 4.4
+% Application: general
+% Users: general
+% Charset: ISO-8859-9
+% Distribution and use is free, also
+% for commercial purposes.
+
+% Adapted from tr_TR by Recai Oktaş <roktas@omu.edu.tr>, 2004
+
+LC_IDENTIFICATION
+title      "Turkish language locale for Cyprus"
+source     "Free Software Foundation, Inc."
+address    "59 Temple Place - Suite 330, Boston, MA 02111-1307, USA"
+contact    ""
+email      "bug-glibc-locales@gnu.org"
+tel        ""
+fax        ""
+language   "Turkish"
+territory  "Cyprus"
+revision   "1.0"
+date       "2004-10-23"
+audience   ""
+application ""
+abbreviation ""
+%
+category  "tr_CY:2000";LC_IDENTIFICATION
+category  "tr_CY:2000";LC_CTYPE
+category  "tr_CY:2000";LC_COLLATE
+category  "tr_CY:2000";LC_TIME
+category  "tr_CY:2000";LC_NUMERIC
+category  "tr_CY:2000";LC_MONETARY
+category  "tr_CY:2000";LC_MESSAGES
+category  "tr_CY:2000";LC_PAPER
+category  "tr_CY:2000";LC_NAME
+category  "tr_CY:2000";LC_ADDRESS
+category  "tr_CY:2000";LC_TELEPHONE
+category  "tr_CY:2000";LC_MEASUREMENT
+
+END LC_IDENTIFICATION
+
+LC_COLLATE
+copy "tr_TR"
+END LC_COLLATE
+
+LC_CTYPE
+copy "tr_TR"
+END LC_CTYPE
+
+LC_MESSAGES
+copy "tr_TR"
+END LC_MESSAGES
+
+LC_MONETARY
+copy "tr_TR"
+END LC_MONETARY
+
+LC_NUMERIC
+copy "tr_TR"
+END LC_NUMERIC
+
+LC_TIME
+copy "tr_TR"
+END LC_TIME
+
+LC_PAPER
+copy "tr_TR"
+END LC_PAPER
+
+LC_TELEPHONE
+copy "tr_TR"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+copy "tr_TR"
+END LC_MEASUREMENT
+
+LC_NAME
+copy "tr_TR"
+END LC_NAME
+
+LC_ADDRESS
+postal_fmt    "<U0025><U0066><U0025><U004E><U0025><U0061><U0025><U004E>/
+<U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E><U0025><U0073>/
+<U0020><U0025><U0068><U0020><U0025><U0065><U0020><U0025><U0072><U0025>/
+<U004E><U0025><U007A><U0020><U0025><U0054><U0025>/
+<U004E><U0025><U0063><U0025><U004E>"
+% Northern Cyprus
+country_name	"<U004E><U006F><U0072><U0074><U0068><U0065><U0072><U006E>/
+<U0020><U0043><U0079><U0070><U0072><U0075><U0073>"
+% TR
+country_post	"<U0054><U0052>"
+% TR
+country_car	"<U0054><U0052>"
+country_isbn	975
+country_num	792
+% TR
+country_ab2	"<U0054><U0052>"
+% TUR
+country_ab3	"<U0054><U0055><U0052>"
+% Turkish
+lang_name	"<U0054><U0075><U0072><U006B><U0069><U0073><U0068>"
+% tr
+lang_term	"<U0074><U0075><U0072>"
+% tr
+lang_lib	"<U0074><U0075><U0072>"
+%tr
+lang_ab		"<U0074><U0072>"
+END LC_ADDRESS

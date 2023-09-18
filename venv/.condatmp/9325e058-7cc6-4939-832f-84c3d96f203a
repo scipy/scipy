@@ -1,0 +1,15 @@
+prefix=/workspaces/scipy/venv
+exec_prefix=${prefix}
+includedir=${prefix}/include
+libdir=${exec_prefix}/lib
+host=x86_64-conda-linux-gnu
+mtcflags=
+mtlibs=-pthread
+
+Name: gpg-error
+Description: GPG Runtime
+Version: 1.47-unknown
+Cflags: -I${includedir}
+Libs: -L${libdir} -lgpg-error
+Libs.private: 
+URL: https://www.gnupg.org/software/libgpg-error/index.html

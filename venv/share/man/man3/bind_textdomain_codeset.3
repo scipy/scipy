@@ -1,0 +1,72 @@
+.\" Copyright (c) Bruno Haible <haible@clisp.cons.org>
+.\"
+.\" This is free documentation; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License as
+.\" published by the Free Software Foundation; either version 2 of
+.\" the License, or (at your option) any later version.
+.\"
+.\" References consulted:
+.\"   GNU glibc-2 source code and manual
+.\"   GNU gettext source code and manual
+.\"   LI18NUX 2000 Globalization Specification
+.\"
+.TH BIND_TEXTDOMAIN_CODESET 3 "May 2001" "GNU gettext 20220912"
+.SH NAME
+bind_textdomain_codeset \- set encoding of message translations
+.SH SYNOPSIS
+.nf
+.B #include <libintl.h>
+.sp
+.BI "char * bind_textdomain_codeset (const char * " domainname ,
+.BI "                                const char * " codeset );
+.fi
+.SH DESCRIPTION
+The \fBbind_textdomain_codeset\fP function sets the output codeset for message
+catalogs for domain \fIdomainname\fP.
+.PP
+A message domain is a set of translatable \fImsgid\fP messages. Usually,
+every software package has its own message domain.
+.PP
+By default, the \fBgettext\fP family of functions returns translated messages
+in the locale's character encoding, which can be retrieved as
+\fBnl_langinfo(CODESET)\fP. The need for calling \fBbind_textdomain_codeset\fP
+arises for programs which store strings in a locale independent way (e.g.
+UTF-8) and want to avoid an extra character set conversion on the returned
+translated messages.
+.PP
+\fIdomainname\fP must be a non-empty string.
+.PP
+If \fIcodeset\fP is not NULL, it must be a valid encoding name which can be
+used for the \fBiconv_open\fP function. The \fBbind_textdomain_codeset\fP
+function sets the output codeset for message catalogs belonging to domain
+\fIdomainname\fP to \fIcodeset\fP. The function makes copies of the argument
+strings as needed.
+.PP
+If \fIcodeset\fP is NULL, the function returns the previously set codeset for
+domain \fIdomainname\fP. The default is NULL, denoting the locale's character
+encoding.
+.SH "RETURN VALUE"
+If successful, the \fBbind_textdomain_codeset\fP function returns the current
+codeset for domain \fIdomainname\fP, after possibly changing it. The resulting
+string is valid until the next \fBbind_textdomain_codeset\fP call for the same
+\fIdomainname\fP and must not be modified or freed. If a memory allocation
+failure occurs, it sets \fBerrno\fP to \fBENOMEM\fP and returns NULL. If no
+codeset has been set for domain \fIdomainname\fP, it returns NULL.
+.SH ERRORS
+The following error can occur, among others:
+.TP
+.B ENOMEM
+Not enough memory available.
+.SH BUGS
+The return type ought to be \fBconst char *\fP, but is \fBchar *\fP to avoid
+warnings in C code predating ANSI C.
+.SH "SEE ALSO"
+.BR gettext (3),
+.BR dgettext (3),
+.BR dcgettext (3),
+.BR ngettext (3),
+.BR dngettext (3),
+.BR dcngettext (3),
+.BR textdomain (3),
+.BR nl_langinfo (3),
+.BR iconv_open (3)

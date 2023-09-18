@@ -1,0 +1,35 @@
+# zh_CN translation for hello-perl.
+# Copyright (C) 2015 Yoyodyne, Inc. (msgids)
+# This file is distributed under the same license as the gettext package.
+# Funda Wang <fundawang@linux.net.cn>, 2003.
+# Ji ZhengYu <zhengyuji@gmail.com>, 2015.
+# Boyuan Yang <073plan@gmail.com>, 2019.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: hello-perl 0.20-rc1\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"POT-Creation-Date: 2022-10-10 00:22+0200\n"
+"PO-Revision-Date: 2019-04-14 13:22-0400\n"
+"Last-Translator: Boyuan Yang <073plan@gmail.com>\n"
+"Language-Team: Chinese (simplified) <i18n-zh@googlegroups.com>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+"X-Generator: Poedit 2.2.1\n"
+
+#: hello-1.pl.in:17 hello-2.pl.in:12
+msgid "Hello, world!"
+msgstr "你好，世界！"
+
+#: hello-1.pl.in:19
+#, perl-format
+msgid "This program is running as process number %d."
+msgstr "此程序正以进程号 %d 运行。"
+
+#: hello-2.pl.in:14
+#, perl-brace-format
+msgid "This program is running as process number {pid}."
+msgstr "此程序正以进程号 {pid} 运行。"

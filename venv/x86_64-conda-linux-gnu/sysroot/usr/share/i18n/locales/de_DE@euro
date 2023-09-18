@@ -1,0 +1,79 @@
+escape_char /
+comment_char %
+% Locale for German locale in Germany
+% Contributed by Ulrich Drepper <drepper@redhat.com>, 2000
+
+LC_IDENTIFICATION
+title      "German locale for Germany with Euro"
+source     "Free Software Foundation, Inc."
+address    "59 Temple Place - Suite 330, Boston, MA 02111-1307, USA"
+contact    ""
+email      "bug-glibc-locales@gnu.org"
+tel        ""
+fax        ""
+language   "German"
+territory  "Germany"
+revision   "1.0"
+date       "2000-06-24"
+%
+category  "de_DE@euro:2000";LC_IDENTIFICATION
+category  "de_DE@euro:2000";LC_CTYPE
+category  "de_DE@euro:2000";LC_COLLATE
+category  "de_DE@euro:2000";LC_TIME
+category  "de_DE@euro:2000";LC_NUMERIC
+category  "de_DE@euro:2000";LC_MONETARY
+category  "de_DE@euro:2000";LC_MESSAGES
+category  "de_DE@euro:2000";LC_PAPER
+category  "de_DE@euro:2000";LC_NAME
+category  "de_DE@euro:2000";LC_ADDRESS
+category  "de_DE@euro:2000";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_CTYPE
+copy "de_DE"
+END LC_CTYPE
+
+LC_COLLATE
+
+% Copy the template from ISO/IEC 14651
+copy "iso14651_t1"
+
+END LC_COLLATE
+
+LC_MONETARY
+copy "de_DE"
+END LC_MONETARY
+
+LC_NUMERIC
+copy "de_DE"
+END LC_NUMERIC
+
+LC_TIME
+copy "de_DE"
+END LC_TIME
+
+LC_MESSAGES
+copy "de_DE"
+END LC_MESSAGES
+
+LC_PAPER
+copy "de_DE"
+END LC_PAPER
+
+LC_NAME
+copy "de_DE"
+END LC_NAME
+
+
+LC_ADDRESS
+copy "de_DE"
+END LC_ADDRESS
+
+LC_TELEPHONE
+copy "de_DE"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+copy "de_DE"
+END LC_MEASUREMENT

@@ -1,0 +1,139 @@
+comment_char %
+escape_char  /
+%
+% Frisian Language Locale for the Netherlands
+% Language: fy
+% Territory: NL
+% Date: 2006-8-13
+% Users: general
+% Charset: ISO-8859-1
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title      "Frisian locale for the Netherlands"
+source     "Free Software Foundation, Inc."
+address    "59 Temple Place - Suite 330, Boston, MA 02111-1307, USA"
+contact    ""
+email      "bug-glibc-locales@gnu.org"
+tel        ""
+fax        ""
+language   "Frisian"
+territory  "Netherlands"
+revision   "1.0"
+date       "2006-08-13"
+%
+category  "fy_NL:2000";LC_IDENTIFICATION
+category  "fy_NL:2000";LC_CTYPE
+category  "fy_NL:2000";LC_COLLATE
+category  "fy_NL:2000";LC_TIME
+category  "fy_NL:2000";LC_NUMERIC
+category  "fy_NL:2000";LC_MONETARY
+category  "fy_NL:2000";LC_MEASUREMENT
+category  "fy_NL:2000";LC_MESSAGES
+category  "fy_NL:2000";LC_PAPER
+category  "fy_NL:2000";LC_NAME
+category  "fy_NL:2000";LC_ADDRESS
+category  "fy_NL:2000";LC_TELEPHONE
+END LC_IDENTIFICATION
+
+LC_CTYPE
+copy "nl_NL"
+END LC_CTYPE
+
+LC_COLLATE
+copy "nl_NL"
+END LC_COLLATE
+
+LC_TIME
+abday   "<U0053><U006E>";/
+        "<U004D><U006F>";/
+        "<U0054><U0069>";/
+        "<U0057><U006F>";/
+        "<U0054><U006F>";/
+        "<U0046><U0072>";/
+        "<U0053><U006E>"
+day     "<U0053><U006E><U0065><U0069><U006E>";/
+        "<U004D><U006F><U0061><U006E><U0064><U0065><U0069>";/
+        "<U0054><U0069><U0069><U0073><U0064><U0065><U0069>";/
+        "<U0057><U006F><U0061><U006E><U0073><U0064><U0065><U0069>";/
+        "<U0054><U006F><U006E><U0067><U0065><U0072><U0073><U0064><U0065><U0069>";/
+        "<U0046><U0072><U0065><U0065><U0064>";/
+        "<U0053><U006E><U0065><U006F><U006E>"
+abmon   "<U004A><U0061><U006E>";/
+        "<U0046><U0065><U0062>";/
+        "<U004D><U0061><U0061>";/
+        "<U0041><U0070><U0072>";/
+        "<U004D><U0061><U0061>";/
+        "<U004A><U0075><U006E>";/
+        "<U004A><U0075><U006C>";/
+        "<U0041><U0075><U0067>";/
+        "<U0053><U0065><U0070>";/
+        "<U004F><U006B><U0074>";/
+        "<U004E><U006F><U0076>";/
+        "<U0044><U0065><U0073>"
+mon     "<U004A><U0061><U006E><U0061><U0072><U0069><U0073>";/
+        "<U0046><U0065><U0062><U0072><U0065><U0077><U0061><U0072><U0069><U0073>";/
+        "<U004D><U0061><U0061><U0072><U0074>";/
+        "<U0041><U0070><U0072><U0069><U006C>";/
+        "<U004D><U0061><U0061><U0069><U0065>";/
+        "<U004A><U0075><U006E><U0079>";/
+        "<U004A><U0075><U006C><U0079>";/
+        "<U0041><U0075><U0067><U0075><U0073><U0074><U0075><U0073>";/
+        "<U0053><U0065><U0070><U0074><U0069><U006D><U0062><U0065><U0072>";/
+        "<U004F><U006B><U0074><U006F><U0062><U0065><U0072>";/
+        "<U004E><U006F><U0076><U0069><U006D><U0062><U0065><U0072>";/
+        "<U0044><U0065><U0073><U0069><U006D><U0062><U0065><U0072>"
+d_t_fmt "<U0025><U0061><U0020><U0025><U0064><U0020><U0025><U0062><U0020><U0025><U0059><U0020><U0025><U0054><U0020><U0025><U005A>"
+d_fmt   "<U0025><U0064><U002D><U0025><U006D><U002D><U0025><U0079>"
+t_fmt   "<U0025><U0054>"
+am_pm   "";""
+t_fmt_ampm ""
+date_fmt       "<U0025><U0061><U0020><U0025><U0062><U0020><U0025><U0065>/
+<U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U0020>/
+<U0025><U005A><U0020><U0025><U0059>"
+END LC_TIME
+
+LC_NUMERIC
+copy "nl_NL"
+END LC_NUMERIC
+
+LC_MONETARY
+copy "nl_NL"
+END LC_MONETARY
+
+LC_MEASUREMENT
+copy "nl_NL"
+END LC_MEASUREMENT
+
+LC_MESSAGES
+copy "nl_NL"
+END LC_MESSAGES
+
+LC_PAPER
+copy "nl_NL"
+END LC_PAPER
+
+LC_NAME
+copy "nl_NL"
+END LC_NAME
+
+LC_ADDRESS
+postal_fmt    "<U0025><U0066><U0025><U004E><U0025><U0061><U0025><U004E>/
+<U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E><U0025><U0073>/
+<U0020><U0025><U0068><U0020><U0025><U0065><U0020><U0025><U0072><U0025>/
+<U004E><U0025><U007A><U0020><U0025><U0054><U0025>/
+<U004E><U0025><U0063><U0025><U004E>"
+country_ab2 "<U004E><U004C>"
+country_ab3 "<U004E><U004C><U0044>"
+country_num 528
+country_car "<U004E><U004C>"
+lang_name "<U0046><U0072><U0069><U0073><U0069><U0061><U006E>"
+lang_ab "<U0066><U0079>"
+lang_term "<U0066><U0072><U0079>"
+lang_lib "<U0066><U0072><U0079>"
+END LC_ADDRESS
+
+LC_TELEPHONE
+copy "nl_NL"
+END LC_TELEPHONE

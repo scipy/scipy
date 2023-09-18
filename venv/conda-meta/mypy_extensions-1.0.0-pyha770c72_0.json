@@ -1,0 +1,115 @@
+{
+  "build": "pyha770c72_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/noarch",
+  "constrains": [],
+  "depends": [
+    "python >=3.5"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/mypy_extensions-1.0.0-pyha770c72_0",
+  "features": "",
+  "files": [
+    "lib/python3.10/site-packages/mypy_extensions-1.0.0.dist-info/INSTALLER",
+    "lib/python3.10/site-packages/mypy_extensions-1.0.0.dist-info/LICENSE",
+    "lib/python3.10/site-packages/mypy_extensions-1.0.0.dist-info/METADATA",
+    "lib/python3.10/site-packages/mypy_extensions-1.0.0.dist-info/RECORD",
+    "lib/python3.10/site-packages/mypy_extensions-1.0.0.dist-info/REQUESTED",
+    "lib/python3.10/site-packages/mypy_extensions-1.0.0.dist-info/WHEEL",
+    "lib/python3.10/site-packages/mypy_extensions-1.0.0.dist-info/direct_url.json",
+    "lib/python3.10/site-packages/mypy_extensions-1.0.0.dist-info/top_level.txt",
+    "lib/python3.10/site-packages/mypy_extensions.py",
+    "lib/python3.10/site-packages/__pycache__/mypy_extensions.cpython-310.pyc"
+  ],
+  "fn": "mypy_extensions-1.0.0-pyha770c72_0.conda",
+  "license": "MIT",
+  "license_family": "MIT",
+  "link": {
+    "source": "/opt/conda/pkgs/mypy_extensions-1.0.0-pyha770c72_0",
+    "type": 1
+  },
+  "md5": "4eccaeba205f0aed9ac3a9ea58568ca3",
+  "name": "mypy_extensions",
+  "noarch": "python",
+  "package_tarball_full_path": "/opt/conda/pkgs/mypy_extensions-1.0.0-pyha770c72_0.conda",
+  "package_type": "noarch_python",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "site-packages/mypy_extensions-1.0.0.dist-info/INSTALLER",
+        "path_type": "hardlink",
+        "sha256": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "sha256_in_prefix": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+        "size_in_bytes": 5
+      },
+      {
+        "_path": "site-packages/mypy_extensions-1.0.0.dist-info/LICENSE",
+        "path_type": "hardlink",
+        "sha256": "a50450da1d53cd777b80ced77c58ff96abe0ccd879706bd142c3ec20e245f0b4",
+        "sha256_in_prefix": "a50450da1d53cd777b80ced77c58ff96abe0ccd879706bd142c3ec20e245f0b4",
+        "size_in_bytes": 1204
+      },
+      {
+        "_path": "site-packages/mypy_extensions-1.0.0.dist-info/METADATA",
+        "path_type": "hardlink",
+        "sha256": "617d60dffb00826a22f5662114d8111d02fa29ffb1ec67e39d6814084ef75486",
+        "sha256_in_prefix": "617d60dffb00826a22f5662114d8111d02fa29ffb1ec67e39d6814084ef75486",
+        "size_in_bytes": 1134
+      },
+      {
+        "_path": "site-packages/mypy_extensions-1.0.0.dist-info/RECORD",
+        "path_type": "hardlink",
+        "sha256": "f2264825bc43937fdec4e85984838f536331e2bdbeb84734715b27bcfa9ca32d",
+        "sha256_in_prefix": "f2264825bc43937fdec4e85984838f536331e2bdbeb84734715b27bcfa9ca32d",
+        "size_in_bytes": 850
+      },
+      {
+        "_path": "site-packages/mypy_extensions-1.0.0.dist-info/REQUESTED",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256_in_prefix": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "site-packages/mypy_extensions-1.0.0.dist-info/WHEEL",
+        "path_type": "hardlink",
+        "sha256": "db07a93359e4e034b8785a58ad6d534ea3dca0635f1e184efe2e66e1c3a299ba",
+        "sha256_in_prefix": "db07a93359e4e034b8785a58ad6d534ea3dca0635f1e184efe2e66e1c3a299ba",
+        "size_in_bytes": 92
+      },
+      {
+        "_path": "site-packages/mypy_extensions-1.0.0.dist-info/direct_url.json",
+        "path_type": "hardlink",
+        "sha256": "7ac1bf3e0752fe50e655961fe9738ff1cabb7bb83f1fef2ea09f7bf16eaa207e",
+        "sha256_in_prefix": "7ac1bf3e0752fe50e655961fe9738ff1cabb7bb83f1fef2ea09f7bf16eaa207e",
+        "size_in_bytes": 111
+      },
+      {
+        "_path": "site-packages/mypy_extensions-1.0.0.dist-info/top_level.txt",
+        "path_type": "hardlink",
+        "sha256": "4e5967196a83a053212b24e25fda5ea05d550b5c269118082c775e6e7b9b11bf",
+        "sha256_in_prefix": "4e5967196a83a053212b24e25fda5ea05d550b5c269118082c775e6e7b9b11bf",
+        "size_in_bytes": 16
+      },
+      {
+        "_path": "site-packages/mypy_extensions.py",
+        "path_type": "hardlink",
+        "sha256": "8ba98ff3eeb4379923d56ede6ef3db53801e18e4a987f7a41cb90c6dfa0ad9ad",
+        "sha256_in_prefix": "8ba98ff3eeb4379923d56ede6ef3db53801e18e4a987f7a41cb90c6dfa0ad9ad",
+        "size_in_bytes": 6227
+      },
+      {
+        "_path": "lib/python3.10/site-packages/__pycache__/mypy_extensions.cpython-310.pyc",
+        "path_type": "pyc_file"
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "f240217476e148e825420c6bc3a0c0efb08c0718b7042fae960400c02af858a3",
+  "size": 10492,
+  "subdir": "noarch",
+  "timestamp": 1675543414256,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/noarch/mypy_extensions-1.0.0-pyha770c72_0.conda",
+  "version": "1.0.0"
+}

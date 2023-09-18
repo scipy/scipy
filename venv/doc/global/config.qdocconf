@@ -1,0 +1,28 @@
+#Include this file to inherit configuration related to Qt Project based modules.
+
+dita.metadata.default.author      = Qt Project
+dita.metadata.default.permissions = all
+dita.metadata.default.publisher   = Qt Project
+dita.metadata.default.copyryear = 2020
+dita.metadata.default.copyrholder = The Qt Company Ltd
+dita.metadata.default.audience = programmer
+
+#Set the main Qt index.html
+navigation.homepage = index.html
+navigation.hometitle = "Qt $QT_VER"
+
+#Words to ignore for auto-linking
+ignorewords += \
+    macOS \
+    WebChannel \
+    WebSocket \
+    WebSockets \
+    OpenGL
+
+sourcedirs += includes $$BUILDDIR
+
+url = http://doc.qt.io/qt-5
+
+# Uncomment the following two lines to generate documentation marked as \internal
+# alias.internal = disable
+# macro.internal.HTML = "<span style="color:red">[internal]</span>"

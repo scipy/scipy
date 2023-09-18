@@ -1,0 +1,29 @@
+/* d-tree.def -- Definitions and documentation for additional tree codes used
+   in the D compiler  (see tree.def for standard codes).
+   Copyright (C) 2006-2022 Free Software Foundation, Inc.
+
+GCC is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3, or (at your option)
+any later version.
+
+GCC is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GCC; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.  */
+
+/* Logical shift done on an unsigned type.  If the first operand is
+   signed, it will be converted to the unsigned equivalent.  The second
+   operand is the number of bits to shift by; it need not be the same
+   type as the first operand and result.  */
+DEFTREECODE (UNSIGNED_RSHIFT_EXPR, "unsigned_rshift_expr", tcc_binary, 2)
+
+/* Floating point modulus that expands to a call to fmod.  */
+DEFTREECODE (FLOAT_MOD_EXPR, "float_mod_expr", tcc_binary, 2)
+
+/* Used to represent information associated with a function closure.  */
+DEFTREECODE (FUNCFRAME_INFO, "funcframe_info", tcc_exceptional, 0)

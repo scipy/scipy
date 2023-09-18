@@ -1,0 +1,87 @@
+//
+//Copyright 1996, 1998  The Open Group
+//
+//Permission to use, copy, modify, distribute, and sell this software and its
+//documentation for any purpose is hereby granted without fee, provided that
+//the above copyright notice appear in all copies and that both that
+//copyright notice and this permission notice appear in supporting
+//documentation.
+//
+//The above copyright notice and this permission notice shall be
+//included in all copies or substantial portions of the Software.
+//
+//THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+//EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+//MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+//IN NO EVENT SHALL THE OPEN GROUP BE LIABLE FOR ANY CLAIM, DAMAGES OR
+//OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+//ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+//OTHER DEALINGS IN THE SOFTWARE.
+//
+//Except as contained in this notice, the name of The Open Group shall
+//not be used in advertising or otherwise to promote the sale, use or
+//other dealings in this Software without prior written authorization
+//from The Open Group.
+//
+// Japanese for a Fujitsu 140 key keyboard
+
+xkb_symbols "basic" {
+    override "fujitsu_vndr/us"
+    augment key <AE01> { [],			[ kana_NU	] 	};
+	    key <AE02> { [ 2, quotedbl	],	[ kana_FU	]	};
+	    key <AE03> { [ 3, numbersign ],	[ kana_A, kana_a ]	};
+	    key <AE04> { [ 4, dollar	],	[ kana_U, kana_u ]	};
+    augment key <AE05> { [],		[ kana_E, kana_e ]	};
+	    key <AE06> { [ 6, ampersand	],	[ kana_O, kana_o ]	};
+	    key <AE07> { [ 7, apostrophe ],	[ kana_YA, kana_ya ]	};
+	    key <AE08> { [ 8, parenleft	],	[ kana_YU, kana_yu ]	};
+	    key <AE09> { [ 9, parenright ],	[ kana_YO, kana_yo ]	};
+    replace key <AE10> { [ 0	],		[ kana_WA, kana_WO ]	};
+	    key <AE11> { [ minus, equal	],	[ kana_HO	]	};
+	    key <AE12> { [ asciicircum, asciitilde ], [ kana_HE ]	};
+	    key <BKSL> { [ backslash, bar ],	[ prolongedsound]	};
+    augment key <AD01> { [],			[ kana_TA	]	};
+    augment key <AD02> { [],			[ kana_TE	]	};
+    augment key <AD03> { [],			[ kana_I, kana_i ]	};
+    augment key <AD04> { [],			[ kana_SU	]	};
+    augment key <AD05> { [],			[ kana_KA	]	};
+    augment key <AD06> { [],			[ kana_N	]	};
+    augment key <AD07> { [],			[ kana_NA	]	};
+    augment key <AD08> { [],			[ kana_NI	]	};
+    augment key <AD09> { [],			[ kana_RA	]	};
+    augment key <AD10> { [],			[ kana_SE	]	};
+	    key <AD11> { [ at, grave	],	[ voicedsound	]	};
+	    key <AD12> { [ bracketleft, braceleft ], [ semivoicedsound, kana_openingbracket ]	};
+    augment key <AC01> { [],			[ kana_CHI	]	};
+    augment key <AC02> { [],			[ kana_TO	]	};
+    augment key <AC03> { [],			[ kana_SHI	]	};
+    augment key <AC04> { [],			[ kana_HA	]	};
+    augment key <AC05> { [],			[ kana_KI	]	};
+    augment key <AC06> { [],			[ kana_KU	]	};
+    augment key <AC07> { [],			[ kana_MA	]	};
+    augment key <AC08> { [],			[ kana_NO	]	};
+    augment key <AC09> { [],			[ kana_RI	]	};
+	    key <AC10> { [ semicolon, plus ],	[ kana_RE	]	};
+	    key <AC11> { [ colon, asterisk ],	[ kana_KE	]	};
+	    key <TLDE> { [ bracketright, braceright ], [ kana_MU, kana_closingbracket ] };
+    augment key <AB01> { [],			[ kana_TSU, kana_tsu ]	};
+    augment key <AB02> { [],			[ kana_SA	]	};
+    augment key <AB03> { [],			[ kana_SO	]	};
+    augment key <AB04> { [],			[ kana_HI	]	};
+    augment key <AB05> { [],			[ kana_KO	]	};
+    augment key <AB06> { [],			[ kana_MI	]	};
+    augment key <AB07> { [],			[ kana_MO	]	};
+    augment key <AB08> { [],			[ kana_NE, kana_comma ]	};
+    augment key <AB09> { [],			[ kana_RU, kana_fullstop ] };
+    augment key <AB10> { [],			[ kana_ME, kana_conjunctive ] };
+	    key <AB11> { [ underscore	],	[ kana_RO	]	};
+	    key <UNK0> { [ Select	]	}; 
+	    key <UNK1> { [ Massyo	]	}; 
+	    key <UNK2> { [ Touroku	]	}; 
+	    key <UNK3> { [ Zenkaku_Hankaku ]	}; 
+	    key <UNK4> { [ Eisu_Shift	]	};
+	    key <UNK5> { [ Mode_switch	]	};
+	    key <UNK6> { [ Cancel	]	};
+	    key <UNK7> { [ Muhenkan	]	};
+	    key <UNK8> { [ Henkan	]	};
+};

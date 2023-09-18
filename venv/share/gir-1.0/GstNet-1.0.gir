@@ -1,0 +1,1333 @@
+<?xml version="1.0"?>
+<!-- This file was automatically generated from C sources - DO NOT EDIT!
+To affect the contents of this file, edit the original C definitions,
+and/or use gtk-doc annotations.  -->
+<repository version="1.2"
+            xmlns="http://www.gtk.org/introspection/core/1.0"
+            xmlns:c="http://www.gtk.org/introspection/c/1.0"
+            xmlns:glib="http://www.gtk.org/introspection/glib/1.0">
+  <include name="GLib" version="2.0"/>
+  <include name="GModule" version="2.0"/>
+  <include name="GObject" version="2.0"/>
+  <include name="Gio" version="2.0"/>
+  <include name="Gst" version="1.0"/>
+  <package name="gstreamer-net-1.0"/>
+  <c:include name="gst/net/net.h"/>
+  <namespace name="GstNet"
+             version="1.0"
+             shared-library="libgstnet-1.0.so.0"
+             c:identifier-prefixes="Gst"
+             c:symbol-prefixes="gst">
+    <function-macro name="IS_NET_CLIENT_CLOCK"
+                    c:identifier="GST_IS_NET_CLIENT_CLOCK"
+                    introspectable="0">
+      <source-position filename="libs/gst/net/gstnetclientclock.h" line="41"/>
+      <parameters>
+        <parameter name="obj">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="IS_NET_CLIENT_CLOCK_CLASS"
+                    c:identifier="GST_IS_NET_CLIENT_CLOCK_CLASS"
+                    introspectable="0">
+      <source-position filename="libs/gst/net/gstnetclientclock.h" line="43"/>
+      <parameters>
+        <parameter name="klass">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="IS_NET_TIME_PROVIDER"
+                    c:identifier="GST_IS_NET_TIME_PROVIDER"
+                    introspectable="0">
+      <source-position filename="libs/gst/net/gstnettimeprovider.h" line="36"/>
+      <parameters>
+        <parameter name="obj">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="IS_NET_TIME_PROVIDER_CLASS"
+                    c:identifier="GST_IS_NET_TIME_PROVIDER_CLASS"
+                    introspectable="0">
+      <source-position filename="libs/gst/net/gstnettimeprovider.h" line="38"/>
+      <parameters>
+        <parameter name="klass">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="IS_NTP_CLOCK"
+                    c:identifier="GST_IS_NTP_CLOCK"
+                    introspectable="0">
+      <source-position filename="libs/gst/net/gstnetclientclock.h" line="83"/>
+      <parameters>
+        <parameter name="obj">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="IS_NTP_CLOCK_CLASS"
+                    c:identifier="GST_IS_NTP_CLOCK_CLASS"
+                    introspectable="0">
+      <source-position filename="libs/gst/net/gstnetclientclock.h" line="85"/>
+      <parameters>
+        <parameter name="klass">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="IS_PTP_CLOCK"
+                    c:identifier="GST_IS_PTP_CLOCK"
+                    introspectable="0">
+      <source-position filename="libs/gst/net/gstptpclock.h" line="35"/>
+      <parameters>
+        <parameter name="obj">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="IS_PTP_CLOCK_CLASS"
+                    c:identifier="GST_IS_PTP_CLOCK_CLASS"
+                    introspectable="0">
+      <source-position filename="libs/gst/net/gstptpclock.h" line="37"/>
+      <parameters>
+        <parameter name="klass">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="NET_CLIENT_CLOCK"
+                    c:identifier="GST_NET_CLIENT_CLOCK"
+                    introspectable="0">
+      <source-position filename="libs/gst/net/gstnetclientclock.h" line="37"/>
+      <parameters>
+        <parameter name="obj">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="NET_CLIENT_CLOCK_CLASS"
+                    c:identifier="GST_NET_CLIENT_CLOCK_CLASS"
+                    introspectable="0">
+      <source-position filename="libs/gst/net/gstnetclientclock.h" line="39"/>
+      <parameters>
+        <parameter name="klass">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <constant name="NET_TIME_PACKET_SIZE"
+              value="16"
+              c:type="GST_NET_TIME_PACKET_SIZE">
+      <doc xml:space="preserve"
+           filename="libs/gst/net/gstnettimepacket.h"
+           line="30">The size of the packets sent between network clocks.</doc>
+      <source-position filename="libs/gst/net/gstnettimepacket.h" line="35"/>
+      <type name="gint" c:type="gint"/>
+    </constant>
+    <function-macro name="NET_TIME_PROVIDER"
+                    c:identifier="GST_NET_TIME_PROVIDER"
+                    introspectable="0">
+      <source-position filename="libs/gst/net/gstnettimeprovider.h" line="32"/>
+      <parameters>
+        <parameter name="obj">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="NET_TIME_PROVIDER_CLASS"
+                    c:identifier="GST_NET_TIME_PROVIDER_CLASS"
+                    introspectable="0">
+      <source-position filename="libs/gst/net/gstnettimeprovider.h" line="34"/>
+      <parameters>
+        <parameter name="klass">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="NTP_CLOCK"
+                    c:identifier="GST_NTP_CLOCK"
+                    introspectable="0">
+      <source-position filename="libs/gst/net/gstnetclientclock.h" line="79"/>
+      <parameters>
+        <parameter name="obj">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="NTP_CLOCK_CLASS"
+                    c:identifier="GST_NTP_CLOCK_CLASS"
+                    introspectable="0">
+      <source-position filename="libs/gst/net/gstnetclientclock.h" line="81"/>
+      <parameters>
+        <parameter name="klass">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <record name="NetAddressMeta" c:type="GstNetAddressMeta">
+      <doc xml:space="preserve"
+           filename="libs/gst/net/gstnetaddressmeta.c"
+           line="20">#GstNetAddressMeta can be used to store a network address (a #GSocketAddress)
+in a #GstBuffer so that it network elements can track the to and from address
+of the buffer.</doc>
+      <source-position filename="libs/gst/net/gstnetaddressmeta.h" line="42"/>
+      <field name="meta" writable="1">
+        <doc xml:space="preserve"
+             filename="libs/gst/net/gstnetaddressmeta.h"
+             line="33">the parent type</doc>
+        <type name="Gst.Meta" c:type="GstMeta"/>
+      </field>
+      <field name="addr" writable="1">
+        <doc xml:space="preserve"
+             filename="libs/gst/net/gstnetaddressmeta.h"
+             line="34">a #GSocketAddress stored as metadata</doc>
+        <type name="Gio.SocketAddress" c:type="GSocketAddress*"/>
+      </field>
+      <function name="get_info" c:identifier="gst_net_address_meta_get_info">
+        <source-position filename="libs/gst/net/gstnetaddressmeta.h"
+                         line="51"/>
+        <return-value transfer-ownership="none">
+          <type name="Gst.MetaInfo" c:type="const GstMetaInfo*"/>
+        </return-value>
+      </function>
+    </record>
+    <class name="NetClientClock"
+           c:symbol-prefix="net_client_clock"
+           c:type="GstNetClientClock"
+           parent="Gst.SystemClock"
+           glib:type-name="GstNetClientClock"
+           glib:get-type="gst_net_client_clock_get_type"
+           glib:type-struct="NetClientClockClass">
+      <doc xml:space="preserve"
+           filename="libs/gst/net/gstnetclientclock.c"
+           line="26">#GstNetClientClock implements a custom #GstClock that synchronizes its time
+to a remote time provider such as #GstNetTimeProvider. #GstNtpClock
+implements a #GstClock that synchronizes its time to a remote NTPv4 server.
+
+A new clock is created with gst_net_client_clock_new() or
+gst_ntp_clock_new(), which takes the address and port of the remote time
+provider along with a name and an initial time.
+
+This clock will poll the time provider and will update its calibration
+parameters based on the local and remote observations.
+
+The "round-trip" property limits the maximum round trip packets can take.
+
+Various parameters of the clock can be configured with the parent #GstClock
+"timeout", "window-size" and "window-threshold" object properties.
+
+A #GstNetClientClock and #GstNtpClock is typically set on a #GstPipeline with
+gst_pipeline_use_clock().
+
+If you set a #GstBus on the clock via the "bus" object property, it will
+send @GST_MESSAGE_ELEMENT messages with an attached #GstStructure containing
+statistics about clock accuracy and network traffic.</doc>
+      <source-position filename="libs/gst/net/gstnetclientclock.h" line="70"/>
+      <constructor name="new" c:identifier="gst_net_client_clock_new">
+        <doc xml:space="preserve"
+             filename="libs/gst/net/gstnetclientclock.c"
+             line="1427">Create a new #GstNetClientClock that will report the time
+provided by the #GstNetTimeProvider on @remote_address and
+@remote_port.</doc>
+        <source-position filename="libs/gst/net/gstnetclientclock.h"
+                         line="76"/>
+        <return-value transfer-ownership="full">
+          <doc xml:space="preserve"
+               filename="libs/gst/net/gstnetclientclock.c"
+               line="1438">a new #GstClock that receives a time from the remote
+clock.</doc>
+          <type name="Gst.Clock" c:type="GstClock*"/>
+        </return-value>
+        <parameters>
+          <parameter name="name"
+                     transfer-ownership="none"
+                     nullable="1"
+                     allow-none="1">
+            <doc xml:space="preserve"
+                 filename="libs/gst/net/gstnetclientclock.c"
+                 line="1429">a name for the clock</doc>
+            <type name="utf8" c:type="const gchar*"/>
+          </parameter>
+          <parameter name="remote_address" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/net/gstnetclientclock.c"
+                 line="1430">the address or hostname of the remote clock provider</doc>
+            <type name="utf8" c:type="const gchar*"/>
+          </parameter>
+          <parameter name="remote_port" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/net/gstnetclientclock.c"
+                 line="1431">the port of the remote clock provider</doc>
+            <type name="gint" c:type="gint"/>
+          </parameter>
+          <parameter name="base_time" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/net/gstnetclientclock.c"
+                 line="1432">initial time of the clock</doc>
+            <type name="Gst.ClockTime" c:type="GstClockTime"/>
+          </parameter>
+        </parameters>
+      </constructor>
+      <property name="address"
+                writable="1"
+                construct="1"
+                transfer-ownership="none"
+                default-value="127.0.0.1">
+        <type name="utf8" c:type="gchar*"/>
+      </property>
+      <property name="base-time"
+                writable="1"
+                construct-only="1"
+                transfer-ownership="none"
+                default-value="0">
+        <type name="guint64" c:type="guint64"/>
+      </property>
+      <property name="bus" writable="1" transfer-ownership="none">
+        <type name="Gst.Bus"/>
+      </property>
+      <property name="internal-clock" transfer-ownership="none">
+        <type name="Gst.Clock"/>
+      </property>
+      <property name="minimum-update-interval"
+                writable="1"
+                transfer-ownership="none"
+                default-value="50000000">
+        <type name="guint64" c:type="guint64"/>
+      </property>
+      <property name="port"
+                writable="1"
+                construct="1"
+                transfer-ownership="none"
+                default-value="5637">
+        <type name="gint" c:type="gint"/>
+      </property>
+      <property name="qos-dscp"
+                writable="1"
+                transfer-ownership="none"
+                default-value="-1">
+        <type name="gint" c:type="gint"/>
+      </property>
+      <property name="round-trip-limit"
+                writable="1"
+                transfer-ownership="none"
+                default-value="1000000000">
+        <type name="guint64" c:type="guint64"/>
+      </property>
+      <field name="clock">
+        <type name="Gst.SystemClock" c:type="GstSystemClock"/>
+      </field>
+      <field name="priv" readable="0" private="1">
+        <type name="NetClientClockPrivate" c:type="GstNetClientClockPrivate*"/>
+      </field>
+      <field name="_gst_reserved" readable="0" private="1">
+        <array zero-terminated="0" fixed-size="4">
+          <type name="gpointer" c:type="gpointer"/>
+        </array>
+      </field>
+    </class>
+    <record name="NetClientClockClass"
+            c:type="GstNetClientClockClass"
+            glib:is-gtype-struct-for="NetClientClock">
+      <source-position filename="libs/gst/net/gstnetclientclock.h" line="70"/>
+      <field name="parent_class">
+        <type name="Gst.SystemClockClass" c:type="GstSystemClockClass"/>
+      </field>
+      <field name="_gst_reserved" readable="0" private="1">
+        <array zero-terminated="0" fixed-size="4">
+          <type name="gpointer" c:type="gpointer"/>
+        </array>
+      </field>
+    </record>
+    <record name="NetClientClockPrivate"
+            c:type="GstNetClientClockPrivate"
+            disguised="1"
+            opaque="1">
+      <source-position filename="libs/gst/net/gstnetclientclock.h" line="49"/>
+    </record>
+    <record name="NetControlMessageMeta" c:type="GstNetControlMessageMeta">
+      <doc xml:space="preserve"
+           filename="libs/gst/net/gstnetcontrolmessagemeta.c"
+           line="20">#GstNetControlMessageMeta can be used to store control messages (ancillary
+data) which was received with or is to be sent alongside the buffer data.
+When used with socket sinks and sources which understand this meta it allows
+sending and receiving ancillary data such as unix credentials (See
+#GUnixCredentialsMessage) and Unix file descriptions (See #GUnixFDMessage).</doc>
+      <source-position filename="libs/gst/net/gstnetcontrolmessagemeta.h"
+                       line="43"/>
+      <field name="meta" writable="1">
+        <doc xml:space="preserve"
+             filename="libs/gst/net/gstnetcontrolmessagemeta.h"
+             line="33">the parent type</doc>
+        <type name="Gst.Meta" c:type="GstMeta"/>
+      </field>
+      <field name="message" writable="1">
+        <doc xml:space="preserve"
+             filename="libs/gst/net/gstnetcontrolmessagemeta.h"
+             line="34">a #GSocketControlMessage stored as metadata</doc>
+        <type name="Gio.SocketControlMessage" c:type="GSocketControlMessage*"/>
+      </field>
+      <function name="get_info"
+                c:identifier="gst_net_control_message_meta_get_info">
+        <source-position filename="libs/gst/net/gstnetcontrolmessagemeta.h"
+                         line="57"/>
+        <return-value transfer-ownership="none">
+          <type name="Gst.MetaInfo" c:type="const GstMetaInfo*"/>
+        </return-value>
+      </function>
+    </record>
+    <record name="NetTimePacket"
+            c:type="GstNetTimePacket"
+            glib:type-name="GstNetTimePacket"
+            glib:get-type="gst_net_time_packet_get_type"
+            c:symbol-prefix="net_time_packet">
+      <doc xml:space="preserve"
+           filename="libs/gst/net/gstnettimepacket.c"
+           line="21">Various functions for receiving, sending an serializing #GstNetTimePacket
+structures.</doc>
+      <source-position filename="libs/gst/net/gstnettimepacket.h" line="49"/>
+      <field name="local_time" writable="1">
+        <doc xml:space="preserve"
+             filename="libs/gst/net/gstnettimepacket.h"
+             line="41">the local time when this packet was sent</doc>
+        <type name="Gst.ClockTime" c:type="GstClockTime"/>
+      </field>
+      <field name="remote_time" writable="1">
+        <doc xml:space="preserve"
+             filename="libs/gst/net/gstnettimepacket.h"
+             line="42">the remote time observation</doc>
+        <type name="Gst.ClockTime" c:type="GstClockTime"/>
+      </field>
+      <constructor name="new" c:identifier="gst_net_time_packet_new">
+        <doc xml:space="preserve"
+             filename="libs/gst/net/gstnettimepacket.c"
+             line="48">Creates a new #GstNetTimePacket from a buffer received over the network. The
+caller is responsible for ensuring that @buffer is at least
+#GST_NET_TIME_PACKET_SIZE bytes long.
+
+If @buffer is %NULL, the local and remote times will be set to
+#GST_CLOCK_TIME_NONE.
+
+MT safe. Caller owns return value (gst_net_time_packet_free to free).</doc>
+        <source-position filename="libs/gst/net/gstnettimepacket.h" line="55"/>
+        <return-value transfer-ownership="full">
+          <doc xml:space="preserve"
+               filename="libs/gst/net/gstnettimepacket.c"
+               line="61">The new #GstNetTimePacket.</doc>
+          <type name="NetTimePacket" c:type="GstNetTimePacket*"/>
+        </return-value>
+        <parameters>
+          <parameter name="buffer"
+                     transfer-ownership="none"
+                     nullable="1"
+                     allow-none="1">
+            <doc xml:space="preserve"
+                 filename="libs/gst/net/gstnettimepacket.c"
+                 line="50">a buffer from which to construct the packet, or NULL</doc>
+            <array zero-terminated="0" c:type="const guint8*" fixed-size="16">
+              <type name="guint8" c:type="guint8"/>
+            </array>
+          </parameter>
+        </parameters>
+      </constructor>
+      <method name="copy" c:identifier="gst_net_time_packet_copy">
+        <doc xml:space="preserve"
+             filename="libs/gst/net/gstnettimepacket.c"
+             line="95">Make a copy of @packet.</doc>
+        <source-position filename="libs/gst/net/gstnettimepacket.h" line="58"/>
+        <return-value transfer-ownership="full">
+          <doc xml:space="preserve"
+               filename="libs/gst/net/gstnettimepacket.c"
+               line="101">a copy of @packet, free with gst_net_time_packet_free().</doc>
+          <type name="NetTimePacket" c:type="GstNetTimePacket*"/>
+        </return-value>
+        <parameters>
+          <instance-parameter name="packet" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/net/gstnettimepacket.c"
+                 line="97">the #GstNetTimePacket</doc>
+            <type name="NetTimePacket" c:type="const GstNetTimePacket*"/>
+          </instance-parameter>
+        </parameters>
+      </method>
+      <method name="free" c:identifier="gst_net_time_packet_free">
+        <doc xml:space="preserve"
+             filename="libs/gst/net/gstnettimepacket.c"
+             line="83">Free @packet.</doc>
+        <source-position filename="libs/gst/net/gstnettimepacket.h" line="61"/>
+        <return-value transfer-ownership="none">
+          <type name="none" c:type="void"/>
+        </return-value>
+        <parameters>
+          <instance-parameter name="packet" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/net/gstnettimepacket.c"
+                 line="85">the #GstNetTimePacket</doc>
+            <type name="NetTimePacket" c:type="GstNetTimePacket*"/>
+          </instance-parameter>
+        </parameters>
+      </method>
+      <method name="send" c:identifier="gst_net_time_packet_send" throws="1">
+        <doc xml:space="preserve"
+             filename="libs/gst/net/gstnettimepacket.c"
+             line="201">Sends a #GstNetTimePacket over a socket.
+
+MT safe.</doc>
+        <source-position filename="libs/gst/net/gstnettimepacket.h" line="71"/>
+        <return-value transfer-ownership="none">
+          <doc xml:space="preserve"
+               filename="libs/gst/net/gstnettimepacket.c"
+               line="212">TRUE if successful, FALSE in case an error occurred.</doc>
+          <type name="gboolean" c:type="gboolean"/>
+        </return-value>
+        <parameters>
+          <instance-parameter name="packet" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/net/gstnettimepacket.c"
+                 line="203">the #GstNetTimePacket to send</doc>
+            <type name="NetTimePacket" c:type="const GstNetTimePacket*"/>
+          </instance-parameter>
+          <parameter name="socket" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/net/gstnettimepacket.c"
+                 line="204">socket to send the time packet on</doc>
+            <type name="Gio.Socket" c:type="GSocket*"/>
+          </parameter>
+          <parameter name="dest_address" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/net/gstnettimepacket.c"
+                 line="205">address to send the time packet to</doc>
+            <type name="Gio.SocketAddress" c:type="GSocketAddress*"/>
+          </parameter>
+        </parameters>
+      </method>
+      <method name="serialize" c:identifier="gst_net_time_packet_serialize">
+        <doc xml:space="preserve"
+             filename="libs/gst/net/gstnettimepacket.c"
+             line="115">Serialized a #GstNetTimePacket into a newly-allocated sequence of
+#GST_NET_TIME_PACKET_SIZE bytes, in network byte order. The value returned is
+suitable for passing to write(2) or sendto(2) for communication over the
+network.
+
+MT safe. Caller owns return value (g_free to free).</doc>
+        <source-position filename="libs/gst/net/gstnettimepacket.h" line="64"/>
+        <return-value transfer-ownership="full">
+          <doc xml:space="preserve"
+               filename="libs/gst/net/gstnettimepacket.c"
+               line="126">A newly allocated sequence of #GST_NET_TIME_PACKET_SIZE bytes.</doc>
+          <array zero-terminated="0" c:type="guint8*" fixed-size="16">
+            <type name="guint8" c:type="guint8"/>
+          </array>
+        </return-value>
+        <parameters>
+          <instance-parameter name="packet" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/net/gstnettimepacket.c"
+                 line="117">the #GstNetTimePacket</doc>
+            <type name="NetTimePacket" c:type="const GstNetTimePacket*"/>
+          </instance-parameter>
+        </parameters>
+      </method>
+      <function name="receive"
+                c:identifier="gst_net_time_packet_receive"
+                throws="1">
+        <doc xml:space="preserve"
+             filename="libs/gst/net/gstnettimepacket.c"
+             line="143">Receives a #GstNetTimePacket over a socket. Handles interrupted system
+calls, but otherwise returns NULL on error.</doc>
+        <source-position filename="libs/gst/net/gstnettimepacket.h" line="67"/>
+        <return-value transfer-ownership="full">
+          <doc xml:space="preserve"
+               filename="libs/gst/net/gstnettimepacket.c"
+               line="152">a new #GstNetTimePacket, or NULL on error. Free
+   with gst_net_time_packet_free() when done.</doc>
+          <type name="NetTimePacket" c:type="GstNetTimePacket*"/>
+        </return-value>
+        <parameters>
+          <parameter name="socket" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/net/gstnettimepacket.c"
+                 line="145">socket to receive the time packet on</doc>
+            <type name="Gio.Socket" c:type="GSocket*"/>
+          </parameter>
+          <parameter name="src_address"
+                     direction="out"
+                     caller-allocates="0"
+                     transfer-ownership="full"
+                     optional="1"
+                     allow-none="1">
+            <doc xml:space="preserve"
+                 filename="libs/gst/net/gstnettimepacket.c"
+                 line="146">address of variable to return sender address</doc>
+            <type name="Gio.SocketAddress" c:type="GSocketAddress**"/>
+          </parameter>
+        </parameters>
+      </function>
+    </record>
+    <class name="NetTimeProvider"
+           c:symbol-prefix="net_time_provider"
+           c:type="GstNetTimeProvider"
+           parent="Gst.Object"
+           glib:type-name="GstNetTimeProvider"
+           glib:get-type="gst_net_time_provider_get_type"
+           glib:type-struct="NetTimeProviderClass">
+      <doc xml:space="preserve"
+           filename="libs/gst/net/gstnettimeprovider.c"
+           line="19">This object exposes the time of a #GstClock on the network.
+
+A #GstNetTimeProvider is created with gst_net_time_provider_new() which
+takes a #GstClock, an address and a port number as arguments.
+
+After creating the object, a client clock such as #GstNetClientClock can
+query the exposed clock over the network for its values.
+
+The #GstNetTimeProvider typically wraps the clock used by a #GstPipeline.</doc>
+      <source-position filename="libs/gst/net/gstnettimeprovider.h" line="64"/>
+      <implements name="Gio.Initable"/>
+      <constructor name="new" c:identifier="gst_net_time_provider_new">
+        <doc xml:space="preserve"
+             filename="libs/gst/net/gstnettimeprovider.c"
+             line="450">Allows network clients to get the current time of @clock.</doc>
+        <source-position filename="libs/gst/net/gstnettimeprovider.h"
+                         line="70"/>
+        <return-value transfer-ownership="full" nullable="1">
+          <doc xml:space="preserve"
+               filename="libs/gst/net/gstnettimeprovider.c"
+               line="459">the new #GstNetTimeProvider, or NULL on error</doc>
+          <type name="NetTimeProvider" c:type="GstNetTimeProvider*"/>
+        </return-value>
+        <parameters>
+          <parameter name="clock" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/net/gstnettimeprovider.c"
+                 line="452">a #GstClock to export over the network</doc>
+            <type name="Gst.Clock" c:type="GstClock*"/>
+          </parameter>
+          <parameter name="address"
+                     transfer-ownership="none"
+                     nullable="1"
+                     allow-none="1">
+            <doc xml:space="preserve"
+                 filename="libs/gst/net/gstnettimeprovider.c"
+                 line="453">an address to bind on as a dotted quad
+          (xxx.xxx.xxx.xxx), IPv6 address, or NULL to bind to all addresses</doc>
+            <type name="utf8" c:type="const gchar*"/>
+          </parameter>
+          <parameter name="port" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/net/gstnettimeprovider.c"
+                 line="455">a port to bind on, or 0 to let the kernel choose</doc>
+            <type name="gint" c:type="gint"/>
+          </parameter>
+        </parameters>
+      </constructor>
+      <property name="active"
+                writable="1"
+                transfer-ownership="none"
+                default-value="TRUE">
+        <type name="gboolean" c:type="gboolean"/>
+      </property>
+      <property name="address"
+                writable="1"
+                construct-only="1"
+                transfer-ownership="none"
+                default-value="0.0.0.0">
+        <type name="utf8" c:type="gchar*"/>
+      </property>
+      <property name="clock"
+                writable="1"
+                construct-only="1"
+                transfer-ownership="none">
+        <type name="Gst.Clock"/>
+      </property>
+      <property name="port"
+                writable="1"
+                construct-only="1"
+                transfer-ownership="none"
+                default-value="5637">
+        <type name="gint" c:type="gint"/>
+      </property>
+      <property name="qos-dscp"
+                writable="1"
+                transfer-ownership="none"
+                default-value="-1">
+        <type name="gint" c:type="gint"/>
+      </property>
+      <field name="parent">
+        <type name="Gst.Object" c:type="GstObject"/>
+      </field>
+      <field name="priv" readable="0" private="1">
+        <type name="NetTimeProviderPrivate"
+              c:type="GstNetTimeProviderPrivate*"/>
+      </field>
+      <field name="_gst_reserved" readable="0" private="1">
+        <array zero-terminated="0" fixed-size="4">
+          <type name="gpointer" c:type="gpointer"/>
+        </array>
+      </field>
+    </class>
+    <record name="NetTimeProviderClass"
+            c:type="GstNetTimeProviderClass"
+            glib:is-gtype-struct-for="NetTimeProvider">
+      <source-position filename="libs/gst/net/gstnettimeprovider.h" line="64"/>
+      <field name="parent_class">
+        <type name="Gst.ObjectClass" c:type="GstObjectClass"/>
+      </field>
+      <field name="_gst_reserved">
+        <array zero-terminated="0" fixed-size="4">
+          <type name="gpointer" c:type="gpointer"/>
+        </array>
+      </field>
+    </record>
+    <record name="NetTimeProviderPrivate"
+            c:type="GstNetTimeProviderPrivate"
+            disguised="1"
+            opaque="1">
+      <source-position filename="libs/gst/net/gstnettimeprovider.h" line="44"/>
+    </record>
+    <class name="NtpClock"
+           c:symbol-prefix="ntp_clock"
+           c:type="GstNtpClock"
+           parent="NetClientClock"
+           glib:type-name="GstNtpClock"
+           glib:get-type="gst_ntp_clock_get_type"
+           glib:type-struct="NtpClockClass">
+      <source-position filename="libs/gst/net/gstnetclientclock.h" line="91"/>
+      <constructor name="new" c:identifier="gst_ntp_clock_new" version="1.6">
+        <doc xml:space="preserve"
+             filename="libs/gst/net/gstnetclientclock.c"
+             line="1475">Create a new #GstNtpClock that will report the time provided by
+the NTPv4 server on @remote_address and @remote_port.</doc>
+        <source-position filename="libs/gst/net/gstnetclientclock.h"
+                         line="97"/>
+        <return-value transfer-ownership="full">
+          <doc xml:space="preserve"
+               filename="libs/gst/net/gstnetclientclock.c"
+               line="1485">a new #GstClock that receives a time from the remote
+clock.</doc>
+          <type name="Gst.Clock" c:type="GstClock*"/>
+        </return-value>
+        <parameters>
+          <parameter name="name"
+                     transfer-ownership="none"
+                     nullable="1"
+                     allow-none="1">
+            <doc xml:space="preserve"
+                 filename="libs/gst/net/gstnetclientclock.c"
+                 line="1477">a name for the clock</doc>
+            <type name="utf8" c:type="const gchar*"/>
+          </parameter>
+          <parameter name="remote_address" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/net/gstnetclientclock.c"
+                 line="1478">the address or hostname of the remote clock provider</doc>
+            <type name="utf8" c:type="const gchar*"/>
+          </parameter>
+          <parameter name="remote_port" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/net/gstnetclientclock.c"
+                 line="1479">the port of the remote clock provider</doc>
+            <type name="gint" c:type="gint"/>
+          </parameter>
+          <parameter name="base_time" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/net/gstnetclientclock.c"
+                 line="1480">initial time of the clock</doc>
+            <type name="Gst.ClockTime" c:type="GstClockTime"/>
+          </parameter>
+        </parameters>
+      </constructor>
+      <field name="clock">
+        <type name="Gst.SystemClock" c:type="GstSystemClock"/>
+      </field>
+      <field name="priv" readable="0" private="1">
+        <type name="NetClientClockPrivate" c:type="GstNetClientClockPrivate*"/>
+      </field>
+      <field name="_gst_reserved" readable="0" private="1">
+        <array zero-terminated="0" fixed-size="4">
+          <type name="gpointer" c:type="gpointer"/>
+        </array>
+      </field>
+    </class>
+    <record name="NtpClockClass"
+            c:type="GstNtpClockClass"
+            glib:is-gtype-struct-for="NtpClock">
+      <source-position filename="libs/gst/net/gstnetclientclock.h" line="91"/>
+      <field name="parent_class">
+        <type name="Gst.SystemClockClass" c:type="GstSystemClockClass"/>
+      </field>
+      <field name="_gst_reserved" readable="0" private="1">
+        <array zero-terminated="0" fixed-size="4">
+          <type name="gpointer" c:type="gpointer"/>
+        </array>
+      </field>
+    </record>
+    <function-macro name="PTP_CLOCK"
+                    c:identifier="GST_PTP_CLOCK"
+                    introspectable="0">
+      <source-position filename="libs/gst/net/gstptpclock.h" line="31"/>
+      <parameters>
+        <parameter name="obj">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <function-macro name="PTP_CLOCK_CLASS"
+                    c:identifier="GST_PTP_CLOCK_CLASS"
+                    introspectable="0">
+      <source-position filename="libs/gst/net/gstptpclock.h" line="33"/>
+      <parameters>
+        <parameter name="klass">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <constant name="PTP_CLOCK_ID_NONE"
+              value="18446744073709551615"
+              c:type="GST_PTP_CLOCK_ID_NONE">
+      <doc xml:space="preserve"
+           filename="libs/gst/net/gstptpclock.h"
+           line="72">PTP clock identification that can be passed to gst_ptp_init() to
+automatically select one based on the MAC address of interfaces</doc>
+      <source-position filename="libs/gst/net/gstptpclock.h" line="76"/>
+      <type name="guint64" c:type="guint64"/>
+    </constant>
+    <constant name="PTP_STATISTICS_BEST_MASTER_CLOCK_SELECTED"
+              value="GstPtpStatisticsBestMasterClockSelected"
+              c:type="GST_PTP_STATISTICS_BEST_MASTER_CLOCK_SELECTED">
+      <source-position filename="libs/gst/net/gstptpclock.h" line="94"/>
+      <type name="utf8" c:type="gchar*"/>
+    </constant>
+    <constant name="PTP_STATISTICS_NEW_DOMAIN_FOUND"
+              value="GstPtpStatisticsNewDomainFound"
+              c:type="GST_PTP_STATISTICS_NEW_DOMAIN_FOUND">
+      <source-position filename="libs/gst/net/gstptpclock.h" line="93"/>
+      <type name="utf8" c:type="gchar*"/>
+    </constant>
+    <constant name="PTP_STATISTICS_PATH_DELAY_MEASURED"
+              value="GstPtpStatisticsPathDelayMeasured"
+              c:type="GST_PTP_STATISTICS_PATH_DELAY_MEASURED">
+      <source-position filename="libs/gst/net/gstptpclock.h" line="95"/>
+      <type name="utf8" c:type="gchar*"/>
+    </constant>
+    <constant name="PTP_STATISTICS_TIME_UPDATED"
+              value="GstPtpStatisticsTimeUpdated"
+              c:type="GST_PTP_STATISTICS_TIME_UPDATED">
+      <source-position filename="libs/gst/net/gstptpclock.h" line="96"/>
+      <type name="utf8" c:type="gchar*"/>
+    </constant>
+    <class name="PtpClock"
+           c:symbol-prefix="ptp_clock"
+           c:type="GstPtpClock"
+           version="1.6"
+           parent="Gst.SystemClock"
+           glib:type-name="GstPtpClock"
+           glib:get-type="gst_ptp_clock_get_type"
+           glib:type-struct="PtpClockClass">
+      <doc xml:space="preserve"
+           filename="libs/gst/net/gstptpclock.c"
+           line="20">GstPtpClock implements a PTP (IEEE1588:2008) ordinary clock in slave-only
+mode, that allows a GStreamer pipeline to synchronize to a PTP network
+clock in some specific domain.
+
+The PTP subsystem can be initialized with gst_ptp_init(), which then starts
+a helper process to do the actual communication via the PTP ports. This is
+required as PTP listens on ports &lt; 1024 and thus requires special
+privileges. Once this helper process is started, the main process will
+synchronize to all PTP domains that are detected on the selected
+interfaces.
+
+gst_ptp_clock_new() then allows to create a GstClock that provides the PTP
+time from a master clock inside a specific PTP domain. This clock will only
+return valid timestamps once the timestamps in the PTP domain are known. To
+check this, you can use gst_clock_wait_for_sync(), the GstClock::synced
+signal and gst_clock_is_synced().
+
+To gather statistics about the PTP clock synchronization,
+gst_ptp_statistics_callback_add() can be used. This gives the application
+the possibility to collect all kinds of statistics from the clock
+synchronization.</doc>
+      <source-position filename="libs/gst/net/gstptpclock.h" line="70"/>
+      <constructor name="new" c:identifier="gst_ptp_clock_new" version="1.6">
+        <doc xml:space="preserve"
+             filename="libs/gst/net/gstptpclock.c"
+             line="2554">Creates a new PTP clock instance that exports the PTP time of the master
+clock in @domain. This clock can be slaved to other clocks as needed.
+
+If gst_ptp_init() was not called before, this will call gst_ptp_init() with
+default parameters.
+
+This clock only returns valid timestamps after it received the first
+times from the PTP master clock on the network. Once this happens the
+GstPtpClock::internal-clock property will become non-NULL. You can
+check this with gst_clock_wait_for_sync(), the GstClock::synced signal and
+gst_clock_is_synced().</doc>
+        <source-position filename="libs/gst/net/gstptpclock.h" line="153"/>
+        <return-value transfer-ownership="full">
+          <doc xml:space="preserve"
+               filename="libs/gst/net/gstptpclock.c"
+               line="2571">A new #GstClock</doc>
+          <type name="Gst.Clock" c:type="GstClock*"/>
+        </return-value>
+        <parameters>
+          <parameter name="name" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/net/gstptpclock.c"
+                 line="2556">Name of the clock</doc>
+            <type name="utf8" c:type="const gchar*"/>
+          </parameter>
+          <parameter name="domain" transfer-ownership="none">
+            <doc xml:space="preserve"
+                 filename="libs/gst/net/gstptpclock.c"
+                 line="2557">PTP domain</doc>
+            <type name="guint" c:type="guint"/>
+          </parameter>
+        </parameters>
+      </constructor>
+      <property name="domain"
+                writable="1"
+                construct-only="1"
+                transfer-ownership="none"
+                default-value="0">
+        <type name="guint" c:type="guint"/>
+      </property>
+      <property name="grandmaster-clock-id"
+                transfer-ownership="none"
+                default-value="0">
+        <type name="guint64" c:type="guint64"/>
+      </property>
+      <property name="internal-clock" transfer-ownership="none">
+        <type name="Gst.Clock"/>
+      </property>
+      <property name="master-clock-id"
+                transfer-ownership="none"
+                default-value="0">
+        <type name="guint64" c:type="guint64"/>
+      </property>
+      <field name="clock">
+        <type name="Gst.SystemClock" c:type="GstSystemClock"/>
+      </field>
+      <field name="priv" readable="0" private="1">
+        <type name="PtpClockPrivate" c:type="GstPtpClockPrivate*"/>
+      </field>
+      <field name="_gst_reserved" readable="0" private="1">
+        <array zero-terminated="0" fixed-size="4">
+          <type name="gpointer" c:type="gpointer"/>
+        </array>
+      </field>
+    </class>
+    <record name="PtpClockClass"
+            c:type="GstPtpClockClass"
+            glib:is-gtype-struct-for="PtpClock">
+      <doc xml:space="preserve"
+           filename="libs/gst/net/gstptpclock.h"
+           line="59">Opaque #GstPtpClockClass structure.</doc>
+      <source-position filename="libs/gst/net/gstptpclock.h" line="70"/>
+      <field name="parent_class">
+        <doc xml:space="preserve"
+             filename="libs/gst/net/gstptpclock.h"
+             line="61">parented to #GstSystemClockClass</doc>
+        <type name="Gst.SystemClockClass" c:type="GstSystemClockClass"/>
+      </field>
+      <field name="_gst_reserved" readable="0" private="1">
+        <array zero-terminated="0" fixed-size="4">
+          <type name="gpointer" c:type="gpointer"/>
+        </array>
+      </field>
+    </record>
+    <record name="PtpClockPrivate"
+            c:type="GstPtpClockPrivate"
+            disguised="1"
+            opaque="1">
+      <source-position filename="libs/gst/net/gstptpclock.h" line="43"/>
+    </record>
+    <callback name="PtpStatisticsCallback" c:type="GstPtpStatisticsCallback">
+      <doc xml:space="preserve"
+           filename="libs/gst/net/gstptpclock.h"
+           line="99">The statistics can be the following structures:
+
+GST_PTP_STATISTICS_NEW_DOMAIN_FOUND:
+"domain"                G_TYPE_UINT          The domain identifier of the domain
+"clock"                 GST_TYPE_CLOCK       The internal clock that is slaved to the
+                                             PTP domain
+
+GST_PTP_STATISTICS_BEST_MASTER_CLOCK_SELECTED:
+"domain"                G_TYPE_UINT          The domain identifier of the domain
+"master-clock-id"       G_TYPE_UINT64        PTP clock identifier of the selected master
+                                             clock
+"master-clock-port"     G_TYPE_UINT          PTP port number of the selected master clock
+"grandmaster-clock-id"  G_TYPE_UINT64        PTP clock identifier of the grandmaster clock
+
+GST_PTP_STATISTICS_PATH_DELAY_MEASURED:
+"domain"                G_TYPE_UINT          The domain identifier of the domain
+"mean-path-delay-avg"   GST_TYPE_CLOCK_TIME  Average mean path delay
+"mean-path-delay"       GST_TYPE_CLOCK_TIME  Latest mean path delay
+"delay-request-delay"   GST_TYPE_CLOCK_TIME  Delay of DELAY_REQ / DELAY_RESP messages
+
+GST_PTP_STATISTICS_TIME_UPDATED:
+"domain"                G_TYPE_UINT          The domain identifier of the domain
+"mean-path-delay-avg"   GST_TYPE_CLOCK_TIME  Average mean path delay
+"local-time"            GST_TYPE_CLOCK_TIME  Local time that corresponds to ptp-time
+"ptp-time"              GST_TYPE_CLOCK_TIME  Newly measured PTP time at local-time
+"estimated-ptp-time"    GST_TYPE_CLOCK_TIME  Estimated PTP time based on previous measurements
+"discontinuity"         G_TYPE_INT64         Difference between estimated and measured PTP time
+"synced"                G_TYPE_BOOLEAN       Currently synced to the remote clock
+"r-squared"             G_TYPE_DOUBLE        R² of clock estimation regression
+"internal-time"         GST_TYPE_CLOCK_TIME  Internal time clock parameter
+"external-time"         GST_TYPE_CLOCK_TIME  External time clock parameter
+"rate-num"              G_TYPE_UINT64        Internal/external rate numerator
+"rate-den"              G_TYPE_UINT64        Internal/external rate denominator
+"rate"                  G_TYPE_DOUBLE        Internal/external rate
+
+If %FALSE is returned, the callback is removed and never called again.</doc>
+      <source-position filename="libs/gst/net/gstptpclock.h" line="143"/>
+      <return-value transfer-ownership="none">
+        <type name="gboolean" c:type="gboolean"/>
+      </return-value>
+      <parameters>
+        <parameter name="domain" transfer-ownership="none">
+          <doc xml:space="preserve"
+               filename="libs/gst/net/gstptpclock.h"
+               line="101">PTP domain identifier</doc>
+          <type name="guint8" c:type="guint8"/>
+        </parameter>
+        <parameter name="stats" transfer-ownership="none">
+          <doc xml:space="preserve"
+               filename="libs/gst/net/gstptpclock.h"
+               line="102">New statistics</doc>
+          <type name="Gst.Structure" c:type="const GstStructure*"/>
+        </parameter>
+        <parameter name="user_data"
+                   transfer-ownership="none"
+                   nullable="1"
+                   allow-none="1"
+                   closure="2">
+          <doc xml:space="preserve"
+               filename="libs/gst/net/gstptpclock.h"
+               line="103">Data passed to gst_ptp_statistics_callback_add()</doc>
+          <type name="gpointer" c:type="gpointer"/>
+        </parameter>
+      </parameters>
+    </callback>
+    <function name="buffer_add_net_address_meta"
+              c:identifier="gst_buffer_add_net_address_meta">
+      <doc xml:space="preserve"
+           filename="libs/gst/net/gstnetaddressmeta.c"
+           line="101">Attaches @addr as metadata in a #GstNetAddressMeta to @buffer.</doc>
+      <source-position filename="libs/gst/net/gstnetaddressmeta.h" line="55"/>
+      <return-value transfer-ownership="none">
+        <doc xml:space="preserve"
+             filename="libs/gst/net/gstnetaddressmeta.c"
+             line="108">a #GstNetAddressMeta connected to @buffer</doc>
+        <type name="NetAddressMeta" c:type="GstNetAddressMeta*"/>
+      </return-value>
+      <parameters>
+        <parameter name="buffer" transfer-ownership="none">
+          <doc xml:space="preserve"
+               filename="libs/gst/net/gstnetaddressmeta.c"
+               line="103">a #GstBuffer</doc>
+          <type name="Gst.Buffer" c:type="GstBuffer*"/>
+        </parameter>
+        <parameter name="addr" transfer-ownership="none">
+          <doc xml:space="preserve"
+               filename="libs/gst/net/gstnetaddressmeta.c"
+               line="104">a @GSocketAddress to connect to @buffer</doc>
+          <type name="Gio.SocketAddress" c:type="GSocketAddress*"/>
+        </parameter>
+      </parameters>
+    </function>
+    <function name="buffer_add_net_control_message_meta"
+              c:identifier="gst_buffer_add_net_control_message_meta">
+      <doc xml:space="preserve"
+           filename="libs/gst/net/gstnetcontrolmessagemeta.c"
+           line="107">Attaches @message as metadata in a #GstNetControlMessageMeta to @buffer.</doc>
+      <source-position filename="libs/gst/net/gstnetcontrolmessagemeta.h"
+                       line="63"/>
+      <return-value transfer-ownership="none">
+        <doc xml:space="preserve"
+             filename="libs/gst/net/gstnetcontrolmessagemeta.c"
+             line="114">a #GstNetControlMessageMeta connected to @buffer</doc>
+        <type name="NetControlMessageMeta" c:type="GstNetControlMessageMeta*"/>
+      </return-value>
+      <parameters>
+        <parameter name="buffer" transfer-ownership="none">
+          <doc xml:space="preserve"
+               filename="libs/gst/net/gstnetcontrolmessagemeta.c"
+               line="109">a #GstBuffer</doc>
+          <type name="Gst.Buffer" c:type="GstBuffer*"/>
+        </parameter>
+        <parameter name="message" transfer-ownership="none">
+          <doc xml:space="preserve"
+               filename="libs/gst/net/gstnetcontrolmessagemeta.c"
+               line="110">a @GSocketControlMessage to attach to @buffer</doc>
+          <type name="Gio.SocketControlMessage"
+                c:type="GSocketControlMessage*"/>
+        </parameter>
+      </parameters>
+    </function>
+    <function name="buffer_get_net_address_meta"
+              c:identifier="gst_buffer_get_net_address_meta">
+      <doc xml:space="preserve"
+           filename="libs/gst/net/gstnetaddressmeta.c"
+           line="127">Find the #GstNetAddressMeta on @buffer.</doc>
+      <source-position filename="libs/gst/net/gstnetaddressmeta.h" line="58"/>
+      <return-value transfer-ownership="none" nullable="1">
+        <doc xml:space="preserve"
+             filename="libs/gst/net/gstnetaddressmeta.c"
+             line="133">the #GstNetAddressMeta or %NULL when there
+is no such metadata on @buffer.</doc>
+        <type name="NetAddressMeta" c:type="GstNetAddressMeta*"/>
+      </return-value>
+      <parameters>
+        <parameter name="buffer" transfer-ownership="none">
+          <doc xml:space="preserve"
+               filename="libs/gst/net/gstnetaddressmeta.c"
+               line="129">a #GstBuffer</doc>
+          <type name="Gst.Buffer" c:type="GstBuffer*"/>
+        </parameter>
+      </parameters>
+    </function>
+    <function-macro name="buffer_get_net_control_message_meta"
+                    c:identifier="gst_buffer_get_net_control_message_meta"
+                    introspectable="0">
+      <source-position filename="libs/gst/net/gstnetcontrolmessagemeta.h"
+                       line="50"/>
+      <parameters>
+        <parameter name="b">
+        </parameter>
+      </parameters>
+    </function-macro>
+    <docsection name="gstnetutils">
+      <doc xml:space="preserve"
+           filename="libs/gst/net/gstnetutils.c"
+           line="20">GstNetUtils gathers network utility functions, enabling use for all
+gstreamer plugins.</doc>
+    </docsection>
+    <function name="net_address_meta_api_get_type"
+              c:identifier="gst_net_address_meta_api_get_type">
+      <source-position filename="libs/gst/net/gstnetaddressmeta.h" line="45"/>
+      <return-value transfer-ownership="none">
+        <type name="GType" c:type="GType"/>
+      </return-value>
+    </function>
+    <function name="net_address_meta_get_info"
+              c:identifier="gst_net_address_meta_get_info"
+              moved-to="NetAddressMeta.get_info">
+      <source-position filename="libs/gst/net/gstnetaddressmeta.h" line="51"/>
+      <return-value transfer-ownership="none">
+        <type name="Gst.MetaInfo" c:type="const GstMetaInfo*"/>
+      </return-value>
+    </function>
+    <function name="net_control_message_meta_api_get_type"
+              c:identifier="gst_net_control_message_meta_api_get_type">
+      <source-position filename="libs/gst/net/gstnetcontrolmessagemeta.h"
+                       line="46"/>
+      <return-value transfer-ownership="none">
+        <type name="GType" c:type="GType"/>
+      </return-value>
+    </function>
+    <function name="net_control_message_meta_get_info"
+              c:identifier="gst_net_control_message_meta_get_info"
+              moved-to="NetControlMessageMeta.get_info">
+      <source-position filename="libs/gst/net/gstnetcontrolmessagemeta.h"
+                       line="57"/>
+      <return-value transfer-ownership="none">
+        <type name="Gst.MetaInfo" c:type="const GstMetaInfo*"/>
+      </return-value>
+    </function>
+    <function name="net_time_packet_receive"
+              c:identifier="gst_net_time_packet_receive"
+              moved-to="NetTimePacket.receive"
+              throws="1">
+      <doc xml:space="preserve"
+           filename="libs/gst/net/gstnettimepacket.c"
+           line="143">Receives a #GstNetTimePacket over a socket. Handles interrupted system
+calls, but otherwise returns NULL on error.</doc>
+      <source-position filename="libs/gst/net/gstnettimepacket.h" line="67"/>
+      <return-value transfer-ownership="full">
+        <doc xml:space="preserve"
+             filename="libs/gst/net/gstnettimepacket.c"
+             line="152">a new #GstNetTimePacket, or NULL on error. Free
+   with gst_net_time_packet_free() when done.</doc>
+        <type name="NetTimePacket" c:type="GstNetTimePacket*"/>
+      </return-value>
+      <parameters>
+        <parameter name="socket" transfer-ownership="none">
+          <doc xml:space="preserve"
+               filename="libs/gst/net/gstnettimepacket.c"
+               line="145">socket to receive the time packet on</doc>
+          <type name="Gio.Socket" c:type="GSocket*"/>
+        </parameter>
+        <parameter name="src_address"
+                   direction="out"
+                   caller-allocates="0"
+                   transfer-ownership="full"
+                   optional="1"
+                   allow-none="1">
+          <doc xml:space="preserve"
+               filename="libs/gst/net/gstnettimepacket.c"
+               line="146">address of variable to return sender address</doc>
+          <type name="Gio.SocketAddress" c:type="GSocketAddress**"/>
+        </parameter>
+      </parameters>
+    </function>
+    <function name="net_utils_set_socket_tos"
+              c:identifier="gst_net_utils_set_socket_tos"
+              version="1.18">
+      <doc xml:space="preserve"
+           filename="libs/gst/net/gstnetutils.c"
+           line="48">Configures IP_TOS value of socket, i.e. sets QoS DSCP.</doc>
+      <source-position filename="libs/gst/net/gstnetutils.h" line="32"/>
+      <return-value transfer-ownership="none">
+        <doc xml:space="preserve"
+             filename="libs/gst/net/gstnetutils.c"
+             line="55">TRUE if successful, FALSE in case an error occurred.</doc>
+        <type name="gboolean" c:type="gboolean"/>
+      </return-value>
+      <parameters>
+        <parameter name="socket" transfer-ownership="none">
+          <doc xml:space="preserve"
+               filename="libs/gst/net/gstnetutils.c"
+               line="50">Socket to configure</doc>
+          <type name="Gio.Socket" c:type="GSocket*"/>
+        </parameter>
+        <parameter name="qos_dscp" transfer-ownership="none">
+          <doc xml:space="preserve"
+               filename="libs/gst/net/gstnetutils.c"
+               line="51">QoS DSCP value</doc>
+          <type name="gint" c:type="gint"/>
+        </parameter>
+      </parameters>
+    </function>
+    <function name="ptp_deinit" c:identifier="gst_ptp_deinit" version="1.6">
+      <doc xml:space="preserve"
+           filename="libs/gst/net/gstptpclock.c"
+           line="2243">Deinitialize the GStreamer PTP subsystem and stop the PTP clock. If there
+are any remaining GstPtpClock instances, they won't be further synchronized
+to the PTP network clock.</doc>
+      <source-position filename="libs/gst/net/gstptpclock.h" line="92"/>
+      <return-value transfer-ownership="none">
+        <type name="none" c:type="void"/>
+      </return-value>
+    </function>
+    <function name="ptp_init" c:identifier="gst_ptp_init" version="1.6">
+      <doc xml:space="preserve"
+           filename="libs/gst/net/gstptpclock.c"
+           line="2043">Initialize the GStreamer PTP subsystem and create a PTP ordinary clock in
+slave-only mode for all domains on the given @interfaces with the
+given @clock_id.
+
+If @clock_id is %GST_PTP_CLOCK_ID_NONE, a clock id is automatically
+generated from the MAC address of the first network interface.
+
+This function is automatically called by gst_ptp_clock_new() with default
+parameters if it wasn't called before.</doc>
+      <source-position filename="libs/gst/net/gstptpclock.h" line="89"/>
+      <return-value transfer-ownership="none">
+        <doc xml:space="preserve"
+             filename="libs/gst/net/gstptpclock.c"
+             line="2058">%TRUE if the GStreamer PTP clock subsystem could be initialized.</doc>
+        <type name="gboolean" c:type="gboolean"/>
+      </return-value>
+      <parameters>
+        <parameter name="clock_id" transfer-ownership="none">
+          <doc xml:space="preserve"
+               filename="libs/gst/net/gstptpclock.c"
+               line="2045">PTP clock id of this process' clock or %GST_PTP_CLOCK_ID_NONE</doc>
+          <type name="guint64" c:type="guint64"/>
+        </parameter>
+        <parameter name="interfaces"
+                   transfer-ownership="none"
+                   nullable="1"
+                   allow-none="1">
+          <doc xml:space="preserve"
+               filename="libs/gst/net/gstptpclock.c"
+               line="2046">network interfaces to run the clock on</doc>
+          <array c:type="gchar**">
+            <type name="utf8" c:type="gchar*"/>
+          </array>
+        </parameter>
+      </parameters>
+    </function>
+    <function name="ptp_is_initialized"
+              c:identifier="gst_ptp_is_initialized"
+              version="1.6">
+      <doc xml:space="preserve"
+           filename="libs/gst/net/gstptpclock.c"
+           line="2028">Check if the GStreamer PTP clock subsystem is initialized.</doc>
+      <source-position filename="libs/gst/net/gstptpclock.h" line="86"/>
+      <return-value transfer-ownership="none">
+        <doc xml:space="preserve"
+             filename="libs/gst/net/gstptpclock.c"
+             line="2033">%TRUE if the GStreamer PTP clock subsystem is initialized.</doc>
+        <type name="gboolean" c:type="gboolean"/>
+      </return-value>
+    </function>
+    <function name="ptp_is_supported"
+              c:identifier="gst_ptp_is_supported"
+              version="1.6">
+      <doc xml:space="preserve"
+           filename="libs/gst/net/gstptpclock.c"
+           line="2011">Check if PTP clocks are generally supported on this system, and if previous
+initializations did not fail.</doc>
+      <source-position filename="libs/gst/net/gstptpclock.h" line="83"/>
+      <return-value transfer-ownership="none">
+        <doc xml:space="preserve"
+             filename="libs/gst/net/gstptpclock.c"
+             line="2017">%TRUE if PTP clocks are generally supported on this system, and
+previous initializations did not fail.</doc>
+        <type name="gboolean" c:type="gboolean"/>
+      </return-value>
+    </function>
+    <function name="ptp_statistics_callback_add"
+              c:identifier="gst_ptp_statistics_callback_add"
+              version="1.6">
+      <doc xml:space="preserve"
+           filename="libs/gst/net/gstptpclock.c"
+           line="2622">Installs a new statistics callback for gathering PTP statistics. See
+GstPtpStatisticsCallback for a list of statistics that are provided.</doc>
+      <source-position filename="libs/gst/net/gstptpclock.h" line="147"/>
+      <return-value transfer-ownership="none">
+        <doc xml:space="preserve"
+             filename="libs/gst/net/gstptpclock.c"
+             line="2631">Id for the callback that can be passed to
+gst_ptp_statistics_callback_remove()</doc>
+        <type name="gulong" c:type="gulong"/>
+      </return-value>
+      <parameters>
+        <parameter name="callback"
+                   transfer-ownership="none"
+                   scope="notified"
+                   closure="1"
+                   destroy="2">
+          <doc xml:space="preserve"
+               filename="libs/gst/net/gstptpclock.c"
+               line="2624">GstPtpStatisticsCallback to call</doc>
+          <type name="PtpStatisticsCallback"
+                c:type="GstPtpStatisticsCallback"/>
+        </parameter>
+        <parameter name="user_data"
+                   transfer-ownership="none"
+                   nullable="1"
+                   allow-none="1">
+          <doc xml:space="preserve"
+               filename="libs/gst/net/gstptpclock.c"
+               line="2625">Data to pass to the callback</doc>
+          <type name="gpointer" c:type="gpointer"/>
+        </parameter>
+        <parameter name="destroy_data" transfer-ownership="none" scope="async">
+          <doc xml:space="preserve"
+               filename="libs/gst/net/gstptpclock.c"
+               line="2626">GDestroyNotify to destroy the data</doc>
+          <type name="GLib.DestroyNotify" c:type="GDestroyNotify"/>
+        </parameter>
+      </parameters>
+    </function>
+    <function name="ptp_statistics_callback_remove"
+              c:identifier="gst_ptp_statistics_callback_remove"
+              version="1.6">
+      <doc xml:space="preserve"
+           filename="libs/gst/net/gstptpclock.c"
+           line="2661">Removes a PTP statistics callback that was previously added with
+gst_ptp_statistics_callback_add().</doc>
+      <source-position filename="libs/gst/net/gstptpclock.h" line="150"/>
+      <return-value transfer-ownership="none">
+        <type name="none" c:type="void"/>
+      </return-value>
+      <parameters>
+        <parameter name="id" transfer-ownership="none">
+          <doc xml:space="preserve"
+               filename="libs/gst/net/gstptpclock.c"
+               line="2663">Callback id to remove</doc>
+          <type name="gulong" c:type="gulong"/>
+        </parameter>
+      </parameters>
+    </function>
+  </namespace>
+</repository>

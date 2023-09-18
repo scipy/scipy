@@ -1,0 +1,436 @@
+// Keyboard layouts for Pakistan.
+
+// Urdu keymap, originally developed by Zaeem Arshad <zaeem@linux.net.pk>
+// (Third-level symbols are yet to be put in. The unavailable symbols
+// are those which do not have a corresponding glyph in Unicode.)
+default partial alphanumeric_keys
+xkb_symbols "urd-phonetic" {
+
+    name[Group1]= "Urdu (Pakistan)";
+
+    key <TLDE>	{[  U064B,     U007E,     U200C  ]};
+    key <AE01>	{[  U0031,     U0021  ]};
+    key <AE02>	{[  U0032,     U0040  ]};
+    key <AE03>	{[  U0033,     U0023  ]};
+    key <AE04>	{[  U0034,     U0024  ]};
+    key <AE05>	{[  U0035,     U0025  ]};
+    key <AE06>	{[  U0036,     U005E  ]};
+    key <AE07>	{[  U0037,     U0026  ]};
+    key <AE08>	{[  U0038,     U002A  ]};
+    key <AE09>	{[  U0039,     U0029  ]};
+    key <AE10>	{[  U0030,     U0028  ]};
+    key <AE11>	{[  U002D,     U005F  ]};
+    key <AE12>	{[  U003D,     U002B  ]};
+
+    key <AD01>	{[  U0642,     U0652,     U200D  ]};
+    key <AD02>	{[  U0648,     U0624,     U200C  ]};
+    key <AD03>	{[  U0639,     U0670  ]};
+    key <AD04>	{[  U0631,     U0691  ]};
+    key <AD05>	{[  U062A,     U0679  ]};
+    key <AD06>	{[  U06D2,     U064E  ]};
+    key <AD07>	{[  U0621,     U0626  ]};
+    key <AD08>	{[  U06CC,     U0650  ]};
+    key <AD09>	{[  U06C1,     U06C3  ]};
+    key <AD10>	{[  U067E,     U064F  ]};
+    key <AD11>	{[  U005D,     U007D  ]};
+    key <AD12>	{[  U005B,     U007B  ]};
+
+    key <AC01>	{[  U0627,     U0622  ]};
+    key <AC02>	{[  U0633,     U0635  ]};
+    key <AC03>	{[  U062F,     U0688  ]};
+    key <AC04>	{[  U0641,     U0651  ]};
+    key <AC05>	{[  U06AF,     U063A  ]};
+    key <AC06>	{[  U062D,     U06BE  ]};
+    key <AC07>	{[  U062C,     U0636  ]};
+    key <AC08>	{[  U06A9,     U062E  ]};
+    key <AC09>	{[  U0644,     U0654  ]};
+    key <AC10>	{[  U061B,     U003A  ]};
+    key <AC11>	{[  U0027,     U0022  ]};
+    key <BKSL>	{[  U005C,     U007C  ]};
+
+    key <LSGT>	{[    bar, brokenbar  ]};
+    key <AB01>	{[  U0632,     U0630,     U200E  ]};
+    key <AB02>	{[  U0634,     U0698,     U202A  ]};
+    key <AB03>	{[  U0686,     U062B,     U202D  ]};
+    key <AB04>	{[  U0637,     U0638,     U202C  ]};
+    key <AB05>	{[  U0628,     U002E,     U202E  ]};
+    key <AB06>	{[  U0646,     U06BA,     U202B  ]};
+    key <AB07>	{[  U0645,     U0658,     U200F  ]};
+    key <AB08>	{[  U060C,     U003C  ]};
+    key <AB09>	{[  U06D4,     U003E  ]};
+    key <AB10>	{[  U002F,     U061F  ]};
+
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "urd-crulp" {
+
+    name[Group1]= "Urdu (Pakistan, CRULP)";
+    // www.crulp.org phonetic v1.1
+
+    key <TLDE>	{[  U007E,     U064B             ]};
+    key <AE01>	{[  U06F1,     U0031,     U0021  ]};
+    key <AE02>	{[  U06F2,     U0032,     U0040  ]};
+    key <AE03>	{[  U06F3,     U0033,     U0023  ]};
+    key <AE04>	{[  U06F4,     U0034             ]};
+    key <AE05>	{[  U06F5,     U0035,     U066A  ]};
+    key <AE06>	{[  U06F6,     U0036             ]};
+    key <AE07>	{[  U06F7,     U0037,     U0026  ]};
+    key <AE08>	{[  U06F8,     U0038,     U002A  ]};
+    key <AE09>	{[  U06F9,     U0039,     U0029  ]};
+    key <AE10>	{[  U06F0,     U0030,     U0028  ]};
+    key <AE11>	{[  U002D,     U005F             ]};
+    key <AE12>	{[  U003D,     U002B             ]};
+
+    key <AD01>	{[  U0642,     U0652             ]};
+    key <AD02>	{[  U0648,     U0651,     U0602  ]};
+    key <AD03>	{[  U0639,     U0670,     U0656  ]};
+    key <AD04>	{[  U0631,     U0691,     U0613  ]};
+    key <AD05>	{[  U062A,     U0679,     U0614  ]};
+    key <AD06>	{[  U06D2,     U064E,     U0601  ]};
+    key <AD07>	{[  U0621,     U0626,     U0654  ]};
+    key <AD08>	{[  U06CC,     U0650,     U0611  ]};
+    key <AD09>	{[  U06C1,     U06C3             ]};
+    key <AD10>	{[  U067E,     U064F,     U0657  ]};
+    key <AD11>	{[  U005D,     U007D             ]};
+    key <AD12>	{[  U005B,     U007B             ]};
+
+    key <AC01>	{[  U0627,     U0622,     UFDF2  ]};
+    key <AC02>	{[  U0633,     U0635,     U0610  ]};
+    key <AC03>	{[  U062F,     U0688,     UFDFA  ]};
+    key <AC04>	{[  U0641,     U0651             ]};
+    key <AC05>	{[  U06AF,     U063A             ]};
+    key <AC06>	{[  U062D,     U06BE,     U0612  ]};
+    key <AC07>	{[  U062C,     U0636,     UFDFB  ]};
+    key <AC08>	{[  U06A9,     U062E             ]};
+    key <AC09>	{[  U0644,     U0654             ]};
+    key <AC10>	{[  U061B,     U003A             ]};
+    key <AC11>	{[  U0027,     U0022             ]};
+    key <BKSL>	{[  U005C,     U007C             ]};
+
+    key <LSGT>	{[    bar, brokenbar             ]};
+    key <AB01>	{[  U0632,     U0630,     U060F  ]};
+    key <AB02>	{[  U0634,     U0698,     U060E  ]};
+    key <AB03>	{[  U0686,     U062B,     U0603  ]};
+    key <AB04>	{[  U0637,     U0638             ]};
+    key <AB05>	{[  U0628,     U002E,     UFDFD  ]};
+    key <AB06>	{[  U0646,     U06BA,     U0600  ]};
+    key <AB07>	{[  U0645,     U0658             ]};
+    key <AB08>	{[  U060C,     U003C,     U003C  ]};
+    key <AB09>	{[  U06D4,     U066B,     U003E  ]};
+    key <AB10>	{[  U002F,     U061F             ]};
+
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "urd-nla" {
+    name[Group1]= "Urdu (Pakistan, NLA)";
+    // www.nla.gov.pk
+
+    key <TLDE>	{[  U0060,     U007E,     U200C  ]};
+    key <AE01>	{[  U0031,     U0021  ]};
+    key <AE02>	{[  U0032,     U0040  ]};
+    key <AE03>	{[  U0033,     U0023  ]};
+    key <AE04>	{[  U0034,     U0024  ]};
+    key <AE05>	{[  U0035,     U066A  ]};
+    key <AE06>	{[  U0036,     U005E  ]};
+    key <AE07>	{[  U0037,     U06D6  ]};
+    key <AE08>	{[  U0038,     U066D  ]};
+    key <AE09>	{[  U0039,     U0029  ]};
+    key <AE10>	{[  U0030,     U0028  ]};
+    key <AE11>	{[  U002D,     U005F  ]};
+    key <AE12>	{[  U003D,     U002B  ]};
+
+    key <AD01>	{[  U0637,     U0638,     U200D  ]};
+    key <AD02>	{[  U0635,     U0636,     U200C  ]};
+    key <AD03>	{[  U06BE,     U0630  ]};
+    key <AD04>	{[  U062F,     U0688  ]};
+    key <AD05>	{[  U0679,     U062B  ]};
+    key <AD06>	{[  U067E,     U0651  ]};
+    key <AD07>	{[  U062A,     U06C3  ]};
+    key <AD08>	{[  U0628,     U0640  ]};
+    key <AD09>	{[  U062C,     U0686  ]};
+    key <AD10>	{[  U062D,     U062E  ]};
+    key <AD11>	{[  U005D,     U007D  ]};
+    key <AD12>	{[  U005B,     U007B  ]};
+
+    key <AC01>	{[  U0645,     U0698  ]};
+    key <AC02>	{[  U0648,     U0632  ]};
+    key <AC03>	{[  U0631,     U0691  ]};
+    key <AC04>	{[  U0646,     U06BA  ]};
+    key <AC05>	{[  U0644,     U06C2  ]};
+    key <AC06>	{[  U06C1,     U0621  ]};
+    key <AC07>	{[  U0627,     U0622  ]};
+    key <AC08>	{[  U06A9,     U06AF  ]};
+    key <AC09>	{[  U06CC,     U064A  ]};
+    key <AC10>	{[  U061B,     U003A  ]};
+    key <AC11>	{[  U0027,     U0022  ]};
+    key <BKSL>	{[  U005C,     U007C  ]};
+
+    key <LSGT>	{[    bar, brokenbar  ]};
+    key <AB01>	{[  U0642,     U200D,     U200E  ]};
+    key <AB02>	{[  U0641,     U200C,     U202A  ]};
+    key <AB03>	{[  U06D2,     U06D3,     U202D  ]};
+    key <AB04>	{[  U0633,     U200E,     U202C  ]};
+    key <AB05>	{[  U0634,     U0624,     U202E  ]};
+    key <AB06>	{[  U063A,     U0626,     U202B  ]};
+    key <AB07>	{[  U0639,     U200F,     U200F  ]};
+    key <AB08>	{[  U060C,     U003E  ]};
+    key <AB09>	{[  U06D4,     U003C  ]};
+    key <AB10>	{[  U002F,     U061F  ]};
+
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "snd" {
+    name[Group1]= "Sindhi";
+    // www.bhurgri.com
+
+    key <TLDE>	{[  U2019,     U2018             ]};
+    key <AE01>	{[      1,    exclam,     U0610  ]};
+    key <AE02>	{[      2,     U0670,     U0611  ]};
+    key <AE03>	{[      3,     U0621,     U0613  ]};
+    key <AE04>	{[      4,     U0621,     U0612  ]};
+    key <AE05>	{[      5,     U0621,     U2026  ]};
+    key <AE06>	{[      6,     U0621,     U2022  ]};
+    key <AE07>	{[      7,     U06FD             ]};
+    key <AE08>	{[      8,  asterisk             ]};
+    key <AE09>	{[      9,parenright             ]};
+    key <AE10>	{[      0, parenleft             ]};
+    key <AE11>	{[  U068F,     U005F,     U002D  ]};
+    key <AE12>	{[  U068C,      plus,     U003D  ]};
+
+    key <AD01>	{[  U0642,     U064E,     U064B  ]};
+    key <AD02>	{[  U0635,     U0636,     UFDFA  ]};
+    key <AD03>	{[  U064A,     U0650,     U0656  ]};
+    key <AD04>	{[  U0631,     U0699,     UFDE6  ]};
+    key <AD05>	{[  U062A,     U067D,     U0629  ]};
+    key <AD06>	{[  U067F,     U062B,     UFDE5  ]};
+    key <AD07>	{[  U0639,     U063A,     UFDE3  ]};
+    key <AD08>	{[  U06B3,     U06BE,     UFDE4  ]};
+    key <AD09>	{[  U0648,     U064F,     U0657  ]};
+    key <AD10>	{[  U067E,     U06A6             ]};
+    key <AD11>	{[  U0687,     U0683             ]};
+    key <AD12>	{[  U0686,     U0684             ]};
+
+    key <AC01>	{[  U0627,     U0622,     U0649  ]};
+    key <AC02>	{[  U0633,     U0634             ]};
+    key <AC03>	{[  U062F,     U068A             ]};
+    key <AC04>	{[  U0641,     U06A6             ]};
+    key <AC05>	{[  U06AF,     U06AF             ]};
+    key <AC06>	{[  U0647,     U062D,     U06C1  ]};
+    key <AC07>	{[  U062C,     U062C,     UFDFB  ]};
+    key <AC08>	{[  U06AA,     U06E1             ]};
+    key <AC09>	{[  U0644,     U003A             ]};
+    key <AC10>	{[  U06A9,     U061B             ]};
+    key <AC11>	{[  U06B1,     U0640             ]};
+    key <BKSL>	{[  U068D,     U067A,     U007C  ]};
+
+    key <AB01>	{[  U0632,     U0630,     U0652  ]};
+    key <AB02>	{[  U062E,     U0651,     U200C  ]};
+    key <AB03>	{[  U0637,     U0638,     U200D  ]};
+    key <AB04>	{[  U0680,     U0621,     U0624  ]};
+    key <AB05>	{[  U0628,     U067B,     UFDE1  ]};
+    key <AB06>	{[  U0646,     U06BB,     U200E  ]};
+    key <AB07>	{[  U0645,     U06FE,     UFDF4  ]};
+    key <AB08>	{[  U060C,     U201C,     U200F  ]};
+    key <AB09>	{[ period,     U201D,     U06D4  ]};
+    key <AB10>	{[  U0626,     U061F,     slash  ]};
+
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "ara" {
+    name[Group1]= "Arabic (Pakistan)";
+
+    // There are also combined shadda diacritis in the AltGr position
+    // of the simple diacritics fatha, fathatan, damma, dammatan,
+    // kasra and kasratan.  Should a third level be added?
+
+    key <TLDE>	{[  U064D,     U064B  ]};
+    key <AE01>	{[  U06F1,     U0021  ]};
+    key <AE02>	{[  U06F2             ]};
+    key <AE03>	{[  U06F3,     U002F  ]};
+    key <AE04>	{[  U06F4,     U0626  ]};
+    key <AE05>	{[  U06F5             ]};
+    key <AE06>	{[  U06F6,     U06D6  ]};
+    key <AE07>	{[  U06F7,     U0654  ]};
+    key <AE08>	{[  U06F8,     U064C  ]};
+    key <AE09>	{[  U06F9,     U0029  ]};
+    key <AE10>	{[  U06F0,     U0028  ]};
+    key <AE11>	{[  U0623,     U0651  ]};
+    key <AE12>	{[  U0624,     U0622  ]};
+
+    key <AD01>	{[  U0642,     U0652  ]};
+    key <AD02>	{[  U0648,     U00A3  ]};
+    key <AD03>	{[  U0639,     U00A5  ]};
+    key <AD04>	{[  U0631,     U0691  ]};
+    key <AD05>	{[  U062A,     U0679  ]};
+    key <AD06>	{[  U06D2,     U0601  ]};
+    key <AD07>	{[  U0621,     U060C  ]};
+    key <AD08>	{[  U06CC,     U0670  ]};
+    key <AD09>	{[  U06C1,     U06C3  ]};
+    key <AD10>	{[  U067E,     U064F  ]};
+    key <AD11>	{[  U005D,     U0670  ]};
+    key <AD12>	{[  U005B,     U0670  ]};
+
+    key <AC01>	{[  U0627,     U0653  ]};
+    key <AC02>	{[  U0633,     U0635  ]};
+    key <AC03>	{[  U062F,     U0688  ]};
+    key <AC04>	{[  U0641             ]};
+    key <AC05>	{[  U06AF,     U063A  ]};
+    key <AC06>	{[  U06BE,     U062D  ]};
+    key <AC07>	{[  U062C,     U0636  ]};
+    key <AC08>	{[  U06A9,     U062E  ]};
+    key <AC09>	{[  U0644,     U0613  ]};
+    key <AC10>	{[  U061B,     U003A  ]};
+    key <AC11>	{[  U0670,     U0022  ]};
+    key <BKSL>	{[  U060E,     U0614  ]};
+
+    key <LSGT>	{[    bar, brokenbar  ]};
+    key <AB01>	{[  U0632,     U0630  ]};
+    key <AB02>	{[  U0634,     U0698  ]};
+    key <AB03>	{[  U0686,     U062B  ]};
+    key <AB04>	{[  U0637,     U0638  ]};
+    key <AB05>	{[  U0628,     U0612  ]};
+    key <AB06>	{[  U0646,     U06BA  ]};
+    key <AB07>	{[  U0645             ]};
+    key <AB08>	{[  U060C,     U0650  ]};
+    key <AB09>	{[  U06D4,     U064E  ]};
+    key <AB10>	{[   none,     U061F  ]};
+};
+
+partial alphanumeric_keys
+xkb_symbols "olpc" {
+
+    // #HW-SPECIFIC
+
+    // Contact: Walter Bender <walter@laptop.org>
+
+    include "pk(ara)"
+
+    name[Group1]= "Urdu (Pakistan)";
+
+    key <TLDE>	{[  U0654,     U064B  ]};
+    key <AE01>	{[  U06F1,     U0603  ]};
+    key <AE02>	{[  U06F2,     U0602  ]};
+    key <AE03>	{[  U06F3,     U0601  ]};
+    key <AE04>	{[  U06F4,     U0600  ]};
+    key <AE05>	{[  U06F5,     U060F  ]};
+    key <AE06>	{[  U06F6,     U060E  ]};
+    key <AE07>	{[  U06F7,     U0614  ]};
+    key <AE08>	{[  U06F8,     U0612  ]};
+    key <AE09>	{[  U06F9,     U0611  ]};
+    key <AE10>	{[  U06F0,     U0613  ]};
+    key <AE11>	{[  minus,     U0610  ]};
+    key <AE12>	{[  equal,      plus  ]};
+
+    key <AD01>	{[  U0642,     U0652  ]};
+    key <AD02>	{[  U0648,     U0651  ]};
+    key <AD03>	{[  U0639,     U0670  ]};
+    key <AD04>	{[  U0631,     U0691  ]};
+    key <AD05>	{[  U062A,     U0679  ]};
+    key <AD06>	{[  U06D2,     U064E  ]};
+    key <AD07>	{[  U0621,     U0626  ]};
+    key <AD08>	{[  U06CC,     U0650  ]};
+    key <AD09>	{[  U06C1,     U06C3  ]};
+    key <AD10>	{[  U067E,     U064F  ]};
+    key <AD11>	{[  UFDF2,     UFDFB  ]};
+    key <AD12>	{[  UFDFD,     UFDFA  ]};
+
+    key <AC01>	{[  U0627,     U0622  ]};
+    key <AC02>	{[  U0633,     U0635  ]};
+    key <AC03>	{[  U062F,     U0688  ]};
+    key <AC04>	{[  U0641             ]};
+    key <AC05>	{[  U06AF,     U063A  ]};
+    key <AC06>	{[  U062D,     U06BE  ]};
+    key <AC07>	{[  U062C,     U0636  ]};
+    key <AC08>	{[  U06A9,     U062E  ]};
+    key <AC09>	{[  U0644,     U0656  ]};
+    key <AC10>	{[  U061B,     colon  ]};
+    key <AC11>	{[apostrophe, quotedbl]};
+    key <BKSL>	{[ backslash,    bar  ]};
+
+    key <AB01>	{[  U0632,     U0622  ]};
+    key <AB02>	{[  U0634,     U0635  ]};
+    key <AB03>	{[  U0686,     U0688  ]};
+    key <AB04>	{[  U0637             ]};
+    key <AB05>	{[  U0628,     U063A  ]};
+    key <AB06>	{[  U0646,     U06BE  ]};
+    key <AB07>	{[  U0645,     U0636  ]};
+    key <AB08>	{[  U060C,     U062E  ]};
+    key <AB09>	{[  U06D4,     U0656  ]};
+    key <AB10>	{[  slash,     U061F  ]};
+
+    key <SPCE>	{[  space  ]};
+
+    include "group(olpc)"
+};
+
+// EXTRAS:
+
+// Navees, a phonetic keyboard layout for Urdu
+// https://saadatm.github.io/navees
+partial alphanumeric_keys
+xkb_symbols "urd-navees" {
+    name[Group1]= "Urdu (Pakistan, Navees)";
+
+    key <TLDE>	{[  U0060,  U064B,  U007E  ]};  // GRAVE ACCENT,                       ARABIC FATHATAN,  TILDE
+    key <AE01>	{[  U06F1,      1,  U0021  ]};  // EXTENDED ARABIC-INDIC DIGIT ONE,    DIGIT ONE,        EXCLAMATION MARK
+    key <AE02>	{[  U06F2,      2,  U0040  ]};  // EXTENDED ARABIC-INDIC DIGIT TWO,    DIGIT TWO,        COMMERCIAL AT
+    key <AE03>	{[  U06F3,      3,  U0023  ]};  // EXTENDED ARABIC-INDIC DIGIT THREE,  DIGIT THREE,      NUMBER SIGN
+    key <AE04>	{[  U06F4,      4,  U0024  ]};  // EXTENDED ARABIC-INDIC DIGIT FOUR,   DIGIT FOUR,       DOLLAR SIGN
+    key <AE05>	{[  U06F5,      5,  U066A  ]};  // EXTENDED ARABIC-INDIC DIGIT FIVE,   DIGIT FIVE,       ARABIC PERCENT SIGN
+    key <AE06>	{[  U06F6,      6,  U005E  ]};  // EXTENDED ARABIC-INDIC DIGIT SIX,    DIGIT SIX,        CIRCUMFLEX ACCENT
+    key <AE07>	{[  U06F7,      7,  U0026  ]};  // EXTENDED ARABIC-INDIC DIGIT SEVEN,  DIGIT SEVEN,      AMPERSAND
+    key <AE08>	{[  U06F8,      8,  U002A  ]};  // EXTENDED ARABIC-INDIC DIGIT EIGHT,  DIGIT EIGHT,      ASTERISK
+    key <AE09>	{[  U06F9,      9,  U0029  ]};  // EXTENDED ARABIC-INDIC DIGIT NINE,   DIGIT NINE,       RIGHT PARENTHESIS
+    key <AE10>	{[  U06F0,      0,  U0028  ]};  // EXTENDED ARABIC-INDIC DIGIT ZERO,   DIGIT ZERO,       LEFT PARENTHESIS
+    key <AE11>	{[  U002D,  U005F,   none  ]};  // HYPHEN-MINUS,                       LOW LINE
+    key <AE12>	{[  U003D,  U002B,   none  ]};  // EQUALS SIGN,                        PLUS SIGN
+
+    key <AD01>	{[  U0642,  U0652,   none  ]};  // ARABIC LETTER QAF,         ARABIC SUKUN
+    key <AD02>	{[  U0648,  U0651,  U0624  ]};  // ARABIC LETTER WAW,         ARABIC SHADDA,                   ARABIC LETTER WAW WITH HAMZA ABOVE
+    key <AD03>	{[  U0639,  U0670,  U0656  ]};  // ARABIC LETTER AIN,         ARABIC LETTER SUPERSCRIPT ALEF,  ARABIC SUBSCRIPT ALEF
+    key <AD04>	{[  U0631,  U0691,  U0613  ]};  // ARABIC LETTER REH,         ARABIC LETTER RREH,              ARABIC SIGN RADI ALLAHOU ANHU
+    key <AD05>	{[  U062A,  U0679,  U0614  ]};  // ARABIC LETTER TEH,         ARABIC LETTER TTEH,              ARABIC SIGN TAKHALLUS
+    key <AD06>	{[  U06D2,  U064E,  U06D3  ]};  // ARABIC LETTER YEH BARREE,  ARABIC FATHA,                    ARABIC LETTER YEH BARREE WITH HAMZA ABOVE
+    key <AD07>	{[  U0621,  U0626,  U0654  ]};  // ARABIC LETTER HAMZA,       ARABIC LETTER YEH WITH HAMZA ABOVE,  ARABIC HAMZA ABOVE
+    key <AD08>	{[  U06CC,  U0650,  U0611  ]};  // ARABIC LETTER FARSI YEH,   ARABIC KASRA,                    ARABIC SIGN ALAYHE ASSALLAM
+    key <AD09>	{[  U06C1,  U06C3,  U06C2  ]};  // ARABIC LETTER HEH GOAL,    ARABIC LETTER TEH MARBUTA GOAL,  ARABIC LETTER HEH GOAL WITH HAMZA ABOVE
+    key <AD10>	{[  U067E,  U064F,  U0657  ]};  // ARABIC LETTER PEH,         ARABIC DAMMA,                    ARABIC INVERTED DAMMA
+    key <AD11>	{[  U005D,  U007D,  U200E  ]};  // RIGHT SQUARE BRACKET,      RIGHT CURLY BRACKET,             LEFT-TO-RIGHT MARK
+    key <AD12>	{[  U005B,  U007B,  U200F  ]};  // LEFT SQUARE BRACKET,       LEFT CURLY BRACKET,              RIGHT-TO-LEFT MARK
+    key <BKSL>	{[  U005C,  U007C,  U200D  ]};  // REVERSE SOLIDUS,           VERTICAL LINE,                   ZERO WIDTH JOINER
+
+    key <AC01>	{[  U0627,  U0622,  U0623  ]};  // ARABIC LETTER ALEF,   ARABIC LETTER ALEF WITH MADDA ABOVE,  ARABIC LETTER ALEF WITH HAMZA ABOVE
+    key <AC02>	{[  U0633,  U0635,  U0610  ]};  // ARABIC LETTER SEEN,   ARABIC LETTER SAD,                    ARABIC SIGN SALLALLAHOU ALAYHE WASSALLAM
+    key <AC03>	{[  U062F,  U0688,  UFDFA  ]};  // ARABIC LETTER DAL,    ARABIC LETTER DDAL,                   ARABIC LIGATURE SALLALLAHOU ALAYHE WASALLAM
+    key <AC04>	{[  U0641,   none,  U0602  ]};  // ARABIC LETTER FEH,                                          ARABIC FOOTNOTE MARKER
+    key <AC05>	{[  U06AF,  U063A,   none  ]};  // ARABIC LETTER GAF,    ARABIC LETTER GHAIN
+    key <AC06>	{[  U062D,  U06BE,  U0612  ]};  // ARABIC LETTER HAH,    ARABIC LETTER HEH DOACHASHMEE,        ARABIC SIGN RAHMATULLAH ALAYHE
+    key <AC07>	{[  U062C,  U0636,  UFDFB  ]};  // ARABIC LETTER JEEM,   ARABIC LETTER DAD,                    ARABIC LIGATURE JALLAJALALOUHOU
+    key <AC08>	{[  U06A9,  U062E,  U0601  ]};  // ARABIC LETTER KEHEH,  ARABIC LETTER KHAH,                   ARABIC SIGN SANAH
+    key <AC09>	{[  U0644,   none,   none  ]};  // ARABIC LETTER LAM
+    key <AC10>	{[  U061B,  U003A,   none  ]};  // ARABIC SEMICOLON,     COLON
+    key <AC11>	{[  U0027,  U0022,   none  ]};  // APOSTROPHE,           QUOTATION MARK
+
+    key <AB01>	{[  U0632,  U0630,  U060F  ]};  // ARABIC LETTER ZAIN,   ARABIC LETTER THAL,         ARABIC SIGN MISRA
+    key <AB02>	{[  U0634,  U0698,  U060E  ]};  // ARABIC LETTER SHEEN,  ARABIC LETTER JEH,          ARABIC POETIC VERSE SIGN
+    key <AB03>	{[  U0686,  U062B,  U0603  ]};  // ARABIC LETTER TCHEH,  ARABIC LETTER THEH,         ARABIC SIGN SAFHA
+    key <AB04>	{[  U0637,  U0638,   none  ]};  // ARABIC LETTER TAH,    ARABIC LETTER ZAH
+    key <AB05>	{[  U0628,   none,  UFDFD  ]};  // ARABIC LETTER BEH,                                ARABIC LIGATURE BISMILLAH AR-RAHMAN AR-RAHEEM
+    key <AB06>	{[  U0646,  U06BA,  U0600  ]};  // ARABIC LETTER NOON,   ARABIC LETTER NOON GHUNNA,  ARABIC NUMBER SIGN
+    key <AB07>	{[  U0645,  U0658,   none  ]};  // ARABIC LETTER MEEM,   ARABIC MARK NOON GHUNNA
+    key <AB08>	{[  U060C,  U060D,  U003C  ]};  // ARABIC COMMA,         ARABIC DATE SEPARATOR,      GREATER-THAN SIGN
+    key <AB09>	{[  U06D4,  U066B,  U003E  ]};  // ARABIC FULL STOP,     ARABIC DECIMAL SEPARATOR,   LESS-THAN SIGN
+    key <AB10>	{[  U002F,  U061F,   none  ]};  // SOLIDUS,              ARABIC QUESTION MARK
+
+    include "nbsp(zwnj2)"
+
+    include "level3(ralt_switch)"
+};

@@ -1,0 +1,3 @@
+Qt looks only at the LANG value and ignores LC_MESSAGES and LC_ALL. (Bug in
+function QTextCodec::locale().) Therefore, to make it work, you have to set
+LANG to the same value as LC_ALL or LC_MESSAGES.

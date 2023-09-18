@@ -1,0 +1,37 @@
+.Dd July 27, 2020
+.Dt XKBCLI\-INTERACTIVE\-X11 1
+.Os
+.
+.Sh NAME
+.Nm "xkbcli interactive\-x11"
+.Nd interactive debugger for XKB keymaps
+.
+.Sh SYNOPSIS
+.Nm
+.Op Ar options
+.
+.Sh DESCRIPTION
+.Nm
+is a commandline tool to interactively debug XKB keymaps by listening to X11 events.
+.
+.Pp
+This requires an X server to be running.
+.
+.Pp
+Press the
+.Aq Escape
+key to exit.
+.
+.Pp
+This is a debugging tool, its behavior or output is not guaranteed to be stable.
+.
+.Bl -tag -width Ds
+.It Fl \-help
+Print help and exit
+.El
+.
+.Sh SEE ALSO
+.Xr xkbcli 1 ,
+.Xr xkbcli\-interactive\-evdev 1 ,
+.Xr xkbcli\-interactive\-wayland 1 ,
+.Lk https://xkbcommon.org "The libxkbcommon online documentation"

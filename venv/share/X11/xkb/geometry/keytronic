@@ -1,0 +1,252 @@
+//
+//Copyright 1996, 1998  The Open Group
+//
+//Permission to use, copy, modify, distribute, and sell this software and its
+//documentation for any purpose is hereby granted without fee, provided that
+//the above copyright notice appear in all copies and that both that
+//copyright notice and this permission notice appear in supporting
+//documentation.
+//
+//The above copyright notice and this permission notice shall be
+//included in all copies or substantial portions of the Software.
+//
+//THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+//EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+//MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+//IN NO EVENT SHALL THE OPEN GROUP BE LIABLE FOR ANY CLAIM, DAMAGES OR
+//OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+//ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+//OTHER DEALINGS IN THE SOFTWARE.
+//
+//Except as contained in this notice, the name of The Open Group shall
+//not be used in advertising or otherwise to promote the sale, use or
+//other dealings in this Software without prior written authorization
+//from The Open Group.
+//
+default xkb_geometry "FlexPro" {
+
+    // This is an approximate layout for a Key Tronic FlexPro
+    // keyboard.  I just took a similar layout (101 key PC keyboard)
+    // and adjusted the sizes of a few keys by eye.  I didn't actually
+    // *measure* a real keyboard.
+
+    description= "Key Tronic FlexPro keyboard";
+
+    width= 515;
+    height= 200;
+
+    shape "EDGE" { cornerRadius= 2, { [ 515, 200 ] } };
+    shape.cornerRadius= 1;
+    shape "NORM" { { [ 18,18] }, { [2,1], [16,17] } };
+    shape "BKSP" { { [ 32,18] }, { [2,1], [30,17] } };
+    shape "TABK" { { [ 32,18] }, { [2,1], [30,17] } };
+    shape "BKSL" { { [ 23,18] }, { [2,1], [21,17] } };
+    shape "RTRN" {
+        approx = { [16, 0], [38,37] },
+        { [16, 0], [38, 0], [38,37], 
+	  [ 0,37], [ 0,19], [16,19] },
+        { [18, 1], [36, 1], [36,36], 
+	  [ 2,36], [ 2,20], [18,20] } };
+    shape "CAPS" { { [36,18] }, { [2,1], [34,17] } };
+    shape "SHFT" { { [46,18] }, { [2,1], [44,17] } };
+    shape "LCTL" { { [32,18] }, { [2,1], [30,17] } };
+    shape "RCTL" { { [38,18] }, { [2,1], [36,17] } };
+    shape "LALT" { { [28,18] }, { [2,1], [26,17] } };
+    shape "RALT" { { [33,18] }, { [2,1], [31,17] } };
+    shape "LSPC" { { [66,22] }, { [0,0], [66,22] } };
+    shape "RSPC" { { [76,22] }, { [0,0], [76,22] } };
+    shape "KP0"  { { [37,18] }, { [2,1], [35,17] } };
+    shape "KPEN" { { [18,37] }, { [2,1], [16,36] } };
+    shape "LOGO" { cornerRadius= 3, { [80,35] } };
+
+    outline "Edges" {
+   	top= 0;
+	left= 0;
+	shape= "EDGE";
+    };
+
+    section.left= 9;
+    row.left= 1;
+    key.shape= "NORM";
+    key.gap=  1;
+
+    section "Function" {
+	top= 56;
+	row {
+	    top = 1;
+	    key.color= "grey20";
+	    keys { <FK01>, <FK02> };
+	};
+	row {
+	    top = 20;
+	    key.color= "grey20";
+	    keys { <FK03>, <FK04> };
+	};
+	row {
+	    top = 39;
+	    keys { <FK05>, <FK06> };
+	};
+	row {
+	    top = 58;
+	    key.color= "grey20";
+	    keys { <FK07>, <FK08> };
+	};
+	row {
+	    top = 77;
+	    key.color= "grey20";
+	    keys { <FK09>, <FK10> };
+	};
+	row {
+	    top = 96;
+	    keys { <FK11>, <FK12> };
+	};
+    }; // End of "Function" section
+
+    section "Alpha" {
+	top= 56;
+	left= 53;
+	row {
+	    top= 1;
+	    keys { 
+		{ <ESC>, color="grey20" }, { <BKSL>, "BKSL", color="grey20" }, 
+		<AE01>, <AE02>, <AE03>, <AE04>,
+		<AE05>, <AE06>, <AE07>, <AE08>, <AE09>,
+		<AE10>, <AE11>, <AE12>,
+		{ <BKSP>, "BKSP", color="grey20" }
+	    };
+	};
+	row {
+	    top= 20;
+	    keys { 
+		{ <TLDE>, color="grey20" },  { <TAB>, "TABK", color="grey20" },
+		<AD01>, <AD02>, <AD03>, <AD04>, <AD05>, 
+		<AD06>, <AD07>, <AD08>, <AD09>, <AD10>, 
+		<AD11>, <AD12>,
+		{ <RTRN>, "RTRN", -14, color="grey20" }
+	    };
+	};
+	row {
+	    top= 39;
+	    keys { 
+		{ <LCTL>, color="grey20" }, { <CAPS>, "CAPS", color="grey20" },
+		<AC01>, <AC02>, <AC03>, <AC04>, <AC05>, 
+		<AC06>, <AC07>, <AC08>, <AC09>, <AC10>, <AC11>
+	    };
+	};
+	row {
+	    top= 58;
+	    keys { 
+		{ <LFSH>, color="grey20" }, 
+		{ <LFSH>, "SHFT", color="grey20" }, 
+		<AB01>, <AB02>, <AB03>, <AB04>, <AB05>, 
+		<AB06>, <AB07>, <AB08>, <AB09>, <AB10>, 
+		{ <RTSH>, "SHFT", color="grey20" }
+	    };
+	};
+	row {
+	    top= 77;
+	    key.color= "grey20";
+	    keys { 
+		<LALT>, 
+		{ <LCTL>, shape="LCTL" }, 
+		{ <LALT>, shape="LALT" },
+		{ <SPCE>, shape="LSPC", 4, color="white" },
+		{ <SPCE>, shape="RSPC",color="white" },
+		{ <RALT>, shape="RALT", 4 }, 
+		{ <RCTL>, shape="RCTL" }
+	    };
+	};
+    }; // End of "Alpha" section
+
+    section "Editing" {
+	top= 12;
+	left= 365;
+	key.color= "grey20";
+	row {
+	    top= 1;
+	    keys { <PRSC>, <SCLK>, <PAUS> };
+	};
+	row {
+	    top= 45;
+	    keys { <INS>, <HOME>, <PGUP> };
+	};
+	row {
+	    top= 64;
+	    keys { <DELE>, <END>, <PGDN> };
+	};
+	row {
+	    top= 102;
+	    left= 20;
+	    keys { <UP> };
+	};
+	row {
+	    top= 121;
+	    keys { <LEFT>, <DOWN>, <RGHT> };
+    	};
+    }; // End of "Editing" section
+
+    shape "LEDS" { cornerRadius= 3, { [ 76, 20 ] } };
+    shape "LED"  { cornerRadius= 0, { [  7,  4 ] } };
+    solid "LedPanel" {
+    	shape= "LEDS";
+	top=  11;
+	left= 430;
+	color= "grey10";
+    };
+    indicator.onColor= "green";
+    indicator.offColor= "green30";
+    indicator.top= 13;
+    indicator.shape= "LED";
+    indicator "Num Lock"     { left= 440; };
+    indicator "Caps Lock"    { left= 467; };
+    indicator "Scroll Lock"  { left= 489; };
+    text.top= 22;
+    text.color= "black";
+    text "NumLockLabel"		{ left= 438; text="Num\nLock"; };
+    text "CapsLockLabel"	{ left= 465; text="Caps\nLock"; };
+    text "ScrollLockLabel"	{ left= 487; text="Scroll\nLock"; };
+
+    logo "FlexProLogoImage" 	{ 
+	top= 12;
+	left= 45;
+	name= "KeyTronic"; 
+	shape= "LOGO"; 
+    };
+    text "KeyTronicLogoText"	{
+	top= 15;
+	left= 50;
+	width= 55;
+	text= "FlexPro";
+	font= "times";
+	slant= "o";
+	weight= "bold";
+	fontWidth= "narrow";
+	fontSize= 36;
+    };
+
+    section "Keypad" {
+	top= 56;
+	left= 430;
+	row {
+	    top= 1;
+	    key.color= "grey20";
+	    keys { <NMLK>, <KPDV>, <KPMU>, <LEFT> };
+	};
+	row {
+	    top= 20;
+	    keys { <KP7>, <KP8>, <KP9>, { <KPSU>, color= "grey20" } };
+	};
+	row {
+	    top= 39;
+	    keys { <KP4>, <KP5>, <KP6>, { <KPAD>, color= "grey20" } };
+    	};
+	row {
+	    top= 58;
+	    keys { <KP1>, <KP2>, <KP3>, { <KPEN>, "KPEN", color= "grey20" } };
+	};
+	row {
+	    top= 77;
+	    keys { { <KP0>, "KP0" }, <KPDL> };
+	};
+    }; // End of "Keypad" section
+};

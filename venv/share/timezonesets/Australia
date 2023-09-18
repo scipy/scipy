@@ -1,0 +1,27 @@
+# Time zone configuration file for set "Australia"
+
+# The abbreviations set up by this file are no longer in widespread use,
+# and should be avoided when possible.  Use this file if you need backwards
+# compatibility with old applications or data.
+
+# In order to use this file, you need to set the run-time parameter
+# timezone_abbreviations to 'Australia'.  See the `Date/Time Support'
+#   appendix in the PostgreSQL documentation for more information.
+#
+# src/timezone/tznames/Australia
+
+
+# include the default set
+@INCLUDE Default
+
+# most timezones are already defined in the default set. With the OVERRIDE
+# option, PostgreSQL will use the new definitions instead of throwing an error
+# in case of a conflict.
+@OVERRIDE
+
+CST     34200    # Central Standard Time (not in IANA database)
+EAST    36000    # East Australian Standard Time (not in IANA database)
+EST     36000    # Eastern Standard Time (not in IANA database)
+SAST    34200    # South Australian Standard Time (not in IANA database)
+SAT     34200    # South Australian Standard Time (not in IANA database)
+WST     28800    # Western Standard Time (not in IANA database)

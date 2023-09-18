@@ -1,0 +1,180 @@
+# Test print-job and later job-hold-until attribute
+{
+	# The name of the test...
+	NAME "Disable printer..."
+
+	# The resource to use for the POST
+	RESOURCE /admin/
+
+	# The operation to use
+	OPERATION pause-printer
+
+	# Attributes, starting in the operation group...
+	GROUP operation
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+
+	# What statuses are OK?
+	STATUS successful-ok
+	STATUS successful-ok-ignored-or-substituted-attributes
+}
+
+{
+	# The name of the test...
+	NAME "Print job"
+
+	# The resource to use for the POST
+	# RESOURCE /admin
+
+	# The operation to use
+	OPERATION print-job
+
+	# Attributes, starting in the operation group...
+	GROUP operation
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR mimetype document-format application/postscript
+
+	GROUP job
+	ATTR integer copies 1
+
+	FILE ../data/testprint.ps
+
+	# What statuses are OK?
+	STATUS successful-ok
+	STATUS successful-ok-ignored-or-substituted-attributes
+
+	# What attributes do we expect?
+	EXPECT job-id
+	EXPECT job-uri
+}
+
+{
+	# The name of the test...
+	NAME "Get job attrs"
+
+	# The resource to use for the POST
+	RESOURCE /
+
+	# The operation to use
+	OPERATION get-job-attributes
+
+	# Attributes, starting in the operation group...
+	GROUP operation
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR integer job-id $job-id
+
+	# What statuses are OK?
+	STATUS successful-ok
+	STATUS successful-ok-ignored-or-substituted-attributes
+
+	# What attributes do we expect?
+	EXPECT job-state
+	EXPECT job-hold-until
+}
+
+{
+	# The name of the test...
+	NAME "Set job attrs with job-hold-until"
+
+	# The resource to use for the POST
+	# RESOURCE /admin
+
+	# The operation to use
+	OPERATION set-job-attributes
+
+	# Attributes, starting in the operation group...
+	GROUP operation
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR integer job-id $job-id
+	ATTR name requesting-user-name $user
+
+	GROUP job
+	ATTR name job-hold-until 00:30:00
+
+	# What statuses are OK?
+	STATUS successful-ok
+	STATUS successful-ok-ignored-or-substituted-attributes
+}
+
+{
+	# The name of the test...
+	NAME "Get job attrs again"
+
+	# The resource to use for the POST
+	RESOURCE /
+
+	# The operation to use
+	OPERATION get-job-attributes
+
+	# Attributes, starting in the operation group...
+	GROUP operation
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR integer job-id $job-id
+
+	# What statuses are OK?
+	STATUS successful-ok
+	STATUS successful-ok-ignored-or-substituted-attributes
+
+	# What attributes do we expect?
+	EXPECT job-state
+	EXPECT job-hold-until
+}
+
+{
+	# The name of the test...
+	NAME "Enable printer..."
+
+	# The resource to use for the POST
+	RESOURCE /admin/
+
+	# The operation to use
+	OPERATION resume-printer
+
+	# Attributes, starting in the operation group...
+	GROUP operation
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+
+	# What statuses are OK?
+	STATUS successful-ok
+	STATUS successful-ok-ignored-or-substituted-attributes
+}
+
+{
+	# The name of the test...
+	NAME "Get job attrs (last time)"
+
+	# The resource to use for the POST
+	RESOURCE /
+
+	# The operation to use
+	OPERATION get-job-attributes
+
+	# Attributes, starting in the operation group...
+	GROUP operation
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR integer job-id $job-id
+
+	# What statuses are OK?
+	STATUS successful-ok
+	STATUS successful-ok-ignored-or-substituted-attributes
+
+	# What attributes do we expect?
+	EXPECT job-state
+	EXPECT job-hold-until
+}

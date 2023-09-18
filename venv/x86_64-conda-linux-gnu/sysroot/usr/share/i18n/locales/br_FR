@@ -1,0 +1,166 @@
+comment_char %
+escape_char  /
+%
+% Breton Language Locale for France
+% Source: thanks to Denise.Peden@enst-bretagne.fr (Denise Derrien-Peden)
+% Address:
+% Contact: Pablo Saratxaga
+% Email: srtxg@chanae.alphanet.ch
+% Tel:
+% Fax:
+% Language: br
+% Territory: FR
+% Revision: 0.5
+% Date: 2001-01-28
+% Users: general
+% Charset: ISO-8859-1
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title "Breton language locale for France"
+source "Denise.Peden@enst-bretagne.fr (Denise Derrien-Peden)"
+address ""
+contact "Pablo Saratxaga"
+email "pablo@mandrakesoft.com"
+tel ""
+fax ""
+language "Breton"
+territory "France"
+revision "0.54"
+date "2001-01-28"
+
+category br_FR:2000;LC_IDENTIFICATION
+category br_FR:2000;LC_CTYPE
+category br_FR:2000;LC_COLLATE
+category br_FR:2000;LC_TIME
+category br_FR:2000;LC_NUMERIC
+category br_FR:2000;LC_PAPER
+category br_FR:2000;LC_TELEPHONE
+category br_FR:2000;LC_MEASUREMENT
+category br_FR:2000;LC_ADDRESS
+category br_FR:2000;LC_MONETARY
+category br_FR:2000;LC_MESSAGES
+
+END LC_IDENTIFICATION
+
+
+LC_COLLATE
+copy "iso14651_t1"
+
+%% a b c ch c'h d e f g h i j k l m n o p q r s t u v w x y z
+collating-symbol  <c-h-br>
+collating-element <C-H> from "<U0043><U0048>"
+collating-element <c-h> from "<U0063><U0068>"
+collating-element <C-h> from "<U0043><U0068>"
+collating-element <c-H> from "<U0063><U0048>"
+collating-symbol  <c-'-h-br>
+collating-element <C'H> from "<U0043><U0027><U0048>"
+collating-element <c'h> from "<U0063><U0027><U0068>"
+collating-element <C'h> from "<U0043><U0027><U0068>"
+collating-element <c'H> from "<U0063><U0027><U0048>"
+
+collating-symbol <CAP-MIN>
+collating-symbol <MIN-CAP>
+
+reorder-after <MIN>
+<MIN-CAP>
+
+reorder-after <CAP>
+<CAP-MIN>
+
+reorder-after <c>
+<c-h-br>
+<c-'-h-br>
+
+reorder-after <U0063>
+<c-h>	<c-h-br>;<PCT>;<MIN>;IGNORE
+<c-H>	<c-h-br>;<PCT>;<MIN-CAP>;IGNORE
+<c'h>	<c-'-h-br>;<PCT>;<MIN>;IGNORE
+<c'H>	<c-'-h-br>;<PCT>;<MIN-CAP>;IGNORE
+reorder-after <U0043>
+<C-H>	<c-h-br>;<PCT>;<CAP>;IGNORE
+<C-h>	<c-h-br>;<PCT>;<CAP-MIN>;IGNORE
+<C'H>	<c-'-h-br>;<PCT>;<CAP>;IGNORE
+<C'h>	<c-'-h-br>;<PCT>;<CAP-MIN>;IGNORE
+
+reorder-end
+
+END LC_COLLATE
+
+LC_CTYPE
+copy "en_DK"
+END LC_CTYPE
+
+LC_MESSAGES
+yesexpr "<U005E><U005B><U006F><U004F><U0079><U0059><U005D><U002E><U002A>"
+noexpr  "<U005E><U005B><U006E><U004E><U005D><U002E><U002A>"
+END LC_MESSAGES
+
+LC_MONETARY
+copy "fr_FR"
+END LC_MONETARY
+
+LC_NUMERIC
+copy "fr_FR"
+END LC_NUMERIC
+
+LC_TIME
+abday   "<U0073><U0075><U006C>";"<U006C><U0075><U006E>";/
+        "<U006D><U0065><U0075>";"<U006D><U0065><U0072>";/
+        "<U0079><U0061><U006F>";"<U0067><U0077><U0065>";/
+        "<U0073><U0061><U0064>"
+day     "<U0073><U0075><U006C>";/
+        "<U006C><U0075><U006E>";/
+        "<U006D><U0065><U0075><U0072><U007A><U0068>";/
+        "<U006D><U0065><U0072><U0063><U0027><U0068><U0065><U0072>";/
+        "<U0079><U0061><U006F><U0075>";/
+        "<U0067><U0077><U0065><U006E><U0065><U0072>";/
+        "<U0073><U0061><U0064><U006F><U0072><U006E>"
+abmon   "<U0047><U0065><U006E><U0020>";"<U0043><U0027><U0068><U0077>";/
+        "<U004D><U0065><U0075><U0020>";"<U0045><U0062><U0072><U0020>";/
+        "<U004D><U0061><U0065><U0020>";"<U0045><U0076><U0065><U0020>";/
+        "<U0047><U006F><U0075><U0020>";"<U0045><U006F><U0073><U0020>";/
+        "<U0047><U0077><U0065><U0020>";"<U0048><U0065><U0072><U0020>";/
+        "<U0044><U0075><U0020><U0020>";"<U004B><U0065><U0072><U0020>"
+mon     "<U0047><U0065><U006E><U0076><U0065><U0072>";/
+        "<U0043><U0027><U0068><U0077><U0065><U0076><U0072><U0065><U0072>";/
+        "<U004D><U0065><U0075><U0072><U007A><U0068>";/
+        "<U0045><U0062><U0072><U0065><U006C>";/
+        "<U004D><U0061><U0065>";/
+        "<U004D><U0065><U007A><U0068><U0065><U0076><U0065><U006E>";/
+        "<U0047><U006F><U0075><U0065><U0072><U0065>";/
+        "<U0045><U006F><U0073><U0074>";/
+        "<U0047><U0077><U0065><U006E><U0067><U006F><U006C><U006F>";/
+        "<U0048><U0065><U0072><U0065>";/
+        "<U0044><U0075>";/
+        "<U004B><U0065><U0072><U007A><U0075>"
+d_t_fmt "<U0044><U0027><U0061><U0072><U0020><U0025><U0041><U0020><U0025><U0064><U0020><U0061><U0020><U0076><U0069><U007A><U0020><U0025><U0042><U0020><U0025><U0059>"
+% <U0025><U0054><U0020><U0025><U005A>"
+d_fmt   "<U0025><U0064><U002E><U0025><U006D><U002E><U0025><U0059>"
+t_fmt   "<U0025><U0054>"
+am_pm   "<U0020>";"<U0020>"
+t_fmt_ampm "<U0025><U0049><U0065><U0025><U004D><U003A><U0025><U0053><U0020><U0025><U0070>"
+END LC_TIME
+
+LC_PAPER
+copy "fr_FR"
+END LC_PAPER
+
+LC_MEASUREMENT
+measurement 1
+END LC_MEASUREMENT
+
+LC_NAME
+% FIXME
+copy "fr_FR"
+END LC_NAME
+
+LC_ADDRESS
+% FIXME
+copy "fr_FR"
+END LC_ADDRESS
+
+LC_TELEPHONE
+copy "fr_FR"
+END LC_TELEPHONE

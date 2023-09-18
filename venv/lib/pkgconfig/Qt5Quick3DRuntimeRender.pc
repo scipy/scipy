@@ -1,0 +1,13 @@
+prefix=/workspaces/scipy/venv
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+includedir=${prefix}/include/qt
+
+
+Name: Qt5 Quick3DRuntimeRender
+Description: Qt Quick3DRuntimeRender module
+Version: 5.15.8
+Libs: -L${libdir} -lQt5Quick3DRuntimeRender 
+Cflags: -DQT_QUICK3DRUNTIMERENDER_LIB -I${includedir}/QtQuick3DRuntimeRender -I${includedir}
+Requires: Qt5Core Qt5Gui Qt5Quick Qt5Quick3DRender Qt5Quick3DAssetImport Qt5Quick3DUtils
+

@@ -1,0 +1,13 @@
+// Override bootstrap by restoring the basic theme default.
+dd {
+  margin-top: 3px;
+  margin-bottom: 10px;
+  margin-left: 30px;
+}
+
+// Prevent field lists from stretching too much on narrow screens
+// ref: https://css-tricks.com/preventing-a-grid-blowout/
+dl.field-list {
+  display: grid;
+  grid-template-columns: fit-content(30%) minmax(0, 1fr);
+}

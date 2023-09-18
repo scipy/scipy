@@ -1,0 +1,93 @@
+div.versionadded,
+div.versionchanged,
+div.deprecated {
+  vertical-align: middle;
+  margin: 1.5625em auto;
+  padding: 0 0.6rem 0 0.6rem;
+  overflow: hidden;
+  page-break-inside: avoid;
+  border-left: 0.2rem solid;
+  border-color: var(--pst-color-info);
+  border-radius: 0.2rem;
+  box-shadow: 0 0.2rem 0.5rem var(--pst-color-shadow),
+    0 0 0.0625rem var(--pst-color-shadow);
+  transition: color 250ms, background-color 250ms, border-color 250ms;
+  position: relative;
+  background-color: var(--pst-color-on-background);
+
+  > p {
+    margin-bottom: 0.6rem;
+    margin-top: 0.6rem;
+
+    // This is a hack to control the opacity for verson tags with our color variables
+    // ref: https://stackoverflow.com/a/56951626/6734243
+    &:before {
+      content: "";
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      left: 0;
+      top: 0;
+      background-color: var(--pst-color-info);
+      opacity: 0.1;
+    }
+  }
+}
+
+div.versionadded {
+  border-color: var(--pst-color-success);
+
+  p:before {
+    background-color: var(--pst-color-success);
+  }
+}
+
+div.versionchanged {
+  border-color: var(--pst-color-warning);
+
+  p:before {
+    background-color: var(--pst-color-warning);
+  }
+}
+
+div.deprecated {
+  border-color: var(--pst-color-danger);
+
+  p:before {
+    background-color: var(--pst-color-danger);
+  }
+}
+
+span.versionmodified {
+  font-weight: 700;
+
+  &:before {
+    font-style: normal;
+    margin-right: 0.6rem;
+    color: var(--pst-color-info);
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    content: var(--pst-icon-versionmodified-default);
+  }
+}
+
+span.versionmodified.added {
+  &:before {
+    color: var(--pst-color-success);
+    content: var(--pst-icon-versionmodified-added);
+  }
+}
+
+span.versionmodified.changed {
+  &:before {
+    color: var(--pst-color-warning);
+    content: var(--pst-icon-versionmodified-changed);
+  }
+}
+
+span.versionmodified.deprecated {
+  &:before {
+    color: var(--pst-color-danger);
+    content: var(--pst-icon-versionmodified-deprecated);
+  }
+}

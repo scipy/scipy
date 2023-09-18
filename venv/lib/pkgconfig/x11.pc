@@ -1,0 +1,15 @@
+prefix=/workspaces/scipy/venv
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+xthreadlib=-lpthread
+
+Name: X11
+Description: X Library
+Version: 1.8.6
+Requires: xproto kbproto
+Requires.private: xcb >= 1.11.1
+Cflags: -I${includedir} 
+Libs: -L${libdir} -lX11
+Libs.private: -lpthread

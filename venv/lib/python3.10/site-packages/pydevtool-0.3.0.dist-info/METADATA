@@ -1,0 +1,28 @@
+Metadata-Version: 2.1
+Name: pydevtool
+Version: 0.3.0
+Summary: CLI dev tools powered by pydoit
+Home-page: https://github.com/pydoit/pydevtool
+Author: Eduardo Naufel Schettino
+Author-email: schettino72@gmail.com
+Project-URL: Documentation, https://pydoit.org
+Project-URL: Source, https://github.com/pydoit/pydevtool
+Project-URL: Bug Tracker, https://github.com/pydoit/pydevtool/issues
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+License-File: AUTHORS
+Requires-Dist: doit (>=0.36.0)
+
+Python dev tool
+
+doit powered, integration with:
+
+- click and rich for custom CLI
+- linters: pycodestlye, pyflakes

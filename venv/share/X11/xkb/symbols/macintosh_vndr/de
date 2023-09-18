@@ -1,0 +1,94 @@
+// olh@suse.de   very close to MacOS map
+
+default partial alphanumeric_keys 
+xkb_symbols "basic" {
+
+    // Describes the differences between a very simple US/ASCII
+    // keyboard and a simple German keyboard.
+
+    include "latin"
+    name[Group1]= "Germany - Mac";
+
+    key <TLDE> {	[ dead_circumflex,	degree,    notsign 		]	};
+    key <AE01> {	[         1,    exclam,  exclamdown,   at		]	};
+    key <AE02> {	[	  2,	quotedbl,  twosuperior			]	};
+    key <AE03> {	[	  3,	section,  threesuperior,sterling	]	};
+    key <AE04> {	[	  4,	dollar,  onequarter,	currency	]	};
+    key <AE05> {	[	  5,	percent,  bracketleft			]	};
+    key <AE06> {	[	  6,	ampersand,  bracketright		]	};
+    key <AE07> {	[	  7,	slash,        bar,    backslash		]	};
+    key <AE08> {	[	  8,	parenleft,  braceleft,    asciitilde	]	};
+    key <AE09> {	[	  9,	parenright, braceright			]	};
+    key <AE10> {	[	  0,	equal,  braceright,	degree		]	};
+    key <AE11> {	[    ssharp,	question,  backslash,	questiondown	]	};
+    key <AE12> {	[ dead_acute,	dead_grave,  dead_cedilla		]	};
+
+    key <AD01> {	[	  q,	Q, guillemotleft,guillemotright	]	};
+    key <AD03> {	[	  e,	E,   EuroSign			]	};
+    key <AD04> {	[         r,    R,  registered			]	};
+    key <AD05> {	[	  t,	T		]	};
+    key <AD06> {	[	  z,	Z		]	};
+    key <AD07> {	[	  u,	U, diaeresis,    Aacute		]	};
+    key <AD08> {	[	  i,	I,      slash,    Ucircumflex	]	};
+    key <AD09> {	[         o,    O,      oslash,   Oslash	]	};
+    key <AD11> {	[ udiaeresis,	Udiaeresis,  periodcentered, degree	]	};
+    key <AD12> {	[      plus,	asterisk,  asciitilde			]	}; 
+    key <AC01> {	[         a,    A,      aring,    Aring		]	};
+    key <AC04> {	[	  f,	F		]	};
+    key <AC05> {	[	  g,	G,  copyright			]	};
+    key <AC06> {	[         h,    H,  ordfeminine			]	};
+    key <AC09> {	[	  l,    L, 	at			]	};
+    key <AC10> {	[ odiaeresis,	Odiaeresis,  dead_acute			]	};
+    key <AC11> {	[ adiaeresis,	Adiaeresis,  dead_circumflex		]	};
+
+    key <LSGT> {	[      less,	greater,        bar			]	};
+    key <AB01> {	[	  y,	Y,  guillemotleft, less		]	};
+    key <AB04> {    [         v,    V, doublelowquotemark, leftsinglequotemark ]    };
+    key <AB05> {    [         b,    B, rightdoublequotemark, leftdoublequotemark ]  };
+    key <AB06> {	[         n,    N, asciitilde			]	};
+    key <AB07> {	[	  m,	M, 	 mu			]	};
+    key <AB08> {	[     comma,	semicolon	]	};
+    key <AB09> {	[    period,	colon,  periodcentered, division	]	};
+    key <AB10> {	[     minus,	underscore	]	};
+    key <BKSL> {	[ numbersign,	apostrophe,  dead_grave			]	};
+
+    include "kpdl(comma)"
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys 
+xkb_symbols "Sundeadkeys" {
+    // modify the default German layout to use Sun dead keys
+    include "macintosh_vndr/de(basic)"
+    name[Group1]= "Germany - Mac, Sun dead keys";
+
+    key <TLDE> {[ dead_circumflex, degree,      notsign         ]};
+    key <AE12> {[      dead_acute, dead_grave,  dead_cedilla    ]};
+    key <AD11> {[      udiaeresis, Udiaeresis,  dead_diaeresis  ]};
+    key <AD12> {[            plus, asterisk,    dead_tilde,     dead_macron ]};
+    key <AC10> {[      odiaeresis, Odiaeresis,  dead_acute      ]};
+    key <AC11> {[      adiaeresis, Adiaeresis,  dead_circumflex ]};
+
+    key <BKSL> {[      numbersign, acute,       dead_grave      ]};
+};
+
+partial alphanumeric_keys 
+xkb_symbols "sundeadkeys" {
+    include "macintosh_vndr/de(Sundeadkeys)"
+};
+
+partial alphanumeric_keys 
+xkb_symbols "nodeadkeys" {
+    // modify the default German layout to not have any dead keys
+    include "macintosh_vndr/de(basic)"
+    name[Group1]= "Germany - Mac, no dead keys";
+
+    key <TLDE> {	[ asciicircum,	degree,    notsign 			]	};
+    key <AE12> {	[ acute,	grave,  cedilla				]	};
+    key <AD11> {	[ udiaeresis,	Udiaeresis,  diaeresis 			]	};
+    key <AD12> {	[      plus,	asterisk,  asciitilde,	macron		]	};
+    key <AC10> {	[ odiaeresis,	Odiaeresis,  acute			]	};
+    key <AC11> {	[ adiaeresis,	Adiaeresis,  asciicircum		]	};
+
+    key <BKSL> {	[ numbersign,	apostrophe,  grave			]	};
+};

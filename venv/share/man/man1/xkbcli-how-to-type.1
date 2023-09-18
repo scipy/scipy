@@ -1,0 +1,41 @@
+.Dd July 27, 2020
+.Dt XKBCLI\-HOW\-TO\-TYPE 1
+.Os
+.
+.Sh NAME
+.Nm "xkbcli how\-to\-type"
+.Nd query how to type a given Unicode codepoint
+.
+.Sh SYNOPSIS
+.Nm
+.Op options
+.Ar codepoint/keysym
+.
+.Sh DESCRIPTION
+.Nm
+prints the key combinations (keycode + modifiers) in the keymap's layouts which
+would produce the given Unicode codepoint.
+.
+.Bl -tag -width Ds
+.It Fl \-keysym
+Treat the argument as a keysym, not a Unicode codepoint
+.
+.It Fl \-rules Ar rules
+The XKB ruleset
+.
+.It Fl \-model Ar model
+The XKB model
+.
+.It Fl \-layout Ar layout
+The XKB layout
+.
+.It Fl \-variant Ar variant
+The XKB layout variant
+.
+.It Fl \-options Ar options
+The XKB options
+.El
+.
+.Sh SEE ALSO
+.Xr xkbcli 1 ,
+.Lk https://xkbcommon.org "The libxkbcommon online documentation"

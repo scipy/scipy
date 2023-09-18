@@ -1,0 +1,47 @@
+//
+// Map the OLPC game keys to virtual modifiers.
+//
+// Created by Bernardo Innocenti <bernie@codewiz.org>
+//
+
+default xkb_compatibility "olpc" {
+    include "complete"
+
+    virtual_modifiers  Square,Cross,Triangle,Circle;
+
+    interpret KP_Home+Any {
+        virtualModifier= Square;
+        action = SetMods(modifiers=modMapMods);
+    };
+
+    interpret KP_Home {
+        action = SetMods(modifiers=Square);
+    };
+
+    interpret KP_Next+Any {
+        virtualModifier= Cross;
+        action = SetMods(modifiers=modMapMods);
+    };
+
+    interpret KP_Next {
+        action = SetMods(modifiers=Cross);
+    };
+
+    interpret KP_End+Any {
+        virtualModifier= Circle;
+        action = SetMods(modifiers=modMapMods);
+    };
+
+    interpret KP_End {
+        action = SetMods(modifiers=Circle);
+    };
+
+    interpret KP_Prior+Any {
+        virtualModifier= Triangle;
+        action = SetMods(modifiers=modMapMods);
+    };
+
+    interpret KP_Prior {
+        action = SetMods(modifiers=Triangle);
+    };
+};

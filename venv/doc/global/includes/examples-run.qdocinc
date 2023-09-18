@@ -1,0 +1,5 @@
+\section1 Running the Example
+
+To run the example from \l{Qt Creator Manual}{Qt Creator}, open the \gui Welcome
+mode and select the example from \gui Examples. For more information, visit
+\l{Qt Creator: Building and Running an Example}{Building and Running an Example}.

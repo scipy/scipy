@@ -1,0 +1,1925 @@
+GNU C Library NEWS -- history of user-visible changes.  2010-5-4
+Copyright (C) 1992-2009, 2010 Free Software Foundation, Inc.
+See the end for copying conditions.
+
+Please send GNU C library bug reports via <http://sources.redhat.com/bugzilla/>
+using `glibc' in the "product" field.
+
+Version 2.12
+
+* The following bugs are resolved with this release:
+
+  3662, 4457, 5553, 10162, 10401, 10414, 10554, 10824, 10864, 10915, 10918,
+  10936, 10939, 10958, 10968, 10969, 10972, 10992, 11000, 11001, 11007,
+  11010, 11027, 11039, 11040, 11041, 11043, 11046, 11056, 11070, 11093,
+  11115, 11120, 11125, 11126, 11127, 11134, 11141, 11149, 11183, 11184,
+  11185, 11186, 11187, 11188, 11189, 11190, 11191, 11192, 11193, 11194,
+  11200, 11230, 11235, 11242, 11254, 11258, 11271, 11272, 11276, 11279,
+  11287, 11292, 11319, 11332, 11333, 11387, 11389, 11390, 11394, 11397,
+  11410, 11438, 11449, 11470, 11471, 11520, 11537, 11538
+
+* New interfaces: pthread_getname_np, pthread_setname_np
+
+* New Linux interface: recvmmsg
+
+* STT_GNU_IFUNC implemented for Sparc by David Miller.
+
+* The dynamic linker now recognizes supported ABI versions from the
+  EI_ABIVERSION field in the ELF header.
+  Implemented by Ulrich Drepper.
+
+* New NIS mode selector ADJUNCT_AS_SHADOW.  The passwd.adjunct.byname table
+  will not be used to fill in password fields in the passwd.byname replies.
+  Instead it is used to synthesize the shadow.byname table, should it be
+  missing.  This is a useful mode in some installations involving Solaris.
+  Implemented by Ulrich Drepper.
+
+* New locales: kok_IN, sq_MK, cv_RU
+
+Version 2.11
+
+* The following bugs are resolved with this release:
+
+  3270, 7094, 9924, 9986, 10011, 10085, 10107, 10159, 10162, 10166, 10183,
+  10195, 10196, 10200, 10203, 10207, 10211, 10213, 10217, 10221, 10229,
+  10262, 10286, 10312, 10315, 10319, 10349, 10360, 10391, 10402, 10416,
+  10418, 10422, 10425, 10446, 10448, 10452, 10540, 10553, 10560, 10564,
+  10609, 10643, 10692, 10713, 10717, 10730, 10731, 10742, 10780, 10784,
+  10789, 10817, 10823, 10840, 10847
+
+* New interfaces: execvpe, pthread_sigqueue, mkstemps, mkstemps64, mkostemps,
+  mkostemps64
+  Implemented by Ulrich Drepper.
+
+* Checking version of longjmp added that fails if an uninitialized stack
+  frame would be created.  Implemented by Ulrich Drepper.
+
+* STT_GNU_IFUNC is now supported in static executables.
+  Implemented by H.J. Lu.
+
+* STT_GNU_IFUNC implemented for PPC by Alan Modra.
+
+* New optimized string functions for x86-64: strstr, strcasestr, memcmp,
+  strcspn, strpbrk, strspn, strcpy, stpcpy, strncpy, strcmp (SSE2, SSE4.2),
+  strncmp (SSE2, SSE4.2), strchr (SSE4.2), strrchr (SSE4.2).
+  Contributed by H.J. Lu.
+
+  strlen, rawmemchr, strcmp (SSSE3), strncmp (SSSE3).
+  Implemented by Ulrich Drepper.
+
+* New optimized string functions for x86: strlen, strcspn, strspn, strpbrk,
+  strstr, strcasestr.
+  Contributed by H.J. Lu.
+
+* Support for fma instruction in AVX on x86-64.
+  Implemented by H.J. Lu and Ulrich Drepper.
+
+* AVX support in x86-64 auditing support in ld.so.
+  Implemented by H.J. Lu.
+
+* STB_GNU_UNIQUE support added.
+  Implemented by Ulrich Drepper.
+
+* Implement second fallback mode for optimized DNS lookup for even more
+  broken environments.  If two requests from the same port are not
+  handled correctly close the socket and open a new one before sending
+  the second request.  The 'single-request-reopen' option in /etc/resolv.conf
+  can be used to select this mode right away, instead of rediscovering the
+  necessity is every process again.
+  Implemented by Ulrich Drepper.
+
+* New resolver flag RES_USE_DNSSEC to enable use of verified lookup.
+  Implemented by Adam Tkac.
+
+* Optimized iconv conversions for S390x.
+  Implemented by Andreas Krebbel.
+
+* Using condvars with PI mutexes is now more efficient due to kernel
+  support for requeueing to PI futexes.  NPTL support added for x86-64.
+  Implemented by Ulrich Drepper.
+
+* New locales: ps_AF, my_MM
+
+Version 2.10
+
+* The following bugs are resolved with this release:
+
+  697, 5381, 5807, 6411, 6545, 7040, 7058, 7067, 7080, 7083, 7095, 7098,
+  9677, 9694, 9697, 9701, 9704, 9705, 9706, 9720, 9726, 9730, 9733, 9736,
+  9741, 9750, 9753, 9759, 9781, 9791, 9793, 9823, 9833, 9844, 9880, 9881,
+  9891, 9893, 9895, 9913, 9916, 9920, 9948, 9955, 9957, 9963, 9985, 10052,
+  10069, 10086, 10087, 10090, 10092, 10093, 10100, 10118, 10128
+
+* New interfaces: preadv, preadv64, pwritev, pwritev64, malloc_info
+  Implemented by Ulrich Drepper.
+
+* New Linux interfaces: accept4, fallocate, fallocate64.
+  Implemented by Ulrich Drepper.
+
+* Correct declarations of string function when used in C++ code.  This
+  could lead to compile errors for invalid C++ code.
+
+* XPG7/POSIX 2008 compilation environment.  Many GNU-specific functions are
+  now in POSIX.
+
+* New POSIX 2008 interface: psiginfo
+  Implemented by Ulrich Drepper.
+
+* New ISO C++1x interfaces: quick_exit, at_quick_exit
+  Implemented by Ulrich Drepper.
+
+* Support for selecting between multiple function definitions at runtime
+  using STT_GNU_IFUNC symbols.  Implemented by Ulrich Drepper.
+
+* The libcrypt library can now use the hash function implementations in
+  NSS.  Implemented by Ulrich Drepper.
+
+* The malloc implementation can be compiled to be less memory efficient
+  but higher performing in multi-threaded programs.
+  Implemented by Ulrich Drepper.
+
+* New locales: nan_TW@latin, ks_IN
+
+* Faster strlen, strchr, strchrnul, strrchr, memchr, and rawmemchr for x86-64.
+  Implemented by Ulrich Drepper.
+
+* Extended printf hook support.  It is possible to use user-defined types
+  and extend existing format specifiers.
+  Implemented by Ulrich Drepper.
+
+* Handling for group shadow files has been added.
+  Implemented by Ulrich Drepper.
+
+* DNS IPv4-IPv6 parallel lookup now deals better with broken DNS
+  servers (the case, e.g., for some people using the built-in DNS
+  server in ADSL modems/routers).  There is a once-per-process timeout
+  in case of a broken server.  To avoid it, users can run nscd or put
+  'options single-request' in /etc/resolv.conf.
+  Implemented by Ulrich Drepper.
+
+Version 2.9
+
+* The following bugs are resolved with this release:
+
+  3406, 5209, 5210, 5381, 5794, 5814, 5911, 6428, 6438, 6442, 6447, 6461,
+  6472, 6505, 6544, 6589, 6612, 6634, 6653, 6654, 6657, 6698, 6712, 6713,
+  6719, 6723, 6724, 6740, 6763, 6771, 6790, 6791, 6817, 6824, 6839, 6843,
+  6845, 6856, 6857, 6860, 6867, 6875, 6919, 6920, 6942, 6947, 6955, 6966,
+  6968, 6974, 6980, 6995, 7008, 7009, 7029
+
+* Unified lookup for getaddrinfo: IPv4 and IPv6 addresses are now looked
+  up at the same time.  Implemented by Ulrich Drepper.
+
+* TLS descriptors for LD and GD on x86 and x86-64.
+  Implemented by Alexandre Oliva.
+
+* getaddrinfo now handles DCCP and UDPlite.
+  Implemented by Ulrich Drepper.
+
+* New fixed-size conversion macros: htobe16, htole16, be16toh, le16toh,
+  htobe32, htole32, be32toh, le32toh, htobe64, htole64, be64toh, le64toh.
+  Implemented by Ulrich Drepper.
+
+* New implementation of memmem, strstr, and strcasestr which is O(n).
+  Implemented by Eric Blake.
+
+* New Linux interfaces: inotify_init1, dup3, epoll_create1, pipe2
+
+* Implement "e" option for popen to open file descriptor with the
+  close-on-exec flag set.  Implemented by Ulrich Drepper.
+
+* Implement "b" mode for fmemopen.  In this mode writes writes don't
+  implicitly add a NUL byte and seeks from the end of the buffer really
+  use the buffer end, not the string length as the basis.
+  Implemented by Ulrich Drepper.
+
+* Many functions, exported and internal, now atomically set the close-on-exec
+  flag when run on a sufficiently new kernel.  Implemented by Ulrich Drepper.
+
+* Sorting rules for some Indian languages (Kannada, Gurumukhi, Telugu,
+  Sinhala)
+  Implemented by Pravin Satpute.
+
+* New locales: sd_IN, sd_IN@devanagari, ks_IN@devanagari, ht_HT, en_AG, nl_AW.
+
+Version 2.8
+
+* The following bugs are resolved with this release:
+
+  2549, 3112, 4314, 4407, 4997, 5012, 5040, 5112, 5204, 5208, 5209, 5220,
+  5222, 5224, 5225, 5237, 5238, 5240, 5245, 5277, 5346, 5375, 5378, 5382,
+  5424, 5427, 5428, 5435, 5436, 5439, 5441, 5442, 5443, 5451, 5452, 5454,
+  5455, 5463, 5464, 5465, 5475, 5477, 5478, 5520, 5541, 5545, 5553, 5600,
+  5602, 5607, 5614, 5627, 5628, 5736, 5737, 5741, 5753, 5760, 5762, 5768,
+  5774, 5777, 5778, 5779, 5786, 5790, 5818, 5854, 5857, 5903, 5939, 5979,
+  5983, 5995, 5998, 6004, 6007, 6020, 6021, 6024, 6040, 6042
+
+* New locales: bo_CN, bo_IN, shs_CA.
+
+* New encoding: HP-ROMAN9, HP-GREEK8, HP-THAI8, HP-TURKISH8.
+
+* Sorting rules for some Indian languages (Devanagari and Gujarati).
+  Implemented by Pravin Satpute.
+
+* IPV6 addresses in /etc/resolv.conf can now have a scope ID
+
+* nscd caches now all timeouts for DNS entries
+  Implemented by Ulrich Drepper.
+
+* nscd is more efficient and wakes up less often.
+  Implemented by Ulrich Drepper.
+
+* More checking functions: asprintf, dprintf, obstack_printf, vasprintf,
+  vdprintf, and obstack_vprintf.
+  Implemented by Jakub Jelinek.
+
+* Faster memset for x86-64.
+  Implemented by Harsha Jagasia and H.J. Lu.
+
+* Faster memcpy on x86.
+  Implemented by Ulrich Drepper.
+
+* ARG_MAX is not anymore constant on Linux.  Use sysconf(_SC_ARG_MAX).
+  Implemented by Ulrich Drepper.
+
+* Faster sqrt and sqrtf implemention for some PPC variants.
+  Implemented by Stephen Munroe.
+
+Version 2.7
+
+* The following bugs are resolved with this release:
+
+  4125, 4126, 4178, 4359, 4407, 4512, 4514, 4525, 4554, 4556, 4557, 4566,
+  4582, 4586, 4588, 4599, 4610, 4647, 4702, 4705, 4726, 4745, 4772, 4773,
+  4775, 4776, 4792, 4813, 4814, 4816, 4833, 4858, 4860, 4896, 4905, 4925,
+  4936, 4937, 4938, 4941, 4946, 4963, 4972, 5010, 5028, 5043, 5058, 5063,
+  5071, 5103, 5104, 5112, 5113, 5184, 5186
+
+* More checking functions: fread, fread_unlocked, open*, mq_open.
+  Implemented by Jakub Jelinek and Ulrich Drepper.
+
+* Extend fortification to C++.  Implemented by Jakub Jelinek.
+
+* Implement 'm' modifier for scanf.  Add stricter C99/SUS compliance
+  by not recognizing 'a' as a modifier when those specs are requested.
+  Implemented by Jakub Jelinek.
+
+* PPC optimizations to math and string functions.
+  Implemented by Steven Munroe.
+
+* New interfaces: mkostemp, mkostemp64.  Like mkstemp* but allow additional
+  options to be passed.  Implemented by Ulrich Drepper.
+
+* More CPU set manipulation functions.  Implemented by Ulrich Drepper.
+
+* New Linux interfaces: signalfd, eventfd, eventfd_read, and eventfd_write.
+  Implemented by Ulrich Drepper.
+
+* Handle private futexes in the NPTL implementation.
+  Implemented by Jakub Jelinek and Ulrich Drepper.
+
+* Add support for O_CLOEXEC.  Implement in Hurd.  Use throughout libc.
+  Implemented by Roland McGrath and Ulrich Drepper.
+
+* Linux/x86-64 vDSO support.  Implemented by Ulrich Drepper.
+
+* SHA-256 and SHA-512 based password encryption.
+  Implemented by Ulrich Drepper.
+
+* New locales: ber_DZ, ber_MA, en_NG, fil_PH, fur_IT, fy_DE, ha_NG, ig_NG,
+  ik_CA, iu_CA, li_BE, li_NL, nds_DE, nds_NL, pap_AN, sc_IT, tk_TM, ug_CN,
+  yo_NG.
+
++ New iconv modules: MAC-CENTRALEUROPE, ISO-8859-9E, KOI8-RU.
+  Implemented by Ulrich Drepper.
+
+Version 2.6
+
+* The following bugs are resolved with this release:
+
+  3156, 3213, 3285, 3291, 3306, 3313, 3320, 3322, 3325, 3326, 3334, 3348,
+  3352, 3363, 3369, 3426, 3427, 3429, 3451, 3458, 3465, 3480, 3483, 3493,
+  3514, 3515, 3559, 3632, 3664, 3673, 3674, 3745, 3747, 3818, 3840, 3842,
+  3851, 3855, 3884, 3885, 3902, 3905, 3919, 3944, 3954, 3955, 3957, 3991,
+  3995, 3996, 4024, 4040, 4069, 4070, 4074, 4076, 4096, 4101, 4102, 4114,
+  4130, 4131, 4181, 4276, 4306, 4342, 4344, 4349, 4364, 4368, 4381, 4392,
+  4403, 4405, 4406, 4411, 4438, 4439, 4455, 4456, 4465, 4512, 4514, 4586,
+  4702, 4858
+
+* New Linux interfaces: epoll_pwait, sched_getcpu.
+
+* New generic interfaces: strerror_l.
+
+* nscd can now cache the services database.   Implemented by Ulrich Drepper.
+
+Version 2.5
+
+* The following bugs are resolved with this release:
+
+  39, 68, 192, 352, 388, 531, 935, 1006, 1201, 1203, 1386, 1782, 1783, 1784,
+  1785, 1786, 1787, 1951, 1974, 1996, 2072, 2098, 2125, 2134, 2158, 2182,
+  2349, 2376, 2386, 2389, 2415, 2418, 2420, 2423, 2450, 2451, 2466, 2472,
+  2473, 2477, 2498, 2499, 2501, 2502, 2505, 2507, 2508, 2509, 2517, 2526,
+  2569, 2571, 2592, 2611, 2625, 2632, 2644, 2662, 2680, 2683, 2684, 2693,
+  2695, 2703, 2734, 2751, 2764, 2766, 2775, 2792, 2821, 2823, 2832, 2841,
+  2843, 2883, 2892, 2908, 2914, 2926, 2961, 2978, 2980, 2987, 2997, 2998,
+  3013, 3018, 3034, 3040, 3044, 3123, 3124, 3137, 3138, 3143, 3155, 3189,
+  3225, 3251, 3252, 3253, 3273
+
+* For Linux, the sorting of addresses returned by getaddrinfo now also
+  handles rules 3, 4, and 7 from RFC 3484.  I.e., all rules are handled.
+  Implemented by Ulrich Drepper.
+
+* Allow system admin to configure getaddrinfo with the /etc/gai.conf file.
+  Implemented by Ulrich Drepper.
+
+* New Linux interfaces: splice, tee, sync_file_range, vmsplice.
+
+* New iconv module for MIK.  Contributed by Alexander Shopov.
+
+* For sites with broken group and/or passwd database, the auto-propagate
+  option of nscd can prevent creating ID lookup entries from the results
+  of a name lookup and vice versa.   This usually is no problem but some
+  site might have problems with the default behavior.
+  Implemented by Ulrich Drepper.
+
+* Iterating over entire database in NIS can be slow.  With the
+  SETENT_BATCH_READ option in /etc/default/nss a system admin can decide
+  to trade time for memory.  The entire database will be read at once.
+  Implemented by Ulrich Drepper.
+
+* The interfaces introduced in RFC 3542 have been implemented by
+  Ulrich Drepper.
+
+* Support for the new ELF hash table format was added by Ulrich Drepper.
+
+* Support for priority inheritance mutexes added by Jakub Jelinek and
+  Ulrich Drepper.
+
+* Support for priority protected mutexes added by Jakub Jelinek.
+
+* New locales: nr_ZA, pa_PK, ca_AD, ca_FR, ca_IT, el_CY, tr_CY, as_IN,
+  or_IN, csb_PL, fy_NL, sr_ME.
+
+Version 2.4
+
+* More overflow detection functions.
+
+* New iconv converters for IBM1025, IBM1122, IBM1137, IBM1153,
+  IBM1154, IBM1155, IBM1156, IBM1157, and IBM1158 contributed by Jiro Sekiba.
+
+  More converters for IBM803, IBM901, IBM902, IBM921, IBM1008, IBM1097,
+  IBM1112, IBM1123, IBM1130, IBM1140, IBM1141, IBM1142, IBM1143, IBM1144,
+  IBM1145, IBM1146, IBM1147, IBM1148, IBM1149, IBM1166, IBM1167, IBM4517,
+  IBM4899, IBM4909, IBM4971, IBM5347, IBM9030, IBM9066, IBM9448, IBM12712,
+  IBM16804, IBM1364, IBM1371, IBM1388, IBM1390, and IBM1399 contributed
+  by Masahide Washizawa.
+
+* It is now possible to install audit libraries for the dynamic linker using
+  LD_AUDIT.  Implemented by Ulrich Drepper.
+
+* The LinuxThreads add-on, providing pthreads on Linux 2.4 kernels, is no
+  longer supported.  The new NPTL implementation requires Linux 2.6 kernels.
+  For a libc and libpthread that works well on Linux 2.4 kernels, we
+  recommend using the stable 2.3 branch.
+
+* The new function open_wmemstream acts like open_memstream,
+  but uses a wchar_t wide character buffer.
+
+* The new function ppoll is an improved version of poll, similar to pselect.
+
+* New interfaces: fdopendir, openat, fstatat, fchmodat, fchownat,
+  futimesat, faccessat, mkdirat, mkfifoat, mknodat,
+  renameat, unlinkat, linkat, symlinkat, readlinkat.
+
+* New Linux kernel system calls: unshare,
+  inotify_init, inotify_add_watch, inotify_rm_watch.
+
+* The euidaccess function is now also known by the alias eaccess,
+  for compatibility with some other systems.
+
+* Timezone data updated to 2006b version.
+
+Version 2.3.6
+
+* The following bugs are resolved with this release:
+
+  38, 253, 549, 622, 653, 721, 758, 851, 877, 915, 934, 955, 961,
+  1016, 1037, 1076, 1079, 1080, 1081, 1082, 1083, 1084, 1085, 1086,
+  1087, 1088, 1090, 1091, 1092, 1093, 1094, 1095, 1096, 1097, 1098,
+  1099, 1100, 1101, 1102, 1103, 1104, 1105, 1106, 1107, 1108, 1109,
+  1110, 1111, 1112, 1113, 1125, 1137, 1138, 1249, 1250, 1251, 1252,
+  1253, 1254, 1350, 1358, 1394, 1438, 1498, 1534
+
+  Visit <http://sources.redhat.com/bugzilla/> for the details of each bug.
+
+* As of this release, GCC 4 can be used to compile the C Library.
+
+* Timezone data updated to 2005m version.
+
+Version 2.3.5
+
+* The following bugs are resolved with this release:
+
+  284, 592, 602, 626, 633, 640, 650, 661, 671, 681, 693, 700, 710, 719,
+  722, 723, 725, 726, 727, 728, 729, 730, 731, 732, 733, 734, 735, 736,
+  737, 738, 739, 740, 741, 742, 743, 744, 745, 765, 767, 768, 769, 776,
+  777, 787, 821, 822, 823, 825
+
+  Visit <http://sources.redhat.com/bugzilla/> for the details of each bug.
+
+Version 2.3.4
+
+* Support for RFC 3678.  Real implementations exist only for Linux so far.
+  Implemented by Ulrich Drepper.
+
+* nscd can now cache entries persistently.  Expiring entries are reloaded.
+  For speedups the cache can be shared in memory with client processes.
+  Implemented by Ulrich Drepper.
+
+* nscd can now perform SELinux checks.
+  Implemented by Matthew Rickard <mjricka@epoch.ncsc.mil>.
+
+* getaddrinfo queries are now cached.  Canonical name lookup is performed
+  efficiently.
+  Implemented by Ulrich Drepper.
+
+* The nothrow function attribute is used when headers are used by gcc when
+  compiling C code.  This can avoid significant amounts of exception
+  handling data.
+
+* The malloc functions perform more error checking and are stricter when
+  it comes to reacting on errors.  The default action is to terminate
+  the process after showing an error message.  Implemented by Ulrich Drepper.
+
+* Reverse lookups of IPv6 addresses does not use bit string or .ip6.int
+  lookups anymore unless explicitly requested.  Implemented by Ulrich Drepper.
+
+* Namespaces in ld.so are implemented.  DSOs can be loaded in separate
+  namespaces using the new function dlmopen().  This feature is of course,
+  like most other dynamic loading functionality, not available in statically
+  linked applications.  Implemented by Ulrich Drepper.
+
+* Low-overhead boundary checking variants of string and some stdio functions
+  were added.  These are to be used in conjunction with a gcc patch by
+  Jakub Jelinek which adds calls to these functions if possible.
+  Implemented by Jakub Jelinek and Ulrich Drepper.
+
+* Old code for several operating systems and machine architectures that
+  have not been in working condition in a long time have been removed from
+  the main source tree maintained by the GNU C Library's maintainers.
+  These files are now reside in the separate `ports' source module
+  that is usable as an add-on when building the library.
+
+Version 2.3.3
+
+* New functions `dladdr1' and `dlinfo' in <dlfcn.h> provide more ways to
+  interrogate the dynamic linker, compatible with the Solaris interface.
+
+* ELF thread-local storage support (TLS) now works on PowerPC and PowerPC64;
+  implemented by Paul Mackerras, Steven Munroe, and Roland McGrath.
+
+* getifaddrs now uses the netlink interface on Linux to get its information.
+  Implemented by Thorsten Kukuk.
+
+* getaddrinfo now implements AI_V4MAPPED, AI_ALL, and AI_ADDRCONF.
+  Implemented by Ulrich Drepper.
+
+* support for non-executable stacks on x86 has been added.  Changes mostly
+  by Roland McGrath.
+
+* regex is now much faster for multibyte locales.  Changes by Jakub Jelinek
+  and Ulrich Drepper.
+
+* getaddrinfo now performs destination address selection according to
+  RFC 3484.
+
+Version 2.3.2
+
+* Thread-safe interfaces for many functions that access locale data
+  were added in version 2.3, but these features were omitted from NEWS.
+  Many functions have variants with an `_l' suffix that take a `locale_t'
+  object as a parameter rather than consulting the current locale.
+  The new functions `newlocale', `duplocale', and `freelocale' in <locale.h>
+  create and maintain `locale_t' objects.  Additionally, the new function
+  `uselocale' sets "the current locale" (as used by functions not so
+  parameterized) set for an individual thread.  These features were added
+  in version 2.3, implemented by Ulrich Drepper and Roland McGrath.
+
+* The functions getresuid, getresgid, setresuid, and setresgid, which
+  have long been available on Linux, are now declared in <unistd.h>
+  and are now also available on the Hurd.
+
+* ELF thread-local storage support (TLS) now works on x86-64.
+
+* The new dynamic string token $LIB is expanded in shared library names.
+  This normally expands to lib, but on some 64-bit platforms to lib64 instead.
+
+* Aldy Hernandez contributed complete software floating point support for
+  PowerPC machines with no FPU.
+
+* fexecve is implemented on Linux.
+
+* The `btowc' function should work at least twice as fast due to
+  specialized callbacks in the iconv modules.  Implemented by Bruno Haible.
+
+* With approriate thread add-ons cancelable functions are now implemented
+  in libc.so as well.  No need to call the function in libpthread.  This
+  change allowed to finally disable the incorrect and expensive handling
+  of weak definition in ld.so.
+
+* Yet more PLT entries in libc.so have been removed.  We finally arrived
+  at the bare minimum.  Startup times improved appropriately.
+
+* Support for the new Linux/x86 system call interface was added.  The
+  AT_SYSINFO auxiliary vector entry is recognized and handled.
+
+Version 2.3
+
+* Masahide Washizawa contributed iconv modules for IBM1163 and IBM1164
+  charsets.
+
+* iconv (the program and the interface) now accepts empty names (excluding
+  options like //TRANSLIT) to mean "use charset of current locale".
+
+* localedef can now transliterate characters in strings which are not in
+  the provided charmap.  The information from the input locale is used.
+
+* Prelinking support was added for ELF targets.  This requires additional
+  tools and recent versions of the GNU binutils.  Contributed by Jakub Jelinek.
+
+* Read-only stdio streams now use mmap to speed up operation by eliminating
+  copying and buffer underflows.  To use add 'm' to the mode string of
+  the fopen/fdopen/freopen call.  Implemented by Ulrich Drepper.
+
+* The malloc functions were completely rewritten by Wolfram Gloger based
+  on Doug Lea's malloc-2.7.0.c.
+
+* Isamu Hasegawa contributed a completely new and POSIX-conformant
+  implementation of regex.
+
+* Bruno Haible upgraded the iconv and locale implementation to support
+  Unicode 3.2.
+
+* Contents of the LC_* and LANG environment variables in the CEN style are
+  not recognized anymore.   It never was used.  Change by Ulrich Drepper.
+
+* The runtime (ld.so, libc, libpthread for Linux) now can handle the ELF
+  thread-local storage (TLS) ABI on some platforms.
+  Changes by Ulrich Drepper.  SH support by Kaz Kojima.
+
+* Bruno Haible contributed iconv converters for ISO-2022-JP-3, SHIFT JIS-X0213,
+  EUC-JISX0213, and TSCII.
+
+* New header <ifaddrs.h> with functions `getifaddrs' and `freeifaddrs':
+  BSD-compatible interface for getting all network interface addresses.
+  Implementation for IPv4 by Roland McGrath.
+
+* Loading of locale data is faster due to the introduction of a locale
+  archive.  Implemented by Roland McGrath and Ulrich Drepper.
+
+* Startup times are significantly reduced by not using exported functions
+  inside the library itself.  Changes by Jakub Jelinek, Roland McGrath,
+  and Ulrich Drepper.
+
+* Steven Munroe contributed a port to PowerPC64/Linux.
+
+Version 2.2.6
+
+* The Hurd now uses the GNU libio implementation of stdio rather than the
+  old GNU stdio implementation, and uses a new ABI (libc.so.0.3).
+
+* The Hurd on x86 now has the `ioperm' function and <sys/io.h> header file
+  with the same behavior as the Linux system call of the same name.
+
+Version 2.2.5
+
+* Stephen Moshier implemented log2, log10, powl and cbrtl for the
+  128-bit long double format.
+
+* Masahide Washizawa contributed iconv modules for IBM1132, IBM1133, IBM1160,
+  IBM1161, and IBM1162 charsets.
+
+* Andreas Jaeger contributed a port to x86-64/Linux.
+
+* Peter Bruin contributed a port to PowerPC/Hurd.
+
+* libc functions using I/O streams now can handle wide-oriented streams
+  as well.
+
+* optimizations in the dynamic linker.  Binaries created by recent binutils
+  versions start up quicker due to reduced time spent on relocations.
+
+* Support for use of gcc3 added by Jakub Jelinek and HJ Lu.
+
+Version 2.2.4
+
+* Stephen Moshier implemented cosh, expm1, log1p, acos, sinh, tanh,
+  asinh, atanh, j0 for the 128-bit long double format.
+
+* Bruno Haible updated all the code handling Unicode in some form to
+  support Unicode 3.1.
+
+* Speed of regex for single-byte locales is back to previous levels.
+  Patch by Isamu Hasegawa.
+
+* Alpha, SPARC, and IA-64 now also using floating stacks.
+
+* Startup time of internationalized applications greatly improved through
+  iconv cache.  Use iconvconfig to generate the cache file.
+  Contributed by Ulrich Drepper.
+
+* The IA-64 specific part of ld.so was rewritten to eliminate some pretty
+  severe performance problems.  Patch by David Mosberger.
+
+* The Hurd port got a lot more functionality like AIO, various stdio
+  extensions, etc.  Mainly done by Roland McGrath.
+
+* mtrace can now lookup symbols in shared libraries.
+
+Version 2.2.3
+
+* Intel's IA-64 math library is largely integrated.  It provides fast and
+  accurate implementatations for most basic and standard math functions
+  in float, double, and long double format.
+
+* Stephen Moshier implemented j0, j1, jn, y0, y1, yn, lgamma, erf, erfc,
+  and asin for the 96-bit long double format and asin, log, tan for the
+  128-bit long double format.
+
+* The beginning of a last-bit accurate math library by IBM Haifa were added.
+  The basic double functions exist today.  Contributed by Abraham Ziv
+  <ziv@il.ibm.com>, Moshe Olshansky <olshansk@il.ibm.com>, Ealan Henis
+  <ealan@il.ibm.com>, and Anna Reitman <reitman@il.ibm.com>.
+
+* An asynchronous name lookup library was added.  The interface is designed
+  after POSIX AIO.  The proposal was circulated beforehand to get comments.
+  No negative ones came in.  Implemented by Ulrich Drepper.
+
+* Port to S390/64bit contributed by Martin Schwidefsky
+  <schwidefsky@de.ibm.com>.
+
+* David Mosberger <davidm@hpl.hp.com> implemented the setcontext family
+  of functions for Linux/IA-64.
+
+* The RPC code is now thread safe.  Threads can now use the same service
+  of different services at the same time.  Patch by Eric Norum
+  <eric.norum@usask.ca> with some help by Ulrich Drepper.
+
+* Martin Schwidefsky <schwidefsky@de.ibm.com> implemented the setcontext
+  family of functions for Linux/S390.
+
+* Ulrich Drepper <drepper@redhat.com> implemented the setcontext family
+  of functions for Linux/x86.
+
+* Port to Linux/CRIS contributed by Axis Communications.
+
+Version 2.2.2
+
+* Lots of headers were cleaned up.  Using the tool in the conform/ subdir
+  we can now check for namespace violations and missing declarations.  The
+  result is that almost all headers are now Unix-compliant (as defined in
+  the upcoming XPG6).  The negative side is that some programs might need
+  corrections, too, if they depend on the incorrect form of the headers in
+  previous versions which defined too many symbols and included too many
+  other headers.
+
+* regex now handles multibyte character sets correctly.
+  Contributed by Isamu Hasegawa <isamu@yamato.ibm.com>.
+
+* iconv (the program) does now conform to the upcoming XPG6 and handles
+  charmaps.  Instead of the charset names the path of charmaps can be
+  provided and the conversion happens based on this data.
+  Contributed by Ulrich Drepper.
+
+* The locale program now provides detailed information about the installed
+  locales.  While
+
+    locale -a
+
+  only lists the names of the supported locales
+
+    locale -a --verbose
+
+  provides details such as country, language, and codeset name.
+  Contributed by Ulrich Drepper.
+
+Version 2.2.1
+
+* The gencat program now parses the input file according to the charset
+  selected by the LC_CTYPE category.  This is important for stateful
+  character sets.  To make generating catalogs easier there is a way
+  to overwrite the charset selected by the locale: before the first
+  message or $ quote line the catalog can contain a line like
+
+    $ codeset=ISO-8859-2
+
+  to select the charset (ISO-8859-2 in this case).
+
+  Implemented by Shinya Hanataka and Ulrich Drepper.
+
+* New codeset conversion modules: IBM-922  (Estonia PC codeset),
+  IBM-1124 (Ukraine PC codeset), IBM-1129 (Vietnamese PC codeset).
+  Contributed by Masahide Washizawa <washi@jp.ibm.com>.
+
+* Optimized string functions for Alpha ev6 and ev67 by Richard Henderson
+  <rth@redhat.com> and Rick Gorton <rick.gorton@alpha-processor.com>.
+
+* The LANGUAGE environment variable is now ignored unless the locale is
+  changed from the default "C" locale.
+
+* The usual bug fixes.
+
+Version 2.2
+
+* Greg McGary added runtime support for bounds checking using gcc's
+  new -fbounded-pointers option.  ix86 target is complete.  PowerPC
+  is in progress.
+
+* Thorsten Kukuk added secure mode support to nscd.
+
+* The Berkeley db libraries have been removed.
+
+  Related, the nss_db module is now in a separate package since it
+  obviously requires a database library being available.
+
+* Wide character I/O streams implemented by Ulrich Drepper.
+
+* Functions from the extended socket API added by Ulrich Drepper.
+
+* Functions feenableexcept and fedisableexcept to control the
+  behaviour of individual exceptions have been added by Andreas Jaeger.
+
+* ldconfig program added by Andreas Jaeger and Jakub Jelinek.
+
+* The resolver code has been updated from bind 8.2.3-T5B which supports
+  threads.  The integration was done by Andreas Jaeger, Adam D. Bradley,
+  and Mark Kettenis.
+
+  This change could in some situations effect backward compatibility.  Since
+  now `_res' is a thread-local instead of a global variable, modifying it
+  in one thread does not have any effect in other threads.
+
+  The resolver library was also extended to allow IPv6 as the transport
+  protocol for the requests.  This work was done by Stig Venaas.
+
+* Compatibility code for K&R C compilers has been removed from the
+  header files.  A ISO C compiler is needed to use the library
+  (conforming to either C89 or C99 standard).
+
+* Complete rewrite of the localedef program to support multibyte character
+  sets.  Implement handling of ISO 14651 and ISO 14652.  Rewrite strcoll,
+  strxfrm, wcscoll, and wcsxfrm functions.  Make isw*() functions work.
+  Implemented by Ulrich Drepper.
+
+  Bruno Haible significantly improved the generation and use of the data
+  structures for the wide character tables.
+
+* Plural handling in gettext implemented by Ulrich Drepper.
+
+* The utmp daemon has been removed.
+
+* The port to MIPS-Linux has been finished by Andreas Jaeger.
+
+* A port to Hitachi SH3 and SH4 has been contributed by Kazumoto Kojima
+  and Yutaka Niibe.
+
+* POSIX clocks and timers implemented by Kaz Kylheku and Ulrich Drepper.
+
+* POSIX barriers implemented by Kaz Kylheku.
+
+* POSIX spawn function family implemented by Ulrich Drepper.
+
+* POSIX spinlocks are now available.
+
+* Timed wait functions for mutex, rwlock, and semaphores are implemented.
+
+* the configure option --enable-kernel=X.Y.Z allows to strip out
+  compatibility for kernel versions before X.Y.Z.  This is currently only
+  implemented for Linux.
+
+* the sockaddr_in6 structure changed.  The IPv6 working group added a new
+  field sin6_scope_id.  This means that all programs using IPv6 should be
+  recompiled.  Don't expect binary compatibility with previous glibc
+  versions.
+
+* various conversion modules for IBM character sets contributed by
+  Masahide Washizawa.
+
+* IA-64 port by Jes Sorensen and HJ Lu.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Compiling the GNU C Library for Linux/ia64
+******************************************
+
+   Please refer to the file INSTALL in the same directory as you found
+this file for general information about configuring and compiling
+glibc.
+
+   For general inquiries about glibc under Linux/ia64 please use the
+following mailing list linux-ia64@linuxia64.org or one of the relevant
+glibc mailing lists.
+
+Recommended Tools for Compilation
+=================================
+
+   In order for glibc-2.2 to build correctly on the ia64 you need at
+least the following versions of the GNU tools (the :
+
+   * The Cygnus toolchain snapshot for the ia64 as of August 4
+     including the provided set of patches.  It is however recommend
+     you use the October 24 toolchain snapshot or a more recent version.
+
+   OR alternatively you can try the following (the Cygnus toolchain is
+   the recommended solution):
+
+   * GCC and binutils, GAS and GNU LD out of CVS from
+     sources.redhat.com as of August 28, 2000 or later.  The CVS tree
+     may require special patches to work properly on the ia64.
+
+Configuring and compiling GNU Libc for Linux/ia64
+=================================================
+
+   The library requires Linux kernel version 2.4.0-test4-000728 or
+later to funtion properly. Besides that it support for debug libraries
+is currently untested. Hence the following options
+are required for configuring the library:
+
+   --disable-debug --enable-kernel=2.4.0
+
+   It is also important that you make sure the library picks up the
+appropriate kernel header files, if you do not have recent enough
+kernel headers in /usr/src/linux/include, you should use the
+--with-headers=<path> option to specify the location.
+
+   As an example I personally use the following options to configure
+the library:
+
+   --disable-debug
+   --disable-cvs
+   --enable-kernel=2.4.0
+   --host=ia64-linux
+   --enable-add-ons=yes
+   --prefix=/usr
+   --with-headers=/home/jes/linux/include
+
+
+Good luck
+
+Jes Sorensen <jes@linuxcare.com>,
+November 14th, 2000
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Version 2.1.3
+
+* bug fixes
+
+
+Version 2.1.2
+
+* bug fixes
+
+
+Version 2.1.1
+
+* New ISO C 9x function _Exit, imaxabs, and imaxdiv are added.
+
+* New xdr functions are added; some rpc functions are now 64bit clean.
+
+* Fixed a number of bugs and memory leaks (especially in NIS+ code).
+
+* Fixed known incompatibilities with glibc 2.0.
+
+* New functions lock64, strchrnul, rawmemchr, getutmp and getutmpx.
+
+* Optimized a number of functions (especially the ELF dynamic loader).
+
+* Update timezone data files.
+
+* lots of charmaps corrections
+
+* some new locale definitions and charmaps
+
+
+Version 2.1
+
+* Richard Henderson corrected size of struct timeval on Linux/Alpha to
+  conform to POSIX member type requirements.  Symbol versions have been
+  adjusted as needed within the library, and for direct use by applications,
+  but there is potential for problems if third-party libraries use
+  struct timeval as part of their interface.  This does not present
+  a problem for X and other "essential" system libraries.
+
+* An additional locale model to support C++ Standard Library locale
+  model and probably more was implemented by Ulrich Drepper.
+
+* Eric Youngdale and Ulrich Drepper implemented versioning of objects on
+  symbol level.
+
+* Miles Bader provided the `argp' function family to support hierachical
+  command line argument parsing, layered on top of getopt.
+
+* strtod accepts new hexadecimal floating-point format from ISO C 9X.
+
+* printf has two new specifiers %a and %A to print hexadecimal flaoting-point
+  numbers.
+
+* scanf recognizes the %a and %A format for scanning floating point numbers.
+
+* the new headers <stdint.h> and <inttypes.h> from ISO C 9X provides
+  information and interfaces for the available integer types.
+
+* about 130 new math functions were added to implement the ISO C9x math
+  library.
+
+* the new header <complex.h> contains definitions of the complex math
+  functions from ISO C 9X.
+
+* the new header <tgmath.h> defines generic macros to use complex or
+  real valued functions.
+
+* Thorsten Kukuk provided an implementation for NIS+, securelevel 0, 1 and 2.
+
+* Andreas Jaeger provided a test suite for the math library.
+
+* Mark Kettenis implemented the utmpx interface and an utmp daemon.
+
+* Ulrich Drepper added character set conversion functions (iconv).
+
+* Optimized string functions have been added.
+
+* The localedata addon is now part of glibc.
+
+* An implementation of profiling shared libraries was added by Ulrich Drepper.
+
+* Thorsten Kukuk and Ulrich Drepper provided an implementation for a caching
+  daemon for NSS (nscd).
+
+  Missing a better place here are some numbers on improvements.  Under
+  Linux 2.1.125 un-tar-ing the kernel sources takes
+
+				  user	system	   wall
+
+    using local files		12.19s	 6.88s	 22.91s
+
+    using NIS			13.92s	 8.91s	 26.34s
+
+    using NIS & nscd		10.37s	 7.34s	 25.30s
+
+    using NIS+			27.57s	30.37s  640.46s
+
+    using NIS+ & nscd           10.25s   7.83s   26.51s
+
+    using NIS & old nscd [1]	13.83s	 8.32s	 29.60s
+
+  Keep in mind that non-namelookup related operations dominate above times.
+  It was just a common complain that using NIS+ unpacking the kernel is
+  horribly slow.
+
+  [1] The old nscd implementation is not available anymore since it was
+  distributed with glibc up to version 2.0.98 and thus is now replaced.
+
+* Tim Waugh provided an implementation of the POSIX.2 wordexp function family.
+
+* Mark Kettenis provided a Hesiod NSS module.
+
+* The ELF dynamic loader knows how to process dynamic string tokens ($ORIGIN
+  and $PLATFORM) in RPATHs and similar strings (Ulrich Drepper).
+
+* rcmd can now handle netgroups (Dick Streefland).
+
+* A port to the ARM was contributed by Phil Blundell, Pat Beirne and Scott
+  Bambrough.
+
+* Support for the IPv6 protocol has been added to the socket API, as per the
+  latest draft standards.
+
+* Support for Linux 2.2 has been added.
+
+* Interface changes relative to the latest 2.0.x release:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+addseverity			NEW: Unix98
+alphasort64			NEW: LFS
+argp_err_exit_status		NEW: argp, GNU ext
+argp_error			NEW: argp, GNU ext
+argp_failure			NEW: argp, GNU ext
+argp_help			NEW: argp, GNU ext
+argp_parse			NEW: argp, GNU ext
+argp_program_bug_address	NEW: argp, GNU ext
+argp_program_version		NEW: argp, GNU ext
+argp_program_version_hook	NEW: argp, GNU ext
+argp_state_help			NEW: argp, GNU ext
+argp_usage			NEW: argp, GNU ext
+authdes_create			NEW: Secure RPC
+authdes_getucred		NEW: Secure RPC
+authdes_pk_create		NEW: Secure RPC
+backtrace			NEW: GNU ext.
+backtrace_symbols		NEW: GNU ext.
+backtrace_symbols_fd		NEW: GNU ext.
+cacos				NEW: ISO C 9x
+cacosf				NEW: ISO C 9x
+cacosh				NEW: ISO C 9x
+cacoshf				NEW: ISO C 9x
+cacoshl				NEW: ISO C 9x
+cacosl				NEW: ISO C 9x
+capget				NEW: kernel
+capset				NEW: kernel
+carg				NEW: ISO C 9x
+cargf				NEW: ISO C 9x
+cargl				NEW: ISO C 9x
+casin				NEW: ISO C 9x
+casinf				NEW: ISO C 9x
+casinh				NEW: ISO C 9x
+casinhf				NEW: ISO C 9x
+casinhl				NEW: ISO C 9x
+casinl				NEW: ISO C 9x
+catan				NEW: ISO C 9x
+catanf				NEW: ISO C 9x
+catanh				NEW: ISO C 9x
+catanhf				NEW: ISO C 9x
+catanhl				NEW: ISO C 9x
+catanl				NEW: ISO C 9x
+cbc_crypt			NEW: Secure RPC
+ccos				NEW: ISO C 9x
+ccosf				NEW: ISO C 9x
+ccosh				NEW: ISO C 9x
+ccoshf				NEW: ISO C 9x
+ccoshl				NEW: ISO C 9x
+ccosl				NEW: ISO C 9x
+cexp				NEW: ISO C 9x
+cexpf				NEW: ISO C 9x
+cexpl				NEW: ISO C 9x
+cimag				NEW: ISO C 9x
+cimagf				NEW: ISO C 9x
+cimagl				NEW: ISO C 9x
+clearerr_locked			REMOVED
+clntunix_create			NEW: sunrpc ext
+clog				NEW: ISO C 9x
+clog10				NEW: ISO C 9x
+clog10f				NEW: ISO C 9x
+clog10l				NEW: ISO C 9x
+clogf				NEW: ISO C 9x
+clogl				NEW: ISO C 9x
+conj				NEW: ISO C 9x
+conjf				NEW: ISO C 9x
+conjl				NEW: ISO C 9x
+cpow				NEW: ISO C 9x
+cpowf				NEW: ISO C 9x
+cpowl				NEW: ISO C 9x
+cproj				NEW: ISO C 9x
+cprojf				NEW: ISO C 9x
+cprojl				NEW: ISO C 9x
+creal				NEW: ISO C 9x
+crealf				NEW: ISO C 9x
+creall				NEW: ISO C 9x
+creat64				NEW: LFS
+csin				NEW: ISO C 9x
+csinf				NEW: ISO C 9x
+csinh				NEW: ISO C 9x
+csinhf				NEW: ISO C 9x
+csinhl				NEW: ISO C 9x
+csinl				NEW: ISO C 9x
+csqrt				NEW: ISO C 9x
+csqrtf				NEW: ISO C 9x
+csqrtl				NEW: ISO C 9x
+ctan				NEW: ISO C 9x
+ctanf				NEW: ISO C 9x
+ctanh				NEW: ISO C 9x
+ctanhf				NEW: ISO C 9x
+ctanhl				NEW: ISO C 9x
+ctanl				NEW: ISO C 9x
+des_setparity			NEW: Secure RPC
+ecb_crypt			NEW: Secure RPC
+endutxent			NEW: Unix98
+exp10				NEW: ISO C 9x
+exp10f				NEW: ISO C 9x
+exp10l				NEW: ISO C 9x
+exp2				NEW: ISO C 9x
+exp2f				NEW: ISO C 9x
+exp2l				NEW: ISO C 9x
+fattach				NEW: STREAMS
+fdetach				NEW: STREAMS
+fdim				NEW: ISO C 9x
+fdimf				NEW: ISO C 9x
+fdiml				NEW: ISO C 9x
+feclearexcept			NEW: ISO C 9x
+fegetenv			NEW: ISO C 9x
+fegetexceptflag			NEW: ISO C 9x
+fegetround			NEW: ISO C 9x
+feholdexcept			NEW: ISO C 9x
+feof_locked			REMOVED
+feraiseexcept			NEW: ISO C 9x
+ferror_locked			REMOVED
+fesetenv			NEW: ISO C 9x
+fesetexceptflag			NEW: ISO C 9x
+fesetround			NEW: ISO C 9x
+fetestexcept			NEW: ISO C 9x
+feupdateenv			NEW: ISO C 9x
+fflush_locked			REMOVED
+ffsl				NEW: GNU ext.
+ffsll				NEW: GNU ext.
+fgetpos64			NEW: LFS
+fgets_unlocked			NEW: GNU ext.
+fileno_locked			REMOVED
+fma				NEW: ISO C 9x
+fmaf				NEW: ISO C 9x
+fmal				NEW: ISO C 9x
+fmax				NEW: ISO C 9x
+fmaxf				NEW: ISO C 9x
+fmaxl				NEW: ISO C 9x
+fmin				NEW: ISO C 9x
+fminf				NEW: ISO C 9x
+fminl				NEW: ISO C 9x
+fmtmsg				NEW: Unix98
+fopen64				NEW: LFS
+fputc_locked			REMOVED
+fputs_unlocked			NEW: GNU ext.
+fread_unlocked			NEW: GNU ext.
+freopen64			NEW: LFS
+fseeko				NEW: Unix98
+fsetpos64			NEW: LFS
+fstatfs64			NEW: LFS
+fstatvfs			NEW: Unix98
+fstatvfs64			NEW: LFS
+ftello				NEW: Unix98
+ftello64			NEW: LFS
+ftruncate64			NEW: LFS
+ftw64				NEW: LFS
+fwrite_unlocked			NEW: GNU ext.
+gai_strerror			NEW: IPv6
+gamma_r				REMOVED
+gammaf_r			REMOVED
+gammal_r			REMOVED
+getchar_locked			REMOVED
+getdate				NEW: Unix98
+getdate_err			NEW: Unix98
+getdate_r			NEW: GNU ext.
+getmsg				NEW: STREAMS
+getnameinfo			NEW: IPv6
+getnetname			NEW: Secure RPC
+getpmsg				NEW: STREAMS
+getpt				NEW: Unix98 PTY
+getrlimit64			NEW: LFS
+getutxent			NEW: Unix98
+getutxid			NEW: Unix98
+getutxline			NEW: Unix98
+glob64				NEW: GNU ext.
+globfree64			NEW: GNU ext.
+gnu_get_libc_release		NEW: GNU ext.
+gnu_get_libc_version		NEW: GNU ext.
+grantpt				NEW: Unix98 PTY
+host2netname			NEW: Secure RPC
+iconv				NEW: iconv
+iconv_close			NEW: iconv
+iconv_open			NEW: iconv
+if_freenameindex		NEW: IPv6
+if_indextoname			NEW: IPv6
+if_nameindex			NEW: IPv6
+if_nametoindex			NEW: IPv6
+in6addr_any			NEW: IPv6
+in6addr_loopback		NEW: IPv6
+inet6_isipv4mapped		NEW: IPv6
+isastream			NEW: STREAMS
+iswblank			NEW: GNU ext.
+key_decryptsession		NEW: Secure RPC
+key_decryptsession_pk		NEW: Secure RPC
+key_encryptsession		NEW: Secure RPC
+key_encryptsession_pk		NEW: Secure RPC
+key_gendes			NEW: Secure RPC
+key_get_conv			NEW: Secure RPC
+key_secretkey_is_set		NEW: Secure RPC
+key_setnet			NEW: Secure RPC
+key_setsecret			NEW: Secure RPC
+llrint				NEW: ISO C 9x
+llrintf				NEW: ISO C 9x
+llrintl				NEW: ISO C 9x
+llround				NEW: ISO C 9x
+llroundf			NEW: ISO C 9x
+llroundl			NEW: ISO C 9x
+log2				NEW: ISO C 9x
+log2f				NEW: ISO C 9x
+log2l				NEW: ISO C 9x
+lrint				NEW: ISO C 9x
+lrintf				NEW: ISO C 9x
+lrintl				NEW: ISO C 9x
+lround				NEW: ISO C 9x
+lroundf				NEW: ISO C 9x
+lroundl				NEW: ISO C 9x
+lseek64				NEW: LFS
+makecontext			NEW: Unix98
+mempcpy				NEW: GNU ext.
+mmap64				NEW: LFS
+moncontrol			REMOVED
+modify_ldt			NEW: kernel
+nan				NEW: ISO C 9x
+nanf				NEW: ISO C 9x
+nanl				NEW: ISO C 9x
+nearbyint			NEW: ISO C 9x
+nearbyintf			NEW: ISO C 9x
+nearbyintl			NEW: ISO C 9x
+netname2host			NEW: Secure RPC
+netname2user			NEW: Secure RPC
+nexttoward			NEW: ISO C 9x
+nexttowardf			NEW: ISO C 9x
+nexttowardl			NEW: ISO C 9x
+nftw				NEW: Unix98
+nftw64				NEW: LFS
+open64				NEW: LFS
+passwd2des			NEW: Secure RPC
+pow10				NEW: GNU ext.
+pow10f				NEW: GNU ext.
+pow10l				NEW: GNU ext.
+pread				NEW: Unix98
+pread64				NEW: LFS
+printf_size			NEW: GNU ext.
+printf_size_info		NEW: GNU ext.
+profil_counter			REMOVED
+pthread_mutexattr_getkind_np	REPLACED
+pthread_mutexattr_setkind_np	REPLACED
+ptsname				NEW: Unix98 PTY
+ptsname_r			NEW: Unix98 PTY
+putc_locked			REMOVED
+putchar_locked			REMOVED
+putgrent			NEW: GNU ext.
+putmsg				NEW: STREAMS
+putpmsg				NEW: STREAMS
+pututxline			NEW: Unix98
+pwrite				NEW: Unix98
+pwrite64			NEW: LFS
+readdir64			NEW: LFS
+readdir64_r			NEW: LFS
+remquo				NEW: ISO C 9x
+remquof				NEW: ISO C 9x
+remquol				NEW: ISO C 9x
+round				NEW: ISO C 9x
+roundf				NEW: ISO C 9x
+roundl				NEW: ISO C 9x
+rtime				NEW: GNU ext.
+scalbln				NEW: ISO C 9x
+scalblnf			NEW: ISO C 9x
+scalblnl			NEW: ISO C 9x
+scandir64			NEW: LFS
+sendfile			NEW: kernel
+setcontext			NEW: Unix98
+setrlimit64			NEW: LFS
+setutxent			NEW: Unix98
+sighold				NEW: Unix98
+sigignore			NEW: Unix98
+sigqueue			NEW: POSIX.1b
+sigrelse			NEW: Unix98
+sigset				NEW: POSIX.1b
+sigtimedwait			NEW: POSIX.1b
+sigwaitinfo			NEW: POSIX.1b
+sincos				NEW: GNU ext.
+sincosf				NEW: GNU ext.
+sincosl				NEW: GNU ext.
+statfs64			NEW: LFS
+statvfs				NEW: Unix98
+statvfs64			NEW: LFS
+strcasestr			NEW: GNU ext.
+strtoimax			NEW: ISO C 9x
+strtoumax			NEW: ISO C 9x
+strverscmp			NEW: GNU ext.
+svcauthdes_stats		NEW: Secure RPC
+svcunix_create			NEW: sunrpc etx
+svcunixfd_create		NEW: sunrpc ext
+swapcontext			NEW: Unix98
+tcgetsid			NEW: Unix98 PTY
+tdestroy			NEW: GNU ext.
+tgamma				NEW: ISO C 9x
+tgammaf				NEW: ISO C 9x
+tgammal				NEW: ISO C 9x
+tmpfile64			NEW: LFS
+trunc				NEW: ISO C 9x
+truncate64			NEW: LFS
+truncf				NEW: ISO C 9x
+truncl				NEW: ISO C 9x
+umount2				NEW: kernel
+unlockpt			NEW: Unix98 PTY
+updwtmpx			NEW: Unix98
+user2netname			NEW: Secure RPC
+utmpxname			NEW: Unix98
+versionsort			NEW: GNU ext.
+versionsort64			NEW: GNU ext.
+waitid				NEW: Unix98
+wcscasecmp			NEW: GNU ext.
+wcsncasecmp			NEW: GNU ext.
+wcsnlen				NEW: GNU ext.
+wcstoimax			NEW: ISO C 9x
+wcstoll				NEW: ISO C 9x
+wcstoull			NEW: ISO C 9x
+wcstoumax			NEW: ISO C 9x
+wcswcs				NEW: Unix98
+wordexp				NEW: POSIX.2
+wordfree			NEW: POSIX.2
+write_profiling			REMOVED
+xdecrypt			NEW: Secure RPC
+xdr_authdes_cred		NEW: Secure RPC
+xdr_authdes_verf		NEW: Secure RPC
+xdr_cryptkeyarg			NEW: Secure RPC
+xdr_cryptkeyarg2		NEW: Secure RPC
+xdr_cryptkeyres			NEW: Secure RPC
+xdr_getcredres			NEW: Secure RPC
+xdr_key_netstarg		NEW: Secure RPC
+xdr_key_netstres		NEW: Secure RPC
+xdr_keybuf			NEW: Secure RPC
+xdr_keystatus			NEW: Secure RPC
+xdr_netnamestr			NEW: Secure RPC
+xdr_sizeof			NEW: Secure RPC
+xdr_unixcred			NEW: sunrpc ext
+xencrypt			NEW: Secure RPC
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Version 2.0.6
+
+* more bug fixes
+
+
+Version 2.0.5
+
+* more bug fixes
+
+* inet_ntoa is thread-safe
+
+* updwtmp is moved from libutil to libc
+
+* rewrite of cbrt function
+
+* update of timezone data
+
+Version 2.0.4
+
+* more bug fixes
+
+Version 2.0.3
+
+* more bug fixes
+
+Version 2.0.2
+
+* more bug fixes
+
+* add atoll function
+
+* fix complex problems in Berkeley DB code
+
+* fix math functions
+
+Version 2.0.1
+
+* fixed lots of header problems (especially Linux/GNU specific)
+
+* dynamic loader preserves all registers
+
+* Roland McGrath provided support for handling of auxiliary objects in
+  the ELF dynamic loader.
+
+* support for parallel builds is improved
+
+Version 2.0
+
+* GNU extensions are no longer declared by default.  To enable them you
+  must define the macro `_GNU_SOURCE' in your program or compile with
+  `-D_GNU_SOURCE'.
+
+* The library has changed from using GNU ld symbol aliases to using weak
+  symbols where available.  The ELF object file format supports weak
+  symbols; GNU ld also supports weak symbols in the a.out format.  (There
+  is also now support for other GNU ld extensions in ELF.  Use the
+  `--with-elf' option to configure to indicate you have ELF, and
+  `--with-gnu-ld' if using GNU ld.)  This change resulted in the deletion
+  of many files which contained only symbol aliases, reducing the size of
+  the source and the compiled library; many other files were renamed to
+  less cryptic names previously occupied by the symbol alias files.
+  There is a new header file <elf.h> for programs which operate on
+  files in the ELF format.
+
+* Converted to Autoconf version 2, so `configure' has more options.
+  Run `configure --help' to see the details.
+
+* The library can now be configured to build profiling, highly-optimized
+  (but undebuggable), and/or shared libraries (ELF with GNU ld only).  The
+  `--enable-profile', `--enable-omitfp', and `--enable-shared' options to
+  `configure' enable building these extra libraries.  The shared library is
+  built by default when using both ELF and GNU ld.  When shared libraries
+  are enabled, the new library `-ldl' is available for arbitrary run-time
+  loading of shared objects; its interface is defined in <dlfcn.h>.  The
+  new header file <link.h> gives access to the internals of the run-time
+  dynamic linker, `ld.so'.  The shell script `ldd' is similar to the
+  application of same name on other systems and it provides information
+  about dynamically linked binaries.
+
+* The C library now provides the run-time support code for profiling
+  executables compiled with `-pg'.  Programs can control the profiling code
+  through the interface in <sys/gmon.h>.  The `gmon.out' files written by
+  the GNU C library can be read only by GNU `gprof' (from GNU binutils);
+  the support for this file format was contributed by David Mosberger-Tang.
+
+* The math code has been replaced with a math library based on fdlibm from
+  Sun, and modified by JT Conklin and Ulrich Drepper with i387 support, by
+  Ian Taylor with `float' functions and by Ulrich Drepper with `long double'
+  functions.  The math functions now reside in a separate library,  so
+  programs using them will need to use `-lm' their linking commands.
+
+* John C. Bowman contributed optimized ix87 assembler inline functions.
+
+* Ulrich Drepper has contributed support for an `/etc/nsswitch.conf'
+  mechanism similar to that found in Solaris 2.  This is now used for the
+  group, passwd, hosts, networks, services, protocols, rpc, ethers,
+  shadow, netgroup, publickey, and alias databases.  The `nsswitch.conf'
+  file controls what services are used for each individual database.  This
+  works by loading shared libraries with names specified in `nsswitch.conf',
+  so service modules can be changed or added at any time without even
+  relinking any program.  Currently there are the file, db, and NIS based
+  NSS services available.
+
+* The new functions `strtoq' and `strtouq' parse integer values from
+  strings, like `strtol' and `strtoul', but they return `long long int' and
+  `unsigned long long int' values, respectively (64-bit quantities).
+
+* The new functions `strtof' and `strtold' parse floating-point values from
+  strings, like `strtod', but they return `float' and `long double' values,
+  respectively (on some machines `double' and `long double' are the same).
+
+* Ulrich Drepper has contributed new implementations of the floating-point
+  printing and reading code used in the `printf' family of functions and
+  `strtod', `strtof', and `strtold'.  These new functions are perfectly
+  accurate, and much faster than the old ones.
+
+* The implementation of the POSIX locale model was completely rewritten by
+  Ulrich Drepper.  This includes the new programs `localedef' and `locale'
+  to compile the POSIX locale definition.
+
+* The former dummy implementations of the strcoll and strxfrm function are
+  now replaced by fully functional code contributed by Ulrich Drepper.  The
+  collation information comes from the POSIX locale definitions.
+
+* The new header <langinfo.h> defines an interface for accessing
+  various locale-dependent data (using the locale chosen with `setlocale').
+
+* Ulrich Drepper has contributed a new suite of functions for operation on
+  wide-character and multibyte-character strings, in <wchar.h>;
+  and classification and case conversion of wide characters, in <wctype.h>.
+  These new functions are conforming to the ISO C, Amendement 1 specification.
+
+* There is now a second implementation of the standard I/O library available.
+  It comes from GNU libg++ as was written by Per Bothner, heavily modified
+  by Hongjiu Lu and made thread safe by Ulrich Drepper.
+
+* You can now use positional parameter specifications in format strings
+  for the `printf' and `scanf' families of functions.  For example,
+  `printf ("Number %2$d, Mr %1$s\n", "Jones", 6);'' prints
+  ``Number 6, Mr Jones''.  This is mainly useful when providing different
+  format strings for different languages, whose grammars may dictate
+  different orderings of the values being printed.  To support this
+  feature, the interface for `register_printf_handler' has changed; see
+  the header file <printf.h> for details.
+
+* The `printf' and `scanf' families of functions now understand a new
+  formatting flag for numeric conversions: the ' flag (e.g. %'d or %'f) says
+  to group numbers as indicated by the locale; for `scanf' and friends, this
+  says to accept as valid only a number with all the proper grouping
+  separators in the right places.  In the default "C" locale, numbers are
+  not grouped; but locales for specific countries will define the usual
+  conventions (i.e. separate thousands with `,' in the US locale).
+
+* The pgrp functions have been regularized, slightly incompatibly but much
+  less confusingly.  The core functions are now `getpgid' and `setpgid',
+  which take arguments for the PID to operate on; the POSIX.1 `getpgrp' (no
+  argument) and BSD `setpgrp' (identical to `setpgid') functions are
+  provided for compatibility.  There is no longer an incompatible `getpgrp'
+  with an argument declared under _BSD_SOURCE; no BSD code uses it.
+
+* The new header file <fts.h> and suite of functions simplify programs that
+  operate on directory trees.  This code comes from 4.4 BSD.
+
+* The resolver code has been updated from the BIND 4.9.5-P1 release.
+  Parts of the code were heavily modified by Ulrich Drepper to fit in the
+  NSS scheme used in glibc.
+
+* There is a new malloc debugging hook `__memalign_hook'.
+
+* There are new typedefs `ushort' for `unsigned short int' and `uint' for
+  `unsigned int' in <sys/types.h>.  These are for compatibility only and
+  their use is discouraged.
+
+* The `-lmcheck' library to enable standard malloc debugging hooks is now
+  done differently, so that it works even without GNU ld.
+
+* New function `euidaccess' checks allowed access to a file like `access',
+  but using the effective IDs instead of the real IDs.
+
+* The time zone data files have been updated for the latest and greatest
+  local time conventions of the countries of the world.
+
+* The new function `dirfd' extracts the file descriptor used by a DIR stream;
+  see <dirent.h>.
+
+* The new functions `ecvt', `fcvt', and `gcvt' provide an obsolete interface
+  for formatting floating-point numbers.  They are provided only for
+  compatibility; new programs should use `sprintf' instead.  There are
+  also equivalent function for the `long double' floating-point type and
+  all functions also exist in a reentrant form.
+
+* The new auxiliary library `-lutil' from 4.4 BSD contains various
+  functions for maintaining the login-record files (primarily of use to
+  system programs such as `login'), and convenient functions for
+  allocating and initializing a pseudo-terminal (pty) device.
+
+* Ulrich Drepper has contributed new support for System V style
+  shared memory and IPC on systems that support it.
+
+* Ulrich Drepper has contributed several miscellaneous new functions found
+  in System V: The `hsearch' family of functions provide an effective
+  implementation of hash tables; `a64l' and `l64a' provide a very simple
+  binary to ASCII mapping; `drand48' and friends provide a 48-bit random
+  number generator.
+
+* Ulrich Drepper has contributed new reentrant counterparts for the
+  `random' and `hsearch' families of functions; `random_r', `hsearch_r', etc.
+
+* Ulrich Drepper has contributed new, highly-optimized versions of several
+  string functions for the i486/Pentium family of processors.
+
+* Ulrich Drepper has updated the Linux-specific code, based largely
+  on work done in Hongjiu Lu's version of GNU libc for Linux.
+  The GNU library now supports Linux versions 2.0.10 and later,
+  using the ELF object file format (i[3456]86-*-linux).
+
+* Andreas Schwab has ported the C library to Linux/m68k (m68k-*-linux).
+
+* David Mosberger-Tang and Richard Henderson have ported the C library
+  to Linux/Alpha (alpha-*-linux).  Richard Henderson contributed the
+  dynamic linking support for ELF/Alpha.
+
+* Richard Henderson contributed several Alpha optimized assembler function
+  for arithmetic and string handling.
+
+* Ulrich Drepper has contributed a new set of message catalog functions to
+  support multiple languages using the <libintl.h> interface, for use with
+  his new package GNU gettext.  Translation volunteers have contributed
+  catalogs of the library's messages in Spanish, German, and Korean.
+
+* For compatibility with XPG4, Ulrich Drepper has contributed the `gencat'
+  program and the `catgets' function for reading the catalog files it
+  creates.  (The <libintl.h> interface is preferred; we include the
+  <nl_types.h> interface using `catgets' only for source compatibility with
+  programs already written to use it.)
+
+* New header file <values.h> gives SVID-compatible names for <limits.h>
+  constants.
+
+* Various new macros, declarations, and small header files for compatibility
+  with 4.4 BSD.
+
+* New function `group_member' is a convenient way to check if a process has
+  a given effective group ID.
+
+* When using GCC 2.7 and later, the socket functions are now declared in a
+  special way so that passing an argument of type `struct sockaddr_in *',
+  `struct sockaddr_ns *', or `struct sockaddr_un *' instead of the generic
+  `struct sockaddr *' type, does not generate a type-clash warning.
+
+* New function `error' declared in header file <error.h> is a convenient
+  function for printing error messages and optionally exiting; this is the
+  canonical function used in GNU programs.  The new functions `err', `warn',
+  and friends in header file <err.h> are the canonical 4.4 BSD interface for
+  doing the same thing.
+
+* The <glob.h> interface has several new flags from 4.4 BSD that extend the
+  POSIX.2 `glob' function to do ~ and {...} expansion.
+
+* New function `unsetenv' complements `setenv' for compatibility with 4.4 BSD.
+  `clearenv' which is used in POSIX.9 is also available.
+
+* New function `getsid' returns session ID number on systems that support it.
+
+* We have incorporated the 4.4 BSD `db' library (version 1.85).  New header
+  files <db.h> and <mpool.h> provide a rich set of functions for several
+  types of simple databases stored in memory and in files, and <ndbm.h> is
+  an old `ndbm'-compatible interface using the `db' functions.  Link with
+  `-ldb' to get these functions.
+
+* New macro `strdupa' copies a string like `strdup', but uses local stack
+  space from `alloca' instead of dynamic heap space from `malloc'.
+
+* New function `strnlen' is like `strlen' but searches only a given maximum
+  number of characters for the null terminator.  `stpncpy', `strndup' and
+  `strndupa' are similar variants for the `stpcpy', `strdup' and `strdupa'
+  function.
+
+* New function `statfs' in header <sys/statfs.h>.
+
+* The new <argz.h> and <envz.h> interfaces contributed by Miles Bader
+  provide convenient functions for operating on blocks of null-terminated
+  strings.
+
+* A new suite of functions in <utmp.h> handle all the details of reading
+  and writing the utmp file.
+
+* An implementation of the NIS/YP(tm) based NSS service was contributed by
+  Thorsten Kukuk.
+
+* Paul Eggert and Ulrich Drepper modified the `strftime' function to be
+  completely POSIX compliant and also implemented the extended functionality
+  to handle alternate digit representation and alternate era date formats.
+
+* Ulrich Drepper provided an implementation of the `strptime' function
+  defined in XPG4.2 which transforms a string into a `struct tm' value.
+
+* Paul Eggert provided the tzselect shell script as part of the timezone
+  code.  The shell script makes it easy to select the correct timezone
+  specification.
+
+* The implementation of the malloc family of functions is completely replaced
+  by a new implementation by Doug Lea with many improvements by Wolfram Gloger.
+  The implementation uses the mmap function (if available) and it is
+  optimized for the use in multi threaded programs.
+
+* Ulrich Drepper contributed a MD5 "encryption" for the crypt family of
+  functions.  This new functionality is usable by specifying a special
+  salt string and it is compatible with implementation on *BSD systems.
+
+* Lots of functions from the XPG4.2 standard were added by Ulrich Drepper:
+  `getsubopt' to handle second level command line options, `bsd_signal'
+  to access BSD style `signal' functionality, the obsolete `regexp' style
+  expression matcher.
+
+* the `lchown' function is available on system which support this
+  functionality.
+
+* The implementation of the shadow password handling function was contributed
+  by Ulrich Drepper.
+
+* David Mosberger-Tang changed the SunRPC implementation to be 64bit safe.
+
+* POSIX.1g support was added.  The <sys/select.h> header is available,
+  `isfdtype' and `pselect' are implemented.  Craig Metz contributed an
+  implementation of `getaddrinfo'.
+
+Version 1.09
+
+* For cross-compilation you should now set `BUILD_CC' instead of `HOST_CC'.
+
+* New header file <fstab.h> and new functions `getfsspec', `getfsent' and
+  friends, for parsing /etc/fstab.  This code comes from 4.4 BSD.
+
+* The new function `daemon' from 4.4 BSD is useful for server programs that
+  want to put themselves in the background.
+
+* Joel Sherrill has contributed support for several standalone boards that
+  run without an operating system.
+
+* `printf', `scanf' and friends now accept a `q' type modifier for long
+  long int as well as `ll'.  Formats using these might be `%qu' or `%lld'.
+
+* All of the code taken from BSD (notably most of the math and networking
+  routines) has been updated from the BSD 4.4-Lite release.
+
+* The resolver code has been updated from the BIND-4.9.3-BETA9 release.
+
+* The new functions `getdomainname' and `setdomainname' fetch or change the
+  YP/NIS domain name.  These are system calls which exist on systems which
+  have YP (aka NIS).
+
+* The time zone data files have been updated for the latest international
+  conventions.
+
+* The SunRPC programs `portmap' and `rpcinfo' are now installed in
+  $(sbindir) (usually /usr/local/sbin) instead of $(bindir).
+
+Version 1.08
+
+* The C library now includes support for Sun RPC, from Sun's free
+  RPCSRC-4.0 distribution.  The `portmap', `rpcinfo', and `rpcgen' programs
+  are included.  (There is still no support for YP.)
+
+* Tom Quinn has contributed a port of the C library to SGI machines running
+  Irix 4 (mips-sgi-irix4).
+
+* The new `lockf' function is a simplified interface to the locking
+  facilities of `fcntl', included for compatibility.
+
+* New time functions `timegm', `timelocal', and `dysize' for compatibility.
+
+* New header file <sys/timeb.h> and new function `ftime' for compatibility.
+
+* New header files <poll.h> and <sys/poll.h> and new function `poll' for
+  compatibility.
+
+* The error message printed by `assert' for a failed assertion now includes
+  the name of the program (if using GNU ld) and the name of the calling
+  function (with versions of GCC that support this).
+
+* The `psignal' function is now declared in <signal.h>, not <stdio.h>.
+
+* The library now includes the <sys/mman.h> header file and memory
+  management functions `mmap', `munmap', `mprotect', `msync', and
+  `madvise', on systems that support those facilities.
+
+* The interface for `mcheck' has changed slightly: the function called to
+  abort the program when an allocation inconsistency is detected now takes
+  an argument that indicates the type of failure.  The new function
+  `mprobe' lets you request a consistency check for a particular block at
+  any time (checks are normally done only when you call `free' or `realloc'
+  on a block).
+
+* It is now possible to easily cross-compile the C library, building on one
+  system a library to run on another machine and/or operating system.  All
+  you need to do is set the variable `HOST_CC' in `configparms' to the
+  native compiler for programs to run on the machine you are building on (a
+  few generator programs are used on Unix systems); set `CC' to the
+  cross-compiler.
+
+* The new function `fexecve' (only implemented on the GNU system) executes
+  a program file given a file descriptor already open on the file.
+
+Version 1.07
+
+* Brendan Kehoe has contributed most of a port to the DEC Alpha
+  running OSF/1 (alpha-dec-osf1).  He says it is 75% complete.
+
+* You can set the variable `libprefix' in `configparms' to specify a prefix
+  to be prepended to installed library files; this makes it easy to install
+  the GNU C library to be linked as `-lgnuc' or whatever.
+
+* The new `stpncpy' is a cross between `stpcpy' and `strncpy': It
+  copies a limited number of characters from a string, and returns the
+  address of the last character written.
+
+* You no longer need to check for whether the installed `stddef.h' is
+  compatible with the GNU C library.  configure now checks for you.
+
+* You can now define a per-stream `fileno' function to convert the
+  stream's cookie into an integral file descriptor.
+
+* ``malloc (0)'' no longer returns a null pointer.  Instead, it
+  allocates zero bytes of storage, and returns a unique pointer which
+  you can pass to `realloc' or `free'.  The behavior is undefined if
+  you dereference this pointer.
+
+* The C library now runs on Sony NEWS m68k machines running either
+  NewsOS 3 or NewsOS 4.
+
+* The new `syscall' function is a system-dependent primitive function
+  for invoking system calls.  It has the canonical behavior on Unix
+  systems, including unreliable return values for some calls (such as
+  `pipe', `fork' and `getppid').
+
+* The error code `EWOULDBLOCK' is now obsolete; it is always defined
+  to `EAGAIN', which is the preferred name.  On systems whose kernels
+  use two distinct codes, the C library now translates EWOULDBLOCK to
+  EAGAIN in every system call function.
+
+Version 1.06
+
+* The GNU C Library Reference Manual is now distributed with the library.
+  `make dvi' will produce a DVI file of the printed manual.
+  `make info' will produce Info files that you can read on line using C-h i
+  in Emacs or the `info' program.
+  Please send comments on the manual to bug-glibc-manual@gnu.org.
+
+* The library now supports SVR4 on i386s (i386-unknown-sysv4).
+
+* Brendan Kehoe has contributed a port to Sun SPARCs running Solaris 2.
+
+* Jason Merrill has contributed a port to the Sequent Symmetry running
+  Dynix version 3 (i386-sequent-dynix).
+
+* The library has been ported to i386s running SCO 3.2.4 (also known as SCO
+  ODT 2.0; i386-unknown-sco3.2.4) or SCO 3.2 (i386-unknown-sco3.2).
+
+* New function `memory_warnings' lets you arrange to get warnings when
+  malloc is running out of memory to allocate, like Emacs gives you.
+
+* The C library now contains the relocating allocator used in Emacs 19 for
+  its editing buffers.  This allocator (ralloc) minimizes allocation
+  overhead and fragmentation by moving allocated regions around whenever it
+  needs to.  You always refer to a ralloc'd region with a "handle" (a
+  pointer to a pointer--an object of type `void **').
+
+* There is a new `printf' format: `%m' gives you the string corresponding
+  to the error code in `errno'.
+
+* In `scanf' formats, you can now use `%as' or `%a[' to do the normal `%s'
+  or `%[' conversion, but instead of filling in a fixed-sized buffer you
+  pass, the `a' modifier says to fill in a `char **' you pass with a
+  malloc'd string.
+
+* The `fnmatch' function supports the new flag bits `FNM_LEADING_DIR' and
+  `FNM_CASEFOLD'.  `FNM_LEADING_DIR' lets a pattern like `foo*' match a
+  name like `foo/bar'.  `FNM_CASEFOLD' says to ignore case in matching.
+
+* `mkstemp' is a traditional Unix function to atomically create and open a
+  uniquely-named temporary file.
+
+Version 1.05
+
+* The standard location for the file that says what the local timezone is
+  has changed again.  It is now `/usr/local/etc/localtime' (or more
+  precisely, `${prefix}/etc/localtime') rather than `/etc/localtime'.
+
+* The distribution no longer contains any files with names longer than 14
+  characters.
+
+* `struct ttyent' has two new flag bits: TTY_TRUSTED and TTY_CONSOLE.
+  These are set by the new `trusted' and `console' keywords in `/etc/ttys'.
+
+* New functions `ttyslot' and `syslog' from 4.4 BSD.
+
+Version 1.04
+
+* The configuration process has changed quite a bit.  The `configure'
+  script is now used just like the configuration scripts for other GNU
+  packages.  The `sysdeps' directory hierarchy is much rearranged.
+  The file `INSTALL' explains the new scheme in detail.
+
+* The header files no longer need to be processed into ANSI C and
+  traditional C versions.  There is just one set of files to install, and
+  it will work with ANSI or old C compilers (including `gcc -traditional').
+
+* Brendan Kehoe and Ian Lance Taylor have ported the library to the
+  MIPS DECStation running Ultrix 4.
+
+* The Sun 4 startup code (crt0) can now properly load SunOS 4 shared libraries.
+  Tom Quinn contributed the initial code.  The GNU C library can NOT yet be
+  made itself into a shared library.
+
+* Yet further improved support for the i386, running 4.3 BSD-like systems
+  (such as Mach 3 with the Unix single-server), or System V.
+
+* New function `strncasecmp' to do case-insensitive string comparison
+  with limited length.
+
+* New function `strsep' is a reentrant alternative to `strtok'.
+
+* New functions `scandir' and `alphasort' for searching directories.
+
+* New function `setenv' is a better interface to `putenv'.
+
+* Ian Lance Taylor has contributed an implementation of the SVID `ftw'
+  function for traversing a directory tree.
+
+* The GNU obstack package is now also part of the C library.
+  The new function `open_obstack_stream' creates a stdio stream that
+  writes onto an obstack; `obstack_printf' and `obstack_vprintf' do
+  formatted output directly to an obstack.
+
+* Miscellaneous new functions: reboot, nice, sigaltstack (4.4 BSD only),
+  cfmakeraw, getusershell, getpass, swab, getttyent, seteuid, setegid.
+
+* `FNM_FILE_NAME' is another name for `FNM_PATHNAME', used with `fnmatch'.
+
+* The new functions `strfry' and `memfrob' do mysterious and wonderful
+  things to your strings.
+
+* There are some new test programs: test-fseek, testmb, and testrand.
+
+* Some work has been done to begin porting the library to 4.4 BSD and Linux.
+  These ports are not finished, but are a good starting place for really
+  supporting those systems.
+
+* `/etc/localtime' is now the standard location for the file that says what
+  the local timezone is, rather than `/usr/local/lib/zoneinfo/localtime'.
+  This follows the general principle that `/etc' is the place for all local
+  configuration files.
+
+* The C library header files now use `extern "C"' when used by the C++
+  compiler, so the C library should now work with C++ code.
+
+* The header file <bstring.h> is gone.  <string.h> now declares bcopy,
+  bcmp, bzero, and ffs.  (Update: nowadays these functions are declared
+  in <strings.h>.)
+
+* Mike Haertel (of GNU e?grep and malloc fame) has written a new sorting
+  function which uses the `merge sort' algorithm, and is said to be
+  significantly faster than the old GNU `qsort' function.  Merge sort is
+  now the standard `qsort' function.  The new algorithm can require a lot
+  of temporary storage; so, the old sorting function is called when the
+  required storage is not available.
+
+* The C library now includes Michael Glad's Ultra Fast Crypt, which
+  provides the Unix `crypt' function, plus some other entry points.
+
+* The code and header files taken from 4.4 BSD have been updated with the
+  latest files released from Berkeley.
+
+----------------------------------------------------------------------
+Copyright information:
+
+Copyright (C) 1992-1999,2000,2001,2002,2003,2004,2005,2006
+	Free Software Foundation, Inc.
+
+   Permission is granted to anyone to make or distribute verbatim copies
+   of this document as received, in any medium, provided that the
+   copyright notice and this permission notice are preserved,
+   thus giving the recipient permission to redistribute in turn.
+
+   Permission is granted to distribute modified versions
+   of this document, or of portions of it,
+   under the above conditions, provided also that they
+   carry prominent notices stating who last changed them.
+
+Local variables:
+version-control: never
+End:

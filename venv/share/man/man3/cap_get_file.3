@@ -1,0 +1,135 @@
+.\"
+.\" written by Andrew Main <zefram@dcs.warwick.ac.uk>
+.\"
+.TH CAP_GET_FILE 3 "2022-10-16" "" "Linux Programmer's Manual"
+.SH NAME
+cap_get_file, cap_set_file, cap_get_fd, cap_set_fd, cap_get_nsowner, \
+cap_set_nsowner \- capability manipulation on files
+.SH SYNOPSIS
+.nf
+#include <sys/capability.h>
+
+cap_t cap_get_file(const char *path_p);
+int cap_set_file(const char *path_p, cap_t cap_p);
+cap_t cap_get_fd(int fd);
+int cap_set_fd(int fd, cap_t caps);
+uid_t cap_get_nsowner(cap_t caps);
+int cap_set_nsowner(cap_t caps, uid_t rootuid);
+.fi
+.sp
+Link with \fI\-lcap\fP.
+.SH DESCRIPTION
+.BR cap_get_file ()
+and
+.BR cap_get_fd ()
+allocate a capability state in working storage and set it to represent the
+capability state of the pathname pointed to by
+.I path_p
+or the file open on descriptor
+.IR fd .
+These functions return a pointer to the newly created capability
+state.  The effects of reading the capability state from any file
+other than a regular file is undefined.  The caller should free any
+releasable memory, when the capability state in working storage is no
+longer required, by calling
+.BR cap_free ()
+with the used
+.I cap_t
+as an argument.
+.PP
+.BR cap_set_file ()
+and
+.BR cap_set_fd ()
+set the values for all capability flags for all capabilities for the pathname
+pointed to by
+.I path_p
+or the file open on descriptor
+.IR fd ,
+with the capability state identified by
+.IR cap_p .
+The new capability state of the file is completely determined by the
+contents of
+.IR cap_p .
+A NULL value for
+.IR cap_p
+is used to indicate that capabilities for the file should be deleted.
+For these functions to succeed, the calling process must have the
+.BR CAP_SETFCAP
+capability in its effective set
+and either the effective user ID of the process must match the
+file owner or the calling process must have the
+.B CAP_FOWNER
+capability in its effective capability set.  The effects of writing the
+capability state to any file type other than a regular file are
+undefined.
+.PP
+A capability set held in memory can be associated with the root user ID in
+use in a specific user namespace. It is possible to get and set this value
+(in the memory copy) with
+.BR cap_get_nsowner ()
+and
+.BR cap_set_nsowner ()
+respectively. The root user ID is ignored by the libcap library in all cases
+other than when the capability is written to a file. Only if the value
+is non-zero will the library attempt to include it in the written file
+capability set.
+.SH "RETURN VALUE"
+.BR cap_get_file ()
+and
+.BR cap_get_fd ()
+return a non-NULL value on success, and NULL on failure.
+.PP
+.BR cap_set_file ()
+and
+.BR cap_set_fd ()
+return zero on success, and \-1 on failure.
+.PP
+On failure,
+.I errno
+is set to
+.BR EACCES ,
+.BR EBADFD ,
+.BR ENAMETOOLONG ,
+.BR ENOENT ,
+.BR ENOMEM ,
+.BR ENOTDIR ,
+.BR EPERM ,
+or
+.BR EROFS .
+.SH "CONFORMING TO"
+These functions are specified by withdrawn POSIX.1e draft specification.
+.SH NOTES
+Support for file capabilities is provided on Linux since version 2.6.24.
+
+On Linux, the file Effective set is a single bit.
+If it is enabled, then all Permitted capabilities are enabled
+in the Effective set of the calling process when the file is executed;
+otherwise, no capabilities are enabled in the process's Effective set
+following an
+.BR execve (2).
+Because the file Effective set is a single bit,
+if any capability is enabled in the Effective set of the
+.I cap_t
+given to
+.BR cap_set_file ()
+or
+.BR cap_set_fd (),
+then all capabilities whose Permitted or Inheritable flag
+is enabled must also have the Effective flag enabled.
+Conversely, if the Effective bit is enabled on a file, then the
+.I cap_t
+returned by
+.BR cap_get_file()
+and
+.BR cap_get_fd()
+will have the Effective flag enabled for each capability that has the
+Permitted or Inheritable flag enabled.
+.SH "SEE ALSO"
+.BR libcap (3),
+.BR cap_clear (3),
+.BR cap_copy_ext (3),
+.BR cap_from_text (3),
+.BR cap_get_proc (3),
+.BR cap_init (3),
+.BR capabilities (7),
+.BR user_namespaces (7)

@@ -1,0 +1,239 @@
+comment_char %
+escape_char  /
+%
+% Crimean Tatar (Crimean Turkish) Language Locale for Ukraine (latin)
+% Source:	Re<U015F>at SABIQ
+% Contact:	Re<U015F>at SABIQ
+% Email:	<tilde.birlik@gmail.com>
+% Language:	crh
+% Territory:	UA
+% Revision:	0.4
+% Date:		2009-08-16
+% Application:	general
+% Users:	general
+% Charset:	UTF-8 
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title		"Crimean Tatar (Crimean Turkish) language locale for Ukraine"
+source		""
+address		""
+contact		"Re<U015F>at SABIQ"
+email		"tilde.birlik@gmail.com"
+tel		""
+fax		""
+language	"Crimean Tatar"
+territory	"Ukraine"
+revision	"0.4"
+date		"2009-08-16"
+
+category crh_UA:2000;LC_IDENTIFICATION
+category crh_UA:2000;LC_CTYPE
+category crh_UA:2000;LC_COLLATE
+category crh_UA:2000;LC_TIME
+category crh_UA:2000;LC_NUMERIC
+category crh_UA:2000;LC_PAPER
+category crh_UA:2000;LC_TELEPHONE
+category crh_UA:2000;LC_MEASUREMENT
+category crh_UA:2000;LC_ADDRESS
+category crh_UA:2000;LC_MONETARY
+category crh_UA:2000;LC_MESSAGES
+category crh_UA:2000;LC_NAME
+
+END LC_IDENTIFICATION
+
+%
+% TODO: check and test LC_COLLATE
+
+LC_COLLATE
+% The new Crimean Tatar alphabet (Latin) is:
+% <a>, <b>, <c>, <c,>, <d>, <e>, <f>, <g>, <g(>, <h>, 
+% <i> (dotless i), <i.> (i with dot), <j>, <k>, <l>, <m>, <n>, <n?>, <o>,
+% <o:>, <p>, <q>, <r>, <s>, <s,>, <t>, <u>, <u:>, <v>, <y>, <z>
+
+copy "iso14651_t1"
+
+collating-symbol <c,>
+collating-symbol <g(>
+collating-symbol <i.>
+collating-symbol <n?>
+collating-symbol <o:>
+collating-symbol <s,>
+collating-symbol <u:>
+
+reorder-after <c>
+<c,>
+reorder-after <g>
+<g(>
+reorder-after <h>
+<i>
+<i.>
+reorder-after <n>
+<n?>
+reorder-after <o>
+<o:>
+reorder-after <s>
+<s,>
+reorder-after <u>
+<u:>
+
+reorder-after <U0063>
+<U00E7> <c,>;<CDI>;<MIN>;IGNORE
+reorder-after <U0043>
+<U00C7> <c,>;<CDI>;<CAP>;IGNORE
+
+reorder-after <U0067>
+<U011F> <g(>;<BRE>;<MIN>;IGNORE
+reorder-after <U0047>
+<U011E> <g(>;<BRE>;<CAP>;IGNORE
+
+reorder-after <U0068>
+<U0131> <i>;<BAS>;<MIN>;IGNORE
+<U0069> <i.>;<PCT>;<MIN>;IGNORE
+reorder-after <U0048>
+<U0049> <i>;<BAS>;<CAP>;IGNORE
+<U0130> <i.>;<PCT>;<CAP>;IGNORE
+
+reorder-after <U006E>
+<U00F1> <n?>;<TIL>;<MIN>;IGNORE
+reorder-after <U004E>
+<U00D1> <n?>;<TIL>;<CAP>;IGNORE
+
+reorder-after <U006F>
+<U00F6> <o:>;<REU>;<MIN>;IGNORE
+reorder-after <U004F>
+<U00D6> <o:>;<REU>;<CAP>;IGNORE
+
+reorder-after <U0073>
+<U015F> <s,>;<CDI>;<MIN>;IGNORE
+reorder-after <U0053>
+<U015E> <s,>;<CDI>;<CAP>;IGNORE
+
+reorder-after <U0075>
+<U00FC> <u:>;<REU>;<MIN>;IGNORE
+reorder-after <U0055>
+<U00DC> <u:>;<REU>;<CAP>;IGNORE
+
+reorder-end
+
+END LC_COLLATE
+
+LC_CTYPE
+copy "tr_TR"
+END LC_CTYPE
+
+LC_MESSAGES
+yesstr  "<U0065><U0062><U0065><U0074>"
+nostr   "<U0068><U0061><U0079><U0131><U0072>"
+yesexpr	"<U005E><U005B><U0079><U0059><U0065><U0045><U005D>"
+noexpr	"<U005E><U005B><U006E><U004E><U0068><U0048><U005D>"
+END LC_MESSAGES
+
+LC_MONETARY
+int_curr_symbol           "<U0055><U0041><U0048><U0020>"
+currency_symbol           "<U0067><U0072>"
+mon_decimal_point         "<U002E>"
+mon_thousands_sep         "<U0020>"
+mon_grouping              3;3
+positive_sign             ""
+negative_sign             "<U002D>"
+int_frac_digits           2
+frac_digits               2
+p_cs_precedes             0
+p_sep_by_space            1
+n_cs_precedes             0
+n_sep_by_space            1
+p_sign_posn               1
+n_sign_posn               1
+END LC_MONETARY
+
+LC_NUMERIC
+decimal_point             "<U002C>"
+thousands_sep             "<U002E>"
+grouping                  3;3
+END LC_NUMERIC
+
+LC_TIME
+day     "<U0042><U0061><U007A><U0061><U0072>";/
+        "<U0042><U0061><U007A><U0061><U0072><U0065><U0072><U0074><U0065><U0073><U0069>";/
+        "<U0053><U0061><U006C><U0131>";/
+        "<U00C7><U0061><U0072><U015F><U0065><U006D><U0062><U0065>";/
+        "<U0043><U0075><U006D><U0061><U0061><U0071><U015F><U0061><U006D><U0131>";/
+        "<U0043><U0075><U006D><U0061>";/
+        "<U0043><U0075><U006D><U0061><U0065><U0072><U0074><U0065><U0073><U0069>"
+abday   "<U0042><U0061><U007A>";/
+        "<U0042><U0065><U0072>";/
+        "<U0053><U0061><U006C>";/
+        "<U00C7><U0061><U0072>";/
+        "<U0043><U0061><U0071>";/
+        "<U0043><U0075><U006D>";/
+        "<U0043><U0065><U0072>"
+mon     "<U0059><U0061><U006E><U0076><U0061><U0072>";/
+        "<U0046><U0065><U0076><U0072><U0061><U006C>";/
+        "<U004D><U0061><U0072><U0074>";/
+        "<U0041><U0070><U0072><U0065><U006C>";/
+        "<U004D><U0061><U0079><U0131><U0073>";/
+        "<U0130><U0079><U0075><U006E>";/
+        "<U0130><U0079><U0075><U006C>";/
+        "<U0041><U0076><U0067><U0075><U0073><U0074>";/
+        "<U0053><U0065><U006E><U0074><U00E2><U0062><U0072>";/
+        "<U004F><U006B><U0074><U00E2><U0062><U0072>";/
+        "<U004E><U006F><U0079><U0061><U0062><U0072>";/
+        "<U0044><U0065><U006B><U0061><U0062><U0072>"
+abmon   "<U0059><U0061><U006E>";/
+        "<U0046><U0065><U0076>";/
+        "<U004D><U0061><U0072>";/
+        "<U0041><U0070><U0072>";/
+        "<U004D><U0061><U0079>";/
+        "<U0130><U0079><U006E>";/
+        "<U0130><U0079><U006C>";/
+        "<U0041><U0076><U0067>";/
+        "<U0053><U0065><U006E>";/
+        "<U004F><U006B><U0074>";/
+        "<U004E><U006F><U0079>";/
+        "<U0044><U0065><U006B>"
+d_t_fmt "<U0025><U0061><U0020><U0025><U0064><U0020><U0025><U0062>/
+<U0020><U0025><U0059><U0020><U0025><U0054>"
+d_fmt     "<U0025><U0064><U002E><U0025><U006D><U002E><U0025><U0059>"
+t_fmt     "<U0025><U0054>"
+am_pm     "<U00DC><U0045>";"<U00DC><U0053>"
+t_fmt_ampm "<U0025><U0049><U003A><U0025><U004D><U003A><U0025><U0053>/
+<U0020><U0025><U0070>"
+date_fmt       "<U0025><U0061><U0020><U0025><U0062><U0020><U0025><U0065>/
+<U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U0020>/
+<U0025><U005A><U0020><U0025><U0059>"
+first_weekday 2
+first_workday 2
+END LC_TIME
+
+LC_PAPER
+height      297
+width       210
+END LC_PAPER
+
+LC_MEASUREMENT
+measurement 1
+END LC_MEASUREMENT
+
+LC_ADDRESS
+postal_fmt    "<U0025><U0066><U0025><U004E><U0025><U0061><U0025><U004E>/
+<U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E><U0025><U0073>/
+<U0020><U0025><U0068><U0020><U0025><U0065><U0020><U0025><U0072><U0025>/
+<U004E><U0025><U007A><U0020><U0025><U0054><U0025>/
+<U004E><U0025><U0063><U0025><U004E>"
+country_ab2 "<U0055><U0041>"
+country_ab3 "<U0055><U004B><U0052>"
+country_num 804
+END LC_ADDRESS
+
+LC_TELEPHONE
+tel_int_fmt    "<U002B><U0025><U0063><U0020><U0025><U0061><U0020><U0025>/
+<U006C>"
+int_prefix     "<U0033><U0038><U0030>"
+END LC_TELEPHONE
+
+LC_NAME
+name_fmt    "<U0025><U0064><U0025><U0074><U0025><U0067><U0025><U0074>/
+<U0025><U006D><U0025><U0074><U0025><U0066>"
+END LC_NAME

@@ -1,0 +1,205 @@
+comment_char %
+escape_char  /
+%
+% Minnan Language Locale for Taiwan
+% Source:
+% Contact: Arne Goetje
+% Email: arne@ubuntu.com
+% Language: nan
+% Territory: TW
+% Revision: 0.1
+% Date: 2008-06-16
+% Users: general
+% Charset: UTF-8
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title "Minnan language locale for Taiwan"
+source ""
+address ""
+contact "Arne Goetje"
+email "arne@canonical.com"
+tel ""
+fax ""
+language "Minnan"
+territory "Taiwan"
+revision "0.1"
+date "2008-06-16"
+
+category "nan_TW@latin:2000";LC_IDENTIFICATION
+category "nan_TW@latin:2000";LC_CTYPE
+category "nan_TW@latin:2000";LC_COLLATE
+category "nan_TW@latin:2000";LC_TIME
+category "nan_TW@latin:2000";LC_NUMERIC
+category "nan_TW@latin:2000";LC_PAPER
+category "nan_TW@latin:2000";LC_TELEPHONE
+category "nan_TW@latin:2000";LC_MEASUREMENT
+category "nan_TW@latin:2000";LC_ADDRESS
+category "nan_TW@latin:2000";LC_MESSAGES
+category "nan_TW@latin:2000";LC_MONETARY
+
+END LC_IDENTIFICATION
+
+LC_CTYPE
+copy "i18n"
+
+translit_start
+
+% accents are simply omitted if they cannot be represented.
+include "translit_combining";""
+
+translit_end
+
+END LC_CTYPE
+
+LC_COLLATE
+copy "iso14651_t1"
+
+%% a b c d e f g h i j k l m n o o͘ p q r s t u v w x y z ⁿ
+
+collating-element <oo> from "<U006F><U0358>"
+collating-element <OO> from "<U004F><U0358>"
+collating-element <nn> from "<U207F>"
+
+collating-symbol <CAP-MIN>
+collating-symbol <MIN-CAP>
+
+reorder-after <MIN>
+<MIN-CAP>
+reorder-after <CAP>
+<CAP-MIN>
+
+reorder-after <U006E>
+<oo>
+reorder-after <U004E>
+<OO>
+reorder-after <U007A>
+<nn>
+reorder-after <U005A>
+<nn>
+
+reorder-end
+
+END LC_COLLATE
+
+LC_MONETARY
+copy "zh_TW"
+END LC_MONETARY
+
+LC_NUMERIC
+copy "zh_TW"
+END LC_NUMERIC
+
+LC_TIME
+abday   "<U006C><U0070>";/
+	"<U0070><U0031>";/
+	"<U0070><U0032>";/
+	"<U0070><U0033>";/
+	"<U0070><U0034>";/
+	"<U0070><U0035>";/
+	"<U0070><U0036>"
+day     "<U006C><U00E9><U002D><U0070><U00E0><U0069><U002D><U006A><U0069><U030D><U0074>";/
+        "<U0070><U00E0><U0069><U002D><U0069><U0074>";/
+        "<U0070><U00E0><U0069><U002D><U006A><U012B>";/
+        "<U0070><U00E0><U0069><U002D><U0073><U0061><U207F>";/
+        "<U0070><U00E0><U0069><U002D><U0073><U00EC>";/
+        "<U0070><U00E0><U0069><U002D><U0067><U014D><U0358>";/
+        "<U0070><U00E0><U0069><U002D><U006C><U0061><U030D><U006B>"
+abmon   "<U0031><U0067>";/
+	"<U0032><U0067>";/
+	"<U0033><U0067>";/
+	"<U0034><U0067>";/
+	"<U0035><U0067>";/
+	"<U0036><U0067>";/
+	"<U0037><U0067>";/
+	"<U0038><U0067>";/
+	"<U0039><U0067>";/
+	"<U0031><U0030><U0067>";/
+	"<U0031><U0031><U0067>";/
+	"<U0031><U0032><U0067>"
+mon     "<U0031><U0067><U006F><U0065><U030D><U0068>";/
+	"<U0032><U0067><U006F><U0065><U030D><U0068>";/
+	"<U0033><U0067><U006F><U0065><U030D><U0068>";/
+	"<U0034><U0067><U006F><U0065><U030D><U0068>";/
+	"<U0035><U0067><U006F><U0065><U030D><U0068>";/
+	"<U0036><U0067><U006F><U0065><U030D><U0068>";/
+	"<U0037><U0067><U006F><U0065><U030D><U0068>";/
+	"<U0038><U0067><U006F><U0065><U030D><U0068>";/
+	"<U0039><U0067><U006F><U0065><U030D><U0068>";/
+	"<U0031><U0030><U0067><U006F><U0065><U030D><U0068>";/
+	"<U0031><U0031><U0067><U006F><U0065><U030D><U0068>";/
+	"<U0031><U0032><U0067><U006F><U0065><U030D><U0068>"
+%
+d_t_fmt    "<U0025><U0059><U0020><U0025><U0062><U0020><U0025><U0064><U0020><U0028><U0025><U0061><U0029><U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U0020><U0025><U005A>"
+d_fmt       "<U0025><U0046>"
+t_fmt       "<U0025><U0072>"
+am_pm       "<U0074><U00E9><U006E><U0067><U002D><U0070><U006F><U0358>";"<U0113><U002D><U0070><U006F><U0358>"
+t_fmt_ampm  "<U0025><U0049><U003A><U0025><U004D><U003A><U0025><U0053><U0020><U0025><U0070>"
+timezone    "<U0054><U0053><U0054><U002D><U0038>"
+date_fmt    "<U0025><U0059><U0020><U0025><U0062><U0020><U0025><U0064><U0020><U0028><U0025><U0061><U0029><U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U0020><U0025><U005A>"
+END LC_TIME
+
+LC_MESSAGES
+
+% "^[sS].*" for "Yes"
+yesexpr "<U005E><U005B><U0073><U0053><U005D><U002E><U002A>"
+
+% "^[mM].*" for "No"
+noexpr "<U005E><U005B><U006D><U004D><U005D><U002E><U002A>"
+
+% "Sī" for "Yes"
+yesstr "<U0053><U012B>"
+
+% "M̄-sī" for "No"
+nostr "<U004D><U0304><U002D><U0053><U012B>"
+
+END LC_MESSAGES
+
+LC_PAPER
+height      297
+width       210
+END LC_PAPER
+
+LC_MEASUREMENT
+measurement 1
+END LC_MEASUREMENT
+
+LC_NAME
+%FIXME
+name_fmt    "<U0025><U0064><U0025><U0074><U0025><U0067><U0025><U0074>/
+<U0025><U006D><U0025><U0074><U0025><U0066>"
+name_miss   "<U006B><U006F><U0358><U002D><U006E><U0069><U00FB>"
+name_mr     "<U0073><U0069><U0061><U006E><U002D><U0073><U0069><U207F>"
+name_mrs    "<U006C><U00FA><U002D><U0073><U016B>"
+name_ms     "<U0073><U0069><U00F3><U002D><U0063><U0068><U0069><U00E1>"
+END LC_NAME
+
+LC_ADDRESS
+% postal_fmt: "%f%N%a%N%d%N%b%N%r %e %h %s%N%z %T%N%c%N"
+postal_fmt    "<U0025><U0066><U0025><U004E><U0025><U0061><U0025><U004E>/
+<U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E><U0025><U0072>/
+<U0020><U0025><U0065><U0020><U0025><U0068><U0020><U0025><U0073><U0025>/
+<U004E><U0025><U007A><U0020><U0025><U0054><U0025>/
+<U004E><U0025><U0063><U0025><U004E>"
+% Reference:	http://www.un.org/Depts/unsd/methods/m49alpha.htm
+%		http://www.isbn.spk-berlin.de/html/prefix.htm
+% country_ab2:	TW
+% country_ab3:	TWN
+% country_isbn:	957
+country_name	"<U0054><U00E2><U0069><U002D><U006F><U00E2><U006E>"
+%country_post	"FIXME"
+country_ab2	"<U0054><U0057>"
+country_ab3	"<U0054><U0057><U004E>"
+country_num	158
+%country_car    "FIXME"
+country_isbn	"<U0039><U0035><U0037>"
+%lang_name "Bân-lâm-gú, Hō-ló-oē"
+lang_name "<U0042><U00E2><U006E><U002D><U006C><U00E2><U006D><U002D><U0067><U00FA><U002C><U0020><U0048><U014D><U002D><U006C><U00F3><U002D><U006F><U0113>"
+lang_term "<U006E><U0061><U006E>"
+lang_lib "<U006E><U0061><U006E>"
+END LC_ADDRESS
+
+LC_TELEPHONE
+copy "zh_TW"
+END LC_TELEPHONE

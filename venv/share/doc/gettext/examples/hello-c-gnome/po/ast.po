@@ -1,0 +1,29 @@
+# Asturian translation for hello-c-gnome
+# Copyright (C) 2018 Yoyodyne, Inc. (msgids)
+# This file is distributed under the same license as the gettext package.
+#
+# Marquinos <maacub@gmail.com>, 2009.
+# enolp <enolp@softastur.org>, 2018.
+msgid ""
+msgstr ""
+"Project-Id-Version: hello-c-gnome 0.19.4.73\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"PO-Revision-Date: 2018-07-16 00:28+0100\n"
+"Last-Translator: enolp <enolp@softastur.org>\n"
+"Language-Team: Asturian <ubuntu-l10n-ast@lists.ubuntu.com>\n"
+"Language: ast\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Lokalize 2.0\n"
+
+#: hello.c:46
+msgid "Hello, world!"
+msgstr "¡Hola, mundu!"
+
+#: hello.c:51
+#, c-format
+msgid "This program is running as process number %d."
+msgstr "Esti programa ta executándose como procesu númberu %d."

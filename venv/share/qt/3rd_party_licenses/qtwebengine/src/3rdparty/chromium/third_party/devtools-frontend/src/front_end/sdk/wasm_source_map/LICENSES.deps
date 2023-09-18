@@ -1,0 +1,7 @@
+Licenses of dependencies as produced by `cargo-license`:
+
+Apache-2.0/MIT (20): js-sys, autocfg, cc, indexmap, wasm-bindgen, wasm-bindgen-macro-support, lazy_static, gimli, fallible-iterator, arrayvec, wasm-bindgen-macro, wasm-bindgen-shared, backtrace-sys, backtrace, wasm-bindgen-backend, nodrop, rustc-demangle, cfg-if, bumpalo,
+stable_deref_trait
+MIT (1): synstructure
+MIT OR Apache-2.0 (9): once_cell, failure, log, quote, proc-macro2, syn, failure_derive, unicode-xid, libc
+Unlicense OR MIT (1): byteorder

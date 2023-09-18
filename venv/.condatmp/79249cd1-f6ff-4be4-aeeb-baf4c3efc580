@@ -1,0 +1,13 @@
+libdir=/workspaces/scipy/venv/lib
+libsuffix=
+includedir=/workspaces/scipy/venv/include
+openblas_config= USE_64BITINT=0 DYNAMIC_ARCH=1 DYNAMIC_OLDER= NO_CBLAS= NO_LAPACK=0 NO_LAPACKE= NO_AFFINITY=1 USE_OPENMP=0 PRESCOTT MAX_THREADS=128
+version=0.3.24
+extralib=-lm -lpthread -lgfortran -lm -lpthread -lgfortran
+Name: openblas
+Description: OpenBLAS is an optimized BLAS library based on GotoBLAS2 1.13 BSD version
+Version: ${version}
+URL: https://github.com/xianyi/OpenBLAS
+Libs: -L${libdir} -lopenblas${libsuffix}
+Libs.private: ${extralib}
+Cflags: -I${includedir}

@@ -1,0 +1,188 @@
+comment_char %
+escape_char  /
+%
+% Tatar Language Locale using IQTElif alphabet; for Tatarstan, Russian Federation
+% Source:	Reshat Sabiq
+% Contact:	Reshat Sabiq
+% Email:	<tatar.iqtelif.i18n@gmail.com>
+% Language:	tt@iqtelif
+% Territory:	RU	
+% Revision:	0.1
+% Date:		2006-10-12
+% Application:	general
+% Users:	general
+% Charset:	ISO-8859-9
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title		"Tatar language locale using IQTElif alphabet; for Tatarstan, Russian Federation"
+source		""
+address		""
+contact		"Reshat Sabiq"
+email		"tatar.iqtelif.i18n@gmail.com"
+tel		""
+fax		""
+language	"Tatar"
+territory	"Tatarstan, Russian Federation"
+revision	"0.1"
+date		"2006-10-12"
+
+category "tt_RU@iqtelif:2000";LC_IDENTIFICATION
+category "tt_RU@iqtelif:2000";LC_CTYPE
+category "tt_RU@iqtelif:2000";LC_COLLATE
+category "tt_RU@iqtelif:2000";LC_TIME
+category "tt_RU@iqtelif:2000";LC_NUMERIC
+category "tt_RU@iqtelif:2000";LC_PAPER
+category "tt_RU@iqtelif:2000";LC_TELEPHONE
+category "tt_RU@iqtelif:2000";LC_MEASUREMENT
+category "tt_RU@iqtelif:2000";LC_ADDRESS
+category "tt_RU@iqtelif:2000";LC_MONETARY
+category "tt_RU@iqtelif:2000";LC_MESSAGES
+category "tt_RU@iqtelif:2000";LC_NAME
+
+END LC_IDENTIFICATION
+
+% TODO: further test LC_COLLATE
+
+LC_COLLATE
+% IQTElif:
+% <a>, <b>, <c>, <c,>, <d>, <e>, <f>, <g>, <g(>, <h>, 
+% <i> (dotless i), <i.> (i with dot), <i'>, <j>, <k>, <l>, <m>, <n>, <n?>, <o>,
+% <o:>, <p>, <q>, <r>, <s>, <s,>, <t>, <u>, <u:>, <v>, <w>, <x>, <y>, <z>
+
+copy "crh_UA"
+
+collating-symbol <i'>
+
+reorder-after <i.>
+<i'>
+
+reorder-after <U0069>
+<U00ED> <i'>;<ACA>;<MIN>;IGNORE
+reorder-after <U0130>
+<U00CD> <i'>;<ACA>;<CAP>;IGNORE
+
+reorder-end
+
+END LC_COLLATE
+
+LC_CTYPE
+copy "tr_TR"
+END LC_CTYPE
+
+LC_MESSAGES
+% TODO: No is "yuq"; is it OK that it corresponds with English "yes"?
+yesstr  "<U0065><U0079><U00ED>"
+nostr   "<U0079><U0075><U0071>"
+yesexpr "<U005E><U005B><U0045><U0065><U005D><U002E><U002A>"
+noexpr  "<U005E><U005B><U0059><U0079><U004E><U006E><U005D><U002E><U002A>"
+END LC_MESSAGES
+
+LC_MONETARY
+int_curr_symbol           "<U0052><U0055><U0042><U0020>"
+currency_symbol           "<U0073><U0075><U006D>"
+mon_decimal_point         "<U002E>"
+mon_thousands_sep         "<U2002>"
+mon_grouping              3;3
+positive_sign             ""
+negative_sign             "<U002D>"
+int_frac_digits           2
+frac_digits               2
+p_cs_precedes             0
+p_sep_by_space            1
+n_cs_precedes             0
+n_sep_by_space            1
+p_sign_posn               1
+n_sign_posn               1
+END LC_MONETARY
+
+LC_NUMERIC
+decimal_point             "<U002C>"
+thousands_sep             "<U002E>"
+grouping                  3;3
+END LC_NUMERIC
+
+LC_TIME
+day     "<U0059><U0065><U006B><U015F><U0065><U006D><U0062><U00ED>";/
+        "<U0044><U00FC><U015F><U0065><U006D><U0062><U00ED>";/
+        "<U0053><U0069><U015F><U0065><U006D><U0062><U00ED>";/
+        "<U00C7><U0065><U0072><U015F><U0065><U006D><U0062><U00ED>";/
+        "<U0050><U0065><U006E><U0063><U00ED><U015F><U0065><U006D><U0062><U00ED>";/
+        "<U0043><U006F><U006D><U011F><U0061>";/
+        "<U015E><U0069><U006D><U0062><U0065>"
+abday   "<U0059><U0065><U006B>";/
+        "<U0044><U00FC><U015F>";/
+        "<U0053><U0069><U015F>";/
+        "<U00C7><U0065><U0072>";/
+        "<U0050><U0065><U006E>";/
+        "<U0043><U006F><U006D>";/
+        "<U015E><U0069><U006D>"
+% RFERL-based month t12n:
+mon     "<U011E><U0131><U006E><U0077><U0061><U0072>";/
+        "<U0046><U0069><U0077><U0072><U0061><U006C><U0027>";/
+        "<U004D><U0061><U0072><U0074>";/
+        "<U0041><U0070><U0072><U0069><U006C>";/
+        "<U004D><U0061><U0079>";/
+        "<U0059><U00FC><U006E>";/
+        "<U0059><U00FC><U006C>";/
+        "<U0041><U0077><U0067><U0075><U0073><U0074>";/
+        "<U0053><U0069><U006E><U0074><U0065><U0062><U00ED><U0072>";/
+        "<U00DC><U006B><U0074><U0065><U0062><U00ED><U0072>";/
+        "<U004E><U006F><U0079><U0065><U0062><U00ED><U0072>";/
+        "<U0044><U0069><U006B><U0065><U0062><U00ED><U0072>"
+abmon   "<U011E><U0131><U006E>";/
+        "<U0046><U0069><U0077>";/
+        "<U004D><U0061><U0072>";/
+        "<U0041><U0070><U0072>";/
+        "<U004D><U0061><U0079>";/
+        "<U0059><U00FC><U006E>";/
+        "<U0059><U00FC><U006C>";/
+        "<U0041><U0077><U0067>";/
+        "<U0053><U0069><U006E>";/
+        "<U00DC><U006B><U0074>";/
+        "<U004E><U006F><U0079>";/
+        "<U0044><U0069><U006B>"
+d_t_fmt "<U0025><U0061><U0020><U0025><U0064><U0020><U0025><U0062>/
+<U0020><U0025><U0059><U0020><U0025><U0054>"
+d_fmt     "<U0025><U0064><U002E><U0025><U006D><U002E><U0025><U0059>"
+t_fmt     "<U0025><U0054>"
+am_pm     "<U00D6><U0041>";"<U00D6><U0053>"
+t_fmt_ampm "<U0025><U0049><U003A><U0025><U004D><U003A><U0025><U0053>/
+<U0020><U0025><U0070>"
+date_fmt       "<U0025><U0061><U0020><U0025><U0062><U0020><U0025><U0065>/
+<U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U0020>/
+<U0025><U005A><U0020><U0025><U0059>"
+END LC_TIME
+
+LC_PAPER
+height      297
+width       210
+END LC_PAPER
+
+LC_MEASUREMENT
+measurement 1
+END LC_MEASUREMENT
+
+LC_ADDRESS
+postal_fmt    "<U0025><U0066><U0025><U004E><U0025><U0061><U0025><U004E>/
+<U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E><U0025><U0073>/
+<U0020><U0025><U0068><U0020><U0025><U0065><U0020><U0025><U0072><U0025>/
+<U004E><U0025><U007A><U0020><U0025><U0054><U0025>/
+<U004E><U0025><U0063><U0025><U004E>"
+country_ab2 "<U0052><U0055>"
+country_ab3 "<U0052><U0055><U0053>"
+country_num 643
+END LC_ADDRESS
+
+LC_TELEPHONE
+tel_int_fmt    "<U002B><U0025><U0063><U0020><U0025><U0061><U0020><U0025>/
+<U006C>"
+int_prefix     "<U0037>"
+int_select     "<U0030><U007E><U0031><U0030>"
+END LC_TELEPHONE
+
+LC_NAME
+name_fmt    "<U0025><U0064><U0025><U0074><U0025><U0067><U0025><U0074>/
+<U0025><U006D><U0025><U0074><U0025><U0066>"
+END LC_NAME

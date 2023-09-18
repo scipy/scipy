@@ -1,0 +1,354 @@
+{
+  "build": "h71f35ed_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [],
+  "depends": [
+    "gettext >=0.21.1,<1.0a0",
+    "libgcc-ng >=12",
+    "libstdcxx-ng >=12"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/libgpg-error-1.47-h71f35ed_0",
+  "features": "",
+  "files": [
+    "bin/gpg-error",
+    "bin/gpgrt-config",
+    "bin/yat2m",
+    "include/gpg-error.h",
+    "include/gpgrt.h",
+    "lib/libgpg-error.so",
+    "lib/libgpg-error.so.0",
+    "lib/libgpg-error.so.0.34.0",
+    "lib/pkgconfig/gpg-error.pc",
+    "share/aclocal/gpg-error.m4",
+    "share/aclocal/gpgrt.m4",
+    "share/common-lisp/source/gpg-error/gpg-error-codes.lisp",
+    "share/common-lisp/source/gpg-error/gpg-error-package.lisp",
+    "share/common-lisp/source/gpg-error/gpg-error.asd",
+    "share/common-lisp/source/gpg-error/gpg-error.lisp",
+    "share/info/gpgrt.info",
+    "share/libgpg-error/errorref.txt",
+    "share/locale/cs/LC_MESSAGES/libgpg-error.mo",
+    "share/locale/da/LC_MESSAGES/libgpg-error.mo",
+    "share/locale/de/LC_MESSAGES/libgpg-error.mo",
+    "share/locale/eo/LC_MESSAGES/libgpg-error.mo",
+    "share/locale/es/LC_MESSAGES/libgpg-error.mo",
+    "share/locale/fr/LC_MESSAGES/libgpg-error.mo",
+    "share/locale/hu/LC_MESSAGES/libgpg-error.mo",
+    "share/locale/it/LC_MESSAGES/libgpg-error.mo",
+    "share/locale/ja/LC_MESSAGES/libgpg-error.mo",
+    "share/locale/nl/LC_MESSAGES/libgpg-error.mo",
+    "share/locale/pl/LC_MESSAGES/libgpg-error.mo",
+    "share/locale/pt/LC_MESSAGES/libgpg-error.mo",
+    "share/locale/ro/LC_MESSAGES/libgpg-error.mo",
+    "share/locale/ru/LC_MESSAGES/libgpg-error.mo",
+    "share/locale/sr/LC_MESSAGES/libgpg-error.mo",
+    "share/locale/sv/LC_MESSAGES/libgpg-error.mo",
+    "share/locale/tr/LC_MESSAGES/libgpg-error.mo",
+    "share/locale/uk/LC_MESSAGES/libgpg-error.mo",
+    "share/locale/vi/LC_MESSAGES/libgpg-error.mo",
+    "share/locale/zh_CN/LC_MESSAGES/libgpg-error.mo",
+    "share/locale/zh_TW/LC_MESSAGES/libgpg-error.mo",
+    "share/man/man1/gpgrt-config.1"
+  ],
+  "fn": "libgpg-error-1.47-h71f35ed_0.conda",
+  "license": "GPL-2.0-only",
+  "license_family": "GPL",
+  "link": {
+    "source": "/opt/conda/pkgs/libgpg-error-1.47-h71f35ed_0",
+    "type": 1
+  },
+  "md5": "c2097d0b46367996f09b4e8e4920384a",
+  "name": "libgpg-error",
+  "package_tarball_full_path": "/opt/conda/pkgs/libgpg-error-1.47-h71f35ed_0.conda",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "bin/gpg-error",
+        "file_mode": "binary",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/libgpg-error_1686979587325/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehol",
+        "sha256": "b796317025b3ceeb54e5525b7589fb0e39b83d74a593befbe8511836f80b6136",
+        "sha256_in_prefix": "ad6a9fa1aa74adf34e2c23e842b4199781917a0c1c9aae1ef8dd71b24eb4b3fc",
+        "size_in_bytes": 43000
+      },
+      {
+        "_path": "bin/gpgrt-config",
+        "path_type": "hardlink",
+        "sha256": "cc85ac546abd9c1fe203b3e8d9fd7ecf9fb7ad9d46c74d2eb75b6d7c2dc3fe1f",
+        "sha256_in_prefix": "cc85ac546abd9c1fe203b3e8d9fd7ecf9fb7ad9d46c74d2eb75b6d7c2dc3fe1f",
+        "size_in_bytes": 16426
+      },
+      {
+        "_path": "bin/yat2m",
+        "path_type": "hardlink",
+        "sha256": "d765f395ccaf744f44a63e2285e0f40c0129817a02612587f38c90d244498514",
+        "sha256_in_prefix": "d765f395ccaf744f44a63e2285e0f40c0129817a02612587f38c90d244498514",
+        "size_in_bytes": 43824
+      },
+      {
+        "_path": "include/gpg-error.h",
+        "path_type": "hardlink",
+        "sha256": "7b1e2b0e606b1e7a07f995aa3cdf5259948b5712c80a6684c1ab06d15df118d4",
+        "sha256_in_prefix": "7b1e2b0e606b1e7a07f995aa3cdf5259948b5712c80a6684c1ab06d15df118d4",
+        "size_in_bytes": 74705
+      },
+      {
+        "_path": "include/gpgrt.h",
+        "path_type": "hardlink",
+        "sha256": "7b1e2b0e606b1e7a07f995aa3cdf5259948b5712c80a6684c1ab06d15df118d4",
+        "sha256_in_prefix": "7b1e2b0e606b1e7a07f995aa3cdf5259948b5712c80a6684c1ab06d15df118d4",
+        "size_in_bytes": 74705
+      },
+      {
+        "_path": "lib/libgpg-error.so",
+        "path_type": "softlink",
+        "sha256": "505a9a84b2248a85031c6a0a76b73ef4b33600c81928af32299054347c8d40ee",
+        "size_in_bytes": 170864
+      },
+      {
+        "_path": "lib/libgpg-error.so.0",
+        "path_type": "softlink",
+        "sha256": "505a9a84b2248a85031c6a0a76b73ef4b33600c81928af32299054347c8d40ee",
+        "size_in_bytes": 170864
+      },
+      {
+        "_path": "lib/libgpg-error.so.0.34.0",
+        "file_mode": "binary",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/libgpg-error_1686979587325/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehol",
+        "sha256": "505a9a84b2248a85031c6a0a76b73ef4b33600c81928af32299054347c8d40ee",
+        "sha256_in_prefix": "7b4b54f2cee7d858b50c3f85cc51a3000c26f94257a39052ee7d3cd67701906c",
+        "size_in_bytes": 170864
+      },
+      {
+        "_path": "lib/pkgconfig/gpg-error.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/libgpg-error_1686979587325/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehol",
+        "sha256": "c755d105a47a5462e92744917b1b314c726c1fc5c709eb035af89e8ce513405b",
+        "sha256_in_prefix": "86d6d69091d5391c726a9047c1be24a698f9e709c1a59ae6c92fad5668c9bb0b",
+        "size_in_bytes": 587
+      },
+      {
+        "_path": "share/aclocal/gpg-error.m4",
+        "path_type": "hardlink",
+        "sha256": "3c9c093421f34b03474bb9198e38e4103c62984b0ecffc6372748cd9656e12c0",
+        "sha256_in_prefix": "3c9c093421f34b03474bb9198e38e4103c62984b0ecffc6372748cd9656e12c0",
+        "size_in_bytes": 8737
+      },
+      {
+        "_path": "share/aclocal/gpgrt.m4",
+        "path_type": "hardlink",
+        "sha256": "b1fa68fd4fff5e38ae7e4403973050320cb1480db052f332809b50f87c809ab0",
+        "sha256_in_prefix": "b1fa68fd4fff5e38ae7e4403973050320cb1480db052f332809b50f87c809ab0",
+        "size_in_bytes": 4085
+      },
+      {
+        "_path": "share/common-lisp/source/gpg-error/gpg-error-codes.lisp",
+        "path_type": "hardlink",
+        "sha256": "3d49966c13da35a5e63d43a66ef1fdd0c9c23cd47cece98429e8e0ea909546db",
+        "sha256_in_prefix": "3d49966c13da35a5e63d43a66ef1fdd0c9c23cd47cece98429e8e0ea909546db",
+        "size_in_bytes": 22982
+      },
+      {
+        "_path": "share/common-lisp/source/gpg-error/gpg-error-package.lisp",
+        "path_type": "hardlink",
+        "sha256": "00bcf902617d080f444b658c11bbeb14308803939a348d97debea8ec8cd51457",
+        "sha256_in_prefix": "00bcf902617d080f444b658c11bbeb14308803939a348d97debea8ec8cd51457",
+        "size_in_bytes": 2206
+      },
+      {
+        "_path": "share/common-lisp/source/gpg-error/gpg-error.asd",
+        "path_type": "hardlink",
+        "sha256": "9fec04198871b9a4ab0b217b34b14c3d4033b2f863f522c96d4cf22e9af5257e",
+        "sha256_in_prefix": "9fec04198871b9a4ab0b217b34b14c3d4033b2f863f522c96d4cf22e9af5257e",
+        "size_in_bytes": 1314
+      },
+      {
+        "_path": "share/common-lisp/source/gpg-error/gpg-error.lisp",
+        "path_type": "hardlink",
+        "sha256": "60a5e23a1b4d29b1a3236c93356d4412a32cdda45c7cf65f0ff0784d61f17e5c",
+        "sha256_in_prefix": "60a5e23a1b4d29b1a3236c93356d4412a32cdda45c7cf65f0ff0784d61f17e5c",
+        "size_in_bytes": 7109
+      },
+      {
+        "_path": "share/info/gpgrt.info",
+        "path_type": "hardlink",
+        "sha256": "ac6898f76e529c59c953aae36c3e3e360679b3c8a8094749c57ec253a054547b",
+        "sha256_in_prefix": "ac6898f76e529c59c953aae36c3e3e360679b3c8a8094749c57ec253a054547b",
+        "size_in_bytes": 62401
+      },
+      {
+        "_path": "share/libgpg-error/errorref.txt",
+        "path_type": "hardlink",
+        "sha256": "9270b51b6807b24adabfc25cdab4f1621aa8842d42a74341b0c664651f47c3c1",
+        "sha256_in_prefix": "9270b51b6807b24adabfc25cdab4f1621aa8842d42a74341b0c664651f47c3c1",
+        "size_in_bytes": 39259
+      },
+      {
+        "_path": "share/locale/cs/LC_MESSAGES/libgpg-error.mo",
+        "path_type": "hardlink",
+        "sha256": "1c5300ee1672bc5b079c362d1bbf1a19452a6076a248f7c8478d52c9d21929a2",
+        "sha256_in_prefix": "1c5300ee1672bc5b079c362d1bbf1a19452a6076a248f7c8478d52c9d21929a2",
+        "size_in_bytes": 34671
+      },
+      {
+        "_path": "share/locale/da/LC_MESSAGES/libgpg-error.mo",
+        "path_type": "hardlink",
+        "sha256": "1a10fc982a5e2a08bf8b42ddffa86160e95e3a5900f265fa6bfccc6d7dc52aa9",
+        "sha256_in_prefix": "1a10fc982a5e2a08bf8b42ddffa86160e95e3a5900f265fa6bfccc6d7dc52aa9",
+        "size_in_bytes": 20822
+      },
+      {
+        "_path": "share/locale/de/LC_MESSAGES/libgpg-error.mo",
+        "path_type": "hardlink",
+        "sha256": "fce43f396d936df1647977faf36329d232160ca539de0fcdf9932d5450b49e3b",
+        "sha256_in_prefix": "fce43f396d936df1647977faf36329d232160ca539de0fcdf9932d5450b49e3b",
+        "size_in_bytes": 35274
+      },
+      {
+        "_path": "share/locale/eo/LC_MESSAGES/libgpg-error.mo",
+        "path_type": "hardlink",
+        "sha256": "c6bcd649e8cb54c3805df1fa22e849afd6b45ac5b7f7dc92e311185fdabade75",
+        "sha256_in_prefix": "c6bcd649e8cb54c3805df1fa22e849afd6b45ac5b7f7dc92e311185fdabade75",
+        "size_in_bytes": 16312
+      },
+      {
+        "_path": "share/locale/es/LC_MESSAGES/libgpg-error.mo",
+        "path_type": "hardlink",
+        "sha256": "db6bfb99034dde596407adcce723c0a63dd585415f148d19b9f3f777e98df33b",
+        "sha256_in_prefix": "db6bfb99034dde596407adcce723c0a63dd585415f148d19b9f3f777e98df33b",
+        "size_in_bytes": 27013
+      },
+      {
+        "_path": "share/locale/fr/LC_MESSAGES/libgpg-error.mo",
+        "path_type": "hardlink",
+        "sha256": "43c4e3737f68548f7e15e6053917cf34dded9eabc71606baa836cbd64878341c",
+        "sha256_in_prefix": "43c4e3737f68548f7e15e6053917cf34dded9eabc71606baa836cbd64878341c",
+        "size_in_bytes": 22649
+      },
+      {
+        "_path": "share/locale/hu/LC_MESSAGES/libgpg-error.mo",
+        "path_type": "hardlink",
+        "sha256": "4fb08b814593f50929cce15d5d6bc8f1eff796961646d7e30d9022a5cf59091a",
+        "sha256_in_prefix": "4fb08b814593f50929cce15d5d6bc8f1eff796961646d7e30d9022a5cf59091a",
+        "size_in_bytes": 17540
+      },
+      {
+        "_path": "share/locale/it/LC_MESSAGES/libgpg-error.mo",
+        "path_type": "hardlink",
+        "sha256": "49e53663c67a3da73cc93254f44a53a4265a34cf67e724d17bff3351a337fa99",
+        "sha256_in_prefix": "49e53663c67a3da73cc93254f44a53a4265a34cf67e724d17bff3351a337fa99",
+        "size_in_bytes": 21084
+      },
+      {
+        "_path": "share/locale/ja/LC_MESSAGES/libgpg-error.mo",
+        "path_type": "hardlink",
+        "sha256": "791b81919a78251b58eb5dc24f74e9ed71ac396a9dc63ccfe9a28369d1c0061f",
+        "sha256_in_prefix": "791b81919a78251b58eb5dc24f74e9ed71ac396a9dc63ccfe9a28369d1c0061f",
+        "size_in_bytes": 38814
+      },
+      {
+        "_path": "share/locale/nl/LC_MESSAGES/libgpg-error.mo",
+        "path_type": "hardlink",
+        "sha256": "bab673e0d10d31a7d2110bbb5d1bf09a8393239435bf64319d4fd056c76fdd67",
+        "sha256_in_prefix": "bab673e0d10d31a7d2110bbb5d1bf09a8393239435bf64319d4fd056c76fdd67",
+        "size_in_bytes": 20438
+      },
+      {
+        "_path": "share/locale/pl/LC_MESSAGES/libgpg-error.mo",
+        "path_type": "hardlink",
+        "sha256": "0e7c6f6ff864b635c11c951a8853204ef9359a59a21ef7d597884b16f16c28d3",
+        "sha256_in_prefix": "0e7c6f6ff864b635c11c951a8853204ef9359a59a21ef7d597884b16f16c28d3",
+        "size_in_bytes": 34878
+      },
+      {
+        "_path": "share/locale/pt/LC_MESSAGES/libgpg-error.mo",
+        "path_type": "hardlink",
+        "sha256": "a6b963d488b98eb4561a31d54a2466169d2449920b991d000981a3328afd18bd",
+        "sha256_in_prefix": "a6b963d488b98eb4561a31d54a2466169d2449920b991d000981a3328afd18bd",
+        "size_in_bytes": 21316
+      },
+      {
+        "_path": "share/locale/ro/LC_MESSAGES/libgpg-error.mo",
+        "path_type": "hardlink",
+        "sha256": "be32e601b982c8af7f1219accd449ef628b20061f6d30e0853a8e68d7b4b067b",
+        "sha256_in_prefix": "be32e601b982c8af7f1219accd449ef628b20061f6d30e0853a8e68d7b4b067b",
+        "size_in_bytes": 14455
+      },
+      {
+        "_path": "share/locale/ru/LC_MESSAGES/libgpg-error.mo",
+        "path_type": "hardlink",
+        "sha256": "560059ba3cf945e72bcdac172139c254564c2bdf4dc8e4250640a71ca7b0bf3c",
+        "sha256_in_prefix": "560059ba3cf945e72bcdac172139c254564c2bdf4dc8e4250640a71ca7b0bf3c",
+        "size_in_bytes": 40611
+      },
+      {
+        "_path": "share/locale/sr/LC_MESSAGES/libgpg-error.mo",
+        "path_type": "hardlink",
+        "sha256": "41a6fb3310646c718bc435d2e9c5b9d263552b56c8b80463c2ab135361d6da08",
+        "sha256_in_prefix": "41a6fb3310646c718bc435d2e9c5b9d263552b56c8b80463c2ab135361d6da08",
+        "size_in_bytes": 21279
+      },
+      {
+        "_path": "share/locale/sv/LC_MESSAGES/libgpg-error.mo",
+        "path_type": "hardlink",
+        "sha256": "77e13a49b24a100511078e54a2f6781f6e84cd49ba4b51d2d0f5e24e7e6c1a9a",
+        "sha256_in_prefix": "77e13a49b24a100511078e54a2f6781f6e84cd49ba4b51d2d0f5e24e7e6c1a9a",
+        "size_in_bytes": 17166
+      },
+      {
+        "_path": "share/locale/tr/LC_MESSAGES/libgpg-error.mo",
+        "path_type": "hardlink",
+        "sha256": "94372ef8ee8ff2a31bd50f6d724851c2a5a9105a540debce51df0570d971bf70",
+        "sha256_in_prefix": "94372ef8ee8ff2a31bd50f6d724851c2a5a9105a540debce51df0570d971bf70",
+        "size_in_bytes": 34653
+      },
+      {
+        "_path": "share/locale/uk/LC_MESSAGES/libgpg-error.mo",
+        "path_type": "hardlink",
+        "sha256": "08e033401ac22731f5d6d69f76241cb5a12e3699001a989df6cb52f8bb7f676e",
+        "sha256_in_prefix": "08e033401ac22731f5d6d69f76241cb5a12e3699001a989df6cb52f8bb7f676e",
+        "size_in_bytes": 45209
+      },
+      {
+        "_path": "share/locale/vi/LC_MESSAGES/libgpg-error.mo",
+        "path_type": "hardlink",
+        "sha256": "67be007bde95759f6d22b59403c0dcdb50d95a4da4fafc021fd1a7f1b7c6745f",
+        "sha256_in_prefix": "67be007bde95759f6d22b59403c0dcdb50d95a4da4fafc021fd1a7f1b7c6745f",
+        "size_in_bytes": 18302
+      },
+      {
+        "_path": "share/locale/zh_CN/LC_MESSAGES/libgpg-error.mo",
+        "path_type": "hardlink",
+        "sha256": "08d4ca3ab9ecf1e3e322c99071032666a071b19b601fa07eb3db56615d73ecb7",
+        "sha256_in_prefix": "08d4ca3ab9ecf1e3e322c99071032666a071b19b601fa07eb3db56615d73ecb7",
+        "size_in_bytes": 31390
+      },
+      {
+        "_path": "share/locale/zh_TW/LC_MESSAGES/libgpg-error.mo",
+        "path_type": "hardlink",
+        "sha256": "eccfee80064d5051019028fd78ae6ac7b844a84cccd8c95cab78295c01dd2aa3",
+        "sha256_in_prefix": "eccfee80064d5051019028fd78ae6ac7b844a84cccd8c95cab78295c01dd2aa3",
+        "size_in_bytes": 31924
+      },
+      {
+        "_path": "share/man/man1/gpgrt-config.1",
+        "path_type": "hardlink",
+        "sha256": "25e99231693b248704d4f26a0df399894a305ca4307fe5b34dd61283ebab8334",
+        "sha256_in_prefix": "25e99231693b248704d4f26a0df399894a305ca4307fe5b34dd61283ebab8334",
+        "size_in_bytes": 1925
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "0306b3c2d65863048983a50bd8b86f6f26e457ef55d1da745a5796af25093f5a",
+  "size": 260794,
+  "subdir": "linux-64",
+  "timestamp": 1686979818648,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/libgpg-error-1.47-h71f35ed_0.conda",
+  "version": "1.47"
+}

@@ -1,0 +1,72 @@
+// Fairly complete set of symbol interpretations
+// to provide reasonable default behavior.
+
+default partial xkb_compatibility "default" {
+
+    virtual_modifiers  LevelThree;
+
+    interpret.repeat= False;
+    setMods.clearLocks= True;
+    latchMods.clearLocks= True;
+    latchMods.latchToLock= True;
+
+    interpret ISO_Level2_Latch+Shift {
+	useModMapMods= level1;
+	action= LatchMods(modifiers=Shift);
+    };
+
+    interpret ISO_Level3_Shift+Any {
+	useModMapMods= level1;
+	virtualModifier= LevelThree;
+	action= SetMods(modifiers=LevelThree);
+    };
+
+    interpret ISO_Level3_Shift {
+	action= SetMods(modifiers=LevelThree);
+    };
+
+    interpret ISO_Level3_Latch+Any {
+	useModMapMods= level1;
+	virtualModifier= LevelThree;
+	action= LatchMods(modifiers=LevelThree);
+    };
+
+    interpret ISO_Level3_Latch {
+	action= LatchMods(modifiers=LevelThree);
+    };
+
+    interpret ISO_Level3_Lock+Any {
+	useModMapMods= level1;
+	virtualModifier= LevelThree;
+	action= LockMods(modifiers=LevelThree);
+    };
+
+    interpret ISO_Level3_Lock {
+	action= LockMods(modifiers=LevelThree);
+    };
+
+    interpret ISO_Group_Latch {
+	action= LatchGroup(group=2);
+    };
+
+    interpret ISO_Next_Group {
+	action= LockGroup(group=+1);
+    };
+
+    interpret ISO_Prev_Group {
+	action= LockGroup(group=-1);
+    };
+
+    interpret ISO_First_Group {
+	action= LockGroup(group=1);
+    };
+
+    interpret ISO_Last_Group {
+	action= LockGroup(group=2);
+    };
+
+    indicator "Group 2" {
+	!allowExplicit;
+	groups= All-Group1;
+    };
+};

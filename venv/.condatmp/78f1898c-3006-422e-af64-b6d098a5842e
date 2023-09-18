@@ -1,0 +1,12 @@
+prefix=/workspaces/scipy/venv
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: cairo-xlib
+Description: Xlib surface backend for cairo graphics library
+Version: 1.16.0
+
+Requires: cairo x11 xext
+Libs:  
+Cflags: -I${includedir}/cairo 

@@ -1,0 +1,354 @@
+comment_char    %
+escape_char     /
+% Albanian language locale for Albania.
+% Contributed by Kentaroh Noji <knoji@jp.ibm.com> and
+% Tetsuji Orita <orita@jp.ibm.com>.
+% fixed LC_COLLATE <pablo@mandrakesoft.com>
+
+LC_IDENTIFICATION
+title      "Albanian language locale for Albania"
+source     "IBM Globalization Center of Competency, Yamato Software Laboratory"
+address    "1623-14, Shimotsuruma, Yamato-shi, Kanagawa-ken, 242-8502, Japan"
+contact    ""
+email      "bug-glibc-locales@gnu.org"
+tel        ""
+fax        ""
+language   "Albanian"
+territory  "Albania"
+revision   "1.1"
+date       "2004-07-01"
+%
+category  "sq_AL:2000";LC_IDENTIFICATION
+category  "sq_AL:2000";LC_CTYPE
+category  "sq_AL:2000";LC_COLLATE
+category  "sq_AL:2000";LC_TIME
+category  "sq_AL:2000";LC_NUMERIC
+category  "sq_AL:2000";LC_MONETARY
+category  "sq_AL:2000";LC_MESSAGES
+category  "sq_AL:2000";LC_PAPER
+category  "sq_AL:2000";LC_NAME
+category  "sq_AL:2000";LC_ADDRESS
+category  "sq_AL:2000";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_CTYPE
+copy "i18n"
+
+translit_start
+include  "translit_combining";""
+translit_end
+END LC_CTYPE
+
+LC_COLLATE
+
+% Copy the template from ISO/IEC 14651
+copy "iso14651_t1"
+
+%% a, b, c, c,, d, dh, e, e:, f, g, gj, h, i, j, k, l, ll, m, n, nj, o, p, q
+%% r, rr, s, sh, t, th, u, v, x, xh, y, z, zh.
+collating-symbol  <ccedilla>
+collating-symbol  <d-h-sq>
+collating-element <D-H> from "<U0044><U0048>"
+collating-element <d-h> from "<U0064><U0068>"
+collating-element <D-h> from "<U0044><U0068>"
+collating-element <d-H> from "<U0064><U0048>"
+collating-symbol  <ediaeresis>
+collating-symbol  <g-j-sq>
+collating-element <G-J> from "<U0047><U004A>"
+collating-element <g-j> from "<U0067><U006A>"
+collating-element <G-j> from "<U0047><U006A>"
+collating-element <g-J> from "<U0067><U004A>"
+collating-symbol  <l-l-sq>
+collating-element <L-L> from "<U004C><U004C>"
+collating-element <l-l> from "<U006C><U006C>"
+collating-element <L-l> from "<U004C><U006C>"
+collating-element <l-L> from "<U006C><U004C>"
+collating-symbol  <n-j-sq>
+collating-element <N-J> from "<U004E><U004A>"
+collating-element <n-j> from "<U006E><U006A>"
+collating-element <N-j> from "<U004E><U006A>"
+collating-element <n-J> from "<U006E><U004A>"
+collating-symbol  <r-r-sq>
+collating-element <R-R> from "<U0052><U0052>"
+collating-element <r-r> from "<U0072><U0072>"
+collating-element <R-r> from "<U0052><U0072>"
+collating-element <r-R> from "<U0072><U0052>"
+collating-symbol  <s-h-sq>
+collating-element <S-H> from "<U0053><U0048>"
+collating-element <s-h> from "<U0073><U0068>"
+collating-element <S-h> from "<U0053><U0068>"
+collating-element <s-H> from "<U0073><U0048>"
+collating-symbol  <t-h-sq>
+collating-element <T-H> from "<U0054><U0048>"
+collating-element <t-h> from "<U0074><U0068>"
+collating-element <T-h> from "<U0054><U0068>"
+collating-element <t-H> from "<U0074><U0048>"
+collating-symbol  <x-h-sq>
+collating-element <X-H> from "<U0058><U0048>"
+collating-element <x-h> from "<U0078><U0068>"
+collating-element <X-h> from "<U0058><U0068>"
+collating-element <x-H> from "<U0078><U0048>"
+collating-symbol  <z-h-sq>
+collating-element <Z-H> from "<U005A><U0048>"
+collating-element <z-h> from "<U007A><U0068>"
+collating-element <Z-h> from "<U005A><U0068>"
+collating-element <z-H> from "<U007A><U0048>"
+
+collating-symbol <CAP-MIN>
+collating-symbol <MIN-CAP>
+
+reorder-after <MIN>
+<MIN-CAP>
+reorder-after <CAP>
+<CAP-MIN>
+
+reorder-after <c>
+<ccedilla>
+reorder-after <d>
+<d-h-sq>
+reorder-after <e>
+<ediaeresis>
+reorder-after <g>
+<g-j-sq>
+reorder-after <l>
+<l-l-sq>
+reorder-after <n>
+<n-j-sq>
+reorder-after <r>
+<r-r-sq>
+reorder-after <s>
+<s-h-sq>
+reorder-after <t>
+<t-h-sq>
+reorder-after <x>
+<x-h-sq>
+reorder-after <z>
+<z-h-sq>
+
+reorder-after <U0063>
+<U00E7> <ccedilla>;<CDI>;<MIN>;IGNORE
+reorder-after <U0043>
+<U00C7> <ccedilla>;<CDI>;<CAP>;IGNORE
+reorder-after <U0064>
+<d-h>   <d-h-sq>;<PCT>;<MIN>;IGNORE
+<d-H>   <d-h-sq>;<PCT>;<MIN-CAP>;IGNORE
+reorder-after <U0044>
+<D-H>   <d-h-sq>;<PCT>;<CAP>;IGNORE
+<D-h>   <d-h-sq>;<PCT>;<CAP-MIN>;IGNORE
+reorder-after <U0065>
+<U00EB> <ediaeresis>;<REU>;<MIN>;IGNORE
+reorder-after <U0045>
+<U00CB> <ediaeresis>;<REU>;<CAP>;IGNORE
+reorder-after <U0067>
+<g-j>   <g-j-sq>;<PCT>;<MIN>;IGNORE
+<g-J>   <g-j-sq>;<PCT>;<MIN-CAP>;IGNORE
+reorder-after <U0047>
+<G-J>   <g-j-sq>;<PCT>;<CAP>;IGNORE
+<G-j>   <g-j-sq>;<PCT>;<CAP-MIN>;IGNORE
+reorder-after <U006C>
+<l-l>   <l-l-sq>;<PCT>;<MIN>;IGNORE
+<l-L>   <l-l-sq>;<PCT>;<MIN-CAP>;IGNORE
+reorder-after <U004C>
+<L-L>   <l-l-sq>;<PCT>;<CAP>;IGNORE
+<L-l>   <l-l-sq>;<PCT>;<CAP-MIN>;IGNORE
+reorder-after <U006E>
+<n-j>   <n-j-sq>;<PCT>;<MIN>;IGNORE
+<n-J>   <n-j-sq>;<PCT>;<MIN-CAP>;IGNORE
+reorder-after <U004E>
+<N-J>   <n-j-sq>;<PCT>;<CAP>;IGNORE
+<N-j>   <n-j-sq>;<PCT>;<CAP-MIN>;IGNORE
+reorder-after <U0072>
+<r-r>   <r-r-sq>;<PCT>;<MIN>;IGNORE
+<r-R>   <r-r-sq>;<PCT>;<MIN-CAP>;IGNORE
+reorder-after <U0052>
+<R-R>   <r-r-sq>;<PCT>;<CAP>;IGNORE
+<R-r>   <r-r-sq>;<PCT>;<CAP-MIN>;IGNORE
+reorder-after <U0074>
+<t-h>   <t-h-sq>;<PCT>;<MIN>;IGNORE
+<t-H>   <t-h-sq>;<PCT>;<MIN-CAP>;IGNORE
+reorder-after <U0054>
+<T-H>   <t-h-sq>;<PCT>;<CAP>;IGNORE
+<T-h>   <t-h-sq>;<PCT>;<CAP-MIN>;IGNORE
+reorder-after <U0078>
+<x-h>   <x-h-sq>;<PCT>;<MIN>;IGNORE
+<x-H>   <x-h-sq>;<PCT>;<MIN-CAP>;IGNORE
+reorder-after <U0058>
+<X-H>   <x-h-sq>;<PCT>;<CAP>;IGNORE
+<X-h>   <x-h-sq>;<PCT>;<CAP-MIN>;IGNORE
+reorder-after <U007A>
+<z-h>   <z-h-sq>;<PCT>;<MIN>;IGNORE
+<z-H>   <z-h-sq>;<PCT>;<MIN-CAP>;IGNORE
+reorder-after <U005A>
+<Z-H>   <z-h-sq>;<PCT>;<CAP>;IGNORE
+<Z-h>   <z-h-sq>;<PCT>;<CAP-MIN>;IGNORE
+
+reorder-end
+
+END LC_COLLATE
+
+LC_MONETARY
+% This is the POSIX Locale definition the LC_MONETARY category.
+% These are generated based on XML base Locale definition file
+% for IBM Class for Unicode/Java
+%
+int_curr_symbol       "<U0041><U004C><U004C><U0020>"
+currency_symbol       "<U004C><U0065><U006B>"
+mon_decimal_point     "<U002C>"
+mon_thousands_sep     "<U002E>"
+mon_grouping          3
+positive_sign         ""
+negative_sign         "<U002D>"
+int_frac_digits       3
+frac_digits           3
+p_cs_precedes         1
+p_sep_by_space        0
+n_cs_precedes         1
+n_sep_by_space        0
+p_sign_posn           1
+n_sign_posn           1
+%
+END LC_MONETARY
+
+
+LC_NUMERIC
+% This is the POSIX Locale definition for the LC_NUMERIC  category.
+%
+decimal_point          "<U002C>"
+thousands_sep          "<U002E>"
+grouping               3
+%
+END LC_NUMERIC
+
+
+LC_TIME
+% This is the POSIX Locale definition for the LC_TIME category.
+% These are generated based on XML base Locale definition file
+% for IBM Class for Unicode/Java
+%
+% Abbreviated weekday names (%a)
+abday       "<U0044><U0069><U0065><U0020>";"<U0048><U00EB><U006E><U0020>";/
+	    "<U004D><U0061><U0072><U0020>";"<U004D><U00EB><U0072><U0020>";/
+	    "<U0045><U006E><U006A><U0020>";"<U0050><U0072><U0065><U0020>";/
+	    "<U0053><U0068><U0074><U0020>"
+%
+% Full weekday names (%A)
+day         "<U0065><U0020><U0064><U0069><U0065><U006C><U0020>";/
+	    "<U0065><U0020><U0068><U00EB><U006E><U00EB><U0020>";/
+	    "<U0065><U0020><U006D><U0061><U0072><U0074><U00EB><U0020>";/
+	    "<U0065><U0020><U006D><U00EB><U0072><U006B><U0075><U0072>/
+<U00EB><U0020>";/
+	    "<U0065><U0020><U0065><U006E><U006A><U0074><U0065><U0020>";/
+	    "<U0065><U0020><U0070><U0072><U0065><U006D><U0074><U0065><U0020>";/
+	    "<U0065><U0020><U0073><U0068><U0074><U0075><U006E><U00EB><U0020>"
+%
+% Abbreviated month names (%b)
+abmon       "<U004A><U0061><U006E>";"<U0053><U0068><U006B>";/
+	    "<U004D><U0061><U0072>";"<U0050><U0072><U0069>";/
+	    "<U004D><U0061><U006A>";"<U0051><U0065><U0072>";/
+	    "<U004B><U006F><U0072>";"<U0047><U0073><U0068>";/
+	    "<U0053><U0068><U0074>";"<U0054><U0065><U0074>";/
+	    "<U004E><U00EB><U006E>";"<U0044><U0068><U006A>"
+%
+% Full month names (%B)
+mon         "<U006A><U0061><U006E><U0061><U0072>";/
+	    "<U0073><U0068><U006B><U0075><U0072><U0074>";/
+	    "<U006D><U0061><U0072><U0073>";/
+	    "<U0070><U0072><U0069><U006C><U006C>";/
+	    "<U006D><U0061><U006A>";/
+	    "<U0071><U0065><U0072><U0073><U0068><U006F><U0072>";/
+	    "<U006B><U006F><U0072><U0072><U0069><U006B>";/
+	    "<U0067><U0075><U0073><U0068><U0074>";/
+	    "<U0073><U0068><U0074><U0061><U0074><U006F><U0072>";/
+	    "<U0074><U0065><U0074><U006F><U0072>";/
+	    "<U006E><U00EB><U006E><U0074><U006F><U0072>";/
+	    "<U0064><U0068><U006A><U0065><U0074><U006F><U0072>"
+%
+% Equivalent of AM PM
+am_pm       "<U0050><U0044>";"<U004D><U0044>"
+%
+% Appropriate date and time representation
+% %Y-%b-%d%I.%M.%S. %Z
+d_t_fmt     "<U0025><U0059><U002D><U0025><U0062><U002D><U0025><U0064>/
+<U0020><U0025><U0049><U002E><U0025><U004D><U002E><U0025><U0053><U002E>/
+<U0025><U0070><U0020><U0025><U005A>"
+%
+% Appropriate date representation
+% %Y-%b-%d
+d_fmt       "<U0025><U0059><U002D><U0025><U0062><U002D><U0025><U0064>"
+%
+% Appropriate time representation
+% %I.%M.%S. %Z
+t_fmt       "<U0025><U0049><U002E><U0025><U004D><U002E><U0025><U0053>/
+<U002E><U0020><U0025><U005A>"
+%
+% Appropriate 12 h time representation (%r)
+t_fmt_ampm  "<U0025><U0049><U002E><U0025><U004D><U002E><U0025><U0053>/
+<U002E><U0025><U0070><U0020><U0025><U005A>"
+%
+% Appropriate date representation (date(1))   "%a %b %e %H:%M:%S %Z %Y"
+date_fmt       "<U0025><U0061><U0020><U0025><U0062><U0020><U0025><U0065>/
+<U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U0020>/
+<U0025><U005A><U0020><U0025><U0059>"
+END LC_TIME
+
+
+LC_MESSAGES
+yesexpr "<U005E><U005B><U0079><U0059><U005D><U002E><U002A>"
+noexpr  "<U005E><U005B><U006E><U004E><U005D><U002E><U002A>"
+END LC_MESSAGES
+
+
+LC_PAPER
+% This is the ISO_IEC TR14652 Locale definition for the
+% LC_PAPER category
+height      297
+width       210
+
+END LC_PAPER
+
+
+LC_NAME
+% This is the ISO_IEC TR14652 Locale definition for the
+% LC_NAME category.
+%
+name_fmt    "<U0025><U0070><U0025><U0074><U0025><U0066><U0025><U0074>/
+<U0025><U0067>"
+name_gen    ""
+name_mr     "<U005A><U002E>"
+name_mrs    "<U005A><U006E><U006A><U002E>"
+name_miss   "<U005A><U0073><U0068><U002E>"
+name_ms     "<U005A><U006E><U006A><U002E>"
+
+END LC_NAME
+
+
+LC_ADDRESS
+% This is the ISO_IEC TR14652 Locale definition for the
+% LC_ADDRESS
+postal_fmt  "<U0025><U007A><U0025><U0063><U0025><U0054><U0025><U0073>/
+<U0025><U0062><U0025><U0065><U0025><U0072>"
+
+country_ab2 "<U0041><U004C>"
+country_ab3 "<U0041><U004C><U0042>"
+country_num 008
+END LC_ADDRESS
+
+
+LC_TELEPHONE
+% This is the ISO_IEC TR14652 Locale definition for the
+%
+tel_int_fmt "<U002B><U0025><U0063><U0020><U003B><U0025><U0061><U0020>/
+<U003B><U0025><U006C>"
+int_prefix     "<U0033><U0035><U0035>"
+int_select     "<U0030><U0030>"
+
+END LC_TELEPHONE
+
+
+LC_MEASUREMENT
+% This is the ISO_IEC TR14652 Locale definition for the
+%
+measurement 1
+
+END LC_MEASUREMENT

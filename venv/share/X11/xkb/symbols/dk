@@ -1,0 +1,94 @@
+// Keyboard layouts for Denmark.
+
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+    include "latin(type2)"
+
+    name[Group1]="Danish";
+
+    key <TLDE>	{[   onehalf,   section, threequarters,    paragraph ]};
+    key <AE11>	{[      plus,   question,    plusminus, questiondown ]};
+    key <AE12>	{[dead_acute, dead_grave,          bar,    brokenbar ]};
+
+    key <AC10>	{[        ae,        AE, dead_acute, dead_doubleacute]};
+    key <AC11>	{[    oslash,    Oslash, dead_circumflex, dead_caron ]};
+    key <BKSL>	{[apostrophe,  asterisk, dead_doubleacute,  multiply ]};
+
+    key <LSGT>	{[      less,    greater,    backslash,      notsign ]};
+
+    include "kpdl(comma)"
+
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "nodeadkeys" {
+
+    include "dk(basic)"
+
+    name[Group1]="Danish (no dead keys)";
+
+    key <AE12>	{[     acute,      grave,          bar,       ogonek ]};
+
+    key <AD11>	{[     aring,      Aring,    diaeresis,       degree ]};
+    key <AD12>	{[ diaeresis, asciicircum,  asciitilde,       macron ]};
+
+    key <AC10>	{[        ae,         AE,        acute,  doubleacute ]};
+    key <AC11>	{[    oslash,     Oslash,  asciicircum,        caron ]};
+    key <BKSL>	{[apostrophe,   asterisk,  doubleacute,     multiply ]};
+
+    key <AB08>	{[     comma,  semicolon,      cedilla,       ogonek ]};
+    key <AB09>	{[    period,      colon, periodcentered,   abovedot ]};
+};
+
+partial alphanumeric_keys
+xkb_symbols "winkeys" {
+
+    include "dk(basic)"
+
+    name[Group1] = "Danish (Windows)";
+
+    include "eurosign(5)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "mac" {
+
+    include "dk(basic)"
+
+    name[Group1]= "Danish (Macintosh)";
+
+    key <AB10>	{[    minus,  underscore,       hyphen,       macron ]};
+    key <SPCE>	{[    space,       space, nobreakspace, nobreakspace ]};
+
+    include "kpdl(dot)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "mac_nodeadkeys" {
+
+    include "dk(mac)"
+
+    name[Group1]= "Danish (Macintosh, no dead keys)";
+
+    key <AE12>	{[    acute,       grave,          bar,       ogonek ]};
+    key <AD12>	{[diaeresis, asciicircum,   asciitilde,  dead_macron ]};
+};
+
+partial alphanumeric_keys
+xkb_symbols "dvorak" {
+
+    include "no(dvorak)"
+
+    name[Group1]= "Danish (Dvorak)";
+
+    key <AD12>	{[ asciitilde, asciicircum, dead_diaeresis, dead_tilde ]};
+};
+
+// EXTRAS:
+
+partial alphanumeric_keys
+	xkb_symbols "sun_type6" {
+	include "sun_vndr/dk(sun_type6)"
+};

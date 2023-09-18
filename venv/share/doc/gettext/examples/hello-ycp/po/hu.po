@@ -1,0 +1,29 @@
+# Hungarian translation for hello-ycp.
+# This file is distributed under the same license as the gettext package.
+# Copyright (C) 2014 Yoyodyne, Inc. (msgids)
+#
+# Tamás Kiss <atomi@inf.elte.hu>, 2005.
+# Balázs Úr <urbalazs@gmail.com>, 2014, 2015.
+msgid ""
+msgstr ""
+"Project-Id-Version: hello-ycp 0.19.4.73\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"PO-Revision-Date: 2015-06-23 20:31+0200\n"
+"Last-Translator: Balázs Úr <urbalazs@gmail.com>\n"
+"Language-Team: Hungarian <translation-team-hu@lists.sourceforge.net>\n"
+"Language: hu\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Lokalize 1.2\n"
+
+#: hello.ycp:15
+msgid "Hello, world!"
+msgstr "Hello, világ!"
+
+#: hello.ycp:19
+#, ycp-format
+msgid "This program is running as process number %1."
+msgstr "Ez a program a(z) %1 folyamatazonosítóval fut."

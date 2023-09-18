@@ -1,0 +1,6 @@
+www.solarsystemscope.com/textures distributed under the terms of
+https://creativecommons.org/licenses/by/4.0/
+
+Changes:
+- Rings created from the reference rectangle file.
+- earthcloudmapcolortrans.png was made from the earthcloudmapspec.jpg file

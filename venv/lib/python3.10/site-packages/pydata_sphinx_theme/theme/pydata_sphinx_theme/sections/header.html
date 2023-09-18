@@ -1,0 +1,31 @@
+<div class="bd-header__inner container-xl">
+
+  <div id="navbar-start">
+    {% for navbar_item in theme_navbar_start %}
+    {% include navbar_item %}
+    {% endfor %}
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="{{ _('Toggle navigation') }}">
+    <span class="fas fa-bars"></span>
+  </button>
+
+  {% set navbar_class, navbar_align = navbar_align_class() %}
+  <div id="navbar-collapsible" class="{{ navbar_class }} collapse navbar-collapse">
+    <div id="navbar-center" class="{{ navbar_align }}">
+      {% for navbar_item in theme_navbar_center %}
+      <div class="navbar-center-item">
+        {% include navbar_item %}
+      </div>
+      {% endfor %}
+    </div>
+
+    <div id="navbar-end">
+      {% for navbar_item in theme_navbar_end %}
+      <div class="navbar-end-item">
+        {% include navbar_item %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>

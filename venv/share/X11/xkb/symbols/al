@@ -1,0 +1,149 @@
+// Keyboard layouts for Albania.
+
+// Basic Albanian layout, by Pablo Saratxaga <pablo@mandrakesoft.com>.
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+    include "latin(type3)"
+
+    name[Group1]="Albanian";
+
+    key <TLDE>	{[ backslash,        bar,      notsign,      notsign ]};
+    key <AE01>	{[         1,     exclam,   asciitilde,   dead_tilde ]};
+    key <AE02>	{[         2,   quotedbl,   dead_caron,    oneeighth ]};
+    key <AE03>	{[         3, numbersign, dead_circumflex,  sterling ]};
+    key <AE04>	{[         4,     dollar,   dead_breve,       dollar ]};
+    key <AE05>	{[         5,    percent, dead_abovering, threeeighths]};
+    key <AE06>	{[         6, asciicircum,  dead_ogonek, fiveeighths ]};
+    key <AE07>	{[         7,  ampersand,        grave,   dead_grave ]};
+    key <AE08>	{[         8,   asterisk, dead_abovedot,   trademark ]};
+    key <AE09>	{[         9,  parenleft,   dead_acute,    plusminus ]};
+    key <AE10>	{[         0, parenright, dead_doubleacute,   degree ]};
+    key <AE11>	{[     minus, underscore, dead_diaeresis, questiondown]};
+
+    key <AD03>	{[         e,          E,     EuroSign,     EuroSign ]};
+    key <AD11>	{[  ccedilla,   Ccedilla,     division, dead_abovering]};
+    key <AD12>	{[        at, apostrophe,     multiply,  dead_macron ]};
+
+    key <AC02>	{[         s,          S,      dstroke,      section ]};
+    key <AC03>	{[         d,          D,      Dstroke,          ETH ]};
+    key <AC10>	{[ediaeresis, Ediaeresis,   dollar, dead_doubleacute ]};
+    key <AC11>	{[bracketleft,  braceleft,      ssharp,   dead_caron ]};
+    key <BKSL>	{[bracketright, braceright,   currency,   dead_breve ]};
+
+    key <AB08>	{[     comma,  semicolon,         less,     multiply ]};
+    key <AB09>	{[    period,      colon,      greater,     division ]};
+    key <AB10>	{[     slash,   question, dead_belowdot, dead_abovedot]};
+
+    include "level3(ralt_switch)"
+};
+
+
+// Tastiera Plisi (plisi.org)
+// by Getoar Mjeku <gm@getoar.com>
+partial alphanumeric_keys
+xkb_symbols "plisi" {
+
+ include "us"
+
+ name[Group1]= "Albanian (Plisi)";
+
+ key <TLDE> {[ grave, asciitilde ]};
+ key <AE01> {[ 1, exclam, rightsinglequotemark ]};
+ key <AE02> {[ 2, at, twosuperior ]};
+ key <AE03> {[ 3, numbersign, threesuperior ]};
+ key <AE04> {[ 4, dollar, EuroSign ]};
+ key <AE05> {[ 5, percent, exclamdown ]};
+ key <AE06> {[ 6, asciicircum, questiondown ]};
+ key <AE07> {[ 7, ampersand, braceleft ]};
+ key <AE08> {[ 8, asterisk, braceright ]};
+ key <AE09> {[ 9, parenleft, bracketleft ]};
+ key <AE10> {[ 0, parenright, bracketright ]};
+ key <AE11> {[ minus, underscore, hyphen ]};
+ key <AE12> {[ equal, plus, registered ]};
+
+ key <AD01> {[ q, Q, dead_grave ]};
+ key <AD02> {[ w, W, dead_caron ]};
+ key <AD03> {[ e, E, dead_circumflex ]};
+ key <AD04> {[ r, R, dead_diaeresis ]};
+ key <AD05> {[ t, T, dead_macron ]};
+ key <AD06> {[ y, Y, dead_doubleacute ]};
+ key <AD07> {[ u, U, dead_breve ]};
+ key <AD08> {[ i, I, dead_tilde, idotless ]};
+ key <AD09> {[ o, O, dead_abovering ]};
+ key <AD10> {[ p, P, dead_abovedot ]};
+ key <AD11> {[ ccedilla, Ccedilla, dead_acute ]};
+ key <AD12> {[ greater, less, U031C ]};
+
+ key <AC01> {[ a, A, U2264 ]};
+ key <AC02> {[ s, S, U2265 ]};
+ key <AC03> {[ d, D, U2300 ]};
+ key <AC04> {[ f, F, U2032 ]};
+ key <AC05> {[ g, G, U2033 ]};
+ key <AC06> {[ h, H, section ]};
+ key <AC07> {[ j, J, dead_cedilla ]};
+ key <AC08> {[ k, K, dead_belowcomma ]};
+ key <AC09> {[ l, L, dead_ogonek ]};
+ key <AC10> {[ ediaeresis, Ediaeresis, dead_belowdot ]};
+ key <AC11> {[ apostrophe, quotedbl ]};
+
+ key <AB01> {[ z, Z, guillemotleft ]};
+ key <AB02> {[ x, X, guillemotright ]};
+ key <AB03> {[ c, C, copyright ]};
+ key <AB04> {[ v, V, U2039 ]};
+ key <AB05> {[ b, B, U203A ]};
+ key <AB06> {[ n, N, endash ]};
+ key <AB07> {[ m, M, emdash, mu ]};
+ key <AB08> {[ comma, semicolon, U02BB ]};
+ key <AB09> {[ period, colon, U200C ]};
+ key <AB10> {[ slash, question, U2011 ]};
+
+ key <BKSL> {[ backslash, bar, U031B ]};
+
+ include "level3(ralt_switch)"
+};
+
+// EXTRAS:
+
+// Veqilharxhi layout, by Arbër Boriçi (illyriensis@protonmail.com), September 2019.
+partial alphanumeric_keys
+xkb_symbols "veqilharxhi" {
+
+    include "us"
+
+    name[Group1]="Albanian (Veqilharxhi)";
+
+    // QWERTYUIOP
+    key <AD01>	{[ U105B0, U10589 ]}; // 𐖰, 𐖉
+    key <AD02>	{[ U1059F, U10578, w, W ]}; // 𐖟, 𐕸, w, W
+    key <AD03>	{[ U1059E, U10577 ]}; // 𐖞, 𐕷
+    key <AD04>	{[ U105B1, U1058A, U105B2, U1058B ]}; // 𐖱, 𐖊, 𐖲, 𐖋
+    key <AD05>	{[ U105B5, U1058E, U105B6, U1058F ]}; // 𐖵, 𐖎, 𐖶, 𐖏
+    key <AD06>	{[ U105BB, U10594 ]}; // 𐖻, 𐖔
+    key <AD07>	{[ U105B7, U10590 ]}; // 𐖷, 𐖐
+    key <AD08>	{[ U105A5, U1057E ]}; // 𐖥, 𐕾
+    key <AD09>	{[ U105AE, U10587 ]}; // 𐖮, 𐖇
+    key <AD10>	{[ U105AF, U10588 ]}; // 𐖯, 𐖈
+
+    // ASDFGHJKL
+    key <AC01>	{[ U10597, U10570 ]}; // 𐖗, 𐕰
+    key <AC02>	{[ U105B3, U1058C, U105B4, U1058D ]}; // 𐖳, 𐖌, 𐖴, 𐖍
+    key <AC03>	{[ U1059C, U10575, U1059D, U10576 ]}; // 𐖜, 𐕵, 𐖝, 𐕶
+    key <AC04>	{[ U105A0, U10579 ]}; // 𐖠, 𐕹
+    key <AC05>	{[ U105A1, U1057A, U105A2, U1057B ]}; // 𐖡, 𐕺, 𐖢, 𐕻
+    key <AC06>	{[ U105A3, U1057C ]}; // 𐖣, 𐕼
+    key <AC07>	{[ U105A7, U10580 ]}; // 𐖧, 𐖀
+    key <AC08>	{[ U105A8, U10581 ]}; // 𐖨, 𐖁
+    key <AC09>	{[ U105A9, U10582, U105AA, U10583 ]}; // 𐖩, 𐖂, 𐖪, 𐖃
+
+    // ZXCVBNM
+    key <AB01>	{[ U105BC, U10595, U105BD, U10596 ]}; // 𐖼, 𐖕, 𐖽, 𐖖
+    key <AB02>	{[ U105B9, U10592, U105BA, U10593 ]}; // 𐖹, 𐖒, 𐖺, 𐖓
+    key <AB03>	{[ U1059A, U10573, U1059B, U10574 ]}; // 𐖚, 𐕳, 𐖛, 𐕴
+    key <AB04>	{[ U105B8, U10591 ]}; // 𐖸, 𐖑
+    key <AB05>	{[ U10598, U10571 ]}; // 𐖘, 𐕱
+    key <AB06>	{[ U105AC, U10585, U105AD, U10586 ]}; // 𐖬, 𐖅, 𐖭, 𐖆
+    key <AB07>	{[ U105AB, U10584 ]}; // 𐖫, 𐖄
+
+    include "level3(ralt_switch)"
+};

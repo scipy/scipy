@@ -1,0 +1,11 @@
+prefix=/workspaces/scipy/venv
+exec_prefix=/workspaces/scipy/venv
+libdir=/workspaces/scipy/venv/lib
+includedir=/workspaces/scipy/venv/include
+
+Name: libcap
+Description: libcap - linux capabilities library
+Version: 2.69
+Libs: -L${libdir} -lcap
+Libs.private: 
+Cflags: -I${includedir}

@@ -1,0 +1,210 @@
+comment_char %
+escape_char /
+%
+% Kashubian Language Locale for Poland
+% Source: csb_PL locale
+% Contact: Michal Ostrowski
+% Email: ostrowski.michal@gmail.com
+% Tel: +48586717262
+% Fax: none
+% Language: csb
+% Territory: PL
+% Revision: 1.0
+% Date: 2006-07-25
+% Application: general
+% Users: general
+% Charset: UTF-8
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title      "Kashubian locale for Poland"
+source     "csb_PL locale"
+address    ""
+contact    "Michal Ostrowski"
+email      "bug-glibc-locales@gnu.org"
+tel        ""
+fax        ""
+language   "Kashubian"
+territory  "Poland"
+revision   "1.0"
+date       "2006-07-25"
+audience   "general"
+application   "GNU locale"
+abbreviation  ""
+%
+category  "csb_PL:2000";LC_IDENTIFICATION
+category  "csb_PL:2000";LC_CTYPE
+category  "csb_PL:2000";LC_COLLATE
+category  "csb_PL:2000";LC_TIME
+category  "csb_PL:2000";LC_NUMERIC
+category  "csb_PL:2000";LC_MONETARY
+category  "csb_PL:2000";LC_MESSAGES
+category  "csb_PL:2000";LC_PAPER
+category  "csb_PL:2000";LC_NAME
+category  "csb_PL:2000";LC_ADDRESS
+category  "csb_PL:2000";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_CTYPE
+copy "pl_PL"
+END LC_CTYPE
+
+LC_COLLATE
+copy "iso14651_t1"
+
+collating-symbol <aogonek>
+collating-symbol <atilde>
+collating-symbol <eacute>
+collating-symbol <ediaeresis>
+collating-symbol <lstroke>
+collating-symbol <nacute>
+collating-symbol <ograve>
+collating-symbol <oacute>
+collating-symbol <ocircumflex>
+collating-symbol <ugrave>
+collating-symbol <zdot>
+
+reorder-after <a>
+<aogonek>
+<atilde>
+
+reorder-after <e>
+<eacute>
+<ediaeresis>
+
+reorder-after <l>
+<lstroke>
+
+reorder-after <n>
+<nacute>
+
+reorder-after <o>
+<ograve>
+<oacute>
+<ocircumflex>
+
+reorder-after <u>
+<ugrave>
+
+reorder-after <z>
+<zdot>
+
+reorder-after <U0061>
+<U0105> <aogonek>;<BAS>;<MIN>;IGNORE
+<U0104> <aogonek>;<BAS>;<CAP>;IGNORE
+<U00E3> <atilde>;<BAS>;<MIN>;IGNORE
+<U00C3> <atilde>;<BAS>;<CAP>;IGNORE
+
+reorder-after <U0065>
+<U00E9> <eacute>;<BAS>;<MIN>;IGNORE
+<U00C9> <eacute>;<BAS>;<CAP>;IGNORE
+<U00EB> <ediaeresis>;<BAS>;<MIN>;IGNORE
+<U00CB> <ediaeresis>;<BAS>;<CAP>;IGNORE
+
+reorder-after <U006C>
+<U0142> <lstroke>;<BAS>;<MIN>;IGNORE
+<U0141> <lstroke>;<BAS>;<CAP>;IGNORE
+
+reorder-after <U006E>
+<U0144> <nacute>;<BAS>;<MIN>;IGNORE
+<U0143> <nacute>;<BAS>;<CAP>;IGNORE
+
+reorder-after <U006F>
+<U00F2> <ograve>;<BAS>;<MIN>;IGNORE
+<U00D2> <ograve>;<BAS>;<CAP>;IGNORE
+<U00F3> <oacute>;<BAS>;<MIN>;IGNORE
+<U00D3> <oacute>;<BAS>;<CAP>;IGNORE
+<U00F4> <ocircumflex>;<BAS>;<MIN>;IGNORE
+<U00D4> <ocircumflex>;<BAS>;<CAP>;IGNORE
+
+reorder-after <U0075>
+<U00F9> <ugrave>;<BAS>;<MIN>;IGNORE
+<U00D9> <ugrave>;<BAS>;<CAP>;IGNORE
+
+reorder-after <U007A>
+<U017C> <zdot>;<BAS>;<MIN>;IGNORE
+<U017B> <zdot>;<BAS>;<CAP>;IGNORE
+
+reorder-end
+
+END LC_COLLATE
+
+LC_MESSAGES
+yesexpr "<U005E><U005B><U004A><U006A><U0054><U0074><U0059><U0079><U005D><U002E><U002A>"
+noexpr  "<U005E><U005B><U006E><U004E><U005D><U002E><U002A>"
+
+END LC_MESSAGES
+
+LC_MONETARY
+copy "pl_PL"
+END LC_MONETARY
+
+LC_NUMERIC
+copy "pl_PL"
+END LC_NUMERIC
+
+LC_TIME
+abday   "<U006E><U0069><U0065>"; "<U0070><U00F2><U006E>";/
+        "<U0077><U0074><U00F3>"; "<U0073><U0074><U0072>";/
+        "<U0063><U007A><U0077>"; "<U0070><U0069><U0105>";/
+        "<U0073><U006F><U0062>"
+
+day    "<U006E><U0069><U0065><U0064><U007A><U0065><U006C><U0061>";/
+        "<U0070><U00F2><U006E><U0069><U0065><U0064><U007A><U00F4><U0142><U006B>";/
+        "<U0077><U0074><U00F3><U0072><U006B>";/
+        "<U0073><U0074><U0072><U007A><U006F><U0064><U0061>";/
+        "<U0063><U007A><U0077><U0069><U00F4><U0072><U0074><U006B>";/
+        "<U0070><U0069><U0105><U0074><U006B>";/
+        "<U0073><U006F><U0062><U00F2><U0074><U0061>"
+abmon  "<U0073><U0074><U00EB>"; "<U0067><U0072><U006F>";/
+        "<U0073><U0074><U006D>"; "<U0142><U017C><U00EB>";/
+        "<U006D><U00F4><U006A>"; "<U0063><U007A><U0065>";/
+        "<U006C><U00EB><U0070>"; "<U007A><U00E9><U006C>";/
+        "<U0073><U00E9><U0077>"; "<U0072><U0075><U006A>";/
+        "<U006C><U00EB><U0073>"; "<U0067><U00F2><U0064>"
+mon    "<U0073><U0074><U00EB><U0063><U007A><U006E><U0069><U006B>";/
+        "<U0067><U0072><U006F><U006D><U0069><U0063><U007A><U006E><U0069><U006B>";/
+        "<U0073><U0074><U0072><U0075><U006D><U0069><U0061><U006E><U006E><U0069><U006B>";/
+        "<U0142><U017C><U00EB><U006B><U0077><U0069><U00F4><U0074>";/
+        "<U006D><U00F4><U006A>";/
+        "<U0063><U007A><U0065><U0072><U0077><U0069><U0144><U0063>";/
+        "<U006C><U00EB><U0070><U0069><U006E><U0063>";/
+        "<U007A><U00E9><U006C><U006E><U0069><U006B>";/
+        "<U0073><U00E9><U0077><U006E><U0069><U006B>";/
+        "<U0072><U0075><U006A><U0061><U006E>";/
+        "<U006C><U00EB><U0073><U0074><U006F><U0070><U0061><U0064><U006E><U0069><U006B>";/
+        "<U0067><U00F2><U0064><U006E><U0069><U006B>"
+d_t_fmt "<U0025><U0061><U0020><U0025><U0064><U0020><U0025><U0062><U0020><U0025><U0059><U0020><U0025><U0054><U0020><U0025><U005A>"
+d_fmt   "<U0025><U0059><U002D><U0025><U006D><U002D><U0025><U0064>"
+t_fmt   "<U0025><U0054>"
+am_pm   "";""
+t_fmt_ampm ""
+date_fmt       "<U0025><U0061><U0020><U0025><U0062><U0020><U0025><U0065>/
+<U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U0020>/
+<U0025><U005A><U0020><U0025><U0059>"
+week    7;19971130;4
+first_weekday 2
+first_workday 2
+END LC_TIME
+
+LC_PAPER
+copy "pl_PL"
+END LC_PAPER
+
+LC_TELEPHONE
+copy "pl_PL"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+copy "pl_PL"
+END LC_MEASUREMENT
+
+LC_NAME
+copy "pl_PL"
+END LC_NAME
+
+LC_ADDRESS
+copy "pl_PL"
+END LC_ADDRESS

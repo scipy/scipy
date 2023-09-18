@@ -1,0 +1,10 @@
+default
+xkb_keycodes "jolla" {
+
+   // These keycodes are beyond the X11 255 limit value so it would
+   // only be valid for the use with SW which supports extended keycodes,
+   // like xkbcommon.
+
+   <I264> = 264;	// Jolla phone has the wired headset button sending this keycode
+
+};

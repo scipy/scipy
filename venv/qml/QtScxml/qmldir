@@ -1,0 +1,5 @@
+module QtScxml
+plugin declarative_scxml
+classname QScxmlStateMachinePlugin
+typeinfo plugins.qmltypes
+

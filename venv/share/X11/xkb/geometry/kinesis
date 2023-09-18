@@ -1,0 +1,189 @@
+default xkb_geometry "model100" {
+
+    // This is an approximate layout for a Kinesis Ergonomic keyboard
+    // Generated completely by eye.  I didn't actually *measure* a real 
+    // keyboard.
+
+    description= "Kinesis Ergonomic";
+    width= 421;
+    height= 185;
+
+    shape.cornerRadius= 1;
+    shape "NORM" { { [ 18,18] }, { [2,1], [16,17] } };
+    shape "WIDE" { { [ 21,18] }, { [2,1], [19,17] } };
+    shape "TALL" { { [ 18,37] }, { [2,1], [16,36] } };
+    shape "FKEY" { cornerRadius=0, { [ 10,13] } };
+    shape "LED"  { cornerRadius= 1.5, { [ 3,  3] } };
+    shape "LOGO" { { [ 40, 10 ] } };
+    shape "EDGE" { cornerRadius=5, { [ 421, 185 ] } };
+
+    outline "Edges" {
+	top= 0;
+	left= 0;
+	shape= "EDGE";
+    };
+
+    section "LeftFunction" {
+	left= 15;
+	top=  11;
+	key.shape= "FKEY";
+	key.gap= 3;
+	row {
+	    left= 1;
+	    top= 1;
+	    keys { 
+	    	<ESC>,  <FK01>, <FK02>, <FK03>, <FK04>,
+		<FK05>, <FK06>, <FK07>, <FK08>
+	    };
+	};
+    }; // End of "LeftFunction" section
+
+    section "RightFunction" {
+	left= 290;
+	top=  11;
+	key.shape= "FKEY";
+	key.gap= 3;
+	row {
+	    left= 1;
+	    top= 0.2;
+	    keys {
+		<FK09>, <FK10>, <FK11>, <FK12>, <PRSC>, 
+		<SCLK>, <PAUS>, <FK16>, <FK17>
+	    };
+	};
+    }; // End of "RightFunction" section
+
+    row.vertical= True;
+    row.top= 1;
+    key.gap= 0.5;
+
+    logo "KinesisLogoImage" 	{ 
+	top= 25;
+	left= 240;
+	name= "Kinesis"; 
+	shape= "LOGO"; 
+    };
+
+    indicator.shape= "LED";
+    indicator.top= 30;
+    indicator.onColor= "green";
+    indicator.offColor= "green30";
+    indicator "Caps Lock" { left= 23; };
+
+    section "LeftAlpha" {
+	top=  34;
+	left= 15;
+	row {
+	    left= 2;
+	    key.shape= "WIDE";
+	    keys { <AE12>, <TAB>, <CAPS>, <LFSH> };
+	};
+	row {
+	    top= 4;
+	    left= 24;
+	    keys { <AE01>, <AD01>, { <AC01>, color="grey20" }, <AB01>, <TLDE> };
+	};
+	row {
+	    left= 43;
+	    keys { <AE02>, <AD02>, { <AC02>, color="grey20" }, <AB02>, <INS> };
+	};
+	row {
+	    left= 62;
+	    keys { <AE03>, <AD03>, { <AC03>, color="grey20" }, <AB03>, <LEFT> };
+	};
+	row {
+	    left= 81;
+	    keys { <AE04>, <AD04>, { <AC04>, color="grey20" }, <AB04>, <RGHT> };
+	};
+	row {
+	    left= 100;
+	    keys { <AE05>, <AD05>, <AC05>, <AB05> };
+	};
+    }; // End of "LeftAlpha" section
+
+    indicator "NumLock"  { left= 318; };
+    indicator "Overlay"  { left= 387; };
+    section "RightAlpha" {
+	top= 34;
+	left= 290;
+	row {
+	    left= 2;
+	    keys { <AE06>, <AD06>, <AC06>, <AB06> };
+	};
+	row {
+	    left= 21;
+	    keys { <AE07>, <AD07>, { <AC07>, color="grey20" }, <AB07>, <UP> };
+	};
+    	row {
+	    left= 40;
+	    keys { <AE08>, <AD08>, { <AC08>, color="grey20" }, <AB08>, <DOWN> };
+	};
+	row {
+	    left= 59;
+	    keys { <AE09>, <AD09>, { <AC09>, color="grey20" }, <AB09>, <AD11> };
+	};
+	row {
+	    top= 4;
+	    left= 78;
+	    keys { <AE10>, <AD10>, { <AC10>, color="grey20" }, <AB10>, <AD12> };
+	};
+	row {
+	    left= 97;
+	    key.shape= "WIDE";
+	    keys { <AE11>, <BKSL>, <AC11>, <RTSH> };
+	};
+	overlay "KPAD" {
+	    <AE07>=<NMLK>, <AE08>=<KPEQ>, <AE09>=<KPSL>, <AE10>=<KPMU>,
+	    <AD07>=<KP7>,  <AD08>=<KP8>,  <AD09>=<KP9>,  <AD10>=<KPSU>,
+	    <AC07>=<KP4>,  <AC08>=<KP5>, <AC09>=<KP6>,  <AC10>=<KPAD>,
+	    <AB07>=<KP1>,  <AB08>=<KP2>, <AB09>=<KP3>,  <AB10>=<KPEN>,
+	    <AE10>=<KPDL>, <AE11>=<KPEN>
+	};
+    }; // End of "RightAlpha" section
+
+    section "LeftEdit" {
+	top= 109;
+	left= 123;
+	angle= 20;
+	row.top= -18;
+	row {
+	    top=  1;
+	    left= 1;
+	    keys { { <BKSP>, "TALL" } };
+	};
+	row {
+	    left= 20;
+	    keys { <LCTL>, { <DELE>, "TALL" } };
+	};
+	row {
+	    left= 39;
+	    keys { <LALT>, <HOME>, <END> };
+	};
+    }; // End of "LeftEdit" section
+
+    section "RightEdit" {
+	top= 109;
+	left= 302;
+	angle= -20;
+	row.top= -18;
+	row {
+	    left= -57;
+	    keys { <RALT>, <PGUP>, <PGDN> };
+	};
+	row {
+	    left= -38;
+	    keys { <RCTL>, { <RTRN>, "TALL" } };
+	};
+	row {
+	    top=  1;
+	    left= -19;
+	    keys { { <SPCE>, "TALL" } };
+	};
+	overlay "KPAD" {
+	    <SPCE>= <KP0>
+	};
+    }; // End of "RightEdit" section
+
+    alias <AC00> = <CAPS>;
+    alias <AA00> = <LCTL>;
+};

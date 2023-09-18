@@ -1,0 +1,67 @@
+// Keyboard layout for Congo.
+
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+    name[Group1]= "French (Democratic Republic of the Congo)";
+
+    key.type[Group1] = "FOUR_LEVEL";
+
+    // GRAVE, TILDE, COMBINING TILDE
+    key <TLDE> { [     grave, asciitilde, 0x01000303                      ] };
+    key <AE01> { [ ampersand,          1, numbersign                      ] };
+    key <AE02> { [0x01000301,          2, at                              ] };
+    key <AE03> { [0x01000300,          3, guillemotleft                   ] };
+    key <AE04> { [ parenleft,          4, bracketleft                     ] };
+    key <AE05> { [ braceleft,          5, less                            ] };
+    key <AE06> { [ braceright,         6, greater                         ] };
+    key <AE07> { [parenright,          7, bracketright                    ] };
+    key <AE08> { [0x01000302,          8, guillemotright                  ] };
+    key <AE09> { [0x0100030c,          9, 0x0100030D                      ] };
+    key <AE10> { [0x01000308,          0, at                              ] };
+    key <AE11> { [     minus,      underscore,  percent,          degree  ] };
+    key <AE12> { [     equal,      plus,       multiply,        division  ] };
+
+    key <AD01> { [	   a,          A,            ae,              AE  ] };
+    key <AD02> { [	   z,          Z                                  ] };
+    key <AD03> { [	   e,          E,            oe,              OE  ] };
+    key <AD04> { [	   r,          R                                  ] };
+    key <AD05> { [	   t,          T                                  ] };
+    key <AD06> { [	   y,          Y                                  ] };
+    key <AD07> { [	   u,          U,    0x01000289,       0x01000244 ] };
+    key <AD08> { [	   i,          I,    0x01000268,       0x01000197 ] };
+    key <AD09> { [	   o,          O,        oslash,           Oslash ] };
+    key <AD10> { [	   p,          P                                  ] };
+    key <AD11> { [0x0100025B, 0x01000190,   asciicircum                   ] };
+    key <AD12> { [ asterisk, asciicircum,        dollar                   ] };
+
+    key <AC01> { [	   q,          Q                                  ] };
+    key <AC02> { [	   s,          S                                  ] };
+    key <AC03> { [	   d,          D                                  ] };
+    key <AC04> { [	   f,          F                                  ] };
+    key <AC05> { [	   g,          G                                  ] };
+    key <AC06> { [	   h,          H                                  ] };
+    key <AC07> { [	   j,          J                                  ] };
+    key <AC08> { [	   k,          K                                  ] };
+    key <AC09> { [	   l,          L                                  ] };
+    key <AC10> { [	   m,          M                                  ] };
+    key <AC11> { [0x01000254, 0x01000186                                  ] };
+    key <LSGT> { [    backslash,     bar                                  ] };
+
+    key <AB01> { [	   w,          W                                  ] };
+    key <AB02> { [	   x,          X                                  ] };
+    key <AB03> { [	   c,          C                                  ] };
+    key <AB04> { [	   v,          V                                  ] };
+    key <AB05> { [	   b,          B                                  ] };
+    key <AB06> { [	   n,          N,    0x0100014B,       0x0100014A ] };
+    key <AB07> { [     comma,   question,    0x01000327                   ] };
+    key <AB08> { [ semicolon,     period                                  ] };
+    key <AB09> { [     colon,      slash                                  ] };
+    key <AB10> { [    exclam,   apostrophe,  0x01002019                   ] };
+    key <BKSL> { [  quotedbl,  backslash,           bar                   ] };
+
+    // SPACE, SPACE, NO-BREAK SPACE, NARROW NO_BREAK SPACE
+    key <SPCE> { [ space,          space,    nobreakspace,     0x0100202F ] };
+
+    include "level3(ralt_switch)"
+};

@@ -1,0 +1,81 @@
+// Keyboard layouts for Bangladesh.
+
+// National Bangla/Bengali Standard keyboard layout,
+// developed by the Bangladesh Computer Council (BCC).
+// http://www.bcc.net.bd/keyboard/bsti_kb_specification.pdf
+//
+// Original author: Jamil Ahmed <jamil at bengalinux.org>, 2006.
+//
+// Issues:
+// <AE06> has U+09B3 even though it is not allocated in Unicode;
+// <AC07> has U+09BB even though it is not allocated in Unicode;
+// <AC08> has U+09CE (Khanda-Ta), but BCC had the unallocated U+09BA there.
+//
+// Three double characters (conjuncts), on the third level of <AD02> and the
+// third and fourth levels of <AB04>, are not included as XKB cannot do this.
+
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+    name[Group1]= "Bangla";
+
+    key <TLDE> {[  grave,	asciitilde,	none,	none	]};
+    key <AE01> {[  U09E7,	exclam,		U09F4,	none	]};
+    key <AE02> {[  U09E8,	at,		U09F5,	none	]};
+    key <AE03> {[  U09E9,	numbersign,	U09F6,	none	]};
+    key <AE04> {[  U09EA,	dollar,		U09F3,	U09F2	]};
+    key <AE05> {[  U09EB,	percent,	U09F7,	none	]};
+    key <AE06> {[  U09EC,	asciicircum,	U09F8,	U09B3	]};
+    key <AE07> {[  U09ED,	ampersand,	U0902,	none	]};
+    key <AE08> {[  U09EE,	asterisk,	none,	none	]};
+    key <AE09> {[  U09EF,	parenleft,	none,	none	]};
+    key <AE10> {[  U09E6,	parenright,	U09F9,	none	]};
+    key <AE11> {[  minus,	underscore,	U200C,	none	]};
+    key <AE12> {[  equal,	plus,		U200D,	none	]};
+
+    key <AD01> {[  U0999,	U0982,		U09E2,	U09E3	]};
+    key <AD02> {[  U09AF,	U09DF,		none,	none	]};
+    key <AD03> {[  U09A1,	U09A2,		U09C4,	none	]};
+    key <AD04> {[  U09AA,	U09AB,		none,	none	]};
+    key <AD05> {[  U099F,	U09A0,		none,	none	]};
+    key <AD06> {[  U099A,	U099B,		none,	none	]};
+    key <AD07> {[  U099C,	U099D,		none,	none	]};
+    key <AD08> {[  U09B9,	U099E,		U09BD,	none	]};
+    key <AD09> {[  U0997,	U0998,		none,	none	]};
+    key <AD10> {[  U09DC,	U09DD,		none,	none	]};
+    key <AD11> {[  bracketleft,	braceleft,	none,	none	]};
+    key <AD12> {[ bracketright,	braceright,	none,	none	]};
+
+    key <AC01> {[  U09C3,	U09D7,		U098B,	U09E0	]};
+    key <AC02> {[  U09C1,	U09C2,		U0989,	U098A	]};
+    key <AC03> {[  U09BF,	U09C0,		U0987,	U0988	]};
+    key <AC04> {[  U09AC,	U09AD,		U09F0,	U09F1	]};
+    key <AC05> {[  U09CD,	U0964,		U0965,	none	]};
+    key <AC06> {[  U09BE,	U0985,		U0986,	none	]};
+    key <AC07> {[  U0995,	U0996,		U09BB,	none	]};
+    key <AC08> {[  U09A4,	U09A5,		U09CE,	none	]};
+    key <AC09> {[  U09A6,	U09A7,		U098C,	U09E1	]};
+    key <AC10> {[  semicolon,	colon,		none,	none	]};
+    key <AC11> {[  apostrophe,	quotedbl,	none,	none	]};
+    key <BKSL> {[  backslash,	bar,		none,	none	]};
+
+    key <AB01> {[  U0981,	U0983,		U09FA,	none	]};
+    key <AB02> {[  U09CB,	U09CC,		U0993,	U0994	]};
+    key <AB03> {[  U09C7,	U09C8,		U098F,	U0990	]};
+    key <AB04> {[  U09B0,	U09B2,		none,	none	]};
+    key <AB05> {[  U09A8,	U09A3,		none,	none	]};
+    key <AB06> {[  U09B8,	U09B7,		none,	none	]};
+    key <AB07> {[  U09AE,	U09B6,		none,	none	]};
+    key <AB08> {[  comma,	less,		none,	none	]};
+    key <AB09> {[  period,	greater,	U09BC,	none	]};
+    key <AB10> {[  slash,	question,	none,	none	]};
+
+    include "level3(ralt_switch)"
+};
+
+
+// Probhat keyboard layout for Bangla/Bengali.
+xkb_symbols "probhat" {
+    include "in(ben_probhat)"
+    name[Group1]= "Bangla (Probhat)";
+};

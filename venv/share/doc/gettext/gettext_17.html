@@ -1,0 +1,1358 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html401/loose.dtd">
+<html>
+<!-- Created on October, 9 2022 by texi2html 1.78a -->
+<!--
+Written by: Lionel Cons <Lionel.Cons@cern.ch> (original author)
+            Karl Berry  <karl@freefriends.org>
+            Olaf Bachmann <obachman@mathematik.uni-kl.de>
+            and many others.
+Maintained by: Many creative people.
+Send bugs and suggestions to <texi2html-bug@nongnu.org>
+
+-->
+<head>
+<title>GNU gettext utilities: 17. Concluding Remarks</title>
+
+<meta name="description" content="GNU gettext utilities: 17. Concluding Remarks">
+<meta name="keywords" content="GNU gettext utilities: 17. Concluding Remarks">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="texi2html 1.78a">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+pre.display {font-family: serif}
+pre.format {font-family: serif}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: serif; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: serif; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.roman {font-family:serif; font-weight:normal;}
+span.sansserif {font-family:sans-serif; font-weight:normal;}
+ul.toc {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="gettext_16.html#SEC338" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="gettext_18.html#SEC371" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_21.html#SEC387" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+
+<hr size="2">
+<a name="Conclusion"></a>
+<a name="SEC362"></a>
+<h1 class="chapter"> <a href="gettext_toc.html#TOC356">17. Concluding Remarks</a> </h1>
+
+<p>We would like to conclude this GNU <code>gettext</code> manual by presenting
+an history of the Translation Project so far.  We finally give
+a few pointers for those who want to do further research or readings
+about Native Language Support matters.
+</p>
+
+
+<a name="History"></a>
+<a name="SEC363"></a>
+<h2 class="section"> <a href="gettext_toc.html#TOC357">17.1 History of GNU <code>gettext</code></a> </h2>
+
+<p>Internationalization concerns and algorithms have been informally
+and casually discussed for years in GNU, sometimes around GNU
+<code>libc</code>, maybe around the incoming <code>Hurd</code>, or otherwise
+(nobody clearly remembers).  And even then, when the work started for
+real, this was somewhat independently of these previous discussions.
+</p>
+<p>This all began in July 1994, when Patrick D'Cruze had the idea and
+initiative of internationalizing version 3.9.2 of GNU <code>fileutils</code>.
+He then asked Jim Meyering, the maintainer, how to get those changes
+folded into an official release.  That first draft was full of
+<code>#ifdef</code>s and somewhat disconcerting, and Jim wanted to find
+nicer ways.  Patrick and Jim shared some tries and experimentations
+in this area.  Then, feeling that this might eventually have a deeper
+impact on GNU, Jim wanted to know what standards were, and contacted
+Richard Stallman, who very quickly and verbally described an overall
+design for what was meant to become <code>glocale</code>, at that time.
+</p>
+<p>Jim implemented <code>glocale</code> and got a lot of exhausting feedback
+from Patrick and Richard, of course, but also from Mitchum DSouza
+(who wrote a <code>catgets</code>-like package), Roland McGrath, maybe David
+MacKenzie, Fran&ccedil;ois Pinard, and Paul Eggert, all pushing and
+pulling in various directions, not always compatible, to the extent
+that after a couple of test releases, <code>glocale</code> was torn apart.
+In particular, Paul Eggert &ndash; always keeping an eye on developments
+in Solaris &ndash; advocated the use of the <code>gettext</code> API over
+<code>glocale</code>'s <code>catgets</code>-based API.
+</p>
+<p>While Jim took some distance and time and became dad for a second
+time, Roland wanted to get GNU <code>libc</code> internationalized, and
+got Ulrich Drepper involved in that project.  Instead of starting
+from <code>glocale</code>, Ulrich rewrote something from scratch, but
+more conforming to the set of guidelines who emerged out of the
+<code>glocale</code> effort.  Then, Ulrich got people from the previous
+forum to involve themselves into this new project, and the switch
+from <code>glocale</code> to what was first named <code>msgutils</code>, renamed
+<code>nlsutils</code>, and later <code>gettext</code>, became officially accepted
+by Richard in May 1995 or so.
+</p>
+<p>Let's summarize by saying that Ulrich Drepper wrote GNU <code>gettext</code>
+in April 1995.  The first official release of the package, including
+PO mode, occurred in July 1995, and was numbered 0.7.  Other people
+contributed to the effort by providing a discussion forum around
+Ulrich, writing little pieces of code, or testing.  These are quoted
+in the <code>THANKS</code> file which comes with the GNU <code>gettext</code>
+distribution.
+</p>
+<p>While this was being done, Fran&ccedil;ois adapted half a dozen of
+GNU packages to <code>glocale</code> first, then later to <code>gettext</code>,
+putting them in pretest, so providing along the way an effective
+user environment for fine tuning the evolving tools.  He also took
+the responsibility of organizing and coordinating the Translation
+Project.  After nearly a year of informal exchanges between people from
+many countries, translator teams started to exist in May 1995, through
+the creation and support by Patrick D'Cruze of twenty unmoderated
+mailing lists for that many native languages, and two moderated
+lists: one for reaching all teams at once, the other for reaching
+all willing maintainers of internationalized free software packages.
+</p>
+<p>Fran&ccedil;ois also wrote PO mode in June 1995 with the collaboration
+of Greg McGary, as a kind of contribution to Ulrich's package.
+He also gave a hand with the GNU <code>gettext</code> Texinfo manual.
+</p>
+<p>In 1997, Ulrich Drepper released the GNU libc 2.0, which included the
+<code>gettext</code>, <code>textdomain</code> and <code>bindtextdomain</code> functions.
+</p>
+<p>In 2000, Ulrich Drepper added plural form handling (the <code>ngettext</code>
+function) to GNU libc.  Later, in 2001, he released GNU libc 2.2.x,
+which is the first free C library with full internationalization support.
+</p>
+<p>Ulrich being quite busy in his role of General Maintainer of GNU libc,
+he handed over the GNU <code>gettext</code> maintenance to Bruno Haible in
+2000.  Bruno added the plural form handling to the tools as well, added
+support for UTF-8 and CJK locales, and wrote a few new tools for
+manipulating PO files.
+</p>
+
+
+<a name="The-original-ABOUT_002dNLS"></a>
+<a name="SEC364"></a>
+<h2 class="section"> <a href="gettext_toc.html#TOC358">17.2 Notes on the Free Translation Project</a> </h2>
+
+<p>This section contains the text that was, for a long time, distributed
+as a file named <code>ABOUT-NLS</code>.
+</p>
+<p><strong> NOTE: </strong> This documentation section is outdated.  It it included
+here for historical purposes only.
+</p>
+
+<p>Free software is going international!  The Free Translation Project is
+a way to get maintainers of free software, translators, and users all
+together, so that free software will gradually become able to speak many
+languages.  A few packages already provide translations for their messages.
+</p>
+<p>If you found this &lsquo;<tt>ABOUT-NLS</tt>&rsquo; file inside a distribution, you
+may assume that the distributed package does use GNU <code>gettext</code>
+internally, itself available at your nearest GNU archive site.  But you
+do <em>not</em> need to install GNU <code>gettext</code> prior to configuring,
+installing or using this package with messages translated.
+</p>
+<p>Installers will find here some useful hints.  These notes also explain
+how users should proceed for getting the programs to use the available
+translations.  They tell how people wanting to contribute and work
+on translations can contact the appropriate team.
+</p>
+
+
+
+<a name="INSTALL-Matters"></a>
+<a name="SEC365"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC359">17.2.1 INSTALL Matters</a> </h3>
+
+<p>Some packages are <em>localizable</em> when properly installed; the
+programs they contain can be made to speak your own native language.
+Most such packages use GNU <code>gettext</code>.  Other packages have their
+own ways to internationalization, predating GNU <code>gettext</code>.
+</p>
+<p>By default, this package will be installed to allow translation of
+messages.  It will automatically detect whether the system already
+provides the GNU <code>gettext</code> functions.  Installers may use special
+options at configuration time for changing the default behaviour.  The
+command:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">./configure --disable-nls
+</pre></td></tr></table>
+
+<p>will <em>totally</em> disable translation of messages.
+</p>
+<p>When you already have GNU <code>gettext</code> installed on your system and
+run configure without an option for your new package, <code>configure</code>
+will probably detect the previously built and installed &lsquo;<tt>libintl</tt>&rsquo;
+library and will decide to use it.  If not, you may have to to use the
+&lsquo;<samp>--with-libintl-prefix</samp>&rsquo; option to tell <code>configure</code> where to
+look for it.
+</p>
+<p>Internationalized packages usually have many &lsquo;<tt>po/<var>ll</var>.po</tt>&rsquo;
+files, where <var>ll</var> gives an ISO 639 two-letter code
+identifying the language.  Unless translations have been forbidden
+at <code>configure</code> time by using the &lsquo;<samp>--disable-nls</samp>&rsquo; switch,
+all available translations are installed together with the package.
+However, the environment variable <code>LINGUAS</code> may be set, prior
+to configuration, to limit the installed set.  <code>LINGUAS</code> should
+then contain a space separated list of two-letter codes, stating
+which languages are allowed.
+</p>
+
+<a name="Using-This-Package"></a>
+<a name="SEC366"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC360">17.2.2 Using This Package</a> </h3>
+
+<p>As a user, if your language has been installed for this package, you
+only have to set the <code>LANG</code> environment variable to the appropriate
+&lsquo;<samp><var>ll</var>_<var>CC</var></samp>&rsquo; combination.  If you happen to have the <code>LC_ALL</code>
+or some other <code>LC_xxx</code> environment variables set, you should unset them
+before setting <code>LANG</code>, otherwise the setting of <code>LANG</code> will not
+have the desired effect.  Here &lsquo;<samp><var>ll</var></samp>&rsquo; is an
+ISO 639 two-letter language code, and &lsquo;<samp><var>CC</var></samp>&rsquo; is an
+ISO 3166 two-letter country code.  For example, let's suppose that you
+speak German and live in Germany.  At the shell prompt, merely execute
+&lsquo;<samp>setenv LANG de_DE</samp>&rsquo; (in <code>csh</code>),
+&lsquo;<samp>export LANG; LANG=de_DE</samp>&rsquo; (in <code>sh</code>) or
+&lsquo;<samp>export LANG=de_DE</samp>&rsquo; (in <code>bash</code>).  This can be done from your
+&lsquo;<tt>.login</tt>&rsquo; or &lsquo;<tt>.profile</tt>&rsquo; file, once and for all.
+</p>
+<p>You might think that the country code specification is redundant.  But in
+fact, some languages have dialects in different countries.  For example,
+&lsquo;<samp>de_AT</samp>&rsquo; is used for Austria, and &lsquo;<samp>pt_BR</samp>&rsquo; for Brazil.  The country
+code serves to distinguish the dialects.
+</p>
+<p>The locale naming convention of &lsquo;<samp><var>ll</var>_<var>CC</var></samp>&rsquo;, with
+&lsquo;<samp><var>ll</var></samp>&rsquo; denoting the language and &lsquo;<samp><var>CC</var></samp>&rsquo; denoting the
+country, is the one use on systems based on GNU libc.  On other systems,
+some variations of this scheme are used, such as &lsquo;<samp><var>ll</var></samp>&rsquo; or
+&lsquo;<samp><var>ll</var>_<var>CC</var>.<var>encoding</var></samp>&rsquo;.  You can get the list of
+locales supported by your system for your language by running the command
+&lsquo;<samp>locale -a | grep '^<var>ll</var>'</samp>&rsquo;.
+</p>
+<p>Not all programs have translations for all languages.  By default, an
+English message is shown in place of a nonexistent translation.  If you
+understand other languages, you can set up a priority list of languages.
+This is done through a different environment variable, called
+<code>LANGUAGE</code>.  GNU <code>gettext</code> gives preference to <code>LANGUAGE</code>
+over <code>LANG</code> for the purpose of message handling, but you still
+need to have <code>LANG</code> set to the primary language; this is required
+by other parts of the system libraries.
+For example, some Swedish users who would rather read translations in
+German than English for when Swedish is not available, set <code>LANGUAGE</code>
+to &lsquo;<samp>sv:de</samp>&rsquo; while leaving <code>LANG</code> to &lsquo;<samp>sv_SE</samp>&rsquo;.
+</p>
+<p>Special advice for Norwegian users: The language code for Norwegian
+bokm&aring;l changed from &lsquo;<samp>no</samp>&rsquo; to &lsquo;<samp>nb</samp>&rsquo; recently (in 2003).
+During the transition period, while some message catalogs for this language
+are installed under &lsquo;<samp>nb</samp>&rsquo; and some older ones under &lsquo;<samp>no</samp>&rsquo;, it's
+recommended for Norwegian users to set <code>LANGUAGE</code> to &lsquo;<samp>nb:no</samp>&rsquo; so that
+both newer and older translations are used.
+</p>
+<p>In the <code>LANGUAGE</code> environment variable, but not in the <code>LANG</code>
+environment variable, &lsquo;<samp><var>ll</var>_<var>CC</var></samp>&rsquo; combinations can be
+abbreviated as &lsquo;<samp><var>ll</var></samp>&rsquo; to denote the language's main dialect.
+For example, &lsquo;<samp>de</samp>&rsquo; is equivalent to &lsquo;<samp>de_DE</samp>&rsquo; (German as spoken in
+Germany), and &lsquo;<samp>pt</samp>&rsquo; to &lsquo;<samp>pt_PT</samp>&rsquo; (Portuguese as spoken in Portugal)
+in this context.
+</p>
+
+
+<a name="Translating-Teams"></a>
+<a name="SEC367"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC361">17.2.3 Translating Teams</a> </h3>
+
+<p>For the Free Translation Project to be a success, we need interested
+people who like their own language and write it well, and who are also
+able to synergize with other translators speaking the same language.
+Each translation team has its own mailing list.  The up-to-date list
+of teams can be found at the Free Translation Project's homepage,
+&lsquo;<tt>https://translationproject.org/</tt>&rsquo;, in the &quot;Teams&quot; area.
+</p>
+<p>If you'd like to volunteer to <em>work</em> at translating messages, you
+should become a member of the translating team for your own language.
+The subscribing address is <em>not</em> the same as the list itself, it
+has &lsquo;<samp>-request</samp>&rsquo; appended.  For example, speakers of Swedish can send
+a message to &lsquo;<tt>sv-request@li.org</tt>&rsquo;, having this message body:
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">subscribe
+</pre></td></tr></table>
+
+<p>Keep in mind that team members are expected to participate
+<em>actively</em> in translations, or at solving translational
+difficulties, rather than merely lurking around.  If your team does not
+exist yet and you want to start one, or if you are unsure about what to
+do or how to get started, please write to
+&lsquo;<tt>coordinator@translationproject.org</tt>&rsquo; to reach the
+coordinator for all translator teams.
+</p>
+<p>The English team is special.  It works at improving and uniformizing
+the terminology in use.  Proven linguistic skills are praised
+more than programming skills, here.
+</p>
+
+<a name="Available-Packages"></a>
+<a name="SEC368"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC362">17.2.4 Available Packages</a> </h3>
+
+<p>Languages are not equally supported in all packages.  The following
+matrix shows the current state of internationalization, as of
+October 2022.  The matrix shows, in regard of each package, for which
+languages PO files have been submitted to translation coordination,
+with a translation percentage of at least 50%.
+</p>
+<table><tr><td>&nbsp;</td><td><pre class="example">Ready PO files       ab af an ar ast be bg bn bn_IN ca ckb crh cs da 
+                   +--------------------------------------------------+
+a2ps               |                 []             []         [] []  |
+anubis             |                                              []  |
+aspell             |             []                 []         [] []  |
+bash               |                    []          []         []     |
+beebase            |                                                  |
+bfd                |                                                  |
+binutils           |                                                  |
+bison              |                    []                            |
+bison-runtime      |             []     []          []            []  |
+buzztrax           |                                           [] []  |
+ccd2cue            |                                              []  |
+ccide              |                                              []  |
+cflow              |                                                  |
+clisp              |                                              []  |
+coreutils          |                    []          []         [] []  |
+cpio               |                                              []  |
+cppi               |                                              []  |
+cpplib             |                                []            []  |
+cryptsetup         |                                           [] []  |
+datamash           |                                              []  |
+denemo             |                                []         [] []  |
+dfarc              |                                []            []  |
+dialog             |       []    []                 []         [] []  |
+dico               |                                              []  |
+diffutils          |                    []                     [] []  |
+dink               |                                []            []  |
+direvent           |                                              []  |
+doodle             |                                           [] []  |
+dos2unix           |                                []            []  |
+dos2unix-man       |                                                  |
+e2fsprogs          |                                []         [] []  |
+enscript           |                                []            []  |
+exif               |             []                            [] []  |
+fetchmail          |                                []         [] []  |
+findutils          |                 [] []                     [] []  |
+flex               |                    []          []            []  |
+freedink           |                                []         [] []  |
+fusionforge        |                                                  |
+gas                |                                                  |
+gawk               |                    []          []                |
+gcal               |                                []            []  |
+gcc                |                                                  |
+gdbm               |                                              []  |
+gettext-examples   |    []       []     []          []         [] []  |
+gettext-runtime    |             []     []          []         [] []  |
+gettext-tools      |                    []          []            []  |
+gnubik             |          []                                  []  |
+gnuchess           |                                              []  |
+gnucobol           |                                                  |
+gnulib             |                    []                     [] []  |
+gnunet             |                                                  |
+gnunet-gtk         |                                                  |
+gnutls             |                                           []     |
+gold               |                                                  |
+gphoto2            |                                           [] []  |
+gprof              |                    []                        []  |
+grep               |                 [] []          []         [] []  |
+grip               |                 [] []          []            []  |
+grub               |             []                 []            []  |
+gsasl              |                                              []  |
+gss                |                                              []  |
+gst-plugins-bad    |             []     []                     [] []  |
+gst-plugins-base   |                    []          []         [] []  |
+gst-plugins-good   |                    []          []         [] []  |
+gst-plugins-ugly   |             []     []          []         [] []  |
+gstreamer          |             []     []          []         [] []  |
+gtick              |                                           [] []  |
+gtkam              |                 []                        [] []  |
+gtkspell           |    []       []  []             []         [] []  |
+gutenprint         |                                []            []  |
+hello              |                                           []     |
+help2man           |                                              []  |
+help2man-texi      |                                                  |
+idutils            |                                              []  |
+kbd                |                                           []     |
+klavaro            |          []        [] []       []         [] []  |
+ld                 |                    []                            |
+libc               |                    []          []         [] []  |
+libexif            |                                              []  |
+libextractor       |                                              []  |
+libgphoto2         |                                           [] []  |
+libgphoto2_port    |                                           [] []  |
+libiconv           |                    []                     [] []  |
+libidn             |                                           [] []  |
+libidn2            |                                           [] []  |
+lilypond           |                                []         [] []  |
+lordsawar          |                                []            []  |
+lynx               |                                []         [] []  |
+m4                 |                    []                            |
+mailfromd          |                                              []  |
+mailutils          |                                                  |
+make               |                    []                     [] []  |
+man-db             |             []                 []         [] []  |
+man-db-manpages    |                                                  |
+meritous           |                                              []  |
+midi-instruments   |          []                    []         [] []  |
+minicom            |                                           [] []  |
+mpop               |                                                  |
+msmtp              |                                                  |
+nano               |                                []         [] []  |
+opcodes            |                                                  |
+parted             |                                           [] []  |
+pies               |                                                  |
+pnmixer            |                                              []  |
+procps-ng          |                                                  |
+procps-ng-man      |                                                  |
+psmisc             |                                           [] []  |
+psmisc-man         |                                                  |
+pspp               |          []                    []                |
+pyspread           |                                              []  |
+radius             |                                []                |
+recode             |                 []             []         [] []  |
+recutils           |                                                  |
+rush               |                                              []  |
+sarg               |                                              []  |
+savane             |                                                  |
+sed                |             []     []          []         [] []  |
+sharutils          |                                           []     |
+shepherd           |                                              []  |
+shishi             |                                                  |
+skribilo           |                                              []  |
+solfege            |                                []         [] []  |
+solfege-manual     |                                []                |
+spotmachine        |                                              []  |
+sudo               |             []                 []         [] []  |
+sudoers            |                                []         [] []  |
+sysstat            |                                              []  |
+tar                |                    []          []         [] []  |
+texinfo            |                                []         [] []  |
+texinfo_document   |                                []         []     |
+tigervnc           |                    []                     [] []  |
+tin                |                                              []  |
+tin-man            |                                                  |
+trader             |                                              []  |
+util-linux         |                                           [] []  |
+util-linux-man     |                                                  |
+ve                 |                                                  |
+vmm                |                                                  |
+vorbis-tools       |                                           [] []  |
+wastesedge         |                                              []  |
+wcd                |                                              []  |
+wcd-man            |                                                  |
+wdiff              |                                []         [] []  |
+wget               |                                           []     |
+wget2              |                                                  |
+wyslij-po          |                                              []  |
+xboard             |                                              []  |
+xdg-user-dirs      | [] [] [] [] []  [] []     []   [] []  []  [] []  |
+xkeyboard-config   |          []        []          []         [] []  |
+xz                 |                                []         []     |
+                   +--------------------------------------------------+
+                     ab af an ar ast be bg bn bn_IN ca ckb crh cs da 
+                      1  3  2  6 15   8 31  1   1   53  1   1  64 104
+
+                     de  el en en_GB eo es  et eu fa fi fr  fur ga gd
+                   +--------------------------------------------------+
+a2ps               | []  []     []   [] []  []       [] []            |
+anubis             | []                 []           [] []            |
+aspell             | []         []   [] []           [] []  []  []    |
+bash               | []              [] []              []      []    |
+beebase            | []                 []              []            |
+bfd                |                                    []            |
+binutils           |                                    []            |
+bison              | []  []          [] []  []       [] []            |
+bison-runtime      | []  []          [] []  []       [] []      []    |
+buzztrax           | []                 []           [] []            |
+ccd2cue            | []              [] []              []            |
+ccide              | []              [] []           [] []  []        |
+cflow              | []              []                 []            |
+clisp              | []     []          []              []            |
+coreutils          | []                 []  []          []            |
+cpio               | []                 []           [] []      []    |
+cppi               | []              [] []           [] []            |
+cpplib             | []              [] []           [] []            |
+cryptsetup         | []                 []              []            |
+datamash           | []              [] []              []            |
+denemo             |                                                  |
+dfarc              | []              [] []           [] []  []        |
+dialog             | []  []          [] []     [] [] [] []  []  [] [] |
+dico               | []                 []           [] []            |
+diffutils          | []  []          [] []           [] []            |
+dink               | []              [] []           [] []            |
+direvent           | []              [] []              []            |
+doodle             | []              [] []           [] []      []    |
+dos2unix           | []              [] []              []  []        |
+dos2unix-man       | []                 []              []            |
+e2fsprogs          | []                 []              []            |
+enscript           | []         []   [] []           [] []      []    |
+exif               | []              [] []           [] []  []        |
+fetchmail          | ()  []     []   [] []              []            |
+findutils          | []  []          [] []  []       [] []      []    |
+flex               | []              [] []           [] []      []    |
+freedink           | []  []          [] []     []    [] []  []        |
+fusionforge        | []                 []              []            |
+gas                |                    []           [] []            |
+gawk               | []                 []           [] []            |
+gcal               | []                 []              []            |
+gcc                | []                 []              []            |
+gdbm               | []              [] []              []            |
+gettext-examples   | []  []          [] []           [] []      []    |
+gettext-runtime    | []              [] []           [] []      []    |
+gettext-tools      | []                 []           [] []            |
+gnubik             | []              [] []           [] []  []        |
+gnuchess           | []              [] []              []            |
+gnucobol           |                    []              []            |
+gnulib             | []              [] []  []       [] []            |
+gnunet             |                    []                            |
+gnunet-gtk         | []                 []                            |
+gnutls             | []              [] []           [] []            |
+gold               |                    []           [] []            |
+gphoto2            | ()              []                 []            |
+gprof              | []              [] []           [] []      []    |
+grep               | []              [] []  []       [] []      []    |
+grip               | []                 []           [] []  []        |
+grub               | []                 []           [] []            |
+gsasl              | []              [] []           [] []      []    |
+gss                | []              [] []           [] []      []    |
+gst-plugins-bad    | []              [] []              []  []        |
+gst-plugins-base   | []  []          [] []           [] []  []        |
+gst-plugins-good   | []  []          [] []           [] []  []        |
+gst-plugins-ugly   | []  []          [] []     []    [] []  []        |
+gstreamer          | []  []          [] []     []    [] []            |
+gtick              | ()              [] []           [] []      []    |
+gtkam              | ()              [] []           [] []            |
+gtkspell           | []  []          [] []     []    [] []  []  []    |
+gutenprint         | []                 []              []            |
+hello              | []                     []    [] []               |
+help2man           | []  []          [] []           [] []            |
+help2man-texi      | []                 []              []            |
+idutils            | []              [] []           [] []      []    |
+kbd                | []  []          [] []              []            |
+klavaro            | []  []          [] []     []       []            |
+ld                 |                    []              []            |
+libc               | []                 []           [] []            |
+libexif            | []                 []              []            |
+libextractor       | []                 []              []            |
+libgphoto2         | ()                 []              []            |
+libgphoto2_port    | ()                 []     []    [] []            |
+libiconv           | []              [] []  []       [] []      []    |
+libidn             | []              [] []           [] []            |
+libidn2            | []              [] []              []  []        |
+lilypond           | []  []          [] []              []            |
+lordsawar          | []                                 []            |
+lynx               | []              []     []       [] []            |
+m4                 |                    []                            |
+mailfromd          |                                    []            |
+mailutils          | []                 []           [] []            |
+make               | []                 []           [] []      []    |
+man-db             | []              [] []              []            |
+man-db-manpages    | []                 []              []            |
+meritous           |                 []                               |
+midi-instruments   | []  []          [] []  []    [] [] []            |
+minicom            | []                 []           [] []            |
+mpop               | []              [] []              []            |
+msmtp              | []              []                 []            |
+nano               | []              [] []           [] []      []    |
+opcodes            | []                 []              []            |
+parted             | []                 []              []  []        |
+pies               | []                 []              []            |
+pnmixer            | []                                 []            |
+procps-ng          | []                                 []            |
+procps-ng-man      |                                                  |
+psmisc             | []  []          [] []           [] []            |
+psmisc-man         | []                                 []            |
+pspp               | []  []             []              []            |
+pyspread           | []                                 []            |
+radius             |                    []              []            |
+recode             | []              [] []           [] []      []    |
+recutils           | []                              [] []            |
+rush               | []                              [] []            |
+sarg               | []                 []              []            |
+savane             |                    []              []            |
+sed                | []  []          [] []  []       [] []      []    |
+sharutils          | []              []     []          []            |
+shepherd           | []                 []              []            |
+shishi             | []                              [] []            |
+skribilo           |                 [] []              []  []        |
+solfege            | []              [] []  []    [] [] []            |
+solfege-manual     | []              [] []  []          []            |
+spotmachine        | []              []              [] []            |
+sudo               | []              [] []           [] []  []        |
+sudoers            | []              []              [] []            |
+sysstat            | []              []              [] []            |
+tar                | []              [] []  []       [] []      []    |
+texinfo            | []              [] []           [] []            |
+texinfo_document   | []              [] []           [] []            |
+tigervnc           | []              [] []           [] []            |
+tin                | []                     []          []            |
+tin-man            |            []                                    |
+trader             | []         []   []              [] []            |
+util-linux         | []                 []              []            |
+util-linux-man     | []                                 []            |
+ve                 | []              [] []           [] []  []        |
+vmm                |                                                  |
+vorbis-tools       | []              [] []              []            |
+wastesedge         |                                    []            |
+wcd                | []              [] []           [] []  []        |
+wcd-man            | []                                 []            |
+wdiff              | []              [] []  []       [] []      []    |
+wget               | []              [] []  []       [] []      []    |
+wget2              | []                 []              []            |
+wyslij-po          | []              [] []           [] []            |
+xboard             | []                 []              []            |
+xdg-user-dirs      | []  []          [] []  [] [] [] [] []  []  [] [] |
+xkeyboard-config   | []              [] []           [] []  []        |
+xz                 | []              [] []           [] []            |
+                   +--------------------------------------------------+
+                     de  el en en_GB eo es  et eu fa fi fr  fur ga gd
+                     127 23  1   6   84 121 20  8  5 80 141 22  27  2
+
+                     gl gu he hi hr hu hy id is it ja ka kk kn ko ku
+                   +-------------------------------------------------+
+a2ps               |             []       []    [] []                |
+anubis             |             [] []    []    []                   |
+aspell             |             []       []    [] []                |
+bash               |             [] []    []       []          []    |
+beebase            |                            ()                   |
+bfd                |                                                 |
+binutils           |                                                 |
+bison              |                               []                |
+bison-runtime      | []          [] []    []    [] [] []             |
+buzztrax           |                                                 |
+ccd2cue            |                []                               |
+ccide              |             [] []                []             |
+cflow              |                                                 |
+clisp              |                                                 |
+coreutils          |             [] []             []          []    |
+cpio               |             [] []    []    [] [] []       []    |
+cppi               | []          [] []          [] [] []             |
+cpplib             |                      []       []                |
+cryptsetup         |                            [] []                |
+datamash           |                                                 |
+denemo             |                                                 |
+dfarc              |             [] []          []                   |
+dialog             | []          [] []    [] [] [] [] []          [] |
+dico               |                                                 |
+diffutils          |             [] []    []    [] [] []             |
+dink               |                []                               |
+direvent           |                []                               |
+doodle             |                            []                   |
+dos2unix           |                []             []          []    |
+dos2unix-man       |                                                 |
+e2fsprogs          |                []                               |
+enscript           |             []       []                         |
+exif               | []          []       [] [] [] [] []       []    |
+fetchmail          |                      []    [] []                |
+findutils          | []          [] []    []    [] []          []    |
+flex               |                                                 |
+freedink           |             [] []    []    []                   |
+fusionforge        |                                                 |
+gas                |                      []                         |
+gawk               |                      []    ()             []    |
+gcal               |                                                 |
+gcc                |                                                 |
+gdbm               |                                                 |
+gettext-examples   | []          [] []    []    [] [] []             |
+gettext-runtime    | []          [] []          [] []          []    |
+gettext-tools      |                      []    [] []          []    |
+gnubik             | []          []             []                   |
+gnuchess           | []                                              |
+gnucobol           |                                                 |
+gnulib             |                []          [] []                |
+gnunet             |                                                 |
+gnunet-gtk         |                                                 |
+gnutls             |                            []                   |
+gold               |                                                 |
+gphoto2            |                []    []    [] []                |
+gprof              |                []    []    []    []             |
+grep               | []          [] []    []    [] [] []       []    |
+grip               |                []          [] []          []    |
+grub               | []          [] []          []    []       []    |
+gsasl              |                []    []    []                   |
+gss                |             [] []    []    []                   |
+gst-plugins-bad    |             [] []    []    []    []             |
+gst-plugins-base   | []          [] []    []    []                   |
+gst-plugins-good   | []          [] []    []    [] []                |
+gst-plugins-ugly   | []          [] []    []    [] [] []             |
+gstreamer          | []          [] []    []    []                   |
+gtick              | []             []    []    []                   |
+gtkam              |       []       []    [] [] [] []                |
+gtkspell           | []    []    [] [] [] [] [] [] [] []             |
+gutenprint         | []          [] []          []    []             |
+hello              |             []                                  |
+help2man           |             []             [] []                |
+help2man-texi      |                                                 |
+idutils            |                []    []          []             |
+kbd                |                                                 |
+klavaro            | []          [] []    []    []       []          |
+ld                 |                                                 |
+libc               | []          []       []    [] []          []    |
+libexif            |                            []                   |
+libextractor       |                                                 |
+libgphoto2         |                                                 |
+libgphoto2_port    |                            [] []                |
+libiconv           | []          [] []    []    [] [] []       []    |
+libidn             |             [] []    []    []                   |
+libidn2            |                []    []          []       []    |
+lilypond           |                            [] []                |
+lordsawar          |                               []                |
+lynx               |                []    []    [] []                |
+m4                 |                                  []       []    |
+mailfromd          |                                                 |
+mailutils          |                                                 |
+make               |             []       []    [] []          []    |
+man-db             |                      []       []                |
+man-db-manpages    |                      []                         |
+meritous           |                                                 |
+midi-instruments   | []    []    [] [] [] [] [] [] []          [] [] |
+minicom            |                []    []       []                |
+mpop               |                                                 |
+msmtp              |                                                 |
+nano               | []          [] []    []    [] []          []    |
+opcodes            |                                                 |
+parted             |                []    []    [] [] []       []    |
+pies               |                                                 |
+pnmixer            |             []             []                   |
+procps-ng          |                                                 |
+procps-ng-man      |                                                 |
+psmisc             |             [] []    []    []             []    |
+psmisc-man         |             []                                  |
+pspp               | []             []             []                |
+pyspread           |                                                 |
+radius             |                      []                         |
+recode             | []    []    [] []    []    []                   |
+recutils           |                                                 |
+rush               |                                                 |
+sarg               |                                                 |
+savane             |       []                                        |
+sed                | []          [] []    []    [] [] []       []    |
+sharutils          |                                                 |
+shepherd           |                                                 |
+shishi             |                                                 |
+skribilo           |                []                               |
+solfege            | []                         []                   |
+solfege-manual     |                                                 |
+spotmachine        |                                                 |
+sudo               | []          [] []          [] [] []       []    |
+sudoers            |             []             [] []          []    |
+sysstat            |             []       []    []    []       []    |
+tar                |             [] []    []    [] []          []    |
+texinfo            |             []       []    []                   |
+texinfo_document   |             [] []          []                   |
+tigervnc           |       []       []    []          []       []    |
+tin                |                                                 |
+tin-man            |                                                 |
+trader             |             [] []                               |
+util-linux         |             []                []          []    |
+util-linux-man     |                                                 |
+ve                 |                         [] []                   |
+vmm                |                                                 |
+vorbis-tools       |             []       []                         |
+wastesedge         |                            []                   |
+wcd                |                                                 |
+wcd-man            |                                                 |
+wdiff              | []             []          []                   |
+wget               |             [] []    []    [] []          []    |
+wget2              |             []                []                |
+wyslij-po          | []          [] []    []                         |
+xboard             |                                                 |
+xdg-user-dirs      | [] [] [] [] [] []    [] [] [] [] [] [] [] [] [] |
+xkeyboard-config   | []    []    [] []    []    []    []       []    |
+xz                 |             [] []          []             []    |
+                   +-------------------------------------------------+
+                     gl gu he hi hr hu hy id is it ja ka kk kn ko ku
+                     32  1  8  1 58 62  2 58  7 68 49 26  2  1 32  3
+
+                     ky lg lt lv mk ml mn mr ms mt nb ne nl nn or pa
+                   +-------------------------------------------------+
+a2ps               |                         []    []    []          |
+anubis             |                         []    []    []          |
+aspell             |                   []                []          |
+bash               |                               []    []          |
+beebase            |                                     []          |
+bfd                |                                                 |
+binutils           |                                                 |
+bison              |                         []                      |
+bison-runtime      | []    [] []             []    []    []          |
+buzztrax           |                                                 |
+ccd2cue            |                                                 |
+ccide              |          []                         []          |
+cflow              |                                                 |
+clisp              |                                     []          |
+coreutils          |                               []    []          |
+cpio               |                                     []          |
+cppi               |                                                 |
+cpplib             |                                     []          |
+cryptsetup         |                                                 |
+datamash           |                               []    []          |
+denemo             |                                     []          |
+dfarc              |             []                      []          |
+dialog             |       [] []             []    []    []          |
+dico               |                                                 |
+diffutils          |          []             []    []    []          |
+dink               |                                     []          |
+direvent           |                                     []          |
+doodle             |                                     []          |
+dos2unix           |                               []    []          |
+dos2unix-man       |                                     []          |
+e2fsprogs          |                                     []          |
+enscript           |                                     []          |
+exif               |          []             []          []          |
+fetchmail          |                                     []          |
+findutils          |                               []    []          |
+flex               |                                     []          |
+freedink           |                               []    []          |
+fusionforge        |                                                 |
+gas                |                                                 |
+gawk               |                                     []          |
+gcal               |                                                 |
+gcc                |                                                 |
+gdbm               |                                                 |
+gettext-examples   | []       []             [] [] []    [] []       |
+gettext-runtime    |                               []    [] []       |
+gettext-tools      |                                                 |
+gnubik             |                               []    []          |
+gnuchess           |                               []    []          |
+gnucobol           |                                                 |
+gnulib             |                                     []          |
+gnunet             |                                                 |
+gnunet-gtk         |                                                 |
+gnutls             |                         []          []          |
+gold               |                                                 |
+gphoto2            |                                     []          |
+gprof              |                         []          []          |
+grep               |                               []    []          |
+grip               |                               []    []          |
+grub               |       []                      []    []          |
+gsasl              |                                     []          |
+gss                |                                                 |
+gst-plugins-bad    |          []                   []    []          |
+gst-plugins-base   |          []                   []    []          |
+gst-plugins-good   |          []                   []    []          |
+gst-plugins-ugly   |          []             [] [] []    []          |
+gstreamer          |       []                      []    []          |
+gtick              |                               []    []          |
+gtkam              |                               []    []       [] |
+gtkspell           | []    [] []       []    []    []    []          |
+gutenprint         |                                     []          |
+hello              |                               []    []          |
+help2man           |                               []                |
+help2man-texi      |                                                 |
+idutils            |                               []    []          |
+kbd                |                                                 |
+klavaro            |                               []    []       [] |
+ld                 |                                                 |
+libc               |                                     []          |
+libexif            |                                     []          |
+libextractor       |                                     []          |
+libgphoto2         |                                     []          |
+libgphoto2_port    |                                     []          |
+libiconv           |       []                            []          |
+libidn             |                                     []          |
+libidn2            |                                     []          |
+lilypond           |                                     []          |
+lordsawar          |                                                 |
+lynx               |                                     []          |
+m4                 |                                     []          |
+mailfromd          |                                                 |
+mailutils          |                                                 |
+make               |                                     []          |
+man-db             |                                     []          |
+man-db-manpages    |                                                 |
+meritous           |                                                 |
+midi-instruments   |       []          []    []       [] []          |
+minicom            |                               []                |
+mpop               |                                                 |
+msmtp              |                                                 |
+nano               |                         []    []    []          |
+opcodes            |                                                 |
+parted             |                                     []          |
+pies               |                                                 |
+pnmixer            |                                     []          |
+procps-ng          |                                                 |
+procps-ng-man      |                                                 |
+psmisc             |                                     []          |
+psmisc-man         |                                                 |
+pspp               |       []                            []          |
+pyspread           |                                        []       |
+radius             |                                     []          |
+recode             |                               []    []          |
+recutils           |                                     []          |
+rush               |                                     []          |
+sarg               |                                                 |
+savane             |                                                 |
+sed                |                               []    []          |
+sharutils          |                                     []          |
+shepherd           |                                                 |
+shishi             |                                                 |
+skribilo           |                                                 |
+solfege            |                               []    []          |
+solfege-manual     |                                     []          |
+spotmachine        |                                     []          |
+sudo               |                               []    []          |
+sudoers            |                               []                |
+sysstat            |                               []    []          |
+tar                | []                            []    []          |
+texinfo            |                               []    []          |
+texinfo_document   |                                     []          |
+tigervnc           |                                                 |
+tin                |                                                 |
+tin-man            |                                                 |
+trader             |                               []                |
+util-linux         |                                     []          |
+util-linux-man     |                                                 |
+ve                 |                                     []          |
+vmm                |                                                 |
+vorbis-tools       |                                     []          |
+wastesedge         |                                     []          |
+wcd                |                                     []          |
+wcd-man            |                                     []          |
+wdiff              |                         []    []    []          |
+wget               |                               []    []          |
+wget2              |                                                 |
+wyslij-po          |                                     [] []       |
+xboard             |                                     []          |
+xdg-user-dirs      | [] [] [] [] [] []    []       []    [] [] [] [] |
+xkeyboard-config   |       []                            []          |
+xz                 |                                                 |
+                   +-------------------------------------------------+
+                     ky lg lt lv mk ml mn mr ms mt nb ne nl nn or pa
+                      5  1 10 12  2  1  3  1 15  2 44  1 98  5  1  3
+
+                     pl ps pt pt_BR ro ru rw sk sl sq sr  sv  sw ta te
+                   +---------------------------------------------------+
+a2ps               | []    []  []   [] []       []    []  []           |
+anubis             | []    []          []             []  []           |
+aspell             | []    []  []   [] []    [] [] [] []  []           |
+bash               | []    []  []   []                []  []           |
+beebase            |                                  []               |
+bfd                |       []          []             []               |
+binutils           |       []          []             []  []           |
+bison              | []    []  []                     []  []           |
+bison-runtime      | []    []  []   [] []       [] [] []  []     []    |
+buzztrax           |           []                     []  []           |
+ccd2cue            |           []                     []  []           |
+ccide              | []                []             []  []           |
+cflow              | []        []                     []  []           |
+clisp              |                   []             []  []           |
+coreutils          | []    []  []   [] []       []    []  []           |
+cpio               | []    []  []   [] []             []  []           |
+cppi               | []        []   []                []  []           |
+cpplib             |           []      []             []  []           |
+cryptsetup         | []        []      []             []  []           |
+datamash           |           []                     []  []           |
+denemo             |                                                   |
+dfarc              | []        []                     []  []           |
+dialog             | []    []  []   [] []    [] [] [] []  []  []       |
+dico               | []        []                     []  []           |
+diffutils          | []    []  []   [] []             []  []           |
+dink               |                                      []           |
+direvent           | []        []   []                []  []           |
+doodle             |           []   []             [] []  []           |
+dos2unix           | []        []      []             []  []           |
+dos2unix-man       | []        []                     []  []           |
+e2fsprogs          | []    []                         []  []           |
+enscript           | []        []   [] []       []    []  []           |
+exif               | []    []  []   [] []    []       []  []           |
+fetchmail          | []             [] []          [] []  []           |
+findutils          | []    []  []   [] []    [] []    []  []           |
+flex               | []    []  []   [] []             []  []           |
+freedink           | []        []      []       []    []  []           |
+fusionforge        |                                                   |
+gas                |                   []                 []           |
+gawk               |       []  []   []                []  []           |
+gcal               |                                  []  []           |
+gcc                |                   []                 []           |
+gdbm               | []        []   [] []             []  []           |
+gettext-examples   | []    []  []   [] []    [] [] [] []  []     []    |
+gettext-runtime    | []    []  []   [] []    [] []    []  []           |
+gettext-tools      | []    []  []   [] []    [] []    []  []           |
+gnubik             | []        []   []          []    []  []           |
+gnuchess           |           []   []                []  []           |
+gnucobol           |                                  []  []           |
+gnulib             | []    []  []   [] []       []    []  []           |
+gnunet             |                                  []               |
+gnunet-gtk         |                                  []               |
+gnutls             | []        []                     []  []           |
+gold               |                                  []               |
+gphoto2            | []        []   [] []             []  []           |
+gprof              |           []   [] []             []  []           |
+grep               | []    []  []   [] []    [] []    []  []     []    |
+grip               | []        []   [] []             []               |
+grub               | []    []  []      []       []    []  []           |
+gsasl              | []        []   []       []       []  []           |
+gss                | []        []   []       []       []  []           |
+gst-plugins-bad    | []        []   [] []    []       []  []           |
+gst-plugins-base   | []        []   [] []    [] []    []  []           |
+gst-plugins-good   | []        []   [] []    [] []    []  []           |
+gst-plugins-ugly   | []        []   [] []    [] [] [] []  []     []    |
+gstreamer          | []        []   [] []    [] []    []  []           |
+gtick              | []        []      []    []       []  []           |
+gtkam              | []        []   [] []    []       []  []           |
+gtkspell           | []    []  []   [] []    [] [] [] []  []     []    |
+gutenprint         |                   []    [] []        []           |
+hello              | []             [] []    []       []  []           |
+help2man           | []        []   [] []             []  []           |
+help2man-texi      | []        []   []                []  []           |
+idutils            | []        []   [] []             []  []           |
+kbd                | []    []  []   [] []             []  []           |
+klavaro            | []    []  []      []       []    []  []           |
+ld                 |           []      []             []               |
+libc               | []    []  []      []    []       []  []           |
+libexif            | []                      []       []  []           |
+libextractor       | []        []                     []               |
+libgphoto2         | []                                   []           |
+libgphoto2_port    | []        []   [] []    []       []  []           |
+libiconv           | []        []   [] []    [] []    []  []           |
+libidn             | []        []   []                []  []           |
+libidn2            | []        []   [] []             []  []           |
+lilypond           |                                      []           |
+lordsawar          |                   []                 []           |
+lynx               |           []      []                 []           |
+m4                 |           []   []                []               |
+mailfromd          | []        []                     []               |
+mailutils          | []        []                     []               |
+make               | []    []  []   [] []             []  []           |
+man-db             | []    []  []   [] []             []  []           |
+man-db-manpages    | []    []  []   [] []             []  []           |
+meritous           |           []                     []  []           |
+midi-instruments   | []    []  []   [] []    [] []    []  []           |
+minicom            | []        []   [] []             []  []           |
+mpop               |           []                     []  []           |
+msmtp              |           []                     []  []           |
+nano               | []    []  []   [] []    []    [] []  []           |
+opcodes            |           []                     []  []           |
+parted             | []        []   [] []    [] []    []  []           |
+pies               | []        []                     []               |
+pnmixer            |           []      ()             []  []           |
+procps-ng          | []        []                         []           |
+procps-ng-man      |                                                   |
+psmisc             | []    []  []   [] []             []  []           |
+psmisc-man         |           []      []             []               |
+pspp               | []                []       []                     |
+pyspread           |           []                     []               |
+radius             | []                []             []               |
+recode             | []    []  []   [] []    [] []    []  []           |
+recutils           |           []                     []  []           |
+rush               | []        []                     []  []           |
+sarg               |           []      []             []               |
+savane             |           []      ()                              |
+sed                | []    []  []   [] []    [] []    []  []           |
+sharutils          | []        []   []                []  []           |
+shepherd           |           []            []       []  []           |
+shishi             | []                               []  []           |
+skribilo           |           []                     []  []           |
+solfege            | []        []      []    []           []           |
+solfege-manual     | []        []                                      |
+spotmachine        |           []                     []  []           |
+sudo               | []    []  []   [] []             []  []           |
+sudoers            | []    []  []   []                []  []           |
+sysstat            | []    []  []   [] []    []       []  []           |
+tar                | []    []  []   [] []       []    []  []           |
+texinfo            | []    []  []   [] []             []  []           |
+texinfo_document   | []    []  []   []                []  []           |
+tigervnc           |           []   [] []             []  []           |
+tin                |                   []                              |
+tin-man            |                                                   |
+trader             |           []      []             []  []           |
+util-linux         | []    []  []                     []  []           |
+util-linux-man     |                                  []               |
+ve                 | []        []   []                []  []           |
+vmm                |                                  []               |
+vorbis-tools       | []             []          []    []  []           |
+wastesedge         |           []                         []           |
+wcd                |           []                     []               |
+wcd-man            |           []                     []               |
+wdiff              | []        []   [] []       []    []  []           |
+wget               | []    []  []   [] []    []       []  []           |
+wget2              | []             [] []             []  []           |
+wyslij-po          | []        []   []                []  []           |
+xboard             | []                []             []               |
+xdg-user-dirs      | [] [] []  []   [] []    [] [] [] []  []     [] [] |
+xkeyboard-config   | []    []  []   [] []          [] []  []           |
+xz                 | []    []  []   []                []  []           |
+                   +---------------------------------------------------+
+                     pl ps pt pt_BR ro ru rw sk sl sq sr  sv  sw ta te
+                     99  1 46  115  74 84  0 34 32 11 131 121  1  6  1
+
+                     tg th tr uk  ur vi wa wo zh_CN zh_HK zh_TW
+                   +--------------------------------------------+
+a2ps               |    [] [] []     []                         | 31
+anubis             |       [] []     []                         | 20
+aspell             |          []     [] []     []               | 32
+bash               |       [] []     []        []          []   | 26
+beebase            |          []                                |  6
+bfd                |          []                                |  5
+binutils           |          []                                |  6
+bison              |          []                           []   | 17
+bison-runtime      |    [] [] []     []        []          []   | 41
+buzztrax           |                 []        []               | 11
+ccd2cue            |    []    []     []        []               | 13
+ccide              |          []     []        []               | 19
+cflow              |          []                                |  8
+clisp              |                                            | 12
+coreutils          |       [] []     []        []          []   | 27
+cpio               |       [] []     []        []               | 25
+cppi               |          []     []        []               | 20
+cpplib             |       [] []     []        []          []   | 19
+cryptsetup         |          []                                | 13
+datamash           |          []                                | 11
+denemo             |                           []    []    []   |  7
+dfarc              |                 []                         | 18
+dialog             |    [] [] []     [] []     []          []   | 48
+dico               |          []                                | 10
+diffutils          |       [] []     []        []          []   | 31
+dink               |       []                                   | 11
+direvent           |          []     []                         | 14
+doodle             |          []     []        []               | 18
+dos2unix           |          []     []        []          []   | 21
+dos2unix-man       |          []               []               | 10
+e2fsprogs          |          []     []        []               | 15
+enscript           |       [] []     []                         | 22
+exif               |       [] []     []        []               | 32
+fetchmail          |       []        []        []               | 21
+findutils          |       [] []     []        []          []   | 35
+flex               |       [] []     []        []          []   | 22
+freedink           |    []           []                         | 25
+fusionforge        |                                            |  3
+gas                |          []                                |  7
+gawk               |       []        []        []               | 17
+gcal               |       []                  []               |  9
+gcc                |                                            |  5
+gdbm               |          []     []                         | 13
+gettext-examples   |       [] []     []        []    []    []   | 44
+gettext-runtime    |       [] []     []        []          []   | 34
+gettext-tools      |       [] []     []        []          []   | 25
+gnubik             |          []     []        []               | 22
+gnuchess           |          []     []        []               | 15
+gnucobol           |                                            |  4
+gnulib             |          []     []        []          []   | 25
+gnunet             |                                            |  2
+gnunet-gtk         |                                            |  3
+gnutls             |          []     []        []               | 16
+gold               |          []                                |  5
+gphoto2            |          []     []        []          []   | 19
+gprof              |       [] []     []                         | 22
+grep               |    [] [] []     []        []          []   | 38
+grip               |          []     []        []    []    []   | 25
+grub               |       [] []     []        []               | 27
+gsasl              |          []     []        []               | 20
+gss                |                 []        []               | 19
+gst-plugins-bad    |       [] []     []        []          []   | 29
+gst-plugins-base   |       [] []     []        []               | 31
+gst-plugins-good   |       [] []     []        []          []   | 33
+gst-plugins-ugly   |       [] []     []        []          []   | 40
+gstreamer          |       [] []     []        []          []   | 33
+gtick              |          []     []        []               | 22
+gtkam              |          []     []        []               | 26
+gtkspell           |    [] [] []     [] []     []    []    []   | 51
+gutenprint         |       [] []               []               | 18
+hello              |          []               []               | 16
+help2man           |          []     []        []               | 20
+help2man-texi      |          []                                |  9
+idutils            |          []     []        []               | 21
+kbd                |          []               []               | 15
+klavaro            |       [] []  [] []    []  []               | 34
+ld                 |          []                                |  7
+libc               |       [] []     []        []          []   | 27
+libexif            |          []     []                         | 12
+libextractor       |          []     []                         | 10
+libgphoto2         |          []     []                         |  9
+libgphoto2_port    |          []     []        []          []   | 20
+libiconv           |          []     [] []     []          []   | 33
+libidn             |          []     []        []               | 20
+libidn2            |          []               []               | 20
+lilypond           |                           []               | 13
+lordsawar          |       []                                   |  8
+lynx               |       [] []     []                         | 19
+m4                 |          []               []               | 10
+mailfromd          |          []     []                         |  7
+mailutils          |          []     []                         |  9
+make               |          []     []        []          []   | 25
+man-db             |       []        []        []          []   | 22
+man-db-manpages    |       []                  []               | 13
+meritous           |                                            |  5
+midi-instruments   |    [] [] []     []        []          []   | 43
+minicom            |                 []                    []   | 18
+mpop               |          []                                |  8
+msmtp              |          []                                |  7
+nano               |       [] []     []        []          []   | 33
+opcodes            |          []                                |  7
+parted             |       [] []     []        []          []   | 26
+pies               |          []     []                         |  8
+pnmixer            |          []     []        ()               | 13
+procps-ng          |          []     []                         |  7
+procps-ng-man      |          []                                |  1
+psmisc             |          []     []        []          []   | 25
+psmisc-man         |          []                                |  7
+pspp               |          []               []               | 16
+pyspread           |          []                                |  7
+radius             |          []     []                         | 10
+recode             |       [] []     []        []               | 31
+recutils           |          []     []                         |  9
+rush               |          []     []        []               | 12
+sarg               |                                            |  7
+savane             |                                            |  4
+sed                |       [] []     []        []          []   | 37
+sharutils          |          []     []        []               | 14
+shepherd           |          []                                |  9
+shishi             |                 []        []               |  8
+skribilo           |          []                                | 10
+solfege            |       []        []        []               | 22
+solfege-manual     |       []                                   | 10
+spotmachine        |          []     []                         | 11
+sudo               |       [] []     []        []          []   | 31
+sudoers            |          []     []        []          []   | 22
+sysstat            |       [] []     []        []               | 24
+tar                |       [] []     []        []          []   | 33
+texinfo            |       [] []     []                         | 23
+texinfo_document   |          []                                | 18
+tigervnc           |          []     []                    []   | 21
+tin                |       []                  []          []   |  8
+tin-man            |                                            |  1
+trader             |                                            | 13
+util-linux         |       [] []     []        []               | 18
+util-linux-man     |          []                                |  4
+ve                 |          []     []        []               | 17
+vmm                |          []                                |  2
+vorbis-tools       |                 []                         | 15
+wastesedge         |       []                                   |  7
+wcd                |          []     []        []               | 13
+wcd-man            |          []                                |  6
+wdiff              |          []     []        []          []   | 27
+wget               |       [] []     []        []          []   | 29
+wget2              |          []                                | 11
+wyslij-po          |          []     []        []               | 20
+xboard             |       [] []               []               | 11
+xdg-user-dirs      |    [] [] []     [] []     []    []    []   | 73
+xkeyboard-config   |       [] []               []               | 32
+xz                 |       [] []     []        []          []   | 22
+                   +--------------------------------------------+
+  86 teams           tg th tr uk  ur vi wa wo zh_CN zh_HK zh_TW
+ 150 domains          0  9 55 119  1 96  5  1  87     5    43    2749
+</pre></td></tr></table>
+
+<p>Some counters in the preceding matrix are higher than the number of visible
+blocks let us expect.  This is because a few extra PO files are used for
+implementing regional variants of languages, or language dialects.
+</p>
+<p>For a PO file in the matrix above to be effective, the package to which
+it applies should also have been internationalized and distributed as
+such by its maintainer.  There might be an observable lag between the
+mere existence a PO file and its wide availability in a distribution.
+</p>
+<p>If October 2022 seems to be old, you may fetch a more recent copy
+of this &lsquo;<tt>ABOUT-NLS</tt>&rsquo; file on most GNU archive sites.  The most
+up-to-date matrix with full percentage details can be found at
+&lsquo;<tt>https://translationproject.org/extra/matrix.html</tt>&rsquo;.
+</p>
+
+
+<a name="Using-gettext-in-own-code"></a>
+<a name="SEC369"></a>
+<h3 class="subsection"> <a href="gettext_toc.html#TOC363">17.2.5 Using <code>gettext</code> in new packages</a> </h3>
+
+<p>If you are writing a freely available program and want to internationalize
+it you are welcome to use GNU &lsquo;<tt>gettext</tt>&rsquo; in your package.  Of course
+you have to respect the GNU Lesser General Public License which covers
+the use of the GNU &lsquo;<tt>gettext</tt>&rsquo; library.  This means in particular that
+even non-free programs can use <code>libintl</code> as a shared library, whereas
+only free software can use <code>libintl</code> as a static library or use
+modified versions of <code>libintl</code>.
+</p>
+<p>Once the sources are changed appropriately and the setup can handle the
+use of <code>gettext</code> the only thing missing are the translations.  The
+Free Translation Project is also available for packages which are not
+developed inside the GNU project.  Therefore the information given above
+applies also for every other Free Software Project.  Contact
+&lsquo;<tt>coordinator@translationproject.org</tt>&rsquo; to make the &lsquo;<tt>.pot</tt>&rsquo; files
+available to the translation teams.
+</p>
+
+<a name="References"></a>
+<a name="SEC370"></a>
+<h2 class="section"> <a href="gettext_toc.html#TOC364">17.3 Related Readings</a> </h2>
+
+<p><strong> NOTE: </strong> This documentation section is outdated and needs to be
+revised.
+</p>
+<p>Eugene H. Dorr (&lsquo;<tt>dorre@well.com</tt>&rsquo;) maintains an interesting
+bibliography on internationalization matters, called
+<cite>Internationalization Reference List</cite>, which is available as:
+</p><table><tr><td>&nbsp;</td><td><pre class="example">ftp://ftp.ora.com/pub/examples/nutshell/ujip/doc/i18n-books.txt
+</pre></td></tr></table>
+
+<p>Michael Gschwind (&lsquo;<tt>mike@vlsivie.tuwien.ac.at</tt>&rsquo;) maintains a
+Frequently Asked Questions (FAQ) list, entitled <cite>Programming for
+Internationalisation</cite>.  This FAQ discusses writing programs which
+can handle different language conventions, character sets, etc.;
+and is applicable to all character set encodings, with particular
+emphasis on ISO 8859-1.  It is regularly published in Usenet
+groups &lsquo;<tt>comp.unix.questions</tt>&rsquo;, &lsquo;<tt>comp.std.internat</tt>&rsquo;,
+&lsquo;<tt>comp.software.international</tt>&rsquo;, &lsquo;<tt>comp.lang.c</tt>&rsquo;,
+&lsquo;<tt>comp.windows.x</tt>&rsquo;, &lsquo;<tt>comp.std.c</tt>&rsquo;, &lsquo;<tt>comp.answers</tt>&rsquo;
+and &lsquo;<tt>news.answers</tt>&rsquo;.  The home location of this document is:
+</p><table><tr><td>&nbsp;</td><td><pre class="example">ftp://ftp.vlsivie.tuwien.ac.at/pub/8bit/ISO-programming
+</pre></td></tr></table>
+
+<p>Patrick D'Cruze (&lsquo;<tt>pdcruze@li.org</tt>&rsquo;) wrote a tutorial about NLS
+matters, and Jochen Hein (&lsquo;<tt>Hein@student.tu-clausthal.de</tt>&rsquo;) took
+over the responsibility of maintaining it.  It may be found as:
+</p><table><tr><td>&nbsp;</td><td><pre class="example">ftp://sunsite.unc.edu/pub/Linux/utils/nls/catalogs/Incoming/...
+     ...locale-tutorial-0.8.txt.gz
+</pre></td></tr></table>
+<p>This site is mirrored in:
+</p><table><tr><td>&nbsp;</td><td><pre class="example">ftp://ftp.ibp.fr/pub/linux/sunsite/
+</pre></td></tr></table>
+
+<p>A French version of the same tutorial should be findable at:
+</p><table><tr><td>&nbsp;</td><td><pre class="example">ftp://ftp.ibp.fr/pub/linux/french/docs/
+</pre></td></tr></table>
+<p>together with French translations of many Linux-related documents.
+</p>
+
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#SEC362" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="gettext_18.html#SEC371" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_21.html#SEC387" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="gettext_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<p>
+ <font size="-1">
+  This document was generated by <em>Bruno Haible</em> on <em>October, 9 2022</em> using <a href="https://www.nongnu.org/texi2html/"><em>texi2html 1.78a</em></a>.
+ </font>
+ <br>
+
+</p>
+</body>
+</html>

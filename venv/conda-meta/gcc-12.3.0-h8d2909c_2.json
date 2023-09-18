@@ -1,0 +1,99 @@
+{
+  "build": "h8d2909c_2",
+  "build_number": 2,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [],
+  "depends": [
+    "gcc_impl_linux-64 12.3.0.*"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/gcc-12.3.0-h8d2909c_2",
+  "features": "",
+  "files": [
+    "bin/cc",
+    "bin/cpp",
+    "bin/gcc",
+    "bin/gcc-ar",
+    "bin/gcc-nm",
+    "bin/gcc-ranlib",
+    "bin/gcov",
+    "bin/gcov-dump",
+    "bin/gcov-tool"
+  ],
+  "fn": "gcc-12.3.0-h8d2909c_2.conda",
+  "license": "BSD-3-Clause",
+  "license_family": "BSD",
+  "link": {
+    "source": "/opt/conda/pkgs/gcc-12.3.0-h8d2909c_2",
+    "type": 1
+  },
+  "md5": "e2f2f81f367e14ca1f77a870bda2fe59",
+  "name": "gcc",
+  "package_tarball_full_path": "/opt/conda/pkgs/gcc-12.3.0-h8d2909c_2.conda",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "bin/cc",
+        "path_type": "softlink",
+        "sha256": "fbb4ae85e925b548538a7da51fcb9a7bdc46a136fe170662d7916bd6585042ab",
+        "size_in_bytes": 1309208
+      },
+      {
+        "_path": "bin/cpp",
+        "path_type": "softlink",
+        "sha256": "9a3b968b8ff3e36df53bc09f2e6a3a4c41a71f86d26181f9be3499a25788b9a0",
+        "size_in_bytes": 1309208
+      },
+      {
+        "_path": "bin/gcc",
+        "path_type": "softlink",
+        "sha256": "fbb4ae85e925b548538a7da51fcb9a7bdc46a136fe170662d7916bd6585042ab",
+        "size_in_bytes": 1309208
+      },
+      {
+        "_path": "bin/gcc-ar",
+        "path_type": "softlink",
+        "sha256": "d338d87883e7e4b698216ed4a83c4bcd19b9b0b4b01fca567f103d26e24023e8",
+        "size_in_bytes": 35304
+      },
+      {
+        "_path": "bin/gcc-nm",
+        "path_type": "softlink",
+        "sha256": "36be41f0c6b607338ee8fe3a8dd7a063187c5479c02a2faca265adb3087ba900",
+        "size_in_bytes": 35304
+      },
+      {
+        "_path": "bin/gcc-ranlib",
+        "path_type": "softlink",
+        "sha256": "590f206fe224d2936e2961da5efc661599ce53fbfea864847b239c144f7092e8",
+        "size_in_bytes": 35304
+      },
+      {
+        "_path": "bin/gcov",
+        "path_type": "softlink",
+        "sha256": "009f1a3f703f3b2e8d222f66d6327955545b4fbcabc98848de55f78fc009bc57",
+        "size_in_bytes": 765560
+      },
+      {
+        "_path": "bin/gcov-dump",
+        "path_type": "softlink",
+        "sha256": "16624309deacda86eda7e17851e1f28c284de2be57a960883f981b1e4c262f64",
+        "size_in_bytes": 548368
+      },
+      {
+        "_path": "bin/gcov-tool",
+        "path_type": "softlink",
+        "sha256": "7ef3b0974b1b388cc0a3507ed8ea85256d907aadc037e595981e0c782797a7df",
+        "size_in_bytes": 573008
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "1bbf077688822993c39518056fb43d83ff0920eb42fef11e8714d2a298cc0f27",
+  "size": 27086,
+  "subdir": "linux-64",
+  "timestamp": 1694604171830,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/gcc-12.3.0-h8d2909c_2.conda",
+  "version": "12.3.0"
+}

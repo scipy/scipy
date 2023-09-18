@@ -1,0 +1,219 @@
+body div#cookie-confirmation,
+body div#cookie-confirmation.can-use-gradients {
+   background:#222840 !important;
+   position:fixed !important;
+   box-shadow:0 0 10px #222840 !important;
+   border-bottom:none;
+   top:auto;
+   bottom:0;
+}
+body div#cookie-confirmation div#cookie-confirmation-inner,
+body div#cookie-confirmation.can-use-gradients div#cookie-confirmation-inner {
+   padding:0 30px !important;
+   overflow:hidden;
+   display:-ms-flexbox;
+   display:flex;
+   -ms-flex-direction:row;
+   flex-direction:row;
+   -ms-flex-align:center;
+   align-items:center;
+   height:60px;
+}
+
+body div#cookie-confirmation div#cookie-confirmation-inner p,
+body div#cookie-confirmation.can-use-gradients div#cookie-confirmation-inner p {
+  text-shadow:none !important;
+  font-family:"Titillium Web" !important;
+  font-size:inherit !important;
+  line-height:inherit !important;
+  float:left;
+  margin:0!important;
+}
+
+body div#cookie-confirmation div#cookie-confirmation-inner p a,
+body div#cookie-confirmation.can-use-gradients div#cookie-confirmation-inner p a {
+  font-family:inherit !important;
+  color:#41cd52 !important;
+  font-size:inherit !important;
+}
+body div#cookie-confirmation div#cookie-confirmation-inner #cookie-confirmation-buttons-area,
+body div#cookie-confirmation.can-use-gradients div#cookie-confirmation-inner #cookie-confirmation-buttons-area {
+  display:-ms-flexbox;
+  display:flex;
+  float:left;
+  margin-left:50px;
+}
+
+body div#cookie-confirmation div#cookie-confirmation-inner #cookie-confirmation-buttons-area a#confirmation-button,
+body div#cookie-confirmation.can-use-gradients div#cookie-confirmation-inner #cookie-confirmation-buttons-area a#confirmation-button {
+  text-shadow:none !important;
+  border-radius:0;
+  border:0 !important;
+  box-shadow:none;
+  line-height:32px !important;
+  height:32px !important;
+  font-size:16px !important;
+  font-weight:400 !important;
+  color:#fff !important;
+  font-family:"Titillium Web" !important;
+  display:inline-block;
+  padding:0 15px !important;
+  position:relative;
+  background:#41cd52 !important;
+  transition:all .2s ease-in-out;
+}
+body div#cookie-confirmation div#cookie-confirmation-inner #cookie-confirmation-buttons-area a#confirmation-button:hover,
+body div#cookie-confirmation.can-use-gradients div#cookie-confirmation-inner #cookie-confirmation-buttons-area a#confirmation-button:hover{
+  background:#17a81a !important;
+}
+
+body div#cookie-confirmation div#cookie-confirmation-inner #cookie-confirmation-buttons-area a#confirmation-button:after,
+body div#cookie-confirmation div#cookie-confirmation-inner #cookie-confirmation-buttons-area a#confirmation-button:before,
+body div#cookie-confirmation.can-use-gradients div#cookie-confirmation-inner #cookie-confirmation-buttons-area a#confirmation-button:after,
+body div#cookie-confirmation.can-use-gradients div#cookie-confirmation-inner #cookie-confirmation-buttons-area a#confirmation-button:before {
+  content:'';
+  width:20px;
+  height:20px;
+  background:#222840;
+  position:absolute;
+}
+
+body div#cookie-confirmation div#cookie-confirmation-inner #cookie-confirmation-buttons-area a#confirmation-button:before,
+body div#cookie-confirmation.can-use-gradients div#cookie-confirmation-inner #cookie-confirmation-buttons-area a#confirmation-button:before {
+  -ms-transform:rotate(45deg);
+  transform:rotate(45deg);
+  top:-12px;
+  left:-13px;
+}
+body div#cookie-confirmation div#cookie-confirmation-inner #cookie-confirmation-buttons-area a#confirmation-button:after,
+body div#cookie-confirmation.can-use-gradients div#cookie-confirmation-inner #cookie-confirmation-buttons-area a#confirmation-button:after {
+  -ms-transform:rotate(-135deg);
+  transform:rotate(-135deg);
+  top:auto;
+  right:-13px;
+  bottom:-12px;
+}
+
+/*! CSS Used from: Embedded */
+ div#cookie-confirmation{
+  position:absolute;
+  left:0;
+  top:0;
+  width:100%;
+  height:auto;
+  background-color:#2d2d2d;
+  border-bottom:1px solid gray;
+  border-bottom:1px solid rgba(0,0,0,0.5);
+  -webkit-box-shadow:0 1px 2px rgba(0,0,0,0.2);
+  -moz-box-shadow:0 1px 2px rgba(0,0,0,0.2);
+  box-shadow:0 1px 2px rgba(0,0,0,0.2);
+  font-size:14px !important;
+  line-height:18px !important;
+  font-family:helvetica neue,helvetica,arial,sans !important;
+  color:#fff !important;
+  text-shadow:0 1px 0 rgba(0,0,0,0.7) !important;
+  text-align:left !important;
+  z-index:100000000 !important;
+}
+div#cookie-confirmation.can-use-gradients{
+  background-color:rgba(0,0,0,0);
+  background-image:-webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, rgba(0,0,0,0.9)), color-stop(100%, rgba(0,0,0,0.75)));
+  background-image:-webkit-linear-gradient(top, rgba(0,0,0,0.9),rgba(0,0,0,0.75));
+  background-image:-moz-linear-gradient(top, rgba(0,0,0,0.9),rgba(0,0,0,0.75));
+  background-image:-o-linear-gradient(top, rgba(0,0,0,0.9),rgba(0,0,0,0.75));
+  background-image:linear-gradient(top, rgba(0,0,0,0.9),rgba(0,0,0,0.75));
+  background-image:linear-gradient(to bottom, rgba(0,0,0,0.9),rgba(0,0,0,0.75));
+}
+ div#cookie-confirmation div#cookie-confirmation-inner{
+  padding:12px 18px 18px;
+}
+ div#cookie-confirmation div#cookie-confirmation-inner a{
+  font-family:helvetica neue,helvetica,arial,sans !important;
+  color:#add8e6 !important;
+  font-size:14px !important;
+  text-decoration:none !important;
+  background:none !important;
+  border:none !important;
+  font-weight:normal !important;
+}
+ div#cookie-confirmation div#cookie-confirmation-inner a:hover{
+  text-decoration:underline !important;
+  background:none !important;
+  border:none !important;
+}
+ div#cookie-confirmation div#cookie-confirmation-inner div#cookie-confirmation-buttons-area{
+  text-align:center !important;
+}
+ div#cookie-confirmation div#cookie-confirmation-inner a#confirmation-button{
+  font-family:helvetica neue,helvetica,arial,sans!important;
+  font-size:14px !important;
+  font-weight:normal !important;
+  margin-right:16px !important;
+  padding:4px 12px !important;
+  background-color:green !important;
+  border:1px solid gray !important;
+  border:1px solid rgba(0,0,0,0.5) !important;
+  background-image:-webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, transparent), color-stop(100%, rgba(0,0,0,0.2)));
+  background-image:-webkit-linear-gradient(top, transparent,rgba(0,0,0,0.2));
+  background-image:-moz-linear-gradient(top, transparent,rgba(0,0,0,0.2));
+  background-image:-o-linear-gradient(top, transparent,rgba(0,0,0,0.2));
+  background-image:linear-gradient(top, transparent,rgba(0,0,0,0.2));
+  -webkit-border-radius:4px;
+  -moz-border-radius:4px;
+  -ms-border-radius:4px;
+  -o-border-radius:4px;
+  border-radius:4px;
+  -webkit-box-shadow:0 1px 2px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.5);
+  -moz-box-shadow:0 1px 2px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.5);
+  box-shadow:0 1px 2px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.5);
+  line-height:14px !important;
+  color:#fff !important;
+  text-shadow:0 1px 0 rgba(0,0,0,0.5) !important;
+  text-decoration:none !important;
+}
+ div#cookie-confirmation div#cookie-confirmation-inner a#confirmation-button:hover{
+  background-image:-webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, transparent), color-stop(100%, rgba(0,0,0,0.3)));
+  background-image:-webkit-linear-gradient(top, transparent,rgba(0,0,0,0.3));
+  background-image:-moz-linear-gradient(top, transparent,rgba(0,0,0,0.3));
+  background-image:-o-linear-gradient(top, transparent,rgba(0,0,0,0.3));
+  background-image:linear-gradient(top, transparent,rgba(0,0,0,0.3));
+}
+ div#cookie-confirmation div#cookie-confirmation-inner a#confirmation-button:active{
+  background-image:-webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, rgba(0,0,0,0.3)), color-stop(100%, rgba(0,0,0,0.3)));
+  background-image:-webkit-linear-gradient(top, rgba(0,0,0,0.3),rgba(0,0,0,0.3));
+  background-image:-moz-linear-gradient(top, rgba(0,0,0,0.3),rgba(0,0,0,0.3));
+  background-image:-o-linear-gradient(top, rgba(0,0,0,0.3),rgba(0,0,0,0.3));
+  background-image:linear-gradient(top, rgba(0,0,0,0.3),rgba(0,0,0,0.3));
+  -webkit-box-shadow:inset 0 1px 2px rgba(0,0,0,0.2);
+  -moz-box-shadow:inset 0 1px 2px rgba(0,0,0,0.2);
+  box-shadow:inset 0 1px 2px rgba(0,0,0,0.2);
+}
+div#cookie-confirmation div#cookie-confirmation-inner p{
+  line-height:18px !important;
+  font-family:helvetica neue,helvetica,arial,sans !important;
+  font-weight:normal !important;
+  font-size:14px !important;
+  margin:0 0 16px !important;
+  padding:0 !important;
+  color:#fff !important;
+  text-align:left !important;
+}
+@media screen and (max-width: 480px) {
+  div#cookie-confirmation {
+  font-size:12px !important;
+  }
+  div#cookie-confirmation div#cookie-confirmation-inner {
+  padding:8px 14px 14px !important;
+  }
+  div#cookie-confirmation div#cookie-confirmation-inner a {
+  font-size:12px !important;
+  }
+  div#cookie-confirmation div#cookie-confirmation-inner a#confirmation-button {
+  font-size:12px !important;
+  }
+  div#cookie-confirmation div#cookie-confirmation-inner p {
+  font-size:12px !important;
+  margin-bottom:12px !important;
+  line-height:15px !important;
+  }
+}

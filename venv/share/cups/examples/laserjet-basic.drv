@@ -1,0 +1,88 @@
+// Include standard font and media definitions
+#include <font.defs>
+#include <media.defs>
+
+// Include HP-PCL driver definitions
+#include <pcl.h>
+
+// Specify that this driver uses the HP-PCL driver...
+DriverType pcl
+
+// Specify the driver options via the model number...
+ModelNumber ($PCL_PAPER_SIZE $PCL_PJL $PCL_PJL_RESOLUTION)
+
+// List the fonts that are supported, in this case all standard
+// fonts...
+Font *
+
+// Manufacturer and driver version
+Manufacturer "HP"
+Version 1.0
+
+// Supported page sizes and their margins
+HWMargins 18 12 18 12
+*MediaSize Letter
+MediaSize Legal
+MediaSize Executive
+MediaSize Monarch
+MediaSize Statement
+MediaSize FanFoldGermanLegal
+
+HWMargins 18 12.72 18 12.72
+MediaSize Env10
+
+HWMargins 9.72 12 9.72 12
+MediaSize A4
+MediaSize A5
+MediaSize B5
+MediaSize EnvC5
+MediaSize EnvDL
+MediaSize EnvISOB5
+MediaSize Postcard
+MediaSize DoublePostcard
+
+// Only black-and-white output with mode 3 compression...
+ColorModel Gray k chunky 3
+
+// Supported resolutions
+Resolution - 1 0 0 0 "300dpi/300 DPI"
+*Resolution - 8 0 0 0 "600dpi/600 DPI"
+
+// Supported input slots
+*InputSlot 7 "Auto/Automatic Selection"
+InputSlot 2 "Manual/Tray 1 - Manual Feed"
+InputSlot 4 "Upper/Tray 1"
+InputSlot 1 "Lower/Tray 2"
+InputSlot 5 "LargeCapacity/Tray 3"
+
+// Tray 3 is an option...
+Installable "OptionLargeCapacity/Tray 3 Installed"
+UIConstraints "*OptionLargeCapacity False *InputSlot LargeCapacity"
+
+{
+  // HP LaserJet 2100 Series
+  Throughput 10
+  ModelName "LaserJet 2100 Series"
+  PCFileName "hpljt211.ppd"
+}
+
+{
+  // LaserJet 2200 and 2300 series have duplexer option...
+  Duplex normal
+  Installable "OptionDuplex/Duplexer Installed"
+  UIConstraints "*OptionDuplex False *Duplex"
+
+  {
+    // HP LaserJet 2200 Series
+    Throughput 19
+    ModelName "LaserJet 2200 Series"
+    PCFileName "hpljt221.ppd"
+  }
+
+  {
+    // HP LaserJet 2300 Series
+    Throughput 25
+    ModelName "LaserJet 2300 Series"
+    PCFileName "hpljt231.ppd"
+  }
+}

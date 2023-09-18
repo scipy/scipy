@@ -1,0 +1,175 @@
+//
+//Copyright (c) 1996  Digital Equipment Corporation
+//
+//Permission is hereby granted, free of charge, to any person obtaining
+//a copy of this software and associated documentation files (the
+//"Software"), to deal in the Software without restriction, including
+//without limitation the rights to use, copy, modify, merge, publish,
+//distribute, sublicense, and sell copies of the Software, and to
+//permit persons to whom the Software is furnished to do so, subject to
+//the following conditions:
+//
+//The above copyright notice and this permission notice shall be included
+//in all copies or substantial portions of the Software.
+//
+//THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+//OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+//MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+//IN NO EVENT SHALL DIGITAL EQUIPMENT CORPORATION BE LIABLE FOR ANY CLAIM,
+//DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+//OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+//THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+//Except as contained in this notice, the name of the Digital Equipment 
+//Corporation shall not be used in advertising or otherwise to promote
+//the sale, use or other dealings in this Software without prior written
+//authorization from Digital Equipment Corporation.
+//
+// HISTORY
+// Log
+// Revision 1.2  1996/06/18  09:10:12  erik
+// use flags correctly, assorted cleanups and consortium fixes
+//
+// Revision 1.1.6.4  1995/12/19  19:55:58  William_Walker
+// 	Update to XKB 0.65
+// 	[1995/12/17  02:37:07  William_Walker]
+//
+// Revision 1.1.6.3  1995/10/25  21:01:09  William_Walker
+// 	Make sure we use DIN 2137 and VT510 Spec for Group Semantics
+// 	[1995/10/23  15:49:03  William_Walker]
+// 
+// Revision 1.1.6.2  1995/08/07  17:40:40  William_Walker
+// 	Upgrade XKB to protocol 0.62 (dual submit from decx11)
+// 	[1995/08/06  14:06:32  William_Walker]
+// 
+// Revision 1.1.2.7  1995/08/05  15:25:57  William_Walker
+// 	Sync up with Erik's pool.
+// 	[1995/08/03  20:17:15  William_Walker]
+// 
+// Revision 1.1.2.6  1995/06/27  12:18:25  William_Walker
+// 	Add LK201 and LK450 support as well as TW and DP variants.
+// 	[1995/06/26  20:29:52  William_Walker]
+// 
+// Revision 1.1.2.5  1995/06/08	 17:10:28  William_Walker
+// 	Make RALT default to Mode_switch
+// 	[1995/06/08  17:08:50  William_Walker]
+// 
+// Revision 1.1.2.4  1995/06/05	 19:24:14  William_Walker
+// 	New file.  I love keymaps.
+// 	[1995/06/05  18:17:03  William_Walker]
+// 
+// EndLog
+// 
+// @(#)RCSfile: pc  Revision: /main/4  (DEC) Date: 1996/01/24 12:15:02 
+// 
+
+// **************************************************************
+// *								*
+// * The symbols common to all Extended PC layouts.		*
+// *								*
+// **************************************************************
+xkb_symbols "pc" {
+
+    // Modifier mappings
+    //
+    modifier_map Shift		{ Shift_L, Shift_R		};
+    modifier_map Lock		{ Caps_Lock			};
+    modifier_map Control	{ Control_L, Control_R		};
+    modifier_map Mod1		{ Alt_L, Alt_R, Meta_L, Meta_R	};
+    modifier_map Mod3		{ Mode_switch			};
+    modifier_map Mod4		{ Num_Lock			};
+    modifier_map Mod5		{ Scroll_Lock			};
+
+    // Common keys
+    //
+    key <BKSP> {       [       BackSpace,	   Delete ] };
+    key	 <TAB> {       [	     Tab,    ISO_Left_Tab ] };
+    key <CAPS> {       [       Caps_Lock ] };
+    key <RTRN> {       [	  Return ] };
+    key <LFSH> {       [	 Shift_L ] };
+    key <RTSH> {       [	 Shift_R ] };
+    key <LCTL> {       [       Control_L ] };
+    key <LALT> {       [	   Alt_L,	   Meta_L ] };
+    key <SPCE> {       [	   space ] };
+    key <RALT> {       [     Mode_switch ] };
+    key <RCTL> {       [       Control_R ] };
+
+    // "Function" keys
+    //
+    key	 <ESC> {       [	  Escape ] };
+    key <FK01> {       [	      F1 ] };
+    key <FK02> {       [	      F2 ] };
+    key <FK03> {       [	      F3 ] };
+    key <FK04> {       [	      F4 ] };
+    key <FK05> {       [	      F5 ] };
+    key <FK06> {       [	      F6 ] };
+    key <FK07> {       [	      F7 ] };
+    key <FK08> {       [	      F8 ] };
+    key <FK09> {       [	      F9 ] };
+    key <FK10> {       [	     F10 ] };
+    key <FK11> {       [	     F11 ] };
+    key <FK12> {       [	     F12 ] };
+    key <PRSC> {
+	type= "PC_ALT_LEVEL2",
+	symbols[Group1]= [	     Print,	    Sys_Req ]
+    };
+    key <SCLK> {       [     Scroll_Lock ] };
+    key <PAUS> {
+	type= "PC_CONTROL_LEVEL2",
+	symbols[Group1]= [	     Pause,	      Break ]
+    };
+
+    // "Editing" keys
+    //
+    key	 <INS> {       [	  Insert ] };
+    key <HOME> {       [	    Home ] };
+    key <PGUP> {       [	   Prior ] };
+    key <DELE> {       [	  Delete ] };
+    key	 <END> {       [	     End ] };
+    key <PGDN> {       [	    Next ] };
+
+    key	  <UP> {       [	      Up ] };
+    key <LEFT> {       [	    Left ] };
+    key <DOWN> {       [	    Down ] };
+    key <RGHT> {       [	   Right ] };
+
+    // "Keypad" keys
+    //
+    key <NMLK> {
+	type= "SHIFT+ALT",
+	symbols[Group1]= [	  Num_Lock,Pointer_EnableKeys]
+    };
+    key <KPDV> {       [       KP_Divide ] };
+    key <KPMU> {       [     KP_Multiply ] };
+    key <KPSU> {       [     KP_Subtract ] };
+
+    key	 <KP7> {       [	 KP_Home,	     KP_7 ] };
+    key	 <KP8> {       [	   KP_Up,	     KP_8 ] };
+    key	 <KP9> {       [	KP_Prior,	     KP_9 ] };
+    key <KPAD> {       [	  KP_Add ] };
+
+    key	 <KP4> {       [	 KP_Left,	     KP_4 ] };
+    key	 <KP5> {       [	    KP_5 ] };
+    key	 <KP6> {       [	KP_Right,	     KP_6 ] };
+
+    key	 <KP1> {       [	  KP_End,	     KP_1 ] };
+    key	 <KP2> {       [	 KP_Down,	     KP_2 ] };
+    key	 <KP3> {       [	 KP_Next,	     KP_3 ] };
+    key <KPEN> {       [	KP_Enter ] };
+
+    key	 <KP0> {       [       KP_Insert,	     KP_0 ] };
+    key <KPDL> {       [       KP_Delete,      KP_Decimal ] };
+
+    // Key to support Lock-Down Modifier descriptions for R5
+    //
+    key	 <LDM> {       [	NoSymbol ] };
+};
+
+xkb_symbols "pc104" {
+    include "digital_vndr/pc(pc)"
+
+    replace key <LALT> {       [       Alt_L ] };
+    key	<LWIN> {       [	 Meta_L ] };
+    key	<RWIN> {       [	 Meta_R ] };
+    key	<MENU> {       [	 Menu   ] };
+};

@@ -1,0 +1,198 @@
+.TH LIBCAP 3 "2022-10-16" "" "Linux Programmer's Manual"
+.SH NAME
+cap_clear, cap_clear_flag, cap_compare, cap_copy_ext, cap_copy_int, \
+cap_drop_bound, cap_dup, cap_fill, cap_fill_flag, cap_free, cap_from_name, \
+cap_from_text, cap_get_ambient, cap_get_bound, cap_get_fd, \
+cap_get_file, cap_get_flag, cap_get_mode, cap_get_nsowner, cap_get_pid, \
+cap_get_pid, cap_get_proc, cap_get_secbits, cap_init, cap_max_bits, \
+cap_prctl, cap_prctlw, cap_proc_root, cap_reset_ambient, \
+cap_set_ambient, cap_set_fd, cap_set_file, cap_set_flag, cap_setgroups, \
+cap_set_mode, cap_set_nsowner, cap_set_proc, cap_set_secbits, \
+cap_setuid, cap_size, cap_to_name, cap_to_text \- capability data object manipulation
+.SH SYNOPSIS
+.nf
+#include <sys/capability.h>
+
+int cap_clear(cap_t cap_p);
+int cap_fill(cap_t cap_p, cap_flag_t to, cap_flag_t from);
+int cap_fill_flag(cap_t cap_p, cap_flag_t to, const cap_t ref, cap_flag_t from);
+int cap_clear_flag(cap_t cap_p, cap_flag_t flag);
+int cap_compare(cap_t cap_a, cap_t cap_b);
+ssize_t cap_copy_ext(void *ext_p, cap_t cap_p, ssize_t size);
+cap_t cap_copy_int(const void *ext_p);
+int cap_free(void *obj_d);
+int cap_from_name(const char *name, cap_value_t *cap_p);
+cap_t cap_from_text(const char *buf_p);
+cap_t cap_get_fd(int fd);
+cap_t cap_get_file(const char *path_p);
+int cap_get_flag(cap_t cap_p, cap_value_t cap ,
+                 cap_flag_t flag, cap_flag_value_t *value_p);
+cap_value_t cap_max_bits();
+
+#include <sys/types.h>
+
+cap_t cap_get_pid(pid_t pid);
+cap_t cap_get_proc(void);
+int cap_set_fd(int fd, cap_t caps);
+int cap_set_file(const char *path_p, cap_t cap_p);
+int cap_set_flag(cap_t cap_p, cap_flag_t flag, int ncap ,
+                 const cap_value_t *caps, cap_flag_value_t value);
+int cap_set_proc(cap_t cap_p);
+ssize_t cap_size(cap_t cap_p);
+char *cap_to_name(cap_value_t cap);
+char *cap_to_text(cap_t caps, ssize_t *length_p);
+cap_t cap_get_pid(pid_t pid);
+cap_t cap_init();
+cap_t cap_dup(cap_t cap_p);
+
+char *cap_proc_root(const char *root);
+int cap_get_nsowner(cap_t cap_p);
+int cap_set_nsowner(cap_t cap_p, uid_t rootuid);
+int cap_get_bound(cap_value_t cap);
+int cap_drop_bound(cap_value_t cap);
+int cap_get_ambient(cap_value_t cap);
+int cap_set_ambient(cap_value_t cap, cap_flag_value_t value);
+int cap_reset_ambient(void);
+int cap_set_mode(cap_mode_t flavor);
+cap_mode_t cap_get_mode(void);
+const char *cap_mode_name(cap_mode_t flavor);
+unsigned cap_get_secbits();
+int cap_set_secbits(unsigned bits);
+int cap_prctl(long int pr_cmd, long int arg1, long int arg2, long int arg3,
+              long int arg4, long int arg5);
+int cap_prctlw(long int pr_cmd, long int arg1, long int arg2, long int arg3,
+               long int arg4, long int arg5);
+int cap_setuid(uid_t uid);
+int cap_setgroups(gid_t gid, size_t ngroups, const gid_t groups[]);
+.fi
+.sp
+Link with \fI\-lcap\fP.
+.fi
+.SH DESCRIPTION
+These primary functions work on a capability state held in working
+storage and attempt to complete the POSIX.1e (draft) user space API
+for Capability based privilege.
+.PP
+A
+.I cap_t
+holds information about the capabilities in each of the three sets,
+Permitted, Inheritable, and Effective.  Each capability in a set may
+be clear (disabled, 0) or set (enabled, 1).
+.PP
+These functions work with the following data types:
+.TP 18
+.I cap_value_t
+identifies a capability, such as
+.BR CAP_CHOWN .
+.TP
+.I cap_flag_t
+identifies one of the three flags associated with a capability
+(i.e., it identifies one of the three capability sets).
+Valid values for this type are
+.BR CAP_EFFECTIVE ,
+.B CAP_INHERITABLE
+or
+.BR CAP_PERMITTED .
+.TP
+.I cap_flag_value_t
+identifies the setting of a particular capability flag
+(i.e, the value of a capability in a set).
+Valid values for this type are
+.BR CAP_CLEAR (0)
+or
+.BR CAP_SET (1).
+.SH "RETURN VALUE"
+The return value is generally specific to the individual function called.
+On failure,
+.I errno
+is set appropriately.
+.SH "CONFORMING TO"
+These functions are as per the withdrawn POSIX.1e draft specification.
+The following functions are Linux extensions:
+.BR cap_clear_flag (),
+.BR cap_drop_bound (),
+.BR cap_fill (),
+.BR cap_fill_flag (),
+.BR cap_from_name (),
+.BR cap_get_ambient (),
+.BR cap_get_bound (),
+.BR cap_get_mode (),
+.BR cap_get_nsowner (),
+.BR cap_get_secbits (),
+.BR cap_mode_name (),
+.BR cap_proc_root (),
+.BR cap_prctl (),
+.BR cap_prctlw (),
+.BR cap_reset_ambient (),
+.BR cap_setgroups (),
+.BR cap_setuid (),
+.BR cap_set_ambient (),
+.BR cap_set_mode (),
+.BR cap_set_nsowner (),
+.BR cap_set_secbits (),
+.BR cap_to_name ()
+and
+.BR cap_compare ().
+.PP
+A Linux, \fIIAB\fP, extension of Inheritable, Bounding and Ambient
+tuple capability vectors are also supported by \fBlibcap\fP. Those
+functions are described in a companion man page:
+.BR cap_iab (3).
+Further, for managing the complexity of launching a sub-process,
+\fBlibcap\fP supports the abstraction:
+.BR cap_launch (3).
+.PP
+In addition to the \fBcap_\fP prefixed \fBlibcap\fP API, the library
+also provides prototypes for the Linux system calls that provide the
+native API for process capabilities. These prototypes are:
+.sp
+.nf
+int capget(cap_user_header_t header, cap_user_data_t data);
+int capset(cap_user_header_t header, const cap_user_data_t data);
+.fi
+.sp
+Further, \fBlibcap\fP provides a set-up function,
+.sp
+.nf
+void cap_set_syscall(
+        long int (*new_syscall)(long int, long int, long int, long int),
+        long int (*new_syscall6)(long int,
+                                 long int, long int, long int,
+                                 long int, long int, long int));
+.fi
+.sp
+which can be used to redirect its use of the
+.BR capset ()
+and other system calls that write kernel managed state. This is
+especially useful when supporting POSIX semantics for security
+state. When a program is linked against
+.BR libpsx (3)
+as described in that man page, this function is used to connect
+\fBlibcap\fP to POSIX semantics system calls.
+.SH "REPORTING BUGS"
+The
+.B libcap
+library is distributed from
+https://sites.google.com/site/fullycapable/ where the release notes
+may already cover recent issues.  Please report newly discovered bugs
+via:
+.TP
+https://bugzilla.kernel.org/buglist.cgi?component=libcap&list_id=1090757
+.SH "SEE ALSO"
+.BR cap_clear (3),
+.BR cap_copy_ext (3),
+.BR cap_from_text (3),
+.BR cap_get_file (3),
+.BR cap_get_proc (3),
+.BR cap_iab (3),
+.BR cap_init (3),
+.BR cap_launch (3),
+.BR capabilities (7),
+.BR getpid (2),
+.BR capsh (1),
+.BR captree (8),
+.BR getcap (8),
+.BR getpcaps (8),
+.BR setcap (8)
+and
+.BR libpsx (3).

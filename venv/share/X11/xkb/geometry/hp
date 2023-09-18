@@ -1,0 +1,696 @@
+//
+//Copyright 1996, 1998  The Open Group
+//
+//Permission to use, copy, modify, distribute, and sell this software and its
+//documentation for any purpose is hereby granted without fee, provided that
+//the above copyright notice appear in all copies and that both that
+//copyright notice and this permission notice appear in supporting
+//documentation.
+//
+//The above copyright notice and this permission notice shall be
+//included in all copies or substantial portions of the Software.
+//
+//THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+//EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+//MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+//IN NO EVENT SHALL THE OPEN GROUP BE LIABLE FOR ANY CLAIM, DAMAGES OR
+//OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+//ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+//OTHER DEALINGS IN THE SOFTWARE.
+//
+//Except as contained in this notice, the name of The Open Group shall
+//not be used in advertising or otherwise to promote the sale, use or
+//other dealings in this Software without prior written authorization
+//from The Open Group.
+//
+
+default xkb_geometry "pc101" {
+
+    description= "HP PC101";
+    width= 470;
+    height= 210;
+
+    shape.cornerRadius= 1;
+    shape "NORM" { { [ 18,18] }, { [2,1], [ 16,17] } };
+    shape "BKSP" { { [ 37,18] }, { [2,1], [ 35,17] } };
+    shape "TABK" { { [ 28,18] }, { [2,1], [ 26,17] } };
+    shape "BKSL" { { [ 28,18] }, { [2,1], [ 26,17] } };
+    shape "RTRN" { { [ 42,18] }, { [2,1], [ 40,17] } };
+    shape "CAPS" { { [ 32,18] }, { [2,1], [ 30,17] } };
+    shape "LFSH" { { [ 42,18] }, { [2,1], [ 40,17] } };
+    shape "RTSH" { { [ 52,18] }, { [2,1], [ 50,17] } };
+    shape "MODK" { { [ 28,18] }, { [2,1], [ 26,17] } };
+    shape "SPCE" { { [132,18] }, { [2,1], [130,17] } };
+    shape "KP0"  { { [ 37,18] }, { [2,1], [ 35,17] } };
+    shape "KPAD" { { [ 18,37] }, { [2,1], [ 16,36] } };
+
+    section.left= 19;
+    row.left= 1;
+    key.shape= "NORM";
+    key.gap=  1;
+    section "Function" {
+	top= 52;
+	row {
+	    top= 1;
+	    keys {  { <ESC>, color="grey20" },
+		    { <FK01>, 18 }, <FK02>, <FK03>, <FK04>,
+		    { <FK05>, 11 }, <FK06>, <FK07>, <FK08>,
+		    { <FK09>, 11 }, <FK10>, <FK11>, <FK12>,
+		    { <PRSC>, 8 }, <SCLK>, <PAUS> 
+	    };
+	};
+    }; // End of "Function" section
+
+    section "Alpha" {
+	top= 91;
+	row {
+	    top= 1;
+	    keys { <TLDE>, <AE01>, <AE02>, <AE03>, <AE04>,
+		   <AE05>, <AE06>, <AE07>, <AE08>, <AE09>,
+		   <AE10>, <AE11>, <AE12>,
+		   { <BKSP>, "BKSP", color="grey20" }
+	    };
+	};
+	row {
+	    top= 20;
+	    keys { { <TAB>, "TABK", color="grey20" },
+		   <AD01>, <AD02>, <AD03>, <AD04>, <AD05>, 
+		   <AD06>, <AD07>, <AD08>, <AD09>, <AD10>, 
+		   <AD11>, <AD12>, { <BKSL>, "BKSL" }
+	    };
+	};
+	row {
+	    top= 39;
+	    keys { { <CAPS>, "CAPS", color="grey20" },
+		   <AC01>, <AC02>, <AC03>, <AC04>, <AC05>, 
+		   <AC06>, <AC07>, <AC08>, <AC09>, <AC10>, 
+		   <AC11>, { <RTRN>, "RTRN", color="grey20" }
+	    };
+	};
+	row {
+	    top= 58;
+	    keys { { <LFSH>, "LFSH", color="grey20" },
+		    <AB01>, <AB02>, <AB03>, <AB04>, <AB05>, 
+		    <AB06>, <AB07>, <AB08>, <AB09>, <AB10>, 
+		    { <RTSH>, "RTSH", color="grey20" }
+	    };
+	};
+	row {
+	    top= 77;
+	    key.shape= "MODK";
+	    key.color= "grey20";
+	    keys { <LCTL>, { <LALT>, 20 },
+		   { <SPCE>, "SPCE", color="white" },
+		   <RALT>, { <RCTL>, 20 }
+	    };
+	};
+    }; // End of "Alpha" section
+
+    section "Editing" {
+	top= 91;
+	left= 310;
+	key.color= "grey20";
+	row {
+	    top= 1;
+	    keys { <INS>, <HOME>, <PGUP> };
+	};
+        row {
+	    top= 20;
+	    keys { <DELE>, <END>, <PGDN> };
+	};
+	row {
+	    top= 58;
+	    left= 20;
+	    keys { <UP> };
+	};
+	row {
+	    top= 77;
+	    keys { <LEFT>, <DOWN>, <RGHT> };
+	};
+    }; // End of "Editing" section
+
+    section "Keypad" {
+	top= 91;
+	left= 375;
+	row {
+	    top= 1;
+	    key.color= "grey20";
+	    keys { <NMLK>, <KPDV>, <KPMU>, <KPSU> };
+	};
+	row {
+	    top= 20;
+	    keys { <KP7>, <KP8>, <KP9>, { <KPAD>, "KPAD", color="grey20" } };
+	};
+	row {
+	    top= 39;
+	    keys { <KP4>, <KP5>, <KP6> };
+	};
+	row {
+	    top= 58;
+	    keys { <KP1>, <KP2>, <KP3>, { <KPEN>, "KPAD", color="grey20" } };
+	};
+	row {
+	    top= 77;
+	    keys { { <KP0>, "KP0" }, <KPDL> };
+	};
+    }; // End of "Keypad" section
+
+    alias <AC00> = <CAPS>;
+    alias <AA00> = <LCTL>;
+
+}; // End of "default" geometry
+
+xkb_geometry "hil" {
+
+    description= "HP hil";
+    width= 455;
+    height= 170;
+
+    shape.cornerRadius= 1;
+    shape "NORM" { { [ 18,18] }, { [2,1], [ 16,17] } };
+    shape "BKSP" { { [ 32,18] }, { [2,1], [ 30,17] } };
+    shape "TABK" { { [ 32,18] }, { [2,1], [ 30,17] } };
+    shape "BKSL" { { [ 24,18] }, { [2,1], [ 22,17] } };
+    shape "RTRN" { { [ 38,18] }, { [2,1], [ 36,17] } };
+    shape "LFSH" { { [ 28,18] }, { [2,1], [ 26,17] } };
+    shape "RTSH" { { [ 28,18] }, { [2,1], [ 26,17] } };
+    shape "SPCE" { { [151,18] }, { [2,1], [150,17] } };
+    shape "KP0"  { { [ 38,18] }, { [2,1], [ 36,17] } };
+    shape "KPTB" { { [ 18,38] }, { [2,1], [ 16,37] } };
+    shape "TLDE" { { [ 24,18] }, { [2,1], [ 22,17] } };
+    shape "FKT1" { { [ 17,14] }, { [2,1], [ 15,13] } };
+    shape "FKT2" { { [ 23,14] }, { [2,1], [ 21,13] } };
+
+    section.left= 19;
+    row.left= 1;
+    key.shape= "NORM";
+    key.gap=  1;
+    section "Function" {
+	top= 14;
+	row {
+	    top= 1;
+	    keys {  { <BRK>, "FKT1" }, { <STOP>, "FKT1" } ,
+		    { <FK01>, "FKT2", 10 }, { <FK02>, "FKT2" },
+		    { <FK03>, "FKT2" }, { <FK04>, "FKT2" }, 
+		    { <MENU>, "FKT1" }, { <SYST>, "FKT1" },
+		    { <FK05>, "FKT2" }, { <FK06>, "FKT2" }, 
+		    { <FK07>, "FKT2" }, { <FK08>, "FKT2" }, 
+		    { <CLRL>, "FKT1", 10 }, { <CLR>, "FKT1" },
+		    { <FK09>, "FKT1", 19 }, { <FK10>, "FKT1" },
+		    { <FK11>, "FKT1" }, { <FK12>, "FKT1" }
+	    };
+	};
+    }; // End of "Function" section
+
+    section "Alpha" {
+	top= 52;
+	row {
+	    top= 1;
+	    keys { { <TLDE>, "TLDE" }, <AE01>, <AE02>, <AE03>, <AE04>,
+		   <AE05>, <AE06>, <AE07>, <AE08>, <AE09>,
+		   <AE10>, <AE11>, <AE12>,
+		   { <BKSP>, "BKSP" }, <INSL>, <DELL>
+	    };
+	};
+	row {
+	    top= 20;
+	    keys { { <TAB>, "TABK" },
+		   <AD01>, <AD02>, <AD03>, <AD04>, <AD05>, 
+		   <AD06>, <AD07>, <AD08>, <AD09>, <AD10>, 
+		   <AD11>, <AD12>, { <BKSL>, "BKSL" },
+		   <INSC>, <DELC>
+	    };
+	};
+	row {
+	    top= 39;
+	    keys { <CAPS>, <LCTL>,
+		   <AC01>, <AC02>, <AC03>, <AC04>, <AC05>, 
+		   <AC06>, <AC07>, <AC08>, <AC09>, <AC10>, 
+		   <AC11>, { <RTRN>, "RTRN" },
+		   <HOME>, <PGUP>
+	    };
+	};
+	row {
+	    top= 58;
+	    keys {  <ESC>, { <LFSH>, "LFSH" },
+		    <AB01>, <AB02>, <AB03>, <AB04>, <AB05>, 
+		    <AB06>, <AB07>, <AB08>, <AB09>, <AB10>, 
+		    { <RTSH>, "RTSH" }, <SELE>,
+		    <UP>, <PGDN>
+	    };
+	};
+	row {
+	    top= 77;
+	    keys { <PRSC>, { <LALT>, 30 },
+		   { <SPCE>, "SPCE" },
+		   <RALT>, { <LEFT>, 30 }, <DOWN>, <RGHT>
+	    };
+	};
+    }; // End of "Alpha" section
+
+    section "Keypad" {
+	top= 52;
+	left= 360;
+	row {
+	    top= 1;
+	    keys { <KPMU>, <KPDV>, <KPAD>, <KPSU> };
+	};
+	row {
+	    top= 20;
+	    keys { <KP7>, <KP8>, <KP9>, <KPEN> };
+	};
+	row {
+	    top= 39;
+	    keys { <KP4>, <KP5>, <KP6>, <KPSP> };
+	};
+	row {
+	    top= 58;
+	    keys { <KP1>, <KP2>, <KP3>, { <KPTB>, "KPTB" } };
+	};
+	row {
+	    top= 77;
+	    keys { { <KP0>, "KP0" }, <KPDL> };
+	};
+    }; // End of "Keypad" section
+
+};
+
+
+// Created by Alexander Pohoyda <alexander.pohoyda@gmx.net>
+// Geometry specification for HP Omnibook keyboards.
+// Compatible Models: 6100, 6000.
+
+xkb_geometry "omnibook" {
+    width = 282;
+    height = 128;
+    baseColor = "grey80";
+    labelColor = "white";
+
+    shape "FN0"  { cornerRadius = 1, { [15.5, 12] }, { [1, 0], [14.5, 11] } };
+    shape "NORM" { cornerRadius = 1, { [18, 16] }, { [2, 0], [16, 14] } };
+    shape "BKSP" { cornerRadius = 1, { [31, 16] }, { [2, 0], [29, 14] } };
+    shape "TABK" { cornerRadius = 1, { [27, 16] }, { [2, 0], [25, 14] } };
+    shape "CAPS" { cornerRadius = 1, { [32, 16] }, { [2, 0], [30, 14] } };
+    shape "RTSH" { cornerRadius = 1, { [45, 16] }, { [2, 0], [43, 14] } };
+    shape "MODK" { cornerRadius = 1, { [28, 16] }, { [2, 0], [26, 14] } };
+    shape "SPCE" { cornerRadius = 1, { [90, 16] }, { [2, 0], [88, 14] } };
+    shape "ARRS" { cornerRadius = 1, { [17, 12] }, { [2, 0], [15, 11] } };
+    
+    shape "LED"  { cornerRadius = 1, { [2, 4] } };
+
+    shape "KEYS" { cornerRadius = 1,
+                   { [0, 13],
+                     [197, 13], [197, 0],
+                     [280, 0], [280, 125],
+                     [224, 125], [224, 112],
+                     [0, 112] }
+    };
+
+    solid "KeyPanel" {
+	shape = "KEYS";
+	left = 1;
+	top = 1;
+	color = "black";
+    };
+
+    shape "NULL1" { cornerRadius = 1, { [54, 16] } };
+
+    solid "NullPanel1" {
+	shape = "NULL1";
+	left = 226;
+	top = 96;
+	color = "grey80";
+    };
+
+    shape "NULL2" { cornerRadius = 1, { [19, 14] } };
+
+    solid "NullPanel2" {
+	shape = "NULL2";
+	left = 243;
+	top = 97;
+	color = "black";
+    };
+
+    indicator.onColor = "green";
+    indicator.offColor = "grey10";
+    indicator.top = 4;
+    indicator.shape = "LED";
+    indicator "Caps Lock"    { left = 45; };
+    indicator "Num Lock"     { left = 60; };
+    indicator "Scroll Lock"  { left = 75; };
+    indicator "HDDActivity" { onColor = "red"; left = 90; };
+
+    key.color = "grey60";
+
+    section "Function" {
+        key.gap = 0.99;
+        left = 1;
+        top = 1;
+	key.shape = "FN0";
+	row {
+	    left = 197;
+	    top = 1;
+	    keys {  <PRSC>, <PAUS>, <INS>, <HOME>, <PGUP> };
+	};
+	row {
+	    top = 14;
+	    keys {  <ESC>,
+                    <FK01>, <FK02>, <FK03>, <FK04>,
+		    <FK05>, <FK06>, <FK07>, <FK08>,
+		    <FK09>, <FK10>, <FK11>, <FK12>,
+                    <SCLK>, <DELE>, <END>, <PGDN>
+	    };
+	};
+    }; // End of "Function" section
+
+    section "Control" {
+        left = 1;
+	top = 34;
+        key.gap = 1;
+	row {
+	    top = 62;
+	    key.shape = "NORM";
+	    keys { <LCTL>, <FN>, <LWIN>, <LALT>,
+		   { <SPCE>, "SPCE" }, <RALT>, <MENU>, <RCTL>
+	    };
+	};
+    }; // End of "Control" section
+
+    section "Navigation" {
+	key.shape = "ARRS";
+	left = 225;
+	top = 97;
+        key.gap = 1.4;
+	row {
+	    left= 18;
+	    top = 1;
+	    keys { <UP> };
+	};
+	row {
+	    top = 16;
+	    keys { <LEFT>, <DOWN>, <RGHT> };
+	};
+    }; // End of "Navigation" section
+
+    shape "STIK" { cornerRadius = 4, { [7, 7] } };
+
+    solid "STIK" {
+	priority = 255;
+	color = "red";
+	shape = "STIK";
+	top = 73;
+	left = 126;
+    };
+};
+
+// 86 keys
+xkb_geometry "omnibook_intl" {
+    include "hp(omnibook)"
+    description = "HP Omnibook 6000/6100, Intl";
+
+    shape "RTRN" { cornerRadius = 1,
+                   { [22, 0], [22, 33], [5, 33], [5, 16], [0, 16], [0, 0] },
+                   { [20, 0], [20, 31], [7, 31], [7, 14], [2, 14], [2, 0] } };
+    shape "LFSH" { cornerRadius = 1, { [23, 16] }, { [2, 0], [21, 14] } };
+
+    section "Alpha" {
+	key.gap = 1;
+	key.color = "grey60";
+	key.shape = "NORM";
+        left = 1;
+	top = 27;
+	row {
+	    top = 1;
+	    keys { <AE00>, <AE01>, <AE02>, <AE03>, <AE04>,
+		   <AE05>, <AE06>, <AE07>, <AE08>, <AE09>,
+		   <AE10>, <AE11>, <AE12>, { <BKSP>, "BKSP" }
+	    };
+	};
+	row {
+	    top = 18;
+	    keys { { <TAB>, "TABK" },
+		   <AD01>, <AD02>, <AD03>, <AD04>, <AD05>, 
+		   <AD06>, <AD07>, <AD08>, <AD09>, <AD10>, 
+		   <AD11>, <AD12>, { <RTRN>, "RTRN" }
+	    };
+	};
+	row {
+	    top = 35;
+	    keys { { <CAPS>, "CAPS" },
+		   <AC01>, <AC02>, <AC03>, <AC04>, <AC05>, 
+		   <AC06>, <AC07>, <AC08>, <AC09>, <AC10>, 
+		   <AC11>, <AC12>
+	    };
+	};
+	row {
+	    top = 52;
+	    keys { { <LFSH>, "LFSH" }, <LSGT>,
+		   <AB01>, <AB02>, <AB03>, <AB04>, <AB05>, 
+		   <AB06>, <AB07>, <AB08>, <AB09>, <AB10>,
+		   { <RTSH>, "RTSH" }
+	    };
+	};
+    }; // End of "Alpha" section
+};
+
+xkb_geometry "mini110" {
+
+	description= "HP Mini 110";
+	width= 262;
+	height= 106;
+
+	shape.cornerRadius = 0;
+	shape "FN0"  { { [ 14, 10 ] } , { [ 14, 10 ] } };
+	shape "NORM" { { [ 16.7, 16 ] }   , { [ 16.7, 16 ] } };
+	shape "TLDE" { { [ 12, 16 ] } , { [ 12, 16 ] } };
+	shape "ONE"  { { [ 14, 16 ] }   , { [ 14, 16 ] } };
+	shape "BKSP" { { [ 31.3, 16 ] }   , { [ 31.3, 16 ] } };
+	shape "BKSL" { { [ 23.9, 16 ] } , { [ 23.9, 16 ] } };
+	shape "CAPS" { { [ 22, 16 ] }   , { [ 22, 16 ] } };
+	shape "RTRN" { { [ 36.3, 16 ] } , { [ 36.3, 16 ] } };
+	shape "LFSH" { { [ 31, 16 ] }   , { [ 31, 16 ] } };
+	shape "RTSH" { { [ 45, 16 ] } , { [ 45, 16 ] } };
+	shape "CTLS" { { [ 16.5, 19 ] }   , { [ 16.5, 19 ] } };
+	shape "SPCE" { { [ 78.4, 19 ] } , { [ 78.4, 19 ] } };
+	shape "ARRW" { { [ 16.7, 9 ] }  , { [ 16.7, 9 ] } };
+
+	key.gap=1;
+
+	section "Function" {
+		top=4;
+		left=3;
+		key.shape="FN0";
+		row {
+			keys {
+				<ESC>, <FK01>, <FK02>, <FK03>, <FK04>, <FK05>,
+				<FK06>, <FK07>, <FK08>, <FK09>, <FK10>, <FK11>,
+				<FK12>, <PAUS>, <SCLK>, <INS>, <DELE>
+			};
+		};
+	};
+
+	section "Alphanum" {
+		top=15;
+		left=3;
+		key.shape="NORM";
+        row {
+            top= 0;
+            keys { { <TLDE>, "TLDE" } , { <AE01>, "ONE" }, <AE02>, <AE03>, <AE04>,
+                   <AE05>, <AE06>, <AE07>, <AE08>, <AE09>,
+                   <AE10>, <AE11>, <AE12>,
+                   { <BKSP>, "BKSP" }
+            };
+        };
+        row {
+            top= 17;
+            keys { <TAB>, <AD01>, <AD02>, <AD03>, <AD04>, <AD05>,
+                   <AD06>, <AD07>, <AD08>, <AD09>, <AD10>,
+                   <AD11>, <AD12>, { <BKSL>, "BKSL" }
+            };
+        };
+        row {
+            top= 34;
+            keys { { <CAPS>, "CAPS" } ,
+                   <AC01>, <AC02>, <AC03>, <AC04>, <AC05>,
+                   <AC06>, <AC07>, <AC08>, <AC09>, <AC10>,
+                   <AC11>, { <RTRN>, "RTRN" }
+            };
+        };
+        row {
+            top= 51;
+            keys { { <LFSH>, "LFSH" },
+                    <AB01>, <AB02>, <AB03>, <AB04>, <AB05>,
+                    <AB06>, <AB07>, <AB08>, <AB09>, <AB10>,
+                    { <RTSH>, "RTSH" }
+            };
+        };
+
+	};
+
+	section "Control" {
+		top=83;
+		left=3;
+		key.shape="CTLS";
+		row {
+			keys {
+				<LCTL>, <FN>, <LWIN>, <LALT>, { <SPCE>, "SPCE" }, <RALT>, <MENU>, <RCTL>
+			};
+		};
+	};
+
+	section "Arrows" {
+		top=83;
+		left=204.9;
+		key.shape="ARRW";
+		row {
+			left= 17.7;
+			keys {
+				<UP>
+			};
+		};
+		row {
+			top = 10;
+			keys {
+				<LEFT>, <DOWN>, <RGHT>
+			};
+		};
+	};
+
+};
+
+xkb_geometry "dv5" {
+
+	height=118.4;
+	width=310.6;
+
+	description = "HP Pavilion dv5";
+
+	shape.cornerRadius = 1;
+
+	shape "ESC"  { { [20.0, 12.5] }, { [2.2, 1], [17.8, 10.5] } };
+	shape "FN0"  { { [15.9, 12.5] }, { [2.2, 1], [13.7, 10.5] } };
+	shape "DELE" { { [19.4, 12.5] }, { [2.2, 1], [17.2, 10.5] } };
+
+	shape "NORM" { { [17.9, 18.3] }, { [2.2, 1], [15.7, 16.3] } };
+
+	shape "BKSP" { { [36.1, 18.3] }, { [2.4, 1], [33.7, 16.3] } };
+
+	shape "TABK" { { [26.8, 18.3] }, { [2.4, 1], [24.4, 16.3] } };
+	shape "BKSL" { { [27.1, 18.3] }, { [2.4, 1], [24.7, 16.3] } };
+
+	shape "CAPS" { { [31.6, 18.3] }, { [2.4, 1], [29.2, 16.3] } };
+	shape "RTRN" { { [41.2, 18.3] }, { [2.4, 1], [39.3, 16.3] } };
+
+	shape "LFSH" { { [41.5, 18.3] }, { [2.4, 1], [38.8, 16.3] } };
+	shape "RTSH" { { [31.5, 18.3] }, { [2.4, 1], [29.1, 16.3] } };
+
+	shape "LCTL" { { [22.4, 18.3] }, { [2.2, 1], [20.2, 16.3] } };
+	shape "RCTL" { { [22.6, 18.3] }, { [2.2, 1], [20.4, 16.3] } };
+	shape "CTLS" { { [17.9, 18.3] }, { [2.2, 1], [15.7, 16.3] } };
+	shape "SPCE" { { [94.3, 18.3] }, { [2.5, 1], [91.8, 16.3] } };
+
+	shape "ARRW" { { [17.9, 18.3] }, { [2.2, 1], [15.7, 16.3] } };
+
+	shape "EDIT" { { [16.6, 18.3] }, { [2.2, 1], [14.4, 16.3] } };
+
+	key.gap = 1.2;
+
+	section "Function" {
+		top=4.2;
+		left=3;
+		row {
+			key.shape = "FN0";
+			keys {
+				{<ESC>, "ESC"},
+				{2.9, <FK01>}, <FK02>, <FK03>, <FK04>,
+				{2.9, <FK05>}, <FK06>, <FK07>, <FK08>,
+				{2.9, <FK09>}, <FK10>, <FK11>, <FK12>,
+				{2.9, <NMLK>}, <PAUS>, <INS>, {<DELE>, "DELE"}
+			};
+		};
+	};
+
+	section "Alpha" {
+		top = 17.9;
+		key.shape = "NORM";
+		left = 3;
+
+		row {
+		    top = 0;
+		    keys { <TLDE>, <AE01>, <AE02>, <AE03>, <AE04>,
+			   <AE05>, <AE06>, <AE07>, <AE08>, <AE09>,
+			   <AE10>, <AE11>, <AE12>, { <BKSP>, "BKSP" }
+		    };
+		};
+		row {
+		    top = 19.5;
+		    keys { { <TAB>, "TABK" },
+			   <AD01>, <AD02>, <AD03>, <AD04>, <AD05>, 
+			   <AD06>, <AD07>, <AD08>, <AD09>, <AD10>, 
+			   <AD11>, <AD12>, { <BKSL>, "BKSL" }
+		    };
+		};
+		row {
+		    top = 39;
+		    keys { { <CAPS>, "CAPS" },
+			   <AC01>, <AC02>, <AC03>, <AC04>, <AC05>, 
+			   <AC06>, <AC07>, <AC08>, <AC09>, <AC10>, 
+			   <AC11>, { <RTRN>, "RTRN" }
+		    };
+		};
+		row {
+		    top = 58.5;
+		    keys { { <LFSH>, "LFSH" },
+			   <AB01>, <AB02>, <AB03>, <AB04>, <AB05>, 
+			   <AB06>, <AB07>, <AB08>, <AB09>, <AB10>,
+			   { <RTSH>, "RTSH" }
+		    };
+		};
+	}; // End of "Alpha" section
+
+	section "Controls" {
+		top = 95.9;
+		key.shape = "CTLS";
+		left = 3;
+		row {
+		    top = 0;
+		    keys { {<LCTL>, "LCTL"}, <FN>, <LWIN>, <LALT>, {<SPCE>, "SPCE"},
+			   <RALT>, <MENU>, {<RCTL>, "RCTL"}
+		    };
+		};
+	};
+
+	section "Editing" {
+		top = 16.5;
+		left = 289.9;
+		key.shape = "EDIT";
+		key.gap = 1.4;
+		row {
+		    top = 0;
+		    vertical = true;
+		    keys {
+				<HOME>, <PGUP>, <PGDN>, <END>
+		    };
+		};
+	};
+
+	section "Arrows" {
+		top = 76.4;
+		key.shape = "ARRW";
+		left = 249.3;
+		row {
+			top = 0;
+			left = 19.1;
+			keys {
+				<UP>
+			};
+		};
+		row {
+			top = 19.5;
+			left = 0;
+			keys {
+				<LEFT>, <DOWN>, <RGHT>
+			};
+		};
+	};
+};

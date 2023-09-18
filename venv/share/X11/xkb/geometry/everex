@@ -1,0 +1,170 @@
+default xkb_geometry "STEPnote" {
+
+    description= "Everex STEPnote";
+    width= 281;
+    height= 150;
+
+    shape.cornerRadius= 1;
+
+    shape "NORM" { 
+	{ [17,17] },
+	{ [ 2, 1], [ 15, 15 ] }
+    };
+    shape "NARR" {
+	{ [  15, 17 ] },
+	{ [   2,  1 ], [ 13, 15 ] }
+    };
+    shape "FKEY" {
+	{ [ 15.1, 15.5 ] },
+	{ [  1,  1 ], [ 14.1, 14.5 ] }
+    };
+    shape "ESC" {
+	{ [  16.4, 15.5 ] },
+	{ [   1, 1  ], [ 14.1, 14.5 ] }
+    };
+    shape "WIDE" {	// backspace, tab and Fn
+	{ [  25, 17 ] },
+	{ [   2,  1 ], [ 23, 15 ] }
+    };
+    shape "RTRN" {
+	{ [  27.5, 17 ] },
+	{ [  2,  1 ], [ 25.5, 15 ] }
+    };
+    shape "CAPS" {
+	{ [  30, 17 ] },
+	{ [   2,  1 ], [ 28, 15 ] }
+    };
+    shape "LFSH" {
+	{ [  38.5, 17 ] },
+	{ [  2,  1 ], [ 36.5, 15 ] }
+    };
+    shape "RTSH" {
+	{ [  21, 17 ] },
+	{ [   2,  1 ], [ 19, 15 ] }
+    };
+    shape "SPCE" {
+	{ [  88.8, 17 ] },
+	{ [  2,  1 ], [ 86.8, 15 ] }
+    };
+    shape "WELL" { 
+	{ [ 269, 105 ] }
+    };
+    shape "LED" {
+	cornerRadius= 1.5,
+	{ [ 3, 10 ] }
+    };
+
+    section.left= 6;
+    row.left= 1;
+    key.shape= "NORM";
+    key.gap=  0.5;
+
+    key.color= "grey20";
+    labelColor= "white";
+    baseColor= "grey20";
+
+    indicator.top= 20;
+    indicator.shape= "LED";
+    indicator.onColor= "green";
+    indicator.offColor= "green30";
+
+    indicator "Power" 		{ left= 40; };
+    indicator "Battery" 	{ left=101; };
+    indicator "Suspend" 	{ left=112; };
+    indicator "HardDrive" 	{ left=123; };
+    indicator "Floppy" 		{ left=134; };
+    indicator "KeyPad" 		{ left=145; };
+    indicator "Num Lock" 	{ left=156; };
+    indicator "Caps Lock" 	{ left=167; };
+    indicator "Scroll Lock"	{ left=178; };
+
+    solid "KeyWell" {
+	top= 35;
+	left= 6;
+	shape= "WELL";
+	color= "grey10";
+    };
+    section "Whole" {
+	top= 35;
+	row {
+	    top= 0.5;
+	    key.color= "grey30";
+	    key.shape= "FKEY";
+	    keys { 
+		{ <ESC>, "ESC" },
+		<FK01>, <FK02>, <FK03>, <FK04>, <FK05>, <FK06>,
+		<FK07>, <FK08>, <FK09>, <FK10>, <FK11>, <FK12>,
+		<NMLK>, <PRSC>, <SCLK>, <PAUS>
+	    };
+	};
+	row {
+	    top= 16.5;
+	    keys { 
+		{ <TLDE>, "NARR" },
+		<AE01>, <AE02>, <AE03>, <AE04>, <AE05>, <AE06>,
+		<AE07>, <AE08>, <AE09>, <AE10>, <AE11>, <AE12>,
+		{ <BKSP>, shape="WIDE", color="grey30" }, 
+		{ <HOME>, shape="NARR", color="grey30" }
+	    };
+	};
+	row {
+	    top= 34;
+	    keys { 
+	    	{  <TAB>, shape="WIDE", color="grey30" },
+		<AD01>, <AD02>, <AD03>, <AD04>, <AD05>, <AD06>,
+		<AD07>, <AD08>, <AD09>, <AD10>, <AD11>, <AD12>,
+		{ <BKSL>, "NARR" }, 
+		{ <PGUP>, shape="NARR", color="grey30" }
+	    };
+	};
+	row {
+	    top= 51.5;
+	    keys { 
+		{ <CAPS>, shape="CAPS", color="grey30" },
+		<AC01>, <AC02>, <AC03>, <AC04>, <AC05>, 
+		<AC06>, <AC07>, <AC08>, <AC09>, <AC10>, 
+		<AC11>, 
+		{ <RTRN>, shape="RTRN", color="grey30" }, 
+		{ <PGDN>, shape="NARR", color="grey30" }
+	    };
+	};
+	row {
+	    top= 69;
+	    keys { 
+		{ <LFSH>, shape="LFSH", color="grey30" },
+		<AB01>, <AB02>, <AB03>, <AB04>, <AB05>, 
+		<AB06>, <AB07>, <AB08>, <AB09>, <AB10>, 
+		{ <RTSH>, shape="RTSH", color="grey30" }, 
+		{   <UP>, shape="NARR", color="grey30" },
+		{  <END>, shape="NARR", color="grey30" }
+	    };
+	};
+	row {
+	    top= 86.5;
+	    key.color= "grey30";
+	    keys { 
+		{ <FUNC>, "WIDE" }, 
+		<LCTL>, <LALT>,
+		{ <SPCE>, shape="SPCE", 18, color="grey20" },
+		<RALT>,  <INS>, <DELE>,
+		{ <LEFT>, "NARR" }, { <DOWN>, "NARR" },
+		{ <RGHT>, "NARR" }
+	    };
+	};
+	solid "FakeKey" {
+	    top= 86.5;
+	    left= 62.1;
+	    shape= "NORM";
+	    color= "grey20";
+	};
+	overlay "KPAD" {
+	    <AE07>=<KP7>,  <AE08>=<KP8>, <AE09>=<KP9>,  <AE10>=<KPMU>,
+	    <AD07>=<KP4>,  <AD08>=<KP5>, <AD09>=<KP6>,  <AD10>=<KPSU>,
+	    <AC07>=<KP1>,  <AC08>=<KP2>, <AC09>=<KP3>,  <AC10>=<KPAD>,
+	    <AB07>=<KP0>,                <AB09>=<KPDL>, <AB10>=<KPSL>
+	};
+    }; // End of "Whole" section
+
+    alias <AC00> = <CAPS>;
+    alias <AA00> = <LCTL>;
+};

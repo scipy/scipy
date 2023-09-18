@@ -1,0 +1,41 @@
+.\" originally written by Andrew Main <zefram@dcs.warwick.ac.uk>
+.TH GETCAP 8 "2021-08-29"
+.SH NAME
+getcap \- examine file capabilities
+.SH SYNOPSIS
+\fBgetcap\fP [\-v] [\-n] [\-r] [\-h] \fIfilename\fP [ ... ]
+.SH DESCRIPTION
+.B getcap
+displays the name and capabilities of each specified file.
+.SH OPTIONS
+.TP 4
+.B \-h
+prints quick usage.
+.TP 4
+.B \-n
+prints any non-zero user namespace root user ID value
+found to be associated with
+a file's capabilities.
+.TP 4
+.B \-r
+enables recursive search.
+.TP 4
+.B \-v
+display all searched entries, even if the have no file-capabilities.
+.TP 4
+.IR filename
+One file per line.
+.SH "REPORTING BUGS"
+Please report bugs via:
+.TP
+https://bugzilla.kernel.org/buglist.cgi?component=libcap&list_id=1090757
+.SH "SEE ALSO"
+.BR capsh (1),
+.BR cap_get_file (3),
+.BR cap_to_text (3),
+.BR capabilities (7),
+.BR user_namespaces (7),
+.BR captree (8),
+.BR getpcaps (8)
+and
+.BR setcap (8).

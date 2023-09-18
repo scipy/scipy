@@ -1,0 +1,220 @@
+comment_char    %
+escape_char     /
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Ge'ez language locale for Ethiopia.
+%
+% Charset: UTF-8
+%
+% Prepared and contributed to glibc by Daniel Yacob <locales@geez.org>.
+%
+% This locale data has been developed under the Yeha Project:
+%      http://yeha.sourceforge.net/
+%
+% build with: localedef -f UTF-8 -i gez_ET gez_ET
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+LC_IDENTIFICATION
+%
+title      "Ge'ez language locale for Ethiopia"
+source     "Ge'ez Frontier Foundation"
+address    "7802 Solomon Seal Dr., Springfield, VA 22152, USA"
+contact    ""
+email      "locales@geez.org"
+tel        ""
+fax        ""
+language   "gez"
+territory  "ET"
+revision   "0.20"
+date       "2003-07-05"
+%
+category  "i18n:2000";LC_IDENTIFICATION
+category  "i18n:2000";LC_COLLATE
+category  "i18n:2000";LC_CTYPE
+category  "i18n:2000";LC_MEASUREMENT
+category  "i18n:2000";LC_MONETARY
+category  "posix:1993";LC_NUMERIC
+category  "i18n:2000";LC_PAPER
+category  "i18n:2000";LC_TELEPHONE
+category  "i18n:2000";LC_ADDRESS
+category  "i18n:2000";LC_MESSAGES
+category  "i18n:2000";LC_NAME
+category  "i18n:2000";LC_TIME
+%
+END LC_IDENTIFICATION
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  Ethiopic Specifc Data:
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+LC_COLLATE
+copy "am_ET"
+END LC_COLLATE
+
+LC_CTYPE
+copy "ti_ET"
+END LC_CTYPE
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  Ethiopia Specifc Data:
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+LC_MEASUREMENT
+copy "ti_ET"
+END LC_MEASUREMENT
+
+LC_MONETARY
+copy "ti_ET"
+END LC_MONETARY
+
+LC_NUMERIC
+copy "ti_ET"
+END LC_NUMERIC
+
+LC_PAPER
+copy "ti_ET"
+END LC_PAPER
+
+LC_TELEPHONE
+copy "ti_ET"
+END LC_TELEPHONE
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  Ge'ez/ET Specific Data:
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+LC_ADDRESS
+%
+% This is the ISO_IEC TR14652 Locale definition for the LC_ADDRESS category.
+%
+postal_fmt    "<U0025><U007A><U0025><U0063><U0025><U0054><U0025><U0073>/
+<U0025><U0062><U0025><U0065><U0025><U0072>"
+country_name  "<U12A2><U1275><U12EE><U1335><U12EB>"
+country_post  "<U0045><U0054><U0048>"
+country_ab2   "<U0045><U0054>"
+country_ab3   "<U0045><U0054><U0048>"
+country_num   231   % 210 found in at least one ISO 3166 doc
+% country_car   unknown
+% country_isbn  unknown, Need ISO 2108
+lang_name     "<U130D><U12D5><U12DD>"
+%lang_ab       "<U0067><U0065><U007A>"
+lang_term     "<U0067><U0065><U007A>"
+%
+% Petter Reinholdtsen reports uncommenting the below breaks compilation
+%
+%lang_lib      "<U0067><U0065><U007A>"
+%
+END LC_ADDRESS
+
+
+LC_MESSAGES
+copy "ti_ET"
+END LC_MESSAGES
+
+
+LC_NAME
+copy "ti_ET"
+END LC_NAME
+
+
+LC_TIME
+%
+% Abbreviated weekday names (%a)
+%
+abday    "<U12A5><U1281><U12F5>";/
+         "<U1230><U1291><U12ED>";/
+         "<U1220><U1209><U1235>";/
+         "<U122B><U1265><U12D5>";/
+         "<U1210><U1219><U1235>";/
+         "<U12D3><U122D><U1260>";/
+         "<U1240><U12F3><U121A>"
+%
+% Full weekday names (%A)
+%
+day      "<U12A5><U1281><U12F5>";/
+         "<U1230><U1291><U12ED>";/
+         "<U1220><U1209><U1235>";/
+         "<U122B><U1265><U12D5>";/
+         "<U1210><U1219><U1235>";/
+         "<U12D3><U122D><U1260>";/
+         "<U1240><U12F3><U121A><U1275>"
+%
+% Abbreviated month names (%b)
+%
+abmon    "<U1303><U1295><U12E9>";/
+         "<U134C><U1265><U1229>";/
+         "<U121B><U122D><U127D>";/
+         "<U12A4><U1355><U1228>";/
+         "<U121C><U12ED><U0020>";/
+         "<U1301><U1295><U0020>";/
+         "<U1301><U120B><U12ED>";/
+         "<U12A6><U1308><U1235>";/
+         "<U1234><U1355><U1274>";/
+         "<U12A6><U12AD><U1270>";/
+         "<U1296><U126C><U121D>";/
+         "<U12F2><U1234><U121D>"
+%
+% Full month names (%B)
+%
+mon      "<U1303><U1295><U12E9><U12C8><U122A>";/
+         "<U134C><U1265><U1229><U12C8><U122A>";/
+         "<U121B><U122D><U127D>";/
+         "<U12A4><U1355><U1228><U120D>";/
+         "<U121C><U12ED>";/
+         "<U1301><U1295>";/
+         "<U1301><U120B><U12ED>";/
+         "<U12A6><U1308><U1235><U1275>";/
+         "<U1234><U1355><U1274><U121D><U1260><U122D>";/
+         "<U12A6><U12AD><U1270><U12CD><U1260><U122D>";/
+         "<U1296><U126C><U121D><U1260><U122D>";/
+         "<U12F2><U1234><U121D><U1260><U122D>"
+%
+% Equivalent of AM PM
+%
+am_pm   "<U133D><U1263><U1215>";"<U121D><U1234><U1275>"
+%
+% Appropriate date representation (%x)
+%	"%d/%m/%Y"
+%
+d_fmt   "<U0025><U0064><U002F><U0025><U006D><U002F><U0025><U0059>"
+%
+% Appropriate time representation (%X)
+%	"%l:%M:%S"
+%
+t_fmt "<U0025><U006C><U003A><U0025><U004D><U003A><U0025><U0053>"
+%
+% Appropriate AM/PM time representation (%r)
+%	"%X %p"
+%
+t_fmt_ampm "<U0025><U0058><U1361><U0025><U0070>"
+%
+% Appropriate date and time representation (%c)
+%	"%A፥%B፡%e፡መዓልት፡%Y፡%r፡%Z"
+%
+d_t_fmt    "<U0025><U0041><U1365><U0025><U0042><U1361><U0025><U0065>/
+<U1361><U1218><U12D3><U120D><U1275>/
+<U1361><U0025><U0059><U1361><U0025><U0072><U1361><U0025><U005A>"
+%
+% Appropriate date representation (date(1))
+%	"%A፥%B፡%e፡መዓልት፡%r፡%Z፡%Y፡ዓ/ም
+%
+date_fmt    "<U0025><U0041><U1365><U0025><U0042><U1361><U0025><U0065>/
+<U1361><U1218><U12D3><U120D><U1275>/
+<U1361><U0025><U0072><U1361><U0025><U005A><U1361><U0025><U0059>/
+<U1361><U12D3><U002F><U121D>"
+%
+END LC_TIME
+%

@@ -1,0 +1,215 @@
+escape_char  /
+comment_char  %
+
+% Kurdish (latin) language locale for Turkey
+% Source: Kader DILSIZ
+% Contact: Kader DILSIZ, Pablo Saratxaga
+% Email: kader@ikader.com, pablo@mandrakesoft.com
+% Tel:
+% Fax:
+% Language: ku
+% Territory: TR
+% Revision: 0.1
+% Date: 2003-07-27
+% Users: general
+% Charset: UTF-8
+% Distribution and use is free, also
+% for commercial purposes.
+% History:
+
+LC_IDENTIFICATION
+title      "Kurdish (latin) locale for Turkey"
+source     "Kader DILSIZ"
+address    ""
+contact    "Kader DILSIZ, Pablo Saratxaga"
+email      "kader@ikader.com, pablo@mandrakesoft.com"
+tel        ""
+fax        ""
+language   "Kurdish"
+territory  "Turkey"
+revision   "0.1"
+date       "2003-07-27"
+%
+category  "ku_TR:2000";LC_IDENTIFICATION
+category  "ku_TR:2000";LC_CTYPE
+category  "ku_TR:2000";LC_COLLATE
+category  "ku_TR:2000";LC_TIME
+category  "ku_TR:2000";LC_NUMERIC
+category  "ku_TR:2000";LC_MONETARY
+category  "ku_TR:2000";LC_MESSAGES
+category  "ku_TR:2000";LC_PAPER
+category  "ku_TR:2000";LC_NAME
+category  "ku_TR:2000";LC_ADDRESS
+category  "ku_TR:2000";LC_TELEPHONE
+category  "ku_TR:2000";LC_MEASUREMENT
+
+END LC_IDENTIFICATION
+
+LC_CTYPE
+copy "tr_TR"
+END LC_CTYPE
+
+LC_COLLATE
+copy "iso14651_t1"
+
+%% a b c c, d e e> f g h i i> j k l m n o p q r s s, t u u> v w x y z
+
+collating-symbol <c,>
+collating-symbol <e/>>
+collating-symbol <i.>
+collating-symbol <i/>>
+collating-symbol <s,>
+collating-symbol <u/>>
+
+reorder-after <c>
+<c,>
+reorder-after <e>
+<e/>>
+reorder-after <h>
+<i>
+<i.>
+<i/>>
+reorder-after <s>
+<s,>
+reorder-after <u>
+<u/>>
+
+reorder-after <U0063>
+<U00E7> <c,>;<CDI>;<MIN>;IGNORE
+reorder-after <U0043>
+<U00C7> <c,>;<CDI>;<CAP>;IGNORE
+
+reorder-after <U0065>
+<U00EA> <e/>>;<CIR>;<MIN>;IGNORE
+reorder-after <U0045>
+<U00CA> <e/>>;<CIR>;<CAP>;IGNORE
+
+reorder-after <U0068>
+<U0131> <i>;<BAS>;<MIN>;IGNORE
+<U0069> <i.>;<PCT>;<MIN>;IGNORE
+<U00EE> <i/>>;<CIR>;<MIN>;IGNORE
+reorder-after <U0048>
+<U0049> <i>;<BAS>;<CAP>;IGNORE
+<U0130> <i.>;<PCT>;<CAP>;IGNORE
+<U00CE> <i/>>;<CIR>;<CAP>;IGNORE
+
+reorder-after <U0073>
+<U015F> <s,>;<CDI>;<MIN>;IGNORE
+reorder-after <U0053>
+<U015E> <s,>;<CDI>;<CAP>;IGNORE
+
+reorder-after <U0075>
+<U00FB> <u/>>;<CIR>;<MIN>;IGNORE
+reorder-after <U0055>
+<U00DB> <u/>>;<CIR>;<CAP>;IGNORE
+
+reorder-end
+
+END LC_COLLATE
+
+LC_MONETARY
+copy "tr_TR"
+END LC_MONETARY
+
+LC_NUMERIC
+copy "tr_TR"
+END LC_NUMERIC
+
+LC_TIME
+abday       "<U0079><U00EA><U006B>";"<U0064><U0075><U0073>";/
+            "<U0073><U00EA><U0073>";"<U00E7><U0061><U0072>";/
+            "<U0070><U00EA><U006E>";"<U00EE><U006E><U00EE>";/
+            "<U0073><U0065><U0070>"
+day         "<U0079><U00EA><U006B><U0073><U00EA><U006D>";/
+            "<U0064><U0075><U0073><U00EA><U006D>";/
+            "<U0073><U00EA><U0073><U00EA><U006D>";/
+            "<U00E7><U0061><U0072><U0073><U00EA><U006D>";/
+            "<U0070><U00EA><U006E><U0063><U0073><U00EA><U006D>";/
+            "<U00EE><U006E><U00EE>";/
+            "<U0073><U0065><U0070><U0074>"
+abmon       "<U00C7><U0069><U006C>";"<U0053><U0069><U0062>";/
+            "<U0041><U0064><U0061>";"<U004E><U00EE><U0073>";/
+            "<U0047><U0075><U006C>";"<U0048><U0065><U007A>";/
+            "<U0054><U00EE><U0072>";"<U0054><U0065><U0062>";/
+            "<U00CE><U006C><U006F>";"<U0043><U006F><U0074>";/
+            "<U004D><U0069><U006A>";"<U004B><U0061><U006E>"
+mon         "<U00C7><U0069><U006C><U0065>";/
+            "<U0053><U0069><U0062><U0061><U0074>";/
+            "<U0041><U0064><U0061><U0072>";/
+            "<U004E><U00EE><U0073><U0061><U006E>";/
+            "<U0047><U0075><U006C><U0061><U006E>";/
+            "<U0048><U0065><U007A><U00EE><U0072><U0061><U006E>";/
+            "<U0054><U00EE><U0072><U006D><U0065><U0068>";/
+            "<U0054><U0065><U0062><U0061><U0078>";/
+            "<U00CE><U006C><U006F><U006E>";/
+            "<U0043><U006F><U0074><U006D><U0065><U0068>";/
+            "<U004D><U0069><U006A><U0064><U0061><U0072>";/
+            "<U004B><U0061><U006E><U00FB><U006E>"
+% format: %A %d %B %Y %T %Z
+d_t_fmt  "<U0025><U0041><U0020><U0025><U0064><U0020><U0025><U0042><U0020><U0025><U0059><U0020><U0025><U0054><U0020><U0025><U005A>"
+% format: %d/%m/%Y
+d_fmt   "<U0025><U0064><U002F><U0025><U006D><U002F><U0025><U0059>"
+t_fmt       "<U0025><U0054>"
+am_pm       "";""
+t_fmt_ampm  ""
+% format: %A %d %B %Y
+date_fmt  "<U0025><U0041><U0020><U0025><U0064><U0020><U0025><U0042><U0020><U0025><U0059>"
+END LC_TIME
+
+LC_MESSAGES
+yesstr	"<U0065><U0072><U00EA>"
+nostr	"<U006E><U00E2>"
+% eEdDyY
+yesexpr	"<U005E><U005B><U0065><U0045><U0064><U0044><U0079><U0059><U005D><U002E><U002A>"
+% nN
+noexpr	"<U005E><U005B><U006E><U004E><U005D><U002E><U002A>"
+END LC_MESSAGES
+
+LC_PAPER
+copy "tr_TR"
+END LC_PAPER
+
+LC_TELEPHONE
+copy "tr_TR"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+copy "tr_TR"
+END LC_MEASUREMENT
+
+LC_NAME
+% format: %d%t%g%t%m%t%f
+name_fmt    "<U0025><U0064><U0025><U0074><U0025><U0067><U0025><U0074>/
+<U0025><U006D><U0025><U0074><U0025><U0066>"
+% TODO
+% Sayýn
+name_gen    "<U0053><U0061><U0079><U0131><U006E>"
+% "M."
+name_mr     "<U004D><U002E>"
+% "Jne"
+name_mrs    "<U004A><U006E><U0065>"
+name_ms     "<U004A><U006E><U0065>"
+% "Kc,k"
+name_miss   "<U004B><U00E7><U006B>"
+END LC_NAME
+
+LC_ADDRESS
+postal_fmt    "<U0025><U0066><U0025><U004E><U0025><U0061><U0025><U004E>/
+<U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E><U0025><U0073>/
+<U0020><U0025><U0068><U0020><U0025><U0065><U0020><U0025><U0072><U0025>/
+<U004E><U0025><U007A><U0020><U0025><U0054><U0025>/
+<U004E><U0025><U0063><U0025><U004E>"
+% TODO
+country_name	"<U0054><U0075><U0072><U006B><U0065><U0079>"
+country_post "TR"
+country_ab2  "TR"
+country_ab3  "TUR"
+country_num  792
+country_isbn 975
+country_car "TR"
+% "kurdi"
+lang_name   "<U006B><U0075><U0072><U0064><U0069>"
+lang_ab     "ku"
+lang_term   "kur"
+lang_lib    "kur"
+END LC_ADDRESS

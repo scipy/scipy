@@ -1,0 +1,61 @@
+// Keyboard layouts for Korea.
+
+default  alphanumeric_keys
+xkb_symbols "kr106" {
+    include "us"
+    name[Group1]= "Korean";
+    include "kr(hw_keys)"
+};
+
+alphanumeric_keys
+xkb_symbols "kr104" {
+    include "us"
+    name[Group1]= "Korean (101/104-key compatible)";
+    include "kr(ralt_hangul)"
+    include "kr(rctrl_hanja)"
+};
+
+partial function_keys
+xkb_symbols "hw_keys" {
+    key <HNGL> { [ Hangul       ] };
+    key <HJCV> { [ Hangul_Hanja ] };
+};
+
+partial function_keys
+xkb_symbols "ralt_hangul" {
+    replace key <RALT> {
+        type[Group1] = "ONE_LEVEL",
+        symbols[Group1]= [ Hangul ]
+    };
+};
+
+partial function_keys
+xkb_symbols "rctrl_hangul" {
+    replace key <RCTL> {
+        type[Group1] = "ONE_LEVEL",
+        symbols[Group1]= [ Hangul ]
+    };
+};
+
+partial function_keys
+xkb_symbols "ralt_hanja" {
+    replace key <RALT> {
+        type[Group1] = "ONE_LEVEL",
+        symbols[Group1]= [ Hangul_Hanja ]
+    };
+};
+
+partial function_keys
+xkb_symbols "rctrl_hanja" {
+    replace key <RCTL> {
+        type[Group1] = "ONE_LEVEL",
+        symbols[Group1]= [ Hangul_Hanja ]
+    };
+};
+
+// EXTRAS:
+
+partial alphanumeric_keys
+	xkb_symbols "sun_type6" {
+	include "sun_vndr/kr(sun_type6)"
+};

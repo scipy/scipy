@@ -1,0 +1,11 @@
+This example relies on:
+  - Free Pascal 2.0 or newer (ppc386)
+
+Installation:
+  ./autogen.sh
+  ./configure --prefix=/some/prefix
+  make
+  make install
+Cleanup:
+  make distclean
+  ./autoclean.sh

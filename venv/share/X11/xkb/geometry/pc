@@ -1,0 +1,1000 @@
+//
+//Copyright 1996, 1998  The Open Group
+//
+//Permission to use, copy, modify, distribute, and sell this software and its
+//documentation for any purpose is hereby granted without fee, provided that
+//the above copyright notice appear in all copies and that both that
+//copyright notice and this permission notice appear in supporting
+//documentation.
+//
+//The above copyright notice and this permission notice shall be
+//included in all copies or substantial portions of the Software.
+//
+//THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+//EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+//MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+//IN NO EVENT SHALL THE OPEN GROUP BE LIABLE FOR ANY CLAIM, DAMAGES OR
+//OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+//ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+//OTHER DEALINGS IN THE SOFTWARE.
+//
+//Except as contained in this notice, the name of The Open Group shall
+//not be used in advertising or otherwise to promote the sale, use or
+//other dealings in this Software without prior written authorization
+//from The Open Group.
+//
+
+default xkb_geometry "pc101" {
+
+    description= "Generic 101-key PC";
+    width= 470;
+    height= 180;
+
+    shape.cornerRadius= 1;
+    shape "NORM" { { [ 18,18] }, { [2,1], [ 16,16] } };
+    shape "BKSP" { { [ 38,18] }, { [2,1], [ 36,16] } };
+    shape "TABK" { { [ 28,18] }, { [2,1], [ 26,16] } };
+    shape "BKSL" { { [ 28,18] }, { [2,1], [ 26,16] } };
+    shape "RTRN" { { [ 42,18] }, { [2,1], [ 40,16] } };
+    shape "CAPS" { { [ 33,18] }, { [2,1], [ 31,16] } };
+    shape "LFSH" { { [ 42,18] }, { [2,1], [ 40,16] } };
+    shape "RTSH" { { [ 52,18] }, { [2,1], [ 50,16] } };
+    shape "MODK" { { [ 27,18] }, { [2,1], [ 25,16] } };
+    shape "SPCE" { { [133,18] }, { [2,1], [131,16] } };
+    shape "KP0"  { { [ 37,18] }, { [2,1], [ 35,16] } };
+    shape "KPAD" { { [ 18,37] }, { [2,1], [ 16,35] } };
+
+    shape "LEDS" { cornerRadius= 0, { [ 75 ,20 ] } };
+    shape "LED"  { cornerRadius= 0, { [  5,  1 ] } };
+    solid "LedPanel" {
+	shape= "LEDS";
+	top=  22;
+	left= 377;
+	color= "grey10";
+    };
+
+    indicator.onColor= "green";
+    indicator.offColor= "green30";
+    indicator.top= 37;
+    indicator.shape= "LED";
+    indicator "Num Lock"     { left= 382; };
+    indicator "Caps Lock"    { left= 407; };
+    indicator "Scroll Lock"  { left= 433; };
+    text.top= 25;
+    text.color= "black";
+    text "NumLockLabel"		{ left= 378; text="Num\nLock"; };
+    text "CapsLockLabel"	{ left= 403; text="Caps\nLock"; };
+    text "ScrollLockLabel"	{ left= 428; text="Scroll\nLock"; };
+
+    section.left= 19;
+    row.left= 1;
+    key.shape= "NORM";
+    key.gap=  1;
+    section "Function" {
+	top= 22;
+	row {
+	    top= 1;
+	    keys {  { <ESC>, color="grey20" },
+		    { <FK01>, 20 }, <FK02>, <FK03>, <FK04>,
+		    { <FK05>, 11 }, <FK06>, <FK07>, <FK08>,
+		    { <FK09>, 11 }, <FK10>, <FK11>, <FK12>,
+		    { <PRSC>, 8 }, <SCLK>, <PAUS> 
+	    };
+	};
+    }; // End of "Function" section
+
+    section "Alpha" {
+	top= 61;
+	row {
+	    top= 1;
+	    keys { <TLDE>, <AE01>, <AE02>, <AE03>, <AE04>,
+		   <AE05>, <AE06>, <AE07>, <AE08>, <AE09>,
+		   <AE10>, <AE11>, <AE12>,
+		   { <BKSP>, "BKSP", color="grey20" }
+	    };
+	};
+	row {
+	    top= 20;
+	    keys { { <TAB>, "TABK", color="grey20" },
+		   <AD01>, <AD02>, <AD03>, <AD04>, <AD05>, 
+		   <AD06>, <AD07>, <AD08>, <AD09>, <AD10>, 
+		   <AD11>, <AD12>, { <BKSL>, "BKSL" }
+	    };
+	};
+	row {
+	    top= 39;
+	    keys { { <CAPS>, "CAPS", color="grey20" },
+		   <AC01>, <AC02>, <AC03>, <AC04>, <AC05>, 
+		   <AC06>, <AC07>, <AC08>, <AC09>, <AC10>, 
+		   <AC11>, { <RTRN>, "RTRN", color="grey20" }
+	    };
+	};
+	row {
+	    top= 58;
+	    keys { { <LFSH>, "LFSH", color="grey20" },
+		    <AB01>, <AB02>, <AB03>, <AB04>, <AB05>, 
+		    <AB06>, <AB07>, <AB08>, <AB09>, <AB10>, 
+		    { <RTSH>, "RTSH", color="grey20" }
+	    };
+	};
+	row {
+	    top= 77;
+	    key.shape= "MODK";
+	    key.color= "grey20";
+	    keys { <LCTL>, { <LALT>, 21 },
+		   { <SPCE>, "SPCE", color="white" },
+		   <RALT>, { <RCTL>, 21 }
+	    };
+	};
+    }; // End of "Alpha" section
+
+    section "Editing" {
+	top= 61;
+	left= 312;
+	key.color= "grey20";
+	row {
+	    top= 1;
+	    keys { <INS>, <HOME>, <PGUP> };
+	};
+        row {
+	    top= 20;
+	    keys { <DELE>, <END>, <PGDN> };
+	};
+	row {
+	    top= 58;
+	    left= 20;
+	    keys { <UP> };
+	};
+	row {
+	    top= 77;
+	    keys { <LEFT>, <DOWN>, <RGHT> };
+	};
+    }; // End of "Editing" section
+
+    section "Keypad" {
+	top= 61;
+	left= 376;
+	row {
+	    top= 1;
+	    key.color= "grey20";
+	    keys { <NMLK>, <KPDV>, <KPMU>, <KPSU> };
+	};
+	row {
+	    top= 20;
+	    keys { <KP7>, <KP8>, <KP9>, { <KPAD>, "KPAD", color="grey20" } };
+	};
+	row {
+	    top= 39;
+	    keys { <KP4>, <KP5>, <KP6> };
+	};
+	row {
+	    top= 58;
+	    keys { <KP1>, <KP2>, <KP3>, { <KPEN>, "KPAD", color="grey20" } };
+	};
+	row {
+	    top= 77;
+	    keys { { <KP0>, "KP0" }, <KPDL> };
+	};
+    }; // End of "Keypad" section
+
+    alias <AC00> = <CAPS>;
+    alias <AA00> = <LCTL>;
+
+}; // End of "default" geometry
+
+xkb_geometry "pc102" {
+
+    description= "Generic 102-key PC";
+    width= 470;
+    height= 180;
+
+    shape.cornerRadius= 1;
+    shape "NORM" { { [ 18,18] }, { [2,1], [ 16,16] } };
+    shape "BKSP" { { [ 38,18] }, { [2,1], [ 36,16] } };
+    shape "TABK" { { [ 28,18] }, { [2,1], [ 26,16] } };
+    shape "BKSL" { { [ 28,18] }, { [2,1], [ 26,16] } };
+    shape "RTRN" {
+        { [0,0], [28,0], [28,37], [5,37], [5,18], [0,18] },
+        { [2,1], [26,1], [26,35], [7,35], [7,16], [2,16] } };
+    shape "CAPS" { { [ 33,18] }, { [2,1], [ 31,16] } };
+    shape "LFSH" { { [ 25,18] }, { [2,1], [ 23,16] } };
+    shape "RTSH" { { [ 50,18] }, { [2,1], [ 48,16] } };
+    shape "MODK" { { [ 27,18] }, { [2,1], [ 25,16] } };
+    shape "SPCE" { { [134,18] }, { [2,1], [132,16] } };
+    shape "KP0"  { { [ 37,18] }, { [2,1], [ 35,16] } };
+    shape "KPAD" { { [ 18,37] }, { [2,1], [ 16,35] } };
+
+    shape "LEDS" { cornerRadius= 0, { [ 75 ,20 ] } };
+    shape "LED"  { cornerRadius= 0, { [  5,  1 ] } };
+    solid "LedPanel" {
+	shape= "LEDS";
+	top=  22;
+	left= 377;
+	color= "grey10";
+    };
+
+    indicator.onColor= "green";
+    indicator.offColor= "green30";
+    indicator.top= 37;
+    indicator.shape= "LED";
+    indicator "Num Lock"     { left= 382; };
+    indicator "Caps Lock"    { left= 407; };
+    indicator "Scroll Lock"  { left= 433; };
+    text.top= 25;
+    text.color= "black";
+    text "NumLockLabel"		{ left= 378; text="Num\nLock"; };
+    text "CapsLockLabel"	{ left= 403; text="Caps\nLock"; };
+    text "ScrollLockLabel"	{ left= 428; text="Scroll\nLock"; };
+
+    section.left= 19;
+    row.left= 1;
+    key.shape= "NORM";
+    key.gap=  1;
+    section "Function" {
+	top= 22;
+	row {
+	    top= 1;
+	    keys {  { <ESC>, "TABK", color="grey20" },
+		    { <FK01>, 10 }, <FK02>, <FK03>, <FK04>,
+		    { <FK05>, 11 }, <FK06>, <FK07>, <FK08>,
+		    { <FK09>, 11 }, <FK10>, <FK11>, <FK12>,
+		    { <PRSC>, 8 }, <SCLK>, <PAUS> 
+	    };
+	};
+    }; // End of "Function" section
+
+    section "Alpha" {
+	top= 61;
+	row {
+	    top= 1;
+	    keys { <TLDE>, <AE01>, <AE02>, <AE03>, <AE04>,
+		   <AE05>, <AE06>, <AE07>, <AE08>, <AE09>,
+		   <AE10>, <AE11>, <AE12>, 
+		   { <BKSP>, "BKSP", color="grey20" }
+	    };
+	};
+	row {
+	    top= 20;
+	    keys { { <TAB>, "TABK", color="grey20" },
+		   <AD01>, <AD02>, <AD03>, <AD04>, <AD05>, 
+		   <AD06>, <AD07>, <AD08>, <AD09>, <AD10>, 
+		   <AD11>, <AD12>, { <RTRN>, "RTRN", color="grey20" }
+	    };
+	};
+	row {
+	    top= 39;
+	    keys { { <CAPS>, "CAPS", color="grey20" },
+		   <AC01>, <AC02>, <AC03>, <AC04>, <AC05>, 
+		   <AC06>, <AC07>, <AC08>, <AC09>, <AC10>, 
+		   <AC11>, <BKSL>
+	    };
+	};
+	row {
+	    top= 58;
+	    keys { { <LFSH>, "LFSH", color="grey20" },
+		    <LSGT>, <AB01>, <AB02>, <AB03>, <AB04>, <AB05>, 
+		    <AB06>, <AB07>, <AB08>, <AB09>, <AB10>, 
+		    { <RTSH>, "RTSH", color="grey20" }
+	    };
+	};
+	row {
+	    top= 77;
+	    key.shape= "MODK";
+	    key.color= "grey20";
+	    keys { <LCTL>, { <LALT>, 20 },
+		   { <SPCE>, "SPCE", color="white" },
+		   <RALT>, { <RCTL>, 21 }
+	    };
+	};
+    }; // End of "Alpha" section
+
+    section "Editing" {
+	top= 61;
+	left= 312;
+	key.color= "grey20";
+	row {
+	    top= 1;
+	    keys { <INS>, <HOME>, <PGUP> };
+	};
+        row {
+	    top= 20;
+	    keys { <DELE>, <END>, <PGDN> };
+	};
+	row {
+	    top= 58;
+	    left= 20;
+	    keys { <UP> };
+	};
+	row {
+	    top= 77;
+	    keys { <LEFT>, <DOWN>, <RGHT> };
+	};
+    }; // End of "Editing" section
+
+    section "Keypad" {
+	top= 61;
+	left= 376;
+	row {
+	    top= 1;
+	    key.color= "grey20";
+	    keys { <NMLK>, <KPDV>, <KPMU>, <KPSU> };
+	};
+	row {
+	    top= 20;
+	    keys { <KP7>, <KP8>, <KP9>, { <KPAD>, "KPAD", color="grey20" } };
+	};
+	row {
+	    top= 39;
+	    keys { <KP4>, <KP5>, <KP6> };
+	};
+	row {
+	    top= 58;
+	    keys { <KP1>, <KP2>, <KP3>, { <KPEN>, "KPAD", color="grey20" } };
+	};
+	row {
+	    top= 77;
+	    keys { { <KP0>, "KP0" }, <KPDL> };
+	};
+    }; // End of "Keypad" section
+
+    alias <AC00> = <CAPS>;
+    alias <AA00> = <LCTL>;
+
+}; // End of "pc102" geometry
+
+xkb_geometry "pc104" {
+
+    description= "Generic 104-key PC";
+    width= 470;
+    height= 180;
+
+    shape.cornerRadius= 1;
+    shape "NORM" { { [ 18,18] }, { [2,1], [ 16,16] } };
+    shape "BKSP" { { [ 38,18] }, { [2,1], [ 36,16] } };
+    shape "TABK" { { [ 28,18] }, { [2,1], [ 26,16] } };
+    shape "BKSL" { { [ 28,18] }, { [2,1], [ 26,16] } };
+    shape "RTRN" { { [ 42,18] }, { [2,1], [ 40,16] } };
+    shape "CAPS" { { [ 33,18] }, { [2,1], [ 31,16] } };
+    shape "LFSH" { { [ 42,18] }, { [2,1], [ 40,16] } };
+    shape "RTSH" { { [ 52,18] }, { [2,1], [ 50,16] } };
+    shape "MODK" { { [ 27,18] }, { [2,1], [ 25,16] } };
+    shape "SMOD" { { [ 23,18] }, { [2,1], [ 21,16] } };
+    shape "SPCE" { { [113,18] }, { [2,1], [111,16] } };
+    shape "KP0"  { { [ 37,18] }, { [2,1], [ 35,16] } };
+    shape "KPAD" { { [ 18,37] }, { [2,1], [ 16,35] } };
+
+    shape "LEDS" { cornerRadius= 0, { [ 75 ,20 ] } };
+    shape "LED"  { cornerRadius= 0, { [  5,  1 ] } };
+    solid "LedPanel" {
+	shape= "LEDS";
+	top=  22;
+	left= 377;
+	color= "grey10";
+    };
+
+    indicator.onColor= "green";
+    indicator.offColor= "green30";
+    indicator.top= 37;
+    indicator.shape= "LED";
+    indicator "Num Lock"     { left= 382; };
+    indicator "Caps Lock"    { left= 407; };
+    indicator "Scroll Lock"  { left= 433; };
+    text.top= 25;
+    text.color= "black";
+    text "NumLockLabel"		{ left= 378; text="Num\nLock"; };
+    text "CapsLockLabel"	{ left= 403; text="Caps\nLock"; };
+    text "ScrollLockLabel"	{ left= 428; text="Scroll\nLock"; };
+
+    section.left= 19;
+    row.left= 1;
+    key.shape= "NORM";
+    key.gap=  1;
+    section "Function" {
+	top= 22;
+	row {
+	    top= 1;
+	    keys {  { <ESC>, color="grey20" },
+		    { <FK01>, 20 }, <FK02>, <FK03>, <FK04>,
+		    { <FK05>, 11 }, <FK06>, <FK07>, <FK08>,
+		    { <FK09>, 11 }, <FK10>, <FK11>, <FK12>,
+		    { <PRSC>, 8 }, <SCLK>, <PAUS> 
+	    };
+	};
+    }; // End of "Function" section
+
+    section "Alpha" {
+	top= 61;
+	row {
+	    top= 1;
+	    keys { <TLDE>, <AE01>, <AE02>, <AE03>, <AE04>,
+		   <AE05>, <AE06>, <AE07>, <AE08>, <AE09>,
+		   <AE10>, <AE11>, <AE12>,
+		   { <BKSP>, "BKSP", color="grey20" }
+	    };
+	};
+	row {
+	    top= 20;
+	    keys { { <TAB>, "TABK", color="grey20" },
+		   <AD01>, <AD02>, <AD03>, <AD04>, <AD05>, 
+		   <AD06>, <AD07>, <AD08>, <AD09>, <AD10>, 
+		   <AD11>, <AD12>, { <BKSL>, "BKSL" }
+	    };
+	};
+	row {
+	    top= 39;
+	    keys { { <CAPS>, "CAPS", color="grey20" },
+		   <AC01>, <AC02>, <AC03>, <AC04>, <AC05>, 
+		   <AC06>, <AC07>, <AC08>, <AC09>, <AC10>, 
+		   <AC11>, { <RTRN>, "RTRN", color="grey20" }
+	    };
+	};
+	row {
+	    top= 58;
+	    keys { { <LFSH>, "LFSH", color="grey20" },
+		    <AB01>, <AB02>, <AB03>, <AB04>, <AB05>, 
+		    <AB06>, <AB07>, <AB08>, <AB09>, <AB10>, 
+		    { <RTSH>, "RTSH", color="grey20" }
+	    };
+	};
+	row {
+	    top= 77;
+	    key.shape= "SMOD";
+	    key.color= "grey20";
+	    keys { { <LCTL>, "MODK" }, <LWIN>, <LALT>,
+		   { <SPCE>, "SPCE", color="white" },
+		   <RALT>, <RWIN>, <MENU>, <RCTL>
+	    };
+	};
+    }; // End of "Alpha" section
+
+    section "Editing" {
+	top= 61;
+	left= 312;
+	key.color= "grey20";
+	row {
+	    top= 1;
+	    keys { <INS>, <HOME>, <PGUP> };
+	};
+        row {
+	    top= 20;
+	    keys { <DELE>, <END>, <PGDN> };
+	};
+	row {
+	    top= 58;
+	    left= 20;
+	    keys { <UP> };
+	};
+	row {
+	    top= 77;
+	    keys { <LEFT>, <DOWN>, <RGHT> };
+	};
+    }; // End of "Editing" section
+
+    section "Keypad" {
+	top= 61;
+	left= 376;
+	row {
+	    top= 1;
+	    key.color= "grey20";
+	    keys { <NMLK>, <KPDV>, <KPMU>, <KPSU> };
+	};
+	row {
+	    top= 20;
+	    keys { <KP7>, <KP8>, <KP9>, { <KPAD>, "KPAD", color="grey20" } };
+	};
+	row {
+	    top= 39;
+	    keys { <KP4>, <KP5>, <KP6> };
+	};
+	row {
+	    top= 58;
+	    keys { <KP1>, <KP2>, <KP3>, { <KPEN>, "KPAD", color="grey20" } };
+	};
+	row {
+	    top= 77;
+	    keys { { <KP0>, "KP0" }, <KPDL> };
+	};
+    }; // End of "Keypad" section
+
+    alias <AC00> = <CAPS>;
+    alias <AA00> = <LCTL>;
+
+}; // End of "pc104" geometry
+
+xkb_geometry "pc105" {
+
+    description= "Generic 105-key PC";
+    width= 470;
+    height= 180;
+
+    shape.cornerRadius= 1;
+
+    shape "NORM" { { [ 18,18] }, { [2,1], [ 16,16] } };
+    shape "BKSP" { { [ 38,18] }, { [2,1], [ 36,16] } };
+    shape "TABK" { { [ 28,18] }, { [2,1], [ 26,16] } };
+    shape "BKSL" { { [ 28,18] }, { [2,1], [ 26,16] } };
+    shape "RTRN" {
+        { [0,0], [28,0], [28,37], [5,37], [5,18], [0,18] } ,
+        { [2,1], [26,1], [26,35], [7,35], [7,16], [2,16] } ,
+        approx = { [5,0], [28,37] } };
+    shape "CAPS" { { [ 33,18] }, { [2,1], [ 31,16] } };
+    shape "LFSH" { { [ 25,18] }, { [2,1], [ 23,16] } };
+    shape "RTSH" { { [ 50,18] }, { [2,1], [ 48,16] } };
+    shape "MODK" { { [ 27,18] }, { [2,1], [ 25,16] } };
+    shape "SMOD" { { [ 23,18] }, { [2,1], [ 21,16] } };
+    shape "SPCE" { { [113,18] }, { [2,1], [111,16] } };
+    shape "KP0"  { { [ 37,18] }, { [2,1], [ 35,16] } };
+    shape "KPAD" { { [ 18,37] }, { [2,1], [ 16,35] } };
+
+    shape "LEDS" { cornerRadius= 0, { [ 75 ,20 ] } };
+    shape "LED"  { cornerRadius= 0, { [  5,  1 ] } };
+    solid "LedPanel" {
+	shape= "LEDS";
+	top=  22;
+	left= 377;
+	color= "grey10";
+    };
+
+    indicator.onColor= "green";
+    indicator.offColor= "green30";
+    indicator.top= 37;
+    indicator.shape= "LED";
+    indicator "Num Lock"     { left= 382; };
+    indicator "Caps Lock"    { left= 407; };
+    indicator "Scroll Lock"  { left= 433; };
+    text.top= 25;
+    text.color= "black";
+    text "NumLockLabel"		{ left= 378; text="Num\nLock"; };
+    text "CapsLockLabel"	{ left= 403; text="Caps\nLock"; };
+    text "ScrollLockLabel"	{ left= 428; text="Scroll\nLock"; };
+
+    section.left= 19;
+    row.left= 1;
+    key.shape= "NORM";
+    key.gap=  1;
+    section "Function" {
+	top= 22;
+	row {
+	    top= 1;
+	    keys {  { <ESC>, color="grey20" },
+		    { <FK01>, 20 }, <FK02>, <FK03>, <FK04>,
+		    { <FK05>, 11 }, <FK06>, <FK07>, <FK08>,
+		    { <FK09>, 11 }, <FK10>, <FK11>, <FK12>,
+		    { <PRSC>, 8 }, <SCLK>, <PAUS> 
+	    };
+	};
+    }; // End of "Function" section
+
+    section "Alpha" {
+	top= 61;
+	row {
+	    top= 1;
+	    keys { <TLDE>, <AE01>, <AE02>, <AE03>, <AE04>,
+		   <AE05>, <AE06>, <AE07>, <AE08>, <AE09>,
+		   <AE10>, <AE11>, <AE12>,
+		   { <BKSP>, "BKSP", color="grey20" }
+	    };
+	};
+	row {
+	    top= 20;
+	    keys { { <TAB>, "TABK", color="grey20" },
+		   <AD01>, <AD02>, <AD03>, <AD04>, <AD05>, 
+		   <AD06>, <AD07>, <AD08>, <AD09>, <AD10>, 
+		   <AD11>, <AD12>, { <RTRN>, "RTRN", color="grey20" } 
+	    };
+	};
+	row {
+	    top= 39;
+	    keys { { <CAPS>, "CAPS", color="grey20" },
+		   <AC01>, <AC02>, <AC03>, <AC04>, <AC05>, 
+		   <AC06>, <AC07>, <AC08>, <AC09>, <AC10>, 
+		   <AC11>, <BKSL> 
+	    };
+	};
+	row {
+	    top= 58;
+	    keys { { <LFSH>, "LFSH", color="grey20" },
+		    <LSGT>, <AB01>, <AB02>, <AB03>, <AB04>, <AB05>, 
+		    <AB06>, <AB07>, <AB08>, <AB09>, <AB10>, 
+		    { <RTSH>, "RTSH", color="grey20" }
+	    };
+	};
+	row {
+	    top= 77;
+	    key.shape= "SMOD";
+	    key.color= "grey20";
+	    keys { { <LCTL>, "MODK" }, <LWIN>, <LALT>,
+		   { <SPCE>, "SPCE", color="white" },
+		   <RALT>, <RWIN>, <MENU>, <RCTL>
+	    };
+	};
+    }; // End of "Alpha" section
+
+    section "Editing" {
+	top= 61;
+	left= 312;
+	key.color= "grey20";
+	row {
+	    top= 1;
+	    keys { <INS>, <HOME>, <PGUP> };
+	};
+        row {
+	    top= 20;
+	    keys { <DELE>, <END>, <PGDN> };
+	};
+	row {
+	    top= 58;
+	    left= 20;
+	    keys { <UP> };
+	};
+	row {
+	    top= 77;
+	    keys { <LEFT>, <DOWN>, <RGHT> };
+	};
+    }; // End of "Editing" section
+
+    section "Keypad" {
+	top= 61;
+	left= 376;
+	row {
+	    top= 1;
+	    key.color= "grey20";
+	    keys { <NMLK>, <KPDV>, <KPMU>, <KPSU> };
+	};
+	row {
+	    top= 20;
+	    keys { <KP7>, <KP8>, <KP9>, { <KPAD>, "KPAD", color="grey20" } };
+	};
+	row {
+	    top= 39;
+	    keys { <KP4>, <KP5>, <KP6> };
+	};
+	row {
+	    top= 58;
+	    keys { <KP1>, <KP2>, <KP3>, { <KPEN>, "KPAD", color="grey20" } };
+	};
+	row {
+	    top= 77;
+	    keys { { <KP0>, "KP0" }, <KPDL> };
+	};
+    }; // End of "Keypad" section
+
+    alias <AC00> = <CAPS>;
+    alias <AA00> = <LCTL>;
+
+}; // End of "pc105" geometry
+
+// Created by Alexander Pohoyda <alexander.pohoyda@gmx.net>
+
+xkb_geometry "pc86" {
+    description = "Generic 86-key PC";
+    width = 287;
+    height = 143;
+    baseColor = "grey20";
+
+    shape "EDGE" { cornerRadius = 2, { [287, 143] } };
+    shape "LED"  { cornerRadius = 2, { [3, 3] } };
+    shape "LEDS" { cornerRadius = 0, { [75, 5] } };
+    shape "KEYS" { cornerRadius = 0, { [271, 109] } };
+
+    outline "Edges" {
+        top = 0;
+        left = 0;
+        shape = "EDGE";
+        color = "black";
+    };
+
+    solid "KeyPanel" {
+	shape = "KEYS";
+	left = 8;
+	top = 22;
+	color = "grey70";
+    };
+
+    solid "LedPanel" {
+	shape = "LEDS";
+	left = 212;
+	top = 10;
+	color = "black";
+    };
+
+    indicator.onColor = "green";
+    indicator.offColor = "green30";
+    indicator.top = 11;
+    indicator.shape = "LED";
+    indicator "Num Lock"     { left = 212 + 7; };
+    indicator "Caps Lock"    { left = 212 + 23; };
+    indicator "Scroll Lock"  { left = 212 + 39; };
+    text.fontSize = 6;
+    text.top = 10;
+    text.color = "white";
+    text "NumLockLabel"     { left = 212 + 7 + 5; text = "Num\nLock"; };
+    text "CapsLockLabel"    { left = 212 + 23 + 5; text = "Caps\nLock"; };
+    text "ScrollLockLabel"  { left = 212 + 39 + 5; text = "Scroll\nLock"; };
+
+    shape.cornerRadius = 1;
+    shape "SMALL"  { { [15, 12] }, { [1.5, 0], [13.5, 10] } };
+    shape "NARR"   { { [13, 18] }, { [1.5, 0], [11.5, 14] } };
+    shape "NORM"   { { [18, 18] }, { [3, 0], [15, 14] } };
+    shape "NORM_1" { { [22, 18] }, { [4, 0], [22, 18] },
+                                   { [7, 0], [19, 14] } };
+    shape "WIDER"  { { [23, 18] }, { [3, 0], [20, 14] } };
+    shape "WIDEST" { { [27, 18] }, { [3, 0], [24, 14] } };
+    shape "SPCE"   { { [75, 18] }, { [3, 0], [72, 14] } };
+
+    section "Function" {
+	key.shape = "SMALL";
+	key.gap = 0.99;
+	key.color = "grey30";
+	left = 8;
+	top = 22;
+	row {
+	    top = 1;
+	    keys {  <ESC>,
+	    	    <FK01>, <FK02>, <FK03>, <FK04>,
+		    <FK05>, <FK06>, <FK07>, <FK08>,
+		    <FK09>, <FK10>, <FK11>, <FK12>,
+		    <NMLK>, <PRSC>, <SCLK>, <PAUS>
+	    };
+	};
+    }; // End of "Function" section
+
+    section "Control" {
+	key.shape = "NORM";
+	key.gap = 1;
+	key.color = "grey30";
+        left = 8;
+	top = 111;
+	row {
+	    top = 1;
+	    keys { <LCTL>, <FN>, <LALT>,
+	           { <SPCE>, shape="SPCE", 39 }, <RALT>,
+		   <INS>, <DELE>
+	    };
+	};
+    }; // End of "Control" section
+
+    section "Editing" {
+        key.shape = "NARR";
+	key.gap = 1;
+	key.color = "grey30";
+	left = 265;
+	top = 34;
+        row.vertical = True;
+	row {
+	    top = 1;
+	    keys { <HOME>, <PGUP>, <PGDN>, <END> };
+	};
+    }; // End of "Editing" section
+
+    section "Navigation" {
+	key.gap = 1;
+	key.shape = "NARR";
+	key.color = "grey30";
+	left = 236;
+	top = 92;
+	row {
+	    left = 14;
+	    top = 1;
+	    keys { <UP> };
+	};
+	row {
+	    top = 20;
+	    keys { <LEFT>, <DOWN>, <RGHT> };
+	};
+    }; // End of "Navigation" section
+
+    section "Alpha" {
+	key.gap = 1;
+	key.shape = "NORM";
+	key.color = "grey10";
+        left = 8;
+	top = 35;
+	row {
+	    top = 1;
+	    keys { { <AE01>, shape="NORM_1" }, <AE02>, <AE03>, <AE04>,
+		   <AE05>, <AE06>, <AE07>, <AE08>, <AE09>,
+		   <AE10>, <AE11>, <AE12>,
+                   { <BKSP>, shape="WIDER", color="grey30" }
+	    };
+	};
+	row {
+	    top = 20;
+	    keys { { <TAB>, shape="NARR", color="grey30" },
+		   <AD01>, <AD02>, <AD03>, <AD04>, <AD05>, 
+		   <AD06>, <AD07>, <AD08>, <AD09>, <AD10>, 
+		   <AD11>, <AD12>, { <AD13>, shape="NARR" }
+	    };
+	};
+	row {
+	    top = 39;
+	    keys { { <CAPS>, color="grey30" },
+		   <AC01>, <AC02>, <AC03>, <AC04>, <AC05>, 
+		   <AC06>, <AC07>, <AC08>, <AC09>, <AC10>, 
+		   <AC11>, { <RTRN>, shape="WIDEST", color="grey30" }
+	    };
+	};
+	row {
+	    top = 58;
+	    keys { { <LFSH>, shape="WIDEST", color="grey30" },
+		    <AB01>, <AB02>, <AB03>, <AB04>, <AB05>, 
+		    <AB06>, <AB07>, <AB08>, <AB09>, <AB10>,
+		    { <RTSH>, shape="WIDER", color="grey30" }
+	    };
+	};
+	row {
+            left = 57;
+	    top = 77;
+	    keys { <AE00>, <LSGT> };
+	};
+    }; // End of "Alpha" section
+
+    alias <AC00> = <CAPS>;
+    alias <AA00> = <LCTL>;
+}; // End of "pc86" geometry
+
+xkb_geometry "pc104alt" {
+
+    description= "Generic 104-key PC with L-shaped Enter key";
+    width= 470;
+    height= 210;
+
+    shape.cornerRadius= 1;
+    shape "NORM" { { [ 18,18] }, { [2,1], [ 16,16] } };
+    shape "BKSP" { { [ 19,18] }, { [2,1], [ 17,16] } };
+    shape "TABK" { { [ 28,18] }, { [2,1], [ 26,16] } };
+//    shape "RTRN" { { [ 0,19 ], [ 0,37 ], [ 42,37 ], [ 42,0 ], [ 14,0 ], [ 14,19 ] },
+//                   { [ 2,20 ], [ 2,35 ], [ 40,35 ], [ 40,1 ], [ 16,1 ], [ 16,20 ] },
+//                   approx = { [ 17,21 ], [ 39,34 ] }
+//                 };
+    shape "RTRN" { { [ -14,19 ], [ -14,37 ], [ 28,37 ], [ 28,0 ], [ 0,0 ], [ 0,19 ] },
+                   { [ -12,20 ], [ -12,35 ], [ 26,35 ], [ 26,1 ], [ 2,1 ], [ 2,20 ] },
+                   approx = { [ 3,21 ], [ 25,34 ] }
+                 };
+    shape "CAPS" { { [ 33,18] }, { [2,1], [ 31,16] } };
+    shape "LFSH" { { [ 42,18] }, { [2,1], [ 40,16] } };
+    shape "RTSH" { { [ 52,18] }, { [2,1], [ 50,16] } };
+    shape "MODK" { { [ 27,18] }, { [2,1], [ 25,16] } };
+    shape "SMOD" { { [ 23,18] }, { [2,1], [ 21,16] } };
+    shape "SPCE" { { [113,18] }, { [2,1], [111,16] } };
+    shape "KP0"  { { [ 37,18] }, { [2,1], [ 35,16] } };
+    shape "KPAD" { { [ 18,37] }, { [2,1], [ 16,35] } };
+
+    shape "LEDS" { cornerRadius= 0, { [ 75 ,20 ] } };
+    shape "LED"  { cornerRadius= 0, { [  5,  1 ] } };
+    solid "LedPanel" {
+	shape= "LEDS";
+	top=  52;
+	left= 377;
+	color= "grey10";
+    };
+
+    indicator.onColor= "green";
+    indicator.offColor= "green30";
+    indicator.top= 67;
+    indicator.shape= "LED";
+    indicator "Num Lock"     { left= 382; };
+    indicator "Caps Lock"    { left= 407; };
+    indicator "Scroll Lock"  { left= 433; };
+    text.top= 55;
+    text.color= "black";
+    text "NumLockLabel"		{ left= 378; text="Num\nLock"; };
+    text "CapsLockLabel"	{ left= 403; text="Caps\nLock"; };
+    text "ScrollLockLabel"	{ left= 428; text="Scroll\nLock"; };
+
+    section.left= 19;
+    row.left= 1;
+    key.shape= "NORM";
+    key.gap=  1;
+    section "Function" {
+	top= 52;
+	row {
+	    top= 1;
+	    keys {  { <ESC>, color="grey20" },
+		    { <FK01>, 20 }, <FK02>, <FK03>, <FK04>,
+		    { <FK05>, 11 }, <FK06>, <FK07>, <FK08>,
+		    { <FK09>, 11 }, <FK10>, <FK11>, <FK12>,
+		    { <PRSC>, 8 }, <SCLK>, <PAUS> 
+	    };
+	};
+    }; // End of "Function" section
+
+    section "Alpha" {
+	top= 91;
+	row {
+	    top= 1;
+	    keys { <TLDE>, <AE01>, <AE02>, <AE03>, <AE04>,
+		   <AE05>, <AE06>, <AE07>, <AE08>, <AE09>,
+		   <AE10>, <AE11>, <AE12>, <BKSL>,
+		   { <BKSP>, "BKSP", color="grey20" }
+	    };
+	};
+	row {
+	    top= 20;
+	    keys { { <TAB>, "TABK", color="grey20" },
+		   <AD01>, <AD02>, <AD03>, <AD04>, <AD05>, 
+		   <AD06>, <AD07>, <AD08>, <AD09>, <AD10>, 
+//		   <AD11>, <AD12>, { <RTRN>, -13, "RTRN", color="grey20" }
+		   <AD11>, <AD12>, { <RTRN>, "RTRN", color="grey20" }
+	    };
+	};
+	row {
+	    top= 39;
+	    keys { { <CAPS>, "CAPS", color="grey20" },
+		   <AC01>, <AC02>, <AC03>, <AC04>, <AC05>, 
+		   <AC06>, <AC07>, <AC08>, <AC09>, <AC10>, 
+		   <AC11>
+	    };
+	};
+	row {
+	    top= 58;
+	    keys { { <LFSH>, "LFSH", color="grey20" },
+		    <AB01>, <AB02>, <AB03>, <AB04>, <AB05>, 
+		    <AB06>, <AB07>, <AB08>, <AB09>, <AB10>, 
+		    { <RTSH>, "RTSH", color="grey20" }
+	    };
+	};
+	row {
+	    top= 77;
+	    key.shape= "SMOD";
+	    key.color= "grey20";
+	    keys { { <LCTL>, "MODK" }, <LWIN>, <LALT>,
+		   { <SPCE>, "SPCE", color="white" },
+		   <RALT>, <RWIN>, <MENU>, <RCTL>
+	    };
+	};
+    }; // End of "Alpha" section
+
+    section "Editing" {
+	top= 91;
+	left= 312;
+	key.color= "grey20";
+	row {
+	    top= 1;
+	    keys { <INS>, <HOME>, <PGUP> };
+	};
+        row {
+	    top= 20;
+	    keys { <DELE>, <END>, <PGDN> };
+	};
+	row {
+	    top= 58;
+	    left= 20;
+	    keys { <UP> };
+	};
+	row {
+	    top= 77;
+	    keys { <LEFT>, <DOWN>, <RGHT> };
+	};
+    }; // End of "Editing" section
+
+    section "Keypad" {
+	top= 91;
+	left= 376;
+	row {
+	    top= 1;
+	    key.color= "grey20";
+	    keys { <NMLK>, <KPDV>, <KPMU>, <KPSU> };
+	};
+	row {
+	    top= 20;
+	    keys { <KP7>, <KP8>, <KP9>, { <KPAD>, "KPAD", color="grey20" } };
+	};
+	row {
+	    top= 39;
+	    keys { <KP4>, <KP5>, <KP6> };
+	};
+	row {
+	    top= 58;
+	    keys { <KP1>, <KP2>, <KP3>, { <KPEN>, "KPAD", color="grey20" } };
+	};
+	row {
+	    top= 77;
+	    keys { { <KP0>, "KP0" }, <KPDL> };
+	};
+    }; // End of "Keypad" section
+
+    alias <AC00> = <CAPS>;
+    alias <AA00> = <LCTL>;
+
+}; // End of "pc104alt" geometry

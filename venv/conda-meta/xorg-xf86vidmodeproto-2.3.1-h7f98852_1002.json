@@ -1,0 +1,70 @@
+{
+  "build": "h7f98852_1002",
+  "build_number": 1002,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [],
+  "depends": [
+    "libgcc-ng >=9.3.0"
+  ],
+  "extracted_package_dir": "/opt/conda/pkgs/xorg-xf86vidmodeproto-2.3.1-h7f98852_1002",
+  "features": "",
+  "files": [
+    "include/X11/extensions/xf86vm.h",
+    "include/X11/extensions/xf86vmproto.h",
+    "include/X11/extensions/xf86vmstr.h",
+    "lib/pkgconfig/xf86vidmodeproto.pc"
+  ],
+  "fn": "xorg-xf86vidmodeproto-2.3.1-h7f98852_1002.tar.bz2",
+  "license": "MIT",
+  "license_family": "MIT",
+  "link": {
+    "source": "/opt/conda/pkgs/xorg-xf86vidmodeproto-2.3.1-h7f98852_1002",
+    "type": 1
+  },
+  "md5": "3ceea9668625c18f19530de98b15d5b0",
+  "name": "xorg-xf86vidmodeproto",
+  "package_tarball_full_path": "/opt/conda/pkgs/xorg-xf86vidmodeproto-2.3.1-h7f98852_1002.tar.bz2",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "include/X11/extensions/xf86vm.h",
+        "path_type": "hardlink",
+        "sha256": "261dc9129838246ed0725cdeb8129e9a90dd1560cf78cf9850352b09b2326349",
+        "sha256_in_prefix": "261dc9129838246ed0725cdeb8129e9a90dd1560cf78cf9850352b09b2326349",
+        "size_in_bytes": 2109
+      },
+      {
+        "_path": "include/X11/extensions/xf86vmproto.h",
+        "path_type": "hardlink",
+        "sha256": "0dbaf9cd6c83574497aba48d579aa7909f0e72899abf0d617ab695be5c7068cd",
+        "sha256_in_prefix": "0dbaf9cd6c83574497aba48d579aa7909f0e72899abf0d617ab695be5c7068cd",
+        "size_in_bytes": 16905
+      },
+      {
+        "_path": "include/X11/extensions/xf86vmstr.h",
+        "path_type": "hardlink",
+        "sha256": "1c03a84d3f615c57b3b8ebbf028354ea5714c8f305ee51ac6478b406e4aba7bc",
+        "sha256_in_prefix": "1c03a84d3f615c57b3b8ebbf028354ea5714c8f305ee51ac6478b406e4aba7bc",
+        "size_in_bytes": 185
+      },
+      {
+        "_path": "lib/pkgconfig/xf86vidmodeproto.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/home/conda/feedstock_root/build_artifacts/xorg-xf86vidmodeproto_1620067163829/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold",
+        "sha256": "aad7e08a39a6c5d27270da048b100a235334bdb111aee99bddb3e6b33d122e81",
+        "sha256_in_prefix": "2c750db5fee46d77884dffea26acb7457feec5c48d20c6473cf347df070489a5",
+        "size_in_bytes": 447
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "43398aeacad5b8753b7a1c12cb6bca36124e0c842330372635879c350c430791",
+  "size": 23875,
+  "subdir": "linux-64",
+  "timestamp": 1620067286978,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/xorg-xf86vidmodeproto-2.3.1-h7f98852_1002.tar.bz2",
+  "version": "2.3.1"
+}

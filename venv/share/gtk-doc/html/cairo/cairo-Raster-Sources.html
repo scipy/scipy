@@ -1,0 +1,794 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Raster Sources: Cairo: A Vector Graphics Library</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<link rel="home" href="index.html" title="Cairo: A Vector Graphics Library">
+<link rel="up" href="cairo-drawing.html" title="Drawing">
+<link rel="prev" href="cairo-text.html" title="text">
+<link rel="next" href="cairo-Tags-and-Links.html" title="Tags and Links">
+<meta name="generator" content="GTK-Doc V1.27 (XML mode)">
+<link rel="stylesheet" href="style.css" type="text/css">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<table class="navigation" id="top" width="100%" summary="Navigation header" cellpadding="2" cellspacing="5"><tr valign="middle">
+<td width="100%" align="left" class="shortcuts">
+<a href="#" class="shortcut">Top</a><span id="nav_description">  <span class="dim">|</span> 
+                  <a href="#cairo-Raster-Sources.description" class="shortcut">Description</a></span>
+</td>
+<td><a accesskey="h" href="index.html"><img src="home.png" width="16" height="16" border="0" alt="Home"></a></td>
+<td><a accesskey="u" href="cairo-drawing.html"><img src="up.png" width="16" height="16" border="0" alt="Up"></a></td>
+<td><a accesskey="p" href="cairo-text.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
+<td><a accesskey="n" href="cairo-Tags-and-Links.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
+</tr></table>
+<div class="refentry">
+<a name="cairo-Raster-Sources"></a><div class="titlepage"></div>
+<div class="refnamediv"><table width="100%"><tr>
+<td valign="top">
+<h2><span class="refentrytitle"><a name="cairo-Raster-Sources.top_of_page"></a>Raster Sources</span></h2>
+<p>Raster Sources — Supplying arbitrary image data</p>
+</td>
+<td class="gallery_image" valign="top" align="right"></td>
+</tr></table></div>
+<div class="refsect1">
+<a name="cairo-Raster-Sources.functions"></a><h2>Functions</h2>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="functions_return">
+<col class="functions_name">
+</colgroup>
+<tbody>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-cairo-pattern-t.html#cairo-pattern-t" title="cairo_pattern_t"><span class="returnvalue">cairo_pattern_t</span></a> *
+</td>
+<td class="function_name">
+<a class="link" href="cairo-Raster-Sources.html#cairo-pattern-create-raster-source" title="cairo_pattern_create_raster_source ()">cairo_pattern_create_raster_source</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-Raster-Sources.html#cairo-raster-source-pattern-set-callback-data" title="cairo_raster_source_pattern_set_callback_data ()">cairo_raster_source_pattern_set_callback_data</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span> *
+</td>
+<td class="function_name">
+<a class="link" href="cairo-Raster-Sources.html#cairo-raster-source-pattern-get-callback-data" title="cairo_raster_source_pattern_get_callback_data ()">cairo_raster_source_pattern_get_callback_data</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-Raster-Sources.html#cairo-raster-source-pattern-set-acquire" title="cairo_raster_source_pattern_set_acquire ()">cairo_raster_source_pattern_set_acquire</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-Raster-Sources.html#cairo-raster-source-pattern-get-acquire" title="cairo_raster_source_pattern_get_acquire ()">cairo_raster_source_pattern_get_acquire</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-Raster-Sources.html#cairo-raster-source-pattern-set-snapshot" title="cairo_raster_source_pattern_set_snapshot ()">cairo_raster_source_pattern_set_snapshot</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-Raster-Sources.html#cairo-raster-source-snapshot-func-t" title="cairo_raster_source_snapshot_func_t ()"><span class="returnvalue">cairo_raster_source_snapshot_func_t</span></a>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-Raster-Sources.html#cairo-raster-source-pattern-get-snapshot" title="cairo_raster_source_pattern_get_snapshot ()">cairo_raster_source_pattern_get_snapshot</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-Raster-Sources.html#cairo-raster-source-pattern-set-copy" title="cairo_raster_source_pattern_set_copy ()">cairo_raster_source_pattern_set_copy</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-Raster-Sources.html#cairo-raster-source-copy-func-t" title="cairo_raster_source_copy_func_t ()"><span class="returnvalue">cairo_raster_source_copy_func_t</span></a>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-Raster-Sources.html#cairo-raster-source-pattern-get-copy" title="cairo_raster_source_pattern_get_copy ()">cairo_raster_source_pattern_get_copy</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-Raster-Sources.html#cairo-raster-source-pattern-set-finish" title="cairo_raster_source_pattern_set_finish ()">cairo_raster_source_pattern_set_finish</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-Raster-Sources.html#cairo-raster-source-finish-func-t" title="cairo_raster_source_finish_func_t ()"><span class="returnvalue">cairo_raster_source_finish_func_t</span></a>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-Raster-Sources.html#cairo-raster-source-pattern-get-finish" title="cairo_raster_source_pattern_get_finish ()">cairo_raster_source_pattern_get_finish</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="returnvalue">cairo_surface_t</span></a>
+</td>
+<td class="function_name">
+<span class="c_punctuation">(</span><a class="link" href="cairo-Raster-Sources.html#cairo-raster-source-acquire-func-t" title="cairo_raster_source_acquire_func_t ()">*cairo_raster_source_acquire_func_t</a><span class="c_punctuation">)</span> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<span class="c_punctuation">(</span><a class="link" href="cairo-Raster-Sources.html#cairo-raster-source-release-func-t" title="cairo_raster_source_release_func_t ()">*cairo_raster_source_release_func_t</a><span class="c_punctuation">)</span> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-Error-handling.html#cairo-status-t" title="enum cairo_status_t"><span class="returnvalue">cairo_status_t</span></a>
+</td>
+<td class="function_name">
+<span class="c_punctuation">(</span><a class="link" href="cairo-Raster-Sources.html#cairo-raster-source-snapshot-func-t" title="cairo_raster_source_snapshot_func_t ()">*cairo_raster_source_snapshot_func_t</a><span class="c_punctuation">)</span> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-Error-handling.html#cairo-status-t" title="enum cairo_status_t"><span class="returnvalue">cairo_status_t</span></a>
+</td>
+<td class="function_name">
+<span class="c_punctuation">(</span><a class="link" href="cairo-Raster-Sources.html#cairo-raster-source-copy-func-t" title="cairo_raster_source_copy_func_t ()">*cairo_raster_source_copy_func_t</a><span class="c_punctuation">)</span> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<span class="c_punctuation">(</span><a class="link" href="cairo-Raster-Sources.html#cairo-raster-source-finish-func-t" title="cairo_raster_source_finish_func_t ()">*cairo_raster_source_finish_func_t</a><span class="c_punctuation">)</span> <span class="c_punctuation">()</span>
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect1">
+<a name="cairo-Raster-Sources.description"></a><h2>Description</h2>
+<p>The raster source provides the ability to supply arbitrary pixel data
+whilst rendering. The pixels are queried at the time of rasterisation
+by means of user callback functions, allowing for the ultimate
+flexibility. For example, in handling compressed image sources, you
+may keep a MRU cache of decompressed images and decompress sources on the
+fly and discard old ones to conserve memory.</p>
+<p>For the raster source to be effective, you must at least specify
+the acquire and release callbacks which are used to retrieve the pixel
+data for the region of interest and demark when it can be freed afterwards.
+Other callbacks are provided for when the pattern is copied temporarily
+during rasterisation, or more permanently as a snapshot in order to keep
+the pixel data available for printing.</p>
+</div>
+<div class="refsect1">
+<a name="cairo-Raster-Sources.functions_details"></a><h2>Functions</h2>
+<div class="refsect2">
+<a name="cairo-pattern-create-raster-source"></a><h3>cairo_pattern_create_raster_source ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-cairo-pattern-t.html#cairo-pattern-t" title="cairo_pattern_t"><span class="returnvalue">cairo_pattern_t</span></a> *
+cairo_pattern_create_raster_source (<em class="parameter"><code><span class="type">void</span> *user_data</code></em>,
+                                    <em class="parameter"><code><a class="link" href="cairo-cairo-surface-t.html#cairo-content-t" title="enum cairo_content_t"><span class="type">cairo_content_t</span></a> content</code></em>,
+                                    <em class="parameter"><code><span class="type">int</span> width</code></em>,
+                                    <em class="parameter"><code><span class="type">int</span> height</code></em>);</pre>
+<p>Creates a new user pattern for providing pixel data.</p>
+<p>Use the setter functions to associate callbacks with the returned
+pattern.  The only mandatory callback is acquire.</p>
+<div class="refsect3">
+<a name="cairo-pattern-create-raster-source.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>user_data</p></td>
+<td class="parameter_description"><p>the user data to be passed to all callbacks</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>content</p></td>
+<td class="parameter_description"><p>content type for the pixel data that will be returned. Knowing
+the content type ahead of time is used for analysing the operation and
+picking the appropriate rendering path.</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>width</p></td>
+<td class="parameter_description"><p>maximum size of the sample area</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>height</p></td>
+<td class="parameter_description"><p>maximum size of the sample area</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-pattern-create-raster-source.returns"></a><h4>Returns</h4>
+<p> a newly created <a class="link" href="cairo-cairo-pattern-t.html#cairo-pattern-t" title="cairo_pattern_t"><span class="type">cairo_pattern_t</span></a>. Free with
+<a class="link" href="cairo-cairo-pattern-t.html#cairo-pattern-destroy" title="cairo_pattern_destroy ()"><code class="function">cairo_pattern_destroy()</code></a> when you are done using it.</p>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-raster-source-pattern-set-callback-data"></a><h3>cairo_raster_source_pattern_set_callback_data ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_raster_source_pattern_set_callback_data
+                               (<em class="parameter"><code><a class="link" href="cairo-cairo-pattern-t.html#cairo-pattern-t" title="cairo_pattern_t"><span class="type">cairo_pattern_t</span></a> *pattern</code></em>,
+                                <em class="parameter"><code><span class="type">void</span> *data</code></em>);</pre>
+<p>Updates the user data that is provided to all callbacks.</p>
+<div class="refsect3">
+<a name="cairo-raster-source-pattern-set-callback-data.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>pattern</p></td>
+<td class="parameter_description"><p>the pattern to update</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>data</p></td>
+<td class="parameter_description"><p>the user data to be passed to all callbacks</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-raster-source-pattern-get-callback-data"></a><h3>cairo_raster_source_pattern_get_callback_data ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span> *
+cairo_raster_source_pattern_get_callback_data
+                               (<em class="parameter"><code><a class="link" href="cairo-cairo-pattern-t.html#cairo-pattern-t" title="cairo_pattern_t"><span class="type">cairo_pattern_t</span></a> *pattern</code></em>);</pre>
+<p>Queries the current user data.</p>
+<div class="refsect3">
+<a name="cairo-raster-source-pattern-get-callback-data.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>pattern</p></td>
+<td class="parameter_description"><p>the pattern to update</p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-raster-source-pattern-get-callback-data.returns"></a><h4>Returns</h4>
+<p> the current user-data passed to each callback</p>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-raster-source-pattern-set-acquire"></a><h3>cairo_raster_source_pattern_set_acquire ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_raster_source_pattern_set_acquire
+                               (<em class="parameter"><code><a class="link" href="cairo-cairo-pattern-t.html#cairo-pattern-t" title="cairo_pattern_t"><span class="type">cairo_pattern_t</span></a> *pattern</code></em>,
+                                <em class="parameter"><code><a class="link" href="cairo-Raster-Sources.html#cairo-raster-source-acquire-func-t" title="cairo_raster_source_acquire_func_t ()"><span class="type">cairo_raster_source_acquire_func_t</span></a> acquire</code></em>,
+                                <em class="parameter"><code><a class="link" href="cairo-Raster-Sources.html#cairo-raster-source-release-func-t" title="cairo_raster_source_release_func_t ()"><span class="type">cairo_raster_source_release_func_t</span></a> release</code></em>);</pre>
+<p>Specifies the callbacks used to generate the image surface for a rendering
+operation (acquire) and the function used to cleanup that surface afterwards.</p>
+<p>The <em class="parameter"><code>acquire</code></em>
+ callback should create a surface (preferably an image
+surface created to match the target using
+<a class="link" href="cairo-cairo-surface-t.html#cairo-surface-create-similar-image" title="cairo_surface_create_similar_image ()"><code class="function">cairo_surface_create_similar_image()</code></a>) that defines at least the region
+of interest specified by extents. The surface is allowed to be the entire
+sample area, but if it does contain a subsection of the sample area,
+the surface extents should be provided by setting the device offset (along
+with its width and height) using <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-set-device-offset" title="cairo_surface_set_device_offset ()"><code class="function">cairo_surface_set_device_offset()</code></a>.</p>
+<div class="refsect3">
+<a name="cairo-raster-source-pattern-set-acquire.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>pattern</p></td>
+<td class="parameter_description"><p>the pattern to update</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>acquire</p></td>
+<td class="parameter_description"><p>acquire callback</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>release</p></td>
+<td class="parameter_description"><p>release callback</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-raster-source-pattern-get-acquire"></a><h3>cairo_raster_source_pattern_get_acquire ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_raster_source_pattern_get_acquire
+                               (<em class="parameter"><code><a class="link" href="cairo-cairo-pattern-t.html#cairo-pattern-t" title="cairo_pattern_t"><span class="type">cairo_pattern_t</span></a> *pattern</code></em>,
+                                <em class="parameter"><code><a class="link" href="cairo-Raster-Sources.html#cairo-raster-source-acquire-func-t" title="cairo_raster_source_acquire_func_t ()"><span class="type">cairo_raster_source_acquire_func_t</span></a> *acquire</code></em>,
+                                <em class="parameter"><code><a class="link" href="cairo-Raster-Sources.html#cairo-raster-source-release-func-t" title="cairo_raster_source_release_func_t ()"><span class="type">cairo_raster_source_release_func_t</span></a> *release</code></em>);</pre>
+<p>Queries the current acquire and release callbacks.</p>
+<div class="refsect3">
+<a name="cairo-raster-source-pattern-get-acquire.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>pattern</p></td>
+<td class="parameter_description"><p>the pattern to query</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>acquire</p></td>
+<td class="parameter_description"><p>return value for the current acquire callback</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>release</p></td>
+<td class="parameter_description"><p>return value for the current release callback</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-raster-source-pattern-set-snapshot"></a><h3>cairo_raster_source_pattern_set_snapshot ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_raster_source_pattern_set_snapshot
+                               (<em class="parameter"><code><a class="link" href="cairo-cairo-pattern-t.html#cairo-pattern-t" title="cairo_pattern_t"><span class="type">cairo_pattern_t</span></a> *pattern</code></em>,
+                                <em class="parameter"><code><a class="link" href="cairo-Raster-Sources.html#cairo-raster-source-snapshot-func-t" title="cairo_raster_source_snapshot_func_t ()"><span class="type">cairo_raster_source_snapshot_func_t</span></a> snapshot</code></em>);</pre>
+<p>Sets the callback that will be used whenever a snapshot is taken of the
+pattern, that is whenever the current contents of the pattern should be
+preserved for later use. This is typically invoked whilst printing.</p>
+<div class="refsect3">
+<a name="cairo-raster-source-pattern-set-snapshot.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>pattern</p></td>
+<td class="parameter_description"><p>the pattern to update</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>snapshot</p></td>
+<td class="parameter_description"><p>snapshot callback</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-raster-source-pattern-get-snapshot"></a><h3>cairo_raster_source_pattern_get_snapshot ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-Raster-Sources.html#cairo-raster-source-snapshot-func-t" title="cairo_raster_source_snapshot_func_t ()"><span class="returnvalue">cairo_raster_source_snapshot_func_t</span></a>
+cairo_raster_source_pattern_get_snapshot
+                               (<em class="parameter"><code><a class="link" href="cairo-cairo-pattern-t.html#cairo-pattern-t" title="cairo_pattern_t"><span class="type">cairo_pattern_t</span></a> *pattern</code></em>);</pre>
+<p>Queries the current snapshot callback.</p>
+<div class="refsect3">
+<a name="cairo-raster-source-pattern-get-snapshot.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>pattern</p></td>
+<td class="parameter_description"><p>the pattern to query</p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-raster-source-pattern-get-snapshot.returns"></a><h4>Returns</h4>
+<p> the current snapshot callback</p>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-raster-source-pattern-set-copy"></a><h3>cairo_raster_source_pattern_set_copy ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_raster_source_pattern_set_copy (<em class="parameter"><code><a class="link" href="cairo-cairo-pattern-t.html#cairo-pattern-t" title="cairo_pattern_t"><span class="type">cairo_pattern_t</span></a> *pattern</code></em>,
+                                      <em class="parameter"><code><a class="link" href="cairo-Raster-Sources.html#cairo-raster-source-copy-func-t" title="cairo_raster_source_copy_func_t ()"><span class="type">cairo_raster_source_copy_func_t</span></a> copy</code></em>);</pre>
+<p>Updates the copy callback which is used whenever a temporary copy of the
+pattern is taken.</p>
+<div class="refsect3">
+<a name="cairo-raster-source-pattern-set-copy.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>pattern</p></td>
+<td class="parameter_description"><p>the pattern to update</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>copy</p></td>
+<td class="parameter_description"><p>the copy callback</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-raster-source-pattern-get-copy"></a><h3>cairo_raster_source_pattern_get_copy ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-Raster-Sources.html#cairo-raster-source-copy-func-t" title="cairo_raster_source_copy_func_t ()"><span class="returnvalue">cairo_raster_source_copy_func_t</span></a>
+cairo_raster_source_pattern_get_copy (<em class="parameter"><code><a class="link" href="cairo-cairo-pattern-t.html#cairo-pattern-t" title="cairo_pattern_t"><span class="type">cairo_pattern_t</span></a> *pattern</code></em>);</pre>
+<p>Queries the current copy callback.</p>
+<div class="refsect3">
+<a name="cairo-raster-source-pattern-get-copy.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>pattern</p></td>
+<td class="parameter_description"><p>the pattern to query</p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-raster-source-pattern-get-copy.returns"></a><h4>Returns</h4>
+<p> the current copy callback</p>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-raster-source-pattern-set-finish"></a><h3>cairo_raster_source_pattern_set_finish ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_raster_source_pattern_set_finish
+                               (<em class="parameter"><code><a class="link" href="cairo-cairo-pattern-t.html#cairo-pattern-t" title="cairo_pattern_t"><span class="type">cairo_pattern_t</span></a> *pattern</code></em>,
+                                <em class="parameter"><code><a class="link" href="cairo-Raster-Sources.html#cairo-raster-source-finish-func-t" title="cairo_raster_source_finish_func_t ()"><span class="type">cairo_raster_source_finish_func_t</span></a> finish</code></em>);</pre>
+<p>Updates the finish callback which is used whenever a pattern (or a copy
+thereof) will no longer be used.</p>
+<div class="refsect3">
+<a name="cairo-raster-source-pattern-set-finish.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>pattern</p></td>
+<td class="parameter_description"><p>the pattern to update</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>finish</p></td>
+<td class="parameter_description"><p>the finish callback</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-raster-source-pattern-get-finish"></a><h3>cairo_raster_source_pattern_get_finish ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-Raster-Sources.html#cairo-raster-source-finish-func-t" title="cairo_raster_source_finish_func_t ()"><span class="returnvalue">cairo_raster_source_finish_func_t</span></a>
+cairo_raster_source_pattern_get_finish
+                               (<em class="parameter"><code><a class="link" href="cairo-cairo-pattern-t.html#cairo-pattern-t" title="cairo_pattern_t"><span class="type">cairo_pattern_t</span></a> *pattern</code></em>);</pre>
+<p>Queries the current finish callback.</p>
+<div class="refsect3">
+<a name="cairo-raster-source-pattern-get-finish.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>pattern</p></td>
+<td class="parameter_description"><p>the pattern to query</p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-raster-source-pattern-get-finish.returns"></a><h4>Returns</h4>
+<p> the current finish callback</p>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-raster-source-acquire-func-t"></a><h3>cairo_raster_source_acquire_func_t ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="returnvalue">cairo_surface_t</span></a>
+<span class="c_punctuation">(</span>*cairo_raster_source_acquire_func_t<span class="c_punctuation">)</span> (<em class="parameter"><code><a class="link" href="cairo-cairo-pattern-t.html#cairo-pattern-t" title="cairo_pattern_t"><span class="type">cairo_pattern_t</span></a> *pattern</code></em>,
+                                       <em class="parameter"><code><span class="type">void</span> *callback_data</code></em>,
+                                       <em class="parameter"><code><a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="type">cairo_surface_t</span></a> *target</code></em>,
+                                       <em class="parameter"><code>const <a class="link" href="cairo-Types.html#cairo-rectangle-int-t" title="cairo_rectangle_int_t"><span class="type">cairo_rectangle_int_t</span></a> *extents</code></em>);</pre>
+<p><a class="link" href="cairo-Raster-Sources.html#cairo-raster-source-acquire-func-t" title="cairo_raster_source_acquire_func_t ()"><span class="type">cairo_raster_source_acquire_func_t</span></a> is the type of function which is
+called when a pattern is being rendered from. It should create a surface
+that provides the pixel data for the region of interest as defined by
+extents, though the surface itself does not have to be limited to that
+area. For convenience the surface should probably be of image type,
+created with <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-create-similar-image" title="cairo_surface_create_similar_image ()"><code class="function">cairo_surface_create_similar_image()</code></a> for the target (which
+enables the number of copies to be reduced during transfer to the
+device). Another option, might be to return a similar surface to the
+target for explicit handling by the application of a set of cached sources
+on the device. The region of sample data provided should be defined using
+<a class="link" href="cairo-cairo-surface-t.html#cairo-surface-set-device-offset" title="cairo_surface_set_device_offset ()"><code class="function">cairo_surface_set_device_offset()</code></a> to specify the top-left corner of the
+sample data (along with width and height of the surface).</p>
+<div class="refsect3">
+<a name="cairo-raster-source-acquire-func-t.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>pattern</p></td>
+<td class="parameter_description"><p>the pattern being rendered from</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>callback_data</p></td>
+<td class="parameter_description"><p>the user data supplied during creation</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>target</p></td>
+<td class="parameter_description"><p>the rendering target surface</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>extents</p></td>
+<td class="parameter_description"><p>rectangular region of interest in pixels in sample space</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-raster-source-acquire-func-t.returns"></a><h4>Returns</h4>
+<p> a <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="type">cairo_surface_t</span></a></p>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-raster-source-release-func-t"></a><h3>cairo_raster_source_release_func_t ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+<span class="c_punctuation">(</span>*cairo_raster_source_release_func_t<span class="c_punctuation">)</span> (<em class="parameter"><code><a class="link" href="cairo-cairo-pattern-t.html#cairo-pattern-t" title="cairo_pattern_t"><span class="type">cairo_pattern_t</span></a> *pattern</code></em>,
+                                       <em class="parameter"><code><span class="type">void</span> *callback_data</code></em>,
+                                       <em class="parameter"><code><a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="type">cairo_surface_t</span></a> *surface</code></em>);</pre>
+<p><a class="link" href="cairo-Raster-Sources.html#cairo-raster-source-release-func-t" title="cairo_raster_source_release_func_t ()"><span class="type">cairo_raster_source_release_func_t</span></a> is the type of function which is
+called when the pixel data is no longer being access by the pattern
+for the rendering operation. Typically this function will simply
+destroy the surface created during acquire.</p>
+<div class="refsect3">
+<a name="cairo-raster-source-release-func-t.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>pattern</p></td>
+<td class="parameter_description"><p>the pattern being rendered from</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>callback_data</p></td>
+<td class="parameter_description"><p>the user data supplied during creation</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>surface</p></td>
+<td class="parameter_description"><p>the surface created during acquire</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-raster-source-snapshot-func-t"></a><h3>cairo_raster_source_snapshot_func_t ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-Error-handling.html#cairo-status-t" title="enum cairo_status_t"><span class="returnvalue">cairo_status_t</span></a>
+<span class="c_punctuation">(</span>*cairo_raster_source_snapshot_func_t<span class="c_punctuation">)</span>
+                               (<em class="parameter"><code><a class="link" href="cairo-cairo-pattern-t.html#cairo-pattern-t" title="cairo_pattern_t"><span class="type">cairo_pattern_t</span></a> *pattern</code></em>,
+                                <em class="parameter"><code><span class="type">void</span> *callback_data</code></em>);</pre>
+<p><a class="link" href="cairo-Raster-Sources.html#cairo-raster-source-snapshot-func-t" title="cairo_raster_source_snapshot_func_t ()"><span class="type">cairo_raster_source_snapshot_func_t</span></a> is the type of function which is
+called when the pixel data needs to be preserved for later use
+during printing. This pattern will be accessed again later, and it
+is expected to provide the pixel data that was current at the time
+of snapshotting.</p>
+<div class="refsect3">
+<a name="cairo-raster-source-snapshot-func-t.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>pattern</p></td>
+<td class="parameter_description"><p>the pattern being rendered from</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>callback_data</p></td>
+<td class="parameter_description"><p>the user data supplied during creation</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-raster-source-snapshot-func-t.returns"></a><h4>Returns</h4>
+<p> CAIRO_STATUS_SUCCESS on success, or one of the
+<a class="link" href="cairo-Error-handling.html#cairo-status-t" title="enum cairo_status_t"><span class="type">cairo_status_t</span></a> error codes for failure.</p>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-raster-source-copy-func-t"></a><h3>cairo_raster_source_copy_func_t ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-Error-handling.html#cairo-status-t" title="enum cairo_status_t"><span class="returnvalue">cairo_status_t</span></a>
+<span class="c_punctuation">(</span>*cairo_raster_source_copy_func_t<span class="c_punctuation">)</span> (<em class="parameter"><code><a class="link" href="cairo-cairo-pattern-t.html#cairo-pattern-t" title="cairo_pattern_t"><span class="type">cairo_pattern_t</span></a> *pattern</code></em>,
+                                    <em class="parameter"><code><span class="type">void</span> *callback_data</code></em>,
+                                    <em class="parameter"><code>const <a class="link" href="cairo-cairo-pattern-t.html#cairo-pattern-t" title="cairo_pattern_t"><span class="type">cairo_pattern_t</span></a> *other</code></em>);</pre>
+<p><a class="link" href="cairo-Raster-Sources.html#cairo-raster-source-copy-func-t" title="cairo_raster_source_copy_func_t ()"><span class="type">cairo_raster_source_copy_func_t</span></a> is the type of function which is
+called when the pattern gets copied as a normal part of rendering.</p>
+<div class="refsect3">
+<a name="cairo-raster-source-copy-func-t.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>pattern</p></td>
+<td class="parameter_description"><p>the <a class="link" href="cairo-cairo-pattern-t.html#cairo-pattern-t" title="cairo_pattern_t"><span class="type">cairo_pattern_t</span></a> that was copied to</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>callback_data</p></td>
+<td class="parameter_description"><p>the user data supplied during creation</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>other</p></td>
+<td class="parameter_description"><p>the <a class="link" href="cairo-cairo-pattern-t.html#cairo-pattern-t" title="cairo_pattern_t"><span class="type">cairo_pattern_t</span></a> being used as the source for the copy</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-raster-source-copy-func-t.returns"></a><h4>Returns</h4>
+<p> CAIRO_STATUS_SUCCESS on success, or one of the
+<a class="link" href="cairo-Error-handling.html#cairo-status-t" title="enum cairo_status_t"><span class="type">cairo_status_t</span></a> error codes for failure.</p>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-raster-source-finish-func-t"></a><h3>cairo_raster_source_finish_func_t ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+<span class="c_punctuation">(</span>*cairo_raster_source_finish_func_t<span class="c_punctuation">)</span> (<em class="parameter"><code><a class="link" href="cairo-cairo-pattern-t.html#cairo-pattern-t" title="cairo_pattern_t"><span class="type">cairo_pattern_t</span></a> *pattern</code></em>,
+                                      <em class="parameter"><code><span class="type">void</span> *callback_data</code></em>);</pre>
+<p><a class="link" href="cairo-Raster-Sources.html#cairo-raster-source-finish-func-t" title="cairo_raster_source_finish_func_t ()"><span class="type">cairo_raster_source_finish_func_t</span></a> is the type of function which is
+called when the pattern (or a copy thereof) is no longer required.</p>
+<div class="refsect3">
+<a name="cairo-raster-source-finish-func-t.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>pattern</p></td>
+<td class="parameter_description"><p>the pattern being rendered from</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>callback_data</p></td>
+<td class="parameter_description"><p>the user data supplied during creation</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+</div>
+<div class="refsect1">
+<a name="cairo-Raster-Sources.other_details"></a><h2>Types and Values</h2>
+</div>
+<div class="refsect1">
+<a name="cairo-Raster-Sources.see-also"></a><h2>See Also</h2>
+<p><a class="link" href="cairo-cairo-pattern-t.html#cairo-pattern-t" title="cairo_pattern_t"><span class="type">cairo_pattern_t</span></a></p>
+</div>
+</div>
+<div class="footer">
+<hr>Generated by GTK-Doc V1.27</div>
+</body>
+</html>

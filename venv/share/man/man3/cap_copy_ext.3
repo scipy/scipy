@@ -1,0 +1,113 @@
+.TH CAP_COPY_EXT 3 "2021-03-06" "" "Linux Programmer's Manual"
+.SH NAME
+cap_copy_ext, cap_size, cap_copy_int \- capability state
+external representation translation
+.SH SYNOPSIS
+.nf
+#include <sys/capability.h>
+
+ssize_t cap_size(cap_t cap_p);
+ssize_t cap_copy_ext(void *ext_p, cap_t cap_p, ssize_t size);
+cap_t cap_copy_int(const void * ext_p);
+cap_t cap_copy_int_check(const void *cap_ext, ssize_t length);
+.fi
+.sp
+Link with \fI\-lcap\fP.
+.SH DESCRIPTION
+These functions translate between internal and external
+representations of a capability state.  The external representation is
+an exportable, contiguous, persistent representation of a capability
+state in user-managed space.  The internal representation is managed
+by the capability functions in working storage.
+.PP
+.BR cap_size ()
+returns the total length (in bytes) that the capability state in working
+storage identified by
+.I cap_p
+would require when converted by
+.BR cap_copy_ext ().
+This function is used primarily to determine the amount of buffer space that
+must be provided to the
+.BR cap_copy_ext ()
+function in order to hold the capability data record created from
+.IR cap_p .
+.PP
+.BR cap_copy_ext ()
+copies a capability state in working storage, identified by
+.IR cap_p ,
+from system-managed space to user-managed space (pointed to by
+.IR ext_p )
+and returns the length of the resulting data record.  The size parameter
+represents the maximum size, in bytes, of the resulting data record.  The
+.BR cap_copy_ext ()
+function will do any conversions necessary to convert the capability
+state from the undefined internal format to an exportable, contiguous,
+persistent data record.  It is the responsibility of the user to
+allocate a buffer large enough to hold the copied data.  The buffer
+length required to hold the copied data may be obtained by a call to
+the
+.BR cap_size ()
+function.
+.PP
+.BR cap_copy_int ()
+copies a capability state from a capability data record in user-managed
+space to a new capability state in working storage, allocating any
+memory necessary, and returning a pointer to the newly created capability
+state.  The function initializes the capability state and then copies
+the capability state from the record pointed to by
+.I ext_p
+into the capability state, converting, if necessary, the data from a
+contiguous, persistent format to an opaque, internal format.  Once
+copied into internal format, the object can be manipulated by the
+capability state manipulation functions (see
+.BR cap_clear (3)).
+Note that the record pointed to by
+.I ext_p
+must have been obtained from a previous, successful call to
+.BR cap_copy_ext ()
+for this function to work successfully.  The caller should free any
+releasable memory, when the capability state in working storage is no
+longer required, by calling
+.BR cap_free ()
+with the
+.I cap_t
+as an argument.
+.PP
+.BR cap_copy_int_check ()
+performs the same operation as
+.BR cap_copy_int ()
+but additionally checks that the provided external data's size is not
+larger than the noted length.
+.SH "RETURN VALUE"
+.BR cap_size ()
+returns the length required to hold a capability data record on success,
+and \-1 on failure.
+.PP
+.BR cap_copy_ext ()
+returns the number of bytes placed in the user managed space pointed to by
+.I ext_p 
+on success, and \-1 on failure.
+.PP
+.BR cap_copy_int ()
+and
+.BR cap_copy_int_check ()
+return a pointer to the newly created capability state in working
+storage on success, and NULL on failure.
+.PP
+On failure,
+.BR errno
+is set to
+.BR EINVAL ,
+.BR ENOMEM ,
+or
+.BR ERANGE .
+.SH "CONFORMING TO"
+These functions are specified in the withdrawn POSIX.1e draft specification.
+.SH "SEE ALSO"
+.BR libcap (3),
+.BR cap_clear (3),
+.BR cap_from_text (3),
+.BR cap_get_file (3),
+.BR cap_get_proc (3),
+.BR cap_init (3),
+.BR capabilities (7)

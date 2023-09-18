@@ -1,0 +1,12 @@
+This example relies on:
+  - Qt (libqt) and its dependencies: OpenGL (libGL), libpng, zlib (libz)
+  - the C++ runtime libraries (libstdc++)
+
+Installation:
+  ./autogen.sh
+  ./configure --prefix=/some/prefix --with-qt-dir=/usr/lib/qt3 --enable-threads
+  make
+  make install
+Cleanup:
+  make distclean
+  ./autoclean.sh

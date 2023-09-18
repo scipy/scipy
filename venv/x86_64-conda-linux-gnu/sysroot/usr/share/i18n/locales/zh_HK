@@ -1,0 +1,205 @@
+comment_char    %
+escape_char     /
+% Chinese language locale for Hong Kong.
+% Contributed by Kentaroh Noji <knoji@jp.ibm.com> and
+% Tetsuji Orita <orita@jp.ibm.com>.
+
+LC_IDENTIFICATION
+title      "Chinese language locale for Hong Kong"
+source     "IBM Globalization Center of Competency, Yamato Software Laboratory"
+address    "1623-14, Shimotsuruma, Yamato-shi, Kanagawa-ken, 242-8502, Japan"
+contact    ""
+email      "bug-glibc-locales@gnu.org"
+tel        ""
+fax        ""
+language   "Chinese"
+territory  "Hong Kong"
+revision   "1.0"
+date       "2000-07-20"
+%
+category  "zh_HK:2000";LC_IDENTIFICATION
+category  "zh_HK:2000";LC_CTYPE
+category  "zh_HK:2000";LC_COLLATE
+category  "zh_HK:2000";LC_TIME
+category  "zh_HK:2000";LC_NUMERIC
+category  "zh_HK:2000";LC_MONETARY
+category  "zh_HK:2000";LC_MESSAGES
+category  "zh_HK:2000";LC_PAPER
+category  "zh_HK:2000";LC_NAME
+category  "zh_HK:2000";LC_ADDRESS
+category  "zh_HK:2000";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_CTYPE
+copy "zh_CN"
+END LC_CTYPE
+
+LC_COLLATE
+
+% Copy the template from ISO/IEC 14651
+copy "iso14651_t1"
+
+END LC_COLLATE
+
+LC_MONETARY
+% This is the POSIX Locale definition the LC_MONETARY category.
+% These are generated based on XML base Locale definition file
+% for IBM Class for Unicode/Java
+%
+int_curr_symbol       "<U0048><U004B><U0044><U0020>"
+currency_symbol       "<U0048><U004B><U0024>"
+mon_decimal_point     "<U002E>"
+mon_thousands_sep     "<U002C>"
+mon_grouping          3
+positive_sign         ""
+negative_sign         "<U002D>"
+int_frac_digits       2
+frac_digits           2
+p_cs_precedes         1
+p_sep_by_space        0
+n_cs_precedes         1
+n_sep_by_space        0
+p_sign_posn           1
+n_sign_posn           0
+%
+END LC_MONETARY
+
+
+LC_NUMERIC
+% This is the POSIX Locale definition for the LC_NUMERIC  category.
+%
+decimal_point          "<U002E>"
+thousands_sep          "<U002C>"
+grouping               3
+%
+END LC_NUMERIC
+
+
+LC_TIME
+% This is the POSIX Locale definition for the LC_TIME category.
+% These are generated based on XML base Locale definition file
+% for IBM Class for Unicode/Java
+%
+% Removed trailing space, by Anthony Fok <anthony@thizlinux.com>, Feb 2002
+% Abbreviated weekday names (%a)
+abday       "<U65E5>";"<U4E00>";/
+            "<U4E8C>";"<U4E09>";/
+            "<U56DB>";"<U4E94>";/
+            "<U516D>"
+%
+% Removed trailing space, by Anthony Fok <anthony@thizlinux.com>, Feb 2002
+% Full weekday names (%A)
+day         "<U661F><U671F><U65E5>";"<U661F><U671F><U4E00>";/
+            "<U661F><U671F><U4E8C>";"<U661F><U671F><U4E09>";/
+            "<U661F><U671F><U56DB>";"<U661F><U671F><U4E94>";/
+            "<U661F><U671F><U516D>"
+%
+% Abbreviated month names (%b)
+abmon       "<U0031><U6708>";"<U0032><U6708>";/
+            "<U0033><U6708>";"<U0034><U6708>";/
+            "<U0035><U6708>";"<U0036><U6708>";/
+            "<U0037><U6708>";"<U0038><U6708>";/
+            "<U0039><U6708>";"<U0031><U0030><U6708>";/
+            "<U0031><U0031><U6708>";"<U0031><U0032><U6708>"
+%
+% Full month names (%B)
+mon         "<U4E00><U6708>";"<U4E8C><U6708>";/
+            "<U4E09><U6708>";"<U56DB><U6708>";/
+            "<U4E94><U6708>";"<U516D><U6708>";/
+            "<U4E03><U6708>";"<U516B><U6708>";/
+            "<U4E5D><U6708>";"<U5341><U6708>";/
+            "<U5341><U4E00><U6708>";"<U5341><U4E8C><U6708>"
+%
+% Equivalent of AM PM
+am_pm       "<U4E0A><U5348>";"<U4E0B><U5348>"
+%
+% Appropriate date and time representation
+% Update by Roger So <roger.so@sw-linux.com>
+% Changed %b to %m, by Anthony Fok <anthony@thizlinux.com>, Feb 2002
+d_t_fmt     "<U0025><U0059><U5E74><U0025><U006D><U6708><U0025><U0064><U65E5>/
+<U0020><U0025><U0041><U0020><U0025><U0048><U003A><U0025><U004D>/
+<U003A><U0025><U0053>"
+%
+% Appropriate date representation
+% Changed %b to %m, by Anthony Fok <anthony@thizlinux.com>, Feb 2002
+% %Y”N%mŒŽ%d“ú %A
+d_fmt       "<U0025><U0059><U5E74><U0025><U006D><U6708><U0025><U0064>/
+<U65E5><U0020><U0025><U0041>"
+%
+% Appropriate time representation
+% %IŽž%M•ª%S•b %Z
+t_fmt       "<U0025><U0049><U6642><U0025><U004D><U5206><U0025><U0053>/
+<U79D2><U0020><U0025><U005A>"
+%
+% Appropriate 12 h time representation (%r)
+% Update by Roger So <roger.so@sw-linux.com>
+t_fmt_ampm  "<U0025><U0070><U0020><U0025><U0049><U003A><U0025><U004D>/
+<U003A><U0025><U0053>"
+%
+% Appropriate date representation (date(1))   "%a %b %e %H:%M:%S %Z %Y"
+date_fmt       "<U0025><U0061><U0020><U0025><U0062><U0020><U0025><U0065>/
+<U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U0020>/
+<U0025><U005A><U0020><U0025><U0059>"
+END LC_TIME
+
+
+LC_MESSAGES
+% yesexpr     "^[<y><Y><CJK Shi4>]"
+% noexpr      "^[<n><N><CJK Bu4><CJK Fou3>]"
+yesexpr "<U005E><U005B><U0079><U0059><U662F><U005D>"
+noexpr  "<U005E><U005B><U006E><U004E><U4E0D><U5426><U005D>"
+END LC_MESSAGES
+
+
+LC_PAPER
+% This is the ISO_IEC TR14652 Locale definition for the
+% LC_PAPER category
+height      297
+width       210
+
+END LC_PAPER
+
+
+LC_NAME
+% This is the ISO_IEC TR14652 Locale definition for the
+% LC_NAME category.
+%
+name_fmt    "<U0025><U0066><U0025><U0074><U0025><U0064><U0031>"
+name_gen    "<U541B>"
+name_mr     "<U5148><U751F>"
+name_mrs    "<U592B><U4EBA><U002E>"
+name_miss   "<U5C0F><U59D0>"
+name_ms     "<U5973><U58EB>"
+
+END LC_NAME
+
+
+LC_ADDRESS
+% This is the ISO_IEC TR14652 Locale definition for the
+% LC_ADDRESS
+postal_fmt  "<U0025><U007A><U0025><U0063><U0025><U0054><U0025><U0073>/
+<U0025><U0062><U0025><U0065><U0025><U0072>"
+
+country_ab2 "<U0048><U004B>"
+country_ab3 "<U0048><U004B><U0047>"
+country_num 344
+END LC_ADDRESS
+
+
+LC_TELEPHONE
+% This is the ISO_IEC TR14652 Locale definition for the
+%
+tel_int_fmt "<U002B><U0025><U0063><U0020><U003B><U0025><U0061><U0020>/
+<U003B><U0025><U006C>"
+int_prefix  "<U0038><U0035><U0032>"
+int_select  "<U0030><U0030><U0031>"
+END LC_TELEPHONE
+
+
+LC_MEASUREMENT
+% This is the ISO_IEC TR14652 Locale definition for the
+%
+measurement 1
+
+END LC_MEASUREMENT

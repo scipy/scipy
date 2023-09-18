@@ -1,0 +1,222 @@
+comment_char    %
+escape_char     /
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Blin language locale for Eritrea.
+%
+% Charset: UTF-8
+%
+% Blin terms are provided by Tekie Alibekit with coordination of the
+% Blin Language and Culture Association in Norway.  Prepared and contributed
+% to glibc by Daniel Yacob <locales@geez.org>
+%
+% build with: localedef -f UTF-8 -i byn_ER byn_ER
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+LC_IDENTIFICATION
+title      "Blin language locale for Eritrea"
+source     "Ge'ez Frontier Foundation"
+address    "7802 Solomon Seal Dr., Springfield, VA 22152, USA"
+contact    ""
+email      "locales@geez.org"
+tel        ""
+fax        ""
+language   "byn"
+territory  "ER"
+revision   "0.21"
+date       "2003-11-01"
+%
+category  "i18n:2000";LC_IDENTIFICATION
+category  "i18n:2000";LC_COLLATE
+category  "i18n:2000";LC_CTYPE
+category  "i18n:2000";LC_MEASUREMENT
+category  "i18n:2000";LC_MONETARY
+category  "posix:1993";LC_NUMERIC
+category  "i18n:2000";LC_PAPER
+category  "i18n:2000";LC_TELEPHONE
+category  "i18n:2000";LC_ADDRESS
+category  "i18n:2000";LC_MESSAGES
+category  "i18n:2000";LC_NAME
+category  "i18n:2000";LC_TIME
+%
+END LC_IDENTIFICATION
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  Ethiopic Specifc Data:
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+LC_COLLATE
+copy "ti_ER"
+END LC_COLLATE
+
+LC_CTYPE
+copy "ti_ER"
+END LC_CTYPE
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  Eritrea Specifc Data:
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+LC_MEASUREMENT
+copy "ti_ER"
+END LC_MEASUREMENT
+
+LC_MONETARY
+copy "ti_ER"
+END LC_MONETARY
+
+LC_NUMERIC
+copy "ti_ER"
+END LC_NUMERIC
+
+LC_PAPER
+copy "ti_ER"
+END LC_PAPER
+
+LC_TELEPHONE
+copy "ti_ER"
+END LC_TELEPHONE
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  Blin Specific Data:
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+LC_MESSAGES
+copy "ti_ER"
+END LC_MESSAGES
+
+LC_NAME
+copy "ti_ER"
+END LC_NAME
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  Blin/ER Specific Data:
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+LC_ADDRESS
+%
+% This is the ISO_IEC TR14652 Locale definition for the LC_ADDRESS category.
+%
+postal_fmt    "<U0025><U007A><U0025><U0063><U0025><U0054><U0025><U0073>/
+<U0025><U0062><U0025><U0065><U0025><U0072>"
+country_name  "<U12A4><U122D><U1275><U122B>"
+country_post  "<U0045><U0052><U0049>"
+country_ab2   "<U0045><U0052>"
+country_ab3   "<U0045><U0052><U0049>"
+country_num   232
+% country_car   unknown
+% country_isbn  unknown, Need ISO 2108
+lang_name     "<U1265><U120A><U1295>"
+lang_ab       ""
+lang_term     "<U0062><U0079><U006E>"
+lang_lib      "<U0062><U0079><U006E>"
+%
+END LC_ADDRESS
+
+
+LC_TIME
+%
+% Abbreviated weekday names (%a)
+%
+abday    "<U1230><U002F><U1245>";/
+         "<U1230><U1291>";/
+         "<U1230><U120A><U131D>";/
+         "<U1208><U1313>";/
+         "<U12A3><U121D><U12F5>";/
+         "<U12A3><U122D><U1265>";/
+         "<U1230><U002F><U123D>"
+%
+% Full weekday names (%A)
+%
+day      "<U1230><U1295><U1260><U122D><U0020><U1245><U12F3><U12C5>";/
+         "<U1230><U1291>";/
+         "<U1230><U120A><U131D>";/
+         "<U1208><U1313><U0020><U12C8><U122A><U0020><U1208><U1265><U12CB>";/
+         "<U12A3><U121D><U12F5>";/
+         "<U12A3><U122D><U1265>";/
+         "<U1230><U1295><U1260><U122D><U0020><U123D><U1313><U12C5>"
+%
+% Abbreviated month names (%b)
+%
+abmon    "<U120D><U12F0><U1275>";/
+         "<U12AB><U1265><U12BD>";/
+         "<U12AD><U1265><U120B>";/
+         "<U134B><U1305><U12BA>";/
+         "<U12AD><U1262><U1245>";/
+         "<U121D><U002F><U1275>";/
+         "<U12B0><U122D>";/
+         "<U121B><U122D><U12EB>";/
+         "<U12EB><U12B8><U1292>";/
+         "<U1218><U1270><U1209>";/
+         "<U121D><U002F><U121D>";/
+         "<U1270><U1215><U1233>"
+%
+% Full month names (%B)
+%
+mon      "<U120D><U12F0><U1275><U122A>";/
+         "<U12AB><U1265><U12BD><U1265><U1272>";/
+         "<U12AD><U1265><U120B>";/
+         "<U134B><U1305><U12BA><U122A>";/
+         "<U12AD><U1262><U1245><U122A>";/
+         "<U121D><U12AA><U12A4><U120D><U0020><U1275><U1313><U0305><U1292><U122A>";/
+         "<U12B0><U122D><U12A9>";/
+         "<U121B><U122D><U12EB><U121D><U0020><U1275><U122A>";/
+         "<U12EB><U12B8><U1292><U0020><U1218><U1233><U1245><U1208><U122A>";/
+         "<U1218><U1270><U1209>";/
+         "<U121D><U12AA><U12A4><U120D><U0020><U1218><U123D><U12C8><U122A>";/
+         "<U1270><U1215><U1233><U1235><U122A>"
+%
+%
+% Equivalent of AM PM
+%
+am_pm    "<U134B><U12F1><U1235><U0020><U1303><U1265>";/
+         "<U134B><U12F1><U1235><U0020><U12F0><U121D><U1262>"
+%
+% Appropriate date representation (%x)
+%	"%d/%m/%Y"
+%
+d_fmt   "<U0025><U0064><U002F><U0025><U006D><U002F><U0025><U0059>"
+%
+% Appropriate time representation (%X)
+%	"%l:%M:%S"
+%
+t_fmt "<U0025><U006C><U003A><U0025><U004D><U003A><U0025><U0053>"
+%
+% Appropriate AM/PM time representation (%r)
+%	"%X %p"
+%
+t_fmt_ampm "<U0025><U0058><U0020><U0025><U0070>"
+%
+% Appropriate date and time representation (%c)
+%	"%A፡ %B %e ዮም %Y %r %Z
+%
+d_t_fmt    "<U0025><U0041><U1361><U0020><U0025><U0042><U0020><U0025><U0065>/
+<U0020><U130D><U122D><U130B>/
+<U0020><U0025><U0059><U0020><U0025><U0072><U0020><U0025><U005A>"
+%
+% Appropriate date representation (date(1))
+%	"%A፡ %B %e ዮም %r %Z %Y ዓ/ም
+%
+date_fmt    "<U0025><U0041><U1361><U0020><U0025><U0042><U0020><U0025><U0065>/
+<U0020><U130D><U122D><U130B>/
+<U0020><U0025><U0072><U0020><U0025><U005A><U0020><U0025><U0059>/
+<U0020><U12A3><U12F5>"
+%
+END LC_TIME
+%

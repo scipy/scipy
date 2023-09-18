@@ -1,0 +1,112 @@
+//
+// Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, and/or sell copies of the Software, and to permit persons
+// to whom the Software is furnished to do so, provided that the above
+// copyright notice(s) and this permission notice appear in all copies of
+// the Software and that both the above copyright notice(s) and this
+// permission notice appear in supporting documentation.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+// OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+// HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL
+// INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING
+// FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
+// NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
+// WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+//
+// Except as contained in this notice, the name of a copyright holder
+// shall not be used in advertising or otherwise to promote the sale, use
+// or other dealings in this Software without prior written authorization
+// of the copyright holder.
+//
+
+partial
+xkb_symbols "defaults_common" {
+
+    key <MUTE> { [ XF86AudioMute         ] };
+    key <VOL-> { [ XF86AudioLowerVolume  ] };
+    key <VOL+> { [ XF86AudioRaiseVolume  ] };
+    key <POWR> { [ XF86PowerOff          ] };
+    key <STOP> { [ Cancel                ] };
+    key <AGAI> { [ Redo                  ] };
+    key <PROP> { [ SunProps              ] };
+    key <UNDO> { [ Undo                  ] };
+    key <FRNT> { [ SunFront              ] };
+    key <COPY> { [ XF86Copy              ] };
+    key <OPEN> { [ SunOpen               ] };
+    key <PAST> { [ XF86Paste             ] };
+    key <FIND> { [ Find                  ] };
+    key <CUT>  { [ XF86Cut               ] };
+    key <HELP> { [ Help                  ] };
+    key <LNFD> { [ Linefeed              ] };
+
+    key <LALT> { [	Alt_L,  Alt_L	] };
+    key <LWIN> { [	Meta_L	        ] };
+    key <RWIN> { [	Meta_R			] };
+
+// The following is needed for virtual hotkeys
+
+    key <I150> { [ XF86Sleep             ] };
+    key <I160> { [ XF86ScreenSaver       ] };
+    key <I235> { [ XF86Display           ] };
+
+// Common Sun Modifiers
+
+    modifier_map Shift	{ Shift_R, Shift_L };
+    modifier_map Mod2	{ Num_Lock };
+    modifier_map Mod4   { Meta_L, Meta_R };
+
+};
+
+default partial
+xkb_symbols "defaults" {
+
+    include "sun_vndr/solaris(defaults_common)"
+
+    modifier_map Mod1   { Alt_L };
+
+};
+
+partial
+xkb_symbols "defaults_type7jp" {
+
+    include "sun_vndr/solaris(defaults_common)"
+
+    modifier_map Mod1  { Alt_L, Alt_R   };
+
+};
+
+partial
+xkb_symbols "sun_compat" {
+
+	key <STOP> { [ L1,        L1,  SunStop    ]       };
+	key <AGAI> { [ L2,        L2,  SunAgain   ]       };
+	key <PROP> { [ L3,        L3,  SunProps   ]       };
+	key <UNDO> { [ L4,        L4,  SunUndo    ]       };
+	key <FRNT> { [ L5,        L5,  SunFront   ]       };
+	key <COPY> { [ L6,        L6,  SunCopy    ]       };
+	key <OPEN> { [ L7,        L7,  SunOpen    ]       };
+	key <PAST> { [ L8,        L8,  SunPaste   ]       };
+	key <FIND> { [ L9,        L9,  SunFind    ]       };
+	key <CUT>  { [ L10,       L10, SunCut     ]       };
+
+// F11 & F12 are mapped to SunF36 and SunF37 since they were added
+// after F11-F35 were already assigned on Sun keyboards
+	key <FK11> { [ SunF36               ], [ F11                ] };
+	key <FK12> { [ SunF37               ], [ F12                ] };
+
+// These were added to the keyboard much later and simply got mapped
+// to their logical names
+	key <HELP> { [  Help						] };
+	key <MUTE> { [  SunAudioMute,        SunVideoDegauss		] };
+	key <VOL-> { [  SunAudioLowerVolume, SunVideoLowerBrightness	] };
+	key <VOL+> { [  SunAudioRaiseVolume, SunVideoRaiseBrightness	] };
+	key <POWR> { [  XF86Sleep,           XF86Hibernate		] };
+};

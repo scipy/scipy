@@ -1,0 +1,46 @@
+# Print a test page using Print-Job + media-col
+#
+# Usage:
+#
+#    ./ipptest -f filename ipp://... print-job-media-col.test
+{
+	# The name of the test...
+	NAME "Print test page using Print-Job + media-col"
+
+	# The operation to use
+	OPERATION Print-Job
+
+	# Attributes, starting in the operation group...
+	GROUP operation-attributes-tag
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+	ATTR mimetype document-format application/octet-stream
+
+	GROUP job-attributes-tag
+	ATTR collection media-col {
+		MEMBER collection media-size {
+			# 4x6
+			MEMBER integer x-dimension 10160
+			MEMBER integer y-dimension 15240
+		}
+
+		# Borderless
+		MEMBER integer media-left-margin 0
+		MEMBER integer media-right-margin 0
+		MEMBER integer media-top-margin 0
+		MEMBER integer media-bottom-margin 0
+	}
+	ATTR enum print-quality 5
+
+	FILE $filename
+
+	# What statuses are OK?
+	STATUS successful-ok
+	STATUS successful-ok-ignored-or-substituted-attributes
+
+	# What attributes do we expect?
+	EXPECT job-id OF-TYPE integer WITH-VALUE >0
+	EXPECT job-uri OF-TYPE uri
+}

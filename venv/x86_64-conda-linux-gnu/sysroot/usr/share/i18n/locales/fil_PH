@@ -1,0 +1,183 @@
+comment_char %
+escape_char  /
+%
+% Filipino Language Locale for Philippines
+% Source: 
+% Contact: Rene Torres, Pablo Saratxaga 
+% Email: <rgtorre@rocketmail.com>, <pablo@mandrakesoft.com>
+% Language: fil
+% Territory: PH
+% Revision: 0.5
+% Date: 2005-02-02
+% Users: general
+% Charset: UTF-8
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title "Filipino language locale for Philippines"
+source "Rene Torres"
+address ""
+contact "Rene Torres, Pablo Saratxaga"
+email "rgtorre@rocketmail.com, pablo@mandrakesoft.com"
+tel ""
+fax ""
+language "Filipino"
+territory "Philippines"
+revision "0.5"
+date "2005-02-02"
+
+category ph_PH:2000;LC_IDENTIFICATION
+category ph_PH:2000;LC_CTYPE
+category ph_PH:2000;LC_COLLATE
+category ph_PH:2000;LC_TIME
+category ph_PH:2000;LC_NUMERIC
+category ph_PH:2000;LC_PAPER
+category ph_PH:2000;LC_TELEPHONE
+category ph_PH:2000;LC_MEASUREMENT
+category ph_PH:2000;LC_ADDRESS
+category ph_PH:2000;LC_MESSAGES
+category ph_PH:2000;LC_MONETARY
+
+END LC_IDENTIFICATION
+
+LC_CTYPE
+copy "tl_PH"
+END LC_CTYPE
+
+LC_COLLATE
+copy "iso14651_t1"
+
+% a b c d e f g h i j k l m n n~ ng o p q r s t u v w x y z
+
+collating-symbol  <n-g-ph>
+collating-element <N-G> from "<U004E><U0047>"
+collating-element <n-g> from "<U006E><U0067>"
+collating-element <N-g> from "<U004E><U0067>"
+collating-element <n-G> from "<U006E><U0047>"
+collating-symbol  <ntilde>
+
+collating-symbol <CAP-MIN>
+collating-symbol <MIN-CAP>
+
+reorder-after <MIN>
+<MIN-CAP>
+reorder-after <CAP>
+<CAP-MIN>
+
+reorder-after <n>
+<ntilde>
+<n-g-ph>
+
+reorder-after <U006E>
+<U00F1> <ntilde>;<TIL>;<MIN>;IGNORE
+<n-g>	<n-g-ph>;<PCT>;<MIN>;IGNORE
+<n-G>	<n-g-ph>;<PCT>;<MIN-CAP>;IGNORE
+reorder-after <U004E> 
+<U00D1> <ntilde>;<TIL>;<CAP>;IGNORE
+<N-G>	<n-g-ph>;<PCT>;<CAP>;IGNORE
+<N-g>	<n-g-ph>;<PCT>;<CAP-MIN>;IGNORE
+
+reorder-end
+
+END LC_COLLATE
+
+LC_MONETARY
+int_curr_symbol         "<U0050><U0048><U0050><U0020>"
+currency_symbol         "<U0050><U0068><U0050>"
+mon_decimal_point       "<U002E>"
+mon_thousands_sep       "<U002C>"
+mon_grouping            3;3
+positive_sign           ""
+negative_sign           "<U002D>"
+int_frac_digits         2
+frac_digits             2
+p_cs_precedes           1
+p_sep_by_space          0
+n_cs_precedes           1
+n_sep_by_space          1
+p_sign_posn             1
+n_sign_posn             1
+END LC_MONETARY
+
+LC_NUMERIC
+copy "tl_PH"
+END LC_NUMERIC
+
+LC_TIME
+abday   "<U004C><U0069><U006E>";"<U004C><U0075><U006E>";/
+        "<U004D><U0061><U0072>";"<U004D><U0069><U0079>";/
+        "<U0048><U0075><U0077>";"<U0042><U0069><U0079>";/
+        "<U0053><U0061><U0062>"
+day     "<U004C><U0069><U006E><U0067><U0067><U006F>";/
+        "<U004C><U0075><U006E><U0065><U0073>";/
+        "<U004D><U0061><U0072><U0074><U0065><U0073>";/
+        "<U004D><U0069><U0079><U0065><U0072><U006B><U006F><U006C><U0065><U0073>";/
+        "<U0048><U0075><U0077><U0065><U0062><U0065><U0073>";/
+        "<U0042><U0069><U0079><U0065><U0072><U006E><U0065><U0073>";/
+        "<U0053><U0061><U0062><U0061><U0064><U006F>"
+abmon   "<U0045><U006E><U0065>";"<U0050><U0065><U0062>";/
+        "<U004D><U0061><U0072>";"<U0041><U0062><U0072>";/
+        "<U004D><U0061><U0079>";"<U0048><U0075><U006E>";/
+        "<U0048><U0075><U006C>";"<U0041><U0067><U006F>";/
+        "<U0053><U0065><U0070>";"<U004F><U006B><U0074>";/
+        "<U004E><U006F><U0062>";"<U0044><U0069><U0073>"
+mon     "<U0045><U006E><U0065><U0072><U006F>";/
+        "<U0050><U0065><U0062><U0072><U0065><U0072><U006F>";/
+        "<U004D><U0061><U0072><U0073><U006F>";/
+        "<U0041><U0062><U0072><U0069><U006C>";/
+        "<U004D><U0061><U0079><U006F>";/
+        "<U0048><U0075><U006E><U0079><U006F>";/
+        "<U0048><U0075><U006C><U0079><U006F>";/
+        "<U0041><U0067><U006F><U0073><U0074><U006F>";/
+        "<U0053><U0065><U0070><U0074><U0069><U0079><U0065><U006D><U0062><U0072><U0065>";/
+        "<U004F><U006B><U0074><U0075><U0062><U0072><U0065>";/
+        "<U004E><U006F><U0062><U0069><U0079><U0065><U006D><U0062><U0072><U0065>";/
+        "<U0044><U0069><U0073><U0079><U0065><U006D><U0062><U0072><U0065>"
+%
+d_t_fmt     "<U0025><U0061><U0020><U0025><U0064><U0020><U0025><U0062><U0020><U0025><U0059><U0020><U0025><U0072><U0020><U0025><U005A>"
+d_fmt       "<U0025><U006D><U002F><U0025><U0064><U002F><U0025><U0079>"
+t_fmt       "<U0025><U0072>"
+am_pm       "<U004E><U002E><U0055><U002E>";"<U004E><U002E><U0048><U002E>"
+t_fmt_ampm  "<U0025><U0049><U003A><U0025><U004D><U003A><U0025><U0053><U0020><U0025><U0070>"
+END LC_TIME
+
+LC_MESSAGES
+yesstr      "<U006F><U006F>"
+nostr	    "<U0068><U0069><U006E><U0064><U0069>"
+yesexpr     "<U005B><U006F><U004F><U0079><U0059><U005D><U002E><U002A>"
+noexpr      "<U005B><U0068><U0048><U006E><U004E><U005D><U002E><U002A>"
+END LC_MESSAGES
+
+LC_PAPER
+copy "tl_PH"
+END LC_PAPER
+
+LC_MEASUREMENT
+measurement 1
+END LC_MEASUREMENT
+
+LC_NAME
+% format: %d%t%g%t%m%t%f
+name_fmt    "<U0025><U0064><U0025><U0074><U0025><U0067><U0025><U0074>/
+<U0025><U006D><U0025><U0074><U0025><U0066>"
+% empty
+name_gen    ""
+% "G."
+name_mr     "<U0047><U002E>"
+% "Gng."
+name_mrs    "<U0047><U006E><U0067><U002E>"
+% "Bb."
+name_ms     "<U0042><U0062><U002E>"
+% "Bb."
+name_miss   "<U0042><U0062><U002E>"
+END LC_NAME
+
+LC_ADDRESS
+copy "tl_PH"
+END LC_ADDRESS
+
+LC_TELEPHONE
+copy "tl_PH"
+END LC_TELEPHONE
+

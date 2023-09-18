@@ -1,0 +1,12 @@
+#version_switcher_button {
+  border-color: var(--pst-color-border);
+  color: var(--pst-color-text-base);
+}
+
+#version_switcher_menu {
+  // Over-rides Bootstrap default blue
+  a.list-group-item.active {
+    background-color: var(--pst-color-primary);
+    border-color: var(--pst-color-primary);
+  }
+}

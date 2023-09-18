@@ -1,0 +1,13 @@
+This example relies on:
+  - KDE (libkdeui, libkdecore) and its dependencies
+  - Qt (libqt) and its dependencies: OpenGL (libGL), libpng, zlib (libz)
+  - the C++ runtime libraries (libstdc++)
+
+Installation:
+  ./autogen.sh
+  ./configure --prefix=/some/prefix
+  make
+  make install
+Cleanup:
+  make distclean
+  ./autoclean.sh

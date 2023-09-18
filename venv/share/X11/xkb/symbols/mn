@@ -1,0 +1,81 @@
+// Keyboard layouts for Mongolia.
+
+// Based on the Mongolian standard keyboard.
+// Author Sanlig Badral <badral@chinggis.com>
+// 2002/12/7 Version 1.0
+
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+  name[Group1]= "Mongolian";
+
+  key <TLDE> { [ equal,       	   plus,  		degree          ] };
+  key <AE01> { [ 1,                numerosign,        	multiply        ] };
+  key <AE02> { [ 2,                minus,              	division        ] };
+  key <AE03> { [ 3,                quotedbl,        	plusminus       ] };
+  key <AE04> { [ 4,                U20ae,  		notsign         ] }; // Tugrik sign
+  key <AE05> { [ 5,                colon,		NoSymbol       	] };
+  key <AE06> { [ 6,                period,              notequal        ] };
+  key <AE07> { [ 7,                underscore,          ampersand    	] };
+  key <AE08> { [ 8,                comma,            	asterisk        ] };
+  key <AE09> { [ 9,                percent,          	bracketleft     ] };
+  key <AE10> { [ 0,                question,       	bracketright   	] };
+  key <AE11> { [ Cyrillic_ie,      Cyrillic_IE,        	X               ] };
+  key <AE12> { [ Cyrillic_shcha,   Cyrillic_SHCHA,   	L       	] };
+
+  key <AD01> { [ Cyrillic_ef,       Cyrillic_EF,       	apostrophe      ] };
+  key <AD02> { [ Cyrillic_tse,      Cyrillic_TSE,       grave           ] };
+  key <AD03> { [ Cyrillic_u,        Cyrillic_U,        	EuroSign        ] };
+  key <AD04> { [ Cyrillic_zhe,      Cyrillic_ZHE,      	registered      ] };
+  key <AD05> { [ Cyrillic_e,        Cyrillic_E,        	trademark       ] };
+  key <AD06> { [ Cyrillic_en,       Cyrillic_EN,       	yen             ] };
+  key <AD07> { [ Cyrillic_ghe,      Cyrillic_GHE,      	doublelowquotemark   ] };
+  key <AD08> { [ Cyrillic_sha,      Cyrillic_SHA,      	leftdoublequotemark  ] };
+  key <AD09> { [ Cyrillic_u_straight,Cyrillic_U_straight,rightdoublequotemark] };
+  key <AD10> { [ Cyrillic_ze,       Cyrillic_ZE,       	NoSymbol        ] };
+  key <AD11> { [ Cyrillic_ka,       Cyrillic_KA,      	braceleft       ] };
+  key <AD12> { [ Cyrillic_hardsign, Cyrillic_HARDSIGN, 	braceright      ] };
+
+  key <AC01> { [ Cyrillic_shorti,   Cyrillic_SHORTI,   	mu              ] };
+  key <AC02> { [ Cyrillic_yeru,     Cyrillic_YERU,     	sterling        ] };
+  key <AC03> { [ Cyrillic_be,       Cyrillic_BE,       	dollar          ] };
+  key <AC04> { [ Cyrillic_o_bar,    Cyrillic_O_bar,     rightdoublequotemark ] };
+  key <AC05> { [ Cyrillic_a,        Cyrillic_A,        	Cyrillic_yeru   ] };
+  key <AC06> { [ Cyrillic_ha,       Cyrillic_HA,       	Cyrillic_YERU   ] };
+  key <AC07> { [ Cyrillic_er,       Cyrillic_ER,       	Cyrillic_e      ] };
+  key <AC08> { [ Cyrillic_o,        Cyrillic_O,       	Cyrillic_E      ] };
+  key <AC09> { [ Cyrillic_el,       Cyrillic_EL,       	numerosign      ] };
+  key <AC10> { [ Cyrillic_de,       Cyrillic_DE,       	section         ] };
+  key <AC11> { [ Cyrillic_pe,       Cyrillic_PE,       	ellipsis        ] };
+  key <BKSL> { [ exclam,            bar,     		bar             ] };
+
+  key <LSGT> { [ parenleft,         parenright,         NoSymbol        ] };
+  key <AB01> { [ Cyrillic_ya,       Cyrillic_YA,       	emdash          ] };
+  key <AB02> { [ Cyrillic_che,      Cyrillic_CHE,      	endash          ] };
+  key <AB03> { [ Cyrillic_io,       Cyrillic_IO,       	copyright       ] };
+  key <AB04> { [ Cyrillic_es,       Cyrillic_ES,       	NoSymbol        ] };
+  key <AB05> { [ Cyrillic_em,       Cyrillic_EM,       	NoSymbol        ] };
+  key <AB06> { [ Cyrillic_i,        Cyrillic_I,        	less            ] };
+  key <AB07> { [ Cyrillic_te,       Cyrillic_TE,       	greater         ] };
+  key <AB08> { [ Cyrillic_softsign, Cyrillic_SOFTSIGN, 	guillemotleft   ] };
+  key <AB09> { [ Cyrillic_ve,       Cyrillic_VE,       	guillemotright  ] };
+  key <AB10> { [ Cyrillic_yu,       Cyrillic_YU,       	backslash       ] };
+
+  key <SPCE> { [ space,             space,             	nobreakspace    ] };
+
+  include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "olpc" {
+
+// Contact: Walter Bender <walter@laptop.org>
+
+  include "mn(basic)"
+
+  key <AE07> { [ 7,                 semicolon,          ampersand       ] };
+
+  key <BKSL> { [ backslash,         bar,     		exclam          ] };
+
+  include "group(olpc)"
+};

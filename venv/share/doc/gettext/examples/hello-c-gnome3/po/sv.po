@@ -1,0 +1,61 @@
+# Swedish messages for hello-c-gnome3.
+# Copyright © 2006, 2014, 2016, 2019, 2020 Yoyodyne, Inc. (msgids)
+# This file is distributed under the same license as the gettext package.
+#
+# Jan Djärv <jan.h.d@swipnet.se>, 2003, 2006, 2014
+# Göran Uddeborg <goeran@uddeborg.se>, 2016, 2019, 2020
+#
+# $Revision: 1.7 $
+msgid ""
+msgstr ""
+"Project-Id-Version: hello-c-gnome3 0.20.2\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"PO-Revision-Date: 2020-04-17 20:31+0200\n"
+"Last-Translator: Göran Uddeborg <goeran@uddeborg.se>\n"
+"Language-Team: Swedish <tp-sv@listor.tp-sv.se>\n"
+"Language: sv\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+
+#: hello.c:79
+#, c-format
+msgid ""
+"<big>Hello world!</big>\n"
+"This program is running as process number <b>%d</b>."
+msgstr ""
+"<big>Hej världen!</big>\n"
+"Detta program kör som process nummer <b>%d</b>."
+
+#: hello.c:84
+msgid "<big><u>This is another text</u></big>"
+msgstr "<big><u>Detta är en annan text</u></big>"
+
+#: hello.c:86
+msgid "<big><i>This is yet another text</i></big>"
+msgstr "<big><i>Detta är ytterligare en annan text</i></big>"
+
+#: hello.desktop.in.in:4
+msgid "Hello"
+msgstr "Hej"
+
+#: hello.desktop.in.in:5
+msgid "Hello, world!"
+msgstr "Hej världen!"
+
+#: hello.ui:6
+msgid "Example Application"
+msgstr "Exempelprogram"
+
+#: hello.ui:34
+msgid "Update text"
+msgstr "Uppdatera text"
+
+#: hello.gschema.xml:8
+msgid "Use XML markup"
+msgstr "Använd XML-märkning"
+
+#: hello.gschema.xml:9
+msgid "Whether to use XML markup in the text."
+msgstr "Huruvida XML-märkning skall användas i texten."

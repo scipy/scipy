@@ -1,0 +1,11 @@
+#ifndef QT_QTVIRTUALKEYBOARD_MODULE_H
+#define QT_QTVIRTUALKEYBOARD_MODULE_H
+#include <QtVirtualKeyboard/QtVirtualKeyboardDepends>
+#include "qvirtualkeyboardabstractinputmethod.h"
+#include "qvirtualkeyboardextensionplugin.h"
+#include "qvirtualkeyboardinputcontext.h"
+#include "qvirtualkeyboardinputengine.h"
+#include "qvirtualkeyboardselectionlistmodel.h"
+#include "qvirtualkeyboardtrace.h"
+#include "qtvirtualkeyboardversion.h"
+#endif

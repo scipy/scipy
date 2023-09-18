@@ -1,0 +1,44 @@
+default partial alphanumeric_keys 
+xkb_symbols "basic" {
+
+    // Describes the differences between a very simple en_US
+    // keyboard and a very simple Swedish(Sweden) keyboard.
+
+    include "latin"
+
+    name[Group1]= "Sweden - Mac";
+
+    key <TLDE> {	[         section,         degree	]	};
+
+    key <AE01> {	[               1,          exclam,        copyright,      exclamdown	]	};
+    key <AE02> {	[               2,        quotedbl,               at,       oneeighth	]	};
+    key <AE03> {	[               3,      numbersign,         sterling,             yen	]	};
+    key <AE04> {	[               4,        currency, 	      dollar,	         cent	]	};
+    key <AE06> {	[               6,       ampersand     	]	};
+    key <AE07> {	[               7,           slash, 	         bar,       backslash	]	};
+    key <AE08> {	[               8,       parenleft,      bracketleft,       braceleft	]	};
+    key <AE09> {	[               9,      parenright,     bracketright,      braceright	]	};
+    key <AB08> {	[           comma,       semicolon     	]	};
+    key <AE10> {	[               0,           equal     	]	};
+    key <AE11> {	[            plus,        question      ]	};
+    key <AE12> {	[           acute,           grave	]	};
+    key <AB09> {	[          period,           colon     	]	};
+    key <AB10> {	[           minus,      underscore     	]	};
+    key <AC10> {	[      odiaeresis,      Odiaeresis, 	   oslash,	       Oslash	]	};
+    key <AC11> {	[      adiaeresis,      Adiaeresis,            ae,		   AE	]	};
+    key <AD11> {	[	    aring,           Aring     	]	};
+    key <AD12> {	[       diaeresis,     asciicircum, 	asciitilde			]	};
+    key <BKSL> {	[      apostrophe,        asterisk,            at			]	};
+    key <LSGT> {	[            less,         greater,           bar,       brokenbar      ]       };
+
+    include "kpdl(comma)"
+    include "eurosign(e)"
+    include "level3(ralt_switch)"
+};
+
+
+partial alphanumeric_keys 
+xkb_symbols "nodeadkeys" {
+    include "macintosh_vndr/se(basic)" // for consistent naming
+    name[Group1]= "Sweden - Mac, no dead keys";
+};

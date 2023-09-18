@@ -1,0 +1,136 @@
+comment_char %
+escape_char  /
+%
+% Sardinian Language Locale for Italy
+% Language: sc
+% Territory: IT
+% Revision: 0.1
+% Date: 2004-05-26
+% Users: general
+% Charset: UTF-8
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title      "Sardinian locale for Italy"
+source     ""
+address    ""
+contact    "Pablo Saratxaga"
+email      "pablo@mandriva.com"
+tel        ""
+fax        ""
+language   "Sardinian"
+territory  "Italy"
+revision   "0.1"
+date       "2004-05-26"
+%
+category  "sc_IT:2000";LC_IDENTIFICATION
+category  "sc_IT:2000";LC_CTYPE
+category  "sc_IT:2000";LC_COLLATE
+category  "sc_IT:2000";LC_TIME
+category  "sc_IT:2000";LC_NUMERIC
+category  "sc_IT:2000";LC_MONETARY
+category  "sc_IT:2000";LC_MESSAGES
+category  "sc_IT:2000";LC_PAPER
+category  "sc_IT:2000";LC_NAME
+category  "sc_IT:2000";LC_ADDRESS
+category  "sc_IT:2000";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_CTYPE
+copy "it_IT"
+END LC_CTYPE
+
+LC_COLLATE
+copy "iso14651_t1"
+
+collating-symbol <c,>
+
+reorder-after <c>
+<c,>
+
+reorder-after <U0063>
+<U00E7> <c,>;<CDI>;<MIN>;IGNORE
+reorder-after <U0043>
+<U00C7> <c,>;<CDI>;<CAP>;IGNORE
+
+reorder-end
+
+END LC_COLLATE
+
+LC_MESSAGES
+yesexpr "<U005E><U005B><U0073><U0053><U006A><U004A><U006F><U004F><U0079><U0059><U005D><U002E><U002A>"
+noexpr  "<U005E><U005B><U006E><U004E><U005D><U002E><U002A>"
+END LC_MESSAGES
+
+LC_MONETARY
+copy  "it_IT"
+END LC_MONETARY
+
+LC_NUMERIC
+copy  "it_IT"
+END LC_NUMERIC
+
+LC_TIME
+abday   "<U0044><U006F><U006D>";"<U004C><U0075><U006E>";/
+        "<U004D><U0061><U0072>";"<U004D><U00E8><U0072>";/
+        "<U004A><U00F2><U0062>";"<U0043><U0065><U006E>";/
+        "<U0053><U00E0><U0062>"
+day     "<U0044><U006F><U006D><U00EC><U006E><U0067><U0075>";/
+        "<U004C><U0075><U006E><U0069><U0073>";/
+        "<U004D><U0061><U0072><U0074><U0069><U0073>";/
+        "<U004D><U00E8><U0072><U0063><U0075><U0072><U0069><U0073>";/
+        "<U004A><U00F2><U0062><U0069><U0061>";/
+        "<U0043><U0065><U006E><U00E0><U0062><U0061><U0072><U0061>";/
+        "<U0053><U00E0><U0062><U0061><U0064><U0075>"
+abmon   "<U0047><U0065><U006E>";"<U0046><U0072><U0069>";/
+        "<U004D><U0061><U0072>";"<U0041><U0062><U0072>";/
+        "<U004D><U0061><U0079>";"<U004C><U00E0><U006D>";/
+        "<U0041><U0072><U006A>";"<U0041><U0075><U0073>";/
+        "<U0043><U0061><U0062>";"<U004C><U0061><U0064>";/
+        "<U0044><U006F><U006E>";"<U0049><U0064><U0061>"
+mon     "<U0047><U0065><U006E><U006E><U0061><U0072><U006A><U0075>";/
+        "<U0046><U0072><U0069><U0061><U0072><U006A><U0075>";/
+        "<U004D><U0061><U0072><U0074><U007A><U0075>";/
+        "<U0041><U0062><U0072><U0069><U006C><U0069>";/
+        "<U004D><U0061><U0079><U0075>";/
+        "<U004C><U00E0><U006D><U0070><U0061><U0064><U0061><U0073>";/
+        "<U0041><U0072><U006A><U006F><U006C><U0061><U0073>";/
+        "<U0041><U0075><U0073><U0074><U0075>";/
+        "<U0043><U0061><U0062><U0075><U0064><U0061><U006E><U006E><U0069>";/
+        "<U004C><U0061><U0064><U00E0><U006D><U0069><U006E><U0069>";/
+        "<U0044><U006F><U006E><U006E><U0079><U0061><U0073><U0061><U006E><U0074><U0075>";/
+        "<U0049><U0064><U0061><U0073>"
+d_t_fmt "<U0025><U0061><U0020><U0025><U0064><U0020><U0025><U0062><U0020><U0025><U0059><U0020><U0025><U0054><U0020><U0025><U005A>"
+d_fmt   "<U0025><U0064><U002E><U0020><U0025><U006D><U002E><U0020><U0025><U0079>"
+t_fmt   "<U0025><U0054>"
+am_pm   "";""
+t_fmt_ampm ""
+date_fmt       "<U0025><U0061><U0020><U0025><U0062><U0020><U0025><U0065>/
+<U0020><U0025><U0048><U003A><U0025><U004D><U003A><U0025><U0053><U0020>/
+<U0025><U005A><U0020><U0025><U0059>"
+week	7;19971130;4
+first_weekday	2
+first_workday	2
+END LC_TIME
+
+LC_PAPER
+copy  "it_IT"
+END LC_PAPER
+
+LC_TELEPHONE
+copy  "it_IT"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+copy  "it_IT"
+END LC_MEASUREMENT
+
+LC_NAME
+copy  "it_IT"
+END LC_NAME
+
+LC_ADDRESS
+copy  "it_IT"
+END LC_ADDRESS

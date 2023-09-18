@@ -1,0 +1,603 @@
+                         The Xrender Library
+			    Version 0.7
+			      2002-11-6
+			    Keith Packard
+			  keithp@xfree86.org
+
+1. Introduction
+
+The Xrender library is designed as a lightweight library interface to the
+Render extension.  This document describes how the library maps to the
+protocol without duplicating the semantics described by that document.
+
+2. Data Types
+
+2.1 Primitive Types
+
+For resources represented as CARD32 or XID on the wire, Xrender exposes them
+using an 'unsigned long' type as is the norm for 32-bit data objects in an
+Xlib compatible API.
+
+	typedef unsigned long	Glyph;
+	typedef unsigned long	GlyphSet;
+	typedef unsigned long	Picture;
+	typedef unsigned long	PictFormat;
+
+Glyphs are just CARD32 objects, while GlyphSet, Picture and PictFormat
+values are XIDs.
+
+	typedef int XFixed;
+
+Fixed point numbers buck the Xlib convention by being represented as ints.
+Machines for which 'int' is smaller than 32 bits cannot support the Xrender
+library.
+
+2.2 PictFormat descriptions.
+
+The definition of a PictFormat is exposed by two data structures:
+
+	typedef struct {
+	    short   red;
+	    short   redMask;
+	    short   green;
+	    short   greenMask;
+	    short   blue;
+	    short   blueMask;
+	    short   alpha;
+	    short   alphaMask;
+	} XRenderDirectFormat;
+
+	typedef struct {
+	    PictFormat		id;
+	    int			type;
+	    int			depth;
+	    XRenderDirectFormat	direct;
+	    Colormap		colormap;
+	} XRenderPictFormat;
+
+These serve both as a description of the available formats and as patterns
+against which available formats are matched.
+
+2.3 Picture Attributes
+
+When creating or changing Picture objects, attributes are passed much as
+they are for XCreateWindow/XChangeWindowAttributes.  A structure capable of
+holding all of the attributes has the relevant ones set and a bitmask passed
+as a separate argument which marks the valid entries.
+
+	typedef struct _XRenderPictureAttributes {
+	    Bool		repeat;
+	    Picture		alpha_map;
+	    int			alpha_x_origin;
+	    int			alpha_y_origin;
+	    int			clip_x_origin;
+	    int			clip_y_origin;
+	    Pixmap		clip_mask;
+	    Bool		graphics_exposures;
+	    int			subwindow_mode;
+	    int			poly_edge;
+	    int			poly_mode;
+	    Atom		dither;
+	    Bool		component_alpha;
+	} XRenderPictureAttributes;
+
+2.4 Colors
+
+The core protocol XColor type doesn't include an alpha component, so Xrender
+has a separate type. Note that XRender expects premultiplied alpha in all
+cases except with the gradient operations.
+
+	typedef struct {
+	    unsigned short   red;
+	    unsigned short   green;
+	    unsigned short   blue;
+	    unsigned short   alpha;
+	} XRenderColor;
+
+2.5 Glyph Types
+
+Glyphs are stored in the server, so these definitions are passed from the
+client to the library and on to the server as glyphs are rasterized and
+transmitted over the wire.
+
+	typedef struct _XGlyphInfo {
+	    unsigned short  width;
+	    unsigned short  height;
+	    short	    x;
+	    short	    y;
+	    short	    xOff;
+	    short	    yOff;
+	} XGlyphInfo;
+
+2.6 Glyph Rendering types
+
+Glyph rendering can either take a single string of glyph indices or an array
+of one of the following structures.
+
+	typedef struct _XGlyphElt8 {
+	    GlyphSet		    glyphset;
+	    _Xconst char	    *chars;
+	    int			    nchars;
+	    int			    xOff;
+	    int			    yOff;
+	} XGlyphElt8;
+
+	typedef struct _XGlyphElt16 {
+	    GlyphSet		    glyphset;
+	    _Xconst unsigned short  *chars;
+	    int			    nchars;
+	    int			    xOff;
+	    int			    yOff;
+	} XGlyphElt16;
+
+	typedef struct _XGlyphElt32 {
+	    GlyphSet		    glyphset;
+	    _Xconst unsigned int    *chars;
+	    int			    nchars;
+	    int			    xOff;
+	    int			    yOff;
+	} XGlyphElt32;
+
+2.7 Geometric Types
+
+Geometric operations directly expose the available protocol datatypes
+
+	typedef struct _XPointFixed {
+	    XFixed  x, y;
+	} XPointFixed;
+
+	typedef struct _XLineFixed {
+	    XPointFixed	p1, p2;
+	} XLineFixed;
+
+	typedef struct _XTriangle {
+	    XPointFixed	p1, p2, p3;
+	} XTriangle;
+
+	typedef struct _XTrapezoid {
+	    XFixed  top, bottom;
+	    XLineFixed	left, right;
+	} XTrapezoid;
+
+	typedef struct _XTransform {
+	    XFixed  matrix[3][3];
+	} XTransform;
+
+2.8 Transformation Filters
+
+All of the filters are named simultaneously; Xrender provides no convenience
+functions for dealing with them.
+
+	typedef struct _XFilters {
+	    int	    nfilter;
+	    char    **filter;
+	    int	    nalias;
+	    short   *alias;
+	} XFilters;
+
+2.9 Index type PictFormat colors
+
+PictFormats of Index type advertise which colors will be used for drawing
+through this type.
+
+	typedef struct _XIndexValue {
+	    unsigned long    pixel;
+	    unsigned short   red, green, blue, alpha;
+	} XIndexValue;
+
+
+3 Application Startup Functions
+
+3.1 Initialization functions
+
+	Bool XRenderQueryExtension (Display *dpy,
+			            int     *event_basep,
+				    int     *error_basep)
+
+This function returns True if the Render extension is available on dpy.
+event_basep and error_basep will be filled in with the first event and error
+numbers used by the extension (note that Render currently uses no events).
+
+	Status XRenderQueryVersion (Display *dpy,
+				    int     *major_versionp,
+				    int     *minor_versionp)
+
+XRenderQueryVersion returns zero if the Render extension is not present or
+some error occurred while attempting to discover the current Render version
+number.  Otherwise, XRenderQueryVersion returns 1 and stores the version
+number returned by the server in *major_versionp and *minor_versionp, which
+will be less than or equal to the library version numbers RENDER_MAJOR and
+RENDER_MINOR.
+
+	Status XRenderQueryFormats (Display *dpy)
+
+XRenderQueryFormats returns 1 if it successfully fetches the available
+PictFormat information from the X server, 0 otherwise.  Applications needn't
+invoke this function directly (hmm, perhaps it should be removed from the
+external interfaces then).
+
+3.2 Subpixel Order
+
+	int XRenderQuerySubpixelOrder (Display *dpy, int screen)
+
+	Bool XRenderSetSubpixelOrder (Display *dpy, int screen, int subpixel)
+
+Applications interested in the geometry of the elements making up a single
+pixel on the screen should use XRenderQuerySubpixelOrder and not cache the
+return value.  XRenderSetSubpixelOrder is used by the XRandR library to
+update the value stored by Xrender when the subpixel order changes as a
+result of screen reconfiguration.
+
+3.3 PictFormat matching
+
+Xrender provides these APIs to help locate appropriate PictFormats; they are
+intended to work much like the Visual matching APIs in Xlib.  The
+application provides a specification including the necessary PictFormat
+characteristics and Xrender returns a matching XRenderPictFormat structure
+which describes the PictFormat.
+
+	XRenderPictFormat *
+	XRenderFindFormat (Display			*dpy,
+			   unsigned long		mask,
+			   _Xconst XRenderPictFormat	*templ,
+			   int				count)
+
+	#define PictFormatID	    (1 << 0)
+	#define PictFormatType	    (1 << 1)
+	#define PictFormatDepth	    (1 << 2)
+	#define PictFormatRed	    (1 << 3)
+	#define PictFormatRedMask   (1 << 4)
+	#define PictFormatGreen	    (1 << 5)
+	#define PictFormatGreenMask (1 << 6)
+	#define PictFormatBlue	    (1 << 7)
+	#define PictFormatBlueMask  (1 << 8)
+	#define PictFormatAlpha	    (1 << 9)
+	#define PictFormatAlphaMask (1 << 10)
+	#define PictFormatColormap  (1 << 11)
+
+XRenderFindFormat locates a PictFormat matching the characteristics provided
+in the templ.  Only elements whose associated bit in mask are compared.
+
+	XRenderPictFormat *
+	XRenderFindVisualFormat (Display *dpy, _Xconst Visual *visual)
+
+Finds the PictFormat suitable for use with the specified visual.
+
+	XRenderPictFormat *
+	XRenderFindStandardFormat (Display		*dpy,
+				   int			format)
+
+	#define PictStandardARGB32  0
+	#define PictStandardRGB24   1
+	#define PictStandardA8	    2
+	#define PictStandardA4	    3
+	#define PictStandardA1	    4
+	#define PictStandardNUM	    5
+
+As a convenience, this function locates PictFormats that correspond to
+commonly used formats.
+
+	ARGB32		depth 32, bits 31-24 A, 23-16 R, 15-8 G, 7-0 B
+	RGB24		depth 24, bits 23-16 R, 15-8 G, 7-0 B
+	A8		depth 8, bits 7-0 A
+	A4		depth 4, bits 3-0 A
+	A1		depth 1, bits 0 A
+
+Any server supporting Render must have a PictFormat corresponding to each of
+these standard formats.
+
+3.4 Index type PictFormat color values
+
+	XIndexValue *
+	XRenderQueryPictIndexValues(Display			*dpy,
+				    _Xconst XRenderPictFormat	*format,
+				    int				*num)
+
+If format refers to an Index type PictFormat, XRenderQueryPictIndexValues
+returns the set of pixel values and their associated colors used when
+drawing to Pictures created with that format.  Otherwise,
+XRenderQueryPictIndexValues generates a BadMatch error.
+
+3.5 Querying available filters
+
+	XFilters *
+	XRenderQueryFilters (Display *dpy, Drawable drawable);
+
+Filters are used with non-identity transformation matrices, this function
+returns a datastructure identifying the available filters on display that
+can be associated with pictures for the screen associated with drawable.
+
+Free this structure with XFree.
+
+4 Picture Functions
+
+	Picture
+	XRenderCreatePicture (Display				*dpy,
+			      Drawable				drawable,
+			      _Xconst XRenderPictFormat		*format,
+			      unsigned long			valuemask,
+			      _Xconst XRenderPictureAttributes	*attributes)
+
+	#define CPRepeat			    (1 << 0)
+	#define CPAlphaMap			    (1 << 1)
+	#define CPAlphaXOrigin			    (1 << 2)
+	#define CPAlphaYOrigin			    (1 << 3)
+	#define CPClipXOrigin			    (1 << 4)
+	#define CPClipYOrigin			    (1 << 5)
+	#define CPClipMask			    (1 << 6)
+	#define CPGraphicsExposure		    (1 << 7)
+	#define CPSubwindowMode			    (1 << 8)
+	#define CPPolyEdge			    (1 << 9)
+	#define CPPolyMode			    (1 << 10)
+	#define CPDither			    (1 << 11)
+	#define CPComponentAlpha		    (1 << 12)
+	#define CPLastBit			    12
+
+Creates a picture for drawable in the specified format.  Any values
+specified in 'attributes' and 'valuemask' are used in place of the default
+values.
+
+	void
+	XRenderChangePicture (Display				*dpy,
+			      Picture				picture,
+			      unsigned long			valuemask,
+			      _Xconst XRenderPictureAttributes  *attributes)
+
+Change values in picture to those specified by valuemask and attributes.
+
+
+	void
+	XRenderSetPictureClipRectangles (Display	    *dpy,
+					 Picture	    picture,
+					 int		    xOrigin,
+					 int		    yOrigin,
+					 _Xconst XRectangle *rects,
+					 int		    n)
+
+Sets the clip mask in picture to the union of rects offset by
+xOrigin/yOrigin.
+
+	void
+	XRenderSetPictureClipRegion (Display	    *dpy,
+				     Picture	    picture,
+				     Region	    r)
+
+Sets the clip mask in picture to r.
+
+	void
+	XRenderSetPictureTransform (Display	    *dpy,
+				    Picture	    picture,
+				    XTransform	    *transform)
+
+Sets the projective transformation matrix of picture to transform.
+
+	void
+	XRenderFreePicture (Display                   *dpy,
+			    Picture                   picture)
+
+Instructs the server to free picture.
+
+5 GlyphSet functions
+
+	GlyphSet
+	XRenderCreateGlyphSet (Display *dpy, _Xconst XRenderPictFormat *format)
+
+Creates a glyphset, every glyph in the set will use PictFormat format.
+
+	GlyphSet
+	XRenderReferenceGlyphSet (Display *dpy, GlyphSet existing)
+
+Creates a new GlyphSet ID which references an existing GlyphSet.  The
+two IDs refer to the same object so that changes using one ID will be
+visible through the other ID.  This is designed to allow multiple clients to
+share the same GlyphSet so that it doesn't get destroyed when the first
+client exits.
+
+	void
+	XRenderFreeGlyphSet (Display *dpy, GlyphSet glyphset)
+
+Frees the glyphset ID.  If no other GlyphSet IDs refer to the underlying
+GlyphSet, it will be destroyed.
+
+	void
+	XRenderAddGlyphs (Display		*dpy,
+			  GlyphSet		glyphset,
+			  _Xconst Glyph		*gids,
+			  _Xconst XGlyphInfo	*glyphs,
+			  int			nglyphs,
+			  _Xconst char		*images,
+			  int			nbyte_images)
+
+Add glyphs to glyphset.  The images are packed together in Z-pixmap format
+according to the depth of the PictFormat used in creating glyphset.
+
+	void
+	XRenderFreeGlyphs (Display	    *dpy,
+			   GlyphSet	    glyphset,
+			   _Xconst Glyph    *gids,
+			   int		    nglyphs)
+
+Free some glyphs from glyphset.
+
+6 Glyph Drawing Routines
+
+Xrender provides two parallel APIs for glyph rendering, a simple API which
+accepts a single string similar to XDrawString and a more complex API which
+accepts an array of XGlyphElt{8,16,32} structures, each of which includes a
+glyphset, string and x/y offsets which parallel the XDrawText API.  Xrender
+also provides glyphs in three sizes, 8 16 and 32 bits.  The simple API is
+just a convenience for the user as both forms generate the same underlying
+Render protocol.
+
+6.1 Simple single-string glyph drawing functions
+
+These are identical except for the format of the glyph ids.
+
+	void
+	XRenderCompositeString8 (Display		    *dpy,
+				 int			    op,
+				 Picture		    src,
+				 Picture		    dst,
+				 _Xconst XRenderPictFormat  *maskFormat,
+				 GlyphSet		    glyphset,
+				 int			    xSrc,
+				 int			    ySrc,
+				 int			    xDst,
+				 int			    yDst,
+				 _Xconst char		    *string,
+				 int			    nchar)
+
+	void
+	XRenderCompositeString16 (Display		    *dpy,
+				  int			    op,
+				  Picture		    src,
+				  Picture		    dst,
+				  _Xconst XRenderPictFormat *maskFormat,
+				  GlyphSet		    glyphset,
+				  int			    xSrc,
+				  int			    ySrc,
+				  int			    xDst,
+				  int			    yDst,
+				  _Xconst unsigned short    *string,
+				  int			    nchar)
+
+	void
+	XRenderCompositeString32 (Display		    *dpy,
+				  int			    op,
+				  Picture		    src,
+				  Picture		    dst,
+				  _Xconst XRenderPictFormat *maskFormat,
+				  GlyphSet		    glyphset,
+				  int			    xSrc,
+				  int			    ySrc,
+				  int			    xDst,
+				  int			    yDst,
+				  _Xconst unsigned int	    *string,
+				  int			    nchar)
+
+6.2 Complete glyph drawing functions
+
+As with the simple functions above, these differ only in the type of the
+underlying glyph id storage type.
+
+	void
+	XRenderCompositeText8 (Display			    *dpy,
+			       int			    op,
+			       Picture			    src,
+			       Picture			    dst,
+			       _Xconst XRenderPictFormat    *maskFormat,
+			       int			    xSrc,
+			       int			    ySrc,
+			       int			    xDst,
+			       int			    yDst,
+			       _Xconst XGlyphElt8	    *elts,
+			       int			    nelt)
+
+	void
+	XRenderCompositeText16 (Display			    *dpy,
+				int			    op,
+				Picture			    src,
+				Picture			    dst,
+				_Xconst XRenderPictFormat   *maskFormat,
+				int			    xSrc,
+				int			    ySrc,
+				int			    xDst,
+				int			    yDst,
+				_Xconst XGlyphElt16	    *elts,
+				int			    nelt)
+
+	void
+	XRenderCompositeText32 (Display			    *dpy,
+				int			    op,
+				Picture			    src,
+				Picture			    dst,
+				_Xconst XRenderPictFormat   *maskFormat,
+				int			    xSrc,
+				int			    ySrc,
+				int			    xDst,
+				int			    yDst,
+				_Xconst XGlyphElt32	    *elts,
+				int			    nelt)
+
+7 Basic Graphics Functions
+
+These are the simplest graphics functions upon which the other functions are
+conceptually built.
+
+7.1 Composite
+
+XRenderComposite exposes the RenderComposite protocol request directly.
+If a format with alpha is used, make sure it is premultiplied into the
+color channels.
+
+	void
+	XRenderComposite (Display   *dpy,
+			  int	    op,
+			  Picture   src,
+			  Picture   mask,
+			  Picture   dst,
+			  int	    src_x,
+			  int	    src_y,
+			  int	    mask_x,
+			  int	    mask_y,
+			  int	    dst_x,
+			  int	    dst_y,
+			  unsigned int	width,
+			  unsigned int	height)
+
+
+7.2 Rectangles
+
+These functions composite rectangles of the specified color, they differ
+only in that XRenderFillRectangles draws more than one at a time.
+
+	void
+	XRenderFillRectangle (Display		    *dpy,
+			      int		    op,
+			      Picture		    dst,
+			      _Xconst XRenderColor  *color,
+			      int		    x,
+			      int		    y,
+			      unsigned int	    width,
+			      unsigned int	    height)
+
+	void
+	XRenderFillRectangles (Display		    *dpy,
+			       int		    op,
+			       Picture		    dst,
+			       _Xconst XRenderColor *color,
+			       _Xconst XRectangle   *rectangles,
+			       int		    n_rects)
+
+8 Geometric Objects
+
+All geometric drawing with Render is performed with sequences of trapezoids
+or triangles; the client is responsible for breaking more complex figures
+into these simple shapes.
+
+8.1 Trapezoids
+
+	void
+	XRenderCompositeTrapezoids (Display		*dpy,
+				    int			op,
+				    Picture		src,
+				    Picture		dst,
+				    _Xconst XRenderPictFormat	*maskFormat,
+				    int			xSrc,
+				    int			ySrc,
+				    _Xconst XTrapezoid	*traps,
+				    int			ntrap)
+
+XRenderCompositeTrapezoids builds RenderTrapezoids requests to composite the
+specified list of trapezoids to dst.  XRenderCompositeTrapezoids will split
+the list of trapezoids to build requests no larger than the maximum request
+size supported by the server.  This can create rendering artifacts as the
+precompositing done by RenderTrapezoids when a maskFormat is specified
+cannot span multiple requests.
+
+8.2 Triangles
+
+Render provides three different ways of encoding triangles on the wire,
+Xrender exposes those with three separate triangle drawing routines.  As
+with trapezoids above, Xrender will split the arguments to fit requests into
+the servers limits, but this may cause rendering artifacts.

@@ -1,0 +1,117 @@
+// Keyboard layouts for Nigeria.
+
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+    include "us"
+
+    name[Group1]= "English (Nigeria)";
+
+    key <AE04> {[      4,  U20A6,      dollar,       cent ]}; // ₦
+
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "yoruba" {
+    include "ng(basic)"
+
+    name[Group1]= "Yoruba";
+
+    key <AD01> {[  U1EB9,  U1EB8,           q,          Q ]}; // ẹ Ẹ
+    key <AB02> {[  U1ECD,  U1ECC,           x,          X ]}; // ọ Ọ
+    key <AB04> {[  U1E63,  U1E62,           v,          V ]}; // ṣ Ṣ
+};
+
+partial alphanumeric_keys
+xkb_symbols "igbo" {
+    include "ng(basic)"
+
+    name[Group1]= "Igbo";
+
+    key <AD01> {[  U1ECB,  U1ECA,           q,          Q ]}; // ị Ị
+    key <AB02> {[  U1E45,  U1E44,           x,          X ]}; // ṅ Ṅ
+    key <AC10> {[  U1EE5,  U1EE4,   semicolon,      colon ]}; // ụ Ụ
+    key <AD11> {[  U1ECD,  U1ECC, bracketleft,  braceleft ]}; // ọ Ọ
+};
+
+partial alphanumeric_keys
+xkb_symbols "hausa" {
+    include "ng(basic)"
+
+    name[Group1]= "Hausa (Nigeria)";
+
+    key <AD01> {[          q,          Q,           q,          Q ]};
+    key <AD02> {[ udiaeresis, Udiaeresis,           w,          W ]};
+    key <AD03> {[          e,          E,    EuroSign,       cent ]};
+    key <AD11> {[      U01B4,      U01B3, bracketleft,  braceleft ]}; // ƴ Ƴ
+    key <AD12> {[     gcaron,     Gcaron,bracketright, braceright ]};
+    key <AC03> {[      U0257,      U018A,           d,          D ]}; // ɗ Ɗ
+    key <AC10> {[      U0131,      U0130,   semicolon,      colon ]}; // ı İ
+    key <AC11> {[      U01DD,      U018E,  apostrophe,   quotedbl ]}; // ǝ Ǝ
+    key <AB01> {[      U0272,      U019D,           z,          Z ]}; // ɲ Ɲ
+    key <AB07> {[     ntilde,     Ntilde,           m,          M ]};
+    key <AB09> {[   ccedilla,   Ccedilla,      period,    greater ]};
+    key <AB10> {[   scedilla,   Scedilla,       slash,   question ]};
+};
+
+partial alphanumeric_keys
+xkb_symbols "olpc" {
+
+   include "ng(basic)"
+
+   // OLPC West Africa keyboard layout
+   // See: http://wiki.laptop.org/go/Image:Nigeria-B3.png
+
+    key <TLDE> {[     grave, asciitilde,    exclamdown,      exclamdown ]};
+    key <AE01> {[         1,     exclam,      sterling,        sterling ]};
+    key <AE02> {[         2,         at,      EuroSign,        EuroSign ]};
+    key <AE03> {[         3, numbersign,        dollar,          dollar ]};
+    key <AE04> {[         4,      U20A6,         U0301,           U0301 ]}; // Naira, combining acute
+    key <AE05> {[         5,    percent,         U0300,           U0300 ]}; // combining grave
+    key <AE06> {[         6,asciicircum,         U030A,           U030A ]}; // combining ring above
+    key <AE07> {[         7,  ampersand,         U0302,           U0302 ]}; // combining circumflex above
+    key <AE08> {[         8,   asterisk,         U0324,           U0324 ]}; // combining caron above
+    key <AE09> {[         9,  parenleft,         U0307,           U0307 ]}; // combining dot above
+    key <AE10> {[         0, parenright,         U0308,           U0308 ]}; // combining diaeresis above
+    key <AE11> {[     minus, underscore,         U0304,           U0304 ]}; // combining macron above
+    key <AE12> {[     equal,       plus,         U0303,           U0303 ]}; // combining tilde above
+
+    key <AD02> {[         w,          W,         U1EB9,           U1EB8 ]}; // E with dot below
+    key <AD03> {[         e,          E,         U01DD,           U018E ]}; // reversed E
+    key <AD04> {[         r,          R,         U01B4,           U01B3 ]}; // Y with hook
+    key <AD05> {[         t,          T,         U0327,           U0327 ]}; // combining cedilla
+    key <AD06> {[         y,          Y,         U0325,           U0325 ]}; // combining ring below
+    key <AD07> {[         u,          U,         U032D,           U032D ]}; // combining circumflex below
+    key <AD08> {[         i,          I,         U032C,           U032C ]}; // combining caron below
+    key <AD09> {[         o,          O,         U0323,           U0323 ]}; // combining dot below
+    key <AD10> {[         p,          P,         U0304,           U0304 ]}; // combining diaeresis below
+    key <AD11> {[ bracketleft,  braceleft,       U0331,           U0331 ]}; // combining macron below
+    key <AD12> {[bracketright, braceright,       U0330,           U0330 ]}; // combining tilde below
+
+    key <AC01> {[         a,          A,    Greek_iota,      Greek_IOTA ]};
+    key <AC02> {[         s,          S,         U1E63,           U1E62 ]}; // S with dot below
+    key <AC03> {[         d,          D,         U0257,           U018A ]}; // D with hook
+    key <AC04> {[         f,          F,         U1E0D,           U1E0C ]}; // D with dot below
+    key <AC05> {[         g,          G,         U0272,           U019D ]}; // N with left hook
+    key <AC06> {[         h,          H,         U1EE5,           U1EE4 ]}; // U with dot below
+    key <AC07> {[         j,          J,         U1ECB,           U1ECA ]}; // I with dot below
+    key <AC08> {[         k,          K,         U0199,           U0198 ]}; // K with hook
+    key <AC09> {[         l,          L,         U1E37,           U1E36 ]}; // L with dot below
+    key <AC10> {[ semicolon,      colon,     masculine,     ordfeminine ]};
+    key <AC11> {[apostrophe,   quotedbl,      currency,        currency ]};
+    key <BKSL> {[ backslash,        bar,       section,         section ]};
+
+    key <AB03> {[         c,          C,         U0254,           U0186 ]}; // open O
+    key <AB04> {[         v,          V,         U028B,           U01B2 ]}; // V with hook
+    key <AB05> {[         b,          B,         U0253,           U0181 ]}; // B with hook
+    key <AB06> {[         n,          N,           eng,             ENG ]};
+    key <AB07> {[         m,          M,         U1E45,           U1E44 ]}; // N with dot above
+    key <AB08> {[     comma,       less,  guillemotleft,  guillemotleft ]};
+    key <AB09> {[    period,    greater, guillemotright, guillemotright ]};
+    key <AB10> {[     slash,   question,   questiondown,   questiondown ]};
+
+    key <I219> {[  multiply,   division, ISO_Next_Group, ISO_Prev_Group ]};
+
+   include "level3(ralt_switch)"
+};

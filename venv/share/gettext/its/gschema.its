@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<!--
+See the gettext documentation for the file format:
+http://www.gnu.org/software/gettext/manual/html_node/Preparing-ITS-Rules.html
+-->
+<its:rules xmlns:its="http://www.w3.org/2005/11/its"
+           xmlns:gt="https://www.gnu.org/s/gettext/ns/its/extensions/1.0"
+           version="2.0">
+  <its:translateRule selector="/schemalist" translate="no"/>
+
+  <its:translateRule selector="//summary | //description" translate="yes"/>
+
+  <its:translateRule selector="//default[@l10n]" translate="yes"/>
+
+  <!-- The 'context' attribute should be extracted as msgctxt.  -->
+  <gt:contextRule selector="//default[@context]" contextPointer="@context"/>
+  <gt:escapeRule selector="//default/@context" escape="no"/>
+
+  <!-- Remove whitespaces around the default value.  -->
+  <gt:preserveSpaceRule selector="//default" space="trim"/>
+
+  <!-- Extracted strings are consumed by the library and are never
+       merged back; we don't want to escape special characters.  -->
+  <gt:escapeRule selector="/schemalist" escape="no"/>
+</its:rules>

@@ -1,0 +1,54 @@
+# Print a test page using create-job + send-document, but don't send
+# last-document = true
+{
+	# The name of the test...
+	NAME "Print test page using create-job"
+
+	# The resource to use for the POST
+	# RESOURCE /admin
+
+	# The operation to use
+	OPERATION create-job
+
+	# Attributes, starting in the operation group...
+	GROUP operation
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR name requesting-user-name $user
+
+	GROUP job
+	ATTR integer copies 1
+	ATTR name job-sheets unclassified,unclassified
+
+	# What statuses are OK?
+	STATUS successful-ok
+
+	# What attributes do we expect?
+	EXPECT job-id
+	EXPECT job-uri
+}
+{
+	# The name of the test...
+	NAME "... and send-document"
+
+	# The resource to use for the POST
+	# RESOURCE /admin
+
+	# The operation to use
+	OPERATION send-document
+
+	# Attributes, starting in the operation group...
+	GROUP operation
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR integer job-id $job-id
+	ATTR name requesting-user-name $user
+	ATTR mimetype document-format application/octet-stream
+
+	FILE ../data/testprint.ps
+
+	# What statuses are OK?
+	STATUS successful-ok
+}

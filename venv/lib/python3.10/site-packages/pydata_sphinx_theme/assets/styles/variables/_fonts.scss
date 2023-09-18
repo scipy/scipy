@@ -1,0 +1,35 @@
+:root {
+  /*****************************************************************************
+  * Font features used in this theme
+  */
+
+  // base font size - applied at body/html level
+  --pst-font-size-base: 15px;
+
+  // heading font sizes
+  --pst-font-size-h1: 36px;
+  --pst-font-size-h2: 32px;
+  --pst-font-size-h3: 26px;
+  --pst-font-size-h4: 21px;
+  --pst-font-size-h5: 18px;
+  --pst-font-size-h6: 16px;
+
+  // smaller then heading font sizes
+  --pst-font-size-milli: 12px;
+
+  // primary sidebar management
+  --pst-sidebar-primary-font-size: 0.9em;
+  --pst-sidebar-primary-caption-font-size: 0.9em;
+
+  // Font family
+  // These are adapted from https://systemfontstack.com/ */
+  --pst-font-family-base-system: -apple-system, BlinkMacSystemFont, Segoe UI,
+    "Helvetica Neue", Arial, sans-serif, Apple Color Emoji, Segoe UI Emoji,
+    Segoe UI Symbol;
+  --pst-font-family-monospace-system: "SFMono-Regular", Menlo, Consolas, Monaco,
+    Liberation Mono, Lucida Console, monospace;
+
+  --pst-font-family-base: var(--pst-font-family-base-system);
+  --pst-font-family-heading: var(--pst-font-family-base-system);
+  --pst-font-family-monospace: var(--pst-font-family-monospace-system);
+}

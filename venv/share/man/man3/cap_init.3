@@ -1,0 +1,86 @@
+.\"
+.\" written by Andrew Main <zefram@dcs.warwick.ac.uk>
+.\"
+.TH CAP_INIT 3 "2021-03-06" "" "Linux Programmer's Manual"
+.SH NAME
+cap_init, cap_free, cap_dup \- capability data object storage management
+.SH SYNOPSIS
+.nf
+#include <sys/capability.h>
+
+cap_t cap_init(void);
+int cap_free(void *obj_d);
+cap_t cap_dup(cap_t cap_p);
+.fi
+.sp
+Link with \fI\-lcap\fP.
+.SH DESCRIPTION
+The capabilities associated with a file or process are never edited
+directly.  Instead, working storage is allocated to contain a
+representation of the capability state.  Capabilities are edited and
+manipulated only within this working storage area.  Once editing of
+the capability state is complete, the updated capability state is used
+to replace the capability state associated with the file or process.
+.PP
+.BR cap_init ()
+creates a capability state in working storage and returns a pointer to
+the capability state.  The initial value of all flags are cleared.  The
+caller should free any releasable memory, when the capability state in
+working storage is no longer required, by calling
+.BR cap_free ()
+with the 
+.I cap_t
+as an argument.
+.PP
+.BR cap_free ()
+liberates any releasable memory that has been allocated to the
+capability state identified by
+.IR obj_d .
+The
+.I obj_d
+argument may identify either a
+.I cap_t
+entity, or a
+.I "char\ *"
+entity allocated by the
+.BR cap_to_text ()
+function.
+.PP
+.BR cap_dup ()
+returns a duplicate capability state in working storage given by the
+source object
+.IR cap_p , 
+allocating any memory necessary, and returning a
+pointer to the newly created capability state.  Once duplicated, no
+operation on either capability state affects the other in any way.
+When the duplicated capability state in working storage is no longer required,
+the caller should free any releasable memory by calling
+.BR cap_free ()
+with the 
+.I cap_t
+as an argument.
+.SH "RETURN VALUE"
+.BR cap_init ()
+and
+.BR cap_dup ()
+return a non-NULL value on success, and NULL on failure.
+.PP
+.BR cap_free ()
+returns zero on success, and \-1 on failure.
+.PP
+On failure,
+.I errno
+is set to
+.BR EINVAL
+or
+.BR ENOMEM .
+.SH "CONFORMING TO"
+These functions are specified in the withdrawn POSIX.1e draft specification.
+.SH "SEE ALSO"
+.BR libcap (3),
+.BR cap_clear (3),
+.BR cap_copy_ext (3),
+.BR cap_from_text (3),
+.BR cap_get_file (3),
+.BR cap_get_proc (3),
+.BR capabilities (7)

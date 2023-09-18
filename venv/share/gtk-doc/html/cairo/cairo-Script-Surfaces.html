@@ -1,0 +1,490 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Script Surfaces: Cairo: A Vector Graphics Library</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<link rel="home" href="index.html" title="Cairo: A Vector Graphics Library">
+<link rel="up" href="cairo-surfaces.html" title="Surfaces">
+<link rel="prev" href="cairo-XLib-XRender-Backend.html" title="XLib-XRender Backend">
+<link rel="next" href="cairo-support.html" title="Utilities">
+<meta name="generator" content="GTK-Doc V1.27 (XML mode)">
+<link rel="stylesheet" href="style.css" type="text/css">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<table class="navigation" id="top" width="100%" summary="Navigation header" cellpadding="2" cellspacing="5"><tr valign="middle">
+<td width="100%" align="left" class="shortcuts">
+<a href="#" class="shortcut">Top</a><span id="nav_description">  <span class="dim">|</span> 
+                  <a href="#cairo-Script-Surfaces.description" class="shortcut">Description</a></span>
+</td>
+<td><a accesskey="h" href="index.html"><img src="home.png" width="16" height="16" border="0" alt="Home"></a></td>
+<td><a accesskey="u" href="cairo-surfaces.html"><img src="up.png" width="16" height="16" border="0" alt="Up"></a></td>
+<td><a accesskey="p" href="cairo-XLib-XRender-Backend.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
+<td><a accesskey="n" href="cairo-support.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
+</tr></table>
+<div class="refentry">
+<a name="cairo-Script-Surfaces"></a><div class="titlepage"></div>
+<div class="refnamediv"><table width="100%"><tr>
+<td valign="top">
+<h2><span class="refentrytitle"><a name="cairo-Script-Surfaces.top_of_page"></a>Script Surfaces</span></h2>
+<p>Script Surfaces — Rendering to replayable scripts</p>
+</td>
+<td class="gallery_image" valign="top" align="right"></td>
+</tr></table></div>
+<div class="refsect1">
+<a name="cairo-Script-Surfaces.functions"></a><h2>Functions</h2>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="functions_return">
+<col class="functions_name">
+</colgroup>
+<tbody>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="returnvalue">cairo_device_t</span></a> *
+</td>
+<td class="function_name">
+<a class="link" href="cairo-Script-Surfaces.html#cairo-script-create" title="cairo_script_create ()">cairo_script_create</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="returnvalue">cairo_device_t</span></a> *
+</td>
+<td class="function_name">
+<a class="link" href="cairo-Script-Surfaces.html#cairo-script-create-for-stream" title="cairo_script_create_for_stream ()">cairo_script_create_for_stream</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-Error-handling.html#cairo-status-t" title="enum cairo_status_t"><span class="returnvalue">cairo_status_t</span></a>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-Script-Surfaces.html#cairo-script-from-recording-surface" title="cairo_script_from_recording_surface ()">cairo_script_from_recording_surface</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-Script-Surfaces.html#cairo-script-mode-t" title="enum cairo_script_mode_t"><span class="returnvalue">cairo_script_mode_t</span></a>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-Script-Surfaces.html#cairo-script-get-mode" title="cairo_script_get_mode ()">cairo_script_get_mode</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-Script-Surfaces.html#cairo-script-set-mode" title="cairo_script_set_mode ()">cairo_script_set_mode</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="returnvalue">cairo_surface_t</span></a> *
+</td>
+<td class="function_name">
+<a class="link" href="cairo-Script-Surfaces.html#cairo-script-surface-create" title="cairo_script_surface_create ()">cairo_script_surface_create</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="returnvalue">cairo_surface_t</span></a> *
+</td>
+<td class="function_name">
+<a class="link" href="cairo-Script-Surfaces.html#cairo-script-surface-create-for-target" title="cairo_script_surface_create_for_target ()">cairo_script_surface_create_for_target</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="cairo-Script-Surfaces.html#cairo-script-write-comment" title="cairo_script_write_comment ()">cairo_script_write_comment</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect1">
+<a name="cairo-Script-Surfaces.other"></a><h2>Types and Values</h2>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="name">
+<col class="description">
+</colgroup>
+<tbody>
+<tr>
+<td class="define_keyword">#define</td>
+<td class="function_name"><a class="link" href="cairo-Script-Surfaces.html#CAIRO-HAS-SCRIPT-SURFACE:CAPS" title="CAIRO_HAS_SCRIPT_SURFACE">CAIRO_HAS_SCRIPT_SURFACE</a></td>
+</tr>
+<tr>
+<td class="datatype_keyword">enum</td>
+<td class="function_name"><a class="link" href="cairo-Script-Surfaces.html#cairo-script-mode-t" title="enum cairo_script_mode_t">cairo_script_mode_t</a></td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect1">
+<a name="cairo-Script-Surfaces.description"></a><h2>Description</h2>
+<p>The script surface provides the ability to render to a native
+script that matches the cairo drawing model. The scripts can
+be replayed using tools under the util/cairo-script directory,
+or with cairo-perf-trace.</p>
+</div>
+<div class="refsect1">
+<a name="cairo-Script-Surfaces.functions_details"></a><h2>Functions</h2>
+<div class="refsect2">
+<a name="cairo-script-create"></a><h3>cairo_script_create ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="returnvalue">cairo_device_t</span></a> *
+cairo_script_create (<em class="parameter"><code>const <span class="type">char</span> *filename</code></em>);</pre>
+<p>Creates a output device for emitting the script, used when
+creating the individual surfaces.</p>
+<div class="refsect3">
+<a name="cairo-script-create.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>filename</p></td>
+<td class="parameter_description"><p>the name (path) of the file to write the script to</p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-script-create.returns"></a><h4>Returns</h4>
+<p> a pointer to the newly created device. The caller
+owns the surface and should call <a class="link" href="cairo-cairo-device-t.html#cairo-device-destroy" title="cairo_device_destroy ()"><code class="function">cairo_device_destroy()</code></a> when done
+with it.</p>
+<p>This function always returns a valid pointer, but it will return a
+pointer to a "nil" device if an error such as out of memory
+occurs. You can use <a class="link" href="cairo-cairo-device-t.html#cairo-device-status" title="cairo_device_status ()"><code class="function">cairo_device_status()</code></a> to check for this.</p>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-script-create-for-stream"></a><h3>cairo_script_create_for_stream ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="returnvalue">cairo_device_t</span></a> *
+cairo_script_create_for_stream (<em class="parameter"><code><a class="link" href="cairo-PNG-Support.html#cairo-write-func-t" title="cairo_write_func_t ()"><span class="type">cairo_write_func_t</span></a> write_func</code></em>,
+                                <em class="parameter"><code><span class="type">void</span> *closure</code></em>);</pre>
+<p>Creates a output device for emitting the script, used when
+creating the individual surfaces.</p>
+<div class="refsect3">
+<a name="cairo-script-create-for-stream.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>write_func</p></td>
+<td class="parameter_description"><p>callback function passed the bytes written to the script</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>closure</p></td>
+<td class="parameter_description"><p>user data to be passed to the callback</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-script-create-for-stream.returns"></a><h4>Returns</h4>
+<p> a pointer to the newly created device. The caller
+owns the surface and should call <a class="link" href="cairo-cairo-device-t.html#cairo-device-destroy" title="cairo_device_destroy ()"><code class="function">cairo_device_destroy()</code></a> when done
+with it.</p>
+<p>This function always returns a valid pointer, but it will return a
+pointer to a "nil" device if an error such as out of memory
+occurs. You can use <a class="link" href="cairo-cairo-device-t.html#cairo-device-status" title="cairo_device_status ()"><code class="function">cairo_device_status()</code></a> to check for this.</p>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-script-from-recording-surface"></a><h3>cairo_script_from_recording_surface ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-Error-handling.html#cairo-status-t" title="enum cairo_status_t"><span class="returnvalue">cairo_status_t</span></a>
+cairo_script_from_recording_surface (<em class="parameter"><code><a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> *script</code></em>,
+                                     <em class="parameter"><code><a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="type">cairo_surface_t</span></a> *recording_surface</code></em>);</pre>
+<p>Converts the record operations in <em class="parameter"><code>recording_surface</code></em>
+ into a script.</p>
+<div class="refsect3">
+<a name="cairo-script-from-recording-surface.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>script</p></td>
+<td class="parameter_description"><p>the script (output device)</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>recording_surface</p></td>
+<td class="parameter_description"><p>the recording surface to replay</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-script-from-recording-surface.returns"></a><h4>Returns</h4>
+<p> <a class="link" href="cairo-Error-handling.html#CAIRO-STATUS-SUCCESS:CAPS"><span class="type">CAIRO_STATUS_SUCCESS</span></a> on successful completion or an error code.</p>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-script-get-mode"></a><h3>cairo_script_get_mode ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-Script-Surfaces.html#cairo-script-mode-t" title="enum cairo_script_mode_t"><span class="returnvalue">cairo_script_mode_t</span></a>
+cairo_script_get_mode (<em class="parameter"><code><a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> *script</code></em>);</pre>
+<p>Queries the script for its current output mode.</p>
+<div class="refsect3">
+<a name="cairo-script-get-mode.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>script</p></td>
+<td class="parameter_description"><p>The script (output device) to query</p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-script-get-mode.returns"></a><h4>Returns</h4>
+<p> the current output mode of the script</p>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-script-set-mode"></a><h3>cairo_script_set_mode ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_script_set_mode (<em class="parameter"><code><a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> *script</code></em>,
+                       <em class="parameter"><code><a class="link" href="cairo-Script-Surfaces.html#cairo-script-mode-t" title="enum cairo_script_mode_t"><span class="type">cairo_script_mode_t</span></a> mode</code></em>);</pre>
+<p>Change the output mode of the script</p>
+<div class="refsect3">
+<a name="cairo-script-set-mode.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>script</p></td>
+<td class="parameter_description"><p>The script (output device)</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>mode</p></td>
+<td class="parameter_description"><p>the new mode</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-script-surface-create"></a><h3>cairo_script_surface_create ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="returnvalue">cairo_surface_t</span></a> *
+cairo_script_surface_create (<em class="parameter"><code><a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> *script</code></em>,
+                             <em class="parameter"><code><a class="link" href="cairo-cairo-surface-t.html#cairo-content-t" title="enum cairo_content_t"><span class="type">cairo_content_t</span></a> content</code></em>,
+                             <em class="parameter"><code><span class="type">double</span> width</code></em>,
+                             <em class="parameter"><code><span class="type">double</span> height</code></em>);</pre>
+<p>Create a new surface that will emit its rendering through <em class="parameter"><code>script</code></em>
+</p>
+<div class="refsect3">
+<a name="cairo-script-surface-create.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>script</p></td>
+<td class="parameter_description"><p>the script (output device)</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>content</p></td>
+<td class="parameter_description"><p>the content of the surface</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>width</p></td>
+<td class="parameter_description"><p>width in pixels</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>height</p></td>
+<td class="parameter_description"><p>height in pixels</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-script-surface-create.returns"></a><h4>Returns</h4>
+<p> a pointer to the newly created surface. The caller
+owns the surface and should call <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-destroy" title="cairo_surface_destroy ()"><code class="function">cairo_surface_destroy()</code></a> when done
+with it.</p>
+<p>This function always returns a valid pointer, but it will return a
+pointer to a "nil" surface if an error such as out of memory
+occurs. You can use <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-status" title="cairo_surface_status ()"><code class="function">cairo_surface_status()</code></a> to check for this.</p>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-script-surface-create-for-target"></a><h3>cairo_script_surface_create_for_target ()</h3>
+<pre class="programlisting"><a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="returnvalue">cairo_surface_t</span></a> *
+cairo_script_surface_create_for_target
+                               (<em class="parameter"><code><a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> *script</code></em>,
+                                <em class="parameter"><code><a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="type">cairo_surface_t</span></a> *target</code></em>);</pre>
+<p>Create a pxoy surface that will render to <em class="parameter"><code>target</code></em>
+ and record
+the operations to <em class="parameter"><code>device</code></em>
+.</p>
+<div class="refsect3">
+<a name="cairo-script-surface-create-for-target.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>script</p></td>
+<td class="parameter_description"><p>the script (output device)</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>target</p></td>
+<td class="parameter_description"><p>a target surface to wrap</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="cairo-script-surface-create-for-target.returns"></a><h4>Returns</h4>
+<p> a pointer to the newly created surface. The caller
+owns the surface and should call <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-destroy" title="cairo_surface_destroy ()"><code class="function">cairo_surface_destroy()</code></a> when done
+with it.</p>
+<p>This function always returns a valid pointer, but it will return a
+pointer to a "nil" surface if an error such as out of memory
+occurs. You can use <a class="link" href="cairo-cairo-surface-t.html#cairo-surface-status" title="cairo_surface_status ()"><code class="function">cairo_surface_status()</code></a> to check for this.</p>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-script-write-comment"></a><h3>cairo_script_write_comment ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+cairo_script_write_comment (<em class="parameter"><code><a class="link" href="cairo-cairo-device-t.html#cairo-device-t" title="cairo_device_t"><span class="type">cairo_device_t</span></a> *script</code></em>,
+                            <em class="parameter"><code>const <span class="type">char</span> *comment</code></em>,
+                            <em class="parameter"><code><span class="type">int</span> len</code></em>);</pre>
+<p>Emit a string verbatim into the script.</p>
+<div class="refsect3">
+<a name="cairo-script-write-comment.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>script</p></td>
+<td class="parameter_description"><p>the script (output device)</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>comment</p></td>
+<td class="parameter_description"><p>the string to emit</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>len</p></td>
+<td class="parameter_description"><p>the length of the sting to write, or -1 to use <code class="function">strlen()</code></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+</div>
+<div class="refsect1">
+<a name="cairo-Script-Surfaces.other_details"></a><h2>Types and Values</h2>
+<div class="refsect2">
+<a name="CAIRO-HAS-SCRIPT-SURFACE:CAPS"></a><h3>CAIRO_HAS_SCRIPT_SURFACE</h3>
+<pre class="programlisting">#define CAIRO_HAS_SCRIPT_SURFACE 1
+</pre>
+<p>Defined if the script surface backend is available.
+The script surface backend is always built in since 1.12.</p>
+<p class="since">Since: 1.12</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="cairo-script-mode-t"></a><h3>enum cairo_script_mode_t</h3>
+<p>A set of script output variants.</p>
+<div class="refsect3">
+<a name="cairo-script-mode-t.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="300px" class="enum_members_name">
+<col class="enum_members_description">
+<col width="200px" class="enum_members_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-SCRIPT-MODE-ASCII:CAPS"></a>CAIRO_SCRIPT_MODE_ASCII</p></td>
+<td class="enum_member_description">
+<p>the output will be in readable text (default). (Since 1.12)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="CAIRO-SCRIPT-MODE-BINARY:CAPS"></a>CAIRO_SCRIPT_MODE_BINARY</p></td>
+<td class="enum_member_description">
+<p>the output will use byte codes. (Since 1.12)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.12</p>
+</div>
+</div>
+<div class="refsect1">
+<a name="cairo-Script-Surfaces.see-also"></a><h2>See Also</h2>
+<p><a class="link" href="cairo-cairo-surface-t.html#cairo-surface-t" title="cairo_surface_t"><span class="type">cairo_surface_t</span></a></p>
+</div>
+</div>
+<div class="footer">
+<hr>Generated by GTK-Doc V1.27</div>
+</body>
+</html>

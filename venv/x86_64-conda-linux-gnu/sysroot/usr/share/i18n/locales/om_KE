@@ -1,0 +1,337 @@
+comment_char    %
+escape_char     /
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Oromo language locale for Kenya.
+%
+% Charset: ISO-8859-1 (Under Qubee conventions)
+%
+% Oromo terms are provided by Mahdi Hamid Muudee of Sagalee Oromoo
+% Publishing Co. Inc and formatted in this locale by Daniel Yacob of
+% the Ge'ez Frontier Foundation.  The Oromo language terms used here
+% are those considered to be canonical in the Oromo language under
+% contemporary and progressive usage adopted by government bureaus
+% across the Oromo region.  Regional synonyms naturally exist for many
+% of the month and day names.
+%
+% This locale data has been developed under the Yeha Project:
+%      http://yeha.sourceforge.net/
+%
+% build with: localedef -f ISO-8859-1 -i om_KE om_KE
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+LC_IDENTIFICATION
+%
+title      "Oromo language locale for Kenya."
+source     "Ge'ez Frontier Foundation & Sagalee Oromoo Publishing Co. Inc."
+address    "7802 Solomon Seal Dr., Springfield, VA 22152, USA"
+contact    ""
+email      "locales@geez.org"
+tel        ""
+fax        ""
+language   "om"
+territory  "KE"
+revision   "0.20"
+date       "2003-07-05"
+%
+category  "i18n:2000";LC_IDENTIFICATION
+category  "i18n:2000";LC_COLLATE
+category  "i18n:2000";LC_CTYPE
+category  "i18n:2000";LC_MEASUREMENT
+category  "i18n:2000";LC_MONETARY
+category  "posix:1993";LC_NUMERIC
+category  "i18n:2000";LC_PAPER
+category  "i18n:2000";LC_TELEPHONE
+category  "i18n:2000";LC_MESSAGES
+category  "i18n:2000";LC_NAME
+category  "i18n:2000";LC_ADDRESS
+category  "i18n:2000";LC_TIME
+%
+END LC_IDENTIFICATION
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  Qubee Specifc Data:
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+LC_COLLATE
+%
+% Copy the template from ISO/IEC 14651
+%
+copy "iso14651_t1"
+%
+% Define extra Oromo letters and their sort order:
+%
+collating-symbol  <CAP-MIN>
+collating-symbol  <ch-qubee>
+collating-element <CH> from "<U0043><U0048>"
+collating-element <Ch> from "<U0043><U0068>"
+collating-element <ch> from "<U0063><U0068>"
+collating-symbol  <dh-qubee>
+collating-element <DH> from "<U0044><U0048>"
+collating-element <Dh> from "<U0044><U0068>"
+collating-element <dh> from "<U0064><U0068>"
+collating-symbol  <kh-qubee>
+collating-element <KH> from "<U004B><U0048>"
+collating-element <Kh> from "<U004B><U0068>"
+collating-element <kh> from "<U006B><U0068>"
+collating-symbol  <ny-qubee>
+collating-element <NY> from "<U004E><U0059>"
+collating-element <Ny> from "<U004E><U0079>"
+collating-element <ny> from "<U006E><U0079>"
+collating-symbol  <ph-qubee>
+collating-element <PH> from "<U0050><U0048>"
+collating-element <Ph> from "<U0050><U0068>"
+collating-element <ph> from "<U0070><U0068>"
+collating-symbol  <sh-qubee>
+collating-element <SH> from "<U0053><U0048>"
+collating-element <Sh> from "<U0053><U0068>"
+collating-element <sh> from "<U0073><U0068>"
+
+reorder-after <MIN>
+<CAP-MIN>
+
+reorder-after <z>
+<ch-qubee>
+<dh-qubee>
+<kh-qubee>
+<ny-qubee>
+<ph-qubee>
+<sh-qubee>
+
+reorder-after <U00DE>
+<ch>	<ch-qubee>;<MIN>;<MIN>;IGNORE
+<Ch>	<ch-qubee>;<CAP>;<MIN>;IGNORE
+<CH>	<ch-qubee>;<CAP>;<CAP>;IGNORE
+<dh>	<dh-qubee>;<MIN>;<MIN>;IGNORE
+<Dh>	<dh-qubee>;<CAP>;<MIN>;IGNORE
+<DH>	<dh-qubee>;<CAP>;<CAP>;IGNORE
+<kh>	<kh-qubee>;<MIN>;<MIN>;IGNORE
+<Kh>	<kh-qubee>;<CAP>;<MIN>;IGNORE
+<KH>	<kh-qubee>;<CAP>;<CAP>;IGNORE
+<ny>	<ny-qubee>;<MIN>;<MIN>;IGNORE
+<Ny>	<ny-qubee>;<CAP>;<MIN>;IGNORE
+<NY>	<ny-qubee>;<CAP>;<CAP>;IGNORE
+<ph>	<ph-qubee>;<MIN>;<MIN>;IGNORE
+<Ph>	<ph-qubee>;<CAP>;<MIN>;IGNORE
+<PH>	<ph-qubee>;<CAP>;<CAP>;IGNORE
+<sh>	<sh-qubee>;<MIN>;<MIN>;IGNORE
+<Sh>	<sh-qubee>;<CAP>;<MIN>;IGNORE
+<SH>	<sh-qubee>;<CAP>;<CAP>;IGNORE
+
+reorder-end
+%
+END LC_COLLATE
+
+
+LC_CTYPE
+copy "i18n"
+
+translit_start
+include  "translit_combining";""
+translit_end
+END LC_CTYPE
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  Kenya Specifc and Shared Data:
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+LC_MEASUREMENT
+%
+% This is the ISO_IEC TR14652 Locale definition for the LC_MEASUREMENT category.
+%
+measurement 1
+%
+END LC_MEASUREMENT
+
+LC_MONETARY
+%
+int_curr_symbol       "<U004B><U0045><U0053><U0020>"
+currency_symbol       "<U004B><U0073><U0068>"
+mon_decimal_point     "<U002E>"
+mon_thousands_sep     "<U002C>"
+mon_grouping          3;3
+positive_sign         ""
+negative_sign         "<U002D>"
+int_frac_digits       2
+frac_digits           2
+p_cs_precedes         1
+p_sep_by_space        0
+n_cs_precedes         1
+n_sep_by_space        0
+p_sign_posn           1
+n_sign_posn           1
+%
+END LC_MONETARY
+
+
+LC_NUMERIC
+%
+% This is the POSIX Locale definition for the LC_NUMERIC category.
+%
+decimal_point          "<U002E>"
+thousands_sep          "<U002C>"
+grouping               3;3
+%
+END LC_NUMERIC
+
+
+LC_PAPER
+%
+% This is the ISO_IEC TR14652 Locale definition for the LC_PAPER category.
+%
+height      297
+width       210
+%
+END LC_PAPER
+
+
+LC_TELEPHONE
+%
+% This is the ISO_IEC TR14652 Locale definition for the LC_TELEPHONE category.
+%
+tel_dom_fmt    "<U0025><U0061><U002D><U0025><U006C>"
+tel_int_fmt    "<U0025><U0063><U002D><U0025><U0061><U002D><U0025><U006C>"
+int_prefix     "<U0032><U0035><U0034>"
+% int_select   unknown
+%
+END LC_TELEPHONE
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  Oromo Specific Data:
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+LC_MESSAGES
+copy "om_ET"
+END LC_MESSAGES
+
+LC_NAME
+copy "om_ET"
+END LC_NAME
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  Oromo/KE Specific Data:
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+LC_ADDRESS
+%
+% This is the ISO_IEC TR14652 Locale definition for the LC_ADDRESS category.
+%
+postal_fmt    "<U0025><U007A><U0025><U0063><U0025><U0054><U0025><U0073>/
+<U0025><U0062><U0025><U0065><U0025><U0072>"
+country_name  "<U004B><U0065><U0065><U006E><U0069><U0079><U0061><U0061>"
+country_post  "<U004B><U0045><U004E>"
+country_ab2   "<U004B><U0045>"
+country_ab3   "<U004B><U0045><U004E>"
+country_num   404
+% country_car   unknown
+% country_isbn  unknown, Need ISO 2108
+lang_name     "<U004F><U0072><U006F><U006D><U006F><U006F>"
+lang_ab       "<U006F><U006D>"
+lang_term     "<U006F><U0072><U006D>"
+lang_lib      "<U006F><U0072><U006D>"
+%
+END LC_ADDRESS
+
+
+LC_TIME
+%
+% Abbreviated weekday names (%a)
+%
+abday    "<U0044><U0069><U006C>";/
+	 "<U0057><U0069><U0078>";/
+	 "<U0051><U0069><U0062>";/
+	 "<U0052><U006F><U0062>";/
+	 "<U004B><U0061><U006D>";/
+	 "<U004A><U0069><U006D>";/
+	 "<U0053><U0061><U006E>"
+%
+% Full weekday names (%A)
+%
+day      "<U0044><U0069><U006C><U0062><U0061><U0074><U0061>";/
+	 "<U0057><U0069><U0069><U0078><U0061><U0074><U0061>";/
+	 "<U0051><U0069><U0062><U0078><U0061><U0074><U0061>";/
+	 "<U0052><U006F><U006F><U0062><U0069><U0069>";/
+	 "<U004B><U0061><U006D><U0069><U0069><U0073><U0061>";/
+	 "<U004A><U0069><U006D><U0061><U0061><U0074><U0061>";/
+	 "<U0053><U0061><U006E><U0062><U0061><U0074><U0061>"
+%
+% Abbreviated month names (%b)
+%
+abmon    "<U0041><U006D><U0061>";/
+         "<U0047><U0075><U0072>";/
+         "<U0042><U0069><U0074>";/
+         "<U0045><U006C><U0062>";/
+         "<U0043><U0061><U006D>";/
+         "<U0057><U0061><U0078>";/
+         "<U0041><U0064><U006F>";/
+         "<U0048><U0061><U0067>";/
+         "<U0046><U0075><U006C>";/
+         "<U004F><U006E><U006B>";/
+         "<U0053><U0061><U0064>";/
+         "<U004D><U0075><U0064>"
+%
+% Full month names (%B)
+%
+mon      "<U0041><U006D><U0061><U006A><U006A><U0069><U0069>";/
+         "<U0047><U0075><U0072><U0061><U0061><U006E><U0064><U0068><U0061><U006C><U0061>";/
+         "<U0042><U0069><U0074><U006F><U006F><U0074><U0065><U0065><U0073><U0073><U0061>";/
+         "<U0045><U006C><U0062><U0061>";/
+         "<U0043><U0061><U0061><U006D><U0073><U0061>";/
+         "<U0057><U0061><U0078><U0061><U0062><U0061><U006A><U006A><U0069><U0069>";/
+         "<U0041><U0064><U006F><U006F><U006C><U0065><U0065><U0073><U0073><U0061>";/
+         "<U0048><U0061><U0067><U0061><U0079><U0079><U0061>";/
+         "<U0046><U0075><U0075><U006C><U0062><U0061><U006E><U0061>";/
+         "<U004F><U006E><U006B><U006F><U006C><U006F><U006C><U0065><U0065><U0073><U0073><U0061>";/
+         "<U0053><U0061><U0064><U0061><U0061><U0073><U0061>";/
+         "<U004D><U0075><U0064><U0064><U0065><U0065>"
+%
+% Equivalent of AM PM
+%
+am_pm    "<U0057><U0044>";"<U0057><U0042>"
+%
+% Appropriate date representation (%x)
+%	"%d/%m/%Y"
+%
+d_fmt   "<U0025><U0064><U002F><U0025><U006D><U002F><U0025><U0059>"
+%
+% Appropriate time representation (%X)
+%	"%l:%M:%S"
+%
+t_fmt "<U0025><U006C><U003A><U0025><U004D><U003A><U0025><U0053>"
+%
+% Appropriate AM/PM time representation (%r)
+%	"%X %p"
+%
+t_fmt_ampm "<U0025><U0058><U0020><U0025><U0070>"
+%
+% Appropriate date and time representation (%c)
+%	"%A, %B %e, %Y %r %Z
+%
+d_t_fmt    "<U0025><U0041><U002C><U0020><U0025><U0042><U0020><U0025><U0065><U002C>/
+<U0020><U0025><U0059><U0020><U0025><U0072><U0020><U0025><U005A>"
+%
+% Appropriate date representation (date(1))
+%	"%A, %b %e, %r %Z %Y"
+%
+date_fmt    "<U0025><U0041><U002C><U0020><U0025><U0042><U0020><U0025><U0065><U002C>/
+<U0020><U0025><U0072><U0020><U0025><U005A><U0020><U0025><U0059>"
+%
+END LC_TIME
+%

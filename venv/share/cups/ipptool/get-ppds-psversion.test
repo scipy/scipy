@@ -1,0 +1,21 @@
+# Get PPD files using CUPS-Get-PPDs and PSVersion
+{
+	# The name of the test...
+	NAME "Get PPD files using CUPS-Get-PPDs and PSVersion"
+
+	# The resource to use for the POST
+	# RESOURCE /admin
+
+	# The operation to use
+	OPERATION CUPS-Get-PPDs
+
+	# Attributes, starting in the operation group...
+	GROUP operation
+	ATTR charset attributes-charset utf-8
+	ATTR language attributes-natural-language en
+	ATTR uri printer-uri $uri
+	ATTR text ppd-psversion $ENV[psversion]
+
+	# What statuses are OK?
+	STATUS successful-ok
+}

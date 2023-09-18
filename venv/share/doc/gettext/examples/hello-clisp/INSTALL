@@ -1,0 +1,10 @@
+This example relies on clisp (GNU clisp).
+
+Installation:
+  ./autogen.sh
+  ./configure --prefix=/some/prefix
+  make
+  make install
+Cleanup:
+  make distclean
+  ./autoclean.sh

@@ -1,0 +1,94 @@
+comment_char %
+escape_char  /
+%
+% Catalan Language Locale for Andorra
+% Language: ca
+% Territory: AD
+% Option: euro
+% Revision: 1.0
+% Date: 2006-01-16
+% Application: general
+% Users: general
+% Charset: ISO-8859-15
+% Distribution and use is free, also
+% for commercial purposes.
+
+LC_IDENTIFICATION
+title      "Catalan locale for Andorra "
+source     "Robert Millan"
+address    ""
+contact    ""
+email      ""
+tel        ""
+fax        ""
+language   "Catalan"
+territory  "Andorra"
+revision   "1.0"
+date       "2006-01-16"
+%
+category  "ca_AD:2000";LC_IDENTIFICATION
+category  "ca_AD:2000";LC_CTYPE
+category  "ca_AD:2000";LC_COLLATE
+category  "ca_AD:2000";LC_TIME
+category  "ca_AD:2000";LC_NUMERIC
+category  "ca_AD:2000";LC_MONETARY
+category  "ca_AD:2000";LC_MESSAGES
+category  "ca_AD:2000";LC_PAPER
+category  "ca_AD:2000";LC_NAME
+category  "ca_AD:2000";LC_ADDRESS
+category  "ca_AD:2000";LC_TELEPHONE
+
+END LC_IDENTIFICATION
+
+LC_COLLATE
+copy "ca_ES"
+END LC_COLLATE
+
+LC_CTYPE
+copy "ca_ES"
+END LC_CTYPE
+
+LC_MESSAGES
+copy "ca_ES"
+END LC_MESSAGES
+
+LC_MONETARY
+copy "ca_ES"
+END LC_MONETARY
+
+LC_NUMERIC
+copy "ca_ES"
+END LC_NUMERIC
+
+LC_TIME
+copy "ca_ES"
+END LC_TIME
+
+LC_PAPER
+copy "ca_ES"
+END LC_PAPER
+
+LC_TELEPHONE
+tel_int_fmt    "<U002B><U0025><U0063><U0020><U0025><U0061><U0020><U0025>/
+<U006C>"
+int_prefix     "<U0033><U0037><U0036>"
+END LC_TELEPHONE
+
+LC_MEASUREMENT
+copy "ca_ES"
+END LC_MEASUREMENT
+
+LC_NAME
+copy "ca_ES"
+END LC_NAME
+
+LC_ADDRESS
+postal_fmt    "<U0025><U0066><U0025><U004E><U0025><U0061><U0025><U004E>/
+<U0025><U0064><U0025><U004E><U0025><U0062><U0025><U004E><U0025><U0073>/
+<U0020><U0025><U0068><U0020><U0025><U0065><U0020><U0025><U0072><U0025>/
+<U004E><U0025><U007A><U0020><U0025><U0054><U0025>/
+<U004E><U0025><U0063><U0025><U004E>"
+country_ab2 "<U0041><U0044>"
+country_ab3 "<U0041><U004E><U0044>"
+country_num 20
+END LC_ADDRESS

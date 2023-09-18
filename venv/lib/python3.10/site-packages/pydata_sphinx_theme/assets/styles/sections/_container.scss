@@ -1,0 +1,9 @@
+.bd-container {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+
+  .bd-container__inner {
+    flex-grow: 1;
+  }
+}

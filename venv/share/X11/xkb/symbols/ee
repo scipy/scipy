@@ -1,0 +1,125 @@
+// Keyboard layouts for Estonia.
+
+// Estonian keyboard layout, by Ville Hallik <ville@linux.ee>.
+// This layout conforms to both EVS8:1993 and EVS8:2000 standards.
+default partial alphanumeric_keys
+xkb_symbols "basic" {
+
+    include "latin(type4)"
+
+    name[Group1]="Estonian";
+
+    key <TLDE>	{[ dead_caron, dead_tilde,        U2022,periodcentered]}; // bullet
+    key <AE03>	{[          3, numbersign,     sterling,     sterling ]};
+    key <AE04>	{[          4,   currency,       dollar,       dollar ]};
+    key <AE05>	{[          5,    percent,     EuroSign, threeeighths ]};
+    key <AE11>	{[       plus,   question,    backslash, questiondown ]};
+    key <AE12>	{[ dead_acute, dead_grave,        grave, dead_cedilla ]};
+
+    key <AD02>	{[          w,          W,       ssharp,  Greek_SIGMA ]};
+    key <AD11>	{[ udiaeresis, Udiaeresis, dead_diaeresis, dead_abovering ]};
+    key <AD12>	{[     otilde,     Otilde,      section,  dead_macron ]};
+
+    key <AC02>	{[          s,          S,       scaron,       Scaron ]};
+    key <AC10>	{[ odiaeresis, Odiaeresis,   dead_acute, dead_doubleacute ]};
+    key <AC11>	{[ adiaeresis, Adiaeresis,  asciicircum,  dead_circumflex ]};
+    key <BKSL>	{[ apostrophe,   asterisk,      onehalf,   dead_breve ]};
+
+    key <AB01>	{[          z,          Z,       zcaron,       Zcaron ]};
+    key <AB02>	{[          x,          X, guillemotright,  guillemotleft ]};
+    key <AB08>	{[      comma,  semicolon,         less,     multiply ]};
+    key <AB09>	{[     period,      colon,      greater,     division ]};
+    key <AB10>	{[      minus, underscore,          bar, dead_abovedot]};
+
+    include "eurosign(e)"
+
+    include "level3(ralt_switch)"
+};
+
+partial alphanumeric_keys
+xkb_symbols "nodeadkeys" {
+
+    include "ee(basic)"
+
+    name[Group1] = "Estonian (no dead keys)";
+
+    key <TLDE>	{[asciicircum, asciitilde                             ]};
+    key <AE12>	{[ apostrophe,      grave                             ]};
+
+    key <AD11>	{[ udiaeresis, Udiaeresis,    diaeresis,       degree ]};
+    key <AD12>	{[     otilde,     Otilde,      section,       macron ]};
+
+    key <AC10>	{[ odiaeresis, Odiaeresis,        acute,  doubleacute ]};
+    key <AC11>	{[ adiaeresis, Adiaeresis,  asciicircum,        caron ]};
+    key <BKSL>	{[ apostrophe,   asterisk,      onehalf,        breve ]};
+
+    key <AB10>	{[      minus, underscore, dead_belowdot,    abovedot ]};
+};
+
+// The US Dvorak layout with Estonian letters on the third level.
+partial alphanumeric_keys
+xkb_symbols "dvorak" {
+
+    include "us(dvorak)"
+
+    name[Group1] = "Estonian (Dvorak)";
+
+    key <AE03>	{[         3, numbersign,   sterling             ]};
+    key <AE04>	{[         4,     dollar,    section,   currency ]};
+    key <AE08>	{[         8,   asterisk,    onehalf             ]};
+
+    key <AC01>	{[         a,          A, adiaeresis, Adiaeresis ]};
+    key <AC02>	{[         o,          O,     otilde,     Otilde ]};
+    key <AC03>	{[         e,          E, odiaeresis, Odiaeresis ]};
+    key <AC04>	{[         u,          U, udiaeresis, Udiaeresis ]};
+    key <AC10>	{[         s,          S,     scaron,     Scaron ]};
+
+    key <AB10>	{[         z,          Z,     zcaron,     Zcaron ]};
+
+    include "kpdl(comma)"
+    include "eurosign(5)"
+
+    include "level3(ralt_switch)"
+};
+
+// The basic US layout with Estonian letters on the third level,
+// originally by Elan Ruusamäe <glen@delfi.ee>.
+partial alphanumeric_keys
+xkb_symbols "us" {
+
+    include "us(basic)"
+
+    name[Group1] = "Estonian (US)";
+
+    key <AE03>	{[           3,  numbersign, sterling,   sterling   ]};
+
+    key <AD01>	{[           q,  Q,          otilde,     Otilde     ]};
+    key <AD07>	{[           u,  U,          udiaeresis, Udiaeresis ]};
+    key <AD09>	{[           o,  O,          odiaeresis, Odiaeresis ]};
+    key <AD10>	{[           p,  P,          otilde,     Otilde     ]};
+    key <AD11>	{[ bracketleft,  braceleft,  udiaeresis, Udiaeresis ]};
+    key <AD12>	{[ bracketright, braceright, otilde,     Otilde     ]};
+
+    key <AC01>	{[           a,  A,          adiaeresis, Adiaeresis ]};
+    key <AC02>	{[           s,  S,          scaron,     Scaron     ]};
+    key <AC03>	{[           d,  D,          odiaeresis, Odiaeresis ]};
+    key <AC04>	{[           f,  F,          udiaeresis, Udiaeresis ]};
+    key <AC10>	{[   semicolon,  colon,      odiaeresis, Odiaeresis ]};
+    key <AC11>	{[  apostrophe,  quotedbl,   adiaeresis, Adiaeresis ]};
+
+    key <AB01>	{[           z,  Z,          zcaron,     Zcaron     ]};
+    key <AB02>	{[           x,  X,          otilde,     Otilde     ]};
+    key <AB03>	{[           c,  C,          cent,       cent       ]};
+
+    include "eurosign(5)"
+    include "eurosign(e)"
+
+    include "level3(ralt_switch)"
+};
+
+// EXTRAS:
+
+partial alphanumeric_keys
+	xkb_symbols "sun_type6" {
+	include "sun_vndr/ee(sun_type6)"
+};

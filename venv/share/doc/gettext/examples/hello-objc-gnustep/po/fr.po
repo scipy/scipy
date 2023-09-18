@@ -1,0 +1,31 @@
+# Messages français pour GNU gettext.
+# Copyright (C) 2006 Yoyodyne, Inc. (msgids)
+# This file is distributed under the same license as the gettext package.
+#
+# Michel Robitaille <robitail@IRO.UMontreal.CA>, 2006.
+# Christophe Combelles <ccomb@free.fr>, 2006
+# Stéphane Aulery <lkppo@free.fr>, 2015
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: hello-objc-gnustep 0.19.4.73\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"POT-Creation-Date: 2022-10-10 00:18+0200\n"
+"PO-Revision-Date: 2015-12-22 23:54+0100\n"
+"Last-Translator: Stéphane Aulery <lkppo@free.fr>\n"
+"Language-Team: French <traduc@traduc.org>\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: Hello.m:49
+msgid "Hello, world!"
+msgstr "Bonjour, le monde !"
+
+#: Hello.m:58
+#, objc-format
+msgid "This program is running as process number %d."
+msgstr "Ce programme est exécuté en tant que processus numéro %d."
