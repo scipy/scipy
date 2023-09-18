@@ -123,7 +123,12 @@ def fftfreq(n, d=1.0, *, xp=None, device=None):
         Window length.
     d : scalar, optional
         Sample spacing (inverse of the sampling rate). Defaults to 1.
-
+    xp : array_namespace, optional
+        The namespace for the return array. Default is None, where NumPy is used.
+    device : device, optional
+        The device for the return array.
+        Only valid when `xp.fft.fftfreq` implements the device parameter.
+     
     Returns
     -------
     f : ndarray
@@ -132,10 +137,10 @@ def fftfreq(n, d=1.0, *, xp=None, device=None):
     Examples
     --------
     >>> signal = np.array([-2, 8, 6, 4, 1, 0, 3, 5], dtype=float)
-    >>> fourier = np.fft.fft(signal)
+    >>> fourier = scipy.fft.fft(signal)
     >>> n = signal.size
     >>> timestep = 0.1
-    >>> freq = np.fft.fftfreq(n, d=timestep)
+    >>> freq = scipy.fft.fftfreq(n, d=timestep)
     >>> freq
     array([ 0.  ,  1.25,  2.5 , ..., -3.75, -2.5 , -1.25])
 
@@ -172,6 +177,11 @@ def rfftfreq(n, d=1.0, *, xp=None, device=None):
         Window length.
     d : scalar, optional
         Sample spacing (inverse of the sampling rate). Defaults to 1.
+    xp : array_namespace, optional
+        The namespace for the return array. Default is None, where NumPy is used.
+    device : device, optional
+        The device for the return array.
+        Only valid when `xp.fft.rfftfreq` implements the device parameter.
 
     Returns
     -------
@@ -181,13 +191,13 @@ def rfftfreq(n, d=1.0, *, xp=None, device=None):
     Examples
     --------
     >>> signal = np.array([-2, 8, 6, 4, 1, 0, 3, 5, -3, 4], dtype=float)
-    >>> fourier = np.fft.rfft(signal)
+    >>> fourier = scipy.fft.rfft(signal)
     >>> n = signal.size
     >>> sample_rate = 100
-    >>> freq = np.fft.fftfreq(n, d=1./sample_rate)
+    >>> freq = scipy.fft.fftfreq(n, d=1./sample_rate)
     >>> freq
     array([  0.,  10.,  20., ..., -30., -20., -10.])
-    >>> freq = np.fft.rfftfreq(n, d=1./sample_rate)
+    >>> freq = scipy.fft.rfftfreq(n, d=1./sample_rate)
     >>> freq
     array([  0.,  10.,  20.,  30.,  40.,  50.])
 
