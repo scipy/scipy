@@ -2152,6 +2152,8 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
         psupi = -ri
         i = 0
         dri0 = np.dot(ri, ri)
+        # We also track of |p_i|^2.
+        psupi_norm2 = dri0
 
         if fhess is not None:             # you want to compute hessian once.
             A = sf.hess(xk)
@@ -2175,7 +2177,10 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
             # check curvature
             Ap = asarray(Ap).squeeze()  # get rid of matrices...
             curv = np.dot(psupi, Ap)
-            if 0 <= curv <= 3 * float64eps:
+            if 0 <= curv <= 16 * float64eps * psupi_norm2:
+                # See https://arxiv.org/abs/1803.02924, Algo 1 Capped Conjugate Gradient.
+                # Note that 16 * eps is a bit arbitrary. We just want it to be a little
+                # larger than eps.
                 break
             elif curv < 0:
                 if (i > 0):
@@ -2190,6 +2195,8 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
             dri1 = np.dot(ri, ri)
             betai = dri1 / dri0
             psupi = -ri + betai * psupi
+            # We use |p_i|^2 = |r_i|^2 + beta_i^2 |p_{i-1}|^2
+            psupi_norm2 = dri1 + betai**2 * psupi_norm2
             i = i + 1
             dri0 = dri1          # update np.dot(ri,ri) for next time.
         else:
