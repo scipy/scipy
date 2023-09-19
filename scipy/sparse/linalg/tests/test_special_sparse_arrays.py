@@ -216,8 +216,8 @@ class TestSakurai:
 
     @pytest.mark.parametrize('dtype', tested_types)
     def test_dot(self, dtype):
-    """ Test the dot-product for type preservation and consistency.
-    """
+        """ Test the dot-product for type preservation and consistency.
+        """
         n = 5
         sak = Sakurai(n)
         x0 = np.arange(n)
