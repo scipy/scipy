@@ -625,7 +625,7 @@ def correlation(u, v, w=None, centered=True):
     Find the correlation between two arrays.
 
     >>> from scipy.spatial.distance import correlation
-    >>> correlation([1, 0, 1],[1, 1, 0])
+    >>> correlation([1, 0, 1], [1, 1, 0])
     1.5
 
     Using a weighting array, the correlation can be calculated as:
