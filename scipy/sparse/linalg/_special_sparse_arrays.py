@@ -519,10 +519,15 @@ class Sakurai(LinearOperator):
     """
     Construct a Sakurai matrix in various formats and its eigenvalues.
 
-    Constructs the "Sakurai" matrix motivated by reference [1]_.
-    The matrix is square real symmetric positive definite and banded
-    with integer entries and analytically known eigenvalues.
+    Constructs the "Sakurai" matrix motivated by reference [1]_:
+    square real symmetric positive definite and 5-diagonal
+    with the main digonal ``[5, 6, 6, ..., 6, 6, 5], the ``+1`` and ``-1``
+    diagonals filled with ``-4``, and the ``+2`` and ``-2`` diagonals
+    made of ``1``. Its eigenvalues are analytically known to be
+    ``16. * np.power(np.cos(0.5 * k * np.pi / (n + 1)), 4)``.
     The matrix gets ill-conditioned with its size growing.
+    It is useful for testing and benchmarking sparse eigenvalue solvers
+    especially those taking advantage of its banded 5-diagonal structure.
     See the notes below for details.
 
     Parameters
@@ -631,6 +636,9 @@ class Sakurai(LinearOperator):
         return spdiags([d2, d1, d0, d1, d2], [-2, -1, 0, 1, 2], self.n, self.n)
 
     def tobanded(self):
+        """
+        Construct a Sakurai matrix in various formats and its eigenvalues.
+        """
         d0 = np.r_[5, 6 * np.ones(self.n - 2, dtype=self.dtype), 5]
         d1 = -4 * np.ones(self.n, dtype=self.dtype)
         d2 = np.ones(self.n, dtype=self.dtype)
@@ -646,6 +654,11 @@ class Sakurai(LinearOperator):
         return a
     
     def _matvec(self, x):
+        """
+        Construct matrix-free callable banded-matrix-vector multiplication by
+        the Sakurai matrix without constructing or storing the matrix itself
+        using the knowledge of its entries and the 5-diagonal format.
+        """
         n = self.n
         assert n == x.shape[0]
         x = x.reshape(n, -1)
@@ -658,6 +671,11 @@ class Sakurai(LinearOperator):
         return sx
 
     def _matmat(self, x):
+        """
+        Construct matrix-free callable matrix-matrix multiplication by
+        the Sakurai matrix without constructing or storing the matrix itself
+        by reusing the ``_matvec(x)`` that supports both 1D and 2D arrays ``x``.
+        """        
         return self._matvec(x)
 
     def _adjoint(self):
@@ -684,9 +702,9 @@ class MikotaM(LinearOperator):
     Methods
     -------
     toarray()
-        Construct a dense array from Laplacian data
+        Construct a dense array from Mikota data
     tosparse()
-        Construct a sparse array from Laplacian data
+        Construct a sparse array from Mikota data
     tobanded()
         The format for banded symmetric matrices,
         i.e., (1, n) ndarray with the main diagonal.
@@ -715,6 +733,11 @@ class MikotaM(LinearOperator):
         return np.diag(aranp1_inv)
 
     def _matvec(self, x):
+        """
+        Construct matrix-free callable banded-matrix-vector multiplication by
+        the Mikota mass matrix without constructing or storing the matrix itself
+        using the knowledge of its entries and the diagonal format.
+        """
         n = self.shape[0]
         aranp1_inv = 1. / np.arange(1, n + 1)
         # linearoperator requires 2D array
@@ -723,6 +746,11 @@ class MikotaM(LinearOperator):
         return aranp1_inv[:, np.newaxis] * x
 
     def _matmat(self, x):
+        """
+        Construct matrix-free callable matrix-matrix multiplication by
+        the Mikota mass matrix without constructing or storing the matrix itself
+        by reusing the ``_matvec(x)`` that supports both 1D and 2D arrays ``x``.
+        """     
         return self._matvec(x)
 
     def _adjoint(self):
@@ -749,9 +777,9 @@ class MikotaK(LinearOperator):
     Methods
     -------
     toarray()
-        Construct a dense array from Laplacian data
+        Construct a dense array from Mikota data
     tosparse()
-        Construct a sparse array from Laplacian data
+        Construct a sparse array from Mikota data
     tobanded()
         The format for banded symmetric matrices,
         i.e., (2, n) ndarray with 2 upper diagonals
@@ -779,6 +807,11 @@ class MikotaK(LinearOperator):
         return self.tosparse().toarray()
 
     def _matvec(self, x):
+        """
+        Construct matrix-free callable banded-matrix-vector multiplication by
+        the Mikota stiffness matrix without constructing or storing the matrix
+        itself using the knowledge of its entries and the 3-diagonal format.
+        """
         n = self.shape[0]
         x = x.reshape(n, -1)
         kx = np.zeros_like(x)
@@ -792,6 +825,11 @@ class MikotaK(LinearOperator):
         return kx
 
     def _matmat(self, x):
+        """
+        Construct matrix-free callable matrix-matrix multiplication by
+        the Stiffness mass matrix without constructing or storing the matrix itself
+        by reusing the ``_matvec(x)`` that supports both 1D and 2D arrays ``x``.
+        """  
         return self._matvec(x)
 
     def _adjoint(self):
