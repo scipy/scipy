@@ -25,6 +25,7 @@ __all__ = ['fmin', 'fmin_powell', 'fmin_bfgs', 'fmin_ncg', 'fmin_cg',
 
 __docformat__ = "restructuredtext en"
 
+import math
 import warnings
 import sys
 import inspect
@@ -2128,7 +2129,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     cg_maxiter = 20*len(x0)
 
     xtol = len(x0) * avextol
-    update = [2 * xtol]
+    update_l1norm = 2 * xtol
     xk = x0
     if retall:
         allvecs = [xk]
@@ -2137,15 +2138,15 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     old_fval = f(x0)
     old_old_fval = None
     float64eps = np.finfo(np.float64).eps
-    while np.add.reduce(np.abs(update)) > xtol:
+    while update_l1norm > xtol:
         if k >= maxiter:
             msg = "Warning: " + _status_message['maxiter']
             return terminate(1, msg)
         # Compute a search direction pk by applying the CG method to
         #  del2 f(xk) p = - grad f(xk) starting from 0.
         b = -fprime(xk)
-        maggrad = np.add.reduce(np.abs(b))
-        eta = np.min([0.5, np.sqrt(maggrad)])
+        maggrad = np.linalg.norm(b, ord=1)
+        eta = min(0.5, math.sqrt(maggrad))
         termcond = eta * maggrad
         xsupi = zeros(len(x0), dtype=x0.dtype)
         ri = -b
@@ -2218,6 +2219,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
         intermediate_result = OptimizeResult(x=xk, fun=old_fval)
         if _call_callback_maybe_halt(callback, intermediate_result):
             return terminate(5, "")
+        update_l1norm = np.linalg.norm(update, ord=1)
 
     else:
         if np.isnan(old_fval) or np.isnan(update).any():
