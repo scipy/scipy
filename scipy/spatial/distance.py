@@ -630,7 +630,7 @@ def correlation(u, v, w=None, centered=True):
 
     Using a weighting array, the correlation can be calculated as:
 
-    >>> correlation([1, 0, 1],[1, 1, 0], [0.9, 0.1, 0.1])
+    >>> correlation([1, 0, 1], [1, 1, 0], w=[0.9, 0.1, 0.1])
     1.1
 
     If centering is not needed, the correlation can be calculated as:
