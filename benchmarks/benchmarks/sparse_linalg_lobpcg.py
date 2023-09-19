@@ -34,7 +34,7 @@ class Bench(Benchmark):
 
         self.time_sakurai_inverse.__func__.params = list(self.params)
         self.time_sakurai_inverse.__func__.params[0] = [500, 1000]
-        self.time_sakurai_inverse.__func__.setup = self.setup_sakuraii
+        self.time_sakurai_inverse.__func__.setup = self.setup_sakurai_inverse
 
 
     def setup_mikota(self, n, solver):
