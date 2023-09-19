@@ -2129,7 +2129,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
 
     xtol = len(x0) * avextol
     update = [2 * xtol]
-    xk = x0
+    xk = np.copy(x0)
     if retall:
         allvecs = [xk]
     k = 0
@@ -2155,7 +2155,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
 
         if fhess is not None:             # you want to compute hessian once.
             A = sf.hess(xk)
-            hcalls = hcalls + 1
+            hcalls += 1
 
         for k2 in range(cg_maxiter):
             if np.add.reduce(np.abs(ri)) <= termcond:
@@ -2165,7 +2165,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
                     Ap = approx_fhess_p(xk, psupi, fprime, epsilon)
                 else:
                     Ap = fhess_p(xk, psupi, *args)
-                    hcalls = hcalls + 1
+                    hcalls += 1
             else:
                 if isinstance(A, HessianUpdateStrategy):
                     # if hess was supplied as a HessianUpdateStrategy
@@ -2185,12 +2185,12 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
                     xsupi = dri0 / (-curv) * b
                     break
             alphai = dri0 / curv
-            xsupi = xsupi + alphai * psupi
-            ri = ri + alphai * Ap
+            xsupi += alphai * psupi
+            ri += alphai * Ap
             dri1 = np.dot(ri, ri)
             betai = dri1 / dri0
             psupi = -ri + betai * psupi
-            i = i + 1
+            i += 1
             dri0 = dri1          # update np.dot(ri,ri) for next time.
         else:
             # curvature keeps increasing, bail out
@@ -2211,7 +2211,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
             return terminate(2, msg)
 
         update = alphak * pk
-        xk = xk + update        # upcast if necessary
+        xk += update        # upcast if necessary
         if retall:
             allvecs.append(xk)
         k += 1
