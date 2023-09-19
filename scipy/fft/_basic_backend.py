@@ -150,6 +150,8 @@ def _swap_direction(norm):
 def hfftn(x, s=None, axes=None, norm=None,
           overwrite_x=False, workers=None, *, plan=None):
     xp = array_namespace(x)
+    if is_numpy(xp):
+        return _pocketfft.hfftn(x, s, axes, norm, overwrite_x, workers, plan=plan)
     if is_complex(x, xp):
         x = xp.conj(x)
     return irfftn(x, s, axes, _swap_direction(norm),
@@ -158,21 +160,17 @@ def hfftn(x, s=None, axes=None, norm=None,
 
 def hfft2(x, s=None, axes=(-2, -1), norm=None,
           overwrite_x=False, workers=None, *, plan=None):
-    xp = array_namespace(x)
-    if is_complex(x, xp):
-        x = xp.conj(x)
-    return irfftn(x, s, axes, _swap_direction(norm),
-                  overwrite_x, workers, plan=plan)
+    return hfftn(x, s, axes, norm, overwrite_x, workers, plan=plan)
 
 
 def ihfftn(x, s=None, axes=None, norm=None,
            overwrite_x=False, workers=None, *, plan=None):
     xp = array_namespace(x)
+    if is_numpy(xp):
+        return _pocketfft.ihfftn(x, s, axes, norm, overwrite_x, workers, plan=plan)
     return xp.conj(rfftn(x, s, axes, _swap_direction(norm),
                          overwrite_x, workers, plan=plan))
 
 def ihfft2(x, s=None, axes=(-2, -1), norm=None,
            overwrite_x=False, workers=None, *, plan=None):
-    xp = array_namespace(x)
-    return xp.conj(rfftn(x, s, axes, _swap_direction(norm),
-                         overwrite_x, workers, plan=plan))
+    return ihfftn(x, s, axes, norm, overwrite_x, workers, plan=plan)
