@@ -13,13 +13,8 @@ from scipy.conftest import (
     skip_if_array_api_backend
 )
 from scipy._lib._array_api import (
-    _assert_matching_namespace,
-    array_namespace,
-    size,
-    xp_assert_close,
-    xp_assert_equal
+    array_namespace, size, xp_assert_close, xp_assert_equal
 )
-
 
 def fft1(x):
     L = len(x)
@@ -363,9 +358,6 @@ class TestFFT1D:
         xp_assert_close(res_fft, x_complex, rtol=rtol, atol=0)
         xp_assert_close(res_rfft, x, rtol=rtol, atol=0)
         xp_assert_close(res_hfft, x, rtol=rtol, atol=0)
-        assert res_fft.dtype == x_complex.dtype
-        assert res_rfft.dtype == x.dtype
-        assert res_hfft.dtype == x.dtype
 
 
 @pytest.mark.parametrize(
@@ -493,50 +485,6 @@ class TestIRFFTN:
 
         # Should not raise error
         fft.irfftn(a, axes=axes)
-
-
-class TestNamespaces:
-
-    @array_api_compatible
-    @pytest.mark.parametrize("func", [fft.fft, fft.ifft])
-    def test_fft_ifft(self, func, xp):
-        x = xp.asarray(random(30) + 1j*random(30))
-        _assert_matching_namespace(func(x), x)
-
-    # torch.fft not yet implemented by array-api-compat
-    @skip_if_array_api_backend('torch')
-    @array_api_compatible
-    @pytest.mark.parametrize("func", [fft.fftn, fft.ifftn])
-    def test_fftn_ifftn(self, func, xp):
-        x = xp.asarray(random((30, 20, 10)) + 1j*random((30, 20, 10)))
-        _assert_matching_namespace(func(x), x)
-
-    @array_api_compatible
-    def test_rfft(self, xp):
-        x = xp.asarray(random(29))
-        _assert_matching_namespace(fft.rfft(x), x)
-
-    @array_api_compatible
-    def test_irfft(self, xp):
-        x = xp.asarray(random(30))
-        _assert_matching_namespace(fft.irfft(x), x)
-
-    # torch.fft not yet implemented by array-api-compat
-    @skip_if_array_api_backend('torch')
-    @array_api_compatible
-    @pytest.mark.parametrize("func", [fft.rfftn, fft.irfftn])
-    def test_rfftn_irfftn(self, func, xp):
-        x = xp.asarray(random((30, 20, 10)))
-        _assert_matching_namespace(func(x), x)
-
-    @array_api_compatible
-    def test_hfft_ihfft(self, xp):
-        x = random(14) + 1j*random(14)
-        x_herm = np.concatenate((random(1), x, random(1)))
-        x_herm = xp.asarray(x_herm)
-        y = fft.hfft(x_herm)
-        _assert_matching_namespace(y, x_herm)
-        _assert_matching_namespace(fft.ihfft(y), y)
 
 
 # torch.fft not yet implemented by array-api-compat

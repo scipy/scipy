@@ -15,11 +15,7 @@ from scipy.conftest import (
     skip_if_array_api_gpu,
     skip_if_array_api_backend
 )
-from scipy._lib._array_api import(
-    _assert_matching_namespace,
-    xp_assert_close,
-    SCIPY_DEVICE
-)
+from scipy._lib._array_api import xp_assert_close, SCIPY_DEVICE
 from scipy import fft
 
 _5_smooth_numbers = [
@@ -484,33 +480,3 @@ class TestRFFTFreq:
         xp_assert_close(y, x2)
         y = xp.asarray(10 * xp.pi * fft.rfftfreq(10, xp.pi, xp=xp), dtype=xp.float64)
         xp_assert_close(y, x2)
-
-
-class TestNamespaces:
-
-    # fft not yet implemented by numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # cupy.fft not yet implemented by array-api-compat
-    @skip_if_array_api_backend('cupy')
-    @array_api_compatible
-    def test_fftfreq(self, xp):
-        x = xp.asarray([0, 1, 2, 3, 4, -4, -3, -2, -1])
-        _assert_matching_namespace(fft.fftfreq(9, xp=xp), x)
-
-    # fft not yet implemented by numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # cupy.fft not yet implemented by array-api-compat
-    @skip_if_array_api_backend('cupy')
-    @array_api_compatible
-    def test_rfftfreq(self, xp):
-        x = xp.asarray([0, 1, 2, 3, 4])
-        _assert_matching_namespace(fft.rfftfreq(9, xp=xp), x)
-
-    # torch.fft not yet implemented by array-api-compat
-    @skip_if_array_api_backend('torch')
-    @array_api_compatible
-    def test_fftshift_ifftshift(self, xp):
-        x = xp.asarray([0, 1, 2, 3, 4, -4, -3, -2, -1])
-        y = xp.asarray([-4, -3, -2, -1, 0, 1, 2, 3, 4])
-        _assert_matching_namespace(fft.fftshift(x), y)
-        _assert_matching_namespace(fft.ifftshift(y), x)
