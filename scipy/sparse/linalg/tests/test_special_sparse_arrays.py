@@ -146,6 +146,8 @@ class TestLaplacianNd:
     @pytest.mark.parametrize('grid_shape', [(6, ), (2, 3), (2, 3, 4)])
     @pytest.mark.parametrize('bc', ['neumann', 'dirichlet', 'periodic'])
     def test_dot(self, grid_shape, bc, dtype):
+        """ Test the dot-product for type preservation and consistency.
+        """
         lap = LaplacianNd(grid_shape, boundary_conditions=bc)
         n = np.prod(grid_shape)
         x0 = np.arange(n)
@@ -170,7 +172,7 @@ class TestSakurai:
     """
     Sakurai tests
     """
-    ALLDTYPES = [np.int32, np.int64] + REAL_DTYPES + COMPLEX_DTYPES
+    tested_types = [np.int32, np.int64] + REAL_DTYPES + COMPLEX_DTYPES
 
     def test_specific_shape(self):
         sak = Sakurai(6)
@@ -202,7 +204,7 @@ class TestSakurai:
             )
         np.array_equal(e, sak.eigenvalues)
 
-    @pytest.mark.parametrize('dtype', ALLDTYPES)
+    @pytest.mark.parametrize('dtype', tested_types)
     def test_linearoperator_shape_dtype(self, dtype):
         n = 7
         sak = Sakurai(n, dtype=dtype)
@@ -212,8 +214,10 @@ class TestSakurai:
         assert_array_equal(sak.tosparse().toarray(),
                            Sakurai(n).tosparse().toarray().astype(dtype))
 
-    @pytest.mark.parametrize('dtype', ALLDTYPES)
+    @pytest.mark.parametrize('dtype', tested_types)
     def test_dot(self, dtype):
+    """ Test the dot-product for type preservation and consistency.
+    """
         n = 5
         sak = Sakurai(n)
         x0 = np.arange(n)
@@ -233,7 +237,8 @@ class TestMikotaPair:
     """
     MikotaPair tests
     """
-    ALLDTYPES = [np.int32, np.int64] + REAL_DTYPES + COMPLEX_DTYPES
+    # type preservation cannot be smaller than the dtype of the `LinearOperator`
+    tested_types = [np.int32, np.int64] + REAL_DTYPES + COMPLEX_DTYPES
 
     def test_specific_shape(self):
         n = 6
@@ -271,7 +276,7 @@ class TestMikotaPair:
         e = np.array([ 1,  4,  9, 16, 25, 36])
         np.array_equal(e, mik.eigenvalues)
 
-    @pytest.mark.parametrize('dtype', ALLDTYPES)
+    @pytest.mark.parametrize('dtype', tested_types)
     def test_linearoperator_shape_dtype(self, dtype):
         n = 7
         mik = MikotaPair(n, dtype=dtype)
@@ -293,8 +298,10 @@ class TestMikotaPair:
         assert_array_equal(mik_k.tosparse().toarray(),
                            mikd_k.tosparse().toarray().astype(dtype))
 
-    @pytest.mark.parametrize('dtype', ALLDTYPES)
+    @pytest.mark.parametrize('dtype', tested_types)
     def test_dot(self, dtype):
+        """ Test the dot-product for type preservation and consistency.
+        """
         n = 5
         mik = MikotaPair(n, dtype=dtype)
         mik_k = mik.k
