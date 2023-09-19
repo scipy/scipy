@@ -1459,7 +1459,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     occurs when the (finite difference) numerical differentiation cannot provide
     sufficient precision to ever satisfy the `gtol` termination criterion.
     This can happen when working in single precision and a callable jac is not
-    provided.
+    provided. For single precision problems a `gtol` of 1e-3 seems to work.
     """
     _check_unknown_options(unknown_options)
     _check_positive_definite(hess_inv0)
