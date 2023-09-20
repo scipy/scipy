@@ -720,7 +720,7 @@ class MikotaM(LinearOperator):
 
     def tosparse(self):
         from scipy.sparse import diags
-        return diags([self.tobanded()], [0], shape=(n, n))
+        return diags([self.tobanded()], [0], shape=self.shape)
 
     def toarray(self):
         return np.diag(self.tobanded())
