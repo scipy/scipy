@@ -709,23 +709,23 @@ class MikotaM(LinearOperator):
         The format for banded symmetric matrices,
         i.e., (1, n) ndarray with the main diagonal.
     """
-    def __init__(self, shape, dtype):
+    def __init__(self, shape, dtype=np.float64):
         self.shape = shape
         self.dtype = dtype
         super().__init__(dtype, shape)
         # The matrix is constructed from its diagonal 1 / [1, ..., N+1];
         # we precompute this to avoid duplicating the computation
-        self._diag = 1. / np.arange(1, shape[0] + 1, dtype=self.dtype)
+        self._diag = (1. / np.arange(1, shape[0] + 1).astype(dtype)
 
     def tobanded(self):
         return self._diag
 
     def tosparse(self):
         from scipy.sparse import diags
-        return diags([self._diag], [0], shape=self.shape)
+        return diags([self._diag], [0], shape=self.shape, dtype=self.dtype)
 
     def toarray(self):
-        return np.diag(self._diag)
+        return np.diag(self._diag).astype(self.dtype)
 
     def _matvec(self, x):
         """
@@ -733,10 +733,7 @@ class MikotaM(LinearOperator):
         the Mikota mass matrix without constructing or storing the matrix itself
         using the knowledge of its entries and the diagonal format.
         """
-        # linearoperator requires 2D array
-        if len(x.shape) == 1:
-            x = x.reshape(-1, 1)
-        return self._diag[:, np.newaxis] * x
+        return self._diag[:, np.newaxis] * x.reshape((-1, x.shape[0]))
 
     def _matmat(self, x):
         """
@@ -782,18 +779,18 @@ class MikotaK(LinearOperator):
         self.shape = shape
         self.dtype = dtype
         super().__init__(dtype, shape)
+        # The matrix is constructed from its diagonals;
+        # we precompute these to avoid duplicating the computation
+        self._diag0 = np.arange(2 * n - 1, 0, -2, dtype=self.dtype)
+        self._diag1 = - np.arange(n - 1, 0, -1, dtype=self.dtype)
 
     def tobanded(self):
-        n = self.shape[0]
-        y = - np.arange(n - 1, 0, -1, dtype=self.dtype)
-        z = np.arange(2 * n - 1, 0, -2, dtype=self.dtype)
-        return np.array([np.pad(y, (1, 0), 'constant'), z])
+        return np.array([np.pad(self._diag0, (1, 0), 'constant'), self._diag1])
 
     def tosparse(self):
         from scipy.sparse import diags
-        y = self.tobanded()[0, 1:]
-        z = self.tobanded()[1, :]
-        return diags([y, z, y], [-1, 0, 1], shape=self.shape)
+        return diags([self._diag1, self._diag0, self._diag1], [-1, 0, 1],
+                     shape=self.shape, dtype=self.dtype)
 
     def toarray(self):
         return self.tosparse().toarray()
@@ -807,8 +804,8 @@ class MikotaK(LinearOperator):
         n = self.shape[0]
         x = x.reshape(n, -1)
         kx = np.zeros_like(x)
-        y = - np.arange(n - 1, 0, -1)
-        z = np.arange(2 * n - 1, 0, -2)
+        y = self._diag1
+        z = self._diag0
         kx[0, :] = z[0] * x[0, :] + y[0] * x[1, :]
         kx[-1, :] = y[-1] * x[-2, :] + z[-1] * x[-1, :]
         kx[1: -1, :] = (y[:-1, None] * x[: -2,:]
@@ -927,7 +924,7 @@ class MikotaPair:
         self.dtype = dtype
         self.shape = (n, n)
 
-        aranp1 = np.arange(1, n + 1, dtype=np.uint64)
-        self.eigenvalues = aranp1 * aranp1
+        arange_plus1 = np.arange(1, n + 1, dtype=np.uint64)
+        self.eigenvalues = arange_plus1 * arange_plus1
         self.m = MikotaM(self.shape, self.dtype)
         self.k = MikotaK(self.shape, self.dtype)
