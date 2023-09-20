@@ -713,17 +713,19 @@ class MikotaM(LinearOperator):
         self.shape = shape
         self.dtype = dtype
         super().__init__(dtype, shape)
+        # The matrix is constructed from its diagonal 1 / [1, ..., N+1];
+        # we precompute this to avoid duplicating the computation
+        self._diag = 1. / np.arange(1, shape[0] + 1, dtype=self.dtype)
 
     def tobanded(self):
-        n = self.shape[0]
-        return 1. / np.arange(1, n + 1, dtype=self.dtype)
+        return self._diag
 
     def tosparse(self):
         from scipy.sparse import diags
-        return diags([self.tobanded()], [0], shape=self.shape)
+        return diags([self._diag], [0], shape=self.shape)
 
     def toarray(self):
-        return np.diag(self.tobanded())
+        return np.diag(self._diag)
 
     def _matvec(self, x):
         """
@@ -731,12 +733,10 @@ class MikotaM(LinearOperator):
         the Mikota mass matrix without constructing or storing the matrix itself
         using the knowledge of its entries and the diagonal format.
         """
-        n = self.shape[0]
-        aranp1_inv = 1. / np.arange(1, n + 1)
         # linearoperator requires 2D array
         if len(x.shape) == 1:
             x = x.reshape(-1, 1)
-        return aranp1_inv[:, np.newaxis] * x
+        return self._diag[:, np.newaxis] * x
 
     def _matmat(self, x):
         """
