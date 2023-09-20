@@ -1457,7 +1457,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     ``Desired error not necessarily achieved due to precision loss``, then
     consider setting `gtol` to a higher value. This precision loss typically
     occurs when the (finite difference) numerical differentiation cannot provide
-    sufficient precision to ever satisfy the `gtol` termination criterion.
+    sufficient precision to satisfy the `gtol` termination criterion.
     This can happen when working in single precision and a callable jac is not
     provided. For single precision problems a `gtol` of 1e-3 seems to work.
     """
