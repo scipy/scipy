@@ -791,8 +791,8 @@ class MikotaK(LinearOperator):
 
     def tosparse(self):
         from scipy.sparse import diags
-        y = self.tobanded[0, 1:]
-        z = self.tobanded[1, :]
+        y = self.tobanded()[0, 1:]
+        z = self.tobanded()[1, :]
         return diags([y, z, y], [-1, 0, 1], shape=self.shape)
 
     def toarray(self):
