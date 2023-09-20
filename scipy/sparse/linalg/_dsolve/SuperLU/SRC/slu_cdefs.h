@@ -90,11 +90,7 @@ typedef int int_t; /* default */
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
-#if defined(_MSC_VER) && !defined(__INTEL_COMPILER) && (_MSC_VER < 1900)
-#include "msc_stdint.h"
-#else
 #include <stdint.h>
-#endif
 #include <string.h>
 #include "slu_Cnames.h"
 #include "supermatrix.h"
