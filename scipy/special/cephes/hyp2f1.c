@@ -85,8 +85,8 @@ static double hyp2f1ra(double a, double b, double c, double x,
 		       double *loss);
 static double hyp2f1_neg_c_equal_bc(double a, double b, double x);
 
-double hyp2f1(a, b, c, x)
-double a, b, c, x;
+
+double hyp2f1(double a, double b, double c, double x)
 {
     double d, d1, d2, e;
     double p, q, r, s, y, ax;
