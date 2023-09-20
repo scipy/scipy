@@ -138,7 +138,16 @@ if ( jcol == MIN_COL ) {
         // jcol represents the rank of U
         // report the rank let dgstrf handle the pivot
 #if 1
+#if SCIPY_FIX
+	if (pivptr < nsupr) {
+	    *pivrow = lsub_ptr[pivptr];
+	}
+	else {
+	    *pivrow = diagind;
+	}
+#else
     *pivrow = lsub_ptr[pivptr];
+#endif
     perm_r[*pivrow] = jcol;
 #else
     perm_r[diagind] = jcol;
