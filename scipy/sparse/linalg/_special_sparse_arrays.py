@@ -714,23 +714,16 @@ class MikotaM(LinearOperator):
         self.dtype = dtype
         super().__init__(dtype, shape)
 
-    def tosparse(self):
-        from scipy.sparse import diags
-        n = self.shape[0]
-        aranp1 = np.arange(1, n + 1, dtype=self.dtype)
-        aranp1_inv = 1. / aranp1
-        return diags([aranp1_inv], [0], shape=(n, n))
-
     def tobanded(self):
         n = self.shape[0]
-        aranp1 = np.arange(1, n + 1, dtype=self.dtype)
-        return 1. / aranp1
+        return 1. / np.arange(1, n + 1, dtype=self.dtype)
+
+    def tosparse(self):
+        from scipy.sparse import diags
+        return diags([self.tobanded()], [0], shape=(n, n))
 
     def toarray(self):
-        n = self.shape[0]
-        aranp1 = np.arange(1, n + 1, dtype=self.dtype)
-        aranp1_inv = 1. / aranp1
-        return np.diag(aranp1_inv)
+        return np.diag(self.tobanded())
 
     def _matvec(self, x):
         """
