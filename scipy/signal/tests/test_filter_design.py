@@ -905,7 +905,7 @@ class TestFreqz:
                               (True, False, 257),
                               (True, True, 257)])
     def test_17289(self, whole, nyquist, worN):
-        d = [0,1]
+        d = [0, 1]
         w, Drfft = freqz(d, worN=32, whole=whole, include_nyquist=nyquist)
         _, Dpoly = freqz(d, worN=w)
         assert_allclose(Drfft, Dpoly)
