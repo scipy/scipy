@@ -720,10 +720,10 @@ class MikotaM(LinearOperator):
 
     def tosparse(self):
         from scipy.sparse import diags
-        return diags([self.tobanded()], [0], shape=self.shape)
+        return diags([self.tobanded], [0], shape=self.shape)
 
     def toarray(self):
-        return np.diag(self.tobanded())
+        return np.diag(self.tobanded)
 
     def _matvec(self, x):
         """
@@ -783,18 +783,17 @@ class MikotaK(LinearOperator):
         self.dtype = dtype
         super().__init__(dtype, shape)
 
-    def tosparse(self):
-        from scipy.sparse import diags
-        n = self.shape[0]
-        y = - np.arange(n - 1, 0, -1, dtype=self.dtype)
-        z = np.arange(2 * n - 1, 0, -2, dtype=self.dtype)
-        return diags([y, z, y], [-1, 0, 1], shape=(n, n))
-
     def tobanded(self):
         n = self.shape[0]
         y = - np.arange(n - 1, 0, -1, dtype=self.dtype)
         z = np.arange(2 * n - 1, 0, -2, dtype=self.dtype)
         return np.array([np.pad(y, (1, 0), 'constant'), z])
+
+    def tosparse(self):
+        from scipy.sparse import diags
+        y = self.tobanded[0, 1:]
+        z = self.tobanded[1, :]
+        return diags([y, z, y], [-1, 0, 1], shape=self.shape)
 
     def toarray(self):
         return self.tosparse().toarray()
