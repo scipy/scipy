@@ -1454,7 +1454,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     Parameters `c1` and `c2` must satisfy ``0 < c1 < c2 < 1``.
 
     If minimization doesn't complete successfully, with an error message of
-    `Desired error not necessarily achieved due to precision loss`, then
+    ``Desired error not necessarily achieved due to precision loss``, then
     consider setting `gtol` to a higher value. This precision loss typically
     occurs when the (finite difference) numerical differentiation cannot provide
     sufficient precision to ever satisfy the `gtol` termination criterion.
