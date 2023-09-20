@@ -715,7 +715,7 @@ class MikotaM(LinearOperator):
         super().__init__(dtype, shape)
         # The matrix is constructed from its diagonal 1 / [1, ..., N+1];
         # we precompute this to avoid duplicating the computation
-        self._diag = (1. / np.arange(1, shape[0] + 1).astype(dtype)
+        self._diag = (1. / np.arange(1, shape[0] + 1)).astype(dtype)
 
     def tobanded(self):
         return self._diag
