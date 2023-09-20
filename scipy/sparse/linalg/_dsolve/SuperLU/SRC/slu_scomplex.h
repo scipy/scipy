@@ -30,6 +30,7 @@ at the top-level directory.
 
 typedef struct { float r, i; } singlecomplex;
 
+#define complex singlecomplex  // backward compatibility
 
 /* Macro definitions */
 

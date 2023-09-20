@@ -29,7 +29,6 @@ at the top-level directory.
 #ifndef __SUPERLU_CNAMES /* allow multiple inclusions */
 #define __SUPERLU_CNAMES
 
-#include "scipy_slu_config.h"
 
 #define ADD_       0
 #define ADD__      1
@@ -121,6 +120,8 @@ at the top-level directory.
 #define dgemm_    dgemm__
 #define dtrsm_    dtrsm__
 
+#define cdotc_    cdotc__
+#define dcabs1_   dcabs1__
 #define cswap_    cswap__
 #define caxpy_    caxpy__
 #define scasum_   scasum__
@@ -137,6 +138,7 @@ at the top-level directory.
 #define chemv_    chemv__
 #define cher2_    cher2__
 
+#define zdotc_    zdotc__
 #define zswap_    zswap__
 #define zaxpy_    zaxpy__
 #define dzasum_   dzasum__

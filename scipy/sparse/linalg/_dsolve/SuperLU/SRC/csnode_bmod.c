@@ -59,12 +59,12 @@ csnode_bmod (
 #endif
 
     singlecomplex   comp_zero = {0.0, 0.0};
-    int            luptr, nsupc, nsupr, nrow;
-    int            isub, irow, i, iptr; 
-    register int   ufirst, nextlu;
-    int            *lsub, *xlsub;
-    singlecomplex         *lusup;
-    int            *xlusup;
+    int     nsupc, nsupr, nrow;
+    int_t   isub, irow;
+    int_t   ufirst, nextlu;
+    int_t   *lsub, *xlsub;
+    singlecomplex *lusup;
+    int_t   *xlusup, luptr;
     flops_t *ops = stat->ops;
 
     lsub    = Glu->lsub;
@@ -105,12 +105,6 @@ csnode_bmod (
 	CGEMV( ftcs2, &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
 		&lusup[ufirst], &incx, &beta, &lusup[ufirst+nsupc], &incy );
 #else
-#if SCIPY_FIX
-       if (nsupr < nsupc) {
-           /* Fail early rather than passing in invalid parameters to TRSV. */
-           ABORT("failed to factorize matrix");
-       }
-#endif
 	ctrsv_( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr, 
 	      &lusup[ufirst], &incx );
 	cgemv_( "N", &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
@@ -121,6 +115,7 @@ csnode_bmod (
 	cmatvec ( nsupr, nrow, nsupc, &lusup[luptr+nsupc], 
 			&lusup[ufirst], &tempv[0] );
 
+	int_t i, iptr; 
         /* Scatter tempv[*] into lusup[*] */
 	iptr = ufirst + nsupc;
 	for (i = 0; i < nrow; i++) {

@@ -79,17 +79,17 @@ spivotL(
     int          fsupc;	    /* first column in the supernode */
     int          nsupc;	    /* no of columns in the supernode */
     int          nsupr;     /* no of rows in the supernode */
-    int          lptr;	    /* points to the starting subscript of the supernode */
+    int_t        lptr;	    /* points to the starting subscript of the supernode */
     int          pivptr, old_pivptr, diag, diagind;
     float       pivmax, rtemp, thresh;
     float       temp;
     float       *lu_sup_ptr; 
     float       *lu_col_ptr;
-    int          *lsub_ptr;
-    int          isub, icol, k, itemp;
-    int          *lsub, *xlsub;
+    int_t        *lsub_ptr;
+    int_t        isub, icol, k, itemp;
+    int_t        *lsub, *xlsub;
     float       *lusup;
-    int          *xlusup;
+    int_t        *xlusup;
     flops_t      *ops = stat->ops;
 
     /* Initialize pointers */
@@ -134,16 +134,7 @@ if ( jcol == MIN_COL ) {
     /* Test for singularity */
     if ( pivmax == 0.0 ) {
 #if 1
-#if SCIPY_FIX
-	if (pivptr < nsupr) {
-	    *pivrow = lsub_ptr[pivptr];
-	}
-	else {
-	    *pivrow = diagind;
-	}
-#else
 	*pivrow = lsub_ptr[pivptr];
-#endif
 	perm_r[*pivrow] = jcol;
 #else
 	perm_r[diagind] = jcol;
