@@ -722,6 +722,10 @@ def _run_doctests(tests, full_name, verbose, doctest_warnings):
             if fails > 0:
                 success = False
 
+    for entry in runner._name2ft:
+        if runner.tries > 0:
+            LOGFILE.write(f"{entry}: ({runner.failures}, {runner.tries})\n")
+
     output.seek(0)
     return success, output.read()
 
@@ -737,6 +741,11 @@ def check_doctests(module, verbose, ns=None,
 
     # Loop over non-deprecated items
     results = []
+
+    global LOGFILE
+    LOGFILE = open('refguide-check.log', 'a')
+    LOGFILE.write(module.__name__ + "\n")
+    LOGFILE.write("="*len(module.__name__) + "\n")
 
     for name in get_all_dict(module)[0]:
         full_name = module.__name__ + '.' + name
@@ -774,6 +783,8 @@ def check_doctests(module, verbose, ns=None,
         if HAVE_MATPLOTLIB:
             import matplotlib.pyplot as plt
             plt.close('all')
+    
+    LOGFILE.close()
 
     return results
 

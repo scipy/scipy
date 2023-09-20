@@ -175,7 +175,7 @@ jobs:
             python dev.py --no-build refguide-check
             pip install matplotlib
             pip install hypothesis
-            pip install git+https://github.com/ev-br/scpdt.git@9cff5e2f53cd0f505bfaa697e3a2c12f86efa288
+            pip install git+https://github.com/ev-br/scpdt.git@55ae127642be2ecfa0876120ac0e743dbddbdee4
             export PY_IGNORE_IMPORTMISMATCH=1
             python dev.py test --doctests
 
