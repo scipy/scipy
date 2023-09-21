@@ -5,7 +5,9 @@ import numpy
 from .lapack import get_lapack_funcs
 from ._misc import _datacopied
 
-from scipy._lib._array_api import array_namespace, is_numpy, as_xparray, arg_err_msg
+from scipy._lib._array_api import (
+    array_namespace, is_numpy, as_xparray, xp_unsupported_param_msg
+)
 
 __all__ = ['qr', 'qr_multiply', 'rq']
 
@@ -127,12 +129,12 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
         return _qr(a, overwrite_a=overwrite_a, lwork=lwork, mode=mode,
                    pivoting=pivoting, check_finite=False)
     if lwork is not None:
-        raise ValueError(arg_err_msg("lwork"))
+        raise ValueError(xp_unsupported_param_msg("lwork"))
     if mode not in {'full', 'economic'}:
         raise ValueError("Only 'full' and 'economic' modes are supported "
                          "for non-numpy arrays.")
     if pivoting:
-        raise ValueError(arg_err_msg("pivoting"))
+        raise ValueError(xp_unsupported_param_msg("pivoting"))
     if hasattr(xp, 'linalg'):
         if mode == 'full':
             mode = 'complete'

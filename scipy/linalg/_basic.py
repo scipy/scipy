@@ -19,7 +19,9 @@ from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 # deprecated imports to be removed in SciPy 1.13.0
 from scipy.linalg._flinalg_py import get_flinalg_funcs  # noqa
 
-from scipy._lib._array_api import array_namespace, is_numpy, as_xparray, arg_err_msg
+from scipy._lib._array_api import (
+    array_namespace, is_numpy, as_xparray, xp_unsupported_param_msg
+)
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
            'solve_toeplitz', 'solve_circulant', 'inv', 'det', 'lstsq',
@@ -157,11 +159,11 @@ def solve(a, b, lower=False, overwrite_a=False,
                       overwrite_b=overwrite_b, check_finite=False,
                       assume_a=assume_a, transposed=transposed)
     if lower:
-        raise ValueError(arg_err_msg("lower"))
+        raise ValueError(xp_unsupported_param_msg("lower"))
     if assume_a != 'gen':
-        raise ValueError(arg_err_msg("assume_a"))
+        raise ValueError(xp_unsupported_param_msg("assume_a"))
     if transposed:
-        raise ValueError(arg_err_msg("transposed"))
+        raise ValueError(xp_unsupported_param_msg("transposed"))
     if hasattr(xp, 'linalg'):
         return xp.linalg.solve(a, b)
     a = np.asarray(a)
@@ -1491,13 +1493,13 @@ def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True,
         return _pinv(a, atol=atol, rtol=rtol, return_rank=return_rank,
                      check_finite=False, cond=cond, rcond=rcond)
     if atol is not None:
-        raise ValueError(arg_err_msg("atol"))
+        raise ValueError(xp_unsupported_param_msg("atol"))
     if return_rank:
-        raise ValueError(arg_err_msg("return_rank"))
+        raise ValueError(xp_unsupported_param_msg("return_rank"))
     if cond != _NoValue:
-        raise ValueError(arg_err_msg("cond"))
+        raise ValueError(xp_unsupported_param_msg("cond"))
     if rcond != _NoValue:
-        raise ValueError(arg_err_msg("rcond"))
+        raise ValueError(xp_unsupported_param_msg("rcond"))
     if hasattr(xp, 'linalg'):
         return xp.linalg.pinv(a, rtol=rtol)
     a = np.asarray(a)
