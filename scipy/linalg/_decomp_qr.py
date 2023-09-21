@@ -124,7 +124,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
     """
     xp = array_namespace(a)
     if check_finite:
-        a = as_xparray(a, check_finite=True)
+        a = as_xparray(a, check_finite=True, xp=xp)
     if is_numpy(xp):
         return _qr(a, overwrite_a=overwrite_a, lwork=lwork, mode=mode,
                    pivoting=pivoting)

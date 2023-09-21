@@ -90,7 +90,7 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
     """
     xp = array_namespace(a)
     if check_finite:
-        a = as_xparray(a, check_finite=True)
+        a = as_xparray(a, check_finite=True, xp=xp)
     if is_numpy(xp):
         c, lower = _cholesky(a, lower=lower, overwrite_a=overwrite_a,
                              clean=True, check_finite=False)

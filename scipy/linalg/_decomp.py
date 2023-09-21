@@ -444,7 +444,7 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
     """
     xp = array_namespace(a)
     if check_finite:
-        a = as_xparray(a, check_finite=True)
+        a = as_xparray(a, check_finite=True, xp=xp)
     if is_numpy(xp):
         return _eigh(a, b=b, lower=lower, eigvals_only=eigvals_only,
                      overwrite_a=overwrite_a, overwrite_b=overwrite_b,
@@ -1064,7 +1064,7 @@ def eigvalsh(a, b=None, *, lower=True, overwrite_a=False,
     """
     xp = array_namespace(a)
     if check_finite:
-        a = as_xparray(a, check_finite=True)
+        a = as_xparray(a, check_finite=True, xp=xp)
     if is_numpy(xp):
         return _eigh(a, b=b, lower=lower, eigvals_only=True,
                      overwrite_a=overwrite_a, overwrite_b=overwrite_b,

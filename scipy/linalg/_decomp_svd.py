@@ -111,7 +111,7 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     """
     xp = array_namespace(a)
     if check_finite:
-        a = as_xparray(a, check_finite=True)
+        a = as_xparray(a, check_finite=True, xp=xp)
     if is_numpy(xp):
         return _svd(a, full_matrices=full_matrices, compute_uv=compute_uv,
                     overwrite_a=overwrite_a, lapack_driver=lapack_driver)
@@ -246,7 +246,7 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     """
     xp = array_namespace(a)
     if check_finite:
-        a = as_xparray(a, check_finite=True)
+        a = as_xparray(a, check_finite=True, xp=xp)
     if is_numpy(xp):
         return _svdvals(a, overwrite_a=overwrite_a)
     if hasattr(xp, 'linalg'):

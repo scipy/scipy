@@ -152,8 +152,8 @@ def solve(a, b, lower=False, overwrite_a=False,
     """
     xp = array_namespace(a, b)
     if check_finite:
-        a = as_xparray(a, check_finite=True)
-        b = as_xparray(b, check_finite=True)
+        a = as_xparray(a, check_finite=True, xp=xp)
+        b = as_xparray(b, check_finite=True, xp=xp)
     if is_numpy(xp):
         return _solve(a, b, lower=lower, overwrite_a=overwrite_a,
                       overwrite_b=overwrite_b, assume_a=assume_a, transposed=transposed)
@@ -972,7 +972,7 @@ def inv(a, overwrite_a=False, check_finite=True):
     """
     xp = array_namespace(a)
     if check_finite:
-        a = as_xparray(a, check_finite=True)
+        a = as_xparray(a, check_finite=True, xp=xp)
     if is_numpy(xp):
         return _inv(a, overwrite_a=overwrite_a)
     if hasattr(xp, 'linalg'):
@@ -1082,7 +1082,7 @@ def det(a, overwrite_a=False, check_finite=True):
     """
     xp = array_namespace(a)
     if check_finite:
-        a = as_xparray(a, check_finite=True)
+        a = as_xparray(a, check_finite=True, xp=xp)
     if is_numpy(xp):
         return _det(a, overwrite_a=overwrite_a)
     if hasattr(xp, 'linalg'):
@@ -1487,7 +1487,7 @@ def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True,
     """
     xp = array_namespace(a)
     if check_finite:
-        a = as_xparray(a, check_finite=True)
+        a = as_xparray(a, check_finite=True, xp=xp)
     if is_numpy(xp):
         return _pinv(a, atol=atol, rtol=rtol, return_rank=return_rank,
                      cond=cond, rcond=rcond)
