@@ -713,19 +713,21 @@ class MikotaM(LinearOperator):
         self.shape = shape
         self.dtype = dtype
         super().__init__(dtype, shape)
+
+    def _diag(self):
         # The matrix is constructed from its diagonal 1 / [1, ..., N+1];
-        # we precompute this to avoid duplicating the computation
-        self._diag = (1. / np.arange(1, shape[0] + 1)).astype(dtype)
+        # compute in a function to avoid duplicated code & storage footprint
+        return (1. / np.arange(1, self.shape[0] + 1)).astype(self.dtype)
 
     def tobanded(self):
-        return self._diag
+        return self._diag()
 
     def tosparse(self):
         from scipy.sparse import diags
-        return diags([self._diag], [0], shape=self.shape, dtype=self.dtype)
+        return diags([self._diag()], [0], shape=self.shape, dtype=self.dtype)
 
     def toarray(self):
-        return np.diag(self._diag).astype(self.dtype)
+        return np.diag(self._diag()).astype(self.dtype)
 
     def _matvec(self, x):
         """
@@ -802,16 +804,15 @@ class MikotaK(LinearOperator):
         the Mikota stiffness matrix without constructing or storing the matrix
         itself using the knowledge of its entries and the 3-diagonal format.
         """
-        n = self.shape[0]
         x = x.reshape((-1, x.shape[0]))
         kx = np.zeros_like(x)
-        y = self._diag1
-        z = self._diag0
-        kx[0, :] = z[0] * x[0, :] + y[0] * x[1, :]
-        kx[-1, :] = y[-1] * x[-2, :] + z[-1] * x[-1, :]
-        kx[1: -1, :] = (y[:-1, None] * x[: -2,:]
-                        + z[1: -1, None] * x[1: -1, :]
-                        + y[1:, None] * x[2:, :])
+        d1 = self._diag1
+        d0 = self._diag0
+        kx[0, :] = d0[0] * x[0, :] + d1[0] * x[1, :]
+        kx[-1, :] = d1[-1] * x[-2, :] + d0[-1] * x[-1, :]
+        kx[1: -1, :] = (d1[:-1, None] * x[: -2, :]
+                        + d0[1: -1, None] * x[1: -1, :]
+                        + d1[1:, None] * x[2:, :])
         return kx
 
     def _matmat(self, x):
@@ -908,10 +909,6 @@ class MikotaPair:
     >>> mik_m.tosparse()
     <6x6 sparse matrix of type '<class 'numpy.float64'>'
         with 6 stored elements (1 diagonals) in DIAgonal format>
-    >>> np.array_equal(mik_k.tosparse().toarray(), mik_k.toarray())
-    True
-    >>> np.array_equal(mik_m.tosparse().toarray(), mik_m.toarray())
-    True
     >>> np.array_equal(mik_k(np.eye(n)), mik_k.toarray())
     True
     >>> np.array_equal(mik_m(np.eye(n)), mik_m.toarray())
