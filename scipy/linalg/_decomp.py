@@ -449,7 +449,7 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
         return _eigh(a, b=b, lower=lower, eigvals_only=eigvals_only,
                      overwrite_a=overwrite_a, overwrite_b=overwrite_b,
                      turbo=turbo, eigvals=eigvals, type=type,
-                     check_finite=False, subset_by_index=subset_by_index,
+                     subset_by_index=subset_by_index,
                      subset_by_value=subset_by_value, driver=driver)
     if b is not None:
         raise ValueError(xp_unsupported_param_msg("b"))
@@ -472,12 +472,12 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
     if hasattr(xp, 'linalg'):
         return xp.linalg.eigh(a)
     a = numpy.asarray(a)
-    return xp.asarray(_eigh(a, check_finite=False))
+    return xp.asarray(_eigh(a))
 
 
 def _eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
           overwrite_b=False, turbo=_NoValue, eigvals=_NoValue, type=1,
-          check_finite=True, subset_by_index=None, subset_by_value=None, driver=None):
+          subset_by_index=None, subset_by_value=None, driver=None):
     if turbo is not _NoValue:
         warnings.warn("Keyword argument 'turbo' is deprecated in favour of '"
                       "driver=gvd' keyword instead and will be removed in "
@@ -499,7 +499,7 @@ def _eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
         raise ValueError('"{}" is unknown. Possible values are "None", "{}".'
                          ''.format(driver, '", "'.join(drv_str[1:])))
 
-    a1 = _asarray_validated(a, check_finite=check_finite)
+    a1 = _asarray_validated(a, check_finite=False)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square "a" matrix')
     overwrite_a = overwrite_a or (_datacopied(a1, a))
@@ -508,7 +508,7 @@ def _eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
     drv_args = {'overwrite_a': overwrite_a}
 
     if b is not None:
-        b1 = _asarray_validated(b, check_finite=check_finite)
+        b1 = _asarray_validated(b, check_finite=False)
         overwrite_b = overwrite_b or _datacopied(b1, b)
         if len(b1.shape) != 2 or b1.shape[0] != b1.shape[1]:
             raise ValueError('expected square "b" matrix')
@@ -1066,11 +1066,11 @@ def eigvalsh(a, b=None, *, lower=True, overwrite_a=False,
     if check_finite:
         a = as_xparray(a, check_finite=True)
     if is_numpy(xp):
-        return eigh(a, b=b, lower=lower, eigvals_only=True,
-                    overwrite_a=overwrite_a, overwrite_b=overwrite_b,
-                    turbo=turbo, eigvals=eigvals, type=type,
-                    check_finite=False, subset_by_index=subset_by_index,
-                    subset_by_value=subset_by_value, driver=driver)
+        return _eigh(a, b=b, lower=lower, eigvals_only=True,
+                     overwrite_a=overwrite_a, overwrite_b=overwrite_b,
+                     turbo=turbo, eigvals=eigvals, type=type,
+                     subset_by_index=subset_by_index,
+                     subset_by_value=subset_by_value, driver=driver)
     if b is not None:
         raise ValueError(xp_unsupported_param_msg("b"))
     if not lower:
@@ -1090,7 +1090,7 @@ def eigvalsh(a, b=None, *, lower=True, overwrite_a=False,
     if hasattr(xp, 'linalg'):
         return xp.linalg.eigvalsh(a)
     a = numpy.asarray(a)
-    return xp.asarray(_eigh(a, eigvals_only=True, check_finite=False))
+    return xp.asarray(_eigh(a, eigvals_only=True))
 
 
 def eigvals_banded(a_band, lower=False, overwrite_a_band=False,

@@ -127,7 +127,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
         a = as_xparray(a, check_finite=True)
     if is_numpy(xp):
         return _qr(a, overwrite_a=overwrite_a, lwork=lwork, mode=mode,
-                   pivoting=pivoting, check_finite=False)
+                   pivoting=pivoting)
     if lwork is not None:
         raise ValueError(xp_unsupported_param_msg("lwork"))
     if mode not in {'full', 'economic'}:
@@ -142,11 +142,10 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
             mode = 'reduced'
         return xp.linalg.qr(a, mode=mode)
     a = numpy.asarray(a)
-    return xp.asarray(_qr(a, mode=mode, check_finite=False))
+    return xp.asarray(_qr(a, mode=mode))
 
 
-def _qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
-        check_finite=True):
+def _qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
     # 'qr' was the old default, equivalent to 'full'. Neither 'full' nor
     # 'qr' are used below.
     # 'raw' is used internally by qr_multiply
@@ -154,10 +153,7 @@ def _qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
         raise ValueError("Mode argument should be one of ['full', 'r',"
                          "'economic', 'raw']")
 
-    if check_finite:
-        a1 = numpy.asarray_chkfinite(a)
-    else:
-        a1 = numpy.asarray(a)
+    a1 = numpy.asarray(a)
     if len(a1.shape) != 2:
         raise ValueError("expected a 2-D array")
     M, N = a1.shape
@@ -305,7 +301,7 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
             raise ValueError('Array shapes are not compatible for c @ Q'
                              ' operation: {} vs {}'.format(c.shape, a.shape))
 
-    raw = qr(a, overwrite_a, None, "raw", pivoting)
+    raw = _qr(a, overwrite_a, None, "raw", pivoting)
     Q, tau = raw[0]
 
     gor_un_mqr, = get_lapack_funcs(('ormqr',), (Q,))

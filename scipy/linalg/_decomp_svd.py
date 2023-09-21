@@ -114,8 +114,7 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
         a = as_xparray(a, check_finite=True)
     if is_numpy(xp):
         return _svd(a, full_matrices=full_matrices, compute_uv=compute_uv,
-                    overwrite_a=overwrite_a, check_finite=False,
-                    lapack_driver=lapack_driver)
+                    overwrite_a=overwrite_a, lapack_driver=lapack_driver)
     if not compute_uv:
         raise ValueError(xp_unsupported_param_msg("compute_uv"))
     if lapack_driver != 'gesdd':
@@ -123,12 +122,12 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     if hasattr(xp, 'linalg'):
         return xp.linalg.svd(a, full_matrices=full_matrices)
     a = numpy.asarray(a)
-    return xp.asarray(_svd(a, full_matrices=full_matrices, check_finite=False))
+    return xp.asarray(_svd(a, full_matrices=full_matrices))
 
 
 def _svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
-         check_finite=True, lapack_driver='gesdd'):
-    a1 = _asarray_validated(a, check_finite=check_finite)
+         lapack_driver='gesdd'):
+    a1 = _asarray_validated(a, check_finite=False)
     if len(a1.shape) != 2:
         raise ValueError('expected matrix')
     m, n = a1.shape
@@ -249,18 +248,17 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     if check_finite:
         a = as_xparray(a, check_finite=True)
     if is_numpy(xp):
-        return _svdvals(a, overwrite_a=overwrite_a, check_finite=False)
+        return _svdvals(a, overwrite_a=overwrite_a)
     if hasattr(xp, 'linalg'):
         return xp.linalg.svdvals(a)
     a = numpy.asarray(a)
-    return xp.asarray(_svdvals(a, check_finite=False))
+    return xp.asarray(_svdvals(a))
 
 
-def _svdvals(a, overwrite_a=False, check_finite=True):
-    a = _asarray_validated(a, check_finite=check_finite)
+def _svdvals(a, overwrite_a=False):
+    a = _asarray_validated(a, check_finite=False)
     if a.size:
-        return svd(a, compute_uv=0, overwrite_a=overwrite_a,
-                   check_finite=False)
+        return _svd(a, compute_uv=0, overwrite_a=overwrite_a)
     elif len(a.shape) != 2:
         raise ValueError('expected matrix')
     else:
@@ -357,7 +355,7 @@ def orth(A, rcond=None):
            [0., 0.]])
 
     """
-    u, s, vh = svd(A, full_matrices=False)
+    u, s, vh = _svd(A, full_matrices=False)
     M, N = u.shape[0], vh.shape[1]
     if rcond is None:
         rcond = numpy.finfo(s.dtype).eps * max(M, N)
@@ -421,7 +419,7 @@ def null_space(A, rcond=None):
            [  6.92087741e-17,   1.00000000e+00]])
 
     """
-    u, s, vh = svd(A, full_matrices=True)
+    u, s, vh = _svd(A, full_matrices=True)
     M, N = u.shape[0], vh.shape[1]
     if rcond is None:
         rcond = numpy.finfo(s.dtype).eps * max(M, N)

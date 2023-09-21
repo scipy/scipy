@@ -156,8 +156,7 @@ def solve(a, b, lower=False, overwrite_a=False,
         b = as_xparray(b, check_finite=True)
     if is_numpy(xp):
         return _solve(a, b, lower=lower, overwrite_a=overwrite_a,
-                      overwrite_b=overwrite_b, check_finite=False,
-                      assume_a=assume_a, transposed=transposed)
+                      overwrite_b=overwrite_b, assume_a=assume_a, transposed=transposed)
     if lower:
         raise ValueError(xp_unsupported_param_msg("lower"))
     if assume_a != 'gen':
@@ -168,16 +167,16 @@ def solve(a, b, lower=False, overwrite_a=False,
         return xp.linalg.solve(a, b)
     a = np.asarray(a)
     b = np.asarray(b)
-    return xp.asarray(_solve(a, b, check_finite=False))
+    return xp.asarray(_solve(a, b))
 
 
 def _solve(a, b, lower=False, overwrite_a=False, overwrite_b=False,
-           check_finite=True, assume_a='gen', transposed=False):
+           assume_a='gen', transposed=False):
     # Flags for 1-D or N-D right-hand side
     b_is_1D = False
 
-    a1 = atleast_2d(_asarray_validated(a, check_finite=check_finite))
-    b1 = atleast_1d(_asarray_validated(b, check_finite=check_finite))
+    a1 = atleast_2d(_asarray_validated(a, check_finite=False))
+    b1 = atleast_1d(_asarray_validated(b, check_finite=False))
     n = a1.shape[0]
 
     overwrite_a = overwrite_a or _datacopied(a1, a)
@@ -975,15 +974,15 @@ def inv(a, overwrite_a=False, check_finite=True):
     if check_finite:
         a = as_xparray(a, check_finite=True)
     if is_numpy(xp):
-        return _inv(a, overwrite_a=overwrite_a, check_finite=False)
+        return _inv(a, overwrite_a=overwrite_a)
     if hasattr(xp, 'linalg'):
         return xp.linalg.inv(a)
     a = np.asarray(a)
-    return xp.asarray(_inv(a, check_finite=False))
+    return xp.asarray(_inv(a))
 
 
-def _inv(a, overwrite_a=False, check_finite=True):
-    a1 = _asarray_validated(a, check_finite=check_finite)
+def _inv(a, overwrite_a=False):
+    a1 = _asarray_validated(a, check_finite=False)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
     overwrite_a = overwrite_a or _datacopied(a1, a)
@@ -1085,18 +1084,18 @@ def det(a, overwrite_a=False, check_finite=True):
     if check_finite:
         a = as_xparray(a, check_finite=True)
     if is_numpy(xp):
-        return _det(a, overwrite_a=overwrite_a, check_finite=False)
+        return _det(a, overwrite_a=overwrite_a)
     if hasattr(xp, 'linalg'):
         return xp.linalg.det(a)
     a = np.asarray(a)
-    return xp.asarray(_det(a, check_finite=False))
+    return xp.asarray(_det(a))
 
 
-def _det(a, overwrite_a=False, check_finite=True):
+def _det(a, overwrite_a=False):
     # The goal is to end up with a writable contiguous array to pass to Cython
 
     # First we check and make arrays.
-    a1 = np.asarray_chkfinite(a) if check_finite else np.asarray(a)
+    a1 = np.asarray(a)
     if a1.ndim < 2:
         raise ValueError('The input array must be at least two-dimensional.')
     if a1.shape[-1] != a1.shape[-2]:
@@ -1491,7 +1490,7 @@ def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True,
         a = as_xparray(a, check_finite=True)
     if is_numpy(xp):
         return _pinv(a, atol=atol, rtol=rtol, return_rank=return_rank,
-                     check_finite=False, cond=cond, rcond=rcond)
+                     cond=cond, rcond=rcond)
     if atol is not None:
         raise ValueError(xp_unsupported_param_msg("atol"))
     if return_rank:
@@ -1503,12 +1502,11 @@ def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True,
     if hasattr(xp, 'linalg'):
         return xp.linalg.pinv(a, rtol=rtol)
     a = np.asarray(a)
-    return xp.asarray(_pinv(a, rtol=rtol, check_finite=False))
+    return xp.asarray(_pinv(a, rtol=rtol))
  
 
-def _pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True,
-          cond=_NoValue, rcond=_NoValue):
-    a = _asarray_validated(a, check_finite=check_finite)
+def _pinv(a, *, atol=None, rtol=None, return_rank=False, cond=_NoValue, rcond=_NoValue):
+    a = _asarray_validated(a, check_finite=False)
     u, s, vh = _decomp_svd.svd(a, full_matrices=False, check_finite=False)
     t = u.dtype.char.lower()
     maxS = np.max(s)
