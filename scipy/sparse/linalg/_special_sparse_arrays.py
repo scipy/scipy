@@ -786,7 +786,7 @@ class MikotaK(LinearOperator):
         self._diag1 = - np.arange(n - 1, 0, -1, dtype=self.dtype)
 
     def tobanded(self):
-        return np.array([np.pad(self._diag0, (1, 0), 'constant'), self._diag1])
+        return np.array([np.pad(self._diag1, (1, 0), 'constant'), self._diag0])
 
     def tosparse(self):
         from scipy.sparse import diags
@@ -803,7 +803,7 @@ class MikotaK(LinearOperator):
         itself using the knowledge of its entries and the 3-diagonal format.
         """
         n = self.shape[0]
-        x = x.reshape(n, -1)
+        x = x.reshape((-1, x.shape[0]))
         kx = np.zeros_like(x)
         y = self._diag1
         z = self._diag0
