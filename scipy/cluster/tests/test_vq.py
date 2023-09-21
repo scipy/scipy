@@ -154,7 +154,7 @@ class TestVq:
         data = xp.asarray(data)
         initc = xp.asarray(initc)
         ta, tb = py_vq(data[:, np.newaxis], initc[:, np.newaxis])
-        xp_assert_equal(ta, xp.asarray(a))
+        xp_assert_equal(ta, xp.asarray(a), check_dtype=False)
         xp_assert_equal(tb, xp.asarray(b))
 
     @skip_if_array_api
@@ -179,7 +179,7 @@ class TestVq:
             xp.asarray(X), xp.asarray(code_book)
         )
         xp_assert_close(dis1, xp.asarray(dis0), 1e-5)
-        xp_assert_equal(codes1, xp.asarray(codes0))
+        xp_assert_equal(codes1, xp.asarray(codes0), check_dtype=False)
 
         X = X.astype(np.float32)
         code_book = code_book.astype(np.float32)
@@ -188,8 +188,8 @@ class TestVq:
         codes1, dis1 = py_vq(
             xp.asarray(X), xp.asarray(code_book)
         )
-        xp_assert_close(dis1, xp.asarray(dis0), 1e-5)
-        xp_assert_equal(codes1, xp.asarray(codes0))
+        xp_assert_close(dis1, xp.asarray(dis0), 1e-5, check_dtype=False)
+        xp_assert_equal(codes1, xp.asarray(codes0), check_dtype=False)
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -202,7 +202,7 @@ class TestVq:
             xp.asarray(X), xp.asarray(code_book)
         )
         xp_assert_close(dis1, xp.asarray(dis0), 1e-5)
-        xp_assert_equal(codes1, xp.asarray(codes0))
+        xp_assert_equal(codes1, xp.asarray(codes0), check_dtype=False)
 
 
 # Whole class skipped on GPU for now;
@@ -350,8 +350,8 @@ class TestKMean:
         # Regression test for gh-1774
         x = xp.asarray([1, 2, 3, 4, 10], dtype=xp.float64)
         res = kmeans(x, xp.asarray(1), thresh=1e16)
-        xp_assert_close(res[0], xp.asarray([4.]))
-        xp_assert_close(res[1], xp.asarray(2.3999999999999999)[()])
+        xp_assert_close(res[0], xp.asarray([4.]), check_dtype=False)
+        xp_assert_close(res[1], xp.asarray(2.3999999999999999)[()], check_dtype=False)
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -361,7 +361,7 @@ class TestKMean:
                                [-3.153375, 3.3945]])
         np.random.seed(42)
         res, _ = kmeans2(xp.asarray(TESTDATA_2D), xp.asarray(2), minit='++')
-        xp_assert_close(res, prev_res)
+        xp_assert_close(res, prev_res, check_dtype=False)
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -387,8 +387,8 @@ class TestKMean:
         # Regression test for gh-8727
         obs = xp.asarray([-3, -1, 0, 1, 1, 8], dtype=xp.float64)
         res = kmeans(obs, xp.asarray([-3., 0.99]))
-        xp_assert_close(res[0], xp.asarray([-0.4,  8.]))
-        xp_assert_close(res[1], xp.asarray(1.0666666666666667)[()])
+        xp_assert_close(res[0], xp.asarray([-0.4,  8.]), check_dtype=False)
+        xp_assert_close(res[1], xp.asarray(1.0666666666666667)[()], check_dtype=False)
 
     @skip_if_array_api
     def test_kmeans_and_kmeans2_random_seed(self):

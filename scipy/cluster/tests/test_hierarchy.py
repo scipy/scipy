@@ -193,7 +193,7 @@ class TestCopheneticDistance:
                                 295, 138, 219, 295, 295])
         Z = xp.asarray(hierarchy_test_data.linkage_ytdist_single)
         M = cophenet(Z)
-        xp_assert_close(M, expectedM, atol=1e-10)
+        xp_assert_close(M, expectedM, atol=1e-10, check_dtype=False)
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -204,8 +204,8 @@ class TestCopheneticDistance:
         expectedM = xp.asarray([268, 295, 255, 255, 295, 295, 268, 268, 295, 295,
                                 295, 138, 219, 295, 295])
         expectedc = xp.asarray(0.639931296433393415057366837573)[()]
-        xp_assert_close(c, expectedc, atol=1e-10)
-        xp_assert_close(M, expectedM, atol=1e-10)
+        xp_assert_close(c, expectedc, atol=1e-10, check_dtype=False)
+        xp_assert_close(M, expectedM, atol=1e-10, check_dtype=False)
 
 
 class TestMLabLinkageConversion:
@@ -223,8 +223,8 @@ class TestMLabLinkageConversion:
         # Tests from/to_mlab_linkage on linkage array with single row.
         Z = xp.asarray([[0., 1., 3., 2.]])
         Zm = xp.asarray([[1, 2, 3]])
-        xp_assert_close(from_mlab_linkage(Zm), Z, rtol=1e-15)
-        xp_assert_close(to_mlab_linkage(Z), Zm, rtol=1e-15)
+        xp_assert_close(from_mlab_linkage(Zm), Z, rtol=1e-15, check_dtype=False)
+        xp_assert_close(to_mlab_linkage(Z), Zm, rtol=1e-15, check_dtype=False)
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -239,7 +239,7 @@ class TestMLabLinkageConversion:
                         [6., 9., 295., 6.]],
                        dtype=xp.float64)
         xp_assert_close(from_mlab_linkage(Zm), Z, rtol=1e-15)
-        xp_assert_close(to_mlab_linkage(Z), Zm, rtol=1e-15)
+        xp_assert_close(to_mlab_linkage(Z), Zm, rtol=1e-15, check_dtype=False)
 
 
 class TestFcluster:
@@ -1274,7 +1274,7 @@ def test_cut_tree(xp):
     cutree = cut_tree(Z)
 
     xp_assert_close(cutree[:, 0], xp.arange(nobs), rtol=1e-15)
-    xp_assert_close(cutree[:, -1], xp.zeros(nobs), rtol=1e-15)
+    xp_assert_close(cutree[:, -1], xp.zeros(nobs), rtol=1e-15, check_dtype=False)
     assert_equal(np.asarray(cutree).max(0), np.arange(nobs - 1, -1, -1))
 
     xp_assert_close(cutree[:, [-5]], cut_tree(Z, n_clusters=5), rtol=1e-15)
