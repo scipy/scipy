@@ -12,13 +12,13 @@ from scipy.sparse.linalg._special_sparse_arrays import MikotaPair
 INT_DTYPES = [np.int8, np.int16, np.int32, np.int64]
 REAL_DTYPES = [np.float32, np.float64]
 COMPLEX_DTYPES = [np.complex64, np.complex128]
+ALLDTYPES = INT_DTYPES + REAL_DTYPES + COMPLEX_DTYPES
 
 
 class TestLaplacianNd:
     """
     LaplacianNd tests
     """
-    ALLDTYPES = INT_DTYPES + REAL_DTYPES + COMPLEX_DTYPES
 
     @pytest.mark.parametrize('bc', ['neumann', 'dirichlet', 'periodic'])
     def test_1d_specific_shape(self, bc):
@@ -237,8 +237,11 @@ class TestMikotaPair:
     """
     MikotaPair tests
     """
-    # type preservation cannot be smaller than the dtype of the `LinearOperator`
-    tested_types = [np.int32, np.int64] + REAL_DTYPES + COMPLEX_DTYPES
+    # both MikotaPair `LinearOperator`s share the same dtype
+    # while `MikotaK` `dtype` can be as small as its default `np.int32`
+    # since its entries are integers, the `MikotaM` involves inverses
+    # so its smallest still accurate `dtype` is `np.float32`
+    tested_types = REAL_DTYPES + COMPLEX_DTYPES
 
     def test_specific_shape(self):
         n = 6
@@ -299,9 +302,11 @@ class TestMikotaPair:
                            mikd_k.tosparse().toarray().astype(dtype))
 
     @pytest.mark.parametrize('dtype', tested_types)
-    def test_dot(self, dtype):
+    @pytest.mark.parametrize('argument_dtype', ALLDTYPES)
+    def test_dot(self, dtype, argument_dtype):
         """ Test the dot-product for type preservation and consistency.
         """
+        result_dtype = np.promote_types(argument_dtype, dtype)
         n = 5
         mik = MikotaPair(n, dtype=dtype)
         mik_k = mik.k
@@ -309,15 +314,13 @@ class TestMikotaPair:
         x0 = np.arange(n)
         x1 = x0.reshape((-1, 1))
         x2 = np.arange(2 * n).reshape((n, 2))
-        mik_m_dot_dtype = mik_m.dot(x1.astype(dtype)).dtype
-        assert mik_m_dot_dtype == np.promote_types(np.float64, dtype)
-        assert mik_k.dot(x1.astype(dtype)).dtype == dtype
         lo_set = [mik_k, mik_m]
         input_set = [x0, x1, x2]
         for lo in lo_set:
             for x in input_set:
                 y = lo.dot(x.astype(dtype))
                 assert x.shape == y.shape
+                assert y.dtype == result_dtype
                 if x.ndim == 2:
                     yy = lo.toarray() @ x.astype(dtype)
                     np.array_equal(y, yy)
