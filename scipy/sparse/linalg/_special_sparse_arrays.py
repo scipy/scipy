@@ -735,9 +735,8 @@ class MikotaM(LinearOperator):
         the Mikota mass matrix without constructing or storing the matrix itself
         using the knowledge of its entries and the diagonal format.
         """
-        n = self.shape[0]
-        x = x.reshape(n, -1)
-        return self._diag[:, np.newaxis] * x
+        x = x.reshape(self.shape[0], -1)
+        return self._diag()[:, np.newaxis] * x
 
     def _matmat(self, x):
         """
