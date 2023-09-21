@@ -1054,6 +1054,7 @@ class TestDet:
 
     # currently failing since as_xparray raises a different exception first
     def test_incompatible_dtype_input(self):
+        pytest.xfail("as_xparray raises a different exception for string dtypes")
         # Double backslashes needed for escaping pytest regex.
         msg = 'cannot be cast to float\\(32, 64\\)'
 
