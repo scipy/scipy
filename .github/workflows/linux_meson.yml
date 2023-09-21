@@ -230,7 +230,7 @@ jobs:
         run: |
           pip install "numpy==1.21.6" &&
           # build deps
-          pip install build meson-python ninja "pythran<0.14.0" "pybind11<2.11.0" "cython<3.0.0" "wheel<0.41.0"
+          pip install build "meson-python<0.14.0" ninja "pythran<0.14.0" "pybind11<2.11.0" "cython<3.0.0" "wheel<0.41.0"
           # test deps
           pip install gmpy2 threadpoolctl mpmath pooch "pythran<0.14.0" "pybind11<2.11.0" pytest pytest-xdist==2.5.0 pytest-timeout
 
