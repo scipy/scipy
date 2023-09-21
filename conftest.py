@@ -78,6 +78,7 @@ dt_config.stopwords.add('integrate.romb(y, show=True)')
 # https://github.com/ev-br/scpdt/issues/102
 dt_config.skiplist = [
     'scipy.stats.kstwobign',  # inaccurate cdf or ppf
+    'scipy.stats._continuous_distns.kstwobign',
     'scipy.stats.levy_stable',
     'scipy.special.sinc',
     'scipy.special._basic.sinc',  # comes from numpy
