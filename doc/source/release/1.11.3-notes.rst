@@ -14,18 +14,20 @@ Authors
 * Name (commits)
 * Jake Bowhay (2)
 * CJ Carey (1)
+* Colin Carroll (1) +
 * drestebon (1) +
+* Ralf Gommers (1)
 * Julien Jerphanion (1)
 * Ellie Litwack (2)
 * Andrew Nelson (3)
 * Bharat Raghunathan (1)
-* Tyler Reddy (13)
+* Tyler Reddy (21)
 * Søren Fuglede Jørgensen (2)
 * Hielke Walinga (1) +
 * Warren Weckesser (1)
 * Bernhard M. Wiedemann (1)
 
-A total of 12 people contributed to this release.
+A total of 14 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
@@ -49,6 +51,7 @@ Pull requests for 1.11.3
 ------------------------
 
 * `#17633 <https://github.com/scipy/scipy/pull/17633>`__: BUG: add infeasibility checks to min_weight_full_bipartite_matching
+* `#18784 <https://github.com/scipy/scipy/pull/18784>`__: BUG: Allow johnsonsu parameters to be floats
 * `#18913 <https://github.com/scipy/scipy/pull/18913>`__: BUG: sparse.csgraph: Support int64 indices in traversal.pyx
 * `#18956 <https://github.com/scipy/scipy/pull/18956>`__: BUG: trust-constr Bounds exclusive
 * `#19076 <https://github.com/scipy/scipy/pull/19076>`__: MAINT: should not be using np.float64() on arrays
@@ -58,4 +61,5 @@ Pull requests for 1.11.3
 * `#19135 <https://github.com/scipy/scipy/pull/19135>`__: MAINT: signal: Remove the cval parameter from the private function...
 * `#19139 <https://github.com/scipy/scipy/pull/19139>`__: BLD: revert to using published wheels [wheel build]
 * `#19156 <https://github.com/scipy/scipy/pull/19156>`__: BUG: Support sparse arrays in scipy.sparse.csgraph.laplacian
+* `#19200 <https://github.com/scipy/scipy/pull/19200>`__: TST: fix \`TestODR.test_implicit\` test failure with tolerance...
 * `#19208 <https://github.com/scipy/scipy/pull/19208>`__: BUG: freqz rfft grid fix
