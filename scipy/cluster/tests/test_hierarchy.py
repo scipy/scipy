@@ -1192,7 +1192,7 @@ class TestDendrogram:
 def calculate_maximum_distances(Z, xp):
     # Used for testing correctness of maxdists.
     n = Z.shape[0] + 1
-    B = xp.zeros((n-1,))
+    B = xp.zeros((n-1,), dtype=Z.dtype)
     q = xp.zeros((3,))
     for i in range(0, n - 1):
         q[:] = 0.0
@@ -1210,7 +1210,8 @@ def calculate_maximum_distances(Z, xp):
 def calculate_maximum_inconsistencies(Z, R, k=3, xp=np):
     # Used for testing correctness of maxinconsts.
     n = Z.shape[0] + 1
-    B = xp.zeros((n-1,))
+    dtype = xp.result_type(Z, R)
+    B = xp.zeros((n-1,), dtype=dtype)
     q = xp.zeros((3,))
     for i in range(0, n - 1):
         q[:] = 0.0
