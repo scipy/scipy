@@ -71,3 +71,36 @@ dt_config.user_context_mgr = warnings_errors_and_rng
 
 # printing the Romberg extrap table is flaky, adds blanklines on some platforms
 dt_config.stopwords.add('integrate.romb(y, show=True)')
+
+# these names are known to fail doctesting and we like to keep it that way
+# e.g. sometimes pseudocode is acceptable etc
+# TODO: we need to remove duplicate functions from the list once pytest collection is tightened: 
+# https://github.com/ev-br/scpdt/issues/102
+dt_config.skiplist = [
+    'scipy.stats.kstwobign',  # inaccurate cdf or ppf
+    'scipy.stats.levy_stable',
+    'scipy.special.sinc',
+    'scipy.special._basic.sinc',  # comes from numpy
+    'scipy.fft.fftfreq',
+    'scipy.fft.rfftfreq',
+    'scipy.fft.fftshift',
+    'scipy.fft.ifftshift',
+    'scipy.fftpack.fftfreq',
+    'scipy.fftpack._helper.fftfreq',
+    'scipy.fftpack.fftshift',
+    'scipy.fftpack._helper.fftshift',
+    'scipy.fftpack.ifftshift',
+    'scipy.fftpack._helper.ifftshift',
+    'scipy.integrate.trapezoid',
+    'scipy.integrate._quadrature.trapezoid',
+    'scipy.linalg.LinAlgError',
+    'scipy.linalg._misc.LinAlgError',
+    'scipy.signal.bspline',
+    'scipy.signal._bsplines.bspline',
+    'scipy.signal.cubic',
+    'scipy.signal._bsplines.cubic',
+    'scipy.signal.quadratic',
+    'scipy.signal._bsplines.quadratic',
+    'scipy.optimize.show_options',
+    'scipy.optimize._optimize.show_options',
+]
