@@ -97,7 +97,7 @@ class TestLinkage:
         # Tests linkage(Y, method) on the tdist data set.
         Z = linkage(xp.asarray(hierarchy_test_data.ytdist), method)
         expectedZ = getattr(hierarchy_test_data, 'linkage_ytdist_' + method)
-        xp_assert_close(Z, expectedZ, atol=1e-10)
+        xp_assert_close(Z, xp.asarray(expectedZ), atol=1e-10)
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -114,7 +114,7 @@ class TestLinkage:
         y = scipy.spatial.distance.pdist(hierarchy_test_data.X,
                                          metric="euclidean")
         Z = linkage(xp.asarray(y), method)
-        xp_assert_close(Z, expectedZ, atol=1e-06)
+        xp_assert_close(Z, xp.asarray(expectedZ), atol=1e-06)
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -127,14 +127,14 @@ class TestLinkage:
         for method, code in _LINKAGE_METHODS.items():
             Z_trivial = _hierarchy.linkage(d, n, code)
             Z = linkage(xp.asarray(d), method)
-            xp_assert_close(Z, Z_trivial, rtol=1e-14, atol=1e-15)
+            xp_assert_close(Z, xp.asarray(Z_trivial), rtol=1e-14, atol=1e-15)
 
     @skip_if_array_api_gpu
     @array_api_compatible
     def test_optimal_leaf_ordering(self, xp):
         Z = linkage(xp.asarray(hierarchy_test_data.ytdist), optimal_ordering=True)
         expectedZ = getattr(hierarchy_test_data, 'linkage_ytdist_single_olo')
-        xp_assert_close(Z, expectedZ, atol=1e-10)
+        xp_assert_close(Z, xp.asarray(expectedZ), atol=1e-10)
 
 
 class TestLinkageTies:
@@ -166,7 +166,7 @@ class TestLinkageTies:
         X = xp.asarray([[-1, -1], [0, 0], [1, 1]])
         Z = linkage(X, method=method)
         expectedZ = self._expectations[method]
-        xp_assert_close(Z, expectedZ, atol=1e-06)
+        xp_assert_close(Z, xp.asarray(expectedZ), atol=1e-06)
 
 
 class TestInconsistent:
@@ -180,7 +180,7 @@ class TestInconsistent:
     def check_inconsistent_tdist(self, depth, xp):
         Z = xp.asarray(hierarchy_test_data.linkage_ytdist_single)
         xp_assert_close(inconsistent(Z, depth),
-                        hierarchy_test_data.inconsistent_ytdist[depth])
+                        xp.asarray(hierarchy_test_data.inconsistent_ytdist[depth]))
 
 
 class TestCopheneticDistance:
@@ -203,7 +203,7 @@ class TestCopheneticDistance:
         (c, M) = cophenet(Z, xp.asarray(hierarchy_test_data.ytdist))
         expectedM = xp.asarray([268, 295, 255, 255, 295, 295, 268, 268, 295, 295,
                                 295, 138, 219, 295, 295])
-        expectedc = 0.639931296433393415057366837573
+        expectedc = xp.asarray(0.639931296433393415057366837573)[()]
         xp_assert_close(c, expectedc, atol=1e-10)
         xp_assert_close(M, expectedM, atol=1e-10)
 
@@ -1298,13 +1298,13 @@ def test_optimal_leaf_ordering(xp):
     Z = optimal_leaf_ordering(linkage(xp.asarray(hierarchy_test_data.ytdist)),
                               xp.asarray(hierarchy_test_data.ytdist))
     expectedZ = hierarchy_test_data.linkage_ytdist_single_olo
-    xp_assert_close(Z, expectedZ, atol=1e-10)
+    xp_assert_close(Z, xp.asarray(expectedZ), atol=1e-10)
 
     # test with the observation matrix X
     Z = optimal_leaf_ordering(linkage(xp.asarray(hierarchy_test_data.X), 'ward'),
                               xp.asarray(hierarchy_test_data.X))
     expectedZ = hierarchy_test_data.linkage_X_ward_olo
-    xp_assert_close(Z, expectedZ, atol=1e-06)
+    xp_assert_close(Z, xp.asarray(expectedZ), atol=1e-06)
 
 
 @skip_if_array_api

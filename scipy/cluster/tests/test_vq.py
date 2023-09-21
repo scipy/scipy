@@ -134,7 +134,7 @@ class TestVq:
         arrays = [xp.asarray] if SCIPY_ARRAY_API else [np.asarray, matrix]
         for tp in arrays:
             label1 = py_vq(tp(X), tp(initc))[0]
-            xp_assert_equal(label1, LABEL1)
+            xp_assert_equal(label1, xp.asarray(LABEL1))
 
     @skip_if_array_api
     def test_vq(self):
@@ -154,8 +154,8 @@ class TestVq:
         data = xp.asarray(data)
         initc = xp.asarray(initc)
         ta, tb = py_vq(data[:, np.newaxis], initc[:, np.newaxis])
-        xp_assert_equal(a, ta)
-        xp_assert_equal(b, tb)
+        xp_assert_equal(ta, xp.asarray(a))
+        xp_assert_equal(tb, xp.asarray(b))
 
     @skip_if_array_api
     def test__vq_sametype(self):
@@ -178,8 +178,8 @@ class TestVq:
         codes1, dis1 = py_vq(
             xp.asarray(X), xp.asarray(code_book)
         )
-        xp_assert_close(dis0, dis1, 1e-5)
-        xp_assert_equal(codes0, codes1)
+        xp_assert_close(dis1, xp.asarray(dis0), 1e-5)
+        xp_assert_equal(codes1, xp.asarray(codes0))
 
         X = X.astype(np.float32)
         code_book = code_book.astype(np.float32)
@@ -188,8 +188,8 @@ class TestVq:
         codes1, dis1 = py_vq(
             xp.asarray(X), xp.asarray(code_book)
         )
-        xp_assert_close(dis0, dis1, 1e-5)
-        xp_assert_equal(codes0, codes1)
+        xp_assert_close(dis1, xp.asarray(dis0), 1e-5)
+        xp_assert_equal(codes1, xp.asarray(codes0))
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -201,8 +201,8 @@ class TestVq:
         codes1, dis1 = py_vq(
             xp.asarray(X), xp.asarray(code_book)
         )
-        xp_assert_close(dis0, dis1, 1e-5)
-        xp_assert_equal(codes0, codes1)
+        xp_assert_close(dis1, xp.asarray(dis0), 1e-5)
+        xp_assert_equal(codes1, xp.asarray(codes0))
 
 
 # Whole class skipped on GPU for now;
@@ -236,7 +236,7 @@ class TestKMean:
         arrays = [xp.asarray] if SCIPY_ARRAY_API else [np.asarray, matrix]
         for tp in arrays:
             code1 = kmeans(tp(X), tp(initc), iter=1)[0]
-            xp_assert_close(code1, CODET2)
+            xp_assert_close(code1, xp.asarray(CODET2))
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -266,8 +266,8 @@ class TestKMean:
             code1 = kmeans2(tp(X), tp(initc), iter=1)[0]
             code2 = kmeans2(tp(X), tp(initc), iter=2)[0]
 
-            xp_assert_close(code1, CODET1)
-            xp_assert_close(code2, CODET2)
+            xp_assert_close(code1, xp.asarray(CODET1))
+            xp_assert_close(code2, xp.asarray(CODET2))
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -351,7 +351,7 @@ class TestKMean:
         x = xp.asarray([1, 2, 3, 4, 10], dtype=xp.float64)
         res = kmeans(x, xp.asarray(1), thresh=1e16)
         xp_assert_close(res[0], xp.asarray([4.]))
-        xp_assert_close(res[1], 2.3999999999999999)
+        xp_assert_close(res[1], xp.asarray(2.3999999999999999)[()])
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -379,7 +379,7 @@ class TestKMean:
 
         data = xp.asarray(data)
         res, _ = kmeans2(data, xp.asarray(2), minit='++')
-        xp_assert_close(res, centers, rtol=0.2)
+        xp_assert_close(res, xp.asarray(centers), rtol=0.2)
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -388,7 +388,7 @@ class TestKMean:
         obs = xp.asarray([-3, -1, 0, 1, 1, 8], dtype=xp.float64)
         res = kmeans(obs, xp.asarray([-3., 0.99]))
         xp_assert_close(res[0], xp.asarray([-0.4,  8.]))
-        xp_assert_close(res[1], 1.0666666666666667)
+        xp_assert_close(res[1], xp.asarray(1.0666666666666667)[()])
 
     @skip_if_array_api
     def test_kmeans_and_kmeans2_random_seed(self):
