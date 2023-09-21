@@ -2340,10 +2340,9 @@ def squareform(X, force="no", checks=True):
         # Grab the closest value to the square root of the number
         # of elements times 2 to see if the number of elements
         # is indeed a binomial coefficient.
-        d = int(np.ceil(np.sqrt(s[0] * 2)))
-
-        # Check that v is of valid dimensions.
-        if d * (d - 1) != s[0] * 2:
+        d = obs_from_pairs(s[0])
+        # Check that v is of valid dimensions
+        if not(d.is_integer()):
             raise ValueError('Incompatible vector size. It must be a binomial '
                              'coefficient n choose 2 for some integer n >= 2.')
 
@@ -2566,8 +2565,8 @@ def is_valid_y(y, warning=False, throw=False, name=None):
                 raise ValueError('Condensed distance matrix must have shape=1 '
                                  '(i.e. be one-dimensional).')
         n = y.shape[0]
-        d = int(np.ceil(np.sqrt(n * 2)))
-        if (d * (d - 1) / 2) != n:
+        d = obs_from_pairs(n)
+        if not(d.is_integer()):
             if name:
                 raise ValueError(('Length n of condensed distance matrix '
                                   '\'%s\' must be a binomial coefficient, i.e.'
@@ -2607,6 +2606,32 @@ def num_obs_dm(d):
     return d.shape[0]
 
 
+def obs_from_pairs(P):
+    """
+    Return the number of observations given the number of pairs.
+
+    This method provides the equation that converts an integer number of pairs
+    to an integer number of observations, assuming that the number of pairs is
+    valid. If the number of pairs is not a binomial coefficient n choose 2, 
+    with n>=2, then it will return a non-integer float, if the number of pairs
+    is a valid binomial coefficient n choose 2, then it will return a float
+    representation of an integer.  
+
+    Parameters
+    ----------
+    P : int
+        integer representing the number of pairs of observations
+    
+    Returns
+    -------
+    n : float
+        float representing the integral number of observations if P is valid,
+        otherwise a non-integer which can be checked as required
+    
+    """
+    return (1 + np.sqrt(1+8*P))/2
+
+
 def num_obs_y(Y):
     """
     Return the number of original observations that correspond to a
@@ -2629,8 +2654,8 @@ def num_obs_y(Y):
     if k == 0:
         raise ValueError("The number of observations cannot be determined on "
                          "an empty distance matrix.")
-    d = int(np.ceil(np.sqrt(k * 2)))
-    if (d * (d - 1) / 2) != k:
+    d = obs_from_pairs(k)
+    if not(d.is_integer()):
         raise ValueError("Invalid condensed distance matrix passed. Must be "
                          "some k where k=(n choose 2) for some n >= 2.")
     return d
