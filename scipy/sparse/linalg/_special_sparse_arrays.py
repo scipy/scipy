@@ -781,6 +781,7 @@ class MikotaK(LinearOperator):
         super().__init__(dtype, shape)
         # The matrix is constructed from its diagonals;
         # we precompute these to avoid duplicating the computation
+        n = shape[0]
         self._diag0 = np.arange(2 * n - 1, 0, -2, dtype=self.dtype)
         self._diag1 = - np.arange(n - 1, 0, -1, dtype=self.dtype)
 
