@@ -805,7 +805,7 @@ class MikotaK(LinearOperator):
         the Mikota stiffness matrix without constructing or storing the matrix
         itself using the knowledge of its entries and the 3-diagonal format.
         """
-        x = x.reshape((-1, x.shape[0]))
+        x = x.reshape(self.shape[0], -1)
         kx = np.zeros_like(x)
         d1 = self._diag1
         d0 = self._diag0
