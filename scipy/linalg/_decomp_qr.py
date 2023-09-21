@@ -301,7 +301,7 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
             raise ValueError('Array shapes are not compatible for c @ Q'
                              ' operation: {} vs {}'.format(c.shape, a.shape))
 
-    raw = _qr(a, overwrite_a, None, "raw", pivoting)
+    raw = qr(a, overwrite_a, None, "raw", pivoting)
     Q, tau = raw[0]
 
     gor_un_mqr, = get_lapack_funcs(('ormqr',), (Q,))

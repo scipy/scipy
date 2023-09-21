@@ -355,7 +355,7 @@ def orth(A, rcond=None):
            [0., 0.]])
 
     """
-    u, s, vh = _svd(A, full_matrices=False)
+    u, s, vh = svd(A, full_matrices=False)
     M, N = u.shape[0], vh.shape[1]
     if rcond is None:
         rcond = numpy.finfo(s.dtype).eps * max(M, N)
@@ -419,7 +419,7 @@ def null_space(A, rcond=None):
            [  6.92087741e-17,   1.00000000e+00]])
 
     """
-    u, s, vh = _svd(A, full_matrices=True)
+    u, s, vh = svd(A, full_matrices=True)
     M, N = u.shape[0], vh.shape[1]
     if rcond is None:
         rcond = numpy.finfo(s.dtype).eps * max(M, N)
