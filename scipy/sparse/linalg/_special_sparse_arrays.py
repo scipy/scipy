@@ -619,9 +619,20 @@ class Sakurai(LinearOperator):
         e = np.sort(16. * np.power(np.cos(0.5 * k * np.pi / (n + 1)), 4))
         self._eigenvalues = e
 
+    def _bands(self):
+        # the matrix is defined by its main diagonal...
+        d0 = np.r_[5, 6 * np.ones(self.n - 2, dtype=self.dtype), 5]
+        # ... as well as the first...
+        d1 = -4 * np.ones(self.n, dtype=self.dtype)
+        # ... and second upper/lower diagonals.
+        d2 = np.ones(self.n, dtype=self.dtype)
+        # standard banded format has main diagonal at the bottom
+        return [d2, d1, d0]
+
     @property
     def eigenvalues(self):
-        return self._eigenvalues
+        k = np.arange(1, n + 1)
+        return np.sort(16. * np.power(np.cos(0.5 * k * np.pi / (n + 1)), 4))
 
     @eigenvalues.setter
     def eigenvalues(self, value):
@@ -630,24 +641,17 @@ class Sakurai(LinearOperator):
 
     def tosparse(self):
         from scipy.sparse import spdiags
-        d0 = np.r_[5, 6 * np.ones(self.n - 2, dtype=self.dtype), 5]
-        d1 = -4 * np.ones(self.n, dtype=self.dtype)
-        d2 = np.ones(self.n, dtype=self.dtype)
+        d2, d1, d0 = self._bands()
         return spdiags([d2, d1, d0, d1, d2], [-2, -1, 0, 1, 2], self.n, self.n)
 
     def tobanded(self):
         """
         Construct a Sakurai matrix in various formats and its eigenvalues.
         """
-        d0 = np.r_[5, 6 * np.ones(self.n - 2, dtype=self.dtype), 5]
-        d1 = -4 * np.ones(self.n, dtype=self.dtype)
-        d2 = np.ones(self.n, dtype=self.dtype)
-        return np.array([d2, d1, d0])
+        return np.array(self._bands())
 
     def toarray(self):
-        d0 = np.r_[5, 6 * np.ones(self.n - 2, dtype=self.dtype), 5]
-        d1 = -4 * np.ones(self.n - 1, dtype=self.dtype)
-        d2 = np.ones(self.n - 2, dtype=self.dtype)
+        d2, d1, d0 = self._bands()
         a = np.diag(d0)
         a += np.diag(d1, 1) + np.diag(d1, -1)
         a += np.diag(d2, 2) + np.diag(d2, -2)
