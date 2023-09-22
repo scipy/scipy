@@ -736,8 +736,7 @@ class MikotaM(LinearOperator):
         using the knowledge of its entries and the diagonal format.
         """
         x = x.reshape(self.shape[0], -1)
-        result_dtype = np.promote_types(x.dtype, self.dtype)
-        return (self._diag()[:, np.newaxis] * x).astype(result_dtype)
+        return self._diag()[:, np.newaxis] * x
 
     def _matmat(self, x):
         """
