@@ -296,13 +296,13 @@ of_the_second_derivative
         Parameters
         ----------
         m : int, optional
-            The positive number of eigenvalues to return. If not provided,
-            then all eigenvalues will be returned.
+            The positive number of smallest eigenvalues to return.
+            If not provided, then all eigenvalues will be returned.
             
         Returns
         -------
         eigenvalues : float array
-            The requested `m` or all eigenvalues, in ascending order.
+            The requested `m` smallest or all eigenvalues, in ascending order.
         """
         eigenvalues, _ = self._eigenvalue_ordering(m)
         return eigenvalues
@@ -610,15 +610,24 @@ class Sakurai(LinearOperator):
         shape = (n, n)
         super().__init__(dtype, shape)
 
-    @property
-    def eigenvalues(self):
-        k = np.arange(1, self.n + 1)
+    def eigenvalues(self, m=None):
+        """Return the requested number of eigenvalues.
+        
+        Parameters
+        ----------
+        m : int, optional
+            The positive number of smallest eigenvalues to return.
+            If not provided, then all eigenvalues will be returned.
+            
+        Returns
+        -------
+        eigenvalues : `np.float64` array
+            The requested `m` smallest or all eigenvalues, in ascending order.
+        """
+        if m is None:
+            m = self.n
+        k = np.arange(1, m + 1)
         return np.flip(16. * np.power(np.cos(0.5 * k * np.pi / (self.n + 1)), 4))
-
-    @eigenvalues.setter
-    def eigenvalues(self, value):
-        raise AttributeError('"eigenvalues" attribute is read-only and cannot '
-                             'be set.')
 
     def tobanded(self):
         """
@@ -912,8 +921,24 @@ class MikotaPair:
         self.n = n
         self.dtype = dtype
         self.shape = (n, n)
-
-        arange_plus1 = np.arange(1, n + 1, dtype=np.uint64)
-        self.eigenvalues = arange_plus1 * arange_plus1
         self.m = MikotaM(self.shape, self.dtype)
         self.k = MikotaK(self.shape, self.dtype)
+
+    def eigenvalues(self, m=None):
+        """Return the requested number of eigenvalues.
+        
+        Parameters
+        ----------
+        m : int, optional
+            The positive number of smallest eigenvalues to return.
+            If not provided, then all eigenvalues will be returned.
+            
+        Returns
+        -------
+        eigenvalues : `np.uint64` array
+            The requested `m` smallest or all eigenvalues, in ascending order.
+        """
+        if m is None:
+            m = n
+        arange_plus1 = np.arange(1, m + 1, dtype=np.uint64)
+        return arange_plus1 * arange_plus1
