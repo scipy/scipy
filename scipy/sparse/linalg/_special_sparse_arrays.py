@@ -638,8 +638,9 @@ class Sakurai(LinearOperator):
         from scipy.sparse import spdiags
         d = self.tobanded()
         # the banded format has the main diagonal at the bottom
+        # `spdiags` has no `dtype` parameter so inherits dtype from banded
         return spdiags([d[0], d[1], d[2], d[1], d[0]], [-2, -1, 0, 1, 2],
-                       self.n, self.n, dtype=self.dtype)
+                       self.n, self.n)
 
     def toarray(self):
         return self.tosparse().toarray()
