@@ -535,12 +535,7 @@ class Sakurai(LinearOperator):
     n : int
         The size of the matrix.
     dtype : dtype
-        Numerical type of the array. Default is ``np.int32``.
-
-    Attributes
-    ----------
-    eigenvalues : ndarray, float
-        Eigenvalues of the Sakurai matrix  ordered ascending.
+        Numerical type of the array. Default is ``np.int8``.
 
     Methods
     -------
@@ -552,6 +547,8 @@ class Sakurai(LinearOperator):
         The Sakurai matrix in the format for banded symmetric matrices,
         i.e., (3, n) ndarray with 3 upper diagonals
         placing the main diagonal at the bottom.
+    eigenvalues()
+        All eigenvalues of the Sakurai matrix ordered ascending.
 
     Notes
     -----
@@ -577,7 +574,7 @@ class Sakurai(LinearOperator):
     >>> n = 6
     >>> sak = Sakurai(n)
 
-    Since all matrix entries are integers, ``'int32'`` is
+    Since all matrix entries are small integers, ``'int8'`` is
     the default dtype for storing matrix representations.
 
     >>> sak.toarray()
@@ -592,7 +589,7 @@ class Sakurai(LinearOperator):
            [-4, -4, -4, -4, -4, -4],
            [ 5,  6,  6,  6,  6,  5]])
     >>> sak.tosparse()
-    <6x6 sparse matrix of type '<class 'numpy.int32'>'
+    <6x6 sparse matrix of type '<class 'numpy.int8'>'
         with 24 stored elements (5 diagonals) in DIAgonal format>
     >>> np.array_equal(sak.tosparse().toarray(), sak.toarray())
     True
@@ -609,7 +606,7 @@ class Sakurai(LinearOperator):
     True
 
     """
-    def __init__(self, n, dtype=np.int32):
+    def __init__(self, n, dtype=np.int8):
         self.n = n
         self.dtype = dtype
         shape = (n, n)
