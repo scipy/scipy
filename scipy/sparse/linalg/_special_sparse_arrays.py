@@ -612,47 +612,37 @@ class Sakurai(LinearOperator):
         shape = (n, n)
         super().__init__(dtype, shape)
 
-    def _bands(self):
-        # the matrix is defined by its main diagonal...
-        d0 = np.r_[5, 6 * np.ones(self.n - 2, dtype=self.dtype), 5]
-        # ... as well as the first...
-        d1 = -4 * np.ones(self.n, dtype=self.dtype)
-        # ... and second upper/lower diagonals.
-        d2 = np.ones(self.n, dtype=self.dtype)
-        # standard banded format has main diagonal at the bottom
-        return [d2, d1, d0]
-
     @property
     def eigenvalues(self):
         k = np.arange(1, self.n + 1)
-        return np.sort(16. * np.power(np.cos(0.5 * k * np.pi / (n + 1)), 4))
+        return np.sort(16. * np.power(np.cos(0.5 * k * np.pi / (self.n + 1)), 4))
 
     @eigenvalues.setter
     def eigenvalues(self, value):
         raise AttributeError('"eigenvalues" attribute is read-only and cannot '
                              'be set.')
 
+    def tobanded(self):
+        """
+        Construct the Sakurai matrix as a banded array.
+        """
+        d0 = np.r_[5, 6 * np.ones(self.n - 2, dtype=self.dtype), 5]
+        d1 = -4 * np.ones(self.n, dtype=self.dtype)
+        d2 = np.ones(self.n, dtype=self.dtype)
+        return np.array([d2, d1, d0]).astype(self.dtype)
+
     def tosparse(self):
         """
         Construct the Sakurai matrix is a sparse format.
         """
         from scipy.sparse import spdiags
-        d2, d1, d0 = self._bands()
-        return spdiags([d2, d1, d0, d1, d2], [-2, -1, 0, 1, 2], self.n, self.n,
-                       dtype=self.dtype)
-
-    def tobanded(self):
-        """
-        Construct the Sakurai matrix as a banded array.
-        """
-        return np.array(self._bands()).astype(self.dtype)
+        d = self.tobanded()
+        % the banded format has the main diagonal at the bottom
+        return spdiags([d[0], d[1], d[2], d[1], d[0]], [-2, -1, 0, 1, 2],
+                       self.n, self.n, dtype=self.dtype)
 
     def toarray(self):
-        d2, d1, d0 = self._bands()
-        a = np.diag(d0)
-        a += np.diag(d1, 1) + np.diag(d1, -1)
-        a += np.diag(d2, 2) + np.diag(d2, -2)
-        return a.astype(self.dtype)
+        return self.tosparse().toarray()
     
     def _matvec(self, x):
         """
