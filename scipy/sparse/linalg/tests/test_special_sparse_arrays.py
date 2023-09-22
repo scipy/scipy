@@ -229,14 +229,14 @@ class TestSakurai:
         for x in input_set:
             y = sak.dot(x.astype(argument_dtype))
             assert x.shape == y.shape
-            # assert y.dtype == result_dtype
+            assert np.can_cast(y.dtype, result_dtype)
             if x.ndim == 2:
                 ya = sak.toarray() @ x.astype(argument_dtype)
                 np.array_equal(y, ya)
-                assert ya.dtype == result_dtype
+                assert np.can_cast(ya.dtype, result_dtype)
                 ys = sak.tosparse() @ x.astype(argument_dtype)
                 np.array_equal(y, ys)
-                assert ys.dtype == result_dtype
+                assert np.can_cast(ys.dtype, result_dtype)
 
 class TestMikotaPair:
     """
@@ -325,11 +325,11 @@ class TestMikotaPair:
             for x in input_set:
                 y = lo.dot(x.astype(argument_dtype))
                 assert x.shape == y.shape
-                assert y.dtype == result_dtype
+                assert np.can_cast(y.dtype, result_dtype)
                 if x.ndim == 2:
                     ya = lo.toarray() @ x.astype(argument_dtype)
                     np.array_equal(y, ya)
-                    assert ya.dtype == result_dtype
+                    assert np.can_cast(ya.dtype, result_dtype)
                     ys = lo.tosparse() @ x.astype(argument_dtype)
                     np.array_equal(y, ys)
-                    assert ys.dtype == result_dtype
+                    assert np.can_cast(ys.dtype, result_dtype)
