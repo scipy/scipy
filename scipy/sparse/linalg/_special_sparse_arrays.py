@@ -547,7 +547,7 @@ class Sakurai(LinearOperator):
         The Sakurai matrix in the format for banded symmetric matrices,
         i.e., (3, n) ndarray with 3 upper diagonals
         placing the main diagonal at the bottom.
-    eigenvalues()
+    eigenvalues
         All eigenvalues of the Sakurai matrix ordered ascending.
 
     Notes
@@ -583,19 +583,17 @@ class Sakurai(LinearOperator):
            [ 1, -4,  6, -4,  1,  0],
            [ 0,  1, -4,  6, -4,  1],
            [ 0,  0,  1, -4,  6, -4],
-           [ 0,  0,  0,  1, -4,  5]])
+           [ 0,  0,  0,  1, -4,  5]], dtype=int8)
     >>> sak.tobanded()
     array([[ 1,  1,  1,  1,  1,  1],
            [-4, -4, -4, -4, -4, -4],
-           [ 5,  6,  6,  6,  6,  5]])
+           [ 5,  6,  6,  6,  6,  5]], dtype=int8)
     >>> sak.tosparse()
     <6x6 sparse matrix of type '<class 'numpy.int8'>'
         with 24 stored elements (5 diagonals) in DIAgonal format>
-    >>> np.array_equal(sak.tosparse().toarray(), sak.toarray())
+    >>> np.array_equal(sak.dot(np.eye(n)), sak.tosparse().toarray())
     True
-    >>> np.array_equal(sak(np.eye(n)), sak.tosparse().toarray())
-    True
-    >>> sak.eigenvalues()
+    >>> sak.eigenvalues
     array([0.03922866, 0.56703972, 2.41789479, 5.97822974,
            10.54287655, 14.45473055])
 
@@ -615,7 +613,7 @@ class Sakurai(LinearOperator):
     @property
     def eigenvalues(self):
         k = np.arange(1, self.n + 1)
-        return np.sort(16. * np.power(np.cos(0.5 * k * np.pi / (self.n + 1)), 4))
+        return np.flip(16. * np.power(np.cos(0.5 * k * np.pi / (self.n + 1)), 4))
 
     @eigenvalues.setter
     def eigenvalues(self, value):
