@@ -201,7 +201,7 @@ class TestSakurai:
                 [0.03922866, 0.56703972, 2.41789479, 5.97822974,
                  10.54287655, 14.45473055]
             )
-        np.array_equal(e, sak.eigenvalues())
+        np.array_equal(e, sak.eigenvalues)
 
     # `Sakurai` default `dtype` is `np.int8` as its entries are small integers
     @pytest.mark.parametrize('dtype', ALLDTYPES)
@@ -229,7 +229,7 @@ class TestSakurai:
         for x in input_set:
             y = sak.dot(x.astype(argument_dtype))
             assert x.shape == y.shape
-            # assert y.dtype == result_dtype
+            assert y.dtype == result_dtype
             if x.ndim == 2:
                 yy = sak.toarray() @ x.astype(argument_dtype)
                 np.array_equal(y, yy)
