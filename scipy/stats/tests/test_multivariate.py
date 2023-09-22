@@ -150,6 +150,15 @@ class TestCovariance:
         if hasattr(cov_object, "_colorize") and "singular" not in matrix_type:
             assert_close(cov_object.colorize(res), x)
 
+        # gh-19197 reported that multivariate normal `rvs` produced incorrect
+        # results when a singular Covariance object was produce using
+        # `from_eigenvalues`. This was due to an issue in `colorize` with
+        # singular covariance matrices. Check this edge case, which is skipped
+        # in the previous tests.
+        if hasattr(cov_object, "_colorize"):
+            res = cov_object.colorize(np.eye(len(A)))
+            assert_close(res.T @ res, A)
+
     @pytest.mark.parametrize("size", [None, tuple(), 1, (2, 4, 3)])
     @pytest.mark.parametrize("matrix_type", list(_matrices))
     @pytest.mark.parametrize("cov_type_name", _all_covariance_types)
@@ -243,6 +252,24 @@ class TestCovariance:
         res = rv.rvs(random_state=rng1)
         ref = multivariate_normal.rvs(mean, cov, random_state=rng2)
         assert_equal(res, ref)
+
+    def test_gh19197(self):
+        # gh-19197 reported that multivariate normal `rvs` produced incorrect
+        # results when a singular Covariance object was produce using
+        # `from_eigenvalues`. Check that this specific issue is resolved;
+        # a more general test is included in `test_covariance`.
+        mean = np.ones(2)
+        cov = Covariance.from_eigendecomposition((np.zeros(2), np.eye(2)))
+        dist = scipy.stats.multivariate_normal(mean=mean, cov=cov)
+        rvs = dist.rvs(size=None)
+        assert_equal(rvs, mean)
+
+        cov = scipy.stats.Covariance.from_eigendecomposition(
+            (np.array([1., 0.]), np.array([[1., 0.], [0., 400.]])))
+        dist = scipy.stats.multivariate_normal(mean=mean, cov=cov)
+        rvs = dist.rvs(size=None)
+        assert rvs[0] != mean[0]
+        assert rvs[1] == mean[1]
 
 
 def _random_covariance(dim, evals, rng, singular=False):
