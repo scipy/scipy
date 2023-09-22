@@ -598,7 +598,7 @@ class Sakurai(LinearOperator):
     True
     >>> np.array_equal(sak(np.eye(n)), sak.tosparse().toarray())
     True
-    >>> sak.eigenvalues
+    >>> sak.eigenvalues()
     array([0.03922866, 0.56703972, 2.41789479, 5.97822974,
            10.54287655, 14.45473055])
 
@@ -615,10 +615,6 @@ class Sakurai(LinearOperator):
         shape = (n, n)
         super().__init__(dtype, shape)
 
-        k = np.arange(1, n + 1)
-        e = np.sort(16. * np.power(np.cos(0.5 * k * np.pi / (n + 1)), 4))
-        self._eigenvalues = e
-
     def _bands(self):
         # the matrix is defined by its main diagonal...
         d0 = np.r_[5, 6 * np.ones(self.n - 2, dtype=self.dtype), 5]
@@ -631,7 +627,7 @@ class Sakurai(LinearOperator):
 
     @property
     def eigenvalues(self):
-        k = np.arange(1, n + 1)
+        k = np.arange(1, self.n + 1)
         return np.sort(16. * np.power(np.cos(0.5 * k * np.pi / (n + 1)), 4))
 
     @eigenvalues.setter
@@ -640,22 +636,26 @@ class Sakurai(LinearOperator):
                              'be set.')
 
     def tosparse(self):
+        """
+        Construct the Sakurai matrix is a sparse format.
+        """
         from scipy.sparse import spdiags
         d2, d1, d0 = self._bands()
-        return spdiags([d2, d1, d0, d1, d2], [-2, -1, 0, 1, 2], self.n, self.n)
+        return spdiags([d2, d1, d0, d1, d2], [-2, -1, 0, 1, 2], self.n, self.n,
+                       dtype=self.dtype)
 
     def tobanded(self):
         """
-        Construct a Sakurai matrix in various formats and its eigenvalues.
+        Construct the Sakurai matrix as a banded array.
         """
-        return np.array(self._bands())
+        return np.array(self._bands()).astype(self.dtype)
 
     def toarray(self):
         d2, d1, d0 = self._bands()
         a = np.diag(d0)
         a += np.diag(d1, 1) + np.diag(d1, -1)
         a += np.diag(d2, 2) + np.diag(d2, -2)
-        return a
+        return a.astype(self.dtype)
     
     def _matvec(self, x):
         """
@@ -663,10 +663,9 @@ class Sakurai(LinearOperator):
         the Sakurai matrix without constructing or storing the matrix itself
         using the knowledge of its entries and the 5-diagonal format.
         """
-        n = self.n
-        assert n == x.shape[0]
-        x = x.reshape(n, -1)
-        sx = np.zeros_like(x)
+        x = x.reshape(self.n, -1)
+        result_dtype = np.promote_types(x.dtype, self.dtype)
+        sx = np.zeros_like(x, dtype=result_dtype)
         sx[0,:] = 5 * x[0,:] - 4 * x[1,:] + x[2,:]
         sx[-1,:] = 5 * x[-1,:] - 4 * x[-2,:] + x[-3,:]
         sx[1:-1,:] = (6 * x[1:-1,:] - 4 * (x[:-2,:] + x[2:,:])
