@@ -652,12 +652,12 @@ class Sakurai(LinearOperator):
         x = x.reshape(self.n, -1)
         result_dtype = np.promote_types(x.dtype, self.dtype)
         sx = np.zeros_like(x, dtype=result_dtype)
-        sx[0,:] = 5 * x[0,:] - 4 * x[1,:] + x[2,:]
-        sx[-1,:] = 5 * x[-1,:] - 4 * x[-2,:] + x[-3,:]
-        sx[1:-1,:] = (6 * x[1:-1,:] - 4 * (x[:-2,:] + x[2:,:])
-                      + np.pad(x[:-3,:], ((1,0),(0,0)))
-                      + np.pad(x[3:,:], ((0,1),(0,0))))
-        return sx
+        sx[0, :] = 5 * x[0, :] - 4 * x[1, :] + x[2, :]
+        sx[-1, :] = 5 * x[-1, :] - 4 * x[-2, :] + x[-3, :]
+        sx[1: -1, :] = (6 * x[1: -1, :] - 4 * (x[:-2, :] + x[2:, :])
+                      + np.pad(x[:-3, :], ((1, 0), (0, 0)))
+                      + np.pad(x[3:, :], ((0, 1), (0, 0))))
+        return sx.astype(result_dtype)
 
     def _matmat(self, x):
         """
