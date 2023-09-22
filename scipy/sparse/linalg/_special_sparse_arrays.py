@@ -939,6 +939,6 @@ class MikotaPair:
             The requested `m` smallest or all eigenvalues, in ascending order.
         """
         if m is None:
-            m = n
+            m = self.n
         arange_plus1 = np.arange(1, m + 1, dtype=np.uint64)
         return arange_plus1 * arange_plus1
