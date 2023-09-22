@@ -172,7 +172,6 @@ class TestSakurai:
     """
     Sakurai tests
     """
-    tested_types = [np.int32, np.int64] + REAL_DTYPES + COMPLEX_DTYPES
 
     def test_specific_shape(self):
         sak = Sakurai(6)
@@ -202,9 +201,10 @@ class TestSakurai:
                 [0.03922866, 0.56703972, 2.41789479, 5.97822974,
                  10.54287655, 14.45473055]
             )
-        np.array_equal(e, sak.eigenvalues)
+        np.array_equal(e, sak.eigenvalues())
 
-    @pytest.mark.parametrize('dtype', tested_types)
+    # `Sakurai` default `dtype` is `np.int8` as its entries are small integers
+    @pytest.mark.parametrize('dtype', ALLDTYPES)
     def test_linearoperator_shape_dtype(self, dtype):
         n = 7
         sak = Sakurai(n, dtype=dtype)
@@ -214,10 +214,12 @@ class TestSakurai:
         assert_array_equal(sak.tosparse().toarray(),
                            Sakurai(n).tosparse().toarray().astype(dtype))
 
-    @pytest.mark.parametrize('dtype', tested_types)
-    def test_dot(self, dtype):
+    @pytest.mark.parametrize('dtype', ALLDTYPES)
+    @pytest.mark.parametrize('argument_dtype', ALLDTYPES)
+    def test_dot(self, dtype, argument_dtype):
         """ Test the dot-product for type preservation and consistency.
         """
+        result_dtype = np.promote_types(argument_dtype, dtype)
         n = 5
         sak = Sakurai(n)
         x0 = np.arange(n)
@@ -225,12 +227,13 @@ class TestSakurai:
         x2 = np.arange(2 * n).reshape((n, 2))
         input_set = [x0, x1, x2]
         for x in input_set:
-            y = sak.dot(x.astype(dtype))
+            y = sak.dot(x.astype(argument_dtype))
             assert x.shape == y.shape
-            assert y.dtype == dtype
+            assert y.dtype == result_dtype
             if x.ndim == 2:
-                yy = sak.toarray() @ x.astype(dtype)
+                yy = sak.toarray() @ x.astype(argument_dtype)
                 np.array_equal(y, yy)
+                assert yy.dtype == result_dtype
 
 
 class TestMikotaPair:
