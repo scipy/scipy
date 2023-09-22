@@ -1157,7 +1157,7 @@ def _filter_ridge_lines(cwt, ridge_lines, window_size=None, min_length=None,
     min_snr : float, optional
         Minimum SNR ratio. Default 1. The signal is the value of
         the cwt matrix at the shortest length scale (``cwt[0, loc]``), the
-        noise is the `noise_perc`th percentile of datapoints contained within a
+        noise is the `noise_perc`\\ th percentile of datapoints contained within a
         window of `window_size` around ``cwt[0, loc]``.
     noise_perc : float, optional
         When calculating the noise floor, percentile of data points

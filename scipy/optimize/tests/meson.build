@@ -17,6 +17,7 @@ py3.install_sources([
     'test_differentiable_functions.py',
     'test_direct.py',
     'test_hessian_update_strategy.py',
+    'test_isotonic_regression.py',
     'test_lbfgsb_hessinv.py',
     'test_lbfgsb_setulb.py',
     'test_least_squares.py',

@@ -871,9 +871,25 @@ class TestSystematic:
                             atol=1e-11)
 
     def test_betainc(self):
-        assert_mpmath_equal(sc.betainc,
-                            time_limited()(exception_to_nan(lambda a, b, x: mpmath.betainc(a, b, 0, x, regularized=True))),
-                            [Arg(), Arg(), Arg()])
+        assert_mpmath_equal(
+            sc.betainc,
+            time_limited()(
+                exception_to_nan(
+                    lambda a, b, x: mpmath.betainc(a, b, 0, x,
+                                                   regularized=True))),
+            [Arg(), Arg(), Arg()]
+        )
+
+    def test_betaincc(self):
+        assert_mpmath_equal(
+            sc.betaincc,
+            time_limited()(
+                exception_to_nan(
+                    lambda a, b, x: mpmath.betainc(a, b, x, 1,
+                                                   regularized=True))),
+            [Arg(), Arg(), Arg()],
+            dps=400,
+        )
 
     def test_binom(self):
         bad_points = []

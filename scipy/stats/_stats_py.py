@@ -33,7 +33,6 @@ from collections import namedtuple
 
 import numpy as np
 from numpy import array, asarray, ma
-from numpy.lib import NumpyVersion
 from numpy.testing import suppress_warnings
 
 from scipy import sparse
@@ -3453,12 +3452,8 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
         raise ValueError("range must not contain NaNs")
 
     rng = sorted(rng)
-    if NumpyVersion(np.__version__) >= '1.22.0':
-        pct = percentile_func(x, rng, axis=axis, method=interpolation,
-                              keepdims=keepdims)
-    else:
-        pct = percentile_func(x, rng, axis=axis, interpolation=interpolation,
-                              keepdims=keepdims)
+    pct = percentile_func(x, rng, axis=axis, method=interpolation,
+                          keepdims=keepdims)
     out = np.subtract(pct[1], pct[0])
 
     if scale != 1.0:
@@ -9628,6 +9623,24 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
             The statistic calculated by the specified method.
         pvalue : float
             The combined p-value.
+
+    Examples
+    --------
+    Suppose we wish to combine p-values from four independent tests
+    of the same null hypothesis using Fisher's method (default).
+
+    >>> from scipy.stats import combine_pvalues
+    >>> pvalues = [0.1, 0.05, 0.02, 0.3]
+    >>> combine_pvalues(pvalues)
+    SignificanceResult(statistic=20.828626352604235, pvalue=0.007616871850449092)
+
+    When the individual p-values carry different weights, consider Stouffer's
+    method.
+
+    >>> weights = [1, 2, 3, 4]
+    >>> res = combine_pvalues(pvalues, method='stouffer', weights=weights)
+    >>> res.pvalue
+    0.009578891494533616
 
     Notes
     -----

@@ -317,7 +317,9 @@ def test_api_importable():
 
 
 @pytest.mark.parametrize(("module_name", "correct_module"),
-                         [('scipy.integrate.dop', None),
+                         [('scipy.constants.codata', None),
+                          ('scipy.constants.constants', None),
+                          ('scipy.integrate.dop', None),
                           ('scipy.integrate.lsoda', None),
                           ('scipy.integrate.odepack', None),
                           ('scipy.integrate.quadpack', None),
@@ -351,6 +353,10 @@ def test_api_importable():
                           ('scipy.optimize.slsqp', None),
                           ('scipy.optimize.tnc', None),
                           ('scipy.optimize.zeros', None),
+                          ('scipy.spatial.ckdtree', None),
+                          ('scipy.spatial.kdtree', None),
+                          ('scipy.spatial.qhull', None),
+                          ('scipy.spatial.transform.rotation', 'transform'),
                           ('scipy.stats.biasedurn', None),
                           ('scipy.stats.kde', None),
                           ('scipy.stats.morestats', None),

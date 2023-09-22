@@ -10,6 +10,26 @@ Files: scipy/_lib/decorator.py
 License: 2-clause BSD
   For details, see the header inside scipy/_lib/decorator.py
 
+Name: fast_matrix_market
+Files: scipy/io/_fast_matrix_market/*
+License: 2-clause BSD
+  For details, see scipy/io/_fast_matrix_market/LICENSE.txt
+
+Name: pystreambuf
+Files: scipy/io/_fast_matrix_market/src/pystreambuf.h
+License: 3-clause BSD
+  For details, see the header inside scipy/io/_fast_matrix_market/src/pystreambuf.h
+
+Name: fast_float
+Files: scipy/io/_fast_matrix_market/fast_matrix_market/dependencies/fast_float/*
+License: MIT
+  For details, see scipy/io/_fast_matrix_market/fast_matrix_market/dependencies/fast_float/LICENSE-MIT
+
+Name: ryu
+Files: scipy/io/_fast_matrix_market/fast_matrix_market/dependencies/ryu/*
+License: BSL-1.0
+  For details, see scipy/io/_fast_matrix_market/fast_matrix_market/dependencies/ryu/LICENSE-BOOST
+
 Name: ID
 Files: scipy/linalg/src/id_dist/*
 License: 3-clause BSD

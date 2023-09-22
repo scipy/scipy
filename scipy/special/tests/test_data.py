@@ -562,7 +562,12 @@ BOOST_TESTS = [
 
 @pytest.mark.parametrize('test', BOOST_TESTS, ids=repr)
 def test_boost(test):
-    _test_factory(test)
+    # Filter deprecation warnings of any deprecated functions.
+    if test.func in [btdtr, btdtri, btdtri_comp]:
+        with pytest.deprecated_call():
+            _test_factory(test)
+    else:
+        _test_factory(test)
 
 
 GSL_TESTS = [

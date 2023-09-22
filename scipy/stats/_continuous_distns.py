@@ -846,8 +846,33 @@ class beta_gen(rv_continuous):
             t3 = -50/b - 10*b**-2.0 - b**-3.0 + b**-4.0
             return log_term + (t1 + t2 + t3) / 120
 
+        def asymptotic_b_large(a, b):
+            sum_ab = a + b
+            t1 = sc.gammaln(a) - (a - 1) * sc.psi(a)
+            t2 = (
+                - 1/(2*b) + 1/(12*b) - b**-2.0/12 - b**-3.0/120 + b**-4.0/120
+                + b**-5.0/252 - b**-6.0/252 + 1/sum_ab - 1/(12*sum_ab)
+                + sum_ab**-2.0/6 + sum_ab**-3.0/120 - sum_ab**-4.0/60
+                - sum_ab**-5.0/252 + sum_ab**-6.0/126
+            )
+            log_term = sum_ab*np.log1p(a/b) + np.log(b) - 2*np.log(sum_ab)
+            return t1 + t2 + log_term
+
+        def threshold_large(v):
+            if v == 1.0:
+                return 1000
+
+            j = np.log10(v)
+            digits = int(j)
+            d = int(v / 10 ** digits) + 2
+            return d*10**(7 + j)
+
         if a >= 4.96e6 and b >= 4.96e6:
             return asymptotic_ab_large(a, b)
+        elif a <= 4.9e6 and b - a >= 1e6 and b >= threshold_large(a):
+            return asymptotic_b_large(a, b)
+        elif b <= 4.9e6 and a - b >= 1e6 and a >= threshold_large(b):
+            return asymptotic_b_large(b, a)
         else:
             return regular(a, b)
 
@@ -4807,7 +4832,7 @@ class geninvgauss_gen(rv_continuous):
 
         f(x, p, b) = x^{p-1} \exp(-b (x + 1/x) / 2) / (2 K_p(b))
 
-    where `x > 0`, `p` is a real number and `b > 0`([1]_).
+    where `x > 0`, `p` is a real number and `b > 0`\([1]_).
     :math:`K_p` is the modified Bessel function of second kind of order `p`
     (`scipy.special.kv`).
 

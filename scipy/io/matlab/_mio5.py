@@ -406,10 +406,6 @@ def varmats_from_mat(file_obj):
     >>> import numpy as np
     >>> from io import BytesIO
     >>> from scipy.io.matlab._mio5 import varmats_from_mat
-
-    BytesIO is from the ``io`` module in Python 3, and is ``cStringIO`` for
-    Python < 3.
-
     >>> mat_fileobj = BytesIO()
     >>> scipy.io.savemat(mat_fileobj, {'b': np.arange(10), 'a': 'a string'})
     >>> varmats = varmats_from_mat(mat_fileobj)
@@ -537,7 +533,7 @@ class VarWriter5:
             mdtype = NP_TO_MTYPES[arr.dtype.str[1:]]
         # Array needs to be in native byte order
         if arr.dtype.byteorder == swapped_code:
-            arr = arr.byteswap().newbyteorder()
+            arr = arr.byteswap().view(arr.dtype.newbyteorder())
         byte_count = arr.size*arr.itemsize
         if byte_count <= 4:
             self.write_smalldata_element(arr, mdtype, byte_count)
