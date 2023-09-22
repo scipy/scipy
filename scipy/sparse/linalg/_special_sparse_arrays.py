@@ -736,7 +736,8 @@ class MikotaM(LinearOperator):
         using the knowledge of its entries and the diagonal format.
         """
         x = x.reshape(self.shape[0], -1)
-        return self._diag()[:, np.newaxis] * x
+        result_dtype = np.promote_types(x.dtype, self.dtype)
+        return (self._diag()[:, np.newaxis] * x).astype(result_dtype)
 
     def _matmat(self, x):
         """
@@ -806,7 +807,8 @@ class MikotaK(LinearOperator):
         itself using the knowledge of its entries and the 3-diagonal format.
         """
         x = x.reshape(self.shape[0], -1)
-        kx = np.zeros_like(x)
+        result_dtype = np.promote_types(x.dtype, self.dtype)
+        kx = np.zeros_like(x, dtype=result_dtype)
         d1 = self._diag1
         d0 = self._diag0
         kx[0, :] = d0[0] * x[0, :] + d1[0] * x[1, :]
