@@ -657,7 +657,7 @@ class Sakurai(LinearOperator):
         sx[1: -1, :] = (6 * x[1: -1, :] - 4 * (x[:-2, :] + x[2:, :])
                       + np.pad(x[:-3, :], ((1, 0), (0, 0)))
                       + np.pad(x[3:, :], ((0, 1), (0, 0))))
-        return sx.astype(result_dtype)
+        return sx
 
     def _matmat(self, x):
         """
