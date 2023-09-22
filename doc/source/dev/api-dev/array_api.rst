@@ -95,6 +95,7 @@ variable is set:
 
 - ``scipy.cluster.hierarchy``
 - ``scipy.cluster.vq``
+- ``scipy.fft``
 
 
 Implementation notes
