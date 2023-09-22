@@ -233,7 +233,7 @@ class TestSakurai:
             if x.ndim == 2:
                 yy = sak.toarray() @ x.astype(argument_dtype)
                 np.array_equal(y, yy)
-                # assert yy.dtype == result_dtype
+                assert yy.dtype == result_dtype
 
 
 class TestMikotaPair:
