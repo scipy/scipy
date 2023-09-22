@@ -17,17 +17,18 @@ Authors
 * Colin Carroll (1) +
 * drestebon (1) +
 * Ralf Gommers (1)
+* Matt Haberland (2)
 * Julien Jerphanion (1)
 * Ellie Litwack (2)
-* Andrew Nelson (3)
+* Andrew Nelson (4)
 * Bharat Raghunathan (1)
-* Tyler Reddy (21)
+* Tyler Reddy (28)
 * Søren Fuglede Jørgensen (2)
 * Hielke Walinga (1) +
 * Warren Weckesser (1)
 * Bernhard M. Wiedemann (1)
 
-A total of 14 people contributed to this release.
+A total of 15 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
@@ -45,6 +46,7 @@ Issues closed for 1.11.3
 * `#19103 <https://github.com/scipy/scipy/issues/19103>`__: BUG: Regression in 1.11.2: optimize.least_squares with method='trf'...
 * `#19132 <https://github.com/scipy/scipy/issues/19132>`__: BUG: Build fails on latest commit
 * `#19149 <https://github.com/scipy/scipy/issues/19149>`__: BUG: scipy.sparse.csgraph.laplacian raises AttributeError on...
+* `#19197 <https://github.com/scipy/scipy/issues/19197>`__: BUG: Incorrect sampling from zero rank covariance
 
 
 Pull requests for 1.11.3
@@ -61,5 +63,7 @@ Pull requests for 1.11.3
 * `#19135 <https://github.com/scipy/scipy/pull/19135>`__: MAINT: signal: Remove the cval parameter from the private function...
 * `#19139 <https://github.com/scipy/scipy/pull/19139>`__: BLD: revert to using published wheels [wheel build]
 * `#19156 <https://github.com/scipy/scipy/pull/19156>`__: BUG: Support sparse arrays in scipy.sparse.csgraph.laplacian
+* `#19199 <https://github.com/scipy/scipy/pull/19199>`__: MAINT: stats.CovViaEigendecomposition: fix \`_LA\` attribute...
 * `#19200 <https://github.com/scipy/scipy/pull/19200>`__: TST: fix \`TestODR.test_implicit\` test failure with tolerance...
 * `#19208 <https://github.com/scipy/scipy/pull/19208>`__: BUG: freqz rfft grid fix
+* `#19280 <https://github.com/scipy/scipy/pull/19280>`__: MAINT: newton, make sure x0 is an inexact type

@@ -465,7 +465,7 @@ class TestNewton(TestScalarRootFinders):
             # an integer raised to a negative integer power would fail
             return x**-2 - 2
 
-        res = optimize.root_scalar(f, x0=1, method=method)
+        res = root_scalar(f, x0=1, method=method)
         assert res.converged
         assert_allclose(abs(res.root), 2**-0.5)
         assert res.root.dtype == np.dtype(np.float64)
