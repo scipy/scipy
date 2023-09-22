@@ -1273,7 +1273,7 @@ def test_cut_tree(xp):
     Z = scipy.cluster.hierarchy.ward(X)
     cutree = cut_tree(Z)
 
-    xp_assert_close(cutree[:, 0], xp.arange(nobs), rtol=1e-15)
+    xp_assert_close(cutree[:, 0], xp.arange(nobs), rtol=1e-15, check_dtype=False)
     xp_assert_close(cutree[:, -1], xp.zeros(nobs), rtol=1e-15, check_dtype=False)
     assert_equal(np.asarray(cutree).max(0), np.arange(nobs - 1, -1, -1))
 

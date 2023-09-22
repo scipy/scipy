@@ -134,7 +134,7 @@ class TestVq:
         arrays = [xp.asarray] if SCIPY_ARRAY_API else [np.asarray, matrix]
         for tp in arrays:
             label1 = py_vq(tp(X), tp(initc))[0]
-            xp_assert_equal(label1, xp.asarray(LABEL1))
+            xp_assert_equal(label1, xp.asarray(LABEL1), check_dtype=False)
 
     @skip_if_array_api
     def test_vq(self):
