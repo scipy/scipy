@@ -318,10 +318,10 @@ class TestMikotaPair:
         input_set = [x0, x1, x2]
         for lo in lo_set:
             for x in input_set:
-                y = lo.dot(x.astype(dtype))
+                y = lo.dot(x.astype(argument_dtype))
                 assert x.shape == y.shape
-                # assert y.dtype == result_dtype
+                assert y.dtype == result_dtype
                 if x.ndim == 2:
-                    yy = lo.toarray() @ x.astype(dtype)
+                    yy = lo.toarray() @ x.astype(argument_dtype)
                     assert yy.dtype == result_dtype
                     np.array_equal(y, yy)
