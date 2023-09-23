@@ -413,3 +413,15 @@ index 351e0ad62..4015b2380 100644
  	ztrsv_( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr, 
  	      &lusup[ufirst], &incx );
  	zgemv_( "N", &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_scomplex.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_scomplex.h
+index 40c22924c..83be8c971 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_scomplex.h
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_scomplex.h
+@@ -30,7 +30,6 @@ at the top-level directory.
+ 
+ typedef struct { float r, i; } singlecomplex;
+ 
+-#define complex singlecomplex  // backward compatibility
+ 
+ /* Macro definitions */
+ 
