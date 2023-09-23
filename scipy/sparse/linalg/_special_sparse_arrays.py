@@ -626,8 +626,8 @@ class Sakurai(LinearOperator):
         """
         if m is None:
             m = self.n
-        k = np.arange(1, m + 1)
-        return np.flip(16. * np.power(np.cos(0.5 * k * np.pi / (self.n + 1)), 4))
+        k = np.arange(self.n + 1, self.n + 1 - m, -1)
+        return 16. * np.power(np.cos(0.5 * k * np.pi / (self.n + 1)), 4)
 
     def tobanded(self):
         """
