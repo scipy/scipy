@@ -63,18 +63,20 @@ class Bench(Benchmark):
     def setup_sakurai_inverse(self, n, solver):
         self.shape = (n, n)
         sakurai_obj = Sakurai(n)
-        self.A = sakurai_obj.tobanded()
+        self.A = sakurai_obj.tobanded().astype(np.float64)
         self.eigenvalues = sakurai_obj.eigenvalues
     
     def time_mikota(self, n, solver):
-        def a(x):
-            return cho_solve_banded((c, False), x)
         m = 10
         ee = self.eigenvalues(m)
         tol = m * n * n * n* np.finfo(float).eps
         rng = np.random.default_rng(0)
         X = rng.normal(size=(n, m))
         if solver == 'lobpcg':
+            # `lobpcg` allows callable parameters `Ac` and `Bc` directly
+            # `lobpcg` solves ``Ax = lambda Bx`` and applies here a preconditioner
+            # given by the matrix inverse in `np.float32` of 'Ab` that itself
+            # is `np.float64`. 
             c = cholesky_banded(self.Ab.astype(np.float32))
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
@@ -83,8 +85,17 @@ class Bench(Benchmark):
             accuracy = max(abs(ee - el) / ee)
             assert accuracy < tol, msg
         elif solver == 'eigsh':
+            # `eigsh` ARPACK here is called on ``Bx = 1/lambda Ax``
+            # to get fast convergence speed similar to that of `lobpcg` above
+            # requiring the inverse of the matrix ``A`` given by Cholesky on
+            # the banded form `Ab` of ``A`` in full `np.float64` precision.
+            # `eigsh` ARPACK does not allow the callable parameter `Bc` directly
+            # requiring `LinearOperator` format for input in contrast to `lobpcg`
+            def a(x):
+                return cho_solve_banded((c, False), x)
+
             B = LinearOperator((n, n), matvec=self.Bc, matmat=self.Bc, dtype='float64')
-            A = LinearOperator((n, n), matvec=self.Ac, matmat=self.Ac, dtype='float64')
+            # A = LinearOperator((n, n), matvec=self.Ac, matmat=self.Ac, dtype='float64')
             c = cholesky_banded(self.Ab)
             a_l = LinearOperator((n, n), matvec=a, matmat=a, dtype='float64')
             ea, _ = eigsh(B, k=m, M=A, Minv=a_l, which='LA', tol=1e-4, maxiter=50,
@@ -92,11 +103,18 @@ class Bench(Benchmark):
             accuracy = max(abs(ee - np.sort(1./ea)) / ee)
             assert accuracy < tol, msg
         else:
+            # `eigh` is the only dense eigensolver for generalized eigenproblems
+            # ``Ax = lambda Bx`` and needs both matrices as dense arrays
+            # making it very slow for large matrix sizes
             ed, _ = eigh(self.Aa, self.Ba, subset_by_index=(0, m - 1))
             accuracy = max(abs(ee - ed) / ee)
             assert accuracy < tol, msg
 
     def time_sakurai(self, n, solver):
+        # the Sakurai matrix ``A`` is ill-conditioned so convergence of both
+        # `lobpcg` and `eigsh` ARPACK on the matrix ``A`` itself is very slow
+        # computing its smallest eigenvalues even from moderate sizes
+        # requiring enormous numbers of iterations
         m = 3
         ee = self.eigenvalues(m)
         tol = 100 * n * n * n* np.finfo(float).eps
@@ -109,8 +127,8 @@ class Bench(Benchmark):
             accuracy = max(abs(ee - el) / ee)
             assert accuracy < tol, msg
         elif solver == 'eigsh':
-            a_l = LinearOperator((n, n), matvec=self.A, matmat=self.A, dtype='float64')
-            ea, _ = eigsh(a_l, k=m, which='SA', tol=1e-9, maxiter=15000,
+            # a_l = LinearOperator((n, n), matvec=self.A, matmat=self.A, dtype='float64')
+            ea, _ = eigsh(self.A, k=m, which='SA', tol=1e-9, maxiter=15000,
                           v0 = rng.normal(size=(n, 1)))
             accuracy = max(abs(ee - ea) / ee)
             assert accuracy < tol, msg
@@ -120,6 +138,9 @@ class Bench(Benchmark):
             assert accuracy < tol, msg
 
     def time_sakurai_inverse(self, n, solver):
+        # apply inverse iterations in  `lobpcg` and `eigsh` ARPACK
+        # using the Cholesky on the banded form in full `np.float64` precision
+        # for fast convergence.
         def a(x):
             return cho_solve_banded((c, False), x)
         m = 3
