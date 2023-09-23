@@ -70,7 +70,7 @@ class Bench(Benchmark):
         def a(x):
             return cho_solve_banded((c, False), x)
         m = 10
-        ee = self.eigenvalues[:m]
+        ee = self.eigenvalues(m)
         tol = m * n * n * n* np.finfo(float).eps
         rng = np.random.default_rng(0)
         X = rng.normal(size=(n, m))
@@ -124,6 +124,7 @@ class Bench(Benchmark):
             return cho_solve_banded((c, False), x)
         m = 3
         ee = self.eigenvalues(m)
+        print(ee)
         tol = 10 * n * n * n* np.finfo(float).eps
         rng = np.random.default_rng(0)
         X = rng.normal(size=(n, m))
