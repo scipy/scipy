@@ -67,6 +67,9 @@ class Bench(Benchmark):
         self.eigenvalues = sakurai_obj.eigenvalues
     
     def time_mikota(self, n, solver):
+        def a(x):
+            return cho_solve_banded((c, False), x)
+
         m = 10
         ee = self.eigenvalues(m)
         tol = m * n * n * n* np.finfo(float).eps
@@ -91,9 +94,6 @@ class Bench(Benchmark):
             # the banded form `Ab` of ``A`` in full `np.float64` precision.
             # `eigsh` ARPACK does not allow the callable parameter `Bc` directly
             # requiring `LinearOperator` format for input in contrast to `lobpcg`
-            def a(x):
-                return cho_solve_banded((c, False), x)
-
             B = LinearOperator((n, n), matvec=self.Bc, matmat=self.Bc, dtype='float64')
             A = LinearOperator((n, n), matvec=self.Ac, matmat=self.Ac, dtype='float64')
             c = cholesky_banded(self.Ab)
