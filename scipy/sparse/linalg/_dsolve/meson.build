@@ -2,13 +2,15 @@ _superlu_lib_c_args = ['-DUSE_VENDOR_BLAS=1']
 if is_windows
   _superlu_lib_c_args += ['-DNO_TIMER=1']
 endif
-_superlu_lib_c_args += cc.get_supported_arguments( 
+_superlu_lib_c_args += [
   Wno_unused_variable,
   Wno_parentheses,
   Wno_unused_label,
   Wno_implicit_function_declaration,
   Wno_switch,
-)
+  Wno_unused_result,
+  Wno_maybe_uninitialized,
+]
 superlu_lib = static_library('superlu_lib',
   [
     'SuperLU/SRC/ccolumn_bmod.c',
