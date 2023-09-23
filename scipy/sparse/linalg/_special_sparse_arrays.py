@@ -593,9 +593,11 @@ class Sakurai(LinearOperator):
         with 24 stored elements (5 diagonals) in DIAgonal format>
     >>> np.array_equal(sak.dot(np.eye(n)), sak.tosparse().toarray())
     True
-    >>> sak.eigenvalues
+    >>> sak.eigenvalues()
     array([0.03922866, 0.56703972, 2.41789479, 5.97822974,
            10.54287655, 14.45473055])
+    >>> sak.eigenvalues(2)
+    array([0.03922866, 0.56703972])
 
     The banded form can be used in scipy functions for banded matrices, e.g.,
 
@@ -626,8 +628,8 @@ class Sakurai(LinearOperator):
         """
         if m is None:
             m = self.n
-        k = np.arange(self.n + 1, self.n + 1 - m, -1)
-        return 16. * np.power(np.cos(0.5 * k * np.pi / (self.n + 1)), 4)
+        k = np.arange(self.n + 1 -m, self.n + 1)
+        return np.flip(16. * np.power(np.cos(0.5 * k * np.pi / (self.n + 1)), 4))
 
     def tobanded(self):
         """
@@ -913,8 +915,10 @@ class MikotaPair:
     True
     >>> np.array_equal(mik_m(np.eye(n)), mik_m.toarray())
     True
-    >>> mik.eigenvalues
+    >>> mik.eigenvalues()
     array([ 1,  4,  9, 16, 25, 36])  
+    >>> mik.eigenvalues(2)
+    array([ 1,  4])
 
     """
     def __init__(self, n, dtype=np.float64):
