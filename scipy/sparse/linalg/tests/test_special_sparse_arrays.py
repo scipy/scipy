@@ -201,7 +201,8 @@ class TestSakurai:
                 [0.03922866, 0.56703972, 2.41789479, 5.97822974,
                  10.54287655, 14.45473055]
             )
-        np.array_equal(e, sak.eigenvalues)
+        np.array_equal(e, sak.eigenvalues())
+        np.array_equal(e[:2], sak.eigenvalues(2))
 
     # `Sakurai` default `dtype` is `np.int8` as its entries are small integers
     @pytest.mark.parametrize('dtype', ALLDTYPES)
@@ -282,7 +283,8 @@ class TestMikotaPair:
         np.array_equal(1. / minv, mik_m.tobanded())
 
         e = np.array([ 1,  4,  9, 16, 25, 36])
-        np.array_equal(e, mik.eigenvalues)
+        np.array_equal(e, mik.eigenvalues())
+        np.array_equal(e[:2], mik.eigenvalues(2))
 
     @pytest.mark.parametrize('dtype', tested_types)
     def test_linearoperator_shape_dtype(self, dtype):
