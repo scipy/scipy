@@ -332,7 +332,11 @@ def test_splu():
         [4, 3, 2, 1],
     ])
     LU = spla.splu(X)
-    npt.assert_allclose(LU.solve(np.array([1, 2, 3, 4])), [1, 0, 0, 0])
+    npt.assert_allclose(
+        LU.solve(np.array([1, 2, 3, 4])),
+        np.asarray([1, 0, 0, 0], dtype=np.float64),
+        rtol=1e-14, atol=3e-16
+    )
 
 
 def test_spilu():
@@ -343,7 +347,11 @@ def test_spilu():
         [4, 3, 2, 1],
     ])
     LU = spla.spilu(X)
-    npt.assert_allclose(LU.solve(np.array([1, 2, 3, 4])), [1, 0, 0, 0])
+    npt.assert_allclose(
+        LU.solve(np.array([1, 2, 3, 4])),
+        np.asarray([1, 0, 0, 0], dtype=np.float64),
+        rtol=1e-14, atol=3e-16
+    )
 
 
 @parametrize_sparrays
