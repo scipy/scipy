@@ -737,6 +737,14 @@ class TestFftn:
         x = numpy.random.random((2,2,2))
         assert_allclose(fftn(x, axes=[]), x, atol=1e-7)
 
+    def test_regression_244(self):
+        """FFT returns wrong result with axes parameter."""
+        # fftn (and hence fft2) used to break when both axes and shape were used
+        x = numpy.ones((4, 4, 2))
+        y = fftn(x, s=(8, 8), axes=(-3, -2))
+        y_r = numpy.fft.fftn(x, s=(8, 8), axes=(-3, -2))
+        assert_allclose(y, y_r)
+
 
 class TestIfftn:
     dtype = None
