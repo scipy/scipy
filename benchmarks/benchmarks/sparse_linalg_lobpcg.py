@@ -95,7 +95,7 @@ class Bench(Benchmark):
                 return cho_solve_banded((c, False), x)
 
             B = LinearOperator((n, n), matvec=self.Bc, matmat=self.Bc, dtype='float64')
-            # A = LinearOperator((n, n), matvec=self.Ac, matmat=self.Ac, dtype='float64')
+            A = LinearOperator((n, n), matvec=self.Ac, matmat=self.Ac, dtype='float64')
             c = cholesky_banded(self.Ab)
             a_l = LinearOperator((n, n), matvec=a, matmat=a, dtype='float64')
             ea, _ = eigsh(B, k=m, M=A, Minv=a_l, which='LA', tol=1e-4, maxiter=50,
@@ -127,8 +127,8 @@ class Bench(Benchmark):
             accuracy = max(abs(ee - el) / ee)
             assert accuracy < tol, msg
         elif solver == 'eigsh':
-            # a_l = LinearOperator((n, n), matvec=self.A, matmat=self.A, dtype='float64')
-            ea, _ = eigsh(self.A, k=m, which='SA', tol=1e-9, maxiter=15000,
+            a_l = LinearOperator((n, n), matvec=self.A, matmat=self.A, dtype='float64')
+            ea, _ = eigsh(a_l, k=m, which='SA', tol=1e-9, maxiter=15000,
                           v0 = rng.normal(size=(n, 1)))
             accuracy = max(abs(ee - ea) / ee)
             assert accuracy < tol, msg
@@ -140,12 +140,11 @@ class Bench(Benchmark):
     def time_sakurai_inverse(self, n, solver):
         # apply inverse iterations in  `lobpcg` and `eigsh` ARPACK
         # using the Cholesky on the banded form in full `np.float64` precision
-        # for fast convergence.
+        # for fast convergence and compare to dense banded eigensolver `eig_banded`
         def a(x):
             return cho_solve_banded((c, False), x)
         m = 3
         ee = self.eigenvalues(m)
-        print(ee)
         tol = 10 * n * n * n* np.finfo(float).eps
         rng = np.random.default_rng(0)
         X = rng.normal(size=(n, m))
