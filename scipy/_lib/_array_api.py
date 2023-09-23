@@ -342,4 +342,4 @@ def xp_unsupported_param_msg(param):
 
 
 def is_complex(x, xp):
-    return x.dtype in [xp.complex64, xp.complex128]
+    return xp.isdtype(x.dtype, 'complex floating')
