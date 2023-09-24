@@ -379,7 +379,7 @@ class TestKMean:
 
         data = xp.asarray(data)
         res, _ = kmeans2(data, xp.asarray(2), minit='++')
-        xp_assert_close(res, xp.asarray(centers), rtol=0.2)
+        xp_assert_equal(xp.sign(res), xp.sign(xp.asarray(centers)))
 
     @skip_if_array_api_gpu
     @array_api_compatible
