@@ -15,20 +15,24 @@ from scipy._lib._array_api import xp_assert_close
 
 class TestCholesky:
 
+    # integer dtypes not accepted
+    @skip_if_array_api_backend('numpy.array_api')
     @array_api_compatible
     def test_simple(self, xp):
-        a = xp.asarray([[8, 2, 3], [2, 9, 3], [3, 3, 6]], dtype=xp.float64)
+        a = xp.asarray([[8, 2, 3], [2, 9, 3], [3, 3, 6]])
         c = cholesky(a)
-        xp_assert_close(c.T @ c, a)
+        xp_assert_close(c.T @ c, a, rtol=1e-6, check_dtype=False)
         c = c.T
         a = c @ c.T
         xp_assert_close(cholesky(a, lower=True), c)
 
+    # integer dtypes not accepted
+    @skip_if_array_api_backend('numpy.array_api')
     @array_api_compatible
     def test_check_finite(self, xp):
-        a = xp.asarray([[8, 2, 3], [2, 9, 3], [3, 3, 6]], dtype=xp.float64)
+        a = xp.asarray([[8, 2, 3], [2, 9, 3], [3, 3, 6]])
         c = cholesky(a, check_finite=False)
-        xp_assert_close(c.T @ c, a)
+        xp_assert_close(c.T @ c, a, rtol=1e-6, check_dtype=False)
         c = c.T
         a = c @ c.T
         xp_assert_close(cholesky(a, lower=True, check_finite=False), c)

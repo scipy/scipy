@@ -164,6 +164,9 @@ def solve(a, b, lower=False, overwrite_a=False,
     if transposed:
         raise ValueError(xp_unsupported_param_msg("transposed"))
     if hasattr(xp, 'linalg'):
+        dtype = xp.result_type(a, b, xp.float32)
+        a = xp.astype(a, dtype)
+        b = xp.astype(b, dtype)
         return xp.linalg.solve(a, b)
     a = np.asarray(a)
     b = np.asarray(b)
@@ -976,6 +979,8 @@ def inv(a, overwrite_a=False, check_finite=True):
     if is_numpy(xp):
         return _inv(a, overwrite_a=overwrite_a)
     if hasattr(xp, 'linalg'):
+        dtype = xp.result_type(a, xp.float32)
+        a = xp.astype(a, dtype)
         return xp.linalg.inv(a)
     a = np.asarray(a)
     return xp.asarray(_inv(a))
@@ -1086,6 +1091,8 @@ def det(a, overwrite_a=False, check_finite=True):
     if is_numpy(xp):
         return _det(a, overwrite_a=overwrite_a)
     if hasattr(xp, 'linalg'):
+        dtype = xp.result_type(a, xp.float32)
+        a = xp.astype(a, dtype)
         return xp.linalg.det(a)
     a = np.asarray(a)
     return xp.asarray(_det(a))
@@ -1500,6 +1507,8 @@ def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True,
     if rcond != _NoValue:
         raise ValueError(xp_unsupported_param_msg("rcond"))
     if hasattr(xp, 'linalg'):
+        dtype = xp.result_type(a, xp.float32)
+        a = xp.astype(a, dtype)
         return xp.linalg.pinv(a, rtol=rtol)
     a = np.asarray(a)
     return xp.asarray(_pinv(a, rtol=rtol))

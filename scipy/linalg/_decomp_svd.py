@@ -120,6 +120,8 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     if lapack_driver != 'gesdd':
         raise ValueError(xp_unsupported_param_msg("lapack_driver"))
     if hasattr(xp, 'linalg'):
+        dtype = xp.result_type(a, xp.float32)
+        a = xp.astype(a, dtype)
         return xp.linalg.svd(a, full_matrices=full_matrices)
     a = numpy.asarray(a)
     return xp.asarray(_svd(a, full_matrices=full_matrices))
@@ -250,6 +252,8 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     if is_numpy(xp):
         return _svdvals(a, overwrite_a=overwrite_a)
     if hasattr(xp, 'linalg'):
+        dtype = xp.result_type(a, xp.float32)
+        a = xp.astype(a, dtype)
         return xp.linalg.svdvals(a)
     a = numpy.asarray(a)
     return xp.asarray(_svdvals(a))

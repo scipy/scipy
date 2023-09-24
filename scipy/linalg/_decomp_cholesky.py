@@ -97,6 +97,8 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
         return c
     if hasattr(xp, 'linalg'):
         upper = not lower
+        dtype = xp.result_type(a, xp.float32)
+        a = xp.astype(a, dtype)
         return xp.linalg.cholesky(a, upper=upper)
     a = asarray(a)
     c, lower = _cholesky(a, lower=lower, clean=True, check_finite=False)

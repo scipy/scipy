@@ -38,7 +38,9 @@ try:
 except ImportError:
     CONFIG = None
 
-from scipy.conftest import array_api_compatible, skip_if_array_api
+from scipy.conftest import (
+    array_api_compatible, skip_if_array_api, skip_if_array_api_backend
+)
 from scipy._lib._array_api import size, array_namespace, xp_assert_close
 
 
@@ -913,58 +915,51 @@ class TestSVD:
 
     def check_simple(lapack_driver, xp=None):
         xp = np if xp is None else xp
-        a = xp.asarray([[1, 2, 3], [1, 20, 3], [2, 5, 6]], dtype=xp.float64)
+        a = xp.asarray([[1, 2, 3], [1, 20, 3], [2, 5, 6]])
         for full_matrices in (True, False):
             u, s, vh = svd(a, full_matrices=full_matrices,
                            lapack_driver=lapack_driver)
-            xp_assert_close(u.T @ u, xp.eye(3, dtype=xp.float64),
-                            rtol=1e-15, atol=1e-15)
-            xp_assert_close(vh.T @ vh, xp.eye(3, dtype=xp.float64),
-                            rtol=1e-15, atol=1e-15)
+            xp_assert_close(u.T @ u, xp.eye(3), atol=1e-6)
+            xp_assert_close(vh.T @ vh, xp.eye(3), atol=1e-6)
             sigma = xp.zeros((u.shape[0], vh.shape[0]), dtype=s.dtype)
             for i in range(s.shape[0]):
                 sigma[i, i] = s[i]
-            xp_assert_close(u @ sigma @ vh, a)
+            xp_assert_close(u @ sigma @ vh, a, rtol=1e-6, check_dtype=False)
 
     def check_simple_singular(lapack_driver, xp=None):
         xp = np if xp is None else xp
-        a = xp.asarray([[1, 2, 3], [1, 2, 3], [2, 5, 6]], dtype=xp.float64)
+        a = xp.asarray([[1, 2, 3], [1, 2, 3], [2, 5, 6]])
         for full_matrices in (True, False):
             u, s, vh = svd(a, full_matrices=full_matrices, lapack_driver=lapack_driver)
-            xp_assert_close(u.T @ u, xp.eye(3, dtype=xp.float64),
-                            rtol=1e-15, atol=1e-15)
-            xp_assert_close(vh.T @ vh, xp.eye(3, dtype=xp.float64),
-                            rtol=1e-15, atol=1e-15)
+            xp_assert_close(u.T @ u, xp.eye(3), atol=1e-6)
+            xp_assert_close(vh.T @ vh, xp.eye(3), atol=1e-6)
             sigma = xp.zeros((u.shape[0], vh.shape[0]), dtype=s.dtype)
             for i in range(s.shape[0]):
                 sigma[i, i] = s[i]
-            xp_assert_close(u @ sigma @ vh, a)
+            xp_assert_close(u @ sigma @ vh, a, rtol=1e-6, check_dtype=False)
 
     def check_simple_underdet(lapack_driver, xp=None):
         xp = np if xp is None else xp
-        a = xp.asarray([[1, 2, 3], [4, 5, 6]], dtype=xp.float64)
+        a = xp.asarray([[1, 2, 3], [4, 5, 6]])
         for full_matrices in (True, False):
             u, s, vh = svd(a, full_matrices=full_matrices, lapack_driver=lapack_driver)
-            xp_assert_close(u.T @ u, xp.eye(u.shape[0], dtype=xp.float64),
-                            rtol=1e-15, atol=1e-15)
+            xp_assert_close(u.T @ u, xp.eye(u.shape[0]), atol=1e-6)
             sigma = xp.zeros((u.shape[0], vh.shape[0]), dtype=s.dtype)
             for i in range(s.shape[0]):
                 sigma[i, i] = s[i]
-            xp_assert_close(u @ sigma @ vh, a)
+            xp_assert_close(u @ sigma @ vh, a, rtol=1e-6, check_dtype=False)
 
     def check_simple_overdet(lapack_driver, xp=None):
         xp = np if xp is None else xp
-        a = xp.asarray([[1, 2], [4, 5], [3, 4]], dtype=xp.float64)
+        a = xp.asarray([[1, 2], [4, 5], [3, 4]])
         for full_matrices in (True, False):
             u, s, vh = svd(a, full_matrices=full_matrices, lapack_driver=lapack_driver)
-            xp_assert_close(u.T @ u, xp.eye(u.shape[1], dtype=xp.float64),
-                            rtol=1e-15, atol=1e-15)
-            xp_assert_close(vh.T @ vh, xp.eye(2, dtype=xp.float64),
-                            rtol=1e-15, atol=1e-15)
+            xp_assert_close(u.T @ u, xp.eye(u.shape[1]), atol=1e-6)
+            xp_assert_close(vh.T @ vh, xp.eye(2), atol=1e-6)
             sigma = xp.zeros((u.shape[1], vh.shape[0]), dtype=s.dtype)
             for i in range(s.shape[0]):
                 sigma[i, i] = s[i]
-            xp_assert_close(u @ sigma @ vh, a)
+            xp_assert_close(u @ sigma @ vh, a, rtol=1e-6, check_dtype=False)
 
     def check_random(lapack_driver, xp=None):
         xp = np if xp is None else xp
@@ -977,10 +972,10 @@ class TestSVD:
                 for full_matrices in (True, False):
                     u, s, vh = svd(a, full_matrices=full_matrices,
                                    lapack_driver=lapack_driver)
-                    xp_assert_close(u.T @ u, xp.eye(u.shape[1], dtype=xp.float64),
-                                    rtol=1e-14, atol=1e-14)
-                    xp_assert_close(vh @ vh.T, xp.eye(vh.shape[0], dtype=xp.float64),
-                                    rtol=1e-14, atol=1e-14)
+                    xp_assert_close(u.T @ u, xp.eye(u.shape[1]),
+                                    atol=1e-14, check_dtype=False)
+                    xp_assert_close(vh @ vh.T, xp.eye(vh.shape[0]),
+                                    atol=1e-15, check_dtype=False)
                     sigma = xp.zeros((u.shape[1], vh.shape[0]), dtype=s.dtype)
                     for i in range(s.shape[0]):
                         sigma[i, i] = s[i]
@@ -993,10 +988,10 @@ class TestSVD:
             u, s, vh = svd(a, full_matrices=full_matrices, lapack_driver=lapack_driver)
             xp_assert_close(xp.conj(u).T @ u,
                             xp.eye(u.shape[1], dtype=xp.complex128),
-                            rtol=1e-15, atol=1e-15)
+                            atol=1e-15)
             xp_assert_close(xp.conj(vh).T @ vh,
                             xp.eye(vh.shape[0], dtype=xp.complex128),
-                            rtol=1e-15, atol=1e-15)
+                            atol=1e-15)
             sigma = xp.zeros((u.shape[0], vh.shape[0]), dtype=s.dtype)
             for i in range(s.shape[0]):
                 sigma[i, i] = s[i]
@@ -1017,7 +1012,7 @@ class TestSVD:
                                    lapack_driver=lapack_driver)
                     xp_assert_close(xp.conj(u).T @ u,
                                     xp.eye(u.shape[1], dtype=xp.complex128),
-                                    rtol=1e-14, atol=1e-14)
+                                    atol=1e-14)
                     # TODO: update comment
                     # This fails when [m,n]
                     # assert_array_almost_equal(vh.conj().T @ vh,
@@ -1041,14 +1036,14 @@ class TestSVD:
 
     def check_check_finite(lapack_driver, xp=None):
         xp = np if xp is None else xp
-        a = xp.asarray([[1, 2, 3], [1, 20, 3], [2, 5, 6]], dtype=xp.float64)
+        a = xp.asarray([[1, 2, 3], [1, 20, 3], [2, 5, 6]])
         u, s, vh = svd(a, check_finite=False, lapack_driver=lapack_driver)
-        xp_assert_close(u.T @ u, xp.eye(3, dtype=xp.float64), rtol=1e-15, atol=1e-15)
-        xp_assert_close(vh.T @ vh, xp.eye(3, dtype=xp.float64), rtol=1e-15, atol=1e-15)
+        xp_assert_close(u.T @ u, xp.eye(3), atol=1e-6)
+        xp_assert_close(vh.T @ vh, xp.eye(3), atol=1e-6)
         sigma = xp.zeros((u.shape[0], vh.shape[0]), dtype=s.dtype)
         for i in range(s.shape[0]):
             sigma[i, i] = s[i]
-        xp_assert_close(u @ sigma @ vh, a)
+        xp_assert_close(u @ sigma @ vh, a, rtol=1e-6, check_dtype=False)
 
     def check_gh_5039(lapack_driver, xp=None):
         xp = np if xp is None else xp
@@ -1073,7 +1068,7 @@ class TestSVD:
     @pytest.mark.slow
     def test_large_matrix(self, xp):
         check_free_memory(free_mb=17000)
-        A = xp.zeros([1, 2**31], dtype=xp.float64)
+        A = xp.zeros([1, 2**31])
         A[0, -1] = 1
         u, s, vh = svd(A, full_matrices=False)
         xp_assert_close(s[0], xp.asarray(1.0))
@@ -1082,18 +1077,26 @@ class TestSVD:
 
 class TestSVD_GESDD:
 
+    # integer dtypes not accepted
+    @skip_if_array_api_backend('numpy.array_api')
     @array_api_compatible
     def test_simple(self, xp):
         TestSVD.check_simple('gesdd', xp=xp)
 
+    # integer dtypes not accepted
+    @skip_if_array_api_backend('numpy.array_api')
     @array_api_compatible
     def test_simple_singular(self, xp):
         TestSVD.check_simple_singular('gesdd', xp=xp)
 
+    # integer dtypes not accepted
+    @skip_if_array_api_backend('numpy.array_api')
     @array_api_compatible
     def test_simple_underdet(self, xp):
         TestSVD.check_simple_underdet('gesdd', xp=xp)
 
+    # integer dtypes not accepted
+    @skip_if_array_api_backend('numpy.array_api')
     @array_api_compatible
     def test_simple_overdet(self, xp):
         TestSVD.check_simple_overdet('gesdd', xp=xp)
@@ -1114,6 +1117,8 @@ class TestSVD_GESDD:
     def test_crash_1580(self, xp):
         TestSVD.check_crash_1580('gesdd', xp=xp)
 
+    # integer dtypes not accepted
+    @skip_if_array_api_backend('numpy.array_api')
     @array_api_compatible
     def test_check_finite(self, xp):
         TestSVD.check_check_finite('gesdd', xp=xp)
@@ -1164,23 +1169,29 @@ class TestSVDVals:
             s = svdvals(a)
             assert_(size(s) == 0)
 
+    # integer dtypes not accepted
+    @skip_if_array_api_backend('numpy.array_api')
     @array_api_compatible
     def test_simple(self, xp):
-        a = xp.asarray([[1, 2, 3], [1, 2, 3], [2, 5, 6]], dtype=xp.float64)
+        a = xp.asarray([[1, 2, 3], [1, 2, 3], [2, 5, 6]])
         s = svdvals(a)
         assert_(s.shape[0] == 3)
         assert_(s[0] >= s[1] >= s[2])
 
+    # integer dtypes not accepted
+    @skip_if_array_api_backend('numpy.array_api')
     @array_api_compatible
     def test_simple_underdet(self, xp):
-        a = xp.asarray([[1, 2, 3], [4, 5, 6]], dtype=xp.float64)
+        a = xp.asarray([[1, 2, 3], [4, 5, 6]])
         s = svdvals(a)
         assert_(s.shape[0] == 2)
         assert_(s[0] >= s[1])
 
+    # integer dtypes not accepted
+    @skip_if_array_api_backend('numpy.array_api')
     @array_api_compatible
     def test_simple_overdet(self, xp):
-        a = xp.asarray([[1, 2], [4, 5], [3, 4]], dtype=xp.float64)
+        a = xp.asarray([[1, 2], [4, 5], [3, 4]])
         s = svdvals(a)
         assert_(s.shape[0] == 2)
         assert_(s[0] >= s[1])
@@ -1206,9 +1217,11 @@ class TestSVDVals:
         assert_(s.shape[0] == 2)
         assert_(s[0] >= s[1])
 
+    # integer dtypes not accepted
+    @skip_if_array_api_backend('numpy.array_api')
     @array_api_compatible
     def test_check_finite(self, xp):
-        a = xp.asarray([[1, 2, 3], [1, 2, 3], [2, 5, 6]], dtype=xp.float64)
+        a = xp.asarray([[1, 2, 3], [1, 2, 3], [2, 5, 6]])
         s = svdvals(a, check_finite=False)
         assert_(s.shape[0] == 3)
         assert_(s[0] >= s[1] >= s[2])
@@ -1230,12 +1243,15 @@ class TestDiagSVD:
 
 
 class TestQR:
+
+    # integer dtypes not accepted
+    @skip_if_array_api_backend('numpy.array_api')
     @array_api_compatible
     def test_simple(self, xp):
-        a = xp.asarray([[8, 2, 3], [2, 9, 3], [5, 3, 6]], dtype=xp.float64)
+        a = xp.asarray([[8, 2, 3], [2, 9, 3], [5, 3, 6]])
         q, r = qr(a)
-        xp_assert_close(q.T @ q, xp.eye(3, dtype=xp.float64), atol=1e-15, rtol=1e-15)
-        xp_assert_close(q @ r, a)
+        xp_assert_close(q.T @ q, xp.eye(3), atol=1e-6)
+        xp_assert_close(q @ r, a, rtol=1e-6, check_dtype=False)
 
     def test_simple_left(self):
         a = [[8, 2, 3], [2, 9, 3], [5, 3, 6]]
@@ -1282,12 +1298,14 @@ class TestQR:
         qc, r, jpvt = qr_multiply(a, c, pivoting=True)
         assert_array_almost_equal(c @ q, qc)
 
+    # integer dtypes not accepted
+    @skip_if_array_api_backend('numpy.array_api')
     @array_api_compatible
     def test_simple_trap(self, xp):
-        a = xp.asarray([[8, 2, 3], [2, 9, 3]], dtype=xp.float64)
+        a = xp.asarray([[8, 2, 3], [2, 9, 3]])
         q, r = qr(a)
-        xp_assert_close(q.T @ q, xp.eye(2, dtype=xp.float64), atol=1e-15, rtol=1e-15)
-        xp_assert_close(q @ r, a)
+        xp_assert_close(q.T @ q, xp.eye(2), atol=1e-6)
+        xp_assert_close(q @ r, a, rtol=1e-6, check_dtype=False)
 
     def test_simple_trap_pivoting(self):
         a = np.asarray([[8, 2, 3], [2, 9, 3]])
@@ -1300,13 +1318,15 @@ class TestQR:
         assert_array_almost_equal(q, q2)
         assert_array_almost_equal(r, r2)
 
+    # integer dtypes not accepted
+    @skip_if_array_api_backend('numpy.array_api')
     @array_api_compatible
     def test_simple_tall(self, xp):
         # full version
-        a = xp.asarray([[8, 2], [2, 9], [5, 3]], dtype=xp.float64)
+        a = xp.asarray([[8, 2], [2, 9], [5, 3]])
         q, r = qr(a)
-        xp_assert_close(q.T @ q, xp.eye(3, dtype=xp.float64), atol=1e-15, rtol=1e-15)
-        xp_assert_close(q @ r, a)
+        xp_assert_close(q.T @ q, xp.eye(3), atol=1e-6)
+        xp_assert_close(q @ r, a, rtol=1e-6, check_dtype=False)
 
     def test_simple_tall_pivoting(self):
         # full version pivoting
@@ -1320,13 +1340,15 @@ class TestQR:
         assert_array_almost_equal(q, q2)
         assert_array_almost_equal(r, r2)
 
+    # integer dtypes not accepted
+    @skip_if_array_api_backend('numpy.array_api')
     @array_api_compatible
     def test_simple_tall_e(self, xp):
         # economy version
-        a = xp.asarray([[8, 2], [2, 9], [5, 3]], dtype=xp.float64)
+        a = xp.asarray([[8, 2], [2, 9], [5, 3]])
         q, r = qr(a, mode='economic')
-        xp_assert_close(q.T @ q, xp.eye(2, dtype=xp.float64), atol=1e-15, rtol=1e-15)
-        xp_assert_close(q @ r, a)
+        xp_assert_close(q.T @ q, xp.eye(2), atol=1e-6)
+        xp_assert_close(q @ r, a, rtol=1e-6, check_dtype=False)
         assert_equal(q.shape, (3, 2))
         assert_equal(r.shape, (2, 2))
 
@@ -1384,13 +1406,15 @@ class TestQR:
         cq, r, jpvt = qr_multiply(a, eye(3), pivoting=True)
         assert_array_almost_equal(cq, q)
 
+    # integer dtypes not accepted
+    @skip_if_array_api_backend('numpy.array_api')
     @array_api_compatible
     def test_simple_fat(self, xp):
         # full version
-        a = xp.asarray([[8, 2, 5], [2, 9, 3]], dtype=xp.float64)
+        a = xp.asarray([[8, 2, 5], [2, 9, 3]])
         q, r = qr(a)
-        xp_assert_close(q.T @ q, xp.eye(2, dtype=xp.float64), atol=1e-15, rtol=1e-15)
-        xp_assert_close(q @ r, a)
+        xp_assert_close(q.T @ q, xp.eye(2), atol=1e-6)
+        xp_assert_close(q @ r, a, rtol=1e-6, check_dtype=False)
         assert_equal(q.shape, (2, 2))
         assert_equal(r.shape, (2, 3))
 
@@ -1408,13 +1432,15 @@ class TestQR:
         assert_array_almost_equal(q, q2)
         assert_array_almost_equal(r, r2)
 
+    # integer dtypes not accepted
+    @skip_if_array_api_backend('numpy.array_api')
     @array_api_compatible
     def test_simple_fat_e(self, xp):
         # economy version
-        a = xp.asarray([[8, 2, 3], [2, 9, 5]], dtype=xp.float64)
+        a = xp.asarray([[8, 2, 3], [2, 9, 5]])
         q, r = qr(a, mode='economic')
-        xp_assert_close(q.T @ q, xp.eye(2, dtype=xp.float64), atol=1e-15, rtol=1e-15)
-        xp_assert_close(q @ r, a)
+        xp_assert_close(q.T @ q, xp.eye(2), atol=1e-6)
+        xp_assert_close(q @ r, a, rtol=1e-6, check_dtype=False)
         assert_equal(q.shape, (2, 2))
         assert_equal(r.shape, (2, 3))
 
@@ -1475,8 +1501,7 @@ class TestQR:
         a = [[3, 3+4j, 5], [5, 2, 2+7j], [3, 2, 7]]
         a = xp.asarray(a, dtype=xp.complex128)
         q, r = qr(a)
-        xp_assert_close(xp.conj(q).T @ q, xp.eye(3, dtype=xp.complex128),
-                        atol=1e-15, rtol=1e-15)
+        xp_assert_close(xp.conj(q).T @ q, xp.eye(3, dtype=xp.complex128), atol=1e-15)
         xp_assert_close(q @ r, a)
 
     def test_simple_complex_left(self):
@@ -1563,8 +1588,7 @@ class TestQR:
         for k in range(2):
             a = xp.asarray(rng.random([n, n]))
             q, r = qr(a)
-            xp_assert_close(q.T @ q, xp.eye(n, dtype=xp.float64),
-                            atol=1e-15, rtol=1e-15)
+            xp_assert_close(q.T @ q, xp.eye(n), atol=1e-15, check_dtype=False)
             xp_assert_close(q @ r, a)
 
     def test_random_left(self):
@@ -1614,8 +1638,7 @@ class TestQR:
         for k in range(2):
             a = xp.asarray(rng.random([m, n]))
             q, r = qr(a)
-            xp_assert_close(q.T @ q, xp.eye(m, dtype=xp.float64),
-                            atol=1e-14, rtol=1e-14)
+            xp_assert_close(q.T @ q, xp.eye(m), atol=1e-14, check_dtype=False)
             xp_assert_close(q @ r, a)
 
     def test_random_tall_left(self):
@@ -1671,8 +1694,7 @@ class TestQR:
         for k in range(2):
             a = xp.asarray(rng.random([m, n]))
             q, r = qr(a, mode='economic')
-            xp_assert_close(q.T @ q, xp.eye(n, dtype=xp.float64),
-                            atol=1e-14, rtol=1e-14)
+            xp_assert_close(q.T @ q, xp.eye(n), atol=1e-14, check_dtype=False)
             xp_assert_close(q @ r, a)
             assert_equal(q.shape, (m, n))
             assert_equal(r.shape, (n, n))
@@ -1703,8 +1725,7 @@ class TestQR:
         for k in range(2):
             a = xp.asarray(rng.random([m, n]))
             q, r = qr(a)
-            xp_assert_close(q.T @ q, xp.eye(m, dtype=xp.float64),
-                            atol=1e-14, rtol=1e-14)
+            xp_assert_close(q.T @ q, xp.eye(m), atol=1e-14, check_dtype=False)
             xp_assert_close(q @ r, a)
 
     def test_random_trap_pivoting(self):
@@ -1730,7 +1751,7 @@ class TestQR:
             a = xp.asarray(rng.random([n, n]) + 1j*rng.random([n, n]))
             q, r = qr(a)
             xp_assert_close(xp.conj(q).T @ q, xp.eye(n, dtype=xp.complex128),
-                            atol=1e-15, rtol=1e-15)
+                            atol=1e-15)
             xp_assert_close(q @ r, a)
 
     def test_random_complex_left(self):
@@ -1771,12 +1792,14 @@ class TestQR:
             assert_array_almost_equal(q, q2)
             assert_array_almost_equal(r, r2)
 
+    # integer dtypes not accepted
+    @skip_if_array_api_backend('numpy.array_api')
     @array_api_compatible
     def test_check_finite(self, xp):
-        a = xp.asarray([[8, 2, 3], [2, 9, 3], [5, 3, 6]], dtype=xp.float64)
+        a = xp.asarray([[8, 2, 3], [2, 9, 3], [5, 3, 6]])
         q, r = qr(a, check_finite=False)
-        xp_assert_close(q.T @ q, xp.eye(3, dtype=xp.float64), atol=1e-15, rtol=1e-15)
-        xp_assert_close(q @ r, a)
+        xp_assert_close(q.T @ q, xp.eye(3), atol=1e-6)
+        xp_assert_close(q @ r, a, rtol=1e-6, check_dtype=False)
 
     def test_lwork(self):
         a = [[8, 2, 3], [2, 9, 3], [5, 3, 6]]

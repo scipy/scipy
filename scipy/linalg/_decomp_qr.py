@@ -140,6 +140,8 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
             mode = 'complete'
         elif mode == 'economic':
             mode = 'reduced'
+        dtype = xp.result_type(a, xp.float32)
+        a = xp.astype(a, dtype)
         return xp.linalg.qr(a, mode=mode)
     a = numpy.asarray(a)
     return xp.asarray(_qr(a, mode=mode))
