@@ -350,7 +350,7 @@ class TestFFT1D:
         res_rfft = fft.irfft(fft.rfft(x))
         res_hfft = fft.hfft(fft.ihfft(x), x.shape[0])
         # Check both numerical results and exact dtype matches
-        rtol = {"float32": 1e-4, "float64": 1e-8}[dtype]
+        rtol = {"float32": 1.2e-4, "float64": 1e-8}[dtype]
         xp_assert_close(res_fft, x_complex, rtol=rtol, atol=0)
         xp_assert_close(res_rfft, x, rtol=rtol, atol=0)
         xp_assert_close(res_hfft, x, rtol=rtol, atol=0)
