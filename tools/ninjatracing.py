@@ -128,7 +128,7 @@ def embed_time_trace(ninja_log_dir, target, pid, tid, options):
                 for time_trace_event in trace_to_dicts(target, trace, options,
                                                        pid, tid):
                     yield time_trace_event
-        except IOError:
+        except OSError:
             pass
 
 
