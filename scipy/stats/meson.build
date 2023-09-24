@@ -2,7 +2,6 @@ _stats_pxd = [
   fs.copyfile('__init__.py'),
   fs.copyfile('_stats.pxd'),
   fs.copyfile('_biasedurn.pxd'),
-  fs.copyfile('_unuran/unuran.pxd'),
 ]
 
 stats_special_cython_gen = generator(cython,
@@ -119,8 +118,6 @@ nct_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[8])
 skewnorm_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[9])
 invgauss_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[10])
 
-# Extra dependency from _lib
-unuran_wrap_pyx = lib_cython_gen.process('_unuran/unuran_wrapper.pyx')
 
 biasedurn = py3.extension_module('_biasedurn',
   [
