@@ -1540,7 +1540,7 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None,
     Growth of the bracket to the right is analogous.
 
     Growth of the bracket in one direction stops when the endpoint is no longer
-    finite, the function value at the endpoint is no longer finite, the
+    finite, the function value at the endpoint is no longer finite, or the
     endpoint reaches its limiting value (`min` or `max`). Iteration terminates
     when the bracket stops growing in both directions, the bracket surrounds
     the root, or a root is found (accidentally).
