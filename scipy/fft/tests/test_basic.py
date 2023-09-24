@@ -4,11 +4,17 @@ import multiprocessing
 import numpy as np
 import pytest
 from numpy.random import random
-from numpy.testing import (
-        assert_array_almost_equal, assert_array_equal, assert_allclose
-        )
+from numpy.testing import assert_array_almost_equal, assert_allclose
 from pytest import raises as assert_raises
 import scipy.fft as fft
+from scipy.conftest import (
+    array_api_compatible,
+    skip_if_array_api_gpu,
+    skip_if_array_api_backend
+)
+from scipy._lib._array_api import (
+    array_namespace, size, xp_assert_close, xp_assert_equal
+)
 
 def fft1(x):
     L = len(x)
@@ -19,218 +25,283 @@ def fft1(x):
 
 class TestFFTShift:
 
-    def test_fft_n(self):
-        assert_raises(ValueError, fft.fft, [1, 2, 3], 0)
+    @array_api_compatible
+    def test_fft_n(self, xp):
+        x = xp.asarray([1, 2, 3])
+        if xp.__name__ == 'torch':
+            assert_raises(RuntimeError, fft.fft, x, 0)
+        else:
+            assert_raises(ValueError, fft.fft, x, 0)
 
 
 class TestFFT1D:
 
-    def test_identity(self):
+    @array_api_compatible
+    def test_identity(self, xp):
         maxlen = 512
-        x = random(maxlen) + 1j*random(maxlen)
-        xr = random(maxlen)
-        for i in range(1,maxlen):
-            assert_array_almost_equal(fft.ifft(fft.fft(x[0:i])), x[0:i],
-                                      decimal=12)
-            assert_array_almost_equal(fft.irfft(fft.rfft(xr[0:i]),i),
-                                      xr[0:i], decimal=12)
+        x = xp.asarray(random(maxlen) + 1j*random(maxlen))
+        xr = xp.asarray(random(maxlen))
+        for i in range(1, maxlen):
+            xp_assert_close(fft.ifft(fft.fft(x[0:i])), x[0:i], rtol=1e-9, atol=0)
+            xp_assert_close(fft.irfft(fft.rfft(xr[0:i]), i), xr[0:i], rtol=1e-9, atol=0)
 
-    def test_fft(self):
+    @array_api_compatible
+    def test_fft(self, xp):
         x = random(30) + 1j*random(30)
-        expect = fft1(x)
-        assert_array_almost_equal(expect, fft.fft(x))
-        assert_array_almost_equal(expect, fft.fft(x, norm="backward"))
-        assert_array_almost_equal(expect / np.sqrt(30),
-                                  fft.fft(x, norm="ortho"))
-        assert_array_almost_equal(expect / 30, fft.fft(x, norm="forward"))
+        expect = xp.asarray(fft1(x))
+        x = xp.asarray(x)
+        xp_assert_close(fft.fft(x), expect)
+        xp_assert_close(fft.fft(x, norm="backward"), expect)
+        xp_assert_close(fft.fft(x, norm="ortho"),
+                        expect / xp.sqrt(xp.asarray(30, dtype=xp.float64)),)
+        xp_assert_close(fft.fft(x, norm="forward"), expect / 30)
 
-    def test_ifft(self):
-        x = random(30) + 1j*random(30)
-        assert_array_almost_equal(x, fft.ifft(fft.fft(x)))
+    @array_api_compatible
+    def test_ifft(self, xp):
+        x = xp.asarray(random(30) + 1j*random(30))
+        xp_assert_close(fft.ifft(fft.fft(x)), x)
         for norm in ["backward", "ortho", "forward"]:
-            assert_array_almost_equal(
-                x, fft.ifft(fft.fft(x, norm=norm), norm=norm))
+            xp_assert_close(fft.ifft(fft.fft(x, norm=norm), norm=norm), x)
 
-    def test_fft2(self):
-        x = random((30, 20)) + 1j*random((30, 20))
+    @skip_if_array_api_gpu
+    @array_api_compatible
+    def test_fft2(self, xp):
+        x = xp.asarray(random((30, 20)) + 1j*random((30, 20)))
         expect = fft.fft(fft.fft(x, axis=1), axis=0)
-        assert_array_almost_equal(expect, fft.fft2(x))
-        assert_array_almost_equal(expect, fft.fft2(x, norm="backward"))
-        assert_array_almost_equal(expect / np.sqrt(30 * 20),
-                                  fft.fft2(x, norm="ortho"))
-        assert_array_almost_equal(expect / (30 * 20),
-                                  fft.fft2(x, norm="forward"))
+        xp_assert_close(fft.fft2(x), expect)
+        xp_assert_close(fft.fft2(x, norm="backward"), expect)
+        xp_assert_close(fft.fft2(x, norm="ortho"),
+                        expect / xp.sqrt(xp.asarray(30 * 20, dtype=xp.float64)))
+        xp_assert_close(fft.fft2(x, norm="forward"), expect / (30 * 20))
 
-    def test_ifft2(self):
-        x = random((30, 20)) + 1j*random((30, 20))
+    @skip_if_array_api_gpu
+    @array_api_compatible
+    def test_ifft2(self, xp):
+        x = xp.asarray(random((30, 20)) + 1j*random((30, 20)))
         expect = fft.ifft(fft.ifft(x, axis=1), axis=0)
-        assert_array_almost_equal(expect, fft.ifft2(x))
-        assert_array_almost_equal(expect, fft.ifft2(x, norm="backward"))
-        assert_array_almost_equal(expect * np.sqrt(30 * 20),
-                                  fft.ifft2(x, norm="ortho"))
-        assert_array_almost_equal(expect * (30 * 20),
-                                  fft.ifft2(x, norm="forward"))
+        xp_assert_close(fft.ifft2(x), expect)
+        xp_assert_close(fft.ifft2(x, norm="backward"), expect)
+        xp_assert_close(fft.ifft2(x, norm="ortho"),
+                        expect * xp.sqrt(xp.asarray(30 * 20, dtype=xp.float64)))
+        xp_assert_close(fft.ifft2(x, norm="forward"), expect * (30 * 20))
 
-    def test_fftn(self):
-        x = random((30, 20, 10)) + 1j*random((30, 20, 10))
+    @array_api_compatible
+    @skip_if_array_api_backend('torch')
+    def test_fftn(self, xp):
+        x = xp.asarray(random((30, 20, 10)) + 1j*random((30, 20, 10)))
         expect = fft.fft(fft.fft(fft.fft(x, axis=2), axis=1), axis=0)
-        assert_array_almost_equal(expect, fft.fftn(x))
-        assert_array_almost_equal(expect, fft.fftn(x, norm="backward"))
-        assert_array_almost_equal(expect / np.sqrt(30 * 20 * 10),
-                                  fft.fftn(x, norm="ortho"))
-        assert_array_almost_equal(expect / (30 * 20 * 10),
-                                  fft.fftn(x, norm="forward"))
+        xp_assert_close(fft.fftn(x), expect)
+        xp_assert_close(fft.fftn(x, norm="backward"), expect)
+        xp_assert_close(fft.fftn(x, norm="ortho"),
+                        expect / xp.sqrt(xp.asarray(30 * 20 * 10, dtype=xp.float64)))
+        xp_assert_close(fft.fftn(x, norm="forward"), expect / (30 * 20 * 10))
 
-    def test_ifftn(self):
-        x = random((30, 20, 10)) + 1j*random((30, 20, 10))
+    @array_api_compatible
+    @skip_if_array_api_backend('torch')
+    def test_ifftn(self, xp):
+        x = xp.asarray(random((30, 20, 10)) + 1j*random((30, 20, 10)))
         expect = fft.ifft(fft.ifft(fft.ifft(x, axis=2), axis=1), axis=0)
-        assert_array_almost_equal(expect, fft.ifftn(x))
-        assert_array_almost_equal(expect, fft.ifftn(x, norm="backward"))
-        assert_array_almost_equal(fft.ifftn(x) * np.sqrt(30 * 20 * 10),
-                                  fft.ifftn(x, norm="ortho"))
-        assert_array_almost_equal(expect * (30 * 20 * 10),
-                                  fft.ifftn(x, norm="forward"))
+        xp_assert_close(fft.ifftn(x), expect)
+        xp_assert_close(fft.ifftn(x, norm="backward"), expect)
+        xp_assert_close(
+            fft.ifftn(x, norm="ortho"),
+            fft.ifftn(x) * xp.sqrt(xp.asarray(30 * 20 * 10, dtype=xp.float64))
+        )
+        xp_assert_close(fft.ifftn(x, norm="forward"), expect * (30 * 20 * 10))
 
-    def test_rfft(self):
-        x = random(29)
-        for n in [x.size, 2*x.size]:
+    @array_api_compatible
+    def test_rfft(self, xp):
+        x = xp.asarray(random(29))
+        for n in [size(x), 2*size(x)]:
             for norm in [None, "backward", "ortho", "forward"]:
-                assert_array_almost_equal(
-                    fft.fft(x, n=n, norm=norm)[:(n//2 + 1)],
-                    fft.rfft(x, n=n, norm=norm))
-            assert_array_almost_equal(fft.rfft(x, n=n) / np.sqrt(n),
-                                      fft.rfft(x, n=n, norm="ortho"))
+                xp_assert_close(fft.rfft(x, n=n, norm=norm),
+                                fft.fft(x, n=n, norm=norm)[:(n//2 + 1)])
+            xp_assert_close(
+                fft.rfft(x, n=n, norm="ortho"),
+                fft.rfft(x, n=n) / xp.sqrt(xp.asarray(n, dtype=xp.float64))
+            )
 
-    def test_irfft(self):
-        x = random(30)
-        assert_array_almost_equal(x, fft.irfft(fft.rfft(x)))
+    @array_api_compatible
+    def test_irfft(self, xp):
+        x = xp.asarray(random(30))
+        xp_assert_close(fft.irfft(fft.rfft(x)), x)
         for norm in ["backward", "ortho", "forward"]:
-            assert_array_almost_equal(
-                x, fft.irfft(fft.rfft(x, norm=norm), norm=norm))
+            xp_assert_close(fft.irfft(fft.rfft(x, norm=norm), norm=norm), x)
 
-    def test_rfft2(self):
-        x = random((30, 20))
+    @skip_if_array_api_gpu
+    @array_api_compatible
+    def test_rfft2(self, xp):
+        x = xp.asarray(random((30, 20)))
         expect = fft.fft2(x)[:, :11]
-        assert_array_almost_equal(expect, fft.rfft2(x))
-        assert_array_almost_equal(expect, fft.rfft2(x, norm="backward"))
-        assert_array_almost_equal(expect / np.sqrt(30 * 20),
-                                  fft.rfft2(x, norm="ortho"))
-        assert_array_almost_equal(expect / (30 * 20),
-                                  fft.rfft2(x, norm="forward"))
+        xp_assert_close(fft.rfft2(x), expect)
+        xp_assert_close(fft.rfft2(x, norm="backward"), expect)
+        xp_assert_close(fft.rfft2(x, norm="ortho"),
+                        expect / xp.sqrt(xp.asarray(30 * 20, dtype=xp.float64)))
+        xp_assert_close(fft.rfft2(x, norm="forward"), expect / (30 * 20))
 
-    def test_irfft2(self):
-        x = random((30, 20))
-        assert_array_almost_equal(x, fft.irfft2(fft.rfft2(x)))
+    @skip_if_array_api_gpu
+    @array_api_compatible
+    def test_irfft2(self, xp):
+        x = xp.asarray(random((30, 20)))
+        xp_assert_close(fft.irfft2(fft.rfft2(x)), x)
         for norm in ["backward", "ortho", "forward"]:
-            assert_array_almost_equal(
-                x, fft.irfft2(fft.rfft2(x, norm=norm), norm=norm))
+            xp_assert_close(fft.irfft2(fft.rfft2(x, norm=norm), norm=norm), x)
 
-    def test_rfftn(self):
-        x = random((30, 20, 10))
+    @array_api_compatible
+    @skip_if_array_api_backend('torch')
+    def test_rfftn(self, xp):
+        x = xp.asarray(random((30, 20, 10)))
         expect = fft.fftn(x)[:, :, :6]
-        assert_array_almost_equal(expect, fft.rfftn(x))
-        assert_array_almost_equal(expect, fft.rfftn(x, norm="backward"))
-        assert_array_almost_equal(expect / np.sqrt(30 * 20 * 10),
-                                  fft.rfftn(x, norm="ortho"))
-        assert_array_almost_equal(expect / (30 * 20 * 10),
-                                  fft.rfftn(x, norm="forward"))
+        xp_assert_close(fft.rfftn(x), expect)
+        xp_assert_close(fft.rfftn(x, norm="backward"), expect)
+        xp_assert_close(fft.rfftn(x, norm="ortho"),
+                        expect / xp.sqrt(xp.asarray(30 * 20 * 10, dtype=xp.float64)))
+        xp_assert_close(fft.rfftn(x, norm="forward"), expect / (30 * 20 * 10))
 
-    def test_irfftn(self):
-        x = random((30, 20, 10))
-        assert_array_almost_equal(x, fft.irfftn(fft.rfftn(x)))
+    @array_api_compatible
+    @skip_if_array_api_backend('torch')
+    def test_irfftn(self, xp):
+        x = xp.asarray(random((30, 20, 10)))
+        xp_assert_close(fft.irfftn(fft.rfftn(x)), x)
         for norm in ["backward", "ortho", "forward"]:
-            assert_array_almost_equal(
-                x, fft.irfftn(fft.rfftn(x, norm=norm), norm=norm))
+            xp_assert_close(fft.irfftn(fft.rfftn(x, norm=norm), norm=norm), x)
 
-    def test_hfft(self):
+    @array_api_compatible
+    def test_hfft(self, xp):
         x = random(14) + 1j*random(14)
         x_herm = np.concatenate((random(1), x, random(1)))
         x = np.concatenate((x_herm, x[::-1].conj()))
-        expect = fft.fft(x)
-        assert_array_almost_equal(expect, fft.hfft(x_herm))
-        assert_array_almost_equal(expect, fft.hfft(x_herm, norm="backward"))
-        assert_array_almost_equal(expect / np.sqrt(30),
-                                  fft.hfft(x_herm, norm="ortho"))
-        assert_array_almost_equal(expect / 30,
-                                  fft.hfft(x_herm, norm="forward"))
+        x = xp.asarray(x)
+        x_herm = xp.asarray(x_herm)
+        expect = xp.real(fft.fft(x))
+        xp_assert_close(fft.hfft(x_herm), expect)
+        xp_assert_close(fft.hfft(x_herm, norm="backward"), expect)
+        xp_assert_close(fft.hfft(x_herm, norm="ortho"),
+                        expect / xp.sqrt(xp.asarray(30, dtype=xp.float64)))
+        xp_assert_close(fft.hfft(x_herm, norm="forward"), expect / 30)
 
-    def test_ihfft(self):
+    @array_api_compatible
+    def test_ihfft(self, xp):
         x = random(14) + 1j*random(14)
         x_herm = np.concatenate((random(1), x, random(1)))
         x = np.concatenate((x_herm, x[::-1].conj()))
-        assert_array_almost_equal(x_herm, fft.ihfft(fft.hfft(x_herm)))
+        x = xp.asarray(x)
+        x_herm = xp.asarray(x_herm)
+        xp_assert_close(fft.ihfft(fft.hfft(x_herm)), x_herm)
         for norm in ["backward", "ortho", "forward"]:
-            assert_array_almost_equal(
-                x_herm, fft.ihfft(fft.hfft(x_herm, norm=norm), norm=norm))
+            xp_assert_close(fft.ihfft(fft.hfft(x_herm, norm=norm), norm=norm), x_herm)
 
-    def test_hfft2(self):
-        x = random((30, 20))
-        assert_array_almost_equal(x, fft.hfft2(fft.ihfft2(x)))
+    @skip_if_array_api_gpu
+    @array_api_compatible
+    def test_hfft2(self, xp):
+        x = xp.asarray(random((30, 20)))
+        xp_assert_close(fft.hfft2(fft.ihfft2(x)), x)
         for norm in ["backward", "ortho", "forward"]:
-            assert_array_almost_equal(
-                x, fft.hfft2(fft.ihfft2(x, norm=norm), norm=norm))
+            xp_assert_close(fft.hfft2(fft.ihfft2(x, norm=norm), norm=norm), x)
 
-    def test_ihfft2(self):
-        x = random((30, 20))
+    @skip_if_array_api_gpu
+    @array_api_compatible
+    def test_ihfft2(self, xp):
+        x = xp.asarray(random((30, 20)))
         expect = fft.ifft2(x)[:, :11]
-        assert_array_almost_equal(expect, fft.ihfft2(x))
-        assert_array_almost_equal(expect, fft.ihfft2(x, norm="backward"))
-        assert_array_almost_equal(expect * np.sqrt(30 * 20),
-                                  fft.ihfft2(x, norm="ortho"))
-        assert_array_almost_equal(expect * (30 * 20),
-                                  fft.ihfft2(x, norm="forward"))
+        xp_assert_close(fft.ihfft2(x), expect)
+        xp_assert_close(fft.ihfft2(x, norm="backward"), expect)
+        xp_assert_close(
+            fft.ihfft2(x, norm="ortho"),
+            expect * xp.sqrt(xp.asarray(30 * 20, dtype=xp.float64))
+        )
+        xp_assert_close(fft.ihfft2(x, norm="forward"), expect * (30 * 20))
 
-    def test_hfftn(self):
-        x = random((30, 20, 10))
-        assert_array_almost_equal(x, fft.hfftn(fft.ihfftn(x)))
+    @skip_if_array_api_gpu
+    @array_api_compatible
+    def test_hfftn(self, xp):
+        x = xp.asarray(random((30, 20, 10)))
+        xp_assert_close(fft.hfftn(fft.ihfftn(x)), x)
         for norm in ["backward", "ortho", "forward"]:
-            assert_array_almost_equal(
-                x, fft.hfftn(fft.ihfftn(x, norm=norm), norm=norm))
+            xp_assert_close(fft.hfftn(fft.ihfftn(x, norm=norm), norm=norm), x)
 
-    def test_ihfftn(self):
-        x = random((30, 20, 10))
+    @skip_if_array_api_gpu
+    @array_api_compatible
+    @skip_if_array_api_backend('torch')
+    def test_ihfftn(self, xp):
+        x = xp.asarray(random((30, 20, 10)))
         expect = fft.ifftn(x)[:, :, :6]
-        assert_array_almost_equal(expect, fft.ihfftn(x))
-        assert_array_almost_equal(expect, fft.ihfftn(x, norm="backward"))
-        assert_array_almost_equal(expect * np.sqrt(30 * 20 * 10),
-                                  fft.ihfftn(x, norm="ortho"))
-        assert_array_almost_equal(expect * (30 * 20 * 10),
-                                  fft.ihfftn(x, norm="forward"))
+        xp_assert_close(expect, fft.ihfftn(x))
+        xp_assert_close(expect, fft.ihfftn(x, norm="backward"))
+        xp_assert_close(
+            fft.ihfftn(x, norm="ortho"),
+            expect * xp.sqrt(xp.asarray(30 * 20 * 10, dtype=xp.float64))
+        )
+        xp_assert_close(fft.ihfftn(x, norm="forward"), expect * (30 * 20 * 10))
 
-    @pytest.mark.parametrize("op", [fft.fftn, fft.ifftn,
-                                    fft.rfftn, fft.irfftn,
-                                    fft.hfftn, fft.ihfftn])
-    def test_axes(self, op):
-        x = random((30, 20, 10))
+    def _check_axes(self, op, xp):
+        x = xp.asarray(random((30, 20, 10)))
         axes = [(0, 1, 2), (0, 2, 1), (1, 0, 2), (1, 2, 0), (2, 0, 1), (2, 1, 0)]
+        xp_test = array_namespace(x)
         for a in axes:
-            op_tr = op(np.transpose(x, a))
-            tr_op = np.transpose(op(x, axes=a), a)
-            assert_array_almost_equal(op_tr, tr_op)
+            op_tr = op(xp_test.permute_dims(x, axes=a))
+            tr_op = xp_test.permute_dims(op(x, axes=a), axes=a)
+            xp_assert_close(op_tr, tr_op)
 
-    @pytest.mark.parametrize("op", [fft.fft2, fft.ifft2,
-                                    fft.rfft2, fft.irfft2,
-                                    fft.hfft2, fft.ihfft2,
-                                    fft.fftn, fft.ifftn,
-                                    fft.rfftn, fft.irfftn,
-                                    fft.hfftn, fft.ihfftn])
-    def test_axes_subset_with_shape(self, op):
-        x = random((16, 8, 4))
+    # torch.fft not yet implemented by array-api-compat
+    @skip_if_array_api_backend('torch')
+    @array_api_compatible
+    @pytest.mark.parametrize("op", [fft.fftn, fft.ifftn, fft.rfftn, fft.irfftn])
+    def test_axes_standard(self, op, xp):
+        self._check_axes(op, xp)
+
+    @skip_if_array_api_gpu
+    @array_api_compatible
+    @pytest.mark.parametrize("op", [fft.hfftn, fft.ihfftn])
+    def test_axes_non_standard(self, op, xp):
+        self._check_axes(op, xp)
+
+    # torch.fft not yet implemented by array-api-compat
+    @skip_if_array_api_backend('torch')
+    @array_api_compatible
+    @pytest.mark.parametrize("op", [fft.fftn, fft.ifftn,
+                                    fft.rfftn, fft.irfftn])
+    def test_axes_subset_with_shape_standard(self, op, xp):
+        x = xp.asarray(random((16, 8, 4)))
         axes = [(0, 1, 2), (0, 2, 1), (1, 2, 0)]
+        xp_test = array_namespace(x)
         for a in axes:
             # different shape on the first two axes
             shape = tuple([2*x.shape[ax] if ax in a[:2] else x.shape[ax]
                            for ax in range(x.ndim)])
             # transform only the first two axes
-            op_tr = op(np.transpose(x, a), s=shape[:2], axes=(0, 1))
-            tr_op = np.transpose(op(x, s=shape[:2], axes=a[:2]), a)
-            assert_array_almost_equal(op_tr, tr_op)
+            op_tr = op(xp_test.permute_dims(x, axes=a),
+                       s=shape[:2], axes=(0, 1))
+            tr_op = xp_test.permute_dims(op(x, s=shape[:2], axes=a[:2]),
+                                         axes=a)
+            xp_assert_close(op_tr, tr_op)
 
-    def test_all_1d_norm_preserving(self):
+    @skip_if_array_api_gpu
+    @array_api_compatible
+    @pytest.mark.parametrize("op", [fft.fft2, fft.ifft2,
+                                    fft.rfft2, fft.irfft2,
+                                    fft.hfft2, fft.ihfft2,
+                                    fft.hfftn, fft.ihfftn])
+    def test_axes_subset_with_shape_non_standard(self, op, xp):
+        x = xp.asarray(random((16, 8, 4)))
+        axes = [(0, 1, 2), (0, 2, 1), (1, 2, 0)]
+        xp_test = array_namespace(x)
+        for a in axes:
+            # different shape on the first two axes
+            shape = tuple([2*x.shape[ax] if ax in a[:2] else x.shape[ax]
+                           for ax in range(x.ndim)])
+            # transform only the first two axes
+            op_tr = op(xp_test.permute_dims(x, axes=a), s=shape[:2], axes=(0, 1))
+            tr_op = xp_test.permute_dims(op(x, s=shape[:2], axes=a[:2]), axes=a)
+            xp_assert_close(op_tr, tr_op)
+
+    @array_api_compatible
+    def test_all_1d_norm_preserving(self, xp):
         # verify that round-trip transforms are norm-preserving
-        x = random(30)
-        x_norm = np.linalg.norm(x)
-        n = x.size * 2
+        x = xp.asarray(random(30))
+        xp_test = array_namespace(x)
+        x_norm = xp_test.linalg.vector_norm(x)
+        n = size(x) * 2
         func_pairs = [(fft.fft, fft.ifft),
                       (fft.rfft, fft.irfft),
                       # hfft: order so the first function takes x.size samples
@@ -238,21 +309,44 @@ class TestFFT1D:
                       (fft.ihfft, fft.hfft),
                       ]
         for forw, back in func_pairs:
-            for n in [x.size, 2*x.size]:
+            for n in [size(x), 2*size(x)]:
                 for norm in ['backward', 'ortho', 'forward']:
                     tmp = forw(x, n=n, norm=norm)
                     tmp = back(tmp, n=n, norm=norm)
-                    assert_array_almost_equal(x_norm,
-                                              np.linalg.norm(tmp))
+                    xp_assert_close(xp_test.linalg.vector_norm(tmp), x_norm)
 
-    @pytest.mark.parametrize("dtype", [np.float16, np.float32, np.float64,
-                                       np.longdouble])
-    def test_dtypes(self, dtype):
-        # make sure that all input precisions are accepted
+    @pytest.mark.parametrize("dtype", [np.float16, np.longdouble])
+    def test_dtypes_nonstandard(self, dtype):
         x = random(30).astype(dtype)
-        assert_array_almost_equal(fft.ifft(fft.fft(x)), x)
-        assert_array_almost_equal(fft.irfft(fft.rfft(x)), x)
-        assert_array_almost_equal(fft.hfft(fft.ihfft(x), len(x)), x)
+        out_dtypes = {np.float16: np.complex64, np.longdouble: np.clongdouble}
+        x_complex = x.astype(out_dtypes[dtype])
+
+        res_fft = fft.ifft(fft.fft(x))
+        res_rfft = fft.irfft(fft.rfft(x))
+        res_hfft = fft.hfft(fft.ihfft(x), x.shape[0])
+        # Check both numerical results and exact dtype matches
+        assert_array_almost_equal(res_fft, x_complex)
+        assert_array_almost_equal(res_rfft, x)
+        assert_array_almost_equal(res_hfft, x)
+        assert res_fft.dtype == x_complex.dtype
+        assert res_rfft.dtype == np.result_type(np.float32, x.dtype)
+        assert res_hfft.dtype == np.result_type(np.float32, x.dtype)
+
+    @array_api_compatible
+    @pytest.mark.parametrize("dtype", ["float32", "float64"])
+    def test_dtypes(self, dtype, xp):
+        x = xp.asarray(random(30), dtype=getattr(xp, dtype))
+        out_dtypes = {"float32": xp.complex64, "float64": xp.complex128}
+        x_complex = xp.asarray(x, dtype=out_dtypes[dtype])
+
+        res_fft = fft.ifft(fft.fft(x))
+        res_rfft = fft.irfft(fft.rfft(x))
+        res_hfft = fft.hfft(fft.ihfft(x), x.shape[0])
+        # Check both numerical results and exact dtype matches
+        rtol = {"float32": 1e-4, "float64": 1e-8}[dtype]
+        xp_assert_close(res_fft, x_complex, rtol=rtol, atol=0)
+        xp_assert_close(res_rfft, x, rtol=rtol, atol=0)
+        xp_assert_close(res_hfft, x, rtol=rtol, atol=0)
 
 
 @pytest.mark.parametrize(
@@ -297,7 +391,7 @@ class TestFFTThreadSafe:
     threads = 16
     input_shape = (800, 200)
 
-    def _test_mtsame(self, func, *args):
+    def _test_mtsame(self, func, *args, xp=None):
         def worker(args, q):
             q.put(func(*args))
 
@@ -310,34 +404,49 @@ class TestFFTThreadSafe:
         [x.start() for x in t]
 
         [x.join() for x in t]
+
         # Make sure all threads returned the correct value
         for i in range(self.threads):
-            assert_array_equal(q.get(timeout=5), expected,
-                'Function returned wrong value in multithreaded context')
+            xp_assert_equal(
+                q.get(timeout=5), expected,
+                err_msg='Function returned wrong value in multithreaded context'
+            )
 
-    def test_fft(self):
-        a = np.ones(self.input_shape, dtype=np.complex128)
-        self._test_mtsame(fft.fft, a)
+    @skip_if_array_api_gpu
+    @array_api_compatible
+    def test_fft(self, xp):
+        a = xp.ones(self.input_shape, dtype=xp.complex128)
+        self._test_mtsame(fft.fft, a, xp=xp)
 
-    def test_ifft(self):
-        a = np.full(self.input_shape, 1+0j)
-        self._test_mtsame(fft.ifft, a)
+    @skip_if_array_api_gpu
+    @array_api_compatible
+    def test_ifft(self, xp):
+        a = xp.full(self.input_shape, 1+0j)
+        self._test_mtsame(fft.ifft, a, xp=xp)
 
-    def test_rfft(self):
-        a = np.ones(self.input_shape)
-        self._test_mtsame(fft.rfft, a)
+    @skip_if_array_api_gpu
+    @array_api_compatible
+    def test_rfft(self, xp):
+        a = xp.ones(self.input_shape)
+        self._test_mtsame(fft.rfft, a, xp=xp)
 
-    def test_irfft(self):
-        a = np.full(self.input_shape, 1+0j)
-        self._test_mtsame(fft.irfft, a)
+    @skip_if_array_api_gpu
+    @array_api_compatible
+    def test_irfft(self, xp):
+        a = xp.full(self.input_shape, 1+0j)
+        self._test_mtsame(fft.irfft, a, xp=xp)
 
-    def test_hfft(self):
-        a = np.ones(self.input_shape, np.complex64)
-        self._test_mtsame(fft.hfft, a)
+    @skip_if_array_api_gpu
+    @array_api_compatible
+    def test_hfft(self, xp):
+        a = xp.ones(self.input_shape, dtype=xp.complex64)
+        self._test_mtsame(fft.hfft, a, xp=xp)
 
-    def test_ihfft(self):
-        a = np.ones(self.input_shape)
-        self._test_mtsame(fft.ihfft, a)
+    @skip_if_array_api_gpu
+    @array_api_compatible
+    def test_ihfft(self, xp):
+        a = xp.ones(self.input_shape)
+        self._test_mtsame(fft.ihfft, a, xp=xp)
 
 
 @pytest.mark.parametrize("func", [fft.fft, fft.ifft, fft.rfft, fft.irfft])
@@ -354,11 +463,30 @@ def test_multiprocess(func):
 
 class TestIRFFTN:
 
-    def test_not_last_axis_success(self):
+    @array_api_compatible
+    @skip_if_array_api_backend('torch')
+    def test_not_last_axis_success(self, xp):
         ar, ai = np.random.random((2, 16, 8, 32))
         a = ar + 1j*ai
+        a = xp.asarray(a)
 
         axes = (-2,)
 
         # Should not raise error
         fft.irfftn(a, axes=axes)
+
+
+# torch.fft not yet implemented by array-api-compat
+@skip_if_array_api_backend('torch')
+@array_api_compatible
+@pytest.mark.parametrize("func", [fft.fft, fft.ifft, fft.rfft, fft.irfft,
+                                  fft.fftn, fft.ifftn,
+                                  fft.rfftn, fft.irfftn, fft.hfft, fft.ihfft])
+def test_non_standard_params(func, xp):
+    if xp.__name__ != 'numpy':
+        x = xp.asarray([1, 2, 3])
+        # func(x) should not raise an exception
+        func(x)
+        assert_raises(ValueError, func, x, workers=2)
+        # `plan` param is not tested since SciPy does not use it currently
+        # but should be tested if it comes into use

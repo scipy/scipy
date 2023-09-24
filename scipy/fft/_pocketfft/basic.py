@@ -247,6 +247,7 @@ def c2rn(forward, x, s=None, axes=None, norm=None, overwrite_x=False,
     if len(axes) == 0:
         raise ValueError("at least 1 axis must be transformed")
 
+    shape = list(shape)
     if noshape:
         shape[-1] = (x.shape[axes[-1]] - 1) * 2
 
@@ -257,7 +258,7 @@ def c2rn(forward, x, s=None, axes=None, norm=None, overwrite_x=False,
     lastsize = shape[-1]
     shape[-1] = (shape[-1] // 2) + 1
 
-    tmp, _ = _fix_shape(tmp, shape, axes)
+    tmp, _ = tuple(_fix_shape(tmp, shape, axes))
 
     # Note: overwrite_x is not utilized
     return pfft.c2r(tmp, axes, lastsize, forward, norm, None, workers)
