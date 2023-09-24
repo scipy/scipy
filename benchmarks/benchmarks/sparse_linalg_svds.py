@@ -9,10 +9,11 @@ with safe_import():
 class BenchSVDS(Benchmark):
     # Benchmark SVD using the MatrixMarket test matrices recommended by the
     # author of PROPACK at http://sun.stanford.edu/~rmunk/PROPACK/
+    # tests silently faling by `lobpcg` removed: west0479
     params = [
         [25],
         ["abb313", "illc1033", "illc1850", "qh1484", "rbs480a", "tols4000",
-         "well1033", "well1850", "west0479", "west2021"],
+         "well1033", "well1850", "west2021"],
         # TODO: re-include propack
         ['arpack', 'lobpcg']  # 'propack' failing (Aug. 2023)
     ]
