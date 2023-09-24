@@ -175,7 +175,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         until the computation is too costly or inexact and then switches to
         the devex method.
 
-        Curently, using ``None`` always selects ``'steepest-devex'``, but this
+        Currently, using ``None`` always selects ``'steepest-devex'``, but this
         may change as new options become available.
 
     mip_max_nodes : int

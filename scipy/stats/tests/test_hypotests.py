@@ -121,7 +121,7 @@ class TestCvm:
         # for large values of x and n, the series used to compute the cdf
         # converges slowly.
         # this leads to bug in R package goftest and MAPLE code that is
-        # the basis of the implemenation in scipy
+        # the basis of the implementation in scipy
         # note: cdf = 1 for x >= 1000/3 and n = 1000
         assert_(0.99999 < _cdf_cvm(333.3, 1000) < 1.0)
         assert_(0.99999 < _cdf_cvm(333.3) < 1.0)
@@ -173,7 +173,7 @@ class TestMannWhitneyU:
     def setup_method(self):
         _mwu_state._recursive = True
 
-    # All magic numbers are from R wilcox.test unless otherwise specied
+    # All magic numbers are from R wilcox.test unless otherwise specified
     # https://rdrr.io/r/stats/wilcox.test.html
 
     # --- Test Input Validation ---

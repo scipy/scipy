@@ -837,7 +837,7 @@ This function looks like an egg carton::
    >>> plt.show()
 
 .. plot:: tutorial/examples/optimize_global_2.py
-   :alt: "A 3-D plot shown from a three-quarter view. The function is very noisy with dozens of valleys and peaks. There is no clear min or max discernable from this view and it's not possible to see all the local peaks and valleys from this view."
+   :alt: "A 3-D plot shown from a three-quarter view. The function is very noisy with dozens of valleys and peaks. There is no clear min or max discernible from this view and it's not possible to see all the local peaks and valleys from this view."
    :align: center
    :include-source: 0
 

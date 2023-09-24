@@ -73,7 +73,7 @@ def shgo(
         sampling points are generated instead of the default `n=100`. For all
         other specified values `n` sampling points are generated. For
         ``sobol``, ``halton`` and other arbitrary `sampling_methods` `n=100` or
-        another speciefied number of sampling points are generated.
+        another specified number of sampling points are generated.
     iters : int, optional
         Number of iterations used in the construction of the simplicial
         complex. Default is 1.
@@ -164,7 +164,7 @@ def shgo(
             along with the objective function. If False, the gradient will be
             estimated numerically. ``jac`` can also be a callable returning the
             gradient of the objective. In this case, it must accept the same
-            arguments as ``fun``. (Passed to `scipy.optimize.minmize`
+            arguments as ``fun``. (Passed to `scipy.optimize.minimize`
             automatically)
 
         * hess, hessp : callable, optional
@@ -175,7 +175,7 @@ def shgo(
             ``hessp`` will be ignored. If neither ``hess`` nor ``hessp`` is
             provided, then the Hessian product will be approximated using
             finite differences on ``jac``. ``hessp`` must compute the Hessian
-            times an arbitrary vector. (Passed to `scipy.optimize.minmize`
+            times an arbitrary vector. (Passed to `scipy.optimize.minimize`
             automatically)
 
         Algorithm settings:
@@ -797,7 +797,7 @@ class SHGO:
         else:
             self.symmetry = None
         # Algorithm functionality
-        # Only evaluate a few of the best candiates
+        # Only evaluate a few of the best candidates
         self.local_iter = options.get('local_iter', False)
         self.infty_cons_sampl = options.get('infty_constraints', True)
 
@@ -1029,10 +1029,10 @@ class SHGO:
             self.n_sampled += self.n
 
         if self.disp:
-            logging.info('Triangulation completed, evaluating all contraints '
+            logging.info('Triangulation completed, evaluating all constraints '
                          'and objective function values.')
 
-        # Readd minimisers to complex
+        # Re-add minimisers to complex
         if len(self.LMC.xl_maps) > 0:
             for xl in self.LMC.cache:
                 v = self.HC.V[xl]
@@ -1175,7 +1175,7 @@ class SHGO:
         Parameters
         ----------
         force_iter : int
-                     Number of starting minimizers to process (can be sepcified
+                     Number of starting minimizers to process (can be specified
                      globally or locally)
 
         """

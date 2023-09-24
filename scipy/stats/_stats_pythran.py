@@ -121,7 +121,7 @@ def _compute_outer_prob_inside_method(m, n, g, h):
     # binomial coefficients, hence grow quickly.
     # Scaling after each column is computed avoids dividing by a
     # large binomial coefficient at the end, but is not sufficient to avoid
-    # the large dyanamic range which appears during the calculation.
+    # the large dynamic range which appears during the calculation.
     # Instead we rescale based on the magnitude of the right most term in
     # the column and keep track of an exponent separately and apply
     # it at the end of the calculation.  Similarly when multiplying by

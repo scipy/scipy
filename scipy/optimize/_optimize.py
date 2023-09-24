@@ -1538,7 +1538,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
             break
 
         rhok_inv = np.dot(yk, sk)
-        # this was handled in numeric, let it remaines for more safety
+        # this was handled in numeric, let it remains for more safety
         # Cryptic comment above is preserved for posterity. Future reader:
         # consider change to condition below proposed in gh-1261/gh-17345.
         if rhok_inv == 0.:
@@ -2100,7 +2100,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
 
     # Logic for hess/hessp
     # - If a callable(hess) is provided, then use that
-    # - If hess is a FD_METHOD, or the output fom hess(x) is a LinearOperator
+    # - If hess is a FD_METHOD, or the output from hess(x) is a LinearOperator
     #   then create a hessp function using those.
     # - If hess is None but you have callable(hessp) then use the hessp.
     # - If hess and hessp are None then approximate hessp using the grad/jac.
@@ -3241,7 +3241,7 @@ def _linesearch_powell(func, p, xi, tol=1e-3,
                        lower_bound=None, upper_bound=None, fval=None):
     """Line-search algorithm using fminbound.
 
-    Find the minimium of the function ``func(x0 + alpha*direc)``.
+    Find the minimum of the function ``func(x0 + alpha*direc)``.
 
     lower_bound : np.array.
         The lower bounds for each parameter in ``x0``. If the ``i``th

@@ -58,7 +58,7 @@ class _dok_base(_spbase, IndexMixin):
 
     def _update(self, data):
         """An update method for dict data defined for direct access to
-        `dok_array` data. Main purpose is to be used for effcient conversion
+        `dok_array` data. Main purpose is to be used for efficient conversion
         from other _spbase classes. Has no checking if `data` is valid."""
         return self._dict.update(data)
 

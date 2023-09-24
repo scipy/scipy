@@ -189,7 +189,7 @@ def test_invalid_fft_mode_RuntimeError():
                                             (('exponential', None, 1.), 9),
                                             (4.0, 9)])
 def test_from_window(win_params, Nx: int):
-    """Verify that `from_window()` handels parameters correctly.
+    """Verify that `from_window()` handles parameters correctly.
 
     The window parameterizations are documented in the `get_window` docstring.
     """

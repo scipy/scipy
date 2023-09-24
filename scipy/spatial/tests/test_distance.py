@@ -290,7 +290,7 @@ def _weight_checked(fn, n_args=2, default_axis=None, key=lambda x: x, weight_arg
             arrays = [np.atleast_1d(a.squeeze()) for a in arrays]
 
         try:
-            # WEIGHTS CHECK 1: EQUAL WEIGHTED OBESERVATIONS
+            # WEIGHTS CHECK 1: EQUAL WEIGHTED OBSERVATIONS
             args = tuple(arrays) + rest
             if ones_test:
                 kwargs[weight_arg] = weights

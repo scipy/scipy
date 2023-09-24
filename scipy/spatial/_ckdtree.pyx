@@ -878,7 +878,7 @@ cdef class cKDTree:
                SciPy 1.9.0.
 
         return_sorted : bool, optional
-            Sorts returned indicies if True and does not sort them if False. If
+            Sorts returned indices if True and does not sort them if False. If
             None, does not sort single point queries, but does sort
             multi-point queries which was the behavior before this option
             was added.
@@ -1398,7 +1398,7 @@ cdef class cKDTree:
 
         if self_weights is None and other_weights is None:
             int_result = True
-            # unweighted, use the integer arithmetics
+            # unweighted, use the integer arithmetic
             results = np.zeros(n_queries + 1, dtype=np.intp)
 
             iresults = results
@@ -1413,7 +1413,7 @@ cdef class cKDTree:
         else:
             int_result = False
 
-            # weighted / half weighted, use the floating point arithmetics
+            # weighted / half weighted, use the floating point arithmetic
             if self_weights is not None:
                 w1 = np.ascontiguousarray(self_weights, dtype=np.float64)
                 w1n = self._build_weights(w1)

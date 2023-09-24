@@ -562,7 +562,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
     wi : array_like, optional
         The barycentric weights for the chosen interpolation points `xi`.
         If absent or None, the weights will be computed from `xi` (default).
-        This allows for the re-use of the weights `wi` if several interpolants
+        This allows for the reuse of the weights `wi` if several interpolants
         are being calculated using the same nodes `xi`, without re-computation.
     random_state : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`

@@ -385,7 +385,7 @@ class TestBinom:
         assert_equal(h, 0.0)
 
     def test_warns_p0(self):
-        # no spurious warnigns are generated for p=0; gh-3817
+        # no spurious warnings are generated for p=0; gh-3817
         with warnings.catch_warnings():
             warnings.simplefilter("error", RuntimeWarning)
             assert_equal(stats.binom(n=2, p=0).mean(), 0)
@@ -1068,7 +1068,7 @@ class TestGompertz:
     #   from mpmath import mp
     #   mp.dps = 100
     #   def gompertz_sf(x, c):
-    #       reurn mp.exp(-c*mp.expm1(x))
+    #       return mp.exp(-c*mp.expm1(x))
     #
     # E.g.
     #
@@ -1118,7 +1118,7 @@ class TestHalfNorm:
     #   from mpmath import mp
     #   mp.dps = 100
     #   def halfnorm_sf(x):
-    #       reurn 2*(1 - mp.ncdf(x))
+    #       return 2*(1 - mp.ncdf(x))
     #
     # E.g.
     #
@@ -1301,7 +1301,7 @@ class TestLaplaceasymmetric:
         assert_allclose(pdf1, pdf2)
 
     def test_asymmetric_laplace_pdf(self):
-        # test assymetric Laplace
+        # test asymmetric Laplace
         points = np.array([1, 2, 3])
         kappa = 2
         kapinv = 1/kappa
@@ -1310,7 +1310,7 @@ class TestLaplaceasymmetric:
         assert_allclose(pdf1, pdf2)
 
     def test_asymmetric_laplace_log_10_16(self):
-        # test assymetric Laplace
+        # test asymmetric Laplace
         points = np.array([-np.log(16), np.log(10)])
         kappa = 2
         pdf1 = stats.laplace_asymmetric.pdf(points, kappa)
@@ -3018,7 +3018,7 @@ class TestLaplace:
         x = 1000
         p0 = stats.laplace.cdf(-x)
         # The exact value is smaller than can be represented with
-        # 64 bit floating point, so the exected result is 0.
+        # 64 bit floating point, so the expected result is 0.
         assert p0 == 0.0
         # The closest 64 bit floating point representation of the
         # exact value is 1.0.
@@ -3027,7 +3027,7 @@ class TestLaplace:
 
         p0 = stats.laplace.sf(x)
         # The exact value is smaller than can be represented with
-        # 64 bit floating point, so the exected result is 0.
+        # 64 bit floating point, so the expected result is 0.
         assert p0 == 0.0
         # The closest 64 bit floating point representation of the
         # exact value is 1.0.
@@ -9167,7 +9167,7 @@ def test_support_gh13294_regression(distname, args):
         pytest.skip(f"skipping test for the support method for "
                     f"distribution {distname}.")
     dist = getattr(stats, distname)
-    # test support method with invalid arguents
+    # test support method with invalid arguments
     if isinstance(dist, stats.rv_continuous):
         # test with valid scale
         if len(args) != 0:

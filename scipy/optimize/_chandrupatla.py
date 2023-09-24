@@ -160,7 +160,7 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
 
     def pre_func_eval(work):
         # `_check_termination` is called first -> `x3 - x2 > x2 - x1`
-        # But let's calculate a few terms that we'll re-use
+        # But let's calculate a few terms that we'll reuse
         x21 = work.x2 - work.x1
         x32 = work.x3 - work.x2
 

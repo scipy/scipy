@@ -1019,7 +1019,7 @@ def bellman_ford(csgraph, directed=True, indices=None,
     N = csgraph.shape[0]
 
     # ------------------------------
-    # intitialize/validate indices
+    # initialize/validate indices
     if indices is None:
         indices = np.arange(N, dtype=ITYPE)
     else:
