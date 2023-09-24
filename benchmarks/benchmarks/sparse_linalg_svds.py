@@ -3,6 +3,7 @@ import numpy as np
 from .common import Benchmark, safe_import
 
 with safe_import():
+    from scipy.linalg import svd
     from scipy.sparse.linalg import svds
 
 
@@ -15,7 +16,7 @@ class BenchSVDS(Benchmark):
         ["abb313", "illc1033", "illc1850", "qh1484", "rbs480a", "tols4000",
          "well1033", "well1850", "west0479", "west2021"],
         # TODO: re-include propack
-        ['arpack', 'lobpcg']  # 'propack' failing (Aug. 2023)
+        ['arpack', 'lobpcg', 'svd']  # 'propack' failing (Aug. 2023)
     ]
     param_names = ['k', 'problem', 'solver']
 
@@ -28,4 +29,7 @@ class BenchSVDS(Benchmark):
 
     def time_svds(self, k, problem, solver):
         rng = np.random.default_rng(0)
-        svds(self.A, k=k, solver=solver, random_state=rng)
+        if solver = 'svd':
+            _, s, _ = svd(self.A.toarray(), full_matrices=False)
+            else
+            _, s, _ = svds(self.A, k=k, solver=solver, random_state=rng)
