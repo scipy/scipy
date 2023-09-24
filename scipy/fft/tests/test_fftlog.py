@@ -110,7 +110,7 @@ def test_fht_identity(n, bias, offset, optimal, xp):
     A = fht(a, dln, mu, offset=offset, bias=bias)
     a_ = ifht(A, dln, mu, offset=offset, bias=bias)
 
-    xp_assert_close(a, a_)
+    xp_assert_close(a_, a)
 
 
 # https://github.com/pytorch/pytorch/issues/59786

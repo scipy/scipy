@@ -171,9 +171,7 @@ static double hyp3f0(double a1, double a2, double a3, double z);
 
 extern double MACHEP;
 
-int shichi(x, si, ci)
-double x;
-double *si, *ci;
+int shichi(double x, double *si, double *ci)
 {
     double k, z, c, s, a, b;
     short sign;

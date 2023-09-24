@@ -1452,6 +1452,14 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     Notes
     -----
     Parameters `c1` and `c2` must satisfy ``0 < c1 < c2 < 1``.
+
+    If minimization doesn't complete successfully, with an error message of
+    ``Desired error not necessarily achieved due to precision loss``, then
+    consider setting `gtol` to a higher value. This precision loss typically
+    occurs when the (finite difference) numerical differentiation cannot provide
+    sufficient precision to satisfy the `gtol` termination criterion.
+    This can happen when working in single precision and a callable jac is not
+    provided. For single precision problems a `gtol` of 1e-3 seems to work.
     """
     _check_unknown_options(unknown_options)
     _check_positive_definite(hess_inv0)
@@ -2129,7 +2137,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
 
     xtol = len(x0) * avextol
     update = [2 * xtol]
-    xk = x0
+    xk = np.copy(x0)
     if retall:
         allvecs = [xk]
     k = 0
@@ -2157,7 +2165,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
 
         if fhess is not None:             # you want to compute hessian once.
             A = sf.hess(xk)
-            hcalls = hcalls + 1
+            hcalls += 1
 
         for k2 in range(cg_maxiter):
             if np.add.reduce(np.abs(ri)) <= termcond:
@@ -2167,7 +2175,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
                     Ap = approx_fhess_p(xk, psupi, fprime, epsilon)
                 else:
                     Ap = fhess_p(xk, psupi, *args)
-                    hcalls = hcalls + 1
+                    hcalls += 1
             else:
                 if isinstance(A, HessianUpdateStrategy):
                     # if hess was supplied as a HessianUpdateStrategy
@@ -2190,14 +2198,14 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
                     xsupi = dri0 / (-curv) * b
                     break
             alphai = dri0 / curv
-            xsupi = xsupi + alphai * psupi
-            ri = ri + alphai * Ap
+            xsupi += alphai * psupi
+            ri += alphai * Ap
             dri1 = np.dot(ri, ri)
             betai = dri1 / dri0
             psupi = -ri + betai * psupi
             # We use |p_i|^2 = |r_i|^2 + beta_i^2 |p_{i-1}|^2
             psupi_norm2 = dri1 + betai**2 * psupi_norm2
-            i = i + 1
+            i += 1
             dri0 = dri1          # update np.dot(ri,ri) for next time.
         else:
             # curvature keeps increasing, bail out
@@ -2218,7 +2226,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
             return terminate(2, msg)
 
         update = alphak * pk
-        xk = xk + update        # upcast if necessary
+        xk += update        # upcast if necessary
         if retall:
             allvecs.append(xk)
         k += 1
