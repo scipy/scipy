@@ -13,7 +13,7 @@ class BenchSVDS(Benchmark):
     params = [
         [25],
         ["abb313", "illc1033", "illc1850", "qh1484", "rbs480a", "tols4000",
-         "well1033", "well1850", "west2021"],
+         "well1033", "well1850", "west0479", "west2021"],
         # TODO: re-include propack
         ['arpack', 'lobpcg']  # 'propack' failing (Aug. 2023)
     ]
@@ -27,6 +27,5 @@ class BenchSVDS(Benchmark):
         self.A = matrices[problem][()]
 
     def time_svds(self, k, problem, solver):
-        # consider k = int(np.min(self.A.shape) * k)
-        np.random.seed(0)
-        svds(self.A, k=k, solver=solver)
+        rng = np.random.default_rng(0)
+        svds(self.A, k=k, solver=solver, random_state=rng)
