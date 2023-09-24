@@ -30,5 +30,5 @@ class BenchSVDS(Benchmark):
         rng = np.random.default_rng(0)
         if solver == 'svd':
             _, s, _ = svd(self.A.toarray(), full_matrices=False)
-            else
+        else:
             _, s, _ = svds(self.A, k=k, solver=solver, random_state=rng)
