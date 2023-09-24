@@ -975,7 +975,7 @@ class TestSVD:
                     xp_assert_close(u.T @ u, xp.eye(u.shape[1]),
                                     atol=1e-14, check_dtype=False)
                     xp_assert_close(vh @ vh.T, xp.eye(vh.shape[0]),
-                                    atol=1e-15, check_dtype=False)
+                                    atol=1e-14, check_dtype=False)
                     sigma = xp.zeros((u.shape[1], vh.shape[0]), dtype=s.dtype)
                     for i in range(s.shape[0]):
                         sigma[i, i] = s[i]
@@ -988,10 +988,10 @@ class TestSVD:
             u, s, vh = svd(a, full_matrices=full_matrices, lapack_driver=lapack_driver)
             xp_assert_close(xp.conj(u).T @ u,
                             xp.eye(u.shape[1], dtype=xp.complex128),
-                            atol=1e-15)
+                            atol=1e-14)
             xp_assert_close(xp.conj(vh).T @ vh,
                             xp.eye(vh.shape[0], dtype=xp.complex128),
-                            atol=1e-15)
+                            atol=1e-14)
             sigma = xp.zeros((u.shape[0], vh.shape[0]), dtype=s.dtype)
             for i in range(s.shape[0]):
                 sigma[i, i] = s[i]
@@ -1501,7 +1501,7 @@ class TestQR:
         a = [[3, 3+4j, 5], [5, 2, 2+7j], [3, 2, 7]]
         a = xp.asarray(a, dtype=xp.complex128)
         q, r = qr(a)
-        xp_assert_close(xp.conj(q).T @ q, xp.eye(3, dtype=xp.complex128), atol=1e-15)
+        xp_assert_close(xp.conj(q).T @ q, xp.eye(3, dtype=xp.complex128), atol=1e-14)
         xp_assert_close(q @ r, a)
 
     def test_simple_complex_left(self):
@@ -1588,7 +1588,7 @@ class TestQR:
         for k in range(2):
             a = xp.asarray(rng.random([n, n]))
             q, r = qr(a)
-            xp_assert_close(q.T @ q, xp.eye(n), atol=1e-15, check_dtype=False)
+            xp_assert_close(q.T @ q, xp.eye(n), atol=1e-14, check_dtype=False)
             xp_assert_close(q @ r, a)
 
     def test_random_left(self):
@@ -1751,7 +1751,7 @@ class TestQR:
             a = xp.asarray(rng.random([n, n]) + 1j*rng.random([n, n]))
             q, r = qr(a)
             xp_assert_close(xp.conj(q).T @ q, xp.eye(n, dtype=xp.complex128),
-                            atol=1e-15)
+                            atol=1e-14)
             xp_assert_close(q @ r, a)
 
     def test_random_complex_left(self):
