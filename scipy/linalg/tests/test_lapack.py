@@ -662,8 +662,8 @@ def test_lartg():
 
         if np.iscomplexobj(g):
             assert_allclose(sn, -4.0j/5.0)
-            assert_(type(r) == complex)
-            assert_(type(cs) == float)
+            assert_(isinstance(r, complex))
+            assert_(isinstance(cs, float))
         else:
             assert_allclose(sn, 4.0/5.0)
 
