@@ -91,7 +91,16 @@ _stats_gen_pyx = custom_target('_stats_gen_pyx',
   ],
   input: '_generate_pyx.py',
   command: [py3, '@INPUT@', '-o', '@OUTDIR@'],
-  depends: _stats_pxd
+  depends: _stats_pxd,
+  depend_files: [
+    '_boost/include/code_gen.py',
+    '_boost/include/gen_func_defs_pxd.py',
+    '_boost/include/_info.py',
+    # TODO: once setup.py is gone, remove this .pxd file from here and from the
+    #       output of this custom_target, and stop copying it manually in
+    #       code_gen.py. Instead, use fs.copyfile at the top of this file.
+    '_boost/include/templated_pyufunc.pxd',
+  ]
 )
 
 # Only needed to establish a dependency; see comments in linalg/meson.build
