@@ -688,7 +688,11 @@ def test_as_euler_symmetric_axes(seq_tuple, intrinsic):
 def test_as_euler_degenerate_asymmetric_axes(seq_tuple, intrinsic):
     # Since we cannot check for angle equality, we check for rotation matrix
     # equality
-    angles = np.array([[45, 90, 35], [35, -90, 20], [35, 90, 25], [25, -90, 15]])
+    angles = np.array([
+        [45, 90, 35],
+        [35, -90, 20],
+        [35, 90, 25],
+        [25, -90, 15]])
 
     seq = "".join(seq_tuple)
     if intrinsic:
@@ -708,7 +712,11 @@ def test_as_euler_degenerate_asymmetric_axes(seq_tuple, intrinsic):
 def test_as_euler_degenerate_symmetric_axes(seq_tuple, intrinsic):
     # Since we cannot check for angle equality, we check for rotation matrix
     # equality
-    angles = np.array([[15, 0, 60], [35, 0, 75], [60, 180, 35], [15, -180, 25]])
+    angles = np.array([
+        [15, 0, 60],
+        [35, 0, 75],
+        [60, 180, 35],
+        [15, -180, 25]])
 
     seq = "".join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
     if intrinsic:
