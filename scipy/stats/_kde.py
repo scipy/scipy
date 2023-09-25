@@ -64,6 +64,10 @@ class gaussian_kde:
     weights : array_like, optional
         weights of datapoints. This must be the same shape as dataset.
         If None (default), the samples are assumed to be equally weighted
+    data_covariance : array_like, optional
+        The data covariance matrix. Must be a symmetric positive definite
+        matrix of shape (# of dims, # of dims). If not provided, this will be
+        computed from `dataset`.
 
     Attributes
     ----------
@@ -82,8 +86,8 @@ class gaussian_kde:
         of `kde.factor` multiplies the covariance matrix of the data in the kde
         estimation.
     covariance : ndarray
-        The covariance matrix of `dataset`, scaled by the calculated bandwidth
-        (`kde.factor`).
+        The data covariance matrix, scaled by the calculated bandwidth
+        (`kde.factor`) squared.
     inv_cov : ndarray
         The inverse of `covariance`.
 
@@ -196,7 +200,8 @@ class gaussian_kde:
     >>> plt.show()
 
     """
-    def __init__(self, dataset, bw_method=None, weights=None):
+    def __init__(self, dataset, bw_method=None, weights=None, *,
+                 data_covariance=None):
         self.dataset = atleast_2d(asarray(dataset))
         if not self.dataset.size > 1:
             raise ValueError("`dataset` input should have multiple elements.")
@@ -221,6 +226,15 @@ class gaussian_kde:
                    "*column* of `dataset` to be a point; consider transposing "
                    "the input to `dataset`.")
             raise ValueError(msg)
+
+        if data_covariance is not None:
+            data_covariance = np.atleast_2d(data_covariance)
+            if (not np.issubdtype(data_covariance.dtype, np.number)
+                    or data_covariance.shape != (self.d, self.d)):
+                msg = ("`data_covariance` must be a numerical array of shape "
+                       "`(d, d)`, where `d` is the dimensionality of the data.")
+                raise ValueError(msg)
+            self._data_covariance = data_covariance
 
         try:
             self.set_bandwidth(bw_method=bw_method)
@@ -579,10 +593,11 @@ class gaussian_kde:
         """
         self.factor = self.covariance_factor()
         # Cache covariance and Cholesky decomp of covariance
-        if not hasattr(self, '_data_cho_cov'):
+        if not hasattr(self, '_data_covariance'):
             self._data_covariance = atleast_2d(cov(self.dataset, rowvar=1,
-                                               bias=False,
-                                               aweights=self.weights))
+                                                   bias=False,
+                                                   aweights=self.weights))
+        if not hasattr(self, '_data_cho_cov'):
             self._data_cho_cov = linalg.cholesky(self._data_covariance,
                                                  lower=True)
 

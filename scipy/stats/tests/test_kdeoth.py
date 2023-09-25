@@ -604,3 +604,19 @@ def test_fewer_points_than_dimensions_gh17436():
     message = "Number of dimensions is greater than number of samples..."
     with pytest.raises(ValueError, match=message):
         stats.gaussian_kde(rvs)
+
+
+def test_data_covariance():
+    rng = np.random.default_rng(2046127537594925772)
+    rvs = rng.multivariate_normal(np.zeros(3), np.eye(3), size=10).T
+
+    message = "`data_covariance` must be a numerical array of shape..."
+    with pytest.raises(ValueError, match=message):
+        stats.gaussian_kde(rvs, data_covariance=[1, 2, 3])
+
+    cov = np.cov(rvs, rowvar=True, bias=False)
+    factor = rng.random()
+    kde1 = stats.gaussian_kde(rvs, bw_method=1)
+    kde2 = stats.gaussian_kde(rvs, bw_method=factor,
+                              data_covariance=cov/factor**2)
+    assert_allclose(kde1.pdf(rvs), kde2.pdf(rvs))
