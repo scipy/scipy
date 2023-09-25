@@ -86,6 +86,7 @@ class TestFFT1D:
         xp_assert_close(fft.ifft2(x, norm="forward"), expect * (30 * 20))
 
     @array_api_compatible
+    # torch.fft not yet implemented by array-api-compat
     @skip_if_array_api_backend('torch')
     def test_fftn(self, xp):
         x = xp.asarray(random((30, 20, 10)) + 1j*random((30, 20, 10)))
@@ -97,6 +98,7 @@ class TestFFT1D:
         xp_assert_close(fft.fftn(x, norm="forward"), expect / (30 * 20 * 10))
 
     @array_api_compatible
+    # torch.fft not yet implemented by array-api-compat
     @skip_if_array_api_backend('torch')
     def test_ifftn(self, xp):
         x = xp.asarray(random((30, 20, 10)) + 1j*random((30, 20, 10)))
@@ -148,6 +150,7 @@ class TestFFT1D:
             xp_assert_close(fft.irfft2(fft.rfft2(x, norm=norm), norm=norm), x)
 
     @array_api_compatible
+    # torch.fft not yet implemented by array-api-compat
     @skip_if_array_api_backend('torch')
     def test_rfftn(self, xp):
         x = xp.asarray(random((30, 20, 10)))
@@ -159,6 +162,7 @@ class TestFFT1D:
         xp_assert_close(fft.rfftn(x, norm="forward"), expect / (30 * 20 * 10))
 
     @array_api_compatible
+    # torch.fft not yet implemented by array-api-compat
     @skip_if_array_api_backend('torch')
     def test_irfftn(self, xp):
         x = xp.asarray(random((30, 20, 10)))
@@ -222,6 +226,7 @@ class TestFFT1D:
 
     @skip_if_array_api_gpu
     @array_api_compatible
+    # torch.fft not yet implemented by array-api-compat
     @skip_if_array_api_backend('torch')
     def test_ihfftn(self, xp):
         x = xp.asarray(random((30, 20, 10)))
@@ -464,6 +469,7 @@ def test_multiprocess(func):
 class TestIRFFTN:
 
     @array_api_compatible
+    # torch.fft not yet implemented by array-api-compat
     @skip_if_array_api_backend('torch')
     def test_not_last_axis_success(self, xp):
         ar, ai = np.random.random((2, 16, 8, 32))

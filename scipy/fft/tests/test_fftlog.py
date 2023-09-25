@@ -4,15 +4,11 @@ import pytest
 
 from scipy.fft._fftlog import fht, ifht, fhtoffset
 from scipy.special import poch
-from scipy.conftest import (
-    array_api_compatible,
-    skip_if_array_api_backend
-)
+
+from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import xp_assert_close
 
 
-# https://github.com/pytorch/pytorch/issues/59786
-@skip_if_array_api_backend('torch')
 @array_api_compatible
 def test_fht_agrees_with_fftlog(xp):
     # check that fht numerically agrees with the output from Fortran FFTLog,
@@ -90,8 +86,6 @@ def test_fht_agrees_with_fftlog(xp):
     xp_assert_close(ours, theirs)
 
 
-# https://github.com/pytorch/pytorch/issues/59786
-@skip_if_array_api_backend('torch')
 @array_api_compatible
 @pytest.mark.parametrize('optimal', [True, False])
 @pytest.mark.parametrize('offset', [0.0, 1.0, -1.0])
@@ -113,8 +107,6 @@ def test_fht_identity(n, bias, offset, optimal, xp):
     xp_assert_close(a_, a)
 
 
-# https://github.com/pytorch/pytorch/issues/59786
-@skip_if_array_api_backend('torch')
 @array_api_compatible
 def test_fht_special_cases(xp):
     rng = np.random.RandomState(3491349965)
@@ -149,8 +141,6 @@ def test_fht_special_cases(xp):
         assert record, 'ifht did not warn about a singular transform'
 
 
-# https://github.com/pytorch/pytorch/issues/59786
-@skip_if_array_api_backend('torch')
 @array_api_compatible
 @pytest.mark.parametrize('n', [64, 63])
 def test_fht_exact(n, xp):
