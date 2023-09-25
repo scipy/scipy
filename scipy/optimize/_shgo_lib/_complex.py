@@ -137,7 +137,7 @@ class Complex:
             self.min_cons = constraints
             self.g_cons = []
             self.g_args = []
-            if not isinstance(constraints, tuple | list):
+            if not isinstance(constraints, (tuple, list)):
                 constraints = (constraints,)
 
             for cons in constraints:
