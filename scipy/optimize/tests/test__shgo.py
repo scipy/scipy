@@ -27,7 +27,7 @@ class StructTestFunction:
 def wrap_constraints(g):
     cons = []
     if g is not None:
-        if (type(g) is not tuple) and (type(g) is not list):
+        if not isinstance(g, (tuple, list)):
             g = (g,)
         else:
             pass
