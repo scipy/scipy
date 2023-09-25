@@ -1,9 +1,8 @@
 """Hessian update strategies for quasi-Newton optimization methods."""
-from warnings import warn
-
 import numpy as np
 from numpy.linalg import norm
 from scipy.linalg import get_blas_funcs
+from warnings import warn
 
 __all__ = ['HessianUpdateStrategy', 'BFGS', 'SR1']
 
