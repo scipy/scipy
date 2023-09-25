@@ -10,13 +10,15 @@
 [build-system]
 build-backend = 'mesonpy'
 requires = [
-    "meson-python>=0.12.1,<0.14.0", # already working with 0.13.x series at branch time
-    "Cython>=0.29.35,<3.0",  # when updating version, also update check in meson.build
-    "pybind11>=2.10.4,<2.11.0",
-    "pythran>=0.12.0,<0.14.0", # already working with 0.13.x series at branch time
-    # `wheel` is needed for non-isolated builds, given that `meson-python`
-    # doesn't list it as a runtime requirement (at least in 0.5.0)
-    "wheel<0.41.0",
+    # Reason for `<`: future-proofing (0.14.0 released and known to work)
+    "meson-python>=0.12.1,<0.15.0",
+    # Reason for `<`: we want to build the 1.11.x releases with Cython 0.29.x
+    # (too many changes in 3.0)
+    "Cython>=0.29.35,<3.0",   # when updating version, also update check in meson.build
+    # Reason for `<`: future-proofing (2.11.1 is the most recent version)
+    "pybind11>=2.10.4,<2.11.1",
+    # Reason for `<`: future-proofing (0.14.0 released and known to work)
+    "pythran>=0.12.0,<0.15.0",
 
     # NumPy dependencies - to update these, sync from
     # https://github.com/scipy/oldest-supported-numpy/, and then
@@ -41,13 +43,14 @@ requires = [
     # (see oldest-supported-numpy issues gh-28 and gh-45)
     "numpy==1.21.6; python_version=='3.10' and (platform_system!='Windows' and platform_machine!='loongarch64') and platform_python_implementation != 'PyPy'",
     "numpy==1.23.2; python_version=='3.11' and platform_python_implementation != 'PyPy'",
+    "numpy>=1.26.0,<1.27.0; python_version=='3.12'",  # no `==` because we expect relevant bug fixes in 1.26.1/2
 
     # For Python versions which aren't yet officially supported,
     # we specify an unpinned NumPy which allows source distributions
     # to be used and allows wheels to be used as soon as they
     # become available.
     "numpy; python_version>='3.9' and platform_python_implementation=='PyPy'",
-    "numpy>=1.26.0,<1.27.0; python_version>='3.12.0.rc1'",
+    "numpy>=1.26.0; python_version>='3.13'",
 ]
 
 [project]
@@ -64,8 +67,6 @@ maintainers = [
 #     https://scipy.github.io/devdocs/dev/core-dev/index.html#version-ranges-for-numpy-and-other-dependencies
 requires-python = ">=3.9,<3.13"
 dependencies = [
-    # TODO: update to "pin-compatible" once possible, see
-    # https://github.com/FFY00/meson-python/issues/29
     "numpy>=1.21.6,<1.28.0",
 ]
 readme = "README.rst"
@@ -80,6 +81,7 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Software Development :: Libraries",
     "Topic :: Scientific/Engineering",
     "Operating System :: Microsoft :: Windows",
