@@ -17,7 +17,6 @@ import argparse
 import re
 import sys
 import os
-import io
 import subprocess
 import collections
 
@@ -149,7 +148,7 @@ This list of names is automatically generated, and may not be fully complete.
 def load_name_map(filename):
     name_map = {}
 
-    with io.open(filename, 'r', encoding='utf-8') as f:
+    with open(filename, 'r', encoding='utf-8') as f:
         for line in f:
             line = line.strip()
             if line.startswith(u"#") or not line:
