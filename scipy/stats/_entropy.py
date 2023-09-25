@@ -8,6 +8,7 @@ from __future__ import annotations
 import math
 import numpy as np
 from scipy import special
+from ._axis_nan_policy import _axis_nan_policy_factory
 
 __all__ = ['entropy', 'differential_entropy']
 
@@ -143,7 +144,9 @@ def entropy(pk: np.typing.ArrayLike,
         S /= np.log(base)
     return S
 
-
+@_axis_nan_policy_factory(
+    lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)
+)
 def differential_entropy(
     values: np.typing.ArrayLike,
     *,

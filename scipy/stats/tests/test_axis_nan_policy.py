@@ -62,7 +62,8 @@ axis_nan_policy_cases = [
     (_get_ttest_ci(stats.ttest_1samp), (0,), dict(), 1, 2, False, None),
     (_get_ttest_ci(stats.ttest_rel), tuple(), dict(), 2, 2, True, None),
     (_get_ttest_ci(stats.ttest_ind), tuple(), dict(), 2, 2, False, None),
-    (stats.mode, tuple(), dict(), 1, 2, True, lambda x: (x.mode, x.count))
+    (stats.mode, tuple(), dict(), 1, 2, True, lambda x: (x.mode, x.count)),
+    (stats.differential_entropy, tuple(), dict(), 1, 1, False, lambda x: (x,))
 ]
 
 # If the message is one of those expected, put nans in
@@ -82,7 +83,10 @@ too_small_messages = {"The input contains nan",  # for nan_policy="raise"
                       "zero-size array to reduction operation maximum",
                       "`x` and `y` must be of nonzero size.",
                       "The exact distribution of the Wilcoxon test",
-                      "Data input must not be empty"}
+                      "Data input must not be empty",
+                      "Window length (0) must be positive and less",
+                      "Window length (1) must be positive and less",
+                      "Window length (2) must be positive and less"}
 
 # If the message is one of these, results of the function may be inaccurate,
 # but NaNs are not to be placed
