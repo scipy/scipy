@@ -4,7 +4,6 @@ from numpy.linalg import norm
 from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_array_less,
                            assert_raises)
-from pytest import raises
 from scipy.optimize import (BFGS, SR1)
 
 
