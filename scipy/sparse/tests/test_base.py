@@ -4928,6 +4928,7 @@ def cases_64bit():
         'test_large_dimensions_reshape': 'test actually requires 64-bit to work',
         'test_constructor_smallcol': 'test verifies int32 indexes',
         'test_constructor_largecol': 'test verifies int64 indexes',
+        'test_tocoo_tocsr_tocsc_gh19245': 'test verifies int32 indexes',
     }
 
     for cls in TEST_CLASSES:
