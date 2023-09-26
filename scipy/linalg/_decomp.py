@@ -162,7 +162,7 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
         ``homogeneous_eigvals=True``.
     vl : (M, M) double or complex ndarray
         The normalized left eigenvector corresponding to the eigenvalue
-        ``w[i]`` is the column vl[:,i]. Only returned if ``left=True``.
+        ``w[i]`` is the column ``vl[:,i]``. Only returned if ``left=True``.
     vr : (M, M) double or complex ndarray
         The normalized right eigenvector corresponding to the eigenvalue
         ``w[i]`` is the column ``vr[:,i]``.  Only returned if ``right=True``.
@@ -353,10 +353,11 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
     Returns
     -------
     w : (N,) ndarray
-        The N (1<=N<=M) selected eigenvalues, in ascending order, each
+        The N (N<=M) selected eigenvalues, in ascending order, each
         repeated according to its multiplicity.
     v : (M, N) ndarray
-        (if ``eigvals_only == False``)
+        The normalized eigenvector corresponding to the eigenvalue ``w[i]`` is
+        the column ``v[:,i]``. Only returned if ``eigvals_only=False``.
 
     Raises
     ------
@@ -731,7 +732,7 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
         multiplicity.
     v : (M, M) float or complex ndarray
         The normalized eigenvector corresponding to the eigenvalue w[i] is
-        the column v[:,i].
+        the column v[:,i]. Only returned if ``eigvals_only=False``.
 
     Raises
     ------
@@ -979,7 +980,7 @@ def eigvalsh(a, b=None, *, lower=True, overwrite_a=False,
     Returns
     -------
     w : (N,) ndarray
-        The ``N`` (``1<=N<=M``) selected eigenvalues, in ascending order, each
+        The N (N<=M) selected eigenvalues, in ascending order, each
         repeated according to its multiplicity.
 
     Raises
@@ -1222,6 +1223,9 @@ def eigh_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
         The diagonal elements of the array.
     e : ndarray, shape (ndim-1,)
         The off-diagonal elements of the array.
+    eigvals_only : bool, optional
+        Compute only the eigenvalues and no eigenvectors.
+        (Default: calculate also eigenvectors)
     select : {'a', 'v', 'i'}, optional
         Which eigenvalues to calculate
 
@@ -1261,7 +1265,7 @@ def eigh_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
         multiplicity.
     v : (M, M) ndarray
         The normalized eigenvector corresponding to the eigenvalue ``w[i]`` is
-        the column ``v[:,i]``.
+        the column ``v[:,i]``. Only returned if ``eigvals_only=False``.
 
     Raises
     ------

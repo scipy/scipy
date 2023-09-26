@@ -103,50 +103,6 @@ irfft = functools.partial(c2r, False)
 irfft.__name__ = 'irfft'
 
 
-def fft2(x, s=None, axes=(-2,-1), norm=None, overwrite_x=False, workers=None,
-         *, plan=None):
-    """
-    2-D discrete Fourier transform.
-    """
-    if plan is not None:
-        raise NotImplementedError('Passing a precomputed plan is not yet '
-                                  'supported by scipy.fft functions')
-    return fftn(x, s, axes, norm, overwrite_x, workers)
-
-
-def ifft2(x, s=None, axes=(-2,-1), norm=None, overwrite_x=False, workers=None,
-          *, plan=None):
-    """
-    2-D discrete inverse Fourier transform of real or complex sequence.
-    """
-    if plan is not None:
-        raise NotImplementedError('Passing a precomputed plan is not yet '
-                                  'supported by scipy.fft functions')
-    return ifftn(x, s, axes, norm, overwrite_x, workers)
-
-
-def rfft2(x, s=None, axes=(-2,-1), norm=None, overwrite_x=False, workers=None,
-          *, plan=None):
-    """
-    2-D discrete Fourier transform of a real sequence
-    """
-    if plan is not None:
-        raise NotImplementedError('Passing a precomputed plan is not yet '
-                                  'supported by scipy.fft functions')
-    return rfftn(x, s, axes, norm, overwrite_x, workers)
-
-
-def irfft2(x, s=None, axes=(-2,-1), norm=None, overwrite_x=False, workers=None,
-           *, plan=None):
-    """
-    2-D discrete inverse Fourier transform of a real sequence
-    """
-    if plan is not None:
-        raise NotImplementedError('Passing a precomputed plan is not yet '
-                                  'supported by scipy.fft functions')
-    return irfftn(x, s, axes, norm, overwrite_x, workers)
-
-
 def hfft2(x, s=None, axes=(-2,-1), norm=None, overwrite_x=False, workers=None,
           *, plan=None):
     """
@@ -247,6 +203,7 @@ def c2rn(forward, x, s=None, axes=None, norm=None, overwrite_x=False,
     if len(axes) == 0:
         raise ValueError("at least 1 axis must be transformed")
 
+    shape = list(shape)
     if noshape:
         shape[-1] = (x.shape[axes[-1]] - 1) * 2
 
@@ -257,7 +214,7 @@ def c2rn(forward, x, s=None, axes=None, norm=None, overwrite_x=False,
     lastsize = shape[-1]
     shape[-1] = (shape[-1] // 2) + 1
 
-    tmp, _ = _fix_shape(tmp, shape, axes)
+    tmp, _ = tuple(_fix_shape(tmp, shape, axes))
 
     # Note: overwrite_x is not utilized
     return pfft.c2r(tmp, axes, lastsize, forward, norm, None, workers)

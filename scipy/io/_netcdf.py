@@ -215,6 +215,7 @@ class netcdf_file:
     to be copied to main memory:
 
     >>> data = time[:].copy()
+    >>> del time
     >>> f.close()
     >>> data.mean()
     4.5
@@ -934,7 +935,7 @@ class netcdf_variable:
             # of NumPy still supported by scipy contains the fix for #1622.
             raise RuntimeError("variable is not writeable")
 
-        self.data.itemset(value)
+        self.data[:] = value
 
     def typecode(self):
         """

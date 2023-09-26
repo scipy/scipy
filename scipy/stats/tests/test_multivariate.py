@@ -150,6 +150,15 @@ class TestCovariance:
         if hasattr(cov_object, "_colorize") and "singular" not in matrix_type:
             assert_close(cov_object.colorize(res), x)
 
+        # gh-19197 reported that multivariate normal `rvs` produced incorrect
+        # results when a singular Covariance object was produce using
+        # `from_eigenvalues`. This was due to an issue in `colorize` with
+        # singular covariance matrices. Check this edge case, which is skipped
+        # in the previous tests.
+        if hasattr(cov_object, "_colorize"):
+            res = cov_object.colorize(np.eye(len(A)))
+            assert_close(res.T @ res, A)
+
     @pytest.mark.parametrize("size", [None, tuple(), 1, (2, 4, 3)])
     @pytest.mark.parametrize("matrix_type", list(_matrices))
     @pytest.mark.parametrize("cov_type_name", _all_covariance_types)
@@ -243,6 +252,24 @@ class TestCovariance:
         res = rv.rvs(random_state=rng1)
         ref = multivariate_normal.rvs(mean, cov, random_state=rng2)
         assert_equal(res, ref)
+
+    def test_gh19197(self):
+        # gh-19197 reported that multivariate normal `rvs` produced incorrect
+        # results when a singular Covariance object was produce using
+        # `from_eigenvalues`. Check that this specific issue is resolved;
+        # a more general test is included in `test_covariance`.
+        mean = np.ones(2)
+        cov = Covariance.from_eigendecomposition((np.zeros(2), np.eye(2)))
+        dist = scipy.stats.multivariate_normal(mean=mean, cov=cov)
+        rvs = dist.rvs(size=None)
+        assert_equal(rvs, mean)
+
+        cov = scipy.stats.Covariance.from_eigendecomposition(
+            (np.array([1., 0.]), np.array([[1., 0.], [0., 400.]])))
+        dist = scipy.stats.multivariate_normal(mean=mean, cov=cov)
+        rvs = dist.rvs(size=None)
+        assert rvs[0] != mean[0]
+        assert rvs[1] == mean[1]
 
 
 def _random_covariance(dim, evals, rng, singular=False):
@@ -803,7 +830,7 @@ class TestMultivariateNormal:
         ref = multivariate_normal.pdf(x, [1, 1, 1], cov_object)
         assert_equal(multivariate_normal.pdf(x, 1, cov=cov_object), ref)
 
-    def test_fit_error(self):
+    def test_fit_wrong_fit_data_shape(self):
         data = [1, 3]
         error_msg = "`x` must be two-dimensional."
         with pytest.raises(ValueError, match=error_msg):
@@ -817,6 +844,95 @@ class TestMultivariateNormal:
         mean_ref, cov_ref = np.mean(x, axis=0), np.cov(x.T, ddof=0)
         assert_allclose(mean_est, mean_ref, atol=1e-15)
         assert_allclose(cov_est, cov_ref, rtol=1e-15)
+
+    def test_fit_both_parameters_fixed(self):
+        data = np.full((2, 1), 3)
+        mean_fixed = 1.
+        cov_fixed = np.atleast_2d(1.)
+        mean, cov = multivariate_normal.fit(data, fix_mean=mean_fixed,
+                                            fix_cov=cov_fixed)
+        assert_equal(mean, mean_fixed)
+        assert_equal(cov, cov_fixed)
+
+    @pytest.mark.parametrize('fix_mean', [np.zeros((2, 2)),
+                                          np.zeros((3, ))])
+    def test_fit_fix_mean_input_validation(self, fix_mean):
+        msg = ("`fix_mean` must be a one-dimensional array the same "
+                "length as the dimensionality of the vectors `x`.")
+        with pytest.raises(ValueError, match=msg):
+            multivariate_normal.fit(np.eye(2), fix_mean=fix_mean)
+
+    @pytest.mark.parametrize('fix_cov', [np.zeros((2, )),
+                                         np.zeros((3, 2)),
+                                         np.zeros((4, 4))])
+    def test_fit_fix_cov_input_validation_dimension(self, fix_cov):
+        msg = ("`fix_cov` must be a two-dimensional square array "
+                "of same side length as the dimensionality of the "
+                "vectors `x`.")
+        with pytest.raises(ValueError, match=msg):
+            multivariate_normal.fit(np.eye(3), fix_cov=fix_cov)
+    
+    def test_fit_fix_cov_not_positive_semidefinite(self):
+        error_msg = "`fix_cov` must be symmetric positive semidefinite."
+        with pytest.raises(ValueError, match=error_msg):
+            fix_cov = np.array([[1., 0.], [0., -1.]])
+            multivariate_normal.fit(np.eye(2), fix_cov=fix_cov)
+    
+    def test_fit_fix_mean(self):
+        rng = np.random.default_rng(4385269356937404)
+        loc = rng.random(3)
+        A = rng.random((3, 3))
+        cov = np.dot(A, A.T)
+        samples = multivariate_normal.rvs(mean=loc, cov=cov, size=100,
+                                          random_state=rng)
+        mean_free, cov_free = multivariate_normal.fit(samples)
+        logp_free = multivariate_normal.logpdf(samples, mean=mean_free,
+                                               cov=cov_free).sum()
+        mean_fix, cov_fix = multivariate_normal.fit(samples, fix_mean=loc)
+        assert_equal(mean_fix, loc)
+        logp_fix = multivariate_normal.logpdf(samples, mean=mean_fix,
+                                              cov=cov_fix).sum()
+        # test that fixed parameters result in lower likelihood than free
+        # parameters
+        assert logp_fix < logp_free
+        # test that a small perturbation of the resulting parameters
+        # has lower likelihood than the estimated parameters
+        A = rng.random((3, 3))
+        m = 1e-8 * np.dot(A, A.T)
+        cov_perturbed = cov_fix + m
+        logp_perturbed = (multivariate_normal.logpdf(samples,
+                                                     mean=mean_fix,
+                                                     cov=cov_perturbed)
+                                                     ).sum()
+        assert logp_perturbed < logp_fix
+
+
+    def test_fit_fix_cov(self):
+        rng = np.random.default_rng(4385269356937404)
+        loc = rng.random(3)
+        A = rng.random((3, 3))
+        cov = np.dot(A, A.T)
+        samples = multivariate_normal.rvs(mean=loc, cov=cov,
+                                          size=100, random_state=rng)
+        mean_free, cov_free = multivariate_normal.fit(samples)
+        logp_free = multivariate_normal.logpdf(samples, mean=mean_free,
+                                               cov=cov_free).sum()
+        mean_fix, cov_fix = multivariate_normal.fit(samples, fix_cov=cov)
+        assert_equal(mean_fix, np.mean(samples, axis=0))
+        assert_equal(cov_fix, cov)
+        logp_fix = multivariate_normal.logpdf(samples, mean=mean_fix,
+                                              cov=cov_fix).sum()
+        # test that fixed parameters result in lower likelihood than free
+        # parameters
+        assert logp_fix < logp_free
+        # test that a small perturbation of the resulting parameters
+        # has lower likelihood than the estimated parameters
+        mean_perturbed = mean_fix + 1e-8 * rng.random(3)
+        logp_perturbed = (multivariate_normal.logpdf(samples,
+                                                     mean=mean_perturbed,
+                                                     cov=cov_fix)
+                                                     ).sum()
+        assert logp_perturbed < logp_fix
 
 
 class TestMatrixNormal:
@@ -2880,7 +2996,7 @@ class TestMultivariateHypergeom:
         assert_equal(cov3, cov4)
 
         cov5 = multivariate_hypergeom.cov(m=np.array([], np.int_), n=0)
-        cov6 = np.array([], dtype=np.float_).reshape(0, 0)
+        cov6 = np.array([], dtype=np.float64).reshape(0, 0)
         assert_allclose(cov5, cov6, rtol=1e-17)
         assert_(cov5.shape == (0, 0))
 

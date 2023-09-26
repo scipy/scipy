@@ -54,6 +54,8 @@ def main():
     # Find source files
     files = []
     for dirpath, dirnames, filenames in os.walk(inp):
+        dirnames.sort()
+        filenames.sort()
         for fn in filenames:
             if fn.endswith('.txt'):
                 key = dirpath[len(inp)+1:] + '-' + fn[:-4]

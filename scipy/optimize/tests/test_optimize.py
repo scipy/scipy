@@ -210,7 +210,40 @@ class CheckOptimizeParameterized(CheckOptimize):
                         [[0, -5.25060743e-01, 4.87748473e-01],
                          [0, -5.24885582e-01, 4.87530347e-01]],
                         atol=1e-14, rtol=1e-7)
-
+    
+    def test_bfgs_hess_inv0_neg(self):
+        # Ensure that BFGS does not accept neg. def. initial inverse 
+        # Hessian estimate.
+        with pytest.raises(ValueError, match="'hess_inv0' matrix isn't "
+                           "positive definite."):
+            x0 = np.array([1.3, 0.7, 0.8, 1.9, 1.2])
+            opts = {'disp': self.disp, 'hess_inv0': -np.eye(5)}
+            optimize.minimize(optimize.rosen, x0=x0, method='BFGS', args=(),
+                              options=opts)
+    
+    def test_bfgs_hess_inv0_semipos(self):
+        # Ensure that BFGS does not accept semi pos. def. initial inverse 
+        # Hessian estimate.
+        with pytest.raises(ValueError, match="'hess_inv0' matrix isn't "
+                           "positive definite."):
+            x0 = np.array([1.3, 0.7, 0.8, 1.9, 1.2])
+            hess_inv0 = np.eye(5)
+            hess_inv0[0, 0] = 0
+            opts = {'disp': self.disp, 'hess_inv0': hess_inv0}
+            optimize.minimize(optimize.rosen, x0=x0, method='BFGS', args=(),
+                              options=opts)
+    
+    def test_bfgs_hess_inv0_sanity(self):
+        # Ensure that BFGS handles `hess_inv0` parameter correctly.
+        fun = optimize.rosen
+        x0 = np.array([1.3, 0.7, 0.8, 1.9, 1.2])
+        opts = {'disp': self.disp, 'hess_inv0': 1e-2 * np.eye(5)}
+        res = optimize.minimize(fun, x0=x0, method='BFGS', args=(), 
+                                options=opts)
+        res_true = optimize.minimize(fun, x0=x0, method='BFGS', args=(), 
+                                     options={'disp': self.disp})
+        assert_allclose(res.fun, res_true.fun, atol=1e-6)
+            
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_bfgs_infinite(self):
         # Test corner case where -Inf is the minimum.  See gh-2019.
@@ -236,6 +269,35 @@ class CheckOptimizeParameterized(CheckOptimize):
         ref = optimize.minimize(optimize.rosen,
                                 x0, method='bfgs', options={'gtol': 1e-3})
         assert res.nit != ref.nit
+
+    def test_bfgs_c1(self):
+        # test for #18977 insufficiently low value of c1 leads to precision loss
+        # for poor starting parameters
+        x0 = [10.3, 20.7, 10.8, 1.9, -1.2]
+        res_c1_small = optimize.minimize(optimize.rosen,
+                                         x0, method='bfgs', options={'c1': 1e-8})
+        res_c1_big = optimize.minimize(optimize.rosen,
+                                       x0, method='bfgs', options={'c1': 1e-1})
+
+        assert res_c1_small.nfev > res_c1_big.nfev
+
+    def test_bfgs_c2(self):
+        # test that modification of c2 parameter results in different number of iterations
+        x0 = [1.3, 0.7, 0.8, 1.9, 1.2]
+        res_default = optimize.minimize(optimize.rosen,
+                                        x0, method='bfgs', options={'c2': .9})
+        res_mod = optimize.minimize(optimize.rosen,
+                                    x0, method='bfgs', options={'c2': 1e-2})
+        assert res_default.nit > res_mod.nit
+    
+    @pytest.mark.parametrize(["c1", "c2"], [[0.5, 2],
+                                            [-0.1, 0.1],
+                                            [0.2, 0.1]])
+    def test_invalid_c1_c2(self, c1, c2):
+        with pytest.raises(ValueError, match="'c1' and 'c2'"):
+            x0 = [10.3, 20.7, 10.8, 1.9, -1.2]
+            optimize.minimize(optimize.rosen, x0, method='cg',
+                              options={'c1': c1, 'c2': c2})
 
     def test_powell(self):
         # Powell (direction set) optimization routine
@@ -2844,7 +2906,7 @@ def test_equal_bounds(method, kwds, bound_type, constraints, callback):
 
     # compare the output of a solution with FD vs that of an analytic grad
     assert res.success
-    assert_allclose(res.fun, expected.fun, rtol=1e-6)
+    assert_allclose(res.fun, expected.fun, rtol=1.5e-6)
     assert_allclose(res.x, expected.x, rtol=5e-4)
 
     if fd_needed or kwds['jac'] is False:

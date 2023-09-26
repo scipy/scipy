@@ -119,12 +119,32 @@ def trapezoid(y, x=None, dx=1.0, axis=-1):
     >>> integrate.trapezoid(a, axis=1)
     array([2.,  8.])
     """
-    # Future-proofing, in case NumPy moves from trapz to trapezoid for the same
-    # reasons as SciPy
-    if hasattr(np, 'trapezoid'):
-        return np.trapezoid(y, x=x, dx=dx, axis=axis)
+    y = np.asanyarray(y)
+    if x is None:
+        d = dx
     else:
-        return np.trapz(y, x=x, dx=dx, axis=axis)
+        x = np.asanyarray(x)
+        if x.ndim == 1:
+            d = np.diff(x)
+            # reshape to correct shape
+            shape = [1]*y.ndim
+            shape[axis] = d.shape[0]
+            d = d.reshape(shape)
+        else:
+            d = np.diff(x, axis=axis)
+    nd = y.ndim
+    slice1 = [slice(None)]*nd
+    slice2 = [slice(None)]*nd
+    slice1[axis] = slice(1, None)
+    slice2[axis] = slice(None, -1)
+    try:
+        ret = (d * (y[tuple(slice1)] + y[tuple(slice2)]) / 2.0).sum(axis)
+    except ValueError:
+        # Operations didn't work, cast to ndarray
+        d = np.asarray(d)
+        y = np.asarray(y)
+        ret = np.add.reduce(d * (y[tuple(slice1)]+y[tuple(slice2)])/2.0, axis)
+    return ret
 
 
 # Note: alias kept for backwards compatibility. Rename was done
@@ -521,8 +541,8 @@ def _basic_simpson(y, start, stop, x, dx, axis):
         h = np.diff(x, axis=axis)
         sl0 = tupleset(slice_all, axis, slice(start, stop, step))
         sl1 = tupleset(slice_all, axis, slice(start+1, stop+1, step))
-        h0 = np.float64(h[sl0])
-        h1 = np.float64(h[sl1])
+        h0 = h[sl0].astype(float, copy=False)
+        h1 = h[sl1].astype(float, copy=False)
         hsum = h0 + h1
         hprod = h0 * h1
         h0divh1 = np.true_divide(h0, h1, out=np.zeros_like(h0), where=h1 != 0)
@@ -723,7 +743,7 @@ def simpson(y, *, x=None, dx=1.0, axis=-1, even=_NoValue):
             slice2 = tupleset(slice_all, axis, -2)
             slice3 = tupleset(slice_all, axis, -3)
 
-            h = np.asfarray([dx, dx])
+            h = np.asarray([dx, dx], dtype=np.float64)
             if x is not None:
                 # grab the last two spacings from the appropriate axis
                 hm2 = tupleset(slice_all, axis, slice(-2, -1, 1))

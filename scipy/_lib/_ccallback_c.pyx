@@ -5,6 +5,7 @@ from cpython.pycapsule cimport (
 from cpython.long cimport PyLong_AsVoidPtr
 from libc.stdlib cimport free
 from libc.string cimport strdup
+from libc.math cimport sin
 
 from .ccallback cimport (ccallback_t, ccallback_prepare, ccallback_release, CCALLBACK_DEFAULTS,
                          ccallback_signature_t)
@@ -102,14 +103,6 @@ def check_capsule(item):
     return False
 
 
-#
-# Test code for src/ccallback.h
-#
-
-DEF ERROR_VALUE = 2
-
-from libc.math cimport sin
-
 sigs = [
     (b"double (double, int *, void *)", 0),
     (b"double (double, double, int *, void *)", 1)
@@ -185,7 +178,8 @@ cdef double plus1_cython(double a, int *error_flag, void *user_data) except * no
     """
     Implementation of a callable in Cython
     """
-    if a == ERROR_VALUE:
+    # 2.0 is ERROR_VALUE in the test code (src/_test_callback.c)
+    if a == 2.0:
         error_flag[0] = 1
         with gil:
             raise ValueError("failure...")

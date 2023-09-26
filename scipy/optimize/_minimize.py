@@ -753,7 +753,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
 def minimize_scalar(fun, bracket=None, bounds=None, args=(),
                     method=None, tol=None, options=None):
-    """Minimization of scalar function of one variable.
+    """Local minimization of scalar function of one variable.
 
     Parameters
     ----------
@@ -832,6 +832,12 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     Method :ref:`Bounded <optimize.minimize_scalar-bounded>` can
     perform bounded minimization [2]_ [3]_. It uses the Brent method to find a
     local minimum in the interval x1 < xopt < x2.
+
+    Note that the Brent and Golden methods do not guarantee success unless a
+    valid ``bracket`` triple is provided. If a three-point bracket cannot be
+    found, consider `scipy.optimize.minimize`. Also, all methods are intended
+    only for local minimization. When the function of interest has more than
+    one local minimum, consider :ref:`global_optimization`.
 
     **Custom minimizers**
 

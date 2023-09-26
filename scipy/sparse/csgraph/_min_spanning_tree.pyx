@@ -54,6 +54,9 @@ def minimum_spanning_tree(csgraph, overwrite=False):
     forest, i.e. the union of the minimum spanning trees on each connected
     component.
 
+    If multiple valid solutions are possible, output may vary with SciPy and
+    Python version.
+
     Examples
     --------
     The following example shows the computation of a minimum spanning tree

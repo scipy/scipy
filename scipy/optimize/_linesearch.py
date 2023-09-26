@@ -13,7 +13,8 @@ Functions
 """
 from warnings import warn
 
-from scipy.optimize import _minpack2 as minpack2
+from scipy.optimize import _minpack2 as minpack2    # noqa: F401
+from ._dcsrch import DCSRCH
 import numpy as np
 
 __all__ = ['LineSearchWarning', 'line_search_wolfe1', 'line_search_wolfe2',
@@ -22,6 +23,12 @@ __all__ = ['LineSearchWarning', 'line_search_wolfe1', 'line_search_wolfe2',
 
 class LineSearchWarning(RuntimeWarning):
     pass
+
+
+def _check_c1_c2(c1, c2):
+    if not (0 < c1 < c2 < 1):
+        raise ValueError("'c1' and 'c2' do not satisfy"
+                         "'0 < c1 < c2 < 1'.")
 
 
 #------------------------------------------------------------------------------
@@ -45,7 +52,6 @@ def line_search_wolfe1(f, fprime, xk, pk, gfk=None,
         Current point
     pk : array_like
         Search direction
-
     gfk : array_like, optional
         Gradient of `f` at point `xk`
     old_fval : float, optional
@@ -61,6 +67,10 @@ def line_search_wolfe1(f, fprime, xk, pk, gfk=None,
         As in `line_search_wolfe1`
     gval : array
         Gradient of `f` at the final point
+
+    Notes
+    -----
+    Parameters `c1` and `c2` must satisfy ``0 < c1 < c2 < 1``.
 
     """
     if gfk is None:
@@ -129,8 +139,19 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
     Notes
     -----
     Uses routine DCSRCH from MINPACK.
+    
+    Parameters `c1` and `c2` must satisfy ``0 < c1 < c2 < 1`` as described in [1]_.
+
+    References
+    ----------
+    
+    .. [1] Nocedal, J., & Wright, S. J. (2006). Numerical optimization.
+       In Springer Series in Operations Research and Financial Engineering.
+       (Springer Series in Operations Research and Financial Engineering).
+       Springer Nature.
 
     """
+    _check_c1_c2(c1, c2)
 
     if phi0 is None:
         phi0 = phi(0.)
@@ -144,29 +165,12 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
     else:
         alpha1 = 1.0
 
-    phi1 = phi0
-    derphi1 = derphi0
-    isave = np.zeros((2,), np.intc)
-    dsave = np.zeros((13,), float)
-    task = b'START'
-
     maxiter = 100
-    for i in range(maxiter):
-        stp, phi1, derphi1, task = minpack2.dcsrch(alpha1, phi1, derphi1,
-                                                   c1, c2, xtol, task,
-                                                   amin, amax, isave, dsave)
-        if task[:2] == b'FG':
-            alpha1 = stp
-            phi1 = phi(stp)
-            derphi1 = derphi(stp)
-        else:
-            break
-    else:
-        # maxiter reached, the line search did not converge
-        stp = None
 
-    if task[:5] == b'ERROR' or task[:4] == b'WARN':
-        stp = None  # failed
+    dcsrch = DCSRCH(phi, derphi, c1, c2, xtol, amin, amax)
+    stp, phi1, phi0, task = dcsrch(
+        alpha1, phi0=phi0, derphi0=derphi0, maxiter=maxiter
+    )
 
     return stp, phi1, phi0
 
@@ -378,6 +382,7 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
     1999, pp. 59-61.
 
     """
+    _check_c1_c2(c1, c2)
 
     if phi0 is None:
         phi0 = phi(0.)

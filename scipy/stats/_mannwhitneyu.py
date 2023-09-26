@@ -319,7 +319,7 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     -----
     If ``U1`` is the statistic corresponding with sample `x`, then the
     statistic corresponding with sample `y` is
-    `U2 = `x.shape[axis] * y.shape[axis] - U1``.
+    ``U2 = x.shape[axis] * y.shape[axis] - U1``.
 
     `mannwhitneyu` is for independent samples. For related / paired samples,
     consider `scipy.stats.wilcoxon`.

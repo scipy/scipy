@@ -348,7 +348,7 @@ def page_trend_test(data, ranked=False, predicted_ranks=None, method='auto'):
                              f"from 1 to {n} (the number of columns in "
                              f"`data`) exactly once.")
 
-    if type(ranked) is not bool:
+    if not isinstance(ranked, bool):
         raise TypeError("`ranked` must be boolean.")
 
     # Calculate the L statistic

@@ -7,7 +7,7 @@ from scipy._lib.deprecation import _sub_module_deprecation
 
 __all__ = [  # noqa: F822
     'expm', 'inv', 'solve', 'solve_triangular',
-    'isspmatrix', 'spsolve', 'is_pydata_spmatrix', 'LinearOperator',
+    'spsolve', 'is_pydata_spmatrix', 'LinearOperator',
     'UPPER_TRIANGULAR', 'MatrixPowerOperator', 'ProductOperator'
 ]
 

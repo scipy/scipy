@@ -33,7 +33,6 @@ from collections import namedtuple
 
 import numpy as np
 from numpy import array, asarray, ma
-from numpy.lib import NumpyVersion
 from numpy.testing import suppress_warnings
 
 from scipy import sparse
@@ -3147,10 +3146,13 @@ def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
     else:
         mn = a.mean(axis=axis, keepdims=True)
         std = a.std(axis=axis, ddof=ddof, keepdims=True)
-        if axis is None:
-            isconst = (a.item(0) == a).all()
-        else:
-            isconst = (_first(a, axis) == a).all(axis=axis, keepdims=True)
+        # The intent is to check whether all elements of `a` along `axis` are
+        # identical. Due to finite precision arithmetic, comparing elements
+        # against `mn` doesn't work. Previously, this compared elements to
+        # `_first`, but that extracts the element at index 0 regardless of
+        # whether it is masked. As a simple fix, compare against `min`.
+        a0 = a.min(axis=axis, keepdims=True)
+        isconst = (a == a0).all(axis=axis, keepdims=True)
 
     # Set std deviations that are 0 to 1 to avoid division by 0.
     std[isconst] = 1.0
@@ -3450,12 +3452,8 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
         raise ValueError("range must not contain NaNs")
 
     rng = sorted(rng)
-    if NumpyVersion(np.__version__) >= '1.22.0':
-        pct = percentile_func(x, rng, axis=axis, method=interpolation,
-                              keepdims=keepdims)
-    else:
-        pct = percentile_func(x, rng, axis=axis, interpolation=interpolation,
-                              keepdims=keepdims)
+    pct = percentile_func(x, rng, axis=axis, method=interpolation,
+                          keepdims=keepdims)
     out = np.subtract(pct[1], pct[0])
 
     if scale != 1.0:
@@ -5429,7 +5427,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
         if axisout == 0:
             a = np.column_stack((a, b))
         else:
-            a = np.row_stack((a, b))
+            a = np.vstack((a, b))
 
     n_vars = a.shape[1 - axisout]
     n_obs = a.shape[axisout]
@@ -8742,7 +8740,7 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
     References
     ----------
     .. [1] Hodges, J.L. Jr.,  "The Significance Probability of the Smirnov
-           Two-Sample Test," Arkiv fiur Matematik, 3, No. 43 (1958), 469-86.
+           Two-Sample Test," Arkiv fiur Matematik, 3, No. 43 (1958), 469-486.
 
     Examples
     --------
@@ -9625,6 +9623,24 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
             The statistic calculated by the specified method.
         pvalue : float
             The combined p-value.
+
+    Examples
+    --------
+    Suppose we wish to combine p-values from four independent tests
+    of the same null hypothesis using Fisher's method (default).
+
+    >>> from scipy.stats import combine_pvalues
+    >>> pvalues = [0.1, 0.05, 0.02, 0.3]
+    >>> combine_pvalues(pvalues)
+    SignificanceResult(statistic=20.828626352604235, pvalue=0.007616871850449092)
+
+    When the individual p-values carry different weights, consider Stouffer's
+    method.
+
+    >>> weights = [1, 2, 3, 4]
+    >>> res = combine_pvalues(pvalues, method='stouffer', weights=weights)
+    >>> res.pvalue
+    0.009578891494533616
 
     Notes
     -----

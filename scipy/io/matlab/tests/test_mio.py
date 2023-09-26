@@ -288,7 +288,7 @@ def _check_level(label, expected, actual):
                          expected[fn], actual[fn])
         return
     if ex_dtype.type in (str,  # string or bool
-                         np.unicode_,
+                         np.str_,
                          np.bool_):
         assert_equal(actual, expected, err_msg=label)
         return
@@ -919,9 +919,11 @@ def test_write_opposite_endian():
     int_arr = np.arange(6).reshape((2, 3))
     uni_arr = np.array(['hello', 'world'], dtype='U')
     stream = BytesIO()
-    savemat(stream, {'floats': float_arr.byteswap().newbyteorder(),
-                            'ints': int_arr.byteswap().newbyteorder(),
-                            'uni_arr': uni_arr.byteswap().newbyteorder()})
+    savemat(stream, {
+        'floats': float_arr.byteswap().view(float_arr.dtype.newbyteorder()),
+        'ints': int_arr.byteswap().view(int_arr.dtype.newbyteorder()),
+        'uni_arr': uni_arr.byteswap().view(uni_arr.dtype.newbyteorder()),
+    })
     rdr = MatFile5Reader(stream)
     d = rdr.get_variables()
     assert_array_equal(d['floats'], float_arr)

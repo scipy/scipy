@@ -171,8 +171,7 @@ static double Z2 = 4.92184563216946036703E1;
 
 extern double THPIO4, SQ2OPI;
 
-double j1(x)
-double x;
+double j1(double x)
 {
     double w, z, p, q, xn;
 
@@ -197,8 +196,7 @@ double x;
 }
 
 
-double y1(x)
-double x;
+double y1(double x)
 {
     double w, z, p, q, xn;
 

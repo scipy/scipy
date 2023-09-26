@@ -3,7 +3,7 @@
 import warnings
 from . import _add_newdocs
 
-__all__ = ['get', 'add_newdoc', 'Dict', 'docdict']  # noqa: F822
+__all__ = ['get', 'add_newdoc', 'docdict']  # noqa: F822
 
 
 def __dir__():

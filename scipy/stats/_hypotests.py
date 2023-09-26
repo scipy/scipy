@@ -604,10 +604,10 @@ def _get_wilcoxon_distr(n):
     Returns an array with the probabilities of all the possible ranks
     r = 0, ..., n*(n+1)/2
     """
-    c = np.ones(1, dtype=np.double)
+    c = np.ones(1, dtype=np.float64)
     for k in range(1, n + 1):
         prev_c = c
-        c = np.zeros(k * (k + 1) // 2 + 1, dtype=np.double)
+        c = np.zeros(k * (k + 1) // 2 + 1, dtype=np.float64)
         m = len(prev_c)
         c[:m] = prev_c * 0.5
         c[-m:] += prev_c * 0.5
@@ -1528,7 +1528,8 @@ def _pval_cvm_2samp_exact(s, m, n):
                 np.delete(tmp, i0, 1),
                 np.delete(g, i1, 1)
             ], 1)
-            tmp[0] += (a * v - b * u) ** 2
+            res = (a * v - b * u) ** 2
+            tmp[0] += res.astype(dtype)
             next_gs.append(tmp)
         gs = next_gs
     value, freq = gs[m]

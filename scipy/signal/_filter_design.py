@@ -445,12 +445,12 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
         lastpoint = 2 * pi if whole else pi
         # if include_nyquist is true and whole is false, w should
         # include end point
-        w = np.linspace(0, lastpoint, N, endpoint=include_nyquist and not whole)
-        if (a.size == 1 and N >= b.shape[0] and
-                sp_fft.next_fast_len(N) == N and
-                (b.ndim == 1 or (b.shape[-1] == 1))):
-            # if N is fast, 2 * N will be fast, too, so no need to check
-            n_fft = N if whole else N * 2
+        w = np.linspace(0, lastpoint, N,
+                        endpoint=include_nyquist and not whole)
+        n_fft = N if whole else 2 * (N - 1) if include_nyquist else 2 * N
+        if (a.size == 1 and (b.ndim == 1 or (b.shape[-1] == 1))
+                and n_fft >= b.shape[0]
+                and n_fft > 0):  # TODO: review threshold acc. to benchmark?
             if np.isrealobj(b) and np.isrealobj(a):
                 fft_func = sp_fft.rfft
             else:
@@ -891,6 +891,7 @@ def _cplxreal(z, tol=None):
 
     Examples
     --------
+    >>> from scipy.signal._filter_design import _cplxreal
     >>> a = [4, 3, 1, 2-2j, 2+2j, 2-1j, 2+1j, 2-1j, 2+1j, 1+1j, 1-1j]
     >>> zc, zr = _cplxreal(a)
     >>> print(zc)
@@ -998,6 +999,7 @@ def _cplxpair(z, tol=None):
 
     Examples
     --------
+    >>> from scipy.signal._filter_design import _cplxpair
     >>> a = [4, 3, 1, 2-2j, 2+2j, 2-1j, 2+1j, 2-1j, 2+1j, 1+1j, 1-1j]
     >>> z = _cplxpair(a)
     >>> print(z)
@@ -1081,6 +1083,20 @@ def tf2zpk(b, a):
     transfer function coefficients must first be converted to the "positive
     powers" form before finding the poles and zeros.
 
+    Examples
+    --------
+    Find the zeroes, poles and gain of 
+    a filter with the transfer function
+
+    .. math::
+    
+        H(s) = \frac{3s^2}{s^2 + 5s + 13}
+        
+    >>> from scipy.signal import tf2zpk
+    >>> tf2zpk([3, 0, 0], [1, 5, 13])
+    (   array([ 0.               ,  0.              ]), 
+        array([ -2.5+2.59807621j ,  -2.5-2.59807621j]), 
+        3.0)
     """
     b, a = normalize(b, a)
     b = (b + 0.0) / a[0]
@@ -1093,7 +1109,7 @@ def tf2zpk(b, a):
 
 
 def zpk2tf(z, p, k):
-    """
+    r"""
     Return polynomial transfer function representation from zeros and poles
 
     Parameters
@@ -1112,6 +1128,23 @@ def zpk2tf(z, p, k):
     a : ndarray
         Denominator polynomial coefficients.
 
+    Examples
+    --------
+    Find the polynomial representation of a transfer function H(s)
+    using its 'zpk' (Zero-Pole-Gain) representation.
+    
+    .. math::
+            
+        H(z) = 5 \frac
+        { (s - 2)(s - 6) }
+        { (s - 1)(s - 8) }
+
+    >>> from scipy.signal import zpk2tf
+    >>> z   = [2,   6]
+    >>> p   = [1,   8]
+    >>> k   = 5
+    >>> zpk2tf(z, p, k)
+    (   array([  5., -40.,  60.]), array([ 1., -9.,  8.]))
     """
     z = atleast_1d(z)
     k = atleast_1d(k)
@@ -1152,7 +1185,7 @@ def zpk2tf(z, p, k):
 
 
 def tf2sos(b, a, pairing=None, *, analog=False):
-    """
+    r"""
     Return second-order sections from transfer function representation
 
     Parameters
@@ -1190,12 +1223,26 @@ def tf2sos(b, a, pairing=None, *, analog=False):
     ZPK to SOS.
 
     .. versionadded:: 0.16.0
+
+    Examples
+    --------
+    Find the 'sos' (second-order sections) of the transfer function H(s)
+    using its polynomial representation.
+    
+    .. math::
+    
+        H(s) = \frac{s^2 - 3.5s - 2}{s^4 + 3s^3 - 15s^2 - 19s + 30}
+        
+    >>> from scipy.signal import tf2sos
+    >>> tf2sos([1, -3.5, -2], [1, 3, -15, -19, 30], analog=True)
+    array([[  0. ,   0. ,   1. ,   1. ,   2. , -15. ],
+           [  1. ,  -3.5,  -2. ,   1. ,   1. ,  -2. ]])
     """
     return zpk2sos(*tf2zpk(b, a), pairing=pairing, analog=analog)
 
 
 def sos2tf(sos):
-    """
+    r"""
     Return a single transfer function from a series of second-order sections
 
     Parameters
@@ -1215,6 +1262,18 @@ def sos2tf(sos):
     Notes
     -----
     .. versionadded:: 0.16.0
+
+    Examples
+    --------
+    Find the polynomial representation of an elliptic filter 
+    using its 'sos' (second-order sections) format.
+   
+    >>> from scipy.signal import sos2tf
+    >>> from scipy import signal
+    >>> sos = signal.ellip(1, 0.001, 50, 0.1, output='sos')
+    >>> sos2tf(sos)
+    (   array([0.91256522, 0.91256522, 0.        ]),
+        array([1.        , 0.82513043, 0.        ]))
     """
     sos = np.asarray(sos)
     result_type = sos.dtype
@@ -2732,6 +2791,18 @@ def lp2lp_zpk(z, p, k, wo=1.0):
 
     .. versionadded:: 1.1.0
 
+    Examples
+    --------
+    Use the 'zpk' (Zero-Pole-Gain) representation of a lowpass filter to 
+    transform it to a new 'zpk' representation associated with a cutoff frequency wo.
+
+    >>> from scipy.signal import lp2lp_zpk
+    >>> z   = [7,   2]
+    >>> p   = [5,   13]
+    >>> k   = 0.8
+    >>> wo  = 0.4
+    >>> lp2lp_zpk(z, p, k, wo)
+    (   array([2.8, 0.8]), array([2. , 5.2]), 0.8)
     """
     z = atleast_1d(z)
     p = atleast_1d(p)
@@ -2794,7 +2865,21 @@ def lp2hp_zpk(z, p, k, wo=1.0):
     logarithmic scale.
 
     .. versionadded:: 1.1.0
-
+    
+    Examples
+    --------
+    Use the 'zpk' (Zero-Pole-Gain) representation of a lowpass filter to 
+    transform it to a highpass filter with a cutoff frequency wo.
+    
+    >>> from scipy.signal import lp2hp_zpk
+    >>> z   = [ -2 + 3j ,  -0.5 - 0.8j ]
+    >>> p   = [ -1      ,  -4          ]
+    >>> k   = 10
+    >>> wo  = 0.6
+    >>> lp2hp_zpk(z, p, k, wo)
+    (   array([-0.09230769-0.13846154j, -0.33707865+0.53932584j]),
+        array([-0.6 , -0.15]),
+        8.5)
     """
     z = atleast_1d(z)
     p = atleast_1d(p)
@@ -2863,7 +2948,24 @@ def lp2bp_zpk(z, p, k, wo=1.0, bw=1.0):
     geometric (log frequency) symmetry about `wo`.
 
     .. versionadded:: 1.1.0
-
+    
+    Examples
+    --------
+    Use the 'zpk' (Zero-Pole-Gain) representation of a lowpass filter to 
+    transform it to a bandpass filter with a center frequency wo and
+    bandwidth bw.
+    
+    >>> from scipy.signal import lp2bp_zpk
+    >>> z   = [ 5 + 2j ,  5 - 2j ]
+    >>> p   = [ 7      ,  -16    ]
+    >>> k   = 0.8
+    >>> wo  = 0.62
+    >>> bw  = 15
+    >>> lp2bp_zpk(z, p, k, wo, bw)
+    (   array([7.49955815e+01+3.00017676e+01j, 7.49955815e+01-3.00017676e+01j,
+               4.41850748e-03-1.76761126e-03j, 4.41850748e-03+1.76761126e-03j]), 
+        array([1.04996339e+02+0.j, -1.60167736e-03+0.j,  3.66108003e-03+0.j,
+               -2.39998398e+02+0.j]), 0.8)
     """
     z = atleast_1d(z)
     p = atleast_1d(p)
@@ -2943,6 +3045,22 @@ def lp2bs_zpk(z, p, k, wo=1.0, bw=1.0):
 
     .. versionadded:: 1.1.0
 
+    Examples
+    --------
+    Transform a low-pass filter represented in 'zpk' (Zero-Pole-Gain) form 
+    into a bandstop filter represented in 'zpk' form, with a center frequency wo and
+    bandwidth bw.
+    
+    >>> from scipy.signal import lp2bs_zpk
+    >>> z   = [             ]
+    >>> p   = [ 0.7 ,    -1 ]
+    >>> k   = 9
+    >>> wo  = 0.5
+    >>> bw  = 10
+    >>> lp2bs_zpk(z, p, k, wo, bw)
+    (   array([0.+0.5j, 0.+0.5j, 0.-0.5j, 0.-0.5j]), 
+        array([14.2681928 +0.j, -0.02506281+0.j,  0.01752149+0.j, -9.97493719+0.j]), 
+        -12.857142857142858)
     """
     z = atleast_1d(z)
     p = atleast_1d(p)
@@ -4537,6 +4655,7 @@ def _bessel_poly(n, reverse=False):
     Sequence is http://oeis.org/A001498, and output can be confirmed to
     match http://oeis.org/A001498/b001498.txt :
 
+    >>> from scipy.signal._filter_design import _bessel_poly
     >>> i = 0
     >>> for n in range(51):
     ...     for x in _bessel_poly(n, reverse=True):

@@ -108,7 +108,7 @@ def argstoarray(*args):
 
     Notes
     -----
-    `numpy.ma.row_stack` has identical behavior, but is called with a sequence
+    `numpy.ma.vstack` has identical behavior, but is called with a sequence
     of sequences.
 
     Examples
@@ -407,11 +407,11 @@ def pearsonr(x, y):
 
     Warns
     -----
-    PearsonRConstantInputWarning
+    `~scipy.stats.ConstantInputWarning`
         Raised if an input is a constant array.  The correlation coefficient
         is not defined in this case, so ``np.nan`` is returned.
 
-    PearsonRNearConstantInputWarning
+    `~scipy.stats.NearConstantInputWarning`
         Raised if an input is "nearly" constant.  The array ``x`` is considered
         nearly constant if ``norm(x - mean(x)) < 1e-13 * abs(mean(x))``.
         Numerical errors in the calculation ``x - mean(x)`` in this case might
@@ -635,7 +635,7 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate',
         if axisout == 0:
             x = ma.column_stack((x, y))
         else:
-            x = ma.row_stack((x, y))
+            x = ma.vstack((x, y))
 
     if axisout == 1:
         # To simplify the code that follow (always use `n_obs, n_vars` shape)
