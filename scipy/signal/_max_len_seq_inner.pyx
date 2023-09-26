@@ -5,6 +5,7 @@ import numpy as np
 cimport numpy as np
 cimport cython
 
+np.import_array()
 
 # Fast inner loop of max_len_seq.
 @cython.cdivision(True)  # faster modulo

@@ -2,6 +2,7 @@
 # cython: boundscheck=False
 # cython: wraparound=False
 # cython: cdivision=True
+# cython: cpow=True
 
 # distutils: language = c++
 
@@ -59,7 +60,7 @@ def _cy_wrapper_l2_star_discrepancy(double[:, ::1] sample,
 
 
 cdef double centered_discrepancy(double[:, ::1] sample_view,
-                                 bint iterative, unsigned int workers) nogil:
+                                 bint iterative, unsigned int workers) noexcept nogil:
     cdef:
         Py_ssize_t n = sample_view.shape[0]
         Py_ssize_t d = sample_view.shape[1]
@@ -86,7 +87,7 @@ cdef double centered_discrepancy(double[:, ::1] sample_view,
 
 
 cdef double centered_discrepancy_loop(double[:, ::1] sample_view,
-                                      Py_ssize_t istart, Py_ssize_t istop) nogil:
+                                      Py_ssize_t istart, Py_ssize_t istop) noexcept nogil:
 
     cdef:
         Py_ssize_t i, j, k
@@ -107,12 +108,11 @@ cdef double centered_discrepancy_loop(double[:, ::1] sample_view,
 
 
 cdef double wrap_around_discrepancy(double[:, ::1] sample_view,
-                                    bint iterative, unsigned int workers) nogil:
+                                    bint iterative, unsigned int workers) noexcept nogil:
     cdef:
         Py_ssize_t n = sample_view.shape[0]
         Py_ssize_t d = sample_view.shape[1]
-        Py_ssize_t i = 0, j = 0, k = 0
-        double x_kikj, prod = 1, disc
+        double disc
 
     disc = threaded_loops(wrap_around_loop, sample_view,
                           workers)
@@ -124,7 +124,7 @@ cdef double wrap_around_discrepancy(double[:, ::1] sample_view,
 
 
 cdef double wrap_around_loop(double[:, ::1] sample_view,
-                             Py_ssize_t istart, Py_ssize_t istop) nogil:
+                             Py_ssize_t istart, Py_ssize_t istop) noexcept nogil:
 
     cdef:
         Py_ssize_t i, j, k
@@ -142,11 +142,11 @@ cdef double wrap_around_loop(double[:, ::1] sample_view,
 
 
 cdef double mixture_discrepancy(double[:, ::1] sample_view,
-                                bint iterative, unsigned int workers) nogil:
+                                bint iterative, unsigned int workers) noexcept nogil:
     cdef:
         Py_ssize_t n = sample_view.shape[0]
         Py_ssize_t d = sample_view.shape[1]
-        Py_ssize_t i = 0, j = 0, k = 0
+        Py_ssize_t i = 0, j = 0
         double prod = 1, disc = 0, disc1 = 0
 
     for i in range(n):
@@ -171,7 +171,7 @@ cdef double mixture_discrepancy(double[:, ::1] sample_view,
 
 
 cdef double mixture_loop(double[:, ::1] sample_view, Py_ssize_t istart,
-                         Py_ssize_t istop) nogil:
+                         Py_ssize_t istop) noexcept nogil:
 
     cdef:
         Py_ssize_t i, j, k
@@ -194,11 +194,11 @@ cdef double mixture_loop(double[:, ::1] sample_view, Py_ssize_t istart,
 
 
 cdef double l2_star_discrepancy(double[:, ::1] sample_view,
-                                bint iterative, unsigned int workers) nogil:
+                                bint iterative, unsigned int workers) noexcept nogil:
     cdef:
         Py_ssize_t n = sample_view.shape[0]
         Py_ssize_t d = sample_view.shape[1]
-        Py_ssize_t i = 0, j = 0, k = 0
+        Py_ssize_t i = 0, j = 0
         double prod = 1, disc1 = 0
 
     for i in range(n):
@@ -220,7 +220,7 @@ cdef double l2_star_discrepancy(double[:, ::1] sample_view,
 
 
 cdef double l2_star_loop(double[:, ::1] sample_view, Py_ssize_t istart,
-                         Py_ssize_t istop) nogil:
+                         Py_ssize_t istop) noexcept nogil:
 
     cdef:
         Py_ssize_t i, j, k
@@ -249,18 +249,18 @@ def _cy_wrapper_update_discrepancy(double[::1] x_new_view,
 
 cdef double c_update_discrepancy(double[::1] x_new_view,
                                  double[:, ::1] sample_view,
-                                 double initial_disc):
+                                 double initial_disc) noexcept:
     cdef:
         Py_ssize_t n = sample_view.shape[0] + 1
-        Py_ssize_t xnew_nlines = x_new_view.shape[0]
-        Py_ssize_t i = 0, j = 0, k = 0
-        double prod = 1, tmp_sum= 0
+        Py_ssize_t d = sample_view.shape[1]
+        Py_ssize_t i = 0, j = 0
+        double prod = 1
         double  disc1 = 0, disc2 = 0, disc3 = 0
-        double[::1] abs_ = np.zeros(n, dtype=np.float64)
+        double[::1] abs_ = np.empty(d, dtype=np.float64)
 
 
     # derivation from P.T. Roy (@tupui)
-    for i in range(xnew_nlines):
+    for i in range(d):
         abs_[i] = fabs(x_new_view[i] - 0.5)
         prod *= (
             1 + 0.5 * abs_[i]
@@ -271,7 +271,7 @@ cdef double c_update_discrepancy(double[::1] x_new_view,
 
     prod = 1
     for i in range(n - 1):
-        for j in range(xnew_nlines):
+        for j in range(d):
             prod *= (
                 1 + 0.5 * abs_[j]
                 + 0.5 * fabs(sample_view[i, j] - 0.5)
@@ -282,7 +282,7 @@ cdef double c_update_discrepancy(double[::1] x_new_view,
 
     disc2 *= 2 / pow(n, 2)
 
-    for i in range(xnew_nlines):
+    for i in range(d):
         prod *= 1 + abs_[i]
 
     disc3 = 1 / pow(n, 2) * prod
@@ -291,12 +291,12 @@ cdef double c_update_discrepancy(double[::1] x_new_view,
 
 
 ctypedef double (*func_type)(double[:, ::1], Py_ssize_t,
-                             Py_ssize_t) nogil
+                             Py_ssize_t) noexcept nogil
 
 
 cdef double threaded_loops(func_type loop_func,
                            double[:, ::1] sample_view,
-                           unsigned int workers) nogil:
+                           unsigned int workers) noexcept nogil:
     cdef:
         Py_ssize_t n = sample_view.shape[0]
         double disc2 = 0
@@ -329,7 +329,7 @@ cdef void one_thread_loop(func_type loop_func,
                           double[:, ::1] sample_view,
                           Py_ssize_t istart,
                           Py_ssize_t istop,
-                          _) nogil:
+                          _) noexcept nogil:
 
     cdef double tmp = loop_func(sample_view, istart, istop)
 

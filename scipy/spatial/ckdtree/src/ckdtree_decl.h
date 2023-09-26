@@ -5,15 +5,13 @@
  * Use numpy to provide some platform independency.
  * Define these functions for your platform
  * */
-#include <cmath> /* needed for isinf / sc_inf from c99compat under CLANG */
-#include "_c99compat.h"
+#include <cmath>
 #include <numpy/npy_common.h>
 #define CKDTREE_LIKELY(x) NPY_LIKELY(x)
 #define CKDTREE_UNLIKELY(x)  NPY_UNLIKELY(x)
 #define CKDTREE_PREFETCH(x, rw, loc)  NPY_PREFETCH(x, rw, loc)
 
 #define ckdtree_intp_t npy_intp
-#define ckdtree_isinf(x)   sc_isinf(x)
 #define ckdtree_fmin(x, y)   fmin(x, y)
 #define ckdtree_fmax(x, y)   fmax(x, y)
 #define ckdtree_fabs(x)   fabs(x)

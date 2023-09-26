@@ -34,7 +34,7 @@
  * ERROR MESSAGES:
  *
  *   message         condition      value returned
- *  K0 domain          x <= 0          NPY_INFINITY
+ *  K0 domain          x <= 0          INFINITY
  *
  */
 /*							k0e()
@@ -128,18 +128,17 @@ static double B[] = {
     2.44030308206595545468E0
 };
 
-double k0(x)
-double x;
+double k0(double x)
 {
     double y, z;
 
     if (x == 0.0) {
 	sf_error("k0", SF_ERROR_SINGULAR, NULL);
-	return NPY_INFINITY;
+	return INFINITY;
     }
     else if (x < 0.0) {
 	sf_error("k0", SF_ERROR_DOMAIN, NULL);
-	return NPY_NAN;
+	return NAN;
     }
 
     if (x <= 2.0) {
@@ -155,18 +154,17 @@ double x;
 
 
 
-double k0e(x)
-double x;
+double k0e(double x)
 {
     double y;
 
     if (x == 0.0) {
 	sf_error("k0e", SF_ERROR_SINGULAR, NULL);
-	return NPY_INFINITY;
+	return INFINITY;
     }
     else if (x < 0.0) {
 	sf_error("k0e", SF_ERROR_DOMAIN, NULL);
-	return NPY_NAN;
+	return NAN;
     }
 
     if (x <= 2.0) {

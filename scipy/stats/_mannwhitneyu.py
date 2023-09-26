@@ -23,15 +23,31 @@ class _MWU:
     def __init__(self):
         '''Minimal initializer'''
         self._fmnks = -np.ones((1, 1, 1))
+        self._recursive = None
 
     def pmf(self, k, m, n):
-        '''Probability mass function'''
+        if (self._recursive is None and m <= 500 and n <= 500
+                or self._recursive):
+            return self.pmf_recursive(k, m, n)
+        else:
+            return self.pmf_iterative(k, m, n)
+
+    def pmf_recursive(self, k, m, n):
+        '''Probability mass function, recursive version'''
         self._resize_fmnks(m, n, np.max(k))
         # could loop over just the unique elements, but probably not worth
         # the time to find them
         for i in np.ravel(k):
             self._f(m, n, i)
         return self._fmnks[m, n, k] / special.binom(m + n, m)
+
+    def pmf_iterative(self, k, m, n):
+        '''Probability mass function, iterative version'''
+        fmnks = {}
+        for i in np.ravel(k):
+            fmnks = _mwu_f_iterative(m, n, i, fmnks)
+        return (np.array([fmnks[(m, n, ki)] for ki in k])
+                / special.binom(m + n, m))
 
     def cdf(self, k, m, n):
         '''Cumulative distribution function'''
@@ -87,6 +103,58 @@ class _MWU:
 
 # Maintain state for faster repeat calls to mannwhitneyu w/ method='exact'
 _mwu_state = _MWU()
+
+
+def _mwu_f_iterative(m, n, k, fmnks):
+    '''Iterative implementation of function of [3] Theorem 2.5'''
+
+    def _base_case(m, n, k):
+        '''Base cases from recursive version'''
+
+        # if already calculated, return the value
+        if fmnks.get((m, n, k), -1) >= 0:
+            return fmnks[(m, n, k)]
+
+        # [3] Theorem 2.5 Line 1
+        elif k < 0 or m < 0 or n < 0 or k > m*n:
+            return 0
+
+        # [3] Theorem 2.5 Line 2
+        elif k == 0 and m >= 0 and n >= 0:
+            return 1
+
+        return None
+
+    stack = [(m, n, k)]
+    fmnk = None
+
+    while stack:
+        # Popping only if necessary would save a tiny bit of time, but NWI.
+        m, n, k = stack.pop()
+
+        # If we're at a base case, continue (stack unwinds)
+        fmnk = _base_case(m, n, k)
+        if fmnk is not None:
+            fmnks[(m, n, k)] = fmnk
+            continue
+
+        # If both terms are base cases, continue (stack unwinds)
+        f1 = _base_case(m-1, n, k-n)
+        f2 = _base_case(m, n-1, k)
+        if f1 is not None and f2 is not None:
+            # [3] Theorem 2.5 Line 3 / Equation 3
+            fmnk = f1 + f2
+            fmnks[(m, n, k)] = fmnk
+            continue
+
+        # recurse deeper
+        stack.append((m, n, k))
+        if f1 is None:
+            stack.append((m-1, n, k-n))
+        if f2 is None:
+            stack.append((m, n-1, k))
+
+    return fmnks
 
 
 def _tie_term(ranks):
@@ -186,7 +254,7 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     The Mann-Whitney U test is a nonparametric test of the null hypothesis
     that the distribution underlying sample `x` is the same as the
     distribution underlying sample `y`. It is often used as a test of
-    of difference in location between distributions.
+    difference in location between distributions.
 
     Parameters
     ----------
@@ -210,6 +278,14 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
         * 'greater': the distribution underlying `x` is stochastically greater
           than the distribution underlying `y`, i.e. *F(u) < G(u)* for all *u*.
 
+        Note that the mathematical expressions in the alternative hypotheses
+        above describe the CDFs of the underlying distributions. The directions
+        of the inequalities appear inconsistent with the natural language
+        description at first glance, but they are not. For example, suppose
+        *X* and *Y* are random variables that follow distributions with CDFs
+        *F* and *G*, respectively. If *F(u) > G(u)* for all *u*, samples drawn
+        from *X* tend to be less than those drawn from *Y*.
+
         Under a more restrictive set of assumptions, the alternative hypotheses
         can be expressed in terms of the locations of the distributions;
         see [5] section 5.1.
@@ -225,8 +301,8 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
           :math:`U` statistic against the exact distribution of the :math:`U`
           statistic under the null hypothesis. No correction is made for ties.
         * ``'auto'``: chooses ``'exact'`` when the size of one of the samples
-          is less than 8 and there are no ties; chooses ``'asymptotic'``
-          otherwise.
+          is less than or equal to 8 and there are no ties;
+          chooses ``'asymptotic'`` otherwise.
 
     Returns
     -------
@@ -243,7 +319,7 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     -----
     If ``U1`` is the statistic corresponding with sample `x`, then the
     statistic corresponding with sample `y` is
-    `U2 = `x.shape[axis] * y.shape[axis] - U1``.
+    ``U2 = x.shape[axis] * y.shape[axis] - U1``.
 
     `mannwhitneyu` is for independent samples. For related / paired samples,
     consider `scipy.stats.wilcoxon`.
@@ -256,7 +332,7 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     data.
 
     The Mann-Whitney U test is a non-parametric version of the t-test for
-    independent samples. When the the means of samples from the populations
+    independent samples. When the means of samples from the populations
     are normally distributed, consider `scipy.stats.ttest_ind`.
 
     See Also

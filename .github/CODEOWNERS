@@ -15,40 +15,47 @@
 # Build related files
 pyproject.toml  @rgommers
 setup.py  @rgommers @larsoner
-pavement.py  @tylerjereddy
 environment.yml  @rgommers
+meson*  @rgommers
 
 # SciPy submodules (please keep in alphabetical order)
 scipy/fft/*  @peterbell10
 scipy/fftpack/*  @peterbell10
 scipy/linalg/*  @larsoner @ilayn
+scipy/integrate/* @steppi
 scipy/interpolate/*  @ev-br
 scipy/optimize/*  @andyfaff
 scipy/signal/*  @larsoner @ilayn
 scipy/sparse/*  @perimosocordiae
 scipy/spatial/*  @tylerjereddy @peterbell10
-scipy/special/*  @person142
+scipy/special/*  @person142 @steppi
 scipy/stats/_distn_infrastructure  @andyfaff @ev-br
 scipy/stats/*distr*.py  @ev-br
 scipy/stats/_continuous_distns  @andyfaff
+scipy/stats/_covariance.py  @mdhaber
 scipy/stats/_hypothesis.py  @tupui
 scipy/stats/*qmc.*  @tupui
+scipy/stats/_multicomp.py  @tupui @mdhaber
+scipy/stats/_resampling.py  @mdhaber
 scipy/stats/*sobol*  @tupui
+scipy/stats/_sensitivity_analysis.py  @tupui
+scipy/stats/_survival.py  @tupui @mdhaber
+scipy/stats/.unuran/*  @tirthasheshpatel
 
 # Testing infrastructure
 ci/*  @larsoner @andyfaff
 tools/refguide_check.py  @ev-br
 tools/*  @larsoner @rgommers
-runtests.py  @larsoner
 pytest.ini  @larsoner
 tox.ini  @larsoner
-codecov.yml  @larsoner
 .coveragerc  @larsoner
 benchmarks/asv.conf.json  @larsoner
 
 # CI config
 .circleci/*  @larsoner
 .github/*  @larsoner @andyfaff
-azure-pipelines.yml  @larsoner
-.travis.yml  @larsoner
 
+# Doc
+doc_requirements.txt  @tupui
+doc/source/conf.py  @tupui
+doc/source/_static/*  @tupui

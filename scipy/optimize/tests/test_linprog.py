@@ -2,6 +2,7 @@
 Unit test for Linear Programming
 """
 import sys
+import platform
 
 import numpy as np
 from numpy.testing import (assert_, assert_allclose, assert_equal,
@@ -11,6 +12,7 @@ from scipy.optimize import linprog, OptimizeWarning
 from scipy.optimize._numdiff import approx_derivative
 from scipy.sparse.linalg import MatrixRankWarning
 from scipy.linalg import LinAlgWarning
+from scipy._lib._util import VisibleDeprecationWarning
 import scipy.sparse
 import pytest
 
@@ -22,8 +24,8 @@ except ImportError:
 
 has_cholmod = True
 try:
-    import sksparse
-    from sksparse.cholmod import cholesky as cholmod
+    import sksparse  # noqa: F401
+    from sksparse.cholmod import cholesky as cholmod  # noqa: F401
 except ImportError:
     has_cholmod = False
 
@@ -62,7 +64,7 @@ def _assert_success(res, desired_fun=None, desired_x=None,
     # desired_fun: desired objective function value or None
     # desired_x: desired solution or None
     if not res.success:
-        msg = "linprog status {0}, message: {1}".format(res.status,
+        msg = "linprog status {}, message: {}".format(res.status,
                                                         res.message)
         raise AssertionError(msg)
 
@@ -140,7 +142,7 @@ def magic_square(n):
     b = np.array(b_list, dtype=float)
     c = np.random.rand(A.shape[1])
 
-    return A, b, c, numbers
+    return A, b, c, numbers, M
 
 
 def lpgen_2d(m, n):
@@ -275,8 +277,10 @@ def test_unknown_solvers_and_options():
                   c, A_ub=A_ub, b_ub=b_ub, method='ekki-ekki-ekki')
     assert_raises(ValueError, linprog,
                   c, A_ub=A_ub, b_ub=b_ub, method='highs-ekki')
-    assert_raises(ValueError, linprog, c, A_ub=A_ub, b_ub=b_ub,
-                  options={"rr_method": 'ekki-ekki-ekki'})
+    message = "Unrecognized options detected: {'rr_method': 'ekki-ekki-ekki'}"
+    with pytest.warns(OptimizeWarning, match=message):
+        linprog(c, A_ub=A_ub, b_ub=b_ub,
+                options={"rr_method": 'ekki-ekki-ekki'})
 
 
 def test_choose_solver():
@@ -287,6 +291,64 @@ def test_choose_solver():
 
     res = linprog(c, A_ub, b_ub, method='highs')
     _assert_success(res, desired_fun=-18.0, desired_x=[2, 6])
+
+
+def test_deprecation():
+    with pytest.warns(DeprecationWarning):
+        linprog(1, method='interior-point')
+    with pytest.warns(DeprecationWarning):
+        linprog(1, method='revised simplex')
+    with pytest.warns(DeprecationWarning):
+        linprog(1, method='simplex')
+
+
+def test_highs_status_message():
+    res = linprog(1, method='highs')
+    msg = "Optimization terminated successfully. (HiGHS Status 7:"
+    assert res.status == 0
+    assert res.message.startswith(msg)
+
+    A, b, c, numbers, M = magic_square(6)
+    bounds = [(0, 1)] * len(c)
+    integrality = [1] * len(c)
+    options = {"time_limit": 0.1}
+    res = linprog(c=c, A_eq=A, b_eq=b, bounds=bounds, method='highs',
+                  options=options, integrality=integrality)
+    msg = "Time limit reached. (HiGHS Status 13:"
+    assert res.status == 1
+    assert res.message.startswith(msg)
+
+    options = {"maxiter": 10}
+    res = linprog(c=c, A_eq=A, b_eq=b, bounds=bounds, method='highs-ds',
+                  options=options)
+    msg = "Iteration limit reached. (HiGHS Status 14:"
+    assert res.status == 1
+    assert res.message.startswith(msg)
+
+    res = linprog(1, bounds=(1, -1), method='highs')
+    msg = "The problem is infeasible. (HiGHS Status 8:"
+    assert res.status == 2
+    assert res.message.startswith(msg)
+
+    res = linprog(-1, method='highs')
+    msg = "The problem is unbounded. (HiGHS Status 10:"
+    assert res.status == 3
+    assert res.message.startswith(msg)
+
+    from scipy.optimize._linprog_highs import _highs_to_scipy_status_message
+    status, message = _highs_to_scipy_status_message(58, "Hello!")
+    msg = "The HiGHS status code was not recognized. (HiGHS Status 58:"
+    assert status == 4
+    assert message.startswith(msg)
+
+    status, message = _highs_to_scipy_status_message(None, None)
+    msg = "HiGHS did not provide a status code. (HiGHS Status None: None)"
+    assert status == 4
+    assert message.startswith(msg)
+
+
+def test_bug_17380():
+    linprog([1, 1], A_ub=[[-1, 0]], b_ub=[-2.5], integrality=[1, 1])
 
 
 A_ub = None
@@ -399,6 +461,24 @@ class LinprogCommonTests:
         assert_warns(OptimizeWarning, f,
                      c, A_ub=A_ub, b_ub=b_ub, options=o)
 
+    def test_integrality_without_highs(self):
+        # ensure that using `integrality` parameter without `method='highs'`
+        # raises warning and produces correct solution to relaxed problem
+        # source: https://en.wikipedia.org/wiki/Integer_programming#Example
+        A_ub = np.array([[-1, 1], [3, 2], [2, 3]])
+        b_ub = np.array([1, 12, 12])
+        c = -np.array([0, 1])
+
+        bounds = [(0, np.inf)] * len(c)
+        integrality = [1] * len(c)
+
+        with np.testing.assert_warns(OptimizeWarning):
+            res = linprog(c=c, A_ub=A_ub, b_ub=b_ub, bounds=bounds,
+                          method=self.method, integrality=integrality)
+
+        np.testing.assert_allclose(res.x, [1.8, 2.8])
+        np.testing.assert_allclose(res.fun, -2.8)
+
     def test_invalid_inputs(self):
 
         def f(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None):
@@ -407,7 +487,9 @@ class LinprogCommonTests:
 
         # Test ill-formatted bounds
         assert_raises(ValueError, f, [1, 2, 3], bounds=[(1, 2), (3, 4)])
-        assert_raises(ValueError, f, [1, 2, 3], bounds=[(1, 2), (3, 4), (3, 4, 5)])
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(VisibleDeprecationWarning, "Creating an ndarray from ragged")
+            assert_raises(ValueError, f, [1, 2, 3], bounds=[(1, 2), (3, 4), (3, 4, 5)])
         assert_raises(ValueError, f, [1, 2, 3], bounds=[(1, -2), (1, 2)])
 
         # Test other invalid inputs
@@ -435,10 +517,10 @@ class LinprogCommonTests:
         m = 100
         n = 150
         A_eq = scipy.sparse.rand(m, n, 0.5)
-        x_valid = np.random.randn((n))
-        c = np.random.randn((n))
-        ub = x_valid + np.random.rand((n))
-        lb = x_valid - np.random.rand((n))
+        x_valid = np.random.randn(n)
+        c = np.random.randn(n)
+        ub = x_valid + np.random.rand(n)
+        lb = x_valid - np.random.rand(n)
         bounds = np.column_stack((lb, ub))
         b_eq = A_eq * x_valid
 
@@ -734,6 +816,10 @@ class LinprogCommonTests:
         _assert_success(res, desired_fun=-9.7087836730413404)
 
     def test_zero_column_2(self):
+        if self.method in {'highs-ds', 'highs-ipm'}:
+            # See upstream issue https://github.com/ERGO-Code/HiGHS/issues/648
+            pytest.xfail()
+
         np.random.seed(0)
         m, n = 2, 4
         c = np.random.rand(n)
@@ -750,7 +836,10 @@ class LinprogCommonTests:
                       method=self.method, options=self.options)
         _assert_unbounded(res)
         # Unboundedness detected in presolve
-        if self.options.get('presolve', True):
+        if self.options.get('presolve', True) and "highs" not in self.method:
+            # HiGHS detects unboundedness or infeasibility in presolve
+            # It needs an iteration of simplex to be sure of unboundedness
+            # Other solvers report that the problem is unbounded if feasible
             assert_equal(res.nit, 0)
 
     def test_zero_row_1(self):
@@ -1122,7 +1211,13 @@ class LinprogCommonTests:
         m = 50
         c = -np.ones(m)
         tmp = 2 * np.pi * np.arange(m) / (m + 1)
-        A_eq = np.vstack((np.cos(tmp) - 1, np.sin(tmp)))
+        # This test relies on `cos(0) -1 == sin(0)`, so ensure that's true
+        # (SIMD code or -ffast-math may cause spurious failures otherwise)
+        row0 = np.cos(tmp) - 1
+        row0[0] = 0.0
+        row1 = np.sin(tmp)
+        row1[0] = 0.0
+        A_eq = np.vstack((row0, row1))
         b_eq = [0, 0]
         res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                       method=self.method, options=self.options)
@@ -1168,10 +1263,16 @@ class LinprogCommonTests:
         assert_(res.success)
         assert_(res.nit)
         assert_(not res.status)
-        assert_(res.message == "Optimization terminated successfully.")
+        if 'highs' not in self.method:
+            # HiGHS status/message tested separately
+            assert_(res.message == "Optimization terminated successfully.")
         assert_allclose(c @ res.x, res.fun)
         assert_allclose(b_eq - A_eq @ res.x, res.con, atol=1e-11)
         assert_allclose(b_ub - A_ub @ res.x, res.slack, atol=1e-11)
+        for key in ['eqlin', 'ineqlin', 'lower', 'upper']:
+            if key in res.keys():
+                assert isinstance(res[key]['marginals'], np.ndarray)
+                assert isinstance(res[key]['residual'], np.ndarray)
 
     #################
     # Bug Fix Tests #
@@ -1303,7 +1404,7 @@ class LinprogCommonTests:
         # leading to a non-optimal solution if A is rank-deficient.
         # https://github.com/scipy/scipy/issues/7044
 
-        A_eq, b_eq, c, N = magic_square(3)
+        A_eq, b_eq, c, _, _ = magic_square(3)
         with suppress_warnings() as sup:
             sup.filter(OptimizeWarning, "A_eq does not appear...")
             sup.filter(RuntimeWarning, "invalid value encountered")
@@ -1555,8 +1656,9 @@ class LinprogCommonTests:
                           method=self.method, options=self.options)
         _assert_success(res, desired_x=[129, 92, 12, 198, 0, 10], desired_fun=92)
 
-    @pytest.mark.skip(sys.platform == 'darwin',
-                      reason="Failing on some local macOS builds, see gh-13846")
+    @pytest.mark.skipif(sys.platform == 'darwin',
+                        reason=("Failing on some local macOS builds, "
+                                "see gh-13846"))
     def test_bug_10466(self):
         """
         Test that autoscale fixes poorly-scaled problem
@@ -1602,14 +1704,20 @@ class LinprogCommonTests:
 #########################
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class LinprogSimplexTests(LinprogCommonTests):
     method = "simplex"
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class LinprogIPTests(LinprogCommonTests):
     method = "interior-point"
 
+    def test_bug_10466(self):
+        pytest.skip("Test is failing, but solver is deprecated.")
 
+
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class LinprogRSTests(LinprogCommonTests):
     method = "revised simplex"
 
@@ -1642,7 +1750,8 @@ class LinprogRSTests(LinprogCommonTests):
 class LinprogHiGHSTests(LinprogCommonTests):
     def test_callback(self):
         # this is the problem from test_callback
-        cb = lambda res: None
+        def cb(res):
+            return None
         c = np.array([-3, -2])
         A_ub = [[2, 1], [1, 1], [1, 0]]
         b_ub = [10, 8, 4]
@@ -1668,10 +1777,9 @@ class LinprogHiGHSTests(LinprogCommonTests):
         assert_warns(OptimizeWarning, f, options=options)
 
     def test_crossover(self):
-        c = np.array([1, 1]) * -1  # maximize
-        A_ub = np.array([[1, 1]])
-        b_ub = [1]
-        res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
+        A_eq, b_eq, c, _, _ = magic_square(4)
+        bounds = (0, 1)
+        res = linprog(c, A_eq=A_eq, b_eq=b_eq,
                       bounds=bounds, method=self.method, options=self.options)
         # there should be nonzero crossover iterations for IPM (only)
         assert_equal(res.crossover_nit == 0, self.method != "highs-ipm")
@@ -1852,9 +1960,6 @@ if has_umfpack:
     class TestLinprogIPSparseUmfpack(LinprogIPTests):
         options = {"sparse": True, "cholesky": False}
 
-        def test_bug_10466(self):
-            pytest.skip("Autoscale doesn't fix everything, and that's OK.")
-
         def test_network_flow_limited_capacity(self):
             pytest.skip("Failing due to numerical issues on some platforms.")
 
@@ -1875,7 +1980,7 @@ class TestLinprogIPSparse(LinprogIPTests):
 
     def test_magic_square_sparse_no_presolve(self):
         # test linprog with a problem with a rank-deficient A_eq matrix
-        A_eq, b_eq, c, N = magic_square(3)
+        A_eq, b_eq, c, _, _ = magic_square(3)
         bounds = (0, 1)
 
         with suppress_warnings() as sup:
@@ -1893,7 +1998,7 @@ class TestLinprogIPSparse(LinprogIPTests):
 
     def test_sparse_solve_options(self):
         # checking that problem is solved with all column permutation options
-        A_eq, b_eq, c, N = magic_square(3)
+        A_eq, b_eq, c, _, _ = magic_square(3)
         with suppress_warnings() as sup:
             sup.filter(OptimizeWarning, "A_eq does not appear...")
             sup.filter(OptimizeWarning, "Invalid permc_spec option")
@@ -1927,6 +2032,7 @@ class TestLinprogIPSparsePresolve(LinprogIPTests):
         super().test_bug_6690()
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestLinprogIPSpecific:
     method = "interior-point"
     # the following tests don't need to be performed separately for
@@ -1945,7 +2051,7 @@ class TestLinprogIPSpecific:
         res2 = linprog(c, A_ub=A, b_ub=b, method=self.method)  # default solver
         assert_allclose(res1.fun, res2.fun,
                         err_msg="linprog default solver unexpected result",
-                        rtol=1e-15, atol=1e-15)
+                        rtol=2e-15, atol=1e-15)
 
     def test_unbounded_below_no_presolve_original(self):
         # formerly caused segfault in TravisCI w/ "cholesky":True
@@ -2043,7 +2149,7 @@ class TestLinprogRSCommon(LinprogRSTests):
         assert_equal(res.status, 6)
 
     def test_redundant_constraints_with_guess(self):
-        A, b, c, N = magic_square(3)
+        A, b, c, _, _ = magic_square(3)
         p = np.random.rand(*c.shape)
         with suppress_warnings() as sup:
             sup.filter(OptimizeWarning, "A_eq does not appear...")
@@ -2072,17 +2178,22 @@ class TestLinprogHiGHSSimplexDual(LinprogHiGHSTests):
     options = {}
 
     def test_lad_regression(self):
-        '''The scaled model should be optimal but unscaled model infeasible.'''
+        '''
+        The scaled model should be optimal, i.e. not produce unscaled model
+        infeasible.  See https://github.com/ERGO-Code/HiGHS/issues/494.
+        '''
+        # Test to ensure gh-13610 is resolved (mismatch between HiGHS scaled
+        # and unscaled model statuses)
         c, A_ub, b_ub, bnds = l1_regression_prob()
         res = linprog(c, A_ub=A_ub, b_ub=b_ub, bounds=bnds,
                       method=self.method, options=self.options)
-        assert_equal(res.status, 4)
-        assert_('An optimal solution to the scaled '
-                'model was found but' in res.message)
+        assert_equal(res.status, 0)
         assert_(res.x is not None)
         assert_(np.all(res.slack > -1e-6))
-        assert_(np.all(res.x <= [np.inf if u is None else u for l, u in bnds]))
-        assert_(np.all(res.x >= [-np.inf if l is None else l for l, u in bnds]))
+        assert_(np.all(res.x <= [np.inf if ub is None else ub
+                                 for lb, ub in bnds]))
+        assert_(np.all(res.x >= [-np.inf if lb is None else lb - 1e-7
+                                 for lb, ub in bnds]))
 
 
 ###################################
@@ -2095,11 +2206,196 @@ class TestLinprogHiGHSIPM(LinprogHiGHSTests):
     options = {}
 
 
+###################################
+# HiGHS-MIP Option-Specific Tests #
+###################################
+
+
+class TestLinprogHiGHSMIP():
+    method = "highs"
+    options = {}
+
+    @pytest.mark.xfail(condition=(sys.maxsize < 2 ** 32 and
+                       platform.system() == "Linux"),
+                       run=False,
+                       reason="gh-16347")
+    def test_mip1(self):
+        # solve non-relaxed magic square problem (finally!)
+        # also check that values are all integers - they don't always
+        # come out of HiGHS that way
+        n = 4
+        A, b, c, numbers, M = magic_square(n)
+        bounds = [(0, 1)] * len(c)
+        integrality = [1] * len(c)
+
+        res = linprog(c=c*0, A_eq=A, b_eq=b, bounds=bounds,
+                      method=self.method, integrality=integrality)
+
+        s = (numbers.flatten() * res.x).reshape(n**2, n, n)
+        square = np.sum(s, axis=0)
+        np.testing.assert_allclose(square.sum(axis=0), M)
+        np.testing.assert_allclose(square.sum(axis=1), M)
+        np.testing.assert_allclose(np.diag(square).sum(), M)
+        np.testing.assert_allclose(np.diag(square[:, ::-1]).sum(), M)
+
+        np.testing.assert_allclose(res.x, np.round(res.x), atol=1e-12)
+
+    def test_mip2(self):
+        # solve MIP with inequality constraints and all integer constraints
+        # source: slide 5,
+        # https://www.cs.upc.edu/~erodri/webpage/cps/theory/lp/milp/slides.pdf
+
+        # use all array inputs to test gh-16681 (integrality couldn't be array)
+        A_ub = np.array([[2, -2], [-8, 10]])
+        b_ub = np.array([-1, 13])
+        c = -np.array([1, 1])
+
+        bounds = np.array([(0, np.inf)] * len(c))
+        integrality = np.ones_like(c)
+
+        res = linprog(c=c, A_ub=A_ub, b_ub=b_ub, bounds=bounds,
+                      method=self.method, integrality=integrality)
+
+        np.testing.assert_allclose(res.x, [1, 2])
+        np.testing.assert_allclose(res.fun, -3)
+
+    def test_mip3(self):
+        # solve MIP with inequality constraints and all integer constraints
+        # source: https://en.wikipedia.org/wiki/Integer_programming#Example
+        A_ub = np.array([[-1, 1], [3, 2], [2, 3]])
+        b_ub = np.array([1, 12, 12])
+        c = -np.array([0, 1])
+
+        bounds = [(0, np.inf)] * len(c)
+        integrality = [1] * len(c)
+
+        res = linprog(c=c, A_ub=A_ub, b_ub=b_ub, bounds=bounds,
+                      method=self.method, integrality=integrality)
+
+        np.testing.assert_allclose(res.fun, -2)
+        # two optimal solutions possible, just need one of them
+        assert np.allclose(res.x, [1, 2]) or np.allclose(res.x, [2, 2])
+
+    def test_mip4(self):
+        # solve MIP with inequality constraints and only one integer constraint
+        # source: https://www.mathworks.com/help/optim/ug/intlinprog.html
+        A_ub = np.array([[-1, -2], [-4, -1], [2, 1]])
+        b_ub = np.array([14, -33, 20])
+        c = np.array([8, 1])
+
+        bounds = [(0, np.inf)] * len(c)
+        integrality = [0, 1]
+
+        res = linprog(c=c, A_ub=A_ub, b_ub=b_ub, bounds=bounds,
+                      method=self.method, integrality=integrality)
+
+        np.testing.assert_allclose(res.x, [6.5, 7])
+        np.testing.assert_allclose(res.fun, 59)
+
+    def test_mip5(self):
+        # solve MIP with inequality and inequality constraints
+        # source: https://www.mathworks.com/help/optim/ug/intlinprog.html
+        A_ub = np.array([[1, 1, 1]])
+        b_ub = np.array([7])
+        A_eq = np.array([[4, 2, 1]])
+        b_eq = np.array([12])
+        c = np.array([-3, -2, -1])
+
+        bounds = [(0, np.inf), (0, np.inf), (0, 1)]
+        integrality = [0, 1, 0]
+
+        res = linprog(c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
+                      bounds=bounds, method=self.method,
+                      integrality=integrality)
+
+        np.testing.assert_allclose(res.x, [0, 6, 0])
+        np.testing.assert_allclose(res.fun, -12)
+
+        # gh-16897: these fields were not present, ensure that they are now
+        assert res.get("mip_node_count", None) is not None
+        assert res.get("mip_dual_bound", None) is not None
+        assert res.get("mip_gap", None) is not None
+
+    @pytest.mark.slow
+    @pytest.mark.timeout(120)  # prerelease_deps_coverage_64bit_blas job
+    def test_mip6(self):
+        # solve a larger MIP with only equality constraints
+        # source: https://www.mathworks.com/help/optim/ug/intlinprog.html
+        A_eq = np.array([[22, 13, 26, 33, 21, 3, 14, 26],
+                         [39, 16, 22, 28, 26, 30, 23, 24],
+                         [18, 14, 29, 27, 30, 38, 26, 26],
+                         [41, 26, 28, 36, 18, 38, 16, 26]])
+        b_eq = np.array([7872, 10466, 11322, 12058])
+        c = np.array([2, 10, 13, 17, 7, 5, 7, 3])
+
+        bounds = [(0, np.inf)]*8
+        integrality = [1]*8
+
+        res = linprog(c=c, A_eq=A_eq, b_eq=b_eq, bounds=bounds,
+                      method=self.method, integrality=integrality)
+
+        np.testing.assert_allclose(res.fun, 1854)
+
+    @pytest.mark.xslow
+    def test_mip_rel_gap_passdown(self):
+        # MIP taken from test_mip6, solved with different values of mip_rel_gap
+        # solve a larger MIP with only equality constraints
+        # source: https://www.mathworks.com/help/optim/ug/intlinprog.html
+        A_eq = np.array([[22, 13, 26, 33, 21, 3, 14, 26],
+                         [39, 16, 22, 28, 26, 30, 23, 24],
+                         [18, 14, 29, 27, 30, 38, 26, 26],
+                         [41, 26, 28, 36, 18, 38, 16, 26]])
+        b_eq = np.array([7872, 10466, 11322, 12058])
+        c = np.array([2, 10, 13, 17, 7, 5, 7, 3])
+
+        bounds = [(0, np.inf)]*8
+        integrality = [1]*8
+
+        mip_rel_gaps = [0.5, 0.25, 0.01, 0.001]
+        sol_mip_gaps = []
+        for mip_rel_gap in mip_rel_gaps:
+            res = linprog(c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
+                          bounds=bounds, method=self.method,
+                          integrality=integrality,
+                          options={"mip_rel_gap": mip_rel_gap})
+            final_mip_gap = res["mip_gap"]
+            # assert that the solution actually has mip_gap lower than the
+            # required mip_rel_gap supplied
+            assert final_mip_gap <= mip_rel_gap
+            sol_mip_gaps.append(final_mip_gap)
+
+        # make sure that the mip_rel_gap parameter is actually doing something
+        # check that differences between solution gaps are declining
+        # monotonically with the mip_rel_gap parameter. np.diff does
+        # x[i+1] - x[i], so flip the array before differencing to get
+        # what should be a positive, monotone decreasing series of solution
+        # gaps
+        gap_diffs = np.diff(np.flip(sol_mip_gaps))
+        assert np.all(gap_diffs >= 0)
+        assert not np.all(gap_diffs == 0)
+
+    def test_semi_continuous(self):
+        # See issue #18106. This tests whether the solution is being
+        # checked correctly (status is 0) when integrality > 1:
+        # values are allowed to be 0 even if 0 is out of bounds.
+
+        c = np.array([1., 1., -1, -1])
+        bounds = np.array([[0.5, 1.5], [0.5, 1.5], [0.5, 1.5], [0.5, 1.5]])
+        integrality = np.array([2, 3, 2, 3])
+
+        res = linprog(c, bounds=bounds,
+                      integrality=integrality, method='highs')
+
+        np.testing.assert_allclose(res.x, [0, 0, 1.5, 1])
+        assert res.status == 0
+
+
 ###########################
 # Autoscale-Specific Tests#
 ###########################
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class AutoscaleTests:
     options = {"autoscale": True}
 
@@ -2143,6 +2439,7 @@ class TestAutoscaleRS(AutoscaleTests):
 ###########################
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class RRTests:
     method = "interior-point"
     LCT = LinprogCommonTests

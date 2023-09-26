@@ -1,15 +1,7 @@
-""" Test functions for linalg.decomp module
-
-"""
-__usage__ = """
-Build linalg:
-  python setup_linalg.py build
-Run tests if scipy is installed:
-  python -c 'import scipy;scipy.linalg.test()'
-"""
-
 import itertools
 import platform
+import sys
+
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal,
                            assert_array_almost_equal, assert_array_equal,
@@ -28,21 +20,23 @@ from scipy.linalg import (eig, eigvals, lu, svd, svdvals, cholesky, qr,
 from scipy.linalg.lapack import (dgbtrf, dgbtrs, zgbtrf, zgbtrs, dsbev,
                                  dsbevd, dsbevx, zhbevd, zhbevx)
 
-from scipy.linalg.misc import norm
+from scipy.linalg._misc import norm
 from scipy.linalg._decomp_qz import _select_function
 from scipy.stats import ortho_group
 
-from numpy import (array, diag, ones, full, linalg, argsort, zeros, arange,
+from numpy import (array, diag, full, linalg, argsort, zeros, arange,
                    float32, complex64, ravel, sqrt, iscomplex, shape, sort,
-                   sign, asarray, isfinite, ndarray, eye, dtype, triu, tril)
-
-from numpy.random import seed, random
+                   sign, asarray, isfinite, ndarray, eye,)
 
 from scipy.linalg._testutils import assert_no_overwrite
-from scipy.sparse.sputils import matrix
+from scipy.sparse._sputils import matrix
 
 from scipy._lib._testutils import check_free_memory
 from scipy.linalg.blas import HAS_ILP64
+try:
+    from scipy.__config__ import CONFIG
+except ImportError:
+    CONFIG = None
 
 
 def _random_hermitian_matrix(n, posdef=False, dtype=float):
@@ -81,25 +75,9 @@ def clear_fuss(ar, fuss_binary_bits=7):
     return np.ldexp(x_mant, x_exp)
 
 
-# XXX: This function should be available through numpy.testing
-def assert_dtype_equal(act, des):
-    if isinstance(act, ndarray):
-        act = act.dtype
-    else:
-        act = dtype(act)
-
-    if isinstance(des, ndarray):
-        des = des.dtype
-    else:
-        des = dtype(des)
-
-    assert_(act == des,
-            'dtype mismatch: "{}" (should be "{}")'.format(act, des))
-
-
 # XXX: This function should not be defined here, but somewhere in
 #      scipy.linalg namespace
-def symrand(dim_or_eigv):
+def symrand(dim_or_eigv, rng):
     """Return a random symmetric (Hermitian) matrix.
 
     If 'dim_or_eigv' is an integer N, return a NxN matrix, with eigenvalues
@@ -110,7 +88,7 @@ def symrand(dim_or_eigv):
     """
     if isinstance(dim_or_eigv, int):
         dim = dim_or_eigv
-        d = random(dim)*2 - 1
+        d = rng.random(dim)*2 - 1
     elif (isinstance(dim_or_eigv, ndarray) and
           len(dim_or_eigv.shape) == 1):
         dim = dim_or_eigv.shape[0]
@@ -123,13 +101,6 @@ def symrand(dim_or_eigv):
     # to avoid roundoff errors, symmetrize the matrix (again)
     h = 0.5*(h.T+h)
     return h
-
-
-def _complex_symrand(dim, dtype):
-    a1, a2 = symrand(dim), symrand(dim)
-    # add antisymmetric matrix as imag part
-    a = a1 + 1j*(triu(a2)-tril(a2))
-    return a.astype(dtype)
 
 
 class TestEigVals:
@@ -224,7 +195,7 @@ class TestEig:
             A = asarray(A)
             B0 = B
             B = np.eye(*A.shape)
-        msg = "\n%r\n%r" % (A, B)
+        msg = f"\n{A!r}\n{B!r}"
 
         # Eigenvalues in homogeneous coordinates
         w, vr = eig(A, B0, homogeneous_eigvals=True)
@@ -302,7 +273,7 @@ class TestEig:
 
     def test_falker(self):
         # Test matrices giving some Nan generalized eigenvalues.
-        M = diag(array(([1, 0, 3])))
+        M = diag(array([1, 0, 3]))
         K = array(([2, -1, -1], [-1, 2, -1], [-1, -1, 2]))
         D = array(([1, -1, 0], [-1, 1, 0], [0, 0, 0]))
         Z = zeros((3, 3))
@@ -338,16 +309,16 @@ class TestEig:
 
     def test_make_eigvals(self):
         # Step through all paths in _make_eigvals
-        seed(1234)
         # Real eigenvalues
-        A = symrand(3)
+        rng = np.random.RandomState(1234)
+        A = symrand(3, rng)
         self._check_gen_eig(A, None)
-        B = symrand(3)
+        B = symrand(3, rng)
         self._check_gen_eig(A, B)
         # Complex eigenvalues
-        A = random((3, 3)) + 1j*random((3, 3))
+        A = rng.random((3, 3)) + 1j*rng.random((3, 3))
         self._check_gen_eig(A, None)
-        B = random((3, 3)) + 1j*random((3, 3))
+        B = rng.random((3, 3)) + 1j*rng.random((3, 3))
         self._check_gen_eig(A, B)
 
     def test_check_finite(self):
@@ -774,7 +745,7 @@ class TestEigTridiagonal:
 
 class TestEigh:
     def setup_class(self):
-        seed(1234)
+        np.random.seed(1234)
 
     def test_wrong_inputs(self):
         # Nonsquare a
@@ -788,16 +759,32 @@ class TestEigh:
                       type=4)
         # Both value and index subsets requested
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
-                      subset_by_value=[1, 2], eigvals=[2, 4])
+                      subset_by_value=[1, 2], subset_by_index=[2, 4])
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "Keyword argument 'eigvals")
+            assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
+                          subset_by_value=[1, 2], eigvals=[2, 4])
         # Invalid upper index spec
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
-                      eigvals=[0, 4])
+                      subset_by_index=[0, 4])
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "Keyword argument 'eigvals")
+            assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
+                          eigvals=[0, 4])
         # Invalid lower index
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
-                      eigvals=[-2, 2])
+                      subset_by_index=[-2, 2])
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "Keyword argument 'eigvals")
+            assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
+                          eigvals=[-2, 2])
         # Invalid index spec #2
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
-                      eigvals=[2, 0])
+                      subset_by_index=[2, 0])
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "Keyword argument 'eigvals")
+            assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
+                          subset_by_index=[2, 0])
         # Invalid value spec
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                       subset_by_value=[2, 0])
@@ -807,10 +794,12 @@ class TestEigh:
         assert_raises(ValueError, eigh, np.ones([3, 3]), None, driver='gvx')
         # Standard driver with b
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
-                      driver='evr', turbo=False)
+                      driver='evr')
         # Subset request from invalid driver
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
-                      driver='gvd', eigvals=[1, 2], turbo=False)
+                      driver='gvd', subset_by_index=[1, 2])
+        assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
+                      driver='gvd', subset_by_index=[1, 2])
 
     def test_nonpositive_b(self):
         assert_raises(LinAlgError, eigh, np.ones([3, 3]), np.ones([3, 3]))
@@ -866,36 +855,9 @@ class TestEigh:
         else:
             assert_allclose(b @ a @ v - v * w, 0., atol=atol, rtol=0.)
 
-    # Old eigh tests kept for backwards compatibility
-    @pytest.mark.parametrize('eigvals', (None, (2, 4)))
-    @pytest.mark.parametrize('turbo', (True, False))
-    @pytest.mark.parametrize('lower', (True, False))
-    @pytest.mark.parametrize('overwrite', (True, False))
-    @pytest.mark.parametrize('dtype_', ('f', 'd', 'F', 'D'))
-    @pytest.mark.parametrize('dim', (6,))
-    def test_eigh(self, dim, dtype_, overwrite, lower, turbo, eigvals):
-        atol = 1e-11 if dtype_ in ('dD') else 1e-4
-        a = _random_hermitian_matrix(n=dim, dtype=dtype_)
-        w, z = eigh(a, overwrite_a=overwrite, lower=lower, eigvals=eigvals)
-        assert_dtype_equal(z.dtype, dtype_)
-        w = w.astype(dtype_)
-        diag_ = diag(z.T.conj() @ a @ z).real
-        assert_allclose(diag_, w, rtol=0., atol=atol)
-
-        a = _random_hermitian_matrix(n=dim, dtype=dtype_)
-        b = _random_hermitian_matrix(n=dim, dtype=dtype_, posdef=True)
-        w, z = eigh(a, b, overwrite_a=overwrite, lower=lower,
-                    overwrite_b=overwrite, turbo=turbo, eigvals=eigvals)
-        assert_dtype_equal(z.dtype, dtype_)
-        w = w.astype(dtype_)
-        diag1_ = diag(z.T.conj() @ a @ z).real
-        assert_allclose(diag1_, w, rtol=0., atol=atol)
-        diag2_ = diag(z.T.conj() @ b @ z).real
-        assert_allclose(diag2_, ones(diag2_.shape[0]), rtol=0., atol=atol)
-
     def test_eigvalsh_new_args(self):
         a = _random_hermitian_matrix(5)
-        w = eigvalsh(a, eigvals=[1, 2])
+        w = eigvalsh(a, subset_by_index=[1, 2])
         assert_equal(len(w), 2)
 
         w2 = eigvalsh(a, subset_by_index=[1, 2])
@@ -907,135 +869,40 @@ class TestEigh:
         assert_equal(len(w3), 2)
         assert_allclose(w3, np.array([1.2, 1.3]))
 
+    @pytest.mark.parametrize("method", [eigh, eigvalsh])
+    def test_deprecation_warnings(self, method):
+        with pytest.warns(DeprecationWarning,
+                          match="Keyword argument 'turbo'"):
+            method(np.zeros((2, 2)), turbo=True)
+        with pytest.warns(DeprecationWarning,
+                          match="Keyword argument 'eigvals'"):
+            method(np.zeros((2, 2)), eigvals=[0, 1])
+        with pytest.deprecated_call(match="use keyword arguments"):
+            method(np.zeros((2,2)), np.eye(2, 2), True)
 
-class TestLU:
-    def setup_method(self):
-        self.a = array([[1, 2, 3], [1, 2, 3], [2, 5, 6]])
-        self.ca = array([[1, 2, 3], [1, 2, 3], [2, 5j, 6]])
-        # Those matrices are more robust to detect problems in permutation
-        # matrices than the ones above
-        self.b = array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-        self.cb = array([[1j, 2j, 3j], [4j, 5j, 6j], [7j, 8j, 9j]])
+    def test_deprecation_results(self):
+        a = _random_hermitian_matrix(3)
+        b = _random_hermitian_matrix(3, posdef=True)
 
-        # Reectangular matrices
-        self.hrect = array([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 12, 12]])
-        self.chrect = 1.j * array([[1, 2, 3, 4],
-                                   [5, 6, 7, 8],
-                                   [9, 10, 12, 12]])
+        # check turbo gives same result as driver='gvd'
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "Keyword argument 'turbo'")
+            w_dep, v_dep = eigh(a, b, turbo=True)
+        w, v = eigh(a, b, driver='gvd')
+        assert_allclose(w_dep, w)
+        assert_allclose(v_dep, v)
 
-        self.vrect = array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 12, 12]])
-        self.cvrect = 1.j * array([[1, 2, 3],
-                                   [4, 5, 6],
-                                   [7, 8, 9],
-                                   [10, 12, 12]])
-
-        # Medium sizes matrices
-        self.med = random((30, 40))
-        self.cmed = random((30, 40)) + 1.j * random((30, 40))
-
-    def _test_common(self, data):
-        p, l, u = lu(data)
-        assert_array_almost_equal(p @ l @ u, data)
-        pl, u = lu(data, permute_l=1)
-        assert_array_almost_equal(pl @ u, data)
-
-    # Simple tests
-    def test_simple(self):
-        self._test_common(self.a)
-
-    def test_simple_complex(self):
-        self._test_common(self.ca)
-
-    def test_simple2(self):
-        self._test_common(self.b)
-
-    def test_simple2_complex(self):
-        self._test_common(self.cb)
-
-    # rectangular matrices tests
-    def test_hrectangular(self):
-        self._test_common(self.hrect)
-
-    def test_vrectangular(self):
-        self._test_common(self.vrect)
-
-    def test_hrectangular_complex(self):
-        self._test_common(self.chrect)
-
-    def test_vrectangular_complex(self):
-        self._test_common(self.cvrect)
-
-    # Bigger matrices
-    def test_medium1(self):
-        """Check lu decomposition on medium size, rectangular matrix."""
-        self._test_common(self.med)
-
-    def test_medium1_complex(self):
-        """Check lu decomposition on medium size, rectangular matrix."""
-        self._test_common(self.cmed)
-
-    def test_check_finite(self):
-        p, l, u = lu(self.a, check_finite=False)
-        assert_array_almost_equal(p @ l @ u, self.a)
-
-    def test_simple_known(self):
-        # Ticket #1458
-        for order in ['C', 'F']:
-            A = np.array([[2, 1], [0, 1.]], order=order)
-            LU, P = lu_factor(A)
-            assert_array_almost_equal(LU, np.array([[2, 1], [0, 1]]))
-            assert_array_equal(P, np.array([0, 1]))
-
-
-class TestLUSingle(TestLU):
-    """LU testers for single precision, real and double"""
-
-    def setup_method(self):
-        TestLU.setup_method(self)
-
-        self.a = self.a.astype(float32)
-        self.ca = self.ca.astype(complex64)
-        self.b = self.b.astype(float32)
-        self.cb = self.cb.astype(complex64)
-
-        self.hrect = self.hrect.astype(float32)
-        self.chrect = self.hrect.astype(complex64)
-
-        self.vrect = self.vrect.astype(float32)
-        self.cvrect = self.vrect.astype(complex64)
-
-        self.med = self.vrect.astype(float32)
-        self.cmed = self.vrect.astype(complex64)
-
-
-class TestLUSolve:
-    def setup_method(self):
-        seed(1234)
-
-    def test_lu(self):
-        a0 = random((10, 10))
-        b = random((10,))
-
-        for order in ['C', 'F']:
-            a = np.array(a0, order=order)
-            x1 = solve(a, b)
-            lu_a = lu_factor(a)
-            x2 = lu_solve(lu_a, b)
-            assert_array_almost_equal(x1, x2)
-
-    def test_check_finite(self):
-        a = random((10, 10))
-        b = random((10,))
-        x1 = solve(a, b)
-        lu_a = lu_factor(a, check_finite=False)
-        x2 = lu_solve(lu_a, b, check_finite=False)
-        assert_array_almost_equal(x1, x2)
+        # check eigvals gives the same result as subset_by_index
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "Keyword argument 'eigvals'")
+            w_dep, v_dep = eigh(a, eigvals=[0, 1])
+        w, v = eigh(a, subset_by_index=[0, 1])
+        assert_allclose(w_dep, w)
+        assert_allclose(v_dep, v)
 
 
 class TestSVD_GESDD:
-    def setup_method(self):
-        self.lapack_driver = 'gesdd'
-        seed(1234)
+    lapack_driver = 'gesdd'
 
     def test_degenerate(self):
         assert_raises(TypeError, svd, [[1.]], lapack_driver=1.)
@@ -1089,10 +956,11 @@ class TestSVD_GESDD:
             assert_array_almost_equal(u @ sigma @ vh, a)
 
     def test_random(self):
+        rng = np.random.RandomState(1234)
         n = 20
         m = 15
         for i in range(3):
-            for a in [random([n, m]), random([m, n])]:
+            for a in [rng.random([n, m]), rng.random([m, n])]:
                 for full_matrices in (True, False):
                     u, s, vh = svd(a, full_matrices=full_matrices,
                                    lapack_driver=self.lapack_driver)
@@ -1116,12 +984,13 @@ class TestSVD_GESDD:
             assert_array_almost_equal(u @ sigma @ vh, a)
 
     def test_random_complex(self):
+        rng = np.random.RandomState(1234)
         n = 20
         m = 15
         for i in range(3):
             for full_matrices in (True, False):
-                for a in [random([n, m]), random([m, n])]:
-                    a = a + 1j*random(list(a.shape))
+                for a in [rng.random([n, m]), rng.random([m, n])]:
+                    a = a + 1j*rng.random(list(a.shape))
                     u, s, vh = svd(a, full_matrices=full_matrices,
                                    lapack_driver=self.lapack_driver)
                     assert_array_almost_equal(u.conj().T @ u,
@@ -1135,11 +1004,11 @@ class TestSVD_GESDD:
                     assert_array_almost_equal(u @ sigma @ vh, a)
 
     def test_crash_1580(self):
+        rng = np.random.RandomState(1234)
         sizes = [(13, 23), (30, 50), (60, 100)]
-        np.random.seed(1234)
         for sz in sizes:
             for dt in [np.float32, np.float64, np.complex64, np.complex128]:
-                a = np.random.rand(*sz).astype(dt)
+                a = rng.rand(*sz).astype(dt)
                 # should not crash
                 svd(a, lapack_driver=self.lapack_driver)
 
@@ -1182,9 +1051,7 @@ class TestSVD_GESDD:
 
 
 class TestSVD_GESVD(TestSVD_GESDD):
-    def setup_method(self):
-        self.lapack_driver = 'gesvd'
-        seed(1234)
+    lapack_driver = 'gesvd'
 
 
 class TestSVDVals:
@@ -1252,10 +1119,6 @@ class TestDiagSVD:
 
 
 class TestQR:
-
-    def setup_method(self):
-        seed(1234)
-
     def test_simple(self):
         a = [[8, 2, 3], [2, 9, 3], [5, 3, 6]]
         q, r = qr(a)
@@ -1574,39 +1437,43 @@ class TestQR:
         assert_array_almost_equal(c @ q, qc)
 
     def test_random(self):
+        rng = np.random.RandomState(1234)
         n = 20
         for k in range(2):
-            a = random([n, n])
+            a = rng.random([n, n])
             q, r = qr(a)
             assert_array_almost_equal(q.T @ q, eye(n))
             assert_array_almost_equal(q @ r, a)
 
     def test_random_left(self):
+        rng = np.random.RandomState(1234)
         n = 20
         for k in range(2):
-            a = random([n, n])
+            a = rng.random([n, n])
             q, r = qr(a)
-            c = random([n])
+            c = rng.random([n])
             qc, r = qr_multiply(a, c, "left")
             assert_array_almost_equal(q @ c, qc)
             qc, r = qr_multiply(a, eye(n), "left")
             assert_array_almost_equal(q, qc)
 
     def test_random_right(self):
+        rng = np.random.RandomState(1234)
         n = 20
         for k in range(2):
-            a = random([n, n])
+            a = rng.random([n, n])
             q, r = qr(a)
-            c = random([n])
+            c = rng.random([n])
             cq, r = qr_multiply(a, c)
             assert_array_almost_equal(c @ q, cq)
             cq, r = qr_multiply(a, eye(n))
             assert_array_almost_equal(q, cq)
 
     def test_random_pivoting(self):
+        rng = np.random.RandomState(1234)
         n = 20
         for k in range(2):
-            a = random([n, n])
+            a = rng.random([n, n])
             q, r, p = qr(a, pivoting=True)
             d = abs(diag(r))
             assert_(np.all(d[1:] <= d[:-1]))
@@ -1617,47 +1484,51 @@ class TestQR:
             assert_array_almost_equal(r, r2)
 
     def test_random_tall(self):
+        rng = np.random.RandomState(1234)
         # full version
         m = 200
         n = 100
         for k in range(2):
-            a = random([m, n])
+            a = rng.random([m, n])
             q, r = qr(a)
             assert_array_almost_equal(q.T @ q, eye(m))
             assert_array_almost_equal(q @ r, a)
 
     def test_random_tall_left(self):
+        rng = np.random.RandomState(1234)
         # full version
         m = 200
         n = 100
         for k in range(2):
-            a = random([m, n])
+            a = rng.random([m, n])
             q, r = qr(a, mode="economic")
-            c = random([n])
+            c = rng.random([n])
             qc, r = qr_multiply(a, c, "left")
             assert_array_almost_equal(q @ c, qc)
             qc, r = qr_multiply(a, eye(n), "left")
             assert_array_almost_equal(qc, q)
 
     def test_random_tall_right(self):
+        rng = np.random.RandomState(1234)
         # full version
         m = 200
         n = 100
         for k in range(2):
-            a = random([m, n])
+            a = rng.random([m, n])
             q, r = qr(a, mode="economic")
-            c = random([m])
+            c = rng.random([m])
             cq, r = qr_multiply(a, c)
             assert_array_almost_equal(c @ q, cq)
             cq, r = qr_multiply(a, eye(m))
             assert_array_almost_equal(cq, q)
 
     def test_random_tall_pivoting(self):
+        rng = np.random.RandomState(1234)
         # full version pivoting
         m = 200
         n = 100
         for k in range(2):
-            a = random([m, n])
+            a = rng.random([m, n])
             q, r, p = qr(a, pivoting=True)
             d = abs(diag(r))
             assert_(np.all(d[1:] <= d[:-1]))
@@ -1668,11 +1539,12 @@ class TestQR:
             assert_array_almost_equal(r, r2)
 
     def test_random_tall_e(self):
+        rng = np.random.RandomState(1234)
         # economy version
         m = 200
         n = 100
         for k in range(2):
-            a = random([m, n])
+            a = rng.random([m, n])
             q, r = qr(a, mode='economic')
             assert_array_almost_equal(q.T @ q, eye(n))
             assert_array_almost_equal(q @ r, a)
@@ -1680,11 +1552,12 @@ class TestQR:
             assert_equal(r.shape, (n, n))
 
     def test_random_tall_e_pivoting(self):
+        rng = np.random.RandomState(1234)
         # economy version pivoting
         m = 200
         n = 100
         for k in range(2):
-            a = random([m, n])
+            a = rng.random([m, n])
             q, r, p = qr(a, pivoting=True, mode='economic')
             d = abs(diag(r))
             assert_(np.all(d[1:] <= d[:-1]))
@@ -1697,19 +1570,21 @@ class TestQR:
             assert_array_almost_equal(r, r2)
 
     def test_random_trap(self):
+        rng = np.random.RandomState(1234)
         m = 100
         n = 200
         for k in range(2):
-            a = random([m, n])
+            a = rng.random([m, n])
             q, r = qr(a)
             assert_array_almost_equal(q.T @ q, eye(m))
             assert_array_almost_equal(q @ r, a)
 
     def test_random_trap_pivoting(self):
+        rng = np.random.RandomState(1234)
         m = 100
         n = 200
         for k in range(2):
-            a = random([m, n])
+            a = rng.random([m, n])
             q, r, p = qr(a, pivoting=True)
             d = abs(diag(r))
             assert_(np.all(d[1:] <= d[:-1]))
@@ -1720,39 +1595,43 @@ class TestQR:
             assert_array_almost_equal(r, r2)
 
     def test_random_complex(self):
+        rng = np.random.RandomState(1234)
         n = 20
         for k in range(2):
-            a = random([n, n])+1j*random([n, n])
+            a = rng.random([n, n]) + 1j*rng.random([n, n])
             q, r = qr(a)
             assert_array_almost_equal(q.conj().T @ q, eye(n))
             assert_array_almost_equal(q @ r, a)
 
     def test_random_complex_left(self):
+        rng = np.random.RandomState(1234)
         n = 20
         for k in range(2):
-            a = random([n, n])+1j*random([n, n])
+            a = rng.random([n, n]) + 1j*rng.random([n, n])
             q, r = qr(a)
-            c = random([n])+1j*random([n])
+            c = rng.random([n]) + 1j*rng.random([n])
             qc, r = qr_multiply(a, c, "left")
             assert_array_almost_equal(q @ c, qc)
             qc, r = qr_multiply(a, eye(n), "left")
             assert_array_almost_equal(q, qc)
 
     def test_random_complex_right(self):
+        rng = np.random.RandomState(1234)
         n = 20
         for k in range(2):
-            a = random([n, n])+1j*random([n, n])
+            a = rng.random([n, n]) + 1j*rng.random([n, n])
             q, r = qr(a)
-            c = random([n])+1j*random([n])
+            c = rng.random([n]) + 1j*rng.random([n])
             cq, r = qr_multiply(a, c)
             assert_array_almost_equal(c @ q, cq)
             cq, r = qr_multiply(a, eye(n))
             assert_array_almost_equal(q, cq)
 
     def test_random_complex_pivoting(self):
+        rng = np.random.RandomState(1234)
         n = 20
         for k in range(2):
-            a = random([n, n])+1j*random([n, n])
+            a = rng.random([n, n]) + 1j*rng.random([n, n])
             q, r, p = qr(a, pivoting=True)
             d = abs(diag(r))
             assert_(np.all(d[1:] <= d[:-1]))
@@ -1794,10 +1673,6 @@ class TestQR:
 
 
 class TestRQ:
-
-    def setup_method(self):
-        seed(1234)
-
     def test_simple(self):
         a = [[8, 2, 3], [2, 9, 3], [5, 3, 6]]
         r, q = rq(a)
@@ -1811,9 +1686,10 @@ class TestRQ:
         assert_array_almost_equal(r, r2)
 
     def test_random(self):
+        rng = np.random.RandomState(1234)
         n = 20
         for k in range(2):
-            a = random([n, n])
+            a = rng.random([n, n])
             r, q = rq(a)
             assert_array_almost_equal(q @ q.T, eye(n))
             assert_array_almost_equal(r @ q, a)
@@ -1843,28 +1719,31 @@ class TestRQ:
         assert_array_almost_equal(r @ q, a)
 
     def test_random_tall(self):
+        rng = np.random.RandomState(1234)
         m = 200
         n = 100
         for k in range(2):
-            a = random([m, n])
+            a = rng.random([m, n])
             r, q = rq(a)
             assert_array_almost_equal(q @ q.T, eye(n))
             assert_array_almost_equal(r @ q, a)
 
     def test_random_trap(self):
+        rng = np.random.RandomState(1234)
         m = 100
         n = 200
         for k in range(2):
-            a = random([m, n])
+            a = rng.random([m, n])
             r, q = rq(a)
             assert_array_almost_equal(q @ q.T, eye(n))
             assert_array_almost_equal(r @ q, a)
 
     def test_random_trap_economic(self):
+        rng = np.random.RandomState(1234)
         m = 100
         n = 200
         for k in range(2):
-            a = random([m, n])
+            a = rng.random([m, n])
             r, q = rq(a, mode='economic')
             assert_array_almost_equal(q @ q.T, eye(m))
             assert_array_almost_equal(r @ q, a)
@@ -1872,18 +1751,20 @@ class TestRQ:
             assert_equal(r.shape, (m, m))
 
     def test_random_complex(self):
+        rng = np.random.RandomState(1234)
         n = 20
         for k in range(2):
-            a = random([n, n])+1j*random([n, n])
+            a = rng.random([n, n]) + 1j*rng.random([n, n])
             r, q = rq(a)
             assert_array_almost_equal(q @ q.conj().T, eye(n))
             assert_array_almost_equal(r @ q, a)
 
     def test_random_complex_economic(self):
+        rng = np.random.RandomState(1234)
         m = 100
         n = 200
         for k in range(2):
-            a = random([m, n])+1j*random([m, n])
+            a = rng.random([m, n]) + 1j*rng.random([m, n])
             r, q = rq(a, mode='economic')
             assert_array_almost_equal(q @ q.conj().T, eye(m))
             assert_array_almost_equal(r @ q, a)
@@ -1899,84 +1780,43 @@ class TestRQ:
 
 class TestSchur:
 
+    def check_schur(self, a, t, u, rtol, atol):
+        # Check that the Schur decomposition is correct.
+        assert_allclose(u @ t @ u.conj().T, a, rtol=rtol, atol=atol,
+                        err_msg="Schur decomposition does not match 'a'")
+        # The expected value of u @ u.H - I is all zeros, so test
+        # with absolute tolerance only.
+        assert_allclose(u @ u.conj().T - np.eye(len(u)), 0, rtol=0, atol=atol,
+                        err_msg="u is not unitary")
+
     def test_simple(self):
         a = [[8, 12, 3], [2, 9, 3], [10, 3, 6]]
         t, z = schur(a)
-        assert_array_almost_equal(z @ t @ z.conj().T, a)
+        self.check_schur(a, t, z, rtol=1e-14, atol=5e-15)
         tc, zc = schur(a, 'complex')
         assert_(np.any(ravel(iscomplex(zc))) and np.any(ravel(iscomplex(tc))))
-        assert_array_almost_equal(zc @ tc @ zc.conj().T, a)
+        self.check_schur(a, tc, zc, rtol=1e-14, atol=5e-15)
         tc2, zc2 = rsf2csf(tc, zc)
-        assert_array_almost_equal(zc2 @ tc2 @ zc2.conj().T, a)
+        self.check_schur(a, tc2, zc2, rtol=1e-14, atol=5e-15)
 
-    def test_sort(self):
+    @pytest.mark.parametrize(
+        'sort, expected_diag',
+        [('lhp', [-np.sqrt(2), -0.5, np.sqrt(2), 0.5]),
+         ('rhp', [np.sqrt(2), 0.5, -np.sqrt(2), -0.5]),
+         ('iuc', [-0.5, 0.5, np.sqrt(2), -np.sqrt(2)]),
+         ('ouc', [np.sqrt(2), -np.sqrt(2), -0.5, 0.5]),
+         (lambda x: x >= 0.0, [np.sqrt(2), 0.5, -np.sqrt(2), -0.5])]
+    )
+    def test_sort(self, sort, expected_diag):
+        # The exact eigenvalues of this matrix are
+        #   -sqrt(2), sqrt(2), -1/2, 1/2.
         a = [[4., 3., 1., -1.],
              [-4.5, -3.5, -1., 1.],
              [9., 6., -4., 4.5],
              [6., 4., -3., 3.5]]
-        s, u, sdim = schur(a, sort='lhp')
-        assert_array_almost_equal([[0.1134, 0.5436, 0.8316, 0.],
-                                   [-0.1134, -0.8245, 0.5544, 0.],
-                                   [-0.8213, 0.1308, 0.0265, -0.5547],
-                                   [-0.5475, 0.0872, 0.0177, 0.8321]],
-                                  u, 3)
-        assert_array_almost_equal([[-1.4142, 0.1456, -11.5816, -7.7174],
-                                   [0., -0.5000, 9.4472, -0.7184],
-                                   [0., 0., 1.4142, -0.1456],
-                                   [0., 0., 0., 0.5]],
-                                  s, 3)
-        assert_equal(2, sdim)
-
-        s, u, sdim = schur(a, sort='rhp')
-        assert_array_almost_equal([[0.4862, -0.4930, 0.1434, -0.7071],
-                                   [-0.4862, 0.4930, -0.1434, -0.7071],
-                                   [0.6042, 0.3944, -0.6924, 0.],
-                                   [0.4028, 0.5986, 0.6924, 0.]],
-                                  u, 3)
-        assert_array_almost_equal([[1.4142, -0.9270, 4.5368, -14.4130],
-                                   [0., 0.5, 6.5809, -3.1870],
-                                   [0., 0., -1.4142, 0.9270],
-                                   [0., 0., 0., -0.5]],
-                                  s, 3)
-        assert_equal(2, sdim)
-
-        s, u, sdim = schur(a, sort='iuc')
-        assert_array_almost_equal([[0.5547, 0., -0.5721, -0.6042],
-                                   [-0.8321, 0., -0.3814, -0.4028],
-                                   [0., 0.7071, -0.5134, 0.4862],
-                                   [0., 0.7071, 0.5134, -0.4862]],
-                                  u, 3)
-        assert_array_almost_equal([[-0.5000, 0.0000, -6.5809, -4.0974],
-                                   [0., 0.5000, -3.3191, -14.4130],
-                                   [0., 0., 1.4142, 2.1573],
-                                   [0., 0., 0., -1.4142]],
-                                  s, 3)
-        assert_equal(2, sdim)
-
-        s, u, sdim = schur(a, sort='ouc')
-        assert_array_almost_equal([[0.4862, -0.5134, 0.7071, 0.],
-                                   [-0.4862, 0.5134, 0.7071, 0.],
-                                   [0.6042, 0.5721, 0., -0.5547],
-                                   [0.4028, 0.3814, 0., 0.8321]],
-                                  u, 3)
-        assert_array_almost_equal([[1.4142, -2.1573, 14.4130, 4.0974],
-                                   [0., -1.4142, 3.3191, 6.5809],
-                                   [0., 0., -0.5000, 0.],
-                                   [0., 0., 0., 0.5000]],
-                                  s, 3)
-        assert_equal(2, sdim)
-
-        s, u, sdim = schur(a, sort=lambda x: x >= 0.0)
-        assert_array_almost_equal([[0.4862, -0.4930, 0.1434, -0.7071],
-                                   [-0.4862, 0.4930, -0.1434, -0.7071],
-                                   [0.6042, 0.3944, -0.6924, 0.],
-                                   [0.4028, 0.5986, 0.6924, 0.]],
-                                  u, 3)
-        assert_array_almost_equal([[1.4142, -0.9270, 4.5368, -14.4130],
-                                   [0., 0.5, 6.5809, -3.1870],
-                                   [0., 0., -1.4142, 0.9270],
-                                   [0., 0., 0., -0.5]],
-                                  s, 3)
+        t, u, sdim = schur(a, sort=sort)
+        self.check_schur(a, t, u, rtol=1e-14, atol=5e-15)
+        assert_allclose(np.diag(t), expected_diag, rtol=1e-12)
         assert_equal(2, sdim)
 
     def test_sort_errors(self):
@@ -2031,16 +1871,18 @@ class TestHessenberg:
         assert_array_almost_equal(q.T @ a @ q, h)
 
     def test_random(self):
+        rng = np.random.RandomState(1234)
         n = 20
         for k in range(2):
-            a = random([n, n])
+            a = rng.random([n, n])
             h, q = hessenberg(a, calc_q=1)
             assert_array_almost_equal(q.T @ a @ q, h)
 
     def test_random_complex(self):
+        rng = np.random.RandomState(1234)
         n = 20
         for k in range(2):
-            a = random([n, n])+1j*random([n, n])
+            a = rng.random([n, n]) + 1j*rng.random([n, n])
             h, q = hessenberg(a, calc_q=1)
             assert_array_almost_equal(q.conj().T @ a @ q, h)
 
@@ -2068,14 +1910,24 @@ class TestHessenberg:
         assert_array_almost_equal(h2, b)
 
 
-class TestQZ:
-    def setup_method(self):
-        seed(12345)
+blas_provider = blas_version = None
+if CONFIG is not None:
+    blas_provider = CONFIG['Build Dependencies']['blas']['name']
+    blas_version = CONFIG['Build Dependencies']['blas']['version']
 
+
+class TestQZ:
+    @pytest.mark.xfail(
+        sys.platform == 'darwin' and
+        blas_provider == 'openblas' and
+        blas_version < "0.3.21.dev",
+        reason="gges[float32] broken for OpenBLAS on macOS, see gh-16949"
+    )
     def test_qz_single(self):
+        rng = np.random.RandomState(12345)
         n = 5
-        A = random([n, n]).astype(float32)
-        B = random([n, n]).astype(float32)
+        A = rng.random([n, n]).astype(float32)
+        B = rng.random([n, n]).astype(float32)
         AA, BB, Q, Z = qz(A, B)
         assert_array_almost_equal(Q @ AA @ Z.T, A, decimal=5)
         assert_array_almost_equal(Q @ BB @ Z.T, B, decimal=5)
@@ -2084,9 +1936,10 @@ class TestQZ:
         assert_(np.all(diag(BB) >= 0))
 
     def test_qz_double(self):
+        rng = np.random.RandomState(12345)
         n = 5
-        A = random([n, n])
-        B = random([n, n])
+        A = rng.random([n, n])
+        B = rng.random([n, n])
         AA, BB, Q, Z = qz(A, B)
         assert_array_almost_equal(Q @ AA @ Z.T, A)
         assert_array_almost_equal(Q @ BB @ Z.T, B)
@@ -2095,9 +1948,10 @@ class TestQZ:
         assert_(np.all(diag(BB) >= 0))
 
     def test_qz_complex(self):
+        rng = np.random.RandomState(12345)
         n = 5
-        A = random([n, n]) + 1j*random([n, n])
-        B = random([n, n]) + 1j*random([n, n])
+        A = rng.random([n, n]) + 1j*rng.random([n, n])
+        B = rng.random([n, n]) + 1j*rng.random([n, n])
         AA, BB, Q, Z = qz(A, B)
         assert_array_almost_equal(Q @ AA @ Z.conj().T, A)
         assert_array_almost_equal(Q @ BB @ Z.conj().T, B)
@@ -2107,9 +1961,10 @@ class TestQZ:
         assert_(np.all(diag(BB).imag == 0))
 
     def test_qz_complex64(self):
+        rng = np.random.RandomState(12345)
         n = 5
-        A = (random([n, n]) + 1j*random([n, n])).astype(complex64)
-        B = (random([n, n]) + 1j*random([n, n])).astype(complex64)
+        A = (rng.random([n, n]) + 1j*rng.random([n, n])).astype(complex64)
+        B = (rng.random([n, n]) + 1j*rng.random([n, n])).astype(complex64)
         AA, BB, Q, Z = qz(A, B)
         assert_array_almost_equal(Q @ AA @ Z.conj().T, A, decimal=5)
         assert_array_almost_equal(Q @ BB @ Z.conj().T, B, decimal=5)
@@ -2119,9 +1974,10 @@ class TestQZ:
         assert_(np.all(diag(BB).imag == 0))
 
     def test_qz_double_complex(self):
+        rng = np.random.RandomState(12345)
         n = 5
-        A = random([n, n])
-        B = random([n, n])
+        A = rng.random([n, n])
+        B = rng.random([n, n])
         AA, BB, Q, Z = qz(A, B, output='complex')
         aa = Q @ AA @ Z.conj().T
         assert_array_almost_equal(aa.real, A)
@@ -2233,20 +2089,16 @@ class TestQZ:
     #    assert_(np.all(np.real(eigenvalues[sdim:] > 0)))
 
     def test_check_finite(self):
+        rng = np.random.RandomState(12345)
         n = 5
-        A = random([n, n])
-        B = random([n, n])
+        A = rng.random([n, n])
+        B = rng.random([n, n])
         AA, BB, Q, Z = qz(A, B, check_finite=False)
         assert_array_almost_equal(Q @ AA @ Z.T, A)
         assert_array_almost_equal(Q @ BB @ Z.T, B)
         assert_array_almost_equal(Q @ Q.T, eye(n))
         assert_array_almost_equal(Z @ Z.T, eye(n))
         assert_(np.all(diag(BB) >= 0))
-
-
-def _make_pos(X):
-    # the decompositions can have different signs than verified results
-    return np.sign(X)*X
 
 
 class TestOrdQZ:
@@ -2353,7 +2205,7 @@ class TestOrdQZ:
             # once the sorting criterion was not matched all subsequent
             # eigenvalues also shouldn't match
             if not lastsort:
-                assert(not cursort)
+                assert not cursort
             lastsort = cursort
 
     def check_all(self, sort):
@@ -2452,44 +2304,38 @@ class TestOrdQZ:
 
 
 class TestOrdQZWorkspaceSize:
-
-    def setup_method(self):
-        seed(12345)
-
     def test_decompose(self):
-
+        rng = np.random.RandomState(12345)
         N = 202
-
         # raises error if lwork parameter to dtrsen is too small
         for ddtype in [np.float32, np.float64]:
-            A = random((N, N)).astype(ddtype)
-            B = random((N, N)).astype(ddtype)
+            A = rng.random((N, N)).astype(ddtype)
+            B = rng.random((N, N)).astype(ddtype)
             # sort = lambda ar, ai, b: ar**2 + ai**2 < b**2
             _ = ordqz(A, B, sort=lambda alpha, beta: alpha < beta,
                       output='real')
 
         for ddtype in [np.complex128, np.complex64]:
-            A = random((N, N)).astype(ddtype)
-            B = random((N, N)).astype(ddtype)
+            A = rng.random((N, N)).astype(ddtype)
+            B = rng.random((N, N)).astype(ddtype)
             _ = ordqz(A, B, sort=lambda alpha, beta: alpha < beta,
                       output='complex')
 
     @pytest.mark.slow
     def test_decompose_ouc(self):
-
+        rng = np.random.RandomState(12345)
         N = 202
-
         # segfaults if lwork parameter to dtrsen is too small
         for ddtype in [np.float32, np.float64, np.complex128, np.complex64]:
-            A = random((N, N)).astype(ddtype)
-            B = random((N, N)).astype(ddtype)
+            A = rng.random((N, N)).astype(ddtype)
+            B = rng.random((N, N)).astype(ddtype)
             S, T, alpha, beta, U, V = ordqz(A, B, sort='ouc')
 
 
 class TestDatacopied:
 
     def test_datacopied(self):
-        from scipy.linalg.decomp import _datacopied
+        from scipy.linalg._decomp import _datacopied
 
         M = matrix([[0, 1], [2, 3]])
         A = asarray(M)
@@ -2526,8 +2372,8 @@ def test_aligned_mem_float():
     eig(z.T, overwrite_a=True)
 
 
-@pytest.mark.skip(platform.machine() == 'ppc64le',
-                  reason="crashes on ppc64le")
+@pytest.mark.skipif(platform.machine() == 'ppc64le',
+                    reason="crashes on ppc64le")
 def test_aligned_mem():
     """Check linalg works with non-aligned memory (float64)"""
     # Allocate 804 bytes of memory (allocated on boundary)

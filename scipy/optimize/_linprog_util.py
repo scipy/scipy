@@ -5,15 +5,16 @@ Method agnostic utility functions for linear progamming
 import numpy as np
 import scipy.sparse as sps
 from warnings import warn
-from .optimize import OptimizeWarning
+from ._optimize import OptimizeWarning
 from scipy.optimize._remove_redundancy import (
     _remove_redundancy_svd, _remove_redundancy_pivot_sparse,
     _remove_redundancy_pivot_dense, _remove_redundancy_id
     )
 from collections import namedtuple
 
-_LPProblem = namedtuple('_LPProblem', 'c A_ub b_ub A_eq b_eq bounds x0')
-_LPProblem.__new__.__defaults__ = (None,) * 6  # make c the only required arg
+_LPProblem = namedtuple('_LPProblem',
+                        'c A_ub b_ub A_eq b_eq bounds x0 integrality')
+_LPProblem.__new__.__defaults__ = (None,) * 7  # make c the only required arg
 _LPProblem.__doc__ = \
     """ Represents a linear-programming problem.
 
@@ -50,6 +51,28 @@ _LPProblem.__doc__ = \
         the optimization algorithm. This argument is currently used only by the
         'revised simplex' method, and can only be used if `x0` represents a
         basic feasible solution.
+    integrality : 1-D array or int, optional
+        Indicates the type of integrality constraint on each decision variable.
+
+        ``0`` : Continuous variable; no integrality constraint.
+
+        ``1`` : Integer variable; decision variable must be an integer
+        within `bounds`.
+
+        ``2`` : Semi-continuous variable; decision variable must be within
+        `bounds` or take value ``0``.
+
+        ``3`` : Semi-integer variable; decision variable must be an integer
+        within `bounds` or take value ``0``.
+
+        By default, all variables are continuous.
+
+        For mixed integrality constraints, supply an array of shape `c.shape`.
+        To infer a constraint on each decision variable from shorter inputs,
+        the argument will be broadcasted to `c.shape` using `np.broadcast_to`.
+
+        This argument is currently used only by the ``'highs'`` method and
+        ignored otherwise.
 
     Notes
     -----
@@ -184,7 +207,7 @@ def _format_b_constraints(b):
     if b is None:
         return np.array([], dtype=float)
     b = np.array(b, dtype=float, copy=True).squeeze()
-    return b if b.size != 1 else b.reshape((-1))
+    return b if b.size != 1 else b.reshape(-1)
 
 
 def _clean_inputs(lp):
@@ -258,7 +281,7 @@ def _clean_inputs(lp):
             basic feasible solution.
 
     """
-    c, A_ub, b_ub, A_eq, b_eq, bounds, x0 = lp
+    c, A_ub, b_ub, A_eq, b_eq, bounds, x0, integrality = lp
 
     if c is None:
         raise TypeError
@@ -272,14 +295,14 @@ def _clean_inputs(lp):
     else:
         # If c is a single value, convert it to a 1-D array.
         if c.size == 1:
-            c = c.reshape((-1))
+            c = c.reshape(-1)
 
         n_x = len(c)
         if n_x == 0 or len(c.shape) != 1:
             raise ValueError(
                 "Invalid input for linprog: c must be a 1-D array and must "
                 "not have more than one non-singleton dimension")
-        if not(np.isfinite(c).all()):
+        if not np.isfinite(c).all():
             raise ValueError(
                 "Invalid input for linprog: c must not contain values "
                 "inf, nan, or None")
@@ -318,7 +341,7 @@ def _clean_inputs(lp):
                 "must not have more than one non-singleton dimension and "
                 "the number of rows in A_ub must equal the number of values "
                 "in b_ub")
-        if not(np.isfinite(b_ub).all()):
+        if not np.isfinite(b_ub).all():
             raise ValueError(
                 "Invalid input for linprog: b_ub must not contain values "
                 "inf, nan, or None")
@@ -357,7 +380,7 @@ def _clean_inputs(lp):
                 "must not have more than one non-singleton dimension and "
                 "the number of rows in A_eq must equal the number of values "
                 "in b_eq")
-        if not(np.isfinite(b_eq).all()):
+        if not np.isfinite(b_eq).all():
             raise ValueError(
                 "Invalid input for linprog: b_eq must not contain values "
                 "inf, nan, or None")
@@ -372,7 +395,7 @@ def _clean_inputs(lp):
                 "Invalid input for linprog: x0 must be a 1-D array of "
                 "numerical coefficients") from e
         if x0.ndim == 0:
-            x0 = x0.reshape((-1))
+            x0 = x0.reshape(-1)
         if len(x0) == 0 or x0.ndim != 1:
             raise ValueError(
                 "Invalid input for linprog: x0 should be a 1-D array; it "
@@ -438,7 +461,7 @@ def _clean_inputs(lp):
     else:
         raise ValueError(
             "Invalid input for linprog: unable to interpret bounds with this "
-            "dimension tuple: {0}.".format(bsh))
+            "dimension tuple: {}.".format(bsh))
 
     # The process above creates nan-s where the input specified None
     # Convert the nan-s in the 1st column to -np.inf and in the 2nd column
@@ -448,7 +471,7 @@ def _clean_inputs(lp):
     i_none = np.isnan(bounds_clean[:, 1])
     bounds_clean[i_none, 1] = np.inf
 
-    return _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds_clean, x0)
+    return _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds_clean, x0, integrality)
 
 
 def _presolve(lp, rr, rr_method, tol=1e-9):
@@ -572,7 +595,7 @@ def _presolve(lp, rr, rr_method, tol=1e-9):
     #  * loop presolve until no additional changes are made
     #  * implement additional efficiency improvements in redundancy removal [2]
 
-    c, A_ub, b_ub, A_eq, b_eq, bounds, x0 = lp
+    c, A_ub, b_ub, A_eq, b_eq, bounds, x0, _ = lp
 
     revstack = []               # record of variables eliminated from problem
     # constant term in cost function may be added if variables are eliminated
@@ -1089,7 +1112,7 @@ def _get_Abc(lp, c0):
            programming." Athena Scientific 1 (1997): 997.
 
     """
-    c, A_ub, b_ub, A_eq, b_eq, bounds, x0 = lp
+    c, A_ub, b_ub, A_eq, b_eq, bounds, x0, integrality = lp
 
     if sps.issparse(A_eq):
         sparse = True
@@ -1286,8 +1309,8 @@ def _display_summary(message, status, fun, iteration):
     """
     print(message)
     if status in (0, 1):
-        print("         Current function value: {0: <12.6f}".format(fun))
-    print("         Iterations: {0:d}".format(iteration))
+        print(f"         Current function value: {fun: <12.6f}")
+    print(f"         Iterations: {iteration:d}")
 
 
 def _postsolve(x, postsolve_args, complete=False):
@@ -1355,7 +1378,8 @@ def _postsolve(x, postsolve_args, complete=False):
     # note that all the inputs are the ORIGINAL, unmodified versions
     # no rows, columns have been removed
 
-    (c, A_ub, b_ub, A_eq, b_eq, bounds, x0), revstack, C, b_scale = postsolve_args
+    c, A_ub, b_ub, A_eq, b_eq, bounds, x0, integrality = postsolve_args[0]
+    revstack, C, b_scale = postsolve_args[1:]
 
     x = _unscale(x, C, b_scale)
 
@@ -1392,7 +1416,8 @@ def _postsolve(x, postsolve_args, complete=False):
     return x, fun, slack, con
 
 
-def _check_result(x, fun, status, slack, con, bounds, tol, message):
+def _check_result(x, fun, status, slack, con, bounds, tol, message,
+                  integrality):
     """
     Check the validity of the provided solution.
 
@@ -1464,7 +1489,13 @@ def _check_result(x, fun, status, slack, con, bounds, tol, message):
     if contains_nans:
         is_feasible = False
     else:
-        invalid_bounds = (x < bounds[:, 0] - tol).any() or (x > bounds[:, 1] + tol).any()
+        if integrality is None:
+            integrality = 0
+        valid_bounds = (x >= bounds[:, 0] - tol) & (x <= bounds[:, 1] + tol)
+        # When integrality is 2 or 3, x must be within bounds OR take value 0
+        valid_bounds |= (integrality > 1) & np.isclose(x, 0, atol=tol)
+        invalid_bounds = not np.all(valid_bounds)
+
         invalid_slack = status != 3 and (slack < -tol).any()
         invalid_con = status != 3 and (np.abs(con) > tol).any()
         is_feasible = not (invalid_bounds or invalid_slack or invalid_con)
@@ -1472,7 +1503,7 @@ def _check_result(x, fun, status, slack, con, bounds, tol, message):
     if status == 0 and not is_feasible:
         status = 4
         message = ("The solution does not satisfy the constraints within the "
-                   "required tolerance of " + "{:.2E}".format(tol) + ", yet "
+                   "required tolerance of " + f"{tol:.2E}" + ", yet "
                    "no errors were raised and there is no certificate of "
                    "infeasibility or unboundedness. Check whether "
                    "the slack and constraint residuals are acceptable; "

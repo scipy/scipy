@@ -32,7 +32,7 @@ Black dashed line
 
 """
 import numpy as np
-import matplotlib.pyplot as plt  # type: ignore[import]
+import matplotlib.pyplot as plt
 
 import mpmath
 
@@ -57,9 +57,11 @@ def do_plot(is_h=True):
 
     mpmath.mp.dps = 50
     if is_h:
-        sh = lambda v, z: float(mpmath.struveh(mpmath.mpf(v), mpmath.mpf(z)))
+        def sh(v, z):
+            return float(mpmath.struveh(mpmath.mpf(v), mpmath.mpf(z)))
     else:
-        sh = lambda v, z: float(mpmath.struvel(mpmath.mpf(v), mpmath.mpf(z)))
+        def sh(v, z):
+            return float(mpmath.struvel(mpmath.mpf(v), mpmath.mpf(z)))
     ex = np.vectorize(sh, otypes='d')(vs[:,None], zs[None,:])
 
     err_a = err_metric(ra[0], ex) + 1e-300

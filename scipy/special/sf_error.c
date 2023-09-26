@@ -1,7 +1,7 @@
+#include <Python.h>
+
 #include <stdlib.h>
 #include <stdarg.h>
-
-#include <Python.h>
 
 #include "sf_error.h"
 
@@ -108,6 +108,9 @@ void sf_error(const char *func_name, sf_error_t code, const char *fmt, ...)
 	/* Sentinel, should never get here */
 	py_SpecialFunctionWarning = NULL;
     }
+    /* Done with scipy_special */
+    Py_DECREF(scipy_special);
+
     if (py_SpecialFunctionWarning == NULL) {
 	PyErr_Clear();
 	goto skip_warn;

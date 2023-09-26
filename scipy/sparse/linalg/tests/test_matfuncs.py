@@ -1,24 +1,23 @@
 #
 # Created by: Pearu Peterson, March 2002
 #
-""" Test functions for scipy.linalg.matfuncs module
+""" Test functions for scipy.linalg._matfuncs module
 
 """
 import math
 
 import numpy as np
 from numpy import array, eye, exp, random
-from numpy.linalg import matrix_power
 from numpy.testing import (
         assert_allclose, assert_, assert_array_almost_equal, assert_equal,
         assert_array_almost_equal_nulp, suppress_warnings)
 
-from scipy.sparse import csc_matrix, SparseEfficiencyWarning
-from scipy.sparse.construct import eye as speye
-from scipy.sparse.linalg.matfuncs import (expm, _expm,
+from scipy.sparse import csc_matrix, csc_array, SparseEfficiencyWarning
+from scipy.sparse._construct import eye as speye
+from scipy.sparse.linalg._matfuncs import (expm, _expm,
         ProductOperator, MatrixPowerOperator,
-        _onenorm_matrix_power_nnm)
-from scipy.sparse.sputils import matrix
+        _onenorm_matrix_power_nnm, matrix_power)
+from scipy.sparse._sputils import matrix
 from scipy.linalg import logm
 from scipy.special import factorial, binom
 import scipy.sparse
@@ -67,6 +66,20 @@ def test_onenorm_matrix_power_nnm():
             expected = np.linalg.norm(Mp, 1)
             assert_allclose(observed, expected)
 
+def test_matrix_power():
+    np.random.seed(1234)
+    row, col = np.random.randint(0, 4, size=(2, 6))
+    data = np.random.random(size=(6,))
+    Amat = csc_matrix((data, (row, col)), shape=(4, 4))
+    A = csc_array((data, (row, col)), shape=(4, 4))
+    Adense = A.toarray()
+    for power in (2, 5, 6):
+        Apow = matrix_power(A, power).toarray()
+        Amat_pow = (Amat**power).toarray()
+        Adense_pow = np.linalg.matrix_power(Adense, power)
+        assert_allclose(Apow, Adense_pow)
+        assert_allclose(Apow, Amat_pow)
+
 
 class TestExpM:
     def test_zero_ndarray(self):
@@ -113,7 +126,7 @@ class TestExpM:
             for scale in [1e-2, 1e-1, 5e-1, 1, 10]:
                 A = scale * eye(3, dtype=dtype)
                 observed = expm(A)
-                expected = exp(scale) * eye(3, dtype=dtype)
+                expected = exp(scale, dtype=dtype) * eye(3, dtype=dtype)
                 assert_array_almost_equal_nulp(observed, expected, nulp=100)
 
     def test_padecases_dtype_complex(self):
@@ -121,7 +134,7 @@ class TestExpM:
             for scale in [1e-2, 1e-1, 5e-1, 1, 10]:
                 A = scale * eye(3, dtype=dtype)
                 observed = expm(A)
-                expected = exp(scale) * eye(3, dtype=dtype)
+                expected = exp(scale, dtype=dtype) * eye(3, dtype=dtype)
                 assert_array_almost_equal_nulp(observed, expected, nulp=100)
 
     def test_padecases_dtype_sparse_float(self):
@@ -129,7 +142,7 @@ class TestExpM:
         dtype = np.float64
         for scale in [1e-2, 1e-1, 5e-1, 1, 10]:
             a = scale * speye(3, 3, dtype=dtype, format='csc')
-            e = exp(scale) * eye(3, dtype=dtype)
+            e = exp(scale, dtype=dtype) * eye(3, dtype=dtype)
             with suppress_warnings() as sup:
                 sup.filter(SparseEfficiencyWarning,
                            "Changing the sparsity structure of a csc_matrix is expensive.")
@@ -577,6 +590,5 @@ class TestOperators:
             A = np.random.randn(n, n)
             B = np.random.randn(n, k)
             op = MatrixPowerOperator(A, p)
-            assert_allclose(op.matmat(B), matrix_power(A, p).dot(B))
-            assert_allclose(op.T.matmat(B), matrix_power(A, p).T.dot(B))
-
+            assert_allclose(op.matmat(B), np.linalg.matrix_power(A, p).dot(B))
+            assert_allclose(op.T.matmat(B), np.linalg.matrix_power(A, p).T.dot(B))

@@ -21,31 +21,34 @@ class BinomTestResult:
         Indicates the alternative hypothesis specified in the input
         to `binomtest`.  It will be one of ``'two-sided'``, ``'greater'``,
         or ``'less'``.
+    statistic: float
+        The estimate of the proportion of successes.
     pvalue : float
         The p-value of the hypothesis test.
-    proportion_estimate : float
-        The estimate of the proportion of successes.
 
     """
-    def __init__(self, k, n, alternative, pvalue, proportion_estimate):
+    def __init__(self, k, n, alternative, statistic, pvalue):
         self.k = k
         self.n = n
         self.alternative = alternative
-        self.proportion_estimate = proportion_estimate
+        self.statistic = statistic
         self.pvalue = pvalue
+
+        # add alias for backward compatibility
+        self.proportion_estimate = statistic
 
     def __repr__(self):
         s = ("BinomTestResult("
              f"k={self.k}, "
              f"n={self.n}, "
              f"alternative={self.alternative!r}, "
-             f"proportion_estimate={self.proportion_estimate}, "
+             f"statistic={self.statistic}, "
              f"pvalue={self.pvalue})")
         return s
 
     def proportion_ci(self, confidence_level=0.95, method='exact'):
         """
-        Compute the confidence interval for the estimated proportion.
+        Compute the confidence interval for ``statistic``.
 
         Parameters
         ----------
@@ -87,7 +90,7 @@ class BinomTestResult:
         --------
         >>> from scipy.stats import binomtest
         >>> result = binomtest(k=7, n=50, p=0.1)
-        >>> result.proportion_estimate
+        >>> result.statistic
         0.14
         >>> result.proportion_ci()
         ConfidenceInterval(low=0.05819170033997342, high=0.26739600249700846)
@@ -233,15 +236,15 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
             Indicates the alternative hypothesis specified in the input
             to `binomtest`.  It will be one of ``'two-sided'``, ``'greater'``,
             or ``'less'``.
+        statistic : float
+            The estimate of the proportion of successes.
         pvalue : float
             The p-value of the hypothesis test.
-        proportion_estimate : float
-            The estimate of the proportion of successes.
 
         The object has the following methods:
 
         proportion_ci(confidence_level=0.95, method='exact') :
-            Compute the confidence interval for ``proportion_estimate``.
+            Compute the confidence interval for ``statistic``.
 
     Notes
     -----
@@ -268,9 +271,10 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
     The null hypothesis cannot be rejected at the 5% level of significance
     because the returned p-value is greater than the critical value of 5%.
 
-    The estimated proportion is simply ``3/15``:
+    The test statistic is equal to the estimated proportion, which is simply
+    ``3/15``:
 
-    >>> result.proportion_estimate
+    >>> result.statistic
     0.2
 
     We can use the `proportion_ci()` method of the result to compute the
@@ -325,7 +329,7 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
         pval = min(1.0, pval)
 
     result = BinomTestResult(k=k, n=n, alternative=alternative,
-                             proportion_estimate=k/n, pvalue=pval)
+                             statistic=k/n, pvalue=pval)
     return result
 
 
@@ -351,7 +355,7 @@ def _binary_search_for_binom_tst(a, d, lo, hi):
       The higher end of the range to search.
 
     Returns
-    ----------
+    -------
     int
       The index, i between lo and hi
       such that a(i)<=d<a(i+1)

@@ -74,7 +74,7 @@ def iterate_structure(structure, iterations, origin=None):
         A new structuring element obtained by dilating `structure`
         (`iterations` - 1) times with itself.
 
-    See also
+    See Also
     --------
     generate_binary_structure
 
@@ -144,7 +144,7 @@ def generate_binary_structure(rank, connectivity):
          Structuring element which may be used for binary morphological
          operations, with `rank` dimensions and all dimensions equal to 3.
 
-    See also
+    See Also
     --------
     iterate_structure, binary_dilation, binary_erosion
 
@@ -159,6 +159,7 @@ def generate_binary_structure(rank, connectivity):
     Examples
     --------
     >>> from scipy import ndimage
+    >>> import numpy as np
     >>> struct = ndimage.generate_binary_structure(2, 1)
     >>> struct
     array([[False,  True, False],
@@ -332,7 +333,7 @@ def binary_erosion(input, structure=None, iterations=1, mask=None, output=None,
     binary_erosion : ndarray of bools
         Erosion of the input by the structuring element.
 
-    See also
+    See Also
     --------
     grey_erosion, binary_dilation, binary_closing, binary_opening,
     generate_binary_structure
@@ -353,6 +354,7 @@ def binary_erosion(input, structure=None, iterations=1, mask=None, output=None,
     Examples
     --------
     >>> from scipy import ndimage
+    >>> import numpy as np
     >>> a = np.zeros((7,7), dtype=int)
     >>> a[1:6, 2:5] = 1
     >>> a
@@ -428,7 +430,7 @@ def binary_dilation(input, structure=None, iterations=1, mask=None,
     binary_dilation : ndarray of bools
         Dilation of the input by the structuring element.
 
-    See also
+    See Also
     --------
     grey_dilation, binary_erosion, binary_closing, binary_opening,
     generate_binary_structure
@@ -449,6 +451,7 @@ def binary_dilation(input, structure=None, iterations=1, mask=None,
     Examples
     --------
     >>> from scipy import ndimage
+    >>> import numpy as np
     >>> a = np.zeros((5, 5))
     >>> a[2, 2] = 1
     >>> a
@@ -570,7 +573,7 @@ def binary_opening(input, structure=None, iterations=1, output=None,
     binary_opening : ndarray of bools
         Opening of the input by the structuring element.
 
-    See also
+    See Also
     --------
     grey_opening, binary_closing, binary_erosion, binary_dilation,
     generate_binary_structure
@@ -593,6 +596,7 @@ def binary_opening(input, structure=None, iterations=1, output=None,
     Examples
     --------
     >>> from scipy import ndimage
+    >>> import numpy as np
     >>> a = np.zeros((5,5), dtype=int)
     >>> a[1:4, 1:4] = 1; a[4, 4] = 1
     >>> a
@@ -693,7 +697,7 @@ def binary_closing(input, structure=None, iterations=1, output=None,
     binary_closing : ndarray of bools
         Closing of the input by the structuring element.
 
-    See also
+    See Also
     --------
     grey_closing, binary_opening, binary_dilation, binary_erosion,
     generate_binary_structure
@@ -716,6 +720,7 @@ def binary_closing(input, structure=None, iterations=1, output=None,
     Examples
     --------
     >>> from scipy import ndimage
+    >>> import numpy as np
     >>> a = np.zeros((5,5), dtype=int)
     >>> a[1:-1, 1:-1] = 1; a[2,2] = 0
     >>> a
@@ -824,7 +829,7 @@ def binary_hit_or_miss(input, structure1=None, structure2=None,
         Hit-or-miss transform of `input` with the given structuring
         element (`structure1`, `structure2`).
 
-    See also
+    See Also
     --------
     binary_erosion
 
@@ -835,6 +840,7 @@ def binary_hit_or_miss(input, structure1=None, structure2=None,
     Examples
     --------
     >>> from scipy import ndimage
+    >>> import numpy as np
     >>> a = np.zeros((7,7), dtype=int)
     >>> a[1, 1] = 1; a[2:4, 2:4] = 1; a[4:6, 4:6] = 1
     >>> a
@@ -947,6 +953,7 @@ def binary_propagation(input, structure=None, mask=None,
     Examples
     --------
     >>> from scipy import ndimage
+    >>> import numpy as np
     >>> input = np.zeros((8, 8), dtype=int)
     >>> input[2, 2] = 1
     >>> mask = np.zeros((8, 8), dtype=int)
@@ -1054,7 +1061,7 @@ def binary_fill_holes(input, structure=None, output=None, origin=0):
         Transformation of the initial image `input` where holes have been
         filled.
 
-    See also
+    See Also
     --------
     binary_dilation, binary_propagation, label
 
@@ -1074,6 +1081,7 @@ def binary_fill_holes(input, structure=None, output=None, origin=0):
     Examples
     --------
     >>> from scipy import ndimage
+    >>> import numpy as np
     >>> a = np.zeros((5, 5), dtype=int)
     >>> a[1:4, 1:4] = 1
     >>> a[2,2] = 0
@@ -1153,7 +1161,7 @@ def grey_erosion(input, size=None, footprint=None, structure=None,
     output : ndarray
         Grayscale erosion of `input`.
 
-    See also
+    See Also
     --------
     binary_erosion, grey_dilation, grey_opening, grey_closing
     generate_binary_structure, minimum_filter
@@ -1179,6 +1187,7 @@ def grey_erosion(input, size=None, footprint=None, structure=None,
     Examples
     --------
     >>> from scipy import ndimage
+    >>> import numpy as np
     >>> a = np.zeros((7,7), dtype=int)
     >>> a[1:6, 1:6] = 3
     >>> a[4,4] = 2; a[2,3] = 1
@@ -1204,7 +1213,7 @@ def grey_erosion(input, size=None, footprint=None, structure=None,
            [ True,  True,  True],
            [False,  True, False]], dtype=bool)
     >>> # Diagonally-connected elements are not considered neighbors
-    >>> ndimage.grey_erosion(a, size=(3,3), footprint=footprint)
+    >>> ndimage.grey_erosion(a, footprint=footprint)
     array([[0, 0, 0, 0, 0, 0, 0],
            [0, 0, 0, 0, 0, 0, 0],
            [0, 0, 1, 1, 1, 0, 0],
@@ -1263,7 +1272,7 @@ def grey_dilation(input, size=None, footprint=None, structure=None,
     grey_dilation : ndarray
         Grayscale dilation of `input`.
 
-    See also
+    See Also
     --------
     binary_dilation, grey_erosion, grey_closing, grey_opening
     generate_binary_structure, maximum_filter
@@ -1289,6 +1298,7 @@ def grey_dilation(input, size=None, footprint=None, structure=None,
     Examples
     --------
     >>> from scipy import ndimage
+    >>> import numpy as np
     >>> a = np.zeros((7,7), dtype=int)
     >>> a[2:5, 2:5] = 1
     >>> a[4,4] = 2; a[2,3] = 3
@@ -1408,7 +1418,7 @@ def grey_opening(input, size=None, footprint=None, structure=None,
     grey_opening : ndarray
         Result of the grayscale opening of `input` with `structure`.
 
-    See also
+    See Also
     --------
     binary_opening, grey_dilation, grey_erosion, grey_closing
     generate_binary_structure
@@ -1425,6 +1435,7 @@ def grey_opening(input, size=None, footprint=None, structure=None,
     Examples
     --------
     >>> from scipy import ndimage
+    >>> import numpy as np
     >>> a = np.arange(36).reshape((6,6))
     >>> a[3, 3] = 50
     >>> a
@@ -1491,7 +1502,7 @@ def grey_closing(input, size=None, footprint=None, structure=None,
     grey_closing : ndarray
         Result of the grayscale closing of `input` with `structure`.
 
-    See also
+    See Also
     --------
     binary_closing, grey_dilation, grey_erosion, grey_opening,
     generate_binary_structure
@@ -1508,6 +1519,7 @@ def grey_closing(input, size=None, footprint=None, structure=None,
     Examples
     --------
     >>> from scipy import ndimage
+    >>> import numpy as np
     >>> a = np.arange(36).reshape((6,6))
     >>> a[3,3] = 0
     >>> a
@@ -1577,7 +1589,7 @@ def morphological_gradient(input, size=None, footprint=None, structure=None,
     morphological_gradient : ndarray
         Morphological gradient of `input`.
 
-    See also
+    See Also
     --------
     grey_dilation, grey_erosion, gaussian_gradient_magnitude
 
@@ -1595,6 +1607,7 @@ def morphological_gradient(input, size=None, footprint=None, structure=None,
     Examples
     --------
     >>> from scipy import ndimage
+    >>> import numpy as np
     >>> a = np.zeros((7,7), dtype=int)
     >>> a[2:5, 2:5] = 1
     >>> ndimage.morphological_gradient(a, size=(3,3))
@@ -1735,11 +1748,16 @@ def white_tophat(input, size=None, footprint=None, structure=None,
     output : ndarray
         Result of the filter of `input` with `structure`.
 
+    See Also
+    --------
+    black_tophat
+
     Examples
     --------
     Subtract gray background from a bright peak.
 
     >>> from scipy.ndimage import generate_binary_structure, white_tophat
+    >>> import numpy as np
     >>> square = generate_binary_structure(rank=2, connectivity=3)
     >>> bright_on_gray = np.array([[2, 3, 3, 3, 2],
     ...                            [3, 4, 5, 4, 3],
@@ -1752,10 +1770,6 @@ def white_tophat(input, size=None, footprint=None, structure=None,
            [0, 1, 5, 1, 0],
            [0, 0, 1, 0, 0],
            [0, 0, 0, 0, 0]])
-
-    See also
-    --------
-    black_tophat
 
     """
     if (size is not None) and (footprint is not None):
@@ -1811,11 +1825,16 @@ def black_tophat(input, size=None, footprint=None,
     black_tophat : ndarray
         Result of the filter of `input` with `structure`.
 
+    See Also
+    --------
+    white_tophat, grey_opening, grey_closing
+
     Examples
     --------
     Change dark peak to bright peak and subtract background.
 
     >>> from scipy.ndimage import generate_binary_structure, black_tophat
+    >>> import numpy as np
     >>> square = generate_binary_structure(rank=2, connectivity=3)
     >>> dark_on_gray = np.array([[7, 6, 6, 6, 7],
     ...                          [6, 5, 4, 5, 6],
@@ -1828,10 +1847,6 @@ def black_tophat(input, size=None, footprint=None,
            [0, 1, 5, 1, 0],
            [0, 0, 1, 0, 0],
            [0, 0, 0, 0, 0]])
-
-    See also
-    --------
-    white_tophat, grey_opening, grey_closing
 
     """
     if (size is not None) and (footprint is not None):
@@ -1907,11 +1922,103 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
         Returned only when `return_indices` is True and `indices` is not
         supplied.
 
+    See Also
+    --------
+    distance_transform_cdt : Faster distance transform for taxicab and
+                             chessboard metrics
+    distance_transform_edt : Faster distance transform for euclidean metric
+
     Notes
     -----
-    This function employs a slow brute force algorithm, see also the
-    function distance_transform_cdt for more efficient taxicab and
-    chessboard algorithms.
+    This function employs a slow brute force algorithm. See also the
+    function `distance_transform_cdt` for more efficient taxicab [1]_ and
+    chessboard algorithms [2]_.
+
+    References
+    ----------
+    .. [1] Taxicab distance. Wikipedia, 2023.
+           https://en.wikipedia.org/wiki/Taxicab_geometry
+    .. [2] Chessboard distance. Wikipedia, 2023.
+           https://en.wikipedia.org/wiki/Chebyshev_distance
+
+    Examples
+    --------
+    Import the necessary modules.
+
+    >>> import numpy as np
+    >>> from scipy.ndimage import distance_transform_bf
+    >>> import matplotlib.pyplot as plt
+    >>> from mpl_toolkits.axes_grid1 import ImageGrid
+
+    First, we create a toy binary image.
+
+    >>> def add_circle(center_x, center_y, radius, image, fillvalue=1):
+    ...     # fill circular area with 1
+    ...     xx, yy = np.mgrid[:image.shape[0], :image.shape[1]]
+    ...     circle = (xx - center_x) ** 2 + (yy - center_y) ** 2
+    ...     circle_shape = np.sqrt(circle) < radius
+    ...     image[circle_shape] = fillvalue
+    ...     return image
+    >>> image = np.zeros((100, 100), dtype=np.uint8)
+    >>> image[35:65, 20:80] = 1
+    >>> image = add_circle(28, 65, 10, image)
+    >>> image = add_circle(37, 30, 10, image)
+    >>> image = add_circle(70, 45, 20, image)
+    >>> image = add_circle(45, 80, 10, image)
+
+    Next, we set up the figure.
+
+    >>> fig = plt.figure(figsize=(8, 8))  # set up the figure structure
+    >>> grid = ImageGrid(fig, 111, nrows_ncols=(2, 2), axes_pad=(0.4, 0.3),
+    ...                  label_mode="1", share_all=True,
+    ...                  cbar_location="right", cbar_mode="each",
+    ...                  cbar_size="7%", cbar_pad="2%")
+    >>> for ax in grid:
+    ...     ax.axis('off')  # remove axes from images
+
+    The top left image is the original binary image.
+
+    >>> binary_image = grid[0].imshow(image, cmap='gray')
+    >>> cbar_binary_image = grid.cbar_axes[0].colorbar(binary_image)
+    >>> cbar_binary_image.set_ticks([0, 1])
+    >>> grid[0].set_title("Binary image: foreground in white")
+
+    The distance transform calculates the distance between foreground pixels
+    and the image background according to a distance metric. Available metrics
+    in `distance_transform_bf` are: ``euclidean`` (default), ``taxicab``
+    and ``chessboard``. The top right image contains the distance transform
+    based on the ``euclidean`` metric.
+
+    >>> distance_transform_euclidean = distance_transform_bf(image)
+    >>> euclidean_transform = grid[1].imshow(distance_transform_euclidean,
+    ...                                      cmap='gray')
+    >>> cbar_euclidean = grid.cbar_axes[1].colorbar(euclidean_transform)
+    >>> colorbar_ticks = [0, 10, 20]
+    >>> cbar_euclidean.set_ticks(colorbar_ticks)
+    >>> grid[1].set_title("Euclidean distance")
+
+    The lower left image contains the distance transform using the ``taxicab``
+    metric.
+
+    >>> distance_transform_taxicab = distance_transform_bf(image,
+    ...                                                    metric='taxicab')
+    >>> taxicab_transformation = grid[2].imshow(distance_transform_taxicab,
+    ...                                         cmap='gray')
+    >>> cbar_taxicab = grid.cbar_axes[2].colorbar(taxicab_transformation)
+    >>> cbar_taxicab.set_ticks(colorbar_ticks)
+    >>> grid[2].set_title("Taxicab distance")
+
+    Finally, the lower right image contains the distance transform using the
+    ``chessboard`` metric.
+
+    >>> distance_transform_cb = distance_transform_bf(image,
+    ...                                               metric='chessboard')
+    >>> chessboard_transformation = grid[3].imshow(distance_transform_cb,
+    ...                                            cmap='gray')
+    >>> cbar_taxicab = grid.cbar_axes[3].colorbar(chessboard_transformation)
+    >>> cbar_taxicab.set_ticks(colorbar_ticks)
+    >>> grid[3].set_title("Chessboard distance")
+    >>> plt.show()
 
     """
     ft_inplace = isinstance(indices, numpy.ndarray)
@@ -1999,6 +2106,10 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
     """
     Distance transform for chamfer type of transforms.
 
+    This function calculates the distance transform of the `input`, by
+    replacing each foreground (non-zero) element, with its
+    shortest distance to the background (any zero-valued element).
+
     In addition to the distance transform, the feature transform can
     be calculated. In this case the index of the closest background
     element to each foreground element is returned in a separate array.
@@ -2006,13 +2117,13 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
     Parameters
     ----------
     input : array_like
-        Input
+        Input. Values of 0 are treated as background.
     metric : {'chessboard', 'taxicab'} or array_like, optional
         The `metric` determines the type of chamfering that is done. If the
         `metric` is equal to 'taxicab' a structure is generated using
-        generate_binary_structure with a squared distance equal to 1. If
+        `generate_binary_structure` with a squared distance equal to 1. If
         the `metric` is equal to 'chessboard', a `metric` is generated
-        using generate_binary_structure with a squared distance equal to
+        using `generate_binary_structure` with a squared distance equal to
         the dimensionality of the array. These choices correspond to the
         common interpretations of the 'taxicab' and the 'chessboard'
         distance metrics in two dimensions.
@@ -2050,6 +2161,77 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
         Returned only when `return_indices` is True, and `indices` is not
         supplied.
 
+    See Also
+    --------
+    distance_transform_edt : Fast distance transform for euclidean metric
+    distance_transform_bf : Distance transform for different metrics using
+                            a slower brute force algorithm
+
+    Examples
+    --------
+    Import the necessary modules.
+
+    >>> import numpy as np
+    >>> from scipy.ndimage import distance_transform_cdt
+    >>> import matplotlib.pyplot as plt
+    >>> from mpl_toolkits.axes_grid1 import ImageGrid
+
+    First, we create a toy binary image.
+
+    >>> def add_circle(center_x, center_y, radius, image, fillvalue=1):
+    ...     # fill circular area with 1
+    ...     xx, yy = np.mgrid[:image.shape[0], :image.shape[1]]
+    ...     circle = (xx - center_x) ** 2 + (yy - center_y) ** 2
+    ...     circle_shape = np.sqrt(circle) < radius
+    ...     image[circle_shape] = fillvalue
+    ...     return image
+    >>> image = np.zeros((100, 100), dtype=np.uint8)
+    >>> image[35:65, 20:80] = 1
+    >>> image = add_circle(28, 65, 10, image)
+    >>> image = add_circle(37, 30, 10, image)
+    >>> image = add_circle(70, 45, 20, image)
+    >>> image = add_circle(45, 80, 10, image)
+
+    Next, we set up the figure.
+
+    >>> fig = plt.figure(figsize=(5, 15))
+    >>> grid = ImageGrid(fig, 111, nrows_ncols=(3, 1), axes_pad=(0.5, 0.3),
+    ...                  label_mode="1", share_all=True,
+    ...                  cbar_location="right", cbar_mode="each",
+    ...                  cbar_size="7%", cbar_pad="2%")
+    >>> for ax in grid:
+    ...     ax.axis('off')
+    >>> top, middle, bottom = grid
+    >>> colorbar_ticks = [0, 10, 20]
+
+    The top image contains the original binary image.
+
+    >>> binary_image = top.imshow(image, cmap='gray')
+    >>> cbar_binary_image = top.cax.colorbar(binary_image)
+    >>> cbar_binary_image.set_ticks([0, 1])
+    >>> top.set_title("Binary image: foreground in white")
+
+    The middle image contains the distance transform using the ``taxicab``
+    metric.
+
+    >>> distance_taxicab = distance_transform_cdt(image, metric="taxicab")
+    >>> taxicab_transform = middle.imshow(distance_taxicab, cmap='gray')
+    >>> cbar_taxicab = middle.cax.colorbar(taxicab_transform)
+    >>> cbar_taxicab.set_ticks(colorbar_ticks)
+    >>> middle.set_title("Taxicab metric")
+
+    The bottom image contains the distance transform using the ``chessboard``
+    metric.
+
+    >>> distance_chessboard = distance_transform_cdt(image,
+    ...                                              metric="chessboard")
+    >>> chessboard_transform = bottom.imshow(distance_chessboard, cmap='gray')
+    >>> cbar_chessboard = bottom.cax.colorbar(chessboard_transform)
+    >>> cbar_chessboard.set_ticks(colorbar_ticks)
+    >>> bottom.set_title("Chessboard metric")
+    >>> plt.tight_layout()
+    >>> plt.show()
+
     """
     ft_inplace = isinstance(indices, numpy.ndarray)
     dt_inplace = isinstance(distances, numpy.ndarray)
@@ -2057,28 +2239,31 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
         dt_inplace, ft_inplace, return_distances, return_indices
     )
     input = numpy.asarray(input)
-    if metric in ['taxicab', 'cityblock', 'manhattan']:
-        rank = input.ndim
-        metric = generate_binary_structure(rank, 1)
-    elif metric == 'chessboard':
-        rank = input.ndim
-        metric = generate_binary_structure(rank, rank)
+    if isinstance(metric, str):
+        if metric in ['taxicab', 'cityblock', 'manhattan']:
+            rank = input.ndim
+            metric = generate_binary_structure(rank, 1)
+        elif metric == 'chessboard':
+            rank = input.ndim
+            metric = generate_binary_structure(rank, rank)
+        else:
+            raise ValueError('invalid metric provided')
     else:
         try:
             metric = numpy.asarray(metric)
         except Exception as e:
-            raise RuntimeError('invalid metric provided') from e
+            raise ValueError('invalid metric provided') from e
         for s in metric.shape:
             if s != 3:
-                raise RuntimeError('metric sizes must be equal to 3')
+                raise ValueError('metric sizes must be equal to 3')
 
     if not metric.flags.contiguous:
         metric = metric.copy()
     if dt_inplace:
         if distances.dtype.type != numpy.int32:
-            raise RuntimeError('distances must be of int32 type')
+            raise ValueError('distances must be of int32 type')
         if distances.shape != input.shape:
-            raise RuntimeError('distances has wrong shape')
+            raise ValueError('distances has wrong shape')
         dt = distances
         dt[...] = numpy.where(input, -1, 0).astype(numpy.int32)
     else:
@@ -2103,9 +2288,9 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
         ft = numpy.ravel(ft)
         if ft_inplace:
             if indices.dtype.type != numpy.int32:
-                raise RuntimeError('indices array must be int32')
+                raise ValueError('indices array must be int32')
             if indices.shape != (dt.ndim,) + dt.shape:
-                raise RuntimeError('indices array has wrong shape')
+                raise ValueError('indices array has wrong shape')
             tmp = indices
         else:
             tmp = numpy.indices(dt.shape, dtype=numpy.int32)
@@ -2134,6 +2319,10 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
                            return_indices=False, distances=None, indices=None):
     """
     Exact Euclidean distance transform.
+
+    This function calculates the distance transform of the `input`, by
+    replacing each foreground (non-zero) element, with its
+    shortest distance to the background (any zero-valued element).
 
     In addition to the distance transform, the feature transform can
     be calculated. In this case the index of the closest background
@@ -2193,6 +2382,7 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
     Examples
     --------
     >>> from scipy import ndimage
+    >>> import numpy as np
     >>> a = np.array(([0,1,1,1,1],
     ...               [0,0,1,1,1],
     ...               [0,1,1,1,1],

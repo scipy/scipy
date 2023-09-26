@@ -19,23 +19,17 @@ def configuration(parent_package='', top_path=None):
 
     config.add_data_dir('tests')
 
-    statlib_src = [join('statlib', '*.f')]
-    config.add_library('statlib', sources=statlib_src)
-
-    # add statlib module
-    config.add_extension('statlib',
-                         sources=['statlib.pyf'],
-                         f2py_options=['--no-wrap-functions'],
-                         libraries=['statlib'],
-                         depends=statlib_src)
-
     # add _stats module
     config.add_extension('_stats',
                          sources=['_stats.c'])
 
-    # add mvn module
-    config.add_extension('mvn',
+    # add _mvn module
+    config.add_extension('_mvn',
                          sources=['mvn.pyf', 'mvndst.f'])
+
+    # add ansari-bradley and shapiro-wilk module _AB_SW.pyx
+    config.add_extension('_ansari_swilk_statistics',
+                         sources=['_ansari_swilk_statistics.c'])
 
     # add _sobol module
     config.add_extension('_sobol',
@@ -50,29 +44,20 @@ def configuration(parent_package='', top_path=None):
     if int(os.environ.get('SCIPY_USE_PYTHRAN', 1)):
         import pythran
         ext = pythran.dist.PythranExtension(
-            'scipy.stats._hypotests_pythran',
-            sources=["scipy/stats/_hypotests_pythran.py"],
+            'scipy.stats._stats_pythran',
+            sources=["scipy/stats/_stats_pythran.py"],
             config=['compiler.blas=none'])
         config.ext_modules.append(ext)
 
     # add BiasedUrn module
-    config.add_data_files('biasedurn.pxd')
-    from _generate_pyx import isNPY_OLD  # type: ignore[import]
-    NPY_OLD = isNPY_OLD()
-
-    if NPY_OLD:
-        biasedurn_libs = []
-        biasedurn_libdirs = []
-    else:
-        biasedurn_libs = ['npyrandom', 'npymath']
-        biasedurn_libdirs = [join(np.get_include(),
-                                  '..', '..', 'random', 'lib')]
-        biasedurn_libdirs += get_info('npymath')['library_dirs']
-
+    config.add_data_files('_biasedurn.pxd')
+    biasedurn_libs = ['npyrandom', 'npymath']
+    biasedurn_libdirs = [join(np.get_include(), '..', '..', 'random', 'lib')]
+    biasedurn_libdirs += get_info('npymath')['library_dirs']
     ext = config.add_extension(
-        'biasedurn',
+        '_biasedurn',
         sources=[
-            'biasedurn.cxx',
+            '_biasedurn.cxx',
             'biasedurn/impls.cpp',
             'biasedurn/fnchyppr.cpp',
             'biasedurn/wnchyppr.cpp',
@@ -87,11 +72,17 @@ def configuration(parent_package='', top_path=None):
     )
     ext._pre_build_hook = pre_build_hook
 
-    # add unuran subumodule
+    # add unuran submodule
     config.add_subpackage('_unuran')
 
     # add boost stats distributions
     config.add_subpackage('_boost')
+
+    # add levy stable submodule
+    config.add_subpackage('_levy_stable')
+
+    # add rcont submodule
+    config.add_subpackage('_rcont')
 
     # Type stubs
     config.add_data_files('*.pyi')

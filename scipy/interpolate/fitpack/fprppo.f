@@ -1,4 +1,5 @@
-      subroutine fprppo(nu,nv,if1,if2,cosi,ratio,c,f,ncoff)
+      recursive subroutine fprppo(nu,nv,if1,if2,cosi,ratio,c,f,ncoff)
+      implicit none
 c  given the coefficients of a constrained bicubic spline, as determined
 c  in subroutine fppola, subroutine fprppo calculates the coefficients
 c  in the standard b-spline representation of bicubic splines.

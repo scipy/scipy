@@ -4,7 +4,7 @@
 Transformed Density Rejection (TDR)
 ===================================
 
-.. currentmodule:: scipy.stats
+.. currentmodule:: scipy.stats.sampling
 
 * Required: T-concave PDF, dPDF
 * Optional: mode, center
@@ -26,19 +26,11 @@ called T-concave. Currently the following transformations are implemented:
 In addition to the PDF, it also requires the derivative of the PDF w.r.t ``x``
 (i.e. the variate). These functions must be present as methods of a python
 object which can then be passed to the generators to instantiate their object.
-
-Three variants of this method are available:
-
-* GW: squeezes between construction points.
-* PS: squeezes proportional to hat function. (Default)
-* IA: same as variant PS but uses a composition method with
-  "immediate acceptance" in the region below the squeeze.
-
-This can be changed by passing a ``variant`` parameter.
+The variant that is implemented uses squeezes proportional to hat function ([1]_).
 
 An example of using this method is shown below:
 
-    >>> from scipy.stats import TransformedDensityRejection
+    >>> from scipy.stats.sampling import TransformedDensityRejection
     >>> from scipy.stats import norm
     >>> 
     >>> class StandardNormal:
@@ -132,13 +124,9 @@ To increase ``squeeze_hat_ratio``, pass ``max_squeeze_hat_ratio``:
 
     >>> dist = StandardNormal()
     >>> rng = TransformedDensityRejection(dist, max_squeeze_hat_ratio=0.999,
-    ...                                   max_intervals=1000, random_state=urng)
+    ...                                   random_state=urng)
     >>> rng.squeeze_hat_ratio
     0.999364900465214
-
-Note that we need to increase the ``max_intervals`` parameter when we want
-a higher ``squeeze_hat_ratio``. This is because more construction points are
-required to fit the distribution more tightly.
 
 Let's see how this affects the callbacks to the PDF method of the
 distribution:
@@ -166,7 +154,7 @@ distribution:
     >>> dist2 = StandardNormal()
     >>> # use the same stream of uniform random numbers
     >>> rng2 = TransformedDensityRejection(dist2, max_squeeze_hat_ratio=0.999,
-    ...                                    max_intervals=1000, random_state=urng2)
+    ...                                    random_state=urng2)
     >>> dist2.callbacks  # evaluations during setup
     467
     >>> dist2.callbacks = 0  # don't consider evaluations during setup
@@ -203,18 +191,13 @@ the number of construction points to use.
     >>> rng = TransformedDensityRejection(dist,
     ...                                   construction_points=[-5, 0, 5])
 
-It is also possible to change the variant of the method used by passing
-a ``variant`` parameter:
-
-    >>> rng = TransformedDensityRejection(dist, variant='ia')
-
 This method accepts many other set-up parameters. See the documentation for
 an exclusive list. More information of the parameters and the method can be
 found in `Section 5.3.16 of the UNU.RAN user manual
 <http://statmath.wu.ac.at/software/unuran/doc/unuran.html#TDR>`__.
 
 
-Please see [1]_, [2]_, and [3]_ for more details on this method.
+Please see [1]_ and [2]_ for more details on this method.
 
 
 References
@@ -226,5 +209,4 @@ References
 .. [2] Hörmann, Wolfgang. "A rejection technique for sampling from
        T-concave distributions." ACM Transactions on Mathematical
        Software (TOMS) 21.2 (1995): 182-193
-.. [3] W.R. Gilks and P. Wild (1992). Adaptive rejection sampling for
-       Gibbs sampling, Applied Statistics 41, pp. 337-348.
+

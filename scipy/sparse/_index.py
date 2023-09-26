@@ -1,13 +1,10 @@
-"""Indexing mixin for sparse matrix classes.
+"""Indexing mixin for sparse array/matrix classes.
 """
 import numpy as np
-from .sputils import isintlike
+from warnings import warn
+from ._sputils import isintlike
 
-try:
-    INT_TYPES = (int, long, np.integer)
-except NameError:
-    # long is not defined in Python3
-    INT_TYPES = (int, np.integer)
+INT_TYPES = (int, np.integer)
 
 
 def _broadcast_arrays(a, b):
@@ -29,19 +26,41 @@ class IndexMixin:
     """
     This class provides common dispatching and validation logic for indexing.
     """
+    def _raise_on_1d_array_slice(self):
+        """We do not currently support 1D sparse arrays.
+
+        This function is called each time that a 1D array would
+        result, raising an error instead.
+
+        Once 1D sparse arrays are implemented, it should be removed.
+        """
+        from scipy.sparse import sparray
+
+        if isinstance(self, sparray):
+            raise NotImplementedError(
+                'We have not yet implemented 1D sparse slices; '
+                'please index using explicit indices, e.g. `x[:, [0]]`'
+            )
+
     def __getitem__(self, key):
         row, col = self._validate_indices(key)
+
         # Dispatch to specialized methods.
         if isinstance(row, INT_TYPES):
             if isinstance(col, INT_TYPES):
                 return self._get_intXint(row, col)
             elif isinstance(col, slice):
+                self._raise_on_1d_array_slice()
                 return self._get_intXslice(row, col)
             elif col.ndim == 1:
+                self._raise_on_1d_array_slice()
+                return self._get_intXarray(row, col)
+            elif col.ndim == 2:
                 return self._get_intXarray(row, col)
             raise IndexError('index results in >2 dimensions')
         elif isinstance(row, slice):
             if isinstance(col, INT_TYPES):
+                self._raise_on_1d_array_slice()
                 return self._get_sliceXint(row, col)
             elif isinstance(col, slice):
                 if row == slice(None) and row == col:
@@ -52,6 +71,7 @@ class IndexMixin:
             raise IndexError('index results in >2 dimensions')
         elif row.ndim == 1:
             if isinstance(col, INT_TYPES):
+                self._raise_on_1d_array_slice()
                 return self._get_arrayXint(row, col)
             elif isinstance(col, slice):
                 return self._get_arrayXslice(row, col)
@@ -98,8 +118,8 @@ class IndexMixin:
         if i.shape != j.shape:
             raise IndexError('number of row and column indices differ')
 
-        from .base import isspmatrix
-        if isspmatrix(x):
+        from ._base import issparse
+        if issparse(x):
             if i.ndim == 1:
                 # Inner indexing, so treat them like row vectors.
                 i = i[None]
@@ -178,7 +198,7 @@ class IndexMixin:
             x[x < 0] += length
         return x
 
-    def getrow(self, i):
+    def _getrow(self, i):
         """Return a copy of row i of the matrix, as a (1 x n) row vector.
         """
         M, N = self.shape
@@ -189,7 +209,7 @@ class IndexMixin:
             i += M
         return self._get_intXslice(i, slice(None))
 
-    def getcol(self, i):
+    def _getcol(self, i):
         """Return a copy of column i of the matrix, as a (m x 1) column vector.
         """
         M, N = self.shape
@@ -248,8 +268,8 @@ def _unpack_index(index):
     Valid type for row/col is integer, slice, or array of integers.
     """
     # First, check if indexing with single boolean matrix.
-    from .base import spmatrix, isspmatrix
-    if (isinstance(index, (spmatrix, np.ndarray)) and
+    from ._base import _spbase, issparse
+    if (isinstance(index, (_spbase, np.ndarray)) and
             index.ndim == 2 and index.dtype.kind == 'b'):
         return index.nonzero()
 
@@ -273,7 +293,7 @@ def _unpack_index(index):
         elif idx.ndim == 2:
             return idx.nonzero()
     # Next, check for validity and transform the index as needed.
-    if isspmatrix(row) or isspmatrix(col):
+    if issparse(row) or issparse(col):
         # Supporting sparse boolean indexing with both row and col does
         # not work because spmatrix.ndim is always 2.
         raise IndexError(
@@ -297,16 +317,14 @@ def _check_ellipsis(index):
     if not isinstance(index, tuple):
         return index
 
-    # TODO: Deprecate this multiple-ellipsis handling,
-    #       as numpy no longer supports it.
-
-    # Find first ellipsis.
-    for j, v in enumerate(index):
-        if v is Ellipsis:
-            first_ellipsis = j
-            break
-    else:
+    # Find any Ellipsis objects.
+    ellipsis_indices = [i for i, v in enumerate(index) if v is Ellipsis]
+    if not ellipsis_indices:
         return index
+    if len(ellipsis_indices) > 1:
+        warn('multi-Ellipsis indexing is deprecated will be removed in v1.13.',
+             DeprecationWarning, stacklevel=2)
+    first_ellipsis = ellipsis_indices[0]
 
     # Try to expand it using shortcuts for common cases
     if len(index) == 1:

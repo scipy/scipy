@@ -1,13 +1,10 @@
-import sys
-
 import numpy as np
 import pytest
 from scipy.linalg import block_diag
 from scipy.sparse import csc_matrix
 from numpy.testing import (TestCase, assert_array_almost_equal,
-                           assert_array_less, assert_,
-                           suppress_warnings, assert_allclose)
-from pytest import raises, warns
+                           assert_array_less, assert_, assert_allclose,
+                           suppress_warnings)
 from scipy.optimize import (NonlinearConstraint,
                             LinearConstraint,
                             Bounds,
@@ -594,9 +591,10 @@ class TestTrustRegionConstr(TestCase):
 
     def test_raise_exception(self):
         prob = Maratos()
-
-        raises(ValueError, minimize, prob.fun, prob.x0, method='trust-constr',
-               jac='2-point', hess='2-point', constraints=prob.constr)
+        message = "Whenever the gradient is estimated via finite-differences"
+        with pytest.raises(ValueError, match=message):
+            minimize(prob.fun, prob.x0, method='trust-constr', jac='2-point',
+                     hess='2-point', constraints=prob.constr)
 
     def test_issue_9044(self):
         # https://github.com/scipy/scipy/issues/9044
@@ -616,6 +614,32 @@ class TestTrustRegionConstr(TestCase):
         # Also check existence of the 'niter' attribute, for backward
         # compatibility
         assert_(result.get('niter', -1) == 1)
+
+    def test_issue_15093(self):
+        # scipy docs define bounds as inclusive, so it shouldn't be
+        # an issue to set x0 on the bounds even if keep_feasible is
+        # True. Previously, trust-constr would treat bounds as
+        # exclusive.
+
+        x0 = np.array([0., 0.5])
+
+        def obj(x):
+            x1 = x[0]
+            x2 = x[1]
+            return x1 ** 2 + x2 ** 2
+
+        bounds = Bounds(np.array([0., 0.]), np.array([1., 1.]),
+                        keep_feasible=True)
+
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "delta_grad == 0.0")
+            result = minimize(
+                method='trust-constr',
+                fun=obj,
+                x0=x0,
+                bounds=bounds)
+
+        assert result['success']
 
 class TestEmptyConstraint(TestCase):
     """
@@ -680,6 +704,44 @@ def test_bug_11886():
     minimize(opt, 2*[1], constraints = lin_cons)  # just checking that there are no errors
 
 
+# Remove xfail when gh-11649 is resolved
+@pytest.mark.xfail(reason="Known bug in trust-constr; see gh-11649.",
+                   strict=True)
+def test_gh11649():
+    bnds = Bounds(lb=[-1, -1], ub=[1, 1], keep_feasible=True)
+
+    def assert_inbounds(x):
+        assert np.all(x >= bnds.lb)
+        assert np.all(x <= bnds.ub)
+
+    def obj(x):
+        assert_inbounds(x)
+        return np.exp(x[0])*(4*x[0]**2 + 2*x[1]**2 + 4*x[0]*x[1] + 2*x[1] + 1)
+
+    def nce(x):
+        assert_inbounds(x)
+        return x[0]**2 + x[1]
+
+    def nci(x):
+        assert_inbounds(x)
+        return x[0]*x[1]
+
+    x0 = np.array((0.99, -0.99))
+    nlcs = [NonlinearConstraint(nci, -10, np.inf),
+            NonlinearConstraint(nce, 1, 1)]
+
+    res = minimize(fun=obj, x0=x0, method='trust-constr',
+                   bounds=bnds, constraints=nlcs)
+    assert res.success
+    assert_inbounds(res.x)
+    assert nlcs[0].lb < nlcs[0].fun(res.x) < nlcs[0].ub
+    assert_allclose(nce(res.x), nlcs[1].ub)
+
+    ref = minimize(fun=obj, x0=x0, method='slsqp',
+                   bounds=bnds, constraints=nlcs)
+    assert_allclose(res.fun, ref.fun)
+
+
 class TestBoundedNelderMead:
 
     @pytest.mark.parametrize('bounds, x_opt',
@@ -725,8 +787,8 @@ class TestBoundedNelderMead:
 
     def test_invalid_bounds(self):
         prob = Rosenbrock()
-        with raises(ValueError, match=r"one of the lower bounds is greater "
-                                      r"than an upper bound."):
+        message = 'An upper bound is less than the corresponding lower bound.'
+        with pytest.raises(ValueError, match=message):
             bounds = Bounds([-np.inf, 1.0], [4.0, -5.0])
             minimize(prob.fun, [-10, 3],
                      method='Nelder-Mead',
@@ -736,8 +798,8 @@ class TestBoundedNelderMead:
                               "see gh-13846")
     def test_outside_bounds_warning(self):
         prob = Rosenbrock()
-        with raises(UserWarning, match=r"Initial guess is not within "
-                                       r"the specified bounds"):
+        message = "Initial guess is not within the specified bounds"
+        with pytest.warns(UserWarning, match=message):
             bounds = Bounds([-np.inf, 1.0], [4.0, 5.0])
             minimize(prob.fun, [-10, 8],
                      method='Nelder-Mead',

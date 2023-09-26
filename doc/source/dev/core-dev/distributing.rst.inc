@@ -25,10 +25,13 @@ are:
 - pytest (to run the test suite)
 - asv_ (to run the benchmarks)
 - matplotlib_ (for some functions that can produce plots)
+- pooch_ (for the scipy.datasets module)
 - Pillow_ (for image loading/saving)
 - scikits.umfpack_ (optionally used in ``sparse.linalg``)
 - mpmath_ (for more extended tests in ``special``)
-- pydata/sparse  (compatibility support in ``scipy.sparse``)
+- pydata/sparse (compatibility support in ``scipy.sparse``)
+- threadpoolctl_ (to control BLAS/LAPACK threading in test suite)
+- Hypothesis_ (to run certain unit tests)
 
 *Unconditional build-time dependencies:*
 
@@ -44,14 +47,13 @@ are:
 - wheel_ (``python setup.py bdist_wheel``)
 - Sphinx_ (docs)
 - `PyData Sphinx theme`_ (docs)
-- `Sphinx-Panels`_  (docs)
+- `Sphinx-Design`_  (docs)
 - matplotlib_ (docs)
-- LaTeX (pdf docs)
-- Pillow_ (docs)
+- MyST-NB_ (docs)
 
 Furthermore of course one needs C, C++ and Fortran compilers to build SciPy,
 but those we don't consider to be dependencies and are therefore not discussed
-here.  For details, see https://scipy.github.io/devdocs/building/.
+here.  For details, see https://scipy.github.io/devdocs/dev/contributor/building.html.
 
 When a package provides useful functionality and it's proposed as a new
 dependency, consider also if it makes sense to vendor (i.e. ship a copy of it with
@@ -135,7 +137,7 @@ Building binary installers
 
    This section is only about building SciPy binary installers to *distribute*.
    For info on building SciPy on the same machine as where it will be used, see
-   `this scipy.org page <https://scipy.github.io/devdocs/building/>`_.
+   `this scipy.org page <https://scipy.github.io/devdocs/dev/contributor/building.html>`_.
 
 There are a number of things to take into consideration when building binaries
 and distributing them on PyPI or elsewhere.
@@ -147,22 +149,20 @@ and distributing them on PyPI or elsewhere.
 - Build against the lowest NumPy version that you need to support, then it will
   work for all NumPy versions with the same major version number (NumPy does
   maintain backwards ABI compatibility).
+- The easiest available toolchain for building portable SciPy binaries
+  is our ``cibuildwheel`` infrastructure for common platforms, with
+  details available in our CI infrastructure code and available via the
+  ``cibuildwheel`` command on Windows, Linux, and MacOS, albeit with some extra
+  external dependencies required in some cases
 
 **Windows**
 
-- The currently most easily available toolchain for building
-  Python.org compatible binaries for SciPy is installing MSVC (see
-  https://wiki.python.org/moin/WindowsCompilers) and mingw64-gfortran.
-  Support for this configuration requires numpy.distutils from
-  NumPy >= 1.14.dev and a gcc/gfortran-compiled static ``openblas.a``.
-  This configuration is currently used in the Appveyor configuration for
-  https://github.com/MacPython/scipy-wheels
 - For 64-bit Windows installers built with a free toolchain, use the method
   documented at https://github.com/numpy/numpy/wiki/Mingw-static-toolchain.
   That method will likely be used for SciPy itself once it's clear that the
   maintenance of that toolchain is sustainable long-term.  See the MingwPy_
   project and `this thread
-  <https://mail.scipy.org/pipermail/numpy-discussion/2015-October/074056.html>`_ for
+  <https://mail.python.org/pipermail/numpy-discussion/2015-October/074056.html>`_ for
   details.
 - The other way to produce 64-bit Windows installers is with ``icc``, ``ifort``
   plus ``MKL`` (or ``MSVC`` instead of ``icc``).  For Intel toolchain
@@ -179,22 +179,12 @@ and distributing them on PyPI or elsewhere.
   longer supported, g77 support isn't needed anymore and SciPy can now include
   Fortran 90/95 code.
 
-**OS X**
-
-- To produce OS X wheels that work with various Python versions (from
-  python.org, Homebrew, MacPython), use the build method provided by
-  https://github.com/MacPython/scipy-wheels.
-- DMG installers for the Python from python.org on OS X can still be produced
-  by ``tools/scipy-macosx-installer/``.  SciPy doesn't distribute those
-  installers anymore though, now that there are binary wheels on PyPi.
-
 **Linux**
 
-- PyPi-compatible Linux wheels can be produced via the manylinux_ project.
-  The corresponding build setup for TravisCI for SciPy is set up in
-  https://github.com/MacPython/scipy-wheels.
+- PyPI-compatible Linux wheels can be produced via the manylinux_ project,
+  which is used under the hood by our ``cibuildwheel`` infrastructure.
 
-Other Linux build-setups result to PyPi incompatible wheels, which
+Other Linux build-setups result in PyPI incompatible wheels, which
 would need to be distributed via custom channels, e.g. in a
 Wheelhouse_, see at the wheel_ and Wheelhouse_ docs.
 
@@ -207,9 +197,10 @@ Wheelhouse_, see at the wheel_ and Wheelhouse_ docs.
 .. _Pillow: https://pillow.readthedocs.org
 .. _scikits.umfpack: https://pypi.org/project/scikit-umfpack
 .. _mpmath: http://mpmath.org
+.. _pooch: https://www.fatiando.org/pooch/latest/
 .. _Cython: https://cython.org
 .. _pybind11: https://github.com/pybind/pybind11
-.. _setuptools: https://bitbucket.org/pypa/setuptools
+.. _setuptools: https://github.com/pypa/setuptools
 .. _wheel: https://wheel.readthedocs.io/
 .. _pip: https://pip.pypa.io/en/stable/
 .. _Python Packaging User Guide: https://packaging.python.org
@@ -217,7 +208,10 @@ Wheelhouse_, see at the wheel_ and Wheelhouse_ docs.
 .. _MingwPy: https://mingwpy.github.io
 .. _Sphinx: http://www.sphinx-doc.org/
 .. _PyData Sphinx theme: https://pydata-sphinx-theme.readthedocs.io/en/latest/
-.. _Sphinx-Panels: https://sphinx-panels.readthedocs.io/en/latest/
+.. _Sphinx-Design: https://sphinx-design.readthedocs.io
 .. _six: https://pypi.org/project/six
 .. _decorator: https://github.com/micheles/decorator
 .. _manylinux: https://github.com/pypa/manylinux/
+.. _threadpoolctl: https://github.com/joblib/threadpoolctl
+.. _MyST-NB: https://myst-nb.readthedocs.io/
+.. _Hypothesis: https://hypothesis.readthedocs.io/en/latest/index.html

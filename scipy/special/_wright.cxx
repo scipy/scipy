@@ -4,18 +4,18 @@
 
 using namespace std;
 
-EXTERN_C_START
+extern "C" {
 
 npy_cdouble wrightomega(npy_cdouble zp)
 {
-    complex<double> z(zp.real, zp.imag);
+    complex<double> z(npy_creal(zp), npy_cimag(zp));
     complex<double> w = wright::wrightomega(z);
     return npy_cpack(real(w), imag(w));
 }
 
 double wrightomega_real(double x)
 {
-  return wright::wrightomega_real(x);
+    return wright::wrightomega_real(x);
 }
 
-EXTERN_C_END
+}  // extern "C"

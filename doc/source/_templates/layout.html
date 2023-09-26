@@ -1,0 +1,17 @@
+{# Base layout for all pages
+
+## Analytics
+
+The service https://plausible.io is used to gather simple
+and privacy-friendly analytics for the site. The dashboard can be accessed
+at https://analytics.scientific-python.org/docs.scipy.org
+The Scientific-Python community is managing the account.
+
+#}
+
+{% extends "!layout.html" %}
+
+{% block extrahead %}
+    <script defer data-domain="docs.scipy.org" src="https://views.scientific-python.org/js/script.js"></script>
+    {{ super() }}
+{% endblock %}

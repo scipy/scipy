@@ -8,7 +8,7 @@ Proper docstrings for scipy.optimize.minimize et al.
 Usage::
 
     .. scipy-optimize:function:: scipy.optimize.minimize
-       :impl: scipy.optimize.optimize._minimize_nelder_mead
+       :impl: scipy.optimize._optimize._minimize_nelder_mead
        :method: Nelder-Mead
 
 Produces output similar to autodoc, except
@@ -20,18 +20,16 @@ Produces output similar to autodoc, except
 - See Also link to the actual function documentation is inserted
 
 """
-import os, sys, re, pydoc
+import sys
 import sphinx
 import inspect
-import collections
 import textwrap
-import warnings
+import pydoc
 
 if sphinx.__version__ < '1.0.1':
     raise RuntimeError("Sphinx 1.0.1 or newer is required")
 
 from numpydoc.numpydoc import mangle_docstrings
-from docutils.parsers.rst import Directive
 from docutils.statemachine import ViewList
 from sphinx.domains.python import PythonDomain
 from scipy._lib._util import getfullargspec_no_self
@@ -122,11 +120,7 @@ def wrap_mangling_directive(base_directive):
                 if arg not in impl_args and arg not in special_args:
                     remove_arg(arg)
 
-            # XXX deprecation that we should fix someday using Signature (?)
-            with warnings.catch_warnings(record=True):
-                warnings.simplefilter('ignore')
-                signature = inspect.formatargspec(
-                    args, varargs, keywords, defaults)
+            signature = str(inspect.signature(obj))
 
             # Produce output
             self.options['noindex'] = True
@@ -135,10 +129,12 @@ def wrap_mangling_directive(base_directive):
             # Change "Options" to "Other Parameters", run numpydoc, reset
             new_lines = []
             for line in lines:
+                # Remap Options to the "Other Parameters" numpydoc section
+                # along with correct heading length
                 if line.strip() == 'Options':
                     line = "Other Parameters"
-                elif line.strip() == "-"*len('Options'):
-                    line = "-"*len("Other Parameters")
+                    new_lines.extend([line, "-"*len(line)])
+                    continue
                 new_lines.append(line)
             # use impl_name instead of name here to avoid duplicate refs
             mangle_docstrings(env.app, 'function', impl_name,

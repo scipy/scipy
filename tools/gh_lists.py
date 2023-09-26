@@ -91,7 +91,14 @@ def get_issues(getter, project, milestone):
     data = getter.get(url)
 
     issues = []
+    # data contains both PR and issue data
     for issue_data in data:
+        # don't include PRs that were closed instead
+        # of merged
+        if "pull" in issue_data[u'html_url']:
+            merge_status = issue_data[u'pull_request'][u'merged_at']
+            if merge_status is None:
+                continue
         issues.append(Issue(issue_data[u'number'],
                             issue_data[u'title'],
                             issue_data[u'html_url']))

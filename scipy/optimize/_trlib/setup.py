@@ -1,6 +1,6 @@
 def configuration(parent_package='', top_path=None):
     from numpy import get_include
-    from scipy._build_utils.system_info import get_info
+    from numpy.distutils.system_info import get_info
     from scipy._build_utils import uses_blas64
     from numpy.distutils.misc_util import Configuration
 

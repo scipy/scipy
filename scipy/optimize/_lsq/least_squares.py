@@ -4,10 +4,11 @@ from warnings import warn
 import numpy as np
 from numpy.linalg import norm
 
-from scipy.sparse import issparse, csr_matrix
+from scipy.sparse import issparse
 from scipy.sparse.linalg import LinearOperator
 from scipy.optimize import _minpack, OptimizeResult
 from scipy.optimize._numdiff import approx_derivative, group_columns
+from scipy.optimize._minimize import Bounds
 
 from .trf import trf
 from .dogbox import dogbox
@@ -92,7 +93,7 @@ def call_minpack(fun, x0, jac, ftol, xtol, gtol, max_nfev, x_scale, diff_step):
 
 
 def prepare_bounds(bounds, n):
-    lb, ub = [np.asarray(b, dtype=float) for b in bounds]
+    lb, ub = (np.asarray(b, dtype=float) for b in bounds)
     if lb.ndim == 0:
         lb = np.resize(lb, n)
 
@@ -282,11 +283,15 @@ def least_squares(
         (or the exact value) for the Jacobian as an array_like (np.atleast_2d
         is applied), a sparse matrix (csr_matrix preferred for performance) or
         a `scipy.sparse.linalg.LinearOperator`.
-    bounds : 2-tuple of array_like, optional
-        Lower and upper bounds on independent variables. Defaults to no bounds.
-        Each array must match the size of `x0` or be a scalar, in the latter
-        case a bound will be the same for all variables. Use ``np.inf`` with
-        an appropriate sign to disable bounds on all or some variables.
+    bounds : 2-tuple of array_like or `Bounds`, optional
+        There are two ways to specify bounds:
+
+            1. Instance of `Bounds` class
+            2. Lower and upper bounds on independent variables. Defaults to no
+               bounds. Each array must match the size of `x0` or be a scalar,
+               in the latter case a bound will be the same for all variables.
+               Use ``np.inf`` with an appropriate sign to disable bounds on all
+               or some variables.
     method : {'trf', 'dogbox', 'lm'}, optional
         Algorithm to perform minimization.
 
@@ -584,6 +589,7 @@ def least_squares(
     In this example we find a minimum of the Rosenbrock function without bounds
     on independent variables.
 
+    >>> import numpy as np
     >>> def fun_rosenbrock(x):
     ...     return np.array([10 * (x[1] - x[0]**2), (1 - x[0])])
 
@@ -769,7 +775,7 @@ def least_squares(
         raise ValueError("`tr_solver` must be None, 'exact' or 'lsmr'.")
 
     if loss not in IMPLEMENTED_LOSSES and not callable(loss):
-        raise ValueError("`loss` must be one of {0} or a callable."
+        raise ValueError("`loss` must be one of {} or a callable."
                          .format(IMPLEMENTED_LOSSES.keys()))
 
     if method == 'lm' and loss != 'linear':
@@ -777,9 +783,6 @@ def least_squares(
 
     if verbose not in [0, 1, 2]:
         raise ValueError("`verbose` must be in [0, 1, 2].")
-
-    if len(bounds) != 2:
-        raise ValueError("`bounds` must contain 2 elements.")
 
     if max_nfev is not None and max_nfev <= 0:
         raise ValueError("`max_nfev` must be None or positive integer.")
@@ -792,7 +795,14 @@ def least_squares(
     if x0.ndim > 1:
         raise ValueError("`x0` must have at most 1 dimension.")
 
-    lb, ub = prepare_bounds(bounds, x0.shape[0])
+    if isinstance(bounds, Bounds):
+        lb, ub = bounds.lb, bounds.ub
+        bounds = (lb, ub)
+    else:
+        if len(bounds) == 2:
+            lb, ub = prepare_bounds(bounds, x0.shape[0])
+        else:
+            raise ValueError("`bounds` must contain 2 elements.")
 
     if method == 'lm' and not np.all((lb == -np.inf) & (ub == np.inf)):
         raise ValueError("Method 'lm' doesn't support bounds.")
@@ -811,17 +821,17 @@ def least_squares(
 
     ftol, xtol, gtol = check_tolerance(ftol, xtol, gtol, method)
 
+    if method == 'trf':
+        x0 = make_strictly_feasible(x0, lb, ub, rstep=0)
+
     def fun_wrapped(x):
         return np.atleast_1d(fun(x, *args, **kwargs))
-
-    if method == 'trf':
-        x0 = make_strictly_feasible(x0, lb, ub)
 
     f0 = fun_wrapped(x0)
 
     if f0.ndim != 1:
         raise ValueError("`fun` must return at most 1-d array_like. "
-                         "f0.shape: {0}".format(f0.shape))
+                         "f0.shape: {}".format(f0.shape))
 
     if not np.all(np.isfinite(f0)):
         raise ValueError("Residuals are not finite in the initial point.")
@@ -871,7 +881,7 @@ def least_squares(
                                  "`jac_sparsity`.")
 
             if jac != '2-point':
-                warn("jac='{0}' works equivalently to '2-point' "
+                warn("jac='{}' works equivalently to '2-point' "
                      "for method='lm'.".format(jac))
 
             J0 = jac_wrapped = None
@@ -896,8 +906,8 @@ def least_squares(
     if J0 is not None:
         if J0.shape != (m, n):
             raise ValueError(
-                "The return value of `jac` has wrong shape: expected {0}, "
-                "actual {1}.".format((m, n), J0.shape))
+                "The return value of `jac` has wrong shape: expected {}, "
+                "actual {}.".format((m, n), J0.shape))
 
         if not isinstance(J0, np.ndarray):
             if method == 'lm':
@@ -945,8 +955,8 @@ def least_squares(
 
     if verbose >= 1:
         print(result.message)
-        print("Function evaluations {0}, initial cost {1:.4e}, final cost "
-              "{2:.4e}, first-order optimality {3:.2e}."
+        print("Function evaluations {}, initial cost {:.4e}, final cost "
+              "{:.4e}, first-order optimality {:.2e}."
               .format(result.nfev, initial_cost, result.cost,
                       result.optimality))
 

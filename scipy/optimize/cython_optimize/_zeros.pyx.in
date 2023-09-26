@@ -6,7 +6,7 @@ from . cimport c_zeros
 
 
 # callback function wrapper that extracts function, args from params struct
-cdef double scipy_zeros_functions_func(double x, void *params):
+cdef double scipy_zeros_functions_func(double x, void *params) noexcept:
     cdef zeros_parameters *myparams = <zeros_parameters *> params
     cdef void* args = myparams.args
     cdef callback_type f = myparams.function
@@ -19,7 +19,7 @@ cdef double scipy_zeros_functions_func(double x, void *params):
 # cythonized way to call scalar {{ROOT_FINDER}}
 cdef double {{ROOT_FINDER}}(
         callback_type f, double xa, double xb, void *args, double xtol,
-        double rtol, int iter, zeros_full_output *full_output) nogil:
+        double rtol, int iter, zeros_full_output *full_output) noexcept nogil:
     cdef c_zeros.scipy_zeros_info solver_stats
     cdef zeros_parameters myparams
     cdef double root
@@ -49,7 +49,7 @@ ctypedef struct extra_params:
 
 
 # callback function
-cdef double f_example(double x, void *args):
+cdef double f_example(double x, void *args) noexcept:
     cdef extra_params *myargs = <extra_params *> args
     cdef double[4] a
     # unpack structure
@@ -62,7 +62,7 @@ cdef double f_example(double x, void *args):
 {{for ROOT_FINDER in root_finders}}
 # {{ROOT_FINDER}} example
 cdef double {{ROOT_FINDER}}_example(
-        tuple args, float xa, float xb, float xtol, float rtol, int mitr):
+        tuple args, float xa, float xb, float xtol, float rtol, int mitr) noexcept:
     cdef extra_params myargs
     myargs.a = args
     return {{ROOT_FINDER}}(
@@ -119,7 +119,7 @@ def loop_example(method, a0, args, xa, xb, xtol, rtol, mitr):
 
 # brentq example with full ouptut
 cdef zeros_full_output brentq_full_output_example(
-        tuple args, float xa, float xb, float xtol, float rtol, int mitr):
+        tuple args, float xa, float xb, float xtol, float rtol, int mitr) noexcept:
     cdef zeros_full_output full_output
     cdef extra_params myargs
     myargs.a = args

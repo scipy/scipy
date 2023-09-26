@@ -47,13 +47,10 @@ cimport cython
 cimport libc.stdlib
 cimport libc.limits
 cimport libc.float
-from libc.math cimport sqrt, fabs, hypot
+from libc.math cimport sqrt, fabs, hypot, M_SQRT1_2
 from libc.string cimport memset
 
 cimport numpy as cnp
-
-cdef extern from "numpy/npy_math.h":
-    double NPY_SQRT1_2
 
 from numpy.linalg import LinAlgError
 
@@ -87,50 +84,50 @@ ctypedef fused blas_t:
     float_complex
     double_complex
 
-cdef inline blas_t* index2(blas_t* a, int* as, int i, int j) nogil:
+cdef inline blas_t* index2(blas_t* a, int* as, int i, int j) noexcept nogil:
     return a + i*as[0] + j*as[1]
 
-cdef inline blas_t* index1(blas_t* a, int* as, int i) nogil:
+cdef inline blas_t* index1(blas_t* a, int* as, int i) noexcept nogil:
     return a + i*as[0]
 
-cdef inline blas_t* row(blas_t* a, int* as, int i) nogil:
+cdef inline blas_t* row(blas_t* a, int* as, int i) noexcept nogil:
     return a + i*as[0]
 
-cdef inline blas_t* col(blas_t* a, int* as, int j) nogil:
+cdef inline blas_t* col(blas_t* a, int* as, int j) noexcept nogil:
     return a + j*as[1]
 
-cdef inline void copy(int n, blas_t* x, int incx, blas_t* y, int incy) nogil:
+cdef inline void copy(int n, blas_t* x, int incx, blas_t* y, int incy) noexcept nogil:
     {{for COND, CNAME, C in zip(CONDS, CNAMES, PREFIX)}}
     {{COND}} blas_t is {{CNAME}}:
         blas_pointers.{{C}}copy(&n, x, &incx, y, &incy)
     {{endfor}}
 
-cdef inline void swap(int n, blas_t* x, int incx, blas_t* y, int incy) nogil:
+cdef inline void swap(int n, blas_t* x, int incx, blas_t* y, int incy) noexcept nogil:
     {{for COND, CNAME, C in zip(CONDS, CNAMES, PREFIX)}}
     {{COND}} blas_t is {{CNAME}}:
         blas_pointers.{{C}}swap(&n, x, &incx, y, &incy)
     {{endfor}}
 
-cdef inline void scal(int n, blas_t a, blas_t* x, int incx) nogil:
+cdef inline void scal(int n, blas_t a, blas_t* x, int incx) noexcept nogil:
     {{for COND, CNAME, C in zip(CONDS, CNAMES, PREFIX)}}
     {{COND}} blas_t is {{CNAME}}:
         blas_pointers.{{C}}scal(&n, &a, x, &incx)
     {{endfor}}
 
 cdef inline void axpy(int n, blas_t a, blas_t* x, int incx,
-                      blas_t* y, int incy) nogil:
+                      blas_t* y, int incy) noexcept nogil:
     {{for COND, CNAME, C in zip(CONDS, CNAMES, PREFIX)}}
     {{COND}} blas_t is {{CNAME}}:
         blas_pointers.{{C}}axpy(&n, &a, x, &incx, y, &incy)
     {{endfor}}
 
-cdef inline blas_t nrm2(int n, blas_t* x, int incx) nogil:
+cdef inline blas_t nrm2(int n, blas_t* x, int incx) noexcept nogil:
     {{for COND, CNAME, C in zip(CONDS, CNAMES, ['s', 'd', 'sc', 'dz'])}}
     {{COND}} blas_t is {{CNAME}}:
         return blas_pointers.{{C}}nrm2(&n, x, &incx)
     {{endfor}}
 
-cdef inline void lartg(blas_t* a, blas_t* b, blas_t* c, blas_t* s) nogil:
+cdef inline void lartg(blas_t* a, blas_t* b, blas_t* c, blas_t* s) noexcept nogil:
     cdef blas_t g
     if blas_t is float:
         lapack_pointers.slartg(a, b, c, s, &g)
@@ -147,7 +144,7 @@ cdef inline void lartg(blas_t* a, blas_t* b, blas_t* c, blas_t* s) nogil:
     b[0] = 0
 
 cdef inline void rot(int n, blas_t* x, int incx, blas_t* y, int incy,
-                     blas_t c, blas_t s) nogil:
+                     blas_t c, blas_t s) noexcept nogil:
     if blas_t is float:
         blas_pointers.srot(&n, x, &incx, y, &incy, &c, &s)
     elif blas_t is double:
@@ -158,21 +155,21 @@ cdef inline void rot(int n, blas_t* x, int incx, blas_t* y, int incy,
         lapack_pointers.zrot(&n, x, &incx, y, &incy, <double*>&c, &s)
 
 cdef inline void larfg(int n, blas_t* alpha, blas_t* x, int incx,
-                       blas_t* tau) nogil:
+                       blas_t* tau) noexcept nogil:
     {{for COND, CNAME, C in zip(CONDS, CNAMES, PREFIX)}}
     {{COND}} blas_t is {{CNAME}}:
         lapack_pointers.{{C}}larfg(&n, alpha, x, &incx, tau)
     {{endfor}}
 
 cdef inline void larf(char* side, int m, int n, blas_t* v, int incv, blas_t tau,
-    blas_t* c, int ldc, blas_t* work) nogil:
+    blas_t* c, int ldc, blas_t* work) noexcept nogil:
     {{for COND, CNAME, C in zip(CONDS, CNAMES, PREFIX)}}
     {{COND}} blas_t is {{CNAME}}:
         lapack_pointers.{{C}}larf(side, &m, &n, v, &incv, &tau, c, &ldc, work)
     {{endfor}}
 
 cdef inline void ger(int m, int n, blas_t alpha, blas_t* x, int incx, blas_t* y,
-        int incy, blas_t* a, int lda) nogil:
+        int incy, blas_t* a, int lda) noexcept nogil:
     if blas_t is float:
         blas_pointers.sger(&m, &n, &alpha, x, &incx, y, &incy, a, &lda)
     elif blas_t is double:
@@ -183,7 +180,7 @@ cdef inline void ger(int m, int n, blas_t alpha, blas_t* x, int incx, blas_t* y,
         blas_pointers.zgeru(&m, &n, &alpha, x, &incx, y, &incy, a, &lda)
 
 cdef inline void gemv(char* trans, int m, int n, blas_t alpha, blas_t* a,
-        int lda, blas_t* x, int incx, blas_t beta, blas_t* y, int incy) nogil:
+        int lda, blas_t* x, int incx, blas_t beta, blas_t* y, int incy) noexcept nogil:
     {{for COND, CNAME, C in zip(CONDS, CNAMES, PREFIX)}}
     {{COND}} blas_t is {{CNAME}}:
         blas_pointers.{{C}}gemv(trans, &m, &n, &alpha, a, &lda, x, &incx,
@@ -192,7 +189,7 @@ cdef inline void gemv(char* trans, int m, int n, blas_t alpha, blas_t* a,
 
 cdef inline void gemm(char* transa, char* transb, int m, int n, int k,
         blas_t alpha, blas_t* a, int lda, blas_t* b, int ldb, blas_t beta,
-        blas_t* c, int ldc) nogil:
+        blas_t* c, int ldc) noexcept nogil:
     {{for COND, CNAME, C in zip(CONDS, CNAMES, PREFIX)}}
     {{COND}} blas_t is {{CNAME}}:
         blas_pointers.{{C}}gemm(transa, transb, &m, &n, &k, &alpha, a, &lda,
@@ -200,7 +197,7 @@ cdef inline void gemm(char* transa, char* transb, int m, int n, int k,
     {{endfor}}
 
 cdef inline void trmm(char* side, char* uplo, char* transa, char* diag, int m,
-        int n, blas_t alpha, blas_t* a, int lda, blas_t* b, int ldb) nogil:
+        int n, blas_t alpha, blas_t* a, int lda, blas_t* b, int ldb) noexcept nogil:
     {{for COND, CNAME, C in zip(CONDS, CNAMES, PREFIX)}}
     {{COND}} blas_t is {{CNAME}}:
         blas_pointers.{{C}}trmm(side, uplo, transa, diag, &m, &n, &alpha, a, &lda,
@@ -208,7 +205,7 @@ cdef inline void trmm(char* side, char* uplo, char* transa, char* diag, int m,
     {{endfor}}
 
 cdef inline int geqrf(int m, int n, blas_t* a, int lda, blas_t* tau,
-                      blas_t* work, int lwork) nogil:
+                      blas_t* work, int lwork) noexcept nogil:
     cdef int info
     {{for COND, CNAME, C in zip(CONDS, CNAMES, PREFIX)}}
     {{COND}} blas_t is {{CNAME}}:
@@ -217,7 +214,7 @@ cdef inline int geqrf(int m, int n, blas_t* a, int lda, blas_t* tau,
     return info
 
 cdef inline int ormqr(char* side, char* trans, int m, int n, int k, blas_t* a,
-    int lda, blas_t* tau, blas_t* c, int ldc, blas_t* work, int lwork) nogil:
+    int lda, blas_t* tau, blas_t* c, int ldc, blas_t* work, int lwork) noexcept nogil:
     cdef int info = 0
     if blas_t is float:
         lapack_pointers.sormqr(side, trans, &m, &n, &k, a, &lda, tau, c, &ldc,
@@ -237,20 +234,20 @@ cdef inline int ormqr(char* side, char* trans, int m, int n, int k, blas_t* a,
 # Utility routines
 #------------------------------------------------------------------------------
 
-cdef void blas_t_conj(int n, blas_t* x, int* xs) nogil:
+cdef void blas_t_conj(int n, blas_t* x, int* xs) noexcept nogil:
     cdef int j
     if blas_t is float_complex or blas_t is double_complex:
         for j in range(n):
             index1(x, xs, j)[0] = index1(x, xs, j)[0].conjugate()
 
-cdef void blas_t_2d_conj(int m, int n, blas_t* x, int* xs) nogil:
+cdef void blas_t_2d_conj(int m, int n, blas_t* x, int* xs) noexcept nogil:
     cdef int i, j
     if blas_t is float_complex or blas_t is double_complex:
         for i in range(m):
             for j in range(n):
                 index2(x, xs, i, j)[0] = index2(x, xs, i, j)[0].conjugate()
 
-cdef blas_t blas_t_sqrt(blas_t x) nogil:
+cdef blas_t blas_t_sqrt(blas_t x) noexcept nogil:
     if blas_t is float:
         return sqrt(x)
     elif blas_t is double:
@@ -260,19 +257,19 @@ cdef blas_t blas_t_sqrt(blas_t x) nogil:
     else:
         return sqrt((<double*>&x)[0])
 
-cdef bint blas_t_less_than(blas_t x, blas_t y) nogil:
+cdef bint blas_t_less_than(blas_t x, blas_t y) noexcept nogil:
     if blas_t is float or blas_t is double:
         return x < y
     else:
         return x.real < y.real
 
-cdef bint blas_t_less_equal(blas_t x, blas_t y) nogil:
+cdef bint blas_t_less_equal(blas_t x, blas_t y) noexcept nogil:
     if blas_t is float or blas_t is double:
         return x <= y
     else:
         return x.real <= y.real
 
-cdef int to_lwork(blas_t a, blas_t b) nogil:
+cdef int to_lwork(blas_t a, blas_t b) noexcept nogil:
     cdef int ai, bi
     if blas_t is float or blas_t is double:
         ai = <int>a
@@ -289,14 +286,14 @@ cdef int to_lwork(blas_t a, blas_t b) nogil:
 # QR update routines start here.
 #------------------------------------------------------------------------------
 
-cdef bint reorthx(int m, int n, blas_t* q, int* qs, bint qisF, int j, blas_t* u, blas_t* s) nogil:
+cdef bint reorthx(int m, int n, blas_t* q, int* qs, bint qisF, int j, blas_t* u, blas_t* s) noexcept nogil:
     # U should be all zeros on entry., and m > 1
     cdef blas_t unorm, snorm, wnorm, wpnorm, sigma_max, sigma_min, rc
     cdef char* T = 'T'
     cdef char* N = 'N'
     cdef char* C = 'C'
     cdef int ss = 1
-    cdef blas_t inv_root2 = NPY_SQRT1_2
+    cdef blas_t inv_root2 = M_SQRT1_2
 
     # u starts out as the jth basis vector.
     u[j] = 1
@@ -350,7 +347,7 @@ cdef bint reorthx(int m, int n, blas_t* q, int* qs, bint qisF, int j, blas_t* u,
 
 cdef int thin_qr_row_delete(int m, int n, blas_t* q, int* qs, bint qisF,
                             blas_t* r, int* rs, int k, int p_eco,
-                            int p_full) nogil:
+                            int p_full) noexcept nogil:
     cdef int i, j, argmin_row_norm
     cdef size_t usize = (m + 3*n + 1) * sizeof(blas_t)
     cdef blas_t* s
@@ -410,7 +407,7 @@ cdef int thin_qr_row_delete(int m, int n, blas_t* q, int* qs, bint qisF,
     return 1
 
 cdef void qr_block_row_delete(int m, int n, blas_t* q, int* qs,
-                              blas_t* r, int* rs, int k, int p) nogil:
+                              blas_t* r, int* rs, int k, int p) noexcept nogil:
     cdef int i, j
     cdef blas_t c,s
     cdef blas_t* W
@@ -446,7 +443,7 @@ cdef void qr_block_row_delete(int m, int n, blas_t* q, int* qs,
                 c, s.conjugate())
 
 cdef void qr_col_delete(int m, int o, int n, blas_t* q, int* qs, blas_t* r,
-                        int* rs, int k) nogil:
+                        int* rs, int k) noexcept nogil:
     """
         Here we support both full and economic decomposition, q is (m,o), and r
         is (o, n).
@@ -460,7 +457,7 @@ cdef void qr_col_delete(int m, int o, int n, blas_t* q, int* qs, blas_t* r,
     hessenberg_qr(m, n-1, q, qs, r, rs, k)
 
 cdef int qr_block_col_delete(int m, int o, int n, blas_t* q, int* qs,
-                              blas_t* r, int* rs, int k, int p) nogil:
+                              blas_t* r, int* rs, int k, int p) noexcept nogil:
     """
         Here we support both full and economic decomposition, q is (m,o), and r
         is (o, n).
@@ -484,7 +481,7 @@ cdef int qr_block_col_delete(int m, int o, int n, blas_t* q, int* qs,
     return 0
 
 cdef void thin_qr_row_insert(int m, int n, blas_t* q, int* qs, blas_t* r,
-                             int* rs, blas_t* u, int* us, int k) nogil:
+                             int* rs, blas_t* u, int* us, int k) noexcept nogil:
     cdef int j
     cdef blas_t c, s
 
@@ -500,7 +497,7 @@ cdef void thin_qr_row_insert(int m, int n, blas_t* q, int* qs, blas_t* r,
         swap(n, row(q, qs, j), qs[1], row(q, qs, j-1), qs[1])
 
 cdef void qr_row_insert(int m, int n, blas_t* q, int* qs, blas_t* r, int* rs,
-                        int k) nogil:
+                        int k) noexcept nogil:
     cdef int j
     cdef blas_t c, s
     cdef int limit = min(m-1, n)
@@ -517,7 +514,7 @@ cdef void qr_row_insert(int m, int n, blas_t* q, int* qs, blas_t* r, int* rs,
 
 cdef int thin_qr_block_row_insert(int m, int n, blas_t* q, int* qs, blas_t* r,
                                   int* rs, blas_t* u, int* us, int k,
-                                  int p) nogil:
+                                  int p) noexcept nogil:
     # as below this should someday call lapack's xtpqrt.
     cdef int j
     cdef blas_t rjj, tau
@@ -571,7 +568,7 @@ cdef int thin_qr_block_row_insert(int m, int n, blas_t* q, int* qs, blas_t* r,
     libc.stdlib.free(work)
 
 cdef int qr_block_row_insert(int m, int n, blas_t* q, int* qs,
-                             blas_t* r, int* rs, int k, int p) nogil:
+                             blas_t* r, int* rs, int k, int p) noexcept nogil:
     # this should someday call lapack's xtpqrt (requires lapack >= 3.4
     # released nov 11). RHEL6's atlas doesn't seem to have it.
     # On input this looks something like this:
@@ -623,7 +620,7 @@ cdef int qr_block_row_insert(int m, int n, blas_t* q, int* qs,
 
 cdef int thin_qr_col_insert(int m, int n, blas_t* q, int* qs, blas_t* r,
                              int* rs, blas_t* u, int* us, int k, int p_eco,
-                             int p_full, blas_t* rcond) nogil:
+                             int p_full, blas_t* rcond) noexcept nogil:
     # here q and r will always be fortran ordered since we have to allocate them
     cdef int i, j, info
     cdef blas_t c, sn
@@ -686,7 +683,7 @@ cdef int thin_qr_col_insert(int m, int n, blas_t* q, int* qs, blas_t* r,
     return 0
 
 cdef void qr_col_insert(int m, int n, blas_t* q, int* qs, blas_t* r, int* rs,
-                        int k) nogil:
+                        int k) noexcept nogil:
     cdef int j
     cdef blas_t c, s, temp, tau
     cdef blas_t* work
@@ -703,7 +700,7 @@ cdef void qr_col_insert(int m, int n, blas_t* q, int* qs, blas_t* r, int* rs,
         rot(m, col(q, qs, j), qs[0], col(q, qs, j+1), qs[0], c, s.conjugate())
 
 cdef int qr_block_col_insert(int m, int n, blas_t* q, int* qs,
-                              blas_t* r, int* rs, int k, int p) nogil:
+                              blas_t* r, int* rs, int k, int p) noexcept nogil:
     cdef int i, j
     cdef blas_t c, s
     cdef blas_t* tau = NULL
@@ -805,7 +802,7 @@ cdef int qr_block_col_insert(int m, int n, blas_t* q, int* qs,
 
 cdef void thin_qr_rank_1_update(int m, int n, blas_t* q, int* qs, bint qisF,
     blas_t* r, int* rs, blas_t* u, int* us, blas_t* v, int* vs, blas_t* s,
-    int* ss) nogil:
+    int* ss) noexcept nogil:
     """Assume that q is (M,N) and either C or F contiguous, r is (N,N), u is M,
        and V is N.  s is a 2*n work array.
     """
@@ -847,7 +844,7 @@ cdef void thin_qr_rank_1_update(int m, int n, blas_t* q, int* qs, bint qisF,
 
 cdef void thin_qr_rank_p_update(int m, int n, int p, blas_t* q, int* qs,
     bint qisF, blas_t* r, int* rs, blas_t* u, int* us, blas_t* v, int* vs,
-    blas_t* s, int* ss) nogil:
+    blas_t* s, int* ss) noexcept nogil:
     """Assume that q is (M,N) and either C or F contiguous, r is (N,N), u is
        (M,p) and V is (N,p).  s is a 2*n work array.
     """
@@ -858,7 +855,7 @@ cdef void thin_qr_rank_p_update(int m, int n, int p, blas_t* q, int* qs,
                               col(v, vs, j), vs, s, ss)
 
 cdef void qr_rank_1_update(int m, int n, blas_t* q, int* qs, blas_t* r, int* rs,
-                           blas_t* u, int* us, blas_t* v, int* vs) nogil:
+                           blas_t* u, int* us, blas_t* v, int* vs) noexcept nogil:
     """ here we will assume that the u = Q.T.dot(u) and not the bare u.
         if A is MxN then q is MxM, r is MxN, u is M and v is N.
         e.g. currently assuming full matrices.
@@ -892,7 +889,7 @@ cdef void qr_rank_1_update(int m, int n, blas_t* q, int* qs, blas_t* r, int* rs,
     # no return, return q, r from python driver.
 
 cdef int qr_rank_p_update(int m, int n, int p, blas_t* q, int* qs, blas_t* r,
-                        int* rs, blas_t* u, int* us, blas_t* v, int* vs) nogil:
+                        int* rs, blas_t* u, int* us, blas_t* v, int* vs) noexcept nogil:
     cdef int i, j
     cdef blas_t c, s
     cdef blas_t* tau = NULL
@@ -984,7 +981,7 @@ cdef int qr_rank_p_update(int m, int n, int p, blas_t* q, int* qs, blas_t* r,
     return 0
 
 cdef void hessenberg_qr(int m, int n, blas_t* q, int* qs, blas_t* r, int* rs,
-                        int k) nogil:
+                        int k) noexcept nogil:
     """Reduce an upper hessenberg matrix r, to upper triangular, starting in
        row j.  Apply these transformation to q as well. Both full and economic
        decompositions are supported here.
@@ -1005,7 +1002,7 @@ cdef void hessenberg_qr(int m, int n, blas_t* q, int* qs, blas_t* r, int* rs,
         rot(m, col(q, qs, j), qs[0], col(q, qs, j+1), qs[0], c, s.conjugate())
 
 cdef void p_subdiag_qr(int m, int o, int n, blas_t* q, int* qs, blas_t* r, int* rs,
-                       int k, int p, blas_t* work) nogil:
+                       int k, int p, blas_t* work) noexcept nogil:
     """ Reduce a matrix r to upper triangular form by eliminating the lower p
         subdiagionals using reflectors. Both full and economic decompositions
         are supported here.  In either case, q is (m,o) and r is (o,n)
@@ -1044,7 +1041,7 @@ cdef void p_subdiag_qr(int m, int o, int n, blas_t* q, int* qs, blas_t* r, int* 
         index2(r, rs, j, j)[0] = rjj
 
 cdef int reorth(int m, int n, blas_t* q, int* qs, bint qisF, blas_t* u,
-                int* us, blas_t* s, blas_t* RCOND) nogil:
+                int* us, blas_t* s, blas_t* RCOND) noexcept nogil:
     """Given a (m,n) matrix q with orthonormal columns and a (m,) vector u,
        find vectors s, w and scalar p such that u = Qs + pw where w is of unit
        length and orthogonal to the columns of q.
@@ -1064,7 +1061,7 @@ cdef int reorth(int m, int n, blas_t* q, int* qs, bint qisF, blas_t* u,
     cdef char* N = 'N'
     cdef char* C = 'C'
     cdef int ss = 1
-    cdef blas_t inv_root2 = NPY_SQRT1_2
+    cdef blas_t inv_root2 = M_SQRT1_2
 
     # normalize u
     unorm = nrm2(m, u, us[0])
@@ -1184,7 +1181,7 @@ def _form_qTu(object a, object b):
     return qTu
 
 cdef form_qTu(cnp.ndarray q, cnp.ndarray u, void* qTuvoid, int* qTus,
-              int k):
+              int k) noexcept:
     """ assuming here that q and u have compatible shapes, and are the same
         type + Q is contiguous.  This function is preferable over simply
         calling np.dot for two reasons: 1) this output is always in F order, 2)
@@ -1315,7 +1312,7 @@ cdef form_qTu(cnp.ndarray q, cnp.ndarray u, void* qTuvoid, int* qTus,
     else:
         raise ValueError('q must be either F or C contiguous')
 
-cdef validate_array(cnp.ndarray a, bint chkfinite):
+cdef validate_array(cnp.ndarray a, bint chkfinite) noexcept:
     # here we check that a has positive strides and that its size is small
     # enough to fit in into an int, as BLAS/LAPACK require
     cdef bint copy = False
@@ -1338,7 +1335,7 @@ cdef validate_array(cnp.ndarray a, bint chkfinite):
     return a
 
 cdef tuple validate_qr(object q0, object r0, bint overwrite_q, int q_order,
-                       bint overwrite_r, int r_order, bint chkfinite):
+                       bint overwrite_r, int r_order, bint chkfinite) noexcept:
     cdef cnp.ndarray Q
     cdef cnp.ndarray R
     cdef int typecode
@@ -1391,7 +1388,7 @@ cdef tuple validate_qr(object q0, object r0, bint overwrite_q, int q_order,
 
     return Q, R, typecode, Q.shape[0], R.shape[1], economic
 
-cdef void* extract(cnp.ndarray arr, int* arrs):
+cdef void* extract(cnp.ndarray arr, int* arrs) noexcept:
     with cython.cdivision(True):    # Assumes itemsize != 0.
         if arr.ndim == 2:
             arrs[0] = arr.strides[0] / cnp.PyArray_ITEMSIZE(arr)
@@ -1466,6 +1463,7 @@ def qr_delete(Q, R, k, int p=1, which='row', overwrite_qr=False,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> a = np.array([[  3.,  -2.,  -2.],
     ...               [  6.,  -9.,  -3.],
@@ -1692,6 +1690,7 @@ def qr_insert(Q, R, u, k, which='row', rcond=None, overwrite_qru=False, check_fi
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> a = np.array([[  3.,  -2.,  -2.],
     ...               [  6.,  -7.,   4.],
@@ -1758,7 +1757,7 @@ def qr_insert(Q, R, u, k, which='row', rcond=None, overwrite_qru=False, check_fi
     else:
         raise ValueError("'which' must be either 'row' or 'col'")
 
-cdef qr_insert_row(Q, R, u, int k, bint overwrite_qru, bint check_finite):
+cdef qr_insert_row(Q, R, u, int k, bint overwrite_qru, bint check_finite) noexcept:
     cdef cnp.ndarray q1, r1, u1, qnew, rnew
     cdef int j
     cdef int u_flags = cnp.NPY_BEHAVED_NS | cnp.NPY_ELEMENTSTRIDES
@@ -1878,7 +1877,7 @@ cdef qr_insert_row(Q, R, u, int k, bint overwrite_qru, bint check_finite):
                 raise MemoryError('Unable to allocate memory for array')
         return qnew, rnew
 
-cdef qr_insert_col(Q, R, u, int k, rcond, bint overwrite_qru, bint check_finite):
+cdef qr_insert_col(Q, R, u, int k, rcond, bint overwrite_qru, bint check_finite) noexcept:
     cdef cnp.ndarray q1, r1, u1, qnew, rnew
     cdef int j
     cdef int q_flags = ARRAY_ANYORDER
@@ -2093,6 +2092,7 @@ def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> a = np.array([[  3.,  -2.,  -2.],
     ...               [  6.,  -9.,  -3.],

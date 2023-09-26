@@ -95,9 +95,7 @@ coefficients by assuming them to be mirror-symmetric also.
 Currently the package provides functions for determining second- and third-
 order cubic spline coefficients from equally-spaced samples in one and two
 dimensions (:func:`qspline1d`, :func:`qspline2d`, :func:`cspline1d`,
-:func:`cspline2d`). The package also supplies a function ( :func:`bspline` )
-for evaluating the B-spline basis function, :math:`\beta^{o}\left(x\right)` for
-arbitrary order and :math:`x.` For large :math:`o`, the B-spline basis
+:func:`cspline2d`). For large :math:`o`, the B-spline basis
 function can be approximated well by a zero-mean Gaussian function with
 standard-deviation equal to :math:`\sigma_{o}=\left(o+1\right)/12` :
 
@@ -108,7 +106,7 @@ standard-deviation equal to :math:`\sigma_{o}=\left(o+1\right)/12` :
 A function to compute this Gaussian for arbitrary :math:`x` and :math:`o` is
 also available ( :func:`gauss_spline` ). The following code and figure use
 spline-filtering to compute an edge-image (the second derivative of a smoothed
-spline) of a raccoon's face, which is an array returned by the command :func:`scipy.misc.face`.
+spline) of a raccoon's face, which is an array returned by the command :func:`scipy.datasets.face`.
 The command :func:`sepfir2d` was used to apply a separable 2-D FIR
 filter with mirror-symmetric boundary conditions to the spline coefficients.
 This function is ideally-suited for reconstructing samples from spline
@@ -117,12 +115,13 @@ coefficients and is faster than :func:`convolve2d`, which convolves arbitrary
 conditions.
 
 .. plot::
+   :alt: "This code displays two plots. The first plot is a normal grayscale photo of a raccoon climbing on a palm plant. The second plot has the 2-D spline filter applied to the photo and is completely grey except the edges of the photo have been emphasized, especially on the raccoon fur and palm fronds."
 
    >>> import numpy as np
-   >>> from scipy import signal, misc
+   >>> from scipy import signal, datasets
    >>> import matplotlib.pyplot as plt
 
-   >>> image = misc.face(gray=True).astype(np.float32)
+   >>> image = datasets.face(gray=True).astype(np.float32)
    >>> derfilt = np.array([1.0, -2, 1.0], dtype=np.float32)
    >>> ck = signal.cspline2d(image, 8.0)
    >>> deriv = (signal.sepfir2d(ck, derfilt, [1]) +
@@ -308,12 +307,13 @@ enhancing, and edge-detection for an image.
 
 
 .. plot::
+   :alt: "This code displays two plots. The first plot is the familiar photo of a raccoon climbing on a palm. The second plot has the FIR filter applied and has the two copies of the photo superimposed due to the twin peaks manually set in the filter kernel definition."
 
    >>> import numpy as np
-   >>> from scipy import signal, misc
+   >>> from scipy import signal, datasets
    >>> import matplotlib.pyplot as plt
 
-   >>> image = misc.face(gray=True)
+   >>> image = datasets.face(gray=True)
    >>> w = np.zeros((50, 50))
    >>> w[0][0] = 1.0
    >>> w[49][25] = 1.0
@@ -354,12 +354,13 @@ example, we consider a Gaussian filter :func:`~scipy.signal.windows.gaussian`
 which is often used for blurring.
 
 .. plot::
+   :alt: "This code displays two plots. The first plot is a grayscale photo of two people climbing a wooden staircase taken from below. The second plot has the 2-D gaussian FIR window applied and appears very blurry. You can still tell it's a photo but the subject is ambiguous."
 
    >>> import numpy as np
-   >>> from scipy import signal, misc
+   >>> from scipy import signal, datasets
    >>> import matplotlib.pyplot as plt
 
-   >>> image = misc.ascent()
+   >>> image = np.asarray(datasets.ascent(), np.float64)
    >>> w = signal.windows.gaussian(51, 10.0)
    >>> image_new = signal.sepfir2d(image, w, w)
 
@@ -525,6 +526,7 @@ types (e.g., low-pass, band-pass...).
 The example below designs a low-pass and a band-stop filter, respectively.
 
 .. plot::
+   :alt: "This code displays an X-Y plot with the amplitude response on the Y axis vs frequency on the X axis. The first (low-pass) trace in blue starts with a pass-band at 0 dB and curves down around halfway through with some ripple in the stop-band about 80 dB down. The second (band-stop) trace in red starts and ends at 0 dB, but the middle third is down about 60 dB from the peak with some ripple where the filter would supress a signal."
 
    >>> import numpy as np
    >>> import scipy.signal as signal
@@ -556,6 +558,7 @@ gains, respectively.
 The example below designs a filter with such an arbitrary amplitude response.
 
 .. plot::
+   :alt: "This code displays an X-Y plot with amplitude response on the Y axis vs frequency on the X axis. A single trace forms a shape similar to a heartbeat signal."
 
    >>> import numpy as np
    >>> import scipy.signal as signal
@@ -590,6 +593,7 @@ compared with the FIR filters from the examples above in order to reach the same
 stop-band attenuation of :math:`\approx 60` dB.
 
 .. plot::
+   :alt: "This code generates an X-Y plot with amplitude response on the Y axis vs Frequency on the X axis. A single trace shows a smooth low-pass filter with the left third passband near 0 dB. The right two-thirds are about 60 dB down with two sharp narrow valleys dipping down to -100 dB."
 
    >>> import numpy as np
    >>> import scipy.signal as signal
@@ -870,6 +874,7 @@ in the amplitude response.
 
 
 .. plot::
+   :alt: "This code displays two plots. The first plot is an IIR filter response as an X-Y plot with amplitude response on the Y axis vs frequency on the X axis. The low-pass filter shown has a passband from 0 to 100 Hz with 0 dB response and a stop-band from about 175 Hz to 1 KHz about 40 dB down. There are two sharp discontinuities in the filter near 175 Hz and 300 Hz. The second plot is an X-Y showing the transfer function in the complex plane. The Y axis is real-valued an the X axis is complex-valued. The filter has four zeros near [300+0j, 175+0j, -175+0j, -300+0j] shown as blue X markers. The filter also has four poles near [50-30j, -50-30j, 100-8j, -100-8j] shown as red dots."
 
    >>> import numpy as np
    >>> import scipy.signal as signal
@@ -888,13 +893,13 @@ in the amplitude response.
 
    >>> z, p, k = signal.tf2zpk(b, a)
 
-   >>> plt.plot(np.real(z), np.imag(z), 'xb')
-   >>> plt.plot(np.real(p), np.imag(p), 'or')
+   >>> plt.plot(np.real(z), np.imag(z), 'ob', markerfacecolor='none')
+   >>> plt.plot(np.real(p), np.imag(p), 'xr')
    >>> plt.legend(['Zeros', 'Poles'], loc=2)
 
    >>> plt.title('Pole / Zero Plot')
-   >>> plt.ylabel('Real')
-   >>> plt.xlabel('Imaginary')
+   >>> plt.xlabel('Real')
+   >>> plt.ylabel('Imaginary')
    >>> plt.grid()
    >>> plt.show()
 
@@ -913,6 +918,7 @@ The example below calculates the periodogram of a sine signal in white
 Gaussian noise.
 
 .. plot::
+   :alt: "This code displays a single X-Y log-linear plot with the power spectral density on the Y axis vs frequency on the X axis. A single blue trace shows a noise floor with a power level of 1e-3 with a single peak at 1270 Hz up to a power of 1. The noise floor measurements appear noisy and oscillate down to 1e-7."
 
    >>> import numpy as np
    >>> import scipy.signal as signal
@@ -949,6 +955,7 @@ the spectrogram.
 
 
 .. plot::
+   :alt: "This code displays a single X-Y log-linear plot with the power spectral density on the Y axis vs frequency on the X axis. A single blue trace shows a smooth noise floor at a power level of 6e-2 with a single peak up to a power level of 2 at 1270 Hz."
 
    >>> import numpy as np
    >>> import scipy.signal as signal
@@ -994,7 +1001,7 @@ variance is unity, the normalized Lomb-Scargle periodogram at frequency
 
 .. math::
 
-    P_{n}(f) \frac{1}{2}\left\{\frac{\left[\sum_{j}^{N_{t}}X_{j}\cos\omega(t_{j}-\tau)\right]^{2}}{\sum_{j}^{N_{t}}\cos^{2}\omega(t_{j}-\tau)}+\frac{\left[\sum_{j}^{N_{t}}X_{j}\sin\omega(t_{j}-\tau)\right]^{2}}{\sum_{j}^{N_{t}}\sin^{2}\omega(t_{j}-\tau)}\right\}.
+    P_{n}(f) = \frac{1}{2}\left\{\frac{\left[\sum_{j}^{N_{t}}X_{j}\cos\omega(t_{j}-\tau)\right]^{2}}{\sum_{j}^{N_{t}}\cos^{2}\omega(t_{j}-\tau)}+\frac{\left[\sum_{j}^{N_{t}}X_{j}\sin\omega(t_{j}-\tau)\right]^{2}}{\sum_{j}^{N_{t}}\sin^{2}\omega(t_{j}-\tau)}\right\}.
 
 Here, :math:`\omega \equiv 2\pi f` is the angular frequency. The frequency-dependent
 time offset :math:`\tau` is given by
@@ -1041,8 +1048,604 @@ giving a factor of :math:`\sim 2` speed increase over the straightforward
 implementation.
 
 
+
+.. currentmodule:: scipy.signal.ShortTimeFFT
+.. math::
+    % LaTeX Macros to make the LaTeX formulas more readable:
+    \newcommand{\IC}{{\mathbb{C}}}  % set of complex numbers
+    \newcommand{\IN}{{\mathbb{N}}}  % set of natural numbers
+    \newcommand{\IR}{{\mathbb{R}}}  % set of real numbers
+    \newcommand{\IZ}{{\mathbb{Z}}}  % set of integers
+    \newcommand{\jj}{{\mathbb{j}}}  % imaginary unit
+    \newcommand{\e}{\operatorname{e}}  % Euler's number
+    \newcommand{\dd}{\operatorname{d}} % infinitesimal operator
+    \newcommand{\conj}[1]{\overline{#1}} % complex conjugate
+    \newcommand{\conjT}[1]{\overline{#1^T}} % transposed complex conjugate
+    \newcommand{\inv}[1]{\left(#1\right)^{\!-1}} % inverse
+    % Since the physics package is not loaded, we define the macros ourselves:
+    \newcommand{\vb}[1]{\mathbf{#1}} % vectors and matrices are bold
+
+.. shorthands to make the source more legible:
+.. |ShortTimeFFT| replace:: :class:`ShortTimeFFT <scipy.signal.ShortTimeFFT>`
+.. |old_stft| replace:: `stft <scipy.signal.stft>`
+.. |old_istft| replace:: `istft <scipy.signal.istft>`
+.. |old_spectrogram| replace:: `spectrogram <scipy.signal.spectrogram>`
+
+.. _tutorial_stft:
+
+Short-Time Fourier Transform
+----------------------------
+This section gives some background information on using the |ShortTimeFFT|
+class: The short-time Fourier transform (STFT) can be utilized to analyze the
+spectral properties of signals over time. It divides a signal into overlapping
+chunks by utilizing a sliding window and calculates the Fourier transform
+of each chunk. For a continuous-time complex-valued signal :math:`x(t)` the
+STFT is defined [4]_ as
+
+.. math::
+
+    S(f, t) := \int_\IR x(\xi)\, \conj{w(\xi-t)}\,\e^{-\jj2\pi f \xi}\dd\xi\ ,
+
+where :math:`w(t)` is a complex-valued window function with its complex
+conjugate being :math:`\conj{w(t)}`. It can be interpreted as determining the
+scalar product of :math:`x` with the window :math:`w` which is translated by
+the time :math:`t` and then modulated (i.e., frequency-shifted) by the
+frequency :math:`f`.
+For working with sampled signals :math:`x[k] := x(kT)`, :math:`k\in\IZ`, with
+sampling interval :math:`T` (being the inverse of the sampling frequency `fs`),
+the discrete version, i.e., only evaluating the STFT at discrete grid points
+:math:`S[q, p] := S(q \Delta f, p\Delta t)`, :math:`q,p\in\IZ`, needs to be
+used. It can be formulated as
+
+.. math::
+    :label: eq_dSTFT
+
+    S[q,p] = \sum_{k=0}^{N-1} x[k]\,\conj{w[k-p h]}\, \e^{-\jj2\pi q k / N}\ ,
+              \quad q,p\in\IZ\ ,
+
+with `p` representing the time index of :math:`S` with time interval
+:math:`\Delta t := h T`, :math:`h\in\IN` (see `delta_t`), which can be
+expressed as the `hop` size of :math:`h` samples. :math:`q` represents the
+frequency index of :math:`S` with step size :math:`\Delta f := 1 / (N T)`
+(see `delta_f`), which makes it FFT compatible. :math:`w[m] := w(mT)`,
+:math:`m\in\IZ` is the sampled window function.
+
+To be more aligned to the implementation of |ShortTimeFFT|, it makes sense to
+reformulate Eq. :math:numref:`eq_dSTFT` as a two-step process:
+
+#. Extract the :math:`p`-th slice by windowing with the window :math:`w[m]`
+   made up of :math:`M` samples (see `m_num`) centered
+   at :math:`t[p] :=  p \Delta t = h T` (see `delta_t`),
+   i.e.,
+
+    .. math::
+        :label: eq_STFT_windowing
+
+        x_p[m] = x\!\big[m - \lfloor M/2\rfloor + h p\big]\, \conj{w[m]}\ ,
+                 \quad m = 0, \ldots M-1\ ,
+
+   where the integer :math:`\lfloor M/2\rfloor` represents ``M//2``, i.e, it is
+   the mid point of the window (`m_num_mid`). For notational convenience,
+   :math:`x[k]:=0` for :math:`k\not\in\{0, 1, \ldots, N-1\}` is assumed. In the
+   subsection :ref:`tutorial_stft_sliding_win` the indexing of the slices is
+   discussed in more detail.
+#. Then perform a discrete Fourier transform (i.e., an
+   :ref:`FFT <tutorial_FFT>`) of :math:`x_p[m]`.
+
+   .. math::
+        :label: eq_STFT_DFT
+
+        S[q, p] = \sum_{m=0}^{M-1} x_p[m] \exp\!\big\{%
+                                         -2\jj\pi (q + \phi_m)\, m / M\big\}\ .
+
+   Note that a linear phase :math:`\phi_m` (see `phase_shift`) can be
+   specified, which corresponds to shifting the input by :math:`\phi_m`
+   samples. The default is :math:`\phi_m = \lfloor M/2\rfloor` (corresponds per
+   definition to ``phase_shift = 0``), which suppresses linear phase components
+   for unshifted signals.
+   Furthermore, the FFT may be oversampled by padding :math:`w[m]` with zeros.
+   This can be achieved by specifying `mfft` to be larger than the window
+   length `m_num`---this sets :math:`M` to `mfft` (implying that also
+   :math:`w[m]:=0` for :math:`m\not\in\{0, 1, \ldots, M-1\}` holds).
+
+The inverse short-time Fourier transform (`istft`) is implemented by reversing
+these two steps:
+
+#. Perform the inverse discrete Fourier transform, i.e.,
+
+   .. math::
+
+      x_p[m] = \frac{1}{M}\sum_{q=0}^M S[q, p]\, \exp\!\big\{
+                                          2\jj\pi (q + \phi_m)\, m / M\big\}\ .
+
+#. Sum the shifted slices weighted by :math:`w_d[m]` to reconstruct the
+   original signal, i.e.,
+
+   .. math::
+
+        x[k] = \sum_p x_p\!\big[\mu_p(k)\big]\, w_d\!\big[\mu_p(k)\big]\ ,\quad
+               \mu_p(k) = k + \lfloor M/2\rfloor - h p
+
+   for :math:`k \in [0, \ldots, n-1]`. :math:`w_d[m]` is the so-called
+   canonical dual window of :math:`w[m]` and is also made up of :math:`M`
+   samples.
+
+Note that an inverse STFT does not necessarily exist for all windows and hop sizes. For a given
+window :math:`w[m]` the hop size :math:`h` must be small enough to ensure that
+every sample of :math:`x[k]` is touched by a non-zero value of at least one
+window slice. This is sometimes referred as the "non-zero overlap condition"
+(see :func:`check_NOLA <scipy.signal.check_NOLA>`). Some more details are
+given in the subsection :ref:`tutorial_stft_dual_win`.
+
+.. _tutorial_stft_sliding_win:
+
+Sliding Windows
+^^^^^^^^^^^^^^^
+This subsection discusses how the sliding window is indexed in the
+|ShortTimeFFT| by means of an example: Consider a window of length 6 with a
+`hop` interval of two and a sampling interval `T` of one, e.g., ``ShortTimeFFT
+(np.ones(6), 2, fs=1)``. The following image schematically depicts the first
+four window positions also named time slices:
+
+.. When editing the SVGs with Inkscape, convert all arrows from "Stroke" to
+   "Path" (See "Path" menu). This circumvents the problem of the arrow tips
+   not being displayed in the browser (as with Firefox 105 and Inkscape 1.2).
+   The online tool https://www.svgminify.com/ was used to reduce the file size
+   of the SVGs which were drawn with inkscape.
+
+.. figure:: ../_static/tutorial_stft_sliding_win_start.svg
+    :width: 60%
+    :align: center
+
+The x-axis denotes the time :math:`t`, which corresponds to the sample index
+`k` indicated by the bottom row of blue boxes. The y-axis denotes the time
+slice index :math:`p`. The signal :math:`x[k]` starts at index :math:`k=0` and
+is marked by a light blue background. Per definition the zeroth slice
+(:math:`p=0`) is centered at :math:`t=0`. The center of each slice
+(`m_num_mid`), here being the sample ``6//2=3``, is marked by the text "mid".
+By default the `stft` calculates all slices which have some overlap with the
+signal. Hence the first slice is at `p_min` = -1 with the lowest sample index
+being `k_min` = -5. The first sample index unaffected by a slice not sticking
+out to the left of the signal is :math:`p_{lb} = 2` and the first sample index
+unaffected by border effects is :math:`k_{lb} = 5`. The property
+`lower_border_end` returns the tuple :math:`(k_{lb}, p_{lb})`.
+
+The behavior at the end of the signal is depicted for a signal with
+:math:`n=50` samples below, as indicated by the blue background:
+
+.. figure:: ../_static/tutorial_stft_sliding_win_stop.svg
+    :width: 66%
+    :align: center
+
+Here the last slice has index :math:`p=26`.  Hence, following Python
+convention of the end index being outside the range, `p_max` = 27 indicates the
+first slice not touching the signal. The corresponding sample index is
+`k_max` = 55. The first slice, which sticks out to the right is
+:math:`p_{ub} = 24` with its first sample at :math:`k_{ub}=45`. The function
+`upper_border_begin` returns the tuple :math:`(k_{ub}, p_{ub})`.
+
+.. The unit test ``test_short_time_fft.test_tutorial_stft_sliding_win``verifies
+   that the shown indexes are correct.
+
+
+.. _tutorial_stft_dual_win:
+
+Inverse STFT and Dual Windows
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The term dual window stems from frame theory [5]_ where a frame is a series
+expansion which can represent any function in a given Hilbert space. There the
+expansions :math:`\{g_k\}` and :math:`\{h_k\}` are dual frames if for all
+functions :math:`f` in the given Hilbert space :math:`\mathcal{H}`
+
+.. math::
+
+  f  = \sum_{k\in\IN} \langle f, g_k\rangle h_k
+     =  \sum_{k\in\IN} \langle f, h_k\rangle g_k\ , \quad f \in \mathcal{H}\ ,
+
+holds, where :math:`\langle ., .\rangle` denotes the scalar product of
+:math:`\mathcal{H}`. All frames have dual frames [5]_.
+
+An STFT evaluated only at discrete grid
+points :math:`S(q \Delta f, p\Delta t)` is called  a "Gabor frame" in
+literature [4]_ [5]_.
+Since the support of the window :math:`w[m]` is limited to a finite interval,
+the |ShortTimeFFT| falls into the class of the so-called "painless
+non-orthogonal expansions" [4]_. In this case the dual windows always have the
+same support and can be calculated by means of inverting a diagonal matrix. A
+rough derivation only requiring some understanding of manipulating matrices
+will be sketched out in the following:
+
+Since the STFT given in Eq. :math:numref:`eq_dSTFT` is a linear mapping in
+:math:`x[k]`, it can be expressed in vector-matrix notation. This allows us to
+express the inverse via the formal solution of the linear least squares method
+(as in :func:`lstsq <scipy.linalg.lstsq>`), which leads to a beautiful and
+simple result.
+
+We begin by reformulating the windowing of Eq. :math:numref:`eq_STFT_windowing`
+
+.. math::
+    :label: eq_STFT_WinMatrix
+
+      \vb{x}_p  = \vb{W}_{\!p}\,\vb{x} =
+      \begin{bmatrix}
+        \cdots & 0 & w[0]   & 0 & \cdots&&&\\
+        & \cdots  & 0 & w[1] & 0 & \cdots&&\\
+        &   &   &         & \ddots&&&\\
+        &&\cdots & 0 & 0 & w[M-1] & 0 & \cdots
+      \end{bmatrix}\begin{bmatrix}
+        x[0]\\ x[1]\\ \vdots\\ x[N-1]
+      \end{bmatrix}\ ,
+
+where the :math:`M\times N` matrix :math:`\vb{W}_{\!p}` has only non-zeros
+entries on the :math:`(ph)`-th minor diagonal, i.e.,
+
+.. math::
+    :label: eq_STFT_WinMatrix1
+
+        W_p[m,k] = w[m]\, \delta_{m+ph,k}\ ,\quad
+       \delta_{k,l} &= \begin{cases} 1 & \text{ for } k=l\ ,\\
+                                    0 & \text{ elsewhere ,} \end{cases}
+
+with :math:`\delta_{k,l}` being the Kronecker Delta.
+Eq. :math:numref:`eq_STFT_DFT` can be expressed as
+
+.. math::
+
+    \vb{s}_p = \vb{F}\,\vb{x}_p \quad\text{with}\quad
+    F[q,m] =\exp\!\big\{-2\jj\pi (q + \phi_m)\, m / M\big\}\ ,
+
+which allows the STFT of the :math:`p`-th slice to be written as
+
+.. math::
+    :label: eq_STFT_Slice_p
+
+    \vb{s}_p = \vb{F}\vb{W}_{\!p}\,\vb{x} =: \vb{G}_p\,\vb{x}
+    \quad\text{with}\quad s_p[q] = S[p,q]\ .
+
+Note that :math:`\vb{F}` is unitary, i.e., the inverse equals its conjugate
+transpose meaning :math:`\conjT{\vb{F}}\vb{F} = \vb{I}`.
+
+To obtain a single vector-matrix equation for the STFT, the slices are stacked
+into one vector, i.e.,
+
+.. math::
+
+    \vb{s} := \begin{bmatrix}
+               \vb{s}_0\\ \vb{s}_1\\ \vdots\\ \vb{s}_{P-1}
+              \end{bmatrix}
+          = \begin{bmatrix}
+               \vb{G}_0\\ \vb{G}_1\\ \vdots\\ \vb{G}_{P-1}
+            \end{bmatrix}\, \vb{x}
+          =:  \vb{G}\, \vb{x}\ ,
+
+where :math:`P` is the number of columns of the resulting STFT. To invert this
+equation the Moore-Penrose inverse :math:`\vb{G}^\dagger` can be utilized
+
+.. math::
+    :label: eq_STFT_MoorePenrose
+
+    \vb{x} = \inv{\conjT{\vb{G}}\vb{G}}\, \conjT{\vb{G}} \vb{s}
+           =: \vb{G}^\dagger \vb{s}\ ,
+
+which exists if
+
+.. math::
+
+    \vb{D} := \conjT{\vb{G}}\vb{G} =
+        \begin{bmatrix}
+            \conjT{\vb{G}_0}& \conjT{\vb{G}_1}& \cdots &  \conjT{\vb{G}_{P-1}}
+        \end{bmatrix}^T \begin{bmatrix}
+            \vb{G}_0\\ \vb{G}_1\\ \vdots\\ \vb{G}_{P-1}
+        \end{bmatrix}
+      = \sum_{p=0}^{P-1} \conjT{\vb{G}_p}\vb{G}_p \ .
+
+is invertible. Then :math:`\vb{x} = \vb{G}^\dagger\vb{G}\,\vb{x} =
+\inv{\conjT{\vb{G}}\vb{G}}\,\conjT{\vb{G}}\vb{G}\,\vb{x}` obviously holds.
+:math:`\vb{D}` is always a diagonal matrix with non-negative diagonal entries.
+This becomes clear, when simplifying :math:`\vb{D}` further to
+
+.. math::
+    :label: eq_STFT_DiagM2
+
+    \vb{D} = \sum_{p=0}^{P-1} \conjT{\vb{G}_p}\vb{G}_p
+           = \sum_{p=0}^{P-1} \conjT{(\vb{F}\,\vb{W}_{\!p})}\,
+                              \vb{F}\,\vb{W}_{\!p}
+           = \sum_{p=0}^{P-1} \conjT{\vb{W}_{\!p}}\vb{W}_{\!p}
+           =: \sum_{p=0}^{P-1} \vb{D}_p
+
+due to :math:`\vb{F}` being unitary. Furthermore
+
+.. math::
+    :label: eq_STFT_DiagM3
+
+    D_p[r,s] &= \sum_{m=0}^{M-1} \conj{W_p^T[r,m]}\,W_p[m,s]
+              = \sum_{m=0}^{M-1} \left(\conj{w[m]}\, \delta_{m+ph,r}\right)
+                                 \left(w[m]\, \delta_{m+ph,s}\right)\\
+             &= \sum_{m=0}^{M-1} \big|w[m]\big|^2\,
+                                 \delta_{r,s}\, \delta_{r,m+ph}\ .
+
+shows that :math:`\vb{D}_p` is a diagonal matrix with non-negative entries.
+Hence, summing :math:`\vb{D}_p` preserves that property. This allows to
+simplify Eq. :math:numref:`eq_STFT_MoorePenrose` further, i.e,
+
+.. math::
+    :label: eq_STFT_istftM
+
+    \vb{x} &= \vb{D}^{-1} \conjT{\vb{G}}\vb{s}
+            = \sum_{p=0}^{P-1} \vb{D}^{-1}\conjT{\vb{W}_{\!p}}\,
+                               \conjT{\vb{F}}\vb{s}_p
+            =  \sum_{p=0}^{P-1} (\conj{\vb{W}_{\!p}\vb{D}^{-1}})^T\,
+                                \conjT{\vb{F}}\vb{s}_p\\
+           &=: \sum_{p=0}^{P-1}\conjT{\vb{U}_p}\,\conjT{\vb{F}}\vb{s}_p\ .
+
+Utilizing Eq. :math:numref:`eq_STFT_WinMatrix1`, :math:numref:`eq_STFT_DiagM2`,
+:math:numref:`eq_STFT_DiagM3`, :math:`\vb{U}_p=\vb{W}_{\!p}\vb{D}^{-1}` can be
+expressed as
+
+.. math::
+    :label: eq_STFT_DualWinM
+
+    U_p[m, k] &= W[m,k]\, D^{-1}[k,k]
+               = \left(w[m] \delta_{m+ph,k}\right)
+                 \inv{\sum_{\eta=0}^{P-1}  \vb{D}_\eta[k,k]} \delta_{m+ph,k}\\
+               &= w[m] \inv{\sum_{\eta=0}^{P-1}\sum_{\mu=0}^{M-1}
+                                 \big|w[\mu]\big|^2\,\delta_{m+ph, \mu+\eta h}}
+                       \delta_{m+ph,k}\\
+                &= w[m] \inv{\sum_{\eta=0}^{P-1} \big|w[m+(p-\eta)h]\big|^2}
+                       \delta_{m+ph,k} \ .
+
+This shows :math:`\vb{U}_p` has the identical structure as :math:`\vb{W}_p`
+in Eq. :math:numref:`eq_STFT_WinMatrix1`, i.e., having only non-zero
+entries on the :math:`(ph)`-th minor diagonal. The sum term in the inverse can
+be interpreted as sliding :math:`|w[\mu]|^2` over :math:`w[m]` (with an
+incorporated inversion), so only components overlapping with :math:`w[m]` have
+an effect. Hence, all :math:`U_p[m, k]` far enough from the border are
+identical windows. To circumvent border effects, :math:`x[k]` is padded with
+zeros, enlarging :math:`\vb{U}` so all slices which touch :math:`x[k]` contain
+the identical dual window
+
+.. math::
+
+    w_d[m] = w[m] \inv{\sum_{\eta\in\IZ} \big|w[m + \eta\, h]\big|^2}\ .
+
+Since :math:`w[m] = 0` holds for :math:`m \not\in\{0, \ldots, M-1\}`, it is
+only required to sum over the indexes :math:`\eta` fulfilling
+:math:`|\eta| < M/h`. The name dual window can be justified by inserting Eq.
+:math:numref:`eq_STFT_Slice_p` into Eq. :math:numref:`eq_STFT_istftM`, i.e.,
+
+.. math::
+
+    \vb{x} = \sum_{p=0}^{P-1} \conjT{\vb{U}_p}\,\conjT{\vb{F}}\,
+                                                 \vb{F}\,\vb{W}_{\!p}\,\vb{x}
+        = \left(\sum_{p=0}^{P-1} \conjT{\vb{U}_p}\,\vb{W}_{\!p}\right)\vb{x}\ ,
+
+showing that :math:`\vb{U}_p` and :math:`\vb{W}_{\!p}` are interchangeable.
+Hence, :math:`w_d[m]` is also a valid window with dual window :math:`w[m]`.
+Note that :math:`w_d[m]` is not a unique dual window, due to :math:`\vb{s}`
+typically having more entries than :math:`\vb{x}`. It can be shown, that
+:math:`w_d[m]` has the minimal energy (or :math:`L_2` norm) [4_], which is the
+reason for being named the  "canonical dual window".
+
+
+.. _tutorial_stft_legacy_stft:
+
+Comparison with Legacy Implementation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The functions |old_stft|, |old_istft|, and the |old_spectrogram| predate the
+|ShortTimeFFT| implementation. This section discusses the key differences
+between the older "legacy" and the newer |ShortTimeFFT| implementations. The
+main motivation for a rewrite was the insight that integrating :ref:`dual
+windows <tutorial_stft_dual_win>` could not be done in a sane way without
+breaking compatibility. This opened the opportunity for rethinking the code
+structure and the parametrization, thus making some implicit behavior more
+explicit.
+
+The following example compares the two STFTs of a complex valued chirp signal
+with a negative slope:
+
+.. plot::
+
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> from scipy.fft import fftshift
+    >>> from scipy.signal import stft, istft, spectrogram, ShortTimeFFT
+    ...
+    >>> fs, N = 200, 1001  # 200 Hz sampling rate for 5 s signal
+    >>> t_z = np.arange(N) / fs  # time indexes for signal
+    >>> z = np.exp(2j*np.pi*70 * (t_z - 0.2*t_z**2))  # complex-valued chirp
+    ...
+    >>> nperseg, noverlap = 50, 40
+    >>> win = ('gaussian', 1e-2 * fs)  # Gaussian with 0.01 s standard dev.
+    ...
+    >>> # Legacy STFT:
+    >>> f0_u, t0, Sz0_u = stft(z, fs, win, nperseg, noverlap,
+    ...                        return_onesided=False, scaling='spectrum')
+    >>> f0, Sz0 = fftshift(f0_u), fftshift(Sz0_u, axes=0)
+    ...
+    >>> # New STFT:
+    >>> SFT = ShortTimeFFT.from_window(win, fs, nperseg, noverlap,
+    ...                                fft_mode='centered',
+    ...                                scale_to='magnitude', phase_shift=None)
+    >>> Sz1 = SFT.stft(z)
+    ...
+    >>> # Plot results:
+    >>> fig1, axx = plt.subplots(2, 1, sharex='all', sharey='all',
+    ...                          figsize=(6., 5.))  # enlarge figure a bit
+    >>> t_lo, t_hi, f_lo, f_hi = SFT.extent(N, center_bins=True)
+    >>> t_str0 = r"Legacy stft() produces $%d\times%d$ points" % Sz0.T.shape
+    >>> t_str1 = r"ShortTimeFFT produces $%d\times%d$ points" % Sz1.T.shape
+    >>> _ = axx[0].set(title=t_str0, xlim=(t_lo, t_hi), ylim=(f_lo, f_hi))
+    >>> _ = axx[1].set(title=t_str1, xlabel="Time $t$ in seconds " +
+    ...                rf"($\Delta t= %g\,$s)" % SFT.delta_t)
+    ...
+    >>> # Calculate extent of plot with centered bins since imshow
+    ... # does not interpolate by default:
+    ... dt2 = (nperseg-noverlap) / fs  / 2 # equals SFT.delta_t / 2
+    >>> df2 = fs / nperseg / 2 # equals SFT.delta_f / 2
+    >>> extent0 = (-dt2, t0[-1] + dt2, f0[0] - df2, f0[-1] - df2)
+    >>> extent1 = SFT.extent(N, center_bins=True)
+    ...
+    >>> kw = dict(origin='lower', aspect='auto', cmap='viridis')
+    >>> im1a = axx[0].imshow(abs(Sz0), extent=extent0, **kw)
+    >>> im1b = axx[1].imshow(abs(Sz1), extent=extent1, **kw)
+    >>> fig1.colorbar(im1b, ax=axx, label="Magnitude $|S_z(t, f)|$")
+    >>> _ = fig1.supylabel(rf"Frequency $f$ in Hertz ($\Delta f = %g\,$Hz)" %
+    ...                    SFT.delta_f)
+    >>> plt.show()
+
+
+That the |ShortTimeFFT| produces 3 more time slices than the legacy version is
+the main difference. As laid out in the :ref:`tutorial_stft_sliding_win`
+section, all slices which touch the signal are incorporated in the new version.
+This has the advantage that the STFT can be sliced and reassembled as shown in
+the |ShortTimeFFT| code example. Furthermore, using all touching slices makes
+the ISTFT more robust in the case of windows that are zero somewhere.
+
+Note that the slices with identical time stamps produce equal results
+(up to numerical accuracy), i.e.:
+
+    >>> np.allclose(Sz0, Sz1[:, 2:-1])
+    True
+
+Generally, those additional slices contain non-zero values. Due to the
+large overlap in our example, they are quite small. E.g.:
+
+    >>> abs(Sz1[:, 1]).min(), abs(Sz1[:, 1]).max()
+    (6.925060911593139e-07, 8.00271269218721e-07)
+
+The ISTFT can be utilized to reconstruct the original signal:
+
+    >>> t0_r, z0_r = istft(Sz0_u, fs, win, nperseg, noverlap,
+    ...                    input_onesided=False, scaling='spectrum')
+    >>> z1_r = SFT.istft(Sz1, k1=N)
+    ...
+    >>> len(z0_r), len(z)
+    (1010, 1001)
+    >>> np.allclose(z0_r[:N], z)
+    True
+    >>> np.allclose(z1_r, z)
+    True
+
+Note that the legacy implementation returns a signal which is longer than the
+original. On the other hand, the new `istft` allows to explicitly specify the
+start index `k0` and the end index `k1` of the reconstructed signal. The length
+discrepancy in the old implementation is caused by the fact that the signal
+length is not a multiple of the slices.
+
+Further differences between the new and legacy versions in this example are:
+
+* The parameter ``fft_mode='centered'`` ensures that the zero frequency is
+  vertically centered for two-sided FFTs in the plot. With the legacy
+  implementation, `fftshift <scipy.fft.fftshift>` needs to be utilized.
+  ``fft_mode='twosided'`` produces the same behavior as the old version.
+* The parameter ``phase_shift=None`` ensures identical phases of the two
+  versions. |ShortTimeFFT|'s default value of ``0`` produces STFT slices
+  with an additional linear phase term.
+
+.. The unit test ``test_short_time_fft.test_tutorial_stft_legacy_stft``
+   verifies that all calculated values in this subsection are correct.
+
+A spectrogram is defined as the absolute square of the STFT [4]_. The
+`spectrogram` provided by the |ShortTimeFFT| sticks to that definition, i.e.:
+
+    >>> np.allclose(SFT.spectrogram(z), abs(Sz1)**2)
+    True
+
+On the other hand, the legacy |old_spectrogram| provides another STFT
+implementation with the key difference being the different handling of the
+signal borders. The following example shows how to use the |ShortTimeFFT| to
+obtain an identical SFT as produced with the legacy |old_spectrogram|:
+
+    >>> # Legacy spectrogram (detrending for complex signals not useful):
+    >>> f2_u, t2, Sz2_u = spectrogram(z, fs, win, nperseg, noverlap,
+    ...                               detrend=None, return_onesided=False,
+    ...                               scaling='spectrum', mode='complex')
+    >>> f2, Sz2 = fftshift(f2_u), fftshift(Sz2_u, axes=0)
+    ...
+    >>> # New STFT:
+    ... SFT = ShortTimeFFT.from_window(win, fs, nperseg, noverlap,
+    ...                                fft_mode='centered',
+    ...                                scale_to='magnitude', phase_shift=None)
+    >>> Sz3 = SFT.stft(z, p0=0, p1=(N-noverlap)//SFT.hop, k_offset=nperseg//2)
+    >>> t3 = SFT.t(N, p0=0, p1=(N-noverlap)//SFT.hop, k_offset=nperseg//2)
+    ...
+    >>> np.allclose(t2, t3)
+    True
+    >>> np.allclose(f2, SFT.f)
+    True
+    >>> np.allclose(Sz2, Sz3)
+    True
+
+The difference from the other STFTs is that the time slices do not start at 0 but
+at ``nperseg//2``, i.e.:
+
+    >>> t2
+    array([0.125, 0.175, 0.225, 0.275, 0.325, 0.375, 0.425, 0.475, 0.525,
+           ...
+           4.625, 4.675, 4.725, 4.775, 4.825, 4.875])
+
+Furthermore, only slices which do not stick out to the right are returned,
+centering the last slice at 4.875 s, which makes it shorter than with the default
+`stft` parametrization.
+
+Using the ``mode`` parameter, the legacy |old_spectrogram| can also return the
+'angle', 'phase', 'psd' or the 'magnitude'. The `scaling` behavior of the
+legacy |old_spectrogram| is not straightforward, since it depends on the
+parameters ``mode``, ``scaling`` and ``return_onesided``. There is no direct
+correspondence for all combinations in the |ShortTimeFFT|, since it provides
+only 'magnitude', 'psd' or no `scaling` of the window at all. The following
+table shows those correspondences:
+
+.. table::
+   :class: table-sm
+
+   +-----------+----------+-----------------++------------+-----------+
+   |   Legacy |old_spectrogram|             || |ShortTimeFFT|         |
+   +-----------+----------+-----------------++------------+-----------+
+   | mode      | scaling  | return_onesided || `fft_mode` | `scaling` |
+   +===========+==========+=================++============+===========+
+   | psd       | density  |       True      || onesided2X | psd       |
+   +-----------+----------+-----------------++------------+-----------+
+   | psd       | density  |       False     || twosided   | psd       |
+   +-----------+----------+-----------------++------------+-----------+
+   | magnitude | spectrum |       True      || onesided   | magnitude |
+   +-----------+----------+-----------------++------------+-----------+
+   | magnitude | spectrum |       False     || twosided   | magnitude |
+   +-----------+----------+-----------------++------------+-----------+
+   | complex   | spectrum |       True      || onesided   | magnitude |
+   +-----------+----------+-----------------++------------+-----------+
+   | complex   | spectrum |       False     || twosided   | magnitude |
+   +-----------+----------+-----------------++------------+-----------+
+   | psd       | spectrum |       True      || ---        | ---       |
+   +-----------+----------+-----------------++------------+-----------+
+   | psd       | spectrum |       False     || ---        | ---       |
+   +-----------+----------+-----------------++------------+-----------+
+   | complex   | density  |       True      || ---        | ---       |
+   +-----------+----------+-----------------++------------+-----------+
+   | complex   | density  |       False     || ---        | ---       |
+   +-----------+----------+-----------------++------------+-----------+
+   | magnitude | density  |       True      || ---        | ---       |
+   +-----------+----------+-----------------++------------+-----------+
+   | magnitude | density  |       False     || ---        | ---       |
+   +-----------+----------+-----------------++------------+-----------+
+   | ---       | ---      |       ---       || ``*``      | ``None``  |
+   +-----------+----------+-----------------++------------+-----------+
+
+When using ``onesided`` output on complex-valued input signals, the old
+|old_spectrogram| switches to ``two-sided`` mode. The |ShortTimeFFT| raises
+a :exc:`TypeError`, since the utilized `~scipy.fft.rfft` function only accepts
+real-valued inputs.
+This `comment
+<https://github.com/scipy/scipy/issues/14903#issuecomment-1100249704>`__ of
+Github issue `14903 <https://github.com/scipy/scipy/issues/14903>`__ discusses
+variations of the old |old_spectrogram| parameters for a single cosine input.
+
+
+
+
 Detrend
 -------
+.. currentmodule:: scipy.signal
 
 SciPy provides the function :func:`detrend` to remove a constant or linear
 trend in a data series in order to see effect of higher order.
@@ -1051,6 +1654,7 @@ The example below removes the constant and linear trend of a second-order
 polynomial time series and plots the remaining signal components.
 
 .. plot::
+   :alt: "This code generates an X-Y plot with no units. A red trace corresponding to the original signal curves from the bottom left to the top right. A blue trace has the constant detrend applied and is below the red trace with zero Y offset. The last black trace has the linear detrend applied and is almost flat from left to right highlighting the curve of the original signal. This last trace has an average slope of zero and looks very different."
 
    >>> import numpy as np
    >>> import scipy.signal as signal
@@ -1190,3 +1794,9 @@ Some further reading and related software:
 .. [3] R.H.D. Townsend, "Fast calculation of the Lomb-Scargle
        periodogram using graphics processing units.", The Astrophysical
        Journal Supplement Series, vol 191, pp. 247-253, 2010
+
+.. [4] Karlheinz Gröchenig: "Foundations of Time-Frequency Analysis",
+       Birkhäuser Boston 2001, :doi:`10.1007/978-1-4612-0003-1`
+
+.. [5] Ole Christensen: "An Introduction to Frames and Riesz Bases",
+       Birkhäuser Boston 2016, :doi:`10.1007/978-3-319-25613-9`

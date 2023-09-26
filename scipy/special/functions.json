@@ -218,13 +218,27 @@
         }
     },
     "betainc": {
-        "cephes.h": {
-            "incbet": "ddd->d"
+        "boost_special_functions.h++": {
+            "ibeta_float": "fff->f",
+            "ibeta_double": "ddd->d"
+        }
+    },
+    "betaincc": {
+        "boost_special_functions.h++": {
+            "ibetac_float": "fff->f",
+            "ibetac_double": "ddd->d"
         }
     },
     "betaincinv": {
-        "cephes.h": {
-            "incbi": "ddd->d"
+        "boost_special_functions.h++": {
+            "ibeta_inv_float": "fff->f",
+            "ibeta_inv_double": "ddd->d"
+        }
+    },
+    "betainccinv": {
+        "boost_special_functions.h++": {
+            "ibetac_inv_float": "fff->f",
+            "ibetac_inv_double": "ddd->d"
         }
     },
     "betaln": {
@@ -368,6 +382,36 @@
 	    "_factorial": "d->d"
 	}
     },
+    "elliprc": {
+	"ellint_carlson_wrap.hh++": {
+	    "fellint_RC": "dd->d",
+	    "cellint_RC": "DD->D"
+	}
+    },
+    "elliprd": {
+	"ellint_carlson_wrap.hh++": {
+	    "fellint_RD": "ddd->d",
+	    "cellint_RD": "DDD->D"
+	}
+    },
+    "elliprf": {
+	"ellint_carlson_wrap.hh++": {
+	    "fellint_RF": "ddd->d",
+	    "cellint_RF": "DDD->D"
+	}
+    },
+    "elliprg": {
+	"ellint_carlson_wrap.hh++": {
+	    "fellint_RG": "ddd->d",
+	    "cellint_RG": "DDD->D"
+	}
+    },
+    "elliprj": {
+	"ellint_carlson_wrap.hh++": {
+	    "fellint_RJ": "dddd->d",
+	    "cellint_RJ": "DDDD->D"
+	}
+    },
     "entr": {
         "_convex_analysis.pxd": {
             "entr": "d->d"
@@ -383,7 +427,7 @@
     },
     "erfc": {
         "_faddeeva.h++": {
-            "faddeeva_erfc": "D->D"
+            "faddeeva_erfc_complex": "D->D"
         },
         "cephes.h": {
             "erfc": "d->d"
@@ -402,8 +446,9 @@
         }
     },
     "erfinv": {
-        "cephes.h": {
-            "erfinv": "d->d"
+        "boost_special_functions.h++": {
+            "erfinv_float": "f->f",
+            "erfinv_double": "d->d"
         }
     },
     "erfcinv": {
@@ -516,6 +561,11 @@
         "specfun_wrappers.h": {
             "cexp1_wrap": "D->D",
             "exp1_wrap": "d->d"
+        }
+    },
+    "_scaled_exp1": {
+        "scaled_exp1.h": {
+            "scaled_exp1": "d->d"
         }
     },
     "exp10": {
@@ -685,9 +735,9 @@
         }
     },
     "hyp1f1": {
-	"_hypergeometric.pxd": {
-	    "hyp1f1": "ddd->d"
-	},
+        "boost_special_functions.h++": {
+            "hyp1f1_double": "ddd->d"
+	    },
         "specfun_wrappers.h": {
             "chyp1f1_wrap": "ddD->D"
         }
@@ -914,12 +964,17 @@
             "log1p": "d->d"
         }
     },
+    "log_expit": {
+        "_logit.h++": {
+            "log_expit": "d->d",
+            "log_expitf": "f->f",
+            "log_expitl": "g->g"
+        }
+    },
     "log_ndtr": {
         "_faddeeva.h++": {
-            "faddeeva_log_ndtr": "D->D"
-        },
-        "cephes.h": {
-            "log_ndtr": "d->d"
+            "faddeeva_log_ndtr": "d->d",
+            "faddeeva_log_ndtr_complex": "D->D"
         }
     },
     "loggamma": {
@@ -1178,6 +1233,12 @@
     "poch": {
         "cephes.h": {
             "poch": "dd->d"
+        }
+    },
+    "powm1": {
+        "boost_special_functions.h++": {
+            "powm1_float": "ff->f",
+            "powm1_double": "dd->d"
         }
     },
     "pro_ang1": {

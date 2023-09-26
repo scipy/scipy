@@ -17,13 +17,16 @@
 ###  test_pbvv_seq
 ###  test_sph_harm
 
+import functools
 import itertools
+import operator
 import platform
 import sys
 
 import numpy as np
 from numpy import (array, isnan, r_, arange, finfo, pi, sin, cos, tan, exp,
-        log, zeros, sqrt, asarray, inf, nan_to_num, real, arctan, float_)
+        log, zeros, sqrt, asarray, inf, nan_to_num, real, arctan, double,
+        array_equal)
 
 import pytest
 from pytest import raises as assert_raises
@@ -34,8 +37,13 @@ from numpy.testing import (assert_equal, assert_almost_equal,
 
 from scipy import special
 import scipy.special._ufuncs as cephes
-from scipy.special import ellipk
+from scipy.special import ellipe, ellipk, ellipkm1
+from scipy.special import elliprc, elliprd, elliprf, elliprg, elliprj
+from scipy.special import mathieu_odd_coef, mathieu_even_coef, stirling2
+from scipy._lib.deprecation import _NoValue
 
+from scipy.special._basic import _FACTORIALK_LIMITS_64BITS, \
+    _FACTORIALK_LIMITS_32BITS
 from scipy.special._testutils import with_special_errors, \
      assert_func_equal, FuncData
 
@@ -160,35 +168,15 @@ class TestCephes:
     def test_besselpoly(self):
         assert_equal(cephes.besselpoly(0,0,0),1.0)
 
-    def test_beta(self):
-        assert_equal(cephes.beta(1,1),1.0)
-        assert_allclose(cephes.beta(-100.3, 1e-200), cephes.gamma(1e-200))
-        assert_allclose(cephes.beta(0.0342, 171), 24.070498359873497,
-                        rtol=1e-13, atol=0)
-
-    def test_betainc(self):
-        assert_equal(cephes.betainc(1,1,1),1.0)
-        assert_allclose(cephes.betainc(0.0342, 171, 1e-10), 0.55269916901806648)
-
-    def test_betaln(self):
-        assert_equal(cephes.betaln(1,1),0.0)
-        assert_allclose(cephes.betaln(-100.3, 1e-200), cephes.gammaln(1e-200))
-        assert_allclose(cephes.betaln(0.0342, 170), 3.1811881124242447,
-                        rtol=1e-14, atol=0)
-
-    def test_betaincinv(self):
-        assert_equal(cephes.betaincinv(1,1,1),1.0)
-        assert_allclose(cephes.betaincinv(0.0342, 171, 0.25),
-                        8.4231316935498957e-21, rtol=3e-12, atol=0)
-
-    def test_beta_inf(self):
-        assert_(np.isinf(special.beta(-1, 2)))
-
     def test_btdtr(self):
-        assert_equal(cephes.btdtr(1,1,1),1.0)
+        with pytest.deprecated_call(match='deprecated in SciPy 1.12.0'):
+            y = special.btdtr(1, 1, 1)
+        assert_equal(y, 1.0)
 
     def test_btdtri(self):
-        assert_equal(cephes.btdtri(1,1,1),1.0)
+        with pytest.deprecated_call(match='deprecated in SciPy 1.12.0'):
+            y = special.btdtri(1, 1, 1)
+        assert_equal(y, 1.0)
 
     def test_btdtria(self):
         assert_equal(cephes.btdtria(1,1,1),5.0)
@@ -492,7 +480,7 @@ class TestCephes:
     def test_iv(self):
         assert_equal(cephes.iv(1,0),0.0)
 
-    def _check_ive(self):
+    def test_ive(self):
         assert_equal(cephes.ive(1,0),0.0)
 
     def test_j0(self):
@@ -507,7 +495,7 @@ class TestCephes:
     def test_jv(self):
         assert_equal(cephes.jv(0,0),1.0)
 
-    def _check_jve(self):
+    def test_jve(self):
         assert_equal(cephes.jve(0,0),1.0)
 
     def test_k0(self):
@@ -534,7 +522,7 @@ class TestCephes:
     def test_kerp(self):
         cephes.kerp(2)
 
-    def _check_kelvin(self):
+    def test_kelvin(self):
         cephes.kelvin(2)
 
     def test_kn(self):
@@ -557,10 +545,10 @@ class TestCephes:
         assert_equal(cephes._kolmogci(0), 0.0)
         assert_(np.isnan(cephes._kolmogci(np.nan)))
 
-    def _check_kv(self):
+    def test_kv(self):
         cephes.kv(1,1)
 
-    def _check_kve(self):
+    def test_kve(self):
         cephes.kve(1,1)
 
     def test_log1p(self):
@@ -698,7 +686,7 @@ class TestCephes:
     def test_modfresnelp(self):
         cephes.modfresnelp(0)
 
-    def _check_modstruve(self):
+    def test_modstruve(self):
         assert_equal(cephes.modstruve(1,0),0.0)
 
     def test_nbdtr(self):
@@ -710,7 +698,7 @@ class TestCephes:
     def test_nbdtri(self):
         assert_equal(cephes.nbdtri(1,1,1),1.0)
 
-    def __check_nbdtrik(self):
+    def test_nbdtrik(self):
         cephes.nbdtrik(1,.4,.5)
 
     def test_nbdtrin(self):
@@ -752,7 +740,7 @@ class TestCephes:
         assert_(np.isnan(cephes.nctdtr(2., np.nan, 1.)))
         assert_(np.isnan(cephes.nctdtr(2., 1., np.nan)))
 
-    def __check_nctdtridf(self):
+    def test_nctdtridf(self):
         cephes.nctdtridf(1,0.5,0)
 
     def test_nctdtrinc(self):
@@ -776,7 +764,7 @@ class TestCephes:
         assert_almost_equal(result[0],1.0)
         assert_almost_equal(result[1],0.0)
 
-    def _check_obl_cv(self):
+    def test_obl_cv(self):
         assert_equal(cephes.obl_cv(1,1,0),2.0)
 
     def test_obl_rad1(self):
@@ -833,7 +821,7 @@ class TestCephes:
         assert_array_almost_equal(cephes.pro_ang1_cv(1,1,1,1,0),
                                   array((1.0,0.0)))
 
-    def _check_pro_cv(self):
+    def test_pro_cv(self):
         assert_equal(cephes.pro_cv(1,1,0),2.0)
 
     def test_pro_rad1(self):
@@ -945,7 +933,7 @@ class TestCephes:
     def test_yv(self):
         cephes.yv(1,1)
 
-    def _check_yve(self):
+    def test_yve(self):
         cephes.yve(1,1)
 
     def test_wofz(self):
@@ -1282,24 +1270,139 @@ class TestBernoulli:
 
 
 class TestBeta:
+    """
+    Test beta and betaln.
+    """
+
     def test_beta(self):
-        bet = special.beta(2,4)
+        assert_equal(special.beta(1, 1), 1.0)
+        assert_allclose(special.beta(-100.3, 1e-200), special.gamma(1e-200))
+        assert_allclose(special.beta(0.0342, 171), 24.070498359873497,
+                        rtol=1e-13, atol=0)
+
+        bet = special.beta(2, 4)
         betg = (special.gamma(2)*special.gamma(4))/special.gamma(6)
-        assert_almost_equal(bet,betg,8)
+        assert_allclose(bet, betg, rtol=1e-13)
+
+    def test_beta_inf(self):
+        assert_(np.isinf(special.beta(-1, 2)))
 
     def test_betaln(self):
-        betln = special.betaln(2,4)
-        bet = log(abs(special.beta(2,4)))
-        assert_almost_equal(betln,bet,8)
+        assert_equal(special.betaln(1, 1), 0.0)
+        assert_allclose(special.betaln(-100.3, 1e-200),
+                        special.gammaln(1e-200))
+        assert_allclose(special.betaln(0.0342, 170), 3.1811881124242447,
+                        rtol=1e-14, atol=0)
 
-    def test_betainc(self):
-        btinc = special.betainc(1,1,.2)
-        assert_almost_equal(btinc,0.2,8)
+        betln = special.betaln(2, 4)
+        bet = log(abs(special.beta(2, 4)))
+        assert_allclose(betln, bet, rtol=1e-13)
 
-    def test_betaincinv(self):
-        y = special.betaincinv(2,4,.5)
-        comp = special.betainc(2,4,y)
-        assert_almost_equal(comp,.5,5)
+
+class TestBetaInc:
+    """
+    Tests for betainc, betaincinv, betaincc, betainccinv.
+    """
+
+    def test_a1_b1(self):
+        # betainc(1, 1, x) is x.
+        x = np.array([0, 0.25, 1])
+        assert_equal(special.betainc(1, 1, x), x)
+        assert_equal(special.betaincinv(1, 1, x), x)
+        assert_equal(special.betaincc(1, 1, x), 1 - x)
+        assert_equal(special.betainccinv(1, 1, x), 1 - x)
+
+    # Nontrivial expected values computed with mpmath:
+    #    from mpmath import mp
+    #    mp.dps = 100
+    #    p = mp.betainc(a, b, 0, x, regularized=True)
+    #
+    # or, e.g.,
+    #
+    #    p = 0.25
+    #    a, b = 0.0342, 171
+    #    x = mp.findroot(
+    #        lambda t: mp.betainc(a, b, 0, t, regularized=True) - p,
+    #        (8e-21, 9e-21),
+    #        solver='anderson',
+    #    )
+    #
+    @pytest.mark.parametrize(
+        'a, b, x, p',
+        [(2, 4, 0.3138101704556974, 0.5),
+         (0.0342, 171.0, 1e-10, 0.552699169018070910641),
+         # gh-3761:
+         (0.0342, 171, 8.42313169354797e-21, 0.25),
+         # gh-4244:
+         (0.0002742794749792665, 289206.03125, 1.639984034231756e-56,
+          0.9688708782196045),
+         # gh-12796:
+         (4, 99997, 0.0001947841578892121, 0.999995)])
+    def test_betainc_betaincinv(self, a, b, x, p):
+        p1 = special.betainc(a, b, x)
+        assert_allclose(p1, p, rtol=1e-15)
+        x1 = special.betaincinv(a, b, p)
+        assert_allclose(x1, x, rtol=5e-13)
+
+    # Expected values computed with mpmath:
+    #     from mpmath import mp
+    #     mp.dps = 100
+    #     p = mp.betainc(a, b, x, 1, regularized=True)
+    @pytest.mark.parametrize('a, b, x, p',
+                             [(2.5, 3.0, 0.25, 0.833251953125),
+                              (7.5, 13.25, 0.375, 0.43298734645560368593),
+                              (0.125, 7.5, 0.425, 0.0006688257851314237),
+                              (0.125, 18.0, 1e-6, 0.72982359145096327654),
+                              (0.125, 18.0, 0.996, 7.2745875538380150586e-46),
+                              (0.125, 24.0, 0.75, 3.70853404816862016966e-17),
+                              (16.0, 0.75, 0.99999999975,
+                               5.4408759277418629909e-07),
+                              # gh-4677 (numbers from stackoverflow question):
+                              (0.4211959643503401, 16939.046996018118,
+                               0.000815296167195521, 1e-7)])
+    def test_betaincc_betainccinv(self, a, b, x, p):
+        p1 = special.betaincc(a, b, x)
+        assert_allclose(p1, p, rtol=5e-15)
+        x1 = special.betainccinv(a, b, p)
+        assert_allclose(x1, x, rtol=8e-15)
+
+    @pytest.mark.parametrize(
+        'a, b, y, ref',
+        [(14.208308325339239, 14.208308325339239, 7.703145458496392e-307,
+          8.566004561846704e-23),
+         (14.0, 14.5, 1e-280, 2.9343915006642424e-21),
+         (3.5, 15.0, 4e-95, 1.3290751429289227e-28),
+         (10.0, 1.25, 2e-234, 3.982659092143654e-24),
+         (4.0, 99997.0, 5e-88, 3.309800566862242e-27)]
+    )
+    def test_betaincinv_tiny_y(self, a, b, y, ref):
+        # Test with extremely small y values.  This test includes
+        # a regression test for an issue in the boost code;
+        # see https://github.com/boostorg/math/issues/961
+        #
+        # The reference values were computed with mpmath. For example,
+        #
+        #   from mpmath import mp
+        #   mp.dps = 1000
+        #   a = 14.208308325339239
+        #   p = 7.703145458496392e-307
+        #   x = mp.findroot(lambda t: mp.betainc(a, a, 0, t,
+        #                                        regularized=True) - p,
+        #                   x0=8.566e-23)
+        #   print(float(x))
+        #
+        x = special.betaincinv(a, b, y)
+        assert_allclose(x, ref, rtol=1e-14)
+
+    @pytest.mark.parametrize('func', [special.betainc, special.betaincinv,
+                                      special.betaincc, special.betainccinv])
+    @pytest.mark.parametrize('args', [(-1.0, 2, 0.5), (0, 2, 0.5),
+                                      (1.5, -2.0, 0.5), (1.5, 0, 0.5),
+                                      (1.5, 2.0, -0.3), (1.5, 2.0, 1.1)])
+    def test_betainc_domain_errors(self, func, args):
+        with special.errstate(domain='raise'):
+            with pytest.raises(special.SpecialFunctionError, match='domain'):
+                special.betainc(*args)
 
 
 class TestCombinatorics:
@@ -1316,15 +1419,49 @@ class TestCombinatorics:
         assert_equal(special.comb(ii, ii-1, exact=True), ii)
 
         expected = 100891344545564193334812497256
-        assert_equal(special.comb(100, 50, exact=True), expected)
+        assert special.comb(100, 50, exact=True) == expected
+
+    @pytest.mark.parametrize("repetition", [True, False])
+    @pytest.mark.parametrize("legacy", [True, False, _NoValue])
+    @pytest.mark.parametrize("k", [3.5, 3])
+    @pytest.mark.parametrize("N", [4.5, 4])
+    def test_comb_legacy(self, N, k, legacy, repetition):
+        # test is only relevant for exact=True
+        if legacy is not _NoValue:
+            with pytest.warns(
+                DeprecationWarning,
+                match=r"Using 'legacy' keyword is deprecated"
+            ):
+                result = special.comb(N, k, exact=True, legacy=legacy,
+                                      repetition=repetition)
+        else:
+            result = special.comb(N, k, exact=True, legacy=legacy,
+                                  repetition=repetition)
+        if legacy:
+            # for exact=True and legacy=True, cast input arguments, else don't
+            if repetition:
+                # the casting in legacy mode happens AFTER transforming N & k,
+                # so rounding can change (e.g. both floats, but sum to int);
+                # hence we need to emulate the repetition-transformation here
+                N, k = int(N + k - 1), int(k)
+                repetition = False
+            else:
+                N, k = int(N), int(k)
+        # expected result is the same as with exact=False
+        with suppress_warnings() as sup:
+            if legacy is not _NoValue:
+                sup.filter(DeprecationWarning)
+            expected = special.comb(N, k, legacy=legacy, repetition=repetition)
+        assert_equal(result, expected)
 
     def test_comb_with_np_int64(self):
         n = 70
         k = 30
         np_n = np.int64(n)
         np_k = np.int64(k)
-        assert_equal(special.comb(np_n, np_k, exact=True),
-                     special.comb(n, k, exact=True))
+        res_np = special.comb(np_n, np_k, exact=True)
+        res_py = special.comb(n, k, exact=True)
+        assert res_np == res_py
 
     def test_comb_zeros(self):
         assert_equal(special.comb(2, 3, exact=True), 0)
@@ -1346,6 +1483,11 @@ class TestCombinatorics:
         assert_equal(special.perm(2, -1, exact=False), 0)
         assert_array_almost_equal(special.perm([2, -1, 2, 10], [3, 3, -1, 3]),
                 [0., 0., 0., 720.])
+
+    def test_positional_deprecation(self):
+        with pytest.deprecated_call(match="use keyword arguments"):
+            # from test_comb
+            special.comb([10, 10], [3, 4], False, False)
 
 
 class TestTrigonometric:
@@ -1581,6 +1723,188 @@ class TestEllip:
         assert_array_almost_equal_nulp(f1, np.full_like(f1, 3.3471442287390509), 4)
 
 
+class TestEllipCarlson:
+    """Test for Carlson elliptic integrals ellipr[cdfgj].
+    The special values used in these tests can be found in Sec. 3 of Carlson
+    (1994), https://arxiv.org/abs/math/9409227
+    """
+    def test_elliprc(self):
+        assert_allclose(elliprc(1, 1), 1)
+        assert elliprc(1, inf) == 0.0
+        assert isnan(elliprc(1, 0))
+        assert elliprc(1, complex(1, inf)) == 0.0
+        args = array([[0.0, 0.25],
+                      [2.25, 2.0],
+                      [0.0, 1.0j],
+                      [-1.0j, 1.0j],
+                      [0.25, -2.0],
+                      [1.0j, -1.0]])
+        expected_results = array([np.pi,
+                                  np.log(2.0),
+                                  1.1107207345396 * (1.0-1.0j),
+                                  1.2260849569072-0.34471136988768j,
+                                  np.log(2.0) / 3.0,
+                                  0.77778596920447+0.19832484993429j])
+        for i, arr in enumerate(args):
+            assert_allclose(elliprc(*arr), expected_results[i])
+
+    def test_elliprd(self):
+        assert_allclose(elliprd(1, 1, 1), 1)
+        assert_allclose(elliprd(0, 2, 1) / 3.0, 0.59907011736779610371)
+        assert elliprd(1, 1, inf) == 0.0
+        assert np.isinf(elliprd(1, 1, 0))
+        assert np.isinf(elliprd(1, 1, complex(0, 0)))
+        assert np.isinf(elliprd(0, 1, complex(0, 0)))
+        assert isnan(elliprd(1, 1, -np.finfo(np.float64).tiny / 2.0))
+        assert isnan(elliprd(1, 1, complex(-1, 0)))
+        args = array([[0.0, 2.0, 1.0],
+                      [2.0, 3.0, 4.0],
+                      [1.0j, -1.0j, 2.0],
+                      [0.0, 1.0j, -1.0j],
+                      [0.0, -1.0+1.0j, 1.0j],
+                      [-2.0-1.0j, -1.0j, -1.0+1.0j]])
+        expected_results = array([1.7972103521034,
+                                  0.16510527294261,
+                                  0.65933854154220,
+                                  1.2708196271910+2.7811120159521j,
+                                  -1.8577235439239-0.96193450888839j,
+                                  1.8249027393704-1.2218475784827j])
+        for i, arr in enumerate(args):
+            assert_allclose(elliprd(*arr), expected_results[i])
+
+    def test_elliprf(self):
+        assert_allclose(elliprf(1, 1, 1), 1)
+        assert_allclose(elliprf(0, 1, 2), 1.31102877714605990523)
+        assert elliprf(1, inf, 1) == 0.0
+        assert np.isinf(elliprf(0, 1, 0))
+        assert isnan(elliprf(1, 1, -1))
+        assert elliprf(complex(inf), 0, 1) == 0.0
+        assert isnan(elliprf(1, 1, complex(-inf, 1)))
+        args = array([[1.0, 2.0, 0.0],
+                      [1.0j, -1.0j, 0.0],
+                      [0.5, 1.0, 0.0],
+                      [-1.0+1.0j, 1.0j, 0.0],
+                      [2.0, 3.0, 4.0],
+                      [1.0j, -1.0j, 2.0],
+                      [-1.0+1.0j, 1.0j, 1.0-1.0j]])
+        expected_results = array([1.3110287771461,
+                                  1.8540746773014,
+                                  1.8540746773014,
+                                  0.79612586584234-1.2138566698365j,
+                                  0.58408284167715,
+                                  1.0441445654064,
+                                  0.93912050218619-0.53296252018635j])
+        for i, arr in enumerate(args):
+            assert_allclose(elliprf(*arr), expected_results[i])
+
+    def test_elliprg(self):
+        assert_allclose(elliprg(1, 1, 1), 1)
+        assert_allclose(elliprg(0, 0, 1), 0.5)
+        assert_allclose(elliprg(0, 0, 0), 0)
+        assert np.isinf(elliprg(1, inf, 1))
+        assert np.isinf(elliprg(complex(inf), 1, 1))
+        args = array([[0.0, 16.0, 16.0],
+                      [2.0, 3.0, 4.0],
+                      [0.0, 1.0j, -1.0j],
+                      [-1.0+1.0j, 1.0j, 0.0],
+                      [-1.0j, -1.0+1.0j, 1.0j],
+                      [0.0, 0.0796, 4.0]])
+        expected_results = array([np.pi,
+                                  1.7255030280692,
+                                  0.42360654239699,
+                                  0.44660591677018+0.70768352357515j,
+                                  0.36023392184473+0.40348623401722j,
+                                  1.0284758090288])
+        for i, arr in enumerate(args):
+            assert_allclose(elliprg(*arr), expected_results[i])
+
+    def test_elliprj(self):
+        assert_allclose(elliprj(1, 1, 1, 1), 1)
+        assert elliprj(1, 1, inf, 1) == 0.0
+        assert isnan(elliprj(1, 0, 0, 0))
+        assert isnan(elliprj(-1, 1, 1, 1))
+        assert elliprj(1, 1, 1, inf) == 0.0
+        args = array([[0.0, 1.0, 2.0, 3.0],
+                      [2.0, 3.0, 4.0, 5.0],
+                      [2.0, 3.0, 4.0, -1.0+1.0j],
+                      [1.0j, -1.0j, 0.0, 2.0],
+                      [-1.0+1.0j, -1.0-1.0j, 1.0, 2.0],
+                      [1.0j, -1.0j, 0.0, 1.0-1.0j],
+                      [-1.0+1.0j, -1.0-1.0j, 1.0, -3.0+1.0j],
+                      [2.0, 3.0, 4.0, -0.5],    # Cauchy principal value
+                      [2.0, 3.0, 4.0, -5.0]])   # Cauchy principal value
+        expected_results = array([0.77688623778582,
+                                  0.14297579667157,
+                                  0.13613945827771-0.38207561624427j,
+                                  1.6490011662711,
+                                  0.94148358841220,
+                                  1.8260115229009+1.2290661908643j,
+                                  -0.61127970812028-1.0684038390007j,
+                                  0.24723819703052,    # Cauchy principal value
+                                  -0.12711230042964])  # Caucny principal value
+        for i, arr in enumerate(args):
+            assert_allclose(elliprj(*arr), expected_results[i])
+
+    @pytest.mark.xfail(reason="Insufficient accuracy on 32-bit")
+    def test_elliprj_hard(self):
+        assert_allclose(elliprj(6.483625725195452e-08,
+                                1.1649136528196886e-27,
+                                3.6767340167168e+13,
+                                0.493704617023468),
+                        8.63426920644241857617477551054e-6,
+                        rtol=5e-15, atol=1e-20)
+        assert_allclose(elliprj(14.375105857849121,
+                                9.993988969725365e-11,
+                                1.72844262269944e-26,
+                                5.898871222598245e-06),
+                        829774.1424801627252574054378691828,
+                        rtol=5e-15, atol=1e-20)
+
+
+class TestEllipLegendreCarlsonIdentities:
+    """Test identities expressing the Legendre elliptic integrals in terms
+    of Carlson's symmetric integrals.  These identities can be found
+    in the DLMF https://dlmf.nist.gov/19.25#i .
+    """
+
+    def setup_class(self):
+        self.m_n1_1 = np.arange(-1., 1., 0.01)
+        # For double, this is -(2**1024)
+        self.max_neg = finfo(double).min
+        # Lots of very negative numbers
+        self.very_neg_m = -1. * 2.**arange(-1 +
+                                           np.log2(-self.max_neg), 0.,
+                                           -1.)
+        self.ms_up_to_1 = np.concatenate(([self.max_neg],
+                                          self.very_neg_m,
+                                          self.m_n1_1))
+
+    def test_k(self):
+        """Test identity:
+        K(m) = R_F(0, 1-m, 1)
+        """
+        m = self.ms_up_to_1
+        assert_allclose(ellipk(m), elliprf(0., 1.-m, 1.))
+
+    def test_km1(self):
+        """Test identity:
+        K(m) = R_F(0, 1-m, 1)
+        But with the ellipkm1 function
+        """
+        # For double, this is 2**-1022
+        tiny = finfo(double).tiny
+        # All these small powers of 2, up to 2**-1
+        m1 = tiny * 2.**arange(0., -np.log2(tiny))
+        assert_allclose(ellipkm1(m1), elliprf(0., m1, 1.))
+
+    def test_e(self):
+        """Test identity:
+        E(m) = 2*R_G(0, 1-k^2, 1)
+        """
+        m = self.ms_up_to_1
+        assert_allclose(ellipe(m), 2.*elliprg(0., 1.-m, 1.))
+
+
 class TestErf:
 
     def test_erf(self):
@@ -1737,121 +2061,415 @@ class TestExp:
 
 
 class TestFactorialFunctions:
-    def test_factorial(self):
-        # Some known values, float math
-        assert_array_almost_equal(special.factorial(0), 1)
-        assert_array_almost_equal(special.factorial(1), 1)
-        assert_array_almost_equal(special.factorial(2), 2)
-        assert_array_almost_equal([6., 24., 120.],
-                                  special.factorial([3, 4, 5], exact=False))
-        assert_array_almost_equal(special.factorial([[5, 3], [4, 3]]),
-                                  [[120, 6], [24, 6]])
+    @pytest.mark.parametrize("exact", [True, False])
+    def test_factorialx_scalar_return_type(self, exact):
+        assert np.isscalar(special.factorial(1, exact=exact))
+        assert np.isscalar(special.factorial2(1, exact=exact))
+        assert np.isscalar(special.factorialk(1, 3, exact=True))
 
-        # Some known values, integer math
-        assert_equal(special.factorial(0, exact=True), 1)
-        assert_equal(special.factorial(1, exact=True), 1)
-        assert_equal(special.factorial(2, exact=True), 2)
-        assert_equal(special.factorial(5, exact=True), 120)
-        assert_equal(special.factorial(15, exact=True), 1307674368000)
+    @pytest.mark.parametrize("n", [-1, -2, -3])
+    @pytest.mark.parametrize("exact", [True, False])
+    def test_factorialx_negative(self, exact, n):
+        assert_equal(special.factorial(n, exact=exact), 0)
+        assert_equal(special.factorial2(n, exact=exact), 0)
+        assert_equal(special.factorialk(n, 3, exact=True), 0)
 
-        # ndarray shape is maintained
-        assert_equal(special.factorial([7, 4, 15, 10], exact=True),
-                     [5040, 24, 1307674368000, 3628800])
-
-        assert_equal(special.factorial([[5, 3], [4, 3]], True),
-                     [[120, 6], [24, 6]])
-
-        # object arrays
-        assert_equal(special.factorial(np.arange(-3, 22), True),
-                     special.factorial(np.arange(-3, 22), False))
-
-        # int64 array
-        assert_equal(special.factorial(np.arange(-3, 15), True),
-                     special.factorial(np.arange(-3, 15), False))
-
-        # int32 array
-        assert_equal(special.factorial(np.arange(-3, 5), True),
-                     special.factorial(np.arange(-3, 5), False))
-
+    @pytest.mark.parametrize("exact", [True, False])
+    def test_factorialx_negative_array(self, exact):
+        assert_func = assert_array_equal if exact else assert_allclose
         # Consistent output for n < 0
-        for exact in (True, False):
-            assert_array_equal(0, special.factorial(-3, exact))
-            assert_array_equal([1, 2, 0, 0],
-                               special.factorial([1, 2, -5, -4], exact))
+        assert_func(special.factorial([-5, -4, 0, 1], exact=exact),
+                    [0, 0, 1, 1])
+        assert_func(special.factorial2([-5, -4, 0, 1], exact=exact),
+                    [0, 0, 1, 1])
+        assert_func(special.factorialk([-5, -4, 0, 1], 3, exact=True),
+                    [0, 0, 1, 1])
 
-        for n in range(0, 22):
-            # Compare all with math.factorial
-            correct = math.factorial(n)
-            assert_array_equal(correct, special.factorial(n, True))
-            assert_array_equal(correct, special.factorial([n], True)[0])
+    @pytest.mark.parametrize("exact", [True, False])
+    @pytest.mark.parametrize("content", [np.nan, None, np.datetime64('nat')],
+                             ids=["NaN", "None", "NaT"])
+    def test_factorialx_nan(self, content, exact):
+        # scalar
+        assert special.factorial(content, exact=exact) is np.nan
+        assert special.factorial2(content, exact=exact) is np.nan
+        assert special.factorialk(content, 3, exact=True) is np.nan
+        # array-like (initializes np.array with default dtype)
+        if content is not np.nan:
+            # None causes object dtype, which is not supported; as is datetime
+            with pytest.raises(ValueError, match="Unsupported datatype.*"):
+                special.factorial([content], exact=exact)
+        elif exact:
+            # cannot use `is np.nan` see https://stackoverflow.com/a/52124109
+            with pytest.warns(DeprecationWarning, match="Non-integer array.*"):
+                assert np.isnan(special.factorial([content], exact=exact)[0])
+        else:
+            assert np.isnan(special.factorial([content], exact=exact)[0])
+        # factorial{2,k} don't support array case due to dtype constraints
+        with pytest.raises(ValueError, match="factorial2 does not support.*"):
+            special.factorial2([content], exact=exact)
+        with pytest.raises(ValueError, match="factorialk does not support.*"):
+            special.factorialk([content], 3, exact=True)
+        # array-case also tested in test_factorial{,2,k}_corner_cases
 
-            assert_allclose(float(correct), special.factorial(n, False))
-            assert_allclose(float(correct), special.factorial([n], False)[0])
+    @pytest.mark.parametrize("levels", range(1, 5))
+    @pytest.mark.parametrize("exact", [True, False])
+    def test_factorialx_array_shape(self, levels, exact):
+        def _nest_me(x, k=1):
+            """
+            Double x and nest it k times
 
-            # Compare exact=True vs False, scalar vs array
-            assert_array_equal(special.factorial(n, True),
-                               special.factorial(n, False))
+            For example:
+            >>> _nest_me([3, 4], 2)
+            [[[3, 4], [3, 4]], [[3, 4], [3, 4]]]
+            """
+            if k == 0:
+                return x
+            else:
+                return _nest_me([x, x], k-1)
 
-            assert_array_equal(special.factorial([n], True),
-                               special.factorial([n], False))
+        def _check(res, nucleus):
+            exp = np.array(_nest_me(nucleus, k=levels), dtype=object)
+            # test that ndarray shape is maintained
+            # need to cast to float due to numpy/numpy#21220
+            assert_allclose(res.astype(np.float64), exp.astype(np.float64))
 
-    @pytest.mark.parametrize('x, exact', [
-        (1, True),
-        (1, False),
-        (np.array(1), True),
-        (np.array(1), False),
-    ])
-    def test_factorial_0d_return_type(self, x, exact):
-        assert np.isscalar(special.factorial(x, exact=exact))
+        n = np.array(_nest_me([5, 25], k=levels))
+        exp_nucleus = {1: [120, math.factorial(25)],
+                       # correctness of factorial2() is tested elsewhere
+                       2: [15, special.factorial2(25, exact=True)],
+                       3: [10, special.factorialk(25, 3)]}
 
-    def test_factorial2(self):
-        assert_array_almost_equal([105., 384., 945.],
-                                  special.factorial2([7, 8, 9], exact=False))
-        assert_equal(special.factorial2(7, exact=True), 105)
+        _check(special.factorial(n, exact=exact), exp_nucleus[1])
+        _check(special.factorial2(n, exact=exact), exp_nucleus[2])
+        _check(special.factorialk(n, 3, exact=True), exp_nucleus[3])
 
-    def test_factorialk(self):
-        assert_equal(special.factorialk(5, 1, exact=True), 120)
-        assert_equal(special.factorialk(5, 3, exact=True), 10)
+    @pytest.mark.parametrize("exact", [True, False])
+    @pytest.mark.parametrize("dim", range(0, 5))
+    def test_factorialx_array_dimension(self, dim, exact):
+        n = np.array(5, ndmin=dim)
+        exp = {1: 120, 2: 15, 3: 10}
+        assert_allclose(special.factorial(n, exact=exact),
+                        np.array(exp[1], ndmin=dim))
+        assert_allclose(special.factorial2(n, exact=exact),
+                        np.array(exp[2], ndmin=dim))
+        assert_allclose(special.factorialk(n, 3, exact=True),
+                        np.array(exp[3], ndmin=dim))
 
-    @pytest.mark.parametrize('x, exact', [
-        (np.nan, True),
-        (np.nan, False),
-        (np.array([np.nan]), True),
-        (np.array([np.nan]), False),
-    ])
-    def test_nan_inputs(self, x, exact):
-        result = special.factorial(x, exact=exact)
-        assert_(np.isnan(result))
+    @pytest.mark.parametrize("exact", [True, False])
+    @pytest.mark.parametrize("level", range(1, 5))
+    def test_factorialx_array_like(self, level, exact):
+        def _nest_me(x, k=1):
+            if k == 0:
+                return x
+            else:
+                return _nest_me([x], k-1)
 
-    # GH-13122: special.factorial() argument should be an array of integers.
-    # On Python 3.10, math.factorial() reject float.
-    # On Python 3.9, a DeprecationWarning is emitted.
-    # A numpy array casts all integers to float if the array contains a
-    # single NaN.
-    @pytest.mark.skipif(sys.version_info >= (3, 10),
-                        reason="Python 3.10+ math.factorial() requires int")
-    def test_mixed_nan_inputs(self):
+        n = _nest_me([5], k=level-1)  # nested list
+        exp_nucleus = {1: 120, 2: 15, 3: 10}
+        assert_func = assert_array_equal if exact else assert_allclose
+        assert_func(special.factorial(n, exact=exact),
+                    np.array(exp_nucleus[1], ndmin=level))
+        assert_func(special.factorial2(n, exact=exact),
+                    np.array(exp_nucleus[2], ndmin=level))
+        assert_func(special.factorialk(n, 3, exact=True),
+                    np.array(exp_nucleus[3], ndmin=level))
+
+    # note that n=170 is the last integer such that factorial(n) fits float64
+    @pytest.mark.parametrize('n', range(30, 180, 10))
+    def test_factorial_accuracy(self, n):
+        # Compare exact=True vs False, i.e. that the accuracy of the
+        # approximation is better than the specified tolerance.
+
+        rtol = 6e-14 if sys.platform == 'win32' else 1e-15
+        # need to cast exact result to float due to numpy/numpy#21220
+        assert_allclose(float(special.factorial(n, exact=True)),
+                        special.factorial(n, exact=False), rtol=rtol)
+        assert_allclose(special.factorial([n], exact=True).astype(float),
+                        special.factorial([n], exact=False), rtol=rtol)
+
+    @pytest.mark.parametrize('n',
+                             list(range(0, 22)) + list(range(30, 180, 10)))
+    def test_factorial_int_reference(self, n):
+        # Compare all with math.factorial
+        correct = math.factorial(n)
+        assert_array_equal(correct, special.factorial(n, True))
+        assert_array_equal(correct, special.factorial([n], True)[0])
+
+        rtol = 6e-14 if sys.platform == 'win32' else 1e-15
+        assert_allclose(float(correct), special.factorial(n, False),
+                        rtol=rtol)
+        assert_allclose(float(correct), special.factorial([n], False)[0],
+                        rtol=rtol)
+
+    @pytest.mark.parametrize("exact", [True, False])
+    def test_factorial_float_reference(self, exact):
+        def _check(n, expected):
+            # support for exact=True with scalar floats grandfathered in
+            assert_allclose(special.factorial(n, exact=exact), expected)
+            # non-integer types in arrays only allowed with exact=False
+            assert_allclose(special.factorial([n])[0], expected)
+
+        # Reference values from mpmath for gamma(n+1)
+        _check(0.01, 0.994325851191506032181932988)
+        _check(1.11, 1.051609009483625091514147465)
+        _check(5.55, 314.9503192327208241614959052)
+        _check(11.1, 50983227.84411615655137170553)
+        _check(33.3, 2.493363339642036352229215273e+37)
+        _check(55.5, 9.479934358436729043289162027e+73)
+        _check(77.7, 3.060540559059579022358692625e+114)
+        _check(99.9, 5.885840419492871504575693337e+157)
+        # close to maximum for float64
+        _check(170.6243, 1.79698185749571048960082e+308)
+
+    @pytest.mark.parametrize("dtype", [np.int64, np.float64,
+                                       np.complex128, object])
+    @pytest.mark.parametrize("exact", [True, False])
+    @pytest.mark.parametrize("dim", range(0, 5))
+    # test empty & non-empty arrays, with nans and mixed
+    @pytest.mark.parametrize("content",
+                             [[], [1], [1.1], [np.nan], [np.nan, 1]],
+                             ids=["[]", "[1]", "[1.1]", "[NaN]", "[NaN, 1]"])
+    def test_factorial_array_corner_cases(self, content, dim, exact, dtype):
+        if dtype == np.int64 and any(np.isnan(x) for x in content):
+            pytest.skip("impossible combination")
+        # np.array(x, ndim=0) will not be 0-dim. unless x is too
+        content = content if (dim > 0 or len(content) != 1) else content[0]
+        n = np.array(content, ndmin=dim, dtype=dtype)
+        result = None
+        if not content:
+            result = special.factorial(n, exact=exact)
+        elif not (np.issubdtype(n.dtype, np.integer)
+                  or np.issubdtype(n.dtype, np.floating)):
+            with pytest.raises(ValueError, match="Unsupported datatype*"):
+                special.factorial(n, exact=exact)
+        elif (exact and not np.issubdtype(n.dtype, np.integer) and n.size and
+              np.allclose(n[~np.isnan(n)], n[~np.isnan(n)].astype(np.int64))):
+            # using integers but in array with wrong dtype (e.g. due to NaNs)
+            with pytest.warns(DeprecationWarning, match="Non-integer array.*"):
+                result = special.factorial(n, exact=exact)
+                # expected dtype is integer, unless there are NaNs
+                dtype = np.float64 if np.any(np.isnan(n)) else np.int_
+        elif exact and not np.issubdtype(n.dtype, np.integer):
+            with pytest.raises(ValueError, match="factorial with exact=.*"):
+                special.factorial(n, exact=exact)
+        else:
+            # no error
+            result = special.factorial(n, exact=exact)
+
+        # assert_equal does not distinguish scalars and 0-dim arrays of the same value, see
+        # https://github.com/numpy/numpy/issues/24050
+        def assert_really_equal(x, y):
+            assert type(x) == type(y), f"types not equal: {type(x)}, {type(y)}"
+            assert_equal(x, y)
+
+        if result is not None:
+            # expected result is empty if and only if n is empty,
+            # and has the same dtype & dimension as n
+            with suppress_warnings() as sup:
+                sup.filter(DeprecationWarning)
+                # keep 0-dim.; otherwise n.ravel().ndim==1, even if n.ndim==0
+                n_flat = n.ravel() if n.ndim else n
+                r = special.factorial(n_flat, exact=exact) if n.size else []
+            expected = np.array(r, ndmin=dim, dtype=dtype)
+            assert_really_equal(result, expected)
+
+    @pytest.mark.parametrize("exact", [True, False])
+    @pytest.mark.parametrize("n", [1, 1.1, 2 + 2j, np.nan, None],
+                             ids=["1", "1.1", "2+2j", "NaN", "None"])
+    def test_factorial_scalar_corner_cases(self, n, exact):
+        if (n is None or n is np.nan or np.issubdtype(type(n), np.integer)
+                or np.issubdtype(type(n), np.floating)):
+            # no error
+            result = special.factorial(n, exact=exact)
+            exp = np.nan if n is np.nan or n is None else special.factorial(n)
+            assert_equal(result, exp)
+        else:
+            with pytest.raises(ValueError, match="Unsupported datatype*"):
+                special.factorial(n, exact=exact)
+
+    # use odd increment to make sure both odd & even numbers are tested!
+    @pytest.mark.parametrize('n', range(30, 180, 11))
+    def test_factorial2_accuracy(self, n):
+        # Compare exact=True vs False, i.e. that the accuracy of the
+        # approximation is better than the specified tolerance.
+
+        rtol = 2e-14 if sys.platform == 'win32' else 1e-15
+        # need to cast exact result to float due to numpy/numpy#21220
+        assert_allclose(float(special.factorial2(n, exact=True)),
+                        special.factorial2(n, exact=False), rtol=rtol)
+        assert_allclose(special.factorial2([n], exact=True).astype(float),
+                        special.factorial2([n], exact=False), rtol=rtol)
+
+    @pytest.mark.parametrize('n',
+                             list(range(0, 22)) + list(range(30, 180, 11)))
+    def test_factorial2_int_reference(self, n):
+        # Compare all with correct value
+
+        # Cannot use np.product due to overflow
+        correct = functools.reduce(operator.mul, list(range(n, 0, -2)), 1)
+
+        assert_array_equal(correct, special.factorial2(n, True))
+        assert_array_equal(correct, special.factorial2([n], True)[0])
+
+        assert_allclose(float(correct), special.factorial2(n, False))
+        assert_allclose(float(correct), special.factorial2([n], False)[0])
+
+    @pytest.mark.parametrize("dtype", [np.int64, np.float64,
+                                       np.complex128, object])
+    @pytest.mark.parametrize("exact", [True, False])
+    @pytest.mark.parametrize("dim", range(0, 5))
+    # test empty & non-empty arrays, with nans and mixed
+    @pytest.mark.parametrize("content", [[], [1], [np.nan], [np.nan, 1]],
+                             ids=["[]", "[1]", "[NaN]", "[NaN, 1]"])
+    def test_factorial2_array_corner_cases(self, content, dim, exact, dtype):
+        if dtype == np.int64 and any(np.isnan(x) for x in content):
+            pytest.skip("impossible combination")
+        # np.array(x, ndim=0) will not be 0-dim. unless x is too
+        content = content if (dim > 0 or len(content) != 1) else content[0]
+        n = np.array(content, ndmin=dim, dtype=dtype)
+        if np.issubdtype(n.dtype, np.integer) or (not content):
+            # no error
+            result = special.factorial2(n, exact=exact)
+            # expected result is identical to n for exact=True resp. empty
+            # arrays (assert_allclose chokes on object), otherwise up to tol
+            func = assert_equal if exact or (not content) else assert_allclose
+            func(result, n)
+        else:
+            with pytest.raises(ValueError, match="factorial2 does not*"):
+                special.factorial2(n, 3)
+
+    @pytest.mark.parametrize("exact", [True, False])
+    @pytest.mark.parametrize("n", [1, 1.1, 2 + 2j, np.nan, None],
+                             ids=["1", "1.1", "2+2j", "NaN", "None"])
+    def test_factorial2_scalar_corner_cases(self, n, exact):
+        if n is None or n is np.nan or np.issubdtype(type(n), np.integer):
+            # no error
+            result = special.factorial2(n, exact=exact)
+            exp = np.nan if n is np.nan or n is None else special.factorial(n)
+            assert_equal(result, exp)
+        else:
+            with pytest.raises(ValueError, match="factorial2 does not*"):
+                special.factorial2(n, exact=exact)
+
+    @pytest.mark.parametrize('k', list(range(1, 5)) + [10, 20])
+    @pytest.mark.parametrize('n',
+                             list(range(0, 22)) + list(range(22, 100, 11)))
+    def test_factorialk_int_reference(self, n, k):
+        # Compare all with correct value
+
+        # Would be nice to use np.product here, but that's
+        # broken on windows, see numpy/numpy#21219
+        correct = functools.reduce(operator.mul, list(range(n, 0, -k)), 1)
+
+        assert_array_equal(correct, special.factorialk(n, k, True))
+        assert_array_equal(correct, special.factorialk([n], k, True)[0])
+
+        # exact=False not yet supported
+        # assert_allclose(float(correct), special.factorialk(n, k, False))
+        # assert_allclose(float(correct), special.factorialk([n], k, False)[0])
+
+    @pytest.mark.parametrize("dtype", [np.int64, np.float64,
+                                       np.complex128, object])
+    @pytest.mark.parametrize("dim", range(0, 5))
+    # test empty & non-empty arrays, with nans and mixed
+    @pytest.mark.parametrize("content", [[], [1], [np.nan], [np.nan, 1]],
+                             ids=["[]", "[1]", "[NaN]", "[NaN, 1]"])
+    def test_factorialk_array_corner_cases(self, content, dim, dtype):
+        if dtype == np.int64 and any(np.isnan(x) for x in content):
+            pytest.skip("impossible combination")
+        # np.array(x, ndim=0) will not be 0-dim. unless x is too
+        content = content if (dim > 0 or len(content) != 1) else content[0]
+        n = np.array(content, ndmin=dim, dtype=dtype)
+        if np.issubdtype(n.dtype, np.integer) or (not content):
+            # no error; expected result is identical to n
+            assert_equal(special.factorialk(n, 3), n)
+        else:
+            with pytest.raises(ValueError, match="factorialk does not*"):
+                special.factorialk(n, 3)
+
+    @pytest.mark.parametrize("exact", [True, False])
+    @pytest.mark.parametrize("k", range(1, 5))
+    @pytest.mark.parametrize("n", [1, 1.1, 2 + 2j, np.nan, None],
+                             ids=["1", "1.1", "2+2j", "NaN", "None"])
+    def test_factorialk_scalar_corner_cases(self, n, k, exact):
+        if not exact:
+            with pytest.raises(NotImplementedError):
+                special.factorialk(n, k=k, exact=exact)
+        elif n is None or n is np.nan or np.issubdtype(type(n), np.integer):
+            # no error
+            result = special.factorial2(n, exact=exact)
+            nan_cond = n is np.nan or n is None
+            expected = np.nan if nan_cond else special.factorialk(n, k=k)
+            assert_equal(result, expected)
+        else:
+            with pytest.raises(ValueError, match="factorialk does not*"):
+                special.factorialk(n, k=k, exact=exact)
+
+    @pytest.mark.parametrize("k", [0, 1.1, np.nan, "1"])
+    def test_factorialk_raises_k(self, k):
+        with pytest.raises(ValueError, match="k must be a positive integer*"):
+            special.factorialk(1, k)
+
+    @pytest.mark.parametrize("k", range(1, 12))
+    def test_factorialk_dtype(self, k):
+        if k in _FACTORIALK_LIMITS_64BITS.keys():
+            n = np.array([_FACTORIALK_LIMITS_32BITS[k]])
+            assert_equal(special.factorialk(n, k).dtype, np.int_)
+            assert_equal(special.factorialk(n + 1, k).dtype, np.int64)
+            # assert maximality of limits for given dtype
+            assert special.factorialk(n + 1, k) > np.iinfo(np.int32).max
+
+            n = np.array([_FACTORIALK_LIMITS_64BITS[k]])
+            assert_equal(special.factorialk(n, k).dtype, np.int64)
+            assert_equal(special.factorialk(n + 1, k).dtype, object)
+            assert special.factorialk(n + 1, k) > np.iinfo(np.int64).max
+        else:
+            # for k >= 10, we always return object
+            assert_equal(special.factorialk(np.array([1]), k).dtype, object)
+
+    def test_factorial_mixed_nan_inputs(self):
         x = np.array([np.nan, 1, 2, 3, np.nan])
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "Using factorial\\(\\) with floats is deprecated")
-            result = special.factorial(x, exact=True)
-            assert_equal(np.array([np.nan, 1, 2, 6, np.nan]), result)
-            result = special.factorial(x, exact=False)
-            assert_equal(np.array([np.nan, 1, 2, 6, np.nan]), result)
+        expected = np.array([np.nan, 1, 2, 6, np.nan])
+        assert_equal(special.factorial(x, exact=False), expected)
+        with pytest.warns(DeprecationWarning, match=r"Non-integer array.*"):
+            assert_equal(special.factorial(x, exact=True), expected)
 
 
 class TestFresnel:
-    def test_fresnel(self):
-        frs = array(special.fresnel(.5))
-        assert_array_almost_equal(frs,array([0.064732432859999287, 0.49234422587144644]),8)
-
-    def test_fresnel_inf1(self):
-        frs = special.fresnel(np.inf)
-        assert_equal(frs, (0.5, 0.5))
-
-    def test_fresnel_inf2(self):
-        frs = special.fresnel(-np.inf)
-        assert_equal(frs, (-0.5, -0.5))
+    @pytest.mark.parametrize("z, s, c", [
+        # some positive value
+        (.5, 0.064732432859999287, 0.49234422587144644),
+        (.5 + .0j, 0.064732432859999287, 0.49234422587144644),
+        # negative half annulus
+        # https://github.com/scipy/scipy/issues/12309
+        # Reference values can be reproduced with
+        # https://www.wolframalpha.com/input/?i=FresnelS%5B-2.0+%2B+0.1i%5D
+        # https://www.wolframalpha.com/input/?i=FresnelC%5B-2.0+%2B+0.1i%5D
+        (
+            -2.0 + 0.1j,
+            -0.3109538687728942-0.0005870728836383176j,
+            -0.4879956866358554+0.10670801832903172j
+        ),
+        (
+            -0.1 - 1.5j,
+            -0.03918309471866977+0.7197508454568574j,
+            0.09605692502968956-0.43625191013617465j
+        ),
+        # a different algorithm kicks in for "large" values, i.e., |z| >= 4.5,
+        # make sure to test both float and complex values; a different
+        # algorithm is used
+        (6.0, 0.44696076, 0.49953147),
+        (6.0 + 0.0j, 0.44696076, 0.49953147),
+        (6.0j, -0.44696076j, 0.49953147j),
+        (-6.0 + 0.0j, -0.44696076, -0.49953147),
+        (-6.0j, 0.44696076j, -0.49953147j),
+        # inf
+        (np.inf, 0.5, 0.5),
+        (-np.inf, -0.5, -0.5),
+    ])
+    def test_fresnel_values(self, z, s, c):
+        frs = array(special.fresnel(z))
+        assert_array_almost_equal(frs, array([s, c]), 8)
 
     # values from pg 329  Table 7.11 of A & S
     #  slightly corrected in 4th decimal place
@@ -2002,10 +2620,10 @@ class TestHyper:
         x = special.hyp0f1(x1, x2)
         expected = [1.0, 1.8134302039235093, 1.21482702689997]
         assert_allclose(x, expected, rtol=1e-12)
-        x = special.hyp0f1(np.row_stack([x1] * 2), x2)
-        assert_allclose(x, np.row_stack([expected] * 2), rtol=1e-12)
+        x = special.hyp0f1(np.vstack([x1] * 2), x2)
+        assert_allclose(x, np.vstack([expected] * 2), rtol=1e-12)
         assert_raises(ValueError, special.hyp0f1,
-                      np.row_stack([x1] * 3), [0, 1])
+                      np.vstack([x1] * 3), [0, 1])
 
     def test_hyp0f1_gh5764(self):
         # Just checks the point that failed; there's a more systematic
@@ -2539,7 +3157,8 @@ class TestBessel:
         self.check_cephes_vs_amos(special.yv, special.yn, rtol=1e-11, atol=1e-305)
 
     def test_yv_cephes_vs_amos_only_small_orders(self):
-        skipper = lambda v, z: (abs(v) > 50)
+        def skipper(v, z):
+            return abs(v) > 50
         self.check_cephes_vs_amos(special.yv, special.yn, rtol=1e-11, atol=1e-305, skip=skipper)
 
     def test_iv_cephes_vs_amos(self):
@@ -2658,11 +3277,11 @@ class TestBessel:
         assert_allclose(special.iv(-0.5, 1), 1.231200214592967)
 
     def iv_series(self, v, z, n=200):
-        k = arange(0, n).astype(float_)
+        k = arange(0, n).astype(double)
         r = (v+2*k)*log(.5*z) - special.gammaln(k+1) - special.gammaln(v+k+1)
         r[isnan(r)] = inf
         r = exp(r)
-        err = abs(r).max() * finfo(float_).eps * n + abs(r[-1])*10
+        err = abs(r).max() * finfo(double).eps * n + abs(r[-1])*10
         return r.sum(), err
 
     def test_i0_series(self):
@@ -3039,10 +3658,10 @@ class TestPolygamma:
         expected = [-1.9635100260214238, 0.93480220054467933,
                     -0.23620405164172739]
         assert_almost_equal(special.polygamma(n, x), expected)
-        expected = np.row_stack([expected]*2)
-        assert_almost_equal(special.polygamma(n, np.row_stack([x]*2)),
+        expected = np.vstack([expected]*2)
+        assert_almost_equal(special.polygamma(n, np.vstack([x]*2)),
                             expected)
-        assert_almost_equal(special.polygamma(np.row_stack([n]*2), x),
+        assert_almost_equal(special.polygamma(np.vstack([n]*2), x),
                             expected)
 
 
@@ -3151,7 +3770,7 @@ class TestStruve:
         """Compute Struve function & error estimate from its power series."""
         k = arange(0, n)
         r = (-1)**k * (.5*z)**(2*k+v+1)/special.gamma(k+1.5)/special.gamma(k+v+1.5)
-        err = abs(r).max() * finfo(float_).eps * n
+        err = abs(r).max() * finfo(double).eps * n
         return r.sum(), err
 
     def test_vs_series(self):
@@ -3395,3 +4014,134 @@ def test_pseudo_huber():
     z = np.array(np.random.randn(10, 2).tolist() + [[0, 0.5], [0.5, 0]])
     w = np.vectorize(xfunc, otypes=[np.float64])(z[:,0], z[:,1])
     assert_func_equal(special.pseudo_huber, w, z, rtol=1e-13, atol=1e-13)
+
+
+def test_pseudo_huber_small_r():
+    delta = 1.0
+    r = 1e-18
+    y = special.pseudo_huber(delta, r)
+    # expected computed with mpmath:
+    #     import mpmath
+    #     mpmath.mp.dps = 200
+    #     r = mpmath.mpf(1e-18)
+    #     expected = float(mpmath.sqrt(1 + r**2) - 1)
+    expected = 5.0000000000000005e-37
+    assert_allclose(y, expected, rtol=1e-13)
+
+
+def test_runtime_warning():
+    with pytest.warns(RuntimeWarning,
+                      match=r'Too many predicted coefficients'):
+        mathieu_odd_coef(1000, 1000)
+    with pytest.warns(RuntimeWarning,
+                      match=r'Too many predicted coefficients'):
+        mathieu_even_coef(1000, 1000)
+
+
+class TestStirling2:
+    table = [
+        [1],
+        [0, 1],
+        [0, 1, 1],
+        [0, 1, 3, 1],
+        [0, 1, 7, 6, 1],
+        [0, 1, 15, 25, 10, 1],
+        [0, 1, 31, 90, 65, 15, 1],
+        [0, 1, 63, 301, 350, 140, 21, 1],
+        [0, 1, 127, 966, 1701, 1050, 266, 28, 1],
+        [0, 1, 255, 3025, 7770, 6951, 2646, 462, 36, 1],
+        [0, 1, 511, 9330, 34105, 42525, 22827, 5880, 750, 45, 1],
+    ]
+
+    def test_table_cases(self):
+        for n in range(len(self.table)):
+            for k in range(len(self.table[n])):
+                assert_equal(self.table[n][k], stirling2(n, k))
+
+    def test_valid_single_integer(self):
+        assert_equal(stirling2(0, 0), self.table[0][0])
+        assert_equal(stirling2(4, 2), self.table[4][2])
+        # a single 2-tuple of integers as arguments must return an int and not
+        # an array whereas arrays of single values should return array
+        assert stirling2(5, 3) == 25
+        assert array_equal(stirling2([5], [3]), [25])
+
+    def test_negative_integer(self):
+        # negative integers for n or k arguments return 0
+        assert_equal(stirling2(-1, -1), 0)
+        assert_equal(stirling2(-1, 2), 0)
+        assert_equal(stirling2(2, -1), 0)
+
+    def test_array_inputs(self):
+        ans = [self.table[10][3], self.table[10][4]]
+        assert array_equal(stirling2(asarray([10, 10]), asarray([3, 4])), ans)
+        assert array_equal(stirling2([10, 10], asarray([3, 4])), ans)
+        assert array_equal(stirling2(asarray([10, 10]), [3, 4]), ans)
+
+    def test_mixed_values(self):
+        # negative values-of either n or k-should return 0 for the entry
+        ans = [0, 1, 3, 25, 1050, 5880, 9330]
+        n = [-1, 0, 3, 5, 8, 10, 10]
+        k = [-2, 0, 2, 3, 5, 7, 3]
+        assert array_equal(stirling2(n, k), ans)
+
+    def test_correct_parity(self):
+        """Test parity follows well known identity.
+
+        en.wikipedia.org/wiki/Stirling_numbers_of_the_second_kind#Parity
+        """
+        n, K = 100, np.arange(101)
+        assert_equal(
+            stirling2(n, K) % 2,
+            [math.comb(n - (k // 2) - 1, n - k) % 2 for k in K],
+        )
+
+    def test_big_numbers(self):
+        # via mpmath (bigger than 32bit)
+        ans = asarray([48063331393110, 48004081105038305])
+        n = [25, 30]
+        k = [17, 4]
+        assert array_equal(stirling2(n, k), ans)
+        # bigger than 64 bit
+        ans = asarray([2801934359500572414253157841233849412,
+                       14245032222277144547280648984426251])
+        n = [42, 43]
+        k = [17, 23]
+        assert array_equal(stirling2(n, k), ans)
+
+    @pytest.mark.parametrize("K", [3.5, 3, "2", None])
+    @pytest.mark.parametrize("N", [4.5, 3., 4+1j, "12", np.nan])
+    def test_unsupported_input_types(self, N, K):
+        # object, float, string, complex are not supported and raise TypeError
+        # when exact=True
+        with pytest.raises(TypeError):
+            special.stirling2(N, K, exact=True)
+
+    def test_numpy_array_int_object_dtype(self):
+        # python integers with arbitrary precision are *not* allowed as
+        # object type in numpy arrays are inconsistent from api perspective
+        ans = asarray(self.table[4][1:])
+        n = asarray([4, 4, 4, 4], dtype=object)
+        k = asarray([1, 2, 3, 4], dtype=object)
+        with pytest.raises(TypeError):
+            array_equal(stirling2(n, k), ans)
+
+    def test_numpy_array_unsigned_int_dtype(self):
+        # numpy unsigned integers are allowed as dtype in numpy arrays
+        ans = asarray(self.table[4][1:])
+        n = asarray([4, 4, 4, 4], dtype=np.uint)
+        k = asarray([1, 2, 3, 4], dtype=np.uint)
+        assert array_equal(stirling2(n, k), ans)
+
+    def test_broadcasting_arrays_correctly(self):
+        # broadcasting is handled by stirling2
+        # test leading 1s are replicated
+        ans = asarray([[1, 15, 25, 10], [1, 7, 6, 1]])  # shape (2,4)
+        n = asarray([[5, 5, 5, 5], [4, 4, 4, 4]])  # shape (2,4)
+        k = asarray([1, 2, 3, 4])  # shape (4,)
+        assert array_equal(stirling2(n, k), ans)
+        # test that dims both mismatch broadcase correctly (5,1) & (6,)
+        n = asarray([[4], [4], [4], [4], [4]])
+        k = asarray([0, 1, 2, 3, 4, 5])
+        ans = asarray([[0, 1, 7, 6, 1, 0] for _ in range(5)])
+        assert array_equal(stirling2(n, k), ans)

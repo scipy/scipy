@@ -101,6 +101,7 @@ is desired (and the fact that this integral can be computed as
 ``vec_expint`` based on the routine :obj:`quad`:
 
     >>> from scipy.integrate import quad
+    >>> import numpy as np
     >>> def integrand(t, n, x):
     ...     return np.exp(-x*t) / t**n
     ...
@@ -139,6 +140,36 @@ integrand from the use of :obj:`quad` ). The integral in this case is
 This last example shows that multiple integration can be handled using
 repeated calls to :func:`quad`.
 
+.. warning::
+
+    Numerical integration algorithms sample the integrand at a finite number of points.
+    Consequently, they cannot guarantee accurate results (or accuracy estimates) for
+    arbitrary integrands and limits of integration. Consider the Gaussian integral,
+    for example:
+
+    >>> def gaussian(x):
+    ...     return np.exp(-x**2)
+    >>> res = integrate.quad(gaussian, -np.inf, np.inf)
+    >>> res
+    (1.7724538509055159, 1.4202636756659625e-08)
+    >>> np.allclose(res[0], np.sqrt(np.pi))  # compare against theoretical result
+    True
+
+    Since the integrand is nearly zero except near the origin, we would expect
+    large but finite limits of integration to yield the same result. However:
+
+    >>> integrate.quad(gaussian, -10000, 10000)
+    (1.975190562208035e-203, 0.0)
+
+    This happens because the adaptive quadrature routine implemented in :func:`quad`,
+    while working as designed, does not notice the small, important part of the function
+    within such a large, finite interval. For best results, consider using integration
+    limits that tightly surround the important part of the integrand.
+
+    >>> integrate.quad(gaussian, -15, 15)
+    (1.772453850905516, 8.476526631214648e-11)
+
+    Integrands with several important regions can be broken into pieces as necessary.
 
 General multiple integration (:func:`dblquad`, :func:`tplquad`, :func:`nquad`)
 ------------------------------------------------------------------------------

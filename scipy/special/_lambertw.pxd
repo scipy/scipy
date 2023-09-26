@@ -20,42 +20,34 @@
 # at `-1/e` and make sure that the proper branch is chosen there
 
 import cython
+from libc.math cimport exp, log, INFINITY, NAN, M_PI, M_E
 
 from . cimport sf_error
 from ._evalpoly cimport cevalpoly
-
-cdef extern from "math.h":
-    double exp(double x) nogil
-    double log(double x) nogil
-
-cdef extern from "numpy/npy_math.h":
-    double NPY_E
-
 from ._complexstuff cimport *
 
-DEF twopi = 6.2831853071795864769252842  # 2*pi
 DEF EXPN1 = 0.36787944117144232159553  # exp(-1)
-DEF OMEGA = 0.56714329040978387299997  # W(1, 0)
 
 
 @cython.cdivision(True)
-cdef inline double complex lambertw_scalar(double complex z, long k, double tol) nogil:
+cdef inline double complex lambertw_scalar(double complex z, long k, double tol) noexcept nogil:
     cdef int i
     cdef double absz, p
     cdef double complex w
     cdef double complex ew, wew, wewz, wn
+    cdef double OMEGA = 0.56714329040978387299997  # W(1, 0)
 
     if zisnan(z):
         return z
-    elif z.real == inf:
-        return z + twopi*k*1j
-    elif z.real == -inf:
-        return -z + (twopi*k+pi)*1j
+    elif z.real == INFINITY:
+        return z + 2*M_PI*k*1j
+    elif z.real == -INFINITY:
+        return -z + (2*M_PI*k+M_PI)*1j
     elif z == 0:
         if k == 0:
             return z
         sf_error.error("lambertw", sf_error.SINGULAR, NULL)
-        return -inf
+        return -INFINITY
     elif z == 1 and k == 0:
         # Split out this case because the asymptotic series blows up
         return OMEGA
@@ -87,7 +79,7 @@ cdef inline double complex lambertw_scalar(double complex z, long k, double tol)
             ew = zexp(-w)
             wewz = w - z*ew
             wn = w - wewz/(w + 1 - (w + 2)*wewz/(2*w + 2))
-            if zabs(wn - w) < tol*zabs(wn):
+            if zabs(wn - w) <= tol*zabs(wn):
                 return wn
             else:
                 w = wn
@@ -97,7 +89,7 @@ cdef inline double complex lambertw_scalar(double complex z, long k, double tol)
             wew = w*ew
             wewz = wew - z
             wn = w - wewz/(wew + ew - (w + 2)*wewz/(2*w + 2))
-            if zabs(wn - w) < tol*zabs(wn):
+            if zabs(wn - w) <= tol*zabs(wn):
                 return wn
             else:
                 w = wn
@@ -105,20 +97,20 @@ cdef inline double complex lambertw_scalar(double complex z, long k, double tol)
     sf_error.error("lambertw", sf_error.SLOW,
                    "iteration failed to converge: %g + %gj",
                    <double>z.real, <double>z.imag)
-    return zpack(nan, nan)
+    return zpack(NAN, NAN)
 
 
 @cython.cdivision(True)
-cdef inline double complex lambertw_branchpt(double complex z) nogil:
+cdef inline double complex lambertw_branchpt(double complex z) noexcept nogil:
     """Series for W(z, 0) around the branch point; see 4.22 in [1]."""
     cdef double *coeffs = [-1.0/3.0, 1.0, -1.0]
-    cdef double complex p = zsqrt(2*(NPY_E*z + 1))
+    cdef double complex p = zsqrt(2*(M_E*z + 1))
 
     return cevalpoly(coeffs, 2, p)
 
 
 @cython.cdivision(True)
-cdef inline double complex lambertw_pade0(double complex z) nogil:
+cdef inline double complex lambertw_pade0(double complex z) noexcept nogil:
     """(3, 2) Pade approximation for W(z, 0) around 0."""
     cdef:
         double *num = [
@@ -139,12 +131,12 @@ cdef inline double complex lambertw_pade0(double complex z) nogil:
 
 
 @cython.cdivision(True)
-cdef inline double complex lambertw_asy(double complex z, long k) nogil:
+cdef inline double complex lambertw_asy(double complex z, long k) noexcept nogil:
     """Compute the W function using the first two terms of the
     asymptotic series. See 4.20 in [1].
 
     """
     cdef double complex w
 
-    w = zlog(z) + twopi*k*1j
+    w = zlog(z) + 2*M_PI*k*1j
     return w - zlog(w)

@@ -251,8 +251,8 @@ def update_tr_radius(Delta, actual_reduction, predicted_reduction,
 def build_quadratic_1d(J, g, s, diag=None, s0=None):
     """Parameterize a multivariate quadratic function along a line.
 
-    The resulting univariate quadratic function is given as follows:
-    ::
+    The resulting univariate quadratic function is given as follows::
+
         f(t) = 0.5 * (s0 + s*t).T * (J.T*J + diag) * (s0 + s*t) +
                g.T * (s0 + s*t)
 
@@ -467,8 +467,8 @@ def make_strictly_feasible(x, lb, ub, rstep=1e-10):
 def CL_scaling_vector(x, g, lb, ub):
     """Compute Coleman-Li scaling vector and its derivatives.
 
-    Components of a vector v are defined as follows:
-    ::
+    Components of a vector v are defined as follows::
+
                | ub[i] - x[i], if g[i] < 0 and ub[i] < np.inf
         v[i] = | x[i] - lb[i], if g[i] > 0 and lb[i] > -np.inf
                | 1,           otherwise
@@ -543,7 +543,7 @@ def reflective_transformation(y, lb, ub):
 
 
 def print_header_nonlinear():
-    print("{0:^15}{1:^15}{2:^15}{3:^15}{4:^15}{5:^15}"
+    print("{:^15}{:^15}{:^15}{:^15}{:^15}{:^15}"
           .format("Iteration", "Total nfev", "Cost", "Cost reduction",
                   "Step norm", "Optimality"))
 
@@ -553,20 +553,20 @@ def print_iteration_nonlinear(iteration, nfev, cost, cost_reduction,
     if cost_reduction is None:
         cost_reduction = " " * 15
     else:
-        cost_reduction = "{0:^15.2e}".format(cost_reduction)
+        cost_reduction = f"{cost_reduction:^15.2e}"
 
     if step_norm is None:
         step_norm = " " * 15
     else:
-        step_norm = "{0:^15.2e}".format(step_norm)
+        step_norm = f"{step_norm:^15.2e}"
 
-    print("{0:^15}{1:^15}{2:^15.4e}{3}{4}{5:^15.2e}"
+    print("{:^15}{:^15}{:^15.4e}{}{}{:^15.2e}"
           .format(iteration, nfev, cost, cost_reduction,
                   step_norm, optimality))
 
 
 def print_header_linear():
-    print("{0:^15}{1:^15}{2:^15}{3:^15}{4:^15}"
+    print("{:^15}{:^15}{:^15}{:^15}{:^15}"
           .format("Iteration", "Cost", "Cost reduction", "Step norm",
                   "Optimality"))
 
@@ -576,14 +576,14 @@ def print_iteration_linear(iteration, cost, cost_reduction, step_norm,
     if cost_reduction is None:
         cost_reduction = " " * 15
     else:
-        cost_reduction = "{0:^15.2e}".format(cost_reduction)
+        cost_reduction = f"{cost_reduction:^15.2e}"
 
     if step_norm is None:
         step_norm = " " * 15
     else:
-        step_norm = "{0:^15.2e}".format(step_norm)
+        step_norm = f"{step_norm:^15.2e}"
 
-    print("{0:^15}{1:^15.4e}{2}{3}{4:^15.2e}".format(
+    print("{:^15}{:^15.4e}{}{}{:^15.2e}".format(
         iteration, cost, cost_reduction, step_norm, optimality))
 
 

@@ -1,3 +1,5 @@
+# cython: cpow=True
+
 # -*-cython-*-
 #
 # Implementation of Wright's generalized Bessel function Phi, see
@@ -17,7 +19,7 @@
 
 import cython
 from libc.math cimport (cos, exp, floor, fmax, fmin, log, log10, pow, sin,
-                        sqrt, M_PI)
+                        sqrt, isnan, isinf, M_PI, NAN, INFINITY)
 
 cdef extern from "cephes/lanczos.h":
     double lanczos_g
@@ -25,26 +27,17 @@ cdef extern from "cephes/lanczos.h":
 cdef extern from "cephes/polevl.h":
     double polevl(double x, const double coef[], int N) nogil
 
-cdef extern from "_c99compat.h":
-    int sc_isnan(double x) nogil
-    int sc_isinf(double x) nogil
-
 from ._cephes cimport lgam, rgamma, zeta, sinpi, cospi, lanczos_sum_expg_scaled
 from ._digamma cimport digamma
-from ._complexstuff cimport inf, nan
 from . cimport sf_error
 
 
 # rgamma_zero: smallest value x for which rgamma(x) == 0 as x gets large
 DEF rgamma_zero = 178.47241115886637
-# exp_inf: smallest value x for which exp(x) == inf
-DEF exp_inf = 709.78271289338403
-# exp_zero: largest value x for which exp(x) == 0
-# DEF exp_zero = -745.13321910194117
 
 
 @cython.cdivision(True)
-cdef inline double _exp_rgamma(double x, double y) nogil:
+cdef inline double _exp_rgamma(double x, double y) noexcept nogil:
     """Compute exp(x) / gamma(y) = exp(x) * rgamma(y).
 
     This helper function avoids overflow by using the lanczos approximation
@@ -58,7 +51,7 @@ cdef inline double _exp_rgamma(double x, double y) nogil:
 
 @cython.cdivision(True)
 cdef inline double _wb_series(double a, double b, double x,
-    unsigned int nstart, unsigned int nstop) nogil:
+    unsigned int nstart, unsigned int nstop) noexcept nogil:
     """1. Taylor series expansion in x=0, for x <= 1
 
     Phi(a, b, x) = sum_k x^k / k! / Gamma(a*k+b)
@@ -87,7 +80,7 @@ cdef inline double _wb_series(double a, double b, double x,
 
 @cython.cdivision(True)
 cdef inline double _wb_large_a(double a, double b, double x,
-    unsigned int n) nogil:
+    unsigned int n) noexcept nogil:
     """2. Taylor series expansion in x=0, for large a.
 
     Phi(a, b, x) = sum_k x^k / k! / Gamma(a*k+b)
@@ -114,7 +107,7 @@ cdef inline double _wb_large_a(double a, double b, double x,
 
 
 @cython.cdivision(True)
-cdef inline double _wb_small_a(double a, double b, double x, int order) nogil:
+cdef inline double _wb_small_a(double a, double b, double x, int order) noexcept nogil:
     """3. Taylor series in a=0 up to order 5, for tiny a and not too large x
 
     Phi(a, b, x) = exp(x)/Gamma(b)
@@ -224,7 +217,7 @@ cdef inline double _wb_small_a(double a, double b, double x, int order) nogil:
 
 
 @cython.cdivision(True)
-cdef inline double _wb_asymptotic(double a, double b, double x) nogil:
+cdef inline double _wb_asymptotic(double a, double b, double x) noexcept nogil:
     """4. Asymptotic expansion for large x up to order 8
 
     Phi(a, b, x) ~ Z^(1/2-b) * exp((1+a)/a * Z) * sum_k (-1)^k * C_k / Z^k
@@ -584,7 +577,7 @@ cdef inline double _wb_asymptotic(double a, double b, double x) nogil:
 
 @cython.cdivision(True)
 cdef inline double _Kmod(double eps, double a, double b, double x,
-                         double r) nogil:
+                         double r) noexcept nogil:
     """Compute integrand Kmod(eps, a, b, x, r) for Gauss-Laguerre quadrature.
 
     K(a, b, x, r+eps) = exp(-r-eps) * Kmod(eps, a, b, x, r)
@@ -597,7 +590,7 @@ cdef inline double _Kmod(double eps, double a, double b, double x,
 
 @cython.cdivision(True)
 cdef inline double _P(double eps, double a, double b, double x,
-                      double phi) nogil:
+                      double phi) noexcept nogil:
     """Compute integrand P for Gauss-Legendre quadrature.
 
     P(eps, a, b, x, phi) =
@@ -612,7 +605,7 @@ cdef inline double _P(double eps, double a, double b, double x,
 
 
 @cython.cdivision(True)
-cdef inline double wright_bessel_integral(double a, double b, double x) nogil:
+cdef inline double wright_bessel_integral(double a, double b, double x) noexcept nogil:
     """5. Integral representation
 
     K(a, b, x, r) = exp(-r + x * r^(-a) * cos(pi*a)) * r^(-b)
@@ -775,7 +768,7 @@ cdef inline double wright_bessel_integral(double a, double b, double x) nogil:
 
 
 @cython.cdivision(True)
-cdef inline double wright_bessel_scalar(double a, double b, double x) nogil:
+cdef inline double wright_bessel_scalar(double a, double b, double x) noexcept nogil:
     """Compute Wright's generalized Bessel function for scalar arguments.
 
     According to [1], it is an entire function defined as
@@ -811,22 +804,24 @@ cdef inline double wright_bessel_scalar(double a, double b, double x) nogil:
     cdef:
         double xk_k, res
         int order
+        # exp_inf: smallest value x for which exp(x) == inf
+        double exp_inf = 709.78271289338403
 
-    if sc_isnan(a) or sc_isnan(b) or sc_isnan(x):
-        return nan
+    if isnan(a) or isnan(b) or isnan(x):
+        return NAN
     elif a < 0 or b < 0 or x < 0:
         sf_error.error("wright_bessel", sf_error.DOMAIN, NULL)
-        return nan
-    elif sc_isinf(x):
-        if sc_isinf(a) or sc_isinf(b):
-            return nan
+        return NAN
+    elif isinf(x):
+        if isinf(a) or isinf(b):
+            return NAN
         else:
-            return inf
-    elif sc_isinf(a) or sc_isinf(b):
-        return nan  # or 0
+            return INFINITY
+    elif isinf(a) or isinf(b):
+        return NAN  # or 0
     elif a >= rgamma_zero or b >= rgamma_zero:
         sf_error.error("wright_bessel", sf_error.OVERFLOW, NULL)
-        return nan
+        return NAN
     elif x == 0:
         return rgamma(b)
     elif a == 0:
@@ -893,7 +888,7 @@ cdef inline double wright_bessel_scalar(double a, double b, double x) nogil:
 
         return _wb_large_a(a, b, x, order)
     elif (0.5 <= a) & (a <= 1.8) & (100 <= b) & (1e5 <= x):
-        return nan
+        return NAN
     elif (pow(a * x, 1 / (1. + a)) >= 14 + b * b / (2 * (1 + a))):
         # Asymptotic expansion in Z = (a*x)^(1/(1+a)) up to 8th term 1/Z^8.
         # For 1/Z^k, the highest term in b is b^(2*k) * a0 / (2^k k! (1+a)^k).

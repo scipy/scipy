@@ -25,9 +25,9 @@ scipy.linalg vs numpy.linalg
 plus some other more advanced ones not contained in ``numpy.linalg``.
 
 Another advantage of using ``scipy.linalg`` over ``numpy.linalg`` is that
-it is always compiled with BLAS/LAPACK support, while for numpy this is
-optional. Therefore, the scipy version might be faster depending on how
-numpy was installed.
+it is always compiled with BLAS/LAPACK support, while for NumPy this is
+optional. Therefore, the SciPy version might be faster depending on how
+NumPy was installed.
 
 Therefore, unless you don't want to add ``scipy`` as a dependency to
 your ``numpy`` program, use ``scipy.linalg`` instead of ``numpy.linalg``.
@@ -48,14 +48,14 @@ multiplication as default for the ``*`` operator, and contains ``I``
 and ``T`` members that serve as shortcuts for inverse and transpose:
 
     >>> import numpy as np
-    >>> A = np.mat('[1 2;3 4]')
+    >>> A = np.asmatrix('[1 2;3 4]')
     >>> A
     matrix([[1, 2],
             [3, 4]])
     >>> A.I
     matrix([[-2. ,  1. ],
             [ 1.5, -0.5]])
-    >>> b = np.mat('[5 6]')
+    >>> b = np.asmatrix('[5 6]')
     >>> b
     matrix([[5, 6]])
     >>> b.T
@@ -353,10 +353,8 @@ where :math:`\mathbf{A}^{\dagger}` is called the pseudo-inverse of
 
 The command :obj:`linalg.lstsq` will solve the linear least-squares
 problem for :math:`\mathbf{c}` given :math:`\mathbf{A}` and
-:math:`\mathbf{y}` . In addition, :obj:`linalg.pinv` or
-:obj:`linalg.pinv2` (uses a different method based on singular value
-decomposition) will find :math:`\mathbf{A}^{\dagger}` given
-:math:`\mathbf{A}.`
+:math:`\mathbf{y}` . In addition, :obj:`linalg.pinv` will find
+:math:`\mathbf{A}^{\dagger}` given :math:`\mathbf{A}.`
 
 The following example and figure demonstrate the use of
 :obj:`linalg.lstsq` and :obj:`linalg.pinv` for solving a data-fitting
@@ -372,6 +370,7 @@ coefficients :math:`c_{1}` and :math:`c_{2}` are estimated using
 linear least squares.
 
 .. plot::
+   :alt: " "
 
    >>> import numpy as np
    >>> from scipy import linalg
@@ -402,11 +401,9 @@ Generalized inverse
 ^^^^^^^^^^^^^^^^^^^
 
 The generalized inverse is calculated using the command
-:obj:`linalg.pinv` or :obj:`linalg.pinv2`. These two commands differ
-in how they compute the generalized inverse. The first uses the
-linalg.lstsq algorithm, while the second uses singular value
-decomposition. Let :math:`\mathbf{A}` be an :math:`M\times N` matrix,
-then if :math:`M>N`, the generalized inverse is
+:obj:`linalg.pinv`. Let :math:`\mathbf{A}` be an
+:math:`M\times N` matrix, then if :math:`M>N`, the generalized
+inverse is
 
 .. math::
 
@@ -726,7 +723,7 @@ functions of matrices.
 The following example illustrates the Schur decomposition:
 
     >>> from scipy import linalg
-    >>> A = np.mat('[1 3 2; 1 4 5; 2 3 6]')
+    >>> A = np.asmatrix('[1 3 2; 1 4 5; 2 3 6]')
     >>> T, Z = linalg.schur(A)
     >>> T1, Z1 = linalg.schur(A, 'complex')
     >>> T2, Z2 = linalg.rsf2csf(T, Z)
@@ -749,7 +746,7 @@ The following example illustrates the Schur decomposition:
     array([[ 0.06833781,  0.88091091,  0.79568503],    # may vary
            [ 0.11857169,  0.44491892,  0.99594171],
            [ 0.12624999,  0.60264117,  0.77257633]])
-    >>> T, Z, T1, Z1, T2, Z2 = map(np.mat,(T,Z,T1,Z1,T2,Z2))
+    >>> T, Z, T1, Z1, T2, Z2 = map(np.asmatrix,(T,Z,T1,Z1,T2,Z2))
     >>> abs(A - Z*T*Z.H)  # same
     matrix([[  5.55111512e-16,   1.77635684e-15,   2.22044605e-15],
             [  0.00000000e+00,   3.99680289e-15,   8.88178420e-16],
@@ -808,8 +805,11 @@ square matrix :math:`\mathbf{A}` as
 
     f\left(\mathbf{A}\right)=\sum_{k=0}^{\infty}\frac{f^{\left(k\right)}\left(0\right)}{k!}\mathbf{A}^{k}.
 
-While this serves as a useful representation of a matrix function, it
-is rarely the best way to calculate a matrix function.
+.. note::
+
+    While this serves as a useful representation of a matrix function, it is
+    rarely the best way to calculate a matrix function. In particular, if the
+    matrix is not diagonalizable, results may be innacurate.
 
 
 Exponential and logarithm functions

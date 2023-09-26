@@ -37,7 +37,6 @@ using clong = std::complex<ldbl_t>;
 using f32 = float;
 using f64 = double;
 using flong = ldbl_t;
-auto None = py::none();
 
 shape_t copy_shape(const py::array &arr)
   {
@@ -130,7 +129,7 @@ template<typename T> py::array c2c_internal(const py::array &in,
   T fct = norm_fct<T>(inorm, dims, axes);
   pocketfft::c2c(dims, s_in, s_out, axes, forward, d_in, d_out, fct, nthreads);
   }
-  return move(res);
+  return std::move(res);
   }
 
 template<typename T> py::array c2c_sym_internal(const py::array &in,
@@ -159,7 +158,7 @@ template<typename T> py::array c2c_sym_internal(const py::array &in,
     iter.advance();
     }
   }
-  return move(res);
+  return std::move(res);
   }
 
 py::array c2c(const py::array &a, const py::object &axes_, bool forward,
@@ -231,7 +230,7 @@ py::array r2r_fftpack(const py::array &in, const py::object &axes_,
 
 template<typename T> py::array dct_internal(const py::array &in,
   const py::object &axes_, int type, int inorm, py::object &out_,
-  size_t nthreads)
+  size_t nthreads, bool ortho)
   {
   auto axes = makeaxes(in, axes_);
   auto dims(copy_shape(in));
@@ -244,7 +243,6 @@ template<typename T> py::array dct_internal(const py::array &in,
   py::gil_scoped_release release;
   T fct = (type==1) ? norm_fct<T>(inorm, dims, axes, 2, -1)
                     : norm_fct<T>(inorm, dims, axes, 2);
-  bool ortho = inorm == 1;
   pocketfft::dct(dims, s_in, s_out, axes, type, d_in, d_out, fct, ortho,
     nthreads);
   }
@@ -252,16 +250,20 @@ template<typename T> py::array dct_internal(const py::array &in,
   }
 
 py::array dct(const py::array &in, int type, const py::object &axes_,
-  int inorm, py::object &out_, size_t nthreads)
+  int inorm, py::object &out_, size_t nthreads, const py::object & ortho_obj)
   {
+  bool ortho=inorm==1;
+  if (!ortho_obj.is_none())
+    ortho=ortho_obj.cast<bool>();
+
   if ((type<1) || (type>4)) throw std::invalid_argument("invalid DCT type");
   DISPATCH(in, f64, f32, flong, dct_internal, (in, axes_, type, inorm, out_,
-    nthreads))
+    nthreads, ortho))
   }
 
 template<typename T> py::array dst_internal(const py::array &in,
   const py::object &axes_, int type, int inorm, py::object &out_,
-  size_t nthreads)
+  size_t nthreads, bool ortho)
   {
   auto axes = makeaxes(in, axes_);
   auto dims(copy_shape(in));
@@ -274,7 +276,6 @@ template<typename T> py::array dst_internal(const py::array &in,
   py::gil_scoped_release release;
   T fct = (type==1) ? norm_fct<T>(inorm, dims, axes, 2, 1)
                     : norm_fct<T>(inorm, dims, axes, 2);
-  bool ortho = inorm == 1;
   pocketfft::dst(dims, s_in, s_out, axes, type, d_in, d_out, fct, ortho,
     nthreads);
   }
@@ -282,11 +283,15 @@ template<typename T> py::array dst_internal(const py::array &in,
   }
 
 py::array dst(const py::array &in, int type, const py::object &axes_,
-  int inorm, py::object &out_, size_t nthreads)
+  int inorm, py::object &out_, size_t nthreads, const py::object &ortho_obj)
   {
+  bool ortho=inorm==1;
+  if (!ortho_obj.is_none())
+    ortho=ortho_obj.cast<bool>();
+
   if ((type<1) || (type>4)) throw std::invalid_argument("invalid DST type");
   DISPATCH(in, f64, f32, flong, dst_internal, (in, axes_, type, inorm,
-    out_, nthreads))
+    out_, nthreads, ortho))
   }
 
 template<typename T> py::array c2r_internal(const py::array &in,
@@ -622,7 +627,7 @@ axes : list of integers
 inorm : int
     Normalization type
       0 : no normalization
-      1 : make transform orthogonal and divide by sqrt(N)
+      1 : divide by sqrt(N)
       2 : divide by N
     where N is the product of n_i for every transformed axis i.
     n_i is 2*(<axis_length>-1 for type 1 and 2*<axis length>
@@ -640,6 +645,8 @@ out : numpy.ndarray (same shape and data type as `a`)
 nthreads : int
     Number of threads to use. If 0, use the system default (typically governed
     by the `OMP_NUM_THREADS` environment variable).
+ortho: bool
+    Orthogonalize transform (defaults to ``inorm=1``)
 
 Returns
 -------
@@ -661,7 +668,7 @@ axes : list of integers
 inorm : int
     Normalization type
       0 : no normalization
-      1 : make transform orthogonal and divide by sqrt(N)
+      1 : divide by sqrt(N)
       2 : divide by N
     where N is the product of n_i for every transformed axis i.
     n_i is 2*(<axis_length>+1 for type 1 and 2*<axis length>
@@ -678,6 +685,8 @@ out : numpy.ndarray (same shape and data type as `a`)
 nthreads : int
     Number of threads to use. If 0, use the system default (typically governed
     by the `OMP_NUM_THREADS` environment variable).
+ortho: bool
+    Orthogonalize transform (defaults to ``inorm=1``)
 
 Returns
 -------
@@ -707,6 +716,8 @@ PYBIND11_MODULE(pypocketfft, m)
   {
   using namespace pybind11::literals;
 
+  auto None = py::none();
+
   m.doc() = pypocketfft_DS;
   m.def("c2c", c2c, c2c_DS, "a"_a, "axes"_a=None, "forward"_a=true,
     "inorm"_a=0, "out"_a=None, "nthreads"_a=1);
@@ -721,9 +732,9 @@ PYBIND11_MODULE(pypocketfft, m)
   m.def("genuine_hartley", genuine_hartley, genuine_hartley_DS, "a"_a,
     "axes"_a=None, "inorm"_a=0, "out"_a=None, "nthreads"_a=1);
   m.def("dct", dct, dct_DS, "a"_a, "type"_a, "axes"_a=None, "inorm"_a=0,
-    "out"_a=None, "nthreads"_a=1);
+    "out"_a=None, "nthreads"_a=1, "ortho"_a=None);
   m.def("dst", dst, dst_DS, "a"_a, "type"_a, "axes"_a=None, "inorm"_a=0,
-    "out"_a=None, "nthreads"_a=1);
+    "out"_a=None, "nthreads"_a=1, "ortho"_a=None);
 
   static PyMethodDef good_size_meth[] =
     {{"good_size", (PyCFunction)good_size,

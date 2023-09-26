@@ -233,9 +233,6 @@ class SpecialMatrices(Benchmark):
     def time_toeplitz(self, size):
         sl.toeplitz(self.x)
 
-    def time_tri(self, size):
-        sl.tri(size)
-
 
 class GetFuncs(Benchmark):
     def setup(self):

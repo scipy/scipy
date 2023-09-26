@@ -97,7 +97,7 @@ class _Bunch:
         self.__dict__.update(**kwargs)
 
     def __repr__(self):
-        return "_Bunch({})".format(", ".join("{}={}".format(k, repr(self.__dict__[k]))
+        return "_Bunch({})".format(", ".join(f"{k}={repr(self.__dict__[k])}"
                                              for k in self.__keys))
 
 
@@ -122,6 +122,9 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
         Vector norm to use for error estimation.
     cache_size : int, optional
         Number of bytes to use for memoization.
+    limit : float or int, optional
+        An upper bound on the number of subintervals used in the adaptive
+        algorithm.
     workers : int or map-like callable, optional
         If `workers` is an integer, part of the computation is done in
         parallel subdivided to this many tasks (using
@@ -206,6 +209,7 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
     We can compute integrations of a vector-valued function:
 
     >>> from scipy.integrate import quad_vec
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> alpha = np.linspace(0.0, 2.0, num=30)
     >>> f = lambda x: x**alpha
@@ -267,7 +271,7 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
 
         return (res[0]*sgn,) + res[1:]
     elif not (np.isfinite(a) and np.isfinite(b)):
-        raise ValueError("invalid integration bounds a={}, b={}".format(a, b))
+        raise ValueError(f"invalid integration bounds a={a}, b={b}")
 
     norm_funcs = {
         None: _max_norm,
@@ -289,7 +293,7 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
                        'trapz': _quadrature_trapezoid,  # alias for backcompat
                        'trapezoid': _quadrature_trapezoid}[quadrature]
     except KeyError as e:
-        raise ValueError("unknown quadrature {!r}".format(quadrature)) from e
+        raise ValueError(f"unknown quadrature {quadrature!r}") from e
 
     # Initial interval set
     if points is None:

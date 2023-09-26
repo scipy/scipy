@@ -283,37 +283,66 @@ Spectral analysis
    spectrogram    -- Compute the spectrogram.
    lombscargle    -- Computes the Lomb-Scargle periodogram.
    vectorstrength -- Computes the vector strength.
-   stft           -- Compute the Short Time Fourier Transform.
-   istft          -- Compute the Inverse Short Time Fourier Transform.
+   ShortTimeFFT   -- Interface for calculating the \
+                     :ref:`Short Time Fourier Transform <tutorial_stft>` and \
+                     its inverse.
+   stft           -- Compute the Short Time Fourier Transform (legacy).
+   istft          -- Compute the Inverse Short Time Fourier Transform (legacy).
    check_COLA     -- Check the COLA constraint for iSTFT reconstruction.
    check_NOLA     -- Check the NOLA constraint for iSTFT reconstruction.
 
+Chirp Z-transform and Zoom FFT
+============================================
+
+.. autosummary::
+   :toctree: generated/
+
+   czt - Chirp z-transform convenience function
+   zoom_fft - Zoom FFT convenience function
+   CZT - Chirp z-transform function generator
+   ZoomFFT - Zoom FFT function generator
+   czt_points - Output the z-plane points sampled by a chirp z-transform
+
+The functions are simpler to use than the classes, but are less efficient when
+using the same transform on many arrays of the same length, since they
+repeatedly generate the same chirp signal with every call.  In these cases,
+use the classes to create a reusable function instead.
+
 """
-from . import sigtools, windows
-from .waveforms import *
+import warnings
+
+from . import _sigtools, windows
+from ._waveforms import *
 from ._max_len_seq import max_len_seq
 from ._upfirdn import upfirdn
 
 from ._spline import (  # noqa: F401
- cspline2d,
- qspline2d,
- sepfir2d,
- symiirorder1,
- symiirorder2,
+    cspline2d,
+    qspline2d,
+    sepfir2d,
+    symiirorder1,
+    symiirorder2,
 )
 
-from .bsplines import *
-from .filter_design import *
-from .fir_filter_design import *
-from .ltisys import *
-from .lti_conversion import *
-from .signaltools import *
+from ._bsplines import *
+from ._filter_design import *
+from ._fir_filter_design import *
+from ._ltisys import *
+from ._lti_conversion import *
+from ._signaltools import *
 from ._savitzky_golay import savgol_coeffs, savgol_filter
-from .spectral import *
-from .wavelets import *
+from ._spectral_py import *
+from ._short_time_fft import *
+from ._wavelets import *
 from ._peak_finding import *
+from ._czt import *
 from .windows import get_window  # keep this one in signal namespace
 
+# Deprecated namespaces, to be removed in v2.0.0
+from . import (
+    bsplines, filter_design, fir_filter_design, lti_conversion, ltisys,
+    spectral, signaltools, waveforms, wavelets, spline
+)
 
 # deal with * -> windows.* doc-only soft-deprecation
 deprecated_windows = ('boxcar', 'triang', 'parzen', 'bohman', 'blackman',
@@ -322,16 +351,17 @@ deprecated_windows = ('boxcar', 'triang', 'parzen', 'bohman', 'blackman',
                       'general_gaussian', 'chebwin', 'cosine',
                       'hann', 'exponential', 'tukey')
 
-# backward compatibility imports for actually deprecated windows not
-# in the above list
-from .windows import hanning
-
 
 def deco(name):
     f = getattr(windows, name)
     # Add deprecation to docstring
 
     def wrapped(*args, **kwargs):
+        warnings.warn(f"Importing {name} from 'scipy.signal' is deprecated "
+                      "and will raise an error in SciPy 1.13.0. Please use "
+                      f"'scipy.signal.windows.{name}' or the convenience "
+                      "function 'scipy.signal.get_window' instead.",
+                      DeprecationWarning, stacklevel=2)
         return f(*args, **kwargs)
 
     wrapped.__name__ = name
@@ -360,8 +390,7 @@ for name in deprecated_windows:
 
 del deprecated_windows, name, deco
 
-
-__all__ = [s for s in dir() if not s.startswith('_')]
+__all__ = [s for s in dir() if not s.startswith('_') and s != "warnings"]
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

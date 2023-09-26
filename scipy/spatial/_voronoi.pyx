@@ -14,6 +14,8 @@ import numpy as np
 cimport numpy as np
 cimport cython
 
+np.import_array()
+
 __all__ = ['sort_vertices_of_regions']
 
 # array-filling placeholder that can never occur
@@ -21,7 +23,7 @@ DEF ARRAY_FILLER = -2
 
 @cython.boundscheck(False)
 cdef void remaining_filter(np.npy_intp[:] remaining,
-                           np.npy_intp current_simplex):
+                           np.npy_intp current_simplex) noexcept:
     cdef np.npy_intp i
     for i in range(remaining.shape[0]):
         if remaining[i] == current_simplex:

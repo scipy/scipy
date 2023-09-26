@@ -33,7 +33,6 @@ IGNORE_PATTERNS = [
 
     # Data files not needed by scipy special tests.
     "ibeta_derivative_",
-    r"ellint_r[cdfjg]_[^d]",
     r"ellint_d2?_",
     "jacobi_",
     "heuman_lambda_",
@@ -58,7 +57,7 @@ def _raw_data(line):
 
 def parse_ipp_file(filename):
     print(filename)
-    with open(filename, 'r') as a:
+    with open(filename) as a:
         lines = a.readlines()
     data = {}
     i = 0

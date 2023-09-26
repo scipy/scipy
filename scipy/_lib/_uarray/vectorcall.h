@@ -6,8 +6,11 @@ extern "C" {
 #endif
 
 // True if python supports vectorcall on custom classes
-#define Q_HAS_VECTORCALL                                                       \
-  (!defined(PYPY_VERSION) && (PY_VERSION_HEX >= 0x03080000))
+#if (!defined(PYPY_VERSION) && (PY_VERSION_HEX >= 0x03080000))
+#  define Q_HAS_VECTORCALL 1
+#else
+#  define Q_HAS_VECTORCALL 0
+#endif
 
 #if !Q_HAS_VECTORCALL
 #  define Q_Py_TPFLAGS_HAVE_VECTORCALL 0

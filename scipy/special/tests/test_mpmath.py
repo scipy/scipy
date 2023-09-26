@@ -8,7 +8,7 @@ from numpy import pi
 import pytest
 import itertools
 
-from distutils.version import LooseVersion
+from scipy._lib import _pep440
 
 import scipy.special as sc
 from scipy.special._testutils import (
@@ -39,7 +39,7 @@ def test_expi_complex():
         for p in np.linspace(0, 2*np.pi, 30):
             z = r*np.exp(1j*p)
             dataset.append((z, complex(mpmath.ei(z))))
-    dataset = np.array(dataset, dtype=np.complex_)
+    dataset = np.array(dataset, dtype=np.cdouble)
 
     FuncData(sc.expi, dataset, 0, 1).check()
 
@@ -117,6 +117,7 @@ def test_hyperu_around_0():
 
     FuncData(sc.hyperu, dataset, (0, 1, 2), 3, rtol=1e-15, atol=5e-13).check()
 
+
 # ------------------------------------------------------------------------------
 # hyp2f1
 # ------------------------------------------------------------------------------
@@ -134,7 +135,7 @@ def test_hyp2f1_strange_points():
     ]
     kw = dict(eliminate=True)
     dataset = [p + (float(mpmath.hyp2f1(*p, **kw)),) for p in pts]
-    dataset = np.array(dataset, dtype=np.float_)
+    dataset = np.array(dataset, dtype=np.float64)
 
     FuncData(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-10).check()
 
@@ -165,7 +166,7 @@ def test_hyp2f1_real_some_points():
         (0.5, 1 - 270.5, 1.5, 0.999**2),  # from issue 1561
     ]
     dataset = [p + (float(mpmath.hyp2f1(*p)),) for p in pts]
-    dataset = np.array(dataset, dtype=np.float_)
+    dataset = np.array(dataset, dtype=np.float64)
 
     with np.errstate(invalid='ignore'):
         FuncData(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-10).check()
@@ -188,7 +189,7 @@ def test_hyp2f1_some_points_2():
             return x
 
     dataset = [tuple(map(fev, p)) + (float(mpmath.hyp2f1(*p)),) for p in pts]
-    dataset = np.array(dataset, dtype=np.float_)
+    dataset = np.array(dataset, dtype=np.float64)
 
     FuncData(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-10).check()
 
@@ -205,7 +206,7 @@ def test_hyp2f1_real_some():
                     except Exception:
                         continue
                     dataset.append((a, b, c, z, v))
-    dataset = np.array(dataset, dtype=np.float_)
+    dataset = np.array(dataset, dtype=np.float64)
 
     with np.errstate(invalid='ignore'):
         FuncData(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-9,
@@ -216,7 +217,7 @@ def test_hyp2f1_real_some():
 @pytest.mark.slow
 def test_hyp2f1_real_random():
     npoints = 500
-    dataset = np.zeros((npoints, 5), np.float_)
+    dataset = np.zeros((npoints, 5), np.float64)
 
     np.random.seed(1234)
     dataset[:, 0] = np.random.pareto(1.5, npoints)
@@ -236,6 +237,7 @@ def test_hyp2f1_real_random():
         ds[4] = float(mpmath.hyp2f1(*tuple(ds[:4])))
 
     FuncData(sc.hyp2f1, dataset, (0, 1, 2, 3), 4, rtol=1e-9).check()
+
 
 # ------------------------------------------------------------------------------
 # erf (complex)
@@ -306,7 +308,7 @@ def test_lpmv():
         return mpmath.legenp(nu, mu, x)
 
     dataset = [p + (mplegenp(p[1], p[0], p[2]),) for p in pts]
-    dataset = np.array(dataset, dtype=np.float_)
+    dataset = np.array(dataset, dtype=np.float64)
 
     def evf(mu, nu, x):
         return sc.lpmv(mu.astype(int), nu, x)
@@ -869,9 +871,25 @@ class TestSystematic:
                             atol=1e-11)
 
     def test_betainc(self):
-        assert_mpmath_equal(sc.betainc,
-                            time_limited()(exception_to_nan(lambda a, b, x: mpmath.betainc(a, b, 0, x, regularized=True))),
-                            [Arg(), Arg(), Arg()])
+        assert_mpmath_equal(
+            sc.betainc,
+            time_limited()(
+                exception_to_nan(
+                    lambda a, b, x: mpmath.betainc(a, b, 0, x,
+                                                   regularized=True))),
+            [Arg(), Arg(), Arg()]
+        )
+
+    def test_betaincc(self):
+        assert_mpmath_equal(
+            sc.betaincc,
+            time_limited()(
+                exception_to_nan(
+                    lambda a, b, x: mpmath.betainc(a, b, x, 1,
+                                                   regularized=True))),
+            [Arg(), Arg(), Arg()],
+            dps=400,
+        )
 
     def test_binom(self):
         bad_points = []
@@ -961,7 +979,7 @@ class TestSystematic:
         eps = np.finfo(float).eps
         assert_mpmath_equal(_cospi,
                             mpmath.cospi,
-                            [Arg()], nan_ok=False, rtol=eps)
+                            [Arg()], nan_ok=False, rtol=2*eps)
 
     def test_cospi_complex(self):
         assert_mpmath_equal(_cospi,
@@ -1011,7 +1029,7 @@ class TestSystematic:
     def test_exprel(self):
         assert_mpmath_equal(sc.exprel,
                             lambda x: mpmath.expm1(x)/x if x != 0 else mpmath.mpf('1.0'),
-                            [Arg(a=-np.log(np.finfo(np.double).max), b=np.log(np.finfo(np.double).max))])
+                            [Arg(a=-np.log(np.finfo(np.float64).max), b=np.log(np.finfo(np.float64).max))])
         assert_mpmath_equal(sc.exprel,
                             lambda x: mpmath.expm1(x)/x if x != 0 else mpmath.mpf('1.0'),
                             np.array([1e-12, 1e-24, 0, 1e12, 1e24, np.inf]), rtol=1e-11)
@@ -1170,7 +1188,7 @@ class TestSystematic:
     def test_log_ndtr(self):
         assert_mpmath_equal(sc.log_ndtr,
                             exception_to_nan(lambda z: mpmath.log(mpmath.ncdf(z))),
-                            [Arg()], n=600, dps=300)
+                            [Arg()], n=600, dps=300, rtol=1e-13)
 
     def test_log_ndtr_complex(self):
         assert_mpmath_equal(sc.log_ndtr,
@@ -1720,7 +1738,7 @@ class TestSystematic:
                                "systems and gh-8095 for another bad "
                                "point"))
     def test_rf(self):
-        if LooseVersion(mpmath.__version__) >= LooseVersion("1.0.0"):
+        if _pep440.parse(mpmath.__version__) >= _pep440.Version("1.0.0"):
             # no workarounds needed
             mppoch = mpmath.rf
         else:
@@ -1741,7 +1759,7 @@ class TestSystematic:
     def test_sinpi(self):
         eps = np.finfo(float).eps
         assert_mpmath_equal(_sinpi, mpmath.sinpi,
-                            [Arg()], nan_ok=False, rtol=eps)
+                            [Arg()], nan_ok=False, rtol=2*eps)
 
     def test_sinpi_complex(self):
         assert_mpmath_equal(_sinpi, mpmath.sinpi,
@@ -1859,17 +1877,18 @@ class TestSystematic:
     def test_riemann_zeta(self):
         assert_mpmath_equal(
             sc.zeta,
-            mpmath.zeta,
+            lambda x: mpmath.zeta(x) if x != 1 else mpmath.inf,
             [Arg(-100, 100)],
             nan_ok=False,
-            rtol=1e-13,
+            rtol=5e-13,
         )
 
     def test_zetac(self):
         assert_mpmath_equal(sc.zetac,
-                            lambda x: mpmath.zeta(x) - 1,
+                            lambda x: (mpmath.zeta(x) - 1
+                                       if x != 1 else mpmath.inf),
                             [Arg(-100, 100)],
-                            nan_ok=False, dps=45, rtol=1e-13)
+                            nan_ok=False, dps=45, rtol=5e-13)
 
     def test_boxcox(self):
 

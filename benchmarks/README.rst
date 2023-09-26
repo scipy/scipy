@@ -10,27 +10,23 @@ Benchmarking SciPy with Airspeed Velocity.
 Usage
 -----
 
-Airspeed Velocity manages building and Python virtualenvs by itself,
+Airspeed Velocity manages building and Python environments by itself,
 unless told otherwise. Some of the benchmarking features in
-``runtests.py`` also tell ASV to use the SciPy compiled by
-``runtests.py``. To run the benchmarks, you do not need to install a
+``dev.py`` also tell ASV to use the SciPy compiled by
+``dev.py``. To run the benchmarks, you do not need to install a
 development version of SciPy to your current Python environment.
 
 Run a benchmark against currently checked-out SciPy version (don't record the
 result)::
 
-    python runtests.py --bench sparse.Arithmetic
+    python dev.py bench sparse.Arithmetic
 
 Compare change in benchmark results with another branch::
 
-    python runtests.py --bench-compare master sparse.Arithmetic
-
-Run benchmarks against the system-installed SciPy rather than rebuild::
-
-    python runtests.py -n --bench sparse.Arithmetic
+    python dev.py bench-compare main sparse.Arithmetic
 
 Run ASV commands directly (note, this will not set env vars for ``ccache``
-and disabling BLAS/LAPACK multi-threading, as ``runtests.py`` does)::
+and disabling BLAS/LAPACK multi-threading, as ``dev.py`` does)::
 
     cd benchmarks
     asv run --skip-existing-commits --steps 10 ALL
@@ -53,10 +49,10 @@ Some things to consider:
 
 - When importing things from SciPy on the top of the test files, do it as::
 
-      try:
+      from .common import safe_import
+
+      with safe_import():
           from scipy.sparse.linalg import onenormest
-      except ImportError:
-          pass
 
   The benchmark files need to be importable also when benchmarking old versions
   of SciPy. The benchmarks themselves don't need any guarding against missing

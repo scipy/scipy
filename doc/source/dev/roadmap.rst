@@ -40,7 +40,7 @@ Enabling the use of an accelerator like Pythran, possibly via Transonic, and
 making it easier for users to use Numba's ``@njit`` in their code that relies
 on SciPy functionality would unlock a lot of performance gain.  That needs a
 strategy though, all solutions are still maturing (see for example
-`this overview <https://fluiddyn.bitbucket.io/transonic-vision.html>`__).
+`this overview <https://fluiddyn.netlify.app/transonic-vision.html>`__).
 
 Finally, many individual functions can be optimized for performance.
 ``scipy.optimize`` and ``scipy.interpolate`` functions are particularly often
@@ -50,13 +50,14 @@ requested in this respect.
 Statistics enhancements
 -----------------------
 
-The `scipy.stats` enhancements listed in the :ref:`scipy-roadmap-detailed` are of
-particularly high importance to the project.
+The following `scipy.stats` enhancements and those listed in the
+:ref:`scipy-roadmap-detailed` are of particularly high importance to the
+project.
 
-- Improve the options for fitting a probability distribution to data.
-- Expand the set of hypothesis tests.  In particular, include all the basic
-  variations of analysis of variance.
-- Add confidence intervals for all statistical tests.
+- Overhaul the univariate distribution infrastructure to address longstanding
+  issues (e.g. see `gh-15928 <https://github.com/scipy/scipy/issues/15928>`_.)
+- Consistently handle ``nan_policy``, ``axis`` arguments, and masked
+  arrays in ``stats`` functions (where appropriate).
 
 
 Support for more hardware platforms
