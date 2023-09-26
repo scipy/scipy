@@ -4,6 +4,7 @@ from numpy.linalg import norm
 from scipy.linalg import get_blas_funcs
 from warnings import warn
 
+
 __all__ = ['HessianUpdateStrategy', 'BFGS', 'SR1']
 
 
@@ -386,8 +387,8 @@ class BFGS(FullHessianUpdateStrategy):
             # interpolate between the actual BFGS
             # result and the unmodified matrix.
             elif self.exception_strategy == 'damp_update':
-                update_factor = (1 - self.min_curvature) / (1 - wz / wMw)
-                z = update_factor * z + (1 - update_factor) * Mw
+                update_factor = (1-self.min_curvature) / (1 - wz/wMw)
+                z = update_factor*z + (1-update_factor)*Mw
                 wz = np.dot(w, z)
         # Update matrix
         if self.approx_type == 'hess':
@@ -449,6 +450,6 @@ class SR1(FullHessianUpdateStrategy):
             return
         # Update matrix
         if self.approx_type == 'hess':
-            self.B = self._syr(1 / denominator, z_minus_Mw, a=self.B)
+            self.B = self._syr(1/denominator, z_minus_Mw, a=self.B)
         else:
-            self.H = self._syr(1 / denominator, z_minus_Mw, a=self.H)
+            self.H = self._syr(1/denominator, z_minus_Mw, a=self.H)
