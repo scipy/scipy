@@ -31,7 +31,7 @@ from scipy.signal._signaltools import (_filtfilt_gust, _compute_factors,
                                       _group_poles)
 from scipy.signal._upfirdn import _upfirdn_modes
 from scipy._lib import _testutils
-from scipy._lib._util import ComplexWarning
+from scipy._lib._util import ComplexWarning, np_int, np_uint
 
 
 class _TestConvolve:
@@ -1084,7 +1084,7 @@ class TestMedFilt:
         assert_array_equal(d, e)
 
     @pytest.mark.parametrize('dtype', [np.ubyte, np.byte, np.ushort, np.short,
-                                       np.uint, int, np.ulonglong, np.ulonglong,
+                                       np_uint, np_int, np.ulonglong, np.ulonglong,
                                        np.float32, np.float64])
     def test_types(self, dtype):
         # volume input and output types match
@@ -1911,7 +1911,7 @@ def test_lfilter_notimplemented_input():
 
 
 @pytest.mark.parametrize('dt', [np.ubyte, np.byte, np.ushort, np.short,
-                                np.uint, int, np.ulonglong, np.ulonglong,
+                                np_uint, np_int, np.ulonglong, np.ulonglong,
                                 np.float32, np.float64, np.longdouble,
                                 Decimal])
 class TestCorrelateReal:

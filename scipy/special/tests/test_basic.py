@@ -41,6 +41,7 @@ from scipy.special import ellipe, ellipk, ellipkm1
 from scipy.special import elliprc, elliprd, elliprf, elliprg, elliprj
 from scipy.special import mathieu_odd_coef, mathieu_even_coef, stirling2
 from scipy._lib.deprecation import _NoValue
+from scipy._lib._util import np_int, np_uint
 
 from scipy.special._basic import _FACTORIALK_LIMITS_64BITS, \
     _FACTORIALK_LIMITS_32BITS
@@ -2248,7 +2249,10 @@ class TestFactorialFunctions:
             with pytest.warns(DeprecationWarning, match="Non-integer array.*"):
                 result = special.factorial(n, exact=exact)
                 # expected dtype is integer, unless there are NaNs
-                dtype = np.float64 if np.any(np.isnan(n)) else np.int_
+                if np.any(np.isnan(n)):
+                    dtype = np.dtype(np.float64)
+                else:
+                    dtype = np.dtype(int)
         elif exact and not np.issubdtype(n.dtype, np.integer):
             with pytest.raises(ValueError, match="factorial with exact=.*"):
                 special.factorial(n, exact=exact)
@@ -2414,7 +2418,7 @@ class TestFactorialFunctions:
     def test_factorialk_dtype(self, k):
         if k in _FACTORIALK_LIMITS_64BITS.keys():
             n = np.array([_FACTORIALK_LIMITS_32BITS[k]])
-            assert_equal(special.factorialk(n, k).dtype, np.int_)
+            assert_equal(special.factorialk(n, k).dtype, np_int)
             assert_equal(special.factorialk(n + 1, k).dtype, np.int64)
             # assert maximality of limits for given dtype
             assert special.factorialk(n + 1, k) > np.iinfo(np.int32).max
@@ -4129,8 +4133,8 @@ class TestStirling2:
     def test_numpy_array_unsigned_int_dtype(self):
         # numpy unsigned integers are allowed as dtype in numpy arrays
         ans = asarray(self.table[4][1:])
-        n = asarray([4, 4, 4, 4], dtype=np.uint)
-        k = asarray([1, 2, 3, 4], dtype=np.uint)
+        n = asarray([4, 4, 4, 4], dtype=np_uint)
+        k = asarray([1, 2, 3, 4], dtype=np_uint)
         assert array_equal(stirling2(n, k), ans)
 
     def test_broadcasting_arrays_correctly(self):

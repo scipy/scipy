@@ -566,8 +566,8 @@ class TestInterp1D:
         raises_bounds_error([0.0, 5.0, 9.0])
 
     def _bounds_check_int_nan_fill(self, kind='linear'):
-        x = np.arange(10).astype(np.int_)
-        y = np.arange(10).astype(np.int_)
+        x = np.arange(10).astype(int)
+        y = np.arange(10).astype(int)
         c = interp1d(x, y, kind=kind, fill_value=np.nan, bounds_error=False)
         yi = c(x - 1)
         assert_(np.isnan(yi[0]))

@@ -6,6 +6,7 @@ Static type checking stub file for scipy/spatial/qhull.pyx
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 from typing_extensions import final
+from scipy._lib._util import np_int
 
 class QhullError(RuntimeError):
     ...
@@ -63,7 +64,7 @@ class _Qhull:
 
 def _get_barycentric_transforms(
     points: NDArray[np.float64],
-    simplices: NDArray[np.int_],
+    simplices: NDArray[np_int],
     eps: float
 ) -> NDArray[np.float64]: ...
 
@@ -210,4 +211,4 @@ class HalfspaceIntersection(_QhullUser):
     @property
     def halfspaces(self) -> NDArray[np.float64]: ...
     @property
-    def dual_vertices(self) -> NDArray[np.int_]: ...
+    def dual_vertices(self) -> NDArray[np_int]: ...
