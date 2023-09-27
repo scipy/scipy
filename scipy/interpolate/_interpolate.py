@@ -1920,7 +1920,7 @@ class BPoly(_PPolyBase):
 
         Return the coefficients of a polynomial in the Bernstein basis
         defined on ``[xa, xb]`` and having the values and derivatives at the
-        endpoints `xa` and `xb` as specified by `ya`` and `yb`.
+        endpoints `xa` and `xb` as specified by `ya` and `yb`.
         The polynomial constructed is of the minimal possible degree, i.e.,
         if the lengths of `ya` and `yb` are `na` and `nb`, the degree
         of the polynomial is ``na + nb - 1``.
