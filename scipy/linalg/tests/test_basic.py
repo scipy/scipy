@@ -21,7 +21,7 @@ from scipy._lib._testutils import check_free_memory, IS_MUSL
 from scipy.linalg.blas import HAS_ILP64
 from scipy._lib.deprecation import _NoValue
 
-from scipy.conftest import array_api_compatible, skip_if_array_api_backend
+from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import xp_assert_close, size as _size, array_namespace
 
 REAL_DTYPES = (np.float32, np.float64, np.longdouble)
@@ -510,19 +510,34 @@ class TestSolve:
         x0 = solve(a, b)
         xp_assert_close(xp_test.matmul(a, x0), xp.asarray([1, 0]), check_dtype=False)
 
-    # integer dtypes not accepted
-    @skip_if_array_api_backend('numpy.array_api')
+    @array_api_compatible
+    @pytest.mark.parametrize("dtype", ["float32", "float64"])
+    def test_dtypes_standard(self, dtype, xp):
+        a = xp.asarray([[1, 20], [-30, 4]], dtype=getattr(xp, dtype))
+        xp_test = array_namespace(a)
+        b = xp.asarray([[1, 0], [0, 1]], dtype=getattr(xp, dtype))
+        x = solve(a, b)
+        atol = 1e-15 if dtype == "float64" else 1e-7
+        xp_assert_close(xp_test.matmul(a, x), b, atol=atol)
+
+    @pytest.mark.parametrize("dtype", [np.int32, np.int64])
+    def test_dtypes_nonstandard(self, dtype):
+        a = np.asarray([[1, 20], [-30, 4]], dtype=dtype)
+        b = np.asarray([[1, 0], [0, 1]], dtype=dtype)
+        x = solve(a, b)
+        xp_assert_close(a @ x, b.astype(np.float64), atol=1e-15)
+
     @array_api_compatible
     def test_simple(self, xp):
-        a = xp.asarray([[1, 20], [-30, 4]])
+        a = xp.asarray([[1., 20], [-30, 4]])
         xp_test = array_namespace(a)
-        for b in ([[1, 0], [0, 1]],
-                  [1, 0],
-                  [[2, 1], [-30, 4]]
+        for b in ([[1., 0], [0, 1]],
+                  [1., 0],
+                  [[2., 1], [-30, 4]]
                   ):
             b = xp.asarray(b)
             x = solve(a, b)
-            xp_assert_close(xp_test.matmul(a, x), b, atol=1e-15, check_dtype=False)
+            xp_assert_close(xp_test.matmul(a, x), b, atol=1e-15)
 
     @array_api_compatible
     def test_simple_complex(self, xp):
@@ -632,7 +647,7 @@ class TestSolve:
         for i in range(2):
             b = xp.asarray(random([n, 3]))
             x = solve(a, b)
-            xp_assert_close(xp_test.matmul(a, x), b, check_dtype=False)
+            xp_assert_close(xp_test.matmul(a, x), xp.asarray(b, dtype=xp.complex128))
 
     def test_random_sym(self):
         n = 20
@@ -659,17 +674,15 @@ class TestSolve:
             x = solve(a, b, assume_a="pos")
             assert_array_almost_equal(dot(a, x), b)
 
-    # integer dtypes not accepted
-    @skip_if_array_api_backend('numpy.array_api')
     @array_api_compatible
     def test_check_finite(self, xp):
-        a = xp.asarray([[1, 20], [-30, 4]])
+        a = xp.asarray([[1., 20], [-30, 4]])
         xp_test = array_namespace(a)
-        for b in ([[1, 0], [0, 1]], [1, 0],
-                  [[2, 1], [-30, 4]]):
+        for b in ([[1., 0], [0, 1]], [1., 0],
+                  [[2., 1], [-30, 4]]):
             b = xp.asarray(b)
             x = solve(a, b, check_finite=False)
-            xp_assert_close(xp_test.matmul(a, x), b, atol=1e-15, check_dtype=False)
+            xp_assert_close(xp_test.matmul(a, x), b, atol=1e-15)
 
     def test_scalar_a_and_1D_b(self):
         a = 1
@@ -693,8 +706,8 @@ class TestSolve:
         b = xp.asarray(b)
 
         x = solve(a, b)
-        xp_assert_close(x, xp.asarray([[1., -1, 3, -5], [3, 2, 4, 1]]).T,
-                        check_dtype=False)
+        xp_assert_close(x,
+                        xp.asarray([[1., -1, 3, -5], [3, 2, 4, 1]], dtype=xp.float64).T)
 
     @array_api_compatible
     def test_simple_complex2(self, xp):
@@ -714,8 +727,7 @@ class TestSolve:
         xp_assert_close(x, xp.asarray([[1+1.j, -1-2.j],
                                        [2-3.j, 5+1.j],
                                        [-4-5.j, -3+4.j],
-                                       [6.j, 2-3.j]]),
-                        check_dtype=False)
+                                       [6.j, 2-3.j]], dtype=xp.complex128))
 
     def test_hermitian(self):
         # An upper triangular matrix will be used for hermitian matrix a
@@ -919,15 +931,29 @@ class TestInv:
     def setup_method(self):
         np.random.seed(1234)
 
-    # integer dtypes not accepted
-    @skip_if_array_api_backend('numpy.array_api')
+    @array_api_compatible
+    @pytest.mark.parametrize("dtype", ["float32", "float64"])
+    def test_dtypes_standard(self, dtype, xp):
+        a = xp.asarray([[1, 2], [3, 4]], dtype=getattr(xp, dtype))
+        a_inv = inv(a)
+        xp_test = array_namespace(a)
+        atol = 1e-14 if dtype == "float64" else 1e-5
+        xp_assert_close(xp_test.matmul(a, a_inv), xp.eye(2, dtype=getattr(xp, dtype)),
+                        atol=atol)
+
+    @pytest.mark.parametrize("dtype", [np.int32, np.int64])
+    def test_dtypes_nonstandard(self, dtype):
+        a = np.asarray([[1, 2], [3, 4]], dtype=dtype)
+        a_inv = inv(a)
+        xp_assert_close(a @ a_inv, np.eye(2), atol=1e-15)
+
     @array_api_compatible
     def test_simple(self, xp):
-        a = xp.asarray([[1, 2], [3, 4]])
+        a = xp.asarray([[1., 2], [3, 4]])
         a_inv = inv(a)
         xp_test = array_namespace(a)
         xp_assert_close(xp_test.matmul(a, a_inv), xp.eye(2), atol=1e-15)
-        a = xp.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 10]])
+        a = xp.asarray([[1., 2, 3], [4, 5, 6], [7, 8, 10]])
         a_inv = inv(a)
         xp_assert_close(xp_test.matmul(a, a_inv), xp.eye(3), atol=1e-5)
 
@@ -939,14 +965,15 @@ class TestInv:
             for i in range(n):
                 a[i, i] = 20*(.1+a[i, i])
             a_inv = inv(a)
-            xp_assert_close(a @ a_inv, xp.eye(n), atol=1e-15, check_dtype=False)
+            xp_assert_close(a @ a_inv, xp.eye(n, dtype=xp.float64), atol=1e-15)
 
     @array_api_compatible
     def test_simple_complex(self, xp):
         a = xp.asarray([[1, 2], [3, 4j]])
         a_inv = inv(a)
-        xp_assert_close(a @ a_inv, xp.asarray([[1, 0], [0, 1]]),
-                        atol=1e-7, check_dtype=False)
+        # complex64 on torch, complex128 for other backends
+        xp_assert_close(a @ a_inv, xp.asarray([[1, 0], [0, 1]]), atol=1e-7,
+                        check_dtype=False)
 
     @array_api_compatible
     def test_random_complex(self, xp):
@@ -956,17 +983,15 @@ class TestInv:
             for i in range(n):
                 a[i, i] = 20*(.1+a[i, i])
             a_inv = inv(a)
-            xp_assert_close(a @ a_inv, xp.eye(n), atol=1e-15, check_dtype=False)
+            xp_assert_close(a @ a_inv, xp.eye(n, dtype=xp.complex128), atol=1e-15)
 
-    # integer dtypes not accepted
-    @skip_if_array_api_backend('numpy.array_api')
     @array_api_compatible
     def test_check_finite(self, xp):
-        a = xp.asarray([[1, 2], [3, 4]])
+        a = xp.asarray([[1., 2], [3, 4]])
         xp_test = array_namespace(a)
         a_inv = inv(a, check_finite=False)
-        xp_assert_close(xp_test.matmul(a, a_inv), xp.asarray([[1, 0], [0, 1]]),
-                        atol=1e-15, check_dtype=False)
+        xp_assert_close(xp_test.matmul(a, a_inv), xp.asarray([[1., 0], [0, 1]]),
+                        atol=1e-15)
 
 
 class TestDet:
@@ -1004,6 +1029,21 @@ class TestDet:
         assert_allclose(deta, np.squeeze(a))
 
     @array_api_compatible
+    @pytest.mark.parametrize("dtype", ["float32", "float64"])
+    def test_dtypes_standard(self, dtype, xp):
+        a = [[2, 4], [1, 3]]
+        d1 = det(xp.asarray(a, dtype=getattr(xp, dtype)))
+        d2 = xp.asarray(2, dtype=getattr(xp, dtype))
+        rtol = 1e-7 if dtype == "float64" else 1e-6
+        # float64 for numpy, float32 for other backends
+        xp_assert_close(d1, d2, rtol=rtol, check_dtype=False)
+
+    @pytest.mark.parametrize("dtype", [np.int32, np.int64])
+    def test_dtypes_nonstandard(self, dtype):
+        a = np.asarray([[2, 4], [1, 3]], dtype=dtype)
+        xp_assert_close(det(a), np.asarray(2, np.float64))
+    
+    @array_api_compatible
     @pytest.mark.parametrize('shape', [[2, 2], [20, 20], [3, 2, 20, 20]])
     def test_simple_det_shapes_real_complex(self, shape, xp):
         a = self.rng.uniform(-1., 1., size=shape)
@@ -1015,12 +1055,10 @@ class TestDet:
         d3, d4 = det(xp.asarray(b)), xp.asarray(np.linalg.det(b))
         xp_assert_close(d3, d4)
 
-    # integer dtypes not accepted
-    @skip_if_array_api_backend('numpy.array_api')
     @array_api_compatible
     def test_for_known_det_values(self, xp):
         # Hadamard8
-        a = np.array([[1, 1, 1, 1, 1, 1, 1, 1],
+        a = np.array([[1., 1, 1, 1, 1, 1, 1, 1],
                       [1, -1, 1, -1, 1, -1, 1, -1],
                       [1, 1, -1, -1, 1, 1, -1, -1],
                       [1, -1, -1, 1, 1, -1, -1, 1],
@@ -1029,11 +1067,13 @@ class TestDet:
                       [1, 1, -1, -1, -1, -1, 1, 1],
                       [1, -1, -1, 1, -1, 1, 1, -1]])
         a = xp.asarray(a)
-        xp_assert_close(det(a), xp.asarray(4096.), check_dtype=False)
+        xp_assert_close(det(a), xp.asarray(4096., dtype=xp.float64))
 
         # consecutive number array always singular
-        xp_assert_close(det(xp.reshape(xp.arange(25), (5, 5))),
-                        xp.asarray(0.))
+        xp_assert_close(
+            det(xp.asarray(xp.reshape(xp.arange(25), (5, 5)), dtype=xp.float64)),
+            xp.asarray(0., dtype=xp.float64)
+        )
 
         # simple anti-diagonal block array
         # Upper right has det (-2+1j) and lower right has (-2-1j)
@@ -1043,7 +1083,7 @@ class TestDet:
                       [0.+1.j, 1.+1.j, 0.+0.j, 0.+0.j],
                       [1.+0.j, 0.+1.j, 0.+0.j, 0.+0.j]], dtype=np.complex128)
         a = xp.asarray(a)
-        xp_assert_close(det(a), xp.asarray(5.+0.j), check_dtype=False)
+        xp_assert_close(det(a), xp.asarray(5.+0.j, dtype=xp.complex128))
 
         # Fiedler companion complexified
         # >>> a = scipy.linalg.fiedler_companion(np.arange(1, 10))
@@ -1056,7 +1096,7 @@ class TestDet:
                       [0., 0., 0., 0., 0., -8., 0., -9.],
                       [0., 0., 0., 0., 0., 1., 0., 0.]])*1.j
         a = xp.asarray(a)
-        xp_assert_close(det(a), xp.asarray(9.), check_dtype=False)
+        xp_assert_close(det(a), xp.asarray(9., dtype=xp.complex128))
 
     # g and G dtypes are handled differently in windows and other platforms
     @pytest.mark.parametrize('typ', [x for x in np.typecodes['All'][:20]
@@ -1423,11 +1463,25 @@ class TestPinv:
     def setup_method(self):
         np.random.seed(1234)
 
-    # integer dtypes not accepted
-    @skip_if_array_api_backend('numpy.array_api')
+    @array_api_compatible
+    @pytest.mark.parametrize("dtype", ["float32", "float64"])
+    def test_dtypes_standard(self, dtype, xp):
+        a = xp.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 10]], dtype=getattr(xp, dtype))
+        xp_test = array_namespace(a)
+        a_pinv = pinv(a)
+        atol = 1e-13 if dtype == "float64" else 1e-4
+        xp_assert_close(xp_test.matmul(a, a_pinv), xp.eye(3, dtype=getattr(xp, dtype)),
+                        atol=atol)
+
+    @pytest.mark.parametrize("dtype", [np.int32, np.int64])
+    def test_dtypes_nonstandard(self, dtype):
+        a = np.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 10]], dtype=dtype)
+        a_pinv = pinv(a)
+        xp_assert_close(a @ a_pinv, np.eye(3), atol=1e-13)
+
     @array_api_compatible
     def test_simple_real(self, xp):
-        a = xp.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 10]])
+        a = xp.asarray([[1., 2, 3], [4, 5, 6], [7, 8, 10]])
         xp_test = array_namespace(a)
         a_pinv = pinv(a)
         xp_assert_close(xp_test.matmul(a, a_pinv), xp.eye(3), atol=1e-5)
@@ -1437,42 +1491,36 @@ class TestPinv:
         a = (xp.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 10]], dtype=xp.complex128)
              + 1j*xp.asarray([[10, 8, 7], [6, 5, 4], [3, 2, 1]], dtype=xp.complex128))
         a_pinv = pinv(a)
-        xp_assert_close(a @ a_pinv, xp.eye(3), atol=1e-5, check_dtype=False)
+        xp_assert_close(a @ a_pinv, xp.eye(3, dtype=xp.complex128), atol=1e-5)
 
-    # integer dtypes not accepted
-    @skip_if_array_api_backend('numpy.array_api')
     @array_api_compatible
     def test_simple_singular(self, xp):
-        a = xp.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+        a = xp.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 9]], dtype=xp.float64)
         a_pinv = pinv(a)
         expected = array([[-6.38888889e-01, -1.66666667e-01, 3.05555556e-01],
                           [-5.55555556e-02, 1.30136518e-16, 5.55555556e-02],
                           [5.27777778e-01, 1.66666667e-01, -1.94444444e-01]])
         expected = xp.asarray(expected)
-        xp_assert_close(a_pinv, expected, atol=1e-6, check_dtype=False)
+        xp_assert_close(a_pinv, expected, atol=1e-6)
 
-    # integer dtypes not accepted
-    @skip_if_array_api_backend('numpy.array_api')
     @array_api_compatible
     def test_simple_cols(self, xp):
-        a = xp.asarray([[1, 2, 3], [4, 5, 6]])
+        a = xp.asarray([[1, 2, 3], [4, 5, 6]], dtype=xp.float64)
         a_pinv = pinv(a)
         expected = array([[-0.94444444, 0.44444444],
                           [-0.11111111, 0.11111111],
                           [0.72222222, -0.22222222]])
         expected = xp.asarray(expected)
-        xp_assert_close(a_pinv, expected, rtol=1e-6, check_dtype=False)
+        xp_assert_close(a_pinv, expected, rtol=1e-6)
 
-    # integer dtypes not accepted
-    @skip_if_array_api_backend('numpy.array_api')
     @array_api_compatible
     def test_simple_rows(self, xp):
-        a = xp.asarray([[1, 2], [3, 4], [5, 6]])
+        a = xp.asarray([[1, 2], [3, 4], [5, 6]], dtype=xp.float64)
         a_pinv = pinv(a)
         expected = array([[-1.33333333, -0.33333333, 0.66666667],
                           [1.08333333, 0.33333333, -0.41666667]])
         expected = xp.asarray(expected)
-        xp_assert_close(a_pinv, expected, rtol=1e-5, check_dtype=False)
+        xp_assert_close(a_pinv, expected, rtol=1e-5)
 
     @array_api_compatible
     def test_check_finite(self, xp):
