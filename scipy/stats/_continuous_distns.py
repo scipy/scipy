@@ -5425,9 +5425,11 @@ class jf_skew_t_gen(rv_continuous):
 
     def _munp(self, n, a, b):
         """Returns the n-th moment(s) where all the following hold:
-            - n >= 0
-            - a > n / 2
-            - b > n / 2
+
+        - n >= 0
+        - a > n / 2
+        - b > n / 2
+
         The result is np.nan in all other cases.
         """
         def nth_moment(n_k, a_k, b_k):
