@@ -198,7 +198,7 @@ class Covariance:
 
         Notes
         -----
-        Let the covariance matrix be :math:`A`and :math:`L` be the lower
+        Let the covariance matrix be :math:`A` and :math:`L` be the lower
         Cholesky factor such that :math:`L L^T = A`.
         Whitening of a data point :math:`x` is performed by computing
         :math:`L^{-1} x`. :math:`\log\det{A}` is calculated as
