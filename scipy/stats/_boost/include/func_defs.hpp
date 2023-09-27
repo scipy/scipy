@@ -11,12 +11,6 @@ typedef boost::math::policies::policy<
     boost::math::policies::discrete_quantile<
         boost::math::policies::integer_round_up > > Policy;
 
-// Run user_error function when evaluation_errors and overflow_errors are encountered
-typedef boost::math::policies::policy<
-    boost::math::policies::evaluation_error<boost::math::policies::user_error>,
-    boost::math::policies::overflow_error<boost::math::policies::user_error> > user_error_policy;
-BOOST_MATH_DECLARE_SPECIAL_FUNCTIONS(user_error_policy)
-
 
 // Raise a RuntimeWarning making users aware that something went wrong during
 // evaluation of the function, but return the best guess

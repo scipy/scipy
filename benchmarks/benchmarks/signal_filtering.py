@@ -6,7 +6,7 @@ from .common import Benchmark, safe_import
 
 with safe_import():
     from scipy.signal import (lfilter, firwin, decimate, butter, sosfilt,
-                              medfilt2d)
+                              medfilt2d, freqz)
 
 
 class Decimate(Benchmark):
@@ -102,3 +102,19 @@ class MedFilt2D(Benchmark):
 
     def peakmem_medfilt2d(self, threads):
         self._medfilt2d(threads)
+
+
+class FreqzRfft(Benchmark):
+    param_names = ['whole', 'nyquist', 'worN']
+    params = [
+        [False, True],
+        [False, True],
+        [64, 65, 128, 129, 256, 257, 258, 512, 513, 65536, 65537, 65538],
+    ]
+
+    def setup(self, whole, nyquist, worN):
+        self.y = np.zeros(worN)
+        self.y[worN//2] = 1.0
+
+    def time_freqz(self, whole, nyquist, worN):
+        freqz(self.y, whole=whole, include_nyquist=nyquist, worN=worN)

@@ -456,6 +456,20 @@ class TestNewton(TestScalarRootFinders):
                 != res_newton_default.iterations
                 == res_newton_default.function_calls/2)  # newton 2-point diff
 
+    @pytest.mark.parametrize('method', ['secant', 'newton'])
+    def test_int_x0_gh19280(self, method):
+        # Originally, `newton` ensured that only floats were passed to the
+        # callable. This was indadvertently changed by gh-17669. Check that
+        # it has been changed back.
+        def f(x):
+            # an integer raised to a negative integer power would fail
+            return x**-2 - 2
+
+        res = root_scalar(f, x0=1, method=method)
+        assert res.converged
+        assert_allclose(abs(res.root), 2**-0.5)
+        assert res.root.dtype == np.dtype(np.float64)
+
 
 def test_gh_5555():
     root = 0.1

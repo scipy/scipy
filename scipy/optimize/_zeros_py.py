@@ -290,7 +290,10 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                              full_output)
 
     # Convert to float (don't use float(x0); this works also for complex x0)
-    x0 = np.asarray(x0)[()]
+    # Use np.asarray because we want x0 to be a numpy object, not a Python
+    # object. e.g. np.complex(1+1j) > 0 is possible, but (1 + 1j) > 0 raises
+    # a TypeError
+    x0 = np.asarray(x0)[()] * 1.0
     p0 = x0
     funcalls = 0
     if fprime is not None:
