@@ -94,27 +94,27 @@ PYBIND11_MODULE(_pava_pybind, m) {
     m.def(
         "pava",
         &pava,
-        "Pool adjacent violators algorithm (PAVA) for isotonic regression"
-        ""
-        "The routine might modify the input arguments x, w and r inplace."
-        ""
-        "Parameters"
-        "----------"
-        "xa : contiguous ndarray of shape (n,) and dtype np.float64"
-        "wa : contiguous ndarray of shape (n,) and dtype np.float64"
-        "ra : contiguous ndarray of shape (n+1,) and dtype np.intp"
-        ""
-        "Returns"
-        "-------"
-        "x : ndarray"
-        "    The isotonic solution."
-        "w : ndarray"
-        "    The array of weights for each block."
-        "r : ndarray"
-        "    The array of indices for each block, such that xa[ra[i]:ra[i+1]]"
-        "    is the i-th block with all elements having the same value."
-        "b : np.intp"
-        "    Number of blocks.",
+        "Pool adjacent violators algorithm (PAVA) for isotonic regression\n"
+        "\n"
+        "The routine might modify the input arguments x, w and r inplace.\n"
+        "\n"
+        "Parameters\n"
+        "----------\n"
+        "xa : contiguous ndarray of shape (n,) and dtype np.float64\n"
+        "wa : contiguous ndarray of shape (n,) and dtype np.float64\n"
+        "ra : contiguous ndarray of shape (n+1,) and dtype np.intp\n"
+        "\n"
+        "Returns\n"
+        "-------\n"
+        "x : ndarray\n"
+        "    The isotonic solution.\n"
+        "w : ndarray\n"
+        "    The array of weights for each block.\n"
+        "r : ndarray\n"
+        "    The array of indices for each block, such that xa[ra[i]:ra[i+1]]\n"
+        "    is the i-th block with all elements having the same value.\n"
+        "b : np.intp\n"
+        "    Number of blocks.\n",
         py::arg("x"), py::arg("w"), py::arg("indices")
     );
 }
