@@ -2607,7 +2607,6 @@ def test_lapack_misaligned():
 # cholesky, rsf2csf, lu_solve, solve, eig_banded, eigvals_banded, eigh, diagsvd
 
 
-# do we need a version of this which works with xp arrays?
 class TestOverwrite:
     def test_eig(self):
         assert_no_overwrite(eig, [(3, 3)])

@@ -1710,7 +1710,6 @@ class TestMatrixNorms:
         assert_(b.shape == c.shape)
 
 
-# do we need a version of this which works with xp arrays?
 class TestOverwrite:
     def test_solve(self):
         assert_no_overwrite(solve, [(3, 3), (3,)])

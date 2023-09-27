@@ -189,7 +189,7 @@ class TestCholeskyBanded:
 
 
 class TestOverwrite:
-    # do we need a version of this which works with xp arrays?
+
     def test_cholesky(self):
         assert_no_overwrite(cholesky, [(3, 3)])
 
