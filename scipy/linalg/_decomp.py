@@ -29,7 +29,7 @@ from .lapack import get_lapack_funcs, _compute_lwork
 from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 
 from scipy._lib._array_api import (
-    array_namespace, is_numpy, as_xparray, xp_unsupported_param_msg
+    array_namespace, is_numpy, as_xparray, xp_unsupported_args
 )
 
 _I = numpy.array(1j, dtype='F')
@@ -451,24 +451,19 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
                      turbo=turbo, eigvals=eigvals, type=type,
                      subset_by_index=subset_by_index,
                      subset_by_value=subset_by_value, driver=driver)
-    if b is not None:
-        raise ValueError(xp_unsupported_param_msg("b"))
-    if not lower:
-        raise ValueError(xp_unsupported_param_msg("lower"))
-    if eigvals_only:
-        raise ValueError(xp_unsupported_param_msg("eigvals_only"))
-    if turbo != _NoValue:
-        raise ValueError(xp_unsupported_param_msg("turbo"))
-    if eigvals != _NoValue:
-        raise ValueError(xp_unsupported_param_msg("eigvals"))
-    if type != 1:
-        raise ValueError(xp_unsupported_param_msg("type"))
-    if subset_by_index is not None:
-        raise ValueError(xp_unsupported_param_msg("subset_by_index"))
-    if subset_by_value is not None:
-        raise ValueError(xp_unsupported_param_msg("subset_by_value"))
-    if driver is not None:
-        raise ValueError(xp_unsupported_param_msg("driver"))
+    unsupported_args = {
+        'b': b is not None,
+        'lower': not lower,
+        'eigvals_only': eigvals_only,
+        'turbo': turbo != _NoValue,
+        'eigvals': eigvals != _NoValue,
+        'type': type != 1,
+        'subset_by_index': subset_by_index is not None,
+        'subset_by_value': subset_by_value is not None,
+        'driver': driver is not None
+    }
+    if any(unsupported_args.values()):
+        xp_unsupported_args(unsupported_args)
     if hasattr(xp, 'linalg'):
         return xp.linalg.eigh(a)
     a = numpy.asarray(a)
@@ -1071,22 +1066,18 @@ def eigvalsh(a, b=None, *, lower=True, overwrite_a=False,
                      turbo=turbo, eigvals=eigvals, type=type,
                      subset_by_index=subset_by_index,
                      subset_by_value=subset_by_value, driver=driver)
-    if b is not None:
-        raise ValueError(xp_unsupported_param_msg("b"))
-    if not lower:
-        raise ValueError(xp_unsupported_param_msg("lower"))
-    if turbo != _NoValue:
-        raise ValueError(xp_unsupported_param_msg("turbo"))
-    if eigvals != _NoValue:
-        raise ValueError(xp_unsupported_param_msg("eigvals"))
-    if type != 1:
-        raise ValueError(xp_unsupported_param_msg("type"))
-    if subset_by_index is not None:
-        raise ValueError(xp_unsupported_param_msg("subset_by_index"))
-    if subset_by_value is not None:
-        raise ValueError(xp_unsupported_param_msg("subset_by_value"))
-    if driver is not None:
-        raise ValueError(xp_unsupported_param_msg("driver"))
+    unsupported_args = {
+        'b': b is not None,
+        'lower': not lower,
+        'turbo': turbo != _NoValue,
+        'eigvals': eigvals != _NoValue,
+        'type': type != 1,
+        'subset_by_index': subset_by_index is not None,
+        'subset_by_value': subset_by_value is not None,
+        'driver': driver is not None
+    }
+    if any(unsupported_args.values()):
+        xp_unsupported_args(unsupported_args)
     if hasattr(xp, 'linalg'):
         return xp.linalg.eigvalsh(a)
     a = numpy.asarray(a)

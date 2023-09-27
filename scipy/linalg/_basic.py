@@ -20,7 +20,7 @@ from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 from scipy.linalg._flinalg_py import get_flinalg_funcs  # noqa
 
 from scipy._lib._array_api import (
-    array_namespace, is_numpy, as_xparray, xp_unsupported_param_msg
+    array_namespace, is_numpy, as_xparray, xp_unsupported_args
 )
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
@@ -157,12 +157,13 @@ def solve(a, b, lower=False, overwrite_a=False,
     if is_numpy(xp):
         return _solve(a, b, lower=lower, overwrite_a=overwrite_a,
                       overwrite_b=overwrite_b, assume_a=assume_a, transposed=transposed)
-    if lower:
-        raise ValueError(xp_unsupported_param_msg("lower"))
-    if assume_a != 'gen':
-        raise ValueError(xp_unsupported_param_msg("assume_a"))
-    if transposed:
-        raise ValueError(xp_unsupported_param_msg("transposed"))
+    unsupported_args = {
+        'lower': lower,
+        'assume_a': assume_a != 'gen',
+        'transposed': transposed
+    }
+    if any(unsupported_args.values()):
+        xp_unsupported_args(unsupported_args)
     if hasattr(xp, 'linalg'):
         dtype = xp.result_type(a, b, xp.float32)
         a = xp.astype(a, dtype)
@@ -1498,14 +1499,14 @@ def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True,
     if is_numpy(xp):
         return _pinv(a, atol=atol, rtol=rtol, return_rank=return_rank,
                      cond=cond, rcond=rcond)
-    if atol is not None:
-        raise ValueError(xp_unsupported_param_msg("atol"))
-    if return_rank:
-        raise ValueError(xp_unsupported_param_msg("return_rank"))
-    if cond != _NoValue:
-        raise ValueError(xp_unsupported_param_msg("cond"))
-    if rcond != _NoValue:
-        raise ValueError(xp_unsupported_param_msg("rcond"))
+    unsupported_args = {
+        'atol': atol is not None,
+        'return_rank': return_rank,
+        'cond': cond != _NoValue,
+        'rcond': rcond != _NoValue
+    }
+    if any(unsupported_args.values()):
+        xp_unsupported_args(unsupported_args)
     if hasattr(xp, 'linalg'):
         dtype = xp.result_type(a, xp.float32)
         a = xp.astype(a, dtype)

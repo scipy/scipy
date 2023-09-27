@@ -8,7 +8,7 @@ from .lapack import get_lapack_funcs, _compute_lwork
 from ._decomp import _asarray_validated
 
 from scipy._lib._array_api import (
-    array_namespace, is_numpy, as_xparray, xp_unsupported_param_msg
+    array_namespace, is_numpy, as_xparray, xp_unsupported_args
 )
 
 __all__ = ['svd', 'svdvals', 'diagsvd', 'orth', 'subspace_angles', 'null_space']
@@ -115,10 +115,12 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     if is_numpy(xp):
         return _svd(a, full_matrices=full_matrices, compute_uv=compute_uv,
                     overwrite_a=overwrite_a, lapack_driver=lapack_driver)
-    if not compute_uv:
-        raise ValueError(xp_unsupported_param_msg("compute_uv"))
-    if lapack_driver != 'gesdd':
-        raise ValueError(xp_unsupported_param_msg("lapack_driver"))
+    unsupported_args = {
+        'compute_uv': not compute_uv,
+        'lapack_driver': lapack_driver != 'gesdd'
+    }
+    if any(unsupported_args.values()):
+        xp_unsupported_args(unsupported_args)
     if hasattr(xp, 'linalg'):
         dtype = xp.result_type(a, xp.float32)
         a = xp.astype(a, dtype)

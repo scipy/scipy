@@ -339,3 +339,13 @@ def cov(x, *, xp=None):
 
 def xp_unsupported_param_msg(param):
     return f'Providing {param!r} is only supported for numpy arrays.'
+
+
+def xp_unsupported_args(arg_or_dict):
+    if isinstance(arg_or_dict, dict):
+        args = [k for k, v in arg_or_dict.items() if v]
+    else:
+        args = [arg_or_dict]
+
+    for arg in args:
+        raise ValueError(xp_unsupported_param_msg(arg))
