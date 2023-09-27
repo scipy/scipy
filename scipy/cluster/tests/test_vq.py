@@ -133,8 +133,10 @@ class TestVq:
         initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
         arrays = [xp.asarray] if SCIPY_ARRAY_API else [np.asarray, matrix]
         for tp in arrays:
+            # label1.dtype varies between int32 and int64 over platforms
             label1 = py_vq(tp(X), tp(initc))[0]
-            xp_assert_equal(label1, xp.asarray(LABEL1, dtype=xp.int64))
+            xp_assert_equal(label1, xp.asarray(LABEL1, dtype=xp.int64),
+                            check_dtype=False)
 
     @skip_if_array_api
     def test_vq(self):
@@ -154,7 +156,8 @@ class TestVq:
         data = xp.asarray(data)
         initc = xp.asarray(initc)
         ta, tb = py_vq(data[:, np.newaxis], initc[:, np.newaxis])
-        xp_assert_equal(ta, xp.asarray(a, dtype=xp.int64))
+        # ta.dtype varies between int32 and int64 over platforms
+        xp_assert_equal(ta, xp.asarray(a, dtype=xp.int64), check_dtype=False)
         xp_assert_equal(tb, xp.asarray(b))
 
     @skip_if_array_api
@@ -179,7 +182,8 @@ class TestVq:
             xp.asarray(X), xp.asarray(code_book)
         )
         xp_assert_close(dis1, xp.asarray(dis0), rtol=1e-5)
-        xp_assert_equal(codes1, xp.asarray(codes0, dtype=xp.int64))
+        # codes1.dtype varies between int32 and int64 over platforms
+        xp_assert_equal(codes1, xp.asarray(codes0, dtype=xp.int64), check_dtype=False)
 
         X = X.astype(np.float32)
         code_book = code_book.astype(np.float32)
@@ -189,7 +193,8 @@ class TestVq:
             xp.asarray(X), xp.asarray(code_book)
         )
         xp_assert_close(dis1, xp.asarray(dis0, dtype=xp.float64), rtol=1e-5)
-        xp_assert_equal(codes1, xp.asarray(codes0, dtype=xp.int64))
+        # codes1.dtype varies between int32 and int64 over platforms
+        xp_assert_equal(codes1, xp.asarray(codes0, dtype=xp.int64), check_dtype=False)
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -201,8 +206,9 @@ class TestVq:
         codes1, dis1 = py_vq(
             xp.asarray(X), xp.asarray(code_book)
         )
-        xp_assert_close(dis1, xp.asarray(dis0), 1e-5)
-        xp_assert_equal(codes1, xp.asarray(codes0, dtype=xp.int64))
+        xp_assert_close(dis1, xp.asarray(dis0), rtol=1e-5)
+        # codes1.dtype varies between int32 and int64 over platforms
+        xp_assert_equal(codes1, xp.asarray(codes0, dtype=xp.int64), check_dtype=False)
 
 
 # Whole class skipped on GPU for now;
