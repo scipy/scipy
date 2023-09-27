@@ -18,20 +18,6 @@ from scipy._lib._array_api import xp_assert_close
 class TestCholesky:
 
     @array_api_compatible
-    @pytest.mark.parametrize("dtype", ["float32", "float64"])
-    def test_dtypes_standard(self, dtype, xp):
-        a = xp.asarray([[8, 2, 3], [2, 9, 3], [3, 3, 6]], dtype=getattr(xp, dtype))
-        c = cholesky(a)
-        rtol = 1e-7 if dtype == "float64" else 1e-6
-        xp_assert_close(c.T @ c, xp.asarray(a, dtype=getattr(xp, dtype)), rtol=rtol)
-
-    @pytest.mark.parametrize("dtype", [np.int32, np.int64])
-    def test_dtypes_nonstandard(self, dtype):
-        a = np.asarray([[8, 2, 3], [2, 9, 3], [3, 3, 6]], dtype=dtype)
-        c = cholesky(a)
-        xp_assert_close(c.T @ c, a.astype(np.float64))
-
-    @array_api_compatible
     def test_simple(self, xp):
         a = xp.asarray([[8., 2, 3], [2, 9, 3], [3, 3, 6]])
         c = cholesky(a)
@@ -99,6 +85,20 @@ class TestCholesky:
             c = c.T
             a = c @ xp.conj(c).T
             xp_assert_close(cholesky(a, lower=True), c)
+
+    @array_api_compatible
+    @pytest.mark.parametrize("dtype", ["float32", "float64"])
+    def test_dtypes_standard(self, dtype, xp):
+        a = xp.asarray([[8, 2, 3], [2, 9, 3], [3, 3, 6]], dtype=getattr(xp, dtype))
+        c = cholesky(a)
+        rtol = 1e-7 if dtype == "float64" else 1e-6
+        xp_assert_close(c.T @ c, xp.asarray(a, dtype=getattr(xp, dtype)), rtol=rtol)
+
+    @pytest.mark.parametrize("dtype", [np.int32, np.int64])
+    def test_dtypes_nonstandard(self, dtype):
+        a = np.asarray([[8, 2, 3], [2, 9, 3], [3, 3, 6]], dtype=dtype)
+        c = cholesky(a)
+        xp_assert_close(c.T @ c, a.astype(np.float64))
 
 
 class TestCholeskyBanded:

@@ -494,6 +494,7 @@ class TestSolveHBanded:
 
 
 class TestSolve:
+
     def setup_method(self):
         np.random.seed(1234)
 
@@ -509,23 +510,6 @@ class TestSolve:
         b = xp.asarray([1, 0j])
         x0 = solve(a, b)
         xp_assert_close(xp_test.matmul(a, x0), xp.asarray([1, 0]), check_dtype=False)
-
-    @array_api_compatible
-    @pytest.mark.parametrize("dtype", ["float32", "float64"])
-    def test_dtypes_standard(self, dtype, xp):
-        a = xp.asarray([[1, 20], [-30, 4]], dtype=getattr(xp, dtype))
-        xp_test = array_namespace(a)
-        b = xp.asarray([[1, 0], [0, 1]], dtype=getattr(xp, dtype))
-        x = solve(a, b)
-        atol = 1e-15 if dtype == "float64" else 1e-7
-        xp_assert_close(xp_test.matmul(a, x), b, atol=atol)
-
-    @pytest.mark.parametrize("dtype", [np.int32, np.int64])
-    def test_dtypes_nonstandard(self, dtype):
-        a = np.asarray([[1, 20], [-30, 4]], dtype=dtype)
-        b = np.asarray([[1, 0], [0, 1]], dtype=dtype)
-        x = solve(a, b)
-        xp_assert_close(a @ x, b.astype(np.float64), atol=1e-15)
 
     @array_api_compatible
     def test_simple(self, xp):
@@ -863,6 +847,23 @@ class TestSolve:
                                 atol=tol * size,
                                 rtol=tol * size,
                                 err_msg=err_msg)
+                
+    @array_api_compatible
+    @pytest.mark.parametrize("dtype", ["float32", "float64"])
+    def test_dtypes_standard(self, dtype, xp):
+        a = xp.asarray([[1, 20], [-30, 4]], dtype=getattr(xp, dtype))
+        xp_test = array_namespace(a)
+        b = xp.asarray([[1, 0], [0, 1]], dtype=getattr(xp, dtype))
+        x = solve(a, b)
+        atol = 1e-15 if dtype == "float64" else 1e-7
+        xp_assert_close(xp_test.matmul(a, x), b, atol=atol)
+
+    @pytest.mark.parametrize("dtype", [np.int32, np.int64])
+    def test_dtypes_nonstandard(self, dtype):
+        a = np.asarray([[1, 20], [-30, 4]], dtype=dtype)
+        b = np.asarray([[1, 0], [0, 1]], dtype=dtype)
+        x = solve(a, b)
+        xp_assert_close(a @ x, b.astype(np.float64), atol=1e-15)
 
 
 class TestSolveTriangular:
@@ -928,24 +929,9 @@ class TestSolveTriangular:
 
 
 class TestInv:
+
     def setup_method(self):
         np.random.seed(1234)
-
-    @array_api_compatible
-    @pytest.mark.parametrize("dtype", ["float32", "float64"])
-    def test_dtypes_standard(self, dtype, xp):
-        a = xp.asarray([[1, 2], [3, 4]], dtype=getattr(xp, dtype))
-        a_inv = inv(a)
-        xp_test = array_namespace(a)
-        atol = 1e-14 if dtype == "float64" else 1e-5
-        xp_assert_close(xp_test.matmul(a, a_inv), xp.eye(2, dtype=getattr(xp, dtype)),
-                        atol=atol)
-
-    @pytest.mark.parametrize("dtype", [np.int32, np.int64])
-    def test_dtypes_nonstandard(self, dtype):
-        a = np.asarray([[1, 2], [3, 4]], dtype=dtype)
-        a_inv = inv(a)
-        xp_assert_close(a @ a_inv, np.eye(2), atol=1e-15)
 
     @array_api_compatible
     def test_simple(self, xp):
@@ -993,8 +979,25 @@ class TestInv:
         xp_assert_close(xp_test.matmul(a, a_inv), xp.asarray([[1., 0], [0, 1]]),
                         atol=1e-15)
 
+    @array_api_compatible
+    @pytest.mark.parametrize("dtype", ["float32", "float64"])
+    def test_dtypes_standard(self, dtype, xp):
+        a = xp.asarray([[1, 2], [3, 4]], dtype=getattr(xp, dtype))
+        a_inv = inv(a)
+        xp_test = array_namespace(a)
+        atol = 1e-14 if dtype == "float64" else 1e-5
+        xp_assert_close(xp_test.matmul(a, a_inv), xp.eye(2, dtype=getattr(xp, dtype)),
+                        atol=atol)
+
+    @pytest.mark.parametrize("dtype", [np.int32, np.int64])
+    def test_dtypes_nonstandard(self, dtype):
+        a = np.asarray([[1, 2], [3, 4]], dtype=dtype)
+        a_inv = inv(a)
+        xp_assert_close(a @ a_inv, np.eye(2), atol=1e-15)
+
 
 class TestDet:
+
     def setup_method(self):
         self.rng = np.random.default_rng(1680305949878959)
 
@@ -1027,21 +1030,6 @@ class TestDet:
         assert deta.dtype.char == 'D'
         assert deta.shape == (4, 5)
         assert_allclose(deta, np.squeeze(a))
-
-    @array_api_compatible
-    @pytest.mark.parametrize("dtype", ["float32", "float64"])
-    def test_dtypes_standard(self, dtype, xp):
-        a = [[2, 4], [1, 3]]
-        d1 = det(xp.asarray(a, dtype=getattr(xp, dtype)))
-        d2 = xp.asarray(2, dtype=getattr(xp, dtype))
-        rtol = 1e-7 if dtype == "float64" else 1e-6
-        # float64 for numpy, float32 for other backends
-        xp_assert_close(d1, d2, rtol=rtol, check_dtype=False)
-
-    @pytest.mark.parametrize("dtype", [np.int32, np.int64])
-    def test_dtypes_nonstandard(self, dtype):
-        a = np.asarray([[2, 4], [1, 3]], dtype=dtype)
-        xp_assert_close(det(a), np.asarray(2, np.float64))
     
     @array_api_compatible
     @pytest.mark.parametrize('shape', [[2, 2], [20, 20], [3, 2, 20, 20]])
@@ -1160,6 +1148,21 @@ class TestDet:
         a = xp.asarray([[1, 2], [3, xp.inf]])
         with assert_raises(ValueError, match='array must not contain'):
             det(a)
+    
+    @array_api_compatible
+    @pytest.mark.parametrize("dtype", ["float32", "float64"])
+    def test_dtypes_standard(self, dtype, xp):
+        a = [[2, 4], [1, 3]]
+        d1 = det(xp.asarray(a, dtype=getattr(xp, dtype)))
+        d2 = xp.asarray(2, dtype=getattr(xp, dtype))
+        rtol = 1e-7 if dtype == "float64" else 1e-6
+        # float64 for numpy, float32 for other backends
+        xp_assert_close(d1, d2, rtol=rtol, check_dtype=False)
+
+    @pytest.mark.parametrize("dtype", [np.int32, np.int64])
+    def test_dtypes_nonstandard(self, dtype):
+        a = np.asarray([[2, 4], [1, 3]], dtype=dtype)
+        xp_assert_close(det(a), np.asarray(2, np.float64))
 
 
 def direct_lstsq(a, b, cmplx=0):
@@ -1460,24 +1463,9 @@ class TestLstsq:
 
 
 class TestPinv:
+
     def setup_method(self):
         np.random.seed(1234)
-
-    @array_api_compatible
-    @pytest.mark.parametrize("dtype", ["float32", "float64"])
-    def test_dtypes_standard(self, dtype, xp):
-        a = xp.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 10]], dtype=getattr(xp, dtype))
-        xp_test = array_namespace(a)
-        a_pinv = pinv(a)
-        atol = 1e-13 if dtype == "float64" else 1e-4
-        xp_assert_close(xp_test.matmul(a, a_pinv), xp.eye(3, dtype=getattr(xp, dtype)),
-                        atol=atol)
-
-    @pytest.mark.parametrize("dtype", [np.int32, np.int64])
-    def test_dtypes_nonstandard(self, dtype):
-        a = np.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 10]], dtype=dtype)
-        a_pinv = pinv(a)
-        xp_assert_close(a @ a_pinv, np.eye(3), atol=1e-13)
 
     @array_api_compatible
     def test_simple_real(self, xp):
@@ -1577,6 +1565,22 @@ class TestPinv:
     def test_positional_deprecation(self):
         with pytest.deprecated_call(match="use keyword arguments"):
             pinv(np.ones((2,2)), 0., 1e-10)
+
+    @array_api_compatible
+    @pytest.mark.parametrize("dtype", ["float32", "float64"])
+    def test_dtypes_standard(self, dtype, xp):
+        a = xp.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 10]], dtype=getattr(xp, dtype))
+        xp_test = array_namespace(a)
+        a_pinv = pinv(a)
+        atol = 1e-13 if dtype == "float64" else 1e-4
+        xp_assert_close(xp_test.matmul(a, a_pinv), xp.eye(3, dtype=getattr(xp, dtype)),
+                        atol=atol)
+
+    @pytest.mark.parametrize("dtype", [np.int32, np.int64])
+    def test_dtypes_nonstandard(self, dtype):
+        a = np.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 10]], dtype=dtype)
+        a_pinv = pinv(a)
+        xp_assert_close(a @ a_pinv, np.eye(3), atol=1e-13)
 
 
 class TestPinvSymmetric:

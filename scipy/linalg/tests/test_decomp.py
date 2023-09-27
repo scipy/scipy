@@ -1192,21 +1192,6 @@ class TestSVD_GESVD:
 class TestSVDVals:
 
     @array_api_compatible
-    @pytest.mark.parametrize("dtype", ["float32", "float64"])
-    def test_dtypes_standard(self, dtype, xp):
-        a = xp.asarray([[1, 2, 3], [1, 2, 3], [2, 5, 6]], dtype=getattr(xp, dtype))
-        s = svdvals(a)
-        assert s.shape[0] == 3
-        assert s[0] >= s[1] >= s[2]
-
-    @pytest.mark.parametrize("dtype", [np.int32, np.int64])
-    def check_dtypes_nonstandard(self, dtype):
-        a = np.asarray([[1, 2, 3], [1, 2, 3], [2, 5, 6]], dtype=dtype)
-        s = svdvals(a)
-        assert s.shape[0] == 3
-        assert s[0] >= s[1] >= s[2]
-
-    @array_api_compatible
     def test_empty(self, xp):
         for a in xp.asarray([[]]), xp.empty((2, 0)), xp.ones((0, 3)):
             s = svdvals(a)
@@ -1269,6 +1254,21 @@ class TestSVDVals:
         # Shouldn't crash:
         svdvals(a)
 
+    @array_api_compatible
+    @pytest.mark.parametrize("dtype", ["float32", "float64"])
+    def test_dtypes_standard(self, dtype, xp):
+        a = xp.asarray([[1, 2, 3], [1, 2, 3], [2, 5, 6]], dtype=getattr(xp, dtype))
+        s = svdvals(a)
+        assert s.shape[0] == 3
+        assert s[0] >= s[1] >= s[2]
+
+    @pytest.mark.parametrize("dtype", [np.int32, np.int64])
+    def check_dtypes_nonstandard(self, dtype):
+        a = np.asarray([[1, 2, 3], [1, 2, 3], [2, 5, 6]], dtype=dtype)
+        s = svdvals(a)
+        assert s.shape[0] == 3
+        assert s[0] >= s[1] >= s[2]
+
 
 class TestDiagSVD:
 
@@ -1278,20 +1278,6 @@ class TestDiagSVD:
 
 
 class TestQR:
-
-    @array_api_compatible
-    @pytest.mark.parametrize("dtype", ["float32", "float64"])
-    def test_dtypes_standard(self, dtype, xp):
-        a = xp.asarray([[8, 2, 3], [2, 9, 3], [5, 3, 6]], dtype=getattr(xp, dtype))
-        q, _ = qr(a)
-        atol = 1e-15 if dtype == "float64" else 1e-6
-        xp_assert_close(q.T @ q, xp.eye(3, dtype=getattr(xp, dtype)), atol=atol)
-
-    @pytest.mark.parametrize("dtype", [np.int32, np.int64])
-    def check_dtypes_nonstandard(self, dtype):
-        a = np.asarray([[8, 2, 3], [2, 9, 3], [5, 3, 6]], dtype=dtype)
-        q, _ = qr(a)
-        xp_assert_close(q.T @ q, np.eye(3))
     
     @array_api_compatible
     def test_simple(self, xp):
@@ -1859,6 +1845,20 @@ class TestQR:
         # Test against invalid lwork
         assert_raises(Exception, qr, (a,), {'lwork': 0})
         assert_raises(Exception, qr, (a,), {'lwork': 2})
+
+    @array_api_compatible
+    @pytest.mark.parametrize("dtype", ["float32", "float64"])
+    def test_dtypes_standard(self, dtype, xp):
+        a = xp.asarray([[8, 2, 3], [2, 9, 3], [5, 3, 6]], dtype=getattr(xp, dtype))
+        q, _ = qr(a)
+        atol = 1e-15 if dtype == "float64" else 1e-6
+        xp_assert_close(q.T @ q, xp.eye(3, dtype=getattr(xp, dtype)), atol=atol)
+
+    @pytest.mark.parametrize("dtype", [np.int32, np.int64])
+    def check_dtypes_nonstandard(self, dtype):
+        a = np.asarray([[8, 2, 3], [2, 9, 3], [5, 3, 6]], dtype=dtype)
+        q, _ = qr(a)
+        xp_assert_close(q.T @ q, np.eye(3))
 
 
 class TestRQ:
