@@ -2185,7 +2185,10 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
             # check curvature
             Ap = asarray(Ap).squeeze()  # get rid of matrices...
             curv = np.dot(psupi, Ap)
+            if curv <= 3 * float64eps:
+                print(f"{curv=} is smaller than {3*float64eps}")
             if 0 <= curv <= 16 * float64eps * psupi_norm2:
+                print(f"{curv=} is tiny, i.e., smaller than {16 * float64eps * psupi_norm2}")
                 # See https://arxiv.org/abs/1803.02924, Algo 1 Capped Conjugate Gradient.
                 # Note that 16 * eps is a bit arbitrary. We just want it to be a little
                 # larger than eps.
