@@ -349,3 +349,7 @@ def xp_unsupported_args(arg_or_dict):
 
     for arg in args:
         raise ValueError(xp_unsupported_param_msg(arg))
+
+
+def is_complex(x, xp):
+    return xp.isdtype(x.dtype, 'complex floating')

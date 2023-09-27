@@ -2,7 +2,6 @@ _stats_pxd = [
   fs.copyfile('__init__.py'),
   fs.copyfile('_stats.pxd'),
   fs.copyfile('_biasedurn.pxd'),
-  fs.copyfile('_unuran/unuran.pxd'),
 ]
 
 stats_special_cython_gen = generator(cython,
@@ -91,7 +90,16 @@ _stats_gen_pyx = custom_target('_stats_gen_pyx',
   ],
   input: '_generate_pyx.py',
   command: [py3, '@INPUT@', '-o', '@OUTDIR@'],
-  depends: _stats_pxd
+  depends: _stats_pxd,
+  depend_files: [
+    '_boost/include/code_gen.py',
+    '_boost/include/gen_func_defs_pxd.py',
+    '_boost/include/_info.py',
+    # TODO: once setup.py is gone, remove this .pxd file from here and from the
+    #       output of this custom_target, and stop copying it manually in
+    #       code_gen.py. Instead, use fs.copyfile at the top of this file.
+    '_boost/include/templated_pyufunc.pxd',
+  ]
 )
 
 # Only needed to establish a dependency; see comments in linalg/meson.build
@@ -119,8 +127,6 @@ nct_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[8])
 skewnorm_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[9])
 invgauss_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[10])
 
-# Extra dependency from _lib
-unuran_wrap_pyx = lib_cython_gen.process('_unuran/unuran_wrapper.pyx')
 
 biasedurn = py3.extension_module('_biasedurn',
   [
