@@ -503,12 +503,14 @@ class TestSolve:
         a = xp.asarray([[1, 1], [1.0, 0]])  # ok
         x0 = solve(a, xp.asarray([1, 0j]))
         xp_test = array_namespace(x0)
+        # complex64 for torch, complex128 for other backends
         xp_assert_close(xp_test.matmul(a, x0), xp.asarray([1, 0]), check_dtype=False)
 
         # gives failure with clapack.zgesv(..,rowmajor=0)
         a = xp.asarray([[1, 1], [1.2, 0]])
         b = xp.asarray([1, 0j])
         x0 = solve(a, b)
+        # complex64 for torch, complex128 for other backends
         xp_assert_close(xp_test.matmul(a, x0), xp.asarray([1, 0]), check_dtype=False)
 
     @array_api_compatible
@@ -957,7 +959,7 @@ class TestInv:
     def test_simple_complex(self, xp):
         a = xp.asarray([[1, 2], [3, 4j]])
         a_inv = inv(a)
-        # complex64 on torch, complex128 for other backends
+        # complex64 for torch, complex128 for other backends
         xp_assert_close(a @ a_inv, xp.asarray([[1, 0], [0, 1]]), atol=1e-7,
                         check_dtype=False)
 
@@ -1030,7 +1032,7 @@ class TestDet:
         assert deta.dtype.char == 'D'
         assert deta.shape == (4, 5)
         assert_allclose(deta, np.squeeze(a))
-    
+
     @array_api_compatible
     @pytest.mark.parametrize('shape', [[2, 2], [20, 20], [3, 2, 20, 20]])
     def test_simple_det_shapes_real_complex(self, shape, xp):
@@ -1094,9 +1096,9 @@ class TestDet:
         a = self.rng.random([n, n]).astype(typ)  # value is not important
         assert isinstance(det(a), (np.float64, np.complex128))
 
-    # currently failing since as_xparray raises a different exception first
     def test_incompatible_dtype_input(self):
-        pytest.xfail("as_xparray raises a different exception for string dtypes")
+        pytest.xfail("as_xparray raises a different exception for string dtypes, "
+                     "see gh-91276")
         # Double backslashes needed for escaping pytest regex.
         msg = 'cannot be cast to float\\(32, 64\\)'
 
