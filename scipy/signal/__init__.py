@@ -195,6 +195,7 @@ Discrete-time linear systems
    dstep            -- Step response of a discrete-time LTI system.
    dfreqresp        -- Frequency response of a discrete-time LTI system.
    dbode            -- Bode magnitude and phase data (discrete-time LTI).
+   nearest_advocate -- Post-hoc synchronization of event-based time-series.
 
 LTI representations
 ===================
@@ -335,6 +336,7 @@ from ._spectral_py import *
 from ._short_time_fft import *
 from ._wavelets import *
 from ._peak_finding import *
+from ._nearest_advocate import nearest_advocate
 from ._czt import *
 from .windows import get_window  # keep this one in signal namespace
 
