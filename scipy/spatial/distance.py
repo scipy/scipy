@@ -620,6 +620,23 @@ def correlation(u, v, w=None, centered=True):
     correlation : double
         The correlation distance between 1-D array `u` and `v`.
 
+    Examples
+    --------
+    Find the correlation between two arrays.
+
+    >>> from scipy.spatial.distance import correlation
+    >>> correlation([1, 0, 1], [1, 1, 0])
+    1.5
+
+    Using a weighting array, the correlation can be calculated as:
+
+    >>> correlation([1, 0, 1], [1, 1, 0], w=[0.9, 0.1, 0.1])
+    1.1
+
+    If centering is not needed, the correlation can be calculated as:
+
+    >>> correlation([1, 0, 1], [1, 1, 0], centered=False)
+    0.5
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
@@ -2601,6 +2618,15 @@ def num_obs_dm(d):
     num_obs_dm : int
         The number of observations in the redundant distance matrix.
 
+    Examples
+    --------
+    Find the number of original observations corresponding
+    to a square redundant distance matrix d.
+    
+    >>> from scipy.spatial.distance import num_obs_dm
+    >>> d = [[0, 100, 200], [100, 0, 150], [200, 150, 0]]
+    >>> num_obs_dm(d)
+    3
     """
     d = np.asarray(d, order='c')
     is_valid_dm(d, tol=np.inf, throw=True, name='d')
@@ -2622,6 +2648,15 @@ def num_obs_y(Y):
     n : int
         The number of observations in the condensed distance matrix `Y`.
 
+    Examples
+    --------
+    Find the number of original observations corresponding to a
+    condensed distance matrix Y.
+    
+    >>> from scipy.spatial.distance import num_obs_y
+    >>> Y = [1, 2, 3.5, 7, 10, 4]
+    >>> num_obs_y(Y)
+    4
     """
     Y = np.asarray(Y, order='c')
     is_valid_y(Y, throw=True, name='Y')
