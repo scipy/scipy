@@ -337,8 +337,15 @@ def cov(x, *, xp=None):
     return xp.squeeze(c, axis=axes)
 
 
-def xp_unsupported_param_msg(param):
-    return f'Providing {param!r} is only supported for numpy arrays.'
+def xp_unsupported_param_msg(args):
+    msg = ""
+    if isinstance(args, (list, tuple)):
+        for arg in args:
+            msg += f'{arg!r}, '
+        msg = msg[:-2]
+    else:
+        msg = f'{args!r}'
+    return f'Providing {msg} is only supported for numpy arrays.'
 
 
 def xp_unsupported_args(arg_or_dict):
@@ -346,9 +353,7 @@ def xp_unsupported_args(arg_or_dict):
         args = [k for k, v in arg_or_dict.items() if v]
     else:
         args = [arg_or_dict]
-
-    for arg in args:
-        raise ValueError(xp_unsupported_param_msg(arg))
+    raise ValueError(xp_unsupported_param_msg(args))
 
 
 def is_complex(x, xp):
