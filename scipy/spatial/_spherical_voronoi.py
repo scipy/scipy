@@ -258,7 +258,12 @@ class SphericalVoronoi:
         """
         if self._dim != 3:
             raise TypeError("Only supported for three-dimensional point sets")
-        _voronoi.sort_vertices_of_regions(self._simplices, self.regions)
+        tmp = _voronoi.sort_vertices_of_regions(self._simplices, self.regions)
+        # the Cython version modifies self.regions in-place, 
+        # while the Pythran version works on a deep copy of input argument
+        # so if return is None, it means you are calling the Cython one
+        if tmp is not None:
+            self.regions = tmp
 
     def _calculate_areas_3d(self):
         self.sort_vertices_of_regions()

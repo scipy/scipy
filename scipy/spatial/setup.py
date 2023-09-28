@@ -1,3 +1,4 @@
+import os
 from os.path import join, dirname
 import glob
 
@@ -103,7 +104,15 @@ def configuration(parent_package='', top_path=None):
                                **numpy_nodepr_api)
     ext._pre_build_hook = pre_build_hook
 
-    config.add_extension('_voronoi',
+    if int(os.environ.get('SCIPY_USE_PYTHRAN', 1)):
+        import pythran
+        ext = pythran.dist.PythranExtension(
+            'scipy.spatial._voronoi',
+            sources=["scipy/spatial/_voronoi.py"],
+            config=['compiler.blas=none'])
+        config.ext_modules.append(ext)
+    else:
+        config.add_extension('_voronoi',
                          sources=['_voronoi.c'])
 
     config.add_extension('_hausdorff',
