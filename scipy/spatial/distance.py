@@ -635,7 +635,7 @@ def correlation(u, v, w=None, centered=True):
 
     If centering is not needed, the correlation can be calculated as:
 
-    >>> correlation([1, 0, 1], [1, 1, 0], centered = False)
+    >>> correlation([1, 0, 1], [1, 1, 0], centered=False)
     0.5
     """
     u = _validate_vector(u)
@@ -2624,7 +2624,7 @@ def num_obs_dm(d):
     to a square redundant distance matrix d.
     
     >>> from scipy.spatial.distance import num_obs_dm
-    >>> d = [[0, 100, 200],[100, 0, 150],[200, 150, 0]]
+    >>> d = [[0, 100, 200], [100, 0, 150], [200, 150, 0]]
     >>> num_obs_dm(d)
     3
     """
