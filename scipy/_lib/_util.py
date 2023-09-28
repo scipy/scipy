@@ -37,8 +37,8 @@ np_ulong: type
 
 if np.lib.NumpyVersion(np.__version__) >= "2.0.0.dev0":
     try:
-        np_long = np.long
-        np_ulong = np.ulong
+        np_long = np.long  # type: ignore[attr-defined]
+        np_ulong = np.ulong  # type: ignore[attr-defined]
     except AttributeError:
             np_long = np.int_
             np_ulong = np.uint
