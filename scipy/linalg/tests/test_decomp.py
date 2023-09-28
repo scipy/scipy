@@ -1184,7 +1184,7 @@ class TestSVDVals:
         assert s[0] >= s[1] >= s[2]
 
     @pytest.mark.parametrize("dtype", [np.int32, np.int64])
-    def check_dtypes_nonstandard(self, dtype):
+    def test_dtypes_nonstandard(self, dtype):
         a = np.asarray([[1, 2, 3], [1, 2, 3], [2, 5, 6]], dtype=dtype)
         s = svdvals(a)
         assert s.shape[0] == 3
@@ -1776,10 +1776,10 @@ class TestQR:
         xp_assert_close(q.T @ q, xp.eye(3, dtype=getattr(xp, dtype)), atol=atol)
 
     @pytest.mark.parametrize("dtype", [np.int32, np.int64])
-    def check_dtypes_nonstandard(self, dtype):
+    def test_dtypes_nonstandard(self, dtype):
         a = np.asarray([[8, 2, 3], [2, 9, 3], [5, 3, 6]], dtype=dtype)
         q, _ = qr(a)
-        xp_assert_close(q.T @ q, np.eye(3))
+        xp_assert_close(q.T @ q, np.eye(3), atol=1e-15)
 
 
 class TestRQ:
