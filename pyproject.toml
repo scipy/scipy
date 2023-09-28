@@ -12,8 +12,7 @@ build-backend = 'mesonpy'
 requires = [
     # Reason for `<`: future-proofing (0.14.0 released and known to work)
     "meson-python>=0.12.1,<0.15.0",
-    # Reason for `<`: we want to build the 1.11.x releases with Cython 0.29.x
-    # (too many changes in 3.0)
+    # Reason for `<`: we want to build the 1.11.x releases with 0.29.x (too many changes in 3.0)
     "Cython>=0.29.35,<3.0",   # when updating version, also update check in meson.build
     # Reason for `<`: future-proofing (2.11.1 is the most recent version)
     "pybind11>=2.10.4,<2.11.1",
