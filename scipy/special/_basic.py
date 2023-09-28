@@ -17,7 +17,7 @@ from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
 from . import _specfun
 from ._comb import _comb_int
 from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
-from scipy._lib._util import np_int
+from scipy._lib._util import np_long
 
 
 __all__ = [
@@ -2844,7 +2844,7 @@ def _exact_factorialx_array(n, k=1):
             # e.g. k=3: 26!!! > np.iinfo(np.int32).max
             dt = np.int64
         else:
-            dt = np_int
+            dt = np_long
     else:
         # for k >= 10, we always use object
         dt = object

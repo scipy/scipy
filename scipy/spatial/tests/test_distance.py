@@ -60,7 +60,7 @@ from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     minkowski, rogerstanimoto,
                                     russellrao, seuclidean, sokalmichener,  # noqa: F401
                                     sokalsneath, sqeuclidean, yule)
-from scipy._lib._util import np_int, np_uint
+from scipy._lib._util import np_long, np_ulong
 
 
 @pytest.fixture(params=_METRICS_NAMES, scope="session")
@@ -128,8 +128,8 @@ def load_testing_files():
     eo['pdist-boolean-inp'] = np.bool_(eo['pdist-boolean-inp'])
     eo['random-bool-data'] = np.bool_(eo['random-bool-data'])
     eo['random-float32-data'] = np.float32(eo['random-double-data'])
-    eo['random-int-data'] = np_int(eo['random-int-data'])
-    eo['random-uint-data'] = np_uint(eo['random-uint-data'])
+    eo['random-int-data'] = np_long(eo['random-int-data'])
+    eo['random-uint-data'] = np_ulong(eo['random-uint-data'])
 
 
 load_testing_files()
@@ -394,8 +394,8 @@ class TestCdist:
         self.rnd_eo_names = ['random-float32-data', 'random-int-data',
                              'random-uint-data', 'random-double-data',
                              'random-bool-data']
-        self.valid_upcasts = {'bool': [np_uint, np_int, np.float32, np.float64],
-                              'uint': [np_int, np.float32, np.float64],
+        self.valid_upcasts = {'bool': [np_ulong, np_long, np.float32, np.float64],
+                              'uint': [np_long, np.float32, np.float64],
                               'int': [np.float32, np.float64],
                               'float32': [np.float64]}
 
@@ -689,8 +689,8 @@ class TestPdist:
         self.rnd_eo_names = ['random-float32-data', 'random-int-data',
                              'random-uint-data', 'random-double-data',
                              'random-bool-data']
-        self.valid_upcasts = {'bool': [np_uint, np_int, np.float32, np.float64],
-                              'uint': [np_int, np.float32, np.float64],
+        self.valid_upcasts = {'bool': [np_ulong, np_long, np.float32, np.float64],
+                              'uint': [np_long, np.float32, np.float64],
                               'int': [np.float32, np.float64],
                               'float32': [np.float64]}
 

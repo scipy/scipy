@@ -32,15 +32,19 @@ else:
         AxisError, ComplexWarning, VisibleDeprecationWarning  # noqa: F401
     )
 
-np_int: type
-np_uint: type
+np_long: type
+np_ulong: type
 
-if np.lib.NumpyVersion(np.__version__) >= "2.0.0":
-    np_int = np.long
-    np_uint = np.ulong
+if np.lib.NumpyVersion(np.__version__) >= "2.0.0.dev0":
+    try:
+        np_long = np.long
+        np_ulong = np.ulong
+    except AttributeError:
+            np_long = np.int_
+            np_ulong = np.uint
 else:
-    np_int = np.int_
-    np_uint = np.uint
+    np_long = np.int_
+    np_ulong = np.uint
 
 IntNumber = Union[int, np.integer]
 DecimalNumber = Union[float, np.floating, np.integer]
