@@ -674,7 +674,7 @@ class TestSplu:
             n = A.shape[0]
             lu = splu(A)
 
-            # Check that the decomposition is as advertized
+            # Check that the decomposition is as advertised
 
             Pc = np.zeros((n, n))
             Pc[np.arange(n), lu.perm_c] = 1

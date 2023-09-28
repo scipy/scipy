@@ -1076,7 +1076,7 @@ class TestInterp:
 
     @pytest.mark.parametrize('k', [2, 3, 4, 5])
     def test_periodic_splev(self, k):
-        # comparision values of periodic b-spline with splev
+        # comparison values of periodic b-spline with splev
         b = make_interp_spline(self.xx, self.yy, k=k, bc_type='periodic')
         tck = splrep(self.xx, self.yy, per=True, k=k)
         spl = splev(self.xx, tck)

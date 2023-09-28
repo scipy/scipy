@@ -1710,7 +1710,7 @@ def chebyt(n, monic=False):
     be obtained as the determinant of specific :math:`n \times n`
     matrices. As an example we can check how the points obtained from
     the determinant of the following :math:`3 \times 3` matrix
-    lay exacty on :math:`T_3`:
+    lay exactly on :math:`T_3`:
 
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
@@ -1872,7 +1872,7 @@ def chebyu(n, monic=False):
     be obtained as the determinant of specific :math:`n \times n`
     matrices. As an example we can check how the points obtained from
     the determinant of the following :math:`3 \times 3` matrix
-    lay exacty on :math:`U_3`:
+    lay exactly on :math:`U_3`:
 
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt

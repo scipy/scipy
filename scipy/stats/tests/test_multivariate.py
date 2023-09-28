@@ -1944,7 +1944,7 @@ class TestSpecialOrthoGroup:
 
         # Dot a few rows (0, 1, 2) with unit vectors (0, 2, 4, 3),
         #   effectively picking off entries in the matrices of xs.
-        #   These projections should all have the same disribution,
+        #   These projections should all have the same distribution,
         #     establishing rotational invariance. We use the two-sided
         #     KS test to confirm this.
         #   We could instead test that angles between random vectors
@@ -2032,7 +2032,7 @@ class TestOrthoGroup:
 
         # Dot a few rows (0, 1, 2) with unit vectors (0, 2, 4, 3),
         #   effectively picking off entries in the matrices of xs.
-        #   These projections should all have the same disribution,
+        #   These projections should all have the same distribution,
         #     establishing rotational invariance. We use the two-sided
         #     KS test to confirm this.
         #   We could instead test that angles between random vectors

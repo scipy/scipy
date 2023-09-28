@@ -746,7 +746,7 @@ class ODR:
                 self.beta0 = _conv(self.model.estimate(self.data))
             else:
                 raise ValueError(
-                  "must specify beta0 or provide an estimater with the model"
+                  "must specify beta0 or provide an estimator with the model"
                 )
         else:
             self.beta0 = _conv(beta0)

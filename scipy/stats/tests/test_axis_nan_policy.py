@@ -122,7 +122,7 @@ def _mixed_data_generator(n_samples, n_repetitions, axis, rng,
 
         # For multi-sample tests, we want to test broadcasting and check
         # that nan policy works correctly for each nan pattern for each input.
-        # This takes care of both simultaneosly.
+        # This takes care of both simultaneously.
         new_shape = [n_repetitions] + [1]*n_samples + [n_obs]
         new_shape[1 + i] = 6
         x = x.reshape(new_shape)
@@ -958,7 +958,7 @@ def test_axis_None_vs_tuple_with_broadcasting():
 @pytest.mark.parametrize(("axis"),
                          list(permutations(range(-3, 3), 2)) + [(-4, 1)])
 def test_other_axis_tuples(axis):
-    # Check that _axis_nan_policy_factory treates all `axis` tuples as expected
+    # Check that _axis_nan_policy_factory treats all `axis` tuples as expected
     rng = np.random.default_rng(0)
     shape_x = (4, 5, 6)
     shape_y = (1, 6)

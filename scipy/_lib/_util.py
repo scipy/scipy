@@ -74,7 +74,7 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
     Returns
     -------
     out : array
-        An array with elements from the ouput of `f` where `cond` is True
+        An array with elements from the output of `f` where `cond` is True
         and `fillvalue` (or elements from the output of `f2`) elsewhere. The
         returned array has data type determined by Type Promotion Rules
         with the output of `f` and `fillvalue` (or the output of `f2`).
@@ -297,7 +297,7 @@ def _validate_int(k, name, minimum=None):
     """
     Validate a scalar integer.
 
-    This functon can be used to validate an argument to a function
+    This function can be used to validate an argument to a function
     that expects the value to be an integer.  It uses `operator.index`
     to validate the value (so, for example, k=2.0 results in a
     TypeError).
