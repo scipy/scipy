@@ -38,7 +38,9 @@ try:
 except ImportError:
     CONFIG = None
 
-from scipy.conftest import array_api_compatible, skip_if_array_api
+from scipy.conftest import (
+    array_api_compatible, skip_if_array_api, skip_if_array_api_backend
+)
 from scipy._lib._array_api import size, array_namespace, xp_assert_close
 
 
@@ -905,17 +907,22 @@ class TestEigh:
         assert_allclose(v_dep, v)
 
 
-class TestSVD:
+class _CheckSVD:
 
-    def test_degenerate(self):
+    lapack_driver = 'gesdd'
+
+    @skip_if_array_api_backend('numpy.array_api')
+    @skip_if_array_api_backend('cupy')
+    @skip_if_array_api_backend('torch')
+    def test_degenerate(self, xp):
         assert_raises(TypeError, svd, [[1.]], lapack_driver=1.)
         assert_raises(ValueError, svd, [[1.]], lapack_driver='foo')
 
-    def check_dtypes_standard(lapack_driver, dtype, xp=None):
-        xp = np if xp is None else xp
+    @pytest.mark.parametrize("dtype", ["float32", "float64"])
+    def test_dtypes_standard(self, dtype, xp):
         a = xp.asarray([[1, 2, 3], [1, 20, 3], [2, 5, 6]], dtype=getattr(xp, dtype))
         atol = 1e-7 if dtype == "float64" else 1e-5
-        u, s, vh = svd(a, lapack_driver=lapack_driver)
+        u, s, vh = svd(a, lapack_driver=self.lapack_driver)
         xp_assert_close(u.T @ u, xp.eye(3, dtype=getattr(xp, dtype)), atol=atol)
         xp_assert_close(vh.T @ vh, xp.eye(3, dtype=getattr(xp, dtype)), atol=atol)
         sigma = xp.zeros((u.shape[0], vh.shape[0]), dtype=s.dtype)
@@ -923,10 +930,14 @@ class TestSVD:
             sigma[i, i] = s[i]
         xp_assert_close(u @ sigma @ vh, a, atol=atol)
 
-    def check_dtypes_nonstandard(lapack_driver, dtype=None):
+    @skip_if_array_api_backend('numpy.array_api')
+    @skip_if_array_api_backend('cupy')
+    @skip_if_array_api_backend('torch')
+    @pytest.mark.parametrize("dtype", [np.int32, np.int64])
+    def test_dtypes_nonstandard(self, dtype, xp):
         a = np.asarray([[1, 2, 3], [1, 20, 3], [2, 5, 6]], dtype=dtype)
-        atol = 1e-7 if dtype == "float64" else 1e-6
-        u, s, vh = svd(a, lapack_driver=lapack_driver)
+        atol = 1e-7
+        u, s, vh = svd(a, lapack_driver=self.lapack_driver)
         xp_assert_close(u.T @ u, np.eye(3), atol=atol)
         xp_assert_close(vh.T @ vh, np.eye(3), atol=atol)
         sigma = np.zeros((u.shape[0], vh.shape[0]), dtype=s.dtype)
@@ -934,12 +945,11 @@ class TestSVD:
             sigma[i, i] = s[i]
         xp_assert_close(u @ sigma @ vh, a.astype(np.float64))
     
-    def check_simple(lapack_driver, xp=None):
-        xp = np if xp is None else xp
+    def test_simple(self, xp):
         a = xp.asarray([[1., 2, 3], [1, 20, 3], [2, 5, 6]])
         for full_matrices in (True, False):
             u, s, vh = svd(a, full_matrices=full_matrices,
-                           lapack_driver=lapack_driver)
+                           lapack_driver=self.lapack_driver)
             xp_assert_close(u.T @ u, xp.eye(3), atol=1e-6)
             xp_assert_close(vh.T @ vh, xp.eye(3), atol=1e-6)
             sigma = xp.zeros((u.shape[0], vh.shape[0]), dtype=s.dtype)
@@ -947,11 +957,11 @@ class TestSVD:
                 sigma[i, i] = s[i]
             xp_assert_close(u @ sigma @ vh, a, rtol=1e-6)
 
-    def check_simple_singular(lapack_driver, xp=None):
-        xp = np if xp is None else xp
+    def test_simple_singular(self, xp):
         a = xp.asarray([[1., 2, 3], [1, 2, 3], [2, 5, 6]])
         for full_matrices in (True, False):
-            u, s, vh = svd(a, full_matrices=full_matrices, lapack_driver=lapack_driver)
+            u, s, vh = svd(a, full_matrices=full_matrices,
+                           lapack_driver=self.lapack_driver)
             xp_assert_close(u.T @ u, xp.eye(3), atol=1e-6)
             xp_assert_close(vh.T @ vh, xp.eye(3), atol=1e-6)
             sigma = xp.zeros((u.shape[0], vh.shape[0]), dtype=s.dtype)
@@ -959,22 +969,22 @@ class TestSVD:
                 sigma[i, i] = s[i]
             xp_assert_close(u @ sigma @ vh, a, rtol=1e-6)
 
-    def check_simple_underdet(lapack_driver, xp=None):
-        xp = np if xp is None else xp
+    def test_simple_underdet(self, xp):
         a = xp.asarray([[1., 2, 3], [4, 5, 6]])
         for full_matrices in (True, False):
-            u, s, vh = svd(a, full_matrices=full_matrices, lapack_driver=lapack_driver)
+            u, s, vh = svd(a, full_matrices=full_matrices,
+                           lapack_driver=self.lapack_driver)
             xp_assert_close(u.T @ u, xp.eye(u.shape[0]), atol=1e-6)
             sigma = xp.zeros((u.shape[0], vh.shape[0]), dtype=s.dtype)
             for i in range(s.shape[0]):
                 sigma[i, i] = s[i]
             xp_assert_close(u @ sigma @ vh, a, rtol=1e-6)
 
-    def check_simple_overdet(lapack_driver, xp=None):
-        xp = np if xp is None else xp
+    def test_simple_overdet(self, xp):
         a = xp.asarray([[1., 2], [4, 5], [3, 4]])
         for full_matrices in (True, False):
-            u, s, vh = svd(a, full_matrices=full_matrices, lapack_driver=lapack_driver)
+            u, s, vh = svd(a, full_matrices=full_matrices,
+                           lapack_driver=self.lapack_driver)
             xp_assert_close(u.T @ u, xp.eye(u.shape[1]), atol=1e-6)
             xp_assert_close(vh.T @ vh, xp.eye(2), atol=1e-6)
             sigma = xp.zeros((u.shape[1], vh.shape[0]), dtype=s.dtype)
@@ -982,8 +992,7 @@ class TestSVD:
                 sigma[i, i] = s[i]
             xp_assert_close(u @ sigma @ vh, a, rtol=1e-6)
 
-    def check_random(lapack_driver, xp=None):
-        xp = np if xp is None else xp
+    def test_random(self, xp):
         rng = np.random.RandomState(1234)
         n = 20
         m = 15
@@ -992,7 +1001,7 @@ class TestSVD:
                 a = xp.asarray(a)
                 for full_matrices in (True, False):
                     u, s, vh = svd(a, full_matrices=full_matrices,
-                                   lapack_driver=lapack_driver)
+                                   lapack_driver=self.lapack_driver)
                     xp_assert_close(u.T @ u, xp.eye(u.shape[1], dtype=xp.float64),
                                     atol=1e-14)
                     xp_assert_close(vh @ vh.T, xp.eye(vh.shape[0], dtype=xp.float64),
@@ -1002,11 +1011,11 @@ class TestSVD:
                         sigma[i, i] = s[i]
                     xp_assert_close(u @ sigma @ vh, a)
 
-    def check_simple_complex(lapack_driver, xp=None):
-        xp = np if xp is None else xp
+    def test_simple_complex(self, xp):
         a = xp.asarray([[1, 2, 3], [1, 2j, 3], [2, 5, 6]], dtype=xp.complex128)
         for full_matrices in (True, False):
-            u, s, vh = svd(a, full_matrices=full_matrices, lapack_driver=lapack_driver)
+            u, s, vh = svd(a, full_matrices=full_matrices,
+                           lapack_driver=self.lapack_driver)
             xp_assert_close(xp.conj(u).T @ u,
                             xp.eye(u.shape[1], dtype=xp.complex128),
                             atol=1e-14)
@@ -1020,8 +1029,7 @@ class TestSVD:
             sigma = xp_test.astype(sigma, u.dtype)
             xp_assert_close(u @ sigma @ vh, a)
 
-    def check_random_complex(lapack_driver, xp=None):
-        xp = np if xp is None else xp
+    def test_random_complex(self, xp):
         rng = np.random.RandomState(1234)
         n = 20
         m = 15
@@ -1030,7 +1038,7 @@ class TestSVD:
                 for a in [rng.random([n, m]), rng.random([m, n])]:
                     a = xp.asarray(a + 1j*rng.random(list(a.shape)))
                     u, s, vh = svd(a, full_matrices=full_matrices,
-                                   lapack_driver=lapack_driver)
+                                   lapack_driver=self.lapack_driver)
                     xp_assert_close(xp.conj(u).T @ u,
                                     xp.eye(u.shape[1], dtype=xp.complex128),
                                     atol=1e-14)
@@ -1045,20 +1053,18 @@ class TestSVD:
                     sigma = xp_test.astype(sigma, u.dtype)
                     xp_assert_close(u @ sigma @ vh, a)
 
-    def check_crash_1580(lapack_driver, xp=None):
-        xp = np if xp is None else xp
+    def test_crash_1580(self, xp):
         rng = np.random.RandomState(1234)
         sizes = [(13, 23), (30, 50), (60, 100)]
         for sz in sizes:
             for dt in [xp.float32, xp.float64, xp.complex64, xp.complex128]:
                 a = xp.asarray(rng.rand(*sz), dtype=dt)
                 # should not crash
-                svd(a, lapack_driver=lapack_driver)
+                svd(a, lapack_driver=self.lapack_driver)
 
-    def check_check_finite(lapack_driver, xp=None):
-        xp = np if xp is None else xp
+    def test_check_finite(self, xp):
         a = xp.asarray([[1., 2, 3], [1, 20, 3], [2, 5, 6]])
-        u, s, vh = svd(a, check_finite=False, lapack_driver=lapack_driver)
+        u, s, vh = svd(a, check_finite=False, lapack_driver=self.lapack_driver)
         xp_assert_close(u.T @ u, xp.eye(3), atol=1e-6)
         xp_assert_close(vh.T @ vh, xp.eye(3), atol=1e-6)
         sigma = xp.zeros((u.shape[0], vh.shape[0]), dtype=s.dtype)
@@ -1066,8 +1072,7 @@ class TestSVD:
             sigma[i, i] = s[i]
         xp_assert_close(u @ sigma @ vh, a, rtol=1e-6)
 
-    def check_gh_5039(lapack_driver, xp=None):
-        xp = np if xp is None else xp
+    def test_gh_5039(self, xp):
         # This is a smoke test for https://github.com/scipy/scipy/issues/5039
         #
         # The following is reported to raise "ValueError: On entry to DGESDD
@@ -1082,9 +1087,8 @@ class TestSVD:
              [0., 0.16666667, 0.66666667, 0.16666667, 0., 0.],
              [0., 0., 0.16666667, 0.66666667, 0.16666667, 0.],
              [0., 0., 0., 0.16666667, 0.66666667, 0.16666667]])
-        svd(b, lapack_driver=lapack_driver)
+        svd(b, lapack_driver=self.lapack_driver)
 
-    @array_api_compatible
     @pytest.mark.skipif(not HAS_ILP64, reason="64-bit LAPACK required")
     @pytest.mark.slow
     def test_large_matrix(self, xp):
@@ -1096,97 +1100,14 @@ class TestSVD:
         xp_assert_close(u[0, 0] * vh[0, -1], xp.asarray(1.0))
 
 
-class TestSVD_GESDD:
+@array_api_compatible
+class TestSVD_GESDD(_CheckSVD):
+    # uses the default LAPACK method, `gesdd`
+    pass
 
-    @array_api_compatible
-    @pytest.mark.parametrize("dtype", ["float32", "float64"])
-    def test_dtypes_standard(self, dtype, xp):
-        TestSVD.check_dtypes_standard('gesdd', dtype, xp)
-
-    @pytest.mark.parametrize("dtype", [np.int32, np.int64])
-    def test_dtypes_nonstandard(self, dtype):
-        TestSVD.check_dtypes_nonstandard('gesdd', dtype)
-    
-    @array_api_compatible
-    def test_simple(self, xp):
-        TestSVD.check_simple('gesdd', xp=xp)
-
-    @array_api_compatible
-    def test_simple_singular(self, xp):
-        TestSVD.check_simple_singular('gesdd', xp=xp)
-
-    @array_api_compatible
-    def test_simple_underdet(self, xp):
-        TestSVD.check_simple_underdet('gesdd', xp=xp)
-
-    @array_api_compatible
-    def test_simple_overdet(self, xp):
-        TestSVD.check_simple_overdet('gesdd', xp=xp)
-
-    @array_api_compatible
-    def test_random(self, xp):
-        TestSVD.check_random('gesdd', xp=xp)
-
-    @array_api_compatible
-    def test_simple_complex(self, xp):
-        TestSVD.check_simple_complex('gesdd', xp=xp)
-
-    @array_api_compatible
-    def test_random_complex(self, xp):
-        TestSVD.check_random_complex('gesdd', xp=xp)
-
-    @array_api_compatible
-    def test_crash_1580(self, xp):
-        TestSVD.check_crash_1580('gesdd', xp=xp)
-
-    @array_api_compatible
-    def test_check_finite(self, xp):
-        TestSVD.check_check_finite('gesdd', xp=xp)
-
-    @array_api_compatible
-    def test_gh_5039(self, xp):
-        TestSVD.check_gh_5039('gesdd', xp=xp)
-
-
-class TestSVD_GESVD:
-
-    @pytest.mark.parametrize("dtype", ["float32", "float64"])
-    def test_dtypes_standard(self, dtype):
-        TestSVD.check_dtypes_standard('gesdd', dtype)
-
-    @pytest.mark.parametrize("dtype", [np.int32, np.int64])
-    def test_dtypes_nonstandard(self, dtype):
-        TestSVD.check_dtypes_nonstandard('gesdd', dtype)
-    
-    def test_simple(self):
-        TestSVD.check_simple('gesvd')
-
-    def test_simple_singular(self):
-        TestSVD.check_simple_singular('gesvd')
-
-    def test_simple_underdet(self):
-        TestSVD.check_simple_underdet('gesvd')
-
-    def test_simple_overdet(self):
-        TestSVD.check_simple_overdet('gesvd')
-
-    def test_random(self):
-        TestSVD.check_random('gesvd')
-
-    def test_simple_complex(self):
-        TestSVD.check_simple_complex('gesvd')
-
-    def test_random_complex(self):
-        TestSVD.check_random_complex('gesvd')
-
-    def test_crash_1580(self):
-        TestSVD.check_crash_1580('gesvd')
-
-    def test_check_finite(self):
-        TestSVD.check_check_finite('gesvd')
-
-    def test_gh_5039(self):
-        TestSVD.check_gh_5039('gesvd')
+@pytest.mark.parametrize("xp", [np])
+class TestSVD_GESVD(_CheckSVD):
+    lapack_driver = 'gesvd'
 
 
 class TestSVDVals:
