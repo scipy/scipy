@@ -29,7 +29,6 @@ python_sources = [
   '__init__.py',
   '_laplacian.py',
   '_validation.py',
-  'setup.py'
 ]
 
 py3.install_sources(
