@@ -157,7 +157,7 @@ class _dia_base(_data_matrix):
             raise ValueError('offset array contains duplicate values')
 
     def __repr__(self):
-        format = _formats[self.getformat()][1]
+        format = _formats[self.format][1]
         return "<%dx%d sparse matrix of type '%s'\n" \
                "\twith %d stored elements (%d diagonals) in %s format>" % \
                (self.shape + (self.dtype.type, self.nnz, self.data.shape[0],
@@ -402,6 +402,11 @@ class _dia_base(_data_matrix):
         mask &= (self.data != 0)
         row = row[mask]
         col = np.tile(offset_inds, num_offsets)[mask.ravel()]
+        idx_dtype = self._get_index_dtype(
+            arrays=(self.offsets,), maxval=max(self.shape)
+        )
+        row = row.astype(idx_dtype, copy=False)
+        col = col.astype(idx_dtype, copy=False)
         data = self.data[mask]
         # Note: this cannot set has_canonical_format=True, because despite the
         # lack of duplicates, we do not generate sorted indices.
