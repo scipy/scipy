@@ -5,6 +5,8 @@ import operator
 import math
 from math import prod as _prod
 import timeit
+import warnings
+
 from scipy.spatial import cKDTree
 from . import _sigtools
 from ._ltisys import dlti
@@ -19,7 +21,6 @@ from ._arraytools import axis_slice, axis_reverse, odd_ext, even_ext, const_ext
 from ._filter_design import cheby1, _validate_sos, zpk2sos
 from ._fir_filter_design import firwin
 from ._sosfilt import _sosfilt
-import warnings
 
 
 __all__ = ['correlate', 'correlation_lags', 'correlate2d',
@@ -436,7 +437,7 @@ def _init_freq_conv_axes(in1, in2, mode, axes, sorted_axes=False):
     if not noaxes and not len(axes):
         raise ValueError("when provided, axes cannot be empty")
 
-    # Axes of length 1 can rely on broadcasting rules for multipy,
+    # Axes of length 1 can rely on broadcasting rules for multiply,
     # no fft needed.
     axes = [a for a in axes if s1[a] != 1 and s2[a] != 1]
 
@@ -1568,7 +1569,7 @@ def medfilt(volume, kernel_size=None):
     numels = np.prod(kernel_size, axis=0)
     order = numels // 2
 
-    if volume.dtype in [np.bool_, np.cfloat, np.cdouble, np.clongdouble,
+    if volume.dtype in [np.bool_, np.complex64, np.complex128, np.clongdouble,
                         np.float16]:
         raise ValueError(f"dtype={volume.dtype} is not supported by medfilt")
 
@@ -1945,7 +1946,7 @@ def medfilt2d(input, kernel_size=3):
 
     # checking dtype.type, rather than just dtype, is necessary for
     # excluding np.longdouble with MS Visual C.
-    if image.dtype.type not in (np.ubyte, np.single, np.double):
+    if image.dtype.type not in (np.ubyte, np.float32, np.float64):
         return medfilt(image, kernel_size)
 
     if kernel_size is None:
@@ -2444,16 +2445,14 @@ def hilbert2(x, N=None):
     Xf = sp_fft.fft2(x, N, axes=(0, 1))
     h1 = np.zeros(N[0], dtype=Xf.dtype)
     h2 = np.zeros(N[1], dtype=Xf.dtype)
-    for p in range(2):
-        h = eval("h%d" % (p + 1))
-        N1 = N[p]
+    for h in (h1, h2):
+        N1 = h.shape[0]
         if N1 % 2 == 0:
             h[0] = h[N1 // 2] = 1
             h[1:N1 // 2] = 2
         else:
             h[0] = 1
             h[1:(N1 + 1) // 2] = 2
-        exec("h%d = h" % (p + 1), globals(), locals())
 
     h = h1[:, np.newaxis] * h2[np.newaxis, :]
     k = x.ndim
@@ -2464,7 +2463,19 @@ def hilbert2(x, N=None):
     return x
 
 
+_msg_cplx_sort="""cmplx_sort is deprecated in SciPy 1.12 and will be removed
+in SciPy 1.14. The exact equivalent for a numpy array argument is
+>>> def cmplx_sort(p):
+...    idx = np.argsort(abs(p))
+...    return np.take(p, idx, 0), idx
+"""
+
 def cmplx_sort(p):
+    warnings.warn(_msg_cplx_sort, DeprecationWarning, stacklevel=2)
+    return _cmplx_sort(p)
+
+
+def _cmplx_sort(p):
     """Sort roots based on magnitude.
 
     Parameters
@@ -2802,7 +2813,7 @@ def residue(b, a, tol=1e-3, rtype='avg'):
 
     poles = np.roots(a)
     if b.size == 0:
-        return np.zeros(poles.shape), cmplx_sort(poles)[0], np.array([])
+        return np.zeros(poles.shape), _cmplx_sort(poles)[0], np.array([])
 
     if len(b) < len(a):
         k = np.empty(0)
@@ -2810,7 +2821,7 @@ def residue(b, a, tol=1e-3, rtype='avg'):
         k, b = np.polydiv(b, a)
 
     unique_poles, multiplicity = unique_roots(poles, tol=tol, rtype=rtype)
-    unique_poles, order = cmplx_sort(unique_poles)
+    unique_poles, order = _cmplx_sort(unique_poles)
     multiplicity = multiplicity[order]
 
     residues = _compute_residues(unique_poles, multiplicity, b)
@@ -2900,7 +2911,7 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
 
     poles = np.roots(a)
     if b.size == 0:
-        return np.zeros(poles.shape), cmplx_sort(poles)[0], np.array([])
+        return np.zeros(poles.shape), _cmplx_sort(poles)[0], np.array([])
 
     b_rev = b[::-1]
     a_rev = a[::-1]
@@ -2911,7 +2922,7 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
         k_rev, b_rev = np.polydiv(b_rev, a_rev)
 
     unique_poles, multiplicity = unique_roots(poles, tol=tol, rtype=rtype)
-    unique_poles, order = cmplx_sort(unique_poles)
+    unique_poles, order = _cmplx_sort(unique_poles)
     multiplicity = multiplicity[order]
 
     residues = _compute_residues(1 / unique_poles, multiplicity, b_rev)
@@ -3161,7 +3172,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
             X *= W.reshape(newshape_W)
 
     # Copy each half of the original spectrum to the output spectrum, either
-    # truncating high frequences (downsampling) or zero-padding them
+    # truncating high frequencies (downsampling) or zero-padding them
     # (upsampling)
 
     # Placeholder array for output spectrum
@@ -3560,7 +3571,7 @@ def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
     else:
         dshape = data.shape
         N = dshape[axis]
-        bp = np.sort(np.unique([0, bp, N]))
+        bp = np.sort(np.unique(np.concatenate(np.atleast_1d(0, bp, N))))
         if np.any(bp > N):
             raise ValueError("Breakpoints must be less than length "
                              "of data along given axis.")

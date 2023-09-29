@@ -74,8 +74,7 @@ static char name[] = "rgamma";
 extern double MAXLOG;
 
 
-double rgamma(x)
-double x;
+double rgamma(double x)
 {
     double w, y, z;
     int sign;

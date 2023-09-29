@@ -695,6 +695,9 @@ All functions
    ctgsen_lwork
    ztgsen_lwork
 
+   stgsyl
+   dtgsyl
+
    stpttf
    dtpttf
    ctpttf

@@ -1232,6 +1232,7 @@ def get_declaration(ufunc, c_name, c_proto, cy_proto, header,
         # redeclare the function, so that the assumed
         # signature is checked at compile time
         new_name = f"{ufunc.cython_func_name(c_name)} \"{c_name}\""
+        proto_h_filename = os.path.basename(proto_h_filename)
         defs.append(f'cdef extern from r"{proto_h_filename}":')
         defs.append("    cdef %s" % (cy_proto.replace('(*)', new_name)))
         defs_h.append(f'#include "{header}"')

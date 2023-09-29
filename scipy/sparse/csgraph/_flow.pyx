@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from scipy.sparse import csr_matrix, isspmatrix_csr
+from scipy.sparse import csr_matrix, issparse
 
 cimport numpy as np
 
@@ -224,7 +224,7 @@ def maximum_flow(csgraph, source, sink, *, method='dinic'):
     modifying the capacities of the new graph appropriately.
 
     """
-    if not isspmatrix_csr(csgraph):
+    if not (issparse(csgraph) and csgraph.format == "csr"):
         raise TypeError("graph must be in CSR format")
     if not issubclass(csgraph.dtype.type, np.integer):
         raise ValueError("graph capacities must be integers")

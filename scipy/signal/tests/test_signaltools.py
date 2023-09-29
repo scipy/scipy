@@ -31,6 +31,7 @@ from scipy.signal._signaltools import (_filtfilt_gust, _compute_factors,
                                       _group_poles)
 from scipy.signal._upfirdn import _upfirdn_modes
 from scipy._lib import _testutils
+from scipy._lib._util import ComplexWarning
 
 
 class _TestConvolve:
@@ -181,16 +182,12 @@ class TestConvolve(_TestConvolve):
         assert_raises(ValueError, convolve, *(b, a), **{'mode': 'valid'})
 
     def test_convolve_method(self, n=100):
-        types = sum([t for _, t in np.sctypes.items()], [])
-        types = {np.dtype(t).name for t in types}
-
-        # These types include 'bool' and all precisions (int8, float32, etc)
-        # The removed types throw errors in correlate or fftconvolve
-        for dtype in ['complex256', 'complex192', 'float128', 'float96',
-                      'str', 'void', 'bytes', 'object', 'unicode', 'string']:
-            if dtype in types:
-                types.remove(dtype)
-
+        # this types data structure was manually encoded instead of
+        # using custom filters on the soon-to-be-removed np.sctypes
+        types = {'uint16', 'uint64', 'int64', 'int32',
+                 'complex128', 'float64', 'float16',
+                 'complex64', 'float32', 'int16',
+                 'uint8', 'uint32', 'int8', 'bool'}
         args = [(t1, t2, mode) for t1 in types for t2 in types
                                for mode in ['valid', 'full', 'same']]
 
@@ -301,7 +298,7 @@ class _TestConvolve2d:
     def test_fillvalue_errors(self):
         msg = "could not cast `fillvalue` directly to the output "
         with np.testing.suppress_warnings() as sup:
-            sup.filter(np.ComplexWarning, "Casting complex values")
+            sup.filter(ComplexWarning, "Casting complex values")
             with assert_raises(ValueError, match=msg):
                 convolve2d([[1]], [[1, 2]], fillvalue=1j)
 
@@ -1041,7 +1038,7 @@ class TestAllFreqConvolves:
                            match="all axes must be unique"):
             convapproach([1], [2], axes=[0, 0])
 
-    @pytest.mark.parametrize('dtype', [np.longfloat, np.longcomplex])
+    @pytest.mark.parametrize('dtype', [np.longdouble, np.clongdouble])
     def test_longdtype_input(self, dtype):
         x = np.random.random((27, 27)).astype(dtype)
         y = np.random.random((4, 4)).astype(dtype)
@@ -1105,7 +1102,7 @@ class TestMedFilt:
             assert_equal(signal.medfilt2d(in_typed).dtype, dtype)
 
 
-    @pytest.mark.parametrize('dtype', [np.bool_, np.cfloat, np.cdouble,
+    @pytest.mark.parametrize('dtype', [np.bool_, np.complex64, np.complex128,
                                        np.clongdouble, np.float16,])
     def test_invalid_dtypes(self, dtype):
         in_typed = np.array(self.IN, dtype=dtype)
@@ -1940,7 +1937,7 @@ class TestCorrelateReal:
         # FFT implementations convert longdouble arguments down to
         # double so don't expect better precision, see gh-9520
         if res_dt == np.longdouble:
-            return self.equal_tolerance(np.double)
+            return self.equal_tolerance(np.float64)
         else:
             return self.equal_tolerance(res_dt)
 
@@ -2386,7 +2383,7 @@ def filtfilt_gust_opt(b, a, x):
     This function computes the same result as
     `scipy.signal._signaltools._filtfilt_gust`, but only 1-d arrays
     are accepted.  The problem is solved using `fmin` from `scipy.optimize`.
-    `_filtfilt_gust` is significanly faster than this implementation.
+    `_filtfilt_gust` is significantly faster than this implementation.
     """
     def filtfilt_gust_opt_func(ics, b, a, x):
         """Objective function used in filtfilt_gust_opt."""
@@ -2467,7 +2464,7 @@ def test_choose_conv_method():
 
             method_try, times = choose_conv_method(x, h, mode=mode, measure=True)
             assert_(method_try in {'fft', 'direct'})
-            assert_(type(times) is dict)
+            assert_(isinstance(times, dict))
             assert_('fft' in times.keys() and 'direct' in times.keys())
 
         n = 10
@@ -2658,7 +2655,7 @@ class TestDecimate:
         yzpref = signal.filtfilt(*signal.zpk2tf(z, p, k),
                                  u)[::2]
 
-        assert_equal(yzp, yzpref)
+        assert_allclose(yzp, yzpref, rtol=1e-10, atol=1e-13)
 
     def test_complex_fir_dlti(self):
         # centre frequency for filter [Hz]
@@ -3605,6 +3602,20 @@ class TestDetrend:
         # breakpoint index > shape[axis]: raises
         with assert_raises(ValueError):
             detrend(data, type="linear", bp=3)
+
+    @pytest.mark.parametrize('bp', [np.array([0, 2]), [0, 2]])
+    def test_detrend_array_bp(self, bp):
+        # regression test for https://github.com/scipy/scipy/issues/18675
+        rng = np.random.RandomState(12345)
+        x = rng.rand(10)
+       # bp = np.array([0, 2])
+
+        res = detrend(x, bp=bp)
+        res_scipy_191 = np.array([-4.44089210e-16, -2.22044605e-16,
+            -1.11128506e-01, -1.69470553e-01,  1.14710683e-01,  6.35468419e-02,
+            3.53533144e-01, -3.67877935e-02, -2.00417675e-02, -1.94362049e-01])
+
+        assert_allclose(res, res_scipy_191, atol=1e-14)
 
 
 class TestUniqueRoots:

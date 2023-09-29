@@ -522,6 +522,7 @@ def test_re_bootstrap(additional_resamples):
                     rtol=1e-14)
 
 
+@pytest.mark.xfail_on_32bit("Sensible to machine precision")
 @pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
 def test_bootstrap_alternative(method):
     rng = np.random.default_rng(5894822712842015040)

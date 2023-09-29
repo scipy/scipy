@@ -51,7 +51,7 @@ at the top-level directory.
    ===================================================================== 
   </pre>
 */
-int icmax1_slu(int *n, complex *cx, int *incx)
+int icmax1_slu(int *n, singlecomplex *cx, int *incx)
 {
 /*
        NEXT LINE IS THE ONLY MODIFICATION.   

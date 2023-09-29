@@ -4,11 +4,23 @@ Cross compilation
 Cross compilation is a complex topic, we only add some hopefully helpful hints
 here (for now). As of May 2023, cross-compilation based on ``crossenv`` is
 known to work, as used (for example) in conda-forge. Cross-compilation without
-``crossenv`` requires some manual overrides, as done in (for example) Void Linux.
+``crossenv`` requires some manual overrides. You instruct these overrides by
+passing options to ``meson setup`` via `meson-python`_.
 
-Please see `Meson's documentation on cross compilation
-<https://mesonbuild.com/Cross-compilation.html>`__
-for details on Meson's support for cross-compilation.
+.. _meson-python: https://meson-python.readthedocs.io/en/latest/how-to-guides/meson-args.html
+
+All distributions that are known to successfully cross compile SciPy are using
+``python -m build`` (``pypa/build``), but using ``pip`` for that should be
+possible as well. Here are links to the SciPy's "build recipes" on those
+distros:
+
+- `Void Linux <https://github.com/void-linux/void-packages/blob/master/srcpkgs/python3-scipy/template>`_
+- `Nix <https://github.com/nixos/nixpkgs/blob/master/pkgs/development/python-modules/scipy/default.nix>`_
+- `Conda-forge <https://github.com/conda-forge/scipy-feedstock/blob/main/recipe/build.sh>`_
+
+See also `Meson's documentation on cross compilation
+<https://mesonbuild.com/Cross-compilation.html>`__ to learn what options you
+may need to pass to Meson to successfully cross compile.
 
 One common hiccup is that ``numpy`` and ``pythran`` require
 running Python code in order to obtain their include directories. This tends to

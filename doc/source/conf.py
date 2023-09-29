@@ -183,6 +183,12 @@ warnings.filterwarnings(
     message=r'There is no current event loop',
     category=DeprecationWarning,
 )
+# TODO: remove after gh-19228 resolved:
+warnings.filterwarnings(
+    'ignore',
+    message=r'.*path is deprecated.*',
+    category=DeprecationWarning,
+)
 
 # -----------------------------------------------------------------------------
 # HTML output
@@ -215,7 +221,7 @@ html_theme_options = {
 }
 
 if 'dev' in version:
-    html_theme_options["switcher"]["version_match"] = "dev"
+    html_theme_options["switcher"]["version_match"] = "development"
 
 if 'versionwarning' in tags:  # noqa
     # Specific to docs.scipy.org deployment.

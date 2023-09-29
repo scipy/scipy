@@ -94,6 +94,27 @@ cdef inline int _elementary_basis_index(uchar axis) noexcept:
     elif axis == b'y': return 1
     elif axis == b'z': return 2
 
+# Reduce the quaternion double coverage of the rotation group to a unique
+# canonical "positive" single cover
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef inline void _quat_canonical_single(double[:] q) noexcept nogil:
+    if ((q[3] < 0)
+        or (q[3] == 0 and q[0] < 0)
+        or (q[3] == 0 and q[0] == 0 and q[1] < 0)
+        or (q[3] == 0 and q[0] == 0 and q[1] == 0 and q[2] < 0)):
+        q[0] *= -1.0
+        q[1] *= -1.0
+        q[2] *= -1.0
+        q[3] *= -1.0
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef inline void _quat_canonical(double[:, :] q) noexcept:
+    cdef Py_ssize_t n = q.shape[0]
+    for ind in range(n):
+        _quat_canonical_single(q[ind])
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef double[:, :] _compute_euler_from_matrix(
@@ -457,8 +478,10 @@ cdef class Rotation:
     concatenate
     apply
     __mul__
+    __pow__
     inv
     magnitude
+    approx_equal
     mean
     reduce
     create_group
@@ -610,6 +633,13 @@ cdef class Rotation:
     >>> r3.apply(v)
     array([-2.        , -1.41421356,  2.82842712])
 
+    A rotation can be composed with itself using the ``**`` operator:
+
+    >>> p = R.from_rotvec([1, 0, 0])
+    >>> q = p ** 2
+    >>> q.as_rotvec()
+    array([2., 0., 0.])
+
     Finally, it is also possible to invert rotations:
 
     >>> r1 = R.from_euler('z', [90, 45], degrees=True)
@@ -756,12 +786,20 @@ cdef class Rotation:
 
         3D rotations can be represented using unit-norm quaternions [1]_.
 
+        Advanced users may be interested in the "double cover" of 3D space by
+        the quaternion representation [2]_. As of version 1.11.0, the
+        following subset (and only this subset) of operations on a `Rotation`
+        ``r`` corresponding to a quaternion ``q`` are guaranteed to preserve
+        the double cover property: ``r = Rotation.from_quat(q)``,
+        ``r.as_quat(canonical=False)``, ``r.inv()``, and composition using the
+        ``*`` operator such as ``r*r``.
+
         Parameters
         ----------
         quat : array_like, shape (N, 4) or (4,)
-            Each row is a (possibly non-unit norm) quaternion in scalar-last
-            (x, y, z, w) format. Each quaternion will be normalized to unit
-            norm.
+            Each row is a (possibly non-unit norm) quaternion representing an
+            active rotation, in scalar-last (x, y, z, w) format. Each
+            quaternion will be normalized to unit norm.
 
         Returns
         -------
@@ -771,6 +809,8 @@ cdef class Rotation:
         References
         ----------
         .. [1] https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation
+        .. [2] Hanson, Andrew J. "Visualizing quaternions."
+            Morgan Kaufmann Publishers Inc., San Francisco, CA. 2006.
 
         Examples
         --------
@@ -1059,7 +1099,7 @@ cdef class Rotation:
         for ind in range(num_rotations):
             angle = _norm3(crotvec[ind, :])
 
-            if angle <= 1e-3:  # small angle
+            if angle <= 1e-3:  # small angle Taylor series expansion
                 angle2 = angle * angle
                 scale = 0.5 - angle2 / 48 + angle2 * angle2 / 3840
             else:  # large angle
@@ -1244,7 +1284,7 @@ cdef class Rotation:
         magnitude is equal to ``tan(theta / 4)``, where ``theta`` is the angle of rotation
         (in radians) [1]_.
 
-        MRPs have a singuarity at 360 degrees which can be avoided by ensuring the angle of
+        MRPs have a singularity at 360 degrees which can be avoided by ensuring the angle of
         rotation does not exceed 180 degrees, i.e. switching the direction of the rotation when
         it is past 180 degrees.
 
@@ -1336,14 +1376,23 @@ cdef class Rotation:
             return cls(quat, normalize=False, copy=False)
 
     @cython.embedsignature(True)
-    def as_quat(self):
+    def as_quat(self, canonical=False):
         """Represent as quaternions.
 
-        Rotations in 3 dimensions can be represented using unit norm
+        Active rotations in 3 dimensions can be represented using unit norm
         quaternions [1]_. The mapping from quaternions to rotations is
         two-to-one, i.e. quaternions ``q`` and ``-q``, where ``-q`` simply
         reverses the sign of each component, represent the same spatial
         rotation. The returned value is in scalar-last (x, y, z, w) format.
+
+        Parameters
+        ----------
+        canonical : `bool`, default False
+            Whether to map the redundant double cover of rotation space to a
+            unique "canonical" single cover. If True, then the quaternion is
+            chosen from {q, -q} such that the w term is positive. If the w term
+            is 0, then the quaternion is chosen such that the first nonzero
+            term of the x, y, and z terms is positive.
 
         Returns
         -------
@@ -1381,11 +1430,25 @@ cdef class Rotation:
         >>> r.as_quat().shape
         (2, 4)
 
+        Quaternions can be mapped from a redundant double cover of the
+        rotation space to a canonical representation with a positive w term.
+
+        >>> r = R.from_quat([0, 0, 0, -1])
+        >>> r.as_quat()
+        array([0. , 0. , 0. , -1.])
+        >>> r.as_quat(canonical=True)
+        array([0. , 0. , 0. , 1.])
         """
         if self._single:
-            return np.array(self._quat[0], copy=True)
+            q = np.array(self._quat[0], copy=True)
+            if canonical:
+                _quat_canonical_single(q)
         else:
-            return np.array(self._quat, copy=True)
+            q = np.array(self._quat, copy=True)
+            if canonical:
+                _quat_canonical(q)
+
+        return q
 
     @cython.embedsignature(True)
     @cython.boundscheck(False)
@@ -1558,23 +1621,19 @@ cdef class Rotation:
         (2, 3)
 
         """
-        
+
         cdef Py_ssize_t num_rotations = len(self._quat)
         cdef double angle, scale, angle2
         cdef double[:, :] rotvec = _empty2(num_rotations, 3)
         cdef double[:] quat
 
         for ind in range(num_rotations):
-            if self._quat[ind, 3] < 0:  # w > 0 to ensure 0 <= angle <= pi
-                quat = self._quat[ind, :].copy()
-                for i in range(4):
-                    quat[i] *= -1
-            else:
-                quat = self._quat[ind, :]
+            quat = self._quat[ind, :].copy()
+            _quat_canonical_single(quat)  # w > 0 ensures that 0 <= angle <= pi
 
             angle = 2 * atan2(_norm3(quat), quat[3])
 
-            if angle <= 1e-3:  # small angle
+            if angle <= 1e-3:  # small angle Taylor series expansion
                 angle2 = angle * angle
                 scale = 2 + angle2 / 12 + 7 * angle2 * angle2 / 2880
             else:  # large angle
@@ -1784,7 +1843,7 @@ cdef class Rotation:
         magnitude is equal to ``tan(theta / 4)``, where ``theta`` is the angle of rotation
         (in radians) [1]_.
 
-        MRPs have a singuarity at 360 degrees which can be avoided by ensuring the angle of
+        MRPs have a singularity at 360 degrees which can be avoided by ensuring the angle of
         rotation does not exceed 180 degrees, i.e. switching the direction of the rotation when
         it is past 180 degrees. This function will always return MRPs corresponding to a rotation
         of less than or equal to 180 degrees.
@@ -1893,7 +1952,7 @@ cdef class Rotation:
               frame as it rotates. In this case the vector components are
               expressed in the original frame before and after the rotation.
 
-        In terms of rotation matricies, this application is the same as
+        In terms of rotation matrices, this application is the same as
         ``self.as_matrix().dot(vectors)``.
 
         Parameters
@@ -2114,6 +2173,84 @@ cdef class Rotation:
         return self.__class__(result, normalize=True, copy=False)
 
     @cython.embedsignature(True)
+    def __pow__(Rotation self, float n, modulus):
+        """Compose this rotation with itself `n` times.
+
+        Composition of a rotation ``p`` with itself can be extended to
+        non-integer ``n`` by considering the power ``n`` to be a scale factor
+        applied to the angle of rotation about the rotation's fixed axis. The
+        expression ``q = p ** n`` can also be expressed as
+        ``q = Rotation.from_rotvec(n * p.as_rotvec())``.
+
+        If ``n`` is negative, then the rotation is inverted before the power
+        is applied. In other words, ``p ** -abs(n) == p.inv() ** abs(n)``.
+
+        Parameters
+        ----------
+        n : float
+            The number of times to compose the rotation with itself.
+        modulus : None
+            This overridden argument is not applicable to Rotations and must be
+            ``None``.
+
+        Returns
+        -------
+        power : `Rotation` instance
+            If the input Rotation ``p`` contains ``N`` multiple rotations, then
+            the output will contain ``N`` rotations where the ``i`` th rotation
+            is equal to ``p[i] ** n``
+
+        Notes
+        -----
+        For example, a power of 2 will double the angle of rotation, and a
+        power of 0.5 will halve the angle. There are three notable cases: if
+        ``n == 1`` then the original rotation is returned, if ``n == 0``
+        then the identity rotation is returned, and if ``n == -1`` then
+        ``p.inv()`` is returned.
+
+        Note that fractional powers ``n`` which effectively take a root of
+        rotation, do so using the shortest path smallest representation of that
+        angle (the principal root). This means that powers of ``n`` and ``1/n``
+        are not necessarily inverses of each other. For example, a 0.5 power of
+        a +240 degree rotation will be calculated as the 0.5 power of a -120
+        degree rotation, with the result being a rotation of -60 rather than
+        +120 degrees.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+
+        Raising a rotation to a power:
+
+        >>> p = R.from_rotvec([1, 0, 0])
+        >>> q = p ** 2
+        >>> q.as_rotvec()
+        array([2., 0., 0.])
+        >>> r = p ** 0.5
+        >>> r.as_rotvec()
+        array([0.5, 0., 0.])
+
+        Inverse powers do not necessarily cancel out:
+
+        >>> p = R.from_rotvec([0, 0, 120], degrees=True)
+        >>> ((p ** 2) ** 0.5).as_rotvec(degrees=True)
+        array([  -0.,   -0., -60.])
+
+        """
+        if modulus is not None:
+            raise NotImplementedError("modulus not supported")
+
+        # Exact short-cuts
+        if n == 0:
+            return Rotation.identity(len(self._quat))
+        elif n == -1:
+            return self.inv()
+        elif n == 1:
+            return self.__class__(self._quat.copy())
+        else:  # general scaling of rotation angle
+            return Rotation.from_rotvec(n * self.as_rotvec())
+
+    @cython.embedsignature(True)
     def inv(self):
         """Invert this rotation.
 
@@ -2147,7 +2284,9 @@ cdef class Rotation:
 
         """
         cdef np.ndarray quat = np.array(self._quat, copy=True)
-        quat[:, -1] *= -1
+        quat[:, 0] *= -1
+        quat[:, 1] *= -1
+        quat[:, 2] *= -1
         if self._single:
             quat = quat[0]
         return self.__class__(quat, copy=False)
@@ -2162,7 +2301,8 @@ cdef class Rotation:
         -------
         magnitude : ndarray or float
             Angle(s) in radians, float if object contains a single rotation
-            and ndarray if object contains multiple rotations.
+            and ndarray if object contains multiple rotations. The magnitude
+            will always be in the range [0, pi].
 
         Examples
         --------
@@ -2188,6 +2328,60 @@ cdef class Rotation:
             return angles[0]
         else:
             return np.asarray(angles)
+
+
+    @cython.embedsignature(True)
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
+    def approx_equal(Rotation self, Rotation other, atol=None, degrees=False):
+        """Determine if another rotation is approximately equal to this one.
+
+        Equality is measured by calculating the smallest angle between the
+        rotations, and checking to see if it is smaller than `atol`.
+
+        Parameters
+        ----------
+        other : `Rotation` instance
+            Object containing the rotations to measure against this one.
+        atol : float, optional
+            The absolute angular tolerance, below which the rotations are
+            considered equal. If not given, then set to 1e-8 radians by
+            default.
+        degrees : bool, optional
+            If True and `atol` is given, then `atol` is measured in degrees. If
+            False (default), then atol is measured in radians.
+
+        Returns
+        -------
+        approx_equal : ndarray or bool
+            Whether the rotations are approximately equal, bool if object
+            contains a single rotation and ndarray if object contains multiple
+            rotations.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+        >>> import numpy as np
+        >>> p = R.from_quat([0, 0, 0, 1])
+        >>> q = R.from_quat(np.eye(4))
+        >>> p.approx_equal(q)
+        array([False, False, False, True])
+
+        Approximate equality for a single rotation:
+
+        >>> p.approx_equal(q[0])
+        False
+        """
+        if atol is None:
+            if degrees:
+                warnings.warn("atol must be set to use the degrees flag, "
+                              "defaulting to 1e-8 radians.")
+            atol = 1e-8  # radians
+        elif degrees:
+            atol = np.deg2rad(atol)
+
+        angles = (other * self.inv()).magnitude()
+        return angles < atol
 
     @cython.embedsignature(True)
     def mean(self, weights=None):
@@ -2572,36 +2766,66 @@ cdef class Rotation:
 
         where :math:`w_i`'s are the `weights` corresponding to each vector.
 
-        The rotation is estimated with Kabsch algorithm [1]_.
+        The rotation is estimated with Kabsch algorithm [1]_, and solves what
+        is known as the "pointing problem", or "Wahba's problem".
+
+        There are two special cases. The first is if a single vector is given
+        for `a` and `b`, in which the shortest distance rotation that aligns
+        `b` to `a` is returned.
+
+        The second is when one of the weights is infinity. In this case, the
+        shortest distance rotation between the primary infinite weight vectors
+        is calculated as above. Then, the rotation about the aligned primary
+        vectors is calculated such that the secondary vectors are optimally
+        aligned per the above loss function. The result is the composition
+        of these two rotations. The result via this process is the same as the
+        Kabsch algorithm as the corresponding weight approaches infinity in
+        the limit. For a single secondary vector this is known as the
+        align-constrain algorithm [2]_.
+
+        For both special cases (single vectors or an infinite weight), the
+        sensitivity matrix does not have physical meaning and an error will be
+        raised if it is requested. For an infinite weight, the primary vectors
+        act as a constraint with perfect alignment, so their contribution to
+        `rssd` will be forced to 0.
 
         Parameters
         ----------
-        a : array_like, shape (N, 3)
+        a : array_like, shape (3,) or (N, 3)
             Vector components observed in initial frame A. Each row of `a`
             denotes a vector.
-        b : array_like, shape (N, 3)
+        b : array_like, shape (3,) or (N, 3)
             Vector components observed in another frame B. Each row of `b`
             denotes a vector.
         weights : array_like shape (N,), optional
             Weights describing the relative importance of the vector
             observations. If None (default), then all values in `weights` are
-            assumed to be 1.
+            assumed to be 1. One and only one weight may be infinity, and
+            weights must be positive.
         return_sensitivity : bool, optional
             Whether to return the sensitivity matrix. See Notes for details.
             Default is False.
 
         Returns
         -------
-        estimated_rotation : `Rotation` instance
+        rotation : `Rotation` instance
             Best estimate of the rotation that transforms `b` to `a`.
         rssd : float
-            Square root of the weighted sum of the squared distances between
-            the given sets of vectors after alignment. It is equal to
-            ``sqrt(2 * minimum_loss)``, where ``minimum_loss`` is the loss
-            function evaluated for the found optimal rotation.
+            Stands for "root sum squared distance". Square root of the weighted
+            sum of the squared distances between the given sets of vectors
+            after alignment. It is equal to ``sqrt(2 * minimum_loss)``, where
+            ``minimum_loss`` is the loss function evaluated for the found
+            optimal rotation.
+            Note that the result will also be weighted by the vectors'
+            magnitudes, so perfectly aligned vector pairs will have nonzero
+            `rssd` if they are not of the same length. So, depending on the
+            use case it may be desirable to normalize the input vectors to unit
+            length before calling this method.
         sensitivity_matrix : ndarray, shape (3, 3)
             Sensitivity matrix of the estimated rotation estimate as explained
-            in Notes. Returned only when `return_sensitivity` is True.
+            in Notes. Returned only when `return_sensitivity` is True. Not
+            valid if aligning a single pair of vectors of if there is an
+            infinite weight, in which cases an error will be raised.
 
         Notes
         -----
@@ -2619,47 +2843,234 @@ cdef class Rotation:
         then you should multiple the sensitivity matrix by 0.01**2 to get the
         covariance.
 
-        Refer to [2]_ for more rigorous discussion of the covariance
-        estimation.
+        Refer to [4]_ for more rigorous discussion of the covariance
+        estimation. See [5]_ for more discussion of the pointing problem and
+        minimal proper pointing.
 
         References
         ----------
         .. [1] https://en.wikipedia.org/wiki/Kabsch_algorithm
-        .. [2] F. Landis Markley,
+        .. [2] Magner, Robert,
+                "Extending target tracking capabilities through trajectory and
+                momentum setpoint optimization." Small Satellite Conference,
+                2018.
+        .. [3] https://en.wikipedia.org/wiki/Harmonic_mean
+        .. [4] F. Landis Markley,
                 "Attitude determination using vector observations: a fast
                 optimal matrix algorithm", Journal of Astronautical Sciences,
                 Vol. 41, No.2, 1993, pp. 261-280.
-        .. [3] https://en.wikipedia.org/wiki/Harmonic_mean
-        """
-        a = np.asarray(a)
-        if a.ndim != 2 or a.shape[-1] != 3:
-            raise ValueError("Expected input `a` to have shape (N, 3), "
-                             "got {}".format(a.shape))
-        b = np.asarray(b)
-        if b.ndim != 2 or b.shape[-1] != 3:
-            raise ValueError("Expected input `b` to have shape (N, 3), "
-                             "got {}.".format(b.shape))
+        .. [5] Bar-Itzhack, Itzhack Y., Daniel Hershkowitz, and Leiba Rodman,
+                "Pointing in Real Euclidean Space", Journal of Guidance,
+                Control, and Dynamics, Vol. 20, No. 5, 1997, pp. 916-922.
 
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from scipy.spatial.transform import Rotation as R
+
+        Best align two sets of vectors with the Kabsch algorithm, where there
+        is noise on the last two vector measurements of the ``b`` set:
+
+        >>> a = [[0, 1, 0], [0, 1, 1], [0, 1, 1]]
+        >>> b = [[1, 0, 0], [1, 1.1, 0], [1, 0.9, 0]]
+        >>> rot, rssd, sens = R.align_vectors(a, b, return_sensitivity=True)
+        >>> rot.as_matrix()
+        array([[0., 0., 1.],
+               [1., 0., 0.],
+               [0., 1., 0.]])
+
+        When we apply the rotation to ``b``, we get vectors close to ``a``:
+
+        >>> rot.apply(b)
+        array([[0. , 1. , 0. ],
+               [0. , 1. , 1.1],
+               [0. , 1. , 0.9]])
+
+        The error for the first vector is 0, and for the last two the error is
+        magnitude 0.1. The `rssd` is the square root of the sum of the
+        weighted squared errors, and the default weights are all 1, so in this
+        case the `rssd` is calculated as
+        ``sqrt(1 * 0**2 + 1 * 0.1**2 + 1 * (-0.1)**2) = 0.141421356237308``
+
+        >>> a - rot.apply(b)
+        array([[ 0., 0.,  0. ],
+               [ 0., 0., -0.1],
+               [ 0., 0.,  0.1]])
+        >>> np.sqrt(np.sum(np.ones(3) @ (a - rot.apply(b))**2))
+        0.141421356237308
+        >>> rssd
+        0.141421356237308
+
+        The sensitivity matrix for this example is as follows:
+
+        >>> sens
+        array([[0.2, 0. , 0.],
+               [0. , 1.5, 1.],
+               [0. , 1. , 1.]])
+
+        Special case 1: Find a minimum rotation between single vectors:
+
+        >>> a = [1, 0, 0]
+        >>> b = [0, 1, 0]
+        >>> rot, _ = R.align_vectors(a, b)
+        >>> rot.as_matrix()
+        array([[0., 1., 0.],
+               [-1., 0., 0.],
+               [0., 0., 1.]])
+        >>> rot.apply(b)
+        array([1., 0., 0.])
+
+        Special case 2: One infinite weight. Here we find a rotation between
+        primary and secondary vectors that can align exactly:
+
+        >>> a = [[0, 1, 0], [0, 1, 1]]
+        >>> b = [[1, 0, 0], [1, 1, 0]]
+        >>> rot, _ = R.align_vectors(a, b, weights=[np.inf, 1])
+        >>> rot.as_matrix()
+        array([[0., 0., 1.],
+               [1., 0., 0.],
+               [0., 1., 0.]])
+        >>> rot.apply(b)
+        array([[0., 1., 0.],
+               [0., 1., 1.]])
+
+        Here the secondary vectors must be best-fit:
+
+        >>> b = [[1, 0, 0], [1, 2, 0]]
+        >>> rot, _ = R.align_vectors(a, b, weights=[np.inf, 1])
+        >>> rot.as_matrix()
+        array([[0., 0., 1.],
+               [1., 0., 0.],
+               [0., 1., 0.]])
+        >>> rot.apply(b)
+        array([[0., 1., 0.],
+               [0., 1., 2.]])
+        """
+        # Check input vectors
+        a_original = np.array(a, dtype=float)
+        b_original = np.array(b, dtype=float)
+        a = np.atleast_2d(a_original)
+        b = np.atleast_2d(b_original)
+        if a.shape[-1] != 3:
+            raise ValueError("Expected input `a` to have shape (3,) or "
+                             "(N, 3), got {}".format(a_original.shape))
+        if b.shape[-1] != 3:
+            raise ValueError("Expected input `b` to have shape (3,) or "
+                             "(N, 3), got {}".format(b_original.shape))
         if a.shape != b.shape:
             raise ValueError("Expected inputs `a` and `b` to have same shapes"
                              ", got {} and {} respectively.".format(
-                                a.shape, b.shape))
+                                 a_original.shape, b_original.shape))
+        N = len(a)
 
+        # Check weights
         if weights is None:
-            weights = np.ones(len(b))
+            weights = np.ones(N)
         else:
-            weights = np.asarray(weights)
+            weights = np.array(weights, dtype=float)
             if weights.ndim != 1:
                 raise ValueError("Expected `weights` to be 1 dimensional, got "
                                  "shape {}.".format(weights.shape))
-            if weights.shape[0] != b.shape[0]:
+            if N > 1 and (weights.shape[0] != N):
                 raise ValueError("Expected `weights` to have number of values "
                                  "equal to number of input vectors, got "
                                  "{} values and {} vectors.".format(
-                                    weights.shape[0], b.shape[0]))
+                                    weights.shape[0], N))
             if (weights < 0).any():
                 raise ValueError("`weights` may not contain negative values")
 
+        # For the special case of a single vector pair, we use the infinite
+        # weight code path
+        if N == 1:
+            weight_is_inf = np.array([True])
+        else:
+            weight_is_inf = np.isposinf(weights)
+        n_inf = np.sum(weight_is_inf)
+
+        # Check for an infinite weight, which indicates that the corresponding
+        # vector pair is the primary unmoving reference to which we align the
+        # other secondary vectors
+        if n_inf > 1:
+            raise ValueError("Only one infinite weight is allowed")
+
+        elif n_inf == 1:
+            if return_sensitivity:
+                raise ValueError("Cannot return sensitivity matrix with an "
+                                 "infinite weight or one vector pair")
+            a_pri = a[weight_is_inf]
+            b_pri = b[weight_is_inf]
+            a_pri_norm = _norm3(a_pri[0])
+            b_pri_norm = _norm3(b_pri[0])
+            if a_pri_norm == 0 or b_pri_norm == 0:
+                raise ValueError("Cannot align zero length primary vectors")
+            a_pri /= a_pri_norm
+            b_pri /= b_pri_norm
+
+            # We first find the minimum angle rotation between the primary
+            # vectors.
+            cross = np.cross(b_pri[0], a_pri[0])
+            theta = atan2(_norm3(cross), np.dot(a_pri[0], b_pri[0]))
+            if theta < 1e-3:  # small angle Taylor series approximation
+                theta2 = theta * theta
+                r = cross * (1 + theta2 / 6 + theta2 * theta2 * 7 / 360)
+            else:
+                r = cross * theta / np.sin(theta)
+            R_pri = cls.from_rotvec(r)
+
+            if N == 1:
+                # No secondary vectors, so we are done
+                R_opt = R_pri
+            else:
+                a_sec = a[~weight_is_inf]
+                b_sec = b[~weight_is_inf]
+                weights_sec = weights[~weight_is_inf]
+
+                # We apply the first rotation to the b vectors to align the
+                # primary vectors, resulting in vectors c. The secondary
+                # vectors must now be rotated about that primary vector to best
+                # align c to a.
+                c_sec = R_pri.apply(b_sec)
+
+                # Calculate vector components for the angle calculation. The
+                # angle phi to rotate a single 2D vector C to align to 2D
+                # vector A in the xy plane can be found with the equation
+                # phi = atan2(cross(C, A), dot(C, A))
+                #     = atan2(|C|*|A|*sin(phi), |C|*|A|*cos(phi))
+                # The below equations perform the same operation, but with the
+                # 3D rotation restricted to the 2D plane normal to a_pri, where
+                # the secondary vectors are projected into that plane. We then
+                # find the composite angle from the weighted sum of the
+                # axial components in that plane, minimizing the 2D alignment
+                # problem.
+                # Note that einsum('ij,ij->i', X, Y) is the row-wise dot
+                # product of X and Y.
+                sin_term = np.einsum('ij,ij->i', np.cross(c_sec, a_sec), a_pri)
+                cos_term = (np.einsum('ij,ij->i', c_sec, a_sec)
+                            - (np.einsum('ij,ij->i', c_sec, a_pri)
+                               * np.einsum('ij,ij->i', a_sec, a_pri)))
+                phi = atan2(np.sum(weights_sec * sin_term),
+                            np.sum(weights_sec * cos_term))
+                R_sec = cls.from_rotvec(phi * a_pri[0])
+
+                # Compose these to get the optimal rotation
+                R_opt = R_sec * R_pri
+
+            # Calculated the root sum squared distance. We force the error to
+            # be zero for the infinite weight vectors since they will align
+            # exactly.
+            weights_inf_zero = weights.copy()
+            if N > 1 or np.isposinf(weights[0]):
+                # Skip non-infinite weight single vectors pairs, we used the
+                # infinite weight code path but don't want to zero that weight
+                weights_inf_zero[weight_is_inf] = 0
+            a_est = R_opt.apply(b)
+            rssd = np.sqrt(np.sum(weights_inf_zero @ (a - a_est)**2))
+
+            return R_opt, rssd
+
+        # If no infinite weights and multiple vectors, proceed with normal
+        # algorithm
+        # Note that einsum('ji,jk->ik', X, Y) is equivalent to np.dot(X.T, Y)
         B = np.einsum('ji,jk->ik', weights[:, None] * a, b)
         u, s, vh = np.linalg.svd(B)
 
@@ -2687,7 +3098,6 @@ cdef class Rotation:
             return cls.from_matrix(C), rssd, sensitivity
         else:
             return cls.from_matrix(C), rssd
-
 
 class Slerp:
     """Spherical Linear Interpolation of Rotations.

@@ -4,15 +4,15 @@
 import math
 import numpy as np
 from numpy import asarray_chkfinite, asarray
-from numpy.lib import NumpyVersion
 import scipy.linalg
 from scipy._lib import doccer
 from scipy.special import (gammaln, psi, multigammaln, xlogy, entr, betaln,
                            ive, loggamma)
-from scipy._lib._util import check_random_state
+from scipy._lib._util import check_random_state, _lazywhere
 from scipy.linalg.blas import drot
 from scipy.linalg._misc import LinAlgError
 from scipy.linalg.lapack import get_lapack_funcs
+from ._continuous_distns import norm
 from ._discrete_distns import binom
 from . import _mvn, _covariance, _rcont
 from ._qmvnt import _qmvt
@@ -307,8 +307,10 @@ class multivariate_normal_gen(multi_rv_generic):
         Log of the cumulative distribution function.
     rvs(mean=None, cov=1, size=1, random_state=None)
         Draw random samples from a multivariate normal distribution.
-    entropy()
+    entropy(mean=None, cov=1)
         Compute the differential entropy of the multivariate normal.
+    fit(x, fix_mean=None, fix_cov=None)
+        Fit a multivariate normal distribution to data.
 
     Parameters
     ----------
@@ -785,6 +787,71 @@ class multivariate_normal_gen(multi_rv_generic):
         """
         dim, mean, cov_object = self._process_parameters(mean, cov)
         return 0.5 * (cov_object.rank * (_LOG_2PI + 1) + cov_object.log_pdet)
+
+    def fit(self, x, fix_mean=None, fix_cov=None):
+        """Fit a multivariate normal distribution to data.
+
+        Parameters
+        ----------
+        x : ndarray (m, n)
+            Data the distribution is fitted to. Must have two axes.
+            The first axis of length `m` represents the number of vectors
+            the distribution is fitted to. The second axis of length `n`
+            determines the dimensionality of the fitted distribution.
+        fix_mean : ndarray(n, )
+            Fixed mean vector. Must have length `n`.
+        fix_cov: ndarray (n, n)
+            Fixed covariance matrix. Must have shape `(n, n)`.
+
+        Returns
+        -------
+        mean : ndarray (n, )
+            Maximum likelihood estimate of the mean vector
+        cov : ndarray (n, n)
+            Maximum likelihood estimate of the covariance matrix
+
+        """
+        # input validation for data to be fitted
+        x = np.asarray(x)
+        if x.ndim != 2:
+            raise ValueError("`x` must be two-dimensional.")
+
+        n_vectors, dim = x.shape
+
+        # parameter estimation
+        # reference: https://home.ttic.edu/~shubhendu/Slides/Estimation.pdf
+        if fix_mean is not None:
+            # input validation for `fix_mean`
+            fix_mean = np.atleast_1d(fix_mean)
+            if fix_mean.shape != (dim, ):
+                msg = ("`fix_mean` must be a one-dimensional array the same "
+                       "length as the dimensionality of the vectors `x`.")
+                raise ValueError(msg)
+            mean = fix_mean
+        else:
+            mean = x.mean(axis=0)
+
+        if fix_cov is not None:
+            # input validation for `fix_cov`
+            fix_cov = np.atleast_2d(fix_cov)
+            # validate shape
+            if fix_cov.shape != (dim, dim):
+                msg = ("`fix_cov` must be a two-dimensional square array "
+                       "of same side length as the dimensionality of the "
+                       "vectors `x`.")
+                raise ValueError(msg)
+            # validate positive semidefiniteness
+            # a trimmed down copy from _PSD
+            s, u = scipy.linalg.eigh(fix_cov, lower=True, check_finite=True)
+            eps = _eigvalsh_to_eps(s)
+            if np.min(s) < -eps:
+                msg = "`fix_cov` must be symmetric positive semidefinite."
+                raise ValueError(msg)
+            cov = fix_cov
+        else:
+            centered_data = x - mean
+            cov = centered_data.T @ centered_data / n_vectors
+        return mean, cov
 
 
 multivariate_normal = multivariate_normal_gen()
@@ -1479,6 +1546,8 @@ class dirichlet_gen(multi_rv_generic):
         The mean of the Dirichlet distribution
     var(alpha)
         The variance of the Dirichlet distribution
+    cov(alpha)
+        The covariance of the Dirichlet distribution
     entropy(alpha)
         Compute the differential entropy of the Dirichlet distribution.
 
@@ -1671,6 +1740,26 @@ class dirichlet_gen(multi_rv_generic):
         out = (alpha * (alpha0 - alpha)) / ((alpha0 * alpha0) * (alpha0 + 1))
         return _squeeze_output(out)
 
+    def cov(self, alpha):
+        """Covariance matrix of the Dirichlet distribution.
+
+        Parameters
+        ----------
+        %(_dirichlet_doc_default_callparams)s
+
+        Returns
+        -------
+        cov : ndarray
+            The covariance matrix of the distribution.
+        """
+
+        alpha = _dirichlet_check_parameters(alpha)
+        alpha0 = np.sum(alpha)
+        a = alpha / alpha0
+
+        cov = (np.diag(a) - np.outer(a, a)) / (alpha0 + 1)
+        return _squeeze_output(cov)
+
     def entropy(self, alpha):
         """
         Differential entropy of the Dirichlet distribution.
@@ -1739,6 +1828,9 @@ class dirichlet_frozen(multi_rv_frozen):
     def var(self):
         return self._dist.var(self.alpha)
 
+    def cov(self):
+        return self._dist.cov(self.alpha)
+
     def entropy(self):
         return self._dist.entropy(self.alpha)
 
@@ -1748,7 +1840,7 @@ class dirichlet_frozen(multi_rv_frozen):
 
 # Set frozen generator docstrings from corresponding docstrings in
 # multivariate_normal_gen and fill in default strings in class docstrings
-for name in ['logpdf', 'pdf', 'rvs', 'mean', 'var', 'entropy']:
+for name in ['logpdf', 'pdf', 'rvs', 'mean', 'var', 'cov', 'entropy']:
     method = dirichlet_gen.__dict__[name]
     method_frozen = dirichlet_frozen.__dict__[name]
     method_frozen.__doc__ = doccer.docformat(
@@ -2304,8 +2396,8 @@ class wishart_gen(multi_rv_generic):
         Returns
         -------
         rvs : ndarray
-            Random variates of shape (`size`) + (`dim`, `dim), where `dim` is
-            the dimension of the scale matrix.
+            Random variates of shape (`size`) + (``dim``, ``dim``), where
+            ``dim`` is the dimension of the scale matrix.
 
         Notes
         -----
@@ -2924,8 +3016,8 @@ class invwishart_gen(wishart_gen):
         Returns
         -------
         rvs : ndarray
-            Random variates of shape (`size`) + (`dim`, `dim), where `dim` is
-            the dimension of the scale matrix.
+            Random variates of shape (`size`) + (``dim``, ``dim``), where
+            ``dim`` is the dimension of the scale matrix.
 
         Notes
         -----
@@ -3761,9 +3853,6 @@ class ortho_group_gen(multi_rv_generic):
         random_state = self._get_random_state(random_state)
 
         size = int(size)
-        if size > 1 and NumpyVersion(np.__version__) < '1.22.0':
-            return np.array([self.rvs(dim, size=1, random_state=random_state)
-                             for i in range(size)])
 
         dim = self._process_parameters(dim)
 
@@ -4176,9 +4265,6 @@ class unitary_group_gen(multi_rv_generic):
         random_state = self._get_random_state(random_state)
 
         size = int(size)
-        if size > 1 and NumpyVersion(np.__version__) < '1.22.0':
-            return np.array([self.rvs(dim, size=1, random_state=random_state)
-                             for i in range(size)])
 
         dim = self._process_parameters(dim)
 
@@ -4319,9 +4405,9 @@ class multivariate_t_gen(multi_rv_generic):
 
     References
     ----------
-    [1]     Arellano-Valle et al. "Shannon Entropy and Mutual Information for
-            Multivariate Skew-Elliptical Distributions". Scandinavian Journal
-            of Statistics. Vol. 40, issue 1.
+    .. [1] Arellano-Valle et al. "Shannon Entropy and Mutual Information for
+           Multivariate Skew-Elliptical Distributions". Scandinavian Journal
+           of Statistics. Vol. 40, issue 1.
 
     Examples
     --------
@@ -4563,12 +4649,34 @@ class multivariate_t_gen(multi_rv_generic):
             return multivariate_normal(None, cov=shape).entropy()
 
         shape_info = _PSD(shape)
-        halfsum = 0.5 * (dim + df)
-        half_df = 0.5 * df
-        return (-gammaln(halfsum) + gammaln(half_df)
+        shape_term = 0.5 * shape_info.log_pdet
+
+        def regular(dim, df):
+            halfsum = 0.5 * (dim + df)
+            half_df = 0.5 * df
+            return (
+                -gammaln(halfsum) + gammaln(half_df)
                 + 0.5 * dim * np.log(df * np.pi) + halfsum
                 * (psi(halfsum) - psi(half_df))
-                + 0.5 * shape_info.log_pdet)
+                + shape_term
+            )
+
+        def asymptotic(dim, df):
+            # Formula from Wolfram Alpha:
+            # "asymptotic expansion -gammaln((m+d)/2) + gammaln(d/2) + (m*log(d*pi))/2
+            #  + ((m+d)/2) * (digamma((m+d)/2) - digamma(d/2))"
+            return (
+                dim * norm._entropy() + dim / df
+                - dim * (dim - 2) * df**-2.0 / 4
+                + dim**2 * (dim - 2) * df**-3.0 / 6
+                + dim * (-3 * dim**3 + 8 * dim**2 - 8) * df**-4.0 / 24
+                + dim**2 * (3 * dim**3 - 10 * dim**2 + 16) * df**-5.0 / 30
+                + shape_term
+            )[()]
+
+        # preserves ~12 digits accuracy up to at least `dim=1e5`. See gh-18465.
+        threshold = dim * 100 * 4 / (np.log(dim) + 1)
+        return _lazywhere(df >= threshold, (dim, df), f=asymptotic, f2=regular)
 
     def entropy(self, loc=None, shape=1, df=1):
         """Calculate the differential entropy of a multivariate
@@ -4723,6 +4831,7 @@ class multivariate_t_frozen(multi_rv_frozen):
         Examples
         --------
         >>> import numpy as np
+        >>> from scipy.stats import multivariate_t
         >>> loc = np.zeros(3)
         >>> shape = np.eye(3)
         >>> df = 10
@@ -5010,8 +5119,8 @@ class multivariate_hypergeom_gen(multi_rv_generic):
     def _logpmf(self, x, M, m, n, mxcond, ncond):
         # This equation of the pmf comes from the relation,
         # n combine r = beta(n+1, 1) / beta(r+1, n-r+1)
-        num = np.zeros_like(m, dtype=np.float_)
-        den = np.zeros_like(n, dtype=np.float_)
+        num = np.zeros_like(m, dtype=np.float64)
+        den = np.zeros_like(n, dtype=np.float64)
         m, x = m[~mxcond], x[~mxcond]
         M, n = M[~ncond], n[~ncond]
         num[~mxcond] = (betaln(m+1, 1) - betaln(x+1, m-x+1))
@@ -6264,7 +6373,7 @@ class vonmises_fisher_gen(multi_rv_generic):
     direction :math:`\mathbf{\mu}`.
 
     In dimensions 2 and 3, specialized algorithms are used for fast sampling
-    [2]_, [3]_. For dimenions of 4 or higher the rejection sampling algorithm
+    [2]_, [3]_. For dimensions of 4 or higher the rejection sampling algorithm
     described in [4]_ is utilized. This implementation is partially based on
     the geomstats package [5]_, [6]_.
 

@@ -186,11 +186,8 @@ For a release there are currently five places on the web to upload things to:
 
 Upload first the wheels and then the sdist::
 
-  twine upload -s REPO_ROOT/release/installers/*.whl
-  twine upload -s REPO_ROOT/release/installers/scipy-1.x.y.tar.gz
-
-If ``gpg2`` is preferred, then the above commands may also include
-``--sign-with gpg2``
+  twine upload REPO_ROOT/release/installers/*.whl
+  twine upload REPO_ROOT/release/installers/scipy-1.x.y.tar.gz
 
 **Github Releases:**
 

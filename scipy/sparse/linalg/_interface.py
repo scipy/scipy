@@ -13,6 +13,7 @@ able to represent such matrices efficiently. First, we need a compact way to
 represent an all-ones matrix::
 
     >>> import numpy as np
+    >>> from scipy.sparse.linalg._interface import LinearOperator
     >>> class Ones(LinearOperator):
     ...     def __init__(self, shape):
     ...         super().__init__(dtype=None, shape=shape)
@@ -24,6 +25,7 @@ amount of storage, independent of ``shape``. The ``_matvec`` method specifies
 how this linear operator multiplies with (operates on) a vector. We can now
 add this operator to a sparse matrix that stores only offsets from one::
 
+    >>> from scipy.sparse.linalg._interface import aslinearoperator
     >>> from scipy.sparse import csr_matrix
     >>> offsets = csr_matrix([[1, 0, 2], [0, -1, 0], [0, 0, 3]])
     >>> A = aslinearoperator(offsets) + Ones(offsets.shape)
@@ -44,7 +46,7 @@ import warnings
 
 import numpy as np
 
-from scipy.sparse import isspmatrix
+from scipy.sparse import issparse
 from scipy.sparse._sputils import isshape, isintlike, asmatrix, is_pydata_spmatrix
 
 __all__ = ['LinearOperator', 'aslinearoperator']
@@ -325,21 +327,19 @@ class LinearOperator:
         _matmat method to ensure that y has the correct type.
 
         """
-        if not (isspmatrix(X) or is_pydata_spmatrix(X)):
+        if not (issparse(X) or is_pydata_spmatrix(X)):
             X = np.asanyarray(X)
 
         if X.ndim != 2:
-            raise ValueError('expected 2-d ndarray or matrix, not %d-d'
-                             % X.ndim)
+            raise ValueError(f'expected 2-d ndarray or matrix, not {X.ndim}-d')
 
         if X.shape[0] != self.shape[1]:
-            raise ValueError('dimension mismatch: %r, %r'
-                             % (self.shape, X.shape))
+            raise ValueError(f'dimension mismatch: {self.shape}, {X.shape}')
 
         try:
             Y = self._matmat(X)
         except Exception as e:
-            if isspmatrix(X) or is_pydata_spmatrix(X):
+            if issparse(X) or is_pydata_spmatrix(X):
                 raise TypeError(
                     "Unable to multiply a LinearOperator with a sparse matrix."
                     " Wrap the matrix in aslinearoperator first."
@@ -373,7 +373,7 @@ class LinearOperator:
         This rmatmat wraps the user-specified rmatmat routine.
 
         """
-        if not (isspmatrix(X) or is_pydata_spmatrix(X)):
+        if not (issparse(X) or is_pydata_spmatrix(X)):
             X = np.asanyarray(X)
 
         if X.ndim != 2:
@@ -381,13 +381,12 @@ class LinearOperator:
                              % X.ndim)
 
         if X.shape[0] != self.shape[0]:
-            raise ValueError('dimension mismatch: %r, %r'
-                             % (self.shape, X.shape))
+            raise ValueError(f'dimension mismatch: {self.shape}, {X.shape}')
 
         try:
             Y = self._rmatmat(X)
         except Exception as e:
-            if isspmatrix(X) or is_pydata_spmatrix(X):
+            if issparse(X) or is_pydata_spmatrix(X):
                 raise TypeError(
                     "Unable to multiply a LinearOperator with a sparse matrix."
                     " Wrap the matrix in aslinearoperator() first."
@@ -411,6 +410,12 @@ class LinearOperator:
     def __mul__(self, x):
         return self.dot(x)
 
+    def __truediv__(self, other):
+        if not np.isscalar(other):
+            raise ValueError("Can only divide a linear operator by a scalar.")
+
+        return _ScaledLinearOperator(self, 1.0/other)
+
     def dot(self, x):
         """Matrix-matrix or matrix-vector multiplication.
 
@@ -431,7 +436,7 @@ class LinearOperator:
         elif np.isscalar(x):
             return _ScaledLinearOperator(self, x)
         else:
-            if not isspmatrix(x) and not is_pydata_spmatrix(x):
+            if not issparse(x) and not is_pydata_spmatrix(x):
                 # Sparse matrices shouldn't be converted to numpy arrays.
                 x = np.asarray(x)
 
@@ -484,7 +489,7 @@ class LinearOperator:
         elif np.isscalar(x):
             return _ScaledLinearOperator(self, x)
         else:
-            if not isspmatrix(x) and not is_pydata_spmatrix(x):
+            if not issparse(x) and not is_pydata_spmatrix(x):
                 # Sparse matrices shouldn't be converted to numpy arrays.
                 x = np.asarray(x)
 
@@ -667,8 +672,7 @@ class _SumLinearOperator(LinearOperator):
                 not isinstance(B, LinearOperator):
             raise ValueError('both operands have to be a LinearOperator')
         if A.shape != B.shape:
-            raise ValueError('cannot add %r and %r: shape mismatch'
-                             % (A, B))
+            raise ValueError(f'cannot add {A} and {B}: shape mismatch')
         self.args = (A, B)
         super().__init__(_get_dtype([A, B]), A.shape)
 
@@ -695,8 +699,7 @@ class _ProductLinearOperator(LinearOperator):
                 not isinstance(B, LinearOperator):
             raise ValueError('both operands have to be a LinearOperator')
         if A.shape[1] != B.shape[0]:
-            raise ValueError('cannot multiply %r and %r: shape mismatch'
-                             % (A, B))
+            raise ValueError(f'cannot multiply {A} and {B}: shape mismatch')
         super().__init__(_get_dtype([A, B]),
                                                      (A.shape[0], B.shape[1]))
         self.args = (A, B)
@@ -724,6 +727,12 @@ class _ScaledLinearOperator(LinearOperator):
             raise ValueError('LinearOperator expected as A')
         if not np.isscalar(alpha):
             raise ValueError('scalar expected as alpha')
+        if isinstance(A, _ScaledLinearOperator):
+            A, alpha_original = A.args
+            # Avoid in-place multiplication so that we don't accidentally mutate
+            # the original prefactor.
+            alpha = alpha * alpha_original
+
         dtype = _get_dtype([A], [type(alpha)])
         super().__init__(dtype, A.shape)
         self.args = (A, alpha)
@@ -865,7 +874,7 @@ def aslinearoperator(A):
         A = np.atleast_2d(np.asarray(A))
         return MatrixLinearOperator(A)
 
-    elif isspmatrix(A) or is_pydata_spmatrix(A):
+    elif issparse(A) or is_pydata_spmatrix(A):
         return MatrixLinearOperator(A)
 
     else:

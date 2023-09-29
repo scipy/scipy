@@ -114,7 +114,6 @@ _mul_overflow_f_int(F_INT mx, F_INT my) {
 /*  module_methods:
  * {"_parcur", fitpack_parcur, METH_VARARGS, doc_parcur},
  * {"_surfit", fitpack_surfit, METH_VARARGS, doc_surfit},
- * {"_bispev", fitpack_bispev, METH_VARARGS, doc_bispev},
  * {"_insert", fitpack_insert, METH_VARARGS, doc_insert},
  */
 
@@ -133,8 +132,6 @@ _mul_overflow_f_int(F_INT mx, F_INT my) {
 		#define PARCUR PARCUR_
 		#define CLOCUR CLOCUR_
 		#define SURFIT SURFIT_
-		#define BISPEV BISPEV_
-		#define PARDER PARDER_
 		#define INSERT INSERT_
 	#endif
 #else
@@ -143,16 +140,12 @@ _mul_overflow_f_int(F_INT mx, F_INT my) {
 		#define PARCUR parcur
 		#define CLOCUR clocur
 		#define SURFIT surfit
-		#define BISPEV bispev
-		#define PARDER parder
 		#define INSERT insert
 	#else
 		#define PERCUR percur_
 		#define PARCUR parcur_
 		#define CLOCUR clocur_
 		#define SURFIT surfit_
-		#define BISPEV bispev_
-		#define PARDER parder_
 		#define INSERT insert_
 	#endif
 #endif
@@ -170,116 +163,10 @@ void SURFIT(F_INT*,F_INT*,double*,double*,double*,double*,
         double*,double*,double*,double*,F_INT*,F_INT*,double*,
         F_INT*,F_INT*,F_INT*,double*,F_INT*,double*,F_INT*,double*,
         double*,double*,double*,F_INT*,double*,F_INT*,F_INT*,F_INT*,F_INT*);
-void BISPEV(double*,F_INT*,double*,F_INT*,double*,F_INT*,F_INT*,
-        double*,F_INT*,double*,F_INT*,double*,double*,F_INT*,
-        F_INT*,F_INT*,F_INT*);
-void PARDER(double*,F_INT*,double*,F_INT*,double*,F_INT*,F_INT*,
-        F_INT*,F_INT*,double*,F_INT*,double*,F_INT*,double*,
-        double*,F_INT*,F_INT*,F_INT*,F_INT*);
 void INSERT(F_INT*,double*,F_INT*,double*,F_INT*,double*,double*,
         F_INT*,double*,F_INT*,F_INT*);
 
 /* Note that curev, cualde need no interface. */
-
-static char doc_bispev[] = " [z,ier] = _bispev(tx,ty,c,kx,ky,x,y,nux,nuy)";
-static PyObject *
-fitpack_bispev(PyObject *dummy, PyObject *args)
-{
-    F_INT nx, ny, kx, ky, mx, my, lwrk, *iwrk, kwrk, ier, lwa, nux, nuy;
-    npy_intp mxy;
-    double *tx, *ty, *c, *x, *y, *z, *wrk, *wa = NULL;
-    PyArrayObject *ap_x = NULL, *ap_y = NULL, *ap_z = NULL, *ap_tx = NULL;
-    PyArrayObject *ap_ty = NULL, *ap_c = NULL;
-    PyObject *x_py = NULL, *y_py = NULL, *c_py = NULL, *tx_py = NULL, *ty_py = NULL;
-
-    if (!PyArg_ParseTuple(args, ("OOO" F_INT_PYFMT F_INT_PYFMT "OO" F_INT_PYFMT F_INT_PYFMT),
-                          &tx_py,&ty_py,&c_py,&kx,&ky,&x_py,&y_py,&nux,&nuy)) {
-        return NULL;
-    }
-    ap_x = (PyArrayObject *)PyArray_ContiguousFromObject(x_py, NPY_DOUBLE, 0, 1);
-    ap_y = (PyArrayObject *)PyArray_ContiguousFromObject(y_py, NPY_DOUBLE, 0, 1);
-    ap_c = (PyArrayObject *)PyArray_ContiguousFromObject(c_py, NPY_DOUBLE, 0, 1);
-    ap_tx = (PyArrayObject *)PyArray_ContiguousFromObject(tx_py, NPY_DOUBLE, 0, 1);
-    ap_ty = (PyArrayObject *)PyArray_ContiguousFromObject(ty_py, NPY_DOUBLE, 0, 1);
-    if (ap_x == NULL
-            || ap_y == NULL
-            || ap_c == NULL
-            || ap_tx == NULL
-            || ap_ty == NULL) {
-        goto fail;
-    }
-    x = (double *) PyArray_DATA(ap_x);
-    y = (double *) PyArray_DATA(ap_y);
-    c = (double *) PyArray_DATA(ap_c);
-    tx = (double *) PyArray_DATA(ap_tx);
-    ty = (double *) PyArray_DATA(ap_ty);
-    nx = PyArray_DIMS(ap_tx)[0];
-    ny = PyArray_DIMS(ap_ty)[0];
-    mx = PyArray_DIMS(ap_x)[0];
-    my = PyArray_DIMS(ap_y)[0];
-
-    mxy = _mul_overflow_intp(mx, my);
-    if (mxy < 0) {
-        PyErr_NoMemory();
-        goto fail;
-    }
-
-    ap_z = (PyArrayObject *)PyArray_SimpleNew(1,&mxy,NPY_DOUBLE);
-    if (ap_z == NULL) {
-        goto fail;
-    }
-    z = (double *) PyArray_DATA(ap_z);
-    /* Try detecting an integer overflow in computations which are quadratic
-     * in the input data size, ~mx*my. On the other hand, k{x,y} and nu{x,y}
-     *  are of the order 1..5, thus kx*mx is unlikely to overflow.
-     */
-    if (nux || nuy) {
-        /* lwrk = mx*(kx + 1 - nux) + my*(ky + 1 - nuy) + (nx - kx - 1)*(ny - ky - 1); */
-        lwrk = _mul_overflow_f_int(nx - kx - 1, ny - ky - 1);
-        if (lwrk < 0) {
-            PyErr_NoMemory();
-            goto fail;
-        }    
-        lwrk += mx*(kx + 1 - nux) + my*(ky + 1 - nuy);
-    }
-    else {
-        lwrk = mx*(kx + 1) + my*(ky + 1);
-    }
-    kwrk = mx + my;
-    lwa = lwrk + kwrk;
-    if ((wa = malloc(lwa*sizeof(double))) == NULL) {
-        PyErr_NoMemory();
-        goto fail;
-    }
-    wrk = wa;
-    iwrk = (int *)(wrk + lwrk);
-    if (nux || nuy) {
-        PARDER(tx, &nx, ty, &ny, c, &kx, &ky, &nux, &nuy, x, &mx, y, &my, z,
-                wrk, &lwrk, iwrk, &kwrk, &ier);
-    }
-    else {
-        BISPEV(tx, &nx, ty, &ny, c, &kx, &ky, x, &mx, y, &my, z, wrk, &lwrk,
-                iwrk, &kwrk, &ier);
-    }
-
-    free(wa);
-    Py_DECREF(ap_x);
-    Py_DECREF(ap_y);
-    Py_DECREF(ap_c);
-    Py_DECREF(ap_tx);
-    Py_DECREF(ap_ty);
-    return Py_BuildValue("Ni",PyArray_Return(ap_z),ier);
-
-fail:
-    free(wa);
-    Py_XDECREF(ap_x);
-    Py_XDECREF(ap_y);
-    Py_XDECREF(ap_z);
-    Py_XDECREF(ap_c);
-    Py_XDECREF(ap_tx);
-    Py_XDECREF(ap_ty);
-    return NULL;
-}
 
 static char doc_surfit[] = " [tx,ty,c,o] = _surfit(x, y, z, w, xb, xe, yb, ye,"\
       " kx,ky,iopt,s,eps,tx,ty,nxest,nyest,wrk,lwrk1,lwrk2)";
@@ -696,9 +583,6 @@ static struct PyMethodDef fitpack_module_methods[] = {
 {"_surfit",
     fitpack_surfit,
     METH_VARARGS, doc_surfit},
-{"_bispev",
-    fitpack_bispev,
-    METH_VARARGS, doc_bispev},
 {"_insert",
     fitpack_insert,
     METH_VARARGS, doc_insert},

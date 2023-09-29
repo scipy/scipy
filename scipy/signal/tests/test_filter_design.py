@@ -893,6 +893,23 @@ class TestFreqz:
         assert_array_almost_equal(w1, w2)
         assert_array_almost_equal(h1, h2)
 
+    # https://github.com/scipy/scipy/issues/17289
+    # https://github.com/scipy/scipy/issues/15273
+    @pytest.mark.parametrize('whole,nyquist,worN',
+                             [(False, False, 32),
+                              (False, True, 32),
+                              (True, False, 32),
+                              (True, True, 32),
+                              (False, False, 257),
+                              (False, True, 257),
+                              (True, False, 257),
+                              (True, True, 257)])
+    def test_17289(self, whole, nyquist, worN):
+        d = [0, 1]
+        w, Drfft = freqz(d, worN=32, whole=whole, include_nyquist=nyquist)
+        _, Dpoly = freqz(d, worN=w)
+        assert_allclose(Drfft, Dpoly)
+
 
 class TestSOSFreqz:
 
@@ -1041,7 +1058,7 @@ class TestSOSFreqz:
         # N = None, whole=True
         w1, h1 = sosfreqz(sos, whole=True, fs=fs)
         w2, h2 = sosfreqz(sos, whole=True)
-        assert_allclose(h1, h2)
+        assert_allclose(h1, h2, atol=1e-27)
         assert_allclose(w1, np.linspace(0, fs, 512, endpoint=False))
 
         # N = 5, whole=False
@@ -1547,6 +1564,13 @@ class TestButtord:
         with pytest.warns(RuntimeWarning, match=r'Order is zero'):
             buttord(0.0, 1.0, 3, 60)
 
+    def test_ellip_butter(self):
+        # The purpose of the test is to compare to some known output from past
+        # scipy versions. The values to compare to are generated with scipy
+        # 1.9.1 (there is nothing special about this particular version though)
+        n, wn = buttord([0.1, 0.6], [0.2, 0.5], 3, 60)
+        assert n == 14
+
 
 class TestCheb1ord:
 
@@ -1657,6 +1681,16 @@ class TestCheb1ord:
         with pytest.raises(ValueError) as exc_info:
             cheb1ord(0.2, 0.3, 1, -2)
         assert "gstop should be larger than 0.0" in str(exc_info.value)
+
+    def test_ellip_cheb1(self):
+        # The purpose of the test is to compare to some known output from past
+        # scipy versions. The values to compare to are generated with scipy
+        # 1.9.1 (there is nothing special about this particular version though)
+        n, wn = cheb1ord([0.1, 0.6], [0.2, 0.5], 3, 60)
+        assert n == 7
+
+        n2, w2 = cheb2ord([0.1, 0.6], [0.2, 0.5], 3, 60)
+        assert not (wn == w2).all()
 
 
 class TestCheb2ord:
@@ -1771,6 +1805,16 @@ class TestCheb2ord:
         with pytest.raises(ValueError) as exc_info:
             cheb2ord([0.1, 0.6], [0.2, 0.5], 1, -2)
         assert "gstop should be larger than 0.0" in str(exc_info.value)
+
+    def test_ellip_cheb2(self):
+        # The purpose of the test is to compare to some known output from past
+        # scipy versions. The values to compare to are generated with scipy
+        # 1.9.1 (there is nothing special about this particular version though)
+        n, wn = cheb2ord([0.1, 0.6], [0.2, 0.5], 3, 60)
+        assert n == 7
+
+        n1, w1 = cheb1ord([0.1, 0.6], [0.2, 0.5], 3, 60)
+        assert not (wn == w1).all()
 
 
 class TestEllipord:
@@ -1899,6 +1943,13 @@ class TestEllipord:
         with pytest.raises(ValueError) as exc_info:
             ellipord(0.2, 0.5, 1, -2)
         assert "gstop should be larger than 0.0" in str(exc_info.value)
+
+    def test_ellip_butter(self):
+        # The purpose of the test is to compare to some known output from past
+        # scipy versions. The values to compare to are generated with scipy
+        # 1.9.1 (there is nothing special about this particular version though)
+        n, wn = ellipord([0.1, 0.6], [0.2, 0.5], 3, 60)
+        assert n == 5
 
 
 class TestBessel:
@@ -3512,7 +3563,7 @@ def test_sos_consistency():
 class TestIIRNotch:
 
     def test_ba_output(self):
-        # Compare coeficients with Matlab ones
+        # Compare coefficients with Matlab ones
         # for the equivalent input:
         b, a = iirnotch(0.06, 30)
         b2 = [
@@ -3528,7 +3579,7 @@ class TestIIRNotch:
         assert_allclose(a, a2, rtol=1e-8)
 
     def test_frequency_response(self):
-        # Get filter coeficients
+        # Get filter coefficients
         b, a = iirnotch(0.3, 30)
 
         # Get frequency response
@@ -3570,7 +3621,7 @@ class TestIIRNotch:
         assert_raises(TypeError, iirnotch, w0=-1, Q=[1, 2, 3])
 
     def test_fs_param(self):
-        # Get filter coeficients
+        # Get filter coefficients
         b, a = iirnotch(1500, 30, fs=10000)
 
         # Get frequency response
@@ -3605,7 +3656,7 @@ class TestIIRNotch:
 class TestIIRPeak:
 
     def test_ba_output(self):
-        # Compare coeficients with Matlab ones
+        # Compare coefficients with Matlab ones
         # for the equivalent input:
         b, a = iirpeak(0.06, 30)
         b2 = [
@@ -3620,7 +3671,7 @@ class TestIIRPeak:
         assert_allclose(a, a2, rtol=1e-8)
 
     def test_frequency_response(self):
-        # Get filter coeficients
+        # Get filter coefficients
         b, a = iirpeak(0.3, 30)
 
         # Get frequency response
@@ -3662,7 +3713,7 @@ class TestIIRPeak:
         assert_raises(TypeError, iirpeak, w0=-1, Q=[1, 2, 3])
 
     def test_fs_param(self):
-        # Get filter coeficients
+        # Get filter coefficients
         b, a = iirpeak(1200, 30, fs=8000)
 
         # Get frequency response
@@ -4073,7 +4124,7 @@ class TestGroupDelay:
 
 
 class TestGammatone:
-    # Test erroneus input cases.
+    # Test erroneous input cases.
     def test_invalid_input(self):
         # Cutoff frequency is <= 0 or >= fs / 2.
         fs = 16000

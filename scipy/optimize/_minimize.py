@@ -344,13 +344,13 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     large floating values.
 
     Method :ref:`trust-constr <optimize.minimize-trustconstr>` is a
-    trust-region algorithm for constrained optimization. It swiches
+    trust-region algorithm for constrained optimization. It switches
     between two implementations depending on the problem definition.
     It is the most versatile constrained minimization algorithm
     implemented in SciPy and the most appropriate for large-scale problems.
     For equality constrained problems it is an implementation of Byrd-Omojokun
     Trust-Region SQP method described in [17]_ and in [5]_, p. 549. When
-    inequality constraints are imposed as well, it swiches to the trust-region
+    inequality constraints are imposed as well, it switches to the trust-region
     interior point method described in [16]_. This interior point algorithm,
     in turn, solves inequality constraints by introducing slack variables
     and solving a sequence of equality-constrained barrier problems
@@ -753,7 +753,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
 def minimize_scalar(fun, bracket=None, bounds=None, args=(),
                     method=None, tol=None, options=None):
-    """Minimization of scalar function of one variable.
+    """Local minimization of scalar function of one variable.
 
     Parameters
     ----------
@@ -832,6 +832,12 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     Method :ref:`Bounded <optimize.minimize_scalar-bounded>` can
     perform bounded minimization [2]_ [3]_. It uses the Brent method to find a
     local minimum in the interval x1 < xopt < x2.
+
+    Note that the Brent and Golden methods do not guarantee success unless a
+    valid ``bracket`` triple is provided. If a three-point bracket cannot be
+    found, consider `scipy.optimize.minimize`. Also, all methods are intended
+    only for local minimization. When the function of interest has more than
+    one local minimum, consider :ref:`global_optimization`.
 
     **Custom minimizers**
 

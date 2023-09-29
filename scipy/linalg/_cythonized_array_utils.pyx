@@ -3,8 +3,8 @@ cimport cython
 import numpy as np
 from scipy.linalg._cythonized_array_utils cimport (
     lapack_t,
-	np_complex_numeric_t,
-	np_numeric_t
+    np_complex_numeric_t,
+    np_numeric_t
     )
 from scipy.linalg.cython_lapack cimport sgetrf, dgetrf, cgetrf, zgetrf
 from libc.stdlib cimport malloc, free
@@ -66,34 +66,26 @@ def find_det_from_lu(lapack_t[:, ::1] a):
 
 
 # ====================== swap_c_and_f_layout : s, d, c, z ====================
-@cython.cdivision(True)
+@cython.nonecheck(False)
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.initializedcheck(False)
-cdef void swap_c_and_f_layout(lapack_t *a, lapack_t *b, int r, int c, int n) noexcept nogil:
-    """Recursive matrix transposition for square arrays"""
-    cdef int i, j, ith_row, r2, c2
-    cdef lapack_t *bb=b
-    cdef lapack_t *aa=a
-    if r < 16:
-        for j in range(c):
-            ith_row = 0
-            for i in range(r):
-            # Basically b[i*n+j] = a[j*n+i] without index math
-                bb[ith_row] = aa[i]
-                ith_row += n
-            aa += n
-            bb += 1
-    else:
-        # If tall
-        if (r > c):
-            r2 = r//2
-            swap_c_and_f_layout(a, b, r2, c, n)
-            swap_c_and_f_layout(a + r2, b+(r2)*n, r-r2, c, n)
-        else:  # Nope
-            c2 = c//2
-            swap_c_and_f_layout(a, b, r, c2, n);
-            swap_c_and_f_layout(a+(c2)*n, b+c2, r, c-c2, n)
+cdef inline void swap_c_and_f_layout(lapack_t *a, lapack_t *b, int r, int c) noexcept nogil:
+    """
+    Swap+copy the memory layout of same sized buffers mainly
+    for Cython LAPACK interfaces.
+    """
+    cdef int row, col, ith_row
+    cdef lapack_t *bb = b
+    cdef lapack_t *aa = a
+
+    for col in range(c):
+        ith_row = 0
+        for row in range(r):
+            bb[row] = aa[ith_row]
+            ith_row += c
+        aa += 1
+        bb += r
 # ============================================================================
 
 
@@ -109,7 +101,7 @@ def bandwidth(a):
     Returns
     -------
     lu : tuple
-        2-tuple of ints indicating the lower and upper bandwith. A zero
+        2-tuple of ints indicating the lower and upper bandwidth. A zero
         denotes no sub- or super-diagonal on that side (triangular), and,
         say for N rows (N-1) means that side is full. Same example applies
         to the upper triangular part with (M-1).
@@ -282,7 +274,7 @@ def issymmetric(a, atol=None, rtol=None):
     The diagonal of the array is not scanned. Thus if there are infs, NaNs or
     similar problematic entries on the diagonal, they will be ignored. However,
     `numpy.inf` will be treated as a number, that is to say ``[[1, inf],
-    [inf, 2]]`` will return ``True``. On the other hand `numpy.NaN` is never
+    [inf, 2]]`` will return ``True``. On the other hand `numpy.nan` is never
     symmetric, say, ``[[1, nan], [nan, 2]]`` will return ``False``.
 
     When ``atol`` and/or ``rtol`` are set to , then the comparison is performed
@@ -408,7 +400,7 @@ def ishermitian(a, atol=None, rtol=None):
     For square empty arrays the result is returned True by convention.
 
     `numpy.inf` will be treated as a number, that is to say ``[[1, inf],
-    [inf, 2]]`` will return ``True``. On the other hand `numpy.NaN` is never
+    [inf, 2]]`` will return ``True``. On the other hand `numpy.nan` is never
     symmetric, say, ``[[1, nan], [nan, 2]]`` will return ``False``.
 
     When ``atol`` and/or ``rtol`` are set to , then the comparison is performed

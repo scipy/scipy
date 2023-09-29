@@ -2,7 +2,6 @@ _stats_pxd = [
   fs.copyfile('__init__.py'),
   fs.copyfile('_stats.pxd'),
   fs.copyfile('_biasedurn.pxd'),
-  fs.copyfile('_unuran/unuran.pxd'),
 ]
 
 stats_special_cython_gen = generator(cython,
@@ -14,35 +13,17 @@ stats_special_cython_gen = generator(cython,
     _stats_pxd,
     cython_special_pxd])
 
-statlib_lib = static_library('statlib_lib',
-  [
-    'statlib/ansari.f',
-    'statlib/spearman.f',
-    'statlib/swilk.f'
-  ],
-  fortran_args: _fflag_Wno_unused_variable
-)
-
-statlib_module = custom_target('statlib_module',
-  output: ['_statlib-f2pywrappers.f', '_statlibmodule.c'],
-  input: 'statlib.pyf',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
-)
-
-statlib = py3.extension_module('_statlib',
-  statlib_module,
-  c_args: numpy_nodepr_api,
-  fortran_args: fortran_ignore_warnings,
-  link_with: statlib_lib,
-  dependencies: [fortranobject_dep],
+_stats = py3.extension_module('_stats',
+  stats_special_cython_gen.process('_stats.pyx'),
+  c_args: cython_c_args,
+  dependencies: np_dep,
   link_args: version_link_args,
   install: true,
-  link_language: 'fortran',
   subdir: 'scipy/stats'
 )
 
-_stats = py3.extension_module('_stats',
-  stats_special_cython_gen.process('_stats.pyx'),
+_ansari_swilk_statistics = py3.extension_module('_ansari_swilk_statistics',
+  cython_gen.process('_ansari_swilk_statistics.pyx'),
   c_args: cython_c_args,
   dependencies: np_dep,
   link_args: version_link_args,
@@ -109,7 +90,16 @@ _stats_gen_pyx = custom_target('_stats_gen_pyx',
   ],
   input: '_generate_pyx.py',
   command: [py3, '@INPUT@', '-o', '@OUTDIR@'],
-  depends: _stats_pxd
+  depends: _stats_pxd,
+  depend_files: [
+    '_boost/include/code_gen.py',
+    '_boost/include/gen_func_defs_pxd.py',
+    '_boost/include/_info.py',
+    # TODO: once setup.py is gone, remove this .pxd file from here and from the
+    #       output of this custom_target, and stop copying it manually in
+    #       code_gen.py. Instead, use fs.copyfile at the top of this file.
+    '_boost/include/templated_pyufunc.pxd',
+  ]
 )
 
 # Only needed to establish a dependency; see comments in linalg/meson.build
@@ -137,8 +127,6 @@ nct_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[8])
 skewnorm_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[9])
 invgauss_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[10])
 
-# Extra dependency from _lib
-unuran_wrap_pyx = lib_cython_gen.process('_unuran/unuran_wrapper.pyx')
 
 biasedurn = py3.extension_module('_biasedurn',
   [
@@ -186,6 +174,7 @@ py3.install_sources([
     '_axis_nan_policy.py',
     '_binned_statistic.py',
     '_binomtest.py',
+    '_bws_test.py',
     '_censored_data.py',
     '_common.py',
     '_constants.py',
@@ -215,6 +204,7 @@ py3.install_sources([
     '_resampling.py',
     '_result_classes.py',
     '_rvs_sampling.py',
+    '_sampling.py',
     '_sensitivity_analysis.py',
     '_stats_mstats_common.py',
     '_stats_py.py',
@@ -233,7 +223,6 @@ py3.install_sources([
     'mvn.py',
     'qmc.py',
     'sampling.py',
-    'statlib.py',
     'stats.py'
   ],
   subdir: 'scipy/stats'

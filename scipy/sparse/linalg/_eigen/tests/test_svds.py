@@ -7,7 +7,7 @@ from numpy.testing import assert_allclose, assert_equal, assert_array_equal
 import pytest
 
 from scipy.linalg import svd, null_space
-from scipy.sparse import csc_matrix, isspmatrix, spdiags, random
+from scipy.sparse import csc_matrix, issparse, spdiags, random
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
 if os.environ.get("SCIPY_USE_PROPACK"):
     has_propack = True
@@ -23,7 +23,7 @@ from scipy.sparse.linalg._eigen.arpack import ArpackNoConvergence
 def sorted_svd(m, k, which='LM'):
     # Compute svd of a dense matrix m, and return singular vectors/values
     # sorted.
-    if isspmatrix(m):
+    if issparse(m):
         m = m.toarray()
     u, s, vh = svd(m)
     if which == 'LM':

@@ -8,9 +8,24 @@ import re
 import sys
 import numpy as np
 import inspect
+import sysconfig
 
 
-__all__ = ['PytestTester', 'check_free_memory', '_TestPythranFunc']
+__all__ = ['PytestTester', 'check_free_memory', '_TestPythranFunc', 'IS_MUSL']
+
+
+IS_MUSL = False
+try:
+    # Note that packaging is not a dependency, hence we need this try-except:
+    from packaging.tags import sys_tags
+    _tags = list(sys_tags())
+    if 'musllinux' in _tags[0].platform:
+        IS_MUSL = True
+except ImportError:
+    # fallback to sysconfig (might be flaky)
+    v = sysconfig.get_config_var('HOST_GNU_TYPE') or ''
+    if 'musl' in v:
+        IS_MUSL = True
 
 
 class FPUModeChangeWarning(RuntimeWarning):
