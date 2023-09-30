@@ -3787,6 +3787,22 @@ class TestSkewNorm:
         computed = stats.skewnorm.stats(a=-4, loc=5, scale=2, moments='mvsk')
         assert_array_almost_equal(computed, expected, decimal=2)
 
+    def test_pdf_large_x(self):
+        # Triples are [x, a, logpdf(x, a)].  These values were computed
+        # using Log[PDF[SkewNormalDistribution[0, 1, a], x]] in Wolfram Alpha.
+        logpdfvals = [
+            [40, -1, -1604.834233366398515598970],
+            [40, -1/2, -1004.142946723741991369168],
+            [40, 0, -800.9189385332046727417803],
+            [40, 1/2, -800.2257913526447274323631],
+            [-40, -1/2, -800.2257913526447274323631],
+            [-2, 1e7, -2.000000000000199559727173e14],
+            [2, -1e7, -2.000000000000199559727173e14],
+        ]
+        for x, a, logpdfval in logpdfvals:
+            logp = stats.skewnorm.logpdf(x, a)
+            assert_allclose(logp, logpdfval, rtol=1e-8)
+
     def test_cdf_large_x(self):
         # Regression test for gh-7746.
         # The x values are large enough that the closest 64 bit floating
@@ -3798,7 +3814,7 @@ class TestSkewNorm:
 
     def test_cdf_sf_small_values(self):
         # Triples are [x, a, cdf(x, a)].  These values were computed
-        # using CDF[SkewNormDistribution[0, 1, a], x] in Wolfram Alpha.
+        # using CDF[SkewNormalDistribution[0, 1, a], x] in Wolfram Alpha.
         cdfvals = [
             [-8, 1, 3.870035046664392611e-31],
             [-4, 2, 8.1298399188811398e-21],
