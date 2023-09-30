@@ -9117,6 +9117,12 @@ class skewnorm_gen(rv_continuous):
             f2=lambda x, a: 2.*_norm_pdf(x)*_norm_cdf(a*x)
         )
 
+    def _logpdf(self, x, a):
+        return _lazywhere(
+            a == 0, (x, a), lambda x, a: _norm_logpdf(x),
+            f2=lambda x, a: np.log(2)+_norm_logpdf(x)+_norm_logcdf(a*x),
+        )
+
     def _cdf(self, x, a):
         a = np.atleast_1d(a)
         cdf = _boost._skewnorm_cdf(x, 0, 1, a)
