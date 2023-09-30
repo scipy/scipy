@@ -47,7 +47,6 @@ if [[ $PLATFORM == "macosx-x86_64" ]]; then
   # environment (so it mirrors what is done in the conda-forge compiler
   # activation scripts)
   export SDKROOT=${SDKROOT:-$(xcrun --show-sdk-path)}
-  gfortran tools/wheels/test.f
 fi
 
 if [[ $PLATFORM == "macosx-arm64" ]]; then
