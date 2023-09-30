@@ -9,10 +9,6 @@
 	path = scipy/_lib/unuran
 	url = https://github.com/scipy/unuran.git
 	shallow = true
-[submodule "HiGHS"]
-	path = scipy/_lib/highs
-	url = https://github.com/HaoZeke/highs
-	shallow = true
 [submodule "scipy/_lib/boost_math"]
 	path = scipy/_lib/boost_math
 	url = https://github.com/boostorg/math.git

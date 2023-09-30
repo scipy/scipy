@@ -252,9 +252,9 @@ License:
   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Name: HiGHS
-Files: scipy/optimize/_highs/*
+Files: subprojects/highs/*
 License: MIT
-  For details, see scipy/optimize/_highs/LICENCE
+  For details, see subprojects/highs/LICENCE
 
 Name: Boost
 Files: scipy/_lib/boost_math/*
