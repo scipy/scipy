@@ -153,8 +153,11 @@ subdir('tests')
 
 # Setup the highs library
 highs_proj = subproject('highs',
-                      default_options : ['default_library=static'])
+                      default_options : ['default_library=static',
+                                        'with_pybind11=True'])
 highs_dep = highs_proj.get_variable('highs_dep')
+highspy_py = highs_proj.get_variable('highspy_py')
+highspy_cpp = highs_proj.get_variable('highspy_cpp')
 
 pyb11_dep = [
   py3.dependency(),
@@ -163,18 +166,13 @@ pyb11_dep = [
 
 highspyext = py3.extension_module(
   '_highs',
-  sources : [
-    'highs/highspy/highs_bindings.cpp'
-  ],
+  sources : highspy_cpp,
   dependencies: [pyb11_dep, highs_dep],
   install: true,
   subdir: 'highspy',
 )
 
 py3.install_sources(
-  [
-    'highs/highspy/__init__.py',
-    'highs/highspy/highs.py'
-  ],
+  highspy_py,
   subdir: 'highspy',
 )
