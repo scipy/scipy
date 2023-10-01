@@ -1,10 +1,9 @@
 from warnings import warn
 
 import numpy as np
-from scipy.optimize._highs import highs_bindings as hspy  # type: ignore[attr-defined]
-from scipy.optimize._highs import _highs_options as hopt  # type: ignore[attr-defined]
+from highspy  import _highs as hspy  # type: ignore[attr-defined]
+from highspy import _highs_options as hopt  # type: ignore[attr-defined]
 from scipy.optimize import OptimizeWarning
-
 
 def _highs_wrapper(c, indptr, indices, data, lhs, rhs, lb, ub, integrality, options):
     numcol = c.size
@@ -36,15 +35,16 @@ def _highs_wrapper(c, indptr, indices, data, lhs, rhs, lb, ub, integrality, opti
         lp.integrality_ = [hspy.HighsVarType(i) for i in integrality]
 
     # Make a Highs object and pass it everything
-    highs = hspy.Highs()
+    highs = hspy.Highs_()
     highs_options = hspy.HighsOptions()
+    hoptmanager = hopt.HighsOptionsManager()
     for key, val in options.items():
         # handle filtering of unsupported and default options
         if val is None or key in ("sense",):
             continue
 
         # ask for the option type
-        opt_type = hopt.get_option_type(key)
+        opt_type = hoptmanager.get_option_type(key)
         if -1 == opt_type:
             warn(f"Unrecognized options detected: {dict({key: val})}", OptimizeWarning)
             continue
@@ -188,25 +188,34 @@ def _highs_wrapper(c, indptr, indices, data, lhs, rhs, lb, ub, integrality, opti
 
 def check_option(highs_inst, option, value):
     status, option_type = highs_inst.getOptionType(option)
+    hoptmanager = hopt.HighsOptionsManager()
 
-    if status != HighsStatus.kOk:
-        return 1, "Invalid option name."
+    if status != hspy.HighsStatus.kOk:
+        return -1, "Invalid option name."
 
     valid_types = {
-        HighsOptionType.kBool: bool,
-        HighsOptionType.kInt: int,
-        HighsOptionType.kDouble: float,
-        HighsOptionType.kString: str
+        hspy.HighsOptionType.kBool: bool,
+        hspy.HighsOptionType.kInt: int,
+        hspy.HighsOptionType.kDouble: float,
+        hspy.HighsOptionType.kString: str
     }
 
     expected_type = valid_types.get(option_type, None)
+
+    if expected_type is str:
+        if not hoptmanager.check_string_option(option, value):
+            return -1, "Invalid option value."
+    if expected_type is float:
+        if not hoptmanager.check_double_option(option, value):
+            return -1, "Invalid option value."
+    if expected_type is int:
+        if not hoptmanager.check_int_option(option, value):
+            return -1, "Invalid option value."
+
     if expected_type is None:
         return 3, "Unknown option type."
 
-    if not isinstance(value, expected_type):
-        return 2, "Invalid option value."
-
     status, current_value = highs_inst.getOptionValue(option)
-    if status != HighsStatus.kOk:
+    if status != hspy.HighsStatus.kOk:
         return 4, "Failed to validate option value."
     return 0, "Check option succeeded."
