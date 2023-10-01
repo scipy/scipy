@@ -20,9 +20,9 @@ from warnings import warn
 from ._highs._highs_wrapper import _highs_wrapper
 from scipy.sparse import csc_matrix, vstack, issparse
 
-from highspy._highs import HighsModelStatus as hms
-from highspy._highs import simplex_constants as simpc
-import highspy._highs as hspy
+from scipy.optimize._highs.highspy.highs import HighsModelStatus as hms
+from scipy.optimize._highs.highspy.highs import simpc
+from scipy.optimize._highs.highspy import highs as hspy
 
 class SciPyRC(Enum):
     """Return codes for SciPy solvers"""

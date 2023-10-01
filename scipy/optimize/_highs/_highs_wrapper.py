@@ -1,8 +1,8 @@
 from warnings import warn
 
 import numpy as np
-from highspy  import _highs as hspy  # type: ignore[attr-defined]
-from highspy import _highs_options as hopt  # type: ignore[attr-defined]
+from scipy.optimize._highs.highspy import highs as hspy  # type: ignore[attr-defined]
+from scipy.optimize._highs.highspy import _highs_options as hopt  # type: ignore[attr-defined]
 from scipy.optimize import OptimizeWarning
 
 def _highs_wrapper(c, indptr, indices, data, lhs, rhs, lb, ub, integrality, options):
