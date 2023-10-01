@@ -153,8 +153,7 @@ subdir('tests')
 
 # Setup the highs library
 highs_proj = subproject('highs',
-                      default_options : ['default_library=static',
-                                        'with_pybind11=True'])
+                      default_options : ['with_pybind11=True'])
 highs_dep = highs_proj.get_variable('highs_dep')
 highspy_py = highs_proj.get_variable('highspy_py')
 highspy_cpp = highs_proj.get_variable('highspy_cpp')
