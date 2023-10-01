@@ -91,8 +91,6 @@ if use_g77_abi
 endif
 foreach ele: elements
   # PROPACK integration is pretty much broken, see for example gh-15108.
-  # Note that in setup.py, adding `g77_abi_wrappers` is skipped for 32-bit
-  # architectures (stated reason: "it blows up").
   propack_lib = static_library('lib_' + ele[0],
     ele[1],
     fortran_args: [

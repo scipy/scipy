@@ -397,9 +397,6 @@ def main():
         if options.outdir:
             # Used by Meson (options.outdir == scipy/sparse/sparsetools)
             outdir = os.path.join(os.getcwd(), options.outdir)
-        else:
-            # Used by setup.py
-            outdir = os.path.join(os.path.dirname(__file__), 'sparsetools')
 
         dst = os.path.join(outdir,
                            unit_name + '_impl.h')
