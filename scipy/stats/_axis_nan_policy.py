@@ -338,12 +338,15 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
         a tuple. This is essentially the inverse of `tuple_to_result`. Default
         is `None`, which is appropriate for statistical tests that return a
         statistic, pvalue tuple (rather than, e.g., a non-iterable datalass).
-    too_small : int, default: 0
+    too_small : int or callable, default: 0
         The largest unnacceptably small sample for the function being wrapped.
         For example, some functions require samples of size two or more or they
         raise an error. This argument prevents the error from being raised when
         input is not 1D and instead places a NaN in the corresponding element
-        of the result.
+        of the result. If callable, it must accept a list of samples and a
+        dictionary of keyword arguments passed to the wrapper function as
+        arguments and return a bool indicating weather the samples passed are
+        too small.
     n_outputs : int or callable, default: 2
         The number of outputs produced by the function given 1d sample(s). For
         example, hypothesis tests that return a namedtuple or result object
@@ -374,11 +377,14 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
         def result_to_tuple(res):
             return res
 
-    def is_too_small(samples):
-        for sample in samples:
-            if len(sample) <= too_small:
-                return True
-        return False
+    if not callable(too_small):
+        def is_too_small(samples, *ts_args, **ts_kwargs):
+            for sample in samples:
+                if len(sample) <= too_small:
+                    return True
+            return False
+    else:
+        is_too_small = too_small
 
     def axis_nan_policy_decorator(hypotest_fun_in):
         @wraps(hypotest_fun_in)
@@ -561,7 +567,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     samples = _remove_nans(samples, paired)
                     if sentinel:
                         samples = _remove_sentinel(samples, paired, sentinel)
-                    if is_too_small(samples):
+                    if is_too_small(samples, kwds):
                         return np.full(n_out, np.nan)
                     return result_to_tuple(hypotest_fun_out(*samples, **kwds))
 
@@ -575,7 +581,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     samples = np.split(x, split_indices)[:n_samp+n_kwd_samp]
                     if sentinel:
                         samples = _remove_sentinel(samples, paired, sentinel)
-                    if is_too_small(samples):
+                    if is_too_small(samples, kwds):
                         return np.full(n_out, np.nan)
                     return result_to_tuple(hypotest_fun_out(*samples, **kwds))
 
@@ -584,7 +590,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     samples = np.split(x, split_indices)[:n_samp+n_kwd_samp]
                     if sentinel:
                         samples = _remove_sentinel(samples, paired, sentinel)
-                    if is_too_small(samples):
+                    if is_too_small(samples, kwds):
                         return np.full(n_out, np.nan)
                     return result_to_tuple(hypotest_fun_out(*samples, **kwds))
 
