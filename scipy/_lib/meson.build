@@ -2,9 +2,6 @@ fs = import('fs')
 if not fs.exists('boost_math/README.md')
   error('Missing the `boost` submodule! Run `git submodule update --init` to fix this.')
 endif
-if not fs.exists('highs/README.md')
-  error('Missing the `highs` submodule! Run `git submodule update --init` to fix this.')
-endif
 if not fs.exists('unuran/README.md')
   error('Missing the `unuran` submodule! Run `git submodule update --init` to fix this.')
 endif
@@ -153,3 +150,31 @@ py3.install_sources(
 
 subdir('_uarray')
 subdir('tests')
+
+# Setup the highs library
+highs_proj = subproject('highs',
+                      default_options : ['default_library=static'])
+highs_dep = highs_proj.get_variable('highs_dep')
+
+pyb11_dep = [
+  py3.dependency(),
+  dependency('pybind11')
+]
+
+highspyext = py3.extension_module(
+  '_highs',
+  sources : [
+    'highs/highspy/highs_bindings.cpp'
+  ],
+  dependencies: [pyb11_dep, highs_dep],
+  install: true,
+  subdir: 'highspy',
+)
+
+py3.install_sources(
+  [
+    'highs/highspy/__init__.py',
+    'highs/highspy/highs.py'
+  ],
+  subdir: 'highspy',
+)
