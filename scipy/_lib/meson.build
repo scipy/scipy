@@ -168,6 +168,8 @@ highspyext = py3.extension_module(
   '_highs',
   sources : highspy_cpp,
   dependencies: [pyb11_dep, highs_dep],
+  c_args: [Wno_unused_variable, Wno_unused_but_set_variable],
+  cpp_args: [_cpp_Wno_unused_variable, _cpp_Wno_unused_but_set_variable],
   install: true,
   subdir: 'highspy',
 )

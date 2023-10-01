@@ -283,6 +283,7 @@ Wno_switch = cc.get_supported_arguments('-Wno-switch')
 Wno_unused_label = cc.get_supported_arguments('-Wno-unused-label')
 Wno_unused_result = cc.get_supported_arguments('-Wno-unused-result')
 Wno_unused_variable = cc.get_supported_arguments('-Wno-unused-variable')
+Wno_unused_but_set_variable = cc.get_supported_arguments('-Wno-unused-but-set-variable')
 Wno_incompatible_pointer_types = cc.get_supported_arguments('-Wno-incompatible-pointer-types')
 
 # C++ warning flags
