@@ -823,7 +823,7 @@ def brenth(f, a, b, args=(),
     between the arguments a and b that uses hyperbolic extrapolation instead of
     inverse quadratic extrapolation. Bus & Dekker (1975) guarantee convergence
     for this method, claiming that the upper bound of function evaluations here
-    is 4 or 5 times lesser than that for bisection.
+    is 4 or 5 times that of bisection.
     f(a) and f(b) cannot have the same signs. Generally, on a par with the
     brent routine, but not as heavily tested. It is a safe version of the
     secant method that uses hyperbolic extrapolation.
