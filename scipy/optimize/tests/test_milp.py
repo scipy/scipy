@@ -99,7 +99,7 @@ def test_result():
     assert res.success
     msg = "Optimization terminated successfully."
     assert res.message.startswith(msg)
-    assert 'HiGHS Status 7' in res.message
+    assert 'HighsModelStatus.kOptimal' in res.message
     assert isinstance(res.x, np.ndarray)
     assert isinstance(res.fun, float)
     assert isinstance(res.mip_node_count, int)
@@ -112,7 +112,7 @@ def test_result():
     assert res.status == 1
     assert not res.success
     msg = "Time limit reached"
-    assert 'HiGHS Status 13' in res.message
+    assert 'HighsModelStatus.kTimeLimit' in res.message
     assert msg in res.message
     assert (res.fun is res.mip_dual_bound is res.mip_gap
             is res.mip_node_count is res.x is None)
@@ -121,19 +121,19 @@ def test_result():
     assert res.status == 2
     assert not res.success
     msg = "The problem is infeasible"
-    assert 'HiGHS Status 8' in res.message
+    assert 'HighsModelStatus.kInfeasible' in res.message
     assert res.message.startswith(msg)
     assert (res.fun is res.mip_dual_bound is res.mip_gap
             is res.mip_node_count is res.x is None)
 
-    # TODO: Fix this
-    # res = milp(-1)
-    # assert res.status == 3
-    # assert not res.success
-    # msg = "The problem is unbounded. (HiGHS Status 10:"
-    # assert res.message.startswith(msg)
-    # assert (res.fun is res.mip_dual_bound is res.mip_gap
-    #         is res.mip_node_count is res.x is None)
+    res = milp(-1)
+    assert res.status == 3
+    assert not res.success
+    assert 'HighsModelStatus.kUnbounded' in res.message
+    msg = "The problem is unbounded."
+    assert res.message.startswith(msg)
+    assert (res.fun is res.mip_dual_bound is res.mip_gap
+            is res.mip_node_count is res.x is None)
 
 
 def test_milp_optional_args():
