@@ -8118,7 +8118,7 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
             None or `f_obs` and `f_exp` are 1-D.
         pvalue : float or ndarray
             The p-value of the test.  The value is a float if `ddof` and the
-            return value `statistic` are scalars.
+            result attribute `statistic` are scalars.
 
     See Also
     --------
