@@ -150,30 +150,3 @@ py3.install_sources(
 
 subdir('_uarray')
 subdir('tests')
-
-# Setup the highs library
-highs_proj = subproject('highs',
-                      default_options : ['with_pybind11=True'])
-highs_dep = highs_proj.get_variable('highs_dep')
-highspy_py = highs_proj.get_variable('highspy_py')
-highspy_cpp = highs_proj.get_variable('highspy_cpp')
-
-pyb11_dep = [
-  py3.dependency(),
-  dependency('pybind11')
-]
-
-highspyext = py3.extension_module(
-  '_highs',
-  sources : highspy_cpp,
-  dependencies: [pyb11_dep, highs_dep],
-  c_args: [Wno_unused_variable, Wno_unused_but_set_variable],
-  cpp_args: [_cpp_Wno_unused_variable, _cpp_Wno_unused_but_set_variable],
-  install: true,
-  subdir: 'highspy',
-)
-
-py3.install_sources(
-  highspy_py,
-  subdir: 'highspy',
-)
