@@ -9244,13 +9244,6 @@ class skewnorm_gen(rv_continuous):
                 np.pi/2 * s_23 / (s_23 + ((4 - np.pi)/2)**(2/3))
             )
 
-        # If skewness of data is greater than max possible population skewness,
-        # MoM won't provide a good guess. Get out early.
-        s = stats.skew(data)
-        s_max = skew_d(1)
-        if abs(s) >= s_max and method != "mm" and fa is None and not args:
-            return super().fit(data, *args, **kwds)
-
         # If method is method of moments, we don't need the user's guesses.
         # Otherwise, extract the guesses from args and kwds.
         if method == "mm":
@@ -9263,7 +9256,14 @@ class skewnorm_gen(rv_continuous):
         if fa is None and a is None:  # not fixed and no guess: use MoM
             # Solve for a that matches sample distribution skewness to sample
             # skewness.
-            s = np.clip(s, -s_max, s_max)
+            s = stats.skew(data)
+            if method == 'mle':
+                # For MLE initial conditions, clip skewness to a large but
+                # reasonable value in case the data skewness is out-of-range.
+                s = np.clip(s, -0.99, 0.99)
+            else:
+                s_max = skew_d(1)
+                s = np.clip(s, -s_max, s_max)
             d = d_skew(s)
             with np.errstate(divide='ignore'):
                 a = np.sqrt(np.divide(d**2, (1-d**2)))*np.sign(s)
