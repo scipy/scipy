@@ -20,12 +20,13 @@ from warnings import warn
 from ._highs._highs_wrapper import _highs_wrapper
 from scipy.sparse import csc_matrix, vstack, issparse
 
-from highspy._highs import HighsModelStatus as hms
-from highspy._highs import simplex_constants as simpc
-import highspy._highs as hspy
+from scipy.optimize._highs.highspy.highs import _h
+from scipy.optimize._highs.highspy.highs import simpc
+
 
 class SciPyRC(Enum):
     """Return codes for SciPy solvers"""
+
     OPTIMAL = 0
     ITERATION_LIMIT = 1
     INFEASIBLE = 2
@@ -46,52 +47,67 @@ class SciPyRC(Enum):
         else:
             return ""
 
+
 class HighsStatusMapping:
     """Class to map HiGHS statuses to SciPy Return Codes"""
+
     def __init__(self):
         # Custom mapping from HiGHS status and errors to SciPy status
         self.highs_to_scipy = {
-            hms.kNotset: (SciPyRC.NUMERICAL, "Not set"),
-            hms.kLoadError: (SciPyRC.NUMERICAL, "Load Error"),
-            hms.kModelError: (SciPyRC.INFEASIBLE, "Model Error"),
-            hms.kPresolveError: (SciPyRC.NUMERICAL, "Presolve Error"),
-            hms.kSolveError: (SciPyRC.NUMERICAL, "Solve Error"),
-            hms.kPostsolveError: (SciPyRC.NUMERICAL, "Postsolve Error"),
-            hms.kModelEmpty: (SciPyRC.NUMERICAL, "Model Empty"),
-            hms.kOptimal: (SciPyRC.OPTIMAL, "Optimal"),
-            hms.kInfeasible: (SciPyRC.INFEASIBLE, "Infeasible"),
-            hms.kUnboundedOrInfeasible: (SciPyRC.NUMERICAL, "Unbounded or Infeasible"),
-            hms.kUnbounded: (SciPyRC.UNBOUNDED, "Unbounded"),
-            hms.kObjectiveBound: (SciPyRC.NUMERICAL, "Objective Bound"),
-            hms.kObjectiveTarget: (SciPyRC.NUMERICAL, "Objective Target"),
-            hms.kTimeLimit: (SciPyRC.ITERATION_LIMIT, "Time Limit"),
-            hms.kIterationLimit: (SciPyRC.ITERATION_LIMIT, "Iteration Limit"),
-            hms.kUnknown: (SciPyRC.NUMERICAL, "Unknown"),
-            hms.kSolutionLimit: (SciPyRC.NUMERICAL, "Solution Limit"),
+            _h.HighsModelStatus.kNotset: (SciPyRC.NUMERICAL, "Not set"),
+            _h.HighsModelStatus.kLoadError: (SciPyRC.NUMERICAL, "Load Error"),
+            _h.HighsModelStatus.kModelError: (SciPyRC.INFEASIBLE, "Model Error"),
+            _h.HighsModelStatus.kPresolveError: (SciPyRC.NUMERICAL, "Presolve Error"),
+            _h.HighsModelStatus.kSolveError: (SciPyRC.NUMERICAL, "Solve Error"),
+            _h.HighsModelStatus.kPostsolveError: (SciPyRC.NUMERICAL, "Postsolve Error"),
+            _h.HighsModelStatus.kModelEmpty: (SciPyRC.NUMERICAL, "Model Empty"),
+            _h.HighsModelStatus.kOptimal: (SciPyRC.OPTIMAL, "Optimal"),
+            _h.HighsModelStatus.kInfeasible: (SciPyRC.INFEASIBLE, "Infeasible"),
+            _h.HighsModelStatus.kUnboundedOrInfeasible: (
+                SciPyRC.NUMERICAL,
+                "Unbounded or Infeasible",
+            ),
+            _h.HighsModelStatus.kUnbounded: (SciPyRC.UNBOUNDED, "Unbounded"),
+            _h.HighsModelStatus.kObjectiveBound: (SciPyRC.NUMERICAL, "Objective Bound"),
+            _h.HighsModelStatus.kObjectiveTarget: (
+                SciPyRC.NUMERICAL,
+                "Objective Target",
+            ),
+            _h.HighsModelStatus.kTimeLimit: (SciPyRC.ITERATION_LIMIT, "Time Limit"),
+            _h.HighsModelStatus.kIterationLimit: (
+                SciPyRC.ITERATION_LIMIT,
+                "Iteration Limit",
+            ),
+            _h.HighsModelStatus.kUnknown: (SciPyRC.NUMERICAL, "Unknown"),
+            _h.HighsModelStatus.kSolutionLimit: (SciPyRC.NUMERICAL, "Solution Limit"),
         }
-
 
     def get_scipy_status(self, highs_status, highs_message):
         """Converts HiGHS status and message to SciPy status and message"""
-        scipy_status, message_prefix = self.highs_to_scipy.get(hspy.HighsModelStatus(highs_status),
-                                                               (SciPyRC.NUMERICAL, "Unknown HiGHS Status"))
+        scipy_status, message_prefix = self.highs_to_scipy.get(
+            _h.HighsModelStatus(highs_status),
+            (SciPyRC.NUMERICAL, "Unknown HiGHS Status"),
+        )
         scip = SciPyRC(scipy_status)
-        scipy_message = f"{scip.to_string()} (HiGHS Status {highs_status}: {highs_message})"
+        scipy_message = (
+            f"{scip.to_string()} (HiGHS Status {highs_status}: {highs_message})"
+        )
         return scipy_status.value, scipy_message
+
 
 def _replace_inf(x):
     # Replace `np.inf` with kHighsInf
     infs = np.isinf(x)
     with np.errstate(invalid="ignore"):
-        x[infs] = np.sign(x[infs])*hspy.kHighsInf
+        x[infs] = np.sign(x[infs]) * _h.kHighsInf
     return x
 
 
 class SimplexStrategy(Enum):
-    DANTZIG = 'dantzig'
-    DEVEX = 'devex'
-    STEEPEST_DEVEX = 'steepest-devex' # highs min, choose
-    STEEPEST = 'steepest' # highs max
+    DANTZIG = "dantzig"
+    DEVEX = "devex"
+    STEEPEST_DEVEX = "steepest-devex"  # highs min, choose
+    STEEPEST = "steepest"  # highs max
 
     def to_highs_enum(self):
         mapping = {
@@ -102,29 +118,39 @@ class SimplexStrategy(Enum):
         }
         return mapping.get(self)
 
+
 def convert_to_highs_enum(option, option_str, choices_enum, default_value):
     if option is None:
         return choices_enum[default_value.upper()].to_highs_enum()
     try:
         enum_value = choices_enum[option.upper()]
     except KeyError:
-        warn(f"Option {option_str} is {option}, but only values in "
-             f"{[e.value for e in choices_enum]} are allowed. Using default: "
-             f"{default_value}.",
-             OptimizeWarning, stacklevel=3)
+        warn(
+            f"Option {option_str} is {option}, but only values in "
+            f"{[e.value for e in choices_enum]} are allowed. Using default: "
+            f"{default_value}.",
+            OptimizeWarning,
+            stacklevel=3,
+        )
         enum_value = choices_enum[default_value.upper()]
     return enum_value.to_highs_enum()
 
 
-def _linprog_highs(lp, solver, time_limit=None, presolve=True,
-                   disp=False, maxiter=None,
-                   dual_feasibility_tolerance=None,
-                   primal_feasibility_tolerance=None,
-                   ipm_optimality_tolerance=None,
-                   simplex_dual_edge_weight_strategy=None,
-                   mip_rel_gap=None,
-                   mip_max_nodes=None,
-                   **unknown_options):
+def _linprog_highs(
+    lp,
+    solver,
+    time_limit=None,
+    presolve=True,
+    disp=False,
+    maxiter=None,
+    dual_feasibility_tolerance=None,
+    primal_feasibility_tolerance=None,
+    ipm_optimality_tolerance=None,
+    simplex_dual_edge_weight_strategy=None,
+    mip_rel_gap=None,
+    mip_max_nodes=None,
+    **unknown_options,
+):
     r"""
     Solve the following linear programming problem using one of the HiGHS
     solvers:
@@ -314,8 +340,10 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
             simplex algorithm." Mathematical Programming 12.1 (1977): 361-371.
     """
     if unknown_options:
-        message = (f"Unrecognized options detected: {unknown_options}. "
-                   "These will be passed to HiGHS verbatim.")
+        message = (
+            f"Unrecognized options detected: {unknown_options}. "
+            "These will be passed to HiGHS verbatim."
+        )
         warn(message, OptimizeWarning, stacklevel=3)
 
     # Map options to HiGHS enum values
@@ -331,7 +359,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     lb, ub = bounds.T.copy()  # separate bounds, copy->C-cntgs
     # highs_wrapper solves LHS <= A*x <= RHS, not equality constraints
     with np.errstate(invalid="ignore"):
-        lhs_ub = -np.ones_like(b_ub)*np.inf  # LHS of UB constraints is -inf
+        lhs_ub = -np.ones_like(b_ub) * np.inf  # LHS of UB constraints is -inf
     rhs_ub = b_ub  # RHS of UB constraints is b_ub
     lhs_eq = b_eq  # Equality constraint is inequality
     rhs_eq = b_eq  # constraint with LHS=RHS
@@ -345,24 +373,23 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     A = csc_matrix(A)
 
     options = {
-        'presolve': presolve,
-        'sense': hspy.ObjSense.kMinimize,
-        'solver': solver,
-        'time_limit': time_limit,
-        # 'highs_debug_level': hspy.kHighs, # TODO
-        'dual_feasibility_tolerance': dual_feasibility_tolerance,
-        'ipm_optimality_tolerance': ipm_optimality_tolerance,
-        'log_to_console': disp,
-        'mip_max_nodes': mip_max_nodes,
-        'output_flag': disp,
-        'primal_feasibility_tolerance': primal_feasibility_tolerance,
-        'simplex_dual_edge_weight_strategy':
-            simplex_dual_edge_weight_strategy_enum,
-        'simplex_strategy': simpc.kSimplexStrategyDual.value,
+        "presolve": presolve,
+        "sense": _h.ObjSense.kMinimize,
+        "solver": solver,
+        "time_limit": time_limit,
+        # 'highs_debug_level': _h.kHighs, # TODO
+        "dual_feasibility_tolerance": dual_feasibility_tolerance,
+        "ipm_optimality_tolerance": ipm_optimality_tolerance,
+        "log_to_console": disp,
+        "mip_max_nodes": mip_max_nodes,
+        "output_flag": disp,
+        "primal_feasibility_tolerance": primal_feasibility_tolerance,
+        "simplex_dual_edge_weight_strategy": simplex_dual_edge_weight_strategy_enum,
+        "simplex_strategy": simpc.kSimplexStrategyDual.value,
         # 'simplex_crash_strategy': simpc.SimplexCrashStrategy.kSimplexCrashStrategyOff,
-        'ipm_iteration_limit': maxiter,
-        'simplex_iteration_limit': maxiter,
-        'mip_rel_gap': mip_rel_gap,
+        "ipm_iteration_limit": maxiter,
+        "simplex_iteration_limit": maxiter,
+        "mip_rel_gap": mip_rel_gap,
     }
     options.update(unknown_options)
 
@@ -377,26 +404,36 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     else:
         integrality = np.array(integrality)
 
-    res = _highs_wrapper(c, A.indptr, A.indices, A.data, lhs, rhs,
-                         lb, ub, integrality.astype(np.uint8), options)
+    res = _highs_wrapper(
+        c,
+        A.indptr,
+        A.indices,
+        A.data,
+        lhs,
+        rhs,
+        lb,
+        ub,
+        integrality.astype(np.uint8),
+        options,
+    )
 
     # HiGHS represents constraints as lhs/rhs, so
     # Ax + s = b => Ax = b - s
     # and we need to split up s by A_ub and A_eq
-    if 'slack' in res:
-        slack = res['slack']
-        con = np.array(slack[len(b_ub):])
-        slack = np.array(slack[:len(b_ub)])
+    if "slack" in res:
+        slack = res["slack"]
+        con = np.array(slack[len(b_ub) :])
+        slack = np.array(slack[: len(b_ub)])
     else:
         slack, con = None, None
 
     # lagrange multipliers for equalities/inequalities and upper/lower bounds
-    if 'lambda' in res:
-        lamda = res['lambda']
-        marg_ineqlin = np.array(lamda[:len(b_ub)])
-        marg_eqlin = np.array(lamda[len(b_ub):])
-        marg_upper = np.array(res['marg_bnds'][1, :])
-        marg_lower = np.array(res['marg_bnds'][0, :])
+    if "lambda" in res:
+        lamda = res["lambda"]
+        marg_ineqlin = np.array(lamda[: len(b_ub)])
+        marg_eqlin = np.array(lamda[len(b_ub) :])
+        marg_upper = np.array(res["marg_bnds"][1, :])
+        marg_lower = np.array(res["marg_bnds"][0, :])
     else:
         marg_ineqlin, marg_eqlin = None, None
         marg_upper, marg_lower = None, None
@@ -405,44 +442,58 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
 
     # Convert to scipy-style status and message
     highs_mapper = HighsStatusMapping()
-    highs_status = res.get('status', None)
-    highs_message = res.get('message', None)
-    status, message = highs_mapper.get_scipy_status(highs_status,
-                                                     highs_message)
+    highs_status = res.get("status", None)
+    highs_message = res.get("message", None)
+    status, message = highs_mapper.get_scipy_status(highs_status, highs_message)
 
-    x = np.array(res['x']) if 'x' in res else None
-    sol = {'x': x,
-           'slack': slack,
-           'con': con,
-           'ineqlin': OptimizeResult({
-               'residual': slack,
-               'marginals': marg_ineqlin,
-           }),
-           'eqlin': OptimizeResult({
-               'residual': con,
-               'marginals': marg_eqlin,
-           }),
-           'lower': OptimizeResult({
-               'residual': None if x is None else x - lb,
-               'marginals': marg_lower,
-           }),
-           'upper': OptimizeResult({
-               'residual': None if x is None else ub - x,
-               'marginals': marg_upper
-            }),
-           'fun': res.get('fun'),
-           'status': status,
-           'success': res['status'] == hms.kOptimal,
-           'message': message,
-           'nit': res.get('simplex_nit', 0) or res.get('ipm_nit', 0),
-           'crossover_nit': res.get('crossover_nit'),
-           }
+    def is_valid_x(val):
+        if isinstance(val, np.ndarray):
+            if val.dtype == object and None in val:
+                return False
+        return val is not None
+
+    x = np.array(res["x"]) if "x" in res and is_valid_x(res["x"]) else None
+
+    sol = {
+        "x": x,
+        "slack": slack,
+        "con": con,
+        "ineqlin": OptimizeResult(
+            {
+                "residual": slack,
+                "marginals": marg_ineqlin,
+            }
+        ),
+        "eqlin": OptimizeResult(
+            {
+                "residual": con,
+                "marginals": marg_eqlin,
+            }
+        ),
+        "lower": OptimizeResult(
+            {
+                "residual": None if x is None else x - lb,
+                "marginals": marg_lower,
+            }
+        ),
+        "upper": OptimizeResult(
+            {"residual": None if x is None else ub - x, "marginals": marg_upper}
+        ),
+        "fun": res.get("fun"),
+        "status": status,
+        "success": res["status"] == _h.HighsModelStatus.kOptimal,
+        "message": message,
+        "nit": res.get("simplex_nit", 0) or res.get("ipm_nit", 0),
+        "crossover_nit": res.get("crossover_nit"),
+    }
 
     if np.any(x) and integrality is not None:
-        sol.update({
-            'mip_node_count': res.get('mip_node_count', 0),
-            'mip_dual_bound': res.get('mip_dual_bound', 0.0),
-            'mip_gap': res.get('mip_gap', 0.0),
-        })
+        sol.update(
+            {
+                "mip_node_count": res.get("mip_node_count", 0),
+                "mip_dual_bound": res.get("mip_dual_bound", 0.0),
+                "mip_gap": res.get("mip_gap", 0.0),
+            }
+        )
 
     return sol
