@@ -3867,6 +3867,16 @@ class TestSkewNorm:
         a7m, loc7m, scale7m = stats.skewnorm.fit(-rvs, method='mm')
         assert_allclose([a7m, loc7m, scale7m], [-a7p, -loc7p, scale7p])
 
+        # test that MLE is resistant to finding the wrong local optimum (see gh-19332)
+        a_correct, loc_correct, scale_correct = -1.60957, 2.2990, 2.46210
+        for n in range(8):
+            rvs = np.array([-5, -1, n / 100_000] + 12 * [1] + [5])
+            a8, loc8, scale8 = stats.skewnorm.fit(rvs)
+            assert_allclose(
+                (a8, loc8, scale8), (a_correct, loc_correct, scale_correct), atol=1e-4
+            )
+
+
 class TestExpon:
     def test_zero(self):
         assert_equal(stats.expon.pdf(0), 1)
