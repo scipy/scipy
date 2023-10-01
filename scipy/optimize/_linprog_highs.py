@@ -410,7 +410,14 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     status, message = highs_mapper.get_scipy_status(highs_status,
                                                      highs_message)
 
-    x = np.array(res['x']) if 'x' in res else None
+    def is_valid_x(val):
+        if isinstance(val, np.ndarray):
+            if val.dtype == object and None in val:
+                return False
+        return val is not None
+
+    x = np.array(res['x']) if 'x' in res and is_valid_x(res['x']) else None
+
     sol = {'x': x,
            'slack': slack,
            'con': con,
