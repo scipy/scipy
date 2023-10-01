@@ -8113,12 +8113,12 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     res: Power_divergenceResult
         An object containing attributes:
 
-        chisq : float or ndarray
+        statistic : float or ndarray
             The chi-squared test statistic.  The value is a float if `axis` is
             None or `f_obs` and `f_exp` are 1-D.
         pvalue : float or ndarray
             The p-value of the test.  The value is a float if `ddof` and the
-            return value `chisq` are scalars.
+            result attribute `statistic` are scalars.
 
     See Also
     --------
