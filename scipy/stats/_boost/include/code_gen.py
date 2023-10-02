@@ -159,7 +159,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     _boost_dir = pathlib.Path(__file__).resolve().parent.parent
-    if args.outdir:
+    if not args.outdir:
+        raise ValueError("A path to the output directory is required")
+    else:
         src_dir = pathlib.Path(args.outdir)
 
     # generate the PXD and PYX wrappers
