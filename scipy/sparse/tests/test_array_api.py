@@ -148,7 +148,7 @@ def test_power_operator(A):
     npt.assert_equal((A**2).todense(), (A.todense())**2)
 
     # power of zero is all ones (dense) so helpful msg exception
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="zero power"):
         A**0
 
 
