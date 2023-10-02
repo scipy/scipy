@@ -392,8 +392,8 @@ class TestIsIsomorphic:
 
     def help_is_isomorphic_randperm(self, nobs, nclusters, noniso=False, nerrors=0):
         for k in range(3):
-            a = np.int_(np.random.rand(nobs) * nclusters)
-            b = np.zeros(a.size, dtype=np.int_)
+            a = (np.random.rand(nobs) * nclusters).astype(int)
+            b = np.zeros(a.size, dtype=int)
             P = np.random.permutation(nclusters)
             for i in range(0, a.shape[0]):
                 b[i] = P[a[i]]

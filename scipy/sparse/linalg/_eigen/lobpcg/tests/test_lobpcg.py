@@ -16,10 +16,11 @@ from scipy.sparse import spdiags, diags, eye, csr_matrix
 from scipy.sparse.linalg import eigs, LinearOperator
 from scipy.sparse.linalg._eigen.lobpcg import lobpcg
 from scipy.sparse.linalg._eigen.lobpcg.lobpcg import _b_orthonormalize
+from scipy._lib._util import np_long, np_ulong
 
 _IS_32BIT = (sys.maxsize < 2**32)
 
-INT_DTYPES = {np.intc, np.int_, np.longlong, np.uintc, np.uint, np.ulonglong}
+INT_DTYPES = {np.intc, np_long, np.longlong, np.uintc, np_ulong, np.ulonglong}
 # np.half is unsupported on many test systems so excluded
 REAL_DTYPES = {np.float32, np.float64, np.longdouble}
 COMPLEX_DTYPES = {np.complex64, np.complex128, np.clongdouble}

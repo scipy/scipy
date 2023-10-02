@@ -133,7 +133,9 @@ def test_rvs_broadcast(dist, shape_args):
     bshape.append(loc.size)
     # bshape holds the expected shape when loc, scale, and the shape
     # parameters are all broadcast together.
-    check_rvs_broadcast(distfunc, dist, allargs, bshape, shape_only, [np.int_])
+    check_rvs_broadcast(
+        distfunc, dist, allargs, bshape, shape_only, [np.dtype(int)]
+    )
 
 
 @pytest.mark.parametrize('dist,args', distdiscrete)
