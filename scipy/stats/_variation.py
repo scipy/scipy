@@ -1,6 +1,7 @@
 import numpy as np
 from scipy._lib._util import _nan_allsame, _contains_nan, normalize_axis_index
 from ._stats_py import _chk_asarray
+from ._axis_nan_policy import _axis_nan_policy_factory
 
 
 def _nanvariation(a, *, axis=0, ddof=0, keepdims=False):
@@ -87,6 +88,9 @@ def _nanvariation(a, *, axis=0, ddof=0, keepdims=False):
     return result
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)
+)
 def variation(a, axis=0, nan_policy='propagate', ddof=0, *, keepdims=False):
     """
     Compute the coefficient of variation.
@@ -193,11 +197,11 @@ def variation(a, axis=0, nan_policy='propagate', ddof=0, *, keepdims=False):
         else:
             del shp[axis]
         if len(shp) == 0:
-            result = np.nan
+            result = np.asarray(np.nan)
         else:
             result = np.full(shp, fill_value=np.nan)
 
-        return result
+        return result[()]
 
     mean_a = a.mean(axis, keepdims=True)
 
