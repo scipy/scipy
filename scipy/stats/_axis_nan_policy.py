@@ -7,7 +7,7 @@
 import numpy as np
 from functools import wraps
 from scipy._lib._docscrape import FunctionDoc, Parameter
-from scipy._lib._util import _contains_nan, AxisError
+from scipy._lib._util import _contains_nan, AxisError, _get_nan
 import inspect
 
 
@@ -235,7 +235,7 @@ def _check_empty_inputs(samples, axis):
     # otherwise, the statistic and p-value will be either empty arrays or
     # arrays with NaNs. Produce the appropriate array and return it.
     output_shape = _broadcast_array_shapes_remove_axis(samples, axis)
-    output = np.ones(output_shape) * np.nan
+    output = np.ones(output_shape) * _get_nan(*samples)
     return output
 
 
@@ -495,6 +495,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                 samples = [sample.reshape(new_shape)
                            for sample, new_shape in zip(samples, new_shapes)]
             axis = -1  # work over the last axis
+            NaN = _get_nan(*samples)
 
             # if axis is not needed, just handle nan_policy and return
             ndims = np.array([sample.ndim for sample in samples])
@@ -510,7 +511,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                 # Addresses nan_policy == "propagate"
                 if any(contains_nan) and (nan_policy == 'propagate'
                                           and override['nan_propagation']):
-                    res = np.full(n_out, np.nan)
+                    res = np.full(n_out, NaN)
                     res = _add_reduced_axes(res, reduced_axes, keepdims)
                     return tuple_to_result(*res)
 
@@ -521,7 +522,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
 
                 # ideally, this is what the behavior would be:
                 # if is_too_small(samples):
-                #     return tuple_to_result(np.nan, np.nan)
+                #     return tuple_to_result(NaN, NaN)
                 # but some existing functions raise exceptions, and changing
                 # behavior of those would break backward compatibility.
 
@@ -568,7 +569,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     if sentinel:
                         samples = _remove_sentinel(samples, paired, sentinel)
                     if is_too_small(samples, kwds):
-                        return np.full(n_out, np.nan)
+                        return np.full(n_out, NaN)
                     return result_to_tuple(hypotest_fun_out(*samples, **kwds))
 
             # Addresses nan_policy == "propagate"
@@ -576,13 +577,13 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                   and override['nan_propagation']):
                 def hypotest_fun(x):
                     if np.isnan(x).any():
-                        return np.full(n_out, np.nan)
+                        return np.full(n_out, NaN)
 
                     samples = np.split(x, split_indices)[:n_samp+n_kwd_samp]
                     if sentinel:
                         samples = _remove_sentinel(samples, paired, sentinel)
                     if is_too_small(samples, kwds):
-                        return np.full(n_out, np.nan)
+                        return np.full(n_out, NaN)
                     return result_to_tuple(hypotest_fun_out(*samples, **kwds))
 
             else:
@@ -591,7 +592,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     if sentinel:
                         samples = _remove_sentinel(samples, paired, sentinel)
                     if is_too_small(samples, kwds):
-                        return np.full(n_out, np.nan)
+                        return np.full(n_out, NaN)
                     return result_to_tuple(hypotest_fun_out(*samples, **kwds))
 
             x = np.moveaxis(x, axis, 0)
