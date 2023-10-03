@@ -40,7 +40,7 @@ if np.lib.NumpyVersion(np.__version__) >= "2.0.0.dev0":
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 action="ignore",
-                message=".*In the future `np.long` will be defined as.*",
+                message=r".*In the future `np\.long` will be defined as.*",
                 category=FutureWarning,
             )
             np_long = np.long  # type: ignore[attr-defined]
