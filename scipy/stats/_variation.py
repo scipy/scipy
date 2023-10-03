@@ -1,5 +1,6 @@
 import numpy as np
-from scipy._lib._util import _nan_allsame, _contains_nan, normalize_axis_index
+from scipy._lib._util import (_nan_allsame, _contains_nan,
+                              normalize_axis_index, _get_nan)
 from ._stats_py import _chk_asarray
 from ._axis_nan_policy import _axis_nan_policy_factory
 
@@ -183,6 +184,7 @@ def variation(a, axis=0, nan_policy='propagate', ddof=0, *, keepdims=False):
     a, axis = _chk_asarray(a, axis)
     axis = normalize_axis_index(axis, ndim=a.ndim)
     n = a.shape[axis]
+    NaN = _get_nan(a)
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
     if contains_nan and nan_policy == 'omit':
@@ -197,9 +199,9 @@ def variation(a, axis=0, nan_policy='propagate', ddof=0, *, keepdims=False):
         else:
             del shp[axis]
         if len(shp) == 0:
-            result = np.asarray(np.nan)
+            result = NaN
         else:
-            result = np.full(shp, fill_value=np.nan)
+            result = np.full(shp, fill_value=NaN)
 
         return result[()]
 
@@ -208,11 +210,13 @@ def variation(a, axis=0, nan_policy='propagate', ddof=0, *, keepdims=False):
     if ddof == n:
         # Another special case.  Result is either inf or nan.
         std_a = a.std(axis=axis, ddof=0, keepdims=True)
-        result = np.full_like(std_a, fill_value=np.nan)
-        result.flat[std_a.flat > 0] = (np.sign(mean_a) * np.inf).flat
-        if result.shape == ():
-            result = result[()]
-        return result
+        result = np.full_like(std_a, fill_value=NaN)
+        sign = np.asarray(np.sign(mean_a))
+        sign[sign == 0] = 1
+        result.flat[std_a.flat > 0] = (sign * np.inf).flat
+        if not keepdims:
+            result = np.squeeze(result, axis=axis)
+        return result[()]
 
     with np.errstate(divide='ignore', invalid='ignore'):
         std_a = a.std(axis, ddof=ddof, keepdims=True)
@@ -220,7 +224,5 @@ def variation(a, axis=0, nan_policy='propagate', ddof=0, *, keepdims=False):
 
     if not keepdims:
         result = np.squeeze(result, axis=axis)
-        if result.shape == ():
-            result = result[()]
 
-    return result
+    return result[()]
