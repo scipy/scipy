@@ -1,5 +1,5 @@
 import numpy as np
-from scipy._lib._util import _nan_allsame, _get_nan
+from scipy._lib._util import _get_nan
 from ._axis_nan_policy import _axis_nan_policy_factory
 
 
