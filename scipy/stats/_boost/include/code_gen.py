@@ -3,7 +3,6 @@
 from typing import NamedTuple
 from warnings import warn
 from textwrap import dedent
-from shutil import copyfile
 import pathlib
 import argparse
 
@@ -160,18 +159,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     _boost_dir = pathlib.Path(__file__).resolve().parent.parent
-    if args.outdir:
-        src_dir = pathlib.Path(args.outdir)
+    if not args.outdir:
+        raise ValueError("A path to the output directory is required")
     else:
-        # We're using setup.py here, not Meson. Create target directory
-        src_dir = _boost_dir / 'src'
-        src_dir.mkdir(exist_ok=True, parents=True)
-
-    # copy contents of include into directory to satisfy Cython
-    # PXD include conditions
-    inc_dir = _boost_dir / 'include'
-    src = 'templated_pyufunc.pxd'
-    copyfile(inc_dir / src, src_dir / src)
+        src_dir = pathlib.Path(args.outdir)
 
     # generate the PXD and PYX wrappers
     _gen_func_defs_pxd(
