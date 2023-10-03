@@ -39,9 +39,9 @@ if np.lib.NumpyVersion(np.__version__) >= "2.0.0.dev0":
     try:
         with warnings.catch_warnings():
             warnings.filterwarnings(
-                action="ignore",
-                message=r".*In the future `np\.long` will be defined as.*",
-                category=FutureWarning,
+                "ignore",
+                r".*In the future `np\.long` will be defined as.*",
+                FutureWarning,
             )
             np_long = np.long  # type: ignore[attr-defined]
             np_ulong = np.ulong  # type: ignore[attr-defined]
