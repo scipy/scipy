@@ -777,7 +777,7 @@ def _get_nan(*data):
         dtype = np.result_type(*data, np.half)  # must be a float16 at least
     except np.exceptions.DTypePromotionError:
         # fallback to float64
-        return np.array(np.nan, dtype=np.float64)
+        return np.array(np.nan, dtype=np.float64)[()]
     return np.array(np.nan, dtype=dtype)[()]
 
 
