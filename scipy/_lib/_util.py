@@ -773,7 +773,11 @@ def _rng_spawn(rng, n_children):
 def _get_nan(*data):
     # Get NaN of appropriate dtype for data
     data = [np.asarray(item) for item in data]
-    dtype = np.result_type(*data, np.half)  # must be a float16 at least
+    try:
+        dtype = np.result_type(*data, np.half)  # must be a float16 at least
+    except np.exceptions.DTypePromotionError:
+        # fallback to float64
+        return np.array(np.nan, dtype=np.float64)
     return np.array(np.nan, dtype=dtype)[()]
 
 
