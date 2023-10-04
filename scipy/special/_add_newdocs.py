@@ -601,6 +601,29 @@ add_newdoc("bdtr",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+    .. [2] PennState, Introduction to Probability Theory, Example 10-6 Revisited,
+           https://online.stat.psu.edu/stat414/lesson/10/10.3#paragraph--617
+
+    Examples
+    --------
+    Suppose that twenty percent (20%) of Americans have no health insurance.
+    We randomly sample 15 Americans. What is the probability that fewer than
+    5 have no health insurance?
+
+    We can use the Binomial distribution cumulative distribution function to
+    answer this question.
+
+    Let X be the binomial random variable that denotes the number of Americans
+    who do not have health insurance. From the provided information n = 15 and
+    p = 0.20. Fewer than 5 means that we are looking at the probability,
+    P(X <= 4). We can simply use the bdtr function to calculate this value.
+
+    >>> from scipy.special import bdtr
+    >>> n = 15
+    >>> p = 0.2
+    >>> k = 4
+    >>> bdtr(k, n, p)
+    0.8357662760632321
 
     """)
 
