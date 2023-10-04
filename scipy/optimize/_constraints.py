@@ -1,12 +1,10 @@
 """Constraints definition for minimize."""
-import warnings
-
 import numpy as np
 from ._hessian_update_strategy import BFGS
 from ._differentiable_functions import (
     VectorFunction, LinearVectorFunction, IdentityVectorFunction)
 from ._optimize import OptimizeWarning
-from warnings import warn, catch_warnings, simplefilter
+from warnings import warn, catch_warnings, simplefilter, filterwarnings
 from scipy.sparse import issparse
 
 
