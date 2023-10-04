@@ -4060,34 +4060,69 @@ class TestStirling2:
     def test_table_cases(self):
         for n in range(len(self.table)):
             for k in range(len(self.table[n])):
-                assert_equal(self.table[n][k], stirling2(n, k))
+                assert_equal(self.table[n][k], stirling2(n, k, exact=True))
+                assert_allclose(self.table[n][k],
+                                stirling2(n, k, exact=False),
+                                rtol=1e-12,
+                                )
 
     def test_valid_single_integer(self):
-        assert_equal(stirling2(0, 0), self.table[0][0])
-        assert_equal(stirling2(4, 2), self.table[4][2])
+        assert_equal(stirling2(0, 0, exact=True), self.table[0][0])
+        assert_equal(stirling2(4, 2, exact=True), self.table[4][2])
         # a single 2-tuple of integers as arguments must return an int and not
         # an array whereas arrays of single values should return array
-        assert stirling2(5, 3) == 25
-        assert array_equal(stirling2([5], [3]), [25])
+        assert stirling2(5, 3, exact=True) == 25
+        assert array_equal(stirling2([5], [3], exact=True), [25])
+        # behavior also needs to hold for approximation
+        assert np.isclose(stirling2(5, 3, exact=False), 25)
+        assert_allclose(stirling2([5], [3], exact=False), [25], rtol=1e-13)
+
 
     def test_negative_integer(self):
         # negative integers for n or k arguments return 0
-        assert_equal(stirling2(-1, -1), 0)
-        assert_equal(stirling2(-1, 2), 0)
-        assert_equal(stirling2(2, -1), 0)
+        assert_equal(stirling2(-1, -1, exact=True), 0)
+        assert_equal(stirling2(-1, 2, exact=True), 0)
+        assert_equal(stirling2(2, -1, exact=True), 0)
+        # similar behavior if approximate
+        assert np.isclose(stirling2(-1, -1, exact=False), 0)
+        assert np.isclose(stirling2(-1, 2, exact=False), 0)
+        assert np.isclose(stirling2(2, -1, exact=False), 0)
 
     def test_array_inputs(self):
         ans = [self.table[10][3], self.table[10][4]]
-        assert array_equal(stirling2(asarray([10, 10]), asarray([3, 4])), ans)
-        assert array_equal(stirling2([10, 10], asarray([3, 4])), ans)
-        assert array_equal(stirling2(asarray([10, 10]), [3, 4]), ans)
+        assert array_equal(stirling2(asarray([10, 10]),
+                                     asarray([3, 4]),
+                                     exact=True),
+                           ans)
+        assert array_equal(stirling2([10, 10],
+                                     asarray([3, 4]),
+                                     exact=True),
+                           ans)
+        assert array_equal(stirling2(asarray([10, 10]),
+                                     [3, 4],
+                                     exact=True),
+                           ans)
+        # check same behavior for approximate
+        assert_allclose(stirling2(asarray([10, 10]),
+                                     asarray([3, 4]),
+                                     exact=False),
+                           ans)
+        assert_allclose(stirling2([10, 10],
+                                     asarray([3, 4]),
+                                     exact=False),
+                           ans)
+        assert_allclose(stirling2(asarray([10, 10]),
+                                     [3, 4],
+                                     exact=False),
+                           ans)
 
     def test_mixed_values(self):
         # negative values-of either n or k-should return 0 for the entry
         ans = [0, 1, 3, 25, 1050, 5880, 9330]
         n = [-1, 0, 3, 5, 8, 10, 10]
         k = [-2, 0, 2, 3, 5, 7, 3]
-        assert array_equal(stirling2(n, k), ans)
+        assert array_equal(stirling2(n, k, exact=True), ans)
+        assert_allclose(stirling2(n, k, exact=False), ans, rtol=1e-13)
 
     def test_correct_parity(self):
         """Test parity follows well known identity.
@@ -4096,7 +4131,7 @@ class TestStirling2:
         """
         n, K = 100, np.arange(101)
         assert_equal(
-            stirling2(n, K) % 2,
+            stirling2(n, K, exact=True) % 2,
             [math.comb(n - (k // 2) - 1, n - k) % 2 for k in K],
         )
 
@@ -4105,37 +4140,39 @@ class TestStirling2:
         ans = asarray([48063331393110, 48004081105038305])
         n = [25, 30]
         k = [17, 4]
-        assert array_equal(stirling2(n, k), ans)
+        assert array_equal(stirling2(n, k, exact=True), ans)
         # bigger than 64 bit
         ans = asarray([2801934359500572414253157841233849412,
                        14245032222277144547280648984426251])
         n = [42, 43]
         k = [17, 23]
-        assert array_equal(stirling2(n, k), ans)
+        assert array_equal(stirling2(n, k, exact=True), ans)
 
-    @pytest.mark.parametrize("K", [3.5, 3, "2", None])
     @pytest.mark.parametrize("N", [4.5, 3., 4+1j, "12", np.nan])
-    def test_unsupported_input_types(self, N, K):
+    @pytest.mark.parametrize("K", [3.5, 3, "2", None])
+    @pytest.mark.parametrize("is_exact", [True, False])
+    def test_unsupported_input_types(self, N, K, is_exact):
         # object, float, string, complex are not supported and raise TypeError
-        # when exact=True
         with pytest.raises(TypeError):
-            special.stirling2(N, K, exact=True)
+            stirling2(N, K, exact=is_exact)
 
-    def test_numpy_array_int_object_dtype(self):
+    @pytest.mark.parametrize("is_exact", [True, False])
+    def test_numpy_array_int_object_dtype(self, is_exact):
         # python integers with arbitrary precision are *not* allowed as
         # object type in numpy arrays are inconsistent from api perspective
         ans = asarray(self.table[4][1:])
         n = asarray([4, 4, 4, 4], dtype=object)
         k = asarray([1, 2, 3, 4], dtype=object)
         with pytest.raises(TypeError):
-            array_equal(stirling2(n, k), ans)
+            array_equal(stirling2(n, k, exact=is_exact), ans)
 
     def test_numpy_array_unsigned_int_dtype(self):
         # numpy unsigned integers are allowed as dtype in numpy arrays
         ans = asarray(self.table[4][1:])
         n = asarray([4, 4, 4, 4], dtype=np_ulong)
         k = asarray([1, 2, 3, 4], dtype=np_ulong)
-        assert array_equal(stirling2(n, k), ans)
+        assert array_equal(stirling2(n, k, exact=True), ans)
+        assert_allclose(stirling2(n, k, exact=False), ans, rtol=1e-13)
 
     def test_broadcasting_arrays_correctly(self):
         # broadcasting is handled by stirling2
@@ -4143,9 +4180,11 @@ class TestStirling2:
         ans = asarray([[1, 15, 25, 10], [1, 7, 6, 1]])  # shape (2,4)
         n = asarray([[5, 5, 5, 5], [4, 4, 4, 4]])  # shape (2,4)
         k = asarray([1, 2, 3, 4])  # shape (4,)
-        assert array_equal(stirling2(n, k), ans)
-        # test that dims both mismatch broadcast correctly (5,1) & (6,)
+        assert array_equal(stirling2(n, k, exact=True), ans)
+        assert_allclose(stirling2(n, k, exact=False), ans, rtol=1e-13)
+        # test that dims both mismatch broadcase correctly (5,1) & (6,)
         n = asarray([[4], [4], [4], [4], [4]])
         k = asarray([0, 1, 2, 3, 4, 5])
         ans = asarray([[0, 1, 7, 6, 1, 0] for _ in range(5)])
-        assert array_equal(stirling2(n, k), ans)
+        assert array_equal(stirling2(n, k, exact=True), ans)
+        assert_allclose(stirling2(n, k, exact=False), ans, rtol=1e-13)

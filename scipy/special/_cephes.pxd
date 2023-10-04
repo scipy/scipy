@@ -109,3 +109,5 @@ cdef extern from "cephes.h" nogil:
     double kolmogp(double x)
     double lanczos_sum_expg_scaled(double x)
     double owens_t(double h, double a)
+    double stirling2_inexact(int n, int k)
+    double stirling2_lanczos(int n, int k)

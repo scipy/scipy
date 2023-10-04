@@ -14454,3 +14454,20 @@ add_newdoc("ndtri_exp",
     >>> sc.ndtri_exp(-1e-20)
     9.262340089798409
     """)
+
+add_newdoc("stirling2_inexact",
+    r"""
+    Internal function, do not use.
+    """)
+
+
+add_newdoc("stirling2_temme",
+    r"""
+    Internal function, do not use.
+    """)
+
+
+add_newdoc("stirling2_dp",
+    r"""
+    Internal function, do not use.
+    """)
