@@ -671,6 +671,7 @@ def test_as_euler_symmetric_axes(seq_tuple, intrinsic):
     angles[:, 1] = rnd.uniform(low=0, high=np.pi, size=(n,))
     angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
 
+    # Extrinsic rotations
     seq = "".join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
     if intrinsic:
         seq = seq.upper()
@@ -694,6 +695,7 @@ def test_as_euler_degenerate_asymmetric_axes(seq_tuple, intrinsic):
         [35, 90, 25],
         [25, -90, 15]])
 
+    # Extrinsic rotations
     seq = "".join(seq_tuple)
     if intrinsic:
         seq = seq.upper()
@@ -774,7 +776,9 @@ def test_as_euler_degenerate_compare_algorithms(seq_tuple, intrinsic):
     # Extrinsic rotations
     seq = "".join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
     if intrinsic:
+        # Intrinsic rotations
         seq = seq.upper()
+
     rot = Rotation.from_euler(seq, angles, degrees=True)
     with pytest.warns(UserWarning, match="Gimbal lock"):
         estimates_matrix = rot._as_euler_from_matrix(seq, degrees=True)
