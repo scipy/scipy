@@ -25,12 +25,14 @@ VisibleDeprecationWarning: Type[Warning]
 
 if np.lib.NumpyVersion(np.__version__) >= '1.25.0':
     from numpy.exceptions import (
-        AxisError, ComplexWarning, VisibleDeprecationWarning  # noqa: F401
+        AxisError, ComplexWarning, VisibleDeprecationWarning,
+        DTypePromotionError # noqa: F401
     )
 else:
     from numpy import (
         AxisError, ComplexWarning, VisibleDeprecationWarning  # noqa: F401
     )
+    DTypePromotionError = TypeError  # type: ignore
 
 
 IntNumber = Union[int, np.integer]
@@ -775,7 +777,7 @@ def _get_nan(*data):
     data = [np.asarray(item) for item in data]
     try:
         dtype = np.result_type(*data, np.half)  # must be a float16 at least
-    except np.exceptions.DTypePromotionError:
+    except DTypePromotionError:
         # fallback to float64
         return np.array(np.nan, dtype=np.float64)[()]
     return np.array(np.nan, dtype=dtype)[()]
