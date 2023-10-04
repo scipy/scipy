@@ -392,7 +392,7 @@ class PreparedConstraint:
             # figuring out total violation
             # UserWarning: delta_grad == 0.0. Check if the approximated
             # function is linear
-            warnings.filterwarnings("ignore", "delta_grad", UserWarning)
+            filterwarnings("ignore", "delta_grad", UserWarning)
             ev = self.fun.fun(np.asarray(x))
 
         excess_lb = np.maximum(self.bounds[0] - ev, 0)

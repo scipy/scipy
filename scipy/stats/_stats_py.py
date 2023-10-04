@@ -33,7 +33,6 @@ from collections import namedtuple
 
 import numpy as np
 from numpy import array, asarray, ma
-from numpy.testing import suppress_warnings
 
 from scipy import sparse
 from scipy.spatial.distance import cdist
@@ -2430,11 +2429,17 @@ def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
         # the CI tests on "Azure pipelines" (but not on the other CI servers)
         # emits warnings when there are nan values, contrarily to the purpose
         # of masked_arrays. As a fix, we simply suppress the warnings.
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning,
-                       "invalid value encountered in less")
-            sup.filter(RuntimeWarning,
-                       "invalid value encountered in greater")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                "invalid value encountered in less",
+                RuntimeWarning
+            )
+            warnings.filterwarnings(
+                "ignore",
+                "invalid value encountered in greater",
+                RuntimeWarning
+            )
 
             # Main computations/logic
             if kind == 'rank':
