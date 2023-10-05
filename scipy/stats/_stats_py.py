@@ -2425,39 +2425,23 @@ def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
         def count(x):
             return np.count_nonzero(x, -1)
 
-        # Despite using masked_array to omit nan values from processing,
-        # the CI tests on "Azure pipelines" (but not on the other CI servers)
-        # emits warnings when there are nan values, contrarily to the purpose
-        # of masked_arrays. As a fix, we simply suppress the warnings.
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore",
-                "invalid value encountered in less",
-                RuntimeWarning
-            )
-            warnings.filterwarnings(
-                "ignore",
-                "invalid value encountered in greater",
-                RuntimeWarning
-            )
-
-            # Main computations/logic
-            if kind == 'rank':
-                left = count(a < score)
-                right = count(a <= score)
-                plus1 = left < right
-                perct = (left + right + plus1) * (50.0 / n)
-            elif kind == 'strict':
-                perct = count(a < score) * (100.0 / n)
-            elif kind == 'weak':
-                perct = count(a <= score) * (100.0 / n)
-            elif kind == 'mean':
-                left = count(a < score)
-                right = count(a <= score)
-                perct = (left + right) * (50.0 / n)
-            else:
-                raise ValueError(
-                    "kind can only be 'rank', 'strict', 'weak' or 'mean'")
+        # Main computations/logic
+        if kind == 'rank':
+            left = count(a < score)
+            right = count(a <= score)
+            plus1 = left < right
+            perct = (left + right + plus1) * (50.0 / n)
+        elif kind == 'strict':
+            perct = count(a < score) * (100.0 / n)
+        elif kind == 'weak':
+            perct = count(a <= score) * (100.0 / n)
+        elif kind == 'mean':
+            left = count(a < score)
+            right = count(a <= score)
+            perct = (left + right) * (50.0 / n)
+        else:
+            raise ValueError(
+                "kind can only be 'rank', 'strict', 'weak' or 'mean'")
 
     # Re-insert nan values
     perct = ma.filled(perct, np.nan)
