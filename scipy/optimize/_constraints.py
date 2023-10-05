@@ -4,8 +4,7 @@ from ._hessian_update_strategy import BFGS
 from ._differentiable_functions import (
     VectorFunction, LinearVectorFunction, IdentityVectorFunction)
 from ._optimize import OptimizeWarning
-from warnings import warn, catch_warnings, simplefilter
-from numpy.testing import suppress_warnings
+from warnings import warn, catch_warnings, simplefilter, filterwarnings
 from scipy.sparse import issparse
 
 
@@ -386,8 +385,12 @@ class PreparedConstraint:
             How much the constraint is exceeded by, for each of the
             constraints specified by `PreparedConstraint.fun`.
         """
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning)
+        with catch_warnings():
+            # Ignore the following warning, it's not important when
+            # figuring out total violation
+            # UserWarning: delta_grad == 0.0. Check if the approximated
+            # function is linear
+            filterwarnings("ignore", "delta_grad", UserWarning)
             ev = self.fun.fun(np.asarray(x))
 
         excess_lb = np.maximum(self.bounds[0] - ev, 0)
