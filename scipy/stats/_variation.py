@@ -48,10 +48,6 @@ def variation(a, axis=0, nan_policy='propagate', ddof=0, *, keepdims=False):
         but it is recommended to use ``ddof=1`` to ensure that the sample
         standard deviation is computed as the square root of the unbiased
         sample variance.
-    keepdims : bool, optional
-        If this is set to True, the axes which are reduced are left in the
-        result as dimensions with size one. With this option, the result
-        will broadcast correctly against the input array.
 
     Returns
     -------
