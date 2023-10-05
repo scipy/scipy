@@ -9897,37 +9897,36 @@ class truncpareto_gen(rv_continuous):
         return self.a, c
 
     def _pdf(self, x, b, c):
-        return b * x**-(b+1) / (1 - c**-b)
+        return b * x**-(b+1) / (1 - 1/c**b)
 
     def _logpdf(self, x, b, c):
-        # return np.log(b) - np.log1p(-c**-b) - (b+1)*np.log(x)
         return np.log(b) - np.log(-np.expm1(-b*np.log(c))) - (b+1)*np.log(x)
 
     def _cdf(self, x, b, c):
-        return (1 - x**-b) / (1 - c**-b)
+        return (1 - x**-b) / (1 - 1/c**b)
 
     def _logcdf(self, x, b, c):
-        return np.log1p(-x**-b) - np.log1p(-c**-b)
+        return np.log1p(-x**-b) - np.log1p(-1/c**b)
 
     def _ppf(self, q, b, c):
-        return pow(1 - (1 - c**-b)*q, -1/b)
+        return pow(1 - (1 - 1/c**b)*q, -1/b)
 
     def _sf(self, x, b, c):
-        return (x**-b - c**-b) / (1 - c**-b)
+        return (x**-b - 1/c**b) / (1 - 1/c**b)
 
     def _logsf(self, x, b, c):
-        return np.log(x**-b - c**-b) - np.log1p(-c**-b)
+        return np.log(x**-b - 1/c**b) - np.log1p(-1/c**b)
 
     def _isf(self, q, b, c):
-        return pow(c**-b + (1 - c**-b)*q, -1/b)
+        return pow(1/c**b + (1 - 1/c**b)*q, -1/b)
 
     def _entropy(self, b, c):
-        return -(np.log(b/(1 - c**-b))
+        return -(np.log(b/(1 - 1/c**b))
                  + (b+1)*(np.log(c)/(c**b - 1) - 1/b))
 
     def _munp(self, n, b, c):
         if (n == b).all():
-            return b*np.log(c) / (1 - c**-b)
+            return b*np.log(c) / (1 - 1/c**b)
         else:
             return b / (b-n) * (c**b - c**n) / (c**b - 1)
 
