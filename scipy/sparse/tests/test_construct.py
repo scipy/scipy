@@ -235,15 +235,15 @@ class TestConstructUtils:
 
     @pytest.mark.parametrize("identity", [construct.identity, construct.eye_array])
     def test_identity(self, identity):
-        assert_equal(construct.identity(1).toarray(), [[1]])
-        assert_equal(construct.identity(2).toarray(), [[1,0],[0,1]])
+        assert_equal(identity(1).toarray(), [[1]])
+        assert_equal(identity(2).toarray(), [[1,0],[0,1]])
 
-        I = construct.identity(3, dtype='int8', format='dia')
+        I = identity(3, dtype='int8', format='dia')
         assert_equal(I.dtype, np.dtype('int8'))
         assert_equal(I.format, 'dia')
 
         for fmt in sparse_formats:
-            I = construct.identity(3, format=fmt)
+            I = identity(3, format=fmt)
             assert_equal(I.format, fmt)
             assert_equal(I.toarray(), [[1,0,0],[0,1,0],[0,0,1]])
 
