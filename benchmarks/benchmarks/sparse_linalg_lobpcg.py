@@ -122,8 +122,6 @@ class Bench(Benchmark):
         def a(x):
             return cho_solve_banded((c, False), x)
         m = 3
-        ee = self.eigenvalues(m)
-        tol = 10 * n * n * n* np.finfo(float).eps
         rng = np.random.default_rng(0)
         X = rng.normal(size=(n, m))
         if solver == 'lobpcg':
