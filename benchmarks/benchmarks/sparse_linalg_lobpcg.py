@@ -58,7 +58,7 @@ class Bench(Benchmark):
     def setup_sakurai_inverse(self, n, solver):
         self.shape = (n, n)
         sakurai_obj = Sakurai(n)
-        self.A = sakurai_obj.tobanded().astype(np.float64)s
+        self.A = sakurai_obj.tobanded().astype(np.float64)
     
     def time_mikota(self, n, solver):
         def a(x):
