@@ -67,7 +67,7 @@ def test_ElasticRod(n):
     A, B = ElasticRod(n)
     m = 2
     rnd = np.random.RandomState(0)
-    V = rnd..standard_normal((n, m))
+    V = rnd.standard_normal((n, m))
     eigvals, _ = lobpcg(A, X, B=B, tol=1e-2, maxiter=50, largest=False)
     eigvals.sort()
     w, _ = eigh(A, b=B)
