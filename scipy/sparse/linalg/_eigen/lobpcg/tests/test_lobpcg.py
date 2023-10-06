@@ -11,12 +11,17 @@ from numpy.testing import (assert_almost_equal, assert_equal,
                            assert_allclose, assert_array_less)
 
 from scipy import sparse
-from scipy.linalg import eig, eigh, toeplitz, orth
+from scipy.linalg import (eigh, toeplitz, orth,
+                          cholesky_banded, cho_solve_banded, eig_banded)
 from scipy.sparse import spdiags, diags, eye, csr_matrix
-from scipy.sparse.linalg import eigs, LinearOperator
+from scipy.sparse.linalg import eighs, LinearOperator
 from scipy.sparse.linalg._eigen.lobpcg import lobpcg
 from scipy.sparse.linalg._eigen.lobpcg.lobpcg import _b_orthonormalize
 from scipy._lib._util import np_long, np_ulong
+
+
+from scipy.sparse.linalg._special_sparse_arrays import (Sakurai,
+                                                        MikotaPair)
 
 _IS_32BIT = (sys.maxsize < 2**32)
 
@@ -66,7 +71,7 @@ def MikotaPair(n):
 
 
 def compare_solutions(A, B, m):
-    """Check eig vs. lobpcg consistency.
+    """Check eigh vs. lobpcg consistency.
     """
     n = A.shape[0]
     rnd = np.random.RandomState(0)
@@ -74,7 +79,7 @@ def compare_solutions(A, B, m):
     X = orth(V)
     eigvals, _ = lobpcg(A, X, B=B, tol=1e-2, maxiter=50, largest=False)
     eigvals.sort()
-    w, _ = eig(A, b=B)
+    w, _ = eigh(A, b=B)
     w.sort()
     assert_almost_equal(w[:int(m/2)], eigvals[:int(m/2)], decimal=2)
 
@@ -409,15 +414,15 @@ def test_hermitian():
 # The n=5 case tests the alternative small matrix code path that uses eigh().
 @pytest.mark.filterwarnings("ignore:The problem size")
 @pytest.mark.parametrize('n, atol', [(20, 1e-3), (5, 1e-8)])
-def test_eigs_consistency(n, atol):
-    """Check eigs vs. lobpcg consistency.
+def test_eighs_consistency(n, atol):
+    """Check eighs vs. lobpcg consistency.
     """
     vals = np.arange(1, n+1, dtype=np.float64)
     A = spdiags(vals, 0, n, n)
     rnd = np.random.RandomState(0)
     X = rnd.standard_normal((n, 2))
     lvals, lvecs = lobpcg(A, X, largest=True, maxiter=100)
-    vals, _ = eigs(A, k=2)
+    vals, _ = eighs(A, k=2)
 
     _check_eigen(A, lvals, lvecs, atol=atol, rtol=0)
     assert_allclose(np.sort(vals), np.sort(lvals), atol=1e-14)
@@ -527,6 +532,97 @@ def test_maxit():
     # Make sure that both history lists are arrays-like
     assert_allclose(np.shape(l_h), np.shape(np.asarray(l_h)))
     assert_allclose(np.shape(r_h), np.shape(np.asarray(r_h)))
+
+
+@pytest.mark.filterwarnings("ignore:Exited at iteration")
+@pytest.mark.filterwarnings("ignore:Exited postprocessing")
+def test_sakurai():
+    """Check lobpcg and eighs accuracy for the Sakurai example
+    already used in `benchmarks/benchmarks/sparse_linalg_lobpcg.py`.
+    """
+    rnd = np.random.RandomState(0)
+    n = 50
+    tol = 100 * n * n * n* np.finfo(float).eps
+    shape = (n, n)
+    sakurai_obj = Sakurai(n, dtype='int')
+    A = sakurai_obj
+    m = 3
+    ee = sakurai_obj.eigenvalues(3)
+    X = rng.normal(size=(n, m))
+    el, _ = lobpcg(A, X, tol=1e-9, maxiter=5000, largest=False)
+    accuracy = max(abs(ee - el) / ee)
+    assert_allclose(accuracy, 0., atol=tol)
+    a_l = LinearOperator((n, n), matvec=A, matmat=A, dtype='float64')
+    ea, _ = eigsh(a_l, k=m, which='SA', tol=1e-9, maxiter=15000,
+                  v0 = rng.normal(size=(n, 1)))
+    accuracy = max(abs(ee - ea) / ee)
+    assert_allclose(accuracy, 0., atol=tol)
+
+
+@pytest.mark.filterwarnings("ignore:Exited at iteration")
+@pytest.mark.filterwarnings("ignore:Exited postprocessing")
+def test_sakurai_inverse():
+    """Check lobpcg and eighs accuracy for the sakurai_inverse example
+    already used in `benchmarks/benchmarks/sparse_linalg_lobpcg.py`.
+    """
+    def a(x):
+        return cho_solve_banded((c, False), x)
+    rnd = np.random.RandomState(0)
+    n = 500 # 1000
+    tol = 100 * n * n * n* np.finfo(float).eps
+    shape = (n, n)
+    sakurai_obj = Sakurai(n)
+    A = sakurai_obj.tobanded().astype(np.float64)
+    m = 3
+    ee = sakurai_obj.eigenvalues(3)
+    X = rng.normal(size=(n, m))
+    c = cholesky_banded(A)
+    el, _ = lobpcg(a, X, tol=1e-9, maxiter=8)
+    accuracy = max(abs(ee - 1. / el) / ee)
+    assert_allclose(accuracy, 0., atol=tol)
+    a_l = LinearOperator((n, n), matvec=a, matmat=a, dtype='float64')
+    ea, _ = eigsh(a_l, k=m, which='LA', tol=1e-9, maxiter=8,
+                  v0 = rng.normal(size=(n, 1)))
+    accuracy = max(abs(ee - np.sort(1. / ea)) / ee)
+    assert_allclose(accuracy, 0., atol=tol)
+
+
+@pytest.mark.filterwarnings("ignore:Exited at iteration")
+@pytest.mark.filterwarnings("ignore:Exited postprocessing")
+def test_MikotaPair():
+    """Check lobpcg and eighs accuracy for the Mikota example
+    already used in `benchmarks/benchmarks/sparse_linalg_lobpcg.py`.
+    """
+    n = 128 # 256, 512, 1024, 2048
+    shape = (n, n)
+    mik = MikotaPair(n)
+    mik_k = mik.k
+    mik_m = mik.m
+    Ac = mik_k
+    Aa = mik_k.toarray()
+    Bc = mik_m
+    Ba = mik_m.toarray()
+    Ab = mik_k.tobanded()
+    eigenvalues = mik.eigenvalues
+    rnd = np.random.RandomState(0)
+    m = 10
+    ee = eigenvalues(m)
+    tol = m * n * n * n* np.finfo(float).eps
+    rng = np.random.default_rng(0)
+    X = rng.normal(size=(n, m))
+    c = cholesky_banded(Ab.astype(np.float32))
+    el, _ = lobpcg(Ac, X, Bc, M=a, tol=1e-4,
+                   maxiter=40, largest=False)
+    accuracy = max(abs(ee - el) / ee)
+    assert_allclose(accuracy, 0., atol=tol)
+    B = LinearOperator((n, n), matvec=Bc, matmat=Bc, dtype='float64')
+    A = LinearOperator((n, n), matvec=Ac, matmat=Ac, dtype='float64')
+    c = cholesky_banded(Ab)
+    a_l = LinearOperator((n, n), matvec=a, matmat=a, dtype='float64')
+    ea, _ = eigsh(B, k=m, M=A, Minv=a_l, which='LA', tol=1e-4, maxiter=50,
+                  v0 = rng.normal(size=(n, 1)))
+    accuracy = max(abs(ee - np.sort(1./ea)) / ee)
+    assert_allclose(accuracy, 0., atol=tol)
 
 
 @pytest.mark.slow
