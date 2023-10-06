@@ -11,10 +11,10 @@ from numpy.testing import (assert_almost_equal, assert_equal,
                            assert_allclose, assert_array_less)
 
 from scipy import sparse
-from scipy.linalg import (eigh, toeplitz, orth,
-                          cholesky_banded, cho_solve_banded, eig_banded)
+from scipy.linalg import (eigh, toeplitz,
+                          cholesky_banded, cho_solve_banded)
 from scipy.sparse import spdiags, diags, eye, csr_matrix
-from scipy.sparse.linalg import eighs, LinearOperator
+from scipy.sparse.linalg import eigsh, LinearOperator
 from scipy.sparse.linalg._eigen.lobpcg import lobpcg
 from scipy.sparse.linalg._eigen.lobpcg.lobpcg import _b_orthonormalize
 from scipy._lib._util import np_long, np_ulong
@@ -57,51 +57,22 @@ def ElasticRod(n):
     return A, B
 
 
-def MikotaPair(n):
-    """Build a pair of full diagonal matrices for the generalized eigenvalue
-    problem. The Mikota pair acts as a nice test since the eigenvalues are the
-    squares of the integers n, n=1,2,...
+@pytest.mark.filterwarnings("ignore:The problem size")
+@pytest.mark.parametrize("n", [10, 20])
+@pytest.mark.filterwarnings("ignore:Exited at iteration")
+@pytest.mark.filterwarnings("ignore:Exited postprocessing")
+def test_ElasticRod(n):
+    """Check eigh vs. lobpcg consistency for elastic rod model.
     """
-    x = np.arange(1, n+1)
-    B = diag(1./x)
-    y = np.arange(n-1, 0, -1)
-    z = np.arange(2*n-1, 0, -2)
-    A = diag(z)-diag(y, -1)-diag(y, 1)
-    return A, B
-
-
-def compare_solutions(A, B, m):
-    """Check eigh vs. lobpcg consistency.
-    """
-    n = A.shape[0]
+    A, B = ElasticRod(n)
+    m = 2
     rnd = np.random.RandomState(0)
-    V = rnd.random((n, m))
-    X = orth(V)
+    V = rnd..standard_normal((n, m))
     eigvals, _ = lobpcg(A, X, B=B, tol=1e-2, maxiter=50, largest=False)
     eigvals.sort()
     w, _ = eigh(A, b=B)
     w.sort()
     assert_almost_equal(w[:int(m/2)], eigvals[:int(m/2)], decimal=2)
-
-
-def test_Small():
-    A, B = ElasticRod(10)
-    with pytest.warns(UserWarning, match="The problem size"):
-        compare_solutions(A, B, 10)
-    A, B = MikotaPair(10)
-    with pytest.warns(UserWarning, match="The problem size"):
-        compare_solutions(A, B, 10)
-
-
-def test_ElasticRod():
-    A, B = ElasticRod(20)
-    with pytest.warns(UserWarning, match="Exited at iteration"):
-        compare_solutions(A, B, 2)
-
-
-def test_MikotaPair():
-    A, B = MikotaPair(20)
-    compare_solutions(A, B, 2)
 
 
 @pytest.mark.parametrize("n", [50])
@@ -568,13 +539,12 @@ def test_sakurai_inverse(n):
     """
     def a(x):
         return cho_solve_banded((c, False), x)
-    rnd = np.random.RandomState(0)
     tol = 100 * n * n * n* np.finfo(float).eps
-    shape = (n, n)
     sakurai_obj = Sakurai(n)
     A = sakurai_obj.tobanded().astype(np.float64)
     m = 3
     ee = sakurai_obj.eigenvalues(3)
+    rng = np.random.default_rng(0)
     X = rng.normal(size=(n, m))
     c = cholesky_banded(A)
     el, _ = lobpcg(a, X, tol=1e-9, maxiter=8)
@@ -587,24 +557,23 @@ def test_sakurai_inverse(n):
     assert_allclose(accuracy, 0., atol=tol)
 
 
-@pytest.mark.parametrize("n", [128, 256, 512, 1024, 2048])
+@pytest.mark.filterwarnings("ignore:The problem size")
+@pytest.mark.parametrize("n", [10, 20, 128, 256, 512, 1024, 2048])
 @pytest.mark.filterwarnings("ignore:Exited at iteration")
 @pytest.mark.filterwarnings("ignore:Exited postprocessing")
 def test_MikotaPair(n):
     """Check lobpcg and eighs accuracy for the Mikota example
     already used in `benchmarks/benchmarks/sparse_linalg_lobpcg.py`.
     """
-    shape = (n, n)
+    def a(x):
+        return cho_solve_banded((c, False), x)
     mik = MikotaPair(n)
     mik_k = mik.k
     mik_m = mik.m
     Ac = mik_k
-    Aa = mik_k.toarray()
     Bc = mik_m
-    Ba = mik_m.toarray()
     Ab = mik_k.tobanded()
     eigenvalues = mik.eigenvalues
-    rnd = np.random.RandomState(0)
     m = 10
     ee = eigenvalues(m)
     tol = m * n * n * n* np.finfo(float).eps
