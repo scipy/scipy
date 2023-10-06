@@ -559,16 +559,16 @@ def test_sakurai():
     assert_allclose(accuracy, 0., atol=tol)
 
 
+@pytest.mark.parametrize("n", [500, 1000])
 @pytest.mark.filterwarnings("ignore:Exited at iteration")
 @pytest.mark.filterwarnings("ignore:Exited postprocessing")
-def test_sakurai_inverse():
+def test_sakurai_inverse(n):
     """Check lobpcg and eighs accuracy for the sakurai_inverse example
     already used in `benchmarks/benchmarks/sparse_linalg_lobpcg.py`.
     """
     def a(x):
         return cho_solve_banded((c, False), x)
     rnd = np.random.RandomState(0)
-    n = 500 # 1000
     tol = 100 * n * n * n* np.finfo(float).eps
     shape = (n, n)
     sakurai_obj = Sakurai(n)
@@ -587,13 +587,13 @@ def test_sakurai_inverse():
     assert_allclose(accuracy, 0., atol=tol)
 
 
+@pytest.mark.parametrize("n", [128, 256, 512, 1024, 2048])
 @pytest.mark.filterwarnings("ignore:Exited at iteration")
 @pytest.mark.filterwarnings("ignore:Exited postprocessing")
-def test_MikotaPair():
+def test_MikotaPair(n):
     """Check lobpcg and eighs accuracy for the Mikota example
     already used in `benchmarks/benchmarks/sparse_linalg_lobpcg.py`.
     """
-    n = 128 # 256, 512, 1024, 2048
     shape = (n, n)
     mik = MikotaPair(n)
     mik_k = mik.k
