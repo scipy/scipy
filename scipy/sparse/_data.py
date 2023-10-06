@@ -122,7 +122,7 @@ class _data_matrix(_spbase):
         if not isscalarlike(n):
             raise NotImplementedError("input is not scalar")
         if not n:
-            raise ValueError("zero power makes all ones (dense).\n"
+            raise NotImplementedError("zero power makes all ones (dense).\n"
                 "Use `np.ones(A.shape, dtype=A.dtype)` for this case.")
 
         data = self._deduped_data()
