@@ -839,7 +839,7 @@ class SVDSCommonTests:
     @pytest.mark.filterwarnings("ignore:Exited postprocessing")
     @pytest.mark.parametrize("problem", ("abb313", "illc1033", "illc1850",
                                          "qh1484", "rbs480a", "tols4000",
-                                         "well1033", "well1850", "west0479", "west2021")),
+                                         "well1033", "well1850", "west0479", "west2021"))
     def test_MatrixMarket(self, problem)
         if self.solver == 'propack':
             pytest.skip("PROPACK failing (Aug. 2023)")
