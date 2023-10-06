@@ -835,6 +835,24 @@ class SVDSCommonTests:
             assert_allclose(sp_mat.transpose() @ su, 0, atol=1e-5, rtol=1e0)
         assert_allclose(sp_mat @ svh.T, 0, atol=1e-5, rtol=1e0)
 
+    @pytest.mark.filterwarnings("ignore:Exited at iteration")
+    @pytest.mark.filterwarnings("ignore:Exited postprocessing")
+     @pytest.mark.parametrize("problem", ("abb313", "illc1033", "illc1850",
+                                          "qh1484", "rbs480a", "tols4000",
+                                          "well1033", "well1850", "west0479", "west2021")),
+    def test_MatrixMarket(self, problem)
+        if self.solver == 'propack':
+            pytest.skip("PROPACK failing (Aug. 2023)")
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        datafile = os.path.join(dir_path, "svds_benchmark_files",
+                                "svds_benchmark_files.npz")
+        matrices = np.load(datafile, allow_pickle=True)
+        A = matrices[problem][()]
+        _, s, _ = svd(A.toarray(), full_matrices=False)
+        rng = np.random.default_rng(0)
+        _, ss, _ = svds(self.A, k=k, solver=solver, random_state=rng)
+        assert_allclose(s, ss, atol=1e-2)
+
 # --- Perform tests with each solver ---
 
 
