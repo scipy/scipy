@@ -67,7 +67,7 @@ def test_ElasticRod(n):
     A, B = ElasticRod(n)
     m = 2
     rnd = np.random.RandomState(0)
-    V = rnd.standard_normal((n, m))
+    X = rnd.standard_normal((n, m))
     eigvals, _ = lobpcg(A, X, B=B, tol=1e-2, maxiter=50, largest=False)
     eigvals.sort()
     w, _ = eigh(A, b=B)
@@ -385,15 +385,15 @@ def test_hermitian():
 # The n=5 case tests the alternative small matrix code path that uses eigh().
 @pytest.mark.filterwarnings("ignore:The problem size")
 @pytest.mark.parametrize('n, atol', [(20, 1e-3), (5, 1e-8)])
-def test_eighs_consistency(n, atol):
-    """Check eighs vs. lobpcg consistency.
+def test_eigsh_consistency(n, atol):
+    """Check eigsh vs. lobpcg consistency.
     """
     vals = np.arange(1, n+1, dtype=np.float64)
     A = spdiags(vals, 0, n, n)
     rnd = np.random.RandomState(0)
     X = rnd.standard_normal((n, 2))
     lvals, lvecs = lobpcg(A, X, largest=True, maxiter=100)
-    vals, _ = eighs(A, k=2)
+    vals, _ = eigsh(A, k=2)
 
     _check_eigen(A, lvals, lvecs, atol=atol, rtol=0)
     assert_allclose(np.sort(vals), np.sort(lvals), atol=1e-14)
@@ -511,14 +511,13 @@ def test_sakurai():
     """Check lobpcg and eighs accuracy for the Sakurai example
     already used in `benchmarks/benchmarks/sparse_linalg_lobpcg.py`.
     """
-    rnd = np.random.RandomState(0)
     n = 50
     tol = 100 * n * n * n* np.finfo(float).eps
-    shape = (n, n)
     sakurai_obj = Sakurai(n, dtype='int')
     A = sakurai_obj
     m = 3
     ee = sakurai_obj.eigenvalues(3)
+    rng = np.random.default_rng(0)
     X = rng.normal(size=(n, m))
     el, _ = lobpcg(A, X, tol=1e-9, maxiter=5000, largest=False)
     accuracy = max(abs(ee - el) / ee)
