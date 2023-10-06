@@ -1146,7 +1146,7 @@ def random_array(m, n=None, *, density=0.01, format='coo', dtype=None,
 
     Using a custom distribution:
 
-    >>> class CustomDistribution(stats.rv_continuous):
+    >>> class CustomDistribution(sp.stats.rv_continuous):
     ...     def _rvs(self,  size=None, random_state=None):
     ...         return random_state.standard_normal(size)
     >>> X = CustomDistribution(seed=rng)
@@ -1278,16 +1278,15 @@ def random(m, n, density=0.01, format='coo', dtype=None,
 
     Passing a ``np.random.Generator`` instance for better performance:
 
-    >>> from scipy.sparse import random
-    >>> from scipy import stats
+    >>> import scipy as sp
     >>> from numpy.random import default_rng
     >>> rng = default_rng()
-    >>> S = random(3, 4, density=0.25, random_state=rng)
+    >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng)
 
     Proving a sampler for the values:
 
-    >>> rvs = stats.poisson(25, loc=10).rvs
-    >>> S = random(3, 4, density=0.25, random_state=rng, data_rvs=rvs)
+    >>> rvs = sp.stats.poisson(25, loc=10).rvs
+    >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng, data_rvs=rvs)
     >>> S.A
     array([[ 36.,   0.,  33.,   0.],   # random
            [  0.,   0.,   0.,   0.],
@@ -1295,12 +1294,12 @@ def random(m, n, density=0.01, format='coo', dtype=None,
 
     Using a custom distribution:
 
-    >>> class CustomDistribution(stats.rv_continuous):
+    >>> class CustomDistribution(sp.stats.rv_continuous):
     ...     def _rvs(self,  size=None, random_state=None):
     ...         return random_state.standard_normal(size)
     >>> X = CustomDistribution(seed=rng)
     >>> Y = X()  # get a frozen version of the distribution
-    >>> S = random(3, 4, density=0.25, random_state=rng, data_rvs=Y.rvs)
+    >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng, data_rvs=Y.rvs)
     >>> S.A
     array([[ 0.        ,  0.        ,  0.        ,  0.        ],   # random
            [ 0.13569738,  1.9467163 , -0.81205367,  0.        ],

@@ -353,11 +353,11 @@ class _spbase:
         return self._imag()
 
     def __repr__(self):
-        _, format_name = _formats[self.format]
+        _, format = _formats[self.format]
         sparse_cls = 'array' if isinstance(self, sparray) else 'matrix'
-        return f"<%dx%d sparse {sparse_cls} of type '%s'\n" \
-               "\twith %d stored elements in %s format>" % \
-               (self.shape + (self.dtype.type, self.nnz, format_name))
+        return (f"<%dx%d sparse {sparse_cls} of type '{self.dtype.type}'\n"
+                f"\twith {self.nnz} stored elements in {format} format>"
+               ) % self.shape
 
     def __str__(self):
         maxprint = self._getmaxprint()
