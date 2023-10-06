@@ -9221,6 +9221,8 @@ class skewnorm_gen(rv_continuous):
         shape parameter ``a`` will be infinite.
         \n\n""")
     def fit(self, data, *args, **kwds):
+        if kwds.pop("superfit", False):
+            return super().fit(data, *args, **kwds)
         if isinstance(data, CensoredData):
             if data.num_censored() == 0:
                 data = data._uncensor()
