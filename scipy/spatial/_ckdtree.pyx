@@ -6,7 +6,6 @@
 
 # cython: cpow=True
 
-# distutils: language = c++
 
 import numpy as np
 import scipy.sparse
