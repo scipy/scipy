@@ -3,6 +3,7 @@ import numpy as np
 from .common import Benchmark, safe_import
 
 with safe_import():
+    from scipy.linalg import svd
     from scipy.sparse.linalg import svds
 
 
@@ -14,7 +15,7 @@ class BenchSVDS(Benchmark):
         ["abb313", "illc1033", "illc1850", "qh1484", "rbs480a", "tols4000",
          "well1033", "well1850", "west0479", "west2021"],
         # TODO: re-include propack
-        ['arpack', 'lobpcg']  # 'propack' failing (Aug. 2023)
+        ['arpack', 'lobpcg', 'svd']  # 'propack' failing (Aug. 2023)
     ]
     param_names = ['k', 'problem', 'solver']
 
@@ -24,8 +25,17 @@ class BenchSVDS(Benchmark):
                                 "svds_benchmark_files.npz")
         matrices = np.load(datafile, allow_pickle=True)
         self.A = matrices[problem][()]
+        _, s, _ = svd(self.A.toarray(), full_matrices=False)
+        self.all_singular_values = s.sort()
 
     def time_svds(self, k, problem, solver):
-        # consider k = int(np.min(self.A.shape) * k)
-        np.random.seed(0)
-        svds(self.A, k=k, solver=solver)
+        rng = np.random.default_rng(0)
+        if solver == 'svd':
+            _, s, _ = svd(self.A.toarray(), full_matrices=False)
+        else:
+            _, s, _ = svds(self.A, k=k, solver=solver, random_state=rng)
+
+        tol = k * np.prod(self.A.shape) * np.finfo(float).eps
+        k_singular_values = self.all_singular_values[:k]
+        accuracy = max(abs(k_singular_values - s) / k_singular_values)
+        assert accuracy < tol, msg
