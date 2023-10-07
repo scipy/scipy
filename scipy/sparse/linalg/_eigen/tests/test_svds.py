@@ -850,7 +850,7 @@ class SVDSCommonTests:
         A = matrices[problem][()]
         _, s, _ = svd(A.toarray(), full_matrices=False)
         rng = np.random.default_rng(0)
-        _, ss, _ = svds(self.A, k=k, solver=solver, random_state=rng)
+        _, ss, _ = svds(A, k=25, solver=self.solver, random_state=rng)
         assert_allclose(s, ss, atol=1e-2)
 
 # --- Perform tests with each solver ---
