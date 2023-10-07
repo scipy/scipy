@@ -840,7 +840,7 @@ class SVDSCommonTests:
     @pytest.mark.parametrize("problem", ("abb313", "illc1033", "illc1850",
                                          "qh1484", "rbs480a", "tols4000",
                                          "well1033", "well1850", "west0479", "west2021"))
-    def test_MatrixMarket(self, problem)
+    def test_MatrixMarket(self, problem):
         if self.solver == 'propack':
             pytest.skip("PROPACK failing (Aug. 2023)")
         dir_path = os.path.dirname(os.path.realpath(__file__))
