@@ -6,6 +6,12 @@ with safe_import():
     from scipy.linalg import svd
     from scipy.sparse.linalg import svds
 
+# ensure that we are benchmarking a consistent outcome;
+# (e.g. if the code wasn't able to find a solution at all,
+# the timing of the benchmark would become useless).
+msg = ("the benchmark code did not converge as expected, "
+       "the timing is therefore useless")
+
 
 class BenchSVDS(Benchmark):
     # Benchmark SVD using the MatrixMarket test matrices recommended by the
