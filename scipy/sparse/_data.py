@@ -115,15 +115,17 @@ class _data_matrix(_spbase):
 
         Raises
         ------
-        ValueError : if n is a zero scalar
+        NotImplementedError : if n is a zero scalar
             If zero power is desired, special case it to use
             `np.ones(A.shape, dtype=A.dtype)`
         """
         if not isscalarlike(n):
             raise NotImplementedError("input is not scalar")
         if not n:
-            raise NotImplementedError("zero power makes all ones (dense).\n"
-                "Use `np.ones(A.shape, dtype=A.dtype)` for this case.")
+            raise NotImplementedError(
+                "n=0 is not supported as it would densify the matrix.\n"
+                "Use `np.ones(A.shape, dtype=A.dtype)` for this case."
+            )
 
         data = self._deduped_data()
         if dtype is not None:
