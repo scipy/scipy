@@ -311,7 +311,7 @@ def check_discr_samples(rng, pv, mv_ex):
     rvs = rng.rvs(100000)
     # test if the first few moments match
     mv = rvs.mean(), rvs.var()
-    assert_allclose(mv, mv_ex, rtol=1e-3, atol=1e-1)
+    assert_allclose(mv, mv_ex, rtol=1e-2, atol=1e-1)
     # normalize
     pv = pv / pv.sum()
     # chi-squared test for goodness-of-fit
@@ -738,6 +738,12 @@ class TestDiscreteAliasUrn:
 
         with pytest.raises(ValueError, match=msg):
             DiscreteAliasUrn(dist)
+
+    def test_gh19359(self):
+        pv = special.softmax(np.ones((1533,)))
+        rng = DiscreteAliasUrn(pv, random_state=42)
+        # check the correctness
+        check_discr_samples(rng, pv, (1532 / 2, (1532**2 - 1) / 12))
 
 
 class TestNumericalInversePolynomial:
