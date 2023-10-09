@@ -32,16 +32,14 @@ class BenchSVDS(Benchmark):
         matrices = np.load(datafile, allow_pickle=True)
         self.A = matrices[problem][()]
         _, s, _ = svd(self.A.toarray(), full_matrices=False)
-        self.all_singular_values = s.sort()
+        self.k_singular_values = s.sort()[:k]
+        self.tol = k * np.prod(self.A.shape) * np.finfo(float).eps
+        self.rng = np.random.default_rng(0)
 
     def time_svds(self, k, problem, solver):
-        rng = np.random.default_rng(0)
         if solver == 'svd':
             _, s, _ = svd(self.A.toarray(), full_matrices=False)
         else:
-            _, s, _ = svds(self.A, k=k, solver=solver, random_state=rng)
-
-        tol = k * np.prod(self.A.shape) * np.finfo(float).eps
-        k_singular_values = self.all_singular_values[:k]
-        accuracy = max(abs(k_singular_values - s) / k_singular_values)
-        assert accuracy < tol, msg
+            _, s, _ = svds(self.A, k=k, solver=solver, random_state=self.rng)
+        accuracy = max(abs(self.k_singular_values - s) / self.k_singular_values)
+        assert accuracy < self.tol, msg
