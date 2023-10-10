@@ -206,8 +206,11 @@ class TestShapiro:
         shapiro_test = stats.shapiro(x)
         assert_equal(w, np.nan)
         assert_equal(shapiro_test.statistic, np.nan)
-        assert_almost_equal(pw, 1.0)
-        assert_almost_equal(shapiro_test.pvalue, 1.0)
+        # Originally, shapiro returned a p-value of 1 in this case,
+        # but there is no way to produce a numerical p-value if the
+        # statistic is not a number. NaN is more appropriate.
+        assert_almost_equal(pw, np.nan)
+        assert_almost_equal(shapiro_test.pvalue, np.nan)
 
     def test_gh14462(self):
         # shapiro is theoretically location-invariant, but when the magnitude
