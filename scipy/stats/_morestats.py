@@ -3629,6 +3629,16 @@ def _mood_inner_lc(xy, x, diffs, sorted_xy, n, m, N) -> float:
     return ((T - E_0_T) / np.sqrt(varM),)
 
 
+def _mood_too_small(samples, kwargs):
+    x, y = samples
+    axis = kwargs.get('axis', 0)
+    n = x.shape[axis]
+    m = y.shape[axis]
+    N = m + n
+    return N < 3
+
+
+@_axis_nan_policy_factory(SignificanceResult, n_samples=2, too_small=_mood_too_small)
 def mood(x, y, axis=0, alternative="two-sided"):
     """Perform Mood's test for equal scale parameters.
 
@@ -4163,7 +4173,6 @@ MedianTestResult = _make_tuple_bunch(
     'MedianTestResult',
     ['statistic', 'pvalue', 'median', 'table'], []
 )
-
 
 def median_test(*samples, ties='below', correction=True, lambda_=1,
                 nan_policy='propagate'):

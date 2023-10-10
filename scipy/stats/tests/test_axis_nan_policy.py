@@ -64,7 +64,8 @@ axis_nan_policy_cases = [
     (_get_ttest_ci(stats.ttest_ind), tuple(), dict(), 2, 2, False, None),
     (stats.mode, tuple(), dict(), 1, 2, True, lambda x: (x.mode, x.count)),
     (stats.differential_entropy, tuple(), dict(), 1, 1, False, lambda x: (x,)),
-    (stats.variation, tuple(), dict(), 1, 1, False, lambda x: (x,))
+    (stats.variation, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.mood, tuple(), {}, 2, 2, False, None),
 ]
 
 # If the message is one of those expected, put nans in
@@ -80,6 +81,7 @@ too_small_messages = {"The input contains nan",  # for nan_policy="raise"
                       "Data passed to ks_2samp must not be empty",
                       "Not enough test observations",
                       "Not enough other observations",
+                      "Not enough observations.",
                       "At least one observation is required",
                       "zero-size array to reduction operation maximum",
                       "`x` and `y` must be of nonzero size.",
