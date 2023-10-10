@@ -207,6 +207,7 @@ Discrete distributions
 
    bernoulli                -- Bernoulli
    betabinom                -- Beta-Binomial
+   betanbinom               -- Beta-Negative Binomial
    binom                    -- Binomial
    boltzmann                -- Boltzmann (Truncated Discrete Exponential)
    dlaplace                 -- Discrete Laplacian

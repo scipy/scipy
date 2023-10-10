@@ -1,9 +1,10 @@
 import pytest
 import itertools
 
-from scipy.stats import (betabinom, hypergeom, nhypergeom, bernoulli,
-                         boltzmann, skellam, zipf, zipfian, binom, nbinom,
-                         nchypergeom_fisher, nchypergeom_wallenius, randint)
+from scipy.stats import (betabinom, betanbinom, hypergeom, nhypergeom,
+                         bernoulli, boltzmann, skellam, zipf, zipfian, binom,
+                         nbinom, nchypergeom_fisher, nchypergeom_wallenius,
+                         randint)
 
 import numpy as np
 from numpy.testing import (
@@ -574,3 +575,22 @@ def test_gh_17146():
     assert_allclose(pmf[-1], p)
     assert_allclose(pmf[0], 1-p)
     assert_equal(pmf[~i], 0)
+
+
+@pytest.mark.parametrize('x, n, a, b, ref',
+                         [[5, 5e6, 5, 20, 1.1520944824139114e-107],
+                          [100, 50, 5, 20, 0.002855762954310226],
+                          [10000, 1000, 5, 20, 1.9648515726019154e-05]])
+def test_betanbinom_pmf(x, n, a, b, ref):
+    # test that PMF stays accurate in the distribution tails
+    # reference values computed with mpmath
+    # from mpmath import mp
+    # mp.dps = 500
+    # def betanbinom_pmf(k, n, a, b):
+    #     k = mp.mpf(k)
+    #     a = mp.mpf(a)
+    #     b = mp.mpf(b)
+    #     n = mp.mpf(n)
+    #     return float(mp.binomial(n + k - mp.one, k) * mp.beta(a + n, b + k)
+    #                  / mp.beta(a, b))
+    assert_allclose(betanbinom.pmf(x, n, a, b), ref, rtol=1e-10)
