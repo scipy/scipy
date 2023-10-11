@@ -390,7 +390,7 @@ class betanbinom_gen(rv_discrete):
 
        f(k) = \binom{n + k - 1}{k} \frac{B(a + n, b + k)}{B(a, b)}
 
-    for :math:`k \in \{0, 1, \dots}`, :math:`n \geq 0`, :math:`a > 0`,
+    for :math:`k \ge 0`, :math:`n \geq 0`, :math:`a > 0`,
     :math:`b > 0`, where :math:`B(a, b)` is the beta function.
 
     `betanbinom` takes :math:`n`, :math:`a`, and :math:`b` as shape parameters.
