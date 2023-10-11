@@ -3276,6 +3276,7 @@ def _apply_func(x, g, func):
 FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
 
 
+@_axis_nan_policy_factory(LeveneResult, n_samples=None)
 def fligner(*samples, center='median', proportiontocut=0.05):
     r"""Perform Fligner-Killeen test for equality of variance.
 
@@ -3503,14 +3504,15 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     if center not in ['mean', 'median', 'trimmed']:
         raise ValueError("center must be 'mean', 'median' or 'trimmed'.")
 
-    # Handle empty input
-    for sample in samples:
-        if np.asanyarray(sample).size == 0:
-            return FlignerResult(np.nan, np.nan)
-
     k = len(samples)
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
+
+    # Handle empty input
+    for sample in samples:
+        if sample.size == 0:
+            NaN = _get_nan(*samples)
+            return FlignerResult(NaN, NaN)
 
     if center == 'median':
 

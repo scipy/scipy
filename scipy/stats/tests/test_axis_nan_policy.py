@@ -66,6 +66,8 @@ axis_nan_policy_cases = [
     (stats.differential_entropy, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.variation, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.levene, tuple(), {}, 2, 2, False, None),
+    (stats.fligner, tuple(), {'center': 'trimmed', 'proportiontocut': 0.01},
+     2, 2, False, None),
 ]
 
 # If the message is one of those expected, put nans in
