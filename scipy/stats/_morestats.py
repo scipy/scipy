@@ -2985,6 +2985,7 @@ def bartlett(*samples):
 LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
 
 
+@_axis_nan_policy_factory(LeveneResult, n_samples=None)
 def levene(*samples, center='median', proportiontocut=0.05):
     r"""Perform Levene test for equal variances.
 
@@ -3209,10 +3210,6 @@ def levene(*samples, center='median', proportiontocut=0.05):
     k = len(samples)
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
-    # check for 1d input
-    for j in range(k):
-        if np.asanyarray(samples[j]).ndim > 1:
-            raise ValueError('Samples must be one-dimensional.')
 
     Ni = np.empty(k)
     Yci = np.empty(k, 'd')
