@@ -64,7 +64,8 @@ axis_nan_policy_cases = [
     (_get_ttest_ci(stats.ttest_ind), tuple(), dict(), 2, 2, False, None),
     (stats.mode, tuple(), dict(), 1, 2, True, lambda x: (x.mode, x.count)),
     (stats.differential_entropy, tuple(), dict(), 1, 1, False, lambda x: (x,)),
-    (stats.variation, tuple(), dict(), 1, 1, False, lambda x: (x,))
+    (stats.variation, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.friedmanchisquare, tuple(), dict(), 3, 2, True, None),
 ]
 
 # If the message is one of those expected, put nans in

@@ -9326,6 +9326,7 @@ FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
                                      ('statistic', 'pvalue'))
 
 
+@_axis_nan_policy_factory(FriedmanchisquareResult, n_samples=None, paired=True)
 def friedmanchisquare(*samples):
     """Compute the Friedman test for repeated samples.
 
