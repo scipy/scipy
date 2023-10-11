@@ -81,26 +81,27 @@ scolumn_dfs(
 	   int        *lsub_col, /* in - defines the RHS vector to start the dfs */
 	   int        *segrep,   /* modified - with new segments appended */
 	   int        *repfnz,   /* modified */
-	   int        *xprune,   /* modified */
+	   int_t      *xprune,   /* modified */
 	   int        *marker,   /* modified */
 	   int        *parent,	 /* working array */
-	   int        *xplore,   /* working array */
+	   int_t      *xplore,   /* working array */
 	   GlobalLU_t *Glu       /* modified */
 	   )
 {
 
-    int     jcolp1, jcolm1, jsuper, nsuper, nextl;
-    int     k, krep, krow, kmark, kperm;
+    int     jcolp1, jcolm1, jsuper, nsuper;
+    int     krep, krow, kmark, kperm;
     int     *marker2;           /* Used for small panel LU */
     int	    fsupc;		/* First column of a snode */
     int     myfnz;		/* First nonz column of a U-segment */
     int	    chperm, chmark, chrep, kchild;
-    int     xdfs, maxdfs, kpar, oldrep;
-    int     jptr, jm1ptr;
-    int     ito, ifrom, istop;	/* Used to compress row subscripts */
-    int     mem_error;
-    int     *xsup, *supno, *lsub, *xlsub;
-    int     nzlmax;
+    int_t   xdfs, maxdfs, nextl, k;
+    int     kpar, oldrep;
+    int_t   jptr, jm1ptr;
+    int_t   ito, ifrom, istop;	/* Used to compress row subscripts */
+    int     *xsup, *supno;
+    int_t   *lsub, *xlsub;
+    int_t   nzlmax, mem_error;
     int     maxsuper;
     
     xsup    = Glu->xsup;
@@ -136,8 +137,8 @@ scolumn_dfs(
    	if ( kperm == EMPTY ) {
 	    lsub[nextl++] = krow; 	/* krow is indexed into A */
 	    if ( nextl >= nzlmax ) {
-		if ( mem_error = sLUMemXpand(jcol, nextl, LSUB, &nzlmax, Glu) )
-		    return (mem_error);
+		mem_error = sLUMemXpand(jcol, nextl, LSUB, &nzlmax, Glu);
+		if ( mem_error ) return (mem_error);
 		lsub = Glu->lsub;
 	    }
             if ( kmark != jcolm1 ) jsuper = EMPTY;/* Row index subset testing */
@@ -178,9 +179,9 @@ scolumn_dfs(
 		   	    if ( chperm == EMPTY ) {
 			    	lsub[nextl++] = kchild;
 				if ( nextl >= nzlmax ) {
-				    if ( mem_error =
-					 sLUMemXpand(jcol,nextl,LSUB,&nzlmax,Glu) )
-					return (mem_error);
+				    mem_error =
+					 sLUMemXpand(jcol,nextl,LSUB,&nzlmax,Glu);
+				    if ( mem_error ) return (mem_error);
 				    lsub = Glu->lsub;
 				}
 				if ( chmark != jcolm1 ) jsuper = EMPTY;

@@ -134,9 +134,9 @@ jobs:
           #  numpy2.0 wheels available on PyPI. Also remove/comment out the
           # PIP_NO_BUILD_ISOLATION and PIP_EXTRA_INDEX_URL from CIBW_ENVIRONMENT
           # (also for _MACOS and _WINDOWS below)
-          CIBW_BEFORE_BUILD_LINUX: "pip install numpy>=2.0.0.dev0 meson-python cython pythran pybind11 ninja; bash {project}/tools/wheels/cibw_before_build_linux.sh {project}"
-          CIBW_BEFORE_BUILD_WINDOWS: "pip install numpy>=2.0.0.dev0 meson-python cython pythran pybind11 ninja && bash {project}/tools/wheels/cibw_before_build_win.sh {project}"
-          CIBW_BEFORE_BUILD_MACOS: "pip install numpy>=2.0.0.dev0 meson-python cython pythran pybind11 ninja; bash {project}/tools/wheels/cibw_before_build_macos.sh {project}"
+          CIBW_BEFORE_BUILD_LINUX: "pip install numpy>=2.0.0.dev0 meson-python cython!=3.0.3 pythran pybind11 ninja; bash {project}/tools/wheels/cibw_before_build_linux.sh {project}"
+          CIBW_BEFORE_BUILD_WINDOWS: "pip install numpy>=2.0.0.dev0 meson-python cython!=3.0.3 pythran pybind11 ninja && bash {project}/tools/wheels/cibw_before_build_win.sh {project}"
+          CIBW_BEFORE_BUILD_MACOS: "pip install numpy>=2.0.0.dev0 meson-python cython!=3.0.3 pythran pybind11 ninja; bash {project}/tools/wheels/cibw_before_build_macos.sh {project}"
           # Allow pip to find install nightly wheels if necessary
           # Setting PIP_NO_BUILD_ISOLATION=false makes pip use build-isolation.
           CIBW_ENVIRONMENT: "PIP_NO_BUILD_ISOLATION=false PIP_PRE=1 PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple"
