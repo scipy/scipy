@@ -8297,6 +8297,19 @@ def _compute_dminus(cdfvals, x):
     return (dminus[amax], loc_max)
 
 
+def _tuple_to_KstestResult(statistic, pvalue,
+                           statistic_location, statistic_sign):
+    return KstestResult(statistic, pvalue,
+                        statistic_location=statistic_location,
+                        statistic_sign=statistic_sign)
+
+
+def _KstestResult_to_tuple(res):
+    return *res, res.statistic_location, res.statistic_sign
+
+
+@_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=1, n_outputs=4,
+                          result_to_tuple=_KstestResult_to_tuple)
 @_rename_parameter("mode", "method")
 def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
     """
@@ -8423,24 +8436,23 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
         alternative.lower()[0], alternative)
     if alternative not in ['two-sided', 'greater', 'less']:
         raise ValueError("Unexpected alternative %s" % alternative)
-    if np.ma.is_masked(x):
-        x = x.compressed()
 
     N = len(x)
     x = np.sort(x)
     cdfvals = cdf(x, *args)
+    np_one = np.int8(1)
 
     if alternative == 'greater':
         Dplus, d_location = _compute_dplus(cdfvals, x)
         return KstestResult(Dplus, distributions.ksone.sf(Dplus, N),
                             statistic_location=d_location,
-                            statistic_sign=1)
+                            statistic_sign=np_one)
 
     if alternative == 'less':
         Dminus, d_location = _compute_dminus(cdfvals, x)
         return KstestResult(Dminus, distributions.ksone.sf(Dminus, N),
                             statistic_location=d_location,
-                            statistic_sign=-1)
+                            statistic_sign=-np_one)
 
     # alternative == 'two-sided':
     Dplus, dplus_location = _compute_dplus(cdfvals, x)
@@ -8448,11 +8460,11 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
     if Dplus > Dminus:
         D = Dplus
         d_location = dplus_location
-        d_sign = 1
+        d_sign = np_one
     else:
         D = Dminus
         d_location = dminus_location
-        d_sign = -1
+        d_sign = -np_one
 
     if mode == 'auto':  # Always select exact
         mode = 'exact'

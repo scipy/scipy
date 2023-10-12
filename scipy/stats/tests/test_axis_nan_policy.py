@@ -64,7 +64,9 @@ axis_nan_policy_cases = [
     (_get_ttest_ci(stats.ttest_ind), tuple(), dict(), 2, 2, False, None),
     (stats.mode, tuple(), dict(), 1, 2, True, lambda x: (x.mode, x.count)),
     (stats.differential_entropy, tuple(), dict(), 1, 1, False, lambda x: (x,)),
-    (stats.variation, tuple(), dict(), 1, 1, False, lambda x: (x,))
+    (stats.variation, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.ks_1samp, (stats.norm().cdf,), dict(), 1, 4, False,
+     lambda res: (*res, res.statistic_location, res.statistic_sign)),
 ]
 
 # If the message is one of those expected, put nans in
@@ -87,7 +89,8 @@ too_small_messages = {"The input contains nan",  # for nan_policy="raise"
                       "Data input must not be empty",
                       "Window length (0) must be positive and less",
                       "Window length (1) must be positive and less",
-                      "Window length (2) must be positive and less",}
+                      "Window length (2) must be positive and less",
+                      "attempt to get argmax of an empty sequence"}
 
 # If the message is one of these, results of the function may be inaccurate,
 # but NaNs are not to be placed
