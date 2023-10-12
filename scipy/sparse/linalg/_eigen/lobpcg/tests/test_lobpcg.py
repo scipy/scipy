@@ -555,7 +555,6 @@ def test_sakurai_inverse(n):
     accuracy = max(abs(ee - np.sort(1. / ea)) / ee)
     assert_allclose(accuracy, 0., atol=tol)
 
-
 @pytest.mark.filterwarnings("ignore:The problem size")
 @pytest.mark.parametrize("n", [10, 20, 128, 256, 512, 1024, 2048])
 @pytest.mark.filterwarnings("ignore:Exited at iteration")
@@ -573,7 +572,12 @@ def test_MikotaPair(n):
     Bc = mik_m
     Ab = mik_k.tobanded()
     eigenvalues = mik.eigenvalues
-    m = 10
+    if n == 10:
+        m = 3 # lobpcg calls eigh
+    elif n == 20:
+        m = 2
+    else:
+        m=10
     ee = eigenvalues(m)
     tol = m * n * n * n* np.finfo(float).eps
     rng = np.random.default_rng(0)
