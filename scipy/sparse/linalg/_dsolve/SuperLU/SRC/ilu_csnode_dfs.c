@@ -42,19 +42,18 @@ int
 ilu_csnode_dfs(
 	   const int  jcol,	    /* in - start of the supernode */
 	   const int  kcol,	    /* in - end of the supernode */
-	   const int  *asub,	    /* in */
-	   const int  *xa_begin,    /* in */
-	   const int  *xa_end,	    /* in */
+	   const int_t  *asub,	    /* in */
+	   const int_t  *xa_begin,    /* in */
+	   const int_t  *xa_end,	    /* in */
 	   int	      *marker,	    /* modified */
 	   GlobalLU_t *Glu	    /* modified */
 	   )
 {
-
-    register int i, k, nextl;
-    int 	 nsuper, krow, kmark, mem_error;
-    int 	 *xsup, *supno;
-    int 	 *lsub, *xlsub;
-    int 	 nzlmax;
+    int_t i, k, nextl, mem_error;
+    int   nsuper, krow, kmark;
+    int   *xsup, *supno;
+    int_t *lsub, *xlsub;
+    int_t nzlmax;
 
     xsup    = Glu->xsup;
     supno   = Glu->supno;
