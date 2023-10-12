@@ -102,7 +102,6 @@ import shutil
 import json
 import datetime
 import time
-import platform
 import importlib
 import importlib.util
 import errno
@@ -427,13 +426,6 @@ class Build(Task):
     show_build_log = Option(
         ['--show-build-log'], default=False, is_flag=True,
         help="Show build output rather than using a log file")
-    win_cp_openblas = Option(
-        ['--win-cp-openblas'], default=False, is_flag=True,
-        help=("If set, and on Windows, copy OpenBLAS lib to install directory "
-              "after meson install. "
-              "Note: this argument may be removed in the future once a "
-              "`site.cfg`-like mechanism to select BLAS/LAPACK libraries is "
-              "implemented for Meson"))
     use_scipy_openblas = Option(
         ['--use-scipy-openblas'], default=False, is_flag=True,
         help=("If set, use the `scipy-openblas32` wheel installed into the "
@@ -600,70 +592,6 @@ class Build(Task):
         return
 
     @classmethod
-    def copy_openblas(cls, dirs):
-        """
-        Copies OpenBLAS DLL to the SciPy install dir, and also overwrites the
-        default `_distributor_init.py` file with the one
-        we use for wheels uploaded to PyPI so that DLL gets loaded.
-
-        Assumes pkg-config is installed and aware of OpenBLAS.
-
-        The "dirs" parameter is typically a "Dirs" object with the
-        structure as the following, say, if dev.py is run from the
-        folder "repo":
-
-        dirs = Dirs(
-            root=WindowsPath('C:/.../repo'),
-            build=WindowsPath('C:/.../repo/build'),
-            installed=WindowsPath('C:/.../repo/build-install'),
-            site=WindowsPath('C:/.../repo/build-install/Lib/site-packages'
-            )
-
-        """
-        # Get OpenBLAS lib path from pkg-config
-        cmd = ['pkg-config', '--variable', 'libdir', 'openblas']
-        result = subprocess.run(cmd, capture_output=True, text=True)
-        # pkg-config does not return any meaningful error message if fails
-        if result.returncode != 0:
-            print('"pkg-config --variable libdir openblas" '
-                  'command did not manage to find OpenBLAS '
-                  'succesfully. Try running manually on the '
-                  'command prompt for more information.')
-            print("OpenBLAS copy failed!")
-            sys.exit(result.returncode)
-
-        # Skip the drive letter of the path -> /c to get Windows drive
-        # to be appended correctly to avoid "C:\c\..." from stdout.
-        openblas_lib_path = Path(result.stdout.strip()[2:]).resolve()
-        if not openblas_lib_path.stem == 'lib':
-            raise RuntimeError('"pkg-config --variable libdir openblas" '
-                               'command did not return a path ending with'
-                               ' "lib" folder. Instead it returned '
-                               f'"{openblas_lib_path}"')
-
-        # Look in bin subdirectory for OpenBLAS binaries.
-        bin_path = openblas_lib_path.parent / 'bin'
-        # Locate, make output .libs directory in Scipy install directory.
-        scipy_path = dirs.site / 'scipy'
-        libs_path = scipy_path / '.libs'
-        libs_path.mkdir(exist_ok=True)
-        # Copy DLL files from OpenBLAS install to scipy install .libs subdir.
-        for dll_fn in bin_path.glob('*.dll'):
-            out_fname = libs_path / dll_fn.name
-            print(f'Copying {dll_fn} ----> {out_fname}')
-            out_fname.write_bytes(dll_fn.read_bytes())
-
-        # Write _distributor_init.py to scipy install dir;
-        # this ensures the .libs file is on the DLL search path at run-time,
-        # so OpenBLAS gets found
-        openblas_support = import_module_from_path(
-            'openblas_support',
-            dirs.root / 'tools' / 'openblas_support.py'
-        )
-        openblas_support.make_init(scipy_path)
-        print('OpenBLAS copied')
-
-    @classmethod
     def configure_scipy_openblas(self, blas_variant='32'):
         """Create .openblas/scipy-openblas.pc and scipy/_distributor_init_local.py
 
@@ -704,8 +632,6 @@ class Build(Task):
             env = cls.setup_build(dirs, args)
             cls.build_project(dirs, args, env)
             cls.install_project(dirs, args)
-            if args.win_cp_openblas and platform.system() == 'Windows':
-                cls.copy_openblas(dirs)
 
         # add site to sys.path
         if add_path:
