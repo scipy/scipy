@@ -66,7 +66,8 @@ axis_nan_policy_cases = [
     (stats.differential_entropy, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.variation, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.entropy, tuple(), dict(), 1, 1, False, lambda x: (x,)),
-    (stats.entropy, tuple(), dict(), 2, 1, True, lambda x: (x,))
+    (stats.entropy, tuple(), dict(), 2, 1, True, lambda x: (x,)),
+    (stats.skewtest, tuple(), dict(), 1, 2, False, None),
 ]
 
 # If the message is one of those expected, put nans in
@@ -89,7 +90,9 @@ too_small_messages = {"The input contains nan",  # for nan_policy="raise"
                       "Data input must not be empty",
                       "Window length (0) must be positive and less",
                       "Window length (1) must be positive and less",
-                      "Window length (2) must be positive and less",}
+                      "Window length (2) must be positive and less",
+                      "skewtest is not valid with less than",
+                      }
 
 # If the message is one of these, results of the function may be inaccurate,
 # but NaNs are not to be placed

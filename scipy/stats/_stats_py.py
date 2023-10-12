@@ -1443,6 +1443,7 @@ def _normtest_finish(z, alternative):
 SkewtestResult = namedtuple('SkewtestResult', ('statistic', 'pvalue'))
 
 
+@_axis_nan_policy_factory(SkewtestResult, n_samples=1, too_small=7)
 def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     r"""Test whether the skew is different from the normal distribution.
 
