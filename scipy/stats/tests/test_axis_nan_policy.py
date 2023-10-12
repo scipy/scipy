@@ -69,6 +69,10 @@ axis_nan_policy_cases = [
      lambda res: (*res, res.statistic_location, res.statistic_sign)),
     (stats.ks_2samp, tuple(), dict(), 2, 4, False,
      lambda res: (*res, res.statistic_location, res.statistic_sign)),
+    (stats.kstest, (stats.norm().cdf,), dict(), 1, 4, False,
+     lambda res: (*res, res.statistic_location, res.statistic_sign)),
+    (stats.kstest, tuple(), dict(), 2, 4, False,
+     lambda res: (*res, res.statistic_location, res.statistic_sign)),
 ]
 
 # If the message is one of those expected, put nans in
