@@ -1635,6 +1635,7 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
 KurtosistestResult = namedtuple('KurtosistestResult', ('statistic', 'pvalue'))
 
 
+@_axis_nan_policy_factory(KurtosistestResult, n_samples=1, too_small=4)
 def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     r"""Test whether a dataset has normal kurtosis.
 
