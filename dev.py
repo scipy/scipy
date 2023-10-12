@@ -103,6 +103,7 @@ import json
 import datetime
 import time
 import platform
+import importlib
 import importlib.util
 import errno
 import contextlib
@@ -433,6 +434,10 @@ class Build(Task):
               "Note: this argument may be removed in the future once a "
               "`site.cfg`-like mechanism to select BLAS/LAPACK libraries is "
               "implemented for Meson"))
+    use_scipy_openblas = Option(
+        ['--use-scipy-openblas'], default=False, is_flag=True,
+        help=("If set, use the `scipy-openblas32` wheel installed into the "
+              "current environment as the BLAS/LAPACK to build against."))
 
     @classmethod
     def setup_build(cls, dirs, args):
@@ -485,6 +490,12 @@ class Build(Task):
             cmd += ['-Db_sanitize=address,undefined']
         if args.setup_args:
             cmd += [str(arg) for arg in args.setup_args]
+        if args.use_scipy_openblas:
+            cls.configure_scipy_openblas()
+            env['PKG_CONFIG_PATH'] = os.pathsep.join([
+                    os.path.join(os.getcwd(), '.openblas'),
+                    env.get('PKG_CONFIG_PATH', '')
+                    ])
 
         # Setting up meson build
         cmd_str = ' '.join([str(p) for p in cmd])
@@ -651,6 +662,33 @@ class Build(Task):
         )
         openblas_support.make_init(scipy_path)
         print('OpenBLAS copied')
+
+    @classmethod
+    def configure_scipy_openblas(self, blas_variant='32'):
+        """Create .openblas/scipy-openblas.pc and scipy/_distributor_init_local.py
+
+        Requires a pre-installed scipy-openblas32 wheel from PyPI.
+        """
+        basedir = os.getcwd()
+        openblas_dir = os.path.join(basedir, ".openblas")
+        pkg_config_fname = os.path.join(openblas_dir, "scipy-openblas.pc")
+
+        if os.path.exists(pkg_config_fname):
+            return None
+
+        module_name = f"scipy_openblas{blas_variant}"
+        try:
+            openblas = importlib.import_module(module_name)
+        except ModuleNotFoundError:
+            raise RuntimeError(f"'pip install {module_name} first")
+
+        local = os.path.join(basedir, "scipy", "_distributor_init_local.py")
+        with open(local, "wt", encoding="utf8") as fid:
+            fid.write(f"import {module_name}\n")
+
+        os.makedirs(openblas_dir, exist_ok=True)
+        with open(pkg_config_fname, "wt", encoding="utf8") as fid:
+            fid.write(openblas.get_pkg_config().replace("\\", "/"))
 
     @classmethod
     def run(cls, add_path=False, **kwargs):
