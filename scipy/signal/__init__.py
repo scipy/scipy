@@ -393,7 +393,9 @@ for name in deprecated_windows:
 
 del deprecated_windows, name, deco
 
-__all__ = [s for s in dir() if not s.startswith('_') and s != "warnings"]
+__all__ = [
+    s for s in dir() if not s.startswith("_") and s not in {"warnings", "inspect"}
+]
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
