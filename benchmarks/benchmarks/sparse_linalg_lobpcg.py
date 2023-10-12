@@ -117,7 +117,7 @@ class Bench(Benchmark):
 
     def time_sakurai_inverse(self, n, solver):
         # apply inverse iterations in  `lobpcg` and `eigsh` ARPACK
-        # using the Cholesky on the banded form in full `np.float64` precision
+        # using Cholesky on the banded form in full `np.float64` precision
         # for fast convergence and compare to dense banded eigensolver `eig_banded`
         def a(x):
             return cho_solve_banded((c, False), x)
