@@ -3877,7 +3877,9 @@ class TestSkewNorm:
         params = stats.skewnorm.fit(x)
         res = stats.skewnorm.nnlf(params, x)
 
-        # Compare overridden fit against generic fit
+        # Compare overridden fit against generic fit.
+        # res should be about 32.01, and generic fit is worse at 32.64.
+        # In case the generic fit improves, remove this assertion (see gh-19333).
         params_super = stats.skewnorm.fit(x, superfit=True)
         ref = stats.skewnorm.nnlf(params_super, x)
         assert res < ref - 0.5
