@@ -34,19 +34,6 @@ else:
     )
     DTypePromotionError = TypeError  # type: ignore
 
-np_long: type
-np_ulong: type
-
-if np.lib.NumpyVersion(np.__version__) >= "2.0.0.dev0":
-    try:
-        np_long = np.long  # type: ignore[attr-defined]
-        np_ulong = np.ulong  # type: ignore[attr-defined]
-    except AttributeError:
-            np_long = np.int_
-            np_ulong = np.uint
-else:
-    np_long = np.int_
-    np_ulong = np.uint
 
 IntNumber = Union[int, np.integer]
 DecimalNumber = Union[float, np.floating, np.integer]
@@ -528,7 +515,7 @@ def rng_integers(gen, low, high=None, size=None, dtype='int64',
         Desired dtype of the result. All dtypes are determined by their name,
         i.e., 'int64', 'int', etc, so byteorder is not available and a specific
         precision may have different C types depending on the platform.
-        The default value is 'int64'.
+        The default value is np.int_.
     endpoint : bool, optional
         If True, sample from the interval [low, high] instead of the default
         [low, high) Defaults to False.

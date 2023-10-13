@@ -1236,8 +1236,8 @@ class TestInterp:
             assert_allclose(b(xx), yy, atol=1e-14, rtol=1e-14)
 
     def test_int_xy(self):
-        x = np.arange(10).astype(int)
-        y = np.arange(10).astype(int)
+        x = np.arange(10).astype(np.int_)
+        y = np.arange(10).astype(np.int_)
 
         # Cython chokes on "buffer type mismatch" (construction) or
         # "no matching signature found" (evaluation)
@@ -1499,8 +1499,8 @@ class TestLSQ:
         assert_allclose(b(x), b_re(x) + 1.j*b_im(x), atol=1e-15, rtol=1e-15)
 
     def test_int_xy(self):
-        x = np.arange(10).astype(int)
-        y = np.arange(10).astype(int)
+        x = np.arange(10).astype(np.int_)
+        y = np.arange(10).astype(np.int_)
         t = _augknt(x, k=1)
         # Cython chokes on "buffer type mismatch"
         make_lsq_spline(x, y, t, k=1)

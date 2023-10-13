@@ -2875,7 +2875,7 @@ class TestMultivariateHypergeom:
              [5, 10], [[8, 8], [8, 2]],
              [[0.3916084, 0.006993007], [0, 0.4761905]]),
             # test with empty arrays.
-            (np.array([], dtype=int), np.array([], dtype=int), 0, []),
+            (np.array([], np.int_), np.array([], np.int_), 0, []),
             ([1, 2], [4, 5], 5, 0),
             # Ground truth value from R dmvhyper
             ([3, 3, 0], [5, 6, 7], 6, 0.01077354)
@@ -2967,7 +2967,7 @@ class TestMultivariateHypergeom:
         assert_allclose(mean2, [[np.nan, np.nan, np.nan], [1., 0., 1.]],
                         rtol=1e-17)
 
-        mean3 = multivariate_hypergeom.mean(m=np.array([], dtype=int), n=0)
+        mean3 = multivariate_hypergeom.mean(m=np.array([], np.int_), n=0)
         assert_equal(mean3, [])
         assert_(mean3.shape == (0, ))
 
@@ -2982,7 +2982,7 @@ class TestMultivariateHypergeom:
         assert_allclose(var2, [[np.nan, np.nan, np.nan], [0., 0., 0.]],
                         rtol=1e-17)
 
-        var3 = multivariate_hypergeom.var(m=np.array([], dtype=int), n=0)
+        var3 = multivariate_hypergeom.var(m=np.array([], np.int_), n=0)
         assert_equal(var3, [])
         assert_(var3.shape == (0, ))
 
@@ -2995,7 +2995,7 @@ class TestMultivariateHypergeom:
         cov4 = [[0., 0., 0.], [0., 0., 0.], [0., 0., 0.]]
         assert_equal(cov3, cov4)
 
-        cov5 = multivariate_hypergeom.cov(m=np.array([], dtype=int), n=0)
+        cov5 = multivariate_hypergeom.cov(m=np.array([], np.int_), n=0)
         cov6 = np.array([], dtype=np.float64).reshape(0, 0)
         assert_allclose(cov5, cov6, rtol=1e-17)
         assert_(cov5.shape == (0, 0))
@@ -3007,7 +3007,7 @@ class TestMultivariateHypergeom:
         m = [7, 9, 11, 13]
         x = [[0, 0, 0, 12], [0, 0, 1, 11], [0, 1, 1, 10],
              [1, 1, 1, 9], [1, 1, 2, 8]]
-        x = np.asarray(x, dtype=int)
+        x = np.asarray(x, dtype=np.int_)
         mhg_frozen = multivariate_hypergeom(m, n)
         assert_allclose(mhg_frozen.pmf(x),
                         multivariate_hypergeom.pmf(x, m, n))

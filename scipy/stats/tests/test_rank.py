@@ -1,9 +1,8 @@
 import numpy as np
 from numpy.testing import assert_equal, assert_array_equal
-import pytest
 
 from scipy.stats import rankdata, tiecorrect
-from scipy._lib._util import np_long
+import pytest
 
 
 class TestTieCorrect:
@@ -188,7 +187,7 @@ class TestRankData:
         assert_array_equal(r1, expected1)
 
     methods = ["average", "min", "max", "dense", "ordinal"]
-    dtypes = [np.float64] + [np_long]*4
+    dtypes = [np.float64] + [np.int_]*4
 
     @pytest.mark.parametrize("axis", [0, 1])
     @pytest.mark.parametrize("method, dtype", zip(methods, dtypes))

@@ -10832,10 +10832,7 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
             # The return values of `normalize_axis_index` are ignored.  The
             # call validates `axis`, even though we won't use it.
             normalize_axis_index(axis, a.ndim)
-            if method == 'average':
-                dt = np.dtype(np.float64)
-            else:
-                dt = np.dtype(int)
+            dt = np.float64 if method == 'average' else np.int_
             return np.empty(a.shape, dtype=dt)
         return np.apply_along_axis(rankdata, axis, a, method,
                                    nan_policy=nan_policy)

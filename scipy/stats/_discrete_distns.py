@@ -1143,7 +1143,7 @@ class randint_gen(rv_discrete):
             low = np.broadcast_to(low, size)
             high = np.broadcast_to(high, size)
         randint = np.vectorize(partial(rng_integers, random_state),
-                               otypes=[np.dtype(int)])
+                               otypes=[np.int_])
         return randint(low, high)
 
     def _entropy(self, low, high):

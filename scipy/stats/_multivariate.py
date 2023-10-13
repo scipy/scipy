@@ -3296,7 +3296,7 @@ class multinomial_gen(multi_rv_generic):
         pcond = np.any(p < 0, axis=-1)
         pcond |= np.any(p > 1, axis=-1)
 
-        n = np.array(n, dtype=int, copy=True)
+        n = np.array(n, dtype=np.int_, copy=True)
 
         # true for bad n
         ncond = n < 0
@@ -3309,7 +3309,7 @@ class multinomial_gen(multi_rv_generic):
         x_ is an int array; xcond is a boolean array flagging values out of the
         domain.
         """
-        xx = np.asarray(x, dtype=int)
+        xx = np.asarray(x, dtype=np.int_)
 
         if xx.ndim == 0:
             raise ValueError("x must be an array.")
