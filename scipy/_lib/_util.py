@@ -39,14 +39,8 @@ np_ulong: type
 
 if np.lib.NumpyVersion(np.__version__) >= "2.0.0.dev0":
     try:
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore",
-                r".*In the future `np\.long` will be defined as.*",
-                FutureWarning,
-            )
-            np_long = np.long  # type: ignore[attr-defined]
-            np_ulong = np.ulong  # type: ignore[attr-defined]
+        np_long = np.long  # type: ignore[attr-defined]
+        np_ulong = np.ulong  # type: ignore[attr-defined]
     except AttributeError:
             np_long = np.int_
             np_ulong = np.uint

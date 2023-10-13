@@ -15,7 +15,7 @@ __all__ = ['compare_medians_ms',
 
 
 import numpy as np
-from numpy import float64, ndarray
+from numpy import float64, int_, ndarray
 
 import numpy.ma as ma
 from numpy.ma import MaskedArray
@@ -259,7 +259,7 @@ def mjci(data, prob=[0.25,0.5,0.75], axis=None):
     def _mjci_1D(data, p):
         data = np.sort(data.compressed())
         n = data.size
-        prob = (np.array(p) * n + 0.5).astype(int)
+        prob = (np.array(p) * n + 0.5).astype(int_)
         betacdf = beta.cdf
 
         mj = np.empty(len(prob), float64)
