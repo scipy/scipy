@@ -822,7 +822,7 @@ def least_squares(
     ftol, xtol, gtol = check_tolerance(ftol, xtol, gtol, method)
 
     if method == 'trf':
-        x0 = make_strictly_feasible(x0, lb, ub, rstep=0)
+        x0 = make_strictly_feasible(x0, lb, ub)
 
     def fun_wrapped(x):
         return np.atleast_1d(fun(x, *args, **kwargs))
