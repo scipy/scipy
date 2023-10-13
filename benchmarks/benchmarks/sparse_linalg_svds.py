@@ -41,6 +41,7 @@ class BenchSVDS(Benchmark):
             _, s, _ = svd(self.A.toarray(), full_matrices=False)
             s = np.sort(s)[:k]
         else:
-            _, s, _ = svds(self.A, k=k, solver=solver, random_state=self.rng)
+            _, s, _ = svds(self.A, k=k, solver=solver, random_state=self.rng,
+                           maxiter = 200, tol=self.tol)
         accuracy = max(abs(self.k_singular_values - s) / self.k_singular_values)
         assert accuracy < self.tol, msg
