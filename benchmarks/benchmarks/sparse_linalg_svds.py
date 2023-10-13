@@ -32,7 +32,7 @@ class BenchSVDS(Benchmark):
         matrices = np.load(datafile, allow_pickle=True)
         self.A = matrices[problem][()]
         _, s, _ = svd(self.A.toarray(), full_matrices=False)
-        self.k_singular_values = s.sort()[:k]
+        self.k_singular_values = np.sort(s)[:k]
         self.tol = k * np.prod(self.A.shape) * np.finfo(float).eps
         self.rng = np.random.default_rng(0)
 
