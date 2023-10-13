@@ -37,4 +37,6 @@ int NI_FindObjects(PyArrayObject*, npy_intp, npy_intp*);
 int NI_WatershedIFT(PyArrayObject*, PyArrayObject*, PyArrayObject*,
                     PyArrayObject*);
 
+int NI_BoundingBox(PyArrayObject*, npy_intp*);
+
 #endif

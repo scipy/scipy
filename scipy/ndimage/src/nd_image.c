@@ -1302,6 +1302,83 @@ exit:
     return PyErr_Occurred() ? NULL : Py_BuildValue("");
 }
 
+static PyObject *Py_BoundingBox(PyObject *obj, PyObject *args)
+{
+    PyArrayObject *input = NULL;
+    PyObject *result=NULL, *tuple = NULL, *start = NULL, *end = NULL;
+    PyObject *slc = NULL;
+    npy_intp *regions = NULL;
+    int dim;
+
+    if (!PyArg_ParseTuple(args, "O&", NI_ObjectToInputArray, &input))
+        goto exit;
+
+    
+    if (PyArray_NDIM(input) > 0) {
+        /* allocate 2 integers (start & end) for each dimension */
+        regions = (npy_intp*)malloc(2 * PyArray_NDIM(input) *
+                                    sizeof(npy_intp));
+    } else {
+        regions = (npy_intp*)malloc(sizeof(npy_intp));
+    }
+    if (!regions) {
+        PyErr_NoMemory();
+        goto exit;
+    }
+
+    if (!NI_BoundingBox(input, regions))
+        goto exit;
+
+    if (regions[0] >= 0) {
+        /* allocate result: tuple of NDIM slices */
+        tuple = PyTuple_New(PyArray_NDIM(input));
+        if (!tuple) {
+            PyErr_NoMemory();
+            goto exit;
+        }
+        /* create slice for each dimension */
+        for(dim = 0; dim < PyArray_NDIM(input); dim++) {
+            start = PyLong_FromSsize_t(regions[dim]);
+            end = PyLong_FromSsize_t(regions[dim +
+                                            PyArray_NDIM(input)]);
+            if (!start || !end) {
+                PyErr_NoMemory();
+                goto exit;
+            }
+            slc = PySlice_New(start, end, NULL);
+            if (!slc) {
+                PyErr_NoMemory();
+                goto exit;
+            }
+            Py_DECREF(start);
+            Py_DECREF(end);
+            start = end = NULL;
+            PyTuple_SetItem(tuple, dim, slc);
+            slc = NULL;
+        }
+        /* result tuple constructed successfully */
+        result = tuple;
+        tuple = NULL;
+        Py_INCREF(result);
+    }
+    /* else:  no region was found, will return Py_None */
+
+ exit:
+    Py_XDECREF(input);
+    Py_XDECREF(result);
+    Py_XDECREF(tuple);
+    Py_XDECREF(start);
+    Py_XDECREF(end);
+    Py_XDECREF(slc);
+    free(regions);
+
+    if (PyErr_Occurred()) {
+        return NULL;
+    } else {
+        return result ? result : Py_None;
+    }
+}
+
 static PyMethodDef methods[] = {
     {"correlate1d",           (PyCFunction)Py_Correlate1D,
      METH_VARARGS, NULL},
@@ -1345,6 +1422,8 @@ static PyMethodDef methods[] = {
     {"binary_erosion",        (PyCFunction)Py_BinaryErosion,
      METH_VARARGS, NULL},
     {"binary_erosion2",       (PyCFunction)Py_BinaryErosion2,
+     METH_VARARGS, NULL},
+    {"bounding_box",              (PyCFunction)Py_BoundingBox,
      METH_VARARGS, NULL},
     {NULL, NULL, 0, NULL}
 };

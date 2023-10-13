@@ -72,6 +72,7 @@ Measurements
 .. autosummary::
    :toctree: generated/
 
+   bounding_box - Get bounding box of nonzero values in an nd-image
    center_of_mass - The center of mass of the values of an array at labels
    extrema - Min's and max's of an array at labels, with their positions
    find_objects - Find objects in a labeled array

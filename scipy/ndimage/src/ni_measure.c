@@ -137,6 +137,153 @@ int NI_FindObjects(PyArrayObject* input, npy_intp max_label,
     return PyErr_Occurred() ? 0 : 1;
 }
 
+#define CASE_CALC_BBOX(_TYPE, _type, _pi, _regions,                         \
+                                    _array, _size, _rank, _ii)              \
+case _TYPE:                                                                 \
+{                                                                           \
+    int _jj, _kk;                                                           \
+    for(_jj = _size; _jj != 0 ; _jj--) {                                    \
+        if (*(_type *)pi) {                                                 \
+            if (_rank > 0) {                                                \
+                if (_regions[0] < 0) {                                      \
+                    for (_kk = 0; _kk < _rank; _kk++) {                     \
+                        npy_intp _cc = _ii.coordinates[_kk];                \
+                        _regions[_kk] = _cc;                                \
+                        _regions[_kk + _rank] = _cc + 1;                    \
+                    }                                                       \
+                }                                                           \
+                else {                                                      \
+                    for(_kk = 0; _kk < _rank; _kk++) {                      \
+                        npy_intp _cc = _ii.coordinates[_kk];                \
+                        if (_cc < _regions[_kk]) {                          \
+                            _regions[_kk] = _cc;                            \
+                        }                                                   \
+                        if (_cc + 1 > _regions[_kk + _rank]) {              \
+                            _regions[_kk + _rank] = _cc + 1;                \
+                        }                                                   \
+                    }                                                       \
+                }                                                           \
+            }                                                               \
+            else {                                                          \
+                _regions[0] = 1;                                            \
+            }                                                               \
+        }                                                                   \
+        NI_ITERATOR_NEXT(_ii, _pi);                                         \
+    }                                                                       \
+}                                                                           \
+break
+
+#define CASE_CALC_BBOX_COMPLEX(_TYPE, _type, _pi, _regions,                 \
+                                            _array, _size, _rank, _ii)      \
+case _TYPE:                                                                 \
+{                                                                           \
+    int _jj, _kk;                                                           \
+    for(_jj = _size; _jj != 0 ; _jj--) {                                    \
+        if (((_type *)_pi)->real != 0 || ((_type *)_pi)->imag != 0) {       \
+            if (_rank > 0) {                                                \
+                if (_regions[0] < 0) {                                      \
+                    for (_kk = 0; _kk < _rank; _kk++) {                     \
+                        npy_intp _cc = _ii.coordinates[_kk];                \
+                        _regions[_kk] = _cc;                                \
+                        _regions[_kk + _rank] = _cc + 1;                    \
+                    }                                                       \
+                }                                                           \
+                else {                                                      \
+                    for(_kk = 0; _kk < _rank; _kk++) {                      \
+                        npy_intp _cc = _ii.coordinates[_kk];                \
+                        if (_cc < _regions[_kk]) {                          \
+                            _regions[_kk] = _cc;                            \
+                        }                                                   \
+                        if (_cc + 1 > _regions[_kk + _rank]) {              \
+                            _regions[_kk + _rank] = _cc + 1;                \
+                        }                                                   \
+                    }                                                       \
+                }                                                           \
+            }                                                               \
+            else {                                                          \
+                _regions[0] = 1;                                            \
+            }                                                               \
+        }                                                                   \
+        NI_ITERATOR_NEXT(_ii, _pi);                                         \
+    }                                                                       \
+}                                                                           \
+break
+
+
+int NI_BoundingBox(PyArrayObject* input, npy_intp* regions)
+{
+    npy_intp size, rank, jj;
+    
+    NI_Iterator ii;
+    char *pi;
+
+    NPY_BEGIN_THREADS_DEF;
+
+    NPY_BEGIN_THREADS;
+
+    /* get input data, size and iterator: */
+    pi = (void *)PyArray_DATA(input);
+    size = PyArray_SIZE(input);
+    rank = PyArray_NDIM(input);
+    if (!NI_InitPointIterator(input, &ii))
+        goto exit;
+    
+    /* initialize result values to -1 */
+    if (PyArray_NDIM(input) > 0) {
+        for (jj = 0; jj < 2 * PyArray_NDIM(input); jj++) {
+            regions[jj] = -1;
+        }
+    } else {
+        regions[0] = -1;
+    }
+
+    /* iterate over all points: */
+    switch (PyArray_TYPE(input)) {
+        CASE_CALC_BBOX(NPY_BOOL, npy_bool, pi, regions, input, size, rank, ii);
+        
+        CASE_CALC_BBOX(NPY_BYTE, npy_byte, pi, regions, input, size, rank, ii);
+        
+        CASE_CALC_BBOX(NPY_UBYTE, npy_ubyte, pi, regions, input, size, rank, ii);
+        
+        CASE_CALC_BBOX(NPY_SHORT, npy_short, pi, regions, input, size, rank, ii);
+        
+        CASE_CALC_BBOX(NPY_USHORT, npy_ushort, pi, regions, input, size, rank, ii);
+        
+        CASE_CALC_BBOX(NPY_INT, npy_int, pi, regions, input, size, rank, ii);
+        
+        CASE_CALC_BBOX(NPY_UINT, npy_uint, pi, regions, input, size, rank, ii);
+        
+        CASE_CALC_BBOX(NPY_LONG, npy_long, pi, regions, input, size, rank, ii);
+        
+        CASE_CALC_BBOX(NPY_ULONG, npy_ulong, pi, regions, input, size, rank, ii);
+        
+        CASE_CALC_BBOX(NPY_LONGLONG, npy_longlong, pi, regions, input, size, rank, ii);
+        
+        CASE_CALC_BBOX(NPY_ULONGLONG, npy_ulonglong, pi, regions, input, size, rank, ii);
+        
+        CASE_CALC_BBOX(NPY_FLOAT16, npy_half, pi, regions, input, size, rank, ii);
+        
+        CASE_CALC_BBOX(NPY_FLOAT, npy_float, pi, regions, input, size, rank, ii);
+        
+        CASE_CALC_BBOX(NPY_DOUBLE, npy_double, pi, regions, input, size, rank, ii);
+
+        CASE_CALC_BBOX_COMPLEX(NPY_CFLOAT, npy_cfloat, pi, regions, input, size, rank, ii);
+
+        CASE_CALC_BBOX_COMPLEX(NPY_CDOUBLE, npy_cdouble, pi, regions, input, size, rank, ii);
+
+        CASE_CALC_BBOX_COMPLEX(NPY_CLONGDOUBLE, npy_clongdouble, pi, regions, input, size, rank, ii);
+        
+        default:
+            NPY_END_THREADS;
+            PyErr_SetString(PyExc_RuntimeError, "data type not supported");
+            goto exit;
+    }
+
+exit:
+    NPY_END_THREADS;
+    return PyErr_Occurred() ? 0 : 1;
+}
+
 
 #define WS_GET_INDEX(_TYPE, _type, _index, _c_strides,      \
                      _b_strides, _rank, _out,  _contiguous) \
@@ -618,3 +765,4 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
     free(nstrides);
     return PyErr_Occurred() ? 0 : 1;
 }
+
