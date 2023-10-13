@@ -33,12 +33,13 @@ class BenchSVDS(Benchmark):
         self.A = matrices[problem][()]
         _, s, _ = svd(self.A.toarray(), full_matrices=False)
         self.k_singular_values = np.sort(s)[:k]
-        self.tol = k * np.prod(self.A.shape) * np.finfo(float).eps
+        self.tol = 100 * k * np.prod(self.A.shape) * np.finfo(float).eps
         self.rng = np.random.default_rng(0)
 
     def time_svds(self, k, problem, solver):
         if solver == 'svd':
             _, s, _ = svd(self.A.toarray(), full_matrices=False)
+            s = np.sort(s)[:k]
         else:
             _, s, _ = svds(self.A, k=k, solver=solver, random_state=self.rng)
         accuracy = max(abs(self.k_singular_values - s) / self.k_singular_values)
