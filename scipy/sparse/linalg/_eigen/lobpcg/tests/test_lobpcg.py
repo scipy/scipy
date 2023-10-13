@@ -577,9 +577,9 @@ def test_MikotaPair(n):
     elif n == 20:
         m = 2
     else:
-        m=10
+        m = 10
     ee = eigenvalues(m)
-    tol = m * n * n * n* np.finfo(float).eps
+    tol = 100 * m * n * n * np.finfo(float).eps
     rng = np.random.default_rng(0)
     X = rng.normal(size=(n, m))
     c = cholesky_banded(Ab.astype(np.float32))
