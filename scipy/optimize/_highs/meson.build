@@ -19,6 +19,7 @@ py3.extension_module(
   dependencies: scipy_highspy_dep,
   c_args: [Wno_unused_variable, Wno_unused_but_set_variable],
   cpp_args: [_cpp_Wno_unused_variable, _cpp_Wno_unused_but_set_variable],
+  link_args: version_link_args,
   subdir: 'scipy/optimize/_highs/highspy',
   install: true,
 )
@@ -30,6 +31,7 @@ py3.extension_module(
   dependencies: scipy_highspy_dep,
   c_args: [Wno_unused_variable, Wno_unused_but_set_variable],
   cpp_args: [_cpp_Wno_unused_variable, _cpp_Wno_unused_but_set_variable],
+  link_args: version_link_args,
   subdir: 'scipy/optimize/_highs/highspy',
   install: true,
 )
