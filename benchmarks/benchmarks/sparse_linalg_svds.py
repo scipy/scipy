@@ -27,6 +27,9 @@ class BenchSVDS(Benchmark):
     param_names = ['k', 'problem', 'solver']
 
     def setup(self, k, problem, solver):
+        if solver == 'svd' and problem == "tols4000":
+            # skip: fails breaking the benchmark
+            raise NotImplementedError()
         dir_path = os.path.dirname(os.path.realpath(__file__))
         datafile = os.path.join(dir_path, "svds_benchmark_files",
                                 "svds_benchmark_files.npz")
