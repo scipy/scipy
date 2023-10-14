@@ -66,6 +66,7 @@ def test_milp_iv():
     message = "`bounds.lb` and `bounds.ub` must contain reals and..."
     with pytest.raises(ValueError, match=message):
         milp([1, 2, 3], bounds=([1, 2], [3, 4]))
+    message = "Lower and upper bounds must be reals"
     with pytest.raises(ValueError, match=message):
         milp([1, 2, 3], bounds=([1, 2, 3], ["3+4", 4, 5]))
     with pytest.raises(ValueError, match=message):
@@ -111,14 +112,6 @@ def test_result():
     assert res.status == 1
     assert not res.success
     msg = "Time limit reached. (HiGHS Status 13:"
-    assert res.message.startswith(msg)
-    assert (res.fun is res.mip_dual_bound is res.mip_gap
-            is res.mip_node_count is res.x is None)
-
-    res = milp(1, bounds=(1, -1))
-    assert res.status == 2
-    assert not res.success
-    msg = "The problem is infeasible. (HiGHS Status 8:"
     assert res.message.startswith(msg)
     assert (res.fun is res.mip_dual_bound is res.mip_gap
             is res.mip_node_count is res.x is None)

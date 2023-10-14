@@ -294,15 +294,15 @@ class TestDIRECT:
         with pytest.raises(ValueError, match=error_msg):
             direct(self.styblinski_tang, bounds)
 
-    @pytest.mark.parametrize("bounds",
-                             [Bounds([-1., -1], [-2, 1]),
-                              Bounds([-np.nan, -1], [-2, np.nan]),
+    @pytest.mark.parametrize("bounds_args",
+                             [([-1., -1], [-2, 1]),
+                              ([-np.nan, -1], [-2, np.nan]),
                               ]
                              )
-    def test_incorrect_bounds(self, bounds):
+    def test_incorrect_bounds(self, bounds_args):
         error_msg = 'Bounds are not consistent min < max'
         with pytest.raises(ValueError, match=error_msg):
-            direct(self.styblinski_tang, bounds)
+            direct(self.styblinski_tang, bounds_args)
 
     def test_inf_bounds(self):
         error_msg = 'Bounds must not be inf.'

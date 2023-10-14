@@ -241,6 +241,23 @@ class Bounds:
         Whether to keep the constraint components feasible throughout
         iterations. Must be broadcastable with `lb` and `ub`.
         Default is False. Has no effect for equality constraints.
+
+    Examples
+    --------
+    Consider two variables, where the first must not be negative,
+    and the second must be between 1 and 2:
+
+    >>> from scipy.optimize import Bounds
+    >>> bounds = Bounds(lb=[0, 1], ub=[np.inf, 2])
+
+    We can check whether something is inside the bounds:
+
+    >>> assert [100, 1.5] in bounds
+    >>> assert [-1, 2.5] not in bounds
+
+    If all variables have the same constraint, a single value is enough:
+
+    >>> bounds = Bounds(0, 1)
     """
     def _input_validation(self):
         try:
@@ -249,6 +266,15 @@ class Bounds:
         except ValueError:
             message = "`lb`, `ub`, and `keep_feasible` must be broadcastable."
             raise ValueError(message)
+        try:
+            lb = self.lb.astype(np.double)
+            ub = self.ub.astype(np.double)
+        except (ValueError, TypeError) as exc:
+            message = ("Lower and upper bounds must be reals")
+            raise ValueError(message) from exc
+
+        if (self.lb > self.ub).any():
+            raise ValueError("An upper bound is less than the corresponding lower bound.")
 
     def __init__(self, lb=-np.inf, ub=np.inf, keep_feasible=False):
         if issparse(lb) or issparse(ub):
@@ -296,6 +322,27 @@ class Bounds:
             The lower and upper residuals
         """
         return x - self.lb, self.ub - x
+
+    def __contains__(self, x):
+        """Check whether the input is within the bounds.
+
+        Verifies for each element the bound constraint::
+
+            lb <= x <= ub
+
+        Parameters
+        ----------
+        x: array_like
+            Vector of independent variables
+
+        Returns
+        -------
+        inside: bool
+            Whether the input is within the bounds.
+
+        """
+        y = np.atleast_1d(x)
+        return not (np.any(self.lb > y) or np.any(y > self.ub))
 
 
 class PreparedConstraint:
