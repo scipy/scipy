@@ -39,12 +39,11 @@ class BenchSVDS(Benchmark):
 
     def time_svds(self, k, problem, solver):
         if solver == 'svd':
-            _, s, _ = svd(self.A.toarray(), full_matrices=False)
-            s = np.flip(s[:int(k/2)])
+            _ = svd(self.A.toarray(), full_matrices=False)
         else:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 _, s, _ = svds(self.A, k=k, solver=solver, random_state=self.rng,
                                maxiter = 50, tol=1e-6)
-        accuracy = np.max(np.abs(1 - s[int(k/2):] / self.top_singular_values))
-        assert accuracy < self.tol, msg
+            accuracy = np.max(np.abs(1 - s[int(k/2):] / self.top_singular_values))
+            assert accuracy < self.tol, msg
