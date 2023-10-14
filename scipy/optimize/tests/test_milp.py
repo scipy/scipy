@@ -97,9 +97,8 @@ def test_result():
     res = milp(c=c, constraints=(A, b, b), bounds=(0, 1), integrality=1)
     assert res.status == 0
     assert res.success
-    msg = "Optimization terminated successfully."
+    msg = "Optimization terminated successfully. (HiGHS Status 7:"
     assert res.message.startswith(msg)
-    assert 'HighsModelStatus.kOptimal' in res.message
     assert isinstance(res.x, np.ndarray)
     assert isinstance(res.fun, float)
     assert isinstance(res.mip_node_count, int)
@@ -111,8 +110,8 @@ def test_result():
                options={'time_limit': 0.05})
     assert res.status == 1
     assert not res.success
-    msg = "Time limit reached"
-    assert 'HighsModelStatus.kTimeLimit' in res.message
+    msg = "Time limit reached. (HiGHS Status 13:"
+    assert res.message.startswith(msg)
     assert msg in res.message
     assert (res.fun is res.mip_dual_bound is res.mip_gap
             is res.mip_node_count is res.x is None)
@@ -120,8 +119,7 @@ def test_result():
     res = milp(1, bounds=(1, -1))
     assert res.status == 2
     assert not res.success
-    msg = "The problem is infeasible"
-    assert 'HighsModelStatus.kInfeasible' in res.message
+    msg = "The problem is infeasible. (HiGHS Status 8:"
     assert res.message.startswith(msg)
     assert (res.fun is res.mip_dual_bound is res.mip_gap
             is res.mip_node_count is res.x is None)
@@ -129,8 +127,7 @@ def test_result():
     res = milp(-1)
     assert res.status == 3
     assert not res.success
-    assert 'HighsModelStatus.kUnbounded' in res.message
-    msg = "The problem is unbounded."
+    msg = "The problem is unbounded. (HiGHS Status 10:"
     assert res.message.startswith(msg)
     assert (res.fun is res.mip_dual_bound is res.mip_gap
             is res.mip_node_count is res.x is None)
@@ -294,14 +291,13 @@ def test_infeasible_prob_16609():
 
 
 _msg_time = "Time limit reached. (HiGHS Status 13:"
-_msg_iter = "Iteration limit reached. (HiGHS Status 14:"
+_msg_sol = "Serious numerical difficulties encountered. (HiGHS Status 16:"
 
 
 @pytest.mark.skipif(np.intp(0).itemsize < 8,
                     reason="Unhandled 32-bit GCC FP bug")
-@pytest.mark.slow
 @pytest.mark.parametrize(["options", "msg"], [({"time_limit": 0.1}, _msg_time),
-                                              ({"node_limit": 1}, _msg_iter)])
+                                              ({"node_limit": 1}, _msg_sol)])
 def test_milp_timeout_16545(options, msg):
     # Ensure solution is not thrown away if MILP solver times out
     # -- see gh-16545
