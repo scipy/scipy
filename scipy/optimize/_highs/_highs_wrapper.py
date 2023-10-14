@@ -146,7 +146,7 @@ def _highs_wrapper(c, indptr, indices, data, lhs, rhs, lb, ub, integrality, opti
             {
                 "status": model_status,
                 "message": f"model_status is {highs.modelStatusToString(model_status)}; "
-                f"primal_status is "
+                "primal_status is "
                 f"{highs.solutionStatusToString(info.primal_solution_status)}",
                 "simplex_nit": info.simplex_iteration_count,
                 "ipm_nit": info.ipm_iteration_count,
