@@ -304,10 +304,9 @@ def test_deprecation():
 
 def test_highs_status_message():
     res = linprog(1, method='highs')
-    msg = "Optimization terminated successfully."
+    msg = "Optimization terminated successfully. (HiGHS Status 7:"
     assert res.status == 0
     assert res.message.startswith(msg)
-    assert 'HighsModelStatus.kOptimal' in res.message
 
     A, b, c, numbers, M = magic_square(6)
     bounds = [(0, 1)] * len(c)
@@ -315,45 +314,38 @@ def test_highs_status_message():
     options = {"time_limit": 0.1}
     res = linprog(c=c, A_eq=A, b_eq=b, bounds=bounds, method='highs',
                   options=options, integrality=integrality)
-    msg = "Time limit reached"
+    msg = "Time limit reached. (HiGHS Status 13:"
     assert res.status == 1
     assert msg in res.message
-    assert 'HighsModelStatus.kTimeLimit' in res.message
 
     options = {"maxiter": 10}
     res = linprog(c=c, A_eq=A, b_eq=b, bounds=bounds, method='highs-ds',
                   options=options)
-    msg = "Iteration limit reached"
+    msg = "Iteration limit reached. (HiGHS Status 14:"
     assert res.status == 1
     assert res.message.startswith(msg)
-    assert 'HighsModelStatus.kIterationLimit' in res.message
 
     res = linprog(1, bounds=(1, -1), method='highs')
-    msg = "The problem is infeasible"
+    msg = "The problem is infeasible. (HiGHS Status 8:"
     assert res.status == 2
     assert res.message.startswith(msg)
-    assert 'HighsModelStatus.kInfeasible' in res.message
 
     res = linprog(-1, method='highs')
-    msg = "The problem is unbounded."
+    msg = "The problem is unbounded. (HiGHS Status 10:"
     assert res.status == 3
     assert res.message.startswith(msg)
-    assert 'HighsModelStatus.kUnbounded' in res.message
 
     from scipy.optimize._linprog_highs import HighsStatusMapping
     highs_mapper = HighsStatusMapping()
     status, message = highs_mapper.get_scipy_status(58, "Hello!")
     assert status == 4
-    # TODO: Fix this
-    # msg = "The HiGHS status code was not recognized. (HiGHS Status 58:"
-    # assert message.startswith(msg)
-    assert "HiGHS Status 58" in message
+    msg = "The HiGHS status code was not recognized. (HiGHS Status 58:"
+    assert message.startswith(msg)
 
-    # TODO: Fix this
-    # status, message = highs_mapper.get_scipy_status(None, None)
-    # msg = "HiGHS did not provide a status code. (HiGHS Status None: None)"
-    # assert status == 4
-    # assert message.startswith(msg)
+    status, message = highs_mapper.get_scipy_status(None, None)
+    msg = "HiGHS did not provide a status code. (HiGHS Status None: None)"
+    assert status == 4
+    assert message.startswith(msg)
 
 
 def test_bug_17380():
