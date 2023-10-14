@@ -26,15 +26,18 @@ class BenchSVDS(Benchmark):
     ]
     param_names = ['k', 'problem', 'solver']
 
+    def __init__(self):
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        datafile = os.path.join(dir_path, "svds_benchmark_files",
+                                "svds_benchmark_files.npz")
+        self.matrices = np.load(datafile, allow_pickle=True)  
+
     def setup(self, k, problem, solver):
         if solver == 'svd' and problem == "tols4000":
             # skip: fails breaking the benchmark
             raise NotImplementedError()
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        datafile = os.path.join(dir_path, "svds_benchmark_files",
-                                "svds_benchmark_files.npz")
-        matrices = np.load(datafile, allow_pickle=True)
-        self.A = matrices[problem][()]
+
+        self.A = self.matrices[problem][()]
         _, s, _ = svd(self.A.toarray(), full_matrices=False)
         self.top_singular_values = np.flip(s[:int(k/2)])
         self.tol = k * np.prod(self.A.shape) * np.finfo(float).eps
