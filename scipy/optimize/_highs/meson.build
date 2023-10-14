@@ -10,6 +10,8 @@ scipy_highspy_dep = [
   py3_dep,
   pybind11_dep,
   highs_dep,
+  thread_dep,
+  atomic_dep,
 ]
 
 py3.extension_module(
