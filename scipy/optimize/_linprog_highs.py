@@ -22,7 +22,6 @@ from scipy.sparse import csc_matrix, vstack, issparse
 
 from scipy.optimize._highs.highspy.highs import _h
 from scipy.optimize._highs.highspy.highs import simpc
-from scipy.optimize._highs.highspy import highs as hspy
 
 
 class SciPyRC(Enum):
