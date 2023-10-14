@@ -24,75 +24,128 @@ from scipy.optimize._highs.highspy.highs import _h
 from scipy.optimize._highs.highspy.highs import simpc
 
 
-class SciPyRC(Enum):
-    """Return codes for SciPy solvers"""
-
-    OPTIMAL = 0
-    ITERATION_LIMIT = 1
-    INFEASIBLE = 2
-    UNBOUNDED = 3
-    NUMERICAL = 4
-
-    def to_string(self):
-        if self == SciPyRC.OPTIMAL:
-            return "Optimization terminated successfully. "
-        elif self == SciPyRC.ITERATION_LIMIT:
-            return "Iteration limit reached. "
-        elif self == SciPyRC.INFEASIBLE:
-            return "The problem is infeasible. "
-        elif self == SciPyRC.UNBOUNDED:
-            return "The problem is unbounded. "
-        elif self == SciPyRC.NUMERICAL:
-            return "Serious numerical difficulties encountered. "
-        else:
-            return ""
-
-
 class HighsStatusMapping:
-    """Class to map HiGHS statuses to SciPy Return Codes"""
+    """Class to map HiGHS statuses to SciPy-like Return Codes and Messages"""
+
+    class SciPyRC(Enum):
+        """Return codes like SciPy's for solvers"""
+
+        OPTIMAL = 0
+        ITERATION_LIMIT = 1
+        INFEASIBLE = 2
+        UNBOUNDED = 3
+        NUMERICAL = 4
 
     def __init__(self):
-        # Custom mapping from HiGHS status and errors to SciPy status
         self.highs_to_scipy = {
-            _h.HighsModelStatus.kNotset: (SciPyRC.NUMERICAL, "Not set"),
-            _h.HighsModelStatus.kLoadError: (SciPyRC.NUMERICAL, "Load Error"),
-            _h.HighsModelStatus.kModelError: (SciPyRC.INFEASIBLE, "Model Error"),
-            _h.HighsModelStatus.kPresolveError: (SciPyRC.NUMERICAL, "Presolve Error"),
-            _h.HighsModelStatus.kSolveError: (SciPyRC.NUMERICAL, "Solve Error"),
-            _h.HighsModelStatus.kPostsolveError: (SciPyRC.NUMERICAL, "Postsolve Error"),
-            _h.HighsModelStatus.kModelEmpty: (SciPyRC.NUMERICAL, "Model Empty"),
-            _h.HighsModelStatus.kOptimal: (SciPyRC.OPTIMAL, "Optimal"),
-            _h.HighsModelStatus.kInfeasible: (SciPyRC.INFEASIBLE, "Infeasible"),
+            _h.HighsModelStatus.kNotset: (
+                self.SciPyRC.NUMERICAL,
+                "Not set",
+                "Serious numerical difficulties encountered.",
+            ),
+            _h.HighsModelStatus.kLoadError: (
+                self.SciPyRC.NUMERICAL,
+                "Load Error",
+                "Serious numerical difficulties encountered.",
+            ),
+            _h.HighsModelStatus.kModelError: (
+                self.SciPyRC.INFEASIBLE,
+                "Model Error",
+                "The problem is infeasible.",
+            ),
+            _h.HighsModelStatus.kPresolveError: (
+                self.SciPyRC.NUMERICAL,
+                "Presolve Error",
+                "Serious numerical difficulties encountered.",
+            ),
+            _h.HighsModelStatus.kSolveError: (
+                self.SciPyRC.NUMERICAL,
+                "Solve Error",
+                "Serious numerical difficulties encountered.",
+            ),
+            _h.HighsModelStatus.kPostsolveError: (
+                self.SciPyRC.NUMERICAL,
+                "Postsolve Error",
+                "Serious numerical difficulties encountered.",
+            ),
+            _h.HighsModelStatus.kModelEmpty: (
+                self.SciPyRC.NUMERICAL,
+                "Model Empty",
+                "Serious numerical difficulties encountered.",
+            ),
+            _h.HighsModelStatus.kOptimal: (
+                self.SciPyRC.OPTIMAL,
+                "Optimal",
+                "Optimization terminated successfully.",
+            ),
+            _h.HighsModelStatus.kInfeasible: (
+                self.SciPyRC.INFEASIBLE,
+                "Infeasible",
+                "The problem is infeasible.",
+            ),
             _h.HighsModelStatus.kUnboundedOrInfeasible: (
-                SciPyRC.NUMERICAL,
+                self.SciPyRC.NUMERICAL,
                 "Unbounded or Infeasible",
+                "Serious numerical difficulties encountered.",
             ),
-            _h.HighsModelStatus.kUnbounded: (SciPyRC.UNBOUNDED, "Unbounded"),
-            _h.HighsModelStatus.kObjectiveBound: (SciPyRC.NUMERICAL, "Objective Bound"),
+            _h.HighsModelStatus.kUnbounded: (
+                self.SciPyRC.UNBOUNDED,
+                "Unbounded",
+                "The problem is unbounded.",
+            ),
+            _h.HighsModelStatus.kObjectiveBound: (
+                self.SciPyRC.NUMERICAL,
+                "Objective Bound",
+                "Serious numerical difficulties encountered.",
+            ),
             _h.HighsModelStatus.kObjectiveTarget: (
-                SciPyRC.NUMERICAL,
+                self.SciPyRC.NUMERICAL,
                 "Objective Target",
+                "Serious numerical difficulties encountered.",
             ),
-            _h.HighsModelStatus.kTimeLimit: (SciPyRC.ITERATION_LIMIT, "Time Limit"),
+            _h.HighsModelStatus.kTimeLimit: (
+                self.SciPyRC.ITERATION_LIMIT,
+                "Time Limit",
+                "Time limit reached.",
+            ),
             _h.HighsModelStatus.kIterationLimit: (
-                SciPyRC.ITERATION_LIMIT,
+                self.SciPyRC.ITERATION_LIMIT,
                 "Iteration Limit",
+                "Iteration limit reached.",
             ),
-            _h.HighsModelStatus.kUnknown: (SciPyRC.NUMERICAL, "Unknown"),
-            _h.HighsModelStatus.kSolutionLimit: (SciPyRC.NUMERICAL, "Solution Limit"),
+            _h.HighsModelStatus.kUnknown: (
+                self.SciPyRC.NUMERICAL,
+                "Unknown",
+                "Serious numerical difficulties encountered.",
+            ),
+            _h.HighsModelStatus.kSolutionLimit: (
+                self.SciPyRC.NUMERICAL,
+                "Solution Limit",
+                "Serious numerical difficulties encountered.",
+            ),
         }
 
     def get_scipy_status(self, highs_status, highs_message):
-        """Converts HiGHS status and message to SciPy status and message"""
-        scipy_status, message_prefix = self.highs_to_scipy.get(
+        """Converts HiGHS status and message to SciPy-like status and messages"""
+        if highs_status is None or highs_message is None:
+            print(f"Highs Status: {highs_status}, Message: {highs_message}")
+            return (
+                self.SciPyRC.NUMERICAL.value,
+                "HiGHS did not provide a status code. (HiGHS Status None: None)",
+            )
+
+        scipy_status_enum, message_prefix, scipy_message = self.highs_to_scipy.get(
             _h.HighsModelStatus(highs_status),
-            (SciPyRC.NUMERICAL, "Unknown HiGHS Status"),
+            (
+                self.SciPyRC.NUMERICAL,
+                "Unknown HiGHS Status",
+                "The HiGHS status code was not recognized.",
+            ),
         )
-        scip = SciPyRC(scipy_status)
-        scipy_message = (
-            f"{scip.to_string()} (HiGHS Status {highs_status}: {highs_message})"
+        full_scipy_message = (
+            f"{scipy_message} (HiGHS Status {int(highs_status)}: {highs_message})"
         )
-        return scipy_status.value, scipy_message
+        return scipy_status_enum.value, full_scipy_message
 
 
 def _replace_inf(x):
