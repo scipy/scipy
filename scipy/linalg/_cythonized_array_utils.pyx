@@ -101,7 +101,7 @@ def bandwidth(a):
     Returns
     -------
     lu : tuple
-        2-tuple of ints indicating the lower and upper bandwith. A zero
+        2-tuple of ints indicating the lower and upper bandwidth. A zero
         denotes no sub- or super-diagonal on that side (triangular), and,
         say for N rows (N-1) means that side is full. Same example applies
         to the upper triangular part with (M-1).

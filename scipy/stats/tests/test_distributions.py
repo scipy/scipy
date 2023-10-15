@@ -33,7 +33,7 @@ from scipy.special import xlogy, polygamma, entr
 from scipy.stats._distr_params import distcont, invdistcont
 from .test_discrete_basic import distdiscrete, invdistdiscrete
 from scipy.stats._continuous_distns import FitDataError, _argus_phi
-from scipy.optimize import root, fmin
+from scipy.optimize import root, fmin, differential_evolution
 from itertools import product
 
 # python -OO strips docstrings
@@ -385,7 +385,7 @@ class TestBinom:
         assert_equal(h, 0.0)
 
     def test_warns_p0(self):
-        # no spurious warnigns are generated for p=0; gh-3817
+        # no spurious warnings are generated for p=0; gh-3817
         with warnings.catch_warnings():
             warnings.simplefilter("error", RuntimeWarning)
             assert_equal(stats.binom(n=2, p=0).mean(), 0)
@@ -1068,7 +1068,7 @@ class TestGompertz:
     #   from mpmath import mp
     #   mp.dps = 100
     #   def gompertz_sf(x, c):
-    #       reurn mp.exp(-c*mp.expm1(x))
+    #       return mp.exp(-c*mp.expm1(x))
     #
     # E.g.
     #
@@ -1118,7 +1118,7 @@ class TestHalfNorm:
     #   from mpmath import mp
     #   mp.dps = 100
     #   def halfnorm_sf(x):
-    #       reurn 2*(1 - mp.ncdf(x))
+    #       return 2*(1 - mp.ncdf(x))
     #
     # E.g.
     #
@@ -1301,7 +1301,7 @@ class TestLaplaceasymmetric:
         assert_allclose(pdf1, pdf2)
 
     def test_asymmetric_laplace_pdf(self):
-        # test assymetric Laplace
+        # test asymmetric Laplace
         points = np.array([1, 2, 3])
         kappa = 2
         kapinv = 1/kappa
@@ -1310,7 +1310,7 @@ class TestLaplaceasymmetric:
         assert_allclose(pdf1, pdf2)
 
     def test_asymmetric_laplace_log_10_16(self):
-        # test assymetric Laplace
+        # test asymmetric Laplace
         points = np.array([-np.log(16), np.log(10)])
         kappa = 2
         pdf1 = stats.laplace_asymmetric.pdf(points, kappa)
@@ -3018,7 +3018,7 @@ class TestLaplace:
         x = 1000
         p0 = stats.laplace.cdf(-x)
         # The exact value is smaller than can be represented with
-        # 64 bit floating point, so the exected result is 0.
+        # 64 bit floating point, so the expected result is 0.
         assert p0 == 0.0
         # The closest 64 bit floating point representation of the
         # exact value is 1.0.
@@ -3027,7 +3027,7 @@ class TestLaplace:
 
         p0 = stats.laplace.sf(x)
         # The exact value is smaller than can be represented with
-        # 64 bit floating point, so the exected result is 0.
+        # 64 bit floating point, so the expected result is 0.
         assert p0 == 0.0
         # The closest 64 bit floating point representation of the
         # exact value is 1.0.
@@ -3787,6 +3787,22 @@ class TestSkewNorm:
         computed = stats.skewnorm.stats(a=-4, loc=5, scale=2, moments='mvsk')
         assert_array_almost_equal(computed, expected, decimal=2)
 
+    def test_pdf_large_x(self):
+        # Triples are [x, a, logpdf(x, a)].  These values were computed
+        # using Log[PDF[SkewNormalDistribution[0, 1, a], x]] in Wolfram Alpha.
+        logpdfvals = [
+            [40, -1, -1604.834233366398515598970],
+            [40, -1/2, -1004.142946723741991369168],
+            [40, 0, -800.9189385332046727417803],
+            [40, 1/2, -800.2257913526447274323631],
+            [-40, -1/2, -800.2257913526447274323631],
+            [-2, 1e7, -2.000000000000199559727173e14],
+            [2, -1e7, -2.000000000000199559727173e14],
+        ]
+        for x, a, logpdfval in logpdfvals:
+            logp = stats.skewnorm.logpdf(x, a)
+            assert_allclose(logp, logpdfval, rtol=1e-8)
+
     def test_cdf_large_x(self):
         # Regression test for gh-7746.
         # The x values are large enough that the closest 64 bit floating
@@ -3798,7 +3814,7 @@ class TestSkewNorm:
 
     def test_cdf_sf_small_values(self):
         # Triples are [x, a, cdf(x, a)].  These values were computed
-        # using CDF[SkewNormDistribution[0, 1, a], x] in Wolfram Alpha.
+        # using CDF[SkewNormalDistribution[0, 1, a], x] in Wolfram Alpha.
         cdfvals = [
             [-8, 1, 3.870035046664392611e-31],
             [-4, 2, 8.1298399188811398e-21],
@@ -3866,6 +3882,33 @@ class TestSkewNorm:
         a7p, loc7p, scale7p = stats.skewnorm.fit(rvs, method='mm')
         a7m, loc7m, scale7m = stats.skewnorm.fit(-rvs, method='mm')
         assert_allclose([a7m, loc7m, scale7m], [-a7p, -loc7p, scale7p])
+
+    def test_fit_gh19332(self):
+        # When the skewness of the data was high, `skewnorm.fit` fell back on
+        # generic `fit` behavior with a bad guess of the skewness parameter.
+        # Test that this is improved; `skewnorm.fit` is now better at finding
+        # the global optimum when the sample is highly skewed. See gh-19332.
+        x = np.array([-5, -1, 1 / 100_000] + 12 * [1] + [5])
+
+        params = stats.skewnorm.fit(x)
+        res = stats.skewnorm.nnlf(params, x)
+
+        # Compare overridden fit against generic fit.
+        # res should be about 32.01, and generic fit is worse at 32.64.
+        # In case the generic fit improves, remove this assertion (see gh-19333).
+        params_super = stats.skewnorm.fit(x, superfit=True)
+        ref = stats.skewnorm.nnlf(params_super, x)
+        assert res < ref - 0.5
+
+        # Compare overridden fit against stats.fit
+        rng = np.random.default_rng(9842356982345693637)
+        bounds = {'a': (-5, 5), 'loc': (-10, 10), 'scale': (1e-16, 10)}
+        def optimizer(fun, bounds):
+            return differential_evolution(fun, bounds, seed=rng)
+
+        fit_result = stats.fit(stats.skewnorm, x, bounds, optimizer=optimizer)
+        np.testing.assert_allclose(params, fit_result.params, rtol=1e-4)
+
 
 class TestExpon:
     def test_zero(self):
@@ -9167,7 +9210,7 @@ def test_support_gh13294_regression(distname, args):
         pytest.skip(f"skipping test for the support method for "
                     f"distribution {distname}.")
     dist = getattr(stats, distname)
-    # test support method with invalid arguents
+    # test support method with invalid arguments
     if isinstance(dist, stats.rv_continuous):
         # test with valid scale
         if len(args) != 0:

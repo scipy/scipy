@@ -65,7 +65,7 @@ def bicg(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None, callback=None,
         as callback(xk), where xk is the current solution vector.
     tol : float, optional, deprecated
 
-        .. deprecated 1.12.0
+        .. deprecated:: 1.12.0
            `bicg` keyword argument `tol` is deprecated in favor of `rtol` and
            will be removed in SciPy 1.14.0.
 
@@ -194,7 +194,7 @@ def bicgstab(A, b, *, x0=None, tol=_NoValue, maxiter=None, M=None,
         as callback(xk), where xk is the current solution vector.
     tol : float, optional, deprecated
 
-        .. deprecated 1.12.0
+        .. deprecated:: 1.12.0
            `bicgstab` keyword argument `tol` is deprecated in favor of `rtol`
            and will be removed in SciPy 1.14.0.
 
@@ -338,7 +338,7 @@ def cg(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None, callback=None,
         as callback(xk), where xk is the current solution vector.
     tol : float, optional, deprecated
 
-        .. deprecated 1.12.0
+        .. deprecated:: 1.12.0
            `cg` keyword argument `tol` is deprecated in favor of `rtol` and
            will be removed in SciPy 1.14.0.
 
@@ -452,7 +452,7 @@ def cgs(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None, callback=None,
         as callback(xk), where xk is the current solution vector.
     tol : float, optional, deprecated
 
-        .. deprecated 1.12.0
+        .. deprecated:: 1.12.0
            `cgs` keyword argument `tol` is deprecated in favor of `rtol` and
            will be removed in SciPy 1.14.0.
 
@@ -631,7 +631,7 @@ def gmres(A, b, x0=None, *, tol=_NoValue, restart=None, maxiter=None, M=None,
            `restart` and will be removed in SciPy 1.14.0.
     tol : float, optional, deprecated
 
-        .. deprecated 1.12.0
+        .. deprecated:: 1.12.0
            `gmres` keyword argument `tol` is deprecated in favor of `rtol` and
            will be removed in SciPy 1.14.0
 
@@ -679,7 +679,7 @@ def gmres(A, b, x0=None, *, tol=_NoValue, restart=None, maxiter=None, M=None,
         raise ValueError("Cannot specify both 'restart' and 'restrt'"
                          " keywords. Also 'rstrt' is deprecated."
                          " and will be removed in SciPy 1.14.0. Use "
-                         "'restart' instad.")
+                         "'restart' instead.")
     if restrt is not _NoValue:
         msg = ("'gmres' keyword argument 'restrt' is deprecated "
                "in favor of 'restart' and will be removed in SciPy"
@@ -893,7 +893,7 @@ def qmr(A, b, x0=None, *, tol=_NoValue, maxiter=None, M1=None, M2=None,
         as callback(xk), where xk is the current solution vector.
     tol : float, optional, deprecated
 
-        .. deprecated 1.12.0
+        .. deprecated:: 1.12.0
            `qmr` keyword argument `tol` is deprecated in favor of `rtol` and
            will be removed in SciPy 1.14.0.
 

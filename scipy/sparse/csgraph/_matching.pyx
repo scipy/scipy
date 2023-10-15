@@ -701,7 +701,7 @@ cdef ITYPE_t[:] _lapjvsp(ITYPE_t[:] first,
     # but to avoid goto statements, and convoluted logic to break out
     # of nested loops, we extract the body of the loop instead. The
     # function thus corresponds to lines 109--154 in the Pascal code,
-    # with lines 155 and 156 seperated into two separate functions below.
+    # with lines 155 and 156 separated into two separate functions below.
     td1 = -1
     for l in range(l0):
         td1 = _lapjvsp_single_l(l, nc, d, ok, free, first, kk, cc, v, lab,

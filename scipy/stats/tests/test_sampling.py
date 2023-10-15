@@ -634,8 +634,8 @@ class TestDiscreteAliasUrn:
     # DAU fails on these probably because of large domains and small
     # computation errors in PMF. Mean/SD match but chi-squared test fails.
     basic_fail_dists = {
-        'nchypergeom_fisher',  # numerical erros on tails
-        'nchypergeom_wallenius',  # numerical erros on tails
+        'nchypergeom_fisher',  # numerical errors on tails
+        'nchypergeom_wallenius',  # numerical errors on tails
         'randint'  # fails on 32-bit ubuntu
     }
 
@@ -983,7 +983,7 @@ class TestNumericalInversePolynomial:
         class MyDist:
             pass
 
-        # create genrator from dist with only pdf
+        # create generator from dist with only pdf
         dist_pdf = MyDist()
         dist_pdf.pdf = lambda x: math.exp(-x*x/2)
         rng1 = NumericalInversePolynomial(dist_pdf)

@@ -618,7 +618,7 @@ def _replace_heap(variable, heap):
                 replace, new = _replace_heap(variable.item(iv), heap)
 
                 if replace:
-                    variable.itemset(iv, new)
+                    variable.reshape(-1)[iv] = new
 
         return False, variable
 

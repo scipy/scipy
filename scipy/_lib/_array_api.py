@@ -335,3 +335,11 @@ def cov(x, *, xp=None):
     c /= fact
     axes = tuple(axis for axis, length in enumerate(c.shape) if length == 1)
     return xp.squeeze(c, axis=axes)
+
+
+def xp_unsupported_param_msg(param):
+    return f'Providing {param!r} is only supported for numpy arrays.'
+
+
+def is_complex(x, xp):
+    return xp.isdtype(x.dtype, 'complex floating')

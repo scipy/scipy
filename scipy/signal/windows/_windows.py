@@ -1737,7 +1737,7 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True):
     constant sidelobe level for a parameterized number of near-in sidelobes,
     but then allows a taper beyond [2]_.
 
-    The SAR (synthetic aperature radar) community commonly uses Taylor
+    The SAR (synthetic aperture radar) community commonly uses Taylor
     weighting for image formation processing because it provides strong,
     selectable sidelobe suppression with minimum broadening of the
     mainlobe [1]_.

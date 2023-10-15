@@ -198,7 +198,7 @@ class Covariance:
 
         Notes
         -----
-        Let the covariance matrix be :math:`A`and :math:`L` be the lower
+        Let the covariance matrix be :math:`A` and :math:`L` be the lower
         Cholesky factor such that :math:`L L^T = A`.
         Whitening of a data point :math:`x` is performed by computing
         :math:`L^{-1} x`. :math:`\log\det{A}` is calculated as
@@ -582,7 +582,7 @@ class CovViaEigendecomposition(Covariance):
         psuedo_reciprocals[i_zero] = 0
 
         self._LP = eigenvectors * psuedo_reciprocals
-        self._LA = eigenvectors * np.sqrt(positive_eigenvalues)
+        self._LA = eigenvectors * np.sqrt(eigenvalues)
         self._rank = positive_eigenvalues.shape[-1] - i_zero.sum(axis=-1)
         self._w = eigenvalues
         self._v = eigenvectors

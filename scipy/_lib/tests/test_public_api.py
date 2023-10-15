@@ -353,6 +353,15 @@ def test_api_importable():
                           ('scipy.optimize.slsqp', None),
                           ('scipy.optimize.tnc', None),
                           ('scipy.optimize.zeros', None),
+                          ('scipy.sparse.lil', None),
+                          ('scipy.sparse.linalg.dsolve', 'linalg'),
+                          ('scipy.sparse.linalg.eigen', 'linalg'),
+                          ('scipy.sparse.linalg.interface', 'linalg'),
+                          ('scipy.sparse.linalg.isolve', 'linalg'),
+                          ('scipy.sparse.linalg.matfuncs', 'linalg'),
+                          ('scipy.sparse.sparsetools', None),
+                          ('scipy.sparse.spfuncs', None),
+                          ('scipy.sparse.sputils', None),
                           ('scipy.spatial.ckdtree', None),
                           ('scipy.spatial.kdtree', None),
                           ('scipy.spatial.qhull', None),
@@ -373,7 +382,7 @@ def test_private_but_present_deprecation(module_name, correct_module):
         import_name = f'scipy.{module_name.split(".")[1]}'
     else:
         import_name = f'scipy.{module_name.split(".")[1]}.{correct_module}'
-    
+
     correct_import = import_module(import_name)
 
     # Attributes that were formerly in `module_name` can still be imported from

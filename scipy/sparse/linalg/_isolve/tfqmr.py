@@ -160,7 +160,7 @@ def tfqmr(A, b, x0=None, *, tol=1e-5, maxiter=None, M=None,
         if callback is not None:
             callback(x)
 
-        # Convergence criteron
+        # Convergence criterion
         if tau * np.sqrt(iter+1) < atol:
             if (show):
                 print("TFQMR: Linear solve converged due to reach TOL "

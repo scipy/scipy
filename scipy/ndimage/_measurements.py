@@ -1655,7 +1655,6 @@ def watershed_ift(input, markers, structure=None, output=None):
     integral_types = [numpy.int8,
                       numpy.int16,
                       numpy.int32,
-                      numpy.int_,
                       numpy.int64,
                       numpy.intc,
                       numpy.intp]

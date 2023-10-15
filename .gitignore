@@ -56,13 +56,13 @@ _configtest.c
 
 # Python files #
 ################
-# setup.py working directory
+# build directory
 build
 # sphinx build directory
 doc/_build
 # cython files
 cythonize.dat
-# setup.py dist directory
+# sdist directory
 dist
 # Egg metadata
 *.egg-info
@@ -145,6 +145,8 @@ benchmarks/results
 benchmarks/scipy
 benchmarks/html
 benchmarks/scipy-benchmarks
+.openblas
+scipy/_distributor_init_local.py
 scipy/__config__.py
 scipy/_lib/_ccallback_c.c
 scipy/_lib/messagestream.c

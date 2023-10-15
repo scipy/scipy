@@ -25,7 +25,7 @@
  * Note: 
  *   Input:  row and column indices *are not* assumed to be ordered
  *           
- *   Note: duplicate entries are carried over to the CSR represention
+ *   Note: duplicate entries are carried over to the CSR representation
  *
  *   Complexity: Linear.  Specifically O(nnz(A) + max(n_row,n_col))
  * 

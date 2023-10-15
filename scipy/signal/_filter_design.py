@@ -445,12 +445,12 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
         lastpoint = 2 * pi if whole else pi
         # if include_nyquist is true and whole is false, w should
         # include end point
-        w = np.linspace(0, lastpoint, N, endpoint=include_nyquist and not whole)
-        if (a.size == 1 and N >= b.shape[0] and
-                sp_fft.next_fast_len(N) == N and
-                (b.ndim == 1 or (b.shape[-1] == 1))):
-            # if N is fast, 2 * N will be fast, too, so no need to check
-            n_fft = N if whole else N * 2
+        w = np.linspace(0, lastpoint, N,
+                        endpoint=include_nyquist and not whole)
+        n_fft = N if whole else 2 * (N - 1) if include_nyquist else 2 * N
+        if (a.size == 1 and (b.ndim == 1 or (b.shape[-1] == 1))
+                and n_fft >= b.shape[0]
+                and n_fft > 0):  # TODO: review threshold acc. to benchmark?
             if np.isrealobj(b) and np.isrealobj(a):
                 fft_func = sp_fft.rfft
             else:
@@ -4363,12 +4363,12 @@ def cheb1ap(N, rp):
 
 def cheb2ap(N, rs):
     """
-    Return (z,p,k) for Nth-order Chebyshev type I analog lowpass filter.
+    Return (z,p,k) for Nth-order Chebyshev type II analog lowpass filter.
 
-    The returned filter prototype has `rs` decibels of ripple in the stopband.
+    The returned filter prototype has attenuation of at least ``rs`` decibels in the stopband.
 
     The filter's angular (e.g. rad/s) cutoff frequency is normalized to 1,
-    defined as the point at which the gain first reaches ``-rs``.
+    defined as the point at which the attenuation first reaches ``rs``.
 
     See Also
     --------

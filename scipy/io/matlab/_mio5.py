@@ -152,7 +152,7 @@ class MatFile5Reader(MatFileReader):
     uint16_codec - char codec to use for uint16 char arrays
         (defaults to system default codec)
 
-    Uses variable reader that has the following stardard interface (see
+    Uses variable reader that has the following standard interface (see
     abstract class in ``miobase``::
 
        __init__(self, file_reader)
@@ -533,7 +533,7 @@ class VarWriter5:
             mdtype = NP_TO_MTYPES[arr.dtype.str[1:]]
         # Array needs to be in native byte order
         if arr.dtype.byteorder == swapped_code:
-            arr = arr.byteswap().newbyteorder()
+            arr = arr.byteswap().view(arr.dtype.newbyteorder())
         byte_count = arr.size*arr.itemsize
         if byte_count <= 4:
             self.write_smalldata_element(arr, mdtype, byte_count)

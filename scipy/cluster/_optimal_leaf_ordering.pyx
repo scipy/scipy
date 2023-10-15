@@ -1,6 +1,5 @@
 # cython: profile=False
 # cython: linetrace=False
-# distutils: define_macros=CYTHON_TRACE_NOGIL=1
 
 # Code adapted from github.com/adrianveres/Polo, licensed:
 #

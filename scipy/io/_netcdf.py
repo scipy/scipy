@@ -935,7 +935,7 @@ class netcdf_variable:
             # of NumPy still supported by scipy contains the fix for #1622.
             raise RuntimeError("variable is not writeable")
 
-        self.data.itemset(value)
+        self.data[:] = value
 
     def typecode(self):
         """
