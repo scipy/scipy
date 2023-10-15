@@ -1,4 +1,6 @@
+from functools import wraps
 from itertools import product
+import math
 
 import numpy as np
 from numpy.linalg import norm
@@ -863,3 +865,63 @@ def test_gh_19103():
     bounds = ((0.01, 0, 0), (np.inf, 10, 20.9))
     res = least_squares(exponential_wrapped, x0, method='trf', bounds=bounds)
     assert res.success
+
+
+def test_gh_19351():
+    def variogram(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            if hasattr(args[0], '__iter__'):
+                new_args = args[1:]
+                mapping = map(lambda h: func(h, *new_args, **kwargs), args[0])
+                return np.fromiter(mapping, dtype=float)
+            else:
+                return func(*args, **kwargs)
+
+        return wrapper
+
+    def spherical(h, r, c0, b=0):
+        a = r / 1.
+        if h <= r:
+            return b + c0 * ((1.5 * (h / a)) - (0.5 * ((h / a) ** 3.0)))
+        else:
+            return b + c0
+
+    def gaussian(h, r, c0, b=0):
+        a = r / 2.
+        return b + c0 * (1. - math.exp(-(h ** 2 / a ** 2)))
+
+    @variogram
+    def model_sum(h, r1, c1, r2, c2):
+        return spherical(h, r1, c1) + gaussian(h, r2, c2)
+
+    xdata = np.array([12.64307503, 25.28615006, 37.9292251, 50.57230013,
+                      63.21537516, 75.85845019, 88.50152522, 101.14460026,
+                      113.78767529, 126.43075032])
+    ydata = np.array(
+        [10.33885898, 20.33271591, 17.6010188, 18.12232903, 19.60947486,
+         16.96256666, 17.08413617, 18.35997835, 13.34964295, 16.91325055])
+    x0 = np.array([126.43075032, 20.33271591, 126.43075032, 20.33271591])
+    bounds = (0, [126.43075032075254, 20.33271591029816, 126.43075032075254,
+                  20.33271591029816])
+
+    def fun(x):
+        r1, c1, r2, c2 = x
+        return model_sum(xdata, r1, c1, r2, c2) - ydata
+
+    # The issue lies in the logic of determining the initial x for 'trf'.
+    # The original implementation steps away for 1e-10 (relative) from the
+    # bounds. While this value is not "magical" it does influence the behavior
+    # of the algorithm. And the value being too small probably might degrade
+    # the convergence speed of the algorithm. Anyway it's better not to change
+    # the behavior unless it gives a clear and provable improvement.
+
+    # Originally this problem was solved via curve_fit, which uses default
+    # least_squares arguments with
+    # max_nfev = None = 'number of params' * 100 = 400.
+    # Here we explicitly set max_nfev to 400 to make it more transparent.
+    # Check that the optimization is terminated as converged in less than 400
+    # function evaluations. When make_strictly_feasible is called with
+    # rstep=0 the number of function evaluations goes higher than 400.
+    result = least_squares(fun, x0, bounds=bounds, max_nfev=400)
+    assert result.success
