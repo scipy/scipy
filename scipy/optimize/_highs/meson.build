@@ -1,7 +1,22 @@
-# Setup the highs library
-highs_proj = subproject('highs',
-                      default_options : ['default_library=static',
-                                        'highsint64=false',])
+###########################
+# Setup the highs library #
+##########################
+
+# Define default options
+highs_defaults = ['default_library=static']
+
+# Check the system and bit-size
+if host_machine.cpu_family() == 'x86'
+    highs_defaults += 'highsint64=False'
+elif host_machine.cpu_family() == 'x86_64'
+    highs_defaults += 'highsint64=True'
+else
+    # Compatibility fallback
+    highs_defaults += 'highsint64=False'
+endif
+
+# Define subproject with conditional default options
+highs_proj = subproject('highs', default_options: highs_defaults)
 highs_dep = highs_proj.get_variable('highs_dep')
 highspy_cpp = highs_proj.get_variable('highspy_cpp')
 highsoptions_cpp = highs_proj.get_variable('highsoptions_cpp')
