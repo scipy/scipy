@@ -1,26 +1,23 @@
 import numpy as np
 from numpy.testing import (assert_equal,
-    assert_array_equal, assert_array_almost_equal, assert_array_less, assert_,
-    suppress_warnings)
+    assert_array_equal, assert_array_almost_equal, assert_array_less, assert_,)
+import pytest
 
 import scipy.signal._wavelets as wavelets
 
 
 class TestWavelets:
     def test_qmf(self):
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning)
+        with pytest.deprecated_call():
             assert_array_equal(wavelets.qmf([1, 1]), [1, -1])
 
     def test_daub(self):
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning)
+        with pytest.deprecated_call():
             for i in range(1, 15):
                 assert_equal(len(wavelets.daub(i)), i * 2)
 
     def test_cascade(self):
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning)
+        with pytest.deprecated_call():
             for J in range(1, 7):
                 for i in range(1, 5):
                     lpcoef = wavelets.daub(i)
@@ -30,9 +27,7 @@ class TestWavelets:
                     assert_equal(len(x), (k - 1) * 2 ** J)
 
     def test_morlet(self):
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning)
-
+        with pytest.deprecated_call():
             x = wavelets.morlet(50, 4.1, complete=True)
             y = wavelets.morlet(50, 4.1, complete=False)
             # Test if complete and incomplete wavelet have same lengths:
@@ -87,9 +82,7 @@ class TestWavelets:
             assert_array_almost_equal(x, y, decimal=2)
 
     def test_morlet2(self):
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning)
-
+        with pytest.deprecated_call():
             w = wavelets.morlet2(1.0, 0.5)
             expected = (np.pi**(-0.25) * np.sqrt(1/0.5)).astype(complex)
             assert_array_equal(w, expected)
@@ -113,9 +106,7 @@ class TestWavelets:
             assert_array_almost_equal(x, y)
 
     def test_ricker(self):
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning)
-
+        with pytest.deprecated_call():
             w = wavelets.ricker(1.0, 1)
             expected = 2 / (np.sqrt(3 * 1.0) * (np.pi ** 0.25))
             assert_array_equal(w, expected)
@@ -145,9 +136,7 @@ class TestWavelets:
                 assert_array_almost_equal(w[exp_zero2], 0)
 
     def test_cwt(self):
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning)
-
+        with pytest.deprecated_call():
             widths = [1.0]
             def delta_wavelet(s, t):
                 return np.array([1])
