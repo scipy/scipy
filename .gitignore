@@ -1,5 +1,3 @@
-# Wrap directories
-subprojects/highs
 # Editor temporary/working/backup files #
 #########################################
 .#*
