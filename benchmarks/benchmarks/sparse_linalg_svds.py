@@ -15,8 +15,15 @@ msg = ("the benchmark code did not converge as expected, "
 
 
 class BenchSVDS(Benchmark):
-    # Benchmark SVD using the MatrixMarket test matrices recommended by the
+    # Benchmark SVDS using the MatrixMarket test matrices recommended by the
     # author of PROPACK at http://sun.stanford.edu/~rmunk/PROPACK/
+    # 'arpack' convergence uniformly for all singular values, while
+    # 'lobpcg' extreme singular values may converge much faster, so
+    # the assert is only evaluated on the top k/2 singular values.
+    # The assert uses the relative error since for some tested matrices
+    # the maximal singular values are very large due to poor matrix scaling.
+    # The `maxiter` and `tol` paremeters of `svds` are tuned for fair comaprison.
+    # The dense SVD solve is benchmaked as the base. 
     params = [
         [20],
         ["abb313", "illc1033", "illc1850", "qh1484", "rbs480a", "tols4000",
@@ -40,7 +47,7 @@ class BenchSVDS(Benchmark):
         self.A = self.matrices[problem][()]
         _, s, _ = svd(self.A.toarray(), full_matrices=False)
         self.top_singular_values = np.flip(s[:int(k/2)])
-        self.tol = k * np.prod(self.A.shape) * np.finfo(float).eps
+        self.tol = k * np.max(self.A.shape) * np.finfo(float).eps
         self.rng = np.random.default_rng(0)
 
     def time_svds(self, k, problem, solver):
@@ -51,5 +58,5 @@ class BenchSVDS(Benchmark):
                 warnings.simplefilter("ignore")
                 _, s, _ = svds(self.A, k=k, solver=solver, random_state=self.rng,
                                maxiter = 50, tol=1e-6)
-            accuracy = np.max(np.abs(1 - s[int(k/2):] / self.top_singular_values))
+            accuracy = np.sum(np.abs(1 - s[int(k/2):] / self.top_singular_values))
             assert accuracy < self.tol, msg
