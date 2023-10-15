@@ -119,9 +119,7 @@ tracker = "https://github.com/scipy/scipy/issues"
 dodoFile = "dev.py"
 
 [tool.meson-python.args]
-dist = ['--include-subprojects']
 install = ['--skip-subprojects']
-setup = ['-Dwrap_mode=forcefallback']
 
 [tool.cibuildwheel]
 skip = "cp36-* cp37-* cp38-* pp* *_ppc64le *_i686 *_s390x"
