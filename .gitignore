@@ -56,13 +56,13 @@ _configtest.c
 
 # Python files #
 ################
-# setup.py working directory
+# build directory
 build
 # sphinx build directory
 doc/_build
 # cython files
 cythonize.dat
-# setup.py dist directory
+# sdist directory
 dist
 # Egg metadata
 *.egg-info

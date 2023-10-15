@@ -13,6 +13,15 @@ from ._axis_nan_policy import _axis_nan_policy_factory
 __all__ = ['entropy', 'differential_entropy']
 
 
+@_axis_nan_policy_factory(
+    lambda x: x,
+    n_samples=lambda kwgs: (
+        2 if ("qk" in kwgs and kwgs["qk"] is not None)
+        else 1
+    ),
+    n_outputs=1, result_to_tuple=lambda x: (x,), paired=True,
+    too_small=-1  # entropy doesn't have too small inputs
+)
 def entropy(pk: np.typing.ArrayLike,
             qk: np.typing.ArrayLike | None = None,
             base: float | None = None,
@@ -157,8 +166,7 @@ def _differential_entropy_is_too_small(samples, kwargs):
 
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,),
-    too_small=_differential_entropy_is_too_small,
-    override={"nan_propagation": False}
+    too_small=_differential_entropy_is_too_small
 )
 def differential_entropy(
     values: np.typing.ArrayLike,
