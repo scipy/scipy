@@ -59,29 +59,12 @@ add new benchmarks, however running the benchmarks is not very intuitive.
 Making this easier is a priority.
 
 
-Moving to the Meson build system
-````````````````````````````````
-Support for the Meson build system was merged into SciPy main in Dec 2021,
-and SciPy 1.9.3 was the first release where all wheels were also built with
-Meson. What is left to do is removing support for
-``numpy.distutils``/``setuptools``, this will happen soon.
-
-
 Use of Cython
 `````````````
 Cython's old syntax for using NumPy arrays should be removed and replaced with
 Cython memoryviews. When Cython 3.0 is released, the last use of the deprecated
 NumPy C API (by Cython, everything in SciPy was fixed) will disappear. Then we
 can define ``NPY_NO_DEPRECATED_API`` unconditionally.
-
-
-Use of Pythran
-``````````````
-Pythran is still an optional build dependency, and can be disabled with
-``SCIPY_USE_PYTHRAN=0``. The aim is to make it a hard dependency - for that to
-happen it must be clear that the maintenance burden is low enough (Meson will
-help here, because it removes the monkey patching that is now done to enable
-Pythran).
 
 
 Use of venerable Fortran libraries
