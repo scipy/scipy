@@ -923,5 +923,6 @@ def test_gh_19351():
     # Check that the optimization is terminated as converged in less than 400
     # function evaluations. When make_strictly_feasible is called with
     # rstep=0 the number of function evaluations goes higher than 400.
-    result = least_squares(fun, x0, bounds=bounds, max_nfev=400)
+    result = least_squares(fun, x0, bounds=bounds, max_nfev=500)
     assert result.success
+    assert result.nfev < 400
