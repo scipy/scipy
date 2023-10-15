@@ -1,7 +1,7 @@
 from warnings import warn
 
 import numpy as np
-from scipy.optimize._highs.highspy.highs import _h
+import scipy.optimize._highs.highspy._highs as _h
 from scipy.optimize._highs.highspy import _highs_options as hopt  # type: ignore[attr-defined]
 from scipy.optimize import OptimizeWarning
 
@@ -36,7 +36,7 @@ def _highs_wrapper(c, indptr, indices, data, lhs, rhs, lb, ub, integrality, opti
         lp.integrality_ = [_h.HighsVarType(i) for i in integrality]
 
     # Make a Highs object and pass it everything
-    highs = _h.Highs_()
+    highs = _h.Highs()
     highs_options = _h.HighsOptions()
     hoptmanager = hopt.HighsOptionsManager()
     for key, val in options.items():

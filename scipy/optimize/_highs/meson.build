@@ -2,7 +2,6 @@
 highs_proj = subproject('highs',
                       default_options : ['default_library=static'])
 highs_dep = highs_proj.get_variable('highs_dep')
-highspy_py = highs_proj.get_variable('highspy_py')
 highspy_cpp = highs_proj.get_variable('highspy_cpp')
 highsoptions_cpp = highs_proj.get_variable('highsoptions_cpp')
 
@@ -35,11 +34,6 @@ py3.extension_module(
   link_args: version_link_args,
   subdir: 'scipy/optimize/_highs/highspy',
   install: true,
-)
-
-py3.install_sources(
-  highspy_py,
-  subdir: 'scipy/optimize/_highs/highspy',
 )
 
 py3.install_sources([

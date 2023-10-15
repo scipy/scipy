@@ -20,8 +20,8 @@ from warnings import warn
 from ._highs._highs_wrapper import _highs_wrapper
 from scipy.sparse import csc_matrix, vstack, issparse
 
-from scipy.optimize._highs.highspy.highs import _h
-from scipy.optimize._highs.highspy.highs import simpc
+import scipy.optimize._highs.highspy._highs as _h
+import scipy.optimize._highs.highspy._highs.simplex_constants as simpc
 
 
 class HighsStatusMapping:
