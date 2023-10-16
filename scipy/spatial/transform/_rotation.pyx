@@ -1493,48 +1493,60 @@ cdef class Rotation:
         (4,)
 
         """
+        axes = np.asarray(axes)
+        if axes.shape == (3, ):
+            axes.shape = (1, 3)
+
         num_axes = len(axes)
-        if num_axes != 3:
-            raise ValueError("Expected axes to be list of 3 vectors got {}"
-                             "".format(axes))
 
         for axis in axes:
             if len(axis) != 3:
                 raise ValueError("Axes must be vectors of length 3.")
 
-        n1 = np.array(axes[0])
-        n2 = np.array(axes[1])
-        n3 = np.array(axes[2])
-
-        if abs(np.dot(n1, n2)) >= 1e-7:
-            raise ValueError("Consecutive axes must be orthogonal.")
-        if abs(np.dot(n2, n3)) >= 1e-7:
-            raise ValueError("Consecutive axes must be orthogonal.")
+        if num_axes < 1 or num_axes > 3:
+            raise ValueError("Expected up to 3 axes, got {}".format(num_axes))
 
         # normalize axes
-        n1 = n1 / np.linalg.norm(n1)
-        n2 = n2 / np.linalg.norm(n2)
-        n3 = n3 / np.linalg.norm(n3)
-        n1.shape = (3, 1)
-        n2.shape = (3, 1)
-        n3.shape = (3, 1)
+        norm = np.repeat(np.linalg.norm(axes, axis=1), 3)
+        axes = axes / norm.reshape(num_axes, 3)
+
+        if num_axes > 1 and abs(np.dot(axes[0], axes[1])) >= 1e-7:
+            raise ValueError("Consecutive axes must be orthogonal.")
+        if num_axes > 2 and abs(np.dot(axes[1], axes[2])) >= 1e-7:
+            raise ValueError("Consecutive axes must be orthogonal.")
 
         angles = np.asarray(angles, dtype=float)
         if degrees:
             angles = np.deg2rad(angles)
 
         is_single = False
-        # Prepare angles to have shape (num_rot, 3)
-        if angles.shape[-1] != 3:
-            raise ValueError("Expected `angles` to be at most "
-                             "2-dimensional with width equal to number "
-                             "of axes specified, got {} for shape".format(
-                             angles.shape))
+        # Prepare angles to have shape (num_rot, num_axes)
+        if num_axes == 1:
+            if angles.ndim == 0:
+                # (1, 1)
+                angles = angles.reshape((1, 1))
+                is_single = True
+            elif angles.ndim == 1:
+                # (N, 1)
+                angles = angles[:, None]
+            elif angles.ndim == 2 and angles.shape[-1] != 1:
+                raise ValueError("Expected `angles` parameter to have shape "
+                                 "(N, 1), got {}.".format(angles.shape))
+            elif angles.ndim > 2:
+                raise ValueError("Expected float, 1D array, or 2D array for "
+                                 "parameter `angles` corresponding to `seq`, "
+                                 "got shape {}.".format(angles.shape))
+        else:  # 2 or 3 axes
+            if angles.ndim not in [1, 2] or angles.shape[-1] != num_axes:
+                raise ValueError("Expected `angles` to be at most "
+                                 "2-dimensional with width equal to number "
+                                 "of axes specified, got {} for shape".format(
+                                 angles.shape))
 
-        if angles.ndim == 1:
-            # (1, num_axes)
-            angles = angles[None, :]
-            is_single = True
+            if angles.ndim == 1:
+                # (1, num_axes)
+                angles = angles[None, :]
+                is_single = True
 
         # By now angles should have shape (num_rot, num_axes)
         # sanity check
@@ -1542,14 +1554,13 @@ cdef class Rotation:
             raise ValueError("Expected angles to have shape (num_rotations, "
                              "num_axes), got {}.".format(angles.shape))
 
-        q1 = cls.from_rotvec((n1 * angles[:, 0]).T)
-        q2 = cls.from_rotvec((n2 * angles[:, 1]).T)
-        q3 = cls.from_rotvec((n3 * angles[:, 2]).T)
-
-        if extrinsic:
-            q = q3 * q2 * q1
-        else:
-            q = q1 * q2 * q3
+        q = cls.from_quat([0, 0, 0, 1])
+        for axis, angle in zip(axes, angles):
+            qi = cls.from_rotvec((axis * angle).T)
+            if extrinsic:
+                q = qi * q
+            else:
+                q = q * qi
 
         return q[0] if is_single else q
 
