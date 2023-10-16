@@ -67,7 +67,10 @@ class _spbase:
 
     __array_priority__ = 10.1
     _format = 'und'  # undefined
-    ndim = 2
+    
+    @property
+    def ndim(self) -> int:
+        return len(self._shape)
 
     @property
     def _bsr_container(self):
@@ -350,7 +353,7 @@ class _spbase:
     def imag(self):
         return self._imag()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         _, format_name = _formats[self.format]
         sparse_cls = 'array' if isinstance(self, sparray) else 'matrix'
         shape_str = 'x'.join(str(x) for x in self.shape)
@@ -568,7 +571,11 @@ class _spbase:
         # This method has to be different from `__matmul__` because it is also
         # called by sparse matrix classes.
 
-        M, N = self.shape
+        # Currently matrix multiplication is only supported
+        # for 2D arrays. Hence we unpacked and use only the
+        # two last axes' lengths.
+        N = self.shape[-1]
+        M = self.shape[-2] if self.ndim > 1 else 1
 
         if other.__class__ is np.ndarray:
             # Fast path for the most common case

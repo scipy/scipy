@@ -292,8 +292,26 @@ def validateaxis(axis) -> None:
         raise ValueError("axis out of range")
 
 
-def check_shape(args, current_shape=None):
-    """Imitate numpy.matrix handling of shape arguments"""
+def check_shape(args, current_shape=None, allow_ndim=False) -> tuple[int, ...]:
+    """Imitate numpy.matrix handling of shape arguments
+
+    Parameters
+    ----------
+    args : array_like
+        Data structures providing information about the shape of the sparse array.
+    current_shape : tuple, optional
+        The current shape of the sparse array or matrix.
+        If None (default), the current shape will be inferred from args.
+    allow_ndim : bool, optional
+        If True, then n-D arrays are accepted.
+        If False (default), then only 2-D arrays are accepted and an error is
+        raised otherwise.
+
+    Returns
+    -------
+    new_shape: tuple
+        The new shape after validation.
+    """
     if len(args) == 0:
         raise TypeError("function missing 1 required positional argument: "
                         "'shape'")
@@ -308,7 +326,7 @@ def check_shape(args, current_shape=None):
         new_shape = tuple(operator.index(arg) for arg in args)
 
     if current_shape is None:
-        if len(new_shape) != 2:
+        if not allow_ndim and len(new_shape) != 2:
             raise ValueError('shape must be a 2-tuple of positive integers')
         elif any(d < 0 for d in new_shape):
             raise ValueError("'shape' elements cannot be negative")
@@ -335,7 +353,7 @@ def check_shape(args, current_shape=None):
         else:
             raise ValueError('can only specify one unknown dimension')
 
-    if len(new_shape) != 2:
+    if not allow_ndim and len(new_shape) != 2:
         raise ValueError('matrix shape must be two-dimensional')
 
     return new_shape
