@@ -15,6 +15,7 @@ from ._stats_pythran import _a_ij_Aij_Dij2
 from ._stats_pythran import (
     _concordant_pairs as _P, _discordant_pairs as _Q
 )
+from ._axis_nan_policy import _axis_nan_policy_factory
 from scipy.stats import _stats_py
 
 __all__ = ['epps_singleton_2samp', 'cramervonmises', 'somersd',
@@ -480,6 +481,12 @@ def _cdf_cvm(x, n=None):
     return y
 
 
+def _cvm_result_to_tuple(res):
+    return res.statistic, res.pvalue
+
+
+@_axis_nan_policy_factory(CramerVonMisesResult, n_samples=1, too_small=1,
+                          result_to_tuple=_cvm_result_to_tuple)
 def cramervonmises(rvs, cdf, args=()):
     """Perform the one-sample Cramér-von Mises test for goodness of fit.
 
@@ -582,8 +589,6 @@ def cramervonmises(rvs, cdf, args=()):
 
     if vals.size <= 1:
         raise ValueError('The sample must contain at least two observations.')
-    if vals.ndim > 1:
-        raise ValueError('The sample must be one-dimensional.')
 
     n = len(vals)
     cdfvals = cdf(vals, *args)

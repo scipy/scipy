@@ -66,7 +66,9 @@ axis_nan_policy_cases = [
     (stats.differential_entropy, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.variation, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.entropy, tuple(), dict(), 1, 1, False, lambda x: (x,)),
-    (stats.entropy, tuple(), dict(), 2, 1, True, lambda x: (x,))
+    (stats.entropy, tuple(), dict(), 2, 1, True, lambda x: (x,)),
+    (stats.cramervonmises, ("norm",), dict(), 1, 2, False,
+     lambda res: (res.statistic, res.pvalue)),
 ]
 
 # If the message is one of those expected, put nans in
