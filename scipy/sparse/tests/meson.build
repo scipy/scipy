@@ -2,6 +2,7 @@ python_sources = [
   '__init__.py',
   'test_array_api.py',
   'test_base.py',
+  'test_coo.py',
   'test_construct.py',
   'test_deprecations.py',
   'test_csc.py',

@@ -931,7 +931,7 @@ def block_diag(mats, format=None, dtype=None):
     c_idx = 0
     for a in mats:
         if isinstance(a, (list, numbers.Number)):
-            a = coo_array(a)
+            a = coo_array(np.atleast_2d(a))
         nrows, ncols = a.shape
         if issparse(a):
             a = a.tocoo()
