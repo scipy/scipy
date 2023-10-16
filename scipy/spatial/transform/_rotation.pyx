@@ -118,7 +118,7 @@ cdef inline void _quat_canonical(double[:, :] q) noexcept:
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef double[:, :] _compute_euler_from_matrix(
-    np.ndarray[double, ndim=3] matrix, const uchar[:] seq, bint extrinsic=False
+    np.ndarray[double, ndim=3] matrix, const uchar[:] seq, bint extrinsic
 ) noexcept:
     # This is being replaced by the newer: _compute_euler_from_quat
     #
@@ -261,7 +261,7 @@ cdef double[:, :] _compute_euler_from_matrix(
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef double[:, :] _compute_euler_from_quat(
-    np.ndarray[double, ndim=2] quat, const uchar[:] seq, bint extrinsic=False
+    np.ndarray[double, ndim=2] quat, const uchar[:] seq, bint extrinsic
 ) noexcept:
     # The algorithm assumes extrinsic frame transformations. The algorithm
     # in the paper is formulated for rotation quaternions, which are stored
@@ -368,7 +368,7 @@ cdef double[:, :] _compute_euler_from_quat(
 cdef double[:, :] _compute_davenport_from_quat(
     np.ndarray[double, ndim=2] quat, np.ndarray[double, ndim=1] n1,
         np.ndarray[double, ndim=1] n2, np.ndarray[double, ndim=1] n3,
-        bint extrinsic=False
+        bint extrinsic
 ):
     # The algorithm assumes extrinsic frame transformations. The algorithm
     # in the paper is formulated for rotation quaternions, which are stored
@@ -1388,7 +1388,7 @@ cdef class Rotation:
 
     @cython.embedsignature(True)
     @classmethod
-    def from_davenport(cls, axes, angles, extrinsic=True, degrees=False):
+    def from_davenport(cls, axes, angles, extrinsic, degrees=False):
         """Initialize from Davenport angles.
 
         Rotations in 3-D can be represented by a sequence of 3
@@ -1420,11 +1420,11 @@ cdef class Rotation:
                 - array_like with shape (N, 3), where each `angle[i, 0]`
                   corresponds to a single rotation
 
-        extrinsic : boolean, optional
-            If True, sequence will be extrinsic. If False, sequence will be
-            treated as intrinsic. Default is True.
         degrees : bool, optional
             If True, then the given angles are assumed to be in degrees. Default is False.
+        extrinsic : boolean
+            If True, sequence will be extrinsic. If False, sequence will be
+            treated as intrinsic.
 
         Returns
         -------
@@ -2102,7 +2102,7 @@ cdef class Rotation:
         return self._compute_euler(seq, degrees, 'from_quat')
 
     @cython.embedsignature(True)
-    def as_davenport(self, axes, extrinsic=True, degrees=False):
+    def as_davenport(self, axes, extrinsic, degrees=False):
         """Represent as Davenport angles.
 
         Any orientation can be expressed as a composition of 3 elementary
@@ -2133,9 +2133,9 @@ cdef class Rotation:
         axes : list of (3, 1) arrays
             Specifies sequence of axes for rotations. Must be a list of
             3 arrays of shape (3, 1).
-        extrinsic : boolean, optional
+        extrinsic : boolean
             If True, sequence will be extrinsic. If False, sequence will be
-            treated as intrinsic. Default is True.
+            treated as intrinsic.
         degrees : boolean, optional
             Returned angles are in degrees if this flag is True, else they are
             in radians. Default is False.
