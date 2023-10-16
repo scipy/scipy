@@ -1541,6 +1541,8 @@ def _pval_cvm_2samp_exact(s, m, n):
     return np.float64(np.sum(freq[value >= zeta]) / combinations)
 
 
+@_axis_nan_policy_factory(CramerVonMisesResult, n_samples=2, too_small=1,
+                          result_to_tuple=_cvm_result_to_tuple)
 def cramervonmises_2samp(x, y, method='auto'):
     """Perform the two-sample Cramér-von Mises test for goodness of fit.
 
@@ -1643,8 +1645,6 @@ def cramervonmises_2samp(x, y, method='auto'):
 
     if xa.size <= 1 or ya.size <= 1:
         raise ValueError('x and y must contain at least two observations.')
-    if xa.ndim > 1 or ya.ndim > 1:
-        raise ValueError('The samples must be one-dimensional.')
     if method not in ['auto', 'exact', 'asymptotic']:
         raise ValueError('method must be either auto, exact or asymptotic.')
 
