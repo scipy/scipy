@@ -331,7 +331,7 @@ from . import codata, constants
 _constant_names_list = [(_k.lower(), _k, _v)
                         for _k, _v in physical_constants.items()
                         if _k not in _obsolete_constants]
-_constant_names = "\n".join(["``%s``%s  %s %s" % (_x[1], " "*(66-len(_x[1])),
+_constant_names = "\n".join(["``{}``{}  {} {}".format(_x[1], " "*(66-len(_x[1])),
                                                   _x[2][0], _x[2][1])
                              for _x in sorted(_constant_names_list)])
 if __doc__:

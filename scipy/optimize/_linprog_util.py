@@ -207,7 +207,7 @@ def _format_b_constraints(b):
     if b is None:
         return np.array([], dtype=float)
     b = np.array(b, dtype=float, copy=True).squeeze()
-    return b if b.size != 1 else b.reshape((-1))
+    return b if b.size != 1 else b.reshape(-1)
 
 
 def _clean_inputs(lp):
@@ -295,7 +295,7 @@ def _clean_inputs(lp):
     else:
         # If c is a single value, convert it to a 1-D array.
         if c.size == 1:
-            c = c.reshape((-1))
+            c = c.reshape(-1)
 
         n_x = len(c)
         if n_x == 0 or len(c.shape) != 1:
@@ -395,7 +395,7 @@ def _clean_inputs(lp):
                 "Invalid input for linprog: x0 must be a 1-D array of "
                 "numerical coefficients") from e
         if x0.ndim == 0:
-            x0 = x0.reshape((-1))
+            x0 = x0.reshape(-1)
         if len(x0) == 0 or x0.ndim != 1:
             raise ValueError(
                 "Invalid input for linprog: x0 should be a 1-D array; it "
@@ -461,7 +461,7 @@ def _clean_inputs(lp):
     else:
         raise ValueError(
             "Invalid input for linprog: unable to interpret bounds with this "
-            "dimension tuple: {0}.".format(bsh))
+            "dimension tuple: {}.".format(bsh))
 
     # The process above creates nan-s where the input specified None
     # Convert the nan-s in the 1st column to -np.inf and in the 2nd column
@@ -1309,8 +1309,8 @@ def _display_summary(message, status, fun, iteration):
     """
     print(message)
     if status in (0, 1):
-        print("         Current function value: {0: <12.6f}".format(fun))
-    print("         Iterations: {0:d}".format(iteration))
+        print(f"         Current function value: {fun: <12.6f}")
+    print(f"         Iterations: {iteration:d}")
 
 
 def _postsolve(x, postsolve_args, complete=False):
@@ -1416,7 +1416,8 @@ def _postsolve(x, postsolve_args, complete=False):
     return x, fun, slack, con
 
 
-def _check_result(x, fun, status, slack, con, bounds, tol, message):
+def _check_result(x, fun, status, slack, con, bounds, tol, message,
+                  integrality):
     """
     Check the validity of the provided solution.
 
@@ -1488,7 +1489,13 @@ def _check_result(x, fun, status, slack, con, bounds, tol, message):
     if contains_nans:
         is_feasible = False
     else:
-        invalid_bounds = (x < bounds[:, 0] - tol).any() or (x > bounds[:, 1] + tol).any()
+        if integrality is None:
+            integrality = 0
+        valid_bounds = (x >= bounds[:, 0] - tol) & (x <= bounds[:, 1] + tol)
+        # When integrality is 2 or 3, x must be within bounds OR take value 0
+        valid_bounds |= (integrality > 1) & np.isclose(x, 0, atol=tol)
+        invalid_bounds = not np.all(valid_bounds)
+
         invalid_slack = status != 3 and (slack < -tol).any()
         invalid_con = status != 3 and (np.abs(con) > tol).any()
         is_feasible = not (invalid_bounds or invalid_slack or invalid_con)
@@ -1496,7 +1503,7 @@ def _check_result(x, fun, status, slack, con, bounds, tol, message):
     if status == 0 and not is_feasible:
         status = 4
         message = ("The solution does not satisfy the constraints within the "
-                   "required tolerance of " + "{:.2E}".format(tol) + ", yet "
+                   "required tolerance of " + f"{tol:.2E}" + ", yet "
                    "no errors were raised and there is no certificate of "
                    "infeasibility or unboundedness. Check whether "
                    "the slack and constraint residuals are acceptable; "

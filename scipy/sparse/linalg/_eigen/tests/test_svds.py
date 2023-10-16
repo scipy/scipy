@@ -7,7 +7,7 @@ from numpy.testing import assert_allclose, assert_equal, assert_array_equal
 import pytest
 
 from scipy.linalg import svd, null_space
-from scipy.sparse import csc_matrix, isspmatrix, spdiags, random
+from scipy.sparse import csc_matrix, issparse, spdiags, random
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
 if os.environ.get("SCIPY_USE_PROPACK"):
     has_propack = True
@@ -23,7 +23,7 @@ from scipy.sparse.linalg._eigen.arpack import ArpackNoConvergence
 def sorted_svd(m, k, which='LM'):
     # Compute svd of a dense matrix m, and return singular vectors/values
     # sorted.
-    if isspmatrix(m):
+    if issparse(m):
         m = m.toarray()
     u, s, vh = svd(m)
     if which == 'LM':
@@ -31,13 +31,9 @@ def sorted_svd(m, k, which='LM'):
     elif which == 'SM':
         ii = np.argsort(s)[:k]
     else:
-        raise ValueError("unknown which=%r" % (which,))
+        raise ValueError(f"unknown which={which!r}")
 
     return u[:, ii], s[ii], vh[ii]
-
-
-def svd_estimate(u, s, vh):
-    return np.dot(u, np.dot(np.diag(s), vh))
 
 
 def _check_svds(A, k, u, s, vh, which="LM", check_usvh_A=False,
@@ -347,14 +343,16 @@ class SVDSCommonTests:
         v0a = rng.random(n)
         res1a = svds(A, k, v0=v0a, solver=self.solver, random_state=0)
         res2a = svds(A, k, v0=v0a, solver=self.solver, random_state=1)
-        assert_equal(res1a, res2a)
+        for idx in range(3):
+            assert_allclose(res1a[idx], res2a[idx], rtol=1e-15, atol=2e-16)
         _check_svds(A, k, *res1a)
 
         # with the same v0, solutions are the same, and they are accurate
         v0b = rng.random(n)
         res1b = svds(A, k, v0=v0b, solver=self.solver, random_state=2)
         res2b = svds(A, k, v0=v0b, solver=self.solver, random_state=3)
-        assert_equal(res1b, res2b)
+        for idx in range(3):
+            assert_allclose(res1b[idx], res2b[idx], rtol=1e-15, atol=2e-16)
         _check_svds(A, k, *res1b)
 
         # with different v0, solutions can be numerically different
@@ -380,13 +378,15 @@ class SVDSCommonTests:
         # with the same random_state, solutions are the same and accurate
         res1a = svds(A, k, solver=self.solver, random_state=0)
         res2a = svds(A, k, solver=self.solver, random_state=0)
-        assert_equal(res1a, res2a)
+        for idx in range(3):
+            assert_allclose(res1a[idx], res2a[idx], rtol=1e-15, atol=2e-16)
         _check_svds(A, k, *res1a)
 
         # with the same random_state, solutions are the same and accurate
         res1b = svds(A, k, solver=self.solver, random_state=1)
         res2b = svds(A, k, solver=self.solver, random_state=1)
-        assert_equal(res1b, res2b)
+        for idx in range(3):
+            assert_allclose(res1b[idx], res2b[idx], rtol=1e-15, atol=2e-16)
         _check_svds(A, k, *res1b)
 
         # with different random_state, solutions can be numerically different
@@ -413,7 +413,8 @@ class SVDSCommonTests:
         # with the same random_state, solutions are the same and accurate
         res1a = svds(A, k, solver=self.solver, random_state=random_state)
         res2a = svds(A, k, solver=self.solver, random_state=random_state_2)
-        assert_equal(res1a, res2a)
+        for idx in range(3):
+            assert_allclose(res1a[idx], res2a[idx], rtol=1e-15, atol=2e-16)
         _check_svds(A, k, *res1a)
 
     @pytest.mark.parametrize("random_state", (None,

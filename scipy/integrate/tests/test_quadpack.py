@@ -1,7 +1,7 @@
 import sys
 import math
 import numpy as np
-from numpy import sqrt, cos, sin, arctan, exp, log, pi, Inf
+from numpy import sqrt, cos, sin, arctan, exp, log, pi
 from numpy.testing import (assert_,
         assert_allclose, assert_array_less, assert_almost_equal)
 import pytest
@@ -117,7 +117,7 @@ class TestMultivariateCtypesQuad:
 
     def test_indefinite(self):
         # 2) Infinite integration limits --- Euler's constant
-        assert_quad(quad(self._multivariate_indefinite, 0, Inf),
+        assert_quad(quad(self._multivariate_indefinite, 0, np.inf),
                     0.577215664901532860606512)
 
     def test_threadsafety(self):
@@ -138,7 +138,7 @@ class TestQuad:
         # 2) Infinite integration limits --- Euler's constant
         def myfunc(x):           # Euler's constant integrand
             return -exp(-x)*log(x)
-        assert_quad(quad(myfunc, 0, Inf), 0.577215664901532860606512)
+        assert_quad(quad(myfunc, 0, np.inf), 0.577215664901532860606512)
 
     def test_singular(self):
         # 3) Singular points in region of integration.
@@ -169,7 +169,7 @@ class TestQuad:
 
         a = 4.0
         ome = 3.0
-        assert_quad(quad(myfunc, 0, Inf, args=a, weight='sin', wvar=ome),
+        assert_quad(quad(myfunc, 0, np.inf, args=a, weight='sin', wvar=ome),
                     ome/(a**2 + ome**2))
 
     def test_cosine_weighted_infinite(self):
@@ -179,7 +179,7 @@ class TestQuad:
 
         a = 2.5
         ome = 2.3
-        assert_quad(quad(myfunc, -Inf, 0, args=a, weight='cos', wvar=ome),
+        assert_quad(quad(myfunc, -np.inf, 0, args=a, weight='cos', wvar=ome),
                     a/(a**2 + ome**2))
 
     def test_algebraic_log_weight(self):
@@ -251,8 +251,10 @@ class TestQuad:
     def test_double_integral2(self):
         def func(x0, x1, t0, t1):
             return x0 + x1 + t0 + t1
-        g = lambda x: x
-        h = lambda x: 2 * x
+        def g(x):
+            return x
+        def h(x):
+            return 2 * x
         args = 1, 2
         assert_quad(dblquad(func, 1, 2, g, h, args=args),35./6 + 9*.5)
 

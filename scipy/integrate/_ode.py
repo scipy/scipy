@@ -901,7 +901,7 @@ class vode(IntegratorBase):
             self.meth == 2:  method="bdf"
 
         miter is the correction iteration method:
-            miter == 0:  Functional iteraton; no Jacobian involved.
+            miter == 0:  Functional iteration; no Jacobian involved.
             miter == 1:  Chord iteration with user-supplied full Jacobian.
             miter == 2:  Chord iteration with internally computed full Jacobian.
             miter == 3:  Chord iteration with internally computed diagonal Jacobian.
@@ -936,7 +936,7 @@ class vode(IntegratorBase):
                 if self.with_jacobian:
                     miter = 2  # Chord iteration with internal full Jacobian.
                 else:
-                    miter = 0  # Functional iteraton; no Jacobian involved.
+                    miter = 0  # Functional iteration; no Jacobian involved.
 
         mf = 10 * self.meth + miter
         return mf
@@ -1007,7 +1007,7 @@ class vode(IntegratorBase):
         y1, t, istate = self.runner(*args)
         self.istate = istate
         if istate < 0:
-            unexpected_istate_msg = 'Unexpected istate={:d}'.format(istate)
+            unexpected_istate_msg = f'Unexpected istate={istate:d}'
             warnings.warn('{:s}: {:s}'.format(self.__class__.__name__,
                           self.messages.get(istate, unexpected_istate_msg)))
             self.success = 0
@@ -1175,7 +1175,7 @@ class dopri5(IntegratorBase):
                                           tuple(self.call_args) + (f_params,)))
         self.istate = istate
         if istate < 0:
-            unexpected_istate_msg = 'Unexpected istate={:d}'.format(istate)
+            unexpected_istate_msg = f'Unexpected istate={istate:d}'
             warnings.warn('{:s}: {:s}'.format(self.__class__.__name__,
                           self.messages.get(istate, unexpected_istate_msg)))
             self.success = 0
@@ -1344,7 +1344,7 @@ class lsoda(IntegratorBase):
         y1, t, istate = self.runner(*args)
         self.istate = istate
         if istate < 0:
-            unexpected_istate_msg = 'Unexpected istate={:d}'.format(istate)
+            unexpected_istate_msg = f'Unexpected istate={istate:d}'
             warnings.warn('{:s}: {:s}'.format(self.__class__.__name__,
                           self.messages.get(istate, unexpected_istate_msg)))
             self.success = 0

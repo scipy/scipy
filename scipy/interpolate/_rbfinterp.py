@@ -136,15 +136,17 @@ class RBFInterpolator:
 
     Parameters
     ----------
-    y : (P, N) array_like
-        Data point coordinates.
-    d : (P, ...) array_like
-        Data values at `y`.
+    y : (npoints, ndims) array_like
+        2-D array of data point coordinates.
+    d : (npoints, ...) array_like
+        N-D array of data values at `y`. The length of `d` along the first
+        axis must be equal to the length of `y`. Unlike some interpolators, the
+        interpolation axis cannot be changed.
     neighbors : int, optional
         If specified, the value of the interpolant at each evaluation point
         will be computed using only this many nearest data points. All the data
         points are used by default.
-    smoothing : float or (P,) array_like, optional
+    smoothing : float or (npoints, ) array_like, optional
         Smoothing parameter. The interpolant perfectly fits the data when this
         is set to 0. For large values, the interpolant approaches a least
         squares fit of a polynomial with the specified degree. Default is 0.
@@ -432,7 +434,7 @@ class RBFInterpolator:
         else:
             nnei = self.neighbors
         # in each chunk we consume the same space we already occupy
-        chunksize = memory_budget // ((self.powers.shape[0] + nnei)) + 1
+        chunksize = memory_budget // (self.powers.shape[0] + nnei) + 1
         if chunksize <= nx:
             out = np.empty((nx, self.d.shape[1]), dtype=float)
             for i in range(0, nx, chunksize):

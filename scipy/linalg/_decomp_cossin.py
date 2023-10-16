@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from collections.abc import Iterable
 import numpy as np
 
@@ -132,11 +131,11 @@ def cossin(X, p=None, q=None, separate=False,
             raise ValueError("When p and q are None, exactly four arrays"
                              " should be in X, got {}".format(len(X)))
 
-        x11, x12, x21, x22 = [np.atleast_2d(x) for x in X]
+        x11, x12, x21, x22 = (np.atleast_2d(x) for x in X)
         for name, block in zip(["x11", "x12", "x21", "x22"],
                                [x11, x12, x21, x22]):
             if block.shape[1] == 0:
-                raise ValueError("{} can't be empty".format(name))
+                raise ValueError(f"{name} can't be empty")
         p, q = x11.shape
         mmp, mmq = x22.shape
 
@@ -176,7 +175,7 @@ def cossin(X, p=None, q=None, separate=False,
         raise ValueError('illegal value in argument {} of internal {}'
                          .format(-info, method_name))
     if info > 0:
-        raise LinAlgError("{} did not converge: {}".format(method_name, info))
+        raise LinAlgError(f"{method_name} did not converge: {info}")
 
     if separate:
         return (u1, u2), theta, (v1h, v2h)

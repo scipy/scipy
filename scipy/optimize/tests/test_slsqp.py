@@ -372,8 +372,10 @@ class TestSLSQP:
         # At x0 = [0, 1], the second constraint is clearly infeasible.
         # This triggers a call with n2==1 in the LSQ subroutine.
         x = [0, 1]
-        f1 = lambda x: x[0] + x[1] - 2
-        f2 = lambda x: x[0]**2 - 1
+        def f1(x):
+            return x[0] + x[1] - 2
+        def f2(x):
+            return x[0] ** 2 - 1
         sol = minimize(
             lambda x: x[0]**2 + x[1]**2,
             x,
@@ -512,7 +514,8 @@ class TestSLSQP:
         assert_(not res.success)
 
     def test_new_bounds_type(self):
-        f = lambda x: x[0]**2 + x[1]**2
+        def f(x):
+            return x[0] ** 2 + x[1] ** 2
         bounds = Bounds([1, 0], [np.inf, np.inf])
         sol = minimize(f, [0, 0], method='slsqp', bounds=bounds)
         assert_(sol.success)
@@ -576,7 +579,8 @@ class TestSLSQP:
                 {'type': 'ineq', 'fun': lambda x: x[1] + x[2] - 2})
         bnds = ((-2, 2), (-2, 2), (-2, 2))
 
-        target = lambda x: 1
+        def target(x):
+            return 1
         x0 = [-1.8869783504471584, -0.640096352696244, -0.8174212253407696]
         res = minimize(target, x0, method='SLSQP', bounds=bnds, constraints=cons,
                        options={'disp':False, 'maxiter':10000})

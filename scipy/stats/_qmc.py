@@ -11,12 +11,8 @@ from functools import partial
 from typing import (
     Callable,
     ClassVar,
-    Dict,
-    List,
     Literal,
-    Optional,
     overload,
-    Tuple,
     TYPE_CHECKING,
 )
 
@@ -29,7 +25,8 @@ if TYPE_CHECKING:
     )
 
 import scipy.stats as stats
-from scipy._lib._util import rng_integers
+from scipy._lib._util import rng_integers, _rng_spawn
+from scipy.sparse.csgraph import minimum_spanning_tree
 from scipy.spatial import distance, Voronoi
 from scipy.special import gammainc
 from ._sobol import (
@@ -47,14 +44,15 @@ from ._qmc_cy import (
 )
 
 
-__all__ = ['scale', 'discrepancy', 'update_discrepancy',
+__all__ = ['scale', 'discrepancy', 'geometric_discrepancy', 'update_discrepancy',
            'QMCEngine', 'Sobol', 'Halton', 'LatinHypercube', 'PoissonDisk',
            'MultinomialQMC', 'MultivariateNormalQMC']
 
 
 @overload
-def check_random_state(seed: Optional[IntNumber] = ...) -> np.random.Generator:
+def check_random_state(seed: IntNumber | None = ...) -> np.random.Generator:
     ...
+
 
 @overload
 def check_random_state(seed: GeneratorType) -> GeneratorType:
@@ -171,6 +169,36 @@ def scale(
         return (sample - lower) / (upper - lower)
 
 
+def _ensure_in_unit_hypercube(sample: npt.ArrayLike) -> np.ndarray:
+    """Ensure that sample is a 2D array and is within a unit hypercube
+
+    Parameters
+    ----------
+    sample : array_like (n, d)
+        A 2D array of points.
+
+    Returns
+    -------
+    np.ndarray
+        The array interpretation of the input sample
+
+    Raises
+    ------
+    ValueError
+        If the input is not a 2D array or contains points outside of
+        a unit hypercube.
+    """
+    sample = np.asarray(sample, dtype=np.float64, order="C")
+
+    if not sample.ndim == 2:
+        raise ValueError("Sample is not a 2D array")
+
+    if (sample.max() > 1.) or (sample.min() < 0.):
+        raise ValueError("Sample is not in unit hypercube")
+
+    return sample
+
+
 def discrepancy(
         sample: npt.ArrayLike,
         *,
@@ -197,6 +225,10 @@ def discrepancy(
     -------
     discrepancy : float
         Discrepancy.
+
+    See Also
+    --------
+    geometric_discrepancy
 
     Notes
     -----
@@ -284,14 +316,7 @@ def discrepancy(
     0.008142039609053513
 
     """
-    sample = np.asarray(sample, dtype=np.float64, order="C")
-
-    # Checking that sample is within the hypercube and 2D
-    if not sample.ndim == 2:
-        raise ValueError("Sample is not a 2D array")
-
-    if (sample.max() > 1.) or (sample.min() < 0.):
-        raise ValueError("Sample is not in unit hypercube")
+    sample = _ensure_in_unit_hypercube(sample)
 
     workers = _validate_workers(workers)
 
@@ -307,6 +332,131 @@ def discrepancy(
     else:
         raise ValueError(f"{method!r} is not a valid method. It must be one of"
                          f" {set(methods)!r}")
+
+
+def geometric_discrepancy(
+        sample: npt.ArrayLike,
+        method: Literal["mindist", "mst"] = "mindist",
+        metric: str = "euclidean") -> float:
+    """Discrepancy of a given sample based on its geometric properties.
+
+    Parameters
+    ----------
+    sample : array_like (n, d)
+        The sample to compute the discrepancy from.
+    method : {"mindist", "mst"}, optional
+        The method to use. One of ``mindist`` for minimum distance (default)
+        or ``mst`` for minimum spanning tree.
+    metric : str or callable, optional
+        The distance metric to use. See the documentation
+        for `scipy.spatial.distance.pdist` for the available metrics and
+        the default.
+
+    Returns
+    -------
+    discrepancy : float
+        Discrepancy (higher values correspond to greater sample uniformity).
+
+    See Also
+    --------
+    discrepancy
+
+    Notes
+    -----
+    The discrepancy can serve as a simple measure of quality of a random sample.
+    This measure is based on the geometric properties of the distribution of points
+    in the sample, such as the minimum distance between any pair of points, or
+    the mean edge length in a minimum spanning tree.
+
+    The higher the value is, the better the coverage of the parameter space is.
+    Note that this is different from `scipy.stats.qmc.discrepancy`, where lower
+    values correspond to higher quality of the sample.
+
+    Also note that when comparing different sampling strategies using this function,
+    the sample size must be kept constant.
+
+    It is possible to calculate two metrics from the minimum spanning tree:
+    the mean edge length and the standard deviation of edges lengths. Using
+    both metrics offers a better picture of uniformity than either metric alone,
+    with higher mean and lower standard deviation being preferable (see [1]_
+    for a brief discussion). This function currently only calculates the mean
+    edge length.
+
+    References
+    ----------
+    .. [1] Franco J. et al. "Minimum Spanning Tree: A new approach to assess the quality
+       of the design of computer experiments." Chemometrics and Intelligent Laboratory
+       Systems, 97 (2), pp. 164-169, 2009.
+
+    Examples
+    --------
+    Calculate the quality of the sample using the minimum euclidean distance
+    (the defaults):
+
+    >>> import numpy as np
+    >>> from scipy.stats import qmc
+    >>> rng = np.random.default_rng(191468432622931918890291693003068437394)
+    >>> sample = qmc.LatinHypercube(d=2, seed=rng).random(50)
+    >>> qmc.geometric_discrepancy(sample)
+    0.03708161435687876
+
+    Calculate the quality using the mean edge length in the minimum
+    spanning tree:
+
+    >>> qmc.geometric_discrepancy(sample, method='mst')
+    0.1105149978798376
+
+    Display the minimum spanning tree and the points with
+    the smallest distance:
+
+    >>> import matplotlib.pyplot as plt
+    >>> from matplotlib.lines import Line2D
+    >>> from scipy.sparse.csgraph import minimum_spanning_tree
+    >>> from scipy.spatial.distance import pdist, squareform
+    >>> dist = pdist(sample)
+    >>> mst = minimum_spanning_tree(squareform(dist))
+    >>> edges = np.where(mst.toarray() > 0)
+    >>> edges = np.asarray(edges).T
+    >>> min_dist = np.min(dist)
+    >>> min_idx = np.argwhere(squareform(dist) == min_dist)[0]
+    >>> fig, ax = plt.subplots(figsize=(10, 5))
+    >>> _ = ax.set(aspect='equal', xlabel=r'$x_1$', ylabel=r'$x_2$',
+    ...            xlim=[0, 1], ylim=[0, 1])
+    >>> for edge in edges:
+    ...     ax.plot(sample[edge, 0], sample[edge, 1], c='k')
+    >>> ax.scatter(sample[:, 0], sample[:, 1])
+    >>> ax.add_patch(plt.Circle(sample[min_idx[0]], min_dist, color='red', fill=False))
+    >>> markers = [
+    ...     Line2D([0], [0], marker='o', lw=0, label='Sample points'),
+    ...     Line2D([0], [0], color='k', label='Minimum spanning tree'),
+    ...     Line2D([0], [0], marker='o', lw=0, markerfacecolor='w', markeredgecolor='r',
+    ...            label='Minimum point-to-point distance'),
+    ... ]
+    >>> ax.legend(handles=markers, loc='center left', bbox_to_anchor=(1, 0.5));
+    >>> plt.show()
+
+    """
+    sample = _ensure_in_unit_hypercube(sample)
+    if sample.shape[0] < 2:
+        raise ValueError("Sample must contain at least two points")
+
+    distances = distance.pdist(sample, metric=metric)  # type: ignore[call-overload]
+
+    if np.any(distances == 0.0):
+        warnings.warn("Sample contains duplicate points.", stacklevel=2)
+
+    if method == "mindist":
+        return np.min(distances[distances.nonzero()])
+    elif method == "mst":
+        fully_connected_graph = distance.squareform(distances)
+        mst = minimum_spanning_tree(fully_connected_graph)
+        distances = mst[mst.nonzero()]
+        # TODO consider returning both the mean and the standard deviation
+        # see [1] for a discussion
+        return np.mean(distances)
+    else:
+        raise ValueError(f"{method!r} is not a valid method. "
+                         f"It must be one of {{'mindist', 'mst'}}")
 
 
 def update_discrepancy(
@@ -492,7 +642,7 @@ def primes_from_2_to(n: int) -> np.ndarray:
     return np.r_[2, 3, ((3 * np.nonzero(sieve)[0][1:] + 1) | 1)]
 
 
-def n_primes(n: IntNumber) -> List[int]:
+def n_primes(n: IntNumber) -> list[int]:
     """List of the n-first prime numbers.
 
     Parameters
@@ -531,12 +681,51 @@ def n_primes(n: IntNumber) -> List[int]:
     return primes
 
 
+def _van_der_corput_permutations(
+    base: IntNumber, *, random_state: SeedType = None
+) -> np.ndarray:
+    """Permutations for scrambling a Van der Corput sequence.
+
+    Parameters
+    ----------
+    base : int
+        Base of the sequence.
+    random_state : {None, int, `numpy.random.Generator`}, optional
+        If `seed` is an int or None, a new `numpy.random.Generator` is
+        created using ``np.random.default_rng(seed)``.
+        If `seed` is already a ``Generator`` instance, then the provided
+        instance is used.
+
+    Returns
+    -------
+    permutations : array_like
+        Permutation indices.
+
+    Notes
+    -----
+    In Algorithm 1 of Owen 2017, a permutation of `np.arange(base)` is
+    created for each positive integer `k` such that `1 - base**-k < 1`
+    using floating-point arithmetic. For double precision floats, the
+    condition `1 - base**-k < 1` can also be written as `base**-k >
+    2**-54`, which makes it more apparent how many permutations we need
+    to create.
+    """
+    rng = check_random_state(random_state)
+    count = math.ceil(54 / math.log2(base)) - 1
+    permutations = np.repeat(np.arange(base)[None], count, axis=0)
+    for perm in permutations:
+        rng.shuffle(perm)
+
+    return permutations
+
+
 def van_der_corput(
         n: IntNumber,
         base: IntNumber = 2,
         *,
         start_index: IntNumber = 0,
         scramble: bool = False,
+        permutations: npt.ArrayLike | None = None,
         seed: SeedType = None,
         workers: IntNumber = 1) -> np.ndarray:
     """Van der Corput sequence.
@@ -558,6 +747,8 @@ def van_der_corput(
     scramble : bool, optional
         If True, use Owen scrambling. Otherwise no scrambling is done.
         Default is True.
+    permutations : array_like, optional
+        Permutations used for scrambling.
     seed : {None, int, `numpy.random.Generator`}, optional
         If `seed` is an int or None, a new `numpy.random.Generator` is
         created using ``np.random.default_rng(seed)``.
@@ -582,17 +773,12 @@ def van_der_corput(
         raise ValueError("'base' must be at least 2")
 
     if scramble:
-        rng = check_random_state(seed)
-        # In Algorithm 1 of Owen 2017, a permutation of `np.arange(base)` is
-        # created for each positive integer `k` such that `1 - base**-k < 1`
-        # using floating-point arithmetic. For double precision floats, the
-        # condition `1 - base**-k < 1` can also be written as `base**-k >
-        # 2**-54`, which makes it more apparent how many permutations we need
-        # to create.
-        count = math.ceil(54 / math.log2(base)) - 1
-        permutations = np.repeat(np.arange(base)[None], count, axis=0)
-        for perm in permutations:
-            rng.shuffle(perm)
+        if permutations is None:
+            permutations = _van_der_corput_permutations(
+                base=base, random_state=seed
+            )
+        else:
+            permutations = np.asarray(permutations)
 
         return _cy_van_der_corput_scrambled(n, base, start_index,
                                             permutations, workers)
@@ -708,15 +894,23 @@ class QMCEngine(ABC):
         self,
         d: IntNumber,
         *,
-        optimization: Optional[Literal["random-cd", "lloyd"]] = None,
+        optimization: Literal["random-cd", "lloyd"] | None = None,
         seed: SeedType = None
     ) -> None:
         if not np.issubdtype(type(d), np.integer) or d < 0:
             raise ValueError('d must be a non-negative integer value')
 
         self.d = d
-        self.rng = check_random_state(seed)
-        self.rng_seed = copy.deepcopy(seed)
+
+        if isinstance(seed, np.random.Generator):
+            # Spawn a Generator that we can own and reset.
+            self.rng = _rng_spawn(seed, 1)[0]
+        else:
+            # Create our instance of Generator, does not need spawning
+            # Also catch RandomState which cannot be spawned
+            self.rng = check_random_state(seed)
+        self.rng_seed = copy.deepcopy(self.rng)
+
         self.num_generated = 0
 
         config = {
@@ -771,7 +965,7 @@ class QMCEngine(ABC):
         self,
         l_bounds: npt.ArrayLike,
         *,
-        u_bounds: Optional[npt.ArrayLike] = None,
+        u_bounds: npt.ArrayLike | None = None,
         n: IntNumber = 1,
         endpoint: bool = False,
         workers: IntNumber = 1
@@ -978,7 +1172,7 @@ class Halton(QMCEngine):
 
     def __init__(
         self, d: IntNumber, *, scramble: bool = True,
-        optimization: Optional[Literal["random-cd", "lloyd"]] = None,
+        optimization: Literal["random-cd", "lloyd"] | None = None,
         seed: SeedType = None
     ) -> None:
         # Used in `scipy.integrate.qmc_quad`
@@ -986,8 +1180,26 @@ class Halton(QMCEngine):
                            'optimization': optimization}
         super().__init__(d=d, optimization=optimization, seed=seed)
         self.seed = seed
-        self.base = n_primes(d)
+
+        # important to have ``type(bdim) == int`` for performance reason
+        self.base = [int(bdim) for bdim in n_primes(d)]
         self.scramble = scramble
+
+        self._initialize_permutations()
+
+    def _initialize_permutations(self) -> None:
+        """Initialize permutations for all Van der Corput sequences.
+
+        Permutations are only needed for scrambling.
+        """
+        self._permutations: list = [None] * len(self.base)
+        if self.scramble:
+            for i, bdim in enumerate(self.base):
+                permutations = _van_der_corput_permutations(
+                    base=bdim, random_state=self.rng
+                )
+
+                self._permutations[i] = permutations
 
     def _random(
         self, n: IntNumber = 1, *, workers: IntNumber = 1
@@ -1011,12 +1223,11 @@ class Halton(QMCEngine):
         """
         workers = _validate_workers(workers)
         # Generate a sample using a Van der Corput sequence per dimension.
-        # important to have ``type(bdim) == int`` for performance reason
-        sample = [van_der_corput(n, int(bdim), start_index=self.num_generated,
+        sample = [van_der_corput(n, bdim, start_index=self.num_generated,
                                  scramble=self.scramble,
-                                 seed=copy.deepcopy(self.seed),
+                                 permutations=self._permutations[i],
                                  workers=workers)
-                  for bdim in self.base]
+                  for i, bdim in enumerate(self.base)]
 
         return np.array(sample).T.reshape(n, self.d)
 
@@ -1033,15 +1244,6 @@ class LatinHypercube(QMCEngine):
     ----------
     d : int
         Dimension of the parameter space.
-    centered : bool, optional
-        Center samples within cells of a multi-dimensional grid.
-        Default is False.
-
-        .. deprecated:: 1.10.0
-            `centered` is deprecated as of SciPy 1.10.0 and will be removed in
-            1.12.0. Use `scramble` instead. ``centered=True`` corresponds to
-            ``scramble=False``.
-
     scramble : bool, optional
         When False, center samples within cells of a multi-dimensional grid.
         Otherwise, samples are randomly placed within cells of the grid.
@@ -1215,21 +1417,12 @@ class LatinHypercube(QMCEngine):
     """
 
     def __init__(
-        self, d: IntNumber, *, centered: bool = False,
+        self, d: IntNumber, *,
         scramble: bool = True,
         strength: int = 1,
-        optimization: Optional[Literal["random-cd", "lloyd"]] = None,
+        optimization: Literal["random-cd", "lloyd"] | None = None,
         seed: SeedType = None
     ) -> None:
-        if centered:
-            scramble = False
-            warnings.warn(
-                "'centered' is deprecated and will be removed in SciPy 1.12."
-                " Please use 'scramble' instead. 'centered=True' corresponds"
-                " to 'scramble=False'.",
-                stacklevel=2
-            )
-
         # Used in `scipy.integrate.qmc_quad`
         self._init_quad = {'d': d, 'scramble': True, 'strength': strength,
                            'optimization': optimization}
@@ -1461,8 +1654,8 @@ class Sobol(QMCEngine):
 
     def __init__(
         self, d: IntNumber, *, scramble: bool = True,
-        bits: Optional[IntNumber] = None, seed: SeedType = None,
-        optimization: Optional[Literal["random-cd", "lloyd"]] = None
+        bits: IntNumber | None = None, seed: SeedType = None,
+        optimization: Literal["random-cd", "lloyd"] | None = None
     ) -> None:
         # Used in `scipy.integrate.qmc_quad`
         self._init_quad = {'d': d, 'scramble': True, 'bits': bits,
@@ -1699,7 +1892,7 @@ class PoissonDisk(QMCEngine):
     -----
     Poisson disk sampling is an iterative sampling strategy. Starting from
     a seed sample, `ncandidates` are sampled in the hypersphere
-    surrounding the seed. Candidates bellow a certain `radius` or outside the
+    surrounding the seed. Candidates below a certain `radius` or outside the
     domain are rejected. New samples are added in a pool of sample seed. The
     process stops when the pool is empty or when the number of required
     samples is reached.
@@ -1774,7 +1967,7 @@ class PoissonDisk(QMCEngine):
         radius: DecimalNumber = 0.05,
         hypersphere: Literal["volume", "surface"] = "volume",
         ncandidates: IntNumber = 30,
-        optimization: Optional[Literal["random-cd", "lloyd"]] = None,
+        optimization: Literal["random-cd", "lloyd"] | None = None,
         seed: SeedType = None
     ) -> None:
         # Used in `scipy.integrate.qmc_quad`
@@ -1887,7 +2080,7 @@ class PoissonDisk(QMCEngine):
             self.sample_grid[tuple(indices)] = candidate
             curr_sample.append(candidate)
 
-        curr_sample: List[np.ndarray] = []
+        curr_sample: list[np.ndarray] = []
 
         if len(self.sample_pool) == 0:
             # the pool is being initialized with a single random sample
@@ -2015,10 +2208,10 @@ class MultivariateNormalQMC:
     """
 
     def __init__(
-            self, mean: npt.ArrayLike, cov: Optional[npt.ArrayLike] = None, *,
-            cov_root: Optional[npt.ArrayLike] = None,
+            self, mean: npt.ArrayLike, cov: npt.ArrayLike | None = None, *,
+            cov_root: npt.ArrayLike | None = None,
             inv_transform: bool = True,
-            engine: Optional[QMCEngine] = None,
+            engine: QMCEngine | None = None,
             seed: SeedType = None
     ) -> None:
         mean = np.array(mean, copy=False, ndmin=1)
@@ -2183,7 +2376,7 @@ class MultinomialQMC:
 
     def __init__(
         self, pvals: npt.ArrayLike, n_trials: IntNumber,
-        *, engine: Optional[QMCEngine] = None,
+        *, engine: QMCEngine | None = None,
         seed: SeedType = None
     ) -> None:
         self.pvals = np.array(pvals, copy=False, ndmin=1)
@@ -2230,15 +2423,15 @@ class MultinomialQMC:
 
 
 def _select_optimizer(
-    optimization: Optional[Literal["random-cd", "lloyd"]], config: Dict
-) -> Optional[Callable]:
+    optimization: Literal["random-cd", "lloyd"] | None, config: dict
+) -> Callable | None:
     """A factory for optimization methods."""
-    optimization_method: Dict[str, Callable] = {
+    optimization_method: dict[str, Callable] = {
         "random-cd": _random_cd,
         "lloyd": _lloyd_centroidal_voronoi_tessellation
     }
 
-    optimizer: Optional[partial]
+    optimizer: partial | None
     if optimization is not None:
         try:
             optimization = optimization.lower()  # type: ignore[assignment]
@@ -2259,14 +2452,14 @@ def _select_optimizer(
 
 def _random_cd(
     best_sample: np.ndarray, n_iters: int, n_nochange: int, rng: GeneratorType,
-    **kwargs: Dict
+    **kwargs: dict
 ) -> np.ndarray:
     """Optimal LHS on CD.
 
     Create a base LHS and do random permutations of coordinates to
     lower the centered discrepancy.
     Because it starts with a normal LHS, it also works with the
-    `centered` keyword argument.
+    `scramble` keyword argument.
 
     Two stopping criterion are used to stop the algorithm: at most,
     `n_iters` iterations are performed; or if there is no improvement
@@ -2279,10 +2472,11 @@ def _random_cd(
     if d == 0 or n == 0:
         return np.empty((n, d))
 
-    best_disc = discrepancy(best_sample)
-
-    if n == 1:
+    if d == 1 or n == 1:
+        # discrepancy measures are invariant under permuting factors and runs
         return best_sample
+
+    best_disc = discrepancy(best_sample)
 
     bounds = ([0, d - 1],
               [0, n - 1],
@@ -2293,9 +2487,9 @@ def _random_cd(
     while n_nochange_ < n_nochange and n_iters_ < n_iters:
         n_iters_ += 1
 
-        col = rng_integers(rng, *bounds[0])
-        row_1 = rng_integers(rng, *bounds[1])
-        row_2 = rng_integers(rng, *bounds[2])
+        col = rng_integers(rng, *bounds[0], endpoint=True)  # type: ignore[misc]
+        row_1 = rng_integers(rng, *bounds[1], endpoint=True)  # type: ignore[misc]
+        row_2 = rng_integers(rng, *bounds[2], endpoint=True)  # type: ignore[misc]
         disc = _perturb_discrepancy(best_sample,
                                     row_1, row_2, col,
                                     best_disc)
@@ -2384,8 +2578,8 @@ def _lloyd_centroidal_voronoi_tessellation(
     *,
     tol: DecimalNumber = 1e-5,
     maxiter: IntNumber = 10,
-    qhull_options: Optional[str] = None,
-    **kwargs: Dict
+    qhull_options: str | None = None,
+    **kwargs: dict
 ) -> np.ndarray:
     """Approximate Centroidal Voronoi Tessellation.
 
@@ -2460,6 +2654,7 @@ def _lloyd_centroidal_voronoi_tessellation(
     --------
     >>> import numpy as np
     >>> from scipy.spatial import distance
+    >>> from scipy.stats._qmc import _lloyd_centroidal_voronoi_tessellation
     >>> rng = np.random.default_rng()
     >>> sample = rng.random((128, 2))
 
@@ -2560,7 +2755,7 @@ def _validate_workers(workers: IntNumber = 1) -> IntNumber:
 
 def _validate_bounds(
     l_bounds: npt.ArrayLike, u_bounds: npt.ArrayLike, d: int
-) -> Tuple[np.ndarray, ...]:
+) -> tuple[np.ndarray, ...]:
     """Bounds input validation.
 
     Parameters

@@ -10,7 +10,7 @@ from scipy.special import (
     jn, jv, jvp, yn, yv, yvp, iv, ivp, kn, kv, kvp,
     gamma, gammaln, gammainc, gammaincc, gammaincinv, gammainccinv, digamma,
     beta, betainc, betaincinv, poch,
-    ellipe, ellipeinc, ellipk, ellipkm1, ellipkinc, ellipj,
+    ellipe, ellipeinc, ellipk, ellipkm1, ellipkinc,
     elliprc, elliprd, elliprf, elliprg, elliprj,
     erf, erfc, erfinv, erfcinv, exp1, expi, expn,
     bdtrik, btdtr, btdtri, btdtria, btdtrib, chndtr, gdtr, gdtrc, gdtrix, gdtrib,
@@ -62,10 +62,6 @@ def ellipe_(k):
 
 def ellipeinc_(f, k):
     return ellipeinc(f, k*k)
-
-
-def ellipj_(k):
-    return ellipj(k*k)
 
 
 def zeta_(x):
@@ -464,7 +460,7 @@ BOOST_TESTS = [
         # work around some hard cases in the Boost test where we get slightly
         # larger error than the ideal bound when the x (==y) input is close to
         # zero.
-        # Also the accuracy on 32-bit buids with g++ may suffer from excess
+        # Also the accuracy on 32-bit builds with g++ may suffer from excess
         # loss of precision; see GCC bugzilla 323
         # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=323
         data(elliprd, 'ellint_rd_xxz_ipp-ellint_rd_xxz', (0, 1, 2), 3,
@@ -566,7 +562,12 @@ BOOST_TESTS = [
 
 @pytest.mark.parametrize('test', BOOST_TESTS, ids=repr)
 def test_boost(test):
-    _test_factory(test)
+    # Filter deprecation warnings of any deprecated functions.
+    if test.func in [btdtr, btdtri, btdtri_comp]:
+        with pytest.deprecated_call():
+            _test_factory(test)
+    else:
+        _test_factory(test)
 
 
 GSL_TESTS = [
@@ -609,7 +610,7 @@ def test_local(test):
     _test_factory(test)
 
 
-def _test_factory(test, dtype=np.double):
+def _test_factory(test, dtype=np.float64):
     """Boost test"""
     with suppress_warnings() as sup:
         sup.filter(IntegrationWarning, "The occurrence of roundoff error is detected")

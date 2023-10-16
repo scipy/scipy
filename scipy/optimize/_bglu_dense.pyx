@@ -17,7 +17,7 @@ __all__ = ['LU', 'BGLU']
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef void swap_rows(self, double[:, ::1] H, int i):
+cdef void swap_rows(self, double[:, ::1] H, int i) noexcept:
     """
     Swaps row i of H with next row; represents matrix product by PI_i
     matrix described after matrix 5.10
@@ -32,7 +32,7 @@ cdef void swap_rows(self, double[:, ::1] H, int i):
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.cdivision(True) # not really important
-cdef double row_subtract(self, double[:, ::1] H, int i):
+cdef double row_subtract(self, double[:, ::1] H, int i) noexcept:
     """
     Zeros first nonzero element of row i+1 of H by subtracting appropriate
     multiple of row i; represents matrix product by matrix 5.10. Returns
@@ -52,7 +52,7 @@ cdef double row_subtract(self, double[:, ::1] H, int i):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef void hess_lu(self, double[:, ::1] H, int i, double[:,::1] ops):
+cdef void hess_lu(self, double[:, ::1] H, int i, double[:,::1] ops) noexcept:
     """
     Converts Hessenberg matrix H with first nonzero off-diagonal in
     column i to upper triangular, recording elementary row operations.
@@ -78,7 +78,7 @@ cdef void hess_lu(self, double[:, ::1] H, int i, double[:,::1] ops):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef void perform_ops(self, double[::1] y, double[:,::1] ops, bint rev = False):
+cdef void perform_ops(self, double[::1] y, double[:,::1] ops, bint rev = False) noexcept:
     """
     Replays operations needed to convert Hessenberg matrix into upper
     triangular form on a vector y. Equivalent to matrix multlication by

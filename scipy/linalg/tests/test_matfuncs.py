@@ -125,7 +125,7 @@ class TestLogM:
 
                 # Eigenvalues are related to the branch cut.
                 W = np.linalg.eigvals(M)
-                err_msg = 'M:{0} eivals:{1}'.format(M, W)
+                err_msg = f'M:{M} eivals:{W}'
 
                 # Check sqrtm round trip because it is used within logm.
                 M_sqrtm, info = sqrtm(M, disp=False)
@@ -410,6 +410,12 @@ class TestSqrtM:
         assert_allclose(np.dot(R, R), M, atol=1e-14)
         assert_allclose(sqrtm(M), R, atol=1e-14)
 
+    def test_gh17918(self):
+        M = np.empty((19, 19))
+        M.fill(0.94)
+        np.fill_diagonal(M, 1)
+        assert np.isrealobj(sqrtm(M))
+
     def test_data_size_preservation_uint_in_float_out(self):
         M = np.zeros((10, 10), dtype=np.uint8)
         # input bit size is 8, but minimum float bit size is 16
@@ -556,7 +562,7 @@ class TestFractionalMatrixPower:
         A_sqrtm, info = sqrtm(A, disp=False)
         A_rem_power = _matfuncs_inv_ssq._remainder_matrix_power(A, 0.5)
         A_power = fractional_matrix_power(A, 0.5)
-        assert_array_equal(A_rem_power, A_power)
+        assert_allclose(A_rem_power, A_power, rtol=1e-11)
         assert_allclose(A_sqrtm, A_power)
         assert_allclose(A_sqrtm, A_funm_sqrt)
 

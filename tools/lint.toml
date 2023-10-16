@@ -1,0 +1,33 @@
+line-length = 88
+
+# Enable Pyflakes `E` and `F` codes by default.
+select = ["E", "F"]
+ignore = ["E501", "E741"]
+exclude = [
+  "scipy/datasets/_registry.py"
+]
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+# Assume Python 3.9
+target-version = "py39"
+
+[per-file-ignores]
+"**/__init__.py" = ["E402", "F401", "F403", "F405"]
+"**/test_*.py" = ["D"]
+"scipy/_lib/uarray.py" = ["F403", "F401"]
+"scipy/linalg/blas.py" = ["F403", "E402"]
+"scipy/linalg/lapack.py" = ["F403", "E402", "F405"]
+"scipy/stats/distributions.py" = ["F403", "F405"]
+"scipy/stats/mstats.py" = ["F403", "F401"]
+"scipy/stats/qmc.py" = ["F403"]
+"scipy/optimize/_linprog.py" = ["F401"]
+"scipy/optimize/_linprog_ip.py" = ["F401"]
+
+[mccabe]
+# Unlike Flake8, default to a complexity level of 10.
+max-complexity = 10
+
+[pydocstyle]
+convention = "numpy"

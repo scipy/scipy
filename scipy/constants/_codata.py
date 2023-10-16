@@ -1,11 +1,3 @@
-# Compiled by Charles Harris, dated October 3, 2002
-# updated to 2002 values by BasSw, 2006
-# Updated to 2006 values by Vincent Davis June 2010
-# Updated to 2014 values by Joseph Booker, 2015
-# Updated to 2018 values by Jakob Jakobson, 2019
-
-from __future__ import annotations
-
 """
 Fundamental Physical Constants
 ------------------------------
@@ -52,8 +44,15 @@ https://physics.nist.gov/cuu/Constants/
 
 """
 
+# Compiled by Charles Harris, dated October 3, 2002
+# updated to 2002 values by BasSw, 2006
+# Updated to 2006 values by Vincent Davis June 2010
+# Updated to 2014 values by Joseph Booker, 2015
+# Updated to 2018 values by Jakob Jakobson, 2019
+
+from __future__ import annotations
+
 import warnings
-from math import pi, sqrt
 
 from typing import Any
 
@@ -1568,7 +1567,7 @@ class ConstantWarning(DeprecationWarning):
 
 def _check_obsolete(key: str) -> None:
     if key in _obsolete_constants and key not in _aliases:
-        warnings.warn("Constant '%s' is not in current %s data set" % (
+        warnings.warn("Constant '{}' is not in current {} data set".format(
             key, _current_codata), ConstantWarning)
 
 

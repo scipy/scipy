@@ -8,7 +8,6 @@ import numpy as np
 from math import pow
 
 from scipy import optimize
-from scipy.sparse._sputils import matrix
 
 
 class TestTnc:
@@ -344,10 +343,3 @@ class TestTnc:
         assert_allclose(res2.x, res.x)
         assert_allclose(res2.fun, res.fun)
         assert_equal(res2.nfev, res.nfev)
-
-    def test_maxiter_depreciations(self):
-        msg = "'maxiter' has been deprecated in favor of 'maxfun'"
-        with pytest.warns(DeprecationWarning, match=msg):
-            optimize.minimize(
-                self.f1, [1, 3], method="TNC", options={"maxiter": 1}
-            )

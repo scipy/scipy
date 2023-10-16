@@ -1,3 +1,4 @@
+#include <Python.h>
 #include "wright.hh"
 
 /**********************************************************************/
@@ -72,7 +73,6 @@
 /* Output: returns 0 on successful exit.                               */
 /**********************************************************************/
 
-#include <Python.h>
 extern "C" {
 #include <math.h>
 #include "sf_error.h"

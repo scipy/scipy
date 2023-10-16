@@ -10,18 +10,18 @@ import numpy as np
 
 from scipy._lib._util import _asarray_validated
 
-
 # Local imports
 from ._misc import norm
 from .lapack import ztrsyl, dtrsyl
 from ._decomp_schur import schur, rsf2csf
 
 
+
 class SqrtmError(np.linalg.LinAlgError):
     pass
 
 
-from ._matfuncs_sqrtm_triu import within_block_loop
+from ._matfuncs_sqrtm_triu import within_block_loop  # noqa: E402
 
 
 def _sqrtm_triu(T, blocksize=64):
@@ -100,7 +100,7 @@ def _sqrtm_triu(T, blocksize=64):
                                                             jstart:jstop])
 
             # Invoke LAPACK.
-            # For more details, see the solve_sylvester implemention
+            # For more details, see the solve_sylvester implementation
             # and the fortran dtrsyl and ztrsyl docs.
             Rii = R[istart:istop, istart:istop]
             Rjj = R[jstart:jstop, jstart:jstop]
@@ -134,9 +134,9 @@ def sqrtm(A, disp=True, blocksize=64):
     sqrtm : (N, N) ndarray
         Value of the sqrt function at `A`. The dtype is float or complex.
         The precision (data size) is determined based on the precision of
-        input `A`. When the dtype is float, the precision is same as `A`.
-        When the dtype is complex, the precition is double as `A`. The
-        precision might be cliped by each dtype precision range.
+        input `A`. When the dtype is float, the precision is the same as `A`.
+        When the dtype is complex, the precision is double that of `A`. The
+        precision might be clipped by each dtype precision range.
 
     errest : float
         (if disp == False)
@@ -172,7 +172,7 @@ def sqrtm(A, disp=True, blocksize=64):
     keep_it_real = np.isrealobj(A)
     if keep_it_real:
         T, Z = schur(A)
-        if not np.array_equal(T, np.triu(T)):
+        if not np.allclose(T, np.triu(T)):
             T, Z = rsf2csf(T, Z)
     else:
         T, Z = schur(A, output='complex')

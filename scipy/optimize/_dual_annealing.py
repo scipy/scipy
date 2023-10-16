@@ -391,9 +391,10 @@ class LocalSearchWrapper:
     LS_MAXITER_MIN = 100
     LS_MAXITER_MAX = 1000
 
-    def __init__(self, search_bounds, func_wrapper, **kwargs):
+    def __init__(self, search_bounds, func_wrapper, *args, **kwargs):
         self.func_wrapper = func_wrapper
         self.kwargs = kwargs
+        self.jac = self.kwargs.get('jac', None)
         self.minimizer = minimize
         bounds_list = list(zip(*search_bounds))
         self.lower = np.array(bounds_list[0])
@@ -410,6 +411,10 @@ class LocalSearchWrapper:
                 'maxiter': ls_max_iter,
             }
             self.kwargs['bounds'] = list(zip(self.lower, self.upper))
+        elif callable(self.jac):
+            def wrapped_jac(x):
+                return self.jac(x, *args)
+            self.kwargs['jac'] = wrapped_jac
 
     def local_search(self, x, e):
         # Run local search from the given x location where energy value is e
@@ -644,7 +649,7 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
     minimizer_kwargs = minimizer_kwargs or {}
 
     minimizer_wrapper = LocalSearchWrapper(
-        bounds, func_wrapper, **minimizer_kwargs)
+        bounds, func_wrapper, *args, **minimizer_kwargs)
 
     # Initialization of random Generator for reproducible runs if seed provided
     rand_state = check_random_state(seed)

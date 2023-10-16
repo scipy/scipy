@@ -19,12 +19,10 @@ from ._complexstuff cimport (
 cdef extern from "specfun_wrappers.h":
     np.npy_cdouble cexpi_wrap(np.npy_cdouble) nogil
 
-DEF MAXITER = 100
-DEF TOL = 2.220446092504131e-16
 DEF EULER = 0.577215664901532860606512090082402431  # Euler constant
     
 
-cdef inline double complex zexpi(double complex z) nogil:
+cdef inline double complex zexpi(double complex z) noexcept nogil:
     cdef np.npy_cdouble r
     r = cexpi_wrap(npy_cdouble_from_double_complex(z))
     return double_complex_from_npy_cdouble(r)
@@ -32,7 +30,7 @@ cdef inline double complex zexpi(double complex z) nogil:
 
 @cython.cdivision(True)
 cdef inline void power_series(int sgn, double complex z,
-                             double complex *s, double complex *c) nogil:
+                             double complex *s, double complex *c) noexcept nogil:
     """DLMF 6.6.5 and 6.6.6. If sgn = -1 computes si/ci, and if sgn = 1
     computes shi/chi.
 
@@ -40,6 +38,8 @@ cdef inline void power_series(int sgn, double complex z,
     cdef:
         int n
         double complex fac, term1, term2
+        int MAXITER = 100
+        double tol = 2.220446092504131e-16
         
     fac = z
     s[0] = fac
@@ -51,12 +51,12 @@ cdef inline void power_series(int sgn, double complex z,
         fac *= z/(2*n + 1)
         term1 = fac/(2*n + 1)
         s[0] += term1
-        if zabs(term1) < TOL*zabs(s[0]) and zabs(term2) < TOL*zabs(c[0]):
+        if zabs(term1) < tol*zabs(s[0]) and zabs(term2) < tol*zabs(c[0]):
             break
 
     
 cdef inline int csici(double complex z,
-                      double complex *si, double complex *ci) nogil:
+                      double complex *si, double complex *ci) noexcept nogil:
     """Compute sin/cos integrals at complex arguments. The algorithm
     largely follows that of [1].
 
@@ -105,7 +105,7 @@ cdef inline int csici(double complex z,
 
 
 cdef inline int cshichi(double complex z,
-                        double complex *shi, double complex *chi) nogil:
+                        double complex *shi, double complex *chi) noexcept nogil:
     """Compute sinh/cosh integrals at complex arguments. The algorithm
     largely follows that of [1].
 

@@ -41,7 +41,7 @@ class FortranFile:
     mode : {'r', 'w'}, optional
         Read-write mode, default is 'r'.
     header_dtype : dtype, optional
-        Data type of the header. Size and endiness must match the input/output file.
+        Data type of the header. Size and endianness must match the input/output file.
 
     Notes
     -----
@@ -174,7 +174,7 @@ class FortranFile:
         Parameters
         ----------
         *dtypes : dtypes, optional
-            Data type(s) specifying the size and endiness of the data.
+            Data type(s) specifying the size and endianness of the data.
 
         Returns
         -------
@@ -243,7 +243,7 @@ class FortranFile:
         """
         dtype = kwargs.pop('dtype', None)
         if kwargs:
-            raise ValueError("Unknown keyword arguments {}".format(tuple(kwargs.keys())))
+            raise ValueError(f"Unknown keyword arguments {tuple(kwargs.keys())}")
 
         if dtype is not None:
             dtypes = dtypes + (dtype,)
@@ -257,15 +257,15 @@ class FortranFile:
 
         num_blocks, remainder = divmod(first_size, block_size)
         if remainder != 0:
-            raise ValueError('Size obtained ({0}) is not a multiple of the '
-                             'dtypes given ({1}).'.format(first_size, block_size))
+            raise ValueError('Size obtained ({}) is not a multiple of the '
+                             'dtypes given ({}).'.format(first_size, block_size))
 
         if len(dtypes) != 1 and first_size != block_size:
             # Fortran does not write mixed type array items in interleaved order,
             # and it's not possible to guess the sizes of the arrays that were written.
             # The user must specify the exact sizes of each of the arrays.
-            raise ValueError('Size obtained ({0}) does not match with the expected '
-                             'size ({1}) of multi-item record'.format(first_size, block_size))
+            raise ValueError('Size obtained ({}) does not match with the expected '
+                             'size ({}) of multi-item record'.format(first_size, block_size))
 
         data = []
         for dtype in dtypes:
@@ -300,7 +300,7 @@ class FortranFile:
         Parameters
         ----------
         dtype : dtype, optional
-            Data type specifying the size and endiness of the data.
+            Data type specifying the size and endianness of the data.
 
         Returns
         -------
@@ -323,7 +323,7 @@ class FortranFile:
         Parameters
         ----------
         dtype : dtype, optional
-            Data type specifying the size and endiness of the data.
+            Data type specifying the size and endianness of the data.
 
         Returns
         -------

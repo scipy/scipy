@@ -96,7 +96,7 @@ class BaseMixin:
             sup.filter(PendingDeprecationWarning)
             A = np.matrix([[20, -4, 0, 2, 3], [10, -2, 1, 0, -1]])
         k = np.array([20, 15])
-        s_t = lsq_linear(A, k)
+        lsq_linear(A, k)
 
     def test_dense_rank_deficient(self):
         A = np.array([[-0.307, -0.184]])
@@ -155,6 +155,7 @@ class BaseMixin:
         result = lsq_linear(A, b, method=self.method)
         assert_(result.cost < 1.1e-8)
 
+    @pytest.mark.xslow
     def test_large_rank_deficient(self):
         np.random.seed(0)
         n, m = np.sort(np.random.randint(2, 1000, size=2))

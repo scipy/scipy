@@ -38,9 +38,7 @@ def main():
     args = p.parse_args()
 
     if not args.outdir:
-        # We're dealing with a distutils build here, write in-place:
-        inp = os.path.normpath(args.dirname)
-        outp = inp + ".npz"
+        raise ValueError("Missing `--outdir` argument to makenpz.py")
     else:
         inp = os.path.join(os.path.abspath(os.path.dirname(__file__)),
                            '..', 'tests', 'data', args.dirname)
@@ -54,6 +52,8 @@ def main():
     # Find source files
     files = []
     for dirpath, dirnames, filenames in os.walk(inp):
+        dirnames.sort()
+        filenames.sort()
         for fn in filenames:
             if fn.endswith('.txt'):
                 key = dirpath[len(inp)+1:] + '-' + fn[:-4]
@@ -65,7 +65,7 @@ def main():
         try:
             old_data = np.load(outp)
             try:
-                changed = set(old_data.keys()) != set(key for key, _ in files)
+                changed = set(old_data.keys()) != {key for key, _ in files}
             finally:
                 old_data.close()
         except OSError:

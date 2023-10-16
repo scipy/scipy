@@ -1,6 +1,7 @@
 import scipy._lib.uarray as ua
-from . import _fftlog
-from . import _pocketfft
+from . import _basic_backend
+from . import _realtransforms_backend
+from . import _fftlog_backend
 
 
 class _ScipyBackend:
@@ -17,9 +18,11 @@ class _ScipyBackend:
     @staticmethod
     def __ua_function__(method, args, kwargs):
 
-        fn = getattr(_pocketfft, method.__name__, None)
+        fn = getattr(_basic_backend, method.__name__, None)
         if fn is None:
-            fn = getattr(_fftlog, method.__name__, None)
+            fn = getattr(_realtransforms_backend, method.__name__, None)
+        if fn is None:
+            fn = getattr(_fftlog_backend, method.__name__, None)
         if fn is None:
             return NotImplemented
         return fn(*args, **kwargs)
@@ -37,7 +40,7 @@ def _backend_from_arg(backend):
         try:
             backend = _named_backends[backend]
         except KeyError as e:
-            raise ValueError('Unknown backend {}'.format(backend)) from e
+            raise ValueError(f'Unknown backend {backend}') from e
 
     if backend.__ua_domain__ != 'numpy.scipy.fft':
         raise ValueError('Backend does not implement "numpy.scipy.fft"')

@@ -1,8 +1,9 @@
 import numpy as np
 from numpy.testing import assert_equal, assert_array_equal
+import pytest
 
 from scipy.stats import rankdata, tiecorrect
-import pytest
+from scipy._lib._util import np_long
 
 
 class TestTieCorrect:
@@ -121,9 +122,15 @@ class TestRankData:
         assert_array_equal(r, expected)
 
     def test_rankdata_object_string(self):
-        min_rank = lambda a: [1 + sum(i < j for i in a) for j in a]
-        max_rank = lambda a: [sum(i <= j for i in a) for j in a]
-        ordinal_rank = lambda a: min_rank([(x, i) for i, x in enumerate(a)])
+
+        def min_rank(a):
+            return [1 + sum(i < j for i in a) for j in a]
+
+        def max_rank(a):
+            return [sum(i <= j for i in a) for j in a]
+
+        def ordinal_rank(a):
+            return min_rank([(x, i) for i, x in enumerate(a)])
 
         def average_rank(a):
             return [(i + j) / 2.0 for i, j in zip(min_rank(a), max_rank(a))]
@@ -181,7 +188,7 @@ class TestRankData:
         assert_array_equal(r1, expected1)
 
     methods = ["average", "min", "max", "dense", "ordinal"]
-    dtypes = [np.float64] + [np.int_]*4
+    dtypes = [np.float64] + [np_long]*4
 
     @pytest.mark.parametrize("axis", [0, 1])
     @pytest.mark.parametrize("method, dtype", zip(methods, dtypes))

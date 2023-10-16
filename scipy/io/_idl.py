@@ -241,7 +241,7 @@ def _read_structure(f, array_desc, struct_desc):
                 raise Exception("Variable type %i not implemented" %
                                                             col['typecode'])
 
-    structure = np.recarray((nrows, ), dtype=dtype)
+    structure = np.rec.recarray((nrows, ), dtype=dtype)
 
     for i in range(nrows):
         for col in columns:
@@ -318,11 +318,11 @@ def _read_record(f):
     record = {'rectype': _read_long(f)}
 
     nextrec = _read_uint32(f)
-    nextrec += _read_uint32(f) * 2**32
+    nextrec += _read_uint32(f).astype(np.int64) * 2**32
 
     _skip_bytes(f, 4)
 
-    if not record['rectype'] in RECTYPE_DICT:
+    if record['rectype'] not in RECTYPE_DICT:
         raise Exception("Unknown RECTYPE: %i" % record['rectype'])
 
     record['rectype'] = RECTYPE_DICT[record['rectype']]
@@ -534,7 +534,7 @@ def _read_structdesc(f):
 
     else:
 
-        if not structdesc['name'] in STRUCT_DICT:
+        if structdesc['name'] not in STRUCT_DICT:
             raise Exception("PREDEF=1 but can't find definition")
 
         structdesc = STRUCT_DICT[structdesc['name']]
@@ -584,7 +584,7 @@ def _replace_heap(variable, heap):
 
         return True, variable
 
-    elif isinstance(variable, np.core.records.recarray):
+    elif isinstance(variable, np.rec.recarray):
 
         # Loop over records
         for ir, record in enumerate(variable):
@@ -596,7 +596,7 @@ def _replace_heap(variable, heap):
 
         return False, variable
 
-    elif isinstance(variable, np.core.records.record):
+    elif isinstance(variable, np.record):
 
         # Loop over values
         for iv, value in enumerate(variable):
@@ -618,7 +618,7 @@ def _replace_heap(variable, heap):
                 replace, new = _replace_heap(variable.item(iv), heap)
 
                 if replace:
-                    variable.itemset(iv, new)
+                    variable.reshape(-1)[iv] = new
 
         return False, variable
 
@@ -632,6 +632,7 @@ class AttrDict(dict):
     A case-insensitive dictionary with access via item, attribute, and call
     notations:
 
+        >>> from scipy.io._idl import AttrDict
         >>> d = AttrDict()
         >>> d['Variable'] = 123
         >>> d['Variable']
@@ -788,7 +789,7 @@ def readsav(file_name, idict=None, python_dict=False,
 
             # Read position of next record and return as int
             nextrec = _read_uint32(f)
-            nextrec += _read_uint32(f) * 2**32
+            nextrec += _read_uint32(f).astype(np.int64) * 2**32
 
             # Read the unknown 4 bytes
             unknown = f.read(4)
@@ -903,7 +904,7 @@ def readsav(file_name, idict=None, python_dict=False,
         if 'VARIABLE' in rectypes:
             print("Available variables:")
             for var in variables:
-                print(" - %s [%s]" % (var, type(variables[var])))
+                print(f" - {var} [{type(variables[var])}]")
             print("-"*50)
 
     if idict:

@@ -10,9 +10,10 @@ from scipy._lib._testutils import check_free_memory
 from scipy._lib._util import check_random_state
 
 from scipy.sparse import (csr_matrix, coo_matrix,
+                          csr_array, coo_array,
+                          sparray, spmatrix,
                           _construct as construct)
 from scipy.sparse._construct import rand as sprand
-from scipy.sparse._sputils import matrix
 
 sparse_formats = ['csr','csc','coo','bsr','dia','lil','dok']
 
@@ -146,13 +147,13 @@ class TestConstructUtils:
                                                     [0, 1, -2]]))
 
         for d, o, shape, result in cases:
-            err_msg = "%r %r %r %r" % (d, o, shape, result)
-            assert_equal(construct.diags(d, o, shape=shape).toarray(),
+            err_msg = f"{d!r} {o!r} {shape!r} {result!r}"
+            assert_equal(construct.diags(d, offsets=o, shape=shape).toarray(),
                          result, err_msg=err_msg)
 
             if shape[0] == shape[1] and hasattr(d[0], '__len__') and len(d[0]) <= max(shape):
                 # should be able to find the shape automatically
-                assert_equal(construct.diags(d, o).toarray(), result,
+                assert_equal(construct.diags(d, offsets=o).toarray(), result,
                              err_msg=err_msg)
 
     def test_diags_default(self):
@@ -178,9 +179,9 @@ class TestConstructUtils:
         cases.append(([a], 0, None))
 
         for d, o, shape in cases:
-            assert_raises(ValueError, construct.diags, d, o, shape)
+            assert_raises(ValueError, construct.diags, d, offsets=o, shape=shape)
 
-        assert_raises(TypeError, construct.diags, [[None]], [0])
+        assert_raises(TypeError, construct.diags, [[None]], offsets=[0])
 
     def test_diags_vs_diag(self):
         # Check that
@@ -199,26 +200,26 @@ class TestConstructUtils:
 
             diagonals = [np.random.rand(n - abs(q)) for q in offsets]
 
-            mat = construct.diags(diagonals, offsets)
+            mat = construct.diags(diagonals, offsets=offsets)
             dense_mat = sum([np.diag(x, j) for x, j in zip(diagonals, offsets)])
 
             assert_array_almost_equal_nulp(mat.toarray(), dense_mat)
 
             if len(offsets) == 1:
-                mat = construct.diags(diagonals[0], offsets[0])
+                mat = construct.diags(diagonals[0], offsets=offsets[0])
                 dense_mat = np.diag(diagonals[0], offsets[0])
                 assert_array_almost_equal_nulp(mat.toarray(), dense_mat)
 
     def test_diags_dtype(self):
-        x = construct.diags([2.2], [0], shape=(2, 2), dtype=int)
+        x = construct.diags([2.2], offsets=[0], shape=(2, 2), dtype=int)
         assert_equal(x.dtype, int)
         assert_equal(x.toarray(), [[2, 0], [0, 2]])
 
     def test_diags_one_diagonal(self):
         d = list(range(5))
         for k in range(-5, 6):
-            assert_equal(construct.diags(d, k).toarray(),
-                         construct.diags([d], [k]).toarray())
+            assert_equal(construct.diags(d, offsets=k).toarray(),
+                         construct.diags([d], offsets=[k]).toarray())
 
     def test_diags_empty(self):
         x = construct.diags([])
@@ -248,9 +249,29 @@ class TestConstructUtils:
         for m in [3, 5]:
             for n in [3, 5]:
                 for k in range(-5,6):
-                    assert_equal(construct.eye(m, n, k=k).toarray(), np.eye(m, n, k=k))
-                    if m == n:
-                        assert_equal(construct.eye(m, k=k).toarray(), np.eye(m, n, k=k))
+                    # scipy.sparse.eye deviates from np.eye here. np.eye will
+                    # create arrays of all 0's when the diagonal offset is
+                    # greater than the size of the array. For sparse arrays
+                    # this makes less sense, especially as it results in dia
+                    # arrays with negative diagonals. Therefore sp.sparse.eye
+                    # validates that diagonal offsets fall within the shape of
+                    # the array. See gh-18555.
+                    if (k > 0 and k > n) or (k < 0 and abs(k) > m):
+                        with pytest.raises(
+                            ValueError, match="Offset.*out of bounds"
+                        ):
+                            construct.eye(m, n, k=k)
+
+                    else:
+                        assert_equal(
+                            construct.eye(m, n, k=k).toarray(),
+                            np.eye(m, n, k=k)
+                        )
+                        if m == n:
+                            assert_equal(
+                                construct.eye(m, k=k).toarray(),
+                                np.eye(m, n, k=k)
+                            )
 
     def test_eye_one(self):
         assert_equal(construct.eye(1).toarray(), [[1]])
@@ -286,7 +307,7 @@ class TestConstructUtils:
             for b in cases:
                 expected = np.kron(a, b)
                 for fmt in sparse_formats:
-                    result = construct.kron(csr_matrix(a), csr_matrix(b), format=fmt) 
+                    result = construct.kron(csr_matrix(a), csr_matrix(b), format=fmt)
                     assert_equal(result.format, fmt)
                     assert_array_equal(result.toarray(), expected)
 
@@ -318,10 +339,10 @@ class TestConstructUtils:
                         np.kron(b, np.eye(len(a)))
                 assert_array_equal(result,expected)
 
-    def test_vstack(self):
-
-        A = coo_matrix([[1,2],[3,4]])
-        B = coo_matrix([[5,6]])
+    @pytest.mark.parametrize("coo_cls", [coo_matrix, coo_array])
+    def test_vstack(self, coo_cls):
+        A = coo_cls([[1,2],[3,4]])
+        B = coo_cls([[5,6]])
 
         expected = array([[1, 2],
                           [3, 4],
@@ -344,10 +365,18 @@ class TestConstructUtils:
         assert_equal(result.indices.dtype, np.int32)
         assert_equal(result.indptr.dtype, np.int32)
 
-    def test_hstack(self):
+    def test_vstack_matrix_or_array(self):
+        A = [[1,2],[3,4]]
+        B = [[5,6]]
+        assert isinstance(construct.vstack([coo_array(A), coo_array(B)]), sparray)
+        assert isinstance(construct.vstack([coo_array(A), coo_matrix(B)]), sparray)
+        assert isinstance(construct.vstack([coo_matrix(A), coo_array(B)]), sparray)
+        assert isinstance(construct.vstack([coo_matrix(A), coo_matrix(B)]), spmatrix)
 
-        A = coo_matrix([[1,2],[3,4]])
-        B = coo_matrix([[5],[6]])
+    @pytest.mark.parametrize("coo_cls", [coo_matrix, coo_array])
+    def test_hstack(self,coo_cls):
+        A = coo_cls([[1,2],[3,4]])
+        B = coo_cls([[5],[6]])
 
         expected = array([[1, 2, 5],
                           [3, 4, 6]])
@@ -365,84 +394,141 @@ class TestConstructUtils:
                                       dtype=np.float32).dtype,
                      np.float32)
 
-    def test_bmat(self):
+    def test_hstack_matrix_or_array(self):
+        A = [[1,2],[3,4]]
+        B = [[5],[6]]
+        assert isinstance(construct.hstack([coo_array(A), coo_array(B)]), sparray)
+        assert isinstance(construct.hstack([coo_array(A), coo_matrix(B)]), sparray)
+        assert isinstance(construct.hstack([coo_matrix(A), coo_array(B)]), sparray)
+        assert isinstance(construct.hstack([coo_matrix(A), coo_matrix(B)]), spmatrix)
 
-        A = coo_matrix([[1, 2], [3, 4]])
-        B = coo_matrix([[5],[6]])
-        C = coo_matrix([[7]])
-        D = coo_matrix((0, 0))
+    @pytest.mark.parametrize("block", (construct.bmat, construct.block))
+    def test_block_creation(self, block):
+
+        A = coo_array([[1, 2], [3, 4]])
+        B = coo_array([[5],[6]])
+        C = coo_array([[7]])
+        D = coo_array((0, 0))
 
         expected = array([[1, 2, 5],
                           [3, 4, 6],
                           [0, 0, 7]])
-        assert_equal(construct.bmat([[A, B], [None, C]]).toarray(), expected)
-        E = csr_matrix((1, 2), dtype=np.int32)
-        assert_equal(construct.bmat([[A.tocsr(), B.tocsr()],
+        assert_equal(block([[A, B], [None, C]]).toarray(), expected)
+        E = csr_array((1, 2), dtype=np.int32)
+        assert_equal(block([[A.tocsr(), B.tocsr()],
                                      [E, C.tocsr()]]).toarray(),
                      expected)
-        assert_equal(construct.bmat([[A.tocsc(), B.tocsc()],
+        assert_equal(block([[A.tocsc(), B.tocsc()],
                                      [E.tocsc(), C.tocsc()]]).toarray(),
                      expected)
 
         expected = array([[1, 2, 0],
                           [3, 4, 0],
                           [0, 0, 7]])
-        assert_equal(construct.bmat([[A, None], [None, C]]).toarray(),
+        assert_equal(block([[A, None], [None, C]]).toarray(),
                      expected)
-        assert_equal(construct.bmat([[A.tocsr(), E.T.tocsr()],
+        assert_equal(block([[A.tocsr(), E.T.tocsr()],
                                      [E, C.tocsr()]]).toarray(),
                      expected)
-        assert_equal(construct.bmat([[A.tocsc(), E.T.tocsc()],
+        assert_equal(block([[A.tocsc(), E.T.tocsc()],
                                      [E.tocsc(), C.tocsc()]]).toarray(),
                      expected)
 
-        Z = csr_matrix((1, 1), dtype=np.int32)
+        Z = csr_array((1, 1), dtype=np.int32)
         expected = array([[0, 5],
                           [0, 6],
                           [7, 0]])
-        assert_equal(construct.bmat([[None, B], [C, None]]).toarray(),
+        assert_equal(block([[None, B], [C, None]]).toarray(),
                      expected)
-        assert_equal(construct.bmat([[E.T.tocsr(), B.tocsr()],
+        assert_equal(block([[E.T.tocsr(), B.tocsr()],
                                      [C.tocsr(), Z]]).toarray(),
                      expected)
-        assert_equal(construct.bmat([[E.T.tocsc(), B.tocsc()],
+        assert_equal(block([[E.T.tocsc(), B.tocsc()],
                                      [C.tocsc(), Z.tocsc()]]).toarray(),
                      expected)
 
-        expected = matrix(np.empty((0, 0)))
-        assert_equal(construct.bmat([[None, None]]).toarray(), expected)
-        assert_equal(construct.bmat([[None, D], [D, None]]).toarray(),
+        expected = np.empty((0, 0))
+        assert_equal(block([[None, None]]).toarray(), expected)
+        assert_equal(block([[None, D], [D, None]]).toarray(),
                      expected)
 
         # test bug reported in gh-5976
         expected = array([[7]])
-        assert_equal(construct.bmat([[None, D], [C, None]]).toarray(),
+        assert_equal(block([[None, D], [C, None]]).toarray(),
                      expected)
 
         # test failure cases
         with assert_raises(ValueError) as excinfo:
-            construct.bmat([[A], [B]])
+            block([[A], [B]])
         excinfo.match(r'Got blocks\[1,0\]\.shape\[1\] == 1, expected 2')
 
         with assert_raises(ValueError) as excinfo:
-            construct.bmat([[A.tocsr()], [B.tocsr()]])
+            block([[A.tocsr()], [B.tocsr()]])
         excinfo.match(r'incompatible dimensions for axis 1')
 
         with assert_raises(ValueError) as excinfo:
-            construct.bmat([[A.tocsc()], [B.tocsc()]])
+            block([[A.tocsc()], [B.tocsc()]])
         excinfo.match(r'Mismatching dimensions along axis 1: ({1, 2}|{2, 1})')
 
         with assert_raises(ValueError) as excinfo:
-            construct.bmat([[A, C]])
+            block([[A, C]])
         excinfo.match(r'Got blocks\[0,1\]\.shape\[0\] == 1, expected 2')
 
         with assert_raises(ValueError) as excinfo:
-            construct.bmat([[A.tocsr(), C.tocsr()]])
+            block([[A.tocsr(), C.tocsr()]])
         excinfo.match(r'Mismatching dimensions along axis 0: ({1, 2}|{2, 1})')
 
         with assert_raises(ValueError) as excinfo:
-            construct.bmat([[A.tocsc(), C.tocsc()]])
+            block([[A.tocsc(), C.tocsc()]])
         excinfo.match(r'incompatible dimensions for axis 0')
+
+    def test_block_return_type(self):
+        block = construct.block
+
+        # csr format ensures we hit _compressed_sparse_stack
+        # shape of F,G ensure we hit _stack_along_minor_axis
+        # list version ensure we hit the path with neither helper function
+        Fl, Gl = [[1, 2],[3, 4]], [[7], [5]]
+        Fm, Gm = csr_matrix(Fl), csr_matrix(Gl)
+        assert isinstance(block([[None, Fl], [Gl, None]], format="csr"), sparray)
+        assert isinstance(block([[None, Fm], [Gm, None]], format="csr"), sparray)
+        assert isinstance(block([[Fm, Gm]], format="csr"), sparray)
+
+    def test_bmat_return_type(self):
+        """This can be removed after sparse matrix is removed"""
+        bmat = construct.bmat
+        # check return type. if any input _is_array output array, else matrix
+        Fl, Gl = [[1, 2],[3, 4]], [[7], [5]]
+        Fm, Gm = csr_matrix(Fl), csr_matrix(Gl)
+        Fa, Ga = csr_array(Fl), csr_array(Gl)
+        assert isinstance(bmat([[Fa, Ga]], format="csr"), sparray)
+        assert isinstance(bmat([[Fm, Gm]], format="csr"), spmatrix)
+        assert isinstance(bmat([[None, Fa], [Ga, None]], format="csr"), sparray)
+        assert isinstance(bmat([[None, Fm], [Ga, None]], format="csr"), sparray)
+        assert isinstance(bmat([[None, Fm], [Gm, None]], format="csr"), spmatrix)
+        assert isinstance(bmat([[None, Fl], [Gl, None]], format="csr"), spmatrix)
+
+        # type returned by _compressed_sparse_stack (all csr)
+        assert isinstance(bmat([[Ga, Ga]], format="csr"), sparray)
+        assert isinstance(bmat([[Gm, Ga]], format="csr"), sparray)
+        assert isinstance(bmat([[Ga, Gm]], format="csr"), sparray)
+        assert isinstance(bmat([[Gm, Gm]], format="csr"), spmatrix)
+        # shape is 2x2 so no _stack_along_minor_axis
+        assert isinstance(bmat([[Fa, Fm]], format="csr"), sparray)
+        assert isinstance(bmat([[Fm, Fm]], format="csr"), spmatrix)
+
+        # type returned by _compressed_sparse_stack (all csc)
+        assert isinstance(bmat([[Gm.tocsc(), Ga.tocsc()]], format="csc"), sparray)
+        assert isinstance(bmat([[Gm.tocsc(), Gm.tocsc()]], format="csc"), spmatrix)
+        # shape is 2x2 so no _stack_along_minor_axis
+        assert isinstance(bmat([[Fa.tocsc(), Fm.tocsc()]], format="csr"), sparray)
+        assert isinstance(bmat([[Fm.tocsc(), Fm.tocsc()]], format="csr"), spmatrix)
+
+        # type returned when mixed input
+        assert isinstance(bmat([[Gl, Ga]], format="csr"), sparray)
+        assert isinstance(bmat([[Gm.tocsc(), Ga]], format="csr"), sparray)
+        assert isinstance(bmat([[Gm.tocsc(), Gm]], format="csr"), spmatrix)
+        assert isinstance(bmat([[Gm, Gm]], format="csc"), spmatrix)
 
     @pytest.mark.slow
     @pytest.mark.xfail_on_32bit("Can't create large array for test")
@@ -451,9 +537,10 @@ class TestConstructUtils:
         check_free_memory(30000)
 
         n = 33000
-        A = csr_matrix(np.ones((n, n), dtype=bool))
+        A = csr_array(np.ones((n, n), dtype=bool))
         B = A.copy()
-        C = construct._compressed_sparse_stack((A,B), 0)
+        C = construct._compressed_sparse_stack((A, B), axis=0,
+                                               return_spmatrix=False)
 
         assert_(np.all(np.equal(np.diff(C.indptr), n)))
         assert_equal(C.indices.dtype, np.int64)
@@ -461,9 +548,9 @@ class TestConstructUtils:
 
     def test_block_diag_basic(self):
         """ basic test for block_diag """
-        A = coo_matrix([[1,2],[3,4]])
-        B = coo_matrix([[5],[6]])
-        C = coo_matrix([[7]])
+        A = coo_array([[1,2],[3,4]])
+        B = coo_array([[5],[6]])
+        C = coo_array([[7]])
 
         expected = array([[1, 2, 0, 0],
                           [3, 4, 0, 0],
@@ -491,20 +578,25 @@ class TestConstructUtils:
         assert_equal(construct.block_diag([1]).toarray(),
                      array([[1]]))
 
-    def test_block_diag_sparse_matrices(self):
-        """ block_diag with sparse matrices """
+    def test_block_diag_sparse_arrays(self):
+        """ block_diag with sparse arrays """
 
-        sparse_col_matrices = [coo_matrix(([[1, 2, 3]]), shape=(1, 3)),
-                               coo_matrix(([[4, 5]]), shape=(1, 2))]
-        block_sparse_cols_matrices = construct.block_diag(sparse_col_matrices)
-        assert_equal(block_sparse_cols_matrices.toarray(),
+        A = coo_array([[1, 2, 3]], shape=(1, 3))
+        B = coo_array([[4, 5]], shape=(1, 2))
+        assert_equal(construct.block_diag([A, B]).toarray(),
                      array([[1, 2, 3, 0, 0], [0, 0, 0, 4, 5]]))
 
-        sparse_row_matrices = [coo_matrix(([[1], [2], [3]]), shape=(3, 1)),
-                               coo_matrix(([[4], [5]]), shape=(2, 1))]
-        block_sparse_row_matrices = construct.block_diag(sparse_row_matrices)
-        assert_equal(block_sparse_row_matrices.toarray(),
+        A = coo_array([[1], [2], [3]], shape=(3, 1))
+        B = coo_array([[4], [5]], shape=(2, 1))
+        assert_equal(construct.block_diag([A, B]).toarray(),
                      array([[1, 0], [2, 0], [3, 0], [0, 4], [0, 5]]))
+
+    def test_block_diag_return_type(self):
+        A, B = coo_array([[1, 2, 3]]), coo_matrix([[2, 3, 4]])
+        assert isinstance(construct.block_diag([A, A]), sparray)
+        assert isinstance(construct.block_diag([A, B]), sparray)
+        assert isinstance(construct.block_diag([B, A]), sparray)
+        assert isinstance(construct.block_diag([B, B]), spmatrix)
 
     def test_random_sampling(self):
         # Simple sanity checks for sparse random sampling.
@@ -517,7 +609,7 @@ class TestConstructUtils:
                 assert_equal(x.nnz, 5)
 
             x1 = f(5, 10, density=0.1, random_state=4321)
-            assert_equal(x1.dtype, np.double)
+            assert_equal(x1.dtype, np.float64)
 
             x2 = f(5, 10, density=0.1,
                    random_state=np.random.RandomState(4321))
@@ -580,3 +672,22 @@ class TestConstructUtils:
         sparse_matrix = construct.random(10, 10, density=0.1265)
         assert_equal(sparse_matrix.count_nonzero(),13)
 
+
+def test_diags_array():
+    """Tests of diags_array that do not rely on diags wrapper."""
+    diag = np.arange(1, 5)
+
+    assert_array_equal(construct.diags_array(diag).toarray(), np.diag(diag))
+
+    assert_array_equal(
+        construct.diags_array(diag, offsets=2).toarray(), np.diag(diag, k=2)
+    )
+
+    assert_array_equal(
+        construct.diags_array(diag, offsets=2, shape=(4, 4)).toarray(),
+        np.diag(diag, k=2)[:4, :4]
+    )
+
+    # Offset outside bounds when shape specified
+    with pytest.raises(ValueError, match=".*out of bounds"):
+        construct.diags(np.arange(1, 5), 5, shape=(4, 4))

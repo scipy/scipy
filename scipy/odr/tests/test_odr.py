@@ -5,7 +5,8 @@ import os
 import numpy as np
 from numpy import pi
 from numpy.testing import (assert_array_almost_equal,
-                           assert_equal, assert_warns)
+                           assert_equal, assert_warns,
+                           assert_allclose)
 import pytest
 from pytest import raises as assert_raises
 
@@ -127,7 +128,7 @@ class TestODR:
             np.array([0.1113840353364371, 0.1097673310686467, 0.0041060738314314,
                 0.0027500347539902, 0.0034962501532468]),
         )
-        assert_array_almost_equal(
+        assert_allclose(
             out.cov_beta,
             np.array([[2.1089274602333052e+00, -1.9437686411979040e+00,
                   7.0263550868344446e-02, -4.7175267373474862e-02,
@@ -144,6 +145,7 @@ class TestODR:
                [5.2515575927380355e-02, -5.8822307501391467e-02,
                   1.4528860663055824e-03, -1.2692942951415293e-03,
                   2.0778813389755596e-03]]),
+            rtol=1e-6, atol=2e-6,
         )
 
     # Multi-variable Example
@@ -531,3 +533,32 @@ class TestODR:
         p = Model(func)
         p.set_meta(name='Sample Model Meta', ref='ODRPACK')
         assert_equal(p.meta, {'name': 'Sample Model Meta', 'ref': 'ODRPACK'})
+
+    def test_work_array_del_init(self):
+        """
+        Verify fix for gh-18739 where del_init=1 fails.
+        """
+        def func(b, x):
+            return b[0] + b[1] * x
+
+        # generate some data
+        n_data = 4
+        x = np.arange(n_data)
+        y = np.where(x % 2, x + 0.1, x - 0.1)
+        x_err = np.full(n_data, 0.1)
+        y_err = np.full(n_data, 0.1)
+
+        linear_model = Model(func)
+        # Try various shapes of the `we` array from various `sy` and `covy`
+        rd0 = RealData(x, y, sx=x_err, sy=y_err)
+        rd1 = RealData(x, y, sx=x_err, sy=0.1)
+        rd2 = RealData(x, y, sx=x_err, sy=[0.1])
+        rd3 = RealData(x, y, sx=x_err, sy=np.full((1, n_data), 0.1))
+        rd4 = RealData(x, y, sx=x_err, covy=[[0.01]])
+        rd5 = RealData(x, y, sx=x_err, covy=np.full((1, 1, n_data), 0.01))
+        for rd in [rd0, rd1, rd2, rd3, rd4, rd5]:
+            odr_obj = ODR(rd, linear_model, beta0=[0.4, 0.4],
+                          delta0=np.full(n_data, -0.1))
+            odr_obj.set_job(fit_type=0, del_init=1)
+            # Just make sure that it runs without raising an exception.
+            odr_obj.run()

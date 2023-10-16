@@ -340,7 +340,7 @@ def _inverse_squaring_helper(T0, theta):
     as lines 4--35 in algorithm (3.1) of [1]_, and
     as lines 3--34 in algorithm (4.1) of [2]_.
     The instances of 'goto line 38' in algorithm (3.1) of [1]_
-    probably mean 'goto line 36' and have been intepreted accordingly.
+    probably mean 'goto line 36' and have been interpreted accordingly.
 
     References
     ----------
@@ -461,7 +461,7 @@ def _fractional_power_pade_constant(i, t):
         j = (i - 1) // 2
         return (-j - t) / (2 * (2*j + 1))
     else:
-        raise Exception('unnexpected value of i, i = {}'.format(i))
+        raise Exception(f'unnexpected value of i, i = {i}')
 
 
 def _fractional_power_pade(R, t, m):

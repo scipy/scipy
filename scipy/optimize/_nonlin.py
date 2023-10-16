@@ -35,7 +35,7 @@ def _as_inexact(x):
     """Return `x` as an array, of either floats or complex floats"""
     x = asarray(x)
     if not np.issubdtype(x.dtype, np.inexact):
-        return asarray(x, dtype=np.float_)
+        return asarray(x, dtype=np.float64)
     return x
 
 
@@ -164,7 +164,8 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
                                      iter=iter, norm=tol_norm)
 
     x0 = _as_inexact(x0)
-    func = lambda z: _as_inexact(F(_array_like(z, x0))).flatten()
+    def func(z):
+        return _as_inexact(F(_array_like(z, x0))).flatten()
     x = x0.flatten()
 
     dx = np.full_like(x, np.inf)
@@ -324,7 +325,7 @@ class TerminationCondition:
                  iter=None, norm=maxnorm):
 
         if f_tol is None:
-            f_tol = np.finfo(np.float_).eps ** (1./3)
+            f_tol = np.finfo(np.float64).eps ** (1./3)
         if f_rtol is None:
             f_rtol = np.inf
         if x_tol is None:
@@ -476,16 +477,16 @@ def asjacobian(J):
 
         return Jacobian(matvec=lambda v: dot(J, v),
                         rmatvec=lambda v: dot(J.conj().T, v),
-                        solve=lambda v: solve(J, v),
-                        rsolve=lambda v: solve(J.conj().T, v),
+                        solve=lambda v, tol=0: solve(J, v),
+                        rsolve=lambda v, tol=0: solve(J.conj().T, v),
                         dtype=J.dtype, shape=J.shape)
-    elif scipy.sparse.isspmatrix(J):
+    elif scipy.sparse.issparse(J):
         if J.shape[0] != J.shape[1]:
             raise ValueError('matrix must be square')
-        return Jacobian(matvec=lambda v: J*v,
-                        rmatvec=lambda v: J.conj().T * v,
-                        solve=lambda v: spsolve(J, v),
-                        rsolve=lambda v: spsolve(J.conj().T, v),
+        return Jacobian(matvec=lambda v: J @ v,
+                        rmatvec=lambda v: J.conj().T @ v,
+                        solve=lambda v, tol=0: spsolve(J, v),
+                        rsolve=lambda v, tol=0: spsolve(J.conj().T, v),
                         dtype=J.dtype, shape=J.shape)
     elif hasattr(J, 'shape') and hasattr(J, 'dtype') and hasattr(J, 'solve'):
         return Jacobian(matvec=getattr(J, 'matvec'),
@@ -506,7 +507,7 @@ def asjacobian(J):
                 m = J(self.x)
                 if isinstance(m, np.ndarray):
                     return solve(m, v)
-                elif scipy.sparse.isspmatrix(m):
+                elif scipy.sparse.issparse(m):
                     return spsolve(m, v)
                 else:
                     raise ValueError("Unknown matrix type")
@@ -515,8 +516,8 @@ def asjacobian(J):
                 m = J(self.x)
                 if isinstance(m, np.ndarray):
                     return dot(m, v)
-                elif scipy.sparse.isspmatrix(m):
-                    return m*v
+                elif scipy.sparse.issparse(m):
+                    return m @ v
                 else:
                     raise ValueError("Unknown matrix type")
 
@@ -524,7 +525,7 @@ def asjacobian(J):
                 m = J(self.x)
                 if isinstance(m, np.ndarray):
                     return solve(m.conj().T, v)
-                elif scipy.sparse.isspmatrix(m):
+                elif scipy.sparse.issparse(m):
                     return spsolve(m.conj().T, v)
                 else:
                     raise ValueError("Unknown matrix type")
@@ -533,8 +534,8 @@ def asjacobian(J):
                 m = J(self.x)
                 if isinstance(m, np.ndarray):
                     return dot(m.conj().T, v)
-                elif scipy.sparse.isspmatrix(m):
-                    return m.conj().T * v
+                elif scipy.sparse.issparse(m):
+                    return m.conj().T @ v
                 else:
                     raise ValueError("Unknown matrix type")
         return Jac()
@@ -1525,10 +1526,10 @@ def _nonlin_wrapper(name, jac):
     signature = _getfullargspec(jac.__init__)
     args, varargs, varkw, defaults, kwonlyargs, kwdefaults, _ = signature
     kwargs = list(zip(args[-len(defaults):], defaults))
-    kw_str = ", ".join(["%s=%r" % (k, v) for k, v in kwargs])
+    kw_str = ", ".join([f"{k}={v!r}" for k, v in kwargs])
     if kw_str:
         kw_str = ", " + kw_str
-    kwkw_str = ", ".join(["%s=%s" % (k, k) for k, v in kwargs])
+    kwkw_str = ", ".join([f"{k}={k}" for k, v in kwargs])
     if kwkw_str:
         kwkw_str = kwkw_str + ", "
     if kwonlyargs:

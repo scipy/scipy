@@ -53,7 +53,8 @@ def orthogonal_procrustes(A, B, check_finite=True):
     References
     ----------
     .. [1] Peter H. Schonemann, "A generalized solution of the orthogonal
-           Procrustes problem", Psychometrica -- Vol. 31, No. 1, March, 1996.
+           Procrustes problem", Psychometrica -- Vol. 31, No. 1, March, 1966.
+           :doi:`10.1007/BF02289451`
 
     Examples
     --------
@@ -81,7 +82,7 @@ def orthogonal_procrustes(A, B, check_finite=True):
     if A.ndim != 2:
         raise ValueError('expected ndim to be 2, but observed %s' % A.ndim)
     if A.shape != B.shape:
-        raise ValueError('the shapes of A and B differ (%s vs %s)' % (
+        raise ValueError('the shapes of A and B differ ({} vs {})'.format(
             A.shape, B.shape))
     # Be clever with transposes, with the intention to save memory.
     u, w, vt = svd(B.T.dot(A).T)

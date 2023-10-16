@@ -1,11 +1,13 @@
 import numpy as np
 
+
 #pythran export _Aij(float[:,:], int, int)
 #pythran export _Aij(int[:,:], int, int)
 def _Aij(A, i, j):
     """Sum of upper-left and lower right blocks of contingency table."""
     # See `somersd` References [2] bottom of page 309
     return A[:i, :j].sum() + A[i+1:, j+1:].sum()
+
 
 #pythran export _Dij(float[:,:], int, int)
 #pythran export _Dij(int[:,:], int, int)
@@ -119,7 +121,7 @@ def _compute_outer_prob_inside_method(m, n, g, h):
     # binomial coefficients, hence grow quickly.
     # Scaling after each column is computed avoids dividing by a
     # large binomial coefficient at the end, but is not sufficient to avoid
-    # the large dyanamic range which appears during the calculation.
+    # the large dynamic range which appears during the calculation.
     # Instead we rescale based on the magnitude of the right most term in
     # the column and keep track of an exponent separately and apply
     # it at the end of the calculation.  Similarly when multiplying by

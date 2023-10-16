@@ -22,7 +22,7 @@ def strip_blank_lines(l):  # noqa
     return l
 
 
-class Reader(object):
+class Reader:
     """A line-based string reader.
 
     """
@@ -102,7 +102,7 @@ class ParseError(Exception):
     def __str__(self):
         message = self.args[0]
         if hasattr(self, 'docstring'):
-            message = "%s in %r" % (message, self.docstring)
+            message = f"{message} in {self.docstring!r}"
         return message
 
 
@@ -329,7 +329,7 @@ class NumpyDocString(Mapping):
 
     def _parse_index(self, section, content):
         """
-        .. index: default
+        .. index:: default
            :refguide: something, else, and more
 
         """
@@ -373,7 +373,7 @@ class NumpyDocString(Mapping):
         self._parse_summary()
 
         sections = list(self._read_sections())
-        section_names = set([section for section, content in sections])
+        section_names = {section for section, content in sections}
 
         has_returns = 'Returns' in section_names
         has_yields = 'Yields' in section_names
@@ -486,9 +486,9 @@ class NumpyDocString(Mapping):
             links = []
             for func, role in funcs:
                 if role:
-                    link = ':%s:`%s`' % (role, func)
+                    link = f':{role}:`{func}`'
                 elif func_role:
-                    link = ':%s:`%s`' % (func_role, func)
+                    link = f':{func_role}:`{func}`'
                 else:
                     link = "`%s`_" % func
                 links.append(link)
@@ -518,7 +518,7 @@ class NumpyDocString(Mapping):
             if section == 'default':
                 continue
             output_index = True
-            out += ['   :%s: %s' % (section, ', '.join(references))]
+            out += ['   :{}: {}'.format(section, ', '.join(references))]
         if output_index:
             return out
         else:
@@ -589,10 +589,10 @@ class FunctionDoc(NumpyDocString):
         if self._role:
             if self._role not in roles:
                 print("Warning: invalid role %s" % self._role)
-            out += '.. %s:: %s\n    \n\n' % (roles.get(self._role, ''),
+            out += '.. {}:: {}\n    \n\n'.format(roles.get(self._role, ''),
                                              func_name)
 
-        out += super(FunctionDoc, self).__str__(func_role=self._role)
+        out += super().__str__(func_role=self._role)
         return out
 
 

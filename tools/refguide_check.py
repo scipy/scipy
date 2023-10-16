@@ -52,7 +52,6 @@ from sphinx.directives.other import SeeAlso, Only
 directives.register_directive('seealso', SeeAlso)
 directives.register_directive('only', Only)
 
-
 BASE_MODULE = "scipy"
 
 PUBLIC_SUBMODULES = [
@@ -118,6 +117,9 @@ DOCTEST_SKIPLIST = set([
     'scipy.linalg.LinAlgError',
     'scipy.optimize.show_options',
     'io.rst',   # XXX: need to figure out how to deal w/ mat files
+    'scipy.signal.bspline',
+    'scipy.signal.cubic',
+    'scipy.signal.quadratic',
 ])
 
 # these names are not required to be present in ALL despite being in
@@ -144,11 +146,6 @@ REFGUIDE_AUTOSUMMARY_SKIPLIST = [
     r'scipy\.stats\.contingency\.margins',
     r'scipy\.stats\.reciprocal',  # alias for lognormal
     r'scipy\.stats\.trapz',   # alias for trapezoid
-    r'scipy\.stats\.F_onewayBadInputSizesWarning',  # shouldn't
-    r'scipy\.stats\.F_onewayConstantInputWarning',  # have
-    r'scipy\.stats\.PearsonRConstantInputWarning',  # been
-    r'scipy\.stats\.PearsonRNearConstantInputWarning',  # in
-    r'scipy\.stats\.SpearmanRConstantInputWarning',  # __all__
 ]
 # deprecated windows in scipy.signal namespace
 for name in ('barthann', 'bartlett', 'blackmanharris', 'blackman', 'bohman',
@@ -208,7 +205,6 @@ def find_names(module, names_dict):
             res = re.match(pattern, line)
             if res is not None:
                 name = res.group(1)
-                entry = '.'.join([module_name, name])
                 names_dict.setdefault(module_name, set()).add(name)
                 break
 
@@ -273,7 +269,7 @@ def compare(all_dict, others, names, module_name):
 
 
 def is_deprecated(f):
-    with warnings.catch_warnings(record=True) as w:
+    with warnings.catch_warnings(record=True):
         warnings.simplefilter("error")
         try:
             f(**{"not a kwarg":None})
@@ -341,7 +337,7 @@ def validate_rst_syntax(text, name, dots=True):
         return False, "ERROR: %s: no documentation" % (name,)
 
     ok_unknown_items = set([
-        'mod', 'currentmodule', 'autosummary', 'data',
+        'mod', 'currentmodule', 'autosummary', 'data', 'legacy',
         'obj', 'versionadded', 'versionchanged', 'module', 'class', 'meth',
         'ref', 'func', 'toctree', 'moduleauthor', 'deprecated',
         'sectionauthor', 'codeauthor', 'eq', 'doi', 'DOI', 'arXiv', 'arxiv'
@@ -605,7 +601,7 @@ class Checker(doctest.OutputChecker):
             # Maybe we're printing a numpy array? This produces invalid python
             # code: `print(np.arange(3))` produces "[0 1 2]" w/o commas between
             # values. So, reinsert commas and retry.
-            # TODO: handle (1) abberivation (`print(np.arange(10000))`), and
+            # TODO: handle (1) abbreviation (`print(np.arange(10000))`), and
             #              (2) n-dim arrays with n > 1
             s_want = want.strip()
             s_got = got.strip()

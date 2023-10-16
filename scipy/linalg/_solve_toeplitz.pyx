@@ -36,7 +36,7 @@ def levinson(dz[::1] a, dz[::1] b):
 
     Returns
     -------
-    x : arrray, shape=(n,)
+    x : array, shape=(n,)
         The solution vector
     reflection_coeff : array, shape=(n+1,)
         Toeplitz reflection coefficients. When a is symmetric Toeplitz and

@@ -19,6 +19,8 @@ and Tukey [CT65]_. Press et al. [NR07]_ provide an accessible introduction to
 Fourier analysis and its applications.
 
 
+.. _tutorial_FFT:
+
 Fast Fourier transforms
 -----------------------
 
@@ -121,7 +123,7 @@ truncated for illustrative purposes).
     >>> x = np.linspace(0.0, N*T, N, endpoint=False)
     >>> y = np.sin(50.0 * 2.0*np.pi*x) + 0.5*np.sin(80.0 * 2.0*np.pi*x)
     >>> yf = fft(y)
-    >>> from scipy.signal import blackman
+    >>> from scipy.signal.windows import blackman
     >>> w = blackman(N)
     >>> ywf = fft(y*w)
     >>> xf = fftfreq(N, T)[:N//2]

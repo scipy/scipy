@@ -16,7 +16,7 @@ __all__ = ['expm_multiply']
 
 def _exact_inf_norm(A):
     # A compatibility function which should eventually disappear.
-    if scipy.sparse.isspmatrix(A):
+    if scipy.sparse.issparse(A):
         return max(abs(A).sum(axis=1).flat)
     elif is_pydata_spmatrix(A):
         return max(abs(A).sum(axis=1))
@@ -26,7 +26,7 @@ def _exact_inf_norm(A):
 
 def _exact_1_norm(A):
     # A compatibility function which should eventually disappear.
-    if scipy.sparse.isspmatrix(A):
+    if scipy.sparse.issparse(A):
         return max(abs(A).sum(axis=0).flat)
     elif is_pydata_spmatrix(A):
         return max(abs(A).sum(axis=0))
@@ -91,9 +91,12 @@ def traceest(A, m3, seed=None):
 
 def _ident_like(A):
     # A compatibility function which should eventually disappear.
-    if scipy.sparse.isspmatrix(A):
-        return scipy.sparse._construct.eye(A.shape[0], A.shape[1],
-                dtype=A.dtype, format=A.format)
+    if scipy.sparse.issparse(A):
+        # Creates a sparse matrix in dia format
+        out = scipy.sparse.eye(A.shape[0], A.shape[1], dtype=A.dtype)
+        if isinstance(A, scipy.sparse.spmatrix):
+            return out.asformat(A.format)
+        return scipy.sparse.dia_array(out).asformat(A.format)
     elif is_pydata_spmatrix(A):
         import sparse
         return sparse.eye(A.shape[0], A.shape[1], dtype=A.dtype)
@@ -132,7 +135,7 @@ def expm_multiply(A, B, start=None, stop=None, num=None,
         For linear operators, `traceA` should be provided to ensure performance
         as the estimation is not guaranteed to be reliable for all cases.
 
-        .. versionadded: 1.9.0
+        .. versionadded:: 1.9.0
 
     Returns
     -------

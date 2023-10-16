@@ -9,9 +9,14 @@ import pytest
 
 from .test_linprog import magic_square
 from scipy.optimize import milp, Bounds, LinearConstraint
+from scipy import sparse
 
 
 def test_milp_iv():
+
+    message = "`c` must be a dense array"
+    with pytest.raises(ValueError, match=message):
+        milp(sparse.coo_array([0, 0]))
 
     message = "`c` must be a one-dimensional array of finite numbers with"
     with pytest.raises(ValueError, match=message):
@@ -30,10 +35,16 @@ def test_milp_iv():
         milp(1, constraints=10)
     with pytest.raises(ValueError, match=re.escape(message)):
         milp(np.zeros(3), constraints=([[1, 2, 3]], [2, 3], [2, 3]))
+    with pytest.raises(ValueError, match=re.escape(message)):
+        milp(np.zeros(2), constraints=([[1, 2]], [2], sparse.coo_array([2])))
 
     message = "The shape of `A` must be (len(b_l), len(c))."
     with pytest.raises(ValueError, match=re.escape(message)):
         milp(np.zeros(3), constraints=([[1, 2]], [2], [2]))
+
+    message = "`integrality` must be a dense array"
+    with pytest.raises(ValueError, match=message):
+        milp([1, 2], integrality=sparse.coo_array([1, 2]))
 
     message = ("`integrality` must contain integers 0-3 and be broadcastable "
                "to `c.shape`.")
@@ -41,6 +52,10 @@ def test_milp_iv():
         milp([1, 2, 3], integrality=[1, 2])
     with pytest.raises(ValueError, match=message):
         milp([1, 2, 3], integrality=[1, 5, 3])
+
+    message = "Lower and upper bounds must be dense arrays."
+    with pytest.raises(ValueError, match=message):
+        milp([1, 2, 3], bounds=([1, 2], sparse.coo_array([3, 4])))
 
     message = "`lb`, `ub`, and `keep_feasible` must be broadcastable."
     with pytest.raises(ValueError, match=message):
@@ -128,6 +143,7 @@ def test_milp_1():
     # solve magic square problem
     n = 3
     A, b, c, numbers, M = magic_square(n)
+    A = sparse.csc_array(A)  # confirm that sparse arrays are accepted
     res = milp(c=c*0, constraints=(A, b, b), bounds=(0, 1), integrality=1)
 
     # check that solution is a magic square
@@ -280,8 +296,7 @@ _msg_iter = "Iteration limit reached. (HiGHS Status 14:"
 @pytest.mark.skipif(np.intp(0).itemsize < 8,
                     reason="Unhandled 32-bit GCC FP bug")
 @pytest.mark.slow
-@pytest.mark.timeout(360)
-@pytest.mark.parametrize(["options", "msg"], [({"time_limit": 10}, _msg_time),
+@pytest.mark.parametrize(["options", "msg"], [({"time_limit": 0.1}, _msg_time),
                                               ({"node_limit": 1}, _msg_iter)])
 def test_milp_timeout_16545(options, msg):
     # Ensure solution is not thrown away if MILP solver times out

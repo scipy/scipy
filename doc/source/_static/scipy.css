@@ -79,10 +79,10 @@ Nat Methods 8, 441 (2011). https://doi.org/10.1038/nmeth.1618
   margin-right: auto;
 }
 
-  .sd-card .sd-card-header {
+.sd-card .sd-card-header {
   border: none;
   background-color:white;
-  color: #150458 !important;
+  color: #150458;
   font-size: var(--pst-font-size-h5);
   font-weight: bold;
   padding: 2.5rem 0rem 0.5rem 0rem;
@@ -149,9 +149,39 @@ html[data-theme=dark] .sd-shadow-sm {
 
 html[data-theme=dark] .sd-card .sd-card-header {
   background-color:var(--pst-color-background);
-  color: #150458 !important;
+  color: var(--sd-color-card-text);
 }
 
 html[data-theme=dark] .sd-card .sd-card-footer {
   background-color:var(--pst-color-background);
+}
+
+/* Dropdowns from sphinx-design */
+
+.sd-dropdown.sd-card {
+  padding: 15px 10px 10px 10px;
+  background-color: var(--sd-color-card-background);
+  border: 1px solid var(--sd-color-card-border);
+  border-radius: 0.25rem;
+  color: var(--sd-color-card-text);
+}
+
+.sd-dropdown .sd-card-header {
+  padding: 0px 0px 0px 0px;
+  text-align: left;
+}
+
+/* Legacy admonition */
+
+div.admonition-legacy {
+  border-color: var(--pst-color-warning);
+}
+
+.admonition-legacy.admonition > .admonition-title:before {
+  color: var(--pst-color-warning);
+  content: var(--pst-icon-admonition-attention);
+}
+
+.admonition-legacy.admonition > .admonition-title:after {
+  background-color: var(--pst-color-warning);
 }

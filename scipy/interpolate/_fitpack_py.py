@@ -5,7 +5,7 @@ __all__ = ['splrep', 'splprep', 'splev', 'splint', 'sproot', 'spalde',
 import numpy as np
 
 # These are in the API for fitpack even if not used in fitpack.py itself.
-from ._fitpack_impl import bisplrep, bisplev, dblint
+from ._fitpack_impl import bisplrep, bisplev, dblint  # noqa: F401
 from . import _fitpack_impl as _impl
 from ._bsplines import BSpline
 
@@ -16,7 +16,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     Find the B-spline representation of an N-D curve.
 
     Given a list of N rank-1 arrays, `x`, which represent a curve in
-    N-D space parametrized by `u`, find a smooth approximating
+    N-dimensional space parametrized by `u`, find a smooth approximating
     spline curve g(`u`). Uses the FORTRAN routine parcur from FITPACK.
 
     Parameters
@@ -63,8 +63,9 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
         standard-deviation of y, then a good `s` value should be found in
         the range ``(m-sqrt(2*m),m+sqrt(2*m))``, where m is the number of
         data points in x, y, and w.
-    t : int, optional
-        The knots needed for task=-1.
+    t : array, optional
+        The knots needed for ``task=-1``.
+        There must be at least ``2*k+2`` knots.
     full_output : int, optional
         If non-zero, then return optional outputs.
     nest : int, optional
@@ -81,7 +82,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     Returns
     -------
     tck : tuple
-        (t,c,k) a tuple containing the vector of knots, the B-spline
+        A tuple, ``(t,c,k)`` containing the vector of knots, the B-spline
         coefficients, and the degree of the spline.
     u : array
         An array of the values of the parameter.
@@ -150,6 +151,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     >>> plt.show()
 
     """
+
     res = _impl.splprep(x, w, u, ub, ue, k, task, s, t, full_output, nest, per,
                         quiet)
     return res
@@ -191,7 +193,7 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
         added automatically.
     s : float, optional
         A smoothing condition. The amount of smoothness is determined by
-        satisfying the conditions: sum((w * (y - g))**2,axis=0) <= s where g(x)
+        satisfying the conditions: ``sum((w * (y - g))**2,axis=0) <= s`` where g(x)
         is the smoothed interpolation of (x,y). The user can use s to control
         the tradeoff between closeness and smoothness of fit. Larger s means
         more smoothing while smaller values of s indicate less smoothing.
@@ -328,16 +330,16 @@ def splev(x, tck, der=0, ext=0):
         the points in `x`.  If `tck` was returned from `splprep`, then this
         is a list of arrays representing the curve in an N-D space.
 
-    Notes
-    -----
-    Manipulating the tck-tuples directly is not recommended. In new code,
-    prefer using `BSpline` objects.
-
     See Also
     --------
     splprep, splrep, sproot, spalde, splint
     bisplrep, bisplev
     BSpline
+
+    Notes
+    -----
+    Manipulating the tck-tuples directly is not recommended. In new code,
+    prefer using `BSpline` objects.
 
     References
     ----------
@@ -395,6 +397,12 @@ def splint(a, b, tck, full_output=0):
         defined on the set of knots.
         (Only returned if `full_output` is non-zero)
 
+    See Also
+    --------
+    splprep, splrep, sproot, spalde, splev
+    bisplrep, bisplev
+    BSpline
+
     Notes
     -----
     `splint` silently assumes that the spline function is zero outside the data
@@ -402,12 +410,6 @@ def splint(a, b, tck, full_output=0):
 
     Manipulating the tck-tuples directly is not recommended. In new code,
     prefer using the `BSpline` objects.
-
-    See Also
-    --------
-    splprep, splrep, sproot, spalde, splev
-    bisplrep, bisplev
-    BSpline
 
     References
     ----------
@@ -459,17 +461,16 @@ def sproot(tck, mest=10):
     zeros : ndarray
         An array giving the roots of the spline.
 
-    Notes
-    -----
-    Manipulating the tck-tuples directly is not recommended. In new code,
-    prefer using the `BSpline` objects.
-
     See Also
     --------
     splprep, splrep, splint, spalde, splev
     bisplrep, bisplev
     BSpline
 
+    Notes
+    -----
+    Manipulating the tck-tuples directly is not recommended. In new code,
+    prefer using the `BSpline` objects.
 
     References
     ----------
@@ -540,8 +541,8 @@ def spalde(x, tck):
         A point or a set of points at which to evaluate the derivatives.
         Note that ``t(k) <= x <= t(n-k+1)`` must hold for each `x`.
     tck : tuple
-        A tuple ``(t, c, k)``, containing the vector of knots, the B-spline
-        coefficients, and the degree of the spline (see `splev`).
+        A tuple (t,c,k) containing the vector of knots,
+        the B-spline coefficients, and the degree of the spline.
 
     Returns
     -------
@@ -552,20 +553,16 @@ def spalde(x, tck):
     See Also
     --------
     splprep, splrep, splint, sproot, splev, bisplrep, bisplev,
-    BSpline
+    UnivariateSpline, BivariateSpline
 
     References
     ----------
-    .. [1] C. de Boor: On calculating with b-splines, J. Approximation Theory
+    .. [1] de Boor C : On calculating with b-splines, J. Approximation Theory
        6 (1972) 50-62.
-    .. [2] M. G. Cox : The numerical evaluation of b-splines, J. Inst. Maths
+    .. [2] Cox M.G. : The numerical evaluation of b-splines, J. Inst. Maths
        applics 10 (1972) 134-149.
-    .. [3] P. Dierckx : Curve and surface fitting with splines, Monographs on
+    .. [3] Dierckx P. : Curve and surface fitting with splines, Monographs on
        Numerical Analysis, Oxford University Press, 1993.
-
-    Examples
-    --------
-    Examples are given :ref:`in the tutorial <tutorial-interpolate_splXXX>`.
 
     """
     if isinstance(tck, BSpline):
@@ -684,15 +681,15 @@ def splder(tck, n=1):
         A tuple is returned iff the input argument `tck` is a tuple, otherwise
         a BSpline object is constructed and returned.
 
-    Notes
-    -----
-
-    .. versionadded:: 0.13.0
-
     See Also
     --------
     splantider, splev, spalde
     BSpline
+
+    Notes
+    -----
+
+    .. versionadded:: 0.13.0
 
     Examples
     --------
@@ -786,3 +783,4 @@ def splantider(tck, n=1):
         return tck.antiderivative(n)
     else:
         return _impl.splantider(tck, n)
+

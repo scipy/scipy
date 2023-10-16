@@ -45,7 +45,7 @@ def prepare_input(x, y, axis, dydx=None):
     if x.shape[0] < 2:
         raise ValueError("`x` must contain at least 2 elements.")
     if x.shape[0] != y.shape[axis]:
-        raise ValueError("The length of `y` along `axis`={0} doesn't "
+        raise ValueError("The length of `y` along `axis`={} doesn't "
                          "match the length of `x`".format(axis))
 
     if not np.all(np.isfinite(x)):
@@ -164,15 +164,16 @@ class PchipInterpolator(CubicHermiteSpline):
 
     Parameters
     ----------
-    x : ndarray
+    x : ndarray, shape (npoints, )
         A 1-D array of monotonically increasing real values. ``x`` cannot
         include duplicate values (otherwise f is overspecified)
-    y : ndarray
-        A 1-D array of real values. ``y``'s length along the interpolation
-        axis must be equal to the length of ``x``. If N-D array, use ``axis``
-        parameter to select correct axis.
+    y : ndarray, shape (..., npoints, ...)
+        A N-D array of real values. ``y``'s length along the interpolation
+        axis must be equal to the length of ``x``. Use the ``axis``
+        parameter to select the interpolation axis.
     axis : int, optional
-        Axis in the y array corresponding to the x-coordinate values.
+        Axis in the ``y`` array corresponding to the x-coordinate values. Defaults
+        to ``axis=0``.
     extrapolate : bool, optional
         Whether to extrapolate to out-of-bounds points based on first
         and last intervals, or to return NaNs.
@@ -226,7 +227,6 @@ class PchipInterpolator(CubicHermiteSpline):
            :doi:`10.1137/0905021`.
     .. [2] see, e.g., C. Moler, Numerical Computing with Matlab, 2004.
            :doi:`10.1137/1.9780898717952`
-
 
     """
 
@@ -328,14 +328,14 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
     axis : int, optional
         Axis in the yi array corresponding to the x-coordinate values.
 
-    See Also
-    --------
-    PchipInterpolator : PCHIP 1-D monotonic cubic interpolator.
-
     Returns
     -------
     y : scalar or array_like
-        The result, of length R or length M or M by R,
+        The result, of length R or length M or M by R.
+
+    See Also
+    --------
+    PchipInterpolator : PCHIP 1-D monotonic cubic interpolator.
 
     Examples
     --------
@@ -375,14 +375,15 @@ class Akima1DInterpolator(CubicHermiteSpline):
 
     Parameters
     ----------
-    x : ndarray, shape (m, )
+    x : ndarray, shape (npoints, )
         1-D array of monotonically increasing real values.
-    y : ndarray, shape (m, ...)
-        N-D array of real values. The length of ``y`` along the first axis
-        must be equal to the length of ``x``.
+    y : ndarray, shape (..., npoints, ...)
+        N-D array of real values. The length of ``y`` along the interpolation axis
+        must be equal to the length of ``x``. Use the ``axis`` parameter to
+        select the interpolation axis.
     axis : int, optional
-        Specifies the axis of ``y`` along which to interpolate. Interpolation
-        defaults to the first axis of ``y``.
+        Axis in the ``y`` array corresponding to the x-coordinate values. Defaults
+        to ``axis=0``.
 
     Methods
     -------
@@ -836,7 +837,7 @@ class CubicSpline(CubicHermiteSpline):
                 elif bc in ['not-a-knot', 'periodic']:
                     validated_bc.append(bc)
                 else:
-                    raise ValueError("bc_type={} is not allowed.".format(bc))
+                    raise ValueError(f"bc_type={bc} is not allowed.")
             else:
                 try:
                     deriv_order, deriv_value = bc

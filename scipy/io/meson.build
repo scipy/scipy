@@ -11,7 +11,6 @@ _test_fortran = py3.extension_module('_test_fortran',
   ],
   c_args: [numpy_nodepr_api, Wno_unused_variable],
   fortran_args: fortran_ignore_warnings,
-  include_directories: [incdir_numpy, incdir_f2py],
   link_args: version_link_args,
   dependencies: [lapack, fortranobject_dep],
   install: true,
@@ -38,3 +37,4 @@ subdir('tests')
 subdir('matlab')
 subdir('arff')
 subdir('_harwell_boeing')
+subdir('_fast_matrix_market')

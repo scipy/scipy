@@ -79,7 +79,7 @@ class ConsistencyTests:
                 continue
             hits += 1
             assert_almost_equal(near_d**2, np.sum((x-self.data[near_i])**2))
-            assert_(near_d < d+eps, "near_d=%g should be less than %g" % (near_d, d))
+            assert_(near_d < d+eps, f"near_d={near_d:g} should be less than {d:g}")
         assert_equal(np.sum(self.distance(self.data, x, 2) < d**2+eps), hits)
 
     def test_points_near_l1(self):
@@ -93,7 +93,7 @@ class ConsistencyTests:
                 continue
             hits += 1
             assert_almost_equal(near_d, self.distance(x, self.data[near_i], 1))
-            assert_(near_d < d+eps, "near_d=%g should be less than %g" % (near_d, d))
+            assert_(near_d < d+eps, f"near_d={near_d:g} should be less than {d:g}")
         assert_equal(np.sum(self.distance(self.data, x, 1) < d+eps), hits)
 
     def test_points_near_linf(self):
@@ -107,7 +107,7 @@ class ConsistencyTests:
                 continue
             hits += 1
             assert_almost_equal(near_d, self.distance(x, self.data[near_i], np.inf))
-            assert_(near_d < d+eps, "near_d=%g should be less than %g" % (near_d, d))
+            assert_(near_d < d+eps, f"near_d={near_d:g} should be less than {d:g}")
         assert_equal(np.sum(self.distance(self.data, x, np.inf) < d+eps), hits)
 
     def test_approx(self):
@@ -1464,7 +1464,58 @@ def test_kdtree_nan():
     vals = [1, 5, -10, 7, -4, -16, -6, 6, 3, -11]
     n = len(vals)
     data = np.concatenate([vals, np.full(n, np.nan)])[:, None]
+    with pytest.raises(ValueError, match="must be finite"):
+        KDTree(data)
 
-    query_with_nans = KDTree(data).query_pairs(2)
-    query_without_nans = KDTree(data[:n]).query_pairs(2)
-    assert query_with_nans == query_without_nans
+
+def test_nonfinite_inputs_gh_18223():
+    rng = np.random.default_rng(12345)
+    coords = rng.uniform(size=(100, 3), low=0.0, high=0.1)
+    t = KDTree(coords, balanced_tree=False, compact_nodes=False)
+    bad_coord = [np.nan for _ in range(3)]
+
+    with pytest.raises(ValueError, match="must be finite"):
+        t.query(bad_coord)
+    with pytest.raises(ValueError, match="must be finite"):
+        t.query_ball_point(bad_coord, 1)
+
+    coords[0, :] = np.nan
+    with pytest.raises(ValueError, match="must be finite"):
+        KDTree(coords, balanced_tree=True, compact_nodes=False)
+    with pytest.raises(ValueError, match="must be finite"):
+        KDTree(coords, balanced_tree=False, compact_nodes=True)
+    with pytest.raises(ValueError, match="must be finite"):
+        KDTree(coords, balanced_tree=True, compact_nodes=True)
+    with pytest.raises(ValueError, match="must be finite"):
+        KDTree(coords, balanced_tree=False, compact_nodes=False)
+
+
+@pytest.mark.parametrize("incantation", [cKDTree, KDTree])
+def test_gh_18800(incantation):
+    # our prohibition on non-finite values
+    # in kd-tree workflows means we need
+    # coercion to NumPy arrays enforced
+
+    class ArrLike(np.ndarray):
+        def __new__(cls, input_array):
+            obj = np.asarray(input_array).view(cls)
+            # we override all() to mimic the problem
+            # pandas DataFrames encountered in gh-18800
+            obj.all = None
+            return obj
+
+        def __array_finalize__(self, obj):
+            if obj is None:
+                return
+            self.all = getattr(obj, 'all', None)
+
+    points = [
+        [66.22, 32.54],
+        [22.52, 22.39],
+        [31.01, 81.21],
+        ]
+    arr = np.array(points)
+    arr_like = ArrLike(arr)
+    tree = incantation(points, 10)
+    tree.query(arr_like, 1)
+    tree.query_ball_point(arr_like, 200)

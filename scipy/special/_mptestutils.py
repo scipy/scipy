@@ -278,9 +278,9 @@ class MpmathData:
 
     def __repr__(self):
         if self.is_complex:
-            return "<MpmathData: %s (complex)>" % (self.name,)
+            return f"<MpmathData: {self.name} (complex)>"
         else:
-            return "<MpmathData: %s>" % (self.name,)
+            return f"<MpmathData: {self.name}>"
 
 
 def assert_mpmath_equal(*a, **kw):
@@ -320,7 +320,7 @@ def trace_args(func):
             return float(x)
 
     def wrap(*a, **kw):
-        sys.stderr.write("%r: " % (tuple(map(tofloat, a)),))
+        sys.stderr.write(f"{tuple(map(tofloat, a))!r}: ")
         sys.stderr.flush()
         try:
             r = func(*a, **kw)
@@ -333,7 +333,6 @@ def trace_args(func):
 
 
 try:
-    import posix
     import signal
     POSIX = ('setitimer' in dir(signal))
 except ImportError:

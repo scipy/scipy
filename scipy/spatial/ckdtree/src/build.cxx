@@ -140,7 +140,7 @@ build(ckdtree *self, ckdtree_intp_t start_idx, intptr_t end_idx,
         }
 
         if (CKDTREE_UNLIKELY(p == start_idx || p == end_idx)) {
-            // All children are equal in this dimenion, try again with new bounds
+            // All children are equal in this dimension, try again with new bounds
             assert(!_compact);
             self->tree_buffer->pop_back();
             std::vector<double> tmp_bounds(2 * m);

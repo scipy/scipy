@@ -12,6 +12,7 @@ python_sources = [
   'test_public_api.py',
   'test_tmpdirs.py',
   'test_warnings.py',
+  'test_array_api.py',
 ]
 
 py3.install_sources(

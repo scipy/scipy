@@ -83,9 +83,7 @@
 #define MAXFAC 31
 extern double MACHEP, MAXLOG;
 
-double kn(nn, x)
-int nn;
-double x;
+double kn(int nn, double x)
 {
     double k, kf, nk1f, nkf, zn, t, s, z0, z;
     double ans, fn, pn, pk, zmn, tlg, tox;

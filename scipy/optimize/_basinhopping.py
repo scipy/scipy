@@ -238,8 +238,8 @@ class AdaptiveStepsize:
             # We're not accepting enough steps. Take smaller steps.
             self.takestep.stepsize *= self.factor
         if self.verbose:
-            print("adaptive stepsize: acceptance rate %f target %f new "
-                  "stepsize %g old stepsize %g" % (accept_rate,
+            print("adaptive stepsize: acceptance rate {:f} target {:f} new "
+                  "stepsize {:g} old stepsize {:g}".format(accept_rate,
                   self.target_accept_rate, self.takestep.stepsize,
                   old_stepsize))
 

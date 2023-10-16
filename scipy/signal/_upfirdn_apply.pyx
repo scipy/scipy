@@ -108,7 +108,7 @@ cpdef MODE mode_enum(mode):
 @cython.boundscheck(False)  # designed to stay within bounds
 @cython.wraparound(False)  # we don't use negative indexing
 cdef DTYPE_t _extend_left(DTYPE_t *x, np.intp_t idx, np.intp_t len_x,
-                          MODE mode, DTYPE_t cval) nogil:
+                          MODE mode, DTYPE_t cval) noexcept nogil:
     cdef DTYPE_t le = 0.
     cdef DTYPE_t lin_slope = 0.
 
@@ -174,7 +174,7 @@ cdef DTYPE_t _extend_left(DTYPE_t *x, np.intp_t idx, np.intp_t len_x,
 @cython.boundscheck(False)  # designed to stay within bounds
 @cython.wraparound(False)  # we don't use negative indexing
 cdef DTYPE_t _extend_right(DTYPE_t *x, np.intp_t idx, np.intp_t len_x,
-                           MODE mode, DTYPE_t cval) nogil:
+                           MODE mode, DTYPE_t cval) noexcept nogil:
     # note: idx will be >= len_x
     cdef DTYPE_t re = 0.
     cdef DTYPE_t lin_slope = 0.
@@ -234,7 +234,7 @@ cdef DTYPE_t _extend_right(DTYPE_t *x, np.intp_t idx, np.intp_t len_x,
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cpdef _pad_test(np.ndarray[DTYPE_t] data, np.intp_t npre=0, np.intp_t npost=0,
-                object mode=0, DTYPE_t cval=0):
+                object mode=0):
     """1D test function for signal extension modes.
 
     Returns ``data extended by ``npre``, ``npost`` at the beginning, end.
@@ -264,9 +264,9 @@ cpdef _pad_test(np.ndarray[DTYPE_t] data, np.intp_t npre=0, np.intp_t npost=0,
     with nogil:
         for idx in range(-npre, len_x + npost, 1):
             if idx < 0:
-                xval = _extend_left(data_ptr, idx, len_x, _mode, cval)
+                xval = _extend_left(data_ptr, idx, len_x, _mode, 0.0)
             elif idx >= len_x:
-                xval = _extend_right(data_ptr, idx, len_x, _mode, cval)
+                xval = _extend_right(data_ptr, idx, len_x, _mode, 0.0)
             else:
                 xval = data_ptr[idx]
             out[cnt] = xval
@@ -322,7 +322,7 @@ cdef int _apply_axis_inner(DTYPE_t* data, ArrayInfo data_info,
                            DTYPE_t* output, ArrayInfo output_info,
                            np.intp_t up, np.intp_t down,
                            np.intp_t axis, MODE mode, DTYPE_t cval,
-                           np.intp_t len_out) nogil:
+                           np.intp_t len_out) noexcept nogil:
     cdef np.intp_t i
     cdef np.intp_t num_loops = 1
     cdef bint make_temp_data, make_temp_output
@@ -421,7 +421,7 @@ cdef int _apply_axis_inner(DTYPE_t* data, ArrayInfo data_info,
 cdef void _apply_impl(DTYPE_t *x, np.intp_t len_x, DTYPE_t *h_trans_flip,
                       np.intp_t len_h, DTYPE_t *out,
                       np.intp_t up, np.intp_t down, MODE mode,
-                      DTYPE_t cval, np.intp_t len_out) nogil:
+                      DTYPE_t cval, np.intp_t len_out) noexcept nogil:
     cdef np.intp_t h_per_phase = len_h // up
     cdef np.intp_t padded_len = len_x + h_per_phase - 1
     cdef np.intp_t x_idx = 0

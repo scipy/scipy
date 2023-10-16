@@ -1,7 +1,8 @@
 from scipy import stats, linalg, integrate
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_, assert_equal,
-    assert_array_almost_equal, assert_array_almost_equal_nulp, assert_allclose)
+                           assert_array_almost_equal,
+                           assert_array_almost_equal_nulp, assert_allclose)
 import pytest
 from pytest import raises as assert_raises
 
@@ -306,6 +307,7 @@ def test_kde_integer_input():
 
 _ftypes = ['float32', 'float64', 'float96', 'float128', 'int32', 'int64']
 
+
 @pytest.mark.parametrize("bw_type", _ftypes + ["scott", "silverman"])
 @pytest.mark.parametrize("dtype", _ftypes)
 def test_kde_output_dtype(dtype, bw_type):
@@ -418,7 +420,7 @@ def test_marginal_1_axis():
     assert_allclose(pdf, ref, rtol=1e-6)
 
 
-@pytest.mark.slow
+@pytest.mark.xslow
 def test_marginal_2_axis():
     rng = np.random.default_rng(6111799263660870475)
     n_data = 30

@@ -1,9 +1,8 @@
 # cython: wraparound=False, boundscheck=False
 
 import numpy as np
-import warnings
 
-from scipy.sparse import csr_matrix, isspmatrix_csr
+from scipy.sparse import csr_matrix, issparse
 
 cimport numpy as np
 
@@ -225,7 +224,7 @@ def maximum_flow(csgraph, source, sink, *, method='dinic'):
     modifying the capacities of the new graph appropriately.
 
     """
-    if not isspmatrix_csr(csgraph):
+    if not (issparse(csgraph) and csgraph.format == "csr"):
         raise TypeError("graph must be in CSR format")
     if not issubclass(csgraph.dtype.type, np.integer):
         raise ValueError("graph capacities must be integers")
@@ -377,7 +376,7 @@ cdef ITYPE_t[:] _edmonds_karp(
         ITYPE_t[:] capacities,
         ITYPE_t[:] rev_edge_ptr,
         ITYPE_t source,
-        ITYPE_t sink):
+        ITYPE_t sink) noexcept:
     """Solves the maximum flow problem using the Edmonds--Karp algorithm.
 
     This assumes that for every edge in the graph, the edge in the opposite
@@ -483,7 +482,7 @@ cdef bint _build_level_graph(
         const ITYPE_t[:] heads,  # IN
         ITYPE_t[:] levels,  # IN/OUT
         ITYPE_t[:] q,  # IN/OUT
-        ) nogil:
+        ) noexcept nogil:
     """Builds layered graph from input graph using breadth first search.
 
     Parameters
@@ -544,7 +543,7 @@ cdef bint _augment_paths(
         ITYPE_t[:] progress,  # IN
         ITYPE_t[:] flows,  # OUT
         ITYPE_t[:, :] stack
-        ) nogil:
+        ) noexcept nogil:
     """Finds augmenting paths in layered graph using depth first search.
 
     Parameters
@@ -618,7 +617,7 @@ cdef ITYPE_t[:] _dinic(
         ITYPE_t[:] capacities,
         ITYPE_t[:] rev_edge_ptr,
         ITYPE_t source,
-        ITYPE_t sink):
+        ITYPE_t sink) noexcept:
     """Solves the maximum flow problem using the Dinic's algorithm.
 
     This assumes that for every edge in the graph, the edge in the opposite

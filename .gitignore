@@ -19,6 +19,7 @@
 *.vim
 tags
 .venv/
+venv/
 .theia/
 .vscode/
 
@@ -55,13 +56,13 @@ _configtest.c
 
 # Python files #
 ################
-# setup.py working directory
+# build directory
 build
 # sphinx build directory
 doc/_build
 # cython files
 cythonize.dat
-# setup.py dist directory
+# sdist directory
 dist
 # Egg metadata
 *.egg-info
@@ -79,8 +80,13 @@ setup.cfg
 .libs
 .eggs
 pip-wheel-metadata
-# install directory for Meson
+
+# Meson #
+#########
+.mesonpy-native-file.ini
 installdir/
+build-install/*
+.mesonpy/*
 
 # doit
 ######
@@ -88,10 +94,6 @@ installdir/
 .doit.db.dir
 .doit.db.db
 .doit.db
-
-# Paver generated files #
-#########################
-/release
 
 # Logs and databases #
 ######################
@@ -107,6 +109,11 @@ installdir/
 # mypy cache #
 ##############
 .mypy_cache/*
+
+# linter #
+##########
+.ruff_cache/*
+.pre-commit-workdir/*
 
 # Patches #
 ###########
@@ -129,6 +136,7 @@ Thumbs.db
 #################################
 doc/frontpage/build
 doc/source/reference/generated
+**/.ipynb_checkpoints
 
 # Things specific to this project #
 ###################################
@@ -137,7 +145,8 @@ benchmarks/results
 benchmarks/scipy
 benchmarks/html
 benchmarks/scipy-benchmarks
-.mesonpy-native-file.ini
+.openblas
+scipy/_distributor_init_local.py
 scipy/__config__.py
 scipy/_lib/_ccallback_c.c
 scipy/_lib/messagestream.c

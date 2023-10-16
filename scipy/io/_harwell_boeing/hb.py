@@ -242,17 +242,17 @@ class HBInfo:
         values_format = parser.parse(values_format_str)
         if isinstance(values_format, ExpFormat):
             if mxtype.value_type not in ["real", "complex"]:
-                raise ValueError("Inconsistency between matrix type %s and "
-                                 "value type %s" % (mxtype, values_format))
+                raise ValueError("Inconsistency between matrix type {} and "
+                                 "value type {}".format(mxtype, values_format))
             values_dtype = np.float64
         elif isinstance(values_format, IntFormat):
             if mxtype.value_type not in ["integer"]:
-                raise ValueError("Inconsistency between matrix type %s and "
-                                 "value type %s" % (mxtype, values_format))
+                raise ValueError("Inconsistency between matrix type {} and "
+                                 "value type {}".format(mxtype, values_format))
             # XXX: fortran int -> dtype association ?
             values_dtype = int
         else:
-            raise ValueError("Unsupported format for values %r" % (values_format,))
+            raise ValueError(f"Unsupported format for values {values_format!r}")
 
         self.pointer_format = pointer_format
         self.indices_format = indices_format
@@ -379,9 +379,9 @@ class HBMatrixType:
         "elemental": "E",
     }
 
-    _f2q_type = dict([(j, i) for i, j in _q2f_type.items()])
-    _f2q_structure = dict([(j, i) for i, j in _q2f_structure.items()])
-    _f2q_storage = dict([(j, i) for i, j in _q2f_storage.items()])
+    _f2q_type = {j: i for i, j in _q2f_type.items()}
+    _f2q_structure = {j: i for i, j in _q2f_structure.items()}
+    _f2q_storage = {j: i for i, j in _q2f_storage.items()}
 
     @classmethod
     def from_fortran(cls, fmt):

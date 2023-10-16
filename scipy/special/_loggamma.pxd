@@ -27,15 +27,12 @@ from ._evalpoly cimport cevalpoly
 cdef extern from "cephes.h":
     double lgam(double x) nogil
 
-DEF TWOPI = 6.2831853071795864769252842 # 2*pi
-DEF LOGPI = 1.1447298858494001741434262 # log(pi)
-DEF HLOG2PI = 0.918938533204672742 # log(2*pi)/2
+
 DEF SMALLX = 7
 DEF SMALLY = 7
-DEF TAYLOR_RADIUS = 0.2
 
 
-cdef inline double loggamma_real(double x) nogil:
+cdef inline double loggamma_real(double x) noexcept nogil:
     if x < 0.0:
         return NAN
 
@@ -43,9 +40,12 @@ cdef inline double loggamma_real(double x) nogil:
 
 
 @cython.cdivision(True)
-cdef inline double complex loggamma(double complex z) nogil:
+cdef inline double complex loggamma(double complex z) noexcept nogil:
     """Compute the principal branch of log-Gamma."""
-    cdef double tmp
+    cdef:
+        double tmp
+        double TAYLOR_RADIUS = 0.2
+        double LOGPI = 1.1447298858494001741434262 # log(pi)
 
     if zisnan(z):
         return zpack(NAN, NAN)
@@ -61,7 +61,7 @@ cdef inline double complex loggamma(double complex z) nogil:
         return zlog1(z - 1) + loggamma_taylor(z - 1)
     elif z.real < 0.1:
         # Reflection formula; see Proposition 3.1 in [1]
-        tmp = copysign(TWOPI, z.imag)*floor(0.5*z.real + 0.25)
+        tmp = copysign(2*M_PI, z.imag)*floor(0.5*z.real + 0.25)
         return zpack(LOGPI, tmp) - zlog(sinpi(z)) - loggamma(1 - z)
     elif signbit(z.imag) == 0:
         # z.imag >= 0 but is not -0.0
@@ -71,7 +71,7 @@ cdef inline double complex loggamma(double complex z) nogil:
 
 
 @cython.cdivision(True)
-cdef inline double complex loggamma_recurrence(double complex z) nogil:
+cdef inline double complex loggamma_recurrence(double complex z) noexcept nogil:
     """Backward recurrence relation.
 
     See Proposition 2.2 in [1] and the Julia implementation [2].
@@ -90,11 +90,11 @@ cdef inline double complex loggamma_recurrence(double complex z) nogil:
         signflips += 1 if nsb != 0 and sb == 0 else 0
         sb = nsb
         z.real += 1
-    return loggamma_stirling(z) - zlog(shiftprod) - signflips*TWOPI*1J
+    return loggamma_stirling(z) - zlog(shiftprod) - signflips*2*M_PI*1J
 
 
 @cython.cdivision(True)
-cdef inline double complex loggamma_stirling(double complex z) nogil:
+cdef inline double complex loggamma_stirling(double complex z) noexcept nogil:
     """Stirling series for log-Gamma.
 
     The coefficients are B[2*n]/(2*n*(2*n - 1)) where B[2*n] is the
@@ -110,12 +110,13 @@ cdef inline double complex loggamma_stirling(double complex z) nogil:
         ]
         double complex rz = 1.0/z
         double complex rzz = rz/z
+        double HLOG2PI = 0.918938533204672742 # log(2*pi)/2
 
     return (z - 0.5)*zlog(z) - z + HLOG2PI + rz*cevalpoly(coeffs, 7, rzz)
 
 
 @cython.cdivision(True)
-cdef inline double complex loggamma_taylor(double complex z) nogil:
+cdef inline double complex loggamma_taylor(double complex z) noexcept nogil:
     """Taylor series for log-Gamma around z = 1.
 
     It is
@@ -145,7 +146,7 @@ cdef inline double complex loggamma_taylor(double complex z) nogil:
     return z*cevalpoly(coeffs, 22, z)
 
 
-cdef inline double complex cgamma(double complex z) nogil:
+cdef inline double complex cgamma(double complex z) noexcept nogil:
     """Compute Gamma(z) using loggamma."""
     if z.real <= 0 and z == floor(z.real):
         # Poles
@@ -154,7 +155,7 @@ cdef inline double complex cgamma(double complex z) nogil:
     return zexp(loggamma(z))
 
 
-cdef inline double complex crgamma(double complex z) nogil:
+cdef inline double complex crgamma(double complex z) noexcept nogil:
     """Compute 1/Gamma(z) using loggamma."""
     if z.real <= 0 and z == floor(z.real):
         # Zeros at 0, -1, -2, ...

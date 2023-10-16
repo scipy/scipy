@@ -1,4 +1,3 @@
-
 import pytest
 import numpy as np
 from numpy import arange, add, array, eye, copy, sqrt
@@ -21,7 +20,10 @@ def get_mat(n):
     data = add.outer(data, data)
     return data
 
+dep_filter = np.testing.suppress_warnings()
+dep_filter.filter(DeprecationWarning, "'tri'/'tril/'triu'")
 
+@dep_filter
 class TestTri:
     def test_basic(self):
         assert_equal(tri(4), array([[1, 0, 0, 0],
@@ -62,6 +64,7 @@ class TestTri:
                                              [1, 1, 0]]))
 
 
+@dep_filter
 class TestTril:
     def test_basic(self):
         a = (100*get_mat(5)).astype('l')
@@ -85,6 +88,7 @@ class TestTril:
         assert_equal(tril(a, k=-2), b)
 
 
+@dep_filter
 class TestTriu:
     def test_basic(self):
         a = (100*get_mat(5)).astype('l')
@@ -106,6 +110,12 @@ class TestTriu:
             for l in range(k+3, 5):
                 b[l, k] = 0
         assert_equal(triu(a, k=-2), b)
+
+
+@pytest.mark.parametrize("func", [tri, tril, triu])
+def test_special_matrices_deprecation(func):
+    with pytest.warns(DeprecationWarning, match="'tri'/'tril/'triu'"):
+        func(np.array([[1]]))
 
 
 class TestToeplitz:

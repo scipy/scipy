@@ -5,8 +5,7 @@ The matfile specification last found here:
 https://www.mathworks.com/access/helpdesk/help/pdf_doc/matlab/matfile_format.pdf
 
 (as of December 5 2008)
-'''
-'''
+
 =================================
  Note on functions and mat files
 =================================
@@ -65,11 +64,10 @@ The mat files I was playing with are in ``tests/data``:
 See ``tests/test_mio.py:test_mio_funcs.py`` for the debugging
 script I was working with.
 
+Small fragments of current code adapted from matfile.py by Heiko
+Henkelmann; parts of the code for simplify_cells=True adapted from
+http://blog.nephics.com/2019/08/28/better-loadmat-for-scipy/.
 '''
-
-# Small fragments of current code adapted from matfile.py by Heiko
-# Henkelmann; parts of the code for simplify_cells=True adapted from
-# http://blog.nephics.com/2019/08/28/better-loadmat-for-scipy/.
 
 import os
 import time
@@ -105,7 +103,7 @@ from ._streams import ZlibInputStream
 
 def _has_struct(elem):
     """Determine if elem is an array and if first array item is a struct."""
-    return (isinstance(elem, np.ndarray) and (elem.size > 0) and
+    return (isinstance(elem, np.ndarray) and (elem.size > 0) and (elem.ndim > 0) and
             isinstance(elem[0], mat_struct))
 
 
@@ -154,7 +152,7 @@ class MatFile5Reader(MatFileReader):
     uint16_codec - char codec to use for uint16 char arrays
         (defaults to system default codec)
 
-    Uses variable reader that has the following stardard interface (see
+    Uses variable reader that has the following standard interface (see
     abstract class in ``miobase``::
 
        __init__(self, file_reader)
@@ -405,10 +403,9 @@ def varmats_from_mat(file_obj):
     Examples
     --------
     >>> import scipy.io
-
-    BytesIO is from the ``io`` module in Python 3, and is ``cStringIO`` for
-    Python < 3.
-
+    >>> import numpy as np
+    >>> from io import BytesIO
+    >>> from scipy.io.matlab._mio5 import varmats_from_mat
     >>> mat_fileobj = BytesIO()
     >>> scipy.io.savemat(mat_fileobj, {'b': np.arange(10), 'a': 'a string'})
     >>> varmats = varmats_from_mat(mat_fileobj)
@@ -466,6 +463,8 @@ def to_writeable(source):
         return source
     if source is None:
         return None
+    if hasattr(source, "__array__"):
+        return np.asarray(source)
     # Objects that implement mappings
     is_mapping = (hasattr(source, 'keys') and hasattr(source, 'values') and
                   hasattr(source, 'items'))
@@ -474,8 +473,8 @@ def to_writeable(source):
         # NumPy scalars are never mappings (PyPy issue workaround)
         pass
     elif not is_mapping and hasattr(source, '__dict__'):
-        source = dict((key, value) for key, value in source.__dict__.items()
-                      if not key.startswith('_'))
+        source = {key: value for key, value in source.__dict__.items()
+                      if not key.startswith('_')}
         is_mapping = True
     if is_mapping:
         dtype = []
@@ -490,7 +489,10 @@ def to_writeable(source):
         else:
             return EmptyStructMarker
     # Next try and convert to an array
-    narr = np.asanyarray(source)
+    try:
+        narr = np.asanyarray(source)
+    except ValueError:
+        narr = np.asanyarray(source, dtype=object)
     if narr.dtype.type in (object, np.object_) and \
        narr.shape == () and narr == source:
         # No interesting conversion possible
@@ -531,7 +533,7 @@ class VarWriter5:
             mdtype = NP_TO_MTYPES[arr.dtype.str[1:]]
         # Array needs to be in native byte order
         if arr.dtype.byteorder == swapped_code:
-            arr = arr.byteswap().newbyteorder()
+            arr = arr.byteswap().view(arr.dtype.newbyteorder())
         byte_count = arr.size*arr.itemsize
         if byte_count <= 4:
             self.write_smalldata_element(arr, mdtype, byte_count)

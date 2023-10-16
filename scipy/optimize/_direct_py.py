@@ -1,6 +1,6 @@
 from __future__ import annotations
-from typing import (
-    Any, Callable, Iterable, Optional, Tuple, TYPE_CHECKING, Union
+from typing import (  # noqa: UP035
+    Any, Callable, Iterable, TYPE_CHECKING
 )
 
 import numpy as np
@@ -10,7 +10,6 @@ from ._direct import direct as _direct  # type: ignore
 
 if TYPE_CHECKING:
     import numpy.typing as npt
-    from _typeshed import NoneType
 
 __all__ = ['direct']
 
@@ -21,7 +20,7 @@ ERROR_MESSAGES = (
     "maxfun is too large",
     "Initialization failed",
     "There was an error in the creation of the sample points",
-    "An error occured while the function was sampled",
+    "An error occurred while the function was sampled",
     "Maximum number of levels has been reached.",
     "Forced stop",
     "Invalid arguments",
@@ -39,19 +38,19 @@ SUCCESS_MESSAGES = (
 
 
 def direct(
-    func: Callable[[npt.ArrayLike, Tuple[Any]], float],
-    bounds: Union[Iterable, Bounds],
+    func: Callable[[npt.ArrayLike, tuple[Any]], float],
+    bounds: Iterable | Bounds,
     *,
     args: tuple = (),
     eps: float = 1e-4,
-    maxfun: Union[int, None] = None,
+    maxfun: int | None = None,
     maxiter: int = 1000,
     locally_biased: bool = True,
     f_min: float = -np.inf,
     f_min_rtol: float = 1e-4,
     vol_tol: float = 1e-16,
     len_tol: float = 1e-6,
-    callback: Optional[Callable[[npt.ArrayLike], NoneType]] = None
+    callback: Callable[[npt.ArrayLike], None] | None = None
 ) -> OptimizeResult:
     """
     Finds the global minimum of a function using the

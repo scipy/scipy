@@ -58,7 +58,7 @@ class UNURANError(RuntimeError):
     pass
 
 
-ctypedef double (*URNG_FUNCT)(void *) nogil
+ctypedef double (*URNG_FUNCT)(void *) noexcept nogil
 
 cdef object get_numpy_rng(object seed = None):
     """
@@ -101,7 +101,7 @@ cdef class _URNG:
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    cdef double _next_qdouble(self) nogil:
+    cdef double _next_qdouble(self) noexcept nogil:
         self.i += 1
         return self.qrvs_array[self.i-1]
 
@@ -143,7 +143,7 @@ cdef class _URNG:
 
 # Module level lock. This is used to provide thread-safe error reporting.
 # UNU.RAN has a thread-unsafe global FILE streams where errors are logged.
-# To make it thread-safe, one can aquire a lock before calling
+# To make it thread-safe, one can acquire a lock before calling
 # `unur_set_stream` and release once the stream is not needed anymore.
 cdef object _lock = threading.RLock()
 
@@ -229,7 +229,7 @@ cdef dict _unpack_dist(object dist, str dist_type, list meths = None,
                     self.support = dist.support
                 def pdf(self, x):
                     # some distributions require array inputs.
-                    x = np.atleast_1d((x-self.loc)/self.scale)
+                    x = np.asarray((x-self.loc)/self.scale)
                     return max(0, self.dist.dist._pdf(x, *self.args)/self.scale)
                 def logpdf(self, x):
                     # some distributions require array inputs.
@@ -238,7 +238,7 @@ cdef dict _unpack_dist(object dist, str dist_type, list meths = None,
                         return self.dist.dist._logpdf(x, *self.args) - np.log(self.scale)
                     return -np.inf
                 def cdf(self, x):
-                    x = np.atleast_1d((x-self.loc)/self.scale)
+                    x = np.asarray((x-self.loc)/self.scale)
                     res = self.dist.dist._cdf(x, *self.args)
                     if res < 0:
                         return 0
@@ -255,10 +255,10 @@ cdef dict _unpack_dist(object dist, str dist_type, list meths = None,
                     self.support = dist.support
                 def pmf(self, x):
                     # some distributions require array inputs.
-                    x = np.atleast_1d(x-self.loc)
+                    x = np.asarray(x-self.loc)
                     return max(0, self.dist.dist._pmf(x, *self.args))
                 def cdf(self, x):
-                    x = np.atleast_1d(x-self.loc)
+                    x = np.asarray(x-self.loc)
                     res = self.dist.dist._cdf(x, *self.args)
                     if res < 0:
                         return 0
@@ -385,7 +385,7 @@ cdef class Method:
     * It implements the `rvs` public method for sampling. No child class
       should override this method.
     * Provides a `set_random_state` method to change the seed.
-    * Implements the __dealloc__ method. The child class must not overide
+    * Implements the __dealloc__ method. The child class must not override
       this method.
     * Implements __reduce__ method to allow pickling.
 
@@ -778,7 +778,7 @@ cdef class TransformedDensityRejection(Method):
     ...                                   random_state=urng)
 
     Domain can be very useful to truncate the distribution but to avoid passing
-    it everytime to the constructor, a default domain can be set by providing a
+    it every time to the constructor, a default domain can be set by providing a
     `support` method in the distribution object (`dist`):
 
     >>> class MyDist:
@@ -837,11 +837,6 @@ cdef class TransformedDensityRejection(Method):
             'max_squeeze_hat_ratio': max_squeeze_hat_ratio,
             'random_state': random_state
         }
-
-        cdef:
-            unur_distr *distr
-            unur_par *par
-            unur_gen *rng
 
         self.callbacks = _unpack_dist(dist, "cont", meths=["pdf", "dpdf"])
         def _callback_wrapper(x, name):
@@ -1085,7 +1080,7 @@ cdef class SimpleRatioUniforms(Method):
 
     >>> rvs = rng.rvs(10)
 
-    If the CDF at mode is avaialble, it can be set to improve the performace of `rvs`:
+    If the CDF at mode is available, it can be set to improve the performance of `rvs`:
 
     >>> from scipy.stats import norm
     >>> rng = SimpleRatioUniforms(dist, mode=0,
@@ -1129,11 +1124,6 @@ cdef class SimpleRatioUniforms(Method):
             'cdf_at_mode': cdf_at_mode,
             'random_state': random_state
         }
-
-        cdef:
-            unur_distr *distr
-            unur_par *par
-            unur_gen *rng
 
         self.callbacks = _unpack_dist(dist, "cont", meths=["pdf"])
         def _callback_wrapper(x, name):
@@ -1199,7 +1189,7 @@ cdef class NumericalInversePolynomial(Method):
     distribution. Nevertheless, the maximal tolerated approximation error can be set to
     be the resolution (but, of course, is bounded by the machine precision). We use the
     u-error ``|U - CDF(X)|`` to measure the error where ``X`` is the approximate
-    percentile corressponding to the quantile ``U`` i.e. ``X = approx_ppf(U)``. We call
+    percentile corresponding to the quantile ``U`` i.e. ``X = approx_ppf(U)``. We call
     the maximal tolerated u-error the u-resolution of the algorithm.
 
     Both the order of the interpolating polynomial and the u-resolution can be selected.
@@ -1412,11 +1402,6 @@ cdef class NumericalInversePolynomial(Method):
             'random_state': random_state
         }
 
-        cdef:
-            unur_distr *distr
-            unur_par *par
-            unur_gen *rng
-
         # either logpdf or pdf are required: use meths = None and check separately
         self.callbacks = _unpack_dist(dist, "cont", meths=None, optional_meths=["cdf", "pdf", "logpdf"])
         if not ("pdf" in self.callbacks or "logpdf" in self.callbacks):
@@ -1537,7 +1522,7 @@ cdef class NumericalInversePolynomial(Method):
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    cdef inline void _ppf(self, const double *u, double *out, size_t N):
+    cdef inline void _ppf(self, const double *u, double *out, size_t N) noexcept:
         cdef:
             size_t i
         for i in range(N):
@@ -1979,10 +1964,6 @@ cdef class NumericalInverseHermite(Method):
             'random_state': random_state
         }
 
-        cdef:
-            unur_distr *distr
-            unur_par *par
-
         self.callbacks = _unpack_dist(dist, "cont", meths=["cdf"], optional_meths=["pdf", "dpdf"])
         def _callback_wrapper(x, name):
             return self.callbacks[name](x)
@@ -2027,7 +2008,7 @@ cdef class NumericalInverseHermite(Method):
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    cdef inline void _ppf(self, const double *u, double *out, size_t N):
+    cdef inline void _ppf(self, const double *u, double *out, size_t N) noexcept:
         cdef:
             size_t i
         for i in range(N):
@@ -2399,11 +2380,6 @@ cdef class DiscreteAliasUrn(Method):
         # save all the arguments for pickling support
         self._kwargs = {'dist': dist, 'domain': domain, 'urn_factor': urn_factor, 'random_state': random_state}
 
-        cdef:
-            unur_distr *distr
-            unur_par *par
-            unur_gen *rng
-
         self._messages = MessageStream()
         _lock.acquire()
         try:
@@ -2672,11 +2648,6 @@ cdef class DiscreteGuideTable(Method):
             'random_state': random_state
         }
 
-        cdef:
-            unur_distr *distr
-            unur_par *par
-            unur_gen *rng
-
         self._messages = MessageStream()
         _lock.acquire()
 
@@ -2745,7 +2716,7 @@ cdef class DiscreteGuideTable(Method):
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    cdef inline void _ppf(self, const double *u, double *out, size_t N):
+    cdef inline void _ppf(self, const double *u, double *out, size_t N) noexcept:
         cdef:
             size_t i
         for i in range(N):

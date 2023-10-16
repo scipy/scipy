@@ -129,7 +129,7 @@ template<typename T> py::array c2c_internal(const py::array &in,
   T fct = norm_fct<T>(inorm, dims, axes);
   pocketfft::c2c(dims, s_in, s_out, axes, forward, d_in, d_out, fct, nthreads);
   }
-  return move(res);
+  return std::move(res);
   }
 
 template<typename T> py::array c2c_sym_internal(const py::array &in,
@@ -158,7 +158,7 @@ template<typename T> py::array c2c_sym_internal(const py::array &in,
     iter.advance();
     }
   }
-  return move(res);
+  return std::move(res);
   }
 
 py::array c2c(const py::array &a, const py::object &axes_, bool forward,
