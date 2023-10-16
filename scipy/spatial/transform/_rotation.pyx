@@ -1409,7 +1409,7 @@ cdef class Rotation:
 
         Parameters
         ----------
-        axes : list of (3, 1) arrays
+        axes : array_like
             Specifies sequence of axes for rotations. Must be a list of
             3 arrays of shape (3, 1).
         angles : float or array_like, shape (3,) or (N, 3)
