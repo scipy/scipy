@@ -1410,21 +1410,35 @@ cdef class Rotation:
         Parameters
         ----------
         axes : array_like
-            Specifies sequence of axes for rotations. Must be a list of
-            3 arrays of shape (3, 1).
-        angles : float or array_like, shape (3,) or (N, 3)
+            Specifies sequence of axes for rotations. Must be an array_like of
+            shape (3, ) or (3, [1 or 2 or 3]), where each axes[i, :] is the ith
+            axis. If more than one axis is given, then the second axis must be
+            orthogonal to both the first and third axes.
+        angles : float or array_like, shape (N,) or (N, [1 or 2 or 3])
             Euler angles specified in radians (`degrees` is False) or degrees
-            (`degrees` is True):
+            (`degrees` is True).
+            For a single axis, `angles` can be:
 
-                - array_like with shape (3,), corresponding to single rotation
-                - array_like with shape (N, 3), where each `angle[i, 0]`
-                  corresponds to a single rotation
+            - a single value
+            - array_like with shape (N,), where each `angle[i]`
+              corresponds to a single rotation
+            - array_like with shape (N, 1), where each `angle[i, 0]`
+              corresponds to a single rotation
 
-        degrees : bool, optional
-            If True, then the given angles are assumed to be in degrees. Default is False.
+            For 2 and 3 axes, `angles` can be:
+
+            - array_like with shape (W,) where `W` is the number of lines of
+              `axes`, which corresponds to a single rotation with `W` axes
+            - array_like with shape (N, W) where each `angle[i]`
+              corresponds to a sequence of Davenport angles describing a 
+              single rotation
+
         extrinsic : boolean
             If True, sequence will be extrinsic. If False, sequence will be
             treated as intrinsic.
+        degrees : bool, optional
+            If True, then the given angles are assumed to be in degrees. 
+            Default is False.
 
         Returns
         -------
