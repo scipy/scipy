@@ -367,7 +367,7 @@ def deco(name):
 
     wrapped.__name__ = name
     wrapped.__module__ = 'scipy.signal'
-    wrapped.__signature__ = inspect.signature(f)
+    wrapped.__signature__ = inspect.signature(f)  # noqa: F821
     if hasattr(f, '__qualname__'):
         wrapped.__qualname__ = f.__qualname__
 
