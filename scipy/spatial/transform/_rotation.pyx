@@ -2211,15 +2211,15 @@ cdef class Rotation:
 
         n1, n2, n3 = axes
 
-        if np.dot(n1, n2) >= 1e-7:
-            raise ValueError("Consecutive axes must be orthogonal.")
-        if np.dot(n2, n3) >= 1e-7:
-            raise ValueError("Consecutive axes must be orthogonal.")
-
         # normalize axes
         n1 = n1 / np.linalg.norm(n1)
         n2 = n2 / np.linalg.norm(n2)
         n3 = n3 / np.linalg.norm(n3)
+
+        if np.dot(n1, n2) >= 1e-7:
+            raise ValueError("Consecutive axes must be orthogonal.")
+        if np.dot(n2, n3) >= 1e-7:
+            raise ValueError("Consecutive axes must be orthogonal.")
 
         quat = self.as_quat()
         if quat.ndim == 1:
