@@ -131,6 +131,8 @@ test-command = "bash {project}/tools/wheels/cibw_test_command.sh {project}"
 manylinux-x86_64-image = "manylinux2014"
 manylinux-aarch64-image = "manylinux2014"
 before-build = "bash {project}/tools/wheels/cibw_before_build_linux.sh {project}"
+environment = { PKG_CONFIG_PATH="$PWD/.openblas" }
+
 
 [tool.cibuildwheel.macos]
 before-build = "bash {project}/tools/wheels/cibw_before_build_macos.sh {project}"

@@ -12,14 +12,13 @@ else
     echo "Usage: $0 [--nightly] <project_dir>"
     exit 1
 fi
-
-PLATFORM=$(PYTHONPATH=tools python -c "import openblas_support; print(openblas_support.get_plat())")
-
 printenv
 # Update license
 cat $PROJECT_DIR/tools/wheels/LICENSE_linux.txt >> $PROJECT_DIR/LICENSE.txt
 
-# Install Openblas
-basedir=$(python tools/openblas_support.py $NIGHTLY_FLAG)
-cp -r $basedir/lib/* /usr/local/lib
-cp $basedir/include/* /usr/local/include
+if [ NIGHTLY_FLAG=="--nightly"];then
+  python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple scipy-openblas32
+else
+  python -m pip install scipy_openblas32
+fi
+PYTHONPATH=tools/wheels python -c "import openblas; openblas.configure_scipy_openblas()"
