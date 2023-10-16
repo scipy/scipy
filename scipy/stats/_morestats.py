@@ -2746,6 +2746,7 @@ def ansari(x, y, alternative='two-sided'):
 BartlettResult = namedtuple('BartlettResult', ('statistic', 'pvalue'))
 
 
+@_axis_nan_policy_factory(BartlettResult, n_samples=None)
 def bartlett(*samples):
     r"""Perform Bartlett's test for equal variances.
 
@@ -2956,16 +2957,16 @@ def bartlett(*samples):
     [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
 
     """
-    # Handle empty input and input that is not 1d
-    for sample in samples:
-        if np.asanyarray(sample).size == 0:
-            return BartlettResult(np.nan, np.nan)
-        if np.asanyarray(sample).ndim > 1:
-            raise ValueError('Samples must be one-dimensional.')
-
     k = len(samples)
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
+
+    # Handle empty input and input that is not 1d
+    for sample in samples:
+        if np.asanyarray(sample).size == 0:
+            NaN = _get_nan(*samples)  # get NaN of result_dtype of all samples
+            return BartlettResult(NaN, NaN)
+
     Ni = np.empty(k)
     ssq = np.empty(k, 'd')
     for j in range(k):
