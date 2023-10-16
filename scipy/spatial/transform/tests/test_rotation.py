@@ -1749,13 +1749,11 @@ def test_as_davenport():
                 ax = ax[::-1]
             angles[:, 1] = angles_middle - lamb
             rot = Rotation.from_davenport(ax, angles, extrinsic=extrinsic)
-            angles_dav = rot.as_davenport(ax, extrinsic=extrinsic,
-                                          correct_set=False)
+            angles_dav = rot.as_davenport(ax, extrinsic=extrinsic)
             assert_allclose(angles_dav, angles)
 
             # asserting that both sets are equivalent
-            angles_alt = rot.as_davenport(ax, extrinsic=extrinsic,
-                                          correct_set=True)
+            angles_alt = rot.as_davenport(ax, extrinsic=extrinsic)
             rot_alt = Rotation.from_davenport(ax, angles_alt,
                                               extrinsic=extrinsic)
             assert_allclose(rot.as_quat(), rot_alt.as_quat())
@@ -1881,5 +1879,5 @@ def test_compare_as_davenport_as_euler():
                 seq = seq.upper()
             rot = Rotation.from_euler(seq, angles)
             eul = rot.as_euler(seq)
-            dav = rot.as_davenport(ax, extrinsic=extrinsic, correct_set=True)
+            dav = rot.as_davenport(ax, extrinsic=extrinsic)
             assert_allclose(eul, dav, atol=0, rtol=1e-9)
