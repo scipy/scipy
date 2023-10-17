@@ -4150,7 +4150,7 @@ class TestGammatone:
         fs = 16000
         ftypes = ['fir', 'iir']
         for ftype in ftypes:
-            # Create a gammatone filter centered at 1000 Hz
+            # Create a gammatone filter centered at 1000 Hz.
             b, a = gammatone(1000, ftype, fs=fs)
 
             # Calculate the frequency response.
@@ -4160,8 +4160,8 @@ class TestGammatone:
             # and corresponding frequency.
             response_max = np.max(np.abs(response))
             freq_hz = freqs[np.argmax(np.abs(response))] / ((2 * np.pi) / fs)
-
-            # Assert values are close
+            
+          # Check that the peak magnitude is 1 and the frequency is 1000 Hz.
             assert_allclose(response_max, 1, rtol=1e-2)
             assert_allclose(freq_hz, 1000, rtol=1e-2)
 
