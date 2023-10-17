@@ -1410,21 +1410,35 @@ cdef class Rotation:
         Parameters
         ----------
         axes : array_like
-            Specifies sequence of axes for rotations. Must be a list of
-            3 arrays of shape (3, 1).
-        angles : float or array_like, shape (3,) or (N, 3)
+            Specifies sequence of axes for rotations. Must be an array_like of
+            shape (3, ) or (3, [1 or 2 or 3]), where each axes[i, :] is the ith
+            axis. If more than one axis is given, then the second axis must be
+            orthogonal to both the first and third axes.
+        angles : float or array_like, shape (N,) or (N, [1 or 2 or 3])
             Euler angles specified in radians (`degrees` is False) or degrees
-            (`degrees` is True):
+            (`degrees` is True).
+            For a single axis, `angles` can be:
 
-                - array_like with shape (3,), corresponding to single rotation
-                - array_like with shape (N, 3), where each `angle[i, 0]`
-                  corresponds to a single rotation
+            - a single value
+            - array_like with shape (N,), where each `angle[i]`
+              corresponds to a single rotation
+            - array_like with shape (N, 1), where each `angle[i, 0]`
+              corresponds to a single rotation
 
-        degrees : bool, optional
-            If True, then the given angles are assumed to be in degrees. Default is False.
+            For 2 and 3 axes, `angles` can be:
+
+            - array_like with shape (W,) where `W` is the number of lines of
+              `axes`, which corresponds to a single rotation with `W` axes
+            - array_like with shape (N, W) where each `angle[i]`
+              corresponds to a sequence of Davenport angles describing a 
+              single rotation
+
         extrinsic : boolean
             If True, sequence will be extrinsic. If False, sequence will be
             treated as intrinsic.
+        degrees : bool, optional
+            If True, then the given angles are assumed to be in degrees. 
+            Default is False.
 
         Returns
         -------
@@ -1452,7 +1466,7 @@ cdef class Rotation:
         Initialize a single rotation with a given axis sequence:
 
         >>> axes = [ez, ey, ex]
-        >>> r = R.from_davenport(axes, [90, 0, 0], degrees=True)
+        >>> r = R.from_davenport(axes, [90, 0, 0], extrinsic=True, degrees=True)
         >>> r.as_quat().shape
         (4,)
 
@@ -1463,7 +1477,7 @@ cdef class Rotation:
 
         Initialize multiple rotations in one object:
 
-        >>> r = R.from_davenport(axes, [[90, 45, 30], [35, 45, 90]], degrees=True)
+        >>> r = R.from_davenport(axes, [[90, 45, 30], [35, 45, 90]], extrinsic=True, degrees=True)
         >>> r.as_quat().shape
         (2, 4)
 
@@ -1474,68 +1488,80 @@ cdef class Rotation:
         >>> e2 = [0, 1, 0]
         >>> e3 = [1, 0, 1]
         >>> axes = [e1, e2, e3]
-        >>> r = R.from_davenport(axes, [90, 45, 30], degrees=True)
+        >>> r = R.from_davenport(axes, [90, 45, 30], extrinsic=True, degrees=True)
         >>> r.as_quat().shape
         (4,)
 
         """
+        axes = np.asarray(axes)
+        if axes.ndim == 1:
+            axes = axes.reshape([1, 3])
+
         num_axes = len(axes)
-        if num_axes != 3:
-            raise ValueError("Expected axes to be list of 3 vectors got {}"
-                             "".format(axes))
 
         for axis in axes:
             if len(axis) != 3:
                 raise ValueError("Axes must be vectors of length 3.")
 
-        n1 = np.array(axes[0])
-        n2 = np.array(axes[1])
-        n3 = np.array(axes[2])
-
-        if abs(np.dot(n1, n2)) >= 1e-7:
-            raise ValueError("Consecutive axes must be orthogonal.")
-        if abs(np.dot(n2, n3)) >= 1e-7:
-            raise ValueError("Consecutive axes must be orthogonal.")
+        if num_axes < 1 or num_axes > 3:
+            raise ValueError("Expected up to 3 axes, got {}".format(num_axes))
 
         # normalize axes
-        n1 = n1 / np.linalg.norm(n1)
-        n2 = n2 / np.linalg.norm(n2)
-        n3 = n3 / np.linalg.norm(n3)
-        n1.shape = (3, 1)
-        n2.shape = (3, 1)
-        n3.shape = (3, 1)
+        norm = np.repeat(np.linalg.norm(axes, axis=1), 3)
+        axes = axes / norm.reshape(num_axes, 3)
 
+        if num_axes > 1 and abs(np.dot(axes[0], axes[1])) >= 1e-7:
+            raise ValueError("Consecutive axes must be orthogonal.")
+        if num_axes > 2 and abs(np.dot(axes[1], axes[2])) >= 1e-7:
+            raise ValueError("Consecutive axes must be orthogonal.")
+            
         angles = np.asarray(angles, dtype=float)
         if degrees:
             angles = np.deg2rad(angles)
 
         is_single = False
-        # Prepare angles to have shape (num_rot, 3)
-        if angles.shape[-1] != 3:
-            raise ValueError("Expected `angles` to be at most "
-                             "2-dimensional with width equal to number "
-                             "of axes specified, got {} for shape".format(
-                             angles.shape))
+        # Prepare angles to have shape (num_rot, num_axes)
+        if num_axes == 1:
+            if angles.ndim == 0:
+                # (1, 1)
+                angles = angles.reshape((1, 1))
+                is_single = True
+            elif angles.ndim == 1:
+                # (N, 1)
+                angles = angles[:, None]
+            elif angles.ndim == 2 and angles.shape[-1] != 1:
+                raise ValueError("Expected `angles` parameter to have shape "
+                                "(N, 1), got {}.".format(angles.shape))
+            elif angles.ndim > 2:
+                raise ValueError("Expected float, 1D array, or 2D array for "
+                                "parameter `angles` corresponding to `seq`, "
+                                "got shape {}.".format(angles.shape))
+        else:  # 2 or 3 axes
+            if angles.ndim not in [1, 2] or angles.shape[-1] != num_axes:
+                raise ValueError("Expected `angles` to be at most "
+                                "2-dimensional with width equal to number "
+                                "of axes specified, got {} for shape".format(
+                                angles.shape))
 
-        if angles.ndim == 1:
-            # (1, num_axes)
-            angles = angles[None, :]
-            is_single = True
+            if angles.ndim == 1:
+                # (1, num_axes)
+                angles = angles[None, :]
+                is_single = True
 
         # By now angles should have shape (num_rot, num_axes)
         # sanity check
         if angles.ndim != 2 or angles.shape[-1] != num_axes:
             raise ValueError("Expected angles to have shape (num_rotations, "
-                             "num_axes), got {}.".format(angles.shape))
+                            "num_axes), got {}.".format(angles.shape))
 
-        q1 = cls.from_rotvec((n1 * angles[:, 0]).T)
-        q2 = cls.from_rotvec((n2 * angles[:, 1]).T)
-        q3 = cls.from_rotvec((n3 * angles[:, 2]).T)
 
-        if extrinsic:
-            q = q3 * q2 * q1
-        else:
-            q = q1 * q2 * q3
+        q = Rotation.identity(len(angles))
+        for i in range(num_axes):
+            qi = Rotation.from_rotvec(angles[:, i, np.newaxis] * axes[i])
+            if extrinsic:
+                q = qi * q
+            else:
+                q = q * qi
 
         return q[0] if is_single else q
 
