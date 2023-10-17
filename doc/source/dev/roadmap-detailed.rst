@@ -67,6 +67,13 @@ NumPy C API (by Cython, everything in SciPy was fixed) will disappear. Then we
 can define ``NPY_NO_DEPRECATED_API`` unconditionally.
 
 
+Use of Pythran
+``````````````
+Pythran is still an optional build dependency, and can be disabled with
+``-Duse-pythran=false``. The aim is to make it a hard dependency - for that to
+happen it must be clear that the maintenance burden is low enough.
+
+
 Use of venerable Fortran libraries
 ``````````````````````````````````
 SciPy owes a lot of its success to relying on wrapping well established
