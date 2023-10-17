@@ -1482,6 +1482,12 @@ cdef class Rotation:
         >>> r.as_quat().shape
         (2, 4)
 
+        Using only one or two axes is also possible:
+
+        >>> r = R.from_davenport([ez, ex], [[90, 45], [35, 45]], extrinsic=True, degrees=True)
+        >>> r.as_quat().shape
+        (2, 4)
+
         Non-canonical axes are possible, and they do not need to be normalized,
         as long as consecutive axes are orthogonal:
 
