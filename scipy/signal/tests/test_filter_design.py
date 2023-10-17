@@ -4162,8 +4162,8 @@ class TestGammatone:
             freq_hz = freqs[np.argmax(np.abs(response))] / ((2 * np.pi) / fs)
 
             # Assert values are close
-        assert_allclose(response_max, 1, rtol=1e-2)  
-        assert_allclose(freq_hz, 1000, rtol=1e-2))
+            assert_allclose(response_max, 1, rtol=1e-2)
+            assert_allclose(freq_hz, 1000, rtol=1e-2)
 
     # All built-in IIR filters are real, so should have perfectly
     # symmetrical poles and zeros. Then ba representation (using
