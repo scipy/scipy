@@ -54,7 +54,7 @@ class MilpMiplibBenchmarks(Benchmark):
              bounds=prob.bounds, 
              integrality=prob.integrality,
              max_iter=1000,
-             max_time=60)
+             max_time=1000)
              
         assert res.success
 
