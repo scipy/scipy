@@ -1466,7 +1466,7 @@ cdef class Rotation:
         Initialize a single rotation with a given axis sequence:
 
         >>> axes = [ez, ey, ex]
-        >>> r = R.from_davenport(axes, [90, 0, 0], degrees=True)
+        >>> r = R.from_davenport(axes, [90, 0, 0], extrinsic=True, degrees=True)
         >>> r.as_quat().shape
         (4,)
 
@@ -1477,7 +1477,7 @@ cdef class Rotation:
 
         Initialize multiple rotations in one object:
 
-        >>> r = R.from_davenport(axes, [[90, 45, 30], [35, 45, 90]], degrees=True)
+        >>> r = R.from_davenport(axes, [[90, 45, 30], [35, 45, 90]], extrinsic=True, degrees=True)
         >>> r.as_quat().shape
         (2, 4)
 
@@ -1488,14 +1488,14 @@ cdef class Rotation:
         >>> e2 = [0, 1, 0]
         >>> e3 = [1, 0, 1]
         >>> axes = [e1, e2, e3]
-        >>> r = R.from_davenport(axes, [90, 45, 30], degrees=True)
+        >>> r = R.from_davenport(axes, [90, 45, 30], extrinsic=True, degrees=True)
         >>> r.as_quat().shape
         (4,)
 
         """
         axes = np.asarray(axes)
-        if axes.shape == (3, ):
-            axes.shape = (1, 3)
+        if axes.ndim == 1:
+            axes = axes.reshape([1, 3])
 
         num_axes = len(axes)
 
@@ -1514,7 +1514,7 @@ cdef class Rotation:
             raise ValueError("Consecutive axes must be orthogonal.")
         if num_axes > 2 and abs(np.dot(axes[1], axes[2])) >= 1e-7:
             raise ValueError("Consecutive axes must be orthogonal.")
-
+            
         angles = np.asarray(angles, dtype=float)
         if degrees:
             angles = np.deg2rad(angles)
@@ -1531,17 +1531,17 @@ cdef class Rotation:
                 angles = angles[:, None]
             elif angles.ndim == 2 and angles.shape[-1] != 1:
                 raise ValueError("Expected `angles` parameter to have shape "
-                                 "(N, 1), got {}.".format(angles.shape))
+                                "(N, 1), got {}.".format(angles.shape))
             elif angles.ndim > 2:
                 raise ValueError("Expected float, 1D array, or 2D array for "
-                                 "parameter `angles` corresponding to `seq`, "
-                                 "got shape {}.".format(angles.shape))
+                                "parameter `angles` corresponding to `seq`, "
+                                "got shape {}.".format(angles.shape))
         else:  # 2 or 3 axes
             if angles.ndim not in [1, 2] or angles.shape[-1] != num_axes:
                 raise ValueError("Expected `angles` to be at most "
-                                 "2-dimensional with width equal to number "
-                                 "of axes specified, got {} for shape".format(
-                                 angles.shape))
+                                "2-dimensional with width equal to number "
+                                "of axes specified, got {} for shape".format(
+                                angles.shape))
 
             if angles.ndim == 1:
                 # (1, num_axes)
@@ -1552,11 +1552,12 @@ cdef class Rotation:
         # sanity check
         if angles.ndim != 2 or angles.shape[-1] != num_axes:
             raise ValueError("Expected angles to have shape (num_rotations, "
-                             "num_axes), got {}.".format(angles.shape))
+                            "num_axes), got {}.".format(angles.shape))
 
-        q = cls.from_quat([0, 0, 0, 1])
-        for axis, angle in zip(axes, angles):
-            qi = cls.from_rotvec((axis * angle).T)
+
+        q = Rotation.identity(len(angles))
+        for i in range(num_axes):
+            qi = Rotation.from_rotvec(angles[:, i, np.newaxis] * axes[i])
             if extrinsic:
                 q = qi * q
             else:
