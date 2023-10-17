@@ -2141,6 +2141,7 @@ cdef class Rotation:
             - ``dot(axis1, axis3) = -1``, ``0`` or ``1``
 
         For Davenport angles, the third relation is relaxed [1]_:
+
             - ``dot(axis1, axis3)`` can be any value between -1 and 1.
 
         A slightly modified version of the algorithm from [2]_ has been used to
