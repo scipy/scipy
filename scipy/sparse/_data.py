@@ -123,7 +123,7 @@ class _data_matrix(_spbase):
             raise NotImplementedError("input is not scalar")
         if not n:
             raise NotImplementedError(
-                "n=0 is not supported as it would densify the matrix.\n"
+                "zero power is not supported as it would densify the matrix.\n"
                 "Use `np.ones(A.shape, dtype=A.dtype)` for this case."
             )
 
