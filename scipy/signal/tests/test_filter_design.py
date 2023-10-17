@@ -4160,7 +4160,7 @@ class TestGammatone:
             # and corresponding frequency.
             response_max = np.max(np.abs(response))
             freq_hz = freqs[np.argmax(np.abs(response))] / ((2 * np.pi) / fs)
-            
+
             # Check that the peak magnitude is 1 and the frequency is 1000 Hz.
             assert_allclose(response_max, 1, rtol=1e-2)
             assert_allclose(freq_hz, 1000, rtol=1e-2)
