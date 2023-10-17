@@ -2204,19 +2204,19 @@ cdef class Rotation:
         Represent a single rotation:
 
         >>> r = R.from_rotvec([0, 0, np.pi/2])
-        >>> r.as_davenport([ez, ex, ey], degrees=True)
+        >>> r.as_davenport([ez, ex, ey], extrinsic=True, degrees=True)
         array([90.,  0.,  0.])
         >>> r.as_euler('zxy', degrees=True)
         array([90.,  0.,  0.])
-        >>> r.as_davenport([ez, ex, ey], degrees=True).shape
+        >>> r.as_davenport([ez, ex, ey], extrinsic=True, degrees=True).shape
         (3,)
 
         Represent a stack of single rotation:
 
         >>> r = R.from_rotvec([[0, 0, np.pi/2]])
-        >>> r.as_davenport([ez, ex, ey], degrees=True)
+        >>> r.as_davenport([ez, ex, ey], extrinsic=True, degrees=True)
         array([[90.,  0.,  0.]])
-        >>> r.as_davenport([ez, ex, ey], degrees=True).shape
+        >>> r.as_davenport([ez, ex, ey], extrinsic=True, degrees=True).shape
         (1, 3)
 
         Represent multiple rotations in a single object:
@@ -2224,10 +2224,10 @@ cdef class Rotation:
         >>> r = R.from_rotvec([
         ... [0, 0, 90],
         ... [45, 0, 0]], degrees=True)
-        >>> r.as_davenport([ez, ex, ey], degrees=True)
+        >>> r.as_davenport([ez, ex, ey], extrinsic=True, degrees=True)
         array([[90.,  0.,  0.],
                [ 0., 45.,  0.]])
-        >>> r.as_davenport([ez, ex, ey], degrees=True).shape
+        >>> r.as_davenport([ez, ex, ey], extrinsic=True, degrees=True).shape
         (2, 3)
         """
         if len(axes) != 3:
