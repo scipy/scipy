@@ -1728,12 +1728,14 @@ def test_len_and_bool():
     assert rotation_multi
     assert rotation_single
 
+
 def test_from_davenport_single_rotation():
     axis = [0, 0, 1]
     quat = Rotation.from_davenport(axis, 90, 
                                    extrinsic=True, degrees=True).as_quat()
     expected_quat = np.array([0, 0, 1, 1]) / np.sqrt(2)
     assert_allclose(quat, expected_quat)
+
 
 def test_as_davenport():
 
