@@ -1405,6 +1405,7 @@ cdef class Rotation:
             - ``dot(axis1, axis3) = -1``, ``0`` or ``1``
 
         For Davenport angles, the third relation is relaxed [2]_:
+
             - ``dot(axis1, axis3)`` can be any value between -1 and 1.
 
         Parameters
@@ -2157,9 +2158,11 @@ cdef class Rotation:
 
         Parameters
         ----------
-        axes : list of (3, 1) arrays
-            Specifies sequence of axes for rotations. Must be a list of
-            3 arrays of shape (3, 1).
+        axes : array_like
+            Specifies sequence of axes for rotations. Must be an array_like of
+            shape (3, ) or (3, [1 or 2 or 3]), where each axes[i, :] is the ith
+            axis. If more than one axis is given, then the second axis must be
+            orthogonal to both the first and third axes.
         extrinsic : boolean
             If True, sequence will be extrinsic. If False, sequence will be
             treated as intrinsic.
