@@ -279,24 +279,24 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     x0 = asarray(x0).ravel()
     n, = x0.shape
 
+    # historically old-style bounds were/are expected by lbfgsb,
+    # but we'll deal with new-style from here on, it's easier
     if bounds is None:
-        bounds = [(None, None)] * n
-    if len(bounds) != n:
-        raise ValueError('length of x0 != length of bounds')
-
-    # unbounded variables must use None, not +-inf, for optimizer to work properly
-    bounds = [(None if l == -np.inf else l, None if u == np.inf else u) for l, u in bounds]
-    # LBFGSB is sent 'old-style' bounds, 'new-style' bounds are required by
-    # approx_derivative and ScalarFunction
-    new_bounds = old_bound_to_new(bounds)
+        bounds = np.empty((2, n), dtype=float)
+        bounds[0] = -np.inf
+        bounds[1] = np.inf
+    else:
+        if len(bounds) != n:
+            raise ValueError('length of x0 != length of bounds')
+        bounds = old_bound_to_new(bounds)
 
     # check bounds
-    if (new_bounds[0] > new_bounds[1]).any():
+    if (bounds[0] > bounds[1]).any():
         raise ValueError("LBFGSB - one of the lower bounds is greater than an upper bound.")
 
     # initial vector must lie within the bounds. Otherwise ScalarFunction and
     # approx_derivative will cause problems
-    x0 = np.clip(x0, new_bounds[0], new_bounds[1])
+    x0 = np.clip(x0, bounds[0], bounds[1])
 
     if disp is not None:
         if disp == 0:
@@ -305,7 +305,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
             iprint = disp
 
     sf = _prepare_scalar_function(fun, x0, jac=jac, args=args, epsilon=eps,
-                                  bounds=new_bounds,
+                                  bounds=bounds,
                                   finite_diff_rel_step=finite_diff_rel_step)
 
     func_and_grad = sf.fun_and_grad
@@ -315,16 +315,17 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     nbd = zeros(n, fortran_int)
     low_bnd = zeros(n, float64)
     upper_bnd = zeros(n, float64)
-    bounds_map = {(None, None): 0,
-                  (1, None): 1,
+    bounds_map = {(-np.inf, np.inf): 0,
+                  (1, np.inf): 1,
                   (1, 1): 2,
-                  (None, 1): 3}
+                  (-np.inf, 1): 3}
+
     for i in range(0, n):
-        l, u = bounds[i]
-        if l is not None:
+        l, u = bounds[0, i], bounds[1, i]
+        if not np.isinf(l):
             low_bnd[i] = l
             l = 1
-        if u is not None:
+        if not np.isinf(u):
             upper_bnd[i] = u
             u = 1
         nbd[i] = bounds_map[l, u]
