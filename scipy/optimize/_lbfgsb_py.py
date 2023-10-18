@@ -286,9 +286,9 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         bounds = np.empty((2, n), dtype=float)
         bounds[0] = -np.inf
         bounds[1] = np.inf
+    elif len(bounds) != n:
+        raise ValueError('length of x0 != length of bounds')
     else:
-        if len(bounds) != n:
-            raise ValueError('length of x0 != length of bounds')
         bounds = np.array(old_bound_to_new(bounds))
 
     # check bounds
