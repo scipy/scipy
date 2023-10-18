@@ -1390,7 +1390,7 @@ def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
     >>> matrix = rand(3, 4, density=0.25, format="csr", random_state=42)
     >>> matrix
     <3x4 sparse matrix of type '<class 'numpy.float64'>'
-       with 3 stored elements in Compressed Sparse Row format>
+        with 3 stored elements in Compressed Sparse Row format>
     >>> matrix.toarray()
     array([[0.05641158, 0.        , 0.        , 0.65088847],  # random
            [0.        , 0.        , 0.        , 0.14286682],
