@@ -1412,7 +1412,7 @@ cdef class Rotation:
         ----------
         axes : array_like
             Specifies sequence of axes for rotations. Must be an array_like of
-            shape (3, ) or (3, [1 or 2 or 3]), where each axes[i, :] is the ith
+            shape (3, ) or ([1 or 2 or 3], 3), where each axes[i, :] is the ith
             axis. If more than one axis is given, then the second axis must be
             orthogonal to both the first and third axes.
         angles : float or array_like, shape (N,) or (N, [1 or 2 or 3])
