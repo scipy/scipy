@@ -117,6 +117,68 @@ cdef inline void _quat_canonical(double[:, :] q) noexcept:
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
+cdef inline void _get_angles(
+    double[:] _angles, bint extrinsic, bint symmetric, bint sign,
+    double lamb, double a, double b, double c, double d):
+    
+        # intrinsic/extrinsic conversion helpers
+        cdef int angle_first, angle_third
+        if extrinsic:
+            angle_first = 0
+            angle_third = 2
+        else:
+            angle_first = 2
+            angle_third = 0
+
+        cdef double half_sum, half_diff
+        cdef int case
+    
+        # Step 2
+        # Compute second angle...
+        _angles[1] = 2 * atan2(hypot(c, d), hypot(a, b))
+
+        # ... and check if equal to is 0 or pi, causing a singularity
+        if abs(_angles[1]) <= 1e-7:
+            case = 1
+        elif abs(_angles[1] - <double>pi) <= 1e-7:
+            case = 2
+        else:
+            case = 0 # normal case
+
+        # Step 3
+        # compute first and third angles, according to case
+        half_sum = atan2(b, a)
+        half_diff = atan2(d, c)
+        
+        if case == 0:  # no singularities
+            _angles[angle_first] = half_sum - half_diff
+            _angles[angle_third] = half_sum + half_diff
+        
+        else:  # any degenerate case
+            _angles[2] = 0
+            if case == 1:
+                _angles[0] = 2 * half_sum
+            else:
+                _angles[0] = 2 * half_diff * (-1 if extrinsic else 1)
+                
+        # for Tait-Bryan angles
+        if not symmetric:
+            _angles[angle_third] *= sign
+            _angles[1] -= lamb
+
+        for idx in range(3):
+            if _angles[idx] < -pi:
+                _angles[idx] += 2 * pi
+            elif _angles[idx] > pi:
+                _angles[idx] -= 2 * pi
+
+        if case != 0:
+            warnings.warn("Gimbal lock detected. Setting third angle to zero "
+                          "since it is not possible to uniquely determine "
+                          "all angles.")
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
 cdef double[:, :] _compute_euler_from_matrix(
     np.ndarray[double, ndim=3] matrix, const uchar[:] seq, bint extrinsic
 ) noexcept:
@@ -269,15 +331,8 @@ cdef double[:, :] _compute_euler_from_quat(
     # Adapt the algorithm for our case by reversing both axis sequence and 
     # angles for intrinsic rotations when needed
     
-    # intrinsic/extrinsic conversion helpers
-    cdef int angle_first, angle_third
-    if extrinsic:
-        angle_first = 0
-        angle_third = 2
-    else:
+    if not extrinsic:
         seq = seq[::-1]
-        angle_first = 2
-        angle_third = 0
         
     cdef int i = _elementary_basis_index(seq[0])
     cdef int j = _elementary_basis_index(seq[1])
@@ -294,12 +349,9 @@ cdef double[:, :] _compute_euler_from_quat(
     cdef Py_ssize_t num_rotations = quat.shape[0]
 
     # some forward definitions
+    cdef double a, b, c, d
     cdef double[:, :] angles = _empty2(num_rotations, 3)
     cdef double[:] _angles # accessor for each rotation
-    cdef double a, b, c, d
-    cdef double half_sum, half_diff
-    cdef double eps = 1e-7
-    cdef int case
 
     for ind in range(num_rotations):
         _angles = angles[ind, :]
@@ -316,50 +368,9 @@ cdef double[:, :] _compute_euler_from_quat(
             b = quat[ind, i] + quat[ind, k] * sign
             c = quat[ind, j] + quat[ind, 3]
             d = quat[ind, k] * sign - quat[ind, i]
-        
-        # Step 2
-        # Compute second angle...
-        _angles[1] = 2 * atan2(hypot(c, d), hypot(a, b))
 
-        # ... and check if equal to is 0 or pi, causing a singularity
-        if abs(_angles[1]) <= eps:
-            case = 1
-        elif abs(_angles[1] - <double>pi) <= eps:
-            case = 2
-        else:
-            case = 0 # normal case
-
-        # Step 3
-        # compute first and third angles, according to case
-        half_sum = atan2(b, a)
-        half_diff = atan2(d, c)
-        
-        if case == 0:  # no singularities
-            _angles[angle_first] = half_sum - half_diff
-            _angles[angle_third] = half_sum + half_diff
-        
-        else:  # any degenerate case
-            _angles[2] = 0
-            if case == 1:
-                _angles[0] = 2 * half_sum
-            else:
-                _angles[0] = 2 * half_diff * (-1 if extrinsic else 1)
-                
-        # for Tait-Bryan angles
-        if not symmetric:
-            _angles[angle_third] *= sign
-            _angles[1] -= pi / 2
-
-        for idx in range(3):
-            if _angles[idx] < -pi:
-                _angles[idx] += 2 * pi
-            elif _angles[idx] > pi:
-                _angles[idx] -= 2 * pi
-
-        if case != 0:
-            warnings.warn("Gimbal lock detected. Setting third angle to zero "
-                          "since it is not possible to uniquely determine "
-                          "all angles.")
+        _get_angles(
+            _angles, extrinsic, symmetric, sign, pi / 2, a, b, c, d)
 
     return angles
 
@@ -376,15 +387,8 @@ cdef double[:, :] _compute_davenport_from_quat(
     # Adapt the algorithm for our case by reversing both axis sequence and
     # angles for intrinsic rotations when needed
 
-    # intrinsic/extrinsic conversion helpers
-    cdef int angle_first, angle_third
-    if extrinsic:
-        angle_first = 0
-        angle_third = 2
-    else:
+    if not extrinsic:
         n1, n3 = n3, n1
-        angle_first = 2
-        angle_third = 0
 
     cdef double[:] n_cross = _cross3(n1, n2)
     cdef double lamb = atan2(_dot3(n3, n_cross), _dot3(n3, n1))
@@ -413,9 +417,6 @@ cdef double[:, :] _compute_davenport_from_quat(
     cdef double[:] _angles # accessor for each rotation
     cdef double[:] quat_transformed = _empty1(4)
     cdef double a, b, c, d
-    cdef double half_sum, half_diff
-    cdef double eps = 1e-7
-    cdef int case
 
     for ind in range(num_rotations):
         _angles = angles[ind, :]
@@ -428,49 +429,11 @@ cdef double[:, :] _compute_davenport_from_quat(
         c = _dot3(quat_transformed[:3], n2)
         d = _dot3(quat_transformed[:3], n_cross)
 
-        # Step 2
-        # Compute second angle...
-        _angles[1] = 2 * atan2(hypot(c, d), hypot(a, b))
-
-        # ... and check if equal to is 0 or pi, causing a singularity
-        if abs(_angles[1]) <= eps:
-            case = 1
-        elif abs(_angles[1] - <double>pi) <= eps:
-            case = 2
-        else:
-            case = 0 # normal case
-
-        # Step 3
-        # compute first and third angles, according to case
-        half_sum = atan2(b, a)
-        half_diff = atan2(d, c)
-
-        if case == 0:  # no singularities
-            _angles[angle_first] = half_sum - half_diff
-            _angles[angle_third] = half_sum + half_diff
-
-        else:  # any degenerate case
-            _angles[2] = 0
-            if case == 1:
-                _angles[0] = 2 * half_sum
-            else:
-                _angles[0] = 2 * half_diff * (-1 if extrinsic else 1)
-
-        _angles[1] -= lamb
+        _get_angles(
+            _angles, extrinsic, False, 1, lamb, a, b, c, d)
 
         if correct_set:
             _angles[1] = -_angles[1]
-
-        for idx in range(3):
-            if _angles[idx] < -pi:
-                _angles[idx] += 2 * pi
-            elif _angles[idx] > pi:
-                _angles[idx] -= 2 * pi
-
-        if case != 0:
-            warnings.warn("Gimbal lock detected. Setting third angle to zero "
-                          "since it is not possible to uniquely determine "
-                          "all angles.")
 
     return angles
 
