@@ -283,21 +283,21 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     # That's still the case but we'll deal with new-style from here on,
     # it's easier
     if bounds is None:
-        bounds = np.empty((2, n), dtype=float)
-        bounds[0] = -np.inf
-        bounds[1] = np.inf
+        pass
     elif len(bounds) != n:
         raise ValueError('length of x0 != length of bounds')
     else:
         bounds = np.array(old_bound_to_new(bounds))
 
-    # check bounds
-    if (bounds[0] > bounds[1]).any():
-        raise ValueError("LBFGSB - one of the lower bounds is greater than an upper bound.")
+        # check bounds
+        if (bounds[0] > bounds[1]).any():
+            raise ValueError(
+                "LBFGSB - one of the lower bounds is greater than an upper bound."
+            )
 
-    # initial vector must lie within the bounds. Otherwise ScalarFunction and
-    # approx_derivative will cause problems
-    x0 = np.clip(x0, bounds[0], bounds[1])
+        # initial vector must lie within the bounds. Otherwise ScalarFunction and
+        # approx_derivative will cause problems
+        x0 = np.clip(x0, bounds[0], bounds[1])
 
     if disp is not None:
         if disp == 0:
@@ -305,6 +305,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         else:
             iprint = disp
 
+    # _prepare_scalar_function can use bounds=None to represent no bounds
     sf = _prepare_scalar_function(fun, x0, jac=jac, args=args, epsilon=eps,
                                   bounds=bounds,
                                   finite_diff_rel_step=finite_diff_rel_step)
@@ -321,15 +322,16 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
                   (1, 1): 2,
                   (-np.inf, 1): 3}
 
-    for i in range(0, n):
-        l, u = bounds[0, i], bounds[1, i]
-        if not np.isinf(l):
-            low_bnd[i] = l
-            l = 1
-        if not np.isinf(u):
-            upper_bnd[i] = u
-            u = 1
-        nbd[i] = bounds_map[l, u]
+    if bounds is not None:
+        for i in range(0, n):
+            l, u = bounds[0, i], bounds[1, i]
+            if not np.isinf(l):
+                low_bnd[i] = l
+                l = 1
+            if not np.isinf(u):
+                upper_bnd[i] = u
+                u = 1
+            nbd[i] = bounds_map[l, u]
 
     if not maxls > 0:
         raise ValueError('maxls must be positive.')
