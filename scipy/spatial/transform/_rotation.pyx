@@ -1388,7 +1388,7 @@ cdef class Rotation:
 
     @cython.embedsignature(True)
     @classmethod
-    def from_davenport(cls, axes, angles, extrinsic, degrees=False):
+    def from_davenport(cls, axes, order, angles, degrees=False):
         """Initialize from Davenport angles.
 
         Rotations in 3-D can be represented by a sequence of 3
@@ -1415,6 +1415,10 @@ cdef class Rotation:
             shape (3, ) or ([1 or 2 or 3], 3), where each axes[i, :] is the ith
             axis. If more than one axis is given, then the second axis must be
             orthogonal to both the first and third axes.
+        order : string
+            If it belongs to the set {'e', 'extrinsic'}, the sequence will be 
+            extrinsic. If if belongs to the set {'i', 'intrinsic'}, sequence 
+            will be treated as intrinsic.
         angles : float or array_like, shape (N,) or (N, [1 or 2 or 3])
             Euler angles specified in radians (`degrees` is False) or degrees
             (`degrees` is True).
@@ -1434,9 +1438,6 @@ cdef class Rotation:
               corresponds to a sequence of Davenport angles describing a 
               single rotation
 
-        extrinsic : boolean
-            If True, sequence will be extrinsic. If False, sequence will be
-            treated as intrinsic.
         degrees : bool, optional
             If True, then the given angles are assumed to be in degrees. 
             Default is False.
@@ -1467,7 +1468,7 @@ cdef class Rotation:
         Initialize a single rotation with a given axis sequence:
 
         >>> axes = [ez, ey, ex]
-        >>> r = R.from_davenport(axes, [90, 0, 0], extrinsic=True, degrees=True)
+        >>> r = R.from_davenport(axes, 'extrinsic', [90, 0, 0], degrees=True)
         >>> r.as_quat().shape
         (4,)
 
@@ -1478,13 +1479,13 @@ cdef class Rotation:
 
         Initialize multiple rotations in one object:
 
-        >>> r = R.from_davenport(axes, [[90, 45, 30], [35, 45, 90]], extrinsic=True, degrees=True)
+        >>> r = R.from_davenport(axes, 'extrinsic', [[90, 45, 30], [35, 45, 90]], degrees=True)
         >>> r.as_quat().shape
         (2, 4)
 
         Using only one or two axes is also possible:
 
-        >>> r = R.from_davenport([ez, ex], [[90, 45], [35, 45]], extrinsic=True, degrees=True)
+        >>> r = R.from_davenport([ez, ex], 'extrinsic', [[90, 45], [35, 45]], degrees=True)
         >>> r.as_quat().shape
         (2, 4)
 
@@ -1495,11 +1496,20 @@ cdef class Rotation:
         >>> e2 = [0, 1, 0]
         >>> e3 = [1, 0, 1]
         >>> axes = [e1, e2, e3]
-        >>> r = R.from_davenport(axes, [90, 45, 30], extrinsic=True, degrees=True)
+        >>> r = R.from_davenport(axes, 'extrinsic', [90, 45, 30], degrees=True)
         >>> r.as_quat().shape
         (4,)
 
         """
+        if order in ['e', 'extrinsic']:
+            extrinsic = True
+        elif order in ['i', 'intrinsic']:
+            extrinsic = False
+        else:
+            raise ValueError("order should be 'e'/'extrinsic' for extrinsic "
+                             "sequences or 'i'/'intrinsic' for intrinsic "
+                             "sequences, got {}".format(order))
+
         axes = np.asarray(axes)
         if axes.ndim == 1:
             axes = axes.reshape([1, 3])
@@ -2135,7 +2145,7 @@ cdef class Rotation:
         return self._compute_euler(seq, degrees, 'from_quat')
 
     @cython.embedsignature(True)
-    def as_davenport(self, axes, extrinsic, degrees=False):
+    def as_davenport(self, axes, order, degrees=False):
         """Represent as Davenport angles.
 
         Any orientation can be expressed as a composition of 3 elementary
@@ -2169,9 +2179,10 @@ cdef class Rotation:
             shape (3, ) or (3, [1 or 2 or 3]), where each axes[i, :] is the ith
             axis. If more than one axis is given, then the second axis must be
             orthogonal to both the first and third axes.
-        extrinsic : boolean
-            If True, sequence will be extrinsic. If False, sequence will be
-            treated as intrinsic.
+        order : string
+            If it belongs to the set {'e', 'extrinsic'}, the sequence will be 
+            extrinsic. If if belongs to the set {'i', 'intrinsic'}, sequence 
+            will be treated as intrinsic.
         degrees : boolean, optional
             Returned angles are in degrees if this flag is True, else they are
             in radians. Default is False.
@@ -2186,7 +2197,7 @@ cdef class Rotation:
             - Third angle belongs to [-180, 180] degrees (both inclusive)
 
             - Second angle belongs to a set of size 180 degrees, 
-            given by: `[-abs(lambda), 180 - abs(lambda)]`, where `lambda`
+            given by: ``[-abs(lambda), 180 - abs(lambda)]``, where ``lambda``
             is the angle between the first and third axes.
 
         References
@@ -2213,19 +2224,19 @@ cdef class Rotation:
         Represent a single rotation:
 
         >>> r = R.from_rotvec([0, 0, np.pi/2])
-        >>> r.as_davenport([ez, ex, ey], extrinsic=True, degrees=True)
+        >>> r.as_davenport([ez, ex, ey], 'extrinsic', degrees=True)
         array([90.,  0.,  0.])
         >>> r.as_euler('zxy', degrees=True)
         array([90.,  0.,  0.])
-        >>> r.as_davenport([ez, ex, ey], extrinsic=True, degrees=True).shape
+        >>> r.as_davenport([ez, ex, ey], 'extrinsic', degrees=True).shape
         (3,)
 
         Represent a stack of single rotation:
 
         >>> r = R.from_rotvec([[0, 0, np.pi/2]])
-        >>> r.as_davenport([ez, ex, ey], extrinsic=True, degrees=True)
+        >>> r.as_davenport([ez, ex, ey], 'extrinsic', degrees=True)
         array([[90.,  0.,  0.]])
-        >>> r.as_davenport([ez, ex, ey], extrinsic=True, degrees=True).shape
+        >>> r.as_davenport([ez, ex, ey], 'extrinsic', degrees=True).shape
         (1, 3)
 
         Represent multiple rotations in a single object:
@@ -2233,12 +2244,21 @@ cdef class Rotation:
         >>> r = R.from_rotvec([
         ... [0, 0, 90],
         ... [45, 0, 0]], degrees=True)
-        >>> r.as_davenport([ez, ex, ey], extrinsic=True, degrees=True)
+        >>> r.as_davenport([ez, ex, ey], 'extrinsic', degrees=True)
         array([[90.,  0.,  0.],
                [ 0., 45.,  0.]])
-        >>> r.as_davenport([ez, ex, ey], extrinsic=True, degrees=True).shape
+        >>> r.as_davenport([ez, ex, ey], 'extrinsic', degrees=True).shape
         (2, 3)
         """
+        if order in ['e', 'extrinsic']:
+            extrinsic = True
+        elif order in ['i', 'intrinsic']:
+            extrinsic = False
+        else:
+            raise ValueError("order should be 'e'/'extrinsic' for extrinsic "
+                             "sequences or 'i'/'intrinsic' for intrinsic "
+                             "sequences, got {}".format(order))
+
         if len(axes) != 3:
             raise ValueError("Expected 3 axes, got {}.".format(len(axes)))
 

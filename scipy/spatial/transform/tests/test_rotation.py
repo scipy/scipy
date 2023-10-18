@@ -1731,8 +1731,8 @@ def test_len_and_bool():
 
 def test_from_davenport_single_rotation():
     axis = [0, 0, 1]
-    quat = Rotation.from_davenport(axis, 90, 
-                                   extrinsic=True, degrees=True).as_quat()
+    quat = Rotation.from_davenport(axis, 'extrinsic', 90, 
+                                   degrees=True).as_quat()
     expected_quat = np.array([0, 0, 1, 1]) / np.sqrt(2)
     assert_allclose(quat, expected_quat)
 
@@ -1751,19 +1751,20 @@ def test_as_davenport():
     e2 = np.array([0, 1, 0])
 
     for lamb in lambdas:
-        for extrinsic in [True, False]:
+        for order in ['extrinsic', 'intrinsic']:
             ax = [e1, e2, Rotation.from_rotvec(lamb*e2).apply(e1)]
-            if extrinsic:
+            if order == 'extrinsic':
                 ax = ax[::-1]
             angles[:, 1] = angles_middle - lamb
-            rot = Rotation.from_davenport(ax, angles, extrinsic=extrinsic)
-            angles_dav = rot.as_davenport(ax, extrinsic=extrinsic)
+            rot = Rotation.from_davenport(ax, order, angles)
+            angles_dav = rot.as_davenport(ax, order)
             assert_allclose(angles_dav, angles)
 
             # asserting that both sets are equivalent
-            angles_alt = rot.as_davenport(ax, extrinsic=extrinsic)
-            rot_alt = Rotation.from_davenport(ax, angles_alt,
-                                              extrinsic=extrinsic)
+            angles_alt = rot.as_davenport(ax, order)
+            rot_alt = Rotation.from_davenport(ax, order, 
+                                              angles_alt)
+                                              
             assert_allclose(rot.as_quat(), rot_alt.as_quat())
 
 
@@ -1788,22 +1789,22 @@ def test_as_davenport_degenerate():
             # Intrinsic
             ax = [e1, e2, Rotation.from_rotvec(lamb*e2).apply(e1)]
             angles[:, 1] = angles_middle - lamb
-            rot = Rotation.from_davenport(ax, angles, extrinsic=False)
+            rot = Rotation.from_davenport(ax, 'intrinsic', angles)
             mat_expected = rot.as_matrix()
-            angles_dav = rot.as_davenport(ax, extrinsic=False)
+            angles_dav = rot.as_davenport(ax, 'intrinsic')
             mat_estimated = Rotation.from_davenport(
-                ax, angles_dav, extrinsic=False).as_matrix()
+                ax, 'intrinsic', angles_dav).as_matrix()
             assert_array_almost_equal(mat_expected, mat_estimated)
 
         with pytest.warns(UserWarning, match="Gimbal lock"):
             # Extrinsic
             ax = [Rotation.from_rotvec(lamb*e2).apply(e1), e2, e1]
             angles[:, 1] = angles_middle - lamb
-            rot = Rotation.from_davenport(ax, angles, extrinsic=True)
+            rot = Rotation.from_davenport(ax, 'extrinsic', angles)
             mat_expected = rot.as_matrix()
-            angles_dav = rot.as_davenport(ax, extrinsic=True)
+            angles_dav = rot.as_davenport(ax, 'extrinsic')
             mat_estimated = Rotation.from_davenport(
-                ax, angles_dav, extrinsic=True).as_matrix()
+                ax, 'extrinsic', angles_dav).as_matrix()
             assert_array_almost_equal(mat_expected, mat_estimated)
 
 
@@ -1825,26 +1826,26 @@ def test_compare_from_davenport_from_euler():
     angles[:, 0] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
     angles[:, 1] = rnd.uniform(low=0, high=np.pi, size=(n,))
     angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
-    for extrinsic in [True, False]:
+    for order in ['extrinsic', 'intrinsic']:
         for seq_tuple in permutations('xyz'):
             seq = ''.join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
             ax = [basis_vec(i) for i in seq]
-            if not extrinsic:
+            if order == 'intrinsic':
                 seq = seq.upper()
             eul = Rotation.from_euler(seq, angles)
-            dav = Rotation.from_davenport(ax, angles, extrinsic=extrinsic)
+            dav = Rotation.from_davenport(ax, order, angles)
             assert_allclose(eul.as_quat(), dav.as_quat(), atol=0, rtol=1e-9)
 
     # asymmetric sequences
     angles[:, 1] -= np.pi / 2
-    for extrinsic in [True, False]:
+    for order in ['extrinsic', 'intrinsic']:
         for seq_tuple in permutations('xyz'):
             seq = ''.join(seq_tuple)
             ax = [basis_vec(i) for i in seq]
-            if not extrinsic:
+            if order == 'intrinsic':
                 seq = seq.upper()
             eul = Rotation.from_euler(seq, angles)
-            dav = Rotation.from_davenport(ax, angles, extrinsic=extrinsic)
+            dav = Rotation.from_davenport(ax, order, angles)
             assert_allclose(eul.as_quat(), dav.as_quat(), atol=0, rtol=1e-9)
 
 
@@ -1866,26 +1867,26 @@ def test_compare_as_davenport_as_euler():
     angles[:, 0] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
     angles[:, 1] = rnd.uniform(low=0, high=np.pi, size=(n,))
     angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
-    for extrinsic in [True, False]:
+    for order in ['extrinsic', 'intrinsic']:
         for seq_tuple in permutations('xyz'):
             seq = ''.join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
             ax = [basis_vec(i) for i in seq]
-            if not extrinsic:
+            if order == 'intrinsic':
                 seq = seq.upper()
             rot = Rotation.from_euler(seq, angles)
             eul = rot.as_euler(seq)
-            dav = rot.as_davenport(ax, extrinsic=extrinsic)
+            dav = rot.as_davenport(ax, order)
             assert_allclose(eul, dav, atol=0, rtol=1e-9)
 
     # asymmetric sequences
     angles[:, 1] -= np.pi / 2
-    for extrinsic in [True, False]:
+    for order in ['extrinsic', 'intrinsic']:
         for seq_tuple in permutations('xyz'):
             seq = ''.join(seq_tuple)
             ax = [basis_vec(i) for i in seq]
-            if not extrinsic:
+            if order == 'intrinsic':
                 seq = seq.upper()
             rot = Rotation.from_euler(seq, angles)
             eul = rot.as_euler(seq)
-            dav = rot.as_davenport(ax, extrinsic=extrinsic)
+            dav = rot.as_davenport(ax, order)
             assert_allclose(eul, dav, atol=0, rtol=1e-9)
