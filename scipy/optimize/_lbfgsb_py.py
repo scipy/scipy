@@ -279,8 +279,9 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     x0 = asarray(x0).ravel()
     n, = x0.shape
 
-    # historically old-style bounds were/are expected by lbfgsb,
-    # but we'll deal with new-style from here on, it's easier
+    # historically old-style bounds were/are expected by lbfgsb.
+    # That's still the case but we'll deal with new-style from here on,
+    # it's easier
     if bounds is None:
         bounds = np.empty((2, n), dtype=float)
         bounds[0] = -np.inf
@@ -288,7 +289,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     else:
         if len(bounds) != n:
             raise ValueError('length of x0 != length of bounds')
-        bounds = old_bound_to_new(bounds)
+        bounds = np.array(old_bound_to_new(bounds))
 
     # check bounds
     if (bounds[0] > bounds[1]).any():
