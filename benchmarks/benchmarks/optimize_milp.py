@@ -49,7 +49,7 @@ class MilpMiplibBenchmarks(Benchmark):
 
     def time_milp(self, prob):
 
-        res = milp(c=prob.c, 
+        res = milp(c=self.c, 
              constraints=prob.constraints,
              bounds=prob.bounds, 
              integrality=prob.integrality,
