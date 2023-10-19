@@ -701,6 +701,13 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
             If `yi` is not given, the y values will be supplied later. `yi`
             should be given if and only if the interpolator has y values
             specified.
+
+        Notes
+        -----
+        Currently, the new points added by add_xi are not randomly permuted
+        so the interpolation is numerically unstable and could fail,
+        especially for a large number of points. If this type of failure
+        happens, please reconstruct interpolation from scratch instead.
         """
         if yi is not None:
             if self.yi is None:
