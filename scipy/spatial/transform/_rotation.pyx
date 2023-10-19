@@ -118,64 +118,64 @@ cdef inline void _quat_canonical(double[:, :] q) noexcept:
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef inline void _get_angles(
-    double[:] _angles, bint extrinsic, bint symmetric, bint sign,
+    double[:] angles, bint extrinsic, bint symmetric, bint sign, 
     double lamb, double a, double b, double c, double d):
     
-        # intrinsic/extrinsic conversion helpers
-        cdef int angle_first, angle_third
-        if extrinsic:
-            angle_first = 0
-            angle_third = 2
-        else:
-            angle_first = 2
-            angle_third = 0
+    # intrinsic/extrinsic conversion helpers
+    cdef int angle_first, angle_third
+    if extrinsic:
+        angle_first = 0
+        angle_third = 2
+    else:
+        angle_first = 2
+        angle_third = 0
 
-        cdef double half_sum, half_diff
-        cdef int case
+    cdef double half_sum, half_diff
+    cdef int case
+
+    # Step 2
+    # Compute second angle...
+    angles[1] = 2 * atan2(hypot(c, d), hypot(a, b))
+
+    # ... and check if equal to is 0 or pi, causing a singularity
+    if abs(angles[1]) <= 1e-7:
+        case = 1
+    elif abs(angles[1] - <double>pi) <= 1e-7:
+        case = 2
+    else:
+        case = 0 # normal case
+
+    # Step 3
+    # compute first and third angles, according to case
+    half_sum = atan2(b, a)
+    half_diff = atan2(d, c)
     
-        # Step 2
-        # Compute second angle...
-        _angles[1] = 2 * atan2(hypot(c, d), hypot(a, b))
-
-        # ... and check if equal to is 0 or pi, causing a singularity
-        if abs(_angles[1]) <= 1e-7:
-            case = 1
-        elif abs(_angles[1] - <double>pi) <= 1e-7:
-            case = 2
+    if case == 0:  # no singularities
+        angles[angle_first] = half_sum - half_diff
+        angles[angle_third] = half_sum + half_diff
+    
+    else:  # any degenerate case
+        angles[2] = 0
+        if case == 1:
+            angles[0] = 2 * half_sum
         else:
-            case = 0 # normal case
+            angles[0] = 2 * half_diff * (-1 if extrinsic else 1)
+            
+    # for Tait-Bryan/asymmetric sequences
+    if not symmetric:
+        angles[angle_third] *= sign
+        angles[1] -= lamb
 
-        # Step 3
-        # compute first and third angles, according to case
-        half_sum = atan2(b, a)
-        half_diff = atan2(d, c)
-        
-        if case == 0:  # no singularities
-            _angles[angle_first] = half_sum - half_diff
-            _angles[angle_third] = half_sum + half_diff
-        
-        else:  # any degenerate case
-            _angles[2] = 0
-            if case == 1:
-                _angles[0] = 2 * half_sum
-            else:
-                _angles[0] = 2 * half_diff * (-1 if extrinsic else 1)
-                
-        # for Tait-Bryan angles
-        if not symmetric:
-            _angles[angle_third] *= sign
-            _angles[1] -= lamb
+    for idx in range(3):
+        if angles[idx] < -pi:
+            angles[idx] += 2 * pi
+        elif angles[idx] > pi:
+            angles[idx] -= 2 * pi
 
-        for idx in range(3):
-            if _angles[idx] < -pi:
-                _angles[idx] += 2 * pi
-            elif _angles[idx] > pi:
-                _angles[idx] -= 2 * pi
-
-        if case != 0:
-            warnings.warn("Gimbal lock detected. Setting third angle to zero "
-                          "since it is not possible to uniquely determine "
-                          "all angles.")
+    if case != 0:
+        warnings.warn("Gimbal lock detected. Setting third angle to zero "
+                        "since it is not possible to uniquely determine "
+                        "all angles.")
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -344,7 +344,7 @@ cdef double[:, :] _compute_euler_from_quat(
         
     # Step 0
     # Check if permutation is even (+1) or odd (-1)     
-    cdef int sign = (i - j) * (j - k) * (k - i) // 2
+    cdef int sig = (i - j) * (j - k) * (k - i) // 2
 
     cdef Py_ssize_t num_rotations = quat.shape[0]
 
@@ -354,7 +354,6 @@ cdef double[:, :] _compute_euler_from_quat(
     cdef double[:] _angles # accessor for each rotation
 
     for ind in range(num_rotations):
-        _angles = angles[ind, :]
 
         # Step 1
         # Permutate quaternion elements            
@@ -362,15 +361,14 @@ cdef double[:, :] _compute_euler_from_quat(
             a = quat[ind, 3]
             b = quat[ind, i]
             c = quat[ind, j]
-            d = quat[ind, k] * sign
+            d = quat[ind, k] * sig
         else:
             a = quat[ind, 3] - quat[ind, j]
-            b = quat[ind, i] + quat[ind, k] * sign
+            b = quat[ind, i] + quat[ind, k] * sig
             c = quat[ind, j] + quat[ind, 3]
-            d = quat[ind, k] * sign - quat[ind, i]
+            d = quat[ind, k] * sig - quat[ind, i]
 
-        _get_angles(
-            _angles, extrinsic, symmetric, sign, pi / 2, a, b, c, d)
+        _get_angles(angles[ind], extrinsic, symmetric, sig, pi / 2, a, b, c, d)
 
     return angles
 
@@ -419,7 +417,6 @@ cdef double[:, :] _compute_davenport_from_quat(
     cdef double a, b, c, d
 
     for ind in range(num_rotations):
-        _angles = angles[ind, :]
         _compose_quat_single(quat_lamb, quat[ind, :], quat_transformed)
 
         # Step 1
@@ -429,11 +426,10 @@ cdef double[:, :] _compute_davenport_from_quat(
         c = _dot3(quat_transformed[:3], n2)
         d = _dot3(quat_transformed[:3], n_cross)
 
-        _get_angles(
-            _angles, extrinsic, False, 1, lamb, a, b, c, d)
+        _get_angles(angles[ind], extrinsic, False, 1, lamb, a, b, c, d)
 
         if correct_set:
-            _angles[1] = -_angles[1]
+            angles[ind, 1] = -angles[ind, 1]
 
     return angles
 
@@ -1379,8 +1375,8 @@ cdef class Rotation:
             axis. If more than one axis is given, then the second axis must be
             orthogonal to both the first and third axes.
         order : string
-            If it belongs to the set {'e', 'extrinsic'}, the sequence will be 
-            extrinsic. If if belongs to the set {'i', 'intrinsic'}, sequence 
+            If it is equal to 'e' or 'extrinsic', the sequence will be 
+            extrinsic. If it is equal to 'i' or 'intrinsic', sequence 
             will be treated as intrinsic.
         angles : float or array_like, shape (N,) or (N, [1 or 2 or 3])
             Euler angles specified in radians (`degrees` is False) or degrees
@@ -1533,7 +1529,6 @@ cdef class Rotation:
         if angles.ndim != 2 or angles.shape[-1] != num_axes:
             raise ValueError("Expected angles to have shape (num_rotations, "
                             "num_axes), got {}.".format(angles.shape))
-
 
         q = Rotation.identity(len(angles))
         for i in range(num_axes):
@@ -2139,7 +2134,7 @@ cdef class Rotation:
         ----------
         axes : array_like
             Specifies sequence of axes for rotations. Must be an array_like of
-            shape (3, ) or (3, [1 or 2 or 3]), where each axes[i, :] is the ith
+            shape (3, ) or ([1 or 2 or 3], 3), where each axes[i, :] is the ith
             axis. If more than one axis is given, then the second axis must be
             orthogonal to both the first and third axes.
         order : string
