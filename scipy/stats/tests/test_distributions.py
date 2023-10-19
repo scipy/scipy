@@ -998,10 +998,36 @@ class TestPlanck:
 class TestNormMixture:
     def test_norm(self):
         # test against normal (special case for 1 component)
-        points = [1, 2, 3]
-        pdf1 = stats.norm_mixture([2], [3], [1]).pdf(points)
+        points = np.linspace(-10, 10, 100)
+        dist1 = stats.norm_mixture([2], [3], [1])
         pdf2 = stats.norm.pdf(points, loc=2, scale=3)
-        assert_almost_equal(pdf1, pdf2)
+        assert_array_almost_equal(dist1.pdf(points), pdf2)
+        assert_almost_equal(dist1.mean(), 2.0)
+        assert_almost_equal(dist1.std(), 3.0)
+
+    def test_two_gaussians(self):
+        points = np.linspace(-10, 10, 100)
+        mixture = stats.norm_mixture([2, 5], [3, 1], [0.7, 0.5])
+        pdf_mixture = mixture.pdf(points)
+
+        pdf_ref = 0.7 / (0.7 + 0.5) * stats.norm.pdf(points, loc=2, scale=3) + \
+                  0.5 / (0.7 + 0.5) * stats.norm.pdf(points, loc=5, scale=1)
+        assert_array_almost_equal(pdf_mixture, pdf_ref)
+
+    def test_means_std(self):
+        mus = np.repeat([2], 3)
+        sigmas = np.array([3, 1.5, 5])
+        weights = np.array([0.7, 0.2, 0.1])
+        mixture = stats.norm_mixture(mus, sigmas, weights)
+        assert_almost_equal(mixture.mean(), mus[0])
+        assert_almost_equal(mixture.var(), np.sum(weights * sigmas ** 2))
+
+        weights = np.array([0.7, 0.2, 0.1])
+        mus = np.array([2, 3, 4])
+        sigmas = np.array([3, 1.5, 5])
+        mixture = stats.norm_mixture(mus, sigmas, weights)
+        assert_almost_equal(mixture.mean(), np.average(mus, weights=weights))
+        assert_almost_equal(mixture.var(), np.sum(weights * (sigmas ** 2 + mus ** 2)) - mixture.mean() ** 2)
 
 class TestGennorm:
     def test_laplace(self):

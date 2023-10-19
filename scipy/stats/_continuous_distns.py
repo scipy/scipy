@@ -11026,7 +11026,7 @@ class mixture_distribution(rv_continuous):
             raise ValueError("The normalization method must be either 'linear' or 'softmax'.")
         super(mixture_distribution, self).__init__()
 
-            
+
     # pdf, cdf, sf, and munp (non-central moments) are easy to compute, they are just the weighted sum
     # this is not true for other properties
     def _pdf(self, x):
