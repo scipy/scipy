@@ -17,7 +17,7 @@ __all__ = [  # noqa: F822
     'lp2lp_zpk', 'lp2hp_zpk', 'lp2bp_zpk', 'lp2bs_zpk',
     'gammatone', 'iircomb',
     'atleast_1d', 'poly', 'polyval', 'roots', 'resize', 'absolute',
-    'logspace', 'tan', 'log10', 'arctan', 'arcsinh', 'exp', 'arccosh',
+    'tan', 'log10', 'arcsinh', 'exp', 'arccosh',
     'ceil', 'conjugate', 'append', 'prod', 'full', 'array', 'mintypecode',
     'npp_polyval', 'polyvalfromroots', 'optimize', 'sp_fft', 'comb',
     'float_factorial', 'abs', 'maxflat', 'yulewalk',

@@ -1,14 +1,14 @@
 import operator
+from math import prod
 
 import numpy as np
-from numpy.core.multiarray import normalize_axis_index
+from scipy._lib._util import normalize_axis_index
 from scipy.linalg import (get_lapack_funcs, LinAlgError,
                           cholesky_banded, cho_solve_banded,
                           solve, solve_banded)
 from scipy.optimize import minimize_scalar
 from . import _bspl
 from . import _fitpack_impl
-from scipy._lib._util import prod
 from scipy.sparse import csr_array
 from scipy.special import poch
 from itertools import combinations
@@ -20,9 +20,9 @@ __all__ = ["BSpline", "make_interp_spline", "make_lsq_spline",
 def _get_dtype(dtype):
     """Return np.complex128 for complex dtypes, np.float64 otherwise."""
     if np.issubdtype(dtype, np.complexfloating):
-        return np.complex_
+        return np.complex128
     else:
-        return np.float_
+        return np.float64
 
 
 def _as_float_array(x, check_finite=False):
@@ -487,7 +487,7 @@ class BSpline:
             extrapolate = self.extrapolate
         x = np.asarray(x)
         x_shape, x_ndim = x.shape, x.ndim
-        x = np.ascontiguousarray(x.ravel(), dtype=np.float_)
+        x = np.ascontiguousarray(x.ravel(), dtype=np.float64)
 
         # With periodic extrapolation we map x to the segment
         # [self.t[k], self.t[n]].
@@ -683,7 +683,7 @@ class BSpline:
 
             if n_periods > 0:
                 # Evaluate the difference of antiderivatives.
-                x = np.asarray([ts, te], dtype=np.float_)
+                x = np.asarray([ts, te], dtype=np.float64)
                 _bspl.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
                                       ka, x, 0, False, out)
                 integral = out[1] - out[0]
@@ -699,23 +699,23 @@ class BSpline:
             # If b <= te then we need to integrate over [a, b], otherwise
             # over [a, te] and from xs to what is remained.
             if b <= te:
-                x = np.asarray([a, b], dtype=np.float_)
+                x = np.asarray([a, b], dtype=np.float64)
                 _bspl.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
                                       ka, x, 0, False, out)
                 integral += out[1] - out[0]
             else:
-                x = np.asarray([a, te], dtype=np.float_)
+                x = np.asarray([a, te], dtype=np.float64)
                 _bspl.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
                                       ka, x, 0, False, out)
                 integral += out[1] - out[0]
 
-                x = np.asarray([ts, ts + b - te], dtype=np.float_)
+                x = np.asarray([ts, ts + b - te], dtype=np.float64)
                 _bspl.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
                                       ka, x, 0, False, out)
                 integral += out[1] - out[0]
         else:
             # Evaluate the difference of antiderivatives.
-            x = np.asarray([a, b], dtype=np.float_)
+            x = np.asarray([a, b], dtype=np.float64)
             _bspl.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
                                   ka, x, 0, extrapolate, out)
             integral = out[1] - out[0]
@@ -910,7 +910,7 @@ def _woodbury_algorithm(A, ur, ll, b, k):
     The system is solved with the following steps:
         1.  New systems of linear equations are constructed:
             A @ z_i = u_i,
-            u_i - columnn vector of U,
+            u_i - column vector of U,
             i = 1, ..., k - 1
         2.  Matrix Z is formed from vectors z_i:
             Z = [ z_1 | z_2 | ... | z_{k - 1} ]
@@ -986,7 +986,7 @@ def _periodic_knots(x, k):
 def _make_interp_per_full_matr(x, y, t, k):
     '''
     Returns a solution of a system for B-spline interpolation with periodic
-    boundary conditions. First ``k - 1`` rows of matrix are condtions of
+    boundary conditions. First ``k - 1`` rows of matrix are conditions of
     periodicity (continuity of ``k - 1`` derivatives at the boundary points).
     Last ``n`` rows are interpolation conditions.
     RHS is ``k - 1`` zeros and ``n`` ordinates in this case.
@@ -1104,7 +1104,7 @@ def _make_periodic_spline(x, y, t, k, axis):
     kul = int(k / 2)
 
     # kl = ku = k
-    ab = np.zeros((3 * k + 1, nt), dtype=np.float_, order='F')
+    ab = np.zeros((3 * k + 1, nt), dtype=np.float64, order='F')
 
     # upper right and lower left blocks
     ur = np.zeros((kul, kul))
@@ -1380,7 +1380,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     # set up the LHS: the collocation matrix + derivatives at boundaries
     kl = ku = k
-    ab = np.zeros((2*kl + ku + 1, nt), dtype=np.float_, order='F')
+    ab = np.zeros((2*kl + ku + 1, nt), dtype=np.float64, order='F')
     _bspl._colloc(x, t, k, ab, offset=nleft)
     if nleft > 0:
         _bspl._handle_lhs_derivatives(t, k, x[0], ab, kl, ku, deriv_l_ords)
@@ -1557,7 +1557,7 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
     # rhs = A.T @ y for solving the LSQ problem  ``A.T @ A @ c = A.T @ y``
     lower = True
     extradim = prod(y.shape[1:])
-    ab = np.zeros((k+1, n), dtype=np.float_, order='F')
+    ab = np.zeros((k+1, n), dtype=np.float64, order='F')
     rhs = np.zeros((n, extradim), dtype=y.dtype, order='F')
     _bspl._norm_eq_lsq(x, t, k,
                        y.reshape(-1, extradim),

@@ -186,9 +186,7 @@ static double GD8[] = {
 extern double MACHEP;
 
 
-int sici(x, si, ci)
-double x;
-double *si, *ci;
+int sici(double x, double *si, double *ci)
 {
     double z, c, s, f, g;
     short sign;

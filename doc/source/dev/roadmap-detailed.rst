@@ -59,14 +59,6 @@ add new benchmarks, however running the benchmarks is not very intuitive.
 Making this easier is a priority.
 
 
-Moving to the Meson build system
-````````````````````````````````
-Support for the Meson build system was merged into SciPy main in Dec 2021,
-and SciPy 1.9.3 was the first release where all wheels were also built with
-Meson. What is left to do is removing support for
-``numpy.distutils``/``setuptools``, this will happen soon.
-
-
 Use of Cython
 `````````````
 Cython's old syntax for using NumPy arrays should be removed and replaced with
@@ -78,10 +70,8 @@ can define ``NPY_NO_DEPRECATED_API`` unconditionally.
 Use of Pythran
 ``````````````
 Pythran is still an optional build dependency, and can be disabled with
-``SCIPY_USE_PYTHRAN=0``. The aim is to make it a hard dependency - for that to
-happen it must be clear that the maintenance burden is low enough (Meson will
-help here, because it removes the monkey patching that is now done to enable
-Pythran).
+``-Duse-pythran=false``. The aim is to make it a hard dependency - for that to
+happen it must be clear that the maintenance burden is low enough.
 
 
 Use of venerable Fortran libraries
@@ -100,9 +90,8 @@ Continuous integration currently covers 32/64-bit Windows, macOS on x86-64/arm,
 of our dependencies and building release quality wheels. Reliability of CI has
 not been good recently (H1 2023), due to the large amount of configurations to
 support and some CI jobs needing an overhaul. We aim to reduce build times by
-removing the remaining distutils-based jobs when we drop that build system,
-move more jobs from Azure Pipelines to GitHub Actions, and make the set of
-configurations in CI jobs more orthogonal.
+removing the remaining distutils-based jobs when we drop that build system
+and make the set of configurations in CI jobs more orthogonal.
 
 
 Size of binaries
@@ -379,7 +368,7 @@ There are a significant number of open issues for ``_arpack`` and ``lobpcg``.
 
 - callback keyword is inconsistent
 - tol keyword is broken, should be relative tol
-- Fortran code not re-entrant (but we don't solve, maybe re-use from
+- Fortran code not re-entrant (but we don't solve, maybe reuse from
   PyKrilov)
 
 ``_dsolve``:

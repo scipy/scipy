@@ -318,12 +318,12 @@ cython_special_pxd = custom_target('_dummy_cython_special.pxd',
 uf_cython_gen = generator(cython,
   arguments : cython_args,
   output : '@BASENAME@.c',
-  depends : [_cython_tree, _ufuncs_pxi_pxd_sources])
+  depends : [_cython_tree, _ufuncs_pxi_pxd_sources, cython_special_pxd])
 
 uf_cython_gen_cpp = generator(cython,
   arguments : cython_cplus_args,
   output : '@BASENAME@.cpp',
-  depends : [_cython_tree, _ufuncs_pxi_pxd_sources])
+  depends : [_cython_tree, _ufuncs_pxi_pxd_sources, cython_special_pxd])
 
 py3.extension_module('_ufuncs',
   [
@@ -371,7 +371,7 @@ py3.extension_module('_ufuncs_cxx',
   [ufuncs_cxx_sources,
     uf_cython_gen_cpp.process(cython_special[2]),  # _ufuncs_cxx.pyx
     ],
-  cpp_args: [cython_cpp_args, '-DBOOST_MATH_STANDALONE=1'],
+  cpp_args: [cython_cpp_args, '-DBOOST_MATH_STANDALONE=1', '-DCYTHON_EXTERN_C=extern "C"'],
   include_directories: ['../_lib/boost_math/include', '../_lib',
                         '../_build_utils/src'],
   link_args: version_link_args,
@@ -484,6 +484,7 @@ python_sources = [
   '_sf_error.py',
   '_spfun_stats.py',
   '_spherical_bessel.py',
+  '_support_alternative_backends.py',
   '_test_internal.pyi',
   '_testutils.py',
   'add_newdocs.py',

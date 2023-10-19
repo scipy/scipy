@@ -1,17 +1,19 @@
 name: "Pull Request Labeler"
 on:
   pull_request_target:
-    types: [created]
 
+# Permissions needed for labelling Pull Requests automatically
+# https://docs.github.com/en/actions/security-guides/automatic-token-authentication
 permissions:
-   contents: write  # to add labels
+   contents: read
+   pull-requests: write
 
 jobs:
 
   label_pull_request:
     runs-on: ubuntu-latest
     steps:
-    - uses: thomasjpfan/labeler@v2.5.0
+    - uses: thomasjpfan/labeler@v2.5.1
       continue-on-error: true
       if: github.repository == 'scipy/scipy'
       with:

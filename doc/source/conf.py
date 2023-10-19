@@ -75,8 +75,8 @@ copyright = '2008-%s, The SciPy community' % date.today().year
 
 # The default replacements for |version| and |release|, also used in various
 # other places throughout the built documents.
-version = re.sub(r'\.dev-.*$', r'.dev', scipy.__version__)
-release = scipy.__version__
+version = re.sub(r'\.dev.*$', r'.dev', scipy.__version__)
+release = version
 
 if os.environ.get('CIRCLE_JOB', False) and \
         os.environ.get('CIRCLE_BRANCH', '') != 'main':
@@ -183,6 +183,12 @@ warnings.filterwarnings(
     message=r'There is no current event loop',
     category=DeprecationWarning,
 )
+# TODO: remove after gh-19228 resolved:
+warnings.filterwarnings(
+    'ignore',
+    message=r'.*path is deprecated.*',
+    category=DeprecationWarning,
+)
 
 # -----------------------------------------------------------------------------
 # HTML output
@@ -204,7 +210,7 @@ html_theme_options = {
 }
 
 if 'dev' in version:
-    html_theme_options["switcher"]["version_match"] = "dev"
+    html_theme_options["switcher"]["version_match"] = "development"
 
 if 'versionwarning' in tags:  # noqa
     # Specific to docs.scipy.org deployment.
@@ -316,13 +322,26 @@ coverage_ignore_c_items = {}
 plot_pre_code = """
 import warnings
 for key in (
-        'scipy.misc'  # scipy.misc deprecated in v1.10.0; use scipy.datasets
+        'lsim2 is deprecated',  # Deprecation of scipy.signal.lsim2
+        'impulse2 is deprecated',  # Deprecation of scipy.signal.impulse2
+        'step2 is deprecated',  # Deprecation of scipy.signal.step2
+        'interp2d` is deprecated',  # Deprecation of scipy.interpolate.interp2d
+        'scipy.misc',  # scipy.misc deprecated in v1.10.0; use scipy.datasets
+        'kurtosistest only valid',  # intentionally "bad" excample in docstring
+        'scipy.signal.daub is deprecated',
+        'scipy.signal.qmf is deprecated',
+        'scipy.signal.cascade is deprecated',
+        'scipy.signal.morlet is deprecated',
+        'scipy.signal.morlet2 is deprecated',
+        'scipy.signal.ricker is deprecated',
+        'scipy.signal.cwt is deprecated',
         ):
     warnings.filterwarnings(action='ignore', message='.*' + key + '.*')
 
 import numpy as np
 np.random.seed(123)
 """
+
 plot_include_source = True
 plot_formats = [('png', 96)]
 plot_html_show_formats = False

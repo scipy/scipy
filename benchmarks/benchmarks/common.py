@@ -62,7 +62,55 @@ class LimitedParamBenchmark(Benchmark):
             raise NotImplementedError("skipped")
 
 
-def run_monitored(code):
+def get_max_rss_bytes(rusage):
+    """
+    Extract the max RSS value in bytes.
+    """
+    if not rusage:
+        return None
+
+    if sys.platform.startswith('linux'):
+        # On Linux getrusage() returns ru_maxrss in kilobytes
+        # https://man7.org/linux/man-pages/man2/getrusage.2.html
+        return rusage.ru_maxrss * 1024
+    elif sys.platform == "darwin":
+        # on macOS ru_maxrss is in bytes
+        return rusage.ru_maxrss
+    else:
+        # Unknown, just return whatever is here.
+        return rusage.ru_maxrss
+
+
+def run_monitored_wait4(code):
+    """
+    Run code in a new Python process, and monitor peak memory usage.
+
+    Returns
+    -------
+    duration : float
+        Duration in seconds (including Python startup time)
+    peak_memusage : int
+        Peak memory usage in bytes of the child Python process
+
+    Notes
+    -----
+    Works on Unix platforms (Linux, macOS) that have `os.wait4()`.
+    """
+    code = textwrap.dedent(code)
+
+    start = time.time()
+    process = subprocess.Popen([sys.executable, '-c', code])
+    pid, returncode, rusage = os.wait4(process.pid, 0)
+    duration = time.time() - start
+    max_rss_bytes = get_max_rss_bytes(rusage)
+
+    if returncode != 0:
+        raise AssertionError("Running failed:\n%s" % code)
+
+    return duration, max_rss_bytes
+
+
+def run_monitored_proc(code):
     """
     Run code in a new Python process, and monitor peak memory usage.
 
@@ -108,17 +156,33 @@ def run_monitored(code):
     return duration, peak_memusage
 
 
+def run_monitored(code):
+    """
+    Run code in a new Python process, and monitor peak memory usage.
+
+    Returns
+    -------
+    duration : float
+        Duration in seconds (including Python startup time)
+    peak_memusage : float or int
+        Peak memory usage (rough estimate only) in bytes
+
+    """
+
+    if hasattr(os, 'wait4'):
+        return run_monitored_wait4(code)
+    else:
+        return run_monitored_proc(code)
+
+
 def get_mem_info():
     """Get information about available memory"""
-    if not sys.platform.startswith('linux'):
-        raise RuntimeError("Memory information implemented only for Linux")
-
-    info = {}
-    with open('/proc/meminfo', 'r') as f:
-        for line in f:
-            p = line.split()
-            info[p[0].strip(':').lower()] = float(p[1]) * 1e3
-    return info
+    import psutil
+    vm = psutil.virtual_memory()
+    return {
+        "memtotal": vm.total,
+        "memavailable": vm.available,
+    }
 
 
 def set_mem_rlimit(max_mem=None):
@@ -133,7 +197,11 @@ def set_mem_rlimit(max_mem=None):
     if cur_limit[0] > 0:
         max_mem = min(max_mem, cur_limit[0])
 
-    resource.setrlimit(resource.RLIMIT_AS, (max_mem, cur_limit[1]))
+    try:
+        resource.setrlimit(resource.RLIMIT_AS, (max_mem, cur_limit[1]))
+    except ValueError:
+        # on macOS may raise: current limit exceeds maximum limit
+        pass
 
 
 def with_attributes(**attrs):

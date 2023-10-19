@@ -268,7 +268,9 @@ def least_squares(
         arguments, as shown at the end of the Examples section.
     x0 : array_like with shape (n,) or float
         Initial guess on independent variables. If float, it will be treated
-        as a 1-D array with one element.
+        as a 1-D array with one element. When `method` is 'trf', the initial
+        guess might be slightly adjusted to lie sufficiently within the given
+        `bounds`.
     jac : {'2-point', '3-point', 'cs', callable}, optional
         Method of computing the Jacobian matrix (an m-by-n matrix, where
         element (i, j) is the partial derivative of f[i] with respect to
@@ -821,11 +823,11 @@ def least_squares(
 
     ftol, xtol, gtol = check_tolerance(ftol, xtol, gtol, method)
 
-    def fun_wrapped(x):
-        return np.atleast_1d(fun(x, *args, **kwargs))
-
     if method == 'trf':
         x0 = make_strictly_feasible(x0, lb, ub)
+
+    def fun_wrapped(x):
+        return np.atleast_1d(fun(x, *args, **kwargs))
 
     f0 = fun_wrapped(x0)
 

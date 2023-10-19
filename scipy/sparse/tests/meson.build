@@ -3,6 +3,7 @@ python_sources = [
   'test_array_api.py',
   'test_base.py',
   'test_construct.py',
+  'test_deprecations.py',
   'test_csc.py',
   'test_csr.py',
   'test_extract.py',

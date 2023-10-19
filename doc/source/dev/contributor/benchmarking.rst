@@ -147,8 +147,13 @@ track its performance over time::
 
 .. note::
 
-   This will take a while, because SciPy has to be rebuilt for each
-   commit! For more information about specifying ranges of commits, see
+   This will take a while, because SciPy has to be rebuilt for each commit! To
+   speed up the building process of benchmarks you can install `ccache`_ and
+   `f90cache`_. The benchmark suite will automatically detect them if they are
+   installed in the ``/usr/lib`` and ``/usr/local/lib``. Otherwise you must add
+   them to the ``PATH`` environment variable.
+
+   For more information about specifying ranges of commits, see
    the `git revisions documentation`_.
 
 To "publish" the results (prepare them to be viewed) and "preview" them
@@ -182,3 +187,6 @@ check out the ``asv find`` command and the ``--quick``,
 
 .. |7fa17f2369e0e5ad055b23cc1a5ee079f9e8ca32| replace:: ``7fa17f2369e0e5ad055b23cc1a5ee079f9e8ca32``
 .. _7fa17f2369e0e5ad055b23cc1a5ee079f9e8ca32: https://github.com/scipy/scipy/commit/7fa17f2369e0e5ad055b23cc1a5ee079f9e8ca32
+
+.. _ccache: https://ccache.dev
+.. _f90cache: https://perso.univ-rennes1.fr/edouard.canot/f90cache/

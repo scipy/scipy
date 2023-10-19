@@ -709,17 +709,20 @@ class TestNdimageFilters:
         ndimage.gaussian_filter(input, 1.0, output=input)
         assert_array_almost_equal(output1, input)
 
-    @pytest.mark.parametrize(('filter_func', 'size0', 'size'),
-                             [(ndimage.gaussian_filter, 0, 1.0),
-                              (ndimage.uniform_filter, 1, 3),
-                              (ndimage.minimum_filter, 1, 3),
-                              (ndimage.maximum_filter, 1, 3)])
+    @pytest.mark.parametrize(('filter_func', 'extra_args', 'size0', 'size'),
+                             [(ndimage.gaussian_filter, (), 0, 1.0),
+                              (ndimage.uniform_filter, (), 1, 3),
+                              (ndimage.minimum_filter, (), 1, 3),
+                              (ndimage.maximum_filter, (), 1, 3),
+                              (ndimage.median_filter, (), 1, 3),
+                              (ndimage.rank_filter, (1,), 1, 3),
+                              (ndimage.percentile_filter, (40,), 1, 3)])
     @pytest.mark.parametrize(
         'axes',
         tuple(itertools.combinations(range(-3, 3), 1))
         + tuple(itertools.combinations(range(-3, 3), 2))
         + ((0, 1, 2),))
-    def test_filter_axes(self, filter_func, size0, size, axes):
+    def test_filter_axes(self, filter_func, extra_args, size0, size, axes):
         # Note: `size` is called `sigma` in `gaussian_filter`
         array = numpy.arange(6 * 8 * 12, dtype=numpy.float64).reshape(6, 8, 12)
         axes = numpy.array(axes)
@@ -727,25 +730,30 @@ class TestNdimageFilters:
         if len(set(axes % array.ndim)) != len(axes):
             # parametrized cases with duplicate axes raise an error
             with pytest.raises(ValueError, match="axes must be unique"):
-                filter_func(array, size, axes=axes)
+                filter_func(array, *extra_args, size, axes=axes)
             return
-        output = filter_func(array, size, axes=axes)
+        output = filter_func(array, *extra_args, size, axes=axes)
 
         # result should be equivalent to sigma=0.0/size=1 on unfiltered axes
         all_sizes = (size if ax in (axes % array.ndim) else size0
                      for ax in range(array.ndim))
-        expected = filter_func(array, all_sizes)
+        expected = filter_func(array, *extra_args, all_sizes)
         assert_allclose(output, expected)
 
     kwargs_gauss = dict(radius=[4, 2, 3], order=[0, 1, 2],
                         mode=['reflect', 'nearest', 'constant'])
     kwargs_other = dict(origin=(-1, 0, 1),
                         mode=['reflect', 'nearest', 'constant'])
+    kwargs_rank = dict(origin=(-1, 0, 1))
+
     @pytest.mark.parametrize("filter_func, size0, size, kwargs",
                              [(ndimage.gaussian_filter, 0, 1.0, kwargs_gauss),
                               (ndimage.uniform_filter, 1, 3, kwargs_other),
                               (ndimage.maximum_filter, 1, 3, kwargs_other),
-                              (ndimage.minimum_filter, 1, 3, kwargs_other)])
+                              (ndimage.minimum_filter, 1, 3, kwargs_other),
+                              (ndimage.median_filter, 1, 3, kwargs_rank),
+                              (ndimage.rank_filter, 1, 3, kwargs_rank),
+                              (ndimage.percentile_filter, 1, 3, kwargs_rank)])
     @pytest.mark.parametrize('axes', itertools.combinations(range(-3, 3), 2))
     def test_filter_axes_kwargs(self, filter_func, size0, size, kwargs, axes):
         array = numpy.arange(6 * 8 * 12, dtype=numpy.float64).reshape(6, 8, 12)
@@ -754,32 +762,49 @@ class TestNdimageFilters:
         axes = numpy.array(axes)
         n_axes = axes.size
 
+        if filter_func == ndimage.rank_filter:
+            args = (2,)  # (rank,)
+        elif filter_func == ndimage.percentile_filter:
+            args = (30,)  # (percentile,)
+        else:
+            args = ()
+
         # form kwargs that specify only the axes in `axes`
-        reduced_kwargs = {key:val[axes] for key, val in kwargs.items()}
+        reduced_kwargs = {key: val[axes] for key, val in kwargs.items()}
         if len(set(axes % array.ndim)) != len(axes):
             # parametrized cases with duplicate axes raise an error
             with pytest.raises(ValueError, match="axes must be unique"):
-                filter_func(array, [size]*n_axes, axes=axes, **reduced_kwargs)
+                filter_func(array, *args, [size]*n_axes, axes=axes,
+                            **reduced_kwargs)
             return
 
-        output = filter_func(array, [size]*n_axes, axes=axes, **reduced_kwargs)
+        output = filter_func(array, *args, [size]*n_axes, axes=axes,
+                             **reduced_kwargs)
 
         # result should be equivalent to sigma=0.0/size=1 on unfiltered axes
         size_3d = numpy.full(array.ndim, fill_value=size0)
         size_3d[axes] = size
-        expected = filter_func(array, size_3d, **kwargs)
+        if 'origin' in kwargs:
+            # origin should be zero on the axis that has size 0
+            origin = numpy.array([0, 0, 0])
+            origin[axes] = reduced_kwargs['origin']
+            kwargs['origin'] = origin
+        expected = filter_func(array, *args, size_3d, **kwargs)
         assert_allclose(output, expected)
 
     @pytest.mark.parametrize(
-        'filter_func, size',
-        [(ndimage.gaussian_filter, 1.0),
-         (ndimage.uniform_filter, 3),
-         (ndimage.minimum_filter, 3),
-         (ndimage.maximum_filter, 3)])
+        'filter_func, args',
+        [(ndimage.gaussian_filter, (1.0,)),      # args = (sigma,)
+         (ndimage.uniform_filter, (3,)),         # args = (size,)
+         (ndimage.minimum_filter, (3,)),         # args = (size,)
+         (ndimage.maximum_filter, (3,)),         # args = (size,)
+         (ndimage.median_filter, (3,)),          # args = (size,)
+         (ndimage.rank_filter, (2, 3)),          # args = (rank, size)
+         (ndimage.percentile_filter, (30, 3))])  # args = (percentile, size)
     @pytest.mark.parametrize(
         'axes', [(1.5,), (0, 1, 2, 3), (3,), (-4,)]
     )
-    def test_filter_invalid_axes(self, filter_func, size, axes):
+    def test_filter_invalid_axes(self, filter_func, args, axes):
         array = numpy.arange(6 * 8 * 12, dtype=numpy.float64).reshape(6, 8, 12)
         if any(isinstance(ax, float) for ax in axes):
             error_class = TypeError
@@ -788,7 +813,33 @@ class TestNdimageFilters:
             error_class = ValueError
             match = "out of range"
         with pytest.raises(error_class, match=match):
-            filter_func(array, size, axes=axes)
+            filter_func(array, *args, axes=axes)
+
+    @pytest.mark.parametrize(
+        'filter_func, kwargs',
+        [(ndimage.minimum_filter, {}),
+         (ndimage.maximum_filter, {}),
+         (ndimage.median_filter, {}),
+         (ndimage.rank_filter, dict(rank=3)),
+         (ndimage.percentile_filter, dict(percentile=30))])
+    @pytest.mark.parametrize(
+        'axes', [(0, ), (1, 2), (0, 1, 2)]
+    )
+    @pytest.mark.parametrize('separable_footprint', [False, True])
+    def test_filter_invalid_footprint_ndim(self, filter_func, kwargs, axes,
+                                           separable_footprint):
+        array = numpy.arange(6 * 8 * 12, dtype=numpy.float64).reshape(6, 8, 12)
+        # create a footprint with one too many dimensions
+        footprint = numpy.ones((3,) * (len(axes) + 1))
+        if not separable_footprint:
+            footprint[(0,) * footprint.ndim] = 0
+        if (filter_func in [ndimage.minimum_filter, ndimage.maximum_filter]
+            and separable_footprint):
+            match = "sequence argument must have length equal to input rank"
+        else:
+            match = "footprint array has incorrect shape"
+        with pytest.raises(RuntimeError, match=match):
+            filter_func(array, **kwargs, footprint=footprint, axes=axes)
 
     @pytest.mark.parametrize('n_mismatch', [1, 3])
     @pytest.mark.parametrize('filter_func, kwargs, key, val',
@@ -1238,9 +1289,14 @@ class TestNdimageFilters:
         'axes', tuple(itertools.combinations(range(-3, 3), 2))
     )
     @pytest.mark.parametrize(
-        'filter_func', [ndimage.minimum_filter, ndimage.maximum_filter]
+        'filter_func, kwargs',
+        [(ndimage.minimum_filter, {}),
+         (ndimage.maximum_filter, {}),
+         (ndimage.median_filter, {}),
+         (ndimage.rank_filter, dict(rank=3)),
+         (ndimage.percentile_filter, dict(percentile=60))]
     )
-    def test_minmax_nonseparable_axes(self, filter_func, axes):
+    def test_minmax_nonseparable_axes(self, filter_func, axes, kwargs):
         array = numpy.arange(6 * 8 * 12, dtype=numpy.float32).reshape(6, 8, 12)
         # use 2D triangular footprint because it is non-separable
         footprint = numpy.tri(5)
@@ -1249,13 +1305,13 @@ class TestNdimageFilters:
         if len(set(axes % array.ndim)) != len(axes):
             # parametrized cases with duplicate axes raise an error
             with pytest.raises(ValueError):
-                filter_func(array, footprint=footprint, axes=axes)
+                filter_func(array, footprint=footprint, axes=axes, **kwargs)
             return
-        output = filter_func(array, footprint=footprint, axes=axes)
+        output = filter_func(array, footprint=footprint, axes=axes, **kwargs)
 
         missing_axis = tuple(set(range(3)) - set(axes % array.ndim))[0]
         footprint_3d = numpy.expand_dims(footprint, missing_axis)
-        expected = filter_func(array, footprint=footprint_3d)
+        expected = filter_func(array, footprint=footprint_3d, **kwargs)
         assert_allclose(output, expected)
 
     def test_rank01(self):
@@ -1949,13 +2005,13 @@ def test_gaussian_truncate():
     # Test gaussian_laplace
     y = ndimage.gaussian_laplace(x, sigma=2, truncate=3.5)
     nonzero_indices = numpy.nonzero(y != 0)[0]
-    n = nonzero_indices.ptp() + 1
+    n = numpy.ptp(nonzero_indices) + 1
     assert_equal(n, 15)
 
     # Test gaussian_gradient_magnitude
     y = ndimage.gaussian_gradient_magnitude(x, sigma=2, truncate=3.5)
     nonzero_indices = numpy.nonzero(y != 0)[0]
-    n = nonzero_indices.ptp() + 1
+    n = numpy.ptp(nonzero_indices) + 1
     assert_equal(n, 15)
 
 

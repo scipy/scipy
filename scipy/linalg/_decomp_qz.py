@@ -114,7 +114,7 @@ def _qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
     if lwork is None or lwork == -1:
         # get optimal work array size
         result = gges(lambda x: None, a1, b1, lwork=-1)
-        lwork = result[-2][0].real.astype(np.int_)
+        lwork = result[-2][0].real.astype(int)
 
     def sfunction(x):
         return None
@@ -388,7 +388,7 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
     that would result if the 2-by-2 diagonal blocks of the real generalized
     Schur form of (A,B) were further reduced to triangular form using complex
     unitary transformations. If ALPHAI(j) is zero, then the jth eigenvalue is
-    real; if positive, then the ``j``th and ``(j+1)``st eigenvalues are a
+    real; if positive, then the ``j``\\ th and ``(j+1)``\\ st eigenvalues are a
     complex conjugate pair, with ``ALPHAI(j+1)`` negative.
 
     .. versionadded:: 0.17.0

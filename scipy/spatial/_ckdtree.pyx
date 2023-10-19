@@ -4,7 +4,8 @@
 # Balanced kd-tree construction written by Jake Vanderplas for scikit-learn
 # Released under the scipy license
 
-# distutils: language = c++
+# cython: cpow=True
+
 
 import numpy as np
 import scipy.sparse
@@ -70,11 +71,11 @@ cdef extern from "ckdtree_decl.h":
                          np.float64_t *maxes,
                          np.float64_t *mins,
                          int _median,
-                         int _compact) nogil except +
+                         int _compact) except + nogil
 
     int build_weights(ckdtree *self,
                          np.float64_t *node_weights,
-                         np.float64_t *weights) nogil except +
+                         np.float64_t *weights) except + nogil
 
     int query_knn(const ckdtree *self,
                      np.float64_t *dd,
@@ -86,13 +87,13 @@ cdef extern from "ckdtree_decl.h":
                      const np.intp_t    kmax,
                      const np.float64_t eps,
                      const np.float64_t p,
-                     const np.float64_t distance_upper_bound) nogil except +
+                     const np.float64_t distance_upper_bound) except + nogil
 
     int query_pairs(const ckdtree *self,
                        const np.float64_t r,
                        const np.float64_t p,
                        const np.float64_t eps,
-                       vector[ordered_pair] *results) nogil except +
+                       vector[ordered_pair] *results) except + nogil
 
     int count_neighbors_unweighted(const ckdtree *self,
                            const ckdtree *other,
@@ -100,7 +101,7 @@ cdef extern from "ckdtree_decl.h":
                            np.float64_t  *real_r,
                            np.intp_t     *results,
                            const np.float64_t p,
-                           int cumulative) nogil except +
+                           int cumulative) except + nogil
 
     int count_neighbors_weighted(const ckdtree *self,
                            const ckdtree *other,
@@ -112,7 +113,7 @@ cdef extern from "ckdtree_decl.h":
                            np.float64_t  *real_r,
                            np.float64_t     *results,
                            const np.float64_t p,
-                           int cumulative) nogil except +
+                           int cumulative) except + nogil
 
     int query_ball_point(const ckdtree *self,
                          const np.float64_t *x,
@@ -122,20 +123,20 @@ cdef extern from "ckdtree_decl.h":
                          const np.intp_t n_queries,
                          vector[np.intp_t] *results,
                          const bool return_length,
-                         const bool sort_output) nogil except +
+                         const bool sort_output) except + nogil
 
     int query_ball_tree(const ckdtree *self,
                            const ckdtree *other,
                            const np.float64_t r,
                            const np.float64_t p,
                            const np.float64_t eps,
-                           vector[np.intp_t] *results) nogil except +
+                           vector[np.intp_t] *results) except + nogil
 
     int sparse_distance_matrix(const ckdtree *self,
                                   const ckdtree *other,
                                   const np.float64_t p,
                                   const np.float64_t max_distance,
-                                  vector[coo_entry] *results) nogil except +
+                                  vector[coo_entry] *results) except + nogil
 
 
 # C++ helper functions
@@ -342,7 +343,7 @@ cdef class cKDTreeNode:
         readonly object       lesser
         readonly object       greater
 
-    cdef void _setup(cKDTreeNode self, cKDTree parent, ckdtreenode *node, np.intp_t level):
+    cdef void _setup(cKDTreeNode self, cKDTree parent, ckdtreenode *node, np.intp_t level) noexcept:
         cdef cKDTreeNode n1, n2
         self.level = level
         self.split_dim = node.split_dim
@@ -553,7 +554,11 @@ cdef class cKDTree:
         data = np.array(data, order='C', copy=copy_data, dtype=np.float64)
 
         if data.ndim != 2:
-            raise ValueError("data must be 2 dimensions")
+            raise ValueError("data must be of shape (n, m), where there are"
+                             "n points of dimension m")
+
+        if not np.isfinite(data).all():
+            raise ValueError("data must be finite, check for nan or inf values")
 
         self.data = data
         cself.n = data.shape[0]
@@ -786,6 +791,9 @@ cdef class cKDTree:
         if p < 1:
             raise ValueError("Only p-norms with 1<=p<=infinity permitted")
 
+        if not np.isfinite(x_arr).all():
+            raise ValueError("'x' must be finite, check for nan or inf values")
+
         cdef:
             bool single = (x_arr.ndim == 1)
             bool nearest = False
@@ -870,7 +878,7 @@ cdef class cKDTree:
                SciPy 1.9.0.
 
         return_sorted : bool, optional
-            Sorts returned indicies if True and does not sort them if False. If
+            Sorts returned indices if True and does not sort them if False. If
             None, does not sort single point queries, but does sort
             multi-point queries which was the behavior before this option
             was added.
@@ -935,6 +943,9 @@ cdef class cKDTree:
 
             const np.float64_t *vxx = <np.float64_t*>x_arr.data
             const np.float64_t *vrr = <np.float64_t*>r_arr.data
+        
+        if not np.isfinite(x_arr).all():
+            raise ValueError("'x' must be finite, check for nan or inf values")
 
         if rlen:
             result = np.empty(retshape, dtype=np.intp)
@@ -1080,7 +1091,7 @@ cdef class cKDTree:
     def query_pairs(cKDTree self, np.float64_t r, np.float64_t p=2.,
                     np.float64_t eps=0, output_type='set'):
         """
-        query_pairs(self, r, p=2., eps=0)
+        query_pairs(self, r, p=2., eps=0, output_type='set')
 
         Find all pairs of points in `self` whose distance is at most r.
 
@@ -1387,7 +1398,7 @@ cdef class cKDTree:
 
         if self_weights is None and other_weights is None:
             int_result = True
-            # unweighted, use the integer arithmetics
+            # unweighted, use the integer arithmetic
             results = np.zeros(n_queries + 1, dtype=np.intp)
 
             iresults = results
@@ -1402,7 +1413,7 @@ cdef class cKDTree:
         else:
             int_result = False
 
-            # weighted / half weighted, use the floating point arithmetics
+            # weighted / half weighted, use the floating point arithmetic
             if self_weights is not None:
                 w1 = np.ascontiguousarray(self_weights, dtype=np.float64)
                 w1n = self._build_weights(w1)

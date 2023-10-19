@@ -35,14 +35,6 @@ at the top-level directory.
 #include <stdlib.h>
 #include "slu_sdefs.h"
 
-/* 
- * Function prototypes 
- */
-void susolve(int, int, float*, float*);
-void slsolve(int, int, float*, float*);
-void smatvec(int, int, int, float*, float*, float*);
-
-
 
 /*! \brief 
  *
@@ -51,7 +43,7 @@ void smatvec(int, int, int, float*, float*, float*);
  * ========
  * Performs numeric block updates (sup-col) in topological order.
  * It features: col-col, 2cols-col, 3cols-col, and sup-col updates.
- * Special processing on the supernodal portion of L\U[*,j]
+ * Special processing on the supernodal portion of L\\U[*,j]
  * Return value:   0 - successful return
  *               > 0 - number of bytes allocated when run out of space
  * </pre>
@@ -86,27 +78,26 @@ scolumn_bmod (
      * kfnz = first nonz in the k-th supernodal segment
      * no_zeros = no of leading zeros in a supernodal U-segment
      */
-    float       ukj, ukj1, ukj2;
-    int          luptr, luptr1, luptr2;
+    float      ukj, ukj1, ukj2;
+    int_t        luptr, luptr1, luptr2;
     int          fsupc, nsupc, nsupr, segsze;
     int          nrow;	  /* No of rows in the matrix of matrix-vector */
     int          jcolp1, jsupno, k, ksub, krep, krep_ind, ksupno;
-    register int lptr, kfnz, isub, irow, i;
-    register int no_zeros, new_next; 
-    int          ufirst, nextlu;
+    int_t        lptr, kfnz, isub, irow, i;
+    int_t        no_zeros, new_next, ufirst, nextlu;
     int          fst_col; /* First column within small LU update */
     int          d_fsupc; /* Distance between the first column of the current
 			     panel and the first column of the current snode. */
     int          *xsup, *supno;
-    int          *lsub, *xlsub;
+    int_t        *lsub, *xlsub;
     float       *lusup;
-    int          *xlusup;
-    int          nzlumax;
+    int_t        *xlusup;
+    int_t        nzlumax;
     float       *tempv1;
     float      zero = 0.0;
     float      one = 1.0;
     float      none = -1.0;
-    int          mem_error;
+    int_t        mem_error;
     flops_t      *ops = stat->ops;
 
     xsup    = Glu->xsup;
@@ -272,7 +263,7 @@ scolumn_bmod (
     } /* for each segment... */
 
     /*
-     *	Process the supernodal portion of L\U[*,j]
+     *	Process the supernodal portion of L\\U[*,j]
      */
     nextlu = xlusup[jcol];
     fsupc = xsup[jsupno];
@@ -280,8 +271,8 @@ scolumn_bmod (
     /* Copy the SPA dense into L\U[*,j] */
     new_next = nextlu + xlsub[fsupc+1] - xlsub[fsupc];
     while ( new_next > nzlumax ) {
-	if (mem_error = sLUMemXpand(jcol, nextlu, LUSUP, &nzlumax, Glu))
-	    return (mem_error);
+	mem_error = sLUMemXpand(jcol, nextlu, LUSUP, &nzlumax, Glu);
+	if (mem_error) return (mem_error);
 	lusup = (float *) Glu->lusup;
 	lsub = Glu->lsub;
     }

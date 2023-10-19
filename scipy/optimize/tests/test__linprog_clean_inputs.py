@@ -5,6 +5,7 @@ import numpy as np
 from numpy.testing import assert_, assert_allclose, assert_equal
 from pytest import raises as assert_raises
 from scipy.optimize._linprog_util import _clean_inputs, _LPProblem
+from scipy._lib._util import VisibleDeprecationWarning
 from copy import deepcopy
 from datetime import date
 
@@ -112,7 +113,10 @@ def test_inconsistent_dimensions():
     assert_raises(ValueError, _clean_inputs, _LPProblem(c=c, A_eq=Abad, b_eq=bgood))
     assert_raises(ValueError, _clean_inputs, _LPProblem(c=c, A_eq=Agood, b_eq=bbad))
     assert_raises(ValueError, _clean_inputs, _LPProblem(c=c, bounds=boundsbad))
-    assert_raises(ValueError, _clean_inputs, _LPProblem(c=c, bounds=[[1, 2], [2, 3], [3, 4], [4, 5, 6]]))
+    with np.testing.suppress_warnings() as sup:
+        sup.filter(VisibleDeprecationWarning, "Creating an ndarray from ragged")
+        assert_raises(ValueError, _clean_inputs,
+                      _LPProblem(c=c, bounds=[[1, 2], [2, 3], [3, 4], [4, 5, 6]]))
 
 
 def test_type_errors():
@@ -241,7 +245,10 @@ def test_bad_bounds():
 
     assert_raises(ValueError, _clean_inputs, lp._replace(bounds=(1, 2, 2)))
     assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, 2, 2)]))
-    assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, 2), (1, 2, 2)]))
+    with np.testing.suppress_warnings() as sup:
+        sup.filter(VisibleDeprecationWarning, "Creating an ndarray from ragged")
+        assert_raises(ValueError, _clean_inputs,
+                      lp._replace(bounds=[(1, 2), (1, 2, 2)]))
     assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, 2), (1, 2), (1, 2)]))
 
     lp = _LPProblem(c=[1, 2, 3, 4])

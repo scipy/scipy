@@ -98,11 +98,11 @@ arpack_module = custom_target('arpack_module',
 )
 
 _arpack = py3.extension_module('_arpack',
-  [arpack_module, g77_abi_wrappers],
+  arpack_module,
   c_args: numpy_nodepr_api,
   link_with: [arpack_lib],
   link_args: version_link_args,
-  dependencies: [lapack, blas, fortranobject_dep],
+  dependencies: [lapack, blas, fortranobject_dep, g77_abi_wrappers],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/sparse/linalg/_eigen/arpack'

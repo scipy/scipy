@@ -97,6 +97,7 @@ Continuous distributions
    invgamma          -- Inverse Gamma
    invgauss          -- Inverse Gaussian
    invweibull        -- Inverse Weibull
+   jf_skew_t         -- Jones and Faddy Skew-T
    johnsonsb         -- Johnson SB
    johnsonsu         -- Johnson SU
    kappa4            -- Kappa 4 parameter
@@ -187,6 +188,7 @@ Multivariate distributions
    multivariate_hypergeom -- Multivariate hypergeometric distribution
    random_table           -- Distribution of random tables with given marginals
    uniform_direction      -- Uniform distribution on S(N-1)
+   vonmises_fisher        -- Von Mises-Fisher distribution
 
 `scipy.stats.multivariate_normal` methods accept instances
 of the following class to represent the covariance.
@@ -305,6 +307,7 @@ drawn from a specified distribution or a distribution with specified properties
 
    ttest_1samp
    binomtest
+   quantile_test
    skewtest
    kurtosistest
    normaltest
@@ -379,6 +382,7 @@ Some tests are specifically for comparing two samples.
    poisson_means_test
    ttest_ind
    mannwhitneyu
+   bws_test
    ranksums
    brunnermunzel
    mood
@@ -420,6 +424,17 @@ at the cost of greater computational requirements and stochastic results.
    permutation_test
    bootstrap
 
+Instances of the following object can be passed into some hypothesis test
+functions to perform a resampling or Monte Carlo version of the hypothesis
+test.
+
+.. autosummary::
+   :toctree: generated/
+
+   MonteCarloMethod
+   PermutationMethod
+   BootstrapMethod
+
 Multiple Hypothesis Testing and Meta-Analysis
 ---------------------------------------------
 These functions are for assessing the results of individual tests as a whole.
@@ -432,13 +447,6 @@ tests) are listed above.
    combine_pvalues
    false_discovery_control
 
-Deprecated and Legacy Functions
--------------------------------
-
-.. autosummary::
-   :toctree: generated/
-
-   binom_test
 
 The following functions are related to the tests above but do not belong in the
 above categories.
@@ -607,12 +615,14 @@ from ._multivariate import *
 from . import contingency
 from .contingency import chi2_contingency
 from ._censored_data import CensoredData  # noqa
-from ._resampling import bootstrap, monte_carlo_test, permutation_test
+from ._resampling import (bootstrap, monte_carlo_test, permutation_test,
+                          MonteCarloMethod, PermutationMethod, BootstrapMethod)
 from ._entropy import *
 from ._hypotests import *
 from ._rvs_sampling import rvs_ratio_uniforms
 from ._page_trend_test import page_trend_test
 from ._mannwhitneyu import mannwhitneyu
+from ._bws_test import bws_test
 from ._fit import fit, goodness_of_fit
 from ._covariance import Covariance
 from ._sensitivity_analysis import *
@@ -620,7 +630,7 @@ from ._survival import *
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import (
-    biasedurn, kde, morestats, mstats_basic, mstats_extras, mvn, statlib, stats
+    biasedurn, kde, morestats, mstats_basic, mstats_extras, mvn, stats
 )
 
 

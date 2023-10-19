@@ -3,12 +3,10 @@ import copy
 import heapq
 import collections
 import functools
-import warnings
 
 import numpy as np
 
 from scipy._lib._util import MapWrapper, _FunctionWrapper
-from scipy._lib._bunch import _make_tuple_bunch
 
 
 class LRUDict(collections.OrderedDict):
@@ -103,17 +101,8 @@ class _Bunch:
                                              for k in self.__keys))
 
 
-QuadratureResult = _make_tuple_bunch("QuadratureResult",
-                                     field_names=["integral", "abserr"],
-                                     extra_field_names=["success", "status",
-                                                        "neval", "intervals",
-                                                        "integrals",
-                                                        "message",
-                                                        "errors"])
-
-
 def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, limit=10000,
-             workers=1, points=None, quadrature=None, full_output=None,
+             workers=1, points=None, quadrature=None, full_output=False,
              *, args=()):
     r"""Adaptive integration of a vector-valued function.
 
@@ -155,11 +144,6 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
         Default: 'gk21' for finite intervals and 'gk15' for (semi-)infinite
     full_output : bool, optional
         Return an additional ``info`` dictionary.
-        
-        .. deprecated:: 1.11.0
-           Parameter `full_output` is deprecated and will be removed in version
-           1.13.0. When `full_output` is unspecified, the contents of ``info``
-           are provided as attributes of the result object.
     args : tuple, optional
         Extra arguments to pass to function, if any.
 
@@ -167,29 +151,29 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
 
     Returns
     -------
-    A result object with the following attributes:
+    res : {float, array-like}
+        Estimate for the result
+    err : float
+        Error estimate for the result in the given norm
+    info : dict
+        Returned only when ``full_output=True``.
+        Info dictionary. Is an object with the attributes:
 
-        integral : {float, array-like}
-            Estimate for integration
-        abserr : float
-            Error estimate for the result in the given norm
-        success : bool
-            Whether integration reached target precision.
-        status : int
-            Indicator for convergence, success (0),
-            failure (1), and failure due to rounding error (2).
-        neval : int
-            Number of function evaluations.
-        intervals : ndarray, shape (num_intervals, 2)
-            Start and end points of subdivision intervals.
-        integrals : ndarray, shape (num_intervals, ...)
-            Integral for each interval.
-            Note that at most ``cache_size`` values are recorded,
-            and the array may contains *nan* for missing items.
-        errors : ndarray, shape (num_intervals,)
-            Estimated integration error for each interval.
-        message : str
-            Additional information regarding the status.
+            success : bool
+                Whether integration reached target precision.
+            status : int
+                Indicator for convergence, success (0),
+                failure (1), and failure due to rounding error (2).
+            neval : int
+                Number of function evaluations.
+            intervals : ndarray, shape (num_intervals, 2)
+                Start and end points of subdivision intervals.
+            integrals : ndarray, shape (num_intervals, ...)
+                Integral for each interval.
+                Note that at most ``cache_size`` values are recorded,
+                and the array may contains *nan* for missing items.
+            errors : ndarray, shape (num_intervals,)
+                Estimated integration error for each interval.
 
     Notes
     -----
@@ -230,21 +214,13 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
     >>> alpha = np.linspace(0.0, 2.0, num=30)
     >>> f = lambda x: x**alpha
     >>> x0, x1 = 0, 2
-    >>> res = quad_vec(f, x0, x1)
-    >>> plt.plot(alpha, res.integral)
+    >>> y, err = quad_vec(f, x0, x1)
+    >>> plt.plot(alpha, y)
     >>> plt.xlabel(r"$\alpha$")
     >>> plt.ylabel(r"$\int_{0}^{2} x^\alpha dx$")
     >>> plt.show()
 
     """
-    if full_output is not None:
-        msg = ("Use of parameter 'full_output' is deprecated as of SciPy "
-               "1.11.0 and will be removed in 1.13.0 . Please leave "
-               "'full_output' unspecified; the contents of 'info' can now be"
-               "accessed as attributes of the object returned by "
-               "'scipy.integrate.quad_vec'.")
-        warnings.warn(msg, DeprecationWarning, stacklevel=2)
-    
     a = float(a)
     b = float(b)
 
@@ -276,7 +252,7 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
         if points is not None:
             kwargs['points'] = tuple(f2.get_t(xp) for xp in points)
         res = quad_vec(f2, 0, 1, **kwargs)
-        return QuadratureResult(integral=-res.integral, abserr=res.integral, **res.__dict__)
+        return (-res[0],) + res[1:]
     elif np.isinf(a) and np.isinf(b):
         sgn = -1 if b < a else 1
 
@@ -292,7 +268,8 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
             res = quad_vec(f2, -1, 1, **kwargs)
         else:
             res = quad_vec(f2, 1, 1, **kwargs)
-        return QuadratureResult(integral=res.integral*sgn, abserr=res.abserr, **res.__dict__)
+
+        return (res[0]*sgn,) + res[1:]
     elif not (np.isfinite(a) and np.isfinite(b)):
         raise ValueError(f"invalid integration bounds a={a}, b={b}")
 
@@ -431,28 +408,24 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
     res = global_integral
     err = global_error + rounding_error
 
-    res_arr = np.asarray(res)
-    dummy = np.full(res_arr.shape, np.nan, dtype=res_arr.dtype)
-    integrals = np.array([interval_cache.get((z[1], z[2]), dummy)
-                                    for z in intervals], dtype=res_arr.dtype)
-    errors = np.array([-z[0] for z in intervals])
-    intervals = np.array([[z[1], z[2]] for z in intervals])
-    success = (ier == CONVERGED)
-    message = status_msg[ier]
-
     if full_output:
+        res_arr = np.asarray(res)
+        dummy = np.full(res_arr.shape, np.nan, dtype=res_arr.dtype)
+        integrals = np.array([interval_cache.get((z[1], z[2]), dummy)
+                                      for z in intervals], dtype=res_arr.dtype)
+        errors = np.array([-z[0] for z in intervals])
+        intervals = np.array([[z[1], z[2]] for z in intervals])
+
         info = _Bunch(neval=neval,
-                      success=success,
+                      success=(ier == CONVERGED),
                       status=ier,
-                      message=message,
+                      message=status_msg[ier],
                       intervals=intervals,
                       integrals=integrals,
                       errors=errors)
         return (res, err, info)
     else:
-        return QuadratureResult(integral=res, abserr=err, success=success, status=ier,
-                                neval=neval, intervals=intervals,
-                                integrals=integrals, errors=errors, message=message)
+        return (res, err)
 
 
 def _subdivide_interval(args):
