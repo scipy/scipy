@@ -65,7 +65,7 @@ def bicg(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None, callback=None,
         as callback(xk), where xk is the current solution vector.
     tol : float, optional, deprecated
 
-        .. deprecated 1.12.0
+        .. deprecated:: 1.12.0
            `bicg` keyword argument `tol` is deprecated in favor of `rtol` and
            will be removed in SciPy 1.14.0.
 
@@ -86,7 +86,7 @@ def bicg(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None, callback=None,
     >>> from scipy.sparse.linalg import bicg
     >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1.]])
     >>> b = np.array([2., 4., -1.])
-    >>> x, exitCode = bicg(A, b)
+    >>> x, exitCode = bicg(A, b, atol=1e-5)
     >>> print(exitCode)  # 0 indicates successful convergence
     0
     >>> np.allclose(A.dot(x), b)
@@ -194,7 +194,7 @@ def bicgstab(A, b, *, x0=None, tol=_NoValue, maxiter=None, M=None,
         as callback(xk), where xk is the current solution vector.
     tol : float, optional, deprecated
 
-        .. deprecated 1.12.0
+        .. deprecated:: 1.12.0
            `bicgstab` keyword argument `tol` is deprecated in favor of `rtol`
            and will be removed in SciPy 1.14.0.
 
@@ -219,7 +219,7 @@ def bicgstab(A, b, *, x0=None, tol=_NoValue, maxiter=None, M=None,
     ...               [0, 2, 1, 0]])
     >>> A = csc_matrix(R)
     >>> b = np.array([-1, -0.5, -1, 2])
-    >>> x, exit_code = bicgstab(A, b)
+    >>> x, exit_code = bicgstab(A, b, atol=1e-5)
     >>> print(exit_code)  # 0 indicates successful convergence
     0
     >>> np.allclose(A.dot(x), b)
@@ -338,7 +338,7 @@ def cg(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None, callback=None,
         as callback(xk), where xk is the current solution vector.
     tol : float, optional, deprecated
 
-        .. deprecated 1.12.0
+        .. deprecated:: 1.12.0
            `cg` keyword argument `tol` is deprecated in favor of `rtol` and
            will be removed in SciPy 1.14.0.
 
@@ -362,7 +362,7 @@ def cg(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None, callback=None,
     ...               [0, 0, 2, 4]])
     >>> A = csc_matrix(P)
     >>> b = np.array([-1, -0.5, -1, 2])
-    >>> x, exit_code = cg(A, b)
+    >>> x, exit_code = cg(A, b, atol=1e-5)
     >>> print(exit_code)    # 0 indicates successful convergence
     0
     >>> np.allclose(A.dot(x), b)
@@ -452,7 +452,7 @@ def cgs(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None, callback=None,
         as callback(xk), where xk is the current solution vector.
     tol : float, optional, deprecated
 
-        .. deprecated 1.12.0
+        .. deprecated:: 1.12.0
            `cgs` keyword argument `tol` is deprecated in favor of `rtol` and
            will be removed in SciPy 1.14.0.
 
@@ -631,7 +631,7 @@ def gmres(A, b, x0=None, *, tol=_NoValue, restart=None, maxiter=None, M=None,
            `restart` and will be removed in SciPy 1.14.0.
     tol : float, optional, deprecated
 
-        .. deprecated 1.12.0
+        .. deprecated:: 1.12.0
            `gmres` keyword argument `tol` is deprecated in favor of `rtol` and
            will be removed in SciPy 1.14.0
 
@@ -667,7 +667,7 @@ def gmres(A, b, x0=None, *, tol=_NoValue, restart=None, maxiter=None, M=None,
     >>> from scipy.sparse.linalg import gmres
     >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
     >>> b = np.array([2, 4, -1], dtype=float)
-    >>> x, exitCode = gmres(A, b)
+    >>> x, exitCode = gmres(A, b, atol=1e-5)
     >>> print(exitCode)            # 0 indicates successful convergence
     0
     >>> np.allclose(A.dot(x), b)
@@ -679,7 +679,7 @@ def gmres(A, b, x0=None, *, tol=_NoValue, restart=None, maxiter=None, M=None,
         raise ValueError("Cannot specify both 'restart' and 'restrt'"
                          " keywords. Also 'rstrt' is deprecated."
                          " and will be removed in SciPy 1.14.0. Use "
-                         "'restart' instad.")
+                         "'restart' instead.")
     if restrt is not _NoValue:
         msg = ("'gmres' keyword argument 'restrt' is deprecated "
                "in favor of 'restart' and will be removed in SciPy"
@@ -893,7 +893,7 @@ def qmr(A, b, x0=None, *, tol=_NoValue, maxiter=None, M1=None, M2=None,
         as callback(xk), where xk is the current solution vector.
     tol : float, optional, deprecated
 
-        .. deprecated 1.12.0
+        .. deprecated:: 1.12.0
            `qmr` keyword argument `tol` is deprecated in favor of `rtol` and
            will be removed in SciPy 1.14.0.
 
@@ -918,7 +918,7 @@ def qmr(A, b, x0=None, *, tol=_NoValue, maxiter=None, M1=None, M2=None,
     >>> from scipy.sparse.linalg import qmr
     >>> A = csc_matrix([[3., 2., 0.], [1., -1., 0.], [0., 5., 1.]])
     >>> b = np.array([2., 4., -1.])
-    >>> x, exitCode = qmr(A, b)
+    >>> x, exitCode = qmr(A, b, atol=1e-5)
     >>> print(exitCode)            # 0 indicates successful convergence
     0
     >>> np.allclose(A.dot(x), b)

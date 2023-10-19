@@ -893,6 +893,23 @@ class TestFreqz:
         assert_array_almost_equal(w1, w2)
         assert_array_almost_equal(h1, h2)
 
+    # https://github.com/scipy/scipy/issues/17289
+    # https://github.com/scipy/scipy/issues/15273
+    @pytest.mark.parametrize('whole,nyquist,worN',
+                             [(False, False, 32),
+                              (False, True, 32),
+                              (True, False, 32),
+                              (True, True, 32),
+                              (False, False, 257),
+                              (False, True, 257),
+                              (True, False, 257),
+                              (True, True, 257)])
+    def test_17289(self, whole, nyquist, worN):
+        d = [0, 1]
+        w, Drfft = freqz(d, worN=32, whole=whole, include_nyquist=nyquist)
+        _, Dpoly = freqz(d, worN=w)
+        assert_allclose(Drfft, Dpoly)
+
 
 class TestSOSFreqz:
 
@@ -3546,7 +3563,7 @@ def test_sos_consistency():
 class TestIIRNotch:
 
     def test_ba_output(self):
-        # Compare coeficients with Matlab ones
+        # Compare coefficients with Matlab ones
         # for the equivalent input:
         b, a = iirnotch(0.06, 30)
         b2 = [
@@ -3562,7 +3579,7 @@ class TestIIRNotch:
         assert_allclose(a, a2, rtol=1e-8)
 
     def test_frequency_response(self):
-        # Get filter coeficients
+        # Get filter coefficients
         b, a = iirnotch(0.3, 30)
 
         # Get frequency response
@@ -3604,7 +3621,7 @@ class TestIIRNotch:
         assert_raises(TypeError, iirnotch, w0=-1, Q=[1, 2, 3])
 
     def test_fs_param(self):
-        # Get filter coeficients
+        # Get filter coefficients
         b, a = iirnotch(1500, 30, fs=10000)
 
         # Get frequency response
@@ -3639,7 +3656,7 @@ class TestIIRNotch:
 class TestIIRPeak:
 
     def test_ba_output(self):
-        # Compare coeficients with Matlab ones
+        # Compare coefficients with Matlab ones
         # for the equivalent input:
         b, a = iirpeak(0.06, 30)
         b2 = [
@@ -3654,7 +3671,7 @@ class TestIIRPeak:
         assert_allclose(a, a2, rtol=1e-8)
 
     def test_frequency_response(self):
-        # Get filter coeficients
+        # Get filter coefficients
         b, a = iirpeak(0.3, 30)
 
         # Get frequency response
@@ -3696,7 +3713,7 @@ class TestIIRPeak:
         assert_raises(TypeError, iirpeak, w0=-1, Q=[1, 2, 3])
 
     def test_fs_param(self):
-        # Get filter coeficients
+        # Get filter coefficients
         b, a = iirpeak(1200, 30, fs=8000)
 
         # Get frequency response
@@ -4107,7 +4124,7 @@ class TestGroupDelay:
 
 
 class TestGammatone:
-    # Test erroneus input cases.
+    # Test erroneous input cases.
     def test_invalid_input(self):
         # Cutoff frequency is <= 0 or >= fs / 2.
         fs = 16000
@@ -4145,8 +4162,8 @@ class TestGammatone:
             freq_hz = freqs[np.argmax(np.abs(response))] / ((2 * np.pi) / fs)
 
             # Check that the peak magnitude is 1 and the frequency is 1000 Hz.
-            response_max == pytest.approx(1, rel=1e-2)
-            freq_hz == pytest.approx(1000, rel=1e-2)
+            assert_allclose(response_max, 1, rtol=1e-2)
+            assert_allclose(freq_hz, 1000, rtol=1e-2)
 
     # All built-in IIR filters are real, so should have perfectly
     # symmetrical poles and zeros. Then ba representation (using

@@ -4,7 +4,6 @@
 import math
 import numpy as np
 from numpy import asarray_chkfinite, asarray
-from numpy.lib import NumpyVersion
 import scipy.linalg
 from scipy._lib import doccer
 from scipy.special import (gammaln, psi, multigammaln, xlogy, entr, betaln,
@@ -308,8 +307,10 @@ class multivariate_normal_gen(multi_rv_generic):
         Log of the cumulative distribution function.
     rvs(mean=None, cov=1, size=1, random_state=None)
         Draw random samples from a multivariate normal distribution.
-    entropy()
+    entropy(mean=None, cov=1)
         Compute the differential entropy of the multivariate normal.
+    fit(x, fix_mean=None, fix_cov=None)
+        Fit a multivariate normal distribution to data.
 
     Parameters
     ----------
@@ -787,7 +788,7 @@ class multivariate_normal_gen(multi_rv_generic):
         dim, mean, cov_object = self._process_parameters(mean, cov)
         return 0.5 * (cov_object.rank * (_LOG_2PI + 1) + cov_object.log_pdet)
 
-    def fit(self, x):
+    def fit(self, x, fix_mean=None, fix_cov=None):
         """Fit a multivariate normal distribution to data.
 
         Parameters
@@ -797,6 +798,10 @@ class multivariate_normal_gen(multi_rv_generic):
             The first axis of length `m` represents the number of vectors
             the distribution is fitted to. The second axis of length `n`
             determines the dimensionality of the fitted distribution.
+        fix_mean : ndarray(n, )
+            Fixed mean vector. Must have length `n`.
+        fix_cov: ndarray (n, n)
+            Fixed covariance matrix. Must have shape `(n, n)`.
 
         Returns
         -------
@@ -806,7 +811,7 @@ class multivariate_normal_gen(multi_rv_generic):
             Maximum likelihood estimate of the covariance matrix
 
         """
-        # input validation
+        # input validation for data to be fitted
         x = np.asarray(x)
         if x.ndim != 2:
             raise ValueError("`x` must be two-dimensional.")
@@ -815,9 +820,37 @@ class multivariate_normal_gen(multi_rv_generic):
 
         # parameter estimation
         # reference: https://home.ttic.edu/~shubhendu/Slides/Estimation.pdf
-        mean = x.mean(axis=0)
-        centered_data = x - mean
-        cov = centered_data.T @ centered_data / n_vectors
+        if fix_mean is not None:
+            # input validation for `fix_mean`
+            fix_mean = np.atleast_1d(fix_mean)
+            if fix_mean.shape != (dim, ):
+                msg = ("`fix_mean` must be a one-dimensional array the same "
+                       "length as the dimensionality of the vectors `x`.")
+                raise ValueError(msg)
+            mean = fix_mean
+        else:
+            mean = x.mean(axis=0)
+
+        if fix_cov is not None:
+            # input validation for `fix_cov`
+            fix_cov = np.atleast_2d(fix_cov)
+            # validate shape
+            if fix_cov.shape != (dim, dim):
+                msg = ("`fix_cov` must be a two-dimensional square array "
+                       "of same side length as the dimensionality of the "
+                       "vectors `x`.")
+                raise ValueError(msg)
+            # validate positive semidefiniteness
+            # a trimmed down copy from _PSD
+            s, u = scipy.linalg.eigh(fix_cov, lower=True, check_finite=True)
+            eps = _eigvalsh_to_eps(s)
+            if np.min(s) < -eps:
+                msg = "`fix_cov` must be symmetric positive semidefinite."
+                raise ValueError(msg)
+            cov = fix_cov
+        else:
+            centered_data = x - mean
+            cov = centered_data.T @ centered_data / n_vectors
         return mean, cov
 
 
@@ -2363,8 +2396,8 @@ class wishart_gen(multi_rv_generic):
         Returns
         -------
         rvs : ndarray
-            Random variates of shape (`size`) + (`dim`, `dim), where `dim` is
-            the dimension of the scale matrix.
+            Random variates of shape (`size`) + (``dim``, ``dim``), where
+            ``dim`` is the dimension of the scale matrix.
 
         Notes
         -----
@@ -2983,8 +3016,8 @@ class invwishart_gen(wishart_gen):
         Returns
         -------
         rvs : ndarray
-            Random variates of shape (`size`) + (`dim`, `dim), where `dim` is
-            the dimension of the scale matrix.
+            Random variates of shape (`size`) + (``dim``, ``dim``), where
+            ``dim`` is the dimension of the scale matrix.
 
         Notes
         -----
@@ -3263,7 +3296,7 @@ class multinomial_gen(multi_rv_generic):
         pcond = np.any(p < 0, axis=-1)
         pcond |= np.any(p > 1, axis=-1)
 
-        n = np.array(n, dtype=np.int_, copy=True)
+        n = np.array(n, dtype=int, copy=True)
 
         # true for bad n
         ncond = n < 0
@@ -3276,7 +3309,7 @@ class multinomial_gen(multi_rv_generic):
         x_ is an int array; xcond is a boolean array flagging values out of the
         domain.
         """
-        xx = np.asarray(x, dtype=np.int_)
+        xx = np.asarray(x, dtype=int)
 
         if xx.ndim == 0:
             raise ValueError("x must be an array.")
@@ -3820,9 +3853,6 @@ class ortho_group_gen(multi_rv_generic):
         random_state = self._get_random_state(random_state)
 
         size = int(size)
-        if size > 1 and NumpyVersion(np.__version__) < '1.22.0':
-            return np.array([self.rvs(dim, size=1, random_state=random_state)
-                             for i in range(size)])
 
         dim = self._process_parameters(dim)
 
@@ -4235,9 +4265,6 @@ class unitary_group_gen(multi_rv_generic):
         random_state = self._get_random_state(random_state)
 
         size = int(size)
-        if size > 1 and NumpyVersion(np.__version__) < '1.22.0':
-            return np.array([self.rvs(dim, size=1, random_state=random_state)
-                             for i in range(size)])
 
         dim = self._process_parameters(dim)
 
@@ -4378,9 +4405,9 @@ class multivariate_t_gen(multi_rv_generic):
 
     References
     ----------
-    [1]     Arellano-Valle et al. "Shannon Entropy and Mutual Information for
-            Multivariate Skew-Elliptical Distributions". Scandinavian Journal
-            of Statistics. Vol. 40, issue 1.
+    .. [1] Arellano-Valle et al. "Shannon Entropy and Mutual Information for
+           Multivariate Skew-Elliptical Distributions". Scandinavian Journal
+           of Statistics. Vol. 40, issue 1.
 
     Examples
     --------
@@ -4804,6 +4831,7 @@ class multivariate_t_frozen(multi_rv_frozen):
         Examples
         --------
         >>> import numpy as np
+        >>> from scipy.stats import multivariate_t
         >>> loc = np.zeros(3)
         >>> shape = np.eye(3)
         >>> df = 10
@@ -6345,7 +6373,7 @@ class vonmises_fisher_gen(multi_rv_generic):
     direction :math:`\mathbf{\mu}`.
 
     In dimensions 2 and 3, specialized algorithms are used for fast sampling
-    [2]_, [3]_. For dimenions of 4 or higher the rejection sampling algorithm
+    [2]_, [3]_. For dimensions of 4 or higher the rejection sampling algorithm
     described in [4]_ is utilized. This implementation is partially based on
     the geomstats package [5]_, [6]_.
 

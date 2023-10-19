@@ -159,8 +159,7 @@ static double gd[11] = {
 
 extern double MACHEP;
 
-int fresnl(xxa, ssa, cca)
-double xxa, *ssa, *cca;
+int fresnl(double xxa, double *ssa, double *cca)
 {
     double f, g, cc, ss, c, s, t, u;
     double x, x2;

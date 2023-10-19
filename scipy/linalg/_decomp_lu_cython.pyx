@@ -109,7 +109,7 @@ cdef void lu_decompose(cnp.ndarray[lapack_t, ndim=2] a,
     finally:
         PyMem_Free(ipiv)
 
-    # Seperation of L and U parts
+    # Separation of L and U parts
 
     if m > n:  # tall, "a" holds bigger L
         # Extract upper right rectangle to lu

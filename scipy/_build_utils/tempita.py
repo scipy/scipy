@@ -14,10 +14,6 @@ def process_tempita(fromfile, outfile=None):
     E.g. processing `template.c.in` generates `template.c`.
 
     """
-    if outfile is None:
-        # We're dealing with a distutils build here, write in-place
-        outfile = os.path.splitext(fromfile)[0]
-
     from_filename = tempita.Template.from_filename
     template = from_filename(fromfile,
                              encoding=sys.getdefaultencoding())
@@ -41,6 +37,9 @@ def main():
 
     if not args.infile.endswith('.in'):
         raise ValueError(f"Unexpected extension: {args.infile}")
+
+    if not args.outdir:
+        raise ValueError("Missing `--outdir` argument to tempita.py")
 
     outdir_abs = os.path.join(os.getcwd(), args.outdir)
     outfile = os.path.join(outdir_abs,

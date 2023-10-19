@@ -734,7 +734,7 @@ class TestConvexHull:
 
     @pytest.mark.parametrize("incremental", [False, True])
     def test_good2d_no_option(self, incremental):
-        # handle case where good attribue doesn't exist
+        # handle case where good attribute doesn't exist
         # because Qgn or Qg-n wasn't specified
         points = np.array([[0.2, 0.2],
                            [0.2, 0.4],

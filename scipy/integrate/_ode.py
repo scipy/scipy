@@ -901,7 +901,7 @@ class vode(IntegratorBase):
             self.meth == 2:  method="bdf"
 
         miter is the correction iteration method:
-            miter == 0:  Functional iteraton; no Jacobian involved.
+            miter == 0:  Functional iteration; no Jacobian involved.
             miter == 1:  Chord iteration with user-supplied full Jacobian.
             miter == 2:  Chord iteration with internally computed full Jacobian.
             miter == 3:  Chord iteration with internally computed diagonal Jacobian.
@@ -936,7 +936,7 @@ class vode(IntegratorBase):
                 if self.with_jacobian:
                     miter = 2  # Chord iteration with internal full Jacobian.
                 else:
-                    miter = 0  # Functional iteraton; no Jacobian involved.
+                    miter = 0  # Functional iteration; no Jacobian involved.
 
         mf = 10 * self.meth + miter
         return mf

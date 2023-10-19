@@ -460,7 +460,7 @@ BOOST_TESTS = [
         # work around some hard cases in the Boost test where we get slightly
         # larger error than the ideal bound when the x (==y) input is close to
         # zero.
-        # Also the accuracy on 32-bit buids with g++ may suffer from excess
+        # Also the accuracy on 32-bit builds with g++ may suffer from excess
         # loss of precision; see GCC bugzilla 323
         # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=323
         data(elliprd, 'ellint_rd_xxz_ipp-ellint_rd_xxz', (0, 1, 2), 3,
@@ -562,7 +562,12 @@ BOOST_TESTS = [
 
 @pytest.mark.parametrize('test', BOOST_TESTS, ids=repr)
 def test_boost(test):
-    _test_factory(test)
+    # Filter deprecation warnings of any deprecated functions.
+    if test.func in [btdtr, btdtri, btdtri_comp]:
+        with pytest.deprecated_call():
+            _test_factory(test)
+    else:
+        _test_factory(test)
 
 
 GSL_TESTS = [

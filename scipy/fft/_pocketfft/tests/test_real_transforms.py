@@ -200,7 +200,7 @@ DecMapType = Dict[
     int,
 ]
 
-# map (tranform, dtype, type) -> decimal
+# map (transform, dtype, type) -> decimal
 dec_map: DecMapType = {
     # DCT
     (dct, np.float64, 1): 13,
@@ -239,7 +239,7 @@ dec_map: DecMapType = {
     (dst, np.float32, 3): 7,
 
     (dst, np.float64, 4): 13,
-    (dst, np.float32, 4): 6,
+    (dst, np.float32, 4): 5,
 
     # IDST
     (idst, np.float64, 1): 14,

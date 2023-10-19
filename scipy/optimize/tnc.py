@@ -26,7 +26,6 @@ __all__ = [  # noqa: F822
     'USERABORT',
     'XCONVERGED',
     'array',
-    'asfarray',
     'fmin_tnc',
     'inf',
     'moduleTNC',

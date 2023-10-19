@@ -102,7 +102,7 @@ import shutil
 import json
 import datetime
 import time
-import platform
+import importlib
 import importlib.util
 import errno
 import contextlib
@@ -426,13 +426,10 @@ class Build(Task):
     show_build_log = Option(
         ['--show-build-log'], default=False, is_flag=True,
         help="Show build output rather than using a log file")
-    win_cp_openblas = Option(
-        ['--win-cp-openblas'], default=False, is_flag=True,
-        help=("If set, and on Windows, copy OpenBLAS lib to install directory "
-              "after meson install. "
-              "Note: this argument may be removed in the future once a "
-              "`site.cfg`-like mechanism to select BLAS/LAPACK libraries is "
-              "implemented for Meson"))
+    use_scipy_openblas = Option(
+        ['--use-scipy-openblas'], default=False, is_flag=True,
+        help=("If set, use the `scipy-openblas32` wheel installed into the "
+              "current environment as the BLAS/LAPACK to build against."))
 
     @classmethod
     def setup_build(cls, dirs, args):
@@ -485,6 +482,12 @@ class Build(Task):
             cmd += ['-Db_sanitize=address,undefined']
         if args.setup_args:
             cmd += [str(arg) for arg in args.setup_args]
+        if args.use_scipy_openblas:
+            cls.configure_scipy_openblas()
+            env['PKG_CONFIG_PATH'] = os.pathsep.join([
+                    os.path.join(os.getcwd(), '.openblas'),
+                    env.get('PKG_CONFIG_PATH', '')
+                    ])
 
         # Setting up meson build
         cmd_str = ' '.join([str(p) for p in cmd])
@@ -589,68 +592,31 @@ class Build(Task):
         return
 
     @classmethod
-    def copy_openblas(cls, dirs):
+    def configure_scipy_openblas(self, blas_variant='32'):
+        """Create .openblas/scipy-openblas.pc and scipy/_distributor_init_local.py
+
+        Requires a pre-installed scipy-openblas32 wheel from PyPI.
         """
-        Copies OpenBLAS DLL to the SciPy install dir, and also overwrites the
-        default `_distributor_init.py` file with the one
-        we use for wheels uploaded to PyPI so that DLL gets loaded.
+        basedir = os.getcwd()
+        openblas_dir = os.path.join(basedir, ".openblas")
+        pkg_config_fname = os.path.join(openblas_dir, "scipy-openblas.pc")
 
-        Assumes pkg-config is installed and aware of OpenBLAS.
+        if os.path.exists(pkg_config_fname):
+            return None
 
-        The "dirs" parameter is typically a "Dirs" object with the
-        structure as the following, say, if dev.py is run from the
-        folder "repo":
+        module_name = f"scipy_openblas{blas_variant}"
+        try:
+            openblas = importlib.import_module(module_name)
+        except ModuleNotFoundError:
+            raise RuntimeError(f"'pip install {module_name} first")
 
-        dirs = Dirs(
-            root=WindowsPath('C:/.../repo'),
-            build=WindowsPath('C:/.../repo/build'),
-            installed=WindowsPath('C:/.../repo/build-install'),
-            site=WindowsPath('C:/.../repo/build-install/Lib/site-packages'
-            )
+        local = os.path.join(basedir, "scipy", "_distributor_init_local.py")
+        with open(local, "wt", encoding="utf8") as fid:
+            fid.write(f"import {module_name}\n")
 
-        """
-        # Get OpenBLAS lib path from pkg-config
-        cmd = ['pkg-config', '--variable', 'libdir', 'openblas']
-        result = subprocess.run(cmd, capture_output=True, text=True)
-        # pkg-config does not return any meaningful error message if fails
-        if result.returncode != 0:
-            print('"pkg-config --variable libdir openblas" '
-                  'command did not manage to find OpenBLAS '
-                  'succesfully. Try running manually on the '
-                  'command prompt for more information.')
-            print("OpenBLAS copy failed!")
-            sys.exit(result.returncode)
-
-        # Skip the drive letter of the path -> /c to get Windows drive
-        # to be appended correctly to avoid "C:\c\..." from stdout.
-        openblas_lib_path = Path(result.stdout.strip()[2:]).resolve()
-        if not openblas_lib_path.stem == 'lib':
-            raise RuntimeError('"pkg-config --variable libdir openblas" '
-                               'command did not return a path ending with'
-                               ' "lib" folder. Instead it returned '
-                               f'"{openblas_lib_path}"')
-
-        # Look in bin subdirectory for OpenBLAS binaries.
-        bin_path = openblas_lib_path.parent / 'bin'
-        # Locate, make output .libs directory in Scipy install directory.
-        scipy_path = dirs.site / 'scipy'
-        libs_path = scipy_path / '.libs'
-        libs_path.mkdir(exist_ok=True)
-        # Copy DLL files from OpenBLAS install to scipy install .libs subdir.
-        for dll_fn in bin_path.glob('*.dll'):
-            out_fname = libs_path / dll_fn.name
-            print(f'Copying {dll_fn} ----> {out_fname}')
-            out_fname.write_bytes(dll_fn.read_bytes())
-
-        # Write _distributor_init.py to scipy install dir;
-        # this ensures the .libs file is on the DLL search path at run-time,
-        # so OpenBLAS gets found
-        openblas_support = import_module_from_path(
-            'openblas_support',
-            dirs.root / 'tools' / 'openblas_support.py'
-        )
-        openblas_support.make_init(scipy_path)
-        print('OpenBLAS copied')
+        os.makedirs(openblas_dir, exist_ok=True)
+        with open(pkg_config_fname, "wt", encoding="utf8") as fid:
+            fid.write(openblas.get_pkg_config().replace("\\", "/"))
 
     @classmethod
     def run(cls, add_path=False, **kwargs):
@@ -666,8 +632,6 @@ class Build(Task):
             env = cls.setup_build(dirs, args)
             cls.build_project(dirs, args, env)
             cls.install_project(dirs, args)
-            if args.win_cp_openblas and platform.system() == 'Windows':
-                cls.copy_openblas(dirs)
 
         # add site to sys.path
         if add_path:
@@ -876,7 +840,7 @@ class Bench(Task):
                 print("Running benchmarks for Scipy version %s at %s"
                       % (version, mod_path))
                 cmd = ['asv', 'run', '--dry-run', '--show-stderr',
-                       '--python=same'] + bench_args
+                       '--python=same', '--quick'] + bench_args
                 retval = cls.run_asv(dirs, cmd)
                 sys.exit(retval)
             else:
@@ -910,7 +874,7 @@ class Bench(Task):
                 commit_a = out.strip()
                 cmd_compare = [
                     'asv', 'continuous', '--show-stderr', '--factor', '1.05',
-                    commit_a, commit_b
+                    '--quick', commit_a, commit_b
                 ] + bench_args
                 cls.run_asv(dirs, cmd_compare)
                 sys.exit(1)
@@ -1037,7 +1001,7 @@ class Doc(Task):
     TARGETS: Sphinx build targets [default: 'html']
 
     Running `python dev.py doc -j8 html` is equivalent to:
-    1. Execute build command (skipp by passing the global `-n` option).
+    1. Execute build command (skip by passing the global `-n` option).
     2. Set the PYTHONPATH environment variable
        (query with `python dev.py -n show_PYTHONPATH`).
     3. Run make on `doc/Makefile`, i.e.: `make -C doc -j8 TARGETS`
@@ -1140,7 +1104,7 @@ class Python:
           If not set, an interactive shell is launched.
 
     Running `python dev.py shell my_script.py` is equivalent to:
-    1. Execute build command (skipp by passing the global `-n` option).
+    1. Execute build command (skip by passing the global `-n` option).
     2. Set the PYTHONPATH environment variable
        (query with `python dev.py -n show_PYTHONPATH`).
     3. Run interpreter: `python my_script.py`
@@ -1183,7 +1147,7 @@ class Ipython(Python):
     """:wrench: Start IPython shell with PYTHONPATH set.
 
     Running `python dev.py ipython` is equivalent to:
-    1. Execute build command (skipp by passing the global `-n` option).
+    1. Execute build command (skip by passing the global `-n` option).
     2. Set the PYTHONPATH environment variable
        (query with `python dev.py -n show_PYTHONPATH`).
     3. Run the `ipython` interpreter.
@@ -1203,7 +1167,7 @@ class Shell(Python):
     """:wrench: Start Unix shell with PYTHONPATH set.
 
     Running `python dev.py shell` is equivalent to:
-    1. Execute build command (skipp by passing the global `-n` option).
+    1. Execute build command (skip by passing the global `-n` option).
     2. Open a new shell.
     3. Set the PYTHONPATH environment variable in shell
        (query with `python dev.py -n show_PYTHONPATH`).
@@ -1242,6 +1206,7 @@ class ShowDirs(Python):
         cls._setup(pythonpath, **kwargs)
         py_path = os.environ.get('PYTHONPATH', '')
         click.echo(f"PYTHONPATH={py_path}")
+
 
 @cli.command()
 @click.argument('version_args', nargs=2)
@@ -1399,7 +1364,7 @@ def _cpu_count_cgroup(os_cpu_count):
             return math.ceil(cpu_quota_us / cpu_period_us)
         else:  # pragma: no cover
             # Setting a negative cpu_quota_us value is a valid way to disable
-            # cgroup CPU bandwith limits
+            # cgroup CPU bandwidth limits
             return os_cpu_count
 
 
@@ -1431,7 +1396,7 @@ def _cpu_count_affinity(os_cpu_count):
             # havoc, typically on CI workers.
             warnings.warn(
                 "Failed to inspect CPU affinity constraints on this system. "
-                "Please install psutil or explictly set LOKY_MAX_CPU_COUNT."
+                "Please install psutil or explicitly set LOKY_MAX_CPU_COUNT."
             )
 
     # This can happen for platforms that do not implement any kind of CPU

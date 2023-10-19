@@ -20,7 +20,7 @@ from ._sputils import (upcast, upcast_char, to_native, isdense, isshape,
 
 
 class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
-    """base matrix class for compressed row- and column-oriented matrices"""
+    """base array/matrix class for compressed row- and column-oriented arrays/matrices"""
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
         _data_matrix.__init__(self)
@@ -133,7 +133,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         self._shape = check_shape(other.shape)
 
     def check_format(self, full_check=True):
-        """Check whether the matrix respects the CSR or CSC format.
+        """Check whether the array/matrix respects the CSR or CSC format.
 
         Parameters
         ----------
@@ -365,7 +365,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         return self._binopt(other, '_minus_')
 
     def multiply(self, other):
-        """Point-wise multiplication by another matrix, vector, or
+        """Point-wise multiplication by another array/matrix, vector, or
         scalar.
         """
         # Scalar multiplication.
@@ -599,7 +599,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     #####################
 
     def sum(self, axis=None, dtype=None, out=None):
-        """Sum the matrix over the given axis.  If the axis is None, sum
+        """Sum the array/matrix over the given axis.  If the axis is None, sum
         over both rows and columns, returning a scalar.
         """
         # The _spbase base class already does axis=0 and axis=1 efficiently
@@ -1071,7 +1071,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     ##############################################################
 
     def eliminate_zeros(self):
-        """Remove zero entries from the matrix
+        """Remove zero entries from the array/matrix
 
         This is an *in place* operation.
         """
@@ -1080,8 +1080,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                                          self.data)
         self.prune()  # nnz may have changed
 
-    def __get_has_canonical_format(self):
-        """Determine whether the matrix has sorted indices and no duplicates
+    @property
+    def has_canonical_format(self) -> bool:
+        """Whether the array/matrix has sorted indices and no duplicates
 
         Returns
             - True: if the above applies
@@ -1091,7 +1092,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         is False, so will the former be; if the former is found True, the
         latter flag is also set.
         """
-
         # first check to see if result was cached
         if not getattr(self, '_has_sorted_indices', True):
             # not sorted => not canonical
@@ -1099,19 +1099,18 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         elif not hasattr(self, '_has_canonical_format'):
             self.has_canonical_format = bool(
                 _sparsetools.csr_has_canonical_format(
-                    len(self.indptr) - 1, self.indptr, self.indices))
+                    len(self.indptr) - 1, self.indptr, self.indices)
+                )
         return self._has_canonical_format
 
-    def __set_has_canonical_format(self, val):
+    @has_canonical_format.setter
+    def has_canonical_format(self, val: bool):
         self._has_canonical_format = bool(val)
         if val:
             self.has_sorted_indices = True
 
-    has_canonical_format = property(fget=__get_has_canonical_format,
-                                    fset=__set_has_canonical_format)
-
     def sum_duplicates(self):
-        """Eliminate duplicate matrix entries by adding them together
+        """Eliminate duplicate entries by adding them together
 
         This is an *in place* operation.
         """
@@ -1126,29 +1125,29 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         self.prune()  # nnz may have changed
         self.has_canonical_format = True
 
-    def __get_sorted(self):
-        """Determine whether the matrix has sorted indices
+    @property
+    def has_sorted_indices(self) -> bool:
+        """Whether the indices are sorted
 
         Returns
-            - True: if the indices of the matrix are in sorted order
+            - True: if the indices of the array/matrix are in sorted order
             - False: otherwise
-
         """
-
         # first check to see if result was cached
         if not hasattr(self, '_has_sorted_indices'):
             self._has_sorted_indices = bool(
                 _sparsetools.csr_has_sorted_indices(
-                    len(self.indptr) - 1, self.indptr, self.indices))
+                    len(self.indptr) - 1, self.indptr, self.indices)
+                )
         return self._has_sorted_indices
 
-    def __set_sorted(self, val):
+    @has_sorted_indices.setter
+    def has_sorted_indices(self, val: bool):
         self._has_sorted_indices = bool(val)
 
-    has_sorted_indices = property(fget=__get_sorted, fset=__set_sorted)
 
     def sorted_indices(self):
-        """Return a copy of this matrix with sorted indices
+        """Return a copy of this array/matrix with sorted indices
         """
         A = self.copy()
         A.sort_indices()
@@ -1159,7 +1158,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         # return self.toother().toother()
 
     def sort_indices(self):
-        """Sort the indices of this matrix *in place*
+        """Sort the indices of this array/matrix *in place*
         """
 
         if not self.has_sorted_indices:

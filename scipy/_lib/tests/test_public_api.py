@@ -317,7 +317,9 @@ def test_api_importable():
 
 
 @pytest.mark.parametrize(("module_name", "correct_module"),
-                         [('scipy.integrate.dop', None),
+                         [('scipy.constants.codata', None),
+                          ('scipy.constants.constants', None),
+                          ('scipy.integrate.dop', None),
                           ('scipy.integrate.lsoda', None),
                           ('scipy.integrate.odepack', None),
                           ('scipy.integrate.quadpack', None),
@@ -338,6 +340,11 @@ def test_api_importable():
                           ('scipy.linalg.matfuncs', None),
                           ('scipy.linalg.misc', None),
                           ('scipy.linalg.special_matrices', None),
+                          ('scipy.ndimage.filters', None),
+                          ('scipy.ndimage.fourier', None),
+                          ('scipy.ndimage.interpolation', None),
+                          ('scipy.ndimage.measurements', None),
+                          ('scipy.ndimage.morphology', None),
                           ('scipy.odr.models', None),
                           ('scipy.odr.odrpack', None),
                           ('scipy.optimize.cobyla', None),
@@ -351,6 +358,19 @@ def test_api_importable():
                           ('scipy.optimize.slsqp', None),
                           ('scipy.optimize.tnc', None),
                           ('scipy.optimize.zeros', None),
+                          ('scipy.sparse.lil', None),
+                          ('scipy.sparse.linalg.dsolve', 'linalg'),
+                          ('scipy.sparse.linalg.eigen', 'linalg'),
+                          ('scipy.sparse.linalg.interface', 'linalg'),
+                          ('scipy.sparse.linalg.isolve', 'linalg'),
+                          ('scipy.sparse.linalg.matfuncs', 'linalg'),
+                          ('scipy.sparse.sparsetools', None),
+                          ('scipy.sparse.spfuncs', None),
+                          ('scipy.sparse.sputils', None),
+                          ('scipy.spatial.ckdtree', None),
+                          ('scipy.spatial.kdtree', None),
+                          ('scipy.spatial.qhull', None),
+                          ('scipy.spatial.transform.rotation', 'transform'),
                           ('scipy.stats.biasedurn', None),
                           ('scipy.stats.kde', None),
                           ('scipy.stats.morestats', None),
@@ -367,7 +387,7 @@ def test_private_but_present_deprecation(module_name, correct_module):
         import_name = f'scipy.{module_name.split(".")[1]}'
     else:
         import_name = f'scipy.{module_name.split(".")[1]}.{correct_module}'
-    
+
     correct_import = import_module(import_name)
 
     # Attributes that were formerly in `module_name` can still be imported from

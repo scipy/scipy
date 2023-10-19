@@ -84,7 +84,7 @@ def pressure_network_jacobian(flow_rates, Qtot, k):
     """Return the jacobian of the equation system F(flow_rates)
     computed by `pressure_network` with respect to
     *flow_rates*. See `pressure_network` for the detailed
-    description of parrameters.
+    description of parameters.
 
     Returns
     -------

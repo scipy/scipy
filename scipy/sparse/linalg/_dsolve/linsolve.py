@@ -556,10 +556,11 @@ def factorized(A):
     --------
     >>> import numpy as np
     >>> from scipy.sparse.linalg import factorized
+    >>> from scipy.sparse import csc_matrix
     >>> A = np.array([[ 3. ,  2. , -1. ],
     ...               [ 2. , -2. ,  4. ],
     ...               [-1. ,  0.5, -1. ]])
-    >>> solve = factorized(A) # Makes LU decomposition.
+    >>> solve = factorized(csc_matrix(A)) # Makes LU decomposition.
     >>> rhs1 = np.array([1, -2, 0])
     >>> solve(rhs1) # Uses the LU factors.
     array([ 1., -2., -2.])

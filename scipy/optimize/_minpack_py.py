@@ -268,7 +268,8 @@ def _root_hybr(func, x0, args=(), jac=None,
 
     info = retval[1]
     info['fun'] = info.pop('fvec')
-    sol = OptimizeResult(x=x, success=(status == 1), status=status)
+    sol = OptimizeResult(x=x, success=(status == 1), status=status,
+                         method="hybr")
     sol.update(info)
     try:
         sol['message'] = errors[status]
