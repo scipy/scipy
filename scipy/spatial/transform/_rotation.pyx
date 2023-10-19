@@ -1486,9 +1486,8 @@ cdef class Rotation:
         norm = np.repeat(np.linalg.norm(axes, axis=1), 3)
         axes = axes / norm.reshape(num_axes, 3)
 
-        if num_axes > 1 and abs(np.dot(axes[0], axes[1])) >= 1e-7:
-            raise ValueError("Consecutive axes must be orthogonal.")
-        if num_axes > 2 and abs(np.dot(axes[1], axes[2])) >= 1e-7:
+        if (num_axes > 1 and abs(np.dot(axes[0], axes[1])) >= 1e-7 or 
+            num_axes > 2 and abs(np.dot(axes[1], axes[2])) >= 1e-7):
             raise ValueError("Consecutive axes must be orthogonal.")
             
         angles = np.asarray(angles, dtype=float)
