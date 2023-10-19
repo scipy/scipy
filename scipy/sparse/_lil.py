@@ -287,6 +287,10 @@ class _lil_base(_spbase, IndexMixin):
     def __truediv__(self, other):           # self / other
         if isscalarlike(other):
             new = self.copy()
+            new_dtype = np.result_type(self.dtype, np.array(other).dtype)
+            if new_dtype != self.dtype:
+                new.data = new.data.astype(new_dtype)
+                new.dtype = new_dtype
             # Divide every element by this scalar
             for j, rowvals in enumerate(new.data):
                 new.data[j] = [val/other for val in rowvals]
