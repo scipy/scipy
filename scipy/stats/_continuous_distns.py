@@ -11043,7 +11043,7 @@ class mixture_distribution(rv_continuous):
 
 
 class norm_mixture(mixture_distribution):
-    """
+    r"""
     A class that represents a Gaussian mixture distribution.
     The probability density is:
 
