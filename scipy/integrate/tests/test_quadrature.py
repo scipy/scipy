@@ -929,8 +929,12 @@ class TestTanhSinh:
 
         res = _tanhsinh(logf, -np.inf, np.inf, log=True)
         ref = _tanhsinh(f, -np.inf, np.inf)
-        assert_allclose(np.exp(res.integral), ref.integral, **test_tols)
-        assert_allclose(np.exp(res.error), ref.error, **test_tols)
+        # In gh-19173, we saw `invalid` warnings on one CI platform.
+        # Silencing `all` because I can't reproduce locally and don't want
+        # to risk the need to run CI again.
+        with np.errstate(all='ignore'):
+            assert_allclose(np.exp(res.integral), ref.integral, **test_tols)
+            assert_allclose(np.exp(res.error), ref.error, **test_tols)
         assert res.nfev == ref.nfev
 
     def test_complex(self):
