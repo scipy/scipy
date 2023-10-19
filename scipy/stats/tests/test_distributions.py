@@ -995,6 +995,13 @@ class TestPlanck:
         expected = array([-1001000., -2001000., -3001000.])
         assert_array_almost_equal(vals, expected)
 
+class TestNormMixture:
+    def test_norm(self):
+        # test against normal (special case for 1 component)
+        points = [1, 2, 3]
+        pdf1 = stats.norm_mixture(2, 3, 1).pdf(points)
+        pdf2 = stats.norm.pdf(points, loc=2, scale=3)
+        assert_almost_equal(pdf1, pdf2)
 
 class TestGennorm:
     def test_laplace(self):

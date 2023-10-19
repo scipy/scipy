@@ -10998,6 +10998,92 @@ class argus_gen(rv_continuous):
 
 argus = argus_gen(name='argus', longname="An Argus Function", a=0.0, b=1.0)
 
+class mixture_distribution(stats.rv_continuous):
+    """
+    class mixture_distribution(stats.rv_continuous):
+        A class that represents a mixture distribution.
+    """
+    def __init__(self, probs, components, prob_normalization='linear'):
+        """
+        Parameters
+        ----------
+        probs : list
+            A list or array-like object containing the probabilities of the Gaussian components.
+        dists : list
+            A list or array-like object containing the distributions of the Gaussian components.
+        prob_normalization : str
+            The normalization method for the probabilities. Either 'linear' or 'softmax'.
+        """
+        self.probs = probs
+        self.components = components
+        if len(probs) != len(components):
+            raise ValueError('probs and components must have the same length.')
+        if prob_normalization == 'linear':
+            self.probs = self.probs / np.sum(self.probs)
+        elif prob_normalization == 'softmax':
+            self.probs = sc.softmax(self.probs)
+        else:
+            raise ValueError("The normalization method must be either 'linear' or 'softmax'.")
+        super(mixture_distribution, self).__init__()
+
+            
+    # pdf, cdf, sf, and munp (non-central moments) are easy to compute, they are just the weighted sum
+    # this is not true for other properties
+    def _pdf(self, x):
+        return np.sum([w * component.pdf(x) for w, component in zip(self.probs, self.components)], axis=0)
+    
+    def _cdf(self, x):
+        return np.sum([w * component.cdf(x) for w, component in zip(self.probs, self.components)], axis=0)
+    
+    def _sf(self, x):
+        return np.sum([w * component.sf(x) for w, component in zip(self.probs, self.components)], axis=0)
+    
+    def _munp(self, n):
+        return np.sum([w * component.moment(n) for w, component in zip(self.probs, self.components)], axis=0)
+
+
+class norm_mixture(mixture_distribution):
+    """
+    A class that represents a Gaussian mixture distribution.
+    The probability density is:
+
+    .. math::
+
+        f(x, w, \mu, \sigma) =  \sum_{i=1}^n w_i N(x, \mu_i, \sigma_i)
+
+    where :math:`N` is the normal distribution
+    :math:the sum all the weights `w` must be 1. If not they are normalized following the `weight_normalization` parameter.
+    """
+    def __init__(self, means, sigmas, weights, sigma_normalizaton=None, weight_normalization='linear'):
+        """
+        Initializes a Gaussian mixture distribution.
+
+        Parameters:
+        -----------
+        means : list or array-like
+            A list or array-like object containing the means of the Gaussian components.
+        sigmas : list or array-like
+            A list or array-like object containing the standard deviations of the Gaussian components.
+        weights : list or array-like
+            A list or array-like object containing the weights of the Gaussian components. Note: the weights will be normalized to sum to 1.
+        sigma_normalizaton : str
+            A string indicating the normalization method for the standard deviations. Must be either 'softplus' or None.
+        weight_normalization : str
+            A string indicating the normalization method for the weights. Must be either 'linear' or 'softmax'.
+        """
+        self.means = np.asarray(means)
+        self.sigmas = np.asarray(sigmas)
+
+        if not (len(self.means) == len(self.sigmas) == len(weights)):
+            raise ValueError("The length of mu, sigma, and weight must be the same.")
+        
+        if sigma_normalizaton == 'softplus':
+            self.sigmas = np.log1p(np.exp(-np.abs(self.sigmas))) + np.maximum(self.sigmas, 0)
+        elif sigma_normalizaton is not None:
+            raise ValueError("The normalization method must be either 'softplus' or None.")
+
+        components = [stats.norm(m, s) for m, s in zip(self.means, self.sigmas)]
+        super(norm_mixture, self).__init__(weights, components, weight_normalization)
 
 class rv_histogram(rv_continuous):
     """
@@ -11538,4 +11624,4 @@ rel_breitwigner = rel_breitwigner_gen(a=0.0, name="rel_breitwigner")
 pairs = list(globals().copy().items())
 _distn_names, _distn_gen_names = get_distribution_names(pairs, rv_continuous)
 
-__all__ = _distn_names + _distn_gen_names + ['rv_histogram']
+__all__ = _distn_names + _distn_gen_names + ['rv_histogram', 'norm_mixture']
