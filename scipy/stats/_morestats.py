@@ -4408,6 +4408,10 @@ def _circfuncs_common(samples, high, low, nan_policy='propagate'):
     return samples, sin_samp, cos_samp, mask
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, n_outputs=1, default_axis=None,
+    result_to_tuple=lambda x: (x,)
+)
 def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     """Compute the circular mean for samples in a range.
 
@@ -4500,6 +4504,10 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     return res*(high - low)/2.0/pi + low
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, n_outputs=1, default_axis=None,
+    result_to_tuple=lambda x: (x,)
+)
 def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     """Compute the circular variance for samples assumed to be in a range.
 
@@ -4588,6 +4596,10 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     return res
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, n_outputs=1, default_axis=None,
+    result_to_tuple=lambda x: (x,)
+)
 def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
             normalize=False):
     """
