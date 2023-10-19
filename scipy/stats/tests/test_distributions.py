@@ -64,7 +64,7 @@ def test_distributions_submodule():
     actual = set(scipy.stats.distributions.__all__)
     continuous = [dist[0] for dist in distcont]    # continuous dist names
     discrete = [dist[0] for dist in distdiscrete]  # discrete dist names
-    other = ['rv_discrete', 'rv_continuous', 'rv_histogram',
+    other = ['rv_discrete', 'rv_continuous', 'mixture_distribution', 'norm_mixture', 'rv_histogram',
              'entropy', 'trapz']
     expected = continuous + discrete + other
 
@@ -999,7 +999,7 @@ class TestNormMixture:
     def test_norm(self):
         # test against normal (special case for 1 component)
         points = [1, 2, 3]
-        pdf1 = stats.norm_mixture(2, 3, 1).pdf(points)
+        pdf1 = stats.norm_mixture([2], [3], [1]).pdf(points)
         pdf2 = stats.norm.pdf(points, loc=2, scale=3)
         assert_almost_equal(pdf1, pdf2)
 
