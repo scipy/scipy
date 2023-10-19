@@ -7,7 +7,6 @@ from numpy.testing import (assert_equal, assert_array_almost_equal,
 import scipy.optimize._linesearch as ls
 from scipy.optimize._linesearch import LineSearchWarning
 import numpy as np
-import pytest
 
 
 def assert_wolfe(s, phi, derphi, c1=1e-4, c2=0.9, err_msg=""):
