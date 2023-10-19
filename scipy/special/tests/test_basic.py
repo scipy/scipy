@@ -39,7 +39,6 @@ from scipy import special
 import scipy.special._ufuncs as cephes
 from scipy.special import ellipe, ellipk, ellipkm1
 from scipy.special import elliprc, elliprd, elliprf, elliprg, elliprj
-from scipy.special import mathieu_odd_coef, mathieu_even_coef
 from scipy.special import softplus
 from scipy.special import mathieu_odd_coef, mathieu_even_coef, stirling2
 from scipy._lib.deprecation import _NoValue
