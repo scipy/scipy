@@ -4162,8 +4162,8 @@ class TestGammatone:
             freq_hz = freqs[np.argmax(np.abs(response))] / ((2 * np.pi) / fs)
 
             # Check that the peak magnitude is 1 and the frequency is 1000 Hz.
-            response_max == pytest.approx(1, rel=1e-2)
-            freq_hz == pytest.approx(1000, rel=1e-2)
+            assert_allclose(response_max, 1, rtol=1e-2)
+            assert_allclose(freq_hz, 1000, rtol=1e-2)
 
     # All built-in IIR filters are real, so should have perfectly
     # symmetrical poles and zeros. Then ba representation (using

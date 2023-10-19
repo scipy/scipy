@@ -2583,6 +2583,7 @@ class _ABW:
 _abw_state = _ABW()
 
 
+@_axis_nan_policy_factory(AnsariResult, n_samples=2)
 def ansari(x, y, alternative='two-sided'):
     """Perform the Ansari-Bradley test for equal scale parameters.
 

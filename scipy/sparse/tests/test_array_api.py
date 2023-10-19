@@ -140,10 +140,16 @@ def test_matmul(A):
     assert np.all((A @ A.T).todense() == A.dot(A.T).todense())
 
 
-@parametrize_square_sparrays
-def test_pow(B):
-    assert isinstance((B**0), scipy.sparse.sparray), "Expected array, got matrix"
-    assert isinstance((B**2), scipy.sparse.sparray), "Expected array, got matrix"
+@parametrize_sparrays
+def test_power_operator(A):
+    assert isinstance((A**2), scipy.sparse.sparray), "Expected array, got matrix"
+
+    # https://github.com/scipy/scipy/issues/15948
+    npt.assert_equal((A**2).todense(), (A.todense())**2)
+
+    # power of zero is all ones (dense) so helpful msg exception
+    with pytest.raises(NotImplementedError, match="zero power"):
+        A**0
 
 
 @parametrize_sparrays
@@ -352,12 +358,6 @@ def test_spilu():
         np.asarray([1, 0, 0, 0], dtype=np.float64),
         rtol=1e-14, atol=3e-16
     )
-
-
-@parametrize_sparrays
-def test_power_operator(A):
-    # https://github.com/scipy/scipy/issues/15948
-    npt.assert_equal((A**2).todense(), (A.todense())**2)
 
 
 @pytest.mark.parametrize(
