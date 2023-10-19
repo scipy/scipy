@@ -118,7 +118,7 @@ cdef inline void _quat_canonical(double[:, :] q) noexcept:
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef inline void _get_angles(
-    double[:] angles, bint extrinsic, bint symmetric, bint sig, 
+    double[:] angles, bint extrinsic, bint symmetric, bint sign, 
     double lamb, double a, double b, double c, double d):
     
     # intrinsic/extrinsic conversion helpers
@@ -163,7 +163,7 @@ cdef inline void _get_angles(
             
     # for Tait-Bryan/asymmetric sequences
     if not symmetric:
-        angles[angle_third] *= sig
+        angles[angle_third] *= sign
         angles[1] -= lamb
 
     for idx in range(3):
@@ -344,7 +344,7 @@ cdef double[:, :] _compute_euler_from_quat(
         
     # Step 0
     # Check if permutation is even (+1) or odd (-1)     
-    cdef int sig = (i - j) * (j - k) * (k - i) // 2
+    cdef int sign = (i - j) * (j - k) * (k - i) // 2
 
     cdef Py_ssize_t num_rotations = quat.shape[0]
 
@@ -361,14 +361,14 @@ cdef double[:, :] _compute_euler_from_quat(
             a = quat[ind, 3]
             b = quat[ind, i]
             c = quat[ind, j]
-            d = quat[ind, k] * sig
+            d = quat[ind, k] * sign
         else:
             a = quat[ind, 3] - quat[ind, j]
-            b = quat[ind, i] + quat[ind, k] * sig
+            b = quat[ind, i] + quat[ind, k] * sign
             c = quat[ind, j] + quat[ind, 3]
-            d = quat[ind, k] * sig - quat[ind, i]
+            d = quat[ind, k] * sign - quat[ind, i]
 
-        _get_angles(angles[ind], extrinsic, symmetric, sig, pi / 2, a, b, c, d)
+        _get_angles(angles[ind], extrinsic, symmetric, sign, pi / 2, a, b, c, d)
 
     return angles
 
