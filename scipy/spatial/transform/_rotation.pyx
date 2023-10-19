@@ -118,7 +118,7 @@ cdef inline void _quat_canonical(double[:, :] q) noexcept:
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef inline void _get_angles(
-    double[:] angles, bint extrinsic, bint symmetric, bint sign, 
+    double[:] angles, bint extrinsic, bint symmetric, bint sig, 
     double lamb, double a, double b, double c, double d):
     
     # intrinsic/extrinsic conversion helpers
@@ -163,7 +163,7 @@ cdef inline void _get_angles(
             
     # for Tait-Bryan/asymmetric sequences
     if not symmetric:
-        angles[angle_third] *= sign
+        angles[angle_third] *= sig
         angles[1] -= lamb
 
     for idx in range(3):
