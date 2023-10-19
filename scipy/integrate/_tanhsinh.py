@@ -88,15 +88,12 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
         ignored, and `minlevel` is set equal to `maxlevel`.
     atol, rtol : float, optional
         Absolute termination tolerance (default: 0) and relative termination
-        tolerance (default: 1e-12), respectively. The error estimate is as
+        tolerance (default: ``eps**0.75``, where ``eps`` is the precision of
+        the result dtype), respectively. The error estimate is as
         described in [1]_ Section 5. While not theoretically rigorous or
         conservative, it is said to work well in practice. Must be non-negative
         and finite if `log` is False, and must be expressed as the log of a
         non-negative and finite number if `log` is True.
-        Note that the default tolerance is inappropriate for floating point
-        types with precision less than ``float64``. A tolerance of ``1e-5``
-        may be appropriate for ``float32``; use of ``float16`` is not
-        recommended.
     callback : callable, optional
         An optional user-supplied function to be called before the first
         iteration and after each iteration.
@@ -140,7 +137,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     Notes
     -----
     Implements the algorithm as described in [1]_ with minor adaptations for
-    fixed-precision arithmetic, including some described by [2]_ and [3]_. The
+    finite-precision arithmetic, including some described by [2]_ and [3]_. The
     tanh-sinh scheme was originally introduced in [4]_.
 
     Due floating-point error in the abscissae, the function may be evaluated
@@ -235,7 +232,9 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     # type promotion rules?
     with np.errstate(over='ignore', invalid='ignore', divide='ignore'):
         c = ((a.ravel() + b.ravel())/2).reshape(a.shape)
-        c[np.isnan(c)] = 0  # infinite left and right limits
+        c[np.isinf(a)] = b[np.isinf(a)]  # takes care of infinite a
+        c[np.isinf(b)] = a[np.isinf(b)]  # takes care of infinite b
+        c[np.isnan(c)] = 0  # takes care of infinite a and b
         tmp = _scalar_optimization_initialize(f, (c,), args, complex_ok=True)
     xs, fs, args, shape, dtype = tmp
     a = np.broadcast_to(a, shape).astype(dtype).ravel()
@@ -249,12 +248,16 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     zero = -np.inf if log else 0
     pi = dtype.type(np.pi)
     maxiter = maxlevel - minlevel + 1
+    eps = np.finfo(dtype).eps
+    if rtol is None:
+        rtol = 0.75*np.log(eps) if log else eps**0.75
 
     Sn = np.full(shape, zero, dtype=dtype).ravel()  # latest integral estimate
+    Sn[np.isnan(a) | np.isnan(b) | np.isnan(fs[0])] = np.nan
     Sk = np.empty_like(Sn).reshape(-1, 1)[:, 0:0]  # all integral estimates
     aerr = np.full(shape, np.nan, dtype=dtype).ravel()  # absolute error
     status = np.full(shape, _EINPROGRESS, dtype=int).ravel()
-    h0 = _get_base_step(dtype=dtype)  # base step
+    h0 = np.real(_get_base_step(dtype=dtype))  # base step
 
     # For term `d4` of error estimate ([1] Section 5), we need to keep the
     # most extreme abscissae and corresponding `fj`s, `wj`s in Euler-Maclaurin
@@ -268,7 +271,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     d4 = np.zeros(shape, dtype=dtype).ravel()
 
     work = OptimizeResult(
-        Sn=Sn, Sk=Sk, aerr=aerr, h=h0, log=log, dtype=dtype, pi=pi,
+        Sn=Sn, Sk=Sk, aerr=aerr, h=h0, log=log, dtype=dtype, pi=pi, eps=eps,
         a=a.reshape(-1, 1), b=b.reshape(-1, 1),  # integration limits
         n=minlevel, nit=nit, nfev=nfev, status=status,  # iter/eval counts
         xr0=xr0, fr0=fr0, wr0=wr0, xl0=xl0, fl0=fl0, wl0=wl0, d4=d4,  # err est
@@ -327,17 +330,19 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
             work.aerr[i] = zero
             work.status[i] = _ECONVERGED
             stop[i] = True
-            return stop
-
-        # Terminate if convergence criterion is met
-        work.rerr, work.aerr = _estimate_error(work)
-        i = ((work.rerr < rtol) | (work.rerr + np.real(work.Sn) < atol) if log
-             else (work.rerr < rtol) | (work.rerr * abs(work.Sn) < atol))
-        work.status[i] = _ECONVERGED
-        stop[i] = True
+        else:
+            # Terminate if convergence criterion is met
+            work.rerr, work.aerr = _estimate_error(work)
+            i = ((work.rerr < rtol) | (work.rerr + np.real(work.Sn) < atol) if log
+                 else (work.rerr < rtol) | (work.rerr * abs(work.Sn) < atol))
+            work.status[i] = _ECONVERGED
+            stop[i] = True
 
         # Terminate if integral estimate becomes invalid
-        i = ~np.isfinite(work.Sn) & ~stop
+        if log:
+            i = (np.isposinf(np.real(work.Sn)) | np.isnan(work.Sn)) & ~stop
+        else:
+            i = ~np.isfinite(work.Sn) & ~stop
         work.status[i] = _EVALUEERR
         stop[i] = True
 
@@ -639,7 +644,7 @@ def _estimate_error(work):
     Snm2 = work.Sk[..., -2]
     Snm1 = work.Sk[..., -1]
 
-    e1 = np.finfo(work.dtype).eps
+    e1 = work.eps
 
     if work.log:
         log_e1 = np.log(e1)
@@ -710,10 +715,9 @@ def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel,
     if atol is None:
         atol = -np.inf if log else 0
 
-    if rtol is None:  # consider changing depending on dtype?
-        rtol = np.log(1e-12) if log else 1e-12
+    rtol_temp = rtol if rtol is not None else 0.
 
-    params = np.asarray([atol, rtol, 0.])
+    params = np.asarray([atol, rtol_temp, 0.])
     message = "`atol` and `rtol` must be real numbers."
     if not np.issubdtype(params.dtype, np.floating):
         raise ValueError(message)
@@ -726,7 +730,8 @@ def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel,
         message = '`atol` and `rtol` must be non-negative and finite.'
         if np.any(params < 0) or np.any(np.isinf(params)):
             raise ValueError(message)
-    atol, rtol, _ = params
+    atol = params[0]
+    rtol = rtol if rtol is None else params[1]
 
     BIGINT = float(2**62)
     if maxfun is None and maxlevel is None:
