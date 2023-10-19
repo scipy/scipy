@@ -417,7 +417,7 @@ cdef double[:, :] _compute_davenport_from_quat(
     cdef double a, b, c, d
 
     for ind in range(num_rotations):
-        _compose_quat_single(quat_lamb, quat[ind, :], quat_transformed)
+        _compose_quat_single(quat_lamb, quat[ind], quat_transformed)
 
         # Step 1
         # Permutate quaternion elements
