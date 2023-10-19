@@ -10998,7 +10998,7 @@ class argus_gen(rv_continuous):
 
 argus = argus_gen(name='argus', longname="An Argus Function", a=0.0, b=1.0)
 
-class mixture_distribution(stats.rv_continuous):
+class mixture_distribution(rv_continuous):
     """
     class mixture_distribution(stats.rv_continuous):
         A class that represents a mixture distribution.
