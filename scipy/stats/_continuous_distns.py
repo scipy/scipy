@@ -11624,4 +11624,4 @@ rel_breitwigner = rel_breitwigner_gen(a=0.0, name="rel_breitwigner")
 pairs = list(globals().copy().items())
 _distn_names, _distn_gen_names = get_distribution_names(pairs, rv_continuous)
 
-__all__ = _distn_names + _distn_gen_names + ['rv_histogram', 'norm_mixture']
+__all__ = _distn_names + _distn_gen_names + ['rv_histogram', 'mixture_distribution', 'norm_mixture']
