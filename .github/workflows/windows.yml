@@ -47,7 +47,7 @@ jobs:
       - name: Build
         run: |
           echo "SCIPY_USE_PROPACK=1" >> $env:GITHUB_ENV
-          python dev.py build --use-scipy-openblas
+          python dev.py build --with-scipy-openblas
 
       - name: Test
         run: |
@@ -84,7 +84,7 @@ jobs:
 
       - name: Build
         run: |
-          python dev.py build --use-scipy-openblas
+          python dev.py build --with-scipy-openblas
 
       - name: Test
         run: |

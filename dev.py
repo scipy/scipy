@@ -426,8 +426,8 @@ class Build(Task):
     show_build_log = Option(
         ['--show-build-log'], default=False, is_flag=True,
         help="Show build output rather than using a log file")
-    use_scipy_openblas = Option(
-        ['--use-scipy-openblas'], default=False, is_flag=True,
+    with_scipy_openblas = Option(
+        ['--with-scipy-openblas'], default=False, is_flag=True,
         help=("If set, use the `scipy-openblas32` wheel installed into the "
               "current environment as the BLAS/LAPACK to build against."))
 
@@ -482,7 +482,7 @@ class Build(Task):
             cmd += ['-Db_sanitize=address,undefined']
         if args.setup_args:
             cmd += [str(arg) for arg in args.setup_args]
-        if args.use_scipy_openblas:
+        if args.with_scipy_openblas:
             cls.configure_scipy_openblas()
             env['PKG_CONFIG_PATH'] = os.pathsep.join([
                     os.path.join(os.getcwd(), '.openblas'),
