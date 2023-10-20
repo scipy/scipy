@@ -310,7 +310,7 @@ jobs:
 
     - name: Build and install SciPy
       run: |
-        python dev.py build --gcov --use-scipy-openblas
+        python dev.py build --gcov --with-scipy-openblas
 
     - name: Ccache performance
       shell: bash -l {0}

@@ -73,9 +73,7 @@ endif
 if host_machine.system() == 'os400'
   # IBM i system, needed to avoid build errors - see gh-17193
   add_project_arguments('-D__STDC_FORMAT_MACROS', language : 'cpp')
-  add_project_link_arguments('-Wl,-bnotextro', language : 'c')
-  add_project_link_arguments('-Wl,-bnotextro', language : 'cpp')
-  add_project_link_arguments('-Wl,-bnotextro', language : 'fortran')
+  add_project_link_arguments('-Wl,-bnotextro', language : ['c', 'cpp', 'fortran'])
 endif
 
 # Adding at project level causes many spurious -lgfortran flags.
@@ -83,6 +81,11 @@ add_languages('fortran', native: false)
 ff = meson.get_compiler('fortran')
 if ff.has_argument('-Wno-conversion')
   add_project_arguments('-Wno-conversion', language: 'fortran')
+endif
+
+if host_machine.system() == 'darwin' and cc.has_link_argument('-Wl,-ld_classic')
+  # New linker introduced in macOS 14 not working yet, see gh-19357 and gh-19387
+  add_project_link_arguments('-Wl,-ld_classic', language : ['c', 'cpp', 'fortran'])
 endif
 
 # Intel compilers default to fast-math, so disable it if we detect Intel
