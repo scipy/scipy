@@ -10,7 +10,8 @@ from collections import defaultdict
 from heapq import heapify, heappop
 from numpy import (pi, asarray, floor, isscalar, iscomplex, real,
                    imag, sqrt, where, mgrid, sin, place, issubdtype,
-                   extract, inexact, nan, zeros, sinc)
+                   extract, inexact, nan, zeros)
+from numpy import sinc as np_sinc
 from . import _ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom)
@@ -105,6 +106,74 @@ def _nonneg_int_or_fail(n, var_name, strict=True):
     except (ValueError, TypeError) as err:
         raise err.__class__(f"{var_name} must be a non-negative integer") from err
     return n
+
+
+def sinc(x):
+    r"""
+
+    .. deprecated:: 1.12.0
+        scipy.special.sinc is deprecated in SciPy 1.12 and will be removed
+        in SciPy 1.14. We recommend using numpy.sinc instead.
+
+    Return the normalized sinc function.
+
+    The sinc function is equal to :math:`\sin(\pi x)/(\pi x)` for any argument
+    :math:`x\ne 0`. ``sinc(0)`` takes the limit value 1, making ``sinc`` not
+    only everywhere continuous but also infinitely differentiable.
+
+    .. note::
+
+        Note the normalization factor of ``pi`` used in the definition.
+        This is the most commonly used definition in signal processing.
+        Use ``sinc(x / np.pi)`` to obtain the unnormalized sinc function
+        :math:`\sin(x)/x` that is more common in mathematics.
+
+    Parameters
+    ----------
+    x : ndarray
+        Array (possibly multi-dimensional) of values for which to calculate
+        ``sinc(x)``.
+
+    Returns
+    -------
+    out : ndarray
+        ``sinc(x)``, which has the same shape as the input.
+
+    Notes
+    -----
+    The name sinc is short for "sine cardinal" or "sinus cardinalis".
+
+    The sinc function is used in various signal processing applications,
+    including in anti-aliasing, in the construction of a Lanczos resampling
+    filter, and in interpolation.
+
+    For bandlimited interpolation of discrete-time signals, the ideal
+    interpolation kernel is proportional to the sinc function.
+
+    References
+    ----------
+    .. [1] Weisstein, Eric W. "Sinc Function." From MathWorld--A Wolfram Web
+           Resource. http://mathworld.wolfram.com/SincFunction.html
+    .. [2] Wikipedia, "Sinc function",
+           https://en.wikipedia.org/wiki/Sinc_function
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import sinc
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(-4, 4, 41)
+    >>> plt.plot(x, sinc(x))
+    >>> plt.title("Sinc Function")
+    >>> plt.ylabel("Amplitude")
+    >>> plt.xlabel("X")
+    >>> plt.show()
+    """
+    _depr_msg = ("scipy.special.sinc is deprecated in SciPy 1.12 and will be "
+                 "removed in SciPy 1.14. We recommend using numpy.sinc "
+                 "instead.")
+    warnings.warn(_depr_msg, DeprecationWarning, stacklevel=2)
+    return np_sinc(x)
 
 
 def diric(x, n):

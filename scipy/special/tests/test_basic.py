@@ -1544,8 +1544,9 @@ class TestTrigonometric:
 
     def test_sinc(self):
         # the sinc implementation and more extensive sinc tests are in numpy
-        assert_array_equal(special.sinc([0]), 1)
-        assert_equal(special.sinc(0.0), 1.0)
+        with pytest.deprecated_call():
+            assert_array_equal(special.sinc([0]), 1)
+            assert_equal(special.sinc(0.0), 1.0)
 
     def test_sindg(self):
         sn = special.sindg(90)
