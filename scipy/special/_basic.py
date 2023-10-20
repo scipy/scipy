@@ -110,7 +110,6 @@ def _nonneg_int_or_fail(n, var_name, strict=True):
 
 def sinc(x):
     r"""
-
     .. deprecated:: 1.12.0
         scipy.special.sinc is deprecated in SciPy 1.12 and will be removed
         in SciPy 1.14. We recommend using numpy.sinc instead.
