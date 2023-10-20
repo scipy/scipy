@@ -11024,7 +11024,10 @@ class mixture_distribution(rv_continuous):
             self.probs = sc.softmax(self.probs)
         else:
             raise ValueError("The normalization method must be either 'linear' or 'softmax'.")
-        super(mixture_distribution, self).__init__()
+        a = np.min([component.support()[0] for component in self.components])
+        b = np.max([component.support()[1] for component in self.components])
+
+        super(mixture_distribution, self).__init__(a=a, b=b)
 
 
     # pdf, cdf, sf, and munp (non-central moments) are easy to compute, they are just the weighted sum
@@ -11041,6 +11044,14 @@ class mixture_distribution(rv_continuous):
     def _munp(self, n):
         return np.sum([w * component.moment(n) for w, component in zip(self.probs, self.components)], axis=0)
 
+    def _rvs(self, size=None, random_state=None):
+        results = np.array([])
+        n_per_component = stats.multinomial.rvs(n=np.prod(size), p=self.probs, random_state=random_state)
+        for n, component in zip(n_per_component, self.components):
+            results = np.append(results, component.rvs(size=n, random_state=random_state))
+        random_state.shuffle(results)
+        results = np.reshape(results, size)
+        return results
 
 class norm_mixture(mixture_distribution):
     r"""

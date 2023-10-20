@@ -995,6 +995,35 @@ class TestPlanck:
         expected = array([-1001000., -2001000., -3001000.])
         assert_array_almost_equal(vals, expected)
 
+class TestMixtureDistribution:
+    def test_uniform(self):
+        uniform1 = stats.uniform(0, 1)
+        uniform2 = stats.uniform(1, 1)
+        md = stats.mixture_distribution([1, 1], [uniform1, uniform2])
+        assert_equal((0, 2), md.support())
+        assert_almost_equal(stats.uniform(0, 2).entropy(), md.entropy())
+        assert_equal(md.mean(), 1.)
+        assert_almost_equal(md.var(), stats.uniform(0, 2).var())
+
+    def test_rvs_uniform(self):
+        uniform1 = stats.uniform(0, 1)
+        uniform2 = stats.uniform(10, 1)
+        uniform3 = stats.uniform(20, 1)
+        md = stats.mixture_distribution([1, 1, 1], [uniform1, uniform2, uniform3])
+        rvs = md.rvs(size=1000, random_state=1234)
+        assert_equal(len(rvs), 1000)
+        assert_equal((rvs < 0).sum(), 0)
+        assert_equal(((rvs > 1) & (rvs < 10)).sum(), 0)
+        assert_equal(((rvs > 11) & (rvs < 20)).sum(), 0)
+        assert_equal((rvs > 21).sum(), 0)
+
+        rvs = md.rvs(size=(2, 3, 1), random_state=1234)
+        assert_equal(rvs.shape, (2, 3, 1))
+
+        rvs = md.rvs(random_state=1234)
+        assert(isinstance(rvs, float))
+
+
 class TestNormMixture:
     def test_norm(self):
         # test against normal (special case for 1 component)
