@@ -6,7 +6,7 @@ from pytest import raises as assert_raises
 import pytest
 
 from scipy.fft import fft
-from scipy.special import sinc
+from numpy import sinc
 from scipy.signal import kaiser_beta, kaiser_atten, kaiserord, \
     firwin, firwin2, freqz, remez, firls, minimum_phase
 

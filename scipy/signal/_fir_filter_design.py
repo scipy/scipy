@@ -6,7 +6,7 @@ import warnings
 
 import numpy as np
 from numpy.fft import irfft, fft, ifft
-from scipy.special import sinc
+from numpy import sinc
 from scipy.linalg import (toeplitz, hankel, solve, LinAlgError, LinAlgWarning,
                           lstsq)
 from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
