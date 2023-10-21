@@ -19,7 +19,8 @@
 [submodule "scipy/_lib/pocketfft"]
 	path = scipy/_lib/pocketfft
 	url = https://github.com/scipy/pocketfft
+# All submodules are required to be under subprojects for meson:
+# https://mesonbuild.com/Subprojects.html#why-must-all-subprojects-be-inside-a-single-directory
 [submodule "subprojects/highs"]
 	path = subprojects/highs
-	url = https://github.com/HaoZeke/highs
-	branch = forSciPy
+	url = https://github.com/scipy/highs

@@ -294,6 +294,8 @@ _msg_time = "Time limit reached. (HiGHS Status 13:"
 _msg_sol = "Serious numerical difficulties encountered. (HiGHS Status 16:"
 
 
+# See https://github.com/scipy/scipy/pull/19255#issuecomment-1778438888
+@pytest.mark.xfail(reason="Often buggy, revisit with callbacks, gh-19255")
 @pytest.mark.skipif(np.intp(0).itemsize < 8,
                     reason="Unhandled 32-bit GCC FP bug")
 @pytest.mark.parametrize(["options", "msg"], [({"time_limit": 0.1}, _msg_time),
