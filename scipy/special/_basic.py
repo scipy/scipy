@@ -111,7 +111,9 @@ def sinc(x):
     r"""
     .. deprecated:: 1.12.0
         scipy.special.sinc is deprecated in SciPy 1.12 and will be removed
-        in SciPy 1.14. We recommend using numpy.sinc instead.
+        in SciPy 1.14. As scipy.special.sinc is an alias of numpy.sinc,
+        we encourage using using numpy.sinc instead which returns the
+        same result.
 
     Return the normalized sinc function.
 
