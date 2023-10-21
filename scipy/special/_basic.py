@@ -11,7 +11,6 @@ from heapq import heapify, heappop
 from numpy import (pi, asarray, floor, isscalar, iscomplex, real,
                    imag, sqrt, where, mgrid, sin, place, issubdtype,
                    extract, inexact, nan, zeros)
-from numpy import sinc as np_sinc
 from . import _ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom)
@@ -172,7 +171,7 @@ def sinc(x):
                  "removed in SciPy 1.14. We recommend using numpy.sinc "
                  "instead.")
     warnings.warn(_depr_msg, DeprecationWarning, stacklevel=2)
-    return np_sinc(x)
+    return np.sinc(x)
 
 
 def diric(x, n):
