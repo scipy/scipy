@@ -706,7 +706,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
         -----
         The new points added by `add_xi` are not randomly permuted
         so there is potential for numerical instability,
-        especially for a large number of points. If this case
+        especially for a large number of points. If this
         happens, please reconstruct interpolation from scratch instead.
         """
         if yi is not None:
