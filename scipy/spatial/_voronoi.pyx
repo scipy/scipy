@@ -26,9 +26,10 @@ def sort_vertices_of_regions(int[:,::1] simplices, regions):
     cdef np.npy_intp current_simplex, current_vertex
     cdef np.npy_intp remaining_size
     cdef np.npy_intp[:] remaining
-    cdef np.npy_intp[:] sorted_vertices = np.empty(max([len(region) for region
-                                                   in regions]),
-                                                   dtype=np.intp)
+    cdef np.ndarray[np.intp_t, ndim=1] sorted_vertices
+    sorted_vertices = np.empty(max([len(region) for region
+                               in regions]),
+                               dtype=np.intp)
 
     for n in range(num_regions):
         remaining = np.asarray(regions[n][:])
@@ -53,4 +54,4 @@ def sort_vertices_of_regions(int[:,::1] simplices, regions):
                 if s != n and s != current_vertex:
                     current_vertex = s
                     break
-        regions[n] = list(np.asarray(sorted_vertices[:remaining_size]))
+        regions[n] = list(sorted_vertices[:remaining_size])
