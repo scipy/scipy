@@ -335,7 +335,7 @@ for key in (
         'scipy.signal.morlet2 is deprecated',
         'scipy.signal.ricker is deprecated',
         'scipy.signal.cwt is deprecated',
-        'scipy.special.sinc is deprecated',
+        '`scipy.special.sinc` is a deprecated alias',
         ):
     warnings.filterwarnings(action='ignore', message='.*' + key + '.*')
 

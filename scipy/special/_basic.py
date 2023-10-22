@@ -110,10 +110,9 @@ def _nonneg_int_or_fail(n, var_name, strict=True):
 def sinc(x):
     r"""
     .. deprecated:: 1.12.0
-        scipy.special.sinc is deprecated in SciPy 1.12 and will be removed
-        in SciPy 1.14. As scipy.special.sinc is an alias of numpy.sinc,
-        we encourage using using numpy.sinc instead which returns the
-        same result.
+        `scipy.special.sinc` is a deprecated alias for `numpy.sinc` and will
+        be removed in SciPy 1.14. To silence this warning, use `numpy.sinc`
+        instead. Deprecated in SciPy 1.12.
 
     Return the normalized sinc function.
 
@@ -138,6 +137,10 @@ def sinc(x):
     -------
     out : ndarray
         ``sinc(x)``, which has the same shape as the input.
+
+    See Also
+    --------
+    numpy.sinc
 
     Notes
     -----
@@ -169,9 +172,10 @@ def sinc(x):
     >>> plt.xlabel("X")
     >>> plt.show()
     """
-    _depr_msg = ("scipy.special.sinc is deprecated in SciPy 1.12 and will be "
-                 "removed in SciPy 1.14. We recommend using numpy.sinc "
-                 "instead.")
+    _depr_msg = ("`scipy.special.sinc` is a deprecated alias for "
+                 "numpy.sinc` and will be removed in SciPy 1.14. To silence "
+                 "this warning, use `numpy.sinc` instead. Deprecated in "
+                 "SciPy 1.12.")
     warnings.warn(_depr_msg, DeprecationWarning, stacklevel=2)
     return np.sinc(x)
 
