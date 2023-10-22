@@ -20,16 +20,18 @@ __all__ = ['sort_vertices_of_regions']
 
 
 @cython.boundscheck(False)
-def sort_vertices_of_regions(int[:,::1] simplices, regions):
-    cdef np.npy_intp n, k, s, i
+def sort_vertices_of_regions(int[:,::1] simplices, list regions):
+    cdef np.npy_intp n, k, s, i, max_len
     cdef np.npy_intp num_regions = len(regions)
     cdef np.npy_intp current_simplex, current_vertex
     cdef np.npy_intp remaining_size
     cdef np.npy_intp[:] remaining
     cdef np.ndarray[np.intp_t, ndim=1] sorted_vertices
-    sorted_vertices = np.empty(max([len(region) for region
-                               in regions]),
-                               dtype=np.intp)
+
+    max_len = 0
+    for region in regions:
+        max_len = max(max_len, len(region))
+    sorted_vertices = np.empty(max_len, dtype=np.intp)
 
     for n in range(num_regions):
         remaining = np.asarray(regions[n][:])
