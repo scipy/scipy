@@ -432,7 +432,7 @@ class betanbinom_gen(rv_discrete):
 
     def _stats(self, n, a, b, moments='mv'):
         def mean(n, a, b):
-            return n * b / (a - 1)
+            return n * b / (a - 1.)
         mu = _lazywhere(a > 1, (n, a, b), f=mean, fillvalue=np.inf)
         def var(n, a, b):
             return (n * b * (n + a - 1.) * (a + b - 1.)
@@ -440,21 +440,22 @@ class betanbinom_gen(rv_discrete):
         var = _lazywhere(a > 2, (n, a, b), f=var, fillvalue=np.inf)
         g1, g2 = None, None
         def skew(n, a, b):
-            return ((2 * n + a - 1) * (2 * b + a - 1)
-                    / (a - 3) / sqrt(n * b * (n + a - 1) * (b + a - 1)
-                    / (a - 2)))
+            return ((2 * n + a - 1.) * (2 * b + a - 1.)
+                    / (a - 3.) / sqrt(n * b * (n + a - 1.) * (b + a - 1.)
+                    / (a - 2.)))
         if 's' in moments:
             g1 = _lazywhere(a > 3, (n, a, b), f=skew, fillvalue=np.inf)
         def kurtosis(n, a, b):
             term = (a - 2.)
             term_2 = ((a - 1.)**2. * (a**2. + a * (6 * b - 1.)
-                      + 6 * (b - 1.) * b)
-                      + 3 * n**2 * ((a + 5.) * b**2 + (a + 5.) * (a - 1.) * b
-                      + 2 * (a - 1.)**2) + 3 * (a - 1.) * n
+                      + 6. * (b - 1.) * b)
+                      + 3. * n**2 * ((a + 5.) * b**2. + (a + 5.)
+                      * (a - 1.) * b + 2. * (a - 1.)**2)
+                      + 3 * (a - 1.) * n
                       * ((a + 5.) * b**2. + (a + 5.) * (a - 1.) * b
-                      + 2 * (a - 1.)**2.))
+                      + 2. * (a - 1.)**2.))
             denominator = ((a - 4.) * (a - 3.) * b * n
-                           * (a + b - 1) * (a + n - 1))
+                           * (a + b - 1.) * (a + n - 1.))
             return term * term_2 / denominator
         if 'k' in moments:
             g2 = _lazywhere(a > 4, (n, a, b), f=kurtosis, fillvalue=np.inf)
