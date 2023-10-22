@@ -2,11 +2,12 @@ from warnings import warn
 
 import numpy as np
 import scipy.optimize._highs.highspy._highs as _h
+import scipy.optimize._highs.highspy._highs.cb as hscb
 from scipy.optimize._highs.highspy import _highs_options as hopt  # type: ignore[attr-defined]
 from scipy.optimize import OptimizeWarning
 
 
-def _highs_wrapper(c, indptr, indices, data, lhs, rhs, lb, ub, integrality, options):
+def _highs_wrapper(c, indptr, indices, data, lhs, rhs, lb, ub, integrality, options, callback):
     numcol = c.size
     numrow = rhs.size
     isMip = integrality is not None and np.sum(integrality) > 0
@@ -100,8 +101,22 @@ def _highs_wrapper(c, indptr, indices, data, lhs, rhs, lb, ub, integrality, opti
         )
         return res
 
+    # Handle Callbacks
+    if callback is not None:
+        print("Got a callback")
+        highs.setCallback(callback, None)
+        highs.startCallback(hscb.HighsCallbackType.kCallbackLogging)
+        # highs.startCallback(hscb.HighsCallbackType.kCallbackSimplexInterrupt)
+        # highs.startCallback(hscb.HighsCallbackType.kCallbackIpmInterrupt)
+        # highs.startCallback(hscb.HighsCallbackType.kCallbackMipInterrupt)
+
     # Solve the LP
     run_status = highs.run()
+    if callback is not None:
+        highs.stopCallback(hscb.HighsCallbackType.kCallbackLogging)
+        # highs.stopCallback(hscb.HighsCallbackType.kCallbackSimplexInterrupt)
+        # highs.stopCallback(hscb.HighsCallbackType.kCallbackIpmInterrupt)
+        # highs.stopCallback(hscb.HighsCallbackType.kCallbackMipInterrupt)
     if run_status == _h.HighsStatus.kError:
         res.update(
             {

@@ -202,6 +202,7 @@ def _linprog_highs(
     simplex_dual_edge_weight_strategy=None,
     mip_rel_gap=None,
     mip_max_nodes=None,
+    callback=None,
     **unknown_options,
 ):
     r"""
@@ -468,6 +469,7 @@ def _linprog_highs(
         ub,
         integrality.astype(np.uint8),
         options,
+        callback
     )
 
     # HiGHS represents constraints as lhs/rhs, so
