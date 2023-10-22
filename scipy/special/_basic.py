@@ -173,7 +173,7 @@ def sinc(x):
     >>> plt.show()
     """
     _depr_msg = ("`scipy.special.sinc` is a deprecated alias for "
-                 "numpy.sinc` and will be removed in SciPy 1.14. To silence "
+                 "`numpy.sinc` and will be removed in SciPy 1.14. To silence "
                  "this warning, use `numpy.sinc` instead. Deprecated in "
                  "SciPy 1.12.")
     warnings.warn(_depr_msg, DeprecationWarning, stacklevel=2)
