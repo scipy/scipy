@@ -441,7 +441,7 @@ class betanbinom_gen(rv_discrete):
         g1, g2 = None, None
         def skew(n, a, b):
             return ((2 * n + a - 1) * (2 * b + a - 1)
-                    / (a - 3) * sqrt(n * b * (n + a - 1) * (b + a -1)
+                    / (a - 3) / sqrt(n * b * (n + a - 1) * (b + a - 1)
                     / (a -2)))
         if 's' in moments:
             g1 = _lazywhere(a > 3, (n, a, b), f=skew, fillvalue=np.inf)
