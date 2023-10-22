@@ -4387,6 +4387,10 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
 def _circfuncs_common(samples, high, low):
     # Ensure samples are array-like and size is not zero
     samples = np.asarray(samples)
+    NaN = _get_nan(samples)
+
+    if samples.size == 0:
+        return NaN, np.asarray(NaN), np.asarray(NaN)
 
     # Recast samples as radians that range between 0 and 2 pi and calculate
     # the sine and cosine
@@ -4453,10 +4457,8 @@ def circmean(samples, high=2*pi, low=0):
 
     """
     samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low)
-    sin_sum, cos_sum = [_get_nan(samples)] * 2
-    if sin_samp.size != 0:
-        sin_sum = sin_samp.sum()
-        cos_sum = cos_samp.sum()
+    sin_sum = sin_samp.sum()
+    cos_sum = cos_samp.sum()
     res = arctan2(sin_sum, cos_sum)
 
     res = np.asarray(res)
@@ -4534,10 +4536,8 @@ def circvar(samples, high=2*pi, low=0):
 
     """
     samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low)
-    sin_mean, cos_mean = [_get_nan(samples)] * 2
-    if sin_samp.size != 0:
-        sin_mean = sin_samp.mean()
-        cos_mean = cos_samp.mean()
+    sin_mean = sin_samp.mean()
+    cos_mean = cos_samp.mean()
     # hypot can go slightly above 1 due to rounding errors
     with np.errstate(invalid='ignore'):
         R = np.minimum(1, hypot(sin_mean, cos_mean))
@@ -4632,10 +4632,8 @@ def circstd(samples, high=2*pi, low=0, *, normalize=False):
 
     """
     samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low)
-    sin_mean, cos_mean = [_get_nan(samples)] * 2
-    if sin_samp.size != 0:
-        sin_mean = sin_samp.mean()  # [1] (2.2.3)
-        cos_mean = cos_samp.mean()  # [1] (2.2.3)
+    sin_mean = sin_samp.mean()  # [1] (2.2.3)
+    cos_mean = cos_samp.mean()  # [1] (2.2.3)
     # hypot can go slightly above 1 due to rounding errors
     with np.errstate(invalid='ignore'):
         R = np.minimum(1, hypot(sin_mean, cos_mean))  # [1] (2.2.4)
