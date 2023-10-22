@@ -575,6 +575,10 @@ def _mask_to_limits(a, limits, inclusive):
     return am
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, n_outputs=1, default_axis=None,
+    result_to_tuple=lambda x: (x,)
+)
 def tmean(a, limits=None, inclusive=(True, True), axis=None):
     """Compute the trimmed mean.
 
@@ -621,10 +625,13 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
     if limits is None:
         return np.mean(a, axis)
     am = _mask_to_limits(a, limits, inclusive)
-    mean = np.ma.filled(am.mean(axis=axis), fill_value=np.nan)
-    return mean if mean.ndim > 0 else mean.item()
+    mean = np.ma.filled(am.mean(axis=axis), fill_value=_get_nan(a))
+    return mean[()]
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)
+)
 def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     """Compute the trimmed variance.
 
@@ -672,14 +679,16 @@ def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 
     """
     a = asarray(a)
-    a = a.astype(float)
     if limits is None:
         return a.var(ddof=ddof, axis=axis)
     am = _mask_to_limits(a, limits, inclusive)
-    amnan = am.filled(fill_value=np.nan)
+    amnan = am.filled(fill_value=_get_nan(a))
     return np.nanvar(amnan, ddof=ddof, axis=axis)
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)
+)
 def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     """Compute the trimmed minimum.
 
@@ -738,11 +747,12 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
         am = ma.masked_invalid(am)
 
     res = ma.minimum.reduce(am, axis).data
-    if res.ndim == 0:
-        return res[()]
-    return res
+    return res[()]
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)
+)
 def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     """Compute the trimmed maximum.
 
@@ -800,11 +810,12 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
         am = ma.masked_invalid(am)
 
     res = ma.maximum.reduce(am, axis).data
-    if res.ndim == 0:
-        return res[()]
-    return res
+    return res[()]
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)
+)
 def tstd(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     """Compute the trimmed sample standard deviation.
 
@@ -854,6 +865,9 @@ def tstd(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     return np.sqrt(tvar(a, limits, inclusive, axis, ddof))
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)
+)
 def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     """Compute the trimmed standard error of the mean.
 
@@ -902,11 +916,11 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     """
     a = np.asarray(a).ravel()
     if limits is None:
-        return a.std(ddof=ddof) / np.sqrt(a.size)
+        return a.std(ddof=ddof) / np.sqrt(a.size, dtype=a.dtype)
 
     am = _mask_to_limits(a, limits, inclusive)
     sd = np.sqrt(np.ma.var(am, ddof=ddof, axis=axis))
-    return sd / np.sqrt(am.count())
+    return sd / np.sqrt(am.count(), dtype=sd.dtype)
 
 
 #####################################

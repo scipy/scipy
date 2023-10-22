@@ -69,6 +69,12 @@ axis_nan_policy_cases = [
     (stats.entropy, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.entropy, tuple(), dict(), 2, 1, True, lambda x: (x,)),
     (stats.bartlett, tuple(), {}, 2, 2, False, None),
+    (stats.tmean, tuple(), {}, 1, 1, False, lambda x: (x,)),
+    (stats.tvar, tuple(), {}, 1, 1, False, lambda x: (x,)),
+    (stats.tmin, tuple(), {}, 1, 1, False, lambda x: (x,)),
+    (stats.tmax, tuple(), {}, 1, 1, False, lambda x: (x,)),
+    (stats.tstd, tuple(), {}, 1, 1, False, lambda x: (x,)),
+    (stats.tsem, tuple(), {}, 1, 1, False, lambda x: (x,)),
 ]
 
 # If the message is one of those expected, put nans in
@@ -91,7 +97,8 @@ too_small_messages = {"The input contains nan",  # for nan_policy="raise"
                       "Data input must not be empty",
                       "Window length (0) must be positive and less",
                       "Window length (1) must be positive and less",
-                      "Window length (2) must be positive and less",}
+                      "Window length (2) must be positive and less",
+                      "No array values within given limits"}
 
 # If the message is one of these, results of the function may be inaccurate,
 # but NaNs are not to be placed
