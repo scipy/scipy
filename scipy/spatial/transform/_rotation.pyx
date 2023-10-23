@@ -375,8 +375,8 @@ cdef double[:, :] _compute_euler_from_quat(
 @cython.wraparound(False)
 cdef double[:, :] _compute_davenport_from_quat(
     np.ndarray[double, ndim=2] quat, np.ndarray[double, ndim=1] n1,
-        np.ndarray[double, ndim=1] n2, np.ndarray[double, ndim=1] n3,
-        bint extrinsic
+    np.ndarray[double, ndim=1] n2, np.ndarray[double, ndim=1] n3,
+    bint extrinsic
 ):
     # The algorithm assumes extrinsic frame transformations. The algorithm
     # in the paper is formulated for rotation quaternions, which are stored
