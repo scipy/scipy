@@ -2216,9 +2216,8 @@ cdef class Rotation:
         if len(axes) != 3:
             raise ValueError("Expected 3 axes, got {}.".format(len(axes)))
 
-        for axis in axes:
-            if len(axes) != 3:
-                raise ValueError("Axes must be vectors of length 3.")
+        if axes.shape[1] != 3:
+            raise ValueError("Axes must be vectors of length 3.")
 
         n1, n2, n3 = axes
 
