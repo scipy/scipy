@@ -1473,9 +1473,8 @@ cdef class Rotation:
 
         num_axes = len(axes)
 
-        for axis in axes:
-            if len(axis) != 3:
-                raise ValueError("Axes must be vectors of length 3.")
+        if axes.shape[1] != 3:
+            raise ValueError("Axes must be vectors of length 3.")
 
         if num_axes < 1 or num_axes > 3:
             raise ValueError("Expected up to 3 axes, got {}".format(num_axes))
