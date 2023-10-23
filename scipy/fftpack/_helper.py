@@ -1,9 +1,9 @@
 import operator
 
-import scipy.fft._pocketfft.helper as _helper
-from scipy.fft._helper import fftshift, ifftshift, fftfreq
-
 import numpy as np
+from numpy.fft import fftshift, ifftshift, fftfreq
+
+import scipy.fft._pocketfft.helper as _helper
 
 __all__ = ['fftshift', 'ifftshift', 'fftfreq', 'rfftfreq', 'next_fast_len']
 
