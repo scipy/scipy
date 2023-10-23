@@ -1390,7 +1390,7 @@ cdef class Rotation:
 
             For 2 and 3 axes, `angles` can be:
 
-            - array_like with shape (W,) where `W` is the number of lines of
+            - array_like with shape (W,) where `W` is the number of rows of
               `axes`, which corresponds to a single rotation with `W` axes
             - array_like with shape (N, W) where each `angle[i]`
               corresponds to a sequence of Davenport angles describing a 
