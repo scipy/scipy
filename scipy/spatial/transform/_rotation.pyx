@@ -351,7 +351,6 @@ cdef double[:, :] _compute_euler_from_quat(
     # some forward definitions
     cdef double a, b, c, d
     cdef double[:, :] angles = _empty2(num_rotations, 3)
-    cdef double[:] _angles # accessor for each rotation
 
     for ind in range(num_rotations):
 
@@ -412,7 +411,6 @@ cdef double[:, :] _compute_davenport_from_quat(
 
     # some forward definitions
     cdef double[:, :] angles = _empty2(num_rotations, 3)
-    cdef double[:] _angles # accessor for each rotation
     cdef double[:] quat_transformed = _empty1(4)
     cdef double a, b, c, d
 
