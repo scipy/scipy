@@ -4201,13 +4201,13 @@ class TestLIL(sparse_test_class(minmax=False)):
         x = x*0
         assert_equal(x[0, 0], 0)
 
-    def test_lil_divide_scalar(self):
+    def test_truediv_scalar(self):
         A = self.spcreator((3, 2))
         A[0, 1] = -10
         A[2, 0] = 20
 
-        assert_array_equal((A/1j).toarray(), A.toarray()/1j)
-        assert_array_equal((A/9).toarray(), A.toarray()/9)
+        assert_array_equal((A / 1j).toarray(), A.toarray() / 1j)
+        assert_array_equal((A / 9).toarray(), A.toarray() / 9)
 
     def test_inplace_ops(self):
         A = lil_matrix([[0, 2, 3], [4, 0, 6]])
