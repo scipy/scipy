@@ -1736,6 +1736,7 @@ def test_from_davenport_single_rotation():
     expected_quat = np.array([0, 0, 1, 1]) / np.sqrt(2)
     assert_allclose(quat, expected_quat)
 
+
 def test_davenport_axes_not_orthogonal():
     ez = [0, 0, 1]
     ey = [0, 1, 0]
@@ -1746,6 +1747,7 @@ def test_davenport_axes_not_orthogonal():
         Rotation.from_davenport([ez, ezy], 'e', [0, 0])
     with pytest.raises(ValueError, match="must be orthogonal"):
         Rotation.from_davenport([ez, ey, ezy], 'e', [0, 0, 0])
+
 
 def test_as_davenport():
 
