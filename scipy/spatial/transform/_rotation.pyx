@@ -1355,15 +1355,16 @@ cdef class Rotation:
         (extrinsic) or in a body centred frame of reference (intrinsic), which
         is attached to, and moves with, the object under rotation [1]_.
 
-        For Euler angles, we have the following conditions:
+        For both Euler angles and Davenport angles, consecutive axes must 
+        be are orthogonal (``axis2`` is orthogonal to both ``axis1`` and 
+        ``axis3``). For Euler angles, there is an additional relationship 
+        between ``axis1`` or ``axis3``, with two possibilities:
 
-            - ``dot(axis1, axis2) = 0``
-            - ``dot(axis2, axis3) = 0``
-            - ``dot(axis1, axis3) = -1``, ``0`` or ``1``
+            - ``axis1`` and ``axis3`` are also orthognal (asymmetric sequence)
+            - ```axis1 == axis3`` (symmetric sequence)
 
-        For Davenport angles, the third relation is relaxed [2]_:
-
-            - ``dot(axis1, axis3)`` can be any value between -1 and 1.
+        For Davenport angles, this last relationship is relaxed [2]_, and only
+        the consecutive orthogonal axes requirement is maintained.
 
         Parameters
         ----------
@@ -2106,15 +2107,16 @@ cdef class Rotation:
         Any orientation can be expressed as a composition of 3 elementary
         rotations.
 
-        For Euler angles, we have the following conditions:
+        For both Euler angles and Davenport angles, consecutive axes must 
+        be are orthogonal (``axis2`` is orthogonal to both ``axis1`` and 
+        ``axis3``). For Euler angles, there is an additional relationship 
+        between ``axis1`` or ``axis3``, with two possibilities:
 
-            - ``dot(axis1, axis2) = 0``
-            - ``dot(axis2, axis3) = 0``
-            - ``dot(axis1, axis3) = -1``, ``0`` or ``1``
+            - ``axis1`` and ``axis3`` are also orthognal (asymmetric sequence)
+            - ```axis1 == axis3`` (symmetric sequence)
 
-        For Davenport angles, the third relation is relaxed [1]_:
-
-            - ``dot(axis1, axis3)`` can be any value between -1 and 1.
+        For Davenport angles, this last relationship is relaxed [1]_, and only
+        the consecutive orthogonal axes requirement is maintained.
 
         A slightly modified version of the algorithm from [2]_ has been used to
         calculate Davenport angles for the rotation about a given sequence of
