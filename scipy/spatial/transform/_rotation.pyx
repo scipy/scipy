@@ -174,8 +174,8 @@ cdef inline void _get_angles(
 
     if case != 0:
         warnings.warn("Gimbal lock detected. Setting third angle to zero "
-                        "since it is not possible to uniquely determine "
-                        "all angles.", stacklevel=3)
+                      "since it is not possible to uniquely determine "
+                      "all angles.", stacklevel=3)
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
