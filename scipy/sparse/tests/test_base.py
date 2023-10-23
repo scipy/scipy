@@ -39,7 +39,7 @@ from scipy.sparse._sputils import (supported_dtypes, isscalarlike,
 from scipy.sparse.linalg import splu, expm, inv
 
 from scipy._lib.decorator import decorator
-from scipy._lib._util import ComplexWarning, np_long
+from scipy._lib._util import ComplexWarning
 
 import pytest
 
@@ -3678,7 +3678,7 @@ class TestCSR(sparse_test_class()):
             sup.filter(SparseEfficiencyWarning,
                        "Changing the sparsity structure of a csr_matrix is expensive")
             return csr_matrix(*args, **kwargs)
-    math_dtypes = [np.bool_, np_long, np.float64, np.complex128]
+    math_dtypes = [np.bool_, np.int_, np.float64, np.complex128]
 
     def test_constructor1(self):
         b = array([[0, 4, 0],
@@ -3931,7 +3931,7 @@ class TestCSC(sparse_test_class()):
             sup.filter(SparseEfficiencyWarning,
                        "Changing the sparsity structure of a csc_matrix is expensive")
             return csc_matrix(*args, **kwargs)
-    math_dtypes = [np.bool_, np_long, np.float64, np.complex128]
+    math_dtypes = [np.bool_, np.int_, np.float64, np.complex128]
 
     def test_constructor1(self):
         b = array([[1, 0, 0, 0], [0, 0, 1, 0], [0, 2, 0, 3]], 'd')
@@ -4073,7 +4073,7 @@ TestCSC.init_class()
 
 class TestDOK(sparse_test_class(minmax=False, nnz_axis=False)):
     spcreator = dok_matrix
-    math_dtypes = [np_long, np.float64, np.complex128]
+    math_dtypes = [np.int_, np.float64, np.complex128]
 
     def test_mult(self):
         A = dok_matrix((10,10))
@@ -4174,7 +4174,7 @@ TestDOK.init_class()
 
 class TestLIL(sparse_test_class(minmax=False)):
     spcreator = lil_matrix
-    math_dtypes = [np_long, np.float64, np.complex128]
+    math_dtypes = [np.int_, np.float64, np.complex128]
 
     def test_dot(self):
         A = zeros((10, 10), np.complex128)
@@ -4284,7 +4284,7 @@ class TestCOO(sparse_test_class(getset=False,
                                 slicing=False, slicing_assign=False,
                                 fancy_indexing=False, fancy_assign=False)):
     spcreator = coo_matrix
-    math_dtypes = [np_long, np.float64, np.complex128]
+    math_dtypes = [np.int_, np.float64, np.complex128]
 
     def test_constructor1(self):
         # unsorted triplet format
@@ -4417,7 +4417,7 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
                                 fancy_indexing=False, fancy_assign=False,
                                 minmax=False, nnz_axis=False)):
     spcreator = dia_matrix
-    math_dtypes = [np_long, np.float64, np.complex128]
+    math_dtypes = [np.int_, np.float64, np.complex128]
 
     def test_constructor1(self):
         D = array([[1, 0, 3, 0],
@@ -4484,7 +4484,7 @@ class TestBSR(sparse_test_class(getset=False,
                                 fancy_indexing=False, fancy_assign=False,
                                 nnz_axis=False)):
     spcreator = bsr_matrix
-    math_dtypes = [np_long, np.float64, np.complex128]
+    math_dtypes = [np.int_, np.float64, np.complex128]
 
     def test_constructor1(self):
         # check native BSR format constructor
