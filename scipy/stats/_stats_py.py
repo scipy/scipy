@@ -679,6 +679,8 @@ def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 
     """
     a = asarray(a)
+    if not np.issubdtype(a.dtype, np.inexact):
+        a = a.astype(np.float64)
     if limits is None:
         return a.var(ddof=ddof, axis=axis)
     am = _mask_to_limits(a, limits, inclusive)
@@ -915,6 +917,8 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 
     """
     a = np.asarray(a).ravel()
+    if not np.issubdtype(a.dtype, np.inexact):
+        a = a.astype(np.float64)
     if limits is None:
         return a.std(ddof=ddof) / np.sqrt(a.size, dtype=a.dtype)
 
