@@ -1524,7 +1524,7 @@ cdef class Rotation:
         # sanity check
         if angles.ndim != 2 or angles.shape[-1] != num_axes:
             raise ValueError("Expected angles to have shape (num_rotations, "
-                            "num_axes), got {}.".format(angles.shape))
+                             "num_axes), got {}.".format(angles.shape))
 
         q = Rotation.identity(len(angles))
         for i in range(num_axes):
