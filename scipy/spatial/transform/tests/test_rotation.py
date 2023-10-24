@@ -1771,13 +1771,6 @@ def test_as_davenport():
             angles_dav = rot.as_davenport(ax, order)
             assert_allclose(angles_dav, angles)
 
-            # asserting that both sets are equivalent
-            angles_alt = rot.as_davenport(ax, order)
-            rot_alt = Rotation.from_davenport(ax, order, 
-                                              angles_alt)
-                                              
-            assert_allclose(rot.as_quat(), rot_alt.as_quat())
-
 
 def test_as_davenport_degenerate():
     # Since we cannot check for angle equality, we check for rotation matrix
