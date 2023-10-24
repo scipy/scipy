@@ -10,6 +10,14 @@ from itertools import permutations
 import pickle
 import copy
 
+def basis_vec(axis):
+    if axis == 'x':
+        return [1, 0, 0]
+    elif axis == 'y':
+        return [0, 1, 0]
+    elif axis == 'z':
+        return [0, 0, 1]
+
 def test_generic_quat_matrix():
     x = np.array([[3, 4, 0, 0], [5, 12, 0, 0]])
     r = Rotation.from_quat(x)
@@ -1813,14 +1821,6 @@ def test_as_davenport_degenerate():
 
 
 def test_compare_from_davenport_from_euler():
-    def basis_vec(axis):
-        if axis == 'x':
-            return [1, 0, 0]
-        elif axis == 'y':
-            return [0, 1, 0]
-        elif axis == 'z':
-            return [0, 0, 1]
-
     rnd = np.random.RandomState(0)
     n = 100
     angles = np.empty((n, 3))
@@ -1854,14 +1854,6 @@ def test_compare_from_davenport_from_euler():
 
 
 def test_compare_as_davenport_as_euler():
-    def basis_vec(axis):
-        if axis == 'x':
-            return [1, 0, 0]
-        elif axis == 'y':
-            return [0, 1, 0]
-        elif axis == 'z':
-            return [0, 0, 1]
-
     rnd = np.random.RandomState(0)
     n = 100
     angles = np.empty((n, 3))
