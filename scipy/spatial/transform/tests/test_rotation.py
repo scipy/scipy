@@ -1750,7 +1750,6 @@ def test_davenport_axes_not_orthogonal():
 
 
 def test_as_davenport():
-
     rnd = np.random.RandomState(0)
     n = 100
     angles = np.empty((n, 3))
@@ -1821,7 +1820,6 @@ def test_as_davenport_degenerate():
 
 
 def test_compare_from_davenport_from_euler():
-
     def basis_vec(axis):
         if axis == 'x':
             return [1, 0, 0]
@@ -1862,7 +1860,6 @@ def test_compare_from_davenport_from_euler():
 
 
 def test_compare_as_davenport_as_euler():
-
     def basis_vec(axis):
         if axis == 'x':
             return [1, 0, 0]
