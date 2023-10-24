@@ -4,7 +4,7 @@ Functions for identifying peaks in signals.
 import math
 import numpy as np
 
-from scipy.signal._wavelets import cwt, ricker
+from scipy.signal._wavelets import _cwt, _ricker
 from scipy.stats import scoreatpercentile
 
 from ._peak_finding_utils import (
@@ -1300,9 +1300,9 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
     if max_distances is None:
         max_distances = widths / 4.0
     if wavelet is None:
-        wavelet = ricker
+        wavelet = _ricker
 
-    cwt_dat = cwt(vector, wavelet, widths)
+    cwt_dat = _cwt(vector, wavelet, widths)
     ridge_lines = _identify_ridge_lines(cwt_dat, max_distances, gap_thresh)
     filtered = _filter_ridge_lines(cwt_dat, ridge_lines, min_length=min_length,
                                    window_size=window_size, min_snr=min_snr,

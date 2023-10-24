@@ -74,11 +74,9 @@ jobs:
       - run:
           name: setup Python venv
           command: |
-            pip install cython
-            pip install numpy==1.23.5
+            pip install numpy==1.23.5 cython!=3.0.3 pybind11 pythran ninja meson
             pip install -r doc_requirements.txt
-            pip install mpmath gmpy2 "asv>=0.6.0" pythran ninja meson click rich-click doit pydevtool pooch threadpoolctl
-            pip install pybind11
+            pip install mpmath gmpy2 "asv>=0.6.0" click rich-click doit pydevtool pooch threadpoolctl
             # extra benchmark deps
             pip install pyfftw cffi pytest
 

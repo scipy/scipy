@@ -8,9 +8,10 @@ All rights reserved.
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
 */
-/*! @file supermatrix.h
- * \brief Defines matrix types
+/*! @file
+ * \brief Matrix type definitions
  */
+
 #ifndef __SUPERLU_SUPERMATRIX /* allow multiple inclusions */
 #define __SUPERLU_SUPERMATRIX
 
@@ -100,9 +101,9 @@ typedef struct {
   int_t *rowind;     /* pointer to array of compressed row indices of 
 			rectangular supernodes */
   int_t *rowind_colptr;/* pointer to array of beginning of columns in rowind[] */
-  int_t *col_to_sup;   /* col_to_sup[j] is the supernode number to which column 
+  int   *col_to_sup;   /* col_to_sup[j] is the supernode number to which column 
 			j belongs; mapping from column to supernode number. */
-  int_t *sup_to_col;   /* sup_to_col[s] points to the start of the s-th 
+  int   *sup_to_col;   /* sup_to_col[s] points to the start of the s-th 
 			supernode; mapping from supernode number to column.
 		        e.g.: col_to_sup: 0 1 2 2 3 3 3 4 4 4 4 4 4 (ncol=12)
 		              sup_to_col: 0 1 2 4 7 12           (nsuper=4) */
@@ -131,11 +132,11 @@ typedef struct {
 			  in rowind[] */
   int_t *rowind_colend;/* rowind_colend[j] points to one past the last element
 			  of column j in rowind[] */
-  int_t *col_to_sup;   /* col_to_sup[j] is the supernode number to which column
+  int   *col_to_sup;   /* col_to_sup[j] is the supernode number to which column
 			  j belongs; mapping from column to supernode. */
-  int_t *sup_to_colbeg; /* sup_to_colbeg[s] points to the start of the s-th 
+  int   *sup_to_colbeg; /* sup_to_colbeg[s] points to the start of the s-th 
 			   supernode; mapping from supernode to column.*/
-  int_t *sup_to_colend; /* sup_to_colend[s] points to one past the end of the
+  int   *sup_to_colend; /* sup_to_colend[s] points to one past the end of the
 			   s-th supernode; mapping from supernode number to
 			   column.
 		        e.g.: col_to_sup: 0 1 2 2 3 3 3 4 4 4 4 4 4 (ncol=12)
@@ -185,6 +186,35 @@ typedef struct {
 			rowptr[] has n_loc + 1 entries, the last one pointing
 			beyond the last row, so that rowptr[n_loc] = nnz_loc.*/
 } NRformat_loc;
+
+
+/* Data structure for storing 3D matrix on layer 0 of the 2D process grid
+   Only grid-0 has meanful values of these data structures.   */
+typedef struct NRformat_loc3d
+{
+    NRformat_loc *A_nfmt; // Gathered A matrix on 2D grid-0 
+    void *B3d;  // on the entire 3D process grid
+    int  ldb;   // relative to 3D process grid
+    int nrhs;
+    int m_loc;  // relative to 3D process grid
+    void *B2d;  // on 2D process layer grid-0
+
+    int *row_counts_int; // these counts are stored on 2D layer grid-0,
+    int *row_disp;       // but count the number of {A, B} rows along Z-dimension
+    int *nnz_counts_int; 
+    int *nnz_disp;
+    int *b_counts_int;
+    int *b_disp;
+
+    /* The following 4 structures are used for scattering
+       solution X from 2D grid-0 back to 3D processes */
+    int num_procs_to_send;  
+    int *procs_to_send_list;
+    int *send_count_list;
+    int num_procs_to_recv;
+    int *procs_recv_from_list;
+    int *recv_count_list;
+} NRformat_loc3d;
 
 
 #endif  /* __SUPERLU_SUPERMATRIX */
