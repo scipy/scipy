@@ -1361,7 +1361,7 @@ cdef class Rotation:
         between ``axis1`` or ``axis3``, with two possibilities:
 
             - ``axis1`` and ``axis3`` are also orthognal (asymmetric sequence)
-            - ```axis1 == axis3`` (symmetric sequence)
+            - ``axis1 == axis3`` (symmetric sequence)
 
         For Davenport angles, this last relationship is relaxed [2]_, and only
         the consecutive orthogonal axes requirement is maintained.
@@ -2111,7 +2111,7 @@ cdef class Rotation:
         between ``axis1`` or ``axis3``, with two possibilities:
 
             - ``axis1`` and ``axis3`` are also orthognal (asymmetric sequence)
-            - ```axis1 == axis3`` (symmetric sequence)
+            - ``axis1 == axis3`` (symmetric sequence)
 
         For Davenport angles, this last relationship is relaxed [1]_, and only
         the consecutive orthogonal axes requirement is maintained.
