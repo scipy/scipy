@@ -2084,7 +2084,7 @@ cdef class Rotation:
 
         Represent multiple rotations in a single object:
 
-        >>> r = R.from_rotvec([
+        >>> r = R.from_rotvec([def as_davenport
         ... [0, 0, np.pi/2],
         ... [0, -np.pi/3, 0],
         ... [np.pi/4, 0, 0]])
@@ -2215,6 +2215,8 @@ cdef class Rotation:
 
         if len(axes) != 3:
             raise ValueError("Expected 3 axes, got {}.".format(len(axes)))
+
+        axes = np.asarray(axes)
 
         if axes.shape[1] != 3:
             raise ValueError("Axes must be vectors of length 3.")

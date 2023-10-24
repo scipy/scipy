@@ -1837,7 +1837,8 @@ def test_compare_from_davenport_from_euler():
                 seq = seq.upper()
             eul = Rotation.from_euler(seq, angles)
             dav = Rotation.from_davenport(ax, order, angles)
-            assert_allclose(eul.as_quat(), dav.as_quat(), atol=0, rtol=1e-9)
+            assert_allclose(eul.as_quat(canonical=True), dav.as_quat(canonical=True), 
+                            atol=0, rtol=1e-9)
 
     # asymmetric sequences
     angles[:, 1] -= np.pi / 2
