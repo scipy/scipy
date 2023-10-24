@@ -1503,17 +1503,17 @@ cdef class Rotation:
                 angles = angles[:, None]
             elif angles.ndim == 2 and angles.shape[-1] != 1:
                 raise ValueError("Expected `angles` parameter to have shape "
-                                "(N, 1), got {}.".format(angles.shape))
+                                 "(N, 1), got {}.".format(angles.shape))
             elif angles.ndim > 2:
                 raise ValueError("Expected float, 1D array, or 2D array for "
-                                "parameter `angles` corresponding to `seq`, "
-                                "got shape {}.".format(angles.shape))
+                                 "parameter `angles` corresponding to `seq`, "
+                                 "got shape {}.".format(angles.shape))
         else:  # 2 or 3 axes
             if angles.ndim not in [1, 2] or angles.shape[-1] != num_axes:
                 raise ValueError("Expected `angles` to be at most "
-                                "2-dimensional with width equal to number "
-                                "of axes specified, got {} for shape".format(
-                                angles.shape))
+                                 "2-dimensional with width equal to number "
+                                 "of axes specified, got {} for shape".format(
+                                 angles.shape))
 
             if angles.ndim == 1:
                 # (1, num_axes)
