@@ -501,6 +501,48 @@ cdef double[:, :] _elementary_quat_compose(
                 result)
     return result
 
+def _format_angles(angles, degrees, num_axes):
+    angles = np.asarray(angles, dtype=float)
+    if degrees:
+        angles = np.deg2rad(angles)
+
+    is_single = False
+    # Prepare angles to have shape (num_rot, num_axes)
+    if num_axes == 1:
+        if angles.ndim == 0:
+            # (1, 1)
+            angles = angles.reshape((1, 1))
+            is_single = True
+        elif angles.ndim == 1:
+            # (N, 1)
+            angles = angles[:, None]
+        elif angles.ndim == 2 and angles.shape[-1] != 1:
+            raise ValueError("Expected `angles` parameter to have shape "
+                                "(N, 1), got {}.".format(angles.shape))
+        elif angles.ndim > 2:
+            raise ValueError("Expected float, 1D array, or 2D array for "
+                                "parameter `angles` corresponding to `seq`, "
+                                "got shape {}.".format(angles.shape))
+    else:  # 2 or 3 axes
+        if angles.ndim not in [1, 2] or angles.shape[-1] != num_axes:
+            raise ValueError("Expected `angles` to be at most "
+                                "2-dimensional with width equal to number "
+                                "of axes specified, got {} for shape".format(
+                                angles.shape))
+
+        if angles.ndim == 1:
+            # (1, num_axes)
+            angles = angles[None, :]
+            is_single = True
+
+    # By now angles should have shape (num_rot, num_axes)
+    # sanity check
+    if angles.ndim != 2 or angles.shape[-1] != num_axes:
+        raise ValueError("Expected angles to have shape (num_rotations, "
+                            "num_axes), got {}.".format(angles.shape))
+
+    return angles, is_single
+
 cdef class Rotation:
     """Rotation in 3 dimensions.
 
@@ -1297,44 +1339,7 @@ cdef class Rotation:
 
         seq = seq.lower()
 
-        angles = np.asarray(angles, dtype=float)
-        if degrees:
-            angles = np.deg2rad(angles)
-
-        is_single = False
-        # Prepare angles to have shape (num_rot, num_axes)
-        if num_axes == 1:
-            if angles.ndim == 0:
-                # (1, 1)
-                angles = angles.reshape((1, 1))
-                is_single = True
-            elif angles.ndim == 1:
-                # (N, 1)
-                angles = angles[:, None]
-            elif angles.ndim == 2 and angles.shape[-1] != 1:
-                raise ValueError("Expected `angles` parameter to have shape "
-                                 "(N, 1), got {}.".format(angles.shape))
-            elif angles.ndim > 2:
-                raise ValueError("Expected float, 1D array, or 2D array for "
-                                 "parameter `angles` corresponding to `seq`, "
-                                 "got shape {}.".format(angles.shape))
-        else:  # 2 or 3 axes
-            if angles.ndim not in [1, 2] or angles.shape[-1] != num_axes:
-                raise ValueError("Expected `angles` to be at most "
-                                 "2-dimensional with width equal to number "
-                                 "of axes specified, got {} for shape".format(
-                                 angles.shape))
-
-            if angles.ndim == 1:
-                # (1, num_axes)
-                angles = angles[None, :]
-                is_single = True
-
-        # By now angles should have shape (num_rot, num_axes)
-        # sanity check
-        if angles.ndim != 2 or angles.shape[-1] != num_axes:
-            raise ValueError("Expected angles to have shape (num_rotations, "
-                             "num_axes), got {}.".format(angles.shape))
+        angles, is_single = _format_angles(angles, degrees, num_axes)
 
         quat = _elementary_quat_compose(seq.encode(), angles, intrinsic)
 
@@ -1487,44 +1492,7 @@ cdef class Rotation:
             num_axes > 2 and abs(np.dot(axes[1], axes[2])) >= 1e-7):
             raise ValueError("Consecutive axes must be orthogonal.")
             
-        angles = np.asarray(angles, dtype=float)
-        if degrees:
-            angles = np.deg2rad(angles)
-
-        is_single = False
-        # Prepare angles to have shape (num_rot, num_axes)
-        if num_axes == 1:
-            if angles.ndim == 0:
-                # (1, 1)
-                angles = angles.reshape((1, 1))
-                is_single = True
-            elif angles.ndim == 1:
-                # (N, 1)
-                angles = angles[:, None]
-            elif angles.ndim == 2 and angles.shape[-1] != 1:
-                raise ValueError("Expected `angles` parameter to have shape "
-                                 "(N, 1), got {}.".format(angles.shape))
-            elif angles.ndim > 2:
-                raise ValueError("Expected float, 1D array, or 2D array for "
-                                 "parameter `angles` corresponding to `seq`, "
-                                 "got shape {}.".format(angles.shape))
-        else:  # 2 or 3 axes
-            if angles.ndim not in [1, 2] or angles.shape[-1] != num_axes:
-                raise ValueError("Expected `angles` to be at most "
-                                 "2-dimensional with width equal to number "
-                                 "of axes specified, got {} for shape".format(
-                                 angles.shape))
-
-            if angles.ndim == 1:
-                # (1, num_axes)
-                angles = angles[None, :]
-                is_single = True
-
-        # By now angles should have shape (num_rot, num_axes)
-        # sanity check
-        if angles.ndim != 2 or angles.shape[-1] != num_axes:
-            raise ValueError("Expected angles to have shape (num_rotations, "
-                             "num_axes), got {}.".format(angles.shape))
+        angles, is_single = _format_angles(angles, degrees, num_axes)
 
         q = Rotation.identity(len(angles))
         for i in range(num_axes):
