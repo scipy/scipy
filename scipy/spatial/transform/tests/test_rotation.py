@@ -1748,17 +1748,34 @@ def test_from_davenport_single_rotation():
 def test_from_davenport_one_or_two_axes():
     ez = [0, 0, 1]
     ey = [0, 1, 0]
-    rotz = Rotation.from_davenport(ez, 'e', 5)
-    rotz2 = Rotation.from_davenport([ez], 'e', [5])
+    DEG = np.pi / 180
 
-    assert_allclose(rotz.as_quat(canonical=True),
-                    rotz2[0].as_quat(canonical=True))
+    # Single rotation, single axis, axes.shape == (3, )
+    rot = Rotation.from_rotvec(np.array(ez) * np.pi/4)
+    rot_dav = Rotation.from_davenport(ez, 'e', np.pi/4)
+    assert_allclose(rot.as_quat(canonical=True),
+                    rot_dav.as_quat(canonical=True))
+
+    # Single rotation, single axis, axes.shape == (1, 3)
+    rot = Rotation.from_rotvec([np.array(ez) * np.pi/4])
+    rot_dav = Rotation.from_davenport([ez], 'e', [np.pi/4])
+    assert_allclose(rot.as_quat(canonical=True),
+                    rot_dav.as_quat(canonical=True))
     
-    roty = Rotation.from_davenport(ey, 'e', 10)
-    rotzy = Rotation.from_davenport([ey, ez], 'e', [10, 5])
-
-    assert_allclose(rotzy.as_quat(canonical=True),
-                    (rotz * roty).as_quat(canonical=True))
+    # Single rotation, two axes, axes.shape == (2, 3)
+    rot = Rotation.from_rotvec([np.array(ez) * np.pi/4, 
+                                np.array(ey) * np.pi/6])
+    rot = rot[0] * rot[1]
+    rot_dav = Rotation.from_davenport([ey, ez], 'e', [np.pi/6, np.pi/4])
+    assert_allclose(rot.as_quat(canonical=True),
+                    rot_dav.as_quat(canonical=True))
+    
+    # Two rotations, single axis, axes.shape == (3, )
+    rot = Rotation.from_rotvec([np.array(ez) * np.pi/6, 
+                                np.array(ez) * np.pi/4])
+    rot_dav = Rotation.from_davenport([ez], 'e', [np.pi/6, np.pi/4])
+    assert_allclose(rot.as_quat(canonical=True),
+                    rot_dav.as_quat(canonical=True))
 
 
 def test_from_davenport_invalid_input():
