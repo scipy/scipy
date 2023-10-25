@@ -57,7 +57,6 @@ def hdquantiles(data, prob=list([.25,.5,.75]), axis=None, var=False,):
 
     Examples
     --------
-    >>> import matplotlib.pyplot as plt
     >>> import numpy as np
     >>> from scipy.stats.mstats import hdquantiles
 
