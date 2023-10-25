@@ -431,6 +431,8 @@ class betanbinom_gen(rv_discrete):
         return exp(self._logpmf(x, n, a, b))
 
     def _stats(self, n, a, b, moments='mv'):
+        # reference: Wolfram Alpha input
+        # BetaNegativeBinomialDistribution[a, b, n]
         def mean(n, a, b):
             return n * b / (a - 1.)
         mu = _lazywhere(a > 1, (n, a, b), f=mean, fillvalue=np.inf)
@@ -449,14 +451,16 @@ class betanbinom_gen(rv_discrete):
             term = (a - 2.)
             term_2 = ((a - 1.)**2. * (a**2. + a * (6 * b - 1.)
                       + 6. * (b - 1.) * b)
-                      + 3. * n**2 * ((a + 5.) * b**2. + (a + 5.)
+                      + 3. * n**2. * ((a + 5.) * b**2. + (a + 5.)
                       * (a - 1.) * b + 2. * (a - 1.)**2)
                       + 3 * (a - 1.) * n
                       * ((a + 5.) * b**2. + (a + 5.) * (a - 1.) * b
                       + 2. * (a - 1.)**2.))
             denominator = ((a - 4.) * (a - 3.) * b * n
                            * (a + b - 1.) * (a + n - 1.))
-            return term * term_2 / denominator
+            # Wolfram Alpha uses Pearson kurtosis, so we substract 3 to get
+            # scipy's Fisher kurtosis
+            return term * term_2 / denominator - 3.
         if 'k' in moments:
             g2 = _lazywhere(a > 4, (n, a, b), f=kurtosis, fillvalue=np.inf)
         return mu, var, g1, g2
