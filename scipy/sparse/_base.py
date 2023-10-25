@@ -353,7 +353,7 @@ class _spbase:
     def imag(self):
         return self._imag()
 
-    def __repr__(self) -> str:
+    def __repr__(self):
         _, format_name = _formats[self.format]
         sparse_cls = 'array' if isinstance(self, sparray) else 'matrix'
         shape_str = 'x'.join(str(x) for x in self.shape)
