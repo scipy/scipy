@@ -202,7 +202,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         All methods except TNC, SLSQP, and COBYLA support a callable with
         the signature:
 
-            ``callback(OptimizeResult: intermediate_result)``
+            ``callback(intermediate_result: OptimizeResult)``
 
         where ``intermediate_result`` is a keyword parameter containing an
         `OptimizeResult` with attributes ``x`` and ``fun``, the present values
