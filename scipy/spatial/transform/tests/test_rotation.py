@@ -1748,7 +1748,6 @@ def test_from_davenport_single_rotation():
 def test_from_davenport_one_or_two_axes():
     ez = [0, 0, 1]
     ey = [0, 1, 0]
-    DEG = np.pi / 180
 
     # Single rotation, single axis, axes.shape == (3, )
     rot = Rotation.from_rotvec(np.array(ez) * np.pi/4)
