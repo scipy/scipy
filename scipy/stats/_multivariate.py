@@ -2954,6 +2954,59 @@ class invwishart_gen(wishart_gen):
         out = self._var(dim, df, scale)
         return _squeeze_output(out) if out is not None else out
 
+    def _inv_standard_rvs(self, n, shape, dim, df, random_state):
+        """
+        Parameters
+        ----------
+        n : integer
+            Number of variates to generate
+        shape : iterable
+            Shape of the variates to generate
+        dim : int
+            Dimension of the scale matrix
+        df : int
+            Degrees of freedom
+        random_state : {None, int, `numpy.random.Generator`,
+                        `numpy.random.RandomState`}, optional
+
+            If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+            singleton is used.
+            If `seed` is an int, a new ``RandomState`` instance is used,
+            seeded with `seed`.
+            If `seed` is already a ``Generator`` or ``RandomState`` instance
+            then that instance is used.
+
+        Notes
+        -----
+        As this function does no argument checking, it should not be
+        called directly; use 'rvs' instead.
+
+        """
+        # Random normal variates for off-diagonal elements
+        n_tril = dim * (dim-1) // 2
+        covariances = random_state.normal(
+            size=n*n_tril).reshape(shape+(n_tril,))
+
+        # Random chi-square variates for diagonal elements
+        variances = (np.r_[[random_state.chisquare(df+(i+1)-dim, size=n)**0.5
+                            for i in range(dim)]].reshape((dim,) +
+                                                          shape[::-1]).T)
+
+        # Create A matri(ces) - lower triangular
+        # where inv(A) @ inv(A).T ~ invwishart(df, I)
+        A = np.zeros(shape + (dim, dim))
+
+        # Input the covariances
+        size_idx = tuple([slice(None, None, None)]*len(shape))
+        tril_idx = np.tril_indices(dim, k=-1)
+        A[size_idx + tril_idx] = covariances
+
+        # Input the variances
+        diag_idx = np.diag_indices(dim)
+        A[size_idx + diag_idx] = variances
+
+        return A
+
     def _rvs(self, n, shape, dim, df, C, random_state):
         """Draw random samples from an inverse Wishart distribution.
 
@@ -2979,25 +3032,23 @@ class invwishart_gen(wishart_gen):
         """
         random_state = self._get_random_state(random_state)
         # Get random draws A such that A ~ W(df, I)
-        A = super()._standard_rvs(n, shape, dim, df, random_state)
+        A = self._inv_standard_rvs(n, shape, dim, df, random_state)
 
         # Calculate SA = (CA)'^{-1} (CA)^{-1} ~ iW(df, scale)
-        eye = np.eye(dim)
         trtrs = get_lapack_funcs(('trtrs'), (A,))
 
         for index in np.ndindex(A.shape[:-2]):
             # Calculate CA
-            CA = np.dot(C, A[index])
-            # Get (C A)^{-1} via triangular solver
+            # Get CA = (C A^{-1}).T via triangular solver
             if dim > 1:
-                CA, info = trtrs(CA, eye, lower=True)
+                CA, info = trtrs(A[index], C.T, lower=True, trans=True)
                 if info > 0:
                     raise LinAlgError("Singular matrix.")
                 if info < 0:
                     raise ValueError('Illegal value in %d-th argument of'
                                      ' internal trtrs' % -info)
             else:
-                CA = 1. / CA
+                CA = C / A[0]
             # Get SA
             A[index] = np.dot(CA.T, CA)
 
@@ -3027,12 +3078,9 @@ class invwishart_gen(wishart_gen):
         n, shape = self._process_size(size)
         dim, df, scale = self._process_parameters(df, scale)
 
-        # Invert the scale
-        eye = np.eye(dim)
-        L, lower = scipy.linalg.cho_factor(scale, lower=True)
-        inv_scale = scipy.linalg.cho_solve((L, lower), eye)
-        # Cholesky decomposition of inverted scale
-        C = scipy.linalg.cholesky(inv_scale, lower=True)
+        # Cholesky decomposition of scale
+        C, _ = scipy.linalg.cho_factor(scale, lower=True)
+        C = np.tril(C)
 
         out = self._rvs(n, shape, dim, df, C, random_state)
 
@@ -3080,15 +3128,8 @@ class invwishart_frozen(multi_rv_frozen):
         )
 
         # Get the determinant via Cholesky factorization
-        C, lower = scipy.linalg.cho_factor(self.scale, lower=True)
-        self.log_det_scale = 2 * np.sum(np.log(C.diagonal()))
-
-        # Get the inverse using the Cholesky factorization
-        eye = np.eye(self.dim)
-        self.inv_scale = scipy.linalg.cho_solve((C, lower), eye)
-
-        # Get the Cholesky factorization of the inverse scale
-        self.C = scipy.linalg.cholesky(self.inv_scale, lower=True)
+        self.C = scipy.linalg.cholesky(self.scale, lower=True)
+        self.log_det_scale = 2 * np.sum(np.log(self.C.diagonal()))
 
     def logpdf(self, x):
         x = self._dist._process_quantiles(x, self.dim)

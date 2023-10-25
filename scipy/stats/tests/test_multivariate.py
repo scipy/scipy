@@ -1787,7 +1787,7 @@ class TestInvwishart:
             # entropy
             assert_allclose(iw.entropy(), ig.entropy())
 
-    def test_wishart_invwishart_2D_rvs(self):
+    def test_wishart_2D_rvs(self):
         dim = 3
         df = 10
 
@@ -1796,19 +1796,14 @@ class TestInvwishart:
         scale[0,1] = 0.5
         scale[1,0] = 0.5
 
-        # Construct frozen Wishart and inverse Wishart random variables
+        # Construct frozen Wishart random variables
         w = wishart(df, scale)
-        iw = invwishart(df, scale)
 
         # Get the generated random variables from a known seed
         np.random.seed(248042)
         w_rvs = wishart.rvs(df, scale)
         np.random.seed(248042)
         frozen_w_rvs = w.rvs()
-        np.random.seed(248042)
-        iw_rvs = invwishart.rvs(df, scale)
-        np.random.seed(248042)
-        frozen_iw_rvs = iw.rvs()
 
         # Manually calculate what it should be, based on the Bartlett (1933)
         # decomposition of a Wishart into D A A' D', where D is the Cholesky
@@ -1832,19 +1827,9 @@ class TestInvwishart:
         DA = D.dot(A)
         manual_w_rvs = np.dot(DA, DA.T)
 
-        # inverse Wishart random variate
-        # Supposing that the inverse wishart has scale matrix `scale`, then the
-        # random variate is the inverse of a random variate drawn from a Wishart
-        # distribution with scale matrix `inv_scale = np.linalg.inv(scale)`
-        iD = np.linalg.cholesky(np.linalg.inv(scale))
-        iDA = iD.dot(A)
-        manual_iw_rvs = np.linalg.inv(np.dot(iDA, iDA.T))
-
         # Test for equality
         assert_allclose(w_rvs, manual_w_rvs)
         assert_allclose(frozen_w_rvs, manual_w_rvs)
-        assert_allclose(iw_rvs, manual_iw_rvs)
-        assert_allclose(frozen_iw_rvs, manual_iw_rvs)
 
     def test_cho_inv_batch(self):
         """Regression test for gh-8844."""
