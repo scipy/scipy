@@ -55,6 +55,30 @@ def hdquantiles(data, prob=list([.25,.5,.75]), axis=None, var=False,):
     --------
     hdquantiles_sd
 
+    Examples
+    --------
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> from scipy.stats.mstats import hdquantiles
+
+    >>> # Sample data
+    >>> data = np.array([1.2, 2.5, 3.7, 4.0, 5.1, 6.3, 7.0, 8.2, 9.4])
+
+    >>> # Define quantiles to compute
+    >>> quantiles = [0.25, 0.5, 0.75]
+
+    >>> # Compute Harrell-Davis quantile estimates
+    >>> quantile_estimates = hdquantiles(data, prob=quantiles)
+
+    >>> # Display the quantile estimates
+    >>> for i, quantile in enumerate(quantiles):
+        >>> print(f"{int(quantile * 100)}th percentile: {quantile_estimates[i]}")
+
+    25th percentile: 3.1505820231763066
+    50th percentile: 5.194344084883956
+    75th percentile: 7.430626414674935
+    ```
+
     """
     def _hd_1D(data,prob,var):
         "Computes the HD quantiles for a 1D array. Returns nan for invalid data."
