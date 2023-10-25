@@ -1745,16 +1745,34 @@ def test_from_davenport_single_rotation():
     assert_allclose(quat, expected_quat)
 
 
-def test_davenport_axes_not_orthogonal():
+def test_from_davenport_one_or_two_axes():
+    ez = [0, 0, 1]
+    ey = [0, 1, 0]
+    rotz = Rotation.from_davenport(ez, 'e', 5)
+    rotz2 = Rotation.from_davenport([ez], 'e', [5])
+
+    assert_allclose(rotz.as_quat(canonical=True),
+                    rotz2[0].as_quat(canonical=True))
+    
+    roty = Rotation.from_davenport(ey, 'e', 10)
+    rotzy = Rotation.from_davenport([ey, ez], 'e', [10, 5])
+
+    assert_allclose(rotzy.as_quat(canonical=True),
+                    (rotz * roty).as_quat(canonical=True))
+
+
+def test_from_davenport_invalid_input():
     ez = [0, 0, 1]
     ey = [0, 1, 0]
     ezy = [0, 1, 1]
-    Rotation.from_davenport([ez, ey], 'e', [0, 0])
-    Rotation.from_davenport([ez, ey, ez], 'e', [0, 0, 0])
     with pytest.raises(ValueError, match="must be orthogonal"):
         Rotation.from_davenport([ez, ezy], 'e', [0, 0])
     with pytest.raises(ValueError, match="must be orthogonal"):
         Rotation.from_davenport([ez, ey, ezy], 'e', [0, 0, 0])
+    with pytest.raises(ValueError, match="order should be"):
+        Rotation.from_davenport([ez], 'xyz', [0])
+    with pytest.raises(ValueError, match="Expected `angles`"):
+        Rotation.from_davenport([ez, ey, ez], 'e', [0, 1, 2, 3])
 
 
 def test_as_davenport():
