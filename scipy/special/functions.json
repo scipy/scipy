@@ -31,9 +31,9 @@
         }
     },
     "_lambertw": {
-        "_lambertw.pxd": {
+	"_lambertw.h++": {
             "lambertw_scalar": "Dld->D"
-        }
+	}
     },
     "_lanczos_sum_expg_scaled": {
         "cephes.h": {

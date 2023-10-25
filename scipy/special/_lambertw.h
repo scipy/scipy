@@ -1,0 +1,167 @@
+/* Implementation of the Lambert W function [1]. Based on MPMath
+ *  Implementation [2], and documentation [3].
+ *
+ * Copyright: Yosef Meller, 2009
+ * Authoer email: mellerf@netvision.net.il
+ *
+ * Distributed under the same license as SciPy
+ * Translated into C++ by SciPy developers, 2023.
+ *
+ * References:
+ * [1] On the Lambert W function, Adv. Comp. Math. 5 (1996) 329-359,
+ *     available online: http://www.apmaths.uwo.ca/~djeffrey/Offprints/W-adv-cm.pdf
+ * [2] mpmath source code, Subversion revision 990
+ *     http://code.google.com/p/mpmath/source/browse/trunk/mpmath/functions.py?spec=svn994&r=992
+ * [3] mpmath source code, Subversion revision 994
+ *     http://code.google.com/p/mpmath/source/browse/trunk/mpmath/function_docs.py?spec=svn994&r=994
+
+ * TODO: use a series expansion when extremely close to the branch point
+ * at `-1/e` and make sure that the proper branch is chosen there.
+ */
+
+
+#ifndef LAMBERTW_H
+#define LAMBERTW_H
+
+#include <cmath>
+#include <complex>
+#include <numpy/npy_math.h>
+
+#include "_evalpoly.h"
+#include "sf_error.h"
+
+constexpr double EXPN1 = 0.36787944117144232159553;  // exp(-1)
+constexpr double OMEGA = 0.56714329040978387299997;  // W(1, 0)
+
+std::complex<double> lambertw_branchpt(const std::complex<double> z);
+std::complex<double> lambertw_pade0(const std::complex<double> z);
+std::complex<double> lambertw_asy(std::complex<double> z, long k);
+
+
+inline std::complex<double> lambertw(std::complex<double> z, long k, double tol) {
+    int i;
+    double absz;
+    std::complex<double> w;
+    std::complex<double> ew, wew, wewz, wn;
+
+    if (std::isnan(z.real()) || std::isnan(z.imag())) {
+	return z;
+    } else if (z.real() == INFINITY) {
+	return z + std::complex<double>(0, 2.0*M_PI*static_cast<double>(k));
+    } else if (z.real() == -INFINITY) {
+	return -z + std::complex<double>(0, 2.0*M_PI*static_cast<double>(k) + M_PI);
+    } else if (z == 0.0) {
+	if (k == 0) {
+	    return z;
+	}
+	sf_error("lambertw", SF_ERROR_SINGULAR, NULL);
+	return -INFINITY;
+    } else if (z == 1.0 && k == 0) {
+	// Split out this case because the asymptotic series blows up
+	return OMEGA;
+    }
+
+    absz = std::abs(z);
+    // Get an initial guess for Halley's method
+    if (k == 0) {
+	if (std::abs(z + EXPN1) < 0.3) {
+	    w = lambertw_branchpt(z);
+	} else if (-1.0 < z.real() && z.real() < 1.5 && std::abs(z.imag()) < 1.0
+		   && -2.5*std::abs(z.imag()) - 0.2 < z.real()) {
+	    /* Empirically determined decision boundary where the Pade
+	     * approximation is more accurate. */
+	    w = lambertw_pade0(z);
+	} else {
+	    w = lambertw_asy(z, k);
+	}
+    } else if (k == -1) {
+	if (absz <= EXPN1 && z.imag() == 0.0 && z.real() < 0.0) {
+	    w = std::log(-z.real());
+	} else {
+	    w = lambertw_asy(z, k);
+	}
+    } else {
+	w = lambertw_asy(z, k);
+    }
+
+    // Halley's method; see 5.9 in [1]
+    if (w.real() >= 0) {
+	// Rearrange the formula to avoid overflow in exp
+	for (i = 0; i < 100; i++) {
+	    ew = std::exp(-w);
+	    wewz = w - z*ew;
+	    wn = w - wewz/(w + 1.0 - (w + 2.0)*wewz/(2.0*w + 2.0));
+	    if (std::abs(wn - w) <= tol*std::abs(wn)) {
+		return wn;
+	    } else {
+		w = wn;
+	    }
+	}
+    } else {
+	for (i = 0; i < 100; i++) {
+	    ew = std::exp(w);
+	    wew = w*ew;
+	    wewz = wew - z;
+	    wn = w - wewz/(wew + ew - (w + 2.0)*wewz/(2.0*w + 2.0));
+	    if (std::abs(wn - w) <= tol*std::abs(wn)) {
+		return wn;
+	    } else {
+		w = wn;
+	    }
+	}
+    }
+
+    sf_error("lambertw", SF_ERROR_SLOW,
+	     "iteration failed to converge: %g + %gj", z.real(), z.imag());
+    return std::complex<double>(NAN, NAN);
+}
+
+
+inline std::complex<double> lambertw_branchpt(std::complex<double> z) {
+    // Series for W(z, 0) around the branch point; see 4.22 in [1].
+    double coeffs[] = {-1.0/3.0, 1.0, -1.0};
+    std::complex<double> p = std::sqrt(2.0*(M_E*z + 1.0));
+
+    return cevalpoly(coeffs, 2, p);
+}
+
+
+inline std::complex<double> lambertw_pade0(std::complex<double> z) {
+    // (3, 2) Pade approximation for W(z, 0) around 0.
+    double num[] = {
+	12.85106382978723404255,
+	12.34042553191489361902,
+	1.0
+    };
+    double denom[] = {
+	32.53191489361702127660,
+	14.34042553191489361702,
+	1.0
+    };
+
+    /* This only gets evaluated close to 0, so we don't need a more
+     * careful algorithm that avoids overflow in the numerator for
+     * large z. */
+    return z * cevalpoly(num, 2, z)/cevalpoly(denom, 2, z);
+}
+
+
+inline std::complex<double> lambertw_asy(std::complex<double> z, long k) {
+    /* Compute the W function using the first two terms of the
+     * asymptotic series. See 4.20 in [1].
+     */
+    std::complex<double> w;
+
+    w = std::log(z)
+	+ std::complex<double>(0, 2.0*M_PI*static_cast<double>(k));
+    return w - std::log(w);
+}
+
+
+inline npy_cdouble lambertw_scalar(npy_cdouble zp, long k, double tol) {
+	std::complex<double> z(npy_creal(zp), npy_cimag(zp));
+	std::complex<double> w = lambertw(z, k, tol);
+	return npy_cpack(real(w), imag(w));
+}
+
+#endif
