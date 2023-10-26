@@ -25,7 +25,6 @@
 #include <cmath>
 #include <complex>
 #include <limits>
-#include <numpy/npy_math.h>
 
 #include "_evalpoly.h"
 #include "sf_error.h"
@@ -152,11 +151,4 @@ inline std::complex<double> lambertw(std::complex<double> z, long k, double tol)
     sf_error("lambertw", SF_ERROR_SLOW,
 	     "iteration failed to converge: %g + %gj", z.real(), z.imag());
     return std::complex<double>(NAN, NAN);
-}
-
-
-inline npy_cdouble lambertw_scalar(npy_cdouble zp, long k, double tol) {
-    std::complex<double>* z_ptr = reinterpret_cast<std::complex<double>*>(&zp);
-    std::complex<double> w = lambertw(*z_ptr, k, tol);
-    return *(reinterpret_cast<npy_cdouble*>(&w));
 }

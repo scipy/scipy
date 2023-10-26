@@ -31,7 +31,7 @@
         }
     },
     "_lambertw": {
-	"_lambertw.h++": {
+	"_extra_special.h++": {
             "lambertw_scalar": "Dld->D"
 	}
     },
