@@ -32,9 +32,46 @@
 constexpr double EXPN1 = 0.36787944117144232159553;  // exp(-1)
 constexpr double OMEGA = 0.56714329040978387299997;  // W(1, 0)
 
-std::complex<double> lambertw_branchpt(const std::complex<double> z);
-std::complex<double> lambertw_pade0(const std::complex<double> z);
-std::complex<double> lambertw_asy(std::complex<double> z, long k);
+
+inline std::complex<double> lambertw_branchpt(std::complex<double> z) {
+    // Series for W(z, 0) around the branch point; see 4.22 in [1].
+    double coeffs[] = {-1.0/3.0, 1.0, -1.0};
+    std::complex<double> p = std::sqrt(2.0*(M_E*z + 1.0));
+
+    return cevalpoly(coeffs, 2, p);
+}
+
+
+inline std::complex<double> lambertw_pade0(std::complex<double> z) {
+    // (3, 2) Pade approximation for W(z, 0) around 0.
+    double num[] = {
+	12.85106382978723404255,
+	12.34042553191489361902,
+	1.0
+    };
+    double denom[] = {
+	32.53191489361702127660,
+	14.34042553191489361702,
+	1.0
+    };
+
+    /* This only gets evaluated close to 0, so we don't need a more
+     * careful algorithm that avoids overflow in the numerator for
+     * large z. */
+    return z * cevalpoly(num, 2, z)/cevalpoly(denom, 2, z);
+}
+
+
+inline std::complex<double> lambertw_asy(std::complex<double> z, long k) {
+    /* Compute the W function using the first two terms of the
+     * asymptotic series. See 4.20 in [1].
+     */
+    std::complex<double> w;
+
+    w = std::log(z)
+	+ std::complex<double>(0, 2.0*M_PI*static_cast<double>(k));
+    return w - std::log(w);
+}
 
 
 inline std::complex<double> lambertw(std::complex<double> z, long k, double tol) {
@@ -113,47 +150,6 @@ inline std::complex<double> lambertw(std::complex<double> z, long k, double tol)
     sf_error("lambertw", SF_ERROR_SLOW,
 	     "iteration failed to converge: %g + %gj", z.real(), z.imag());
     return std::complex<double>(NAN, NAN);
-}
-
-
-inline std::complex<double> lambertw_branchpt(std::complex<double> z) {
-    // Series for W(z, 0) around the branch point; see 4.22 in [1].
-    double coeffs[] = {-1.0/3.0, 1.0, -1.0};
-    std::complex<double> p = std::sqrt(2.0*(M_E*z + 1.0));
-
-    return cevalpoly(coeffs, 2, p);
-}
-
-
-inline std::complex<double> lambertw_pade0(std::complex<double> z) {
-    // (3, 2) Pade approximation for W(z, 0) around 0.
-    double num[] = {
-	12.85106382978723404255,
-	12.34042553191489361902,
-	1.0
-    };
-    double denom[] = {
-	32.53191489361702127660,
-	14.34042553191489361702,
-	1.0
-    };
-
-    /* This only gets evaluated close to 0, so we don't need a more
-     * careful algorithm that avoids overflow in the numerator for
-     * large z. */
-    return z * cevalpoly(num, 2, z)/cevalpoly(denom, 2, z);
-}
-
-
-inline std::complex<double> lambertw_asy(std::complex<double> z, long k) {
-    /* Compute the W function using the first two terms of the
-     * asymptotic series. See 4.20 in [1].
-     */
-    std::complex<double> w;
-
-    w = std::log(z)
-	+ std::complex<double>(0, 2.0*M_PI*static_cast<double>(k));
-    return w - std::log(w);
 }
 
 
