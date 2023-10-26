@@ -1460,7 +1460,7 @@ cdef class Rotation:
         >>> e3 = [1, 0, 1]
         >>> axes = [e1, e2, e3]
         >>> r = R.from_davenport(axes, 'extrinsic', [90, 45, 30], degrees=True)
-        >>> r.as_quat().shape
+        >>> r.as_quat()
         [ 0.701057,  0.430459, -0.092296,  0.560986]
         """
         if order in ['e', 'extrinsic']:
