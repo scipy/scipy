@@ -1,4 +1,5 @@
-from libc.math cimport log, fabs, expm1, log1p, isnan, NAN, INFINITY
+from libc.math cimport (log, fabs, expm1, log1p, isnan, NAN, INFINITY,
+                        fpclassify, FP_SUBNORMAL)
 
 cdef inline double entr(double x) noexcept nogil:
     if isnan(x):
@@ -27,6 +28,8 @@ cdef inline double rel_entr(double x, double y) noexcept nogil:
         return x * log(x / y)
     elif x == 0 and y >= 0:
         return 0
+    elif fpclassify(x) == FP_SUBNORMAL:
+        return x
     else:
         return INFINITY
 

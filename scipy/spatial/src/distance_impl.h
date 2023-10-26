@@ -365,8 +365,14 @@ jensenshannon_distance_double(const double *p, const double *q, const npy_intp n
         const double m_i = (p_i + q_i) / 2.0;
         if (p_i > 0.0)
             s += p_i * log(p_i / m_i);
-        if (q_i > 0.0)
-            s += q_i * log(q_i / m_i);
+        if (q_i > 0.0) {
+            if (fpclassify(q_i) == FP_SUBNORMAL) {
+                s += q_i;
+            }
+            else {
+                s += q_i * log(q_i / m_i);
+            }
+        }
     }
 
     return sqrt(s / 2.0);
