@@ -73,15 +73,12 @@ namespace scipy {
 	    /* Compute the W function using the first two terms of the
 	     * asymptotic series. See 4.20 in [1].
 	     */
-	    std::complex<double> w;
-	    
-	    w = std::log(z) + 2.0*M_PI*k*1i;
+	    std::complex<double> w = std::log(z) + 2.0*M_PI*k*1i;
 	    return w - std::log(w);
 	}
 	
 
 	inline std::complex<double> lambertw(std::complex<double> z, long k, double tol) {
-	    int i;
 	    double absz;
 	    std::complex<double> w;
 	    std::complex<double> ew, wew, wewz, wn;
@@ -133,7 +130,7 @@ namespace scipy {
 	    // Halley's method; see 5.9 in [1]
 	    if (w.real() >= 0) {
 		// Rearrange the formula to avoid overflow in exp
-		for (i = 0; i < 100; i++) {
+		for (int i = 0; i < 100; i++) {
 		    ew = std::exp(-w);
 		    wewz = w - z*ew;
 		    wn = w - wewz/(w + 1.0 - (w + 2.0)*wewz/(2.0*w + 2.0));
@@ -143,7 +140,7 @@ namespace scipy {
 		    w = wn;
 		}
 	    } else {
-		for (i = 0; i < 100; i++) {
+		for (int i = 0; i < 100; i++) {
 		    ew = std::exp(w);
 		    wew = w*ew;
 		    wewz = wew - z;

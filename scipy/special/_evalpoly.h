@@ -24,14 +24,13 @@ inline std::complex<double> cevalpoly(const double *coeffs, int degree,
      * Uses equation (3) in section 4.6.4 of [1]. Note that it is more
      * efficient than Horner's method.
      */
-    int j;
     double a = coeffs[0];
     double b = coeffs[1];
     double r = 2 * z.real();
     double s = std::norm(z);
     double tmp;
 
-    for (j = 2; j < degree + 1; j++) {
+    for (int j = 2; j < degree + 1; j++) {
 	tmp = b;
 	b = std::fma(-s, a, coeffs[j]);
 	a = std::fma(r, a, tmp);
