@@ -12,9 +12,7 @@
  * [1] Knuth, "The Art of Computer Programming, Volume II"
  */
 
-
-#ifndef EVALPOLY_H
-#define EVALPOLY_H
+#pragma once
 
 #include <complex>
 
@@ -41,5 +39,3 @@ inline std::complex<double> cevalpoly(const double *coeffs, int degree,
 
     return z*a + b;
 }
-	    
-#endif

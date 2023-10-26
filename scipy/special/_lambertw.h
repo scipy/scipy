@@ -20,8 +20,7 @@
  */
 
 
-#ifndef LAMBERTW_H
-#define LAMBERTW_H
+#pragma once
 
 #include <cmath>
 #include <complex>
@@ -163,5 +162,3 @@ inline npy_cdouble lambertw_scalar(npy_cdouble zp, long k, double tol) {
 	std::complex<double> w = lambertw(z, k, tol);
 	return npy_cpack(real(w), imag(w));
 }
-
-#endif
