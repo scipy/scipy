@@ -2052,7 +2052,7 @@ cdef class Rotation:
 
         Represent multiple rotations in a single object:
 
-        >>> r = R.from_rotvec([def as_davenport
+        >>> r = R.from_rotvec([
         ... [0, 0, np.pi/2],
         ... [0, -np.pi/3, 0],
         ... [np.pi/4, 0, 0]])
