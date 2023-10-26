@@ -70,7 +70,7 @@ inline std::complex<double> lambertw_asy(std::complex<double> z, long k) {
      */
     std::complex<double> w;
 
-    w = std::log(z) + 2.0*M_PI*static_cast<double>(k)*1i;
+    w = std::log(z) + 2.0*M_PI*k*1i;
     return w - std::log(w);
 }
 
@@ -84,9 +84,9 @@ inline std::complex<double> lambertw(std::complex<double> z, long k, double tol)
     if (std::isnan(z.real()) || std::isnan(z.imag())) {
 	return z;
     } else if (z.real() == std::numeric_limits<double>::infinity()) {
-	return z + 2.0*M_PI*static_cast<double>(k)*1i;
+	return z + 2.0*M_PI*k*1i;
     } else if (z.real() == -std::numeric_limits<double>::infinity()) {
-	return -z + (2.0*M_PI*static_cast<double>(k) + M_PI)*1i;
+	return -z + (2.0*M_PI*k + M_PI)*1i;
     } else if (z == 0.0) {
 	if (k == 0) {
 	    return z;
