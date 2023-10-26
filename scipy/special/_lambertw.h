@@ -83,17 +83,21 @@ inline std::complex<double> lambertw(std::complex<double> z, long k, double tol)
 
     if (std::isnan(z.real()) || std::isnan(z.imag())) {
 	return z;
-    } else if (z.real() == std::numeric_limits<double>::infinity()) {
+    }
+    if (z.real() == std::numeric_limits<double>::infinity()) {
 	return z + 2.0*M_PI*k*1i;
-    } else if (z.real() == -std::numeric_limits<double>::infinity()) {
+    }
+    if (z.real() == -std::numeric_limits<double>::infinity()) {
 	return -z + (2.0*M_PI*k + M_PI)*1i;
-    } else if (z == 0.0) {
+    }
+    if (z == 0.0) {
 	if (k == 0) {
 	    return z;
 	}
 	sf_error("lambertw", SF_ERROR_SINGULAR, NULL);
 	return -std::numeric_limits<double>::infinity();
-    } else if (z == 1.0 && k == 0) {
+    }
+    if (z == 1.0 && k == 0) {
 	// Split out this case because the asymptotic series blows up
 	return OMEGA;
     }
@@ -130,9 +134,8 @@ inline std::complex<double> lambertw(std::complex<double> z, long k, double tol)
 	    wn = w - wewz/(w + 1.0 - (w + 2.0)*wewz/(2.0*w + 2.0));
 	    if (std::abs(wn - w) <= tol*std::abs(wn)) {
 		return wn;
-	    } else {
-		w = wn;
 	    }
+	    w = wn;
 	}
     } else {
 	for (i = 0; i < 100; i++) {
@@ -142,9 +145,8 @@ inline std::complex<double> lambertw(std::complex<double> z, long k, double tol)
 	    wn = w - wewz/(wew + ew - (w + 2.0)*wewz/(2.0*w + 2.0));
 	    if (std::abs(wn - w) <= tol*std::abs(wn)) {
 		return wn;
-	    } else {
-		w = wn;
 	    }
+	    w = wn;
 	}
     }
 
