@@ -621,12 +621,13 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
     10.0
 
     """
-    a = asarray(a)
+    if not np.issubdtype(a.dtype, np.inexact):
+        a = a.astype(np.float64)
     if limits is None:
         return np.mean(a, axis)
     am = _mask_to_limits(a, limits, inclusive)
-    mean = np.ma.filled(am.mean(axis=axis), fill_value=_get_nan(a))
-    return mean[()]
+    amnan = am.filled(fill_value=_get_nan(a))
+    return np.nanmean(amnan, axis=axis)
 
 
 @_axis_nan_policy_factory(
@@ -678,7 +679,6 @@ def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     20.0
 
     """
-    a = asarray(a)
     if not np.issubdtype(a.dtype, np.inexact):
         a = a.astype(np.float64)
     if limits is None:
@@ -691,7 +691,7 @@ def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)
 )
-def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
+def tmin(a, lowerlimit=None, axis=0, inclusive=True):
     """Compute the trimmed minimum.
 
     This function finds the minimum value of an array `a` along the
@@ -712,13 +712,6 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     inclusive : {True, False}, optional
         This flag determines whether values exactly equal to the lower limit
         are included.  The default value is True.
-    nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan.
-        The following options are available (default is 'propagate'):
-
-          * 'propagate': returns nan
-          * 'raise': throws an error
-          * 'omit': performs the calculations ignoring nan values
 
     Returns
     -------
@@ -740,22 +733,17 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     14
 
     """
-    a, axis = _chk_asarray(a, axis)
     am = _mask_to_limits(a, (lowerlimit, None), (inclusive, False))
-
-    contains_nan, nan_policy = _contains_nan(am, nan_policy)
-
-    if contains_nan and nan_policy == 'omit':
-        am = ma.masked_invalid(am)
-
-    res = ma.minimum.reduce(am, axis).data
+    res = ma.min(am, axis)
+    if isinstance(res, ma.masked_array):
+        res = res.data
     return res[()]
 
 
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)
 )
-def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
+def tmax(a, upperlimit=None, axis=0, inclusive=True):
     """Compute the trimmed maximum.
 
     This function computes the maximum value of an array along a given axis,
@@ -775,13 +763,6 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     inclusive : {True, False}, optional
         This flag determines whether values exactly equal to the upper limit
         are included.  The default value is True.
-    nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan.
-        The following options are available (default is 'propagate'):
-
-          * 'propagate': returns nan
-          * 'raise': throws an error
-          * 'omit': performs the calculations ignoring nan values
 
     Returns
     -------
@@ -803,15 +784,10 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     12
 
     """
-    a, axis = _chk_asarray(a, axis)
     am = _mask_to_limits(a, (None, upperlimit), (False, inclusive))
-
-    contains_nan, nan_policy = _contains_nan(am, nan_policy)
-
-    if contains_nan and nan_policy == 'omit':
-        am = ma.masked_invalid(am)
-
-    res = ma.maximum.reduce(am, axis).data
+    res = ma.max(am, axis)
+    if isinstance(res, ma.masked_array):
+        res = res.data
     return res[()]
 
 
@@ -864,7 +840,7 @@ def tstd(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     4.4721359549995796
 
     """
-    return np.sqrt(tvar(a, limits, inclusive, axis, ddof))
+    return np.sqrt(tvar(a, limits, inclusive, axis, ddof, _no_deco=True))
 
 
 @_axis_nan_policy_factory(
@@ -916,15 +892,14 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     1.1547005383792515
 
     """
-    a = np.asarray(a).ravel()
     if not np.issubdtype(a.dtype, np.inexact):
         a = a.astype(np.float64)
     if limits is None:
-        return a.std(ddof=ddof) / np.sqrt(a.size, dtype=a.dtype)
+        return a.std(ddof=ddof, axis=axis) / np.sqrt(a.shape[axis], dtype=a.dtype)
 
     am = _mask_to_limits(a, limits, inclusive)
     sd = np.sqrt(np.ma.var(am, ddof=ddof, axis=axis))
-    return sd / np.sqrt(am.count(), dtype=sd.dtype)
+    return sd / np.sqrt(am.count(axis), dtype=sd.dtype)
 
 
 #####################################
