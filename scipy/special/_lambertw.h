@@ -31,6 +31,8 @@
 
 using namespace std::complex_literals;
 
+using std::numeric_limits;
+
 constexpr double EXPN1 = 0.36787944117144232159553;  // exp(-1)
 constexpr double OMEGA = 0.56714329040978387299997;  // W(1, 0)
 
@@ -84,10 +86,10 @@ inline std::complex<double> lambertw(std::complex<double> z, long k, double tol)
     if (std::isnan(z.real()) || std::isnan(z.imag())) {
 	return z;
     }
-    if (z.real() == std::numeric_limits<double>::infinity()) {
+    if (z.real() == numeric_limits<double>::infinity()) {
 	return z + 2.0*M_PI*k*1i;
     }
-    if (z.real() == -std::numeric_limits<double>::infinity()) {
+    if (z.real() == -numeric_limits<double>::infinity()) {
 	return -z + (2.0*M_PI*k + M_PI)*1i;
     }
     if (z == 0.0) {
@@ -95,7 +97,7 @@ inline std::complex<double> lambertw(std::complex<double> z, long k, double tol)
 	    return z;
 	}
 	sf_error("lambertw", SF_ERROR_SINGULAR, NULL);
-	return -std::numeric_limits<double>::infinity();
+	return -numeric_limits<double>::infinity();
     }
     if (z == 1.0 && k == 0) {
 	// Split out this case because the asymptotic series blows up
@@ -152,5 +154,7 @@ inline std::complex<double> lambertw(std::complex<double> z, long k, double tol)
 
     sf_error("lambertw", SF_ERROR_SLOW,
 	     "iteration failed to converge: %g + %gj", z.real(), z.imag());
-    return std::complex<double>(NAN, NAN);
+    return std::complex<double>(numeric_limits<double>::quiet_NaN(),
+				numeric_limits<double>::quiet_NaN());
+
 }
