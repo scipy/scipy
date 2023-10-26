@@ -24,10 +24,13 @@
 
 #include <cmath>
 #include <complex>
+#include <limits>
 #include <numpy/npy_math.h>
 
 #include "_evalpoly.h"
 #include "sf_error.h"
+
+using namespace std::complex_literals;
 
 constexpr double EXPN1 = 0.36787944117144232159553;  // exp(-1)
 constexpr double OMEGA = 0.56714329040978387299997;  // W(1, 0)
@@ -68,8 +71,7 @@ inline std::complex<double> lambertw_asy(std::complex<double> z, long k) {
      */
     std::complex<double> w;
 
-    w = std::log(z)
-	+ std::complex<double>(0, 2.0*M_PI*static_cast<double>(k));
+    w = std::log(z) + 2.0*M_PI*static_cast<double>(k)*1i;
     return w - std::log(w);
 }
 
@@ -82,16 +84,16 @@ inline std::complex<double> lambertw(std::complex<double> z, long k, double tol)
 
     if (std::isnan(z.real()) || std::isnan(z.imag())) {
 	return z;
-    } else if (z.real() == INFINITY) {
-	return z + std::complex<double>(0, 2.0*M_PI*static_cast<double>(k));
-    } else if (z.real() == -INFINITY) {
-	return -z + std::complex<double>(0, 2.0*M_PI*static_cast<double>(k) + M_PI);
+    } else if (z.real() == std::numeric_limits<double>::infinity()) {
+	return z + 2.0*M_PI*static_cast<double>(k)*1i;
+    } else if (z.real() == -std::numeric_limits<double>::infinity()) {
+	return -z + (2.0*M_PI*static_cast<double>(k) + M_PI)*1i;
     } else if (z == 0.0) {
 	if (k == 0) {
 	    return z;
 	}
 	sf_error("lambertw", SF_ERROR_SINGULAR, NULL);
-	return -INFINITY;
+	return -std::numeric_limits<double>::infinity();
     } else if (z == 1.0 && k == 0) {
 	// Split out this case because the asymptotic series blows up
 	return OMEGA;
