@@ -1911,9 +1911,9 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         win = xp.astype(win, outdtype)
 
     if scaling == 'density':
-        scale = 1.0 / (fs * (win*win).sum())
+        scale = 1.0 / (fs * xp.sum(win*win))
     elif scaling == 'spectrum':
-        scale = 1.0 / win.sum()**2
+        scale = 1.0 / xp.sum(win) ** 2
     else:
         raise ValueError('Unknown scaling: %r' % scaling)
 
@@ -1921,11 +1921,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         scale = xp.sqrt(scale)
 
     if return_onesided:
-        try:
-            is_complex = xp.iscomplexobj(x)
-        except AttributeError:
-            # torch shim
-            is_complex = xp.is_complex(x)
+        is_complex = x.dtype in {xp.complex64, xp.complex128}
 
         if is_complex:
             sides = 'twosided'
@@ -2026,10 +2022,6 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides):
     result = detrend_func(result)
 
     # Apply window by multiplication
-    # NOTE: torch device shim -- needs
-    # deeper analysis
-    result_device = xp.device(result)
-    win = xp.to_device(win, result_device)
     result = win * result
 
     # Perform the fft. Acts on last axis by default. Zero-pads automatically

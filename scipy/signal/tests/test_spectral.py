@@ -326,7 +326,7 @@ class TestWelch:
 
     @array_api_compatible
     def test_integer_twosided(self, xp):
-        x = xp.zeros(16, dtype=int)
+        x = xp.zeros(16, dtype=xp.int64)
         x[0] = 1
         x[8] = 1
         f, p = welch(x, nperseg=8, return_onesided=False)
@@ -385,7 +385,7 @@ class TestWelch:
     @array_api_compatible
     def test_detrend_external_nd_m1(self, xp):
         x = xp.arange(40, dtype=xp.float64) + 0.04
-        x = x.reshape((2,2,10))
+        x = xp.reshape(x, (2,2,10))
         f, p = welch(x, nperseg=10,
                      detrend=lambda seg: signal.detrend(seg, type='l'))
         p = array_api_compat.to_device(p, "cpu")
@@ -394,7 +394,7 @@ class TestWelch:
     @array_api_compatible
     def test_detrend_external_nd_0(self, xp):
         x = xp.arange(20, dtype=xp.float64) + 0.04
-        x = x.reshape((2,1,10))
+        x = xp.reshape(x, (2,1,10))
         x = xp.moveaxis(x, 2, 0)
         f, p = welch(x, nperseg=10, axis=0,
                      detrend=lambda seg: signal.detrend(seg, axis=0, type='l'))
@@ -404,7 +404,7 @@ class TestWelch:
     @array_api_compatible
     def test_nd_axis_m1(self, xp):
         x = xp.arange(20, dtype=xp.float64) + 0.04
-        x = x.reshape((2,1,10))
+        x = xp.reshape(x, (2,1,10))
         f, p = welch(x, nperseg=10)
         assert_array_equal(p.shape, (2, 1, 6))
         assert_allclose(array_api_compat.to_device(p[0,0,:], "cpu"),
@@ -418,7 +418,7 @@ class TestWelch:
     @array_api_compatible
     def test_nd_axis_0(self, xp):
         x = xp.arange(20, dtype=xp.float64) + 0.04
-        x = x.reshape((10,2,1))
+        x = xp.reshape(x, (10,2,1))
         f, p = welch(x, nperseg=10, axis=0)
         assert_array_equal(p.shape, (6,2,1))
         assert_allclose(array_api_compat.to_device(p[:,0,0], "cpu"),
@@ -452,7 +452,7 @@ class TestWelch:
 
     @array_api_compatible
     def test_empty_input(self, xp):
-        val = xp.asarray([]) if SCIPY_ARRAY_API else []
+        val = xp.asarray([])
         f, p = welch(val)
         assert_array_equal(f.shape, (0,))
         assert_array_equal(p.shape, (0,))
@@ -493,7 +493,7 @@ class TestWelch:
     def test_window_long_or_nd(self, xp):
         assert_raises(ValueError, welch, xp.zeros(4), 1, xp.asarray([1,1,1,1,1]))
         assert_raises(ValueError, welch, xp.zeros(4), 1,
-                      xp.arange(6).reshape((2,3)))
+                      xp.reshape(xp.arange(6), (2,3)))
 
     @array_api_compatible
     def test_nondefault_noverlap(self, xp):
