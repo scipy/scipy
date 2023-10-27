@@ -2706,14 +2706,14 @@ class invwishart_gen(wishart_gen):
         """
         # Retrieve tr(scale x^{-1})
         log_det_x = np.empty(x.shape[-1])
-        tr_inv_scale_x = np.empty(x.shape[-1])
+        tr_scale_x_inv = np.empty(x.shape[-1])
         for i in range(x.shape[-1]):
             Cx, log_det_x[i] = self._cholesky_logdet(x[:, :, i])
             A = scipy.linalg.solve_triangular(Cx, C, lower=True)
-            tr_inv_scale_x[i] = np.linalg.norm(A)**2
+            tr_scale_x_inv[i] = np.linalg.norm(A)**2
 
         # Log PDF
-        out = ((0.5 * df * log_det_scale - 0.5 * tr_inv_scale_x) -
+        out = ((0.5 * df * log_det_scale - 0.5 * tr_scale_x_inv) -
                (0.5 * df * dim * _LOG_2 + 0.5 * (df + dim + 1) * log_det_x) -
                multigammaln(0.5*df, dim))
 
