@@ -736,7 +736,12 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     am = _mask_to_limits(a, (lowerlimit, None), (inclusive, False))
     res = ma.min(am, axis)
     if isinstance(res, ma.masked_array):
-        res = res.data
+        if np.any(res.mask):
+            if not np.issubdtype(res.dtype, np.inexact):
+                res = res.astype(np.float64)
+            res = res.filled(np.nan)
+        else:
+            res = res.data
     return res[()]
 
 
@@ -787,7 +792,12 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     am = _mask_to_limits(a, (None, upperlimit), (False, inclusive))
     res = ma.max(am, axis)
     if isinstance(res, ma.masked_array):
-        res = res.data
+        if np.any(res.mask):
+            if not np.issubdtype(res.dtype, np.inexact):
+                res = res.astype(np.float64)
+            res = res.filled(np.nan)
+        else:
+            res = res.data
     return res[()]
 
 
