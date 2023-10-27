@@ -626,7 +626,7 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
     if limits is None:
         return np.mean(a, axis)
     am = _mask_to_limits(a, limits, inclusive)
-    amnan = am.filled(fill_value=_get_nan(a))
+    amnan = am.filled(fill_value=np.nan)
     return np.nanmean(amnan, axis=axis)
 
 
@@ -684,7 +684,7 @@ def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     if limits is None:
         return a.var(ddof=ddof, axis=axis)
     am = _mask_to_limits(a, limits, inclusive)
-    amnan = am.filled(fill_value=_get_nan(a))
+    amnan = am.filled(fill_value=np.nan)
     return np.nanvar(amnan, ddof=ddof, axis=axis)
 
 
