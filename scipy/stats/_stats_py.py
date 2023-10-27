@@ -691,7 +691,7 @@ def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)
 )
-def tmin(a, lowerlimit=None, axis=0, inclusive=True):
+def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     """Compute the trimmed minimum.
 
     This function finds the minimum value of an array `a` along the
@@ -743,7 +743,7 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True):
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)
 )
-def tmax(a, upperlimit=None, axis=0, inclusive=True):
+def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     """Compute the trimmed maximum.
 
     This function computes the maximum value of an array along a given axis,
