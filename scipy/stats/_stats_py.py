@@ -529,8 +529,8 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=False):
     return ModeResult(modes[()], counts[()])
 
 
-def _mask_to_limits(a, limits, inclusive):
-    """Mask an array for values outside of given limits.
+def _put_nan_to_limits(a, limits, inclusive):
+    """Put NaNs in an array for values outside of given limits.
 
     This is primarily a utility function.
 
@@ -540,39 +540,33 @@ def _mask_to_limits(a, limits, inclusive):
     limits : (float or None, float or None)
         A tuple consisting of the (lower limit, upper limit).  Values in the
         input array less than the lower limit or greater than the upper limit
-        will be masked out. None implies no limit.
+        will be replaced with `np.nan`. None implies no limit.
     inclusive : (bool, bool)
         A tuple consisting of the (lower flag, upper flag).  These flags
         determine whether values exactly equal to lower or upper are allowed.
 
-    Returns
-    -------
-    A MaskedArray.
-
-    Raises
-    ------
-    A ValueError if there are no values within the given limits.
-
     """
+    if limits is None:
+        return a
+    a = a.copy()
+    mask = np.full_like(a, False, dtype=np.bool_)
     lower_limit, upper_limit = limits
     lower_include, upper_include = inclusive
-    am = ma.MaskedArray(a)
     if lower_limit is not None:
-        if lower_include:
-            am = ma.masked_less(am, lower_limit)
-        else:
-            am = ma.masked_less_equal(am, lower_limit)
-
+        mask |= a < lower_limit
+        if not lower_include:
+            mask |= a == lower_limit
     if upper_limit is not None:
-        if upper_include:
-            am = ma.masked_greater(am, upper_limit)
-        else:
-            am = ma.masked_greater_equal(am, upper_limit)
-
-    if am.count() == 0:
+        mask |= a > upper_limit
+        if not upper_include:
+            mask |= a == upper_limit
+    if np.all(mask):
         raise ValueError("No array values within given limits")
-
-    return am
+    if np.any(mask):
+        if not np.issubdtype(a.dtype, np.inexact):
+            a = a.astype(np.float64)
+        np.place(a, mask, np.nan)
+    return a
 
 
 @_axis_nan_policy_factory(
@@ -621,13 +615,8 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
     10.0
 
     """
-    if not np.issubdtype(a.dtype, np.inexact):
-        a = a.astype(np.float64)
-    if limits is None:
-        return np.mean(a, axis)
-    am = _mask_to_limits(a, limits, inclusive)
-    amnan = am.filled(fill_value=np.nan)
-    return np.nanmean(amnan, axis=axis)
+    a = _put_nan_to_limits(a, limits, inclusive)
+    return np.nanmean(a, axis=axis)
 
 
 @_axis_nan_policy_factory(
@@ -679,13 +668,8 @@ def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     20.0
 
     """
-    if not np.issubdtype(a.dtype, np.inexact):
-        a = a.astype(np.float64)
-    if limits is None:
-        return a.var(ddof=ddof, axis=axis)
-    am = _mask_to_limits(a, limits, inclusive)
-    amnan = am.filled(fill_value=np.nan)
-    return np.nanvar(amnan, ddof=ddof, axis=axis)
+    a = _put_nan_to_limits(a, limits, inclusive)
+    return np.nanvar(a, ddof=ddof, axis=axis)
 
 
 @_axis_nan_policy_factory(
@@ -733,16 +717,8 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     14
 
     """
-    am = _mask_to_limits(a, (lowerlimit, None), (inclusive, False))
-    res = ma.min(am, axis)
-    if isinstance(res, ma.masked_array):
-        if np.any(res.mask):
-            if not np.issubdtype(res.dtype, np.inexact):
-                res = res.astype(np.float64)
-            res = res.filled(np.nan)
-        else:
-            res = res.data
-    return res[()]
+    a = _put_nan_to_limits(a, (lowerlimit, None), (inclusive, None))
+    return np.nanmin(a, axis=axis)
 
 
 @_axis_nan_policy_factory(
@@ -789,16 +765,8 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     12
 
     """
-    am = _mask_to_limits(a, (None, upperlimit), (False, inclusive))
-    res = ma.max(am, axis)
-    if isinstance(res, ma.masked_array):
-        if np.any(res.mask):
-            if not np.issubdtype(res.dtype, np.inexact):
-                res = res.astype(np.float64)
-            res = res.filled(np.nan)
-        else:
-            res = res.data
-    return res[()]
+    a = _put_nan_to_limits(a, (None, upperlimit), (None, inclusive))
+    return np.nanmax(a, axis=axis)
 
 
 @_axis_nan_policy_factory(
@@ -902,14 +870,10 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     1.1547005383792515
 
     """
-    if not np.issubdtype(a.dtype, np.inexact):
-        a = a.astype(np.float64)
-    if limits is None:
-        return a.std(ddof=ddof, axis=axis) / np.sqrt(a.shape[axis], dtype=a.dtype)
-
-    am = _mask_to_limits(a, limits, inclusive)
-    sd = np.sqrt(np.ma.var(am, ddof=ddof, axis=axis))
-    return sd / np.sqrt(am.count(axis), dtype=sd.dtype)
+    a = _put_nan_to_limits(a, limits, inclusive)
+    sd = np.sqrt(np.nanvar(a, ddof=ddof, axis=axis))
+    n_samples = (~np.isnan(a)).sum(axis=axis)
+    return sd / np.sqrt(n_samples, dtype=sd.dtype)
 
 
 #####################################
