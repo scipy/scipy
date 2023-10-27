@@ -18,7 +18,6 @@ import numpy as np
 import scipy.linalg
 from scipy.stats._multivariate import (_PSD,
                                        _lnB,
-                                       _cho_inv_batch,
                                        multivariate_normal_frozen)
 from scipy.stats import (multivariate_normal, multivariate_hypergeom,
                          matrix_normal, special_ortho_group, ortho_group,
@@ -1900,23 +1899,6 @@ class TestInvwishart:
         max_diff = norm.ppf(1 - fail_rate / 2)
         idx = np.triu_indices(dim)
         assert np.allclose((Xmean_est[idx] - Xmean_exp[idx]) / Xmean_std[idx], 0, atol=max_diff)
-
-    def test_cho_inv_batch(self):
-        """Regression test for gh-8844."""
-        a0 = np.array([[2, 1, 0, 0.5],
-                       [1, 2, 0.5, 0.5],
-                       [0, 0.5, 3, 1],
-                       [0.5, 0.5, 1, 2]])
-        a1 = np.array([[2, -1, 0, 0.5],
-                       [-1, 2, 0.5, 0.5],
-                       [0, 0.5, 3, 1],
-                       [0.5, 0.5, 1, 4]])
-        a = np.array([a0, a1])
-        ainv = a.copy()
-        _cho_inv_batch(ainv)
-        ident = np.eye(4)
-        assert_allclose(a[0].dot(ainv[0]), ident, atol=1e-15)
-        assert_allclose(a[1].dot(ainv[1]), ident, atol=1e-15)
 
     def test_logpdf_4x4(self):
         """Regression test for gh-8844."""
