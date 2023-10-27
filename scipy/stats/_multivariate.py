@@ -2743,7 +2743,7 @@ class invwishart_gen(wishart_gen):
         """
         return invwishart_frozen(df, scale, seed)
 
-    def _logpdf(self, x, dim, df, scale, log_det_scale):
+    def _logpdf(self, x, dim, df, scale, log_det_scale, C):
         """Log of the inverse Wishart probability density function.
 
         Parameters
@@ -2759,6 +2759,8 @@ class invwishart_gen(wishart_gen):
             Scale matrix
         log_det_scale : float
             Logarithm of the determinant of the scale matrix
+        C : ndarray
+            Cholesky factorization of the scale matrix, lower triagular.
 
         Notes
         -----
@@ -2766,23 +2768,16 @@ class invwishart_gen(wishart_gen):
         called directly; use 'logpdf' instead.
 
         """
+        # Retrieve tr(scale x^{-1})
         log_det_x = np.empty(x.shape[-1])
-        x_inv = np.copy(x).T
-        if dim > 1:
-            _cho_inv_batch(x_inv)  # works in-place
-        else:
-            x_inv = 1./x_inv
-        tr_scale_x_inv = np.empty(x.shape[-1])
-
+        tr_inv_scale_x = np.empty(x.shape[-1])
         for i in range(x.shape[-1]):
-            C, lower = scipy.linalg.cho_factor(x[:, :, i], lower=True)
-
-            log_det_x[i] = 2 * np.sum(np.log(C.diagonal()))
-
-            tr_scale_x_inv[i] = np.dot(scale, x_inv[i]).trace()
+            Cx, log_det_x[i] = self._cholesky_logdet(x[:, :, i])
+            A = scipy.linalg.solve_triangular(Cx, C, lower=True)
+            tr_inv_scale_x[i] = np.linalg.norm(A)**2
 
         # Log PDF
-        out = ((0.5 * df * log_det_scale - 0.5 * tr_scale_x_inv) -
+        out = ((0.5 * df * log_det_scale - 0.5 * tr_inv_scale_x) -
                (0.5 * df * dim * _LOG_2 + 0.5 * (df + dim + 1) * log_det_x) -
                multigammaln(0.5*df, dim))
 
@@ -2810,8 +2805,8 @@ class invwishart_gen(wishart_gen):
         """
         dim, df, scale = self._process_parameters(df, scale)
         x = self._process_quantiles(x, dim)
-        _, log_det_scale = self._cholesky_logdet(scale)
-        out = self._logpdf(x, dim, df, scale, log_det_scale)
+        C, log_det_scale = self._cholesky_logdet(scale)
+        out = self._logpdf(x, dim, df, scale, log_det_scale, C)
         return _squeeze_output(out)
 
     def pdf(self, x, df, scale):
@@ -3134,7 +3129,7 @@ class invwishart_frozen(multi_rv_frozen):
     def logpdf(self, x):
         x = self._dist._process_quantiles(x, self.dim)
         out = self._dist._logpdf(x, self.dim, self.df, self.scale,
-                                 self.log_det_scale)
+                                 self.log_det_scale, self.C)
         return _squeeze_output(out)
 
     def pdf(self, x):
