@@ -4386,11 +4386,9 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
 
 def _circfuncs_common(samples, high, low):
     # Ensure samples are array-like and size is not zero
-    samples = np.asarray(samples)
-    NaN = _get_nan(samples)
-
     if samples.size == 0:
-        return NaN, np.asarray(NaN), np.asarray(NaN)
+        NaN = _get_nan(samples)
+        return NaN, NaN, NaN
 
     # Recast samples as radians that range between 0 and 2 pi and calculate
     # the sine and cosine
@@ -4404,7 +4402,7 @@ def _circfuncs_common(samples, high, low):
     lambda x: x, n_outputs=1, default_axis=None,
     result_to_tuple=lambda x: (x,)
 )
-def circmean(samples, high=2*pi, low=0):
+def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     """Compute the circular mean for samples in a range.
 
     Parameters
@@ -4457,8 +4455,8 @@ def circmean(samples, high=2*pi, low=0):
 
     """
     samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low)
-    sin_sum = sin_samp.sum()
-    cos_sum = cos_samp.sum()
+    sin_sum = sin_samp.sum(axis)
+    cos_sum = cos_samp.sum(axis)
     res = arctan2(sin_sum, cos_sum)
 
     res = np.asarray(res)
@@ -4472,7 +4470,7 @@ def circmean(samples, high=2*pi, low=0):
     lambda x: x, n_outputs=1, default_axis=None,
     result_to_tuple=lambda x: (x,)
 )
-def circvar(samples, high=2*pi, low=0):
+def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     """Compute the circular variance for samples assumed to be in a range.
 
     Parameters
@@ -4536,8 +4534,8 @@ def circvar(samples, high=2*pi, low=0):
 
     """
     samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low)
-    sin_mean = sin_samp.mean()
-    cos_mean = cos_samp.mean()
+    sin_mean = sin_samp.mean(axis)
+    cos_mean = cos_samp.mean(axis)
     # hypot can go slightly above 1 due to rounding errors
     with np.errstate(invalid='ignore'):
         R = np.minimum(1, hypot(sin_mean, cos_mean))
@@ -4550,7 +4548,8 @@ def circvar(samples, high=2*pi, low=0):
     lambda x: x, n_outputs=1, default_axis=None,
     result_to_tuple=lambda x: (x,)
 )
-def circstd(samples, high=2*pi, low=0, *, normalize=False):
+def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
+            normalize=False):
     """
     Compute the circular standard deviation for samples assumed to be in the
     range [low to high].
@@ -4632,8 +4631,8 @@ def circstd(samples, high=2*pi, low=0, *, normalize=False):
 
     """
     samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low)
-    sin_mean = sin_samp.mean()  # [1] (2.2.3)
-    cos_mean = cos_samp.mean()  # [1] (2.2.3)
+    sin_mean = sin_samp.mean(axis)  # [1] (2.2.3)
+    cos_mean = cos_samp.mean(axis)  # [1] (2.2.3)
     # hypot can go slightly above 1 due to rounding errors
     with np.errstate(invalid='ignore'):
         R = np.minimum(1, hypot(sin_mean, cos_mean))  # [1] (2.2.4)
