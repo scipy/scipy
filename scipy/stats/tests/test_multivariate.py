@@ -1483,6 +1483,50 @@ class TestWishart:
             assert_equal(w.entropy(), wishart.entropy(df, scale))
             assert_equal(w.pdf(x), wishart.pdf(x, df, scale))
 
+    def test_wishart_2D_rvs(self):
+        dim = 3
+        df = 10
+
+        # Construct a simple non-diagonal positive definite matrix
+        scale = np.eye(dim)
+        scale[0,1] = 0.5
+        scale[1,0] = 0.5
+
+        # Construct frozen Wishart random variables
+        w = wishart(df, scale)
+
+        # Get the generated random variables from a known seed
+        np.random.seed(248042)
+        w_rvs = wishart.rvs(df, scale)
+        np.random.seed(248042)
+        frozen_w_rvs = w.rvs()
+
+        # Manually calculate what it should be, based on the Bartlett (1933)
+        # decomposition of a Wishart into D A A' D', where D is the Cholesky
+        # factorization of the scale matrix and A is the lower triangular matrix
+        # with the square root of chi^2 variates on the diagonal and N(0,1)
+        # variates in the lower triangle.
+        np.random.seed(248042)
+        covariances = np.random.normal(size=3)
+        variances = np.r_[
+            np.random.chisquare(df),
+            np.random.chisquare(df-1),
+            np.random.chisquare(df-2),
+        ]**0.5
+
+        # Construct the lower-triangular A matrix
+        A = np.diag(variances)
+        A[np.tril_indices(dim, k=-1)] = covariances
+
+        # Wishart random variate
+        D = np.linalg.cholesky(scale)
+        DA = D.dot(A)
+        manual_w_rvs = np.dot(DA, DA.T)
+
+        # Test for equality
+        assert_allclose(w_rvs, manual_w_rvs)
+        assert_allclose(frozen_w_rvs, manual_w_rvs)
+
     def test_1D_is_chisquared(self):
         # The 1-dimensional Wishart with an identity scale matrix is just a
         # chi-squared distribution.
@@ -1787,7 +1831,7 @@ class TestInvwishart:
             # entropy
             assert_allclose(iw.entropy(), ig.entropy())
 
-    def test_wishart_2D_rvs(self):
+    def test_invwishart_2D_rvs(self):
         dim = 3
         df = 10
 
@@ -1796,40 +1840,42 @@ class TestInvwishart:
         scale[0,1] = 0.5
         scale[1,0] = 0.5
 
-        # Construct frozen Wishart random variables
-        w = wishart(df, scale)
+        # Construct frozen inverse-Wishart random variables
+        iw = invwishart(df, scale)
 
         # Get the generated random variables from a known seed
-        np.random.seed(248042)
-        w_rvs = wishart.rvs(df, scale)
-        np.random.seed(248042)
-        frozen_w_rvs = w.rvs()
+        np.random.seed(608072)
+        iw_rvs = invwishart.rvs(df, scale)
+        np.random.seed(608072)
+        frozen_iw_rvs = iw.rvs()
 
-        # Manually calculate what it should be, based on the Bartlett (1933)
-        # decomposition of a Wishart into D A A' D', where D is the Cholesky
-        # factorization of the scale matrix and A is the lower triangular matrix
-        # with the square root of chi^2 variates on the diagonal and N(0,1)
-        # variates in the lower triangle.
-        np.random.seed(248042)
+        # Manually calculate what it should be, based on the decomposition in
+        # https://arxiv.org/abs/2310.15884 of an invers-Wishart into L L',
+        # where L A = D, D is the Cholesky factorization of the scale matrix,
+        # and A is the lower triangular matrix with the square root of chi^2
+        # variates on the diagonal and N(0,1) variates in the lower triangle.
+        # the diagonal chi^2 variates in this A are reversed compared to those
+        # in the Bartlett decomposition A for Wishart rvs.
+        np.random.seed(608072)
         covariances = np.random.normal(size=3)
         variances = np.r_[
-            np.random.chisquare(df),
-            np.random.chisquare(df-1),
             np.random.chisquare(df-2),
+            np.random.chisquare(df-1),
+            np.random.chisquare(df),
         ]**0.5
 
         # Construct the lower-triangular A matrix
         A = np.diag(variances)
         A[np.tril_indices(dim, k=-1)] = covariances
 
-        # Wishart random variate
+        # inverse-Wishart random variate
         D = np.linalg.cholesky(scale)
-        DA = D.dot(A)
-        manual_w_rvs = np.dot(DA, DA.T)
+        L = np.linalg.solve(A.T, D.T).T
+        manual_iw_rvs = np.dot(L, L.T)
 
         # Test for equality
-        assert_allclose(w_rvs, manual_w_rvs)
-        assert_allclose(frozen_w_rvs, manual_w_rvs)
+        assert_allclose(iw_rvs, manual_iw_rvs)
+        assert_allclose(frozen_iw_rvs, manual_iw_rvs)
 
     def test_cho_inv_batch(self):
         """Regression test for gh-8844."""
