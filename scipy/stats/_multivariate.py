@@ -2633,8 +2633,9 @@ class invwishart_gen(wishart_gen):
     ----------
     .. [1] M.L. Eaton, "Multivariate Statistics: A Vector Space Approach",
            Wiley, 1983.
-    .. [2] S.D. Axen, "Efficiently generating inverse-Wishart matrices and
-           their Cholesky factors", :arXiv:`2310.15884v1`. 2023.
+    .. [2] M.C. Jones, "Generating Inverse Wishart Matrices", Communications
+           in Statistics - Simulation and Computation, vol. 14.2, pp.511-514,
+           1985.
     .. [3] Gupta, M. and Srivastava, S. "Parametric Bayesian Estimation of
            Differential Entropy and Relative Entropy". Entropy 12, 818 - 843.
            2010.
