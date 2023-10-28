@@ -2685,7 +2685,7 @@ class invwishart_gen(wishart_gen):
         """
         return invwishart_frozen(df, scale, seed)
 
-    def _logpdf(self, x, dim, df, scale, log_det_scale, C):
+    def _logpdf(self, x, dim, df, log_det_scale, C):
         """Log of the inverse Wishart probability density function.
 
         Parameters
@@ -2697,8 +2697,6 @@ class invwishart_gen(wishart_gen):
             Dimension of the scale matrix
         df : int
             Degrees of freedom
-        scale : ndarray
-            Scale matrix
         log_det_scale : float
             Logarithm of the determinant of the scale matrix
         C : ndarray
@@ -2748,7 +2746,7 @@ class invwishart_gen(wishart_gen):
         dim, df, scale = self._process_parameters(df, scale)
         x = self._process_quantiles(x, dim)
         C, log_det_scale = self._cholesky_logdet(scale)
-        out = self._logpdf(x, dim, df, scale, log_det_scale, C)
+        out = self._logpdf(x, dim, df, log_det_scale, C)
         return _squeeze_output(out)
 
     def pdf(self, x, df, scale):
@@ -3064,7 +3062,7 @@ class invwishart_frozen(multi_rv_frozen):
 
     def logpdf(self, x):
         x = self._dist._process_quantiles(x, self.dim)
-        out = self._dist._logpdf(x, self.dim, self.df, self.scale,
+        out = self._dist._logpdf(x, self.dim, self.df,
                                  self.log_det_scale, self.C)
         return _squeeze_output(out)
 
