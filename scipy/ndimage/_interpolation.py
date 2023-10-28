@@ -142,9 +142,6 @@ def spline_filter(input, order=3, output=numpy.float64, mode='mirror'):
     %(input)s
     order : int, optional
         The order of the spline, default is 3.
-    axis : int, optional
-        The axis along which the spline filter is applied. Default is the last
-        axis.
     output : ndarray or dtype, optional
         The array in which to place the output, or the dtype of the returned
         array. Default is ``numpy.float64``.

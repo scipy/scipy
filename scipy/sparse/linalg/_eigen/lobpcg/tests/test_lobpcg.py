@@ -24,9 +24,9 @@ INT_DTYPES = {np.intc, np_long, np.longlong, np.uintc, np_ulong, np.ulonglong}
 # np.half is unsupported on many test systems so excluded
 REAL_DTYPES = {np.float32, np.float64, np.longdouble}
 COMPLEX_DTYPES = {np.complex64, np.complex128, np.clongdouble}
-# use sorted tuple to ensure fixed order of tests
-VDTYPES = tuple(sorted(REAL_DTYPES ^ COMPLEX_DTYPES, key=str))
-MDTYPES = tuple(sorted(INT_DTYPES ^ REAL_DTYPES ^ COMPLEX_DTYPES, key=str))
+# use sorted list to ensure fixed order of tests
+VDTYPES = sorted(REAL_DTYPES ^ COMPLEX_DTYPES, key=str)
+MDTYPES = sorted(INT_DTYPES ^ REAL_DTYPES ^ COMPLEX_DTYPES, key=str)
 
 
 def sign_align(A, B):
