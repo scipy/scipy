@@ -9,9 +9,8 @@ from scipy._lib import doccer
 from scipy.special import (gammaln, psi, multigammaln, xlogy, entr, betaln,
                            ive, loggamma)
 from scipy._lib._util import check_random_state, _lazywhere
-from scipy.linalg.blas import drot
+from scipy.linalg.blas import drot, get_blas_funcs
 from scipy.linalg._misc import LinAlgError
-from scipy.linalg.lapack import get_lapack_funcs
 from ._continuous_distns import norm
 from ._discrete_distns import binom
 from . import _mvn, _covariance, _rcont
@@ -2973,22 +2972,17 @@ class invwishart_gen(wishart_gen):
         A = self._inv_standard_rvs(n, shape, dim, df, random_state)
 
         # Calculate SA = (CA)'^{-1} (CA)^{-1} ~ iW(df, scale)
-        trtrs = get_lapack_funcs(('trtrs'), (A,))
+        trsm = get_blas_funcs(('trsm'), (A,))
 
         for index in np.ndindex(A.shape[:-2]):
             # Calculate CA
-            # Get CA = (C A^{-1}).T via triangular solver
+            # Get CA = C A^{-1} via triangular solver
             if dim > 1:
-                CA, info = trtrs(A[index], C.T, lower=True, trans=True)
-                if info > 0:
-                    raise LinAlgError("Singular matrix.")
-                if info < 0:
-                    raise ValueError('Illegal value in %d-th argument of'
-                                     ' internal trtrs' % -info)
+                CA = trsm(1., A[index], C, side=1, lower=True)
             else:
                 CA = C / A[0]
             # Get SA
-            A[index] = np.dot(CA.T, CA)
+            A[index] = np.dot(CA, CA.T)
 
         return A
 
