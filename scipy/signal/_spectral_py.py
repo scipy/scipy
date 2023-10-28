@@ -462,12 +462,17 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     >>> plt.show()
 
     """
+    xp = array_namespace(x)
     freqs, Pxx = csd(x, x, fs=fs, window=window, nperseg=nperseg,
                      noverlap=noverlap, nfft=nfft, detrend=detrend,
                      return_onesided=return_onesided, scaling=scaling,
                      axis=axis, average=average)
 
-    return freqs, Pxx.real
+    if Pxx.dtype in {xp.complex64, xp.complex128}:
+        Pxx_real = xp.real(Pxx)
+    else:
+        Pxx_real = Pxx
+    return freqs, Pxx_real
 
 
 def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
@@ -627,7 +632,7 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
                 bias = xp.to_device(bias, device_pxy)
                 Pxy = Pxy / bias
             elif average == 'mean':
-                Pxy = Pxy.mean(axis=-1)
+                Pxy = xp.mean(Pxy, axis=-1)
             else:
                 raise ValueError(f'average must be "median" or "mean", got {average}')
         else:
@@ -1939,9 +1944,16 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         sides = 'twosided'
 
     if sides == 'twosided':
-        freqs = xp.fft.fftfreq(nfft, 1/fs)
+        if hasattr(xp, 'fft'):
+            freqs = xp.fft.fftfreq(nfft, 1/fs)
+        else:
+            freqs = xp.asarray(np.fft.fftfreq(nfft, 1/fs))
+
     elif sides == 'onesided':
-        freqs = xp.fft.rfftfreq(nfft, 1/fs)
+        if hasattr(xp, 'fft'):
+            freqs = xp.fft.rfftfreq(nfft, 1/fs)
+        else:
+            freqs = xp.asarray(np.fft.rfftfreq(nfft, 1/fs))
 
     # Perform the windowed FFTs
     result = _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides)
@@ -1967,11 +1979,11 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     if boundary is not None:
         time -= (nperseg/2) / fs
 
-    result = xp.astype(result, outdtype)
+    result = xp.asarray(result, dtype=outdtype)
 
     # All imaginary parts are zero anyways
     if same_data and mode != 'stft':
-        result = result.real
+        result = xp.real(result)
 
     # Output is going to have new last axis for time/window index, so a
     # negative axis index shifts down one
@@ -1979,7 +1991,10 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         axis -= 1
 
     # Roll frequency axis back to axis where the data came from
+    #shape_before = result.shape
+    #new_shape = shape_before[:axis] + (shape_before[-1],) + shape_before[axis:-1]
     result = xp.moveaxis(result, -1, axis)
+    #result = xp.reshape(result, new_shape)
 
     return freqs, time, result
 
@@ -2026,10 +2041,17 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides):
 
     # Perform the fft. Acts on last axis by default. Zero-pads automatically
     if sides == 'twosided':
-        func = xp.fft.fft
+        if hasattr(xp, "fft"):
+            func = xp.fft.fft
+        else:
+            func = np.fft.fft
     else:
-        result = result.real
-        func = xp.fft.rfft
+        if result.dtype in {xp.complex64, xp.complex128}:
+            result = xp.real(result)
+        if hasattr(xp, "fft"):
+            func = xp.fft.rfft
+        else:
+            func = np.fft.rfft
     result = func(result, n=nfft)
 
     return result
