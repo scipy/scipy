@@ -2627,6 +2627,10 @@ class invwishart_gen(wishart_gen):
     inverse Gamma distribution with parameters shape = :math:`\frac{\nu}{2}`
     and scale = :math:`\frac{1}{2}`.
 
+    Instead of inverting a randomly generated Wishart matrix as described in [2],
+    here the algorithm in [4] is used to directly generate a random inverse-Wishart
+    matrix without inversion.
+
     .. versionadded:: 0.16.0
 
     References
@@ -2639,6 +2643,8 @@ class invwishart_gen(wishart_gen):
     .. [3] Gupta, M. and Srivastava, S. "Parametric Bayesian Estimation of
            Differential Entropy and Relative Entropy". Entropy 12, 818 - 843.
            2010.
+    .. [4] S.D. Axen, "Efficiently generating inverse-Wishart matrices and
+           their Cholesky factors", :arXiv:`2310.15884v1`. 2023.
 
     Examples
     --------
