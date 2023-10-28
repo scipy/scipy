@@ -594,3 +594,27 @@ def test_betanbinom_pmf(x, n, a, b, ref):
     #     return float(mp.binomial(n + k - mp.one, k) * mp.beta(a + n, b + k)
     #                  / mp.beta(a, b))
     assert_allclose(betanbinom.pmf(x, n, a, b), ref, rtol=1e-10)
+
+
+@pytest.mark.parametrize('n, a, b, ref',
+                         [[10000, 5000, 50, 0.12841520515722202],
+                          [10, 9, 9, 7.9224400871459695],
+                          [100, 1000, 10, 1.5849602176622748]])
+def test_betanbinom_kurtosis(n, a, b, ref):
+    # reference values were computed via mpmath
+    # from mpmath import mp
+    # def kurtosis_betanegbinom(n, a, b):
+    #     n = mp.mpf(n)
+    #     a = mp.mpf(a)
+    #     b = mp.mpf(b)
+    #     four = mp.mpf(4.)
+    #     mean = n * b / (a - mp.one)
+    #     var = (n * b * (n + a - 1.) * (a + b - 1.)
+    #            / ((a - 2.) * (a - 1.)**2.))
+    #     def f(k):
+    #         return (mp.binomial(n + k - mp.one, k) * mp.beta(a + n, b + k)
+    #                  / mp.beta(a, b) * (k - mean)**four)
+    #         fourth_moment = mp.nsum(f, [0, mp.inf])
+    #     return float(fourth_moment/var**2 - 3.)
+    _, _, _, k = betanbinom.stats(n, a, b, moments="msvk")
+    assert_allclose(k, ref, rtol=3e-15)
