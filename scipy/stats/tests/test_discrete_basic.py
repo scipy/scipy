@@ -88,10 +88,9 @@ def test_moments(distname, arg):
 
     # compare `stats` and `moment` methods
     check_moment(distfn, arg, m, v, distname)
-    if distname not in ['betanbinom']:
-        check_mean_expect(distfn, arg, m, distname)
-        check_var_expect(distfn, arg, m, v, distname)
-        check_skew_expect(distfn, arg, m, v, s, distname)
+    check_mean_expect(distfn, arg, m, distname)
+    check_var_expect(distfn, arg, m, v, distname)
+    check_skew_expect(distfn, arg, m, v, s, distname)
     if distname not in ['zipf', 'yulesimon', 'betanbinom']:
         check_kurt_expect(distfn, arg, m, v, k, distname)
 
