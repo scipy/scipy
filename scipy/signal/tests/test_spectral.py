@@ -298,9 +298,11 @@ class TestWelch:
         assert_allclose(array_api_compat.to_device(p, "cpu"),
                         q, atol=1e-7, rtol=1e-7)
 
+    # dtype casting issues with numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
     @array_api_compatible
     def test_integer_onesided_even(self, xp):
-        x = xp.zeros(16, dtype=int)
+        x = xp.zeros(16, dtype=xp.int64)
         x[0] = 1
         x[8] = 1
         f, p = welch(x, nperseg=8)
@@ -311,9 +313,11 @@ class TestWelch:
         assert_allclose(array_api_compat.to_device(p, "cpu"),
                         q, atol=1e-7, rtol=1e-7)
 
+    # casting issues with numpy.array_api backend
+    @skip_if_array_api_backend("numpy.array_api")
     @array_api_compatible
     def test_integer_onesided_odd(self, xp):
-        x = xp.zeros(16, dtype=int)
+        x = xp.zeros(16, dtype=xp.int64)
         x[0] = 1
         x[8] = 1
         f, p = welch(x, nperseg=9)
@@ -324,6 +328,8 @@ class TestWelch:
         assert_allclose(array_api_compat.to_device(p, "cpu"),
                         q, atol=1e-7, rtol=1e-7)
 
+    # casting issues with numpy.array_api backend
+    @skip_if_array_api_backend("numpy.array_api")
     @array_api_compatible
     def test_integer_twosided(self, xp):
         x = xp.zeros(16, dtype=xp.int64)
@@ -337,6 +343,10 @@ class TestWelch:
         assert_allclose(array_api_compat.to_device(p, "cpu"),
                         q, atol=1e-7, rtol=1e-7)
 
+    # xp.mean() requires real types so skip
+    # for backends that enforce that requirement
+    # for now
+    @skip_if_array_api_backend('numpy.array_api')
     @array_api_compatible
     def test_complex(self, xp):
         x = xp.zeros(16, dtype=xp.complex128)
@@ -559,6 +569,10 @@ class TestWelch:
                         atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
+    # xp.mean() requires real types so skip
+    # for backends that enforce that requirement
+    # for now
+    @skip_if_array_api_backend('numpy.array_api')
     @array_api_compatible
     def test_complex_32(self, xp):
         x = xp.zeros(16, dtype=xp.complex64)
