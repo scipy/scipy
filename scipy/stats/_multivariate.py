@@ -2915,28 +2915,21 @@ class invwishart_gen(wishart_gen):
         called directly; use 'rvs' instead.
 
         """
-        # Random normal variates for off-diagonal elements
-        n_tril = dim * (dim-1) // 2
-        covariances = random_state.normal(
-            size=n*n_tril).reshape(shape+(n_tril,))
-
-        # Random chi-square variates for diagonal elements
-        variances = (np.r_[[random_state.chisquare(df+(i+1)-dim, size=n)**0.5
-                            for i in range(dim)]].reshape((dim,) +
-                                                          shape[::-1]).T)
-
-        # Create A matri(ces) - lower triangular
-        # where inv(A) @ inv(A).T ~ invwishart(df, I)
         A = np.zeros(shape + (dim, dim))
 
-        # Input the covariances
-        size_idx = tuple([slice(None, None, None)]*len(shape))
-        tril_idx = np.tril_indices(dim, k=-1)
-        A[size_idx + tril_idx] = covariances
+        # Random normal variates for off-diagonal elements
+        tri_rows, tri_cols = np.tril_indices(dim, k=-1)
+        n_tril = dim * (dim-1) // 2
+        A[..., tri_rows, tri_cols] = random_state.normal(
+            size=(*shape, n_tril),
+        )
 
-        # Input the variances
-        diag_idx = np.diag_indices(dim)
-        A[size_idx + diag_idx] = variances
+        # Random chi variates for diagonal elements
+        rows = np.arange(dim)
+        chi_dfs = (df - dim + 1) + rows
+        A[..., rows, rows] = random_state.chisquare(
+            df=chi_dfs, size=(*shape, dim),
+        )**0.5
 
         return A
 
