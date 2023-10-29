@@ -2909,6 +2909,14 @@ class invwishart_gen(wishart_gen):
             If `seed` is already a ``Generator`` or ``RandomState`` instance
             then that instance is used.
 
+        Returns
+        -------
+        A : ndarray
+            Random variates of shape (`shape`) + (``dim``, ``dim``).
+            Each slice `A[..., :, :]` is lower-triangular, and its
+            inverse is the lower Cholesky factor of a draw from
+            `invwishart(df, np.eye(dim))`.
+
         Notes
         -----
         As this function does no argument checking, it should not be
