@@ -2709,9 +2709,10 @@ class invwishart_gen(wishart_gen):
         # Retrieve tr(scale x^{-1})
         log_det_x = np.empty(x.shape[-1])
         tr_scale_x_inv = np.empty(x.shape[-1])
+        trsm = get_blas_funcs(('trsm'), (x,))
         for i in range(x.shape[-1]):
             Cx, log_det_x[i] = self._cholesky_logdet(x[:, :, i])
-            A = scipy.linalg.solve_triangular(Cx, C, lower=True)
+            A = trsm(1., Cx, C, side=0, lower=True)
             tr_scale_x_inv[i] = np.linalg.norm(A)**2
 
         # Log PDF
