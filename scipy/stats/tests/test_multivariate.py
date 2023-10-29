@@ -1879,26 +1879,29 @@ class TestInvwishart:
     def test_sample_mean(self):
         """Test that sample mean consistent with known mean."""
         # Construct an arbitrary positive definite scale matrix
-        dim = 5
         df = 10
-        sample_size = 10_000
-        scale = np.diag(np.arange(dim) + 1)
-        scale[np.tril_indices(dim, k=-1)] = np.arange(dim * (dim - 1) / 2)
-        scale = np.dot(scale.T, scale)
+        sample_size = 20_000
+        for dim in [1, 5]:
+            scale = np.diag(np.arange(dim) + 1)
+            scale[np.tril_indices(dim, k=-1)] = np.arange(dim * (dim - 1) / 2)
+            scale = np.dot(scale.T, scale)
 
-        dist = invwishart(df, scale)
-        Xmean_exp = dist.mean()
-        Xvar_exp = dist.var()
-        Xmean_std = (Xvar_exp / sample_size)**0.5  # asymptotic SE of mean estimate
+            dist = invwishart(df, scale)
+            Xmean_exp = dist.mean()
+            Xvar_exp = dist.var()
+            Xmean_std = (Xvar_exp / sample_size)**0.5  # asymptotic SE of mean estimate
 
-        X = dist.rvs(size=sample_size, random_state=1234)
-        Xmean_est = X.mean(axis=0)
+            X = dist.rvs(size=sample_size, random_state=1234)
+            Xmean_est = X.mean(axis=0)
 
-        fail_rate = 0.01
-        fail_rate = 1 - (1 - fail_rate) ** (dim*(dim + 1)//2)  # correct for multiple tests
-        max_diff = norm.ppf(1 - fail_rate / 2)
-        idx = np.triu_indices(dim)
-        assert np.allclose((Xmean_est[idx] - Xmean_exp[idx]) / Xmean_std[idx], 0, atol=max_diff)
+            ntests = dim*(dim + 1)//2
+            fail_rate = 0.01 / ntests  # correct for multiple tests
+            max_diff = norm.ppf(1 - fail_rate / 2)
+            assert np.allclose(
+                (Xmean_est - Xmean_exp) / Xmean_std,
+                0,
+                atol=max_diff,
+            )
 
     def test_logpdf_4x4(self):
         """Regression test for gh-8844."""
