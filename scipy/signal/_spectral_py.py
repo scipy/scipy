@@ -3,7 +3,7 @@
 import numpy as np
 from scipy import fft as sp_fft
 from scipy._lib._array_api import (
-    array_namespace, size,
+    array_namespace, size, is_complex,
 )
 from . import _signaltools
 from .windows import get_window
@@ -468,7 +468,7 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
                      return_onesided=return_onesided, scaling=scaling,
                      axis=axis, average=average)
 
-    if Pxx.dtype in {xp.complex64, xp.complex128}:
+    if is_complex(Pxx, xp=xp):
         Pxx_real = xp.real(Pxx)
     else:
         Pxx_real = Pxx
@@ -1926,16 +1926,14 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         scale = xp.sqrt(scale)
 
     if return_onesided:
-        is_complex = x.dtype in {xp.complex64, xp.complex128}
-
-        if is_complex:
+        if is_complex(x, xp=xp):
             sides = 'twosided'
             warnings.warn('Input data is complex, switching to return_onesided=False',
                           stacklevel=3)
         else:
             sides = 'onesided'
             if not same_data:
-                if xp.iscomplexobj(y):
+                if xp.is_complex(y, xp=xp):
                     sides = 'twosided'
                     warnings.warn('Input data is complex, switching to '
                                   'return_onesided=False',
@@ -1944,16 +1942,10 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         sides = 'twosided'
 
     if sides == 'twosided':
-        if hasattr(xp, 'fft'):
-            freqs = xp.fft.fftfreq(nfft, 1/fs)
-        else:
-            freqs = xp.asarray(np.fft.fftfreq(nfft, 1/fs))
+        freqs = sp_fft.fftfreq(nfft, 1/fs, xp=xp)
 
     elif sides == 'onesided':
-        if hasattr(xp, 'fft'):
-            freqs = xp.fft.rfftfreq(nfft, 1/fs)
-        else:
-            freqs = xp.asarray(np.fft.rfftfreq(nfft, 1/fs))
+        freqs = sp_fft.rfftfreq(nfft, 1/fs, xp=xp)
 
     # Perform the windowed FFTs
     result = _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides)
@@ -1966,7 +1958,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     elif mode == 'psd':
         result = xp.conj(result) * result
 
-    result *= scale
+    result = result * scale
     if sides == 'onesided' and mode == 'psd':
         if nfft % 2:
             result[..., 1:] *= 2
@@ -1979,7 +1971,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     if boundary is not None:
         time -= (nperseg/2) / fs
 
-    result = xp.asarray(result, dtype=outdtype)
+    result = xp.astype(result, outdtype)
 
     # All imaginary parts are zero anyways
     if same_data and mode != 'stft':
@@ -2041,19 +2033,13 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides):
 
     # Perform the fft. Acts on last axis by default. Zero-pads automatically
     if sides == 'twosided':
-        if hasattr(xp, "fft"):
-            func = xp.fft.fft
-        else:
-            func = np.fft.fft
+        func = sp_fft.fft
     else:
-        if result.dtype in {xp.complex64, xp.complex128}:
+        if is_complex(result, xp=xp):
             result = xp.real(result)
-        if hasattr(xp, "fft"):
-            func = xp.fft.rfft
-        else:
-            func = np.fft.rfft
-    result = func(result, n=nfft)
+        func = sp_fft.rfft
 
+    result = func(result, n=nfft)
     return result
 
 

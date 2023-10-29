@@ -3568,16 +3568,21 @@ def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
         raise ValueError("Trend type must be 'linear' or 'constant'.")
     data = xp.asarray(data)
     dtype = data.dtype
-    if data.dtype not in [xp.float32, xp.float64, xp.complex128, xp.complex64]:
+    if data.dtype not in [xp.float32, xp.float64, xp.complex64, xp.complex128]:
         dtype = xp.float64
     if type in ['constant', 'c']:
-        ret = data - xp.mean(xp.asarray(data, dtype=dtype), axis=axis, keepdims=True)
+        # TODO: array API standard requires real-valued types in xp.mean()
+        ret = data - xp.mean(xp.astype(data, dtype), axis=axis, keepdims=True)
         return ret
     else:
         dshape = data.shape
         N = dshape[axis]
         if isinstance(bp, int):
-            bp = xp.sort(xp.unique(xp.asarray([0, bp, N])))
+            try:
+                bp = xp.sort(xp.unique(xp.asarray([0, bp, N])))
+            except AttributeError:
+                bp = xp.sort(xp.unique_values(xp.asarray([0, bp, N])))
+
         else:
             bp = xp.asarray(bp)
             new_bp = xp.empty(size(bp) + 1)

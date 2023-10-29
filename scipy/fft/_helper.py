@@ -153,7 +153,9 @@ def fftfreq(n, d=1.0, *, xp=None, device=None):
     xp = np if xp is None else xp
     # numpy does not yet support the `device` keyword
     # `xp.__name__ != 'numpy'` should be removed when numpy is compatible
-    if hasattr(xp, 'fft') and xp.__name__ != 'numpy':
+    if (hasattr(xp, 'fft') and xp.__name__ != 'numpy' and
+        "array_api_compat.numpy" not in xp.__name__ and
+        "cupy" not in xp.__name__):
         return xp.fft.fftfreq(n, d=d, device=device)
     if device is not None:
         raise ValueError('device parameter is not supported for input array type')
@@ -212,7 +214,9 @@ def rfftfreq(n, d=1.0, *, xp=None, device=None):
     xp = np if xp is None else xp
     # numpy does not yet support the `device` keyword
     # `xp.__name__ != 'numpy'` should be removed when numpy is compatible
-    if hasattr(xp, 'fft') and xp.__name__ != 'numpy':
+    if (hasattr(xp, 'fft') and xp.__name__ != 'numpy' and
+        "array_api_compat.numpy" not in xp.__name__ and
+        "cupy" not in xp.__name__):
         return xp.fft.rfftfreq(n, d=d, device=device)
     if device is not None:
         raise ValueError('device parameter is not supported for input array type')
