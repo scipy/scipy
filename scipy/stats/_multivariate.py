@@ -2966,22 +2966,23 @@ class invwishart_gen(wishart_gen):
 
         """
         random_state = self._get_random_state(random_state)
-        # Get random draws A such that A ~ W(df, I)
+        # Get random draws A such that inv(A) ~ iW(df, I)
         A = self._inv_standard_rvs(n, shape, dim, df, random_state)
 
         # Calculate SA = (CA)'^{-1} (CA)^{-1} ~ iW(df, scale)
         trsm = get_blas_funcs(('trsm'), (A,))
+        trmm = get_blas_funcs(('trmm'), (A,))
 
         for index in np.ndindex(A.shape[:-2]):
-            # Calculate CA
-            # Get CA = C A^{-1} via triangular solver
             if dim > 1:
+                # Calculate CA
+                # Get CA = C A^{-1} via triangular solver
                 CA = trsm(1., A[index], C, side=1, lower=True)
+                # get SA
+                A[index] = trmm(1., CA, CA, side=1, lower=True, trans_a=True)
             else:
-                CA = C / A[0]
-            # Get SA
-            A[index] = np.dot(CA, CA.T)
-
+                A[index][0, 0] = (C[0, 0] / A[index][0, 0])**2
+                
         return A
 
     def rvs(self, df, scale, size=1, random_state=None):
