@@ -9,11 +9,11 @@
  *
  * References:
  * [1] On the Lambert W function, Adv. Comp. Math. 5 (1996) 329-359,
- *     available online: http://www.apmaths.uwo.ca/~djeffrey/Offprints/W-adv-cm.pdf
- * [2] mpmath source code, Subversion revision 990
- *     http://code.google.com/p/mpmath/source/browse/trunk/mpmath/functions.py?spec=svn994&r=992
- * [3] mpmath source code, Subversion revision 994
- *     http://code.google.com/p/mpmath/source/browse/trunk/mpmath/function_docs.py?spec=svn994&r=994
+ *     available online: https://web.archive.org/web/20230123211413/https://cs.uwaterloo.ca/research/tr/1993/03/W.pdf
+ * [2] mpmath source code,
+ *     https://github.com/mpmath/mpmath/blob/c5939823669e1bcce151d89261b802fe0d8978b4/mpmath/functions/functions.py#L435-L461
+ * [3] https://web.archive.org/web/20230504171447/https://mpmath.org/doc/current/functions/powers.html#lambert-w-function
+ *
 
  * TODO: use a series expansion when extremely close to the branch point
  * at `-1/e` and make sure that the proper branch is chosen there.
