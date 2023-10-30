@@ -59,16 +59,16 @@ def hdquantiles(data, prob=list([.25,.5,.75]), axis=None, var=False,):
     --------
     >>> import numpy as np
     >>> from scipy.stats.mstats import hdquantiles
-
+    >>>
     >>> # Sample data
     >>> data = np.array([1.2, 2.5, 3.7, 4.0, 5.1, 6.3, 7.0, 8.2, 9.4])
-
+    >>>
     >>> # Probabilities at which to compute quantiles
     >>> probabilities = [0.25, 0.5, 0.75]
-
+    >>>
     >>> # Compute Harrell-Davis quantile estimates
     >>> quantile_estimates = hdquantiles(data, prob=probabilities)
-
+    >>>
     >>> # Display the quantile estimates
     >>> for i, quantile in enumerate(probabilities):
     ...     print(f"{int(quantile * 100)}th percentile: {quantile_estimates[i]}")
