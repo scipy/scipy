@@ -4,7 +4,7 @@ import inspect
 from ._pocketfft import helper as _helper
 
 import numpy as np
-from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api import array_namespace, is_numpy
 
 
 def next_fast_len(target, real=False):
@@ -154,8 +154,7 @@ def fftfreq(n, d=1.0, *, xp=None, device=None):
     # numpy does not yet support the `device` keyword
     # `xp.__name__ != 'numpy'` should be removed when numpy is compatible
     if (hasattr(xp, 'fft') and xp.__name__ != 'numpy' and
-        "array_api_compat.numpy" not in xp.__name__ and
-        "cupy" not in xp.__name__):
+            not is_numpy(xp)):
         return xp.fft.fftfreq(n, d=d, device=device)
     if device is not None:
         raise ValueError('device parameter is not supported for input array type')
@@ -215,8 +214,7 @@ def rfftfreq(n, d=1.0, *, xp=None, device=None):
     # numpy does not yet support the `device` keyword
     # `xp.__name__ != 'numpy'` should be removed when numpy is compatible
     if (hasattr(xp, 'fft') and xp.__name__ != 'numpy' and
-        "array_api_compat.numpy" not in xp.__name__ and
-        "cupy" not in xp.__name__):
+            not is_numpy(xp)):
         return xp.fft.rfftfreq(n, d=d, device=device)
     if device is not None:
         raise ValueError('device parameter is not supported for input array type')
