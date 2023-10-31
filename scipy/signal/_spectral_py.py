@@ -616,7 +616,7 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
             if average == 'median':
                 # xp.median must be passed real arrays for the desired result
                 bias = _median_bias(Pxy.shape[-1])
-                if Pxy.dtype in [xp.complex64, xp.complex128]:
+                if is_complex(Pxy, xp=xp):
                     Pxy = (xp.median(xp.real(Pxy), axis=-1)
                            + 1j * xp.median(xp.imag(Pxy), axis=-1))
                 else:
@@ -1933,7 +1933,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         else:
             sides = 'onesided'
             if not same_data:
-                if xp.is_complex(y, xp=xp):
+                if is_complex(y, xp=xp):
                     sides = 'twosided'
                     warnings.warn('Input data is complex, switching to '
                                   'return_onesided=False',

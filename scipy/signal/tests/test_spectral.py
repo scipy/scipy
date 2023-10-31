@@ -8,8 +8,7 @@ import pytest
 from pytest import raises as assert_raises
 
 from scipy import signal
-from scipy.fft import fftfreq, rfftfreq, fft, irfft
-from scipy.integrate import trapezoid
+from scipy.fft import fftfreq
 from scipy.signal import (periodogram, welch, lombscargle, coherence,
                           spectrogram, check_COLA, check_NOLA)
 from scipy.signal.windows import hann
@@ -21,7 +20,6 @@ from scipy.signal.tests._scipy_spectral_test_shim import istft_compare as istft
 from scipy.signal.tests._scipy_spectral_test_shim import csd_compare as csd
 from scipy.conftest import array_api_compatible, skip_if_array_api_backend
 from scipy._lib.array_api_compat import array_api_compat
-from scipy._lib._array_api import SCIPY_ARRAY_API
 
 
 class TestPeriodogram:
@@ -246,6 +244,11 @@ class TestPeriodogram:
 
 
 class TestWelch:
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
     @array_api_compatible
     def test_real_onesided_even(self, xp):
         x = xp.zeros(16)
@@ -259,6 +262,11 @@ class TestWelch:
         assert_allclose(array_api_compat.to_device(f, "cpu"),
                         np.linspace(0, 0.5, 5))
 
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
     @array_api_compatible
     def test_real_onesided_odd(self, xp):
         x = xp.zeros(16)
@@ -272,6 +280,11 @@ class TestWelch:
         assert_allclose(array_api_compat.to_device(p, "cpu"),
                         q, atol=1e-7, rtol=1e-7)
 
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
     @array_api_compatible
     def test_real_twosided(self, xp):
         x = xp.zeros(16)
@@ -285,6 +298,11 @@ class TestWelch:
         assert_allclose(array_api_compat.to_device(p, "cpu"),
                         q, atol=1e-7, rtol=1e-7)
 
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
     @array_api_compatible
     def test_real_spectrum(self, xp):
         x = xp.zeros(16)
@@ -300,6 +318,9 @@ class TestWelch:
 
     # dtype casting issues with numpy.array_api
     @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
     @array_api_compatible
     def test_integer_onesided_even(self, xp):
         x = xp.zeros(16, dtype=xp.int64)
@@ -315,6 +336,9 @@ class TestWelch:
 
     # casting issues with numpy.array_api backend
     @skip_if_array_api_backend("numpy.array_api")
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
     @array_api_compatible
     def test_integer_onesided_odd(self, xp):
         x = xp.zeros(16, dtype=xp.int64)
@@ -330,6 +354,9 @@ class TestWelch:
 
     # casting issues with numpy.array_api backend
     @skip_if_array_api_backend("numpy.array_api")
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
     @array_api_compatible
     def test_integer_twosided(self, xp):
         x = xp.zeros(16, dtype=xp.int64)
@@ -347,6 +374,9 @@ class TestWelch:
     # for backends that enforce that requirement
     # for now
     @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
     @array_api_compatible
     def test_complex(self, xp):
         x = xp.zeros(16, dtype=xp.complex128)
@@ -365,6 +395,11 @@ class TestWelch:
         assert_raises(ValueError, welch, xp.zeros(4, dtype=xp.complex128),
                       scaling='foo', nperseg=4)
 
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
     @array_api_compatible
     def test_detrend_linear(self, xp):
         x = xp.arange(10, dtype=xp.float64) + 0.04
@@ -372,6 +407,11 @@ class TestWelch:
         p = array_api_compat.to_device(p, "cpu")
         assert_allclose(p, np.zeros_like(p), atol=1e-15)
 
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
     @array_api_compatible
     def test_no_detrending(self, xp):
         x = xp.arange(10, dtype=xp.float64) + 0.04
@@ -384,6 +424,11 @@ class TestWelch:
                         array_api_compat.to_device(p2, "cpu"),
                         atol=1e-15)
 
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
     @array_api_compatible
     def test_detrend_external(self, xp):
         x = xp.arange(10, dtype=xp.float64) + 0.04
@@ -392,6 +437,11 @@ class TestWelch:
         p = array_api_compat.to_device(p, "cpu")
         assert_allclose(p, np.zeros_like(p), atol=1e-15)
 
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
     @array_api_compatible
     def test_detrend_external_nd_m1(self, xp):
         x = xp.arange(40, dtype=xp.float64) + 0.04
@@ -401,6 +451,11 @@ class TestWelch:
         p = array_api_compat.to_device(p, "cpu")
         assert_allclose(p, np.zeros_like(p), atol=1e-15)
 
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
     @array_api_compatible
     def test_detrend_external_nd_0(self, xp):
         x = xp.arange(20, dtype=xp.float64) + 0.04
@@ -411,6 +466,11 @@ class TestWelch:
         p = array_api_compat.to_device(p, "cpu")
         assert_allclose(p, np.zeros_like(p), atol=1e-15)
 
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
     @array_api_compatible
     def test_nd_axis_m1(self, xp):
         x = xp.arange(20, dtype=xp.float64) + 0.04
@@ -425,6 +485,11 @@ class TestWelch:
                         array_api_compat.to_device(p[1,:], "cpu"),
                         atol=1e-13, rtol=1e-13)
 
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
     @array_api_compatible
     def test_nd_axis_0(self, xp):
         x = xp.arange(20, dtype=xp.float64) + 0.04
@@ -441,6 +506,11 @@ class TestWelch:
 
     @array_api_compatible
     @skip_if_array_api_backend('torch')
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
     def test_window_external(self, xp):
         x = xp.zeros(16)
         x[0] = 1
@@ -478,6 +548,11 @@ class TestWelch:
             assert_array_equal(f.shape, shape)
             assert_array_equal(p.shape, shape)
 
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
     @array_api_compatible
     def test_short_data(self, xp):
         x = xp.zeros(8)
@@ -505,6 +580,11 @@ class TestWelch:
         assert_raises(ValueError, welch, xp.zeros(4), 1,
                       xp.reshape(xp.arange(6), (2,3)))
 
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
     @array_api_compatible
     def test_nondefault_noverlap(self, xp):
         x = xp.zeros(64)
@@ -523,6 +603,11 @@ class TestWelch:
     def test_nfft_too_short(self, xp):
         assert_raises(ValueError, welch, xp.ones(12), nfft=3, nperseg=4)
 
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
     @array_api_compatible
     def test_real_onesided_even_32(self, xp):
         x = xp.zeros(16, dtype=xp.float32)
@@ -538,6 +623,11 @@ class TestWelch:
                         atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
     @array_api_compatible
     def test_real_onesided_odd_32(self, xp):
         x = xp.zeros(16, dtype=xp.float32)
@@ -553,6 +643,11 @@ class TestWelch:
                         atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
     @array_api_compatible
     def test_real_twosided_32(self, xp):
         x = xp.zeros(16, dtype=xp.float32)
@@ -573,6 +668,9 @@ class TestWelch:
     # for backends that enforce that requirement
     # for now
     @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
     @array_api_compatible
     def test_complex_32(self, xp):
         x = xp.zeros(16, dtype=xp.complex64)
@@ -588,6 +686,11 @@ class TestWelch:
         assert_(p.dtype == q.dtype,
                 f'dtype mismatch, {p.dtype}, {q.dtype}')
 
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
     @array_api_compatible
     def test_padded_freqs(self, xp):
         x = xp.zeros(12)
@@ -607,6 +710,11 @@ class TestWelch:
         assert_allclose(f, array_api_compat.to_device(fodd, "cpu"))
         assert_allclose(f, array_api_compat.to_device(feven, "cpu"))
 
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
     @array_api_compatible
     def test_window_correction(self, xp):
         A = 20
@@ -632,6 +740,11 @@ class TestWelch:
                                              array_api_compat.to_device(freq, "cpu"))),
                             A*np.sqrt(2)/2, rtol=1e-3)
 
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
     @array_api_compatible
     def test_axis_rolling(self, xp):
         np.random.seed(1234)
@@ -654,6 +767,11 @@ class TestWelch:
                                array_api_compat.to_device(p_minus.squeeze(), "cpu"),
                                err_msg=a-x.ndim)
 
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
     @array_api_compatible
     def test_average(self, xp):
         x = xp.zeros(16)
