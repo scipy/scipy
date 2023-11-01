@@ -83,7 +83,7 @@ def test_1d_tuple_constructor_with_shape():
 
 def test_non_subscriptability():
     coo_2d = coo_array((2, 2))
-    
+
     with pytest.raises(TypeError,
                         match="'coo_array' object does not support item assignment"):
         coo_2d[0, 0] = 1
@@ -95,7 +95,7 @@ def test_non_subscriptability():
 def test_reshape():
     arr1d = coo_array([1, 0, 3])
     assert arr1d.shape == (3,)
-    
+
     col_vec = arr1d.reshape((3, 1))
     assert col_vec.shape == (3, 1)
     assert np.array_equal(col_vec.toarray(), np.array([[1], [0], [3]]))
@@ -184,7 +184,7 @@ def test_1d_tocsc_tocsr_todia_todok():
 def test_1d_resize(arg: int):
     den = np.array([1, -2, -3])
     res = coo_array(den)
-    den.resize(arg)
+    den.resize(arg, refcheck=False)
     res.resize(arg)
     assert res.shape == den.shape
     assert np.array_equal(res.toarray(), den)
@@ -195,7 +195,7 @@ def test_1d_to_2d_resize(arg: tuple[int, int]):
     den = np.array([1, 0, 3])
     res = coo_array(den)
 
-    den.resize(arg)
+    den.resize(arg, refcheck=False)
     res.resize(arg)
     assert res.shape == den.shape
     assert np.array_equal(res.toarray(), den)
@@ -205,7 +205,7 @@ def test_1d_to_2d_resize(arg: tuple[int, int]):
 def test_2d_to_1d_resize(arg: int):
     den = np.array([[1, 0, 3], [4, 0, 0]])
     res = coo_array(den)
-    den.resize(arg)
+    den.resize(arg, refcheck=False)
     res.resize(arg)
     assert res.shape == den.shape
     assert np.array_equal(res.toarray(), den)
@@ -256,7 +256,7 @@ def test_1d_mul_vector():
     den_b = np.array([0, 1, 2, 3])
     exp = den_a @ den_b
     res = coo_array(den_a) @ den_b
-    assert type(res) == type(exp)
+    assert np.ndim(res) == 0
     assert np.array_equal(res, exp)
 
 

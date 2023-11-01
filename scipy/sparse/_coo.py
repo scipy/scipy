@@ -128,8 +128,22 @@ class _coo_base(_data_matrix, _minmax_mixin):
             else:
                 return self
 
-        # TODO: Handle overflow as in https://github.com/scipy/scipy/pull/9132
-        flat_indices = np.ravel_multi_index(self.indices, self.shape, order=order)
+        # Handle overflow as in https://github.com/scipy/scipy/pull/9132
+        if self.ndim == 1:
+            flat_indices = self.indices[0]
+        else:
+            nrows, ncols = self.shape
+            row, col = self.indices
+            if order == 'C':
+                maxval = (ncols * max(0, nrows - 1) + max(0, ncols - 1))
+                idx_dtype = self._get_index_dtype(maxval=maxval)
+                flat_indices = np.multiply(ncols, row, dtype=idx_dtype) + col
+            elif order == 'F':
+                maxval = (nrows * max(0, ncols - 1) + max(0, nrows - 1))
+                idx_dtype = self._get_index_dtype(maxval=maxval)
+                flat_indices = np.multiply(nrows, col, dtype=idx_dtype) + row
+            else:
+                raise ValueError("'order' must be 'C' or 'F'")
         new_indices = np.unravel_index(flat_indices, shape, order=order)
 
         # Handle copy here rather than passing on to the constructor so that no
@@ -218,7 +232,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         # Check for added dimensions.
         if len(shape) > self.ndim:
             flat_indices = np.ravel_multi_index(self.indices, self.shape)
-            max_size = np.prod(shape)
+            max_size = shape[0] if len(shape) == 1 else shape[0] * shape[1]
             self.indices = np.unravel_index(flat_indices[:max_size], shape)
             self.data = self.data[:max_size]
             self._shape = shape
