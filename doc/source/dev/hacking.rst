@@ -83,7 +83,9 @@ tests, benchmarks, and correct code style.
 
 4. Code style
     Uniform code style makes it easier for others to read your code.
-    SciPy follows the standard Python style guideline, `PEP8`_.
+    SciPy follows the standard Python style guideline, `PEP8`_,
+    with the exception that the recommended maximum line length is 88 characters,
+    rather than PEP8's 79 characters.
 
     We provide a git pre-commit hook that can check each of your commits
     for proper style. Install it (once) by running the following from
