@@ -20,6 +20,7 @@ from scipy.signal.tests._scipy_spectral_test_shim import istft_compare as istft
 from scipy.signal.tests._scipy_spectral_test_shim import csd_compare as csd
 from scipy.conftest import array_api_compatible, skip_if_array_api_backend
 from scipy._lib.array_api_compat import array_api_compat
+from scipy._lib._array_api import xp_assert_close
 
 
 class TestPeriodogram:
@@ -255,12 +256,10 @@ class TestWelch:
         x[0] = 1
         x[8] = 1
         f, p = welch(x, nperseg=8)
-        q = np.array([0.08333333, 0.15277778, 0.22222222, 0.22222222,
+        q = xp.asarray([0.08333333, 0.15277778, 0.22222222, 0.22222222,
                       0.11111111])
-        assert_allclose(array_api_compat.to_device(p, "cpu"),
-                        q, atol=1e-7, rtol=1e-7)
-        assert_allclose(array_api_compat.to_device(f, "cpu"),
-                        np.linspace(0, 0.5, 5))
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
+        xp_assert_close(f, xp.linspace(0, 0.5, 5))
 
     # moveaxis not available in numpy.array_api
     @skip_if_array_api_backend('numpy.array_api')
@@ -273,12 +272,10 @@ class TestWelch:
         x[0] = 1
         x[8] = 1
         f, p = welch(x, nperseg=9)
-        assert_allclose(array_api_compat.to_device(f, "cpu"),
-                        np.arange(5.0)/9.0)
-        q = np.array([0.12477455, 0.23430933, 0.17072113, 0.17072113,
+        xp_assert_close(f, xp.arange(5.0)/9.0)
+        q = xp.asarray([0.12477455, 0.23430933, 0.17072113, 0.17072113,
                       0.17072113])
-        assert_allclose(array_api_compat.to_device(p, "cpu"),
-                        q, atol=1e-7, rtol=1e-7)
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
     # moveaxis not available in numpy.array_api
     @skip_if_array_api_backend('numpy.array_api')
@@ -287,16 +284,15 @@ class TestWelch:
     @skip_if_array_api_backend("cupy")
     @array_api_compatible
     def test_real_twosided(self, xp):
-        x = xp.zeros(16)
+        x = xp.zeros(16, dtype=xp.float64)
         x[0] = 1
         x[8] = 1
         f, p = welch(x, nperseg=8, return_onesided=False)
-        assert_allclose(array_api_compat.to_device(f, "cpu"),
-                        fftfreq(8, 1.0))
-        q = np.array([0.08333333, 0.07638889, 0.11111111, 0.11111111,
-                      0.11111111, 0.11111111, 0.11111111, 0.07638889])
-        assert_allclose(array_api_compat.to_device(p, "cpu"),
-                        q, atol=1e-7, rtol=1e-7)
+        xp_assert_close(f, fftfreq(8, 1.0), check_namespace=False, check_dtype=False)
+        q = xp.asarray([0.08333333, 0.07638889, 0.11111111, 0.11111111,
+                      0.11111111, 0.11111111, 0.11111111, 0.07638889],
+                      dtype=xp.float64)
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
     # moveaxis not available in numpy.array_api
     @skip_if_array_api_backend('numpy.array_api')
@@ -305,16 +301,14 @@ class TestWelch:
     @skip_if_array_api_backend("cupy")
     @array_api_compatible
     def test_real_spectrum(self, xp):
-        x = xp.zeros(16)
+        x = xp.zeros(16, dtype=xp.float64)
         x[0] = 1
         x[8] = 1
         f, p = welch(x, nperseg=8, scaling='spectrum')
-        assert_allclose(array_api_compat.to_device(f, "cpu"),
-                        np.linspace(0, 0.5, 5))
-        q = np.array([0.015625, 0.02864583, 0.04166667, 0.04166667,
-                      0.02083333])
-        assert_allclose(array_api_compat.to_device(p, "cpu"),
-                        q, atol=1e-7, rtol=1e-7)
+        xp_assert_close(f, xp.linspace(0, 0.5, 5))
+        q = xp.asarray([0.015625, 0.02864583, 0.04166667, 0.04166667,
+                      0.02083333], dtype=xp.float64)
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
     # dtype casting issues with numpy.array_api
     @skip_if_array_api_backend('numpy.array_api')
@@ -327,12 +321,10 @@ class TestWelch:
         x[0] = 1
         x[8] = 1
         f, p = welch(x, nperseg=8)
-        assert_allclose(array_api_compat.to_device(f, "cpu"),
-                        np.linspace(0, 0.5, 5))
-        q = np.array([0.08333333, 0.15277778, 0.22222222, 0.22222222,
+        xp_assert_close(f, xp.linspace(0, 0.5, 5))
+        q = xp.asarray([0.08333333, 0.15277778, 0.22222222, 0.22222222,
                       0.11111111])
-        assert_allclose(array_api_compat.to_device(p, "cpu"),
-                        q, atol=1e-7, rtol=1e-7)
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
     # casting issues with numpy.array_api backend
     @skip_if_array_api_backend("numpy.array_api")
@@ -345,12 +337,10 @@ class TestWelch:
         x[0] = 1
         x[8] = 1
         f, p = welch(x, nperseg=9)
-        assert_allclose(array_api_compat.to_device(f, "cpu"),
-                        np.arange(5.0)/9.0)
-        q = np.array([0.12477455, 0.23430933, 0.17072113, 0.17072113,
+        xp_assert_close(f, xp.arange(5.0)/9.0)
+        q = xp.asarray([0.12477455, 0.23430933, 0.17072113, 0.17072113,
                       0.17072113])
-        assert_allclose(array_api_compat.to_device(p, "cpu"),
-                        q, atol=1e-7, rtol=1e-7)
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
     # casting issues with numpy.array_api backend
     @skip_if_array_api_backend("numpy.array_api")
@@ -363,12 +353,10 @@ class TestWelch:
         x[0] = 1
         x[8] = 1
         f, p = welch(x, nperseg=8, return_onesided=False)
-        assert_allclose(array_api_compat.to_device(f, "cpu"),
-                        fftfreq(8, 1.0))
-        q = np.array([0.08333333, 0.07638889, 0.11111111, 0.11111111,
+        xp_assert_close(f, fftfreq(8, 1.0), check_namespace=False, check_dtype=False)
+        q = xp.asarray([0.08333333, 0.07638889, 0.11111111, 0.11111111,
                       0.11111111, 0.11111111, 0.11111111, 0.07638889])
-        assert_allclose(array_api_compat.to_device(p, "cpu"),
-                        q, atol=1e-7, rtol=1e-7)
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
     # xp.mean() requires real types so skip
     # for backends that enforce that requirement
@@ -383,12 +371,10 @@ class TestWelch:
         x[0] = 1.0 + 2.0j
         x[8] = 1.0 + 2.0j
         f, p = welch(x, nperseg=8, return_onesided=False)
-        assert_allclose(array_api_compat.to_device(f, "cpu"),
-                        fftfreq(8, 1.0))
-        q = np.array([0.41666667, 0.38194444, 0.55555556, 0.55555556,
-                      0.55555556, 0.55555556, 0.55555556, 0.38194444])
-        assert_allclose(array_api_compat.to_device(p, "cpu"),
-                        q, atol=1e-7, rtol=1e-7)
+        xp_assert_close(f, fftfreq(8, 1.0), check_namespace=False, check_dtype=False)
+        q = xp.asarray([0.41666667, 0.38194444, 0.55555556, 0.55555556,
+                      0.55555556, 0.55555556, 0.55555556, 0.38194444], dtype=xp.float64)
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
     @array_api_compatible
     def test_unk_scaling(self, xp):
@@ -404,8 +390,7 @@ class TestWelch:
     def test_detrend_linear(self, xp):
         x = xp.arange(10, dtype=xp.float64) + 0.04
         f, p = welch(x, nperseg=10, detrend='linear')
-        p = array_api_compat.to_device(p, "cpu")
-        assert_allclose(p, np.zeros_like(p), atol=1e-15)
+        xp_assert_close(p, xp.zeros_like(p), atol=1e-15)
 
     # moveaxis not available in numpy.array_api
     @skip_if_array_api_backend('numpy.array_api')
@@ -417,12 +402,8 @@ class TestWelch:
         x = xp.arange(10, dtype=xp.float64) + 0.04
         f1, p1 = welch(x, nperseg=10, detrend=False)
         f2, p2 = welch(x, nperseg=10, detrend=lambda x: x)
-        assert_allclose(array_api_compat.to_device(f1, "cpu"),
-                        array_api_compat.to_device(f2, "cpu"),
-                        atol=1e-15)
-        assert_allclose(array_api_compat.to_device(p1, "cpu"),
-                        array_api_compat.to_device(p2, "cpu"),
-                        atol=1e-15)
+        xp_assert_close(f1, f2, atol=1e-15)
+        xp_assert_close(p1, p2, atol=1e-15)
 
     # moveaxis not available in numpy.array_api
     @skip_if_array_api_backend('numpy.array_api')
