@@ -129,8 +129,18 @@ class _coo_base(_data_matrix, _minmax_mixin):
             else:
                 return self
 
-        flat_indices = _ravel_indices(self.indices, self.shape, order=order)
-        new_indices = np.unravel_index(flat_indices, shape, order=order)
+        if self.ndim == 1:
+            new_indices = np.unravel_index(self.indices[0], shape, order=order)
+        else:
+            flat_indices = _ravel_indices(self.indices, self.shape, order=order)
+            if len(shape) == 1:
+                new_indices = (flat_indices,)
+            else:
+                if order == 'C':
+                    new_indices = divmod(flat_indices, shape[1])
+                elif order == 'F':
+                    new_indices = divmod(flat_indices, shape[0])[::-1]
+                # else: already checked in _ravel_indices
 
         # Handle copy here rather than passing on to the constructor so that no
         # copy will be made of new_row and new_col regardless
@@ -569,8 +579,6 @@ class _coo_base(_data_matrix, _minmax_mixin):
 def _ravel_indices(indices, shape, order='C'):
     """Like np.ravel_multi_index, but avoids some overflow issues."""
     # Handle overflow as in https://github.com/scipy/scipy/pull/9132
-    if len(indices) == 1:
-        return indices[0]
     if len(indices) == 2:
         nrows, ncols = shape
         row, col = indices
@@ -584,6 +592,8 @@ def _ravel_indices(indices, shape, order='C'):
             return np.multiply(nrows, col, dtype=idx_dtype) + row
         else:
             raise ValueError("'order' must be 'C' or 'F'")
+    if len(indices) == 1:
+        return indices[0]
     return np.ravel_multi_index(indices, shape, order=order)
 
 
