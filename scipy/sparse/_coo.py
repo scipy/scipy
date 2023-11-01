@@ -4,6 +4,7 @@ __docformat__ = "restructuredtext en"
 
 __all__ = ['coo_array', 'coo_matrix', 'isspmatrix_coo']
 
+import math
 from warnings import warn
 
 import numpy as np
@@ -13,7 +14,7 @@ from ._sparsetools import coo_tocsr, coo_todense, coo_matvec
 from ._base import issparse, SparseEfficiencyWarning, _spbase, sparray
 from ._data import _data_matrix, _minmax_mixin
 from ._sputils import (upcast, upcast_char, to_native, isshape, getdtype,
-                       getdata, downcast_intp_index,
+                       getdata, downcast_intp_index, get_index_dtype,
                        check_shape, check_reshape_kwargs)
 
 import operator
@@ -128,22 +129,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
             else:
                 return self
 
-        # Handle overflow as in https://github.com/scipy/scipy/pull/9132
-        if self.ndim == 1:
-            flat_indices = self.indices[0]
-        else:
-            nrows, ncols = self.shape
-            row, col = self.indices
-            if order == 'C':
-                maxval = (ncols * max(0, nrows - 1) + max(0, ncols - 1))
-                idx_dtype = self._get_index_dtype(maxval=maxval)
-                flat_indices = np.multiply(ncols, row, dtype=idx_dtype) + col
-            elif order == 'F':
-                maxval = (nrows * max(0, ncols - 1) + max(0, nrows - 1))
-                idx_dtype = self._get_index_dtype(maxval=maxval)
-                flat_indices = np.multiply(nrows, col, dtype=idx_dtype) + row
-            else:
-                raise ValueError("'order' must be 'C' or 'F'")
+        flat_indices = _ravel_indices(self.indices, self.shape, order=order)
         new_indices = np.unravel_index(flat_indices, shape, order=order)
 
         # Handle copy here rather than passing on to the constructor so that no
@@ -231,8 +217,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         # Check for added dimensions.
         if len(shape) > self.ndim:
-            flat_indices = np.ravel_multi_index(self.indices, self.shape)
-            max_size = shape[0] if len(shape) == 1 else shape[0] * shape[1]
+            flat_indices = _ravel_indices(self.indices, self.shape)
+            max_size = math.prod(shape)
             self.indices = np.unravel_index(flat_indices[:max_size], shape)
             self.data = self.data[:max_size]
             self._shape = shape
@@ -578,6 +564,27 @@ class _coo_base(_data_matrix, _minmax_mixin):
         for i, other_col in enumerate(other.T):
             coo_matvec(self.nnz, row, col, self.data, other_col, result[i:i + 1])
         return result.T.view(type=type(other))
+
+
+def _ravel_indices(indices, shape, order='C'):
+    """Like np.ravel_multi_index, but avoids some overflow issues."""
+    # Handle overflow as in https://github.com/scipy/scipy/pull/9132
+    if len(indices) == 1:
+        return indices[0]
+    if len(indices) == 2:
+        nrows, ncols = shape
+        row, col = indices
+        if order == 'C':
+            maxval = (ncols * max(0, nrows - 1) + max(0, ncols - 1))
+            idx_dtype = get_index_dtype(maxval=maxval)
+            return np.multiply(ncols, row, dtype=idx_dtype) + col
+        elif order == 'F':
+            maxval = (nrows * max(0, ncols - 1) + max(0, nrows - 1))
+            idx_dtype = get_index_dtype(maxval=maxval)
+            return np.multiply(nrows, col, dtype=idx_dtype) + row
+        else:
+            raise ValueError("'order' must be 'C' or 'F'")
+    return np.ravel_multi_index(indices, shape, order=order)
 
 
 def isspmatrix_coo(x):
