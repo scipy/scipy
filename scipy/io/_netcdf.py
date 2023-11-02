@@ -124,7 +124,7 @@ class netcdf_file:
     version : {1, 2}, optional
         version of netcdf to read / write, where 1 means *Classic
         format* and 2 means *64-bit offset format*.  Default is 1.  See
-        `here <https://www.unidata.ucar.edu/software/netcdf/docs/netcdf_introduction.html#select_format>`__
+        `here <https://docs.unidata.ucar.edu/nug/current/netcdf_introduction.html#select_format>`__
         for more info.
     maskandscale : bool, optional
         Whether to automatically scale and/or mask data based on attributes.
