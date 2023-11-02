@@ -326,9 +326,9 @@ cpdef _label(np.ndarray input,
                 # Take neighbor labels
                 PyArray_ITER_RESET(itstruct)
                 for ni in range(num_neighbors):
-                    neighbor_use_prev = (<np.int_t *> PyArray_ITER_DATA(itstruct))[0]
-                    neighbor_use_adjacent = (<np.int_t *> (<char *> PyArray_ITER_DATA(itstruct) + ss))[0]
-                    neighbor_use_next = (<np.int_t *> (<char *> PyArray_ITER_DATA(itstruct) + 2 * ss))[0]
+                    neighbor_use_prev = (<np.npy_long *> PyArray_ITER_DATA(itstruct))[0]
+                    neighbor_use_adjacent = (<np.npy_long *> (<char *> PyArray_ITER_DATA(itstruct) + ss))[0]
+                    neighbor_use_next = (<np.npy_long *> (<char *> PyArray_ITER_DATA(itstruct) + 2 * ss))[0]
                     if not (neighbor_use_prev or
                             neighbor_use_adjacent or
                             neighbor_use_next):
