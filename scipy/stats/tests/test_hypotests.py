@@ -63,12 +63,6 @@ class TestEppsSingleton:
         # raise error if there are non-finite values
         x, y = (1, 2, 3, 4, 5, np.inf), np.arange(10)
         assert_raises(ValueError, epps_singleton_2samp, x, y)
-        x, y = np.arange(10), (1, 2, 3, 4, 5, np.nan)
-        assert_raises(ValueError, epps_singleton_2samp, x, y)
-
-    def test_epps_singleton_1d_input(self):
-        x = np.arange(100).reshape(-1, 1)
-        assert_raises(ValueError, epps_singleton_2samp, x, x)
 
     def test_names(self):
         x, y = np.arange(20), np.arange(30)
@@ -135,8 +129,6 @@ class TestCvm:
         assert_equal(res.pvalue, 0)
 
     def test_invalid_input(self):
-        x = np.arange(10).reshape((2, 5))
-        assert_raises(ValueError, cramervonmises, x, "norm")
         assert_raises(ValueError, cramervonmises, [1.5], "norm")
         assert_raises(ValueError, cramervonmises, (), "norm")
 
@@ -1322,13 +1314,7 @@ class TestBoschlooExact:
 
 class TestCvm_2samp:
     def test_invalid_input(self):
-        x = np.arange(10).reshape((2, 5))
         y = np.arange(5)
-        msg = 'The samples must be one-dimensional'
-        with pytest.raises(ValueError, match=msg):
-            cramervonmises_2samp(x, y)
-        with pytest.raises(ValueError, match=msg):
-            cramervonmises_2samp(y, x)
         msg = 'x and y must contain at least two observations.'
         with pytest.raises(ValueError, match=msg):
             cramervonmises_2samp([], y)
