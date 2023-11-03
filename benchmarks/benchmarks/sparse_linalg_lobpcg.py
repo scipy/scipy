@@ -75,7 +75,7 @@ class Bench(Benchmark):
             c = cholesky_banded(self.Ab.astype(np.float32))
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                _, _ = lobpcg(self.Ac, X, self.Bc, M=a, tol=1e-4,
+                lobpcg(self.Ac, X, self.Bc, M=a, tol=1e-4,
                                maxiter=40, largest=False)
         elif solver == 'eigsh':
             # `eigsh` ARPACK here is called on ``Bx = 1/lambda Ax``
@@ -88,13 +88,13 @@ class Bench(Benchmark):
             A = LinearOperator((n, n), matvec=self.Ac, matmat=self.Ac, dtype='float64')
             c = cholesky_banded(self.Ab)
             a_l = LinearOperator((n, n), matvec=a, matmat=a, dtype='float64')
-            _, _ = eigsh(B, k=m, M=A, Minv=a_l, which='LA', tol=1e-4, maxiter=50,
+            eigsh(B, k=m, M=A, Minv=a_l, which='LA', tol=1e-4, maxiter=50,
                           v0 = rng.normal(size=(n, 1)))
         else:
             # `eigh` is the only dense eigensolver for generalized eigenproblems
             # ``Ax = lambda Bx`` and needs both matrices as dense arrays
             # making it very slow for large matrix sizes
-            _, _ = eigh(self.Aa, self.Ba, subset_by_index=(0, m - 1))
+            eigh(self.Aa, self.Ba, subset_by_index=(0, m - 1))
 
     def time_sakurai(self, n, solver):
         # the Sakurai matrix ``A`` is ill-conditioned so convergence of both
@@ -107,13 +107,13 @@ class Bench(Benchmark):
         if solver == 'lobpcg':
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                _, _ = lobpcg(self.A, X, tol=1e-9, maxiter=5000, largest=False)
+                lobpcg(self.A, X, tol=1e-9, maxiter=5000, largest=False)
         elif solver == 'eigsh':
             a_l = LinearOperator((n, n), matvec=self.A, matmat=self.A, dtype='float64')
-            _, _ = eigsh(a_l, k=m, which='SA', tol=1e-9, maxiter=15000,
+            eigsh(a_l, k=m, which='SA', tol=1e-9, maxiter=15000,
                           v0 = rng.normal(size=(n, 1)))
         else:
-            _, _ = eigh(self.Aa, subset_by_index=(0, m - 1))
+            eigh(self.Aa, subset_by_index=(0, m - 1))
 
     def time_sakurai_inverse(self, n, solver):
         # apply inverse iterations in  `lobpcg` and `eigsh` ARPACK
@@ -128,11 +128,11 @@ class Bench(Benchmark):
             c = cholesky_banded(self.A)
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                _, _ = lobpcg(a, X, tol=1e-9, maxiter=8)
+                lobpcg(a, X, tol=1e-9, maxiter=8)
         elif solver == 'eigsh':
             c = cholesky_banded(self.A)
             a_l = LinearOperator((n, n), matvec=a, matmat=a, dtype='float64')
-            _, _ = eigsh(a_l, k=m, which='LA', tol=1e-9, maxiter=8,
+            eigsh(a_l, k=m, which='LA', tol=1e-9, maxiter=8,
                           v0 = rng.normal(size=(n, 1)))
         else:
-            _, _ = eig_banded(self.A, select='i', select_range=[0, m-1])
+            eig_banded(self.A, select='i', select_range=[0, m-1])
