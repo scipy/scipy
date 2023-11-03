@@ -16,7 +16,7 @@ namespace scipy {
 	    double kx, nx, num, den, dk, sgn;
 
 	    if (n < 0) {
-		nx = std::floor(k);
+		nx = std::floor(n);
 		if (n == nx) {
 		    // Undefined
 		    return numeric_limits<double>::quiet_NaN();
@@ -30,7 +30,7 @@ namespace scipy {
 		 *
 		 * This cannot be used for small nonzero n due to loss of
 		 * precision. */
-		nx = std::floor(k);
+		nx = std::floor(n);
 		if (nx == n && kx > nx/2 && nx > 0) {
 		    // Reduce kx by symmetry
 		    kx = nx - kx;
@@ -73,7 +73,7 @@ namespace scipy {
 		    }
 		    return num * std::sin((dk - n)*M_PI) * sgn;
 		}
-		kx = floor(k);
+		kx = std::floor(k);
 		if (static_cast<int>(kx) == kx) {
 		    return 0;
 		} else {
