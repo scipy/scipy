@@ -14,6 +14,7 @@ from scipy import sparse
 from scipy.linalg import eig, eigh, toeplitz, orth
 from scipy.sparse import spdiags, diags, eye, csr_matrix
 from scipy.sparse.linalg import eigs, LinearOperator
+from scipy.sparse.linalg._special_sparse_arrays import MikotaPair
 from scipy.sparse.linalg._eigen.lobpcg import lobpcg
 from scipy.sparse.linalg._eigen.lobpcg.lobpcg import _b_orthonormalize
 from scipy._lib._util import np_long, np_ulong
@@ -52,19 +53,6 @@ def ElasticRod(n):
     return A, B
 
 
-def MikotaPair(n):
-    """Build a pair of full diagonal matrices for the generalized eigenvalue
-    problem. The Mikota pair acts as a nice test since the eigenvalues are the
-    squares of the integers n, n=1,2,...
-    """
-    x = np.arange(1, n+1)
-    B = diag(1./x)
-    y = np.arange(n-1, 0, -1)
-    z = np.arange(2*n-1, 0, -2)
-    A = diag(z)-diag(y, -1)-diag(y, 1)
-    return A, B
-
-
 def compare_solutions(A, B, m):
     """Check eig vs. lobpcg consistency.
     """
@@ -83,9 +71,9 @@ def test_Small():
     A, B = ElasticRod(10)
     with pytest.warns(UserWarning, match="The problem size"):
         compare_solutions(A, B, 10)
-    A, B = MikotaPair(10)
+    mikota_pair = MikotaPair(10)
     with pytest.warns(UserWarning, match="The problem size"):
-        compare_solutions(A, B, 10)
+        compare_solutions(mikota_pair.k.toarray(), mikota_pair.m.toarray(), 10)
 
 
 def test_ElasticRod():
@@ -95,8 +83,8 @@ def test_ElasticRod():
 
 
 def test_MikotaPair():
-    A, B = MikotaPair(20)
-    compare_solutions(A, B, 2)
+    mikota_pair = MikotaPair(20)
+    compare_solutions(mikota_pair.k.toarray(), mikota_pair.m.toarray(), 2)
 
 
 @pytest.mark.parametrize("n", [50])
