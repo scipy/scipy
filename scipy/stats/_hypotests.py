@@ -26,6 +26,7 @@ Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
                                         ('statistic', 'pvalue'))
 
 
+@_axis_nan_policy_factory(Epps_Singleton_2sampResult, n_samples=2, too_small=4)
 def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
     """Compute the Epps-Singleton (ES) test statistic.
 
@@ -92,12 +93,9 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
        function", The Stata Journal 9(3), p. 454--465, 2009.
 
     """
-    x, y, t = np.asarray(x), np.asarray(y), np.asarray(t)
+    # x and y are converted to arrays by the decorator
+    t = np.asarray(t)
     # check if x and y are valid inputs
-    if x.ndim > 1:
-        raise ValueError(f'x must be 1d, but x.ndim equals {x.ndim}.')
-    if y.ndim > 1:
-        raise ValueError(f'y must be 1d, but y.ndim equals {y.ndim}.')
     nx, ny = len(x), len(y)
     if (nx < 5) or (ny < 5):
         raise ValueError('x and y should have at least 5 elements, but len(x) '

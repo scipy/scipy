@@ -71,6 +71,7 @@ axis_nan_policy_cases = [
      lambda res: (res.statistic, res.pvalue)),
     (stats.cramervonmises_2samp, tuple(), dict(), 2, 2, False,
      lambda res: (res.statistic, res.pvalue)),
+    (stats.epps_singleton_2samp, tuple(), dict(), 2, 2, False, None),
 ]
 
 # If the message is one of those expected, put nans in
