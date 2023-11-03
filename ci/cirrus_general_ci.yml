@@ -19,6 +19,9 @@ modified_clone: &MODIFIED_CLONE
       # However, if you do a PR against a maintenance branch we will want to
       # merge the PR into the maintenance branch, not main
       git checkout $CIRRUS_BASE_BRANCH
+    
+      # visualise the last 10 commits to aid git clone debugging.
+      git log -n10 --oneline
 
       # alpine git package needs default user.name and user.email to be set before a merge
       git -c user.email="you@example.com" merge --no-commit pull/$CIRRUS_PR

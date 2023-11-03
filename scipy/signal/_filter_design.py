@@ -478,7 +478,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
         h = (npp_polyval(zm1, b, tensor=False) /
              npp_polyval(zm1, a, tensor=False))
 
-    w = w*fs/(2*pi)
+    w = w*(fs/(2*pi))
 
     if plot is not None:
         plot(w, h)
@@ -588,7 +588,7 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=2*pi):
     zm1 = exp(1j * w)
     h = k * polyvalfromroots(zm1, z) / polyvalfromroots(zm1, p)
 
-    w = w*fs/(2*pi)
+    w = w*(fs/(2*pi))
 
     return w, h
 
@@ -708,7 +708,7 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
             stacklevel=2
         )
 
-    w = w*fs/(2*pi)
+    w = w*(fs/(2*pi))
 
     return w, gd
 

@@ -10,6 +10,14 @@ from itertools import permutations
 import pickle
 import copy
 
+def basis_vec(axis):
+    if axis == 'x':
+        return [1, 0, 0]
+    elif axis == 'y':
+        return [0, 1, 0]
+    elif axis == 'z':
+        return [0, 0, 1]
+
 def test_generic_quat_matrix():
     x = np.array([[3, 4, 0, 0], [5, 12, 0, 0]])
     r = Rotation.from_quat(x)
@@ -1727,3 +1735,175 @@ def test_len_and_bool():
     assert rotation_multi_one
     assert rotation_multi
     assert rotation_single
+
+
+def test_from_davenport_single_rotation():
+    axis = [0, 0, 1]
+    quat = Rotation.from_davenport(axis, 'extrinsic', 90, 
+                                   degrees=True).as_quat()
+    expected_quat = np.array([0, 0, 1, 1]) / np.sqrt(2)
+    assert_allclose(quat, expected_quat)
+
+
+def test_from_davenport_one_or_two_axes():
+    ez = [0, 0, 1]
+    ey = [0, 1, 0]
+
+    # Single rotation, single axis, axes.shape == (3, )
+    rot = Rotation.from_rotvec(np.array(ez) * np.pi/4)
+    rot_dav = Rotation.from_davenport(ez, 'e', np.pi/4)
+    assert_allclose(rot.as_quat(canonical=True),
+                    rot_dav.as_quat(canonical=True))
+
+    # Single rotation, single axis, axes.shape == (1, 3)
+    rot = Rotation.from_rotvec([np.array(ez) * np.pi/4])
+    rot_dav = Rotation.from_davenport([ez], 'e', [np.pi/4])
+    assert_allclose(rot.as_quat(canonical=True),
+                    rot_dav.as_quat(canonical=True))
+    
+    # Single rotation, two axes, axes.shape == (2, 3)
+    rot = Rotation.from_rotvec([np.array(ez) * np.pi/4, 
+                                np.array(ey) * np.pi/6])
+    rot = rot[0] * rot[1]
+    rot_dav = Rotation.from_davenport([ey, ez], 'e', [np.pi/6, np.pi/4])
+    assert_allclose(rot.as_quat(canonical=True),
+                    rot_dav.as_quat(canonical=True))
+    
+    # Two rotations, single axis, axes.shape == (3, )
+    rot = Rotation.from_rotvec([np.array(ez) * np.pi/6, 
+                                np.array(ez) * np.pi/4])
+    rot_dav = Rotation.from_davenport([ez], 'e', [np.pi/6, np.pi/4])
+    assert_allclose(rot.as_quat(canonical=True),
+                    rot_dav.as_quat(canonical=True))
+
+
+def test_from_davenport_invalid_input():
+    ez = [0, 0, 1]
+    ey = [0, 1, 0]
+    ezy = [0, 1, 1]
+    with pytest.raises(ValueError, match="must be orthogonal"):
+        Rotation.from_davenport([ez, ezy], 'e', [0, 0])
+    with pytest.raises(ValueError, match="must be orthogonal"):
+        Rotation.from_davenport([ez, ey, ezy], 'e', [0, 0, 0])
+    with pytest.raises(ValueError, match="order should be"):
+        Rotation.from_davenport([ez], 'xyz', [0])
+    with pytest.raises(ValueError, match="Expected `angles`"):
+        Rotation.from_davenport([ez, ey, ez], 'e', [0, 1, 2, 3])
+
+
+def test_as_davenport():
+    rnd = np.random.RandomState(0)
+    n = 100
+    angles = np.empty((n, 3))
+    angles[:, 0] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
+    angles_middle = rnd.uniform(low=0, high=np.pi, size=(n,))
+    angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
+    lambdas = rnd.uniform(low=0, high=np.pi, size=(20,))
+
+    e1 = np.array([1, 0, 0])
+    e2 = np.array([0, 1, 0])
+
+    for lamb in lambdas:
+        ax_lamb = [e1, e2, Rotation.from_rotvec(lamb*e2).apply(e1)]
+        angles[:, 1] = angles_middle - lamb
+        for order in ['extrinsic', 'intrinsic']:
+            ax = ax_lamb if order == 'intrinsic' else ax_lamb[::-1]
+            rot = Rotation.from_davenport(ax, order, angles)
+            angles_dav = rot.as_davenport(ax, order)
+            assert_allclose(angles_dav, angles)
+
+
+def test_as_davenport_degenerate():
+    # Since we cannot check for angle equality, we check for rotation matrix
+    # equality
+    rnd = np.random.RandomState(0)
+    n = 5
+    angles = np.empty((n, 3))
+
+    # symmetric sequences
+    angles[:, 0] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
+    angles_middle = [rnd.choice([0, np.pi]) for i in range(n)]
+    angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
+    lambdas = rnd.uniform(low=0, high=np.pi, size=(5,))
+
+    e1 = np.array([1, 0, 0])
+    e2 = np.array([0, 1, 0])
+
+    for lamb in lambdas:
+        ax_lamb = [e1, e2, Rotation.from_rotvec(lamb*e2).apply(e1)]
+        angles[:, 1] = angles_middle - lamb
+        for order in ['extrinsic', 'intrinsic']:
+            ax = ax_lamb if order == 'intrinsic' else ax_lamb[::-1]
+            rot = Rotation.from_davenport(ax, order, angles)
+            with pytest.warns(UserWarning, match="Gimbal lock"):
+                angles_dav = rot.as_davenport(ax, order)
+            mat_expected = rot.as_matrix()
+            mat_estimated = Rotation.from_davenport(ax, order, angles_dav).as_matrix()
+            assert_array_almost_equal(mat_expected, mat_estimated)
+
+
+def test_compare_from_davenport_from_euler():
+    rnd = np.random.RandomState(0)
+    n = 100
+    angles = np.empty((n, 3))
+
+    # symmetric sequences
+    angles[:, 0] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
+    angles[:, 1] = rnd.uniform(low=0, high=np.pi, size=(n,))
+    angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
+    for order in ['extrinsic', 'intrinsic']:
+        for seq_tuple in permutations('xyz'):
+            seq = ''.join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
+            ax = [basis_vec(i) for i in seq]
+            if order == 'intrinsic':
+                seq = seq.upper()
+            eul = Rotation.from_euler(seq, angles)
+            dav = Rotation.from_davenport(ax, order, angles)
+            assert_allclose(eul.as_quat(canonical=True), dav.as_quat(canonical=True), 
+                            rtol=1e-12)
+
+    # asymmetric sequences
+    angles[:, 1] -= np.pi / 2
+    for order in ['extrinsic', 'intrinsic']:
+        for seq_tuple in permutations('xyz'):
+            seq = ''.join(seq_tuple)
+            ax = [basis_vec(i) for i in seq]
+            if order == 'intrinsic':
+                seq = seq.upper()
+            eul = Rotation.from_euler(seq, angles)
+            dav = Rotation.from_davenport(ax, order, angles)
+            assert_allclose(eul.as_quat(), dav.as_quat(), rtol=1e-12)
+
+
+def test_compare_as_davenport_as_euler():
+    rnd = np.random.RandomState(0)
+    n = 100
+    angles = np.empty((n, 3))
+
+    # symmetric sequences
+    angles[:, 0] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
+    angles[:, 1] = rnd.uniform(low=0, high=np.pi, size=(n,))
+    angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
+    for order in ['extrinsic', 'intrinsic']:
+        for seq_tuple in permutations('xyz'):
+            seq = ''.join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
+            ax = [basis_vec(i) for i in seq]
+            if order == 'intrinsic':
+                seq = seq.upper()
+            rot = Rotation.from_euler(seq, angles)
+            eul = rot.as_euler(seq)
+            dav = rot.as_davenport(ax, order)
+            assert_allclose(eul, dav, rtol=1e-12)
+
+    # asymmetric sequences
+    angles[:, 1] -= np.pi / 2
+    for order in ['extrinsic', 'intrinsic']:
+        for seq_tuple in permutations('xyz'):
+            seq = ''.join(seq_tuple)
+            ax = [basis_vec(i) for i in seq]
+            if order == 'intrinsic':
+                seq = seq.upper()
+            rot = Rotation.from_euler(seq, angles)
+            eul = rot.as_euler(seq)
+            dav = rot.as_davenport(ax, order)
+            assert_allclose(eul, dav, rtol=1e-12)
