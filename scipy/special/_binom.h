@@ -74,9 +74,8 @@ namespace scipy {
 		kx = std::floor(k);
 		if (static_cast<int>(kx) == kx) {
 		    return 0;
-		} else {
-		    return num * std::sin(k*M_PI);
 		}
+		return num * std::sin(k*M_PI);
 	    }
 	    return 1/(n + 1)/cephes::beta(1 + n - k, 1 + k);
 	}
