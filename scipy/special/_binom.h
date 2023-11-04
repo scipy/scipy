@@ -7,8 +7,6 @@
 #include "cephes.hh"
 
 
-using std::numeric_limits;
-
 namespace scipy {
     namespace special {
 
@@ -19,7 +17,7 @@ namespace scipy {
 		nx = std::floor(n);
 		if (n == nx) {
 		    // Undefined
-		    return numeric_limits<double>::quiet_NaN();
+		    return std::numeric_limits<double>::quiet_NaN();
 		}
 	    }
 
