@@ -15,7 +15,7 @@
 namespace scipy {
     namespace special {
 	namespace cephes {
-	    namespace cephes_internal {
+	    namespace detail {
 
 #include "cephes.h"
 
@@ -140,15 +140,15 @@ namespace scipy {
 	    // Functions are being added as needed.
 
 	    inline double beta(double a, double b) {
-		return cephes_internal::cephes_beta(a, b);
+		return detail::cephes_beta(a, b);
 	    }
 
 	    inline double lbeta(double a, double b) {
-		return cephes_internal::cephes_lbeta(a, b);
+		return detail::cephes_lbeta(a, b);
 	    }
 
 	    inline double Gamma(double x) {
-		return cephes_internal::cephes_Gamma(x);
+		return detail::cephes_Gamma(x);
 	    }
 
 	}
