@@ -11009,6 +11009,35 @@ def expectile(a, alpha=0.5, *, weights=None):
     res = root_scalar(first_order, x0=x0, x1=x1)
     return res.root
 
+def lmoments_iv(sample, n_moments, axis, sorted, standardize):
+    # If n_moments is invalid, passing `dtype=int` would make `asarray` fail.
+    # We want to raise a more readable error message.
+
+    n_moments_int = np.asarray(n_moments).astype(int, copy=False)[()]
+    message = "`n_moments` must be a positive integer."
+    if n_moments_int.ndim != 0 or n_moments_int <= 0 or n_moments_int != n_moments:
+        raise ValueError(message)
+
+    axis_int = np.asarray(axis).astype(int, copy=False)[()]
+    message = "`axis` must be an integer."
+    if axis_int.ndim != 0 or axis_int != axis:
+        raise ValueError(message)
+
+    sorted_bool = np.asarray(sorted).astype(bool, copy=False)[()]
+    message = "`sorted` must be True or False."
+    if sorted_bool.ndim != 0 or sorted_bool != sorted:
+        raise ValueError(message)
+
+    standardize_bool = np.asarray(standardize).astype(bool, copy=False)[()]
+    message = "`standardize` must be True or False."
+    if standardize_bool.ndim != 0 or standardize_bool != standardize:
+        raise ValueError(message)
+
+    sample = np.moveaxis(sample, axis, -1)
+    sample = np.sort(sample, axis=-1) if not sorted else sample
+
+    return sample, n_moments_int, axis_int, sorted_bool, standardize_bool
+
 def _br(x, *, r=0):
     n = x.shape[-1]
     x = np.expand_dims(x, axis=-2)
@@ -11020,7 +11049,7 @@ def _br(x, *, r=0):
 def _prk(r, k):
     return (-1)**(r-k)*special.binom(r, k)*special.binom(r+k, k)
 
-def lmoment(sample, n_moments=4, *, axis=0, sorted=False, ratios=True):
+def lmoment(sample, n_moments=4, *, axis=0, sorted=False, standardize=True):
     r"""Compute sample L-moments.
 
     The L-moments of a probability distribution are summary statistics with
@@ -11040,7 +11069,7 @@ def lmoment(sample, n_moments=4, *, axis=0, sorted=False, ratios=True):
         The axis along which to compute L-moments.
     sorted : bool, default=False
         Whether `sample` is sorted in increasing order along `axis`.
-    ratios : bool, default=True
+    standardize : bool, default=True
         Whether to return L-moment ratios for orders 3 and higher.
         L-moment ratios are analogous to standardized conventional
         moments: they are the non-standardized L-moments divided
@@ -11055,6 +11084,11 @@ def lmoment(sample, n_moments=4, *, axis=0, sorted=False, ratios=True):
     --------
     moment
 
+    References
+    ----------
+    D. Bilkova. "L-Moments and TL-Moments as an Alternative Tool of Statistical Data Analysis".
+    Journal of Applied Mathematics and Physics. 2014. :doi:`10.4236/jamp.2014.210104`
+
     Examples
     --------
     >>> import numpy as np
@@ -11068,17 +11102,22 @@ def lmoment(sample, n_moments=4, *, axis=0, sorted=False, ratios=True):
     exponential distribution are 1, 1/2, 1/3, and 1/6; the sample L-moments
     provide reasonable estimates.
 
-
-
-
     """
     # Needs input validation and tests
-    x = np.moveaxis(sample, axis, -1)
-    x = np.sort(x, axis=-1) if not sorted else x
+
+    args = lmoments_iv(sample, n_moments, axis, sorted, standardize)
+    sample, n_moments, axis, sorted, standardize = args
+
     k = np.arange(n_moments, dtype=np.float64)
-    prk = _prk(np.expand_dims(k, list(range(1, x.ndim+1))), k)
-    bk = _br(x, r=k)
+    prk = _prk(np.expand_dims(k, list(range(1, sample.ndim+1))), k)
+    bk = _br(sample, r=k)
+
+    n = sample.shape[-1]
+    bk[..., n:] = 0  # remove NaNs due to n_moments > n
+
     lmoms = np.sum(prk * bk, axis=-1)
-    if ratios:
+    if standardize:
         lmoms[2:] /= lmoms[1]
+
+    lmoms[n:] = np.nan  # add NaNs where appropriate
     return lmoms
