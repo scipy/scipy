@@ -1818,7 +1818,8 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         xouter.pop(axis)
         youter.pop(axis)
         try:
-            outershape = xp.broadcast(xp.empty(xouter), xp.empty(youter)).shape
+            outershape = xp.broadcast_arrays(xp.empty(xouter),
+                                             xp.empty(youter))[0].shape
         except ValueError as e:
             raise ValueError('x and y cannot be broadcast together.') from e
 
@@ -1843,11 +1844,11 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
             if x.shape[-1] < y.shape[-1]:
                 pad_shape = list(x.shape)
                 pad_shape[-1] = y.shape[-1] - x.shape[-1]
-                x = xp.concatenate((x, xp.zeros(pad_shape)), -1)
+                x = xp.concat((x, xp.zeros(pad_shape)), axis=-1)
             else:
                 pad_shape = list(y.shape)
                 pad_shape[-1] = x.shape[-1] - y.shape[-1]
-                y = xp.concatenate((y, xp.zeros(pad_shape)), -1)
+                y = xp.concat((y, xp.zeros(pad_shape)), axis=-1)
 
     if nperseg is not None:  # if specified by user
         nperseg = int(nperseg)

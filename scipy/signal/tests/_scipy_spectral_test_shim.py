@@ -29,6 +29,7 @@ from scipy.signal._arraytools import const_ext, even_ext, odd_ext, zero_ext
 from scipy.signal._short_time_fft import FFT_MODE_TYPE
 from scipy.signal._spectral_py import _spectral_helper, _triage_segments, \
     _median_bias
+from scipy._lib._array_api import array_namespace, is_complex
 
 
 def _stft_wrapper(x, fs=1.0, window='hann', nperseg=256, noverlap=None,
@@ -300,14 +301,15 @@ def _spect_helper_csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     for testing the ShortTimeFFT implementation.
     """
 
+    xp = array_namespace(x)
     # The following lines are taken from the original _spectral_helper():
     same_data = y is x
     axis = int(axis)
 
     # Ensure we have np.arrays, get outdtype
-    x = np.asarray(x)
+    x = xp.asarray(x)
     if not same_data:
-        y = np.asarray(y)
+        y = xp.asarray(y)
     #     outdtype = np.result_type(x, y, np.complex64)
     # else:
     #     outdtype = np.result_type(x, np.complex64)
@@ -356,7 +358,7 @@ def _spect_helper_csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         raise ValueError('noverlap must be less than nperseg.')
     nstep = nperseg - noverlap
 
-    if np.iscomplexobj(x) and return_onesided:
+    if is_complex(x, xp=xp) and return_onesided:
         return_onesided = False
 
     # using cast() to make mypy happy:
