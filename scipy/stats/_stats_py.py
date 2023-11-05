@@ -94,7 +94,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
            'rankdata', 'combine_pvalues', 'quantile_test',
            'wasserstein_distance', 'energy_distance',
            'brunnermunzel', 'alexandergovern',
-           'expectile']
+           'expectile', 'lmoment']
 
 
 def _chk_asarray(a, axis):
@@ -11008,3 +11008,77 @@ def expectile(a, alpha=0.5, *, weights=None):
     # finding a wrong root.
     res = root_scalar(first_order, x0=x0, x1=x1)
     return res.root
+
+def _br(x, *, r=0):
+    n = x.shape[-1]
+    x = np.expand_dims(x, axis=-2)
+    x = np.broadcast_to(x, x.shape[:-2] + (len(r), n))
+    x = np.triu(x)
+    j = np.arange(n)
+    return np.sum(special.binom(j, r[:, np.newaxis])*x, axis=-1) / special.binom(n-1, r) / n
+
+def _prk(r, k):
+    return (-1)**(r-k)*special.binom(r, k)*special.binom(r+k, k)
+
+def lmoment(sample, n_moments=4, *, axis=0, sorted=False, ratios=True):
+    r"""Compute sample L-moments.
+
+    The L-moments of a probability distribution are summary statistics with
+    uses similar to those of conventional moments, but they are defined in
+    terms of the expected value of order statistics.
+    Sample L-moments are defined analogously to population L-moments, and
+    they can serve as estimators of population L-moments. They tend to be less
+    sensitive to extreme observations than conventional moments.
+
+    Parameters
+    ----------
+    sample : array_like
+        Array containing numbers whose expectile is desired.
+    n_moments : int
+        The number of moments to compute.
+    axis : int
+        The axis along which to compute L-moments.
+    sorted : bool, default=False
+        Whether `sample` is sorted in increasing order along `axis`.
+    ratios : bool, default=True
+        Whether to return L-moment ratios for orders 3 and higher.
+        L-moment ratios are analogous to standardized conventional
+        moments: they are the non-standardized L-moments divided
+        by the L-moment of order 2.
+
+    Returns
+    -------
+    lmoments : ndarray
+        The sample L-moments of orders 1 through `n_moments`.
+
+    See Also
+    --------
+    moment
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> rng = np.random.default_rng(328458568356392)
+    >>> sample = rng.exponential(size=100000)
+    >>> stats.lmoment(sample)
+    array([1.00124272, 0.50111437, 0.3340092 , 0.16755338])
+
+    Note that the first four standardized population L-moments of the standard
+    exponential distribution are 1, 1/2, 1/3, and 1/6; the sample L-moments
+    provide reasonable estimates.
+
+
+
+
+    """
+    # Needs input validation and tests
+    x = np.moveaxis(sample, axis, -1)
+    x = np.sort(x, axis=-1) if not sorted else x
+    k = np.arange(n_moments, dtype=np.float64)
+    prk = _prk(np.expand_dims(k, list(range(1, x.ndim+1))), k)
+    bk = _br(x, r=k)
+    lmoms = np.sum(prk * bk, axis=-1)
+    if ratios:
+        lmoms[2:] /= lmoms[1]
+    return lmoms
