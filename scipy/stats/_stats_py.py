@@ -11013,30 +11013,32 @@ def lmoments_iv(sample, n_moments, axis, sorted, standardize):
     # If n_moments is invalid, passing `dtype=int` would make `asarray` fail.
     # We want to raise a more readable error message.
 
-    n_moments_int = np.asarray(n_moments).astype(int, copy=False)[()]
+    n_moments = np.asarray(n_moments)[()]
     message = "`n_moments` must be a positive integer."
-    if n_moments_int.ndim != 0 or n_moments_int <= 0 or n_moments_int != n_moments:
+    if (not np.issubdtype(n_moments.dtype, np.integer) or n_moments.ndim != 0
+            or n_moments <= 0):
         raise ValueError(message)
 
-    axis_int = np.asarray(axis).astype(int, copy=False)[()]
+    axis = np.asarray(axis)[()]
     message = "`axis` must be an integer."
-    if axis_int.ndim != 0 or axis_int != axis:
+    if not np.issubdtype(axis.dtype, np.integer) or axis.ndim != 0:
         raise ValueError(message)
 
-    sorted_bool = np.asarray(sorted).astype(bool, copy=False)[()]
+    sorted = np.asarray(sorted)[()]
     message = "`sorted` must be True or False."
-    if sorted_bool.ndim != 0 or sorted_bool != sorted:
+    if not np.issubdtype(sorted.dtype, np.bool_) or sorted.ndim != 0:
         raise ValueError(message)
 
-    standardize_bool = np.asarray(standardize).astype(bool, copy=False)[()]
+    standardize = np.asarray(standardize)[()]
     message = "`standardize` must be True or False."
-    if standardize_bool.ndim != 0 or standardize_bool != standardize:
+    if not np.issubdtype(standardize.dtype, np.bool_) or standardize.ndim != 0:
         raise ValueError(message)
 
     sample = np.moveaxis(sample, axis, -1)
     sample = np.sort(sample, axis=-1) if not sorted else sample
 
-    return sample, n_moments_int, axis_int, sorted_bool, standardize_bool
+    return sample, n_moments, axis, sorted, standardize
+
 
 def _br(x, *, r=0):
     n = x.shape[-1]
@@ -11046,9 +11048,15 @@ def _br(x, *, r=0):
     j = np.arange(n)
     return np.sum(special.binom(j, r[:, np.newaxis])*x, axis=-1) / special.binom(n-1, r) / n
 
+
 def _prk(r, k):
     return (-1)**(r-k)*special.binom(r, k)*special.binom(r+k, k)
 
+
+@_axis_nan_policy_factory(  # noqa: E302
+    _moment_result_object, n_samples=1, result_to_tuple=lambda x: (x,),
+    n_outputs=lambda kwds: kwds.get('n_moments', 4)
+)
 def lmoment(sample, n_moments=4, *, axis=0, sorted=False, standardize=True):
     r"""Compute sample L-moments.
 
@@ -11116,8 +11124,10 @@ def lmoment(sample, n_moments=4, *, axis=0, sorted=False, standardize=True):
     bk[..., n:] = 0  # remove NaNs due to n_moments > n
 
     lmoms = np.sum(prk * bk, axis=-1)
-    if standardize:
+    if standardize and n_moments > 2:
         lmoms[2:] /= lmoms[1]
 
     lmoms[n:] = np.nan  # add NaNs where appropriate
+    if n_moments == 1:
+        lmoms = lmoms[0]
     return lmoms

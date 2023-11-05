@@ -8564,3 +8564,65 @@ class TestExpectile:
         for alpha in np.r_[0, alpha_seq, 1 - alpha_seq[:-1:-1], 1]:
             e_list.append(stats.expectile(x, alpha=alpha))
         assert np.all(np.diff(e_list) > 0)
+
+
+class TestLMoment:
+    # data from https://github.com/scipy/scipy/issues/19460
+    data = [0.87, 0.87, 1.29, 1.5, 1.7, 0.66, 1.5, 0.5, 1., 1.25, 2.3,
+            1.03, 2.85, 0.68, 1.74, 1.94, 0.63, 2.04, 1.2, 0.64, 2.05, 0.97,
+            2.81, 1.02, 2.76, 0.86, 1.36, 1.29, 1.68, 0.72, 1.67, 1.15, 3.26,
+            0.93, 0.83, 0.91, 0.92, 2.32, 1.12, 3.21, 1.23, 1.22, 1.29, 2.08,
+            0.64, 2.83, 2.68, 1.77, 0.69, 1.69, 0.7, 1.83, 2.25, 1.23, 1.17,
+            0.94, 1.22, 0.76, 0.69, 0.48, 1.04, 2.49, 1.38, 1.57, 1.79, 1.59,
+            1.3, 1.54, 1.07, 1.03, 0.76, 2.35, 2.05, 2.02, 2.36, 1.59, 0.97,
+            1.63, 1.66, 0.94, 1.45, 1.26, 1.25, 0.68, 2.96, 0.8, 1.16, 0.82,
+            0.64, 0.87, 1.33, 1.28, 1.26, 1.19, 1.24, 1.12, 1.45, 1.03, 1.37,
+            1.4, 1.35, 1.28, 1.04, 1.31, 0.87, 0.96, 2.55, 1.72, 1.05, 1.15,
+            1.73, 1.03, 1.53, 2.41, 1.36, 2.08, 0.92, 0.73, 1.56, 1.94, 0.78]
+
+    not_integers = [1.5, [1, 2, 3.5], np.nan, np.inf, 'a duck']
+
+    @pytest.mark.parametrize('n_moments', not_integers + [0])
+    def test_n_moments_iv(self, n_moments):
+        message = 'n_moments` must be a positive integer.'
+        with pytest.raises(ValueError, match=message):
+            stats.lmoment(self.data, n_moments=n_moments)
+
+    @pytest.mark.parametrize('axis', not_integers)
+    def test_axis_iv(self, axis):
+        message = 'axis` must be an integer, a tuple'
+        with pytest.raises(ValueError, match=message):
+            stats.lmoment(self.data, axis=axis)
+
+    @pytest.mark.parametrize('sorted', not_integers)
+    def test_sorted_iv(self, sorted):
+        message = 'sorted` must be True or False.'
+        with pytest.raises(ValueError, match=message):
+            stats.lmoment(self.data, sorted=sorted)
+
+    @pytest.mark.parametrize('standardize', not_integers)
+    def test_standardize_iv(self, standardize):
+        message = 'standardize` must be True or False.'
+        with pytest.raises(ValueError, match=message):
+            stats.lmoment(self.data, standardize=standardize)
+
+    @pytest.mark.parametrize('n_moments', [1, 2, 3, 4])
+    @pytest.mark.parametrize('standardize', [False, True])
+    @pytest.mark.parametrize('sorted', [False, True])
+    def test_lmoment(self, n_moments, standardize, sorted):
+        # Reference values from R package `lmom`
+        # options(digits=16)
+        # library(lmom)
+        # data= c(0.87, 0.87,..., 1.94, 0.78)
+        # samlmu(data)
+        ref = np.asarray([1.4087603305785130, 0.3415936639118458,
+                          0.2189964482831403, 0.1328186463415905])
+
+        if not standardize:
+            ref[2:] *= ref[1]
+
+        data = np.sort(self.data) if sorted else self.data
+
+        res = stats.lmoment(data, n_moments,
+                            standardize=standardize, sorted=sorted)
+        assert_allclose(res, ref[:n_moments])
