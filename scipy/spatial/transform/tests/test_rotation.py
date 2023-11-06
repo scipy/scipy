@@ -701,7 +701,7 @@ def test_as_euler_degenerate_asymmetric_axes(seq_tuple, intrinsic):
     seq = "".join(seq_tuple)
     if intrinsic:
         # Extrinsic rotation (wrt to global world at lower case
-        # Intrinsic (WRT the object itself) lower case.
+        # Intrinsic (WRT the object itself) upper case.
         seq = seq.upper()
     rotation = Rotation.from_euler(seq, angles, degrees=True)
     mat_expected = rotation.as_matrix()
@@ -729,7 +729,7 @@ def test_as_euler_degenerate_symmetric_axes(seq_tuple, intrinsic):
     seq = "".join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
     if intrinsic:
         # Extrinsic rotation (wrt to global world at lower case
-        # Intrinsic (WRT the object itself) lower case.
+        # Intrinsic (WRT the object itself) upper case.
         seq = seq.upper()
     rotation = Rotation.from_euler(seq, angles, degrees=True)
     mat_expected = rotation.as_matrix()
@@ -757,7 +757,7 @@ def test_as_euler_degenerate_compare_algorithms(seq_tuple, intrinsic):
     seq = "".join(seq_tuple)
     if intrinsic:
         # Extrinsic rotation (wrt to global world at lower case
-        # Intrinsic (WRT the object itself) lower case.
+        # Intrinsic (WRT the object itself) upper case.
         seq = seq.upper()
 
     rot = Rotation.from_euler(seq, angles, degrees=True)
@@ -783,12 +783,11 @@ def test_as_euler_degenerate_compare_algorithms(seq_tuple, intrinsic):
 
     idx = angles[:, 1] == 0  # find problematic angles indices
 
-    # Rotation of the form A/B/A are rotation around symmetric
-    # Axes
+    # Rotation of the form A/B/A are rotation around symmetric axes
     seq = "".join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
     if intrinsic:
         # Extrinsinc rotation (wrt to global world at lower case
-        # Intrinsic (WRT the object itself) lower case.
+        # Intrinsic (WRT the object itself) upper case.
         seq = seq.upper()
 
     rot = Rotation.from_euler(seq, angles, degrees=True)
