@@ -4,7 +4,8 @@
 PEP8 and SciPy
 ==============
 
-All SciPy Python code should adhere to `PEP8`_ style guidelines. It’s so
+All SciPy Python code should adhere to `PEP8`_ style guidelines, with the exception
+that line length should be limited to 88 characters rather than 79. It's so
 important that some continuous integration tests on GitHub will fail due
 to certain PEP8 violations. Here are a few tips for ensuring PEP8
 compliance before pushing your code:
@@ -22,7 +23,7 @@ compliance before pushing your code:
    checks.
 
 -  It is recommended to leave existing style issues alone
-   unless they exist in files you are already modifying.
+   unless they exist in lines of code you are already modifying.
    This practice ensures that the codebase is gradually cleaned up
    without dedicating precious review time to style-only cleanups.
 

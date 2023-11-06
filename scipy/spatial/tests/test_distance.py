@@ -60,6 +60,7 @@ from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     minkowski, rogerstanimoto,
                                     russellrao, seuclidean, sokalmichener,  # noqa: F401
                                     sokalsneath, sqeuclidean, yule)
+from scipy._lib._util import np_long, np_ulong
 
 
 @pytest.fixture(params=_METRICS_NAMES, scope="session")
@@ -127,8 +128,8 @@ def load_testing_files():
     eo['pdist-boolean-inp'] = np.bool_(eo['pdist-boolean-inp'])
     eo['random-bool-data'] = np.bool_(eo['random-bool-data'])
     eo['random-float32-data'] = np.float32(eo['random-double-data'])
-    eo['random-int-data'] = np.int_(eo['random-int-data'])
-    eo['random-uint-data'] = np.uint(eo['random-uint-data'])
+    eo['random-int-data'] = np_long(eo['random-int-data'])
+    eo['random-uint-data'] = np_ulong(eo['random-uint-data'])
 
 
 load_testing_files()
@@ -290,7 +291,7 @@ def _weight_checked(fn, n_args=2, default_axis=None, key=lambda x: x, weight_arg
             arrays = [np.atleast_1d(a.squeeze()) for a in arrays]
 
         try:
-            # WEIGHTS CHECK 1: EQUAL WEIGHTED OBESERVATIONS
+            # WEIGHTS CHECK 1: EQUAL WEIGHTED OBSERVATIONS
             args = tuple(arrays) + rest
             if ones_test:
                 kwargs[weight_arg] = weights
@@ -393,10 +394,10 @@ class TestCdist:
         self.rnd_eo_names = ['random-float32-data', 'random-int-data',
                              'random-uint-data', 'random-double-data',
                              'random-bool-data']
-        self.valid_upcasts = {'bool': [np.uint, np.int_, np.float32, np.double],
-                              'uint': [np.int_, np.float32, np.double],
-                              'int': [np.float32, np.double],
-                              'float32': [np.double]}
+        self.valid_upcasts = {'bool': [np_ulong, np_long, np.float32, np.float64],
+                              'uint': [np_long, np.float32, np.float64],
+                              'int': [np.float32, np.float64],
+                              'float32': [np.float64]}
 
     def test_cdist_extra_args(self, metric):
         # Tests that args and kwargs are correctly handled
@@ -561,11 +562,11 @@ class TestCdist:
 
             # Testing built-in metrics with extra args
             if metric == "seuclidean":
-                X12 = np.vstack([X1, X2]).astype(np.double)
+                X12 = np.vstack([X1, X2]).astype(np.float64)
                 V = np.var(X12, axis=0, ddof=1)
                 self._check_calling_conventions(X1, X2, metric, V=V)
             elif metric == "mahalanobis":
-                X12 = np.vstack([X1, X2]).astype(np.double)
+                X12 = np.vstack([X1, X2]).astype(np.float64)
                 V = np.atleast_2d(np.cov(X12.T))
                 VI = np.array(np.linalg.inv(V).T)
                 self._check_calling_conventions(X1, X2, metric, VI=VI)
@@ -607,7 +608,7 @@ class TestCdist:
         kwargs = dict()
         if metric == 'minkowski':
             kwargs['p'] = 1.23
-        out1 = np.empty((out_r, out_c), dtype=np.double)
+        out1 = np.empty((out_r, out_c), dtype=np.float64)
         Y1 = cdist(X1, X2, metric, **kwargs)
         Y2 = cdist(X1, X2, metric, out=out1, **kwargs)
 
@@ -618,14 +619,14 @@ class TestCdist:
         assert_(Y2 is out1)
 
         # test for incorrect shape
-        out2 = np.empty((out_r-1, out_c+1), dtype=np.double)
+        out2 = np.empty((out_r-1, out_c+1), dtype=np.float64)
         with pytest.raises(ValueError):
             cdist(X1, X2, metric, out=out2, **kwargs)
 
         # test for C-contiguous order
         out3 = np.empty(
-            (2 * out_r, 2 * out_c), dtype=np.double)[::2, ::2]
-        out4 = np.empty((out_r, out_c), dtype=np.double, order='F')
+            (2 * out_r, 2 * out_c), dtype=np.float64)[::2, ::2]
+        out4 = np.empty((out_r, out_c), dtype=np.float64, order='F')
         with pytest.raises(ValueError):
             cdist(X1, X2, metric, out=out3, **kwargs)
         with pytest.raises(ValueError):
@@ -688,10 +689,10 @@ class TestPdist:
         self.rnd_eo_names = ['random-float32-data', 'random-int-data',
                              'random-uint-data', 'random-double-data',
                              'random-bool-data']
-        self.valid_upcasts = {'bool': [np.uint, np.int_, np.float32, np.double],
-                              'uint': [np.int_, np.float32, np.double],
-                              'int': [np.float32, np.double],
-                              'float32': [np.double]}
+        self.valid_upcasts = {'bool': [np_ulong, np_long, np.float32, np.float64],
+                              'uint': [np_long, np.float32, np.float64],
+                              'int': [np.float32, np.float64],
+                              'float32': [np.float64]}
 
     def test_pdist_extra_args(self, metric):
         # Tests that args and kwargs are correctly handled
@@ -1487,10 +1488,10 @@ class TestPdist:
 
             # Testing built-in metrics with extra args
             if metric == "seuclidean":
-                V = np.var(X.astype(np.double), axis=0, ddof=1)
+                V = np.var(X.astype(np.float64), axis=0, ddof=1)
                 self._check_calling_conventions(X, metric, V=V)
             elif metric == "mahalanobis":
-                V = np.atleast_2d(np.cov(X.astype(np.double).T))
+                V = np.atleast_2d(np.cov(X.astype(np.float64).T))
                 VI = np.array(np.linalg.inv(V).T)
                 self._check_calling_conventions(X, metric, VI=VI)
 
@@ -1528,7 +1529,7 @@ class TestPdist:
         kwargs = dict()
         if metric == 'minkowski':
             kwargs['p'] = 1.23
-        out1 = np.empty(out_size, dtype=np.double)
+        out1 = np.empty(out_size, dtype=np.float64)
         Y_right = pdist(X, metric, **kwargs)
         Y_test1 = pdist(X, metric, out=out1, **kwargs)
 
@@ -1539,12 +1540,12 @@ class TestPdist:
         assert_(Y_test1 is out1)
 
         # test for incorrect shape
-        out2 = np.empty(out_size + 3, dtype=np.double)
+        out2 = np.empty(out_size + 3, dtype=np.float64)
         with pytest.raises(ValueError):
             pdist(X, metric, out=out2, **kwargs)
 
         # test for (C-)contiguous output
-        out3 = np.empty(2 * out_size, dtype=np.double)[::2]
+        out3 = np.empty(2 * out_size, dtype=np.float64)[::2]
         with pytest.raises(ValueError):
             pdist(X, metric, out=out3, **kwargs)
 
@@ -1805,21 +1806,21 @@ def is_valid_dm_throw(D):
 class TestIsValidDM:
 
     def test_is_valid_dm_improper_shape_1D_E(self):
-        D = np.zeros((5,), dtype=np.double)
+        D = np.zeros((5,), dtype=np.float64)
         with pytest.raises(ValueError):
             is_valid_dm_throw((D))
 
     def test_is_valid_dm_improper_shape_1D_F(self):
-        D = np.zeros((5,), dtype=np.double)
+        D = np.zeros((5,), dtype=np.float64)
         assert_equal(is_valid_dm(D), False)
 
     def test_is_valid_dm_improper_shape_3D_E(self):
-        D = np.zeros((3, 3, 3), dtype=np.double)
+        D = np.zeros((3, 3, 3), dtype=np.float64)
         with pytest.raises(ValueError):
             is_valid_dm_throw((D))
 
     def test_is_valid_dm_improper_shape_3D_F(self):
-        D = np.zeros((3, 3, 3), dtype=np.double)
+        D = np.zeros((3, 3, 3), dtype=np.float64)
         assert_equal(is_valid_dm(D), False)
 
     def test_is_valid_dm_nonzero_diagonal_E(self):
@@ -1851,7 +1852,7 @@ class TestIsValidDM:
         assert_equal(is_valid_dm(D), False)
 
     def test_is_valid_dm_correct_1_by_1(self):
-        D = np.zeros((1, 1), dtype=np.double)
+        D = np.zeros((1, 1), dtype=np.float64)
         assert_equal(is_valid_dm(D), True)
 
     def test_is_valid_dm_correct_2_by_2(self):
@@ -1885,21 +1886,21 @@ class TestIsValidY:
     # check.  Otherwise the input is expected to be valid.
 
     def test_is_valid_y_improper_shape_2D_E(self):
-        y = np.zeros((3, 3,), dtype=np.double)
+        y = np.zeros((3, 3,), dtype=np.float64)
         with pytest.raises(ValueError):
             is_valid_y_throw((y))
 
     def test_is_valid_y_improper_shape_2D_F(self):
-        y = np.zeros((3, 3,), dtype=np.double)
+        y = np.zeros((3, 3,), dtype=np.float64)
         assert_equal(is_valid_y(y), False)
 
     def test_is_valid_y_improper_shape_3D_E(self):
-        y = np.zeros((3, 3, 3), dtype=np.double)
+        y = np.zeros((3, 3, 3), dtype=np.float64)
         with pytest.raises(ValueError):
             is_valid_y_throw((y))
 
     def test_is_valid_y_improper_shape_3D_F(self):
-        y = np.zeros((3, 3, 3), dtype=np.double)
+        y = np.zeros((3, 3, 3), dtype=np.float64)
         assert_equal(is_valid_y(y), False)
 
     def test_is_valid_y_correct_2_by_2(self):

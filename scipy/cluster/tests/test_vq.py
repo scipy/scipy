@@ -2,9 +2,9 @@ import warnings
 import sys
 
 import numpy as np
-from numpy.testing import (assert_array_equal, assert_array_almost_equal,
-                           assert_allclose, assert_equal, assert_,
-                           suppress_warnings)
+from numpy.testing import (
+    assert_array_equal, assert_allclose, assert_equal, assert_, suppress_warnings
+)
 import pytest
 from pytest import raises as assert_raises
 
@@ -14,12 +14,13 @@ from scipy.cluster import _vq
 from scipy.conftest import (
     array_api_compatible,
     skip_if_array_api,
-    skip_if_array_api_gpu,
-    skip_if_array_api_backend,
+    skip_if_array_api_gpu
 )
 from scipy.sparse._sputils import matrix
-from scipy._lib._array_api import SCIPY_ARRAY_API, as_xparray
 
+from scipy._lib._array_api import (
+    SCIPY_ARRAY_API, copy, cov, xp_assert_close, xp_assert_equal
+)
 
 TESTDATA_2D = np.array([
     -2.2, 1.17, -1.63, 1.69, -2.04, 4.38, -3.09, 0.95, -1.7, 4.79, -1.68, 0.68,
@@ -78,6 +79,7 @@ LABEL1 = np.array([0, 1, 2, 2, 2, 2, 1, 2, 1, 1, 1])
 
 
 class TestWhiten:
+
     @array_api_compatible
     def test_whiten(self, xp):
         desired = xp.asarray([[5.08738849, 2.97091878],
@@ -91,17 +93,13 @@ class TestWhiten:
                           [0.87545741, 0.00735733],
                           [0.85124403, 0.26499712],
                           [0.45067590, 0.45464607]])
-        if "cupy" in xp.__name__:
-            import cupy as cp
-            cp.testing.assert_allclose(whiten(obs), desired, rtol=1e-5)
-        else:
-            assert_allclose(whiten(obs), desired, rtol=1e-5)
+        xp_assert_close(whiten(obs), desired, rtol=1e-5)
 
     @array_api_compatible
     def test_whiten_zero_std(self, xp):
-        desired = np.array([[0., 1.0, 2.86666544],
-                            [0., 1.0, 1.32460034],
-                            [0., 1.0, 3.74382172]])
+        desired = xp.asarray([[0., 1.0, 2.86666544],
+                              [0., 1.0, 1.32460034],
+                              [0., 1.0, 3.74382172]])
 
         obs = xp.asarray([[0., 1., 0.74109533],
                           [0., 1., 0.34243798],
@@ -109,11 +107,7 @@ class TestWhiten:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter('always')
 
-            if "cupy" in xp.__name__:
-                import cupy as cp
-                cp.testing.assert_allclose(whiten(obs), desired, rtol=1e-5)
-            else:
-                assert_allclose(whiten(obs), desired, rtol=1e-5)
+            xp_assert_close(whiten(obs), desired, rtol=1e-5)
 
             assert_equal(len(w), 1)
             assert_(issubclass(w[-1].category, RuntimeWarning))
@@ -132,14 +126,17 @@ class TestWhiten:
 
 
 class TestVq:
+
     @skip_if_array_api_gpu
     @array_api_compatible
     def test_py_vq(self, xp):
         initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
         arrays = [xp.asarray] if SCIPY_ARRAY_API else [np.asarray, matrix]
         for tp in arrays:
+            # label1.dtype varies between int32 and int64 over platforms
             label1 = py_vq(tp(X), tp(initc))[0]
-            assert_array_equal(label1, LABEL1)
+            xp_assert_equal(label1, xp.asarray(LABEL1, dtype=xp.int64),
+                            check_dtype=False)
 
     @skip_if_array_api
     def test_vq(self):
@@ -159,8 +156,9 @@ class TestVq:
         data = xp.asarray(data)
         initc = xp.asarray(initc)
         ta, tb = py_vq(data[:, np.newaxis], initc[:, np.newaxis])
-        assert_array_equal(a, ta)
-        assert_array_equal(b, tb)
+        # ta.dtype varies between int32 and int64 over platforms
+        xp_assert_equal(ta, xp.asarray(a, dtype=xp.int64), check_dtype=False)
+        xp_assert_equal(tb, xp.asarray(b))
 
     @skip_if_array_api
     def test__vq_sametype(self):
@@ -183,8 +181,9 @@ class TestVq:
         codes1, dis1 = py_vq(
             xp.asarray(X), xp.asarray(code_book)
         )
-        assert_allclose(dis0, dis1, 1e-5)
-        assert_array_equal(codes0, codes1)
+        xp_assert_close(dis1, xp.asarray(dis0), rtol=1e-5)
+        # codes1.dtype varies between int32 and int64 over platforms
+        xp_assert_equal(codes1, xp.asarray(codes0, dtype=xp.int64), check_dtype=False)
 
         X = X.astype(np.float32)
         code_book = code_book.astype(np.float32)
@@ -193,8 +192,9 @@ class TestVq:
         codes1, dis1 = py_vq(
             xp.asarray(X), xp.asarray(code_book)
         )
-        assert_allclose(dis0, dis1, 1e-5)
-        assert_array_equal(codes0, codes1)
+        xp_assert_close(dis1, xp.asarray(dis0, dtype=xp.float64), rtol=1e-5)
+        # codes1.dtype varies between int32 and int64 over platforms
+        xp_assert_equal(codes1, xp.asarray(codes0, dtype=xp.int64), check_dtype=False)
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -206,14 +206,16 @@ class TestVq:
         codes1, dis1 = py_vq(
             xp.asarray(X), xp.asarray(code_book)
         )
-        assert_allclose(dis0, dis1, 1e-5)
-        assert_array_equal(codes0, codes1)
+        xp_assert_close(dis1, xp.asarray(dis0), rtol=1e-5)
+        # codes1.dtype varies between int32 and int64 over platforms
+        xp_assert_equal(codes1, xp.asarray(codes0, dtype=xp.int64), check_dtype=False)
 
 
-# Class-level skip on GPU for now; once pdist/cdist are hooked up for CuPy,
-# more tests will work so use per-test markers then
-@skip_if_array_api_gpu
+# Whole class skipped on GPU for now;
+# once pdist/cdist are hooked up for CuPy, more tests will work
 class TestKMean:
+
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_large_features(self, xp):
         # Generate a data set with large values, and run kmeans on it to
@@ -226,12 +228,13 @@ class TestKMean:
         x = 10000 * np.random.randn(n, d) - 20000 * m1
         y = 10000 * np.random.randn(n, d) + 20000 * m2
 
-        data = np.empty((x.shape[0] + y.shape[0], d), np.double)
+        data = np.empty((x.shape[0] + y.shape[0], d), np.float64)
         data[:x.shape[0]] = x
         data[x.shape[0]:] = y
 
         kmeans(xp.asarray(data), xp.asarray(2))
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_kmeans_simple(self, xp):
         np.random.seed(54321)
@@ -239,8 +242,9 @@ class TestKMean:
         arrays = [xp.asarray] if SCIPY_ARRAY_API else [np.asarray, matrix]
         for tp in arrays:
             code1 = kmeans(tp(X), tp(initc), iter=1)[0]
-            assert_array_almost_equal(code1, CODET2)
+            xp_assert_close(code1, xp.asarray(CODET2))
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_kmeans_lost_cluster(self, xp):
         # This will cause kmeans to have a cluster with no points.
@@ -258,6 +262,7 @@ class TestKMean:
 
         assert_raises(ClusterError, kmeans2, data, initk, missing='raise')
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_kmeans2_simple(self, xp):
         np.random.seed(12345678)
@@ -267,26 +272,28 @@ class TestKMean:
             code1 = kmeans2(tp(X), tp(initc), iter=1)[0]
             code2 = kmeans2(tp(X), tp(initc), iter=2)[0]
 
-            assert_array_almost_equal(code1, CODET1)
-            assert_array_almost_equal(code2, CODET2)
+            xp_assert_close(code1, xp.asarray(CODET1))
+            xp_assert_close(code2, xp.asarray(CODET2))
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_kmeans2_rank1(self, xp):
         data = xp.asarray(TESTDATA_2D)
         data1 = data[:, 0]
 
         initc = data1[:3]
-        code = as_xparray(initc, copy=True, xp=xp)
+        code = copy(initc, xp=xp)
         kmeans2(data1, code, iter=1)[0]
         kmeans2(data1, code, iter=2)[0]
 
+    @skip_if_array_api_gpu
     @array_api_compatible
-    @skip_if_array_api_backend('numpy.array_api')
     def test_kmeans2_rank1_2(self, xp):
         data = xp.asarray(TESTDATA_2D)
         data1 = data[:, 0]
         kmeans2(data1, xp.asarray(2), iter=1)
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_kmeans2_high_dim(self, xp):
         # test kmeans2 when the number of dimensions exceeds the number
@@ -297,7 +304,6 @@ class TestKMean:
 
     @skip_if_array_api_gpu
     @array_api_compatible
-    @skip_if_array_api_backend('numpy.array_api')
     def test_kmeans2_init(self, xp):
         np.random.seed(12345)
         data = xp.asarray(TESTDATA_2D)
@@ -315,26 +321,23 @@ class TestKMean:
             kmeans2(data, k, minit='random')
             kmeans2(data[:, :1], k, minit='random')  # special case (1-D)
 
+    @skip_if_array_api_gpu
     @array_api_compatible
-    @skip_if_array_api_backend('numpy.array_api')
     @pytest.mark.skipif(sys.platform == 'win32',
                         reason='Fails with MemoryError in Wine.')
     def test_krandinit(self, xp):
         data = xp.asarray(TESTDATA_2D)
-        datas = [xp.reshape(data, (200, 2)), xp.reshape(data, (20, 20))[:10, :]]
+        datas = [xp.reshape(data, (200, 2)),
+                 xp.reshape(data, (20, 20))[:10, :]]
         k = int(1e6)
         for data in datas:
-            # check that np.random.Generator can be used (numpy >= 1.17)
-            if hasattr(np.random, 'default_rng'):
-                rng = np.random.default_rng(1234)
-            else:
-                rng = np.random.RandomState(1234)
-
+            rng = np.random.default_rng(1234)
             init = _krandinit(data, k, rng, xp)
-            orig_cov = xp.cov(data.T)
-            init_cov = xp.cov(init.T)
-            assert_allclose(orig_cov, init_cov, atol=1e-2)
+            orig_cov = cov(data.T)
+            init_cov = cov(init.T)
+            xp_assert_close(orig_cov, init_cov, atol=1e-2)
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_kmeans2_empty(self, xp):
         # Regression test for gh-1032.
@@ -347,23 +350,24 @@ class TestKMean:
         assert_raises(ValueError, kmeans2, X, 0)
         assert_raises(ValueError, kmeans2, X, np.array([]))
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_kmeans_large_thres(self, xp):
         # Regression test for gh-1774
         x = xp.asarray([1, 2, 3, 4, 10], dtype=xp.float64)
         res = kmeans(x, xp.asarray(1), thresh=1e16)
-        assert_allclose(res[0], xp.asarray([4.]))
-        assert_allclose(res[1], 2.3999999999999999)
+        xp_assert_close(res[0], xp.asarray([4.], dtype=xp.float64))
+        xp_assert_close(res[1], xp.asarray(2.3999999999999999, dtype=xp.float64)[()])
 
     @skip_if_array_api_gpu
     @array_api_compatible
     def test_kmeans2_kpp_low_dim(self, xp):
         # Regression test for gh-11462
         prev_res = xp.asarray([[-1.95266667, 0.898],
-                               [-3.153375, 3.3945]])
+                               [-3.153375, 3.3945]], dtype=xp.float64)
         np.random.seed(42)
         res, _ = kmeans2(xp.asarray(TESTDATA_2D), xp.asarray(2), minit='++')
-        assert_allclose(res, prev_res)
+        xp_assert_close(res, prev_res)
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -381,15 +385,16 @@ class TestKMean:
 
         data = xp.asarray(data)
         res, _ = kmeans2(data, xp.asarray(2), minit='++')
-        assert_array_almost_equal(res, centers, decimal=0)
+        xp_assert_equal(xp.sign(res), xp.sign(xp.asarray(centers)))
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_kmeans_diff_convergence(self, xp):
         # Regression test for gh-8727
         obs = xp.asarray([-3, -1, 0, 1, 1, 8], dtype=xp.float64)
         res = kmeans(obs, xp.asarray([-3., 0.99]))
-        assert_allclose(res[0], xp.asarray([-0.4,  8.]))
-        assert_allclose(res[1], 1.0666666666666667)
+        xp_assert_close(res[0], xp.asarray([-0.4,  8.], dtype=xp.float64))
+        xp_assert_close(res[1], xp.asarray(1.0666666666666667, dtype=xp.float64)[()])
 
     @skip_if_array_api
     def test_kmeans_and_kmeans2_random_seed(self):

@@ -7,7 +7,7 @@ from . import _mmio
 
 __all__ = [  # noqa: F822
     'mminfo', 'mmread', 'mmwrite', 'MMFile',
-    'coo_matrix', 'isspmatrix', 'asstr'
+    'coo_matrix', 'asstr'
 ]
 
 

@@ -756,7 +756,7 @@ def splder(tck, n=1):
                 # See e.g. Schumaker, Spline Functions: Basic Theory, Chapter 5
 
                 # Compute the denominator in the differentiation formula.
-                # (and append traling dims, if necessary)
+                # (and append trailing dims, if necessary)
                 dt = t[k+1:-1] - t[1:-k-1]
                 dt = dt[sh]
                 # Compute the new coefficients

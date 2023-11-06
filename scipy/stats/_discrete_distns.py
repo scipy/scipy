@@ -1143,7 +1143,7 @@ class randint_gen(rv_discrete):
             low = np.broadcast_to(low, size)
             high = np.broadcast_to(high, size)
         randint = np.vectorize(partial(rng_integers, random_state),
-                               otypes=[np.int_])
+                               otypes=[np.dtype(int)])
         return randint(low, high)
 
     def _entropy(self, low, high):
@@ -1192,7 +1192,7 @@ class zipf_gen(rv_discrete):
     Confirm that `zipf` is the large `n` limit of `zipfian`.
 
     >>> import numpy as np
-    >>> from scipy.stats import zipfian
+    >>> from scipy.stats import zipf, zipfian
     >>> k = np.arange(11)
     >>> np.allclose(zipf.pmf(k, a), zipfian.pmf(k, a, n=10000000))
     True
@@ -1289,7 +1289,7 @@ class zipfian_gen(rv_discrete):
     Confirm that `zipfian` reduces to `zipf` for large `n`, `a > 1`.
 
     >>> import numpy as np
-    >>> from scipy.stats import zipf
+    >>> from scipy.stats import zipf, zipfian
     >>> k = np.arange(11)
     >>> np.allclose(zipfian.pmf(k, a=3.5, n=10000000), zipf.pmf(k, a=3.5))
     True

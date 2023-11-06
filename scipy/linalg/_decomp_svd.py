@@ -364,7 +364,7 @@ def null_space(A, rcond=None):
     >>> from scipy.linalg import null_space
     >>> A = np.array([[1, 1], [1, 1]])
     >>> ns = null_space(A)
-    >>> ns * np.sign(ns[0,0])  # Remove the sign ambiguity of the vector
+    >>> ns * np.copysign(1, ns[0,0])  # Remove the sign ambiguity of the vector
     array([[ 0.70710678],
            [-0.70710678]])
 

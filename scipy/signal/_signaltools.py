@@ -437,7 +437,7 @@ def _init_freq_conv_axes(in1, in2, mode, axes, sorted_axes=False):
     if not noaxes and not len(axes):
         raise ValueError("when provided, axes cannot be empty")
 
-    # Axes of length 1 can rely on broadcasting rules for multipy,
+    # Axes of length 1 can rely on broadcasting rules for multiply,
     # no fft needed.
     axes = [a for a in axes if s1[a] != 1 and s2[a] != 1]
 
@@ -1569,7 +1569,7 @@ def medfilt(volume, kernel_size=None):
     numels = np.prod(kernel_size, axis=0)
     order = numels // 2
 
-    if volume.dtype in [np.bool_, np.cfloat, np.cdouble, np.clongdouble,
+    if volume.dtype in [np.bool_, np.complex64, np.complex128, np.clongdouble,
                         np.float16]:
         raise ValueError(f"dtype={volume.dtype} is not supported by medfilt")
 
@@ -1946,7 +1946,7 @@ def medfilt2d(input, kernel_size=3):
 
     # checking dtype.type, rather than just dtype, is necessary for
     # excluding np.longdouble with MS Visual C.
-    if image.dtype.type not in (np.ubyte, np.single, np.double):
+    if image.dtype.type not in (np.ubyte, np.float32, np.float64):
         return medfilt(image, kernel_size)
 
     if kernel_size is None:
@@ -3172,7 +3172,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
             X *= W.reshape(newshape_W)
 
     # Copy each half of the original spectrum to the output spectrum, either
-    # truncating high frequences (downsampling) or zero-padding them
+    # truncating high frequencies (downsampling) or zero-padding them
     # (upsampling)
 
     # Placeholder array for output spectrum

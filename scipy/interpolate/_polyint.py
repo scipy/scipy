@@ -135,10 +135,10 @@ class _Interpolator1D:
     def _set_dtype(self, dtype, union=False):
         if np.issubdtype(dtype, np.complexfloating) \
                or np.issubdtype(self.dtype, np.complexfloating):
-            self.dtype = np.complex_
+            self.dtype = np.complex128
         else:
-            if not union or self.dtype != np.complex_:
-                self.dtype = np.float_
+            if not union or self.dtype != np.complex128:
+                self.dtype = np.float64
 
 
 class _Interpolator1DWithDerivatives(_Interpolator1D):
@@ -562,7 +562,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
     wi : array_like, optional
         The barycentric weights for the chosen interpolation points `xi`.
         If absent or None, the weights will be computed from `xi` (default).
-        This allows for the re-use of the weights `wi` if several interpolants
+        This allows for the reuse of the weights `wi` if several interpolants
         are being calculated using the same nodes `xi`, without re-computation.
     random_state : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
@@ -624,7 +624,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
         
         random_state = check_random_state(random_state)
 
-        self.xi = np.asfarray(xi)
+        self.xi = np.asarray(xi, dtype=np.float64)
         self.set_yi(yi)
         self.n = len(self.xi)
 
@@ -701,6 +701,13 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
             If `yi` is not given, the y values will be supplied later. `yi`
             should be given if and only if the interpolator has y values
             specified.
+
+        Notes
+        -----
+        The new points added by `add_xi` are not randomly permuted
+        so there is potential for numerical instability,
+        especially for a large number of points. If this
+        happens, please reconstruct interpolation from scratch instead.
         """
         if yi is not None:
             if self.yi is None:

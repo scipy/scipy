@@ -1823,6 +1823,7 @@ class _TestCommon:
 
             assert_array_equal(a.toarray(), b)
             assert_array_equal(a.transpose().toarray(), dat)
+            assert_array_equal(datsp.transpose(axes=(1, 0)).toarray(), b)
             assert_equal(a.dtype, b.dtype)
 
         # See gh-5987
@@ -1915,7 +1916,7 @@ class _TestCommon:
             assert_equal(min_s.dtype, min_d.dtype)
 
         for dtype in self.math_dtypes:
-            for dtype2 in [np.int8, np.float_, np.complex_]:
+            for dtype2 in [np.int8, np.float64, np.complex128]:
                 for btype in ['scalar', 'scalar2', 'dense', 'sparse']:
                     check(np.dtype(dtype), np.dtype(dtype2), btype)
 
@@ -2212,7 +2213,7 @@ class _TestInplaceArithmetic:
         for dtype in self.math_dtypes:
             # /= should only be used with float dtypes to avoid implicit
             # casting.
-            if not np.can_cast(dtype, np.int_):
+            if not np.can_cast(dtype, np.dtype(int)):
                 check(dtype)
 
     def test_inplace_success(self):
@@ -3677,7 +3678,7 @@ class TestCSR(sparse_test_class()):
             sup.filter(SparseEfficiencyWarning,
                        "Changing the sparsity structure of a csr_matrix is expensive")
             return csr_matrix(*args, **kwargs)
-    math_dtypes = [np.bool_, np.int_, np.float_, np.complex_]
+    math_dtypes = [np.bool_, np.int_, np.float64, np.complex128]
 
     def test_constructor1(self):
         b = array([[0, 4, 0],
@@ -3838,7 +3839,7 @@ class TestCSR(sparse_test_class()):
         indptr = np.array([0, 2])
         M = csr_matrix((data, sorted_inds, indptr)).copy()
         assert_equal(True, M.has_sorted_indices)
-        assert type(M.has_sorted_indices) == bool
+        assert isinstance(M.has_sorted_indices, bool)
 
         M = csr_matrix((data, unsorted_inds, indptr)).copy()
         assert_equal(False, M.has_sorted_indices)
@@ -3870,7 +3871,7 @@ class TestCSR(sparse_test_class()):
 
         M = csr_matrix((data, indices, indptr)).copy()
         assert_equal(False, M.has_canonical_format)
-        assert type(M.has_canonical_format) == bool
+        assert isinstance(M.has_canonical_format, bool)
 
         # set by deduplicating
         M.sum_duplicates()
@@ -3930,7 +3931,7 @@ class TestCSC(sparse_test_class()):
             sup.filter(SparseEfficiencyWarning,
                        "Changing the sparsity structure of a csc_matrix is expensive")
             return csc_matrix(*args, **kwargs)
-    math_dtypes = [np.bool_, np.int_, np.float_, np.complex_]
+    math_dtypes = [np.bool_, np.int_, np.float64, np.complex128]
 
     def test_constructor1(self):
         b = array([[1, 0, 0, 0], [0, 0, 1, 0], [0, 2, 0, 3]], 'd')
@@ -4072,7 +4073,7 @@ TestCSC.init_class()
 
 class TestDOK(sparse_test_class(minmax=False, nnz_axis=False)):
     spcreator = dok_matrix
-    math_dtypes = [np.int_, np.float_, np.complex_]
+    math_dtypes = [np.int_, np.float64, np.complex128]
 
     def test_mult(self):
         A = dok_matrix((10,10))
@@ -4173,7 +4174,7 @@ TestDOK.init_class()
 
 class TestLIL(sparse_test_class(minmax=False)):
     spcreator = lil_matrix
-    math_dtypes = [np.int_, np.float_, np.complex_]
+    math_dtypes = [np.int_, np.float64, np.complex128]
 
     def test_dot(self):
         A = zeros((10, 10), np.complex128)
@@ -4283,7 +4284,7 @@ class TestCOO(sparse_test_class(getset=False,
                                 slicing=False, slicing_assign=False,
                                 fancy_indexing=False, fancy_assign=False)):
     spcreator = coo_matrix
-    math_dtypes = [np.int_, np.float_, np.complex_]
+    math_dtypes = [np.int_, np.float64, np.complex128]
 
     def test_constructor1(self):
         # unsorted triplet format
@@ -4416,7 +4417,7 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
                                 fancy_indexing=False, fancy_assign=False,
                                 minmax=False, nnz_axis=False)):
     spcreator = dia_matrix
-    math_dtypes = [np.int_, np.float_, np.complex_]
+    math_dtypes = [np.int_, np.float64, np.complex128]
 
     def test_constructor1(self):
         D = array([[1, 0, 3, 0],
@@ -4461,6 +4462,19 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
         inds_are_sorted = np.all(np.diff(flat_inds) > 0)
         assert m.has_canonical_format == inds_are_sorted
 
+    def test_tocoo_tocsr_tocsc_gh19245(self):
+        # test index_dtype with tocoo, tocsr, tocsc
+        data = np.array([[1, 2, 3, 4]]).repeat(3, axis=0)
+        offsets = np.array([0, -1, 2], dtype=np.int32)
+        dia = sparse.dia_array((data, offsets), shape=(4, 4))
+
+        coo = dia.tocoo()
+        assert coo.col.dtype == np.int32
+        csr = dia.tocsr()
+        assert csr.indices.dtype == np.int32
+        csc = dia.tocsc()
+        assert csc.indices.dtype == np.int32
+
 
 TestDIA.init_class()
 
@@ -4470,7 +4484,7 @@ class TestBSR(sparse_test_class(getset=False,
                                 fancy_indexing=False, fancy_assign=False,
                                 nnz_axis=False)):
     spcreator = bsr_matrix
-    math_dtypes = [np.int_, np.float_, np.complex_]
+    math_dtypes = [np.int_, np.float64, np.complex128]
 
     def test_constructor1(self):
         # check native BSR format constructor
@@ -4914,6 +4928,7 @@ def cases_64bit():
         'test_large_dimensions_reshape': 'test actually requires 64-bit to work',
         'test_constructor_smallcol': 'test verifies int32 indexes',
         'test_constructor_largecol': 'test verifies int64 indexes',
+        'test_tocoo_tocsr_tocsc_gh19245': 'test verifies int32 indexes',
     }
 
     for cls in TEST_CLASSES:

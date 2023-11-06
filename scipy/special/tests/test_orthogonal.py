@@ -798,5 +798,5 @@ def test_roots_genlaguerre():
 
 
 def test_gh_6721():
-    # Regresssion test for gh_6721. This should not raise.
+    # Regression test for gh_6721. This should not raise.
     sc.chebyt(65)(0.2)

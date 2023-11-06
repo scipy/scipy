@@ -18,7 +18,6 @@ _ufuncs_pxi_pxd_sources = [
   fs.copyfile('_hyp0f1.pxd'),
   fs.copyfile('_hyp2f1.pxd'),
   fs.copyfile('_hypergeometric.pxd'),
-  fs.copyfile('_lambertw.pxd'),
   fs.copyfile('_legacy.pxd'),
   fs.copyfile('_loggamma.pxd'),
   fs.copyfile('_ndtri_exp.pxd'),
@@ -318,12 +317,12 @@ cython_special_pxd = custom_target('_dummy_cython_special.pxd',
 uf_cython_gen = generator(cython,
   arguments : cython_args,
   output : '@BASENAME@.c',
-  depends : [_cython_tree, _ufuncs_pxi_pxd_sources])
+  depends : [_cython_tree, _ufuncs_pxi_pxd_sources, cython_special_pxd])
 
 uf_cython_gen_cpp = generator(cython,
   arguments : cython_cplus_args,
   output : '@BASENAME@.cpp',
-  depends : [_cython_tree, _ufuncs_pxi_pxd_sources])
+  depends : [_cython_tree, _ufuncs_pxi_pxd_sources, cython_special_pxd])
 
 py3.extension_module('_ufuncs',
   [
@@ -484,6 +483,7 @@ python_sources = [
   '_sf_error.py',
   '_spfun_stats.py',
   '_spherical_bessel.py',
+  '_support_alternative_backends.py',
   '_test_internal.pyi',
   '_testutils.py',
   'add_newdocs.py',

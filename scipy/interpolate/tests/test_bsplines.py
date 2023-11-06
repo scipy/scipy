@@ -1076,7 +1076,7 @@ class TestInterp:
 
     @pytest.mark.parametrize('k', [2, 3, 4, 5])
     def test_periodic_splev(self, k):
-        # comparision values of periodic b-spline with splev
+        # comparison values of periodic b-spline with splev
         b = make_interp_spline(self.xx, self.yy, k=k, bc_type='periodic')
         tck = splrep(self.xx, self.yy, per=True, k=k)
         spl = splev(self.xx, tck)
@@ -1142,7 +1142,7 @@ class TestInterp:
 
     def test_quintic_derivs(self):
         k, n = 5, 7
-        x = np.arange(n).astype(np.float_)
+        x = np.arange(n).astype(np.float64)
         y = np.sin(x)
         der_l = [(1, -12.), (2, 1)]
         der_r = [(1, 8.), (2, 3.)]
@@ -1236,8 +1236,8 @@ class TestInterp:
             assert_allclose(b(xx), yy, atol=1e-14, rtol=1e-14)
 
     def test_int_xy(self):
-        x = np.arange(10).astype(np.int_)
-        y = np.arange(10).astype(np.int_)
+        x = np.arange(10).astype(int)
+        y = np.arange(10).astype(int)
 
         # Cython chokes on "buffer type mismatch" (construction) or
         # "no matching signature found" (evaluation)
@@ -1398,7 +1398,7 @@ def make_interp_full_matr(x, y, t, k):
     assert t.size == x.size + k + 1
     n = x.size
 
-    A = np.zeros((n, n), dtype=np.float_)
+    A = np.zeros((n, n), dtype=np.float64)
 
     for j in range(n):
         xval = x[j]
@@ -1421,7 +1421,7 @@ def make_lsq_full_matrix(x, y, t, k=3):
     m = x.size
     n = t.size - k - 1
 
-    A = np.zeros((m, n), dtype=np.float_)
+    A = np.zeros((m, n), dtype=np.float64)
 
     for j in range(m):
         xval = x[j]
@@ -1499,8 +1499,8 @@ class TestLSQ:
         assert_allclose(b(x), b_re(x) + 1.j*b_im(x), atol=1e-15, rtol=1e-15)
 
     def test_int_xy(self):
-        x = np.arange(10).astype(np.int_)
-        y = np.arange(10).astype(np.int_)
+        x = np.arange(10).astype(int)
+        y = np.arange(10).astype(int)
         t = _augknt(x, k=1)
         # Cython chokes on "buffer type mismatch"
         make_lsq_spline(x, y, t, k=1)

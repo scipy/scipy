@@ -142,9 +142,6 @@ def spline_filter(input, order=3, output=numpy.float64, mode='mirror'):
     %(input)s
     order : int, optional
         The order of the spline, default is 3.
-    axis : int, optional
-        The axis along which the spline filter is applied. Default is the last
-        axis.
     output : ndarray or dtype, optional
         The array in which to place the output, or the dtype of the returned
         array. Default is ``numpy.float64``.
@@ -662,6 +659,10 @@ def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
     shift : ndarray
         The shifted input.
 
+    See Also
+    --------
+    affine_transform : Affine transformations
+
     Notes
     -----
     For complex-valued `input`, this function shifts the real and imaginary
@@ -670,6 +671,37 @@ def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
     .. versionadded:: 1.6.0
         Complex-valued support added.
 
+    Examples
+    --------
+    Import the necessary modules and an exemplary image.
+
+    >>> from scipy.ndimage import shift
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy import datasets
+    >>> image = datasets.ascent()
+
+    Shift the image vertically by 20 pixels.
+
+    >>> image_shifted_vertically = shift(image, (20, 0))
+
+    Shift the image vertically by -200 pixels and horizontally by 100 pixels.
+
+    >>> image_shifted_both_directions = shift(image, (-200, 100))
+
+    Plot the original and the shifted images.
+
+    >>> fig, axes = plt.subplots(3, 1, figsize=(4, 12))
+    >>> plt.gray()  # show the filtered result in grayscale
+    >>> top, middle, bottom = axes
+    >>> for ax in axes:
+    ...     ax.set_axis_off()  # remove coordinate system
+    >>> top.imshow(image)
+    >>> top.set_title("Original image")
+    >>> middle.imshow(image_shifted_vertically)
+    >>> middle.set_title("Vertically shifted image")
+    >>> bottom.imshow(image_shifted_both_directions)
+    >>> bottom.set_title("Image shifted in both directions")
+    >>> fig.tight_layout()
     """
     if order < 0 or order > 5:
         raise RuntimeError('spline order not supported')

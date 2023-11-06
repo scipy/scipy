@@ -178,6 +178,16 @@ _slsqp = py3.extension_module('_slsqp',
   subdir: 'scipy/optimize'
 )
 
+_pava_pybind = py3.extension_module('_pava_pybind',
+  ['_pava/pava_pybind.cpp'],
+  cpp_args: [numpy_nodepr_api],
+  include_directories: '_pava',
+  dependencies: [np_dep, pybind11_dep],
+  link_args: version_link_args,
+  install: true,
+  subdir: 'scipy/optimize'
+)
+
 if use_pythran
   _group_columns_cpp = custom_target('_group_columns',
     output: ['_group_columns.cpp'],
@@ -250,8 +260,10 @@ py3.install_sources([
   '_differentiable_functions.py',
   '_differentialevolution.py',
   '_direct_py.py',
+  '_dcsrch.py',
   '_dual_annealing.py',
   '_hessian_update_strategy.py',
+  '_isotonic.py',
   '_lbfgsb_py.py',
   '_linesearch.py',
   '_linprog.py',
