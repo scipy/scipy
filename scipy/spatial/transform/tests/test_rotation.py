@@ -673,8 +673,7 @@ def test_as_euler_symmetric_axes(seq_tuple, intrinsic):
     angles[:, 1] = rnd.uniform(low=0, high=np.pi, size=(n,))
     angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
 
-    # Rotation of the form A/B/A are rotation around symmetric
-    # Axes
+    # Rotation of the form A/B/A are rotation around symmetric axes
     seq = "".join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
     if intrinsic:
         seq = seq.upper()
@@ -724,8 +723,7 @@ def test_as_euler_degenerate_symmetric_axes(seq_tuple, intrinsic):
         [60, 180, 35],
         [15, -180, 25]])
 
-    # Rotation of the form A/B/A are rotation around symmetric
-    # Axes
+    # Rotation of the form A/B/A are rotation around symmetric axes
     seq = "".join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
     if intrinsic:
         # Extrinsic rotation (wrt to global world) at lower case
