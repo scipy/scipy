@@ -1778,7 +1778,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
 
     .. versionadded:: 0.16.0
     """
-    xp = array_namespace(x)
+    xp = array_namespace(y)
     if mode not in ['psd', 'stft']:
         raise ValueError("Unknown value for mode %s, must be one of: "
                          "{'psd', 'stft'}" % mode)

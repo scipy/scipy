@@ -29,6 +29,7 @@ import numpy as np
 import scipy.fft as fft_lib
 from scipy.signal import detrend
 from scipy.signal.windows import get_window
+from scipy._lib._array_api import array_namespace
 
 __all__ = ['ShortTimeFFT']
 
@@ -824,6 +825,7 @@ class ShortTimeFFT:
                                    (without detrending).
         :class:`scipy.signal.ShortTimeFFT`: Class this method belongs to.
         """
+        xp = array_namespace(x)
         if self.onesided_fft and np.iscomplexobj(x):
             raise ValueError(f"Complex-valued `x` not allowed for {self.fft_mode=}'! "
                              "Set property `fft_mode` to 'twosided' or 'centered'.")
@@ -838,7 +840,7 @@ class ShortTimeFFT:
             raise ValueError(f"{e_str} must be >= ceil(m_num/2) = {m2p}!")
 
         if x.ndim > 1:  # motivated by the NumPy broadcasting mechanisms:
-            x = np.moveaxis(x, axis, -1)
+            x = xp.moveaxis(x, axis, -1)
         # determine slice index range:
         p0, p1 = self.p_range(n, p0, p1)
         S_shape_1d = (self.f_pts, p1 - p0)
