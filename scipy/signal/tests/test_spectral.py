@@ -20,7 +20,7 @@ from scipy.signal.tests._scipy_spectral_test_shim import istft_compare as istft
 from scipy.signal.tests._scipy_spectral_test_shim import csd_compare as csd
 from scipy.conftest import array_api_compatible, skip_if_array_api_backend
 from scipy._lib.array_api_compat import array_api_compat
-from scipy._lib._array_api import xp_assert_close, xp_assert_equal
+from scipy._lib._array_api import xp_assert_close, xp_assert_equal, copy
 
 
 class TestPeriodogram:
@@ -792,65 +792,113 @@ class TestCSD:
                         0.11111111])
         xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    def test_real_onesided_odd(self):
-        x = np.zeros(16)
+    # torch hits a messy np.pad codepath...
+    @skip_if_array_api_backend("torch")
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_real_onesided_odd(self, xp):
+        x = xp.zeros(16)
         x[0] = 1
         x[8] = 1
         f, p = csd(x, x, nperseg=9)
-        assert_allclose(f, np.arange(5.0)/9.0)
-        q = np.array([0.12477455, 0.23430933, 0.17072113, 0.17072113,
-                      0.17072113])
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        xp_assert_close(f, np.arange(5.0)/9.0)
+        q = xp.asarray([0.12477455, 0.23430933, 0.17072113, 0.17072113,
+                        0.17072113])
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    def test_real_twosided(self):
-        x = np.zeros(16)
+    # torch hits a messy np.pad codepath...
+    @skip_if_array_api_backend("torch")
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_real_twosided(self, xp):
+        x = xp.zeros(16)
         x[0] = 1
         x[8] = 1
         f, p = csd(x, x, nperseg=8, return_onesided=False)
-        assert_allclose(f, fftfreq(8, 1.0))
-        q = np.array([0.08333333, 0.07638889, 0.11111111, 0.11111111,
-                      0.11111111, 0.11111111, 0.11111111, 0.07638889])
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        xp_assert_close(f, fftfreq(8, 1.0))
+        q = xp.asarray([0.08333333, 0.07638889, 0.11111111, 0.11111111,
+                        0.11111111, 0.11111111, 0.11111111, 0.07638889])
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    def test_real_spectrum(self):
-        x = np.zeros(16)
+    # torch hits a messy np.pad codepath...
+    @skip_if_array_api_backend("torch")
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_real_spectrum(self, xp):
+        x = xp.zeros(16)
         x[0] = 1
         x[8] = 1
         f, p = csd(x, x, nperseg=8, scaling='spectrum')
-        assert_allclose(f, np.linspace(0, 0.5, 5))
-        q = np.array([0.015625, 0.02864583, 0.04166667, 0.04166667,
-                      0.02083333])
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        xp_assert_close(f, xp.linspace(0, 0.5, 5))
+        q = xp.asarray([0.015625, 0.02864583, 0.04166667, 0.04166667,
+                        0.02083333])
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    def test_integer_onesided_even(self):
-        x = np.zeros(16, dtype=int)
+    # torch hits a messy np.pad codepath...
+    @skip_if_array_api_backend("torch")
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    # type casting error with numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    @array_api_compatible
+    def test_integer_onesided_even(self, xp):
+        x = xp.zeros(16, dtype=xp.int64)
         x[0] = 1
         x[8] = 1
         f, p = csd(x, x, nperseg=8)
-        assert_allclose(f, np.linspace(0, 0.5, 5))
-        q = np.array([0.08333333, 0.15277778, 0.22222222, 0.22222222,
-                      0.11111111])
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        xp_assert_close(f, xp.linspace(0, 0.5, 5))
+        q = xp.asarray([0.08333333, 0.15277778, 0.22222222, 0.22222222,
+                        0.11111111])
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    def test_integer_onesided_odd(self):
-        x = np.zeros(16, dtype=int)
+    # torch hits a messy np.pad codepath...
+    @skip_if_array_api_backend("torch")
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    # type casting error with numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    @array_api_compatible
+    def test_integer_onesided_odd(self, xp):
+        x = xp.zeros(16, dtype=xp.int64)
         x[0] = 1
         x[8] = 1
         f, p = csd(x, x, nperseg=9)
-        assert_allclose(f, np.arange(5.0)/9.0)
-        q = np.array([0.12477455, 0.23430933, 0.17072113, 0.17072113,
-                      0.17072113])
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        xp_assert_close(f, xp.arange(5.0)/9.0)
+        q = xp.asarray([0.12477455, 0.23430933, 0.17072113, 0.17072113,
+                        0.17072113])
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    def test_integer_twosided(self):
-        x = np.zeros(16, dtype=int)
+    # torch hits a messy np.pad codepath...
+    @skip_if_array_api_backend("torch")
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    # type casting error with numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    @array_api_compatible
+    def test_integer_twosided(self, xp):
+        x = xp.zeros(16, dtype=xp.int64)
         x[0] = 1
         x[8] = 1
         f, p = csd(x, x, nperseg=8, return_onesided=False)
-        assert_allclose(f, fftfreq(8, 1.0))
-        q = np.array([0.08333333, 0.07638889, 0.11111111, 0.11111111,
-                      0.11111111, 0.11111111, 0.11111111, 0.07638889])
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        xp_assert_close(f, fftfreq(8, 1.0))
+        q = xp.asarray([0.08333333, 0.07638889, 0.11111111, 0.11111111,
+                        0.11111111, 0.11111111, 0.11111111, 0.07638889])
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
     # skip cupy because array_api_compat doesn't support
     # fft at this time
@@ -888,107 +936,185 @@ class TestCSD:
         f, p = csd(x, x, nperseg=10, detrend='linear')
         xp_assert_close(p, xp.zeros_like(p), atol=1e-15)
 
-    def test_no_detrending(self):
-        x = np.arange(10, dtype=np.float64) + 0.04
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    # torch hits a messy np.pad codepath...
+    @skip_if_array_api_backend("torch")
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    @array_api_compatible
+    def test_no_detrending(self, xp):
+        x = xp.arange(10, dtype=xp.float64) + 0.04
         f1, p1 = csd(x, x, nperseg=10, detrend=False)
         f2, p2 = csd(x, x, nperseg=10, detrend=lambda x: x)
-        assert_allclose(f1, f2, atol=1e-15)
-        assert_allclose(p1, p2, atol=1e-15)
+        xp_assert_close(f1, f2, atol=1e-15)
+        xp_assert_close(p1, p2, atol=1e-15)
 
-    def test_detrend_external(self):
-        x = np.arange(10, dtype=np.float64) + 0.04
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    # torch hits a messy np.pad codepath...
+    @skip_if_array_api_backend("torch")
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    @array_api_compatible
+    def test_detrend_external(self, xp):
+        x = xp.arange(10, dtype=xp.float64) + 0.04
         f, p = csd(x, x, nperseg=10,
                    detrend=lambda seg: signal.detrend(seg, type='l'))
-        assert_allclose(p, np.zeros_like(p), atol=1e-15)
+        xp_assert_close(p, xp.zeros_like(p), atol=1e-15)
 
-    def test_detrend_external_nd_m1(self):
-        x = np.arange(40, dtype=np.float64) + 0.04
-        x = x.reshape((2,2,10))
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    # torch hits a messy np.pad codepath...
+    @skip_if_array_api_backend("torch")
+    @array_api_compatible
+    def test_detrend_external_nd_m1(self, xp):
+        x = xp.arange(40, dtype=xp.float64) + 0.04
+        x = xp.reshape(x, (2, 2, 10))
         f, p = csd(x, x, nperseg=10,
                    detrend=lambda seg: signal.detrend(seg, type='l'))
-        assert_allclose(p, np.zeros_like(p), atol=1e-15)
+        xp_assert_close(p, xp.zeros_like(p), atol=1e-15)
 
-    def test_detrend_external_nd_0(self):
-        x = np.arange(20, dtype=np.float64) + 0.04
-        x = x.reshape((2,1,10))
-        x = np.moveaxis(x, 2, 0)
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # torch hits a messy np.pad codepath...
+    @skip_if_array_api_backend("torch")
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_detrend_external_nd_0(self, xp):
+        x = xp.arange(20, dtype=xp.float64) + 0.04
+        x = xp.reshape(x, (2, 1, 10))
+        x = xp.moveaxis(x, 2, 0)
         f, p = csd(x, x, nperseg=10, axis=0,
                    detrend=lambda seg: signal.detrend(seg, axis=0, type='l'))
-        assert_allclose(p, np.zeros_like(p), atol=1e-15)
+        xp_assert_close(p, xp.zeros_like(p), atol=1e-15)
 
-    def test_nd_axis_m1(self):
-        x = np.arange(20, dtype=np.float64) + 0.04
-        x = x.reshape((2,1,10))
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # torch hits a messy np.pad codepath...
+    @skip_if_array_api_backend("torch")
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_nd_axis_m1(self, xp):
+        x = xp.arange(20, dtype=xp.float64) + 0.04
+        x = xp.reshape(x, (2, 1, 10))
         f, p = csd(x, x, nperseg=10)
-        assert_array_equal(p.shape, (2, 1, 6))
-        assert_allclose(p[0,0,:], p[1,0,:], atol=1e-13, rtol=1e-13)
+        assert p.shape == (2, 1, 6)
+        xp_assert_close(p[0,0,:], p[1,0,:], atol=1e-13, rtol=1e-13)
         f0, p0 = csd(x[0,0,:], x[0,0,:], nperseg=10)
-        assert_allclose(p0[np.newaxis,:], p[1,:], atol=1e-13, rtol=1e-13)
+        xp_assert_close(p0[xp.newaxis,:], p[1,:], atol=1e-13, rtol=1e-13, check_dtype=False)
 
-    def test_nd_axis_0(self):
-        x = np.arange(20, dtype=np.float64) + 0.04
-        x = x.reshape((10,2,1))
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # torch hits a messy np.pad codepath...
+    @skip_if_array_api_backend("torch")
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_nd_axis_0(self, xp):
+        x = xp.arange(20, dtype=xp.float64) + 0.04
+        x = xp.reshape(x, (10, 2, 1))
         f, p = csd(x, x, nperseg=10, axis=0)
-        assert_array_equal(p.shape, (6,2,1))
-        assert_allclose(p[:,0,0], p[:,1,0], atol=1e-13, rtol=1e-13)
+        assert p.shape == (6, 2, 1)
+        xp_assert_close(p[:,0,0], p[:,1,0], atol=1e-13, rtol=1e-13)
         f0, p0 = csd(x[:,0,0], x[:,0,0], nperseg=10)
-        assert_allclose(p0, p[:,1,0], atol=1e-13, rtol=1e-13)
+        xp_assert_close(p0, p[:,1,0], atol=1e-13, rtol=1e-13, check_dtype=False)
 
-    def test_window_external(self):
-        x = np.zeros(16)
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # torch hits a messy np.pad codepath...
+    @skip_if_array_api_backend("torch")
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_window_external(self, xp):
+        x = xp.zeros(16)
         x[0] = 1
         x[8] = 1
         f, p = csd(x, x, 10, 'hann', 8)
         win = signal.get_window('hann', 8)
         fe, pe = csd(x, x, 10, win, nperseg=None)
+        # TODO: no nulp array API testing funcs yet
         assert_array_almost_equal_nulp(p, pe)
         assert_array_almost_equal_nulp(f, fe)
-        assert_array_equal(fe.shape, (5,))  # because win length used as nperseg
-        assert_array_equal(pe.shape, (5,))
+        assert fe.shape == (5,)  # because win length used as nperseg
+        assert pe.shape == (5,)
         assert_raises(ValueError, csd, x, x,
                       10, win, nperseg=256)  # because nperseg != win.shape[-1]
         win_err = signal.get_window('hann', 32)
         assert_raises(ValueError, csd, x, x,
               10, win_err, nperseg=None)  # because win longer than signal
 
-    def test_empty_input(self):
-        f, p = csd([],np.zeros(10))
-        assert_array_equal(f.shape, (0,))
-        assert_array_equal(p.shape, (0,))
+    # torch max() expects reduction dim to be specified...
+    @skip_if_array_api_backend("torch")
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # the empty list input causes issues for CuPy
+    # (array-like support)
+    @skip_if_array_api_backend('cupy')
+    @array_api_compatible
+    def test_empty_input(self, xp):
+        f, p = csd([], xp.zeros(10))
+        assert f.shape == (0,)
+        assert p.shape == (0,)
 
-        f, p = csd(np.zeros(10),[])
-        assert_array_equal(f.shape, (0,))
-        assert_array_equal(p.shape, (0,))
+        f, p = csd(xp.zeros(10), [])
+        assert f.shape == (0,)
+        assert p.shape == (0,)
 
         for shape in [(0,), (3,0), (0,5,2)]:
-            f, p = csd(np.empty(shape), np.empty(shape))
-            assert_array_equal(f.shape, shape)
-            assert_array_equal(p.shape, shape)
+            f, p = csd(xp.empty(shape), xp.empty(shape))
+            assert f.shape == shape
+            assert p.shape == shape
 
-        f, p = csd(np.ones(10), np.empty((5,0)))
-        assert_array_equal(f.shape, (5,0))
-        assert_array_equal(p.shape, (5,0))
+        f, p = csd(xp.ones(10), xp.empty((5,0)))
+        assert f.shape == (5,0)
+        assert p.shape == (5,0)
 
-        f, p = csd(np.empty((5,0)), np.ones(10))
-        assert_array_equal(f.shape, (5,0))
-        assert_array_equal(p.shape, (5,0))
+        f, p = csd(xp.empty((5,0)), xp.ones(10))
+        assert f.shape == (5,0)
+        assert p.shape == (5,0)
 
-    def test_empty_input_other_axis(self):
+    # torch max() expects reduction dim to be specified...
+    @skip_if_array_api_backend("torch")
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    @array_api_compatible
+    def test_empty_input_other_axis(self, xp):
         for shape in [(3,0), (0,5,2)]:
-            f, p = csd(np.empty(shape), np.empty(shape), axis=1)
-            assert_array_equal(f.shape, shape)
-            assert_array_equal(p.shape, shape)
+            f, p = csd(xp.empty(shape), xp.empty(shape), axis=1)
+            assert f.shape == shape
+            assert p.shape == shape
 
-        f, p = csd(np.empty((10,10,3)), np.zeros((10,0,1)), axis=1)
-        assert_array_equal(f.shape, (10,0,3))
-        assert_array_equal(p.shape, (10,0,3))
+        f, p = csd(xp.empty((10,10,3)), xp.zeros((10,0,1)), axis=1)
+        assert f.shape == (10, 0, 3)
+        assert p.shape == (10, 0, 3)
 
-        f, p = csd(np.empty((10,0,1)), np.zeros((10,10,3)), axis=1)
-        assert_array_equal(f.shape, (10,0,3))
-        assert_array_equal(p.shape, (10,0,3))
+        f, p = csd(xp.empty((10,0,1)), xp.zeros((10,10,3)), axis=1)
+        assert f.shape == (10, 0, 3)
+        assert p.shape == (10, 0, 3)
 
-    def test_short_data(self):
-        x = np.zeros(8)
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # torch hits a messy np.pad codepath...
+    @skip_if_array_api_backend("torch")
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_short_data(self, xp):
+        x = xp.zeros(8)
         x[0] = 1
 
         #for string-like window, input signal length < nperseg value gives
@@ -999,113 +1125,168 @@ class TestCSD:
             f, p = csd(x, x, window='hann')  # default nperseg
             f1, p1 = csd(x, x, window='hann', nperseg=256)  # user-specified nperseg
         f2, p2 = csd(x, x, nperseg=8)  # valid nperseg, doesn't give warning
-        assert_allclose(f, f2)
-        assert_allclose(p, p2)
-        assert_allclose(f1, f2)
-        assert_allclose(p1, p2)
+        xp_assert_close(f, f2)
+        xp_assert_close(p, p2)
+        xp_assert_close(f1, f2)
+        xp_assert_close(p1, p2)
 
-    def test_window_long_or_nd(self):
-        assert_raises(ValueError, csd, np.zeros(4), np.ones(4), 1,
-                      np.array([1,1,1,1,1]))
-        assert_raises(ValueError, csd, np.zeros(4), np.ones(4), 1,
-                      np.arange(6).reshape((2,3)))
+    @array_api_compatible
+    def test_window_long_or_nd(self, xp):
+        assert_raises(ValueError, csd, xp.zeros(4), xp.ones(4), 1,
+                      xp.asarray([1,1,1,1,1]))
+        assert_raises(ValueError, csd, xp.zeros(4), xp.ones(4), 1,
+                      xp.reshape(xp.arange(6), (2, 3)))
 
-    def test_nondefault_noverlap(self):
-        x = np.zeros(64)
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # torch hits a messy np.pad codepath...
+    @skip_if_array_api_backend("torch")
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_nondefault_noverlap(self, xp):
+        x = xp.zeros(64)
         x[::8] = 1
         f, p = csd(x, x, nperseg=16, noverlap=4)
-        q = np.array([0, 1./12., 1./3., 1./5., 1./3., 1./5., 1./3., 1./5.,
-                      1./6.])
-        assert_allclose(p, q, atol=1e-12)
+        q = xp.asarray([0, 1./12., 1./3., 1./5., 1./3., 1./5., 1./3., 1./5.,
+                        1./6.])
+        xp_assert_close(p, q, atol=1e-12)
 
-    def test_bad_noverlap(self):
-        assert_raises(ValueError, csd, np.zeros(4), np.ones(4), 1, 'hann',
+    @array_api_compatible
+    def test_bad_noverlap(self, xp):
+        assert_raises(ValueError, csd, xp.zeros(4), xp.ones(4), 1, 'hann',
                       2, 7)
 
-    def test_nfft_too_short(self):
-        assert_raises(ValueError, csd, np.ones(12), np.zeros(12), nfft=3,
+    @array_api_compatible
+    def test_nfft_too_short(self, xp):
+        assert_raises(ValueError, csd, xp.ones(12), xp.zeros(12), nfft=3,
                       nperseg=4)
 
-    def test_real_onesided_even_32(self):
-        x = np.zeros(16, 'f')
+    # torch hits a messy np.pad codepath...
+    @skip_if_array_api_backend("torch")
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    @array_api_compatible
+    def test_real_onesided_even_32(self, xp):
+        x = xp.zeros(16, dtype=xp.float32)
         x[0] = 1
         x[8] = 1
         f, p = csd(x, x, nperseg=8)
-        assert_allclose(f, np.linspace(0, 0.5, 5))
-        q = np.array([0.08333333, 0.15277778, 0.22222222, 0.22222222,
-                      0.11111111], 'f')
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
-        assert_(p.dtype == q.dtype)
+        xp_assert_close(f, xp.linspace(0, 0.5, 5))
+        q = xp.asarray([0.08333333, 0.15277778, 0.22222222, 0.22222222,
+                        0.11111111], xp.float32)
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    def test_real_onesided_odd_32(self):
-        x = np.zeros(16, 'f')
+    # torch hits a messy np.pad codepath...
+    @skip_if_array_api_backend("torch")
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    @array_api_compatible
+    def test_real_onesided_odd_32(self, xp):
+        x = xp.zeros(16, dtype=xp.float32)
         x[0] = 1
         x[8] = 1
         f, p = csd(x, x, nperseg=9)
-        assert_allclose(f, np.arange(5.0)/9.0)
-        q = np.array([0.12477458, 0.23430935, 0.17072113, 0.17072116,
-                      0.17072113], 'f')
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
-        assert_(p.dtype == q.dtype)
+        xp_assert_close(f, xp.arange(5.0)/9.0)
+        q = xp.asarray([0.12477458, 0.23430935, 0.17072113, 0.17072116,
+                        0.17072113], xp.float32)
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    def test_real_twosided_32(self):
-        x = np.zeros(16, 'f')
+    # torch hits a messy np.pad codepath...
+    @skip_if_array_api_backend("torch")
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    @array_api_compatible
+    def test_real_twosided_32(self, xp):
+        x = xp.zeros(16, dtype=xp.float32)
         x[0] = 1
         x[8] = 1
         f, p = csd(x, x, nperseg=8, return_onesided=False)
-        assert_allclose(f, fftfreq(8, 1.0))
-        q = np.array([0.08333333, 0.07638889, 0.11111111,
-                      0.11111111, 0.11111111, 0.11111111, 0.11111111,
-                      0.07638889], 'f')
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
-        assert_(p.dtype == q.dtype)
+        xp_assert_close(f, fftfreq(8, 1.0))
+        q = xp.asarray([0.08333333, 0.07638889, 0.11111111,
+                        0.11111111, 0.11111111, 0.11111111, 0.11111111,
+                        0.07638889], xp.float32)
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    def test_complex_32(self):
-        x = np.zeros(16, 'F')
+    # xp.mean() requires real input for numpy.array_api
+    @skip_if_array_api_backend("numpy.array_api")
+    # torch hits a messy np.pad codepath...
+    @skip_if_array_api_backend("torch")
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_complex_32(self, xp):
+        x = xp.zeros(16, dtype=xp.complex64)
         x[0] = 1.0 + 2.0j
         x[8] = 1.0 + 2.0j
         f, p = csd(x, x, nperseg=8, return_onesided=False)
-        assert_allclose(f, fftfreq(8, 1.0))
-        q = np.array([0.41666666, 0.38194442, 0.55555552, 0.55555552,
-                      0.55555558, 0.55555552, 0.55555552, 0.38194442], 'f')
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
-        assert_(p.dtype == q.dtype,
-                f'dtype mismatch, {p.dtype}, {q.dtype}')
+        xp_assert_close(f, fftfreq(8, 1.0))
+        q = xp.asarray([0.41666666, 0.38194442, 0.55555552, 0.55555552,
+                        0.55555558, 0.55555552, 0.55555552, 0.38194442], xp.float32)
+        xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    def test_padded_freqs(self):
-        x = np.zeros(12)
-        y = np.ones(12)
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # torch hits a messy np.pad codepath...
+    @skip_if_array_api_backend("torch")
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_padded_freqs(self, xp):
+        x = xp.zeros(12)
+        y = xp.ones(12)
 
         nfft = 24
         f = fftfreq(nfft, 1.0)[:nfft//2+1]
         f[-1] *= -1
         fodd, _ = csd(x, y, nperseg=5, nfft=nfft)
         feven, _ = csd(x, y, nperseg=6, nfft=nfft)
-        assert_allclose(f, fodd)
-        assert_allclose(f, feven)
+        xp_assert_close(fodd, f)
+        xp_assert_close(feven, f)
 
         nfft = 25
         f = fftfreq(nfft, 1.0)[:(nfft + 1)//2]
         fodd, _ = csd(x, y, nperseg=5, nfft=nfft)
         feven, _ = csd(x, y, nperseg=6, nfft=nfft)
-        assert_allclose(f, fodd)
-        assert_allclose(f, feven)
+        xp_assert_close(fodd, f)
+        xp_assert_close(feven, f)
 
-    def test_copied_data(self):
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # torch hits a messy np.pad codepath...
+    @skip_if_array_api_backend("torch")
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_copied_data(self, xp):
         x = np.random.randn(64)
-        y = x.copy()
+        x = xp.asarray(x)
+        y = copy(x)
 
         _, p_same = csd(x, x, nperseg=8, average='mean',
                         return_onesided=False)
         _, p_copied = csd(x, y, nperseg=8, average='mean',
                           return_onesided=False)
-        assert_allclose(p_same, p_copied)
+        xp_assert_close(p_same, p_copied, check_dtype=False)
 
         _, p_same = csd(x, x, nperseg=8, average='median',
                         return_onesided=False)
         _, p_copied = csd(x, y, nperseg=8, average='median',
                           return_onesided=False)
-        assert_allclose(p_same, p_copied)
+        xp_assert_close(p_same, p_copied, check_dtype=False)
 
 
 class TestCoherence:
