@@ -715,7 +715,10 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     """
     dtype = a.dtype
     a = _put_nan_to_limits(a, (lowerlimit, None), (inclusive, None))
-    return np.nanmin(a, axis=axis).astype(dtype)
+    res = np.nanmin(a, axis=axis)
+    if not np.any(np.isnan(res)):
+        return res.astype(dtype)
+    return res
 
 
 @_axis_nan_policy_factory(
@@ -764,7 +767,10 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     """
     dtype = a.dtype
     a = _put_nan_to_limits(a, (None, upperlimit), (None, inclusive))
-    return np.nanmax(a, axis=axis).astype(dtype)
+    res = np.nanmax(a, axis=axis)
+    if not np.any(np.isnan(res)):
+        return res.astype(dtype)
+    return res
 
 
 @_axis_nan_policy_factory(
