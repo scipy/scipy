@@ -1384,10 +1384,10 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     _bspl._colloc(x, t, k, ab, offset=nleft)
     if nleft > 0:
         _bspl._handle_lhs_derivatives(t, k, x[0], ab, kl, ku,
-                                      deriv_l_ords.astype(int))
+                                      deriv_l_ords.astype(np.dtype("long")))
     if nright > 0:
         _bspl._handle_lhs_derivatives(t, k, x[-1], ab, kl, ku,
-                                      deriv_r_ords.astype(int),
+                                      deriv_r_ords.astype(np.dtype("long")),
                                       offset=nt-nright)
 
     # set up the RHS: values to interpolate (+ derivative values, if any)

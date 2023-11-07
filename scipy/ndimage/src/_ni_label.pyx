@@ -207,7 +207,7 @@ cpdef _label(np.ndarray input,
         ("Shapes must match for input and output,"
          "{} != {}".format((<object> input).shape, (<object> output).shape))
 
-    structure = np.asanyarray(structure, dtype=int).copy()
+    structure = np.asanyarray(structure, dtype=np.bool_).copy()
     assert input.ndim == structure.ndim, \
         ("Structuring element must have same "
          "# of dimensions as input, "
