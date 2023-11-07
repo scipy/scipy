@@ -21,6 +21,7 @@
 
 #include "cephes.hh"
 #include "special/evalpoly.h"
+#include "_zlog1.h"
 #include "_trig.h"
 #include "sf_error.h"
 
@@ -84,7 +85,7 @@ namespace special {
 	 *
 	 * where gamma is the Euler-Mascheroni constant.
 	 */
-
+	
 	double coeffs[] = {
 	    -4.3478266053040259361E-2, 4.5454556293204669442E-2,
 	    -4.7619070330142227991E-2, 5.000004769810169364E-2,
@@ -110,7 +111,7 @@ namespace special {
 	}
 	return cephes::lgam(x);
     }
-
+    
     inline std::complex<double> loggamma(std::complex<double> z) {
 	// Compute the principal branch of log-Gamma
 	
@@ -131,7 +132,7 @@ namespace special {
 	}
 	if (std::abs(z - 2.0) < TAYLOR_RADIUS) {
 	    // Recurrence relation and the Taylor series around 1.
-	    return std::log(z - 1.0) + loggamma_taylor(z - 1.0);
+	    return detail::zlog1(z - 1.0) + loggamma_taylor(z - 1.0);
 	}
 	if (z.real() < 0.1) {
 	    // Reflection formula; see Proposition 3.1 in [1]
@@ -145,7 +146,7 @@ namespace special {
 	}
 	return std::conj(loggamma_recurrence(std::conj(z)));
     }
-
+    
     inline std::complex<double> cgamma(std::complex<double> z) {
 	// Compute Gamma(z) using loggamma.
 	if (z.real() <= 0 && z == std::floor(z.real())) {
@@ -165,5 +166,6 @@ namespace special {
 	}
 	return std::exp(-loggamma(z));
     }
+		    
 		    
 }
