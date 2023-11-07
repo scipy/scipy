@@ -634,7 +634,7 @@
         }
     },
     "gamma": {
-        "_loggamma.pxd": {
+        "_special.h++": {
             "cgamma": "D->D"
         },
         "cephes.h": {
@@ -969,7 +969,7 @@
         }
     },
     "loggamma": {
-        "_loggamma.pxd": {
+        "_special.h++": {
 	    "loggamma_real": "d->d",
             "loggamma": "D->D"
         }
@@ -1283,7 +1283,7 @@
         }
     },
     "rgamma": {
-        "_loggamma.pxd": {
+        "_special.h++": {
             "crgamma": "D->D"
         },
         "cephes.h": {

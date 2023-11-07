@@ -5,6 +5,7 @@
 
 #include "special/binom.h"
 #include "special/lambertw.h"
+#include "_loggamma.h"
 #include "_trig.h"
 
 
@@ -29,5 +30,28 @@ inline npy_cdouble ccospi(npy_cdouble zp) {
     std::complex<double> z(npy_creal(zp), npy_cimag(zp));
     std::complex<double> w = scipy::special::ccospi(z);
     return npy_cpack(real(w), imag(w));
+}
+
+
+inline npy_cdouble cgamma(npy_cdouble zp) {
+    std::complex<double> z(npy_creal(zp), npy_cimag(zp));
+    std::complex<double> w = scipy::special::cgamma(z);
+    return npy_cpack(real(w), imag(w));
+}
+
+inline npy_cdouble crgamma(npy_cdouble zp) {
+    std::complex<double> z(npy_creal(zp), npy_cimag(zp));
+    std::complex<double> w = scipy::special::crgamma(z);
+    return npy_cpack(real(w), imag(w));
+}
+
+inline npy_cdouble loggamma(npy_cdouble zp) {
+    std::complex<double> z(npy_creal(zp), npy_cimag(zp));
+    std::complex<double> w = scipy::special::loggamma(z);
+    return npy_cpack(real(w), imag(w));
+}
+
+inline double loggamma_real(double x) {
+    return scipy::special::loggamma_real(x);
 }
 						    
