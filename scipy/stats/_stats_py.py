@@ -548,7 +548,6 @@ def _put_nan_to_limits(a, limits, inclusive):
     """
     if limits is None:
         return a
-    a = a.copy()
     mask = np.full_like(a, False, dtype=np.bool_)
     lower_limit, upper_limit = limits
     lower_include, upper_include = inclusive
