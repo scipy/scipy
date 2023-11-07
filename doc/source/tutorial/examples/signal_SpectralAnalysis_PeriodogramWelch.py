@@ -1,8 +1,3 @@
-"""Plot phase of spectrum of  delayed signal.
-
-This plot is used file ``signal.rst`` in the `Spectra with Averaging` subsection of the
-"Spectral Analysis" section.
-"""
 import matplotlib.pyplot as plt
 import numpy as np
 

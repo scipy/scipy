@@ -1,8 +1,3 @@
-"""Plot 3x oversampled  magnitude spectrum with Hann window of 20 Hz and 20.5 Hz sine.
-
-This plot is used file ``signal.rst`` in the `Sampled Sine Signal` subsection of the
-"Spectral Analysis" section.
-"""
 import matplotlib.pyplot as plt
 import numpy as np
 

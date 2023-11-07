@@ -1,9 +1,3 @@
-"""Plots three different spectral representations of four sine signals with varying
-amplitude and durations.
-
-This plot is used file ``signal.rst`` in the `Continuous-time Sine Signal` subsection
-of the "Spectral Analysis" section.
-"""
 import matplotlib.pyplot as plt
 import numpy as np
 

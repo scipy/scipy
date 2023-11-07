@@ -1,8 +1,3 @@
-"""Plot spectral leakage of various windows.
-
-This plot is used file ``signal.rst`` in the `Sampled Sine Signal` subsection of the
-"Spectral Analysis" section.
-"""
 import matplotlib.pyplot as plt
 import numpy as np
 

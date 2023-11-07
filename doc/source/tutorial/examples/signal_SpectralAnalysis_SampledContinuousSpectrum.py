@@ -1,9 +1,3 @@
-"""Plot magnitude spectrum of 20 Hz and 20.5 Hz sine overlaying continuos and sampled
-spectrum.
-
-This plot is used file ``signal.rst`` in the `Sampled Sine Signal` subsection of the
-"Spectral Analysis" section.
-"""
 import matplotlib.pyplot as plt
 import numpy as np
 

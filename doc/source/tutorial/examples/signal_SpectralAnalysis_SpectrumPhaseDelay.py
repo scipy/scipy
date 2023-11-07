@@ -1,8 +1,3 @@
-"""Plot phase of spectrum of  delayed signal.
-
-This plot is used file ``signal.rst`` in the `Phase of Spectrum` subsection of the
-"Spectral Analysis" section.
-"""
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
