@@ -75,6 +75,9 @@ axis_nan_policy_cases = [
     (stats.tmax, tuple(), {}, 1, 1, False, lambda x: (x,)),
     (stats.tstd, tuple(), {}, 1, 1, False, lambda x: (x,)),
     (stats.tsem, tuple(), {}, 1, 1, False, lambda x: (x,)),
+    (stats.circmean, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.circvar, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.circstd, tuple(), dict(), 1, 1, False, lambda x: (x,)),
 ]
 
 # If the message is one of those expected, put nans in
