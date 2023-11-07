@@ -299,7 +299,7 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
     scale : list of floats
         Scaling factors to apply to each variable. If None, the
         factors are up-low for interval bounded variables and
-        1+|x] fo the others. Defaults to None.
+        1+|x] for the others. Defaults to None.
     offset : float
         Value to subtract from each variable. If None, the
         offsets are (up+low)/2 for interval bounded variables

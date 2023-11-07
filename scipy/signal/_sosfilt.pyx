@@ -20,7 +20,7 @@ ctypedef fused DTYPE_t:
 #
 #     with nogil(DTYPE_t is not object):
 #
-# But until then, we'll neeed two copies of the loops, one with
+# But until then, we'll need two copies of the loops, one with
 # nogil and another with gil.
 
 @cython.cdivision(True)

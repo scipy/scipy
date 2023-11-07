@@ -25,6 +25,7 @@ __all__ = ['fmin', 'fmin_powell', 'fmin_bfgs', 'fmin_ncg', 'fmin_cg',
 
 __docformat__ = "restructuredtext en"
 
+import math
 import warnings
 import sys
 import inspect
@@ -1538,7 +1539,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
             break
 
         rhok_inv = np.dot(yk, sk)
-        # this was handled in numeric, let it remaines for more safety
+        # this was handled in numeric, let it remains for more safety
         # Cryptic comment above is preserved for posterity. Future reader:
         # consider change to condition below proposed in gh-1261/gh-17345.
         if rhok_inv == 0.:
@@ -2100,7 +2101,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
 
     # Logic for hess/hessp
     # - If a callable(hess) is provided, then use that
-    # - If hess is a FD_METHOD, or the output fom hess(x) is a LinearOperator
+    # - If hess is a FD_METHOD, or the output from hess(x) is a LinearOperator
     #   then create a hessp function using those.
     # - If hess is None but you have callable(hessp) then use the hessp.
     # - If hess and hessp are None then approximate hessp using the grad/jac.
@@ -2136,7 +2137,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     cg_maxiter = 20*len(x0)
 
     xtol = len(x0) * avextol
-    update = [2 * xtol]
+    update_l1norm = 2 * xtol
     xk = np.copy(x0)
     if retall:
         allvecs = [xk]
@@ -2145,15 +2146,15 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     old_fval = f(x0)
     old_old_fval = None
     float64eps = np.finfo(np.float64).eps
-    while np.add.reduce(np.abs(update)) > xtol:
+    while update_l1norm > xtol:
         if k >= maxiter:
             msg = "Warning: " + _status_message['maxiter']
             return terminate(1, msg)
         # Compute a search direction pk by applying the CG method to
         #  del2 f(xk) p = - grad f(xk) starting from 0.
         b = -fprime(xk)
-        maggrad = np.add.reduce(np.abs(b))
-        eta = np.min([0.5, np.sqrt(maggrad)])
+        maggrad = np.linalg.norm(b, ord=1)
+        eta = min(0.5, math.sqrt(maggrad))
         termcond = eta * maggrad
         xsupi = zeros(len(x0), dtype=x0.dtype)
         ri = -b
@@ -2236,6 +2237,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
         intermediate_result = OptimizeResult(x=xk, fun=old_fval)
         if _call_callback_maybe_halt(callback, intermediate_result):
             return terminate(5, "")
+        update_l1norm = np.linalg.norm(update, ord=1)
 
     else:
         if np.isnan(old_fval) or np.isnan(update).any():
@@ -3251,7 +3253,7 @@ def _linesearch_powell(func, p, xi, tol=1e-3,
                        lower_bound=None, upper_bound=None, fval=None):
     """Line-search algorithm using fminbound.
 
-    Find the minimium of the function ``func(x0 + alpha*direc)``.
+    Find the minimum of the function ``func(x0 + alpha*direc)``.
 
     lower_bound : np.array.
         The lower bounds for each parameter in ``x0``. If the ``i``th

@@ -1054,7 +1054,7 @@ def firls(numtaps, bands, desired, *, weight=None, nyq=_NoValue, fs=None):
 
     # We have that:
     #     q(n) = 1/π ∫W(ω)cos(nω)dω (over 0->π)
-    # Using our nomalization ω=πf and with a constant weight W over each
+    # Using our normalization ω=πf and with a constant weight W over each
     # interval f1->f2 we get:
     #     q(n) = W∫cos(πnf)df (0->1) = Wf sin(πnf)/πnf
     # integrated over each f1->f2 pair (i.e., value at f2 - value at f1).

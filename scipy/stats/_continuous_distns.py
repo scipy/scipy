@@ -1932,7 +1932,7 @@ class exponnorm_gen(rv_continuous):
     %(after_notes)s
 
     An alternative parameterization of this distribution (for example, in
-    the Wikpedia article [1]_) involves three parameters, :math:`\mu`,
+    the Wikipedia article [1]_) involves three parameters, :math:`\mu`,
     :math:`\lambda` and :math:`\sigma`.
 
     In the present parameterization this corresponds to having ``loc`` and
@@ -4780,10 +4780,10 @@ class invgauss_gen(rv_continuous):
                                                                    args, kwds)
         '''
         Source: Statistical Distributions, 3rd Edition. Evans, Hastings,
-        and Peacock (2000), Page 121. Their shape parameter is equivilent to
+        and Peacock (2000), Page 121. Their shape parameter is equivalent to
         SciPy's with the conversion `fshape_s = fshape / scale`.
 
-        MLE formulas are not used in 3 condtions:
+        MLE formulas are not used in 3 conditions:
         - `loc` is not fixed
         - `mu` is fixed
         These cases fall back on the superclass fit method.
@@ -4923,7 +4923,7 @@ class geninvgauss_gen(rv_continuous):
             # `shp` is the shape of the blocks of random variates that are
             # generated for each combination of parameters associated with
             # broadcasting p and b.
-            # bc is a tuple the same lenth as size.  The values
+            # bc is a tuple the same length as size.  The values
             # in bc are bools.  If bc[j] is True, it means that
             # entire axis is filled in for a given combination of the
             # broadcast arguments.
@@ -5425,9 +5425,11 @@ class jf_skew_t_gen(rv_continuous):
 
     def _munp(self, n, a, b):
         """Returns the n-th moment(s) where all the following hold:
-            - n >= 0
-            - a > n / 2
-            - b > n / 2
+
+        - n >= 0
+        - a > n / 2
+        - b > n / 2
+
         The result is np.nan in all other cases.
         """
         def nth_moment(n_k, a_k, b_k):
@@ -9115,6 +9117,12 @@ class skewnorm_gen(rv_continuous):
             f2=lambda x, a: 2.*_norm_pdf(x)*_norm_cdf(a*x)
         )
 
+    def _logpdf(self, x, a):
+        return _lazywhere(
+            a == 0, (x, a), lambda x, a: _norm_logpdf(x),
+            f2=lambda x, a: np.log(2)+_norm_logpdf(x)+_norm_logcdf(a*x),
+        )
+
     def _cdf(self, x, a):
         a = np.atleast_1d(a)
         cdf = _boost._skewnorm_cdf(x, 0, 1, a)
@@ -9219,6 +9227,8 @@ class skewnorm_gen(rv_continuous):
         shape parameter ``a`` will be infinite.
         \n\n""")
     def fit(self, data, *args, **kwds):
+        if kwds.pop("superfit", False):
+            return super().fit(data, *args, **kwds)
         if isinstance(data, CensoredData):
             if data.num_censored() == 0:
                 data = data._uncensor()
@@ -9242,13 +9252,6 @@ class skewnorm_gen(rv_continuous):
                 np.pi/2 * s_23 / (s_23 + ((4 - np.pi)/2)**(2/3))
             )
 
-        # If skewness of data is greater than max possible population skewness,
-        # MoM won't provide a good guess. Get out early.
-        s = stats.skew(data)
-        s_max = skew_d(1)
-        if abs(s) >= s_max and method != "mm" and fa is None and not args:
-            return super().fit(data, *args, **kwds)
-
         # If method is method of moments, we don't need the user's guesses.
         # Otherwise, extract the guesses from args and kwds.
         if method == "mm":
@@ -9261,7 +9264,14 @@ class skewnorm_gen(rv_continuous):
         if fa is None and a is None:  # not fixed and no guess: use MoM
             # Solve for a that matches sample distribution skewness to sample
             # skewness.
-            s = np.clip(s, -s_max, s_max)
+            s = stats.skew(data)
+            if method == 'mle':
+                # For MLE initial conditions, clip skewness to a large but
+                # reasonable value in case the data skewness is out-of-range.
+                s = np.clip(s, -0.99, 0.99)
+            else:
+                s_max = skew_d(1)
+                s = np.clip(s, -s_max, s_max)
             d = d_skew(s)
             with np.errstate(divide='ignore'):
                 a = np.sqrt(np.divide(d**2, (1-d**2)))*np.sign(s)
@@ -9889,37 +9899,36 @@ class truncpareto_gen(rv_continuous):
         return self.a, c
 
     def _pdf(self, x, b, c):
-        return b * x**-(b+1) / (1 - c**-b)
+        return b * x**-(b+1) / (1 - 1/c**b)
 
     def _logpdf(self, x, b, c):
-        # return np.log(b) - np.log1p(-c**-b) - (b+1)*np.log(x)
         return np.log(b) - np.log(-np.expm1(-b*np.log(c))) - (b+1)*np.log(x)
 
     def _cdf(self, x, b, c):
-        return (1 - x**-b) / (1 - c**-b)
+        return (1 - x**-b) / (1 - 1/c**b)
 
     def _logcdf(self, x, b, c):
-        return np.log1p(-x**-b) - np.log1p(-c**-b)
+        return np.log1p(-x**-b) - np.log1p(-1/c**b)
 
     def _ppf(self, q, b, c):
-        return pow(1 - (1 - c**-b)*q, -1/b)
+        return pow(1 - (1 - 1/c**b)*q, -1/b)
 
     def _sf(self, x, b, c):
-        return (x**-b - c**-b) / (1 - c**-b)
+        return (x**-b - 1/c**b) / (1 - 1/c**b)
 
     def _logsf(self, x, b, c):
-        return np.log(x**-b - c**-b) - np.log1p(-c**-b)
+        return np.log(x**-b - 1/c**b) - np.log1p(-1/c**b)
 
     def _isf(self, q, b, c):
-        return pow(c**-b + (1 - c**-b)*q, -1/b)
+        return pow(1/c**b + (1 - 1/c**b)*q, -1/b)
 
     def _entropy(self, b, c):
-        return -(np.log(b/(1 - c**-b))
+        return -(np.log(b/(1 - 1/c**b))
                  + (b+1)*(np.log(c)/(c**b - 1) - 1/b))
 
     def _munp(self, n, b, c):
         if (n == b).all():
-            return b*np.log(c) / (1 - c**-b)
+            return b*np.log(c) / (1 - 1/c**b)
         else:
             return b / (b-n) * (c**b - c**n) / (c**b - 1)
 
@@ -10087,7 +10096,7 @@ class truncpareto_gen(rv_continuous):
 
             # Standardised values should be within the distribution support
             # when all parameters controlling it are fixed. If it not the case,
-            # `fc` is overidden by `c` determined from `floc` and `fscale` when
+            # `fc` is overridden by `c` determined from `floc` and `fscale` when
             # raising the exception.
             if fc and (floc is not None) and fscale:
                 if data.max() > fc*fscale + floc:
@@ -11200,7 +11209,7 @@ class argus_gen(rv_continuous):
         # only samples on [0, chi**2 / 2], and apply the inverse
         # transformation X = (1 - 2*Y/chi**2)**(1/2). Since we only
         # look at chi > 1.8, gamma(1.5).cdf(chi**2/2) is large enough such
-        # Y falls in the inteval [0, chi**2 / 2] with a high probability:
+        # Y falls in the interval [0, chi**2 / 2] with a high probability:
         # stats.gamma(1.5).cdf(1.8**2/2) = 0.644...
         #
         # The points to switch between the different methods are determined

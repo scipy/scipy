@@ -6,13 +6,14 @@ import operator
 import numpy as np
 from math import prod
 import scipy.sparse as sp
+from scipy._lib._util import np_long, np_ulong
 
 
 __all__ = ['upcast', 'getdtype', 'getdata', 'isscalarlike', 'isintlike',
            'isshape', 'issequence', 'isdense', 'ismatrix', 'get_sum_dtype']
 
 supported_dtypes = [np.bool_, np.byte, np.ubyte, np.short, np.ushort, np.intc,
-                    np.uintc, np.int_, np.uint, np.longlong, np.ulonglong,
+                    np.uintc, np_long, np_ulong, np.longlong, np.ulonglong,
                     np.float32, np.float64, np.longdouble, 
                     np.complex64, np.complex128, np.clongdouble]
 
@@ -199,7 +200,7 @@ def get_index_dtype(arrays=(), maxval=None, check_contents=False):
     return dtype
 
 
-def get_sum_dtype(dtype):
+def get_sum_dtype(dtype: np.dtype) -> np.dtype:
     """Mimic numpy's casting for np.sum"""
     if dtype.kind == 'u' and np.can_cast(dtype, np.uint):
         return np.uint

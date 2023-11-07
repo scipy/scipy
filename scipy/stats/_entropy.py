@@ -8,10 +8,20 @@ from __future__ import annotations
 import math
 import numpy as np
 from scipy import special
+from ._axis_nan_policy import _axis_nan_policy_factory
 
 __all__ = ['entropy', 'differential_entropy']
 
 
+@_axis_nan_policy_factory(
+    lambda x: x,
+    n_samples=lambda kwgs: (
+        2 if ("qk" in kwgs and kwgs["qk"] is not None)
+        else 1
+    ),
+    n_outputs=1, result_to_tuple=lambda x: (x,), paired=True,
+    too_small=-1  # entropy doesn't have too small inputs
+)
 def entropy(pk: np.typing.ArrayLike,
             qk: np.typing.ArrayLike | None = None,
             base: float | None = None,
@@ -144,6 +154,20 @@ def entropy(pk: np.typing.ArrayLike,
     return S
 
 
+def _differential_entropy_is_too_small(samples, kwargs):
+    values = samples[0]
+    n = values.shape[-1]
+    window_length = kwargs.get("window_length",
+                               math.floor(math.sqrt(n) + 0.5))
+    if not 2 <= 2 * window_length < n:
+        return True
+    return False
+
+
+@_axis_nan_policy_factory(
+    lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,),
+    too_small=_differential_entropy_is_too_small
+)
 def differential_entropy(
     values: np.typing.ArrayLike,
     *,

@@ -203,7 +203,7 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
     }
     for (kk = 0; kk < PyArray_NDIM(input); kk++) {
         /* along the direction of the real transform we must use the given
-             length of that dimensons, unless a complex transform is assumed
+             length of that dimensions, unless a complex transform is assumed
              (n < 0): */
         int shape = kk == axis ?
                 (n < 0 ? PyArray_DIM(input, kk) : n) : PyArray_DIM(input, kk);
@@ -482,7 +482,7 @@ int NI_FourierShift(PyArrayObject *input, PyArrayObject* shift_array,
     }
     for (kk = 0; kk < PyArray_NDIM(input); kk++) {
         /* along the direction of the real transform we must use the given
-             length of that dimensons, unless a complex transform is assumed
+             length of that dimensions, unless a complex transform is assumed
              (n < 0): */
         int shape = kk == axis ?
                 (n < 0 ? PyArray_DIM(input, kk) : n) : PyArray_DIM(input, kk);

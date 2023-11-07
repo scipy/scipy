@@ -24,7 +24,7 @@ sys.path.insert(1, os.path.join(os.path.dirname(__file__), 'tools'))
 try:
     version_utils = __import__("version_utils")
     FULLVERSION = version_utils.VERSION
-    # This is duplicated from setup.py
+    # This is duplicated from tools/version_utils.py
     if os.path.exists('.git'):
         GIT_REVISION, _ = version_utils.git_version(
             os.path.join(os.path.dirname(__file__), '..'))

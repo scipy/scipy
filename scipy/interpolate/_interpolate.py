@@ -590,8 +590,8 @@ class interp1d(_Interpolator1D):
                     fill_value = (np.take(self.y, 0, axis), np.nan)
             else:
                 # Check if we can delegate to numpy.interp (2x-10x faster).
-                np_types = (np.float64, np.int_)
-                cond = self.x.dtype in np_types and self.y.dtype in np_types
+                np_dtypes = (np.dtype(np.float64), np.dtype(int))
+                cond = self.x.dtype in np_dtypes and self.y.dtype in np_dtypes
                 cond = cond and self.y.ndim == 1
                 cond = cond and not _do_extrapolate(fill_value)
 
@@ -1920,7 +1920,7 @@ class BPoly(_PPolyBase):
 
         Return the coefficients of a polynomial in the Bernstein basis
         defined on ``[xa, xb]`` and having the values and derivatives at the
-        endpoints `xa` and `xb` as specified by `ya`` and `yb`.
+        endpoints `xa` and `xb` as specified by `ya` and `yb`.
         The polynomial constructed is of the minimal possible degree, i.e.,
         if the lengths of `ya` and `yb` are `na` and `nb`, the degree
         of the polynomial is ``na + nb - 1``.

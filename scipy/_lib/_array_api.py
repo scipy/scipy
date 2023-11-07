@@ -339,3 +339,7 @@ def cov(x, *, xp=None):
 
 def xp_unsupported_param_msg(param):
     return f'Providing {param!r} is only supported for numpy arrays.'
+
+
+def is_complex(x, xp):
+    return xp.isdtype(x.dtype, 'complex floating')

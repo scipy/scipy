@@ -41,7 +41,7 @@ class FortranFile:
     mode : {'r', 'w'}, optional
         Read-write mode, default is 'r'.
     header_dtype : dtype, optional
-        Data type of the header. Size and endiness must match the input/output file.
+        Data type of the header. Size and endianness must match the input/output file.
 
     Notes
     -----
@@ -174,7 +174,7 @@ class FortranFile:
         Parameters
         ----------
         *dtypes : dtypes, optional
-            Data type(s) specifying the size and endiness of the data.
+            Data type(s) specifying the size and endianness of the data.
 
         Returns
         -------
@@ -300,7 +300,7 @@ class FortranFile:
         Parameters
         ----------
         dtype : dtype, optional
-            Data type specifying the size and endiness of the data.
+            Data type specifying the size and endianness of the data.
 
         Returns
         -------
@@ -323,7 +323,7 @@ class FortranFile:
         Parameters
         ----------
         dtype : dtype, optional
-            Data type specifying the size and endiness of the data.
+            Data type specifying the size and endianness of the data.
 
         Returns
         -------

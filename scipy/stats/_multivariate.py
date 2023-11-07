@@ -3296,7 +3296,7 @@ class multinomial_gen(multi_rv_generic):
         pcond = np.any(p < 0, axis=-1)
         pcond |= np.any(p > 1, axis=-1)
 
-        n = np.array(n, dtype=np.int_, copy=True)
+        n = np.array(n, dtype=int, copy=True)
 
         # true for bad n
         ncond = n < 0
@@ -3309,7 +3309,7 @@ class multinomial_gen(multi_rv_generic):
         x_ is an int array; xcond is a boolean array flagging values out of the
         domain.
         """
-        xx = np.asarray(x, dtype=np.int_)
+        xx = np.asarray(x, dtype=int)
 
         if xx.ndim == 0:
             raise ValueError("x must be an array.")
@@ -6373,7 +6373,7 @@ class vonmises_fisher_gen(multi_rv_generic):
     direction :math:`\mathbf{\mu}`.
 
     In dimensions 2 and 3, specialized algorithms are used for fast sampling
-    [2]_, [3]_. For dimenions of 4 or higher the rejection sampling algorithm
+    [2]_, [3]_. For dimensions of 4 or higher the rejection sampling algorithm
     described in [4]_ is utilized. This implementation is partially based on
     the geomstats package [5]_, [6]_.
 

@@ -33,7 +33,6 @@ from collections import namedtuple
 
 import numpy as np
 from numpy import array, asarray, ma
-from numpy.testing import suppress_warnings
 
 from scipy import sparse
 from scipy.spatial.distance import cdist
@@ -530,8 +529,8 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=False):
     return ModeResult(modes[()], counts[()])
 
 
-def _mask_to_limits(a, limits, inclusive):
-    """Mask an array for values outside of given limits.
+def _put_nan_to_limits(a, limits, inclusive):
+    """Put NaNs in an array for values outside of given limits.
 
     This is primarily a utility function.
 
@@ -541,41 +540,33 @@ def _mask_to_limits(a, limits, inclusive):
     limits : (float or None, float or None)
         A tuple consisting of the (lower limit, upper limit).  Values in the
         input array less than the lower limit or greater than the upper limit
-        will be masked out. None implies no limit.
+        will be replaced with `np.nan`. None implies no limit.
     inclusive : (bool, bool)
         A tuple consisting of the (lower flag, upper flag).  These flags
         determine whether values exactly equal to lower or upper are allowed.
 
-    Returns
-    -------
-    A MaskedArray.
-
-    Raises
-    ------
-    A ValueError if there are no values within the given limits.
-
     """
+    if limits is None:
+        return a
+    mask = np.full_like(a, False, dtype=np.bool_)
     lower_limit, upper_limit = limits
     lower_include, upper_include = inclusive
-    am = ma.MaskedArray(a)
     if lower_limit is not None:
-        if lower_include:
-            am = ma.masked_less(am, lower_limit)
-        else:
-            am = ma.masked_less_equal(am, lower_limit)
-
+        mask |= (a < lower_limit) if lower_include else a <= lower_limit
     if upper_limit is not None:
-        if upper_include:
-            am = ma.masked_greater(am, upper_limit)
-        else:
-            am = ma.masked_greater_equal(am, upper_limit)
-
-    if am.count() == 0:
+        mask |= (a > upper_limit) if upper_include else a >= upper_limit
+    if np.all(mask):
         raise ValueError("No array values within given limits")
+    if np.any(mask):
+        a = a.copy() if np.issubdtype(a.dtype, np.inexact) else a.astype(np.float64)
+        a[mask] = np.nan
+    return a
 
-    return am
 
-
+@_axis_nan_policy_factory(
+    lambda x: x, n_outputs=1, default_axis=None,
+    result_to_tuple=lambda x: (x,)
+)
 def tmean(a, limits=None, inclusive=(True, True), axis=None):
     """Compute the trimmed mean.
 
@@ -618,14 +609,13 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
     10.0
 
     """
-    a = asarray(a)
-    if limits is None:
-        return np.mean(a, axis)
-    am = _mask_to_limits(a, limits, inclusive)
-    mean = np.ma.filled(am.mean(axis=axis), fill_value=np.nan)
-    return mean if mean.ndim > 0 else mean.item()
+    a = _put_nan_to_limits(a, limits, inclusive)
+    return np.nanmean(a, axis=axis)
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)
+)
 def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     """Compute the trimmed variance.
 
@@ -672,19 +662,17 @@ def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     20.0
 
     """
-    a = asarray(a)
-    a = a.astype(float)
-    if limits is None:
-        return a.var(ddof=ddof, axis=axis)
-    am = _mask_to_limits(a, limits, inclusive)
-    amnan = am.filled(fill_value=np.nan)
-    return np.nanvar(amnan, ddof=ddof, axis=axis)
+    a = _put_nan_to_limits(a, limits, inclusive)
+    return np.nanvar(a, ddof=ddof, axis=axis)
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)
+)
 def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     """Compute the trimmed minimum.
 
-    This function finds the miminum value of an array `a` along the
+    This function finds the minimum value of an array `a` along the
     specified axis, but only considering values greater than a specified
     lower limit.
 
@@ -702,13 +690,6 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     inclusive : {True, False}, optional
         This flag determines whether values exactly equal to the lower limit
         are included.  The default value is True.
-    nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan.
-        The following options are available (default is 'propagate'):
-
-          * 'propagate': returns nan
-          * 'raise': throws an error
-          * 'omit': performs the calculations ignoring nan values
 
     Returns
     -------
@@ -730,20 +711,18 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     14
 
     """
-    a, axis = _chk_asarray(a, axis)
-    am = _mask_to_limits(a, (lowerlimit, None), (inclusive, False))
-
-    contains_nan, nan_policy = _contains_nan(am, nan_policy)
-
-    if contains_nan and nan_policy == 'omit':
-        am = ma.masked_invalid(am)
-
-    res = ma.minimum.reduce(am, axis).data
-    if res.ndim == 0:
-        return res[()]
+    dtype = a.dtype
+    a = _put_nan_to_limits(a, (lowerlimit, None), (inclusive, None))
+    res = np.nanmin(a, axis=axis)
+    if not np.any(np.isnan(res)):
+        # needed if input is of integer dtype
+        return res.astype(dtype, copy=False)
     return res
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)
+)
 def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     """Compute the trimmed maximum.
 
@@ -764,13 +743,6 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     inclusive : {True, False}, optional
         This flag determines whether values exactly equal to the upper limit
         are included.  The default value is True.
-    nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan.
-        The following options are available (default is 'propagate'):
-
-          * 'propagate': returns nan
-          * 'raise': throws an error
-          * 'omit': performs the calculations ignoring nan values
 
     Returns
     -------
@@ -792,20 +764,18 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     12
 
     """
-    a, axis = _chk_asarray(a, axis)
-    am = _mask_to_limits(a, (None, upperlimit), (False, inclusive))
-
-    contains_nan, nan_policy = _contains_nan(am, nan_policy)
-
-    if contains_nan and nan_policy == 'omit':
-        am = ma.masked_invalid(am)
-
-    res = ma.maximum.reduce(am, axis).data
-    if res.ndim == 0:
-        return res[()]
+    dtype = a.dtype
+    a = _put_nan_to_limits(a, (None, upperlimit), (None, inclusive))
+    res = np.nanmax(a, axis=axis)
+    if not np.any(np.isnan(res)):
+        # needed if input is of integer dtype
+        return res.astype(dtype, copy=False)
     return res
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)
+)
 def tstd(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     """Compute the trimmed sample standard deviation.
 
@@ -852,9 +822,12 @@ def tstd(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     4.4721359549995796
 
     """
-    return np.sqrt(tvar(a, limits, inclusive, axis, ddof))
+    return np.sqrt(tvar(a, limits, inclusive, axis, ddof, _no_deco=True))
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)
+)
 def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     """Compute the trimmed standard error of the mean.
 
@@ -901,13 +874,10 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     1.1547005383792515
 
     """
-    a = np.asarray(a).ravel()
-    if limits is None:
-        return a.std(ddof=ddof) / np.sqrt(a.size)
-
-    am = _mask_to_limits(a, limits, inclusive)
-    sd = np.sqrt(np.ma.var(am, ddof=ddof, axis=axis))
-    return sd / np.sqrt(am.count())
+    a = _put_nan_to_limits(a, limits, inclusive)
+    sd = np.sqrt(np.nanvar(a, ddof=ddof, axis=axis))
+    n_obs = (~np.isnan(a)).sum(axis=axis)
+    return sd / np.sqrt(n_obs, dtype=sd.dtype)
 
 
 #####################################
@@ -1535,7 +1505,7 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     >>> st_val = np.linspace(-5, 5, 100)
     >>> pdf = dist.pdf(st_val)
     >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> def st_plot(ax):  # we'll re-use this
+    >>> def st_plot(ax):  # we'll reuse this
     ...     ax.plot(st_val, pdf)
     ...     ax.set_title("Skew Test Null Distribution")
     ...     ax.set_xlabel("statistic")
@@ -1729,7 +1699,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     >>> kt_val = np.linspace(-5, 5, 100)
     >>> pdf = dist.pdf(kt_val)
     >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> def kt_plot(ax):  # we'll re-use this
+    >>> def kt_plot(ax):  # we'll reuse this
     ...     ax.plot(kt_val, pdf)
     ...     ax.set_title("Kurtosis Test Null Distribution")
     ...     ax.set_xlabel("statistic")
@@ -1924,7 +1894,7 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     >>> stat_vals = np.linspace(0, 16, 100)
     >>> pdf = dist.pdf(stat_vals)
     >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> def plot(ax):  # we'll re-use this
+    >>> def plot(ax):  # we'll reuse this
     ...     ax.plot(stat_vals, pdf)
     ...     ax.set_title("Normality Test Null Distribution")
     ...     ax.set_xlabel("statistic")
@@ -2084,7 +2054,7 @@ def jarque_bera(x, *, axis=None):
     >>> jb_val = np.linspace(0, 11, 100)
     >>> pdf = dist.pdf(jb_val)
     >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> def jb_plot(ax):  # we'll re-use this
+    >>> def jb_plot(ax):  # we'll reuse this
     ...     ax.plot(jb_val, pdf)
     ...     ax.set_title("Jarque-Bera Null Distribution")
     ...     ax.set_xlabel("statistic")
@@ -2426,33 +2396,23 @@ def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
         def count(x):
             return np.count_nonzero(x, -1)
 
-        # Despite using masked_array to omit nan values from processing,
-        # the CI tests on "Azure pipelines" (but not on the other CI servers)
-        # emits warnings when there are nan values, contrarily to the purpose
-        # of masked_arrays. As a fix, we simply suppress the warnings.
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning,
-                       "invalid value encountered in less")
-            sup.filter(RuntimeWarning,
-                       "invalid value encountered in greater")
-
-            # Main computations/logic
-            if kind == 'rank':
-                left = count(a < score)
-                right = count(a <= score)
-                plus1 = left < right
-                perct = (left + right + plus1) * (50.0 / n)
-            elif kind == 'strict':
-                perct = count(a < score) * (100.0 / n)
-            elif kind == 'weak':
-                perct = count(a <= score) * (100.0 / n)
-            elif kind == 'mean':
-                left = count(a < score)
-                right = count(a <= score)
-                perct = (left + right) * (50.0 / n)
-            else:
-                raise ValueError(
-                    "kind can only be 'rank', 'strict', 'weak' or 'mean'")
+        # Main computations/logic
+        if kind == 'rank':
+            left = count(a < score)
+            right = count(a <= score)
+            plus1 = left < right
+            perct = (left + right + plus1) * (50.0 / n)
+        elif kind == 'strict':
+            perct = count(a < score) * (100.0 / n)
+        elif kind == 'weak':
+            perct = count(a <= score) * (100.0 / n)
+        elif kind == 'mean':
+            left = count(a < score)
+            right = count(a <= score)
+            perct = (left + right) * (50.0 / n)
+        else:
+            raise ValueError(
+                "kind can only be 'rank', 'strict', 'weak' or 'mean'")
 
     # Re-insert nan values
     perct = ma.filled(perct, np.nan)
@@ -5307,7 +5267,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
     >>> t_vals = np.linspace(-5, 5, 100)
     >>> pdf = dist.pdf(t_vals)
     >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> def plot(ax):  # we'll re-use this
+    >>> def plot(ax):  # we'll reuse this
     ...     ax.plot(t_vals, pdf)
     ...     ax.set_title("Spearman's Rho Test Null Distribution")
     ...     ax.set_xlabel("statistic")
@@ -5718,7 +5678,7 @@ def kendalltau(x, y, *, initial_lexsort=_NoValue, nan_policy='propagate',
 
     These data were analyzed in [7]_ using Spearman's correlation coefficient,
     a statistic similar to to Kendall's tau in that it is also sensitive to
-    ordinal correlation between the samples. Let's perform an analagous study
+    ordinal correlation between the samples. Let's perform an analogous study
     using Kendall's tau.
 
     >>> from scipy import stats
@@ -5747,7 +5707,7 @@ def kendalltau(x, y, *, initial_lexsort=_NoValue, nan_policy='propagate',
     >>> z_vals = np.linspace(-1.25, 1.25, 100)
     >>> pdf = dist.pdf(z_vals)
     >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> def plot(ax):  # we'll re-use this
+    >>> def plot(ax):  # we'll reuse this
     ...     ax.plot(z_vals, pdf)
     ...     ax.set_title("Kendall Tau Test Null Distribution")
     ...     ax.set_xlabel("statistic")
@@ -8113,12 +8073,12 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     res: Power_divergenceResult
         An object containing attributes:
 
-        chisq : float or ndarray
+        statistic : float or ndarray
             The chi-squared test statistic.  The value is a float if `axis` is
             None or `f_obs` and `f_exp` are 1-D.
         pvalue : float or ndarray
             The p-value of the test.  The value is a float if `ddof` and the
-            return value `chisq` are scalars.
+            result attribute `statistic` are scalars.
 
     See Also
     --------
@@ -8740,7 +8700,7 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
     References
     ----------
     .. [1] Hodges, J.L. Jr.,  "The Significance Probability of the Smirnov
-           Two-Sample Test," Arkiv fiur Matematik, 3, No. 43 (1958), 469-86.
+           Two-Sample Test," Arkiv fiur Matematik, 3, No. 43 (1958), 469-486.
 
     Examples
     --------
@@ -10259,7 +10219,7 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     where :math:`\Gamma (u, v)` is the set of (probability) distributions on
     :math:`\mathbb{R} \times \mathbb{R}` whose marginals are :math:`u` and
     :math:`v` on the first and second factors respectively. For a given value
-    :math:`x`, :math:`u(x)` gives the probabilty of :math:`u` at position
+    :math:`x`, :math:`u(x)` gives the probability of :math:`u` at position
     :math:`x`, and the same for :math:`v(x)`.
 
     In the 1-dimensional case, let :math:`U` and :math:`V` denote the
@@ -10292,7 +10252,7 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     The :math:`\text{vec}()` function denotes the Vectorization function
     that transforms a matrix into a column vector by vertically stacking
     the columns of the matrix.
-    The tranport plan :math:`\Gamma` is a matrix :math:`[\gamma_{ij}]` in
+    The transport plan :math:`\Gamma` is a matrix :math:`[\gamma_{ij}]` in
     which :math:`\gamma_{ij}` is a positive value representing the amount of
     probability mass transported from :math:`u(x_i)` to :math:`v(y_i)`.
     Summing over the rows of :math:`\Gamma` should give the source distribution
@@ -10304,7 +10264,7 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     :math:`d_{ij} = d(x_i, y_j)`.
 
     Given :math:`\Gamma`, :math:`D`, :math:`b`, the Monge problem can be
-    tranformed into a linear programming problem by
+    transformed into a linear programming problem by
     taking :math:`A x = b` as constraints and :math:`z = c^T x` as minimization
     target (sum of costs) , where matrix :math:`A` has the form
 
@@ -10843,7 +10803,10 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
             # The return values of `normalize_axis_index` are ignored.  The
             # call validates `axis`, even though we won't use it.
             normalize_axis_index(axis, a.ndim)
-            dt = np.float64 if method == 'average' else np.int_
+            if method == 'average':
+                dt = np.dtype(np.float64)
+            else:
+                dt = np.dtype(int)
             return np.empty(a.shape, dtype=dt)
         return np.apply_along_axis(rankdata, axis, a, method,
                                    nan_policy=nan_policy)

@@ -62,7 +62,25 @@ axis_nan_policy_cases = [
     (_get_ttest_ci(stats.ttest_1samp), (0,), dict(), 1, 2, False, None),
     (_get_ttest_ci(stats.ttest_rel), tuple(), dict(), 2, 2, True, None),
     (_get_ttest_ci(stats.ttest_ind), tuple(), dict(), 2, 2, False, None),
-    (stats.mode, tuple(), dict(), 1, 2, True, lambda x: (x.mode, x.count))
+    (stats.mode, tuple(), dict(), 1, 2, True, lambda x: (x.mode, x.count)),
+    (stats.differential_entropy, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.variation, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.levene, tuple(), {}, 2, 2, False, None),
+    (stats.fligner, tuple(), {'center': 'trimmed', 'proportiontocut': 0.01},
+     2, 2, False, None),
+    (stats.ansari, tuple(), {}, 2, 2, False, None),
+    (stats.entropy, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.entropy, tuple(), dict(), 2, 1, True, lambda x: (x,)),
+    (stats.bartlett, tuple(), {}, 2, 2, False, None),
+    (stats.tmean, tuple(), {}, 1, 1, False, lambda x: (x,)),
+    (stats.tvar, tuple(), {}, 1, 1, False, lambda x: (x,)),
+    (stats.tmin, tuple(), {}, 1, 1, False, lambda x: (x,)),
+    (stats.tmax, tuple(), {}, 1, 1, False, lambda x: (x,)),
+    (stats.tstd, tuple(), {}, 1, 1, False, lambda x: (x,)),
+    (stats.tsem, tuple(), {}, 1, 1, False, lambda x: (x,)),
+    (stats.circmean, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.circvar, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.circstd, tuple(), dict(), 1, 1, False, lambda x: (x,)),
 ]
 
 # If the message is one of those expected, put nans in
@@ -82,7 +100,11 @@ too_small_messages = {"The input contains nan",  # for nan_policy="raise"
                       "zero-size array to reduction operation maximum",
                       "`x` and `y` must be of nonzero size.",
                       "The exact distribution of the Wilcoxon test",
-                      "Data input must not be empty"}
+                      "Data input must not be empty",
+                      "Window length (0) must be positive and less",
+                      "Window length (1) must be positive and less",
+                      "Window length (2) must be positive and less",
+                      "No array values within given limits"}
 
 # If the message is one of these, results of the function may be inaccurate,
 # but NaNs are not to be placed
@@ -122,7 +144,7 @@ def _mixed_data_generator(n_samples, n_repetitions, axis, rng,
 
         # For multi-sample tests, we want to test broadcasting and check
         # that nan policy works correctly for each nan pattern for each input.
-        # This takes care of both simultaneosly.
+        # This takes care of both simultaneously.
         new_shape = [n_repetitions] + [1]*n_samples + [n_obs]
         new_shape[1 + i] = 6
         x = x.reshape(new_shape)
@@ -958,7 +980,7 @@ def test_axis_None_vs_tuple_with_broadcasting():
 @pytest.mark.parametrize(("axis"),
                          list(permutations(range(-3, 3), 2)) + [(-4, 1)])
 def test_other_axis_tuples(axis):
-    # Check that _axis_nan_policy_factory treates all `axis` tuples as expected
+    # Check that _axis_nan_policy_factory treats all `axis` tuples as expected
     rng = np.random.default_rng(0)
     shape_x = (4, 5, 6)
     shape_y = (1, 6)

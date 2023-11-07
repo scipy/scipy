@@ -103,50 +103,6 @@ irfft = functools.partial(c2r, False)
 irfft.__name__ = 'irfft'
 
 
-def fft2(x, s=None, axes=(-2,-1), norm=None, overwrite_x=False, workers=None,
-         *, plan=None):
-    """
-    2-D discrete Fourier transform.
-    """
-    if plan is not None:
-        raise NotImplementedError('Passing a precomputed plan is not yet '
-                                  'supported by scipy.fft functions')
-    return fftn(x, s, axes, norm, overwrite_x, workers)
-
-
-def ifft2(x, s=None, axes=(-2,-1), norm=None, overwrite_x=False, workers=None,
-          *, plan=None):
-    """
-    2-D discrete inverse Fourier transform of real or complex sequence.
-    """
-    if plan is not None:
-        raise NotImplementedError('Passing a precomputed plan is not yet '
-                                  'supported by scipy.fft functions')
-    return ifftn(x, s, axes, norm, overwrite_x, workers)
-
-
-def rfft2(x, s=None, axes=(-2,-1), norm=None, overwrite_x=False, workers=None,
-          *, plan=None):
-    """
-    2-D discrete Fourier transform of a real sequence
-    """
-    if plan is not None:
-        raise NotImplementedError('Passing a precomputed plan is not yet '
-                                  'supported by scipy.fft functions')
-    return rfftn(x, s, axes, norm, overwrite_x, workers)
-
-
-def irfft2(x, s=None, axes=(-2,-1), norm=None, overwrite_x=False, workers=None,
-           *, plan=None):
-    """
-    2-D discrete inverse Fourier transform of a real sequence
-    """
-    if plan is not None:
-        raise NotImplementedError('Passing a precomputed plan is not yet '
-                                  'supported by scipy.fft functions')
-    return irfftn(x, s, axes, norm, overwrite_x, workers)
-
-
 def hfft2(x, s=None, axes=(-2,-1), norm=None, overwrite_x=False, workers=None,
           *, plan=None):
     """
