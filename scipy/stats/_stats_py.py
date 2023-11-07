@@ -559,8 +559,7 @@ def _put_nan_to_limits(a, limits, inclusive):
     if np.all(mask):
         raise ValueError("No array values within given limits")
     if np.any(mask):
-        if not np.issubdtype(a.dtype, np.inexact):
-            a = a.astype(np.float64)
+        a = a.copy() if np.issubdtype(a.dtype, np.inexact) else a.astype(np.float64)
         a[mask] = np.nan
     return a
 
@@ -717,7 +716,8 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     a = _put_nan_to_limits(a, (lowerlimit, None), (inclusive, None))
     res = np.nanmin(a, axis=axis)
     if not np.any(np.isnan(res)):
-        return res.astype(dtype)
+        # needed if input is of integer dtype
+        return res.astype(dtype, copy=False)
     return res
 
 
@@ -769,7 +769,8 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     a = _put_nan_to_limits(a, (None, upperlimit), (None, inclusive))
     res = np.nanmax(a, axis=axis)
     if not np.any(np.isnan(res)):
-        return res.astype(dtype)
+        # needed if input is of integer dtype
+        return res.astype(dtype, copy=False)
     return res
 
 
