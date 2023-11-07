@@ -3278,7 +3278,7 @@ def _apply_func(x, g, func):
 FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
 
 
-@_axis_nan_policy_factory(LeveneResult, n_samples=None)
+@_axis_nan_policy_factory(FlignerResult, n_samples=None)
 def fligner(*samples, center='median', proportiontocut=0.05):
     r"""Perform Fligner-Killeen test for equality of variance.
 
