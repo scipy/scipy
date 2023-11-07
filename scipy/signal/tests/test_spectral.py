@@ -24,82 +24,131 @@ from scipy._lib._array_api import xp_assert_close, xp_assert_equal, copy
 
 
 class TestPeriodogram:
-    def test_real_onesided_even(self):
-        x = np.zeros(16)
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_real_onesided_even(self, xp):
+        x = xp.zeros(16)
         x[0] = 1
         f, p = periodogram(x)
-        assert_allclose(f, np.linspace(0, 0.5, 9))
-        q = np.ones(9)
+        xp_assert_close(f, xp.linspace(0, 0.5, 9))
+        q = xp.ones(9)
         q[0] = 0
         q[-1] /= 2.0
         q /= 8
-        assert_allclose(p, q)
+        xp_assert_close(p, q)
 
-    def test_real_onesided_odd(self):
-        x = np.zeros(15)
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_real_onesided_odd(self, xp):
+        x = xp.zeros(15)
         x[0] = 1
         f, p = periodogram(x)
-        assert_allclose(f, np.arange(8.0)/15.0)
-        q = np.ones(8)
+        xp_assert_close(f, xp.arange(8.0)/15.0)
+        q = xp.ones(8)
         q[0] = 0
         q *= 2.0/15.0
-        assert_allclose(p, q, atol=1e-15)
+        xp_assert_close(p, q, atol=1e-15)
 
-    def test_real_twosided(self):
-        x = np.zeros(16)
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_real_twosided(self, xp):
+        x = xp.zeros(16)
         x[0] = 1
         f, p = periodogram(x, return_onesided=False)
-        assert_allclose(f, fftfreq(16, 1.0))
-        q = np.full(16, 1/16.0)
+        xp_assert_close(f, fftfreq(16, 1.0), check_namespace=False, check_dtype=False)
+        q = xp.full((16,), 1/16.0)
         q[0] = 0
-        assert_allclose(p, q)
+        xp_assert_close(p, q)
 
-    def test_real_spectrum(self):
-        x = np.zeros(16)
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_real_spectrum(self, xp):
+        x = xp.zeros(16)
         x[0] = 1
         f, p = periodogram(x, scaling='spectrum')
         g, q = periodogram(x, scaling='density')
-        assert_allclose(f, np.linspace(0, 0.5, 9))
-        assert_allclose(p, q/16.0)
+        xp_assert_close(f, xp.linspace(0, 0.5, 9))
+        xp_assert_close(p, q/16.0)
 
-    def test_integer_even(self):
-        x = np.zeros(16, dtype=int)
+    # dtype casting issue for numpy.array_api
+    @skip_if_array_api_backend("numpy.array_api")
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_integer_even(self, xp):
+        x = xp.zeros(16, dtype=xp.int64)
         x[0] = 1
         f, p = periodogram(x)
-        assert_allclose(f, np.linspace(0, 0.5, 9))
-        q = np.ones(9)
+        xp_assert_close(f, xp.linspace(0, 0.5, 9))
+        q = xp.ones(9)
         q[0] = 0
         q[-1] /= 2.0
         q /= 8
-        assert_allclose(p, q)
+        xp_assert_close(p, q)
 
-    def test_integer_odd(self):
-        x = np.zeros(15, dtype=int)
+    # dtype casting issue for numpy.array_api
+    @skip_if_array_api_backend("numpy.array_api")
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_integer_odd(self, xp):
+        x = xp.zeros(15, dtype=xp.int64)
         x[0] = 1
         f, p = periodogram(x)
-        assert_allclose(f, np.arange(8.0)/15.0)
-        q = np.ones(8)
+        xp_assert_close(f, xp.arange(8.0)/15.0)
+        q = xp.ones(8)
         q[0] = 0
         q *= 2.0/15.0
-        assert_allclose(p, q, atol=1e-15)
+        xp_assert_close(p, q, atol=1e-15)
 
-    def test_integer_twosided(self):
-        x = np.zeros(16, dtype=int)
+    # dtype casting issue for numpy.array_api
+    @skip_if_array_api_backend("numpy.array_api")
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_integer_twosided(self, xp):
+        x = xp.zeros(16, dtype=xp.int64)
         x[0] = 1
         f, p = periodogram(x, return_onesided=False)
-        assert_allclose(f, fftfreq(16, 1.0))
-        q = np.full(16, 1/16.0)
+        xp_assert_close(f, fftfreq(16, 1.0), check_namespace=False, check_dtype=False)
+        q = xp.full((16,), 1/16.0)
         q[0] = 0
-        assert_allclose(p, q)
+        xp_assert_close(p, q)
 
-    def test_complex(self):
-        x = np.zeros(16, np.complex128)
+    # xp.mean() requires real types so skip
+    # for numpy.array_api
+    @skip_if_array_api_backend("numpy.array_api")
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_complex(self, xp):
+        x = xp.zeros(16, dtype=xp.complex128)
         x[0] = 1.0 + 2.0j
         f, p = periodogram(x, return_onesided=False)
-        assert_allclose(f, fftfreq(16, 1.0))
-        q = np.full(16, 5.0/16.0)
+        xp_assert_close(f, fftfreq(16, 1.0), check_namespace=False, check_dtype=False)
+        q = xp.full((16,), 5.0/16.0)
         q[0] = 0
-        assert_allclose(p, q)
+        xp_assert_close(p, q, check_dtype=False)
 
     def test_unk_scaling(self):
         assert_raises(ValueError, periodogram, np.zeros(4, np.complex128),

@@ -269,10 +269,11 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
     2.0077340678640727
 
     """
-    x = np.asarray(x)
+    xp = array_namespace(x)
+    x = xp.asarray(x)
 
-    if x.size == 0:
-        return np.empty(x.shape), np.empty(x.shape)
+    if size(x) == 0:
+        return xp.empty(x.shape), xp.empty(x.shape)
 
     if window is None:
         window = 'boxcar'
