@@ -17,8 +17,7 @@ void scipy::special::set_error(const char *func_name, sf_error_t code,
     /* Definition of error handling for scipy::special C++ library of special
      * functions used in SciPy.
      *
-     * The arg "code" must take an int that is a valid value for enum sf_error_t.
-     * See sf_error.h for the definition of this enum.
+     * See error.h for info on valid codes in enum sf_error_t.
      *
      * Other packages making use of this library can supply their own implementation. 
      */
