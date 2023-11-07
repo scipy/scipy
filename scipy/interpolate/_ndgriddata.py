@@ -48,6 +48,8 @@ class NearestNDInterpolator(NDInterpolatorBase):
         Option to truncate ``cKDTree`` nearest neighbor query to some
         ``query_max_dist``. This is useful for larger interpolation problems.
 
+        .. versionadded:: 1.11.4
+
     See Also
     --------
     griddata :
