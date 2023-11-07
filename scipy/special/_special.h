@@ -23,4 +23,11 @@ inline npy_cdouble csinpi(npy_cdouble zp) {
     std::complex<double> w = scipy::special::csinpi(z);
     return npy_cpack(real(w), imag(w));
 }
+
+
+inline npy_cdouble ccospi(npy_cdouble zp) {
+    std::complex<double> z(npy_creal(zp), npy_cimag(zp));
+    std::complex<double> w = scipy::special::ccospi(z);
+    return npy_cpack(real(w), imag(w));
+}
 						    

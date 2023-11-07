@@ -13,7 +13,7 @@
 	"cephes.h": {
 	    "cospi": "d->d"
 	},
-        "_trig.pxd": {
+        "_special.h++": {
             "ccospi": "D->D"
         }
     },
