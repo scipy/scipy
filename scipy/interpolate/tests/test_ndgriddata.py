@@ -196,6 +196,22 @@ class TestNearestNDInterpolator:
         NI = NearestNDInterpolator((d[0], d[1]), list(d[2]))
         assert_array_equal(NI([0.1, 0.9], [0.1, 0.9]), [0, 2])
 
+    def test_nearest_max_dist(self):
+        nd = np.array([[0, 1, 0, 1],
+                       [0, 0, 1, 1],
+                       [0, 1, 1, 2]])
+        delta = 0.1
+        query_points = [0 + delta, 1 + delta], [0 + delta, 1 + delta]
+
+        # case 1 - query max_dist is smaller than the query points' nearest distance to nd.
+        NI = NearestNDInterpolator((nd[0], nd[1]), nd[2], query_max_dist=np.sqrt(delta ** 2 + delta ** 2) - 1e-7)
+        assert_array_equal(NI(query_points), [np.nan, np.nan])
+
+        # case 2 - query max_dist is larger, so should return non np.nan
+        NI = NearestNDInterpolator((nd[0], nd[1]), nd[2], query_max_dist=np.sqrt(delta ** 2 + delta ** 2) + 1e-7)
+        assert_array_equal(NI(query_points), [0, 2])
+
+
 
 class TestNDInterpolators:
     @parametrize_interpolators

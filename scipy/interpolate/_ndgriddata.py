@@ -44,6 +44,9 @@ class NearestNDInterpolator(NDInterpolatorBase):
         Options passed to the underlying ``cKDTree``.
 
         .. versionadded:: 0.17.0
+    query_max_dist : float, optional
+        Option to truncate ``cKDTree`` nearest neighbor query to some
+        ``query_max_dist``. This is useful for larger interpolation problems.
 
     See Also
     --------
@@ -89,13 +92,14 @@ class NearestNDInterpolator(NDInterpolatorBase):
 
     """
 
-    def __init__(self, x, y, rescale=False, tree_options=None):
+    def __init__(self, x, y, rescale=False, tree_options=None, query_max_dist=np.inf):
         NDInterpolatorBase.__init__(self, x, y, rescale=rescale,
                                     need_contiguous=False,
                                     need_values=False)
         if tree_options is None:
             tree_options = dict()
         self.tree = cKDTree(self.points, **tree_options)
+        self.query_max_dist = query_max_dist
         self.values = np.asarray(y)
 
     def __call__(self, *args):
@@ -116,8 +120,16 @@ class NearestNDInterpolator(NDInterpolatorBase):
         xi = _ndim_coords_from_arrays(args, ndim=self.points.shape[1])
         xi = self._check_call_shape(xi)
         xi = self._scale_x(xi)
-        dist, i = self.tree.query(xi)
-        return self.values[i]
+        dist, i = self.tree.query(xi, distance_upper_bound=self.query_max_dist)
+        if np.isfinite(self.query_max_dist):
+            # dist will be infinite for points where NN returned no neighbors. set those to nan, and mask in arr.
+            valid_mask = np.isfinite(dist)
+            interp_values = np.zeros(i.shape)
+            interp_values[~valid_mask] = np.nan
+            interp_values[valid_mask] = self.values[i[valid_mask]]
+            return interp_values
+        else:
+            return self.values[i]
 
 
 #------------------------------------------------------------------------------
