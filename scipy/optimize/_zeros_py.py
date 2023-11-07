@@ -2075,7 +2075,7 @@ def _scalar_optimization_loop(work, callback, shape, maxiter,
     cb_terminate = False
 
     # Initialize the result object and active element index array
-    n_elements = int(np.prod(shape)) or 1
+    n_elements = int(np.prod(shape))
     active = np.arange(n_elements)  # in-progress element indices
     res_dict = {i: np.zeros(n_elements, dtype=dtype) for i, j in res_work_pairs}
     res_dict['success'] = np.zeros(n_elements, dtype=bool)
@@ -2094,7 +2094,7 @@ def _scalar_optimization_loop(work, callback, shape, maxiter,
         if _call_callback_maybe_halt(callback, temp):
             cb_terminate = True
 
-    while work.nit < maxiter and active.size and not cb_terminate:
+    while work.nit < maxiter and active.size and not cb_terminate and n_elements:
         x = pre_func_eval(work)
 
         if work.args and work.args[0].ndim != x.ndim:

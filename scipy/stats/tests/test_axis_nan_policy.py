@@ -65,6 +65,10 @@ axis_nan_policy_cases = [
     (stats.mode, tuple(), dict(), 1, 2, True, lambda x: (x.mode, x.count)),
     (stats.differential_entropy, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.variation, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.levene, tuple(), {}, 2, 2, False, None),
+    (stats.fligner, tuple(), {'center': 'trimmed', 'proportiontocut': 0.01},
+     2, 2, False, None),
+    (stats.ansari, tuple(), {}, 2, 2, False, None),
     (stats.entropy, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.entropy, tuple(), dict(), 2, 1, True, lambda x: (x,)),
     (stats.cramervonmises, ("norm",), dict(), 1, 2, False,
@@ -72,6 +76,10 @@ axis_nan_policy_cases = [
     (stats.cramervonmises_2samp, tuple(), dict(), 2, 2, False,
      lambda res: (res.statistic, res.pvalue)),
     (stats.epps_singleton_2samp, tuple(), dict(), 2, 2, False, None),
+    (stats.bartlett, tuple(), {}, 2, 2, False, None),
+    (stats.circmean, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.circvar, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.circstd, tuple(), dict(), 1, 1, False, lambda x: (x,)),
 ]
 
 # If the message is one of those expected, put nans in
