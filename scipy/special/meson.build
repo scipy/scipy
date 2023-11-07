@@ -21,7 +21,6 @@ _ufuncs_pxi_pxd_sources = [
   fs.copyfile('_hyp2f1.pxd'),
   fs.copyfile('_hypergeometric.pxd'),
   fs.copyfile('_legacy.pxd'),
-  fs.copyfile('_loggamma.pxd'),
   fs.copyfile('_ndtri_exp.pxd'),
   fs.copyfile('_sici.pxd'),
   fs.copyfile('_spence.pxd'),
