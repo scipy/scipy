@@ -553,19 +553,15 @@ def _put_nan_to_limits(a, limits, inclusive):
     lower_limit, upper_limit = limits
     lower_include, upper_include = inclusive
     if lower_limit is not None:
-        mask |= a < lower_limit
-        if not lower_include:
-            mask |= a == lower_limit
+        mask |= (a < lower_limit) if lower_include else a <= lower_limit
     if upper_limit is not None:
-        mask |= a > upper_limit
-        if not upper_include:
-            mask |= a == upper_limit
+        mask |= (a > upper_limit) if upper_include else a >= upper_limit
     if np.all(mask):
         raise ValueError("No array values within given limits")
     if np.any(mask):
         if not np.issubdtype(a.dtype, np.inexact):
             a = a.astype(np.float64)
-        np.place(a, mask, np.nan)
+        a[mask] = np.nan
     return a
 
 
@@ -717,8 +713,9 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     14
 
     """
+    dtype = a.dtype
     a = _put_nan_to_limits(a, (lowerlimit, None), (inclusive, None))
-    return np.nanmin(a, axis=axis)
+    return np.nanmin(a, axis=axis).astype(dtype)
 
 
 @_axis_nan_policy_factory(
@@ -765,8 +762,9 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     12
 
     """
+    dtype = a.dtype
     a = _put_nan_to_limits(a, (None, upperlimit), (None, inclusive))
-    return np.nanmax(a, axis=axis)
+    return np.nanmax(a, axis=axis).astype(dtype)
 
 
 @_axis_nan_policy_factory(
@@ -872,8 +870,8 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     """
     a = _put_nan_to_limits(a, limits, inclusive)
     sd = np.sqrt(np.nanvar(a, ddof=ddof, axis=axis))
-    n_samples = (~np.isnan(a)).sum(axis=axis)
-    return sd / np.sqrt(n_samples, dtype=sd.dtype)
+    n_obs = (~np.isnan(a)).sum(axis=axis)
+    return sd / np.sqrt(n_obs, dtype=sd.dtype)
 
 
 #####################################
