@@ -83,5 +83,5 @@ def __dir__():
 
 def __getattr__(name):
     return _sub_module_deprecation(sub_package="special", module="basic",
-                            private_modules=["_basic", "_ufuncs"], all=__all__,
-                            attribute=name)
+                                   private_modules=["_basic", "_ufuncs"], all=__all__,
+                                   attribute=name)

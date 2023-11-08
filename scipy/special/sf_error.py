@@ -16,5 +16,5 @@ def __dir__():
 
 def __getattr__(name):
     return _sub_module_deprecation(sub_package="special", module="sf_error",
-                            private_modules=["_sf_error"], all=__all__,
-                            attribute=name)
+                                   private_modules=["_sf_error"], all=__all__,
+                                   attribute=name)

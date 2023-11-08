@@ -11,5 +11,5 @@ def __dir__():
 
 def __getattr__(name):
     return _sub_module_deprecation(sub_package="special", module="add_newdocs",
-                            private_modules=["_add_newdocs"], all=__all__,
-                            attribute=name)
+                                   private_modules=["_add_newdocs"], all=__all__,
+                                   attribute=name)

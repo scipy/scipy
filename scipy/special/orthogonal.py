@@ -43,5 +43,5 @@ def __dir__():
 
 def __getattr__(name):
     return _sub_module_deprecation(sub_package="special", module="orthogonal",
-                            private_modules=["_orthogonal"], all=__all__,
-                            attribute=name)
+                                   private_modules=["_orthogonal"], all=__all__,
+                                   attribute=name)
