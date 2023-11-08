@@ -1127,10 +1127,8 @@
     },
     "ndtr": {
         "_faddeeva.h++": {
+            "faddeeva_ndtr_double": "d->d",
             "faddeeva_ndtr": "D->D"
-        },
-        "cephes.h": {
-            "ndtr": "d->d"
         }
     },
     "ndtri": {

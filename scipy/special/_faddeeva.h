@@ -34,6 +34,7 @@ npy_cdouble faddeeva_erfi_complex(npy_cdouble zp);
 double faddeeva_dawsn(double zp);
 npy_cdouble faddeeva_dawsn_complex(npy_cdouble zp);
 
+double faddeeva_ndtr_double(double x);
 npy_cdouble faddeeva_ndtr(npy_cdouble zp);
 
 double faddeeva_log_ndtr(double x);

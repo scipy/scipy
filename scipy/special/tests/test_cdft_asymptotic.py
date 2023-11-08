@@ -19,7 +19,7 @@ def test_stdtr_vs_R_large_df():
              0.84134474606854292578]
     assert_allclose(res, res_R, rtol=2e-15)
     # last value should also agree with ndtr
-    assert_equal(res[3], ndtr(1.))
+    assert_allclose(res[3], ndtr(1.), atol=1.5e-16)
 
 
 def test_stdtrit_vs_R_large_df():

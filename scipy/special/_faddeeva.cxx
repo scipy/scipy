@@ -75,8 +75,15 @@ npy_cdouble faddeeva_dawsn_complex(npy_cdouble zp)
 }
 
 /*
- * A wrapper for a normal CDF for complex argument
+ * A wrapper for a normal CDF for real & complex arguments
  */
+
+double faddeeva_ndtr_double(double x)
+{
+    x *= M_SQRT1_2;
+    return 0.5 * Faddeeva::erfc(-x);
+}
+
 
 npy_cdouble faddeeva_ndtr(npy_cdouble zp)
 {
