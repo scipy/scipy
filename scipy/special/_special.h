@@ -3,10 +3,12 @@
 #include <complex>
 #include <numpy/npy_math.h>
 
+
 #include "special/binom.h"
 #include "special/lambertw.h"
 #include "special/loggamma.h"
 #include "special/trig.h"
+#include "special/digamma.h"
 
 
 inline double binom(double n, double k) {
@@ -53,4 +55,15 @@ inline npy_cdouble loggamma(npy_cdouble zp) {
 
 inline double loggamma_real(double x) {
     return special::loggamma(x);
+}
+
+						    
+inline double digamma(double z) {
+    return scipy::special::digamma(z);
+}
+
+inline npy_cdouble cdigamma(npy_cdouble zp) {
+    std::complex<double> z(npy_creal(zp), npy_cimag(zp));
+    std::complex<double> w = scipy::special::digamma(z);
+    return npy_cpack(real(w), imag(w));
 }
