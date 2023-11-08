@@ -44,11 +44,16 @@ class NearestNDInterpolator(NDInterpolatorBase):
         Options passed to the underlying ``cKDTree``.
 
         .. versionadded:: 0.17.0
-    query_max_dist : float, optional
+    distance_upper_bound : float, optional
         Option to truncate ``cKDTree`` nearest neighbor query to some
-        ``query_max_dist``. This is useful for larger interpolation problems.
+        ``distance_upper_bound``. This is useful for larger interpolation problems.
 
-        .. versionadded:: 1.11.4
+        .. versionadded:: 1.12.0
+    workers : int, optional
+        Number of workers to use for parallel processing during nearest neighbor searches.
+        If -1 is given all CPU threads are used. Default: 1.
+
+        .. versionadded:: 1.12.0
 
     See Also
     --------
@@ -94,14 +99,15 @@ class NearestNDInterpolator(NDInterpolatorBase):
 
     """
 
-    def __init__(self, x, y, rescale=False, tree_options=None, *, query_max_dist=np.inf):
+    def __init__(self, x, y, rescale=False, tree_options=None, *, distance_upper_bound=np.inf, workers=1):
         NDInterpolatorBase.__init__(self, x, y, rescale=rescale,
                                     need_contiguous=False,
                                     need_values=False)
         if tree_options is None:
             tree_options = dict()
         self.tree = cKDTree(self.points, **tree_options)
-        self.query_max_dist = query_max_dist
+        self.distance_upper_bound = distance_upper_bound
+        self.workers = workers
         self.values = np.asarray(y)
 
     def __call__(self, *args):
@@ -122,9 +128,12 @@ class NearestNDInterpolator(NDInterpolatorBase):
         xi = _ndim_coords_from_arrays(args, ndim=self.points.shape[1])
         xi = self._check_call_shape(xi)
         xi = self._scale_x(xi)
-        dist, i = self.tree.query(xi, distance_upper_bound=self.query_max_dist)
-        if np.isfinite(self.query_max_dist):
-            # dist will be infinite for points where NN returned no neighbors. set those to nan, and mask in arr.
+        dist, i = self.tree.query(xi, distance_upper_bound=self.distance_upper_bound, workers=workers)
+        if np.isfinite(self.distance_upper_bound):
+            # if distance_upper_bound is set to not be infinite, then we need to consider the case where cKDtree
+            # does not find any points within distance_upper_bound to return. It marks those points as having infinte
+            # distance, which is what will be used below to mask the array and return only the points that were deemed
+            # to have a close enough neighbor to return something useful.
             valid_mask = np.isfinite(dist)
             interp_values = np.zeros(i.shape)
             interp_values[~valid_mask] = np.nan
