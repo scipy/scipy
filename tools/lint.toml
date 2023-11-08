@@ -27,7 +27,6 @@ target-version = "py39"
 "doc/source/scipyoptdoc.py" = ["E501"]
 "scipy/_lib/**" = ["E501"]
 "scipy/cluster/**" = ["E501"]
-"scipy/conftest.py" = ["E501"]
 "scipy/constants/**" = ["E501"]
 "scipy/fft/**" = ["E501"]
 "scipy/fftpack/**" = ["E501"]
