@@ -128,7 +128,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
         xi = _ndim_coords_from_arrays(args, ndim=self.points.shape[1])
         xi = self._check_call_shape(xi)
         xi = self._scale_x(xi)
-        dist, i = self.tree.query(xi, distance_upper_bound=self.distance_upper_bound, workers=workers)
+        dist, i = self.tree.query(xi, distance_upper_bound=self.distance_upper_bound, workers=self.workers)
         if np.isfinite(self.distance_upper_bound):
             # if distance_upper_bound is set to not be infinite, then we need to consider the case where cKDtree
             # does not find any points within distance_upper_bound to return. It marks those points as having infinte
