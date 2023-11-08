@@ -125,8 +125,6 @@ namespace scipy {
 	    return cephes::psi(z);
 	}
 
-
-
 	inline std::complex<double> digamma(std::complex<double> z) {
 	    /* 
 	     * Compute the digamma function for complex arguments. The strategy
@@ -151,7 +149,7 @@ namespace scipy {
 	     * smallimag of the negative real axis.
 	     * int smallimag = 6  # unused below except in a comment */
 
-	    if (z.real() > 0.0 && std::ceil(z.real()) == z) {
+	    if (z.real() <= 0.0 && std::ceil(z.real()) == z) {
 		// Poles
 		sf_error("digamma", SF_ERROR_SINGULAR, NULL);
 		return std::complex<double>(std::numeric_limits<double>::quiet_NaN(),
