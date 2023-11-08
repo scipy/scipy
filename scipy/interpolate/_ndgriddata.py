@@ -94,7 +94,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
 
     """
 
-    def __init__(self, x, y, rescale=False, tree_options=None, query_max_dist=np.inf):
+    def __init__(self, x, y, rescale=False, tree_options=None, *, query_max_dist=np.inf):
         NDInterpolatorBase.__init__(self, x, y, rescale=rescale,
                                     need_contiguous=False,
                                     need_values=False)
