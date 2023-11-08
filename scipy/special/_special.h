@@ -21,37 +21,36 @@ inline npy_cdouble lambertw_scalar(npy_cdouble zp, long k, double tol) {
 
 inline npy_cdouble csinpi(npy_cdouble zp) {
     std::complex<double> z(npy_creal(zp), npy_cimag(zp));
-    std::complex<double> w = scipy::special::csinpi(z);
+    std::complex<double> w = special::sinpi(z);
     return npy_cpack(real(w), imag(w));
 }
 
 
 inline npy_cdouble ccospi(npy_cdouble zp) {
     std::complex<double> z(npy_creal(zp), npy_cimag(zp));
-    std::complex<double> w = scipy::special::ccospi(z);
+    std::complex<double> w = special::cospi(z);
     return npy_cpack(real(w), imag(w));
 }
 
 
 inline npy_cdouble cgamma(npy_cdouble zp) {
     std::complex<double> z(npy_creal(zp), npy_cimag(zp));
-    std::complex<double> w = scipy::special::cgamma(z);
+    std::complex<double> w = special::gamma(z);
     return npy_cpack(real(w), imag(w));
 }
 
 inline npy_cdouble crgamma(npy_cdouble zp) {
     std::complex<double> z(npy_creal(zp), npy_cimag(zp));
-    std::complex<double> w = scipy::special::crgamma(z);
+    std::complex<double> w = special::rgamma(z);
     return npy_cpack(real(w), imag(w));
 }
 
 inline npy_cdouble loggamma(npy_cdouble zp) {
     std::complex<double> z(npy_creal(zp), npy_cimag(zp));
-    std::complex<double> w = scipy::special::loggamma(z);
+    std::complex<double> w = special::loggamma(z);
     return npy_cpack(real(w), imag(w));
 }
 
 inline double loggamma_real(double x) {
-    return scipy::special::loggamma_real(x);
+    return special::loggamma(x);
 }
-						    

@@ -1,3 +1,5 @@
+#pragma once
+
 /* Author: Josh Wilson 2016
  * Translated from Cython to C++ by SciPy developers 2023.
  */
@@ -5,6 +7,7 @@
 
 #include <complex>
 #include <cmath>
+
 
 namespace special {
     namespace detail {
@@ -14,6 +17,7 @@ namespace special {
 	    /* Compute log, paying special attention to accuracy around 1. We
 	     * implement this ourselves because some systems (most notably the
 	     * Travis CI machines) are weak in this regime. */
+	    const double tol = 2.220446092504131e-16; // machine epsilon
 	    std::complex<double> coeff = -1.0;
 	    std::complex<double> res = 0.0;
 	    
@@ -31,6 +35,5 @@ namespace special {
 	    }
 	    return res;
 	}
-
     }
 }

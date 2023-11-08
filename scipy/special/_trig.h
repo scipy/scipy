@@ -22,7 +22,8 @@
 
 namespace special {
 	
-    inline std::complex<double> csinpi(std::complex<double> z) {
+
+    inline std::complex<double> sinpi(std::complex<double> z) {
 	double x = z.real();
 	double piy = M_PI * z.imag();
 	double abspiy = std::fabs(piy);
@@ -68,18 +69,19 @@ namespace special {
 	return std::complex<double>(coshfac*exphpiy, sinhfac*exphpiy);
 
     }
-
-    inline std::complex<double> ccospi(std::complex<double> z) {
+    
+    inline std::complex<double> cospi(std::complex<double> z) {
 	double x = z.real();
 	double piy = M_PI * z.imag();
 	double abspiy = std::fabs(piy);
 	double sinpix = cephes::sinpi(x);
 	double cospix = cephes::cospi(x);
-
+	
 	if (abspiy < 700) {
 	    return std::complex<double>(cospix*std::cosh(piy),
 					-sinpix*std::sinh(piy));
 	}
+
 
 	// See csinpi(z) for an idea of what's going on here.
 	double exphpiy = std::exp(abspiy/2);
