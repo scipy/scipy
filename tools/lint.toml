@@ -35,7 +35,6 @@ target-version = "py39"
 "scipy/interpolate/**" = ["E501"]
 "scipy/io/**" = ["E501"]
 "scipy/linalg/**" = ["E501"]
-"scipy/misc/_common.py" = ["E501"]
 "scipy/ndimage/**" = ["E501"]
 "scipy/odr/**" = ["E501"]
 "scipy/optimize/**" = ["E501"]
