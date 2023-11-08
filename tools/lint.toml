@@ -33,7 +33,6 @@ target-version = "py39"
 "scipy/io/**" = ["E501"]
 "scipy/linalg/**" = ["E501"]
 "scipy/ndimage/**" = ["E501"]
-"scipy/odr/**" = ["E501"]
 "scipy/optimize/**" = ["E501"]
 "scipy/signal/**" = ["E501"]
 "scipy/sparse/**" = ["E501"]
