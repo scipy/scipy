@@ -150,40 +150,68 @@ class TestPeriodogram:
         q[0] = 0
         xp_assert_close(p, q, check_dtype=False)
 
-    def test_unk_scaling(self):
-        assert_raises(ValueError, periodogram, np.zeros(4, np.complex128),
+    @array_api_compatible
+    def test_unk_scaling(self, xp):
+        assert_raises(ValueError, periodogram, xp.zeros(4, dtype=xp.complex128),
                 scaling='foo')
 
     @pytest.mark.skipif(
         sys.maxsize <= 2**32,
         reason="On some 32-bit tolerance issue"
     )
-    def test_nd_axis_m1(self):
-        x = np.zeros(20, dtype=np.float64)
-        x = x.reshape((2,1,10))
+    # torch hits nulp device coercion until
+    # we have nulp-style array API tests
+    @skip_if_array_api_backend("torch")
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_nd_axis_m1(self, xp):
+        x = xp.zeros(20, dtype=xp.float64)
+        x = xp.reshape(x, (2, 1, 10))
         x[:,:,0] = 1.0
         f, p = periodogram(x)
-        assert_array_equal(p.shape, (2, 1, 6))
+        assert p.shape == (2, 1, 6)
         assert_array_almost_equal_nulp(p[0,0,:], p[1,0,:], 60)
         f0, p0 = periodogram(x[0,0,:])
-        assert_array_almost_equal_nulp(p0[np.newaxis,:], p[1,:], 60)
+        assert_array_almost_equal_nulp(p0[xp.newaxis,:], p[1,:], 60)
 
     @pytest.mark.skipif(
         sys.maxsize <= 2**32,
         reason="On some 32-bit tolerance issue"
     )
-    def test_nd_axis_0(self):
-        x = np.zeros(20, dtype=np.float64)
-        x = x.reshape((10,2,1))
+    # torch hits nulp device coercion until
+    # we have nulp-style array API tests
+    @skip_if_array_api_backend("torch")
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_nd_axis_0(self, xp):
+        x = xp.zeros(20, dtype=xp.float64)
+        x = xp.reshape(x, (10, 2, 1))
         x[0,:,:] = 1.0
         f, p = periodogram(x, axis=0)
-        assert_array_equal(p.shape, (6,2,1))
+        assert p.shape == (6, 2, 1)
         assert_array_almost_equal_nulp(p[:,0,0], p[:,1,0], 60)
         f0, p0 = periodogram(x[:,0,0])
         assert_array_almost_equal_nulp(p0, p[:,1,0])
 
-    def test_window_external(self):
-        x = np.zeros(16)
+    # torch hits nulp device coercion until
+    # we have nulp-style array API tests
+    @skip_if_array_api_backend("torch")
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_window_external(self, xp):
+        x = xp.zeros(16)
         x[0] = 1
         f, p = periodogram(x, 10, 'hann')
         win = signal.get_window('hann', 16)
