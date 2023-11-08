@@ -32,95 +32,93 @@ namespace scipy {
 	constexpr double negrootval = 7.2897639029768949e-17;
 
 	namespace detail {
-	    namespace digamma {
-		template <typename T>
-		T zeta_series(T z, double root, double rootval) {
-		    T res = rootval;
-		    T coeff = -1.0;
-		    
-		    z = z - root;
-		    T term;
-		    for (int n = 1; n < 100; n++) {
-			coeff *= -z;
-			term = coeff*cephes::zeta(n + 1, root);
-			res += term;
-			if (std::abs(term) < tol*std::abs(res)) {
-			    break;
-			}
+	    template <typename T>
+	    T digamma_zeta_series(T z, double root, double rootval) {
+		T res = rootval;
+		T coeff = -1.0;
+
+		z = z - root;
+		T term;
+		for (int n = 1; n < 100; n++) {
+		    coeff *= -z;
+		    term = coeff*cephes::zeta(n + 1, root);
+		    res += term;
+		    if (std::abs(term) < tol*std::abs(res)) {
+			break;
 		    }
-		    return res;
 		}
-
-		inline std::complex<double> forward_recurrence(std::complex<double> z,
-							       std::complex<double> psiz,
-							       int n) {
-		    /* Compute digamma(z + n) using digamma(z) using the recurrence
-		     * relation
-		     *
-		     * digamma(z + 1) = digamma(z) + 1/z.
-		     *
-		     * See https://dlmf.nist.gov/5.5#E2 */
-		    std::complex<double> res = psiz;
-		    
-		    for (int k = 0; k < n; k++) {
-			res += 1.0/(z + static_cast<double>(k));
-		    }
-		    return res;
-		}
-
-		inline std::complex<double> backward_recurrence(std::complex<double> z,
-								std::complex<double> psiz,
-								int n) {
-		    /* Compute digamma(z - n) using digamma(z) and a recurrence relation. */
-		    std::complex<double> res = psiz;
-		    
-		    for (int k = 1; k < n + 1; k++) {
-			res -= 1.0/(z - static_cast<double>(k));
-		    }
-		    return res;
-		}
-
-		inline std::complex<double> asymptotic_series(std::complex<double> z) {
-		    /* Evaluate digamma using an asymptotic series. See
-		     *
-		     * https://dlmf.nist.gov/5.11#E2 */
-		    double bernoulli2k[] = {
-			0.166666666666666667, -0.0333333333333333333,
-			0.0238095238095238095, -0.0333333333333333333,
-			0.0757575757575757576, -0.253113553113553114,
-			1.16666666666666667, -7.09215686274509804,
-			54.9711779448621554, -529.124242424242424,
-			6192.12318840579710, -86580.2531135531136,
-			1425517.16666666667, -27298231.0678160920,
-			601580873.900642368, -15116315767.0921569
-		    };
-		    std::complex<double> rzz = 1.0/z/z;
-		    std::complex<double> zfac = 1.0;
-		    std::complex<double> term;
-		    std::complex<double> res;
-
-		    res = std::log(z) - 0.5/z;
-
-		    for (int k=1;  k < 17; k++) {
-			zfac *= rzz;
-			term = -bernoulli2k[k-1]*zfac/(2*static_cast<double>(k));
-			res += term;
-			if (std::abs(term) < tol * std::abs(res)) {
-			    break;
-			}
-		    }
-		    return res;
-		}
-
+		return res;
 	    }
+
+	    inline std::complex<double> digamma_forward_recurrence(std::complex<double> z,
+							   std::complex<double> psiz,
+							   int n) {
+		/* Compute digamma(z + n) using digamma(z) using the recurrence
+		 * relation
+		 *
+		 * digamma(z + 1) = digamma(z) + 1/z.
+		 *
+		 * See https://dlmf.nist.gov/5.5#E2 */
+		std::complex<double> res = psiz;
+
+		for (int k = 0; k < n; k++) {
+		    res += 1.0/(z + static_cast<double>(k));
+		}
+		return res;
+	    }
+
+	    inline std::complex<double> digamma_backward_recurrence(std::complex<double> z,
+							    std::complex<double> psiz,
+							    int n) {
+		/* Compute digamma(z - n) using digamma(z) and a recurrence relation. */
+		std::complex<double> res = psiz;
+
+		for (int k = 1; k < n + 1; k++) {
+		    res -= 1.0/(z - static_cast<double>(k));
+		}
+		return res;
+	    }
+
+	    inline std::complex<double> digamma_asymptotic_series(std::complex<double> z) {
+		/* Evaluate digamma using an asymptotic series. See
+		 *
+		 * https://dlmf.nist.gov/5.11#E2 */
+		double bernoulli2k[] = {
+		    0.166666666666666667, -0.0333333333333333333,
+		    0.0238095238095238095, -0.0333333333333333333,
+		    0.0757575757575757576, -0.253113553113553114,
+		    1.16666666666666667, -7.09215686274509804,
+		    54.9711779448621554, -529.124242424242424,
+		    6192.12318840579710, -86580.2531135531136,
+		    1425517.16666666667, -27298231.0678160920,
+		    601580873.900642368, -15116315767.0921569
+		};
+		std::complex<double> rzz = 1.0/z/z;
+		std::complex<double> zfac = 1.0;
+		std::complex<double> term;
+		std::complex<double> res;
+
+		res = std::log(z) - 0.5/z;
+
+		for (int k=1;  k < 17; k++) {
+		    zfac *= rzz;
+		    term = -bernoulli2k[k-1]*zfac/(2*static_cast<double>(k));
+		    res += term;
+		    if (std::abs(term) < tol * std::abs(res)) {
+			break;
+		    }
+		}
+		return res;
+	    }
+
 	}
-	
+
 	inline double digamma(double z) {
 	    /* Wrap Cephes' psi to take advantage of the series expansion around
 	     * the smallest negative zero.
 	     */
 	    if (std::abs(z - negroot) < 0.3) {
-		return detail::digamma::zeta_series(z, negroot, negrootval);
+		return detail::digamma_zeta_series(z, negroot, negrootval);
 	    }
 	    return cephes::psi(z);
 	}
@@ -157,7 +155,7 @@ namespace scipy {
 	    }
 	    if (std::abs(z - negroot) < 0.3) {
 		// First negative root.
-		return detail::digamma::zeta_series(z, negroot, negrootval);
+		return detail::digamma_zeta_series(z, negroot, negrootval);
 	    }
 
 	    if (z.real() < 0 and std::fabs(z.imag()) < smallabsz) {
@@ -179,18 +177,18 @@ namespace scipy {
 	    }
 
 	    if (std::abs(z - posroot) < 0.5) {
-		res += detail::digamma::zeta_series(z, posroot, posrootval);
+		res += detail::digamma_zeta_series(z, posroot, posrootval);
 	    } else if (absz > smallabsz) {
-		res += detail::digamma::asymptotic_series(z);
+		res += detail::digamma_asymptotic_series(z);
 	    } else if (z.real() > 0.0) {
 		double n = std::trunc(smallabsz - absz) + 1;
-		std::complex<double> init = detail::digamma::asymptotic_series(z + n);
-		res += detail::digamma::backward_recurrence(z + n, init, n);
+		std::complex<double> init = detail::digamma_asymptotic_series(z + n);
+		res += detail::digamma_backward_recurrence(z + n, init, n);
 	    } else {
 		// z.real() < 0, absz < smallabsz, and z.imag() > smallimag
 		double n = std::trunc(smallabsz - absz) - 1;
-		std::complex<double> init = detail::digamma::asymptotic_series(z - n);
-		res += detail::digamma::forward_recurrence(z - n, init, n);
+		std::complex<double> init = detail::digamma_asymptotic_series(z - n);
+		res += detail::digamma_forward_recurrence(z - n, init, n);
 	    }
 	    return res;
 	}
