@@ -20,6 +20,7 @@ EXTERN_C_START
 
 npy_cdouble faddeeva_w(npy_cdouble zp);
 npy_cdouble faddeeva_erf(npy_cdouble zp);
+double faddeeva_erf_double(double x);
 
 double faddeeva_erfc(double x);
 npy_cdouble faddeeva_erfc_complex(npy_cdouble zp);

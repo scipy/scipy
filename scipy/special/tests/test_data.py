@@ -266,13 +266,13 @@ BOOST_TESTS = [
         data(ellipe_, 'ellint_e_data_ipp-ellint_e_data', 0, 1),
         data(ellipeinc_, 'ellint_e2_data_ipp-ellint_e2_data', (0,1), 2, rtol=1e-14),
 
-        data(erf, 'erf_data_ipp-erf_data', 0, 1),
+        data(erf, 'erf_data_ipp-erf_data', 0, 1, rtol=2e-14),
         data(erf, 'erf_data_ipp-erf_data', 0j, 1, rtol=1e-13),
         data(erfc, 'erf_data_ipp-erf_data', 0, 2, rtol=6e-15),
         data(erf, 'erf_large_data_ipp-erf_large_data', 0, 1),
         data(erf, 'erf_large_data_ipp-erf_large_data', 0j, 1),
         data(erfc, 'erf_large_data_ipp-erf_large_data', 0, 2, rtol=4e-14),
-        data(erf, 'erf_small_data_ipp-erf_small_data', 0, 1),
+        data(erf, 'erf_small_data_ipp-erf_small_data', 0, 1, rtol=3e-14),
         data(erf, 'erf_small_data_ipp-erf_small_data', 0j, 1, rtol=1e-13),
         data(erfc, 'erf_small_data_ipp-erf_small_data', 0, 2),
 

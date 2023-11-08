@@ -21,6 +21,11 @@ npy_cdouble faddeeva_erf(npy_cdouble zp)
     return npy_cpack(real(w), imag(w));
 }
 
+double faddeeva_erf_double(double x)
+{
+    return Faddeeva::erf(x);
+}
+
 double faddeeva_erfc(double x)
 {
     return Faddeeva::erfc(x);
@@ -80,6 +85,7 @@ npy_cdouble faddeeva_ndtr(npy_cdouble zp)
     complex<double> w = 0.5 * Faddeeva::erfc(-z);
     return npy_cpack(real(w), imag(w));
 }
+
 
 /*
  * Log of the CDF of the normal distribution for double x.

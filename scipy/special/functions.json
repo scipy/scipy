@@ -419,18 +419,14 @@
     },
     "erf": {
         "_faddeeva.h++": {
+            "faddeeva_erf_double": "d->d",
             "faddeeva_erf": "D->D"
-        },
-        "cephes.h": {
-            "erf": "d->d"
         }
     },
     "erfc": {
         "_faddeeva.h++": {
+            "faddeeva_erfc": "d->d",
             "faddeeva_erfc_complex": "D->D"
-        },
-        "cephes.h": {
-            "erfc": "d->d"
         }
     },
     "erfcx": {
