@@ -735,6 +735,9 @@ class Test(Task):
         else:
             tests = None
 
+        if args.doctests:
+            os.environ['PY_IGNORE_IMPORTMISMATCH'] = '1'
+
         if len(args.array_api_backend) != 0:
             os.environ['SCIPY_ARRAY_API'] = json.dumps(list(args.array_api_backend))
 

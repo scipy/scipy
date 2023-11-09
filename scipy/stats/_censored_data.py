@@ -129,8 +129,7 @@ class CensoredData:
     >>> data = CensoredData(uncensored=[1, 1.5], left=[0], right=[10],
     ...                     interval=[[2, 3]])
     >>> print(data)
-    CensoredData(5 values: 2 not censored, 1 left-censored,
-    1 right-censored, 1 interval-censored)
+    CensoredData(5 values: 2 not censored, 1 left-censored, 1 right-censored, 1 interval-censored)
 
     Equivalently,
 
@@ -140,8 +139,7 @@ class CensoredData:
     ...                               [10, np.inf],
     ...                               [2, 3]])
     >>> print(data)
-    CensoredData(5 values: 2 not censored, 1 left-censored,
-    1 right-censored, 1 interval-censored)
+    CensoredData(5 values: 2 not censored, 1 left-censored, 1 right-censored, 1 interval-censored)
 
     A common case is to have a mix of uncensored observations and censored
     observations that are all right-censored (or all left-censored). For
