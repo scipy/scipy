@@ -286,7 +286,7 @@ jobs:
     - name: Install Python packages
       run: |
         python -m pip install cython!=3.0.3 pythran ninja meson-python pybind11 click rich_click pydevtool
-        python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy scipy-openblas32
+        python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy "scipy-openblas32<=0.3.24.135"
         python -m pip install --pre --upgrade pytest pytest-cov pytest-xdist mpmath gmpy2 threadpoolctl pooch matplotlib hypothesis
 
     - name:  Prepare compiler cache
