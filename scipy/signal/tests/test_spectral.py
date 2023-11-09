@@ -222,97 +222,139 @@ class TestPeriodogram:
         assert_raises(ValueError, periodogram, x,
                       10, win_err)  # win longer than signal
 
-    def test_padded_fft(self):
-        x = np.zeros(16)
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_padded_fft(self, xp):
+        x = xp.zeros(16)
         x[0] = 1
         f, p = periodogram(x)
         fp, pp = periodogram(x, nfft=32)
-        assert_allclose(f, fp[::2])
-        assert_allclose(p, pp[::2])
-        assert_array_equal(pp.shape, (17,))
+        xp_assert_close(f, fp[::2])
+        xp_assert_close(p, pp[::2])
+        assert pp.shape == (17,)
 
-    def test_empty_input(self):
+    @array_api_compatible
+    def test_empty_input(self, xp):
         f, p = periodogram([])
         assert_array_equal(f.shape, (0,))
         assert_array_equal(p.shape, (0,))
         for shape in [(0,), (3,0), (0,5,2)]:
-            f, p = periodogram(np.empty(shape))
+            f, p = periodogram(xp.empty(shape))
             assert_array_equal(f.shape, shape)
             assert_array_equal(p.shape, shape)
 
-    def test_empty_input_other_axis(self):
+    @array_api_compatible
+    def test_empty_input_other_axis(self, xp):
         for shape in [(3,0), (0,5,2)]:
-            f, p = periodogram(np.empty(shape), axis=1)
+            f, p = periodogram(xp.empty(shape), axis=1)
             assert_array_equal(f.shape, shape)
             assert_array_equal(p.shape, shape)
 
-    def test_short_nfft(self):
-        x = np.zeros(18)
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_short_nfft(self, xp):
+        x = xp.zeros(18)
         x[0] = 1
         f, p = periodogram(x, nfft=16)
-        assert_allclose(f, np.linspace(0, 0.5, 9))
-        q = np.ones(9)
+        xp_assert_close(f, xp.linspace(0, 0.5, 9))
+        q = xp.ones(9)
         q[0] = 0
         q[-1] /= 2.0
         q /= 8
-        assert_allclose(p, q)
+        xp_assert_close(p, q)
 
-    def test_nfft_is_xshape(self):
-        x = np.zeros(16)
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_nfft_is_xshape(self, xp):
+        x = xp.zeros(16)
         x[0] = 1
         f, p = periodogram(x, nfft=16)
-        assert_allclose(f, np.linspace(0, 0.5, 9))
-        q = np.ones(9)
+        xp_assert_close(f, xp.linspace(0, 0.5, 9))
+        q = xp.ones(9)
         q[0] = 0
         q[-1] /= 2.0
         q /= 8
-        assert_allclose(p, q)
+        xp_assert_close(p, q)
 
-    def test_real_onesided_even_32(self):
-        x = np.zeros(16, 'f')
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_real_onesided_even_32(self, xp):
+        x = xp.zeros(16, dtype=xp.float32)
         x[0] = 1
         f, p = periodogram(x)
-        assert_allclose(f, np.linspace(0, 0.5, 9))
-        q = np.ones(9, 'f')
+        xp_assert_close(f, xp.linspace(0, 0.5, 9))
+        q = xp.ones(9, dtype=xp.float32)
         q[0] = 0
         q[-1] /= 2.0
         q /= 8
-        assert_allclose(p, q)
-        assert_(p.dtype == q.dtype)
+        xp_assert_close(p, q)
 
-    def test_real_onesided_odd_32(self):
-        x = np.zeros(15, 'f')
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_real_onesided_odd_32(self, xp):
+        x = xp.zeros(15, dtype=xp.float32)
         x[0] = 1
         f, p = periodogram(x)
-        assert_allclose(f, np.arange(8.0)/15.0)
-        q = np.ones(8, 'f')
+        xp_assert_close(f, xp.arange(8.0)/15.0)
+        q = xp.ones(8, dtype=xp.float32)
         q[0] = 0
         q *= 2.0/15.0
-        assert_allclose(p, q, atol=1e-7)
-        assert_(p.dtype == q.dtype)
+        xp_assert_close(p, q, atol=1e-7)
 
-    def test_real_twosided_32(self):
-        x = np.zeros(16, 'f')
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_real_twosided_32(self, xp):
+        x = xp.zeros(16, dtype=xp.float32)
         x[0] = 1
         f, p = periodogram(x, return_onesided=False)
-        assert_allclose(f, fftfreq(16, 1.0))
-        q = np.full(16, 1/16.0, 'f')
+        xp_assert_close(f, fftfreq(16, 1.0), check_namespace=False, check_dtype=False)
+        q = xp.full((16,), 1/16.0, dtype=xp.float32)
         q[0] = 0
-        assert_allclose(p, q)
-        assert_(p.dtype == q.dtype)
+        xp_assert_close(p, q)
 
-    def test_complex_32(self):
-        x = np.zeros(16, 'F')
+    # xp.mean() requires real types so skip
+    # for numpy.array_api
+    @skip_if_array_api_backend("numpy.array_api")
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_complex_32(self, xp):
+        x = xp.zeros(16, dtype=xp.complex64)
         x[0] = 1.0 + 2.0j
         f, p = periodogram(x, return_onesided=False)
-        assert_allclose(f, fftfreq(16, 1.0))
-        q = np.full(16, 5.0/16.0, 'f')
+        xp_assert_close(f, fftfreq(16, 1.0), check_dtype=False, check_namespace=False)
+        q = xp.full((16,), 5.0/16.0, dtype=xp.float32)
         q[0] = 0
-        assert_allclose(p, q)
-        assert_(p.dtype == q.dtype)
+        xp_assert_close(p, q)
 
-    def test_shorter_window_error(self):
-        x = np.zeros(16)
+    @array_api_compatible
+    def test_shorter_window_error(self, xp):
+        x = xp.zeros(16)
         x[0] = 1
         win = signal.get_window('hann', 10)
         expected_msg = ('the size of the window must be the same size '
