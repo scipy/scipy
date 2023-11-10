@@ -1,13 +1,7 @@
 # -*- coding: utf-8 -*-
 from numpy import cos, exp, log, pi, sin, sqrt
 
-from .go_benchmark import Benchmark, safe_import
-
-with safe_import():
-    try:
-        from scipy.special import factorial  # new
-    except ImportError:
-        from scipy.misc import factorial  # old
+from .go_benchmark import Benchmark
 
 
 #-----------------------------------------------------------------------
