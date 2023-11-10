@@ -4668,19 +4668,19 @@ class TestBSR(sparse_test_class(getset=False,
         S = self.spcreator(D, blocksize=(1, 2))
         assert_(S.resize((3, 2)) is None)
         assert_array_equal(S.toarray(), [[1, 0],
-                                 [2, 0],
-                                 [3, 0]])
+                                         [2, 0],
+                                         [3, 0]])
         S.resize((2, 2))
         assert_array_equal(S.toarray(), [[1, 0],
-                                 [2, 0]])
+                                         [2, 0]])
         S.resize((3, 2))
         assert_array_equal(S.toarray(), [[1, 0],
-                                 [2, 0],
-                                 [0, 0]])
+                                         [2, 0],
+                                         [0, 0]])
         S.resize((3, 4))
         assert_array_equal(S.toarray(), [[1, 0, 0, 0],
-                                 [2, 0, 0, 0],
-                                 [0, 0, 0, 0]])
+                                         [2, 0, 0, 0],
+                                         [0, 0, 0, 0]])
         assert_raises(ValueError, S.resize, (2, 3))
 
     @pytest.mark.xfail(run=False, reason='BSR does not have a __setitem__')
