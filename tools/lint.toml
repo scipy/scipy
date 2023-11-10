@@ -29,7 +29,6 @@ target-version = "py39"
 "scipy/cluster/**" = ["E501"]
 "scipy/constants/**" = ["E501"]
 "scipy/fft/**" = ["E501"]
-"scipy/fftpack/**" = ["E501"]
 "scipy/integrate/**" = ["E501"]
 "scipy/interpolate/**" = ["E501"]
 "scipy/io/**" = ["E501"]

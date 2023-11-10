@@ -10,3 +10,5 @@ b9cb3d075dad2b1ee9c145f9e69192d6eeda4f1e
 79099da5aefd2f76092b999823e45a6519e41005
 # Line length clean up in misc (gh-19491)
 8870c5d01a6f91a737db4642343ef997a63c8584
+# Line length clean up in fftpack (gh-19503)
+39787f146137b0ec9d31907989c6f104ba7eed76
