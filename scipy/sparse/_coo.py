@@ -99,23 +99,26 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
     @property
     def row(self):
-        return self.indices[0]
+        if self.ndim > 1:
+            return self.indices[0]
+        return np.zeros(self.nnz, dtype=self.indices[0].dtype)
+
 
     @row.setter
     def row(self, new_row):
+        if self.ndim < 2:
+            raise ValueError('cannot set row attribute of a 1-dimensional sparse array')
         new_row = np.asarray(new_row, dtype=self.indices[0].dtype)
         self.indices = (new_row,) + self.indices[1:]
 
     @property
     def col(self):
-        return self.indices[1] if self.ndim > 1 else np.zeros_like(self.row)
+        return self.indices[-1]
 
     @col.setter
     def col(self, new_col):
-        if self.ndim < 2:
-            raise ValueError('cannot set col attribute of a 1-dimensional sparse array')
-        new_col = np.asarray(new_col, dtype=self.indices[1].dtype)
-        self.indices = self.indices[:1] + (new_col,) + self.indices[2:]
+        new_col = np.asarray(new_col, dtype=self.indices[-1].dtype)
+        self.indices = self.indices[:-1] + (new_col,)
 
     def reshape(self, *args, **kwargs):
         is_array = isinstance(self, sparray)
@@ -267,13 +270,11 @@ class _coo_base(_data_matrix, _minmax_mixin):
             raise ValueError("Cannot densify higher-rank sparse array")
         # This handles both 0D and 1D cases correctly regardless of the
         # original shape.
-        M, N, *_ = self.shape + (1, 1)
+        *_, M, N = (1, 1) + self.shape
         coo_todense(M, N, self.nnz, self.row, self.col, self.data,
                     B.ravel('A'), fortran)
         # Note: reshape() doesn't copy here, but does return a new array (view).
         return B.reshape(self.shape)
-
-    toarray.__doc__ = _spbase.toarray.__doc__
 
     toarray.__doc__ = _spbase.toarray.__doc__
 
@@ -304,7 +305,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         else:
             M,N = self.shape
             idx_dtype = self._get_index_dtype(
-                (self.col, self.row), maxval=max(self.nnz, M)
+                (self.col, self.row), maxval=max(self.nnz, *self.shape)
             )
             row = self.row.astype(idx_dtype, copy=False)
             col = self.col.astype(idx_dtype, copy=False)
@@ -348,7 +349,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         else:
             M,N = self.shape
             idx_dtype = self._get_index_dtype(
-                (self.row, self.col), maxval=max(self.nnz, N)
+                (self.row, self.col), maxval=max(self.nnz, *self.shape)
             )
             row = self.row.astype(idx_dtype, copy=False)
             col = self.col.astype(idx_dtype, copy=False)
@@ -528,8 +529,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
         dtype = upcast_char(self.dtype.char, other.dtype.char)
         result = np.array(other, dtype=dtype, copy=True)
         fortran = int(result.flags.f_contiguous)
-        M = self.shape[0]
-        N = self.shape[1] if self.ndim > 1 else 1
+        M = self.shape[0] if self.ndim > 1 else 1
+        N = self.shape[-1]
         coo_todense(M, N, self.nnz, self.row, self.col, self.data,
                     result.ravel('A'), fortran)
         return self._container(result, copy=False)
