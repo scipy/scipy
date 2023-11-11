@@ -30,6 +30,7 @@ class TestFixedQuad:
         assert_allclose(got, expected, rtol=1e-12)
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 class TestQuadrature:
     def quad(self, x, a, b, args):
         raise NotImplementedError
@@ -263,6 +264,13 @@ class TestQuadrature:
                 simpson(y, x=x, dx=0.5),
                 simps(y, x=x, dx=0.5)
             )
+
+
+@pytest.mark.parametrize('func', [romberg, quadrature])
+def test_deprecate_integrator(func):
+    message = f"`scipy.integrate.{func.__name__}` is deprecated..."
+    with pytest.deprecated_call(match=message):
+        func(np.exp, 0, 1)
 
 
 class TestCumulative_trapezoid:
