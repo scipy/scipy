@@ -697,7 +697,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
 
     # sum duplicates for non-canonical format
     A.sum_duplicates()
-    
+
     b = np.asanyarray(b)
 
     if b.ndim not in [1, 2]:
@@ -731,8 +731,8 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
                              N, U.nnz, U.data, U.indices, U.indptr,
                              b)
     if info:
-        warn("Matrix is singular", MatrixRankWarning)
-        x.fill(np.nan)
+        raise LinAlgError(
+            'A is singular.')
 
     if not unit_diagonal:
         invdiag = invdiag.reshape(-1, *([1]*(len(x.shape)-1)))
