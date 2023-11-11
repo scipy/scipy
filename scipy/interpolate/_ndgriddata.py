@@ -44,16 +44,6 @@ class NearestNDInterpolator(NDInterpolatorBase):
         Options passed to the underlying ``cKDTree``.
 
         .. versionadded:: 0.17.0
-    distance_upper_bound : float, optional
-        Option to truncate ``cKDTree`` nearest neighbor query to some
-        ``distance_upper_bound``. This is useful for larger interpolation problems.
-
-        .. versionadded:: 1.12.0
-    workers : int, optional
-        Number of workers to use for parallel processing during nearest neighbor searches.
-        If -1 is given all CPU threads are used. Default: 1.
-
-        .. versionadded:: 1.12.0
 
     See Also
     --------
@@ -99,37 +89,53 @@ class NearestNDInterpolator(NDInterpolatorBase):
 
     """
 
-    def __init__(self, x, y, rescale=False, tree_options=None, *, distance_upper_bound=np.inf, workers=1):
+    def __init__(self, x, y, rescale=False, tree_options=None):
         NDInterpolatorBase.__init__(self, x, y, rescale=rescale,
                                     need_contiguous=False,
                                     need_values=False)
         if tree_options is None:
             tree_options = dict()
         self.tree = cKDTree(self.points, **tree_options)
-        self.distance_upper_bound = distance_upper_bound
-        self.workers = workers
         self.values = np.asarray(y)
 
-    def __call__(self, *args):
+    def __call__(self, *args, query_options=None):
         """
         Evaluate interpolator at given points.
 
         Parameters
         ----------
+        query_options : dict, optional
+            This allows `eps`, `p`, `distance_upper_bound`, and `workers` being passed to the cKDTree's query function
+            to be explicitly set. See the `scipy.spatial.cKDTree.query` for an overview of the different options. Note
+            that k is restricted to 1 since NearestNDInterpolator has to have k=1 by definition.
+
+            ..versionadded:: 1.12.0
+
         x1, x2, ... xn : array-like of float
             Points where to interpolate data at.
             x1, x2, ... xn can be array-like of float with broadcastable shape.
             or x1 can be array-like of float with shape ``(..., ndim)``
 
         """
+        if query_options is not None and not isinstance(query_options, dict):
+            raise TypeError("query_options must be a dictionary")
+
+        # gather the query options to pass to cKDTree.query
+        query_options = query_options or {}
+        eps = query_options.get('eps', 0)
+        p = query_options.get('p', 2)
+        distance_upper_bound = query_options.get('distance_upper_bound', np.inf)
+        workers = query_options.get('workers', 1)
+
         # For the sake of enabling subclassing, NDInterpolatorBase._set_xi performs some operations
         # which are not required by NearestNDInterpolator.__call__, hence here we operate
         # on xi directly, without calling a parent class function.
         xi = _ndim_coords_from_arrays(args, ndim=self.points.shape[1])
         xi = self._check_call_shape(xi)
         xi = self._scale_x(xi)
-        dist, i = self.tree.query(xi, distance_upper_bound=self.distance_upper_bound, workers=self.workers)
-        if np.isfinite(self.distance_upper_bound):
+        dist, i = self.tree.query(xi, eps=eps, p=p, distance_upper_bound=distance_upper_bound, workers=workers)
+
+        if np.isfinite(distance_upper_bound):
             # if distance_upper_bound is set to not be infinite, then we need to consider the case where cKDtree
             # does not find any points within distance_upper_bound to return. It marks those points as having infinte
             # distance, which is what will be used below to mask the array and return only the points that were deemed
