@@ -275,23 +275,39 @@ static PyObject *Py_gstrs(PyObject * self, PyObject * args,
   PyArrayObject *U_nzvals=NULL, *U_rowind=NULL, *U_colptr=NULL;
   /* right hand side / solution */
   PyObject *X_py=NULL;
+  /* whether the matrix is transposed ('T'), conjugate transposed ('H') or normal ('N') */
+  volatile int itrans = 'N';
   volatile jmp_buf* jmpbuf_ptr;
   SLU_BEGIN_THREADS_DEF;
 
 
-  static char* kwlist[] = {"L_N", "L_nnz", "L_nzvals", "L_colind", "L_rowptr",
+  static char* kwlist[] = {"trans",
+                           "L_N", "L_nnz", "L_nzvals", "L_colind", "L_rowptr",
                            "U_N", "U_nnz", "U_nzvals", "U_rowind", "U_colptr",
                            "B", NULL};
 
   /* Parse and check input arguments. */
 
   int res =
-      PyArg_ParseTupleAndKeywords(args, keywds, "iiO!O!O!iiO!O!O!O", kwlist,
+      PyArg_ParseTupleAndKeywords(args, keywds, "CiiO!O!O!iiO!O!O!O", kwlist,
+        &itrans,
         &L_N, &L_nnz, &PyArray_Type, &L_nzvals, &PyArray_Type, &L_colind, &PyArray_Type, &L_rowptr,
         &U_N, &U_nnz, &PyArray_Type, &U_nzvals, &PyArray_Type, &U_rowind, &PyArray_Type, &U_colptr,
         &X_py );
   if(!res)
     return NULL;
+
+  volatile trans_t trans; 
+  if (itrans == 'n' || itrans == 'N')
+      trans = NOTRANS;
+  else if (itrans == 't' || itrans == 'T')
+      trans = TRANS;
+  else if (itrans == 'h' || itrans == 'H')
+      trans = CONJ;
+  else {
+      PyErr_SetString(PyExc_ValueError, "trans must be N, T, or H");
+      return NULL;
+  }
 
   if(L_N!=U_N){
       PyErr_SetString(PyExc_TypeError, "L and U must have the same dimension");
@@ -383,7 +399,7 @@ static PyObject *Py_gstrs(PyObject * self, PyObject * args,
       goto fail;
   }
   gstrs(L_type,
-        NOTRANS, &L_super, &U_super, perm_c, perm_r,
+        trans, &L_super, &U_super, perm_c, perm_r,
         (SuperMatrix *)&X, (SuperLUStat_t *)&stat, (int *)&info);
   SLU_END_THREADS;
 
@@ -451,12 +467,14 @@ ilu : bool\n\
 ";
 
 static char gstrs_doc[] =
-  "gstrs(L..., U..., b)\n"
+  "gstrs(trans, L..., U..., b)\n"
   "\n"
-  "solves the linear system L*U*x = b via backward and forward substitution.\n"
-  "L is specified first, in the compressed sparse column format via parameters N,nnz,nzvals,colind,rowptr.\n"
-  "U is specified second, in the compressed sparse column format via parameters N,nnz,nzvals,rowind,colptr.\n"
-  "b is specified third.\n";
+  "solves the linear system A*x = b via backward and forward substitution, with\n"
+  "either A=L*U, A=(L*U)^T, or A=conj(L*U)^T.\n"
+  "trans says whether the matrix is transposed (\"T\"), conjugate transposed (\"H\"), or normal (\"N\").\n"
+  "L is specified in the compressed sparse column format via parameters N,nnz,nzvals,colind,rowptr.\n"
+  "U is specified in the compressed sparse column format via parameters N,nnz,nzvals,rowind,colptr.\n"
+  "b is specified as a dense vector.\n";
 
 /*
  * Main SuperLU module
