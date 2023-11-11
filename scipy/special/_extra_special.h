@@ -3,8 +3,12 @@
 #include <complex>
 #include <numpy/npy_math.h>
 
+#include "_binom.h"
 #include "_lambertw.h"
 
+inline double binom(double n, double k) {
+    return scipy::special::binom(n, k);
+}
 
 inline npy_cdouble lambertw_scalar(npy_cdouble zp, long k, double tol) {
     std::complex<double> z(npy_creal(zp), npy_cimag(zp));

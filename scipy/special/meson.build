@@ -381,6 +381,7 @@ py3.extension_module('_ufuncs_cxx',
   include_directories: ['../_lib/boost_math/include', '../_lib',
                         '../_build_utils/src'],
   link_args: version_link_args,
+    link_with: [cephes_lib],
   dependencies: [np_dep, ellint_dep],
   install: true,
   subdir: 'scipy/special'
