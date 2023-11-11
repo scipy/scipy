@@ -3,7 +3,7 @@ from warnings import warn
 import numpy as np
 from numpy import asarray
 from scipy.sparse import (issparse,
-                          SparseEfficiencyWarning, csc_matrix, eye)
+                          SparseEfficiencyWarning, csc_matrix, eye, diags)
 from scipy.sparse._sputils import is_pydata_spmatrix
 from scipy.linalg import LinAlgError
 import copy
@@ -660,9 +660,15 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
 
     if is_pydata_spmatrix(A):
         A = A.to_scipy_sparse().tocsc()
+    
+    trans = "N"
+    if issparse(A) and A.format == "csr":
+        A = A.T
+        trans = "T"
+        lower = not lower
 
     if not (issparse(A) and A.format == "csc"): 
-        warn('CSC matrix format is required. Converting to CSC matrix.',
+        warn('CSC or CSR matrix format is required. Converting to CSC matrix.',
              SparseEfficiencyWarning)
         A = csc_matrix(A)
     elif not overwrite_A:
@@ -683,8 +689,11 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
         if np.any(diag==0):
             raise LinAlgError(
                 'A is singular: zero entry on diagonal.')
-        A = A.multiply(1/diag).tocsc()
-
+        invdiag = 1/diag
+        if trans=="N":
+            A = A @ diags(invdiag)
+        else:
+            A = (A.T @ diags(invdiag)).T
 
     # sum duplicates for non-canonical format
     A.sum_duplicates()
@@ -717,7 +726,8 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
         U = A
         U.setdiag(0)
 
-    x, info = _superlu.gstrs(N, L.nnz, L.data, L.indices, L.indptr,
+    x, info = _superlu.gstrs(trans,
+                             N, L.nnz, L.data, L.indices, L.indptr,
                              N, U.nnz, U.data, U.indices, U.indptr,
                              b)
     if info:
@@ -725,8 +735,8 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
         x.fill(np.nan)
 
     if not unit_diagonal:
-        diag = diag.reshape(-1, *([1]*(len(x.shape)-1)))
-        x = x / diag
+        invdiag = invdiag.reshape(-1, *([1]*(len(x.shape)-1)))
+        x = x * invdiag
 
     return x
 
