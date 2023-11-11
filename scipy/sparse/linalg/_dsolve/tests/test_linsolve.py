@@ -741,7 +741,7 @@ class TestSpsolveTriangular:
         A = np.array([[0, 0, 0], [1, 0, 0], [1, 1, 0]], dtype=np.float64)
         b = np.array([1., 2., 3.])
         with suppress_warnings() as sup:
-            sup.filter(SparseEfficiencyWarning, "CSC matrix format is")
+            sup.filter(SparseEfficiencyWarning, "CSC or CSR matrix format is")
             spsolve_triangular(A, b, unit_diagonal=True)
 
     def test_singular(self):
@@ -774,29 +774,33 @@ class TestSpsolveTriangular:
     @pytest.mark.timeout(120)  # prerelease_deps_coverage_64bit_blas job
     @sup_sparse_efficiency
     def test_random(self):
-        def random_triangle_matrix(n, lower=True):
-            A = scipy.sparse.random(n, n, density=0.1, format='coo')
+        def random_triangle_matrix(n, lower=True, format="csr"):
+            A = scipy.sparse.random(n, n, density=0.1, format='lil')
             if lower:
-                A = scipy.sparse.tril(A)
+                A = scipy.sparse.tril(A,format="lil")
             else:
-                A = scipy.sparse.triu(A)
-            A = A.tocsr(copy=False)
+                A = scipy.sparse.triu(A,format="lil")
             for i in range(n):
                 A[i, i] = np.random.rand() + 1
+            if format=="csc":
+                A = A.tocsc(copy=False)
+            else:
+                A = A.tocsr(copy=False)
             return A
 
         np.random.seed(1234)
         for lower in (True, False):
-            for n in (10, 10**2, 10**3):
-                A = random_triangle_matrix(n, lower=lower)
-                for m in (1, 10):
-                    for b in (np.random.rand(n, m),
-                              np.random.randint(-9, 9, (n, m)),
-                              np.random.randint(-9, 9, (n, m)) +
-                              np.random.randint(-9, 9, (n, m)) * 1j):
-                        x = spsolve_triangular(A, b, lower=lower)
-                        assert_array_almost_equal(A.dot(x), b)
-                        x = spsolve_triangular(A, b, lower=lower,
-                                               unit_diagonal=True)
-                        A.setdiag(1)
-                        assert_array_almost_equal(A.dot(x), b)
+            for format in ["csr", "csc"]:
+                for n in (10, 10**2, 10**3):
+                    A = random_triangle_matrix(n, lower=lower)
+                    for m in (1, 10):
+                        for b in (np.random.rand(n, m),
+                                  np.random.randint(-9, 9, (n, m)),
+                                  np.random.randint(-9, 9, (n, m)) +
+                                  np.random.randint(-9, 9, (n, m)) * 1j):
+                            x = spsolve_triangular(A, b, lower=lower)
+                            assert_array_almost_equal(A.dot(x), b)
+                            x = spsolve_triangular(A, b, lower=lower,
+                                                   unit_diagonal=True)
+                            A.setdiag(1)
+                            assert_array_almost_equal(A.dot(x), b)
