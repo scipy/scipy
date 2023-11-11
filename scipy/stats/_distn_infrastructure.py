@@ -360,6 +360,10 @@ for obj in [s for s in dir() if s.startswith('_doc_')]:
 del obj
 
 
+def _identity(x):
+    return x
+
+
 def _moment(data, n, mu=None):
     if mu is None:
         mu = data.mean()
@@ -2849,8 +2853,6 @@ class rv_continuous(rv_generic):
         function is provided for convenience; for critical applications,
         check results against other integration methods.
 
-        The function is not vectorized.
-
         Examples
         --------
 
@@ -2886,16 +2888,23 @@ class rv_continuous(rv_generic):
         2.0
 
         """
+        loc, scale = map(asarray, (loc, scale))
         lockwds = {'loc': loc,
                    'scale': scale}
         self._argcheck(*args)
         _a, _b = self._get_support(*args)
         if func is None:
-            def fun(x, *args):
-                return x * self.pdf(x, *args, **lockwds)
-        else:
-            def fun(x, *args):
-                return func(x) * self.pdf(x, *args, **lockwds)
+            func = _identity
+
+        def _expect_integrator(lower_bound, upper_bound, **lockwds):
+            # Do not silence warnings from integration.
+            return integrate.quad(lambda x: func(x) * self.pdf(x, *args, **lockwds),
+                                  lower_bound,
+                                  upper_bound
+                                  **kwds)[0]
+
+        _expect_integrator = vectorize(_expect_integrator, otypes='d')
+
         if lb is None:
             lb = loc + _a * scale
         if ub is None:
@@ -2908,14 +2917,14 @@ class rv_continuous(rv_generic):
 
         # split interval to help integrator w/ infinite support; see gh-8928
         alpha = 0.05  # split body from tails at probability mass `alpha`
-        inner_bounds = np.array([alpha, 1-alpha])
-        cdf_inner_bounds = cdf_bounds[0] + invfac * inner_bounds
-        c, d = loc + self._ppf(cdf_inner_bounds, *args) * scale
+        cdf_inner_ub = cdf_bounds[0] + invfac * alpha
+        cdf_inner_lb = cdf_bounds[0] + invfac * (1 - alpha)
+        c = loc + self._ppf(cdf_inner_ub, *args) * scale
+        d = loc + self._ppf(cdf_inner_lb, *args) * scale
 
-        # Do not silence warnings from integration.
-        lbc = integrate.quad(fun, lb, c, **kwds)[0]
-        cd = integrate.quad(fun, c, d, **kwds)[0]
-        dub = integrate.quad(fun, d, ub, **kwds)[0]
+        lbc = _expect_integrator(lb, c, **lockwds)
+        cd = _expect_integrator(c, d, **lockwds)
+        dub = _expect_integrator(d, ub, **lockwds)
         vals = (lbc + cd + dub)
 
         if conditional:
