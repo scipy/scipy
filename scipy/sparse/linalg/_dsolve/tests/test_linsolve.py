@@ -778,10 +778,17 @@ class TestSpsolveTriangular:
     @pytest.mark.parametrize("lower", [True, False])
     @pytest.mark.parametrize("format", ["csr", "csc"])
     @pytest.mark.parametrize("unit_diagonal", [False, True])
+    @pytest.mark.parametrize("choice_of_A", ["real", "complex"])
     @pytest.mark.parametrize("choice_of_b", ["floats", "ints", "complexints"])
-    def test_random(self, n, m, lower, format, unit_diagonal, choice_of_b):
-        def random_triangle_matrix(n, lower=True, format="csr"):
-            A = scipy.sparse.random(n, n, density=0.1, format='lil')
+    def test_random(self, n, m, lower, format, unit_diagonal, choice_of_A, choice_of_b):
+        def random_triangle_matrix(n, lower=True, format="csr", choice_of_A="real"):
+            if choice_of_A == "real":
+                dtype = np.float64
+            elif choice_of_A == "complex":
+                dtype = np.complex128
+            else:
+                raise ValueError("choice_of_A must be 'real' or 'complex'.")
+            A = scipy.sparse.random(n, n, density=0.1, format='lil', dtype=dtype)
             if lower:
                 A = scipy.sparse.tril(A, format="lil")
             else:
