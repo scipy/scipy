@@ -788,7 +788,7 @@ class TestSpsolveTriangular:
                 dtype = np.complex128
             else:
                 raise ValueError("choice_of_A must be 'real' or 'complex'.")
-            rng = np.random.default_rng()
+            rng = np.random.default_rng(789002319)
             rvs = rng.random
             A = scipy.sparse.random(n, n, density=0.1, format='lil', dtype=dtype,
                     random_state=rng, data_rvs=rvs)
