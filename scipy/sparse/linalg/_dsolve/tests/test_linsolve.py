@@ -777,9 +777,9 @@ class TestSpsolveTriangular:
         def random_triangle_matrix(n, lower=True, format="csr"):
             A = scipy.sparse.random(n, n, density=0.1, format='lil')
             if lower:
-                A = scipy.sparse.tril(A,format="lil")
+                A = scipy.sparse.tril(A, format="lil")
             else:
-                A = scipy.sparse.triu(A,format="lil")
+                A = scipy.sparse.triu(A, format="lil")
             for i in range(n):
                 A[i, i] = np.random.rand() + 1
             if format=="csc":

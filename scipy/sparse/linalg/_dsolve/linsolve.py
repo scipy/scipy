@@ -686,11 +686,11 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
         A = A.tocsc()
     else:
         diag = A.diagonal()
-        if np.any(diag==0):
+        if np.any(diag == 0):
             raise LinAlgError(
                 'A is singular: zero entry on diagonal.')
         invdiag = 1/diag
-        if trans=="N":
+        if trans == "N":
             A = A @ diags(invdiag)
         else:
             A = (A.T @ diags(invdiag)).T
@@ -735,7 +735,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
             'A is singular.')
 
     if not unit_diagonal:
-        invdiag = invdiag.reshape(-1, *([1]*(len(x.shape)-1)))
+        invdiag = invdiag.reshape(-1, *([1] * (len(x.shape) - 1)))
         x = x * invdiag
 
     return x
