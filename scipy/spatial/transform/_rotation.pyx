@@ -117,9 +117,12 @@ cdef inline void _quat_canonical(double[:, :] q) noexcept:
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline void _get_angles(
+cdef inline int _get_angles(
     double[:] angles, bint extrinsic, bint symmetric, bint sign, 
-    double lamb, double a, double b, double c, double d):
+    double lamb, double a, double b, double c, double d) noexcept:
+    # This will return 1 if a  gimbal warning is detected, 0 otherwise that it
+    # can be handled (accumulated) at a higher level instead of emitting a
+    # gimbal warning everytime
     
     # intrinsic/extrinsic conversion helpers
     cdef int angle_first, angle_third
@@ -173,13 +176,12 @@ cdef inline void _get_angles(
             angles[idx] -= 2 * pi
 
     if case != 0:
-        warnings.warn("Gimbal lock detected. Setting third angle to zero "
-                      "since it is not possible to uniquely determine "
-                      "all angles.", stacklevel=3)
+        return 1
+    return 0
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef double[:, :] _compute_euler_from_matrix(
+cdef tuple[double[:, :], int32] _compute_euler_from_matrix(
     np.ndarray[double, ndim=3] matrix, const uchar[:] seq, bint extrinsic
 ) noexcept:
     # This is being replaced by the newer: _compute_euler_from_quat
@@ -233,6 +235,8 @@ cdef double[:, :] _compute_euler_from_matrix(
     cdef np.ndarray[double, ndim=2] res
     cdef double eps = 1e-7
     cdef bint safe1, safe2, safe, adjust
+
+    cdef int n_gimbal_warnings = 0
 
     for ind in range(num_rotations):
         _angles = angles[ind, :]
@@ -314,15 +318,13 @@ cdef double[:, :] _compute_euler_from_matrix(
 
         # Step 8
         if not safe:
-            warnings.warn("Gimbal lock detected. Setting third angle to zero "
-                          "since it is not possible to uniquely determine "
-                          "all angles.")
+            n_gimbal_warnings += 1
 
-    return angles
+    return angles, n_gimbal_warnings
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef double[:, :] _compute_euler_from_quat(
+cdef tuple[double[:, :], int32] _compute_euler_from_quat(
     np.ndarray[double, ndim=2] quat, const uchar[:] seq, bint extrinsic
 ) noexcept:
     # The algorithm assumes extrinsic frame transformations. The algorithm
@@ -330,6 +332,8 @@ cdef double[:, :] _compute_euler_from_quat(
     # directly by Rotation.
     # Adapt the algorithm for our case by reversing both axis sequence and 
     # angles for intrinsic rotations when needed
+    #
+    # As the second parameter it will return the number of gimbals lock detected
     
     if not extrinsic:
         seq = seq[::-1]
@@ -352,6 +356,8 @@ cdef double[:, :] _compute_euler_from_quat(
     cdef double a, b, c, d
     cdef double[:, :] angles = _empty2(num_rotations, 3)
 
+    cdef int n_gimbal_warnings = 0
+
     for ind in range(num_rotations):
 
         # Step 1
@@ -367,13 +373,13 @@ cdef double[:, :] _compute_euler_from_quat(
             c = quat[ind, j] + quat[ind, 3]
             d = quat[ind, k] * sign - quat[ind, i]
 
-        _get_angles(angles[ind], extrinsic, symmetric, sign, pi / 2, a, b, c, d)
+        n_gimbal_warnings += _get_angles(angles[ind], extrinsic, symmetric, sign, pi / 2, a, b, c, d)
 
-    return angles
+    return angles, n_gimbal_warnings
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef double[:, :] _compute_davenport_from_quat(
+cdef tuple[double[:, :], int32] _compute_davenport_from_quat(
     np.ndarray[double, ndim=2] quat, np.ndarray[double, ndim=1] n1,
     np.ndarray[double, ndim=1] n2, np.ndarray[double, ndim=1] n3,
     bint extrinsic
@@ -383,12 +389,16 @@ cdef double[:, :] _compute_davenport_from_quat(
     # directly by Rotation.
     # Adapt the algorithm for our case by reversing both axis sequence and
     # angles for intrinsic rotations when needed
+    #
+    # as as second parameter it will return the number of gimbal locks
+    # encountered
 
     if not extrinsic:
         n1, n3 = n3, n1
 
     cdef double[:] n_cross = _cross3(n1, n2)
     cdef double lamb = atan2(_dot3(n3, n_cross), _dot3(n3, n1))
+    cdef int n_gimbal_warnings = False
 
     cdef int correct_set = False
     if lamb < 0:
@@ -424,12 +434,12 @@ cdef double[:, :] _compute_davenport_from_quat(
         c = _dot3(quat_transformed[:3], n2)
         d = _dot3(quat_transformed[:3], n_cross)
 
-        _get_angles(angles[ind], extrinsic, False, 1, lamb, a, b, c, d)
+        n_gimbal_warnings += _get_angles(angles[ind], extrinsic, False, 1, lamb, a, b, c, d)
 
         if correct_set:
             angles[ind, 1] = -angles[ind, 1]
 
-    return angles
+    return angles, n_gimbal_warnings
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -1883,7 +1893,26 @@ cdef class Rotation:
             return np.asarray(rotvec)
 
     @cython.embedsignature(True)
-    def _compute_euler(self, seq, degrees, algorithm):
+    def _compute_euler(self, seq, degrees, algorithm, *, suppress_warnings):
+        """
+
+        Parameters
+        ----------
+        seq : string, length 3
+            3 characters belonging to the set {'X', 'Y', 'Z'} for intrinsic
+            rotations, or {'x', 'y', 'z'} for extrinsic rotations [1]_.
+            Adjacent axes cannot be the same.
+            Extrinsic and intrinsic rotations cannot be mixed in one function
+            call.
+        degrees : boolean, optional
+            Returned angles are in degrees if this flag is True, else they are
+            in radians. Default is False.
+        algorithm: str
+            One of 'from_matrix'|'from_quat'
+        suppress_warnings : boolean, optional
+            Disable the warnings about Gimbal Lock when encountered.
+
+        """
         # Prepare axis sequence to call Euler angles conversion algorithm.
         
         if len(seq) != 3:
@@ -1906,17 +1935,23 @@ cdef class Rotation:
             matrix = self.as_matrix()
             if matrix.ndim == 2:
                 matrix = matrix[None, :, :]
-            angles = np.asarray(_compute_euler_from_matrix(
-                matrix, seq.encode(), extrinsic))
+            data, n_gimbal_warnings = _compute_euler_from_matrix(
+                matrix, seq.encode(), extrinsic)
         elif algorithm == 'from_quat':
             quat = self.as_quat()
             if quat.ndim == 1:
                 quat = quat[None, :]
-            angles = np.asarray(_compute_euler_from_quat(
-                    quat, seq.encode(), extrinsic))
+            data, n_gimbal_warnings = _compute_euler_from_quat(
+                    quat, seq.encode(), extrinsic)
         else:
             # algorithm can only be 'from_quat' or 'from_matrix'
             assert False
+
+        angles = np.asarray(data)
+        if n_gimbal_warnings > 0 and not suppress_warnings:
+            warnings.warn("Gimbal lock detected %s time(s). Setting third "
+                          "angle to zero since it is not possible to uniquely "
+                          "determine all angles." % n_gimbal_warnings)
             
         if degrees:
             angles = np.rad2deg(angles)
@@ -1924,7 +1959,7 @@ cdef class Rotation:
         return angles[0] if self._single else angles
 
     @cython.embedsignature(True)
-    def _as_euler_from_matrix(self, seq, degrees=False):
+    def _as_euler_from_matrix(self, seq, degrees=False, *, suppress_warnings=False):
         """Represent as Euler angles.
 
         Any orientation can be expressed as a composition of 3 elementary
@@ -1951,6 +1986,9 @@ cdef class Rotation:
         degrees : boolean, optional
             Returned angles are in degrees if this flag is True, else they are
             in radians. Default is False.
+        suppress_warnings : boolean, optional
+            Disable the warnings about Gimbal Lock when encountered.
+            Default is `False`
 
         Returns
         -------
@@ -1975,10 +2013,10 @@ cdef class Rotation:
         .. [3] https://en.wikipedia.org/wiki/Gimbal_lock#In_applied_mathematics
 
         """
-        return self._compute_euler(seq, degrees, 'from_matrix')
+        return self._compute_euler(seq, degrees, 'from_matrix', suppress_warnings=suppress_warnings)
 
     @cython.embedsignature(True)
-    def as_euler(self, seq, degrees=False):
+    def as_euler(self, seq, degrees=False, *, suppress_warnings=False):
         """Represent as Euler angles.
 
         Any orientation can be expressed as a composition of 3 elementary
@@ -2064,7 +2102,7 @@ cdef class Rotation:
         (3, 3)
 
         """
-        return self._compute_euler(seq, degrees, 'from_quat')
+        return self._compute_euler(seq, degrees, 'from_quat', suppress_warnings=suppress_warnings)
 
     @cython.embedsignature(True)
     def as_davenport(self, axes, order, degrees=False):
@@ -2204,8 +2242,14 @@ cdef class Rotation:
         quat = self.as_quat()
         if quat.ndim == 1:
             quat = quat[None, :]
-        angles = np.asarray(_compute_davenport_from_quat(
-                quat, n1, n2, n3, extrinsic))
+        data, n_gimbal_warnings = _compute_davenport_from_quat(
+                quat, n1, n2, n3, extrinsic)
+
+        if n_gimbal_warnings > 0:
+            warnings.warn("Gimbal lock detected %s time(s). Setting third "
+                          "angle to zero since it is not possible to uniquely "
+                          "determine all angles." % n_gimbal_warnings)
+        angles = np.asarray(data)
 
         if degrees:
             angles = np.rad2deg(angles)

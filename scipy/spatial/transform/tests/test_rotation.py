@@ -6,6 +6,8 @@ from numpy.testing import assert_allclose
 from scipy.spatial.transform import Rotation, Slerp
 from scipy.stats import special_ortho_group
 from itertools import permutations
+from contextlib import contextmanager
+import warnings
 
 import pickle
 import copy
@@ -694,9 +696,21 @@ def test_as_euler_symmetric_axes(seq_tuple, intrinsic):
     test_stats(angles_mat - angles, 1e-15, 1e-13)
 
 
+@contextmanager
+def maybe_warn_gimbal_lock(should_warn):
+    if should_warn:
+        with pytest.warns(UserWarning, match="Gimbal lock"):
+            yield
+
+    else:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            yield
+
 @pytest.mark.parametrize("seq_tuple", permutations("xyz"))
 @pytest.mark.parametrize("intrinsic", (False, True))
-def test_as_euler_degenerate_asymmetric_axes(seq_tuple, intrinsic):
+@pytest.mark.parametrize("suppress_warnings", (False, True))
+def test_as_euler_degenerate_asymmetric_axes(seq_tuple, intrinsic, suppress_warnings):
     # Since we cannot check for angle equality, we check for rotation matrix
     # equality
     angles = np.array([
@@ -713,8 +727,10 @@ def test_as_euler_degenerate_asymmetric_axes(seq_tuple, intrinsic):
     rotation = Rotation.from_euler(seq, angles, degrees=True)
     mat_expected = rotation.as_matrix()
 
-    with pytest.warns(UserWarning, match="Gimbal lock"):
-        angle_estimates = rotation.as_euler(seq, degrees=True)
+    with maybe_warn_gimbal_lock(not suppress_warnings):
+        angle_estimates = rotation.as_euler(
+            seq, degrees=True, suppress_warnings=suppress_warnings
+        )
     mat_estimated = Rotation.from_euler(seq, angle_estimates, degrees=True).as_matrix()
 
     assert_array_almost_equal(mat_expected, mat_estimated)
@@ -722,7 +738,8 @@ def test_as_euler_degenerate_asymmetric_axes(seq_tuple, intrinsic):
 
 @pytest.mark.parametrize("seq_tuple", permutations("xyz"))
 @pytest.mark.parametrize("intrinsic", (False, True))
-def test_as_euler_degenerate_symmetric_axes(seq_tuple, intrinsic):
+@pytest.mark.parametrize("suppress_warnings", (False, True))
+def test_as_euler_degenerate_symmetric_axes(seq_tuple, intrinsic, suppress_warnings):
     # Since we cannot check for angle equality, we check for rotation matrix
     # equality
     angles = np.array([
@@ -740,8 +757,10 @@ def test_as_euler_degenerate_symmetric_axes(seq_tuple, intrinsic):
     rotation = Rotation.from_euler(seq, angles, degrees=True)
     mat_expected = rotation.as_matrix()
 
-    with pytest.warns(UserWarning, match="Gimbal lock"):
-        angle_estimates = rotation.as_euler(seq, degrees=True)
+    with maybe_warn_gimbal_lock(not suppress_warnings):
+        angle_estimates = rotation.as_euler(
+            seq, degrees=True, suppress_warnings=suppress_warnings
+        )
     mat_estimated = Rotation.from_euler(seq, angle_estimates, degrees=True).as_matrix()
 
     assert_array_almost_equal(mat_expected, mat_estimated)
@@ -749,7 +768,8 @@ def test_as_euler_degenerate_symmetric_axes(seq_tuple, intrinsic):
 
 @pytest.mark.parametrize("seq_tuple", permutations("xyz"))
 @pytest.mark.parametrize("intrinsic", (False, True))
-def test_as_euler_degenerate_compare_algorithms(seq_tuple, intrinsic):
+@pytest.mark.parametrize("suppress_warnings", (False, True))
+def test_as_euler_degenerate_compare_algorithms(seq_tuple, intrinsic, suppress_warnings):
     # this test makes sure that both algorithms are doing the same choices
     # in degenerate cases
 
@@ -767,10 +787,12 @@ def test_as_euler_degenerate_compare_algorithms(seq_tuple, intrinsic):
         seq = seq.upper()
 
     rot = Rotation.from_euler(seq, angles, degrees=True)
-    with pytest.warns(UserWarning, match="Gimbal lock"):
-        estimates_matrix = rot._as_euler_from_matrix(seq, degrees=True)
-    with pytest.warns(UserWarning, match="Gimbal lock"):
-        estimates_quat = rot.as_euler(seq, degrees=True)
+    with maybe_warn_gimbal_lock(not suppress_warnings):
+        estimates_matrix = rot._as_euler_from_matrix(
+            seq, degrees=True, suppress_warnings=suppress_warnings
+        )
+    with maybe_warn_gimbal_lock(not suppress_warnings):
+        estimates_quat = rot.as_euler(seq, degrees=True, suppress_warnings=suppress_warnings)
     assert_allclose(
         estimates_matrix[:, [0, 2]], estimates_quat[:, [0, 2]], atol=0, rtol=1e-12
     )
@@ -797,10 +819,12 @@ def test_as_euler_degenerate_compare_algorithms(seq_tuple, intrinsic):
         seq = seq.upper()
 
     rot = Rotation.from_euler(seq, angles, degrees=True)
-    with pytest.warns(UserWarning, match="Gimbal lock"):
-        estimates_matrix = rot._as_euler_from_matrix(seq, degrees=True)
-    with pytest.warns(UserWarning, match="Gimbal lock"):
-        estimates_quat = rot.as_euler(seq, degrees=True)
+    with maybe_warn_gimbal_lock(not suppress_warnings):
+        estimates_matrix = rot._as_euler_from_matrix(
+            seq, degrees=True, suppress_warnings=suppress_warnings
+        )
+    with maybe_warn_gimbal_lock(not suppress_warnings):
+        estimates_quat = rot.as_euler(seq, degrees=True, suppress_warnings=suppress_warnings)
     assert_allclose(
         estimates_matrix[:, [0, 2]], estimates_quat[:, [0, 2]], atol=0, rtol=1e-12
     )
