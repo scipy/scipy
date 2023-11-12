@@ -773,7 +773,13 @@ class TestSpsolveTriangular:
     @pytest.mark.slow
     @pytest.mark.timeout(120)  # prerelease_deps_coverage_64bit_blas job
     @sup_sparse_efficiency
-    def test_random(self):
+    @pytest.mark.parametrize("n", [10, 10**2, 10**3])
+    @pytest.mark.parametrize("m", [1, 10])
+    @pytest.mark.parametrize("lower", [True, False])
+    @pytest.mark.parametrize("format", ["csr", "csc"])
+    @pytest.mark.parametrize("unit_diagonal", [False, True])
+    @pytest.mark.parametrize("choice_of_b", ["floats", "ints", "complexints"])
+    def test_random(self, n, m, lower, format, unit_diagonal, choice_of_b):
         def random_triangle_matrix(n, lower=True, format="csr"):
             A = scipy.sparse.random(n, n, density=0.1, format='lil')
             if lower:
@@ -789,18 +795,17 @@ class TestSpsolveTriangular:
             return A
 
         np.random.seed(1234)
-        for lower in (True, False):
-            for format in ["csr", "csc"]:
-                for n in (10, 10**2, 10**3):
-                    A = random_triangle_matrix(n, lower=lower)
-                    for m in (1, 10):
-                        for b in (np.random.rand(n, m),
-                                  np.random.randint(-9, 9, (n, m)),
-                                  np.random.randint(-9, 9, (n, m)) +
-                                  np.random.randint(-9, 9, (n, m)) * 1j):
-                            x = spsolve_triangular(A, b, lower=lower)
-                            assert_array_almost_equal(A.dot(x), b)
-                            x = spsolve_triangular(A, b, lower=lower,
-                                                   unit_diagonal=True)
-                            A.setdiag(1)
-                            assert_array_almost_equal(A.dot(x), b)
+        A = random_triangle_matrix(n, lower=lower)
+        if choice_of_b == "floats":
+            b = np.random.rand(n, m)
+        elif choice_of_b == "ints":
+            b = np.random.randint(-9, 9, (n, m))
+        elif choice_of_b == "complexints":
+            b = np.random.randint(-9, 9, (n, m)) + np.random.randint(-9, 9, (n, m)) * 1j
+        else:
+            raise ValueError(
+                "choice_of_b must be 'floats', 'ints', or 'complexints'.")
+        x = spsolve_triangular(A, b, lower=lower, unit_diagonal=unit_diagonal)
+        if unit_diagonal:
+            A.setdiag(1)
+        assert_array_almost_equal(A.dot(x), b)
