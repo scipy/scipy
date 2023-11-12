@@ -788,7 +788,10 @@ class TestSpsolveTriangular:
                 dtype = np.complex128
             else:
                 raise ValueError("choice_of_A must be 'real' or 'complex'.")
-            A = scipy.sparse.random(n, n, density=0.1, format='lil', dtype=dtype)
+            rng = np.random.default_rng()
+            rvs = rng.random
+            A = scipy.sparse.random(n, n, density=0.1, format='lil', dtype=dtype,
+                    random_state=rng, data_rvs=rvs)
             if lower:
                 A = scipy.sparse.tril(A, format="lil")
             else:
