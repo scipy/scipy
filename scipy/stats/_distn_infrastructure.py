@@ -2896,14 +2896,16 @@ class rv_continuous(rv_generic):
         if func is None:
             func = _identity
 
-        def _expect_integrator(lower_bound, upper_bound, **lockwds):
-            # Do not silence warnings from integration.
-            return integrate.quad(lambda x: func(x) * self.pdf(x, *args, **lockwds),
-                                  lower_bound,
-                                  upper_bound
-                                  **kwds)[0]
+        kwds['args'] = args
 
-        _expect_integrator = vectorize(_expect_integrator, otypes='d')
+        def _expect_integrator(low_b, up_b, **lockwds):
+            def _integrand(x, *args):
+                return func(x) * self.pdf(x, *args, **lockwds)
+
+            # Do not silence warnings from integration.
+            return integrate.quad(_integrand, low_b, up_b, **kwds)[0]
+
+        _expect_integrator = vectorize(_expect_integrator)
 
         if lb is None:
             lb = loc + _a * scale
@@ -2912,8 +2914,6 @@ class rv_continuous(rv_generic):
 
         cdf_bounds = self.cdf([lb, ub], *args, **lockwds)
         invfac = cdf_bounds[1] - cdf_bounds[0]
-
-        kwds['args'] = args
 
         # split interval to help integrator w/ infinite support; see gh-8928
         alpha = 0.05  # split body from tails at probability mass `alpha`
