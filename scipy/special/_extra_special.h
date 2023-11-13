@@ -4,7 +4,7 @@
 #include <numpy/npy_math.h>
 
 #include "_binom.h"
-#include "extra_special/_lambertw.h"
+#include "extra_special/lambertw.h"
 
 inline double binom(double n, double k) {
     return scipy::special::binom(n, k);

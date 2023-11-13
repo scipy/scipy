@@ -479,8 +479,9 @@ endforeach
 
 
 extra_special_sources = [
-  'extra_special/_lambertw.h',
-  'extra_special/_evalpoly.h'
+  'extra_special/error.h',
+  'extra_special/evalpoly.h',
+  'extra_special/lambertw.h'
 ]
 
 # Headers for special functions currently supplied by SciPy in
