@@ -12,3 +12,5 @@ b9cb3d075dad2b1ee9c145f9e69192d6eeda4f1e
 8870c5d01a6f91a737db4642343ef997a63c8584
 # Line length clean up in fftpack (gh-19503)
 39787f146137b0ec9d31907989c6f104ba7eed76
+# Line length clean up in `scipyoptdoc.py` (gh-19505)
+49858c5fb2bf479b17a0bf42a7397d73f45f1b31

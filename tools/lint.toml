@@ -24,7 +24,6 @@ target-version = "py39"
 "scipy/optimize/_linprog_ip.py" = ["F401"]
 # E501 (line length) ignores
 "benchmarks/benchmarks/**" = ["E501"]
-"doc/source/scipyoptdoc.py" = ["E501"]
 "scipy/_lib/**" = ["E501"]
 "scipy/cluster/**" = ["E501"]
 "scipy/constants/**" = ["E501"]
