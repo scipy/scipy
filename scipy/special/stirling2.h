@@ -76,18 +76,6 @@ double stirling2_dp(int n, int k){
 }
 
 
-// TODO: replace this standin binomial coefficients
-// https://github.com/scipy/scipy/pull/19471
-int binom(int n, int k){
-  assert(n >= 1);
-  assert(k >= 1);
-  int64_t res  = 1;
-  for (int i = n - k + 1; i <= n; ++i)
-      res *= i;
-  for (int i = 2; i <= k; ++i)
-      res /= i;
-  return res;
-}
 
 // second order Temme approximation
 double stirling2_temme(int n, int k){
@@ -115,7 +103,7 @@ double stirling2_temme(int n, int k){
   double denom = (24*F*(1 + t0) * (1 + t0)*(x0 - t0)*(x0 - t0)*(x0 - t0)*(x0-t0));
   double F1 = num / denom;
   double val = exp(A) * pow(k, n - k) * (F - F1/k);
-  val *= binom(n, k);
+  val *= scipy::special::binom(n, k);
   return val;
 }
 
