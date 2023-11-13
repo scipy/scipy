@@ -16,7 +16,7 @@
 
 #include "cephes.hh"
 #include "_trig.h"
-#include "sf_error.h"
+#include "error.h"
 
 namespace scipy {
     namespace special {
@@ -149,7 +149,7 @@ namespace scipy {
 
 	    if (z.real() <= 0.0 && std::ceil(z.real()) == z) {
 		// Poles
-		sf_error("digamma", SF_ERROR_SINGULAR, NULL);
+		set_error("digamma", SF_ERROR_SINGULAR, NULL);
 		return std::complex<double>(std::numeric_limits<double>::quiet_NaN(),
 					    std::numeric_limits<double>::quiet_NaN());
 	    }
