@@ -1,23 +1,16 @@
 #ifndef STIRLING_H
 #define STIRLING_H
 
-/* c implementation of Stirling numbers of the second kind */
-
 #include <complex.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 
-//#include "_extra_special.h"
 #include "_lambertw.h"
 
 
-/*
- *
- *     Stirling numbers of the second kind
- *
- *
+/*     Stirling numbers of the second kind
  *
  * SYNOPSIS: Stirling numbers of the second kind count the
  *  number of ways to make a partition of n distinct elements
@@ -33,7 +26,7 @@
  *  added by Lucas Roberts
  */
 
-// Dynamic programming approach
+// Dynamic programming
 
 double stirling2_dp(int n, int k){
     if ((n == 0 && k == 0) || (n==1 && k==1)) {
@@ -51,7 +44,6 @@ double stirling2_dp(int n, int k){
         for (int i = 1; i < n - k + 1; i++){
             for (int j = 1; j < k; j++){
                 curr[j] = (j + 1) * curr[j] + curr[j - 1];
-                // supported in c99: https://devdocs.io/c/numeric/math/isinf
                 if (isinf(curr[j])){
                     free(curr);
                     return INFINITY; // numeric overflow
@@ -62,7 +54,6 @@ double stirling2_dp(int n, int k){
         for (int i = 1; i < k; i++){
             for (int j = 1; j < n - k + 1; j++){
                 curr[j] = (i + 1) * curr[j - 1] + curr[j];
-                // supported in c99: https://devdocs.io/c/numeric/math/isinf
                 if (isinf(curr[j])){
                     free(curr);
                     return INFINITY; // numeric overflow
@@ -78,6 +69,7 @@ double stirling2_dp(int n, int k){
 
 
 // second order Temme approximation
+
 double stirling2_temme(int n, int k){
   if ((n == k && n >= 0) || (n > 0 && k==1)){
       return 1.;
@@ -85,25 +77,28 @@ double stirling2_temme(int n, int k){
   if (k <= 0 || k > n || n < 0){
       return 0.;
   }
-  double mu = k / (double)n;
-  double delta = 1. / mu * pow(exp(-1), (-1/mu));
+  double mu = (double)k / (double)n;
+  double d = exp(-1/mu) / mu;
+  std::complex<double> delta = std::complex<double>(-d, 0);
   // note: lambert returns complex value, we only want the real part
-  double x0 = 1. / mu;
   // matching k=0, tolerance=1e-8 from _lambertw.py
-  std::complex<double> lwv = scipy::special::lambertw(-delta, 0, 1e-8);
-  x0 += lwv.real();
-  double t0 = (n - k) / (double)k;
+  std::complex<double> lwv = scipy::special::lambertw(delta, 0, 1e-8);
+  double x0 = lwv.real() + 1/mu;
+  double t0 = (1/mu) - 1;
   double F = sqrt(t0/((1 + t0)*(x0 - t0)));
-  double A = -n * log(x0) + k * log(pow(exp(1), x0) - 1) - k * t0 + (n - k) * log(t0);
+  double A = -n * log(x0) + k * log(exp(x0) - 1) - k * t0 + (n - k) * log(t0);
   // write F1 as numerator and denominator and apply Horner rule to num
-  double x0t0 = x0*t0;
-  double t03 = t0*t0*t0;
-  double num = (((2*x0 +1)*x0 + 3)*x0 + ((-6*x0 + 8*x0t0 - 5)*x0t0 -6*t03)*x0t0);
-  num += (2*t0*t0 + 4)*t03 - 2*x0*x0*x0;
+  double xt = x0*t0;
+  double t0power3 = t0*t0*t0;
+  // first all x only terms
+  double num = -2*x0*x0*x0;
+  // then all t only terms
+  num += ((t0 + 2)*t0 + 2)*(2*t0power3);
+  // finally mixed x^a * t^b terms
+  num += (-6*t0power3 + (8*t0 - 6*x0 - 5)*xt + ((2.*x0+1.)*x0+3.)*x0)*xt;
   double denom = (24*F*(1 + t0) * (1 + t0)*(x0 - t0)*(x0 - t0)*(x0 - t0)*(x0-t0));
   double F1 = num / denom;
-  double val = exp(A) * pow(k, n - k) * (F - F1/k);
-  val *= scipy::special::binom(n, k);
+  double val = exp(A) * pow(k,n - k) * scipy::special::binom(n, k) * (F-F1/k);
   return val;
 }
 
