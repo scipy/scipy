@@ -1433,8 +1433,15 @@ class TestCoherence:
 
 
 class TestSpectrogram:
-    def test_average_all_segments(self):
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_average_all_segments(self, xp):
         x = np.random.randn(1024)
+        x = xp.asarray(x)
 
         fs = 1.0
         window = ('tukey', 0.25)
@@ -1443,11 +1450,18 @@ class TestSpectrogram:
 
         f, _, P = spectrogram(x, fs, window, nperseg, noverlap)
         fw, Pw = welch(x, fs, window, nperseg, noverlap)
-        assert_allclose(f, fw)
-        assert_allclose(np.mean(P, axis=-1), Pw)
+        xp_assert_close(f, fw)
+        xp_assert_close(xp.mean(P, axis=-1), Pw)
 
-    def test_window_external(self):
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_window_external(self, xp):
         x = np.random.randn(1024)
+        x = xp.asarray(x)
 
         fs = 1.0
         window = ('tukey', 0.25)
@@ -1465,8 +1479,15 @@ class TestSpectrogram:
         assert_raises(ValueError, spectrogram, x,
                       fs, win_err, nperseg=None)  # win longer than signal
 
-    def test_short_data(self):
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_short_data(self, xp):
         x = np.random.randn(1024)
+        x = xp.asarray(x)
         fs = 1.0
 
         #for string-like window, input signal length < nperseg value gives
@@ -1480,10 +1501,10 @@ class TestSpectrogram:
                                     nperseg=1025)  # user-specified nperseg
         f2, _, p2 = spectrogram(x, fs, nperseg=256)  # to compare w/default
         f3, _, p3 = spectrogram(x, fs, nperseg=1024)  # compare w/user-spec'd
-        assert_allclose(f, f2)
-        assert_allclose(p, p2)
-        assert_allclose(f1, f3)
-        assert_allclose(p1, p3)
+        xp_assert_close(f, f2)
+        xp_assert_close(p, p2)
+        xp_assert_close(f1, f3)
+        xp_assert_close(p1, p3)
 
 class TestLombscargle:
     def test_frequency(self):
