@@ -478,6 +478,24 @@ foreach npz_file: npz_files
 endforeach
 
 
+extra_special_sources = [
+  'extra_special/_lambertw.h',
+  'extra_special/_evalpoly.h'
+]
+
+# Headers for special functions currently supplied by SciPy in
+# scipy::special C++ namespace are included for development
+# purposes.
+foreach header: extra_special_sources
+  configure_file(
+    input: header,
+    output: header.split('/')[-1],
+    copy: true,
+    install: true,
+    install_dir: py3.get_install_dir() / 'scipy/special/extra_special'
+  )
+endforeach
+
 python_sources = [
   '__init__.py',
   '_add_newdocs.py',

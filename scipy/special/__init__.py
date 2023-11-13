@@ -852,3 +852,13 @@ def btdtri(*args, **kwargs):  # type: ignore [no-redef]
 
 
 btdtri.__doc__ = _ufuncs.btdtri.__doc__  # type: ignore [misc]
+
+
+def _get_include():
+    """This function is for development purposes only.
+
+    This function could disappear or its behavior could change at any time.
+    """
+    import os
+    here = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(here, "extra_special")
