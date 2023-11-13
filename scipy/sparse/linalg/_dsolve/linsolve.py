@@ -731,8 +731,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
                              N, U.nnz, U.data, U.indices, U.indptr,
                              b)
     if info:
-        raise LinAlgError(
-            'A is singular.')
+        raise LinAlgError('A is singular.')
 
     if not unit_diagonal:
         invdiag = invdiag.reshape(-1, *([1] * (len(x.shape) - 1)))
