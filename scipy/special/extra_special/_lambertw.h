@@ -27,7 +27,7 @@
 #include <limits>
 
 #include "_evalpoly.h"
-#include "error.h"
+#include "../error.h"
 
 using namespace std::complex_literals;
 
