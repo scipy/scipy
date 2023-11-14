@@ -19,7 +19,7 @@ void extra_special::set_error(const char *func_name, sf_error_t code,
      *
      * See error.h for info on valid codes in enum sf_error_t.
      *
-     * Other packages making use of this library can supply their own implementation. 
+     * Other packages making use of this library can supply their own implementation.
      */
     va_list ap;
     va_start(ap, fmt);
@@ -28,4 +28,3 @@ void extra_special::set_error(const char *func_name, sf_error_t code,
     va_end(ap);
 }
 #endif
-
