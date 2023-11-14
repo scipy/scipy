@@ -1,7 +1,7 @@
 import sys
 
 import numpy as np
-from numpy.testing import (assert_, assert_approx_equal,
+from numpy.testing import (assert_,
                            assert_allclose, assert_array_equal, assert_equal,
                            assert_array_almost_equal_nulp, suppress_warnings)
 import pytest
@@ -1507,7 +1507,15 @@ class TestSpectrogram:
         xp_assert_close(p1, p3)
 
 class TestLombscargle:
-    def test_frequency(self):
+    # _lombscargle is a Cython function, so we currently
+    # have to skip backends across the board here
+    # (there's an expectation of contiguous memory
+    # layout as well)
+    @skip_if_array_api_backend("numpy.array_api")
+    @skip_if_array_api_backend("cupy")
+    @skip_if_array_api_backend("torch")
+    @array_api_compatible
+    def test_frequency(self, xp):
         """Test if frequency location of peak corresponds to frequency of
         generated input signal.
         """
@@ -1515,7 +1523,7 @@ class TestLombscargle:
         # Input parameters
         ampl = 2.
         w = 1.
-        phi = 0.5 * np.pi
+        phi = 0.5 * xp.pi
         nin = 100
         nout = 1000
         p = 0.7  # Fraction of points to select
@@ -1523,13 +1531,14 @@ class TestLombscargle:
         # Randomly select a fraction of an array with timesteps
         np.random.seed(2353425)
         r = np.random.rand(nin)
-        t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
+        r = xp.asarray(r)
+        t = xp.linspace(0.01*xp.pi, 10.*xp.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
-        x = ampl * np.sin(w*t + phi)
+        x = ampl * xp.sin(w*t + phi)
 
         # Define the array of frequencies for which to compute the periodogram
-        f = np.linspace(0.01, 10., nout)
+        f = xp.linspace(0.01, 10., nout)
 
         # Calculate Lomb-Scargle periodogram
         P = lombscargle(t, x, f)
@@ -1537,16 +1546,24 @@ class TestLombscargle:
         # Check if difference between found frequency maximum and input
         # frequency is less than accuracy
         delta = f[1] - f[0]
-        assert_(w - f[np.argmax(P)] < (delta/2.))
+        assert_(w - f[xp.argmax(P)] < (delta/2.))
 
-    def test_amplitude(self):
+    # _lombscargle is a Cython function, so we currently
+    # have to skip backends across the board here
+    # (there's an expectation of contiguous memory
+    # layout as well)
+    @skip_if_array_api_backend("numpy.array_api")
+    @skip_if_array_api_backend("cupy")
+    @skip_if_array_api_backend("torch")
+    @array_api_compatible
+    def test_amplitude(self, xp):
         # Test if height of peak in normalized Lomb-Scargle periodogram
         # corresponds to amplitude of the generated input signal.
 
         # Input parameters
         ampl = 2.
         w = 1.
-        phi = 0.5 * np.pi
+        phi = 0.5 * xp.pi
         nin = 100
         nout = 1000
         p = 0.7  # Fraction of points to select
@@ -1554,31 +1571,38 @@ class TestLombscargle:
         # Randomly select a fraction of an array with timesteps
         np.random.seed(2353425)
         r = np.random.rand(nin)
-        t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
+        r = xp.asarray(r)
+        t = xp.linspace(0.01*xp.pi, 10.*xp.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
-        x = ampl * np.sin(w*t + phi)
+        x = ampl * xp.sin(w*t + phi)
 
         # Define the array of frequencies for which to compute the periodogram
-        f = np.linspace(0.01, 10., nout)
+        f = xp.linspace(0.01, 10., nout)
 
         # Calculate Lomb-Scargle periodogram
         pgram = lombscargle(t, x, f)
 
         # Normalize
-        pgram = np.sqrt(4 * pgram / t.shape[0])
+        pgram = xp.sqrt(4 * pgram / t.shape[0])
 
         # Check if difference between found frequency maximum and input
         # frequency is less than accuracy
-        assert_approx_equal(np.max(pgram), ampl, significant=2)
+        xp_assert_close(xp.max(pgram), ampl, rtol=0.035)
 
-    def test_precenter(self):
+    # here we only need to skip cupy and torch backends
+    # for the _lombscargle Cython function (I'm a little
+    # surprised numpy.array_api squeezed through here)
+    @skip_if_array_api_backend("cupy")
+    @skip_if_array_api_backend("torch")
+    @array_api_compatible
+    def test_precenter(self, xp):
         # Test if precenter gives the same result as manually precentering.
 
         # Input parameters
         ampl = 2.
         w = 1.
-        phi = 0.5 * np.pi
+        phi = 0.5 * xp.pi
         nin = 100
         nout = 1000
         p = 0.7  # Fraction of points to select
@@ -1587,28 +1611,37 @@ class TestLombscargle:
         # Randomly select a fraction of an array with timesteps
         np.random.seed(2353425)
         r = np.random.rand(nin)
-        t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
+        r = xp.asarray(r)
+        t = xp.linspace(0.01*xp.pi, 10.*xp.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
-        x = ampl * np.sin(w*t + phi) + offset
+        x = ampl * xp.sin(w*t + phi) + offset
 
         # Define the array of frequencies for which to compute the periodogram
-        f = np.linspace(0.01, 10., nout)
+        f = xp.linspace(0.01, 10., nout)
 
         # Calculate Lomb-Scargle periodogram
         pgram = lombscargle(t, x, f, precenter=True)
-        pgram2 = lombscargle(t, x - x.mean(), f, precenter=False)
+        pgram2 = lombscargle(t, x - xp.mean(x), f, precenter=False)
 
         # check if centering worked
-        assert_allclose(pgram, pgram2)
+        xp_assert_close(pgram, pgram2)
 
-    def test_normalize(self):
+    # _lombscargle is a Cython function, so we currently
+    # have to skip backends across the board here
+    # (there's an expectation of contiguous memory
+    # layout as well)
+    @skip_if_array_api_backend("numpy.array_api")
+    @skip_if_array_api_backend("cupy")
+    @skip_if_array_api_backend("torch")
+    @array_api_compatible
+    def test_normalize(self, xp):
         # Test normalize option of Lomb-Scarge.
 
         # Input parameters
         ampl = 2.
         w = 1.
-        phi = 0.5 * np.pi
+        phi = 0.5 * xp.pi
         nin = 100
         nout = 1000
         p = 0.7  # Fraction of points to select
@@ -1616,41 +1649,56 @@ class TestLombscargle:
         # Randomly select a fraction of an array with timesteps
         np.random.seed(2353425)
         r = np.random.rand(nin)
-        t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
+        r = xp.asarray(r)
+        t = xp.linspace(0.01*xp.pi, 10.*xp.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
-        x = ampl * np.sin(w*t + phi)
+        x = ampl * xp.sin(w*t + phi)
 
         # Define the array of frequencies for which to compute the periodogram
-        f = np.linspace(0.01, 10., nout)
+        f = xp.linspace(0.01, 10., nout)
 
         # Calculate Lomb-Scargle periodogram
         pgram = lombscargle(t, x, f)
         pgram2 = lombscargle(t, x, f, normalize=True)
 
         # check if normalization works as expected
-        assert_allclose(pgram * 2 / np.dot(x, x), pgram2)
-        assert_approx_equal(np.max(pgram2), 1.0, significant=2)
+        xp_assert_close(pgram * 2 / (x @ x), pgram2)
+        xp_assert_close(xp.max(pgram2), 1.0, rtol=0.35)
 
-    def test_wrong_shape(self):
-        t = np.linspace(0, 1, 1)
-        x = np.linspace(0, 1, 2)
-        f = np.linspace(0, 1, 3)
+    # skips for Cython code in _lombscargle
+    @skip_if_array_api_backend("torch")
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_wrong_shape(self, xp):
+        t = xp.linspace(0, 1, 1)
+        x = xp.linspace(0, 1, 2)
+        f = xp.linspace(0, 1, 3)
         assert_raises(ValueError, lombscargle, t, x, f)
 
-    def test_zero_division(self):
-        t = np.zeros(1)
-        x = np.zeros(1)
-        f = np.zeros(1)
+    # skips for Cython code in _lombscargle
+    @skip_if_array_api_backend("torch")
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_zero_division(self, xp):
+        t = xp.zeros(1)
+        x = xp.zeros(1)
+        f = xp.zeros(1)
         assert_raises(ZeroDivisionError, lombscargle, t, x, f)
 
-    def test_lombscargle_atan_vs_atan2(self):
+    # here, CuPy is skipped because of Cython usage
+    # in _lombscargle, but "torch" gets skipped
+    # because of `endpoint` usage in linspace!
+    @skip_if_array_api_backend("torch")
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_lombscargle_atan_vs_atan2(self, xp):
         # https://github.com/scipy/scipy/issues/3787
         # This raised a ZeroDivisionError.
-        t = np.linspace(0, 10, 1000, endpoint=False)
-        x = np.sin(4*t)
-        f = np.linspace(0, 50, 500, endpoint=False) + 0.1
-        lombscargle(t, x, f*2*np.pi)
+        t = xp.linspace(0, 10, 1000, endpoint=False)
+        x = xp.sin(4*t)
+        f = xp.linspace(0, 50, 500, endpoint=False) + 0.1
+        lombscargle(t, x, f*2*xp.pi)
 
 
 class TestSTFT:
