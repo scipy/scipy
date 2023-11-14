@@ -29,7 +29,7 @@
 #include "evalpoly.h"
 #include "error.h"
 
-namespace extra_special {
+namespace special {
     using namespace std::complex_literals;
     constexpr double EXPN1 = 0.36787944117144232159553;  // exp(-1)
     constexpr double OMEGA = 0.56714329040978387299997;  // W(1, 0)

@@ -7,12 +7,12 @@
  * which causes trouble when one tries to use functions from cephes in the
  * same translation unit where boost is used, due to name clashes. We undef
  * all of these aliases and disambiguate the cephes functions by putting them
- * in a extra_special::cephes namespace.
+ * in a special::cephes namespace.
  */
 
 
 // Namespace the include to avoid polluting global namespace.
-namespace extra_special {
+namespace special {
     namespace cephes {
 	namespace detail {
 
@@ -131,7 +131,7 @@ namespace extra_special {
     }
 }
 
-namespace extra_special {
+namespace special {
     namespace cephes {
 	// Functions are being added as needed.
 

@@ -20,7 +20,7 @@ typedef enum {
 
 
 #ifdef __cplusplus
-namespace extra_special {
+namespace special {
 
 #ifndef SP_SPECFUN_ERROR
         inline void set_error(const char *func_name, sf_error_t code, const char *fmt, ...) {

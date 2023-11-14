@@ -1,7 +1,7 @@
 #ifndef SF_ERROR_H_
 #define SF_ERROR_H_
 
-#include "extra_special/error.h"
+#include "special/error.h"
 
 #ifdef __cplusplus
 extern "C" {

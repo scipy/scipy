@@ -17,7 +17,7 @@
 #include <complex>
 
 
-namespace extra_special {
+namespace special {
 
     inline std::complex<double> cevalpoly(const double *coeffs, int degree,
 					  std::complex<double> z) {

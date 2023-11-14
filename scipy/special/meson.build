@@ -478,22 +478,22 @@ foreach npz_file: npz_files
 endforeach
 
 
-extra_special_sources = [
-  'extra_special/error.h',
-  'extra_special/evalpoly.h',
-  'extra_special/lambertw.h'
+special_sources = [
+  'special/error.h',
+  'special/evalpoly.h',
+  'special/lambertw.h'
 ]
 
-# Headers for special functions in extra_special library are included
+# Headers for special functions in special library are included
 # in build folder for development purposes.
-# extra_special is a temporary working name.
-foreach header: extra_special_sources
+# special is a temporary working name.
+foreach header: special_sources
   configure_file(
     input: header,
     output: header.split('/')[-1],
     copy: true,
     install: true,
-    install_dir: py3.get_install_dir() / 'scipy/special/extra_special'
+    install_dir: py3.get_install_dir() / 'scipy/special/special'
   )
 endforeach
 

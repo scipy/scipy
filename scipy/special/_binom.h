@@ -7,7 +7,7 @@
 #include "cephes.hh"
 
 
-namespace extra_special {
+namespace special {
 
     inline double binom(double n, double k) {
 	double kx, nx, num, den, dk, sgn;
