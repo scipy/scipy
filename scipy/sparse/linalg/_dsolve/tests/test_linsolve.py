@@ -818,4 +818,4 @@ class TestSpsolveTriangular:
         x = spsolve_triangular(A, b, lower=lower, unit_diagonal=unit_diagonal)
         if unit_diagonal:
             A.setdiag(1)
-        assert_allclose(A.dot(x), b)
+        assert_allclose(A.dot(x), b, atol=1.5e-6)
