@@ -1,3 +1,5 @@
+#pragma once
+
 /* An implementation of the digamma function for complex arguments.
  *
  * Author: Josh Wilson
