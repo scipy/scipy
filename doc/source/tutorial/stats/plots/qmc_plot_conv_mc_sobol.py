@@ -49,7 +49,7 @@ sample_sobol_rmse = []
 rng = np.random.default_rng()
 
 def sampler_mc(x):
-    rng.random((x, case.dim))
+    return rng.random((x, case.dim))
 
 for ns in ns_gen:
     # Monte Carlo
