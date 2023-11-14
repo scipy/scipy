@@ -22,9 +22,9 @@
 
 namespace scipy {
     namespace special {
-	double tol = 2.220446092504131E-16; // machine epsilon
 
 	namespace detail {
+	    inline constexpr double machep64 = 2.220446092504131E-16; // machine epsilon
 	    // All of the following were computed with mpmath
 	    // Location of the positive root
 	    constexpr double digamma_posroot = 1.4616321449683623;
@@ -34,6 +34,7 @@ namespace scipy {
 	    constexpr double digamma_negroot = -0.504083008264455409;
 	    // Value of the negative root
 	    constexpr double digamma_negrootval = 7.2897639029768949e-17;
+
 	    template <typename T>
 	    T digamma_zeta_series(T z, double root, double rootval) {
 		T res = rootval;
@@ -45,7 +46,7 @@ namespace scipy {
 		    coeff *= -z;
 		    term = coeff*cephes::zeta(n + 1, root);
 		    res += term;
-		    if (std::abs(term) < tol*std::abs(res)) {
+		    if (std::abs(term) < machep64*std::abs(res)) {
 			break;
 		    }
 		}
@@ -106,7 +107,7 @@ namespace scipy {
 		    zfac *= rzz;
 		    term = -bernoulli2k[k-1]*zfac/(2*static_cast<double>(k));
 		    res += term;
-		    if (std::abs(term) < tol * std::abs(res)) {
+		    if (std::abs(term) < machep64 * std::abs(res)) {
 			break;
 		    }
 		}
