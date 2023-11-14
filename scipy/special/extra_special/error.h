@@ -20,8 +20,8 @@ typedef enum {
 
 
 #ifdef __cplusplus
-namespace scipy {
-    namespace special {
+namespace extra_special {
+
 #ifndef SP_SPECFUN_ERROR
         inline void set_error(const char *func_name, sf_error_t code, const char *fmt, ...) {
             // nothing
@@ -29,7 +29,6 @@ namespace scipy {
 #else
         void set_error(const char *func_name, sf_error_t code, const char *fmt, ...);
 #endif
-    }
 }
 
 } // closes extern "C"

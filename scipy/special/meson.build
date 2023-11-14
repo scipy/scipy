@@ -484,9 +484,9 @@ extra_special_sources = [
   'extra_special/lambertw.h'
 ]
 
-# Headers for special functions currently supplied by SciPy in
-# scipy::special C++ namespace are included for development
-# purposes.
+# Headers for special functions in extra_special library are included
+# in build folder for development purposes.
+# extra_special is a temporary working name.
 foreach header: extra_special_sources
   configure_file(
     input: header,
