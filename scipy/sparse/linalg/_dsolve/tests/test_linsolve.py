@@ -771,7 +771,6 @@ class TestSpsolveTriangular:
             assert_array_almost_equal(A.dot(x), b)
 
     @pytest.mark.slow
-    @pytest.mark.timeout(120)  # prerelease_deps_coverage_64bit_blas job
     @sup_sparse_efficiency
     @pytest.mark.parametrize("n", [10, 10**2, 10**3])
     @pytest.mark.parametrize("m", [1, 10])
@@ -798,7 +797,7 @@ class TestSpsolveTriangular:
                 A = scipy.sparse.triu(A, format="lil")
             for i in range(n):
                 A[i, i] = np.random.rand() + 1
-            if format=="csc":
+            if format == "csc":
                 A = A.tocsc(copy=False)
             else:
                 A = A.tocsr(copy=False)
