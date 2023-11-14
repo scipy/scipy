@@ -22,18 +22,18 @@
 
 namespace scipy {
     namespace special {
-	constexpr double tol = 2.220446092504131E-16; // machine epsilon
-	// All of the following were computed with mpmath
-	// Location of the positive root
-	constexpr double posroot = 1.4616321449683623;
-	// Value of the positive root
-	constexpr double posrootval = -9.2412655217294275e-17;
-	// Location of the negative root
-	constexpr double negroot = -0.504083008264455409;
-	// Value of the negative root
-	constexpr double negrootval = 7.2897639029768949e-17;
+	double tol = 2.220446092504131E-16; // machine epsilon
 
 	namespace detail {
+	    // All of the following were computed with mpmath
+	    // Location of the positive root
+	    constexpr double digamma_posroot = 1.4616321449683623;
+	    // Value of the positive root
+	    constexpr double digamma_posrootval = -9.2412655217294275e-17;
+	    // Location of the negative root
+	    constexpr double digamma_negroot = -0.504083008264455409;
+	    // Value of the negative root
+	    constexpr double digamma_negrootval = 7.2897639029768949e-17;
 	    template <typename T>
 	    T digamma_zeta_series(T z, double root, double rootval) {
 		T res = rootval;
@@ -119,8 +119,9 @@ namespace scipy {
 	    /* Wrap Cephes' psi to take advantage of the series expansion around
 	     * the smallest negative zero.
 	     */
-	    if (std::abs(z - negroot) < 0.3) {
-		return detail::digamma_zeta_series(z, negroot, negrootval);
+	    if (std::abs(z - detail::digamma_negroot) < 0.3) {
+		return detail::digamma_zeta_series(z, detail::digamma_negroot,
+						   detail::digamma_negrootval);
 	    }
 	    return cephes::psi(z);
 	}
@@ -155,9 +156,10 @@ namespace scipy {
 		return std::complex<double>(std::numeric_limits<double>::quiet_NaN(),
 					    std::numeric_limits<double>::quiet_NaN());
 	    }
-	    if (std::abs(z - negroot) < 0.3) {
+	    if (std::abs(z - detail::digamma_negroot) < 0.3) {
 		// First negative root.
-		return detail::digamma_zeta_series(z, negroot, negrootval);
+		return detail::digamma_zeta_series(z, detail::digamma_negroot,
+						   detail::digamma_negrootval);
 	    }
 
 	    if (z.real() < 0 and std::fabs(z.imag()) < smallabsz) {
@@ -178,8 +180,9 @@ namespace scipy {
 		absz = std::abs(z);
 	    }
 
-	    if (std::abs(z - posroot) < 0.5) {
-		res += detail::digamma_zeta_series(z, posroot, posrootval);
+	    if (std::abs(z - detail::digamma_posroot) < 0.5) {
+		res += detail::digamma_zeta_series(z, detail::digamma_posroot,
+						   detail::digamma_posrootval);
 	    } else if (absz > smallabsz) {
 		res += detail::digamma_asymptotic_series(z);
 	    } else if (z.real() > 0.0) {
