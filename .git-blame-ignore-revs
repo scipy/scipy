@@ -16,3 +16,5 @@ b9cb3d075dad2b1ee9c145f9e69192d6eeda4f1e
 49858c5fb2bf479b17a0bf42a7397d73f45f1b31
 # Line length clean up in odr (gh-19514)
 877f1cc34ad2147340684bcadfbf884d47f5a954
+# Line length clean up in fft (gh-19520)
+9d41d85c472438cf17211b843de7c770868d25a4
