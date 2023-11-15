@@ -98,7 +98,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
         self.tree = cKDTree(self.points, **tree_options)
         self.values = np.asarray(y)
 
-    def __call__(self, *args, query_options=None):
+    def __call__(self, *args, **query_options):
         """
         Evaluate interpolator at given points.
 
@@ -117,23 +117,13 @@ class NearestNDInterpolator(NDInterpolatorBase):
             or x1 can be array-like of float with shape ``(..., ndim)``
 
         """
-        if query_options is not None and not isinstance(query_options, dict):
-            raise TypeError("query_options must be a dictionary")
-
-        # gather the query options to pass to cKDTree.query
-        query_options = query_options or {}
-        eps = query_options.get('eps', 0)
-        p = query_options.get('p', 2)
-        distance_upper_bound = query_options.get('distance_upper_bound', np.inf)
-        workers = query_options.get('workers', 1)
-
         # For the sake of enabling subclassing, NDInterpolatorBase._set_xi performs some operations
         # which are not required by NearestNDInterpolator.__call__, hence here we operate
         # on xi directly, without calling a parent class function.
         xi = _ndim_coords_from_arrays(args, ndim=self.points.shape[1])
         xi = self._check_call_shape(xi)
         xi = self._scale_x(xi)
-        dist, i = self.tree.query(xi, eps=eps, p=p, distance_upper_bound=distance_upper_bound, workers=workers)
+        dist, i = self.tree.query(xi, **query_options)
 
         if np.isfinite(distance_upper_bound):
             # if distance_upper_bound is set to not be infinite, then we need to consider the case where cKDtree
