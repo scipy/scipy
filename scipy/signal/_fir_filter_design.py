@@ -999,7 +999,7 @@ def firls(numtaps, bands, desired, *, weight=None, nyq=_NoValue, fs=None):
     >>> fig.tight_layout()
     >>> plt.show()
 
-    """  # noqa
+    """
     nyq = 0.5 * _get_fs(fs, nyq)
 
     numtaps = int(numtaps)
@@ -1248,7 +1248,7 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
     >>> axs[3].set(ylabel='Group delay')
     >>> plt.tight_layout()
 
-    """  # noqa
+    """
     h = np.asarray(h)
     if np.iscomplexobj(h):
         raise ValueError('Complex filters not supported')

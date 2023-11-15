@@ -614,7 +614,7 @@ from . import qmc
 from ._multivariate import *
 from . import contingency
 from .contingency import chi2_contingency
-from ._censored_data import CensoredData  # noqa
+from ._censored_data import CensoredData
 from ._resampling import (bootstrap, monte_carlo_test, permutation_test,
                           MonteCarloMethod, PermutationMethod, BootstrapMethod)
 from ._entropy import *

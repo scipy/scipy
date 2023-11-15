@@ -42,9 +42,9 @@ import numpy as np
 from docutils.parsers.rst import directives
 
 from numpydoc.docscrape_sphinx import get_doc_object
-from numpydoc.docscrape import NumpyDocString  # noqa
-from scipy.stats._distr_params import distcont, distdiscrete  # noqa
-from scipy import stats  # noqa
+from numpydoc.docscrape import NumpyDocString
+from scipy.stats._distr_params import distcont, distdiscrete
+from scipy import stats
 
 
 # Enable specific Sphinx directives

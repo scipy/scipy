@@ -18,8 +18,8 @@ from scipy._lib._util import _rng_html_rewrite
 # Workaround for sphinx-doc/sphinx#6573
 # ua._Function should not be treated as an attribute
 import scipy._lib.uarray as ua
-from scipy.stats._distn_infrastructure import rv_generic  # noqa: E402
-from scipy.stats._multivariate import multi_rv_generic  # noqa: E402
+from scipy.stats._distn_infrastructure import rv_generic
+from scipy.stats._multivariate import multi_rv_generic
 
 
 old_isdesc = inspect.isdescriptor
@@ -212,7 +212,7 @@ html_theme_options = {
 if 'dev' in version:
     html_theme_options["switcher"]["version_match"] = "development"
 
-if 'versionwarning' in tags:  # noqa
+if 'versionwarning' in tags:  # noqa: F821
     # Specific to docs.scipy.org deployment.
     # See https://github.com/scipy/docs.scipy.org/blob/main/_static/versionwarning.js_t
     src = ('var script = document.createElement("script");\n'

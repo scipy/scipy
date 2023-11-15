@@ -301,7 +301,7 @@ class multivariate_normal_gen(multi_rv_generic):
         Probability density function.
     logpdf(x, mean=None, cov=1, allow_singular=False)
         Log of the probability density function.
-    cdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5, lower_limit=None)  # noqa
+    cdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5, lower_limit=None)
         Cumulative distribution function.
     logcdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5)
         Log of the cumulative distribution function.
@@ -386,7 +386,7 @@ class multivariate_normal_gen(multi_rv_generic):
     >>> ax2 = fig2.add_subplot(111)
     >>> ax2.contourf(x, y, rv.pdf(pos))
 
-    """
+    """  # noqa: E501
 
     def __init__(self, seed=None):
         super().__init__(seed)
@@ -6000,12 +6000,12 @@ _dirichlet_mn_doc_frozen_callparams_note = """\
 See class definition for a detailed description of parameters."""
 
 dirichlet_mn_docdict_params = {
-    '_dirichlet_mn_doc_default_callparams': _dirichlet_mn_doc_default_callparams,  # noqa
+    '_dirichlet_mn_doc_default_callparams': _dirichlet_mn_doc_default_callparams,
     '_doc_random_state': _doc_random_state
 }
 
 dirichlet_mn_docdict_noparams = {
-    '_dirichlet_mn_doc_default_callparams': _dirichlet_mn_doc_frozen_callparams, # noqa
+    '_dirichlet_mn_doc_default_callparams': _dirichlet_mn_doc_frozen_callparams,
     '_doc_random_state': _doc_random_state
 }
 

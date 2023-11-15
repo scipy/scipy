@@ -20,6 +20,7 @@ target-version = "py39"
 "scipy/stats/distributions.py" = ["F403", "F405"]
 "scipy/stats/mstats.py" = ["F403", "F401"]
 "scipy/stats/qmc.py" = ["F403"]
+"scipy/stats/tests/data/_mvt.py" = ["E701", "E702"]
 "scipy/optimize/_linprog.py" = ["F401"]
 "scipy/optimize/_linprog_ip.py" = ["F401"]
 # E501 (line length) ignores

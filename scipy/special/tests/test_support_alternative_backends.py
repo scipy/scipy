@@ -1,5 +1,5 @@
 import pytest
-from hypothesis import given, strategies, reproduce_failure  # noqa
+from hypothesis import given, strategies, reproduce_failure  # noqa: F401
 import hypothesis.extra.numpy as npst
 
 from scipy.special._support_alternative_backends import (get_array_special_func,
