@@ -206,18 +206,18 @@ class TestNearestNDInterpolator:
         # case 1 - query max_dist is smaller than the query points' nearest distance to nd.
         NI = NearestNDInterpolator((nd[0], nd[1]), nd[2])
         distance_upper_bound = np.sqrt(delta ** 2 + delta ** 2) - 1e-7
-        assert_array_equal(NI(query_points, query_options={"distance_upper_bound": distance_upper_bound}),
+        assert_array_equal(NI(query_points, distance_upper_bound=distance_upper_bound),
                            [np.nan, np.nan])
 
         # case 2 - query p is inf, will return [0, 2]
         distance_upper_bound = np.sqrt(delta ** 2 + delta ** 2) - 1e-7
         p = np.inf
-        assert_array_equal(NI(query_points, query_options={"distance_upper_bound": distance_upper_bound, "p": p}),
+        assert_array_equal(NI(query_points, distance_upper_bound=distance_upper_bound, p=p),
                            [0, 2])
 
         # case 3 - query max_dist is larger, so should return non np.nan
         distance_upper_bound = np.sqrt(delta ** 2 + delta ** 2) + 1e-7
-        assert_array_equal(NI(query_points, query_options={"distance_upper_bound": distance_upper_bound}),
+        assert_array_equal(NI(query_points, distance_upper_bound=distance_upper_bound),
                            [0, 2])
 
     def test_nearest_query_valid_inputs(self):

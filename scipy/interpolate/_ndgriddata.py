@@ -104,17 +104,15 @@ class NearestNDInterpolator(NDInterpolatorBase):
 
         Parameters
         ----------
-        query_options : dict, optional
-            This allows `eps`, `p`, `distance_upper_bound`, and `workers` being passed to the cKDTree's query function
-            to be explicitly set. See the `scipy.spatial.cKDTree.query` for an overview of the different options. Note
-            that k is restricted to 1 since NearestNDInterpolator has to have k=1 by definition.
-
-            ..versionadded:: 1.12.0
-
         x1, x2, ... xn : array-like of float
             Points where to interpolate data at.
             x1, x2, ... xn can be array-like of float with broadcastable shape.
             or x1 can be array-like of float with shape ``(..., ndim)``
+        query_options : dict, optional
+            This allows `eps`, `p`, `distance_upper_bound`, and `workers` being passed to the cKDTree's query function
+            to be explicitly set. See the `scipy.spatial.cKDTree.query` for an overview of the different options.
+
+            ..versionadded:: 1.12.0
 
         """
         # For the sake of enabling subclassing, NDInterpolatorBase._set_xi performs some operations
