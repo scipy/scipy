@@ -123,18 +123,15 @@ class NearestNDInterpolator(NDInterpolatorBase):
         xi = self._scale_x(xi)
         dist, i = self.tree.query(xi, **query_options)
 
-        if np.isfinite(distance_upper_bound):
-            # if distance_upper_bound is set to not be infinite, then we need to consider the case where cKDtree
-            # does not find any points within distance_upper_bound to return. It marks those points as having infinte
-            # distance, which is what will be used below to mask the array and return only the points that were deemed
-            # to have a close enough neighbor to return something useful.
-            valid_mask = np.isfinite(dist)
-            interp_values = np.zeros(i.shape)
-            interp_values[~valid_mask] = np.nan
-            interp_values[valid_mask] = self.values[i[valid_mask]]
-            return interp_values
-        else:
-            return self.values[i]
+        # if distance_upper_bound is set to not be infinite, then we need to consider the case where cKDtree
+        # does not find any points within distance_upper_bound to return. It marks those points as having infinte
+        # distance, which is what will be used below to mask the array and return only the points that were deemed
+        # to have a close enough neighbor to return something useful.
+        valid_mask = np.isfinite(dist)
+        interp_values = np.zeros(i.shape)
+        interp_values[~valid_mask] = np.nan
+        interp_values[valid_mask] = self.values[i[valid_mask]]
+        return interp_values
 
 
 #------------------------------------------------------------------------------
