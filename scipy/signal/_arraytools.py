@@ -3,6 +3,10 @@ Functions for acting on a axis of an array.
 """
 import numpy as np
 
+from scipy._lib._array_api import (
+    array_namespace,
+)
+
 
 def axis_slice(a, start=None, stop=None, step=None, axis=-1):
     """Take a slice along axis 'axis' from 'a'.
@@ -240,10 +244,11 @@ def zero_ext(x, n, axis=-1):
     """
     if n < 1:
         return x
+    xp = array_namespace(x)
     zeros_shape = list(x.shape)
     zeros_shape[axis] = n
-    zeros = np.zeros(zeros_shape, dtype=x.dtype)
-    ext = np.concatenate((zeros, x, zeros), axis=axis)
+    zeros = xp.zeros(zeros_shape, dtype=x.dtype)
+    ext = xp.concat((zeros, x, zeros), axis=axis)
     return ext
 
 

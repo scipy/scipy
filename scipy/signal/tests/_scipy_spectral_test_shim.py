@@ -44,6 +44,7 @@ def _stft_wrapper(x, fs=1.0, window='hann', nperseg=256, noverlap=None,
 
     This function is meant to be solely used by `stft_compare()`.
     """
+    xp = array_namespace(x)
     if scaling not in ('psd', 'spectrum'):  # same errors as in original stft:
         raise ValueError(f"Parameter {scaling=} not in ['spectrum', 'psd']!")
 
@@ -58,7 +59,7 @@ def _stft_wrapper(x, fs=1.0, window='hann', nperseg=256, noverlap=None,
         raise ValueError(f"Unknown boundary option '{boundary}', must be one" +
                          f" of: {list(boundary_funcs.keys())}")
     if x.size == 0:
-        return np.empty(x.shape), np.empty(x.shape), np.empty(x.shape)
+        return xp.empty(x.shape), xp.empty(x.shape), xp.empty(x.shape)
 
     if nperseg is not None:  # if specified by user
         nperseg = int(nperseg)
@@ -99,7 +100,7 @@ def _stft_wrapper(x, fs=1.0, window='hann', nperseg=256, noverlap=None,
     if padded:
         # Pad to integer number of windowed segments
         # I.e make x.shape[-1] = nperseg + (nseg-1)*nstep, with integer nseg
-        x = np.moveaxis(x, axis, -1)
+        x = xp.moveaxis(x, axis, -1)
 
         # This is an edge case where shortTimeFFT returns one more time slice
         # than the Scipy stft() shorten to remove last time slice:
@@ -108,13 +109,13 @@ def _stft_wrapper(x, fs=1.0, window='hann', nperseg=256, noverlap=None,
 
         nadd = (-(x.shape[-1]-nperseg) % nstep) % nperseg
         zeros_shape = list(x.shape[:-1]) + [nadd]
-        x = np.concatenate((x, np.zeros(zeros_shape)), axis=-1)
-        x = np.moveaxis(x, -1, axis)
+        x = xp.concatenate((x, xp.zeros(zeros_shape)), axis=-1)
+        x = xp.moveaxis(x, -1, axis)
 
     #  ... end original _spectral_helper() code.
     scale_to = {'spectrum': 'magnitude', 'psd': 'psd'}[scaling]
 
-    if np.iscomplexobj(x) and return_onesided:
+    if is_complex(x, xp=xp) and return_onesided:
         return_onesided = False
     # using cast() to make mypy happy:
     fft_mode = cast(FFT_MODE_TYPE, 'onesided' if return_onesided else 'twosided')
@@ -134,8 +135,8 @@ def _stft_wrapper(x, fs=1.0, window='hann', nperseg=256, noverlap=None,
     detr = None if detrend is False else detrend
     Sxx = ST.stft_detrend(x, detr, p0, p1, k_offset=k_off, axis=axis)
     t = ST.t(nn, 0, p1 - p0, k_offset=0 if boundary is not None else k_off)
-    if x.dtype in (np.float32, np.complex64):
-        Sxx = Sxx.astype(np.complex64)
+    if x.dtype in (xp.float32, xp.complex64):
+        Sxx = Sxx.astype(xp.complex64)
 
     # workaround for test_average_all_segments() - seems to be buggy behavior:
     if boundary is None and padded is False:

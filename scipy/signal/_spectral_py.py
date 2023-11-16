@@ -930,8 +930,12 @@ def check_COLA(window, nperseg, noverlap, tol=1e-10):
 
     if isinstance(window, str) or type(window) is tuple:
         win = get_window(window, nperseg)
+        # NOTE: if window is a string or tuple, is it "ok"
+        # to assume we want to use NumPy under the hood?
+        xp = np
     else:
-        win = np.asarray(window)
+        xp = array_namespace(window)
+        win = xp.asarray(window)
         if len(win.shape) != 1:
             raise ValueError('window must be 1-D')
         if win.shape[0] != nperseg:
@@ -943,8 +947,8 @@ def check_COLA(window, nperseg, noverlap, tol=1e-10):
     if nperseg % step != 0:
         binsums[:nperseg % step] += win[-(nperseg % step):]
 
-    deviation = binsums - np.median(binsums)
-    return np.max(np.abs(deviation)) < tol
+    deviation = binsums - xp.median(binsums)
+    return xp.max(xp.abs(deviation)) < tol
 
 
 def check_NOLA(window, nperseg, noverlap, tol=1e-10):
@@ -1058,8 +1062,12 @@ def check_NOLA(window, nperseg, noverlap, tol=1e-10):
 
     if isinstance(window, str) or type(window) is tuple:
         win = get_window(window, nperseg)
+        # NOTE: if window is a string or tuple, is it "ok"
+        # to assume we want to use NumPy under the hood?
+        xp = np
     else:
-        win = np.asarray(window)
+        xp = array_namespace(window)
+        win = xp.asarray(window)
         if len(win.shape) != 1:
             raise ValueError('window must be 1-D')
         if win.shape[0] != nperseg:
@@ -1071,7 +1079,7 @@ def check_NOLA(window, nperseg, noverlap, tol=1e-10):
     if nperseg % step != 0:
         binsums[:nperseg % step] += win[-(nperseg % step):]**2
 
-    return np.min(binsums) > tol
+    return xp.min(binsums) > tol
 
 
 def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
@@ -1892,10 +1900,10 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         # I.e make x.shape[-1] = nperseg + (nseg-1)*nstep, with integer nseg
         nadd = (-(x.shape[-1]-nperseg) % nstep) % nperseg
         zeros_shape = list(x.shape[:-1]) + [nadd]
-        x = xp.concatenate((x, xp.zeros(zeros_shape)), axis=-1)
+        x = xp.concat((x, xp.zeros(zeros_shape)), axis=-1)
         if not same_data:
             zeros_shape = list(y.shape[:-1]) + [nadd]
-            y = xp.concatenate((y, xp.zeros(zeros_shape)), axis=-1)
+            y = xp.concat((y, xp.zeros(zeros_shape)), axis=-1)
 
     # Handle detrending and window functions
     if not detrend:
