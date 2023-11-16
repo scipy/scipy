@@ -345,7 +345,7 @@ class NullSlice(Benchmark):
         X = coo_matrix((data, (row, col)), shape=(n, k))
         X.sum_duplicates()
         X = X.asformat(format)
-        with open('{}-{}.pck'.format(density, format), 'wb') as f:
+        with open(f'{density}-{format}.pck', 'wb') as f:
             pickle.dump(X, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     def setup_cache(self):
@@ -357,7 +357,7 @@ class NullSlice(Benchmark):
 
     def setup(self, density, format):
         # Unpickling is faster than computing the random matrix...
-        with open('{}-{}.pck'.format(density, format), 'rb') as f:
+        with open(f'{density}-{format}.pck', 'rb') as f:
             self.X = pickle.load(f)
 
     def time_getrow(self, density, format):

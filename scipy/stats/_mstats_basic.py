@@ -84,7 +84,7 @@ def _chk_size(a, b):
     (na, nb) = (a.size, b.size)
     if na != nb:
         raise ValueError("The size of the input array should match!"
-                         " ({} <> {})".format(na, nb))
+                         f" ({na} <> {nb})")
     return (a, b, na)
 
 

@@ -997,8 +997,7 @@ class TestVoronoi:
                 try:
                     return vertex_map[x]
                 except KeyError as e:
-                    raise AssertionError("incremental result has spurious vertex at %r"
-                                         % (objx.vertices[x],)) from e
+                    raise AssertionError(f"incremental result has spurious vertex at {objx.vertices[x]!r}") from e
 
             def simplified(x):
                 items = set(map(sorted_tuple, x))

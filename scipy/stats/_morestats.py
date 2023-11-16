@@ -4313,8 +4313,8 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
 
     ties_options = ['below', 'above', 'ignore']
     if ties not in ties_options:
-        raise ValueError("invalid 'ties' option '{}'; 'ties' must be one "
-                         "of: {}".format(ties, str(ties_options)[1:-1]))
+        raise ValueError(f"invalid 'ties' option '{ties}'; 'ties' must be one "
+                         f"of: {str(ties_options)[1:-1]}")
 
     data = [np.asarray(sample) for sample in samples]
 

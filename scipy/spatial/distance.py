@@ -2479,21 +2479,18 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
         else:
             if not (D - D.T <= tol).all():
                 if name:
-                    raise ValueError(('Distance matrix \'%s\' must be '
-                                      'symmetric within tolerance %5.5f.')
-                                     % (name, tol))
+                    raise ValueError(f'Distance matrix \'{name}\' must be '
+                                     f'symmetric within tolerance {tol:5.5f}.')
                 else:
-                    raise ValueError('Distance matrix must be symmetric within'
-                                     ' tolerance %5.5f.' % tol)
+                    raise ValueError('Distance matrix must be symmetric within '
+                                     'tolerance %5.5f.' % tol)
             if not (D[range(0, s[0]), range(0, s[0])] <= tol).all():
                 if name:
-                    raise ValueError(('Distance matrix \'%s\' diagonal must be'
-                                      ' close to zero within tolerance %5.5f.')
-                                     % (name, tol))
+                    raise ValueError(f'Distance matrix \'{name}\' diagonal must be '
+                                     f'close to zero within tolerance {tol:5.5f}.')
                 else:
-                    raise ValueError(('Distance matrix \'%s\' diagonal must be'
-                                      ' close to zero within tolerance %5.5f.')
-                                     % tol)
+                    raise ValueError(('Distance matrix \'{}\' diagonal must be close '
+                                      'to zero within tolerance {:5.5f}.').format(*tol))
     except Exception as e:
         if throw:
             raise

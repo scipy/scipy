@@ -177,8 +177,7 @@ def lu_solve(lu_and_piv, b, trans=0, overwrite_b=False, check_finite=True):
         b1 = asarray(b)
     overwrite_b = overwrite_b or _datacopied(b1, b)
     if lu.shape[0] != b1.shape[0]:
-        raise ValueError("Shapes of lu {} and b {} are incompatible"
-                         .format(lu.shape, b1.shape))
+        raise ValueError(f"Shapes of lu {lu.shape} and b {b1.shape} are incompatible")
 
     getrs, = get_lapack_funcs(('getrs',), (lu, b1))
     x, info = getrs(lu, piv, b1, trans=trans, overwrite_b=overwrite_b)

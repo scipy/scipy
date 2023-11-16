@@ -289,8 +289,7 @@ class MMFile:
     @classmethod
     def _validate_format(self, format):
         if format not in self.FORMAT_VALUES:
-            raise ValueError('unknown format type %s, must be one of %s' %
-                             (format, self.FORMAT_VALUES))
+            raise ValueError(f'unknown format type {format}, must be one of {self.FORMAT_VALUES}')
 
     # field values
     FIELD_INTEGER = 'integer'
@@ -304,8 +303,7 @@ class MMFile:
     @classmethod
     def _validate_field(self, field):
         if field not in self.FIELD_VALUES:
-            raise ValueError('unknown field type %s, must be one of %s' %
-                             (field, self.FIELD_VALUES))
+            raise ValueError(f'unknown field type {field}, must be one of {self.FIELD_VALUES}')
 
     # symmetry values
     SYMMETRY_GENERAL = 'general'
@@ -318,8 +316,7 @@ class MMFile:
     @classmethod
     def _validate_symmetry(self, symmetry):
         if symmetry not in self.SYMMETRY_VALUES:
-            raise ValueError('unknown symmetry type %s, must be one of %s' %
-                             (symmetry, self.SYMMETRY_VALUES))
+            raise ValueError(f'unknown symmetry type {symmetry}, must be one of {self.SYMMETRY_VALUES}')
 
     DTYPES_BY_FIELD = {FIELD_INTEGER: 'intp',
                        FIELD_UNSIGNED: 'uint64',

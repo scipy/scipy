@@ -431,8 +431,7 @@ def mp_assert_allclose(res, std, atol=0, rtol=1e-17):
     if nfail > 0:
         ndigits = int(abs(np.log10(rtol)))
         msg = [""]
-        msg.append("Bad results ({} out of {}) for the following points:"
-                   .format(nfail, k + 1))
+        msg.append(f"Bad results ({nfail} out of {k + 1}) for the following points:")
         for k, resval, stdval in failures:
             resrep = mpmath.nstr(resval, ndigits, min_fixed=0, max_fixed=0)
             stdrep = mpmath.nstr(stdval, ndigits, min_fixed=0, max_fixed=0)
@@ -441,6 +440,5 @@ def mp_assert_allclose(res, std, atol=0, rtol=1e-17):
             else:
                 rdiff = mpmath.fabs((resval - stdval)/stdval)
                 rdiff = mpmath.nstr(rdiff, 3)
-            msg.append("{}: {} != {} (rdiff {})".format(k, resrep, stdrep,
-                                                        rdiff))
+            msg.append(f"{k}: {resrep} != {stdrep} (rdiff {rdiff})")
         assert_(False, "\n".join(msg))

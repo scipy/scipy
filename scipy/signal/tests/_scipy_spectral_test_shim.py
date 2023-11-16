@@ -258,8 +258,7 @@ def _csd_wrapper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
             elif average == 'mean':
                 Pxy = Pxy.mean(axis=-1)
             else:
-                raise ValueError('average must be "median" or "mean", got %s'
-                                 % (average,))
+                raise ValueError(f'average must be "median" or "mean", got {average}')
         else:
             Pxy = np.reshape(Pxy, Pxy.shape[:-1])
 

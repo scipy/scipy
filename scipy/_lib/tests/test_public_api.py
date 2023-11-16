@@ -276,7 +276,7 @@ def test_all_modules_are_expected_2():
 
     if unexpected_members:
         raise AssertionError("Found unexpected object(s) that look like "
-                             "modules: {}".format(unexpected_members))
+                             f"modules: {unexpected_members}")
 
 
 def test_api_importable():
@@ -301,7 +301,7 @@ def test_api_importable():
 
     if module_names:
         raise AssertionError("Modules in the public API that cannot be "
-                             "imported: {}".format(module_names))
+                             f"imported: {module_names}")
 
     with warnings.catch_warnings(record=True):
         warnings.filterwarnings('always', category=DeprecationWarning)
@@ -313,7 +313,7 @@ def test_api_importable():
     if module_names:
         raise AssertionError("Modules that are not really public but looked "
                              "public and can not be imported: "
-                             "{}".format(module_names))
+                             f"{module_names}")
 
 
 @pytest.mark.parametrize(("module_name", "correct_module"),

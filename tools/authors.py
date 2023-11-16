@@ -104,7 +104,7 @@ def main():
         n_authors = list(new_authors)
         n_authors.sort(key=name_key)
         # Print some empty lines to separate
-        stdout_b.write(("\n\n").encode('utf-8'))
+        stdout_b.write(b"\n\n")
         for author in n_authors:
             stdout_b.write(("- %s\n" % author).encode('utf-8'))
         # return for early exit so we only print new authors
@@ -129,9 +129,9 @@ Authors
         author_clean = author.strip('@')
 
         if author in all_authors:
-            stdout_b.write((f"* {author_clean} ({count})\n").encode('utf-8'))
+            stdout_b.write((f"* {author_clean} ({count})\n").encode())
         else:
-            stdout_b.write((f"* {author_clean} ({count}) +\n").encode('utf-8'))
+            stdout_b.write((f"* {author_clean} ({count}) +\n").encode())
 
     stdout_b.write(("""
 A total of %(count)d people contributed to this release.
@@ -140,14 +140,14 @@ This list of names is automatically generated, and may not be fully complete.
 
 """ % dict(count=len(authors))).encode('utf-8'))
 
-    stdout_b.write(("\nNOTE: Check this list manually! It is automatically generated "
-                    "and some names\n      may be missing.\n").encode('utf-8'))
+    stdout_b.write(b"\nNOTE: Check this list manually! It is automatically generated "
+                   b"and some names\n      may be missing.\n")
 
 
 def load_name_map(filename):
     name_map = {}
 
-    with open(filename, 'r', encoding='utf-8') as f:
+    with open(filename, encoding='utf-8') as f:
         for line in f:
             line = line.strip()
             if line.startswith("#") or not line:
@@ -155,7 +155,7 @@ def load_name_map(filename):
 
             m = re.match(r'^(.*?)\s*<(.*?)>(.*?)\s*<(.*?)>\s*$', line)
             if not m:
-                print("Invalid line in .mailmap: '{!r}'".format(line), file=sys.stderr)
+                print(f"Invalid line in .mailmap: '{line!r}'", file=sys.stderr)
                 sys.exit(1)
 
             new_name = m.group(1).strip()

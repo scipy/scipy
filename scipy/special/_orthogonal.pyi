@@ -1,29 +1,20 @@
+from __future__ import annotations
 from typing import (
     Any,
     Callable,
     Literal,
     Optional,
     overload,
-    Tuple,
-    Union,
 )
 
 import numpy
 
-_IntegerType = Union[int, numpy.integer]
-_FloatingType = Union[float, numpy.floating]
-_PointsAndWeights = Tuple[numpy.ndarray, numpy.ndarray]
-_PointsAndWeightsAndMu = Tuple[numpy.ndarray, numpy.ndarray, float]
+_IntegerType = int | numpy.integer
+_FloatingType = float | numpy.floating
+_PointsAndWeights = tuple[numpy.ndarray, numpy.ndarray]
+_PointsAndWeightsAndMu = tuple[numpy.ndarray, numpy.ndarray, float]
 
-_ArrayLike0D = Union[
-    bool,
-    int,
-    float,
-    complex,
-    str,
-    bytes,
-    numpy.generic,
-]
+_ArrayLike0D = bool | int | float | complex | str | bytes | numpy.generic
 
 __all__ = [
     'legendre',
@@ -287,7 +278,7 @@ class orthopoly1d(numpy.poly1d):
             hn: float = ...,
             kn: float = ...,
             wfunc = Optional[Callable[[float], float]],
-            limits = Optional[Tuple[float, float]],
+            limits = tuple[float, float] | None,
             monic: bool = ...,
             eval_func: numpy.ufunc = ...,
     ) -> None: ...

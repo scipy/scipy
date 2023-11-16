@@ -5369,8 +5369,8 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
     """
     if axis is not None and axis > 1:
         raise ValueError("spearmanr only handles 1-D or 2-D arrays, "
-                         "supplied axis argument {}, please use only "
-                         "values 0, 1 or None for axis".format(axis))
+                         f"supplied axis argument {axis}, please use only "
+                         "values 0, 1 or None for axis")
 
     a, axisout = _chk_asarray(a, axis)
     if a.ndim > 2:
@@ -6050,7 +6050,7 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
     if x.size != y.size:
         raise ValueError("All inputs to `weightedtau` must be "
                          "of the same size, "
-                         "found x-size {} and y-size {}".format(x.size, y.size))
+                         f"found x-size {x.size} and y-size {y.size}")
     if not x.size:
         # Return NaN if arrays are empty
         res = SignificanceResult(np.nan, np.nan)
@@ -6090,7 +6090,7 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
         if rank.size != x.size:
             raise ValueError(
                 "All inputs to `weightedtau` must be of the same size, "
-                "found x-size {} and rank-size {}".format(x.size, rank.size)
+                f"found x-size {x.size} and rank-size {rank.size}"
             )
 
     tau = _weightedrankedtau(x, y, rank, weigher, additive)
@@ -6389,13 +6389,11 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
     if x.ndim == 1:
         x = x[:, np.newaxis]
     elif x.ndim != 2:
-        raise ValueError("Expected a 2-D array `x`, found shape "
-                         "{}".format(x.shape))
+        raise ValueError(f"Expected a 2-D array `x`, found shape {x.shape}")
     if y.ndim == 1:
         y = y[:, np.newaxis]
     elif y.ndim != 2:
-        raise ValueError("Expected a 2-D array `y`, found shape "
-                         "{}".format(y.shape))
+        raise ValueError(f"Expected a 2-D array `y`, found shape {y.shape}")
 
     nx, px = x.shape
     ny, py = y.shape
@@ -7983,8 +7981,8 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     if isinstance(lambda_, str):
         if lambda_ not in _power_div_lambda_names:
             names = repr(list(_power_div_lambda_names.keys()))[1:-1]
-            raise ValueError("invalid string for lambda_: {!r}. "
-                             "Valid strings are {}".format(lambda_, names))
+            raise ValueError(f"invalid string for lambda_: {lambda_!r}. "
+                             f"Valid strings are {names}")
         lambda_ = _power_div_lambda_names[lambda_]
     elif lambda_ is None:
         lambda_ = 1
@@ -9364,7 +9362,7 @@ def friedmanchisquare(*samples):
     k = len(samples)
     if k < 3:
         raise ValueError('At least 3 sets of samples must be given '
-                         'for Friedman test, got {}.'.format(k))
+                         f'for Friedman test, got {k}.')
 
     n = len(samples[0])
     for i in range(1, k):

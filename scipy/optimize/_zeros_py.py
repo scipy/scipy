@@ -484,9 +484,7 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2, full_output):
             warnings.warn(msg, RuntimeWarning)
     elif failures.any():
         all_or_some = 'all' if failures.all() else 'some'
-        msg = '{:s} failed to converge after {:d} iterations'.format(
-            all_or_some, maxiter
-        )
+        msg = f'{all_or_some:s} failed to converge after {maxiter:d} iterations'
         if failures.all():
             raise RuntimeError(msg)
         warnings.warn(msg, RuntimeWarning)
@@ -1148,7 +1146,7 @@ class TOMS748Solver:
 
         if np.sign(fb) * np.sign(fa) > 0:
             raise ValueError("f(a) and f(b) must have different signs, but "
-                             "f({:e})={:e}, f({:e})={:e} ".format(a, fa, b, fb))
+                             f"f({a:e})={fa:e}, f({b:e})={fb:e} ")
         self.fab[:] = [fa, fb]
 
         return _EINPROGRESS, sum(self.ab) / 2.0

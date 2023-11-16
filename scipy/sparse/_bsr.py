@@ -83,8 +83,8 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
                 self.data = getdata(data, copy=copy, dtype=dtype)
                 if self.data.ndim != 3:
                     raise ValueError(
-                        'BSR data must be 3-dimensional, got shape={}'.format(
-                            self.data.shape,))
+                        f'BSR data must be 3-dimensional, got shape={self.data.shape}'
+                    )
                 if blocksize is not None:
                     if not isshape(blocksize):
                         raise ValueError(f'invalid blocksize={blocksize}')

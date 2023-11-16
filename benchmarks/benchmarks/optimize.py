@@ -520,7 +520,7 @@ class BenchGlobal(Benchmark):
             raise NotImplementedError("skipped")
 
         # load json backing file
-        with open(self.dump_fn, 'r') as f:
+        with open(self.dump_fn) as f:
             self.results = json.load(f)
 
     def teardown(self, name, ret_value, solver):

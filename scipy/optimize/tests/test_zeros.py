@@ -1289,7 +1289,7 @@ def test_maxiter_int_check_gh10236(method):
         method(f1, 0.0, 1.0, maxiter=72.45)
 
 
-class TestDifferentiate():
+class TestDifferentiate:
 
     def f(self, x):
         return stats.norm().cdf(x)

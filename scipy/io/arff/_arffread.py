@@ -156,8 +156,7 @@ class NominalAttribute(Attribute):
         elif data_str == '?':
             return data_str
         else:
-            raise ValueError("{} value not in {}".format(str(data_str),
-                                                     str(self.values)))
+            raise ValueError(f"{str(data_str)} value not in {str(self.values)}")
 
     def __str__(self):
         msg = self.name + ",{"
@@ -453,8 +452,7 @@ def workaround_csv_sniffer_bug_last_field(sniff_line, dialect, delimiters):
         space = bool(m[n])
 
         dq_regexp = re.compile(
-            r"((%(delim)s)|^)\W*%(quote)s[^%(delim)s\n]*%(quote)s[^%(delim)s\n]*%(quote)s\W*((%(delim)s)|$)" %
-            {'delim': re.escape(delim), 'quote': quote}, re.MULTILINE
+            rf"(({re.escape(delim)})|^)\W*{quote}[^{re.escape(delim)}\n]*{quote}[^{re.escape(delim)}\n]*{quote}\W*(({re.escape(delim)})|$)", re.MULTILINE
         )
 
         doublequote = bool(dq_regexp.search(sniff_line))

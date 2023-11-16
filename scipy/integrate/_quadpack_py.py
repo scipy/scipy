@@ -531,9 +531,8 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
                     msg = ("All break points in 'points' must lie within the"
                            " integration limits.")
                 elif len(points) >= limit:
-                    msg = ("Number of break points ({:d})"
-                           " must be less than subinterval"
-                           " limit ({:d})").format(len(points), limit)
+                    msg = (f"Number of break points ({len(points):d}) "
+                           f"must be less than subinterval limit ({limit:d})")
 
         else:
             if maxp1 < 1:
