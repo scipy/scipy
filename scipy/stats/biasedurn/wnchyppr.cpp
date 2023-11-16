@@ -829,7 +829,7 @@ double CWalleniusNCHypergeometric::laplace() {
    int j;                        // loop counter for derivative
    int k;                        // loop counter for expansion degree
    int ll;                       // k/2
-   int converg = 0;              // number of consecutive terms below accuracy
+   int converg = 0;              // number of consequtive terms below accuracy
    int PrecisionIndex;           // index into ErfRes table according to desired precision
 
    // initialize
@@ -1604,7 +1604,7 @@ double CMultiWalleniusNCHypergeometric::laplace(void) {
    int j;                              // loop counter for derivative
    int k;                              // loop counter for expansion degree
    int ll;                             // k/2
-   int converg = 0;                    // number of consecutive terms below accuracy
+   int converg = 0;                    // number of consequtive terms below accuracy
    int PrecisionIndex;                 // index into ErfRes table according to desired precision
 
    // initialize
