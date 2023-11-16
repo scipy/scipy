@@ -70,7 +70,7 @@ from scipy._lib._util import normalize_axis_index
 # In __all__ but deprecated for removal in SciPy 1.13.0
 from scipy._lib._util import float_factorial  # noqa: F401
 from scipy.stats._mstats_basic import (PointbiserialrResult, Ttest_1sampResult,  # noqa: F401
-                                       Ttest_relResult)  # noqa: F401
+                                       Ttest_relResult)
 
 
 # Functions/classes in other files should be added in `__init__.py`, not here
@@ -511,7 +511,7 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=False):
     >>> stats.mode(a, axis=None, keepdims=False)
     ModeResult(mode=3, count=5)
 
-    """  # noqa: E501
+    """
     # `axis`, `nan_policy`, and `keepdims` are handled by `_axis_nan_policy`
     if not np.issubdtype(a.dtype, np.number):
         message = ("Argument `a` is not recognized as numeric. "

@@ -87,7 +87,7 @@ Solving boundary value problems for ODE systems
    :toctree: generated/
 
    solve_bvp     -- Solve a boundary value problem for a system of ODEs.
-"""  # noqa: E501
+"""
 
 
 from ._quadrature import *

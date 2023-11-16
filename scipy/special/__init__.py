@@ -779,8 +779,8 @@ from ._ufuncs import *
 
 # Replace some function definitions from _ufuncs to add Array API support
 from ._support_alternative_backends import (
-    log_ndtr, ndtr, ndtri, erf, erfc, i0, i0e, i1, i1e,  # noqa: F401
-    gammaln, gammainc, gammaincc, logit, expit)  # noqa: F401
+    log_ndtr, ndtr, ndtri, erf, erfc, i0, i0e, i1, i1e,
+    gammaln, gammainc, gammaincc, logit, expit)
 
 from . import _basic
 from ._basic import *

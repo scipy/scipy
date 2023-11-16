@@ -3267,7 +3267,7 @@ class multinomial_gen(multi_rv_generic):
     numpy.random.Generator.multinomial : Sampling from the multinomial distribution.
     scipy.stats.multivariate_hypergeom :
         The multivariate hypergeometric distribution.
-    """  # noqa: E501
+    """
 
     def __init__(self, seed=None):
         super().__init__(seed)
