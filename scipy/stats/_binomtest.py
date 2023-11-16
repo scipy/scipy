@@ -96,11 +96,11 @@ class BinomTestResult:
         ConfidenceInterval(low=0.05819170033997342, high=0.26739600249700846)
         """
         if method not in ('exact', 'wilson', 'wilsoncc'):
-            raise ValueError(f"method ({method}) must be one of 'exact', 'wilson' or "
-                             "'wilsoncc'.")
+            raise ValueError(f"method ('{method}') must be one of 'exact', "
+                             "'wilson' or 'wilsoncc'.")
         if not (0 <= confidence_level <= 1):
-            raise ValueError(f'confidence_level ({confidence_level}) must be in the interval '
-                             '[0, 1].')
+            raise ValueError(f'confidence_level ({confidence_level}) must be in '
+                             'the interval [0, 1].')
         if method == 'exact':
             low, high = _binom_exact_conf_int(self.k, self.n,
                                               confidence_level,
@@ -293,7 +293,7 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
         raise ValueError(f"p ({p}) must be in range [0,1]")
 
     if alternative not in ('two-sided', 'less', 'greater'):
-        raise ValueError(f"alternative ({alternative}) not recognized; \n"
+        raise ValueError(f"alternative ('{alternative}') not recognized; \n"
                          "must be 'two-sided', 'less' or 'greater'")
     if alternative == 'less':
         pval = binom.cdf(k, n, p)
