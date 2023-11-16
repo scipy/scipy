@@ -18,3 +18,7 @@ b9cb3d075dad2b1ee9c145f9e69192d6eeda4f1e
 877f1cc34ad2147340684bcadfbf884d47f5a954
 # Line length clean up in fft (gh-19520)
 9d41d85c472438cf17211b843de7c770868d25a4
+# Blanket noqa clean up (gh-19529)
+664a42c9a7945a0a47f876baa6d27fb4c31c6847
+# Unused noqa clean up (gh-19529)
+05b872da4f498d923dbf5f5f38691b9a21580914

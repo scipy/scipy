@@ -19,7 +19,7 @@ from ._bsplines import make_interp_spline, BSpline
 
 # even though this is a stdlib module, it got accidentally exposed in __all__
 # in the past. It is now deprecated and scheduled to be removed in SciPy 1.13.0
-import itertools  # noqa
+import itertools  # noqa: F401
 
 
 def lagrange(x, w):
