@@ -12,8 +12,11 @@ with safe_import() as exc:
     from scipy import LowLevelCallable
     from_cython = LowLevelCallable.from_cython
 if exc.error:
-    LowLevelCallable = lambda func, data: (func, data)
-    from_cython = lambda *a: a
+    def LowLevelCallable(func, data):
+        return (func, data)
+
+    def from_cython(*a):
+        return a
 
 with safe_import() as exc:
     import cffi

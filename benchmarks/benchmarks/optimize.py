@@ -387,8 +387,12 @@ class BenchSmoothUnbounded(Benchmark):
         return b
 
     def run_sin_1d(self, methods=None):
-        fun = lambda x: np.sin(x[0])
-        der = lambda x: np.array([np.cos(x[0])])
+        def fun(x):
+            return np.sin(x[0])
+
+        def der(x):
+            return np.array([np.cos(x[0])])
+
         b = _BenchOptimizers("1d sin function",
                              fun=fun, der=der, hess=None)
         for i in range(10):

@@ -1088,7 +1088,7 @@ class ODR:
         -------
         output : Output instance
             This object is also assigned to the attribute .output .
-        """
+        """  # noqa: E501
 
         args = (self.model.fcn, self.beta0, self.data.y, self.data.x)
         kwds = {'full_output': 1}

@@ -47,7 +47,8 @@ def pytest_runtest_setup(item):
         except ValueError:
             v = False
         if not v:
-            pytest.skip("very slow test; set environment variable SCIPY_XSLOW=1 to run it")
+            pytest.skip("very slow test; "
+                        "set environment variable SCIPY_XSLOW=1 to run it")
     mark = _get_mark(item, 'xfail_on_32bit')
     if mark is not None and np.intp(0).itemsize < 8:
         pytest.xfail(f'Fails on our 32-bit test platform(s): {mark.args[0]}')

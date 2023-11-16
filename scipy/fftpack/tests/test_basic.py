@@ -157,7 +157,10 @@ class TestSingleFFT(_TestFFTBase):
         self.cdt = np.complex64
         self.rdt = np.float32
 
-    @pytest.mark.xfail(run=False, reason="single-precision FFT implementation is partially disabled, until accuracy issues with large prime powers are resolved")
+    reason = ("single-precision FFT implementation is partially disabled, "
+              "until accuracy issues with large prime powers are resolved")
+
+    @pytest.mark.xfail(run=False, reason=reason)
     def test_notice(self):
         pass
 
