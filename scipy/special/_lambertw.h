@@ -27,7 +27,7 @@
 #include <limits>
 
 #include "_evalpoly.h"
-#include "sf_error.h"
+#include "error.h"
 
 using namespace std::complex_literals;
 
@@ -96,7 +96,7 @@ namespace scipy {
 		if (k == 0) {
 		    return z;
 		}
-		sf_error("lambertw", SF_ERROR_SINGULAR, NULL);
+		set_error("lambertw", SF_ERROR_SINGULAR, NULL);
 		return -numeric_limits<double>::infinity();
 	    }
 	    if (z == 1.0 && k == 0) {
@@ -152,7 +152,7 @@ namespace scipy {
 		}
 	    }
 	    
-	    sf_error("lambertw", SF_ERROR_SLOW,
+	    set_error("lambertw", SF_ERROR_SLOW,
 		     "iteration failed to converge: %g + %gj", z.real(), z.imag());
 	    return std::complex<double>(numeric_limits<double>::quiet_NaN(),
 					numeric_limits<double>::quiet_NaN());

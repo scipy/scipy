@@ -180,6 +180,14 @@ class TestTrimmedStats:
             with assert_raises(ValueError, match=msg):
                 stats.tmin(x, nan_policy='foo')
 
+        # check that that if a full slice is masked, the output returns a
+        # nan instead of a garbage value.
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "All-NaN slice encountered")
+            x = np.arange(16).reshape(4, 4)
+            res = stats.tmin(x, lowerlimit=4, axis=1)
+            assert_equal(res, [np.nan, 4, 8, 12])
+
     def test_tmax(self):
         assert_equal(stats.tmax(4), 4)
 
@@ -201,6 +209,14 @@ class TestTrimmedStats:
             assert_equal(stats.tmax(x, nan_policy='omit'), 9.)
             assert_raises(ValueError, stats.tmax, x, nan_policy='raise')
             assert_raises(ValueError, stats.tmax, x, nan_policy='foobar')
+
+        # check that that if a full slice is masked, the output returns a
+        # nan instead of a garbage value.
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "All-NaN slice encountered")
+            x = np.arange(16).reshape(4, 4)
+            res = stats.tmax(x, upperlimit=11, axis=1)
+            assert_equal(res, [3, 7, 11, np.nan])
 
     def test_tsem(self):
         y = stats.tsem(X, limits=(3, 8), inclusive=(False, True))

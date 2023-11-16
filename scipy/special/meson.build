@@ -366,14 +366,22 @@ ellint_files = [
 
 ellint_dep = declare_dependency(sources: ellint_files)
 
+ufuncs_cxx_cpp_args = [
+  cython_cpp_args,
+  '-DBOOST_MATH_STANDALONE=1',
+  '-DCYTHON_EXTERN_C=extern "C"',
+  '-DSP_SPECFUN_ERROR', # For error handling in special functions.
+]
+
 py3.extension_module('_ufuncs_cxx',
   [ufuncs_cxx_sources,
     uf_cython_gen_cpp.process(cython_special[2]),  # _ufuncs_cxx.pyx
     ],
-  cpp_args: [cython_cpp_args, '-DBOOST_MATH_STANDALONE=1', '-DCYTHON_EXTERN_C=extern "C"'],
+  cpp_args: ufuncs_cxx_cpp_args,
   include_directories: ['../_lib/boost_math/include', '../_lib',
                         '../_build_utils/src'],
   link_args: version_link_args,
+    link_with: [cephes_lib],
   dependencies: [np_dep, ellint_dep],
   install: true,
   subdir: 'scipy/special'

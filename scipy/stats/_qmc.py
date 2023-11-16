@@ -2416,7 +2416,7 @@ class MultinomialQMC:
             base_draws = self.engine.random(self.n_trials).ravel()
             p_cumulative = np.empty_like(self.pvals, dtype=float)
             _fill_p_cumulative(np.array(self.pvals, dtype=float), p_cumulative)
-            sample_ = np.zeros_like(self.pvals, dtype=int)
+            sample_ = np.zeros_like(self.pvals, dtype=np.intp)
             _categorize(base_draws, p_cumulative, sample_)
             sample[i] = sample_
         return sample

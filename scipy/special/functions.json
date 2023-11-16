@@ -247,7 +247,7 @@
         }
     },
     "binom": {
-        "orthogonal_eval.pxd": {
+        "_extra_special.h++": {
             "binom": "dd->d"
         }
     },
