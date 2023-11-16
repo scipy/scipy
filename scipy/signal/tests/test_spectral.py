@@ -1702,7 +1702,15 @@ class TestLombscargle:
 
 
 class TestSTFT:
-    def test_input_validation(self):
+    # torch hits a messy np.pad codepath...
+    @skip_if_array_api_backend("torch")
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_input_validation(self, xp):
 
         def chk_VE(match):
             """Assert for a ValueError matching regexp `match`.
@@ -1717,9 +1725,9 @@ class TestSTFT:
         with chk_VE('noverlap must be less than nperseg.'):
             check_COLA('hann', 10, 20)
         with chk_VE('window must be 1-D'):
-            check_COLA(np.ones((2, 2)), 10, 0)
+            check_COLA(xp.ones((2, 2)), 10, 0)
         with chk_VE('window must have length of nperseg'):
-            check_COLA(np.ones(20), 10, 0)
+            check_COLA(xp.ones(20), 10, 0)
 
         # Checks for check_NOLA():
         with chk_VE('nperseg must be a positive integer'):
@@ -1727,21 +1735,21 @@ class TestSTFT:
         with chk_VE('noverlap must be less than nperseg'):
             check_NOLA('hann', 10, 20)
         with chk_VE('window must be 1-D'):
-            check_NOLA(np.ones((2, 2)), 10, 0)
+            check_NOLA(xp.ones((2, 2)), 10, 0)
         with chk_VE('window must have length of nperseg'):
-            check_NOLA(np.ones(20), 10, 0)
+            check_NOLA(xp.ones(20), 10, 0)
         with chk_VE('noverlap must be a nonnegative integer'):
             check_NOLA('hann', 64, -32)
 
-        x = np.zeros(1024)
+        x = xp.zeros(1024)
         z = stft(x)[2]
 
         # Checks for stft():
         with chk_VE('window must be 1-D'):
-            stft(x, window=np.ones((2, 2)))
+            stft(x, window=xp.ones((2, 2)))
         with chk_VE('value specified for nperseg is different ' +
                     'from length of window'):
-            stft(x, window=np.ones(10), nperseg=256)
+            stft(x, window=xp.ones(10), nperseg=256)
         with chk_VE('nperseg must be a positive integer'):
             stft(x, nperseg=-256)
         with chk_VE('noverlap must be less than nperseg.'):
@@ -1753,9 +1761,9 @@ class TestSTFT:
         with chk_VE('Input stft must be at least 2d!'):
             istft(x)
         with chk_VE('window must be 1-D'):
-            istft(z, window=np.ones((2, 2)))
+            istft(z, window=xp.ones((2, 2)))
         with chk_VE('window must have length of 256'):
-            istft(z, window=np.ones(10), nperseg=256)
+            istft(z, window=xp.ones(10), nperseg=256)
         with chk_VE('nperseg must be a positive integer'):
             istft(z, nperseg=-256)
         with chk_VE('noverlap must be less than nperseg.'):
