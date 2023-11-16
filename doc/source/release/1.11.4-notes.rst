@@ -12,12 +12,41 @@ compared to 1.11.3.
 Authors
 =======
 * Name (commits)
+* Jake Bowhay (2)
+* Ralf Gommers (3)
+* Julien Jerphanion (2)
+* Nikolay Mayorov (2)
+* Tirth Patel (1)
+* Tyler Reddy (9)
+* Dan Schult (3)
+* Nicolas Vetsch (1) +
+
+A total of 8 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+This list of names is automatically generated, and may not be fully complete.
 
 
 Issues closed for 1.11.4
 ------------------------
 
+* `#19245 <https://github.com/scipy/scipy/issues/19245>`__: BUG: upcasting of indices dtype from DIA to COO/CSR/BSR arrays
+* `#19351 <https://github.com/scipy/scipy/issues/19351>`__: BUG: Regression in 1.11.3 can still fail for \`optimize.least_squares\`...
+* `#19357 <https://github.com/scipy/scipy/issues/19357>`__: BUG: build failure with Xcode 15 linker
+* `#19359 <https://github.com/scipy/scipy/issues/19359>`__: BUG: DiscreteAliasUrn construction fails with UNURANError for...
+* `#19387 <https://github.com/scipy/scipy/issues/19387>`__: BUG: problem importing libgfortran.5.dylib on macOS Sonoma
+* `#19403 <https://github.com/scipy/scipy/issues/19403>`__: BUG: scipy.sparse.lil_matrix division by complex number leads...
 
 
 Pull requests for 1.11.4
 ------------------------
+
+* `#19307 <https://github.com/scipy/scipy/pull/19307>`__: set idx_dtype in sparse dia_array.tocoo
+* `#19316 <https://github.com/scipy/scipy/pull/19316>`__: MAINT: Prep 1.11.4
+* `#19320 <https://github.com/scipy/scipy/pull/19320>`__: BLD: fix up version parsing issue in cythonize.py for setup.py...
+* `#19329 <https://github.com/scipy/scipy/pull/19329>`__: DOC: stats.chisquare: result object contains attribute 'statistic'
+* `#19335 <https://github.com/scipy/scipy/pull/19335>`__: BUG: fix pow method for sparrays with power zero
+* `#19364 <https://github.com/scipy/scipy/pull/19364>`__: MAINT, BUG: stats: update the UNU.RAN submodule with DAU fix
+* `#19379 <https://github.com/scipy/scipy/pull/19379>`__: BUG: Restore the original behavior of 'trf' from least_squares...
+* `#19400 <https://github.com/scipy/scipy/pull/19400>`__: BLD: use classic linker on macOS 14 (Sonoma), the new linker...
+* `#19408 <https://github.com/scipy/scipy/pull/19408>`__: BUG: Fix typecasting problem in scipy.sparse.lil_matrix truediv
+* `#19517 <https://github.com/scipy/scipy/pull/19517>`__: MAINT, REL: unpin Python 1.11.x branch
