@@ -225,7 +225,7 @@ class TestNearestNDInterpolator:
                        [0, 0, 1, 1],
                        [0, 1, 1, 2]])
         NI = NearestNDInterpolator((nd[0], nd[1]), nd[2])
-        with self.assertRaises(TypeError):
+        with assert_raises(TypeError):
             NI([0.5, 0.5], query_options="not a dictionary")
 
 
