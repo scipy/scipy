@@ -519,7 +519,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
                 msg = ("If 'epsabs'<=0, 'epsrel' must be greater than both"
                        " 5e-29 and 50*(machine epsilon).")
             elif weight in ['sin', 'cos'] and (abs(a) + abs(b) == np.inf):
-                msg = ("Sine or cosine weighted intervals with infinite domain"
+                msg = ("Sine or cosine weighted integrals with infinite domain"
                        " must have 'epsabs'>0.")
 
         elif weight is None:
