@@ -2251,12 +2251,13 @@ def _scalar_optimization_check_termination(work, res, res_work_pairs, active,
         _scalar_optimization_update_active(work, res, res_work_pairs, active,
                                            stop)
 
-        # compress the arrays to avoid unnecessary computation
+        # # compress the arrays to avoid unnecessary computation
+        stop = stop[active]
         proceed = ~stop
         active = active[proceed]
-        for key, val in work.items():
-            work[key] = val[proceed] if isinstance(val, np.ndarray) else val
-        work.args = [arg[proceed] for arg in work.args]
+        # for key, val in work.items():
+        #     work[key] = val[proceed] if isinstance(val, np.ndarray) else val
+        # work.args = [arg[proceed] for arg in work.args]
 
     return active
 
@@ -2271,11 +2272,15 @@ def _scalar_optimization_update_active(work, res, res_work_pairs, active,
     update_dict['success'] = work.status == 0
 
     if mask is not None:
-        active_mask = active[mask]
+        active_mask = np.zeros_like(mask)
+        active_mask[active] = 1
+        active_mask = active_mask & mask
         for key, val in update_dict.items():
-            res[key][active_mask] = val[mask] if np.size(val) > 1 else val
+            res[key][active_mask] = val[active_mask] if np.size(val) > 1 else val
     else:
         for key, val in update_dict.items():
+            if not np.isscalar(val):
+                val = val[active]
             res[key][active] = val
 
 
