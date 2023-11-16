@@ -22,7 +22,7 @@
 
    magic_eps, magic_eps_abs: Jones' "magic" epsilon parameter, and
                              also an absolute version of the same
-                 (not multipled by minf).  Jones suggests
+                 (not multiplied by minf).  Jones suggests
                  setting this to 1e-4, but 0 also works...
 
    max_feval, max_iter: maximum number of function evaluations & DIRECT iters

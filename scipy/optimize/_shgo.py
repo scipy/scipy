@@ -1101,7 +1101,7 @@ class SHGO:
         # Process all pools
         # Evaluate all constraints and functions
         if self.disp:
-            logging.info('Triangulation completed, evaluating all contraints '
+            logging.info('Triangulation completed, evaluating all constraints '
                          'and objective function values.')
 
         # Evaluate all constraints and functions
