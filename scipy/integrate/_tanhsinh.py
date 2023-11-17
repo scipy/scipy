@@ -102,7 +102,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
         distinct from ``fargs`` passed into `f`).
 
         - When ``preserve_shape=False`` (default), `f` must accept arguments
-          of *any* shape.
+          of *any* broadcastable shapes.
 
         - When ``preserve_shape=True``, `f` must accept arguments of shape
           ``shape`` *or* ``shape + (n,)``, where ``(n,)`` is the number of
@@ -110,6 +110,8 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
 
         In either case, for each scalar element ``xi`` within `x`, the array
         returned by `f` must include the scalar ``f(xi)`` at the same index.
+        Consequently, the shape of the output is always the shape of the input
+        ``x``.
 
         See Examples.
 
@@ -235,6 +237,71 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     >>> res = _tanhsinh(dist.pdf, a, x)
     >>> ref = dist.cdf(x)
     >>> np.allclose(res.integral, ref)
+
+    By default, `preserve_shape` is False, and therefore the callable
+    `f` may be called with arrays of any broadcastable shapes.
+    For example:
+
+    >>> shapes = []
+    >>> def f(x, c):
+    ...    shape = np.broadcast_shapes(x.shape, c.shape)
+    ...    shapes.append(shape)
+    ...    return np.sin(c*x)
+    >>>
+    >>> c = [1, 10, 30, 100]
+    >>> res = _tanhsinh(f, 0, 1, args=(c,), minlevel=1)
+    >>> shapes
+    [(4,), (4, 66), (3, 64), (2, 128), (1, 256)]
+
+    To understand where these shapes are coming from - and to better
+    understand how `_tanhsinh` computes accurate results - note that
+    higher values of ``c`` correspond with higher frequency sinusoids.
+    The higher frequency sinusoids make the integrand more complicated,
+    so more function evaluations are required to achieve the target
+    accuracy:
+
+    >>> res.nfev
+    array([ 67, 131, 259, 515])
+
+    The initial ``shape``, ``(4,)``, corresponds with evaluating the
+    integrand at a single abscissa and all four frequencies; this is used
+    for input validation and to determine the size and dtype of the arrays
+    that store results. The next shape corresponds with evaluating the
+    integrand at an initial grid of abscissae and all four frequencies.
+    Successive calls to the function double the total number of abscissae at
+    which the function has been evaluated. However, in later function
+    evaluations, the integrand is evaluated at fewer frequencies because
+    the corresponding integral has already converged to the required
+    tolerance. This saves function evaluations to improve performance, but
+    it requires the function to accept arguments of any shape.
+
+    "Vector-valued" integrands, such as those written for use with
+    `scipy.integrate.quad_vec`, are unlikely to satisfy this requirement.
+    For example, consider
+
+    >>> def f(x):
+    ...    return [x, np.sin(10*x), np.cos(30*x), x3*np.sin(100*x)**2]
+
+    This integrand is not compatible with `_tanhsinh` as written; for instance,
+    the shape of the output will not be the same as the shape of ``x``. Such a
+    function *could* be converted to a compatible form with the introduction of
+    additional parameters, but this would be inconvenient. In such cases,
+    a simpler solution would be to use `preserve_shape`.
+
+    >>> shapes = []
+    >>> def f(x):
+    ...     shapes.append(x.shape)
+    ...     x0, x1, x2, x3 = x
+    ...     return [x0, np.sin(10*x1), np.cos(30*x2), x3*np.sin(100*x3)]
+    >>>
+    >>> a = np.zeros(4)
+    >>> res = _tanhsinh(f, a, 1, preserve_shape=True)
+    >>> shapes
+    [(4,), (4, 66), (4, 64), (4, 128), (4, 256)]
+
+    Here, the broadcasted shape of `a` and `b` is ``(4,)``. With
+    ``preserve_shape=True``, the function may be called with argument
+    ``x`` of shape ``(4,)`` or ``(4, n)``, and this is what we observe.
 
     """
     (f, a, b, log, maxfun, maxlevel, minlevel,
