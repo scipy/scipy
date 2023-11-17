@@ -266,7 +266,7 @@ def cli(ctx, **kwargs):
 
     \b**python dev.py --build-dir my-build test -s stats**
 
-    """  # noqa: E501
+    """
     CLI.update_context(ctx, kwargs)
 
 
@@ -652,7 +652,7 @@ class Test(Task):
     $ python dev.py test -s stats -- --tb=line  # `--` passes next args to pytest
     $ python dev.py test -b numpy -b pytorch -s cluster
     ```
-    """  # noqa: E501
+    """
     ctx = CONTEXT
 
     verbose = Option(

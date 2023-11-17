@@ -2007,7 +2007,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
     ...                 'Corrected (subsample)'])
     >>> fig.tight_layout()
 
-    """  # noqa: E501
+    """
     if _len_guards(M):
         return np.ones(M)
     if norm is None:

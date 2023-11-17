@@ -68,9 +68,9 @@ from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 from scipy._lib._util import normalize_axis_index
 
 # In __all__ but deprecated for removal in SciPy 1.13.0
-from scipy._lib._util import float_factorial  # noqa
-from scipy.stats._mstats_basic import (PointbiserialrResult, Ttest_1sampResult,  # noqa
-                                       Ttest_relResult)  # noqa
+from scipy._lib._util import float_factorial  # noqa: F401
+from scipy.stats._mstats_basic import (PointbiserialrResult, Ttest_1sampResult,  # noqa: F401
+                                       Ttest_relResult)
 
 
 # Functions/classes in other files should be added in `__init__.py`, not here
@@ -511,7 +511,7 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=False):
     >>> stats.mode(a, axis=None, keepdims=False)
     ModeResult(mode=3, count=5)
 
-    """  # noqa: E501
+    """
     # `axis`, `nan_policy`, and `keepdims` are handled by `_axis_nan_policy`
     if not np.issubdtype(a.dtype, np.number):
         message = ("Argument `a` is not recognized as numeric. "
@@ -529,8 +529,8 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=False):
     return ModeResult(modes[()], counts[()])
 
 
-def _mask_to_limits(a, limits, inclusive):
-    """Mask an array for values outside of given limits.
+def _put_nan_to_limits(a, limits, inclusive):
+    """Put NaNs in an array for values outside of given limits.
 
     This is primarily a utility function.
 
@@ -540,41 +540,33 @@ def _mask_to_limits(a, limits, inclusive):
     limits : (float or None, float or None)
         A tuple consisting of the (lower limit, upper limit).  Values in the
         input array less than the lower limit or greater than the upper limit
-        will be masked out. None implies no limit.
+        will be replaced with `np.nan`. None implies no limit.
     inclusive : (bool, bool)
         A tuple consisting of the (lower flag, upper flag).  These flags
         determine whether values exactly equal to lower or upper are allowed.
 
-    Returns
-    -------
-    A MaskedArray.
-
-    Raises
-    ------
-    A ValueError if there are no values within the given limits.
-
     """
+    if limits is None:
+        return a
+    mask = np.full_like(a, False, dtype=np.bool_)
     lower_limit, upper_limit = limits
     lower_include, upper_include = inclusive
-    am = ma.MaskedArray(a)
     if lower_limit is not None:
-        if lower_include:
-            am = ma.masked_less(am, lower_limit)
-        else:
-            am = ma.masked_less_equal(am, lower_limit)
-
+        mask |= (a < lower_limit) if lower_include else a <= lower_limit
     if upper_limit is not None:
-        if upper_include:
-            am = ma.masked_greater(am, upper_limit)
-        else:
-            am = ma.masked_greater_equal(am, upper_limit)
-
-    if am.count() == 0:
+        mask |= (a > upper_limit) if upper_include else a >= upper_limit
+    if np.all(mask):
         raise ValueError("No array values within given limits")
+    if np.any(mask):
+        a = a.copy() if np.issubdtype(a.dtype, np.inexact) else a.astype(np.float64)
+        a[mask] = np.nan
+    return a
 
-    return am
 
-
+@_axis_nan_policy_factory(
+    lambda x: x, n_outputs=1, default_axis=None,
+    result_to_tuple=lambda x: (x,)
+)
 def tmean(a, limits=None, inclusive=(True, True), axis=None):
     """Compute the trimmed mean.
 
@@ -617,14 +609,13 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
     10.0
 
     """
-    a = asarray(a)
-    if limits is None:
-        return np.mean(a, axis)
-    am = _mask_to_limits(a, limits, inclusive)
-    mean = np.ma.filled(am.mean(axis=axis), fill_value=np.nan)
-    return mean if mean.ndim > 0 else mean.item()
+    a = _put_nan_to_limits(a, limits, inclusive)
+    return np.nanmean(a, axis=axis)
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)
+)
 def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     """Compute the trimmed variance.
 
@@ -671,15 +662,13 @@ def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     20.0
 
     """
-    a = asarray(a)
-    a = a.astype(float)
-    if limits is None:
-        return a.var(ddof=ddof, axis=axis)
-    am = _mask_to_limits(a, limits, inclusive)
-    amnan = am.filled(fill_value=np.nan)
-    return np.nanvar(amnan, ddof=ddof, axis=axis)
+    a = _put_nan_to_limits(a, limits, inclusive)
+    return np.nanvar(a, ddof=ddof, axis=axis)
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)
+)
 def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     """Compute the trimmed minimum.
 
@@ -701,13 +690,6 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     inclusive : {True, False}, optional
         This flag determines whether values exactly equal to the lower limit
         are included.  The default value is True.
-    nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan.
-        The following options are available (default is 'propagate'):
-
-          * 'propagate': returns nan
-          * 'raise': throws an error
-          * 'omit': performs the calculations ignoring nan values
 
     Returns
     -------
@@ -729,20 +711,18 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     14
 
     """
-    a, axis = _chk_asarray(a, axis)
-    am = _mask_to_limits(a, (lowerlimit, None), (inclusive, False))
-
-    contains_nan, nan_policy = _contains_nan(am, nan_policy)
-
-    if contains_nan and nan_policy == 'omit':
-        am = ma.masked_invalid(am)
-
-    res = ma.minimum.reduce(am, axis).data
-    if res.ndim == 0:
-        return res[()]
+    dtype = a.dtype
+    a = _put_nan_to_limits(a, (lowerlimit, None), (inclusive, None))
+    res = np.nanmin(a, axis=axis)
+    if not np.any(np.isnan(res)):
+        # needed if input is of integer dtype
+        return res.astype(dtype, copy=False)
     return res
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)
+)
 def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     """Compute the trimmed maximum.
 
@@ -763,13 +743,6 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     inclusive : {True, False}, optional
         This flag determines whether values exactly equal to the upper limit
         are included.  The default value is True.
-    nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan.
-        The following options are available (default is 'propagate'):
-
-          * 'propagate': returns nan
-          * 'raise': throws an error
-          * 'omit': performs the calculations ignoring nan values
 
     Returns
     -------
@@ -791,20 +764,18 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     12
 
     """
-    a, axis = _chk_asarray(a, axis)
-    am = _mask_to_limits(a, (None, upperlimit), (False, inclusive))
-
-    contains_nan, nan_policy = _contains_nan(am, nan_policy)
-
-    if contains_nan and nan_policy == 'omit':
-        am = ma.masked_invalid(am)
-
-    res = ma.maximum.reduce(am, axis).data
-    if res.ndim == 0:
-        return res[()]
+    dtype = a.dtype
+    a = _put_nan_to_limits(a, (None, upperlimit), (None, inclusive))
+    res = np.nanmax(a, axis=axis)
+    if not np.any(np.isnan(res)):
+        # needed if input is of integer dtype
+        return res.astype(dtype, copy=False)
     return res
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)
+)
 def tstd(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     """Compute the trimmed sample standard deviation.
 
@@ -851,9 +822,12 @@ def tstd(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     4.4721359549995796
 
     """
-    return np.sqrt(tvar(a, limits, inclusive, axis, ddof))
+    return np.sqrt(tvar(a, limits, inclusive, axis, ddof, _no_deco=True))
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)
+)
 def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     """Compute the trimmed standard error of the mean.
 
@@ -900,13 +874,10 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     1.1547005383792515
 
     """
-    a = np.asarray(a).ravel()
-    if limits is None:
-        return a.std(ddof=ddof) / np.sqrt(a.size)
-
-    am = _mask_to_limits(a, limits, inclusive)
-    sd = np.sqrt(np.ma.var(am, ddof=ddof, axis=axis))
-    return sd / np.sqrt(am.count())
+    a = _put_nan_to_limits(a, limits, inclusive)
+    sd = np.sqrt(np.nanvar(a, ddof=ddof, axis=axis))
+    n_obs = (~np.isnan(a)).sum(axis=axis)
+    return sd / np.sqrt(n_obs, dtype=sd.dtype)
 
 
 #####################################
@@ -7762,11 +7733,11 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     >>> rvs2 = (stats.norm.rvs(loc=5, scale=10, size=500, random_state=rng)
     ...         + stats.norm.rvs(scale=0.2, size=500, random_state=rng))
     >>> stats.ttest_rel(rvs1, rvs2)
-    TtestResult(statistic=-0.4549717054410304, pvalue=0.6493274702088672, df=499)  # noqa
+    TtestResult(statistic=-0.4549717054410304, pvalue=0.6493274702088672, df=499)
     >>> rvs3 = (stats.norm.rvs(loc=8, scale=10, size=500, random_state=rng)
     ...         + stats.norm.rvs(scale=0.2, size=500, random_state=rng))
     >>> stats.ttest_rel(rvs1, rvs3)
-    TtestResult(statistic=-5.879467544540889, pvalue=7.540777129099917e-09, df=499)  # noqa
+    TtestResult(statistic=-5.879467544540889, pvalue=7.540777129099917e-09, df=499)
 
     """
     a, b, axis = _chk2_asarray(a, b, axis)
@@ -8241,7 +8212,7 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     ...           axis=1)
     Power_divergenceResult(statistic=array([3.5 , 9.25]), pvalue=array([0.62338763, 0.09949846]))
 
-    """  # noqa
+    """  # noqa: E501
     return power_divergence(f_obs, f_exp=f_exp, ddof=ddof, axis=axis,
                             lambda_="pearson")
 

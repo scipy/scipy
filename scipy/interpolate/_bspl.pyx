@@ -289,7 +289,7 @@ def _colloc(const double[::1] x, const double[::1] t, int k, double[::1, :] ab,
 def _handle_lhs_derivatives(const double[::1]t, int k, double xval,
                             double[::1, :] ab,
                             int kl, int ku,
-                            const cnp.int_t[::1] deriv_ords,
+                            const cnp.npy_long[::1] deriv_ords,
                             int offset=0):
     """ Fill in the entries of the collocation matrix corresponding to known
     derivatives at xval.

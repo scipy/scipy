@@ -19,7 +19,7 @@ from ._matfuncs_sqrtm import sqrtm
 from ._matfuncs_expm import pick_pade_structure, pade_UV_calc
 
 # deprecated imports to be removed in SciPy 1.13.0
-from numpy import single  # noqa
+from numpy import single  # noqa: F401
 
 __all__ = ['expm', 'cosm', 'sinm', 'tanm', 'coshm', 'sinhm', 'tanhm', 'logm',
            'funm', 'signm', 'sqrtm', 'fractional_matrix_power', 'expm_frechet',

@@ -11,8 +11,8 @@ from scipy.integrate import (quadrature, romberg, romb, newton_cotes,
                              qmc_quad)
 from scipy.integrate._tanhsinh import _tanhsinh, _pair_cache
 from scipy import stats, special as sc
-from scipy.optimize._zeros_py import (_ECONVERGED, _ESIGNERR, _ECONVERR,  # noqa
-                                      _EVALUEERR, _ECALLBACK, _EINPROGRESS)  # noqa
+from scipy.optimize._zeros_py import (_ECONVERGED, _ESIGNERR, _ECONVERR,  # noqa: F401
+                                      _EVALUEERR, _ECALLBACK, _EINPROGRESS)
 
 class TestFixedQuad:
     def test_scalar(self):

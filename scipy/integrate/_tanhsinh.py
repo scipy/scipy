@@ -4,8 +4,8 @@ from scipy import special
 from scipy.optimize import OptimizeResult
 from scipy.optimize._zeros_py import (_scalar_optimization_initialize,
                                       _scalar_optimization_loop,
-                                      _ECONVERGED, _ESIGNERR, _ECONVERR,  # noqa
-                                      _EVALUEERR, _ECALLBACK, _EINPROGRESS)  # noqa
+                                      _ECONVERGED, _ESIGNERR, _ECONVERR,  # noqa: F401
+                                      _EVALUEERR, _ECALLBACK, _EINPROGRESS)  # noqa: F401
 
 # todo:
 #  figure out warning situation

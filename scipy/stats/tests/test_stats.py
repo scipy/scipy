@@ -180,6 +180,14 @@ class TestTrimmedStats:
             with assert_raises(ValueError, match=msg):
                 stats.tmin(x, nan_policy='foo')
 
+        # check that that if a full slice is masked, the output returns a
+        # nan instead of a garbage value.
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "All-NaN slice encountered")
+            x = np.arange(16).reshape(4, 4)
+            res = stats.tmin(x, lowerlimit=4, axis=1)
+            assert_equal(res, [np.nan, 4, 8, 12])
+
     def test_tmax(self):
         assert_equal(stats.tmax(4), 4)
 
@@ -201,6 +209,14 @@ class TestTrimmedStats:
             assert_equal(stats.tmax(x, nan_policy='omit'), 9.)
             assert_raises(ValueError, stats.tmax, x, nan_policy='raise')
             assert_raises(ValueError, stats.tmax, x, nan_policy='foobar')
+
+        # check that that if a full slice is masked, the output returns a
+        # nan instead of a garbage value.
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "All-NaN slice encountered")
+            x = np.arange(16).reshape(4, 4)
+            res = stats.tmax(x, upperlimit=11, axis=1)
+            assert_equal(res, [3, 7, 11, np.nan])
 
     def test_tsem(self):
         y = stats.tsem(X, limits=(3, 8), inclusive=(False, True))
@@ -443,7 +459,7 @@ class TestCorrPearsonr:
     # correlation coefficient and p-value for alternative='two-sided'
     # calculated with mpmath agree to 16 digits.
     @pytest.mark.parametrize('alternative, pval, rlow, rhigh, sign',
-            [('two-sided', 0.325800137536, -0.814938968841, 0.99230697523, 1),  # noqa
+            [('two-sided', 0.325800137536, -0.814938968841, 0.99230697523, 1),
              ('less', 0.8370999312316, -1, 0.985600937290653, 1),
              ('greater', 0.1629000687684, -0.6785654158217636, 1, 1),
              ('two-sided', 0.325800137536, -0.992306975236, 0.81493896884, -1),
@@ -5473,14 +5489,14 @@ def test_ttest_1samp_new():
     assert_almost_equal(t1[0,0],t3, decimal=14)
     assert_equal(t1.shape, (n2,n3))
 
-    t1,p1 = stats.ttest_1samp(rvn1[:,:,:], np.ones((n1, 1, n3)),axis=1)  # noqa
+    t1,p1 = stats.ttest_1samp(rvn1[:,:,:], np.ones((n1, 1, n3)),axis=1)
     t2,p2 = stats.ttest_1samp(rvn1[:,:,:], 1,axis=1)
     t3,p3 = stats.ttest_1samp(rvn1[0,:,0], 1)
     assert_array_almost_equal(t1,t2, decimal=14)
     assert_almost_equal(t1[0,0],t3, decimal=14)
     assert_equal(t1.shape, (n1,n3))
 
-    t1,p1 = stats.ttest_1samp(rvn1[:,:,:], np.ones((n1,n2,1)),axis=2)  # noqa
+    t1,p1 = stats.ttest_1samp(rvn1[:,:,:], np.ones((n1,n2,1)),axis=2)
     t2,p2 = stats.ttest_1samp(rvn1[:,:,:], 1,axis=2)
     t3,p3 = stats.ttest_1samp(rvn1[0,0,:], 1)
     assert_array_almost_equal(t1,t2, decimal=14)
@@ -8396,7 +8412,7 @@ y = rng.random(10)
 
 @pytest.mark.parametrize("fun, args",
                          [(stats.wilcoxon, (x,)),
-                          (stats.ks_1samp, (x, stats.norm.cdf)),  # type: ignore[attr-defined] # noqa
+                          (stats.ks_1samp, (x, stats.norm.cdf)),  # type: ignore[attr-defined]
                           (stats.ks_2samp, (x, y)),
                           (stats.kstest, (x, y)),
                           ])
