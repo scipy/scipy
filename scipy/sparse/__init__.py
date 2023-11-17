@@ -94,8 +94,8 @@ Building sparse matrices:
    diags - Return a sparse matrix from diagonals
    spdiags - Return a sparse matrix from diagonals
    bmat - Build a sparse matrix from sparse sub-blocks
-   rand - Random values in a given shape matrix
    random - Random values in a given shape matrix
+   rand - Random values in a given shape matrix (old interface)
 
 Building larger structures from smaller (array or matrix)
 

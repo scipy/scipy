@@ -322,9 +322,6 @@ def identity(n, dtype='d', format=None):
 def eye_array(m, n=None, *, k=0, dtype=float, format=None):
     """Identity matrix in sparse array format
 
-    Returns an identity matrix with shape (n, n) using the
-    given sparse array `format` and `dtype`.
-
     Return a sparse array with ones on diagonal.
     Specifically a sparse array (m x n) where the kth diagonal
     is all ones and everything else is zeros.
@@ -1066,7 +1063,7 @@ def block_diag(mats, format=None, dtype=None):
 
 def random_array(m, n=None, *, density=0.01, format='coo', dtype=None,
                  random_state=None, data_rng=None):
-    """Return a sparse array of random numbers in [0, 1)
+    """Return a sparse array of uniformly random numbers in [0, 1)
 
     Returns a sparse array with the given shape and density
     where values are generated uniformly randomly in the range [0, 1).
@@ -1082,14 +1079,14 @@ def random_array(m, n=None, *, density=0.01, format='coo', dtype=None,
 
     Parameters
     ----------
-    m, n : int or 2-tuple of ints
-        shape of the matrix
-    density : real, optional
+    shape : int or tuple of ints
+        shape of the array
+    density : real, optional (default: 0.01)
         density of the generated matrix: density equal to one means a full
         matrix, density of 0 means a matrix with no non-zero items.
-    format : str, optional
+    format : str, optional (default: 'coo')
         sparse matrix format.
-    dtype : dtype, optional
+    dtype : dtype, optional (default: np.float64)
         type of the returned matrix values.
     random_state : {None, int, `Generator`, `RandomState`}, optional
         The random number generator used for this function. We recommend using
@@ -1107,14 +1104,14 @@ def random_array(m, n=None, *, density=0.01, format='coo', dtype=None,
         prefer another random state for data (e.g. normal distribution)
         use ``data_rng`` and see the examples below.
 
-    data_rng : callable, optional
+    data_rng : callable, optional (default: np.random.uniform)
         Samples a requested number of random values.
-        This function should take a single argument specifying the length
-        of the ndarray that it will return. The structurally nonzero entries
-        of the sparse random matrix will be taken from the array sampled
-        by this function. By default, uniform [0, 1) random values will be
-        sampled using the random state given by ``random_state`` (and also
-        used to get the sparsity structure).
+        This function should take a single keyword argument `size` specifying
+        the length of its returned ndarray. It is used to generate the nonzero
+        values in the matrix after the locations of those values are chosen.
+        By default, uniform [0, 1) random values are used unless `dtype` is
+        an integer (default uniform integers from that dtype) or
+        complex (default uniform over the unit square in the complex plane).
 
     Returns
     -------
@@ -1128,29 +1125,44 @@ def random_array(m, n=None, *, density=0.01, format='coo', dtype=None,
     >>> import numpy as np
     >>> import scipy as sp
     >>> rng = np.random.default_rng()
+
+    Default sampling uniformly from [0, 1):
+
     >>> S = sp.sparse.random_array(3, 4, density=0.25, random_state=rng)
 
-    Proving a sampler for the values:
+    Providing a sampler for the values:
 
     >>> rvs = sp.stats.poisson(25, loc=10).rvs
     >>> S = sp.sparse.random_array(3, 4, density=0.25, random_state=rng, data_rng=rvs)
-    >>> S.A
+    >>> S.toarray()
     array([[ 36.,   0.,  33.,   0.],   # random
            [  0.,   0.,   0.,   0.],
            [  0.,   0.,  36.,   0.]])
 
-    Using a custom distribution:
+    Building a custom distribution.
+    This example builds a squared normal from np.random:
 
-    >>> class CustomDistribution(sp.stats.rv_continuous):
+    >>> def np_normal_squared(size=None, random_state=None):
+    ...     return random_state.standard_normal(size) ** 2
+    >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng,
+                             data_rvs=np_normal_squared)
+
+    Or we can build it from sp.stats style rvs functions:
+
+    >>> def sp_stats_normal_squared(size=None, random_state=None):
+    ...     std_normal = sp.stats.distributions.norm_gen().rvs
+    ...     return std_normal(size=size, random_state=random_state) ** 2
+    >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng,
+    ...                      data_rvs=sp_stats_normal_squared)
+
+    Or we can subclass sp.stats rv_continous or rv_discrete:
+
+    >>> class NormalSquared(sp.stats.rv_continuous):
     ...     def _rvs(self,  size=None, random_state=None):
-    ...         return random_state.standard_normal(size)
-    >>> X = CustomDistribution(seed=rng)
-    >>> Y = X().rvs  # use a frozen version of the distribution
-    >>> S = sp.sparse.random_array(3, 4, density=0.25, random_state=rng, data_rng=Y)
-    >>> S.A
-    array([[ 0.        ,  0.        ,  0.        ,  0.        ],   # random
-           [ 0.13569738,  1.9467163 , -0.81205367,  0.        ],
-           [ 0.        ,  0.        ,  0.        ,  0.        ]])
+    ...         return random_state.standard_normal(size) ** 2
+    >>> X = NormalSquared(seed=rng)
+    >>> Y = X()
+    >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng, data_rvs=Y.rvs)
     """
     vals, i, j = _random(m, n, density, format, dtype, random_state, data_rng)
     return coo_array((vals, (i, j)), shape=(m, n)).asformat(format)
@@ -1274,31 +1286,43 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     Passing a ``np.random.Generator`` instance for better performance:
 
     >>> import scipy as sp
-    >>> from numpy.random import default_rng
-    >>> rng = default_rng()
+    >>> import numpy as np
+    >>> rng = np.random.default_rng()
     >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng)
 
-    Proving a sampler for the values:
+    Providing a sampler for the values:
 
     >>> rvs = sp.stats.poisson(25, loc=10).rvs
     >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng, data_rvs=rvs)
-    >>> S.A
+    >>> S.toarray()
     array([[ 36.,   0.,  33.,   0.],   # random
            [  0.,   0.,   0.,   0.],
            [  0.,   0.,  36.,   0.]])
 
-    Using a custom distribution:
+    Building a custom distribution.
+    This example builds a squared normal from np.random:
 
-    >>> class CustomDistribution(sp.stats.rv_continuous):
+    >>> def np_normal_squared(size=None, random_state=None):
+    ...     return random_state.standard_normal(size) ** 2
+    >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng,
+                             data_rvs=np_normal_squared)
+
+    Or we can build it from sp.stats style rvs functions:
+
+    >>> def sp_stats_normal_squared(size=None, random_state=None):
+    ...     std_normal = sp.stats.distributions.norm_gen().rvs
+    ...     return std_normal(size=size, random_state=random_state) ** 2
+    >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng,
+    ...                      data_rvs=sp_stats_normal_squared)
+
+    Or we can subclass sp.stats rv_continous or rv_discrete:
+
+    >>> class NormalSquared(sp.stats.rv_continuous):
     ...     def _rvs(self,  size=None, random_state=None):
-    ...         return random_state.standard_normal(size)
-    >>> X = CustomDistribution(seed=rng)
+    ...         return random_state.standard_normal(size) ** 2
+    >>> X = NormalSquared(seed=rng)
     >>> Y = X()  # get a frozen version of the distribution
     >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng, data_rvs=Y.rvs)
-    >>> S.A
-    array([[ 0.        ,  0.        ,  0.        ,  0.        ],   # random
-           [ 0.13569738,  1.9467163 , -0.81205367,  0.        ],
-           [ 0.        ,  0.        ,  0.        ,  0.        ]])
     """
     vals, i, j = _random(m, n, density, format, dtype, random_state, data_rvs)
     return coo_matrix((vals, (i, j)), shape=(m, n)).asformat(format)
@@ -1345,8 +1369,8 @@ def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
 
     See Also
     --------
-    random : Similar function allowing a user-specified random data source
-    random_array : Similar but returns a sparse array instead of matrix
+    random : Similar function allowing a custom random data sampler
+    random_array : Similar to random() but returns a sparse array
 
     Examples
     --------
