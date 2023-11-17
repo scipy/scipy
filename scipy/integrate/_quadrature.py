@@ -321,7 +321,7 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
     """
     Compute a definite integral using fixed-tolerance Gaussian quadrature.
 
-    .. deprecated::
+    .. deprecated:: 1.12.0
 
           This function is deprecated as of SciPy 1.12.0 and will be removed
           in SciPy 1.14.0. Please use `scipy.integrate.quad` instead.
@@ -1020,7 +1020,7 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
     """
     Romberg integration of a callable function or method.
 
-    .. deprecated::
+    .. deprecated:: 1.12.0
 
           This function is deprecated as of SciPy 1.12.0 and will be removed
           in SciPy 1.14.0. Please use `scipy.integrate.quad` instead.
