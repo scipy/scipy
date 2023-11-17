@@ -2007,7 +2007,8 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
 def _scalar_optimization_loop(work, callback, shape, maxiter,
                               func, args, dtype, pre_func_eval, post_func_eval,
                               check_termination, post_termination_check,
-                              customize_result, res_work_pairs):
+                              customize_result, res_work_pairs,
+                              preserve_shape=False):
     """Main loop of a vectorized scalar optimization algorithm
 
     Parameters
@@ -2055,6 +2056,12 @@ def _scalar_optimization_loop(work, callback, shape, maxiter,
         copied to the appropriate indices of `res` when appropriate. The order
         determines the order in which OptimizeResult attributes will be
         pretty-printed.
+    preserve_shape : bool, default:False
+        When ``preserve_shape=False`` (default), `func` may be passed
+        arguments of any shape; `_scalar_optimization_loop` is permitted
+        to reshape and compress arguments at will. When
+        ``preserve_shape=False``, arguments passed to `func` must have shape
+        `shape` or ``shape + (n,)``, where ``n`` is any integer.
 
     Returns
     -------
@@ -2086,11 +2093,12 @@ def _scalar_optimization_loop(work, callback, shape, maxiter,
     work.args = args
 
     active = _scalar_optimization_check_termination(
-        work, res, res_work_pairs, active, check_termination)
+        work, res, res_work_pairs, active, check_termination, preserve_shape)
 
     if callback is not None:
         temp = _scalar_optimization_prepare_result(
-            work, res, res_work_pairs, active, shape, customize_result)
+            work, res, res_work_pairs, active, shape,
+            customize_result, preserve_shape)
         if _call_callback_maybe_halt(callback, temp):
             cb_terminate = True
 
@@ -2113,11 +2121,12 @@ def _scalar_optimization_loop(work, callback, shape, maxiter,
 
         work.nit += 1
         active = _scalar_optimization_check_termination(
-            work, res, res_work_pairs, active, check_termination)
+            work, res, res_work_pairs, active, check_termination, preserve_shape)
 
         if callback is not None:
             temp = _scalar_optimization_prepare_result(
-                work, res, res_work_pairs, active, shape, customize_result)
+                work, res, res_work_pairs, active, shape,
+                customize_result, preserve_shape)
             if _call_callback_maybe_halt(callback, temp):
                 cb_terminate = True
                 break
@@ -2128,7 +2137,8 @@ def _scalar_optimization_loop(work, callback, shape, maxiter,
 
     work.status[:] = _ECALLBACK if cb_terminate else _ECONVERR
     return _scalar_optimization_prepare_result(
-        work, res, res_work_pairs, active, shape, customize_result)
+        work, res, res_work_pairs, active, shape,
+        customize_result, preserve_shape)
 
 
 def _chandrupatla_iv(func, args, xatol, xrtol,
@@ -2239,7 +2249,7 @@ def _scalar_optimization_initialize(func, xs, args, complex_ok=False):
 
 
 def _scalar_optimization_check_termination(work, res, res_work_pairs, active,
-                                           check_termination):
+                                           check_termination, preserve_shape):
     # Checks termination conditions, updates elements of `res` with
     # corresponding elements of `work`, and compresses `work`.
 
@@ -2249,21 +2259,25 @@ def _scalar_optimization_check_termination(work, res, res_work_pairs, active,
         # update the active elements of the result object with the active
         # elements for which a termination condition has been met
         _scalar_optimization_update_active(work, res, res_work_pairs, active,
-                                           stop)
+                                           stop, preserve_shape)
 
-        # # compress the arrays to avoid unnecessary computation
-        stop = stop[active]
+        if preserve_shape:
+            stop = stop[active]
+
         proceed = ~stop
         active = active[proceed]
-        # for key, val in work.items():
-        #     work[key] = val[proceed] if isinstance(val, np.ndarray) else val
-        # work.args = [arg[proceed] for arg in work.args]
+
+        if not preserve_shape:
+            # compress the arrays to avoid unnecessary computation
+            for key, val in work.items():
+                work[key] = val[proceed] if isinstance(val, np.ndarray) else val
+            work.args = [arg[proceed] for arg in work.args]
 
     return active
 
 
 def _scalar_optimization_update_active(work, res, res_work_pairs, active,
-                                       mask=None):
+                                       mask, preserve_shape):
     # Update `active` indices of the arrays in result object `res` with the
     # contents of the scalars and arrays in `update_dict`. When provided,
     # `mask` is a boolean array applied both to the arrays in `update_dict`
@@ -2272,25 +2286,32 @@ def _scalar_optimization_update_active(work, res, res_work_pairs, active,
     update_dict['success'] = work.status == 0
 
     if mask is not None:
-        active_mask = np.zeros_like(mask)
-        active_mask[active] = 1
-        active_mask = active_mask & mask
-        for key, val in update_dict.items():
-            res[key][active_mask] = val[active_mask] if np.size(val) > 1 else val
+        if preserve_shape:
+            active_mask = np.zeros_like(mask)
+            active_mask[active] = 1
+            active_mask = active_mask & mask
+            for key, val in update_dict.items():
+                res[key][active_mask] = (val[active_mask] if np.size(val) > 1
+                                         else val)
+        else:
+            active_mask = active[mask]
+            for key, val in update_dict.items():
+                res[key][active_mask] = val[mask] if np.size(val) > 1 else val
     else:
         for key, val in update_dict.items():
-            if not np.isscalar(val):
+            if preserve_shape and not np.isscalar(val):
                 val = val[active]
             res[key][active] = val
 
 
 def _scalar_optimization_prepare_result(work, res, res_work_pairs, active,
-                                        shape, customize_result):
+                                        shape, customize_result, preserve_shape):
     # Prepare the result object `res` by creating a copy, copying the latest
     # data from work, running the provided result customization function,
     # and reshaping the data to the original shapes.
     res = res.copy()
-    _scalar_optimization_update_active(work, res, res_work_pairs, active)
+    _scalar_optimization_update_active(work, res, res_work_pairs,
+                                       active, None, preserve_shape)
 
     shape = customize_result(res, shape)
 

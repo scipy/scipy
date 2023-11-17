@@ -674,6 +674,10 @@ class TestTanhSinh:
         with pytest.raises(ValueError, match=message):
             _tanhsinh(f, 0, f.b, minlevel=-1)
 
+        message = '...must be True or False.'
+        with pytest.raises(ValueError, match=message):
+            _tanhsinh(f, 0, f.b, preserve_shape=2)
+
         message = '...must be callable.'
         with pytest.raises(ValueError, match=message):
             _tanhsinh(f, 0, f.b, callback='elderberry')
@@ -784,6 +788,18 @@ class TestTanhSinh:
 
         args = (np.arange(3, dtype=np.int64),)
         res = _tanhsinh(f, [np.inf]*3, [-np.inf]*3, maxlevel=5, args=args)
+        ref_flags = np.array([0, -2, -3])
+        assert_equal(res.status, ref_flags)
+
+    def test_flags2(self):
+        # Test cases that should produce different status flags; show that all
+        # can be produced simultaneously.
+        def f(x):
+            return [np.exp(-x[0]**2),  # converges
+                    np.exp(x[1]),  # reaches maxiter due to order=2
+                    np.full_like(x[2], np.nan)[()]]  # stops due to NaN
+
+        res = _tanhsinh(f, [np.inf]*3, [-np.inf]*3, maxlevel=5, preserve_shape=True)
         ref_flags = np.array([0, -2, -3])
         assert_equal(res.status, ref_flags)
 
