@@ -3338,7 +3338,7 @@ def fligner(*samples, center='median', proportiontocut=0.05):
            University.
     .. [4] Conover, W. J., Johnson, M. E. and Johnson M. M. (1981). A
            comparative study of tests for homogeneity of variances, with
-           applications to the outer continental shelf biding data.
+           applications to the outer continental shelf bidding data.
            Technometrics, 23(4), 351-361.
     .. [5] C.I. BLISS (1952), The Statistics of Bioassay: With Special
            Reference to the Vitamins, pp 499-503,

@@ -1416,7 +1416,7 @@ def _get_binomial_log_p_value_with_nuisance_param(
     Returns
     -------
     p_value : float
-        Return the maximum p-value considering every nuisance paramater
+        Return the maximum p-value considering every nuisance parameter
         between 0 and 1
 
     Notes

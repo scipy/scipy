@@ -1365,7 +1365,7 @@ cdef class Rotation:
         ``axis3``). For Euler angles, there is an additional relationship 
         between ``axis1`` or ``axis3``, with two possibilities:
 
-            - ``axis1`` and ``axis3`` are also orthognal (asymmetric sequence)
+            - ``axis1`` and ``axis3`` are also orthogonal (asymmetric sequence)
             - ``axis1 == axis3`` (symmetric sequence)
 
         For Davenport angles, this last relationship is relaxed [2]_, and only
@@ -1374,7 +1374,7 @@ cdef class Rotation:
         Parameters
         ----------
         axes : array_like, shape (3,) or ([1 or 2 or 3], 3)
-            Axis of rotation, if one dimentional. If two dimentional, describes the 
+            Axis of rotation, if one dimensional. If two dimensional, describes the 
             sequence of axes for rotations, where each axes[i, :] is the ith
             axis. If more than one axis is given, then the second axis must be
             orthogonal to both the first and third axes.
@@ -2078,7 +2078,7 @@ cdef class Rotation:
         ``axis3``). For Euler angles, there is an additional relationship 
         between ``axis1`` or ``axis3``, with two possibilities:
 
-            - ``axis1`` and ``axis3`` are also orthognal (asymmetric sequence)
+            - ``axis1`` and ``axis3`` are also orthogonal (asymmetric sequence)
             - ``axis1 == axis3`` (symmetric sequence)
 
         For Davenport angles, this last relationship is relaxed [1]_, and only
@@ -2098,7 +2098,7 @@ cdef class Rotation:
         Parameters
         ----------
         axes : array_like, shape (3,) or ([1 or 2 or 3], 3)
-            Axis of rotation, if one dimentional. If two dimentional, describes the 
+            Axis of rotation, if one dimensional. If two dimensional, describes the 
             sequence of axes for rotations, where each axes[i, :] is the ith
             axis. If more than one axis is given, then the second axis must be
             orthogonal to both the first and third axes.
