@@ -32,7 +32,7 @@ def _sprandn_array(m, n, density=0.01, format="coo", dtype=None, random_state=No
     # Helper function for testing.
     random_state = check_random_state(random_state)
     data_rng = random_state.standard_normal
-    return construct.random_array(m, n, density=density, format=format, dtype=dtype,
+    return construct.random_array((m, n), density=density, format=format, dtype=dtype,
                                   random_state=random_state, data_rng=data_rng)
 
 
@@ -708,7 +708,7 @@ class TestConstructUtils:
         # anything that np.dtype can convert to a dtype should be accepted
         # for the dtype
         construct.random(10, 10, dtype='d')
-        construct.random_array(10, 10, dtype='d')
+        construct.random_array((10, 10), dtype='d')
 
     def test_random_sparse_matrix_returns_correct_number_of_non_zero_elements(self):
         # A 10 x 10 matrix, with density of 12.65%, should have 13 nonzero elements.
@@ -716,7 +716,7 @@ class TestConstructUtils:
         sparse_matrix = construct.random(10, 10, density=0.1265)
         assert_equal(sparse_matrix.count_nonzero(),13)
         # check random_array
-        sparse_array = construct.random_array(10, 10, density=0.1265)
+        sparse_array = construct.random_array((10, 10), density=0.1265)
         assert_equal(sparse_array.count_nonzero(),13)
         assert isinstance(sparse_array, sparray)
 
