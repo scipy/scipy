@@ -1061,7 +1061,7 @@ def block_diag(mats, format=None, dtype=None):
                       dtype=dtype).asformat(format)
 
 
-def random_array(m, n=None, *, density=0.01, format='coo', dtype=None,
+def random_array(shape, *, density=0.01, format='coo', dtype=None,
                  random_state=None, data_rng=None):
     """Return a sparse array of uniformly random numbers in [0, 1)
 
@@ -1164,21 +1164,17 @@ def random_array(m, n=None, *, density=0.01, format='coo', dtype=None,
     >>> Y = X()
     >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng, data_rvs=Y.rvs)
     """
-    vals, i, j = _random(m, n, density, format, dtype, random_state, data_rng)
-    return coo_array((vals, (i, j)), shape=(m, n)).asformat(format)
+    data, ind = _random(shape, density, format, dtype, random_state, data_rng)
+    return coo_array((data, ind), shape=shape).asformat(format)
 
 
-def _random(m, n, density=0.01, format=None, dtype=None,
+def _random(shape, density=0.01, format=None, dtype=None,
            random_state=None, data_rng=None, coo_array=coo_array):
-    if n is None:
-        n = m
-    m, n = int(m), int(n)
-
     if density < 0 or density > 1:
         raise ValueError("density expected to be 0 <= density <= 1")
     dtype = np.dtype(dtype)
 
-    mn = m * n
+    mn = np.prod(shape)
 
     tp = np.intc
     if mn > np.iinfo(tp).max:
@@ -1192,7 +1188,7 @@ def _random(m, n, density=0.01, format=None, dtype=None,
         raise ValueError(msg % np.iinfo(tp).max)
 
     # Number of non zero values
-    k = int(round(density * m * n))
+    size = int(round(density * mn))
 
     random_state = check_random_state(random_state)
 
@@ -1211,12 +1207,12 @@ def _random(m, n, density=0.01, format=None, dtype=None,
         else:
             data_rng = partial(random_state.uniform, 0., 1.)
 
-    ind = random_state.choice(mn, size=k, replace=False)
-
-    j = np.floor(ind * 1. / m).astype(tp, copy=False)
-    i = (ind - j * m).astype(tp, copy=False)
-    vals = data_rng(k).astype(dtype, copy=False)
-    return vals, i, j
+    indices = [
+        random_state.choice(d, size=size, replace=False).astype(tp, copy=False)
+        for d in shape
+    ]
+    vals = data_rng(size).astype(dtype, copy=False)
+    return vals, indices
 
 
 def random(m, n, density=0.01, format='coo', dtype=None,
@@ -1324,8 +1320,11 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     >>> Y = X()  # get a frozen version of the distribution
     >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng, data_rvs=Y.rvs)
     """
-    vals, i, j = _random(m, n, density, format, dtype, random_state, data_rvs)
-    return coo_matrix((vals, (i, j)), shape=(m, n)).asformat(format)
+    if n is None:
+        n = m
+    m, n = int(m), int(n)
+    vals, ind = _random((m, n), density, format, dtype, random_state, data_rvs)
+    return coo_matrix((vals, ind), shape=(m, n)).asformat(format)
 
 
 def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
