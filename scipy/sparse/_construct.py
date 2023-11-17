@@ -1194,25 +1194,25 @@ def _random(shape, density=0.01, format=None, dtype=None,
 
     if data_rng is None:
         if np.issubdtype(dtype, np.integer):
-            def data_rng(n):
+            def data_rng(size):
                 return rng_integers(random_state,
                                     np.iinfo(dtype).min,
                                     np.iinfo(dtype).max,
-                                    n,
+                                    size,
                                     dtype=dtype)
         elif np.issubdtype(dtype, np.complexfloating):
-            def data_rng(n):
-                return (random_state.uniform(size=n) +
-                        random_state.uniform(size=n) * 1j)
+            def data_rng(size):
+                return (random_state.uniform(size=size) +
+                        random_state.uniform(size=size) * 1j)
         else:
             data_rng = partial(random_state.uniform, 0., 1.)
 
-    indices = [
-        random_state.choice(d, size=size, replace=False).astype(tp, copy=False)
-        for d in shape
-    ]
-    vals = data_rng(size).astype(dtype, copy=False)
-    return vals, indices
+    raveled_ind = random_state.choice(mn, size=size, replace=False).astype(dtype=tp)
+    ind = np.unravel_index(raveled_ind, shape=shape)
+
+    # size kwarg allows data_rng=functools.partial(np.random.poisson, lam=5)
+    vals = data_rng(size=size).astype(dtype, copy=False)
+    return vals, ind
 
 
 def random(m, n, density=0.01, format='coo', dtype=None,
@@ -1323,6 +1323,10 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     if n is None:
         n = m
     m, n = int(m), int(n)
+    # make keyword syntax work for data_rvs e.g. data_rvs(size=7)
+    if data_rvs is not None:
+        def data_rvs_keyword(size):
+            return data_rvs(size)
     vals, ind = _random((m, n), density, format, dtype, random_state, data_rvs)
     return coo_matrix((vals, ind), shape=(m, n)).asformat(format)
 
