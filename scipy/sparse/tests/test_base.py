@@ -3842,7 +3842,7 @@ class TestCSR(sparse_test_class()):
         indptr = np.array([0, 2])
         M = csr_matrix((data, sorted_inds, indptr)).copy()
         assert_equal(True, M.has_sorted_indices)
-        assert type(M.has_sorted_indices) == bool
+        assert isinstance(M.has_sorted_indices, bool)
 
         M = csr_matrix((data, unsorted_inds, indptr)).copy()
         assert_equal(False, M.has_sorted_indices)
@@ -3874,7 +3874,7 @@ class TestCSR(sparse_test_class()):
 
         M = csr_matrix((data, indices, indptr)).copy()
         assert_equal(False, M.has_canonical_format)
-        assert type(M.has_canonical_format) == bool
+        assert isinstance(M.has_canonical_format, bool)
 
         # set by deduplicating
         M.sum_duplicates()
