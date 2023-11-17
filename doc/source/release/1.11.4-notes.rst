@@ -16,14 +16,16 @@ Authors
 * Ralf Gommers (3)
 * Julien Jerphanion (2)
 * Nikolay Mayorov (2)
+* Melissa Weber Mendonça (1)
 * Tirth Patel (1)
-* Tyler Reddy (9)
+* Tyler Reddy (14)
 * Dan Schult (3)
 * Nicolas Vetsch (1) +
 
-A total of 8 people contributed to this release.
+A total of 9 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
+
 
 
 Issues closed for 1.11.4
@@ -35,6 +37,8 @@ Issues closed for 1.11.4
 * `#19359 <https://github.com/scipy/scipy/issues/19359>`__: BUG: DiscreteAliasUrn construction fails with UNURANError for...
 * `#19387 <https://github.com/scipy/scipy/issues/19387>`__: BUG: problem importing libgfortran.5.dylib on macOS Sonoma
 * `#19403 <https://github.com/scipy/scipy/issues/19403>`__: BUG: scipy.sparse.lil_matrix division by complex number leads...
+* `#19500 <https://github.com/scipy/scipy/issues/19500>`__: DOC: doc build failing
+* `#19513 <https://github.com/scipy/scipy/issues/19513>`__: BUG: Python version constraints in releases causes issues for...
 
 
 Pull requests for 1.11.4
@@ -49,4 +53,5 @@ Pull requests for 1.11.4
 * `#19379 <https://github.com/scipy/scipy/pull/19379>`__: BUG: Restore the original behavior of 'trf' from least_squares...
 * `#19400 <https://github.com/scipy/scipy/pull/19400>`__: BLD: use classic linker on macOS 14 (Sonoma), the new linker...
 * `#19408 <https://github.com/scipy/scipy/pull/19408>`__: BUG: Fix typecasting problem in scipy.sparse.lil_matrix truediv
+* `#19504 <https://github.com/scipy/scipy/pull/19504>`__: DOC, MAINT: Bump CircleCI Python version to 3.11
 * `#19517 <https://github.com/scipy/scipy/pull/19517>`__: MAINT, REL: unpin Python 1.11.x branch
