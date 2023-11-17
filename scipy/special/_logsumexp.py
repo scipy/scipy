@@ -389,24 +389,62 @@ def log_softmax(x, axis=None):
     >>> y
     array([  0., -inf])
 
+    >>> subnormal32 = np.finfo(np.float32).smallest_subnormal
+    >>> x = np.array([0, np.log(subnormal32)], dtype=np.float32)
+    >>> y = log_softmax(x)
+    >>> y
+    array([-1.40130e-45, -1.03279e+02], dtype=float32)
+
+    >>> with np.errstate(divide='ignore'):
+    ...   y = np.log(softmax(x))
+    ...
+    >>> y
+    array([   0.     , -103.27893], dtype=float32)
+
+    >>> subnormal64 = np.finfo(np.float64).smallest_subnormal
+    >>> x = np.array([0, np.log(subnormal64)], dtype=np.float64)
+    >>> y = log_softmax(x)
+    >>> y
+    array([-4.9407e-324, -7.4444e+002])
+
+    >>> with np.errstate(divide='ignore'):
+    ...   y = np.log(softmax(x))
+    ...
+    >>> y
+    array([   0.     , -744.44007])
     """
 
     x = _asarray_validated(x, check_finite=False)
 
-    x_max = np.amax(x, axis=axis, keepdims=True)
+    x_argmax = np.argmax(x, axis=axis, keepdims=True)
+    # work around https://github.com/numpy/numpy/issues/25622
+    if axis is None:
+        x_argmax = x_argmax.flatten()
+    x_max = np.take_along_axis(x, x_argmax, axis=axis)
+
+    finite_max_mask = np.isfinite(x_max)
 
     if x_max.ndim > 0:
-        x_max[~np.isfinite(x_max)] = 0
-    elif not np.isfinite(x_max):
-        x_max = 0
+        x_max[~finite_max_mask] = 0
+    elif not finite_max_mask:
+        x_max = np.zeros_like(x_max)
 
     tmp = x - x_max
     exp_tmp = np.exp(tmp)
 
+    # we know that exp_tmp at the location of the max is either 1 or infinite,
+    # depending on finite_max_mask, so we can set it to zero and use log1p
+    if exp_tmp.ndim > 0:
+        exp_tmp_max = np.take_along_axis(exp_tmp, x_argmax, axis=axis)
+        exp_tmp_max[finite_max_mask] = 0
+        np.put_along_axis(exp_tmp, x_argmax, exp_tmp_max, axis=axis)
+    elif finite_max_mask:
+        exp_tmp = np.zeros_like(exp_tmp)
+
     # suppress warnings about log of zero
     with np.errstate(divide='ignore'):
         s = np.sum(exp_tmp, axis=axis, keepdims=True)
-        out = np.log(s)
+        out = np.log1p(s)
 
     out = tmp - out
     return out
