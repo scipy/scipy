@@ -3842,7 +3842,7 @@ class TestCSR(sparse_test_class()):
         indptr = np.array([0, 2])
         M = csr_matrix((data, sorted_inds, indptr)).copy()
         assert_equal(True, M.has_sorted_indices)
-        assert type(M.has_sorted_indices) == bool
+        assert isinstance(M.has_sorted_indices, bool)
 
         M = csr_matrix((data, unsorted_inds, indptr)).copy()
         assert_equal(False, M.has_sorted_indices)
@@ -3874,7 +3874,7 @@ class TestCSR(sparse_test_class()):
 
         M = csr_matrix((data, indices, indptr)).copy()
         assert_equal(False, M.has_canonical_format)
-        assert type(M.has_canonical_format) == bool
+        assert isinstance(M.has_canonical_format, bool)
 
         # set by deduplicating
         M.sum_duplicates()
@@ -4204,6 +4204,14 @@ class TestLIL(sparse_test_class(minmax=False)):
         x = x*0
         assert_equal(x[0, 0], 0)
 
+    def test_truediv_scalar(self):
+        A = self.spcreator((3, 2))
+        A[0, 1] = -10
+        A[2, 0] = 20
+
+        assert_array_equal((A / 1j).toarray(), A.toarray() / 1j)
+        assert_array_equal((A / 9).toarray(), A.toarray() / 9)
+
     def test_inplace_ops(self):
         A = lil_matrix([[0, 2, 3], [4, 0, 6]])
         B = lil_matrix([[0, 1, 0], [0, 2, 3]])
@@ -4464,6 +4472,19 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
         flat_inds = np.ravel_multi_index((m.row, m.col), m.shape)
         inds_are_sorted = np.all(np.diff(flat_inds) > 0)
         assert m.has_canonical_format == inds_are_sorted
+
+    def test_tocoo_tocsr_tocsc_gh19245(self):
+        # test index_dtype with tocoo, tocsr, tocsc
+        data = np.array([[1, 2, 3, 4]]).repeat(3, axis=0)
+        offsets = np.array([0, -1, 2], dtype=np.int32)
+        dia = sparse.dia_array((data, offsets), shape=(4, 4))
+
+        coo = dia.tocoo()
+        assert coo.col.dtype == np.int32
+        csr = dia.tocsr()
+        assert csr.indices.dtype == np.int32
+        csc = dia.tocsc()
+        assert csc.indices.dtype == np.int32
 
 
 TestDIA.init_class()
@@ -4918,6 +4939,7 @@ def cases_64bit():
         'test_large_dimensions_reshape': 'test actually requires 64-bit to work',
         'test_constructor_smallcol': 'test verifies int32 indexes',
         'test_constructor_largecol': 'test verifies int64 indexes',
+        'test_tocoo_tocsr_tocsc_gh19245': 'test verifies int32 indexes',
     }
 
     for cls in TEST_CLASSES:
