@@ -319,12 +319,12 @@ def vectorize1(func, args=(), vec_func=False):
 def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
                vec_func=True, miniter=1):
     """
-    Compute a definite integral using fixed-tolerance Gaussian quadrature.
-
     .. deprecated:: 1.12.0
 
           This function is deprecated as of SciPy 1.12.0 and will be removed
           in SciPy 1.14.0. Please use `scipy.integrate.quad` instead.
+
+    Compute a definite integral using fixed-tolerance Gaussian quadrature.
 
     Integrate `func` from `a` to `b` using Gaussian quadrature
     with absolute tolerance `tol`.
@@ -1018,12 +1018,12 @@ def _printresmat(function, interval, resmat):
 def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
             divmax=10, vec_func=False):
     """
-    Romberg integration of a callable function or method.
-
     .. deprecated:: 1.12.0
 
           This function is deprecated as of SciPy 1.12.0 and will be removed
           in SciPy 1.14.0. Please use `scipy.integrate.quad` instead.
+
+    Romberg integration of a callable function or method.
 
     Returns the integral of `function` (a function of one variable)
     over the interval (`a`, `b`).
