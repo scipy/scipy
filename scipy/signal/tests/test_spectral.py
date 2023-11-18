@@ -20,7 +20,7 @@ from scipy.signal.tests._scipy_spectral_test_shim import istft_compare as istft
 from scipy.signal.tests._scipy_spectral_test_shim import csd_compare as csd
 from scipy.conftest import array_api_compatible, skip_if_array_api_backend
 from scipy._lib.array_api_compat import array_api_compat
-from scipy._lib._array_api import xp_assert_close, xp_assert_equal, copy
+from scipy._lib._array_api import xp_assert_close, xp_assert_equal, copy, size
 
 
 class TestPeriodogram:
@@ -1792,7 +1792,8 @@ class TestSTFT:
         with chk_VE(fr"Parameter {scaling=} not in \['spectrum', 'psd'\]!"):
             istft(z, scaling=scaling)
 
-    def test_check_COLA(self):
+    @array_api_compatible
+    def test_check_COLA(self, xp):
         settings = [
                     ('boxcar', 10, 0),
                     ('boxcar', 10, 9),
@@ -1806,9 +1807,18 @@ class TestSTFT:
 
         for setting in settings:
             msg = '{}, {}, {}'.format(*setting)
-            assert_equal(True, check_COLA(*setting), err_msg=msg)
+            # NOTE: there is no array input here with string
+            # window type--I think we have to assume NumPy return
+            # type with no input array type to key off of?
+            xp_assert_equal(xp.asarray(True),
+                            check_COLA(*setting),
+                            err_msg=msg,
+                            check_dtype=False,
+                            check_namespace=False,
+                            check_shape=False)
 
-    def test_check_NOLA(self):
+    @array_api_compatible
+    def test_check_NOLA(self, xp):
         settings_pass = [
                     ('boxcar', 10, 0),
                     ('boxcar', 10, 9),
@@ -1827,17 +1837,36 @@ class TestSTFT:
                     ]
         for setting in settings_pass:
             msg = '{}, {}, {}'.format(*setting)
-            assert_equal(True, check_NOLA(*setting), err_msg=msg)
+            # NOTE: there is no array input here with string
+            # window type--I think we have to assume NumPy return
+            # type with no input array type to key off of?
+            xp_assert_equal(xp.asarray(True), check_NOLA(*setting),
+                            err_msg=msg,
+                            check_dtype=False,
+                            check_namespace=False,
+                            check_shape=False)
 
-        w_fail = np.ones(16)
+        w_fail = xp.ones(16)
         w_fail[::2] = 0
         settings_fail = [
-                    (w_fail, len(w_fail), len(w_fail) // 2),
+                    (w_fail, size(w_fail), size(w_fail) // 2),
                     ('hann', 64, 0),
         ]
         for setting in settings_fail:
             msg = '{}, {}, {}'.format(*setting)
-            assert_equal(False, check_NOLA(*setting), err_msg=msg)
+            if isinstance(setting[0], str):
+                check_namespace = False
+                check_dtype = False
+            else:
+                # we can do a stricter check when there is an
+                # actual array type pass-through to key off of
+                check_namespace = True
+                check_dtype = True
+            xp_assert_equal(xp.asarray(False), check_NOLA(*setting),
+                            err_msg=msg,
+                            check_dtype=check_dtype,
+                            check_namespace=check_namespace,
+                            check_shape=False)
 
     def test_average_all_segments(self):
         np.random.seed(1234)
