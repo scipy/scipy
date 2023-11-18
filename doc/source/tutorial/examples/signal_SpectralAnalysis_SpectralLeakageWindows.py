@@ -21,10 +21,10 @@ for c_, (w_name_, ax_) in enumerate(zip(ww, axx)):
     ax_.grid(axis='x')
 
 axx[0].set_title("Spectral Leakage of various Windows")
-fg0.supylabel(r"Normalized Magnitude $20\,\log_{10}|W(f)/\tau|$ in dB",
+fg0.supylabel(r"Normalized Magnitude $20\,\log_{10}|W(f)/c^\operatorname{amp}|$ in dB",
               x=0.04, y=0.5, fontsize='medium')
 axx[-1].set(xlabel=r"Normalized frequency $f/\Delta f$ in bins",
-            xlim=(0, 9), ylim=(-75, 1))
+            xlim=(0, 9), ylim=(-75, 3))
 
 fg0.tight_layout(h_pad=0.4)
 plt.show()

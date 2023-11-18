@@ -954,7 +954,7 @@ Consider a sine signal with amplitude :math:`a`, frequency :math:`f_x` and durat
 .. math::
     :label: eq_SpectA_sine
 
-    x(t) = a \sin(2 \pi f_x t)\, \rect(\frac{t}{\tau}+\frac{1}{2})
+    x(t) = a \sin(2 \pi f_x t)\, \rect(\frac{t}{\tau}-\frac{1}{2})
          = \left(\frac{a}{2\jj}
               \e^{\jj 2 \pi f_x t} - \frac{a}{2\jj} \e^{-\jj 2 \pi f_x t}
            \right) \rect(\frac{t}{\tau}-\frac{1}{2})\ .
