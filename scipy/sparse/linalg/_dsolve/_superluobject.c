@@ -339,10 +339,10 @@ int NCFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
 }
 
 int SparseFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz, int csr /* 1=csr 0=csc -1=supernode csc */,
-                           PyArrayObject * nzvals, PyArrayObject * indices,
-                           PyArrayObject * pointers, int typenum, Stype_t stype, Mtype_t mtype,
-                           int* identity_col_to_sup, /* must be int array {0,1,2,...,n-2,n-1,n-1} */
-                           int* identity_sup_to_col /* must be int array {0,1,...,n} */)
+                               PyArrayObject * nzvals, PyArrayObject * indices,
+                               PyArrayObject * pointers, int typenum, Stype_t stype, Mtype_t mtype,
+                               int* identity_col_to_sup, /* must be int array {0,1,2,...,n-2,n-1,n-1} */
+                               int* identity_sup_to_col /* must be int array {0,1,...,n} */)
 {
     volatile int ok = 0;
     volatile jmp_buf *jmpbuf_ptr;
@@ -375,28 +375,28 @@ int SparseFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz, int csr /
             PyErr_SetString(PyExc_TypeError, "Invalid type for array.");
             return -1;
         }
-        if(csr==1){
-          Create_CompRow_Matrix(PyArray_TYPE(nzvals),
-                              A, m, n, nnz, PyArray_DATA(nzvals),
-                              (int *) PyArray_DATA(indices), (int *) PyArray_DATA(pointers),
-                              stype,
-                              NPY_TYPECODE_TO_SLU(PyArray_TYPE(nzvals)),
-                              mtype);
-        } else if(csr==0) {
-          Create_CompCol_Matrix(PyArray_TYPE(nzvals),
-                                A, m, n, nnz, PyArray_DATA(nzvals),
-                                (int *) PyArray_DATA(indices), (int *) PyArray_DATA(pointers),
-                                stype,
-                                NPY_TYPECODE_TO_SLU(PyArray_TYPE(nzvals)),
-                                mtype);
-        } else if(csr==-1){
-          Create_SuperNode_Matrix(PyArray_TYPE(nzvals),
-                                 A, m, n, nnz, PyArray_DATA(nzvals),
-                                 (int *) PyArray_DATA(pointers), (int *) PyArray_DATA(indices),
-                                 (int *) PyArray_DATA(pointers), identity_col_to_sup, identity_sup_to_col,
-                                 stype,
-                                 NPY_TYPECODE_TO_SLU(PyArray_TYPE(nzvals)),
-                                 mtype);
+        if (csr == 1) {
+            Create_CompRow_Matrix(PyArray_TYPE(nzvals),
+                                  A, m, n, nnz, PyArray_DATA(nzvals),
+                                  (int *) PyArray_DATA(indices), (int *) PyArray_DATA(pointers),
+                                  stype,
+                                  NPY_TYPECODE_TO_SLU(PyArray_TYPE(nzvals)),
+                                  mtype);
+        } else if (csr == 0) {
+            Create_CompCol_Matrix(PyArray_TYPE(nzvals),
+                                  A, m, n, nnz, PyArray_DATA(nzvals),
+                                  (int *) PyArray_DATA(indices), (int *) PyArray_DATA(pointers),
+                                  stype,
+                                  NPY_TYPECODE_TO_SLU(PyArray_TYPE(nzvals)),
+                                  mtype);
+        } else if (csr == -1) {
+            Create_SuperNode_Matrix(PyArray_TYPE(nzvals),
+                                    A, m, n, nnz, PyArray_DATA(nzvals),
+                                    (int *) PyArray_DATA(pointers), (int *) PyArray_DATA(indices),
+                                    (int *) PyArray_DATA(pointers), identity_col_to_sup, identity_sup_to_col,
+                                    stype,
+                                    NPY_TYPECODE_TO_SLU(PyArray_TYPE(nzvals)),
+                                    mtype);
         }
     }
 

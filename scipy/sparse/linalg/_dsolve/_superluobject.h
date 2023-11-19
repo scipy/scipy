@@ -159,9 +159,9 @@ jmp_buf *superlu_python_jmpbuf(void);
 
 
 #define Create_SuperNode_Matrix_ARGS \
-  SuperMatrix *a, int b, int c, int d, \
-  void* e, int* f, int* g, int* h, int* i, int* j, \
-  Stype_t k, Dtype_t l, Mtype_t m
+    SuperMatrix *a, int b, int c, int d, \
+    void* e, int* f, int* g, int* h, int* i, int* j, \
+    Stype_t k, Dtype_t l, Mtype_t m
 #define Create_SuperNode_Matrix_ARGS_REF a,b,c,d,e,f,g,h,i,j,k,l,m
 
 TYPE_GENERIC_FUNC(gstrf, void);
