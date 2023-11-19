@@ -481,8 +481,8 @@ def _fragment_3_1(norm_info, n0, tol, m_max=55, ell=2):
     """
     if ell < 1:
         raise ValueError('expected ell to be a positive integer')
-    best_m = np.infty
-    best_s = np.infty
+    best_m = np.inf
+    best_s = np.inf
     if _condition_3_13(norm_info.onenorm, n0, m_max, ell):
         for m, theta in _theta.items():
             s = int(np.ceil(norm_info.onenorm / theta))
