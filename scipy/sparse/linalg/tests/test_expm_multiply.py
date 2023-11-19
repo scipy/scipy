@@ -13,7 +13,7 @@ from scipy.sparse.linalg import expm as sp_expm
 from scipy.sparse.linalg._expm_multiply import (_theta, _compute_p_max,
         _onenormest_matrix_power, expm_multiply, _expm_multiply_simple,
         _expm_multiply_interval)
-from scipy._lib._util import np_long`
+from scipy._lib._util import np_long
 
 
 IMPRECISE = {np.single, np.csingle}
