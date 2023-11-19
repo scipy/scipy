@@ -968,6 +968,12 @@ def _power_iv(rvs, test, n_observations, vectorized, n_resamples, batch):
     if not len(rvs) == len(n_observations):
         message = "If `rvs` is a sequence, `len(rvs)` must equal `len(n_observations)`."
         raise ValueError(message)
+    n_observations_array = np.asarray(n_observations).astype(int)
+    shape = n_observations_array.shape
+    if n_observations_array.ndim == 1:
+        n_observations_array = n_observations_array[np.newaxis, :]
+    else:
+        n_observations_array = n_observations_array.reshape((shape[0], -1)).T
 
     if not callable(test):
         raise TypeError("`test` must be callable.")
@@ -991,8 +997,8 @@ def _power_iv(rvs, test, n_observations, vectorized, n_resamples, batch):
         if batch != batch_iv or batch_iv <= 0:
             raise ValueError("`batch` must be a positive integer or None.")
 
-    return (rvs, test_vectorized, n_observations, vectorized, n_resamples_int,
-            batch_iv)
+    return (rvs, test_vectorized, n_observations_array, vectorized,
+            n_resamples_int, batch_iv, shape[1:])
 
 
 def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
@@ -1019,9 +1025,10 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
         in `rvs` must match the number of elements of `n_observations`, i.e.
         ``len(rvs) == len(n_observations)``. If `rvs` is a single callable,
         `n_observations` is treated as a single element.
-    n_observations : sequence of ints
-        A sequence of sizes of samples to be drawn under the alternative
-        hypothesis.
+    n_observations : sequence of ints or sequence of integer arrays
+        If a sequence of ints, each is the sizes of a sample to be passed to `test`.
+        If a sequence of integer arrays, the power is simulated for each
+        set of corresponding sample sizes. See Examples.
     significance : float
         The threshold for significance; i.e., the p-value below which the
         hypothesis test results will be considered as evidence against the null
@@ -1080,7 +1087,18 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
 
     With samples of size 10 and 12, respectively, the power of the t-test
     with a significance threshold of 0.05 is approximately 60% under the chosen
-    alternative.
+    alternative. We can investigate the effect of sample size on the power
+    by passing sample size arrays.
+
+    >>> import matplotlib.pyplot as plt
+    >>> n_observations = (np.arange(5, 21), np.arange(5, 21))
+    >>> res = stats.power(test, rvs, n_observations, significance=0.05)
+    >>> ax = plt.subplot()
+    >>> ax.plot(n_observations, res.power)
+    >>> ax.set_xlabel('Sample Size')
+    >>> ax.set_ylabel('Simulated Power')
+    >>> ax.set_title('Simulated Power of `ttest_ind` with Equal Sample Sizes')
+    >>> plt.show()
 
     Now, suppose we wish to test whether the SciPy's independent sample t-test
     is  implemented correctly. Specifically, we wish to determine whether the
@@ -1090,16 +1108,16 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
     our question, we can consider the null hypothesis to be a true *alternative*
     hypothesis and calculate the power.
 
+    >>> n_observations = (10, 12)
     >>> rvs = (rng.normal, rng.normal)
     >>> res = stats.power(test, rvs, n_observations, significance=0.05)
     >>> print(res.power)
-    0.0484048404840484
+    0.0481048104810481
 
     The simulated power nearly matches our significance threshold, as expected.
     Moreover, the p-values are uniformly distributed under the null hypothesis:
 
-    >>> import matplotlib.pyplot as plt
-    >>> fig, ax = plt.subplots(1, 1)
+    >>> ax = plt.subplot()
     >>> ecdf = stats.ecdf(res.pvalues)
     >>> ecdf.cdf.plot(ax)
     >>> ax.plot([0, 1], [0, 1], '--')
@@ -1110,22 +1128,26 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
     >>> plt.show()
 
     """
-    args = _power_iv(rvs, test, n_observations, vectorized, n_observations, batch)
-    rvs, test, n_observations, vectorized, n_resamples, batch = args
+    args = _power_iv(rvs, test, n_observations, vectorized, n_resamples, batch)
+    rvs, test, n_observations_array, vectorized, n_resamples, batch, shape = args
 
     batch_nominal = batch or n_resamples
     pvalues = []
-    for k in range(0, n_resamples, batch_nominal):
-        batch_actual = min(batch_nominal, n_resamples - k)
-        resamples = [rvs_i(size=(batch_actual, n_observations_i))
-                     for rvs_i, n_observations_i in zip(rvs, n_observations)]
-        res = test(*resamples, axis=-1)
-        pvalue = getattr(res, 'pvalue', res)
-        pvalues.append(pvalue)
-    pvalues = np.concatenate(pvalues)
-    power = np.mean(pvalues < significance, axis=-1)
+    for n_observations in n_observations_array:
+        ps = []
+        for k in range(0, n_resamples, batch_nominal):
+            batch_actual = min(batch_nominal, n_resamples - k)
+            resamples = [rvs_i(size=(batch_actual, n_observations_i))
+                         for rvs_i, n_observations_i in zip(rvs, n_observations)]
+            res = test(*resamples, axis=-1)
+            p = getattr(res, 'pvalue', res)
+            ps.append(p)
+        ps = np.concatenate(ps)
+        pvalues.append(ps)
+    pvalues = np.asarray(pvalues).reshape(shape + (-1,))
+    powers = np.mean(pvalues < significance, axis=-1)
 
-    return PowerResult(power=power, pvalues=pvalues)
+    return PowerResult(power=powers, pvalues=pvalues)
 
 
 @dataclass
