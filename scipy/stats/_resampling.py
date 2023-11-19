@@ -938,6 +938,197 @@ def monte_carlo_test(data, rvs, statistic, *, vectorized=None,
 
 
 @dataclass
+class PowerResult:
+    """Result object returned by `scipy.stats.power`.
+
+    Attributes
+    ----------
+    power : float or ndarray
+        The estimated power.
+    pvalues : float or ndarray
+        The simulated p-values.
+    """
+    power: float | np.ndarray
+    pvalues: float | np.ndarray
+
+
+def _power_iv(rvs, test, n_observations, vectorized, n_resamples, batch):
+    """Input validation for `monte_carlo_test`."""
+
+    if vectorized not in {True, False, None}:
+        raise ValueError("`vectorized` must be `True`, `False`, or `None`.")
+
+    if not isinstance(rvs, Sequence):
+        rvs = (rvs,)
+        n_observations = (n_observations,)
+    for rvs_i in rvs:
+        if not callable(rvs_i):
+            raise TypeError("`rvs` must be callable or sequence of callables.")
+
+    if not len(rvs) == len(n_observations):
+        message = "If `rvs` is a sequence, `len(rvs)` must equal `len(n_observations)`."
+        raise ValueError(message)
+
+    if not callable(test):
+        raise TypeError("`test` must be callable.")
+
+    if vectorized is None:
+        vectorized = 'axis' in inspect.signature(test).parameters
+
+    if not vectorized:
+        test_vectorized = _vectorize_statistic(test)
+    else:
+        test_vectorized = test
+
+    n_resamples_int = int(n_resamples)
+    if n_resamples != n_resamples_int or n_resamples_int <= 0:
+        raise ValueError("`n_resamples` must be a positive integer.")
+
+    if batch is None:
+        batch_iv = batch
+    else:
+        batch_iv = int(batch)
+        if batch != batch_iv or batch_iv <= 0:
+            raise ValueError("`batch` must be a positive integer or None.")
+
+    return (rvs, test_vectorized, n_observations, vectorized, n_resamples_int,
+            batch_iv)
+
+
+def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
+          n_resamples=9999, batch=None, alternative="two-sided", axis=0):
+    r"""Simulate the power of a hypothesis test under an alternative hypothesis.
+
+    Parameters
+    ----------
+    test : callable
+        Hypothesis test for which the power is to be simulated.
+        `test` must be a callable that accepts a sample (e.g. ``test(sample)``)
+        or ``len(rvs)`` separate samples (e.g. ``test(samples1, sample2)`` if
+        `rvs` contains two callables and `n_observations` contains two values)
+        and returns either the p-value of the test or a result object with
+        attribute ``pvalue`` (like SciPy hypothesis tests).
+        If `vectorized` is set to ``True``, `test` must also accept a keyword
+        argument `axis` and be vectorized to perform the test along the
+        provided `axis` of the samples.
+    rvs : callable or tuple of callables
+        A callable or sequence of callables that generate(s) random variates
+        under the alternative hypothesis. Each element of `rvs` must accept
+        keyword argument ``size`` (e.g. ``rvs(size=(m, n))``) and return an
+        N-d array of that shape. If `rvs` is a sequence, the number of callables
+        in `rvs` must match the number of elements of `n_observations`, i.e.
+        ``len(rvs) == len(n_observations)``. If `rvs` is a single callable,
+        `n_observations` is treated as a single element.
+    n_observations : sequence of ints
+        A sequence of sizes of samples to be drawn under the alternative
+        hypothesis.
+    significance : float
+        The threshold for significance; i.e., the p-value below which the
+        hypothesis test results will be considered as evidence against the null
+        hypothesis. Equivalently, the acceptable rate of Type II error under
+        the null hypothesis.
+    vectorized : bool, optional
+        If `vectorized` is set to ``False``, `test` will not be passed keyword
+        argument `axis` and is expected to perform the test only for 1D samples.
+        If ``True``, `test` will be passed keyword argument `axis` and is
+        expected to perform the test along `axis` when passed N-D sample arrays.
+        If ``None`` (default), `vectorized` will be set ``True`` if ``axis`` is
+        a parameter of `test`. Use of a vectorized test typically reduces
+        computation time.
+    n_resamples : int, default: 9999
+        Number of samples drawn from each of the callables of `rvs`.
+        Equivalently, the number tests performed under the alternative
+        hypothesis to approximate the power.
+    batch : int, optional
+        The number of samples to process in each call to `test`. Memory usage is
+        O( `batch` * ``sample.size[axis]`` ). Default is ``None``, in which case
+        `batch` equals `n_resamples`.
+
+    Returns
+    -------
+    res : PowerResult
+        An object with attributes:
+
+        power : float or ndarray
+            The estimated power against the alternative.
+        pvalues : ndarray
+            The p-values observed under the alternative hypothesis.
+
+    Examples
+    --------
+    Suppose we wish to simulate the power of the independent sample t-test
+    under the following conditions:
+
+    - The first sample has 10 observations drawn from a normal distribution
+      with mean 0.
+    - The second sample has 12 observations drawn from a normal distribution
+      with mean 1.0.
+    - The threshold on p-values for significance is 0.05.
+
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> rng = np.random.default_rng(2549598345528)
+    >>>
+    >>> test = stats.ttest_ind
+    >>> n_observations = (10, 12)
+    >>> rvs1 = rng.normal
+    >>> rvs2 = lambda size: rng.normal(loc=1, size=size)
+    >>> rvs = (rvs1, rvs2)
+    >>> res = stats.power(test, rvs, n_observations, significance=0.05)
+    >>> res.power
+    0.611061106110611
+
+    With samples of size 10 and 12, respectively, the power of the t-test
+    with a significance threshold of 0.05 is approximately 60% under the chosen
+    alternative.
+
+    Now, suppose we wish to test whether the SciPy's independent sample t-test
+    is  implemented correctly. Specifically, we wish to determine whether the
+    Type II error rate of the test matches the nominal level under the null
+    hypothesis. The null hypothesis of the test is that the samples were
+    independently drawn from normal distributions with the same mean. To answer
+    our question, we can consider the null hypothesis to be a true *alternative*
+    hypothesis and calculate the power.
+
+    >>> rvs = (rng.normal, rng.normal)
+    >>> res = stats.power(test, rvs, n_observations, significance=0.05)
+    >>> print(res.power)
+    0.0484048404840484
+
+    The simulated power nearly matches our significance threshold, as expected.
+    Moreover, the p-values are uniformly distributed under the null hypothesis:
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots(1, 1)
+    >>> ecdf = stats.ecdf(res.pvalues)
+    >>> ecdf.cdf.plot(ax)
+    >>> ax.plot([0, 1], [0, 1], '--')
+    >>> ax.set_xlabel('p-value')
+    >>> ax.set_ylabel('CDF')
+    >>> ax.set_title('Empirical CDF of p-values under H0')
+    >>> ax.legend(('`ttest_ind` p-values', 'uniform distribution'))
+    >>> plt.show()
+
+    """
+    args = _power_iv(rvs, test, n_observations, vectorized, n_observations, batch)
+    rvs, test, n_observations, vectorized, n_resamples, batch = args
+
+    batch_nominal = batch or n_resamples
+    pvalues = []
+    for k in range(0, n_resamples, batch_nominal):
+        batch_actual = min(batch_nominal, n_resamples - k)
+        resamples = [rvs_i(size=(batch_actual, n_observations_i))
+                     for rvs_i, n_observations_i in zip(rvs, n_observations)]
+        res = test(*resamples, axis=-1)
+        pvalue = getattr(res, 'pvalue', res)
+        pvalues.append(pvalue)
+    pvalues = np.concatenate(pvalues)
+    power = np.mean(pvalues < significance, axis=-1)
+
+    return PowerResult(power=power, pvalues=pvalues)
+
+
+@dataclass
 class PermutationTestResult:
     """Result object returned by `scipy.stats.permutation_test`.
 
