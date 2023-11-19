@@ -77,6 +77,7 @@ Fortran code. In some cases, it might be worth using this old API.
    odeint        -- General integration of ordinary differential equations.
    ode           -- Integrate ODE using VODE and ZVODE routines.
    complex_ode   -- Convert a complex-valued ODE to real-valued and integrate.
+   ODEintWarning -- Warning raised during the execution of `odeint`.
 
 
 Solving boundary value problems for ODE systems
@@ -86,7 +87,7 @@ Solving boundary value problems for ODE systems
    :toctree: generated/
 
    solve_bvp     -- Solve a boundary value problem for a system of ODEs.
-"""  # noqa: E501
+"""
 
 
 from ._quadrature import *

@@ -147,8 +147,7 @@ static double B[] = {
     7.78576235018280120474E-1
 };
 
-double i1(x)
-double x;
+double i1(double x)
 {
     double y, z;
 
@@ -167,8 +166,7 @@ double x;
 
 /*                                                     i1e()   */
 
-double i1e(x)
-double x;
+double i1e(double x)
 {
     double y, z;
 

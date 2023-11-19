@@ -1,11 +1,13 @@
 import numpy as np
 from .utils import make_system
+from scipy._lib.deprecation import _deprecate_positional_args
 
 
 __all__ = ['tfqmr']
 
 
-def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
+@_deprecate_positional_args(version="1.14.0")
+def tfqmr(A, b, x0=None, *, tol=1e-5, maxiter=None, M=None,
           callback=None, atol=None, show=False):
     """
     Use Transpose-Free Quasi-Minimal Residual iteration to solve ``Ax = b``.
@@ -158,7 +160,7 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
         if callback is not None:
             callback(x)
 
-        # Convergence criteron
+        # Convergence criterion
         if tau * np.sqrt(iter+1) < atol:
             if (show):
                 print("TFQMR: Linear solve converged due to reach TOL "

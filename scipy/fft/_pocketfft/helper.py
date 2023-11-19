@@ -6,7 +6,9 @@ import contextlib
 
 import numpy as np
 # good_size is exposed (and used) from this import
-from .pypocketfft import good_size  # noqa: F401
+from .pypocketfft import good_size
+
+__all__ = ['good_size', 'set_workers', 'get_workers']
 
 _config = threading.local()
 _cpu_count = os.cpu_count()
@@ -74,7 +76,7 @@ def _init_nd_shape_and_axes(x, shape, axes):
         raise ValueError(
             f"invalid number of data points ({shape}) specified")
 
-    return shape, axes
+    return tuple(shape), list(axes)
 
 
 def _asfarray(x):

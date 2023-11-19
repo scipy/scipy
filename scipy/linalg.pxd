@@ -1,1 +1,1 @@
-from .linalg cimport cython_blas, cython_lapack
+from scipy.linalg cimport cython_blas, cython_lapack

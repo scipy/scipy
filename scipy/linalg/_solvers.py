@@ -733,7 +733,7 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
     sym_threshold = np.max([np.spacing(1000.), 0.1*n_u_sym])
 
     if norm(u_sym, 1) > sym_threshold:
-        raise LinAlgError('The associated symplectic pencil has eigenvalues'
+        raise LinAlgError('The associated symplectic pencil has eigenvalues '
                           'too close to the unit circle')
 
     return (x + x.conj().T)/2

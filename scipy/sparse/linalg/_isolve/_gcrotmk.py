@@ -6,6 +6,7 @@ import numpy as np
 from numpy.linalg import LinAlgError
 from scipy.linalg import (get_blas_funcs, qr, solve, svd, qr_insert, lstsq)
 from scipy.sparse.linalg._isolve.utils import make_system
+from scipy._lib.deprecation import _deprecate_positional_args
 
 
 __all__ = ['gcrotmk']
@@ -181,7 +182,8 @@ def _fgmres(matvec, v0, m, atol, lpsolve=None, rpsolve=None, cs=(), outer_v=(),
     return Q, R, B, vs, zs, y, res
 
 
-def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
+@_deprecate_positional_args(version="1.14.0")
+def gcrotmk(A, b, x0=None, *, tol=1e-5, maxiter=1000, M=None, callback=None,
             m=20, k=None, CU=None, discard_C=False, truncate='oldest',
             atol=None):
     """
@@ -259,7 +261,7 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
     >>> R = np.random.randn(5, 5)
     >>> A = csc_matrix(R)
     >>> b = np.random.randn(5)
-    >>> x, exit_code = gcrotmk(A, b)
+    >>> x, exit_code = gcrotmk(A, b, atol=1e-5)
     >>> print(exit_code)
     0
     >>> np.allclose(A.dot(x), b)

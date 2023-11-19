@@ -8,12 +8,9 @@ from ._cephes cimport expm1, poch
 cdef extern from 'specfun_wrappers.h':
     double hypU_wrap(double, double, double) nogil
 
-DEF EPS = 2.220446049250313e-16
-DEF ACCEPTABLE_RTOL = 1e-7
-
 
 @cython.cdivision(True)
-cdef inline double hyperu(double a, double b, double x) nogil:
+cdef inline double hyperu(double a, double b, double x) noexcept nogil:
     if isnan(a) or isnan(b) or isnan(x):
         return NAN
 

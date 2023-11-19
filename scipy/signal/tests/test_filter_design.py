@@ -16,6 +16,7 @@ from scipy.signal import (argrelextrema, BadCoefficients, bessel, besselap, bili
                           firwin, freqs_zpk, freqs, freqz, freqz_zpk,
                           gammatone, group_delay, iircomb, iirdesign, iirfilter,
                           iirnotch, iirpeak, lp2bp, lp2bs, lp2hp, lp2lp, normalize,
+                          medfilt, order_filter,
                           sos2tf, sos2zpk, sosfreqz, tf2sos, tf2zpk, zpk2sos,
                           zpk2tf, bilinear_zpk, lp2lp_zpk, lp2hp_zpk, lp2bp_zpk,
                           lp2bs_zpk)
@@ -892,6 +893,23 @@ class TestFreqz:
         assert_array_almost_equal(w1, w2)
         assert_array_almost_equal(h1, h2)
 
+    # https://github.com/scipy/scipy/issues/17289
+    # https://github.com/scipy/scipy/issues/15273
+    @pytest.mark.parametrize('whole,nyquist,worN',
+                             [(False, False, 32),
+                              (False, True, 32),
+                              (True, False, 32),
+                              (True, True, 32),
+                              (False, False, 257),
+                              (False, True, 257),
+                              (True, False, 257),
+                              (True, True, 257)])
+    def test_17289(self, whole, nyquist, worN):
+        d = [0, 1]
+        w, Drfft = freqz(d, worN=32, whole=whole, include_nyquist=nyquist)
+        _, Dpoly = freqz(d, worN=w)
+        assert_allclose(Drfft, Dpoly)
+
 
 class TestSOSFreqz:
 
@@ -1040,7 +1058,7 @@ class TestSOSFreqz:
         # N = None, whole=True
         w1, h1 = sosfreqz(sos, whole=True, fs=fs)
         w2, h2 = sosfreqz(sos, whole=True)
-        assert_allclose(h1, h2)
+        assert_allclose(h1, h2, atol=1e-27)
         assert_allclose(w1, np.linspace(0, fs, 512, endpoint=False))
 
         # N = 5, whole=False
@@ -1546,6 +1564,13 @@ class TestButtord:
         with pytest.warns(RuntimeWarning, match=r'Order is zero'):
             buttord(0.0, 1.0, 3, 60)
 
+    def test_ellip_butter(self):
+        # The purpose of the test is to compare to some known output from past
+        # scipy versions. The values to compare to are generated with scipy
+        # 1.9.1 (there is nothing special about this particular version though)
+        n, wn = buttord([0.1, 0.6], [0.2, 0.5], 3, 60)
+        assert n == 14
+
 
 class TestCheb1ord:
 
@@ -1656,6 +1681,16 @@ class TestCheb1ord:
         with pytest.raises(ValueError) as exc_info:
             cheb1ord(0.2, 0.3, 1, -2)
         assert "gstop should be larger than 0.0" in str(exc_info.value)
+
+    def test_ellip_cheb1(self):
+        # The purpose of the test is to compare to some known output from past
+        # scipy versions. The values to compare to are generated with scipy
+        # 1.9.1 (there is nothing special about this particular version though)
+        n, wn = cheb1ord([0.1, 0.6], [0.2, 0.5], 3, 60)
+        assert n == 7
+
+        n2, w2 = cheb2ord([0.1, 0.6], [0.2, 0.5], 3, 60)
+        assert not (wn == w2).all()
 
 
 class TestCheb2ord:
@@ -1770,6 +1805,16 @@ class TestCheb2ord:
         with pytest.raises(ValueError) as exc_info:
             cheb2ord([0.1, 0.6], [0.2, 0.5], 1, -2)
         assert "gstop should be larger than 0.0" in str(exc_info.value)
+
+    def test_ellip_cheb2(self):
+        # The purpose of the test is to compare to some known output from past
+        # scipy versions. The values to compare to are generated with scipy
+        # 1.9.1 (there is nothing special about this particular version though)
+        n, wn = cheb2ord([0.1, 0.6], [0.2, 0.5], 3, 60)
+        assert n == 7
+
+        n1, w1 = cheb1ord([0.1, 0.6], [0.2, 0.5], 3, 60)
+        assert not (wn == w1).all()
 
 
 class TestEllipord:
@@ -1898,6 +1943,13 @@ class TestEllipord:
         with pytest.raises(ValueError) as exc_info:
             ellipord(0.2, 0.5, 1, -2)
         assert "gstop should be larger than 0.0" in str(exc_info.value)
+
+    def test_ellip_butter(self):
+        # The purpose of the test is to compare to some known output from past
+        # scipy versions. The values to compare to are generated with scipy
+        # 1.9.1 (there is nothing special about this particular version though)
+        n, wn = ellipord([0.1, 0.6], [0.2, 0.5], 3, 60)
+        assert n == 5
 
 
 class TestBessel:
@@ -3511,7 +3563,7 @@ def test_sos_consistency():
 class TestIIRNotch:
 
     def test_ba_output(self):
-        # Compare coeficients with Matlab ones
+        # Compare coefficients with Matlab ones
         # for the equivalent input:
         b, a = iirnotch(0.06, 30)
         b2 = [
@@ -3527,7 +3579,7 @@ class TestIIRNotch:
         assert_allclose(a, a2, rtol=1e-8)
 
     def test_frequency_response(self):
-        # Get filter coeficients
+        # Get filter coefficients
         b, a = iirnotch(0.3, 30)
 
         # Get frequency response
@@ -3569,7 +3621,7 @@ class TestIIRNotch:
         assert_raises(TypeError, iirnotch, w0=-1, Q=[1, 2, 3])
 
     def test_fs_param(self):
-        # Get filter coeficients
+        # Get filter coefficients
         b, a = iirnotch(1500, 30, fs=10000)
 
         # Get frequency response
@@ -3604,7 +3656,7 @@ class TestIIRNotch:
 class TestIIRPeak:
 
     def test_ba_output(self):
-        # Compare coeficients with Matlab ones
+        # Compare coefficients with Matlab ones
         # for the equivalent input:
         b, a = iirpeak(0.06, 30)
         b2 = [
@@ -3619,7 +3671,7 @@ class TestIIRPeak:
         assert_allclose(a, a2, rtol=1e-8)
 
     def test_frequency_response(self):
-        # Get filter coeficients
+        # Get filter coefficients
         b, a = iirpeak(0.3, 30)
 
         # Get frequency response
@@ -3661,7 +3713,7 @@ class TestIIRPeak:
         assert_raises(TypeError, iirpeak, w0=-1, Q=[1, 2, 3])
 
     def test_fs_param(self):
-        # Get filter coeficients
+        # Get filter coefficients
         b, a = iirpeak(1200, 30, fs=8000)
 
         # Get frequency response
@@ -4072,7 +4124,7 @@ class TestGroupDelay:
 
 
 class TestGammatone:
-    # Test erroneus input cases.
+    # Test erroneous input cases.
     def test_invalid_input(self):
         # Cutoff frequency is <= 0 or >= fs / 2.
         fs = 16000
@@ -4110,8 +4162,8 @@ class TestGammatone:
             freq_hz = freqs[np.argmax(np.abs(response))] / ((2 * np.pi) / fs)
 
             # Check that the peak magnitude is 1 and the frequency is 1000 Hz.
-            response_max == pytest.approx(1, rel=1e-2)
-            freq_hz == pytest.approx(1000, rel=1e-2)
+            assert_allclose(response_max, 1, rtol=1e-2)
+            assert_allclose(freq_hz, 1000, rtol=1e-2)
 
     # All built-in IIR filters are real, so should have perfectly
     # symmetrical poles and zeros. Then ba representation (using
@@ -4154,3 +4206,86 @@ class TestGammatone:
               0.793651554625368]
         assert_allclose(b, b2)
         assert_allclose(a, a2)
+
+
+class TestOrderFilter:
+    def test_doc_example(self):
+        x = np.arange(25).reshape(5, 5)
+        domain = np.identity(3)
+
+        # minimum of elements 1,3,9 (zero-padded) on phone pad
+        # 7,5,3 on numpad
+        expected = np.array(
+            [[0., 0., 0., 0., 0.],
+             [0., 0., 1., 2., 0.],
+             [0., 5., 6., 7., 0.],
+             [0., 10., 11., 12., 0.],
+             [0., 0., 0., 0., 0.]],
+        )
+        assert_allclose(order_filter(x, domain, 0), expected)
+
+        # maximum of elements 1,3,9 (zero-padded) on phone pad
+        # 7,5,3 on numpad
+        expected = np.array(
+            [[6., 7., 8., 9., 4.],
+             [11., 12., 13., 14., 9.],
+             [16., 17., 18., 19., 14.],
+             [21., 22., 23., 24., 19.],
+             [20., 21., 22., 23., 24.]],
+        )
+        assert_allclose(order_filter(x, domain, 2), expected)
+
+        # and, just to complete the set, median of zero-padded elements
+        expected = np.array(
+            [[0, 1, 2, 3, 0],
+             [5, 6, 7, 8, 3],
+             [10, 11, 12, 13, 8],
+             [15, 16, 17, 18, 13],
+             [0, 15, 16, 17, 18]],
+        )
+        assert_allclose(order_filter(x, domain, 1), expected)
+
+    def test_medfilt_order_filter(self):
+        x = np.arange(25).reshape(5, 5)
+
+        # median of zero-padded elements 1,5,9 on phone pad
+        # 7,5,3 on numpad
+        expected = np.array(
+            [[0, 1, 2, 3, 0],
+             [1, 6, 7, 8, 4],
+             [6, 11, 12, 13, 9],
+             [11, 16, 17, 18, 14],
+             [0, 16, 17, 18, 0]],
+        )
+        assert_allclose(medfilt(x, 3), expected)
+
+        assert_allclose(
+            order_filter(x, np.ones((3, 3)), 4),
+            expected
+        )
+
+    def test_order_filter_asymmetric(self):
+        x = np.arange(25).reshape(5, 5)
+        domain = np.array(
+            [[1, 1, 0],
+             [0, 1, 0],
+             [0, 0, 0]],
+        )
+
+        expected = np.array(
+            [[0, 0, 0, 0, 0],
+             [0, 0, 1, 2, 3],
+             [0, 5, 6, 7, 8],
+             [0, 10, 11, 12, 13],
+             [0, 15, 16, 17, 18]]
+        )
+        assert_allclose(order_filter(x, domain, 0), expected)
+
+        expected = np.array(
+            [[0, 0, 0, 0, 0],
+             [0, 1, 2, 3, 4],
+             [5, 6, 7, 8, 9],
+             [10, 11, 12, 13, 14],
+             [15, 16, 17, 18, 19]]
+        )
+        assert_allclose(order_filter(x, domain, 1), expected)

@@ -553,6 +553,10 @@ class Output:
         Standard deviations of the estimated parameters, of shape (p,).
     cov_beta : ndarray
         Covariance matrix of the estimated parameters, of shape (p,p).
+        Note that this `cov_beta` is not scaled by the residual variance 
+        `res_var`, whereas `sd_beta` is. This means 
+        ``np.sqrt(np.diag(output.cov_beta * output.res_var))`` is the same 
+        result as `output.sd_beta`.
     delta : ndarray, optional
         Array of estimated errors in input variables, of same shape as `x`.
     eps : ndarray, optional
@@ -742,7 +746,7 @@ class ODR:
                 self.beta0 = _conv(self.model.estimate(self.data))
             else:
                 raise ValueError(
-                  "must specify beta0 or provide an estimater with the model"
+                  "must specify beta0 or provide an estimator with the model"
                 )
         else:
             self.beta0 = _conv(beta0)
@@ -895,10 +899,16 @@ class ODR:
         elif len(self.data.we.shape) == 3:
             ld2we, ldwe = self.data.we.shape[1:]
         else:
-            # Okay, this isn't precisely right, but for this calculation,
-            # it's fine
+            we = self.data.we
             ldwe = 1
-            ld2we = self.data.we.shape[1]
+            ld2we = 1
+            if we.ndim == 1 and q == 1:
+                ldwe = n
+            elif we.ndim == 2:
+                if we.shape == (q, q):
+                    ld2we = q
+                elif we.shape == (q, n):
+                    ldwe = n
 
         if self.job % 10 < 2:
             # ODR not OLS
@@ -1078,7 +1088,7 @@ class ODR:
         -------
         output : Output instance
             This object is also assigned to the attribute .output .
-        """
+        """  # noqa: E501
 
         args = (self.model.fcn, self.beta0, self.data.y, self.data.x)
         kwds = {'full_output': 1}

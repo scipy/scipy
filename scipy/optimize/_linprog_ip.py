@@ -29,12 +29,12 @@ has_umfpack = True
 has_cholmod = True
 try:
     import sksparse  # noqa: F401
-    from sksparse.cholmod import cholesky as cholmod
+    from sksparse.cholmod import cholesky as cholmod  # noqa: F401
     from sksparse.cholmod import analyze as cholmod_analyze
 except ImportError:
     has_cholmod = False
 try:
-    import scikits.umfpack  # test whether to use factorized
+    import scikits.umfpack  # test whether to use factorized  # noqa: F401
 except ImportError:
     has_umfpack = False
 
@@ -724,9 +724,6 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
 
     if sparse:
         A = sps.csc_matrix(A)
-        A.T = A.transpose()  # A.T is defined for sparse matrices but is slow
-        # Redefine it to avoid calculating again
-        # This is fine as long as A doesn't change
 
     while go:
 

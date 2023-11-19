@@ -24,7 +24,7 @@ sys.path.insert(1, os.path.join(os.path.dirname(__file__), 'tools'))
 try:
     version_utils = __import__("version_utils")
     FULLVERSION = version_utils.VERSION
-    # This is duplicated from setup.py
+    # This is duplicated from tools/version_utils.py
     if os.path.exists('.git'):
         GIT_REVISION, _ = version_utils.git_version(
             os.path.join(os.path.dirname(__file__), '..'))
@@ -90,7 +90,7 @@ def compute_sha256(idirs):
 
 def write_release_task(filename='NOTES.txt'):
     idirs = Path('release')
-    source = Path(get_latest_release_doc('doc/release'))
+    source = Path(get_latest_release_doc('doc/source/release'))
     target = Path(filename)
     if target.exists():
         target.remove()

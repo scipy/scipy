@@ -344,7 +344,7 @@ def bohman(M, sym=True):
     >>> plt.xlabel("Sample")
 
     >>> plt.figure()
-    >>> A = fft(window, 2048) / (len(window)/2.0)
+    >>> A = fft(window, 2047) / (len(window)/2.0)
     >>> freq = np.linspace(-0.5, 0.5, len(A))
     >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
     >>> plt.plot(freq, response)
@@ -1620,7 +1620,7 @@ def cosine(M, sym=True):
     >>> plt.xlabel("Sample")
 
     >>> plt.figure()
-    >>> A = fft(window, 2048) / (len(window)/2.0)
+    >>> A = fft(window, 2047) / (len(window)/2.0)
     >>> freq = np.linspace(-0.5, 0.5, len(A))
     >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
     >>> plt.plot(freq, response)
@@ -1737,7 +1737,7 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True):
     constant sidelobe level for a parameterized number of near-in sidelobes,
     but then allows a taper beyond [2]_.
 
-    The SAR (synthetic aperature radar) community commonly uses Taylor
+    The SAR (synthetic aperture radar) community commonly uses Taylor
     weighting for image formation processing because it provides strong,
     selectable sidelobe suppression with minimum broadening of the
     mainlobe [1]_.
@@ -2007,7 +2007,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
     ...                 'Corrected (subsample)'])
     >>> fig.tight_layout()
 
-    """  # noqa: E501
+    """
     if _len_guards(M):
         return np.ones(M)
     if norm is None:

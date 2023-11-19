@@ -19,16 +19,17 @@ __all__ = ['eig', 'eigvals', 'eigh', 'eigvalsh',
 import warnings
 
 import numpy
-from numpy import (array, isfinite, inexact, nonzero, iscomplexobj, cast,
+from numpy import (array, isfinite, inexact, nonzero, iscomplexobj,
                    flatnonzero, conj, asarray, argsort, empty,
                    iscomplex, zeros, einsum, eye, inf)
 # Local imports
 from scipy._lib._util import _asarray_validated
 from ._misc import LinAlgError, _datacopied, norm
 from .lapack import get_lapack_funcs, _compute_lwork
+from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 
 
-_I = cast['F'](1j)
+_I = numpy.array(1j, dtype='F')
 
 
 def _make_complex_eigvecs(w, vin, dtype):
@@ -161,7 +162,7 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
         ``homogeneous_eigvals=True``.
     vl : (M, M) double or complex ndarray
         The normalized left eigenvector corresponding to the eigenvalue
-        ``w[i]`` is the column vl[:,i]. Only returned if ``left=True``.
+        ``w[i]`` is the column ``vl[:,i]``. Only returned if ``left=True``.
     vr : (M, M) double or complex ndarray
         The normalized right eigenvector corresponding to the eigenvalue
         ``w[i]`` is the column ``vr[:,i]``.  Only returned if ``right=True``.
@@ -266,8 +267,9 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     return w, vr
 
 
-def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
-         overwrite_b=False, turbo=False, eigvals=None, type=1,
+@_deprecate_positional_args(version="1.14.0")
+def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
+         overwrite_b=False, turbo=_NoValue, eigvals=_NoValue, type=1,
          check_finite=True, subset_by_index=None, subset_by_value=None,
          driver=None):
     """
@@ -341,20 +343,21 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
             .. deprecated:: 1.5.0
                 `eigh` keyword argument `turbo` is deprecated in favour of
                 ``driver=gvd`` keyword instead and will be removed in SciPy
-                1.12.0.
+                1.14.0.
     eigvals : tuple (lo, hi), optional, deprecated
             .. deprecated:: 1.5.0
                 `eigh` keyword argument `eigvals` is deprecated in favour of
                 `subset_by_index` keyword instead and will be removed in SciPy
-                1.12.0.
+                1.14.0.
 
     Returns
     -------
     w : (N,) ndarray
-        The N (1<=N<=M) selected eigenvalues, in ascending order, each
+        The N (N<=M) selected eigenvalues, in ascending order, each
         repeated according to its multiplicity.
     v : (M, N) ndarray
-        (if ``eigvals_only == False``)
+        The normalized eigenvector corresponding to the eigenvalue ``w[i]`` is
+        the column ``v[:,i]``. Only returned if ``eigvals_only=False``.
 
     Raises
     ------
@@ -436,15 +439,15 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     (5, 1)
 
     """
-    if turbo:
+    if turbo is not _NoValue:
         warnings.warn("Keyword argument 'turbo' is deprecated in favour of '"
                       "driver=gvd' keyword instead and will be removed in "
-                      "SciPy 1.12.0.",
+                      "SciPy 1.14.0.",
                       DeprecationWarning, stacklevel=2)
-    if eigvals:
+    if eigvals is not _NoValue:
         warnings.warn("Keyword argument 'eigvals' is deprecated in favour of "
                       "'subset_by_index' keyword instead and will be removed "
-                      "in SciPy 1.12.0.",
+                      "in SciPy 1.14.0.",
                       DeprecationWarning, stacklevel=2)
 
     # set lower
@@ -482,7 +485,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
         drv_args.update({'overwrite_b': overwrite_b, 'itype': type})
 
     # backwards-compatibility handling
-    subset_by_index = subset_by_index if (eigvals is None) else eigvals
+    subset_by_index = subset_by_index if (eigvals in (None, _NoValue)) else eigvals
 
     subset = (subset_by_index is not None) or (subset_by_value is not None)
 
@@ -491,7 +494,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
         raise ValueError('Either index or value subset can be requested.')
 
     # Take turbo into account if all conditions are met otherwise ignore
-    if turbo and b is not None:
+    if turbo not in (None, _NoValue) and b is not None:
         driver = 'gvx' if subset else 'gvd'
 
     # Check indices if given
@@ -729,7 +732,7 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
         multiplicity.
     v : (M, M) float or complex ndarray
         The normalized eigenvector corresponding to the eigenvalue w[i] is
-        the column v[:,i].
+        the column v[:,i]. Only returned if ``eigvals_only=False``.
 
     Raises
     ------
@@ -897,8 +900,9 @@ def eigvals(a, b=None, overwrite_a=False, check_finite=True,
                homogeneous_eigvals=homogeneous_eigvals)
 
 
-def eigvalsh(a, b=None, lower=True, overwrite_a=False,
-             overwrite_b=False, turbo=False, eigvals=None, type=1,
+@_deprecate_positional_args(version="1.14.0")
+def eigvalsh(a, b=None, *, lower=True, overwrite_a=False,
+             overwrite_b=False, turbo=_NoValue, eigvals=_NoValue, type=1,
              check_finite=True, subset_by_index=None, subset_by_value=None,
              driver=None):
     """
@@ -966,17 +970,17 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
     turbo : bool, optional, deprecated
         .. deprecated:: 1.5.0
             'eigvalsh' keyword argument `turbo` is deprecated in favor of
-            ``driver=gvd`` option and will be removed in SciPy 1.12.0.
+            ``driver=gvd`` option and will be removed in SciPy 1.14.0.
 
     eigvals : tuple (lo, hi), optional
         .. deprecated:: 1.5.0
             'eigvalsh' keyword argument `eigvals` is deprecated in favor of
-            `subset_by_index` option and will be removed in SciPy 1.12.0.
+            `subset_by_index` option and will be removed in SciPy 1.14.0.
 
     Returns
     -------
     w : (N,) ndarray
-        The ``N`` (``1<=N<=M``) selected eigenvalues, in ascending order, each
+        The N (N<=M) selected eigenvalues, in ascending order, each
         repeated according to its multiplicity.
 
     Raises
@@ -1219,6 +1223,9 @@ def eigh_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
         The diagonal elements of the array.
     e : ndarray, shape (ndim-1,)
         The off-diagonal elements of the array.
+    eigvals_only : bool, optional
+        Compute only the eigenvalues and no eigenvectors.
+        (Default: calculate also eigenvectors)
     select : {'a', 'v', 'i'}, optional
         Which eigenvalues to calculate
 
@@ -1258,7 +1265,7 @@ def eigh_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
         multiplicity.
     v : (M, M) ndarray
         The normalized eigenvector corresponding to the eigenvalue ``w[i]`` is
-        the column ``v[:,i]``.
+        the column ``v[:,i]``. Only returned if ``eigvals_only=False``.
 
     Raises
     ------
@@ -1596,7 +1603,7 @@ def cdf2rdf(w, v):
     u[stack_ind + (k, j)] = -0.5j
     u[stack_ind + (k, k)] = 0.5
 
-    # multipy matrices v and u (equivalent to v @ u)
+    # multiply matrices v and u (equivalent to v @ u)
     vr = einsum('...ij,...jk->...ik', v, u).real
 
     return wr, vr

@@ -5,7 +5,7 @@ _defaults: &defaults
   docker:
     # CircleCI maintains a library of pre-built images
     # documented at https://circleci.com/docs/2.0/circleci-images/
-    - image: cimg/python:3.9
+    - image: cimg/python:3.11
   working_directory: ~/repo
 
 commands:
@@ -74,12 +74,10 @@ jobs:
       - run:
           name: setup Python venv
           command: |
-            pip install --install-option="--no-cython-compile" cython
-            pip install numpy==1.23.5
+            pip install numpy cython!=3.0.3 pybind11 pythran ninja meson
             pip install -r doc_requirements.txt
-            # `asv` pin because of slowdowns reported in gh-15568
-            pip install mpmath gmpy2 "asv==0.4.2" pythran ninja meson click rich-click doit pydevtool pooch
-            pip install pybind11
+            pip install "myst-nb<1.0.0"
+            pip install mpmath gmpy2 "asv>=0.6.0" click rich-click doit pydevtool pooch threadpoolctl
             # extra benchmark deps
             pip install pyfftw cffi pytest
 
@@ -118,7 +116,7 @@ jobs:
           name: build docs
           no_output_timeout: 25m
           command: |
-            export PYTHONPATH=$PWD/build-install/lib/python3.9/site-packages
+            export PYTHONPATH=$PWD/build-install/lib/python3.11/site-packages
             python dev.py --no-build doc -j2
 
       - store_artifacts:
@@ -145,18 +143,36 @@ jobs:
           name: run asv
           no_output_timeout: 30m
           command: |
-            export PYTHONPATH=$PWD/build-install/lib/python3.9/site-packages
+            export PYTHONPATH=$PWD/build-install/lib/python3.11/site-packages
             cd benchmarks
             asv machine --machine CircleCI
             export SCIPY_GLOBAL_BENCH_NUMTRIALS=1
             export SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0
             export OPENBLAS_NUM_THREADS=1
-            time asv --config asv.conf.json dev -m CircleCI --python=same --bench '^((?!BenchGlobal|QuadraticAssignment).)*$'
+            time asv --config asv.conf.json run -m CircleCI --quick --python=same --bench '^((?!BenchGlobal|QuadraticAssignment).)*$'
             asv --config asv.conf.json publish
 
       - store_artifacts:
           path: benchmarks/html
           destination: html-benchmarks
+
+# Reference guide checking
+  refguide_check:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: ~/
+
+      - check-skip
+      - apt-install
+
+      - run:
+          name: refguide_check
+          no_output_timeout: 25m
+          command: |
+            sudo apt-get install -y wamerican-small
+            export PYTHONPATH=$PWD/build-install/lib/python3.11/site-packages
+            python dev.py --no-build refguide-check
 
 # Upload build output to scipy/devdocs repository, using SSH deploy keys.
 # The keys are only available for builds on main branch.
@@ -203,6 +219,9 @@ workflows:
           requires:
             - build_scipy
       - run_benchmarks:
+          requires:
+            - build_scipy
+      - refguide_check:
           requires:
             - build_scipy
       - deploy:

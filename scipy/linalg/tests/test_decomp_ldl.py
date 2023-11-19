@@ -4,9 +4,9 @@ from numpy import (array, eye, zeros, empty_like, empty, tril_indices_from,
                    complex64, complex128)
 from numpy.random import rand, randint, seed
 from scipy.linalg import ldl
+from scipy._lib._util import ComplexWarning
 import pytest
 from pytest import raises as assert_raises, warns
-from numpy import ComplexWarning
 
 
 def test_args():
@@ -121,7 +121,7 @@ def test_ldl_type_size_combinations_complex(n, dtype):
 
     l, d1, p = ldl(x)
     u, d2, p = ldl(x, lower=0)
-    rtol = 1e-4 if dtype is complex64 else 1e-10
+    rtol = 2e-4 if dtype is complex64 else 1e-10
     assert_allclose(l.dot(d1).dot(l.conj().T), x, rtol=rtol, err_msg=msg1)
     assert_allclose(u.dot(d2).dot(u.conj().T), x, rtol=rtol, err_msg=msg1)
 

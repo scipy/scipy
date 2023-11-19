@@ -92,8 +92,7 @@ static double Q[] = {
     2.49999999999888314361E-1
 };
 
-double ellpe(x)
-double x;
+double ellpe(double x)
 {
     x = 1.0 - x;
     if (x <= 0.0) {

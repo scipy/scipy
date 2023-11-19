@@ -367,3 +367,59 @@ class RegularGridInterpolatorSubclass(Benchmark):
 
     def time_rgi(self, ndim, max_coord_size, n_samples, flipped):
         self.interp(self.values)
+
+
+class CloughTocherInterpolatorValues(interpolate.CloughTocher2DInterpolator):
+    """Subclass of the CT2DInterpolator with optional `values`.
+
+    This is mainly a demo of the functionality. See
+    https://github.com/scipy/scipy/pull/18376 for discussion
+    """
+    def __init__(self, points, xi, tol=1e-6, maxiter=400, **kwargs):
+        interpolate.CloughTocher2DInterpolator.__init__(self, points, None, tol=tol, maxiter=maxiter)
+        self.xi = None
+        self._preprocess_xi(*xi)
+        self.simplices, self.c = interpolate.CloughTocher2DInterpolator._find_simplicies(self, self.xi)
+
+    def _preprocess_xi(self, *args):
+        if self.xi is None:
+            self.xi, self.interpolation_points_shape = interpolate.CloughTocher2DInterpolator._preprocess_xi(self, *args)
+        return self.xi, self.interpolation_points_shape
+    
+    def _find_simplicies(self, xi):
+        return self.simplices, self.c
+
+    def __call__(self, values):
+        self._set_values(values)
+        return super().__call__(self.xi)
+
+
+class CloughTocherInterpolatorSubclass(Benchmark):
+    """
+    Benchmark CloughTocherInterpolatorValues.
+
+    Derived from the docstring example,
+    https://docs.scipy.org/doc/scipy-1.11.2/reference/generated/scipy.interpolate.CloughTocher2DInterpolator.html
+    """
+    param_names = ['n_samples']
+    params = [10, 50, 100]
+
+    def setup(self, n_samples):
+        rng = np.random.default_rng(314159)
+
+        x = rng.random(n_samples) - 0.5
+        y = rng.random(n_samples) - 0.5
+
+
+        self.z = np.hypot(x, y)
+        X = np.linspace(min(x), max(x))
+        Y = np.linspace(min(y), max(y))
+        self.X, self.Y = np.meshgrid(X, Y)
+
+        self.interp = CloughTocherInterpolatorValues(
+            list(zip(x, y)), (self.X, self.Y)
+        )
+
+    def time_clough_tocher(self, n_samples):
+            self.interp(self.z)
+

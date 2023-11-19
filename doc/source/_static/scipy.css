@@ -82,7 +82,7 @@ Nat Methods 8, 441 (2011). https://doi.org/10.1038/nmeth.1618
 .sd-card .sd-card-header {
   border: none;
   background-color:white;
-  color: #150458 !important;
+  color: #150458;
   font-size: var(--pst-font-size-h5);
   font-weight: bold;
   padding: 2.5rem 0rem 0.5rem 0rem;
@@ -149,7 +149,7 @@ html[data-theme=dark] .sd-shadow-sm {
 
 html[data-theme=dark] .sd-card .sd-card-header {
   background-color:var(--pst-color-background);
-  color: #150458 !important;
+  color: var(--sd-color-card-text);
 }
 
 html[data-theme=dark] .sd-card .sd-card-footer {

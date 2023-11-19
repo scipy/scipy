@@ -6,3 +6,19 @@
 c1c91d3933291046c72a8e1569c0c4703a51ba45
 # Release entries move
 b9cb3d075dad2b1ee9c145f9e69192d6eeda4f1e
+# Rename `fft/tests/test_numpy.py` to `test_basic.py`
+79099da5aefd2f76092b999823e45a6519e41005
+# Line length clean up in misc (gh-19491)
+8870c5d01a6f91a737db4642343ef997a63c8584
+# Line length clean up in fftpack (gh-19503)
+39787f146137b0ec9d31907989c6f104ba7eed76
+# Line length clean up in `scipyoptdoc.py` (gh-19505)
+49858c5fb2bf479b17a0bf42a7397d73f45f1b31
+# Line length clean up in odr (gh-19514)
+877f1cc34ad2147340684bcadfbf884d47f5a954
+# Line length clean up in fft (gh-19520)
+9d41d85c472438cf17211b843de7c770868d25a4
+# Blanket noqa clean up (gh-19529)
+664a42c9a7945a0a47f876baa6d27fb4c31c6847
+# Unused noqa clean up (gh-19529)
+05b872da4f498d923dbf5f5f38691b9a21580914
