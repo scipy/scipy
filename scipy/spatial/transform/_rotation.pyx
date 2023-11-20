@@ -1532,7 +1532,7 @@ cdef class Rotation:
 
         References
         ----------
-        .. [1] Shuster, M. D. "A Survery of Attitude Representations",
+        .. [1] Shuster, M. D. "A Survey of Attitude Representations",
                The Journal of Astronautical Sciences, Vol. 41, No.4, 1993,
                pp. 475-476
 
@@ -2232,7 +2232,7 @@ cdef class Rotation:
 
         References
         ----------
-        .. [1] Shuster, M. D. "A Survery of Attitude Representations",
+        .. [1] Shuster, M. D. "A Survey of Attitude Representations",
                The Journal of Astronautical Sciences, Vol. 41, No.4, 1993,
                pp. 475-476
 
