@@ -31,9 +31,9 @@ def _sprandn(m, n, density=0.01, format="coo", dtype=None, random_state=None):
 def _sprandn_array(m, n, density=0.01, format="coo", dtype=None, random_state=None):
     # Helper function for testing.
     random_state = check_random_state(random_state)
-    data_rng = random_state.standard_normal
+    data_sampler = random_state.standard_normal
     return construct.random_array((m, n), density=density, format=format, dtype=dtype,
-                                  random_state=random_state, data_rng=data_rng)
+                                  random_state=random_state, data_sampler=data_sampler)
 
 
 class TestConstructUtils:
@@ -719,6 +719,10 @@ class TestConstructUtils:
         sparse_array = construct.random_array((10, 10), density=0.1265)
         assert_equal(sparse_array.count_nonzero(),13)
         assert isinstance(sparse_array, sparray)
+        # check big size
+        shape = (2**33, 2**33)
+        sparse_array = construct.random_array(shape, density=2.7105e-17)
+        assert_equal(sparse_array.count_nonzero(),2000)
 
 
 def test_diags_array():

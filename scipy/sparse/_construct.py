@@ -8,6 +8,7 @@ __all__ = ['spdiags', 'eye', 'identity', 'kron', 'kronsum',
            'diags_array', 'block', 'eye_array', 'random_array']
 
 import numbers
+import math
 from functools import partial
 import numpy as np
 
@@ -1062,7 +1063,7 @@ def block_diag(mats, format=None, dtype=None):
 
 
 def random_array(shape, *, density=0.01, format='coo', dtype=None,
-                 random_state=None, data_rng=None):
+                 random_state=None, data_sampler=None):
     """Return a sparse array of uniformly random numbers in [0, 1)
 
     Returns a sparse array with the given shape and density
@@ -1092,26 +1093,26 @@ def random_array(shape, *, density=0.01, format='coo', dtype=None,
         The random number generator used for this function. We recommend using
         this for every call with a `numpy.random.Generator` as it is much faster.
 
-        - If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        - If `None` (or `np.random`), the `numpy.random.RandomState`
           singleton is used.
-        - If `seed` is an int, a new ``RandomState`` instance is used,
-          seeded with `seed`.
-        - If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        - If an int, a new ``Generator`` instance is used,
+          seeded with the int.
+        - If a ``Generator`` or ``RandomState`` instance then
           that instance is used.
 
         This random state will be used for sampling `indices` (the sparsity
-        structure), and possibly for the data values themselves, but if you
-        prefer another random state for data (e.g. normal distribution)
-        use ``data_rng`` and see the examples below.
+        structure), and by default for the data values too (see `data_sampler`).
 
-    data_rng : callable, optional (default: np.random.uniform)
-        Samples a requested number of random values.
+    data_sampler : callable, optional (default depends on dtype)
+        Sampler of random data values with keyword arg `size`.
         This function should take a single keyword argument `size` specifying
         the length of its returned ndarray. It is used to generate the nonzero
         values in the matrix after the locations of those values are chosen.
         By default, uniform [0, 1) random values are used unless `dtype` is
         an integer (default uniform integers from that dtype) or
         complex (default uniform over the unit square in the complex plane).
+        Also by default the `random_state` rng is used e.g.
+        `random_state.uniform(size=size)`.
 
     Returns
     -------
@@ -1133,7 +1134,7 @@ def random_array(shape, *, density=0.01, format='coo', dtype=None,
     Providing a sampler for the values:
 
     >>> rvs = sp.stats.poisson(25, loc=10).rvs
-    >>> S = sp.sparse.random_array(3, 4, density=0.25, random_state=rng, data_rng=rvs)
+    >>> S = sp.sparse.random_array(3, 4, density=0.25, random_state=rng, data_sampler=rvs)
     >>> S.toarray()
     array([[ 36.,   0.,  33.,   0.],   # random
            [  0.,   0.,   0.,   0.],
@@ -1164,54 +1165,53 @@ def random_array(shape, *, density=0.01, format='coo', dtype=None,
     >>> Y = X()
     >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng, data_rvs=Y.rvs)
     """
-    data, ind = _random(shape, density, format, dtype, random_state, data_rng)
+    data, ind = _random(shape, density, format, dtype, random_state, data_sampler)
     return coo_array((data, ind), shape=shape).asformat(format)
 
 
 def _random(shape, density=0.01, format=None, dtype=None,
-           random_state=None, data_rng=None, coo_array=coo_array):
+           random_state=None, data_sampler=None, coo_array=coo_array):
     if density < 0 or density > 1:
         raise ValueError("density expected to be 0 <= density <= 1")
-    dtype = np.dtype(dtype)
 
-    mn = np.prod(shape)
-
-    tp = np.intc
-    if mn > np.iinfo(tp).max:
-        tp = np.int64
-
-    if mn > np.iinfo(tp).max:
-        msg = (
-            "Trying to generate a random sparse matrix such that the product of "
-            "dimensions is\n greater than %d is not supported on this machine\n"
-        )
-        raise ValueError(msg % np.iinfo(tp).max)
+    tot_prod = math.prod(shape)  # use `math` for when prod is >= 2**64
 
     # Number of non zero values
-    size = int(round(density * mn))
+    size = int(round(density * tot_prod))
 
-    random_state = check_random_state(random_state)
+    rng = check_random_state(random_state)
 
-    if data_rng is None:
+    if data_sampler is None:
         if np.issubdtype(dtype, np.integer):
-            def data_rng(size):
-                return rng_integers(random_state,
+            def data_sampler(size):
+                return rng_integers(rng,
                                     np.iinfo(dtype).min,
                                     np.iinfo(dtype).max,
                                     size,
                                     dtype=dtype)
         elif np.issubdtype(dtype, np.complexfloating):
-            def data_rng(size):
-                return (random_state.uniform(size=size) +
-                        random_state.uniform(size=size) * 1j)
+            def data_sampler(size):
+                return (rng.uniform(size=size) +
+                        rng.uniform(size=size) * 1j)
         else:
-            data_rng = partial(random_state.uniform, 0., 1.)
+            data_sampler = rng.uniform
 
-    raveled_ind = random_state.choice(mn, size=size, replace=False).astype(dtype=tp)
-    ind = np.unravel_index(raveled_ind, shape=shape)
+    # rng.choice uses int64 if first arg is an int
+    if tot_prod < np.iinfo(np.int64).max:
+        raveled_ind = rng.choice(tot_prod, size=size, replace=False)
+        ind = np.unravel_index(raveled_ind, shape=shape)
+    else:
+        # for ravel indices bigger than dtype max, use sets to remove duplicates
+        ndim = len(shape)
+        seen = set()
+        while len(seen) < size:
+            dsize = size - len(seen)
+            seen.update(map(tuple, rng_integers(rng, shape, size=(dsize, ndim))))
+        ind = tuple(np.array(list(seen)).T)
+        print("size(ind): ",tuple(a.shape for a in ind))
 
-    # size kwarg allows data_rng=functools.partial(np.random.poisson, lam=5)
-    vals = data_rng(size=size).astype(dtype, copy=False)
+    # size kwarg allows eg data_sampler=partial(np.random.poisson, lam=5)
+    vals = data_sampler(size=size).astype(dtype, copy=False)
     return vals, ind
 
 
