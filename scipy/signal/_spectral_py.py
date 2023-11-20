@@ -1684,6 +1684,7 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     >>> plt.show()
 
     """
+    xp = array_namespace(x)
     freqs, Pxx = welch(x, fs=fs, window=window, nperseg=nperseg,
                        noverlap=noverlap, nfft=nfft, detrend=detrend,
                        axis=axis)
@@ -1692,7 +1693,7 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     _, Pxy = csd(x, y, fs=fs, window=window, nperseg=nperseg,
                  noverlap=noverlap, nfft=nfft, detrend=detrend, axis=axis)
 
-    Cxy = np.abs(Pxy)**2 / Pxx / Pyy
+    Cxy = xp.abs(Pxy)**2 / Pxx / Pyy
 
     return freqs, Cxy
 
