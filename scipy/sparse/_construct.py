@@ -1128,12 +1128,12 @@ def random_array(shape, *, density=0.01, format='coo', dtype=None,
 
     Default sampling uniformly from [0, 1):
 
-    >>> S = sp.sparse.random_array(3, 4, density=0.25, random_state=rng)
+    >>> S = sp.sparse.random_array((3, 4), density=0.25, random_state=rng)
 
     Providing a sampler for the values:
 
     >>> rvs = sp.stats.poisson(25, loc=10).rvs
-    >>> S = sp.sparse.random_array(3, 4, density=0.25, random_state=rng, data_sampler=rvs)
+    >>> S = sp.sparse.random_array((3, 4), density=0.25, random_state=rng, data_sampler=rvs)
     >>> S.toarray()
     array([[ 36.,   0.,  33.,   0.],   # random
            [  0.,   0.,   0.,   0.],
@@ -1144,15 +1144,15 @@ def random_array(shape, *, density=0.01, format='coo', dtype=None,
 
     >>> def np_normal_squared(size=None, random_state=None):
     ...     return random_state.standard_normal(size) ** 2
-    >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng,
-                             data_rvs=np_normal_squared)
+    >>> S = sp.sparse.random_array((3, 4), density=0.25, random_state=rng,
+    ...                      data_rvs=np_normal_squared)
 
     Or we can build it from sp.stats style rvs functions:
 
     >>> def sp_stats_normal_squared(size=None, random_state=None):
     ...     std_normal = sp.stats.distributions.norm_gen().rvs
     ...     return std_normal(size=size, random_state=random_state) ** 2
-    >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng,
+    >>> S = sp.sparse.random_array((3, 4), density=0.25, random_state=rng,
     ...                      data_rvs=sp_stats_normal_squared)
 
     Or we can subclass sp.stats rv_continous or rv_discrete:
@@ -1162,7 +1162,7 @@ def random_array(shape, *, density=0.01, format='coo', dtype=None,
     ...         return random_state.standard_normal(size) ** 2
     >>> X = NormalSquared(seed=rng)
     >>> Y = X()
-    >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng, data_rvs=Y.rvs)
+    >>> S = sp.sparse.random_array((3, 4), density=0.25, random_state=rng, data_rvs=Y.rvs)
     """
     data, ind = _random(shape, density, format, dtype, random_state, data_sampler)
     return coo_array((data, ind), shape=shape).asformat(format)
