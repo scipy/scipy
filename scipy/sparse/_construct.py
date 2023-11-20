@@ -1143,34 +1143,34 @@ def random_array(shape, *, density=0.01, format='coo', dtype=None,
     Building a custom distribution.
     This example builds a squared normal from np.random:
 
-    >>> def np_normal_squared(size=None, random_state=None):
+    >>> def np_normal_squared(size=None, random_state=rng):
     ...     return random_state.standard_normal(size) ** 2
     >>> S = sp.sparse.random_array((3, 4), density=0.25, random_state=rng,
-    ...                      data_rvs=np_normal_squared)
+    ...                      data_sampler=np_normal_squared)
 
     Or we can build it from sp.stats style rvs functions:
 
-    >>> def sp_stats_normal_squared(size=None, random_state=None):
+    >>> def sp_stats_normal_squared(size=None, random_state=rng):
     ...     std_normal = sp.stats.distributions.norm_gen().rvs
     ...     return std_normal(size=size, random_state=random_state) ** 2
     >>> S = sp.sparse.random_array((3, 4), density=0.25, random_state=rng,
-    ...                      data_rvs=sp_stats_normal_squared)
+    ...                      data_sampler=sp_stats_normal_squared)
 
     Or we can subclass sp.stats rv_continous or rv_discrete:
 
     >>> class NormalSquared(sp.stats.rv_continuous):
-    ...     def _rvs(self,  size=None, random_state=None):
+    ...     def _rvs(self,  size=None, random_state=rng):
     ...         return random_state.standard_normal(size) ** 2
-    >>> X = NormalSquared(seed=rng)
-    >>> Y = X()
-    >>> S = sp.sparse.random_array((3, 4), density=0.25, random_state=rng, data_rvs=Y.rvs)
+    >>> X = NormalSquared()
+    >>> Y = X().rvs
+    >>> S = sp.sparse.random_array((3, 4), density=0.25, random_state=rng, data_sampler=Y)
     """
     data, ind = _random(shape, density, format, dtype, random_state, data_sampler)
     return coo_array((data, ind), shape=shape).asformat(format)
 
 
 def _random(shape, density=0.01, format=None, dtype=None,
-           random_state=None, data_sampler=None, coo_array=coo_array):
+            random_state=None, data_sampler=None):
     if density < 0 or density > 1:
         raise ValueError("density expected to be 0 <= density <= 1")
 
@@ -1298,14 +1298,14 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     Building a custom distribution.
     This example builds a squared normal from np.random:
 
-    >>> def np_normal_squared(size=None, random_state=None):
+    >>> def np_normal_squared(size=None, random_state=rng):
     ...     return random_state.standard_normal(size) ** 2
     >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng,
-                             data_rvs=np_normal_squared)
+    ...                      data_rvs=np_normal_squared)
 
     Or we can build it from sp.stats style rvs functions:
 
-    >>> def sp_stats_normal_squared(size=None, random_state=None):
+    >>> def sp_stats_normal_squared(size=None, random_state=rng):
     ...     std_normal = sp.stats.distributions.norm_gen().rvs
     ...     return std_normal(size=size, random_state=random_state) ** 2
     >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng,
@@ -1314,9 +1314,9 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     Or we can subclass sp.stats rv_continous or rv_discrete:
 
     >>> class NormalSquared(sp.stats.rv_continuous):
-    ...     def _rvs(self,  size=None, random_state=None):
+    ...     def _rvs(self,  size=None, random_state=rng):
     ...         return random_state.standard_normal(size) ** 2
-    >>> X = NormalSquared(seed=rng)
+    >>> X = NormalSquared()
     >>> Y = X()  # get a frozen version of the distribution
     >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng, data_rvs=Y.rvs)
     """
@@ -1325,9 +1325,11 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     m, n = int(m), int(n)
     # make keyword syntax work for data_rvs e.g. data_rvs(size=7)
     if data_rvs is not None:
-        def data_rvs_keyword(size):
+        def data_rvs_kw(size):
             return data_rvs(size)
-    vals, ind = _random((m, n), density, format, dtype, random_state, data_rvs)
+    else:
+        data_rvs_kw = None
+    vals, ind = _random((m, n), density, format, dtype, random_state, data_rvs_kw)
     return coo_matrix((vals, ind), shape=(m, n)).asformat(format)
 
 
@@ -1383,7 +1385,7 @@ def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
     <3x4 sparse matrix of type '<class 'numpy.float64'>'
        with 3 stored elements in Compressed Sparse Row format>
     >>> matrix.toarray()
-    array([[0.05641158, 0.        , 0.        , 0.65088847],
+    array([[0.05641158, 0.        , 0.        , 0.65088847],  # random
            [0.        , 0.        , 0.        , 0.14286682],
            [0.        , 0.        , 0.        , 0.        ]])
 

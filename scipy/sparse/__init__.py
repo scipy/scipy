@@ -115,9 +115,8 @@ Save and load sparse matrices:
 .. autosummary::
    :toctree: generated/
 
-   save_npz - Save a sparse matrix to a file using ``.npz`` format.
-   load_npz - Load a sparse matrix from a file using ``.npz`` format.
-   load_npz_array - Load a sparse array from a file using ``.npz`` format.
+   save_npz - Save a sparse matrix/array to a file using ``.npz`` format.
+   load_npz - Load a sparse matrix/array from a file using ``.npz`` format.
 
 Sparse tools:
 
