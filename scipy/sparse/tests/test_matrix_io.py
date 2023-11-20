@@ -6,7 +6,7 @@ from pytest import raises as assert_raises
 from numpy.testing import assert_equal, assert_
 
 from scipy.sparse import (sparray, csc_matrix, csr_matrix, bsr_matrix, dia_matrix,
-                          coo_matrix, dok_matrix, save_npz, load_npz, load_npz_array)
+                          coo_matrix, dok_matrix, csr_array, save_npz, load_npz)
 
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
@@ -48,12 +48,21 @@ def test_save_and_load_one_entry():
     _check_save_and_load(dense_matrix)
 
 def test_sparray_vs_spmatrix():
+    #save/load matrix
     fd, tmpfile = tempfile.mkstemp(suffix='.npz')
     os.close(fd)
     try:
         save_npz(tmpfile, csr_matrix([[1.2, 0, 0.9], [0, 0.3, 0]]))
         loaded_matrix = load_npz(tmpfile)
-        loaded_array = load_npz_array(tmpfile)
+    finally:
+        os.remove(tmpfile)
+
+    #save/load array
+    fd, tmpfile = tempfile.mkstemp(suffix='.npz')
+    os.close(fd)
+    try:
+        save_npz(tmpfile, csr_array([[1.2, 0, 0.9], [0, 0.3, 0]]))
+        loaded_array = load_npz(tmpfile)
     finally:
         os.remove(tmpfile)
 
@@ -74,8 +83,6 @@ def test_malicious_load():
 
         # Should raise a ValueError, not execute code
         assert_raises(ValueError, load_npz, tmpfile)
-        # Should raise a ValueError, not execute code
-        assert_raises(ValueError, load_npz_array, tmpfile)
     finally:
         os.remove(tmpfile)
 
