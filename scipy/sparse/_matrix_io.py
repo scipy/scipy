@@ -36,7 +36,7 @@ def save_npz(file, matrix, compressed=True):
 
     >>> import numpy as np
     >>> import scipy as sp
-    >>> sparse_matrix = sp.sparse.csc_matrix(np.array([[0, 0, 3], [4, 0, 0]]))
+    >>> sparse_matrix = sp.sparse.csc_matrix([[0, 0, 3], [4, 0, 0]])
     >>> sparse_matrix
     <2x3 sparse matrix of type '<class 'numpy.int64'>'
        with 2 stored elements in Compressed Sparse Column format>
@@ -106,7 +106,7 @@ def load_npz(file):
 
     >>> import numpy as np
     >>> import scipy as sp
-    >>> sparse_array = sp.sparse.csc_array(np.array([[0, 0, 3], [4, 0, 0]]))
+    >>> sparse_array = sp.sparse.csc_array([[0, 0, 3], [4, 0, 0]])
     >>> sparse_array
     <2x3 sparse array of type '<class 'numpy.int64'>'
        with 2 stored elements in Compressed Sparse Column format>
@@ -123,6 +123,12 @@ def load_npz(file):
     >>> sparse_array.toarray()
     array([[0, 0, 3],
            [4, 0, 0]], dtype=int64)
+
+    In this example we force the result to be csr_array from csr_matrix
+    >>> sparse_matrix = sp.sparse.csc_matrix([[0, 0, 3], [4, 0, 0]])
+    >>> sp.sparse.save_npz('/tmp/sparse_matrix.npz', sparse_matrix)
+    >>> tmp = sp.sparse.load_npz('/tmp/sparse_matrix.npz')
+    >>> sparse_array = sp.sparse.csr_array(tmp)
     """
     with np.load(file, **PICKLE_KWARGS) as loaded:
         try:
