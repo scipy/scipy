@@ -29,7 +29,7 @@ import numpy as np
 import scipy.fft as fft_lib
 from scipy.signal import detrend
 from scipy.signal.windows import get_window
-from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api import array_namespace, size, is_complex
 
 __all__ = ['ShortTimeFFT']
 
@@ -253,9 +253,10 @@ class ShortTimeFFT:
                  dual_win: np.ndarray | None = None,
                  scale_to: Literal['magnitude', 'psd'] | None = None,
                  phase_shift: int | None = 0):
-        if not (win.ndim == 1 and win.size > 0):
+        xp = array_namespace(win)
+        if not (win.ndim == 1 and size(win) > 0):
             raise ValueError(f"Parameter win must be 1d, but {win.shape=}!")
-        if not all(np.isfinite(win)):
+        if not all(xp.isfinite(win)):
             raise ValueError("Parameter win must have finite entries!")
         if not (hop >= 1 and isinstance(hop, int)):
             raise ValueError(f"Parameter {hop=} is not an integer >= 1!")
@@ -569,10 +570,11 @@ class ShortTimeFFT:
         Allowed values are 'twosided', 'centered', 'onesided', 'onesided2X'.
         See the property `fft_mode` for more details.
         """
+        xp = array_namespace(self.win)
         if t not in (fft_mode_types := get_args(FFT_MODE_TYPE)):
             raise ValueError(f"fft_mode='{t}' not in {fft_mode_types}!")
 
-        if t in {'onesided', 'onesided2X'} and np.iscomplexobj(self.win):
+        if t in {'onesided', 'onesided2X'} and is_complex(self.win, xp=xp):
             raise ValueError(f"One-sided spectra, i.e., fft_mode='{t}', " +
                              "are not allowed for complex-valued windows!")
 

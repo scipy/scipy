@@ -2,7 +2,7 @@ import sys
 
 import numpy as np
 from numpy.testing import (assert_,
-                           assert_allclose, assert_array_equal, assert_equal,
+                           assert_allclose, assert_array_equal,
                            assert_array_almost_equal_nulp, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
@@ -1409,27 +1409,41 @@ class TestCSD:
 
 
 class TestCoherence:
-    def test_identical_input(self):
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_identical_input(self, xp):
         x = np.random.randn(20)
-        y = np.copy(x)  # So `y is x` -> False
+        x = xp.asarray(x)
+        y = copy(x)  # So `y is x` -> False
 
-        f = np.linspace(0, 0.5, 6)
-        C = np.ones(6)
+        f = xp.linspace(0, 0.5, 6)
+        C = xp.ones(6)
         f1, C1 = coherence(x, y, nperseg=10)
 
-        assert_allclose(f, f1)
-        assert_allclose(C, C1)
+        xp_assert_close(f, f1)
+        xp_assert_close(C, C1, check_dtype=False)
 
-    def test_phase_shifted_input(self):
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_phase_shifted_input(self, xp):
         x = np.random.randn(20)
+        x = xp.asarray(x)
         y = -x
 
-        f = np.linspace(0, 0.5, 6)
-        C = np.ones(6)
+        f = xp.linspace(0, 0.5, 6)
+        C = xp.ones(6)
         f1, C1 = coherence(x, y, nperseg=10)
 
-        assert_allclose(f, f1)
-        assert_allclose(C, C1)
+        xp_assert_close(f, f1)
+        xp_assert_close(C, C1, check_dtype=False)
 
 
 class TestSpectrogram:
@@ -1868,9 +1882,18 @@ class TestSTFT:
                             check_namespace=check_namespace,
                             check_shape=False)
 
-    def test_average_all_segments(self):
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    # torch hits a messy np.pad codepath...
+    @skip_if_array_api_backend("torch")
+    @array_api_compatible
+    def test_average_all_segments(self, xp):
         np.random.seed(1234)
         x = np.random.randn(1024)
+        x = xp.asarray(x)
 
         fs = 1.0
         window = 'hann'
@@ -1885,12 +1908,21 @@ class TestSTFT:
         fw, Pw = welch(x, fs, window, nperseg, noverlap, return_onesided=False,
                        scaling='spectrum', detrend=False)
 
-        assert_allclose(f, fw)
-        assert_allclose(np.mean(np.abs(Z)**2, axis=-1), Pw)
+        xp_assert_close(f, fw)
+        xp_assert_close(xp.mean(xp.abs(Z)**2, axis=-1), Pw)
 
-    def test_permute_axes(self):
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # torch hits a messy np.pad codepath...
+    @skip_if_array_api_backend("torch")
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_permute_axes(self, xp):
         np.random.seed(1234)
         x = np.random.randn(1024)
+        x = xp.asarray(x)
 
         fs = 1.0
         window = 'hann'
@@ -1905,14 +1937,22 @@ class TestSTFT:
         t4, x2 = istft(Z2.T, fs, window, nperseg, noverlap, time_axis=0,
                        freq_axis=-1)
 
-        assert_allclose(f1, f2)
-        assert_allclose(t1, t2)
-        assert_allclose(t3, t4)
-        assert_allclose(Z1, Z2[:, 0, 0, :])
-        assert_allclose(x1, x2[:, 0, 0])
+        xp_assert_close(f1, f2)
+        xp_assert_close(t1, t2)
+        xp_assert_close(t3, t4)
+        xp_assert_close(Z1, Z2[:, 0, 0, :])
+        xp_assert_close(x1, x2[:, 0, 0])
 
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # torch hits a messy np.pad codepath...
+    @skip_if_array_api_backend("torch")
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
     @pytest.mark.parametrize('scaling', ['spectrum', 'psd'])
-    def test_roundtrip_real(self, scaling):
+    def test_roundtrip_real(self, scaling, xp):
         np.random.seed(1234)
 
         settings = [
@@ -1925,8 +1965,9 @@ class TestSTFT:
                     ]
 
         for window, N, nperseg, noverlap in settings:
-            t = np.arange(N)
-            x = 10*np.random.randn(t.size)
+            t = xp.arange(N)
+            x = 10*np.random.randn(size(t))
+            x = xp.asarray(x)
 
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
                             window=window, detrend=None, padded=False,
@@ -1936,16 +1977,31 @@ class TestSTFT:
                            window=window, scaling=scaling)
 
             msg = f'{window}, {noverlap}'
-            assert_allclose(t, tr, err_msg=msg)
-            assert_allclose(x, xr, err_msg=msg)
+            # NOTE: when the skips above can be removed, it seems
+            # unlikely we'll be able to enforce namespace matches here
+            # because there are no array type inputs (string window type)
+            xp_assert_close(t, tr, err_msg=msg, check_dtype=False)
+            xp_assert_close(x, xr, err_msg=msg)
 
-    def test_roundtrip_not_nola(self):
+    # for torch, we end up in a situation where x.imag is called
+    # but x is real; I think torch may formally be standard compliant
+    # in erroring out here based on:
+    # https://data-apis.org/array-api/latest/API_specification/generated/array_api.imag.html?highlight=imag#array_api.imag
+    # but skip for now
+    @skip_if_array_api_backend('torch')
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_roundtrip_not_nola(self, xp):
         np.random.seed(1234)
 
-        w_fail = np.ones(16)
+        w_fail = xp.ones(16)
         w_fail[::2] = 0
         settings = [
-                    (w_fail, 256, len(w_fail), len(w_fail) // 2),
+                    (w_fail, 256, size(w_fail), size(w_fail) // 2),
                     ('hann', 256, 64, 0),
         ]
 
@@ -1953,8 +2009,9 @@ class TestSTFT:
             msg = f'{window}, {N}, {nperseg}, {noverlap}'
             assert not check_NOLA(window, nperseg, noverlap), msg
 
-            t = np.arange(N)
-            x = 10 * np.random.randn(t.size)
+            t = xp.arange(N)
+            x = 10 * np.random.randn(size(t))
+            x = xp.asarray(x)
 
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
                             window=window, detrend=None, padded=True,
@@ -1963,10 +2020,19 @@ class TestSTFT:
                 tr, xr = istft(zz, nperseg=nperseg, noverlap=noverlap,
                                window=window, boundary=True)
 
-            assert np.allclose(t, tr[:len(t)]), msg
-            assert not np.allclose(x, xr[:len(x)]), msg
+            xp_assert_close(t, tr[:len(t)], err_msg=msg, check_dtype=False)
+            with pytest.raises(AssertionError):
+                xp_assert_close(x, xr[:len(x)], err_msg=msg)
 
-    def test_roundtrip_nola_not_cola(self):
+    # torch hits a messy np.pad codepath...
+    @skip_if_array_api_backend("torch")
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_roundtrip_nola_not_cola(self, xp):
         np.random.seed(1234)
 
         settings = [
@@ -1982,8 +2048,9 @@ class TestSTFT:
             assert check_NOLA(window, nperseg, noverlap), msg
             assert not check_COLA(window, nperseg, noverlap), msg
 
-            t = np.arange(N)
-            x = 10 * np.random.randn(t.size)
+            t = xp.arange(N)
+            x = 10 * np.random.randn(size(t))
+            x = xp.asarray(x)
 
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
                             window=window, detrend=None, padded=True,
@@ -1993,18 +2060,26 @@ class TestSTFT:
                            window=window, boundary=True)
 
             msg = f'{window}, {noverlap}'
-            assert_allclose(t, tr[:len(t)], err_msg=msg)
-            assert_allclose(x, xr[:len(x)], err_msg=msg)
+            xp_assert_close(t, tr[:len(t)], err_msg=msg, check_dtype=False)
+            xp_assert_close(x, xr[:len(x)], err_msg=msg)
 
-    def test_roundtrip_float32(self):
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # torch hits a messy np.pad codepath...
+    @skip_if_array_api_backend("torch")
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_roundtrip_float32(self, xp):
         np.random.seed(1234)
 
         settings = [('hann', 1024, 256, 128)]
 
         for window, N, nperseg, noverlap in settings:
-            t = np.arange(N)
-            x = 10*np.random.randn(t.size)
-            x = x.astype(np.float32)
+            t = xp.arange(N)
+            x = 10*np.random.randn(size(t))
+            x = xp.asarray(x, dtype=xp.float32)
 
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
                             window=window, detrend=None, padded=False)
@@ -2013,12 +2088,12 @@ class TestSTFT:
                            window=window)
 
             msg = f'{window}, {noverlap}'
-            assert_allclose(t, t, err_msg=msg)
-            assert_allclose(x, xr, err_msg=msg, rtol=1e-4, atol=1e-5)
-            assert_(x.dtype == xr.dtype)
+            xp_assert_close(t, t, err_msg=msg)
+            xp_assert_close(x, xr, err_msg=msg, rtol=1e-4, atol=1e-5)
 
+    @array_api_compatible
     @pytest.mark.parametrize('scaling', ['spectrum', 'psd'])
-    def test_roundtrip_complex(self, scaling):
+    def test_roundtrip_complex(self, scaling, xp):
         np.random.seed(1234)
 
         settings = [
@@ -2031,8 +2106,8 @@ class TestSTFT:
                     ]
 
         for window, N, nperseg, noverlap in settings:
-            t = np.arange(N)
-            x = 10*np.random.randn(t.size) + 10j*np.random.randn(t.size)
+            t = xp.arange(N)
+            x = 10*np.random.randn(size(t)) + 10j*np.random.randn(size(t))
 
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
                             window=window, detrend=None, padded=False,
@@ -2043,8 +2118,10 @@ class TestSTFT:
                            scaling=scaling)
 
             msg = f'{window}, {nperseg}, {noverlap}'
-            assert_allclose(t, tr, err_msg=msg)
-            assert_allclose(x, xr, err_msg=msg)
+            # NOTE: here and below it may not be surprising that namespace checks
+            # fail because there are no input array types to key off of
+            xp_assert_close(t, tr, err_msg=msg, check_namespace=False, check_dtype=False)
+            xp_assert_close(x, xr, err_msg=msg)
 
         # Check that asking for onesided switches to twosided
         with suppress_warnings() as sup:
@@ -2058,10 +2135,18 @@ class TestSTFT:
                        window=window, input_onesided=False, scaling=scaling)
 
         msg = f'{window}, {nperseg}, {noverlap}'
-        assert_allclose(t, tr, err_msg=msg)
-        assert_allclose(x, xr, err_msg=msg)
+        xp_assert_close(t, tr, err_msg=msg, check_namespace=False, check_dtype=False)
+        xp_assert_close(x, xr, err_msg=msg)
 
-    def test_roundtrip_boundary_extension(self):
+    # torch hits a messy np.pad codepath...
+    @skip_if_array_api_backend("torch")
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_roundtrip_boundary_extension(self, xp):
         np.random.seed(1234)
 
         # Test against boxcar, since window is all ones, and thus can be fully
@@ -2073,8 +2158,9 @@ class TestSTFT:
                     ]
 
         for window, N, nperseg, noverlap in settings:
-            t = np.arange(N)
-            x = 10*np.random.randn(t.size)
+            t = xp.arange(N)
+            x = 10*np.random.randn(size(t))
+            x = xp.asarray(x)
 
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
                            window=window, detrend=None, padded=True,
@@ -2091,10 +2177,18 @@ class TestSTFT:
                                 boundary=True)
 
                 msg = f'{window}, {noverlap}, {boundary}'
-                assert_allclose(x, xr, err_msg=msg)
-                assert_allclose(x, xr_ext, err_msg=msg)
+                xp_assert_close(x, xr, err_msg=msg)
+                xp_assert_close(x, xr_ext, err_msg=msg)
 
-    def test_roundtrip_padded_signal(self):
+    # torch hits a messy np.pad codepath...
+    @skip_if_array_api_backend("torch")
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_roundtrip_padded_signal(self, xp):
         np.random.seed(1234)
 
         settings = [
@@ -2103,8 +2197,9 @@ class TestSTFT:
                     ]
 
         for window, N, nperseg, noverlap in settings:
-            t = np.arange(N)
-            x = 10*np.random.randn(t.size)
+            t = xp.arange(N)
+            x = 10*np.random.randn(size(t))
+            x = xp.asarray(x)
 
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
                             window=window, detrend=None, padded=True)
@@ -2113,10 +2208,18 @@ class TestSTFT:
 
             msg = f'{window}, {noverlap}'
             # Account for possible zero-padding at the end
-            assert_allclose(t, tr[:t.size], err_msg=msg)
-            assert_allclose(x, xr[:x.size], err_msg=msg)
+            xp_assert_close(t, tr[:t.size], err_msg=msg, check_dtype=False)
+            xp_assert_close(x, xr[:x.size], err_msg=msg)
 
-    def test_roundtrip_padded_FFT(self):
+    # torch hits a messy np.pad codepath...
+    @skip_if_array_api_backend("torch")
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_roundtrip_padded_FFT(self, xp):
         np.random.seed(1234)
 
         settings = [
@@ -2127,9 +2230,10 @@ class TestSTFT:
                     ]
 
         for window, N, nperseg, noverlap, nfft in settings:
-            t = np.arange(N)
-            x = 10*np.random.randn(t.size)
-            xc = x*np.exp(1j*np.pi/4)
+            t = xp.arange(N)
+            x = 10*np.random.randn(size(t))
+            x = xp.asarray(x)
+            xc = x*xp.exp(xp.asarray(1j*xp.pi/4))
 
             # real signal
             _, _, z = stft(x, nperseg=nperseg, noverlap=noverlap, nfft=nfft,
@@ -2147,14 +2251,23 @@ class TestSTFT:
                             window=window, input_onesided=False)
 
             msg = f'{window}, {noverlap}'
-            assert_allclose(t, tr, err_msg=msg)
-            assert_allclose(x, xr, err_msg=msg)
-            assert_allclose(xc, xcr, err_msg=msg)
+            xp_assert_close(t, tr, err_msg=msg, check_dtype=False)
+            xp_assert_close(x, xr, err_msg=msg)
+            xp_assert_close(xc, xcr, err_msg=msg)
 
-    def test_axis_rolling(self):
+    # torch hits a messy np.pad codepath...
+    @skip_if_array_api_backend("torch")
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_axis_rolling(self, xp):
         np.random.seed(1234)
 
         x_flat = np.random.randn(1024)
+        x_flat = xp.asarray(x_flat)
         _, _, z_flat = stft(x_flat)
 
         for a in range(3):
@@ -2165,8 +2278,8 @@ class TestSTFT:
             _, _, z_plus = stft(x, axis=a)  # Positive axis index
             _, _, z_minus = stft(x, axis=a-x.ndim)  # Negative axis index
 
-            assert_equal(z_flat, z_plus.squeeze(), err_msg=a)
-            assert_equal(z_flat, z_minus.squeeze(), err_msg=a-x.ndim)
+            xp_assert_equal(z_flat, z_plus.squeeze(), err_msg=a)
+            xp_assert_equal(z_flat, z_minus.squeeze(), err_msg=a-x.ndim)
 
         # z_flat has shape [n_freq, n_time]
 
@@ -2174,23 +2287,35 @@ class TestSTFT:
         _, x_transpose_m = istft(z_flat.T, time_axis=-2, freq_axis=-1)
         _, x_transpose_p = istft(z_flat.T, time_axis=0, freq_axis=1)
 
-        assert_allclose(x_flat, x_transpose_m, err_msg='istft transpose minus')
-        assert_allclose(x_flat, x_transpose_p, err_msg='istft transpose plus')
+        xp_assert_close(x_flat, x_transpose_m, err_msg='istft transpose minus')
+        xp_assert_close(x_flat, x_transpose_p, err_msg='istft transpose plus')
 
-    def test_roundtrip_scaling(self):
+    # moveaxis not available in numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # torch seems to have an issue with a slice that
+    # has a negative step?
+    @skip_if_array_api_backend("torch")
+    # skip cupy because array_api_compat doesn't support
+    # fft at this time
+    @skip_if_array_api_backend("cupy")
+    @array_api_compatible
+    def test_roundtrip_scaling(self, xp):
         """Verify behavior of scaling parameter. """
         # Create 1024 sample cosine signal with amplitude 2:
-        X = np.zeros(513, dtype=complex)
+        # NOTE: don't use xp here, coerce expected value
+        # after
+        X = np.zeros(513, dtype=np.complex128)
         X[256] = 1024
         x = np.fft.irfft(X)
-        power_x = sum(x**2) / len(x)  # power of signal x is 2
+        x = xp.asarray(x)
+        power_x = sum(x**2) / size(x)  # power of signal x is 2
 
         # Calculate magnitude-scaled STFT:
         Zs = stft(x, boundary='even', scaling='spectrum')[2]
 
         # Test round trip:
         x1 = istft(Zs, boundary=True, scaling='spectrum')[1]
-        assert_allclose(x1, x)
+        xp_assert_close(x1, x)
 
         # For a Hann-windowed 256 sample length FFT, we expect a peak at
         # frequency 64 (since it is 1/4 the length of X) with a height of 1
@@ -2198,13 +2323,15 @@ class TestSTFT:
         # the magnitude [..., 0, 0, 0.5, 1, 0.5, 0, 0, ...].
         # Note that in this case the 'even' padding works for the beginning
         # but not for the end of the STFT.
-        assert_allclose(abs(Zs[63, :-1]), 0.5)
-        assert_allclose(abs(Zs[64, :-1]), 1)
-        assert_allclose(abs(Zs[65, :-1]), 0.5)
+        xp_assert_close(abs(Zs[63, :-1]), 0.5, check_shape=False)
+        xp_assert_close(abs(Zs[64, :-1]), 1, check_dtype=False, check_shape=False)
+        xp_assert_close(abs(Zs[65, :-1]), 0.5, check_shape=False)
         # All other values should be zero:
         Zs[63:66, :-1] = 0
         # Note since 'rtol' does not have influence here, atol needs to be set:
-        assert_allclose(Zs[:, :-1], 0, atol=np.finfo(Zs.dtype).resolution)
+        xp_assert_close(Zs[:, :-1], 0, atol=xp.finfo(Zs.dtype).resolution,
+                        check_dtype=False,
+                        check_shape=False)
 
         # Calculate two-sided psd-scaled STFT:
         #  - using 'even' padding since signal is axis symmetric - this ensures
@@ -2214,13 +2341,13 @@ class TestSTFT:
         Zp = stft(x, return_onesided=False, boundary='even', scaling='psd')[2]
 
         # Calculate spectral power of Zd by summing over the frequency axis:
-        psd_Zp = np.sum(Zp.real**2 + Zp.imag**2, axis=0) / Zp.shape[0]
+        psd_Zp = xp.sum(Zp.real**2 + Zp.imag**2, axis=0) / Zp.shape[0]
         # Spectral power of Zp should be equal to the signal's power:
-        assert_allclose(psd_Zp, power_x)
+        xp_assert_close(psd_Zp, power_x, check_shape=False)
 
         # Test round trip:
         x1 = istft(Zp, input_onesided=False, boundary=True, scaling='psd')[1]
-        assert_allclose(x1, x)
+        xp_assert_close(x1, x, check_dtype=False)
 
         # The power of the one-sided psd-scaled STFT can be determined
         # analogously (note that the two sides are not of equal shape):
@@ -2228,15 +2355,15 @@ class TestSTFT:
 
         # Since x is real, its Fourier transform is conjugate symmetric, i.e.,
         # the missing 'second side' can be expressed through the 'first side':
-        Zp1 = np.conj(Zp0[-2:0:-1, :])  # 'second side' is conjugate reversed
-        assert_allclose(Zp[:129, :], Zp0, atol=9e-16)
-        assert_allclose(Zp[129:, :], Zp1, atol=9e-16)
+        Zp1 = xp.conj(Zp0[-2:0:-1, :])  # 'second side' is conjugate reversed
+        xp_assert_close(Zp[:129, :], Zp0, atol=9e-16)
+        xp_assert_close(Zp[129:, :], Zp1, atol=9e-16)
 
         # Calculate the spectral power:
-        s2 = (np.sum(Zp0.real ** 2 + Zp0.imag ** 2, axis=0) +
-              np.sum(Zp1.real ** 2 + Zp1.imag ** 2, axis=0))
+        s2 = (xp.sum(Zp0.real ** 2 + Zp0.imag ** 2, axis=0) +
+              xp.sum(Zp1.real ** 2 + Zp1.imag ** 2, axis=0))
         psd_Zp01 = s2 / (Zp0.shape[0] + Zp1.shape[0])
-        assert_allclose(psd_Zp01, power_x)
+        xp_assert_close(psd_Zp01, power_x, check_shape=False)
 
         # Test round trip:
         x1 = istft(Zp0, input_onesided=True, boundary=True, scaling='psd')[1]
