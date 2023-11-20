@@ -5,7 +5,7 @@ __docformat__ = "restructuredtext en"
 
 __all__ = ['spdiags', 'eye', 'identity', 'kron', 'kronsum',
            'hstack', 'vstack', 'bmat', 'rand', 'random', 'diags', 'block_diag',
-           'diags_array', 'block', 'eye_array', 'random_array']
+           'diags_array', 'block_array', 'eye_array', 'random_array']
 
 import numbers
 import math
@@ -782,14 +782,14 @@ def bmat(blocks, format=None, dtype=None):
     """
     Build a sparse array or matrix from sparse sub-blocks
 
-    Note: `block` is preferred over `bmat`. They are the same function
+    Note: `block_array` is preferred over `bmat`. They are the same function
     except that `bmat` can return a deprecated sparse matrix.
     `bmat` returns a coo_matrix if none of the inputs are a sparse array.
 
     .. warning::
 
         This function returns a sparse matrix -- not a sparse array.
-        You are encouraged to use ``block`` to take advantage
+        You are encouraged to use ``block_array`` to take advantage
         of the sparse array functionality.
 
     Parameters
@@ -812,7 +812,7 @@ def bmat(blocks, format=None, dtype=None):
         Otherwise return a sparse matrix.
 
         If you want a sparse array built from blocks that are not sparse
-        arrays, use `block()`.
+        arrays, use `block_array()`.
 
     See Also
     --------
@@ -842,7 +842,7 @@ def bmat(blocks, format=None, dtype=None):
         return _block(blocks, format, dtype, return_spmatrix=True)
 
 
-def block(blocks, *, format=None, dtype=None):
+def block_array(blocks, *, format=None, dtype=None):
     """
     Build a sparse array from sparse sub-blocks
 
@@ -870,16 +870,16 @@ def block(blocks, *, format=None, dtype=None):
 
     Examples
     --------
-    >>> from scipy.sparse import coo_array, block
+    >>> from scipy.sparse import coo_array, block_array
     >>> A = coo_array([[1, 2], [3, 4]])
     >>> B = coo_array([[5], [6]])
     >>> C = coo_array([[7]])
-    >>> block([[A, B], [None, C]]).toarray()
+    >>> block_array([[A, B], [None, C]]).toarray()
     array([[1, 2, 5],
            [3, 4, 6],
            [0, 0, 7]])
 
-    >>> block([[A, None], [None, C]]).toarray()
+    >>> block_array([[A, None], [None, C]]).toarray()
     array([[1, 2, 0],
            [3, 4, 0],
            [0, 0, 7]])
@@ -1089,8 +1089,9 @@ def random_array(shape, *, density=0.01, format='coo', dtype=None,
     dtype : dtype, optional (default: np.float64)
         type of the returned matrix values.
     random_state : {None, int, `Generator`, `RandomState`}, optional
-        The random number generator used for this function. We recommend using
-        this for every call with a `numpy.random.Generator` as it is much faster.
+        A random number generator to determine nonzero structure. We recommend using
+        a `numpy.random.Generator` manually provided for every call as it is much
+        faster than RandomState.
 
         - If `None` (or `np.random`), the `numpy.random.RandomState`
           singleton is used.

@@ -82,7 +82,7 @@ Building sparse arrays:
    diags_array - Return a sparse array from diagonals
    eye_array - Sparse MxN array whose k-th diagonal is all ones
    random_array - Random values in a given shape array
-   block - Build a sparse array from sub-blocks
+   block_array - Build a sparse array from sub-blocks
 
 Building sparse matrices:
 
@@ -128,7 +128,7 @@ Sparse tools:
 
 Identifying sparse arrays:
 
-- use `isinstance(A, sparray)` to check whether an array or matrix.
+- use `isinstance(A, sp.sparse.sparray)` to check whether an array or matrix.
 - use `A.format == 'csr'` to check the sparse format
 
 Identifying sparse matrices:
