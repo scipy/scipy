@@ -816,7 +816,7 @@ def bmat(blocks, format=None, dtype=None):
 
     See Also
     --------
-    block
+    block_array
 
     Examples
     --------
@@ -1011,7 +1011,8 @@ def block_diag(mats, format=None, dtype=None):
 
     See Also
     --------
-    block, diags
+    block_array
+    diags_array
 
     Examples
     --------
