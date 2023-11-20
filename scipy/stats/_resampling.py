@@ -952,7 +952,8 @@ class PowerResult:
     pvalues: float | np.ndarray
 
 
-def _power_iv(rvs, test, n_observations, vectorized, n_resamples, batch, args):
+def _power_iv(rvs, test, n_observations, significance, vectorized,
+              n_resamples, batch, args):
     """Input validation for `monte_carlo_test`."""
 
     if vectorized not in {True, False, None}:
@@ -969,6 +970,11 @@ def _power_iv(rvs, test, n_observations, vectorized, n_resamples, batch, args):
         message = ("If `rvs` is a sequence, `len(rvs)` "
                    "must equal `len(n_observations)`.")
         raise ValueError(message)
+
+    significance = np.asarray(significance)[()]
+    if (not np.issubdtype(significance.dtype, np.floating)
+            or np.min(significance) < 0 or np.max(significance) > 1):
+        raise TypeError("`significance` must contain floats between 0 and 1.")
 
     if not isinstance(args, Sequence):
         args = (args,)
@@ -1004,7 +1010,7 @@ def _power_iv(rvs, test, n_observations, vectorized, n_resamples, batch, args):
         if batch != batch_iv or batch_iv <= 0:
             raise ValueError("`batch` must be a positive integer or None.")
 
-    return (rvs, test_vectorized, nobs, vectorized,
+    return (rvs, test_vectorized, nobs, significance, vectorized,
             n_resamples_int, batch_iv, args, shape[1:])
 
 
@@ -1036,10 +1042,10 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
         If a sequence of ints, each is the sizes of a sample to be passed to `test`.
         If a sequence of integer arrays, the power is simulated for each
         set of corresponding sample sizes. See Examples.
-    significance : float, default: 0.05
+    significance : float or array_like of floats, default: 0.01
         The threshold for significance; i.e., the p-value below which the
         hypothesis test results will be considered as evidence against the null
-        hypothesis. Equivalently, the acceptable rate of Type II error under
+        hypothesis. Equivalently, the acceptable rate of Type I error under
         the null hypothesis.
     args : tuple of arrays, optional
         Sequence of array arguments to be passed to all `rvs` and `test`
@@ -1136,7 +1142,7 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
 
     Now, suppose we wish to test whether the SciPy's independent sample t-test
     is  implemented correctly. Specifically, we wish to determine whether the
-    Type II error rate of the test matches the nominal level under the null
+    Type I error rate of the test matches the nominal level under the null
     hypothesis. The null hypothesis of the test is that the samples were
     independently drawn from normal distributions with the same mean. To answer
     our question, we can consider the null hypothesis to be a true *alternative*
@@ -1168,8 +1174,10 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
     # - improve `args` interface
     # - simplify n_observations/args input validation
     # - tests
-    tmp = _power_iv(rvs, test, n_observations, vectorized, n_resamples, batch, args)
-    rvs, test, nobs, vectorized, n_resamples, batch, args, shape = tmp
+    tmp = _power_iv(rvs, test, n_observations, significance,
+                    vectorized, n_resamples, batch, args)
+    (rvs, test, nobs, significance,
+     vectorized, n_resamples, batch, args, shape)= tmp
 
     batch_nominal = batch or n_resamples
     pvalues = []
@@ -1185,6 +1193,8 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
         ps = np.concatenate(ps)
         pvalues.append(ps)
     pvalues = np.asarray(pvalues).reshape(shape + (-1,))
+    if significance.ndim > 0:
+        significance = np.expand_dims(significance, tuple(range(1, pvalues.ndim + 1)))
     powers = np.mean(pvalues < significance, axis=-1)
 
     return PowerResult(power=powers, pvalues=pvalues)
