@@ -4,6 +4,7 @@ _ufuncs_pxi_pxd_sources = [
   fs.copyfile('__init__.py'),
   fs.copyfile('_agm.pxd'),
   fs.copyfile('_boxcox.pxd'),
+  fs.copyfile('_cdflib.pxd'),
   fs.copyfile('_cephes.pxd'),
   fs.copyfile('_complexstuff.pxd'),
   fs.copyfile('_convex_analysis.pxd'),
@@ -426,6 +427,13 @@ py3.extension_module('cython_special',
 py3.extension_module('_comb',
   cython_gen.process('_comb.pyx'),
   link_args: version_link_args,
+  install: true,
+  subdir: 'scipy/special'
+)
+
+py3.extension_module('_cdflib',
+  cython_gen.process('_cdflib.pyx'),
+  dependencies: [np_dep, npymath_lib],
   install: true,
   subdir: 'scipy/special'
 )
