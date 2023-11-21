@@ -673,7 +673,8 @@ cdef inline (double, double, int) bratio(double a, double b,
 # %%----------------------------------------- brcmp1
 cdef inline double brcmp1(int mu, double a, double b,
                           double x, double y) noexcept nogil:
-    cdef double a0,apb,b0,c,e,h,lmbda,lnx,lny,t,u,v,x0,y0,z
+    cdef double a0, apb, b0, c, e, h, lmbda, t, u, v, x0, y0, z
+    cdef double lnx = 1., lny = 1.
     cdef int i, n
     cdef double const = 1./sqrt(2.*PI)
 
@@ -2977,7 +2978,7 @@ cdef inline (double, double) cumt(double t, double df) noexcept nogil:
 
 # %%----------------------------------------- cumtnc
 cdef inline (double, double) cumtnc(double t, double df, double pnonc) noexcept nogil:
-    cdef double alghdf, b, bb, bbcent, bcent, cent, d, dcent, dpnonc
+    cdef double alghdf, b, bb, bbcent, bcent, cent, d, dcent
     cdef double dum1, dum2, e, ecent, lmbda, lnomx, lnx, omx
     cdef double pnonc2, s, scent, ss, sscent, t2, term, tt, twoi, x
     cdef double xi, xlnd, xlne
@@ -2989,9 +2990,8 @@ cdef inline (double, double) cumtnc(double t, double df, double pnonc) noexcept 
     if abs(pnonc) <= tiny:
         return cumt(t, df)
     qrevs = t < 0.
-    if qrevs:
-        tt = -t
-        dpnonc = -pnonc
+    tt = -t if qrevs else t
+    dpnonc = -pnonc if qrevs else pnonc
 
     pnonc2 = dpnonc**2
     t2 = tt**2
@@ -3731,8 +3731,9 @@ cdef inline double gam1(double a) noexcept nogil:
 cdef inline (double, int) gaminv(double a, double p,
                                  double q, double x0) noexcept nogil:
     cdef:
-        double am1, ap1, ap2, ap3, apn, b, bot, d, g, h
+        double ap1, ap2, ap3, apn, b, bot, d, g, h
         double pn, qg, qn, r, rta, s, s2, ssum, t, top, u, w, y, z
+        double am1 = 0.
         double ln10 = log(10)
         double c = 0.57721566490153286060651209008
         double tol = 1e-5
@@ -3745,7 +3746,7 @@ cdef inline (double, int) gaminv(double a, double p,
         double x = 0.
         int ierr = 0
         int iop = 1 if e > 1e-10 else 0
-        bint use_p
+        bint use_p = False if p > 0.5 else True
 
     cdef double[4] arr = [3.31125922108741, 11.6616720288968,
                           4.28342155967104, 0.213623493715853]
@@ -4078,9 +4079,9 @@ cdef inline double gamln1(double a) noexcept nogil:
 
 # %%-------------------------------------- gamma
 cdef inline double gamma(double a) noexcept nogil:
-    cdef double bot, g, lnx, s, t, top, w, z, result
+    cdef double bot, g, lnx, t, top, w, z, result
     cdef int i, j, m, n
-
+    cdef double s = 0.
     cdef double d = 0.5*(log(2.*PI) - 1)
     cdef double x = a
     cdef double[7] p = [.539637273585445e-03, .261939260042690e-02,
@@ -4253,7 +4254,7 @@ cdef inline (double, double) gratio(double a, double x, int ind) noexcept nogil:
         double rta, rtx, s, ssum, t, t1, tol, twoa, u, w, x0, y, z
         int i, m, n
 
-    cdef double[20] wk
+    cdef double[20] wk =  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     cdef double[3] acc0 = [5.e-15, 5.e-7, 5.e-4]
     cdef double[3] big = [20., 14., 10.]
     cdef double[3] e00 = [.00025, .025, .14]
