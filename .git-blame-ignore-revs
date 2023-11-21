@@ -22,3 +22,5 @@ b9cb3d075dad2b1ee9c145f9e69192d6eeda4f1e
 664a42c9a7945a0a47f876baa6d27fb4c31c6847
 # Unused noqa clean up (gh-19529)
 05b872da4f498d923dbf5f5f38691b9a21580914
+# Clean up for UP lint rules (gh-19516)
+9cf72e4599e0a22902ef3bc1a42e645240b1734d
