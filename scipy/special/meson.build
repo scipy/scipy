@@ -433,6 +433,7 @@ py3.extension_module('_comb',
 
 py3.extension_module('_cdflib',
   cython_gen.process('_cdflib.pyx'),
+  c_args: numpy_nodepr_api,
   dependencies: [np_dep, npymath_lib],
   install: true,
   subdir: 'scipy/special'
