@@ -34,7 +34,7 @@ from . import _mvn
 from ._stats import gaussian_kernel_estimate, gaussian_kernel_estimate_log
 
 # deprecated import to be removed in SciPy 1.13.0
-from scipy.special import logsumexp  # noqa
+from scipy.special import logsumexp  # noqa: F401
 
 
 __all__ = ['gaussian_kde']

@@ -391,7 +391,7 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
     >>> signal.firwin(numtaps, [f1, f2, f3, f4], pass_zero=False)
     array([ 0.04890915,  0.91284326,  0.04890915])
 
-    """  # noqa: E501
+    """
     # The major enhancements to this function added in November 2010 were
     # developed by Tom Krauss (see ticket #902).
 
@@ -999,7 +999,7 @@ def firls(numtaps, bands, desired, *, weight=None, nyq=_NoValue, fs=None):
     >>> fig.tight_layout()
     >>> plt.show()
 
-    """  # noqa
+    """
     nyq = 0.5 * _get_fs(fs, nyq)
 
     numtaps = int(numtaps)
@@ -1248,7 +1248,7 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
     >>> axs[3].set(ylabel='Group delay')
     >>> plt.tight_layout()
 
-    """  # noqa
+    """
     h = np.asarray(h)
     if np.iscomplexobj(h):
         raise ValueError('Complex filters not supported')

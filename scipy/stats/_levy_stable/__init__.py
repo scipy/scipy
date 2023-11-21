@@ -837,8 +837,8 @@ class levy_stable_gen(rv_continuous):
     def rvs(self, *args, **kwds):
         X1 = super().rvs(*args, **kwds)
 
-        discrete = kwds.pop("discrete", None)  # noqa
-        rndm = kwds.pop("random_state", None)  # noqa
+        kwds.pop("discrete", None)
+        kwds.pop("random_state", None)
         (alpha, beta), delta, gamma, size = self._parse_args_rvs(*args, **kwds)
 
         # shift location for this parameterisation (S1)

@@ -1,7 +1,7 @@
 line-length = 88
 
 # Enable Pyflakes `E` and `F` codes by default.
-select = ["E", "F"]
+select = ["E", "F", "PGH004"]
 ignore = ["E741"]
 exclude = ["scipy/datasets/_registry.py"]
 
@@ -20,20 +20,17 @@ target-version = "py39"
 "scipy/stats/distributions.py" = ["F403", "F405"]
 "scipy/stats/mstats.py" = ["F403", "F401"]
 "scipy/stats/qmc.py" = ["F403"]
-"scipy/optimize/_linprog.py" = ["F401"]
-"scipy/optimize/_linprog_ip.py" = ["F401"]
+"scipy/stats/tests/data/_mvt.py" = ["E701", "E702"]
 # E501 (line length) ignores
 "benchmarks/benchmarks/**" = ["E501"]
 "scipy/_lib/**" = ["E501"]
 "scipy/cluster/**" = ["E501"]
-"scipy/constants/**" = ["E501"]
-"scipy/fft/**" = ["E501"]
+"scipy/constants/_codata.py" = ["E501"]
 "scipy/integrate/**" = ["E501"]
 "scipy/interpolate/**" = ["E501"]
 "scipy/io/**" = ["E501"]
 "scipy/linalg/**" = ["E501"]
 "scipy/ndimage/**" = ["E501"]
-"scipy/odr/**" = ["E501"]
 "scipy/optimize/**" = ["E501"]
 "scipy/signal/**" = ["E501"]
 "scipy/sparse/**" = ["E501"]

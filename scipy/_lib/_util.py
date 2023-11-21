@@ -26,7 +26,7 @@ VisibleDeprecationWarning: Type[Warning]
 if np.lib.NumpyVersion(np.__version__) >= '1.25.0':
     from numpy.exceptions import (
         AxisError, ComplexWarning, VisibleDeprecationWarning,
-        DTypePromotionError  # noqa: F401
+        DTypePromotionError
     )
 else:
     from numpy import (

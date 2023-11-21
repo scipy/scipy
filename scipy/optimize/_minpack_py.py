@@ -15,11 +15,11 @@ from ._lsq import least_squares
 from ._lsq.least_squares import prepare_bounds
 from scipy.optimize._minimize import Bounds
 
-error = _minpack.error
-
 # deprecated imports to be removed in SciPy 1.13.0
-from numpy import dot, eye, take  # noqa
-from numpy.linalg import inv  # noqa
+from numpy import dot, eye, take  # noqa: F401
+from numpy.linalg import inv  # noqa: F401
+
+error = _minpack.error
 
 __all__ = ['fsolve', 'leastsq', 'fixed_point', 'curve_fit']
 
@@ -485,7 +485,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=False,
             r = triu(transpose(retval[1]['fjac'])[:n, :])
             inv_triu = linalg.get_lapack_funcs('trtri', (r,))
             try:
-                # inverse of permuted matrix is a permuation of matrix inverse
+                # inverse of permuted matrix is a permutation of matrix inverse
                 invR, trtri_info = inv_triu(r)  # default: upper, non-unit diag
                 if trtri_info != 0:  # explicit comparison for readability
                     raise LinAlgError(f'trtri returned info {trtri_info}')
@@ -751,7 +751,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         A string message giving information about the solution.
 
         .. versionadded:: 1.9
-    ier : int (returnned only if `full_output` is True)
+    ier : int (returned only if `full_output` is True)
         An integer flag. If it is equal to 1, 2, 3 or 4, the solution was
         found. Otherwise, the solution was not found. In either case, the
         optional output variable `mesg` gives more information.
@@ -862,7 +862,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     suggesting that the optimal values of these parameters are ambiguous and
     that only one of these parameters is needed in the model.
 
-    """  # noqa
+    """
     if p0 is None:
         # determine number of parameters by inspecting the function
         sig = _getfullargspec(f)

@@ -1304,11 +1304,11 @@ def test_deprecation():
     """Test that access to previous attributes still works."""
     # This should be accessible immediately from scipy.io import
     with assert_warns(DeprecationWarning):
-        scipy.io.matlab.mio5_params.MatlabOpaque  # noqa
+        scipy.io.matlab.mio5_params.MatlabOpaque
 
     # These should be importable but warn as well
     with assert_warns(DeprecationWarning):
-        from scipy.io.matlab.miobase import MatReadError  # noqa
+        from scipy.io.matlab.miobase import MatReadError  # noqa: F401
 
 
 def test_gh_17992(tmp_path):

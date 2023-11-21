@@ -5,7 +5,7 @@ from collections import namedtuple
 
 import numpy as np
 from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
-                   arange, sort, amin, amax, sqrt, array, atleast_1d,  # noqa
+                   arange, sort, amin, amax, sqrt, array, atleast_1d,  # noqa: F401
                    compress, pi, exp, ravel, count_nonzero, sin, cos,
                    arctan2, hypot)
 
@@ -2149,7 +2149,7 @@ def anderson(x, dist='norm'):
     with a significance level of 2.5%, so the null hypothesis may be rejected
     at a significance level of 2.5%, but not at a significance level of 1%.
 
-    """  # noqa
+    """  # noqa: E501
     dist = dist.lower()
     if dist in {'extreme1', 'gumbel'}:
         dist = 'gumbel_l'
@@ -2444,7 +2444,7 @@ def anderson_ksamp(samples, midrank=True, *, method=None):
     >>> res.pvalue
     0.5254
 
-    """  # noqa
+    """
     k = len(samples)
     if (k < 2):
         raise ValueError("anderson_ksamp needs at least two samples")
@@ -3338,7 +3338,7 @@ def fligner(*samples, center='median', proportiontocut=0.05):
            University.
     .. [4] Conover, W. J., Johnson, M. E. and Johnson M. M. (1981). A
            comparative study of tests for homogeneity of variances, with
-           applications to the outer continental shelf biding data.
+           applications to the outer continental shelf bidding data.
            Technometrics, 23(4), 351-361.
     .. [5] C.I. BLISS (1952), The Statistics of Bioassay: With Special
            Reference to the Vitamins, pp 499-503,

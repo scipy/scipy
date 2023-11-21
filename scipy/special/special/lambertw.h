@@ -2,7 +2,7 @@
  *  Implementation [2], and documentation [3].
  *
  * Copyright: Yosef Meller, 2009
- * Authoer email: mellerf@netvision.net.il
+ * Author email: mellerf@netvision.net.il
  *
  * Distributed under the same license as SciPy
  * Translated into C++ by SciPy developers, 2023.
