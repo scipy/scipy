@@ -57,5 +57,4 @@ extern double cdftnc2_wrap(double df, double nc, double p);
 extern double cdftnc3_wrap(double p, double nc, double t);
 extern double cdftnc4_wrap(double df, double p, double t);
 
-extern double tukeylambdacdf(double x, double lambda);
 #endif

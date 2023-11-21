@@ -31,6 +31,15 @@ cdef (double, double, int, double) cdff_which1(double f, double dfn, double dfd)
 cdef (double, int, double) cdff_which2(double p, double q, double dfn, double dfd) noexcept nogil
 cdef (double, int, double) cdff_which3(double p, double q, double f, double dfd) noexcept nogil
 cdef (double, int, double) cdff_which4(double p, double q, double f, double dfn) noexcept nogil
+cdef (double, double, int, double) cdffnc_which1(double f, double dfn, double dfd, double phonc) noexcept nogil
+cdef (double, int, double) cdffnc_which2(double p, double q, double dfn, double dfd, double phonc) noexcept nogil
+cdef (double, int, double) cdffnc_which3(double p, double q, double f, double dfd, double phonc) noexcept nogil
+cdef (double, int, double) cdffnc_which4(double p, double q, double f, double dfn, double phonc) noexcept nogil
+cdef (double, int, double) cdffnc_which5(double p, double q, double f, double dfn, double dfd) noexcept nogil
+cdef (double, double, int, double) cdfgam_which1(double x, double shape, double scale) noexcept nogil
+cdef (double, int, double) cdfgam_which2(double p, double q, double shape, double scale) noexcept nogil
+cdef (double, int, double) cdfgam_which3(double p, double q, double x, double scale) noexcept nogil
+cdef (double, int, double) cdfgam_which4(double p, double q, double x, double shape) noexcept nogil
 cdef (double, double, int, double) cdfnbn_which1(double s, double xn, double pr, double ompr) noexcept nogil
 cdef (double, int, double) cdfnbn_which2(double p, double q, double xn, double pr, double ompr) noexcept nogil
 cdef (double, int, double) cdfnbn_which3(double p, double q, double s, double pr, double ompr) noexcept nogil

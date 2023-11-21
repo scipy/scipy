@@ -182,9 +182,19 @@
             "cdfbin2_wrap": "ddd->d"
         }
     },
+    "bdtrik_cython": {
+        "_cdflib_wrappers.pxd": {
+            "bdtrik": "ddd->d"
+        }
+    },
     "bdtrin": {
         "cdf_wrappers.h": {
             "cdfbin3_wrap": "ddd->d"
+        }
+    },
+    "bdtrin_cython": {
+        "_cdflib_wrappers.pxd": {
+            "bdtrin": "ddd->d"
         }
     },
     "bei": {
@@ -276,9 +286,19 @@
             "cdfbet3_wrap": "ddd->d"
         }
     },
+    "btdtria_cython": {
+        "_cdflib_wrappers.pxd": {
+            "btdtria": "ddd->d"
+        }
+    },
     "btdtrib": {
         "cdf_wrappers.h": {
             "cdfbet4_wrap": "ddd->d"
+        }
+    },
+    "btdtrib_cython": {
+        "_cdflib_wrappers.pxd": {
+            "btdtrib": "ddd->d"
         }
     },
     "cbrt": {
@@ -306,9 +326,19 @@
             "cdfchi3_wrap": "dd->d"
         }
     },
+    "chdtriv_cython": {
+        "_cdflib_wrappers.pxd": {
+            "chdtriv": "dd->d"
+        }
+    },
     "chndtr": {
         "cdf_wrappers.h": {
             "cdfchn1_wrap": "ddd->d"
+        }
+    },
+    "chndtr_cython": {
+        "_cdflib_wrappers.pxd": {
+            "chndtr": "ddd->d"
         }
     },
     "chndtridf": {
@@ -316,14 +346,29 @@
             "cdfchn3_wrap": "ddd->d"
         }
     },
+    "chndtridf_cython": {
+        "_cdflib_wrappers.pxd": {
+            "chndtridf": "ddd->d"
+        }
+    },
     "chndtrinc": {
         "cdf_wrappers.h": {
             "cdfchn4_wrap": "ddd->d"
         }
     },
+    "chndtrinc_cython": {
+        "_cdflib_wrappers.pxd": {
+            "chndtrinc": "ddd->d"
+        }
+    },
     "chndtrix": {
         "cdf_wrappers.h": {
             "cdfchn2_wrap": "ddd->d"
+        }
+    },
+    "chndtrix_cython": {
+        "_cdflib_wrappers.pxd": {
+            "chndtrix": "ddd->d"
         }
     },
     "cosdg": {
@@ -632,6 +677,11 @@
             "cdff4_wrap": "ddd->d"
         }
     },
+    "fdtridfd_cython": {
+        "_cdflib_wrappers.pxd": {
+            "fdtridfd": "ddd->d"
+        }
+    },
     "fresnel": {
         "cephes.h": {
             "fresnl": "d*dd->*i"
@@ -693,14 +743,24 @@
             "cdfgam4_wrap": "ddd->d"
         }
     },
+    "gdtria_cython": {
+        "_cdflib_wrappers.pxd": {
+            "gdtria": "ddd->d"
+        }
+    },
     "gdtrib": {
         "cdf_wrappers.h": {
             "cdfgam3_wrap": "ddd->d"
         }
     },
+    "gdtrib_cython": {
+        "_cdflib_wrappers.pxd": {
+            "gdtrib": "ddd->d"
+        }
+    },
     "gdtrix": {
-        "cdf_wrappers.h": {
-            "cdfgam2_wrap": "ddd->d"
+        "_cdflib_wrappers.pxd": {
+            "gdtrix": "ddd->d"
         }
     },
     "hankel1": {
@@ -1079,9 +1139,19 @@
             "cdfnbn2_wrap": "ddd->d"
         }
     },
+    "nbdtrik_cython": {
+        "_cdflib_wrappers.pxd": {
+            "nbdtrik": "ddd->d"
+        }
+    },
     "nbdtrin": {
         "cdf_wrappers.h": {
             "cdfnbn3_wrap": "ddd->d"
+        }
+    },
+    "nbdtrin_cython": {
+        "_cdflib_wrappers.pxd": {
+            "nbdtrin": "ddd->d"
         }
     },
     "ncfdtr": {
@@ -1089,9 +1159,19 @@
             "cdffnc1_wrap": "dddd->d"
         }
     },
+    "ncfdtr_cython": {
+        "_cdflib_wrappers.pxd": {
+            "ncfdtr": "dddd->d"
+        }
+    },
     "ncfdtri": {
         "cdf_wrappers.h": {
             "cdffnc2_wrap": "dddd->d"
+        }
+    },
+    "ncfdtri_cython": {
+        "_cdflib_wrappers.pxd": {
+            "ncfdtri": "dddd->d"
         }
     },
     "ncfdtridfd": {
@@ -1099,9 +1179,19 @@
             "cdffnc4_wrap": "dddd->d"
         }
     },
+    "ncfdtridfd_cython": {
+        "_cdflib_wrappers.pxd": {
+            "ncfdtridfd": "dddd->d"
+        }
+    },
     "ncfdtridfn": {
         "cdf_wrappers.h": {
             "cdffnc3_wrap": "dddd->d"
+        }
+    },
+    "ncfdtridfn_cython": {
+        "_cdflib_wrappers.pxd": {
+            "ncfdtridfn": "dddd->d"
         }
     },
     "ncfdtrinc": {
@@ -1109,9 +1199,19 @@
             "cdffnc5_wrap": "dddd->d"
         }
     },
+    "ncfdtrinc_cython": {
+        "_cdflib_wrappers.pxd": {
+            "ncfdtrinc": "dddd->d"
+        }
+    },
     "nctdtr": {
         "cdf_wrappers.h": {
             "cdftnc1_wrap": "ddd->d"
+        }
+    },
+    "nctdtr_cython": {
+        "_cdflib_wrappers.pxd": {
+            "nctdtr": "ddd->d"
         }
     },
     "nctdtridf": {
@@ -1124,9 +1224,19 @@
             "cdftnc4_wrap": "ddd->d"
         }
     },
+    "nctdtrinc_cython": {
+        "_cdflib_wrappers.pxd": {
+            "nctdtrinc": "ddd->d"
+        }
+    },
     "nctdtrit": {
         "cdf_wrappers.h": {
             "cdftnc2_wrap": "ddd->d"
+        }
+    },
+    "nctdtrit_cython": {
+        "_cdflib_wrappers.pxd": {
+            "nctdtrit": "ddd->d"
         }
     },
     "ndtr": {
@@ -1147,9 +1257,19 @@
             "cdfnor3_wrap": "ddd->d"
         }
     },
+    "nrdtrimn_cython": {
+        "_cdflib_wrappers.pxd": {
+            "nrdtrimn": "ddd->d"
+        }
+    },
     "nrdtrisd": {
         "cdf_wrappers.h": {
             "cdfnor4_wrap": "ddd->d"
+        }
+    },
+    "nrdtrisd_cython": {
+        "_cdflib_wrappers.pxd": {
+            "nrdtrisd": "ddd->d"
         }
     },
     "obl_ang1": {
@@ -1228,6 +1348,11 @@
     "pdtrik": {
         "cdf_wrappers.h": {
             "cdfpoi2_wrap": "dd->d"
+        }
+    },
+    "pdtrik_cython": {
+        "_cdflib_wrappers.pxd": {
+            "pdtrik": "dd->d"
         }
     },
     "poch": {
@@ -1392,9 +1517,19 @@
             "cdft1_wrap": "dd->d"
         }
     },
+    "stdtr_cython": {
+        "_cdflib_wrappers.pxd": {
+            "stdtr": "dd->d"
+        }
+    },
     "stdtridf": {
         "cdf_wrappers.h": {
             "cdft3_wrap": "dd->d"
+        }
+    },
+    "stdtridf_cython": {
+        "_cdflib_wrappers.pxd": {
+            "stdtridf": "dd->d"
         }
     },
     "stdtrit": {
@@ -1418,7 +1553,7 @@
         }
     },
     "tklmbda": {
-        "cdf_wrappers.h": {
+        "cephes.h": {
             "tukeylambdacdf": "dd->d"
         }
     },
