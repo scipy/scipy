@@ -253,6 +253,7 @@ Building from source to use SciPy
 
       # To build a development version, you need a local clone of the SciPy git repository:
       git clone https://github.com/scipy/scipy.git
+      cd scipy
       git submodule update --init
       pip install . --no-build-isolation
 
@@ -266,6 +267,7 @@ Building from source to use SciPy
 
       # To build a development version, you need a local clone of the SciPy git repository:
       git clone https://github.com/scipy/scipy.git
+      cd scipy
       git submodule update --init
       pip install .
 
@@ -280,6 +282,7 @@ If you want to build from source in order to work on SciPy itself, first clone
 the SciPy repository::
 
       git clone https://github.com/scipy/scipy.git
+      cd scipy
       git submodule update --init
 
 Then you want to do the following:
