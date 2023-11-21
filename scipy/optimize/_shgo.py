@@ -464,7 +464,7 @@ def shgo(
         shc.find_lowest_vertex()
         shc.break_routine = True
         shc.fail_routine(mes="Failed to find a feasible minimizer point. "
-                             "Lowest sampling point = {}".format(shc.f_lowest))
+                             f"Lowest sampling point = {shc.f_lowest}")
         shc.res.fun = shc.f_lowest
         shc.res.x = shc.x_lowest
         shc.res.nfev = shc.fn
@@ -1332,12 +1332,10 @@ class SHGO:
             return self.LMC[x_min].lres
 
         if self.callback is not None:
-            logging.info('Callback for '
-                  'minimizer starting at {}:'.format(x_min))
+            logging.info(f'Callback for minimizer starting at {x_min}:')
 
         if self.disp:
-            logging.info('Starting '
-                  'minimization at {}...'.format(x_min))
+            logging.info(f'Starting minimization at {x_min}...')
 
         if self.sampling_method == 'simplicial':
             x_min_t = tuple(x_min)

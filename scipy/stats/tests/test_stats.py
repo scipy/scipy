@@ -2472,7 +2472,7 @@ class TestMode:
     def test_raise_non_numeric_gh18254(self):
         message = "Argument `a` is not recognized as numeric."
 
-        class ArrLike():
+        class ArrLike:
             def __init__(self, x):
                 self._x = x
 
@@ -4721,7 +4721,7 @@ def test_ttest_ind():
     assert_allclose(p, converter(tr, pr, 'greater'), rtol=1e-14)
 
 
-class Test_ttest_ind_permutations():
+class Test_ttest_ind_permutations:
     N = 20
 
     # data for most tests
@@ -8076,7 +8076,7 @@ class TestMGCStat:
         assert_equal(res.stat, res.statistic)
 
 
-class TestQuantileTest():
+class TestQuantileTest:
     r""" Test the non-parametric quantile test,
     including the computation of confidence intervals
     """

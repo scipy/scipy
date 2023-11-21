@@ -561,8 +561,8 @@ class Build(Task):
                         log_size = os.stat(log_filename).st_size
                         if log_size > last_log_size:
                             elapsed = datetime.datetime.now() - start_time
-                            print("    ... installation in progress ({} "
-                                  "elapsed)".format(elapsed))
+                            print(f"    ... installation in progress ({elapsed} "
+                                  "elapsed)")
                             last_blip = time.time()
                             last_log_size = log_size
 
@@ -611,11 +611,11 @@ class Build(Task):
             raise RuntimeError(f"'pip install {module_name} first")
 
         local = os.path.join(basedir, "scipy", "_distributor_init_local.py")
-        with open(local, "wt", encoding="utf8") as fid:
+        with open(local, "w", encoding="utf8") as fid:
             fid.write(f"import {module_name}\n")
 
         os.makedirs(openblas_dir, exist_ok=True)
-        with open(pkg_config_fname, "wt", encoding="utf8") as fid:
+        with open(pkg_config_fname, "w", encoding="utf8") as fid:
             fid.write(openblas.get_pkg_config().replace("\\", "/"))
 
     @classmethod
@@ -837,8 +837,7 @@ class Bench(Task):
             for a in extra_argv:
                 bench_args.extend(['--bench', ' '.join(str(x) for x in a)])
             if not args.compare:
-                print("Running benchmarks for Scipy version %s at %s"
-                      % (version, mod_path))
+                print(f"Running benchmarks for Scipy version {version} at {mod_path}")
                 cmd = ['asv', 'run', '--dry-run', '--show-stderr',
                        '--python=same', '--quick'] + bench_args
                 retval = cls.run_asv(dirs, cmd)
@@ -936,7 +935,7 @@ def task_check_test_name():
 
 
 @cli.cls_cmd('lint')
-class Lint():
+class Lint:
     """:dash: Run linter on modified files and check for
     disallowed Unicode characters and possibly-invalid test names."""
     def run():

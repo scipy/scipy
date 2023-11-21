@@ -1478,9 +1478,7 @@ class TestOptimizeSimple(CheckOptimize):
             res = optimize.minimize(f, x0, jac=g, method=method,
                                     options=options)
 
-            err_msg = "{} {}: {}: {}".format(method, scale,
-                                                 first_step_size,
-                                                 res)
+            err_msg = f"{method} {scale}: {first_step_size}: {res}"
 
             assert res.success, err_msg
             assert_allclose(res.x, [1.0], err_msg=err_msg)

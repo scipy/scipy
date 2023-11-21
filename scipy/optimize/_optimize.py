@@ -1199,8 +1199,8 @@ def check_grad(func, grad, x0, *args, epsilon=_epsilon,
         vars = x0
         analytical_grad = grad(x0, *args)
     else:
-        raise ValueError("{} is not a valid string for "
-                         "``direction`` argument".format(direction))
+        raise ValueError(f"{direction} is not a valid string for "
+                         "``direction`` argument")
 
     return np.sqrt(np.sum(np.abs(
         (analytical_grad - approx_fprime(vars, _func, step, *_args))**2

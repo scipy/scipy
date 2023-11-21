@@ -64,8 +64,7 @@ def _assert_success(res, desired_fun=None, desired_x=None,
     # desired_fun: desired objective function value or None
     # desired_x: desired solution or None
     if not res.success:
-        msg = "linprog status {}, message: {}".format(res.status,
-                                                        res.message)
+        msg = f"linprog status {res.status}, message: {res.message}"
         raise AssertionError(msg)
 
     assert_equal(res.status, 0)
@@ -2211,7 +2210,7 @@ class TestLinprogHiGHSIPM(LinprogHiGHSTests):
 ###################################
 
 
-class TestLinprogHiGHSMIP():
+class TestLinprogHiGHSMIP:
     method = "highs"
     options = {}
 

@@ -1291,8 +1291,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         raise ValueError("First and last points does not match while "
                          "periodic case expected")
     if x.size != y.shape[0]:
-        raise ValueError('Shapes of x {} and y {} are incompatible'
-                         .format(x.shape, y.shape))
+        raise ValueError(f'Shapes of x {x.shape} and y {y.shape} are incompatible')
     if np.any(x[1:] == x[:-1]):
         raise ValueError("Expect x to not have duplicates")
     if x.ndim != 1 or np.any(x[1:] < x[:-1]):
@@ -1371,7 +1370,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     if nt - n != nleft + nright:
         raise ValueError("The number of derivatives at boundaries does not "
-                         "match: expected {}, got {}+{}".format(nt-n, nleft, nright))
+                         f"match: expected {nt-n}, got {nleft}+{nright}")
 
     # bail out if the `y` array is zero-sized
     if y.size == 0:
@@ -1544,13 +1543,11 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
     if t.ndim != 1 or np.any(t[1:] - t[:-1] < 0):
         raise ValueError("Expect t to be a 1-D sorted array_like.")
     if x.size != y.shape[0]:
-        raise ValueError('Shapes of x {} and y {} are incompatible'
-                         .format(x.shape, y.shape))
+        raise ValueError(f'Shapes of x {x.shape} and y {y.shape} are incompatible')
     if k > 0 and np.any((x < t[k]) | (x > t[-k])):
         raise ValueError('Out of bounds w/ x = %s.' % x)
     if x.size != w.size:
-        raise ValueError('Shapes of x {} and w {} are incompatible'
-                         .format(x.shape, w.shape))
+        raise ValueError(f'Shapes of x {x.shape} and w {w.shape} are incompatible')
 
     # number of coefficients
     n = t.size - k - 1

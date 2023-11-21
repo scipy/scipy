@@ -70,16 +70,15 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                     self.indptr = np.array(indptr, copy=copy, dtype=idx_dtype)
                     self.data = np.array(data, copy=copy, dtype=dtype)
                 else:
-                    raise ValueError("unrecognized {}_matrix "
-                                     "constructor usage".format(self.format))
+                    raise ValueError(f"unrecognized {self.format}_matrix "
+                                     "constructor usage")
 
         else:
             # must be dense
             try:
                 arg1 = np.asarray(arg1)
             except Exception as e:
-                raise ValueError("unrecognized {}_matrix constructor usage"
-                                 "".format(self.format)) from e
+                raise ValueError(f"unrecognized {self.format}_matrix constructor usage") from e
             self._set_self(self.__class__(
                 self._coo_container(arg1, dtype=dtype)
             ))
@@ -150,11 +149,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         # index arrays should have integer data types
         if self.indptr.dtype.kind != 'i':
-            warn("indptr array has non-integer dtype ({})"
-                 "".format(self.indptr.dtype.name), stacklevel=3)
+            warn(f"indptr array has non-integer dtype ({self.indptr.dtype.name})", stacklevel=3)
         if self.indices.dtype.kind != 'i':
-            warn("indices array has non-integer dtype ({})"
-                 "".format(self.indices.dtype.name), stacklevel=3)
+            warn(f"indices array has non-integer dtype ({self.indices.dtype.name})", stacklevel=3)
 
         # check array shapes
         for x in [self.data.ndim, self.indices.ndim, self.indptr.ndim]:
@@ -181,11 +178,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             # check format validity (more expensive)
             if self.nnz > 0:
                 if self.indices.max() >= minor_dim:
-                    raise ValueError("{} index values must be < {}"
-                                     "".format(minor_name, minor_dim))
+                    raise ValueError(f"{minor_name} index values must be < {minor_dim}")
                 if self.indices.min() < 0:
-                    raise ValueError("{} index values must be >= 0"
-                                     "".format(minor_name))
+                    raise ValueError(f"{minor_name} index values must be >= 0")
                 if np.diff(self.indptr).min() < 0:
                     raise ValueError("index pointer values must form a "
                                      "non-decreasing sequence")
@@ -348,8 +343,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
     def _add_dense(self, other):
         if other.shape != self.shape:
-            raise ValueError('Incompatible shapes ({} and {})'
-                             .format(self.shape, other.shape))
+            raise ValueError(f'Incompatible shapes ({self.shape} and {other.shape})')
         dtype = upcast_char(self.dtype.char, other.dtype.char)
         order = self._swap('CF')[0]
         result = np.array(other, dtype=dtype, order=order, copy=True)

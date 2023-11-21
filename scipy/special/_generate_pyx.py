@@ -75,7 +75,6 @@ from stat import ST_MTIME
 import argparse
 import re
 import textwrap
-from typing import List
 
 import numpy
 
@@ -1407,7 +1406,7 @@ def generate_fused_funcs(modname, ufunc_fn_prefix, fused_funcs):
         f.write("\n\n".join(bench_aux))
 
 
-def generate_ufuncs_type_stubs(module_name: str, ufuncs: List[Ufunc]):
+def generate_ufuncs_type_stubs(module_name: str, ufuncs: list[Ufunc]):
     stubs, module_all = [], []
     for ufunc in ufuncs:
         stubs.append(f'{ufunc.name}: np.ufunc')

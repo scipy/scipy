@@ -61,17 +61,17 @@ def main():
             print(msg)
         print()
 
-    msg = "Issues closed for {0}".format(args.milestone)
+    msg = f"Issues closed for {args.milestone}"
     print_list(msg, issues)
 
-    msg = "Pull requests for {0}".format(args.milestone)
+    msg = f"Pull requests for {args.milestone}"
     print_list(msg, prs)
 
     return 0
 
 
 def get_milestones(getter, project):
-    url = "https://api.github.com/repos/{project}/milestones".format(project=project)
+    url = f"https://api.github.com/repos/{project}/milestones"
     data = getter.get(url)
 
     milestones = {}
@@ -110,9 +110,9 @@ class CachedGet:
 
         self.filename = filename
         if os.path.isfile(filename):
-            print("[gh_lists] using {0} as cache (remove it if you want fresh data)".format(filename),
+            print(f"[gh_lists] using {filename} as cache (remove it if you want fresh data)",
                   file=sys.stderr)
-            with open(filename, 'r', encoding='utf-8') as f:
+            with open(filename, encoding='utf-8') as f:
                 self.cache = json.load(f)
         else:
             self.cache = {}
@@ -159,7 +159,7 @@ class GithubGet:
               file=sys.stderr, flush=True)
         print("Access token: ", file=sys.stderr, end='', flush=True)
         token = input()
-        self.headers['Authorization'] = 'token {0}'.format(token.strip())
+        self.headers['Authorization'] = f'token {token.strip()}'
 
     def urlopen(self, url, auth=None):
         assert url.startswith('https://')
@@ -181,7 +181,7 @@ class GithubGet:
                 s = self.ratelimit_reset + 5 - time.time()
                 if s <= 0:
                     break
-                print("[gh_lists] rate limit exceeded: waiting until {0} ({1} s remaining)".format(
+                print("[gh_lists] rate limit exceeded: waiting until {} ({} s remaining)".format(
                          datetime.datetime.fromtimestamp(self.ratelimit_reset).strftime('%Y-%m-%d %H:%M:%S'),
                          int(s)),
                       file=sys.stderr, flush=True)

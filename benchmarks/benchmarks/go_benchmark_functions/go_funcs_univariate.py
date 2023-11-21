@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from numpy import cos, exp, log, pi, sin, sqrt
 
 from .go_benchmark import Benchmark

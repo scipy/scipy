@@ -519,9 +519,8 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_p
 
     index = numpy.atleast_1d(index)
     if np.any(index.astype(labels.dtype).astype(index.dtype) != index):
-        raise ValueError("Cannot convert index values from <%s> to <%s> "
-                            "(labels' type) without loss of precision" %
-                            (index.dtype, labels.dtype))
+        raise ValueError(f"Cannot convert index values from <{index.dtype}> to "
+                         f"<{labels.dtype}> (labels' type) without loss of precision")
 
     index = index.astype(labels.dtype)
 

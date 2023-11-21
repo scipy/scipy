@@ -2014,8 +2014,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
         norm = 'approximate' if Kmax is None else 2
     known_norms = (2, 'approximate', 'subsample')
     if norm not in known_norms:
-        raise ValueError('norm must be one of %s, got %s'
-                         % (known_norms, norm))
+        raise ValueError(f'norm must be one of {known_norms}, got {norm}')
     if Kmax is None:
         singleton = True
         Kmax = 1

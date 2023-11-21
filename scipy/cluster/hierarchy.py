@@ -1104,19 +1104,19 @@ class ClusterNode:
     def __lt__(self, node):
         if not isinstance(node, ClusterNode):
             raise ValueError("Can't compare ClusterNode "
-                             "to type {}".format(type(node)))
+                             f"to type {type(node)}")
         return self.dist < node.dist
 
     def __gt__(self, node):
         if not isinstance(node, ClusterNode):
             raise ValueError("Can't compare ClusterNode "
-                             "to type {}".format(type(node)))
+                             f"to type {type(node)}")
         return self.dist > node.dist
 
     def __eq__(self, node):
         if not isinstance(node, ClusterNode):
             raise ValueError("Can't compare ClusterNode "
-                             "to type {}".format(type(node)))
+                             f"to type {type(node)}")
         return self.dist == node.dist
 
     def get_id(self):

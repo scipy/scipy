@@ -367,7 +367,7 @@ class _spbase:
         # helper function, outputs "(i,j)  v"
         def tostr(row, col, data):
             triples = zip(list(zip(row, col)), data)
-            return '\n'.join([('  %s\t%s' % t) for t in triples])
+            return '\n'.join([('  {}\t{}'.format(*t)) for t in triples])
 
         if self.nnz > maxprint:
             half = maxprint // 2

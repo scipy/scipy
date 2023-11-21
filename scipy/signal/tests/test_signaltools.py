@@ -2558,7 +2558,7 @@ class TestDecimate:
         rate = 120
         rates_to = [15, 20, 30, 40]  # q = 8, 6, 4, 3
 
-        t_tot = int(100)  # Need to let antialiasing filters settle
+        t_tot = 100  # Need to let antialiasing filters settle
         t = np.arange(rate*t_tot+1) / float(rate)
 
         # Sinusoids at 0.8*nyquist, windowed to avoid edge artifacts

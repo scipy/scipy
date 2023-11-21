@@ -1544,8 +1544,7 @@ def zpk2sos(z, p, k, pairing=None, *, analog=False):
 
     valid_pairings = ['nearest', 'keep_odd', 'minimal']
     if pairing not in valid_pairings:
-        raise ValueError('pairing must be one of %s, not %s'
-                         % (valid_pairings, pairing))
+        raise ValueError(f'pairing must be one of {valid_pairings}, not {pairing}')
 
     if analog and pairing != 'minimal':
         raise ValueError('for analog zpk2sos conversion, '
@@ -2382,8 +2381,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
 
     if wp.shape[0] != ws.shape[0] or wp.shape not in [(1,), (2,)]:
         raise ValueError("wp and ws must have one or two elements each, and"
-                         "the same shape, got %s and %s"
-                         % (wp.shape, ws.shape))
+                         f"the same shape, got {wp.shape} and {ws.shape}")
 
     if any(wp <= 0) or any(ws <= 0):
         raise ValueError("Values for wp, ws must be greater than 0")
@@ -2394,7 +2392,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
                 raise ValueError("Values for wp, ws must be less than 1")
         elif any(wp >= fs/2) or any(ws >= fs/2):
             raise ValueError("Values for wp, ws must be less than fs/2"
-                             " (fs={} -> fs/2={})".format(fs, fs/2))
+                             f" (fs={fs} -> fs/2={fs/2})")
 
     if wp.shape[0] == 2:
         if not ((ws[0] < wp[0] and wp[1] < ws[1]) or
@@ -5300,8 +5298,8 @@ def iircomb(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False):
     # Check for invalid cutoff frequency or filter type
     ftype = ftype.lower()
     if not 0 < w0 < fs / 2:
-        raise ValueError("w0 must be between 0 and {}"
-                         " (nyquist), but given {}.".format(fs / 2, w0))
+        raise ValueError(f"w0 must be between 0 and {fs / 2}"
+                         f" (nyquist), but given {w0}.")
     if ftype not in ('notch', 'peak'):
         raise ValueError('ftype must be either notch or peak.')
 
@@ -5468,8 +5466,8 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
     ftype = ftype.lower()
     filter_types = ['fir', 'iir']
     if not 0 < freq < fs / 2:
-        raise ValueError("The frequency must be between 0 and {}"
-                         " (nyquist), but given {}.".format(fs / 2, freq))
+        raise ValueError(f"The frequency must be between 0 and {fs / 2}"
+                         f" (nyquist), but given {freq}.")
     if ftype not in filter_types:
         raise ValueError('ftype must be either fir or iir.')
 

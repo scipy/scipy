@@ -261,9 +261,8 @@ class Data:
         self.x = _conv(x)
 
         if not isinstance(self.x, numpy.ndarray):
-            raise ValueError(("Expected an 'ndarray' of data for 'x', "
-                              "but instead got data of type '{name}'").format(
-                    name=type(self.x).__name__))
+            raise ValueError("Expected an 'ndarray' of data for 'x', "
+                             f"but instead got data of type '{type(self.x).__name__}'")
 
         self.y = _conv(y)
         self.we = _conv(we)
@@ -375,9 +374,8 @@ class RealData(Data):
         self.x = _conv(x)
 
         if not isinstance(self.x, numpy.ndarray):
-            raise ValueError(("Expected an 'ndarray' of data for 'x', "
-                              "but instead got data of type '{name}'").format(
-                    name=type(self.x).__name__))
+            raise ValueError("Expected an 'ndarray' of data for 'x', "
+                              f"but instead got data of type '{type(self.x).__name__}'")
 
         self.y = _conv(y)
         self.sx = _conv(sx)

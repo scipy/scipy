@@ -260,8 +260,7 @@ def _check_level(label, expected, actual):
         return
     # Check types are as expected
     assert_(types_compatible(expected, actual),
-            "Expected type %s, got %s at %s" %
-            (type(expected), type(actual), label))
+            f"Expected type {type(expected)}, got {type(actual)} at {label}")
     # A field in a record array may not be an ndarray
     # A scalar from a record array will be type np.void
     if not isinstance(expected,
@@ -270,9 +269,7 @@ def _check_level(label, expected, actual):
         return
     # This is an ndarray-like thing
     assert_(expected.shape == actual.shape,
-            msg='Expected shape {}, got {} at {}'.format(expected.shape,
-                                                     actual.shape,
-                                                     label))
+            msg=f'Expected shape {expected.shape}, got {actual.shape} at {label}')
     ex_dtype = expected.dtype
     if ex_dtype.hasobject:  # array of objects
         if isinstance(expected, MatlabObject):

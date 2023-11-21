@@ -345,7 +345,7 @@ class TestZipfian:
                         [mean, var, skew, kurtosis])
 
 
-class TestNCH():
+class TestNCH:
     np.random.seed(2)  # seeds 0 and 1 had some xl = xu; randint failed
     shape = (2, 4, 3)
     max_m = 100

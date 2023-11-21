@@ -209,8 +209,7 @@ def check_free_memory(free_mb):
         if mem_free is None:
             pytest.skip("Could not determine available memory; set SCIPY_AVAILABLE_MEM "
                         "variable to free memory in MB to run the test.")
-        msg = '{} MB memory required, but {} MB available'.format(
-            free_mb, mem_free/1e6)
+        msg = f'{free_mb} MB memory required, but {mem_free/1e6} MB available'
 
     if mem_free < free_mb * 1e6:
         pytest.skip(msg)

@@ -99,8 +99,8 @@ class TestCephes:
         def binom_int(n, k):
             n = int(n)
             k = int(k)
-            num = int(1)
-            den = int(1)
+            num = 1
+            den = 1
             for i in range(1, k+1):
                 num *= i + n - k
                 den *= i

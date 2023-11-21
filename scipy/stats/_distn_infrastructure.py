@@ -812,8 +812,7 @@ class rv_generic:
                 self.__doc__ = doccer.docformat(self.__doc__, tempdict)
             except TypeError as e:
                 raise Exception("Unable to construct docstring for "
-                                "distribution \"%s\": %s" %
-                                (self.name, repr(e))) from e
+                                f"distribution \"{self.name}\": {repr(e)}") from e
 
         # correct for empty shapes
         self.__doc__ = self.__doc__.replace('(, ', '(').replace(', )', ')')

@@ -34,8 +34,7 @@ def _iterable_of_int(x, name=None):
         x = [operator.index(a) for a in x]
     except TypeError as e:
         name = name or "value"
-        raise ValueError("{} must be a scalar or iterable of integers"
-                         .format(name)) from e
+        raise ValueError(f"{name} must be a scalar or iterable of integers") from e
 
     return x
 
@@ -168,8 +167,8 @@ def _workers(workers):
         if workers >= -_cpu_count:
             workers += 1 + _cpu_count
         else:
-            raise ValueError("workers value out of range; got {}, must not be"
-                             " less than {}".format(workers, -_cpu_count))
+            raise ValueError(f"workers value out of range; got {workers}, must not be"
+                             f" less than {-_cpu_count}")
     elif workers == 0:
         raise ValueError("workers must not be zero")
 
