@@ -52,7 +52,7 @@ sf_action_t sf_error_get_action(sf_error_t code)
 void sf_error_v(const char *func_name, sf_error_t code, const char *fmt, va_list ap)
 {
     /* Internal function which takes a va_list instead of variadic args.
-     * Makes this easier to wrap in error handling used in scipy::special C++
+     * Makes this easier to wrap in error handling used in special C++
      * namespace for special function kernels provided by SciPy. */
     PyGILState_STATE save;
     PyObject *scipy_special = NULL;

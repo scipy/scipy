@@ -31,7 +31,7 @@
         }
     },
     "_lambertw": {
-	"_extra_special.h++": {
+	"_special.h++": {
             "lambertw_scalar": "Dld->D"
 	}
     },
@@ -247,7 +247,7 @@
         }
     },
     "binom": {
-        "_extra_special.h++": {
+        "_special.h++": {
             "binom": "dd->d"
         }
     },
