@@ -379,29 +379,33 @@ interface is self-documenting, so please see ``python dev.py --help`` and
 .. admonition:: IDE support & editable installs
 
     While the ``dev.py`` interface is our recommended way of working on SciPy,
-    it has one limitation: because of the custom install location, setting
-    breakpoints inside an IDE or debugger does not work as expected. This will
-    only work with an *in-place build* (or "editable install").
+    it has one limitation: because of the custom install location, SciPy
+    installed using ``dev.py`` will not be recognized automatically within an
+    IDE (e.g., for running a script via a "run" button, or setting breakpoints
+    visually). This will work better with an *in-place build* (or "editable
+    install").
 
     Editable installs are supported. It is important to understand that **you
-    must use either an editable install or dev.py, but not both**. If you use
-    editable installs, you can use ``pytest`` and other development tools
-    directly instead of using ``dev.py``.
+    may use either an editable install or dev.py in a given repository clone,
+    but not both**. If you use editable installs, you have to use ``pytest``
+    and other development tools directly instead of using ``dev.py``.
 
     To use an editable install, ensure you start from a clean repository (run
-    ``git clean -xdf`` if you've built with ``dev.py`` before) and have all dependencies set up correctly as described higher up on this page. Then do::
+    ``git clean -xdf`` if you've built with ``dev.py`` before) and have all
+    dependencies set up correctly as described higher up on this page. Then
+    do::
 
         # Note: the --no-build-isolation is important! meson-python will
-        # auto-rebuild each time Scipy is imported by the Python interpreter.
+        # auto-rebuild each time SciPy is imported by the Python interpreter.
         pip install -e . --no-build-isolation
 
         # To run the tests for, e.g., the `scipy.linalg` module:
         pytest scipy/linalg
 
     When making changes to SciPy code, including to compiled code, there is no
-    need to manually rebuild. When you run ``git clean -xdf``, which removes
-    the built extension modules, remember to also uninstall SciPy with ``pip
-    uninstall scipy``.
+    need to manually rebuild or reinstall. When you run ``git clean -xdf``,
+    which removes the built extension modules, remember to also uninstall SciPy
+    with ``pip uninstall scipy``.
 
     See the meson-python_ documentation on editable installs for more details
     on how things work under the hood.
