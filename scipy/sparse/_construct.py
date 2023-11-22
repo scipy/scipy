@@ -284,7 +284,10 @@ def identity(n, dtype='d', format=None):
     """Identity matrix in sparse format
 
     Returns an identity matrix with shape (n,n) using a given
-    sparse format and dtype.
+    sparse format and dtype. This differs from `eye_array` in
+    that it has a square shape with ones only on the main diagonal.
+    It is thus the multiplicative identity. `eye_array` allows
+    rectangular shapes and the diagonal can be offset from the main one.
 
     .. warning::
 
