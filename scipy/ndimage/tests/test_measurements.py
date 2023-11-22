@@ -1390,3 +1390,14 @@ class TestWatershedIft:
         expected = [[1, 1],
                     [1, 1]]
         assert_array_almost_equal(out, expected)
+
+    def test_watershed_ift09(self):
+        # Test large cost. See gh-19575
+        data = np.array([[(1 << 16) - 1, 0],
+                         [0, 0]], np.uint16)
+        markers = np.array([[1, 0],
+                            [0, 0]], np.int8)
+        out = ndimage.watershed_ift(data, markers)
+        expected = [[1, 1],
+                    [1, 1]]
+        assert_array_almost_equal(out, expected)
