@@ -142,7 +142,11 @@ class NearestNDInterpolator(NDInterpolatorBase):
 
         # create a holder interp_values array with shape (n*m*.., k, l, ...) and fill with nans.
         interp_shape = flattened_shape[:-1] + self.values.shape[1:] if self.values.ndim > 1 else flattened_shape[:-1]
-        interp_values = np.full(interp_shape, np.nan, dtype=self.values.dtype)
+
+        if np.issubdtype(self.values.dtype, np.complexfloating):
+            interp_values = np.full(interp_shape, np.nan, dtype=self.values.dtype)
+        else:
+            interp_values = np.full(interp_shape, np.nan)
 
         if self.values.ndim == 1:
             interp_values[valid_mask] = self.values[i[valid_mask]]
