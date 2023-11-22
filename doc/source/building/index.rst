@@ -246,7 +246,7 @@ Building from source to use SciPy
       mamba env create -f environment.yml
 
       # Or, install only the required build dependencies
-      mamba install python numpy cython pythran pybind11 compilers openblas pkg-config
+      mamba install python numpy cython pythran pybind11 compilers openblas meson-python pkg-config
 
       # To build the latest stable release:
       pip install scipy --no-build-isolation --no-binary scipy
@@ -353,7 +353,7 @@ virtual environments:
     PyPI with::
 
        # Build dependencies
-       python -m pip install numpy cython pythran pybind11 meson ninja pydevtool rich-click
+       python -m pip install numpy cython pythran pybind11 meson-python ninja pydevtool rich-click
 
        # Test and optional runtime dependencies
        python -m pip install pytest pytest-xdist pytest-timeout pooch threadpoolctl asv gmpy2 mpmath hypothesis
