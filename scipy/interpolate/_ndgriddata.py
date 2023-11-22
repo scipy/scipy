@@ -128,9 +128,20 @@ class NearestNDInterpolator(NDInterpolatorBase):
         # distance, which is what will be used below to mask the array and return only the points that were deemed
         # to have a close enough neighbor to return something useful.
         valid_mask = np.isfinite(dist)
-        interp_values = np.zeros(i.shape)
-        interp_values[~valid_mask] = np.nan
-        interp_values[valid_mask] = self.values[i[valid_mask]]
+
+        if self.values.ndim == 1:
+            interp_shape = xi.shape[0]
+        else:
+            interp_shape = (xi.shape[0],) + self.values.shape[1:]
+
+        interp_values = np.full(interp_shape, np.nan, dtype=self.values.dtype)
+
+        # Indexing self.values - need to consider case where values is nD
+        if self.values.ndim == 1:
+            interp_values[valid_mask] = self.values[i[valid_mask]]
+        else:
+            interp_values[valid_mask] = self.values[i[valid_mask], ...]
+
         return interp_values
 
 
