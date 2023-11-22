@@ -30,9 +30,9 @@ class NearestNDInterpolator(NDInterpolatorBase):
 
     Parameters
     ----------
-    x : (npoints, ndims) n-D ndarray of floats
+    x : (npoints, ndims) 2-D ndarray of floats
         Data point coordinates.
-    y : (npoints, ...) n-D ndarray of floats or complex
+    y : (m1, …, mn, …) n-D ndarray of floats or complex
         Data values.
     rescale : boolean, optional
         Rescale points to unit cube before performing interpolation.
@@ -109,8 +109,9 @@ class NearestNDInterpolator(NDInterpolatorBase):
             x1, x2, ... xn can be array-like of float with broadcastable shape.
             or x1 can be array-like of float with shape ``(..., ndim)``
         query_options : dict, optional
-            This allows `eps`, `p`, `distance_upper_bound`, and `workers` being passed to the cKDTree's query function
-            to be explicitly set. See the `scipy.spatial.cKDTree.query` for an overview of the different options.
+            This allows ``eps``, ``p``, ``distance_upper_bound``, and ``workers`` being passed to the cKDTree's query
+            function to be explicitly set. See the `scipy.spatial.cKDTree.query` for an overview of the different
+            options.
 
             ..versionadded:: 1.12.0
 
@@ -122,11 +123,11 @@ class NearestNDInterpolator(NDInterpolatorBase):
         xi = self._check_call_shape(xi)
         xi = self._scale_x(xi)
 
-        # We need to handle two important cases for compatibility with a flexible griddata:
-        # (1) the case where xi is of some dimension (n, m, ..., D), where D is the coordinate dimension, and
-        # (2) the case where y is multidimensional (npoints, k, l, ...).
-        # We will first flatten xi to deal with case (1) and build an intermediate return array with shape
-        # (n*m*.., k, l, ...) and then reshape back to (n, m, ..., k, l, ...).
+        # We need to handle two important cases:
+        # (1) the case where xi has trailing dimensions (..., ndim), where D is the coordinate dimension, and
+        # (2) the case where y is multidimensional (m1, …, mn, …).
+        # We will first flatten xi to deal with case (1), do the computation in flattened array while retaining y's
+        # dimensionality, and then reshape the interpolated values back to match xi's shape.
 
         # Flatten xi for the query
         xi_flat = xi.reshape(-1, xi.shape[-1])
@@ -140,7 +141,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
         dist, i = self.tree.query(xi_flat, **query_options)
         valid_mask = np.isfinite(dist)
 
-        # create a holder interp_values array with shape (n*m*.., k, l, ...) and fill with nans.
+        # create a holder interp_values array and fill with nans.
         interp_shape = flattened_shape[:-1] + self.values.shape[1:] if self.values.ndim > 1 else flattened_shape[:-1]
 
         if np.issubdtype(self.values.dtype, np.complexfloating):
@@ -153,7 +154,6 @@ class NearestNDInterpolator(NDInterpolatorBase):
         else:
             interp_values[valid_mask] = self.values[i[valid_mask], ...]
 
-        # (n*m*.., k, l, ...) -> (n, m, ..., k, l, ...)
         new_shape = original_shape[:-1] + self.values.shape[1:] if self.values.ndim > 1 else original_shape[:-1]
         interp_values = interp_values.reshape(new_shape)
 
