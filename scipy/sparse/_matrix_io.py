@@ -161,4 +161,4 @@ def load_npz(file):
             return cls((loaded['data'], (loaded['row'], loaded['col'])), shape=loaded['shape'])
         else:
             raise NotImplementedError('Load is not implemented for '
-                                      'sparse matrix of format {}.'.format(sparse_format))
+                                      f'sparse matrix of format {sparse_format}.')
