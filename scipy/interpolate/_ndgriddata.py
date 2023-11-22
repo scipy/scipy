@@ -108,7 +108,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
             Points where to interpolate data at.
             x1, x2, ... xn can be array-like of float with broadcastable shape.
             or x1 can be array-like of float with shape ``(..., ndim)``
-        query_options : dict, optional
+        **query_options
             This allows ``eps``, ``p``, ``distance_upper_bound``, and ``workers`` being passed to the cKDTree's query
             function to be explicitly set. See the `scipy.spatial.cKDTree.query` for an overview of the different
             options.
