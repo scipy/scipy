@@ -197,8 +197,8 @@ class TestNearestNDInterpolator:
         assert_array_equal(NI([0.1, 0.9], [0.1, 0.9]), [0, 2])
 
     def test_nearest_query_options(self):
-        nd = np.array([[0, 1, 0, 1],
-                       [0, 0, 1, 1],
+        nd = np.array([[0, 0.5, 0, 1],
+                       [0, 0, 0.5, 1],
                        [0, 1, 1, 2]])
         delta = 0.1
         query_points = [0 + delta, 1 + delta], [0 + delta, 1 + delta]

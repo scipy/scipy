@@ -30,9 +30,9 @@ class NearestNDInterpolator(NDInterpolatorBase):
 
     Parameters
     ----------
-    x : (npoints, ndims) 2-D ndarray of floats
+    x : (npoints, ndims) n-D ndarray of floats
         Data point coordinates.
-    y : (npoints, ) 1-D ndarray of float or complex
+    y : (npoints, ...) n-D ndarray of floats or complex
         Data values.
     rescale : boolean, optional
         Rescale points to unit cube before performing interpolation.
@@ -121,26 +121,37 @@ class NearestNDInterpolator(NDInterpolatorBase):
         xi = _ndim_coords_from_arrays(args, ndim=self.points.shape[1])
         xi = self._check_call_shape(xi)
         xi = self._scale_x(xi)
-        dist, i = self.tree.query(xi, **query_options)
+
+        # We need to handle two important cases for compatibility with a flexible griddata:
+        # (1) the case where xi is of some dimension (n, m, ..., D), where D is the coordinate dimension, and
+        # (2) the case where y is multidimensional (npoints, k, l, ...).
+        # We will first flatten xi to deal with case (1) and build an intermediate return array with shape
+        # (n*m*.., k, l, ...) and then reshape back to (n, m, ..., k, l, ...).
+
+        # Flatten xi for the query
+        xi_flat = xi.reshape(-1, xi.shape[-1])
+        original_shape = xi.shape
+        flattened_shape = xi_flat.shape
 
         # if distance_upper_bound is set to not be infinite, then we need to consider the case where cKDtree
         # does not find any points within distance_upper_bound to return. It marks those points as having infinte
         # distance, which is what will be used below to mask the array and return only the points that were deemed
         # to have a close enough neighbor to return something useful.
+        dist, i = self.tree.query(xi_flat, **query_options)
         valid_mask = np.isfinite(dist)
 
-        if self.values.ndim == 1:
-            interp_shape = xi.shape[0]
-        else:
-            interp_shape = (xi.shape[0],) + self.values.shape[1:]
-
+        # create a holder interp_values array with shape (n*m*.., k, l, ...) and fill with nans.
+        interp_shape = flattened_shape[:-1] + self.values.shape[1:] if self.values.ndim > 1 else flattened_shape[:-1]
         interp_values = np.full(interp_shape, np.nan, dtype=self.values.dtype)
 
-        # Indexing self.values - need to consider case where values is nD
         if self.values.ndim == 1:
             interp_values[valid_mask] = self.values[i[valid_mask]]
         else:
             interp_values[valid_mask] = self.values[i[valid_mask], ...]
+
+        # (n*m*.., k, l, ...) -> (n, m, ..., k, l, ...)
+        new_shape = original_shape[:-1] + self.values.shape[1:] if self.values.ndim > 1 else original_shape[:-1]
+        interp_values = interp_values.reshape(new_shape)
 
         return interp_values
 
@@ -148,6 +159,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
 #------------------------------------------------------------------------------
 # Convenience interface function
 #------------------------------------------------------------------------------
+
 
 def griddata(points, values, xi, method='linear', fill_value=np.nan,
              rescale=False):
