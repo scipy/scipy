@@ -332,7 +332,7 @@ def eye_array(m, n=None, *, k=0, dtype=float, format=None):
     Parameters
     ----------
     m : int or tuple of ints
-        Number of rows or shape requested.
+        Number of rows requested.
     n : int, optional
         Number of columns. Default: `m`.
     k : int, optional
@@ -1115,8 +1115,7 @@ def random_array(shape, *, density=0.01, format='coo', dtype=None,
         By default, uniform [0, 1) random values are used unless `dtype` is
         an integer (default uniform integers from that dtype) or
         complex (default uniform over the unit square in the complex plane).
-        Also by default the `random_state` rng is used e.g.
-        `random_state.uniform(size=size)`.
+        For these, the `random_state` rng is used e.g. `rng.uniform(size=size)`.
 
     Returns
     -------
@@ -1212,7 +1211,6 @@ def _random(shape, density=0.01, format=None, dtype=None,
             dsize = size - len(seen)
             seen.update(map(tuple, rng_integers(rng, shape, size=(dsize, ndim))))
         ind = tuple(np.array(list(seen)).T)
-        print("size(ind): ",tuple(a.shape for a in ind))
 
     # size kwarg allows eg data_sampler=partial(np.random.poisson, lam=5)
     vals = data_sampler(size=size).astype(dtype, copy=False)

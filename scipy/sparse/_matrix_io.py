@@ -69,7 +69,7 @@ def save_npz(file, matrix, compressed=True):
         data=matrix.data
     )
     if isinstance(matrix, sp.sparse.sparray):
-        arrays_dict.update(__is_array="array")
+        arrays_dict.update(_is_array=True)
     if compressed:
         np.savez_compressed(file, **arrays_dict)
     else:
@@ -131,11 +131,10 @@ def load_npz(file):
     >>> sparse_array = sp.sparse.csr_array(tmp)
     """
     with np.load(file, **PICKLE_KWARGS) as loaded:
-        try:
-            sparse_format = loaded['format']
-        except KeyError as e:
-            raise ValueError(f'The file {file} does not contain a sparse matrix.') from e
-
+        sparse_format = loaded.get('format')
+        if sparse_format is None:
+            raise ValueError(f'The file {file} does not contain '
+                             'a sparse array or matrix.')
         sparse_format = sparse_format.item()
 
         if not isinstance(sparse_format, str):
@@ -143,7 +142,7 @@ def load_npz(file):
             # files saved with SciPy < 1.0.0 may contain unicode or bytes.
             sparse_format = sparse_format.decode('ascii')
 
-        if '__is_array' in loaded and loaded['__is_array'].item() == 'array':
+        if loaded.get('_is_array'):
             sparse_type = sparse_format + '_array'
         else:
             sparse_type = sparse_format + '_matrix'
