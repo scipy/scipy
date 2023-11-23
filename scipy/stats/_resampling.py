@@ -952,8 +952,20 @@ class PowerResult:
     pvalues: float | np.ndarray
 
 
+def wrap_kwargs(fun):
+    try:
+        keys = set(inspect.signature(fun).parameters.keys())
+    except ValueError:
+        keys = {'size'}
+
+    def wrapped_rvs_i(*args, keys=keys, fun=fun, **all_kwargs):
+        kwargs = {key: val for key, val in all_kwargs.items()
+                  if key in keys}
+        return fun(*args, **kwargs)
+    return wrapped_rvs_i
+
 def _power_iv(rvs, test, n_observations, significance, vectorized,
-              n_resamples, batch, args):
+              n_resamples, batch, kwargs):
     """Input validation for `monte_carlo_test`."""
 
     if vectorized not in {True, False, None}:
@@ -976,16 +988,24 @@ def _power_iv(rvs, test, n_observations, significance, vectorized,
             or np.min(significance) < 0 or np.max(significance) > 1):
         raise TypeError("`significance` must contain floats between 0 and 1.")
 
-    if not isinstance(args, Sequence):
-        args = (args,)
+    kwargs = dict() if kwargs is None else kwargs
+    if not isinstance(kwargs, dict):
+        raise TypeError("`kwargs` must be a dictionary mapping keywards to arrays.")
 
-    tmp = np.asarray(np.broadcast_arrays(*n_observations, *args))
+    vals = kwargs.values()
+    keys = set(kwargs.keys())
+
+    # Wrap callables to accept any keyword argument but only use the ones
+    # that should be used
+    wrapped_rvs = [wrap_kwargs(rvs_i) for rvs_i in rvs]
+
+    tmp = np.asarray(np.broadcast_arrays(*n_observations, *vals))
     shape = tmp.shape
     if tmp.ndim == 1:
         tmp = tmp[np.newaxis, :]
     else:
         tmp = tmp.reshape((shape[0], -1)).T
-    nobs, args = tmp[:, :len(rvs)], tmp[:, len(rvs):]
+    nobs, vals = tmp[:, :len(rvs)], tmp[:, len(rvs):]
     nobs = np.asarray(nobs).astype(int)
 
     if not callable(test):
@@ -998,6 +1018,7 @@ def _power_iv(rvs, test, n_observations, significance, vectorized,
         test_vectorized = _vectorize_statistic(test)
     else:
         test_vectorized = test
+    test_vectorized = wrap_kwargs(test_vectorized)
 
     n_resamples_int = int(n_resamples)
     if n_resamples != n_resamples_int or n_resamples_int <= 0:
@@ -1010,12 +1031,12 @@ def _power_iv(rvs, test, n_observations, significance, vectorized,
         if batch != batch_iv or batch_iv <= 0:
             raise ValueError("`batch` must be a positive integer or None.")
 
-    return (rvs, test_vectorized, nobs, significance, vectorized,
-            n_resamples_int, batch_iv, args, shape[1:])
+    return (wrapped_rvs, test_vectorized, nobs, significance, vectorized,
+            n_resamples_int, batch_iv, vals, keys, shape[1:])
 
 
 def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
-          n_resamples=9999, batch=None, args=tuple()):
+          n_resamples=9999, batch=None, kwargs=None):
     r"""Simulate the power of a hypothesis test under an alternative hypothesis.
 
     Parameters
@@ -1047,12 +1068,13 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
         hypothesis test results will be considered as evidence against the null
         hypothesis. Equivalently, the acceptable rate of Type I error under
         the null hypothesis.
-    args : tuple of arrays, optional
-        Sequence of array arguments to be passed to all `rvs` and `test`
-        callables as positional arguments. Arrays must be broadcastable with
-        one another and with each array in `n_observations`; the power is
-        simulated for each set of corresponding sample sizes and arguments.
-        See Examples.
+    kwargs : dict, optional
+        Keyword arguments to be passed to `rvs` and/or `test` callables.
+        Introspection is used to determine which keyword arguments may be
+        passed to each callable.
+        Arrays must be broadcastable with one another and with each array in
+        `n_observations`; the power is simulated for each set of corresponding
+        sample sizes and arguments. See Examples.
     vectorized : bool, optional
         If `vectorized` is set to ``False``, `test` will not be passed keyword
         argument `axis` and is expected to perform the test only for 1D samples.
@@ -1125,14 +1147,12 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
     In this case, the effect size is the location of the distribution underlying
     the second sample.
 
-    >>> test = lambda x, y, loc, axis: stats.ttest_ind(x, y, axis=axis)
     >>> n_observations = (10, 12)
     >>> loc = np.linspace(0, 1, 20)
-    >>> rvs1 = lambda loc, size: rng.normal(size=size)
-    >>> rvs2 = lambda loc, size: rng.normal(loc=loc, size=size)
+    >>> rvs2 = lambda size, loc: rng.normal(loc=loc, size=size)
     >>> rvs = (rvs1, rvs2)
-    >>> res = stats.power(test, rvs, n_observations, significance=0.05, args=(loc,))
-    >>>
+    >>> res = stats.power(test, rvs, n_observations, significance=0.05,
+    ...                   kwargs={'loc': loc})
     >>> ax = plt.subplot()
     >>> ax.plot(loc, res.power)
     >>> ax.set_xlabel('Effect Size')
@@ -1171,23 +1191,23 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
     """
     # TODO:
     # - improve auto-vectorization
-    # - improve `args` interface
     # - simplify n_observations/args input validation
     # - tests
     tmp = _power_iv(rvs, test, n_observations, significance,
-                    vectorized, n_resamples, batch, args)
+                    vectorized, n_resamples, batch, kwargs)
     (rvs, test, nobs, significance,
-     vectorized, n_resamples, batch, args, shape)= tmp
+     vectorized, n_resamples, batch, args, kwds, shape)= tmp
 
     batch_nominal = batch or n_resamples
     pvalues = []
     for nobs_i, args_i in zip(nobs, args):
+        kwargs_i = dict(zip(kwds, args_i))
         ps = []
         for k in range(0, n_resamples, batch_nominal):
             batch_actual = min(batch_nominal, n_resamples - k)
-            resamples = [rvs_j(*args_i, size=(batch_actual, nobs_ij))
+            resamples = [rvs_j(size=(batch_actual, nobs_ij), **kwargs_i)
                          for rvs_j, nobs_ij in zip(rvs, nobs_i)]
-            res = test(*resamples, *args_i, axis=-1)
+            res = test(*resamples, **kwargs_i, axis=-1)
             p = getattr(res, 'pvalue', res)
             ps.append(p)
         ps = np.concatenate(ps)
