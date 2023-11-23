@@ -32,7 +32,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
     ----------
     x : (npoints, ndims) 2-D ndarray of floats
         Data point coordinates.
-    y : (m1, …, mn, …) n-D ndarray of floats or complex
+    y : 1-D ndarray of float or complex
         Data values.
     rescale : boolean, optional
         Rescale points to unit cube before performing interpolation.
@@ -124,8 +124,8 @@ class NearestNDInterpolator(NDInterpolatorBase):
         xi = self._scale_x(xi)
 
         # We need to handle two important cases:
-        # (1) the case where xi has trailing dimensions (..., ndim), where D is the coordinate dimension, and
-        # (2) the case where y is multidimensional (m1, …, mn, …).
+        # (1) the case where xi has trailing dimensions (..., ndim), and
+        # (2) the case where y has trailing dimensions
         # We will first flatten xi to deal with case (1), do the computation in flattened array while retaining y's
         # dimensionality, and then reshape the interpolated values back to match xi's shape.
 
@@ -149,10 +149,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
         else:
             interp_values = np.full(interp_shape, np.nan)
 
-        if self.values.ndim == 1:
-            interp_values[valid_mask] = self.values[i[valid_mask]]
-        else:
-            interp_values[valid_mask] = self.values[i[valid_mask], ...]
+        interp_values[valid_mask] = self.values[i[valid_mask], ...]
 
         new_shape = original_shape[:-1] + self.values.shape[1:] if self.values.ndim > 1 else original_shape[:-1]
         interp_values = interp_values.reshape(new_shape)
