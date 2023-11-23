@@ -1,9 +1,53 @@
 import numpy as np
-from scipy.spatial import cKDTree
-from .interpnd import NDInterpolatorBase, _ndim_coords_from_arrays
+from scipy.spatial import cKDTree, distance
+from scipy.interpolate.interpnd import NDInterpolatorBase, _ndim_coords_from_arrays
 
 
 class InverseDistanceWeightedNDInterpolator(NDInterpolatorBase):
+    """
+    Inverse Distance Weighted (IDW) interpolation for N-dimensional data.
+
+    This interpolator uses an inverse distance weighting method for interpolating
+    values across an N-dimensional space.
+
+    Parameters
+    ----------
+    x : (npoints, ndims) ndarray of floats
+        Data point coordinates.
+    y : (npoints, ) ndarray of floats
+        Data values associated with the points.
+    rescale : bool, optional
+        Rescale points to a unit cube before performing interpolation.
+        This is useful if some of the input dimensions have incommensurable units
+        and differ by many orders of magnitude. Default is False.
+    fill_value : float or nan, optional
+        Value used to fill in for requested points outside of the convex hull
+        of the input points. Default is nan.
+    tree_options : dict, optional
+        Options passed to the underlying `cKDTree`.
+    local : bool, optional
+        If True, perform local interpolation, else global. Default is True.
+
+    Methods
+    -------
+    __call__(xi, p=2, k=3, distance_upper_bound=np.inf, **query_options)
+        Evaluate the interpolator at given points.
+
+    Examples
+    --------
+    >>> points = np.array([[0, 0], [1, 1], [2, 2]])
+    >>> values = np.array([0, 1, 2])
+    >>> interpolator = InverseDistanceWeightedNDInterpolator(points, values)
+    >>> interpolator([1.5, 1.5])
+    # array output of interpolated value
+
+    Notes
+    -----
+    The interpolation uses an inverse distance weighting method, where the
+    influence of each data point on the interpolated values is inversely
+    proportional to the distance from the point to a power `p`.
+    """
+
     def __init__(self, x, y, rescale=False, fill_value=np.nan, tree_options=None, local=True):
         NDInterpolatorBase.__init__(self, x, y, rescale=rescale,
                                     need_contiguous=False,
@@ -16,30 +60,129 @@ class InverseDistanceWeightedNDInterpolator(NDInterpolatorBase):
         self._local = local
         self._fill_value = fill_value
 
-    def __call__(self, xi, p=2, k=6, distance_upper_bound=np.inf, **query_options):
+    def __call__(self, xi, p=2, k=3, distance_upper_bound=np.inf, **query_options):
+        """
+        Evaluate the interpolator at given points.
+
+        Parameters
+        ----------
+        xi : array_like
+            Points to interpolate the data at.
+        p : float, optional
+            The power of the inverse distance weighting. Default is 2.
+        k : int, optional
+            The number of nearest neighbors to use for interpolation. Default is 3.
+        distance_upper_bound : float, optional
+            The maximum distance to consider for points to influence the
+            interpolation at a given point. Default is np.inf.
+        **query_options : dict, optional
+            Additional keyword arguments to pass to the cKDTree query method.
+
+        Returns
+        -------
+        ndarray
+            Interpolated values at the input points ``xi``.
+        """
         xi = _ndim_coords_from_arrays(xi, ndim=self.points.shape[1])
         xi = self._check_call_shape(xi)
         xi = self._scale_x(xi)
 
         if self._local:
-            interp_values = self._local_idw_interpolation(xi, p=p, k=k, distance_upper_bound=distance_upper_bound,
-                                                          **query_options)
+            interp_values = self._local_idw_interpolation(xi, p=p, k=k, distance_upper_bound=distance_upper_bound, **query_options)
         else:
-            interp_values = self._gloabl_idw_interpolation(xi, p=p)
+            interp_values = self._global_idw_interpolation(xi, p=p)
 
         return interp_values
 
-    def _local_idw_interpolation(self, xi, p, k, distance_upper_bound, **query_options):
+    def _local_idw_interpolation(self, xi, p, k, distance_upper_bound, eps=1e-7, **query_options):
+        """
+        Perform local Inverse Distance Weighting interpolation.
+
+        In local IDW, only the k-nearest neighbors of each query point are considered for
+        interpolation. This method tends to be faster, but requires some careful thought on hyperparameters
+        chosen for the IDW interpolation.
+
+        Parameters
+        ----------
+        xi : ndarray
+            The query points where interpolation is performed.
+        p : float
+            The power parameter of IDW. Higher values assign greater weight to closer points.
+        k : int
+            The number of nearest neighbors to consider for each query point.
+        distance_upper_bound : float
+            Maximum distance for points to be considered as neighbors.
+        eps : float, optional
+            Small constant to prevent division by zero in weight calculation. This can be changed depending on the
+            distance scale of different problems.
+        **query_options : dict, optional
+            Additional options to pass to the KDTree query.
+
+        Returns
+        -------
+        ndarray
+            The interpolated values at the query points.
+        """
         xi_flat = xi.reshape(-1, xi.shape[-1])
         original_shape = xi.shape
         flattened_shape = xi_flat.shape
 
         dist, i = self.tree.query(xi_flat, k=k, distance_upper_bound=distance_upper_bound, **query_options)
+
         valid_mask = np.isfinite(dist)
 
-        weights = 1.0 / dist ** p
+        to_interpolate_mask = np.any(valid_mask, axis=1)
+        zero_dist_mask = np.any(dist == 0, axis=1)
 
-        # create a holder interp_values array with shape (n*m*.., k, l, ...) and fill with nans.
+        weights = 1.0 / np.maximum(dist, eps) ** p
+
+        interp_shape = flattened_shape[:-1] + self.values.shape[1:] if self.values.ndim > 1 else flattened_shape[:-1]
+
+        if np.issubdtype(self.values.dtype, np.complexfloating):
+            relevant_values = np.full(interp_shape + (k,), np.nan, dtype=self.values.dtype)
+            interp_values = np.full(interp_shape, self._fill_value, dtype=self.values.dtype)
+        else:
+            relevant_values = np.full(interp_shape + (k,), np.nan)
+            interp_values = np.full(interp_shape, self._fill_value)
+
+        relevant_values[valid_mask] = self.values[i[valid_mask]]
+
+        numerator = np.sum(np.multiply(weights, relevant_values, where=valid_mask), axis=-1)
+        denominator = np.sum(weights, axis=-1, where=valid_mask)
+
+        interp_values[to_interpolate_mask] = numerator[to_interpolate_mask] / denominator[to_interpolate_mask]
+        interp_values[zero_dist_mask] = self.values[i[zero_dist_mask, 0]]
+
+        new_shape = original_shape[:-1] + self.values.shape[1:] if self.values.ndim > 1 else original_shape[:-1]
+        interp_values = interp_values.reshape(new_shape)
+
+        return interp_values
+
+    def _global_idw_interpolation(self, xi, p, eps=1e-7):
+        """
+        Perform global Inverse Distance Weighting interpolation.
+
+        In global IDW, all points in the dataset contribute to the interpolation of each
+        query point.
+
+        Parameters
+        ----------
+        xi : ndarray
+            The query points where interpolation is performed.
+        p : float
+            The power parameter of IDW.
+        eps : float, optional
+            Small constant to prevent division by zero in weight calculation.
+
+        Returns
+        -------
+        ndarray
+            The interpolated values at the query points.
+        """
+        xi_flat = xi.reshape(-1, xi.shape[-1])
+        original_shape = xi.shape
+        flattened_shape = xi_flat.shape
+
         interp_shape = flattened_shape[:-1] + self.values.shape[1:] if self.values.ndim > 1 else flattened_shape[:-1]
 
         if np.issubdtype(self.values.dtype, np.complexfloating):
@@ -47,14 +190,23 @@ class InverseDistanceWeightedNDInterpolator(NDInterpolatorBase):
         else:
             interp_values = np.full(interp_shape, self._fill_value)
 
-        if self.values.ndim == 1:
-            interp_values[valid_mask] = np.sum(weights[valid_mask, ...] * self.values[i[valid_mask]], axis=-1) / np.sum(
-                weights[valid_mask], axis=-1)
-        else:
-            interp_values[valid_mask] = np.sum(weights[valid_mask, ...] * self.values[i[valid_mask], ...], axis=-1) / np.sum(
-                weights[valid_mask], axis=-1)
+        for i in range(len(xi_flat)):
+            dist = distance.cdist(xi_flat[i, np.newaxis], self.points).ravel()
+            weights = 1.0 / np.maximum(dist, eps) ** p
+
+            zero_dist_mask = np.any(dist == 0)
+
+            if zero_dist_mask:
+                interp_values[i] = self.values[zero_dist_mask]
+
+            else:
+                if np.any(np.isfinite(dist)):
+                    numerator = np.sum((weights * self.values))
+                    denominator = np.sum(weights)
+                    interp_values[i] = numerator / denominator
 
         new_shape = original_shape[:-1] + self.values.shape[1:] if self.values.ndim > 1 else original_shape[:-1]
         interp_values = interp_values.reshape(new_shape)
 
         return interp_values
+
