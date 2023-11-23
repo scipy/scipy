@@ -14,7 +14,7 @@ __all__ = [  # noqa: F822
     'bsr_tocsr',
     'bsr_transpose',
     'check_shape',
-    'csr_matmat_maxnnz',
+    'bsr_matmat_maxnnz',
     'getdata',
     'getdtype',
     'isshape',

@@ -322,3 +322,30 @@ _warnings.filterwarnings('ignore', message=msg)
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester
+
+# Register the sparsetools thread pool with threadpoolctl
+try:
+    import threadpoolctl
+
+    class _SparseToolsThreadPoolCtlController(threadpoolctl.LibController):
+        user_api = "scipy"
+        internal_api = "scipy_sparsetools"
+
+        filename_prefixes = ("_sparsetools",)
+
+        def get_num_threads(self):
+            return _sparsetools.get_workers()
+
+        def set_num_threads(self, num_threads):
+            _sparsetools.set_workers(num_threads)
+
+        def get_version(self):
+            return "1"
+
+        def set_additional_attributes(self):
+            pass
+
+    threadpoolctl.register(_SparseToolsThreadPoolCtlController)
+except (ImportError, AttributeError):
+    # threadpoolctl not installed or version too old
+    pass

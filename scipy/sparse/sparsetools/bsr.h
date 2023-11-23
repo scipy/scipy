@@ -245,6 +245,52 @@ void bsr_transpose(const I n_brow,
 
 
 
+/*
+ * Compute the number of non-zeroes (nnz) in the result of C = A * B.
+ *
+ */
+template <class I>
+npy_intp bsr_matmat_maxnnz(const I n_row,
+                           const I n_col,
+                           const I Ap[],
+                           const I Aj[],
+                           const I Bp[],
+                           const I Bj[])
+{
+    // method that uses O(n) temp storage
+    std::vector<I> mask(n_col, -1);
+
+    npy_intp nnz = 0;
+    for(I i = 0; i < n_row; i++){
+        npy_intp row_nnz = 0;
+
+        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
+            I j = Aj[jj];
+            for(I kk = Bp[j]; kk < Bp[j+1]; kk++){
+                I k = Bj[kk];
+                if(mask[k] != i){
+                    mask[k] = i;
+                    row_nnz++;
+                }
+            }
+        }
+
+        npy_intp next_nnz = nnz + row_nnz;
+
+        if (row_nnz > NPY_MAX_INTP - nnz) {
+            /*
+             * Index overflowed. Note that row_nnz <= n_col and cannot overflow
+             */
+            throw std::overflow_error("nnz of the result is too large");
+        }
+
+        nnz = next_nnz;
+    }
+
+    return nnz;
+}
+
+
 template <class I, class T>
 void bsr_matmat(const I maxnnz,
                 const I n_brow,  const I n_bcol,
@@ -257,6 +303,8 @@ void bsr_matmat(const I maxnnz,
 
     if( R == 1 && N == 1 && C == 1 ){
         // Use CSR for 1x1 blocksize
+        csr_matmat_maxnnz(n_brow, n_bcol, Ap, Aj, Ax, Bp, Bj, Bx, Cp);
+        std::inclusive_scan(Cp, Cp + n_brow + 1, Cp);
         csr_matmat(n_brow, n_bcol, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx);
         return;
     }

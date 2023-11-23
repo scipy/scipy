@@ -44,6 +44,19 @@ from scipy._lib._util import ComplexWarning
 import pytest
 
 
+# Run the entire test suite with both sequential and parallel codepaths
+@pytest.fixture(scope='module', params=(False, True), autouse=True)
+def implementations(request):
+    if request.param:
+        # parallelize everything
+        scipy.sparse._sparsetools.set_par_threshold(1)
+        scipy.sparse._sparsetools.set_workers(4)
+    else:
+        # parallelize nothing
+        scipy.sparse._sparsetools.set_par_threshold(0)
+        scipy.sparse._sparsetools.set_workers(1)
+
+
 IS_COLAB = ('google.colab' in sys.modules)
 
 

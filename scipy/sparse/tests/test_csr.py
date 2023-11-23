@@ -4,6 +4,20 @@ from scipy.sparse import csr_matrix, hstack
 import pytest
 
 
+# Run the entire test suite with both sequential and parallel codepaths
+@pytest.fixture(scope='module', params=(False, True), autouse=True)
+def implementations(request):
+    import scipy.sparse._sparsetools
+    if request.param:
+        # parallelize everything
+        scipy.sparse._sparsetools.set_par_threshold(1)
+        scipy.sparse._sparsetools.set_workers(4)
+    else:
+        # parallelize nothing
+        scipy.sparse._sparsetools.set_par_threshold(0)
+        scipy.sparse._sparsetools.set_workers(1)
+
+
 def _check_csr_rowslice(i, sl, X, Xcsr):
     np_slice = X[i, sl]
     csr_slice = Xcsr[i, sl]

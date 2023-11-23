@@ -14,6 +14,7 @@ __all__ = [  # noqa: F822
     'bsr_le_bsr',
     'bsr_lt_bsr',
     'bsr_matmat',
+    'bsr_matmat_maxnnz',
     'bsr_matvec',
     'bsr_matvecs',
     'bsr_maximum_bsr',
@@ -85,6 +86,9 @@ __all__ = [  # noqa: F822
     'expandptr',
     'get_csr_submatrix',
     'test_throw_error',
+    'get_workers',
+    'set_workers',
+    'set_par_threshold',
 ]
 
 
