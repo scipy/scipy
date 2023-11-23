@@ -380,7 +380,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
     if not callable(too_small):
         def is_too_small(samples, *ts_args, **ts_kwargs):
             for sample in samples:
-                if len(sample) <= too_small:
+                if sample.size <= too_small or len(sample) <= too_small:
                     return True
             return False
     else:
@@ -538,7 +538,8 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
             # exceptions for empty input, so overriding it would break
             # backward compatibility.
             empty_output = _check_empty_inputs(samples, axis)
-            if empty_output is not None:
+            # only return empty output if zero sized input is too small.
+            if is_too_small(samples, kwds) and empty_output is not None:
                 res = [empty_output.copy() for i in range(n_out)]
                 res = _add_reduced_axes(res, reduced_axes, keepdims)
                 return tuple_to_result(*res)
