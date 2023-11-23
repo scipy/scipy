@@ -13,7 +13,6 @@ class InverseDistanceWeightedNDInterpolator(NDInterpolatorBase):
         self.tree = cKDTree(self.points, **tree_options)
         self.values = np.asarray(y)
 
-        self._k = k
         self._local = local
         self._fill_value = fill_value
 
@@ -31,7 +30,11 @@ class InverseDistanceWeightedNDInterpolator(NDInterpolatorBase):
         return interp_values
 
     def _local_idw_interpolation(self, xi, p, k, distance_upper_bound, **query_options):
-        dist, i = self.tree.query(xi_flat, **query_options)
+        xi_flat = xi.reshape(-1, xi.shape[-1])
+        original_shape = xi.shape
+        flattened_shape = xi_flat.shape
+
+        dist, i = self.tree.query(xi_flat, k=k, distance_upper_bound=distance_upper_bound, **query_options)
         valid_mask = np.isfinite(dist)
 
         weights = 1.0 / dist ** p
@@ -45,8 +48,13 @@ class InverseDistanceWeightedNDInterpolator(NDInterpolatorBase):
             interp_values = np.full(interp_shape, self._fill_value)
 
         if self.values.ndim == 1:
-            interp_values[valid_mask] = np.sum(weights[mask] * self.values[i[mask]], axis=2) / np.sum(weights, axis=2)
+            interp_values[valid_mask] = np.sum(weights[valid_mask, ...] * self.values[i[valid_mask]], axis=-1) / np.sum(
+                weights[valid_mask], axis=-1)
         else:
-            interp_values[valid_mask] = np.sum(weights[mask] * self.values[i[mask], ...], axis=-1) / np.sum(weights, axis=2)
+            interp_values[valid_mask] = np.sum(weights[valid_mask, ...] * self.values[i[valid_mask], ...], axis=-1) / np.sum(
+                weights[valid_mask], axis=-1)
+
+        new_shape = original_shape[:-1] + self.values.shape[1:] if self.values.ndim > 1 else original_shape[:-1]
+        interp_values = interp_values.reshape(new_shape)
 
         return interp_values
