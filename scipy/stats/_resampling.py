@@ -1199,20 +1199,26 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
      vectorized, n_resamples, batch, args, kwds, shape)= tmp
 
     batch_nominal = batch or n_resamples
-    pvalues = []
+    pvalues = []  # results of various nobs/kwargs combinations
     for nobs_i, args_i in zip(nobs, args):
         kwargs_i = dict(zip(kwds, args_i))
-        ps = []
+        pvalues_i = []  # results of batches; fixed nobs/kwargs combination
         for k in range(0, n_resamples, batch_nominal):
             batch_actual = min(batch_nominal, n_resamples - k)
             resamples = [rvs_j(size=(batch_actual, nobs_ij), **kwargs_i)
                          for rvs_j, nobs_ij in zip(rvs, nobs_i)]
             res = test(*resamples, **kwargs_i, axis=-1)
             p = getattr(res, 'pvalue', res)
-            ps.append(p)
-        ps = np.concatenate(ps)
-        pvalues.append(ps)
-    pvalues = np.asarray(pvalues).reshape(shape + (-1,))
+            pvalues_i.append(p)
+        # Concatenate results from batches
+        pvalues_i = np.concatenate(pvalues_i, axis=-1)
+        pvalues.append(pvalues_i)
+    # `test` can return result with array of p-values
+    shape += pvalues_i.shape[:-1]
+    # Concatenate results from various nobs/kwargs combinations
+    pvalues = np.concatenate(pvalues, axis=0)
+    # nobs/kwargs arrays were raveled to single axis; unravel
+    pvalues = pvalues.reshape(shape + (-1,))
     if significance.ndim > 0:
         significance = np.expand_dims(significance, tuple(range(1, pvalues.ndim + 1)))
     powers = np.mean(pvalues < significance, axis=-1)
