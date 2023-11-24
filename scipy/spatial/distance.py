@@ -624,13 +624,17 @@ def correlation(u, v, w=None, centered=True):
     v = _validate_vector(v)
     if w is not None:
         w = _validate_weights(w)
+        w /= w.sum()
     if centered:
-        umu = np.average(u, weights=w)
-        vmu = np.average(v, weights=w)
+        if w is not None:
+            umu = np.dot(u, w)
+            vmu = np.dot(v, w)
+        else:
+            umu = np.mean(u)
+            vmu = np.mean(v)
         u = u - umu
         v = v - vmu
     if w is not None:
-        w /= w.sum()
         vw = v * w
         uw = u * w
     else:
