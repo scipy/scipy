@@ -952,12 +952,16 @@ class PowerResult:
     pvalues: float | np.ndarray
 
 
-def wrap_kwargs(fun):
+def _wrap_kwargs(fun):
+    """Wrap callable to accept arbitrary kwargs and ignore unused ones"""
+
     try:
         keys = set(inspect.signature(fun).parameters.keys())
     except ValueError:
+        # NumPy Generator methods can't be inspected
         keys = {'size'}
 
+    # Set keys=keys/fun=fun to avoid late binding gotcha
     def wrapped_rvs_i(*args, keys=keys, fun=fun, **all_kwargs):
         kwargs = {key: val for key, val in all_kwargs.items()
                   if key in keys}
@@ -990,15 +994,16 @@ def _power_iv(rvs, test, n_observations, significance, vectorized,
 
     kwargs = dict() if kwargs is None else kwargs
     if not isinstance(kwargs, dict):
-        raise TypeError("`kwargs` must be a dictionary mapping keywards to arrays.")
+        raise TypeError("`kwargs` must be a dictionary that maps keywords to arrays.")
 
     vals = kwargs.values()
-    keys = set(kwargs.keys())
+    keys = kwargs.keys()
 
-    # Wrap callables to accept any keyword argument but only use the ones
-    # that should be used
-    wrapped_rvs = [wrap_kwargs(rvs_i) for rvs_i in rvs]
+    # Wrap callables to ignore unused keyword arguments
+    wrapped_rvs = [_wrap_kwargs(rvs_i) for rvs_i in rvs]
 
+    # Broadcast, then ravel nobs/kwarg combinations. In the end,
+    # `nobs` and `vals` have shape (# of combinations, number of variables)
     tmp = np.asarray(np.broadcast_arrays(*n_observations, *vals))
     shape = tmp.shape
     if tmp.ndim == 1:
@@ -1006,7 +1011,7 @@ def _power_iv(rvs, test, n_observations, significance, vectorized,
     else:
         tmp = tmp.reshape((shape[0], -1)).T
     nobs, vals = tmp[:, :len(rvs)], tmp[:, len(rvs):]
-    nobs = np.asarray(nobs).astype(int)
+    nobs = nobs.astype(int)
 
     if not callable(test):
         raise TypeError("`test` must be callable.")
@@ -1018,7 +1023,8 @@ def _power_iv(rvs, test, n_observations, significance, vectorized,
         test_vectorized = _vectorize_statistic(test)
     else:
         test_vectorized = test
-    test_vectorized = wrap_kwargs(test_vectorized)
+    # Wrap `test` function to ignore unused kwargs
+    test_vectorized = _wrap_kwargs(test_vectorized)
 
     n_resamples_int = int(n_resamples)
     if n_resamples != n_resamples_int or n_resamples_int <= 0:
@@ -1046,11 +1052,12 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
         `test` must be a callable that accepts a sample (e.g. ``test(sample)``)
         or ``len(rvs)`` separate samples (e.g. ``test(samples1, sample2)`` if
         `rvs` contains two callables and `n_observations` contains two values)
-        and returns either the p-value of the test or a result object with
-        attribute ``pvalue`` (like SciPy hypothesis tests).
+        and returns the p-value of the test.
         If `vectorized` is set to ``True``, `test` must also accept a keyword
         argument `axis` and be vectorized to perform the test along the
         provided `axis` of the samples.
+        Any callable from `scipy.stats` with an `axis` argument that returns an
+        object with a `pvalue` attribute is also acceptable.
     rvs : callable or tuple of callables
         A callable or sequence of callables that generate(s) random variates
         under the alternative hypothesis. Each element of `rvs` must accept
@@ -1067,13 +1074,15 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
         The threshold for significance; i.e., the p-value below which the
         hypothesis test results will be considered as evidence against the null
         hypothesis. Equivalently, the acceptable rate of Type I error under
-        the null hypothesis.
+        the null hypothesis. If an array, the power is simulated for each
+        significance threshold.
     kwargs : dict, optional
         Keyword arguments to be passed to `rvs` and/or `test` callables.
         Introspection is used to determine which keyword arguments may be
         passed to each callable.
+        The value corresponding with each keyword must be an array.
         Arrays must be broadcastable with one another and with each array in
-        `n_observations`; the power is simulated for each set of corresponding
+        `n_observations`. The power is simulated for each set of corresponding
         sample sizes and arguments. See Examples.
     vectorized : bool, optional
         If `vectorized` is set to ``False``, `test` will not be passed keyword
@@ -1089,8 +1098,8 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
         hypothesis to approximate the power.
     batch : int, optional
         The number of samples to process in each call to `test`. Memory usage is
-        O( `batch` * ``sample.size[axis]`` ). Default is ``None``, in which case
-        `batch` equals `n_resamples`.
+        proportional to the product of `batch` and the largest sample size. Default
+        is ``None``, in which case `batch` equals `n_resamples`.
 
     Returns
     -------
@@ -1190,8 +1199,6 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
 
     """
     # TODO:
-    # - improve auto-vectorization
-    # - simplify n_observations/args input validation
     # - tests
     tmp = _power_iv(rvs, test, n_observations, significance,
                     vectorized, n_resamples, batch, kwargs)
