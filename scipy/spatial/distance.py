@@ -628,9 +628,15 @@ def correlation(u, v, w=None, centered=True):
         vmu = np.average(v, weights=w)
         u = u - umu
         v = v - vmu
-    uv = np.average(u * v, weights=w)
-    uu = np.average(np.square(u), weights=w)
-    vv = np.average(np.square(v), weights=w)
+    if w is not None:
+        w /= w.sum()
+        vw = v * w
+        uw = u * w
+    else:
+        vw, uw = v, u
+    uv = np.dot(u, vw)
+    uu = np.dot(u, uw)
+    vv = np.dot(v, vw)
     dist = 1.0 - uv / np.sqrt(uu * vv)
     # Return absolute value to avoid small negative value due to rounding
     return np.abs(dist)
