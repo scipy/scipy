@@ -682,22 +682,44 @@ def _colloc_nd(xi, t, long[::1] k):
 
     Parameters
     ----------
-    xi : ndarray
+    xi : tuple of ndarrays of float, with shapes (m1,), ... (mN,)
+        The points defining the regular grid in N dimensions.
     t : tuple of 1D arrays, length-ndim
         Tuple of knot vectors
     k : tuple of ints, length-ndim
         Spline degrees
 
+    Returns
+    -------
+    csr_data, csr_indices, csr_indptr
+        The collocation matrix in the CSR array format.
+
     Notes
     -----
 
-    This routine is Cython only because `find_interval` and `_deBoor_D` are.
+    This routine is in Cython only because `find_interval` and `_deBoor_D` are.
+
+    Algorithm: given `xi` and data `values`, we construct a tensor product
+    spline, i.e. the linear combinations of
+
+       B(x1; i1, t1) * B(x2; i2, t2) * ... * B(xN; iN, tN)
 
 
+    Here ``B(x; i, t)`` is the ``i``-th b-spline defined by the knot vector
+    ``t`` evaluated at ``x``.
+
+    Since ``B`` functions are localized, for each point `(x1, ..., xN)` we
+    loop over the dimensions, and
+    - find the the location in the knot array, `t[i] <= x < t[i+1]`,
+    - compute all non-zero `B` values
+    - place these values into the relevant row
+
+    In the dense representation, the collocation matrix would have had a row per
+    data point, and each row has the values of the basis elements (i.e., tensor
+    products of B-splines) evaluated at this data point. Since the matrix is very
+    sparse (has size = len(x)**ndim, with only (k+1)**ndim non-zero elements per
+    row), we construct it in the CSR format.
     """
-    # TODO:
-    #   1. move itertools to python
-    #   2. make construct a general design matrix + plumb over to NdBSpline
     cdef:
         npy_intp ndim = len(xi)
         # 'intervals': indices for a point in xi into the knot arrays t
@@ -707,7 +729,7 @@ def _colloc_nd(xi, t, long[::1] k):
         double[:, ::1] b = np.empty((ndim, max(k) + 1), dtype=float)
 
         double xd               # d-th component of x
-        const double[::1] td    # knots in dimension d
+        const double[::1] td    # knots in the dimension d
         npy_intp kd             # d-th component of k
 
         npy_intp iflat    # index to loop over (k+1)**ndim non-zero terms
@@ -734,13 +756,11 @@ def _colloc_nd(xi, t, long[::1] k):
     csr_data = np.empty(shape=(size*volume,), dtype=float)
     csr_indptr = np.arange(0, volume*size + 1, volume) 
 
-
     import itertools
     ### Iterate over the outer product of the data points
     j = -1
     for xv in itertools.product(*xi):
         j+= 1
-       ### print('======', j, np.asarray(xv))
 
         # For each point, iterate over the dimensions
         out_of_bounds = 0
@@ -750,8 +770,7 @@ def _colloc_nd(xi, t, long[::1] k):
             kd = k[d]
 
             # get the location of x[d] in t[d]
-            extrapolate = True
-            i[d] = find_interval(td, kd, xd, kd, extrapolate=extrapolate)
+            i[d] = find_interval(td, kd, xd, kd, extrapolate=True)
 
             if i[d] < 0:
                 out_of_bounds = 1
@@ -762,12 +781,7 @@ def _colloc_nd(xi, t, long[::1] k):
             b[d, :kd+1] = wrk[:kd+1]
 
         if out_of_bounds:
-            # TODO : how to handle out-of-bounds (?)
-            # xd was nan or extrapolate=False: Fill the output array
-            # *for this xv value*, and continue to the next xv in xi.
-#            for i_c in range(num_c_tr):
-#                out[j, i_c] = NAN
-            continue
+            raise ValueError(f"Out of bounds in {d = }, with {xv = }")
 
         # Iterate over the products of non-zero b-splines:
         # First, construct indices, `idx_b`, into the ndim-dimensional array of
@@ -796,13 +810,6 @@ def _colloc_nd(xi, t, long[::1] k):
             # the CSR `indices` and `data` arrays.
             csr_indices[j*volume + iflat] = idx_cflat
             csr_data[j*volume + iflat] = factor
-
-    # XXX: dense
-    from scipy.sparse import csr_array
-    matr_csr = csr_array((csr_data, csr_indices, csr_indptr))
-
-    from numpy.testing import assert_allclose
-    assert_allclose(matr, matr_csr.toarray(), atol=1e-15)
 
     # XXX: return the dense matrix, too
     return csr_data, csr_indices, csr_indptr, matr

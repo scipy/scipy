@@ -235,10 +235,9 @@ def make_ndbspl(points, values, k=3):
     Notes
     -----
     Boundary conditions are not-a-knot in all dimensions.
-
     """
-   
     # TODO: 1. check consistency of inputs
+    #       2. plumb through to RGI
     ndim = len(points)
     xi_shape = tuple(len(x) for x in points)
 
