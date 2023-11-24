@@ -698,7 +698,6 @@ def _colloc_nd(xi, t, long[::1] k):
     # TODO:
     #   1. move itertools to python
     #   2. make construct a general design matrix + plumb over to NdBSpline
-
     cdef:
         npy_intp ndim = len(xi)
         # 'intervals': indices for a point in xi into the knot arrays t

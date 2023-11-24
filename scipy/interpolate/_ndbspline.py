@@ -239,8 +239,6 @@ def make_ndbspl(points, values, k=3):
     """
    
     # TODO: 1. check consistency of inputs
-    #       2. DONE trailing dims of values
-    #       3. DONE mixed k
     ndim = len(points)
     xi_shape = tuple(len(x) for x in points)
 
@@ -249,6 +247,13 @@ def make_ndbspl(points, values, k=3):
     except TypeError:
         # make k a tuple
         k = (k,)*ndim
+
+    for d, point in enumerate(points):
+        numpts = len(np.atleast_1d(point))
+        if numpts <= k[d]:
+            raise ValueError(f"There are {numpts} points in dimension {d},"
+                             f" but order {k[d]} requires at least "
+                             f" {k[d]+1} points per dimension.")
 
     t = tuple(_not_a_knot(np.asarray(points[d], dtype=float), k[d])
               for d in range(ndim))

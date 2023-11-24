@@ -2165,8 +2165,6 @@ class TestNdBSpline:
 
         assert bspl3((1, 2, 3)) == bspl3_((1, 2, 3))
 
-    # TODO: test complex values
-
 
 class TestMakeND:
     def make_2d_case(self):
@@ -2247,4 +2245,65 @@ class TestMakeND:
         bspl, dense = make_ndbspl((x, y), values, k=k)
         assert_allclose(bspl(xi), values.ravel(), atol=1e-15)
 
+    def _get_sample_2d_data(self):
+        # from test_rgi.py::TestIntepN
+        x = np.array([.5, 2., 3., 4., 5.5, 6.])
+        y = np.array([.5, 2., 3., 4., 5.5, 6.])
+        z = np.array(
+            [
+                [1, 2, 1, 2, 1, 1],
+                [1, 2, 1, 2, 1, 1],
+                [1, 2, 3, 2, 1, 1],
+                [1, 2, 2, 2, 1, 1],
+                [1, 2, 1, 2, 1, 1],
+                [1, 2, 2, 2, 1, 1],
+            ]
+        )
+        return x, y, z
+
+    def test_2D_vs_RGI_linear(self):
+        x, y, z = self._get_sample_2d_data()
+        bspl, _ = make_ndbspl((x, y), z, k=1)
+        rgi = RegularGridInterpolator((x, y), z, method='linear')
+
+        xi = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
+                       [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
+
+        assert_allclose(bspl(xi), rgi(xi), atol=1e-14)
+
+    def test_2D_vs_RGI_cubic(self):
+        # XXX: if make_ndbspl becomes an impl detail of RGI spline methods?
+        x, y, z = self._get_sample_2d_data()
+        bspl, _ = make_ndbspl((x, y), z, k=3)
+        rgi = RegularGridInterpolator((x, y), z, method='cubic')
+
+        xi = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
+                       [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
+
+        assert_allclose(bspl(xi), rgi(xi), atol=1e-14)
+
+    def test_2D_vs_RGI_quintic(self):
+        # XXX: if make_ndbspl becomes an impl detail of RGI spline methods?
+        x, y, z = self._get_sample_2d_data()
+        bspl, _ = make_ndbspl((x, y), z, k=5)
+        rgi = RegularGridInterpolator((x, y), z, method='quintic')
+
+        xi = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
+                       [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
+
+        assert_allclose(bspl(xi), rgi(xi), atol=1e-14)
+
+    @pytest.mark.parametrize('k, meth', [(1, 'linear'), (3, 'cubic'), (5, 'quintic')])
+    def test_3D_random_vs_RGI(self, k, meth):
+        rndm = np.random.default_rng(123456)
+        x = np.cumsum(rndm.uniform(size=6))
+        y = np.cumsum(rndm.uniform(size=7))
+        z = np.cumsum(rndm.uniform(size=8))
+        values = rndm.uniform(size=(6, 7, 8))
+
+        bspl, _ = make_ndbspl((x, y, z), values, k=k)
+        rgi = RegularGridInterpolator((x, y, z), values, method=meth)
+
+        xi = np.random.uniform(low=0.7, high=2.1, size=(11, 3))
+        assert_allclose(bspl(xi), rgi(xi), atol=1e-14)
 
