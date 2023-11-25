@@ -321,8 +321,8 @@ class RegularGridInterpolator:
         >>> interp([[1.5, 1.3], [0.3, 4.5]], method='linear')
         array([ 4.7, 24.3])
         """
-        is_method_changed = self.method != method
         method = self.method if method is None else method
+        is_method_changed = self.method != method
         if method not in self._ALL_METHODS:
             raise ValueError("Method '%s' is not defined" % method)
 
