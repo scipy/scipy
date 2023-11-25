@@ -4051,12 +4051,12 @@ cdef inline double gamln1(double a) noexcept nogil:
                 )*a+p[2]
                )*a+p[1]
               )*a+p[0]
-        bot = ((((((q[6]
-                   )*a+q[5]
-                  )*a+q[4]
-                 )*a+q[3]
-                )*a+q[2]
-               )*a+q[1]
+        bot = ((((((q[5]
+                   )*a+q[4]
+                  )*a+q[3]
+                 )*a+q[2]
+                )*a+q[1]
+               )*a+q[0]
               )*a+1.
         w = top/bot
         return -a*w
@@ -4068,11 +4068,11 @@ cdef inline double gamln1(double a) noexcept nogil:
                 )*x+r[2]
                )*x+r[1]
               )*x+r[0]
-        bot = (((((s[5]
-                  )*x+s[4]
-                 )*x+s[3]
-                )*x+s[2]
-               )*x+s[1]
+        bot = (((((s[4]
+                  )*x+s[3]
+                 )*x+s[2]
+                )*x+s[1]
+               )*x+s[0]
               )*x+1.
         w = top/bot
         return x*w
