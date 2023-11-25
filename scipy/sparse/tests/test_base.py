@@ -235,22 +235,22 @@ class BinopTester_with_shape:
 class ComparisonTester:
     # Custom type to test comparison operations on sparse matrices.
     def __eq__(self, other):
-        return 'eq'
+        return "eq"
 
     def __ne__(self, other):
-        return 'ne'
+        return "ne"
 
     def __lt__(self, other):
-        return 'lt'
+        return "lt"
 
     def __le__(self, other):
-        return 'le'
+        return "le"
 
     def __gt__(self, other):
-        return 'gt'
+        return "gt"
 
     def __ge__(self, other):
-        return 'ge'
+        return "ge"
 
 
 #------------------------------------------------------------------------------
