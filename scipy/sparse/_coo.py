@@ -74,22 +74,22 @@ class _coo_base(_data_matrix, _minmax_mixin):
                     self.has_canonical_format = False
             else:
                 # dense argument
-                M = np.asarray(arg1)
+                A = np.asarray(arg1)
                 if not is_array:
-                    M = np.atleast_2d(M)
-                    if M.ndim != 2:
+                    A = np.atleast_2d(A)
+                    if A.ndim != 2:
                         raise TypeError('expected dimension <= 2 array or matrix')
 
-                self._shape = check_shape(M.shape, allow_ndim=is_array)
+                self._shape = check_shape(A.shape, allow_ndim=is_array)
                 if shape is not None:
                     if check_shape(shape, allow_ndim=is_array) != self._shape:
                         message = f'inconsistent shapes: {shape} != {self._shape}'
                         raise ValueError(message)
                 index_dtype = self._get_index_dtype(maxval=max(self._shape))
-                indices = M.nonzero()
+                indices = A.nonzero()
                 self.indices = tuple(idx.astype(index_dtype, copy=False)
                                      for idx in indices)
-                self.data = M[indices]
+                self.data = A[indices]
                 self.has_canonical_format = True
 
         if dtype is not None:
