@@ -2113,8 +2113,14 @@ def _scalar_optimization_loop(work, callback, shape, maxiter,
             work.args = [np.expand_dims(arg, tuple(dims[arg.ndim:]))
                          for arg in work.args]
 
+        x_shape = x.shape
+        if preserve_shape:
+            x = x.reshape(shape + (-1,))
         f = func(x, *work.args)
         f = np.asarray(f, dtype=dtype)
+        if preserve_shape:
+            x = x.reshape(x_shape)
+            f = f.reshape(x_shape)
         work.nfev += 1 if x.ndim == 1 else x.shape[-1]
 
         post_func_eval(x, f, work)

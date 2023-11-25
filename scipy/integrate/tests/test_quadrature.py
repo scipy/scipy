@@ -5,7 +5,7 @@ from numpy import cos, sin, pi
 from numpy.testing import (assert_equal, assert_almost_equal, assert_allclose,
                            assert_, suppress_warnings)
 
-from scipy.integrate import (quadrature, romberg, romb, newton_cotes,
+from scipy.integrate import (quadrature, romberg, romb, newton_cotes, quad_vec,
                              cumulative_trapezoid, cumtrapz, trapz, trapezoid,
                              quad, simpson, simps, fixed_quad, AccuracyWarning,
                              qmc_quad)
@@ -791,9 +791,8 @@ class TestTanhSinh:
         ref_flags = np.array([0, -2, -3])
         assert_equal(res.status, ref_flags)
 
-    def test_flags2(self):
-        # Test cases that should produce different status flags; show that all
-        # can be produced simultaneously.
+    def test_flags_preserve_shape(self):
+        # Same test as above but using `preserve_shape` option to simplify.
         def f(x):
             return [np.exp(-x[0]**2),  # converges
                     np.exp(x[1]),  # reaches maxiter due to order=2
@@ -802,6 +801,17 @@ class TestTanhSinh:
         res = _tanhsinh(f, [np.inf]*3, [-np.inf]*3, maxlevel=5, preserve_shape=True)
         ref_flags = np.array([0, -2, -3])
         assert_equal(res.status, ref_flags)
+
+    def test_preserve_shape(self):
+        # Test `preserve_shape` option
+        def f(x):
+            return np.asarray([[x, np.sin(10 * x)],
+                               [np.cos(30 * x), x * np.sin(100 * x)]])
+
+        ref = quad_vec(f, 0, 1)
+        res = _tanhsinh(lambda x: f(x[0, 0]), np.zeros((2, 2)), np.ones((2, 2)),
+                        preserve_shape=True)
+        assert_allclose(res.integral, ref[0])
 
     def test_convergence(self):
         # demonstrate that number of accurate digits doubles each iteration
