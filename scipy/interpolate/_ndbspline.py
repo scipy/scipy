@@ -258,7 +258,8 @@ def make_ndbspl(points, values, k=3):
               for d in range(ndim))
 
     # construct the colocation matrix
-    data, indices, indptr, dense = _bspl._colloc_nd(points, t, np.asarray(k))
+    data, indices, indptr, dense = _bspl._colloc_nd(points, t, np.asarray(k))  # XXX: dense
+    # data, indices, indptr = _bspl._colloc_nd(points, t, np.asarray(k))
     matr = csr_array((data, indices, indptr))
 
     # Solve for the coefficients given `values`.
@@ -270,7 +271,7 @@ def make_ndbspl(points, values, k=3):
     coef = spsolve(matr, vals)
     coef = coef.reshape(xi_shape + v_shape[ndim:])
 
-    from numpy.testing import assert_allclose
-    assert_allclose(dense, matr.toarray(), atol=1e-15)
-    return NdBSpline(t, coef, k), dense
+  #  from numpy.testing import assert_allclose
+  #  assert_allclose(dense, matr.toarray(), atol=1e-15)  # XXX: dense
+    return NdBSpline(t, coef, k), 1  #dense   # XXX: dense
 

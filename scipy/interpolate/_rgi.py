@@ -10,6 +10,7 @@ from ._cubic import PchipInterpolator
 from ._rgi_cython import evaluate_linear_2d, find_indices
 from ._bsplines import make_interp_spline
 from ._fitpack2 import RectBivariateSpline
+from ._ndbspline import make_ndbspl
 
 
 def _check_points(points):
@@ -232,7 +233,10 @@ class RegularGridInterpolator:
     # this class is based on code originally programmed by Johannes Buchner,
     # see https://github.com/JohannesBuchner/regulargrid
 
-    _SPLINE_DEGREE_MAP = {"slinear": 1, "cubic": 3, "quintic": 5, 'pchip': 3}
+    _SPLINE_DEGREE_MAP = {"slinear": 1, "cubic": 3, "quintic": 5, 'pchip': 3,
+                          "slinear_": 1, "cubic_": 3, "quintic_": 5,}
+    _SPLINE_METHODS_recurive = {"slinear_", "cubic_", "quintic_", "pchip"}
+    _SPLINE_METHODS_ndbspl = {"slinear", "cubic", "quintic"}
     _SPLINE_METHODS = list(_SPLINE_DEGREE_MAP.keys())
     _ALL_METHODS = ["linear", "nearest"] + _SPLINE_METHODS
 
@@ -250,7 +254,6 @@ class RegularGridInterpolator:
         self.fill_value = self._check_fill_value(self.values, fill_value)
         if self._descending_dimensions:
             self.values = np.flip(values, axis=self._descending_dimensions)
-        
         if self.method == "pchip" and np.iscomplexobj(self.values):
             msg = ("`PchipInterpolator` only works with real values. Passing "
                    "complex-dtyped `values` with `method='pchip'` is deprecated "
@@ -258,6 +261,8 @@ class RegularGridInterpolator:
                    "use the real components of the passed array, use `np.real` on "
                    "the array before passing to `RegularGridInterpolator`.")
             warnings.warn(msg, DeprecationWarning, stacklevel=2)
+        if method in self._SPLINE_METHODS_ndbspl:
+            self._spline, _ = make_ndbspl(self.grid, self.values, self._SPLINE_DEGREE_MAP[method])
 
     def _check_dimensionality(self, grid, values):
         _check_dimensionality(grid, values)
@@ -366,7 +371,10 @@ class RegularGridInterpolator:
         elif method in self._SPLINE_METHODS:
             if is_method_changed:
                 self._validate_grid_dimensions(self.grid, method)
-            result = self._evaluate_spline(xi, method)
+            if method in self._SPLINE_METHODS_recurive:
+                result = self._evaluate_spline(xi, method)
+            else:
+                result = self._spline(xi)
 
         if not self.bounds_error and self.fill_value is not None:
             result[out_of_bounds] = self.fill_value
@@ -628,7 +636,8 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     """
     # sanity check 'method' kwarg
     if method not in ["linear", "nearest", "cubic", "quintic", "pchip",
-                      "splinef2d", "slinear"]:
+                      "splinef2d", "slinear",
+                      "slinear_", "cubic_", "quintic_"]:
         raise ValueError("interpn only understands the methods 'linear', "
                          "'nearest', 'slinear', 'cubic', 'quintic', 'pchip', "
                          f"and 'splinef2d'. You provided {method}.")
@@ -669,7 +678,7 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
                                  "in dimension %d" % i)
 
     # perform interpolation
-    if method in ["linear", "nearest", "slinear", "cubic", "quintic", "pchip"]:
+    if method in ["linear", "nearest", "slinear", "cubic", "quintic", "pchip", "slinear_", "cubic_", "quintic_"]:
         interp = RegularGridInterpolator(points, values, method=method,
                                          bounds_error=bounds_error,
                                          fill_value=fill_value)
@@ -690,3 +699,5 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
         result[np.logical_not(idx_valid)] = fill_value
 
         return result.reshape(xi_shape[:-1])
+    else:
+        raise ValueError(f"unknown {method = }")

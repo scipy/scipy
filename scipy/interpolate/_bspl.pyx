@@ -750,7 +750,7 @@ def _colloc_nd(xi, t, long[::1] k):
         volume *= k[d] + 1
 
     size = np.prod([len(x) for x in xi])
-    matr = np.zeros((size, size), dtype=float)
+ #   matr = np.zeros((size, size), dtype=float)   # XXX: dense
 
     csr_indices = np.empty(shape=(size*volume,), dtype=int)
     csr_data = np.empty(shape=(size*volume,), dtype=float)
@@ -800,7 +800,7 @@ def _colloc_nd(xi, t, long[::1] k):
             idx_cflat = np.ravel_multi_index(tuple(idx_c), c_shape)
 
             # XXX: dense
-            matr[j, idx_cflat] += factor
+            #matr[j, idx_cflat] += factor
             # print('matr: ', j, idx_cflat, factor)
 
             # Fill the CSR format array of b-splines. Each row of the full
@@ -812,4 +812,4 @@ def _colloc_nd(xi, t, long[::1] k):
             csr_data[j*volume + iflat] = factor
 
     # XXX: return the dense matrix, too
-    return csr_data, csr_indices, csr_indptr, matr
+    return csr_data, csr_indices, csr_indptr, 1  #, matr
