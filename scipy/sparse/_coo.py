@@ -268,7 +268,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
             raise ValueError("Cannot densify higher-rank sparse array")
         # This handles both 0D and 1D cases correctly regardless of the
         # original shape.
-        *_, M, N = (1, 1) + self.shape
+        M, N = self._shape_as_2d
         coo_todense(M, N, self.nnz, self.row, self.col, self.data,
                     B.ravel('A'), fortran)
         # Note: reshape() doesn't copy here, but does return a new array (view).
@@ -527,8 +527,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         dtype = upcast_char(self.dtype.char, other.dtype.char)
         result = np.array(other, dtype=dtype, copy=True)
         fortran = int(result.flags.f_contiguous)
-        M = self.shape[0] if self.ndim > 1 else 1
-        N = self.shape[-1]
+        M, N = self._shape_as_2d
         coo_todense(M, N, self.nnz, self.row, self.col, self.data,
                     result.ravel('A'), fortran)
         return self._container(result, copy=False)

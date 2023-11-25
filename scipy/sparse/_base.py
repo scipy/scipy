@@ -73,6 +73,11 @@ class _spbase:
         return len(self._shape)
 
     @property
+    def _shape_as_2d(self):
+        s = self._shape
+        return (1, s[-1]) if len(s) == 1 else s
+
+    @property
     def _bsr_container(self):
         from ._bsr import bsr_array
         return bsr_array
