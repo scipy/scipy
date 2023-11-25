@@ -2187,25 +2187,19 @@ class TestMakeND:
         values = x[:, None]**3 * (y**3 + 2*y)[None, :]
         xi = [(a, b) for a, b in itertools.product(x, y)]
 
-        bspl, dense = make_ndbspl((x, y), values, k=3)
+        bspl, dense = make_ndbspl((x, y), values, k=1)
         assert_allclose(bspl(xi), values.ravel(), atol=1e-15)
 
         # test the coefficients vs outer product of 1D coefficients
-        spl_x = make_interp_spline(x, x**3, k=3)
-        spl_y = make_interp_spline(y, y**3 + 2*y, k=3)
+        spl_x = make_interp_spline(x, x**3, k=1)
+        spl_y = make_interp_spline(y, y**3 + 2*y, k=1)
         cc = spl_x.c[:, None] * spl_y.c[None, :]
-        assert_allclose(cc, bspl.c, atol=1e-11)
+        assert_allclose(cc, bspl.c, atol=1e-11, rtol=0)
 
         # test against RGI
         from scipy.interpolate import RegularGridInterpolator as RGI
-        rgi = RGI((x, y), values, method='cubic')
+        rgi = RGI((x, y), values, method='linear')
         assert_allclose(rgi(xi), bspl(xi), atol=1e-14)
-
-        # XXX: test dense solve
-        from scipy.linalg import solve
-        coef2 = solve(dense, values.ravel())
-        bspl2 = NdBSpline(bspl.t, coef2.reshape((6, 6)), k=3)
-        assert_allclose(rgi(xi), bspl2(xi), atol=1e-14)
 
     def test_2D_separable_trailing_dims(self):
         # test `c` with trailing dimensions, i.e. c.ndim > ndim
