@@ -99,17 +99,15 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
     @property
     def row(self):
-        if self.ndim > 1:
-            return self.indices[0]
-        return np.zeros(self.nnz, dtype=self.indices[0].dtype)
+        return self.indices[-2] if self.ndim > 1 else np.zeros_like(self.col)
 
 
     @row.setter
     def row(self, new_row):
         if self.ndim < 2:
             raise ValueError('cannot set row attribute of a 1-dimensional sparse array')
-        new_row = np.asarray(new_row, dtype=self.indices[0].dtype)
-        self.indices = (new_row,) + self.indices[1:]
+        new_row = np.asarray(new_row, dtype=self.indices[-2].dtype)
+        self.indices = self.indices[:-2] + (new_row,) + self.indices[-1:]
 
     @property
     def col(self):
