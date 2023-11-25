@@ -673,6 +673,9 @@ def evaluate_ndbspline(const double[:, ::1] xi,
                         out[j, i_c] = out[j, i_c] + c1r[idx_cflat_base + i_c] * factor
 
 
+@cython.wraparound(False)
+@cython.nonecheck(False)
+@cython.boundscheck(False)
 def _colloc_nd(xi, t, long[::1] k):
     """Construct the N-D tensor product collocation matrix as a CSR array.
 
@@ -740,6 +743,9 @@ def _colloc_nd(xi, t, long[::1] k):
         int out_of_bounds
         double factor
         double[::1] wrk = np.empty(2*max(k) + 2, dtype=float)
+        npy_intp[:, ::1] _indices_k1d
+
+        cdef int j, d
 
     # the shape of the coefficients array
     c_shape = tuple(len(xi[i]) for i in range(ndim))
@@ -748,6 +754,12 @@ def _colloc_nd(xi, t, long[::1] k):
     volume = 1
     for d in range(ndim):
         volume *= k[d] + 1
+
+    # tabulate flat indices for iterating over the (k+1)**ndim subarray of
+    # non-zero b-spline elements
+    k1_shape = tuple(kd + 1 for kd in k)
+    indices = np.unravel_index(np.arange(volume), k1_shape)
+    _indices_k1d = np.asarray(indices, dtype=np.intp).T.copy()
 
     size = np.prod([len(x) for x in xi])
  #   matr = np.zeros((size, size), dtype=float)   # XXX: dense
@@ -789,7 +801,9 @@ def _colloc_nd(xi, t, long[::1] k):
         # From it, construct the indices into the columns of the design matrix:
         # for each dimension, d, shift the index by ``i[d] - k[d]``.
         for iflat in range(volume):
-            idx_b = np.unravel_index(iflat,  tuple(kd+1 for kd in k))
+            idx_b = _indices_k1d[iflat, :]
+            # the line above is an unrolled version of
+            # idx_b = np.unravel_index(iflat,  tuple(kd+1 for kd in k))
 
             factor = 1.0
             idx_c = ['none']*ndim   # any sentinel would do, really
