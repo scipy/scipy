@@ -968,6 +968,7 @@ def _wrap_kwargs(fun):
         return fun(*args, **kwargs)
     return wrapped_rvs_i
 
+
 def _power_iv(rvs, test, n_observations, significance, vectorized,
               n_resamples, batch, kwargs):
     """Input validation for `monte_carlo_test`."""
@@ -1111,6 +1112,14 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
         pvalues : ndarray
             The p-values observed under the alternative hypothesis.
 
+    Notes
+    -----
+    Suppose that `significance` is an array with shape ``shape1``, the elements
+    of `kwargs` and `n_observations` are mutually broadcastable to shape ``shape2``,
+    and `test` returns an array of p-values of shape ``shape3``. Then the result
+    object ``power`` attribute will be of shape ``shape1 + shape2 + shape3``, and
+    the ``pvalues`` attribute will be of shape ``shape2 + shape3 + (n_resamples,)``.
+    
     Examples
     --------
     Suppose we wish to simulate the power of the independent sample t-test
@@ -1169,8 +1178,8 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
     >>> ax.set_title('Simulated Power of `ttest_ind`, Varying Effect Size')
     >>> plt.show()
 
-    Now, suppose we wish to test whether the SciPy's independent sample t-test
-    is  implemented correctly. Specifically, we wish to determine whether the
+    Now, suppose we wish to test whether SciPy's independent sample t-test
+    is implemented correctly. Specifically, we wish to determine whether the
     Type I error rate of the test matches the nominal level under the null
     hypothesis. The null hypothesis of the test is that the samples were
     independently drawn from normal distributions with the same mean. To answer
@@ -1198,8 +1207,6 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
     >>> plt.show()
 
     """
-    # TODO:
-    # - tests
     tmp = _power_iv(rvs, test, n_observations, significance,
                     vectorized, n_resamples, batch, kwargs)
     (rvs, test, nobs, significance,
@@ -1227,7 +1234,8 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
     # nobs/kwargs arrays were raveled to single axis; unravel
     pvalues = pvalues.reshape(shape + (-1,))
     if significance.ndim > 0:
-        significance = np.expand_dims(significance, tuple(range(1, pvalues.ndim + 1)))
+        newdims = tuple(range(significance.ndim, pvalues.ndim + significance.ndim))
+        significance = np.expand_dims(significance, newdims)
     powers = np.mean(pvalues < significance, axis=-1)
 
     return PowerResult(power=powers, pvalues=pvalues)

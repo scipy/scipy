@@ -1071,7 +1071,6 @@ class TestPower:
         # make sure that the `batch` parameter is respected by checking the
         # maximum batch size provided in calls to `test`
         rng = np.random.default_rng(23492340193)
-        x = rng.random(10)
 
         def test(x, axis):
             batch_size = 1 if x.ndim == 1 else len(x)
@@ -1130,11 +1129,11 @@ class TestPower:
             for nx_i in nx:
                 for alternative_i in kwargs['alternative']:
                     for popmean_i in popmeans:
-                        def test(x, axis=-1):
+                        def test2(x, axis=-1):
                             return stats.ttest_1samp(x, popmean_i, axis=axis,
                                                      alternative=alternative_i)
 
-                        tmp = stats.power(test, rng.normal, nx_i,
+                        tmp = stats.power(test2, rng.normal, nx_i,
                                           significance=significance_i)
                         ref.append(tmp.power)
         ref = np.reshape(ref, res.power.shape)
@@ -1142,8 +1141,8 @@ class TestPower:
         # Show that results are similar
         assert_allclose(res.power, ref, rtol=2e-2, atol=1e-2)
 
-    def test_ttest_ind(self):
-        # CHeck that the p-values of `ttest_ind` are uniformly distributed under
+    def test_ttest_ind_null(self):
+        # Check that the p-values of `ttest_ind` are uniformly distributed under
         # the null hypothesis
         rng = np.random.default_rng(254952548345528)
 
@@ -1156,9 +1155,10 @@ class TestPower:
         assert_allclose(res.power, significance, atol=1e-2)
 
     def test_ttest_1samp_power(self):
+        # Check simulated ttest_1samp power against reference
         rng = np.random.default_rng(254952548345528)
 
-        # Reference computed with statmodels
+        # Reference values computed with statmodels
         # import numpy as np
         # from statsmodels.stats.power import tt_solve_power
         # tt_solve_power = np.vectorize(tt_solve_power)
