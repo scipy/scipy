@@ -432,8 +432,9 @@ cdef inline (double, int) bgrat(double a, double b, double x , double y, double 
 
 # %%----------------------------------------- bpser
 cdef inline double bpser(double a, double b, double x, double eps) noexcept nogil:
-    cdef double a0, apb, b0, c, n, ssum, t, tol, u, w, z, result
+    cdef double a0, apb, b0, c, n, ssum, t, tol, u, w, z
     cdef int i, m
+    cdef double result = 0.
 
     if x == 0.:
         return 0.
@@ -2675,7 +2676,6 @@ cdef inline (double, int, double) cdftnc_which4(
 cdef inline (double, double) cumbet(double x, double y,
                                     double a, double b) noexcept nogil:
     cdef double u, v
-    cdef int ierr
 
     if x <= 0.:
         return (0., 1.)
@@ -2762,7 +2762,7 @@ cdef inline (double, double) cumchn(double x, double df, double pnonc) noexcept 
 cdef inline (double, double) cumf(double f, double dfn, double dfd) noexcept nogil:
     cdef double dsum,prod,xx,yy
     cdef double cum, ccum
-    cdef int ierr
+
     if f <= 0.:
         return (0., 1.)
     prod = dfn*f
@@ -2774,7 +2774,7 @@ cdef inline (double, double) cumf(double f, double dfn, double dfd) noexcept nog
     else:
         yy = 1. - xx
 
-    cum, ccum, ierr = bratio(dfd*0.5, dfn*0.5, xx, yy)
+    cum, ccum, _ = bratio(dfd*0.5, dfn*0.5, xx, yy)
     return cum, ccum
 
 # %% ---------------------------------------- cumfnc
@@ -2813,7 +2813,7 @@ cdef inline (double, double, int) cumfnc(double f, double dfn,
     else:
         xx = 1. - yy
 
-    betdn, _, ierr = bratio(dfn*0.5 + icent, dfd*0.5, xx, yy)
+    betdn, _, _ = bratio(dfn*0.5 + icent, dfd*0.5, xx, yy)
     adn = dfn/2. + icent
     aup = adn
     b = dfd / 2.
