@@ -990,7 +990,7 @@ def _power_iv(rvs, test, n_observations, significance, vectorized,
     significance = np.asarray(significance)[()]
     if (not np.issubdtype(significance.dtype, np.floating)
             or np.min(significance) < 0 or np.max(significance) > 1):
-        raise TypeError("`significance` must contain floats between 0 and 1.")
+        raise ValueError("`significance` must contain floats between 0 and 1.")
 
     kwargs = dict() if kwargs is None else kwargs
     if not isinstance(kwargs, dict):
