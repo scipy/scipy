@@ -1,9 +1,10 @@
 import pytest
 import itertools
 
-from scipy.stats import (betabinom, hypergeom, nhypergeom, bernoulli,
-                         boltzmann, skellam, zipf, zipfian, binom, nbinom,
-                         nchypergeom_fisher, nchypergeom_wallenius, randint)
+from scipy.stats import (betabinom, betanbinom, hypergeom, nhypergeom,
+                         bernoulli, boltzmann, skellam, zipf, zipfian, binom,
+                         nbinom, nchypergeom_fisher, nchypergeom_wallenius,
+                         randint)
 
 import numpy as np
 from numpy.testing import (
@@ -344,7 +345,7 @@ class TestZipfian:
                         [mean, var, skew, kurtosis])
 
 
-class TestNCH():
+class TestNCH:
     np.random.seed(2)  # seeds 0 and 1 had some xl = xu; randint failed
     shape = (2, 4, 3)
     max_m = 100
@@ -574,3 +575,48 @@ def test_gh_17146():
     assert_allclose(pmf[-1], p)
     assert_allclose(pmf[0], 1-p)
     assert_equal(pmf[~i], 0)
+
+
+class TestBetaNBinom:
+    @pytest.mark.parametrize('x, n, a, b, ref',
+                            [[5, 5e6, 5, 20, 1.1520944824139114e-107],
+                            [100, 50, 5, 20, 0.002855762954310226],
+                            [10000, 1000, 5, 20, 1.9648515726019154e-05]])
+    def test_betanbinom_pmf(self, x, n, a, b, ref):
+        # test that PMF stays accurate in the distribution tails
+        # reference values computed with mpmath
+        # from mpmath import mp
+        # mp.dps = 500
+        # def betanbinom_pmf(k, n, a, b):
+        #     k = mp.mpf(k)
+        #     a = mp.mpf(a)
+        #     b = mp.mpf(b)
+        #     n = mp.mpf(n)
+        #     return float(mp.binomial(n + k - mp.one, k)
+        #                  * mp.beta(a + n, b + k) / mp.beta(a, b))
+        assert_allclose(betanbinom.pmf(x, n, a, b), ref, rtol=1e-10)
+
+
+    @pytest.mark.parametrize('n, a, b, ref',
+                            [[10000, 5000, 50, 0.12841520515722202],
+                            [10, 9, 9, 7.9224400871459695],
+                            [100, 1000, 10, 1.5849602176622748]])
+    def test_betanbinom_kurtosis(self, n, a, b, ref):
+        # reference values were computed via mpmath
+        # from mpmath import mp
+        # def kurtosis_betanegbinom(n, a, b):
+        #     n = mp.mpf(n)
+        #     a = mp.mpf(a)
+        #     b = mp.mpf(b)
+        #     four = mp.mpf(4.)
+        #     mean = n * b / (a - mp.one)
+        #     var = (n * b * (n + a - 1.) * (a + b - 1.)
+        #            / ((a - 2.) * (a - 1.)**2.))
+        #     def f(k):
+        #         return (mp.binomial(n + k - mp.one, k)
+        #                 * mp.beta(a + n, b + k) / mp.beta(a, b)
+        #                 * (k - mean)**four)
+        #      fourth_moment = mp.nsum(f, [0, mp.inf])
+        #      return float(fourth_moment/var**2 - 3.)
+        assert_allclose(betanbinom.stats(n, a, b, moments="k"),
+                        ref, rtol=3e-15)

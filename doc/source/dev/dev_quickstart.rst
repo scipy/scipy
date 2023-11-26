@@ -71,7 +71,7 @@ following commands at the terminal from the base directory of your
             # Activate the environment
             source $HOME/.venvs/scipy-dev/bin/activate
             # Install python-level dependencies
-            python -m pip install numpy pytest cython pythran pybind11 meson ninja pydevtool rich-click
+            python -m pip install numpy pytest cython pythran pybind11 meson ninja pydevtool rich-click hypothesis
 
 Your command prompt now lists the name of your new environment, like so:
 ``(scipy-dev)$``.
@@ -107,7 +107,7 @@ many. For more detailed instructions, see the :ref:`contributor-toc`.
     When creating a codespace for the ``scipy/scipy`` repository, the default
     2-core machine type works; 4-core will build and work a bit faster (but of
     course at a cost of halving your number of free usage hours). Once your
-    codespace has started, you can run ``mamba activate scipy-dev`` and your
+    codespace has started, you can run ``conda activate scipy-dev`` and your
     development environment is completely set up - you can then follow the
     relevant parts of the SciPy documentation to build, test, develop, write
     docs, and contribute to SciPy.

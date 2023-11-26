@@ -950,7 +950,7 @@ def gmres_loose(A, b, tol):
     """
     b = np.asarray(b)
     min_tol = 1000 * np.sqrt(b.size) * np.finfo(b.dtype).eps
-    return gmres(A, b, tol=max(tol, min_tol), atol=0)
+    return gmres(A, b, rtol=max(tol, min_tol), atol=0)
 
 
 class IterInv(LinearOperator):
@@ -1257,8 +1257,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
         raise ValueError(f'expected square matrix (shape={A.shape})')
     if M is not None:
         if M.shape != A.shape:
-            raise ValueError('wrong M dimensions %s, should be %s'
-                             % (M.shape, A.shape))
+            raise ValueError(f'wrong M dimensions {M.shape}, should be {A.shape}')
         if np.dtype(M.dtype).char.lower() != np.dtype(A.dtype).char.lower():
             warnings.warn('M does not have the same type precision as A. '
                           'This may adversely affect ARPACK convergence')
@@ -1585,8 +1584,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         raise ValueError(f'expected square matrix (shape={A.shape})')
     if M is not None:
         if M.shape != A.shape:
-            raise ValueError('wrong M dimensions %s, should be %s'
-                             % (M.shape, A.shape))
+            raise ValueError(f'wrong M dimensions {M.shape}, should be {A.shape}')
         if np.dtype(M.dtype).char.lower() != np.dtype(A.dtype).char.lower():
             warnings.warn('M does not have the same type precision as A. '
                           'This may adversely affect ARPACK convergence')

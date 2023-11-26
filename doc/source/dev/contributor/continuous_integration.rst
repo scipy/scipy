@@ -42,6 +42,7 @@ GitHub Actions
   dependencies and check coverage
 * ``gcc-8``: build with minimal supported version of GCC, install the wheel,
   then run the test suite with `python -OO`
+* ``Array API``: test Array API support
 
 The test suite runs on GitHub Actions and other platforms cover a range of
 test/environment conditions: Python and NumPy versions
@@ -79,17 +80,19 @@ Skipping CI can be achieved by adding a special text in the commit message:
 * ``[skip actions]``: will skip GitHub Actions
 * ``[skip circle]``: will skip CircleCI
 * ``[skip cirrus]``: will skip CirrusCI
+* ``[docs only]``: will skip *all but* the CircleCI checks and the linter
+* ``[lint only]``: will skip *all but* the linter
 * ``[skip ci]``: will skip *all* CI
 
 Of course, you can combine these to skip multiple workflows.
 
 This skip information should be placed on a new line. In this example, we
-just updated a ``.rst`` file in the documentation and ask to skip Azure and
-GitHub Actions' workflows::
+just updated a ``.rst`` file in the documentation and ask to skip all but the
+relevant docs checks (skip Cirrus and GitHub Actions' workflows)::
 
     DOC: improve QMCEngine examples.
 
-    [skip actions] [skip cirrus]
+    [docs only]
 
 Wheel builds
 ============

@@ -1,11 +1,9 @@
 line-length = 88
 
 # Enable Pyflakes `E` and `F` codes by default.
-select = ["E", "F"]
-ignore = ["E501", "E741"]
-exclude = [
-  "scipy/datasets/_registry.py"
-]
+select = ["E", "F", "PGH004", "UP"]
+ignore = ["E741"]
+exclude = ["scipy/datasets/_registry.py"]
 
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
@@ -22,9 +20,24 @@ target-version = "py39"
 "scipy/stats/distributions.py" = ["F403", "F405"]
 "scipy/stats/mstats.py" = ["F403", "F401"]
 "scipy/stats/qmc.py" = ["F403"]
-"scipy/optimize/_linprog.py" = ["F401"]
-"scipy/optimize/_linprog_ip.py" = ["F401"]
-"setup.py" = ["ALL"]
+"scipy/stats/tests/data/_mvt.py" = ["E701", "E702"]
+# E501 (line length) ignores
+"benchmarks/benchmarks/**" = ["E501"]
+"scipy/_lib/**" = ["E501"]
+"scipy/cluster/**" = ["E501"]
+"scipy/constants/_codata.py" = ["E501"]
+"scipy/integrate/**" = ["E501"]
+"scipy/interpolate/**" = ["E501"]
+"scipy/io/**" = ["E501"]
+"scipy/linalg/**" = ["E501"]
+"scipy/ndimage/**" = ["E501"]
+"scipy/optimize/**" = ["E501"]
+"scipy/signal/**" = ["E501"]
+"scipy/sparse/**" = ["E501"]
+"scipy/spatial/**" = ["E501"]
+"scipy/special/**" = ["E501"]
+"scipy/stats/**" = ["E501"]
+"tools/**" = ["E501"]
 
 [mccabe]
 # Unlike Flake8, default to a complexity level of 10.

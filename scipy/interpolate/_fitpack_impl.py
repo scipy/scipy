@@ -667,7 +667,7 @@ def bisplev(x, y, tck, dx=0, dy=0):
     if (len(x.shape) != 1) or (len(y.shape) != 1):
         raise ValueError("First two entries should be rank-1 arrays.")
 
-    msg = f"Too many data points to interpolate."
+    msg = "Too many data points to interpolate."
 
     _int_overflow(x.size * y.size, MemoryError, msg=msg)
 
@@ -744,8 +744,8 @@ def splder(tck, n=1):
     t, c, k = tck
 
     if n > k:
-        raise ValueError(("Order of derivative (n = {!r}) must be <= "
-                          "order of spline (k = {!r})").format(n, tck[2]))
+        raise ValueError(f"Order of derivative (n = {n!r}) must be <= "
+                         f"order of spline (k = {tck[2]!r})")
 
     # Extra axes for the trailing dims of the `c` array:
     sh = (slice(None),) + ((None,)*len(c.shape[1:]))
@@ -756,7 +756,7 @@ def splder(tck, n=1):
                 # See e.g. Schumaker, Spline Functions: Basic Theory, Chapter 5
 
                 # Compute the denominator in the differentiation formula.
-                # (and append traling dims, if necessary)
+                # (and append trailing dims, if necessary)
                 dt = t[k+1:-1] - t[1:-k-1]
                 dt = dt[sh]
                 # Compute the new coefficients

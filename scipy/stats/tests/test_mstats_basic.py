@@ -1066,7 +1066,7 @@ def test_plotting_positions():
     assert_array_almost_equal(pos.data, np.array([0.25, 0.5, 0.75]))
 
 
-class TestNormalitytests():
+class TestNormalitytests:
 
     def test_vs_nonmasked(self):
         x = np.array((-2, -1, 0, 1, 2, 3)*4)**2
@@ -1123,7 +1123,7 @@ class TestNormalitytests():
         check_named_results(res, attributes, ma=True)
 
     def test_regression_9033(self):
-        # x cleary non-normal but power of negtative denom needs
+        # x clearly non-normal but power of negative denom needs
         # to be handled correctly to reject normality
         counts = [128, 0, 58, 7, 0, 41, 16, 0, 0, 167]
         x = np.hstack([np.full(c, i) for i, c in enumerate(counts)])
@@ -1161,7 +1161,7 @@ class TestNormalitytests():
             mstats.kurtosistest(x, alternative='error')
 
 
-class TestFOneway():
+class TestFOneway:
     def test_result_attributes(self):
         a = np.array([655, 788], dtype=np.uint16)
         b = np.array([789, 772], dtype=np.uint16)
@@ -1170,7 +1170,7 @@ class TestFOneway():
         check_named_results(res, attributes, ma=True)
 
 
-class TestMannwhitneyu():
+class TestMannwhitneyu:
     # data from gh-1428
     x = np.array([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
                   1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1.,
@@ -1219,7 +1219,7 @@ class TestMannwhitneyu():
         assert_allclose(res1.pvalue, res2.pvalue)
 
 
-class TestKruskal():
+class TestKruskal:
     def test_result_attributes(self):
         x = [1, 3, 5, 7, 9]
         y = [2, 4, 6, 8, 10]
@@ -1230,7 +1230,7 @@ class TestKruskal():
 
 
 # TODO: for all ttest functions, add tests with masked array inputs
-class TestTtest_rel():
+class TestTtest_rel:
     def test_vs_nonmasked(self):
         np.random.seed(1234567)
         outcome = np.random.randn(20, 4) + [0, 0, 1, 2]
@@ -1321,7 +1321,7 @@ class TestTtest_rel():
         assert_allclose(p, p_ex, rtol=1e-14)
 
 
-class TestTtest_ind():
+class TestTtest_ind:
     def test_vs_nonmasked(self):
         np.random.seed(1234567)
         outcome = np.random.randn(20, 4) + [0, 0, 1, 2]
@@ -1415,7 +1415,7 @@ class TestTtest_ind():
         assert_allclose(p, p_ex, rtol=1e-14)
 
 
-class TestTtest_1samp():
+class TestTtest_1samp:
     def test_vs_nonmasked(self):
         np.random.seed(1234567)
         outcome = np.random.randn(20, 4) + [0, 0, 1, 2]

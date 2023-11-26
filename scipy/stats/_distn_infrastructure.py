@@ -34,7 +34,7 @@ from scipy import stats
 
 from numpy import (arange, putmask, ones, shape, ndarray, zeros, floor,
                    logical_and, log, sqrt, place, argmax, vectorize, asarray,
-                   nan, inf, isinf, NINF, empty)
+                   nan, inf, isinf, empty)
 
 import numpy as np
 from ._constants import _XMAX, _LOGXMAX
@@ -441,6 +441,8 @@ def _sum_finite(x):
 
     Examples
     --------
+    >>> import numpy as np
+    >>> from scipy.stats._distn_infrastructure import _sum_finite
     >>> tot, nbad = _sum_finite(np.array([-2, -np.inf, 5, 1]))
     >>> tot
     4.0
@@ -568,6 +570,7 @@ def argsreduce(cond, *args):
     Examples
     --------
     >>> import numpy as np
+    >>> from scipy.stats._distn_infrastructure import argsreduce
     >>> rng = np.random.default_rng()
     >>> A = rng.random((4, 5))
     >>> B = 2
@@ -809,8 +812,7 @@ class rv_generic:
                 self.__doc__ = doccer.docformat(self.__doc__, tempdict)
             except TypeError as e:
                 raise Exception("Unable to construct docstring for "
-                                "distribution \"%s\": %s" %
-                                (self.name, repr(e))) from e
+                                f"distribution \"{self.name}\": {repr(e)}") from e
 
         # correct for empty shapes
         self.__doc__ = self.__doc__.replace('(, ', '(').replace(', )', ')')
@@ -1210,6 +1212,7 @@ class rv_generic:
         Entropy is defined base `e`:
 
         >>> import numpy as np
+        >>> from scipy.stats._distn_infrastructure import rv_discrete
         >>> drv = rv_discrete(values=((0, 1), (0.5, 0.5)))
         >>> np.allclose(drv.entropy(), np.log(2.0))
         True
@@ -2026,7 +2029,7 @@ class rv_continuous(rv_generic):
         cond1 = self._support_mask(x, *args) & (scale > 0)
         cond = cond0 & cond1
         output = empty(shape(cond), dtyp)
-        output.fill(NINF)
+        output.fill(-inf)
         putmask(output, (1-cond0)+np.isnan(x), self.badvalue)
         if np.any(cond):
             goodargs = argsreduce(cond, *((x,)+args+(scale,)))
@@ -2110,7 +2113,7 @@ class rv_continuous(rv_generic):
         cond2 = (x >= _b) & cond0
         cond = cond0 & cond1
         output = empty(shape(cond), dtyp)
-        output.fill(NINF)
+        output.fill(-inf)
         place(output, (1-cond0)*(cond1 == cond1)+np.isnan(x), self.badvalue)
         place(output, cond2, 0.0)
         if np.any(cond):  # call only if at least 1 entry
@@ -2196,7 +2199,7 @@ class rv_continuous(rv_generic):
         cond2 = cond0 & (x <= _a)
         cond = cond0 & cond1
         output = empty(shape(cond), dtyp)
-        output.fill(NINF)
+        output.fill(-inf)
         place(output, (1-cond0)+np.isnan(x), self.badvalue)
         place(output, cond2, 0.0)
         if np.any(cond):
@@ -3042,7 +3045,7 @@ class rv_discrete(rv_generic):
     values : tuple of two array_like, optional
         ``(xk, pk)`` where ``xk`` are integers and ``pk`` are the non-zero
         probabilities between 0 and 1 with ``sum(pk) = 1``. ``xk``
-        and ``pk`` must have the same shape.
+        and ``pk`` must have the same shape, and ``xk`` must be unique.
     inc : integer, optional
         Increment for the support of the distribution.
         Default is 1. (other values have not been tested)
@@ -3413,7 +3416,7 @@ class rv_discrete(rv_generic):
             cond1 = cond1 & self._nonzero(k, *args)
         cond = cond0 & cond1
         output = empty(shape(cond), 'd')
-        output.fill(NINF)
+        output.fill(-inf)
         place(output, (1-cond0) + np.isnan(k), self.badvalue)
         if np.any(cond):
             goodargs = argsreduce(cond, *((k,)+args))
@@ -3493,7 +3496,7 @@ class rv_discrete(rv_generic):
         cond2 = (k >= _b)
         cond = cond0 & cond1
         output = empty(shape(cond), 'd')
-        output.fill(NINF)
+        output.fill(-inf)
         place(output, (1-cond0) + np.isnan(k), self.badvalue)
         place(output, cond2*(cond0 == cond0), 0.0)
 
@@ -3574,7 +3577,7 @@ class rv_discrete(rv_generic):
         cond2 = (k < _a) & cond0
         cond = cond0 & cond1
         output = empty(shape(cond), 'd')
-        output.fill(NINF)
+        output.fill(-inf)
         place(output, (1-cond0) + np.isnan(k), self.badvalue)
         place(output, cond2, 0.0)
         if np.any(cond):
@@ -3825,6 +3828,7 @@ def _iter_chunked(x0, x1, chunksize=4, inc=1):
     Handles both x0 < x1 and x0 > x1. In the latter case, iterates downwards
     (make sure to set inc < 0.)
 
+    >>> from scipy.stats._distn_infrastructure import _iter_chunked
     >>> [x for x in _iter_chunked(2, 5, inc=2)]
     [array([2, 4])]
     >>> [x for x in _iter_chunked(2, 11, inc=2)]
@@ -3889,6 +3893,8 @@ class rv_sample(rv_discrete):
             raise ValueError("All elements of pk must be non-negative.")
         if not np.allclose(np.sum(pk), 1):
             raise ValueError("The sum of provided pk is not 1.")
+        if not len(set(np.ravel(xk))) == np.size(xk):
+            raise ValueError("xk may not contain duplicate values.")
 
         indx = np.argsort(np.ravel(xk))
         self.xk = np.take(np.ravel(xk), indx, 0)

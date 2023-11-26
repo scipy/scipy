@@ -7,6 +7,9 @@ import pkgutil
 import types
 import importlib
 import warnings
+from importlib import import_module
+
+import pytest
 
 import scipy
 
@@ -79,10 +82,10 @@ PRIVATE_BUT_PRESENT_MODULES = [
     'scipy.fftpack.helper',
     'scipy.fftpack.pseudo_diffs',
     'scipy.fftpack.realtransforms',
-    'scipy.integrate.odepack',
-    'scipy.integrate.quadpack',
     'scipy.integrate.dop',
     'scipy.integrate.lsoda',
+    'scipy.integrate.odepack',
+    'scipy.integrate.quadpack',
     'scipy.integrate.vode',
     'scipy.interpolate.dfitpack',
     'scipy.interpolate.fitpack',
@@ -95,8 +98,6 @@ PRIVATE_BUT_PRESENT_MODULES = [
     'scipy.io.arff.arffread',
     'scipy.io.harwell_boeing',
     'scipy.io.idl',
-    'scipy.io.mmio',
-    'scipy.io.netcdf',
     'scipy.io.matlab.byteordercodes',
     'scipy.io.matlab.mio',
     'scipy.io.matlab.mio4',
@@ -106,6 +107,8 @@ PRIVATE_BUT_PRESENT_MODULES = [
     'scipy.io.matlab.mio_utils',
     'scipy.io.matlab.miobase',
     'scipy.io.matlab.streams',
+    'scipy.io.mmio',
+    'scipy.io.netcdf',
     'scipy.linalg.basic',
     'scipy.linalg.decomp',
     'scipy.linalg.decomp_cholesky',
@@ -186,7 +189,6 @@ PRIVATE_BUT_PRESENT_MODULES = [
     'scipy.stats.mstats_basic',
     'scipy.stats.mstats_extras',
     'scipy.stats.mvn',
-    'scipy.stats.statlib',
     'scipy.stats.stats',
 ]
 
@@ -274,7 +276,7 @@ def test_all_modules_are_expected_2():
 
     if unexpected_members:
         raise AssertionError("Found unexpected object(s) that look like "
-                             "modules: {}".format(unexpected_members))
+                             f"modules: {unexpected_members}")
 
 
 def test_api_importable():
@@ -299,7 +301,7 @@ def test_api_importable():
 
     if module_names:
         raise AssertionError("Modules in the public API that cannot be "
-                             "imported: {}".format(module_names))
+                             f"imported: {module_names}")
 
     with warnings.catch_warnings(record=True):
         warnings.filterwarnings('always', category=DeprecationWarning)
@@ -311,4 +313,104 @@ def test_api_importable():
     if module_names:
         raise AssertionError("Modules that are not really public but looked "
                              "public and can not be imported: "
-                             "{}".format(module_names))
+                             f"{module_names}")
+
+
+@pytest.mark.parametrize(("module_name", "correct_module"),
+                         [('scipy.constants.codata', None),
+                          ('scipy.constants.constants', None),
+                          ('scipy.integrate.dop', None),
+                          ('scipy.integrate.lsoda', None),
+                          ('scipy.integrate.odepack', None),
+                          ('scipy.integrate.quadpack', None),
+                          ('scipy.integrate.vode', None),
+                          ('scipy.interpolate.fitpack', None),
+                          ('scipy.interpolate.fitpack2', None),
+                          ('scipy.interpolate.interpolate', None),
+                          ('scipy.interpolate.ndgriddata', None),
+                          ('scipy.interpolate.polyint', None),
+                          ('scipy.interpolate.rbf', None),
+                          ('scipy.linalg.basic', None),
+                          ('scipy.linalg.decomp', None),
+                          ('scipy.linalg.decomp_cholesky', None),
+                          ('scipy.linalg.decomp_lu', None),
+                          ('scipy.linalg.decomp_qr', None),
+                          ('scipy.linalg.decomp_schur', None),
+                          ('scipy.linalg.decomp_svd', None),
+                          ('scipy.linalg.matfuncs', None),
+                          ('scipy.linalg.misc', None),
+                          ('scipy.linalg.special_matrices', None),
+                          ('scipy.ndimage.filters', None),
+                          ('scipy.ndimage.fourier', None),
+                          ('scipy.ndimage.interpolation', None),
+                          ('scipy.ndimage.measurements', None),
+                          ('scipy.ndimage.morphology', None),
+                          ('scipy.odr.models', None),
+                          ('scipy.odr.odrpack', None),
+                          ('scipy.optimize.cobyla', None),
+                          ('scipy.optimize.lbfgsb', None),
+                          ('scipy.optimize.linesearch', None),
+                          ('scipy.optimize.minpack', None),
+                          ('scipy.optimize.minpack2', None),
+                          ('scipy.optimize.moduleTNC', None),
+                          ('scipy.optimize.nonlin', None),
+                          ('scipy.optimize.optimize', None),
+                          ('scipy.optimize.slsqp', None),
+                          ('scipy.optimize.tnc', None),
+                          ('scipy.optimize.zeros', None),
+                          ('scipy.sparse.lil', None),
+                          ('scipy.sparse.linalg.dsolve', 'linalg'),
+                          ('scipy.sparse.linalg.eigen', 'linalg'),
+                          ('scipy.sparse.linalg.interface', 'linalg'),
+                          ('scipy.sparse.linalg.isolve', 'linalg'),
+                          ('scipy.sparse.linalg.matfuncs', 'linalg'),
+                          ('scipy.sparse.sparsetools', None),
+                          ('scipy.sparse.spfuncs', None),
+                          ('scipy.sparse.sputils', None),
+                          ('scipy.spatial.ckdtree', None),
+                          ('scipy.spatial.kdtree', None),
+                          ('scipy.spatial.qhull', None),
+                          ('scipy.spatial.transform.rotation', 'transform'),
+                          ('scipy.special.add_newdocs', None),
+                          ('scipy.special.basic', None),
+                          ('scipy.special.orthogonal', None),
+                          ('scipy.special.sf_error', None),
+                          ('scipy.special.specfun', None),
+                          ('scipy.special.spfun_stats', None),
+                          ('scipy.stats.biasedurn', None),
+                          ('scipy.stats.kde', None),
+                          ('scipy.stats.morestats', None),
+                          ('scipy.stats.mstats_basic', 'mstats'),
+                          ('scipy.stats.mstats_extras', 'mstats'),
+                          ('scipy.stats.mvn', None),
+                          ('scipy.stats.stats', None)])
+def test_private_but_present_deprecation(module_name, correct_module):
+    # gh-18279, gh-17572, gh-17771 noted that deprecation warnings
+    # for imports from private modules
+    # were misleading. Check that this is resolved.
+    module = import_module(module_name)
+    if correct_module is None:
+        import_name = f'scipy.{module_name.split(".")[1]}'
+    else:
+        import_name = f'scipy.{module_name.split(".")[1]}.{correct_module}'
+
+    correct_import = import_module(import_name)
+
+    # Attributes that were formerly in `module_name` can still be imported from
+    # `module_name`, albeit with a deprecation warning. The specific message
+    # depends on whether the attribute is public in `scipy.xxx` or not.
+    for attr_name in module.__all__:
+        attr = getattr(correct_import, attr_name, None)
+        if attr is None:
+            message = f"`{module_name}.{attr_name}` is deprecated..."
+        else:
+            message = f"Please import `{attr_name}` from the `{import_name}`..."
+        with pytest.deprecated_call(match=message):
+            getattr(module, attr_name)
+
+    # Attributes that were not in `module_name` get an error notifying the user
+    # that the attribute is not in `module_name` and that `module_name` is
+    # deprecated.
+    message = f"`{module_name}` is deprecated..."
+    with pytest.raises(AttributeError, match=message):
+        getattr(module, "ekki")

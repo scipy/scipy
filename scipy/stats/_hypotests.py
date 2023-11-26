@@ -100,7 +100,7 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
     nx, ny = len(x), len(y)
     if (nx < 5) or (ny < 5):
         raise ValueError('x and y should have at least 5 elements, but len(x) '
-                         '= {} and len(y) = {}.'.format(nx, ny))
+                         f'= {nx} and len(y) = {ny}.')
     if not np.isfinite(x).all():
         raise ValueError('x must not contain nonfinite values.')
     if not np.isfinite(y).all():
@@ -604,10 +604,10 @@ def _get_wilcoxon_distr(n):
     Returns an array with the probabilities of all the possible ranks
     r = 0, ..., n*(n+1)/2
     """
-    c = np.ones(1, dtype=np.double)
+    c = np.ones(1, dtype=np.float64)
     for k in range(1, n + 1):
         prev_c = c
-        c = np.zeros(k * (k + 1) // 2 + 1, dtype=np.double)
+        c = np.zeros(k * (k + 1) // 2 + 1, dtype=np.float64)
         m = len(prev_c)
         c[:m] = prev_c * 0.5
         c[-m:] += prev_c * 0.5
@@ -1416,7 +1416,7 @@ def _get_binomial_log_p_value_with_nuisance_param(
     Returns
     -------
     p_value : float
-        Return the maximum p-value considering every nuisance paramater
+        Return the maximum p-value considering every nuisance parameter
         between 0 and 1
 
     Notes
@@ -1528,7 +1528,8 @@ def _pval_cvm_2samp_exact(s, m, n):
                 np.delete(tmp, i0, 1),
                 np.delete(g, i1, 1)
             ], 1)
-            tmp[0] += (a * v - b * u) ** 2
+            res = (a * v - b * u) ** 2
+            tmp[0] += res.astype(dtype)
             next_gs.append(tmp)
         gs = next_gs
     value, freq = gs[m]

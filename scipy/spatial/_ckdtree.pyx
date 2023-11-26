@@ -6,7 +6,6 @@
 
 # cython: cpow=True
 
-# distutils: language = c++
 
 import numpy as np
 import scipy.sparse
@@ -555,7 +554,8 @@ cdef class cKDTree:
         data = np.array(data, order='C', copy=copy_data, dtype=np.float64)
 
         if data.ndim != 2:
-            raise ValueError("data must be 2 dimensions")
+            raise ValueError("data must be of shape (n, m), where there are"
+                             "n points of dimension m")
 
         if not np.isfinite(data).all():
             raise ValueError("data must be finite, check for nan or inf values")
@@ -791,7 +791,7 @@ cdef class cKDTree:
         if p < 1:
             raise ValueError("Only p-norms with 1<=p<=infinity permitted")
 
-        if not np.isfinite(x).all():
+        if not np.isfinite(x_arr).all():
             raise ValueError("'x' must be finite, check for nan or inf values")
 
         cdef:
@@ -878,7 +878,7 @@ cdef class cKDTree:
                SciPy 1.9.0.
 
         return_sorted : bool, optional
-            Sorts returned indicies if True and does not sort them if False. If
+            Sorts returned indices if True and does not sort them if False. If
             None, does not sort single point queries, but does sort
             multi-point queries which was the behavior before this option
             was added.
@@ -944,7 +944,7 @@ cdef class cKDTree:
             const np.float64_t *vxx = <np.float64_t*>x_arr.data
             const np.float64_t *vrr = <np.float64_t*>r_arr.data
         
-        if not np.isfinite(x).all():
+        if not np.isfinite(x_arr).all():
             raise ValueError("'x' must be finite, check for nan or inf values")
 
         if rlen:
@@ -1398,7 +1398,7 @@ cdef class cKDTree:
 
         if self_weights is None and other_weights is None:
             int_result = True
-            # unweighted, use the integer arithmetics
+            # unweighted, use the integer arithmetic
             results = np.zeros(n_queries + 1, dtype=np.intp)
 
             iresults = results
@@ -1413,7 +1413,7 @@ cdef class cKDTree:
         else:
             int_result = False
 
-            # weighted / half weighted, use the floating point arithmetics
+            # weighted / half weighted, use the floating point arithmetic
             if self_weights is not None:
                 w1 = np.ascontiguousarray(self_weights, dtype=np.float64)
                 w1n = self._build_weights(w1)

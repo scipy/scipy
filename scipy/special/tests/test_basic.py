@@ -25,7 +25,8 @@ import sys
 
 import numpy as np
 from numpy import (array, isnan, r_, arange, finfo, pi, sin, cos, tan, exp,
-        log, zeros, sqrt, asarray, inf, nan_to_num, real, arctan, float_)
+        log, zeros, sqrt, asarray, inf, nan_to_num, real, arctan, double,
+        array_equal)
 
 import pytest
 from pytest import raises as assert_raises
@@ -38,7 +39,9 @@ from scipy import special
 import scipy.special._ufuncs as cephes
 from scipy.special import ellipe, ellipk, ellipkm1
 from scipy.special import elliprc, elliprd, elliprf, elliprg, elliprj
-from scipy.special import mathieu_odd_coef, mathieu_even_coef
+from scipy.special import mathieu_odd_coef, mathieu_even_coef, stirling2
+from scipy._lib.deprecation import _NoValue
+from scipy._lib._util import np_long, np_ulong
 
 from scipy.special._basic import _FACTORIALK_LIMITS_64BITS, \
     _FACTORIALK_LIMITS_32BITS
@@ -96,8 +99,8 @@ class TestCephes:
         def binom_int(n, k):
             n = int(n)
             k = int(k)
-            num = int(1)
-            den = int(1)
+            num = 1
+            den = 1
             for i in range(1, k+1):
                 num *= i + n - k
                 den *= i
@@ -166,35 +169,15 @@ class TestCephes:
     def test_besselpoly(self):
         assert_equal(cephes.besselpoly(0,0,0),1.0)
 
-    def test_beta(self):
-        assert_equal(cephes.beta(1,1),1.0)
-        assert_allclose(cephes.beta(-100.3, 1e-200), cephes.gamma(1e-200))
-        assert_allclose(cephes.beta(0.0342, 171), 24.070498359873497,
-                        rtol=1e-13, atol=0)
-
-    def test_betainc(self):
-        assert_equal(cephes.betainc(1,1,1),1.0)
-        assert_allclose(cephes.betainc(0.0342, 171, 1e-10), 0.55269916901806648)
-
-    def test_betaln(self):
-        assert_equal(cephes.betaln(1,1),0.0)
-        assert_allclose(cephes.betaln(-100.3, 1e-200), cephes.gammaln(1e-200))
-        assert_allclose(cephes.betaln(0.0342, 170), 3.1811881124242447,
-                        rtol=1e-14, atol=0)
-
-    def test_betaincinv(self):
-        assert_equal(cephes.betaincinv(1,1,1),1.0)
-        assert_allclose(cephes.betaincinv(0.0342, 171, 0.25),
-                        8.4231316935498957e-21, rtol=3e-12, atol=0)
-
-    def test_beta_inf(self):
-        assert_(np.isinf(special.beta(-1, 2)))
-
     def test_btdtr(self):
-        assert_equal(cephes.btdtr(1,1,1),1.0)
+        with pytest.deprecated_call(match='deprecated in SciPy 1.12.0'):
+            y = special.btdtr(1, 1, 1)
+        assert_equal(y, 1.0)
 
     def test_btdtri(self):
-        assert_equal(cephes.btdtri(1,1,1),1.0)
+        with pytest.deprecated_call(match='deprecated in SciPy 1.12.0'):
+            y = special.btdtri(1, 1, 1)
+        assert_equal(y, 1.0)
 
     def test_btdtria(self):
         assert_equal(cephes.btdtria(1,1,1),5.0)
@@ -1288,24 +1271,139 @@ class TestBernoulli:
 
 
 class TestBeta:
+    """
+    Test beta and betaln.
+    """
+
     def test_beta(self):
-        bet = special.beta(2,4)
+        assert_equal(special.beta(1, 1), 1.0)
+        assert_allclose(special.beta(-100.3, 1e-200), special.gamma(1e-200))
+        assert_allclose(special.beta(0.0342, 171), 24.070498359873497,
+                        rtol=1e-13, atol=0)
+
+        bet = special.beta(2, 4)
         betg = (special.gamma(2)*special.gamma(4))/special.gamma(6)
-        assert_almost_equal(bet,betg,8)
+        assert_allclose(bet, betg, rtol=1e-13)
+
+    def test_beta_inf(self):
+        assert_(np.isinf(special.beta(-1, 2)))
 
     def test_betaln(self):
-        betln = special.betaln(2,4)
-        bet = log(abs(special.beta(2,4)))
-        assert_almost_equal(betln,bet,8)
+        assert_equal(special.betaln(1, 1), 0.0)
+        assert_allclose(special.betaln(-100.3, 1e-200),
+                        special.gammaln(1e-200))
+        assert_allclose(special.betaln(0.0342, 170), 3.1811881124242447,
+                        rtol=1e-14, atol=0)
 
-    def test_betainc(self):
-        btinc = special.betainc(1,1,.2)
-        assert_almost_equal(btinc,0.2,8)
+        betln = special.betaln(2, 4)
+        bet = log(abs(special.beta(2, 4)))
+        assert_allclose(betln, bet, rtol=1e-13)
 
-    def test_betaincinv(self):
-        y = special.betaincinv(2,4,.5)
-        comp = special.betainc(2,4,y)
-        assert_almost_equal(comp,.5,5)
+
+class TestBetaInc:
+    """
+    Tests for betainc, betaincinv, betaincc, betainccinv.
+    """
+
+    def test_a1_b1(self):
+        # betainc(1, 1, x) is x.
+        x = np.array([0, 0.25, 1])
+        assert_equal(special.betainc(1, 1, x), x)
+        assert_equal(special.betaincinv(1, 1, x), x)
+        assert_equal(special.betaincc(1, 1, x), 1 - x)
+        assert_equal(special.betainccinv(1, 1, x), 1 - x)
+
+    # Nontrivial expected values computed with mpmath:
+    #    from mpmath import mp
+    #    mp.dps = 100
+    #    p = mp.betainc(a, b, 0, x, regularized=True)
+    #
+    # or, e.g.,
+    #
+    #    p = 0.25
+    #    a, b = 0.0342, 171
+    #    x = mp.findroot(
+    #        lambda t: mp.betainc(a, b, 0, t, regularized=True) - p,
+    #        (8e-21, 9e-21),
+    #        solver='anderson',
+    #    )
+    #
+    @pytest.mark.parametrize(
+        'a, b, x, p',
+        [(2, 4, 0.3138101704556974, 0.5),
+         (0.0342, 171.0, 1e-10, 0.552699169018070910641),
+         # gh-3761:
+         (0.0342, 171, 8.42313169354797e-21, 0.25),
+         # gh-4244:
+         (0.0002742794749792665, 289206.03125, 1.639984034231756e-56,
+          0.9688708782196045),
+         # gh-12796:
+         (4, 99997, 0.0001947841578892121, 0.999995)])
+    def test_betainc_betaincinv(self, a, b, x, p):
+        p1 = special.betainc(a, b, x)
+        assert_allclose(p1, p, rtol=1e-15)
+        x1 = special.betaincinv(a, b, p)
+        assert_allclose(x1, x, rtol=5e-13)
+
+    # Expected values computed with mpmath:
+    #     from mpmath import mp
+    #     mp.dps = 100
+    #     p = mp.betainc(a, b, x, 1, regularized=True)
+    @pytest.mark.parametrize('a, b, x, p',
+                             [(2.5, 3.0, 0.25, 0.833251953125),
+                              (7.5, 13.25, 0.375, 0.43298734645560368593),
+                              (0.125, 7.5, 0.425, 0.0006688257851314237),
+                              (0.125, 18.0, 1e-6, 0.72982359145096327654),
+                              (0.125, 18.0, 0.996, 7.2745875538380150586e-46),
+                              (0.125, 24.0, 0.75, 3.70853404816862016966e-17),
+                              (16.0, 0.75, 0.99999999975,
+                               5.4408759277418629909e-07),
+                              # gh-4677 (numbers from stackoverflow question):
+                              (0.4211959643503401, 16939.046996018118,
+                               0.000815296167195521, 1e-7)])
+    def test_betaincc_betainccinv(self, a, b, x, p):
+        p1 = special.betaincc(a, b, x)
+        assert_allclose(p1, p, rtol=5e-15)
+        x1 = special.betainccinv(a, b, p)
+        assert_allclose(x1, x, rtol=8e-15)
+
+    @pytest.mark.parametrize(
+        'a, b, y, ref',
+        [(14.208308325339239, 14.208308325339239, 7.703145458496392e-307,
+          8.566004561846704e-23),
+         (14.0, 14.5, 1e-280, 2.9343915006642424e-21),
+         (3.5, 15.0, 4e-95, 1.3290751429289227e-28),
+         (10.0, 1.25, 2e-234, 3.982659092143654e-24),
+         (4.0, 99997.0, 5e-88, 3.309800566862242e-27)]
+    )
+    def test_betaincinv_tiny_y(self, a, b, y, ref):
+        # Test with extremely small y values.  This test includes
+        # a regression test for an issue in the boost code;
+        # see https://github.com/boostorg/math/issues/961
+        #
+        # The reference values were computed with mpmath. For example,
+        #
+        #   from mpmath import mp
+        #   mp.dps = 1000
+        #   a = 14.208308325339239
+        #   p = 7.703145458496392e-307
+        #   x = mp.findroot(lambda t: mp.betainc(a, a, 0, t,
+        #                                        regularized=True) - p,
+        #                   x0=8.566e-23)
+        #   print(float(x))
+        #
+        x = special.betaincinv(a, b, y)
+        assert_allclose(x, ref, rtol=1e-14)
+
+    @pytest.mark.parametrize('func', [special.betainc, special.betaincinv,
+                                      special.betaincc, special.betainccinv])
+    @pytest.mark.parametrize('args', [(-1.0, 2, 0.5), (0, 2, 0.5),
+                                      (1.5, -2.0, 0.5), (1.5, 0, 0.5),
+                                      (1.5, 2.0, -0.3), (1.5, 2.0, 1.1)])
+    def test_betainc_domain_errors(self, func, args):
+        with special.errstate(domain='raise'):
+            with pytest.raises(special.SpecialFunctionError, match='domain'):
+                special.betainc(*args)
 
 
 class TestCombinatorics:
@@ -1325,12 +1423,12 @@ class TestCombinatorics:
         assert special.comb(100, 50, exact=True) == expected
 
     @pytest.mark.parametrize("repetition", [True, False])
-    @pytest.mark.parametrize("legacy", [True, False, None])
+    @pytest.mark.parametrize("legacy", [True, False, _NoValue])
     @pytest.mark.parametrize("k", [3.5, 3])
     @pytest.mark.parametrize("N", [4.5, 4])
     def test_comb_legacy(self, N, k, legacy, repetition):
         # test is only relevant for exact=True
-        if legacy is not None:
+        if legacy is not _NoValue:
             with pytest.warns(
                 DeprecationWarning,
                 match=r"Using 'legacy' keyword is deprecated"
@@ -1352,7 +1450,7 @@ class TestCombinatorics:
                 N, k = int(N), int(k)
         # expected result is the same as with exact=False
         with suppress_warnings() as sup:
-            if legacy is not None:
+            if legacy is not _NoValue:
                 sup.filter(DeprecationWarning)
             expected = special.comb(N, k, legacy=legacy, repetition=repetition)
         assert_equal(result, expected)
@@ -1386,6 +1484,11 @@ class TestCombinatorics:
         assert_equal(special.perm(2, -1, exact=False), 0)
         assert_array_almost_equal(special.perm([2, -1, 2, 10], [3, 3, -1, 3]),
                 [0., 0., 0., 720.])
+
+    def test_positional_deprecation(self):
+        with pytest.deprecated_call(match="use keyword arguments"):
+            # from test_comb
+            special.comb([10, 10], [3, 4], False, False)
 
 
 class TestTrigonometric:
@@ -1653,7 +1756,7 @@ class TestEllipCarlson:
         assert np.isinf(elliprd(1, 1, 0))
         assert np.isinf(elliprd(1, 1, complex(0, 0)))
         assert np.isinf(elliprd(0, 1, complex(0, 0)))
-        assert isnan(elliprd(1, 1, -np.finfo(np.double).tiny / 2.0))
+        assert isnan(elliprd(1, 1, -np.finfo(np.float64).tiny / 2.0))
         assert isnan(elliprd(1, 1, complex(-1, 0)))
         args = array([[0.0, 2.0, 1.0],
                       [2.0, 3.0, 4.0],
@@ -1768,7 +1871,7 @@ class TestEllipLegendreCarlsonIdentities:
     def setup_class(self):
         self.m_n1_1 = np.arange(-1., 1., 0.01)
         # For double, this is -(2**1024)
-        self.max_neg = finfo(float_).min
+        self.max_neg = finfo(double).min
         # Lots of very negative numbers
         self.very_neg_m = -1. * 2.**arange(-1 +
                                            np.log2(-self.max_neg), 0.,
@@ -1790,7 +1893,7 @@ class TestEllipLegendreCarlsonIdentities:
         But with the ellipkm1 function
         """
         # For double, this is 2**-1022
-        tiny = finfo(float_).tiny
+        tiny = finfo(double).tiny
         # All these small powers of 2, up to 2**-1
         m1 = tiny * 2.**arange(0., -np.log2(tiny))
         assert_allclose(ellipkm1(m1), elliprf(0., m1, 1.))
@@ -1801,6 +1904,7 @@ class TestEllipLegendreCarlsonIdentities:
         """
         m = self.ms_up_to_1
         assert_allclose(ellipe(m), 2.*elliprg(0., 1.-m, 1.))
+
 
 class TestErf:
 
@@ -2129,6 +2233,8 @@ class TestFactorialFunctions:
     def test_factorial_array_corner_cases(self, content, dim, exact, dtype):
         if dtype == np.int64 and any(np.isnan(x) for x in content):
             pytest.skip("impossible combination")
+        # np.array(x, ndim=0) will not be 0-dim. unless x is too
+        content = content if (dim > 0 or len(content) != 1) else content[0]
         n = np.array(content, ndmin=dim, dtype=dtype)
         result = None
         if not content:
@@ -2143,7 +2249,10 @@ class TestFactorialFunctions:
             with pytest.warns(DeprecationWarning, match="Non-integer array.*"):
                 result = special.factorial(n, exact=exact)
                 # expected dtype is integer, unless there are NaNs
-                dtype = np.float_ if np.any(np.isnan(n)) else np.int_
+                if np.any(np.isnan(n)):
+                    dtype = np.dtype(np.float64)
+                else:
+                    dtype = np.dtype(int)
         elif exact and not np.issubdtype(n.dtype, np.integer):
             with pytest.raises(ValueError, match="factorial with exact=.*"):
                 special.factorial(n, exact=exact)
@@ -2151,14 +2260,22 @@ class TestFactorialFunctions:
             # no error
             result = special.factorial(n, exact=exact)
 
+        # assert_equal does not distinguish scalars and 0-dim arrays of the same value, see
+        # https://github.com/numpy/numpy/issues/24050
+        def assert_really_equal(x, y):
+            assert type(x) == type(y), f"types not equal: {type(x)}, {type(y)}"
+            assert_equal(x, y)
+
         if result is not None:
             # expected result is empty if and only if n is empty,
             # and has the same dtype & dimension as n
             with suppress_warnings() as sup:
                 sup.filter(DeprecationWarning)
-                r = special.factorial(n.ravel(), exact=exact) if n.size else []
+                # keep 0-dim.; otherwise n.ravel().ndim==1, even if n.ndim==0
+                n_flat = n.ravel() if n.ndim else n
+                r = special.factorial(n_flat, exact=exact) if n.size else []
             expected = np.array(r, ndmin=dim, dtype=dtype)
-            assert_equal(result, expected)
+            assert_really_equal(result, expected)
 
     @pytest.mark.parametrize("exact", [True, False])
     @pytest.mark.parametrize("n", [1, 1.1, 2 + 2j, np.nan, None],
@@ -2211,6 +2328,8 @@ class TestFactorialFunctions:
     def test_factorial2_array_corner_cases(self, content, dim, exact, dtype):
         if dtype == np.int64 and any(np.isnan(x) for x in content):
             pytest.skip("impossible combination")
+        # np.array(x, ndim=0) will not be 0-dim. unless x is too
+        content = content if (dim > 0 or len(content) != 1) else content[0]
         n = np.array(content, ndmin=dim, dtype=dtype)
         if np.issubdtype(n.dtype, np.integer) or (not content):
             # no error
@@ -2262,6 +2381,8 @@ class TestFactorialFunctions:
     def test_factorialk_array_corner_cases(self, content, dim, dtype):
         if dtype == np.int64 and any(np.isnan(x) for x in content):
             pytest.skip("impossible combination")
+        # np.array(x, ndim=0) will not be 0-dim. unless x is too
+        content = content if (dim > 0 or len(content) != 1) else content[0]
         n = np.array(content, ndmin=dim, dtype=dtype)
         if np.issubdtype(n.dtype, np.integer) or (not content):
             # no error; expected result is identical to n
@@ -2297,7 +2418,7 @@ class TestFactorialFunctions:
     def test_factorialk_dtype(self, k):
         if k in _FACTORIALK_LIMITS_64BITS.keys():
             n = np.array([_FACTORIALK_LIMITS_32BITS[k]])
-            assert_equal(special.factorialk(n, k).dtype, np.int_)
+            assert_equal(special.factorialk(n, k).dtype, np_long)
             assert_equal(special.factorialk(n + 1, k).dtype, np.int64)
             # assert maximality of limits for given dtype
             assert special.factorialk(n + 1, k) > np.iinfo(np.int32).max
@@ -2503,10 +2624,10 @@ class TestHyper:
         x = special.hyp0f1(x1, x2)
         expected = [1.0, 1.8134302039235093, 1.21482702689997]
         assert_allclose(x, expected, rtol=1e-12)
-        x = special.hyp0f1(np.row_stack([x1] * 2), x2)
-        assert_allclose(x, np.row_stack([expected] * 2), rtol=1e-12)
+        x = special.hyp0f1(np.vstack([x1] * 2), x2)
+        assert_allclose(x, np.vstack([expected] * 2), rtol=1e-12)
         assert_raises(ValueError, special.hyp0f1,
-                      np.row_stack([x1] * 3), [0, 1])
+                      np.vstack([x1] * 3), [0, 1])
 
     def test_hyp0f1_gh5764(self):
         # Just checks the point that failed; there's a more systematic
@@ -3160,11 +3281,11 @@ class TestBessel:
         assert_allclose(special.iv(-0.5, 1), 1.231200214592967)
 
     def iv_series(self, v, z, n=200):
-        k = arange(0, n).astype(float_)
+        k = arange(0, n).astype(double)
         r = (v+2*k)*log(.5*z) - special.gammaln(k+1) - special.gammaln(v+k+1)
         r[isnan(r)] = inf
         r = exp(r)
-        err = abs(r).max() * finfo(float_).eps * n + abs(r[-1])*10
+        err = abs(r).max() * finfo(double).eps * n + abs(r[-1])*10
         return r.sum(), err
 
     def test_i0_series(self):
@@ -3541,10 +3662,10 @@ class TestPolygamma:
         expected = [-1.9635100260214238, 0.93480220054467933,
                     -0.23620405164172739]
         assert_almost_equal(special.polygamma(n, x), expected)
-        expected = np.row_stack([expected]*2)
-        assert_almost_equal(special.polygamma(n, np.row_stack([x]*2)),
+        expected = np.vstack([expected]*2)
+        assert_almost_equal(special.polygamma(n, np.vstack([x]*2)),
                             expected)
-        assert_almost_equal(special.polygamma(np.row_stack([n]*2), x),
+        assert_almost_equal(special.polygamma(np.vstack([n]*2), x),
                             expected)
 
 
@@ -3653,7 +3774,7 @@ class TestStruve:
         """Compute Struve function & error estimate from its power series."""
         k = arange(0, n)
         r = (-1)**k * (.5*z)**(2*k+v+1)/special.gamma(k+1.5)/special.gamma(k+v+1.5)
-        err = abs(r).max() * finfo(float_).eps * n
+        err = abs(r).max() * finfo(double).eps * n
         return r.sum(), err
 
     def test_vs_series(self):
@@ -3919,3 +4040,112 @@ def test_runtime_warning():
     with pytest.warns(RuntimeWarning,
                       match=r'Too many predicted coefficients'):
         mathieu_even_coef(1000, 1000)
+
+
+class TestStirling2:
+    table = [
+        [1],
+        [0, 1],
+        [0, 1, 1],
+        [0, 1, 3, 1],
+        [0, 1, 7, 6, 1],
+        [0, 1, 15, 25, 10, 1],
+        [0, 1, 31, 90, 65, 15, 1],
+        [0, 1, 63, 301, 350, 140, 21, 1],
+        [0, 1, 127, 966, 1701, 1050, 266, 28, 1],
+        [0, 1, 255, 3025, 7770, 6951, 2646, 462, 36, 1],
+        [0, 1, 511, 9330, 34105, 42525, 22827, 5880, 750, 45, 1],
+    ]
+
+    def test_table_cases(self):
+        for n in range(len(self.table)):
+            for k in range(len(self.table[n])):
+                assert_equal(self.table[n][k], stirling2(n, k))
+
+    def test_valid_single_integer(self):
+        assert_equal(stirling2(0, 0), self.table[0][0])
+        assert_equal(stirling2(4, 2), self.table[4][2])
+        # a single 2-tuple of integers as arguments must return an int and not
+        # an array whereas arrays of single values should return array
+        assert stirling2(5, 3) == 25
+        assert array_equal(stirling2([5], [3]), [25])
+
+    def test_negative_integer(self):
+        # negative integers for n or k arguments return 0
+        assert_equal(stirling2(-1, -1), 0)
+        assert_equal(stirling2(-1, 2), 0)
+        assert_equal(stirling2(2, -1), 0)
+
+    def test_array_inputs(self):
+        ans = [self.table[10][3], self.table[10][4]]
+        assert array_equal(stirling2(asarray([10, 10]), asarray([3, 4])), ans)
+        assert array_equal(stirling2([10, 10], asarray([3, 4])), ans)
+        assert array_equal(stirling2(asarray([10, 10]), [3, 4]), ans)
+
+    def test_mixed_values(self):
+        # negative values-of either n or k-should return 0 for the entry
+        ans = [0, 1, 3, 25, 1050, 5880, 9330]
+        n = [-1, 0, 3, 5, 8, 10, 10]
+        k = [-2, 0, 2, 3, 5, 7, 3]
+        assert array_equal(stirling2(n, k), ans)
+
+    def test_correct_parity(self):
+        """Test parity follows well known identity.
+
+        en.wikipedia.org/wiki/Stirling_numbers_of_the_second_kind#Parity
+        """
+        n, K = 100, np.arange(101)
+        assert_equal(
+            stirling2(n, K) % 2,
+            [math.comb(n - (k // 2) - 1, n - k) % 2 for k in K],
+        )
+
+    def test_big_numbers(self):
+        # via mpmath (bigger than 32bit)
+        ans = asarray([48063331393110, 48004081105038305])
+        n = [25, 30]
+        k = [17, 4]
+        assert array_equal(stirling2(n, k), ans)
+        # bigger than 64 bit
+        ans = asarray([2801934359500572414253157841233849412,
+                       14245032222277144547280648984426251])
+        n = [42, 43]
+        k = [17, 23]
+        assert array_equal(stirling2(n, k), ans)
+
+    @pytest.mark.parametrize("K", [3.5, 3, "2", None])
+    @pytest.mark.parametrize("N", [4.5, 3., 4+1j, "12", np.nan])
+    def test_unsupported_input_types(self, N, K):
+        # object, float, string, complex are not supported and raise TypeError
+        # when exact=True
+        with pytest.raises(TypeError):
+            special.stirling2(N, K, exact=True)
+
+    def test_numpy_array_int_object_dtype(self):
+        # python integers with arbitrary precision are *not* allowed as
+        # object type in numpy arrays are inconsistent from api perspective
+        ans = asarray(self.table[4][1:])
+        n = asarray([4, 4, 4, 4], dtype=object)
+        k = asarray([1, 2, 3, 4], dtype=object)
+        with pytest.raises(TypeError):
+            array_equal(stirling2(n, k), ans)
+
+    def test_numpy_array_unsigned_int_dtype(self):
+        # numpy unsigned integers are allowed as dtype in numpy arrays
+        ans = asarray(self.table[4][1:])
+        n = asarray([4, 4, 4, 4], dtype=np_ulong)
+        k = asarray([1, 2, 3, 4], dtype=np_ulong)
+        assert array_equal(stirling2(n, k), ans)
+
+    def test_broadcasting_arrays_correctly(self):
+        # broadcasting is handled by stirling2
+        # test leading 1s are replicated
+        ans = asarray([[1, 15, 25, 10], [1, 7, 6, 1]])  # shape (2,4)
+        n = asarray([[5, 5, 5, 5], [4, 4, 4, 4]])  # shape (2,4)
+        k = asarray([1, 2, 3, 4])  # shape (4,)
+        assert array_equal(stirling2(n, k), ans)
+        # test that dims both mismatch broadcast correctly (5,1) & (6,)
+        n = asarray([[4], [4], [4], [4], [4]])
+        k = asarray([0, 1, 2, 3, 4, 5])
+        ans = asarray([[0, 1, 7, 6, 1, 0] for _ in range(5)])
+        assert array_equal(stirling2(n, k), ans)

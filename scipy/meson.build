@@ -4,7 +4,7 @@ if is_mingw and ff.get_id() != 'gcc'
   error('If you are using GCC on Windows, you must also use GFortran! Detected ' + ff.get_id())
 endif
 
-cython_c_args = []
+cython_c_args = ['-DCYTHON_CCOMPLEX=0'] # see gh-18975 for why we need this
 if is_mingw
   # For mingw-w64, link statically against the UCRT.
   gcc_link_args = ['-lucrt', '-static']
@@ -153,6 +153,16 @@ fortranobject_dep = declare_dependency(
 # https://github.com/mesonbuild/meson/issues/2835
 blas_name = get_option('blas')
 lapack_name = get_option('lapack')
+
+# First try scipy-openblas, and if found don't look for cblas or lapack, we
+# know what's inside the scipy-openblas wheels already.
+if blas_name == 'openblas' or blas_name == 'auto'
+  blas = dependency('scipy-openblas', required: false)
+  if blas.found()
+    blas_name = 'scipy-openblas'
+  endif
+endif
+
 # pkg-config uses a lower-case name while CMake uses a capitalized name, so try
 # that too to make the fallback detection with CMake work
 if blas_name == 'openblas'
@@ -171,7 +181,11 @@ else
   cblas = []
 endif
 
-if lapack_name == 'openblas'
+if 'mkl' in blas.name() or blas.name() == 'accelerate' or blas_name == 'scipy-openblas'
+  # For these libraries we know that they contain LAPACK, and it's desirable to
+  # use that - no need to run the full detection twice.
+  lapack = blas
+elif lapack_name == 'openblas'
   lapack = dependency(['openblas', 'OpenBLAS'])
 else
   lapack = dependency(lapack_name)
@@ -223,8 +237,12 @@ python_sources = [
   'conftest.py',
   'linalg.pxd',
   'optimize.pxd',
-  'special.pxd'
+  'special.pxd',
 ]
+
+if blas_name == 'scipy-openblas'
+  python_sources += ['_distributor_init_local.py']
+endif
 
 py3.install_sources(
   python_sources,
@@ -281,6 +299,7 @@ Wno_implicit_function_declaration = cc.get_supported_arguments('-Wno-implicit-fu
 Wno_parentheses = cc.get_supported_arguments('-Wno-parentheses')
 Wno_switch = cc.get_supported_arguments('-Wno-switch')
 Wno_unused_label = cc.get_supported_arguments('-Wno-unused-label')
+Wno_unused_result = cc.get_supported_arguments('-Wno-unused-result')
 Wno_unused_variable = cc.get_supported_arguments('-Wno-unused-variable')
 Wno_incompatible_pointer_types = cc.get_supported_arguments('-Wno-incompatible-pointer-types')
 
@@ -413,12 +432,18 @@ conf_data = configuration_data()
 
 # Set compiler information
 foreach name, compiler : compilers
-  # conf_data.set(name + '_COMP_CMD_ARRAY', compiler.cmd_array())
-  conf_data.set(name + '_COMP_CMD_ARRAY', compiler.get_id())
   conf_data.set(name + '_COMP', compiler.get_id())
   conf_data.set(name + '_COMP_LINKER_ID', compiler.get_linker_id())
   conf_data.set(name + '_COMP_VERSION', compiler.version())
   conf_data.set(name + '_COMP_CMD_ARRAY', ', '.join(compiler.cmd_array()))
+  conf_data.set(name + '_COMP_ARGS', ', '.join(
+      get_option(name.to_lower() + '_args')
+    )
+  )
+  conf_data.set(name + '_COMP_LINK_ARGS', ', '.join(
+      get_option(name.to_lower() + '_link_args')
+    )
+  )
 endforeach
 # Add `pythran` information if present
 if use_pythran
@@ -471,6 +496,7 @@ subdir('linalg')
 subdir('sparse')
 subdir('stats')
 subdir('fft')
+subdir('io')
 subdir('spatial')
 subdir('cluster')
 subdir('constants')
@@ -483,4 +509,3 @@ subdir('odr')
 subdir('optimize')
 subdir('datasets')
 subdir('misc')
-subdir('io')

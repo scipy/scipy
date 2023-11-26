@@ -5,7 +5,7 @@ from collections import namedtuple
 
 import numpy as np
 from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
-                   arange, sort, amin, amax, sqrt, array,
+                   arange, sort, amin, amax, sqrt, array, atleast_1d,  # noqa: F401
                    compress, pi, exp, ravel, count_nonzero, sin, cos,
                    arctan2, hypot)
 
@@ -13,7 +13,7 @@ from scipy import optimize, special, interpolate, stats
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
 
-from . import _statlib
+from ._ansari_swilk_statistics import gscale, swilk
 from . import _stats_py
 from ._fit import FitResult
 from ._stats_py import find_repeats, _normtest_finish, SignificanceResult
@@ -1118,7 +1118,7 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
     Parameters
     ----------
     x : array_like
-        Input array.
+        Input array. All entries must be positive, finite, real numbers.
     brack : 2-tuple, optional, default (-2.0, 2.0)
          The starting interval for a downhill bracket search for the default
          `optimize.brent` solver. Note that this is in most cases not
@@ -1134,7 +1134,7 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
             normally-distributed.
 
         'mle'
-            Minimizes the log-likelihood `boxcox_llf`.  This is the method used
+            Maximizes the log-likelihood `boxcox_llf`.  This is the method used
             in `boxcox`.
 
         'all'
@@ -1144,10 +1144,11 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
         `optimizer` is a callable that accepts one argument:
 
         fun : callable
-            The objective function to be optimized. `fun` accepts one argument,
-            the Box-Cox transform parameter `lmbda`, and returns the negative
-            log-likelihood function at the provided value. The job of `optimizer`
-            is to find the value of `lmbda` that minimizes `fun`.
+            The objective function to be minimized. `fun` accepts one argument,
+            the Box-Cox transform parameter `lmbda`, and returns the value of
+            the function (e.g., the negative log-likelihood) at the provided
+            argument. The job of `optimizer` is to find the value of `lmbda`
+            that *minimizes* `fun`.
 
         and returns an object, such as an instance of
         `scipy.optimize.OptimizeResult`, which holds the optimal value of
@@ -1272,10 +1273,20 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
         raise ValueError("Method %s not recognized." % method)
 
     optimfunc = methods[method]
-    res = optimfunc(x)
+
+    try:
+        res = optimfunc(x)
+    except ValueError as e:
+        if "infs or NaNs" in str(e):
+            message = ("The `x` argument of `boxcox_normmax` must contain "
+                       "only positive, finite, real numbers.")
+            raise ValueError(message) from e
+        else:
+            raise e
+
     if res is None:
-        message = ("`optimizer` must return an object containing the optimal "
-                   "`lmbda` in attribute `x`")
+        message = ("The `optimizer` argument of `boxcox_normmax` must return "
+                   "an object containing the optimal `lmbda` in attribute `x`.")
         raise ValueError(message)
     return res
 
@@ -1485,18 +1496,20 @@ def _yeojohnson_transform(x, lmbda):
     """Returns `x` transformed by the Yeo-Johnson power transform with given
     parameter `lmbda`.
     """
-    out = np.zeros_like(x)
+    dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
+    out = np.zeros_like(x, dtype=dtype)
     pos = x >= 0  # binary mask
 
     # when x >= 0
     if abs(lmbda) < np.spacing(1.):
         out[pos] = np.log1p(x[pos])
     else:  # lmbda != 0
-        out[pos] = (np.power(x[pos] + 1, lmbda) - 1) / lmbda
+        # more stable version of: ((x + 1) ** lmbda - 1) / lmbda
+        out[pos] = np.expm1(lmbda * np.log1p(x[pos])) / lmbda
 
     # when x < 0
     if abs(lmbda - 2) > np.spacing(1.):
-        out[~pos] = -(np.power(-x[~pos] + 1, 2 - lmbda) - 1) / (2 - lmbda)
+        out[~pos] = -np.expm1((2 - lmbda) * np.log1p(-x[~pos])) / (2 - lmbda)
     else:  # lmbda == 2
         out[~pos] = -np.log1p(-x[~pos])
 
@@ -1602,11 +1615,11 @@ def yeojohnson_llf(lmb, data):
     loglike[~tiny_variance] = (
         -n_samples / 2 * np.log(trans_var[~tiny_variance]))
     loglike[~tiny_variance] += (
-        (lmb - 1) * (np.sign(data) * np.log(np.abs(data) + 1)).sum(axis=0))
+        (lmb - 1) * (np.sign(data) * np.log1p(np.abs(data))).sum(axis=0))
     return loglike
 
 
-def yeojohnson_normmax(x, brack=(-2, 2)):
+def yeojohnson_normmax(x, brack=None):
     """Compute optimal Yeo-Johnson transform parameter.
 
     Compute optimal Yeo-Johnson transform parameter for input data, using
@@ -1619,7 +1632,8 @@ def yeojohnson_normmax(x, brack=(-2, 2)):
     brack : 2-tuple, optional
         The starting interval for a downhill bracket search with
         `optimize.brent`. Note that this is in most cases not critical; the
-        final result is allowed to be outside this bracket.
+        final result is allowed to be outside this bracket. If None,
+        `optimize.fminbound` is used with bounds that avoid overflow.
 
     Returns
     -------
@@ -1662,7 +1676,36 @@ def yeojohnson_normmax(x, brack=(-2, 2)):
         return -llf
 
     with np.errstate(invalid='ignore'):
-        return optimize.brent(_neg_llf, brack=brack, args=(x,))
+        if not np.all(np.isfinite(x)):
+            raise ValueError('Yeo-Johnson input must be finite.')
+        if np.all(x == 0):
+            return 1.0
+        if brack is not None:
+            return optimize.brent(_neg_llf, brack=brack, args=(x,))
+        x = np.asarray(x)
+        dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
+        # Allow values up to 20 times the maximum observed value to be safely
+        # transformed without over- or underflow.
+        log1p_max_x = np.log1p(20 * np.max(np.abs(x)))
+        # Use half of floating point's exponent range to allow safe computation
+        # of the variance of the transformed data.
+        log_eps = np.log(np.finfo(dtype).eps)
+        log_tiny_float = (np.log(np.finfo(dtype).tiny) - log_eps) / 2
+        log_max_float = (np.log(np.finfo(dtype).max) + log_eps) / 2
+        # Compute the bounds by approximating the inverse of the Yeo-Johnson
+        # transform on the smallest and largest floating point exponents, given
+        # the largest data we expect to observe. See [1] for further details.
+        # [1] https://github.com/scipy/scipy/pull/18852#issuecomment-1630286174
+        lb = log_tiny_float / log1p_max_x
+        ub = log_max_float / log1p_max_x
+        # Convert the bounds if all or some of the data is negative.
+        if np.all(x < 0):
+            lb, ub = 2 - ub, 2 - lb
+        elif np.any(x < 0):
+            lb, ub = max(2 - ub, lb), min(2 - lb, ub)
+        # Match `optimize.brent`'s tolerance.
+        tol_brent = 1.48e-08
+        return optimize.fminbound(_neg_llf, lb, ub, args=(x,), xtol=tol_brent)
 
 
 def yeojohnson_normplot(x, la, lb, plot=None, N=80):
@@ -1770,18 +1813,23 @@ def shapiro(x):
     References
     ----------
     .. [1] https://www.itl.nist.gov/div898/handbook/prc/section2/prc213.htm
-    .. [2] Shapiro, S. S. & Wilk, M.B (1965). An analysis of variance test for
-           normality (complete samples), Biometrika, Vol. 52, pp. 591-611.
-    .. [3] Razali, N. M. & Wah, Y. B. (2011) Power comparisons of Shapiro-Wilk,
-           Kolmogorov-Smirnov, Lilliefors and Anderson-Darling tests, Journal of
-           Statistical Modeling and Analytics, Vol. 2, pp. 21-33.
-    .. [4] ALGORITHM AS R94 APPL. STATIST. (1995) VOL. 44, NO. 4.
-    .. [5] B. Phipson and G. K. Smyth. "Permutation P-values Should Never Be
+           :doi:`10.18434/M32189`
+    .. [2] Shapiro, S. S. & Wilk, M.B, "An analysis of variance test for
+           normality (complete samples)", Biometrika, 1965, Vol. 52,
+           pp. 591-611, :doi:`10.2307/2333709`
+    .. [3] Razali, N. M. & Wah, Y. B., "Power comparisons of Shapiro-Wilk,
+           Kolmogorov-Smirnov, Lilliefors and Anderson-Darling tests", Journal
+           of Statistical Modeling and Analytics, 2011, Vol. 2, pp. 21-33.
+    .. [4] Royston P., "Remark AS R94: A Remark on Algorithm AS 181: The
+           W-test for Normality", 1995, Applied Statistics, Vol. 44,
+           :doi:`10.2307/2986146`
+    .. [5] Phipson B., and Smyth, G. K., "Permutation P-values Should Never Be
            Zero: Calculating Exact P-values When Permutations Are Randomly
-           Drawn." Statistical Applications in Genetics and Molecular Biology
-           9.1 (2010).
-    .. [6] Panagiotakos, D. B. (2008). The value of p-value in biomedical
-           research. The open cardiovascular medicine journal, 2, 97.
+           Drawn", Statistical Applications in Genetics and Molecular Biology,
+           2010, Vol.9, :doi:`10.2202/1544-6115.1585`
+    .. [6] Panagiotakos, D. B., "The value of p-value in biomedical
+           research", The Open Cardiovascular Medicine Journal, 2008, Vol.2,
+           pp. 97-99, :doi:`10.2174/1874192400802010097`
 
     Examples
     --------
@@ -1820,7 +1868,7 @@ def shapiro(x):
     >>> import matplotlib.pyplot as plt
     >>> fig, ax = plt.subplots(figsize=(8, 5))
     >>> bins = np.linspace(0.65, 1, 50)
-    >>> def plot(ax):  # we'll re-use this
+    >>> def plot(ax):  # we'll reuse this
     ...     ax.hist(ref.null_distribution, density=True, bins=bins)
     ...     ax.set_title("Shapiro-Wilk Test Null Distribution \n"
     ...                  "(Monte Carlo Approximation, 11 Observations)")
@@ -1861,29 +1909,27 @@ def shapiro(x):
       and false negatives (failure to reject a false null hypothesis).
 
     """
-    x = np.ravel(x)
+    x = np.ravel(x).astype(np.float64)
 
     N = len(x)
     if N < 3:
         raise ValueError("Data must be at least length 3.")
 
-    x = x - np.median(x)
-
-    a = zeros(N, 'f')
+    a = zeros(N//2, dtype=np.float64)
     init = 0
 
     y = sort(x)
-    a, w, pw, ifault = _statlib.swilk(y, a[:N//2], init)
-    if ifault not in [0, 2]:
-        warnings.warn("Input data for shapiro has range zero. The results "
-                      "may not be accurate.")
-    if N > 5000:
-        warnings.warn("p-value may not be accurate for N > 5000.")
+    y -= x[N//2]  # subtract the median (or a nearby value); see gh-15777
 
-    # `swilk` can return negative p-values for N==3; see gh-18322.
-    if N == 3:
-        # Potential improvement: precision for small p-values
-        pw = 1 - 6/np.pi*np.arccos(np.sqrt(w))
+    w, pw, ifault = swilk(y, a, init)
+    if ifault not in [0, 2]:
+        warnings.warn("scipy.stats.shapiro: Input data has range zero. The"
+                      " results may not be accurate.", stacklevel=2)
+    if N > 5000:
+        warnings.warn("scipy.stats.shapiro: For N > 5000, computed p-value "
+                      f"may not be accurate. Current N is {N}.",
+                      stacklevel=2)
+
     return ShapiroResult(w, pw)
 
 
@@ -2103,7 +2149,7 @@ def anderson(x, dist='norm'):
     with a significance level of 2.5%, so the null hypothesis may be rejected
     at a significance level of 2.5%, but not at a significance level of 1%.
 
-    """  # noqa
+    """  # noqa: E501
     dist = dist.lower()
     if dist in {'extreme1', 'gumbel'}:
         dist = 'gumbel_l'
@@ -2281,7 +2327,7 @@ Anderson_ksampResult = _make_tuple_bunch(
 )
 
 
-def anderson_ksamp(samples, midrank=True):
+def anderson_ksamp(samples, midrank=True, *, method=None):
     """The Anderson-Darling test for k-samples.
 
     The k-sample Anderson-Darling test is a modification of the
@@ -2299,6 +2345,12 @@ def anderson_ksamp(samples, midrank=True):
         (True) is the midrank test applicable to continuous and
         discrete populations. If False, the right side empirical
         distribution is used.
+    method : PermutationMethod, optional
+        Defines the method used to compute the p-value. If `method` is an
+        instance of `PermutationMethod`, the p-value is computed using
+        `scipy.stats.permutation_test` with the provided configuration options
+        and other appropriate settings. Otherwise, the p-value is interpolated
+        from tabulated values.
 
     Returns
     -------
@@ -2311,13 +2363,13 @@ def anderson_ksamp(samples, midrank=True):
             The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%,
             0.5%, 0.1%.
         pvalue : float
-            The approximate p-value of the test. The value is floored / capped
-            at 0.1% / 25%.
+            The approximate p-value of the test. If `method` is not
+            provided, the value is floored / capped at 0.1% / 25%.
 
     Raises
     ------
     ValueError
-        If less than 2 samples are provided, a sample is empty, or no
+        If fewer than 2 samples are provided, a sample is empty, or no
         distinct observations are in the samples.
 
     See Also
@@ -2370,8 +2422,9 @@ def anderson_ksamp(samples, midrank=True):
     not at the 2.5% level. The interpolation gives an approximate
     p-value of 4.99%.
 
-    >>> res = stats.anderson_ksamp([rng.normal(size=50),
-    ... rng.normal(size=30), rng.normal(size=20)])
+    >>> samples = [rng.normal(size=50), rng.normal(size=30),
+    ...            rng.normal(size=20)]
+    >>> res = stats.anderson_ksamp(samples)
     >>> res.statistic, res.pvalue
     (-0.29103725200789504, 0.25)
     >>> res.critical_values
@@ -2382,6 +2435,14 @@ def anderson_ksamp(samples, midrank=True):
     identical distribution. The reported p-value (25%) has been capped and
     may not be very accurate (since it corresponds to the value 0.449
     whereas the statistic is -0.291).
+
+    In such cases where the p-value is capped or when sample sizes are
+    small, a permutation test may be more accurate.
+
+    >>> method = stats.PermutationMethod(n_resamples=9999, random_state=rng)
+    >>> res = stats.anderson_ksamp(samples, method=method)
+    >>> res.pvalue
+    0.5254
 
     """
     k = len(samples)
@@ -2402,9 +2463,17 @@ def anderson_ksamp(samples, midrank=True):
                          "observations")
 
     if midrank:
-        A2kN = _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N)
+        A2kN_fun = _anderson_ksamp_midrank
     else:
-        A2kN = _anderson_ksamp_right(samples, Z, Zstar, k, n, N)
+        A2kN_fun = _anderson_ksamp_right
+    A2kN = A2kN_fun(samples, Z, Zstar, k, n, N)
+
+    def statistic(*samples):
+        return A2kN_fun(samples, Z, Zstar, k, n, N)
+
+    if method is not None:
+        res = stats.permutation_test(samples, statistic, **method._asdict(),
+                                     alternative='greater')
 
     H = (1. / n).sum()
     hs_cs = (1. / arange(N - 1, 1, -1)).cumsum()
@@ -2427,18 +2496,25 @@ def anderson_ksamp(samples, midrank=True):
     critical = b0 + b1 / math.sqrt(m) + b2 / m
 
     sig = np.array([0.25, 0.1, 0.05, 0.025, 0.01, 0.005, 0.001])
-    if A2 < critical.min():
+
+    if A2 < critical.min() and method is None:
         p = sig.max()
-        warnings.warn("p-value capped: true value larger than {}".format(p),
-                      stacklevel=2)
-    elif A2 > critical.max():
+        msg = (f"p-value capped: true value larger than {p}. Consider "
+               "specifying `method` "
+               "(e.g. `method=stats.PermutationMethod()`.)")
+        warnings.warn(msg, stacklevel=2)
+    elif A2 > critical.max() and method is None:
         p = sig.min()
-        warnings.warn("p-value floored: true value smaller than {}".format(p),
-                      stacklevel=2)
-    else:
+        msg = (f"p-value floored: true value smaller than {p}. Consider "
+               "specifying `method` "
+               "(e.g. `method=stats.PermutationMethod()`.)")
+        warnings.warn(msg, stacklevel=2)
+    elif method is None:
         # interpolation of probit of significance level
         pf = np.polyfit(critical, log(sig), 2)
         p = math.exp(np.polyval(pf, A2))
+    else:
+        p = res.pvalue if method is not None else p
 
     # create result object with alias for backward compatibility
     res = Anderson_ksampResult(A2, critical, p)
@@ -2453,7 +2529,7 @@ class _ABW:
     """Distribution of Ansari-Bradley W-statistic under the null hypothesis."""
     # TODO: calculate exact distribution considering ties
     # We could avoid summing over more than half the frequencies,
-    # but inititally it doesn't seem worth the extra complexity
+    # but initially it doesn't seem worth the extra complexity
 
     def __init__(self):
         """Minimal initializer."""
@@ -2469,7 +2545,7 @@ class _ABW:
             self.n, self.m = n, m
             # distribution is NOT symmetric when m + n is odd
             # n is len(x), m is len(y), and ratio of scales is defined x/y
-            astart, a1, _ = _statlib.gscale(n, m)
+            astart, a1, _ = gscale(n, m)
             self.astart = astart  # minimum value of statistic
             # Exact distribution of test statistic under null hypothesis
             # expressed as frequencies/counts/integers to maintain precision.
@@ -2507,6 +2583,7 @@ class _ABW:
 _abw_state = _ABW()
 
 
+@_axis_nan_policy_factory(AnsariResult, n_samples=2)
 def ansari(x, y, alternative='two-sided'):
     """Perform the Ansari-Bradley test for equal scale parameters.
 
@@ -2670,6 +2747,7 @@ def ansari(x, y, alternative='two-sided'):
 BartlettResult = namedtuple('BartlettResult', ('statistic', 'pvalue'))
 
 
+@_axis_nan_policy_factory(BartlettResult, n_samples=None)
 def bartlett(*samples):
     r"""Perform Bartlett's test for equal variances.
 
@@ -2777,7 +2855,7 @@ def bartlett(*samples):
     >>> val = np.linspace(0, 5, 100)
     >>> pdf = dist.pdf(val)
     >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> def plot(ax):  # we'll re-use this
+    >>> def plot(ax):  # we'll reuse this
     ...     ax.plot(val, pdf, color='C0')
     ...     ax.set_title("Bartlett Test Null Distribution")
     ...     ax.set_xlabel("statistic")
@@ -2880,16 +2958,16 @@ def bartlett(*samples):
     [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
 
     """
-    # Handle empty input and input that is not 1d
-    for sample in samples:
-        if np.asanyarray(sample).size == 0:
-            return BartlettResult(np.nan, np.nan)
-        if np.asanyarray(sample).ndim > 1:
-            raise ValueError('Samples must be one-dimensional.')
-
     k = len(samples)
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
+
+    # Handle empty input and input that is not 1d
+    for sample in samples:
+        if np.asanyarray(sample).size == 0:
+            NaN = _get_nan(*samples)  # get NaN of result_dtype of all samples
+            return BartlettResult(NaN, NaN)
+
     Ni = np.empty(k)
     ssq = np.empty(k, 'd')
     for j in range(k):
@@ -2909,6 +2987,7 @@ def bartlett(*samples):
 LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
 
 
+@_axis_nan_policy_factory(LeveneResult, n_samples=None)
 def levene(*samples, center='median', proportiontocut=0.05):
     r"""Perform Levene test for equal variances.
 
@@ -3025,7 +3104,7 @@ def levene(*samples, center='median', proportiontocut=0.05):
     >>> val = np.linspace(0, 5, 100)
     >>> pdf = dist.pdf(val)
     >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> def plot(ax):  # we'll re-use this
+    >>> def plot(ax):  # we'll reuse this
     ...     ax.plot(val, pdf, color='C0')
     ...     ax.set_title("Levene Test Null Distribution")
     ...     ax.set_xlabel("statistic")
@@ -3133,10 +3212,6 @@ def levene(*samples, center='median', proportiontocut=0.05):
     k = len(samples)
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
-    # check for 1d input
-    for j in range(k):
-        if np.asanyarray(samples[j]).ndim > 1:
-            raise ValueError('Samples must be one-dimensional.')
 
     Ni = np.empty(k)
     Yci = np.empty(k, 'd')
@@ -3203,6 +3278,7 @@ def _apply_func(x, g, func):
 FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
 
 
+@_axis_nan_policy_factory(FlignerResult, n_samples=None)
 def fligner(*samples, center='median', proportiontocut=0.05):
     r"""Perform Fligner-Killeen test for equality of variance.
 
@@ -3262,7 +3338,7 @@ def fligner(*samples, center='median', proportiontocut=0.05):
            University.
     .. [4] Conover, W. J., Johnson, M. E. and Johnson M. M. (1981). A
            comparative study of tests for homogeneity of variances, with
-           applications to the outer continental shelf biding data.
+           applications to the outer continental shelf bidding data.
            Technometrics, 23(4), 351-361.
     .. [5] C.I. BLISS (1952), The Statistics of Bioassay: With Special
            Reference to the Vitamins, pp 499-503,
@@ -3325,7 +3401,7 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     >>> val = np.linspace(0, 8, 100)
     >>> pdf = dist.pdf(val)
     >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> def plot(ax):  # we'll re-use this
+    >>> def plot(ax):  # we'll reuse this
     ...     ax.plot(val, pdf, color='C0')
     ...     ax.set_title("Fligner Test Null Distribution")
     ...     ax.set_xlabel("statistic")
@@ -3430,14 +3506,15 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     if center not in ['mean', 'median', 'trimmed']:
         raise ValueError("center must be 'mean', 'median' or 'trimmed'.")
 
-    # Handle empty input
-    for sample in samples:
-        if np.asanyarray(sample).size == 0:
-            return FlignerResult(np.nan, np.nan)
-
     k = len(samples)
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
+
+    # Handle empty input
+    for sample in samples:
+        if sample.size == 0:
+            NaN = _get_nan(*samples)
+            return FlignerResult(NaN, NaN)
 
     if center == 'median':
 
@@ -4236,8 +4313,8 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
 
     ties_options = ['below', 'above', 'ignore']
     if ties not in ties_options:
-        raise ValueError("invalid 'ties' option '{}'; 'ties' must be one "
-                         "of: {}".format(ties, str(ties_options)[1:-1]))
+        raise ValueError(f"invalid 'ties' option '{ties}'; 'ties' must be one "
+                         f"of: {str(ties_options)[1:-1]}")
 
     data = [np.asarray(sample) for sample in samples]
 
@@ -4306,30 +4383,24 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
     return MedianTestResult(stat, p, grand_median, table)
 
 
-def _circfuncs_common(samples, high, low, nan_policy='propagate'):
+def _circfuncs_common(samples, high, low):
     # Ensure samples are array-like and size is not zero
-    samples = np.asarray(samples)
     if samples.size == 0:
-        return np.nan, np.asarray(np.nan), np.asarray(np.nan), None
+        NaN = _get_nan(samples)
+        return NaN, NaN, NaN
 
     # Recast samples as radians that range between 0 and 2 pi and calculate
     # the sine and cosine
     sin_samp = sin((samples - low)*2.*pi / (high - low))
     cos_samp = cos((samples - low)*2.*pi / (high - low))
 
-    # Apply the NaN policy
-    contains_nan, nan_policy = _contains_nan(samples, nan_policy)
-    if contains_nan and nan_policy == 'omit':
-        mask = np.isnan(samples)
-        # Set the sines and cosines that are NaN to zero
-        sin_samp[mask] = 0.0
-        cos_samp[mask] = 0.0
-    else:
-        mask = None
-
-    return samples, sin_samp, cos_samp, mask
+    return samples, sin_samp, cos_samp
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, n_outputs=1, default_axis=None,
+    result_to_tuple=lambda x: (x,)
+)
 def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     """Compute the circular mean for samples in a range.
 
@@ -4341,13 +4412,6 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
         High boundary for the sample range. Default is ``2*pi``.
     low : float or int, optional
         Low boundary for the sample range. Default is 0.
-    axis : int, optional
-        Axis along which means are computed. The default is to compute
-        the mean of the flattened array.
-    nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate' returns nan,
-        'raise' throws an error, 'omit' performs the calculations ignoring nan
-        values. Default is 'propagate'.
 
     Returns
     -------
@@ -4389,39 +4453,22 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     >>> plt.show()
 
     """
-    samples, sin_samp, cos_samp, nmask = _circfuncs_common(samples, high, low,
-                                                           nan_policy=nan_policy)
-    sin_sum = sin_samp.sum(axis=axis)
-    cos_sum = cos_samp.sum(axis=axis)
+    samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low)
+    sin_sum = sin_samp.sum(axis)
+    cos_sum = cos_samp.sum(axis)
     res = arctan2(sin_sum, cos_sum)
 
-    mask_nan = ~np.isnan(res)
-    if mask_nan.ndim > 0:
-        mask = res[mask_nan] < 0
-    else:
-        mask = res < 0
-
-    if mask.ndim > 0:
-        mask_nan[mask_nan] = mask
-        res[mask_nan] += 2*pi
-    elif mask:
-        res += 2*pi
-
-    # Set output to NaN if no samples went into the mean
-    if nmask is not None:
-        if nmask.all():
-            res = np.full(shape=res.shape, fill_value=np.nan)
-        else:
-            # Find out if any of the axis that are being averaged consist
-            # entirely of NaN.  If one exists, set the result (res) to NaN
-            nshape = 0 if axis is None else axis
-            smask = nmask.shape[nshape] == nmask.sum(axis=axis)
-            if smask.any():
-                res[smask] = np.nan
+    res = np.asarray(res)
+    res[res < 0] += 2*pi
+    res = res[()]
 
     return res*(high - low)/2.0/pi + low
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, n_outputs=1, default_axis=None,
+    result_to_tuple=lambda x: (x,)
+)
 def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     """Compute the circular variance for samples assumed to be in a range.
 
@@ -4433,13 +4480,6 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
         High boundary for the sample range. Default is ``2*pi``.
     low : float or int, optional
         Low boundary for the sample range. Default is 0.
-    axis : int, optional
-        Axis along which variances are computed. The default is to compute
-        the variance of the flattened array.
-    nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate' returns nan,
-        'raise' throws an error, 'omit' performs the calculations ignoring nan
-        values. Default is 'propagate'.
 
     Returns
     -------
@@ -4492,16 +4532,9 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     >>> plt.show()
 
     """
-    samples, sin_samp, cos_samp, mask = _circfuncs_common(samples, high, low,
-                                                          nan_policy=nan_policy)
-    if mask is None:
-        sin_mean = sin_samp.mean(axis=axis)
-        cos_mean = cos_samp.mean(axis=axis)
-    else:
-        nsum = np.asarray(np.sum(~mask, axis=axis).astype(float))
-        nsum[nsum == 0] = np.nan
-        sin_mean = sin_samp.sum(axis=axis) / nsum
-        cos_mean = cos_samp.sum(axis=axis) / nsum
+    samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low)
+    sin_mean = sin_samp.mean(axis)
+    cos_mean = cos_samp.mean(axis)
     # hypot can go slightly above 1 due to rounding errors
     with np.errstate(invalid='ignore'):
         R = np.minimum(1, hypot(sin_mean, cos_mean))
@@ -4510,6 +4543,10 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     return res
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, n_outputs=1, default_axis=None,
+    result_to_tuple=lambda x: (x,)
+)
 def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
             normalize=False):
     """
@@ -4524,13 +4561,6 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
         High boundary for the sample range. Default is ``2*pi``.
     low : float or int, optional
         Low boundary for the sample range. Default is 0.
-    axis : int, optional
-        Axis along which standard deviations are computed. The default is
-        to compute the standard deviation of the flattened array.
-    nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate' returns nan,
-        'raise' throws an error, 'omit' performs the calculations ignoring nan
-        values. Default is 'propagate'.
     normalize : boolean, optional
         If True, the returned value is equal to ``sqrt(-2*log(R))`` and does
         not depend on the variable units. If False (default), the returned
@@ -4599,16 +4629,9 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     >>> plt.show()
 
     """
-    samples, sin_samp, cos_samp, mask = _circfuncs_common(samples, high, low,
-                                                          nan_policy=nan_policy)
-    if mask is None:
-        sin_mean = sin_samp.mean(axis=axis)  # [1] (2.2.3)
-        cos_mean = cos_samp.mean(axis=axis)  # [1] (2.2.3)
-    else:
-        nsum = np.asarray(np.sum(~mask, axis=axis).astype(float))
-        nsum[nsum == 0] = np.nan
-        sin_mean = sin_samp.sum(axis=axis) / nsum
-        cos_mean = cos_samp.sum(axis=axis) / nsum
+    samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low)
+    sin_mean = sin_samp.mean(axis)  # [1] (2.2.3)
+    cos_mean = cos_samp.mean(axis)  # [1] (2.2.3)
     # hypot can go slightly above 1 due to rounding errors
     with np.errstate(invalid='ignore'):
         R = np.minimum(1, hypot(sin_mean, cos_mean))  # [1] (2.2.4)

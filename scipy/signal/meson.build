@@ -120,6 +120,7 @@ py3.install_sources([
     '_max_len_seq.py',
     '_peak_finding.py',
     '_savitzky_golay.py',
+    '_short_time_fft.py',
     '_signaltools.py',
     '_spectral.py',
     '_spectral_py.py',

@@ -557,7 +557,7 @@ class ode:
         solout : callable
             ``solout(t, y)`` is called at each internal integrator step,
             t is a scalar providing the current independent position
-            y is the current soloution ``y.shape == (n,)``
+            y is the current solution ``y.shape == (n,)``
             solout should return -1 to stop integration
             otherwise it should return None or 0
 
@@ -734,7 +734,7 @@ class complex_ode(ode):
         solout : callable
             ``solout(t, y)`` is called at each internal integrator step,
             t is a scalar providing the current independent position
-            y is the current soloution ``y.shape == (n,)``
+            y is the current solution ``y.shape == (n,)``
             solout should return -1 to stop integration
             otherwise it should return None or 0
 
@@ -901,7 +901,7 @@ class vode(IntegratorBase):
             self.meth == 2:  method="bdf"
 
         miter is the correction iteration method:
-            miter == 0:  Functional iteraton; no Jacobian involved.
+            miter == 0:  Functional iteration; no Jacobian involved.
             miter == 1:  Chord iteration with user-supplied full Jacobian.
             miter == 2:  Chord iteration with internally computed full Jacobian.
             miter == 3:  Chord iteration with internally computed diagonal Jacobian.
@@ -936,7 +936,7 @@ class vode(IntegratorBase):
                 if self.with_jacobian:
                     miter = 2  # Chord iteration with internal full Jacobian.
                 else:
-                    miter = 0  # Functional iteraton; no Jacobian involved.
+                    miter = 0  # Functional iteration; no Jacobian involved.
 
         mf = 10 * self.meth + miter
         return mf
