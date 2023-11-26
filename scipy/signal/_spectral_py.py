@@ -605,8 +605,7 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
             elif average == 'mean':
                 Pxy = Pxy.mean(axis=-1)
             else:
-                raise ValueError('average must be "median" or "mean", got %s'
-                                 % (average,))
+                raise ValueError(f'average must be "median" or "mean", got {average}')
         else:
             Pxy = np.reshape(Pxy, Pxy.shape[:-1])
 
@@ -759,8 +758,7 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
     """
     modelist = ['psd', 'complex', 'magnitude', 'angle', 'phase']
     if mode not in modelist:
-        raise ValueError('unknown value for mode {}, must be one of {}'
-                         .format(mode, modelist))
+        raise ValueError(f'unknown value for mode {mode}, must be one of {modelist}')
 
     # need to set default for nperseg before setting default for noverlap below
     window, nperseg = _triage_segments(window, nperseg,
@@ -2043,9 +2041,8 @@ def _triage_segments(window, nperseg, input_length):
         if nperseg is None:
             nperseg = 256  # then change to default
         if nperseg > input_length:
-            warnings.warn('nperseg = {0:d} is greater than input length '
-                          ' = {1:d}, using nperseg = {1:d}'
-                          .format(nperseg, input_length))
+            warnings.warn(f'nperseg = {nperseg:d} is greater than input length '
+                          f' = {input_length:d}, using nperseg = {input_length:d}')
             nperseg = input_length
         win = get_window(window, nperseg)
     else:

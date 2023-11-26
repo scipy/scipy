@@ -79,7 +79,7 @@ class _TextToBytesWrapper(io.BufferedReader):
     """
 
     def __init__(self, text_io_buffer, encoding=None, errors=None, **kwargs):
-        super(_TextToBytesWrapper, self).__init__(text_io_buffer, **kwargs)
+        super().__init__(text_io_buffer, **kwargs)
         self.encoding = encoding or text_io_buffer.encoding or 'utf-8'
         self.errors = errors or text_io_buffer.errors or 'strict'
 
@@ -107,7 +107,7 @@ class _TextToBytesWrapper(io.BufferedReader):
         if offset == 0 and whence == 0 or \
            offset == 0 and whence == 2:
             # seek to start or end is ok
-            super(_TextToBytesWrapper, self).seek(offset, whence)
+            super().seek(offset, whence)
         else:
             # Drop any other seek
             # In this application this may happen when pystreambuf seeks during sync(), which can happen when closing

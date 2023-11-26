@@ -176,9 +176,8 @@ def expand_sub(substr, names):
             elif num == numsubs:
                 rules[r] = rule
             else:
-                print("Mismatch in number of replacements (base <%s=%s>)"
-                      " for <%s=%s>. Ignoring." %
-                      (base_rule, ','.join(rules[base_rule]), r, thelist))
+                print("Mismatch in number of replacements (base <{}={}>) "
+                      "for <{}={}>. Ignoring.".format(base_rule, ','.join(rules[base_rule]), r, thelist))
     if not rules:
         return substr
 

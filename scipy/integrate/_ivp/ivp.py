@@ -566,8 +566,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     """
     if method not in METHODS and not (
             inspect.isclass(method) and issubclass(method, OdeSolver)):
-        raise ValueError("`method` must be one of {} or OdeSolver class."
-                         .format(METHODS))
+        raise ValueError(f"`method` must be one of {METHODS} or OdeSolver class.")
 
     t0, tf = map(float, t_span)
 

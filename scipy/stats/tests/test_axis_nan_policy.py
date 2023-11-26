@@ -1130,7 +1130,7 @@ def test_array_like_input(dtype):
     # Check that `_axis_nan_policy`-decorated functions work with custom
     # containers that are coercible to numeric arrays
 
-    class ArrLike():
+    class ArrLike:
         def __init__(self, x):
             self._x = x
 

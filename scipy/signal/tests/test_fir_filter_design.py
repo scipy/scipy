@@ -44,8 +44,7 @@ class TestFirwin:
         for freq, expected in expected_response:
             actual = abs(np.sum(h*np.exp(-1.j*np.pi*m*freq)))
             mse = abs(actual-expected)**2
-            assert_(mse < tol, 'response not as expected, mse=%g > %g'
-               % (mse, tol))
+            assert_(mse < tol, f'response not as expected, mse={mse:g} > {tol:g}')
 
     def test_response(self):
         N = 51

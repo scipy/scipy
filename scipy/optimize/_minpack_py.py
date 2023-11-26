@@ -32,8 +32,8 @@ def _check_func(checker, argname, thefunc, x0, args, numinputs,
             if len(output_shape) > 1:
                 if output_shape[1] == 1:
                     return shape(res)
-            msg = "{}: there is a mismatch between the input and output " \
-                  "shape of the '{}' argument".format(checker, argname)
+            msg = f"{checker}: there is a mismatch between the input and output " \
+                  f"shape of the '{argname}' argument"
             func_name = getattr(thefunc, '__name__', None)
             if func_name:
                 msg += " '%s'." % func_name
@@ -449,9 +449,9 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=False,
               2: ["The relative error between two consecutive "
                   "iterates is at most %f" % xtol, None],
               3: ["Both actual and predicted relative reductions in "
-                  "the sum of squares\n  are at most {:f} and the "
+                  f"the sum of squares\n  are at most {ftol:f} and the "
                   "relative error between two consecutive "
-                  "iterates is at \n  most {:f}".format(ftol, xtol), None],
+                  f"iterates is at \n  most {xtol:f}", None],
               4: ["The cosine of the angle between func(x) and any "
                   "column of the\n  Jacobian is at most %f in "
                   "absolute value" % gtol, None],
