@@ -479,7 +479,6 @@ endforeach
 
 
 special_sources = [
-  'special/complex.h',
   'special/config.h',
   'special/error.h',
   'special/evalpoly.h',
