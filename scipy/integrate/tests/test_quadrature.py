@@ -809,8 +809,7 @@ class TestTanhSinh:
                                [np.cos(30 * x), x * np.sin(100 * x)]])
 
         ref = quad_vec(f, 0, 1)
-        res = _tanhsinh(lambda x: f(x[0, 0]), np.zeros((2, 2)), np.ones((2, 2)),
-                        preserve_shape=True)
+        res = _tanhsinh(f, 0, 1, preserve_shape=True)
         assert_allclose(res.integral, ref[0])
 
     def test_convergence(self):

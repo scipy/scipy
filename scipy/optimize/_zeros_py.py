@@ -1562,7 +1562,7 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None,
 
     xs = (a, b)
     temp = _scalar_optimization_initialize(func, xs, args)
-    xs, fs, args, shape, dtype = temp  # line split for PEP8
+    func, xs, fs, args, shape, dtype = temp  # line split for PEP8
 
     # The approach is to treat the left and right searches as though they were
     # (almost) totally independent one-sided bracket searches. (The interaction
@@ -1905,8 +1905,8 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
     func, args, xatol, xrtol, fatol, frtol, maxiter, callback = res
 
     # Initialization
-    xs, fs, args, shape, dtype = _scalar_optimization_initialize(func, (a, b),
-                                                                 args)
+    temp = _scalar_optimization_initialize(func, (a, b), args)
+    func, xs, fs, args, shape, dtype = temp
     x1, x2 = xs
     f1, f2 = fs
     status = np.full_like(x1, _EINPROGRESS, dtype=int)  # in progress
@@ -2175,7 +2175,8 @@ def _chandrupatla_iv(func, args, xatol, xrtol,
     return func, args, xatol, xrtol, fatol, frtol, maxiter, callback
 
 
-def _scalar_optimization_initialize(func, xs, args, complex_ok=False):
+def _scalar_optimization_initialize(func, xs, args, complex_ok=False,
+                                    preserve_shape=None):
     """Initialize abscissa, function, and args arrays for elementwise function
 
     Parameters
@@ -2230,9 +2231,21 @@ def _scalar_optimization_initialize(func, xs, args, complex_ok=False):
     xs = [x.astype(xat, copy=False)[()] for x in xs]
     fs = [np.asarray(func(x, *args)) for x in xs]
     shape = xs[0].shape
+    fshape = fs[0].shape
+
+    if preserve_shape:
+        # bind original shape/func now to avoid late-binding gotcha
+        def func(x, *args, shape=shape, func=func,  **kwargs):
+            i = (0,)*(len(fshape) - len(shape))
+            return func(x[i], *args, **kwargs)
+        shape = np.broadcast_shapes(fshape, shape)
+        xs = [np.broadcast_to(x, shape) for x in xs]
+        args = [np.broadcast_to(arg, shape) for arg in args]
 
     message = ("The shape of the array returned by `func` must be the same as "
                "the broadcasted shape of `x` and all other `args`.")
+    if preserve_shape is not None:  # only in tanhsinh for now
+        message = f"When `preserve_shape=False`, {message.lower}"
     shapes_equal = [f.shape == shape for f in fs]
     if not np.all(shapes_equal):
         raise ValueError(message)
@@ -2251,7 +2264,7 @@ def _scalar_optimization_initialize(func, xs, args, complex_ok=False):
     xs = [x.ravel() for x in xs]
     fs = [f.ravel() for f in fs]
     args = [arg.flatten() for arg in args]
-    return xs, fs, args, shape, xfat
+    return func, xs, fs, args, shape, xfat
 
 
 def _scalar_optimization_check_termination(work, res, res_work_pairs, active,
@@ -2592,7 +2605,8 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     # possible to eliminate this function evaluation. However, it's useful for
     # input validation and standardization, and everything else is designed to
     # reduce function calls, so let's keep it simple.
-    xs, fs, args, shape, dtype = _scalar_optimization_initialize(func, (x,), args)
+    temp = _scalar_optimization_initialize(func, (x,), args)
+    func, xs, fs, args, shape, dtype = temp
     x, f = xs[0], fs[0]
     df = np.full_like(f, np.nan)
     # Ideally we'd broadcast the shape of `hdir` in `_scalar_opt_init`, but

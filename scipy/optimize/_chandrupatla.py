@@ -131,7 +131,7 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
     # Initialization
     xs = (x1, x2, x3)
     temp = _scalar_optimization_initialize(func, xs, args)
-    xs, fs, args, shape, dtype = temp  # line split for PEP8
+    func, xs, fs, args, shape, dtype = temp  # line split for PEP8
     x1, x2, x3 = xs
     f1, f2, f3 = fs
     phi = dtype.type(0.5 + 0.5*5**0.5)  # golden ratio

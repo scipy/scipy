@@ -280,7 +280,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     For example, consider
 
     >>> def f(x):
-    ...    return [x, np.sin(10*x), np.cos(30*x), x3*np.sin(100*x)**2]
+    ...    return [x, np.sin(10*x), np.cos(30*x), x*np.sin(100*x)**2]
 
     This integrand is not compatible with `_tanhsinh` as written; for instance,
     the shape of the output will not be the same as the shape of ``x``. Such a
@@ -322,8 +322,9 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
         c[np.isinf(a)] = b[np.isinf(a)]  # takes care of infinite a
         c[np.isinf(b)] = a[np.isinf(b)]  # takes care of infinite b
         c[np.isnan(c)] = 0  # takes care of infinite a and b
-        tmp = _scalar_optimization_initialize(f, (c,), args, complex_ok=True)
-    xs, fs, args, shape, dtype = tmp
+        temp = _scalar_optimization_initialize(f, (c,), args, complex_ok=True,
+                                               preserve_shape=preserve_shape)
+    f, xs, fs, args, shape, dtype = temp
     a = np.broadcast_to(a, shape).astype(dtype).ravel()
     b = np.broadcast_to(b, shape).astype(dtype).ravel()
 
