@@ -603,7 +603,7 @@ class TestCumulativeSimpson:
             y_shape[axis] = slice(1, None)
             int_y = int_y[tuple(y_shape)]
 
-        assert_almost_equal(
+        assert_allclose(
             cumulative_simpson(y, x=x, axis=axis, initial=initial),
             int_y,
         )
@@ -613,7 +613,7 @@ class TestCumulativeSimpson:
         x = np.array([input_x]*3)
         y = x**2
         int_y = x**3 / 3
-        assert_almost_equal(
+        assert_allclose(
             cumulative_simpson(y, x=input_x, initial=0),
             int_y,
         )
@@ -710,7 +710,7 @@ class TestCumulativeSimpson:
             kwargs["initial"] = initial
         if axis is not None:
             kwargs["axis"] = axis
-        assert_almost_equal(
+        assert_allclose(
             cumulative_simpson(y, **kwargs),
             int_y,
         )
