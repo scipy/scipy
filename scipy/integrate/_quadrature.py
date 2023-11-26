@@ -15,7 +15,7 @@ from scipy._lib.deprecation import (_NoValue, _deprecate_positional_args,
 __all__ = ['fixed_quad', 'quadrature', 'romberg', 'romb',
            'trapezoid', 'trapz', 'simps', 'simpson',
            'cumulative_trapezoid', 'cumtrapz', 'newton_cotes',
-           'qmc_quad', 'AccuracyWarning']
+           'qmc_quad', 'AccuracyWarning', 'gauss_quad']
 
 
 def trapezoid(y, x=None, dx=1.0, axis=-1):
@@ -314,15 +314,17 @@ def vectorize1(func, args=(), vec_func=False):
 
 
 @_deprecated("`scipy.integrate.quadrature` is deprecated as of SciPy 1.12.0"
-             "and will be removed in SciPy 1.14.0. Please use"
-             "`scipy.integrate.quad` instead.")
+             "and will be removed in SciPy 1.14.0. Please use "
+             "`scipy.integrate.quad` for new code or "
+             "`scipy.integrate.gauss_quad` for legacy code.")
 def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
                vec_func=True, miniter=1):
     """
     .. deprecated:: 1.12.0
 
-          This function is deprecated as of SciPy 1.12.0 and will be removed
-          in SciPy 1.14.0. Please use `scipy.integrate.quad` instead.
+          This function is deprecated and will be removed in SciPy 1.14.0.
+          Please use `scipy.integrate.quad` for new code or
+          `scipy.integrate.gauss_quad` for legacy code.
 
     Compute a definite integral using fixed-tolerance Gaussian quadrature.
 
@@ -359,8 +361,9 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
 
     See Also
     --------
-    romberg : adaptive Romberg quadrature
+    gauss_quad : adaptive Gaussian quadrature
     fixed_quad : fixed-order Gaussian quadrature
+    romberg : adaptive Romberg quadrature
     quad : adaptive quadrature using QUADPACK
     dblquad : double integrals
     tplquad : triple integrals
@@ -385,6 +388,70 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
     >>> np.sin(np.pi/2)-np.sin(0)  # analytical result
     1.0
 
+    """
+    return gauss_quad(func, a, b, args, tol, rtol, maxiter, vec_func, miniter)
+
+
+def gauss_quad(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
+               vec_func=True, miniter=1):
+    """
+    .. legacy:: function
+
+          This function is considered legacy as of SciPy 1.12.0 and may
+          be deprecated and removed in the future. Please use
+          `scipy.integrate.quad` for new code.
+
+    (Legacy) Compute a definite integral using fixed-tolerance Gaussian quadrature.
+
+    Integrate `func` from `a` to `b` using Gaussian quadrature
+    with absolute tolerance `tol`.
+
+    Parameters
+    ----------
+    func : function
+        A Python function or method to integrate.
+    a : float
+        Lower limit of integration.
+    b : float
+        Upper limit of integration.
+    args : tuple, optional
+        Extra arguments to pass to function.
+    tol, rtol : float, optional
+        Iteration stops when error between last two iterates is less than
+        `tol` OR the relative change is less than `rtol`.
+    maxiter : int, optional
+        Maximum order of Gaussian quadrature.
+    vec_func : bool, optional
+        True or False if func handles arrays as arguments (is
+        a "vector" function). Default is True.
+    miniter : int, optional
+        Minimum order of Gaussian quadrature.
+
+    Returns
+    -------
+    val : float
+        Gaussian quadrature approximation (within tolerance) to integral.
+    err : float
+        Difference between last two estimates of the integral.
+
+    See Also
+    --------
+    quad : general purpose adaptive quadrature
+
+    Examples
+    --------
+    >>> from scipy import integrate
+    >>> import numpy as np
+    >>> f = lambda x: x**8
+    >>> integrate.gauss_quad(f, 0.0, 1.0)
+    (0.11111111111111106, 4.163336342344337e-17)
+    >>> print(1/9.0)  # analytical result
+    0.1111111111111111
+
+    >>> integrate.gauss_quad(np.cos, 0.0, np.pi/2)
+    (0.9999999999999536, 3.9611425250996035e-11)
+    >>> np.sin(np.pi/2)-np.sin(0)  # analytical result
+    1.0
     """
     if not isinstance(args, tuple):
         args = (args,)
@@ -1012,18 +1079,16 @@ def _printresmat(function, interval, resmat):
     print('after', 2**(len(resmat)-1)+1, 'function evaluations.')
 
 
-@_deprecated("`scipy.integrate.romberg` is deprecated as of SciPy 1.12.0"
-             "and will be removed in SciPy 1.14.0. Please use"
-             "`scipy.integrate.quad` instead.")
 def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
             divmax=10, vec_func=False):
     """
-    .. deprecated:: 1.12.0
+    .. legacy:: function
 
-          This function is deprecated as of SciPy 1.12.0 and will be removed
-          in SciPy 1.14.0. Please use `scipy.integrate.quad` instead.
+          This function is considered legacy as of SciPy 1.12.0 and may
+          be deprecated and removed in the future. Please use
+          `scipy.integrate.quad` for new code.
 
-    Romberg integration of a callable function or method.
+    (Legacy) Romberg integration of a callable function or method.
 
     Returns the integral of `function` (a function of one variable)
     over the interval (`a`, `b`).

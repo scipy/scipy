@@ -5,7 +5,7 @@ from numpy import cos, sin, pi
 from numpy.testing import (assert_equal, assert_almost_equal, assert_allclose,
                            assert_, suppress_warnings)
 
-from scipy.integrate import (quadrature, romberg, romb, newton_cotes,
+from scipy.integrate import (quadrature, romberg, romb, newton_cotes, gauss_quad,
                              cumulative_trapezoid, cumtrapz, trapz, trapezoid,
                              quad, simpson, simps, fixed_quad, AccuracyWarning,
                              qmc_quad)
@@ -30,23 +30,21 @@ class TestFixedQuad:
         assert_allclose(got, expected, rtol=1e-12)
 
 
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
-class TestQuadrature:
-    def quad(self, x, a, b, args):
-        raise NotImplementedError
+class QuadratureTest:
+    quadrature_func = None
 
     def test_quadrature(self):
         # Typical function with two extra arguments:
         def myfunc(x, n, z):       # Bessel function integrand
             return cos(n*x-z*sin(x))/pi
-        val, err = quadrature(myfunc, 0, pi, (2, 1.8))
+        val, err = self.quadrature_func(myfunc, 0, pi, (2, 1.8))
         table_val = 0.30614353532540296487
         assert_almost_equal(val, table_val, decimal=7)
 
     def test_quadrature_rtol(self):
         def myfunc(x, n, z):       # Bessel function integrand
             return 1e90 * cos(n*x-z*sin(x))/pi
-        val, err = quadrature(myfunc, 0, pi, (2, 1.8), rtol=1e-10)
+        val, err = self.quadrature_func(myfunc, 0, pi, (2, 1.8), rtol=1e-10)
         table_val = 1e90 * 0.30614353532540296487
         assert_allclose(val, table_val, rtol=1e-10)
 
@@ -56,17 +54,34 @@ class TestQuadrature:
             return cos(n*x-z*sin(x))/pi
         table_val = 0.30614353532540296487
         for miniter in [5, 52]:
-            val, err = quadrature(myfunc, 0, pi, (2, 1.8), miniter=miniter)
+            val, err = self.quadrature_func(myfunc, 0, pi, (2, 1.8), miniter=miniter)
             assert_almost_equal(val, table_val, decimal=7)
             assert_(err < 1.0)
 
     def test_quadrature_single_args(self):
         def myfunc(x, n):
             return 1e90 * cos(n*x-1.8*sin(x))/pi
-        val, err = quadrature(myfunc, 0, pi, args=2, rtol=1e-10)
+        val, err = self.quadrature_func(myfunc, 0, pi, args=2, rtol=1e-10)
         table_val = 1e90 * 0.30614353532540296487
         assert_allclose(val, table_val, rtol=1e-10)
 
+
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
+class TestQuadrature(QuadratureTest):
+    quadrature_func = lambda self, *args, **kwargs: quadrature(*args, **kwargs)
+
+
+def test_quadrature_deprecated():
+    message = f"`scipy.integrate.quadrature` is deprecated..."
+    with pytest.deprecated_call(match=message):
+        quadrature(np.exp, 0, 1)
+
+
+class TestGaussQuad(QuadratureTest):
+    quadrature_func = lambda self, *args, **kwargs: gauss_quad(*args, **kwargs)
+
+
+class TestRomberg:
     def test_romberg(self):
         # Typical function with two extra arguments:
         def myfunc(x, n, z):       # Bessel function integrand
@@ -83,6 +98,15 @@ class TestQuadrature:
         table_val = 1e19*0.30614353532540296487
         assert_allclose(val, table_val, rtol=1e-10)
 
+    def test_non_dtype(self):
+        # Check that we work fine with functions returning float
+        import math
+        valmath = romberg(math.sin, 0, 1)
+        expected_val = 0.45969769413185085
+        assert_almost_equal(valmath, expected_val, decimal=7)
+
+
+class TestRomb:
     def test_romb(self):
         assert_equal(romb(np.arange(17)), 128)
 
@@ -100,13 +124,8 @@ class TestQuadrature:
             val3 = romberg(lambda x: np.cos(0.2*x), x.min(), x.max(), divmax=4)
         assert_allclose(val, val3, rtol=1e-12, atol=0)
 
-    def test_non_dtype(self):
-        # Check that we work fine with functions returning float
-        import math
-        valmath = romberg(math.sin, 0, 1)
-        expected_val = 0.45969769413185085
-        assert_almost_equal(valmath, expected_val, decimal=7)
 
+class TestNewtonCotes:
     def test_newton_cotes(self):
         """Test the first few degrees, for evenly spaced points."""
         n = 1
@@ -146,6 +165,8 @@ class TestQuadrature:
         numeric_integral = np.dot(wts, y)
         assert_almost_equal(numeric_integral, exact_integral)
 
+
+class TestSimpson:
     # ignore the DeprecationWarning emitted by the even kwd
     @pytest.mark.filterwarnings('ignore::DeprecationWarning')
     def test_simpson(self):
@@ -264,13 +285,6 @@ class TestQuadrature:
                 simpson(y, x=x, dx=0.5),
                 simps(y, x=x, dx=0.5)
             )
-
-
-@pytest.mark.parametrize('func', [romberg, quadrature])
-def test_deprecate_integrator(func):
-    message = f"`scipy.integrate.{func.__name__}` is deprecated..."
-    with pytest.deprecated_call(match=message):
-        func(np.exp, 0, 1)
 
 
 class TestCumulative_trapezoid:
