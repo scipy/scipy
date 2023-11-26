@@ -922,8 +922,7 @@ def _cumulative_simpson_unequal_intervals(
         + y3 * (3.0 * h1 + 2.0 * h2) / (h1 + h2) * h2 / 6.0
     )
 
-    # Addition of above formulae gives Simpson's 1/3 rule for unequal 
-    # intervals, see
+    # Addition of above formulae gives Simpson's 1/3 rule for unequal intervals, see
     # https://en.wikipedia.org/wiki/Simpson%27s_rule#Composite_Simpson's_rule_for_irregularly_spaced_data
 
     res = _cumulatively_sum_simpson_subintegrals(
