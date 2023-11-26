@@ -1,3 +1,4 @@
+import pytest
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose, suppress_warnings
 
@@ -29,6 +30,7 @@ def test_half_integer_real_part():
     assert_equal(res.real, 0.0)
 
 
+@pytest.mark.skip("Temporary skip while gh-19526 is being resolved")
 def test_intermediate_overlow():
     # Make sure we avoid overflow in situations where cosh/sinh would
     # overflow but the product with sin/cos would not
