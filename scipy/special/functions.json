@@ -691,6 +691,11 @@
             "gdtrib": "ddd->d"        }
     },
     "gdtrix": {
+        "cdf_wrappers.h": {
+            "cdfgam2_wrap": "ddd->d"
+        }
+    },
+    "gdtrix_cython": {
         "_cdflib_wrappers.pxd": {
             "gdtrix": "ddd->d"
         }
