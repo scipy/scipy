@@ -6,9 +6,10 @@
 #define SPECFUN_HOST_DEVICE
 #endif
 
-#if __has_include(<cmath>)
-#include <cmath>
+#if __has_include(<math.h>)
+#include <math.h>
 #else
+
 #define M_E 2.71828182845904523536
 #define M_LOG2E 1.44269504088896340736
 #define M_LOG10E 0.434294481903251827651
@@ -22,6 +23,12 @@
 #define M_2_SQRTPI 1.12837916709551257390
 #define M_SQRT2 1.41421356237309504880
 #define M_SQRT1_2 0.707106781186547524401
+
+#endif
+
+#if __has_include(<cmath>)
+#include <cmath>
+#else
 
 namespace std {
 
