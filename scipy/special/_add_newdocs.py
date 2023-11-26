@@ -14455,19 +14455,19 @@ add_newdoc("ndtri_exp",
     9.262340089798409
     """)
 
-add_newdoc("stirling2_inexact",
+add_newdoc("_stirling2_inexact",
     r"""
     Internal function, do not use.
     """)
 
 
-add_newdoc("stirling2_temme",
+add_newdoc("_stirling2_temme",
     r"""
     Internal function, do not use.
     """)
 
 
-add_newdoc("stirling2_dp",
+add_newdoc("_stirling2_dp",
     r"""
     Internal function, do not use.
     """)

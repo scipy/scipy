@@ -14,7 +14,7 @@ from numpy import (pi, asarray, floor, isscalar, iscomplex, real,
 from . import _ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       _lanczos_sum_expg_scaled, psi, hankel1, hankel2, yv, kv,
-                      poch, binom)
+                      poch, binom, _stirling2_inexact)
 from . import _specfun
 from ._comb import _comb_int
 from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
@@ -3258,7 +3258,7 @@ def stirling2(N, K, *, exact=False):
             snsk_vals[(n, k)] = 1
             continue
         elif not exact:
-            snsk_vals[(n, k)] = _s2_lanczos(n,k)
+            snsk_vals[(n, k)] = _stirling2_inexact(n,k)
         elif n != n_old:
             num_iters = n - n_old
             while num_iters > 0:
