@@ -1,13 +1,13 @@
 #pragma once
 
-// this should be included from <special/config.h>, but currently cannot be as that is C++ and this file needs to be included in some of the older C files
+// should be included from config.h, but that won't work until we've cleanly separated out the C and C++ parts of the code
 #ifdef __CUDACC__
 #define SPECFUN_HOST_DEVICE __host__ __device__
 #else
 #define SPECFUN_HOST_DEVICE
 #endif
 
-#if __cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
