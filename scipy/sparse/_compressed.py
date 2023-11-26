@@ -419,6 +419,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             return np.multiply(self.toarray(), other)
         # Single element / wrapped object.
         if other.size == 1:
+            if other.dtype == np.object_:
+                # 'other' not convertible to ndarray.
+                return NotImplemented
             return self._mul_scalar(other.flat[0])
         # Fast case for trivial sparse matrix.
         elif self.shape == (1, 1):
