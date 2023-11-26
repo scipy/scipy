@@ -365,7 +365,7 @@ cdef inline double bfrac(double a, double b, double x, double y,
         bnp1 = t
         r0 = r
         r = anp1 / bnp1
-        if (abs(r - r0) <= eps*r):
+        if (not (abs(r - r0) > eps*r)):
             break
 
         an /= bnp1
@@ -929,19 +929,15 @@ cdef inline (double, double, int, double) cdfbet_which1(
     ) noexcept nogil:
     cdef double p, q
 
-    if x < 0.:
-        return (0., 0., -1, 0.)
-    if x > 1.:
-        return (0., 0., -1, 1.)
-    if y < 0:
-        return (0., 0., -2, 0.)
-    if y > 1.:
-        return (0., 0., -2, 1.)
-    if a < 0.:
-        return (0., 0., -3, 0.)
-    if b < 0.:
-        return (0., 0., -4, 0.)
 
+    if not (0 <= x <= 1.):
+        return (0., 0., -1, 0. if not (x > 0.) else 1.)
+    if not (0 <= y <= 1.):
+        return (0., 0., -2, 0. if not (y > 0.) else 1.)
+    if not (a > 0.):
+        return (0., 0., -3, 0.)
+    if not (b > 0.):
+        return (0., 0., -4, 0.)
     if ((abs(x+y)-0.5)-0.5) > 3*spmpar[0]:
         return (0., 0., 4, (0. if (x+y) < 0 else 1.))
 
@@ -966,17 +962,13 @@ cdef inline (double, double, int, double) cdfbet_which2(
     DZ.x = 0.
     DZ.b = 0.
 
-    if p < 0.:
-        return (0., 0., -1, 0.)
-    if p > 1.:
-        return (0., 0., -1, 1.)
-    if q < 0.:
-        return (0., 0., -2, 0.)
-    if q > 1.:
-        return (0., 0., -2, 1.)
-    if a < 0.:
+    if not (0 <= p <= 1.):
+        return (0., 0., -1, 0. if not (p > 0.) else 1.)
+    if not (0 <= q <= 1.):
+        return (0., 0., -2, 0. if not (q > 0.) else 1.)
+    if not (a > 0.):
         return (0., 0., -3, 0.)
-    if b < 0.:
+    if not (b > 0.):
         return (0., 0., -4, 0.)
     if ((abs(p+q)-0.5)-0.5) > 3*spmpar[0]:
         return (0., 0., 3, (0. if (p+q) < 0 else 1.))
@@ -1027,25 +1019,16 @@ cdef inline (double, int, double) cdfbet_which3(
     DS.reltol = tol
     DS.x = 5.
 
-    if p < 0.:
-        return (0., -1, 0.)
-    if p > 1.:
-        return (0., -1, 1.)
-    if q < 0.:
-        return (0., -2, 0.)
-    if q > 1:
-        return (0., -2, 1.)
-    if x < 0.:
-        return (0., -3, 0.)
-    if x > 1.:
-        return (0., -3, 1.)
-    if y < 0:
-        return (0., -4, 0.)
-    if y > 1.:
-        return (0., -4, 1.)
-    if b < 0.:
+    if not (0 <= p <= 1.):
+        return (0., -1, 0. if not (p > 0.) else 1.)
+    if not (0 <= q <= 1.):
+        return (0., -2, 0. if not (q > 0.) else 1.)
+    if not (0 <= x <= 1.):
+        return (0., -3, 0. if not (x > 0.) else 1.)
+    if not (0 <= y <= 1.):
+        return (0., -4, 0. if not (y > 0.) else 1.)
+    if not (b > 0.):
         return (0., -5, 0.)
-
     if ((abs(p+q)-0.5)-0.5) > 3*spmpar[0]:
         return (0., 3, (0. if (p+q) < 0 else 1.))
     if ((abs(x+y)-0.5)-0.5) > 3*spmpar[0]:
@@ -1084,25 +1067,16 @@ cdef inline (double, int, double) cdfbet_which4(
     DS.reltol = tol
     DS.x = 5.
 
-    if p < 0.:
-        return (0., -1, 0.)
-    if p > 1.:
-        return (0., -1, 1.)
-    if q < 0.:
-        return (0., -2, 0.)
-    if q > 1:
-        return (0., -2, 1.)
-    if x < 0.:
-        return (0., -3, 0.)
-    if x > 1.:
-        return (0., -3, 1.)
-    if y < 0:
-        return (0., -4, 0.)
-    if y > 1.:
-        return (0., -4, 1.)
-    if a < 0.:
+    if not (0 <= p <= 1.):
+        return (0., -1, 0. if not (p > 0.) else 1.)
+    if not (0 <= q <= 1.):
+        return (0., -2, 0. if not (q > 0.) else 1.)
+    if not (0 <= x <= 1.):
+        return (0., -3, 0. if not (x > 0.) else 1.)
+    if not (0 <= y <= 1.):
+        return (0., -4, 0. if not (y > 0.) else 1.)
+    if not (a > 0.):
         return (0., -5, 0.)
-
     if ((abs(p+q)-0.5)-0.5) > 3*spmpar[0]:
         return (0., 3, (0. if (p+q) < 0 else 1.))
     if ((abs(x+y)-0.5)-0.5) > 3*spmpar[0]:
@@ -1124,20 +1098,15 @@ cdef inline (double, int, double) cdfbet_which4(
 cdef inline (double, double, int, double) cdfbin_which1(
     double s, double xn, double pr, double ompr) noexcept nogil:
     cdef double p, q
-    if xn < 0.:
+
+    if not (0 <= s <= xn):
+        return (0., 0., -1, 0. if not (s > 0.) else xn)
+    if not (xn > 0.):
         return (0., 0., -2, 0.)
-    if (s < 0.):
-        return (0., 0., -1, 0.)
-    if (s > xn):
-        return (0., 0., -1, xn)
-    if pr < 0.:
-        return (0., 0., -3, 0.)
-    if pr > 1.:
-        return (0., 0., -3, 1.)
-    if ompr < 0.:
-        return (0., 0., -4, 0.)
-    if ompr > 1.:
-        return (0., 0., -4, 1.)
+    if not (0 <= pr <= 1.):
+        return (0., 0., -3, 0. if not (pr > 0.) else 1.)
+    if not (0 <= ompr <= 1.):
+        return (0., 0., -4, 0. if not (ompr > 0.) else 1.)
     if ((abs(pr+ompr)-0.5)-0.5) > 3*spmpar[0]:
         return (0., 0., 4, (0. if (pr+ompr) < 0 else 1.))
 
@@ -1166,25 +1135,16 @@ cdef inline (double, int, double) cdfbin_which2(
     DS.reltol = tol
     DS.x = xn/2.
 
-    if p < 0.:
-        return (0., -1, 0.)
-    if p > 1.:
-        return (0., -1, 1.)
-    if q < 0.:
-        return (0., -2, 0.)
-    if q > 1.:
-        return (0., -2, 1.)
-    if (xn < 0.):
+    if not (0 <= p <= 1.):
+        return (0., -1, 0. if not (p > 0.) else 1.)
+    if not (0 <= q <= 1.):
+        return (0., -2, 0. if not (q > 0.) else 1.)
+    if not (xn > 0.):
         return (0., -3, 0.)
-    if pr < 0.:
-        return (0., -4, 0.)
-    if pr > 1.:
-        return (0., -4, 1.)
-    if ompr < 0.:
-        return (0., -5, 0.)
-    if ompr > 1.:
-        return (0., -5, 1.)
-
+    if not (0 <= pr <= 1.):
+        return (0., -4, 0. if not (pr > 0.) else 1.)
+    if not (0 <= ompr <= 1.):
+        return (0., -5, 0. if not (ompr > 0.) else 1.)
     if ((abs(pr+ompr)-0.5)-0.5) > 3*spmpar[0]:
         return (0., 4, (0. if (pr+ompr) < 0 else 1.))
     if ((abs(p+q)-0.5)-0.5) > 3*spmpar[0]:
@@ -1222,29 +1182,20 @@ cdef inline (double, int, double) cdfbin_which3(
     DS.reltol = tol
     DS.x = 5.
 
-    if p < 0.:
-        return (0., -1, 0.)
-    if p > 1.:
-        return (0., -1, 1.)
-    if q < 0.:
-        return (0., -2, 0.)
-    if q > 1.:
-        return (0., -2, 1.)
-    if (s < 0.):
+    if not (0 <= p <= 1.):
+        return (0., -1, 0. if not (p > 0.) else 1.)
+    if not (0 <= q <= 1.):
+        return (0., -2, 0. if not (q > 0.) else 1.)
+    if not (s >= 0.):
         return (0., -3, 0.)
-    if pr < 0.:
-        return (0., -4, 0.)
-    if pr > 1.:
-        return (0., -4, 1.)
-    if ompr < 0.:
-        return (0., -5, 0.)
-    if ompr > 1.:
-        return (0., -5, 1.)
-
-    if ((abs(pr+ompr)-0.5)-0.5) > 3*spmpar[0]:
-        return (0., 4, (0. if (pr+ompr) < 0 else 1.))
+    if not (0 <= pr <= 1.):
+        return (0., -4, 0. if not (pr > 0.) else 1.)
+    if not (0 <= ompr <= 1.):
+        return (0., -5, 0. if not (ompr > 0.) else 1.)
     if ((abs(p+q)-0.5)-0.5) > 3*spmpar[0]:
         return (0., 3, (0. if (p+q) < 0 else 1.))
+    if ((abs(pr+ompr)-0.5)-0.5) > 3*spmpar[0]:
+        return (0., 4, (0. if (pr+ompr) < 0 else 1.))
 
     dinvr(&DS, &DZ)
     while DS.status == 1:
@@ -1274,22 +1225,17 @@ cdef inline (double, double, int, double) cdfbin_which4(
     DZ.x = 0.
     DZ.b = 0.
 
-    if p < 0.:
-        return (0., 0., -1, 0.)
-    if p > 1.:
-        return (0., 0., -1, 1.)
-    if q < 0.:
-        return (0., 0., -2, 0.)
-    if q > 1.:
-        return (0., 0., -2, 1.)
-    if (s < 0.):
-        return (0., 0., -3, 0.)
-    if (s > xn):
-        return (0., 0., -3, xn)
-    if (xn < 0.):
+    if not (0 <= p <= 1.):
+        return (0., 0., -1, 0. if not (p > 0.) else 1.)
+    if not (0 <= q <= 1.):
+        return (0., 0., -2, 0. if not (q > 0.) else 1.)
+    if not (0 <= s <= xn):
+        return (0., 0., -3, 0. if not (s > 0.) else xn)
+    if not (xn > 0.):
         return (0., 0., -4, 0.)
     if ((abs(p+q)-0.5)-0.5) > 3*spmpar[0]:
-        return (0., 0., 4, (0. if (p+q) < 0 else 1.))
+        return (0., 0., 3, (0. if (p+q) < 0 else 1.))
+
 
     if qporq:
         dzror(&DZ)
@@ -1316,13 +1262,16 @@ cdef inline (double, double, int, double) cdfbin_which4(
         return (pr, ompr, 0, 0.)
 
 # %% ---------------------------------------- cdfchi_whichX
-cdef inline (double, double, int, double) cdfchi_which1(double x, double df) noexcept nogil:
+cdef inline (double, double, int, double) cdfchi_which1(
+    double x, double df) noexcept nogil:
     cdef double p, q
-    if x < 0.:
+
+    if not (x >= 0.):
         return (0., 0., -1, 0.)
-    if df < 0.:
+    if not (df >= 0.):
         return (0., 0., -2, 0.)
     p, q = cumchi(x, df)
+
     return (p, q, 0, 0)
 
 cdef inline (double, int, double) cdfchi_which2(double p, double q, double df) noexcept nogil:
@@ -1337,15 +1286,11 @@ cdef inline (double, int, double) cdfchi_which2(double p, double q, double df) n
     cdef DzrorState DZ = DzrorState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0)
-    if p < 0.:
-        return (0., -1, 0.)
-    if p > 1.:
-        return (0., -1, 1.)
-    if q < 0.:
-        return (0., -2, 0.)
-    if q > 1.:
-        return (0., -2, 1.)
-    if df < 0.:
+    if not (0 <= p <= 1.):
+        return (0., -1, 0. if not (p > 0.) else 1.)
+    if not (0 < q <= 1.):
+        return (0., -2, 0. if not (q > 0.) else 1.)
+    if not (df >= 0.):
         return (0., -3, 0.)
     if ((abs(p+q)-0.5)-0.5) > 3*spmpar[0]:
         return (0., 3, (0. if (p+q) < 0 else 1.))
@@ -1372,7 +1317,8 @@ cdef inline (double, int, double) cdfchi_which2(double p, double q, double df) n
     else:
         return(DS.x, 0, 0.)
 
-cdef inline (double, int, double) cdfchi_which3(double p, double q, double x) noexcept nogil:
+cdef inline (double, int, double) cdfchi_which3(
+    double p, double q, double x) noexcept nogil:
     cdef bint qporq = p <= q
     cdef double porq = p if qporq else q
     cdef double ccum, cum
@@ -1384,15 +1330,11 @@ cdef inline (double, int, double) cdfchi_which3(double p, double q, double x) no
     cdef DzrorState DZ = DzrorState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0)
-    if p < 0.:
-        return (0., -1, 0.)
-    if p > 1.:
-        return (0., -1, 1.)
-    if q < 0.:
-        return (0., -2, 0.)
-    if q > 1.:
-        return (0., -2, 1.)
-    if x < 0.:
+    if not (0 <= p <= 1.):
+        return (0., -1, 0. if not (p > 0.) else 1.)
+    if not (0 < q <= 1.):
+        return (0., -2, 0. if not (q > 0.) else 1.)
+    if not (x >= 0.):
         return (0., -3, 0.)
     if ((abs(p+q)-0.5)-0.5) > 3*spmpar[0]:
         return (0., 3, (0. if (p+q) < 0 else 1.))
@@ -1423,11 +1365,12 @@ cdef inline (double, int, double) cdfchi_which3(double p, double q, double x) no
 cdef inline (double, double, int, double) cdfchn_which1(
     double x, double df, double pnonc) noexcept nogil:
     cdef double p, q
-    if x < 0.:
+
+    if not (x >= 0.):
         return (0., 0., -1, 0.)
-    if df < 0.:
+    if not (df >= 0.):
         return (0., 0., -2, 0.)
-    if pnonc < 0.:
+    if not (pnonc >= 0.):
         return (0., 0., -3, 0.)
     p, q = cumchn(x, df, pnonc)
     return (p, q, 0, 0.)
@@ -1456,13 +1399,11 @@ cdef inline (double, int, double) cdfchn_which2(
     df = min(df, spmpar[2])
     pnonc = min(pnonc, 1.e9)
 
-    if p < 0.:
-        return (0., -1, 0.)
-    if p > 1.:
-        return (0., -1, 1.)
-    if df < 0.:
+    if not (0 <= p <= 1.):
+        return (0., -1, 0. if not (p > 0.) else 1.)
+    if not (df >= 0.):
         return (0., -2, 0.)
-    if pnonc < 0.:
+    if not (pnonc >= 0.):
         return (0., -3, 0.)
 
     dinvr(&DS, &DZ)
@@ -1500,13 +1441,11 @@ cdef inline (double, int, double) cdfchn_which3(
     x = min(x, spmpar[2])
     pnonc = min(pnonc, 1.e9)
 
-    if p < 0.:
-        return (0., -1, 0.)
-    if p > 1.:
-        return (0., -1, 1.)
-    if x < 0.:
+    if not (0 <= p <= 1.):
+        return (0., -1, 0. if not (p > 0.) else 1.)
+    if not (x >= 0.):
         return (0., -2, 0.)
-    if pnonc < 0.:
+    if not (pnonc >= 0.):
         return (0., -3, 0.)
 
     dinvr(&DS, &DZ)
@@ -1544,13 +1483,11 @@ cdef inline (double, int, double) cdfchn_which4(
     x = min(x, spmpar[2])
     df = min(df, spmpar[2])
 
-    if p < 0.:
-        return (0., -1, 0.)
-    if p > 1.:
-        return (0., -1, 1.)
-    if x < 0.:
+    if not (0 <= p <= 1.):
+        return (0., -1, 0. if not (p > 0.) else 1.)
+    if not (x >= 0.):
         return (0., -2, 0.)
-    if df < 0.:
+    if not (df >= 0.):
         return (0., -3, 0.)
 
     dinvr(&DS, &DZ)
@@ -1568,12 +1505,14 @@ cdef inline (double, int, double) cdfchn_which4(
 cdef inline (double, double, int, double) cdff_which1(
     double f, double dfn, double dfd) noexcept nogil:
     cdef double p, q
-    if f < 0.:
+
+    if not (f >= 0.):
         return (0., 0., -1, 0.)
-    if dfn < 0.:
+    if not (dfn >= 0.):
         return (0., 0., -2, 0.)
-    if dfd < 0.:
+    if not (dfd >= 0.):
         return (0., 0., -3, 0.)
+
     p, q = cumf(f, dfn, dfd)
     return (p, q, 0, 0.)
 
@@ -1599,17 +1538,13 @@ cdef inline (double, int, double) cdff_which2(
     DS.reltol = tol
     DS.x = 5.
 
-    if p < 0.:
-        return (0., -1, 0.)
-    if p > 1.:
-        return (0., -1, 1.)
-    if q < 0.:
-        return (0., -2, 0.)
-    if q > 1.:
-        return (0., -2, 1.)
-    if dfn < 0.:
+    if not (0 <= p <= 1.):
+        return (0., -1, 0. if not (p > 0.) else 1.)
+    if not (0 < q <= 1.):
+        return (0., -2, 0. if not (q > 0.) else 1.)
+    if not (dfn >= 0.):
         return (0., -3, 0.)
-    if dfd < 0.:
+    if not (dfd >= 0.):
         return (0., -4, 0.)
     if ((abs(p+q)-0.5)-0.5) > 3*spmpar[0]:
         return (0., 3, (0. if (p+q) < 0 else 1.))
@@ -1647,17 +1582,13 @@ cdef inline (double, int, double) cdff_which3(
     DS.reltol = tol
     DS.x = 5.
 
-    if p < 0.:
-        return (0., -1, 0.)
-    if p > 1.:
-        return (0., -1, 1.)
-    if q < 0.:
-        return (0., -2, 0.)
-    if q > 1.:
-        return (0., -2, 1.)
-    if f < 0.:
+    if not (0 <= p <= 1.):
+        return (0., -1, 0. if not (p > 0.) else 1.)
+    if not (0 < q <= 1.):
+        return (0., -2, 0. if not (q > 0.) else 1.)
+    if not (f >= 0.):
         return (0., -3, 0.)
-    if dfd < 0.:
+    if not (dfd >= 0.):
         return (0., -4, 0.)
     if ((abs(p+q)-0.5)-0.5) > 3*spmpar[0]:
         return (0., 3, (0. if (p+q) < 0 else 1.))
@@ -1695,17 +1626,13 @@ cdef inline (double, int, double) cdff_which4(
     DS.reltol = tol
     DS.x = 5.
 
-    if p < 0.:
-        return (0., -1, 0.)
-    if p > 1.:
-        return (0., -1, 1.)
-    if q < 0.:
-        return (0., -2, 0.)
-    if q > 1.:
-        return (0., -2, 1.)
-    if f < 0.:
+    if not (0 <= p <= 1.):
+        return (0., -1, 0. if not (p > 0.) else 1.)
+    if not (0 < q <= 1.):
+        return (0., -2, 0. if not (q > 0.) else 1.)
+    if not (f >= 0.):
         return (0., -3, 0.)
-    if dfn < 0.:
+    if not (dfn >= 0.):
         return (0., -4, 0.)
     if ((abs(p+q)-0.5)-0.5) > 3*spmpar[0]:
         return (0., 3, (0. if (p+q) < 0 else 1.))
@@ -1726,14 +1653,16 @@ cdef (double, double, int, double) cdffnc_which1(
     double f, double dfn, double dfd, double phonc) noexcept nogil:
     cdef double p, q
     cdef int ierr
-    if f < 0.:
+
+    if not (f >= 0.):
         return (0., 0., -1, 0.)
-    if dfn < 0.:
+    if not (dfn > 0.):
         return (0., 0., -2, 0.)
-    if dfd < 0.:
+    if not (dfd > 0.):
         return (0., 0., -3, 0.)
-    if phonc < 0.:
+    if not (phonc >= 0.):
         return (0., 0., -4, 0.)
+
     p, q, ierr = cumfnc(f, dfn, dfd, phonc)
     if ierr != 0:
         return (p, q, 10, 0.)
@@ -1742,7 +1671,7 @@ cdef (double, double, int, double) cdffnc_which1(
 
 cdef (double, int, double) cdffnc_which2(
     double p, double q, double dfn, double dfd, double phonc) noexcept nogil:
-    cdef double cum, ccum
+    cdef double cum
     cdef double tol = 1e-8
     cdef double atol = 1e-50
     cdef bint qporq = p <= q
@@ -1763,27 +1692,19 @@ cdef (double, int, double) cdffnc_which2(
     DS.reltol = tol
     DS.x = 5.
 
-    if p < 0.:
-        return (0., -1, 0.)
-    if p > 1.:
-        return (0., -1, 1.)
-    if q < 0.:
-        return (0., -2, 0.)
-    if q > 1.:
-        return (0., -2, 1.)
-    if dfn < 0.:
+    if not (0 <= p <= 1.-1e-16):
+        return (0., -1, 0. if not (p > 0.) else 1.)
+    if not (dfn > 0.):
         return (0., -3, 0.)
-    if dfd < 0.:
+    if not (dfd > 0.):
         return (0., -4, 0.)
-    if phonc < 0.:
+    if not (phonc >= 0.):
         return (0., -5, 0.)
-    if ((abs(p+q)-0.5)-0.5) > 3*spmpar[0]:
-        return (0., 3, (0. if (p+q) < 0 else 1.))
 
     dinvr(&DS, &DZ)
     while DS.status == 1:
-        cum, ccum, ierr = cumfnc(DS.x, dfn, dfd, phonc)
-        DS.fx = cum - p if qporq else ccum - q
+        cum, _, ierr = cumfnc(DS.x, dfn, dfd, phonc)
+        DS.fx = cum - p
         if ierr != 0:
             return (DS.x, 10, 0.)
         dinvr(&DS, &DZ)
@@ -1795,7 +1716,7 @@ cdef (double, int, double) cdffnc_which2(
 
 cdef (double, int, double) cdffnc_which3(
     double p, double q, double f, double dfd, double phonc) noexcept nogil:
-    cdef double cum, ccum
+    cdef double cum
     cdef double tol = 1e-8
     cdef double atol = 1e-50
     cdef bint qporq = p <= q
@@ -1816,27 +1737,19 @@ cdef (double, int, double) cdffnc_which3(
     DS.reltol = tol
     DS.x = 5.
 
-    if p < 0.:
-        return (0., -1, 0.)
-    if p > 1.:
-        return (0., -1, 1.)
-    if q < 0.:
-        return (0., -2, 0.)
-    if q > 1.:
-        return (0., -2, 1.)
-    if f < 0.:
+    if not (0 <= p <= 1.-1e-16):
+        return (0., -1, 0. if not (p > 0.) else 1.)
+    if not (f >= 0.):
         return (0., -3, 0.)
-    if dfd < 0.:
+    if not (dfd > 0.):
         return (0., -4, 0.)
-    if phonc < 0.:
+    if not (phonc >= 0.):
         return (0., -5, 0.)
-    if ((abs(p+q)-0.5)-0.5) > 3*spmpar[0]:
-        return (0., 3, (0. if (p+q) < 0 else 1.))
 
     dinvr(&DS, &DZ)
     while DS.status == 1:
-        cum, ccum, ierr = cumfnc(f, DS.x, dfd, phonc)
-        DS.fx = cum - p if qporq else ccum - q
+        cum, _, ierr = cumfnc(f, DS.x, dfd, phonc)
+        DS.fx = cum - p
         if ierr != 0:
             return (DS.x, 10, 0.)
         dinvr(&DS, &DZ)
@@ -1848,7 +1761,7 @@ cdef (double, int, double) cdffnc_which3(
 
 cdef (double, int, double) cdffnc_which4(
     double p, double q, double f, double dfn, double phonc) noexcept nogil:
-    cdef double cum, ccum
+    cdef double cum
     cdef double tol = 1e-8
     cdef double atol = 1e-50
     cdef bint qporq = p <= q
@@ -1869,27 +1782,19 @@ cdef (double, int, double) cdffnc_which4(
     DS.reltol = tol
     DS.x = 5.
 
-    if p < 0.:
-        return (0., -1, 0.)
-    if p > 1.:
-        return (0., -1, 1.)
-    if q < 0.:
-        return (0., -2, 0.)
-    if q > 1.:
-        return (0., -2, 1.)
-    if f < 0.:
+    if not (0 <= p <= 1.-1e-16):
+        return (0., -1, 0. if not (p > 0.) else 1.)
+    if not (f >= 0.):
         return (0., -3, 0.)
-    if dfn < 0.:
+    if not (dfn > 0.):
         return (0., -4, 0.)
-    if phonc < 0.:
+    if not (phonc >= 0.):
         return (0., -5, 0.)
-    if ((abs(p+q)-0.5)-0.5) > 3*spmpar[0]:
-        return (0., 3, (0. if (p+q) < 0 else 1.))
 
     dinvr(&DS, &DZ)
     while DS.status == 1:
-        cum, ccum, ierr = cumfnc(f, dfn, DS.x, phonc)
-        DS.fx = cum - p if qporq else ccum - q
+        cum, _, ierr = cumfnc(f, dfn, DS.x, phonc)
+        DS.fx = cum - p
         if ierr != 0:
             return (DS.x, 10, 0.)
         dinvr(&DS, &DZ)
@@ -1901,7 +1806,7 @@ cdef (double, int, double) cdffnc_which4(
 
 cdef (double, int, double) cdffnc_which5(
     double p, double q, double f, double dfn, double dfd) noexcept nogil:
-    cdef double cum, ccum
+    cdef double cum
     cdef double tol = 1e-8
     cdef double atol = 1e-50
     cdef bint qporq = p <= q
@@ -1922,27 +1827,19 @@ cdef (double, int, double) cdffnc_which5(
     DS.reltol = tol
     DS.x = 5.
 
-    if p < 0.:
-        return (0., -1, 0.)
-    if p > 1.:
-        return (0., -1, 1.)
-    if q < 0.:
-        return (0., -2, 0.)
-    if q > 1.:
-        return (0., -2, 1.)
-    if f < 0.:
+    if not (0 <= p <= 1.-1e-16):
+        return (0., -1, 0. if not (p > 0.) else 1.)
+    if not (f >= 0.):
         return (0., -3, 0.)
-    if dfn < 0.:
+    if not (dfd > 0.):
         return (0., -4, 0.)
-    if dfd < 0.:
+    if not (dfn > 0.):
         return (0., -5, 0.)
-    if ((abs(p+q)-0.5)-0.5) > 3*spmpar[0]:
-        return (0., 3, (0. if (p+q) < 0 else 1.))
 
     dinvr(&DS, &DZ)
     while DS.status == 1:
-        cum, ccum, ierr = cumfnc(f, dfn, dfd, DS.x)
-        DS.fx = cum - p if qporq else ccum - q
+        cum, _, ierr = cumfnc(f, dfn, dfd, DS.x)
+        DS.fx = cum - p
         if ierr != 0:
             return (DS.x, 10, 0.)
         dinvr(&DS, &DZ)
@@ -1957,11 +1854,11 @@ cdef (double, double, int, double) cdfgam_which1(
     double x, double shape, double scale) noexcept nogil:
     cdef double p, q
 
-    if x < 0.:
+    if not (x >= 0.):
         return (0., 0., -1, 0.)
-    if shape < 0.:
+    if not (shape > 0.):
         return (0., 0., -2, 0.)
-    if scale < 0.:
+    if not (scale > 0.):
         return (0., 0., -3, 0.)
 
     p, q = cumgam(x*scale, shape)
@@ -1974,17 +1871,14 @@ cdef (double, int, double) cdfgam_which2(
     double p, double q, double shape, double scale) noexcept nogil:
     cdef double xx
     cdef int ierr
-    if p < 0.:
-        return (0., -1, 0.)
-    if p > 1.:
-        return (0., -1, 1.)
-    if q < 0.:
-        return (0., -2, 0.)
-    if q > 1.:
-        return (0., -2, 1.)
-    if shape <= 0.:
+
+    if not (0 <= p <= 1.):
+        return (0., -1, 0. if not (p > 0.) else 1.)
+    if not (0 < q <= 1.):
+        return (0., -2, 0. if not (q > 0.) else 1.)
+    if not (shape > 0.):
         return (0., -3, 0.)
-    if scale <= 0.:
+    if not (scale > 0.):
         return (0., -4, 0.)
     if ((abs(p+q)-0.5)-0.5) > 3*spmpar[0]:
         return (0., 3, (0. if (p+q) < 0 else 1.))
@@ -2019,17 +1913,13 @@ cdef (double, int, double) cdfgam_which3(
     DS.reltol = tol
     DS.x = 5.
 
-    if p < 0.:
-        return (0., -1, 0.)
-    if p > 1.:
-        return (0., -1, 1.)
-    if q < 0.:
-        return (0., -2, 0.)
-    if q > 1.:
-        return (0., -2, 1.)
-    if x <= 0.:
+    if not (0 <= p <= 1.):
+        return (0., -1, 0. if not (p > 0.) else 1.)
+    if not (0 < q <= 1.):
+        return (0., -2, 0. if not (q > 0.) else 1.)
+    if not (x >= 0.):
         return (0., -3, 0.)
-    if scale <= 0.:
+    if not (scale > 0.):
         return (0., -4, 0.)
     if ((abs(p+q)-0.5)-0.5) > 3*spmpar[0]:
         return (0., 3, (0. if (p+q) < 0 else 1.))
@@ -2053,17 +1943,13 @@ cdef (double, int, double) cdfgam_which4(
     cdef double xx
     cdef int ierr
 
-    if p < 0.:
-        return (0., -1, 0.)
-    if p > 1.:
-        return (0., -1, 1.)
-    if q < 0.:
-        return (0., -2, 0.)
-    if q > 1.:
-        return (0., -2, 1.)
-    if x <= 0.:
+    if not (0 <= p <= 1.):
+        return (0., -1, 0. if not (p > 0.) else 1.)
+    if not (0 < q <= 1.):
+        return (0., -2, 0. if not (q > 0.) else 1.)
+    if not (x >= 0.):
         return (0., -3, 0.)
-    if shape <= 0.:
+    if not (shape > 0.):
         return (0., -4, 0.)
     if ((abs(p+q)-0.5)-0.5) > 3*spmpar[0]:
         return (0., 3, (0. if (p+q) < 0 else 1.))
@@ -2078,20 +1964,15 @@ cdef (double, int, double) cdfgam_which4(
 cdef inline (double, double, int, double) cdfnbn_which1(
     double s, double xn, double pr, double ompr) noexcept nogil:
     cdef double p, q
-    if xn < 0.:
-        return (0., 0., -2, 0.)
-    if (s < 0.):
+
+    if not (0 <= s <= xn):
         return (0., 0., -1, 0.)
-    if (s > xn):
-        return (0., 0., -1, xn)
-    if pr < 0.:
-        return (0., 0., -3, 0.)
-    if pr > 1.:
-        return (0., 0., -3, 1.)
-    if ompr < 0.:
-        return (0., 0., -4, 0.)
-    if ompr > 1.:
-        return (0., 0., -4, 1.)
+    if not (xn >= 0.):
+        return (0., 0., -2, 0.)
+    if not (0 <= pr < 1.):
+        return (0., 0., -3, 0. if not (pr > 0.) else 1.)
+    if not (0 <= ompr < 1.):
+        return (0., 0., -4, 0. if not (ompr > 0.) else 1.)
     if ((abs(pr+ompr)-0.5)-0.5) > 3*spmpar[0]:
         return (0., 0., 4, (0. if (pr+ompr) < 0 else 1.))
 
@@ -2120,29 +2001,20 @@ cdef inline (double, int, double) cdfnbn_which2(
     DS.reltol = tol
     DS.x = 5.
 
-    if p < 0.:
-        return (0., -1, 0.)
-    if p > 1.:
-        return (0., -1, 1.)
-    if q < 0.:
-        return (0., -2, 0.)
-    if q > 1.:
-        return (0., -2, 1.)
-    if (xn < 0.):
+    if not (0 <= p <= 1.):
+        return (0., -1, 0. if not (p > 0.) else 1.)
+    if not (0 < q <= 1.):
+        return (0., -2, 0. if not (q > 0.) else 1.)
+    if not (xn >= 0.):
         return (0., -3, 0.)
-    if pr < 0.:
-        return (0., -4, 0.)
-    if pr > 1.:
-        return (0., -4, 1.)
-    if ompr < 0.:
-        return (0., -5, 0.)
-    if ompr > 1.:
-        return (0., -5, 1.)
-
-    if ((abs(pr+ompr)-0.5)-0.5) > 3*spmpar[0]:
-        return (0., 4, (0. if (pr+ompr) < 0 else 1.))
+    if not (0 <= pr < 1.):
+        return (0., -4, 0. if not (pr > 0.) else 1.)
+    if not (0 <= ompr < 1.):
+        return (0., -5, 0. if not (ompr > 0.) else 1.)
     if ((abs(p+q)-0.5)-0.5) > 3*spmpar[0]:
         return (0., 3, (0. if (p+q) < 0 else 1.))
+    if ((abs(pr+ompr)-0.5)-0.5) > 3*spmpar[0]:
+        return (0., 4, (0. if (pr+ompr) < 0 else 1.))
 
     dinvr(&DS, &DZ)
     while DS.status == 1:
@@ -2176,24 +2048,16 @@ cdef inline (double, int, double) cdfnbn_which3(
     DS.reltol = tol
     DS.x = 5.
 
-    if p < 0.:
-        return (0., -1, 0.)
-    if p > 1.:
-        return (0., -1, 1.)
-    if q < 0.:
-        return (0., -2, 0.)
-    if q > 1.:
-        return (0., -2, 1.)
-    if (s < 0.):
+    if not (0 <= p <= 1.):
+        return (0., -1, 0. if not (p > 0.) else 1.)
+    if not (0 < q <= 1.):
+        return (0., -2, 0. if not (q > 0.) else 1.)
+    if not (s >= 0.):
         return (0., -3, 0.)
-    if pr < 0.:
-        return (0., -4, 0.)
-    if pr > 1.:
-        return (0., -4, 1.)
-    if ompr < 0.:
-        return (0., -5, 0.)
-    if ompr > 1.:
-        return (0., -5, 1.)
+    if not (0 <= pr < 1.):
+        return (0., -4, 0. if not (pr > 0.) else 1.)
+    if not (0 <= ompr < 1.):
+        return (0., -5, 0. if not (ompr > 0.) else 1.)
 
     if ((abs(pr+ompr)-0.5)-0.5) > 3*spmpar[0]:
         return (0., 4, (0. if (pr+ompr) < 0 else 1.))
@@ -2228,17 +2092,13 @@ cdef inline (double, double, int, double) cdfnbn_which4(
     DZ.x = 0.
     DZ.b = 0.
 
-    if p < 0.:
-        return (0., 0., -1, 0.)
-    if p > 1.:
-        return (0., 0., -1, 1.)
-    if q < 0.:
-        return (0., 0., -2, 0.)
-    if q > 1.:
-        return (0., 0., -2, 1.)
-    if (s < 0.):
+    if not (0 <= p <= 1.):
+        return (0., 0., -1, 0. if not (p > 0.) else 1.)
+    if not (0 < q <= 1.):
+        return (0., 0., -2, 0. if not (q > 0.) else 1.)
+    if not (s >= 0.):
         return (0., 0., -3, 0.)
-    if (xn < 0.):
+    if not (xn >= 0.):
         return (0., 0., -4, 0.)
     if ((abs(p+q)-0.5)-0.5) > 3*spmpar[0]:
         return (0., 0., 4, (0. if (p+q) < 0 else 1.))
@@ -2271,7 +2131,7 @@ cdef inline (double, double, int, double) cdfnbn_which4(
 cdef inline (double, double, int, double) cdfnor_which1(
     double x, double mean, double sd) noexcept nogil:
     cdef double z, p, q
-    if sd <= 0.:
+    if not (sd > 0.):
         return (0., 0., -3, 0.)
     z = (x-mean)/sd
     p, q = cumnor(z)
@@ -2280,7 +2140,7 @@ cdef inline (double, double, int, double) cdfnor_which1(
 cdef inline (double, int, double) cdfnor_which2(
     double p, double q, double mean, double sd) noexcept nogil:
     cdef double z
-    if sd <= 0.:
+    if not (sd > 0.):
         return (0., -4, 0.)
     z = dinvnr(p, q)
     return (sd*z + mean, 0, 0.)
@@ -2288,7 +2148,7 @@ cdef inline (double, int, double) cdfnor_which2(
 cdef inline (double, int, double) cdfnor_which3(
     double p, double q, double x, double sd) noexcept nogil:
     cdef double z
-    if sd <= 0.:
+    if not (sd > 0.):
         return (0., -4, 0.)
     z = dinvnr(p, q)
     return (x - sd*z, 0, 0.)
@@ -2303,9 +2163,9 @@ cdef inline (double, int, double) cdfnor_which4(
 cdef inline (double, double, int, double) cdfpoi_which1(
     double s, double xlam) noexcept nogil:
     cdef double p, q
-    if s < 0.:
+    if not (s >= 0.):
         return (0., 0., -1, 0.)
-    if xlam < 0.:
+    if not (xlam >= 0.):
         return (0., 0., -2, 0.)
     p, q = cumpoi(s, xlam)
     return (p, q, 0, 0.)
@@ -2331,15 +2191,11 @@ cdef inline (double, int, double) cdfpoi_which2(
     DS.reltol = tol
     DS.x = 5.
 
-    if p < 0.:
-        return (0., -1, 0.)
-    if p > 1.:
-        return (0., -1, 1.)
-    if q < 0.:
-        return (0., -2, 0.)
-    if q > 1.:
-        return (0., -2, 1.)
-    if (xlam < 0.):
+    if not (0 <= p <= 1.):
+        return (0., -1, 0. if not (p > 0.) else 1.)
+    if not (0 < q <= 1.):
+        return (0., -2, 0. if not (q > 0.) else 1.)
+    if not (xlam >= 0.):
         return (0., -3, 0.)
     if ((abs(p+q)-0.5)-0.5) > 3*spmpar[0]:
         return (0., 3, (0. if (p+q) < 0 else 1.))
@@ -2379,15 +2235,11 @@ cdef inline (double, int, double) cdfpoi_which3(
     DS.reltol = tol
     DS.x = 5.
 
-    if p < 0.:
-        return (0., -1, 0.)
-    if p > 1.:
-        return (0., -1, 1.)
-    if q < 0.:
-        return (0., -2, 0.)
-    if q > 1.:
-        return (0., -2, 1.)
-    if (s < 0.):
+    if not (0 <= p <= 1.):
+        return (0., -1, 0. if not (p > 0.) else 1.)
+    if not (0 < q <= 1.):
+        return (0., -2, 0. if not (q > 0.) else 1.)
+    if not (s >= 0.):
         return (0., -3, 0.)
     if ((abs(p+q)-0.5)-0.5) > 3*spmpar[0]:
         return (0., 3, (0. if (p+q) < 0 else 1.))
@@ -2407,7 +2259,7 @@ cdef inline (double, int, double) cdfpoi_which3(
 cdef inline (double, double, int, double) cdft_which1(
     double t, double df) noexcept nogil:
     cdef double p, q
-    if df <= 0.:
+    if not (df > 0.):
         return (0., 0., -2, 0.)
     p, q = cumt(t, df)
     return (p, q, 0, 0.)
@@ -2433,15 +2285,11 @@ cdef inline (double, int, double) cdft_which2(
     DS.reltol = tol
     DS.x = dt1(p, q, df)
 
-    if p < 0.:
-        return (0., -1, 0.)
-    if p > 1.:
-        return (0., -1, 1.)
-    if q < 0.:
-        return (0., -2, 0.)
-    if q > 1.:
-        return (0., -2, 1.)
-    if (df < 0.):
+    if not (0 < p <= 1.):
+        return (0., -1, 0. if not (p > 0.) else 1.)
+    if not (0 < q <= 1.):
+        return (0., -2, 0. if not (q > 0.) else 1.)
+    if not (df > 0.):
         return (0., -3, 0.)
     if ((abs(p+q)-0.5)-0.5) > 3*spmpar[0]:
         return (0., 3, (0. if (p+q) < 0 else 1.))
@@ -2478,14 +2326,10 @@ cdef inline (double, int, double) cdft_which3(
     DS.reltol = tol
     DS.x = 5.
 
-    if p < 0.:
-        return (0., -1, 0.)
-    if p > 1.:
-        return (0., -1, 1.)
-    if q < 0.:
-        return (0., -2, 0.)
-    if q > 1.:
-        return (0., -2, 1.)
+    if not (0 < p <= 1.):
+        return (0., -1, 0. if not (p > 0.) else 1.)
+    if not (0 < q <= 1.):
+        return (0., -2, 0. if not (q > 0.) else 1.)
     if ((abs(p+q)-0.5)-0.5) > 3*spmpar[0]:
         return (0., 3, (0. if (p+q) < 0 else 1.))
 
@@ -2504,27 +2348,25 @@ cdef inline (double, int, double) cdft_which3(
 cdef inline (double, double, int, double) cdftnc_which1(
     double t, double df, double pnonc) noexcept nogil:
     cdef double p, q
-    if df < 0.:
+    if not (t == t):
+        return (0., 0., -1, 0.)
+    if not (df > 0.):
         return (0., 0., -2, 0.)
 
     df = min(df, 1.e10)
     t = max(min(t, spmpar[2]), -spmpar[2])
 
-    if t != t:
-        return (0., 0., -1, 0.)
     if not (-1.e-6 <= pnonc <= 1.e6):
         return (0., 0., -3, 1.e6 if pnonc > -1e6 else -1.e6)
-
 
     p, q = cumtnc(t, df, pnonc)
     return (p, q, 0, 0.)
 
 cdef inline (double, int, double) cdftnc_which2(
     double p, double q, double df, double pnonc) noexcept nogil:
-    cdef double cum, ccum
+    cdef double cum
     cdef double tol = 1e-8
     cdef double atol = 1e-50
-    cdef bint qporq = p <= q
     cdef DinvrState DS = DinvrState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
@@ -2541,26 +2383,21 @@ cdef inline (double, int, double) cdftnc_which2(
     DS.reltol = tol
     DS.x = 5.
 
-    if p < 0.:
-        return (0., -1, 0.)
-    if p > 1.:
-        return (0., -1, 1.)
-    if q < 0.:
-        return (0., -2, 0.)
-    if q > 1.:
-        return (0., -2, 1.)
+    if not (0 <= p <= 1.):
+        return (0., -1, 0. if not (p > 0.) else 1.)
+    if not (df > 0.):
+        return (0., -3, 0.)
     df = min(df, 1.e10)
+
     if not (-1.e-6 <= pnonc <= 1.e6):
         return (0., -4, 1.e6 if pnonc > -1e6 else -1.e6)
-    if df < 0.:
-        return (0., -3, 0.)
     if ((abs(p+q)-0.5)-0.5) > 3*spmpar[0]:
         return (0., 3, (0. if (p+q) < 0 else 1.))
 
     dinvr(&DS, &DZ)
     while DS.status == 1:
-        cum, ccum = cumf(DS.x, df, pnonc)
-        DS.fx = cum - p if qporq else ccum - q
+        cum, _ = cumf(DS.x, df, pnonc)
+        DS.fx = cum - p
         dinvr(&DS, &DZ)
 
     if DS.status == -1:
@@ -2570,7 +2407,7 @@ cdef inline (double, int, double) cdftnc_which2(
 
 cdef inline (double, int, double) cdftnc_which3(
     double p, double q, double t, double pnonc) noexcept nogil:
-    cdef double cum, ccum
+    cdef double cum
     cdef double tol = 1e-8
     cdef double atol = 1e-50
     cdef bint qporq = p <= q
@@ -2590,16 +2427,10 @@ cdef inline (double, int, double) cdftnc_which3(
     DS.reltol = tol
     DS.x = 5.
 
-    if p < 0.:
-        return (0., -1, 0.)
-    if p > 1.:
-        return (0., -1, 1.)
-    if q < 0.:
-        return (0., -2, 0.)
-    if q > 1.:
-        return (0., -2, 1.)
+    if not (0 <= p <= 1.):
+        return (0., -1, 0. if not (p > 0.) else 1.)
     t = max(min(t, spmpar[2]), -spmpar[2])
-    if t != t:
+    if not (t == t):
         return (0., -3, 0.)
     if not (-1.e-6 <= pnonc <= 1.e6):
         return (0., -4, 1.e6 if pnonc > -1e6 else -1.e6)
@@ -2608,8 +2439,8 @@ cdef inline (double, int, double) cdftnc_which3(
 
     dinvr(&DS, &DZ)
     while DS.status == 1:
-        cum, ccum = cumf(t, DS.x, pnonc)
-        DS.fx = cum - p if qporq else ccum - q
+        cum, _ = cumf(t, DS.x, pnonc)
+        DS.fx = cum - p
         dinvr(&DS, &DZ)
 
     if DS.status == -1:
@@ -2619,7 +2450,7 @@ cdef inline (double, int, double) cdftnc_which3(
 
 cdef inline (double, int, double) cdftnc_which4(
     double p, double q, double t, double df) noexcept nogil:
-    cdef double cum, ccum
+    cdef double cum
     cdef double tol = 1e-8
     cdef double atol = 1e-50
     cdef bint qporq = p <= q
@@ -2639,32 +2470,22 @@ cdef inline (double, int, double) cdftnc_which4(
     DS.reltol = tol
     DS.x = 5.
 
-    if p < 0.:
-        return (0., -1, 0.)
-    if p > 1.:
-        return (0., -1, 1.)
-    if q < 0.:
-        return (0., -2, 0.)
-    if q > 1.:
-        return (0., -2, 1.)
-    if t < 0.:
+    if not (0 <= p <= 1.):
+        return (0., -1, 0. if not (p > 0.) else 1.)
+    if not (t == t):
         return (0., -3, 0.)
-    if df < 0.:
+    if not (df > 0.):
         return (0., -4, 0.)
     if ((abs(p+q)-0.5)-0.5) > 3*spmpar[0]:
         return (0., 3, (0. if (p+q) < 0 else 1.))
 
     t = max(min(t, spmpar[2]), -spmpar[2])
     df = min(df, 1.e10)
-    if t != t:
-        return (0., -3, 0.)
-    if df < 0.:
-        return (0., -4, 0.)
 
     dinvr(&DS, &DZ)
     while DS.status == 1:
-        cum, ccum = cumf(t, df, DS.x)
-        DS.fx = cum - p if qporq else ccum - q
+        cum, _ = cumf(t, df, DS.x)
+        DS.fx = cum - p
         dinvr(&DS, &DZ)
 
     if DS.status == -1:
@@ -2739,7 +2560,7 @@ cdef inline (double, double) cumchn(double x, double df, double pnonc) noexcept 
         term = wt*pterm
         ssum += term
         i -= 1
-        if ((ssum < abstol) or (term < eps*ssum)) or (i == 0):
+        if not ((ssum >= abstol) and (term >= eps*ssum)) or (i == 0):
             break
 
     sumadj, adj, wt, i = centaj, centaj, centwt, icent
@@ -2753,7 +2574,7 @@ cdef inline (double, double) cumchn(double x, double df, double pnonc) noexcept 
         dfd2 = (df + 2.*i)/2.
         adj *= chid2/dfd2
         sumadj += adj
-        if ((ssum < abstol) or (term < eps*ssum)):
+        if not ((ssum >= abstol) and (term >= eps*ssum)):
             break
 
     return (ssum, 0.5 + (0.5 - ssum))
@@ -3759,10 +3580,10 @@ cdef inline (double, int) gaminv(double a, double p,
     cdef double[2] emin = [2e-3, 6e-3]
     cdef double eps = eps0[iop]
 
-    if a <= 0.:
+    if not (a > 0.):
         return (x, -2)
     t = p + q - 1.
-    if abs(t) > e:
+    if not (abs(t) <= e):
         return (x, -4)
 
     ierr = 0
@@ -4288,7 +4109,7 @@ cdef inline (double, double) gratio(double a, double x, int ind) noexcept nogil:
                          -.199325705161888e-03, .679778047793721e-04]
     cdef double[2] d6 = [-.592166437353694e-03, .270878209671804e-03]
 
-    if a < 0. or x < 0.:
+    if not (a >= 0.) or not (x >= 0.):
         return 2., 0.
     if a == 0. and x == 0.:
         return 2., 0.
@@ -4496,7 +4317,7 @@ cdef inline (double, double) gratio(double a, double x, int ind) noexcept nogil:
                     apn += 1.
                     t *= x / apn
                     ssum += t
-                    if t <= tol:
+                    if not (t > tol):
                         break
 
                 for m in range(n - 1, -1, -1):
@@ -4524,7 +4345,7 @@ cdef inline (double, double) gratio(double a, double x, int ind) noexcept nogil:
                     apn += 1.
                     t *= x / apn
                     ssum += t
-                    if t <= tol:
+                    if not (t > tol):
                         break
 
                 for m in range(n - 1, -1, -1):
@@ -4548,7 +4369,7 @@ cdef inline (double, double) gratio(double a, double x, int ind) noexcept nogil:
                     a2n = a2nm1 + cma*a2n
                     b2n = b2nm1 + cma*b2n
                     an0 = a2n/b2n
-                    if (abs(an0-am0) < tol*an0):
+                    if not (abs(an0-am0) >= tol*an0):
                         break
                 qans = r*an0
                 ans = 0.5 + (0.5 - qans)
@@ -4606,7 +4427,7 @@ cdef inline (double, double) gratio(double a, double x, int ind) noexcept nogil:
                     apn += 1.
                     t *= x / apn
                     ssum += t
-                    if t <= tol:
+                    if not (t > tol):
                         break
 
                 for m in range(n - 1, -1, -1):
@@ -4629,7 +4450,7 @@ cdef inline (double, double) gratio(double a, double x, int ind) noexcept nogil:
                     a2n = a2nm1 + cma*a2n
                     b2n = b2nm1 + cma*b2n
                     an0 = a2n/b2n
-                    if (abs(an0-am0) < tol*an0):
+                    if not (abs(an0-am0) >= tol*an0):
                         break
                 qans = r*an0
                 ans = 0.5 + (0.5 - qans)
@@ -4699,7 +4520,7 @@ cdef inline (double, double) gratio(double a, double x, int ind) noexcept nogil:
             c *= -(x / an)
             t = c / (a + an)
             ssum += t
-            if abs(t) <= tol:
+            if not (abs(t) > tol):
                 break
         j = a*x*((ssum / 6. - 0.5 / (a + 2.))*x + 1./(a + 1.))
         z = a*log(x)
@@ -4737,7 +4558,7 @@ cdef inline (double, double) gratio(double a, double x, int ind) noexcept nogil:
         a2n = a2nm1 + cma*a2n
         b2n = b2nm1 + cma*b2n
         an0 = a2n/b2n
-        if (abs(an0-am0) < tol*an0):
+        if not (abs(an0-am0) >= tol*an0):
             break
     qans = r*an0
     ans = 0.5 + (0.5 - qans)
