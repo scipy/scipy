@@ -1,6 +1,13 @@
 #pragma once
 
-#ifdef __cplusplus
+// this should be included from <special/config.h>, but currently cannot be as that is C++ and this file needs to be included in some of the older C files
+#ifdef __CUDACC__
+#define SPECFUN_HOST_DEVICE __host__ __device__
+#else
+#define SPECFUN_HOST_DEVICE
+#endif
+
+#if __cplusplus
 extern "C" {
 #endif
 
@@ -23,7 +30,7 @@ typedef enum {
 namespace special {
 
 #ifndef SP_SPECFUN_ERROR
-        inline void set_error(const char *func_name, sf_error_t code, const char *fmt, ...) {
+        SPECFUN_HOST_DEVICE inline void set_error(const char *func_name, sf_error_t code, const char *fmt, ...) {
             // nothing
         }
 #else
