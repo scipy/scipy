@@ -1076,7 +1076,7 @@ class FusedFunc(Func):
         for n, (intype, _) in enumerate(self.intypes):
             callvars.append(f"{intype} {self.invars[n]}")
         (outtype, _) = self.outtypes[0]
-        dec = "cpdef {} {}({}) nogil".format(outtype, self.name, ", ".join(callvars))
+        dec = f'cpdef {outtype} {self.name}({", ".join(callvars)}) noexcept nogil'
         head.append(dec + ":")
         head.append(tab + f'"""{self.doc}"""')
 

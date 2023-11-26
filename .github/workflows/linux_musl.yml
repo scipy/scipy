@@ -19,10 +19,18 @@ concurrency:
 
 
 jobs:
+  get_commit_message:
+    name: Get commit message
+    uses: ./.github/workflows/commit_message.yml
+
   musllinux_x86_64:
+    needs: get_commit_message
     runs-on: ubuntu-latest
-    # If using act to run CI locally the github object does not exist and the usual skipping should not be enforced
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    # If using act to run CI locally the github object does not exist and
+    # the usual skipping should not be enforced
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
     container:
       # Use container used for building musllinux wheels
       # it has git installed, all the pythons, etc
