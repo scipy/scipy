@@ -322,9 +322,9 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
     """
     .. deprecated:: 1.12.0
 
-          This function is deprecated and will be removed in SciPy 1.14.0.
-          Please use `scipy.integrate.quad` for new code or
-          `scipy.integrate.gauss_quad` for legacy code.
+        This function is deprecated and will be removed in SciPy 1.14.0.
+        Please use `scipy.integrate.quad` for new code or
+        `scipy.integrate.gauss_quad` for legacy code.
 
     Compute a definite integral using fixed-tolerance Gaussian quadrature.
 
@@ -394,14 +394,14 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
 
 def gauss_quad(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
                vec_func=True, miniter=1):
-    """
+    r"""
+    Compute a definite integral using fixed-tolerance Gaussian quadrature.
+
     .. legacy:: function
 
-          This function is considered legacy as of SciPy 1.12.0 and may
-          be deprecated and removed in the future. Please use
-          `scipy.integrate.quad` for new code.
-
-    (Legacy) Compute a definite integral using fixed-tolerance Gaussian quadrature.
+        This function is considered legacy as of SciPy 1.12.0; it may
+        be deprecated and removed in the future. Please use
+        `scipy.integrate.quad` for new code.
 
     Integrate `func` from `a` to `b` using Gaussian quadrature
     with absolute tolerance `tol`.
@@ -1082,13 +1082,13 @@ def _printresmat(function, interval, resmat):
 def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
             divmax=10, vec_func=False):
     """
+    Romberg integration of a callable function or method.
+
     .. legacy:: function
 
-          This function is considered legacy as of SciPy 1.12.0 and may
-          be deprecated and removed in the future. Please use
-          `scipy.integrate.quad` for new code.
-
-    (Legacy) Romberg integration of a callable function or method.
+        This function is considered legacy as of SciPy 1.12.0; it may
+        be deprecated and removed in the future. Please use
+        `scipy.integrate.quad` for new code.
 
     Returns the integral of `function` (a function of one variable)
     over the interval (`a`, `b`).

@@ -24,15 +24,17 @@ Integrating functions, given function object
 
 Legacy and Deprecated API
 -------------------------
+
 These functions are either deprecated or considered legacy. For new code,
-use one of the functions above.
+please use one of the functions above.
 
 .. autosummary::
    :toctree: generated/
 
-   gauss_quad
-   romberg
-   quadrature
+   gauss_quad  -- Compute a definite integral with fixed-tolerance Gaussian quadrature
+   romberg     -- Compute a definite integral with fixed-tolerance Romberg quadrature
+   quadrature  -- Compute a definite integral with fixed-tolerance Gaussian quadrature
+
 
 Integrating functions, given fixed samples
 ==========================================

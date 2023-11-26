@@ -31,7 +31,6 @@ class TestFixedQuad:
 
 
 class QuadratureTest:
-    quadrature_func = None
 
     def test_quadrature(self):
         # Typical function with two extra arguments:
@@ -68,17 +67,19 @@ class QuadratureTest:
 
 @pytest.mark.filterwarnings('ignore::DeprecationWarning')
 class TestQuadrature(QuadratureTest):
-    quadrature_func = lambda self, *args, **kwargs: quadrature(*args, **kwargs)
+    def quadrature_func(self, *args, **kwargs):
+        return quadrature(*args, **kwargs)
 
 
 def test_quadrature_deprecated():
-    message = f"`scipy.integrate.quadrature` is deprecated..."
+    message = "`scipy.integrate.quadrature` is deprecated..."
     with pytest.deprecated_call(match=message):
         quadrature(np.exp, 0, 1)
 
 
 class TestGaussQuad(QuadratureTest):
-    quadrature_func = lambda self, *args, **kwargs: gauss_quad(*args, **kwargs)
+    def quadrature_func(self, *args, **kwargs):
+        return gauss_quad(*args, **kwargs)
 
 
 class TestRomberg:
