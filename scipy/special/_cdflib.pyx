@@ -3662,7 +3662,7 @@ cdef inline (double, int) gaminv(double a, double p,
         top = ((arr[3]*t+arr[2])*t+arr[1])*t+arr[0]
         bot = (((barr[3]*t+barr[2])*t+barr[1])*t+barr[0])*t+1.
         s = t - top/bot
-        if q >= 0.5:
+        if q > 0.5:
             s = -s
 
         rta = sqrt(a)
@@ -3673,6 +3673,7 @@ cdef inline (double, int) gaminv(double a, double p,
         xn += s*((9.*s2+256.)*s2-433.)/(38880.*a*rta)
         xn = max(xn, 0.)
         if a >= amin[iop]:
+            x = xn
             d = 0.5 + (0.5 - xn/a)
             if abs(d) <= dmin[iop]:
                 return (xn, 0)
@@ -3709,34 +3710,31 @@ cdef inline (double, int) gaminv(double a, double p,
             else:
                 # branches that go to 170 via 140
                 w += gamln(ap1)
-                ap2 = a + 2.
-                ap3 = a + 3.
-                # Note: recursion not duplicate
-                x = exp((w+x)*a)
-                x = exp((w+x-log(1.+(x/ap1)*(1.+x/ap2)))/a)
-                x = exp((w+x-log(1.+(x/ap1)*(1.+x/ap2)))/a)
-                x = exp((w+x-log(1.+(x/ap1)*(1.+(x/ap2)*(1.+x/ap3))))/a)
-
-                # push xn = x inside the following if
-                if (xn > 0.15*ap1) or (x > 0.01*ap1):
-                    if not (xn > 0.15*ap1):
-                        xn = x
-
-                    # Go to 140
-                    apn = ap1
-                    t = xn/apn
-                    ssum = 1. + t
-                    while True:
-                        t *= xn/apn
-                        ssum += t
-                        if t <= 1e-4:
-                            break
-                    t = w - log(ssum)
-                    xn = exp((xn + t)/a)
-                    xn *= (1. - (a*log(xn) - xn -t) / (a - xn))
-                    # Go to 170
-                elif x <= emin[iop]*ap1:
-                    return (x, 0)
+                if (xn <= 0.15*ap1):
+                    ap2 = a + 2.
+                    ap3 = a + 3.
+                    # Note: recursion not duplicate
+                    x = exp((w+x)*a)
+                    x = exp((w+x-log(1.+(x/ap1)*(1.+x/ap2)))/a)
+                    x = exp((w+x-log(1.+(x/ap1)*(1.+x/ap2)))/a)
+                    x = exp((w+x-log(1.+(x/ap1)*(1.+(x/ap2)*(1.+x/ap3))))/a)
+                    xn = x
+                    if (xn <= 0.01*ap1):
+                        if (x <= emin[iop]*ap1):
+                            return (x, 0)
+                    else:
+                        # Go to 140
+                        apn = ap1
+                        t = xn/apn
+                        ssum = 1. + t
+                        while True:
+                            t *= xn/apn
+                            ssum += t
+                            if t <= 1e-4:
+                                break
+                        t = w - log(ssum)
+                        xn = exp((xn + t)/a)
+                        xn *= (1. - (a*log(xn) - xn -t) / (a - xn))
 
             # Go to 170
             use_p = True
@@ -3759,6 +3757,7 @@ cdef inline (double, int) gaminv(double a, double p,
             return (xn, -8)
         t = (pn-p)/r if use_p else (q-qn)/r
         w = 0.5 * (am1 - xn)
+
         if (abs(t) <= 0.1) and (abs(w*t) <= 0.1):
             h = t * (1. + w*t)
             x = xn * (1. - h)
@@ -3785,7 +3784,7 @@ cdef inline (double, int) gaminv(double a, double p,
 
 
 cdef inline double gaminv_helper_30(double a, double s,
-                                    double z, double y) noexcept nogil:
+                                    double y, double z) noexcept nogil:
     cdef double c1, c2, c3, c4, c5
     c1 = -s*z
     c2 = -s*(1. + c1)
@@ -4137,6 +4136,7 @@ cdef inline (double, double) gratio(double a, double x, int ind) noexcept nogil:
             y = a*z
             rta = sqrt(a)
             if abs(s) <= (e0 / rta):
+                # 330
                 if (a*eps*eps > 3.28e-3):
                     return (2., 0.)
                 c = 0.5 + (0.5 - y)
@@ -4184,7 +4184,9 @@ cdef inline (double, double) gratio(double a, double x, int ind) noexcept nogil:
                     ans = 0.5 + (0.5 - qans)
 
                 return ans, qans
+
             if abs(s) <= 0.4:
+                # 270
                 if (abs(s) <= 2.*eps) and (a*eps*eps > 3.28e-3):
                     return (2., 0.)
                 c = exp(-y)
@@ -4378,11 +4380,12 @@ cdef inline (double, double) gratio(double a, double x, int ind) noexcept nogil:
             amn = a - 1.
             t = amn / x
             wk[0] = t
-            for n in range(2, 20):
+            for n in range(2, 21):
                 amn -= 1.
                 t *= amn / x
                 if abs(t) <= 1e-3:
                     break
+                wk[n-1] = t
 
             ssum = t
             while not (abs(t) <= acc):
@@ -4390,14 +4393,12 @@ cdef inline (double, double) gratio(double a, double x, int ind) noexcept nogil:
                 t *= amn / x
                 ssum += t
 
-            for m in range(n - 1, -1, -1):
-                ssum += wk[n]
+            for m in range(n - 1, 0, -1):
+                ssum += wk[m-1]
 
             qans = (r/x) * (1. + ssum)
             ans = 0.5 + (0.5 - qans)
             return ans, qans
-
-
 
         twoa = a + a
         m = <int>(twoa)
@@ -4459,20 +4460,22 @@ cdef inline (double, double) gratio(double a, double x, int ind) noexcept nogil:
             amn = a - 1.
             t = amn / x
             wk[0] = t
+
             for n in range(2, 20):
                 amn -= 1.
                 t *= amn / x
                 if abs(t) <= 1e-3:
                     break
-
+                wk[n-1] = t
             ssum = t
+
             while not (abs(t) <= acc):
                 amn -= 1.
                 t *= amn / x
                 ssum += t
 
-            for m in range(n - 1, -1, -1):
-                ssum += wk[n]
+            for m in range(n - 1, 0, -1):
+                ssum += wk[m-1]
 
             qans = (r/x) * (1. + ssum)
             ans = 0.5 + (0.5 - qans)
