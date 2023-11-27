@@ -317,7 +317,7 @@ from ._waveforms import *
 from ._max_len_seq import max_len_seq
 from ._upfirdn import upfirdn
 
-from ._spline import (  # noqa: F401
+from ._spline import (
     cspline2d,
     qspline2d,
     sepfir2d,

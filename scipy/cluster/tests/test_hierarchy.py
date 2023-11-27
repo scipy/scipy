@@ -415,7 +415,7 @@ class TestIsValidLinkage:
             self.check_is_valid_linkage_various_size(nrow, ncol, valid, xp)
 
     def check_is_valid_linkage_various_size(self, nrow, ncol, valid, xp):
-        # Tests is_valid_linkage(Z) with linkage matrics of various sizes
+        # Tests is_valid_linkage(Z) with linkage matrices of various sizes
         Z = xp.asarray([[0, 1, 3.0, 2, 5],
                         [3, 2, 4.0, 3, 3]], dtype=xp.float64)
         Z = Z[:nrow, :ncol]
@@ -523,7 +523,7 @@ class TestIsValidInconsistent:
             self.check_is_valid_im_various_size(nrow, ncol, valid, xp)
 
     def check_is_valid_im_various_size(self, nrow, ncol, valid, xp):
-        # Tests is_valid_im(R) with linkage matrics of various sizes
+        # Tests is_valid_im(R) with linkage matrices of various sizes
         R = xp.asarray([[0, 1, 3.0, 2, 5],
                         [3, 2, 4.0, 3, 3]], dtype=xp.float64)
         R = R[:nrow, :ncol]

@@ -5267,14 +5267,15 @@ class TestLevyStable:
                   (subdata2['relerr'] >= rtol) |
                   np.isnan(p)
                 ]
+                message = (
+                    f"pdf test {ix} failed with method '{default_method}' "
+                    f"[platform: {platform_desc}]\n{failures.dtype.names}\n{failures}"
+                )
                 assert_allclose(
                     p,
                     subdata['p'],
                     rtol,
-                    err_msg="pdf test %s failed with method '%s'"
-                            " [platform: %s]\n%s\n%s" %
-                    (ix, default_method, platform_desc, failures.dtype.names,
-                        failures),
+                    err_msg=message,
                     verbose=False
                 )
 
@@ -5417,8 +5418,7 @@ class TestLevyStable:
                     p,
                     subdata['p'],
                     rtol,
-                    err_msg="cdf test %s failed with method '%s'\n%s\n%s" %
-                    (ix, default_method, failures.dtype.names, failures),
+                    err_msg=f"cdf test {ix} failed with method '{default_method}'\n{failures.dtype.names}\n{failures}",
                     verbose=False
                 )
 

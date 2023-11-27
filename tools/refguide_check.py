@@ -42,9 +42,9 @@ import numpy as np
 from docutils.parsers.rst import directives
 
 from numpydoc.docscrape_sphinx import get_doc_object
-from numpydoc.docscrape import NumpyDocString  # noqa
-from scipy.stats._distr_params import distcont, distdiscrete  # noqa
-from scipy import stats  # noqa
+from numpydoc.docscrape import NumpyDocString
+from scipy.stats._distr_params import distcont, distdiscrete
+from scipy import stats
 
 
 # Enable specific Sphinx directives
@@ -334,7 +334,7 @@ def validate_rst_syntax(text, name, dots=True):
     if text is None:
         if dots:
             output_dot('E')
-        return False, "ERROR: %s: no documentation" % (name,)
+        return False, f"ERROR: {name}: no documentation"
 
     ok_unknown_items = set([
         'mod', 'currentmodule', 'autosummary', 'data', 'legacy',
@@ -423,7 +423,7 @@ def check_rest(module, names, dots=True):
         obj = getattr(module, name, None)
 
         if obj is None:
-            results.append((full_name, False, "%s has no docstring" % (full_name,)))
+            results.append((full_name, False, f"{full_name} has no docstring"))
             continue
         elif isinstance(obj, skip_types):
             continue

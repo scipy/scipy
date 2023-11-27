@@ -1019,7 +1019,7 @@ class TestBinomTest:
 
     def test_invalid_k_too_big(self):
         with pytest.raises(ValueError,
-                           match="k must not be greater than n"):
+                           match=r"k \(11\) must not be greater than n \(10\)."):
             stats.binomtest(11, 10, 0.25)
 
     def test_invalid_k_wrong_type(self):
@@ -1028,21 +1028,27 @@ class TestBinomTest:
             stats.binomtest([10, 11], 21, 0.25)
 
     def test_invalid_p_range(self):
-        message = 'p must be in range...'
+        message = r'p \(-0.5\) must be in range...'
         with pytest.raises(ValueError, match=message):
             stats.binomtest(50, 150, p=-0.5)
+        message = r'p \(1.5\) must be in range...'
         with pytest.raises(ValueError, match=message):
             stats.binomtest(50, 150, p=1.5)
 
     def test_invalid_confidence_level(self):
         res = stats.binomtest(3, n=10, p=0.1)
-        with pytest.raises(ValueError, match="must be in the interval"):
+        message = r"confidence_level \(-1\) must be in the interval"
+        with pytest.raises(ValueError, match=message):
             res.proportion_ci(confidence_level=-1)
 
     def test_invalid_ci_method(self):
         res = stats.binomtest(3, n=10, p=0.1)
-        with pytest.raises(ValueError, match="method must be"):
+        with pytest.raises(ValueError, match=r"method \('plate of shrimp'\) must be"):
             res.proportion_ci(method="plate of shrimp")
+
+    def test_invalid_alternative(self):
+        with pytest.raises(ValueError, match=r"alternative \('ekki'\) not..."):
+            stats.binomtest(3, n=10, p=0.1, alternative='ekki')
 
     def test_alias(self):
         res = stats.binomtest(3, n=10, p=0.1)

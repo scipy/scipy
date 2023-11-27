@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from numpy import sum, cos, exp, pi, arange, sin
 from .go_benchmark import Benchmark
 

@@ -744,8 +744,8 @@ def splder(tck, n=1):
     t, c, k = tck
 
     if n > k:
-        raise ValueError(("Order of derivative (n = {!r}) must be <= "
-                          "order of spline (k = {!r})").format(n, tck[2]))
+        raise ValueError(f"Order of derivative (n = {n!r}) must be <= "
+                         f"order of spline (k = {tck[2]!r})")
 
     # Extra axes for the trailing dims of the `c` array:
     sh = (slice(None),) + ((None,)*len(c.shape[1:]))

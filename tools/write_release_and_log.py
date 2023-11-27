@@ -70,7 +70,7 @@ def compute_md5(idirs):
         fn_updated = os.path.join("release", fn)
         with open(fn_updated, 'rb') as f:
             m = md5(f.read())
-        checksums.append('%s  %s' % (m.hexdigest(), os.path.basename(fn)))
+        checksums.append(f'{m.hexdigest()}  {os.path.basename(fn)}')
     return checksums
 
 
@@ -83,7 +83,7 @@ def compute_sha256(idirs):
         fn_updated = os.path.join("release", fn)
         with open(fn_updated, 'rb') as f:
             m = sha256(f.read())
-        checksums.append('%s  %s' % (m.hexdigest(), os.path.basename(fn)))
+        checksums.append(f'{m.hexdigest()}  {os.path.basename(fn)}')
 
     return checksums
 
@@ -119,7 +119,7 @@ SHA256
 
 def write_log_task(filename='Changelog'):
     st = subprocess.Popen(
-        ['git', 'log', '%s..%s' % (LOG_START, LOG_END)],
+        ['git', 'log', f'{LOG_START}..{LOG_END}'],
         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     output, error = st.communicate()
     if not st.returncode == 0:

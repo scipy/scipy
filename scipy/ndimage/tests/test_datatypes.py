@@ -1,7 +1,5 @@
 """ Testing data types for ndimage calls
 """
-import sys
-
 import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_
 import pytest

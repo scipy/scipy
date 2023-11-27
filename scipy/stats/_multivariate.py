@@ -301,7 +301,7 @@ class multivariate_normal_gen(multi_rv_generic):
         Probability density function.
     logpdf(x, mean=None, cov=1, allow_singular=False)
         Log of the probability density function.
-    cdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5, lower_limit=None)  # noqa
+    cdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5, lower_limit=None)
         Cumulative distribution function.
     logcdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5)
         Log of the cumulative distribution function.
@@ -386,7 +386,7 @@ class multivariate_normal_gen(multi_rv_generic):
     >>> ax2 = fig2.add_subplot(111)
     >>> ax2.contourf(x, y, rv.pdf(pos))
 
-    """
+    """  # noqa: E501
 
     def __init__(self, seed=None):
         super().__init__(seed)
@@ -1457,7 +1457,7 @@ def _dirichlet_check_parameters(alpha):
         raise ValueError("All parameters must be greater than 0")
     elif alpha.ndim != 1:
         raise ValueError("Parameter vector 'a' must be one dimensional, "
-                         "but a.shape = {}.".format(alpha.shape))
+                         f"but a.shape = {alpha.shape}.")
     return alpha
 
 
@@ -1467,8 +1467,8 @@ def _dirichlet_check_input(alpha, x):
     if x.shape[0] + 1 != alpha.shape[0] and x.shape[0] != alpha.shape[0]:
         raise ValueError("Vector 'x' must have either the same number "
                          "of entries as, or one entry fewer than, "
-                         "parameter vector 'a', but alpha.shape = {} "
-                         "and x.shape = {}.".format(alpha.shape, x.shape))
+                         f"parameter vector 'a', but alpha.shape = {alpha.shape} "
+                         f"and x.shape = {x.shape}.")
 
     if x.shape[0] != alpha.shape[0]:
         xk = np.array([1 - np.sum(x, 0)])
@@ -2061,7 +2061,7 @@ class wishart_gen(multi_rv_generic):
         # Now we have 3-dim array; should have shape [dim, dim, *]
         if not x.shape[0:2] == (dim, dim):
             raise ValueError('Quantiles have incompatible dimensions: should'
-                             ' be {}, got {}.'.format((dim, dim), x.shape[0:2]))
+                             f' be {(dim, dim)}, got {x.shape[0:2]}.')
 
         return x
 
@@ -3267,7 +3267,7 @@ class multinomial_gen(multi_rv_generic):
     numpy.random.Generator.multinomial : Sampling from the multinomial distribution.
     scipy.stats.multivariate_hypergeom :
         The multivariate hypergeometric distribution.
-    """  # noqa: E501
+    """
 
     def __init__(self, seed=None):
         super().__init__(seed)
@@ -6000,12 +6000,12 @@ _dirichlet_mn_doc_frozen_callparams_note = """\
 See class definition for a detailed description of parameters."""
 
 dirichlet_mn_docdict_params = {
-    '_dirichlet_mn_doc_default_callparams': _dirichlet_mn_doc_default_callparams,  # noqa
+    '_dirichlet_mn_doc_default_callparams': _dirichlet_mn_doc_default_callparams,
     '_doc_random_state': _doc_random_state
 }
 
 dirichlet_mn_docdict_noparams = {
-    '_dirichlet_mn_doc_default_callparams': _dirichlet_mn_doc_frozen_callparams, # noqa
+    '_dirichlet_mn_doc_default_callparams': _dirichlet_mn_doc_frozen_callparams,
     '_doc_random_state': _doc_random_state
 }
 
