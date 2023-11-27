@@ -1404,17 +1404,17 @@
     },
     "_stirling2_inexact": {
         "stirling2.h++": {
-            "_stirling2_inexact": "ii->d"
+            "_stirling2_inexact": "dd->d"
         }
     },
     "_stirling2_temme": {
         "stirling2.h++": {
-            "_stirling2_temme": "ii->d"
+            "_stirling2_temme": "dd->d"
         }
     },
     "_stirling2_dp": {
         "stirling2.h++": {
-            "_stirling2_dp": "ii->d"
+            "_stirling2_dp": "dd->d"
         }
     },
     "struve": {

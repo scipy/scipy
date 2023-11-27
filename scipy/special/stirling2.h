@@ -28,7 +28,7 @@
 
 // Dynamic programming
 
-double _stirling2_dp(int n, int k){
+double _stirling2_dp(double n, double k){
     if ((n == 0 && k == 0) || (n==1 && k==1)) {
         return 1.;
     }
@@ -70,7 +70,7 @@ double _stirling2_dp(int n, int k){
 
 // second order Temme approximation
 
-double _stirling2_temme(int n, int k){
+double _stirling2_temme(double n, double k){
   if ((n == k && n >= 0) || (n > 0 && k==1)){
       return 1.;
   }
@@ -110,7 +110,7 @@ double _stirling2_temme(int n, int k){
  *
  */
 
-double _stirling2_inexact(int n, int k) {
+double _stirling2_inexact(double n, double k) {
   if (n>50) {
     return _stirling2_temme(n, k);
   } else {

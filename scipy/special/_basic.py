@@ -3195,8 +3195,9 @@ def stirling2(N, K, *, exact=False):
     K : int, ndarray
         Number of non-empty subsets taken.
     exact : bool, optional
-        Uses the inclusion-exclusion formula and the Lanczos approximation
-        to give an approximate value that allows trading speed for accuracy.
+        Uses the approximations or dynamic programming with floating point
+        numbers to give an approximate value that allows trading speed for
+        accuracy. See [2]_ for one approach.
 
     Returns
     -------
@@ -3221,6 +3222,9 @@ def stirling2(N, K, *, exact=False):
     .. [1] R. L. Graham, D. E. Knuth and O. Patashnik, "Concrete
         Mathematics: A Foundation for Computer Science," Addison-Wesley
         Publishing Company, Boston, 1989. Chapter 6, page 258.
+
+    .. [2] Temme, Nico M. "Asymptotic estimates of Stirling numbers."
+        Studies in Applied Mathematics 89.3 (1993): 233-243.
 
     Examples
     --------
@@ -3258,7 +3262,10 @@ def stirling2(N, K, *, exact=False):
             snsk_vals[(n, k)] = 1
             continue
         elif not exact:
-            snsk_vals[(n, k)] = _stirling2_inexact(n,k)
+            # NOTE: here we allow np.uint via casting to double types prior to
+            # passing to private ufunc dispatcher. All dispatched functions
+            # take double type for (n,k) arguments and return double.
+            snsk_vals[(n, k)] = _stirling2_inexact(np.double(n),np.double(k))
         elif n != n_old:
             num_iters = n - n_old
             while num_iters > 0:
