@@ -835,6 +835,19 @@ def ppcc_plot(x, a, b, dist='tukeylambda', plot=None, N=80):
     return svals, ppcc
 
 
+def _log_mean(logx):
+    # compute log of mean of x from log(x)
+    return special.logsumexp(logx, axis=0) - np.log(len(logx))
+
+
+def _log_var(logx):
+    # compute log of variance of x from log(x)
+    logmean = _log_mean(logx)
+    pij = np.full_like(logx, np.pi * 1j, dtype=np.complex128)
+    logxmu = special.logsumexp([logx, logmean + pij], axis=0)
+    return np.real(special.logsumexp(2 * logxmu, axis=0)) - np.log(len(logx))
+
+
 def boxcox_llf(lmb, data):
     r"""The boxcox log-likelihood function.
 
@@ -924,14 +937,16 @@ def boxcox_llf(lmb, data):
 
     # Compute the variance of the transformed data.
     if lmb == 0:
-        variance = np.var(logdata, axis=0)
+        logvar = np.log(np.var(logdata, axis=0))
     else:
         # Transform without the constant offset 1/lmb.  The offset does
-        # not effect the variance, and the subtraction of the offset can
+        # not affect the variance, and the subtraction of the offset can
         # lead to loss of precision.
-        variance = np.var(data**lmb / lmb, axis=0)
+        # The sign of lmb at the denominator doesn't affect the variance.
+        logx = lmb * logdata - np.log(abs(lmb))
+        logvar = _log_var(logx)
 
-    return (lmb - 1) * np.sum(logdata, axis=0) - N/2 * np.log(variance)
+    return (lmb - 1) * np.sum(logdata, axis=0) - N/2 * logvar
 
 
 def _boxcox_conf_interval(x, lmax, alpha):
@@ -1274,6 +1289,7 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
 
     optimfunc = methods[method]
 
+    x = np.asarray(x)
     try:
         res = optimfunc(x)
     except ValueError as e:
@@ -1288,6 +1304,29 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
         message = ("The `optimizer` argument of `boxcox_normmax` must return "
                    "an object containing the optimal `lmbda` in attribute `x`.")
         raise ValueError(message)
+    else:
+        # Test if the optimal lambda causes overflow
+        max_x = np.max(x, axis=0)
+        istransinf = np.isinf(special.boxcox(max_x, res))
+        print(istransinf)
+        dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
+        if np.any(istransinf):
+            warnings.warn(
+                f"The optimal lambda is {res}, but the returned lambda is"
+                " the constrained optimum to ensure that maximum of"
+                f" transformed data does not cause overflow in {dtype}."
+            )
+
+            # Return the constrained lambda to ensure x^lambda
+            # does not cause overflow
+            log_eps = np.log(np.finfo(dtype).eps)
+            log_max_float = np.log(np.finfo(dtype).max) + log_eps
+            constrained_res = log_max_float / np.log(max_x)
+
+            if isinstance(res, np.ndarray):
+                res[istransinf] = constrained_res
+            else:
+                res = constrained_res
     return res
 
 
