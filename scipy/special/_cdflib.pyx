@@ -2513,11 +2513,12 @@ cdef inline (double, double) cumbet(double x, double y,
 cdef inline (double, double) cumbin(double s, double xn,
                                     double pr, double ompr) noexcept nogil:
     cdef double cum, ccum
-    if s < xn:
-        ccum, cum = cumbet(pr, ompr, s + 1., xn - s)
-    else:
+    if not (s < xn):
         cum, ccum = 1., 0.
-    return ccum, cum
+    else:
+        ccum, cum = cumbet(pr, ompr, s + 1., xn - s)
+
+    return cum, ccum
 
 
 # %% ---------------------------------------- cumchi
