@@ -1020,7 +1020,7 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
 
     Note that the integral formulae in [1]_ and [2]_ use different variables.
 
-    For samples that are equally spaced the result is exact if the function
+    For samples that are equally spaced, the result is exact if the function
     is a polynomial of order 3 or less [1]_. If the samples are not equally 
     spaced, then the result is exact only if the function is a polynomial of 
     order 2 or less.
