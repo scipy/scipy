@@ -1289,7 +1289,6 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
 
     optimfunc = methods[method]
 
-    x = np.asarray(x)
     try:
         res = optimfunc(x)
     except ValueError as e:
@@ -1306,6 +1305,7 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
         raise ValueError(message)
     else:
         # Test if the optimal lambda causes overflow
+        x = np.asarray(x)
         max_x = np.max(x, axis=0)
         istransinf = np.isinf(special.boxcox(max_x, res))
         dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
