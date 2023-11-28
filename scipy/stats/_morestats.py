@@ -1311,9 +1311,9 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
         dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
         if np.any(istransinf):
             warnings.warn(
-                f"The optimal lambda is {res}, but the returned lambda is"
-                " the constrained optimum to ensure that maximum of"
-                f" transformed data does not cause overflow in {dtype}."
+                f"The optimal lambda is {res}, but the returned lambda is "
+                f"the constrained optimum to ensure that maximum of "
+                f"transformed data does not cause overflow in {dtype}."
             )
 
             # Return the constrained lambda to ensure x^lambda
