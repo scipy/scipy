@@ -74,22 +74,22 @@ class _coo_base(_data_matrix, _minmax_mixin):
                     self.has_canonical_format = False
             else:
                 # dense argument
-                A = np.asarray(arg1)
+                M = np.asarray(arg1)
                 if not is_array:
-                    A = np.atleast_2d(A)
-                    if A.ndim != 2:
+                    M = np.atleast_2d(M)
+                    if M.ndim != 2:
                         raise TypeError('expected dimension <= 2 array or matrix')
 
-                self._shape = check_shape(A.shape, allow_ndim=is_array)
+                self._shape = check_shape(M.shape, allow_ndim=is_array)
                 if shape is not None:
                     if check_shape(shape, allow_ndim=is_array) != self._shape:
                         raise ValueError('inconsistent shapes: %s != %s' %
                                          (shape, self._shape))
                 index_dtype = self._get_index_dtype(maxval=max(self._shape))
-                indices = A.nonzero()
+                indices = M.nonzero()
                 self.indices = tuple(idx.astype(index_dtype, copy=False)
                                      for idx in indices)
-                self.data = A[indices]
+                self.data = M[indices]
                 self.has_canonical_format = True
 
         if dtype is not None:
@@ -303,7 +303,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         else:
             M,N = self.shape
             idx_dtype = self._get_index_dtype(
-                (self.col, self.row), maxval=max(self.nnz, *self.shape)
+                (self.col, self.row), maxval=max(self.nnz, M)
             )
             row = self.row.astype(idx_dtype, copy=False)
             col = self.col.astype(idx_dtype, copy=False)
@@ -347,7 +347,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         else:
             M,N = self.shape
             idx_dtype = self._get_index_dtype(
-                (self.row, self.col), maxval=max(self.nnz, *self.shape)
+                (self.row, self.col), maxval=max(self.nnz, N)
             )
             row = self.row.astype(idx_dtype, copy=False)
             col = self.col.astype(idx_dtype, copy=False)

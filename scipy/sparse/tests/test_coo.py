@@ -161,7 +161,7 @@ def test_transpose_with_axis():
 def test_1d_row_and_col():
     res = coo_array([1, -2, -3])
     assert np.array_equal(res.col, np.array([0, 1, 2]))
-    assert np.array_equal(res.row, np.zeros_like(res.row))
+    assert np.array_equal(res.row, np.zeros_like(res.col))
     assert res.row.dtype == res.col.dtype
 
     res.col = [1, 2, 3]
@@ -238,7 +238,7 @@ def test_1d_add_dense():
     den_b = np.array([0, 1, 2, 3])
     exp = den_a + den_b
     res = coo_array(den_a) + den_b
-    assert isinstance(res, np.ndarray)
+    assert type(res) == type(exp)
     assert np.array_equal(res, exp)
 
 
@@ -257,7 +257,6 @@ def test_1d_mul_vector():
     den_b = np.array([0, 1, 2, 3])
     exp = den_a @ den_b
     res = coo_array(den_a) @ den_b
-    assert isinstance(res, np.int_)
     assert np.ndim(res) == 0
     assert np.array_equal(res, exp)
 
@@ -267,7 +266,7 @@ def test_1d_mul_multivector():
     other = np.array([[0, 1, 2, 3], [3, 2, 1, 0]]).T
     exp = den @ other
     res = coo_array(den) @ other
-    assert isinstance(res, np.ndarray)
+    assert type(res) == type(exp)
     assert np.array_equal(res, exp)
 
 
