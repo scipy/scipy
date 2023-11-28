@@ -1025,7 +1025,7 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
     spaced, then the result is exact only if the function is a polynomial of 
     order 2 or less.
 
-    References
+    For samples that are equally spaced, the result is exact if the function
     ----------
     .. [1] Wikipedia page: https://en.wikipedia.org/wiki/Simpson's_rule
     .. [2] Cartwright, Kenneth V. Simpson's Rule Cumulative Integration with
