@@ -869,13 +869,17 @@ def _cumulative_simpson_equal_intervals(
 
     # Calculate integral over the h1 subintervals.
     # Calculate for all but last subinterval of y.
-    sub_integrals_h1 = dx[:-1] / 3.0 * \
+    sub_integrals_h1 = (
+        dx[:-1] / 3.0 * 
         (5.0 * y[:-2] / 4.0 + 2.0 * y[1:-1] - y[2:] / 4.0)
+    )
 
     # Calculate integral over the h2 subintervals.
     # Calculate for all but first subinterval of y.
-    sub_integrals_h2 = dx[:-1] / 3.0 * \
+    sub_integrals_h2 = (
+        dx[:-1] / 3.0 * 
         (-y[:-2] / 4.0 + 2.0 * y[1:-1] + 5.0 * y[2:] / 4.0)
+    )
 
     # Addition of above formulae gives Simpson's 1/3 rule, see
     # https://en.wikipedia.org/wiki/Simpson%27s_rule#Composite_Simpson's_1/3_rule
@@ -946,13 +950,13 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
         The coordinate to integrate along. Must be monotonically increasing.
         If None (default), use spacing `dx` between consecutive elements in 
         `y`.
-    dx : scalar | array_like, optional
+    dx : scalar or array_like, optional
         Spacing between elements of `y`. Only used if `x` is None. Can either 
         be a float, or an array with the same shape as `y`, but size 1 along 
         `axis`.
     axis : int, optional
         Specifies the axis to integrate along. Default is -1 (last axis).
-    initial : scalar | array_like, optional
+    initial : scalar or array_like, optional
         If given, insert this value at the beginning of the returned result,
         and add it to the rest of the result. Default is None, which means no
         value at ``x[0]`` is returned and `res` has one element less than `y`
@@ -969,19 +973,10 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
 
     See Also
     --------
-    numpy.cumsum, numpy.cumprod
+    numpy.cumsum
     cumulative_trapezoid : cumulative integration using the composite 
         trapezoidal rule
     simpson : integrator for sampled data using the Composite Simpson's Rule
-    quad : adaptive quadrature using QUADPACK
-    romberg : adaptive Romberg quadrature
-    quadrature : adaptive Gaussian quadrature
-    fixed_quad : fixed-order Gaussian quadrature
-    dblquad : double integrals
-    tplquad : triple integrals
-    romb : integrators for sampled data
-    ode : ODE integrators
-    odeint : ODE integrators
 
     Notes
     -----
