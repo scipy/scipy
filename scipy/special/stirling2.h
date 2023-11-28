@@ -19,11 +19,9 @@
  * DESCRIPTION: n is the number of distinct elements of the set
  *  to be partitioned and k is the number of non-empty subsets.
  *  The values for n < 0 or k < 0 are interpreted as 0. If you
- *
  * ACCURACY: The method returns a double type.
  *
- * NOTE: this file is *NOT* part of the originaldistribution and was
- *  added by Lucas Roberts
+ * NOTE: this file was added by Lucas Roberts
  */
 
 // Dynamic programming
@@ -111,10 +109,10 @@ double _stirling2_temme(double n, double k){
  */
 
 double _stirling2_inexact(double n, double k) {
-  if (n>50) {
-    return _stirling2_temme(n, k);
-  } else {
+  if (n<=50) {
     return _stirling2_dp(n,k);
+  } else {
+    return _stirling2_temme(n, k);
   }
 }
 

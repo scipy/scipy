@@ -3142,31 +3142,6 @@ def factorialk(n, k, exact=True):
     return _exact_factorialx_array(n, k=k)
 
 
-def _s2_lanczos(n, k):
-    # uses inclusion-exclusion + lanczos
-    # to approx stirling numbers 2nd kind
-    # NOTE: on my 64 bit machine this experiences precision issues @ n=33
-    lanczos_g = 6.024680040776729583740234375
-    if (n == 0 and k == 0) or n == k or (k == 1 and n > 0):
-        return 1
-    if n < k or n <= 0 or k <= 0:
-        return 0
-    result = 0
-    k_choose_j = 1
-    for j in range(k):
-        term = (
-            (-1)**j * k_choose_j * (1 - j/k)**(k + 0.5)
-            * (k - j)**(n - k - 0.5)
-        )
-        result += term
-        k_choose_j *= (k - j) / (j + 1)
-    return (
-        result
-        * (np.e / (1 + (lanczos_g + 0.5)/k))**(k + 0.5)
-        / _lanczos_sum_expg_scaled(k + 1)
-    )
-
-
 def stirling2(N, K, *, exact=False):
     r"""Generate Stirling number(s) of the second kind.
 
@@ -3195,9 +3170,15 @@ def stirling2(N, K, *, exact=False):
     K : int, ndarray
         Number of non-empty subsets taken.
     exact : bool, optional
-        Uses the approximations or dynamic programming with floating point
-        numbers to give an approximate value that allows trading speed for
-        accuracy. See [2]_ for one approach.
+        Uses dynamic programming (DP) with floating point
+        numbers for smaller arrays and uses a second order approximation due to
+        Temme for larger entries  of `N` and `K` that allows trading speed for
+        accuracy. See [2]_ for a description. Temme approximation is used for
+        values `n>50`. The max error from the DP has max relative error
+        `4.5*10^-16` for `n<=50` and the max error from the Temme approximation
+        has max relative error `5*10^-5` for `51 <= n < 70` and
+        `9*10^-6` for `70 <= n < 101`. Note that these max relative errors will
+        decrease further as `n` increases.
 
     Returns
     -------

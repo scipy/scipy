@@ -4058,13 +4058,13 @@ class TestStirling2:
     ]
 
     def test_table_cases(self):
-        for n in range(len(self.table)):
-            for k in range(len(self.table[n])):
-                assert_equal(self.table[n][k], stirling2(n, k, exact=True))
-                assert_allclose(self.table[n][k],
-                                stirling2(n, k, exact=False),
-                                rtol=1e-12,
-                                )
+
+        for n in range(1, len(self.table)):
+            assert_equal(self.table[n],
+                         stirling2([n], list(range(n+1)), exact=True))
+            assert_allclose(self.table[n],
+                            stirling2([n], list(range(n+1)), exact=False),
+                            rtol=1e-12)
 
     def test_valid_single_integer(self):
         assert_equal(stirling2(0, 0, exact=True), self.table[0][0])
@@ -4188,3 +4188,13 @@ class TestStirling2:
         ans = asarray([[0, 1, 7, 6, 1, 0] for _ in range(5)])
         assert array_equal(stirling2(n, k, exact=True), ans)
         assert_allclose(stirling2(n, k, exact=False), ans, rtol=1e-13)
+
+    def test_temme_rel_max_error(self):
+        # python integers with arbitrary precision are *not* allowed as
+        # object type in numpy arrays are inconsistent from api perspective
+        x = list(range(51, 101, 5))
+        for n in x:
+            k_entries = list(range(1, n+1))
+            denom = stirling2([n], k_entries, exact=True)
+            num = denom - stirling2([n], k_entries, exact=False)
+            assert np.max(np.abs(num / denom)) < 2e-5
