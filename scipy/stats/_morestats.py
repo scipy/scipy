@@ -1308,7 +1308,6 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
         # Test if the optimal lambda causes overflow
         max_x = np.max(x, axis=0)
         istransinf = np.isinf(special.boxcox(max_x, res))
-        print(istransinf)
         dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
         if np.any(istransinf):
             warnings.warn(
