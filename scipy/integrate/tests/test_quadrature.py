@@ -4,6 +4,9 @@ import numpy as np
 from numpy import cos, sin, pi
 from numpy.testing import (assert_equal, assert_almost_equal, assert_allclose,
                            assert_, suppress_warnings)
+from hypothesis import given
+import hypothesis.strategies as st
+import hypothesis.extra.numpy as hyp_num
 
 from scipy.integrate import (quadrature, romberg, romb, newton_cotes,
                              cumulative_trapezoid, cumtrapz, trapz, trapezoid,
@@ -800,6 +803,56 @@ class TestCumulativeSimpson:
         input_x = x if dx is None else None
         with pytest.raises(ValueError, match=match):
             cumulative_simpson(y, x=input_x, dx=dx, axis=axis, initial=initial)
+
+    
+    @given(
+        y=hyp_num.arrays(
+            np.float64, 
+            hyp_num.array_shapes(max_dims=4, min_side=3, max_side=10),
+            elements=st.floats(-10, 10, allow_nan=False)
+        )
+    )
+    def test_cumulative_simpson_against_simpson_with_default_dx(
+        self, y
+    ):
+        """Theoretically, the output of cumulative_simpson will be identical
+        to simpson at all even indices and in the last index."""
+        def simpson_reference(y):
+            return np.stack(
+                [simpson(y[..., :i]) for i in range(2, y.shape[-1]+1)], axis=-1,
+            )
+
+        ref = cumulative_simpson(y)
+        res = simpson_reference(y)
+        np.testing.assert_allclose(res[..., 1::2], ref[..., 1::2])
+        np.testing.assert_allclose(res[..., -1], ref[..., -1])
+
+    
+    @given(
+        y=hyp_num.arrays(
+            np.float64, 
+            hyp_num.array_shapes(max_dims=4, min_side=3, max_side=10),
+            elements=st.floats(-10, 10, allow_nan=False)
+        )
+    )
+    def test_cumulative_simpson_against_simpson(
+        self, y
+    ):
+        """Theoretically, the output of cumulative_simpson will be identical
+        to simpson at all even indices and in the last index."""
+        interval = 10/(y.shape[-1] - 1)
+        x = np.linspace(0, 10, num=y.shape[-1])
+        x[1:] = x[1:] + 0.2*interval*np.random.uniform(-1, 1, len(x) - 1)
+        
+        def simpson_reference(y, x):
+            return np.stack(
+                [simpson(y[..., :i], x=x[..., :i]) for i in range(2, y.shape[-1]+1)], axis=-1,
+            )
+
+        ref = cumulative_simpson(y, x=x)
+        res = simpson_reference(y, x)
+        np.testing.assert_allclose(res[..., 1::2], ref[..., 1::2])
+        np.testing.assert_allclose(res[..., -1], ref[..., -1])
 
 
 class TestTanhSinh:
