@@ -866,20 +866,18 @@ def _cumulative_simpson_equal_intervals(
     # Consider a quadratic interpolation over each set of 3 adjacent points,
     # a, a+h1, a+h1+h2. The subinterval widths are h1 and h2
     # (in this case, h1 = h2 = dx)
+    h = dx[..., :-1]
+    y1 = y[..., :-2]
+    y2 = y[..., 1:-1]
+    y3 = y[..., 2:]
 
     # Calculate integral over the h1 subintervals.
     # Calculate for all but last subinterval of y.
-    sub_integrals_h1 = (
-        dx[..., :-1] / 3 * 
-        (5 * y[..., :-2] / 4 + 2 * y[..., 1:-1] - y[..., 2:] / 4)
-    )
+    sub_integrals_h1 = h / 3 * (5 * y1 / 4 + 2 * y2 - y3 / 4)
 
     # Calculate integral over the h2 subintervals.
     # Calculate for all but first subinterval of y.
-    sub_integrals_h2 = (
-        dx[..., :-1] / 3 * 
-        (-y[..., :-2] / 4 + 2 * y[..., 1:-1] + 5 * y[..., 2:] / 4)
-    )
+    sub_integrals_h2 = h / 3 * (-y1 / 4 + 2 * y2 + 5 * y3 / 4)
 
     # Addition of above formulae gives Simpson's 1/3 rule, see
     # https://en.wikipedia.org/wiki/Simpson%27s_rule#Composite_Simpson's_1/3_rule
