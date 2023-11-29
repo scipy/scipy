@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Callable, Any, cast
 import numpy as np
+import numpy.typing as npt
 import math
 import warnings
 from collections import namedtuple
@@ -934,7 +935,7 @@ def _cumulative_simpson_unequal_intervals(
     return res.swapaxes(-1, axis)
 
 
-def _convert_input_to_float_array(arr) -> np.ndarray:
+def _convert_input_to_float_array(arr: npt.ArrayLike) -> np.ndarray:
     arr = np.asarray(arr)
     if np.issubdtype(arr.dtype, np.integer):
         arr = arr.astype(float, copy=False)
