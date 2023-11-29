@@ -3325,16 +3325,16 @@ class TestVectorstrength:
 
 
 def cast_tf2sos(b, a):
-    """Convert TF2SOS, casting to complex128 and back to the original dtype."""
+    """Convert TF2SOS, casting to complex64 and back to the original dtype."""
     # tf2sos does not support all of the dtypes that we want to check, e.g.:
     #
-    #     TypeError: array type complex256 is unsupported in linalg
+    #     TypeError: array type complex128 is unsupported in linalg
     #
     # so let's cast, convert, and cast back -- should be fine for the
     # systems and precisions we are testing.
     dtype = np.asarray(b).dtype
-    b = np.array(b, np.complex128)
-    a = np.array(a, np.complex128)
+    b = np.array(b, np.complex64)
+    a = np.array(a, np.complex64)
     return tf2sos(b, a).astype(dtype)
 
 
