@@ -24,7 +24,6 @@ target-version = "py39"
 # E501 (line length) ignores
 "benchmarks/benchmarks/**" = ["E501"]
 "scipy/_lib/**" = ["E501"]
-"scipy/cluster/**" = ["E501"]
 "scipy/constants/_codata.py" = ["E501"]
 "scipy/integrate/**" = ["E501"]
 "scipy/interpolate/**" = ["E501"]
