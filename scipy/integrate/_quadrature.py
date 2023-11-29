@@ -832,27 +832,27 @@ def _cumulatively_sum_simpson_subintegrals(
 
     Takes as input the estimated Simpson integrals over h1 and
     h2 subintervals. Returns the cumulative sum using
-    composite Simpson's rule. Assumes the axis of summation is 0.
+    composite Simpson's rule. Assumes the axis of summation is -1.
     """
     # Set integral of odd h1 intervals = 0
-    sub_integrals_h1[1::2] = 0.0
+    sub_integrals_h1[..., 1::2] = 0.0
     # Set integral of odd h2 intervals = 0, except for the last interval
-    sub_integrals_h2[1:-1:2] = 0.0
+    sub_integrals_h2[..., 1:-1:2] = 0.0
     sub_integrals = np.concatenate(
         [
             # Integral over first subinterval can only be calculated from 
             # formula for h1
-            sub_integrals_h1[0:1],
+            sub_integrals_h1[..., 0:1],
             # Combine sub_integral arrays (at every index, i, either
             # sub_integrals_h1[i] = 0 or sub_integrals_h2[i] = 0)
-            (sub_integrals_h1[1:] + sub_integrals_h2[:-1]),
+            (sub_integrals_h1[..., 1:] + sub_integrals_h2[..., :-1]),
             # Integral over last subinterval can only be calculated from 
             # formula for h2
-            sub_integrals_h2[-1:],
+            sub_integrals_h2[..., -1:],
         ],
-        axis=0,
+        axis=-1,
     )
-    res = np.cumsum(sub_integrals, axis=0)
+    res = np.cumsum(sub_integrals, axis=-1)
     return res
 
 
@@ -860,8 +860,8 @@ def _cumulative_simpson_equal_intervals(
     y: np.ndarray, dx: np.ndarray, axis: int
 ) -> np.ndarray:
 
-    y = y.swapaxes(0, axis)
-    dx = dx.swapaxes(0, axis)
+    y = y.swapaxes(-1, axis)
+    dx = dx.swapaxes(-1, axis)
 
     # Consider a quadratic interpolation over each set of 3 adjacent points,
     # a, a+h1, a+h1+h2. The subinterval widths are h1 and h2
@@ -870,15 +870,15 @@ def _cumulative_simpson_equal_intervals(
     # Calculate integral over the h1 subintervals.
     # Calculate for all but last subinterval of y.
     sub_integrals_h1 = (
-        dx[:-1] / 3.0 * 
-        (5.0 * y[:-2] / 4.0 + 2.0 * y[1:-1] - y[2:] / 4.0)
+        dx[..., :-1] / 3 * 
+        (5 * y[..., :-2] / 4 + 2 * y[..., 1:-1] - y[..., 2:] / 4)
     )
 
     # Calculate integral over the h2 subintervals.
     # Calculate for all but first subinterval of y.
     sub_integrals_h2 = (
-        dx[:-1] / 3.0 * 
-        (-y[:-2] / 4.0 + 2.0 * y[1:-1] + 5.0 * y[2:] / 4.0)
+        dx[..., :-1] / 3 * 
+        (-y[..., :-2] / 4 + 2 * y[..., 1:-1] + 5 * y[..., 2:] / 4)
     )
 
     # Addition of above formulae gives Simpson's 1/3 rule, see
@@ -888,24 +888,24 @@ def _cumulative_simpson_equal_intervals(
         sub_integrals_h1,
         sub_integrals_h2,
     )
-    return res.swapaxes(0, axis)
+    return res.swapaxes(-1, axis)
 
 
 def _cumulative_simpson_unequal_intervals(
     y: np.ndarray, x: np.ndarray, axis: int
 ) -> np.ndarray:
 
-    y = y.swapaxes(0, axis)
-    x = x.swapaxes(0, axis)
+    y = y.swapaxes(-1, axis)
+    x = x.swapaxes(-1, axis)
 
-    d = np.diff(x, axis=0)
+    d = np.diff(x, axis=-1)
     if np.any(d <= 0):
         raise ValueError("Input x must be monotonically increasing.")
-    h1 = d[:-1]
-    h2 = d[1:]
-    y1 = y[:-2]
-    y2 = y[1:-1]
-    y3 = y[2:]
+    h1 = d[..., :-1]
+    h2 = d[..., 1:]
+    y1 = y[..., :-2]
+    y2 = y[..., 1:-1]
+    y3 = y[..., 2:]
 
     # Consider a quadratic interpolation over each set of 3 adjacent points,
     # a, a+h1, a+h1+h2. The subinterval widths are h1 and h2
@@ -913,17 +913,17 @@ def _cumulative_simpson_unequal_intervals(
     # Calculate integral over the h1 subintervals.
     # Calculate for all but last subinterval of y.
     sub_integrals_h1 = (
-        y1 * (2.0 * h1 + 3.0 * h2) / (h1 + h2) * h1 / 6.0
-        + y2 * (h1 + 3.0 * h2) * h1 / (6.0 * h2)
-        - y3 * (h1**3 / (6.0 * h2)) / (h1 + h2)
+        y1 * (2 * h1 + 3 * h2) / (h1 + h2) * h1 / 6
+        + y2 * (h1 + 3 * h2) * h1 / (6 * h2)
+        - y3 * (h1**3 / (6 * h2)) / (h1 + h2)
     )
 
     # Calculate integral over the h2 subintervals.
     # Calculate for all but first subinterval of y.
     sub_integrals_h2 = (
-        -y1 * (h2**3 / (6.0 * h1)) / (h1 + h2)
-        + y2 * (3.0 * h1 + h2) * h2 / (6.0 * h1)
-        + y3 * (3.0 * h1 + 2.0 * h2) / (h1 + h2) * h2 / 6.0
+        -y1 * (h2**3 / (6 * h1)) / (h1 + h2)
+        + y2 * (3 * h1 + h2) * h2 / (6 * h1)
+        + y3 * (3 * h1 + 2 * h2) / (h1 + h2) * h2 / 6
     )
 
     # Addition of above formulae gives Simpson's 1/3 rule for unequal intervals, see
@@ -933,7 +933,14 @@ def _cumulative_simpson_unequal_intervals(
         sub_integrals_h1,
         sub_integrals_h2,
     )
-    return res.swapaxes(0, axis)
+    return res.swapaxes(-1, axis)
+
+
+def _convert_input_to_float_array(arr) -> np.ndarray:
+    arr = np.asarray(arr)
+    if np.issubdtype(arr.dtype, np.integer):
+        arr = arr.astype(float, copy=False)
+    return arr
 
 
 def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
@@ -1046,7 +1053,7 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
     >>> plt.show()
 
     """
-    y = np.asarray(y)
+    y = _convert_input_to_float_array(y)
 
     # validate y and axis
     if axis < -1 or axis >= y.ndim:
@@ -1059,7 +1066,7 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
         )
 
     if x is not None:
-        x = np.asarray(x)
+        x = _convert_input_to_float_array(x)
         if x.ndim == 1 and y.shape[axis] == x.shape[0]:
             x_shape = [1] * y.ndim
             x_shape[axis] = -1
@@ -1072,7 +1079,7 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
         res = _cumulative_simpson_unequal_intervals(y, x, axis=axis)
 
     else:
-        dx = np.asarray(dx)
+        dx = _convert_input_to_float_array(dx)
         final_dx_shape = tupleset(y.shape, axis, y.shape[axis] - 1)
         alt_input_dx_shape = tupleset(y.shape, axis, 1)
 
@@ -1088,7 +1095,7 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
         res = _cumulative_simpson_equal_intervals(y, dx, axis=axis)
 
     if initial is not None:
-        initial = np.asarray(initial)
+        initial = _convert_input_to_float_array(initial)
         alt_initial_input_shape = tupleset(y.shape, axis, 1)
         if initial.ndim == 0:
             initial = np.ones(y.shape) * initial
