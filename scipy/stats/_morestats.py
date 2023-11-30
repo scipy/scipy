@@ -1127,6 +1127,12 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
         return y, lmax, interval
 
 
+def _boxcox_inv_lmbda(x, y):
+    # compute lmbda given x and y for Box-Cox transformation
+    num = special.lambertw(-(x ** (-1 / y)) * np.log(x) / y, k=1)
+    return np.real(-num / np.log(x) - 1 / y)
+
+
 def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
     """Compute optimal Box-Cox transform parameter for input data.
 
@@ -1316,11 +1322,10 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
                 f"transformed data does not cause overflow in {dtype}."
             )
 
-            # Return the constrained lambda to ensure x^lambda
+            # Return the constrained lambda to ensure the transformation
             # does not cause overflow
-            log_eps = np.log(np.finfo(dtype).eps)
-            log_max_float = np.log(np.finfo(dtype).max) + log_eps
-            constrained_res = log_max_float / np.log(max_x)
+            ymax = np.finfo(dtype).max / 100  # 100 is the safety factor
+            constrained_res = _boxcox_inv_lmbda(max_x, ymax)
 
             if isinstance(res, np.ndarray):
                 res[istransinf] = constrained_res
