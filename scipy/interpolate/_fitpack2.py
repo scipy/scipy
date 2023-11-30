@@ -1223,8 +1223,8 @@ class BivariateSpline(_BivariateSplineBase):
         ...     return np.exp(-np.sqrt((x / 2) ** 2 + y**2))
 
         We sample the function on a coarse grid and set up the interpolator. Note that
-        the default ``indexing="xy"`` of meshgrid would result in an unexpected (transposed)
-        result after interpolation.
+        the default ``indexing="xy"`` of meshgrid would result in an unexpected
+        (transposed) result after interpolation.
 
         >>> xarr = np.linspace(-3, 3, 21)
         >>> yarr = np.linspace(-3, 3, 21)
@@ -1691,8 +1691,9 @@ class SphereBivariateSpline(_BivariateSplineBase):
         Examples
         --------
 
-        Suppose that we want to use splines to interpolate a bivariate function on a sphere.
-        The value of the function is known on a grid of longitudes and colatitudes.
+        Suppose that we want to use splines to interpolate a bivariate function on a
+        sphere. The value of the function is known on a grid of longitudes and
+        colatitudes.
 
         >>> import numpy as np
         >>> from scipy.interpolate import RectSphereBivariateSpline
@@ -1761,8 +1762,9 @@ class SphereBivariateSpline(_BivariateSplineBase):
 
         Examples
         --------
-        Suppose that we want to use splines to interpolate a bivariate function on a sphere.
-        The value of the function is known on a grid of longitudes and colatitudes.
+        Suppose that we want to use splines to interpolate a bivariate function on a
+        sphere. The value of the function is known on a grid of longitudes and
+        colatitudes.
 
         >>> import numpy as np
         >>> from scipy.interpolate import RectSphereBivariateSpline
