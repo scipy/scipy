@@ -113,7 +113,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
             function to be explicitly set. See the `scipy.spatial.cKDTree.query` for an overview of the different
             options.
 
-            ..versionadded:: 1.12.0
+            .. versionadded:: 1.12.0
 
         """
         # For the sake of enabling subclassing, NDInterpolatorBase._set_xi performs some operations
