@@ -25,7 +25,6 @@ target-version = "py39"
 "benchmarks/benchmarks/**" = ["E501"]
 "scipy/_lib/**" = ["E501"]
 "scipy/constants/_codata.py" = ["E501"]
-"scipy/io/**" = ["E501"]
 "scipy/linalg/**" = ["E501"]
 "scipy/ndimage/**" = ["E501"]
 "scipy/optimize/**" = ["E501"]

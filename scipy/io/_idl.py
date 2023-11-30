@@ -798,7 +798,9 @@ def readsav(file_name, idict=None, python_dict=False,
             if RECTYPE_DICT[rectype] == 'END_MARKER':
                 modval = np.int64(2**32)
                 fout.write(struct.pack('>I', int(nextrec) % modval))
-                fout.write(struct.pack('>I', int((nextrec - (nextrec % modval)) / modval)))
+                fout.write(
+                    struct.pack('>I', int((nextrec - (nextrec % modval)) / modval))
+                )
                 fout.write(unknown)
                 break
 
