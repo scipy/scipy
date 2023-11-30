@@ -3224,6 +3224,11 @@ def stirling2(N, K, *, exact=False):
         raise TypeError("Argument `N` must contain only integers")
     if not np.issubdtype(K.dtype, np.integer):
         raise TypeError("Argument `K` must contain only integers")
+    if not exact:
+        # NOTE: here we allow np.uint via casting to double types prior to
+        # passing to private ufunc dispatcher. All dispatched functions
+        # take double type for (n,k) arguments and return double.
+        return _stirling2_inexact(N.astype(float), K.astype(float))
     nk_pairs = list(
         set([(n.take(0), k.take(0))
              for n, k in np.nditer([N, K], ['refs_ok'])])
@@ -3242,11 +3247,6 @@ def stirling2(N, K, *, exact=False):
         elif k == n or k == 1:
             snsk_vals[(n, k)] = 1
             continue
-        elif not exact:
-            # NOTE: here we allow np.uint via casting to double types prior to
-            # passing to private ufunc dispatcher. All dispatched functions
-            # take double type for (n,k) arguments and return double.
-            snsk_vals[(n, k)] = _stirling2_inexact(np.double(n),np.double(k))
         elif n != n_old:
             num_iters = n - n_old
             while num_iters > 0:
