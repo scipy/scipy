@@ -1402,6 +1402,11 @@
             "cdft2_wrap": "dd->d"
         }
     },
+    "_stirling2_inexact": {
+        "stirling2.h++": {
+            "_stirling2_inexact": "dd->d"
+        }
+    },
     "struve": {
         "cephes.h": {
             "struve_h": "dd->d"
