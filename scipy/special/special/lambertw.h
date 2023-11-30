@@ -22,20 +22,15 @@
 
 #pragma once
 
-#include <cmath>
-#include <complex>
-#include <limits>
-
 #include "evalpoly.h"
 #include "error.h"
 
 namespace special {
-    using namespace std::complex_literals;
     constexpr double EXPN1 = 0.36787944117144232159553;  // exp(-1)
     constexpr double OMEGA = 0.56714329040978387299997;  // W(1, 0)
 
     namespace detail {
-	inline std::complex<double> lambertw_branchpt(std::complex<double> z) {
+	SPECFUN_HOST_DEVICE inline std::complex<double> lambertw_branchpt(std::complex<double> z) {
 	    // Series for W(z, 0) around the branch point; see 4.22 in [1].
 	    double coeffs[] = {-1.0/3.0, 1.0, -1.0};
 	    std::complex<double> p = std::sqrt(2.0*(M_E*z + 1.0));
@@ -44,7 +39,7 @@ namespace special {
 	}
 
 
-	inline std::complex<double> lambertw_pade0(std::complex<double> z) {
+	SPECFUN_HOST_DEVICE inline std::complex<double> lambertw_pade0(std::complex<double> z) {
 	    // (3, 2) Pade approximation for W(z, 0) around 0.
 	    double num[] = {
 		12.85106382978723404255,
@@ -64,17 +59,17 @@ namespace special {
 	}
 
 
-	inline std::complex<double> lambertw_asy(std::complex<double> z, long k) {
+	SPECFUN_HOST_DEVICE inline std::complex<double> lambertw_asy(std::complex<double> z, long k) {
 	    /* Compute the W function using the first two terms of the
 	     * asymptotic series. See 4.20 in [1].
 	     */
-	    std::complex<double> w = std::log(z) + 2.0*M_PI*k*1i;
+	    std::complex<double> w = std::log(z) + 2.0*M_PI*k*std::complex<double>(0, 1);
 	    return w - std::log(w);
 	}
  
     }
 
-    inline std::complex<double> lambertw(std::complex<double> z, long k, double tol) {
+    SPECFUN_HOST_DEVICE inline std::complex<double> lambertw(std::complex<double> z, long k, double tol) {
 	double absz;
 	std::complex<double> w;
 	std::complex<double> ew, wew, wewz, wn;
@@ -83,10 +78,10 @@ namespace special {
 	    return z;
 	}
 	if (z.real() == std::numeric_limits<double>::infinity()) {
-	    return z + 2.0*M_PI*k*1i;
+	    return z + 2.0*M_PI*k*std::complex<double>(0, 1);
 	}
 	if (z.real() == -std::numeric_limits<double>::infinity()) {
-	    return -z + (2.0*M_PI*k + M_PI)*1i;
+	    return -z + (2.0*M_PI*k + M_PI)*std::complex<double>(0, 1);
 	}
 	if (z == 0.0) {
 	    if (k == 0) {

@@ -1,5 +1,12 @@
 #pragma once
 
+// should be included from config.h, but that won't work until we've cleanly separated out the C and C++ parts of the code
+#ifdef __CUDACC__
+#define SPECFUN_HOST_DEVICE __host__ __device__
+#else
+#define SPECFUN_HOST_DEVICE
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -23,7 +30,7 @@ typedef enum {
 namespace special {
 
 #ifndef SP_SPECFUN_ERROR
-        inline void set_error(const char *func_name, sf_error_t code, const char *fmt, ...) {
+        SPECFUN_HOST_DEVICE inline void set_error(const char *func_name, sf_error_t code, const char *fmt, ...) {
             // nothing
         }
 #else
