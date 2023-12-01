@@ -44,9 +44,9 @@ def compliance_scipy(arrays):
     for i in range(len(arrays)):
         array = arrays[i]
         if isinstance(array, np.ma.MaskedArray):
-            raise TypeError("'numpy.ma.MaskedArray' arrays are not supported.")
+            raise TypeError("Inputs of type `numpy.ma.MaskedArray` are not supported.")
         elif isinstance(array, np.matrix):
-            raise TypeError("'numpy.matrix' arrays are not supported.")
+            raise TypeError("Inputs of type `numpy.matrix` are not supported.")
         if isinstance(array, (np.ndarray, np.generic)):
             dtype = array.dtype
             if not (np.issubdtype(dtype, np.number) or np.issubdtype(dtype, np.bool_)):
