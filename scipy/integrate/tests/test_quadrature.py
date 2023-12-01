@@ -737,7 +737,7 @@ class TestCumulativeSimpson:
                 None,
                 8 / 3,
                 4,
-                "`axis` must exist in the shape of `y`"
+                "is not valid for `y` with `y.ndim="
             ),
             (
                 # Invalid x
@@ -782,7 +782,7 @@ class TestCumulativeSimpson:
                 None,
                 np.array([1 / 3, 0, 8 / 3]),
                 -1,
-                "`initial` must either be numeric or have the same"
+                "If provided, `initial` must either be a scalar or have the same"
             ),
             (
                 # Invalid input for dx
@@ -791,7 +791,7 @@ class TestCumulativeSimpson:
                 [[1], [2], [1], [1]],
                 None,
                 -1,
-                "`dx` must either be numeric or"
+                "If provided, `dx` must either be a scalar or"
             ),
         ],
     )
