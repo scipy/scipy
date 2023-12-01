@@ -20,7 +20,7 @@ __all__ = ['griddata', 'NearestNDInterpolator', 'LinearNDInterpolator',
 class NearestNDInterpolator(NDInterpolatorBase):
     """NearestNDInterpolator(x, y).
 
-    Nearest-neighbor interpolation in N > 1 dimensions.
+    Nearest-neighbor interpolator in N > 1 dimensions.
 
     .. versionadded:: 0.9
 
@@ -50,11 +50,11 @@ class NearestNDInterpolator(NDInterpolatorBase):
     griddata :
         Interpolate unstructured D-D data.
     LinearNDInterpolator :
-        Piecewise linear interpolant in N dimensions.
+        Piecewise linear interpolator in N dimensions.
     CloughTocher2DInterpolator :
-        Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D.
+        Piecewise cubic, C1 smooth, curvature-minimizing interpolator in 2D.
     interpn : Interpolation on a regular grid or rectilinear grid.
-    RegularGridInterpolator : Interpolation on a regular or rectilinear grid
+    RegularGridInterpolator : Interpolator on a regular or rectilinear grid
                               in arbitrary dimensions (`interpn` wraps this
                               class).
 
@@ -179,13 +179,13 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
     See Also
     --------
     LinearNDInterpolator :
-        Piecewise linear interpolant in N dimensions.
+        Piecewise linear interpolator in N dimensions.
     NearestNDInterpolator :
-        Nearest-neighbor interpolation in N dimensions.
+        Nearest-neighbor interpolator in N dimensions.
     CloughTocher2DInterpolator :
-        Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D.
+        Piecewise cubic, C1 smooth, curvature-minimizing interpolator in 2D.
     interpn : Interpolation on a regular grid or rectilinear grid.
-    RegularGridInterpolator : Interpolation on a regular or rectilinear grid
+    RegularGridInterpolator : Interpolator on a regular or rectilinear grid
                               in arbitrary dimensions (`interpn` wraps this
                               class).
 

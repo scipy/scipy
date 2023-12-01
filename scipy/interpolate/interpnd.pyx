@@ -247,7 +247,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
     """
     LinearNDInterpolator(points, values, fill_value=np.nan, rescale=False)
 
-    Piecewise linear interpolant in N > 1 dimensions.
+    Piecewise linear interpolator in N > 1 dimensions.
 
     .. versionadded:: 0.9
 
@@ -308,11 +308,11 @@ class LinearNDInterpolator(NDInterpolatorBase):
     griddata :
         Interpolate unstructured D-D data.
     NearestNDInterpolator :
-        Nearest-neighbor interpolation in N dimensions.
+        Nearest-neighbor interpolator in N dimensions.
     CloughTocher2DInterpolator :
-        Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D.
+        Piecewise cubic, C1 smooth, curvature-minimizing interpolator in 2D.
     interpn : Interpolation on a regular grid or rectilinear grid.
-    RegularGridInterpolator : Interpolation on a regular or rectilinear grid
+    RegularGridInterpolator : Interpolator on a regular or rectilinear grid
                               in arbitrary dimensions (`interpn` wraps this
                               class).
 
@@ -837,7 +837,7 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
 class CloughTocher2DInterpolator(NDInterpolatorBase):
     """CloughTocher2DInterpolator(points, values, tol=1e-6).
 
-    Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D.
+    Piecewise cubic, C1 smooth, curvature-minimizing interpolator in 2D.
 
     .. versionadded:: 0.9
 
@@ -909,11 +909,11 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     griddata :
         Interpolate unstructured D-D data.
     LinearNDInterpolator :
-        Piecewise linear interpolant in N > 1 dimensions.
+        Piecewise linear interpolator in N > 1 dimensions.
     NearestNDInterpolator :
-        Nearest-neighbor interpolation in N > 1 dimensions.
+        Nearest-neighbor interpolator in N > 1 dimensions.
     interpn : Interpolation on a regular grid or rectilinear grid.
-    RegularGridInterpolator : Interpolation on a regular or rectilinear grid
+    RegularGridInterpolator : Interpolator on a regular or rectilinear grid
                               in arbitrary dimensions (`interpn` wraps this
                               class).
 
