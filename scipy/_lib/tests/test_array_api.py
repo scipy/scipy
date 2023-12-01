@@ -31,11 +31,11 @@ class TestArrayAPI:
 
     @pytest.mark.filterwarnings("ignore: the matrix subclass")
     def test_raises(self):
-        msg = "'numpy.ma.MaskedArray' arrays are not supported"
+        msg = "of type `numpy.ma.MaskedArray` are not supported"
         with pytest.raises(TypeError, match=msg):
             array_namespace(np.ma.array(1), np.array(1))
 
-        msg = "'numpy.matrix' arrays are not supported"
+        msg = "of type `numpy.matrix` are not supported"
         with pytest.raises(TypeError, match=msg):
             array_namespace(np.array(1), np.matrix(1))
 
