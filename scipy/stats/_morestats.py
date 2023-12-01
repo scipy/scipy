@@ -1319,7 +1319,8 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
             warnings.warn(
                 f"The optimal lambda is {res}, but the returned lambda is "
                 f"the constrained optimum to ensure that the maximum of the "
-                f"transformed data does not cause overflow in {dtype}."
+                f"transformed data does not cause overflow in {dtype}.",
+                stacklevel=2
             )
 
             # Return the constrained lambda to ensure the transformation
