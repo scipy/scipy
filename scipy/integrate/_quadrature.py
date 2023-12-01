@@ -1074,7 +1074,7 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
     original_shape = y.shape
     try:
         y = np.swapaxes(y, axis, -1)
-    except np.exceptions.AxisError as e:
+    except np.AxisError as e:
         message = f"`axis={axis}` is not valid for `y` with `y.ndim={y.ndim}`."
         raise ValueError(message) from e
 
