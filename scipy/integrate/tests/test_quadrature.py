@@ -528,6 +528,9 @@ class TestQMCQuad:
 
 
 class TestCumulativeSimpson:
+    x0 = np.arange(4)
+    y0 = x0**2
+
     @pytest.mark.parametrize(
         ("y_func", "x", "dx", "initial", "int_y_func"),
         [
@@ -718,92 +721,20 @@ class TestCumulativeSimpson:
             int_y,
         )
 
-    @pytest.mark.parametrize(
-        ("y", "x", "dx", "initial", "axis", "match"),
-        [
-            (
-                # Non-unique values in x
-                None,
-                np.array([2, 2, 4, 8]),
-                None,
-                8 / 3,
-                -1,
-                "Input x must be monotonically increasing"
-            ),
-            (
-                # Invalid axis
-                None,
-                np.array([1, 2, 4, 8]),
-                None,
-                8 / 3,
-                4,
-                "is not valid for `y` with `y.ndim="
-            ),
-            (
-                # Invalid x
-                np.array([1, 4, 16, 64, 81]),
-                np.array([1, 2, 4, 8]),
-                None,
-                8 / 3,
-                -1,
-                "shape of `x` must be the same as `y` or 1-D"
-            ),
-            (
-                # Multi dimensional, non-unique values in x
-                None,
-                np.array([[1, 2, 3, 4], [0, 2, 4, 8], [2, 2, 4, 8]]),
-                None,
-                np.array([[1 / 3], [0], [8 / 3]]),
-                -1,
-                "Input x must be monotonically increasing"
-            ),
-            (
-                # Multi dimensional, non-unique values in x in non-default axis
-                None,
-                np.array([[1, 2, 3, 4], [1, 2, 4, 8], [1, 2, 4, 8]]),
-                None,
-                None,
-                0,
-                "Input x must be monotonically increasing"
-            ),
-            (
-                # Less than 3 points along axis of integration
-                None,
-                np.array([[1, 2], [1, 2], [1, 2]]),
-                None,
-                None,
-                -1,
-                "At least 3 points"
-            ),
-            (
-                # Invalid input for initial
-                None,
-                np.array([[1, 2, 3, 4], [0, 2, 4, 8], [1, 2, 4, 8]]),
-                None,
-                np.array([1 / 3, 0, 8 / 3]),
-                -1,
-                "If provided, `initial` must either be a scalar or have the same"
-            ),
-            (
-                # Invalid input for dx
-                None,
-                np.array([[1, 2, 3, 4], [0, 2, 4, 8], [1, 2, 4, 8]]),
-                [[1], [2], [1], [1]],
-                None,
-                -1,
-                "If provided, `dx` must either be a scalar or"
-            ),
-        ],
-    )
-    def test_simpson_exceptions(
-        self, y, x, dx, initial, axis, match
-    ):
-        if y is None:
-            y = x**2
-        input_x = x if dx is None else None
-        with pytest.raises(ValueError, match=match):
-            cumulative_simpson(y, x=input_x, dx=dx, axis=axis, initial=initial)
-
+    @pytest.mark.parametrize(('message', 'kwarg_update'), [
+        ("x must be monotonically increasing", dict(x=[2, 2, 3, 4])),
+        ("x must be monotonically", dict(x=[x0, [2, 2, 4, 8]], y=[y0, y0])),
+        ("x must be monotonically", dict(x=[x0, x0, x0], y=[y0, y0, y0], axis=0)),
+        ("At least 3 points are required", dict(x=x0[:2], y=y0[:2])),
+        ("`axis=4` is not valid for `y` with `y.ndim=1`", dict(axis=4)),
+        ("shape of `x` must be the same as `y` or 1-D", dict(x=np.arange(5))),
+        ("`initial` must either be a scalar or...", dict(initial=np.arange(5))),
+        ("`dx` must either be a scalar or...", dict(x=None, dx=np.arange(5))),
+    ])
+    def test_simpson_exceptions(self, message, kwarg_update):
+        kwargs0 = dict(y=self.y0, x=self.x0, dx=None, initial=None, axis=-1)
+        with pytest.raises(ValueError, match=message):
+            cumulative_simpson(**dict(kwargs0, **kwarg_update))
 
     def _get_theoretical_diff_between_simps_and_cum_simps(self, y, x):
         """`cumulative_simpson` and `simpson` can be tested against other to verify
