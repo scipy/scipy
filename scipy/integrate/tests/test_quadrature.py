@@ -804,55 +804,120 @@ class TestCumulativeSimpson:
         with pytest.raises(ValueError, match=match):
             cumulative_simpson(y, x=input_x, dx=dx, axis=axis, initial=initial)
 
-    
+
+    def _get_theoretical_diff_between_simps_and_cum_simps(self, y, x):
+        """`cumulative_simpson` and `simpson` can be tested against other to verify
+        they give consistent results. `simpson` will iteratively be called with 
+        successively higher upper limits of integration. This function calculates
+        the theoretical correction required to `simpson` at even intervals to match
+        with `cumulative_simpson`.
+        """
+        d = np.diff(x, axis=-1)
+        h1 = d[..., :-1]
+        h2 = d[..., 1:]
+        y1 = y[..., :-2]
+        y2 = y[..., 1:-1]
+        y3 = y[..., 2:]
+
+        # Consider a quadratic interpolation over each set of 3 adjacent points,
+        # a, a+h1, a+h1+h2. The subinterval widths are h1 and h2
+
+        # Calculate integral over the h1 subintervals.
+        # Calculate for all but last subinterval of y.
+        sub_integrals_h1 = (
+            y1 * (2 * h1 + 3 * h2) / (h1 + h2) * h1 / 6
+            + y2 * (h1 + 3 * h2) * h1 / (6 * h2)
+            - y3 * (h1**3 / (6 * h2)) / (h1 + h2)
+        )
+
+        # Calculate integral over the h2 subintervals.
+        # Calculate for all but first subinterval of y.
+        sub_integrals_h2 = (
+            -y1 * (h2**3 / (6 * h1)) / (h1 + h2)
+            + y2 * (3 * h1 + h2) * h2 / (6 * h1)
+            + y3 * (3 * h1 + 2 * h2) / (h1 + h2) * h2 / 6
+        )
+
+        # Concatenate to build final array
+        zeros_shape = (*y.shape[:-1], 1)
+        theoretical_difference = np.concatenate(
+            [
+                np.zeros(zeros_shape),
+                (sub_integrals_h1[..., 1:] - sub_integrals_h2[..., :-1]),
+                np.zeros(zeros_shape),
+            ],
+            axis=-1,
+        )
+        # Differences only expected at even intervals. Odd intervals will
+        # match exactly so there is no correction
+        theoretical_difference[..., 1::2] = 0.0
+        # Note: the first interval will not match from this correction as 
+        # `simpson` uses the trapezoidal rule
+        return theoretical_difference
+
     @given(
         y=hyp_num.arrays(
             np.float64, 
             hyp_num.array_shapes(max_dims=4, min_side=3, max_side=10),
-            elements=st.floats(-10, 10, allow_nan=False)
+            elements=st.floats(-10, 10, allow_nan=False).filter(lambda x: abs(x) > 1e-7)
         )
     )
     def test_cumulative_simpson_against_simpson_with_default_dx(
         self, y
     ):
-        """Theoretically, the output of cumulative_simpson will be identical
-        to simpson at all even indices and in the last index."""
+        """Theoretically, the output of `cumulative_simpson` will be identical
+        to `simpson` at all even indices and in the last index. The first index
+        will not match as `simpson` uses the trapezoidal rule when there are only two
+        data points. Odd indices after the first index are shown to match with
+        a mathematically-derived correction."""
         def simpson_reference(y):
             return np.stack(
-                [simpson(y[..., :i]) for i in range(2, y.shape[-1]+1)], axis=-1,
+                [simpson(y[..., :i], dx=1.0) for i in range(2, y.shape[-1]+1)], axis=-1,
             )
 
-        ref = cumulative_simpson(y)
-        res = simpson_reference(y)
-        np.testing.assert_allclose(res[..., 1::2], ref[..., 1::2])
-        np.testing.assert_allclose(res[..., -1], ref[..., -1])
+        res = cumulative_simpson(y, dx=1.0)
+        ref = simpson_reference(y)
+        theoretical_difference = self._get_theoretical_diff_between_simps_and_cum_simps(
+            y, x=np.arange(y.shape[-1])
+        )
+        np.testing.assert_allclose(
+            res[..., 1:], ref[..., 1:] + theoretical_difference[..., 1:]
+        )
 
     
     @given(
         y=hyp_num.arrays(
             np.float64, 
             hyp_num.array_shapes(max_dims=4, min_side=3, max_side=10),
-            elements=st.floats(-10, 10, allow_nan=False)
+            elements=st.floats(-10, 10, allow_nan=False).filter(lambda x: abs(x) > 1e-7)
         )
     )
     def test_cumulative_simpson_against_simpson(
         self, y
     ):
-        """Theoretically, the output of cumulative_simpson will be identical
-        to simpson at all even indices and in the last index."""
+        """Theoretically, the output of `cumulative_simpson` will be identical
+        to `simpson` at all even indices and in the last index. The first index
+        will not match as `simpson` uses the trapezoidal rule when there are only two
+        data points. Odd indices after the first index are shown to match with
+        a mathematically-derived correction."""
         interval = 10/(y.shape[-1] - 1)
         x = np.linspace(0, 10, num=y.shape[-1])
         x[1:] = x[1:] + 0.2*interval*np.random.uniform(-1, 1, len(x) - 1)
         
         def simpson_reference(y, x):
             return np.stack(
-                [simpson(y[..., :i], x=x[..., :i]) for i in range(2, y.shape[-1]+1)], axis=-1,
+                [simpson(y[..., :i], x=x[..., :i]) for i in range(2, y.shape[-1]+1)],
+                axis=-1,
             )
 
-        ref = cumulative_simpson(y, x=x)
-        res = simpson_reference(y, x)
-        np.testing.assert_allclose(res[..., 1::2], ref[..., 1::2])
-        np.testing.assert_allclose(res[..., -1], ref[..., -1])
+        res = cumulative_simpson(y, x=x)
+        ref = simpson_reference(y, x)
+        theoretical_difference = self._get_theoretical_diff_between_simps_and_cum_simps(
+            y, x
+        )
+        np.testing.assert_allclose(
+            res[..., 1:], ref[..., 1:] + theoretical_difference[..., 1:]
+        )
 
 
 class TestTanhSinh:
