@@ -570,7 +570,7 @@ def centroid(y):
            [11.        , 14.        ,  1.11803399,  3.        ],
            [18.        , 19.        ,  3.33333333,  6.        ],
            [16.        , 17.        ,  3.33333333,  6.        ],
-           [20.        , 21.        ,  3.33333333, 12.        ]])
+           [20.        , 21.        ,  3.33333333, 12.        ]]) # may vary
 
     The linkage matrix ``Z`` represents a dendrogram - see
     `scipy.cluster.hierarchy.linkage` for a detailed explanation of its
@@ -580,11 +580,11 @@ def centroid(y):
     each initial point would belong given a distance threshold:
 
     >>> fcluster(Z, 0.9, criterion='distance')
-    array([ 7,  8,  9, 10, 11, 12,  1,  2,  3,  4,  5,  6], dtype=int32)
+    array([ 7,  8,  9, 10, 11, 12,  1,  2,  3,  4,  5,  6], dtype=int32) # may vary
     >>> fcluster(Z, 1.1, criterion='distance')
-    array([5, 5, 6, 7, 7, 8, 1, 1, 2, 3, 3, 4], dtype=int32)
+    array([5, 5, 6, 7, 7, 8, 1, 1, 2, 3, 3, 4], dtype=int32) # may vary
     >>> fcluster(Z, 2, criterion='distance')
-    array([3, 3, 3, 4, 4, 4, 1, 1, 1, 2, 2, 2], dtype=int32)
+    array([3, 3, 3, 4, 4, 4, 1, 1, 1, 2, 2, 2], dtype=int32) # may vary
     >>> fcluster(Z, 4, criterion='distance')
     array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], dtype=int32)
 
