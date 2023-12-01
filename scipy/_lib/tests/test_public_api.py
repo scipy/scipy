@@ -454,9 +454,9 @@ def test_misc_doccer_deprecation():
     module = import_module('scipy.misc.doccer')
     correct_import = import_module('scipy._lib.doccer')
 
-    # Attributes that were formerly in `module_name` can still be imported from
-    # `module_name`, albeit with a deprecation warning. The specific message
-    # depends on whether the attribute is public in `scipy.xxx` or not.
+    # Attributes that were formerly in `scipy.misc.doccer` can still be imported from
+    # `scipy.misc.doccer`, albeit with a deprecation warning. The specific message
+    # depends on whether the attribute is public in `scipy._lib.doccer` or not.
     for attr_name in module.__all__:
         attr = getattr(correct_import, attr_name, None)
         if attr is None:
@@ -466,8 +466,9 @@ def test_misc_doccer_deprecation():
         with pytest.deprecated_call(match=message):
             getattr(module, attr_name)
 
-    # Attributes that were not in `module_name` get an error notifying the user
-    # that the attribute is not in `module_name` and that `module_name` is deprecated.
+    # Attributes that were not in `scipy.misc.doccer` get an error
+    # notifying the user that the attribute is not in `scipy.misc.doccer` 
+    # and that `scipy.misc.doccer` is deprecated.
     message = "`scipy.misc.doccer` is deprecated..."
     with pytest.raises(AttributeError, match=message):
         getattr(module, "ekki")
