@@ -5208,9 +5208,9 @@ class norminvgauss_gen(rv_continuous):
 
     def _pdf(self, x, a, b):
         gamma = np.sqrt(a**2 - b**2)
-        fac1 = a / np.pi * np.exp(gamma)
+        fac1 = a / np.pi
         sq = np.hypot(1, x)  # reduce overflows
-        return fac1 * sc.k1e(a * sq) * np.exp(b*x - a*sq) / sq
+        return fac1 * sc.k1e(a * sq) * np.exp(b*x - a*sq + gamma) / sq
 
     def _sf(self, x, a, b):
         if np.isscalar(x):
