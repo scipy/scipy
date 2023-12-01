@@ -423,9 +423,9 @@ cdef inline (double, int) bgrat(double a, double b, double x , double y, double 
         d[n-1] = bm1*cn + s/n
         dj = d[n-1]*j
         ssum += dj
-        if ssum <= 0.:
+        if not (ssum > 0.):
             return (w, 1)
-        if abs(dj) <= eps*(ssum+l):
+        if not (abs(dj) > eps*(ssum+l)):
             break
 
     return (w + u*ssum, 0)
@@ -498,7 +498,7 @@ cdef inline double bpser(double a, double b, double x, double eps) noexcept nogi
         c *= (0.5 + (0.5 - b/n))*x
         w = c / (a + n)
         ssum += w
-        if abs(w) <= tol:
+        if not (abs(w) > tol):
             break
     return result * (1. + a*ssum)
 
@@ -537,8 +537,7 @@ cdef inline (double, double, int) bratio(double a, double b,
     x0, y0 = x, y
 
     if min(a0, b0) <= 1.:
-
-        if x > 0.5:
+        if not (x <= 0.5):
             ind = 1
             a0, b0 = b, a
             x0, y0 = y, x
@@ -1004,7 +1003,6 @@ cdef inline (double, int, double) cdfbet_which3(
     cdef double tol = 1e-8
     cdef double atol = 1e-50
     cdef bint qporq = p <= q
-
     cdef DinvrState DS = DinvrState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
@@ -1059,7 +1057,7 @@ cdef inline (double, int, double) cdfbet_which4(
     cdef DzrorState DZ = DzrorState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0)
-    DS.small = 0.
+    DS.small = 1e-100
     DS.big = 1e100
     DS.absstp = 0.5
     DS.relstp = 0.5
@@ -1088,7 +1086,6 @@ cdef inline (double, int, double) cdfbet_which4(
         cum, ccum = cumbet(x, y, a, DS.x)
         DS.fx = cum - p if qporq else ccum - q
         dinvr(&DS, &DZ)
-
 
     if DS.status == -1:
         return (DS.x, (1 if DS.qleft else 2), (0. if DS.qleft else INFINITY))
@@ -1162,6 +1159,7 @@ cdef inline (double, int, double) cdfbin_which2(
     else:
         return(DS.x, 0, 0.)
 
+
 cdef inline (double, int, double) cdfbin_which3(
     double p, double q, double s, double pr, double ompr) noexcept nogil:
     cdef double ccum, cum
@@ -1174,7 +1172,7 @@ cdef inline (double, int, double) cdfbin_which3(
     cdef DzrorState DZ = DzrorState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0)
-    DS.small = 0.
+    DS.small = 1e-100
     DS.big = 1.e100
     DS.absstp = 0.5
     DS.relstp = 0.5
@@ -1275,7 +1273,8 @@ cdef inline (double, double, int, double) cdfchi_which1(
 
     return (p, q, 0, 0)
 
-cdef inline (double, int, double) cdfchi_which2(double p, double q, double df) noexcept nogil:
+cdef inline (double, int, double) cdfchi_which2(
+    double p, double q, double df) noexcept nogil:
     cdef bint qporq = p <= q
     cdef double porq = p if qporq else q
     cdef double ccum, cum
@@ -1353,7 +1352,7 @@ cdef inline (double, int, double) cdfchi_which3(
     while DS.status == 1:
         cum, ccum = cumchi(x, DS.x)
         DS.fx = cum - p if qporq else ccum - q
-        if DS.fx + porq <= 1.5:
+        if (DS.fx + porq > 1.5):
             return (DS.x, 10, 0.)
         dinvr(&DS, &DZ)
 
@@ -1366,7 +1365,8 @@ cdef inline (double, int, double) cdfchi_which3(
 cdef inline (double, double, int, double) cdfchn_which1(
     double x, double df, double pnonc) noexcept nogil:
     cdef double p, q
-
+    df = min(df, spmpar[2])
+    pnonc = min(pnonc, 1.e9)
     if not (x >= 0.):
         return (0., 0., -1, 0.)
     if not (df >= 0.):
@@ -1670,12 +1670,12 @@ cdef (double, double, int, double) cdffnc_which1(
     else:
         return (p, q, 0, 0.)
 
+
 cdef (double, int, double) cdffnc_which2(
     double p, double q, double dfn, double dfd, double phonc) noexcept nogil:
     cdef double cum
     cdef double tol = 1e-8
     cdef double atol = 1e-50
-    cdef bint qporq = p <= q
     cdef int ierr
     cdef DinvrState DS = DinvrState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -1715,12 +1715,12 @@ cdef (double, int, double) cdffnc_which2(
     else:
         return(DS.x, 0, 0.)
 
+
 cdef (double, int, double) cdffnc_which3(
     double p, double q, double f, double dfd, double phonc) noexcept nogil:
     cdef double cum
     cdef double tol = 1e-8
     cdef double atol = 1e-50
-    cdef bint qporq = p <= q
     cdef int ierr
     cdef DinvrState DS = DinvrState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -1729,8 +1729,8 @@ cdef (double, int, double) cdffnc_which3(
                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0)
 
-    DS.small = 0.
-    DS.big = 1e300
+    DS.small = 1e-100
+    DS.big = 1e100
     DS.absstp = 0.5
     DS.relstp = 0.5
     DS.stpmul = 5.
@@ -1760,12 +1760,12 @@ cdef (double, int, double) cdffnc_which3(
     else:
         return(DS.x, 0, 0.)
 
+
 cdef (double, int, double) cdffnc_which4(
     double p, double q, double f, double dfn, double phonc) noexcept nogil:
     cdef double cum
     cdef double tol = 1e-8
     cdef double atol = 1e-50
-    cdef bint qporq = p <= q
     cdef int ierr
     cdef DinvrState DS = DinvrState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -1774,8 +1774,8 @@ cdef (double, int, double) cdffnc_which4(
                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0)
 
-    DS.small = 0.
-    DS.big = 1e300
+    DS.small = 1e-100
+    DS.big = 1e100
     DS.absstp = 0.5
     DS.relstp = 0.5
     DS.stpmul = 5.
@@ -1805,12 +1805,12 @@ cdef (double, int, double) cdffnc_which4(
     else:
         return(DS.x, 0, 0.)
 
+
 cdef (double, int, double) cdffnc_which5(
     double p, double q, double f, double dfn, double dfd) noexcept nogil:
     cdef double cum
     cdef double tol = 1e-8
     cdef double atol = 1e-50
-    cdef bint qporq = p <= q
     cdef int ierr
     cdef DinvrState DS = DinvrState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -1820,7 +1820,7 @@ cdef (double, int, double) cdffnc_which5(
                                     0, 0, 0, 0, 0, 0, 0)
 
     DS.small = 0.
-    DS.big = 1.e9
+    DS.big = 1e4
     DS.absstp = 0.5
     DS.relstp = 0.5
     DS.stpmul = 5.
@@ -1846,9 +1846,10 @@ cdef (double, int, double) cdffnc_which5(
         dinvr(&DS, &DZ)
 
     if DS.status == -1:
-        return (DS.x, 1 if DS.qleft else 2, 0. if DS.qleft else INFINITY)
+        return (DS.x, 1 if DS.qleft else 2, 0. if DS.qleft else 1e4)
     else:
         return(DS.x, 0, 0.)
+
 
 # %% ---------------------------------------- cdfgam_whichX
 cdef (double, double, int, double) cdfgam_which1(
@@ -1867,6 +1868,7 @@ cdef (double, double, int, double) cdfgam_which1(
         return (p, q, 10, 0.)
     else:
         return (p, q, 0, 0.)
+
 
 cdef (double, int, double) cdfgam_which2(
     double p, double q, double shape, double scale) noexcept nogil:
@@ -1890,6 +1892,7 @@ cdef (double, int, double) cdfgam_which2(
     else:
         return (xx/scale, 0, 0.)
 
+
 cdef (double, int, double) cdfgam_which3(
     double p, double q, double x, double scale) noexcept nogil:
     cdef double cum, ccum
@@ -1906,7 +1909,7 @@ cdef (double, int, double) cdfgam_which3(
                                     0, 0, 0, 0, 0, 0, 0)
 
     DS.small = 0.
-    DS.big = 1e300
+    DS.big = 1e100
     DS.absstp = 0.5
     DS.relstp = 0.5
     DS.stpmul = 5.
@@ -1960,6 +1963,7 @@ cdef (double, int, double) cdfgam_which4(
         return (0., 10, 0.)
     else:
         return (xx/x, 0, 0.)
+
 
 # %% ---------------------------------------- cdfnbn_whichX
 cdef inline (double, double, int, double) cdfnbn_which1(
@@ -2411,7 +2415,6 @@ cdef inline (double, int, double) cdftnc_which3(
     cdef double cum
     cdef double tol = 1e-8
     cdef double atol = 1e-50
-    cdef bint qporq = p <= q
     cdef DinvrState DS = DinvrState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
@@ -2454,7 +2457,6 @@ cdef inline (double, int, double) cdftnc_which4(
     cdef double cum
     cdef double tol = 1e-8
     cdef double atol = 1e-50
-    cdef bint qporq = p <= q
     cdef DinvrState DS = DinvrState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
@@ -2534,24 +2536,29 @@ cdef inline (double, double) cumchn(double x, double df, double pnonc) noexcept 
     cdef double abstol = 1.e-300
     cdef int i, icent
 
-    if x <= 0.:
+    if not (x > 0.):
         return (0., 1.)
-    if pnonc <= 1e-10:
+    if not (pnonc > 1e-10):
         return cumchi(x, df)
+
     xnonc = pnonc/2.
     icent = <int>xnonc
     if icent == 0:
         icent = 1
     chid2 = x / 2.
+
     lfact = alngam(icent + 1)
     lcntwt = -xnonc + icent*log(xnonc) - lfact
     centwt = exp(lcntwt)
+
     pcent, _ = cumchi(x, df + 2.*icent)
+
     dfd2 = (df + 2.*icent)/2.
     lfact = alngam(1. + dfd2)
     lcntaj = dfd2*log(chid2) - chid2 - lfact
     centaj = exp(lcntaj)
     ssum = centwt*pcent
+
     sumadj = 0.
     adj = centaj
     wt = centwt
@@ -2566,7 +2573,7 @@ cdef inline (double, double) cumchn(double x, double df, double pnonc) noexcept 
         term = wt*pterm
         ssum += term
         i -= 1
-        if not ((ssum >= abstol) and (term >= eps*ssum)) or (i == 0):
+        if (not ((ssum >= abstol) and (term >= eps*ssum))) or (i == 0):
             break
 
     sumadj, adj, wt, i = centaj, centaj, centwt, icent
@@ -2601,7 +2608,6 @@ cdef inline (double, double) cumf(double f, double dfn, double dfd) noexcept nog
         xx = 1. - yy
     else:
         yy = 1. - xx
-
     cum, ccum, _ = bratio(dfd*0.5, dfn*0.5, xx, yy)
     return cum, ccum
 
@@ -2618,10 +2624,10 @@ cdef inline (double, double, int) cumfnc(double f, double dfn,
     cdef int status = 0
     cdef int i, icent
 
-    if f <= 0.:
+    if not (f > 0.):
         return 0., 1., status
 
-    if pnonc < 1e-10:
+    if not (pnonc >= 1e-10):
         cum, ccum = cumf(f, dfn, dfd)
         return cum, ccum, status
 
@@ -2658,6 +2664,7 @@ cdef inline (double, double, int) cumfnc(double f, double dfn,
     else:
         dnterm = exp(-betaln(adn, b) - log(adn) + adn*log(xx) +
                      b*log(yy))
+
     while True:
         xmult *= (i/xnonc)
         i -= 1
@@ -2667,6 +2674,7 @@ cdef inline (double, double, int) cumfnc(double f, double dfn,
         ssum += xmult*betdn
         if ((ssum < abstol) and (xmult*betdn < eps*ssum)) or i <= 0:
             break
+
     i = icent + 1
     xmult = centwt
     if (aup - 1 + b) == 0:
@@ -2687,8 +2695,8 @@ cdef inline (double, double, int) cumfnc(double f, double dfn,
         aup += 1
         upterm *= (aup + b - 2.)*xx/(aup - 1.)
         betup -= upterm
-        ssum += xmult
-        if ((ssum < abstol) and (xmult*betup < eps*ssum)):
+        ssum += xmult*betup
+        if not ((ssum >= abstol) and (xmult*betup >= eps*ssum)):
             break
 
     return (ssum, 0.5 + (0.5 - ssum), status)
@@ -3150,6 +3158,7 @@ cdef void dinvr(DinvrState *S, DzrorState *DZ) noexcept nogil:
             S.status = -9999  # Bad state, should not be possible to get here
             return
 
+
 # %%-------------------------------------- dt1
 cdef inline double dt1(double p, double q, double df) noexcept nogil:
     cdef double ssum, term, x, xx
@@ -3171,6 +3180,7 @@ cdef inline double dt1(double p, double q, double df) noexcept nogil:
         ssum += term / (denpow*denom[i])
 
     return -ssum if not (p >= 0.5) else ssum
+
 
 # %% ------------------------------------- dzror
 cdef struct DzrorState:
@@ -3203,6 +3213,7 @@ cdef struct DzrorState:
     bint qrzero
     bint qleft
     bint qhi
+
 
 cdef void dzror(DzrorState *S) noexcept nogil:
     """Main zero-finding function. If not returned, cycles
@@ -3348,6 +3359,7 @@ cdef void dzror(DzrorState *S) noexcept nogil:
             S.status = -9999  # Bad state, should not be possible to get here
             return
 
+
 # %%-------------------------------------- erf
 cdef inline double erf(double x) noexcept nogil:
     cdef double ax, bot, t, top
@@ -3405,6 +3417,7 @@ cdef inline double erf(double x) noexcept nogil:
         return -t if (x < 0) else t
 
     return -1. if (x < 0) else 1.
+
 
 # %%-------------------------------------- erfc1
 cdef inline double erfc1(int ind, double x) noexcept nogil:
@@ -3474,6 +3487,7 @@ cdef inline double erfc1(int ind, double x) noexcept nogil:
     else:
         return (2.*exp(x*x) - result) if (x < 0) else result
 
+
 # %%----------------------------------------- esum
 cdef inline double esum(int mu, double x) noexcept nogil:
     if x > 0.:
@@ -3486,6 +3500,7 @@ cdef inline double esum(int mu, double x) noexcept nogil:
             return exp(mu)*exp(x)
         else:
             return exp(mu + x)
+
 
 # %%----------------------------------------- fpser
 cdef inline double fpser(double a, double b, double x, double eps) noexcept nogil:
@@ -3512,6 +3527,7 @@ cdef inline double fpser(double a, double b, double x, double eps) noexcept nogi
             break
 
     return result*(1. + a*s)
+
 
 # %%----------------------------------------- gam1
 cdef inline double gam1(double a) noexcept nogil:
@@ -3571,6 +3587,7 @@ cdef inline double gam1(double a) noexcept nogil:
     else:
         return a * w
 
+
 # %%----------------------------------------- gaminv
 cdef inline (double, int) gaminv(double a, double p,
                                  double q, double x0) noexcept nogil:
@@ -3591,7 +3608,7 @@ cdef inline (double, int) gaminv(double a, double p,
         int ierr = 0
         int iop = 1 if e > 1e-10 else 0
         bint use_p = False if p > 0.5 else True
-
+        bint skip140 = False
     cdef double[4] arr = [3.31125922108741, 11.6616720288968,
                           4.28342155967104, 0.213623493715853]
     cdef double[4] barr = [6.61053765625462, 6.40691597760039,
@@ -3615,7 +3632,7 @@ cdef inline (double, int) gaminv(double a, double p,
     if q == 0.:
         return (xmax, 0)
     if a == 1.:
-        return (-log(q), 0)
+        return (-log(q), 0) if not (q >= 0.9) else (-alnrel(-p), 0)
 
     if x0 > 0.:
         use_p = False if p > 0.5 else True
@@ -3629,35 +3646,33 @@ cdef inline (double, int) gaminv(double a, double p,
         if qg == 0.:
             return (xmax, -8)
         b = qg / a
-        if (qg > 0.6*a) or (((a >= 0.3) or (b < 0.35)) and (b > 0.45)):
 
+        if (qg > 0.6*a) or (((a >= 0.3) or (b < 0.35)) and b >= 0.45):
             if (b*q > 1.e-8):
+    # 50
                 if (p <= 0.9):
                     xn = exp(log(p*g)/a)
                 else:
+    # 60
                     xn = exp((alnrel(-q) + gamln1(a))/a)
             else:
+    # 40
                 xn = exp(-(q/a + c))
-
+    # 70
             if xn == 0.:
                 return (x, -3)
 
             t = 0.5 + (0.5 - xn/(a + 1.))
             xn /= t
+
+            #160
             use_p = True
             am1 = (a - 0.5) - 0.5
             if (p if use_p else q) <= 1.e10*xmin:
                 return (xn, -8)
 
-        elif not ((a >= 0.3) or (b < 0.35)):
-            t = exp(-(b+c))
-            u = t*exp(t)
-            xn = t*exp(u)
-            use_p = True
-            am1 = (a - 0.5) - 0.5
-            if p <= 1.e10*xmin:
-                return (xn, -8)
-        else:
+        elif ((a >= 0.3) or (b < 0.35)):
+    # 10
             if b == 0.:
                 return (xmax, -8)
 
@@ -3665,19 +3680,35 @@ cdef inline (double, int) gaminv(double a, double p,
             s = 0.5 + (0.5 - a)
             z = log(y)
             t = y - s*z
-            if b <= 0.01:
-                xn = gaminv_helper_30(a, s, y, z)
-                if (a <= 1.) or (b > bmin[iop]):
-                    return (xn, 0)
-            elif b < 0.15:
+
+            if b < 0.15:
+    # 20
+                if b <= 0.01:
+                    xn = gaminv_helper_30(a, s, y, z)
+                    if (a <= 1.) or (b > bmin[iop]):
+                        return (xn, 0)
                 u = ((t+2.*(3.-a))*t + (2.-a)* (3.-a))/((t+ (5.-a))*t+2.)
                 xn = y - s*log(t) - log(u)
             else:
                 xn = y - s*log(t)-log(1.+s/(t+1.))
+
+            # 220
             use_p = False
             am1 = (a - 0.5) - 0.5
             if q <= 1.e10*xmin:
                 return (xn, -8)
+
+        else:
+            t = exp(-(b+c))
+            u = t*exp(t)
+            xn = t*exp(u)
+
+            # 160
+            use_p = True
+            am1 = (a - 0.5) - 0.5
+            if p <= 1.e10*xmin:
+                return (xn, -8)
+
 
     elif a > 1:
         w = log(p) if q > 0.5 else log(q)
@@ -3695,6 +3726,7 @@ cdef inline (double, int) gaminv(double a, double p,
         xn -= ((3.*s2+7.)*s2-16.)/(810.*a)
         xn += s*((9.*s2+256.)*s2-433.)/(38880.*a*rta)
         xn = max(xn, 0.)
+
         if a >= amin[iop]:
             x = xn
             d = 0.5 + (0.5 - xn/a)
@@ -3720,6 +3752,7 @@ cdef inline (double, int) gaminv(double a, double p,
                     if (a <= 1.):
                         return (xn, 0)
 
+            # Go to 220
             use_p = False
             am1 = (a - 0.5) - 0.5
             if q <= 1.e10*xmin:
@@ -3737,7 +3770,7 @@ cdef inline (double, int) gaminv(double a, double p,
                     ap2 = a + 2.
                     ap3 = a + 3.
                     # Note: recursion not duplicate
-                    x = exp((w+x)*a)
+                    x = exp((w+x)/a)
                     x = exp((w+x-log(1.+(x/ap1)*(1.+x/ap2)))/a)
                     x = exp((w+x-log(1.+(x/ap1)*(1.+x/ap2)))/a)
                     x = exp((w+x-log(1.+(x/ap1)*(1.+(x/ap2)*(1.+x/ap3))))/a)
@@ -3745,19 +3778,26 @@ cdef inline (double, int) gaminv(double a, double p,
                     if (xn <= 0.01*ap1):
                         if (x <= emin[iop]*ap1):
                             return (x, 0)
-                    else:
-                        # Go to 140
-                        apn = ap1
-                        t = xn/apn
-                        ssum = 1. + t
-                        while True:
-                            t *= xn/apn
-                            ssum += t
-                            if t <= 1e-4:
-                                break
-                        t = w - log(ssum)
-                        xn = exp((xn + t)/a)
-                        xn *= (1. - (a*log(xn) - xn -t) / (a - xn))
+                        else:
+                            use_p = True
+                            am1 = (a - 0.5) - 0.5
+                            if p <= 1.e10*xmin:
+                                return (xn, -8)
+                            skip140 = True
+
+                if not skip140:
+                    # Go to 140
+                    apn = ap1
+                    t = xn/apn
+                    ssum = 1. + t
+                    while True:
+                        t *= xn/apn
+                        ssum += t
+                        if not (t > 1e-4):
+                            break
+                    t = w - log(ssum)
+                    xn = exp((xn + t)/a)
+                    xn *= (1. - (a*log(xn) - xn -t) / (a - xn))
 
             # Go to 170
             use_p = True
@@ -3771,7 +3811,6 @@ cdef inline (double, int) gaminv(double a, double p,
             d = 0.5 + (0.5 - xn / a)
             if abs(d) <= e2:
                 return (xn, -8)
-
         pn, qn = gratio(a, xn, 0)
         if pn == 0. or qn == 0.:
             return (xn, -8)
@@ -3806,6 +3845,7 @@ cdef inline (double, int) gaminv(double a, double p,
         return (x, -6)
 
 
+
 cdef inline double gaminv_helper_30(double a, double s,
                                     double y, double z) noexcept nogil:
     cdef double c1, c2, c3, c4, c5
@@ -3818,6 +3858,7 @@ cdef inline double gaminv_helper_30(double a, double s,
               )*c1 + 0.5*(((2.*a-25.)*a+72.)*a-61.)
              )*c1+ (((25.*a-195.)*a+477.)*a-379.)/12.)
     return ((((c5/y+c4)/y+c3)/y+c2)/y+c1) + y
+
 
 # %%----------------------------------------- gamln
 cdef inline double gamln(double a) noexcept nogil:
@@ -3852,6 +3893,7 @@ cdef inline double gamln(double a) noexcept nogil:
     t = (1/a)**2
     w = (((((c[5]*t+c[4])*t+c[3])*t+c[2])*t+c[1])*t+c[0])/a
     return (d + w) + (a-0.5)*(log(a) - 1.)
+
 
 # %%----------------------------------------- gamln1
 cdef inline double gamln1(double a) noexcept nogil:
@@ -3919,6 +3961,7 @@ cdef inline double gamln1(double a) noexcept nogil:
               )*x+1.
         w = top/bot
         return x*w
+
 
 # %%-------------------------------------- gamma
 cdef inline double gamma(double a) noexcept nogil:
@@ -4008,6 +4051,7 @@ cdef inline double gamma(double a) noexcept nogil:
     result = exp(w)*(1. + t)
     return (1. / (result * s)) / x if (a < 0.) else result
 
+
 # %%-------------------------------------- grat1
 # Subroutine converted to function
 cdef inline (double, double) grat1(double a, double x,
@@ -4073,11 +4117,12 @@ cdef inline (double, double) grat1(double a, double x,
         a2n = a2nm1 + cma*a2n
         b2n = b2nm1 + cma*b2n
         an0 = a2n/b2n
-        if (abs(an0-am0) < eps*an0):
+        if not (abs(an0-am0) >= eps*an0):
             break
     q = r*an0
     p = 0.5 + (0.5 - q)
     return (p, q)
+
 
 # %%-------------------------------------- gratio
 cdef inline (double, double) gratio(double a, double x, int ind) noexcept nogil:
@@ -4301,7 +4346,13 @@ cdef inline (double, double) gratio(double a, double x, int ind) noexcept nogil:
                         c6 = (d6[1]*z+d6[0])*z + d60
                         t = ((((((d70*u+c6)*u+c5)*u+c4)*u+c3)*u+c2)*u+c1)*u + c0
                 elif ind == 1:
-                    c0 = (((((d0[5]*z+d0[4])*z+d0[3])*z+d0[2])*z+d0[1])*z+d0[0])*z - (1./3.)
+                    c0 = ((((((d0[5]
+                               )*z+d0[4]
+                              )*z+d0[3]
+                             )*z+d0[2]
+                            )*z+d0[1]
+                           )*z+d0[0]
+                          )*z - (1./3.)
                     c1 = (((d1[3]*z+d1[2])*z+d1[1])*z+d1[0])*z + d10
                     c2 = d2[0]*z + d20
                     t = (c2*u+c1)*u + c0
@@ -4591,6 +4642,7 @@ cdef inline (double, double) gratio(double a, double x, int ind) noexcept nogil:
     ans = 0.5 + (0.5 - qans)
     return ans, qans
 
+
 # %%-------------------------------------- gsumln
 cdef inline double gsumln(double a, double b) noexcept nogil:
     cdef double x
@@ -4703,6 +4755,7 @@ cdef inline double psi(double xx) noexcept nogil:
 
         return aug + log(x)
 
+
 # %%-------------------------------------- rcomp
 cdef inline double rcomp(double a, double x) noexcept nogil:
     cdef double t, t1, u
@@ -4720,6 +4773,7 @@ cdef inline double rcomp(double a, double x) noexcept nogil:
         t1 -= a*rlog(u)
         return r2pi*sqrt(a)*exp(t1)
 
+
 # %%-------------------------------------- rexp
 cdef inline double rexp(double x) noexcept nogil:
     cdef double[2] p = [.914041914819518e-09, .238082361044469e-01]
@@ -4735,6 +4789,7 @@ cdef inline double rexp(double x) noexcept nogil:
             return w* (0.5+ (0.5 - 1./w))
         else:
             return (w - 0.5) - 0.5
+
 
 # %%-------------------------------------- rlog
 cdef inline double rlog(double x) noexcept nogil:
@@ -4762,6 +4817,7 @@ cdef inline double rlog(double x) noexcept nogil:
     t = r*r
     w = ((p[2]*t+p[1])*t+p[0])/ ((q[1]*t+q[0])*t+1.)
     return 2.*t*(1. / (1. - r) - r*w) + w1
+
 
 # %%-------------------------------------- rlog1
 cdef inline double rlog1(double x) noexcept nogil:
@@ -4797,6 +4853,7 @@ cdef inline double rlog1(double x) noexcept nogil:
         return 2*t*(1./(1.-r) - r*w) + w1
     else:
         return x - log((x + 0.5) + 0.5)
+
 
 # %%-------------------------------------- stvaln
 cdef inline double stvaln(double p) noexcept nogil:
