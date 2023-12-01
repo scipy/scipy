@@ -37,9 +37,9 @@ def compliance_scipy(arrays):
     The following subclasses are not supported and raise and error:
     - `numpy.ma.MaskedArray`
     - `numpy.matrix`
-    - numpy arrays which do not have a boolean or numerical dtype
-    - Any array-like which is neither array API compatible nor coercible by numpy
-    - Any array-like which is coerced by numpy to an unsupported dtype
+    - NumPy arrays which do not have a boolean or numerical dtype
+    - Any array-like which is neither array API compatible nor coercible by NumPy
+    - Any array-like which is coerced by NumPy to an unsupported dtype
     """
     for i in range(len(arrays)):
         array = arrays[i]
@@ -57,7 +57,7 @@ def compliance_scipy(arrays):
                 array = np.asanyarray(array)
             except TypeError:
                 raise TypeError("An argument is neither array API compatible nor "
-                                "coercible by numpy.")
+                                "coercible by NumPy.")
             dtype = array.dtype
             if not (np.issubdtype(dtype, np.number) or np.issubdtype(dtype, np.bool_)):
                 message = (
