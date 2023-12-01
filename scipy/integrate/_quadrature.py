@@ -952,7 +952,7 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
         `y`.
     dx : scalar or array_like, optional
         Spacing between elements of `y`. Only used if `x` is None. Can either 
-        be a float, or an array with the same shape as `y`, but size 1 along
+        be a float, or an array with the same shape as `y`, but length 1 along
         `axis`.
     axis : int, optional
         Specifies the axis to integrate along. Default is -1 (last axis).
@@ -961,7 +961,7 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
         and add it to the rest of the result. Default is None, which means no
         value at ``x[0]`` is returned and `res` has one element less than `y`
         along the axis of integration. Can either be a float, or an array with
-        the same shape as `y`, but size 1 along `axis`.
+        the same shape as `y`, but length 1 along `axis`.
 
     Returns
     -------
@@ -1044,6 +1044,28 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
     >>> ax.plot(x, y_int, 'ro', x, x**3/3 - (x[0])**3/3, 'b-')
     >>> ax.grid()
     >>> plt.show()
+
+    The output of `cumulative_simpson` is similar to that of iteratively
+    calling `simpson` with successively larger integration intervals, but
+    not identical.
+
+    >>> def cumulative_simpson_reference(y, x):
+    ...     return np.asarray([integrate.simpson(y[:i], x=x[:i])
+    ...                        for i in range(2, len(y) + 1)])
+    >>>
+    >>> rng = np.random.default_rng(354673834679465)
+    >>> x, y = rng.random(size=(2, 10))
+    >>> x.sort()
+    >>>
+    >>> res = integrate.cumulative_simpson(y, x=x)
+    >>> ref = cumulative_simpson_reference(y, x)
+    >>> equal = np.abs(res - ref) < 1e-15
+    >>> equal  # not equal when `simpson` has even number of subintervals
+    array([False,  True, False,  True, False,  True, False,  True,  True])
+
+    This is expected: because `cumulative_simpson` has access to more
+    information than `simpson`, it can typically produce more accurate
+    estimates of the underlying integral over subintervals.
 
     """
     y = _ensure_float_array(y)
