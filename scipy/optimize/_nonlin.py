@@ -1490,7 +1490,10 @@ class KrylovJacobian(Jacobian):
                 raise ValueError('Fgradp did not return a numpy array')
             
             if not((self.x0.shape == r.shape)):
-                raise ValueError(f'Fgradp returned array with wrong shape. Returned shape: {r.shape}. Expected shape: {self.x0.shape}')
+                message = (f'Fgradp returned array with wrong shape. '
+                           f'Returned shape: {r.shape}. '
+                           f'Expected shape: {self.x0.shape}')
+                raise ValueError(message)
             
         if not np.all(np.isfinite(r)) and np.all(np.isfinite(v)):
             raise ValueError('Function returned non-finite results')
