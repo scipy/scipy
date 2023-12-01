@@ -691,14 +691,8 @@
             "gdtrib": "ddd->d"        }
     },
     "gdtrix": {
-        "cdf_wrappers.h": {
-            "cdfgam2_wrap": "ddd->d"
-        }
-    },
-    "gdtrix_cython": {
         "_cdflib_wrappers.pxd": {
-            "gdtrix": "ddd->d"
-        }
+            "gdtrix": "ddd->d"        }
     },
     "hankel1": {
         "amos_wrappers.h": {
@@ -1136,21 +1130,10 @@
         }
     },
     "nrdtrimn": {
-        "cdf_wrappers.h": {
-            "cdfnor3_wrap": "ddd->d"
-        }
-    },
-    "nrdtrimn_cython": {
         "_cdflib_wrappers.pxd": {
-            "nrdtrimn": "ddd->d"
-        }
+            "nrdtrimn": "ddd->d"        }
     },
     "nrdtrisd": {
-        "cdf_wrappers.h": {
-            "cdfnor4_wrap": "ddd->d"
-        }
-    },
-    "nrdtrisd_cython": {
         "_cdflib_wrappers.pxd": {
             "nrdtrisd": "ddd->d"
         }
@@ -1229,14 +1212,8 @@
         }
     },
     "pdtrik": {
-        "cdf_wrappers.h": {
-            "cdfpoi2_wrap": "dd->d"
-        }
-    },
-    "pdtrik_cython": {
         "_cdflib_wrappers.pxd": {
-            "pdtrik": "dd->d"
-        }
+            "pdtrik": "dd->d"        }
     },
     "poch": {
         "cephes.h": {
@@ -1396,21 +1373,10 @@
         }
     },
     "stdtr": {
-        "cdf_wrappers.h": {
-            "cdft1_wrap": "dd->d"
-        }
-    },
-    "stdtr_cython": {
         "_cdflib_wrappers.pxd": {
-            "stdtr": "dd->d"
-        }
+            "stdtr": "dd->d"        }
     },
     "stdtridf": {
-        "cdf_wrappers.h": {
-            "cdft3_wrap": "dd->d"
-        }
-    },
-    "stdtridf_cython": {
         "_cdflib_wrappers.pxd": {
             "stdtridf": "dd->d"
         }
