@@ -858,11 +858,8 @@ def _cumulatively_sum_simpson_subintegrals(
 
 
 def _cumulative_simpson_equal_intervals(
-    y: np.ndarray, dx: np.ndarray, axis: int
+    y: np.ndarray, dx: np.ndarray
 ) -> np.ndarray:
-
-    y = y.swapaxes(-1, axis)
-    dx = dx.swapaxes(-1, axis)
 
     # Consider a quadratic interpolation over each set of 3 adjacent points,
     # a, a+h1, a+h1+h2. The subinterval widths are h1 and h2
@@ -887,15 +884,12 @@ def _cumulative_simpson_equal_intervals(
         sub_integrals_h1,
         sub_integrals_h2,
     )
-    return res.swapaxes(-1, axis)
+    return res
 
 
 def _cumulative_simpson_unequal_intervals(
-    y: np.ndarray, x: np.ndarray, axis: int
+    y: np.ndarray, x: np.ndarray
 ) -> np.ndarray:
-
-    y = y.swapaxes(-1, axis)
-    x = x.swapaxes(-1, axis)
 
     d = np.diff(x, axis=-1)
     if np.any(d <= 0):
@@ -932,10 +926,10 @@ def _cumulative_simpson_unequal_intervals(
         sub_integrals_h1,
         sub_integrals_h2,
     )
-    return res.swapaxes(-1, axis)
+    return res
 
 
-def _convert_input_to_float_array(arr: npt.ArrayLike) -> np.ndarray:
+def _ensure_float_array(arr: npt.ArrayLike) -> np.ndarray:
     arr = np.asarray(arr)
     if np.issubdtype(arr.dtype, np.integer):
         arr = arr.astype(float, copy=False)
@@ -958,7 +952,7 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
         `y`.
     dx : scalar or array_like, optional
         Spacing between elements of `y`. Only used if `x` is None. Can either 
-        be a float, or an array with the same shape as `y`, but size 1 along 
+        be a float, or an array with the same shape as `y`, but size 1 along
         `axis`.
     axis : int, optional
         Specifies the axis to integrate along. Default is -1 (last axis).
@@ -1052,64 +1046,59 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
     >>> plt.show()
 
     """
-    y = _convert_input_to_float_array(y)
+    y = _ensure_float_array(y)
 
-    # validate y and axis
-    if axis < -1 or axis >= y.ndim:
-        raise ValueError("If given, `axis` must exist in the shape of `y`.")
+    # validate `axis` and standardize to work along the last axis
+    original_shape = y.shape
+    try:
+        y = np.moveaxis(y, axis, -1)
+    except np.exceptions.AxisError as e:
+        message = f"`axis={axis}` is not valid for `y` with `y.ndim={y.ndim}`."
+        raise ValueError(message) from e
 
-    if y.shape[axis] < 3:
+    if y.shape[-1] < 3:
         raise ValueError(
             "At least 3 points are required along the axis of integration "
             "to use the composite Simpson's method."
         )
 
     if x is not None:
-        x = _convert_input_to_float_array(x)
-        if x.ndim == 1 and y.shape[axis] == x.shape[0]:
-            x_shape = [1] * y.ndim
-            x_shape[axis] = -1
-            x = x.reshape(tuple(x_shape))
-        elif x.shape != y.shape:
-            raise ValueError(
-                "If given, shape of `x` must be the same as `y` or 1-D with "
-                "the same length as `y` along `axis`."
-            )
-        res = _cumulative_simpson_unequal_intervals(y, x, axis=axis)
+        x = _ensure_float_array(x)
+        message = ("If given, shape of `x` must be the same as `y` or 1-D with "
+                   "the same length as `y` along `axis`.")
+        if not (x.shape == original_shape
+                or (x.ndim == 1 and len(x) == original_shape[axis])):
+            raise ValueError(message)
+
+        x = np.broadcast_to(x, y.shape) if x.ndim == 1 else np.moveaxis(x, axis, -1)
+        res = _cumulative_simpson_unequal_intervals(y, x)
 
     else:
-        dx = _convert_input_to_float_array(dx)
-        final_dx_shape = tupleset(y.shape, axis, y.shape[axis] - 1)
-        alt_input_dx_shape = tupleset(y.shape, axis, 1)
-
-        if dx.ndim == 0:
-            dx = np.ones(final_dx_shape) * dx
-        elif dx.shape == alt_input_dx_shape:
-            dx = np.repeat(dx, y.shape[axis] - 1, axis=axis)
-        else:
-            raise ValueError(
-                "`dx` must either be numeric or have the same shape as `y` "
-                "but with only 1 point along `axis`."
-            )
-        res = _cumulative_simpson_equal_intervals(y, dx, axis=axis)
+        dx = _ensure_float_array(dx)
+        final_dx_shape = tupleset(original_shape, axis, original_shape[axis] - 1)
+        alt_input_dx_shape = tupleset(original_shape, axis, 1)
+        message = ("If provided, `dx` must either be a scalar or have the same "
+                   "shape as `y` but with only 1 point along `axis`.")
+        if not (dx.ndim == 0 or dx.shape == alt_input_dx_shape):
+            raise ValueError(message)
+        dx = np.broadcast_to(dx, final_dx_shape)
+        dx = np.moveaxis(dx, axis, -1)
+        res = _cumulative_simpson_equal_intervals(y, dx)
 
     if initial is not None:
-        initial = _convert_input_to_float_array(initial)
-        alt_initial_input_shape = tupleset(y.shape, axis, 1)
-        if initial.ndim == 0:
-            initial = np.ones(y.shape) * initial
-        elif initial.shape == alt_initial_input_shape:
-            initial = np.repeat(initial, y.shape[axis], axis=axis)
-        else:
-            raise ValueError(
-                "`initial` must either be numeric or have the same shape as "
-                "`y` but with only 1 point along `axis`."
-            )
+        initial = _ensure_float_array(initial)
+        alt_initial_input_shape = tupleset(original_shape, axis, 1)
+        message = ("If provided, `initial` must either be a scalar or have the "
+                   "same shape as `y` but with only 1 point along `axis`.")
+        if not (initial.ndim == 0 or initial.shape == alt_initial_input_shape):
+            raise ValueError(message)
+        initial = np.broadcast_to(initial, alt_initial_input_shape)
+        initial = np.moveaxis(initial, axis, -1)
 
-        slice1 = tupleset((slice(None),) * y.ndim, axis, slice(1, None))
-        initial[slice1] = initial[slice1] + res
-        res = initial
+        res += initial
+        res = np.concatenate((initial, res), axis=-1)
 
+    res = np.moveaxis(res, -1, axis)
     return res
 
 
