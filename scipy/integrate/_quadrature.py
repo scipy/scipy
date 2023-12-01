@@ -1046,7 +1046,7 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
     >>> plt.show()
 
     The output of `cumulative_simpson` is similar to that of iteratively
-    calling `simpson` with successively larger integration intervals, but
+    calling `simpson` with successively higher upper limits of integration, but
     not identical.
 
     >>> def cumulative_simpson_reference(y, x):
@@ -1073,7 +1073,7 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
     # validate `axis` and standardize to work along the last axis
     original_shape = y.shape
     try:
-        y = np.moveaxis(y, axis, -1)
+        y = np.swapaxes(y, axis, -1)
     except np.exceptions.AxisError as e:
         message = f"`axis={axis}` is not valid for `y` with `y.ndim={y.ndim}`."
         raise ValueError(message) from e
@@ -1092,7 +1092,7 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
                 or (x.ndim == 1 and len(x) == original_shape[axis])):
             raise ValueError(message)
 
-        x = np.broadcast_to(x, y.shape) if x.ndim == 1 else np.moveaxis(x, axis, -1)
+        x = np.broadcast_to(x, y.shape) if x.ndim == 1 else np.swapaxes(x, axis, -1)
         res = _cumulative_simpson_unequal_intervals(y, x)
 
     else:
@@ -1104,7 +1104,7 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
         if not (dx.ndim == 0 or dx.shape == alt_input_dx_shape):
             raise ValueError(message)
         dx = np.broadcast_to(dx, final_dx_shape)
-        dx = np.moveaxis(dx, axis, -1)
+        dx = np.swapaxes(dx, axis, -1)
         res = _cumulative_simpson_equal_intervals(y, dx)
 
     if initial is not None:
@@ -1115,12 +1115,12 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
         if not (initial.ndim == 0 or initial.shape == alt_initial_input_shape):
             raise ValueError(message)
         initial = np.broadcast_to(initial, alt_initial_input_shape)
-        initial = np.moveaxis(initial, axis, -1)
+        initial = np.swapaxes(initial, axis, -1)
 
         res += initial
         res = np.concatenate((initial, res), axis=-1)
 
-    res = np.moveaxis(res, -1, axis)
+    res = np.swapaxes(res, -1, axis)
     return res
 
 

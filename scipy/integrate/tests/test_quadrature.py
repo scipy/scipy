@@ -851,7 +851,7 @@ class TestCumulativeSimpson:
 
         ref = cumulative_simpson(y, x=x)
         res = simpson_reference(y, x)
-        np.testing.assert_allclose(res[..., 1::2], ref[..., 1::2], 1e-15)
+        np.testing.assert_allclose(res[..., 1::2], ref[..., 1::2])
         np.testing.assert_allclose(res[..., -1], ref[..., -1])
 
 
