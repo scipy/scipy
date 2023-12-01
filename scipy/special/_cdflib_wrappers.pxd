@@ -508,7 +508,7 @@ cdef inline double pdtrik(double p, double xlam) noexcept nogil:
     return get_result("pdtrik", argnames, result, status, bound, 1)
 
 
-cdef inline double stdtr(double t, double df) noexcept nogil:
+cdef inline double stdtr(double df, double t) noexcept nogil:
     cdef:
         double result, _, bound
         int status = 10
