@@ -423,7 +423,7 @@ cdef inline (double, int) bgrat(double a, double b, double x , double y, double 
         d[n-1] = bm1*cn + s/n
         dj = d[n-1]*j
         ssum += dj
-        if not (ssum > 0.):
+        if ssum <= 0.:
             return (w, 1)
         if not (abs(dj) > eps*(ssum+l)):
             break
@@ -2322,7 +2322,7 @@ cdef inline (double, int, double) cdft_which3(
     cdef DzrorState DZ = DzrorState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0)
-    DS.small = 0.
+    DS.small = 1e-100
     DS.big = 1e10
     DS.absstp = 0.5
     DS.relstp = 0.5
@@ -2345,7 +2345,7 @@ cdef inline (double, int, double) cdft_which3(
         dinvr(&DS, &DZ)
 
     if DS.status == -1:
-        return (DS.x, 1 if DS.qleft else 2, 0. if DS.qleft else INFINITY)
+        return (DS.x, 1 if DS.qleft else 2, 1e-100 if DS.qleft else 1e10)
     else:
         return(DS.x, 0, 0.)
 
@@ -3508,7 +3508,7 @@ cdef inline double fpser(double a, double b, double x, double eps) noexcept nogi
     cdef double result = 1.
 
     result = 1.
-    if (a > 1e-3*eps):
+    if not (a <= 1e-3*eps):
         result = 0.
         t = a*log(x)
         if t < -708.:
@@ -3523,7 +3523,7 @@ cdef inline double fpser(double a, double b, double x, double eps) noexcept nogi
         t *= x
         c = t / an
         s += c
-        if abs(c) <= tol:
+        if not (abs(c) > tol):
             break
 
     return result*(1. + a*s)
