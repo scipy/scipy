@@ -70,7 +70,7 @@ cdef inline double get_result(
         return NAN
     sf_error.error(name, sf_error.OTHER, "Unknown error.")
     return NAN
-    
+
 
 cdef inline double btdtria(double p, double b, double x) noexcept nogil:
     cdef:
@@ -91,7 +91,7 @@ cdef inline double btdtria(double p, double b, double x) noexcept nogil:
 
 
 
-cdef inline double btdtrib(double p, double a, double x) noexcept nogil:
+cdef inline double btdtrib(double a, double p, double x) noexcept nogil:
     cdef:
         double q = 1.0 - p
         double y = 1.0 - x
