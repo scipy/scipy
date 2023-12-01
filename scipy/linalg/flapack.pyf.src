@@ -35,12 +35,12 @@ interface
     ! http://www.netlib.org/lapack/explore-html/
 
     include 'flapack_user.pyf.src'
-    include 'flapack_gen.pyf.src'
-    include 'flapack_gen_banded.pyf.src'
-    include 'flapack_gen_tri.pyf.src'
-    include 'flapack_sym_herm.pyf.src'
-    include 'flapack_pos_def.pyf.src'
-    include 'flapack_pos_def_tri.pyf.src'
+!    include 'flapack_gen.pyf.src'
+!    include 'flapack_gen_banded.pyf.src'
+!    include 'flapack_gen_tri.pyf.src'
+!    include 'flapack_sym_herm.pyf.src'
+!    include 'flapack_pos_def.pyf.src'
+!    include 'flapack_pos_def_tri.pyf.src'
     include 'flapack_other.pyf.src'
 
 end interface
