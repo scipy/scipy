@@ -1318,7 +1318,7 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
         if np.any(istransinf):
             warnings.warn(
                 f"The optimal lambda is {res}, but the returned lambda is "
-                f"the constrained optimum to ensure that maximum of "
+                f"the constrained optimum to ensure that the maximum of the "
                 f"transformed data does not cause overflow in {dtype}."
             )
 
