@@ -1,6 +1,9 @@
 from . cimport sf_error
 
-from libc.math cimport NAN
+from libc.math cimport NAN, isnan, isinf
+cdef extern from "cephes.h" nogil:
+    double ndtr(double a)
+    double ndtri(double y0)
 
 from ._cdflib cimport (
     cdfbet_which3,
@@ -517,6 +520,9 @@ cdef inline double stdtr(double df, double t) noexcept nogil:
     argnames[0] = "t"
     argnames[1] = "df"
 
+    if isinf(df):
+        return NAN if isnan(t) else ndtr(t)
+
     result, _, status, bound = cdft_which1(t, df)
     return get_result("stdtr", argnames, result, status, bound, 1)
 
@@ -527,6 +533,9 @@ cdef inline double stdtridf(double p, double t) noexcept nogil:
         double result, bound
         int status = 10
         char *argnames[3]
+
+    if isnan(p) or isnan(q) or isnan(t):
+        return NAN
 
     argnames[0] = "p"
     argnames[1] = "q"
@@ -542,6 +551,9 @@ cdef inline double stdtrit(double df, double p) noexcept nogil:
         double result, bound
         int status = 10
         char *argnames[3]
+
+    if isinf(df):
+        return NAN if isnan(p) else ndtri(p)
 
     argnames[0] = "p"
     argnames[1] = "q"
