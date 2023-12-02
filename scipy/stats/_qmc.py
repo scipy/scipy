@@ -780,6 +780,7 @@ def van_der_corput(
         else:
             permutations = np.asarray(permutations)
 
+        permutations = permutations.astype(np.int64)
         return _cy_van_der_corput_scrambled(n, base, start_index,
                                             permutations, workers)
 
