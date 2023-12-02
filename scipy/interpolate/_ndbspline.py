@@ -6,7 +6,7 @@ from math import prod
 
 from . import _bspl  # type: ignore
 
-from scipy.sparse.linalg import spsolve
+import scipy.sparse.linalg as ssl
 from scipy.sparse import csr_array
 
 from ._bsplines import _not_a_knot
@@ -251,7 +251,23 @@ class NdBSpline:
         return csr_array((data, indices, indptr))
 
 
-def make_ndbspl(points, values, k=3):
+def _iter_solve(a, b, solver=ssl.gcrotmk, **solver_args):
+    # work around iterative solvers not accepting multiple r.h.s.
+    if b.ndim == 2 and b.shape[1] !=1:
+        res = np.empty_like(b)
+        for j in range(b.shape[1]):
+            res[:, j], info = solver(a, b[:, j], **solver_args)
+            if info != 0:
+                raise ValueError(f"{solver = } returns {info =} for column {j}.")
+        return res
+    else:
+        res, info = solver(a, b, **solver_args)
+        if info != 0:
+            raise ValueError(f"{solver = } returns {info = }.")
+        return res
+
+
+def make_ndbspl(points, values, k=3, *, solver=ssl.gcrotmk, **solver_args):
     """Construct an interpolating NdBspline.
 
     Parameters
@@ -264,6 +280,15 @@ def make_ndbspl(points, values, k=3):
         The data on the regular grid in n dimensions.
     k : int, optional
         The spline degree. Must be odd. Default is cubic, k=3
+    solver : a `scipy.sparse.linalg` solver (iterative or direct), optional.
+        An iterative solver from `scipy.sparse.linalg` or a direct one,
+        `sparse.sparse.linalg.spsolve`.
+        Used to solve the sparse linear system
+        ``design_matrix @ coefficients = rhs`` for the coefficients.
+        Default is `scipy.sparse.linalg.gcrotmk`
+    solver_args : dict, optional
+        Additional arguments for the solver. The call signature is
+        ``solver(csr_array, rhs_vector, **solver_args)``
 
     Returns
     -------
@@ -274,7 +299,6 @@ def make_ndbspl(points, values, k=3):
     Boundary conditions are not-a-knot in all dimensions.
     """
     # TODO: 1. check consistency of inputs
-    #       2. plumb through to RGI
     ndim = len(points)
     xi_shape = tuple(len(x) for x in points)
 
@@ -299,20 +323,19 @@ def make_ndbspl(points, values, k=3):
     matr = NdBSpline.design_matrix(xvals, t, k)
 
     # Solve for the coefficients given `values`.
-    # Trailing dimensions: first ndim dimensions are data, trailing dimensions
-    # are batch dimensions, so stack `values` into a 2D array for `spsolve` to undestand.
+    # Trailing dimensions: first ndim dimensions are data, the rest are batch
+    # dimensions, so stack `values` into a 2D array for `spsolve` to undestand.
     v_shape = values.shape
     vals_shape = (prod(v_shape[:ndim]), prod(v_shape[ndim:]))
     vals = values.reshape(vals_shape)
 
-    # https://github.com/scikit-umfpack/scikit-umfpack/issues/99
-    from scipy.sparse import csr_matrix
-    matr = csr_matrix(matr)
+    if solver != ssl.spsolve:
+        solver = _iter_solve
+        if "atol" not in solver_args:
+            # avoid a DeprecationWarning, grumble grumble
+            solver_args["atol"] = 1e-6
 
-    coef = spsolve(matr, vals, use_umfpack=True)
+    coef = solver(matr, vals, **solver_args)
     coef = coef.reshape(xi_shape + v_shape[ndim:])
-
-  #  from numpy.testing import assert_allclose
-  #  assert_allclose(dense, matr.toarray(), atol=1e-15)  # XXX: dense
-    return NdBSpline(t, coef, k), 1  #dense   # XXX: dense
+    return NdBSpline(t, coef, k), 1
 

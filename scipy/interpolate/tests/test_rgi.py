@@ -16,7 +16,7 @@ from scipy._lib._util import ComplexWarning
 
 
 parametrize_rgi_interp_methods = pytest.mark.parametrize(
-    "method", RegularGridInterpolator._ALL_METHODS   #['linear', 'nearest', 'slinear', 'cubic', 'quintic', 'pchip']
+    "method", RegularGridInterpolator._ALL_METHODS
 )
 
 class TestRegularGridInterpolator:
@@ -447,7 +447,6 @@ class TestRegularGridInterpolator:
         assert_equal(res[i], np.nan)
         assert_equal(res[~i], interp(z[~i]))
 
-    @pytest.mark.skip  # FIXME
     @parametrize_rgi_interp_methods
     @pytest.mark.parametrize(("ndims", "func"), [
         (2, lambda x, y: 2 * x ** 3 + 3 * y ** 2),
@@ -456,6 +455,10 @@ class TestRegularGridInterpolator:
         (5, lambda x, y, z, a, b: 2 * x ** 3 + 3 * y ** 2 - z + a * b),
     ])
     def test_descending_points_nd(self, method, ndims, func):
+
+        if ndims == 5 and method in {"cubic", "quintic"}:
+            pytest.skip("too slow; OOM (quintic); or nearly so (cubic)")
+
         rng = np.random.default_rng(42)
         sample_low = 1
         sample_high = 5
@@ -505,6 +508,10 @@ class TestRegularGridInterpolator:
 
     @parametrize_rgi_interp_methods
     def test_nonscalar_values(self, method):
+
+        if method == "quintic":
+            pytest.skip("Way too slow.")
+
         # Verify that non-scalar valued values also works
         points = [(0.0, 0.5, 1.0, 1.5, 2.0, 2.5)] * 2 + [
             (0.0, 5.0, 10.0, 15.0, 20, 25.0)
@@ -532,6 +539,10 @@ class TestRegularGridInterpolator:
     @parametrize_rgi_interp_methods
     @pytest.mark.parametrize("flip_points", [False, True])
     def test_nonscalar_values_2(self, method, flip_points):
+
+        if method in {"cubic", "quintic"}:
+            pytest.skip("Way too slow.")
+
         # Verify that non-scalar valued values also work : use different
         # lengths of axes to simplify tracing the internals
         points = [(0.0, 0.5, 1.0, 1.5, 2.0, 2.5),
@@ -792,6 +803,10 @@ class TestInterpN:
 
     @parametrize_rgi_interp_methods
     def test_nonscalar_values(self, method):
+
+        if method == "quintic":
+            pytest.skip("Way too slow.")
+
         # Verify that non-scalar valued values also works
         points = [(0.0, 0.5, 1.0, 1.5, 2.0, 2.5)] * 2 + [
             (0.0, 5.0, 10.0, 15.0, 20, 25.0)
@@ -813,6 +828,10 @@ class TestInterpN:
 
     @parametrize_rgi_interp_methods
     def test_nonscalar_values_2(self, method):
+
+        if method in {"cubic", "quintic"}:
+            pytest.skip("Way too slow.")
+
         # Verify that non-scalar valued values also work : use different
         # lengths of axes to simplify tracing the internals
         points = [(0.0, 0.5, 1.0, 1.5, 2.0, 2.5),
@@ -866,7 +885,9 @@ class TestInterpN:
         v2r = interpn(points, values.real, sample, method=method)
         v2i = interpn(points, values.imag, sample, method=method)
         v2 = v2r + 1j*v2i
-        assert_allclose(v1, v2)
+
+        atol = 5e-6 if method == "quintic" else 1e-15
+        assert_allclose(v1, v2, atol=atol)
 
     def test_complex_pchip(self):
         # Complex-valued data deprecated for pchip

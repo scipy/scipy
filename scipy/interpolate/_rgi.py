@@ -5,6 +5,8 @@ import warnings
 
 import numpy as np
 
+import scipy.sparse.linalg as ssl
+
 from .interpnd import _ndim_coords_from_arrays
 from ._cubic import PchipInterpolator
 from ._rgi_cython import evaluate_linear_2d, find_indices
@@ -241,7 +243,7 @@ class RegularGridInterpolator:
     _ALL_METHODS = ["linear", "nearest"] + _SPLINE_METHODS
 
     def __init__(self, points, values, method="linear", bounds_error=True,
-                 fill_value=np.nan):
+                 fill_value=np.nan, *, solver=None, **solver_args):
         if method not in self._ALL_METHODS:
             raise ValueError("Method '%s' is not defined" % method)
         elif method in self._SPLINE_METHODS:
@@ -262,7 +264,10 @@ class RegularGridInterpolator:
                    "the array before passing to `RegularGridInterpolator`.")
             warnings.warn(msg, DeprecationWarning, stacklevel=2)
         if method in self._SPLINE_METHODS_ndbspl:
-            self._spline, _ = make_ndbspl(self.grid, self.values, self._SPLINE_DEGREE_MAP[method])
+            self._spline, _ = make_ndbspl(
+                self.grid, self.values, self._SPLINE_DEGREE_MAP[method],
+                solver=ssl.gcrotmk, **solver_args
+            )
 
     def _check_dimensionality(self, grid, values):
         _check_dimensionality(grid, values)
