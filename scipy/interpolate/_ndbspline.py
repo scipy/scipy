@@ -1,3 +1,4 @@
+import itertools
 import operator
 import numpy as np
 
@@ -256,6 +257,9 @@ def make_ndbspl(points, values, k=3):
 
     t = tuple(_not_a_knot(np.asarray(points[d], dtype=float), k[d])
               for d in range(ndim))
+
+    xvals = np.asarray([xv for xv in itertools.product(*points)])
+ #   breakpoint()
 
     # construct the colocation matrix
     data, indices, indptr, dense = _bspl._colloc_nd(points, t, np.asarray(k))  # XXX: dense

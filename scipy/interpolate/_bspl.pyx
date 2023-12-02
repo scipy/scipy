@@ -756,24 +756,25 @@ def _colloc_nd(xi, tuple t not None, long[::1] k):
 
         int j, d
 
-    # Precompute the shape and strides of the coefficients array.
-    # This would have been the NdBSpline coefficients; in the present context
-    # this is a helper to compute the indices into the collocation matrix.
-    # The computation is equivalent to
-    # >>> x = np.empty(c_shape)
-    # >>> cstrides = [s // 8 for s in x.strides]
-    c_shape = tuple(len(xi[i]) for i in range(ndim))
-    cs = c_shape[1:] + (1,)
-    cstrides = np.cumprod(cs[::-1])[::-1].copy()
-
-    # the number of non-zero terms for each point in ``xi``.
+    # the number of non-zero b-splines for each data point.
+    k1_shape = tuple(kd + 1 for kd in k)
     volume = 1
     for d in range(ndim):
         volume *= k[d] + 1
 
+    # Precompute the shape and strides of the coefficients array.
+    # This would have been the NdBSpline coefficients; in the present context
+    # this is a helper to compute the indices into the collocation matrix.
+    c_shape = tuple(len(t[d]) - k1_shape[d] for d in range(ndim))
+
+    # The computation is equivalent to
+    # >>> x = np.empty(c_shape)
+    # >>> cstrides = [s // 8 for s in x.strides]
+    cs = c_shape[1:] + (1,)
+    cstrides = np.cumprod(cs[::-1])[::-1].copy()
+
     # tabulate flat indices for iterating over the (k+1)**ndim subarray of
     # non-zero b-spline elements
-    k1_shape = tuple(kd + 1 for kd in k)
     indices = np.unravel_index(np.arange(volume), k1_shape)
     _indices_k1d = np.asarray(indices, dtype=np.intp).T.copy()
 
