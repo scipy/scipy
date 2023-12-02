@@ -53,6 +53,7 @@ cdef inline double algdiv(double a, double b) noexcept nogil:
     v = a * (log(b) - 1.)
     return (w - v) - u if (u>v) else (w - u) - v
 
+
 # %%----------------------------------------- alngam
 cdef inline double alngam(double x) noexcept nogil:
     cdef double prod, xx, result, offset
@@ -102,6 +103,7 @@ cdef inline double alngam(double x) noexcept nogil:
     result += offset + (xx - 0.5)*log(xx) - xx
     return result
 
+
 # %%----------------------------------------- alnrel
 cdef inline double alnrel(double a) noexcept nogil:
     cdef double[3] p = [-0.129418923021993e+01, 0.405303492862024e+00,
@@ -118,6 +120,7 @@ cdef inline double alnrel(double a) noexcept nogil:
         w = ((p[2]*t2 + p[1])*t2 + p[0])*t2 + 1.
         w /= ((q[2]*t2 + q[1])*t2 + q[0])*t2 + 1.
         return 2*t*w
+
 
 # %%----------------------------------------- apser
 cdef inline double apser(double a, double b, double x, double eps) noexcept nogil:
@@ -144,6 +147,7 @@ cdef inline double apser(double a, double b, double x, double eps) noexcept nogi
             break
 
     return -a * (c + s)
+
 
 # %%-------------------------------------- basym
 cdef inline double basym(double a, double b, double lmbda, double eps) noexcept nogil:
@@ -228,6 +232,7 @@ cdef inline double basym(double a, double b, double lmbda, double eps) noexcept 
 
     return e0*t*u*ssum
 
+
 # %%-------------------------------------- bcorr
 cdef inline double bcorr(double a0, double b0) noexcept nogil:
     cdef double a,b,c,h,s11,s3,s5,s7,s9,t,w,x,x2
@@ -262,6 +267,7 @@ cdef inline double bcorr(double a0, double b0) noexcept nogil:
              )*t + carr[1]
             )*t + carr[0]
            )/a + w
+
 
 # %% betaln ----------------------------------------- betaln
 cdef inline double betaln(double a0, double b0) noexcept nogil:
@@ -324,6 +330,7 @@ cdef inline double betaln(double a0, double b0) noexcept nogil:
         z *= b / (a + b)
     return w + log(z) + (gamln(a) + gamln(b) - gsumln(a, b))
 
+
 # %%----------------------------------------- bfrac
 cdef inline double bfrac(double a, double b, double x, double y,
                          double lmbda, double eps) noexcept nogil:
@@ -374,6 +381,7 @@ cdef inline double bfrac(double a, double b, double x, double y,
         bnp1 = 1.
 
     return result*r
+
 
 # %%----------------------------------------- bgrat
 cdef inline (double, int) bgrat(double a, double b, double x , double y, double w,
@@ -429,6 +437,7 @@ cdef inline (double, int) bgrat(double a, double b, double x , double y, double 
             break
 
     return (w + u*ssum, 0)
+
 
 # %%----------------------------------------- bpser
 cdef inline double bpser(double a, double b, double x, double eps) noexcept nogil:
@@ -501,6 +510,7 @@ cdef inline double bpser(double a, double b, double x, double eps) noexcept nogi
         if not (abs(w) > tol):
             break
     return result * (1. + a*ssum)
+
 
 # %%----------------------------------------- bratio
 cdef inline (double, double, int) bratio(double a, double b,
@@ -671,6 +681,7 @@ cdef inline (double, double, int) bratio(double a, double b,
         w1 = 0.5 + (0.5 - w)
         return (w, w1, 0) if (ind == 0) else (w1, w, 0)
 
+
 # %%----------------------------------------- brcmp1
 cdef inline double brcmp1(int mu, double a, double b,
                           double x, double y) noexcept nogil:
@@ -763,6 +774,7 @@ cdef inline double brcmp1(int mu, double a, double b,
     c = (1. + gam1(a)) * (1. + gam1(b)) / z
     return t*(a0*c) / (1. + a0 / b0)
 
+
 # %%----------------------------------------- brcomp
 cdef inline double brcomp(double a, double b, double x, double y) noexcept nogil:
     cdef double a0, apb, b0, c, e, h, lmbda, lnx, lny, t, u, v, x0, y0, z
@@ -853,6 +865,7 @@ cdef inline double brcomp(double a, double b, double x, double y) noexcept nogil
     c = (1. + gam1(a)) * (1. + gam1(b)) / z
     return t * (a0*c) / (1. + a0 / b0)
 
+
 # %%----------------------------------------- bup
 cdef inline double bup(double a, double b, double x, double y,
                        int n, double eps) noexcept nogil:
@@ -923,6 +936,7 @@ cdef inline double bup(double a, double b, double x, double y,
 
     return result*w
 
+
 # %% ---------------------------------------- cdfbet_whichX
 cdef inline (double, double, int, double) cdfbet_which1(
     double x, double y,double a, double b
@@ -943,6 +957,7 @@ cdef inline (double, double, int, double) cdfbet_which1(
 
     p, q = cumbet(x, y, a, b)
     return (p, q, 0, 0.)
+
 
 cdef inline (double, double, int, double) cdfbet_which2(
     double p, double q, double a, double b) noexcept nogil:
@@ -997,6 +1012,7 @@ cdef inline (double, double, int, double) cdfbet_which2(
         return (xx, yy, 1 if DZ.qleft else 2, 0. if DZ.qleft else 1.)
     else:
         return (xx, yy, 0, 0.)
+
 
 cdef inline (double, int, double) cdfbet_which3(
     double p, double q, double x, double y, double b) noexcept nogil:
@@ -1091,6 +1107,7 @@ cdef inline (double, int, double) cdfbet_which4(
         return (DS.x, (1 if DS.qleft else 2), (0. if DS.qleft else INFINITY))
     else:
         return(DS.x, 0, 0.)
+
 
 # %% ---------------------------------------- cdfbin_whichX
 cdef inline (double, double, int, double) cdfbin_which1(
@@ -1207,6 +1224,7 @@ cdef inline (double, int, double) cdfbin_which3(
     else:
         return(DS.x, 0, 0.)
 
+
 cdef inline (double, double, int, double) cdfbin_which4(
     double p, double q, double s, double xn) noexcept nogil:
     cdef double ccum, cum, pr, ompr
@@ -1260,6 +1278,7 @@ cdef inline (double, double, int, double) cdfbin_which4(
     else:
         return (pr, ompr, 0, 0.)
 
+
 # %% ---------------------------------------- cdfchi_whichX
 cdef inline (double, double, int, double) cdfchi_which1(
     double x, double df) noexcept nogil:
@@ -1272,6 +1291,7 @@ cdef inline (double, double, int, double) cdfchi_which1(
     p, q = cumchi(x, df)
 
     return (p, q, 0, 0)
+
 
 cdef inline (double, int, double) cdfchi_which2(
     double p, double q, double df) noexcept nogil:
@@ -1317,6 +1337,7 @@ cdef inline (double, int, double) cdfchi_which2(
     else:
         return(DS.x, 0, 0.)
 
+
 cdef inline (double, int, double) cdfchi_which3(
     double p, double q, double x) noexcept nogil:
     cdef bint qporq = p <= q
@@ -1361,10 +1382,13 @@ cdef inline (double, int, double) cdfchi_which3(
     else:
         return(DS.x, 0, 0.)
 
+
 # %% ---------------------------------------- cdfchn_whichX
 cdef inline (double, double, int, double) cdfchn_which1(
     double x, double df, double pnonc) noexcept nogil:
     cdef double p, q
+
+    x = min(x, spmpar[2])
     df = min(df, spmpar[2])
     pnonc = min(pnonc, 1.e9)
     if not (x >= 0.):
@@ -1375,6 +1399,7 @@ cdef inline (double, double, int, double) cdfchn_which1(
         return (0., 0., -3, 0.)
     p, q = cumchn(x, df, pnonc)
     return (p, q, 0, 0.)
+
 
 cdef inline (double, int, double) cdfchn_which2(
     double p, double df, double pnonc) noexcept nogil:
@@ -1418,6 +1443,7 @@ cdef inline (double, int, double) cdfchn_which2(
     else:
         return(DS.x, 0, 0.)
 
+
 cdef inline (double, int, double) cdfchn_which3(
     double p, double x, double pnonc) noexcept nogil:
     cdef double cum
@@ -1459,6 +1485,7 @@ cdef inline (double, int, double) cdfchn_which3(
         return (DS.x, 1 if DS.qleft else 2, 0. if DS.qleft else INFINITY)
     else:
         return(DS.x, 0, 0.)
+
 
 cdef inline (double, int, double) cdfchn_which4(
     double p, double x, double df) noexcept nogil:
@@ -1502,6 +1529,7 @@ cdef inline (double, int, double) cdfchn_which4(
     else:
         return(DS.x, 0, 0.)
 
+
 # %% ---------------------------------------- cdff_whichX
 cdef inline (double, double, int, double) cdff_which1(
     double f, double dfn, double dfd) noexcept nogil:
@@ -1516,6 +1544,7 @@ cdef inline (double, double, int, double) cdff_which1(
 
     p, q = cumf(f, dfn, dfd)
     return (p, q, 0, 0.)
+
 
 cdef inline (double, int, double) cdff_which2(
     double p, double q, double dfn, double dfd) noexcept nogil:
@@ -1561,6 +1590,7 @@ cdef inline (double, int, double) cdff_which2(
     else:
         return(DS.x, 0, 0.)
 
+
 cdef inline (double, int, double) cdff_which3(
     double p, double q, double f, double dfd) noexcept nogil:
     cdef double cum, ccum
@@ -1605,6 +1635,7 @@ cdef inline (double, int, double) cdff_which3(
     else:
         return(DS.x, 0, 0.)
 
+
 cdef inline (double, int, double) cdff_which4(
     double p, double q, double f, double dfn) noexcept nogil:
     cdef double cum, ccum
@@ -1648,6 +1679,7 @@ cdef inline (double, int, double) cdff_which4(
         return (DS.x, 1 if DS.qleft else 2, 0. if DS.qleft else INFINITY)
     else:
         return(DS.x, 0, 0.)
+
 
 # %% ---------------------------------------- cdffnc_whichX
 cdef (double, double, int, double) cdffnc_which1(
@@ -1998,7 +2030,7 @@ cdef inline (double, int, double) cdfnbn_which2(
                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0)
     DS.small = 0.
-    DS.big = 1e300
+    DS.big = 1e100
     DS.absstp = 0.5
     DS.relstp = 0.5
     DS.stpmul = 5.
@@ -2012,9 +2044,9 @@ cdef inline (double, int, double) cdfnbn_which2(
         return (0., -2, 0. if not (q > 0.) else 1.)
     if not (xn >= 0.):
         return (0., -3, 0.)
-    if not (0 <= pr < 1.):
+    if not (0 <= pr <= 1.):
         return (0., -4, 0. if not (pr > 0.) else 1.)
-    if not (0 <= ompr < 1.):
+    if not (0 <= ompr <= 1.):
         return (0., -5, 0. if not (ompr > 0.) else 1.)
     if ((abs(p+q)-0.5)-0.5) > 3*spmpar[0]:
         return (0., 3, (0. if (p+q) < 0 else 1.))
@@ -2032,6 +2064,7 @@ cdef inline (double, int, double) cdfnbn_which2(
     else:
         return(DS.x, 0, 0.)
 
+
 cdef inline (double, int, double) cdfnbn_which3(
     double p, double q, double s, double pr, double ompr) noexcept nogil:
     cdef double ccum, cum
@@ -2045,7 +2078,7 @@ cdef inline (double, int, double) cdfnbn_which3(
                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0)
     DS.small = 0.
-    DS.big = 1e300
+    DS.big = 1e100
     DS.absstp = 0.5
     DS.relstp = 0.5
     DS.stpmul = 5.
@@ -2059,9 +2092,9 @@ cdef inline (double, int, double) cdfnbn_which3(
         return (0., -2, 0. if not (q > 0.) else 1.)
     if not (s >= 0.):
         return (0., -3, 0.)
-    if not (0 <= pr < 1.):
+    if not (0 <= pr <= 1.):
         return (0., -4, 0. if not (pr > 0.) else 1.)
-    if not (0 <= ompr < 1.):
+    if not (0 <= ompr <= 1.):
         return (0., -5, 0. if not (ompr > 0.) else 1.)
 
     if ((abs(pr+ompr)-0.5)-0.5) > 3*spmpar[0]:
@@ -2071,7 +2104,7 @@ cdef inline (double, int, double) cdfnbn_which3(
 
     dinvr(&DS, &DZ)
     while DS.status == 1:
-        cum, ccum = cumbin(s, DS.x, pr, ompr)
+        cum, ccum = cumnbn(s, DS.x, pr, ompr)
         DS.fx = cum - p if qporq else ccum - q
         dinvr(&DS, &DZ)
 
@@ -2079,6 +2112,7 @@ cdef inline (double, int, double) cdfnbn_which3(
         return (DS.x, 1 if DS.qleft else 2, 0. if DS.qleft else INFINITY)
     else:
         return(DS.x, 0, 0.)
+
 
 cdef inline (double, double, int, double) cdfnbn_which4(
     double p, double q, double s, double xn) noexcept nogil:
@@ -2112,7 +2146,7 @@ cdef inline (double, double, int, double) cdfnbn_which4(
         dzror(&DZ)
         ompr = 1. - DZ.x
         while DZ.status == 1:
-            cum, ccum = cumbin(s, xn, DZ.x, ompr)
+            cum, ccum = cumnbn(s, xn, DZ.x, ompr)
             DZ.fx = cum - p
             dzror(&DZ)
             ompr = 1. - DZ.x
@@ -2121,7 +2155,7 @@ cdef inline (double, double, int, double) cdfnbn_which4(
         dzror(&DZ)
         pr = 1. - DZ.x
         while DZ.status == 1:
-            cum, ccum = cumbin(s, xn, pr, DZ.x)
+            cum, ccum = cumnbn(s, xn, pr, DZ.x)
             DZ.fx = ccum - q
             dzror(&DZ)
             pr = 1. - DZ.x
@@ -2142,6 +2176,7 @@ cdef inline (double, double, int, double) cdfnor_which1(
     p, q = cumnor(z)
     return (p, q, 0, 0.)
 
+
 cdef inline (double, int, double) cdfnor_which2(
     double p, double q, double mean, double sd) noexcept nogil:
     cdef double z
@@ -2149,6 +2184,7 @@ cdef inline (double, int, double) cdfnor_which2(
         return (0., -4, 0.)
     z = dinvnr(p, q)
     return (sd*z + mean, 0, 0.)
+
 
 cdef inline (double, int, double) cdfnor_which3(
     double p, double q, double x, double sd) noexcept nogil:
@@ -2158,11 +2194,13 @@ cdef inline (double, int, double) cdfnor_which3(
     z = dinvnr(p, q)
     return (x - sd*z, 0, 0.)
 
+
 cdef inline (double, int, double) cdfnor_which4(
     double p, double q, double x, double mean) noexcept nogil:
     cdef double z
     z = dinvnr(p, q)
     return ((x-mean)/z, 0, 0.)
+
 
 # %% ---------------------------------------- cdfpoi_whichX
 cdef inline (double, double, int, double) cdfpoi_which1(
@@ -2219,6 +2257,7 @@ cdef inline (double, int, double) cdfpoi_which2(
     else:
         return(DS.x, 0, 0.)
 
+
 cdef inline (double, int, double) cdfpoi_which3(
     double p, double q, double s) noexcept nogil:
     cdef double ccum, cum
@@ -2260,6 +2299,7 @@ cdef inline (double, int, double) cdfpoi_which3(
     else:
         return(DS.x, 0, 0.)
 
+
 # %% ---------------------------------------- cdft_whichX
 cdef inline (double, double, int, double) cdft_which1(
     double t, double df) noexcept nogil:
@@ -2268,6 +2308,7 @@ cdef inline (double, double, int, double) cdft_which1(
         return (0., 0., -2, 0.)
     p, q = cumt(t, df)
     return (p, q, 0, 0.)
+
 
 cdef inline (double, int, double) cdft_which2(
     double p, double q, double df) noexcept nogil:
@@ -2310,6 +2351,7 @@ cdef inline (double, int, double) cdft_which2(
     else:
         return(DS.x, 0, 0.)
 
+
 cdef inline (double, int, double) cdft_which3(
     double p, double q, double t) noexcept nogil:
     cdef double ccum, cum
@@ -2349,6 +2391,7 @@ cdef inline (double, int, double) cdft_which3(
     else:
         return(DS.x, 0, 0.)
 
+
 # %% ---------------------------------------- cdftnc_whichX
 cdef inline (double, double, int, double) cdftnc_which1(
     double t, double df, double pnonc) noexcept nogil:
@@ -2366,6 +2409,7 @@ cdef inline (double, double, int, double) cdftnc_which1(
 
     p, q = cumtnc(t, df, pnonc)
     return (p, q, 0, 0.)
+
 
 cdef inline (double, int, double) cdftnc_which2(
     double p, double q, double df, double pnonc) noexcept nogil:
@@ -2410,6 +2454,7 @@ cdef inline (double, int, double) cdftnc_which2(
     else:
         return(DS.x, 0, 0.)
 
+
 cdef inline (double, int, double) cdftnc_which3(
     double p, double q, double t, double pnonc) noexcept nogil:
     cdef double cum
@@ -2451,6 +2496,7 @@ cdef inline (double, int, double) cdftnc_which3(
         return (DS.x, 1 if DS.qleft else 2, 0. if DS.qleft else INFINITY)
     else:
         return(DS.x, 0, 0.)
+
 
 cdef inline (double, int, double) cdftnc_which4(
     double p, double q, double t, double df) noexcept nogil:
@@ -2608,7 +2654,7 @@ cdef inline (double, double) cumf(double f, double dfn, double dfd) noexcept nog
         xx = 1. - yy
     else:
         yy = 1. - xx
-    cum, ccum, _ = bratio(dfd*0.5, dfn*0.5, xx, yy)
+    ccum, cum, _ = bratio(dfd*0.5, dfn*0.5, xx, yy)
     return cum, ccum
 
 
@@ -2665,15 +2711,13 @@ cdef inline (double, double, int) cumfnc(double f, double dfn,
         dnterm = exp(-betaln(adn, b) - log(adn) + adn*log(xx) +
                      b*log(yy))
 
-    while True:
+    while ((ssum >= abstol) and (xmult*betdn >= eps*ssum)) and i > 0:
         xmult *= (i/xnonc)
         i -= 1
         adn -= 1
         dnterm *= (adn + 1) / ((adn + b)*xx)
         betdn += dnterm
         ssum += xmult*betdn
-        if ((ssum < abstol) and (xmult*betdn < eps*ssum)) or i <= 0:
-            break
 
     i = icent + 1
     xmult = centwt
@@ -2798,7 +2842,9 @@ cdef inline (double, double) cumnor(double x) noexcept nogil:
 
 # %%----------------------------------------- cumpoi
 cdef inline (double, double) cumpoi(double s, double xlam) noexcept nogil:
-    return cumchi(2*xlam, 2.*(s + 1.))
+    cdef double cum, ccum
+    ccum, cum = cumchi(2*xlam, 2.*(s + 1.))
+    return cum, ccum
 
 
 # %%----------------------------------------- cumt
