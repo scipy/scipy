@@ -258,11 +258,10 @@ def make_ndbspl(points, values, k=3):
     t = tuple(_not_a_knot(np.asarray(points[d], dtype=float), k[d])
               for d in range(ndim))
 
-    xvals = np.asarray([xv for xv in itertools.product(*points)])
- #   breakpoint()
+    xvals = np.asarray([xv for xv in itertools.product(*points)], dtype=float)
 
     # construct the colocation matrix
-    data, indices, indptr, dense = _bspl._colloc_nd(points, t, np.asarray(k))  # XXX: dense
+    data, indices, indptr, dense = _bspl._colloc_nd(xvals, t, np.asarray(k))  # XXX: dense
     # data, indices, indptr = _bspl._colloc_nd(points, t, np.asarray(k))
     matr = csr_array((data, indices, indptr))
 

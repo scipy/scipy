@@ -676,7 +676,7 @@ def evaluate_ndbspline(const double[:, ::1] xi,
 @cython.wraparound(False)
 @cython.nonecheck(False)
 @cython.boundscheck(False)
-def _colloc_nd(xi, tuple t not None, long[::1] k):
+def _colloc_nd(double[:, ::1] xvals, tuple t not None, long[::1] k):
     """Construct the N-D tensor product collocation matrix as a CSR array.
 
     In the dense representation, each row of the collocation matrix corresponds
@@ -724,7 +724,9 @@ def _colloc_nd(xi, tuple t not None, long[::1] k):
     row), we construct it in the CSR format.
     """
     cdef:
-        npy_intp ndim = len(xi)
+        npy_intp size = xvals.shape[0]
+        npy_intp ndim = xvals.shape[1]
+
         # 'intervals': indices for a point in xi into the knot arrays t
         npy_intp[::1] i = np.empty(ndim, dtype=int)
 
@@ -781,16 +783,13 @@ def _colloc_nd(xi, tuple t not None, long[::1] k):
     # The collocation matrix in the CSR format.
     # If dense, this would have been
     # >>> matr = np.zeros((size, size), dtype=float)
-    size = np.prod([len(x) for x in xi])
     csr_indices = np.empty(shape=(size*volume,), dtype=int)
     csr_data = np.empty(shape=(size*volume,), dtype=float)
     csr_indptr = np.arange(0, volume*size + 1, volume)
 
-    import itertools
-    ### Iterate over the outer product of the data points
-    j = -1
-    for xv in itertools.product(*xi):
-        j+= 1
+    # ### Iterate over the the data points ###
+    for j in range(size):
+        xv = xvals[j, :]
 
         # For each point, iterate over the dimensions
         out_of_bounds = 0
