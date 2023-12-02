@@ -304,7 +304,12 @@ def make_ndbspl(points, values, k=3):
     v_shape = values.shape
     vals_shape = (prod(v_shape[:ndim]), prod(v_shape[ndim:]))
     vals = values.reshape(vals_shape)
-    coef = spsolve(matr, vals)
+
+    # https://github.com/scikit-umfpack/scikit-umfpack/issues/99
+    from scipy.sparse import csr_matrix
+    matr = csr_matrix(matr)
+
+    coef = spsolve(matr, vals, use_umfpack=True)
     coef = coef.reshape(xi_shape + v_shape[ndim:])
 
   #  from numpy.testing import assert_allclose
