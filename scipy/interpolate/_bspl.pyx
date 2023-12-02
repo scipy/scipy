@@ -685,8 +685,9 @@ def _colloc_nd(double[:, ::1] xvals, tuple t not None, long[::1] k):
 
     Parameters
     ----------
-    xi : tuple of ndarrays of float, with shapes (m1,), ... (mN,)
-        The points defining the regular grid in N dimensions.
+    xvals : ndarray, shape(size, ndim)
+        Data points. ``xvals[j, :]`` gives the ``j``-th data point as an
+        ``ndim``-dimensional array.
     t : tuple of 1D arrays, length-ndim
         Tuple of knot vectors
     k : tuple of ints, length-ndim
@@ -700,10 +701,10 @@ def _colloc_nd(double[:, ::1] xvals, tuple t not None, long[::1] k):
     Notes
     -----
 
-    This routine is in Cython only because `find_interval` and `_deBoor_D` are.
+    This routine is in Cython mainly because `find_interval` and `_deBoor_D` are.
 
-    Algorithm: given `xi` and data `values`, we construct a tensor product
-    spline, i.e. the linear combinations of
+    Algorithm: given `xvals` and the tuple of knots `t`, we construct a tensor
+    product spline, i.e. a linear combination of
 
        B(x1; i1, t1) * B(x2; i2, t2) * ... * B(xN; iN, tN)
 
@@ -780,9 +781,9 @@ def _colloc_nd(double[:, ::1] xvals, tuple t not None, long[::1] k):
     indices = np.unravel_index(np.arange(volume), k1_shape)
     _indices_k1d = np.asarray(indices, dtype=np.intp).T.copy()
 
-    # The collocation matrix in the CSR format.
+    # Allocate the collocation matrix in the CSR format.
     # If dense, this would have been
-    # >>> matr = np.zeros((size, size), dtype=float)
+    # >>> matr = np.zeros((size, max_row_index), dtype=float)
     csr_indices = np.empty(shape=(size*volume,), dtype=int)
     csr_data = np.empty(shape=(size*volume,), dtype=float)
     csr_indptr = np.arange(0, volume*size + 1, volume)

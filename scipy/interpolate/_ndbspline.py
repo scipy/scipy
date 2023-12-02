@@ -65,6 +65,7 @@ class NdBSpline:
     Methods
     -------
     __call__
+    design_matrix
 
     See Also
     --------
@@ -214,6 +215,41 @@ class NdBSpline:
 
         return out.reshape(xi_shape[:-1] + self.c.shape[ndim:])
 
+    @classmethod
+    def design_matrix(cls, xvals, t, k, extrapolate=True):
+        """Construct the design matrix as a CSR format sparse array.
+
+        Parameters
+        ----------
+        xvals :  ndarray, shape(npts, ndim)
+            Data points. ``xvals[j, :]`` gives the ``j``-th data point as an
+            ``ndim``-dimensional array.
+        t : tuple of 1D ndarrays, length-ndim
+            Knot vectors in directions 1, 2, ... ndim,
+        k : int
+            B-spline degree.
+        extrapolate : bool, optional
+            Whether to extrapolate out-of bounds values of raise a `ValueError`
+
+        Returns
+        -------
+        design_matrix : a CSR array
+            Each row of the design matrix corresponds to a value in `xvals` and
+            contains values of b-spline basis elements which are non-zero
+            at this value.
+
+        """
+        ndim = xvals.shape[-1]
+        if len(t) != ndim:
+            raise ValueError(
+                f"Data and knots are inconsistent: len(t) = {len(t)} for "
+                f" {ndim = }."
+            )
+        # XXX: other consistency checks
+
+        data, indices, indptr, _ = _bspl._colloc_nd(xvals, t, np.asarray(k))
+        return csr_array((data, indices, indptr))
+
 
 def make_ndbspl(points, values, k=3):
     """Construct an interpolating NdBspline.
@@ -257,13 +293,10 @@ def make_ndbspl(points, values, k=3):
 
     t = tuple(_not_a_knot(np.asarray(points[d], dtype=float), k[d])
               for d in range(ndim))
-
     xvals = np.asarray([xv for xv in itertools.product(*points)], dtype=float)
 
     # construct the colocation matrix
-    data, indices, indptr, dense = _bspl._colloc_nd(xvals, t, np.asarray(k))  # XXX: dense
-    # data, indices, indptr = _bspl._colloc_nd(points, t, np.asarray(k))
-    matr = csr_array((data, indices, indptr))
+    matr = NdBSpline.design_matrix(xvals, t, k)
 
     # Solve for the coefficients given `values`.
     # Trailing dimensions: first ndim dimensions are data, trailing dimensions
