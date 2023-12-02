@@ -1,7 +1,7 @@
 line-length = 88
 
 # Enable Pyflakes `E` and `F` codes by default.
-select = ["E", "F", "PGH004", "UP"]
+select = ["E", "F", "PGH004", "UP", "B028"]
 ignore = ["E741"]
 exclude = ["scipy/datasets/_registry.py"]
 
