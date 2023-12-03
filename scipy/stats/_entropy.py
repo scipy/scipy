@@ -154,9 +154,9 @@ def entropy(pk: np.typing.ArrayLike,
     return S
 
 
-def _differential_entropy_is_too_small(samples, kwargs):
+def _differential_entropy_is_too_small(samples, axis, kwargs):
     values = samples[0]
-    n = values.shape[-1]
+    n = values.shape[axis]
     window_length = kwargs.get("window_length",
                                math.floor(math.sqrt(n) + 0.5))
     if not 2 <= 2 * window_length < n:
