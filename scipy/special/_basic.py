@@ -2844,7 +2844,7 @@ def _exact_factorialx_array(n, k=1):
             # e.g. k=3: 26!!! > np.iinfo(np.int32).max
             dt = np.int64
         else:
-            dt = np.int_
+            dt = np.dtype("long")
     else:
         # for k >= 10, we always use object
         dt = object
