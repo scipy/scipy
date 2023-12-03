@@ -608,7 +608,10 @@ class Build(Task):
         try:
             openblas = importlib.import_module(module_name)
         except ModuleNotFoundError:
-            raise RuntimeError(f"'pip install {module_name} first")
+            raise RuntimeError(f"Importing '{module_name}' failed. "
+                               "Make sure it is installed and reachable "
+                               "by the current Python executable. You can "
+                               f"install it via 'pip install {module_name}'.")
 
         local = os.path.join(basedir, "scipy", "_distributor_init_local.py")
         with open(local, "w", encoding="utf8") as fid:

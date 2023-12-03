@@ -39,7 +39,7 @@ def main(ctx):
     if PR < 0:
         return []
 
-    if "[skip cirrus]" in dct["message"] or "[skip ci]" in dct["message"]:
+    if "[skip cirrus]" in dct["message"] or "[skip ci]" in dct["message"] or "[lint only]" in dct["message"] or "[docs only]" in dct["message"]:
         return []
 
     return fs.read("ci/cirrus_general_ci.yml")

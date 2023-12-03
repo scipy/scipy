@@ -161,8 +161,9 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
         multiplicity. The shape is (M,) unless
         ``homogeneous_eigvals=True``.
     vl : (M, M) double or complex ndarray
-        The normalized left eigenvector corresponding to the eigenvalue
+        The left eigenvector corresponding to the eigenvalue
         ``w[i]`` is the column ``vl[:,i]``. Only returned if ``left=True``.
+        The left eigenvector is not normalized.
     vr : (M, M) double or complex ndarray
         The normalized right eigenvector corresponding to the eigenvalue
         ``w[i]`` is the column ``vr[:,i]``.  Only returned if ``right=True``.
