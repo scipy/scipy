@@ -393,7 +393,8 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
     else:
         warnings.warn(
             "maxiter (%d) exceeded. Latest difference = %e" % (maxiter, err),
-            AccuracyWarning)
+            AccuracyWarning, stacklevel=2
+        )
     return val, err
 
 
@@ -1117,7 +1118,7 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
     else:
         warnings.warn(
             "divmax (%d) exceeded. Latest difference = %e" % (divmax, err),
-            AccuracyWarning)
+            AccuracyWarning, stacklevel=2)
 
     if show:
         _printresmat(vfunc, interval, resmat)

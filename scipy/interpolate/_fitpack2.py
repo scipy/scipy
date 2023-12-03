@@ -310,7 +310,7 @@ class UnivariateSpline:
             if ier == 1:
                 self._set_class(LSQUnivariateSpline)
             message = _curfit_messages.get(ier, 'ier=%s' % (ier))
-            warnings.warn(message)
+            warnings.warn(message, stacklevel=2)
 
     def _set_class(self, cls):
         self._spline_class = cls
@@ -346,7 +346,8 @@ class UnivariateSpline:
         data = self._data
         if data[6] == -1:
             warnings.warn('smoothing factor unchanged for'
-                          'LSQ spline with fixed knots')
+                          'LSQ spline with fixed knots',
+                          stacklevel=2)
             return
         args = data[:6] + (s,) + data[7:]
         data = dfitpack.fpcurf1(*args)
@@ -1416,7 +1417,7 @@ class SmoothBivariateSpline(BivariateSpline):
             pass
         else:
             message = _surfit_messages.get(ier, 'ier=%s' % (ier))
-            warnings.warn(message)
+            warnings.warn(message, stacklevel=2)
 
         self.fp = fp
         self.tck = tx[:nx], ty[:ny], c[:(nx-kx-1)*(ny-ky-1)]
@@ -1516,7 +1517,7 @@ class LSQBivariateSpline(BivariateSpline):
                 message = _surfit_messages.get(-3) % (deficiency)
             else:
                 message = _surfit_messages.get(ier, 'ier=%s' % (ier))
-            warnings.warn(message)
+            warnings.warn(message, stacklevel=2)
         self.fp = fp
         self.tck = tx1[:nx], ty1[:ny], c
         self.degrees = kx, ky

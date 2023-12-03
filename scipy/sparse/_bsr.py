@@ -148,11 +148,11 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
 
         # index arrays should have integer data types
         if self.indptr.dtype.kind != 'i':
-            warn("indptr array has non-integer dtype (%s)"
-                    % self.indptr.dtype.name)
+            warn(f"indptr array has non-integer dtype ({self.indptr.dtype.name})",
+                 stacklevel=2)
         if self.indices.dtype.kind != 'i':
-            warn("indices array has non-integer dtype (%s)"
-                    % self.indices.dtype.name)
+            warn(f"indices array has non-integer dtype ({self.indices.dtype.name})",
+                 stacklevel=2)
 
         # check array shapes
         if self.indices.ndim != 1 or self.indptr.ndim != 1:

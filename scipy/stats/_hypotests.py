@@ -130,7 +130,8 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
     if r < 2*len(t):
         warnings.warn('Estimated covariance matrix does not have full rank. '
                       'This indicates a bad choice of the input t and the '
-                      'test might not be consistent.')  # see p. 183 in [1]_
+                      'test might not be consistent.', # see p. 183 in [1]_
+                      stacklevel=2)
 
     # compute test statistic w distributed asympt. as chisquare with df=r
     g_diff = np.mean(gx, axis=0) - np.mean(gy, axis=0)

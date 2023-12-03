@@ -1635,7 +1635,7 @@ def mathieu_even_coef(m, q):
         qm = 17.0 + 3.1*sqrt(q) - .126*q + .0037*sqrt(q)*q
     km = int(qm + 0.5*m)
     if km > 251:
-        warnings.warn("Too many predicted coefficients.", RuntimeWarning, 2)
+        warnings.warn("Too many predicted coefficients.", RuntimeWarning, stacklevel=2)
     kd = 1
     m = int(floor(m))
     if m % 2:
@@ -1692,7 +1692,7 @@ def mathieu_odd_coef(m, q):
         qm = 17.0 + 3.1*sqrt(q) - .126*q + .0037*sqrt(q)*q
     km = int(qm + 0.5*m)
     if km > 251:
-        warnings.warn("Too many predicted coefficients.", RuntimeWarning, 2)
+        warnings.warn("Too many predicted coefficients.", RuntimeWarning, stacklevel=2)
     kd = 4
     m = int(floor(m))
     if m % 2:

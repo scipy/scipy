@@ -183,7 +183,8 @@ class FullHessianUpdateStrategy(HessianUpdateStrategy):
                  'function is linear. If the function is linear '
                  'better results can be obtained by defining the '
                  'Hessian as zero instead of using quasi-Newton '
-                 'approximations.', UserWarning)
+                 'approximations.',
+                 UserWarning, stacklevel=2)
             return
         if self.first_iteration:
             # Get user specific scale

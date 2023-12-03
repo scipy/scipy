@@ -98,7 +98,8 @@ def _ufunc_gen(scipy_dist: str, types: list, ctor_args: tuple,
 
         if has_NPY_FLOAT16:
             warn('Boost stats NPY_FLOAT16 ufunc generation not '
-                 'currently not supported!')
+                 'currently not supported!',
+                 stacklevel=2)
 
         # Generate ufuncs for each method
         for ii, m in enumerate(methods):
