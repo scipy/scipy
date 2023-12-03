@@ -17,6 +17,15 @@ cdef double[3] spmpar = [np.finfo(np.float64).eps,
 
 # %%----------------------------------------- algdiv
 cdef inline double algdiv(double a, double b) noexcept nogil:
+    """
+         Computation of ln(gamma(b)/gamma(a+b)) when b >= 8
+
+                             --------
+
+         In this algorithm, del(x) is the function defined by
+         Ln(gamma(x)) = (x - 0.5)*ln(x) - x + 0.5*ln(2*pi) + del(x).
+
+    """
     cdef double c, d, h, s11, s3, s5, s7, s9, t, u, v, w, x, x2
     cdef double[6] carr = [0.833333333333333e-01, -0.277777777760991e-02,
                            0.793650666825390e-03, -0.595202931351870e-03,
@@ -33,6 +42,7 @@ cdef inline double algdiv(double a, double b) noexcept nogil:
         x = 1./(1. + h)
         d = b + (a - 0.5)
 
+    # Set sn = (1 - x**n)/(1 - x)
     x2 = x*x
     s3 = 1. + (x + x2)
     s5 = 1. + (x + x2*s3)
@@ -40,6 +50,7 @@ cdef inline double algdiv(double a, double b) noexcept nogil:
     s9 = 1. + (x + x2*s7)
     s11 = 1. + (x + x2*s9)
 
+    # Set w = del(b) - del(a + b)
     t = (1. / b)**2
     w = (((((carr[5]*s11
             )*t + carr[4]*s9
@@ -48,7 +59,7 @@ cdef inline double algdiv(double a, double b) noexcept nogil:
          )*t + carr[1]*s3
         )*t + carr[0]
     w *= c / b
-
+    # Combine the results
     u = d * alnrel(a / b)
     v = a * (log(b) - 1.)
     return (w - v) - u if (u>v) else (w - u) - v
@@ -56,6 +67,34 @@ cdef inline double algdiv(double a, double b) noexcept nogil:
 
 # %%----------------------------------------- alngam
 cdef inline double alngam(double x) noexcept nogil:
+    """
+                   Double precision log of the gamma function
+
+
+                                  Function
+
+
+         Returns the natural logarithm of gamma(x).
+
+
+                                  Arguments
+
+
+         X --> value at which scaled log gamma is to be returned
+                        x is double precision
+
+
+                                  Method
+
+
+         If x <= 6.0, then use recursion to get x below 3
+         then apply rational approximation number 5236 of
+         hart et al, computer approximations, john wiley and
+         sons, ny, 1968.
+
+         If x > 6.0, then use recursion to get x to at least 12 and
+         then use formula 5423 of the same source.
+    """
     cdef double prod, xx, result, offset
     cdef int i, n
     cdef double[9] scoefn = [0.62003838007127258804e2, 0.36036772530024836321e2,
@@ -83,9 +122,11 @@ cdef inline double alngam(double x) noexcept nogil:
                 xx += 1.
 
         result = devlpl(scoefn, 9, xx - 2.) / devlpl(scoefd, 4, xx - 2.)
+        # Compute rational approximation to gamma(x)
         return log(result * prod)
 
     offset = 0.5*log(2.*PI)
+    # If necessary make x at least 12 and carry correction in offset
     if x <= 12.:
         n = <int>(12. - x)
         if n > 0:
@@ -98,7 +139,7 @@ cdef inline double alngam(double x) noexcept nogil:
             xx = x
     else:
         xx = x
-
+    # Compute power series
     result = devlpl(coef, 5, (1./xx)**2) / xx
     result += offset + (xx - 0.5)*log(xx) - xx
     return result
@@ -106,6 +147,11 @@ cdef inline double alngam(double x) noexcept nogil:
 
 # %%----------------------------------------- alnrel
 cdef inline double alnrel(double a) noexcept nogil:
+    """
+
+    Evaluation of the function ln(1 + a)
+
+    """
     cdef double[3] p = [-0.129418923021993e+01, 0.405303492862024e+00,
                         -0.178874546012214e-01]
     cdef double[3] q = [-0.162752256355323e+01, 0.747811014037616e+00,
@@ -124,6 +170,12 @@ cdef inline double alnrel(double a) noexcept nogil:
 
 # %%----------------------------------------- apser
 cdef inline double apser(double a, double b, double x, double eps) noexcept nogil:
+    """
+    Apser yields the incomplete beta ratio I_(1-x))(b,a) for
+    a <= Min(eps,eps*b), b*x <= 1, And x <= 0.5. Used when
+    a is very small. Use only if above inequalities are satisfied.
+
+    """
     cdef double aj, bx, c, j, s, t, tol
     cdef double g = 0.577215664901532860606512090082
 
@@ -151,6 +203,12 @@ cdef inline double apser(double a, double b, double x, double eps) noexcept nogi
 
 # %%-------------------------------------- basym
 cdef inline double basym(double a, double b, double lmbda, double eps) noexcept nogil:
+    """
+    Asymptotic expansion for ix(a,b) for large a and b.
+    Lambda = (a + b)*y - b  and eps is the tolerance used.
+    It is assumed that lambda is nonnegative and that
+    a and b are greater than or equal to 15.
+    """
     cdef double a0[21]
     cdef double b0[21]
     cdef double c[21]
@@ -160,7 +218,9 @@ cdef inline double basym(double a, double b, double lmbda, double eps) noexcept 
     cdef double e0 = 2. / sqrt(PI)
     cdef double e1 = 2.**(-3./2.)
     cdef int i, imj, j, m, mmj, n, num
-
+    # ****** Num is the maximum value that n can take in the do loop
+    #        ending at statement 50. It is required that num be even.
+    #        The arrays a0, b0, c, d have dimension num + 1.
     num = 20
 
     if a < b:
@@ -235,6 +295,11 @@ cdef inline double basym(double a, double b, double lmbda, double eps) noexcept 
 
 # %%-------------------------------------- bcorr
 cdef inline double bcorr(double a0, double b0) noexcept nogil:
+    """
+    Evaluation of  del(a0) + del(b0) - del(a0 + b0)  where
+    ln(gamma(a)) = (a - 0.5)*ln(a) - a + 0.5*ln(2*pi) + del(a).
+    It is assumed that a0 >= 8 And b0 >= 8.
+    """
     cdef double a,b,c,h,s11,s3,s5,s7,s9,t,w,x,x2
     cdef double[6] carr = [0.833333333333333e-01, -0.277777777760991e-02,
                            0.793650666825390e-03, -0.595202931351870e-03,
@@ -245,12 +310,13 @@ cdef inline double bcorr(double a0, double b0) noexcept nogil:
     c = h/(1. + h)
     x = 1./(1. + h)
     x2 = x*x
+    #  Set sn = (1 - x**n)/(1 - x)
     s3 = 1. + (x + x2)
     s5 = 1. + (x + x2*s3)
     s7 = 1. + (x + x2*s5)
     s9 = 1. + (x + x2*s7)
     s11 = 1. + (x + x2*s9)
-
+    # Set w = del(b) - del(a + b)
     t = (1. / b)**2
     w = (((((carr[5]*s11
             )*t + carr[4]*s9
@@ -259,7 +325,7 @@ cdef inline double bcorr(double a0, double b0) noexcept nogil:
          )*t + carr[1]*s3
         )*t + carr[0]
     w *= c / b
-
+    # Compute  del(a) + w
     t = (1. / a)**2
     return ((((((carr[5])*t + carr[4]
                )*t + carr[3]
@@ -271,6 +337,9 @@ cdef inline double bcorr(double a0, double b0) noexcept nogil:
 
 # %% betaln ----------------------------------------- betaln
 cdef inline double betaln(double a0, double b0) noexcept nogil:
+    """
+    Evaluation of the logarithm of the beta function
+    """
     cdef double a, b, c, h, u, v, w, z
     cdef double e = .918938533204673
     cdef int i, n
@@ -334,6 +403,10 @@ cdef inline double betaln(double a0, double b0) noexcept nogil:
 # %%----------------------------------------- bfrac
 cdef inline double bfrac(double a, double b, double x, double y,
                          double lmbda, double eps) noexcept nogil:
+    """
+    Continued fraction expansion for ix(a,b) when a,b > 1.
+    It is assumed that  lambda = (a + b)*y - b.
+    """
     cdef double alpha, beta, e, r0, t, w, result
     cdef:
         double c = 1. + lmbda
@@ -353,7 +426,7 @@ cdef inline double bfrac(double a, double b, double x, double y,
 
     if result == 0.:
         return 0
-
+    # Continued fraction calculation
     while True:
         n += 1.
         t = n / a
@@ -364,6 +437,7 @@ cdef inline double bfrac(double a, double b, double x, double y,
         beta = n + (w / s) + e*(c + n*yp1)
         p = 1. + t
         s += 2.
+        # Update an, bn, anp1, and bnp1
         t = alpha*an + beta*anp1
         an = anp1
         anp1 = t
@@ -374,7 +448,7 @@ cdef inline double bfrac(double a, double b, double x, double y,
         r = anp1 / bnp1
         if (not (abs(r - r0) > eps*r)):
             break
-
+        # Rescale an, bn, anp1, and bnp1
         an /= bnp1
         bn /= bnp1
         anp1 = r
@@ -386,6 +460,12 @@ cdef inline double bfrac(double a, double b, double x, double y,
 # %%----------------------------------------- bgrat
 cdef inline (double, int) bgrat(double a, double b, double x , double y, double w,
                                 double eps) noexcept nogil:
+    """
+    Asymptotic expansion for ix(a,b) when a is larger than b.
+    The result of the expansion is added to w. It is assumed
+    that a >= 15 And b <= 1.  Eps is the tolerance used.
+    Ierr is a variable that reports the status of the results.
+    """
     cdef double bp2n, cn, coef, dj, j, l, n2, q, r, s, ssum, t, t2, u, v
     cdef double c[30]
     cdef double d[30]
@@ -398,6 +478,8 @@ cdef inline (double, int) bgrat(double a, double b, double x , double y, double 
     if (b*z) == 0.:
         return (w, 1)
 
+    # COMPUTATION OF THE EXPANSION
+    # SET R = EXP(-Z)*Z**B/GAMMA(B)
     r = b * (1. + gam1(b)) * exp(b*log(z))
     r *= exp(a*lnx) * exp(0.5*bm1*lnx)
     u = algdiv(b, a) + b*log(nu)
@@ -441,6 +523,10 @@ cdef inline (double, int) bgrat(double a, double b, double x , double y, double 
 
 # %%----------------------------------------- bpser
 cdef inline double bpser(double a, double b, double x, double eps) noexcept nogil:
+    """
+    Power series expansion for evaluating ix(a,b) when b <= 1
+    Or b*x <= 0.7.  Eps is the tolerance used.
+    """
     cdef double a0, apb, b0, c, n, ssum, t, tol, u, w, z
     cdef int i, m
     cdef double result = 0.
@@ -448,6 +534,7 @@ cdef inline double bpser(double a, double b, double x, double eps) noexcept nogi
     if x == 0.:
         return 0.
 
+    # Compute the factor x**a/(a*beta(a,b))
     a0 = min(a, b)
 
     if a0 < 1.:
@@ -497,7 +584,7 @@ cdef inline double bpser(double a, double b, double x, double eps) noexcept nogi
 
     if (result == 0.) or (a <= 0.1*eps):
         return result
-
+    # Compute the series
     ssum = 0.
     n = 0.
     c = 1.
@@ -515,6 +602,32 @@ cdef inline double bpser(double a, double b, double x, double eps) noexcept nogi
 # %%----------------------------------------- bratio
 cdef inline (double, double, int) bratio(double a, double b,
                                          double x, double y) noexcept nogil:
+    """
+           Evaluation of the incomplete beta function Ix(a,b)
+
+                    --------------------
+
+    It is assumed that a and b are nonnegative, and that x <= 1
+    And y = 1 - x.  Bratio assigns w and w1 the values
+
+                     w  = Ix(a,b)
+                     w1 = 1 - Ix(a,b)
+
+    Ierr is a variable that reports the status of the results.
+    If no input errors are detected then ierr is set to 0 and
+    w and w1 are computed. Otherwise, if an error is detected,
+    then w and w1 are assigned the value 0 and ierr is set to
+    one of the following values ...
+
+       Ierr = 1  if a or b is negative
+       ierr = 2  if a = b = 0
+       ierr = 3  if x < 0 Or x > 1
+       Ierr = 4  if y < 0 Or y > 1
+       Ierr = 5  if x + y .ne. 1
+       Ierr = 6  if x = a = 0
+       ierr = 7  if y = b = 0
+
+    """
     cdef double a0, b0, lmbda, x0, y0
     cdef int ierr1, ind, n
     cdef double w = 0.
@@ -685,6 +798,9 @@ cdef inline (double, double, int) bratio(double a, double b,
 # %%----------------------------------------- brcmp1
 cdef inline double brcmp1(int mu, double a, double b,
                           double x, double y) noexcept nogil:
+    """
+    Evaluation of  exp(mu) * (x**a*y**b/beta(a,b))
+    """
     cdef double a0, apb, b0, c, e, h, lmbda, t, u, v, x0, y0, z
     cdef double lnx = 1., lny = 1.
     cdef int i, n
@@ -777,6 +893,9 @@ cdef inline double brcmp1(int mu, double a, double b,
 
 # %%----------------------------------------- brcomp
 cdef inline double brcomp(double a, double b, double x, double y) noexcept nogil:
+    """
+    Evaluation of x**a*y**b/beta(a,b)
+    """
     cdef double a0, apb, b0, c, e, h, lmbda, lnx, lny, t, u, v, x0, y0, z
     cdef double const = 1. / sqrt(2 * PI)
     cdef int i, n
@@ -869,6 +988,10 @@ cdef inline double brcomp(double a, double b, double x, double y) noexcept nogil
 # %%----------------------------------------- bup
 cdef inline double bup(double a, double b, double x, double y,
                        int n, double eps) noexcept nogil:
+    """
+    Evaluation of Ix(a,b) - Ix(a+n,b) where n is a positive integer.
+    Eps is the tolerance used.
+    """
     cdef:
         double apb = a + b
         double ap1 = a + 1.
@@ -937,6 +1060,102 @@ cdef inline double bup(double a, double b, double x, double y,
 
 
 # %% ---------------------------------------- cdfbet_whichX
+#
+#                Cumulative Distribution Function
+#                          BETa Distribution
+#
+#
+#                               Function
+#
+#
+#      Calculates any one parameter of the beta distribution given
+#      values for the others.
+#
+#
+#                               Arguments
+#
+#
+#      WHICH --> Integer indicating which of the next four argument
+#                values is to be calculated from the others.
+#                Legal range: 1..4
+#                iwhich = 1 : Calculate P and Q from X,Y,A and B
+#                iwhich = 2 : Calculate X and Y from P,Q,A and B
+#                iwhich = 3 : Calculate A from P,Q,X,Y and B
+#                iwhich = 4 : Calculate B from P,Q,X,Y and A
+#
+#                     INTEGER WHICH
+#
+#      P <--> The integral from 0 to X of the chi-square
+#             distribution.
+#             Input range: [0, 1].
+#                     DOUBLE PRECISION P
+#
+#      Q <--> 1-P.
+#             Input range: [0, 1].
+#             P + Q = 1.0.
+#                     DOUBLE PRECISION Q
+#
+#      X <--> Upper limit of integration of beta density.
+#             Input range: [0,1].
+#             Search range: [0,1]
+#                     DOUBLE PRECISION X
+#
+#      Y <--> 1-X.
+#             Input range: [0,1].
+#             Search range: [0,1]
+#             X + Y = 1.0.
+#                     DOUBLE PRECISION Y
+#
+#      A <--> The first parameter of the beta density.
+#             Input range: (0, +infinity).
+#             Search range: [1D-100,1D100]
+#                     DOUBLE PRECISION A
+#
+#      B <--> The second parameter of the beta density.
+#             Input range: (0, +infinity).
+#             Search range: [1D-100,1D100]
+#                     DOUBLE PRECISION B
+#
+#      STATUS <-- 0 if calculation completed correctly
+#                -I if input parameter number I is out of range
+#                 1 if answer appears to be lower than lowest
+#                   search bound
+#                 2 if answer appears to be higher than greatest
+#                   search bound
+#                 3 if P + Q .ne. 1
+#                 4 if X + Y .ne. 1
+#                     INTEGER STATUS
+#
+#      BOUND <-- Undefined if STATUS is 0
+#
+#                Bound exceeded by parameter number I if STATUS
+#                is negative.
+#
+#                Lower search bound if STATUS is 1.
+#
+#                Upper search bound if STATUS is 2.
+#
+#
+#                               Method
+#
+#
+#      Cumulative distribution function  (P)  is calculated directly by
+#      code associated with the following reference.
+#
+#      DiDinato, A. R. and Morris,  A.   H.  Algorithm 708: Significant
+#      Digit Computation of the Incomplete  Beta  Function Ratios.  ACM
+#      Trans. Math.  Softw. 18 (1993), 360-373.
+#
+#      Computation of other parameters involve a search for a value that
+#      produces  the desired  value  of P.   The search relies  on  the
+#      monotinicity of P with the other parameter.
+#
+#
+#                               Note
+#
+#      The beta density is proportional to
+#                t^(A-1) * (1-t)^(B-1)
+
 cdef inline (double, double, int, double) cdfbet_which1(
     double x, double y,double a, double b
     ) noexcept nogil:
@@ -1109,6 +1328,93 @@ cdef inline (double, int, double) cdfbet_which4(
 
 
 # %% ---------------------------------------- cdfbin_whichX
+#      SUBROUTINE CDFBIN ( WHICH, P, Q, S, XN, PR, OMPR, STATUS, BOUND )
+#               Cumulative Distribution Function
+#                         BINomial distribution
+#
+#
+#                              Function
+#
+#
+#     Calculates any one parameter of the binomial
+#     distribution given values for the others.
+#
+#
+#                              Arguments
+#
+#
+#     WHICH --> Integer indicating which of the next four argument
+#               values is to be calculated from the others.
+#               Legal range: 1..4
+#               iwhich = 1 : Calculate P and Q from S,XN,PR and OMPR
+#               iwhich = 2 : Calculate S from P,Q,XN,PR and OMPR
+#               iwhich = 3 : Calculate XN from P,Q,S,PR and OMPR
+#               iwhich = 4 : Calculate PR and OMPR from P,Q,S and XN
+#                    INTEGER WHICH
+#
+#     P <--> The cumulation from 0 to S of the binomial distribution.
+#            (Probablility of S or fewer successes in XN trials each
+#            with probability of success PR.)
+#            Input range: [0,1].
+#                    DOUBLE PRECISION P
+#
+#     Q <--> 1-P.
+#            Input range: [0, 1].
+#            P + Q = 1.0.
+#                    DOUBLE PRECISION Q
+#
+#     S <--> The number of successes observed.
+#            Input range: [0, XN]
+#            Search range: [0, XN]
+#                    DOUBLE PRECISION S
+#
+#     XN  <--> The number of binomial trials.
+#              Input range: (0, +infinity).
+#              Search range: [1E-100, 1E100]
+#                    DOUBLE PRECISION XN
+#
+#     PR  <--> The probability of success in each binomial trial.
+#              Input range: [0,1].
+#              Search range: [0,1]
+#                    DOUBLE PRECISION PR
+#
+#     OMPR  <--> 1-PR
+#              Input range: [0,1].
+#              Search range: [0,1]
+#              PR + OMPR = 1.0
+#                    DOUBLE PRECISION OMPR
+#
+#     STATUS <-- 0 if calculation completed correctly
+#               -I if input parameter number I is out of range
+#                1 if answer appears to be lower than lowest
+#                  search bound
+#                2 if answer appears to be higher than greatest
+#                  search bound
+#                3 if P + Q .ne. 1
+#                4 if PR + OMPR .ne. 1
+#                    INTEGER STATUS
+#
+#     BOUND <-- Undefined if STATUS is 0
+#
+#               Bound exceeded by parameter number I if STATUS
+#               is negative.
+#
+#               Lower search bound if STATUS is 1.
+#
+#               Upper search bound if STATUS is 2.
+#
+#
+#                              Method
+#
+#
+#     Formula  26.5.24    of   Abramowitz  and    Stegun,  Handbook   of
+#     Mathematical   Functions (1966) is   used  to reduce the  binomial
+#     distribution  to  the  cumulative incomplete    beta distribution.
+#
+#     Computation of other parameters involve a search for a value that
+#     produces  the desired  value  of P.   The search relies  on  the
+#     monotinicity of P with the other parameter.
+
 cdef inline (double, double, int, double) cdfbin_which1(
     double s, double xn, double pr, double ompr) noexcept nogil:
     cdef double p, q
@@ -1279,6 +1585,83 @@ cdef inline (double, double, int, double) cdfbin_which4(
 
 
 # %% ---------------------------------------- cdfchi_whichX
+#
+#               Cumulative Distribution Function
+#               CHI-Square distribution
+#
+#
+#                              Function
+#
+#
+#     Calculates any one parameter of the chi-square
+#     distribution given values for the others.
+#
+#
+#                              Arguments
+#
+#
+#     WHICH --> Integer indicating which of the next three argument
+#               values is to be calculated from the others.
+#               Legal range: 1..3
+#               iwhich = 1 : Calculate P and Q from X and DF
+#               iwhich = 2 : Calculate X from P,Q and DF
+#               iwhich = 3 : Calculate DF from P,Q and X
+#                    INTEGER WHICH
+#
+#     P <--> The integral from 0 to X of the chi-square
+#            distribution.
+#            Input range: [0, 1].
+#                    DOUBLE PRECISION P
+#
+#     Q <--> 1-P.
+#            Input range: (0, 1].
+#            P + Q = 1.0.
+#                    DOUBLE PRECISION Q
+#
+#     X <--> Upper limit of integration of the non-central
+#            chi-square distribution.
+#            Input range: [0, +infinity).
+#            Search range: [0,1E100]
+#                    DOUBLE PRECISION X
+#
+#     DF <--> Degrees of freedom of the
+#             chi-square distribution.
+#             Input range: (0, +infinity).
+#             Search range: [ 1E-100, 1E100]
+#                    DOUBLE PRECISION DF
+#
+#     STATUS <-- 0 if calculation completed correctly
+#               -I if input parameter number I is out of range
+#                1 if answer appears to be lower than lowest
+#                  search bound
+#                2 if answer appears to be higher than greatest
+#                  search bound
+#                3 if P + Q .ne. 1
+#               10 indicates error returned from cumgam.  See
+#                  references in cdfgam
+#                    INTEGER STATUS
+#
+#     BOUND <-- Undefined if STATUS is 0
+#
+#               Bound exceeded by parameter number I if STATUS
+#               is negative.
+#
+#               Lower search bound if STATUS is 1.
+#
+#               Upper search bound if STATUS is 2.
+#
+#
+#                              Method
+#
+#
+#     Formula    26.4.19   of Abramowitz  and     Stegun, Handbook  of
+#     Mathematical Functions   (1966) is used   to reduce the chisqure
+#     distribution to the incomplete distribution.
+#
+#     Computation of other parameters involve a search for a value that
+#     produces  the desired  value  of P.   The search relies  on  the
+#     monotinicity of P with the other parameter.
+
 cdef inline (double, double, int, double) cdfchi_which1(
     double x, double df) noexcept nogil:
     cdef double p, q
@@ -1383,6 +1766,96 @@ cdef inline (double, int, double) cdfchi_which3(
 
 
 # %% ---------------------------------------- cdfchn_whichX
+#
+#      SUBROUTINE CDFCHN( WHICH, P, Q, X, DF, PNONC, STATUS, BOUND )
+#               Cumulative Distribution Function
+#               Non-central Chi-Square
+#
+#
+#                              Function
+#
+#
+#     Calculates any one parameter of the non-central chi-square
+#     distribution given values for the others.
+#
+#
+#                              Arguments
+#
+#
+#     WHICH --> Integer indicating which of the next three argument
+#               values is to be calculated from the others.
+#               Input range: 1..4
+#               iwhich = 1 : Calculate P and Q from X and DF
+#               iwhich = 2 : Calculate X from P,DF and PNONC
+#               iwhich = 3 : Calculate DF from P,X and PNONC
+#               iwhich = 3 : Calculate PNONC from P,X and DF
+#                    INTEGER WHICH
+#
+#     P <--> The integral from 0 to X of the non-central chi-square
+#            distribution.
+#            Input range: [0, 1-1E-16).
+#                    DOUBLE PRECISION P
+#
+#     Q <--> 1-P.
+#            Q is not used by this subroutine and is only included
+#            for similarity with other cdf* routines.
+#                    DOUBLE PRECISION Q
+#
+#     X <--> Upper limit of integration of the non-central
+#            chi-square distribution.
+#            Input range: [0, +infinity).
+#            Search range: [0,1E300]
+#                    DOUBLE PRECISION X
+#
+#     DF <--> Degrees of freedom of the non-central
+#             chi-square distribution.
+#             Input range: (0, +infinity).
+#             Search range: [ 1E-300, 1E300]
+#                    DOUBLE PRECISION DF
+#
+#     PNONC <--> Non-centrality parameter of the non-central
+#                chi-square distribution.
+#                Input range: [0, +infinity).
+#                Search range: [0,1E4]
+#                    DOUBLE PRECISION PNONC
+#
+#     STATUS <-- 0 if calculation completed correctly
+#               -I if input parameter number I is out of range
+#                1 if answer appears to be lower than lowest
+#                  search bound
+#                2 if answer appears to be higher than greatest
+#                  search bound
+#                    INTEGER STATUS
+#
+#     BOUND <-- Undefined if STATUS is 0
+#
+#               Bound exceeded by parameter number I if STATUS
+#               is negative.
+#
+#               Lower search bound if STATUS is 1.
+#
+#               Upper search bound if STATUS is 2.
+#
+#
+#                              Method
+#
+#
+#     Formula  26.4.25   of   Abramowitz   and   Stegun,  Handbook  of
+#     Mathematical  Functions (1966) is used to compute the cumulative
+#     distribution function.
+#
+#     Computation of other parameters involve a search for a value that
+#     produces  the desired  value  of P.   The search relies  on  the
+#     monotinicity of P with the other parameter.
+#
+#
+#                            WARNING
+#
+#     The computation time  required for this  routine is proportional
+#     to the noncentrality  parameter  (PNONC).  Very large  values of
+#     this parameter can consume immense  computer resources.  This is
+#     why the search range is bounded by 1e9.
+
 cdef inline (double, double, int, double) cdfchn_which1(
     double x, double df, double pnonc) noexcept nogil:
     cdef double p, q
@@ -1530,6 +2003,92 @@ cdef inline (double, int, double) cdfchn_which4(
 
 
 # %% ---------------------------------------- cdff_whichX
+#
+#               Cumulative Distribution Function
+#               F distribution
+#
+#
+#                              Function
+#
+#
+#     Calculates any one parameter of the F distribution
+#     given values for the others.
+#
+#
+#                              Arguments
+#
+#
+#     WHICH --> Integer indicating which of the next four argument
+#               values is to be calculated from the others.
+#               Legal range: 1..4
+#               iwhich = 1 : Calculate P and Q from F,DFN and DFD
+#               iwhich = 2 : Calculate F from P,Q,DFN and DFD
+#               iwhich = 3 : Calculate DFN from P,Q,F and DFD
+#               iwhich = 4 : Calculate DFD from P,Q,F and DFN
+#                    INTEGER WHICH
+#
+#       P <--> The integral from 0 to F of the f-density.
+#              Input range: [0,1].
+#                    DOUBLE PRECISION P
+#
+#       Q <--> 1-P.
+#              Input range: (0, 1].
+#              P + Q = 1.0.
+#                    DOUBLE PRECISION Q
+#
+#       F <--> Upper limit of integration of the f-density.
+#              Input range: [0, +infinity).
+#              Search range: [0,1E100]
+#                    DOUBLE PRECISION F
+#
+#     DFN < --> Degrees of freedom of the numerator sum of squares.
+#               Input range: (0, +infinity).
+#               Search range: [ 1E-100, 1E100]
+#                    DOUBLE PRECISION DFN
+#
+#     DFD < --> Degrees of freedom of the denominator sum of squares.
+#               Input range: (0, +infinity).
+#               Search range: [ 1E-100, 1E100]
+#                    DOUBLE PRECISION DFD
+#
+#     STATUS <-- 0 if calculation completed correctly
+#               -I if input parameter number I is out of range
+#                1 if answer appears to be lower than lowest
+#                  search bound
+#                2 if answer appears to be higher than greatest
+#                  search bound
+#                3 if P + Q .ne. 1
+#                    INTEGER STATUS
+#
+#     BOUND <-- Undefined if STATUS is 0
+#
+#               Bound exceeded by parameter number I if STATUS
+#               is negative.
+#
+#               Lower search bound if STATUS is 1.
+#
+#               Upper search bound if STATUS is 2.
+#
+#
+#                              Method
+#
+#
+#     Formula   26.6.2   of   Abramowitz   and   Stegun,  Handbook  of
+#     Mathematical  Functions (1966) is used to reduce the computation
+#     of the  cumulative  distribution function for the  F  variate to
+#     that of an incomplete beta.
+#
+#     Computation of other parameters involve a search for a value that
+#     produces  the desired  value  of P.   The search relies  on  the
+#     monotinicity of P with the other parameter.
+#
+#                              WARNING
+#
+#     The value of the  cumulative  F distribution is  not necessarily
+#     monotone in  either degrees of freedom.  There  thus may  be two
+#     values  that  provide a given CDF  value.   This routine assumes
+#     monotonicity and will find an arbitrary one of the two values.
+
 cdef inline (double, double, int, double) cdff_which1(
     double f, double dfn, double dfd) noexcept nogil:
     cdef double p, q
@@ -1681,6 +2240,107 @@ cdef inline (double, int, double) cdff_which4(
 
 
 # %% ---------------------------------------- cdffnc_whichX
+#
+#               Cumulative Distribution Function
+#               Non-central F distribution
+#
+#
+#                              Function
+#
+#
+#     Calculates any one parameter of the Non-central F
+#     distribution given values for the others.
+#
+#
+#                              Arguments
+#
+#
+#     WHICH --> Integer indicating which of the next five argument
+#               values is to be calculated from the others.
+#               Legal range: 1..5
+#               iwhich = 1 : Calculate P and Q from F,DFN,DFD and PNONC
+#               iwhich = 2 : Calculate F from P,Q,DFN,DFD and PNONC
+#               iwhich = 3 : Calculate DFN from P,Q,F,DFD and PNONC
+#               iwhich = 4 : Calculate DFD from P,Q,F,DFN and PNONC
+#               iwhich = 5 : Calculate PNONC from P,Q,F,DFN and DFD
+#                    INTEGER WHICH
+#
+#       P <--> The integral from 0 to F of the non-central f-density.
+#              Input range: [0,1-1E-16).
+#                    DOUBLE PRECISION P
+#
+#       Q <--> 1-P.
+#            Q is not used by this subroutine and is only included
+#            for similarity with other cdf* routines.
+#                    DOUBLE PRECISION Q
+#
+#       F <--> Upper limit of integration of the non-central f-density.
+#              Input range: [0, +infinity).
+#              Search range: [0,1E100]
+#                    DOUBLE PRECISION F
+#
+#     DFN < --> Degrees of freedom of the numerator sum of squares.
+#               Input range: (0, +infinity).
+#               Search range: [ 1E-100, 1E100]
+#                    DOUBLE PRECISION DFN
+#
+#     DFD < --> Degrees of freedom of the denominator sum of squares.
+#               Must be in range: (0, +infinity).
+#               Input range: (0, +infinity).
+#               Search range: [ 1E-100, 1E100]
+#                    DOUBLE PRECISION DFD
+#
+#     PNONC <-> The non-centrality parameter
+#               Input range: [0,infinity)
+#               Search range: [0,1E4]
+#                    DOUBLE PRECISION PHONC
+#
+#     STATUS <-- 0 if calculation completed correctly
+#               -I if input parameter number I is out of range
+#                1 if answer appears to be lower than lowest
+#                  search bound
+#                2 if answer appears to be higher than greatest
+#                  search bound
+#                3 if P + Q .ne. 1
+#                    INTEGER STATUS
+#
+#     BOUND <-- Undefined if STATUS is 0
+#
+#               Bound exceeded by parameter number I if STATUS
+#               is negative.
+#
+#               Lower search bound if STATUS is 1.
+#
+#               Upper search bound if STATUS is 2.
+#
+#
+#                              Method
+#
+#
+#     Formula  26.6.20   of   Abramowitz   and   Stegun,  Handbook  of
+#     Mathematical  Functions (1966) is used to compute the cumulative
+#     distribution function.
+#
+#     Computation of other parameters involve a search for a value that
+#     produces  the desired  value  of P.   The search relies  on  the
+#     monotinicity of P with the other parameter.
+#
+#                            WARNING
+#
+#     The computation time  required for this  routine is proportional
+#     to the noncentrality  parameter  (PNONC).  Very large  values of
+#     this parameter can consume immense  computer resources.  This is
+#     why the search range is bounded by 10,000.
+#
+#                              WARNING
+#
+#     The  value  of the  cumulative  noncentral F distribution is not
+#     necessarily monotone in either degrees  of freedom.  There  thus
+#     may be two values that provide a given  CDF value.  This routine
+#     assumes monotonicity  and will find  an arbitrary one of the two
+#     values.
+#
+
 cdef (double, double, int, double) cdffnc_which1(
     double f, double dfn, double dfd, double phonc) noexcept nogil:
     cdef double p, q
@@ -1883,6 +2543,100 @@ cdef (double, int, double) cdffnc_which5(
 
 
 # %% ---------------------------------------- cdfgam_whichX
+#
+#               Cumulative Distribution Function
+#                         GAMma Distribution
+#
+#
+#                              Function
+#
+#
+#     Calculates any one parameter of the gamma
+#     distribution given values for the others.
+#
+#
+#                              Arguments
+#
+#
+#     WHICH --> Integer indicating which of the next four argument
+#               values is to be calculated from the others.
+#               Legal range: 1..4
+#               iwhich = 1 : Calculate P and Q from X,SHAPE and SCALE
+#               iwhich = 2 : Calculate X from P,Q,SHAPE and SCALE
+#               iwhich = 3 : Calculate SHAPE from P,Q,X and SCALE
+#               iwhich = 4 : Calculate SCALE from P,Q,X and SHAPE
+#                    INTEGER WHICH
+#
+#     P <--> The integral from 0 to X of the gamma density.
+#            Input range: [0,1].
+#                    DOUBLE PRECISION P
+#
+#     Q <--> 1-P.
+#            Input range: (0, 1].
+#            P + Q = 1.0.
+#                    DOUBLE PRECISION Q
+#
+#
+#     X <--> The upper limit of integration of the gamma density.
+#            Input range: [0, +infinity).
+#            Search range: [0,1E100]
+#                    DOUBLE PRECISION X
+#
+#     SHAPE <--> The shape parameter of the gamma density.
+#                Input range: (0, +infinity).
+#                Search range: [1E-100,1E100]
+#                  DOUBLE PRECISION SHAPE
+#
+#
+#     SCALE <--> The scale parameter of the gamma density.
+#                Input range: (0, +infinity).
+#                Search range: (1E-100,1E100]
+#                   DOUBLE PRECISION SCALE
+#
+#     STATUS <-- 0 if calculation completed correctly
+#               -I if input parameter number I is out of range
+#                1 if answer appears to be lower than lowest
+#                  search bound
+#                2 if answer appears to be higher than greatest
+#                  search bound
+#                3 if P + Q .ne. 1
+#                10 if the gamma or inverse gamma routine cannot
+#                   compute the answer.  Usually happens only for
+#                   X and SHAPE very large (gt 1E10 or more)
+#                    INTEGER STATUS
+#
+#     BOUND <-- Undefined if STATUS is 0
+#
+#               Bound exceeded by parameter number I if STATUS
+#               is negative.
+#
+#               Lower search bound if STATUS is 1.
+#
+#               Upper search bound if STATUS is 2.
+#
+#
+#                              Method
+#
+#
+#     Cumulative distribution function (P) is calculated directly by
+#     the code associated with:
+#
+#     DiDinato, A. R. and Morris, A. H. Computation of the  incomplete
+#     gamma function  ratios  and their  inverse.   ACM  Trans.  Math.
+#     Softw. 12 (1986), 377-393.
+#
+#     Computation of other parameters involve a search for a value that
+#     produces  the desired  value  of P.   The search relies  on  the
+#     monotinicity of P with the other parameter.
+#
+#
+#                              Note
+#
+#
+#
+#     The gamma density is proportional to
+#       T**(SHAPE - 1) * EXP(- SCALE * T)
+
 cdef (double, double, int, double) cdfgam_which1(
     double x, double shape, double scale) noexcept nogil:
     cdef double p, q
@@ -1997,6 +2751,103 @@ cdef (double, int, double) cdfgam_which4(
 
 
 # %% ---------------------------------------- cdfnbn_whichX
+#
+#               Cumulative Distribution Function
+#               Negative BiNomial distribution
+#
+#
+#                              Function
+#
+#
+#     Calculates any one parameter of the negative binomial
+#     distribution given values for the others.
+#
+#     The  cumulative  negative   binomial  distribution  returns  the
+#     probability that there  will be  F or fewer failures before  the
+#     XNth success in binomial trials each of which has probability of
+#     success PR.
+#
+#     The individual term of the negative binomial is the probability of
+#     S failures before XN successes and is
+#          Choose( S, XN+S-1 ) * PR^(XN) * (1-PR)^S
+#
+#
+#                              Arguments
+#
+#
+#     WHICH --> Integer indicating which of the next four argument
+#               values is to be calculated from the others.
+#               Legal range: 1..4
+#               iwhich = 1 : Calculate P and Q from S,XN,PR and OMPR
+#               iwhich = 2 : Calculate S from P,Q,XN,PR and OMPR
+#               iwhich = 3 : Calculate XN from P,Q,S,PR and OMPR
+#               iwhich = 4 : Calculate PR and OMPR from P,Q,S and XN
+#                    INTEGER WHICH
+#
+#     P <--> The cumulation from 0 to S of the  negative
+#            binomial distribution.
+#            Input range: [0,1].
+#                    DOUBLE PRECISION P
+#
+#     Q <--> 1-P.
+#            Input range: (0, 1].
+#            P + Q = 1.0.
+#                    DOUBLE PRECISION Q
+#
+#     S <--> The upper limit of cumulation of the binomial distribution.
+#            There are F or fewer failures before the XNth success.
+#            Input range: [0, +infinity).
+#            Search range: [0, 1E100]
+#                    DOUBLE PRECISION S
+#
+#     XN  <--> The number of successes.
+#              Input range: [0, +infinity).
+#              Search range: [0, 1E100]
+#                    DOUBLE PRECISION XN
+#
+#     PR  <--> The probability of success in each binomial trial.
+#              Input range: [0,1].
+#              Search range: [0,1].
+#                    DOUBLE PRECISION PR
+#
+#     OMPR  <--> 1-PR
+#              Input range: [0,1].
+#              Search range: [0,1]
+#              PR + OMPR = 1.0
+#                    DOUBLE PRECISION OMPR
+#
+#     STATUS <-- 0 if calculation completed correctly
+#               -I if input parameter number I is out of range
+#                1 if answer appears to be lower than lowest
+#                  search bound
+#                2 if answer appears to be higher than greatest
+#                  search bound
+#                3 if P + Q .ne. 1
+#                4 if PR + OMPR .ne. 1
+#                    INTEGER STATUS
+#
+#     BOUND <-- Undefined if STATUS is 0
+#
+#               Bound exceeded by parameter number I if STATUS
+#               is negative.
+#
+#               Lower search bound if STATUS is 1.
+#
+#               Upper search bound if STATUS is 2.
+#
+#
+#                              Method
+#
+#
+#     Formula   26.5.26   of   Abramowitz  and  Stegun,  Handbook   of
+#     Mathematical Functions (1966) is used  to  reduce calculation of
+#     the cumulative distribution  function to that of  an  incomplete
+#     beta.
+#
+#     Computation of other parameters involve a search for a value that
+#     produces  the desired  value  of P.   The search relies  on  the
+#     monotinicity of P with the other parameter.
+
 cdef inline (double, double, int, double) cdfnbn_which1(
     double s, double xn, double pr, double ompr) noexcept nogil:
     cdef double p, q
@@ -2166,6 +3017,101 @@ cdef inline (double, double, int, double) cdfnbn_which4(
         return (pr, ompr, 0, 0.)
 
 # %% ---------------------------------------- cdfnor_whichX
+#
+#               Cumulative Distribution Function
+#               NORmal distribution
+#
+#
+#                              Function
+#
+#
+#     Calculates any one parameter of the normal
+#     distribution given values for the others.
+#
+#
+#                              Arguments
+#
+#
+#     WHICH  --> Integer indicating  which of the  next  parameter
+#     values is to be calculated using values  of the others.
+#     Legal range: 1..4
+#               iwhich = 1 : Calculate P and Q from X,MEAN and SD
+#               iwhich = 2 : Calculate X from P,Q,MEAN and SD
+#               iwhich = 3 : Calculate MEAN from P,Q,X and SD
+#               iwhich = 4 : Calculate SD from P,Q,X and MEAN
+#                    INTEGER WHICH
+#
+#     P <--> The integral from -infinity to X of the normal density.
+#            Input range: (0,1].
+#                    DOUBLE PRECISION P
+#
+#     Q <--> 1-P.
+#            Input range: (0, 1].
+#            P + Q = 1.0.
+#                    DOUBLE PRECISION Q
+#
+#     X < --> Upper limit of integration of the normal-density.
+#             Input range: ( -infinity, +infinity)
+#                    DOUBLE PRECISION X
+#
+#     MEAN <--> The mean of the normal density.
+#               Input range: (-infinity, +infinity)
+#                    DOUBLE PRECISION MEAN
+#
+#     SD <--> Standard Deviation of the normal density.
+#             Input range: (0, +infinity).
+#                    DOUBLE PRECISION SD
+#
+#     STATUS <-- 0 if calculation completed correctly
+#               -I if input parameter number I is out of range
+#                1 if answer appears to be lower than lowest
+#                  search bound
+#                2 if answer appears to be higher than greatest
+#                  search bound
+#                3 if P + Q .ne. 1
+#                    INTEGER STATUS
+#
+#     BOUND <-- Undefined if STATUS is 0
+#
+#               Bound exceeded by parameter number I if STATUS
+#               is negative.
+#
+#               Lower search bound if STATUS is 1.
+#
+#               Upper search bound if STATUS is 2.
+#
+#
+#                              Method
+#
+#
+#
+#
+#     A slightly modified version of ANORM from
+#
+#     Cody, W.D. (1993). "ALGORITHM 715: SPECFUN - A Portabel FORTRAN
+#     Package of Special Function Routines and Test Drivers"
+#     acm Transactions on Mathematical Software. 19, 22-32.
+#
+#     is used to calculate the cumulative standard normal distribution.
+#
+#     The rational functions from pages  90-95  of Kennedy and Gentle,
+#     Statistical  Computing,  Marcel  Dekker, NY,  1980 are  used  as
+#     starting values to Newton's Iterations which compute the inverse
+#     standard normal.  Therefore no  searches  are necessary for  any
+#     parameter.
+#
+#     For X < -15, the asymptotic expansion for the normal is used  as
+#     the starting value in finding the inverse standard normal.
+#     This is formula 26.2.12 of Abramowitz and Stegun.
+#
+#
+#                              Note
+#
+#
+#      The normal density is proportional to
+#      exp( - 0.5 * (( X - MEAN)/SD)**2)
+#
+
 cdef inline (double, double, int, double) cdfnor_which1(
     double x, double mean, double sd) noexcept nogil:
     cdef double z, p, q
@@ -2202,6 +3148,81 @@ cdef inline (double, int, double) cdfnor_which4(
 
 
 # %% ---------------------------------------- cdfpoi_whichX
+#
+#               Cumulative Distribution Function
+#               POIsson distribution
+#
+#
+#                              Function
+#
+#
+#     Calculates any one parameter of the Poisson
+#     distribution given values for the others.
+#
+#
+#                              Arguments
+#
+#
+#     WHICH --> Integer indicating which  argument
+#               value is to be calculated from the others.
+#               Legal range: 1..3
+#               iwhich = 1 : Calculate P and Q from S and XLAM
+#               iwhich = 2 : Calculate S from P,Q and XLAM
+#               iwhich = 3 : Calculate XLAM from P,Q and S
+#                    INTEGER WHICH
+#
+#        P <--> The cumulation from 0 to S of the poisson density.
+#               Input range: [0,1].
+#                    DOUBLE PRECISION P
+#
+#        Q <--> 1-P.
+#               Input range: (0, 1].
+#               P + Q = 1.0.
+#                    DOUBLE PRECISION Q
+#
+#        S <--> Upper limit of cumulation of the Poisson.
+#               Input range: [0, +infinity).
+#               Search range: [0,1E100]
+#                    DOUBLE PRECISION S
+#
+#     XLAM <--> Mean of the Poisson distribution.
+#               Input range: [0, +infinity).
+#               Search range: [0,1E100]
+#                    DOUBLE PRECISION XLAM
+#
+#     STATUS <-- 0 if calculation completed correctly
+#               -I if input parameter number I is out of range
+#                1 if answer appears to be lower than lowest
+#                  search bound
+#                2 if answer appears to be higher than greatest
+#                  search bound
+#                3 if P + Q .ne. 1
+#                    INTEGER STATUS
+#
+#     BOUND <-- Undefined if STATUS is 0
+#
+#               Bound exceeded by parameter number I if STATUS
+#               is negative.
+#
+#               Lower search bound if STATUS is 1.
+#
+#               Upper search bound if STATUS is 2.
+#
+#
+#                              Method
+#
+#
+#     Formula   26.4.21  of   Abramowitz  and   Stegun,   Handbook  of
+#     Mathematical Functions (1966) is used  to reduce the computation
+#     of  the cumulative distribution function to that  of computing a
+#     chi-square, hence an incomplete gamma function.
+#
+#     Cumulative  distribution function  (P) is  calculated  directly.
+#     Computation of other parameters involve a search for a value that
+#     produces  the desired value of  P.   The  search relies  on  the
+#     monotinicity of P with the other parameter.
+#
+
 cdef inline (double, double, int, double) cdfpoi_which1(
     double s, double xlam) noexcept nogil:
     cdef double p, q
@@ -2211,6 +3232,7 @@ cdef inline (double, double, int, double) cdfpoi_which1(
         return (0., 0., -2, 0.)
     p, q = cumpoi(s, xlam)
     return (p, q, 0, 0.)
+
 
 cdef inline (double, int, double) cdfpoi_which2(
     double p, double q, double xlam) noexcept nogil:
@@ -2300,6 +3322,79 @@ cdef inline (double, int, double) cdfpoi_which3(
 
 
 # %% ---------------------------------------- cdft_whichX
+#
+#               Cumulative Distribution Function
+#                         T distribution
+#
+#
+#                              Function
+#
+#
+#     Calculates any one parameter of the t distribution given
+#     values for the others.
+#
+#
+#                              Arguments
+#
+#
+#     WHICH --> Integer indicating which  argument
+#               values is to be calculated from the others.
+#               Legal range: 1..3
+#               iwhich = 1 : Calculate P and Q from T and DF
+#               iwhich = 2 : Calculate T from P,Q and DF
+#               iwhich = 3 : Calculate DF from P,Q and T
+#                    INTEGER WHICH
+#
+#        P <--> The integral from -infinity to t of the t-density.
+#              Input range: (0,1].
+#                    DOUBLE PRECISION P
+#
+#     Q <--> 1-P.
+#            Input range: (0, 1].
+#            P + Q = 1.0.
+#                    DOUBLE PRECISION Q
+#
+#        T <--> Upper limit of integration of the t-density.
+#               Input range: ( -infinity, +infinity).
+#               Search range: [ -1E100, 1E100 ]
+#                    DOUBLE PRECISION T
+#
+#        DF <--> Degrees of freedom of the t-distribution.
+#                Input range: (0 , +infinity).
+#                Search range: [1e-100, 1E10]
+#                    DOUBLE PRECISION DF
+#
+#     STATUS <-- 0 if calculation completed correctly
+#               -I if input parameter number I is out of range
+#                1 if answer appears to be lower than lowest
+#                  search bound
+#                2 if answer appears to be higher than greatest
+#                  search bound
+#                3 if P + Q .ne. 1
+#                    INTEGER STATUS
+#
+#     BOUND <-- Undefined if STATUS is 0
+#
+#               Bound exceeded by parameter number I if STATUS
+#               is negative.
+#
+#               Lower search bound if STATUS is 1.
+#
+#               Upper search bound if STATUS is 2.
+#
+#
+#                              Method
+#
+#
+#     Formula  26.5.27  of   Abramowitz   and  Stegun,   Handbook   of
+#     Mathematical Functions  (1966) is used to reduce the computation
+#     of the cumulative distribution function to that of an incomplete
+#     beta.
+#
+#     Computation of other parameters involve a search for a value that
+#     produces  the desired  value  of P.   The search relies  on  the
+#     monotinicity of P with the other parameter.
+
 cdef inline (double, double, int, double) cdft_which1(
     double t, double df) noexcept nogil:
     cdef double p, q
@@ -2392,6 +3487,76 @@ cdef inline (double, int, double) cdft_which3(
 
 
 # %% ---------------------------------------- cdftnc_whichX
+#
+#               Cumulative Distribution Function
+#                  Non-Central T distribution
+#
+#                               Function
+#
+#     Calculates any one parameter of the noncentral t distribution give
+#     values for the others.
+#
+#                               Arguments
+#
+#     WHICH --> Integer indicating which  argument
+#               values is to be calculated from the others.
+#               Legal range: 1..3
+#               iwhich = 1 : Calculate P and Q from T,DF,PNONC
+#               iwhich = 2 : Calculate T from P,Q,DF,PNONC
+#               iwhich = 3 : Calculate DF from P,Q,T
+#               iwhich = 4 : Calculate PNONC from P,Q,DF,T
+#                    INTEGER WHICH
+#
+#        P <--> The integral from -infinity to t of the noncentral t-den
+#              Input range: (0,1].
+#                    DOUBLE PRECISION P
+#
+#     Q <--> 1-P.
+#            Input range: (0, 1].
+#            P + Q = 1.0.
+#                    DOUBLE PRECISION Q
+#
+#        T <--> Upper limit of integration of the noncentral t-density.
+#               Input range: ( -infinity, +infinity).
+#               Search range: [ -1E100, 1E100 ]
+#                    DOUBLE PRECISION T
+#
+#        DF <--> Degrees of freedom of the noncentral t-distribution.
+#                Input range: (0 , +infinity).
+#                Search range: [1e-100, 1E10]
+#                    DOUBLE PRECISION DF
+#
+#     PNONC <--> Noncentrality parameter of the noncentral t-distributio
+#                Input range: [-1e6, 1E6].
+#
+#     STATUS <-- 0 if calculation completed correctly
+#               -I if input parameter number I is out of range
+#                1 if answer appears to be lower than lowest
+#                  search bound
+#                2 if answer appears to be higher than greatest
+#                  search bound
+#                3 if P + Q .ne. 1
+#                    INTEGER STATUS
+#
+#     BOUND <-- Undefined if STATUS is 0
+#
+#               Bound exceeded by parameter number I if STATUS
+#               is negative.
+#
+#               Lower search bound if STATUS is 1.
+#
+#               Upper search bound if STATUS is 2.
+#
+#                                Method
+#
+#     Upper tail    of  the  cumulative  noncentral t is calculated usin
+#     formulae  from page 532  of Johnson, Kotz,  Balakrishnan, Coninuou
+#     Univariate Distributions, Vol 2, 2nd Edition.  Wiley (1995)
+#
+#     Computation of other parameters involve a search for a value that
+#     produces  the desired  value  of P.   The search relies  on  the
+#     monotinicity of P with the other parameter.
+
 cdef inline (double, double, int, double) cdftnc_which1(
     double t, double df, double pnonc) noexcept nogil:
     cdef double p, q
@@ -2545,6 +3710,51 @@ cdef inline (double, int, double) cdftnc_which4(
 # %% ---------------------------------------- cumbet
 cdef inline (double, double) cumbet(double x, double y,
                                     double a, double b) noexcept nogil:
+    """
+              Double precision cUMulative incomplete BETa distribution
+
+
+                                  Function
+
+
+         Calculates the cdf to X of the incomplete beta distribution
+         with parameters a and b.  This is the integral from 0 to x
+         of (1/B(a,b))*f(t)) where f(t) = t**(a-1) * (1-t)**(b-1)
+
+
+                                  Arguments
+
+
+         X --> Upper limit of integration.
+                                            X is DOUBLE PRECISION
+
+         Y --> 1 - X.
+                                            Y is DOUBLE PRECISION
+
+         A --> First parameter of the beta distribution.
+                                            A is DOUBLE PRECISION
+
+         B --> Second parameter of the beta distribution.
+                                            B is DOUBLE PRECISION
+
+         CUM <-- Cumulative incomplete beta distribution.
+                                            CUM is DOUBLE PRECISION
+
+         CCUM <-- Compliment of Cumulative incomplete beta distribution.
+                                            CCUM is DOUBLE PRECISION
+
+
+                                  Method
+
+
+         Calls the routine BRATIO.
+
+                                       References
+
+         Didonato, Armido R. and Morris, Alfred H. Jr. (1992) Algorithim
+         708 Significant Digit Computation of the Incomplete Beta Function
+         Ratios. ACM ToMS, Vol.18, No. 3, Sept. 1992, 360-373.
+    """
     cdef double u, v
 
     if x <= 0.:
@@ -2559,6 +3769,47 @@ cdef inline (double, double) cumbet(double x, double y,
 # %% ---------------------------------------- cumbin
 cdef inline (double, double) cumbin(double s, double xn,
                                     double pr, double ompr) noexcept nogil:
+    """
+                        CUmulative BINomial distribution
+
+
+                                  Function
+
+
+         Returns the probability   of 0  to  S  successes in  XN   binomial
+         trials, each of which has a probability of success, PBIN.
+
+
+                                  Arguments
+
+
+         S --> The upper limit of cumulation of the binomial distribution.
+                                                      S is DOUBLE PRECISION
+
+         XN --> The number of binomial trials.
+                                                      XN is DOUBLE PRECISIO
+
+         PBIN --> The probability of success in each binomial trial.
+                                                      PBIN is DOUBLE PRECIS
+
+         OMPR --> 1 - PBIN
+                                                      OMPR is DOUBLE PRECIS
+
+         CUM <-- Cumulative binomial distribution.
+                                                      CUM is DOUBLE PRECISI
+
+         CCUM <-- Compliment of Cumulative binomial distribution.
+                                                      CCUM is DOUBLE PRECIS
+
+
+
+                                  Method
+
+
+         Formula  26.5.24    of   Abramowitz  and    Stegun,  Handbook   of
+         Mathematical   Functions (1966) is   used  to reduce the  binomial
+         distribution  to  the  cumulative    beta distribution.
+    """
     cdef double cum, ccum
     if not (s < xn):
         cum, ccum = 1., 0.
@@ -2570,11 +3821,92 @@ cdef inline (double, double) cumbin(double s, double xn,
 
 # %% ---------------------------------------- cumchi
 cdef inline (double, double) cumchi(double x, double df) noexcept nogil:
+    """
+                 CUMulative of the CHi-square distribution
+
+
+                                  Function
+
+
+         Calculates the cumulative chi-square distribution.
+
+
+                                  Arguments
+
+
+         X       --> Upper limit of integration of the
+                     chi-square distribution.
+                                                     X is DOUBLE PRECISION
+
+         DF      --> Degrees of freedom of the
+                     chi-square distribution.
+                                                     DF is DOUBLE PRECISION
+
+         CUM <-- Cumulative chi-square distribution.
+                                                     CUM is DOUBLE PRECISIO
+
+         CCUM <-- Compliment of Cumulative chi-square distribution.
+                                                     CCUM is DOUBLE PRECISI
+
+
+                                  Method
+
+
+         Calls incomplete gamma function (CUMGAM)
+    """
     return cumgam(0.5*x, 0.5*df)
 
 
 # %% ---------------------------------------- cumchn
 cdef inline (double, double) cumchn(double x, double df, double pnonc) noexcept nogil:
+    """
+             CUMulative of the Non-central CHi-square distribution
+
+                               Function
+
+     Calculates     the       cumulative      non-central    chi-square
+     distribution, i.e.,  the probability   that  a   random   variable
+     which    follows  the  non-central chi-square  distribution,  with
+     non-centrality  parameter    PNONC  and   continuous  degrees   of
+     freedom DF, is less than or equal to X.
+
+                              Arguments
+
+     X       --> Upper limit of integration of the non-central
+                 chi-square distribution.
+                                                 X is DOUBLE PRECISION
+
+     DF      --> Degrees of freedom of the non-central
+                 chi-square distribution.
+                                                 DF is DOUBLE PRECISION
+
+     PNONC   --> Non-centrality parameter of the non-central
+                 chi-square distribution.
+                                                 PNONC is DOUBLE PRECISION
+
+     CUM <-- Cumulative non-central chi-square distribution.
+                                                 CUM is DOUBLE PRECISION
+
+     CCUM <-- Compliment of Cumulative non-central chi-square distribut
+                                                 CCUM is DOUBLE PRECISION
+
+
+                                Method
+
+     Uses  formula  26.4.25   of  Abramowitz  and  Stegun, Handbook  of
+     Mathematical    Functions,  US   NBS   (1966)    to calculate  the
+     non-central chi-square.
+
+                                Variables
+
+     EPS     --- Convergence criterion.  The sum stops when a
+                 term is less than EPS*SUM.
+                                                 EPS is DOUBLE PRECISION
+
+     CCUM <-- Compliment of Cumulative non-central
+              chi-square distribution.
+                                                 CCUM is DOUBLE PRECISION
+    """
     cdef double adj, centaj, centwt, chid2, dfd2, lcntaj, lcntwt
     cdef double lfact, pcent, pterm, ssum, sumadj, term, wt, xnonc
     cdef double eps = 1.e-15
@@ -2640,6 +3972,48 @@ cdef inline (double, double) cumchn(double x, double df, double pnonc) noexcept 
 
 # %% ---------------------------------------- cumf
 cdef inline (double, double) cumf(double f, double dfn, double dfd) noexcept nogil:
+    """
+                    CUMulative F distribution
+
+
+                              Function
+
+
+     Computes  the  integral from  0  to  F of  the f-density  with DFN
+     and DFD degrees of freedom.
+
+
+                              Arguments
+
+
+     F --> Upper limit of integration of the f-density.
+                                                  F is DOUBLE PRECISION
+
+     DFN --> Degrees of freedom of the numerator sum of squares.
+                                                  DFN is DOUBLE PRECISION
+
+     DFD --> Degrees of freedom of the denominator sum of squares.
+                                                  DFD is DOUBLE PRECISION
+
+     CUM <-- Cumulative f distribution.
+                                                  CUM is DOUBLE PRECISION
+
+     CCUM <-- Compliment of Cumulative f distribution.
+                                                  CCUM is DOUBLE PRECISION
+
+
+                              Method
+
+
+     Formula  26.5.28 of  Abramowitz and   Stegun   is  used to  reduce
+     the cumulative F to a cumulative beta distribution.
+
+
+                              Note
+
+
+     If F is less than or equal to 0, 0 is returned.
+    """
     cdef double dsum,prod,xx,yy
     cdef double cum, ccum
 
@@ -2660,6 +4034,64 @@ cdef inline (double, double) cumf(double f, double dfn, double dfd) noexcept nog
 # %% ---------------------------------------- cumfnc
 cdef inline (double, double, int) cumfnc(double f, double dfn,
                                     double dfd, double pnonc) noexcept nogil:
+    """
+            F -NON- -C-ENTRAL F DISTRIBUTION
+
+
+
+                            Function
+
+
+    COMPUTES NONCENTRAL F DISTRIBUTION WITH DFN AND DFD
+    DEGREES OF FREEDOM AND NONCENTRALITY PARAMETER PNONC
+
+
+                            Arguments
+
+
+    X --> UPPER LIMIT OF INTEGRATION OF NONCENTRAL F IN EQUATION
+
+    DFN --> DEGREES OF FREEDOM OF NUMERATOR
+
+    DFD -->  DEGREES OF FREEDOM OF DENOMINATOR
+
+    PNONC --> NONCENTRALITY PARAMETER.
+
+    CUM <-- CUMULATIVE NONCENTRAL F DISTRIBUTION
+
+    CCUM <-- COMPLIMENT OF CUMMULATIVE
+
+
+                            Method
+
+
+    USES FORMULA 26.6.20 OF REFERENCE FOR INFINITE SERIES.
+    SERIES IS CALCULATED BACKWARD AND FORWARD FROM J = LAMBDA/2
+    (THIS IS THE TERM WITH THE LARGEST POISSON WEIGHT) UNTIL
+    THE CONVERGENCE CRITERION IS MET.
+
+    FOR SPEED, THE INCOMPLETE BETA FUNCTIONS ARE EVALUATED
+    BY FORMULA 26.5.16.
+
+
+            REFERENCE
+
+
+    HANDBOOD OF MATHEMATICAL FUNCTIONS
+    EDITED BY MILTON ABRAMOWITZ AND IRENE A. STEGUN
+    NATIONAL BUREAU OF STANDARDS APPLIED MATEMATICS SERIES - 55
+    MARCH 1965
+    P 947, EQUATIONS 26.6.17, 26.6.18
+
+
+                            Note
+
+
+    THE SUM CONTINUES UNTIL A SUCCEEDING TERM IS LESS THAN EPS
+    TIMES THE SUM (OR THE SUM IS LESS THAN 1.0E-20).  EPS IS
+    SET TO 1.0E-4 IN A DATA STATEMENT WHICH CAN BE CHANGED.
+    """
+
     cdef double dsum, prod, xx, yy, adn, aup, b
     cdef double betdn, betup, centwt, dnterm, ssum
     cdef double upterm, xmult, xnonc
@@ -2747,17 +4179,149 @@ cdef inline (double, double, int) cumfnc(double f, double dfn,
 
 # %% ---------------------------------------- cumgam
 cdef inline (double, double) cumgam(double x, double a) noexcept nogil:
+    """
+        Double precision cUMulative incomplete GAMma distribution
+
+
+                            Function
+
+
+    Computes   the  cumulative        of    the     incomplete   gamma
+    distribution, i.e., the integral from 0 to X of
+        (1/GAM(A))*EXP(-T)*T**(A-1) DT
+    where GAM(A) is the complete gamma function of A, i.e.,
+        GAM(A) = integral from 0 to infinity of
+                EXP(-T)*T**(A-1) DT
+
+
+                            Arguments
+
+
+    X --> The upper limit of integration of the incomplete gamma.
+                                            X is DOUBLE PRECISION
+
+    A --> The shape parameter of the incomplete gamma.
+                                            A is DOUBLE PRECISION
+
+    CUM <-- Cumulative incomplete gamma distribution.
+                                    CUM is DOUBLE PRECISION
+
+    CCUM <-- Compliment of Cumulative incomplete gamma distribution.
+                                            CCUM is DOUBLE PRECISIO
+
+
+                            Method
+
+
+    Calls the routine GRATIO.
+    """
     return gratio(a, x, 0) if (x > 0.) else (0., 1.)
 
 
 # %% ---------------------------------------- cumnbn
 cdef inline (double, double) cumnbn(double s, double xn,
                                     double pr, double ompr) noexcept nogil:
+    """
+                CUmulative Negative BINomial distribution
+
+
+                            Function
+
+
+    Returns the probability that it there will be S or fewer failures
+    before there are XN successes, with each binomial trial having
+    a probability of success PR.
+
+    Prob(# failures = S | XN successes, PR)  =
+                    ( XN + S - 1 )
+                    (            ) * PR^XN * (1-PR)^S
+                    (      S     )
+
+
+                            Arguments
+
+
+    S --> The number of failures
+                                                S is DOUBLE PRECISION
+
+    XN --> The number of successes
+                                                XN is DOUBLE PRECISION
+
+    PR --> The probability of success in each binomial trial.
+                                                PR is DOUBLE PRECISION
+
+    OMPR --> 1 - PR
+                                                OMPR is DOUBLE PRECISION
+
+    CUM <-- Cumulative negative binomial distribution.
+                                                CUM is DOUBLE PRECISION
+
+    CCUM <-- Compliment of Cumulative negative binomial distribution.
+                                                CCUM is DOUBLE PRECISION
+
+
+                            Method
+
+    Formula  26.5.26    of   Abramowitz  and    Stegun,  Handbook   of
+    Mathematical   Functions (1966) is   used  to reduce the  negative
+    binomial distribution to the cumulative beta distribution.
+    """
     return cumbet(pr, ompr, xn, s+1.)
 
 
 # %% ---------------------------------------- cumnor
 cdef inline (double, double) cumnor(double x) noexcept nogil:
+    """
+                                Function
+
+
+        Computes the cumulative  of    the  normal   distribution,   i.e.,
+        the integral from -infinity to x of
+            (1/sqrt(2*pi)) exp(-u*u/2) du
+
+        X --> Upper limit of integration.
+                                            X is DOUBLE PRECISION
+
+        RESULT <-- Cumulative normal distribution.
+                                            RESULT is DOUBLE PRECISION
+
+        CCUM <-- Compliment of Cumulative normal distribution.
+                                            CCUM is DOUBLE PRECISION
+
+
+        Renaming of function ANORM from:
+
+        Cody, W.D. (1993). "ALGORITHM 715: SPECFUN - A Portabel FORTRAN
+        Package of Special Function Routines and Test Drivers"
+        acm Transactions on Mathematical Software. 19, 22-32.
+
+        with slight modifications to return ccum and to deal with
+        machine constants.
+
+    **********************************************************************
+
+
+    Original Comments:
+    ------------------------------------------------------------------
+
+    This function evaluates the normal distribution function:
+
+                                / x
+                        1       |       -t*t/2
+            P(x) = ----------- |      e       dt
+                    sqrt(2 pi)  |
+                                /-oo
+
+    The main computation evaluates near-minimax approximations
+    derived from those in "Rational Chebyshev approximations for
+    the error function" by W. J. Cody, Math. Comp., 1969, 631-637.
+    This transportable program uses rational functions that
+    theoretically approximate the normal distribution function to
+    at least 18 significant decimal digits.  The accuracy achieved
+    depends on the arithmetic system, the compiler, the intrinsic
+    functions, and proper selection of the machine-dependent
+    constants.
+    """
     cdef double[5] a = [2.2352520354606839287e00, 1.6102823106855587881e02,
                         1.0676894854603709582e03, 1.8154981253343561249e04,
                         6.5682337918207449113e-2]
@@ -2786,6 +4350,7 @@ cdef inline (double, double) cumnor(double x) noexcept nogil:
     cdef int i
 
     if y <= threshold:
+        # Evaluate  anorm  for  |X| <= 0.66291
         xsq = x*x if (y > eps) else 0.
         xnum = a[4] * xsq
         xden = xsq
@@ -2798,6 +4363,7 @@ cdef inline (double, double) cumnor(double x) noexcept nogil:
         ccum = 0.5 - result
         result += 0.5
     elif y < sqrt(32):
+        # Evaluate  anorm  for 0.66291 <= |X| <= sqrt(32)
         xnum = c[8]*y
         xden = y
         for i in range(7):
@@ -2813,6 +4379,7 @@ cdef inline (double, double) cumnor(double x) noexcept nogil:
         if x > 0:
             ccum, result = result, ccum
     else:
+        # Evaluate  anorm  for |X| > sqrt(32)
         result = 0.
         xsq = (1 / x)**2
         xnum = p[5] * xsq
@@ -2841,6 +4408,40 @@ cdef inline (double, double) cumnor(double x) noexcept nogil:
 
 # %%----------------------------------------- cumpoi
 cdef inline (double, double) cumpoi(double s, double xlam) noexcept nogil:
+    """
+                CUMulative POIsson distribution
+
+
+                            Function
+
+
+    Returns the  probability  of  S   or  fewer events in  a   Poisson
+    distribution with mean XLAM.
+
+
+                            Arguments
+
+
+    S --> Upper limit of cumulation of the Poisson.
+                                                S is DOUBLE PRECISION
+
+    XLAM --> Mean of the Poisson distribution.
+                                                XLAM is DOUBLE PRECIS
+
+    CUM <-- Cumulative poisson distribution.
+                                    CUM is DOUBLE PRECISION
+
+    CCUM <-- Compliment of Cumulative poisson distribution.
+                                                CCUM is DOUBLE PRECIS
+
+
+                            Method
+
+
+    Uses formula  26.4.21   of   Abramowitz and  Stegun,  Handbook  of
+    Mathematical   Functions  to reduce   the   cumulative Poisson  to
+    the cumulative chi-square distribution.
+    """
     cdef double cum, ccum
     ccum, cum = cumchi(2*xlam, 2.*(s + 1.))
     return cum, ccum
@@ -2848,6 +4449,39 @@ cdef inline (double, double) cumpoi(double s, double xlam) noexcept nogil:
 
 # %%----------------------------------------- cumt
 cdef inline (double, double) cumt(double t, double df) noexcept nogil:
+    """
+                CUMulative T-distribution
+
+
+                            Function
+
+
+    Computes the integral from -infinity to T of the t-density.
+
+
+                            Arguments
+
+
+    T --> Upper limit of integration of the t-density.
+                                                T is DOUBLE PRECISION
+
+    DF --> Degrees of freedom of the t-distribution.
+                                                DF is DOUBLE PRECISIO
+
+    CUM <-- Cumulative t-distribution.
+                                                CCUM is DOUBLE PRECIS
+
+    CCUM <-- Compliment of Cumulative t-distribution.
+                                                CCUM is DOUBLE PRECIS
+
+
+                            Method
+
+
+    Formula 26.5.27   of     Abramowitz  and   Stegun,    Handbook  of
+    Mathematical Functions  is   used   to  reduce the  t-distribution
+    to an incomplete beta.
+    """
     cdef double a, oma, tt, dfptt, xx, yy, cum, ccum
 
     tt = t*t
@@ -2866,6 +4500,45 @@ cdef inline (double, double) cumt(double t, double df) noexcept nogil:
 
 # %%----------------------------------------- cumtnc
 cdef inline (double, double) cumtnc(double t, double df, double pnonc) noexcept nogil:
+    """
+                CUMulative Non-Central T-distribution
+
+
+                            Function
+
+
+    Computes the integral from -infinity to T of the non-central
+    t-density.
+
+
+                            Arguments
+
+
+    T --> Upper limit of integration of the non-central t-density.
+                                                T is DOUBLE PRECISION
+
+    DF --> Degrees of freedom of the non-central t-distribution.
+                                                DF is DOUBLE PRECISION
+
+    PNONC --> Non-centrality parameter of the non-central t distibutio
+                                                PNONC is DOUBLE PRECISION
+
+    CUM <-- Cumulative t-distribution.
+                                                CCUM is DOUBLE PRECISION
+
+    CCUM <-- Compliment of Cumulative t-distribution.
+                                                CCUM is DOUBLE PRECISION
+
+
+                            Method
+
+    Upper tail    of  the  cumulative  noncentral t   using
+    formulae from page 532  of Johnson, Kotz,  Balakrishnan, Coninuous
+    Univariate Distributions, Vol 2, 2nd Edition.  Wiley (1995)
+
+    This implementation starts the calculation at i = lambda,
+    which is near the largest Di.  It then sums forward and backward.
+    """
     cdef double alghdf, b, bb, bbcent, bcent, cent, d, dcent
     cdef double dum1, dum2, e, ecent, lmbda, lnomx, lnx, omx
     cdef double pnonc2, s, scent, ss, sscent, t2, term, tt, twoi, x
@@ -2892,27 +4565,39 @@ cdef inline (double, double) cumtnc(double t, double df, double pnonc) noexcept 
     lnx = log(x)
     lnomx = log(omx)
     alghdf = gamln(0.5*df)
+    # Case : i = lambda
     cent = max(floor(lmbda), 1.)
+    # Compute d=T(2i) in log space and offset by exp(-lambda)
     xlnd = cent*log(lmbda) - gamln(cent + 1.) - lmbda
     dcent = exp(xlnd)
+    # Compute e=t(2i+1) in log space offset by exp(-lambda)
     xlne = (cent + 0.5)*log(lmbda) - gamln(cent + 1.5) - lmbda
     ecent = exp(xlne)
     if dpnonc < 0.:
         ecent = -ecent
+    # Compute bcent=B(2*cent)
     bcent, dum1, ierr = bratio(0.5*df, cent + 0.5, x, omx)
+    # Compute bbcent=B(2*cent+1)
     bbcent, dum2, ierr = bratio(0.5*df, cent + 1., x, omx)
-
+    # Case bcent and bbcent are essentially zero
+    # Thus t is effectively infinite
     if (bbcent + bcent) < tiny:
         return (0., 1.) if qrevs else (1., 0.)
 
+    # Case bcent and bbcent are essentially one
+    # Thus t is effectively zero
     if (dum1 + dum2) < tiny:
         return cumnor(-pnonc)
 
+    # First term in ccum is D*B + E*BB
     ccum = dcent*bcent + ecent*bbcent
+    # Compute s(cent) = B(2*(cent+1)) - B(2*cent))
     scent = exp(gamln(0.5*df + cent + 0.5) - gamln(cent + 1.5) - alghdf
                 + 0.5*df*lnx + (cent + 0.5)*lnomx)
+    # Compute ss(cent) = B(2*cent+3) - B(2*cent+1)
     sscent = exp(gamln(0.5*df + cent + 1.) - gamln(cent + 2.) - alghdf
                  + 0.5*df*lnx + (cent + 1.)*lnomx)
+    # Sum forward
     xi = cent + 1.
     twoi = 2.*xi
     d, e, b, bb, s, ss = dcent, ecent, bcent, bbcent, scent, sscent
@@ -2929,7 +4614,7 @@ cdef inline (double, double) cumtnc(double t, double df, double pnonc) noexcept 
         twoi *= xi
         if abs(term) <= conv*ccum:
             break
-
+    # Sum Backward
     xi = cent
     twoi = 2.*xi
     d, e, b, bb = dcent, ecent, bcent, bbcent
@@ -2952,6 +4637,8 @@ cdef inline (double, double) cumtnc(double t, double df, double pnonc) noexcept 
         if abs(term) <= conv*ccum:
             break
 
+    # Due to roundoff error the answer may not lie between zero and one
+    # Force it to do so
     if qrevs:
         cum = max(min(0.5*ccum, 1.), 0.)
         ccum = max(min(1.-cum, 1.), 0.)
@@ -2963,6 +4650,29 @@ cdef inline (double, double) cumtnc(double t, double df, double pnonc) noexcept 
 
 # %%----------------------------------------- devlpl
 cdef inline double devlpl(double *a, int n, double x) noexcept nogil:
+    """
+            Double precision EVALuate a PoLynomial at X
+
+
+                            Function
+
+
+    returns
+        A(1) + A(2)*X + ... + A(N)*X**(N-1)
+
+
+                            Arguments
+
+
+    A --> Array of coefficients of the polynomial.
+                                    A is DOUBLE PRECISION(N)
+
+    N --> Length of A, also degree of polynomial - 1.
+                                    N is INTEGER
+
+    X --> Point at which the polynomial is to be evaluated.
+                                    X is DOUBLE PRECISION
+    """
     cdef double temp = a[n-1]
     cdef int i
 
@@ -2973,6 +4683,40 @@ cdef inline double devlpl(double *a, int n, double x) noexcept nogil:
 
 # %%-------------------------------------- dinvnr
 cdef inline double dinvnr(double p, double q) noexcept nogil:
+    """
+    Double precision NoRmal distribution INVerse
+
+
+                            Function
+
+
+    Returns X  such that CUMNOR(X)  =   P,  i.e., the  integral from -
+    infinity to X of (1/SQRT(2*PI)) EXP(-U*U/2) dU is P
+
+
+                            Arguments
+
+
+    P --> The probability whose normal deviate is sought.
+                P is DOUBLE PRECISION
+
+    Q --> 1-P
+                P is DOUBLE PRECISION
+
+
+                            Method
+
+
+    The  rational   function   on  page 95    of Kennedy  and  Gentle,
+    Statistical Computing, Marcel Dekker, NY , 1980 is used as a start
+    value for the Newton method of finding roots.
+
+
+                            Note
+
+
+    If P or Q < machine EPS returns +/- DINVNR(EPS)
+    """
     cdef int maxit = 100
     cdef double eps = 1e-13
     cdef double r2pi = sqrt(1. / (2.*PI))
@@ -2994,6 +4738,85 @@ cdef inline double dinvnr(double p, double q) noexcept nogil:
 
 
 # %% ------------------------------------- dinvr
+# 
+# Double Precision - SeT INverse finder - Reverse Communication
+# 
+# 
+#                         Function
+# 
+# 
+# Concise Description - Given a monotone function F finds X
+# such that F(X) = Y.  Uses Reverse communication -- see invr.
+# This routine sets quantities needed by INVR.
+# 
+#     More Precise Description of INVR -
+# 
+# F must be a monotone function, the results of QMFINV are
+# otherwise undefined.  QINCR must be .TRUE. if F is non-
+# decreasing and .FALSE. if F is non-increasing.
+# 
+# QMFINV will return .TRUE. if and only if F(SMALL) and
+# F(BIG) bracket Y, i. e.,
+#     QINCR is .TRUE. and F(SMALL)<=Y<=F(BIG) or
+#     QINCR is .FALSE. and F(BIG)<=Y<=F(SMALL)
+# 
+# if QMFINV returns .TRUE., then the X returned satisfies
+# the following condition.  let
+#         TOL(X) = MAX(ABSTOL,RELTOL*ABS(X))
+# then if QINCR is .TRUE.,
+#     F(X-TOL(X)) <= Y <= F(X+TOL(X))
+# and if QINCR is .FALSE.
+#     F(X-TOL(X)) >= Y >= F(X+TOL(X))
+# 
+# 
+#                         Arguments
+# 
+# 
+# SMALL --> The left endpoint of the interval to be
+#     searched for a solution.
+#             SMALL is DOUBLE PRECISION
+# 
+# BIG --> The right endpoint of the interval to be
+#     searched for a solution.
+#             BIG is DOUBLE PRECISION
+# 
+# ABSSTP, RELSTP --> The initial step size in the search
+#     is MAX(ABSSTP,RELSTP*ABS(X)). See algorithm.
+#             ABSSTP is DOUBLE PRECISION
+#             RELSTP is DOUBLE PRECISION
+# 
+# STPMUL --> When a step doesn't bound the zero, the step
+#         size is multiplied by STPMUL and another step
+#         taken.  A popular value is 2.0
+#             DOUBLE PRECISION STPMUL
+# 
+# ABSTOL, RELTOL --> Two numbers that determine the accuracy
+#     of the solution.  See function for a precise definition.
+#             ABSTOL is DOUBLE PRECISION
+#             RELTOL is DOUBLE PRECISION
+# 
+# 
+#                         Method
+# 
+# 
+# Compares F(X) with Y for the input value of X then uses QINCR
+# to determine whether to step left or right to bound the
+# desired x.  the initial step size is
+#     MAX(ABSSTP,RELSTP*ABS(S)) for the input value of X.
+# Iteratively steps right or left until it bounds X.
+# At each step which doesn't bound X, the step size is doubled.
+# The routine is careful never to step beyond SMALL or BIG.  If
+# it hasn't bounded X at SMALL or BIG, QMFINV returns .FALSE.
+# after setting QLEFT and QHI.
+# 
+# If X is successfully bounded then Algorithm R of the paper
+# 'Two Efficient Algorithms with Guaranteed Convergence for
+# Finding a Zero of a Function' by J. C. P. Bus and
+# T. J. Dekker in ACM Transactions on Mathematical
+# Software, Volume 1, No. 4 page 330 (DEC. '75) is employed
+# to find the zero of the function F(X)-Y. This is routine
+# QRZERO.
+
 cdef struct DinvrState:
     double absstp
     double abstol
@@ -3031,13 +4854,62 @@ cdef struct DinvrState:
 
 
 cdef void dinvr(DinvrState *S, DzrorState *DZ) noexcept nogil:
-    """Main zero-finding function. If not returned, cycles
-    through different states and modifies S in place. Progress
-    is achieved through reverse communication and tracking
-    status variable.
+    """
+        Double precision
+        bounds the zero of the function and invokes zror
+                Reverse Communication
+
+
+                            Function
+
+
+    Bounds the    function  and  invokes  ZROR   to perform the   zero
+    finding.  STINVR  must  have   been  called  before this   routine
+    in order to set its parameters.
+
+
+                            Arguments
+
+
+    STATUS <--> At the beginning of a zero finding problem, STATUS
+                should be set to 0 and INVR invoked.  (The value
+                of parameters other than X will be ignored on this cal
+
+                When INVR needs the function evaluated, it will set
+                STATUS to 1 and return.  The value of the function
+                should be set in FX and INVR again called without
+                changing any of its other parameters.
+
+                When INVR has finished without error, it will return
+                with STATUS 0.  In that case X is approximately a root
+                of F(X).
+
+                If INVR cannot bound the function, it returns status
+                -1 and sets QLEFT and QHI.
+                        INTEGER STATUS
+
+    X <-- The value of X at which F(X) is to be evaluated.
+                        DOUBLE PRECISION X
+
+    FX --> The value of F(X) calculated when INVR returns with
+        STATUS = 1.
+                        DOUBLE PRECISION FX
+
+    QLEFT <-- Defined only if QMFINV returns .FALSE.  In that
+        case it is .TRUE. If the stepping search terminated
+        unsuccessfully at SMALL.  If it is .FALSE. the search
+        terminated unsuccessfully at BIG.
+                QLEFT is LOGICAL
+
+    QHI <-- Defined only if QMFINV returns .FALSE.  In that
+        case it is .TRUE. if F(X) > Y at the termination
+        of the search and .FALSE. if F(X) < Y at the
+        termination of the search.
+                QHI is LOGICAL
     """
     while True:
         if S.next_state == 0:
+            # See that SMALL and BIG bound the zero and set QINCR
             S.qcond = (S.small <= S.x <= S.big)
             if not S.qcond:
                 S.status = -2
@@ -3103,6 +4975,7 @@ cdef void dinvr(DinvrState *S, DzrorState *DZ) noexcept nogil:
                 return
             S.next_state = 100
 
+    #  Handle case in which we must step higher
         elif S.next_state == 100:
             S.qup = (S.qincr and (S.yy < 0.)) or ((not S.qincr) and (S.yy > 0.))
             if S.qup:
@@ -3149,7 +5022,7 @@ cdef void dinvr(DinvrState *S, DzrorState *DZ) noexcept nogil:
             S.status = 1
             S.next_state = 200
             return
-
+    # Handle case in which we must step lower
         elif S.next_state == 200:
             S.yy = S.fx
             S.qbdd = (S.qincr and (S.yy <= 0.)) or ((not S.qincr) and (S.yy >= 0.))
@@ -3173,6 +5046,7 @@ cdef void dinvr(DinvrState *S, DzrorState *DZ) noexcept nogil:
             else:
                 S.next_state = 240
 
+    # If we reach here, xlb and xub bound the zero of f.
         elif S.next_state == 240:
             # Overwrite supplied DZ with the problem
             DZ.xhi = S.xub
@@ -3206,6 +5080,33 @@ cdef void dinvr(DinvrState *S, DzrorState *DZ) noexcept nogil:
 
 # %%-------------------------------------- dt1
 cdef inline double dt1(double p, double q, double df) noexcept nogil:
+    """
+    Double precision Initialize Approximation to
+        INVerse of the cumulative T distribution
+
+
+                            Function
+
+
+    Returns  the  inverse   of  the T   distribution   function, i.e.,
+    the integral from 0 to INVT of the T density is P. This is an
+    initial approximation
+
+
+                            Arguments
+
+
+    P --> The p-value whose inverse from the T distribution is
+        desired.
+                P is DOUBLE PRECISION
+
+    Q --> 1-P.
+                Q is DOUBLE PRECISION
+
+    DF --> Degrees of freedom of the T distribution.
+                DF is DOUBLE PRECISION
+
+    """
     cdef double ssum, term, x, xx
     cdef double denpow = 1.
     cdef double[4][5] coef = [[1., 1., 0., 0., 0.],
@@ -3228,6 +5129,67 @@ cdef inline double dt1(double p, double q, double df) noexcept nogil:
 
 
 # %% ------------------------------------- dzror
+# 
+# Double precision SeT ZeRo finder - Reverse communication version
+# 
+# 
+#                         Function
+# 
+# 
+# 
+# Sets quantities needed by ZROR.  The function of ZROR
+# and the quantities set is given here.
+# 
+# Concise Description - Given a function F
+# find XLO such that F(XLO) = 0.
+# 
+#     More Precise Description -
+# 
+# Input condition. F is a double precision function of a single
+# double precision argument and XLO and XHI are such that
+#     F(XLO)*F(XHI)  <=  0.0
+# 
+# If the input condition is met, QRZERO returns .TRUE.
+# and output values of XLO and XHI satisfy the following
+#     F(XLO)*F(XHI)  <= 0.
+#     ABS(F(XLO)  <= ABS(F(XHI)
+#     ABS(XLO-XHI)  <= TOL(X)
+# where
+#     TOL(X) = MAX(ABSTOL,RELTOL*ABS(X))
+# 
+# If this algorithm does not find XLO and XHI satisfying
+# these conditions then QRZERO returns .FALSE.  This
+# implies that the input condition was not met.
+# 
+# 
+#                         Arguments
+# 
+# 
+# XLO --> The left endpoint of the interval to be
+#     searched for a solution.
+#             XLO is DOUBLE PRECISION
+# 
+# XHI --> The right endpoint of the interval to be
+#     for a solution.
+#             XHI is DOUBLE PRECISION
+# 
+# ABSTOL, RELTOL --> Two numbers that determine the accuracy
+#                 of the solution.  See function for a
+#                 precise definition.
+#             ABSTOL is DOUBLE PRECISION
+#             RELTOL is DOUBLE PRECISION
+# 
+# 
+#                         Method
+# 
+# 
+# Algorithm R of the paper 'Two Efficient Algorithms with
+# Guaranteed Convergence for Finding a Zero of a Function'
+# by J. C. P. Bus and T. J. Dekker in ACM Transactions on
+# Mathematical Software, Volume 1, no. 4 page 330
+# (Dec. '75) is employed to find the zero of F(X)-Y.
+#
+
 cdef struct DzrorState:
     double a
     double atol
@@ -3261,10 +5223,61 @@ cdef struct DzrorState:
 
 
 cdef void dzror(DzrorState *S) noexcept nogil:
-    """Main zero-finding function. If not returned, cycles
-    through different states and modifies S in place. Progress
-    is achieved through reverse communication and tracking
-    status variable.
+    """
+    Double precision ZeRo of a function -- Reverse Communication
+
+
+                            Function
+
+
+    Performs the zero finding.  STZROR must have been called before
+    this routine in order to set its parameters.
+
+
+                            Arguments
+
+
+    STATUS <--> At the beginning of a zero finding problem, STATUS
+                should be set to 0 and ZROR invoked.  (The value
+                of other parameters will be ignored on this call.)
+
+                When ZROR needs the function evaluated, it will set
+                STATUS to 1 and return.  The value of the function
+                should be set in FX and ZROR again called without
+                changing any of its other parameters.
+
+                When ZROR has finished without error, it will return
+                with STATUS 0.  In that case (XLO,XHI) bound the answe
+
+                If ZROR finds an error (which implies that F(XLO)-Y an
+                F(XHI)-Y have the same sign, it returns STATUS -1.  In
+                this case, XLO and XHI are undefined.
+                        INTEGER STATUS
+
+    X <-- The value of X at which F(X) is to be evaluated.
+                        DOUBLE PRECISION X
+
+    FX --> The value of F(X) calculated when ZROR returns with
+        STATUS = 1.
+                        DOUBLE PRECISION FX
+
+    XLO <-- When ZROR returns with STATUS = 0, XLO bounds the
+            inverval in X containing the solution below.
+                        DOUBLE PRECISION XLO
+
+    XHI <-- When ZROR returns with STATUS = 0, XHI bounds the
+            inverval in X containing the solution above.
+                        DOUBLE PRECISION XHI
+
+    QLEFT <-- .TRUE. if the stepping search terminated unsuccessfully
+            at XLO.  If it is .FALSE. the search terminated
+            unsuccessfully at XHI.
+                QLEFT is LOGICAL
+
+    QHI <-- .TRUE. if F(X) > Y at the termination of the
+            search and .FALSE. if F(X) < Y at the
+            termination of the search.
+                QHI is LOGICAL
     """
     while True:
         if S.next_state == 0:
@@ -3407,6 +5420,9 @@ cdef void dzror(DzrorState *S) noexcept nogil:
 
 # %%-------------------------------------- erf
 cdef inline double erf(double x) noexcept nogil:
+    """
+    Evaluation of the real error function
+    """
     cdef double ax, bot, t, top
     cdef double c = .564189583547756
     cdef double[5] a = [.771058495001320e-04, -.133733772997339e-02,
@@ -3466,6 +5482,13 @@ cdef inline double erf(double x) noexcept nogil:
 
 # %%-------------------------------------- erfc1
 cdef inline double erfc1(int ind, double x) noexcept nogil:
+    """
+        Evaluation of the complementary error function
+
+        Erfc1(ind,x) = erfc(x)            if ind = 0
+        Erfc1(ind,x) = exp(x*x)*erfc(x)   otherwise
+
+    """
     cdef double ax, bot, t, top, result
     cdef double c = 0.564189583547756
     cdef double[5] a = [.771058495001320e-04, -.133733772997339e-02,
@@ -3535,6 +5558,9 @@ cdef inline double erfc1(int ind, double x) noexcept nogil:
 
 # %%----------------------------------------- esum
 cdef inline double esum(int mu, double x) noexcept nogil:
+    """
+    Evaluation of exp(mu + x)
+    """
     if x > 0.:
         if (mu > 0.) or (mu + x < 0):
             return exp(mu)*exp(x)
@@ -3549,6 +5575,11 @@ cdef inline double esum(int mu, double x) noexcept nogil:
 
 # %%----------------------------------------- fpser
 cdef inline double fpser(double a, double b, double x, double eps) noexcept nogil:
+    """
+           Evaluation of i_x(a,b)
+
+    for b < Min(eps,eps*a) and x <= 0.5.
+    """
     cdef double an, c, s, t, tol
     cdef double result = 1.
 
@@ -3559,7 +5590,7 @@ cdef inline double fpser(double a, double b, double x, double eps) noexcept nogi
         if t < -708.:
             return result
         result = exp(t)
-
+    #  Note that 1/Beta(a,b) = b
     result *= (b / a)
     tol, an, t = eps / a, a + 1., x
     s = t / an
@@ -3576,6 +5607,9 @@ cdef inline double fpser(double a, double b, double x, double eps) noexcept nogi
 
 # %%----------------------------------------- gam1
 cdef inline double gam1(double a) noexcept nogil:
+    """
+    Computation of 1/gamma(a+1) - 1  for -0.5 <= A <= 1.5
+    """
     cdef double bot, d, t, top, w
     cdef double[7] p = [.577215664901533e+00, -.409078193005776e+00,
                         -.230975380857675e+00, .597275330452234e-01,
@@ -3636,6 +5670,53 @@ cdef inline double gam1(double a) noexcept nogil:
 # %%----------------------------------------- gaminv
 cdef inline (double, int) gaminv(double a, double p,
                                  double q, double x0) noexcept nogil:
+    """
+        INVERSE INCOMPLETE GAMMA RATIO FUNCTION
+
+    GIVEN POSITIVE A, AND NONEGATIVE P AND Q WHERE P + Q = 1.
+    THEN X IS COMPUTED WHERE P(A,X) = P AND Q(A,X) = Q. SCHRODER
+    ITERATION IS EMPLOYED. THE ROUTINE ATTEMPTS TO COMPUTE X
+    TO 10 SIGNIFICANT DIGITS IF THIS IS POSSIBLE FOR THE
+    PARTICULAR COMPUTER ARITHMETIC BEING USED.
+
+                    ------------
+
+    X IS A VARIABLE. IF P = 0 THEN X IS ASSIGNED THE VALUE 0,
+    AND IF Q = 0 THEN X IS SET TO THE LARGEST FLOATING POINT
+    NUMBER AVAILABLE. OTHERWISE, GAMINV ATTEMPTS TO OBTAIN
+    A SOLUTION FOR P(A,X) = P AND Q(A,X) = Q. IF THE ROUTINE
+    IS SUCCESSFUL THEN THE SOLUTION IS STORED IN X.
+
+    X0 IS AN OPTIONAL INITIAL APPROXIMATION FOR X. IF THE USER
+    DOES NOT WISH TO SUPPLY AN INITIAL APPROXIMATION, THEN SET
+    X0 <= 0.
+
+    IERR IS A VARIABLE THAT REPORTS THE STATUS OF THE RESULTS.
+    WHEN THE ROUTINE TERMINATES, IERR HAS ONE OF THE FOLLOWING
+    VALUES ...
+
+    IERR =  0    THE SOLUTION WAS OBTAINED. ITERATION WAS
+                NOT USED.
+    IERR>0    THE SOLUTION WAS OBTAINED. IERR ITERATIONS
+                WERE PERFORMED.
+    IERR = -2    (INPUT ERROR) A <= 0
+    IERR = -3    NO SOLUTION WAS OBTAINED. THE RATIO Q/A
+                IS TOO LARGE.
+    IERR = -4    (INPUT ERROR) P + Q .NE. 1
+    IERR = -6    20 ITERATIONS WERE PERFORMED. THE MOST
+                RECENT VALUE OBTAINED FOR X IS GIVEN.
+                THIS CANNOT OCCUR IF X0 <= 0.
+    IERR = -7    ITERATION FAILED. NO VALUE IS GIVEN FOR X.
+                THIS MAY OCCUR WHEN X IS APPROXIMATELY 0.
+    IERR = -8    A VALUE FOR X HAS BEEN OBTAINED, BUT THE
+                ROUTINE IS NOT CERTAIN OF ITS ACCURACY.
+                ITERATION CANNOT BE PERFORMED IN THIS
+                CASE. IF X0 <= 0, THIS CAN OCCUR ONLY
+                WHEN P OR Q IS APPROXIMATELY 0. IF X0 IS
+                POSITIVE THEN THIS CAN OCCUR WHEN A IS
+                EXCEEDINGLY CLOSE TO X AND A IS EXTREMELY
+                LARGE (SAY A >= 1.E20).
+    """
     cdef:
         double ap1, ap2, ap3, apn, b, bot, d, g, h
         double pn, qg, qn, r, rta, s, s2, ssum, t, top, u, w, y, z
@@ -3907,6 +5988,9 @@ cdef inline double gaminv_helper_30(double a, double s,
 
 # %%----------------------------------------- gamln
 cdef inline double gamln(double a) noexcept nogil:
+    """
+    Evaluation of ln(gamma(a)) for positive a
+    """
     cdef double t,w
     cdef double c[6]
     cdef double d = .418938533204673
@@ -3942,6 +6026,9 @@ cdef inline double gamln(double a) noexcept nogil:
 
 # %%----------------------------------------- gamln1
 cdef inline double gamln1(double a) noexcept nogil:
+    """
+    Evaluation of ln(gamma(1 + a)) for -0.2 <= A <= 1.25
+    """
     cdef double p[7]
     cdef double q[6]
     cdef double r[6]
@@ -4010,6 +6097,13 @@ cdef inline double gamln1(double a) noexcept nogil:
 
 # %%-------------------------------------- gamma
 cdef inline double gamma(double a) noexcept nogil:
+    """
+        Evaluation of the gamma function for real arguments
+
+    Gamma(a) is assigned the value 0 when the gamma function cannot
+    be computed.
+
+    """
     cdef double bot, g, lnx, t, top, w, z, result
     cdef int i, j, m, n
     cdef double s = 0.
@@ -4098,9 +6192,15 @@ cdef inline double gamma(double a) noexcept nogil:
 
 
 # %%-------------------------------------- grat1
-# Subroutine converted to function
 cdef inline (double, double) grat1(double a, double x,
                                    double r, double eps) noexcept nogil:
+    """
+    Evaluation of the incomplete gamma ratio functions
+                    p(a,x) and q(a,x)
+
+    it is assumed that a <= 1.  Eps is the tolerance to be used.
+    the input argument r has the value e**(-x)*x**a/gamma(a).
+    """
     cdef double a2n, a2nm1, am0, an, an0, b2n, b2nm1, c, cma, g, h, j, l
     cdef double p, q, ssum, t, tol, w, z
 
@@ -4116,6 +6216,7 @@ cdef inline (double, double) grat1(double a, double x,
             return (0.5 + (0.5 - q), q)
 
     if x < 1.1:
+        # Taylor series for p(a,x)/x**a
         an = 3.
         c = x
         ssum = x / (a + 3.)
@@ -4147,7 +6248,7 @@ cdef inline (double, double) grat1(double a, double x,
                 return (1., 0.)
             p = 0.5 + (0.5 - q)
             return (p, q)
-
+    #  Continued fraction expansion
     a2nm1 = 1.
     a2n = 1.
     b2nm1 = x
@@ -4171,6 +6272,29 @@ cdef inline (double, double) grat1(double a, double x,
 
 # %%-------------------------------------- gratio
 cdef inline (double, double) gratio(double a, double x, int ind) noexcept nogil:
+    """
+    Evaluation of the incomplete gamma ratio functions
+                    P(a,x) and Q(a,x)
+
+                    ----------
+
+    It is assumed that a and x are nonnegative, where a and x
+    Are not both 0.
+
+    Ans and qans are variables. Gratio assigns ans the value
+    P(a,x) and qans the value q(a,x). Ind may be any integer.
+    If ind = 0 then the user is requesting as much accuracy as
+    Possible (up to 14 significant digits). Otherwise, if
+    Ind = 1 then accuracy is requested to within 1 unit of the
+    6-Th significant digit, and if ind .ne. 0,1 Then accuracy
+    Is requested to within 1 unit of the 3rd significant digit.
+
+    Error return ...
+    Ans is assigned the value 2 when a or x is negative,
+    When a*x = 0, or when p(a,x) and q(a,x) are indeterminant.
+    P(a,x) and q(a,x) are computationally indeterminant when
+    X is exceedingly close to a and a is extremely large.
+    """
     cdef:
         double d10 = -.185185185185185e-02
         double d20 = .413359788359788e-02
@@ -4690,6 +6814,10 @@ cdef inline (double, double) gratio(double a, double x, int ind) noexcept nogil:
 
 # %%-------------------------------------- gsumln
 cdef inline double gsumln(double a, double b) noexcept nogil:
+    """
+    Evaluation of the function ln(gamma(a + b))
+    for 1 <= A <= 2  And  1 <= B <= 2
+    """
     cdef double x
 
     x = a + b - 2
@@ -4704,6 +6832,23 @@ cdef inline double gsumln(double a, double b) noexcept nogil:
 
 # %%-------------------------------------- psi_fort
 cdef inline double psi(double xx) noexcept nogil:
+    """
+                Evaluation of the digamma function
+
+                          -----------
+
+    Psi(xx) is assigned the value 0 when the digamma function cannot
+    be computed.
+
+    The main computation involves evaluation of rational chebyshev
+    approximations published in math. Comp. 27, 123-127(1973) By
+    cody, strecok and thacher.
+
+    ----------------------------------------------------------------
+    Psi was written at Argonne National Laboratory for the FUNPACK
+    package of special function subroutines. Psi was modified by
+    A.H. Morris (nswc).
+    """
     cdef double aug, den, dx0, sgn, upper, w, x, xmax1, xmx0, xsmall, z
     cdef double p1[7]
     cdef double q1[6]
@@ -4803,6 +6948,9 @@ cdef inline double psi(double xx) noexcept nogil:
 
 # %%-------------------------------------- rcomp
 cdef inline double rcomp(double a, double x) noexcept nogil:
+    """
+    Evaluation of exp(-x)*x**a/gamma(a)
+    """
     cdef double t, t1, u
     cdef double r2pi = sqrt(1. / (2.*PI))
 
@@ -4821,6 +6969,9 @@ cdef inline double rcomp(double a, double x) noexcept nogil:
 
 # %%-------------------------------------- rexp
 cdef inline double rexp(double x) noexcept nogil:
+    """
+    Evaluation of the function exp(x) - 1
+    """
     cdef double[2] p = [.914041914819518e-09, .238082361044469e-01]
     cdef double[4] q = [-.499999999085958e+00, .107141568980644e+00,
                         -.119041179760821e-01, .595130811860248e-03]
@@ -4838,6 +6989,9 @@ cdef inline double rexp(double x) noexcept nogil:
 
 # %%-------------------------------------- rlog
 cdef inline double rlog(double x) noexcept nogil:
+    """
+    Computation of  x - 1 - ln(x)
+    """
     cdef double r, t, u, w, w1
     cdef double a = .566749439387324e-01
     cdef double b = .456512608815524e-01
@@ -4866,6 +7020,9 @@ cdef inline double rlog(double x) noexcept nogil:
 
 # %%-------------------------------------- rlog1
 cdef inline double rlog1(double x) noexcept nogil:
+    """
+    Evaluation of the function x - ln(1 + x)
+    """
     cdef:
         double a = .566749439387324e-01
         double b = .456512608815524e-01
@@ -4902,6 +7059,25 @@ cdef inline double rlog1(double x) noexcept nogil:
 
 # %%-------------------------------------- stvaln
 cdef inline double stvaln(double p) noexcept nogil:
+    """
+                   STarting VALue for Neton-Raphon
+               calculation of Normal distribution Inverse
+
+                             Function
+
+    Returns X  such that CUMNOR(X)  =   P,  i.e., the  integral from -
+    infinity to X of (1/SQRT(2*PI)) EXP(-U*U/2) dU is P
+
+                             Arguments
+
+    P --> The probability whose normal deviate is sought.
+                   P is DOUBLE PRECISION
+
+                             Method
+
+    The  rational   function   on  page 95    of Kennedy  and  Gentle,
+    Statistical Computing, Marcel Dekker, NY , 1980.
+    """
     cdef double y, z
     cdef double[5] xnum = [-0.322232431088, -1.000000000000,
                            -0.342242088547, -0.204231210245e-1,
