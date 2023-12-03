@@ -1950,8 +1950,12 @@ class TestCorrelateReal:
             y_fft = correlate(a, b, method='fft')
             y_direct = correlate(a, b, method='direct')
 
-            assert_array_almost_equal(y_r, y_fft, decimal=self.equal_tolerance_fft(y_fft.dtype))
-            assert_array_almost_equal(y_r, y_direct, decimal=self.equal_tolerance(y_direct.dtype))
+            assert_array_almost_equal(y_r,
+                                      y_fft,
+                                      decimal=self.equal_tolerance_fft(y_fft.dtype),)
+            assert_array_almost_equal(y_r,
+                                      y_direct,
+                                      decimal=self.equal_tolerance(y_direct.dtype),)
             assert_equal(y_fft.dtype, dt)
             assert_equal(y_direct.dtype, dt)
 

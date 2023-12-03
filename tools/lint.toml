@@ -27,7 +27,6 @@ target-version = "py39"
 "scipy/constants/_codata.py" = ["E501"]
 "scipy/linalg/**" = ["E501"]
 "scipy/optimize/**" = ["E501"]
-"scipy/signal/**" = ["E501"]
 "scipy/sparse/**" = ["E501"]
 "scipy/spatial/**" = ["E501"]
 "scipy/special/**" = ["E501"]
