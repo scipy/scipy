@@ -878,11 +878,10 @@ cdef inline double bup(double a, double b, double x, double y,
         int k = 0
         int mu = 0
 
-    if n != 1 and a >= 1.:
-        if (apb >= 1.1*ap1):
-            mu = 708
-            t = mu
-            d = exp(-708)
+    if not ((n == 1) or (a < 1.) or (apb < 1.1*ap1)):
+        mu = 708
+        t = mu
+        d = exp(-708)
 
     result = brcmp1(mu, a, b, x, y) / a
     if (n == 1) or (result == 0.):
@@ -900,7 +899,7 @@ cdef inline double bup(double a, double b, double x, double y,
                 break
         return result*w
 
-    if y >= 1e-4:
+    if y > 1e-4:
         # 20
         r = (b - 1.)*x/y - a
         if r < 1.:
@@ -1537,9 +1536,9 @@ cdef inline (double, double, int, double) cdff_which1(
 
     if not (f >= 0.):
         return (0., 0., -1, 0.)
-    if not (dfn >= 0.):
+    if not (dfn > 0.):
         return (0., 0., -2, 0.)
-    if not (dfd >= 0.):
+    if not (dfd > 0.):
         return (0., 0., -3, 0.)
 
     p, q = cumf(f, dfn, dfd)
@@ -1560,7 +1559,7 @@ cdef inline (double, int, double) cdff_which2(
                                     0, 0, 0, 0, 0, 0, 0)
 
     DS.small = 0.
-    DS.big = 1e300
+    DS.big = 1e100
     DS.absstp = 0.5
     DS.relstp = 0.5
     DS.stpmul = 5.
@@ -1572,9 +1571,9 @@ cdef inline (double, int, double) cdff_which2(
         return (0., -1, 0. if not (p > 0.) else 1.)
     if not (0 < q <= 1.):
         return (0., -2, 0. if not (q > 0.) else 1.)
-    if not (dfn >= 0.):
+    if not (dfn > 0.):
         return (0., -3, 0.)
-    if not (dfd >= 0.):
+    if not (dfd > 0.):
         return (0., -4, 0.)
     if ((abs(p+q)-0.5)-0.5) > 3*spmpar[0]:
         return (0., 3, (0. if (p+q) < 0 else 1.))
@@ -1604,8 +1603,8 @@ cdef inline (double, int, double) cdff_which3(
                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0)
 
-    DS.small = 0.
-    DS.big = 1e300
+    DS.small = 1e-100
+    DS.big = 1e100
     DS.absstp = 0.5
     DS.relstp = 0.5
     DS.stpmul = 5.
@@ -1619,7 +1618,7 @@ cdef inline (double, int, double) cdff_which3(
         return (0., -2, 0. if not (q > 0.) else 1.)
     if not (f >= 0.):
         return (0., -3, 0.)
-    if not (dfd >= 0.):
+    if not (dfd > 0.):
         return (0., -4, 0.)
     if ((abs(p+q)-0.5)-0.5) > 3*spmpar[0]:
         return (0., 3, (0. if (p+q) < 0 else 1.))
@@ -1649,8 +1648,8 @@ cdef inline (double, int, double) cdff_which4(
                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0)
 
-    DS.small = 0.
-    DS.big = 1e300
+    DS.small = 1e-100
+    DS.big = 1e100
     DS.absstp = 0.5
     DS.relstp = 0.5
     DS.stpmul = 5.
@@ -1664,7 +1663,7 @@ cdef inline (double, int, double) cdff_which4(
         return (0., -2, 0. if not (q > 0.) else 1.)
     if not (f >= 0.):
         return (0., -3, 0.)
-    if not (dfn >= 0.):
+    if not (dfn > 0.):
         return (0., -4, 0.)
     if ((abs(p+q)-0.5)-0.5) > 3*spmpar[0]:
         return (0., 3, (0. if (p+q) < 0 else 1.))
