@@ -222,7 +222,9 @@ def _validate_hamming_kwargs(X, m, n, **kwargs):
     w = kwargs.get('w', np.ones((n,), dtype='double'))
 
     if w.ndim != 1 or w.shape[0] != n:
-        raise ValueError("Weights must have same size as input vector. %d vs. %d" % (w.shape[0], n))
+        raise ValueError(
+            "Weights must have same size as input vector. %d vs. %d" % (w.shape[0], n)
+        )
 
     kwargs['w'] = _validate_weights(w)
     return kwargs
