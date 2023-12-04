@@ -1182,7 +1182,10 @@ def _random(shape, density=0.01, format=None, dtype=None,
     # Number of non zero values
     size = int(round(density * tot_prod))
 
-    rng = check_random_state(random_state)
+    if random_state is None:
+        random_state = np.random.random_rng()
+    else:
+        rng = check_random_state(random_state)
 
     if data_sampler is None:
         if np.issubdtype(dtype, np.integer):
