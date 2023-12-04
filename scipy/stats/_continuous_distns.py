@@ -7250,7 +7250,7 @@ class nakagami_gen(rv_continuous):
         return np.sqrt(1/nu * sc.gammainccinv(nu, p))
 
     def _stats(self, nu):
-        mu = sc.gamma(nu+0.5)/sc.gamma(nu)/np.sqrt(nu)
+        mu = sc.poch(nu, 0.5)/np.sqrt(nu)
         mu2 = 1.0-mu*mu
         g1 = mu * (1 - 4*nu*mu2) / 2.0 / nu / np.power(mu2, 1.5)
         g2 = -6*mu**4*nu + (8*nu-2)*mu**2-2*nu + 1
