@@ -9125,8 +9125,8 @@ class TestNakagami:
 
     @pytest.mark.parametrize("nu, ref",
                              [(1e10, 0.9999999999875),
-                              (1e3, 0.9998750078173821)]
-                            )
+                              (1e3, 0.9998750078173821),
+                              (1e-10, 1.772453850659802e-05)])
     def test_mean(self, nu, ref):
         # reference values were computed with mpmath
         # from mpmath import mp
