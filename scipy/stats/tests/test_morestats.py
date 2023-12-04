@@ -2077,7 +2077,7 @@ class TestBoxcoxNormmax:
                                  optimizer=optimizer)
 
     def test_negative_ymax(self):
-        with pytest.raises(ValueError, match="`ymax` can only be positive number"):
+        with pytest.raises(ValueError, match="`ymax` must be strictly positive"):
             stats.boxcox_normmax(self.x, ymax=-1)
 
     @pytest.mark.parametrize('x', [
