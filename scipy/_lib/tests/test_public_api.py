@@ -456,7 +456,7 @@ def test_misc_doccer_deprecation():
 
     # Attributes that were formerly in `scipy.misc.doccer` can still be imported from
     # `scipy.misc.doccer`, albeit with a deprecation warning. The specific message
-    # depends on whether the attribute is public in `scipy._lib.doccer` or not.
+    # depends on whether the attribute is in `scipy._lib.doccer` or not.
     for attr_name in module.__all__:
         attr = getattr(correct_import, attr_name, None)
         if attr is None:
