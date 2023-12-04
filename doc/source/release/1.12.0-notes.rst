@@ -37,6 +37,16 @@ New features
 
 `scipy.interpolate` improvements
 ================================
+- New class ``NdBSpline`` represents tensor-product splines in N dimensions.
+  This class only knows how to evaluate a tensor product given coefficients
+  and knot vectors. This way it generalizes ``BSpline`` for 1D data to N-D, and
+  parallels ``NdPPoly`` (which represents N-D tensor product polynomials).
+  Evaluations exploit the localized nature of b-splines.
+- ``NeastNDInterpolator.__call__`` accepts ``**query_options``, which are
+  passed through to the ``KDTree.query`` call to find nearest neighbors. This
+  allows, for instance, to limit the neighbor search distance and parallelize
+  the query using the ``workers`` keyword.
+- ``BarycentricInterpolator`` now allows computing the derivatives.
 
 
 `scipy.linalg` improvements
@@ -59,7 +69,8 @@ New features
 
 `scipy.signal` improvements
 ===========================
-
+- ``freqz``, ``freqz_zpk``, and ``group_delay`` are now more accurate
+  when ``fs`` has a default value.
 
 `scipy.sparse` improvements
 ===========================
@@ -80,13 +91,25 @@ New features
   backward incompatible change.
 - A new representation for ``spatial.transform.Rotation`` called Davenport
   angles is available through ``from_davenport`` and ``as_davenport`` methods.
+- Performance improvements have been added to ``distance.hamming`` and
+  ``distance.correlation``.
+- Improved performance of ``SphericalVoronoi`` ``sort_vertices_of_regions``.
 
 `scipy.special` improvements
 ============================
+- Added `scipy.special.stirling2` for computation of Stirling numbers of the
+  second kind. Both exact calculation and an asymptotic approximation
+  (the default) are supported via ``exact=True`` and ``exact=False`` (the
+  default) respectively.
 
 
 `scipy.stats` improvements
 ==========================
+- masked array, axis tuple, and nan policy support was added to the trimmed
+  statistics functions: ``stats.tmean``, ``stats.tvar``, ``stats.tstd``,
+  ``stats.tmin``, ``stats.tmax``, and ``stats.tsem``.
+- ``axis`` and ``nan_policy`` support were added to `scipy.stats.levene` and
+  `scipy.stats.fligner`
 - Added `scipy.stats.quantile_test`, a nonparametric test of whether a
   hypothesized value is the quantile associated with a specified probability.
   The ``confidence_interval`` method of the result object gives a confidence
@@ -121,6 +144,9 @@ New features
 Deprecated features
 *******************
 
+- Error messages have been made clearer for objects that don't exist in the
+  public namespace and warnings sharpened for private attributes that are not
+  supposed to be imported at all.
 - `scipy.signal.cmplx_sort` has been deprecated and will be removed in
   SciPy 1.14. A replacement you can use is provided in the deprecation message.
 - Values the the argument ``initial`` of `scipy.integrate.cumulative_trapezoid`
@@ -143,6 +169,9 @@ Deprecated features
     qmr, tfqmr}``
   - ``special.comb``
   - ``stats.kendalltau``
+- All wavelet functions have been deprecated, as PyWavelets provides suitable
+  implementations; affected functions are: ``signal.{daub, qmf, cascade,
+  morlet, morlet2, ricker, cwt}``
 
 
 *********************
