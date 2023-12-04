@@ -954,7 +954,7 @@ class SHGO:
                     warnings.warn(
                         f"A much lower value than expected f* = {self.f_min_true} "
                         f"was found f_lowest = {self.f_lowest}",
-                        stacklevel=2
+                        stacklevel=3
                     )
             if pe <= self.f_tol:
                 self.stop_global = True

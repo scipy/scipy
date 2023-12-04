@@ -385,7 +385,7 @@ class ode:
             # FIXME: this really should be raise an exception. Will that break
             # any code?
             message = f'No integrator name match with {name!r} or is not available.'
-            warnings.warn(message, stacklevel=3)
+            warnings.warn(message, stacklevel=2)
         else:
             self._integrator = integrator(**integrator_params)
             if not len(self._y):

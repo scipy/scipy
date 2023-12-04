@@ -110,7 +110,7 @@ def check_tolerance(ftol, xtol, gtol, method):
         elif tol < EPS:
             warn(f"Setting `{name}` below the machine epsilon ({EPS:.2e}) effectively "
                  f"disables the corresponding termination condition.",
-                 stacklevel=2)
+                 stacklevel=3)
         return tol
 
     ftol = check(ftol, "ftol")

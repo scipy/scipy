@@ -379,7 +379,7 @@ def projections(A, method=None, orth_tol=1e-12, max_refin=3, tol=1e-15):
             warnings.warn("Only accepts 'NormalEquation' option when "
                           "scikit-sparse is available. Using "
                           "'AugmentedSystem' option instead.",
-                          ImportWarning, stacklevel=2)
+                          ImportWarning, stacklevel=3)
             method = 'AugmentedSystem'
     else:
         if method is None:

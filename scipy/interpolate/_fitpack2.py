@@ -347,7 +347,7 @@ class UnivariateSpline:
         if data[6] == -1:
             warnings.warn('smoothing factor unchanged for'
                           'LSQ spline with fixed knots',
-                          stacklevel=3)
+                          stacklevel=2)
             return
         args = data[:6] + (s,) + data[7:]
         data = dfitpack.fpcurf1(*args)
