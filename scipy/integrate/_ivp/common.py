@@ -158,7 +158,7 @@ class OdeSolution:
     t_min, t_max : float
         Time range of the interpolation.
     """
-    def __init__(self, ts, interpolants, alt_segment=False):
+    def __init__(self, ts, interpolants, alt_segment=False, yshape=None):
         ts = np.asarray(ts)
         d = np.diff(ts)
         # The first case covers integration on zero segment.
@@ -172,6 +172,7 @@ class OdeSolution:
                              "don't match.")
 
         self.ts = ts
+        self.yshape = yshape
         self.interpolants = interpolants
         if ts[-1] >= ts[0]:
             self.t_min = ts[0]
@@ -240,6 +241,8 @@ class OdeSolution:
 
         ys = np.hstack(ys)
         ys = ys[:, reverse]
+        if self.yshape is not None:
+            ys = ys.reshape(self.yshape + (-1,))
 
         return ys
 

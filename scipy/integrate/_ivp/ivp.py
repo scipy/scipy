@@ -612,6 +612,14 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     if method in METHODS:
         method = METHODS[method]
 
+    y0 = np.asarray(y0)
+    if y0.ndim != 1:
+        shape0 = y0.shape
+        y0 = y0.ravel()
+        def fun(t, y, *args, f=fun, shape0=shape0,  **kwargs):
+            y = y.reshape(shape0)
+            return np.ravel(f(t, y, *args, **kwargs))
+
     solver = method(fun, t0, y0, tf, vectorized=vectorized, **options)
 
     if t_eval is None:
@@ -714,7 +722,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
 
     if t_events is not None:
         t_events = [np.asarray(te) for te in t_events]
-        y_events = [np.asarray(ye) for ye in y_events]
+        y_events = [np.asarray(ye.reshape(shape0)) for ye in y_events]
 
     if t_eval is None:
         ts = np.array(ts)
@@ -722,15 +730,18 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     elif ts:
         ts = np.hstack(ts)
         ys = np.hstack(ys)
+    ys = ys.reshape(shape0 + (-1,))
 
     if dense_output:
         if t_eval is None:
             sol = OdeSolution(
-                ts, interpolants, alt_segment=True if method in [BDF, LSODA] else False
+                ts, interpolants, alt_segment=True if method in [BDF, LSODA] else False,
+                yshape=shape0
             )
         else:
             sol = OdeSolution(
-                ti, interpolants, alt_segment=True if method in [BDF, LSODA] else False
+                ti, interpolants, alt_segment=True if method in [BDF, LSODA] else False,
+                yshape=shape0
             )
     else:
         sol = None
