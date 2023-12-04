@@ -1,6 +1,8 @@
 line-length = 88
 
-# Enable Pyflakes `E` and `F` codes by default.
+# Enable Pyflakes `E` and `F` and PyUpgrade `UP` codes by default.
+# Also, `PGH004` which checks for blanket (non-specific) `noqa`s
+# and `B028` which checks that warnings include the `stacklevel` keyword.
 select = ["E", "F", "PGH004", "UP", "B028"]
 ignore = ["E741"]
 exclude = ["scipy/datasets/_registry.py"]
