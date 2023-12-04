@@ -1142,10 +1142,6 @@ def boxcox_normmax(
     ----------
     x : array_like
         Input array. All entries must be positive, finite, real numbers.
-    ymax : float, optional
-        The maximum value after Box-Cox transformation. The default value
-        is the maximum value of the input dtype. If set to infinity,
-        it returns the true, unconstrained optimal lambda.
     brack : 2-tuple, optional, default (-2.0, 2.0)
          The starting interval for a downhill bracket search for the default
          `optimize.brent` solver. Note that this is in most cases not
@@ -1183,6 +1179,10 @@ def boxcox_normmax(
 
         See the example below or the documentation of
         `scipy.optimize.minimize_scalar` for more information.
+    ymax : float, optional
+        The maximum value after Box-Cox transformation. The default value
+        is the maximum value of the input dtype. If set to infinity,
+        it returns the true, unconstrained optimal lambda.
 
     Returns
     -------
