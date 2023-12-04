@@ -1134,7 +1134,7 @@ def _boxcox_inv_lmbda(x, y):
 
 
 def boxcox_normmax(
-    x, ymax=None, brack=None, method='pearsonr', optimizer=None
+    x, brack=None, method='pearsonr', optimizer=None, *, ymax=None
 ):
     """Compute optimal Box-Cox transform parameter for input data.
 
