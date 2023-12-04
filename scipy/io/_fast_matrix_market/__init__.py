@@ -13,6 +13,7 @@ import os
 
 import numpy as np
 import scipy.sparse
+from scipy.io import _mmio
 
 __all__ = ['mminfo', 'mmread', 'mmwrite']
 
@@ -79,7 +80,7 @@ class _TextToBytesWrapper(io.BufferedReader):
     """
 
     def __init__(self, text_io_buffer, encoding=None, errors=None, **kwargs):
-        super(_TextToBytesWrapper, self).__init__(text_io_buffer, **kwargs)
+        super().__init__(text_io_buffer, **kwargs)
         self.encoding = encoding or text_io_buffer.encoding or 'utf-8'
         self.errors = errors or text_io_buffer.errors or 'strict'
 
@@ -107,7 +108,7 @@ class _TextToBytesWrapper(io.BufferedReader):
         if offset == 0 and whence == 0 or \
            offset == 0 and whence == 2:
             # seek to start or end is ok
-            super(_TextToBytesWrapper, self).seek(offset, whence)
+            super().seek(offset, whence)
         else:
             # Drop any other seek
             # In this application this may happen when pystreambuf seeks during sync(), which can happen when closing
@@ -494,7 +495,7 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
             symmetry = "general"
 
     if symmetry is None:
-        symmetry = scipy.io._mmio.MMFile()._get_symmetry(a)
+        symmetry = _mmio.MMFile()._get_symmetry(a)
 
     symmetry = _validate_symmetry(symmetry)
     cursor = _get_write_cursor(target, comment=comment, precision=precision, symmetry=symmetry)

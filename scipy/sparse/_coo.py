@@ -83,8 +83,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 self._shape = check_shape(M.shape, allow_ndim=is_array)
                 if shape is not None:
                     if check_shape(shape, allow_ndim=is_array) != self._shape:
-                        raise ValueError('inconsistent shapes: %s != %s' %
-                                         (shape, self._shape))
+                        raise ValueError(f'inconsistent shapes: {shape} != {self._shape}')
                 index_dtype = self._get_index_dtype(maxval=max(self._shape))
                 indices = M.nonzero()
                 self.indices = tuple(idx.astype(index_dtype, copy=False)
@@ -522,8 +521,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
     def _add_dense(self, other):
         if other.shape != self.shape:
-            raise ValueError('Incompatible shapes ({} and {})'
-                             .format(self.shape, other.shape))
+            raise ValueError(f'Incompatible shapes ({self.shape} and {other.shape})')
         dtype = upcast_char(self.dtype.char, other.dtype.char)
         result = np.array(other, dtype=dtype, copy=True)
         fortran = int(result.flags.f_contiguous)

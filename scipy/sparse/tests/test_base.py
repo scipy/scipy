@@ -39,7 +39,7 @@ from scipy.sparse._sputils import (supported_dtypes, isscalarlike,
 from scipy.sparse.linalg import splu, expm, inv
 
 from scipy._lib.decorator import decorator
-from scipy._lib._util import ComplexWarning, np_long
+from scipy._lib._util import ComplexWarning
 
 import pytest
 
@@ -809,7 +809,7 @@ class _TestCommon:
                     n = min(len(d), len(v))
                     assert_array_equal(d[:n], v[:n], err_msg="%s %d" % (msg, r))
                 # check that sparse setdiag worked
-                assert_array_equal(b.A, a, err_msg="%s %d" % (msg, r))
+                assert_array_equal(b.toarray(), a, err_msg="%s %d" % (msg, r))
 
         # comprehensive test
         np.random.seed(1234)
@@ -2405,7 +2405,7 @@ class _TestSlicing:
         E = matrix([[1, 2, 1], [4, 0, 0], [0, 0, 0], [0, 0, 1]])
         F = self.spcreator(E)
         assert_array_equal(E[1, 1:3], F[1, 1:3].toarray())
-        assert_array_equal(E[2, -2:], F[2, -2:].A)
+        assert_array_equal(E[2, -2:], F[2, -2:].toarray())
 
         # The following should raise exceptions:
         assert_raises(IndexError, A.__getitem__, (slice(None), 11))
@@ -2650,15 +2650,15 @@ class _TestSlicingAssign:
 
             A = B / 10
             B[0,:] = A[0,:]
-            assert_array_equal(A[0,:].A, B[0,:].A)
+            assert_array_equal(A[0,:].toarray(), B[0,:].toarray())
 
             A = B / 10
             B[:,:] = A[:1,:1]
-            assert_array_equal(np.zeros((4,3)) + A[0,0], B.A)
+            assert_array_equal(np.zeros((4,3)) + A[0,0], B.toarray())
 
             A = B / 10
             B[:-1,0] = A[0,:].T
-            assert_array_equal(A[0,:].A.T, B[:-1,0].A)
+            assert_array_equal(A[0,:].toarray().T, B[:-1,0].toarray())
 
     def test_slice_assignment(self):
         B = self.spcreator((4,3))
@@ -3685,7 +3685,7 @@ class TestCSR(sparse_test_class()):
             sup.filter(SparseEfficiencyWarning,
                        "Changing the sparsity structure of a csr_matrix is expensive")
             return csr_matrix(*args, **kwargs)
-    math_dtypes = [np.bool_, np_long, np.float64, np.complex128]
+    math_dtypes = [np.bool_, np.int_, np.float64, np.complex128]
 
     def test_constructor1(self):
         b = array([[0, 4, 0],
@@ -3696,7 +3696,7 @@ class TestCSR(sparse_test_class()):
         assert_array_equal(bsp.indices,[1,0,1])
         assert_array_equal(bsp.indptr,[0,1,2,3])
         assert_equal(bsp.getnnz(),3)
-        assert_equal(bsp.getformat(),'csr')
+        assert_equal(bsp.format,'csr')
         assert_array_equal(bsp.toarray(), b)
 
     def test_constructor2(self):
@@ -3938,7 +3938,7 @@ class TestCSC(sparse_test_class()):
             sup.filter(SparseEfficiencyWarning,
                        "Changing the sparsity structure of a csc_matrix is expensive")
             return csc_matrix(*args, **kwargs)
-    math_dtypes = [np.bool_, np_long, np.float64, np.complex128]
+    math_dtypes = [np.bool_, np.int_, np.float64, np.complex128]
 
     def test_constructor1(self):
         b = array([[1, 0, 0, 0], [0, 0, 1, 0], [0, 2, 0, 3]], 'd')
@@ -3948,7 +3948,7 @@ class TestCSC(sparse_test_class()):
         assert_array_equal(bsp.indptr,[0,1,2,3,4])
         assert_equal(bsp.getnnz(),4)
         assert_equal(bsp.shape,b.shape)
-        assert_equal(bsp.getformat(),'csc')
+        assert_equal(bsp.format,'csc')
 
     def test_constructor2(self):
         b = zeros((6,6),'d')
@@ -4080,7 +4080,7 @@ TestCSC.init_class()
 
 class TestDOK(sparse_test_class(minmax=False, nnz_axis=False)):
     spcreator = dok_matrix
-    math_dtypes = [np_long, np.float64, np.complex128]
+    math_dtypes = [np.int_, np.float64, np.complex128]
 
     def test_mult(self):
         A = dok_matrix((10,10))
@@ -4088,7 +4088,7 @@ class TestDOK(sparse_test_class(minmax=False, nnz_axis=False)):
         A[5,6] = 20
         D = A*A.T
         E = A*A.H
-        assert_array_equal(D.A, E.A)
+        assert_array_equal(D.toarray(), E.toarray())
 
     def test_add_nonzero(self):
         A = self.spcreator((3,2))
@@ -4181,7 +4181,7 @@ TestDOK.init_class()
 
 class TestLIL(sparse_test_class(minmax=False)):
     spcreator = lil_matrix
-    math_dtypes = [np_long, np.float64, np.complex128]
+    math_dtypes = [np.int_, np.float64, np.complex128]
 
     def test_dot(self):
         A = zeros((10, 10), np.complex128)
@@ -4196,7 +4196,7 @@ class TestLIL(sparse_test_class(minmax=False)):
         if platform.machine() != 'ppc64le':
             assert_array_equal(A @ A.T, (B * B.T).toarray())
 
-        assert_array_equal(A @ A.conjugate().T, (B * B.H).toarray())
+        assert_array_equal(A @ A.conjugate().T, (B * B.conjugate().T).toarray())
 
     def test_scalar_mul(self):
         x = lil_matrix((3, 3))
@@ -4207,6 +4207,14 @@ class TestLIL(sparse_test_class(minmax=False)):
 
         x = x*0
         assert_equal(x[0, 0], 0)
+
+    def test_truediv_scalar(self):
+        A = self.spcreator((3, 2))
+        A[0, 1] = -10
+        A[2, 0] = 20
+
+        assert_array_equal((A / 1j).toarray(), A.toarray() / 1j)
+        assert_array_equal((A / 9).toarray(), A.toarray() / 9)
 
     def test_inplace_ops(self):
         A = lil_matrix([[0, 2, 3], [4, 0, 6]])
@@ -4245,7 +4253,7 @@ class TestLIL(sparse_test_class(minmax=False)):
         B[8, 9] = 50
         C = B.tocsr()
         D = lil_matrix(C)
-        assert_array_equal(C.A, D.A)
+        assert_array_equal(C.toarray(), D.toarray())
 
     def test_fancy_indexing_lil(self):
         M = asmatrix(arange(25).reshape(5, 5))
@@ -4291,7 +4299,7 @@ class TestCOO(sparse_test_class(getset=False,
                                 slicing=False, slicing_assign=False,
                                 fancy_indexing=False, fancy_assign=False)):
     spcreator = coo_matrix
-    math_dtypes = [np_long, np.float64, np.complex128]
+    math_dtypes = [np.int_, np.float64, np.complex128]
 
     def test_constructor1(self):
         # unsorted triplet format
@@ -4361,17 +4369,17 @@ class TestCOO(sparse_test_class(getset=False,
     def test_todia_all_zeros(self):
         zeros = [[0, 0]]
         dia = coo_matrix(zeros).todia()
-        assert_array_equal(dia.A, zeros)
+        assert_array_equal(dia.toarray(), zeros)
 
     def test_sum_duplicates(self):
         coo = coo_matrix((4,3))
         coo.sum_duplicates()
         coo = coo_matrix(([1,2], ([1,0], [1,0])))
         coo.sum_duplicates()
-        assert_array_equal(coo.A, [[2,0],[0,1]])
+        assert_array_equal(coo.toarray(), [[2,0],[0,1]])
         coo = coo_matrix(([1,2], ([1,1], [1,1])))
         coo.sum_duplicates()
-        assert_array_equal(coo.A, [[0,0],[0,3]])
+        assert_array_equal(coo.toarray(), [[0,0],[0,3]])
         assert_array_equal(coo.row, [1])
         assert_array_equal(coo.col, [1])
         assert_array_equal(coo.data, [3])
@@ -4379,7 +4387,7 @@ class TestCOO(sparse_test_class(getset=False,
     def test_todok_duplicates(self):
         coo = coo_matrix(([1,1,1,1], ([0,2,2,0], [0,1,1,0])))
         dok = coo.todok()
-        assert_array_equal(dok.A, coo.A)
+        assert_array_equal(dok.toarray(), coo.toarray())
 
     def test_eliminate_zeros(self):
         data = array([1, 0, 0, 0, 2, 0, 3, 0])
@@ -4389,7 +4397,7 @@ class TestCOO(sparse_test_class(getset=False,
         bsp = asp.copy()
         asp.eliminate_zeros()
         assert_((asp.data != 0).all())
-        assert_array_equal(asp.A, bsp.A)
+        assert_array_equal(asp.toarray(), bsp.toarray())
 
     def test_reshape_copy(self):
         arr = [[0, 10, 0, 0], [0, 0, 0, 0], [0, 20, 30, 40]]
@@ -4424,7 +4432,7 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
                                 fancy_indexing=False, fancy_assign=False,
                                 minmax=False, nnz_axis=False)):
     spcreator = dia_matrix
-    math_dtypes = [np_long, np.float64, np.complex128]
+    math_dtypes = [np.int_, np.float64, np.complex128]
 
     def test_constructor1(self):
         D = array([[1, 0, 3, 0],
@@ -4491,7 +4499,7 @@ class TestBSR(sparse_test_class(getset=False,
                                 fancy_indexing=False, fancy_assign=False,
                                 nnz_axis=False)):
     spcreator = bsr_matrix
-    math_dtypes = [np_long, np.float64, np.complex128]
+    math_dtypes = [np.int_, np.float64, np.complex128]
 
     def test_constructor1(self):
         # check native BSR format constructor
@@ -4666,20 +4674,20 @@ class TestBSR(sparse_test_class(getset=False,
                       [3, 0, 0, 0]])
         S = self.spcreator(D, blocksize=(1, 2))
         assert_(S.resize((3, 2)) is None)
-        assert_array_equal(S.A, [[1, 0],
-                                 [2, 0],
-                                 [3, 0]])
+        assert_array_equal(S.toarray(), [[1, 0],
+                                         [2, 0],
+                                         [3, 0]])
         S.resize((2, 2))
-        assert_array_equal(S.A, [[1, 0],
-                                 [2, 0]])
+        assert_array_equal(S.toarray(), [[1, 0],
+                                         [2, 0]])
         S.resize((3, 2))
-        assert_array_equal(S.A, [[1, 0],
-                                 [2, 0],
-                                 [0, 0]])
+        assert_array_equal(S.toarray(), [[1, 0],
+                                         [2, 0],
+                                         [0, 0]])
         S.resize((3, 4))
-        assert_array_equal(S.A, [[1, 0, 0, 0],
-                                 [2, 0, 0, 0],
-                                 [0, 0, 0, 0]])
+        assert_array_equal(S.toarray(), [[1, 0, 0, 0],
+                                         [2, 0, 0, 0],
+                                         [0, 0, 0, 0]])
         assert_raises(ValueError, S.resize, (2, 3))
 
     @pytest.mark.xfail(run=False, reason='BSR does not have a __setitem__')
@@ -4766,7 +4774,7 @@ class _NonCanonicalMixin:
         construct = super().spcreator
         M = construct(D, **kwargs)
 
-        zero_pos = (M.A == 0).nonzero()
+        zero_pos = (M.toarray() == 0).nonzero()
         has_zeros = (zero_pos[0].size > 0)
         if has_zeros:
             k = zero_pos[0].size//2
@@ -4789,7 +4797,7 @@ class _NonCanonicalMixin:
             rtol = 1e-05
         else:
             rtol = 1e-07
-        assert_allclose(NC.A, M.A, rtol=rtol)
+        assert_allclose(NC.toarray(), M.toarray(), rtol=rtol)
 
         # check that at least one explicit zero
         if has_zeros:

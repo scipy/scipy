@@ -112,9 +112,8 @@ def _get_umf_family(A):
         family = _families[(f_type, i_type)]
 
     except KeyError as e:
-        msg = 'only float64 or complex128 matrices with int32 or int64' \
-            ' indices are supported! (got: matrix: %s, indices: %s)' \
-            % (f_type, i_type)
+        msg = ('only float64 or complex128 matrices with int32 or int64 '
+               f'indices are supported! (got: matrix: {f_type}, indices: {i_type})')
         raise ValueError(msg) from e
 
     # See gh-8278. Considered converting only if
@@ -254,8 +253,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
         raise ValueError(f"matrix must be square (has shape {(M, N)})")
 
     if M != b.shape[0]:
-        raise ValueError("matrix - rhs dimension mismatch (%s - %s)"
-                         % (A.shape, b.shape[0]))
+        raise ValueError(f"matrix - rhs dimension mismatch ({A.shape} - {b.shape[0]})")
 
     use_umfpack = use_umfpack and useUmfpack
 
@@ -687,7 +685,8 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
         raise ValueError(
             'The size of the dimensions of A must be equal to '
             'the size of the first dimension of b but the shape of A is '
-            '{} and the shape of b is {}.'.format(A.shape, b.shape))
+            f'{A.shape} and the shape of b is {b.shape}.'
+        )
 
     # Init x as (a copy of) b.
     x_dtype = np.result_type(A.data, b, np.float64)
@@ -696,8 +695,9 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
             x = b
         else:
             raise ValueError(
-                'Cannot overwrite b (dtype {}) with result '
-                'of type {}.'.format(b.dtype, x_dtype))
+                f'Cannot overwrite b (dtype {b.dtype}) with result '
+                f'of type {x_dtype}.'
+            )
     else:
         x = b.astype(x_dtype, copy=True)
 

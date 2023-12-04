@@ -266,7 +266,7 @@ def cli(ctx, **kwargs):
 
     \b**python dev.py --build-dir my-build test -s stats**
 
-    """  # noqa: E501
+    """
     CLI.update_context(ctx, kwargs)
 
 
@@ -426,8 +426,8 @@ class Build(Task):
     show_build_log = Option(
         ['--show-build-log'], default=False, is_flag=True,
         help="Show build output rather than using a log file")
-    use_scipy_openblas = Option(
-        ['--use-scipy-openblas'], default=False, is_flag=True,
+    with_scipy_openblas = Option(
+        ['--with-scipy-openblas'], default=False, is_flag=True,
         help=("If set, use the `scipy-openblas32` wheel installed into the "
               "current environment as the BLAS/LAPACK to build against."))
 
@@ -482,7 +482,7 @@ class Build(Task):
             cmd += ['-Db_sanitize=address,undefined']
         if args.setup_args:
             cmd += [str(arg) for arg in args.setup_args]
-        if args.use_scipy_openblas:
+        if args.with_scipy_openblas:
             cls.configure_scipy_openblas()
             env['PKG_CONFIG_PATH'] = os.pathsep.join([
                     os.path.join(os.getcwd(), '.openblas'),
@@ -561,8 +561,8 @@ class Build(Task):
                         log_size = os.stat(log_filename).st_size
                         if log_size > last_log_size:
                             elapsed = datetime.datetime.now() - start_time
-                            print("    ... installation in progress ({} "
-                                  "elapsed)".format(elapsed))
+                            print(f"    ... installation in progress ({elapsed} "
+                                  "elapsed)")
                             last_blip = time.time()
                             last_log_size = log_size
 
@@ -608,14 +608,17 @@ class Build(Task):
         try:
             openblas = importlib.import_module(module_name)
         except ModuleNotFoundError:
-            raise RuntimeError(f"'pip install {module_name} first")
+            raise RuntimeError(f"Importing '{module_name}' failed. "
+                               "Make sure it is installed and reachable "
+                               "by the current Python executable. You can "
+                               f"install it via 'pip install {module_name}'.")
 
         local = os.path.join(basedir, "scipy", "_distributor_init_local.py")
-        with open(local, "wt", encoding="utf8") as fid:
+        with open(local, "w", encoding="utf8") as fid:
             fid.write(f"import {module_name}\n")
 
         os.makedirs(openblas_dir, exist_ok=True)
-        with open(pkg_config_fname, "wt", encoding="utf8") as fid:
+        with open(pkg_config_fname, "w", encoding="utf8") as fid:
             fid.write(openblas.get_pkg_config().replace("\\", "/"))
 
     @classmethod
@@ -652,7 +655,7 @@ class Test(Task):
     $ python dev.py test -s stats -- --tb=line  # `--` passes next args to pytest
     $ python dev.py test -b numpy -b pytorch -s cluster
     ```
-    """  # noqa: E501
+    """
     ctx = CONTEXT
 
     verbose = Option(
@@ -837,8 +840,7 @@ class Bench(Task):
             for a in extra_argv:
                 bench_args.extend(['--bench', ' '.join(str(x) for x in a)])
             if not args.compare:
-                print("Running benchmarks for Scipy version %s at %s"
-                      % (version, mod_path))
+                print(f"Running benchmarks for Scipy version {version} at {mod_path}")
                 cmd = ['asv', 'run', '--dry-run', '--show-stderr',
                        '--python=same', '--quick'] + bench_args
                 retval = cls.run_asv(dirs, cmd)
@@ -936,7 +938,7 @@ def task_check_test_name():
 
 
 @cli.cls_cmd('lint')
-class Lint():
+class Lint:
     """:dash: Run linter on modified files and check for
     disallowed Unicode characters and possibly-invalid test names."""
     def run():

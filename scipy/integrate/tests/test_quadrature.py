@@ -9,10 +9,10 @@ from scipy.integrate import (quadrature, romberg, romb, newton_cotes,
                              cumulative_trapezoid, cumtrapz, trapz, trapezoid,
                              quad, simpson, simps, fixed_quad, AccuracyWarning,
                              qmc_quad)
-from scipy.integrate._tanhsinh import _tanhsinh
+from scipy.integrate._tanhsinh import _tanhsinh, _pair_cache
 from scipy import stats, special as sc
-from scipy.optimize._zeros_py import (_ECONVERGED, _ESIGNERR, _ECONVERR,  # noqa
-                                      _EVALUEERR, _ECALLBACK, _EINPROGRESS)  # noqa
+from scipy.optimize._zeros_py import (_ECONVERGED, _ESIGNERR, _ECONVERR,  # noqa: F401
+                                      _EVALUEERR, _ECALLBACK, _EINPROGRESS)
 
 class TestFixedQuad:
     def test_scalar(self):
@@ -30,6 +30,7 @@ class TestFixedQuad:
         assert_allclose(got, expected, rtol=1e-12)
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 class TestQuadrature:
     def quad(self, x, a, b, args):
         raise NotImplementedError
@@ -263,6 +264,13 @@ class TestQuadrature:
                 simpson(y, x=x, dx=0.5),
                 simps(y, x=x, dx=0.5)
             )
+
+
+@pytest.mark.parametrize('func', [romberg, quadrature])
+def test_deprecate_integrator(func):
+    message = f"`scipy.integrate.{func.__name__}` is deprecated..."
+    with pytest.deprecated_call(match=message):
+        func(np.exp, 0, 1)
 
 
 class TestCumulative_trapezoid:
@@ -929,8 +937,12 @@ class TestTanhSinh:
 
         res = _tanhsinh(logf, -np.inf, np.inf, log=True)
         ref = _tanhsinh(f, -np.inf, np.inf)
-        assert_allclose(np.exp(res.integral), ref.integral, **test_tols)
-        assert_allclose(np.exp(res.error), ref.error, **test_tols)
+        # In gh-19173, we saw `invalid` warnings on one CI platform.
+        # Silencing `all` because I can't reproduce locally and don't want
+        # to risk the need to run CI again.
+        with np.errstate(all='ignore'):
+            assert_allclose(np.exp(res.integral), ref.integral, **test_tols)
+            assert_allclose(np.exp(res.error), ref.error, **test_tols)
         assert res.nfev == ref.nfev
 
     def test_complex(self):
@@ -1101,3 +1113,35 @@ class TestTanhSinh:
 
         res = _tanhsinh(f, 0, 1, args=99)
         assert_allclose(res.integral, 1/100)
+
+        # Test NaNs
+        a = [np.nan, 0, 0, 0]
+        b = [1, np.nan, 1, 1]
+        c = [1, 1, np.nan, 1]
+        res = _tanhsinh(f, a, b, args=(c,))
+        assert_allclose(res.integral, [np.nan, np.nan, np.nan, 0.5])
+        assert_allclose(res.error[:3], np.nan)
+        assert_equal(res.status, [-3, -3, -3, 0])
+        assert_equal(res.success, [False, False, False, True])
+        assert_equal(res.nfev[:3], 1)
+
+        # Test complex integral followed by real integral
+        # Previously, h0 was of the result dtype. If the `dtype` were complex,
+        # this could lead to complex cached abscissae/weights. If these get
+        # cast to real dtype for a subsequent real integral, we would get a
+        # ComplexWarning. Check that this is avoided.
+        _pair_cache.xjc = np.empty(0)
+        _pair_cache.wj = np.empty(0)
+        _pair_cache.indices = [0]
+        _pair_cache.h0 = None
+        res = _tanhsinh(lambda x: x*1j, 0, 1)
+        assert_allclose(res.integral, 0.5*1j)
+        res = _tanhsinh(lambda x: x, 0, 1)
+        assert_allclose(res.integral, 0.5)
+
+        # Test zero-size
+        shape = (0, 3)
+        res = _tanhsinh(lambda x: x, 0, np.zeros(shape))
+        attrs = ['integral', 'error', 'success', 'status', 'nfev', 'maxlevel']
+        for attr in attrs:
+            assert_equal(res[attr].shape, shape)

@@ -174,6 +174,7 @@ class NdBSpline:
         _t.fill(np.nan)
         for d in range(ndim):
             _t[d, :len(self.t[d])] = self.t[d]
+        len_t = np.asarray(len_t)
 
         # tabulate the flat indices for iterating over the (k+1)**ndim subarray
         shape = tuple(kd + 1 for kd in self.k)
@@ -194,6 +195,7 @@ class NdBSpline:
 
         _bspl.evaluate_ndbspline(xi,
                                  _t,
+                                 len_t,
                                  _k,
                                  nu,
                                  extrapolate,

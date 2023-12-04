@@ -312,12 +312,11 @@ def _arg_wlen_as_expected(value):
         value = -1
     elif 1 < value:
         # Round up to a positive integer
-        if not np.can_cast(value, np.intp, "safe"):
+        if isinstance(value, float):
             value = math.ceil(value)
         value = np.intp(value)
     else:
-        raise ValueError('`wlen` must be larger than 1, was {}'
-                         .format(value))
+        raise ValueError(f'`wlen` must be larger than 1, was {value}')
     return value
 
 

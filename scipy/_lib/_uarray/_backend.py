@@ -40,9 +40,9 @@ __all__ = [
     "_SetBackendContext",
 ]
 
-ArgumentExtractorType = typing.Callable[..., typing.Tuple["Dispatchable", ...]]
+ArgumentExtractorType = typing.Callable[..., tuple["Dispatchable", ...]]
 ArgumentReplacerType = typing.Callable[
-    [typing.Tuple, typing.Dict, typing.Tuple], typing.Tuple[typing.Tuple, typing.Dict]
+    [tuple, dict, tuple], tuple[tuple, dict]
 ]
 
 def unpickle_function(mod_name, qname, self_):
@@ -440,9 +440,7 @@ class Dispatchable:
         return (self.type, self.value)[index]
 
     def __str__(self):
-        return "<{}: type={!r}, value={!r}>".format(
-            type(self).__name__, self.type, self.value
-        )
+        return f"<{type(self).__name__}: type={self.type!r}, value={self.value!r}>"
 
     __repr__ = __str__
 

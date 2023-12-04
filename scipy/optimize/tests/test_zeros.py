@@ -27,7 +27,7 @@ _FLOAT_EPS = finfo(float).eps
 bracket_methods = [zeros.bisect, zeros.ridder, zeros.brentq, zeros.brenth,
                    zeros.toms748]
 gradient_methods = [zeros.newton]
-all_methods = bracket_methods + gradient_methods  # noqa
+all_methods = bracket_methods + gradient_methods
 
 # A few test functions used frequently:
 # # A simple quadratic, (x-1)^2 - 1
@@ -1289,7 +1289,7 @@ def test_maxiter_int_check_gh10236(method):
         method(f1, 0.0, 1.0, maxiter=72.45)
 
 
-class TestDifferentiate():
+class TestDifferentiate:
 
     def f(self, x):
         return stats.norm().cdf(x)

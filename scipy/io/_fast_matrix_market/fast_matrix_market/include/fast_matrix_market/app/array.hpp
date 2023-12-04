@@ -105,7 +105,9 @@ namespace fast_matrix_market {
         header.nnz = values.size();
 
         header.object = matrix;
-        header.field = get_field_type((const VT*)nullptr);
+        if (options.fill_header_field_type) {
+            header.field = get_field_type((const VT *) nullptr);
+        }
         header.format = array;
         header.symmetry = general;
 

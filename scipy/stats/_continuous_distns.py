@@ -601,9 +601,8 @@ class FitDataError(ValueError):
     def __init__(self, distr, lower, upper):
         self.args = (
             "Invalid values in `data`.  Maximum likelihood "
-            "estimation with {distr!r} requires that {lower!r} < "
-            "(x - loc)/scale  < {upper!r} for each x in `data`.".format(
-                distr=distr, lower=lower, upper=upper),
+            f"estimation with {distr!r} requires that {lower!r} < "
+            f"(x - loc)/scale  < {upper!r} for each x in `data`.",
         )
 
 
@@ -3491,10 +3490,9 @@ class erlang_gen(gamma_gen):
         if not allint:
             # An Erlang distribution shouldn't really have a non-integer
             # shape parameter, so warn the user.
-            warnings.warn(
-                'The shape parameter of the erlang distribution '
-                'has been given a non-integer value {!r}.'.format(a),
-                RuntimeWarning)
+            message = ('The shape parameter of the erlang distribution '
+                       f'has been given a non-integer value {a!r}.')
+            warnings.warn(message, RuntimeWarning)
         return a > 0
 
     def _shape_info(self):
@@ -5056,8 +5054,8 @@ class geninvgauss_gen(rv_continuous):
 
                 if (simulated == 0) and (i*N >= 50000):
                     msg = ("Not a single random variate could be generated "
-                           "in {} attempts. Sampling does not appear to "
-                           "work for the provided parameters.".format(i*N))
+                           f"in {i*N} attempts. Sampling does not appear to "
+                           "work for the provided parameters.")
                     raise RuntimeError(msg)
                 i += 1
         else:
@@ -5210,9 +5208,9 @@ class norminvgauss_gen(rv_continuous):
 
     def _pdf(self, x, a, b):
         gamma = np.sqrt(a**2 - b**2)
-        fac1 = a / np.pi * np.exp(gamma)
+        fac1 = a / np.pi
         sq = np.hypot(1, x)  # reduce overflows
-        return fac1 * sc.k1e(a * sq) * np.exp(b*x - a*sq) / sq
+        return fac1 * sc.k1e(a * sq) * np.exp(b*x - a*sq + gamma) / sq
 
     def _sf(self, x, a, b):
         if np.isscalar(x):

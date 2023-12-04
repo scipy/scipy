@@ -3296,7 +3296,7 @@ add_newdoc(
     widely in the order of magnitude. [5]_
 
     The input values are subject to certain sufficient but not necessary
-    constaints when input arguments are complex. Notably, ``x``, ``y``, and
+    constraints when input arguments are complex. Notably, ``x``, ``y``, and
     ``z`` must have non-negative real parts, unless two of them are
     non-negative and complex-conjugates to each other while the other is a real
     non-negative number. [1]_ If the inputs do not satisfy the sufficient
@@ -9049,7 +9049,7 @@ add_newdoc("kolmogi",
     Notes
     -----
     `kolmogorov` is used by `stats.kstest` in the application of the
-    Kolmogorov-Smirnov Goodness of Fit test. For historial reasons this
+    Kolmogorov-Smirnov Goodness of Fit test. For historical reasons this
     function is exposed in `scpy.special`, but the recommended way to achieve
     the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
     `stats.kstwobign` distribution.
@@ -9098,7 +9098,7 @@ add_newdoc("kolmogorov",
     Notes
     -----
     `kolmogorov` is used by `stats.kstest` in the application of the
-    Kolmogorov-Smirnov Goodness of Fit test. For historial reasons this
+    Kolmogorov-Smirnov Goodness of Fit test. For historical reasons this
     function is exposed in `scpy.special`, but the recommended way to achieve
     the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
     `stats.kstwobign` distribution.
@@ -11672,7 +11672,7 @@ add_newdoc("pdtri",
     Returns
     -------
     scalar or ndarray
-        Values of the shape paramter `m` such that ``pdtr(k, m) = p``
+        Values of the shape parameter `m` such that ``pdtr(k, m) = p``
 
     See Also
     --------
@@ -12747,7 +12747,7 @@ add_newdoc("smirnov",
     Notes
     -----
     `smirnov` is used by `stats.kstest` in the application of the
-    Kolmogorov-Smirnov Goodness of Fit test. For historial reasons this
+    Kolmogorov-Smirnov Goodness of Fit test. For historical reasons this
     function is exposed in `scpy.special`, but the recommended way to achieve
     the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
     `stats.ksone` distribution.
@@ -12857,7 +12857,7 @@ add_newdoc("smirnovi",
     Notes
     -----
     `smirnov` is used by `stats.kstest` in the application of the
-    Kolmogorov-Smirnov Goodness of Fit test. For historial reasons this
+    Kolmogorov-Smirnov Goodness of Fit test. For historical reasons this
     function is exposed in `scpy.special`, but the recommended way to achieve
     the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
     `stats.ksone` distribution.
@@ -13585,7 +13585,7 @@ add_newdoc("xlogy",
 
     A lower loss is usually better as it indicates that the predictions are
     similar to the actual labels. In this example since our predicted
-    probabilties are close to the actual labels, we get an overall loss
+    probabilities are close to the actual labels, we get an overall loss
     that is reasonably low and appropriate.
 
     """)
@@ -14374,7 +14374,7 @@ add_newdoc("wright_bessel",
 
     Notes
     -----
-    Due to the compexity of the function with its three parameters, only
+    Due to the complexity of the function with its three parameters, only
     non-negative arguments are implemented.
 
     References
@@ -14453,4 +14453,9 @@ add_newdoc("ndtri_exp",
     -39.88469483825668
     >>> sc.ndtri_exp(-1e-20)
     9.262340089798409
+    """)
+
+add_newdoc("_stirling2_inexact",
+    r"""
+    Internal function, do not use.
     """)

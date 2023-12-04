@@ -377,7 +377,7 @@ class _spbase:
         # helper function, outputs "(i,j)  v"
         def tostr(row, col, data):
             triples = zip(list(zip(row, col)), data)
-            return '\n'.join([('  %s\t%s' % t) for t in triples])
+            return '\n'.join([('  {}\t{}'.format(*t)) for t in triples])
 
         if self.nnz > maxprint:
             half = maxprint // 2
@@ -1369,7 +1369,7 @@ class _spbase:
 Note that, starting in SciPy 1.13.0, this property will no longer be
 settable. To change the array shape, use `X.reshape` instead.
 """
-    )  # noqa: F811
+    )
 
     def asfptype(self):
         """Upcast array/matrix to a floating point format (if necessary)

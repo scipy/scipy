@@ -1808,7 +1808,7 @@ class TestIsValidDM:
     def test_is_valid_dm_improper_shape_1D_E(self):
         D = np.zeros((5,), dtype=np.float64)
         with pytest.raises(ValueError):
-            is_valid_dm_throw((D))
+            is_valid_dm_throw(D)
 
     def test_is_valid_dm_improper_shape_1D_F(self):
         D = np.zeros((5,), dtype=np.float64)
@@ -1817,7 +1817,7 @@ class TestIsValidDM:
     def test_is_valid_dm_improper_shape_3D_E(self):
         D = np.zeros((3, 3, 3), dtype=np.float64)
         with pytest.raises(ValueError):
-            is_valid_dm_throw((D))
+            is_valid_dm_throw(D)
 
     def test_is_valid_dm_improper_shape_3D_F(self):
         D = np.zeros((3, 3, 3), dtype=np.float64)
@@ -1829,7 +1829,7 @@ class TestIsValidDM:
         for i in range(0, 5):
             D[i, i] = 2.0
         with pytest.raises(ValueError):
-            is_valid_dm_throw((D))
+            is_valid_dm_throw(D)
 
     def test_is_valid_dm_nonzero_diagonal_F(self):
         y = np.random.rand(10)
@@ -1843,7 +1843,7 @@ class TestIsValidDM:
         D = squareform(y)
         D[1, 3] = D[3, 1] + 1
         with pytest.raises(ValueError):
-            is_valid_dm_throw((D))
+            is_valid_dm_throw(D)
 
     def test_is_valid_dm_asymmetric_F(self):
         y = np.random.rand(10)
@@ -1888,7 +1888,7 @@ class TestIsValidY:
     def test_is_valid_y_improper_shape_2D_E(self):
         y = np.zeros((3, 3,), dtype=np.float64)
         with pytest.raises(ValueError):
-            is_valid_y_throw((y))
+            is_valid_y_throw(y)
 
     def test_is_valid_y_improper_shape_2D_F(self):
         y = np.zeros((3, 3,), dtype=np.float64)
@@ -1897,7 +1897,7 @@ class TestIsValidY:
     def test_is_valid_y_improper_shape_3D_E(self):
         y = np.zeros((3, 3, 3), dtype=np.float64)
         with pytest.raises(ValueError):
-            is_valid_y_throw((y))
+            is_valid_y_throw(y)
 
     def test_is_valid_y_improper_shape_3D_F(self):
         y = np.zeros((3, 3, 3), dtype=np.float64)

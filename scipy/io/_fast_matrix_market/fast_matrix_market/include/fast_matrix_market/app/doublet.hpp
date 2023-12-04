@@ -89,7 +89,7 @@ namespace fast_matrix_market {
         header.object = vector;
         if (header.nnz > 0 && (values.cbegin() == values.cend())) {
             header.field = pattern;
-        } else if (header.field != pattern) {
+        } else if (header.field != pattern && options.fill_header_field_type) {
             header.field = get_field_type((const VT *) nullptr);
         }
         header.format = coordinate;
