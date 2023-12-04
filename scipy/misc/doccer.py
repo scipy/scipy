@@ -37,7 +37,7 @@ def __getattr__(name):
             f"the `scipy.misc.doccer` namespace will be removed in SciPy 2.0.0."
         )
 
-    warnings.warn(message, category=DeprecationWarning, stacklevel=3)
+    warnings.warn(message, category=DeprecationWarning, stacklevel=2)
 
     try:
         return getattr(import_module("scipy._lib.doccer"), name)
