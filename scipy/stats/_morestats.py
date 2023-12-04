@@ -1180,7 +1180,10 @@ def boxcox_normmax(
         See the example below or the documentation of
         `scipy.optimize.minimize_scalar` for more information.
     ymax : float, optional
-        The maximum value after Box-Cox transformation. The default value
+        This parameter constraints the maximum returned `maxlog` such that
+        the Box-Cox transformation of the maximum `x` is at most `ymax`.
+        This helps to avoid situations where the maximum transformed `x`
+        overflows with the optimal value of `maxlog`. The default value
         is the maximum value of the input dtype. If set to infinity,
         it returns the true, unconstrained optimal lambda.
 
