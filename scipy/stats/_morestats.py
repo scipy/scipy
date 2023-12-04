@@ -1328,9 +1328,9 @@ def boxcox_normmax(
 
         if ymax is None:
             # Test if the optimal lambda causes overflow
-            istransinf = np.isinf(ymax_res)
-            dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
-            if np.any(istransinf):
+            mask = np.isinf(ymax_res)
+            if np.any(mask):
+                dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
                 warnings.warn(
                     f"The optimal lambda is {res}, but the returned lambda is "
                     f"the constrained optimum to ensure that the maximum of the "
@@ -1341,20 +1341,15 @@ def boxcox_normmax(
                 # Return the constrained lambda to ensure the transformation
                 # does not cause overflow
                 ymax = np.finfo(dtype).max / 100  # 100 is the safety factor
-                constrained_res = _boxcox_inv_lmbda(xmax, ymax)
-
-                if isinstance(res, np.ndarray):
-                    res[istransinf] = constrained_res
-                else:
-                    res = constrained_res
         else:
-            islargethanymax = ymax_res > ymax
-            if np.any(islargethanymax):
-                constrained_res = _boxcox_inv_lmbda(xmax, ymax)
-                if isinstance(res, np.ndarray):
-                    res[islargethanymax] = constrained_res
-                else:
-                    res = constrained_res
+            mask = ymax_res > ymax
+
+        if np.any(mask):
+            constrained_res = _boxcox_inv_lmbda(xmax, ymax)
+            if isinstance(res, np.ndarray):
+                res[mask] = constrained_res
+            else:
+                res = constrained_res
     return res
 
 
