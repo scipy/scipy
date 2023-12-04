@@ -9123,6 +9123,18 @@ class TestNakagami:
         assert np.isfinite(stats.nakagami._entropy(1e100))
         assert np.isfinite(stats.nakagami._entropy(1e-100))
 
+    @pytest.mark.parametrize("nu, ref",
+                             [(1e10, 0.9999999999875),
+                              (1e3, 0.9998750078173821),
+                              (1e-10, 1.772453850659802e-05)])
+    def test_mean(self, nu, ref):
+        # reference values were computed with mpmath
+        # from mpmath import mp
+        # mp.dps = 500
+        # nu = mp.mpf(1e10)
+        # float(mp.rf(nu, mp.mpf(0.5))/mp.sqrt(nu))
+        assert_allclose(stats.nakagami.mean(nu), ref, rtol=1e-12)
+
     @pytest.mark.xfail(reason="Fit of nakagami not reliable, see gh-10908.")
     @pytest.mark.parametrize('nu', [1.6, 2.5, 3.9])
     @pytest.mark.parametrize('loc', [25.0, 10, 35])
