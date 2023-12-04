@@ -1091,3 +1091,56 @@ def test_initial_state_finiteness(f0_fill):
     msg = "All components of the initial state `y0` must be finite."
     with pytest.raises(ValueError, match=msg):
         solve_ivp(fun_zero, [0, 10], np.full(3, f0_fill))
+
+
+@pytest.mark.filterwarnings("ignore::UserWarning")
+def test_nd_y0():
+    # Check that if y0 has ndim > 1, RHS and event functions
+    # are passed state vector of the same shape and may return
+    # derivative vector of that shape; state outputs have
+    # appropriate shape.
+    def dz(t, z):
+        # Ballistic motion
+        # x'' = 0
+        # y'' = -g
+        assert z.shape == np.shape(z0)
+        g = 9.81
+        dz = np.zeros_like(z)
+        x, dx = z[0]
+        y, dy = z[1]
+        ddx = 0
+        ddy = -g
+        dz[0] = dx, ddx
+        dz[1] = dy, ddy
+        return dz
+
+    def event(t, z):
+        assert z.shape == np.shape(z0)
+        y, dy = z[1]
+        return y - 1
+
+    x0, dx0 = 0, 10
+    y0, dy0 = 0, 10
+    z0 = [[x0, dx0], [y0, dy0]]
+    t_span = [0, 3]
+    t = np.linspace(*t_span)
+
+    res = solve_ivp(dz, t_span=t_span, y0=z0, events=event)
+    assert res.y.shape == np.shape(z0) + res.t.shape
+    assert res.y_events[0].shape == np.shape(z0) + res.t_events[0].shape
+
+    res = solve_ivp(dz, t_span=t_span, y0=z0, t_eval=t)
+    assert res.y.shape == np.shape(z0) + t.shape
+
+    res = solve_ivp(dz, t_span=t_span, y0=z0, dense_output=True)
+    assert res.sol(t).shape == np.shape(z0) + t.shape
+
+    # If `vectorized`, `jac`, or `jac_sparsity` do not have default
+    # values, an error is still raised
+    message = '`y0` must be 1-dimensional.'
+    with pytest.raises(ValueError, match=message):
+        solve_ivp(dz, t_span=t_span, y0=z0, vectorized=True)
+    with pytest.raises(ValueError, match=message):
+        solve_ivp(dz, t_span=t_span, y0=z0, jac=lambda t, y: np.ones((2, 2, 2, 2)))
+    with pytest.raises(ValueError, match=message):
+        solve_ivp(dz, t_span=t_span, y0=z0, jac_sparsity=np.ones((2, 2, 2, 2)))

@@ -192,6 +192,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     y0 : array_like, shape (n,)
         Initial state. For problems in the complex domain, pass `y0` with a
         complex data type (even if the initial value is purely real).
+        In general, y0 must be 1-dimensional; see Notes for exceptions.
     method : string or `OdeSolver`, optional
         Integration method to use:
 
@@ -388,6 +389,15 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     success : bool
         True if the solver reached the interval end or a termination event
         occurred (``status >= 0``).
+
+    Notes
+    -----
+    In general, y0 must be 1-dimensional. However, if parameters `jac`,
+    `jac_sparsity`, and `vectorized` have their default values, `y0` may
+    be of any shape. In this case, ``y`` passed to the RHS and event
+    callables will have the same shape, the return value of the RHS
+    callable must be of the same shape, and all elements of the result
+    object involving the state will have the corresponding shape.
 
     References
     ----------
@@ -613,8 +623,10 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         method = METHODS[method]
 
     y0 = np.asarray(y0)
-    if y0.ndim != 1:
-        shape0 = y0.shape
+    shape0 = y0.shape
+
+    if (y0.ndim != 1 and not vectorized and options.get('jac', None) is None
+            and options.get('jac_sparsity', None) is None):
         y0 = y0.ravel()
         def fun(t, y, *args, f=fun, shape0=shape0,  **kwargs):
             y = y.reshape(shape0)
@@ -638,6 +650,15 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     events, is_terminal, event_dir = prepare_events(events)
 
     if events is not None:
+        events = list(events)
+
+        if len(shape0) != 1:
+            for i, _ in enumerate(events):
+                def event(t, y, *args, event=events[i], shape0=shape0, **kwargs):
+                    y = y.reshape(shape0)
+                    return event(t, y, *args, **kwargs)
+                events[i] = event
+
         if args is not None:
             # Wrap user functions in lambdas to hide the additional parameters.
             # The original event function is passed as a keyword argument to the
@@ -722,7 +743,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
 
     if t_events is not None:
         t_events = [np.asarray(te) for te in t_events]
-        y_events = [np.asarray(ye.reshape(shape0)) for ye in y_events]
+        y_events = [np.asarray(ye).reshape(shape0 + (-1,)) for ye in y_events]
 
     if t_eval is None:
         ts = np.array(ts)
