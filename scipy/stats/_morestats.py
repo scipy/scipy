@@ -1142,9 +1142,9 @@ def boxcox_normmax(
     ----------
     x : array_like
         Input array. All entries must be positive, finite, real numbers.
-    ymax : positive number, infinity, optional
+    ymax : float, optional
         The maximum value after Box-Cox transformation. The default value
-        is the maximum float of the input data's type. If set to infinity,
+        is the maximum value of the input dtype. If set to infinity,
         it returns the true, unconstrained optimal lambda.
     brack : 2-tuple, optional, default (-2.0, 2.0)
          The starting interval for a downhill bracket search for the default
