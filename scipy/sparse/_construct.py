@@ -1183,7 +1183,7 @@ def _random(shape, density=0.01, format=None, dtype=None,
     size = int(round(density * tot_prod))
 
     if random_state is None:
-        random_state = np.random.random_rng()
+        rng = np.random.default_rng()
     else:
         rng = check_random_state(random_state)
 
