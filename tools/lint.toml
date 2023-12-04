@@ -23,7 +23,6 @@ target-version = "py39"
 "scipy/stats/tests/data/_mvt.py" = ["E701", "E702"]
 # E501 (line length) ignores
 "benchmarks/benchmarks/**" = ["E501"]
-"scipy/_lib/**" = ["E501"]
 "scipy/constants/_codata.py" = ["E501"]
 "scipy/linalg/_cython_signature_generator.py" = ["E501"]
 "scipy/linalg/_generate_pyx.py" = ["E501"]
