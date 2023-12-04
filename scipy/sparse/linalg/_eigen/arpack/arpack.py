@@ -720,17 +720,20 @@ class _UnsymmetricArpackParams(_ArpackParams):
 
     def iterate(self):
         if self.tp in 'fd':
-            self.ido, self.tol, self.resid, self.v, self.iparam, self.ipntr, self.info =\
-                self._arpack_solver(self.ido, self.bmat, self.which, self.k,
-                                    self.tol, self.resid, self.v, self.iparam,
-                                    self.ipntr, self.workd, self.workl,
-                                    self.info)
+            results = self._arpack_solver(self.ido, self.bmat, self.which, self.k,
+                                          self.tol, self.resid, self.v, self.iparam,
+                                          self.ipntr, self.workd, self.workl, self.info)
+            self.ido, self.tol, self.resid, self.v, \
+                self.iparam, self.ipntr, self.info = results
+                
         else:
-            self.ido, self.tol, self.resid, self.v, self.iparam, self.ipntr, self.info =\
-                self._arpack_solver(self.ido, self.bmat, self.which, self.k,
-                                    self.tol, self.resid, self.v, self.iparam,
-                                    self.ipntr, self.workd, self.workl,
-                                    self.rwork, self.info)
+            results = self._arpack_solver(self.ido, self.bmat, self.which, self.k,
+                                          self.tol, self.resid, self.v, self.iparam,
+                                          self.ipntr, self.workd, self.workl,
+                                          self.rwork, self.info)
+            self.ido, self.tol, self.resid, self.v, \
+                self.iparam, self.ipntr, self.info = results
+                
 
         xslice = slice(self.ipntr[0] - 1, self.ipntr[0] - 1 + self.n)
         yslice = slice(self.ipntr[1] - 1, self.ipntr[1] - 1 + self.n)

@@ -180,7 +180,8 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
             # check format validity (more expensive)
             if self.nnz > 0:
                 if self.indices.max() >= N//C:
-                    raise ValueError("column index values must be < %d (now max %d)" % (N//C, self.indices.max()))
+                    raise ValueError("column index values must be < %d (now max %d)"
+                                     % (N//C, self.indices.max()))
                 if self.indices.min() < 0:
                     raise ValueError("column index values must be >= 0")
                 if np.diff(self.indptr).min() < 0:
@@ -399,7 +400,8 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
         row += np.tile(np.arange(R, dtype=idx_dtype).reshape(-1,1), (1,C))
         row = row.reshape(-1)
 
-        col = (C * self.indices).astype(idx_dtype, copy=False).repeat(R*C).reshape(-1,R,C)
+        col = ((C * self.indices).astype(idx_dtype, copy=False)
+               .repeat(R*C).reshape(-1,R,C))
         col += np.tile(np.arange(C, dtype=idx_dtype), (R,1))
         col = col.reshape(-1)
 

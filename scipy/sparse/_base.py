@@ -1308,7 +1308,9 @@ class _spbase:
         from ._sputils import get_index_dtype
 
         # Don't check contents for array API
-        return get_index_dtype(arrays, maxval, (check_contents and not isinstance(self, sparray)))
+        return get_index_dtype(arrays,
+                               maxval,
+                               (check_contents and not isinstance(self, sparray)))
 
 
     ## All methods below are deprecated and should be removed in

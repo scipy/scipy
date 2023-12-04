@@ -1137,7 +1137,8 @@ def random_array(shape, *, density=0.01, format='coo', dtype=None,
     Providing a sampler for the values:
 
     >>> rvs = sp.stats.poisson(25, loc=10).rvs
-    >>> S = sp.sparse.random_array((3, 4), density=0.25, random_state=rng, data_sampler=rvs)
+    >>> S = sp.sparse.random_array((3, 4), density=0.25,
+    ...                            random_state=rng, data_sampler=rvs)
     >>> S.toarray()
     array([[ 36.,   0.,  33.,   0.],   # random
            [  0.,   0.,   0.,   0.],
@@ -1166,7 +1167,8 @@ def random_array(shape, *, density=0.01, format='coo', dtype=None,
     ...         return random_state.standard_normal(size) ** 2
     >>> X = NormalSquared()
     >>> Y = X().rvs
-    >>> S = sp.sparse.random_array((3, 4), density=0.25, random_state=rng, data_sampler=Y)
+    >>> S = sp.sparse.random_array((3, 4), density=0.25,
+    ...                            random_state=rng, data_sampler=Y)
     """
     # Use the more efficient RNG by default.
     if random_state is None:

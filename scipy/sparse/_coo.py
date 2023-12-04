@@ -53,7 +53,9 @@ class _coo_base(_data_matrix, _minmax_mixin):
                     M, N = shape
                     self._shape = check_shape((M, N))
 
-                idx_dtype = self._get_index_dtype((row, col), maxval=max(self.shape), check_contents=True)
+                idx_dtype = self._get_index_dtype((row, col),
+                                                  maxval=max(self.shape),
+                                                  check_contents=True)
                 self.row = np.array(row, copy=copy, dtype=idx_dtype)
                 self.col = np.array(col, copy=copy, dtype=idx_dtype)
                 self.data = getdata(obj, copy=copy, dtype=dtype)
@@ -82,7 +84,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 self._shape = check_shape(M.shape)
                 if shape is not None:
                     if check_shape(shape) != self._shape:
-                        raise ValueError(f'inconsistent shapes: {shape} != {self._shape}')
+                        message = f'inconsistent shapes: {shape} != {self._shape}'
+                        raise ValueError(message)
                 index_dtype = self._get_index_dtype(maxval=max(self._shape))
                 row, col = M.nonzero()
                 self.row = row.astype(index_dtype, copy=False)
@@ -112,12 +115,14 @@ class _coo_base(_data_matrix, _minmax_mixin):
             # Upcast to avoid overflows: the coo_array constructor
             # below will downcast the results to a smaller dtype, if
             # possible.
-            dtype = self._get_index_dtype(maxval=(ncols * max(0, nrows - 1) + max(0, ncols - 1)))
+            maxval = (ncols * max(0, nrows - 1) + max(0, ncols - 1))
+            dtype = self._get_index_dtype(maxval=maxval)
 
             flat_indices = np.multiply(ncols, self.row, dtype=dtype) + self.col
             new_row, new_col = divmod(flat_indices, shape[1])
         elif order == 'F':
-            dtype = self._get_index_dtype(maxval=(nrows * max(0, ncols - 1) + max(0, nrows - 1)))
+            maxval = (nrows * max(0, ncols - 1) + max(0, nrows - 1))
+            dtype = self._get_index_dtype(maxval=maxval)
 
             flat_indices = np.multiply(nrows, self.col, dtype=dtype) + self.row
             new_col, new_row = divmod(flat_indices, shape[0])
