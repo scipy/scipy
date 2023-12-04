@@ -296,7 +296,7 @@ class RegularGridInterpolator:
                                  "of a type compatible with values")
         return fill_value
 
-    def __call__(self, xi, method=None):
+    def __call__(self, xi, method=None, *, nu=None):
         """
         Interpolation at coordinates.
 
@@ -309,6 +309,11 @@ class RegularGridInterpolator:
             The method of interpolation to perform. Supported are "linear",
             "nearest", "slinear", "cubic", "quintic" and "pchip". Default is
             the method chosen when the interpolator was created.
+
+        nu : sequence of ints, length ndim, optional
+            If not None, the orders of the derivatives to evaluate.
+            Each entry must be positive.
+            Only allowed for methods "slinear", "cubic" and "quintic".
 
         Returns
         -------
@@ -351,6 +356,12 @@ class RegularGridInterpolator:
         if method not in self._ALL_METHODS:
             raise ValueError("Method '%s' is not defined" % method)
 
+        if nu is not None and method not in self._SPLINE_METHODS_ndbspl:
+            raise ValueError(
+                f"Can only compute derivatives for methods "
+                f"{self._SPLINE_METHODS_ndbspl}, got {method =}."
+            )
+
         xi, xi_shape, ndim, nans, out_of_bounds = self._prepare_xi(xi)
 
         if method == "linear":
@@ -379,7 +390,7 @@ class RegularGridInterpolator:
             if method in self._SPLINE_METHODS_recurive:
                 result = self._evaluate_spline(xi, method)
             else:
-                result = self._spline(xi)
+                result = self._spline(xi, nu=nu)
 
         if not self.bounds_error and self.fill_value is not None:
             result[out_of_bounds] = self.fill_value
