@@ -2076,6 +2076,27 @@ class TestBoxcoxNormmax:
             stats.boxcox_normmax(self.x, brack=(-2.0, 2.0),
                                  optimizer=optimizer)
 
+    def test_negative_ymax(self):
+        with pytest.raises(ValueError, match="`ymax` can only be positive number"):
+            stats.boxcox_normmax(self.x, ymax=-1)
+
+    @pytest.mark.parametrize('x', [
+        # Attempt to trigger overflow in power expressions.
+        np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0,
+                  2009.0, 1980.0, 1999.0, 2007.0, 1991.0]),
+        # Attempt to trigger overflow with a large optimal lambda.
+        np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0]),
+        # Attempt to trigger overflow with large data.
+        np.array([2003.0e200, 1950.0e200, 1997.0e200, 2000.0e200, 2009.0e200])
+    ])
+    @pytest.mark.parametrize("ymax", [1e10, 1e30, 1e100])
+    # TODO: add method "pearsonr" after fix overflow issue
+    @pytest.mark.parametrize("method", ["mle"])
+    def test_user_defined_ymax(self, x, ymax, method):
+        lmb = stats.boxcox_normmax(x, ymax=ymax, method=method)
+        ymax_res = np.max(stats.boxcox(x, lmb))
+        assert_allclose(ymax, ymax_res, rtol=1e-1)
+
 
 class TestBoxcoxNormplot:
     def setup_method(self):

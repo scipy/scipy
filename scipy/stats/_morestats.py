@@ -1133,13 +1133,19 @@ def _boxcox_inv_lmbda(x, y):
     return np.real(-num / np.log(x) - 1 / y)
 
 
-def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
+def boxcox_normmax(
+    x, ymax=None, brack=None, method='pearsonr', optimizer=None
+):
     """Compute optimal Box-Cox transform parameter for input data.
 
     Parameters
     ----------
     x : array_like
         Input array. All entries must be positive, finite, real numbers.
+    ymax : positive number, infinity, optional
+        The maximum value after Box-Cox transformation. The default value
+        is the maximum float of the input data's type. If set to infinity,
+        it returns the true, unconstrained optimal lambda.
     brack : 2-tuple, optional, default (-2.0, 2.0)
          The starting interval for a downhill bracket search for the default
          `optimize.brent` solver. Note that this is in most cases not
@@ -1233,6 +1239,9 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
     >>> stats.boxcox_normmax(x, optimizer=optimizer)
     6.000...
     """
+    if ymax is not None and ymax <= 0:
+        raise ValueError("`ymax` can only be positive number")
+
     # If optimizer is not given, define default 'brent' optimizer.
     if optimizer is None:
 
@@ -1309,29 +1318,40 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
         message = ("The `optimizer` argument of `boxcox_normmax` must return "
                    "an object containing the optimal `lmbda` in attribute `x`.")
         raise ValueError(message)
-    else:
-        # Test if the optimal lambda causes overflow
+    elif ymax is None or not np.isinf(ymax):  # adjust the final lambda
         x = np.asarray(x)
-        max_x = np.max(x, axis=0)
-        istransinf = np.isinf(special.boxcox(max_x, res))
-        dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
-        if np.any(istransinf):
-            warnings.warn(
-                f"The optimal lambda is {res}, but the returned lambda is "
-                f"the constrained optimum to ensure that the maximum of the "
-                f"transformed data does not cause overflow in {dtype}.",
-                stacklevel=2
-            )
+        xmax = np.max(x, axis=0)
+        ymax_res = special.boxcox(xmax, res)
 
-            # Return the constrained lambda to ensure the transformation
-            # does not cause overflow
-            ymax = np.finfo(dtype).max / 100  # 100 is the safety factor
-            constrained_res = _boxcox_inv_lmbda(max_x, ymax)
+        if ymax is None:
+            # Test if the optimal lambda causes overflow
+            istransinf = np.isinf(ymax_res)
+            dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
+            if np.any(istransinf):
+                warnings.warn(
+                    f"The optimal lambda is {res}, but the returned lambda is "
+                    f"the constrained optimum to ensure that the maximum of the "
+                    f"transformed data does not cause overflow in {dtype}.",
+                    stacklevel=2
+                )
 
-            if isinstance(res, np.ndarray):
-                res[istransinf] = constrained_res
-            else:
-                res = constrained_res
+                # Return the constrained lambda to ensure the transformation
+                # does not cause overflow
+                ymax = np.finfo(dtype).max / 100  # 100 is the safety factor
+                constrained_res = _boxcox_inv_lmbda(xmax, ymax)
+
+                if isinstance(res, np.ndarray):
+                    res[istransinf] = constrained_res
+                else:
+                    res = constrained_res
+        else:
+            islargethanymax = ymax_res > ymax
+            if np.any(islargethanymax):
+                constrained_res = _boxcox_inv_lmbda(xmax, ymax)
+                if isinstance(res, np.ndarray):
+                    res[islargethanymax] = constrained_res
+                else:
+                    res = constrained_res
     return res
 
 
