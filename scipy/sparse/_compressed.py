@@ -285,7 +285,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             if 0 == other and op_name in ('_le_', '_ge_'):
                 raise NotImplementedError(" >= and <= don't work with 0.")
             elif op(0, other):
-                warn(bad_scalar_msg, SparseEfficiencyWarning, stacklevel=2)
+                warn(bad_scalar_msg, SparseEfficiencyWarning, stacklevel=3)
                 other_arr = np.empty(self.shape, dtype=np.result_type(other))
                 other_arr.fill(other)
                 other_arr = self.__class__(other_arr)
@@ -307,7 +307,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
             warn("Comparing sparse matrices using >= and <= is inefficient, "
                  "using <, >, or !=, instead.",
-                 SparseEfficiencyWarning, stacklevel=2)
+                 SparseEfficiencyWarning, stacklevel=3)
             all_true = self.__class__(np.ones(self.shape, dtype=np.bool_))
             res = self._binopt(other, '_gt_' if op_name == '_le_' else '_lt_')
             return all_true - res

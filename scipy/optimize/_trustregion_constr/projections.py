@@ -102,7 +102,7 @@ def augmented_system_projections(A, m, n, orth_tol, max_refin, tol):
     except RuntimeError:
         warn("Singular Jacobian matrix. Using dense SVD decomposition to "
              "perform the factorizations.",
-             stacklevel=2)
+             stacklevel=3)
         return svd_factorization_projections(A.toarray(),
                                              m, n, orth_tol,
                                              max_refin, tol)
@@ -181,7 +181,7 @@ def qr_factorization_projections(A, m, n, orth_tol, max_refin, tol):
     if np.linalg.norm(R[-1, :], np.inf) < tol:
         warn('Singular Jacobian matrix. Using SVD decomposition to ' +
              'perform the factorizations.',
-             stacklevel=2)
+             stacklevel=3)
         return svd_factorization_projections(A, m, n,
                                              orth_tol,
                                              max_refin,

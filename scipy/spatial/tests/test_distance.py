@@ -361,7 +361,7 @@ def _weight_checked(fn, n_args=2, default_axis=None, key=lambda x: x, weight_arg
             #  this is the desired response
             if not silent:
                 warnings.warn(f"{fn.__name__} NotImplemented weights: {e}",
-                              stacklevel=2)
+                              stacklevel=3)
         return result
     return wrapped
 

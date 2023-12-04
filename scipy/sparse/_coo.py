@@ -168,10 +168,10 @@ class _coo_base(_data_matrix, _minmax_mixin):
         # index arrays should have integer data types
         if self.row.dtype.kind != 'i':
             warn(f"row index array has non-integer dtype ({self.row.dtype.name})",
-                 stacklevel=2)
+                 stacklevel=3)
         if self.col.dtype.kind != 'i':
             warn(f"col index array has non-integer dtype ({self.col.dtype.name})",
-                 stacklevel=2)
+                 stacklevel=3)
 
         idx_dtype = self._get_index_dtype((self.row, self.col), maxval=max(self.shape))
         self.row = np.asarray(self.row, dtype=idx_dtype)

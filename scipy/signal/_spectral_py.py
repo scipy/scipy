@@ -1896,7 +1896,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         if np.iscomplexobj(x):
             sides = 'twosided'
             warnings.warn('Input data is complex, switching to return_onesided=False',
-                          stacklevel=2)
+                          stacklevel=3)
         else:
             sides = 'onesided'
             if not same_data:
@@ -1904,7 +1904,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
                     sides = 'twosided'
                     warnings.warn('Input data is complex, switching to '
                                   'return_onesided=False',
-                                  stacklevel=2)
+                                  stacklevel=3)
     else:
         sides = 'twosided'
 
@@ -2045,7 +2045,7 @@ def _triage_segments(window, nperseg, input_length):
         if nperseg > input_length:
             warnings.warn(f'nperseg = {nperseg:d} is greater than input length '
                           f' = {input_length:d}, using nperseg = {input_length:d}',
-                          stacklevel=2)
+                          stacklevel=3)
             nperseg = input_length
         win = get_window(window, nperseg)
     else:

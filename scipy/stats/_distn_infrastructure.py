@@ -3804,7 +3804,7 @@ def _expect(fun, lb, ub, x0, inc, maxcount=1000, tolerance=1e-10,
             break
         if count > maxcount:
             warnings.warn('expect(): sum did not converge',
-                          RuntimeWarning, stacklevel=2)
+                          RuntimeWarning, stacklevel=3)
             return tot
 
     # iterate over [lb, x0)
@@ -3816,7 +3816,7 @@ def _expect(fun, lb, ub, x0, inc, maxcount=1000, tolerance=1e-10,
             break
         if count > maxcount:
             warnings.warn('expect(): sum did not converge',
-                          RuntimeWarning, stacklevel=2)
+                          RuntimeWarning, stacklevel=3)
             break
 
     return tot

@@ -3492,7 +3492,7 @@ class erlang_gen(gamma_gen):
             # shape parameter, so warn the user.
             message = ('The shape parameter of the erlang distribution '
                        f'has been given a non-integer value {a!r}.')
-            warnings.warn(message, RuntimeWarning, stacklevel=2)
+            warnings.warn(message, RuntimeWarning, stacklevel=3)
         return a > 0
 
     def _shape_info(self):
@@ -3836,7 +3836,7 @@ class genhyperbolic_gen(rv_continuous):
         if np.isnan(intgrl):
             msg = ("Infinite values encountered in scipy.special.kve. "
                    "Values replaced by NaN to avoid incorrect results.")
-            warnings.warn(msg, RuntimeWarning, stacklevel=2)
+            warnings.warn(msg, RuntimeWarning, stacklevel=3)
         return max(0.0, min(1.0, intgrl))
 
     def _cdf(self, x, p, a, b):
@@ -4875,7 +4875,7 @@ class geninvgauss_gen(rv_continuous):
         if np.isnan(z).any():
             msg = ("Infinite values encountered in scipy.special.kve(p, b). "
                    "Values replaced by NaN to avoid incorrect results.")
-            warnings.warn(msg, RuntimeWarning, stacklevel=2)
+            warnings.warn(msg, RuntimeWarning, stacklevel=3)
         return z
 
     def _pdf(self, x, p, b):
@@ -5126,7 +5126,7 @@ class geninvgauss_gen(rv_continuous):
             msg = ("Infinite values encountered in the moment calculation "
                    "involving scipy.special.kve. Values replaced by NaN to "
                    "avoid incorrect results.")
-            warnings.warn(msg, RuntimeWarning, stacklevel=2)
+            warnings.warn(msg, RuntimeWarning, stacklevel=3)
             m = np.full_like(num, np.nan, dtype=np.float64)
             m[~inf_vals] = num[~inf_vals] / denom[~inf_vals]
         else:

@@ -2500,7 +2500,7 @@ def _histogram(a, numbins=10, defaultlimits=None, weights=None,
                        if defaultlimits[0] > v or v > defaultlimits[1]])
     if extrapoints > 0 and printextras:
         warnings.warn("Points outside given histogram range = %s" % extrapoints,
-                      stacklevel=2,)
+                      stacklevel=3,)
 
     return HistogramResult(hist, defaultlimits[0], binsize, extrapoints)
 

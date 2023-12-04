@@ -871,7 +871,7 @@ class ODR:
         if self.data.x.size == 0:
             warn("Empty data detected for ODR instance. "
                  "Do not expect any fitting to occur",
-                 OdrWarning, stacklevel=2)
+                 OdrWarning, stacklevel=3)
 
     def _gen_work(self):
         """ Generate a suitable work array if one does not already exist.

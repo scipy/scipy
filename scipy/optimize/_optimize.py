@@ -423,7 +423,7 @@ def _check_clip_x(x, bounds):
     if (x < bounds[0]).any() or (x > bounds[1]).any():
         warnings.warn("Values in x were outside bounds during a "
                       "minimize step, clipping to bounds",
-                      RuntimeWarning, stacklevel=2)
+                      RuntimeWarning, stacklevel=3)
         x = np.clip(x, bounds[0], bounds[1])
         return x
 
@@ -861,7 +861,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         if (lower_bound > upper_bound).any():
             raise ValueError(
                 "Nelder Mead - one of the lower bounds is greater than an upper bound.",
-                stacklevel=2
+                stacklevel=3
             )
         if np.any(lower_bound > x0) or np.any(x0 > upper_bound):
             warnings.warn("Initial guess is not within the specified bounds",

@@ -310,7 +310,7 @@ class UnivariateSpline:
             if ier == 1:
                 self._set_class(LSQUnivariateSpline)
             message = _curfit_messages.get(ier, 'ier=%s' % (ier))
-            warnings.warn(message, stacklevel=2)
+            warnings.warn(message, stacklevel=3)
 
     def _set_class(self, cls):
         self._spline_class = cls
@@ -347,7 +347,7 @@ class UnivariateSpline:
         if data[6] == -1:
             warnings.warn('smoothing factor unchanged for'
                           'LSQ spline with fixed knots',
-                          stacklevel=2)
+                          stacklevel=3)
             return
         args = data[:6] + (s,) + data[7:]
         data = dfitpack.fpcurf1(*args)

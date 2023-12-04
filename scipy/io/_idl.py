@@ -277,7 +277,7 @@ def _read_array(f, typecode, array_desc):
             nbytes = _read_int32(f)
             if nbytes != array_desc['nbytes']:
                 warnings.warn("Not able to verify number of bytes from header",
-                              stacklevel=2)
+                              stacklevel=3)
 
         # Read bytes as numpy array
         array = np.frombuffer(f.read(array_desc['nbytes']),
@@ -406,11 +406,11 @@ def _read_record(f):
 
     elif record['rectype'] == "UNKNOWN":
 
-        warnings.warn("Skipping UNKNOWN record", stacklevel=2)
+        warnings.warn("Skipping UNKNOWN record", stacklevel=3)
 
     elif record['rectype'] == "SYSTEM_VARIABLE":
 
-        warnings.warn("Skipping SYSTEM_VARIABLE record", stacklevel=2)
+        warnings.warn("Skipping SYSTEM_VARIABLE record", stacklevel=3)
 
     else:
 
@@ -462,7 +462,7 @@ def _read_arraydesc(f):
 
     elif arraydesc['arrstart'] == 18:
 
-        warnings.warn("Using experimental 64-bit array read", stacklevel=2)
+        warnings.warn("Using experimental 64-bit array read", stacklevel=3)
 
         _skip_bytes(f, 8)
 
@@ -575,7 +575,7 @@ def _replace_heap(variable, heap):
                 else:
                     warnings.warn("Variable referenced by pointer not found "
                                   "in heap: variable will be set to None",
-                                  stacklevel=2)
+                                  stacklevel=3)
                     variable = None
 
         replace, new = _replace_heap(variable, heap)

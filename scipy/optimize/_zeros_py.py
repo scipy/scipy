@@ -475,18 +475,18 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2, full_output):
                 rms = np.sqrt(
                     sum((p1[zero_der_nz_dp] - p[zero_der_nz_dp]) ** 2)
                 )
-                warnings.warn(f'RMS of {rms:g} reached', RuntimeWarning, stacklevel=2)
+                warnings.warn(f'RMS of {rms:g} reached', RuntimeWarning, stacklevel=3)
         # Newton or Halley warnings
         else:
             all_or_some = 'all' if zero_der.all() else 'some'
             msg = f'{all_or_some:s} derivatives were zero'
-            warnings.warn(msg, RuntimeWarning, stacklevel=2)
+            warnings.warn(msg, RuntimeWarning, stacklevel=3)
     elif failures.any():
         all_or_some = 'all' if failures.all() else 'some'
         msg = f'{all_or_some:s} failed to converge after {maxiter:d} iterations'
         if failures.all():
             raise RuntimeError(msg)
-        warnings.warn(msg, RuntimeWarning, stacklevel=2)
+        warnings.warn(msg, RuntimeWarning, stacklevel=3)
 
     if full_output:
         result = namedtuple('result', ('root', 'converged', 'zero_der'))
@@ -1101,7 +1101,7 @@ class TOMS748Solver:
         # Noisily replace a high value of k with self._K_MAX
         if self.k > self._K_MAX:
             msg = "toms748: Overriding k: ->%d" % self._K_MAX
-            warnings.warn(msg, RuntimeWarning, stacklevel=2)
+            warnings.warn(msg, RuntimeWarning, stacklevel=3)
             self.k = self._K_MAX
 
     def _callf(self, x, error=True):

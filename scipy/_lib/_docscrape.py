@@ -418,7 +418,7 @@ class NumpyDocString(Mapping):
         if error:
             raise ValueError(msg)
         else:
-            warn(msg, stacklevel=2)
+            warn(msg, stacklevel=3)
 
     # string conversion routines
 
