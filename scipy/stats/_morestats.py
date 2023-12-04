@@ -1240,7 +1240,7 @@ def boxcox_normmax(
     6.000...
     """
     if ymax is not None and ymax <= 0:
-        raise ValueError("`ymax` can only be positive number")
+        raise ValueError("`ymax` must be strictly positive")
 
     # If optimizer is not given, define default 'brent' optimizer.
     if optimizer is None:
