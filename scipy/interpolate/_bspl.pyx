@@ -729,7 +729,7 @@ def _colloc_nd(double[:, ::1] xvals, tuple t not None, long[::1] k):
         npy_intp ndim = xvals.shape[1]
 
         # 'intervals': indices for a point in xi into the knot arrays t
-        npy_intp[::1] i = np.empty(ndim, dtype=int)
+        npy_intp[::1] i = np.empty(ndim, dtype=np.intp)
 
         # container for non-zero b-splines at each point in xi
         double[:, ::1] b = np.empty((ndim, max(k) + 1), dtype=float)
@@ -743,11 +743,11 @@ def _colloc_nd(double[:, ::1] xvals, tuple t not None, long[::1] k):
         npy_intp[:, ::1] _indices_k1d    # tabulated np.unravel_index
 
         # shifted indices into the data array
-        npy_intp[::1] idx_c = np.ones(ndim, dtype=int) * (-101)  # any sentinel would do, really
+        npy_intp[::1] idx_c = np.ones(ndim, dtype=np.intp) * (-101)  # any sentinel would do, really
         npy_intp[::1] cstrides
         npy_intp idx_cflat
 
-        long[::1] nu = np.zeros(ndim, dtype=int)
+        npy_intp[::1] nu = np.zeros(ndim, dtype=np.intp)
 
         int out_of_bounds
         double factor
@@ -755,7 +755,7 @@ def _colloc_nd(double[:, ::1] xvals, tuple t not None, long[::1] k):
 
         # output
         double[::1] csr_data
-        npy_intp[::1] csr_indices
+        npy_int64[::1] csr_indices
 
         int j, d
 
@@ -774,7 +774,7 @@ def _colloc_nd(double[:, ::1] xvals, tuple t not None, long[::1] k):
     # >>> x = np.empty(c_shape)
     # >>> cstrides = [s // 8 for s in x.strides]
     cs = c_shape[1:] + (1,)
-    cstrides = np.cumprod(cs[::-1])[::-1].copy()
+    cstrides = np.cumprod(cs[::-1], dtype=np.intp)[::-1].copy()
 
     # tabulate flat indices for iterating over the (k+1)**ndim subarray of
     # non-zero b-spline elements
@@ -784,9 +784,9 @@ def _colloc_nd(double[:, ::1] xvals, tuple t not None, long[::1] k):
     # Allocate the collocation matrix in the CSR format.
     # If dense, this would have been
     # >>> matr = np.zeros((size, max_row_index), dtype=float)
-    csr_indices = np.empty(shape=(size*volume,), dtype=int)
+    csr_indices = np.empty(shape=(size*volume,), dtype=np.int64)
     csr_data = np.empty(shape=(size*volume,), dtype=float)
-    csr_indptr = np.arange(0, volume*size + 1, volume)
+    csr_indptr = np.arange(0, volume*size + 1, volume, dtype=np.int64)
 
     # ### Iterate over the the data points ###
     for j in range(size):
