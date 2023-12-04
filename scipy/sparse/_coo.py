@@ -99,23 +99,24 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
     @property
     def row(self):
-        return self.indices[0]
+        return self.indices[-2] if self.ndim > 1 else np.zeros_like(self.col)
+
 
     @row.setter
     def row(self, new_row):
-        new_row = np.asarray(new_row, dtype=self.indices[0].dtype)
-        self.indices = (new_row,) + self.indices[1:]
+        if self.ndim < 2:
+            raise ValueError('cannot set row attribute of a 1-dimensional sparse array')
+        new_row = np.asarray(new_row, dtype=self.indices[-2].dtype)
+        self.indices = self.indices[:-2] + (new_row,) + self.indices[-1:]
 
     @property
     def col(self):
-        return self.indices[1] if self.ndim > 1 else np.zeros_like(self.row)
+        return self.indices[-1]
 
     @col.setter
     def col(self, new_col):
-        if self.ndim < 2:
-            raise ValueError('cannot set col attribute of a 1-dimensional sparse array')
-        new_col = np.asarray(new_col, dtype=self.indices[1].dtype)
-        self.indices = self.indices[:1] + (new_col,) + self.indices[2:]
+        new_col = np.asarray(new_col, dtype=self.indices[-1].dtype)
+        self.indices = self.indices[:-1] + (new_col,)
 
     def reshape(self, *args, **kwargs):
         is_array = isinstance(self, sparray)
@@ -267,13 +268,11 @@ class _coo_base(_data_matrix, _minmax_mixin):
             raise ValueError("Cannot densify higher-rank sparse array")
         # This handles both 0D and 1D cases correctly regardless of the
         # original shape.
-        M, N, *_ = self.shape + (1, 1)
+        M, N = self._shape_as_2d
         coo_todense(M, N, self.nnz, self.row, self.col, self.data,
                     B.ravel('A'), fortran)
         # Note: reshape() doesn't copy here, but does return a new array (view).
         return B.reshape(self.shape)
-
-    toarray.__doc__ = _spbase.toarray.__doc__
 
     toarray.__doc__ = _spbase.toarray.__doc__
 
@@ -528,8 +527,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         dtype = upcast_char(self.dtype.char, other.dtype.char)
         result = np.array(other, dtype=dtype, copy=True)
         fortran = int(result.flags.f_contiguous)
-        M = self.shape[0]
-        N = self.shape[1] if self.ndim > 1 else 1
+        M, N = self._shape_as_2d
         coo_todense(M, N, self.nnz, self.row, self.col, self.data,
                     result.ravel('A'), fortran)
         return self._container(result, copy=False)

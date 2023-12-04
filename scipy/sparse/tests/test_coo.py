@@ -160,17 +160,17 @@ def test_transpose_with_axis():
 
 def test_1d_row_and_col():
     res = coo_array([1, -2, -3])
-    assert np.array_equal(res.row, np.array([0, 1, 2]))
-    assert np.array_equal(res.col, np.zeros_like(res.row))
+    assert np.array_equal(res.col, np.array([0, 1, 2]))
+    assert np.array_equal(res.row, np.zeros_like(res.col))
     assert res.row.dtype == res.col.dtype
 
-    res.row = [1, 2, 3]
+    res.col = [1, 2, 3]
     assert len(res.indices) == 1
-    assert np.array_equal(res.row, np.array([1, 2, 3]))
+    assert np.array_equal(res.col, np.array([1, 2, 3]))
     assert res.row.dtype == res.col.dtype
 
-    with pytest.raises(ValueError, match="cannot set col attribute"):
-        res.col = [1, 2, 3]
+    with pytest.raises(ValueError, match="cannot set row attribute"):
+        res.row = [1, 2, 3]
 
 
 def test_1d_tocsc_tocsr_todia_todok():
@@ -229,7 +229,8 @@ def test_eliminate_zeros():
     assert arr1d.nnz == 1
     assert arr1d.count_nonzero() == 1
     assert np.array_equal(arr1d.toarray(), np.array([0, 1]))
-    assert np.array_equal(arr1d.row, np.array([1]))
+    assert np.array_equal(arr1d.col, np.array([1]))
+    assert np.array_equal(arr1d.row, np.array([0]))
 
 
 def test_1d_add_dense():
