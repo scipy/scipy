@@ -264,10 +264,14 @@ class RegularGridInterpolator:
                    "the array before passing to `RegularGridInterpolator`.")
             warnings.warn(msg, DeprecationWarning, stacklevel=2)
         if method in self._SPLINE_METHODS_ndbspl:
-            self._spline, _ = make_ndbspl(
+            self._spline = self._construct_spline(method, solver, **solver_args)
+
+    def _construct_spline(self, method, solver=ssl.gcrotmk, **solver_args):
+        spl, _ = make_ndbspl(
                 self.grid, self.values, self._SPLINE_DEGREE_MAP[method],
-                solver=ssl.gcrotmk, **solver_args
-            )
+                solver=solver, **solver_args
+                )
+        return spl
 
     def _check_dimensionality(self, grid, values):
         _check_dimensionality(grid, values)
@@ -355,6 +359,8 @@ class RegularGridInterpolator:
         is_method_changed = self.method != method
         if method not in self._ALL_METHODS:
             raise ValueError("Method '%s' is not defined" % method)
+        if is_method_changed and method in self._SPLINE_METHODS_ndbspl:
+            self._spline = self._construct_spline(method)
 
         if nu is not None and method not in self._SPLINE_METHODS_ndbspl:
             raise ValueError(
