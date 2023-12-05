@@ -1676,8 +1676,7 @@ class _TestCommon:
         c = Custom(scalar)
         A_scalar = A * scalar
         A_c = A * c
-        assert_equal(A_scalar, A_c)
-        assert_equal(A_scalar.dtype, A_c.dtype)
+        assert_array_equal_dtype(A_scalar.toarray(), A_c.toarray())
         assert_equal(A_scalar.format, A_c.format)
 
     def test_comparisons_custom_type(self):
