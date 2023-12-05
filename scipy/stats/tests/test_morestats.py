@@ -2098,9 +2098,9 @@ class TestBoxcoxNormmax:
         with pytest.warns(UserWarning, match="The optimal lambda is"):
             stats.boxcox_normmax(x, ymax=None, method=method)
 
-        lmb = stats.boxcox_normmax(x, ymax=ymax, method=method)
-        ymax_res = np.max(stats.boxcox(x, lmb))
-        assert_allclose(ymax, ymax_res, rtol=1e-1)
+            lmb = stats.boxcox_normmax(x, ymax=ymax, method=method)
+            ymax_res = np.max(stats.boxcox(x, lmb))
+            assert_allclose(ymax, ymax_res, rtol=1e-1)
 
 
 class TestBoxcoxNormplot:
