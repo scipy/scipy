@@ -743,7 +743,12 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
 
     if t_events is not None:
         t_events = [np.asarray(te) for te in t_events]
-        y_events = [np.asarray(ye).reshape(shape0 + (-1,)) for ye in y_events]
+        if len(shape0) > 1:
+            for i, _ in enumerate(y_events):
+                ye = np.asarray(y_events[i])
+                y_events[i] = ye.reshape(ye.shape[:-1] + shape0)
+        else:
+            y_events = [np.asarray(ye) for ye in y_events]
 
     if t_eval is None:
         ts = np.array(ts)
@@ -751,7 +756,10 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     elif ts:
         ts = np.hstack(ts)
         ys = np.hstack(ys)
-    ys = ys.reshape(shape0 + (-1,))
+
+    if len(shape0) > 1 and len(ys):
+        ys = np.asarray(ys)
+        ys = ys.reshape(shape0 + ys.shape[1:])
 
     if dense_output:
         if t_eval is None:

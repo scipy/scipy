@@ -242,7 +242,7 @@ class OdeSolution:
         ys = np.hstack(ys)
         ys = ys[:, reverse]
         if self.yshape is not None:
-            ys = ys.reshape(self.yshape + (-1,))
+            ys = ys.reshape(self.yshape + ys.shape[1:])
 
         return ys
 
