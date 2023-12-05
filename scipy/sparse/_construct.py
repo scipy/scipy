@@ -1168,6 +1168,9 @@ def random_array(shape, *, density=0.01, format='coo', dtype=None,
     >>> Y = X().rvs
     >>> S = sp.sparse.random_array((3, 4), density=0.25, random_state=rng, data_sampler=Y)
     """
+    # Use the more efficient RNG by default.
+    if random_state is None:
+        random_state = np.random.default_rng()
     data, ind = _random(shape, density, format, dtype, random_state, data_sampler)
     return coo_array((data, ind), shape=shape).asformat(format)
 
@@ -1182,10 +1185,7 @@ def _random(shape, density=0.01, format=None, dtype=None,
     # Number of non zero values
     size = int(round(density * tot_prod))
 
-    if random_state is None:
-        rng = np.random.default_rng()
-    else:
-        rng = check_random_state(random_state)
+    rng = check_random_state(random_state)
 
     if data_sampler is None:
         if np.issubdtype(dtype, np.integer):
