@@ -530,19 +530,13 @@ class TestQMCQuad:
 class TestCumulativeSimpson:
     x0 = np.arange(4)
     y0 = x0**2
-
+    
     @pytest.mark.parametrize(
         ("y_func", "x", "dx", "initial", "int_y_func"),
         [
             (lambda y: y, None, 1.0, 0, lambda y: y**2 / 2),
             (lambda y: y, None, 0.5, 5, lambda y: y**2 / 2 + 5),
-            (
-                lambda y: y,
-                np.linspace(0, 4, 17),
-                1.0,
-                None,
-                lambda y: y**2 / 2,
-            ),
+            (lambda y: y, np.linspace(0, 4, 17), 1.0, None, lambda y: y**2 / 2),
             (lambda y: y**2, None, 0, None, lambda y: 0 * y),
         ],
     )
