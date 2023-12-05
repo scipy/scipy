@@ -256,6 +256,20 @@ class NdBSpline:
 
 def _iter_solve(a, b, solver=ssl.gcrotmk, **solver_args):
     # work around iterative solvers not accepting multiple r.h.s.
+
+    # also work around a.dtype == float64 and b.dtype == complex128
+    # gcrotmk has bad accuracy and/or emits a warning
+    #   scipy/sparse/linalg/_isolve/_gcrotmk.py:131: in _fgmres
+    #      alpha = 1/hcur[-1]
+    #   E   RuntimeWarning: invalid value encountered in cdouble_scalars
+    # on some linuxes (32-bit, ATLAS, some others, just not the default 64-bit
+    # ubuntu with OpenBLAS). Note that that line has a comment
+    # "careful with denormals".
+    if np.issubdtype(b.dtype, np.complexfloating):
+        real = _iter_solve(a, b.real, solver, **solver_args)
+        imag = _iter_solve(a, b.imag, solver, **solver_args)
+        return real + 1j*imag
+
     if b.ndim == 2 and b.shape[1] !=1:
         res = np.empty_like(b)
         for j in range(b.shape[1]):

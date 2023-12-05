@@ -886,8 +886,9 @@ class TestInterpN:
         v2i = interpn(points, values.imag, sample, method=method)
         v2 = v2r + 1j*v2i
 
-        atol = 5e-6 if method == "quintic" else 1e-15
-        assert_allclose(v1, v2, atol=atol)
+        # atol = 5e-6 if method == "quintic" else 1e-15
+        # assert_allclose(v1, v2, atol=atol)
+        assert_allclose(v1, v2)
 
     def test_complex_pchip(self):
         # Complex-valued data deprecated for pchip
