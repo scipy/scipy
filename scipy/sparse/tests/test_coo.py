@@ -12,11 +12,8 @@ def test_shape_constructor():
     assert empty2d.shape == (3, 2)
     assert np.array_equal(empty2d.toarray(), np.zeros((3, 2)))
 
-    empty3d = coo_array((3, 2, 2))
-    assert empty3d.shape == (3, 2, 2)
-    with pytest.raises(ValueError,
-                       match='Cannot densify higher-rank sparse array'):
-        empty3d.toarray()
+    with pytest.raises(TypeError, match='invalid input format'):
+        coo_array((3, 2, 2))
 
 
 def test_dense_constructor():
@@ -28,8 +25,8 @@ def test_dense_constructor():
     assert res2d.shape == (2, 3)
     assert np.array_equal(res2d.toarray(), np.array([[1, 2, 3], [4, 5, 6]]))
 
-    res3d = coo_array([[[3]], [[4]]])
-    assert res3d.shape == (2, 1, 1)
+    with pytest.raises(ValueError, match='shape must be a 1- or 2-tuple'):
+        coo_array([[[3]], [[4]]])
 
 
 def test_dense_constructor_with_shape():
@@ -41,8 +38,8 @@ def test_dense_constructor_with_shape():
     assert res2d.shape == (2, 3)
     assert np.array_equal(res2d.toarray(), np.array([[1, 2, 3], [4, 5, 6]]))
 
-    res3d = coo_array([[[3]], [[4]]], shape=(2, 1, 1))
-    assert res3d.shape == (2, 1, 1)
+    with pytest.raises(ValueError, match='shape must be a 1- or 2-tuple'):
+        coo_array([[[3]], [[4]]], shape=(2, 1, 1))
 
 
 def test_dense_constructor_with_inconsistent_shape():
@@ -121,10 +118,6 @@ def test_nnz():
     assert arr2d.shape == (2, 3)
     assert arr2d.nnz == 3
 
-    arr3d = coo_array([[[1, 2, 0], [0, 0, 0]]])
-    assert arr3d.shape == (1, 2, 3)
-    assert arr3d.nnz == 2
-
 
 def test_transpose():
     arr1d = coo_array([1, 0, 3]).T
@@ -135,9 +128,6 @@ def test_transpose():
     assert arr2d.shape == (3, 2)
     assert np.array_equal(arr2d.toarray(), np.array([[1, 0], [2, 0], [0, 3]]))
 
-    arr3d = coo_array([[[1, 2, 0], [0, 0, 0]]]).T
-    assert arr3d.shape == (3, 2, 1)
-
 
 def test_transpose_with_axis():
     arr1d = coo_array([1, 0, 3]).transpose(axes=(0,))
@@ -147,9 +137,6 @@ def test_transpose_with_axis():
     arr2d = coo_array([[1, 2, 0], [0, 0, 3]]).transpose(axes=(0, 1))
     assert arr2d.shape == (2, 3)
     assert np.array_equal(arr2d.toarray(), np.array([[1, 2, 0], [0, 0, 3]]))
-
-    arr3d = coo_array([[[1, 2, 0], [0, 0, 0]]]).transpose(axes=(1, 0, 2))
-    assert arr3d.shape == (2, 1, 3)
 
     with pytest.raises(ValueError, match="axes don't match matrix dimensions"):
         coo_array([1, 0, 3]).transpose(axes=(0, 1))

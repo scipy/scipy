@@ -28,8 +28,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
         is_array = isinstance(self, sparray)
 
         if isinstance(arg1, tuple):
-            if isshape(arg1, allow_ndim=is_array):
-                self._shape = check_shape(arg1, allow_ndim=is_array)
+            if isshape(arg1, allow_1d=is_array):
+                self._shape = check_shape(arg1, allow_1d=is_array)
                 idx_dtype = self._get_index_dtype(maxval=max(self._shape))
                 data_dtype = getdtype(dtype, default=float)
                 self.indices = tuple(np.array([], dtype=idx_dtype)
@@ -48,7 +48,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                                          'sized index arrays')
                     shape = tuple(operator.index(np.max(idx)) + 1
                                   for idx in indices)
-                self._shape = check_shape(shape, allow_ndim=is_array)
+                self._shape = check_shape(shape, allow_1d=is_array)
 
                 idx_dtype = self._get_index_dtype(indices,
                                                   maxval=max(self.shape),
@@ -62,15 +62,13 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 if arg1.format == self.format and copy:
                     self.indices = tuple(idx.copy() for idx in arg1.indices)
                     self.data = arg1.data.copy()
-                    self._shape = check_shape(arg1.shape,
-                                              allow_ndim=is_array)
+                    self._shape = check_shape(arg1.shape, allow_1d=is_array)
                     self.has_canonical_format = arg1.has_canonical_format
                 else:
                     coo = arg1.tocoo()
                     self.indices = tuple(coo.indices)
                     self.data = coo.data
-                    self._shape = check_shape(coo.shape,
-                                              allow_ndim=is_array)
+                    self._shape = check_shape(coo.shape, allow_1d=is_array)
                     self.has_canonical_format = False
             else:
                 # dense argument
@@ -80,9 +78,9 @@ class _coo_base(_data_matrix, _minmax_mixin):
                     if M.ndim != 2:
                         raise TypeError('expected dimension <= 2 array or matrix')
 
-                self._shape = check_shape(M.shape, allow_ndim=is_array)
+                self._shape = check_shape(M.shape, allow_1d=is_array)
                 if shape is not None:
-                    if check_shape(shape, allow_ndim=is_array) != self._shape:
+                    if check_shape(shape, allow_1d=is_array) != self._shape:
                         raise ValueError(f'inconsistent shapes: {shape} != {self._shape}')
                 index_dtype = self._get_index_dtype(maxval=max(self._shape))
                 indices = M.nonzero()
@@ -119,7 +117,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
     def reshape(self, *args, **kwargs):
         is_array = isinstance(self, sparray)
-        shape = check_shape(args, self.shape, allow_ndim=is_array)
+        shape = check_shape(args, self.shape, allow_1d=is_array)
         order, copy = check_reshape_kwargs(kwargs)
 
         # Return early if reshape is not required
@@ -222,7 +220,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
     def resize(self, *shape) -> None:
         is_array = isinstance(self, sparray)
-        shape = check_shape(shape, allow_ndim=is_array)
+        shape = check_shape(shape, allow_1d=is_array)
 
         # Check for added dimensions.
         if len(shape) > self.ndim:
