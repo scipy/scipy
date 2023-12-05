@@ -1990,6 +1990,20 @@ class TestBoxcox:
         with pytest.raises(ValueError, match=message):
             stats.boxcox_normmax(bad_x)
 
+    @pytest.mark.parametrize('x', [
+        # Attempt to trigger overflow in power expressions.
+        np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0,
+                  2009.0, 1980.0, 1999.0, 2007.0, 1991.0]),
+        # Attempt to trigger overflow with a large optimal lambda.
+        np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0]),
+        # Attempt to trigger overflow with large data.
+        np.array([2003.0e200, 1950.0e200, 1997.0e200, 2000.0e200, 2009.0e200])
+    ])
+    def test_overflow(self, x):
+        with pytest.warns(UserWarning, match="The optimal lambda is"):
+            xt_bc, lam_bc = stats.boxcox(x)
+            assert np.all(np.isfinite(xt_bc))
+
 
 class TestBoxcoxNormmax:
     def setup_method(self):

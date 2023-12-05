@@ -8,7 +8,8 @@ from collections import namedtuple
 from scipy.special import roots_legendre
 from scipy.special import gammaln, logsumexp
 from scipy._lib._util import _rng_spawn
-from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
+from scipy._lib.deprecation import (_NoValue, _deprecate_positional_args,
+                                    _deprecated)
 
 
 __all__ = ['fixed_quad', 'quadrature', 'romberg', 'romb',
@@ -312,9 +313,17 @@ def vectorize1(func, args=(), vec_func=False):
     return vfunc
 
 
+@_deprecated("`scipy.integrate.quadrature` is deprecated as of SciPy 1.12.0"
+             "and will be removed in SciPy 1.14.0. Please use"
+             "`scipy.integrate.quad` instead.")
 def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
                vec_func=True, miniter=1):
     """
+    .. deprecated:: 1.12.0
+
+          This function is deprecated as of SciPy 1.12.0 and will be removed
+          in SciPy 1.14.0. Please use `scipy.integrate.quad` instead.
+
     Compute a definite integral using fixed-tolerance Gaussian quadrature.
 
     Integrate `func` from `a` to `b` using Gaussian quadrature
@@ -1003,9 +1012,17 @@ def _printresmat(function, interval, resmat):
     print('after', 2**(len(resmat)-1)+1, 'function evaluations.')
 
 
+@_deprecated("`scipy.integrate.romberg` is deprecated as of SciPy 1.12.0"
+             "and will be removed in SciPy 1.14.0. Please use"
+             "`scipy.integrate.quad` instead.")
 def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
             divmax=10, vec_func=False):
     """
+    .. deprecated:: 1.12.0
+
+          This function is deprecated as of SciPy 1.12.0 and will be removed
+          in SciPy 1.14.0. Please use `scipy.integrate.quad` instead.
+
     Romberg integration of a callable function or method.
 
     Returns the integral of `function` (a function of one variable)

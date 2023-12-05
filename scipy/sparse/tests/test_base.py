@@ -232,6 +232,26 @@ class BinopTester_with_shape:
     def __rmatmul__(self, mat):
         return "matrix on the left"
 
+class ComparisonTester:
+    # Custom type to test comparison operations on sparse matrices.
+    def __eq__(self, other):
+        return "eq"
+
+    def __ne__(self, other):
+        return "ne"
+
+    def __lt__(self, other):
+        return "lt"
+
+    def __le__(self, other):
+        return "le"
+
+    def __gt__(self, other):
+        return "gt"
+
+    def __ge__(self, other):
+        return "ge"
+
 
 #------------------------------------------------------------------------------
 # Generic tests
@@ -1642,7 +1662,7 @@ class _TestCommon:
 
         assert_equal(A @ B, "matrix on the left")
         assert_equal(B @ A, "matrix on the right")
-    
+
     def test_mul_custom_type(self):
         class Custom:
             def __init__(self, scalar):
@@ -1659,6 +1679,16 @@ class _TestCommon:
         assert_equal(A_scalar, A_c)
         assert_equal(A_scalar.dtype, A_c.dtype)
         assert_equal(A_scalar.format, A_c.format)
+
+    def test_comparisons_custom_type(self):
+        A = self.spcreator([[1], [2], [3]])
+        B = ComparisonTester()
+        assert_equal(A == B, "eq")
+        assert_equal(A != B, "ne")
+        assert_equal(A > B, "lt")
+        assert_equal(A >= B, "le")
+        assert_equal(A < B, "gt")
+        assert_equal(A <= B, "ge")
 
     def test_dot_scalar(self):
         M = self.spcreator(array([[3,0,0],[0,1,0],[2,0,3.0],[2,3,0]]))

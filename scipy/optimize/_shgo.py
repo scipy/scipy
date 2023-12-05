@@ -426,11 +426,11 @@ def shgo(
      success: True
          fun: 29.894378159142136
         funl: [ 2.989e+01]
-           x: [ 6.355e-01  1.137e-13  3.127e-01  5.178e-02]
-          xl: [[ 6.355e-01  1.137e-13  3.127e-01  5.178e-02]]
+           x: [ 6.355e-01  1.137e-13  3.127e-01  5.178e-02] # may vary
+          xl: [[ 6.355e-01  1.137e-13  3.127e-01  5.178e-02]] # may vary
          nit: 1
-        nfev: 142
-       nlfev: 35
+        nfev: 142 # may vary
+       nlfev: 35 # may vary
        nljev: 5
        nlhev: 0
 

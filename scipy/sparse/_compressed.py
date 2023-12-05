@@ -243,7 +243,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             all_true = self.__class__(np.ones(self.shape, dtype=np.bool_))
             return all_true - res
         else:
-            return False
+            return NotImplemented
 
     def __ne__(self, other):
         # Scalar other.
@@ -277,7 +277,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 other = other.asformat(self.format)
             return self._binopt(other, '_ne_')
         else:
-            return True
+            return NotImplemented
 
     def _inequality(self, other, op, op_name, bad_scalar_msg):
         # Scalar other.
@@ -311,7 +311,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             res = self._binopt(other, '_gt_' if op_name == '_le_' else '_lt_')
             return all_true - res
         else:
-            raise ValueError("Operands could not be compared.")
+            return NotImplemented
 
     def __lt__(self, other):
         return self._inequality(other, operator.lt, '_lt_',
