@@ -832,7 +832,7 @@ def _cumulatively_sum_simpson_integrals(
 ) -> np.ndarray:
     """Calculate cumulative sum of Simpson integrals.
     Takes as input the integration function to be used. 
-    The integration_func is assumed to Returns the cumulative sum using
+    The integration_func is assumed to return the cumulative sum using
     composite Simpson's rule. Assumes the axis of summation is -1.
     """
     sub_integrals_h1 = integration_func(y, dx)
@@ -855,8 +855,6 @@ def _cumulative_simpson_equal_intervals(y: np.ndarray, dx: np.ndarray) -> np.nda
     widths. The function can also be used to calculate the integral for all
     h2 intervals by reversing the inputs, `y` and `dx`.
     """
-    # Consider a quadratic interpolation over each set of 3 adjacent points,
-    # x1, x2, x3. The subinterval widths are h1 and h2 (in this case, h1 = h2 = dx)
     d = dx[..., :-1]
     f1 = y[..., :-2]
     f2 = y[..., 1:-1]
@@ -951,31 +949,32 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
     and then cumulatively summed to obtain the final result.
 
     Consider three consecutive points: 
-    :math:`(x_{1}, y_{1}), (x_{2}, y_{2}), (x_{3}, y_{3})`.
+    :math:`(x_1, y_1), (x_2, y_2), (x_3, y_3)`.
     where the widths of the 2 subintervals are:
-    :math:`h_{1} = x_{2} - x_{1}` and :math:`h_{2} = x_{3} - x_{2}`
+    :math:`h_1 = x_2 - x_1` and :math:`h_2 = x_3 - x_2`.
 
     Assuming a quadratic relationship over the 3 points, the following 
-    integrals for the subintervals are derived (see [2]_ for derivation 
-    method):
+    integrals for the subintervals are derived (formulae (6) and (8) of [2]_):
 
     .. math::
-        \int_{x_{1}}^{x_{2}} y(x) dx\ = \int_{0}^{h_{1}} y(x) dx\
-            = \frac{h_{1}(2h_{1}+3h_{2})}{6(h_{1}+h_{2})} y_{1}
-            + \frac{h_{1}(h_{1}+3h_{2})}{6h_{2}} y_{2}
-            - \frac{h_{1}^{3}}{6h_{2}(h_{1}+h_{2})} y_{3}
+        \int_{x_1}^{x_3} y(x) dx\ = \frac{x_3-x_1}{6}\left[\
+        \left\{2-\frac{x_3-x_2}{x_2-x_1}\right\} y_1 + \
+        \frac{(x_3-x_1)^2}{(x_2-x_1)(x_3-x_2)} y_2 + \
+        \left\{2-\frac{x_2-x_1}{x_3-x_2}\right\} y_3\right]
 
     .. math::
-        \int_{x_{2}}^{x_{3}} y(x) dx\ = \int_{h_{1}}^{h_{1}+h_{2}} y(x) dx\
-            = - \frac{h_{2}^{3}}{6h_{1}(h_{1}+h_{2})} y_{1}
-            + \frac{h_{2}(3h_{1}+h_{2})}{6h_{1}} y_{2}
-            + \frac{h_{2}(3h_{1}+2h_{2})}{6(h_{1}+h_{2})} y_{3}
+        \int_{x_1}^{x_2} y(x) dx\ = \frac{x_2-x_1}{6}\left[\
+        \left\{3-\frac{x_2-x_1}{x_3-x_1}\right\} y_1 + \
+        \left\{3 + \frac{(x_2-x_1)^2}{(x_3-x_2)(x_3-x_1)} + \
+        \frac{x_2-x_1}{x_3-x_1}\right\} y_2 - \
+        \frac{(x_2-x_1)^2}{(x_3-x_2)(x_3-x_1)} y_3\right]
 
     .. math::
-        \int_{x_{1}}^{x_{3}} y(x) dx\ = \int_{0}^{h_{1}+h_{2}} y(x) dx\
-            = \frac{(h_{1}+h_{2})(2h_{1}-h_{2})}{6h_{1}} y_{1}
-            + \frac{(h_{1}+h_{2})^{3}}{6h_{1}h_{2}} y_{2}
-            - \frac{(h_{1}-2h_{2})(h_{1}+h_{2})}{6h_{2}} y_{3}
+        \int_{x_2}^{x_3} y(x) dx\ = \frac{x_3-x_2}{6}\left[\
+        - \frac{(x_3-x_2)^2}{(x_2-x_1)(x_3-x_1)} y_1 + \
+        \left\{3 + \frac{(x_3-x_2)^2}{(x_2-x_1)(x_3-x_1)} + \
+        \frac{x_3-x_2}{x_3-x_1}\right\} y_2 + \
+        \left\{3-\frac{x_3-x_2}{x_3-x_1}\right\} y_3\right]
 
     Note that the integral formulae in [1]_ and [2]_ use different variables.
 
