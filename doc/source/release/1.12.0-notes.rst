@@ -35,6 +35,18 @@ New features
 ============================
 
 
+`scipy.fft` improvements
+========================
+- Experimental support added for the array API standard; functions which are
+  part of the ``fft`` array API standard extension module, as well as the 
+  Fast Hankel Transforms and the basic FFTs which are not in the extension
+  module, now accept PyTorch tensors, CuPy arrays and array API compatible
+  array libraries. CPU arrays which can be converted to and from NumPy arrays
+  are supported module-wide and returned arrays will match the input type.
+  This behaviour is enabled by setting the ``SCIPY_ARRAY_API`` environment
+  variable before importing ``scipy``. This experimental support is still under
+  development and likely to contain bugs - testing is very welcome.
+
 `scipy.interpolate` improvements
 ================================
 - New class ``NdBSpline`` represents tensor-product splines in N dimensions.
@@ -105,11 +117,6 @@ New features
 
 `scipy.stats` improvements
 ==========================
-- masked array, axis tuple, and nan policy support was added to the trimmed
-  statistics functions: ``stats.tmean``, ``stats.tvar``, ``stats.tstd``,
-  ``stats.tmin``, ``stats.tmax``, and ``stats.tsem``.
-- ``axis`` and ``nan_policy`` support were added to `scipy.stats.levene` and
-  `scipy.stats.fligner`
 - Added `scipy.stats.quantile_test`, a nonparametric test of whether a
   hypothesized value is the quantile associated with a specified probability.
   The ``confidence_interval`` method of the result object gives a confidence
@@ -136,6 +143,13 @@ New features
   several distributions: `scipy.stats.burr`, `scipy.stats.hypsecant`,
   `scipy.stats.kappa3`, `scipy.stats.loglaplace`, `scipy.stats.lognorm`,
   `scipy.stats.lomax`, and `scipy.stats.pareto`.
+- The following functions now support parameters ``axis``, ``nan_policy``, and ``keep_dims``: `scipy.stats.entropy`, `scipy.stats.differential_entropy`, `scipy.stats.variation`, `scipy.stats.ansari`, `scipy.stats.bartlett`, `scipy.stats.levene`, `scipy.stats.fligner`, `scipy.stats.cirmean, `scipy.stats.circvar`, `scipy.stats.circstd`, `scipy.stats.tmean`, `scipy.stats.tvar`, `scipy.stats.tstd`, `scipy.stats.tmin`, `scipy.stats.tmax`, and `scipy.stats.tsem`.
+- The ``logpdf`` and ``fit`` methods of `scipy.stats.skewnorm` have been improved.
+- The beta negative binomial distribution is implemented as `scipy.stats.betanbinom`.
+- The speed of `scipy.stats.invwishart` ``rvs`` and ``logpdf`` have been improved.
+- A source of intermediate overflow in `scipy.stats.boxcox_normmax` with ``method='mle'`` has been eliminated, and the returned value of ``lmbda`` is constrained such that the transformed data will not overflow.
+- `scipy.stats.nakagami.stats` is more accurate and reliable.
+- A source of intermediate overflow in `scipy.norminvgauss.pdf` has been eliminated.
 
 
 
