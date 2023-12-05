@@ -826,7 +826,9 @@ def simpson(y, *, x=None, dx=1.0, axis=-1, even=_NoValue):
 
 
 def _cumulatively_sum_simpson_integrals(
-    y: np.ndarray, dx: np.ndarray, integration_func: Callable
+    y: np.ndarray, 
+    dx: np.ndarray, 
+    integration_func: Callable[[np.ndarray, np.ndarray], np.ndarray],
 ) -> np.ndarray:
     """Calculate cumulative sum of Simpson integrals.
     Takes as input the integration function to be used. 
@@ -834,15 +836,13 @@ def _cumulatively_sum_simpson_integrals(
     composite Simpson's rule. Assumes the axis of summation is -1.
     """
     sub_integrals_h1 = integration_func(y, dx)
-    sub_integrals_h2 = integration_func(
-        y[..., ::-1], dx[..., ::-1], h2=True,
-    )[..., ::-1]
+    sub_integrals_h2 = integration_func(y[..., ::-1], dx[..., ::-1])[..., ::-1]
     
     shape = list(sub_integrals_h1.shape)
-    shape[-1] = sub_integrals_h1.shape[-1] + sub_integrals_h2.shape[-1]
-    sub_integrals = np.zeros(shape)
-    sub_integrals[..., :-1:2] = sub_integrals_h1
-    sub_integrals[..., 1::2] = sub_integrals_h2[..., :shape[-1]//2]
+    shape[-1] += 1
+    sub_integrals = np.empty(shape)
+    sub_integrals[..., :-1:2] = sub_integrals_h1[..., ::2]
+    sub_integrals[..., 1::2] = sub_integrals_h2[..., ::2]
     # Integral over last subinterval can only be calculated from 
     # formula for h2
     sub_integrals[..., -1] = sub_integrals_h2[..., -1]
@@ -850,50 +850,32 @@ def _cumulatively_sum_simpson_integrals(
     return res
 
 
-def _cumulative_simpson_equal_intervals(
-    y: np.ndarray, dx: np.ndarray, *, h2: bool = False
-) -> np.ndarray:
+def _cumulative_simpson_equal_intervals(y: np.ndarray, dx: np.ndarray) -> np.ndarray:
     """Calculate the Simpson integrals for all h1 intervals assuming equal interval
     widths. The function can also be used to calculate the integral for all
-    h2 intervals by reversing the inputs, `y` and `dx` and setting `h2`=True.
+    h2 intervals by reversing the inputs, `y` and `dx`.
     """
     # Consider a quadratic interpolation over each set of 3 adjacent points,
     # x1, x2, x3. The subinterval widths are h1 and h2 (in this case, h1 = h2 = dx)
-    if h2 and y.shape[-1] % 2 == 0:
-        d = np.concatenate([dx[..., 0:1], dx[..., 1:-1:2]], axis=-1)
-        f1 = np.concatenate([y[..., 0:1], y[..., 1:-2:2]], axis=-1)
-        f2 = np.concatenate([y[..., 1:2],  y[..., 2:-1:2]], axis=-1)
-        f3 = np.concatenate([y[..., 2:3],  y[..., 3::2]], axis=-1)
-    else:
-        d = dx[..., :-1:2]
-        f1 = y[..., :-2:2]
-        f2 = y[..., 1:-1:2]
-        f3 = y[..., 2::2]
+    d = dx[..., :-1]
+    f1 = y[..., :-2]
+    f2 = y[..., 1:-1]
+    f3 = y[..., 2:]
 
     # Calculate integral over the subintervals (eqn (10) of Reference [2])
     return d / 3 * (5 * f1 / 4 + 2 * f2 - f3 / 4)
 
 
-def _cumulative_simpson_unequal_intervals(
-    y: np.ndarray, dx: np.ndarray, *, h2: bool = False
-) -> np.ndarray:
+def _cumulative_simpson_unequal_intervals(y: np.ndarray, dx: np.ndarray) -> np.ndarray:
     """Calculate the Simpson integrals for all h1 intervals assuming unequal interval
     widths. The function can also be used to calculate the integral for all
-    h2 intervals by reversing the inputs, `y` and `dx` and setting `h2`=True.
+    h2 intervals by reversing the inputs, `y` and `dx`.
     """
-
-    if h2 and y.shape[-1] % 2 == 0:
-        x21 = np.concatenate([dx[..., 0:1], dx[..., 1:-1:2]], axis=-1)
-        x32 = np.concatenate([dx[..., 1:2], dx[..., 2::2]], axis=-1)
-        f1 = np.concatenate([y[..., 0:1], y[..., 1:-2:2]], axis=-1)
-        f2 = np.concatenate([y[..., 1:2],  y[..., 2:-1:2]], axis=-1)
-        f3 = np.concatenate([y[..., 2:3],  y[..., 3::2]], axis=-1)
-    else:
-        x21 = dx[..., :-1:2]
-        x32 = dx[..., 1::2]
-        f1 = y[..., :-2:2]
-        f2 = y[..., 1:-1:2]
-        f3 = y[..., 2::2]
+    x21 = dx[..., :-1]
+    x32 = dx[..., 1:]
+    f1 = y[..., :-2]
+    f2 = y[..., 1:-1]
+    f3 = y[..., 2:]
 
     x31 = x21 + x32
     x21_x31 = x21/x31
