@@ -1662,7 +1662,23 @@ class _TestCommon:
 
         assert_equal(A @ B, "matrix on the left")
         assert_equal(B @ A, "matrix on the right")
-    
+
+    def test_mul_custom_type(self):
+        class Custom:
+            def __init__(self, scalar):
+                self.scalar = scalar
+                
+            def __rmul__(self, other):
+                return other * self.scalar
+        
+        scalar = 2
+        A = self.spcreator([[1],[2],[3]])
+        c = Custom(scalar)
+        A_scalar = A * scalar
+        A_c = A * c
+        assert_array_equal_dtype(A_scalar.toarray(), A_c.toarray())
+        assert_equal(A_scalar.format, A_c.format)
+
     def test_comparisons_custom_type(self):
         A = self.spcreator([[1], [2], [3]])
         B = ComparisonTester()
