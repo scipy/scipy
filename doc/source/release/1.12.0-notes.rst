@@ -75,9 +75,17 @@ New features
   fnnls or fast nnls.
 - The result object of `scipy.optimize.root` and `scipy.optimize.root_scalar`
   now reports the method used.
-- The callback method of `scipy.optimize.differential_evolution` can now be
+- The ``callback`` method of `scipy.optimize.differential_evolution` can now be
   passed more detailed information via the ``intermediate_results`` keyword
-  parameter.
+  parameter. Also, the evolution ``strategy`` now accepts a callable for
+  additional customization.
+- ``minimize`` method ``Newton-CG`` has been made slightly more efficient.
+- ``minimize`` method ``BFGS`` now accepts an initial estimate for the inverse
+  of the Hessian, which allows for more efficient workflows in some
+  circumstances. The new parameter is ``hess_inv0``.
+- ``minimize`` methods ``CG``, ``Newton-CG``, and ``BFGS`` now accept parameters
+  ``c1`` and ``c2``, allowing specification of the Armijo and curvature rule
+  parameters, respectively.
 
 `scipy.signal` improvements
 ===========================
@@ -89,6 +97,13 @@ New features
 - ``sparse.linalg`` iterative solvers ``sparse.linalg.cg``,
   ``sparse.linalg.cgs``, ``sparse.linalg.bicg``, ``sparse.linalg.bicgstab``,
   ``sparse.linalg.gmres``, and ``sparse.linalg.qmr`` are rewritten in Python.
+- Updated vendored SuperLU version to ``6.0.1``, along with a few additional
+  fixes.
+- Sparse arrays have gained additional constructors: ``eye_array``,
+  ``random_array``, ``block_array``, and ``identity``. ``kron`` and ``kronsum``
+  have been adjusted to additionally support operation on sparse arrays.
+- Sparse matrices now support a transpose with ``axes=(1, 0)``, to mirror
+  the ``.T``  method.
 
 
 `scipy.spatial` improvements
@@ -150,6 +165,8 @@ New features
 - A source of intermediate overflow in `scipy.stats.boxcox_normmax` with ``method='mle'`` has been eliminated, and the returned value of ``lmbda`` is constrained such that the transformed data will not overflow.
 - `scipy.stats.nakagami.stats` is more accurate and reliable.
 - A source of intermediate overflow in `scipy.norminvgauss.pdf` has been eliminated.
+- Added support for masked arrays to ``stats.circmean``, ``stats.circvar``,
+  ``stats.circstd``, and ``stats.entropy``.
 
 
 
