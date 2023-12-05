@@ -469,7 +469,7 @@ class gaussian_kde:
         resample : (self.d, `size`) ndarray
             The sampled dataset.
 
-        """
+        """ # numpy/numpydoc#87  # noqa: E501
         if size is None:
             size = int(self.neff)
 

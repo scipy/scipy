@@ -5425,11 +5425,13 @@ class TestLevyStable:
                   (subdata2['relerr'] >= rtol) |
                   np.isnan(p)
                 ]
+                message = (f"cdf test {ix} failed with method '{default_method}'\n"
+                           f"{failures.dtype.names}\n{failures}")
                 assert_allclose(
                     p,
                     subdata['p'],
                     rtol,
-                    err_msg=f"cdf test {ix} failed with method '{default_method}'\n{failures.dtype.names}\n{failures}",
+                    err_msg=message,
                     verbose=False
                 )
 

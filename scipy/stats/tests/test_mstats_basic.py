@@ -74,7 +74,8 @@ class TestGeoMean:
 
     def test_1d_ma_value(self):
         #  Test a 1d masked array with a masked value
-        a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100], mask=[0, 0, 0, 0, 0, 0, 0, 0, 0, 1])
+        a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
+                        mask=[0, 0, 0, 0, 0, 0, 0, 0, 0, 1])
         desired = 41.4716627439
         check_equal_gmean(a, desired)
 
@@ -91,7 +92,8 @@ class TestGeoMean:
         with np.errstate(invalid='ignore'):
             check_equal_gmean(a, desired)
 
-    @pytest.mark.skipif(not hasattr(np, 'float96'), reason='cannot find float96 so skipping')
+    @pytest.mark.skipif(not hasattr(np, 'float96'),
+                        reason='cannot find float96 so skipping')
     def test_1d_float96(self):
         a = ma.array([1, 2, 3, 4], mask=[0, 0, 0, 1])
         desired_dt = np.power(1*2*3, 1./3.).astype(np.float96)
@@ -129,7 +131,8 @@ class TestHarMean:
         desired = 31.8137186141
         check_equal_hmean(a, desired)
 
-    @pytest.mark.skipif(not hasattr(np, 'float96'), reason='cannot find float96 so skipping')
+    @pytest.mark.skipif(not hasattr(np, 'float96'),
+                        reason='cannot find float96 so skipping')
     def test_1d_float96(self):
         a = ma.array([1, 2, 3, 4], mask=[0, 0, 0, 1])
         desired_dt = np.asarray(3. / (1./1 + 1./2 + 1./3), dtype=np.float96)
@@ -1258,7 +1261,8 @@ class TestTtest_rel:
                                   mask=[[1, 1, 1], [0, 0, 0]])
         with suppress_warnings() as sup:
             sup.filter(RuntimeWarning, "invalid value encountered in absolute")
-            for pair in [(outcome[:, 0], outcome[:, 1]), ([np.nan, np.nan], [1.0, 2.0])]:
+            for pair in [(outcome[:, 0], outcome[:, 1]),
+                         ([np.nan, np.nan], [1.0, 2.0])]:
                 t, p = mstats.ttest_rel(*pair)
                 assert_array_equal(t, (np.nan, np.nan))
                 assert_array_equal(p, (np.nan, np.nan))
@@ -1356,7 +1360,8 @@ class TestTtest_ind:
         outcome = ma.masked_array(np.random.randn(3, 2), mask=[[1, 1, 1], [0, 0, 0]])
         with suppress_warnings() as sup:
             sup.filter(RuntimeWarning, "invalid value encountered in absolute")
-            for pair in [(outcome[:, 0], outcome[:, 1]), ([np.nan, np.nan], [1.0, 2.0])]:
+            for pair in [(outcome[:, 0], outcome[:, 1]),
+                         ([np.nan, np.nan], [1.0, 2.0])]:
                 t, p = mstats.ttest_ind(*pair)
                 assert_array_equal(t, (np.nan, np.nan))
                 assert_array_equal(p, (np.nan, np.nan))
@@ -1525,8 +1530,8 @@ class TestCompareWithStats:
     b) numerical inaccuracies
     c) different definitions of routine interfaces
 
-    These failures need to be checked. Current workaround is to have disabled these tests,
-    but issuing reports on scipy-dev
+    These failures need to be checked. Current workaround is to have disabled these
+    tests, but issuing reports on scipy-dev
 
     """
     def get_n(self):
@@ -1867,23 +1872,31 @@ class TestCompareWithStats:
                 for alternative in ['less', 'greater', 'two-sided']:
                     for n in self.get_n():
                         x, y, xm, ym = self.generate_xy_sample(n)
-                        res1 = stats.ks_1samp(x, stats.norm.cdf, alternative=alternative, mode=mode)
-                        res2 = stats.mstats.ks_1samp(xm, stats.norm.cdf, alternative=alternative, mode=mode)
+                        res1 = stats.ks_1samp(x, stats.norm.cdf,
+                                              alternative=alternative, mode=mode)
+                        res2 = stats.mstats.ks_1samp(xm, stats.norm.cdf,
+                                                     alternative=alternative, mode=mode)
                         assert_equal(np.asarray(res1), np.asarray(res2))
-                        res3 = stats.ks_1samp(xm, stats.norm.cdf, alternative=alternative, mode=mode)
+                        res3 = stats.ks_1samp(xm, stats.norm.cdf,
+                                              alternative=alternative, mode=mode)
                         assert_equal(np.asarray(res1), np.asarray(res3))
 
     def test_kstest_1samp(self):
-        """Checks that 1-sample mstats.kstest and stats.kstest agree on masked arrays."""
+        """
+        Checks that 1-sample mstats.kstest and stats.kstest agree on masked arrays.
+        """
         for mode in ['auto', 'exact', 'asymp']:
             with suppress_warnings():
                 for alternative in ['less', 'greater', 'two-sided']:
                     for n in self.get_n():
                         x, y, xm, ym = self.generate_xy_sample(n)
-                        res1 = stats.kstest(x, 'norm', alternative=alternative, mode=mode)
-                        res2 = stats.mstats.kstest(xm, 'norm', alternative=alternative, mode=mode)
+                        res1 = stats.kstest(x, 'norm',
+                                            alternative=alternative, mode=mode)
+                        res2 = stats.mstats.kstest(xm, 'norm',
+                                                   alternative=alternative, mode=mode)
                         assert_equal(np.asarray(res1), np.asarray(res2))
-                        res3 = stats.kstest(xm, 'norm', alternative=alternative, mode=mode)
+                        res3 = stats.kstest(xm, 'norm',
+                                            alternative=alternative, mode=mode)
                         assert_equal(np.asarray(res1), np.asarray(res3))
 
     def test_ks_2samp(self):
@@ -1897,14 +1910,19 @@ class TestCompareWithStats:
                 for alternative in ['less', 'greater', 'two-sided']:
                     for n in self.get_n():
                         x, y, xm, ym = self.generate_xy_sample(n)
-                        res1 = stats.ks_2samp(x, y, alternative=alternative, mode=mode)
-                        res2 = stats.mstats.ks_2samp(xm, ym, alternative=alternative, mode=mode)
+                        res1 = stats.ks_2samp(x, y,
+                                              alternative=alternative, mode=mode)
+                        res2 = stats.mstats.ks_2samp(xm, ym,
+                                                     alternative=alternative, mode=mode)
                         assert_equal(np.asarray(res1), np.asarray(res2))
-                        res3 = stats.ks_2samp(xm, y, alternative=alternative, mode=mode)
+                        res3 = stats.ks_2samp(xm, y,
+                                              alternative=alternative, mode=mode)
                         assert_equal(np.asarray(res1), np.asarray(res3))
 
     def test_kstest_2samp(self):
-        """Checks that 2-sample mstats.kstest and stats.kstest agree on masked arrays."""
+        """
+        Checks that 2-sample mstats.kstest and stats.kstest agree on masked arrays.
+        """
         for mode in ['auto', 'exact', 'asymp']:
             with suppress_warnings() as sup:
                 if mode in ['auto', 'exact']:
@@ -1913,10 +1931,13 @@ class TestCompareWithStats:
                 for alternative in ['less', 'greater', 'two-sided']:
                     for n in self.get_n():
                         x, y, xm, ym = self.generate_xy_sample(n)
-                        res1 = stats.kstest(x, y, alternative=alternative, mode=mode)
-                        res2 = stats.mstats.kstest(xm, ym, alternative=alternative, mode=mode)
+                        res1 = stats.kstest(x, y,
+                                            alternative=alternative, mode=mode)
+                        res2 = stats.mstats.kstest(xm, ym,
+                                                   alternative=alternative, mode=mode)
                         assert_equal(np.asarray(res1), np.asarray(res2))
-                        res3 = stats.kstest(xm, y, alternative=alternative, mode=mode)
+                        res3 = stats.kstest(xm, y,
+                                            alternative=alternative, mode=mode)
                         assert_equal(np.asarray(res1), np.asarray(res3))
 
 

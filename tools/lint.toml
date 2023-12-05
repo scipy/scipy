@@ -20,7 +20,7 @@ target-version = "py39"
 "scipy/stats/distributions.py" = ["F403", "F405"]
 "scipy/stats/mstats.py" = ["F403", "F401"]
 "scipy/stats/qmc.py" = ["F403"]
-"scipy/stats/tests/data/_mvt.py" = ["E701", "E702"]
+"scipy/stats/tests/data/_mvt.py" = ["E501", "E701", "E702"]
 # E501 (line length) ignores
 "benchmarks/benchmarks/**" = ["E501"]
 "scipy/constants/_codata.py" = ["E501"]
@@ -29,7 +29,6 @@ target-version = "py39"
 "scipy/optimize/**" = ["E501"]
 "scipy/spatial/transform/_rotation.pyi" = ["E501"]
 "scipy/special/**" = ["E501"]
-"scipy/stats/**" = ["E501"]
 "tools/**" = ["E501"]
 
 [mccabe]

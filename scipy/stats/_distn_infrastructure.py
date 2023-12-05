@@ -79,7 +79,7 @@ logcdf(x, %(shapes)s, loc=0, scale=1)
 _doc_sf = """\
 sf(x, %(shapes)s, loc=0, scale=1)
     Survival function  (also defined as ``1 - cdf``, but `sf` is sometimes more accurate).
-"""
+"""  # noqa: E501
 _doc_logsf = """\
 logsf(x, %(shapes)s, loc=0, scale=1)
     Log of the survival function.
@@ -109,11 +109,11 @@ fit(data)
     Parameter estimates for generic data.
     See `scipy.stats.rv_continuous.fit <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.rv_continuous.fit.html#scipy.stats.rv_continuous.fit>`__ for detailed documentation of the
     keyword arguments.
-"""
+"""  # noqa: E501
 _doc_expect = """\
 expect(func, args=(%(shapes_)s), loc=0, scale=1, lb=None, ub=None, conditional=False, **kwds)
     Expected value of a function (of one argument) with respect to the distribution.
-"""
+"""  # noqa: E501
 _doc_expect_discrete = """\
 expect(func, args=(%(shapes_)s), loc=0, lb=None, ub=None, conditional=False)
     Expected value of a function (of one argument) with respect to the distribution.
