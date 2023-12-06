@@ -561,34 +561,41 @@ class TestCumulativeSimpson:
     x0 = np.arange(4)
     y0 = x0**2
 
-    @pytest.mark.parametrize(
-        ("y_func", "x", "dx", "initial", "int_y_func"),
-        [
-            (lambda y: y, None, 1.0, 0, lambda y: y**2 / 2),
-            (lambda y: y, None, 0.5, 5, lambda y: y**2 / 2 + 5),
-            (lambda y: y, np.linspace(0, 4, 17), 1.0, None, lambda y: y**2 / 2),
-            (lambda y: y**2, None, 0, None, lambda y: 0 * y),
-        ],
-    )
-    def test_simpson_1d(self, y_func, x, dx, initial, int_y_func):
-        input_x = x
-        if x is None:
-            x = dx * np.arange(17)
-        y = y_func(x)
-        int_y = int_y_func(x)
-        if initial is None:
-            int_y = int_y[1:]
+    @pytest.mark.parametrize('use_dx', (False, True))
+    @pytest.mark.parametrize('use_initial', (False, True))
+    def test_1d(self, use_dx, use_initial):
+        # Test for exact agreement with polynomial of highest
+        # possible order (3 if `dx` is constant, 2 otherwise).
+        rng = np.random.default_rng(82456839535679456794)
+        n = 10
 
-        assert_equal(
-            cumulative_simpson(y, x=input_x, dx=dx, initial=initial),
-            int_y,
-        )
+        # Generate random polynomials and ground truth
+        # integral of appropriate order
+        order = 3 if use_dx else 2
+        dx = rng.random()
+        x = (np.sort(rng.random(n)) if order == 2
+             else np.arange(n)*dx + rng.random())
+        i = np.arange(order + 1)[:, np.newaxis]
+        c = rng.random(order + 1)[:, np.newaxis]
+        y = np.sum(c*x**i, axis=0)
+        Y = np.sum(c*x**(i + 1)/(i + 1), axis=0)
+
+        # Integrate with `cumulative_simpson`
+        initial = Y[0] if use_initial else None
+        kwarg = {'dx': dx} if use_dx else {'x': x}
+        res = cumulative_simpson(y, **kwarg, initial=initial)
+
+        # Compare result against reference
+        res = res[::2] if use_initial else res[1::2]
+        ref = Y[::2] if use_initial else Y[2::2] - Y[0]
+        assert_allclose(res, ref)
 
     @pytest.mark.parametrize('axis', np.arange(-3, 3))
     @pytest.mark.parametrize('x_ndim', (1, 3))
     @pytest.mark.parametrize('i_ndim', (None, 0, 3,))
     @pytest.mark.parametrize('dx', (None, True))
     def test_nd(self, axis, x_ndim, i_ndim, dx):
+        # Test behavior of `cumulative_simpson` with N-D `y`
         rng = np.random.default_rng(82456839535679456794)
 
         # determine shapes
@@ -626,6 +633,18 @@ class TestCumulativeSimpson:
         kwargs0 = dict(y=self.y0, x=self.x0, dx=None, initial=None, axis=-1)
         with pytest.raises(ValueError, match=message):
             cumulative_simpson(**dict(kwargs0, **kwarg_update))
+
+    def test_special_cases(self):
+        # Test special cases not checked elsewhere
+        rng = np.random.default_rng(82456839535679456794)
+        y = rng.random(size=10)
+        res = cumulative_simpson(y, dx=0)
+        assert_equal(res, 0)
+
+        # Should add tests of:
+        # - all elements of `x` identical
+        # - y of size 1 and 2
+        # These should work as they do for `simpson`
 
     def _get_theoretical_diff_between_simps_and_cum_simps(self, y, x):
         """`cumulative_simpson` and `simpson` can be tested against other to verify
