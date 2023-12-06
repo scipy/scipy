@@ -579,6 +579,7 @@ class TestCumulativeSimpson:
         c = rng.random(order + 1)[:, np.newaxis]
         y = np.sum(c*x**i, axis=0)
         Y = np.sum(c*x**(i + 1)/(i + 1), axis=0)
+        ref = Y if use_initial else (Y-Y[0])[1:]
 
         # Integrate with `cumulative_simpson`
         initial = Y[0] if use_initial else None
@@ -586,9 +587,14 @@ class TestCumulativeSimpson:
         res = cumulative_simpson(y, **kwarg, initial=initial)
 
         # Compare result against reference
-        res = res[::2] if use_initial else res[1::2]
-        ref = Y[::2] if use_initial else Y[2::2] - Y[0]
-        assert_allclose(res, ref)
+        if not use_dx:
+            assert_allclose(res, ref, rtol=2e-15)
+        else:
+            i0 = 0 if use_initial else 1
+            # all terms are "close"
+            assert_allclose(res, ref, rtol=0.0025)
+            # only even-interval terms are "exact"
+            assert_allclose(res[i0::2], ref[i0::2], rtol=2e-15)
 
     @pytest.mark.parametrize('axis', np.arange(-3, 3))
     @pytest.mark.parametrize('x_ndim', (1, 3))
