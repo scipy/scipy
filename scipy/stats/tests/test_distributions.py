@@ -490,7 +490,7 @@ class TestChi:
     # reference value for 1e14 was computed via mpmath
     # from mpmath import mp
     # mp.dps = 500
-    # df = mp.mpf(1e20)
+    # df = mp.mpf(1e14)
     # float(mp.rf(mp.mpf(0.5) * df, mp.mpf(0.5)) * mp.sqrt(2.))
 
     @pytest.mark.parametrize('df, ref',
