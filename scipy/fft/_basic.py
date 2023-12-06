@@ -157,7 +157,8 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     >>> sp = fftshift(fft(np.sin(t)))
     >>> freq = fftshift(fftfreq(t.shape[-1]))
     >>> plt.plot(freq, sp.real, freq, sp.imag)
-    [<matplotlib.lines.Line2D object at 0x...>, <matplotlib.lines.Line2D object at 0x...>]
+    [<matplotlib.lines.Line2D object at 0x...>,
+     <matplotlib.lines.Line2D object at 0x...>]
     >>> plt.show()
 
     """

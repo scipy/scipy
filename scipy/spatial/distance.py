@@ -105,7 +105,7 @@ __all__ = [
 ]
 
 
-import os
+import math
 import warnings
 import numpy as np
 import dataclasses
@@ -121,24 +121,6 @@ from ..linalg import norm
 from ..special import rel_entr
 
 from . import _distance_pybind
-
-
-def _extra_windows_error_checks(x, out, required_shape, **kwargs):
-    # TODO: remove this function when distutils
-    # build system is removed because pybind11 error
-    # handling should suffice per gh-18108
-    if os.name == "nt" and out is not None:
-        if out.shape != required_shape:
-            raise ValueError("Output array has incorrect shape.")
-        if not out.flags["C_CONTIGUOUS"]:
-            raise ValueError("Output array must be C-contiguous.")
-        if not np.can_cast(x.dtype, out.dtype):
-            raise ValueError("Wrong out dtype.")
-    if os.name == "nt" and "w" in kwargs:
-        w = kwargs["w"]
-        if w is not None:
-            if (w < 0).sum() > 0:
-                raise ValueError("Input weights should be all non-negative")
 
 
 def _copy_array_if_base_present(a):
@@ -642,17 +624,27 @@ def correlation(u, v, w=None, centered=True):
     v = _validate_vector(v)
     if w is not None:
         w = _validate_weights(w)
+        w /= w.sum()
     if centered:
-        umu = np.average(u, weights=w)
-        vmu = np.average(v, weights=w)
+        if w is not None:
+            umu = np.dot(u, w)
+            vmu = np.dot(v, w)
+        else:
+            umu = np.mean(u)
+            vmu = np.mean(v)
         u = u - umu
         v = v - vmu
-    uv = np.average(u * v, weights=w)
-    uu = np.average(np.square(u), weights=w)
-    vv = np.average(np.square(v), weights=w)
-    dist = 1.0 - uv / np.sqrt(uu * vv)
+    if w is not None:
+        vw = v * w
+        uw = u * w
+    else:
+        vw, uw = v, u
+    uv = np.dot(u, vw)
+    uu = np.dot(u, uw)
+    vv = np.dot(v, vw)
+    dist = 1.0 - uv / math.sqrt(uu * vv)
     # Return absolute value to avoid small negative value due to rounding
-    return np.abs(dist)
+    return abs(dist)
 
 
 def cosine(u, v, w=None):
@@ -754,7 +746,9 @@ def hamming(u, v, w=None):
         w = _validate_weights(w)
         if w.shape != u.shape:
             raise ValueError("'w' should have the same length as 'u' and 'v'.")
-    return np.average(u_ne_v, weights=w)
+        w /= w.sum()
+        return np.dot(u_ne_v, w)
+    return np.mean(u_ne_v)
 
 
 def jaccard(u, v, w=None):
@@ -2233,7 +2227,6 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
 
         if metric_info is not None:
             pdist_fn = metric_info.pdist_func
-            _extra_windows_error_checks(X, out, (m * (m - 1) / 2,), **kwargs)
             return pdist_fn(X, out=out, **kwargs)
         elif mstr.startswith("test_"):
             metric_info = _TEST_METRICS.get(mstr, None)
@@ -2499,21 +2492,18 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
         else:
             if not (D - D.T <= tol).all():
                 if name:
-                    raise ValueError(('Distance matrix \'%s\' must be '
-                                      'symmetric within tolerance %5.5f.')
-                                     % (name, tol))
+                    raise ValueError(f'Distance matrix \'{name}\' must be '
+                                     f'symmetric within tolerance {tol:5.5f}.')
                 else:
-                    raise ValueError('Distance matrix must be symmetric within'
-                                     ' tolerance %5.5f.' % tol)
+                    raise ValueError('Distance matrix must be symmetric within '
+                                     'tolerance %5.5f.' % tol)
             if not (D[range(0, s[0]), range(0, s[0])] <= tol).all():
                 if name:
-                    raise ValueError(('Distance matrix \'%s\' diagonal must be'
-                                      ' close to zero within tolerance %5.5f.')
-                                     % (name, tol))
+                    raise ValueError(f'Distance matrix \'{name}\' diagonal must be '
+                                     f'close to zero within tolerance {tol:5.5f}.')
                 else:
-                    raise ValueError(('Distance matrix \'%s\' diagonal must be'
-                                      ' close to zero within tolerance %5.5f.')
-                                     % tol)
+                    raise ValueError(('Distance matrix \'{}\' diagonal must be close '
+                                      'to zero within tolerance {:5.5f}.').format(*tol))
     except Exception as e:
         if throw:
             raise
@@ -3037,7 +3027,6 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
         metric_info = _METRIC_ALIAS.get(mstr, None)
         if metric_info is not None:
             cdist_fn = metric_info.cdist_func
-            _extra_windows_error_checks(XA, out, (mA, mB), **kwargs)
             return cdist_fn(XA, XB, out=out, **kwargs)
         elif mstr.startswith("test_"):
             metric_info = _TEST_METRICS.get(mstr, None)

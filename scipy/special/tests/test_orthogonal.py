@@ -278,7 +278,7 @@ def verify_gauss_quad(root_func, eval_func, weight_func, a, b, N,
     # this test is copied from numpy's TestGauss in test_hermite.py
     x, w, mu = root_func(N, True)
 
-    n = np.arange(N)
+    n = np.arange(N, dtype=np.dtype("long"))
     v = eval_func(n[:,np.newaxis], x)
     vv = np.dot(v*w, v.T)
     vd = 1 / np.sqrt(vv.diagonal())

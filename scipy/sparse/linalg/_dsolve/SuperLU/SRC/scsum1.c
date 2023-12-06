@@ -53,7 +53,6 @@ at the top-level directory.
 double scsum1_slu(int *n, singlecomplex *cx, int *incx)
 {
     /* System generated locals */
-    int i__1, i__2;
     float ret_val;
     /* Builtin functions */
     double c_abs(singlecomplex *);
@@ -77,8 +76,6 @@ double scsum1_slu(int *n, singlecomplex *cx, int *incx)
 /*     CODE FOR INCREMENT NOT EQUAL TO 1 */
 
     nincx = *n * *incx;
-    i__1 = nincx;
-    i__2 = *incx;
     for (i = 1; *incx < 0 ? i >= nincx : i <= nincx; i += *incx) {
 
 /*        NEXT LINE MODIFIED. */
@@ -92,7 +89,6 @@ double scsum1_slu(int *n, singlecomplex *cx, int *incx)
 /*     CODE FOR INCREMENT EQUAL TO 1 */
 
 L20:
-    i__2 = *n;
     for (i = 1; i <= *n; ++i) {
 
 /*        NEXT LINE MODIFIED. */

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import numpy as np
 from numpy import (abs, asarray, cos, exp, floor, pi, sign, sin, sqrt, sum,
                    size, tril, isnan, atleast_2d, repeat)
@@ -214,7 +213,7 @@ class Cola(Benchmark):
         yj = repeat(yi, size(yi, 1), axis=0)
         yi = yi.T
 
-        inner = (sqrt(((xi - xj) ** 2 + (yi - yj) ** 2)) - self.d) ** 2
+        inner = (sqrt((xi - xj) ** 2 + (yi - yj) ** 2) - self.d) ** 2
         inner = tril(inner, -1)
         return sum(sum(inner, axis=1))
 

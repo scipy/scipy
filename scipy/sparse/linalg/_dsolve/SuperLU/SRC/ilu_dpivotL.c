@@ -79,7 +79,7 @@ ilu_dpivotL(
     int		 fsupc;  /* first column in the supernode */
     int		 nsupc;  /* no of columns in the supernode */
     int		 nsupr;  /* no of rows in the supernode */
-    int		 lptr;	 /* points to the starting subscript of the supernode */
+    int_t	 lptr;	 /* points to the starting subscript of the supernode */
     register int	 pivptr;
     int		 old_pivptr, diag, ptr0;
     register double  pivmax, rtemp;
@@ -87,11 +87,11 @@ ilu_dpivotL(
     double	 temp;
     double	 *lu_sup_ptr;
     double	 *lu_col_ptr;
-    int		 *lsub_ptr;
+    int_t	 *lsub_ptr;
     register int	 isub, icol, k, itemp;
-    int		 *lsub, *xlsub;
+    int_t	 *lsub, *xlsub;
     double	 *lusup;
-    int		 *xlusup;
+    int_t	 *xlusup;
     flops_t	 *ops = stat->ops;
     int		 info;
 

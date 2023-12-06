@@ -601,9 +601,8 @@ class FitDataError(ValueError):
     def __init__(self, distr, lower, upper):
         self.args = (
             "Invalid values in `data`.  Maximum likelihood "
-            "estimation with {distr!r} requires that {lower!r} < "
-            "(x - loc)/scale  < {upper!r} for each x in `data`.".format(
-                distr=distr, lower=lower, upper=upper),
+            f"estimation with {distr!r} requires that {lower!r} < "
+            f"(x - loc)/scale  < {upper!r} for each x in `data`.",
         )
 
 
@@ -3491,10 +3490,9 @@ class erlang_gen(gamma_gen):
         if not allint:
             # An Erlang distribution shouldn't really have a non-integer
             # shape parameter, so warn the user.
-            warnings.warn(
-                'The shape parameter of the erlang distribution '
-                'has been given a non-integer value {!r}.'.format(a),
-                RuntimeWarning)
+            message = ('The shape parameter of the erlang distribution '
+                       f'has been given a non-integer value {a!r}.')
+            warnings.warn(message, RuntimeWarning)
         return a > 0
 
     def _shape_info(self):
@@ -5056,8 +5054,8 @@ class geninvgauss_gen(rv_continuous):
 
                 if (simulated == 0) and (i*N >= 50000):
                     msg = ("Not a single random variate could be generated "
-                           "in {} attempts. Sampling does not appear to "
-                           "work for the provided parameters.".format(i*N))
+                           f"in {i*N} attempts. Sampling does not appear to "
+                           "work for the provided parameters.")
                     raise RuntimeError(msg)
                 i += 1
         else:
@@ -5210,9 +5208,9 @@ class norminvgauss_gen(rv_continuous):
 
     def _pdf(self, x, a, b):
         gamma = np.sqrt(a**2 - b**2)
-        fac1 = a / np.pi * np.exp(gamma)
+        fac1 = a / np.pi
         sq = np.hypot(1, x)  # reduce overflows
-        return fac1 * sc.k1e(a * sq) * np.exp(b*x - a*sq) / sq
+        return fac1 * sc.k1e(a * sq) * np.exp(b*x - a*sq + gamma) / sq
 
     def _sf(self, x, a, b):
         if np.isscalar(x):
@@ -7252,7 +7250,7 @@ class nakagami_gen(rv_continuous):
         return np.sqrt(1/nu * sc.gammainccinv(nu, p))
 
     def _stats(self, nu):
-        mu = sc.gamma(nu+0.5)/sc.gamma(nu)/np.sqrt(nu)
+        mu = sc.poch(nu, 0.5)/np.sqrt(nu)
         mu2 = 1.0-mu*mu
         g1 = mu * (1 - 4*nu*mu2) / 2.0 / nu / np.power(mu2, 1.5)
         g2 = -6*mu**4*nu + (8*nu-2)*mu**2-2*nu + 1
@@ -9227,6 +9225,8 @@ class skewnorm_gen(rv_continuous):
         shape parameter ``a`` will be infinite.
         \n\n""")
     def fit(self, data, *args, **kwds):
+        if kwds.pop("superfit", False):
+            return super().fit(data, *args, **kwds)
         if isinstance(data, CensoredData):
             if data.num_censored() == 0:
                 data = data._uncensor()
@@ -9250,13 +9250,6 @@ class skewnorm_gen(rv_continuous):
                 np.pi/2 * s_23 / (s_23 + ((4 - np.pi)/2)**(2/3))
             )
 
-        # If skewness of data is greater than max possible population skewness,
-        # MoM won't provide a good guess. Get out early.
-        s = stats.skew(data)
-        s_max = skew_d(1)
-        if abs(s) >= s_max and method != "mm" and fa is None and not args:
-            return super().fit(data, *args, **kwds)
-
         # If method is method of moments, we don't need the user's guesses.
         # Otherwise, extract the guesses from args and kwds.
         if method == "mm":
@@ -9269,7 +9262,14 @@ class skewnorm_gen(rv_continuous):
         if fa is None and a is None:  # not fixed and no guess: use MoM
             # Solve for a that matches sample distribution skewness to sample
             # skewness.
-            s = np.clip(s, -s_max, s_max)
+            s = stats.skew(data)
+            if method == 'mle':
+                # For MLE initial conditions, clip skewness to a large but
+                # reasonable value in case the data skewness is out-of-range.
+                s = np.clip(s, -0.99, 0.99)
+            else:
+                s_max = skew_d(1)
+                s = np.clip(s, -s_max, s_max)
             d = d_skew(s)
             with np.errstate(divide='ignore'):
                 a = np.sqrt(np.divide(d**2, (1-d**2)))*np.sign(s)

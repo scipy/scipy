@@ -20,8 +20,8 @@ IMPRECISE = {np.single, np.csingle}
 REAL_DTYPES = {np.intc, np_long, np.longlong,
                np.float32, np.float64, np.longdouble}
 COMPLEX_DTYPES = {np.complex64, np.complex128, np.clongdouble}
-# use sorted tuple to ensure fixed order of tests
-DTYPES = tuple(sorted(REAL_DTYPES ^ COMPLEX_DTYPES, key=str))
+# use sorted list to ensure fixed order of tests
+DTYPES = sorted(REAL_DTYPES ^ COMPLEX_DTYPES, key=str)
 
 
 def estimated(func):

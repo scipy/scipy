@@ -282,7 +282,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     qawce             'cauchy'        No          No
     ================  ==============  ==========  =====================
 
-    The following provides a short desciption from [1]_ for each
+    The following provides a short description from [1]_ for each
     routine.
 
     qagse
@@ -348,7 +348,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         \\int_a^b f(x) dx = \\int_a^b g(x) dx + i\\int_a^b h(x) dx
 
     assuming that the integrals of :math:`g` and :math:`h` exist
-    over the inteval :math:`[a,b]` [2]_. Therefore, ``quad`` integrates
+    over the interval :math:`[a,b]` [2]_. Therefore, ``quad`` integrates
     complex-valued functions by integrating the real and imaginary components
     separately.
 
@@ -519,7 +519,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
                 msg = ("If 'epsabs'<=0, 'epsrel' must be greater than both"
                        " 5e-29 and 50*(machine epsilon).")
             elif weight in ['sin', 'cos'] and (abs(a) + abs(b) == np.inf):
-                msg = ("Sine or cosine weighted intergals with infinite domain"
+                msg = ("Sine or cosine weighted integrals with infinite domain"
                        " must have 'epsabs'>0.")
 
         elif weight is None:
@@ -531,9 +531,8 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
                     msg = ("All break points in 'points' must lie within the"
                            " integration limits.")
                 elif len(points) >= limit:
-                    msg = ("Number of break points ({:d})"
-                           " must be less than subinterval"
-                           " limit ({:d})").format(len(points), limit)
+                    msg = (f"Number of break points ({len(points):d}) "
+                           f"must be less than subinterval limit ({limit:d})")
 
         else:
             if maxp1 < 1:
@@ -1031,7 +1030,7 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
     qawce             'cauchy'        No          No
     ================  ==============  ==========  =====================
 
-    The following provides a short desciption from [1]_ for each
+    The following provides a short description from [1]_ for each
     routine.
 
     qagse

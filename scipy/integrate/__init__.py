@@ -33,6 +33,7 @@ Integrating functions, given fixed samples
    trapezoid            -- Use trapezoidal rule to compute integral.
    cumulative_trapezoid -- Use trapezoidal rule to cumulatively compute integral.
    simpson              -- Use Simpson's rule to compute integral from samples.
+   cumulative_simpson   -- Use Simpson's rule to cumulatively compute integral from samples.
    romb                 -- Use Romberg Integration to compute integral from
                         -- (2**k + 1) evenly-spaced samples.
 
@@ -87,7 +88,7 @@ Solving boundary value problems for ODE systems
    :toctree: generated/
 
    solve_bvp     -- Solve a boundary value problem for a system of ODEs.
-"""  # noqa: E501
+"""
 
 
 from ._quadrature import *

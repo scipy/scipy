@@ -146,8 +146,7 @@ def deprecate_cython_api(module, routine_name, new_name=None, message=None):
     if new_name is None:
         depdoc = "`%s` is deprecated!" % old_name
     else:
-        depdoc = "`%s` is deprecated, use `%s` instead!" % \
-                 (old_name, new_name)
+        depdoc = f"`{old_name}` is deprecated, use `{new_name}` instead!"
 
     if message is not None:
         depdoc += "\n" + message

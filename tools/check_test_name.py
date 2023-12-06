@@ -32,7 +32,7 @@ import ast
 import os
 from pathlib import Path
 import sys
-from typing import Iterator, Sequence
+from collections.abc import Iterator, Sequence
 import itertools
 
 PRAGMA = "# skip name check"
