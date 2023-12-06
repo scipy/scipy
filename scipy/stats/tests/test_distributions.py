@@ -487,9 +487,18 @@ class TestChi:
         x = stats.chi.isf(self.CHI_SF_10_4, 4)
         assert_allclose(x, 10, rtol=1e-15)
 
-    def test_mean(self):
-        x = stats.chi.mean(df=1000)
-        assert_allclose(x, self.CHI_MEAN_1000, rtol=1e-12)
+    # reference value for 1e14 was computed via mpmath
+    # from mpmath import mp
+    # mp.dps = 500
+    # df = mp.mpf(1e20)
+    # float(mp.rf(mp.mpf(0.5) * df, mp.mpf(0.5)) * mp.sqrt(2.))
+
+    @pytest.mark.parametrize('df, ref',
+                             [(1e3, CHI_MEAN_1000),
+                              (1e14, 9999999.999999976)]
+                            ) 
+    def test_mean(self, df, ref):
+        assert_allclose(stats.chi.mean(df), ref, rtol=1e-12)
 
     # Entropy references values were computed with the following mpmath code
     # from mpmath import mp
