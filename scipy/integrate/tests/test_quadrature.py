@@ -528,193 +528,103 @@ class TestQMCQuad:
         assert_allclose(res.integral, ref, 1e-2)
 
 
+def cumulative_simpson_nd_reference(y, *, x=None, dx=None, initial=None, axis=-1):
+    # Ensure that working axis is last axis
+    y = np.moveaxis(y, axis, -1)
+    x = np.moveaxis(x, axis, -1) if np.ndim(x) > 1 else x
+    dx = np.moveaxis(dx, axis, -1) if np.ndim(dx) > 1 else dx
+    initial = np.moveaxis(initial, axis, -1) if np.ndim(initial) > 1 else initial
+
+    # If `x` is not present, create it from `dx`
+    n = y.shape[-1]
+    x = dx * np.arange(n) if dx is not None else x
+    # Similarly, if `initial` is not present, set it to 0
+    initial_was_none = initial is None
+    initial = 0 if initial_was_none else initial
+
+    # `np.apply_along_axis` accepts only one array, so concatenate arguments
+    x = np.broadcast_to(x, y.shape)
+    initial = np.broadcast_to(initial, y.shape[:-1] + (1,))
+    z = np.concatenate((y, x, initial), axis=-1)
+
+    # Use `np.apply_along_axis` to compute result
+    def f(z):
+        return cumulative_simpson(z[:n], x=z[n:2*n], initial=z[2*n:])
+    res = np.apply_along_axis(f, -1, z)
+
+    # Remove `initial` and undo axis move as needed
+    res = res[..., 1:] if initial_was_none else res
+    res = np.moveaxis(res, -1, axis)
+    return res
+
+
 class TestCumulativeSimpson:
     x0 = np.arange(4)
     y0 = x0**2
-    
-    @pytest.mark.parametrize(
-        ("y_func", "x", "dx", "initial", "int_y_func"),
-        [
-            (lambda y: y, None, 1.0, 0, lambda y: y**2 / 2),
-            (lambda y: y, None, 0.5, 5, lambda y: y**2 / 2 + 5),
-            (lambda y: y, np.linspace(0, 4, 17), 1.0, None, lambda y: y**2 / 2),
-            (lambda y: y**2, None, 0, None, lambda y: 0 * y),
-        ],
-    )
-    def test_simpson_1d(self, y_func, x, dx, initial, int_y_func):
-        input_x = x
-        if x is None:
-            x = dx * np.arange(17)
-        y = y_func(x)
-        int_y = int_y_func(x)
-        if initial is None:
-            int_y = int_y[1:]
 
-        assert_equal(
-            cumulative_simpson(y, x=input_x, dx=dx, initial=initial),
-            int_y,
-        )
+    @pytest.mark.parametrize('use_dx', (False, True))
+    @pytest.mark.parametrize('use_initial', (False, True))
+    def test_1d(self, use_dx, use_initial):
+        # Test for exact agreement with polynomial of highest
+        # possible order (3 if `dx` is constant, 2 otherwise).
+        rng = np.random.default_rng(82456839535679456794)
+        n = 10
 
-    @pytest.mark.parametrize(
-        ("y_func", "x", "initial", "axis", "int_y_func"),
-        [
-            # Unit tests with inputs for x, dx is None
-            (
-                lambda y: y**2,
-                np.array([[-1, 2, 3, 4], [-1, 2, 4, 8], [-1, 2, 4, 8]]),
-                None,
-                -1,
-                lambda y: y**3 / 3 + 1 / 3,
-            ),
-            (
-                lambda y: y**2,
-                np.array([[0, 2, 3], [0, 2, 4], [0, 2, 4]]),
-                None,
-                -1,
-                lambda y: y**3 / 3,
-            ),
-            (
-                lambda y: y**2,
-                np.array([[1, 2, 3, 4], [1, 2, 4, 8], [1, 2, 4, 8]]),
-                1 / 3,
-                -1,
-                lambda y: y**3 / 3,
-            ),
-            (
-                lambda y: y**2,
-                np.array([[1, 2, 3, 4], [1, 2, 4, 8], [1, 2, 4, 8]]),
-                np.array([[1 / 3], [1 / 3], [1 / 3]]),
-                -1,
-                lambda y: y**3 / 3,
-            ),
-            (
-                lambda y: y**2,
-                np.array([[1, 1, 1, 1], [2, 2, 2, 2], [4, 4, 4, 8]]),
-                np.array([[1 / 3, 1 / 3, 1 / 3, 1 / 3]]),
-                0,
-                lambda y: y**3 / 3,
-            ),
-        ],
-    )
-    def test_simpson_multid(self, y_func, x, initial, axis, int_y_func):
-        y = y_func(x)
-        int_y = int_y_func(x)
-        if initial is None:
-            y_shape = [slice(None)] * y.ndim
-            y_shape[axis] = slice(1, None)
-            int_y = int_y[tuple(y_shape)]
+        # Generate random polynomials and ground truth
+        # integral of appropriate order
+        order = 3 if use_dx else 2
+        dx = rng.random()
+        x = (np.sort(rng.random(n)) if order == 2
+             else np.arange(n)*dx + rng.random())
+        i = np.arange(order + 1)[:, np.newaxis]
+        c = rng.random(order + 1)[:, np.newaxis]
+        y = np.sum(c*x**i, axis=0)
+        Y = np.sum(c*x**(i + 1)/(i + 1), axis=0)
+        ref = Y if use_initial else (Y-Y[0])[1:]
 
-        assert_allclose(
-            cumulative_simpson(y, x=x, axis=axis, initial=initial),
-            int_y,
-        )
+        # Integrate with `cumulative_simpson`
+        initial = Y[0] if use_initial else None
+        kwarg = {'dx': dx} if use_dx else {'x': x}
+        res = cumulative_simpson(y, **kwarg, initial=initial)
 
-    def test_simpson_multid_w_1d_x(self):
-        input_x = [0, 2, 3, 4]
-        x = np.array([input_x]*3)
-        y = x**2
-        int_y = x**3 / 3
-        assert_allclose(
-            cumulative_simpson(y, x=input_x, initial=0),
-            int_y,
-        )
+        # Compare result against reference
+        if not use_dx:
+            assert_allclose(res, ref, rtol=2e-15)
+        else:
+            i0 = 0 if use_initial else 1
+            # all terms are "close"
+            assert_allclose(res, ref, rtol=0.0025)
+            # only even-interval terms are "exact"
+            assert_allclose(res[i0::2], ref[i0::2], rtol=2e-15)
 
-    @pytest.mark.parametrize(
-        ("y", "dx", "initial", "axis", "int_y"),
-        [
-            (
-                # Default dx value
-                np.array([[1, 4, 9, 16], [1, 4, 9, 16], [1, 4, 9, 16]]),
-                None,
-                1 / 3,
-                None,
-                np.array(
-                    [
-                        [1 / 3, 8 / 3, 9.0, 64 / 3],
-                        [1 / 3, 8 / 3, 9.0, 64 / 3],
-                        [1 / 3, 8 / 3, 9.0, 64 / 3],
-                    ]
-                ),
-            ),
-            (
-                # Default dx and initial values
-                np.array([[1, 4, 9, 16], [1, 4, 9, 16], [1, 4, 9, 16]]),
-                None,
-                None,
-                None,
-                np.array(
-                    [
-                        [7 / 3, 26 / 3, 21.0],
-                        [7 / 3, 26 / 3, 21.0],
-                        [7 / 3, 26 / 3, 21.0],
-                    ]
-                ),
-            ),
-            (
-                # Multi dimensional input for initial
-                np.array([[1, 4, 9, 16], [1, 4, 9, 16], [1, 4, 9, 16]]),
-                None,
-                [[1 / 3], [2 / 3], [1.0]],
-                -1,
-                np.array(
-                    [
-                        [1 / 3, 8 / 3, 9.0, 64 / 3],
-                        [2 / 3, 3.0, 28 / 3, 65 / 3],
-                        [1.0, 10 / 3, 29 / 3, 22.0],
-                    ]
-                ),
-            ),
-            (
-                # Multi dimensional input for dx
-                np.array([[1, 4, 9, 16], [1, 4, 9, 16], [1, 4, 9, 16]]),
-                [[1.0], [2.0], [1.0]],
-                None,
-                None,
-                np.array(
-                    [
-                        [7 / 3, 26 / 3, 21.0],
-                        [14 / 3, 52 / 3, 42.0],
-                        [7 / 3, 26 / 3, 21.0],
-                    ]
-                ),
-            ),
-            (
-                # Multi dimensional values for initial and dx with non-default
-                # axis, and mixture of int and float inputs
-                np.array([[1, 4, 9, 16], [1, 4, 9, 16], [1, 4, 9, 16]]),
-                [[1.0, 2.0, 1.0, 5.0]],
-                [[0, 0, 0, 1]],
-                0,
-                np.array(
-                    [
-                        [0, 0, 0, 1],
-                        [1, 8, 9, 81],
-                        [2, 16, 18, 161],
-                    ]
-                ),
-            ),
-            (
-                # Test case with cubic y
-                np.array([[0, 1, 8]]),
-                1,
-                None,
-                None,
-                np.array([[0.0, 4.0]]),
-            ),
-        ],
-    )
-    def test_simpson_multi_dx(self, y, dx, initial, axis, int_y):
-        kwargs = {}
-        if dx is not None:
-            kwargs["dx"] = dx
-        if initial is not None:
-            kwargs["initial"] = initial
-        if axis is not None:
-            kwargs["axis"] = axis
-        assert_allclose(
-            cumulative_simpson(y, **kwargs),
-            int_y,
-        )
+    @pytest.mark.parametrize('axis', np.arange(-3, 3))
+    @pytest.mark.parametrize('x_ndim', (1, 3))
+    @pytest.mark.parametrize('i_ndim', (None, 0, 3,))
+    @pytest.mark.parametrize('dx', (None, True))
+    def test_nd(self, axis, x_ndim, i_ndim, dx):
+        # Test behavior of `cumulative_simpson` with N-D `y`
+        rng = np.random.default_rng(82456839535679456794)
+
+        # determine shapes
+        shape = [5, 6, 7]
+        shape_len_1 = shape.copy()
+        shape_len_1[axis] = 1
+        i_shape = shape_len_1 if i_ndim == 3 else ()
+
+        # initialize arguments
+        y = rng.random(size=shape)
+        x, dx = None, None
+        if dx:
+            dx = rng.random(size=shape_len_1) if x_ndim > 1 else rng.random()
+        else:
+            x = (np.sort(rng.random(size=shape), axis=axis) if x_ndim > 1
+                 else np.sort(rng.random(size=shape[axis])))
+        initial = None if i_ndim is None else rng.random(size=i_shape)
+
+        # compare results
+        res = cumulative_simpson(y, x=x, dx=dx, initial=initial, axis=axis)
+        ref = cumulative_simpson_nd_reference(y, x=x, dx=dx, initial=initial, axis=axis)
+        np.testing.assert_allclose(res, ref, rtol=1e-15)
 
     @pytest.mark.parametrize(('message', 'kwarg_update'), [
         ("x must be monotonically increasing", dict(x=[2, 2, 3, 4])),
@@ -730,6 +640,18 @@ class TestCumulativeSimpson:
         kwargs0 = dict(y=self.y0, x=self.x0, dx=None, initial=None, axis=-1)
         with pytest.raises(ValueError, match=message):
             cumulative_simpson(**dict(kwargs0, **kwarg_update))
+
+    def test_special_cases(self):
+        # Test special cases not checked elsewhere
+        rng = np.random.default_rng(82456839535679456794)
+        y = rng.random(size=10)
+        res = cumulative_simpson(y, dx=0)
+        assert_equal(res, 0)
+
+        # Should add tests of:
+        # - all elements of `x` identical
+        # - y of size 1 and 2
+        # These should work as they do for `simpson`
 
     def _get_theoretical_diff_between_simps_and_cum_simps(self, y, x):
         """`cumulative_simpson` and `simpson` can be tested against other to verify
