@@ -2080,27 +2080,74 @@ class TestBoxcoxNormmax:
         with pytest.raises(ValueError, match="`ymax` must be strictly positive"):
             stats.boxcox_normmax(self.x, ymax=-1)
 
-    @pytest.mark.parametrize('x', [
+    @pytest.mark.parametrize("x", [
         # Attempt to trigger overflow in power expressions.
         np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0,
-                  2009.0, 1980.0, 1999.0, 2007.0, 1991.0]),
+                  2009.0, 1980.0, 1999.0, 2007.0, 1991.0],
+                 dtype=np.float64),
         # Attempt to trigger overflow with a large optimal lambda.
-        np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0]),
+        np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0],
+                 dtype=np.float64),
         # Attempt to trigger overflow with large data.
-        np.array([2003.0e200, 1950.0e200, 1997.0e200, 2000.0e200, 2009.0e200])
+        np.array([2003.0e200, 1950.0e200, 1997.0e200, 2000.0e200, 2009.0e200],
+                 dtype=np.float64)
     ])
-    @pytest.mark.parametrize("ymax", [1e10, 1e30, 1e100])
+    @pytest.mark.parametrize("ymax", [1e10, 1e30, 1e100, None])
     # TODO: add method "pearsonr" after fix overflow issue
     @pytest.mark.parametrize("method", ["mle"])
-    def test_user_defined_ymax(self, x, ymax, method):
-        # Use ymax=None and assert that there is indeed an overflow.
-        # Then continue with the rest of this test.
+    def test_user_defined_ymax_input_float64(self, x, ymax, method):
+        # Test the maximum of the transformed data close to ymax
         with pytest.warns(UserWarning, match="The optimal lambda is"):
-            stats.boxcox_normmax(x, ymax=None, method=method)
-
             lmb = stats.boxcox_normmax(x, ymax=ymax, method=method)
-            ymax_res = np.max(stats.boxcox(x, lmb))
+            ymax_res = stats.boxcox(np.max(x), lmb)
+            if ymax is None:
+                ymax = np.finfo(x.dtype).max / 100
             assert_allclose(ymax, ymax_res, rtol=1e-1)
+
+    @pytest.mark.parametrize("x", [
+        np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0,
+                  2009.0, 1980.0, 1999.0, 2007.0, 1991.0],
+                 dtype=np.float32),
+        np.array([200.3, 195.0, 199.7, 200.0, 200.9,
+                  200.9, 198.0, 199.9, 200.7, 199.1],
+                 dtype=np.float32),
+        np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0],
+                 dtype=np.float32),
+        np.array([200.3, 195.0, 199.7, 200.0, 200.9],
+                 dtype=np.float32)
+    ])
+    @pytest.mark.parametrize("ymax", [1e8, 1e15, 1e30, None])
+    # TODO: add method "pearsonr" after fix overflow issue
+    @pytest.mark.parametrize("method", ["mle"])
+    def test_user_defined_ymax_input_float32(self, x, ymax, method):
+        # Test the maximum of the transformed data close to ymax
+        with pytest.warns(UserWarning, match="The optimal lambda is"):
+            lmb = stats.boxcox_normmax(x, ymax=ymax, method=method)
+            ymax_res = stats.boxcox(np.max(x), lmb)
+            if ymax is None:
+                ymax = np.finfo(x.dtype).max / 100
+            assert_allclose(ymax, ymax_res, rtol=1e-1)
+
+    @pytest.mark.parametrize("x", [
+        np.array([200.3, 195.0, 199.7, 200.0, 200.9,
+                  200.9, 198.0, 199.9, 200.7, 199.1]),
+        np.array([200.3, 195.0, 199.7, 200.0, 200.9])
+    ])
+    # TODO: add method "pearsonr" after fix overflow issue
+    @pytest.mark.parametrize("method", ["mle"])
+    def test_user_defined_ymax_inf(self, x, method):
+        x_32 = np.asarray(x, dtype=np.float32)
+        x_64 = np.asarray(x, dtype=np.float64)
+
+        # assert overflow with float32 but not float64
+        with pytest.warns(UserWarning, match="The optimal lambda is"):
+            stats.boxcox_normmax(x_32, method=method)
+        stats.boxcox_normmax(x_64, method=method)
+
+        # compute the true optimal lambda then compare them
+        lmb_32 = stats.boxcox_normmax(x_32, ymax=np.inf, method=method)
+        lmb_64 = stats.boxcox_normmax(x_64, ymax=np.inf, method=method)
+        assert_allclose(lmb_32, lmb_64, rtol=1e-2)
 
 
 class TestBoxcoxNormplot:

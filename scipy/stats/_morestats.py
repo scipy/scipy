@@ -1327,17 +1327,14 @@ def boxcox_normmax(
         ymax_res = special.boxcox(xmax, res)
 
         if ymax is None:
-            # Test if the optimal lambda causes overflow
-            mask = np.isinf(ymax_res)
-            if np.any(mask):
-                dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
-                ymax = np.finfo(dtype).max / 100  # 100 is the safety factor
-                end_msg = f"cause overflow in {dtype}."
+            # The default `ymax` is the maximum value of the input dtype
+            dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
+            ymax = np.finfo(dtype).max / 100  # 100 is the safety factor
+            end_msg = f"cause overflow in {dtype}."
         else:
-            mask = ymax_res > ymax
-            if np.any(mask):
-                end_msg = "exceed specified `ymax`."
+            end_msg = "exceed specified `ymax`."
 
+        mask = ymax_res > ymax
         if np.any(mask):
             message = (
                 f"The optimal lambda is {res}, but the returned lambda is "
