@@ -13,13 +13,7 @@ target-version = "py39"
 
 [per-file-ignores]
 "**/__init__.py" = ["E402", "F401", "F403", "F405"]
-"**/test_*.py" = ["D"]
-"scipy/_lib/uarray.py" = ["F403", "F401"]
-"scipy/linalg/blas.py" = ["F403", "E402"]
-"scipy/linalg/lapack.py" = ["F403", "E402", "F405"]
-"scipy/stats/distributions.py" = ["F403", "F405"]
-"scipy/stats/mstats.py" = ["F403", "F401"]
-"scipy/stats/qmc.py" = ["F403"]
+"scipy/linalg/lapack.py" = ["F405"]
 "scipy/stats/tests/data/_mvt.py" = ["E501", "E701", "E702"]
 # E501 (line length) ignores
 "scipy/constants/_codata.py" = ["E501"]
