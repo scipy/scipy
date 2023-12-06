@@ -581,8 +581,7 @@ class _spbase:
         # Currently matrix multiplication is only supported
         # for 2D arrays. Hence we unpacked and use only the
         # two last axes' lengths.
-        N = self.shape[-1]
-        M = self.shape[-2] if self.ndim > 1 else 1
+        M, N = self._shape_as_2d
 
         if other.__class__ is np.ndarray:
             # Fast path for the most common case
@@ -600,6 +599,8 @@ class _spbase:
         if issparse(other):
             if self.shape[1] != other.shape[0]:
                 raise ValueError('dimension mismatch')
+            if other.ndim == 1:
+                raise ValueError('Cannot yet multiply a 1d sparse array')
             return self._mul_sparse_matrix(other)
 
         # If it's a list or whatever, treat it like an array

@@ -935,6 +935,8 @@ def block_diag(mats, format=None, dtype=None):
         nrows, ncols = a.shape
         if issparse(a):
             a = a.tocoo()
+            if a.ndim == 1:
+                a = a.reshape((a._shape_as_2d))
             row.append(a.row + r_idx)
             col.append(a.col + c_idx)
             data.append(a.data)
