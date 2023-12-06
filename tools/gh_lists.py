@@ -110,7 +110,8 @@ class CachedGet:
 
         self.filename = filename
         if os.path.isfile(filename):
-            print(f"[gh_lists] using {filename} as cache (remove it if you want fresh data)",
+            print(f"[gh_lists] using {filename} as cache "
+                  f"(remove it if you want fresh data)",
                   file=sys.stderr)
             with open(filename, encoding='utf-8') as f:
                 self.cache = json.load(f)
@@ -181,10 +182,13 @@ class GithubGet:
                 s = self.ratelimit_reset + 5 - time.time()
                 if s <= 0:
                     break
-                print("[gh_lists] rate limit exceeded: waiting until {} ({} s remaining)".format(
-                         datetime.datetime.fromtimestamp(self.ratelimit_reset).strftime('%Y-%m-%d %H:%M:%S'),
-                         int(s)),
-                      file=sys.stderr, flush=True)
+                print(
+                    "[gh_lists] rate limit exceeded: waiting until {} ({} s remaining)"
+                    .format(datetime.datetime.fromtimestamp(self.ratelimit_reset)
+                            .strftime('%Y-%m-%d %H:%M:%S'),
+                            int(s)),
+                    file=sys.stderr, flush=True
+                )
                 time.sleep(min(5*60, s))
 
             # Get page
