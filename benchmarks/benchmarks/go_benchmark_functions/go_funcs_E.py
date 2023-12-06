@@ -27,7 +27,8 @@ class Easom(Benchmark):
     For Global Optimization Problems Int. Journal of Mathematical Modelling
     and Numerical Optimisation, 2013, 4, 150-194.
 
-    TODO Gavana website disagrees with Jamil, etc. Gavana equation in docstring is totally wrong.
+    TODO Gavana website disagrees with Jamil, etc.
+    Gavana equation in docstring is totally wrong.
     """
 
     def __init__(self, dimensions=2):
