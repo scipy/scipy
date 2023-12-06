@@ -945,23 +945,17 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
     The composite Simpson's 1/3 method can be used to approximate the definite 
     integral of a sampled input function :math:`y(x)` [1]_. The method assumes 
     a quadratic relationship over the interval containing any 3 consecutive 
-    sampled points. The integral is estimated separately for each interval
-    and then cumulatively summed to obtain the final result.
+    sampled points.
 
     Consider three consecutive points: 
     :math:`(x_1, y_1), (x_2, y_2), (x_3, y_3)`.
     where the widths of the 2 subintervals are:
     :math:`h_1 = x_2 - x_1` and :math:`h_2 = x_3 - x_2`.
 
-    Assuming a quadratic relationship over the 3 points, the following 
-    integrals for the subintervals are derived (formulae (6) and (8) of [2]_):
-
-    .. math::
-        \int_{x_1}^{x_3} y(x) dx\ = \frac{x_3-x_1}{6}\left[\
-        \left\{2-\frac{x_3-x_2}{x_2-x_1}\right\} y_1 + \
-        \frac{(x_3-x_1)^2}{(x_2-x_1)(x_3-x_2)} y_2 + \
-        \left\{2-\frac{x_2-x_1}{x_3-x_2}\right\} y_3\right]
-
+    Assuming a quadratic relationship over the 3 points, the integral over 
+    the subinterval between :math:`x_1` and :math:`x_2` is given by formula
+    (8) of [2]_:
+    
     .. math::
         \int_{x_1}^{x_2} y(x) dx\ = \frac{x_2-x_1}{6}\left[\
         \left\{3-\frac{x_2-x_1}{x_3-x_1}\right\} y_1 + \
@@ -969,19 +963,15 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
         \frac{x_2-x_1}{x_3-x_1}\right\} y_2 - \
         \frac{(x_2-x_1)^2}{(x_3-x_2)(x_3-x_1)} y_3\right]
 
-    .. math::
-        \int_{x_2}^{x_3} y(x) dx\ = \frac{x_3-x_2}{6}\left[\
-        - \frac{(x_3-x_2)^2}{(x_2-x_1)(x_3-x_1)} y_1 + \
-        \left\{3 + \frac{(x_3-x_2)^2}{(x_2-x_1)(x_3-x_1)} + \
-        \frac{x_3-x_2}{x_3-x_1}\right\} y_2 + \
-        \left\{3-\frac{x_3-x_2}{x_3-x_1}\right\} y_3\right]
-
-    Note that the integral formulae in [1]_ and [2]_ use different variables.
-
+    The integral between :math:`x_2` and :math:`x_3` is given by swapping
+    appearances of :math:`x_1` and :math:`x_3`. The integral is estimated
+    separately for each subinterval and then cumulatively summed to obtain
+    the final result.
+    
     For samples that are equally spaced, the result is exact if the function
-    is a polynomial of order 3 or less [1]_. If the samples are not equally 
-    spaced, then the result is exact only if the function is a polynomial of 
-    order 2 or less.
+    is a polynomial of order 3 or less [1]_ and the number of subintervals
+    is even. Otherwise, the integral is exact for polynomials of  order 2 or
+    less. 
 
     References
     ----------
