@@ -12,6 +12,7 @@ from scipy.integrate import (quadrature, romberg, romb, newton_cotes,
                              cumulative_trapezoid, cumtrapz, trapz, trapezoid,
                              quad, simpson, simps, fixed_quad, AccuracyWarning,
                              qmc_quad, cumulative_simpson)
+from scipy.integrate._quadrature import _cumulative_simpson_unequal_intervals
 from scipy.integrate._tanhsinh import _tanhsinh, _pair_cache
 from scipy import stats, special as sc
 from scipy.optimize._zeros_py import (_ECONVERGED, _ESIGNERR, _ECONVERR,  # noqa: F401
@@ -738,32 +739,12 @@ class TestCumulativeSimpson:
         with `cumulative_simpson`.
         """
         d = np.diff(x, axis=-1)
-        h1 = d[..., :-1]
-        h2 = d[..., 1:]
-        y1 = y[..., :-2]
-        y2 = y[..., 1:-1]
-        y3 = y[..., 2:]
+        sub_integrals_h1 = _cumulative_simpson_unequal_intervals(y, d)
+        sub_integrals_h2 = _cumulative_simpson_unequal_intervals(
+            y[..., ::-1], d[..., ::-1]
+        )[..., ::-1]
 
-        # Consider a quadratic interpolation over each set of 3 adjacent points,
-        # a, a+h1, a+h1+h2. The subinterval widths are h1 and h2
-
-        # Calculate integral over the h1 subintervals.
-        # Calculate for all but last subinterval of y.
-        sub_integrals_h1 = (
-            y1 * (2 * h1 + 3 * h2) / (h1 + h2) * h1 / 6
-            + y2 * (h1 + 3 * h2) * h1 / (6 * h2)
-            - y3 * (h1**3 / (6 * h2)) / (h1 + h2)
-        )
-
-        # Calculate integral over the h2 subintervals.
-        # Calculate for all but first subinterval of y.
-        sub_integrals_h2 = (
-            -y1 * (h2**3 / (6 * h1)) / (h1 + h2)
-            + y2 * (3 * h1 + h2) * h2 / (6 * h1)
-            + y3 * (3 * h1 + 2 * h2) / (h1 + h2) * h2 / 6
-        )
-
-        # Concatenate to build final array
+        # Concatenate to build difference array
         zeros_shape = (*y.shape[:-1], 1)
         theoretical_difference = np.concatenate(
             [
