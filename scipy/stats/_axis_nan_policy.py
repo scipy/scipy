@@ -128,9 +128,9 @@ def _broadcast_shapes_remove_axis(shapes, axis=None):
     return tuple(shape)
 
 
-def _broadcast_concatenate(arrays, axis):
+def _broadcast_concatenate(arrays, axis, paired=False):
     """Concatenate arrays along an axis with broadcasting."""
-    arrays = _broadcast_arrays(arrays, axis)
+    arrays = _broadcast_arrays(arrays, axis if not paired else None)
     res = np.concatenate(arrays, axis=axis)
     return res
 
@@ -378,7 +378,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
             return res
 
     if not callable(too_small):
-        def is_too_small(samples, axis, *ts_args, **ts_kwargs):
+        def is_too_small(samples, *ts_args, axis=-1, **ts_kwargs):
             for sample in samples:
                 if sample.shape[axis] <= too_small:
                     return True
@@ -541,7 +541,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
             # only return empty output if zero sized input is too small.
             if (
                 empty_output is not None
-                and (is_too_small(samples, -1, kwds) or empty_output.size == 0)
+                and (is_too_small(samples, kwds) or empty_output.size == 0)
             ):
                 res = [empty_output.copy() for i in range(n_out)]
                 res = _add_reduced_axes(res, reduced_axes, keepdims)
@@ -572,7 +572,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     samples = _remove_nans(samples, paired)
                     if sentinel:
                         samples = _remove_sentinel(samples, paired, sentinel)
-                    if is_too_small(samples, -1, kwds):
+                    if is_too_small(samples, kwds):
                         return np.full(n_out, NaN)
                     return result_to_tuple(hypotest_fun_out(*samples, **kwds))
 
@@ -586,7 +586,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     samples = np.split(x, split_indices)[:n_samp+n_kwd_samp]
                     if sentinel:
                         samples = _remove_sentinel(samples, paired, sentinel)
-                    if is_too_small(samples, -1, kwds):
+                    if is_too_small(samples, kwds):
                         return np.full(n_out, NaN)
                     return result_to_tuple(hypotest_fun_out(*samples, **kwds))
 
@@ -595,7 +595,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     samples = np.split(x, split_indices)[:n_samp+n_kwd_samp]
                     if sentinel:
                         samples = _remove_sentinel(samples, paired, sentinel)
-                    if is_too_small(samples, -1, kwds):
+                    if is_too_small(samples, kwds):
                         return np.full(n_out, NaN)
                     return result_to_tuple(hypotest_fun_out(*samples, **kwds))
 

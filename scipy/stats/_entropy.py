@@ -8,7 +8,7 @@ from __future__ import annotations
 import math
 import numpy as np
 from scipy import special
-from ._axis_nan_policy import _axis_nan_policy_factory
+from ._axis_nan_policy import _axis_nan_policy_factory, _broadcast_arrays
 
 __all__ = ['entropy', 'differential_entropy']
 
@@ -140,12 +140,13 @@ def entropy(pk: np.typing.ArrayLike,
         raise ValueError("`base` must be a positive number or `None`.")
 
     pk = np.asarray(pk)
-    pk = 1.0*pk / np.sum(pk, axis=axis, keepdims=True)
+    with np.errstate(invalid='ignore'):
+        pk = 1.0*pk / np.sum(pk, axis=axis, keepdims=True)
     if qk is None:
         vec = special.entr(pk)
     else:
         qk = np.asarray(qk)
-        pk, qk = np.broadcast_arrays(pk, qk)
+        pk, qk = _broadcast_arrays((pk, qk), axis=None)  # don't ignore any axes
         qk = 1.0*qk / np.sum(qk, axis=axis, keepdims=True)
         vec = special.rel_entr(pk, qk)
     S = np.sum(vec, axis=axis)
@@ -154,7 +155,7 @@ def entropy(pk: np.typing.ArrayLike,
     return S
 
 
-def _differential_entropy_is_too_small(samples, axis, kwargs):
+def _differential_entropy_is_too_small(samples, kwargs, axis=-1):
     values = samples[0]
     n = values.shape[axis]
     window_length = kwargs.get("window_length",
