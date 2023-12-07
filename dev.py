@@ -1400,7 +1400,7 @@ def _cpu_count_affinity(os_cpu_count):
             warnings.warn(
                 "Failed to inspect CPU affinity constraints on this system. "
                 "Please install psutil or explicitly set LOKY_MAX_CPU_COUNT.",
-                stacklevel=2
+                stacklevel=4
             )
 
     # This can happen for platforms that do not implement any kind of CPU
