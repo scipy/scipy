@@ -560,32 +560,33 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     # - jac
     if meth in ('nelder-mead', 'powell', 'cobyla') and bool(jac):
         warn('Method %s does not use gradient information (jac).' % method,
-             RuntimeWarning)
+             RuntimeWarning, stacklevel=2)
     # - hess
     if meth not in ('newton-cg', 'dogleg', 'trust-ncg', 'trust-constr',
                     'trust-krylov', 'trust-exact', '_custom') and hess is not None:
         warn('Method %s does not use Hessian information (hess).' % method,
-             RuntimeWarning)
+             RuntimeWarning, stacklevel=2)
     # - hessp
     if meth not in ('newton-cg', 'trust-ncg', 'trust-constr',
                     'trust-krylov', '_custom') \
        and hessp is not None:
         warn('Method %s does not use Hessian-vector product '
-             'information (hessp).' % method, RuntimeWarning)
+             'information (hessp).' % method,
+             RuntimeWarning, stacklevel=2)
     # - constraints or bounds
     if (meth not in ('cobyla', 'slsqp', 'trust-constr', '_custom') and
             np.any(constraints)):
         warn('Method %s cannot handle constraints.' % method,
-             RuntimeWarning)
+             RuntimeWarning, stacklevel=2)
     if meth not in ('nelder-mead', 'powell', 'l-bfgs-b', 'cobyla', 'slsqp',
                     'tnc', 'trust-constr', '_custom') and bounds is not None:
         warn('Method %s cannot handle bounds.' % method,
-             RuntimeWarning)
+             RuntimeWarning, stacklevel=2)
     # - return_all
     if (meth in ('l-bfgs-b', 'tnc', 'cobyla', 'slsqp') and
             options.get('return_all', False)):
         warn('Method %s does not support the return_all option.' % method,
-             RuntimeWarning)
+             RuntimeWarning, stacklevel=2)
 
     # check gradient vector
     if callable(jac):
@@ -919,7 +920,8 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         options = dict(options)
         if meth == 'bounded' and 'xatol' not in options:
             warn("Method 'bounded' does not support relative tolerance in x; "
-                 "defaulting to absolute tolerance.", RuntimeWarning)
+                 "defaulting to absolute tolerance.",
+                 RuntimeWarning, stacklevel=2)
             options['xatol'] = tol
         elif meth == '_custom':
             options.setdefault('tol', tol)

@@ -1263,7 +1263,8 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
             raise ValueError(f'wrong M dimensions {M.shape}, should be {A.shape}')
         if np.dtype(M.dtype).char.lower() != np.dtype(A.dtype).char.lower():
             warnings.warn('M does not have the same type precision as A. '
-                          'This may adversely affect ARPACK convergence')
+                          'This may adversely affect ARPACK convergence',
+                          stacklevel=2)
 
     n = A.shape[0]
 
@@ -1273,7 +1274,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     if k >= n - 1:
         warnings.warn("k >= N - 1 for N * N square matrix. "
                       "Attempting to use scipy.linalg.eig instead.",
-                      RuntimeWarning)
+                      RuntimeWarning, stacklevel=2)
 
         if issparse(A):
             raise TypeError("Cannot use scipy.linalg.eig for sparse A with "
@@ -1590,7 +1591,8 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
             raise ValueError(f'wrong M dimensions {M.shape}, should be {A.shape}')
         if np.dtype(M.dtype).char.lower() != np.dtype(A.dtype).char.lower():
             warnings.warn('M does not have the same type precision as A. '
-                          'This may adversely affect ARPACK convergence')
+                          'This may adversely affect ARPACK convergence',
+                          stacklevel=2)
 
     n = A.shape[0]
 
@@ -1600,7 +1602,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     if k >= n:
         warnings.warn("k >= N for N * N square matrix. "
                       "Attempting to use scipy.linalg.eigh instead.",
-                      RuntimeWarning)
+                      RuntimeWarning, stacklevel=2)
 
         if issparse(A):
             raise TypeError("Cannot use scipy.linalg.eigh for sparse A with "

@@ -2754,7 +2754,7 @@ def ansari(x, y, alternative='two-sided'):
     repeats = (len(uxy) != len(xy))
     exact = ((m < 55) and (n < 55) and not repeats)
     if repeats and (m < 55 or n < 55):
-        warnings.warn("Ties preclude use of exact statistic.")
+        warnings.warn("Ties preclude use of exact statistic.", stacklevel=2)
     if exact:
         if alternative == 'two-sided':
             pval = 2.0 * np.minimum(_abw_state.cdf(AB, n, m),
@@ -4108,7 +4108,8 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     if n_zero > 0 and mode == "exact":
         mode = "approx"
         warnings.warn("Exact p-value calculation does not work if there are "
-                      "zeros. Switching to normal approximation.")
+                      "zeros. Switching to normal approximation.",
+                      stacklevel=2)
 
     if mode == "approx":
         if zero_method in ["wilcox", "pratt"]:
@@ -4121,7 +4122,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
 
     count = len(d)
     if count < 10 and mode == "approx":
-        warnings.warn("Sample size too small for normal approximation.")
+        warnings.warn("Sample size too small for normal approximation.", stacklevel=2)
 
     r = _stats_py.rankdata(abs(d))
     r_plus = np.sum((d > 0) * r)

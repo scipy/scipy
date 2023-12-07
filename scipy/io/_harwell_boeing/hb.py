@@ -222,7 +222,8 @@ class HBInfo:
         if key is None:
             key = "|No Key"
         if len(key) > 8:
-            warnings.warn("key is > 8 characters (key is %s)" % key, LineOverflow)
+            warnings.warn("key is > 8 characters (key is %s)" % key,
+                          LineOverflow, stacklevel=3)
 
         self.total_nlines = total_nlines
         self.pointer_nlines = pointer_nlines

@@ -303,14 +303,15 @@ class netcdf_file:
                     else:
                         # we cannot close self._mm, since self._mm_buf is
                         # alive and there may still be arrays referring to it
-                        warnings.warn((
+                        warnings.warn(
                             "Cannot close a netcdf_file opened with mmap=True, when "
                             "netcdf_variables or arrays referring to its data still "
                             "exist. All data arrays obtained from such files refer "
                             "directly to data on disk, and must be copied before the "
                             "file can be cleanly closed. "
-                            "(See netcdf_file docstring for more information on mmap.)"
-                        ), category=RuntimeWarning)
+                            "(See netcdf_file docstring for more information on mmap.)",
+                            category=RuntimeWarning, stacklevel=2,
+                        )
                 self._mm = None
                 self.fp.close()
     __del__ = close

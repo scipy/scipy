@@ -953,7 +953,7 @@ class levy_stable_gen(rv_continuous):
                 warnings.warn(
                     "Density calculations experimental for FFT method."
                     + " Use combination of piecewise and dni methods instead.",
-                    RuntimeWarning,
+                    RuntimeWarning, stacklevel=3,
                 )
                 _alpha, _beta = pair
                 _x = data_subset[:, (0,)]
@@ -1093,7 +1093,7 @@ class levy_stable_gen(rv_continuous):
                 warnings.warn(
                     "Cumulative density calculations experimental for FFT"
                     + " method. Use piecewise method instead.",
-                    RuntimeWarning,
+                    RuntimeWarning, stacklevel=3,
                 )
                 _alpha, _beta = pair
                 _x = data_subset[:, (0,)]

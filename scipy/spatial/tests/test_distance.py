@@ -366,7 +366,8 @@ def _weight_checked(fn, n_args=2, default_axis=None, key=lambda x: x, weight_arg
             # when some combination of arguments makes weighting impossible,
             #  this is the desired response
             if not silent:
-                warnings.warn(f"{fn.__name__} NotImplemented weights: {e}")
+                warnings.warn(f"{fn.__name__} NotImplemented weights: {e}",
+                              stacklevel=3)
         return result
     return wrapped
 

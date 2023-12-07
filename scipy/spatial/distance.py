@@ -2510,7 +2510,7 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
         if throw:
             raise
         if warning:
-            warnings.warn(str(e))
+            warnings.warn(str(e), stacklevel=2)
         valid = False
     return valid
 
@@ -2590,7 +2590,7 @@ def is_valid_y(y, warning=False, throw=False, name=None):
         if throw:
             raise
         if warning:
-            warnings.warn(str(e))
+            warnings.warn(str(e), stacklevel=2)
         valid = False
     return valid
 

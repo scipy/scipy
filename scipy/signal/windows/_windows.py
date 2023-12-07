@@ -1545,7 +1545,8 @@ def chebwin(M, at, sym=True):
                       "the equivalent noise bandwidth of a Chebyshev window "
                       "does not grow monotonically with increasing sidelobe "
                       "attenuation when the attenuation is smaller than "
-                      "about 45 dB.")
+                      "about 45 dB.",
+                      stacklevel=2)
     if _len_guards(M):
         return np.ones(M)
     M, needs_trunc = _extend(M, sym)

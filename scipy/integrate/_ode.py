@@ -384,8 +384,8 @@ class ode:
         if integrator is None:
             # FIXME: this really should be raise an exception. Will that break
             # any code?
-            warnings.warn('No integrator name match with %r or is not '
-                          'available.' % name)
+            message = f'No integrator name match with {name!r} or is not available.'
+            warnings.warn(message, stacklevel=2)
         else:
             self._integrator = integrator(**integrator_params)
             if not len(self._y):
@@ -1010,7 +1010,8 @@ class vode(IntegratorBase):
         if istate < 0:
             unexpected_istate_msg = f'Unexpected istate={istate:d}'
             warnings.warn('{:s}: {:s}'.format(self.__class__.__name__,
-                          self.messages.get(istate, unexpected_istate_msg)))
+                          self.messages.get(istate, unexpected_istate_msg)),
+                          stacklevel=2)
             self.success = 0
         else:
             self.call_args[3] = 2  # upgrade istate from 1 to 2
@@ -1178,7 +1179,8 @@ class dopri5(IntegratorBase):
         if istate < 0:
             unexpected_istate_msg = f'Unexpected istate={istate:d}'
             warnings.warn('{:s}: {:s}'.format(self.__class__.__name__,
-                          self.messages.get(istate, unexpected_istate_msg)))
+                          self.messages.get(istate, unexpected_istate_msg)),
+                          stacklevel=2)
             self.success = 0
         return y, x
 
@@ -1347,7 +1349,8 @@ class lsoda(IntegratorBase):
         if istate < 0:
             unexpected_istate_msg = f'Unexpected istate={istate:d}'
             warnings.warn('{:s}: {:s}'.format(self.__class__.__name__,
-                          self.messages.get(istate, unexpected_istate_msg)))
+                          self.messages.get(istate, unexpected_istate_msg)),
+                          stacklevel=2)
             self.success = 0
         else:
             self.call_args[3] = 2  # upgrade istate from 1 to 2

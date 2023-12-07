@@ -112,7 +112,7 @@ class FortranFile:
 
         header_dtype = np.dtype(header_dtype)
         if header_dtype.kind != 'u':
-            warnings.warn("Given a dtype which is not unsigned.")
+            warnings.warn("Given a dtype which is not unsigned.", stacklevel=2)
 
         if mode not in 'rw' or len(mode) != 1:
             raise ValueError('mode must be either r or w')

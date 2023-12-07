@@ -952,10 +952,11 @@ class SHGO:
                 self.stop_global = True
                 # 2if (pe - self.f_tol) <= abs(1.0 / abs(self.f_min_true)):
                 if abs(pe) >= 2 * self.f_tol:
-                    warnings.warn("A much lower value than expected f* =" +
-                                  f" {self.f_min_true} than" +
-                                  " the was found f_lowest =" +
-                                  f"{self.f_lowest} ")
+                    warnings.warn(
+                        f"A much lower value than expected f* = {self.f_min_true} "
+                        f"was found f_lowest = {self.f_lowest}",
+                        stacklevel=3
+                    )
             if pe <= self.f_tol:
                 self.stop_global = True
 
