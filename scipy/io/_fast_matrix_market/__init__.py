@@ -13,6 +13,7 @@ import os
 
 import numpy as np
 import scipy.sparse
+from scipy.io import _mmio
 
 __all__ = ['mminfo', 'mmread', 'mmwrite']
 
@@ -494,7 +495,7 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
             symmetry = "general"
 
     if symmetry is None:
-        symmetry = scipy.io._mmio.MMFile()._get_symmetry(a)
+        symmetry = _mmio.MMFile()._get_symmetry(a)
 
     symmetry = _validate_symmetry(symmetry)
     cursor = _get_write_cursor(target, comment=comment, precision=precision, symmetry=symmetry)
