@@ -4,7 +4,6 @@
 #
 import warnings
 import sys
-from functools import partial
 
 import numpy as np
 from numpy.random import RandomState
