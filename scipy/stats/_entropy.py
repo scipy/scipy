@@ -147,7 +147,8 @@ def entropy(pk: np.typing.ArrayLike,
     else:
         qk = np.asarray(qk)
         pk, qk = _broadcast_arrays((pk, qk), axis=None)  # don't ignore any axes
-        qk = 1.0*qk / np.sum(qk, axis=axis, keepdims=True)
+        sum_kwargs = dict(axis=axis, keepdims=True)
+        qk = 1.0*qk / np.sum(qk, **sum_kwargs)  # type: ignore[operator, call-overload]
         vec = special.rel_entr(pk, qk)
     S = np.sum(vec, axis=axis)
     if base is not None:
