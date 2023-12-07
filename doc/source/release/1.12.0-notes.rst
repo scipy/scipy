@@ -99,6 +99,8 @@ New features
 - ``minimize`` methods ``CG``, ``Newton-CG``, and ``BFGS`` now accept parameters
   ``c1`` and ``c2``, allowing specification of the Armijo and curvature rule
   parameters, respectively.
+- ``curve_fit`` performance has improved due to more efficient memoization
+  of the callable function.
 
 `scipy.signal` improvements
 ===========================
@@ -117,6 +119,10 @@ New features
   have been adjusted to additionally support operation on sparse arrays.
 - Sparse matrices now support a transpose with ``axes=(1, 0)``, to mirror
   the ``.T``  method.
+- ``LaplacianNd`` now allows selection of the largest subset of eigenvalues,
+  and additionally now supports retrieval of the corresponding eigenvectors.
+  The performance of ``LaplacianNd`` has also been improved.
+
 
 
 `scipy.spatial` improvements
