@@ -317,10 +317,9 @@ class _spbase:
             Use `.toarray()` instead.
         """
         if isinstance(self, sparray):
-            warn(VisibleDeprecationWarning(
-                "`.A` is deprecated and will be removed in v1.13.0. "
-                "Use `.toarray()` instead."
-            ))
+            message = ("`.A` is deprecated and will be removed in v1.13.0. "
+                       "Use `.toarray()` instead.")
+            warn(VisibleDeprecationWarning(message), stacklevel=2)
         return self.toarray()
 
     @property
@@ -338,10 +337,9 @@ class _spbase:
             Please use `.T.conjugate()` instead.
         """
         if isinstance(self, sparray):
-            warn(VisibleDeprecationWarning(
-                "`.H` is deprecated and will be removed in v1.13.0. "
-                "Please use `.T.conjugate()` instead."
-            ))
+            message = ("`.H` is deprecated and will be removed in v1.13.0. "
+                       "Please use `.T.conjugate()` instead.")
+            warn(VisibleDeprecationWarning(message), stacklevel=2)
         return self.T.conjugate()
 
     @property

@@ -178,7 +178,7 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
         elif status == 1:
             pass
         elif status in [2, 3, 4, 5]:
-            warnings.warn(msg, RuntimeWarning)
+            warnings.warn(msg, RuntimeWarning, stacklevel=2)
         else:
             raise TypeError(msg)
         return res['x']
@@ -496,7 +496,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=False,
         return (retval[0], cov_x) + retval[1:-1] + (errors[info][0], info)
     else:
         if info in LEASTSQ_FAILURE:
-            warnings.warn(errors[info][0], RuntimeWarning)
+            warnings.warn(errors[info][0], RuntimeWarning, stacklevel=2)
         elif info == 0:
             raise errors[info][1](errors[info][0])
         return retval[0], info
@@ -1020,7 +1020,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     if warn_cov:
         warnings.warn('Covariance of the parameters could not be estimated',
-                      category=OptimizeWarning)
+                      category=OptimizeWarning, stacklevel=2)
 
     if full_output:
         return popt, pcov, infodict, errmsg, ier

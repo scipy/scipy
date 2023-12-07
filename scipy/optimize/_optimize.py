@@ -290,7 +290,7 @@ def _check_unknown_options(unknown_options):
         # Stack level 4: this is called from _minimize_*, which is
         # called from another function in SciPy. Level 4 is the first
         # level in user code.
-        warnings.warn("Unknown solver options: %s" % msg, OptimizeWarning, 4)
+        warnings.warn("Unknown solver options: %s" % msg, OptimizeWarning, stacklevel=4)
 
 
 def is_finite_scalar(x):
@@ -422,7 +422,8 @@ def _clip_x_for_func(func, bounds):
 def _check_clip_x(x, bounds):
     if (x < bounds[0]).any() or (x > bounds[1]).any():
         warnings.warn("Values in x were outside bounds during a "
-                      "minimize step, clipping to bounds", RuntimeWarning)
+                      "minimize step, clipping to bounds",
+                      RuntimeWarning, stacklevel=3)
         x = np.clip(x, bounds[0], bounds[1])
         return x
 
@@ -858,10 +859,13 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         lower_bound, upper_bound = bounds.lb, bounds.ub
         # check bounds
         if (lower_bound > upper_bound).any():
-            raise ValueError("Nelder Mead - one of the lower bounds is greater than an upper bound.")
+            raise ValueError(
+                "Nelder Mead - one of the lower bounds is greater than an upper bound.",
+                stacklevel=3
+            )
         if np.any(lower_bound > x0) or np.any(x0 > upper_bound):
             warnings.warn("Initial guess is not within the specified bounds",
-                          OptimizeWarning, 3)
+                          OptimizeWarning, stacklevel=3)
 
     if bounds is not None:
         x0 = np.clip(x0, lower_bound, upper_bound)
@@ -1016,12 +1020,12 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         warnflag = 1
         msg = _status_message['maxfev']
         if disp:
-            warnings.warn(msg, RuntimeWarning, 3)
+            warnings.warn(msg, RuntimeWarning, stacklevel=3)
     elif iterations >= maxiter:
         warnflag = 2
         msg = _status_message['maxiter']
         if disp:
-            warnings.warn(msg, RuntimeWarning, 3)
+            warnings.warn(msg, RuntimeWarning, stacklevel=3)
     else:
         msg = _status_message['success']
         if disp:
@@ -3566,7 +3570,7 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
         if np.linalg.matrix_rank(direc) != direc.shape[0]:
             warnings.warn("direc input is not full rank, some parameters may "
                           "not be optimized",
-                          OptimizeWarning, 3)
+                          OptimizeWarning, stacklevel=3)
 
     if bounds is None:
         # don't make these arrays of all +/- inf. because
@@ -3579,7 +3583,7 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
         lower_bound, upper_bound = bounds.lb, bounds.ub
         if np.any(lower_bound > x0) or np.any(x0 > upper_bound):
             warnings.warn("Initial guess is not within the specified bounds",
-                          OptimizeWarning, 3)
+                          OptimizeWarning, stacklevel=3)
 
     fval = squeeze(func(x))
     x1 = x.copy()
@@ -3950,10 +3954,9 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
             success = res[-1] == 0
         if not success:
             if disp:
-                warnings.warn(
-                    "Either final optimization did not succeed "
-                    "or `finish` does not return `statuscode` as its last "
-                    "argument.", RuntimeWarning, 2)
+                warnings.warn("Either final optimization did not succeed or `finish` "
+                              "does not return `statuscode` as its last argument.",
+                              RuntimeWarning, stacklevel=2)
 
     if full_output:
         return xmin, Jmin, grid, Jout

@@ -167,11 +167,11 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         # index arrays should have integer data types
         if self.row.dtype.kind != 'i':
-            warn("row index array has non-integer dtype (%s)  "
-                    % self.row.dtype.name)
+            warn(f"row index array has non-integer dtype ({self.row.dtype.name})",
+                 stacklevel=3)
         if self.col.dtype.kind != 'i':
-            warn("col index array has non-integer dtype (%s) "
-                    % self.col.dtype.name)
+            warn(f"col index array has non-integer dtype ({self.col.dtype.name})",
+                 stacklevel=3)
 
         idx_dtype = self._get_index_dtype((self.row, self.col), maxval=max(self.shape))
         self.row = np.asarray(self.row, dtype=idx_dtype)
@@ -328,7 +328,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
         if len(diags) > 100:
             # probably undesired, should todia() have a maxdiags parameter?
             warn("Constructing a DIA matrix with %d diagonals "
-                 "is inefficient" % len(diags), SparseEfficiencyWarning)
+                 "is inefficient" % len(diags),
+                 SparseEfficiencyWarning, stacklevel=2)
 
         #initialize and fill in data array
         if self.data.size == 0:
