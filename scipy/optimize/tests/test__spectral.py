@@ -26,7 +26,6 @@ def test_performance():
         dict(F=F_2, x0=x0_2, n=2000, nit=11, nfev=11),
         # dict(F=F_4, x0=x0_4, n=999, nit=243, nfev=1188) removed:
         # too sensitive to rounding errors
-        #
         # Results from dfsane.f; papers list nit=3, nfev=3
         dict(F=F_6, x0=x0_6, n=100, nit=6, nfev=6),
         # Must have n%3==0, typo in papers?
