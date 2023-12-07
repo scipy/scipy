@@ -1560,6 +1560,48 @@ def _yeojohnson_transform(x, lmbda):
     return out
 
 
+def _log_var_yeojohnson(x, lmb):
+    # compute log of variance of _yeojohnson_transform(x, lmb)
+    # in the log-space
+    if np.all(x >= 0):
+        if abs(lmb) < np.spacing(1.0):
+            return np.log(np.var(np.log1p(x), axis=0))
+        # 1. Remove the offset 1/lmb
+        # 2. Add the absolute value sign to the denominator
+        return _log_var(lmb * np.log1p(x) - np.log(abs(lmb)))
+
+    elif np.all(x < 0):
+        if abs(lmb - 2) < np.spacing(1.0):
+            return np.log(np.var(np.log1p(-x), axis=0))
+        # 1. Remove the offset 1/(2-lmb)
+        # 2. Add the absolute value sign to the denominator
+        return _log_var((2 - lmb) * np.log1p(-x) - np.log(abs(2 - lmb)))
+
+    else:  # mixed positive and negtive data
+        logyj = np.zeros_like(x, dtype=np.complex128)
+        pos = x >= 0  # binary mask
+
+        # when x >= 0
+        if abs(lmb) < np.spacing(1.0):
+            logyj[pos] = np.log(np.log1p(x[pos]) + 0j)
+        else:  # lmbda != 0
+            logm1_pos = np.full_like(x[pos], np.pi * 1j, dtype=np.complex128)
+            logyj[pos] = special.logsumexp(
+                [lmb * special.log1p(x[pos]), logm1_pos], axis=0
+            ) - np.log(lmb + 0j)
+
+        # when x < 0
+        if abs(lmb - 2) > np.spacing(1.0):
+            logm1_neg = np.full_like(x[~pos], np.pi * 1j, dtype=np.complex128)
+            logyj[~pos] = special.logsumexp(
+                [(2 - lmb) * special.log1p(-x[~pos]), logm1_neg], axis=0
+            ) - np.log(lmb - 2 + 0j)
+        else:  # lmbda == 2
+            logyj[~pos] = np.log(-np.log1p(-x[~pos]) + 0j)
+
+        return _log_var(logyj)
+
+
 def yeojohnson_llf(lmb, data):
     r"""The yeojohnson log-likelihood function.
 
@@ -1648,22 +1690,22 @@ def yeojohnson_llf(lmb, data):
     if n_samples == 0:
         return np.nan
 
-    trans = _yeojohnson_transform(data, lmb)
-    trans_var = trans.var(axis=0)
-    loglike = np.empty_like(trans_var)
-
-    # Avoid RuntimeWarning raised by np.log when the variance is too low
-    tiny_variance = trans_var < np.finfo(trans_var.dtype).tiny
-    loglike[tiny_variance] = np.inf
-
-    loglike[~tiny_variance] = (
-        -n_samples / 2 * np.log(trans_var[~tiny_variance]))
-    loglike[~tiny_variance] += (
-        (lmb - 1) * (np.sign(data) * np.log1p(np.abs(data))).sum(axis=0))
-    return loglike
+    llf = (lmb - 1) * np.sum(np.sign(data) * np.log1p(np.abs(data)), axis=0)
+    llf += -n_samples / 2 * _log_var_yeojohnson(data, lmb)
+    return llf
 
 
-def yeojohnson_normmax(x, brack=None):
+def _yeojohnson_inv_lmbda(x, y):
+    # compute lmbda given x and y for Yeo-Johnson transformation
+    if x >= 0:
+        num = special.lambertw(-((x + 1) ** (-1 / y) * np.log1p(x)) / y, k=1)
+        return np.real(-num / np.log1p(x)) - 1 / y
+    else:
+        num = special.lambertw(((1 - x) ** (1 / y) * np.log1p(-x)) / y, k=1)
+        return np.real(num / np.log1p(-x)) - 1 / y + 2
+
+
+def yeojohnson_normmax(x, brack=(-2, 2)):
     """Compute optimal Yeo-Johnson transform parameter.
 
     Compute optimal Yeo-Johnson transform parameter for input data, using
@@ -1676,8 +1718,7 @@ def yeojohnson_normmax(x, brack=None):
     brack : 2-tuple, optional
         The starting interval for a downhill bracket search with
         `optimize.brent`. Note that this is in most cases not critical; the
-        final result is allowed to be outside this bracket. If None,
-        `optimize.fminbound` is used with bounds that avoid overflow.
+        final result is allowed to be outside this bracket.
 
     Returns
     -------
@@ -1713,43 +1754,48 @@ def yeojohnson_normmax(x, brack=None):
 
     """
     def _neg_llf(lmbda, data):
-        llf = yeojohnson_llf(lmbda, data)
-        # reject likelihoods that are inf which are likely due to small
-        # variance in the transformed space
-        llf[np.isinf(llf)] = -np.inf
-        return -llf
+        return -yeojohnson_llf(lmbda, data)
 
-    with np.errstate(invalid='ignore'):
-        if not np.all(np.isfinite(x)):
-            raise ValueError('Yeo-Johnson input must be finite.')
-        if np.all(x == 0):
-            return 1.0
-        if brack is not None:
-            return optimize.brent(_neg_llf, brack=brack, args=(x,))
-        x = np.asarray(x)
-        dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
-        # Allow values up to 20 times the maximum observed value to be safely
-        # transformed without over- or underflow.
-        log1p_max_x = np.log1p(20 * np.max(np.abs(x)))
-        # Use half of floating point's exponent range to allow safe computation
-        # of the variance of the transformed data.
-        log_eps = np.log(np.finfo(dtype).eps)
-        log_tiny_float = (np.log(np.finfo(dtype).tiny) - log_eps) / 2
-        log_max_float = (np.log(np.finfo(dtype).max) + log_eps) / 2
-        # Compute the bounds by approximating the inverse of the Yeo-Johnson
-        # transform on the smallest and largest floating point exponents, given
-        # the largest data we expect to observe. See [1] for further details.
-        # [1] https://github.com/scipy/scipy/pull/18852#issuecomment-1630286174
-        lb = log_tiny_float / log1p_max_x
-        ub = log_max_float / log1p_max_x
-        # Convert the bounds if all or some of the data is negative.
-        if np.all(x < 0):
-            lb, ub = 2 - ub, 2 - lb
-        elif np.any(x < 0):
-            lb, ub = max(2 - ub, lb), min(2 - lb, ub)
-        # Match `optimize.brent`'s tolerance.
-        tol_brent = 1.48e-08
-        return optimize.fminbound(_neg_llf, lb, ub, args=(x,), xtol=tol_brent)
+    if not np.all(np.isfinite(x)):
+        raise ValueError('Yeo-Johnson input must be finite.')
+    if np.all(x == 0):
+        return 1.0
+
+    lmb_opt = optimize.brent(_neg_llf, brack=brack, args=(x,))
+
+    x = np.asarray(x)
+    xmax, xmin = np.max(x), np.min(x)
+
+    dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
+    safty_factor = 100
+    ymax = np.finfo(dtype).max / safty_factor
+    ymin = np.finfo(dtype).min / safty_factor
+
+    isoverflow = False
+    if xmin >= 0 and lmb_opt > 1:
+        # Test xmax
+        with np.errstate(over='ignore'):
+            ymax_res = _yeojohnson_transform(xmax, lmb_opt)
+        if ymax_res > ymax:
+            isoverflow = True
+            lmb = _yeojohnson_inv_lmbda(xmax, ymax)
+    if xmax < 0 and lmb_opt < 1:
+        # Test xmin
+        with np.errstate(over='ignore'):
+            ymin_res = _yeojohnson_transform(xmin, lmb_opt)
+        if ymin_res < ymin:
+            isoverflow = True
+            lmb = _yeojohnson_inv_lmbda(xmin, ymin)
+
+    if isoverflow:
+        warnings.warn(
+            f"The optimal lambda is {lmb_opt}, but the returned lambda is the "
+            f"constrained optimum to ensure that the maximum and the minimum "
+            f"of the transformed data does not cause overflow in {dtype}.",
+            stacklevel=2
+        )
+        return lmb
+    return lmb_opt
 
 
 def yeojohnson_normplot(x, la, lb, plot=None, N=80):
