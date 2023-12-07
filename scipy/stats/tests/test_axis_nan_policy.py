@@ -12,6 +12,7 @@ import pytest
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 from scipy import stats
+from scipy.stats import norm  # type: ignore[attr-defined]
 from scipy.stats._axis_nan_policy import _masked_arrays_2_sentinel_arrays
 from scipy._lib._util import AxisError
 
@@ -65,11 +66,11 @@ axis_nan_policy_cases = [
     (stats.mode, tuple(), dict(), 1, 2, True, lambda x: (x.mode, x.count)),
     (stats.differential_entropy, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.variation, tuple(), dict(), 1, 1, False, lambda x: (x,)),
-    (stats.ks_1samp, (stats.norm().cdf,), dict(), 1, 4, False,
+    (stats.ks_1samp, (norm().cdf,), dict(), 1, 4, False,
      lambda res: (*res, res.statistic_location, res.statistic_sign)),
     (stats.ks_2samp, tuple(), dict(), 2, 4, False,
      lambda res: (*res, res.statistic_location, res.statistic_sign)),
-    (stats.kstest, (stats.norm().cdf,), dict(), 1, 4, False,
+    (stats.kstest, (norm().cdf,), dict(), 1, 4, False,
      lambda res: (*res, res.statistic_location, res.statistic_sign)),
     (stats.kstest, tuple(), dict(), 2, 4, False,
      lambda res: (*res, res.statistic_location, res.statistic_sign)),
