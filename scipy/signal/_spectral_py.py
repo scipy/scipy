@@ -1518,7 +1518,8 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     if np.sum(norm > 1e-10) != len(norm):
         warnings.warn(
             "NOLA condition failed, STFT may not be invertible."
-            + (" Possibly due to missing boundary" if not boundary else "")
+            + (" Possibly due to missing boundary" if not boundary else ""),
+            stacklevel=2
         )
     x /= np.where(norm > 1e-10, norm, 1.0)
 
@@ -1894,15 +1895,16 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     if return_onesided:
         if np.iscomplexobj(x):
             sides = 'twosided'
-            warnings.warn('Input data is complex, switching to '
-                          'return_onesided=False')
+            warnings.warn('Input data is complex, switching to return_onesided=False',
+                          stacklevel=3)
         else:
             sides = 'onesided'
             if not same_data:
                 if np.iscomplexobj(y):
                     sides = 'twosided'
                     warnings.warn('Input data is complex, switching to '
-                                  'return_onesided=False')
+                                  'return_onesided=False',
+                                  stacklevel=3)
     else:
         sides = 'twosided'
 
@@ -2042,7 +2044,8 @@ def _triage_segments(window, nperseg, input_length):
             nperseg = 256  # then change to default
         if nperseg > input_length:
             warnings.warn(f'nperseg = {nperseg:d} is greater than input length '
-                          f' = {input_length:d}, using nperseg = {input_length:d}')
+                          f' = {input_length:d}, using nperseg = {input_length:d}',
+                          stacklevel=3)
             nperseg = input_length
         win = get_window(window, nperseg)
     else:

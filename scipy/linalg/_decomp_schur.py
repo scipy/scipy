@@ -276,7 +276,8 @@ def rsf2csf(T, Z, check_finite=True):
             raise ValueError("Input '{}' must be square.".format('ZT'[ind]))
 
     if T.shape[0] != Z.shape[0]:
-        raise ValueError(f"Input array shapes must match: Z: {Z.shape} vs. T: {T.shape}")
+        message = f"Input array shapes must match: Z: {Z.shape} vs. T: {T.shape}"
+        raise ValueError(message)
     N = T.shape[0]
     t = _commonType(Z, T, array([3.0], 'F'))
     Z, T = _castCopy(t, Z, T)

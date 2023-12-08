@@ -1876,9 +1876,9 @@ def make_smoothing_spline(x, y, w=None, lam=None):
     Parameters
     ----------
     x : array_like, shape (n,)
-        Abscissas. `n` must be larger than 5.
+        Abscissas. `n` must be at least 5.
     y : array_like, shape (n,)
-        Ordinates. `n` must be larger than 5.
+        Ordinates. `n` must be at least 5.
     w : array_like, shape (n,), optional
         Vector of weights. Default is ``np.ones_like(x)``.
     lam : float, (:math:`\lambda \geq 0`), optional
@@ -1980,7 +1980,7 @@ def make_smoothing_spline(x, y, w=None, lam=None):
     n = x.shape[0]
 
     if n <= 4:
-        raise ValueError('``x`` and ``y`` length must be larger than 5')
+        raise ValueError('``x`` and ``y`` length must be at least 5')
 
     # It is known that the solution to the stated minimization problem exists
     # and is a natural cubic spline with vector of knots equal to the unique

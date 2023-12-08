@@ -556,7 +556,7 @@ def interp_decomp(A, eps_or_k, rand=True):
         Column index array.
     proj : :class:`numpy.ndarray`
         Interpolation coefficients.
-    """
+    """  # numpy/numpydoc#87  # noqa: E501
     from scipy.sparse.linalg import LinearOperator
 
     real = _is_real(A)

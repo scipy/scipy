@@ -71,6 +71,11 @@ axis_nan_policy_cases = [
     (stats.ansari, tuple(), {}, 2, 2, False, None),
     (stats.entropy, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.entropy, tuple(), dict(), 2, 1, True, lambda x: (x,)),
+    (stats.cramervonmises, ("norm",), dict(), 1, 2, False,
+     lambda res: (res.statistic, res.pvalue)),
+    (stats.cramervonmises_2samp, tuple(), dict(), 2, 2, False,
+     lambda res: (res.statistic, res.pvalue)),
+    (stats.epps_singleton_2samp, tuple(), dict(), 2, 2, False, None),
     (stats.bartlett, tuple(), {}, 2, 2, False, None),
     (stats.tmean, tuple(), {}, 1, 1, False, lambda x: (x,)),
     (stats.tvar, tuple(), {}, 1, 1, False, lambda x: (x,)),
@@ -114,6 +119,8 @@ inaccuracy_messages = {"Precision loss occurred in moment calculation",
 # For some functions, nan_policy='propagate' should not just return NaNs
 override_propagate_funcs = {stats.mode}
 
+# For some functions, empty arrays produce non-NaN results
+empty_special_case_funcs = {stats.entropy}
 
 def _mixed_data_generator(n_samples, n_repetitions, axis, rng,
                           paired=False):
@@ -691,6 +698,11 @@ def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
                     sup.filter(RuntimeWarning, "invalid value encountered")
                     expected = np.mean(concat, axis=axis) * np.nan
 
+                if hypotest in empty_special_case_funcs:
+                    empty_val = hypotest(*([[]]*len(samples)), *args, **kwds)
+                    mask = np.isnan(expected)
+                    expected[mask] = empty_val
+
                 res = hypotest(*samples, *args, axis=axis, **kwds)
                 res = unpacker(res)
 
@@ -699,13 +711,14 @@ def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
 
             except ValueError:
                 # confirm that the arrays truly are not broadcastable
-                assert not _check_arrays_broadcastable(samples, axis)
+                assert not _check_arrays_broadcastable(samples,
+                                                       None if paired else axis)
 
                 # confirm that _both_ `_broadcast_concatenate` and `hypotest`
                 # produce this information.
                 message = "Array shapes are incompatible for broadcasting."
                 with pytest.raises(ValueError, match=message):
-                    stats._stats_py._broadcast_concatenate(samples, axis)
+                    stats._stats_py._broadcast_concatenate(samples, axis, paired)
                 with pytest.raises(ValueError, match=message):
                     hypotest(*samples, *args, axis=axis, **kwds)
 

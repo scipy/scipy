@@ -103,7 +103,9 @@ class TestScalarRootFinders:
         # The methods have one of two base signatures:
         # (f, a, b, **kwargs)  # newton
         # (func, x0, **kwargs)  # bisect/brentq/...
-        sig = _getfullargspec(method)  # FullArgSpec with args, varargs, varkw, defaults, ...
+
+        # FullArgSpec with args, varargs, varkw, defaults, ...
+        sig = _getfullargspec(method)
         assert_(not sig.kwonlyargs)
         nDefaults = len(sig.defaults)
         nRequired = len(sig.args) - nDefaults
@@ -762,9 +764,8 @@ class TestNewton(TestScalarRootFinders):
             if derivs == 1:
                 # Check that the correct Exception is raised and
                 # validate the start of the message.
-                with pytest.raises(
-                    RuntimeError,
-                    match='Failed to converge after %d iterations, value is .*' % (iters)):
+                msg = 'Failed to converge after %d iterations, value is .*' % (iters)
+                with pytest.raises(RuntimeError, match=msg):
                     x, r = zeros.newton(f1, x0, maxiter=iters, disp=True, **kwargs)
 
     def test_deriv_zero_warning(self):
@@ -1140,7 +1141,8 @@ def test_gh9551_raise_error_if_disp_true():
     assert_warns(RuntimeWarning, zeros.newton, f, 1.0, f_p, disp=False)
     with pytest.raises(
             RuntimeError,
-            match=r'^Derivative was zero\. Failed to converge after \d+ iterations, value is [+-]?\d*\.\d+\.$'):
+            match=r'^Derivative was zero\. Failed to converge after \d+ iterations, '
+                  r'value is [+-]?\d*\.\d+\.$'):
         zeros.newton(f, 1.0, f_p)
     root = zeros.newton(f, complex(10.0, 10.0), f_p)
     assert_allclose(root, complex(0.0, 1.0))
@@ -1441,12 +1443,14 @@ class TestDifferentiate:
         # This is a similar test for one-sided difference
         kwargs = dict(order=2, maxiter=1, step_direction=1)
         res = zeros._differentiate(f, x, initial_step=1, step_factor=2, **kwargs)
-        ref = zeros._differentiate(f, x, initial_step=1/np.sqrt(2), step_factor=0.5, **kwargs)
+        ref = zeros._differentiate(f, x, initial_step=1/np.sqrt(2), step_factor=0.5,
+                                   **kwargs)
         assert_allclose(res.df, ref.df, rtol=5e-15)
 
         kwargs['step_direction'] = -1
         res = zeros._differentiate(f, x, initial_step=1, step_factor=2, **kwargs)
-        ref = zeros._differentiate(f, x, initial_step=1/np.sqrt(2), step_factor=0.5, **kwargs)
+        ref = zeros._differentiate(f, x, initial_step=1/np.sqrt(2), step_factor=0.5,
+                                   **kwargs)
         assert_allclose(res.df, ref.df, rtol=5e-15)
 
     def test_step_direction(self):

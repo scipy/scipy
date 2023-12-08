@@ -1800,7 +1800,8 @@ def normalize(b, a):
     # Trim leading zeros of numerator
     if leading_zeros > 0:
         warnings.warn("Badly conditioned filter coefficients (numerator): the "
-                      "results may be meaningless", BadCoefficients)
+                      "results may be meaningless",
+                      BadCoefficients, stacklevel=2)
         # Make sure at least one column remains
         if leading_zeros == num.shape[1]:
             leading_zeros -= 1
@@ -3962,7 +3963,7 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
     except ZeroDivisionError:
         W0 = 1.0
         warnings.warn("Order is zero...check input parameters.",
-                      RuntimeWarning, 2)
+                      RuntimeWarning, stacklevel=2)
 
     # now convert this frequency back from lowpass prototype
     # to the original analog filter
@@ -4363,7 +4364,8 @@ def cheb2ap(N, rs):
     """
     Return (z,p,k) for Nth-order Chebyshev type II analog lowpass filter.
 
-    The returned filter prototype has attenuation of at least ``rs`` decibels in the stopband.
+    The returned filter prototype has attenuation of at least ``rs`` decibels
+    in the stopband.
 
     The filter's angular (e.g. rad/s) cutoff frequency is normalized to 1,
     defined as the point at which the attenuation first reaches ``rs``.
@@ -5505,9 +5507,9 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
     elif ftype == 'iir':
         # Raise warning if order and/or numtaps is passed
         if order is not None:
-            warnings.warn('order is not used for IIR gammatone filter.')
+            warnings.warn('order is not used for IIR gammatone filter.', stacklevel=2)
         if numtaps is not None:
-            warnings.warn('numtaps is not used for IIR gammatone filter.')
+            warnings.warn('numtaps is not used for IIR gammatone filter.', stacklevel=2)
 
         # Gammatone impulse response settings
         T = 1./fs

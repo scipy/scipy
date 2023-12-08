@@ -6,6 +6,7 @@
 
 #include <complex>
 #include <map>
+#include <cstdint>
 #include <string>
 
 namespace fast_matrix_market {

@@ -168,7 +168,9 @@ def get_args(argspec, n):
         args = argspec.copy()
     else:
         nargs = len(argspec)
-        ms = np.asarray([1.5 if isinstance(spec, ComplexArg) else 1.0 for spec in argspec])
+        ms = np.asarray(
+            [1.5 if isinstance(spec, ComplexArg) else 1.0 for spec in argspec]
+        )
         ms = (n**(ms/sum(ms))).astype(int) + 1
 
         args = [spec.values(m) for spec, m in zip(argspec, ms)]
@@ -207,7 +209,9 @@ class MpmathData:
         if isinstance(self.arg_spec, np.ndarray):
             self.is_complex = np.issubdtype(self.arg_spec.dtype, np.complexfloating)
         else:
-            self.is_complex = any([isinstance(arg, ComplexArg) for arg in self.arg_spec])
+            self.is_complex = any(
+                [isinstance(arg, ComplexArg) for arg in self.arg_spec]
+            )
         self.ignore_inf_sign = ignore_inf_sign
         self.distinguish_nan_and_inf = distinguish_nan_and_inf
         if not name or name == '<lambda>':
@@ -256,15 +260,18 @@ class MpmathData:
                 mpmath.mp.dps = dps
 
                 try:
-                    assert_func_equal(self.scipy_func,
-                                      lambda *a: pytype(self.mpmath_func(*map(mptype, a))),
-                                      argarr,
-                                      vectorized=False,
-                                      rtol=self.rtol, atol=self.atol,
-                                      ignore_inf_sign=self.ignore_inf_sign,
-                                      distinguish_nan_and_inf=self.distinguish_nan_and_inf,
-                                      nan_ok=self.nan_ok,
-                                      param_filter=self.param_filter)
+                    assert_func_equal(
+                        self.scipy_func,
+                        lambda *a: pytype(self.mpmath_func(*map(mptype, a))),
+                        argarr,
+                        vectorized=False,
+                        rtol=self.rtol,
+                        atol=self.atol,
+                        ignore_inf_sign=self.ignore_inf_sign,
+                        distinguish_nan_and_inf=self.distinguish_nan_and_inf,
+                        nan_ok=self.nan_ok,
+                        param_filter=self.param_filter
+                    )
                     break
                 except AssertionError:
                     if j >= len(dps_list)-1:
@@ -289,7 +296,9 @@ def assert_mpmath_equal(*a, **kw):
 
 
 def nonfunctional_tooslow(func):
-    return pytest.mark.skip(reason="    Test not yet functional (too slow), needs more work.")(func)
+    return pytest.mark.skip(
+        reason="    Test not yet functional (too slow), needs more work."
+    )(func)
 
 
 # ------------------------------------------------------------------------------

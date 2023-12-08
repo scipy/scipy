@@ -317,10 +317,9 @@ class _spbase:
             Use `.toarray()` instead.
         """
         if isinstance(self, sparray):
-            warn(VisibleDeprecationWarning(
-                "`.A` is deprecated and will be removed in v1.13.0. "
-                "Use `.toarray()` instead."
-            ))
+            message = ("`.A` is deprecated and will be removed in v1.13.0. "
+                       "Use `.toarray()` instead.")
+            warn(VisibleDeprecationWarning(message), stacklevel=2)
         return self.toarray()
 
     @property
@@ -338,10 +337,9 @@ class _spbase:
             Please use `.T.conjugate()` instead.
         """
         if isinstance(self, sparray):
-            warn(VisibleDeprecationWarning(
-                "`.H` is deprecated and will be removed in v1.13.0. "
-                "Please use `.T.conjugate()` instead."
-            ))
+            message = ("`.H` is deprecated and will be removed in v1.13.0. "
+                       "Please use `.T.conjugate()` instead.")
+            warn(VisibleDeprecationWarning(message), stacklevel=2)
         return self.T.conjugate()
 
     @property
@@ -355,9 +353,11 @@ class _spbase:
     def __repr__(self):
         _, format_name = _formats[self.format]
         sparse_cls = 'array' if isinstance(self, sparray) else 'matrix'
-        return f"<%dx%d sparse {sparse_cls} of type '%s'\n" \
-               "\twith %d stored elements in %s format>" % \
-               (self.shape + (self.dtype.type, self.nnz, format_name))
+        shape_str = 'x'.join(str(x) for x in self.shape)
+        return (
+            f"<{shape_str} sparse {sparse_cls} of type '{self.dtype.type}'\n"
+            f"\twith {self.nnz} stored elements in {format_name} format>"
+        )
 
     def __str__(self):
         maxprint = self._getmaxprint()
@@ -1306,7 +1306,9 @@ class _spbase:
         from ._sputils import get_index_dtype
 
         # Don't check contents for array API
-        return get_index_dtype(arrays, maxval, (check_contents and not isinstance(self, sparray)))
+        return get_index_dtype(arrays,
+                               maxval,
+                               (check_contents and not isinstance(self, sparray)))
 
 
     ## All methods below are deprecated and should be removed in

@@ -1025,7 +1025,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         raise ValueError("`p` must be 1 dimensional.")
 
     if tol < 100 * EPS:
-        warn(f"`tol` is too low, setting to {100 * EPS:.2e}")
+        warn(f"`tol` is too low, setting to {100 * EPS:.2e}", stacklevel=2)
         tol = 100 * EPS
 
     if verbose not in [0, 1, 2]:

@@ -84,7 +84,8 @@ class HBInfo:
             elif values.dtype.kind in np.typecodes["AllInteger"]:
                 values_fmt = IntFormat.from_number(-np.max(np.abs(values)))
             else:
-                raise NotImplementedError("type %s not implemented yet" % values.dtype.kind)
+                message = f"type {values.dtype.kind} not implemented yet"
+                raise NotImplementedError(message)
         else:
             raise NotImplementedError("fmt argument not supported yet.")
 
@@ -221,7 +222,8 @@ class HBInfo:
         if key is None:
             key = "|No Key"
         if len(key) > 8:
-            warnings.warn("key is > 8 characters (key is %s)" % key, LineOverflow)
+            warnings.warn("key is > 8 characters (key is %s)" % key,
+                          LineOverflow, stacklevel=3)
 
         self.total_nlines = total_nlines
         self.pointer_nlines = pointer_nlines

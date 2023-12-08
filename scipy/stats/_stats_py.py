@@ -69,8 +69,9 @@ from scipy._lib._util import normalize_axis_index
 
 # In __all__ but deprecated for removal in SciPy 1.13.0
 from scipy._lib._util import float_factorial  # noqa: F401
-from scipy.stats._mstats_basic import (PointbiserialrResult, Ttest_1sampResult,  # noqa: F401
-                                       Ttest_relResult)
+from scipy.stats._mstats_basic import (  # noqa: F401
+    PointbiserialrResult, Ttest_1sampResult,  Ttest_relResult
+)
 
 
 # Functions/classes in other files should be added in `__init__.py`, not here
@@ -1784,7 +1785,8 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
             " were given." % int(n))
     if n < 20:
         warnings.warn("kurtosistest only valid for n>=20 ... continuing "
-                      "anyway, n=%i" % int(n))
+                      "anyway, n=%i" % int(n),
+                      stacklevel=2)
     b2 = kurtosis(a, axis, fisher=False)
 
     E = 3.0*(n-1) / (n+1)
@@ -1800,9 +1802,9 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     term2 = np.sign(denom) * np.where(denom == 0.0, np.nan,
                                       np.power((1-2.0/A)/np.abs(denom), 1/3.0))
     if np.any(denom == 0):
-        msg = "Test statistic not defined in some cases due to division by " \
-              "zero. Return nan in that case..."
-        warnings.warn(msg, RuntimeWarning)
+        msg = ("Test statistic not defined in some cases due to division by "
+               "zero. Return nan in that case...")
+        warnings.warn(msg, RuntimeWarning, stacklevel=2)
 
     Z = (term1 - term2) / np.sqrt(2/(9.0*A))  # [1]_ Eq. 5
 
@@ -2498,8 +2500,8 @@ def _histogram(a, numbins=10, defaultlimits=None, weights=None,
     extrapoints = len([v for v in a
                        if defaultlimits[0] > v or v > defaultlimits[1]])
     if extrapoints > 0 and printextras:
-        warnings.warn("Points outside given histogram range = %s"
-                      % extrapoints)
+        warnings.warn("Points outside given histogram range = %s" % extrapoints,
+                      stacklevel=3,)
 
     return HistogramResult(hist, defaultlimits[0], binsize, extrapoints)
 
@@ -4091,15 +4093,15 @@ def f_oneway(*samples, axis=0):
     # Check this after forming alldata, so shape errors are detected
     # and reported before checking for 0 length inputs.
     if any(sample.shape[axis] == 0 for sample in samples):
-        warnings.warn(stats.DegenerateDataWarning('at least one input '
-                                                  'has length 0'))
+        msg = 'at least one input has length 0'
+        warnings.warn(stats.DegenerateDataWarning(msg), stacklevel=2)
         return _create_f_oneway_nan_result(alldata.shape, axis)
 
     # Must have at least one group with length greater than 1.
     if all(sample.shape[axis] == 1 for sample in samples):
         msg = ('all input arrays have length 1.  f_oneway requires that at '
                'least one input has length greater than 1.')
-        warnings.warn(stats.DegenerateDataWarning(msg))
+        warnings.warn(stats.DegenerateDataWarning(msg), stacklevel=2)
         return _create_f_oneway_nan_result(alldata.shape, axis)
 
     # Check if all values within each group are identical, and if the common
@@ -4123,9 +4125,9 @@ def f_oneway(*samples, axis=0):
     # the same (e.g. [[3, 3, 3], [5, 5, 5, 5], [4, 4, 4]]).
     all_const = is_const.all(axis=axis)
     if all_const.any():
-        msg = ("Each of the input arrays is constant;"
+        msg = ("Each of the input arrays is constant; "
                "the F statistic is not defined or infinite")
-        warnings.warn(stats.ConstantInputWarning(msg))
+        warnings.warn(stats.ConstantInputWarning(msg), stacklevel=2)
 
     # all_same_const is True if all the values in the groups along the axis=0
     # slice are the same (e.g. [[3, 3, 3], [3, 3, 3, 3], [3, 3, 3]]).
@@ -4270,7 +4272,7 @@ def alexandergovern(*samples, nan_policy='propagate'):
 
     if np.any([(sample == sample[0]).all() for sample in samples]):
         msg = "An input array is constant; the statistic is not defined."
-        warnings.warn(stats.ConstantInputWarning(msg))
+        warnings.warn(stats.ConstantInputWarning(msg), stacklevel=2)
         return AlexanderGovernResult(np.nan, np.nan)
 
     # The following formula numbers reference the equation described on
@@ -4739,7 +4741,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None):
     if (x == x[0]).all() or (y == y[0]).all():
         msg = ("An input array is constant; the correlation coefficient "
                "is not defined.")
-        warnings.warn(stats.ConstantInputWarning(msg))
+        warnings.warn(stats.ConstantInputWarning(msg), stacklevel=2)
         result = PearsonRResult(statistic=np.nan, pvalue=np.nan, n=n,
                                 alternative=alternative, x=x, y=y)
         return result
@@ -4805,7 +4807,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None):
         # might result in large errors in r.
         msg = ("An input array is nearly constant; the computed "
                "correlation coefficient may be inaccurate.")
-        warnings.warn(stats.NearConstantInputWarning(msg))
+        warnings.warn(stats.NearConstantInputWarning(msg), stacklevel=2)
 
     r = np.dot(xm/normxm, ym/normym)
 
@@ -5403,7 +5405,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
         if (a[:, 0][0] == a[:, 0]).all() or (a[:, 1][0] == a[:, 1]).all():
             # If an input is constant, the correlation coefficient
             # is not defined.
-            warnings.warn(stats.ConstantInputWarning(warn_msg))
+            warnings.warn(stats.ConstantInputWarning(warn_msg), stacklevel=2)
             res = SignificanceResult(np.nan, np.nan)
             res.correlation = np.nan
             return res
@@ -5411,7 +5413,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
         if (a[0, :][0] == a[0, :]).all() or (a[1, :][0] == a[1, :]).all():
             # If an input is constant, the correlation coefficient
             # is not defined.
-            warnings.warn(stats.ConstantInputWarning(warn_msg))
+            warnings.warn(stats.ConstantInputWarning(warn_msg), stacklevel=2)
             res = SignificanceResult(np.nan, np.nan)
             res.correlation = np.nan
             return res
@@ -6434,7 +6436,7 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
         msg = ("The number of replications is low (under 1000), and p-value "
                "calculations may be unreliable. Use the p-value result, with "
                "caution!")
-        warnings.warn(msg, RuntimeWarning)
+        warnings.warn(msg, RuntimeWarning, stacklevel=2)
 
     if is_twosamp:
         if compute_distance is None:
@@ -9144,11 +9146,14 @@ def ranksums(x, y, alternative='two-sided'):
     >>> sample1 = rng.uniform(-1, 1, 200)
     >>> sample2 = rng.uniform(-0.5, 1.5, 300) # a shifted distribution
     >>> ranksums(sample1, sample2)
-    RanksumsResult(statistic=-7.887059, pvalue=3.09390448e-15)  # may vary
+    RanksumsResult(statistic=-7.887059,
+                   pvalue=3.09390448e-15) # may vary
     >>> ranksums(sample1, sample2, alternative='less')
-    RanksumsResult(statistic=-7.750585297581713, pvalue=4.573497606342543e-15) # may vary
+    RanksumsResult(statistic=-7.750585297581713,
+                   pvalue=4.573497606342543e-15) # may vary
     >>> ranksums(sample1, sample2, alternative='greater')
-    RanksumsResult(statistic=-7.750585297581713, pvalue=0.9999999999999954) # may vary
+    RanksumsResult(statistic=-7.750585297581713,
+                   pvalue=0.9999999999999954) # may vary
 
     The p-value of less than ``0.05`` indicates that this test rejects the
     hypothesis at the 5% significance level.
@@ -9518,7 +9523,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
             message = ("p-value cannot be estimated with `distribution='t' "
                        "because degrees of freedom parameter is undefined "
                        "(0/0). Try using `distribution='normal'")
-            warnings.warn(message, RuntimeWarning)
+            warnings.warn(message, RuntimeWarning, stacklevel=2)
 
         p = distributions.t.cdf(wbfn, df)
     elif distribution == "normal":

@@ -608,7 +608,10 @@ class Build(Task):
         try:
             openblas = importlib.import_module(module_name)
         except ModuleNotFoundError:
-            raise RuntimeError(f"'pip install {module_name} first")
+            raise RuntimeError(f"Importing '{module_name}' failed. "
+                               "Make sure it is installed and reachable "
+                               "by the current Python executable. You can "
+                               f"install it via 'pip install {module_name}'.")
 
         local = os.path.join(basedir, "scipy", "_distributor_init_local.py")
         with open(local, "w", encoding="utf8") as fid:
@@ -1324,7 +1327,8 @@ def cpu_count(only_physical_cores=False):
             f"following reason:\n{exception}\n"
             "Returning the number of logical cores instead. You can "
             "silence this warning by setting LOKY_MAX_CPU_COUNT to "
-            "the number of cores you want to use."
+            "the number of cores you want to use.",
+            stacklevel=2
         )
         traceback.print_tb(exception.__traceback__)
 
@@ -1395,7 +1399,8 @@ def _cpu_count_affinity(os_cpu_count):
             # havoc, typically on CI workers.
             warnings.warn(
                 "Failed to inspect CPU affinity constraints on this system. "
-                "Please install psutil or explicitly set LOKY_MAX_CPU_COUNT."
+                "Please install psutil or explicitly set LOKY_MAX_CPU_COUNT.",
+                stacklevel=4
             )
 
     # This can happen for platforms that do not implement any kind of CPU
