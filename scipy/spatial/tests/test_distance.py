@@ -2250,3 +2250,17 @@ def test_gh_17703():
     actual = cdist(np.atleast_2d(arr_1),
                    np.atleast_2d(arr_2), metric='dice')
     assert_allclose(actual, expected)
+
+
+def test_gh_19436():
+    p = [0, 1]
+    q = [5e-324, 1]
+    actual = jensenshannon(p, q)
+    expected = jensenshannon(p, p)
+    x2 = cdist(np.atleast_2d(p),
+               np.atleast_2d(q),
+               metric="jensenshannon")
+    x3 = pdist([p, q], metric="jensenshannon")
+    assert_allclose(actual, expected)
+    assert_allclose(x2, expected)
+    assert_allclose(x3, expected)
