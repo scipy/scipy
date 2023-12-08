@@ -24,3 +24,7 @@ b9cb3d075dad2b1ee9c145f9e69192d6eeda4f1e
 05b872da4f498d923dbf5f5f38691b9a21580914
 # Clean up for UP lint rules (gh-19516)
 9cf72e4599e0a22902ef3bc1a42e645240b1734d
+# Clean up for B028 lint rule (gh-19623)
+81662226aac5c6b978825b381d2793b16d3b354f
+# Clean up for enabling line length check (gh-19609)
+fa9f13e6906e7d00510d593f7f982db30e4e4f14
