@@ -1255,7 +1255,8 @@ def boxcox_normmax(
     end_msg = "exceed specified `ymax`."
     if isinstance(ymax, BigFloat):
         ymax = ymax(x)
-        end_msg = f"overflow."
+        dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
+        end_msg = f"overflow in {dtype}."
     elif ymax <= 0:
         raise ValueError("`ymax` must be strictly positive")
 
