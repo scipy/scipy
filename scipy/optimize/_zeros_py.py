@@ -1547,7 +1547,7 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None,
     If roots of the function are found, both `l` and `r` are set to the
     leftmost root.
 
-    """
+    """  # noqa: E501
     # Todo:
     # - find bracket with sign change in specified direction
     # - Add tolerance
@@ -2486,9 +2486,13 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     >>> res.df  # approximation of the derivative
     array([2.71828183, 3.49034296, 4.48168907, 5.75460268, 7.3890561 ])
     >>> res.error  # estimate of the error
-    array([7.12940817e-12, 9.16688947e-12, 1.17594823e-11, 1.50972568e-11, 1.93942640e-11])
+    array(
+        [7.12940817e-12, 9.16688947e-12, 1.17594823e-11, 1.50972568e-11, 1.93942640e-11]
+    )
     >>> abs(res.df - df(x))  # true error
-    array([3.06421555e-14, 3.01980663e-14, 5.06261699e-14, 6.30606678e-14, 8.34887715e-14])
+    array(
+        [3.06421555e-14, 3.01980663e-14, 5.06261699e-14, 6.30606678e-14, 8.34887715e-14]
+    )
 
     Show the convergence of the approximation as the step size is reduced.
     Each iteration, the step size is reduced by `step_factor`, so for

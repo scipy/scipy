@@ -147,7 +147,12 @@ class TestConstructUtils:
         # too long arrays are OK
         cases.append(([a], [0], (1, 1), [[1]]))
         cases.append(([a[:3],b], [0,2], (3, 3), [[1, 0, 6], [0, 2, 0], [0, 0, 3]]))
-        cases.append((np.array([[1, 2, 3], [4, 5, 6]]), [0,-1], (3, 3), [[1, 0, 0], [4, 2, 0], [0, 5, 3]]))
+        cases.append((
+            np.array([[1, 2, 3], [4, 5, 6]]),
+            [0,-1],
+            (3, 3),
+            [[1, 0, 0], [4, 2, 0], [0, 5, 3]]
+        ))
 
         # scalar case: broadcasting
         cases.append(([1,-2,1], [1,0,-1], (3, 3), [[-2, 1, 0],
@@ -159,7 +164,9 @@ class TestConstructUtils:
             assert_equal(construct.diags(d, offsets=o, shape=shape).toarray(),
                          result, err_msg=err_msg)
 
-            if shape[0] == shape[1] and hasattr(d[0], '__len__') and len(d[0]) <= max(shape):
+            if (shape[0] == shape[1]
+                and hasattr(d[0], '__len__')
+                and len(d[0]) <= max(shape)):
                 # should be able to find the shape automatically
                 assert_equal(construct.diags(d, offsets=o).toarray(), result,
                              err_msg=err_msg)
@@ -373,7 +380,8 @@ class TestConstructUtils:
         for a in cases:
             for b in cases:
                 result = construct.kronsum(csr_array(a), csr_array(b)).toarray()
-                expected = np.kron(np.eye(b.shape[0]), a) + np.kron(b, np.eye(a.shape[0]))
+                expected = (np.kron(np.eye(b.shape[0]), a)
+                            + np.kron(b, np.eye(a.shape[0])))
                 assert_array_equal(result, expected)
 
         # check that spmatrix returned when both inputs are spmatrix
@@ -394,14 +402,16 @@ class TestConstructUtils:
 
         assert_equal(construct.vstack([A.tocsr(), B.tocsr()]).toarray(),
                      expected)
-        result = construct.vstack([A.tocsr(), B.tocsr()], format="csr", dtype=np.float32)
+        result = construct.vstack([A.tocsr(), B.tocsr()],
+                                  format="csr", dtype=np.float32)
         assert_equal(result.dtype, np.float32)
         assert_equal(result.indices.dtype, np.int32)
         assert_equal(result.indptr.dtype, np.int32)
 
         assert_equal(construct.vstack([A.tocsc(), B.tocsc()]).toarray(),
                      expected)
-        result = construct.vstack([A.tocsc(), B.tocsc()], format="csc", dtype=np.float32)
+        result = construct.vstack([A.tocsc(), B.tocsc()],
+                                  format="csc", dtype=np.float32)
         assert_equal(result.dtype, np.float32)
         assert_equal(result.indices.dtype, np.int32)
         assert_equal(result.indptr.dtype, np.int32)

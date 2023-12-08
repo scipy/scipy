@@ -139,7 +139,9 @@ class Query(LimitedParamBenchmark):
         self.T.query(self.queries, p=p)
 
     # Retain old benchmark results (remove this if changing the benchmark)
-    time_query.version = "327bc0627d5387347e9cdcf4c52a550c813bb80a859eeb0f3e5bfe6650a8a1db"
+    time_query.version = (
+        "327bc0627d5387347e9cdcf4c52a550c813bb80a859eeb0f3e5bfe6650a8a1db"
+    )
 
 
 class Radius(LimitedParamBenchmark):
@@ -184,8 +186,12 @@ class Radius(LimitedParamBenchmark):
         self.T.query_pairs(probe_radius, p=p)
 
     # Retain old benchmark results (remove this if changing the benchmark)
-    time_query_ball_point.version = "e0c2074b35db7e5fca01a43b0fba8ab33a15ed73d8573871ea6feb57b3df4168"
-    time_query_pairs.version = "cf669f7d619e81e4a09b28bb3fceaefbdd316d30faf01524ab33d41661a53f56"
+    time_query_ball_point.version = (
+        "e0c2074b35db7e5fca01a43b0fba8ab33a15ed73d8573871ea6feb57b3df4168"
+    )
+    time_query_pairs.version = (
+        "cf669f7d619e81e4a09b28bb3fceaefbdd316d30faf01524ab33d41661a53f56"
+    )
 
 
 class Neighbors(LimitedParamBenchmark):
@@ -202,7 +208,8 @@ class Neighbors(LimitedParamBenchmark):
     num_param_combinations = 17
 
     def setup(self, mn1n2, p, probe_radius, boxsize, leafsize, cls):
-        LimitedParamBenchmark.setup(self, mn1n2, p, probe_radius, boxsize, leafsize, cls)
+        LimitedParamBenchmark.setup(self, mn1n2, p, probe_radius,
+                                    boxsize, leafsize, cls)
 
         m, n1, n2 = mn1n2
 
@@ -215,7 +222,8 @@ class Neighbors(LimitedParamBenchmark):
         self.T1 = cKDTree(self.data1, boxsize=boxsize, leafsize=leafsize)
         self.T2 = cKDTree(self.data2, boxsize=boxsize, leafsize=leafsize)
 
-    def time_sparse_distance_matrix(self, mn1n2, p, probe_radius, boxsize, leafsize, cls):
+    def time_sparse_distance_matrix(self, mn1n2, p, probe_radius,
+                                    boxsize, leafsize, cls):
         self.T1.sparse_distance_matrix(self.T2, probe_radius, p=p)
 
     def time_count_neighbors(self, mn1n2, p, probe_radius, boxsize, leafsize, cls):
@@ -227,11 +235,16 @@ class Neighbors(LimitedParamBenchmark):
         if cls != 'cKDTree_weighted':
             self.T1.count_neighbors(self.T2, probe_radius, p=p)
         else:
-            self.T1.count_neighbors(self.T2, probe_radius, weights=(self.w1, self.w2), p=p)
+            self.T1.count_neighbors(self.T2, probe_radius,
+                                    weights=(self.w1, self.w2), p=p)
 
     # Retain old benchmark results (remove this if changing the benchmark)
-    time_sparse_distance_matrix.version = "9aa921dce6da78394ab29d949be27953484613dcf9c9632c01ae3973d4b29596"
-    time_count_neighbors.version = "830287f1cf51fa6ba21854a60b03b2a6c70b2f2485c3cdcfb19a360e0a7e2ca2"
+    time_sparse_distance_matrix.version = (
+        "9aa921dce6da78394ab29d949be27953484613dcf9c9632c01ae3973d4b29596"
+    )
+    time_count_neighbors.version = (
+        "830287f1cf51fa6ba21854a60b03b2a6c70b2f2485c3cdcfb19a360e0a7e2ca2"
+    )
 
 
 class CNeighbors(Benchmark):

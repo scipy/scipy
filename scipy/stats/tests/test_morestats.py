@@ -2612,7 +2612,8 @@ class TestMedianTest:
                       ties="foo")
 
     def test_bad_nan_policy(self):
-        assert_raises(ValueError, stats.median_test, [1, 2, 3], [4, 5], nan_policy='foobar')
+        assert_raises(ValueError, stats.median_test, [1, 2, 3], [4, 5],
+                      nan_policy='foobar')
 
     def test_bad_keyword(self):
         assert_raises(TypeError, stats.median_test, [1, 2, 3], [4, 5],

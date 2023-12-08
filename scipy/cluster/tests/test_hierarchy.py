@@ -159,7 +159,8 @@ class TestLinkageTies:
     @skip_if_array_api_gpu
     @array_api_compatible
     def test_linkage_ties(self, xp):
-        for method in ['single', 'complete', 'average', 'weighted', 'centroid', 'median', 'ward']:
+        for method in ['single', 'complete', 'average', 'weighted',
+                       'centroid', 'median', 'ward']:
             self.check_linkage_ties(method, xp)
 
     def check_linkage_ties(self, method, xp):
@@ -258,7 +259,7 @@ class TestFcluster:
             self.check_fclusterdata(t, 'maxclust', xp)
 
     def check_fclusterdata(self, t, criterion, xp):
-        # Tests fclusterdata(X, criterion=criterion, t=t) on a random 3-cluster data set.
+        # Tests fclusterdata(X, criterion=criterion, t=t) on a random 3-cluster data set
         expectedT = xp.asarray(getattr(hierarchy_test_data, 'fcluster_' + criterion)[t])
         X = xp.asarray(hierarchy_test_data.Q_X)
         T = fclusterdata(X, criterion=criterion, t=t)
@@ -346,7 +347,8 @@ class TestIsIsomorphic:
 
     @skip_if_array_api
     def test_is_isomorphic_4A(self):
-        # Tests is_isomorphic on test case #4A (3 flat clusters, different labelings, isomorphic)
+        # Tests is_isomorphic on test case #4A
+        # (3 flat clusters, different labelings, isomorphic)
         a = np.asarray([1, 2, 3])
         b = np.asarray([1, 3, 2])
         assert_(is_isomorphic(a, b))
@@ -354,7 +356,8 @@ class TestIsIsomorphic:
 
     @skip_if_array_api
     def test_is_isomorphic_4B(self):
-        # Tests is_isomorphic on test case #4B (3 flat clusters, different labelings, nonisomorphic)
+        # Tests is_isomorphic on test case #4B
+        # (3 flat clusters, different labelings, nonisomorphic)
         a = np.asarray([1, 2, 3, 3])
         b = np.asarray([1, 3, 2, 3])
         assert_(is_isomorphic(a, b) is False)
@@ -362,7 +365,8 @@ class TestIsIsomorphic:
 
     @skip_if_array_api
     def test_is_isomorphic_4C(self):
-        # Tests is_isomorphic on test case #4C (3 flat clusters, different labelings, isomorphic)
+        # Tests is_isomorphic on test case #4C
+        # (3 flat clusters, different labelings, isomorphic)
         a = np.asarray([7, 2, 3])
         b = np.asarray([6, 3, 2])
         assert_(is_isomorphic(a, b))

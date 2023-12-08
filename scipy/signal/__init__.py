@@ -359,9 +359,9 @@ def deco(name):
 
     def wrapped(*args, **kwargs):
         warnings.warn(f"Importing {name} from 'scipy.signal' is deprecated "
-                      "since SciPy 1.1.0 and will raise an error in SciPy 1.13.0. Please use "
-                      f"'scipy.signal.windows.{name}' or the convenience "
-                      "function 'scipy.signal.get_window' instead.",
+                      f"since SciPy 1.1.0 and will raise an error in SciPy 1.13.0. "
+                      f"Please use 'scipy.signal.windows.{name}' or the convenience "
+                      f"function 'scipy.signal.get_window' instead.",
                       DeprecationWarning, stacklevel=2)
         return f(*args, **kwargs)
 

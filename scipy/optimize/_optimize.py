@@ -859,10 +859,9 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         lower_bound, upper_bound = bounds.lb, bounds.ub
         # check bounds
         if (lower_bound > upper_bound).any():
-            raise ValueError(
-                "Nelder Mead - one of the lower bounds is greater than an upper bound.",
-                stacklevel=3
-            )
+            raise ValueError("Nelder Mead - one of the lower bounds "
+                             "is greater than an upper bound.",
+                             stacklevel=3)
         if np.any(lower_bound > x0) or np.any(x0 > upper_bound):
             warnings.warn("Initial guess is not within the specified bounds",
                           OptimizeWarning, stacklevel=3)
@@ -1312,8 +1311,8 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
     c2 : float, default: 0.9
         Parameter for curvature condition rule.
     hess_inv0 : None or ndarray, optional``
-        Initial inverse hessian estimate, shape (n, n). If None (default) then the identity
-        matrix is used.
+        Initial inverse hessian estimate, shape (n, n). If None (default) then
+        the identity matrix is used.
 
     Returns
     -------
@@ -1451,8 +1450,8 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     c2 : float, default: 0.9
         Parameter for curvature condition rule.
     hess_inv0 : None or ndarray, optional
-        Initial inverse hessian estimate, shape (n, n). If None (default) then the identity
-        matrix is used.
+        Initial inverse hessian estimate, shape (n, n). If None (default) then
+        the identity matrix is used.
 
     Notes
     -----
@@ -1884,8 +1883,8 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         try:
             alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
                      _line_search_wolfe12(f, myfprime, xk, pk, gfk, old_fval,
-                                          old_old_fval, c1=c1, c2=c2, amin=1e-100, amax=1e100,
-                                          extra_condition=descent_condition)
+                                          old_old_fval, c1=c1, c2=c2, amin=1e-100,
+                                          amax=1e100, extra_condition=descent_condition)
         except _LineSearchError:
             # Line search failed to find a better solution.
             warnflag = 2

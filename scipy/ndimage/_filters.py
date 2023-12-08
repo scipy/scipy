@@ -1214,7 +1214,8 @@ def maximum_filter1d(input, size, axis=-1, output=None,
 def _min_or_max_filter(input, size, footprint, structure, output, mode,
                        cval, origin, minimum, axes=None):
     if (size is not None) and (footprint is not None):
-        warnings.warn("ignoring size because footprint is set", UserWarning, stacklevel=3)
+        warnings.warn("ignoring size because footprint is set",
+                      UserWarning, stacklevel=3)
     if structure is None:
         if footprint is None:
             if size is None:
@@ -1405,7 +1406,8 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
                  mode="reflect", cval=0.0, origin=0, operation='rank',
                  axes=None):
     if (size is not None) and (footprint is not None):
-        warnings.warn("ignoring size because footprint is set", UserWarning, stacklevel=3)
+        warnings.warn("ignoring size because footprint is set",
+                      UserWarning, stacklevel=3)
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError('Complex type not supported')
@@ -1820,7 +1822,8 @@ def generic_filter(input, function, size=None, footprint=None,
 
     """
     if (size is not None) and (footprint is not None):
-        warnings.warn("ignoring size because footprint is set", UserWarning, stacklevel=2)
+        warnings.warn("ignoring size because footprint is set",
+                      UserWarning, stacklevel=2)
     if extra_keywords is None:
         extra_keywords = {}
     input = numpy.asarray(input)

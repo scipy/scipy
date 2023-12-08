@@ -990,7 +990,8 @@ def _linprog_ip(c, c0, A, b, callback, postsolve_args, maxiter=1000, tol=1e-8,
 
     1. ``sksparse.cholmod.cholesky`` (if scikit-sparse and SuiteSparse are installed)
 
-    2. ``scipy.sparse.linalg.factorized`` (if scikit-umfpack and SuiteSparse are installed)
+    2. ``scipy.sparse.linalg.factorized``
+        (if scikit-umfpack and SuiteSparse are installed)
 
     3. ``scipy.sparse.linalg.splu`` (which uses SuperLU distributed with SciPy)
 

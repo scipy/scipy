@@ -15,12 +15,14 @@ from ._sparsetools import (get_csr_submatrix, csr_sample_offsets, csr_todense,
                            csr_column_index1, csr_column_index2)
 from ._index import IndexMixin
 from ._sputils import (upcast, upcast_char, to_native, isdense, isshape,
-                       getdtype, isscalarlike, isintlike, downcast_intp_index, get_sum_dtype, check_shape,
-                       is_pydata_spmatrix)
+                       getdtype, isscalarlike, isintlike, downcast_intp_index,
+                       get_sum_dtype, check_shape, is_pydata_spmatrix)
 
 
 class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
-    """base array/matrix class for compressed row- and column-oriented arrays/matrices"""
+    """
+    base array/matrix class for compressed row- and column-oriented arrays/matrices
+    """
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
         _data_matrix.__init__(self)
@@ -78,7 +80,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             try:
                 arg1 = np.asarray(arg1)
             except Exception as e:
-                raise ValueError(f"unrecognized {self.format}_matrix constructor usage") from e
+                msg = f"unrecognized {self.format}_matrix constructor usage"
+                raise ValueError(msg) from e
             self._set_self(self.__class__(
                 self._coo_container(arg1, dtype=dtype)
             ))
@@ -149,9 +152,11 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         # index arrays should have integer data types
         if self.indptr.dtype.kind != 'i':
-            warn(f"indptr array has non-integer dtype ({self.indptr.dtype.name})", stacklevel=3)
+            warn(f"indptr array has non-integer dtype ({self.indptr.dtype.name})",
+                 stacklevel=3)
         if self.indices.dtype.kind != 'i':
-            warn(f"indices array has non-integer dtype ({self.indices.dtype.name})", stacklevel=3)
+            warn(f"indices array has non-integer dtype ({self.indices.dtype.name})",
+                 stacklevel=3)
 
         # check array shapes
         for x in [self.data.ndim, self.indices.ndim, self.indptr.ndim]:

@@ -58,7 +58,12 @@ def main():
             names.update((name,))
 
         # Look for "thanks to" messages in the commit log
-        m = re.search(r'([Tt]hanks to|[Cc]ourtesy of|Co-authored-by:) ([A-Z][A-Za-z]*? [A-Z][A-Za-z]*? [A-Z][A-Za-z]*|[A-Z][A-Za-z]*? [A-Z]\. [A-Z][A-Za-z]*|[A-Z][A-Za-z ]*? [A-Z][A-Za-z]*|[a-z0-9]+)($|\.| )', line)
+        m = re.search(
+            r'([Tt]hanks to|[Cc]ourtesy of|Co-authored-by:) '
+            r'([A-Z][A-Za-z]*? [A-Z][A-Za-z]*? [A-Z][A-Za-z]*|[A-Z][A-Za-z]*? [A-Z]\.'
+            r' [A-Z][A-Za-z]*|[A-Z][A-Za-z ]*? [A-Z][A-Za-z]*|[a-z0-9]+)($|\.| )',
+            line,
+        )
         if m:
             name = m.group(2)
             if name not in ('this',):

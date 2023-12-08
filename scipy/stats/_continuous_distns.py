@@ -1154,7 +1154,8 @@ class burr_gen(rv_continuous):
         g1 = _lazywhere(
             c > 3.0,
             (c, e1, e2, e3, mu2_if_c),
-            lambda c, e1, e2, e3, mu2_if_c: (e3 - 3*e2*e1 + 2*e1**3) / np.sqrt((mu2_if_c)**3),
+            lambda c, e1, e2, e3, mu2_if_c: ((e3 - 3*e2*e1 + 2*e1**3)
+                                             / np.sqrt((mu2_if_c)**3)),
             fillvalue=np.nan)
         g2 = _lazywhere(
             c > 4.0,
@@ -1631,7 +1632,9 @@ class cosine_gen(rv_continuous):
         return -scu._cosine_invcdf(p)
 
     def _stats(self):
-        return 0.0, np.pi*np.pi/3.0-2.0, 0.0, -6.0*(np.pi**4-90)/(5.0*(np.pi*np.pi-6)**2)
+        v = (np.pi * np.pi / 3.0) - 2.0
+        k = -6.0 * (np.pi**4 - 90) / (5.0 * (np.pi * np.pi - 6)**2)
+        return 0.0, v, 0.0, k
 
     def _entropy(self):
         return np.log(4*np.pi)-1.0
@@ -2282,8 +2285,8 @@ class f_gen(rv_continuous):
 
     Notes
     -----
-    The F distribution with :math:`df_1 > 0` and :math:`df_2 > 0` degrees of freedom is the
-    distribution of the ratio of two independent chi-squared distributions with
+    The F distribution with :math:`df_1 > 0` and :math:`df_2 > 0` degrees of freedom is
+    the distribution of the ratio of two independent chi-squared distributions with
     :math:`df_1` and :math:`df_2` degrees of freedom, after rescaling by
     :math:`df_2 / df_1`.
     
@@ -3312,7 +3315,8 @@ class gamma_gen(rv_continuous):
 
     .. math::
 
-        f(x, \alpha, \beta) = \frac{\beta^\alpha x^{\alpha - 1} e^{-\beta x }}{\Gamma(\alpha)}
+        f(x, \alpha, \beta) =
+        \frac{\beta^\alpha x^{\alpha - 1} e^{-\beta x }}{\Gamma(\alpha)}
 
     Note that this parameterization is equivalent to the above, with
     ``scale = 1 / beta``.
@@ -6342,7 +6346,8 @@ loglaplace = loglaplace_gen(a=0.0, name='loglaplace')
 
 def _lognorm_logpdf(x, s):
     return _lazywhere(x != 0, (x, s),
-                      lambda x, s: -np.log(x)**2 / (2*s**2) - np.log(s*x*np.sqrt(2*np.pi)),
+                      lambda x, s: (-np.log(x)**2 / (2 * s**2)
+                                    - np.log(s * x * np.sqrt(2 * np.pi))),
                       -np.inf)
 
 

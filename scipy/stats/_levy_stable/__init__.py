@@ -220,9 +220,9 @@ def _pdf_single_value_piecewise_Z0(x0, alpha, beta, **kwds):
     )
 
 
-def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps, x_tol_near_zeta):
-    """Calculate pdf using Nolan's methods as detailed in [NO].
-    """
+def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps,
+                                                 x_tol_near_zeta):
+    """Calculate pdf using Nolan's methods as detailed in [NO]."""
 
     _nolan = Nolan(alpha, beta, x0)
     zeta = _nolan.zeta
@@ -341,9 +341,9 @@ def _cdf_single_value_piecewise_Z0(x0, alpha, beta, **kwds):
     )
 
 
-def _cdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps, x_tol_near_zeta):
-    """Calculate cdf using Nolan's methods as detailed in [NO].
-    """
+def _cdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps,
+                                                 x_tol_near_zeta):
+    """Calculate cdf using Nolan's methods as detailed in [NO]."""
     _nolan = Nolan(alpha, beta, x0)
     zeta = _nolan.zeta
     xi = _nolan.xi

@@ -598,7 +598,7 @@ Result classes used in :mod:`scipy.stats`
 
    stats._result_classes
 
-"""
+"""  # noqa: E501
 
 from ._warnings_errors import (ConstantInputWarning, NearConstantInputWarning,
                                DegenerateDataWarning, FitError)

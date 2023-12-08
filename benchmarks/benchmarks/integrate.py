@@ -102,7 +102,8 @@ class Quad(Benchmark):
             voidp = ctypes.cast(self.f_ctypes, ctypes.c_void_p)
             address = voidp.value
             ffi = cffi.FFI()
-            self.f_cffi = LowLevelCallable(ffi.cast("double (*)(int, double *)", address))
+            self.f_cffi = LowLevelCallable(ffi.cast("double (*)(int, double *)",
+                                                    address))
 
     def time_quad_python(self):
         quad(self.f_python, 0, np.pi)

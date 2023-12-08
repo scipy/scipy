@@ -264,8 +264,8 @@ class FortranFile:
             # Fortran does not write mixed type array items in interleaved order,
             # and it's not possible to guess the sizes of the arrays that were written.
             # The user must specify the exact sizes of each of the arrays.
-            raise ValueError('Size obtained ({}) does not match with the expected '
-                             'size ({}) of multi-item record'.format(first_size, block_size))
+            raise ValueError(f'Size obtained ({first_size}) does not match with the '
+                             f'expected size ({block_size}) of multi-item record')
 
         data = []
         for dtype in dtypes:

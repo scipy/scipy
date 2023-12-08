@@ -1410,7 +1410,8 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
 
 # You can use maxima to find these rational coefficients
 #  for equally spaced data using the commands
-#  a(i,N) := integrate(product(r-j,j,0,i-1) * product(r-j,j,i+1,N),r,0,N) / ((N-i)! * i!) * (-1)^(N-i);
+#  a(i,N) := (integrate(product(r-j,j,0,i-1) * product(r-j,j,i+1,N),r,0,N)
+#             / ((N-i)! * i!) * (-1)^(N-i));
 #  Be(N) := N^(N+2)/(N+2)! * (N/(N+3) - sum((i/N)^(N+2)*a(i,N),i,0,N));
 #  Bo(N) := N^(N+1)/(N+1)! * (N/(N+2) - sum((i/N)^(N+1)*a(i,N),i,0,N));
 #  B(N) := (if (mod(N,2)=0) then Be(N) else Bo(N));
