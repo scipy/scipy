@@ -1336,7 +1336,6 @@ def boxcox_normmax(
                    "an object containing the optimal `lmbda` in attribute `x`.")
         raise ValueError(message)
     elif not np.isinf(ymax):  # adjust the final lambda
-        x = np.asarray(x)
         xmax = np.max(x, axis=0)
         ymax_res = special.boxcox(xmax, res)
         mask = ymax_res > ymax
