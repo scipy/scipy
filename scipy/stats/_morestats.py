@@ -1698,10 +1698,10 @@ def yeojohnson_llf(lmb, data):
 def _yeojohnson_inv_lmbda(x, y):
     # compute lmbda given x and y for Yeo-Johnson transformation
     if x >= 0:
-        num = special.lambertw(-((x + 1) ** (-1 / y) * np.log1p(x)) / y, k=1)
+        num = special.lambertw(-((x + 1) ** (-1 / y) * np.log1p(x)) / y, k=-1)
         return np.real(-num / np.log1p(x)) - 1 / y
     else:
-        num = special.lambertw(((1 - x) ** (1 / y) * np.log1p(-x)) / y, k=1)
+        num = special.lambertw(((1 - x) ** (1 / y) * np.log1p(-x)) / y, k=-1)
         return np.real(num / np.log1p(-x)) - 1 / y + 2
 
 
