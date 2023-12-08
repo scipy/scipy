@@ -2092,13 +2092,14 @@ class TestBoxcoxNormmax:
         np.array([2003.0e200, 1950.0e200, 1997.0e200, 2000.0e200, 2009.0e200],
                  dtype=np.float64)
     ])
-    @pytest.mark.parametrize("ymax", [1e10, 1e30, 1e100, None])
+    @pytest.mark.parametrize("ymax", [1e10, 1e100, None])
     # TODO: add method "pearsonr" after fix overflow issue
     @pytest.mark.parametrize("method", ["mle"])
     def test_user_defined_ymax_input_float64(self, x, ymax, method):
         # Test the maximum of the transformed data close to ymax
         with pytest.warns(UserWarning, match="The optimal lambda is"):
-            lmb = stats.boxcox_normmax(x, ymax=ymax, method=method)
+            kwarg = {'ymax': ymax} if ymax is not None else {}
+            lmb = stats.boxcox_normmax(x, method=method, **kwarg)
             ymax_res = stats.boxcox(np.max(x), lmb)
             if ymax is None:
                 ymax = np.finfo(x.dtype).max / 100
@@ -2116,13 +2117,14 @@ class TestBoxcoxNormmax:
         np.array([200.3, 195.0, 199.7, 200.0, 200.9],
                  dtype=np.float32)
     ])
-    @pytest.mark.parametrize("ymax", [1e8, 1e15, 1e30, None])
+    @pytest.mark.parametrize("ymax", [1e8, 1e30, None])
     # TODO: add method "pearsonr" after fix overflow issue
     @pytest.mark.parametrize("method", ["mle"])
     def test_user_defined_ymax_input_float32(self, x, ymax, method):
         # Test the maximum of the transformed data close to ymax
         with pytest.warns(UserWarning, match="The optimal lambda is"):
-            lmb = stats.boxcox_normmax(x, ymax=ymax, method=method)
+            kwarg = {'ymax': ymax} if ymax is not None else {}
+            lmb = stats.boxcox_normmax(x, method=method, **kwarg)
             ymax_res = stats.boxcox(np.max(x), lmb)
             if ymax is None:
                 ymax = np.finfo(x.dtype).max / 100

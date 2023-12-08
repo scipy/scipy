@@ -1129,12 +1129,21 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
 
 def _boxcox_inv_lmbda(x, y):
     # compute lmbda given x and y for Box-Cox transformation
-    num = special.lambertw(-(x ** (-1 / y)) * np.log(x) / y, k=1)
+    num = special.lambertw(-(x ** (-1 / y)) * np.log(x) / y, k=-1)
     return np.real(-num / np.log(x) - 1 / y)
 
 
+class BigFloat:
+    def __repr__(self):
+        return "BIG_FLOAT"
+
+    def __call__(self, x):
+        dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
+        return np.finfo(dtype).max / 100  # 100 is the safety factor
+
+
 def boxcox_normmax(
-    x, brack=None, method='pearsonr', optimizer=None, *, ymax=None
+    x, brack=None, method='pearsonr', optimizer=None, *, ymax=BigFloat()
 ):
     """Compute optimal Box-Cox transform parameter for input data.
 
@@ -1180,12 +1189,12 @@ def boxcox_normmax(
         See the example below or the documentation of
         `scipy.optimize.minimize_scalar` for more information.
     ymax : float, optional
-        This parameter constraints the maximum returned `maxlog` such that
-        the Box-Cox transformation of the maximum `x` is at most `ymax`.
-        This helps to avoid situations where the maximum transformed `x`
-        overflows with the optimal value of `maxlog`. The default value
-        is the maximum value of the input dtype. If set to infinity,
-        it returns the true, unconstrained optimal lambda.
+        The unconstrained optimal transform parameter may cause Box-Cox
+        transformed data to have extreme magnitude or even overflow. This
+        parameter constrains MLE optimization such that the transformed
+        `x` does not exceed `ymax`. The default is the maximum value of the
+        input dtype. If set to infinity, `boxcox_normmax` returns the
+        unconstrained optimal lambda. Ignored when ``method='pearsonr'``.
 
     Returns
     -------
@@ -1242,7 +1251,12 @@ def boxcox_normmax(
     >>> stats.boxcox_normmax(x, optimizer=optimizer)
     6.000...
     """
-    if ymax is not None and ymax <= 0:
+    x = np.asarray(x)
+    end_msg = "exceed specified `ymax`."
+    if isinstance(ymax, BigFloat):
+        ymax = ymax(x)
+        end_msg = f"overflow."
+    elif ymax <= 0:
         raise ValueError("`ymax` must be strictly positive")
 
     # If optimizer is not given, define default 'brent' optimizer.
@@ -1321,19 +1335,9 @@ def boxcox_normmax(
         message = ("The `optimizer` argument of `boxcox_normmax` must return "
                    "an object containing the optimal `lmbda` in attribute `x`.")
         raise ValueError(message)
-    elif ymax is None or not np.isinf(ymax):  # adjust the final lambda
-        x = np.asarray(x)
+    elif not np.isinf(ymax):  # adjust the final lambda
         xmax = np.max(x, axis=0)
         ymax_res = special.boxcox(xmax, res)
-
-        if ymax is None:
-            # The default `ymax` is the maximum value of the input dtype
-            dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
-            ymax = np.finfo(dtype).max / 100  # 100 is the safety factor
-            end_msg = f"cause overflow in {dtype}."
-        else:
-            end_msg = "exceed specified `ymax`."
-
         mask = ymax_res > ymax
         if np.any(mask):
             message = (
