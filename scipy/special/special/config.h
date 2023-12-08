@@ -44,6 +44,14 @@ SPECFUN_HOST_DEVICE inline double sqrt(double num) { return thrust::sqrt(num); }
 
 SPECFUN_HOST_DEVICE inline bool isnan(double num) { return thrust::isnan(num); }
 
+SPECFUN_HOST_DEVICE inline bool isfinite(double num) { return thrust::isfinite(num); }
+
+SPECFUN_HOST_DEVICE inline double pow(double x, double y) { return thrust::pow(x, y); }
+
+SPECFUN_HOST_DEVICe inline double sin(double x) { return thrust::sin(x); }
+
+SPECFUN_HOST_DEVICE inline double floor(double x) { return thrust::floor(x); }
+
 } // namespace std
 
 #endif
