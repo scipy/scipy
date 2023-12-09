@@ -2573,13 +2573,13 @@ class rv_continuous(rv_generic):
 
         >>> from scipy.optimize import minimize
         >>> def custom_optimizer(func, x0, args=(), disp=0):
-        ...     res = minimize(func, x0, args, method="SLSQP")
+        ...     res = minimize(func, x0, args, method="COBYLA")
         ...     if res.success:
         ...         return res.x
         ...     raise RuntimeError('optimization routine failed')
         >>> a1, b1, loc1, scale1 = beta.fit(x, method="MLE", optimizer=custom_optimizer)
         >>> a1, b1, loc1, scale1
-        (0.990700499949893, 2.0187807737322947, 0.0004988499083140839, 1.004757298351524)
+        (1.0200503867415276, 2.0418189235479125, 0.00037458995003956784, 0.9983744473416487)
 
         We can also use some prior knowledge about the dataset: let's keep
         ``loc`` and ``scale`` fixed:
