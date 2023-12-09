@@ -36,19 +36,26 @@ class InverseDistanceWeightedNDInterpolator(NDInterpolatorBase):
     >>> values = np.array([0, 1, 2])
     >>> interpolator = InverseDistanceWeightedNDInterpolator(points, values)
     >>> interpolator([1.5, 1.5])
-    # array output of interpolated value
+    array([1.42105263])
+    >>> def exp_weight(dists, power, decorrelation_length=1.5):
+    ...     return np.exp(-(dists / decorrelation_length) ** p)
+    >>> interpolator([1.5, 1.5], weight_func=exp_weight)
+    array([1.38311737])
 
     Notes
     -----
     The interpolation uses an inverse distance weighting method, where the
     influence of each data point on the interpolated values is inversely
-    proportional to the distance from the point to a power `p`.
+    proportional to the distance from the point to a power `p` or specified
+    by the user.
     """
 
-    def __init__(self, x, y, rescale=False, fill_value=np.nan, tree_options=None, local=True):
-        NDInterpolatorBase.__init__(self, x, y, rescale=rescale,
-                                    need_contiguous=False,
-                                    need_values=False)
+    def __init__(
+        self, x, y, rescale=False, fill_value=np.nan, tree_options=None, local=True
+    ):
+        NDInterpolatorBase.__init__(
+            self, x, y, rescale=rescale, need_contiguous=False, need_values=False
+        )
         if tree_options is None:
             tree_options = dict()
         self.tree = cKDTree(self.points, **tree_options)
@@ -57,11 +64,25 @@ class InverseDistanceWeightedNDInterpolator(NDInterpolatorBase):
         self._local = local
         self._fill_value = fill_value
 
-    def __call__(self, xi, weight_func=None, p=2, k=3, distance_upper_bound=np.inf, **query_options):
+    def __call__(
+        self,
+        xi,
+        weight_func=None,
+        p=2,
+        k=3,
+        distance_upper_bound=np.inf,
+        **query_options,
+    ):
         """
         Evaluate the interpolator at given points.
 
-        The interpolating weights are given by: w_i = kernel(d_i / decorrelation_length)**p
+        The interpolating weights are given by:
+
+            w_i = weight_func(d_i, p)
+
+        The default weighting function is the inverse function:
+
+            w_i = 1/d_i^p
 
         Parameters
         ----------
@@ -90,34 +111,45 @@ class InverseDistanceWeightedNDInterpolator(NDInterpolatorBase):
         xi = self._scale_x(xi)
 
         if self._local:
-            interp_values = self._local_idw_interpolation(xi, weight_func=weight_func, p=p, k=k,
-                                                          distance_upper_bound=distance_upper_bound, **query_options)
+            interp_values = self._local_idw_interpolation(
+                xi,
+                weight_func=weight_func,
+                p=p,
+                k=k,
+                distance_upper_bound=distance_upper_bound,
+                **query_options,
+            )
         else:
-            interp_values = self._global_idw_interpolation(xi, weight_func=weight_func, p=p)
+            interp_values = self._global_idw_interpolation(
+                xi, weight_func=weight_func, p=p
+            )
 
         return interp_values
 
-    def _local_idw_interpolation(self, xi, weight_func, p, k, distance_upper_bound, eps=1e-7, **query_options):
+    def _local_idw_interpolation(
+        self, xi, weight_func, p, k, distance_upper_bound, eps=1e-7, **query_options
+    ):
         """
         Perform local Inverse Distance Weighting interpolation.
 
-        In local IDW, only the k-nearest neighbors of each query point are considered for
-        interpolation. This method tends to be faster, but requires some careful thought on hyperparameters
-        chosen for the IDW interpolation.
+        In local IDW, only the k-nearest neighbors of each query point are considered
+        for interpolation. This method tends to be faster, but requires some careful
+        thought on hyperparameters chosen for the IDW interpolation.
 
         Parameters
         ----------
         xi : ndarray
             The query points where interpolation is performed.
         p : float
-            The power parameter of IDW. Higher values assign greater weight to closer points.
+            The power parameter of IDW. Higher values assign greater weight to closer
+            points.
         k : int
             The number of nearest neighbors to consider for each query point.
         distance_upper_bound : float
             Maximum distance for points to be considered as neighbors.
         eps : float, optional
-            Small constant to prevent division by zero in weight calculation. This can be changed depending on the
-            distance scale of different problems.
+            Small constant to prevent division by zero in weight calculation. This can
+            be changed depending on the distance scale of different problems.
         **query_options : dict, optional
             Additional options to pass to the KDTree query.
 
@@ -130,9 +162,13 @@ class InverseDistanceWeightedNDInterpolator(NDInterpolatorBase):
         original_shape = xi.shape
         flattened_shape = xi_flat.shape
 
-        dist, i = self.tree.query(xi_flat, k=k, distance_upper_bound=distance_upper_bound, **query_options)
-        valid_mask = np.isfinite(dist)
+        dist, i = self.tree.query(
+            xi_flat, k=k, distance_upper_bound=distance_upper_bound, **query_options
+        )
 
+        # for points that lie outside of distance_upper_bound, returned dist from
+        # cKDTree will be inf
+        valid_mask = np.isfinite(dist)
         to_interpolate_mask = np.any(valid_mask, axis=1)
 
         if weight_func is not None:
@@ -140,33 +176,56 @@ class InverseDistanceWeightedNDInterpolator(NDInterpolatorBase):
         else:
             weights = 1.0 / np.maximum(dist, eps) ** p
 
-        interp_shape = flattened_shape[:-1] + self.values.shape[1:] if self.values.ndim > 1 else flattened_shape[:-1]
+        # create correct shape for the returned interpolated values and for the
+        # intermediate relevant_values and weighted_values
+        interp_shape = (
+            flattened_shape[:-1] + self.values.shape[1:]
+            if self.values.ndim > 1
+            else flattened_shape[:-1]
+        )
 
         if np.issubdtype(self.values.dtype, np.complexfloating):
-            relevant_values = np.full(interp_shape + (k,), np.nan, dtype=self.values.dtype)
+            relevant_values = np.full(
+                interp_shape + (k,), np.nan, dtype=self.values.dtype
+            )
             weighted_values = np.full(interp_shape + (k,), 0.0, dtype=self.values.dtype)
-            interp_values = np.full(interp_shape, self._fill_value, dtype=self.values.dtype)
+            interp_values = np.full(
+                interp_shape, self._fill_value, dtype=self.values.dtype
+            )
         else:
             relevant_values = np.full(interp_shape + (k,), np.nan)
             weighted_values = np.full(interp_shape + (k,), 0.0)
             interp_values = np.full(interp_shape, self._fill_value)
 
+        # fetch value of valid nearest neighbors and multiply by weights
         relevant_values[valid_mask] = self.values[i[valid_mask]]
         np.multiply(weights, relevant_values, where=valid_mask, out=weighted_values)
 
+        # sum(x*w)/sum(w)
         numerator = np.sum(weighted_values, axis=-1)
         denominator = np.sum(weights, where=valid_mask, axis=-1)
 
-        interp_values[to_interpolate_mask] = numerator[to_interpolate_mask] / denominator[to_interpolate_mask]
+        # only set values for those points that had real data points within
+        # distance_upper_bound
+        interp_values[to_interpolate_mask] = (
+            numerator[to_interpolate_mask] / denominator[to_interpolate_mask]
+        )
+
+        # handle case where there are any/mutiple equidistant points
 
         zero_dist_mask_points = np.any(dist == 0, axis=1)
         if True in zero_dist_mask_points:
             zero_dist_mask_full = dist == 0
             values = np.mean(self.values[i], where=zero_dist_mask_full, axis=1)
-            # handle the case where numpy still wants to take the mean for rows with all False
+            # clunky handle of case when numpy still wants to take the mean for points
+            # with all False (i.e. no points with 0 dists)
             interp_values[zero_dist_mask_points] = values[~np.isnan(values)]
 
-        new_shape = original_shape[:-1] + self.values.shape[1:] if self.values.ndim > 1 else original_shape[:-1]
+        new_shape = (
+            original_shape[:-1] + self.values.shape[1:]
+            if self.values.ndim > 1
+            else original_shape[:-1]
+        )
         interp_values = interp_values.reshape(new_shape)
 
         return interp_values
@@ -196,10 +255,16 @@ class InverseDistanceWeightedNDInterpolator(NDInterpolatorBase):
         original_shape = xi.shape
         flattened_shape = xi_flat.shape
 
-        interp_shape = flattened_shape[:-1] + self.values.shape[1:] if self.values.ndim > 1 else flattened_shape[:-1]
+        interp_shape = (
+            flattened_shape[:-1] + self.values.shape[1:]
+            if self.values.ndim > 1
+            else flattened_shape[:-1]
+        )
 
         if np.issubdtype(self.values.dtype, np.complexfloating):
-            interp_values = np.full(interp_shape, self._fill_value, dtype=self.values.dtype)
+            interp_values = np.full(
+                interp_shape, self._fill_value, dtype=self.values.dtype
+            )
         else:
             interp_values = np.full(interp_shape, self._fill_value)
 
@@ -207,7 +272,7 @@ class InverseDistanceWeightedNDInterpolator(NDInterpolatorBase):
             dist = distance.cdist(xi_flat[i, np.newaxis], self.points).ravel()
 
             if weight_func is not None:
-                weights = weight_func(dists, p)
+                weights = weight_func(dist, p)
             else:
                 weights = 1.0 / np.maximum(dist, eps) ** p
 
@@ -218,12 +283,15 @@ class InverseDistanceWeightedNDInterpolator(NDInterpolatorBase):
 
             else:
                 if np.any(np.isfinite(dist)):
-                    numerator = np.sum((weights * self.values))
+                    numerator = np.sum(weights * self.values)
                     denominator = np.sum(weights)
                     interp_values[i] = numerator / denominator
 
-        new_shape = original_shape[:-1] + self.values.shape[1:] if self.values.ndim > 1 else original_shape[:-1]
+        new_shape = (
+            original_shape[:-1] + self.values.shape[1:]
+            if self.values.ndim > 1
+            else original_shape[:-1]
+        )
         interp_values = interp_values.reshape(new_shape)
 
         return interp_values
-
