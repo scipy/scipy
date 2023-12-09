@@ -3442,9 +3442,17 @@ BrunnerMunzelResult = namedtuple('BrunnerMunzelResult', ('statistic', 'pvalue'))
 
 def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
     """
-    Computes the Brunner-Munzel test on samples x and y
+    Compute the Brunner-Munzel test on samples x and y.
 
-    Missing values in `x` and/or `y` are discarded.
+    Any missing values in `x` and/or `y` are discarded.
+
+    The Brunner-Munzel test is a nonparametric test of the null hypothesis that
+    when values are taken one by one from each group, the probabilities of
+    getting large values in both groups are equal.
+    Unlike the Wilcoxon-Mann-Whitney's U test, this does not require the
+    assumption of equivariance of two groups. Note that this does not assume
+    the distributions are same. This test works on two independent samples,
+    which may have different sizes.
 
     Parameters
     ----------
@@ -3474,6 +3482,18 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
     Notes
     -----
     For more details on `brunnermunzel`, see `scipy.stats.brunnermunzel`.
+
+    Examples
+    --------
+    >>> from scipy.stats.mstats import brunnermunzel
+    >>> import numpy as np
+    >>> x1 = [1,2,np.nan,np.nan,1,1,1,1,1,1,2,4,1,1]
+    >>> x2 = [3,3,4,3,1,2,3,1,1,5,4]
+    >>> w, p_value = mstats.brunnermunzel(x1, x2)
+    >>> w
+    1.4670611987757205
+    >>> p_value
+    0.15622840440238628
 
     """
     x = ma.asarray(x).compressed().view(ndarray)
