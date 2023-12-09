@@ -674,7 +674,8 @@ class TestEmptyConstraint(TestCase):
         def constraintlcoh(x, v):
             return np.array([[2., 0.], [0., -2.]]) * v[0]
 
-        constraint = NonlinearConstraint(constraint, 1., np.inf, constraintjacobian, constraintlcoh)
+        constraint = NonlinearConstraint(constraint, 1., np.inf,
+                                         constraintjacobian, constraintlcoh)
 
         startpoint = [1., 2.]
 
@@ -701,7 +702,8 @@ def test_bug_11886():
         sup.filter(PendingDeprecationWarning)
         A = np.matrix(np.diag([1, 1]))
     lin_cons = LinearConstraint(A, -1, np.inf)
-    minimize(opt, 2*[1], constraints = lin_cons)  # just checking that there are no errors
+    # just checking that there are no errors
+    minimize(opt, 2*[1], constraints = lin_cons)
 
 
 # Remove xfail when gh-11649 is resolved

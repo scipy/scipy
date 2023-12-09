@@ -393,7 +393,8 @@ def test_rotvec_calc_pipeline():
         [-3e-4, 3.5e-4, 7.5e-5]
         ])
     assert_allclose(Rotation.from_rotvec(rotvec).as_rotvec(), rotvec)
-    assert_allclose(Rotation.from_rotvec(rotvec, degrees=True).as_rotvec(degrees=True), rotvec)
+    assert_allclose(Rotation.from_rotvec(rotvec, degrees=True).as_rotvec(degrees=True),
+                    rotvec)
 
 
 def test_from_1d_single_mrp():
@@ -452,7 +453,10 @@ def test_past_180_degree_rotation():
     # ensure that a > 180 degree rotation is returned as a <180 rotation in MRPs
     # in this case 270 should be returned as -90
     expected_mrp = np.array([-np.tan(np.pi/2/4), 0.0, 0])
-    assert_array_almost_equal(Rotation.from_euler('xyz', [270, 0, 0], degrees=True).as_mrp(), expected_mrp)
+    assert_array_almost_equal(
+        Rotation.from_euler('xyz', [270, 0, 0], degrees=True).as_mrp(),
+        expected_mrp
+    )
 
 
 def test_as_mrp_single_1d_input():
@@ -630,7 +634,9 @@ def test_from_euler_extrinsic_rotation_313():
     ]))
 
 
-def test_as_euler_asymmetric_axes():
+@pytest.mark.parametrize("seq_tuple", permutations("xyz"))
+@pytest.mark.parametrize("intrinsic", (False, True))
+def test_as_euler_asymmetric_axes(seq_tuple, intrinsic):
     # helper function for mean error tests
     def test_stats(error, mean_max, rms_max):
         mean = np.mean(error, axis=0)
@@ -646,29 +652,24 @@ def test_as_euler_asymmetric_axes():
     angles[:, 1] = rnd.uniform(low=-np.pi / 2, high=np.pi / 2, size=(n,))
     angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
 
-    for seq_tuple in permutations('xyz'):
-        # Extrinsic rotations
-        seq = ''.join(seq_tuple)
-        rotation = Rotation.from_euler(seq, angles)
-        angles_quat = rotation.as_euler(seq)
-        angles_mat = rotation._as_euler_from_matrix(seq)
-        assert_allclose(angles, angles_quat, atol=0, rtol=1e-12)
-        assert_allclose(angles, angles_mat, atol=0, rtol=1e-12)
-        test_stats(angles_quat - angles, 1e-15, 1e-14)
-        test_stats(angles_mat - angles, 1e-15, 1e-14)
-
-        # Intrinsic rotations
+    seq = "".join(seq_tuple)
+    if intrinsic:
+        # Extrinsic rotation (wrt to global world) at lower case
+        # intrinsinc (WRT the object itself) lower case.
         seq = seq.upper()
-        rotation = Rotation.from_euler(seq, angles)
-        angles_quat = rotation.as_euler(seq)
-        angles_mat = rotation._as_euler_from_matrix(seq)
-        assert_allclose(angles, angles_quat, atol=0, rtol=1e-12)
-        assert_allclose(angles, angles_mat, atol=0, rtol=1e-12)
-        test_stats(angles_quat - angles, 1e-15, 1e-14)
-        test_stats(angles_mat - angles, 1e-15, 1e-14)
+    rotation = Rotation.from_euler(seq, angles)
+    angles_quat = rotation.as_euler(seq)
+    angles_mat = rotation._as_euler_from_matrix(seq)
+    assert_allclose(angles, angles_quat, atol=0, rtol=1e-12)
+    assert_allclose(angles, angles_mat, atol=0, rtol=1e-12)
+    test_stats(angles_quat - angles, 1e-15, 1e-14)
+    test_stats(angles_mat - angles, 1e-15, 1e-14)
 
 
-def test_as_euler_symmetric_axes():
+
+@pytest.mark.parametrize("seq_tuple", permutations("xyz"))
+@pytest.mark.parametrize("intrinsic", (False, True))
+def test_as_euler_symmetric_axes(seq_tuple, intrinsic):
     # helper function for mean error tests
     def test_stats(error, mean_max, rms_max):
         mean = np.mean(error, axis=0)
@@ -684,29 +685,22 @@ def test_as_euler_symmetric_axes():
     angles[:, 1] = rnd.uniform(low=0, high=np.pi, size=(n,))
     angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
 
-    for seq_tuple in permutations('xyz'):
-        # Extrinsic rotations
-        seq = ''.join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
-        rotation = Rotation.from_euler(seq, angles)
-        angles_quat = rotation.as_euler(seq)
-        angles_mat = rotation._as_euler_from_matrix(seq)
-        assert_allclose(angles, angles_quat, atol=0, rtol=1e-13)
-        assert_allclose(angles, angles_mat, atol=0, rtol=1e-9)
-        test_stats(angles_quat - angles, 1e-16, 1e-14)
-        test_stats(angles_mat - angles, 1e-15, 1e-13)
-
-        # Intrinsic rotations
+    # Rotation of the form A/B/A are rotation around symmetric axes
+    seq = "".join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
+    if intrinsic:
         seq = seq.upper()
-        rotation = Rotation.from_euler(seq, angles)
-        angles_quat = rotation.as_euler(seq)
-        angles_mat = rotation._as_euler_from_matrix(seq)
-        assert_allclose(angles, angles_quat, atol=0, rtol=1e-13)
-        assert_allclose(angles, angles_mat, atol=0, rtol=1e-9)
-        test_stats(angles_quat - angles, 1e-16, 1e-14)
-        test_stats(angles_mat - angles, 1e-15, 1e-13)
+    rotation = Rotation.from_euler(seq, angles)
+    angles_quat = rotation.as_euler(seq)
+    angles_mat = rotation._as_euler_from_matrix(seq)
+    assert_allclose(angles, angles_quat, atol=0, rtol=1e-13)
+    assert_allclose(angles, angles_mat, atol=0, rtol=1e-9)
+    test_stats(angles_quat - angles, 1e-16, 1e-14)
+    test_stats(angles_mat - angles, 1e-15, 1e-13)
 
 
-def test_as_euler_degenerate_asymmetric_axes():
+@pytest.mark.parametrize("seq_tuple", permutations("xyz"))
+@pytest.mark.parametrize("intrinsic", (False, True))
+def test_as_euler_degenerate_asymmetric_axes(seq_tuple, intrinsic):
     # Since we cannot check for angle equality, we check for rotation matrix
     # equality
     angles = np.array([
@@ -715,34 +709,24 @@ def test_as_euler_degenerate_asymmetric_axes():
         [35, 90, 25],
         [25, -90, 15]])
 
+    seq = "".join(seq_tuple)
+    if intrinsic:
+        # Extrinsic rotation (wrt to global world) at lower case
+        # Intrinsic (WRT the object itself) upper case.
+        seq = seq.upper()
+    rotation = Rotation.from_euler(seq, angles, degrees=True)
+    mat_expected = rotation.as_matrix()
+
     with pytest.warns(UserWarning, match="Gimbal lock"):
-        for seq_tuple in permutations('xyz'):
-            # Extrinsic rotations
-            seq = ''.join(seq_tuple)
-            rotation = Rotation.from_euler(seq, angles, degrees=True)
-            mat_expected = rotation.as_matrix()
+        angle_estimates = rotation.as_euler(seq, degrees=True)
+    mat_estimated = Rotation.from_euler(seq, angle_estimates, degrees=True).as_matrix()
 
-            angle_estimates = rotation.as_euler(seq, degrees=True)
-            mat_estimated = Rotation.from_euler(
-                seq, angle_estimates, degrees=True
-                ).as_matrix()
-
-            assert_array_almost_equal(mat_expected, mat_estimated)
-
-            # Intrinsic rotations
-            seq = seq.upper()
-            rotation = Rotation.from_euler(seq, angles, degrees=True)
-            mat_expected = rotation.as_matrix()
-
-            angle_estimates = rotation.as_euler(seq, degrees=True)
-            mat_estimated = Rotation.from_euler(
-                seq, angle_estimates, degrees=True
-                ).as_matrix()
-
-            assert_array_almost_equal(mat_expected, mat_estimated)
+    assert_array_almost_equal(mat_expected, mat_estimated)
 
 
-def test_as_euler_degenerate_symmetric_axes():
+@pytest.mark.parametrize("seq_tuple", permutations("xyz"))
+@pytest.mark.parametrize("intrinsic", (False, True))
+def test_as_euler_degenerate_symmetric_axes(seq_tuple, intrinsic):
     # Since we cannot check for angle equality, we check for rotation matrix
     # equality
     angles = np.array([
@@ -751,34 +735,25 @@ def test_as_euler_degenerate_symmetric_axes():
         [60, 180, 35],
         [15, -180, 25]])
 
+    # Rotation of the form A/B/A are rotation around symmetric axes
+    seq = "".join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
+    if intrinsic:
+        # Extrinsic rotation (wrt to global world) at lower case
+        # Intrinsic (WRT the object itself) upper case.
+        seq = seq.upper()
+    rotation = Rotation.from_euler(seq, angles, degrees=True)
+    mat_expected = rotation.as_matrix()
+
     with pytest.warns(UserWarning, match="Gimbal lock"):
-        for seq_tuple in permutations('xyz'):
-            # Extrinsic rotations
-            seq = ''.join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
-            rotation = Rotation.from_euler(seq, angles, degrees=True)
-            mat_expected = rotation.as_matrix()
+        angle_estimates = rotation.as_euler(seq, degrees=True)
+    mat_estimated = Rotation.from_euler(seq, angle_estimates, degrees=True).as_matrix()
 
-            angle_estimates = rotation.as_euler(seq, degrees=True)
-            mat_estimated = Rotation.from_euler(
-                seq, angle_estimates, degrees=True
-                ).as_matrix()
-
-            assert_array_almost_equal(mat_expected, mat_estimated)
-
-            # Intrinsic rotations
-            seq = seq.upper()
-            rotation = Rotation.from_euler(seq, angles, degrees=True)
-            mat_expected = rotation.as_matrix()
-
-            angle_estimates = rotation.as_euler(seq, degrees=True)
-            mat_estimated = Rotation.from_euler(
-                seq, angle_estimates, degrees=True
-                ).as_matrix()
-
-            assert_array_almost_equal(mat_expected, mat_estimated)
+    assert_array_almost_equal(mat_expected, mat_estimated)
 
 
-def test_as_euler_degenerate_compare_algorithms():
+@pytest.mark.parametrize("seq_tuple", permutations("xyz"))
+@pytest.mark.parametrize("intrinsic", (False, True))
+def test_as_euler_degenerate_compare_algorithms(seq_tuple, intrinsic):
     # this test makes sure that both algorithms are doing the same choices
     # in degenerate cases
 
@@ -789,27 +764,22 @@ def test_as_euler_degenerate_compare_algorithms():
         [35, 90, 25],
         [25, -90, 15]])
 
-    with pytest.warns(UserWarning, match="Gimbal lock"):
-        for seq_tuple in permutations('xyz'):
-            # Extrinsic rotations
-            seq = ''.join(seq_tuple)
-            rot = Rotation.from_euler(seq, angles, degrees=True)
-            estimates_matrix = rot._as_euler_from_matrix(seq, degrees=True)
-            estimates_quat = rot.as_euler(seq, degrees=True)
-            assert_allclose(estimates_matrix[:, [0, 2]],
-                            estimates_quat[:, [0, 2]], atol=0, rtol=1e-12)
-            assert_allclose(estimates_matrix[:, 1], estimates_quat[:, 1],
-                            atol=0, rtol=1e-7)
+    seq = "".join(seq_tuple)
+    if intrinsic:
+        # Extrinsic rotation (wrt to global world at lower case
+        # Intrinsic (WRT the object itself) upper case.
+        seq = seq.upper()
 
-            # Intrinsic rotations
-            seq = seq.upper()
-            rot = Rotation.from_euler(seq, angles, degrees=True)
-            estimates_matrix = rot._as_euler_from_matrix(seq, degrees=True)
-            estimates_quat = rot.as_euler(seq, degrees=True)
-            assert_allclose(estimates_matrix[:, [0, 2]],
-                            estimates_quat[:, [0, 2]], atol=0, rtol=1e-12)
-            assert_allclose(estimates_matrix[:, 1], estimates_quat[:, 1],
-                            atol=0, rtol=1e-7)
+    rot = Rotation.from_euler(seq, angles, degrees=True)
+    with pytest.warns(UserWarning, match="Gimbal lock"):
+        estimates_matrix = rot._as_euler_from_matrix(seq, degrees=True)
+    with pytest.warns(UserWarning, match="Gimbal lock"):
+        estimates_quat = rot.as_euler(seq, degrees=True)
+    assert_allclose(
+        estimates_matrix[:, [0, 2]], estimates_quat[:, [0, 2]], atol=0, rtol=1e-12
+    )
+    assert_allclose(estimates_matrix[:, 1], estimates_quat[:, 1], atol=0, rtol=1e-7)
+
     # symmetric axes
     # Absolute error tolerance must be looser to directly compare the results
     # from both algorithms, because of numerical loss of precision for the
@@ -823,35 +793,29 @@ def test_as_euler_degenerate_compare_algorithms():
 
     idx = angles[:, 1] == 0  # find problematic angles indices
 
+    # Rotation of the form A/B/A are rotation around symmetric axes
+    seq = "".join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
+    if intrinsic:
+        # Extrinsinc rotation (wrt to global world) at lower case
+        # Intrinsic (WRT the object itself) upper case.
+        seq = seq.upper()
+
+    rot = Rotation.from_euler(seq, angles, degrees=True)
     with pytest.warns(UserWarning, match="Gimbal lock"):
-        for seq_tuple in permutations('xyz'):
-            # Extrinsic rotations
-            seq = ''.join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
-            rot = Rotation.from_euler(seq, angles, degrees=True)
-            estimates_matrix = rot._as_euler_from_matrix(seq, degrees=True)
-            estimates_quat = rot.as_euler(seq, degrees=True)
-            assert_allclose(estimates_matrix[:, [0, 2]],
-                            estimates_quat[:, [0, 2]], atol=0, rtol=1e-12)
+        estimates_matrix = rot._as_euler_from_matrix(seq, degrees=True)
+    with pytest.warns(UserWarning, match="Gimbal lock"):
+        estimates_quat = rot.as_euler(seq, degrees=True)
+    assert_allclose(
+        estimates_matrix[:, [0, 2]], estimates_quat[:, [0, 2]], atol=0, rtol=1e-12
+    )
 
-            assert_allclose(estimates_matrix[~idx, 1], estimates_quat[~idx, 1],
-                            atol=0, rtol=1e-7)
+    assert_allclose(
+        estimates_matrix[~idx, 1], estimates_quat[~idx, 1], atol=0, rtol=1e-7
+    )
 
-            assert_allclose(estimates_matrix[idx, 1], estimates_quat[idx, 1],
-                            atol=1e-6)  # problematic, angles[1] = 0
-
-            # Intrinsic rotations
-            seq = seq.upper()
-            rot = Rotation.from_euler(seq, angles, degrees=True)
-            estimates_matrix = rot._as_euler_from_matrix(seq, degrees=True)
-            estimates_quat = rot.as_euler(seq, degrees=True)
-            assert_allclose(estimates_matrix[:, [0, 2]],
-                            estimates_quat[:, [0, 2]], atol=0, rtol=1e-12)
-
-            assert_allclose(estimates_matrix[~idx, 1], estimates_quat[~idx, 1],
-                            atol=0, rtol=1e-7)
-
-            assert_allclose(estimates_matrix[idx, 1], estimates_quat[idx, 1],
-                            atol=1e-6)  # problematic, angles[1] = 0
+    assert_allclose(
+        estimates_matrix[idx, 1], estimates_quat[idx, 1], atol=1e-6
+    )  # problematic, angles[1] = 0
 
 
 def test_inv():

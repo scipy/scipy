@@ -605,8 +605,7 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
             elif average == 'mean':
                 Pxy = Pxy.mean(axis=-1)
             else:
-                raise ValueError('average must be "median" or "mean", got %s'
-                                 % (average,))
+                raise ValueError(f'average must be "median" or "mean", got {average}')
         else:
             Pxy = np.reshape(Pxy, Pxy.shape[:-1])
 
@@ -759,8 +758,7 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
     """
     modelist = ['psd', 'complex', 'magnitude', 'angle', 'phase']
     if mode not in modelist:
-        raise ValueError('unknown value for mode {}, must be one of {}'
-                         .format(mode, modelist))
+        raise ValueError(f'unknown value for mode {mode}, must be one of {modelist}')
 
     # need to set default for nperseg before setting default for noverlap below
     window, nperseg = _triage_segments(window, nperseg,
@@ -1520,7 +1518,8 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     if np.sum(norm > 1e-10) != len(norm):
         warnings.warn(
             "NOLA condition failed, STFT may not be invertible."
-            + (" Possibly due to missing boundary" if not boundary else "")
+            + (" Possibly due to missing boundary" if not boundary else ""),
+            stacklevel=2
         )
     x /= np.where(norm > 1e-10, norm, 1.0)
 
@@ -1896,15 +1895,16 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     if return_onesided:
         if np.iscomplexobj(x):
             sides = 'twosided'
-            warnings.warn('Input data is complex, switching to '
-                          'return_onesided=False')
+            warnings.warn('Input data is complex, switching to return_onesided=False',
+                          stacklevel=3)
         else:
             sides = 'onesided'
             if not same_data:
                 if np.iscomplexobj(y):
                     sides = 'twosided'
                     warnings.warn('Input data is complex, switching to '
-                                  'return_onesided=False')
+                                  'return_onesided=False',
+                                  stacklevel=3)
     else:
         sides = 'twosided'
 
@@ -2043,9 +2043,9 @@ def _triage_segments(window, nperseg, input_length):
         if nperseg is None:
             nperseg = 256  # then change to default
         if nperseg > input_length:
-            warnings.warn('nperseg = {0:d} is greater than input length '
-                          ' = {1:d}, using nperseg = {1:d}'
-                          .format(nperseg, input_length))
+            warnings.warn(f'nperseg = {nperseg:d} is greater than input length '
+                          f' = {input_length:d}, using nperseg = {input_length:d}',
+                          stacklevel=3)
             nperseg = input_length
         win = get_window(window, nperseg)
     else:

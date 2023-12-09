@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from .go_benchmark import Benchmark
 
 

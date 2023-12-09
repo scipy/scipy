@@ -139,7 +139,7 @@ class MemUsage(Benchmark):
 
         a = generate_{matrix_type}({size})
         mmwrite('{self.filename}', a, symmetry='general')
-        """
+        """  # noqa: E501
         time, peak_mem = run_monitored(code)
         return peak_mem / size
 

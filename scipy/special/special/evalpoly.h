@@ -14,11 +14,11 @@
 
 #pragma once
 
-#include <complex>
+#include "config.h"
 
+namespace special {
 
-inline std::complex<double> cevalpoly(const double *coeffs, int degree,
-				      std::complex<double> z) {
+SPECFUN_HOST_DEVICE inline std::complex<double> cevalpoly(const double *coeffs, int degree, std::complex<double> z) {
     /* Evaluate a polynomial with real coefficients at a complex point.
      *
      * Uses equation (3) in section 4.6.4 of [1]. Note that it is more
@@ -31,10 +31,12 @@ inline std::complex<double> cevalpoly(const double *coeffs, int degree,
     double tmp;
 
     for (int j = 2; j < degree + 1; j++) {
-	tmp = b;
-	b = std::fma(-s, a, coeffs[j]);
-	a = std::fma(r, a, tmp);
+        tmp = b;
+        b = std::fma(-s, a, coeffs[j]);
+        a = std::fma(r, a, tmp);
     }
 
-    return z*a + b;
+    return z * a + b;
 }
+
+} // namespace special

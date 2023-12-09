@@ -327,8 +327,10 @@ class TestLinsolve:
                     # interprets also these as "vectors"
                     x = x.ravel()
 
-                assert_array_almost_equal(toarray(x1), x, err_msg=repr((b, spmattype, 1)))
-                assert_array_almost_equal(toarray(x2), x, err_msg=repr((b, spmattype, 2)))
+                assert_array_almost_equal(toarray(x1), x,
+                                          err_msg=repr((b, spmattype, 1)))
+                assert_array_almost_equal(toarray(x2), x,
+                                          err_msg=repr((b, spmattype, 2)))
 
                 # dense vs. sparse output  ("vectors" are always dense)
                 if issparse(b) and x.ndim > 1:
@@ -749,7 +751,8 @@ class TestSpsolveTriangular:
         A = csr_matrix((n, n))
         b = np.arange(n)
         for lower in (True, False):
-            assert_raises(scipy.linalg.LinAlgError, spsolve_triangular, A, b, lower=lower)
+            assert_raises(scipy.linalg.LinAlgError,
+                          spsolve_triangular, A, b, lower=lower)
 
     @sup_sparse_efficiency
     def test_bad_shape(self):

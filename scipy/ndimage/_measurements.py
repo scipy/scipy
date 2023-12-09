@@ -284,7 +284,9 @@ def find_objects(input, max_label=0):
            [0, 0, 0, 0, 1, 0],
            [0, 0, 0, 0, 0, 0]])
     >>> ndimage.find_objects(a)
-    [(slice(2, 5, None), slice(2, 5, None)), (slice(0, 2, None), slice(0, 3, None)), (slice(0, 1, None), slice(5, 6, None))]
+    [(slice(2, 5, None), slice(2, 5, None)),
+     (slice(0, 2, None), slice(0, 3, None)),
+     (slice(0, 1, None), slice(5, 6, None))]
     >>> ndimage.find_objects(a, max_label=2)
     [(slice(2, 5, None), slice(2, 5, None)), (slice(0, 2, None), slice(0, 3, None))]
     >>> ndimage.find_objects(a == 1, max_label=2)
@@ -421,7 +423,8 @@ def value_indices(arr, *, ignore_value=None):
     return val_indices
 
 
-def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_positions=False):
+def labeled_comprehension(input, labels, index, func, out_dtype, default,
+                          pass_positions=False):
     """
     Roughly equivalent to [func(input[labels == i]) for i in index].
 
@@ -519,13 +522,13 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_p
 
     index = numpy.atleast_1d(index)
     if np.any(index.astype(labels.dtype).astype(index.dtype) != index):
-        raise ValueError("Cannot convert index values from <%s> to <%s> "
-                            "(labels' type) without loss of precision" %
-                            (index.dtype, labels.dtype))
+        raise ValueError(f"Cannot convert index values from <{index.dtype}> to "
+                         f"<{labels.dtype}> (labels' type) without loss of precision")
 
     index = index.astype(labels.dtype)
 
-    # optimization: find min/max in index, and select those parts of labels, input, and positions
+    # optimization: find min/max in index,
+    # and select those parts of labels, input, and positions
     lo = index.min()
     hi = index.max()
     mask = (labels >= lo) & (labels <= hi)
@@ -1461,8 +1464,12 @@ def extrema(input, labels=None, index=None):
         return (minimums, maximums, tuple((min_positions // dim_prod) % dims),
                 tuple((max_positions // dim_prod) % dims))
 
-    min_positions = [tuple(v) for v in (min_positions.reshape(-1, 1) // dim_prod) % dims]
-    max_positions = [tuple(v) for v in (max_positions.reshape(-1, 1) // dim_prod) % dims]
+    min_positions = [
+        tuple(v) for v in (min_positions.reshape(-1, 1) // dim_prod) % dims
+    ]
+    max_positions = [
+        tuple(v) for v in (max_positions.reshape(-1, 1) // dim_prod) % dims
+    ]
 
     return minimums, maximums, min_positions, max_positions
 

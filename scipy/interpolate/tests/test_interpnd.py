@@ -206,7 +206,8 @@ class TestEstimateGradients2DGlobal:
 
 class TestCloughTocher2DInterpolator:
 
-    def _check_accuracy(self, func, x=None, tol=1e-6, alternate=False, rescale=False, **kw):
+    def _check_accuracy(self, func, x=None, tol=1e-6, alternate=False,
+                        rescale=False, **kw):
         np.random.seed(1234)
         if x is None:
             x = np.array([(0, 0), (0, 1),
