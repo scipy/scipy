@@ -134,10 +134,9 @@ class InverseDistanceWeightedNDInterpolator(NDInterpolatorBase):
         valid_mask = np.isfinite(dist)
 
         to_interpolate_mask = np.any(valid_mask, axis=1)
-        zero_dist_mask = np.any(dist == 0, axis=1)
 
         if weight_func is not None:
-            weights = weight_func(dist)
+            weights = weight_func(dist, p)
         else:
             weights = 1.0 / np.maximum(dist, eps) ** p
 
@@ -159,14 +158,20 @@ class InverseDistanceWeightedNDInterpolator(NDInterpolatorBase):
         denominator = np.sum(weights, where=valid_mask, axis=-1)
 
         interp_values[to_interpolate_mask] = numerator[to_interpolate_mask] / denominator[to_interpolate_mask]
-        interp_values[zero_dist_mask] = self.values[i[zero_dist_mask, 0]]
+
+        zero_dist_mask_points = np.any(dist == 0, axis=1)
+        if True in zero_dist_mask_points:
+            zero_dist_mask_full = dist == 0
+            values = np.mean(self.values[i], where=zero_dist_mask_full, axis=1)
+            # handle the case where numpy still wants to take the mean for rows with all False
+            interp_values[zero_dist_mask_points] = values[~np.isnan(values)]
 
         new_shape = original_shape[:-1] + self.values.shape[1:] if self.values.ndim > 1 else original_shape[:-1]
         interp_values = interp_values.reshape(new_shape)
 
         return interp_values
 
-    def _global_idw_interpolation(self, xi, weight_func, p, eps=1e-7):
+    def _global_idw_interpolation(self, xi, weight_func=None, p=2, eps=1e-7):
         """
         Perform global Inverse Distance Weighting interpolation.
 
@@ -200,15 +205,16 @@ class InverseDistanceWeightedNDInterpolator(NDInterpolatorBase):
 
         for i in range(len(xi_flat)):
             dist = distance.cdist(xi_flat[i, np.newaxis], self.points).ravel()
+
             if weight_func is not None:
-                weights = weight_func(dists)
+                weights = weight_func(dists, p)
             else:
                 weights = 1.0 / np.maximum(dist, eps) ** p
 
-            zero_dist_mask = np.any(dist == 0)
+            zero_dist_mask = dist == 0
 
-            if zero_dist_mask:
-                interp_values[i] = self.values[zero_dist_mask]
+            if True in zero_dist_mask:
+                interp_values[i] = np.mean(self.values[zero_dist_mask])
 
             else:
                 if np.any(np.isfinite(dist)):
