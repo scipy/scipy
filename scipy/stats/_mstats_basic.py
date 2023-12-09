@@ -3489,11 +3489,8 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
     >>> import numpy as np
     >>> x1 = [1,2,np.nan,np.nan,1,1,1,1,1,1,2,4,1,1]
     >>> x2 = [3,3,4,3,1,2,3,1,1,5,4]
-    >>> w, p_value = brunnermunzel(x1, x2)
-    >>> w
-    1.4670611987757205
-    >>> p_value
-    0.15622840440238628
+    >>> brunnermunzel(x1, x2)
+    BrunnerMunzelResult(statistic=1.4723186918922935, pvalue=0.15479415300426624)
 
     """
     x = ma.asarray(x).compressed().view(ndarray)
