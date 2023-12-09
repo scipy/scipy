@@ -426,11 +426,11 @@ def shgo(
      success: True
          fun: 29.894378159142136
         funl: [ 2.989e+01]
-           x: [ 6.355e-01  1.137e-13  3.127e-01  5.178e-02]
-          xl: [[ 6.355e-01  1.137e-13  3.127e-01  5.178e-02]]
+           x: [ 6.355e-01  1.137e-13  3.127e-01  5.178e-02] # may vary
+          xl: [[ 6.355e-01  1.137e-13  3.127e-01  5.178e-02]] # may vary
          nit: 1
-        nfev: 142
-       nlfev: 35
+        nfev: 142 # may vary
+       nlfev: 35 # may vary
        nljev: 5
        nlhev: 0
 
@@ -464,7 +464,7 @@ def shgo(
         shc.find_lowest_vertex()
         shc.break_routine = True
         shc.fail_routine(mes="Failed to find a feasible minimizer point. "
-                             "Lowest sampling point = {}".format(shc.f_lowest))
+                             f"Lowest sampling point = {shc.f_lowest}")
         shc.res.fun = shc.f_lowest
         shc.res.x = shc.x_lowest
         shc.res.nfev = shc.fn
@@ -575,8 +575,9 @@ class SHGO:
             self.minimizer_kwargs['options'] = {'ftol': 1e-12}
 
         if (
-            self.minimizer_kwargs['method'].lower() in ('slsqp', 'cobyla', 'trust-constr') and
-            (
+            self.minimizer_kwargs['method'].lower() in ('slsqp', 'cobyla',
+                                                        'trust-constr')
+            and (
                 minimizer_kwargs is not None and
                 'constraints' not in minimizer_kwargs and
                 constraints is not None
@@ -951,10 +952,11 @@ class SHGO:
                 self.stop_global = True
                 # 2if (pe - self.f_tol) <= abs(1.0 / abs(self.f_min_true)):
                 if abs(pe) >= 2 * self.f_tol:
-                    warnings.warn("A much lower value than expected f* =" +
-                                  f" {self.f_min_true} than" +
-                                  " the was found f_lowest =" +
-                                  f"{self.f_lowest} ")
+                    warnings.warn(
+                        f"A much lower value than expected f* = {self.f_min_true} "
+                        f"was found f_lowest = {self.f_lowest}",
+                        stacklevel=3
+                    )
             if pe <= self.f_tol:
                 self.stop_global = True
 
@@ -1101,7 +1103,7 @@ class SHGO:
         # Process all pools
         # Evaluate all constraints and functions
         if self.disp:
-            logging.info('Triangulation completed, evaluating all contraints '
+            logging.info('Triangulation completed, evaluating all constraints '
                          'and objective function values.')
 
         # Evaluate all constraints and functions
@@ -1332,12 +1334,10 @@ class SHGO:
             return self.LMC[x_min].lres
 
         if self.callback is not None:
-            logging.info('Callback for '
-                  'minimizer starting at {}:'.format(x_min))
+            logging.info(f'Callback for minimizer starting at {x_min}:')
 
         if self.disp:
-            logging.info('Starting '
-                  'minimization at {}...'.format(x_min))
+            logging.info(f'Starting minimization at {x_min}...')
 
         if self.sampling_method == 'simplicial':
             x_min_t = tuple(x_min)

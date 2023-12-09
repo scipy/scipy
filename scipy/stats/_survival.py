@@ -91,7 +91,7 @@ class EmpiricalDistributionFunction:
             Objects representing the plotted data
         """
         try:
-            import matplotlib  # noqa
+            import matplotlib  # noqa: F401
         except ModuleNotFoundError as exc:
             message = "matplotlib must be installed to use method `plot`."
             raise ModuleNotFoundError(message) from exc

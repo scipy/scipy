@@ -11,7 +11,6 @@ from typing import (
     Optional,
     Union,
     TYPE_CHECKING,
-    Type,
     TypeVar,
 )
 
@@ -19,14 +18,14 @@ import numpy as np
 from scipy._lib._array_api import array_namespace
 
 
-AxisError: Type[Exception]
-ComplexWarning: Type[Warning]
-VisibleDeprecationWarning: Type[Warning]
+AxisError: type[Exception]
+ComplexWarning: type[Warning]
+VisibleDeprecationWarning: type[Warning]
 
 if np.lib.NumpyVersion(np.__version__) >= '1.25.0':
     from numpy.exceptions import (
         AxisError, ComplexWarning, VisibleDeprecationWarning,
-        DTypePromotionError  # noqa: F401
+        DTypePromotionError
     )
 else:
     from numpy import (
@@ -68,7 +67,7 @@ if TYPE_CHECKING:
 try:
     from numpy.random import Generator as Generator
 except ImportError:
-    class Generator():  # type: ignore[no-redef]
+    class Generator:  # type: ignore[no-redef]
         pass
 
 

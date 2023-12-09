@@ -153,6 +153,16 @@ fortranobject_dep = declare_dependency(
 # https://github.com/mesonbuild/meson/issues/2835
 blas_name = get_option('blas')
 lapack_name = get_option('lapack')
+
+# First try scipy-openblas, and if found don't look for cblas or lapack, we
+# know what's inside the scipy-openblas wheels already.
+if blas_name == 'openblas' or blas_name == 'auto'
+  blas = dependency('scipy-openblas', required: false)
+  if blas.found()
+    blas_name = 'scipy-openblas'
+  endif
+endif
+
 # pkg-config uses a lower-case name while CMake uses a capitalized name, so try
 # that too to make the fallback detection with CMake work
 if blas_name == 'openblas'
@@ -171,7 +181,11 @@ else
   cblas = []
 endif
 
-if lapack_name == 'openblas'
+if 'mkl' in blas.name() or blas.name() == 'accelerate' or blas_name == 'scipy-openblas'
+  # For these libraries we know that they contain LAPACK, and it's desirable to
+  # use that - no need to run the full detection twice.
+  lapack = blas
+elif lapack_name == 'openblas'
   lapack = dependency(['openblas', 'OpenBLAS'])
 else
   lapack = dependency(lapack_name)
@@ -225,6 +239,10 @@ python_sources = [
   'optimize.pxd',
   'special.pxd',
 ]
+
+if blas_name == 'scipy-openblas'
+  python_sources += ['_distributor_init_local.py']
+endif
 
 py3.install_sources(
   python_sources,

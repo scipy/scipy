@@ -254,7 +254,7 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
     """
     if mode not in ['left', 'right']:
         raise ValueError("Mode argument can only be 'left' or 'right' but "
-                         "not '{}'".format(mode))
+                         f"not '{mode}'")
     c = numpy.asarray_chkfinite(c)
     if c.ndim < 2:
         onedim = True
@@ -270,11 +270,11 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
     if mode == 'left':
         if c.shape[0] != min(M, N + overwrite_c*(M-N)):
             raise ValueError('Array shapes are not compatible for Q @ c'
-                             ' operation: {} vs {}'.format(a.shape, c.shape))
+                             f' operation: {a.shape} vs {c.shape}')
     else:
         if M != c.shape[1]:
             raise ValueError('Array shapes are not compatible for c @ Q'
-                             ' operation: {} vs {}'.format(c.shape, a.shape))
+                             f' operation: {c.shape} vs {a.shape}')
 
     raw = qr(a, overwrite_a, None, "raw", pivoting)
     Q, tau = raw[0]

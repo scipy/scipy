@@ -160,7 +160,9 @@ class Matmul(Benchmark):
             self.matrix1 * self.matrix2
 
     # Retain old benchmark results (remove this if changing the benchmark)
-    time_large.version = "33aee08539377a7cb0fabaf0d9ff9d6d80079a428873f451b378c39f6ead48cb"
+    time_large.version = (
+        "33aee08539377a7cb0fabaf0d9ff9d6d80079a428873f451b378c39f6ead48cb"
+    )
 
 
 class Construction(Benchmark):
@@ -345,7 +347,7 @@ class NullSlice(Benchmark):
         X = coo_matrix((data, (row, col)), shape=(n, k))
         X.sum_duplicates()
         X = X.asformat(format)
-        with open('{}-{}.pck'.format(density, format), 'wb') as f:
+        with open(f'{density}-{format}.pck', 'wb') as f:
             pickle.dump(X, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     def setup_cache(self):
@@ -357,7 +359,7 @@ class NullSlice(Benchmark):
 
     def setup(self, density, format):
         # Unpickling is faster than computing the random matrix...
-        with open('{}-{}.pck'.format(density, format), 'rb') as f:
+        with open(f'{density}-{format}.pck', 'rb') as f:
             self.X = pickle.load(f)
 
     def time_getrow(self, density, format):
@@ -379,12 +381,24 @@ class NullSlice(Benchmark):
         self.X[:, np.arange(100)]
 
     # Retain old benchmark results (remove this if changing the benchmark)
-    time_10000_rows.version = "dc19210b894d5fd41d4563f85b7459ef5836cddaf77154b539df3ea91c5d5c1c"
-    time_100_cols.version = "8d43ed52084cdab150018eedb289a749a39f35d4dfa31f53280f1ef286a23046"
-    time_3_cols.version = "93e5123910772d62b3f72abff56c2732f83d217221bce409b70e77b89c311d26"
-    time_3_rows.version = "a9eac80863a0b2f4b510269955041930e5fdd15607238257eb78244f891ebfe6"
-    time_getcol.version = "291388763b355f0f3935db9272a29965d14fa3f305d3306059381e15300e638b"
-    time_getrow.version = "edb9e4291560d6ba8dd58ef371b3a343a333bc10744496adb3ff964762d33c68"
+    time_10000_rows.version = (
+        "dc19210b894d5fd41d4563f85b7459ef5836cddaf77154b539df3ea91c5d5c1c"
+    )
+    time_100_cols.version = (
+        "8d43ed52084cdab150018eedb289a749a39f35d4dfa31f53280f1ef286a23046"
+    )
+    time_3_cols.version = (
+        "93e5123910772d62b3f72abff56c2732f83d217221bce409b70e77b89c311d26"
+    )
+    time_3_rows.version = (
+        "a9eac80863a0b2f4b510269955041930e5fdd15607238257eb78244f891ebfe6"
+    )
+    time_getcol.version = (
+        "291388763b355f0f3935db9272a29965d14fa3f305d3306059381e15300e638b"
+    )
+    time_getrow.version = (
+        "edb9e4291560d6ba8dd58ef371b3a343a333bc10744496adb3ff964762d33c68"
+    )
 
 
 class Diagonal(Benchmark):
@@ -404,7 +418,9 @@ class Diagonal(Benchmark):
         self.X.diagonal()
 
     # Retain old benchmark results (remove this if changing the benchmark)
-    time_diagonal.version = "d84f53fdc6abc208136c8ce48ca156370f6803562f6908eb6bd1424f50310cf1"
+    time_diagonal.version = (
+        "d84f53fdc6abc208136c8ce48ca156370f6803562f6908eb6bd1424f50310cf1"
+    )
 
 
 class Sum(Benchmark):
@@ -429,9 +445,15 @@ class Sum(Benchmark):
         self.X.sum(axis=1)
 
     # Retain old benchmark results (remove this if changing the benchmark)
-    time_sum.version = "05c305857e771024535e546360203b17f5aca2b39b023a49ab296bd746d6cdd3"
-    time_sum_axis0.version = "8aca682fd69aa140c69c028679826bdf43c717589b1961b4702d744ed72effc6"
-    time_sum_axis1.version = "1a6e05244b77f857c61f8ee09ca3abd006a10ba07eff10b1c5f9e0ac20f331b2"
+    time_sum.version = (
+        "05c305857e771024535e546360203b17f5aca2b39b023a49ab296bd746d6cdd3"
+    )
+    time_sum_axis0.version = (
+        "8aca682fd69aa140c69c028679826bdf43c717589b1961b4702d744ed72effc6"
+    )
+    time_sum_axis1.version = (
+        "1a6e05244b77f857c61f8ee09ca3abd006a10ba07eff10b1c5f9e0ac20f331b2"
+    )
 
 
 class Iteration(Benchmark):
@@ -463,7 +485,9 @@ class Densify(Benchmark):
         self.X.toarray(order=order)
 
     # Retain old benchmark results (remove this if changing the benchmark)
-    time_toarray.version = "2fbf492ec800b982946a62785beda803460b913cc80080043a5d407025893b2b"
+    time_toarray.version = (
+        "2fbf492ec800b982946a62785beda803460b913cc80080043a5d407025893b2b"
+    )
 
 
 class Random(Benchmark):
