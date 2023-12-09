@@ -2589,6 +2589,16 @@ class rv_continuous(rv_generic):
         >>> loc1, scale1 = norm.fit(x)
         >>> loc1, scale1
         (0.92087172783841631, 2.0015750750324668)
+
+        Using a custom optimizer:
+
+        >>> def optimizer_NM(func, x0=[0.6, 1.6], args=(), disp=0):
+        ...     res = minimize(func, x0, args, method="nelder-mead")
+        ...     if res.success:
+        ...         return res.x
+        ...     raise RuntimeError('optimization routine failed')
+        >>> norm.fit(x, method="MLE", optimizer=optimizer_NM)
+        (0.9208717278384163, 2.001575075032467)
         """
         method = kwds.get('method', "mle").lower()
 
