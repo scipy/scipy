@@ -171,6 +171,30 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
       FORTRAN routines for large scale bound constrained optimization (2011),
       ACM Transactions on Mathematical Software, 38, 1.
 
+    Examples
+    --------
+    Minimize the error function f(m,b) = (y-y_model)**2, where y and y_model are functions of m and b as defined below, with bounds defined as (0, None) for both m and b.
+
+        >>> import numpy as np
+        >>> X = np.arange(0,10,1)
+        >>> M = 2
+        >>> B = 3
+        >>> Y = M*X + B
+        >>> def func(parameters, *args):
+        ...     x = args[0]
+        ...     y = args[1]
+        ...     m, b = parameters
+        ...     y_model = m*x+b
+        ...     error = sum(np.power((y-y_model),2))
+        ...     return error
+        ...
+        >>> initial_values = np.array([0.0, 1.0])
+        >>> bounds = [(0,None), (0,None)]
+        ...
+        >>> import scipy
+        >>> from scipy.optimize import fmin_l_bfgs_b
+        >>> scipy.optimize.fmin_l_bfgs_b(func, x0 = initial_values, args = (X, Y), bounds = bounds, approx_grad=True)
+        (array([1.99999999, 3.00000006]), 1.7746127182509256e-14, {'grad': array([8.05248555e-10, 8.80773807e-10]), 'task': 'CONVERGENCE: NORM_OF_PROJECTED_GRADIENT_<=_PGTOL', 'funcalls': 27, 'nit': 6, 'warnflag': 0})
     """
     # handle fprime/approx_grad
     if approx_grad:
