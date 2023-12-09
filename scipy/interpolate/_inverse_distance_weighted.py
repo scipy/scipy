@@ -69,7 +69,7 @@ class InverseDistanceWeightedNDInterpolator(NDInterpolatorBase):
         xi,
         weight_func=None,
         p=2,
-        k=3,
+        k=5,
         distance_upper_bound=np.inf,
         **query_options,
     ):
