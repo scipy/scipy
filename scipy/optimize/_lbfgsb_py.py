@@ -175,9 +175,8 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
     --------
     Solve a linear regression problem via `fmin_l_bfgs_b`. To do this, first we define an objective function ``f(m,b) = 
     (y - y_model)**2``, where `y` describes the observations and `y_model` the prediction of the linear model as 
-    ``y_model = m * x + b``.
-    functions of m and b as defined below,
-    with bounds defined as (0, None) for both m and b.
+    ``y_model = m * x + b``. The bounds for the parameters, m and b, are arbitrarily chosen as (0,5) and (5,10) 
+    for this example.
 
     >>> import numpy as np
     >>> X = np.arange(0,10,1)
@@ -193,15 +192,24 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
     ...     return error
 
     >>> initial_values = np.array([0.0, 1.0])
-    >>> bounds = [(0,None), (0,None)]
+    >>> bounds = [(0,5), (5,10)]
 
     >>> from scipy.optimize import fmin_l_bfgs_b
     >>> fmin_l_bfgs_b(func, x0 = initial_values, args = (X, Y),
-    ...                              bounds = bounds, approx_grad=True)
-    (array([1.99999999, 3.00000006]), 1.7746127182509256e-14, # may vary
-     {'grad': array([8.05248555e-10, 8.80773807e-10]), # may vary
+    ...                              approx_grad=True)
+    (array([1.99999999, 3.00000006]), 1.7746231151323805e-14, # may vary
+     {'grad': array([8.08207139e-10, 8.83131710e-10]), # may vary
       'task': 'CONVERGENCE: NORM_OF_PROJECTED_GRADIENT_<=_PGTOL',
       'funcalls': 27, 'nit': 6, 'warnflag': 0})
+    >>> fmin_l_bfgs_b(func, x0 = initial_values, args = (X, Y),
+    ...                              bounds = bounds, approx_grad=True)
+    (array([1.65990508, 5.31649385]), 15.721334516453945, # may vary
+     {'grad': array([14.63034662, 15.72133562]), # may vary
+      'task': 'CONVERGENCE: REL_REDUCTION_OF_F_<=_FACTR*EPSMCH',
+      'funcalls': 39, 'nit': 4, 'warnflag': 0})
+    
+    The first optimize function is unbounded, resulting in optimal parameters but when we use 
+    bounds in the second optimize function, we do not get the optimal parameters anymore. 
     """
     # handle fprime/approx_grad
     if approx_grad:
