@@ -790,12 +790,12 @@ def _nsum_iv(f, a, b, step, args, log, maxterms, atol, rtol):
         raise ValueError(message)
 
     if log:
-        message = '`step`, `atol`, `rtol` may not be positive infinity.'
-        if np.any(np.isposinf(params)):
+        message = '`step`, `atol`, `rtol` may not be positive infinity or NaN.'
+        if np.any(np.isposinf(params) | np.isnan(params)):
             raise ValueError(message)
     else:
         message = '`step`, `atol`, and `rtol` must be non-negative and finite.'
-        if np.any(params < 0) or np.any(np.isinf(params)):
+        if np.any((params < 0) | (~np.isfinite(params))):
             raise ValueError(message)
     step = params[0]
     atol = params[1]
@@ -809,13 +809,12 @@ def _nsum_iv(f, a, b, step, args, log, maxterms, atol, rtol):
     if not np.iterable(args):
         args = (args,)
 
-
     return f, a, b, step, args, log, maxterms_int, atol, rtol
 
 
-def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**32), atol=None,
+def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
           rtol=None):
-    """Evaluate a convergent sum.
+    r"""Evaluate a convergent sum.
 
     For finite `b`, this evaluates::
 
@@ -936,11 +935,12 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**32), atol=None,
     
     """ # noqa: E501
     # TODO
-    # - sum should include upper limit b
     # - correct finite sums that use integral approximation
     # - negative terms?
+    # - b < a?
     # - look for non-monotonicity?
     # - add tests
+    # - generalize integral approximation for step not 1
     #
     # `args` contains the distribution parameters. We broadcast for simplicity,
     # ignoring the original shapes of the arrays. A potential optimization can
@@ -968,7 +968,7 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**32), atol=None,
     a, b, step = a.ravel(), b.ravel(), step.ravel()
     args = [arg.ravel() for arg in args]
 
-    def direct(f, a, b, step, args):
+    def direct(f, a, b, step, args, inclusive=True):
         # Directly evaluate the sum. To allow computation in a single
         # vectorized call, we find the maximum number of points (over all
         # slices) at which the function needs to be evaluated. In each slice,
@@ -978,12 +978,12 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**32), atol=None,
         # in the sum.
         # In some cases it may be faster to loop over slices than to vectorize
         # like this. This is an optimization that can be added later.
-        steps = np.round((b - a) / step)  # don't add 1; b is now exclusive
+        steps = np.round((b - a) / step) + int(inclusive)
         max_steps = int(np.max(steps))
         a, b, step = a[:, np.newaxis], b[:, np.newaxis], step[:, np.newaxis]
         args = [arg[:, np.newaxis] for arg in args]
         ks = a + np.arange(max_steps, dtype=dtype) * step
-        i_nan = ks >= b
+        i_nan = ks > b
         ks[i_nan] = np.nan
         fs = f(ks, *args)
         fs[i_nan] = zero
@@ -997,7 +997,7 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**32), atol=None,
         a2 = a[..., np.newaxis]
         step2 = step[..., np.newaxis]
         args2 = [arg[..., np.newaxis] for arg in args]
-        n_steps = np.round(np.logspace(1, np.log10(maxterms), 10))
+        n_steps = np.round(np.logspace(0, np.log10(maxterms), 10))
         ks = a2 + n_steps * step2
         fks = f(ks, *args2)
         if fks.size and np.all((fks < atol)[..., -1]):
@@ -1010,24 +1010,23 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**32), atol=None,
 
         # use integration to estimate the remaining sum
         k = a + n_steps * step
-        left, left_error, nfev = direct(f, a, k, step, args)
+        left, left_error, nfev = direct(f, a, k, step, args, inclusive=False)
         fk = fks[..., nt]
-        right = _tanhsinh(f, k, b, args=args, atol=atol, rtol=rtol,
-                          log=log)
-        S = (special.logsumexp((left, right.integral, fk-np.log(2))) if log
-             else left + right.integral + fk/2)
-        E = (special.logsumexp((left_error, right.error, fk-np.log(2))) if log
-             else left_error + right.error + fk/2)
-        return (S, E, right.status, nfev+right.nfev+10)
+        right = _tanhsinh(f, k, b, args=args, atol=atol, rtol=rtol, log=log)
+        fb = f(b, *args)
+        S = (special.logsumexp((left, right.integral, fk-np.log(2), fb-np.log(2)), axis=0) if log
+             else left + right.integral + fk/2 + fb/2)
+        E = (special.logsumexp((left_error, right.error, fk-np.log(2), fb-np.log(2)+np.pi*1j), axis=0).real if log
+             else left_error + right.error + fk/2 - fb/2)
+        return (S, E, right.status, nfev+right.nfev+11)
 
     S = np.empty_like(a)
     E = np.empty_like(a)
     status = np.empty(len(a), dtype=int)
     nfev = np.ones(len(a), dtype=int)  # one function evaluation above
 
-    steps = np.floor((b - a) / step) + 1
-    b = a + steps * step
-    i_direct = steps < maxterms
+    nterms = np.floor((b - a) / step) + 1
+    i_direct = nterms <= maxterms
     i_indirect = ~i_direct
 
     if np.any(i_direct):

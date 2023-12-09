@@ -13,10 +13,11 @@ from scipy.integrate import (quadrature, romberg, romb, newton_cotes,
                              quad, simpson, simps, fixed_quad, AccuracyWarning,
                              qmc_quad, cumulative_simpson)
 from scipy.integrate._quadrature import _cumulative_simpson_unequal_intervals
-from scipy.integrate._tanhsinh import _tanhsinh, _pair_cache
-from scipy import stats, special as sc
+from scipy.integrate._tanhsinh import _tanhsinh, _pair_cache, _nsum
+from scipy import stats, special
 from scipy.optimize._zeros_py import (_ECONVERGED, _ESIGNERR, _ECONVERR,  # noqa: F401
                                       _EVALUEERR, _ECALLBACK, _EINPROGRESS)
+from scipy.stats._discrete_distns import _gen_harmonic_gt1
 
 class TestFixedQuad:
     def test_scalar(self):
@@ -494,7 +495,7 @@ class TestQMCQuad:
         res = qmc_quad(func, a, b, n_points=n_points,
                        n_estimates=n_estimates, qrng=qrng)
         ref = stats.multivariate_normal.cdf(b, mean, cov, lower_limit=a)
-        atol = sc.stdtrit(n_estimates-1, 0.995) * res.standard_error  # 99% CI
+        atol = special.stdtrit(n_estimates-1, 0.995) * res.standard_error  # 99% CI
         assert_allclose(res.integral, ref, atol=atol)
         assert np.prod(signs)*res.integral > 0
 
@@ -799,7 +800,7 @@ class TestTanhSinh:
     def f7(self, t):
         return np.sqrt(t) / np.sqrt(1 - t ** 2)
 
-    f7.ref = 2 * np.sqrt(np.pi) * sc.gamma(3 / 4) / sc.gamma(1 / 4)
+    f7.ref = 2 * np.sqrt(np.pi) * special.gamma(3 / 4) / special.gamma(1 / 4)
     f7.b = 1
 
     def f8(self, t):
@@ -1369,3 +1370,130 @@ class TestTanhSinh:
         attrs = ['integral', 'error', 'success', 'status', 'nfev', 'maxlevel']
         for attr in attrs:
             assert_equal(res[attr].shape, shape)
+
+
+class TestNSum:
+    rng = np.random.default_rng(5895448232066142650)
+    p = rng.uniform(1, 10, size=10)
+
+    def f1(self, k):
+        return 1 / k**2
+
+    f1.ref = np.pi**2/6
+    f1.a = 1
+    f1.b = np.inf
+    f1.args = tuple()
+
+    def f2(self, k, p):
+        return 1 / k**p
+
+    f2.ref = special.zeta(p, 1)
+    f2.a = 1
+    f2.b = np.inf
+    f2.args = (p,)
+
+    def f3(self, k, p):
+        return 1 / k**p
+
+    f3.a = 1
+    f3.b = rng.integers(5, 15, size=(3, 1))
+    f3.ref = _gen_harmonic_gt1(f3.b, p)
+    f3.args = (p,)
+
+    def test_input_validation(self):
+        f = self.f1
+
+        message = '`f` must be callable.'
+        with pytest.raises(ValueError, match=message):
+            _nsum(42, f.a, f.b)
+
+        message = '...must be True or False.'
+        with pytest.raises(ValueError, match=message):
+            _nsum(f, f.a, f.b, log=2)
+
+        message = '...must be real numbers.'
+        with pytest.raises(ValueError, match=message):
+            _nsum(f, 1+1j, f.b)
+        with pytest.raises(ValueError, match=message):
+            _nsum(f, f.a, f.b, atol='ekki')
+        with pytest.raises(ValueError, match=message):
+            _nsum(f, f.a, f.b, rtol=pytest)
+        with pytest.raises(ValueError, match=message):
+            _nsum(f, f.a, f.b, step=None)
+
+        message = '...must be non-negative and finite.'
+        with pytest.raises(ValueError, match=message):
+            _nsum(f, f.a, f.b, rtol=-1)
+        with pytest.raises(ValueError, match=message):
+            _nsum(f, f.a, f.b, atol=np.inf)
+        with pytest.raises(ValueError, match=message):
+            _nsum(f, f.a, f.b, step=np.nan)
+
+        message = '...may not be positive infinity.'
+        with pytest.raises(ValueError, match=message):
+            _nsum(f, f.a, f.b, rtol=np.inf, log=True)
+        with pytest.raises(ValueError, match=message):
+            _nsum(f, f.a, f.b, atol=np.inf, log=True)
+        with pytest.raises(ValueError, match=message):
+            _nsum(f, f.a, f.b, step=np.nan, log=True)
+
+        message = '...must be a positive integer.'
+        with pytest.raises(ValueError, match=message):
+            _nsum(f, f.a, f.b, maxterms=3.5)
+        with pytest.raises(ValueError, match=message):
+            _nsum(f, f.a, f.b, maxterms=-2)
+
+    @pytest.mark.parametrize('f_number', range(1, 4))
+    def test_basic(self, f_number):
+        f = getattr(self, f"f{f_number}")
+        res = _nsum(f, f.a, f.b, args=f.args)
+        assert_allclose(res.sum, f.ref)
+
+        with np.errstate(divide='ignore'):
+            logres = _nsum(lambda *args: np.log(f(*args)),
+                           f.a, f.b, log=True, args=f.args)
+        assert_allclose(np.exp(logres.sum), res.sum)
+        assert_allclose(np.exp(logres.error), res.error)
+
+    @pytest.mark.parametrize('maxterms', [1, 10, 20, 100])
+    def test_integral(self, maxterms):
+        # test precise behavior of integral approximation
+        f = self.f1
+
+        def logf(x):
+            return -2*np.log(x)
+
+        def F(x):
+            return -1 / x
+
+        a = np.asarray([1, 5])[:, np.newaxis]
+        b = np.asarray([20, 100, np.inf])[:, np.newaxis, np.newaxis]
+        k = a + maxterms
+        direct = f(a + np.arange(maxterms)).sum(axis=-1, keepdims=True)  # direct contribution
+        integral = F(b) - F(k)  # integral approximation of remainder
+        low = direct + integral + f(b)  # theoretical lower bound
+        high = direct + integral + f(k)  # theoretical upper bound
+        ref_sum = (low + high)/2  # nsum uses average
+        ref_err = (high - low) / 2  # error assuming perfect quadrature
+
+        # replace reference integrals by exact result where appropriate
+        a, b = np.broadcast_arrays(a, b)
+        for i in np.ndindex(a.shape):
+            ai, bi = a[i], b[i]
+            if (bi - ai + 1) <= maxterms:
+                direct = f(np.arange(ai, bi+1)).sum()
+                ref_sum[i] = direct
+                ref_err[i] = direct * np.finfo(direct).eps
+
+        rtol = 1e-12
+        res = _nsum(f, a, b, maxterms=maxterms, rtol=rtol)
+        assert_allclose(res.sum, ref_sum, rtol=10*rtol)
+        assert_allclose(res.error, ref_err, rtol=10*rtol)
+
+        i = (b - a + 1 <= maxterms)
+        assert_allclose(res.sum[i], ref_sum[i], rtol=1e-15)
+        assert_allclose(res.error[i], ref_err[i], rtol=1e-15)
+
+        logres = _nsum(logf, a, b, log=True, maxterms=maxterms)
+        assert_allclose(np.exp(logres.sum), res.sum)
+        assert_allclose(np.exp(logres.error), res.error)
