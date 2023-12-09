@@ -173,7 +173,9 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
 
     Examples
     --------
-    Minimize the error function f(m,b) = (y-y_model)**2, where y and y_model are
+    Solve a linear regression problem via `fmin_l_bfgs_b`. To do this, first we define an objective function ``f(m,b) = 
+    (y - y_model)**2``, where `y` describes the observations and `y_model` the prediction of the linear model as 
+    ``y_model = m * x + b``.
     functions of m and b as defined below,
     with bounds defined as (0, None) for both m and b.
 
@@ -187,15 +189,14 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
     ...     y = args[1]
     ...     m, b = parameters
     ...     y_model = m*x+b
-    ...     error = sum(np.power((y-y_model),2))
+    ...     error = sum(np.power((y - y_model), 2))
     ...     return error
 
     >>> initial_values = np.array([0.0, 1.0])
     >>> bounds = [(0,None), (0,None)]
 
-    >>> import scipy
     >>> from scipy.optimize import fmin_l_bfgs_b
-    >>> scipy.optimize.fmin_l_bfgs_b(func, x0 = initial_values, args = (X, Y),
+    >>> fmin_l_bfgs_b(func, x0 = initial_values, args = (X, Y),
     ...                              bounds = bounds, approx_grad=True)
     (array([1.99999999, 3.00000006]), 1.7746127182509256e-14, # may vary
      {'grad': array([8.05248555e-10, 8.80773807e-10]), # may vary
