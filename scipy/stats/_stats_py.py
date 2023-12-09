@@ -8268,6 +8268,19 @@ def _compute_dminus(cdfvals, x):
     return (dminus[amax], loc_max)
 
 
+def _tuple_to_KstestResult(statistic, pvalue,
+                           statistic_location, statistic_sign):
+    return KstestResult(statistic, pvalue,
+                        statistic_location=statistic_location,
+                        statistic_sign=statistic_sign)
+
+
+def _KstestResult_to_tuple(res):
+    return *res, res.statistic_location, res.statistic_sign
+
+
+@_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=1, n_outputs=4,
+                          result_to_tuple=_KstestResult_to_tuple)
 @_rename_parameter("mode", "method")
 def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
     """
@@ -8394,24 +8407,23 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
         alternative.lower()[0], alternative)
     if alternative not in ['two-sided', 'greater', 'less']:
         raise ValueError("Unexpected alternative %s" % alternative)
-    if np.ma.is_masked(x):
-        x = x.compressed()
 
     N = len(x)
     x = np.sort(x)
     cdfvals = cdf(x, *args)
+    np_one = np.int8(1)
 
     if alternative == 'greater':
         Dplus, d_location = _compute_dplus(cdfvals, x)
         return KstestResult(Dplus, distributions.ksone.sf(Dplus, N),
                             statistic_location=d_location,
-                            statistic_sign=1)
+                            statistic_sign=np_one)
 
     if alternative == 'less':
         Dminus, d_location = _compute_dminus(cdfvals, x)
         return KstestResult(Dminus, distributions.ksone.sf(Dminus, N),
                             statistic_location=d_location,
-                            statistic_sign=-1)
+                            statistic_sign=-np_one)
 
     # alternative == 'two-sided':
     Dplus, dplus_location = _compute_dplus(cdfvals, x)
@@ -8419,11 +8431,11 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
     if Dplus > Dminus:
         D = Dplus
         d_location = dplus_location
-        d_sign = 1
+        d_sign = np_one
     else:
         D = Dminus
         d_location = dminus_location
-        d_sign = -1
+        d_sign = -np_one
 
     if mode == 'auto':  # Always select exact
         mode = 'exact'
@@ -8603,6 +8615,8 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
     return True, d, prob
 
 
+@_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=2, n_outputs=4,
+                          result_to_tuple=_KstestResult_to_tuple)
 @_rename_parameter("mode", "method")
 def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
     """
@@ -8833,8 +8847,11 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
             prob = np.exp(expt)
 
     prob = np.clip(prob, 0, 1)
-    return KstestResult(d, prob, statistic_location=d_location,
-                        statistic_sign=d_sign)
+    # Currently, `d` is a Python float. We want it to be a NumPy type, so
+    # float64 is appropriate. An enhancement would be for `d` to respect the
+    # dtype of the input.
+    return KstestResult(np.float64(d), prob, statistic_location=d_location,
+                        statistic_sign=np.int8(d_sign))
 
 
 def _parse_kstest_args(data1, data2, args, N):
@@ -8866,6 +8883,13 @@ def _parse_kstest_args(data1, data2, args, N):
     return data1, data2, cdf
 
 
+def _kstest_n_samples(kwargs):
+    cdf = kwargs['cdf']
+    return 1 if (isinstance(cdf, str) or callable(cdf)) else 2
+
+
+@_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=_kstest_n_samples,
+                          n_outputs=4, result_to_tuple=_KstestResult_to_tuple)
 @_rename_parameter("mode", "method")
 def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method='auto'):
     """
@@ -9039,8 +9063,9 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method='auto'):
     xvals, yvals, cdf = _parse_kstest_args(rvs, cdf, args, N)
     if cdf:
         return ks_1samp(xvals, cdf, args=args, alternative=alternative,
-                        method=method)
-    return ks_2samp(xvals, yvals, alternative=alternative, method=method)
+                        method=method, _no_deco=True)
+    return ks_2samp(xvals, yvals, alternative=alternative, method=method,
+                    _no_deco=True)
 
 
 def tiecorrect(rankvals):

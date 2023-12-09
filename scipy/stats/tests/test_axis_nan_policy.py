@@ -12,6 +12,7 @@ import pytest
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 from scipy import stats
+from scipy.stats import norm  # type: ignore[attr-defined]
 from scipy.stats._axis_nan_policy import _masked_arrays_2_sentinel_arrays
 from scipy._lib._util import AxisError
 
@@ -65,6 +66,14 @@ axis_nan_policy_cases = [
     (stats.mode, tuple(), dict(), 1, 2, True, lambda x: (x.mode, x.count)),
     (stats.differential_entropy, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.variation, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.ks_1samp, (norm().cdf,), dict(), 1, 4, False,
+     lambda res: (*res, res.statistic_location, res.statistic_sign)),
+    (stats.ks_2samp, tuple(), dict(), 2, 4, False,
+     lambda res: (*res, res.statistic_location, res.statistic_sign)),
+    (stats.kstest, (norm().cdf,), dict(), 1, 4, False,
+     lambda res: (*res, res.statistic_location, res.statistic_sign)),
+    (stats.kstest, tuple(), dict(), 2, 4, False,
+     lambda res: (*res, res.statistic_location, res.statistic_sign)),
     (stats.levene, tuple(), {}, 2, 2, False, None),
     (stats.fligner, tuple(), {'center': 'trimmed', 'proportiontocut': 0.01},
      2, 2, False, None),
@@ -109,7 +118,8 @@ too_small_messages = {"The input contains nan",  # for nan_policy="raise"
                       "Window length (0) must be positive and less",
                       "Window length (1) must be positive and less",
                       "Window length (2) must be positive and less",
-                      "No array values within given limits"}
+                      "attempt to get argmax of an empty sequence",
+                      "No array values within given limits",}
 
 # If the message is one of these, results of the function may be inaccurate,
 # but NaNs are not to be placed
