@@ -2501,7 +2501,8 @@ class rv_continuous(rv_generic):
               ``func`` and starting position as the first two arguments,
               plus ``args`` (for extra arguments to pass to the
               function to be optimized) and ``disp=0`` to suppress
-              output as keyword arguments.
+              output as keyword arguments. The optimizer must return
+              the estimated parameters.
 
             - method : The method to use. The default is "MLE" (Maximum
               Likelihood Estimate); "MM" (Method of Moments)
@@ -2559,12 +2560,26 @@ class rv_continuous(rv_generic):
 
         >>> from scipy.stats import beta
         >>> a, b = 1., 2.
-        >>> x = beta.rvs(a, b, size=1000)
+        >>> x = beta.rvs(a, b, size=1000, random_state=80)
 
         Now we can fit all four parameters (``a``, ``b``, ``loc`` and
         ``scale``):
 
         >>> a1, b1, loc1, scale1 = beta.fit(x)
+        >>> a1, b1, loc1, scale1
+        (0.998314523745146, 2.0351090001496326, 0.0004988689720895926, 1.0059326261917274)
+
+        The fit can be done also using a custom optimizer:
+
+        >>> from scipy.optimize import minimize
+        >>> def custom_optimizer(func, x0, args=(), disp=0):
+        ...     res = minimize(func, x0, args, method="SLSQP")
+        ...     if res.success:
+        ...         return res.x
+        ...     raise RuntimeError('optimization routine failed')
+        >>> a1, b1, loc1, scale1 = beta.fit(x, method="MLE", optimizer=custom_optimizer)
+        >>> a1, b1, loc1, scale1
+        (0.990700499949893, 2.0187807737322947, 0.0004988499083140839, 1.004757298351524)
 
         We can also use some prior knowledge about the dataset: let's keep
         ``loc`` and ``scale`` fixed:
@@ -2589,16 +2604,6 @@ class rv_continuous(rv_generic):
         >>> loc1, scale1 = norm.fit(x)
         >>> loc1, scale1
         (0.92087172783841631, 2.0015750750324668)
-
-        Using a custom optimizer:
-
-        >>> def optimizer_NM(func, x0=[0.6, 1.6], args=(), disp=0):
-        ...     res = minimize(func, x0, args, method="nelder-mead")
-        ...     if res.success:
-        ...         return res.x
-        ...     raise RuntimeError('optimization routine failed')
-        >>> norm.fit(x, method="MLE", optimizer=optimizer_NM)
-        (0.9208717278384163, 2.001575075032467)
         """
         method = kwds.get('method', "mle").lower()
 
