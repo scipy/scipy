@@ -6,7 +6,7 @@ from scipy._lib.deprecation import _sub_module_deprecation
 
 __all__ = [  # noqa: F822
     'lti', 'dlti', 'TransferFunction', 'ZerosPolesGain', 'StateSpace',
-    'lsim', 'lsim2', 'impulse', 'impulse2', 'step', 'step2', 'bode',
+    'lsim', 'impulse', 'step', 'bode',
     'freqresp', 'place_poles', 'dlsim', 'dstep', 'dimpulse',
     'dfreqresp', 'dbode', 's_qr', 'integrate', 'interpolate', 'linalg',
     'tf2zpk', 'zpk2tf', 'normalize', 'freqs',

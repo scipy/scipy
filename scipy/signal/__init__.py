@@ -172,11 +172,8 @@ Continuous-time linear systems
    TransferFunction -- Linear time invariant system in transfer function form.
    ZerosPolesGain   -- Linear time invariant system in zeros, poles, gain form.
    lsim             -- Continuous-time simulation of output to linear system.
-   lsim2            -- Like lsim, but `scipy.integrate.odeint` is used.
    impulse          -- Impulse response of linear, time-invariant (LTI) system.
-   impulse2         -- Like impulse, but `scipy.integrate.odeint` is used.
    step             -- Step response of continuous-time LTI system.
-   step2            -- Like step, but `scipy.integrate.odeint` is used.
    freqresp         -- Frequency response of a continuous-time LTI system.
    bode             -- Bode magnitude and phase data (continuous-time LTI).
 

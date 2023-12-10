@@ -1,13 +1,11 @@
-from abc import abstractmethod
 import warnings
 
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal, assert_allclose,
                            assert_, suppress_warnings)
 from pytest import raises as assert_raises
-from pytest import warns
 
-from scipy.signal import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
+from scipy.signal import (ss2tf, tf2ss, lti,
                           dlti, bode, freqresp, lsim, impulse, step,
                           abcd_normalize, place_poles,
                           TransferFunction, StateSpace, ZerosPolesGain)
@@ -411,12 +409,28 @@ class TestSS2TF:
         assert_allclose(b_all, np.vstack((b0, b1, b2)), rtol=1e-13, atol=1e-14)
 
 
-class _TestLsimFuncs:
+class TestLsim:
     digits_accuracy = 7
 
-    @abstractmethod
     def func(self, *args, **kwargs):
-        pass
+        return lsim(*args, **kwargs)
+
+    def test_nonzero_initial_time(self):
+        system = self.lti_nowarn(-1.,1.,1.,0.)
+        t = np.linspace(1,2)
+        u = np.zeros_like(t)
+        tout, y, x = self.func(system, u, t, X0=[1.0])
+        expected_y = np.exp(-tout)
+        assert_almost_equal(y, expected_y)
+
+    def test_nonequal_timesteps(self):
+        t = np.array([0.0, 1.0, 1.0, 3.0])
+        u = np.array([0.0, 0.0, 1.0, 1.0])
+        # Simple integrator: x'(t) = u(t)
+        system = ([1.0], [1.0, 0.0])
+        with assert_raises(ValueError,
+                           match="Time steps are not equally spaced."):
+            tout, y, x = self.func(system, u, t, X0=[1.0])
 
     def lti_nowarn(self, *args):
         with suppress_warnings() as sup:
@@ -524,68 +538,9 @@ class _TestLsimFuncs:
         assert_almost_equal(x[:,1], expected_x1)
 
 
-class TestLsim(_TestLsimFuncs):
-
+class TestImpulse:
     def func(self, *args, **kwargs):
-        return lsim(*args, **kwargs)
-
-    def test_nonzero_initial_time(self):
-        system = self.lti_nowarn(-1.,1.,1.,0.)
-        t = np.linspace(1,2)
-        u = np.zeros_like(t)
-        tout, y, x = self.func(system, u, t, X0=[1.0])
-        expected_y = np.exp(-tout)
-        assert_almost_equal(y, expected_y)
-
-    def test_nonequal_timesteps(self):
-        t = np.array([0.0, 1.0, 1.0, 3.0])
-        u = np.array([0.0, 0.0, 1.0, 1.0])
-        # Simple integrator: x'(t) = u(t)
-        system = ([1.0], [1.0, 0.0])
-        with assert_raises(ValueError,
-                           match="Time steps are not equally spaced."):
-            tout, y, x = self.func(system, u, t, X0=[1.0])
-
-
-class TestLsim2(_TestLsimFuncs):
-    digits_accuracy = 6
-
-    def func(self, *args, **kwargs):
-        with warns(DeprecationWarning, match="lsim2 is deprecated"):
-            t, y, x = lsim2(*args, **kwargs)
-        return t, np.squeeze(y), np.squeeze(x)
-
-    def test_integrator_nonequal_timestamp(self):
-        t = np.array([0.0, 1.0, 1.0, 3.0])
-        u = np.array([0.0, 0.0, 1.0, 1.0])
-        # Simple integrator: x'(t) = u(t)
-        system = ([1.0],[1.0,0.0])
-        tout, y, x = self.func(system, u, t, X0=[1.0])
-        expected_x = np.maximum(1.0, tout)
-        assert_almost_equal(x, expected_x)
-
-    def test_integrator_nonequal_timestamp_kwarg(self):
-        t = np.array([0.0, 1.0, 1.0, 1.1, 1.1, 2.0])
-        u = np.array([0.0, 0.0, 1.0, 1.0, 0.0, 0.0])
-        # Simple integrator:  x'(t) = u(t)
-        system = ([1.0],[1.0, 0.0])
-        tout, y, x = self.func(system, u, t, hmax=0.01)
-        expected_x = np.array([0.0, 0.0, 0.0, 0.1, 0.1, 0.1])
-        assert_almost_equal(x, expected_x)
-
-    def test_default_arguments(self):
-        # Test use of the default values of the arguments `T` and `U`.
-        # Second order system with a repeated root: x''(t) + 2*x(t) + x(t) = 0.
-        # With initial conditions x(0)=1.0 and x'(t)=0.0, the exact solution
-        # is (1-t)*exp(-t).
-        system = ([1.0], [1.0, 2.0, 1.0])
-        tout, y, x = self.func(system, X0=[1.0, 0.0])
-        expected_x = (1.0 - tout) * np.exp(-tout)
-        assert_almost_equal(x[:,0], expected_x)
-
-
-class _TestImpulseFuncs:
-    # Common tests for impulse/impulse2 (= self.func)
+        return impulse(*args, **kwargs)
 
     def test_first_order(self):
         # First order system: x'(t) + x(t) = u(t)
@@ -657,20 +612,16 @@ class _TestImpulseFuncs:
         tout, y = self.func(system, X0=3, T=5)
 
 
-class TestImpulse2(_TestImpulseFuncs):
-
+class TestStep:
     def func(self, *args, **kwargs):
-        with warns(DeprecationWarning, match="impulse2 is deprecated"):
-            return impulse2(*args, **kwargs)
+        return step(*args, **kwargs)
 
+    def test_complex_input(self):
+        # Test that complex input doesn't raise an error.
+        # `step` doesn't seem to have been designed for complex input, but this
+        # works and may be used, so add regression test.  See gh-2654.
+        step(([], [-1], 1+0j))
 
-class TestImpulse(_TestImpulseFuncs):
-
-    def func(self, *args, **kwargs):
-        return impulse(*args, **kwargs)
-
-
-class _TestStepFuncs:
     def test_first_order(self):
         # First order system: x'(t) + x(t) = u(t)
         # Exact step response is x(t) = 1 - exp(-t).
@@ -735,35 +686,6 @@ class _TestStepFuncs:
         system = ([1.0], [1.0, 2.0, 1.0])
         # TODO: add meaningful test where X0 is a list
         tout, y = self.func(system, T=[5, 6])
-
-
-class TestStep2(_TestStepFuncs):
-    def func(self, *args, **kwargs):
-        with warns(DeprecationWarning, match="step2 is deprecated"):
-            return step2(*args, **kwargs)
-
-    def test_integrator(self):
-        # This test is almost the same as the one it overwrites in the base
-        # class.  The only difference is the tolerances passed to step2:
-        # the default tolerances are not accurate enough for this test
-
-        # Simple integrator: x'(t) = u(t)
-        # Exact step response is x(t) = t.
-        system = ([1.0], [1.0,0.0])
-        tout, y = self.func(system, atol=1e-10, rtol=1e-8)
-        expected_y = tout
-        assert_almost_equal(y, expected_y)
-
-
-class TestStep(_TestStepFuncs):
-    def func(self, *args, **kwargs):
-        return step(*args, **kwargs)
-
-    def test_complex_input(self):
-        # Test that complex input doesn't raise an error.
-        # `step` doesn't seem to have been designed for complex input, but this
-        # works and may be used, so add regression test.  See gh-2654.
-        step(([], [-1], 1+0j))
 
 
 class TestLti:
