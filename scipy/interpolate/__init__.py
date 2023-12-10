@@ -180,7 +180,7 @@ from ._cubic import *
 
 from ._ndgriddata import *
 
-from ._inverse_distance_weighted import *
+from ._inverse_distance_weighted import InverseDistanceWeightedNDInterpolator
 
 from ._bsplines import *
 

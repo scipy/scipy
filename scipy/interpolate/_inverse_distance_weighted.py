@@ -2,6 +2,7 @@ import numpy as np
 from scipy.spatial import cKDTree, distance
 from scipy.interpolate.interpnd import NDInterpolatorBase, _ndim_coords_from_arrays
 
+__all__ = ['InverseDistanceWeightedNDInterpolator']
 
 class InverseDistanceWeightedNDInterpolator(NDInterpolatorBase):
     """
