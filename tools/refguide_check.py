@@ -117,9 +117,6 @@ DOCTEST_SKIPLIST = set([
     'scipy.linalg.LinAlgError',
     'scipy.optimize.show_options',
     'io.rst',   # XXX: need to figure out how to deal w/ mat files
-    'scipy.signal.bspline',
-    'scipy.signal.cubic',
-    'scipy.signal.quadratic',
 ])
 
 # these names are not required to be present in ALL despite being in
