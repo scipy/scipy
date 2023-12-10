@@ -841,7 +841,7 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
         Real lower and upper limits of summed terms. Must be broadcastable.
         Elements of `b` may be infinite.
     args : tuple, optional
-        Additional positional arguments to be passed to `func`. Must be arrays
+        Additional positional arguments to be passed to `f`. Must be arrays
         broadcastable with `a` and `b`. If the callable to be summed
         requires arguments that are not broadcastable with `a` and `b`, wrap
         that callable with `f`. See Examples.
@@ -868,6 +868,7 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
         An instance of `scipy.optimize.OptimizeResult` with the following
         attributes. (The descriptions are written as though the values will be
         scalars; however, if `func` returns an array, the outputs will be
+
         arrays of the same shape.)
         success : bool
             ``True`` when the algorithm terminated successfully (status ``0``).
@@ -902,7 +903,7 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
     where :math:`\epsilon` is the requested absolute tolerance. If no absolute
     tolerance is specified, or if there is no :math:`c ≤ a + n` (where :math:`a`
     and :math:`n` represent `a` and `maxterms`, respectively) that satisfies
-    the tolerance, then :math:`c = a + n`. Then the infinite sum is approximated
+    the tolerance, we let :math:`c = a + n`. Then the infinite sum is approximated
     as
     
     .. math::
@@ -910,7 +911,7 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
         \sum_{k=a}^{c-1} f(k) + \int_c^\infty f(x) dx + f(c)/2
         
     and the reported error is :math:`f(c)/2` plus the error estimate of
-    integration.
+    numerical integration.
 
     References
     ----------
@@ -958,7 +959,6 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
     tmp = _nsum_iv(f, a, b, step, args, log, maxterms, atol, rtol)
     f, a, b, step, args, log, maxterms, atol, rtol = tmp
 
-    a, b, step = np.broadcast_arrays(a, b, step)
     tmp = _scalar_optimization_initialize(f, (a,), args, complex_ok=False)
     xs, fs, args, shape, dtype = tmp
 
@@ -1025,9 +1025,9 @@ def _direct(f, a, b, step, args, constants, inclusive=True):
     ks[i_nan] = np.nan
     fs = f(ks, *args2)
     fs[i_nan] = zero
-    nfev = max_steps-i_nan.sum(axis=-1)
+    nfev = max_steps - i_nan.sum(axis=-1)
     S = special.logsumexp(fs, axis=-1) if log else np.sum(fs, axis=-1)
-    E = np.real(S) + np.log(eps) if log else abs(eps * S)
+    E = np.real(S) + np.log(eps) if log else abs(eps) * S
     return S, E, nfev
 
 

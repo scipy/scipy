@@ -1531,19 +1531,17 @@ class TestNSum:
         n = np.prod(shape)
 
         def f(x, p):
-            f.ncall += 1
             f.feval += 1 if (x.size == n or x.ndim <= 1) else x.shape[-1]
             return 1 / x ** p
 
-        f.ncall = 0
         f.feval = 0
 
         @np.vectorize
-        def _nsum_single(a, b, p):
-            return _nsum(lambda x: 1 / x**p, a, b, maxterms=1000)
+        def _nsum_single(a, b, p, maxterms):
+            return _nsum(lambda x: 1 / x**p, a, b, maxterms=maxterms)
 
         res = _nsum(f, a, b, maxterms=1000, args=(p,))
-        refs = _nsum_single(a, b, p).ravel()
+        refs = _nsum_single(a, b, p, maxterms).ravel()
 
         attrs = ['sum', 'error', 'success', 'status', 'nfev']
         for attr in attrs:
