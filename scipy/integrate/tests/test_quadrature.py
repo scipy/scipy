@@ -1468,15 +1468,16 @@ class TestNSum:
 
         a = np.asarray([1, 5])[:, np.newaxis]
         b = np.asarray([20, 100, np.inf])[:, np.newaxis, np.newaxis]
+        # step = np.asarray([0.5, 1]).reshape((-1, 1, 1, 1))
         k = a + maxterms
-        direct = f(a + np.arange(maxterms)).sum(axis=-1, keepdims=True)  # direct contribution
+        direct = f(a + np.arange(maxterms)).sum(axis=-1, keepdims=True)  # partial sum
         integral = F(b) - F(k)  # integral approximation of remainder
         low = direct + integral + f(b)  # theoretical lower bound
         high = direct + integral + f(k)  # theoretical upper bound
-        ref_sum = (low + high)/2  # nsum uses average
-        ref_err = (high - low) / 2  # error assuming perfect quadrature
+        ref_sum = (low + high)/2  # _nsum uses average of the two
+        ref_err = (high - low) / 2  # error (assuming perfect quadrature)
 
-        # replace reference integrals by exact result where appropriate
+        # correct reference values where number of terms < maxterms
         a, b = np.broadcast_arrays(a, b)
         for i in np.ndindex(a.shape):
             ai, bi = a[i], b[i]

@@ -960,65 +960,15 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
     a = xs[0]
     b = np.broadcast_to(b, shape).astype(dtype)
     step = np.broadcast_to(step, shape).astype(dtype)
-    zero = -np.inf if log else 0
     eps = np.finfo(dtype).eps
+    zero = -np.inf if log else 0
+    log2 = np.log(2)
     if rtol is None:
         rtol = 0.5*np.log(eps) if log else eps**0.5
+    constants = (dtype, log, eps, zero, log2, rtol, atol, maxterms)
 
     a, b, step = a.ravel(), b.ravel(), step.ravel()
     args = [arg.ravel() for arg in args]
-
-    def direct(f, a, b, step, args, inclusive=True):
-        # Directly evaluate the sum. To allow computation in a single
-        # vectorized call, we find the maximum number of points (over all
-        # slices) at which the function needs to be evaluated. In each slice,
-        # the function will be evaluated at the same number of points, but
-        # excessive points (those beyond the right sum limit `b`) are replaced
-        # with NaN. The function evaluated at NaN is NaN, and NaNs are ignored
-        # in the sum.
-        # In some cases it may be faster to loop over slices than to vectorize
-        # like this. This is an optimization that can be added later.
-        steps = np.round((b - a) / step) + int(inclusive)
-        max_steps = int(np.max(steps))
-        a, b, step = a[:, np.newaxis], b[:, np.newaxis], step[:, np.newaxis]
-        args = [arg[:, np.newaxis] for arg in args]
-        ks = a + np.arange(max_steps, dtype=dtype) * step
-        i_nan = ks > b
-        ks[i_nan] = np.nan
-        fs = f(ks, *args)
-        fs[i_nan] = zero
-        nfev = max_steps-i_nan.sum(axis=-1)
-        S = special.logsumexp(fs, axis=-1) if log else np.sum(fs, axis=-1)
-        E = np.real(S) + np.log(eps) if log else abs(eps * S)
-        return S, E, nfev
-
-    def integral_bound(f, a, b, step, args):
-        # find the number of direct steps to take until error is sufficiently small
-        a2 = a[..., np.newaxis]
-        step2 = step[..., np.newaxis]
-        args2 = [arg[..., np.newaxis] for arg in args]
-        n_steps = np.round(np.logspace(0, np.log10(maxterms), 10))
-        ks = a2 + n_steps * step2
-        fks = f(ks, *args2)
-        if fks.size and np.all((fks < atol)[..., -1]):
-            # find the location of a term that is less than the tolerance
-            nt = np.argmax(fks < atol, axis=-1)
-            nt = np.max(nt)
-        else:
-            nt = len(n_steps) - 1
-        n_steps = n_steps[nt]
-
-        # use integration to estimate the remaining sum
-        k = a + n_steps * step
-        left, left_error, nfev = direct(f, a, k, step, args, inclusive=False)
-        fk = fks[..., nt]
-        right = _tanhsinh(f, k, b, args=args, atol=atol, rtol=rtol, log=log)
-        fb = f(b, *args)
-        S = (special.logsumexp((left, right.integral, fk-np.log(2), fb-np.log(2)), axis=0) if log
-             else left + right.integral + fk/2 + fb/2)
-        E = (special.logsumexp((left_error, right.error, fk-np.log(2), fb-np.log(2)+np.pi*1j), axis=0).real if log
-             else left_error + right.error + fk/2 - fb/2)
-        return (S, E, right.status, nfev+right.nfev+11)
 
     S = np.empty_like(a)
     E = np.empty_like(a)
@@ -1026,23 +976,85 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
     nfev = np.ones(len(a), dtype=int)  # one function evaluation above
 
     nterms = np.floor((b - a) / step) + 1
-    i_direct = nterms <= maxterms
-    i_indirect = ~i_direct
+    i = nterms <= maxterms
+    ni = ~i
 
-    if np.any(i_direct):
-        args_direct = [arg[i_direct] for arg in args]
-        tmp = direct(f, a[i_direct], b[i_direct], step[i_direct], args_direct)
-        S[i_direct], E[i_direct], nfev[i_direct] = tmp
-        status[i_direct] = 0
+    if np.any(i):
+        args_direct = [arg[i] for arg in args]
+        tmp = _direct(f, a[i], b[i], step[i], args_direct, constants)
+        S[i], E[i], nfev[i] = tmp
+        status[i] = 0
 
-    if np.any(i_indirect):
-        args_indirect = [arg[i_indirect] for arg in args]
-        tmp = integral_bound(f, a[i_indirect], b[i_indirect], step[i_indirect],
-                             args_indirect)
-        S[i_indirect], E[i_indirect], status[i_indirect], nfev[i_indirect] = tmp
+    if np.any(ni):
+        args_indirect = [arg[ni] for arg in args]
+        tmp = _integral_bound(f, a[ni], b[ni], step[ni], args_indirect, constants)
+        S[ni], E[ni], status[ni], nfev[ni] = tmp
 
     S, E = S.reshape(shape)[()], E.reshape(shape)[()]
     status, nfev = status.reshape(shape)[()], nfev.reshape(shape)[()]
 
     return OptimizeResult(sum=S, error=E, status=status, success=status == 0,
                           nfev=nfev)
+
+
+def _direct(f, a, b, step, args, constants, inclusive=True):
+    # Directly evaluate the sum. To allow computation in a single
+    # vectorized call, we find the maximum number of points (over all
+    # slices) at which the function needs to be evaluated. In each slice,
+    # the function will be evaluated at the same number of points, but
+    # excessive points (those beyond the right sum limit `b`) are replaced
+    # with NaN. The function evaluated at NaN is NaN, and NaNs are ignored
+    # in the sum.
+    # In some cases it may be faster to loop over slices than to vectorize
+    # like this. This is an optimization that can be added later.
+    dtype, log, eps, zero, log2, rtol, atol, maxterms = constants
+    steps = np.round((b - a) / step) + int(inclusive)
+    max_steps = int(np.max(steps))
+    a2, b2, step2 = a[:, np.newaxis], b[:, np.newaxis], step[:, np.newaxis]
+    args2 = [arg[:, np.newaxis] for arg in args]
+    ks = a2 + np.arange(max_steps, dtype=dtype) * step2
+    i_nan = ks > b2
+    ks[i_nan] = np.nan
+    fs = f(ks, *args2)
+    fs[i_nan] = zero
+    nfev = max_steps-i_nan.sum(axis=-1)
+    S = (special.logsumexp(fs, axis=-1) - np.log(step) if log
+         else np.sum(fs, axis=-1) / step)
+    E = np.real(S) + np.log(eps) if log else abs(eps * S)
+    return S, E, nfev
+
+
+def _integral_bound(f, a, b, step, args, constants):
+    # find the number of direct steps to take until error is sufficiently small
+    dtype, log, eps, zero, log2, rtol, atol, maxterms = constants
+    a2 = a[..., np.newaxis]
+    step2 = step[..., np.newaxis]
+    args2 = [arg[..., np.newaxis] for arg in args]
+    n_steps = np.round(np.logspace(0, np.log10(maxterms), 10))
+    ks = a2 + n_steps * step2
+    fks = f(ks, *args2)
+    if fks.size and np.all((fks < atol)[..., -1]):
+        # find the location of a term that is less than the tolerance
+        nt = np.argmax(fks < atol, axis=-1)
+        nt = np.max(nt)
+    else:
+        nt = len(n_steps) - 1
+    n_steps = n_steps[nt]
+
+    # use integration to estimate the remaining sum
+    k = a + n_steps * step
+    left, left_error, nfev = _direct(f, a, k, step, args, constants, inclusive=False)
+    fk = fks[..., nt]
+    right = _tanhsinh(f, k, b, args=args, atol=atol, rtol=rtol, log=log)
+    fb = f(b, *args)
+    if log:
+        log_step = np.log(step)
+        S_terms = (left, right.integral, fk - log2, fb - log2)
+        S = special.logsumexp(S_terms, axis=0) - log_step
+        E_terms = (left_error, right.error, fk-log2, fb-log2+np.pi*1j)
+        E = special.logsumexp(E_terms, axis=0).real - log_step
+    else:
+        S = (left + right.integral + fk/2 + fb/2) * step
+        E = (left_error + right.error + fk/2 - fb/2) * step
+
+    return S, E, right.status, nfev + right.nfev + 11
