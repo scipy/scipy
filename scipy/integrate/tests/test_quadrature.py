@@ -1541,7 +1541,7 @@ class TestNSum:
             return _nsum(lambda x: 1 / x**p, a, b, maxterms=maxterms)
 
         res = _nsum(f, a, b, maxterms=1000, args=(p,))
-        refs = _nsum_single(a, b, p, maxterms).ravel()
+        refs = _nsum_single(a, b, p, maxterms=1000).ravel()
 
         attrs = ['sum', 'error', 'success', 'status', 'nfev']
         for attr in attrs:
