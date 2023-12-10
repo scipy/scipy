@@ -838,11 +838,11 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
          which may contain an arbitrary number of arrays that are broadcastable
          with `x`.
     a, b : array_like
-        Real lower and upper limits of integration. Must be broadcastable.
+        Real lower and upper limits of summed terms. Must be broadcastable.
         Elements of `b` may be infinite.
     args : tuple, optional
         Additional positional arguments to be passed to `func`. Must be arrays
-        broadcastable with `a` and `b`. If the callable to be integrated
+        broadcastable with `a` and `b`. If the callable to be summed
         requires arguments that are not broadcastable with `a` and `b`, wrap
         that callable with `f`. See Examples.
     log : bool, default: False
@@ -857,10 +857,8 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
         validation and integral evaluation. 
     atol, rtol : float, optional
         Absolute termination tolerance (default: 0) and relative termination
-        tolerance (default: ``eps**0.75``, where ``eps`` is the precision of
-        the result dtype), respectively. The error estimate is as
-        described in [1]_ Section 5. While not theoretically rigorous or
-        conservative, it is said to work well in practice. Must be non-negative
+        tolerance (default: ``eps**0.5``, where ``eps`` is the precision of
+        the result dtype), respectively. Must be non-negative
         and finite if `log` is False, and must be expressed as the log of a
         non-negative and finite number if `log` is True.
 
@@ -880,10 +878,11 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
             ``-2`` : The maximum number of iterations was reached.
             ``-3`` : A non-finite value was encountered.
         sum : float
-            An estimate of the integral
+            An estimate of the sum.
         error : float
-            An estimate of the error. Only available if level two or higher
-            has been completed; otherwise NaN.
+            An estimate of the absolute error.
+        nfev : int
+            The number of points at which `func` was evaluated.
 
     See Also
     --------
@@ -892,19 +891,23 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
     Notes
     -----
     The method implemented for infinite summation is related to the integral
-    test for convergence of an infinite series: the sum is bounded by
+    test for convergence of an infinite series: assuming `step` size 1,
+    the sum of a monotone decreasing function is bounded by
 
     .. math::
 
         \int_c^\infty f(x) dx \leq \sum_{k=c}^\infty f(k) \leq \int_c^\infty f(x) dx + f(c)
 
     The implementation first finds :math:`c > a` such that :math:`f(c) < \epsilon`,
-    where :math:`\epsilon` is the requested absolute tolerance. Then the infinite
-    sum is approximated as
+    where :math:`\epsilon` is the requested absolute tolerance. If no absolute
+    tolerance is specified, or if there is no :math:`c ≤ a + n` (where :math:`a`
+    and :math:`n` represent `a` and `maxterms`, respectively) that satisfies
+    the tolerance, then :math:`c = a + n`. Then the infinite sum is approximated
+    as
     
     .. math::
     
-        \sum_{k=a}^c f(k) + \int_c^\infty f(x) dx + f(c)/2
+        \sum_{k=a}^{c-1} f(k) + \int_c^\infty f(x) dx + f(c)/2
         
     and the reported error is :math:`f(c)/2` plus the error estimate of
     integration.
@@ -927,7 +930,7 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
     >>> (res.sum - ref)/ref  # true error
     -1.0101760641302586e-10
     >>> res.nfev  # number of points at which callable was evaluated
-    1141
+    1142
     
     Compute the infinite sums of the reciprocals of integers raised to powers ``p``.
     
@@ -963,8 +966,8 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
     b = np.broadcast_to(b, shape).astype(dtype)
     step = np.broadcast_to(step, shape).astype(dtype)
     eps = np.finfo(dtype).eps
-    zero = -np.inf if log else 0
-    log2 = np.log(2)
+    zero = np.asarray(-np.inf if log else 0, dtype=dtype)[()]
+    log2 = np.log(np.asarray(2, dtype=dtype)[()])
     if rtol is None:
         rtol = 0.5*np.log(eps) if log else eps**0.5
     constants = (dtype, log, eps, zero, log2, rtol, atol, maxterms)
@@ -974,7 +977,7 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
 
     S = np.empty_like(a)
     E = np.empty_like(a)
-    status = np.empty(len(a), dtype=int)
+    status = np.zeros(len(a), dtype=int)
     nfev = np.ones(len(a), dtype=int)  # one function evaluation above
 
     nterms = np.floor((b - a) / step)
@@ -985,13 +988,15 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
     if np.any(i):
         args_direct = [arg[i] for arg in args]
         tmp = _direct(f, a[i], b[i], step[i], args_direct, constants)
-        S[i], E[i], nfev[i] = tmp
-        status[i] = 0
+        S[i], E[i] = tmp[:-1]
+        nfev[i] += tmp[-1]
+        status[i] = -3 * (~np.isfinite(S[i]))
 
     if np.any(ni):
         args_indirect = [arg[ni] for arg in args]
         tmp = _integral_bound(f, a[ni], b[ni], step[ni], args_indirect, constants)
-        S[ni], E[ni], status[ni], nfev[ni] = tmp
+        S[ni], E[ni], status[ni] = tmp[:-1]
+        nfev[ni] += tmp[-1]
 
     S, E = S.reshape(shape)[()], E.reshape(shape)[()]
     status, nfev = status.reshape(shape)[()], nfev.reshape(shape)[()]
@@ -1032,7 +1037,7 @@ def _integral_bound(f, a, b, step, args, constants):
     a2 = a[..., np.newaxis]
     step2 = step[..., np.newaxis]
     args2 = [arg[..., np.newaxis] for arg in args]
-    n_steps = np.round(np.logspace(0, np.log10(maxterms), 10))
+    n_steps = np.round(np.logspace(0, np.log10(maxterms), 10, dtype=dtype))
     ks = a2 + n_steps * step2
     fks = f(ks, *args2)
     if fks.size and np.all((fks < atol)[..., -1]):
@@ -1046,6 +1051,7 @@ def _integral_bound(f, a, b, step, args, constants):
     # use integration to estimate the remaining sum
     k = a + n_steps * step
     left, left_error, nfev = _direct(f, a, k, step, args, constants, inclusive=False)
+    k[~np.isfinite(left)] = np.nan  # if sum is not finite, no sense in continuing
     fk = fks[..., nt]
     right = _tanhsinh(f, k, b, args=args, atol=atol, rtol=rtol, log=log)
     fb = f(b, *args)
@@ -1058,5 +1064,4 @@ def _integral_bound(f, a, b, step, args, constants):
     else:
         S = left + right.integral/step + fk/2 + fb/2
         E = left_error + right.error/step + fk/2 - fb/2
-
     return S, E, right.status, nfev + right.nfev + 11
