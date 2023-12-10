@@ -770,8 +770,14 @@ def _nsum_iv(f, a, b, step, args, log, maxterms, atol, rtol):
         raise ValueError(message)
 
     message = 'All elements of `a` and `b` must be real numbers.'
-    a, b = np.broadcast_arrays(a, b)
+    a, b, step = np.broadcast_arrays(a, b, step)
     if np.any(np.iscomplex(a)) or np.any(np.iscomplex(b)):
+        raise ValueError(message)
+
+    message = 'All elements of `step` must be positive and finite.'
+    if (not np.issubdtype(step.dtype, np.number)
+            or not np.all(np.isfinite(step))
+            or not np.all(step>0)):
         raise ValueError(message)
 
     message = '`log` must be True or False.'
@@ -784,22 +790,21 @@ def _nsum_iv(f, a, b, step, args, log, maxterms, atol, rtol):
 
     rtol_temp = rtol if rtol is not None else 0.
 
-    params = np.asarray([step, atol, rtol_temp, 0.])
-    message = "`step`, `atol` and `rtol` must be real numbers."
+    params = np.asarray([atol, rtol_temp, 0.])
+    message = "`atol` and `rtol` must be real numbers."
     if not np.issubdtype(params.dtype, np.floating):
         raise ValueError(message)
 
     if log:
-        message = '`step`, `atol`, `rtol` may not be positive infinity or NaN.'
+        message = '`atol`, `rtol` may not be positive infinity or NaN.'
         if np.any(np.isposinf(params) | np.isnan(params)):
             raise ValueError(message)
     else:
-        message = '`step`, `atol`, and `rtol` must be non-negative and finite.'
+        message = '`atol`, and `rtol` must be non-negative and finite.'
         if np.any((params < 0) | (~np.isfinite(params))):
             raise ValueError(message)
-    step = params[0]
-    atol = params[1]
-    rtol = rtol if rtol is None else params[2]
+    atol = params[0]
+    rtol = rtol if rtol is None else params[1]
 
     maxterms_int = int(maxterms)
     if not maxterms_int == maxterms or maxterms <= 0:
@@ -935,12 +940,9 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
     
     """ # noqa: E501
     # TODO
-    # - correct finite sums that use integral approximation
     # - negative terms?
-    # - b < a?
-    # - look for non-monotonicity?
+    # - b < a or negative step?
     # - add tests
-    # - generalize integral approximation for step not 1
     #
     # `args` contains the distribution parameters. We broadcast for simplicity,
     # ignoring the original shapes of the arrays. A potential optimization can
@@ -975,8 +977,9 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
     status = np.empty(len(a), dtype=int)
     nfev = np.ones(len(a), dtype=int)  # one function evaluation above
 
-    nterms = np.floor((b - a) / step) + 1
-    i = nterms <= maxterms
+    nterms = np.floor((b - a) / step)
+    b = a + nterms*step
+    i = nterms + 1 <= maxterms
     ni = ~i
 
     if np.any(i):
@@ -1018,8 +1021,7 @@ def _direct(f, a, b, step, args, constants, inclusive=True):
     fs = f(ks, *args2)
     fs[i_nan] = zero
     nfev = max_steps-i_nan.sum(axis=-1)
-    S = (special.logsumexp(fs, axis=-1) - np.log(step) if log
-         else np.sum(fs, axis=-1) / step)
+    S = special.logsumexp(fs, axis=-1) if log else np.sum(fs, axis=-1)
     E = np.real(S) + np.log(eps) if log else abs(eps * S)
     return S, E, nfev
 
@@ -1049,12 +1051,12 @@ def _integral_bound(f, a, b, step, args, constants):
     fb = f(b, *args)
     if log:
         log_step = np.log(step)
-        S_terms = (left, right.integral, fk - log2, fb - log2)
-        S = special.logsumexp(S_terms, axis=0) - log_step
-        E_terms = (left_error, right.error, fk-log2, fb-log2+np.pi*1j)
-        E = special.logsumexp(E_terms, axis=0).real - log_step
+        S_terms = (left, right.integral - log_step, fk - log2, fb - log2)
+        S = special.logsumexp(S_terms, axis=0)
+        E_terms = (left_error, right.error - log_step, fk-log2, fb-log2+np.pi*1j)
+        E = special.logsumexp(E_terms, axis=0).real
     else:
-        S = (left + right.integral + fk/2 + fb/2) * step
-        E = (left_error + right.error + fk/2 - fb/2) * step
+        S = left + right.integral/step + fk/2 + fb/2
+        E = left_error + right.error/step + fk/2 - fb/2
 
     return S, E, right.status, nfev + right.nfev + 11

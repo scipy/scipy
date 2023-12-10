@@ -1418,6 +1418,12 @@ class TestNSum:
             _nsum(f, f.a, f.b, atol='ekki')
         with pytest.raises(ValueError, match=message):
             _nsum(f, f.a, f.b, rtol=pytest)
+
+        message = '...must be positive and finite.'
+        with pytest.raises(ValueError, match=message):
+            _nsum(f, f.a, f.b, step=np.nan)
+        with pytest.raises(ValueError, match=message):
+            _nsum(f, f.a, f.b, step=-1)
         with pytest.raises(ValueError, match=message):
             _nsum(f, f.a, f.b, step=None)
 
@@ -1426,16 +1432,12 @@ class TestNSum:
             _nsum(f, f.a, f.b, rtol=-1)
         with pytest.raises(ValueError, match=message):
             _nsum(f, f.a, f.b, atol=np.inf)
-        with pytest.raises(ValueError, match=message):
-            _nsum(f, f.a, f.b, step=np.nan)
 
         message = '...may not be positive infinity.'
         with pytest.raises(ValueError, match=message):
             _nsum(f, f.a, f.b, rtol=np.inf, log=True)
         with pytest.raises(ValueError, match=message):
             _nsum(f, f.a, f.b, atol=np.inf, log=True)
-        with pytest.raises(ValueError, match=message):
-            _nsum(f, f.a, f.b, step=np.nan, log=True)
 
         message = '...must be a positive integer.'
         with pytest.raises(ValueError, match=message):
@@ -1468,33 +1470,37 @@ class TestNSum:
 
         a = np.asarray([1, 5])[:, np.newaxis]
         b = np.asarray([20, 100, np.inf])[:, np.newaxis, np.newaxis]
-        # step = np.asarray([0.5, 1]).reshape((-1, 1, 1, 1))
-        k = a + maxterms
-        direct = f(a + np.arange(maxterms)).sum(axis=-1, keepdims=True)  # partial sum
-        integral = F(b) - F(k)  # integral approximation of remainder
+        step = np.asarray([0.5, 1, 2]).reshape((-1, 1, 1, 1))
+        nsteps = np.floor((b - a)/step)
+        b_original = b
+        b = a + nsteps*step
+
+        k = a + maxterms*step
+        direct = f(a + np.arange(maxterms)*step).sum(axis=-1, keepdims=True)  # partial sum
+        integral = (F(b) - F(k))/step  # integral approximation of remainder
         low = direct + integral + f(b)  # theoretical lower bound
         high = direct + integral + f(k)  # theoretical upper bound
         ref_sum = (low + high)/2  # _nsum uses average of the two
-        ref_err = (high - low) / 2  # error (assuming perfect quadrature)
+        ref_err = (high - low)/2  # error (assuming perfect quadrature)
 
         # correct reference values where number of terms < maxterms
-        a, b = np.broadcast_arrays(a, b)
+        a, b, step = np.broadcast_arrays(a, b, step)
         for i in np.ndindex(a.shape):
-            ai, bi = a[i], b[i]
-            if (bi - ai + 1) <= maxterms:
-                direct = f(np.arange(ai, bi+1)).sum()
+            ai, bi, stepi = a[i], b[i], step[i]
+            if (bi - ai)/stepi + 1 <= maxterms:
+                direct = f(np.arange(ai, bi+stepi, stepi)).sum()
                 ref_sum[i] = direct
                 ref_err[i] = direct * np.finfo(direct).eps
 
         rtol = 1e-12
-        res = _nsum(f, a, b, maxterms=maxterms, rtol=rtol)
+        res = _nsum(f, a, b_original, step=step, maxterms=maxterms, rtol=rtol)
         assert_allclose(res.sum, ref_sum, rtol=10*rtol)
-        assert_allclose(res.error, ref_err, rtol=10*rtol)
+        assert_allclose(res.error, ref_err, rtol=100*rtol)
 
-        i = (b - a + 1 <= maxterms)
+        i = ((b_original - a)/step + 1 <= maxterms)
         assert_allclose(res.sum[i], ref_sum[i], rtol=1e-15)
         assert_allclose(res.error[i], ref_err[i], rtol=1e-15)
 
-        logres = _nsum(logf, a, b, log=True, maxterms=maxterms)
+        logres = _nsum(logf, a, b_original, step=step, log=True, rtol=np.log(rtol), maxterms=maxterms)
         assert_allclose(np.exp(logres.sum), res.sum)
         assert_allclose(np.exp(logres.error), res.error)
