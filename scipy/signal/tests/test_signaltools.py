@@ -1092,18 +1092,9 @@ class TestMedFilt:
         assert_equal(signal.medfilt(in_typed).dtype, dtype)
         assert_equal(signal.medfilt2d(in_typed).dtype, dtype)
 
-    def test_types_deprecated(self):
-        dtype = np.longdouble
-        in_typed = np.array(self.IN, dtype=dtype)
-        msg = "Using medfilt with arrays of dtype"
-        with pytest.deprecated_call(match=msg):
-            assert_equal(signal.medfilt(in_typed).dtype, dtype)
-        with pytest.deprecated_call(match=msg):
-            assert_equal(signal.medfilt2d(in_typed).dtype, dtype)
-
-
     @pytest.mark.parametrize('dtype', [np.bool_, np.complex64, np.complex128,
-                                       np.clongdouble, np.float16,])
+                                       np.clongdouble, np.float16, np.float128,
+                                       np.object_])
     def test_invalid_dtypes(self, dtype):
         in_typed = np.array(self.IN, dtype=dtype)
         with pytest.raises(ValueError, match="not supported"):
@@ -1115,7 +1106,7 @@ class TestMedFilt:
     def test_none(self):
         # gh-1651, trac #1124. Ensure this does not segfault.
         with pytest.warns(UserWarning):
-            assert_raises(TypeError, signal.medfilt, None)
+            assert_raises(ValueError, signal.medfilt, None)
         # Expand on this test to avoid a regression with possible contiguous
         # numpy arrays that have odd strides. The stride value below gets
         # us into wrong memory if used (but it does not need to be used)
@@ -1123,30 +1114,6 @@ class TestMedFilt:
         a = dummy[5:6]
         a.strides = 16
         assert_(signal.medfilt(a, 1) == 5.)
-
-    def test_refcounting(self):
-        # Check a refcounting-related crash
-        a = Decimal(123)
-        x = np.array([a, a], dtype=object)
-        if hasattr(sys, 'getrefcount'):
-            n = 2 * sys.getrefcount(a)
-        else:
-            n = 10
-        # Shouldn't segfault:
-        with pytest.warns(UserWarning):
-            for j in range(n):
-                signal.medfilt(x)
-        if hasattr(sys, 'getrefcount'):
-            assert_(sys.getrefcount(a) < n)
-        assert_equal(x, [a, a])
-
-    def test_object(self,):
-        msg = "Using medfilt with arrays of dtype"
-        with pytest.deprecated_call(match=msg):
-            in_object = np.array(self.IN, dtype=object)
-            out_object = np.array(self.OUT, dtype=object)
-            assert_array_equal(signal.medfilt(in_object, self.KERNEL_SIZE),
-                               out_object)
 
     @pytest.mark.parametrize("dtype", [np.ubyte, np.float32, np.float64])
     def test_medfilt2d_parallel(self, dtype):
