@@ -2500,9 +2500,9 @@ class rv_continuous(rv_generic):
             - optimizer : The optimizer to use.  The optimizer must take
               ``func`` and starting position as the first two arguments,
               plus ``args`` (for extra arguments to pass to the
-              function to be optimized) and ``disp=0`` to suppress
-              output as keyword arguments. The optimizer must return
-              the estimated parameters.
+              function to be optimized) and ``disp``. 
+              The ``fit`` method calls always the optimizer with ``disp=0``.
+              The optimizer must return the estimated parameters.
 
             - method : The method to use. The default is "MLE" (Maximum
               Likelihood Estimate); "MM" (Method of Moments)
@@ -2573,7 +2573,7 @@ class rv_continuous(rv_generic):
 
         >>> from scipy.optimize import minimize
         >>> def custom_optimizer(func, x0, args=(), disp=0):
-        ...     res = minimize(func, x0, args, method="COBYLA")
+        ...     res = minimize(func, x0, args, method="COBYLA", options={"disp": disp})
         ...     if res.success:
         ...         return res.x
         ...     raise RuntimeError('optimization routine failed')
