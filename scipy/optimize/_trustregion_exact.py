@@ -207,11 +207,12 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
     # in formula 7.3.14 (p. 190) named as "theta".
     # As recommended there it value is fixed in 0.01.
     UPDATE_COEFF = 0.01
+    MAXITER_DEFAULT = 0  # zero means infinite.
 
     EPS = np.finfo(float).eps
 
     def __init__(self, x, fun, jac, hess, hessp=None,
-                 k_easy=0.1, k_hard=0.2):
+                 k_easy=0.1, k_hard=0.2, maxiter=None):
 
         super().__init__(x, fun, jac, hess)
 
@@ -232,6 +233,11 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
         # from reference _[1] for a more detailed description.
         self.k_easy = k_easy
         self.k_hard = k_hard
+
+        # ``maxiter`` optionally limits the number of iterations
+        # the solve method may perform. Useful for poorly conditioned
+        # problems which may otherwise hang.
+        self.maxiter = self.MAXITER_DEFAULT if maxiter is None else maxiter
 
         # Get Lapack function for cholesky decomposition.
         # The implemented SciPy wrapper does not return
@@ -291,7 +297,7 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
         already_factorized = False
         self.niter = 0
 
-        while True:
+        while self.maxiter == 0 or self.niter < self.maxiter:
 
             # Compute Cholesky factorization
             if already_factorized:
@@ -400,10 +406,10 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                 s_min, z_min = estimate_smallest_singular_value(U)
                 step_len = tr_radius
 
+                p = step_len * z_min
                 # Check stop criteria
                 if (step_len**2 * s_min**2
                     <= self.k_hard * lambda_current * tr_radius**2):
-                    p = step_len * z_min
                     break
 
                 # Update uncertanty bounds
