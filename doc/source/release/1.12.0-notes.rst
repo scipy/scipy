@@ -28,8 +28,9 @@ Highlights of this release
 - Experimental support for the array API standard has been added to part of
   `scipy.special`, and to all of `scipy.fft` and `scipy.cluster`. There are
   likely to be bugs and early feedback for usage with CuPy arrays, PyTorch
-  tensors, and other array API compatible libraries is appreciated.
-- A new class, ``ShortTimeFFT```, provides a more versatile implementation of the
+  tensors, and other array API compatible libraries is appreciated. Use the
+  ``SCIPY_ARRAY_API`` environment variable for testing.
+- A new class, ``ShortTimeFFT``, provides a more versatile implementation of the
   short-time Fourier transform (STFT), its inverse (ISTFT) as well as the (cross-)
   spectrogram. It utilizes an improved algorithm for calculating the ISTFT.
 - Several new constructors have been added for sparse arrays, and many operations
@@ -81,7 +82,7 @@ New features
   and knot vectors. This way it generalizes ``BSpline`` for 1D data to N-D, and
   parallels ``NdPPoly`` (which represents N-D tensor product polynomials).
   Evaluations exploit the localized nature of b-splines.
-- ``NeastNDInterpolator.__call__`` accepts ``**query_options``, which are
+- ``NearestNDInterpolator.__call__`` accepts ``**query_options``, which are
   passed through to the ``KDTree.query`` call to find nearest neighbors. This
   allows, for instance, to limit the neighbor search distance and parallelize
   the query using the ``workers`` keyword.
