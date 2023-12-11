@@ -1062,11 +1062,7 @@ def _integral_bound(f, a, b, step, args, constants):
     n_steps = np.round(np.logspace(0, np.log10(maxterms), nfev, dtype=dtype))
     ks = a2 + n_steps * step2
     fks = f(ks, *args2)
-    if fks.size and np.all((fks < atol)[..., -1]):
-        nt = np.argmax(fks < atol, axis=-1)
-        nt = np.max(nt)
-    else:
-        nt = len(n_steps) - 1
+    nt = np.minimum(np.sum(fks > atol, axis=-1),  n_steps.shape[-1]-1)
     n_steps = n_steps[nt]
 
     # Directly evaluate the sum up to this term
@@ -1084,7 +1080,7 @@ def _integral_bound(f, a, b, step, args, constants):
     right = _tanhsinh(f, k, b, args=args, atol=atol, rtol=rtol, log=log)
 
     # Calculate the full estimate and error from the pieces
-    fk = fks[..., nt]
+    fk = fks[np.arange(len(fks)), nt]
     fb = f(b, *args)
     nfev += 1
     if log:
