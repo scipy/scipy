@@ -80,6 +80,9 @@ axis_nan_policy_cases = [
     (stats.ansari, tuple(), {}, 2, 2, False, None),
     (stats.entropy, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.entropy, tuple(), dict(), 2, 1, True, lambda x: (x,)),
+    (stats.skewtest, tuple(), dict(), 1, 2, False, None),
+    (stats.kurtosistest, tuple(), dict(), 1, 2, False, None),
+    (stats.normaltest, tuple(), dict(), 1, 2, False, None),
     (stats.cramervonmises, ("norm",), dict(), 1, 2, False,
      lambda res: (res.statistic, res.pvalue)),
     (stats.cramervonmises_2samp, tuple(), dict(), 2, 2, False,
@@ -118,6 +121,8 @@ too_small_messages = {"The input contains nan",  # for nan_policy="raise"
                       "Window length (0) must be positive and less",
                       "Window length (1) must be positive and less",
                       "Window length (2) must be positive and less",
+                      "skewtest is not valid with less than",
+                      "kurtosistest requires at least 5",
                       "attempt to get argmax of an empty sequence",
                       "No array values within given limits",}
 
