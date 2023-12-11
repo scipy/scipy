@@ -90,12 +90,19 @@ More strict array input validation will reject ``np.matrix`` and
 Currently supported functionality
 `````````````````````````````````
 
-The following modules provide Array API standard support when the environment
+The following modules provide array API standard support when the environment
 variable is set:
 
 - ``scipy.cluster.hierarchy``
 - ``scipy.cluster.vq``
 - ``scipy.fft``
+
+Partial support is provided in ``scipy.special`` for the following functions:
+``scipy.special.log_ndtr``, ``scipy.special.ndtr``, ``scipy.special.ndtri``,
+``scipy.special.erf``, ``scipy.special.erfc``, ``scipy.special.i0``,
+``scipy.special.i0e``, ``scipy.special.i1``, ``scipy.special.i1e``, 
+``scipy.special.gammaln``, ``scipy.special.gammainc``, ``scipy.special.gammaincc``,
+``scipy.special.logit``, and ``scipy.special.expit``.
 
 
 Implementation notes
