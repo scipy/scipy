@@ -93,16 +93,16 @@ Currently supported functionality
 The following modules provide array API standard support when the environment
 variable is set:
 
-- ``scipy.cluster.hierarchy``
-- ``scipy.cluster.vq``
-- ``scipy.fft``
+- `scipy.cluster.hierarchy`
+- `scipy.cluster.vq`
+- `scipy.fft`
 
-Partial support is provided in ``scipy.special`` for the following functions:
-``scipy.special.log_ndtr``, ``scipy.special.ndtr``, ``scipy.special.ndtri``,
-``scipy.special.erf``, ``scipy.special.erfc``, ``scipy.special.i0``,
-``scipy.special.i0e``, ``scipy.special.i1``, ``scipy.special.i1e``, 
-``scipy.special.gammaln``, ``scipy.special.gammainc``, ``scipy.special.gammaincc``,
-``scipy.special.logit``, and ``scipy.special.expit``.
+Support is provided in `scipy.special` for the following functions:
+`scipy.special.log_ndtr`, `scipy.special.ndtr`, `scipy.special.ndtri`,
+`scipy.special.erf`, `scipy.special.erfc`, `scipy.special.i0`,
+`scipy.special.i0e`, `scipy.special.i1`, `scipy.special.i1e`, 
+`scipy.special.gammaln`, `scipy.special.gammainc`, `scipy.special.gammaincc`,
+`scipy.special.logit`, and `scipy.special.expit`.
 
 
 Implementation notes
@@ -126,7 +126,7 @@ it's effectively the existing ``numpy`` namespace with a number of aliases
 added and a handful of functions amended/added for array API standard support.
 When support is enabled, depending on the type of arrays, ``xp`` will return the
 standard-compatible namespace matching the input array type to a function (e.g.,
-if the input to ``cluster.vq.kmeans`` is a PyTorch array, then ``xp`` is
+if the input to `cluster.vq.kmeans` is a PyTorch array, then ``xp`` is
 ``array_api_compat.torch``).
 
 
