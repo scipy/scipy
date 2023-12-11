@@ -1,13 +1,13 @@
-Support for Array API
-=====================
+Support for the array API standard
+==================================
 
-.. note:: Array API support is still experimental and hidden behind an
+.. note:: array API standard support is still experimental and hidden behind an
           environment variable. Only a small part of the public API is covered
           right now.
 
 This guide describes how to **use** and **add support for** the
-`Python Array API standard <https://data-apis.org/array-api/latest/index.html>`_.
-This standard allows users to use any Array API compatible array library
+`Python array API standard <https://data-apis.org/array-api/latest/index.html>`_.
+This standard allows users to use any array API compatible array library
 with SciPy out of the box.
 
 The `RFC`_ defines how SciPy implements support for the standard, with the main
@@ -16,13 +16,13 @@ implementation does more strict validation of allowed array-like inputs, e.g.
 rejecting numpy matrix and masked array instances, and arrays with object
 dtype.
 
-In the following, an Array API compatible namespace is noted as ``xp``.
+In the following, an array API compatible namespace is noted as ``xp``.
 
 
-Using Array API support
------------------------
+Using array API standard support
+--------------------------------
 
-To enable the Array API standard support, an environment variable must be set
+To enable the array API standard support, an environment variable must be set
 before importing SciPy:
 
 .. code:: bash
@@ -119,25 +119,25 @@ as ``xp.concat`` (which, for numpy, maps to ``np.concatenate``). This allows
 using a uniform API across NumPy, PyTorch and CuPy (as of right now; support
 for other libraries like JAX is expected to be added in the future).
 
-When the environment variable isn't set and hence Array API support in SciPy is
-disabled, we still use the "augmented" version of the NumPy namespace, which is
-``array_api_compat.numpy``. That should not change behavior of SciPy functions,
-it's effectively the existing ``numpy`` namespace with a number of aliases
-added and a handful of functions amended/added for array API standard support.
-When support is enabled, depending on the type of arrays, ``xp`` will return the
-standard-compatible namespace matching the input array type to a function (e.g.,
-if the input to `cluster.vq.kmeans` is a PyTorch array, then ``xp`` is
-``array_api_compat.torch``).
+When the environment variable isn't set and hence array API standard support in
+SciPy is disabled, we still use the "augmented" version of the NumPy namespace,
+which is ``array_api_compat.numpy``. That should not change behavior of SciPy
+functions, it's effectively the existing ``numpy`` namespace with a number of
+aliases added and a handful of functions amended/added for array API standard
+support. When support is enabled, depending on the type of arrays, ``xp`` will
+return the standard-compatible namespace matching the input array type to a
+function (e.g., if the input to `cluster.vq.kmeans` is a PyTorch array, then
+``xp`` is ``array_api_compat.torch``).
 
 
-Adding Array API support to a SciPy function
---------------------------------------------
+Adding array API standard support to a SciPy function
+-----------------------------------------------------
 
 As much as possible, new code added to SciPy should try to follow as closely as
-possible the Array API standard (these functions typically are best-practice
+possible the array API standard (these functions typically are best-practice
 idioms for NumPy usage as well). By following the standard, effectively adding
-support for Array API is typically straightforward, and we ideally don't need
-to maintain any customization.
+support for the array API standard is typically straightforward, and we ideally
+don't need to maintain any customization.
 
 Two helper functions are available:
 
