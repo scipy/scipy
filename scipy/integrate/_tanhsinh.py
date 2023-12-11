@@ -762,6 +762,17 @@ def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel,
     return f, a, b, log, maxfun, maxlevel, minlevel, atol, rtol, args, callback
 
 
+def _logsumexp(x, axis=0):
+    # logsumexp raises with empty array
+    x = np.asarray(x)
+    shape = list(x.shape)
+    if shape[axis] == 0:
+        shape.pop(axis)
+        return np.full(shape, fill_value=-np.inf, dtype=x.dtype)
+    else:
+        return special.logsumexp(x, axis=axis)
+
+
 def _nsum_iv(f, a, b, step, args, log, maxterms, atol, rtol):
     # Input validation and standardization
 
@@ -807,8 +818,8 @@ def _nsum_iv(f, a, b, step, args, log, maxterms, atol, rtol):
     rtol = rtol if rtol is None else params[1]
 
     maxterms_int = int(maxterms)
-    if not maxterms_int == maxterms or maxterms <= 0:
-        message = "`maxterms` must be a positive integer."
+    if maxterms_int != maxterms or maxterms < 0:
+        message = "`maxterms` must be a non-negative integer."
         raise ValueError(message)
 
     if not np.iterable(args):
@@ -1040,7 +1051,7 @@ def _direct(f, a, b, step, args, constants, inclusive=True):
     # like this. This is an optimization that can be added later.
     fs[i_nan] = zero
     nfev = max_steps - i_nan.sum(axis=-1)
-    S = special.logsumexp(fs, axis=-1) if log else np.sum(fs, axis=-1)
+    S = _logsumexp(fs, axis=-1) if log else np.sum(fs, axis=-1)
     E = np.real(S) + np.log(eps) if log else abs(eps) * S
     return S, E, nfev
 
@@ -1059,7 +1070,8 @@ def _integral_bound(f, a, b, step, args, constants):
 
     # Find the location of a term that is less than the tolerance (if possible)
     nfev = 10
-    n_steps = np.round(np.logspace(0, np.log10(maxterms), nfev, dtype=dtype))
+    with np.errstate(divide='ignore', invalid='ignore'):
+        n_steps = np.round(np.logspace(0, np.log10(maxterms), nfev, dtype=dtype))
     ks = a2 + n_steps * step2
     fks = f(ks, *args2)
     nt = np.minimum(np.sum(fks > atol, axis=-1),  n_steps.shape[-1]-1)
@@ -1068,7 +1080,7 @@ def _integral_bound(f, a, b, step, args, constants):
     # Directly evaluate the sum up to this term
     k = a + n_steps * step
     left, left_error, left_nfev = _direct(f, a, k, step, args, constants, inclusive=False)
-    k[~np.isfinite(left)] = np.nan  # if sum is not finite, no sense in continuing
+    k[np.isposinf(left)] = np.nan  # if sum is not finite, no sense in continuing
 
     # Use integration to estimate the remaining sum
     # Possible optimization for future work: if there were no terms less than
@@ -1086,9 +1098,9 @@ def _integral_bound(f, a, b, step, args, constants):
     if log:
         log_step = np.log(step)
         S_terms = (left, right.integral - log_step, fk - log2, fb - log2)
-        S = special.logsumexp(S_terms, axis=0)
+        S = _logsumexp(S_terms, axis=0)
         E_terms = (left_error, right.error - log_step, fk-log2, fb-log2+np.pi*1j)
-        E = special.logsumexp(E_terms, axis=0).real
+        E = _logsumexp(E_terms, axis=0).real
     else:
         S = left + right.integral/step + fk/2 + fb/2
         E = left_error + right.error/step + fk/2 - fb/2

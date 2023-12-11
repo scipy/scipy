@@ -1441,7 +1441,7 @@ class TestNSum:
         with pytest.raises(ValueError, match=message):
             _nsum(f, f.a, f.b, atol=np.inf, log=True)
 
-        message = '...must be a positive integer.'
+        message = '...must be a non-negative integer.'
         with pytest.raises(ValueError, match=message):
             _nsum(f, f.a, f.b, maxterms=3.5)
         with pytest.raises(ValueError, match=message):
@@ -1463,7 +1463,7 @@ class TestNSum:
         assert_equal(logres.status, 0)
         assert_equal(logres.success, True)
 
-    @pytest.mark.parametrize('maxterms', [1, 10, 20, 100])
+    @pytest.mark.parametrize('maxterms', [0, 1, 10, 20, 100])
     def test_integral(self, maxterms):
         # test precise behavior of integral approximation
         f = self.f1
