@@ -220,9 +220,9 @@ def _pdf_single_value_piecewise_Z0(x0, alpha, beta, **kwds):
     )
 
 
-def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps, x_tol_near_zeta):
-    """Calculate pdf using Nolan's methods as detailed in [NO].
-    """
+def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps,
+                                                 x_tol_near_zeta):
+    """Calculate pdf using Nolan's methods as detailed in [NO]."""
 
     _nolan = Nolan(alpha, beta, x0)
     zeta = _nolan.zeta
@@ -341,9 +341,9 @@ def _cdf_single_value_piecewise_Z0(x0, alpha, beta, **kwds):
     )
 
 
-def _cdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps, x_tol_near_zeta):
-    """Calculate cdf using Nolan's methods as detailed in [NO].
-    """
+def _cdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps,
+                                                 x_tol_near_zeta):
+    """Calculate cdf using Nolan's methods as detailed in [NO]."""
     _nolan = Nolan(alpha, beta, x0)
     zeta = _nolan.zeta
     xi = _nolan.xi
@@ -837,8 +837,8 @@ class levy_stable_gen(rv_continuous):
     def rvs(self, *args, **kwds):
         X1 = super().rvs(*args, **kwds)
 
-        discrete = kwds.pop("discrete", None)  # noqa
-        rndm = kwds.pop("random_state", None)  # noqa
+        kwds.pop("discrete", None)
+        kwds.pop("random_state", None)
         (alpha, beta), delta, gamma, size = self._parse_args_rvs(*args, **kwds)
 
         # shift location for this parameterisation (S1)
@@ -953,7 +953,7 @@ class levy_stable_gen(rv_continuous):
                 warnings.warn(
                     "Density calculations experimental for FFT method."
                     + " Use combination of piecewise and dni methods instead.",
-                    RuntimeWarning,
+                    RuntimeWarning, stacklevel=3,
                 )
                 _alpha, _beta = pair
                 _x = data_subset[:, (0,)]
@@ -1093,7 +1093,7 @@ class levy_stable_gen(rv_continuous):
                 warnings.warn(
                     "Cumulative density calculations experimental for FFT"
                     + " method. Use piecewise method instead.",
-                    RuntimeWarning,
+                    RuntimeWarning, stacklevel=3,
                 )
                 _alpha, _beta = pair
                 _x = data_subset[:, (0,)]

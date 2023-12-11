@@ -40,21 +40,27 @@ def _sub_module_deprecation(*, sub_package, module, private_modules, all,
 
     if attribute not in all:
         raise AttributeError(
-            f"`scipy.{sub_package}.{module}` has no attribute `{attribute}`; furthermore, "
-            f"`scipy.{sub_package}.{module}` is deprecated and will be removed in "
-            "SciPy 2.0.0.")
+            f"`scipy.{sub_package}.{module}` has no attribute `{attribute}`; "
+            f"furthermore, `scipy.{sub_package}.{module}` is deprecated "
+            f"and will be removed in SciPy 2.0.0."
+        )
 
     attr = getattr(import_module(correct_import), attribute, None)
 
     if attr is not None:
-        message = (f"Please import `{attribute}` from the `{correct_import}` namespace; "
-                   f"the `scipy.{sub_package}.{module}` namespace is deprecated and "
-                   "will be removed in SciPy 2.0.0.")
+        message = (
+            f"Please import `{attribute}` from the `{correct_import}` namespace; "
+            f"the `scipy.{sub_package}.{module}` namespace is deprecated "
+            f"and will be removed in SciPy 2.0.0."
+        )
     else:
-        message = (f"`scipy.{sub_package}.{module}.{attribute}` is deprecated along with "
-                   f"the `scipy.{sub_package}.{module}` namespace. "
-                   f"`scipy.{sub_package}.{module}.{attribute}` will be removed in SciPy 1.13.0, and "
-                   f"the `scipy.{sub_package}.{module}` namespace will be removed in SciPy 2.0.0.")
+        message = (
+            f"`scipy.{sub_package}.{module}.{attribute}` is deprecated along with "
+            f"the `scipy.{sub_package}.{module}` namespace. "
+            f"`scipy.{sub_package}.{module}.{attribute}` will be removed "
+            f"in SciPy 1.13.0, and the `scipy.{sub_package}.{module}` namespace "
+            f"will be removed in SciPy 2.0.0."
+        )
 
     warnings.warn(message, category=DeprecationWarning, stacklevel=3)
 
@@ -146,8 +152,7 @@ def deprecate_cython_api(module, routine_name, new_name=None, message=None):
     if new_name is None:
         depdoc = "`%s` is deprecated!" % old_name
     else:
-        depdoc = "`%s` is deprecated, use `%s` instead!" % \
-                 (old_name, new_name)
+        depdoc = f"`{old_name}` is deprecated, use `{new_name}` instead!"
 
     if message is not None:
         depdoc += "\n" + message

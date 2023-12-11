@@ -161,7 +161,9 @@ class Test_Qhull:
         assert_raises(RuntimeError, y.get_voronoi_diagram)
 
     def test_issue_8051(self):
-        points = np.array([[0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [1, 2],[2, 0], [2, 1], [2, 2]])
+        points = np.array(
+            [[0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [1, 2],[2, 0], [2, 1], [2, 2]]
+        )
         Voronoi(points)
 
 
@@ -353,7 +355,9 @@ class TestUtilities:
         for ndim in range(2, 6):
             # Generate an uniform grid in n-d unit cube
             x = np.linspace(0, 1, npoints[ndim])
-            grid = np.c_[list(map(np.ravel, np.broadcast_arrays(*np.ix_(*([x]*ndim)))))].T
+            grid = np.c_[
+                list(map(np.ravel, np.broadcast_arrays(*np.ix_(*([x]*ndim)))))
+            ].T
 
             err_msg = "ndim=%d" % ndim
 
@@ -889,9 +893,10 @@ class TestVoronoi:
         assert_equal(set(map(tuple, vor.regions)),
                      set(map(tuple, regions)))
 
-        p1 = list(zip(list(map(sorttuple, ridge_points)), list(map(sorttuple, ridge_vertices))))
+        p1 = list(zip(list(map(sorttuple, ridge_points)),
+                      list(map(sorttuple, ridge_vertices))))
         p2 = list(zip(list(map(sorttuple, vor.ridge_points.tolist())),
-                 list(map(sorttuple, vor.ridge_vertices))))
+                      list(map(sorttuple, vor.ridge_vertices))))
         p1.sort()
         p2.sort()
 
@@ -997,8 +1002,9 @@ class TestVoronoi:
                 try:
                     return vertex_map[x]
                 except KeyError as e:
-                    raise AssertionError("incremental result has spurious vertex at %r"
-                                         % (objx.vertices[x],)) from e
+                    message = (f"incremental result has spurious vertex "
+                               f"at {objx.vertices[x]!r}")
+                    raise AssertionError(message) from e
 
             def simplified(x):
                 items = set(map(sorted_tuple, x))
@@ -1076,17 +1082,21 @@ class Test_HalfspaceIntersection:
                                [0.0, 1.0, -1.0]])
         feasible_point = np.array([0.5, 0.5, 0.5])
         #Feasible point is (ndim,) instead of (ndim-1,)
-        assert_raises(ValueError, qhull.HalfspaceIntersection, halfspaces, feasible_point)
+        assert_raises(ValueError,
+                      qhull.HalfspaceIntersection, halfspaces, feasible_point)
         feasible_point = np.array([[0.5], [0.5]])
         #Feasible point is (ndim-1, 1) instead of (ndim-1,)
-        assert_raises(ValueError, qhull.HalfspaceIntersection, halfspaces, feasible_point)
+        assert_raises(ValueError,
+                      qhull.HalfspaceIntersection, halfspaces, feasible_point)
         feasible_point = np.array([[0.5, 0.5]])
         #Feasible point is (1, ndim-1) instead of (ndim-1,)
-        assert_raises(ValueError, qhull.HalfspaceIntersection, halfspaces, feasible_point)
+        assert_raises(ValueError,
+                      qhull.HalfspaceIntersection, halfspaces, feasible_point)
 
         feasible_point = np.array([-0.5, -0.5])
         #Feasible point is outside feasible region
-        assert_raises(qhull.QhullError, qhull.HalfspaceIntersection, halfspaces, feasible_point)
+        assert_raises(qhull.QhullError,
+                      qhull.HalfspaceIntersection, halfspaces, feasible_point)
 
     def test_incremental(self):
         #Cube
@@ -1109,7 +1119,8 @@ class Test_HalfspaceIntersection:
 
         inc_hs = qhull.HalfspaceIntersection(halfspaces, feas_point, incremental=True)
 
-        inc_res_hs = qhull.HalfspaceIntersection(halfspaces, feas_point, incremental=True)
+        inc_res_hs = qhull.HalfspaceIntersection(halfspaces, feas_point,
+                                                 incremental=True)
 
         for i, ehs in enumerate(extra_halfspaces):
             inc_hs.add_halfspaces(ehs[np.newaxis, :])

@@ -22,9 +22,10 @@ at the top-level directory.
 #include "slu_cdefs.h"
 
 extern int_t mc64id_(int_t*);
-extern int_t mc64ad_(int_t*, int_t*, int_t*, int_t [], int_t [], double [],
-		    int_t*, int_t [], int_t*, int_t[], int_t*, double [],
-		    int_t [], int_t []);
+extern int_t mc64ad_(int_t *job, int_t *n, int_t *ne, int_t *ip,
+                     int_t *irn, double *a, int_t *num, int *cperm,
+	             int_t *liw, int_t *iw, int_t *ldw, double *dw,
+		     int_t *icntl, int_t *info);
 
 /*! \brief
  *
@@ -92,11 +93,12 @@ extern int_t mc64ad_(int_t*, int_t*, int_t*, int_t [], int_t [], double [],
  */
 
 int
-cldperm(int_t job, int_t n, int_t nnz, int_t colptr[], int_t adjncy[],
-	singlecomplex nzval[], int_t *perm, float u[], float v[])
-{ 
-    int_t i, liw, ldw, num;
-    int_t *iw, icntl[10], info[10];
+cldperm(int job, int n, int_t nnz, int_t colptr[], int_t adjncy[],
+	singlecomplex nzval[], int *perm, float u[], float v[])
+{
+    int_t i, num;
+    int_t icntl[10], info[10];
+    int_t liw, ldw, *iw;
     double *dw;
     double *nzval_d = (double *) SUPERLU_MALLOC(nnz * sizeof(double));
 
@@ -142,16 +144,18 @@ cldperm(int_t job, int_t n, int_t nnz, int_t colptr[], int_t adjncy[],
     icntl[1] = -1;
 #endif
 
+    int_t ljob = job, ln = n;
+    
     for (i = 0; i < nnz; ++i) nzval_d[i] = c_abs1(&nzval[i]);
-    mc64ad_(&job, &n, &nnz, colptr, adjncy, nzval_d, &num, perm,
+    mc64ad_(&ljob, &ln, &nnz, colptr, adjncy, nzval_d, &num, perm,
 	    &liw, iw, &ldw, dw, icntl, info);
 
 #if ( DEBUGlevel>=2 )
     slu_PrintInt10("perm", n, perm);
-    printf(".. After MC64AD info %d\tsize of matching %d\n", info[0], num);
+    printf(".. After MC64AD info %lld\tsize of matching %d\n", (long long)info[0], num);
 #endif
     if ( info[0] == 1 ) { /* Structurally singular */
-        printf(".. The last %d permutations:\n", n-num);
+        printf(".. The last %d permutations:\n", (int)(n-num));
 	slu_PrintInt10("perm", n-num, &perm[num]);
     }
 

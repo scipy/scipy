@@ -124,10 +124,8 @@ def embed_time_trace(ninja_log_dir, target, pid, tid, options):
         o_path = os.path.join(ninja_log_dir, t)
         json_trace_path = os.path.splitext(o_path)[0] + '.json'
         try:
-            with open(json_trace_path, 'r') as trace:
-                for time_trace_event in trace_to_dicts(target, trace, options,
-                                                       pid, tid):
-                    yield time_trace_event
+            with open(json_trace_path) as trace:
+                yield from trace_to_dicts(target, trace, options, pid, tid)
         except OSError:
             pass
 
@@ -151,9 +149,7 @@ def log_to_dicts(log, pid, options):
                 ninja_log_dir = os.path.dirname(log.name)
             except AttributeError:
                 continue
-            for time_trace in embed_time_trace(ninja_log_dir, target, pid,
-                                               tid, options):
-                yield time_trace
+            yield from embed_time_trace(ninja_log_dir, target, pid, tid, options)
 
 
 def main(argv):
@@ -177,7 +173,7 @@ def main(argv):
 
     entries = []
     for pid, log_file in enumerate(options.logfiles):
-        with open(log_file, 'r') as log:
+        with open(log_file) as log:
             entries += list(log_to_dicts(log, pid, vars(options)))
     json.dump(entries, sys.stdout)
 

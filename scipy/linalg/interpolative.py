@@ -556,7 +556,7 @@ def interp_decomp(A, eps_or_k, rand=True):
         Column index array.
     proj : :class:`numpy.ndarray`
         Interpolation coefficients.
-    """
+    """  # numpy/numpydoc#87  # noqa: E501
     from scipy.sparse.linalg import LinearOperator
 
     real = _is_real(A)
@@ -921,8 +921,8 @@ def svd(A, eps_or_k, rand=True):
         else:
             k = int(eps_or_k)
             if k > min(A.shape):
-                raise ValueError("Approximation rank {} exceeds min(A.shape) = "
-                                 " {} ".format(k, min(A.shape)))
+                raise ValueError(f"Approximation rank {k} exceeds min(A.shape) = "
+                                 f" {min(A.shape)} ")
             if rand:
                 if real:
                     U, V, S = _backend.iddr_asvd(A, k)

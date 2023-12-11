@@ -1450,8 +1450,7 @@ class StateSpace(LinearTimeInvariant):
         if isinstance(other, StateSpace):
             # Disallow mix of discrete and continuous systems.
             if type(other) is not type(self):
-                raise TypeError('Cannot add {} and {}'.format(type(self),
-                                                              type(other)))
+                raise TypeError(f'Cannot add {type(self)} and {type(other)}')
 
             if self.dt != other.dt:
                 raise TypeError('Cannot add systems with different `dt`.')
@@ -1481,8 +1480,7 @@ class StateSpace(LinearTimeInvariant):
                 d = self.D + other
             else:
                 raise ValueError("Cannot add systems with incompatible "
-                                 "dimensions ({} and {})"
-                                 .format(self.D.shape, other.shape))
+                                 f"dimensions ({self.D.shape} and {other.shape})")
 
         common_dtype = np.result_type(a.dtype, b.dtype, c.dtype, d.dtype)
         return StateSpace(np.asarray(a, dtype=common_dtype),

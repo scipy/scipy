@@ -5,7 +5,7 @@
 *~
 *$
 *.bak
-.idea/*
+.idea/
 *.kdev4
 *.org
 .project
@@ -85,8 +85,8 @@ pip-wheel-metadata
 #########
 .mesonpy-native-file.ini
 installdir/
-build-install/*
-.mesonpy/*
+build-install/
+.mesonpy/
 
 # doit
 ######
@@ -103,17 +103,17 @@ build-install/*
 
 # pytest cache #
 ################
-.cache/*
-.pytest_cache/*
+.cache/
+.pytest_cache/
 
 # mypy cache #
 ##############
-.mypy_cache/*
+.mypy_cache/
 
 # linter #
 ##########
-.ruff_cache/*
-.pre-commit-workdir/*
+.ruff_cache/
+.pre-commit-workdir/
 
 # Patches #
 ###########
@@ -145,6 +145,8 @@ benchmarks/results
 benchmarks/scipy
 benchmarks/html
 benchmarks/scipy-benchmarks
+.openblas
+scipy/_distributor_init_local.py
 scipy/__config__.py
 scipy/_lib/_ccallback_c.c
 scipy/_lib/messagestream.c

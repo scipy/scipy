@@ -630,7 +630,7 @@ cdef inline double wright_bessel_integral(double a, double b, double x) noexcept
 
     int_0^inf K(a, b, x, r+eps) dr = exp(-eps) int_0^inf exp(-r) Kmod(.., r) dr
 
-    Note the shift r -> r+eps to have integation from 0 to infinity.
+    Note the shift r -> r+eps to have integration from 0 to infinity.
     The integral over P is done via a Gauss-Legendre quadrature rule.
 
     Note: Hardest argument range is large z, large b and small eps.
@@ -779,7 +779,7 @@ cdef inline double wright_bessel_scalar(double a, double b, double x) noexcept n
     There are 5 different approaches depending on the ranges of the arguments:
 
     1. Taylor series expansion in x=0 [1], for x <= 1.
-       Involves gamma funtions in each term.
+       Involves gamma functions in each term.
     2. Taylor series expansion in x=0 [2], for large a.
     3. Taylor series in a=0, for tiny a and not too large x.
     4. Asymptotic expansion for large x [3, 4].

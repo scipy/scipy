@@ -142,9 +142,6 @@ def spline_filter(input, order=3, output=numpy.float64, mode='mirror'):
     %(input)s
     order : int, optional
         The order of the spline, default is 3.
-    axis : int, optional
-        The axis along which the spline filter is applied. Default is the last
-        axis.
     output : ndarray or dtype, optional
         The array in which to place the output, or the dtype of the returned
         array. Default is ``numpy.float64``.
@@ -622,7 +619,8 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
         warnings.warn(
             "The behavior of affine_transform with a 1-D "
             "array supplied for the matrix parameter has changed in "
-            "SciPy 0.18.0."
+            "SciPy 0.18.0.",
+            stacklevel=2
         )
         _nd_image.zoom_shift(filtered, matrix, offset/matrix, output, order,
                              mode, cval, npad, False)
@@ -851,7 +849,8 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
         if suggest_mode is not None:
             warnings.warn(
                 ("It is recommended to use mode = {} instead of {} when "
-                 "grid_mode is True.").format(suggest_mode, mode)
+                 "grid_mode is True.").format(suggest_mode, mode),
+                stacklevel=2
             )
     mode = _ni_support._extend_mode_to_code(mode)
 

@@ -128,9 +128,9 @@ def _broadcast_shapes_remove_axis(shapes, axis=None):
     return tuple(shape)
 
 
-def _broadcast_concatenate(arrays, axis):
+def _broadcast_concatenate(arrays, axis, paired=False):
     """Concatenate arrays along an axis with broadcasting."""
-    arrays = _broadcast_arrays(arrays, axis)
+    arrays = _broadcast_arrays(arrays, axis if not paired else None)
     res = np.concatenate(arrays, axis=axis)
     return res
 
@@ -343,8 +343,8 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
         For example, some functions require samples of size two or more or they
         raise an error. This argument prevents the error from being raised when
         input is not 1D and instead places a NaN in the corresponding element
-        of the result. If callable, it must accept a list of samples and a
-        dictionary of keyword arguments passed to the wrapper function as
+        of the result. If callable, it must accept a list of samples, axis,
+        and a dictionary of keyword arguments passed to the wrapper function as
         arguments and return a bool indicating weather the samples passed are
         too small.
     n_outputs : int or callable, default: 2
@@ -378,9 +378,9 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
             return res
 
     if not callable(too_small):
-        def is_too_small(samples, *ts_args, **ts_kwargs):
+        def is_too_small(samples, *ts_args, axis=-1, **ts_kwargs):
             for sample in samples:
-                if len(sample) <= too_small:
+                if sample.shape[axis] <= too_small:
                     return True
             return False
     else:
@@ -538,7 +538,11 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
             # exceptions for empty input, so overriding it would break
             # backward compatibility.
             empty_output = _check_empty_inputs(samples, axis)
-            if empty_output is not None:
+            # only return empty output if zero sized input is too small.
+            if (
+                empty_output is not None
+                and (is_too_small(samples, kwds) or empty_output.size == 0)
+            ):
                 res = [empty_output.copy() for i in range(n_out)]
                 res = _add_reduced_axes(res, reduced_axes, keepdims)
                 return tuple_to_result(*res)
