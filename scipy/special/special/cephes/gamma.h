@@ -125,16 +125,16 @@ namespace cephes {
             double y, w, v;
 
             if (x >= MAXGAM) {
-                return (std::numeric_limits<double>::infinity());
+                return (STD::numeric_limits<double>::infinity());
             }
             w = 1.0 / x;
             w = 1.0 + w * special::cephes::polevl(w, gamma_STIR, 4);
-            y = std::exp(x);
+            y = STD::exp(x);
             if (x > MAXSTIR) { /* Avoid overflow in pow() */
-                v = std::pow(x, 0.5 * x - 0.25);
+                v = STD::pow(x, 0.5 * x - 0.25);
                 y = v * (v / y);
             } else {
-                y = std::pow(x, x - 0.5) / y;
+                y = STD::pow(x, x - 0.5) / y;
             }
             y = SQTPI * y * w;
             return (y);
@@ -146,10 +146,10 @@ namespace cephes {
         int i;
         int sgngam = 1;
 
-        if (!std::isfinite(x)) {
+        if (!STD::isfinite(x)) {
             return x;
         }
-        q = std::abs(x);
+        q = STD::abs(x);
 
         if (q > 33.0) {
             if (x < 0.0) {
@@ -157,7 +157,7 @@ namespace cephes {
                 if (p == q) {
                 gamnan:
                     set_error("Gamma", SF_ERROR_OVERFLOW, NULL);
-                    return (std::numeric_limits<double>::infinity());
+                    return (STD::numeric_limits<double>::infinity());
                 }
                 i = p;
                 if ((i & 1) == 0) {
@@ -168,11 +168,11 @@ namespace cephes {
                     p += 1.0;
                     z = q - p;
                 }
-                z = q * std::sin(M_PI * z);
+                z = q * STD::sin(M_PI * z);
                 if (z == 0.0) {
-                    return (sgngam * std::numeric_limits<double>::infinity());
+                    return (sgngam * STD::numeric_limits<double>::infinity());
                 }
-                z = std::abs(z);
+                z = STD::abs(z);
                 z = M_PI / (z * detail::stirf(q));
             } else {
                 z = detail::stirf(x);
@@ -244,7 +244,7 @@ namespace cephes {
 
             *sign = 1;
 
-            if (!std::isfinite(x)) {
+            if (!STD::isfinite(x)) {
                 return x;
             }
 
@@ -255,7 +255,7 @@ namespace cephes {
                 if (p == q) {
                 lgsing:
                     set_error("lgam", SF_ERROR_SINGULAR, NULL);
-                    return (std::numeric_limits<double>::infinity());
+                    return (STD::numeric_limits<double>::infinity());
                 }
                 i = p;
                 if ((i & 1) == 0) {
@@ -268,12 +268,12 @@ namespace cephes {
                     p += 1.0;
                     z = p - q;
                 }
-                z = q * std::sin(M_PI * z);
+                z = q * STD::sin(M_PI * z);
                 if (z == 0.0) {
                     goto lgsing;
                 }
                 /*     z = log(M_PI) - log( z ) - w; */
-                z = LOGPI - std::log(z) - w;
+                z = LOGPI - STD::log(z) - w;
                 return (z);
             }
 
@@ -301,19 +301,19 @@ namespace cephes {
                     *sign = 1;
                 }
                 if (u == 2.0) {
-                    return (std::log(z));
+                    return (STD::log(z));
                 }
                 p -= 2.0;
                 x = x + p;
                 p = x * polevl(x, gamma_B, 5) / p1evl(x, gamma_C, 6);
-                return (std::log(z) + p);
+                return (STD::log(z) + p);
             }
 
             if (x > MAXLGM) {
-                return (*sign * std::numeric_limits<double>::infinity());
+                return (*sign * STD::numeric_limits<double>::infinity());
             }
 
-            q = (x - 0.5) * std::log(x) - x + LS2PI;
+            q = (x - 0.5) * STD::log(x) - x + LS2PI;
             if (x > 1.0e8) {
                 return (q);
             }

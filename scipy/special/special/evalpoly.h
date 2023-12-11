@@ -18,7 +18,7 @@
 
 namespace special {
 
-SPECFUN_HOST_DEVICE inline std::complex<double> cevalpoly(const double *coeffs, int degree, std::complex<double> z) {
+SPECFUN_HOST_DEVICE inline STD::complex<double> cevalpoly(const double *coeffs, int degree, STD::complex<double> z) {
     /* Evaluate a polynomial with real coefficients at a complex point.
      *
      * Uses equation (3) in section 4.6.4 of [1]. Note that it is more
@@ -27,13 +27,13 @@ SPECFUN_HOST_DEVICE inline std::complex<double> cevalpoly(const double *coeffs, 
     double a = coeffs[0];
     double b = coeffs[1];
     double r = 2 * z.real();
-    double s = std::norm(z);
+    double s = STD::norm(z);
     double tmp;
 
     for (int j = 2; j < degree + 1; j++) {
         tmp = b;
-        b = std::fma(-s, a, coeffs[j]);
-        a = std::fma(r, a, tmp);
+        b = STD::fma(-s, a, coeffs[j]);
+        a = STD::fma(r, a, tmp);
     }
 
     return z * a + b;
