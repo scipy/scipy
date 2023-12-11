@@ -1032,17 +1032,19 @@ def _direct(f, a, b, step, args, constants, inclusive=True):
 
     # To allow computation in a single vectorized call, find the maximum number
     # of points (over all slices) at which the function needs to be evaluated.
-    steps = np.round((b - a) / step) + int(inclusive)
+    inclusive_adjustment = int(inclusive)
+    steps = np.round((b - a) / step) + inclusive_adjustment
     max_steps = int(np.max(steps))
 
     # In each slice, the function will be evaluated at the same number of points,
     # but excessive points (those beyond the right sum limit `b`) are replaced
-    # with NaN. Use a new last axis for these calculations for consistency with
-    # other elementwise algorithms.
+    # with NaN to (potentially) reduce the time of these unnecessary calculations.
+    # Use a new last axis for these calculations for consistency with other
+    # elementwise algorithms.
     a2, b2, step2 = a[:, np.newaxis], b[:, np.newaxis], step[:, np.newaxis]
     args2 = [arg[:, np.newaxis] for arg in args]
     ks = a2 + np.arange(max_steps, dtype=dtype) * step2
-    i_nan = ks > b2
+    i_nan = ks >= (b2 + inclusive_adjustment*step2/2)
     ks[i_nan] = np.nan
     fs = f(ks, *args2)
 

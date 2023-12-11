@@ -1583,6 +1583,14 @@ class TestNSum:
         res = _nsum(f, 1, np.inf, atol=1e-6)
         assert_equal(res.nfev, f.nfev)
 
+    def test_inclusive(self):
+        # There was an edge case off-by one bug when `_direct` was called with
+        # `inclusive=True`. Check that this is resolved.
+        res = _nsum(lambda k: 1 / k ** 2, [1, 4], np.inf, maxterms=500, atol=0.1)
+        ref = _nsum(lambda k: 1 / k ** 2, [1, 4], np.inf)
+        assert np.all(res.sum > (ref.sum - res.error))
+        assert np.all(res.sum < (ref.sum + res.error))
+
     def test_special_case(self):
         # test equal lower/upper limit
         f = self.f1
