@@ -1417,17 +1417,24 @@ class TestNSum:
         with pytest.raises(ValueError, match=message):
             _nsum(f, 1+1j, f.b)
         with pytest.raises(ValueError, match=message):
+            _nsum(f, f.a, None)
+        with pytest.raises(ValueError, match=message):
+            _nsum(f, f.a, f.b, step=object())
+        with pytest.raises(ValueError, match=message):
             _nsum(f, f.a, f.b, atol='ekki')
         with pytest.raises(ValueError, match=message):
             _nsum(f, f.a, f.b, rtol=pytest)
 
-        message = '...must be positive and finite.'
-        with pytest.raises(ValueError, match=message):
-            _nsum(f, f.a, f.b, step=np.nan)
-        with pytest.raises(ValueError, match=message):
-            _nsum(f, f.a, f.b, step=-1)
-        with pytest.raises(ValueError, match=message):
-            _nsum(f, f.a, f.b, step=None)
+        with np.errstate(all='ignore'):
+            res = _nsum(f, [np.nan, -np.inf, np.inf], 1)
+            assert np.all((res.status == -1) & np.isnan(res.sum)
+                          & np.isnan(res.error) & ~res.success & res.nfev == 1)
+            res = _nsum(f, 10, [np.nan, 1])
+            assert np.all((res.status == -1) & np.isnan(res.sum)
+                          & np.isnan(res.error) & ~res.success & res.nfev == 1)
+            res = _nsum(f, 1, 10, step=[np.nan, -np.inf, np.inf, -1, 0])
+            assert np.all((res.status == -1) & np.isnan(res.sum)
+                          & np.isnan(res.error) & ~res.success & res.nfev == 1)
 
         message = '...must be non-negative and finite.'
         with pytest.raises(ValueError, match=message):

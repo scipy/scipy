@@ -780,16 +780,16 @@ def _nsum_iv(f, a, b, step, args, log, maxterms, atol, rtol):
     if not callable(f):
         raise ValueError(message)
 
-    message = 'All elements of `a` and `b` must be real numbers.'
+    message = 'All elements of `a`, `b`, and `step` must be real numbers.'
     a, b, step = np.broadcast_arrays(a, b, step)
-    if np.any(np.iscomplex(a)) or np.any(np.iscomplex(b)):
+    dtype = np.result_type(a.dtype, b.dtype, step.dtype)
+    if not np.issubdtype(dtype, np.number) or np.issubdtype(dtype, np.complexfloating):
         raise ValueError(message)
 
-    message = 'All elements of `step` must be positive and finite.'
-    if (not np.issubdtype(step.dtype, np.number)
-            or not np.all(np.isfinite(step))
-            or not np.all(step>0)):
-        raise ValueError(message)
+    valid_a = np.isfinite(a)
+    valid_b = b >= a  # NaNs will be False
+    valid_step = np.isfinite(step) & (step > 0)
+    valid_abstep = valid_a & valid_b & valid_step
 
     message = '`log` must be True or False.'
     if log not in {True, False}:
@@ -825,7 +825,7 @@ def _nsum_iv(f, a, b, step, args, log, maxterms, atol, rtol):
     if not np.iterable(args):
         args = (args,)
 
-    return f, a, b, step, args, log, maxterms_int, atol, rtol
+    return f, a, b, step, valid_abstep, args, log, maxterms_int, atol, rtol
 
 
 def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
@@ -844,18 +844,25 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
     ----------
     f : callable
         The function that evaluates terms to be summed. The signature must be::
-            func(x: ndarray, *args) -> ndarray
+
+            f(x: ndarray, *args) -> ndarray
+
          where each element of ``x`` is a finite real and ``args`` is a tuple,
          which may contain an arbitrary number of arrays that are broadcastable
-         with `x`.
+         with `x`. `f` must represent a smooth, positive, and monotone decreasing
+         function of `x`.
     a, b : array_like
         Real lower and upper limits of summed terms. Must be broadcastable.
-        Elements of `b` may be infinite.
+        Each element of `a` must be finite and less than the corresponding
+        element in `b`, but elements of `b` may be infinite.
+    step : array_like
+        Finite, positive, real step between summed terms. Must be broadcastable
+        with `a` and `b`.
     args : tuple, optional
         Additional positional arguments to be passed to `f`. Must be arrays
-        broadcastable with `a` and `b`. If the callable to be summed
-        requires arguments that are not broadcastable with `a` and `b`, wrap
-        that callable with `f`. See Examples.
+        broadcastable with `a`, `b`, and `step`. If the callable to be summed
+        requires arguments that are not broadcastable with `a`, `b`, and `step`,
+        wrap that callable with `f`. See Examples.
     log : bool, default: False
         Setting to True indicates that `f` returns the log of the terms
         and that `atol` and `rtol` are expressed as the logs of the absolute
@@ -886,7 +893,7 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
         status : int
             An integer representing the exit status of the algorithm.
             ``0`` : The algorithm converged to the specified tolerances.
-            ``-1`` : (unused)
+            ``-1`` : Element(s) of `a`, `b`, or `step` are invalid
             ``-2`` : The maximum number of iterations was reached.
             ``-3`` : A non-finite value was encountered.
         sum : float
@@ -918,9 +925,9 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
     as
     
     .. math::
-    
+
         \sum_{k=a}^{c-1} f(k) + \int_c^\infty f(x) dx + f(c)/2
-        
+
     and the reported error is :math:`f(c)/2` plus the error estimate of
     numerical integration.
 
@@ -955,17 +962,22 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
     
     """ # noqa: E501
     # TODO
-    # - b < a or negative step?
+    # - discuss how to make this do what the user intends when b is slightly
+    #   less than a plus an integer multiple of step. This needs a careful
+    #   review of the places this could get us into trouble.
 
     # Potential future work:
+    # - iteratively calculate direct portion of sum, stopping when `rtol` is met
     # - add other methods for convergence acceleration (Richardson, epsilon)
     # - support infinite lower limit?
     # - support negative monotone increasing functions?
+    # - b < a or negative step?
+    # - complex-valued function?
     # - look out for violations of monotonicity
 
     # Function-specific input validation / standardization
     tmp = _nsum_iv(f, a, b, step, args, log, maxterms, atol, rtol)
-    f, a, b, step, args, log, maxterms, atol, rtol = tmp
+    f, a, b, step, valid_abstep, args, log, maxterms, atol, rtol = tmp
 
     # Additional elementwise algorithm input validation / standardization
     tmp = _scalar_optimization_initialize(f, (a,), args, complex_ok=False)
@@ -975,6 +987,7 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
     a = xs[0]
     b = np.broadcast_to(b, shape).ravel().astype(dtype)
     step = np.broadcast_to(step, shape).ravel().astype(dtype)
+    valid_abstep = np.broadcast_to(valid_abstep, shape).ravel()
     nterms = np.floor((b - a) / step)
     b = a + nterms*step
 
@@ -991,22 +1004,27 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
     status = np.zeros(len(a), dtype=int)
     nfev = np.ones(len(a), dtype=int)  # one function evaluation above
 
-    # Branch for direct sum evaluation vs integral approximation
-    i = nterms + 1 <= maxterms
-    ni = ~i
+    # Branch for direct sum evaluation / integral approximation / invalid input
+    i1 = (nterms + 1 <= maxterms) & valid_abstep
+    i2 = (nterms + 1 > maxterms) & valid_abstep
+    i3 = ~valid_abstep
 
-    if np.any(i):
-        args_direct = [arg[i] for arg in args]
-        tmp = _direct(f, a[i], b[i], step[i], args_direct, constants)
-        S[i], E[i] = tmp[:-1]
-        nfev[i] += tmp[-1]
-        status[i] = -3 * (~np.isfinite(S[i]))
+    if np.any(i1):
+        args_direct = [arg[i1] for arg in args]
+        tmp = _direct(f, a[i1], b[i1], step[i1], args_direct, constants)
+        S[i1], E[i1] = tmp[:-1]
+        nfev[i1] += tmp[-1]
+        status[i1] = -3 * (~np.isfinite(S[i1]))
 
-    if np.any(ni):
-        args_indirect = [arg[ni] for arg in args]
-        tmp = _integral_bound(f, a[ni], b[ni], step[ni], args_indirect, constants)
-        S[ni], E[ni], status[ni] = tmp[:-1]
-        nfev[ni] += tmp[-1]
+    if np.any(i2):
+        args_indirect = [arg[i2] for arg in args]
+        tmp = _integral_bound(f, a[i2], b[i2], step[i2], args_indirect, constants)
+        S[i2], E[i2], status[i2] = tmp[:-1]
+        nfev[i2] += tmp[-1]
+
+    if np.any(i3):
+        S[i3], E[i3] = np.nan, np.nan
+        status[i3] = -1
 
     # Return results
     S, E = S.reshape(shape)[()], E.reshape(shape)[()]
