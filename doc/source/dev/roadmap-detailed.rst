@@ -307,8 +307,9 @@ things are done in `interpolate`), and eliminate any duplication.
 
 *Filter design*: merge `firwin` and `firwin2` so `firwin2` can be removed.
 
-Further improve the performance of ``ltisys`` (fewer internal transformations
-between different representations). Fill gaps in lti system conversion functions.
+*Continuous-Time Linear Systems*: Further improve the performance of ``ltisys``
+(fewer internal transformations between different representations). Fill gaps in lti
+system conversion functions.
 
 *Second Order Sections*: Make SOS filtering equally capable as existing
 methods. This includes ltisys objects, an `lfiltic` equivalent, and numerically
