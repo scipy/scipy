@@ -309,8 +309,6 @@ repeatedly generate the same chirp signal with every call.  In these cases,
 use the classes to create a reusable function instead.
 
 """
-import warnings
-import inspect
 
 from . import _sigtools, windows
 from ._waveforms import *
@@ -345,58 +343,10 @@ from . import (
     spectral, signaltools, waveforms, wavelets, spline
 )
 
-# deal with * -> windows.* doc-only soft-deprecation
-deprecated_windows = ('boxcar', 'triang', 'parzen', 'bohman', 'blackman',
-                      'nuttall', 'blackmanharris', 'flattop', 'bartlett',
-                      'barthann', 'hamming', 'kaiser', 'gaussian',
-                      'general_gaussian', 'chebwin', 'cosine',
-                      'hann', 'exponential', 'tukey')
-
-
-def deco(name):
-    f = getattr(windows, name)
-    # Add deprecation to docstring
-
-    def wrapped(*args, **kwargs):
-        warnings.warn(f"Importing {name} from 'scipy.signal' is deprecated "
-                      f"since SciPy 1.1.0 and will raise an error in SciPy 1.13.0. "
-                      f"Please use 'scipy.signal.windows.{name}' or the convenience "
-                      f"function 'scipy.signal.get_window' instead.",
-                      DeprecationWarning, stacklevel=2)
-        return f(*args, **kwargs)
-
-    wrapped.__name__ = name
-    wrapped.__module__ = 'scipy.signal'
-    wrapped.__signature__ = inspect.signature(f)  # noqa: F821
-    if hasattr(f, '__qualname__'):
-        wrapped.__qualname__ = f.__qualname__
-
-    if f.__doc__:
-        lines = f.__doc__.splitlines()
-        for li, line in enumerate(lines):
-            if line.strip() == 'Parameters':
-                break
-        else:
-            raise RuntimeError('dev error: badly formatted doc')
-        spacing = ' ' * line.find('P')
-        lines.insert(li, ('{0}.. warning:: `scipy.signal.{1}` is deprecated since\n'
-                          '{0}             SciPy 1.1.0 and will be removed in 1.13.0\n'
-                          '{0}             use `scipy.signal.windows.{1}`'
-                          'instead.\n'.format(spacing, name)))
-        wrapped.__doc__ = '\n'.join(lines)
-
-    return wrapped
-
-
-for name in deprecated_windows:
-    locals()[name] = deco(name)
-
-del deprecated_windows, name, deco
-
 __all__ = [
-    s for s in dir() if not s.startswith("_") and s not in {"warnings", "inspect"}
+    s for s in dir() if not s.startswith("_")
 ]
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
-del PytestTester, inspect
+del PytestTester
