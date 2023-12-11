@@ -1594,6 +1594,17 @@ class TestNSum:
         res = _nsum(self.f2, 1, np.inf, args=2)
         assert_allclose(res.sum, self.f1.ref)  # f1.ref is correct w/ args=2
 
+        # Test 0 size input
+        a = np.empty((3, 1, 1))  # arbitrary broadcastable shapes
+        b = np.empty((0, 1))  # could use Hypothesis
+        p = np.empty((4))  # but it's overkill
+        shape = np.broadcast_shapes(a.shape, b.shape, p.shape)
+        res = _nsum(self.f2, a, b, args=(p,))
+        assert res.sum.shape == shape
+        assert res.error.shape == shape
+        assert res.status.shape == shape
+        assert res.nfev.shape == shape
+
         # # Test NaNs
         # should skip both direct and integral methods if there are NaNs
         # a = [np.nan, 1, 1, 1]
