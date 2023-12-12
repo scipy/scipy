@@ -931,71 +931,80 @@ def test_linregress_identical_x():
         mstats.linregress(x, y)
 
 
-def test_theilslopes():
-    # Test for basic slope and intercept.
-    slope, intercept, lower, upper = mstats.theilslopes([0, 1, 1])
-    assert_almost_equal(slope, 0.5)
-    assert_almost_equal(intercept, 0.5)
+class TestTheilslopes:
+    def test_theilslopes(self):
+        # Test for basic slope and intercept.
+        slope, intercept, lower, upper = mstats.theilslopes([0, 1, 1])
+        assert_almost_equal(slope, 0.5)
+        assert_almost_equal(intercept, 0.5)
 
-    slope, intercept, lower, upper = mstats.theilslopes([0, 1, 1],
-                                                        method='joint')
-    assert_almost_equal(slope, 0.5)
-    assert_almost_equal(intercept, 0.0)
+        slope, intercept, lower, upper = mstats.theilslopes([0, 1, 1],
+                                                            method='joint')
+        assert_almost_equal(slope, 0.5)
+        assert_almost_equal(intercept, 0.0)
 
-    # Test for correct masking.
-    y = np.ma.array([0, 1, 100, 1], mask=[False, False, True, False])
-    slope, intercept, lower, upper = mstats.theilslopes(y)
-    assert_almost_equal(slope, 1./3)
-    assert_almost_equal(intercept, 2./3)
+        # Test for correct masking.
+        y = np.ma.array([0, 1, 100, 1], mask=[False, False, True, False])
+        slope, intercept, lower, upper = mstats.theilslopes(y)
+        assert_almost_equal(slope, 1./3)
+        assert_almost_equal(intercept, 2./3)
 
-    slope, intercept, lower, upper = mstats.theilslopes(y,
-                                                        method='joint')
-    assert_almost_equal(slope, 1./3)
-    assert_almost_equal(intercept, 0.0)
+        slope, intercept, lower, upper = mstats.theilslopes(y,
+                                                            method='joint')
+        assert_almost_equal(slope, 1./3)
+        assert_almost_equal(intercept, 0.0)
 
-    # Test of confidence intervals from example in Sen (1968).
-    x = [1, 2, 3, 4, 10, 12, 18]
-    y = [9, 15, 19, 20, 45, 55, 78]
-    slope, intercept, lower, upper = mstats.theilslopes(y, x, 0.07)
-    assert_almost_equal(slope, 4)
-    assert_almost_equal(intercept, 4.0)
-    assert_almost_equal(upper, 4.38, decimal=2)
-    assert_almost_equal(lower, 3.71, decimal=2)
+        # Test of confidence intervals from example in Sen (1968).
+        x = [1, 2, 3, 4, 10, 12, 18]
+        y = [9, 15, 19, 20, 45, 55, 78]
+        slope, intercept, lower, upper = mstats.theilslopes(y, x, 0.07)
+        assert_almost_equal(slope, 4)
+        assert_almost_equal(intercept, 4.0)
+        assert_almost_equal(upper, 4.38, decimal=2)
+        assert_almost_equal(lower, 3.71, decimal=2)
 
-    slope, intercept, lower, upper = mstats.theilslopes(y, x, 0.07,
-                                                        method='joint')
-    assert_almost_equal(slope, 4)
-    assert_almost_equal(intercept, 6.0)
-    assert_almost_equal(upper, 4.38, decimal=2)
-    assert_almost_equal(lower, 3.71, decimal=2)
-
-
-def test_theilslopes_warnings():
-    # Test `theilslopes` with degenerate input; see gh-15943
-    with pytest.warns(RuntimeWarning, match="All `x` coordinates are..."):
-        res = mstats.theilslopes([0, 1], [0, 0])
-        assert np.all(np.isnan(res))
-    with suppress_warnings() as sup:
-        sup.filter(RuntimeWarning, "invalid value encountered...")
-        res = mstats.theilslopes([0, 0, 0], [0, 1, 0])
-        assert_allclose(res, (0, 0, np.nan, np.nan))
+        slope, intercept, lower, upper = mstats.theilslopes(y, x, 0.07,
+                                                            method='joint')
+        assert_almost_equal(slope, 4)
+        assert_almost_equal(intercept, 6.0)
+        assert_almost_equal(upper, 4.38, decimal=2)
+        assert_almost_equal(lower, 3.71, decimal=2)
 
 
-def test_theilslopes_namedtuple_consistency():
-    """
-    Simple test to ensure tuple backwards-compatibility of the returned
-    TheilslopesResult object
-    """
-    y = [1, 2, 4]
-    x = [4, 6, 8]
-    slope, intercept, low_slope, high_slope = mstats.theilslopes(y, x)
-    result = mstats.theilslopes(y, x)
+    def test_theilslopes_warnings(self):
+        # Test `theilslopes` with degenerate input; see gh-15943
+        with pytest.warns(RuntimeWarning, match="All `x` coordinates are..."):
+            res = mstats.theilslopes([0, 1], [0, 0])
+            assert np.all(np.isnan(res))
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "invalid value encountered...")
+            res = mstats.theilslopes([0, 0, 0], [0, 1, 0])
+            assert_allclose(res, (0, 0, np.nan, np.nan))
 
-    # note all four returned values are distinct here
-    assert_equal(slope, result.slope)
-    assert_equal(intercept, result.intercept)
-    assert_equal(low_slope, result.low_slope)
-    assert_equal(high_slope, result.high_slope)
+
+    def test_theilslopes_namedtuple_consistency(self):
+        """
+        Simple test to ensure tuple backwards-compatibility of the returned
+        TheilslopesResult object
+        """
+        y = [1, 2, 4]
+        x = [4, 6, 8]
+        slope, intercept, low_slope, high_slope = mstats.theilslopes(y, x)
+        result = mstats.theilslopes(y, x)
+
+        # note all four returned values are distinct here
+        assert_equal(slope, result.slope)
+        assert_equal(intercept, result.intercept)
+        assert_equal(low_slope, result.low_slope)
+        assert_equal(high_slope, result.high_slope)
+
+    def test_gh19678_uint8(self):
+        # `theilslopes` returned unexpected results when `y` was an unsigned type.
+        # Check that this is resolved.
+        rng = np.random.default_rng(2549824598234528)
+        y = rng.integers(0, 255, size=10, dtype=np.uint8)
+        res = stats.theilslopes(y, y)
+        np.testing.assert_allclose(res.slope, 1)
 
 
 def test_siegelslopes():
