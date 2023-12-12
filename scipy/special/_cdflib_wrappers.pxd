@@ -88,6 +88,9 @@ cdef inline double btdtria(double p, double b, double x) noexcept nogil:
     argnames[2] = "x"
     argnames[3] = "y"
     argnames[4] = "b"
+    
+    if isnan(p) or isnan(b) or isnan(x):
+      return NAN
 
     result, status, bound = cdfbet_which3(p, q, x, y, b)
     return get_result("btdtria", argnames, result, status, bound, 1)
@@ -101,6 +104,9 @@ cdef inline double btdtrib(double a, double p, double x) noexcept nogil:
         double result, bound
         int status = 10
         char *argnames[5]
+
+    if isnan(a) or isnan(p) or isnan(x):
+      return NAN
 
     argnames[0] = "p"
     argnames[1] = "q"
@@ -120,6 +126,9 @@ cdef inline double bdtrik(double p, double xn, double pr) noexcept nogil:
         int status
         char *argnames[5]
 
+    if isnan(p) or isnan(xn) or isnan(pr):
+      return NAN
+
     argnames[0] = "p"
     argnames[1] = "q"
     argnames[2] = "xn"
@@ -138,6 +147,9 @@ cdef inline double bdtrin(double s, double p, double pr) noexcept nogil:
         int status = 10
         char *argnames[5]
 
+    if isnan(s) or isnan(p) or isnan(pr):
+      return NAN
+
     argnames[0] = "p"
     argnames[1] = "q"
     argnames[2] = "s"
@@ -155,6 +167,9 @@ cdef inline double chdtriv(double p, double x) noexcept nogil:
         int status = 10
         char *argnames[3]
 
+    if isnan(p) or isnan(x):
+      return NAN
+
     argnames[0] = "p"
     argnames[1] = "q"
     argnames[2] = "x"
@@ -168,6 +183,9 @@ cdef inline double chndtr(double x, double df, double nc) noexcept nogil:
         double result, _, bound
         int status = 10
         char *argnames[3]
+
+    if isnan(x) or isnan(df) or isnan(nc):
+      return NAN
 
     argnames[0] = "x"
     argnames[1] = "df"
@@ -183,6 +201,9 @@ cdef inline double chndtridf(double x, double p, double nc) noexcept nogil:
         int status = 10
         char *argnames[3]
 
+    if isnan(x) or isnan(p) or isnan(nc):
+      return NAN
+
     argnames[0] = "p"
     argnames[1] = "x"
     argnames[2] = "nc"
@@ -196,6 +217,9 @@ cdef inline double chndtrinc(double x, double df, double p) noexcept nogil:
         double result, bound
         int status = 10
         char *argnames[3]
+
+    if isnan(x) or isnan(df) or isnan(p):
+      return NAN
 
     argnames[0] = "p"
     argnames[1] = "x"
@@ -211,6 +235,9 @@ cdef inline double chndtrix(double p, double df, double nc) noexcept nogil:
         int status = 10
         char *argnames[3]
 
+    if isnan(p) or isnan(df) or isnan(nc):
+      return NAN
+
     argnames[0] = "p"
     argnames[1] = "df"
     argnames[2] = "nc"
@@ -225,6 +252,9 @@ cdef inline double fdtridfd(double dfn, double p, double f) noexcept nogil:
         double result, bound
         int status = 10
         char *argnames[4]
+
+    if isnan(dfn) or isnan(p) or isnan(f):
+      return NAN
 
     argnames[0] = "p"
     argnames[1] = "q"
@@ -247,6 +277,9 @@ cdef inline double gdtria(double p, double shp, double x) noexcept nogil:
     argnames[2] = "x"
     argnames[3] = "shp"
 
+    if isnan(p) or isnan(shp) or isnan(x):
+      return NAN
+
     result, status, bound = cdfgam_which4(p, q, x, shp)
     return get_result("gdtria", argnames, result, status, bound, 1)
 
@@ -257,6 +290,9 @@ cdef inline double gdtrib(double scl, double p, double x) noexcept nogil:
         double result, bound
         int status = 10
         char *argnames[4]
+
+    if isnan(scl) or isnan(p) or isnan(x):
+      return NAN
 
     argnames[0] = "p"
     argnames[1] = "q"
@@ -274,6 +310,9 @@ cdef inline double gdtrix(double scl, double shp, double p) noexcept nogil:
         int status = 10
         char *argnames[4]
 
+    if isnan(scl) or isnan(shp) or isnan(p):
+      return NAN
+
     argnames[0] = "p"
     argnames[1] = "q"
     argnames[2] = "shp"
@@ -290,6 +329,9 @@ cdef inline double nbdtrik(double p, double xn, double pr) noexcept nogil:
         double result, bound
         int status = 10
         char *argnames[5]
+
+    if isnan(p) or isnan(xn) or isnan(pr):
+      return NAN
 
     argnames[0] = "p"
     argnames[1] = "q"
@@ -309,6 +351,9 @@ cdef inline double nbdtrin(double s, double p, double pr) noexcept nogil:
         int status = 10
         char *argnames[5]
 
+    if isnan(s) or isnan(p) or isnan(pr):
+      return NAN
+
     argnames[0] = "p"
     argnames[1] = "q"
     argnames[2] = "s"
@@ -325,6 +370,9 @@ cdef inline double ncfdtr(double dfn, double dfd, double nc, double f) noexcept 
         int status = 10
         char *argnames[4]
 
+    if isnan(dfn) or isnan(dfd) or isnan(nc) or isnan(f):
+      return NAN
+
     argnames[0] = "f"
     argnames[1] = "dfn"
     argnames[2] = "dfd"
@@ -340,6 +388,9 @@ cdef inline double ncfdtri(double dfn, double dfd, double nc, double p) noexcept
         double result, bound
         int status = 10
         char *argnames[5]
+
+    if isnan(dfn) or isnan(dfd) or isnan(nc) or isnan(p):
+      return NAN
 
     argnames[0] = "p"
     argnames[1] = "q"
@@ -358,6 +409,9 @@ cdef inline double ncfdtridfd(double dfn, double p, double nc, double f) noexcep
         int status = 10
         char *argnames[5]
 
+    if isnan(dfn) or isnan(p) or isnan(nc) or isnan(f):
+      return NAN
+
     argnames[0] = "p"
     argnames[1] = "q"
     argnames[2] = "f"
@@ -374,6 +428,9 @@ cdef inline double ncfdtridfn(double p, double dfd, double nc, double f) noexcep
         double result, bound
         int status = 10
         char *argnames[5]
+
+    if isnan(p) or isnan(dfd) or isnan(nc) or isnan(f):
+      return NAN
 
     argnames[0] = "p"
     argnames[1] = "q"
@@ -392,6 +449,9 @@ cdef inline double ncfdtrinc(double dfn, double dfd, double p, double f) noexcep
         int status = 10
         char *argnames[5]
 
+    if isnan(dfn) or isnan(dfd) or isnan(p) or isnan(f):
+      return NAN
+
     argnames[0] = "p"
     argnames[1] = "q"
     argnames[2] = "f"
@@ -408,6 +468,9 @@ cdef inline double nctdtr(double df, double nc, double t) noexcept nogil:
         int status = 10
         char *argnames[3]
 
+    if isnan(df) or isnan(nc) or isnan(t):
+      return NAN
+
     argnames[0] = "t"
     argnames[1] = "df"
     argnames[2] = "nc"
@@ -422,6 +485,9 @@ cdef inline double nctdtridf(double p, double nc, double t) noexcept nogil:
         double result, bound
         int status = 10
         char *argnames[4]
+
+    if isnan(p) or isnan(nc) or isnan(t):
+      return NAN
 
     argnames[0] = "p"
     argnames[1] = "q"
@@ -439,6 +505,9 @@ cdef inline double nctdtrinc(double df, double p, double t) noexcept nogil:
         int status = 10
         char *argnames[4]
 
+    if isnan(df) or isnan(p) or isnan(t):
+      return NAN
+
     argnames[0] = "p"
     argnames[1] = "q"
     argnames[2] = "t"
@@ -454,6 +523,9 @@ cdef inline double nctdtrit(double df, double nc, double p) noexcept nogil:
         double result, bound
         int status = 10
         char *argnames[4]
+
+    if isnan(df) or isnan(nc) or isnan(p):
+      return NAN
 
     argnames[0] = "p"
     argnames[1] = "q"
@@ -471,6 +543,9 @@ cdef inline double nrdtrimn(double p, double std, double x) noexcept nogil:
         int status = 10
         char *argnames[4]
 
+    if isnan(p) or isnan(std) or isnan(x):
+      return NAN
+
     argnames[0] = "p"
     argnames[1] = "q"
     argnames[2] = "x"
@@ -487,6 +562,9 @@ cdef inline double nrdtrisd(double mn, double p, double x) noexcept nogil:
         int status = 10
         char *argnames[4]
 
+    if isnan(mn) or isnan(p) or isnan(x):
+      return NAN
+
     argnames[0] = "p"
     argnames[1] = "q"
     argnames[2] = "x"
@@ -502,6 +580,9 @@ cdef inline double pdtrik(double p, double xlam) noexcept nogil:
         double result, bound
         int status = 10
         char *argnames[3]
+
+    if isnan(p) or isnan(xlam):
+      return NAN
 
     argnames[0] = "p"
     argnames[1] = "q"
@@ -522,6 +603,9 @@ cdef inline double stdtr(double df, double t) noexcept nogil:
 
     if isinf(df):
         return NAN if isnan(t) else ndtr(t)
+
+    if isnan(df) or isnan(t):
+      return NAN
 
     result, _, status, bound = cdft_which1(t, df)
     return get_result("stdtr", argnames, result, status, bound, 1)
@@ -554,6 +638,9 @@ cdef inline double stdtrit(double df, double p) noexcept nogil:
 
     if isinf(df):
         return NAN if isnan(p) else ndtri(p)
+
+    if isnan(p) or isnan(df):
+      return NAN
 
     argnames[0] = "p"
     argnames[1] = "q"
