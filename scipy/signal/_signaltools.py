@@ -1647,7 +1647,6 @@ def wiener(im, mysize=None, noise=None):
     # Pad image
     padsize = [dim//2 for dim in mysize]
     im_padded = np.pad(im, padsize, mode='symmetric')
-    print(im_padded.shape)
 
     # Estimate the local mean
     lMean = correlate(im_padded, np.ones(mysize), 'valid') / np.prod(mysize, axis=0)
