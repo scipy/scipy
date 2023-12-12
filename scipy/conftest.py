@@ -183,11 +183,10 @@ def skip_if_array_api_gpu(func):
     return wrapped
 
 
-def skip_if_array_api_backend(backend):
-    def wrapper(func):
-        reason = (
-            f"do not run with Array API backend: {backend}"
-        )
+def skip_if_array_api_backend(backend, reason=None):
+    def wrapper(func, reason=reason):
+        if reason is None:
+            reason = f"do not run with Array API backend: {backend}"
         # method gets there as a function so we cannot use inspect.ismethod
         if '.' in func.__qualname__:
             @wraps(func)

@@ -226,8 +226,8 @@ The following pytest markers are available:
 * ``skip_if_array_api``: don't run a test if ``SCIPY_ARRAY_API`` is on.
 * ``skip_if_array_api_gpu``: don't run a test if GPU is involved (also applies
   to PyTorch's MPS mode).
-* ``skip_if_array_api_backend(backend)``: don't run a test for a specific
-  backend
+* ``skip_if_array_api_backend(backend, reason=None)``: don't run a test for a
+  specific backend
 
 The following is an example using the main decorator responsible of the
 namespace parametrization::
