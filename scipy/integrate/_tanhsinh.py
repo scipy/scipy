@@ -894,7 +894,7 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
             An integer representing the exit status of the algorithm.
             ``0`` : The algorithm converged to the specified tolerances.
             ``-1`` : Element(s) of `a`, `b`, or `step` are invalid
-            ``-2`` : The maximum number of iterations was reached.
+            ``-2`` : Numerical integration reached its iteration limit; the sum may be divergent.
             ``-3`` : A non-finite value was encountered.
         sum : float
             An estimate of the sum.
@@ -910,26 +910,28 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
     Notes
     -----
     The method implemented for infinite summation is related to the integral
-    test for convergence of an infinite series: assuming `step` size 1,
-    the sum of a monotone decreasing function is bounded by
+    test for convergence of an infinite series: assuming `step` size 1 for
+    simplicity of exposition, the sum of a monotone decreasing function is bounded by
 
     .. math::
 
-        \int_c^\infty f(x) dx \leq \sum_{k=c}^\infty f(k) \leq \int_c^\infty f(x) dx + f(c)
+        \int_u^\infty f(x) dx \leq \sum_{k=u}^\infty f(k) \leq \int_u^\infty f(x) dx + f(u)
 
-    The implementation first finds :math:`c > a` such that :math:`f(c) < \epsilon`,
-    where :math:`\epsilon` is the requested absolute tolerance. If no absolute
-    tolerance is specified, or if there is no :math:`c ≤ a + n` (where :math:`a`
-    and :math:`n` represent `a` and `maxterms`, respectively) that satisfies
-    the tolerance, we let :math:`c = a + n`. Then the infinite sum is approximated
-    as
+    Let :math:`a` represent  `a`, :math:`n` represent `maxterms`, :math:`\epsilon_a`
+    represent `atol`, and :math:`\epsilon_r` represent `rtol`.
+    The implementation first evaluates the integral :math:`S_l=\int_a^\infty f(x) dx`
+    as a lower bound of the infinite sum. Then, it seeks a value :math:`c > a` such
+    that :math:`f(c) < \epsilon_a + S_l \epsilon_r`, if it exists; otherwise,
+    let :math:`c = a + n`. Then the infinite sum is approximated as
     
     .. math::
 
         \sum_{k=a}^{c-1} f(k) + \int_c^\infty f(x) dx + f(c)/2
 
     and the reported error is :math:`f(c)/2` plus the error estimate of
-    numerical integration.
+    numerical integration. The approach described above is generalized for non-unit
+    `step` and finite `b` that is too large for direct evaluation of the sum,
+    i.e. ``b - a + 1 > maxterms``.
 
     References
     ----------
@@ -967,7 +969,6 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
     #   review of the places this could get us into trouble.
 
     # Potential future work:
-    # - iteratively calculate direct portion of sum, stopping when `rtol` is met
     # - add other methods for convergence acceleration (Richardson, epsilon)
     # - support infinite lower limit?
     # - support negative monotone increasing functions?
@@ -1081,6 +1082,14 @@ def _integral_bound(f, a, b, step, args, constants):
     dtype, log, _, _, rtol, atol, maxterms = constants
     log2 = np.log(2, dtype=dtype)
 
+    # Get a lower bound on the sum and compute effective absolute tolerance
+    lb = _tanhsinh(f, a, b, args=args, atol=atol, rtol=rtol, log=log)
+    tol = np.broadcast_to(atol, lb.integral.shape)
+    tol = _logsumexp((tol, rtol + lb.integral)) if log else tol + rtol*lb.integral
+    i_skip = lb.status < 0  # avoid unnecessary f_evals if integral is divergent
+    tol[i_skip] = np.nan
+    status = lb.status
+
     # As in `_direct`, we'll need a temporary new axis for points
     # at which to evaluate the function. Append axis at the end for
     # consistency with other elementwise algorithms.
@@ -1094,13 +1103,16 @@ def _integral_bound(f, a, b, step, args, constants):
         n_steps = np.round(np.logspace(0, np.log10(maxterms), nfev, dtype=dtype))
     ks = a2 + n_steps * step2
     fks = f(ks, *args2)
-    nt = np.minimum(np.sum(fks > atol, axis=-1),  n_steps.shape[-1]-1)
+    nt = np.minimum(np.sum(fks > tol[:, np.newaxis], axis=-1),  n_steps.shape[-1]-1)
     n_steps = n_steps[nt]
 
     # Directly evaluate the sum up to this term
     k = a + n_steps * step
-    left, left_error, left_nfev = _direct(f, a, k, step, args, constants, inclusive=False)
-    k[np.isposinf(left)] = np.nan  # if sum is not finite, no sense in continuing
+    left, left_error, left_nfev = _direct(f, a, k, step, args,
+                                          constants, inclusive=False)
+    i_skip |= np.isposinf(left)  # if sum is not finite, no sense in continuing
+    status[np.isposinf(left)] = -3
+    k[i_skip] = np.nan
 
     # Use integration to estimate the remaining sum
     # Possible optimization for future work: if there were no terms less than
@@ -1124,4 +1136,5 @@ def _integral_bound(f, a, b, step, args, constants):
     else:
         S = left + right.integral/step + fk/2 + fb/2
         E = left_error + right.error/step + fk/2 - fb/2
-    return S, E, right.status, left_nfev + right.nfev + nfev
+    status[~i_skip] = right.status[~i_skip]
+    return S, E, status, left_nfev + right.nfev + nfev + lb.nfev

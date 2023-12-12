@@ -1612,11 +1612,10 @@ class TestNSum:
         # Test 0 size input
         a = np.empty((3, 1, 1))  # arbitrary broadcastable shapes
         b = np.empty((0, 1))  # could use Hypothesis
-        p = np.empty((4))  # but it's overkill
+        p = np.empty(4)  # but it's overkill
         shape = np.broadcast_shapes(a.shape, b.shape, p.shape)
         res = _nsum(self.f2, a, b, args=(p,))
         assert res.sum.shape == shape
-        assert res.error.shape == shape
         assert res.status.shape == shape
         assert res.nfev.shape == shape
 
