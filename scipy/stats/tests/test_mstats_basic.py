@@ -1004,7 +1004,7 @@ class TestTheilslopes:
         rng = np.random.default_rng(2549824598234528)
         y = rng.integers(0, 255, size=10, dtype=np.uint8)
         res = stats.theilslopes(y, y)
-        np.testing.assert_allclose(res.slope,1)
+        np.testing.assert_allclose(res.slope, 1)
 
 
 def test_siegelslopes():
