@@ -1644,11 +1644,16 @@ def wiener(im, mysize=None, noise=None):
     if mysize.shape == ():
         mysize = np.repeat(mysize.item(), im.ndim)
 
+    # Pad image
+    padsize = [dim//2 for dim in mysize]
+    im_padded = np.pad(im, padsize, mode='symmetric')
+    print(im_padded.shape)
+
     # Estimate the local mean
-    lMean = correlate(im, np.ones(mysize), 'same') / np.prod(mysize, axis=0)
+    lMean = correlate(im_padded, np.ones(mysize), 'valid') / np.prod(mysize, axis=0)
 
     # Estimate the local variance
-    lVar = (correlate(im ** 2, np.ones(mysize), 'same') /
+    lVar = (correlate(im_padded ** 2, np.ones(mysize), 'valid') /
             np.prod(mysize, axis=0) - lMean ** 2)
 
     # Estimate the noise power if needed.
