@@ -1,7 +1,6 @@
 """Indexing mixin for sparse array/matrix classes.
 """
 import numpy as np
-from warnings import warn
 from ._sputils import isintlike
 
 INT_TYPES = (int, np.integer)
