@@ -944,15 +944,6 @@ def inv(a, overwrite_a=False, check_finite=True):
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
     overwrite_a = overwrite_a or _datacopied(a1, a)
-    # XXX: I found no advantage or disadvantage of using finv.
-#     finv, = get_flinalg_funcs(('inv',),(a1,))
-#     if finv is not None:
-#         a_inv,info = finv(a1,overwrite_a=overwrite_a)
-#         if info==0:
-#             return a_inv
-#         if info>0: raise LinAlgError, "singular matrix"
-#         if info<0: raise ValueError('illegal value in %d-th argument of '
-#                                     'internal inv.getrf|getri'%(-info))
     getrf, getri, getri_lwork = get_lapack_funcs(('getrf', 'getri',
                                                   'getri_lwork'),
                                                  (a1,))
