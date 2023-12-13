@@ -8,7 +8,7 @@
 
 import numpy as np
 
-from ._base import _sparray, _ufuncs_with_fixed_point_at_zero
+from ._base import _spbase, _ufuncs_with_fixed_point_at_zero
 from ._sputils import isscalarlike, validateaxis
 
 __all__ = []
@@ -16,16 +16,17 @@ __all__ = []
 
 # TODO implement all relevant operations
 # use .data.__methods__() instead of /=, *=, etc.
-class _data_matrix(_sparray):
+class _data_matrix(_spbase):
     def __init__(self):
-        _sparray.__init__(self)
+        _spbase.__init__(self)
 
-    def _get_dtype(self):
+    @property
+    def dtype(self):
         return self.data.dtype
 
-    def _set_dtype(self, newtype):
+    @dtype.setter
+    def dtype(self, newtype):
         self.data.dtype = newtype
-    dtype = property(fget=_get_dtype, fset=_set_dtype)
 
     def _deduped_data(self):
         if hasattr(self, 'sum_duplicates'):
@@ -78,7 +79,7 @@ class _data_matrix(_sparray):
         else:
             return self
 
-    astype.__doc__ = _sparray.astype.__doc__
+    astype.__doc__ = _spbase.astype.__doc__
 
     def conjugate(self, copy=True):
         if np.issubdtype(self.dtype, np.complexfloating):
@@ -88,17 +89,17 @@ class _data_matrix(_sparray):
         else:
             return self
 
-    conjugate.__doc__ = _sparray.conjugate.__doc__
+    conjugate.__doc__ = _spbase.conjugate.__doc__
 
     def copy(self):
         return self._with_data(self.data.copy(), copy=True)
 
-    copy.__doc__ = _sparray.copy.__doc__
+    copy.__doc__ = _spbase.copy.__doc__
 
     def count_nonzero(self):
         return np.count_nonzero(self._deduped_data())
 
-    count_nonzero.__doc__ = _sparray.count_nonzero.__doc__
+    count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
 
     def power(self, n, dtype=None):
         """
@@ -106,12 +107,25 @@ class _data_matrix(_sparray):
 
         Parameters
         ----------
-        n : n is a scalar
+        n : scalar
+            n is a non-zero scalar (nonzero avoids dense ones creation)
+            If zero power is desired, special case it to use `np.ones`
 
         dtype : If dtype is not specified, the current dtype will be preserved.
+
+        Raises
+        ------
+        NotImplementedError : if n is a zero scalar
+            If zero power is desired, special case it to use
+            `np.ones(A.shape, dtype=A.dtype)`
         """
         if not isscalarlike(n):
             raise NotImplementedError("input is not scalar")
+        if not n:
+            raise NotImplementedError(
+                "zero power is not supported as it would densify the matrix.\n"
+                "Use `np.ones(A.shape, dtype=A.dtype)` for this case."
+            )
 
         data = self._deduped_data()
         if dtype is not None:
@@ -135,8 +149,8 @@ for npfunc in _ufuncs_with_fixed_point_at_zero:
             result = op(self._deduped_data())
             return self._with_data(result, copy=True)
 
-        method.__doc__ = ("Element-wise {}.\n\n"
-                          "See `numpy.{}` for more information.".format(name, name))
+        method.__doc__ = (f"Element-wise {name}.\n\n"
+                          f"See `numpy.{name}` for more information.")
         method.__name__ = name
 
         return method
@@ -302,14 +316,14 @@ class _minmax_mixin:
 
     def max(self, axis=None, out=None):
         """
-        Return the maximum of the matrix or maximum along an axis.
+        Return the maximum of the array/matrix or maximum along an axis.
         This takes all elements into account, not just the non-zero ones.
 
         Parameters
         ----------
         axis : {-2, -1, 0, 1, None} optional
             Axis along which the sum is computed. The default is to
-            compute the maximum over all the matrix elements, returning
+            compute the maximum over all elements, returning
             a scalar (i.e., `axis` = `None`).
 
         out : None, optional
@@ -326,7 +340,7 @@ class _minmax_mixin:
 
         See Also
         --------
-        min : The minimum value of a sparse matrix along a given axis.
+        min : The minimum value of a sparse array/matrix along a given axis.
         numpy.matrix.max : NumPy's implementation of 'max' for matrices
 
         """
@@ -334,14 +348,14 @@ class _minmax_mixin:
 
     def min(self, axis=None, out=None):
         """
-        Return the minimum of the matrix or maximum along an axis.
+        Return the minimum of the array/matrix or maximum along an axis.
         This takes all elements into account, not just the non-zero ones.
 
         Parameters
         ----------
         axis : {-2, -1, 0, 1, None} optional
             Axis along which the sum is computed. The default is to
-            compute the minimum over all the matrix elements, returning
+            compute the minimum over all elements, returning
             a scalar (i.e., `axis` = `None`).
 
         out : None, optional
@@ -358,11 +372,87 @@ class _minmax_mixin:
 
         See Also
         --------
-        max : The maximum value of a sparse matrix along a given axis.
+        max : The maximum value of a sparse array/matrix along a given axis.
         numpy.matrix.min : NumPy's implementation of 'min' for matrices
 
         """
         return self._min_or_max(axis, out, np.minimum)
+
+    def nanmax(self, axis=None, out=None):
+        """
+        Return the maximum of the array/matrix or maximum along an axis, ignoring any
+        NaNs. This takes all elements into account, not just the non-zero
+        ones.
+
+        .. versionadded:: 1.11.0
+
+        Parameters
+        ----------
+        axis : {-2, -1, 0, 1, None} optional
+            Axis along which the maximum is computed. The default is to
+            compute the maximum over all elements, returning
+            a scalar (i.e., `axis` = `None`).
+
+        out : None, optional
+            This argument is in the signature *solely* for NumPy
+            compatibility reasons. Do not pass in anything except
+            for the default value, as this argument is not used.
+
+        Returns
+        -------
+        amax : coo_matrix or scalar
+            Maximum of `a`. If `axis` is None, the result is a scalar value.
+            If `axis` is given, the result is a sparse.coo_matrix of dimension
+            ``a.ndim - 1``.
+
+        See Also
+        --------
+        nanmin : The minimum value of a sparse array/matrix along a given axis,
+                 ignoring NaNs.
+        max : The maximum value of a sparse array/matrix along a given axis,
+              propagating NaNs.
+        numpy.nanmax : NumPy's implementation of 'nanmax'.
+
+        """
+        return self._min_or_max(axis, out, np.fmax)
+
+    def nanmin(self, axis=None, out=None):
+        """
+        Return the minimum of the array/matrix or minimum along an axis, ignoring any
+        NaNs. This takes all elements into account, not just the non-zero
+        ones.
+
+        .. versionadded:: 1.11.0
+
+        Parameters
+        ----------
+        axis : {-2, -1, 0, 1, None} optional
+            Axis along which the minimum is computed. The default is to
+            compute the minimum over all elements, returning
+            a scalar (i.e., `axis` = `None`).
+
+        out : None, optional
+            This argument is in the signature *solely* for NumPy
+            compatibility reasons. Do not pass in anything except for
+            the default value, as this argument is not used.
+
+        Returns
+        -------
+        amin : coo_matrix or scalar
+            Minimum of `a`. If `axis` is None, the result is a scalar value.
+            If `axis` is given, the result is a sparse.coo_matrix of dimension
+            ``a.ndim - 1``.
+
+        See Also
+        --------
+        nanmax : The maximum value of a sparse array/matrix along a given axis,
+                 ignoring NaNs.
+        min : The minimum value of a sparse array/matrix along a given axis,
+              propagating NaNs.
+        numpy.nanmin : NumPy's implementation of 'nanmin'.
+
+        """
+        return self._min_or_max(axis, out, np.fmin)
 
     def argmax(self, axis=None, out=None):
         """Return indices of maximum elements along an axis.

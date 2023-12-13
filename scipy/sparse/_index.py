@@ -1,4 +1,4 @@
-"""Indexing mixin for sparse matrix classes.
+"""Indexing mixin for sparse array/matrix classes.
 """
 import numpy as np
 from warnings import warn
@@ -34,7 +34,9 @@ class IndexMixin:
 
         Once 1D sparse arrays are implemented, it should be removed.
         """
-        if self._is_array:
+        from scipy.sparse import sparray
+
+        if isinstance(self, sparray):
             raise NotImplementedError(
                 'We have not yet implemented 1D sparse slices; '
                 'please index using explicit indices, e.g. `x[:, [0]]`'
@@ -116,8 +118,8 @@ class IndexMixin:
         if i.shape != j.shape:
             raise IndexError('number of row and column indices differ')
 
-        from ._base import isspmatrix
-        if isspmatrix(x):
+        from ._base import issparse
+        if issparse(x):
             if i.ndim == 1:
                 # Inner indexing, so treat them like row vectors.
                 i = i[None]
@@ -266,8 +268,8 @@ def _unpack_index(index):
     Valid type for row/col is integer, slice, or array of integers.
     """
     # First, check if indexing with single boolean matrix.
-    from ._base import _sparray, isspmatrix
-    if (isinstance(index, (_sparray, np.ndarray)) and
+    from ._base import _spbase, issparse
+    if (isinstance(index, (_spbase, np.ndarray)) and
             index.ndim == 2 and index.dtype.kind == 'b'):
         return index.nonzero()
 
@@ -291,7 +293,7 @@ def _unpack_index(index):
         elif idx.ndim == 2:
             return idx.nonzero()
     # Next, check for validity and transform the index as needed.
-    if isspmatrix(row) or isspmatrix(col):
+    if issparse(row) or issparse(col):
         # Supporting sparse boolean indexing with both row and col does
         # not work because spmatrix.ndim is always 2.
         raise IndexError(

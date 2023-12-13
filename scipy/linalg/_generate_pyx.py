@@ -253,7 +253,7 @@ cpdef double _test_ddot(double[:] dx, double[:] dy) noexcept nogil:
     return ddot(&n, &dx[0], &incx, &dy[0], &incy)
 
 cpdef int _test_dgemm(double alpha, double[:,:] a, double[:,:] b, double beta,
-                double[:,:] c) nogil except -1:
+                double[:,:] c) except -1 nogil:
     cdef:
         char *transa
         char *transb
@@ -777,9 +777,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if not args.outdir:
-        #raise ValueError(f"Missing `--outdir` argument to _generate_pyx.py")
-        # We're dealing with a distutils build here, write in-place:
-        outdir_abs = os.path.abspath(os.path.dirname(__file__))
+        raise ValueError("Missing `--outdir` argument to _generate_pyx.py")
     else:
         outdir_abs = os.path.join(os.getcwd(), args.outdir)
 

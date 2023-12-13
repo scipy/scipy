@@ -74,34 +74,9 @@ class NDInterpolatorBase:
             self.tri = None
 
         points = _ndim_coords_from_arrays(points)
-        values = np.asarray(values)
-
-        _check_init_shape(points, values, ndim=ndim)
 
         if need_contiguous:
-            points = np.ascontiguousarray(points, dtype=np.double)
-
-        if need_values:
-            self.values_shape = values.shape[1:]
-            if values.ndim == 1:
-                self.values = values[:,None]
-            elif values.ndim == 2:
-                self.values = values
-            else:
-                self.values = values.reshape(values.shape[0],
-                                             np.prod(values.shape[1:]))
-
-            # Complex or real?
-            self.is_complex = np.issubdtype(self.values.dtype, np.complexfloating)
-            if self.is_complex:
-                if need_contiguous:
-                    self.values = np.ascontiguousarray(self.values,
-                                                       dtype=np.complex128)
-                self.fill_value = complex(fill_value)
-            else:
-                if need_contiguous:
-                    self.values = np.ascontiguousarray(self.values, dtype=np.double)
-                self.fill_value = float(fill_value)
+            points = np.ascontiguousarray(points, dtype=np.float64)
 
         if not rescale:
             self.scale = None
@@ -110,9 +85,46 @@ class NDInterpolatorBase:
             # scale to unit cube centered at 0
             self.offset = np.mean(points, axis=0)
             self.points = points - self.offset
-            self.scale = self.points.ptp(axis=0)
+            self.scale = np.ptp(points, axis=0)
             self.scale[~(self.scale > 0)] = 1.0  # avoid division by 0
             self.points /= self.scale
+        
+        self._calculate_triangulation(self.points)
+        
+        if need_values or values is not None:
+            self._set_values(values, fill_value, need_contiguous, ndim)
+        else:
+            self.values = None
+
+    def _calculate_triangulation(self, points):
+        pass
+
+    def _set_values(self, values, fill_value=np.nan, need_contiguous=True, ndim=None):
+        values = np.asarray(values)
+        _check_init_shape(self.points, values, ndim=ndim)
+
+        self.values_shape = values.shape[1:]
+        if values.ndim == 1:
+            self.values = values[:,None]
+        elif values.ndim == 2:
+            self.values = values
+        else:
+            self.values = values.reshape(values.shape[0],
+                                            np.prod(values.shape[1:]))
+        
+        # Complex or real?
+        self.is_complex = np.issubdtype(self.values.dtype, np.complexfloating)
+        if self.is_complex:
+            if need_contiguous:
+                self.values = np.ascontiguousarray(self.values,
+                                                    dtype=np.complex128)
+            self.fill_value = complex(fill_value)
+        else:
+            if need_contiguous:
+                self.values = np.ascontiguousarray(
+                    self.values, dtype=np.float64
+                )
+            self.fill_value = float(fill_value)
 
     def _check_call_shape(self, xi):
         xi = np.asanyarray(xi)
@@ -126,6 +138,39 @@ class NDInterpolatorBase:
         else:
             return (xi - self.offset) / self.scale
 
+    def _preprocess_xi(self, *args):
+        xi = _ndim_coords_from_arrays(args, ndim=self.points.shape[1])
+        xi = self._check_call_shape(xi)
+        interpolation_points_shape = xi.shape
+        xi = xi.reshape(-1, xi.shape[-1])
+        xi = np.ascontiguousarray(xi, dtype=np.float64)
+        return self._scale_x(xi), interpolation_points_shape
+    
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
+    def _find_simplicies(self, const double[:,::1] xi):
+        cdef int[:] isimplices
+        cdef double[:,:] c
+        cdef qhull.DelaunayInfo_t info
+        cdef double eps, eps_broad
+        cdef int start
+
+        qhull._get_delaunay_info(&info, self.tri, 1, 1, 0)
+
+        eps = 100 * DBL_EPSILON
+        eps_broad = sqrt(eps)
+
+        c = np.zeros((xi.shape[0], NPY_MAXDIMS))
+        isimplices = np.zeros(xi.shape[0], np.int32)
+        with nogil:
+            for i in range(xi.shape[0]):
+                # 1) Find the simplex
+
+                isimplices[i] = qhull._find_simplex(&info, &c[i, 0],
+                                            &xi[i,0],
+                                            &start, eps, eps_broad)
+        return np.copy(isimplices), np.copy(c)
+
     def __call__(self, *args):
         """
         interpolator(xi)
@@ -138,21 +183,15 @@ class NDInterpolatorBase:
             Points where to interpolate data at.
             x1, x2, ... xn can be array-like of float with broadcastable shape.
             or x1 can be array-like of float with shape ``(..., ndim)``
-
         """
-        xi = _ndim_coords_from_arrays(args, ndim=self.points.shape[1])
-        xi = self._check_call_shape(xi)
-        shape = xi.shape
-        xi = xi.reshape(-1, shape[-1])
-        xi = np.ascontiguousarray(xi, dtype=np.double)
+        xi, interpolation_points_shape = self._preprocess_xi(*args)
 
-        xi = self._scale_x(xi)
         if self.is_complex:
             r = self._evaluate_complex(xi)
         else:
             r = self._evaluate_double(xi)
 
-        return np.asarray(r).reshape(shape[:-1] + self.values_shape)
+        return np.asarray(r).reshape(interpolation_points_shape[:-1] + self.values_shape)
 
 
 cpdef _ndim_coords_from_arrays(points, ndim=None):
@@ -208,7 +247,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
     """
     LinearNDInterpolator(points, values, fill_value=np.nan, rescale=False)
 
-    Piecewise linear interpolant in N > 1 dimensions.
+    Piecewise linear interpolator in N > 1 dimensions.
 
     .. versionadded:: 0.9
 
@@ -220,7 +259,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
     ----------
     points : ndarray of floats, shape (npoints, ndims); or Delaunay
         2-D array of data point coordinates, or a precomputed Delaunay triangulation.
-    values : ndarray of float or complex, shape (npoints, ...)
+    values : ndarray of float or complex, shape (npoints, ...), optional
         N-D array of data values at `points`.  The length of `values` along the
         first axis must be equal to the length of `points`. Unlike some
         interpolators, the interpolation axis cannot be changed.
@@ -269,11 +308,11 @@ class LinearNDInterpolator(NDInterpolatorBase):
     griddata :
         Interpolate unstructured D-D data.
     NearestNDInterpolator :
-        Nearest-neighbor interpolation in N dimensions.
+        Nearest-neighbor interpolator in N dimensions.
     CloughTocher2DInterpolator :
-        Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D.
+        Piecewise cubic, C1 smooth, curvature-minimizing interpolator in 2D.
     interpn : Interpolation on a regular grid or rectilinear grid.
-    RegularGridInterpolator : Interpolation on a regular or rectilinear grid
+    RegularGridInterpolator : Interpolator on a regular or rectilinear grid
                               in arbitrary dimensions (`interpn` wraps this
                               class).
 
@@ -286,8 +325,9 @@ class LinearNDInterpolator(NDInterpolatorBase):
     def __init__(self, points, values, fill_value=np.nan, rescale=False):
         NDInterpolatorBase.__init__(self, points, values, fill_value=fill_value,
                 rescale=rescale)
-        if self.tri is None:
-            self.tri = qhull.Delaunay(self.points)
+
+    def _calculate_triangulation(self, points):
+        self.tri = qhull.Delaunay(points)
 
     def _evaluate_double(self, xi):
         return self._do_evaluate(xi, 1.0)
@@ -301,33 +341,26 @@ class LinearNDInterpolator(NDInterpolatorBase):
         cdef const double_or_complex[:,::1] values = self.values
         cdef double_or_complex[:,::1] out
         cdef const int[:,::1] simplices = self.tri.simplices
-        cdef double c[NPY_MAXDIMS]
         cdef double_or_complex fill_value
-        cdef int i, j, k, m, ndim, isimplex, start, nvalues
-        cdef qhull.DelaunayInfo_t info
-        cdef double eps, eps_broad
+        cdef int i, j, k, m, ndim, isimplex, nvalues
+        cdef int[:] isimplices
+        cdef double[:,:] c
+
+        isimplices,c = self._find_simplicies(xi)
 
         ndim = xi.shape[1]
-        start = 0
         fill_value = self.fill_value
-
-        qhull._get_delaunay_info(&info, self.tri, 1, 0, 0)
 
         out = np.empty((xi.shape[0], self.values.shape[1]),
                        dtype=self.values.dtype)
         nvalues = out.shape[1]
-
-        eps = 100 * DBL_EPSILON
-        eps_broad = sqrt(DBL_EPSILON)
 
         with nogil:
             for i in range(xi.shape[0]):
 
                 # 1) Find the simplex
 
-                isimplex = qhull._find_simplex(&info, c,
-                                               &xi[0,0] + i*ndim,
-                                               &start, eps, eps_broad)
+                isimplex = isimplices[i]
 
                 # 2) Linear barycentric interpolation
 
@@ -343,7 +376,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
                 for j in range(ndim+1):
                     for k in range(nvalues):
                         m = simplices[isimplex,j]
-                        out[i,k] = out[i,k] + c[j] * values[m,k]
+                        out[i,k] = out[i,k] + c[i, j] * values[m,k]
 
         return out
 
@@ -555,7 +588,7 @@ cpdef estimate_gradients_2d_global(tri, y, int maxiter=400, double tol=1e-6):
         y = y[:,None]
 
     y = y.reshape(tri.npoints, -1).T
-    y = np.ascontiguousarray(y, dtype=np.double)
+    y = np.ascontiguousarray(y, dtype=np.float64)
     yi = np.empty((y.shape[0], y.shape[1], 2))
 
     data = y
@@ -804,7 +837,7 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
 class CloughTocher2DInterpolator(NDInterpolatorBase):
     """CloughTocher2DInterpolator(points, values, tol=1e-6).
 
-    Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D.
+    Piecewise cubic, C1 smooth, curvature-minimizing interpolator in 2D.
 
     .. versionadded:: 0.9
 
@@ -876,11 +909,11 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     griddata :
         Interpolate unstructured D-D data.
     LinearNDInterpolator :
-        Piecewise linear interpolant in N > 1 dimensions.
+        Piecewise linear interpolator in N > 1 dimensions.
     NearestNDInterpolator :
-        Nearest-neighbor interpolation in N > 1 dimensions.
+        Nearest-neighbor interpolator in N > 1 dimensions.
     interpn : Interpolation on a regular grid or rectilinear grid.
-    RegularGridInterpolator : Interpolation on a regular or rectilinear grid
+    RegularGridInterpolator : Interpolator on a regular or rectilinear grid
                               in arbitrary dimensions (`interpn` wraps this
                               class).
 
@@ -909,12 +942,28 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
 
     def __init__(self, points, values, fill_value=np.nan,
                  tol=1e-6, maxiter=400, rescale=False):
+        self._tol = tol
+        self._maxiter = maxiter
         NDInterpolatorBase.__init__(self, points, values, ndim=2,
-                                    fill_value=fill_value, rescale=rescale)
-        if self.tri is None:
-            self.tri = qhull.Delaunay(self.points)
-        self.grad = estimate_gradients_2d_global(self.tri, self.values,
-                                                 tol=tol, maxiter=maxiter)
+                                    fill_value=fill_value, rescale=rescale,
+                                    need_values=False)
+    
+    def _set_values(self, values, fill_value=np.nan, need_contiguous=True, ndim=None):
+        """
+        Sets the values of the interpolation points.
+
+        Parameters
+        ----------
+        values : ndarray of float or complex, shape (npoints, ...)
+            Data values.
+        """
+        NDInterpolatorBase._set_values(self, values, fill_value=fill_value, need_contiguous=need_contiguous, ndim=ndim)
+        if self.values is not None:
+            self.grad = estimate_gradients_2d_global(self.tri, self.values,
+                                                    tol=self._tol, maxiter=self._maxiter)
+    
+    def _calculate_triangulation(self, points):
+        self.tri = qhull.Delaunay(points)
 
     def _evaluate_double(self, xi):
         return self._do_evaluate(xi, 1.0)
@@ -929,17 +978,18 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         cdef const double_or_complex[:,:,:] grad = self.grad
         cdef double_or_complex[:,::1] out
         cdef const int[:,::1] simplices = self.tri.simplices
-        cdef double c[NPY_MAXDIMS]
+        cdef double[:,:] c
         cdef double_or_complex f[NPY_MAXDIMS+1]
         cdef double_or_complex df[2*NPY_MAXDIMS+2]
         cdef double_or_complex w
         cdef double_or_complex fill_value
-        cdef int i, j, k, ndim, isimplex, start, nvalues
+        cdef int i, j, k, ndim, isimplex, nvalues
         cdef qhull.DelaunayInfo_t info
-        cdef double eps, eps_broad
+        cdef int[:] isimplices
+
+        isimplices,c = self._find_simplicies(xi)
 
         ndim = xi.shape[1]
-        start = 0
         fill_value = self.fill_value
 
         qhull._get_delaunay_info(&info, self.tri, 1, 1, 0)
@@ -948,17 +998,12 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
                        dtype=self.values.dtype)
         nvalues = out.shape[1]
 
-        eps = 100 * DBL_EPSILON
-        eps_broad = sqrt(eps)
-
         with nogil:
             for i in range(xi.shape[0]):
                 # 1) Find the simplex
 
-                isimplex = qhull._find_simplex(&info, c,
-                                               &xi[i,0],
-                                               &start, eps, eps_broad)
-
+                isimplex = isimplices[i]
+                
                 # 2) Clough-Tocher interpolation
 
                 if isimplex == -1:
@@ -973,7 +1018,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
                         df[2*j] = grad[simplices[isimplex,j],k,0]
                         df[2*j+1] = grad[simplices[isimplex,j],k,1]
 
-                    w = _clough_tocher_2d_single(&info, isimplex, c, f, df)
+                    w = _clough_tocher_2d_single(&info, isimplex, &c[i, 0], f, df)
                     out[i,k] = w
 
         return out

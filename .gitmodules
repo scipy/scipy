@@ -17,3 +17,6 @@
 	path = scipy/_lib/boost_math
 	url = https://github.com/boostorg/math.git
 	shallow = true
+[submodule "scipy/_lib/array_api_compat"]
+	path = scipy/_lib/array_api_compat
+	url = https://github.com/data-apis/array-api-compat.git

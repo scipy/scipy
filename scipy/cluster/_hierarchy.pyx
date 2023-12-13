@@ -90,7 +90,7 @@ def cluster_dist(double[:, :] Z, int[:] T, double cutoff, int n):
     n : int
         The number of observations.
     """
-    cdef double[:] max_dists = np.ndarray(n, dtype=np.double)
+    cdef double[:] max_dists = np.ndarray(n, dtype=np.float64)
     get_max_dist_for_each_cluster(Z, max_dists, n)
     cluster_monocrit(Z, max_dists, T, cutoff, n)
 
@@ -114,7 +114,7 @@ def cluster_in(double[:, :] Z, double[:, :] R, int[:] T, double cutoff, int n):
     n : int
         The number of observations.
     """
-    cdef double[:] max_inconsists = np.ndarray(n, dtype=np.double)
+    cdef double[:] max_inconsists = np.ndarray(n, dtype=np.float64)
     get_max_Rfield_for_each_cluster(Z, R, max_inconsists, n, 3)
     cluster_monocrit(Z, max_inconsists, T, cutoff, n)
 
@@ -135,7 +135,7 @@ def cluster_maxclust_dist(double[:, :] Z, int[:] T, int n, int mc):
     mc : int
         The maximum number of clusters.
     """
-    cdef double[:] max_dists = np.ndarray(n, dtype=np.double)
+    cdef double[:] max_dists = np.ndarray(n, dtype=np.float64)
     get_max_dist_for_each_cluster(Z, max_dists, n)
     # should use an O(n) algorithm
     cluster_maxclust_monocrit(Z, max_dists, T, n, mc)
@@ -380,7 +380,8 @@ cpdef void get_max_Rfield_for_each_cluster(double[:, :] Z, double[:, :] R,
     R : ndarray
         The R matrix.
     max_rfs : ndarray
-        The array to store the result.
+        The array to store the result. Note that this input arrays gets
+        modified in-place.
     n : int
         The number of observations.
     rf : int
@@ -440,7 +441,8 @@ cpdef get_max_dist_for_each_cluster(double[:, :] Z, double[:] MD, int n) noexcep
     Z : ndarray
         The linkage matrix.
     MD : ndarray
-        The array to store the result.
+        The array to store the result (hence this input array gets modified
+        in-place).
     n : int
         The number of observations.
     """
@@ -498,11 +500,13 @@ def inconsistent(double[:, :] Z, double[:, :] R, int n, int d):
     Z : ndarray
         The linkage matrix.
     R : ndarray
-        A (n - 1) x 4 matrix to store the result. The inconsistency statistics
-        `R[i]` are calculated over `d` levels below cluster i. `R[i, 0]` is the
-        mean of distances. `R[i, 1]` is the standard deviation of distances.
-        `R[i, 2]` is the number of clusters included. `R[i, 3]` is the
-        inconsistency coefficient.
+        A (n - 1) x 4 matrix to store the result (hence this input array is
+        modified in-place). The inconsistency statistics ``R[i]`` are calculated
+        over `d` levels below cluster ``i``.
+        ``R[i, 0]`` is the mean of distances.
+        ``R[i, 1]`` is the standard deviation of distances.
+        ``R[i, 2]`` is the number of clusters included.
+        ``R[i, 3]`` is the inconsistency coefficient.
 
         .. math:: \\frac{\\mathtt{Z[i,2]}-\\mathtt{R[i,0]}} {R[i,1]}
 
@@ -580,12 +584,9 @@ def leaders(double[:, :] Z, int[:] T, int[:] L, int[:] M, int nc, int n):
         The linkage matrix.
     T : ndarray
         The flat clusters assignment returned by `fcluster` or `fclusterdata`.
-    L : ndarray
-        `L` and `M` store the result. The leader of flat cluster `L[i]` is
-        node `M[i]`.
-    M : ndarray
-        `L` and `M` store the result. The leader of flat cluster `L[i]` is
-        node `M[i]`.
+    L, M : ndarray
+        `L` and `M` store the result (i.e., these inputs are modified
+        in-place). The leader of flat cluster ``L[i]`` is node ``M[i]``.
     nc : int
         The number of flat clusters.
     n : int
@@ -697,7 +698,7 @@ def linkage(double[:] dists, np.npy_int64 n, int method):
     cdef np.npy_int64 i_start
     cdef double current_min
     # inter-cluster dists
-    cdef double[:] D = np.ndarray(n * (n - 1) / 2, dtype=np.double)
+    cdef double[:] D = np.ndarray(n * (n - 1) / 2, dtype=np.float64)
     # map the indices to node ids
     cdef int[:] id_map = np.ndarray(n, dtype=np.intc)
     cdef linkage_distance_update new_dist
@@ -1124,7 +1125,8 @@ def prelist(double[:, :] Z, int[:] members, int n):
     Z : ndarray
         The linkage matrix.
     members : ndarray
-        The array to store the result.
+        The array to store the result. Note that this input array will be
+        modified in-place.
     n : int
         The number of observations.
     """

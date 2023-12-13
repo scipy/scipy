@@ -15,6 +15,7 @@ cimport scipy.special.cython_special as cs
 
 np.import_array()
 
+
 cdef double von_mises_cdf_series(double k, double x, unsigned int p) noexcept:
     cdef double s, c, sn, cn, R, V
     cdef unsigned int n
@@ -33,10 +34,9 @@ cdef double von_mises_cdf_series(double k, double x, unsigned int p) noexcept:
         return 0.5 + x / (2 * PI) + V / PI
 
 
-DEF SQRT2_PI = 0.79788456080286535588  # sqrt(2/pi)
-
-
 cdef von_mises_cdf_normalapprox(k, x):
+    cdef double SQRT2_PI = 0.79788456080286535588  # sqrt(2/pi)
+
     b = SQRT2_PI / scipy.special.i0e(k)  # Check for negative k
     z = b * np.sin(x / 2.)
     return scipy.stats.norm.cdf(z)
@@ -509,7 +509,7 @@ cdef double _geninvgauss_logpdf_kernel(double x, double p, double b) noexcept no
     return c + (p - 1)*math.log(x) - b*(x + 1/x)/2
 
 
-cdef double _geninvgauss_pdf(double x, void *user_data) nogil except *:
+cdef double _geninvgauss_pdf(double x, void *user_data) except * nogil:
     # destined to be used in a LowLevelCallable
     cdef double p, b
 
@@ -645,7 +645,7 @@ cpdef double genhyperbolic_pdf(double x, double p, double a, double b) noexcept 
     return math.exp(_genhyperbolic_logpdf_kernel(x, p, a, b))
 
 
-cdef double _genhyperbolic_pdf(double x, void *user_data) nogil except *:
+cdef double _genhyperbolic_pdf(double x, void *user_data) except * nogil:
     # destined to be used in a LowLevelCallable
     cdef double p, a, b
 
@@ -662,7 +662,7 @@ cpdef double genhyperbolic_logpdf(
     return _genhyperbolic_logpdf_kernel(x, p, a, b)
 
 
-cdef double _genhyperbolic_logpdf(double x, void *user_data) nogil except *:
+cdef double _genhyperbolic_logpdf(double x, void *user_data) except * nogil:
     # destined to be used in a LowLevelCallable
     cdef double p, a, b
 

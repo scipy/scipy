@@ -18,7 +18,6 @@ _ufuncs_pxi_pxd_sources = [
   fs.copyfile('_hyp0f1.pxd'),
   fs.copyfile('_hyp2f1.pxd'),
   fs.copyfile('_hypergeometric.pxd'),
-  fs.copyfile('_lambertw.pxd'),
   fs.copyfile('_legacy.pxd'),
   fs.copyfile('_loggamma.pxd'),
   fs.copyfile('_ndtri_exp.pxd'),
@@ -318,12 +317,12 @@ cython_special_pxd = custom_target('_dummy_cython_special.pxd',
 uf_cython_gen = generator(cython,
   arguments : cython_args,
   output : '@BASENAME@.c',
-  depends : [_cython_tree, _ufuncs_pxi_pxd_sources])
+  depends : [_cython_tree, _ufuncs_pxi_pxd_sources, cython_special_pxd])
 
 uf_cython_gen_cpp = generator(cython,
   arguments : cython_cplus_args,
   output : '@BASENAME@.cpp',
-  depends : [_cython_tree, _ufuncs_pxi_pxd_sources])
+  depends : [_cython_tree, _ufuncs_pxi_pxd_sources, cython_special_pxd])
 
 py3.extension_module('_ufuncs',
   [
@@ -367,14 +366,22 @@ ellint_files = [
 
 ellint_dep = declare_dependency(sources: ellint_files)
 
+ufuncs_cxx_cpp_args = [
+  cython_cpp_args,
+  '-DBOOST_MATH_STANDALONE=1',
+  '-DCYTHON_EXTERN_C=extern "C"',
+  '-DSP_SPECFUN_ERROR', # For error handling in special functions.
+]
+
 py3.extension_module('_ufuncs_cxx',
   [ufuncs_cxx_sources,
     uf_cython_gen_cpp.process(cython_special[2]),  # _ufuncs_cxx.pyx
     ],
-  cpp_args: [cython_cpp_args, '-DBOOST_MATH_STANDALONE=1', '-DCYTHON_EXTERN_C=extern "C"'],
+  cpp_args: ufuncs_cxx_cpp_args,
   include_directories: ['../_lib/boost_math/include', '../_lib',
                         '../_build_utils/src'],
   link_args: version_link_args,
+    link_with: [cephes_lib],
   dependencies: [np_dep, ellint_dep],
   install: true,
   subdir: 'scipy/special'
@@ -471,6 +478,26 @@ foreach npz_file: npz_files
 endforeach
 
 
+special_sources = [
+  'special/config.h',
+  'special/error.h',
+  'special/evalpoly.h',
+  'special/lambertw.h'
+]
+
+# Headers for special functions in special library are included
+# in build folder for development purposes.
+# special is a temporary working name.
+foreach header: special_sources
+  configure_file(
+    input: header,
+    output: header.split('/')[-1],
+    copy: true,
+    install: true,
+    install_dir: py3.get_install_dir() / 'scipy/special/special'
+  )
+endforeach
+
 python_sources = [
   '__init__.py',
   '_add_newdocs.py',
@@ -484,6 +511,7 @@ python_sources = [
   '_sf_error.py',
   '_spfun_stats.py',
   '_spherical_bessel.py',
+  '_support_alternative_backends.py',
   '_test_internal.pyi',
   '_testutils.py',
   'add_newdocs.py',

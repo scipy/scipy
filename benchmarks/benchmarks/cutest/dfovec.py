@@ -312,7 +312,7 @@ def dfovec(m, n, x, nprob):
             tmp2 = np.exp(-x[5] * (temp - x[8]) ** 2)
             tmp3 = np.exp(-x[6] * (temp - x[9]) ** 2)
             tmp4 = np.exp(-x[7] * (temp - x[10]) ** 2)
-            fvec[i] = y5[i] - (x[0] * tmp1 + x[1] * tmp2 + x[2] * tmp3 + x[3] * tmp4)  # noqa
+            fvec[i] = y5[i] - (x[0] * tmp1 + x[1] * tmp2 + x[2] * tmp3 + x[3] * tmp4)
     elif nprob == 19:  # Bdqrtic
         # n >= 5, m = (n-4)*2
         for i in range(n - 4):
@@ -326,7 +326,7 @@ def dfovec(m, n, x, nprob):
             )
     elif nprob == 20:  # Cube
         # n = 2, m = n
-        fvec[1] = x[0] - 1.0
+        fvec[0] = x[0] - 1.0
         for i in range(1, n):
             fvec[i] = 10 * (x[i] - x[i - 1] ** 3)
     elif nprob == 21:  # Mancino
@@ -335,7 +335,7 @@ def dfovec(m, n, x, nprob):
             ss = 0
             for j in range(n):
                 v2 = np.sqrt(x[i] ** 2 + (i + 1) / (j + 1))
-                ss = ss + v2 * ((np.sin(np.log(v2))) ** 5 + (np.cos(np.log(v2))) ** 5)  # noqa
+                ss = ss + v2 * ((np.sin(np.log(v2))) ** 5 + (np.cos(np.log(v2))) ** 5)
             fvec[i] = 1400 * x[i] + (i - 49) ** 3 + ss
     elif nprob == 22:  # Heart8ls
         # m = n = 8

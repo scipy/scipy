@@ -192,8 +192,32 @@ Now there are only five stored elements in our sparse array, and it is identical
           [0, 4, 1, 0],
           [0, 0, 5, 0]])
 
+Canonical formats
+-----------------
+
+Several sparse array formats have "canonical formats" to allow for more efficient operations.
+Generally these consist of added restrictions like:
+
+- No duplicate entries for any value
+- Sorted indices
+
+Classes with a canonical form include: :func:`coo_array`, :func:`csr_array`, :func:`csc_array`, and :func:`bsr_array`.
+See the docstrings of these classes for details on each canonical representation.
+
+To check if an instance of these classes is in canonical form, use the ``.has_canonical_format`` attribute:
+
+   >>> coo = sp.sparse.coo_array(([1, 1, 1], ([0, 2, 1], [0, 1, 2])))
+   >>> coo.has_canonical_format
+   False
+
+To convert an instance to canonical form, use the ``.sum_duplicates()`` method:
+
+   >>> coo.sum_duplicates()
+   >>> coo.has_canonical_format
+   True
+
 Next steps with sparse arrays 
 -------------------------------
 
-Sparse array types are most helpful when working with large, nearly empty arrays. Specifically, `sparse linear algebra <https://docs.scipy.org/doc/scipy/tutorial/arpack.html>`_ and `sparse graph methods <https://docs.scipy.org/doc/scipy/tutorial/csgraph.html>`_ see the largest improvements in efficency in these circumstances. 
+Sparse array types are most helpful when working with large, nearly empty arrays. Specifically, `sparse linear algebra <https://docs.scipy.org/doc/scipy/tutorial/arpack.html>`_ and `sparse graph methods <https://docs.scipy.org/doc/scipy/tutorial/csgraph.html>`_ see the largest improvements in efficiency in these circumstances. 
 

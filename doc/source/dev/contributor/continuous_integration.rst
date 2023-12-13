@@ -42,6 +42,7 @@ GitHub Actions
   dependencies and check coverage
 * ``gcc-8``: build with minimal supported version of GCC, install the wheel,
   then run the test suite with `python -OO`
+* ``Array API``: test Array API support
 
 The test suite runs on GitHub Actions and other platforms cover a range of
 test/environment conditions: Python and NumPy versions
@@ -79,23 +80,25 @@ Skipping CI can be achieved by adding a special text in the commit message:
 * ``[skip actions]``: will skip GitHub Actions
 * ``[skip circle]``: will skip CircleCI
 * ``[skip cirrus]``: will skip CirrusCI
+* ``[docs only]``: will skip *all but* the CircleCI checks and the linter
+* ``[lint only]``: will skip *all but* the linter
 * ``[skip ci]``: will skip *all* CI
 
 Of course, you can combine these to skip multiple workflows.
 
 This skip information should be placed on a new line. In this example, we
-just updated a ``.rst`` file in the documentation and ask to skip Azure and
-GitHub Actions' workflows::
+just updated a ``.rst`` file in the documentation and ask to skip all but the
+relevant docs checks (skip Cirrus and GitHub Actions' workflows)::
 
     DOC: improve QMCEngine examples.
 
-    [skip actions] [skip cirrus]
+    [docs only]
 
 Wheel builds
 ============
 
 Wheels for SciPy releases and
-`*nightly* <https://anaconda.org/scipy-wheels-nightly/scipy>`_ builds are built
+`*nightly* <https://anaconda.org/scientific-python-nightly-wheels/scipy>`_ builds are built
 using cibuildwheel in a
 `Github Action <https://github.com/scipy/scipy/blob/main/.github/workflows/wheels.yml>`_.
 The Action runs:
@@ -109,7 +112,7 @@ The action does not run on forks of the main SciPy repository. The wheels that
 are created are available as artifacts associated with a successful run of the
 Action. When the Action runs on a schedule, or is manually started, the wheels
 are uploaded to the
-`*scipy-wheels-nightly* <https://anaconda.org/scipy-wheels-nightly/scipy>`_
+`*scientific-python-nightly-wheels* <https://anaconda.org/scientific-python-nightly-wheels/scipy>`_
 repository.
 
 It is not advised to use cibuildwheel to build scipy wheels on your own system

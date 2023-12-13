@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 from scipy.linalg import eig
 from scipy.special import comb
@@ -6,8 +8,18 @@ from scipy.signal import convolve
 __all__ = ['daub', 'qmf', 'cascade', 'morlet', 'ricker', 'morlet2', 'cwt']
 
 
+_msg="""scipy.signal.%s is deprecated in SciPy 1.12 and will be removed
+in SciPy 1.14. We recommend using PyWavelets instead.
+"""
+
+
 def daub(p):
     """
+    .. deprecated:: 1.12.0
+
+        scipy.signal.daub is deprecated in SciPy 1.12 and will be removed
+        in SciPy 1.14. We recommend using PyWavelets instead.
+
     The coefficients for the FIR low-pass filter producing Daubechies wavelets.
 
     p>=1 gives the order of the zero at f=1/2.
@@ -24,6 +36,8 @@ def daub(p):
         Return
 
     """
+    warnings.warn(_msg % 'daub', DeprecationWarning, stacklevel=2)
+
     sqrt = np.sqrt
     if p < 1:
         raise ValueError("p must be at least 1.")
@@ -77,6 +91,12 @@ def daub(p):
 
 def qmf(hk):
     """
+    .. deprecated:: 1.12.0
+
+        scipy.signal.qmf is deprecated in SciPy 1.12 and will be removed
+        in SciPy 1.14. We recommend using PyWavelets instead.
+
+
     Return high-pass qmf filter from low-pass
 
     Parameters
@@ -90,6 +110,8 @@ def qmf(hk):
         High-pass filter coefficients.
 
     """
+    warnings.warn(_msg % 'qmf', DeprecationWarning, stacklevel=2)
+
     N = len(hk) - 1
     asgn = [{0: 1, 1: -1}[k % 2] for k in range(N + 1)]
     return hk[::-1] * np.array(asgn)
@@ -97,6 +119,12 @@ def qmf(hk):
 
 def cascade(hk, J=7):
     """
+    .. deprecated:: 1.12.0
+
+        scipy.signal.cascade is deprecated in SciPy 1.12 and will be removed
+        in SciPy 1.14. We recommend using PyWavelets instead.
+
+
     Return (x, phi, psi) at dyadic points ``K/2**J`` from filter coefficients.
 
     Parameters
@@ -127,6 +155,8 @@ def cascade(hk, J=7):
     end.
 
     """
+    warnings.warn(_msg % 'cascade', DeprecationWarning, stacklevel=2)
+
     N = len(hk) - 1
 
     if (J > 30 - np.log2(N + 1)):
@@ -203,6 +233,11 @@ def cascade(hk, J=7):
 
 def morlet(M, w=5.0, s=1.0, complete=True):
     """
+    .. deprecated:: 1.12.0
+
+        scipy.signal.morlet is deprecated in SciPy 1.12 and will be removed
+        in SciPy 1.14. We recommend using PyWavelets instead.
+
     Complex Morlet wavelet.
 
     Parameters
@@ -267,6 +302,8 @@ def morlet(M, w=5.0, s=1.0, complete=True):
     >>> plt.show()
 
     """
+    warnings.warn(_msg % 'morlet', DeprecationWarning, stacklevel=2)
+
     x = np.linspace(-s * 2 * np.pi, s * 2 * np.pi, M)
     output = np.exp(1j * w * x)
 
@@ -280,6 +317,12 @@ def morlet(M, w=5.0, s=1.0, complete=True):
 
 def ricker(points, a):
     """
+    .. deprecated:: 1.12.0
+
+        scipy.signal.ricker is deprecated in SciPy 1.12 and will be removed
+        in SciPy 1.14. We recommend using PyWavelets instead.
+
+
     Return a Ricker wavelet, also known as the "Mexican hat wavelet".
 
     It models the function:
@@ -315,6 +358,11 @@ def ricker(points, a):
     >>> plt.show()
 
     """
+    warnings.warn(_msg % 'ricker', DeprecationWarning, stacklevel=2)
+    return _ricker(points, a)
+
+
+def _ricker(points, a):
     A = 2 / (np.sqrt(3 * a) * (np.pi**0.25))
     wsq = a**2
     vec = np.arange(0, points) - (points - 1.0) / 2
@@ -327,6 +375,12 @@ def ricker(points, a):
 
 def morlet2(M, s, w=5):
     """
+    .. deprecated:: 1.12.0
+
+        scipy.signal.morlet2 is deprecated in SciPy 1.12 and will be removed
+        in SciPy 1.14. We recommend using PyWavelets instead.
+
+
     Complex Morlet wavelet, designed to work with `cwt`.
 
     Returns the complete version of morlet wavelet, normalised
@@ -397,6 +451,8 @@ def morlet2(M, s, w=5):
     >>> plt.show()
 
     """
+    warnings.warn(_msg % 'morlet2', DeprecationWarning, stacklevel=2)
+
     x = np.arange(0, M) - (M - 1.0) / 2
     x = x / s
     wavelet = np.exp(1j * w * x) * np.exp(-0.5 * x**2) * np.pi**(-0.25)
@@ -406,6 +462,12 @@ def morlet2(M, s, w=5):
 
 def cwt(data, wavelet, widths, dtype=None, **kwargs):
     """
+    .. deprecated:: 1.12.0
+
+        scipy.signal.cwt is deprecated in SciPy 1.12 and will be removed
+        in SciPy 1.14. We recommend using PyWavelets instead.
+
+
     Continuous wavelet transform.
 
     Performs a continuous wavelet transform on `data`,
@@ -479,6 +541,11 @@ def cwt(data, wavelet, widths, dtype=None, **kwargs):
     ...            vmax=abs(cwtmatr).max(), vmin=-abs(cwtmatr).max())
     >>> plt.show()
     """
+    warnings.warn(_msg % 'cwt', DeprecationWarning, stacklevel=2)
+    return _cwt(data, wavelet, widths, dtype, **kwargs)
+
+
+def _cwt(data, wavelet, widths, dtype=None, **kwargs):
     # Determine output type
     if dtype is None:
         if np.asarray(wavelet(1, widths[0], **kwargs)).dtype.char in 'FDG':

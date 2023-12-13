@@ -13,6 +13,7 @@ able to represent such matrices efficiently. First, we need a compact way to
 represent an all-ones matrix::
 
     >>> import numpy as np
+    >>> from scipy.sparse.linalg._interface import LinearOperator
     >>> class Ones(LinearOperator):
     ...     def __init__(self, shape):
     ...         super().__init__(dtype=None, shape=shape)
@@ -24,6 +25,7 @@ amount of storage, independent of ``shape``. The ``_matvec`` method specifies
 how this linear operator multiplies with (operates on) a vector. We can now
 add this operator to a sparse matrix that stores only offsets from one::
 
+    >>> from scipy.sparse.linalg._interface import aslinearoperator
     >>> from scipy.sparse import csr_matrix
     >>> offsets = csr_matrix([[1, 0, 2], [0, -1, 0], [0, 0, 3]])
     >>> A = aslinearoperator(offsets) + Ones(offsets.shape)
@@ -44,7 +46,7 @@ import warnings
 
 import numpy as np
 
-from scipy.sparse import isspmatrix
+from scipy.sparse import issparse
 from scipy.sparse._sputils import isshape, isintlike, asmatrix, is_pydata_spmatrix
 
 __all__ = ['LinearOperator', 'aslinearoperator']
@@ -325,7 +327,7 @@ class LinearOperator:
         _matmat method to ensure that y has the correct type.
 
         """
-        if not (isspmatrix(X) or is_pydata_spmatrix(X)):
+        if not (issparse(X) or is_pydata_spmatrix(X)):
             X = np.asanyarray(X)
 
         if X.ndim != 2:
@@ -337,7 +339,7 @@ class LinearOperator:
         try:
             Y = self._matmat(X)
         except Exception as e:
-            if isspmatrix(X) or is_pydata_spmatrix(X):
+            if issparse(X) or is_pydata_spmatrix(X):
                 raise TypeError(
                     "Unable to multiply a LinearOperator with a sparse matrix."
                     " Wrap the matrix in aslinearoperator first."
@@ -371,7 +373,7 @@ class LinearOperator:
         This rmatmat wraps the user-specified rmatmat routine.
 
         """
-        if not (isspmatrix(X) or is_pydata_spmatrix(X)):
+        if not (issparse(X) or is_pydata_spmatrix(X)):
             X = np.asanyarray(X)
 
         if X.ndim != 2:
@@ -384,7 +386,7 @@ class LinearOperator:
         try:
             Y = self._rmatmat(X)
         except Exception as e:
-            if isspmatrix(X) or is_pydata_spmatrix(X):
+            if issparse(X) or is_pydata_spmatrix(X):
                 raise TypeError(
                     "Unable to multiply a LinearOperator with a sparse matrix."
                     " Wrap the matrix in aslinearoperator() first."
@@ -434,7 +436,7 @@ class LinearOperator:
         elif np.isscalar(x):
             return _ScaledLinearOperator(self, x)
         else:
-            if not isspmatrix(x) and not is_pydata_spmatrix(x):
+            if not issparse(x) and not is_pydata_spmatrix(x):
                 # Sparse matrices shouldn't be converted to numpy arrays.
                 x = np.asarray(x)
 
@@ -487,7 +489,7 @@ class LinearOperator:
         elif np.isscalar(x):
             return _ScaledLinearOperator(self, x)
         else:
-            if not isspmatrix(x) and not is_pydata_spmatrix(x):
+            if not issparse(x) and not is_pydata_spmatrix(x):
                 # Sparse matrices shouldn't be converted to numpy arrays.
                 x = np.asarray(x)
 
@@ -872,7 +874,7 @@ def aslinearoperator(A):
         A = np.atleast_2d(np.asarray(A))
         return MatrixLinearOperator(A)
 
-    elif isspmatrix(A) or is_pydata_spmatrix(A):
+    elif issparse(A) or is_pydata_spmatrix(A):
         return MatrixLinearOperator(A)
 
     else:

@@ -178,25 +178,13 @@ _slsqp = py3.extension_module('_slsqp',
   subdir: 'scipy/optimize'
 )
 
-__nnls_module = custom_target('__nnls_module',
-  output: ['__nnlsmodule.c'],
-  input: '__nnls/nnls.pyf',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
-)
-
-py3.install_sources(
-  ['__nnls.pyi'],
-  subdir: 'scipy/optimize'
-)
-
-__nnls = py3.extension_module('__nnls',
-  ['__nnls/nnls.f', __nnls_module],
-  c_args: numpy_nodepr_api,
-  fortran_args: fortran_ignore_warnings,
+_pava_pybind = py3.extension_module('_pava_pybind',
+  ['_pava/pava_pybind.cpp'],
+  cpp_args: [numpy_nodepr_api],
+  include_directories: '_pava',
+  dependencies: [np_dep, pybind11_dep],
   link_args: version_link_args,
-  dependencies: [fortranobject_dep],
   install: true,
-  link_language: 'fortran',
   subdir: 'scipy/optimize'
 )
 
@@ -228,10 +216,16 @@ endif
 
 _dummy_init_optimize = fs.copyfile('__init__.py')
 
+# Copying this .pxd file is only needed because of a Cython bug, see
+# discussion on SciPy PR gh-18810.
+cython_optimize_pxd = [
+  fs.copyfile('cython_optimize.pxd'),
+]
+
 opt_gen = generator(cython,
   arguments : cython_args,
   output : '@BASENAME@.c',
-  depends : [_cython_tree, cython_blas_pxd, _dummy_init_optimize])
+  depends : [_cython_tree, cython_blas_pxd, cython_optimize_pxd, _dummy_init_optimize])
 
 _bglu_dense_c = opt_gen.process('_bglu_dense.pyx')
 
@@ -260,13 +254,16 @@ py3.install_sources(
 py3.install_sources([
   '__init__.py',
   '_basinhopping.py',
+  '_chandrupatla.py',
   '_cobyla_py.py',
   '_constraints.py',
   '_differentiable_functions.py',
   '_differentialevolution.py',
   '_direct_py.py',
+  '_dcsrch.py',
   '_dual_annealing.py',
   '_hessian_update_strategy.py',
+  '_isotonic.py',
   '_lbfgsb_py.py',
   '_linesearch.py',
   '_linprog.py',

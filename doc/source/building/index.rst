@@ -37,6 +37,7 @@ your system.
 .. tab-set::
 
   .. tab-item:: Linux
+    :sync: linux
 
     If you want to use the system Python and ``pip``, you will need:
 
@@ -103,6 +104,7 @@ your system.
           sudo pacman -S gcc-fortran openblas pkgconf
 
   .. tab-item:: macOS
+    :sync: macos
 
     Install Apple Developer Tools. An easy way to do this is to
     `open a terminal window <https://blog.teamtreehouse.com/introduction-to-the-mac-os-x-command-line>`_,
@@ -132,6 +134,7 @@ your system.
         issues.
 
   .. tab-item:: Windows
+    :sync: windows
 
     A compatible set of C, C++ and Fortran compilers is needed to build SciPy.
     This is trickier on Windows than on other platforms, because MSVC does not
@@ -203,16 +206,34 @@ your system.
         invoking a Fortran compiler in the shell you use (e.g., ``gfortran
         --version`` or ``ifort --version``).
 
+    .. warning::
+
+        When using a conda environment it is possible that the environment
+        creation will not work due to an outdated Fortran compiler. If that
+        happens, remove the ``compilers`` entry from ``environment.yml`` and
+        try again. The Fortran compiler should be installed as described in
+        this section.
+
 
 Building SciPy from source
 --------------------------
 
 If you want to only install SciPy from source once and not do any development
-work, then the recommended way to build and install is to use ``pip``:
+work, then the recommended way to build and install is to use ``pip``.
+Otherwise, conda is recommended.
+
+.. note::
+
+    If you don't have a conda installation yet, we recommend using
+    Mambaforge_; any conda flavor will work though.
+
+Building from source to use SciPy
+`````````````````````````````````
 
 .. tab-set::
 
   .. tab-item:: Conda env
+    :sync: conda
 
     If you are using a conda environment, ``pip`` is still the tool you use to
     invoke a from-source build of SciPy. It is important to always use the
@@ -225,17 +246,19 @@ work, then the recommended way to build and install is to use ``pip``:
       mamba env create -f environment.yml
 
       # Or, install only the required build dependencies
-      mamba install python numpy cython pythran pybind11 compilers openblas pkg-config
+      mamba install python numpy cython pythran pybind11 compilers openblas meson-python pkg-config
 
       # To build the latest stable release:
       pip install scipy --no-build-isolation --no-binary scipy
 
       # To build a development version, you need a local clone of the SciPy git repository:
       git clone https://github.com/scipy/scipy.git
+      cd scipy
       git submodule update --init
       pip install . --no-build-isolation
 
   .. tab-item:: Virtual env or system Python
+    :sync: pip
 
     ::
 
@@ -244,6 +267,7 @@ work, then the recommended way to build and install is to use ``pip``:
 
       # To build a development version, you need a local clone of the SciPy git repository:
       git clone https://github.com/scipy/scipy.git
+      cd scipy
       git submodule update --init
       pip install .
 
@@ -258,6 +282,7 @@ If you want to build from source in order to work on SciPy itself, first clone
 the SciPy repository::
 
       git clone https://github.com/scipy/scipy.git
+      cd scipy
       git submodule update --init
 
 Then you want to do the following:
@@ -273,43 +298,8 @@ virtual environments:
 
 .. tab-set::
 
-  .. tab-item:: Virtual env or system Python
-
-    .. note::
-
-       There are many tools to manage virtual environments, like ``venv``,
-       ``virtualenv``/``virtualenvwrapper, ``pyenv``/``pyenv-virtualenv``,
-       Poetry, PDM, Hatch, and more. Here we use the basic ``venv`` tool that
-       is part of the Python stdlib. You can use any other tool; all we need is
-       an activated Python environment.
-
-    Create and activate a virtual environment in a new directory named ``venv`` (
-    note that the exact activation command may be different based on your OS and shell
-    - see `"How venvs work" <https://docs.python.org/3/library/venv.html#how-venvs-work>`__
-    in the ``venv`` docs)::
-
-       python -m venv venv
-       source venv/bin/activate
-
-    Then install the Python-level dependencies (see ``pyproject.toml``) from
-    PyPI with::
-
-       # Build dependencies
-       python -m pip install numpy cython pythran pybind11 meson ninja pydevtool rich-click
-
-       # Test and optional runtime dependencies
-       python -m pip install pytest pytest-xdist pytest-timeout pooch threadpoolctl asv gmpy2 mpmath
-
-       # Doc build dependencies
-       python -m pip sphinx "pydata-sphinx-theme==0.9.0" sphinx-design matplotlib numpydoc jupytext myst-nb
-
-       # Dev dependencies (static typing and linting)
-       python -m pip mypy typing_extensions types-psutil pycodestyle ruff cython-lint
-
   .. tab-item:: Conda env
-
-    If you don't have a conda installation yet, we recommend using
-    Mambaforge_; any conda flavor will work though.
+    :sync: conda
 
     To create a ``scipy-dev`` development environment with every required and
     optional dependency installed, run::
@@ -317,13 +307,62 @@ virtual environments:
         mamba env create -f environment.yml
         mamba activate scipy-dev
 
+  .. tab-item:: Virtual env or system Python
+    :sync: pip
+
     .. note::
 
-       On Windows it is possible that the environment creation will not work due
-       to an outdated Fortran compiler. If that happens, remove the ``compilers``
-       entry from ``environment.yml`` and try again. The Fortran compiler should
-       be installed as described under the *Windows* tab of the *System-level
-       dependencies* section higher up.
+       There are many tools to manage virtual environments, like ``venv``,
+       ``virtualenv``/``virtualenvwrapper``, ``pyenv``/``pyenv-virtualenv``,
+       Poetry, PDM, Hatch, and more. Here we use the basic ``venv`` tool that
+       is part of the Python stdlib. You can use any other tool; all we need is
+       an activated Python environment.
+
+    Create and activate a virtual environment in a new directory named ``venv`` (
+    note that the exact activation command may be different based on your OS and shell
+    - see `"How venvs work" <https://docs.python.org/3/library/venv.html#how-venvs-work>`__
+    in the ``venv`` docs).
+
+    .. tab-set::
+
+      .. tab-item:: Linux
+        :sync: linux
+
+        ::
+
+          python -m venv venv
+          source venv/bin/activate
+
+      .. tab-item:: macOS
+        :sync: macos
+
+        ::
+
+          python -m venv venv
+          source venv/bin/activate
+
+      .. tab-item:: Windows
+        :sync: windows
+
+        ::
+
+          python -m venv venv
+          .\venv\Scripts\activate
+
+    Then install the Python-level dependencies (see ``pyproject.toml``) from
+    PyPI with::
+
+       # Build dependencies
+       python -m pip install numpy cython pythran pybind11 meson-python ninja pydevtool rich-click
+
+       # Test and optional runtime dependencies
+       python -m pip install pytest pytest-xdist pytest-timeout pooch threadpoolctl asv gmpy2 mpmath hypothesis
+
+       # Doc build dependencies
+       python -m pip install sphinx "pydata-sphinx-theme==0.9.0" sphinx-design matplotlib numpydoc jupytext myst-nb
+
+       # Dev dependencies (static typing and linting)
+       python -m pip install mypy typing_extensions types-psutil pycodestyle ruff cython-lint
 
 To build SciPy in an activated development environment, run::
 
@@ -335,6 +374,41 @@ drop into IPython (``python dev.py ipython``), or take other development steps
 like build the html documentation or running benchmarks. The ``dev.py``
 interface is self-documenting, so please see ``python dev.py --help`` and
 ``python dev.py <subcommand> --help`` for detailed guidance.
+
+
+.. admonition:: IDE support & editable installs
+
+    While the ``dev.py`` interface is our recommended way of working on SciPy,
+    it has one limitation: because of the custom install location, SciPy
+    installed using ``dev.py`` will not be recognized automatically within an
+    IDE (e.g., for running a script via a "run" button, or setting breakpoints
+    visually). This will work better with an *in-place build* (or "editable
+    install").
+
+    Editable installs are supported. It is important to understand that **you
+    may use either an editable install or dev.py in a given repository clone,
+    but not both**. If you use editable installs, you have to use ``pytest``
+    and other development tools directly instead of using ``dev.py``.
+
+    To use an editable install, ensure you start from a clean repository (run
+    ``git clean -xdf`` if you've built with ``dev.py`` before) and have all
+    dependencies set up correctly as described higher up on this page. Then
+    do::
+
+        # Note: the --no-build-isolation is important! meson-python will
+        # auto-rebuild each time SciPy is imported by the Python interpreter.
+        pip install -e . --no-build-isolation
+
+        # To run the tests for, e.g., the `scipy.linalg` module:
+        pytest scipy/linalg
+
+    When making changes to SciPy code, including to compiled code, there is no
+    need to manually rebuild or reinstall. When you run ``git clean -xdf``,
+    which removes the built extension modules, remember to also uninstall SciPy
+    with ``pip uninstall scipy``.
+
+    See the meson-python_ documentation on editable installs for more details
+    on how things work under the hood.
 
 
 Customizing builds
@@ -361,3 +435,4 @@ Background information
 
 
 .. _Mambaforge: https://github.com/conda-forge/miniforge#mambaforge
+.. _meson-python: https://mesonbuild.com/meson-python/
