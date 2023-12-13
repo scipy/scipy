@@ -1588,11 +1588,12 @@ def medfilt(volume, kernel_size=None):
     return result
 
 
-def wiener(im, mysize=None, noise=None):
+def wiener(im, mysize=None, noise=None, boundary='fill', fillvalue=0):
     """
     Perform a Wiener filter on an N-dimensional array.
 
-    Apply a Wiener filter to the N-dimensional array `im`.
+    Apply a Wiener filter to the N-dimensional array `im`, with
+    boundary conditions determined by `boundary` and `fillvalue`.
 
     Parameters
     ----------
@@ -1606,6 +1607,17 @@ def wiener(im, mysize=None, noise=None):
     noise : float, optional
         The noise-power to use. If None, then noise is estimated as the
         average of the local variance of the input.
+    boundary : str {'fill', 'wrap', 'symm'}, optional
+        A flag indicating how to handle boundaries:
+
+        ``fill``
+           pad input arrays with fillvalue. (default)
+        ``wrap``
+           circular boundary conditions.
+        ``symm``
+           symmetrical boundary conditions.
+    fillvalue : scalar, optional
+        Value to fill pad input arrays with. Default is 0.
 
     Returns
     -------
@@ -1616,6 +1628,9 @@ def wiener(im, mysize=None, noise=None):
     -----
     This implementation is similar to wiener2 in Matlab/Octave.
     For more details see [1]_
+
+    Because of backward compatibility, the filter uses zero-padding.
+    However, this produces edge artifacts in the output.
 
     References
     ----------
@@ -1646,7 +1661,12 @@ def wiener(im, mysize=None, noise=None):
 
     # Pad image
     padsize = [dim//2 for dim in mysize]
-    im_padded = np.pad(im, padsize, mode='symmetric')
+    BOUNDARY_TO_KW = {
+        'fill': {'mode': 'constant', 'constant_values': fillvalue},
+        'wrap': {'mode': 'wrap'},
+        'symm': {'mode': 'symmetric'},
+    }
+    im_padded = np.pad(im, padsize, **BOUNDARY_TO_KW[boundary])
 
     # Estimate the local mean
     lMean = correlate(im_padded, np.ones(mysize), 'valid') / np.prod(mysize, axis=0)
