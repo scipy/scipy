@@ -81,7 +81,9 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 self._shape = check_shape(M.shape, allow_1d=is_array)
                 if shape is not None:
                     if check_shape(shape, allow_1d=is_array) != self._shape:
-                        raise ValueError(f'inconsistent shapes: {shape} != {self._shape}')
+                        raise ValueError(
+                            f'inconsistent shapes: {shape} != {self._shape}'
+                        )
                 index_dtype = self._get_index_dtype(maxval=max(self._shape))
                 indices = M.nonzero()
                 self.indices = tuple(idx.astype(index_dtype, copy=False)
@@ -182,7 +184,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
         # index arrays should have integer data types
         for i, idx in enumerate(self.indices):
             if idx.dtype.kind != 'i':
-                warn(f'index array {i} has non-integer dtype ({idx.dtype.name}) ')
+                warn(f'index array {i} has non-integer dtype ({idx.dtype.name})',
+                     stacklevel=2)
 
         idx_dtype = self._get_index_dtype(self.indices, maxval=max(self.shape))
         self.indices = tuple(np.asarray(idx, dtype=idx_dtype)

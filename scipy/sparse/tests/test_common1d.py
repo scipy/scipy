@@ -318,10 +318,14 @@ class _Common1D:
         D = np.array([1.0 + 3j, 0, -1])
         S = coo_array(D)
         assert_array_equal(self.spcreator(S).toarray(), D)
-        assert_array_equal(self.spcreator(S, dtype='int16').toarray(), D.astype('int16'))
+        assert_array_equal(
+            self.spcreator(S, dtype='int16').toarray(), D.astype('int16')
+        )
         S = self.spcreator(D)
         assert_array_equal(self.spcreator(S).toarray(), D)
-        assert_array_equal(self.spcreator(S, dtype='int16').toarray(), D.astype('int16'))
+        assert_array_equal(
+            self.spcreator(S, dtype='int16').toarray(), D.astype('int16')
+        )
 
     def test_toarray(self):
         # Check C- or F-contiguous (default).
@@ -771,8 +775,10 @@ class _GetSet1D:
         dtype = np.float64
         A = self.spcreator((12,), dtype=dtype)
         with suppress_warnings() as sup:
-            sup.filter(SparseEfficiencyWarning,
-                       "Changing the sparsity structure of a cs[cr]_matrix is expensive")
+            sup.filter(
+                SparseEfficiencyWarning,
+                "Changing the sparsity structure of a cs[cr]_matrix is expensive"
+            )
             A[0] = dtype(0)
             A[np.array(6)] = dtype(4.0)  # scalar index
             A[1] = dtype(3)
@@ -884,8 +890,10 @@ class _SlicingAndFancy1D:
         A = self.spcreator((5,))
         B = np.zeros((5,))
         with suppress_warnings() as sup:
-            sup.filter(SparseEfficiencyWarning,
-                       "Changing the sparsity structure of a cs[cr]_matrix is expensive")
+            sup.filter(
+                SparseEfficiencyWarning,
+               "Changing the sparsity structure of a cs[cr]_matrix is expensive"
+            )
             for C in [A, B]:
                 C[0:1] = 1
                 C[2:0] = 4
@@ -900,8 +908,10 @@ class _SlicingAndFancy1D:
         for idx in [slice(3), slice(None, 10, 4), slice(5, -2)]:
             A = self.spcreator(shape)
             with suppress_warnings() as sup:
-                sup.filter(SparseEfficiencyWarning,
-                           "Changing the sparsity structure of a cs[cr]_matrix is expensive")
+                sup.filter(
+                    SparseEfficiencyWarning,
+                    "Changing the sparsity structure of a cs[cr]_matrix is expensive"
+                )
                 A[idx] = 1
             B = np.zeros(shape)
             B[idx] = 1
@@ -912,8 +922,10 @@ class _SlicingAndFancy1D:
         # Tests whether a row of one lil_matrix can be assigned to another.
         B = self.spcreator((5,))
         with suppress_warnings() as sup:
-            sup.filter(SparseEfficiencyWarning,
-                       "Changing the sparsity structure of a cs[cr]_matrix is expensive")
+            sup.filter(
+                SparseEfficiencyWarning,
+               "Changing the sparsity structure of a cs[cr]_matrix is expensive"
+            )
             B[0] = 2
             B[1] = 0
             B[2] = 3
@@ -939,8 +951,10 @@ class _SlicingAndFancy1D:
         block = [2, 1]
 
         with suppress_warnings() as sup:
-            sup.filter(SparseEfficiencyWarning,
-                       "Changing the sparsity structure of a cs[cr]_matrix is expensive")
+            sup.filter(
+                SparseEfficiencyWarning,
+               "Changing the sparsity structure of a cs[cr]_matrix is expensive"
+            )
             B[0] = 5
             B[2] = 7
             B[:] = B+B
@@ -959,8 +973,10 @@ class _SlicingAndFancy1D:
                   np.array(-1), np.int8(-3)]
 
         with suppress_warnings() as sup:
-            sup.filter(SparseEfficiencyWarning,
-                       "Changing the sparsity structure of a cs[cr]_matrix is expensive")
+            sup.filter(
+                SparseEfficiencyWarning,
+               "Changing the sparsity structure of a cs[cr]_matrix is expensive"
+            )
             for j, a in enumerate(slices):
                 A[a] = j
                 B[a] = j
@@ -1090,7 +1106,9 @@ class _SlicingAndFancy1D:
     ############################
     def test_bad_index_assign(self):
         A = self.spcreator(np.zeros(5))
-        pytest.raises((IndexError, ValueError, TypeError), A.__setitem__, "foo", 2)
+        pytest.raises(
+            (IndexError, ValueError, TypeError), A.__setitem__, "foo", 2
+        )
 
     def test_fancy_indexing_set(self):
         M = (5,)
@@ -1101,8 +1119,10 @@ class _SlicingAndFancy1D:
             A = self.spcreator(M)
             B = np.zeros(M)
             with suppress_warnings() as sup:
-                sup.filter(SparseEfficiencyWarning,
-                           "Changing the sparsity structure of a cs[cr]_matrix is expensive")
+                sup.filter(
+                    SparseEfficiencyWarning,
+                   "Changing the sparsity structure of a cs[cr]_matrix is expensive"
+                )
                 B[j] = 1
                 with check_remains_sorted(A):
                     A[j] = 1
@@ -1117,8 +1137,10 @@ class _SlicingAndFancy1D:
         i2 = np.array(i0)
 
         with suppress_warnings() as sup:
-            sup.filter(SparseEfficiencyWarning,
-                       "Changing the sparsity structure of a cs[cr]_matrix is expensive")
+            sup.filter(
+                SparseEfficiencyWarning,
+               "Changing the sparsity structure of a cs[cr]_matrix is expensive"
+            )
             with check_remains_sorted(A):
                 A[i0] = B[i0]
                 pytest.raises(IndexError, B.__getitem__, i1)

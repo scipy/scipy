@@ -10,8 +10,16 @@ import numpy as np
 from ._matrix import spmatrix
 from ._base import _spbase, sparray, issparse
 from ._index import IndexMixin
-from ._sputils import (isdense, getdtype, isshape, isintlike, isscalarlike,
-                       upcast, upcast_scalar, check_shape)
+from ._sputils import (
+    isdense,
+    getdtype,
+    isshape,
+    isintlike,
+    isscalarlike,
+    upcast,
+    upcast_scalar,
+    check_shape,
+)
 
 
 class _dok_base(_spbase, IndexMixin):
@@ -61,20 +69,23 @@ class _dok_base(_spbase, IndexMixin):
 
     def update(self, val):
         # Prevent direct usage of update
-        raise NotImplementedError("Direct modification to dok_array element "
-                                  "is not allowed.")
+        raise NotImplementedError(
+            "Direct modification to dok_array element is not allowed."
+        )
 
     def _update(self, data):
         """An update method for dict data defined for direct access to
         `dok_array` data. Main purpose is to be used for efficient conversion
         from other _spbase classes. Has no checking if `data` is valid.
-        Be acreful to use int for 1d-array and tuple for 2d."""
+        Be careful to use int for 1d-array and tuple for 2d.
+        """
         return self._dict.update(data)
 
     def _getnnz(self, axis=None):
         if axis is not None:
-            raise NotImplementedError("_getnnz over an axis is not implemented "
-                                      "for DOK format.")
+            raise NotImplementedError(
+                "_getnnz over an axis is not implemented for DOK format."
+            )
         return len(self._dict)
 
     def count_nonzero(self):
@@ -110,7 +121,7 @@ class _dok_base(_spbase, IndexMixin):
     def values(self):
         return self._dict.values()
 
-    def get(self, key, default=0.):
+    def get(self, key, default=0.0):
         """This provides dict.get method functionality with type checking"""
         if key in self._dict:
             return self._dict.get(key, default)
@@ -161,10 +172,10 @@ class _dok_base(_spbase, IndexMixin):
         return self._dict.get((row, col), self.dtype.type(0))
 
     def _get_intXslice(self, row, col):
-        return self._get_sliceXslice(slice(row, row+1), col)
+        return self._get_sliceXslice(slice(row, row + 1), col)
 
     def _get_sliceXint(self, row, col):
-        return self._get_sliceXslice(row, slice(col, col+1))
+        return self._get_sliceXslice(row, slice(col, col + 1))
 
     def _get_sliceXslice(self, row, col):
         row_start, row_stop, row_step = row.indices(self.shape[0])
@@ -308,9 +319,7 @@ class _dok_base(_spbase, IndexMixin):
                 else:
                     o_coo_data = zip(zip(*o_coo.indices), o_coo.data)
                 with np.errstate(over='ignore'):
-                    new._dict.update(
-                        (k, new[k] + o_value) for k, o_value in o_coo_data
-                    )
+                    new._dict.update((k, new[k] + o_value) for k, o_value in o_coo_data)
         elif isdense(other):
             new = self.todense() + other
         else:
@@ -322,8 +331,9 @@ class _dok_base(_spbase, IndexMixin):
 
     def __neg__(self):
         if self.dtype.kind == 'b':
-            raise NotImplementedError('Negating a sparse boolean matrix is not'
-                                      ' supported.')
+            raise NotImplementedError(
+                'Negating a sparse boolean matrix is not supported.'
+            )
         new = self._dok_container(self.shape, dtype=self.dtype)
         new._dict.update((k, -v) for k, v in self.items())
         return new
@@ -346,9 +356,13 @@ class _dok_base(_spbase, IndexMixin):
                 else:
                     o_coo = other.tocoo()
                     shared_keys = sd.keys() & o_coo.indices[0]
-                return np.array([sd[k] * other._dict[k] for k in shared_keys]).sum(dtype=res_dtype)
+                return np.array([sd[k] * other._dict[k] for k in shared_keys]).sum(
+                    dtype=res_dtype
+                )
             elif isdense(other):
-                return np.array([other[k] * v for k, v in sd.items()]).sum(dtype=res_dtype)
+                return np.array([other[k] * v for k, v in sd.items()]).sum(
+                    dtype=res_dtype
+                )
 
         # matrix * vector
         result = np.zeros(self.shape[0], dtype=res_dtype)
@@ -369,7 +383,7 @@ class _dok_base(_spbase, IndexMixin):
                 result_shape = (other.shape[1],)
                 result = np.zeros(result_shape, dtype=result_dtype)
                 for j, v in self._dict.items():
-                    result[:] += v * other[j,:]
+                    result[:] += v * other[j, :]
             return result
 
         # matrix * multivector
@@ -382,7 +396,7 @@ class _dok_base(_spbase, IndexMixin):
             result_shape = (self.shape[0], other.shape[1])
             result = np.zeros(result_shape, dtype=result_dtype)
             for (i, j), v in self.items():
-                result[i,:] += v * other[j,:]
+                result[i, :] += v * other[j, :]
         return result
 
     def __imul__(self, other):
@@ -416,14 +430,15 @@ class _dok_base(_spbase, IndexMixin):
             return self.copy()
 
         if axes is not None and axes != (1, 0):
-            raise ValueError("Sparse matrices do not support "
-                             "an 'axes' parameter because swapping "
-                             "dimensions is the only logical permutation.")
+            raise ValueError(
+                "Sparse matrices do not support "
+                "an 'axes' parameter because swapping "
+                "dimensions is the only logical permutation."
+            )
 
         M, N = self.shape
         new = self._dok_container((N, M), dtype=self.dtype, copy=copy)
-        new._dict.update((((right, left), val)
-                          for (left, right), val in self.items()))
+        new._dict.update((((right, left), val) for (left, right), val in self.items()))
         return new
 
     transpose.__doc__ = _spbase.transpose.__doc__
@@ -435,8 +450,9 @@ class _dok_base(_spbase, IndexMixin):
 
         M, N = self.shape
         new = self._dok_container((N, M), dtype=self.dtype)
-        new._dict.update((((right, left), np.conj(val))
-                          for (left, right), val in self.items()))
+        new._dict.update(
+            (((right, left), np.conj(val)) for (left, right), val in self.items())
+        )
         return new
 
     def copy(self):
@@ -455,14 +471,12 @@ class _dok_base(_spbase, IndexMixin):
         idx_dtype = self._get_index_dtype(maxval=max(self.shape))
         data = np.fromiter(sd.values(), dtype=self.dtype, count=nnz)
         if self.ndim == 1:
-            indices = (np.fromiter(sd, dtype = idx_dtype, count=nnz),)
+            indices = (np.fromiter(sd, dtype=idx_dtype, count=nnz),)
         else:
             row = np.fromiter((i for i, _ in sd), dtype=idx_dtype, count=nnz)
             col = np.fromiter((j for _, j in sd), dtype=idx_dtype, count=nnz)
             indices = (row, col)
-        A = self._coo_container(
-            (data, indices), shape=self.shape, dtype=self.dtype
-        )
+        A = self._coo_container((data, indices), shape=self.shape, dtype=self.dtype)
         A.has_canonical_format = True
         return A
 
@@ -476,7 +490,7 @@ class _dok_base(_spbase, IndexMixin):
     todok.__doc__ = _spbase.todok.__doc__
 
     def tocsc(self, copy=False):
-        if self.ndim ==1:
+        if self.ndim == 1:
             raise NotImplementedError("tocsr() not valid for 1d sparse array")
         return self.tocoo(copy=False).tocsc(copy=copy)
 
@@ -504,7 +518,7 @@ class _dok_base(_spbase, IndexMixin):
         M, N = self.shape
         if newM < M or newN < N:
             # Remove all elements outside new dimensions
-            for (i, j) in list(self.keys()):
+            for i, j in list(self.keys()):
                 if i >= newM or j >= newN:
                     del self._dict[i, j]
         self._shape = shape
@@ -654,6 +668,7 @@ class dok_matrix(spmatrix, _dok_base, dict):
     ...         S[i, j] = i + j    # Update element
 
     """
+
     def set_shape(self, shape):
         new_matrix = self.reshape(shape, copy=False).asformat(self.format)
         self.__dict__ = new_matrix.__dict__
