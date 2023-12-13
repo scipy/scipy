@@ -98,7 +98,6 @@ class _coo_base(_data_matrix, _minmax_mixin):
     def row(self):
         return self.indices[-2] if self.ndim > 1 else np.zeros_like(self.col)
 
-
     @row.setter
     def row(self, new_row):
         if self.ndim < 2:
@@ -394,12 +393,14 @@ class _coo_base(_data_matrix, _minmax_mixin):
     todia.__doc__ = _spbase.todia.__doc__
 
     def todok(self, copy=False):
-        if self.ndim != 2:
-            raise ValueError("Cannot convert a 1d sparse array to dok format")
         self.sum_duplicates()
-        dok = self._dok_container((self.shape), dtype=self.dtype)
-        dok._update(zip(zip(self.row,self.col),self.data))
-
+        dok = self._dok_container(self.shape, dtype=self.dtype)
+        # ensure that 1d indices are not tuples
+        if self.ndim == 1:
+            indices = self.indices[0]
+        else:
+            indices = zip(*self.indices)
+        dok._update(zip(indices, self.data))
         return dok
 
     todok.__doc__ = _spbase.todok.__doc__

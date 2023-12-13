@@ -3002,6 +3002,7 @@ class _TestFancyIndexing:
                       False, False, False, False, False])
 
         assert_equal(toarray(A[I, J]), B[I, J])
+        assert_equal(toarray(A[I]), B[I])
 
         Z1 = np.zeros((6, 11), dtype=bool)
         Z2 = np.zeros((6, 11), dtype=bool)
@@ -3009,10 +3010,21 @@ class _TestFancyIndexing:
         Z3 = np.zeros((6, 11), dtype=bool)
         Z3[-1,0] = True
 
-        assert_equal(A[Z1], np.array([]))
+        # This used to be: assert_equal(A[Z1], np.array([]))
+        assert_raises(IndexError, A.__getitem__, Z1)
         assert_raises(IndexError, A.__getitem__, Z2)
         assert_raises(IndexError, A.__getitem__, Z3)
         assert_raises((IndexError, ValueError), A.__getitem__, (X, 1))
+
+        L = [True, False, True, True, False]
+        assert_equal(B[L], toarray(A[L]))
+        LL = [L + L] * 5  # 5x10 list of lists
+        assert_equal(B[LL], toarray(A[LL]))
+
+        assert_raises(IndexError, A.__getitem__, [[L]])
+        assert_raises(IndexError, B.__getitem__, [[L]])
+        assert_raises(IndexError, A.__getitem__, [[[L]]])
+        assert_raises(IndexError, B.__getitem__, [[[L]]])
 
     def test_fancy_indexing_sparse_boolean(self):
         np.random.seed(1234)  # make runs repeatable
