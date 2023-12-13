@@ -54,7 +54,7 @@ axis_nan_policy_cases = [
     (stats.kstat, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.kstatvar, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.moment, tuple(), dict(), 1, 1, False, lambda x: (x,)),
-    (stats.moment, tuple(), dict(moment=[1, 2]), 1, 2, False, None),
+    (stats.moment, tuple(), dict(order=[1, 2]), 1, 2, False, None),
     (stats.jarque_bera, tuple(), dict(), 1, 2, False, None),
     (stats.ttest_1samp, (np.array([0]),), dict(), 1, 7, False,
      unpack_ttest_result),

@@ -887,9 +887,9 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 
 
 def _moment_outputs(kwds):
-    moment = np.atleast_1d(kwds.get('moment', 1))
+    moment = np.atleast_1d(kwds.get('order', 1))
     if moment.size == 0:
-        raise ValueError("'moment' must be a scalar or a non-empty 1D "
+        raise ValueError("'order' must be a scalar or a non-empty 1D "
                          "list/array.")
     return len(moment)
 
@@ -922,11 +922,12 @@ def _moment_result_object(*args):
 # empty, there is no distinction between the `moment` function being called
 # with parameter `moments=1` and `moments=[1]`; the latter *should* produce
 # the same as the former but with a singleton zeroth dimension.
+@_rename_parameter('moment', 'order')
 @_axis_nan_policy_factory(  # noqa: E302
     _moment_result_object, n_samples=1, result_to_tuple=lambda x: (x,),
     n_outputs=_moment_outputs
 )
-def moment(a, moment=1, axis=0, nan_policy='propagate', *, center=None):
+def moment(a, order=1, axis=0, nan_policy='propagate', *, center=None):
     r"""Calculate the nth moment about the mean for a sample.
 
     A moment is a specific quantitative measure of the shape of a set of
@@ -937,7 +938,7 @@ def moment(a, moment=1, axis=0, nan_policy='propagate', *, center=None):
     ----------
     a : array_like
        Input array.
-    moment : int or array_like of ints, optional
+    order : int or array_like of ints, optional
        Order of central moment that is returned. Default is 1.
     axis : int or None, optional
        Axis along which the central moment is computed. Default is 0.
@@ -995,6 +996,7 @@ def moment(a, moment=1, axis=0, nan_policy='propagate', *, center=None):
     2.0
 
     """
+    moment = order  # parameter was renamed
     a, axis = _chk_asarray(a, axis)
 
     # for array_like moment input, return a value for each.
