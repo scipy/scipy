@@ -72,7 +72,7 @@ def hdquantiles(data, prob=list([.25,.5,.75]), axis=None, var=False,):
     >>> # Display the quantile estimates
     >>> for i, quantile in enumerate(probabilities):
     ...     print(f"{int(quantile * 100)}th percentile: {quantile_estimates[i]}")
-    25th percentile: 3.1505820231763066
+    25th percentile: 3.1505820231763066 # may vary
     50th percentile: 5.194344084883956
     75th percentile: 7.430626414674935
 

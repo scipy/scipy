@@ -21,10 +21,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  get_commit_message:
+    name: Get commit message
+    uses: ./.github/workflows/commit_message.yml
+
   test_meson:
     name: Meson build
-    # If using act to run CI locally the github object does not exist and the usual skipping should not be enforced
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    needs: get_commit_message
+    # If using act to run CI locally the github object does not exist and
+    # the usual skipping should not be enforced
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: macos-latest
     strategy:
       matrix:

@@ -1365,7 +1365,7 @@ cdef class Rotation:
         ``axis3``). For Euler angles, there is an additional relationship 
         between ``axis1`` or ``axis3``, with two possibilities:
 
-            - ``axis1`` and ``axis3`` are also orthognal (asymmetric sequence)
+            - ``axis1`` and ``axis3`` are also orthogonal (asymmetric sequence)
             - ``axis1 == axis3`` (symmetric sequence)
 
         For Davenport angles, this last relationship is relaxed [2]_, and only
@@ -1374,7 +1374,7 @@ cdef class Rotation:
         Parameters
         ----------
         axes : array_like, shape (3,) or ([1 or 2 or 3], 3)
-            Axis of rotation, if one dimentional. If two dimentional, describes the 
+            Axis of rotation, if one dimensional. If two dimensional, describes the 
             sequence of axes for rotations, where each axes[i, :] is the ith
             axis. If more than one axis is given, then the second axis must be
             orthogonal to both the first and third axes.
@@ -1532,7 +1532,7 @@ cdef class Rotation:
 
         References
         ----------
-        .. [1] Shuster, M. D. "A Survery of Attitude Representations",
+        .. [1] Shuster, M. D. "A Survey of Attitude Representations",
                The Journal of Astronautical Sciences, Vol. 41, No.4, 1993,
                pp. 475-476
 
@@ -2078,7 +2078,7 @@ cdef class Rotation:
         ``axis3``). For Euler angles, there is an additional relationship 
         between ``axis1`` or ``axis3``, with two possibilities:
 
-            - ``axis1`` and ``axis3`` are also orthognal (asymmetric sequence)
+            - ``axis1`` and ``axis3`` are also orthogonal (asymmetric sequence)
             - ``axis1 == axis3`` (symmetric sequence)
 
         For Davenport angles, this last relationship is relaxed [1]_, and only
@@ -2098,7 +2098,7 @@ cdef class Rotation:
         Parameters
         ----------
         axes : array_like, shape (3,) or ([1 or 2 or 3], 3)
-            Axis of rotation, if one dimentional. If two dimentional, describes the 
+            Axis of rotation, if one dimensional. If two dimensional, describes the 
             sequence of axes for rotations, where each axes[i, :] is the ith
             axis. If more than one axis is given, then the second axis must be
             orthogonal to both the first and third axes.
@@ -2232,7 +2232,7 @@ cdef class Rotation:
 
         References
         ----------
-        .. [1] Shuster, M. D. "A Survery of Attitude Representations",
+        .. [1] Shuster, M. D. "A Survey of Attitude Representations",
                The Journal of Astronautical Sciences, Vol. 41, No.4, 1993,
                pp. 475-476
 
@@ -2330,7 +2330,7 @@ cdef class Rotation:
               expressed in the original frame before and after the rotation.
 
         In terms of rotation matrices, this application is the same as
-        ``self.as_matrix().dot(vectors)``.
+        ``self.as_matrix() @ vectors``.
 
         Parameters
         ----------
@@ -2475,14 +2475,14 @@ cdef class Rotation:
         If `p` and `q` are two rotations, then the composition of 'q followed
         by p' is equivalent to `p * q`. In terms of rotation matrices,
         the composition can be expressed as
-        ``p.as_matrix().dot(q.as_matrix())``.
+        ``p.as_matrix() @ q.as_matrix()``.
 
         Parameters
         ----------
         other : `Rotation` instance
             Object containing the rotations to be composed with this one. Note
             that rotation compositions are not commutative, so ``p * q`` is
-            different from ``q * p``.
+            generally different from ``q * p``.
 
         Returns
         -------
@@ -2686,6 +2686,11 @@ cdef class Rotation:
         >>> from scipy.spatial.transform import Rotation as R
         >>> import numpy as np
         >>> r = R.from_quat(np.eye(4))
+        >>> r.as_quat()
+        array([[ 1., 0., 0., 0.],
+               [ 0., 1., 0., 0.],
+               [ 0., 0., 1., 0.],
+               [ 0., 0., 0., 1.]])
         >>> r.magnitude()
         array([3.14159265, 3.14159265, 3.14159265, 0.        ])
 
@@ -2764,6 +2769,18 @@ cdef class Rotation:
     def mean(self, weights=None):
         """Get the mean of the rotations.
 
+        The mean used is the chordal L2 mean (also called the projected or
+        induced arithmetic mean) [1]_. If ``A`` is a set of rotation matrices,
+        then the mean ``M`` is the rotation matrix that minimizes the
+        following loss function:
+
+        .. math::
+
+            L(M) = \\sum_{i = 1}^{n} w_i \\lVert \\mathbf{A}_i -
+            \\mathbf{M} \\rVert^2 ,
+
+        where :math:`w_i`'s are the `weights` corresponding to each matrix.
+
         Parameters
         ----------
         weights : array_like shape (N,), optional
@@ -2777,12 +2794,11 @@ cdef class Rotation:
             Object containing the mean of the rotations in the current
             instance.
 
-        Notes
-        -----
-        The mean used is the chordal L2 mean (also called the projected or
-        induced arithmetic mean). If ``p`` is a set of rotations with mean
-        ``m``, then ``m`` is the rotation which minimizes
-        ``(weights[:, None, None] * (p.as_matrix() - m.as_matrix())**2).sum()``.
+        References
+        ----------
+        .. [1] Hartley, Richard, et al.,
+                "Rotation Averaging", International Journal of Computer Vision
+                103, 2013, pp. 267-305.
 
         Examples
         --------
@@ -3144,7 +3160,7 @@ cdef class Rotation:
         where :math:`w_i`'s are the `weights` corresponding to each vector.
 
         The rotation is estimated with Kabsch algorithm [1]_, and solves what
-        is known as the "pointing problem", or "Wahba's problem".
+        is known as the "pointing problem", or "Wahba's problem" [2]_.
 
         There are two special cases. The first is if a single vector is given
         for `a` and `b`, in which the shortest distance rotation that aligns
@@ -3158,13 +3174,13 @@ cdef class Rotation:
         of these two rotations. The result via this process is the same as the
         Kabsch algorithm as the corresponding weight approaches infinity in
         the limit. For a single secondary vector this is known as the
-        align-constrain algorithm [2]_.
+        "align-constrain" algorithm [3]_.
 
         For both special cases (single vectors or an infinite weight), the
         sensitivity matrix does not have physical meaning and an error will be
         raised if it is requested. For an infinite weight, the primary vectors
         act as a constraint with perfect alignment, so their contribution to
-        `rssd` will be forced to 0.
+        `rssd` will be forced to 0 even if they are of different lengths.
 
         Parameters
         ----------
@@ -3201,42 +3217,43 @@ cdef class Rotation:
         sensitivity_matrix : ndarray, shape (3, 3)
             Sensitivity matrix of the estimated rotation estimate as explained
             in Notes. Returned only when `return_sensitivity` is True. Not
-            valid if aligning a single pair of vectors of if there is an
+            valid if aligning a single pair of vectors or if there is an
             infinite weight, in which cases an error will be raised.
 
         Notes
         -----
-        This method can also compute the sensitivity of the estimated rotation
+        The sensitivity matrix gives the sensitivity of the estimated rotation
         to small perturbations of the vector measurements. Specifically we
         consider the rotation estimate error as a small rotation vector of
         frame A. The sensitivity matrix is proportional to the covariance of
         this rotation vector assuming that the vectors in `a` was measured with
         errors significantly less than their lengths. To get the true
         covariance matrix, the returned sensitivity matrix must be multiplied
-        by harmonic mean [3]_ of variance in each observation. Note that
+        by harmonic mean [4]_ of variance in each observation. Note that
         `weights` are supposed to be inversely proportional to the observation
         variances to get consistent results. For example, if all vectors are
         measured with the same accuracy of 0.01 (`weights` must be all equal),
         then you should multiple the sensitivity matrix by 0.01**2 to get the
         covariance.
 
-        Refer to [4]_ for more rigorous discussion of the covariance
-        estimation. See [5]_ for more discussion of the pointing problem and
+        Refer to [5]_ for more rigorous discussion of the covariance
+        estimation. See [6]_ for more discussion of the pointing problem and
         minimal proper pointing.
 
         References
         ----------
         .. [1] https://en.wikipedia.org/wiki/Kabsch_algorithm
-        .. [2] Magner, Robert,
+        .. [2] https://en.wikipedia.org/wiki/Wahba%27s_problem
+        .. [3] Magner, Robert,
                 "Extending target tracking capabilities through trajectory and
                 momentum setpoint optimization." Small Satellite Conference,
                 2018.
-        .. [3] https://en.wikipedia.org/wiki/Harmonic_mean
-        .. [4] F. Landis Markley,
+        .. [4] https://en.wikipedia.org/wiki/Harmonic_mean
+        .. [5] F. Landis Markley,
                 "Attitude determination using vector observations: a fast
                 optimal matrix algorithm", Journal of Astronautical Sciences,
                 Vol. 41, No.2, 1993, pp. 261-280.
-        .. [5] Bar-Itzhack, Itzhack Y., Daniel Hershkowitz, and Leiba Rodman,
+        .. [6] Bar-Itzhack, Itzhack Y., Daniel Hershkowitz, and Leiba Rodman,
                 "Pointing in Real Euclidean Space", Journal of Guidance,
                 Control, and Dynamics, Vol. 20, No. 5, 1997, pp. 916-922.
 
@@ -3245,8 +3262,9 @@ cdef class Rotation:
         >>> import numpy as np
         >>> from scipy.spatial.transform import Rotation as R
 
-        Best align two sets of vectors with the Kabsch algorithm, where there
-        is noise on the last two vector measurements of the ``b`` set:
+        Here we run the baseline Kabsch algorithm to best align two sets of
+        vectors, where there is noise on the last two vector measurements of
+        the ``b`` set:
 
         >>> a = [[0, 1, 0], [0, 1, 1], [0, 1, 1]]
         >>> b = [[1, 0, 0], [1, 1.1, 0], [1, 0.9, 0]]
@@ -3313,6 +3331,7 @@ cdef class Rotation:
 
         Here the secondary vectors must be best-fit:
 
+        >>> a = [[0, 1, 0], [0, 1, 1]]
         >>> b = [[1, 0, 0], [1, 2, 0]]
         >>> rot, _ = R.align_vectors(a, b, weights=[np.inf, 1])
         >>> rot.as_matrix()

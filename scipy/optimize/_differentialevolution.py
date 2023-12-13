@@ -1216,10 +1216,11 @@ class DifferentialEvolutionSolver:
 
                 constr_violation = self._constraint_violation_fn(DE_result.x)
                 if np.any(constr_violation > 0.):
-                    warnings.warn("differential evolution didn't find a"
-                                  " solution satisfying the constraints,"
-                                  " attempting to polish from the least"
-                                  " infeasible solution", UserWarning)
+                    warnings.warn("differential evolution didn't find a "
+                                  "solution satisfying the constraints, "
+                                  "attempting to polish from the least "
+                                  "infeasible solution",
+                                  UserWarning, stacklevel=2)
             if self.disp:
                 print(f"Polishing solution with '{polish_method}'")
             result = minimize(self.func,

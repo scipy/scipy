@@ -120,7 +120,7 @@ class Complex:
         # Domains
         self.domain = domain
         if domain is None:
-            self.bounds = [(float(0), float(1.0)), ] * dim
+            self.bounds = [(0.0, 1.0), ] * dim
         else:
             self.bounds = domain
         self.symmetry = symmetry

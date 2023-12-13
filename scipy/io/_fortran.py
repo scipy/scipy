@@ -112,7 +112,7 @@ class FortranFile:
 
         header_dtype = np.dtype(header_dtype)
         if header_dtype.kind != 'u':
-            warnings.warn("Given a dtype which is not unsigned.")
+            warnings.warn("Given a dtype which is not unsigned.", stacklevel=2)
 
         if mode not in 'rw' or len(mode) != 1:
             raise ValueError('mode must be either r or w')
@@ -257,15 +257,15 @@ class FortranFile:
 
         num_blocks, remainder = divmod(first_size, block_size)
         if remainder != 0:
-            raise ValueError('Size obtained ({}) is not a multiple of the '
-                             'dtypes given ({}).'.format(first_size, block_size))
+            raise ValueError(f'Size obtained ({first_size}) is not a multiple of the '
+                             f'dtypes given ({block_size}).')
 
         if len(dtypes) != 1 and first_size != block_size:
             # Fortran does not write mixed type array items in interleaved order,
             # and it's not possible to guess the sizes of the arrays that were written.
             # The user must specify the exact sizes of each of the arrays.
-            raise ValueError('Size obtained ({}) does not match with the expected '
-                             'size ({}) of multi-item record'.format(first_size, block_size))
+            raise ValueError(f'Size obtained ({first_size}) does not match with the '
+                             f'expected size ({block_size}) of multi-item record')
 
         data = []
         for dtype in dtypes:

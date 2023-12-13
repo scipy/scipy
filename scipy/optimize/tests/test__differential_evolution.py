@@ -362,7 +362,8 @@ class TestDifferentialEvolutionSolver:
         def callback_evaluates_false(param, convergence=0.):
             return []
 
-        result = differential_evolution(rosen, bounds, callback=callback_evaluates_false)
+        result = differential_evolution(rosen, bounds,
+                                        callback=callback_evaluates_false)
         assert result.success
 
     def test_args_tuple_is_passed(self):
@@ -901,10 +902,11 @@ class TestDifferentialEvolutionSolver:
         # trial and original are infeasible
         # cv_trial have to be <= cv_original to be better
         assert (fn(0.1, False, np.array([0.5, 0.5]),
-                  1.0, False, np.array([1., 1.0])))
+                   1.0, False, np.array([1., 1.0])))
         assert (fn(0.1, False, np.array([0.5, 0.5]),
-                  1.0, False, np.array([1., 0.50])))
-        assert (fn(1.0, False, np.array([0.5, 0.5]), 1.0, False, np.array([1.0, 0.4])) is False)
+                   1.0, False, np.array([1., 0.50])))
+        assert not (fn(1.0, False, np.array([0.5, 0.5]),
+                       1.0, False, np.array([1.0, 0.4])))
 
     def test_constraint_wrapper(self):
         lb = np.array([0, 20, 30])

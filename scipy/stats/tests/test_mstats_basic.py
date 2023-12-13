@@ -74,7 +74,8 @@ class TestGeoMean:
 
     def test_1d_ma_value(self):
         #  Test a 1d masked array with a masked value
-        a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100], mask=[0, 0, 0, 0, 0, 0, 0, 0, 0, 1])
+        a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
+                        mask=[0, 0, 0, 0, 0, 0, 0, 0, 0, 1])
         desired = 41.4716627439
         check_equal_gmean(a, desired)
 
@@ -91,7 +92,8 @@ class TestGeoMean:
         with np.errstate(invalid='ignore'):
             check_equal_gmean(a, desired)
 
-    @pytest.mark.skipif(not hasattr(np, 'float96'), reason='cannot find float96 so skipping')
+    @pytest.mark.skipif(not hasattr(np, 'float96'),
+                        reason='cannot find float96 so skipping')
     def test_1d_float96(self):
         a = ma.array([1, 2, 3, 4], mask=[0, 0, 0, 1])
         desired_dt = np.power(1*2*3, 1./3.).astype(np.float96)
@@ -129,7 +131,8 @@ class TestHarMean:
         desired = 31.8137186141
         check_equal_hmean(a, desired)
 
-    @pytest.mark.skipif(not hasattr(np, 'float96'), reason='cannot find float96 so skipping')
+    @pytest.mark.skipif(not hasattr(np, 'float96'),
+                        reason='cannot find float96 so skipping')
     def test_1d_float96(self):
         a = ma.array([1, 2, 3, 4], mask=[0, 0, 0, 1])
         desired_dt = np.asarray(3. / (1./1 + 1./2 + 1./3), dtype=np.float96)
@@ -928,71 +931,80 @@ def test_linregress_identical_x():
         mstats.linregress(x, y)
 
 
-def test_theilslopes():
-    # Test for basic slope and intercept.
-    slope, intercept, lower, upper = mstats.theilslopes([0, 1, 1])
-    assert_almost_equal(slope, 0.5)
-    assert_almost_equal(intercept, 0.5)
+class TestTheilslopes:
+    def test_theilslopes(self):
+        # Test for basic slope and intercept.
+        slope, intercept, lower, upper = mstats.theilslopes([0, 1, 1])
+        assert_almost_equal(slope, 0.5)
+        assert_almost_equal(intercept, 0.5)
 
-    slope, intercept, lower, upper = mstats.theilslopes([0, 1, 1],
-                                                        method='joint')
-    assert_almost_equal(slope, 0.5)
-    assert_almost_equal(intercept, 0.0)
+        slope, intercept, lower, upper = mstats.theilslopes([0, 1, 1],
+                                                            method='joint')
+        assert_almost_equal(slope, 0.5)
+        assert_almost_equal(intercept, 0.0)
 
-    # Test for correct masking.
-    y = np.ma.array([0, 1, 100, 1], mask=[False, False, True, False])
-    slope, intercept, lower, upper = mstats.theilslopes(y)
-    assert_almost_equal(slope, 1./3)
-    assert_almost_equal(intercept, 2./3)
+        # Test for correct masking.
+        y = np.ma.array([0, 1, 100, 1], mask=[False, False, True, False])
+        slope, intercept, lower, upper = mstats.theilslopes(y)
+        assert_almost_equal(slope, 1./3)
+        assert_almost_equal(intercept, 2./3)
 
-    slope, intercept, lower, upper = mstats.theilslopes(y,
-                                                        method='joint')
-    assert_almost_equal(slope, 1./3)
-    assert_almost_equal(intercept, 0.0)
+        slope, intercept, lower, upper = mstats.theilslopes(y,
+                                                            method='joint')
+        assert_almost_equal(slope, 1./3)
+        assert_almost_equal(intercept, 0.0)
 
-    # Test of confidence intervals from example in Sen (1968).
-    x = [1, 2, 3, 4, 10, 12, 18]
-    y = [9, 15, 19, 20, 45, 55, 78]
-    slope, intercept, lower, upper = mstats.theilslopes(y, x, 0.07)
-    assert_almost_equal(slope, 4)
-    assert_almost_equal(intercept, 4.0)
-    assert_almost_equal(upper, 4.38, decimal=2)
-    assert_almost_equal(lower, 3.71, decimal=2)
+        # Test of confidence intervals from example in Sen (1968).
+        x = [1, 2, 3, 4, 10, 12, 18]
+        y = [9, 15, 19, 20, 45, 55, 78]
+        slope, intercept, lower, upper = mstats.theilslopes(y, x, 0.07)
+        assert_almost_equal(slope, 4)
+        assert_almost_equal(intercept, 4.0)
+        assert_almost_equal(upper, 4.38, decimal=2)
+        assert_almost_equal(lower, 3.71, decimal=2)
 
-    slope, intercept, lower, upper = mstats.theilslopes(y, x, 0.07,
-                                                        method='joint')
-    assert_almost_equal(slope, 4)
-    assert_almost_equal(intercept, 6.0)
-    assert_almost_equal(upper, 4.38, decimal=2)
-    assert_almost_equal(lower, 3.71, decimal=2)
-
-
-def test_theilslopes_warnings():
-    # Test `theilslopes` with degenerate input; see gh-15943
-    with pytest.warns(RuntimeWarning, match="All `x` coordinates are..."):
-        res = mstats.theilslopes([0, 1], [0, 0])
-        assert np.all(np.isnan(res))
-    with suppress_warnings() as sup:
-        sup.filter(RuntimeWarning, "invalid value encountered...")
-        res = mstats.theilslopes([0, 0, 0], [0, 1, 0])
-        assert_allclose(res, (0, 0, np.nan, np.nan))
+        slope, intercept, lower, upper = mstats.theilslopes(y, x, 0.07,
+                                                            method='joint')
+        assert_almost_equal(slope, 4)
+        assert_almost_equal(intercept, 6.0)
+        assert_almost_equal(upper, 4.38, decimal=2)
+        assert_almost_equal(lower, 3.71, decimal=2)
 
 
-def test_theilslopes_namedtuple_consistency():
-    """
-    Simple test to ensure tuple backwards-compatibility of the returned
-    TheilslopesResult object
-    """
-    y = [1, 2, 4]
-    x = [4, 6, 8]
-    slope, intercept, low_slope, high_slope = mstats.theilslopes(y, x)
-    result = mstats.theilslopes(y, x)
+    def test_theilslopes_warnings(self):
+        # Test `theilslopes` with degenerate input; see gh-15943
+        with pytest.warns(RuntimeWarning, match="All `x` coordinates are..."):
+            res = mstats.theilslopes([0, 1], [0, 0])
+            assert np.all(np.isnan(res))
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "invalid value encountered...")
+            res = mstats.theilslopes([0, 0, 0], [0, 1, 0])
+            assert_allclose(res, (0, 0, np.nan, np.nan))
 
-    # note all four returned values are distinct here
-    assert_equal(slope, result.slope)
-    assert_equal(intercept, result.intercept)
-    assert_equal(low_slope, result.low_slope)
-    assert_equal(high_slope, result.high_slope)
+
+    def test_theilslopes_namedtuple_consistency(self):
+        """
+        Simple test to ensure tuple backwards-compatibility of the returned
+        TheilslopesResult object
+        """
+        y = [1, 2, 4]
+        x = [4, 6, 8]
+        slope, intercept, low_slope, high_slope = mstats.theilslopes(y, x)
+        result = mstats.theilslopes(y, x)
+
+        # note all four returned values are distinct here
+        assert_equal(slope, result.slope)
+        assert_equal(intercept, result.intercept)
+        assert_equal(low_slope, result.low_slope)
+        assert_equal(high_slope, result.high_slope)
+
+    def test_gh19678_uint8(self):
+        # `theilslopes` returned unexpected results when `y` was an unsigned type.
+        # Check that this is resolved.
+        rng = np.random.default_rng(2549824598234528)
+        y = rng.integers(0, 255, size=10, dtype=np.uint8)
+        res = stats.theilslopes(y, y)
+        np.testing.assert_allclose(res.slope, 1)
 
 
 def test_siegelslopes():
@@ -1066,7 +1078,7 @@ def test_plotting_positions():
     assert_array_almost_equal(pos.data, np.array([0.25, 0.5, 0.75]))
 
 
-class TestNormalitytests():
+class TestNormalitytests:
 
     def test_vs_nonmasked(self):
         x = np.array((-2, -1, 0, 1, 2, 3)*4)**2
@@ -1161,7 +1173,7 @@ class TestNormalitytests():
             mstats.kurtosistest(x, alternative='error')
 
 
-class TestFOneway():
+class TestFOneway:
     def test_result_attributes(self):
         a = np.array([655, 788], dtype=np.uint16)
         b = np.array([789, 772], dtype=np.uint16)
@@ -1170,7 +1182,7 @@ class TestFOneway():
         check_named_results(res, attributes, ma=True)
 
 
-class TestMannwhitneyu():
+class TestMannwhitneyu:
     # data from gh-1428
     x = np.array([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
                   1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1.,
@@ -1219,7 +1231,7 @@ class TestMannwhitneyu():
         assert_allclose(res1.pvalue, res2.pvalue)
 
 
-class TestKruskal():
+class TestKruskal:
     def test_result_attributes(self):
         x = [1, 3, 5, 7, 9]
         y = [2, 4, 6, 8, 10]
@@ -1230,7 +1242,7 @@ class TestKruskal():
 
 
 # TODO: for all ttest functions, add tests with masked array inputs
-class TestTtest_rel():
+class TestTtest_rel:
     def test_vs_nonmasked(self):
         np.random.seed(1234567)
         outcome = np.random.randn(20, 4) + [0, 0, 1, 2]
@@ -1258,7 +1270,8 @@ class TestTtest_rel():
                                   mask=[[1, 1, 1], [0, 0, 0]])
         with suppress_warnings() as sup:
             sup.filter(RuntimeWarning, "invalid value encountered in absolute")
-            for pair in [(outcome[:, 0], outcome[:, 1]), ([np.nan, np.nan], [1.0, 2.0])]:
+            for pair in [(outcome[:, 0], outcome[:, 1]),
+                         ([np.nan, np.nan], [1.0, 2.0])]:
                 t, p = mstats.ttest_rel(*pair)
                 assert_array_equal(t, (np.nan, np.nan))
                 assert_array_equal(p, (np.nan, np.nan))
@@ -1321,7 +1334,7 @@ class TestTtest_rel():
         assert_allclose(p, p_ex, rtol=1e-14)
 
 
-class TestTtest_ind():
+class TestTtest_ind:
     def test_vs_nonmasked(self):
         np.random.seed(1234567)
         outcome = np.random.randn(20, 4) + [0, 0, 1, 2]
@@ -1356,7 +1369,8 @@ class TestTtest_ind():
         outcome = ma.masked_array(np.random.randn(3, 2), mask=[[1, 1, 1], [0, 0, 0]])
         with suppress_warnings() as sup:
             sup.filter(RuntimeWarning, "invalid value encountered in absolute")
-            for pair in [(outcome[:, 0], outcome[:, 1]), ([np.nan, np.nan], [1.0, 2.0])]:
+            for pair in [(outcome[:, 0], outcome[:, 1]),
+                         ([np.nan, np.nan], [1.0, 2.0])]:
                 t, p = mstats.ttest_ind(*pair)
                 assert_array_equal(t, (np.nan, np.nan))
                 assert_array_equal(p, (np.nan, np.nan))
@@ -1415,7 +1429,7 @@ class TestTtest_ind():
         assert_allclose(p, p_ex, rtol=1e-14)
 
 
-class TestTtest_1samp():
+class TestTtest_1samp:
     def test_vs_nonmasked(self):
         np.random.seed(1234567)
         outcome = np.random.randn(20, 4) + [0, 0, 1, 2]
@@ -1525,8 +1539,8 @@ class TestCompareWithStats:
     b) numerical inaccuracies
     c) different definitions of routine interfaces
 
-    These failures need to be checked. Current workaround is to have disabled these tests,
-    but issuing reports on scipy-dev
+    These failures need to be checked. Current workaround is to have disabled these
+    tests, but issuing reports on scipy-dev
 
     """
     def get_n(self):
@@ -1867,23 +1881,31 @@ class TestCompareWithStats:
                 for alternative in ['less', 'greater', 'two-sided']:
                     for n in self.get_n():
                         x, y, xm, ym = self.generate_xy_sample(n)
-                        res1 = stats.ks_1samp(x, stats.norm.cdf, alternative=alternative, mode=mode)
-                        res2 = stats.mstats.ks_1samp(xm, stats.norm.cdf, alternative=alternative, mode=mode)
+                        res1 = stats.ks_1samp(x, stats.norm.cdf,
+                                              alternative=alternative, mode=mode)
+                        res2 = stats.mstats.ks_1samp(xm, stats.norm.cdf,
+                                                     alternative=alternative, mode=mode)
                         assert_equal(np.asarray(res1), np.asarray(res2))
-                        res3 = stats.ks_1samp(xm, stats.norm.cdf, alternative=alternative, mode=mode)
+                        res3 = stats.ks_1samp(xm, stats.norm.cdf,
+                                              alternative=alternative, mode=mode)
                         assert_equal(np.asarray(res1), np.asarray(res3))
 
     def test_kstest_1samp(self):
-        """Checks that 1-sample mstats.kstest and stats.kstest agree on masked arrays."""
+        """
+        Checks that 1-sample mstats.kstest and stats.kstest agree on masked arrays.
+        """
         for mode in ['auto', 'exact', 'asymp']:
             with suppress_warnings():
                 for alternative in ['less', 'greater', 'two-sided']:
                     for n in self.get_n():
                         x, y, xm, ym = self.generate_xy_sample(n)
-                        res1 = stats.kstest(x, 'norm', alternative=alternative, mode=mode)
-                        res2 = stats.mstats.kstest(xm, 'norm', alternative=alternative, mode=mode)
+                        res1 = stats.kstest(x, 'norm',
+                                            alternative=alternative, mode=mode)
+                        res2 = stats.mstats.kstest(xm, 'norm',
+                                                   alternative=alternative, mode=mode)
                         assert_equal(np.asarray(res1), np.asarray(res2))
-                        res3 = stats.kstest(xm, 'norm', alternative=alternative, mode=mode)
+                        res3 = stats.kstest(xm, 'norm',
+                                            alternative=alternative, mode=mode)
                         assert_equal(np.asarray(res1), np.asarray(res3))
 
     def test_ks_2samp(self):
@@ -1897,14 +1919,19 @@ class TestCompareWithStats:
                 for alternative in ['less', 'greater', 'two-sided']:
                     for n in self.get_n():
                         x, y, xm, ym = self.generate_xy_sample(n)
-                        res1 = stats.ks_2samp(x, y, alternative=alternative, mode=mode)
-                        res2 = stats.mstats.ks_2samp(xm, ym, alternative=alternative, mode=mode)
+                        res1 = stats.ks_2samp(x, y,
+                                              alternative=alternative, mode=mode)
+                        res2 = stats.mstats.ks_2samp(xm, ym,
+                                                     alternative=alternative, mode=mode)
                         assert_equal(np.asarray(res1), np.asarray(res2))
-                        res3 = stats.ks_2samp(xm, y, alternative=alternative, mode=mode)
+                        res3 = stats.ks_2samp(xm, y,
+                                              alternative=alternative, mode=mode)
                         assert_equal(np.asarray(res1), np.asarray(res3))
 
     def test_kstest_2samp(self):
-        """Checks that 2-sample mstats.kstest and stats.kstest agree on masked arrays."""
+        """
+        Checks that 2-sample mstats.kstest and stats.kstest agree on masked arrays.
+        """
         for mode in ['auto', 'exact', 'asymp']:
             with suppress_warnings() as sup:
                 if mode in ['auto', 'exact']:
@@ -1913,10 +1940,13 @@ class TestCompareWithStats:
                 for alternative in ['less', 'greater', 'two-sided']:
                     for n in self.get_n():
                         x, y, xm, ym = self.generate_xy_sample(n)
-                        res1 = stats.kstest(x, y, alternative=alternative, mode=mode)
-                        res2 = stats.mstats.kstest(xm, ym, alternative=alternative, mode=mode)
+                        res1 = stats.kstest(x, y,
+                                            alternative=alternative, mode=mode)
+                        res2 = stats.mstats.kstest(xm, ym,
+                                                   alternative=alternative, mode=mode)
                         assert_equal(np.asarray(res1), np.asarray(res2))
-                        res3 = stats.kstest(xm, y, alternative=alternative, mode=mode)
+                        res3 = stats.kstest(xm, y,
+                                            alternative=alternative, mode=mode)
                         assert_equal(np.asarray(res1), np.asarray(res3))
 
 

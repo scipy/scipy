@@ -5,7 +5,7 @@ from collections import namedtuple
 
 import numpy as np
 from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
-                   arange, sort, amin, amax, sqrt, array, atleast_1d,  # noqa
+                   arange, sort, amin, amax, sqrt, array, atleast_1d,  # noqa: F401
                    compress, pi, exp, ravel, count_nonzero, sin, cos,
                    arctan2, hypot)
 
@@ -101,7 +101,8 @@ def bayes_mvs(data, alpha=0.90):
     >>> var
     Variance(statistic=10.0, minmax=(3.176724206..., 24.45910382...))
     >>> std
-    Std_dev(statistic=2.9724954732045084, minmax=(1.7823367265645143, 4.945614605014631))
+    Std_dev(statistic=2.9724954732045084,
+            minmax=(1.7823367265645143, 4.945614605014631))
 
     Now we generate some normally distributed random data, and get estimates of
     mean and standard deviation with 95% confidence intervals for those
@@ -352,10 +353,11 @@ def kstatvar(data, n=2):
                      \frac{6 n \kappa^3_{2}}{(n-1) (n-2)}
         var(k_{4}) = \frac{\kappa^8}{n} + \frac{16 \kappa_2 \kappa_6}{n - 1} +
                      \frac{48 \kappa_{3} \kappa_5}{n - 1} +
-                     \frac{34 \kappa^2_{4}}{n-1} + \frac{72 n \kappa^2_{2} \kappa_4}{(n - 1) (n - 2)} +
+                     \frac{34 \kappa^2_{4}}{n-1} +
+                     \frac{72 n \kappa^2_{2} \kappa_4}{(n - 1) (n - 2)} +
                      \frac{144 n \kappa_{2} \kappa^2_{3}}{(n - 1) (n - 2)} +
                      \frac{24 (n + 1) n \kappa^4_{2}}{(n - 1) (n - 2) (n - 3)}
-    """
+    """  # noqa: E501
     data = ravel(data)
     N = len(data)
     if n == 1:
@@ -835,6 +837,19 @@ def ppcc_plot(x, a, b, dist='tukeylambda', plot=None, N=80):
     return svals, ppcc
 
 
+def _log_mean(logx):
+    # compute log of mean of x from log(x)
+    return special.logsumexp(logx, axis=0) - np.log(len(logx))
+
+
+def _log_var(logx):
+    # compute log of variance of x from log(x)
+    logmean = _log_mean(logx)
+    pij = np.full_like(logx, np.pi * 1j, dtype=np.complex128)
+    logxmu = special.logsumexp([logx, logmean + pij], axis=0)
+    return np.real(special.logsumexp(2 * logxmu, axis=0)) - np.log(len(logx))
+
+
 def boxcox_llf(lmb, data):
     r"""The boxcox log-likelihood function.
 
@@ -924,14 +939,16 @@ def boxcox_llf(lmb, data):
 
     # Compute the variance of the transformed data.
     if lmb == 0:
-        variance = np.var(logdata, axis=0)
+        logvar = np.log(np.var(logdata, axis=0))
     else:
         # Transform without the constant offset 1/lmb.  The offset does
-        # not effect the variance, and the subtraction of the offset can
+        # not affect the variance, and the subtraction of the offset can
         # lead to loss of precision.
-        variance = np.var(data**lmb / lmb, axis=0)
+        # The sign of lmb at the denominator doesn't affect the variance.
+        logx = lmb * logdata - np.log(abs(lmb))
+        logvar = _log_var(logx)
 
-    return (lmb - 1) * np.sum(logdata, axis=0) - N/2 * np.log(variance)
+    return (lmb - 1) * np.sum(logdata, axis=0) - N/2 * logvar
 
 
 def _boxcox_conf_interval(x, lmax, alpha):
@@ -1112,6 +1129,12 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
         return y, lmax, interval
 
 
+def _boxcox_inv_lmbda(x, y):
+    # compute lmbda given x and y for Box-Cox transformation
+    num = special.lambertw(-(x ** (-1 / y)) * np.log(x) / y, k=1)
+    return np.real(-num / np.log(x) - 1 / y)
+
+
 def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
     """Compute optimal Box-Cox transform parameter for input data.
 
@@ -1288,6 +1311,29 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
         message = ("The `optimizer` argument of `boxcox_normmax` must return "
                    "an object containing the optimal `lmbda` in attribute `x`.")
         raise ValueError(message)
+    else:
+        # Test if the optimal lambda causes overflow
+        x = np.asarray(x)
+        max_x = np.max(x, axis=0)
+        istransinf = np.isinf(special.boxcox(max_x, res))
+        dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
+        if np.any(istransinf):
+            warnings.warn(
+                f"The optimal lambda is {res}, but the returned lambda is "
+                f"the constrained optimum to ensure that the maximum of the "
+                f"transformed data does not cause overflow in {dtype}.",
+                stacklevel=2
+            )
+
+            # Return the constrained lambda to ensure the transformation
+            # does not cause overflow
+            ymax = np.finfo(dtype).max / 100  # 100 is the safety factor
+            constrained_res = _boxcox_inv_lmbda(max_x, ymax)
+
+            if isinstance(res, np.ndarray):
+                res[istransinf] = constrained_res
+            else:
+                res = constrained_res
     return res
 
 
@@ -2149,7 +2195,7 @@ def anderson(x, dist='norm'):
     with a significance level of 2.5%, so the null hypothesis may be rejected
     at a significance level of 2.5%, but not at a significance level of 1%.
 
-    """  # noqa
+    """ # numpy/numpydoc#87  # noqa: E501
     dist = dist.lower()
     if dist in {'extreme1', 'gumbel'}:
         dist = 'gumbel_l'
@@ -2444,7 +2490,7 @@ def anderson_ksamp(samples, midrank=True, *, method=None):
     >>> res.pvalue
     0.5254
 
-    """  # noqa
+    """
     k = len(samples)
     if (k < 2):
         raise ValueError("anderson_ksamp needs at least two samples")
@@ -2708,7 +2754,7 @@ def ansari(x, y, alternative='two-sided'):
     repeats = (len(uxy) != len(xy))
     exact = ((m < 55) and (n < 55) and not repeats)
     if repeats and (m < 55 or n < 55):
-        warnings.warn("Ties preclude use of exact statistic.")
+        warnings.warn("Ties preclude use of exact statistic.", stacklevel=2)
     if exact:
         if alternative == 'two-sided':
             pval = 2.0 * np.minimum(_abw_state.cdf(AB, n, m),
@@ -2987,6 +3033,7 @@ def bartlett(*samples):
 LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
 
 
+@_axis_nan_policy_factory(LeveneResult, n_samples=None)
 def levene(*samples, center='median', proportiontocut=0.05):
     r"""Perform Levene test for equal variances.
 
@@ -3211,10 +3258,6 @@ def levene(*samples, center='median', proportiontocut=0.05):
     k = len(samples)
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
-    # check for 1d input
-    for j in range(k):
-        if np.asanyarray(samples[j]).ndim > 1:
-            raise ValueError('Samples must be one-dimensional.')
 
     Ni = np.empty(k)
     Yci = np.empty(k, 'd')
@@ -3281,6 +3324,7 @@ def _apply_func(x, g, func):
 FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
 
 
+@_axis_nan_policy_factory(FlignerResult, n_samples=None)
 def fligner(*samples, center='median', proportiontocut=0.05):
     r"""Perform Fligner-Killeen test for equality of variance.
 
@@ -3340,7 +3384,7 @@ def fligner(*samples, center='median', proportiontocut=0.05):
            University.
     .. [4] Conover, W. J., Johnson, M. E. and Johnson M. M. (1981). A
            comparative study of tests for homogeneity of variances, with
-           applications to the outer continental shelf biding data.
+           applications to the outer continental shelf bidding data.
            Technometrics, 23(4), 351-361.
     .. [5] C.I. BLISS (1952), The Statistics of Bioassay: With Special
            Reference to the Vitamins, pp 499-503,
@@ -3508,14 +3552,15 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     if center not in ['mean', 'median', 'trimmed']:
         raise ValueError("center must be 'mean', 'median' or 'trimmed'.")
 
-    # Handle empty input
-    for sample in samples:
-        if np.asanyarray(sample).size == 0:
-            return FlignerResult(np.nan, np.nan)
-
     k = len(samples)
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
+
+    # Handle empty input
+    for sample in samples:
+        if sample.size == 0:
+            NaN = _get_nan(*samples)
+            return FlignerResult(NaN, NaN)
 
     if center == 'median':
 
@@ -4063,7 +4108,8 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     if n_zero > 0 and mode == "exact":
         mode = "approx"
         warnings.warn("Exact p-value calculation does not work if there are "
-                      "zeros. Switching to normal approximation.")
+                      "zeros. Switching to normal approximation.",
+                      stacklevel=2)
 
     if mode == "approx":
         if zero_method in ["wilcox", "pratt"]:
@@ -4076,7 +4122,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
 
     count = len(d)
     if count < 10 and mode == "approx":
-        warnings.warn("Sample size too small for normal approximation.")
+        warnings.warn("Sample size too small for normal approximation.", stacklevel=2)
 
     r = _stats_py.rankdata(abs(d))
     r_plus = np.sum((d > 0) * r)
@@ -4314,8 +4360,8 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
 
     ties_options = ['below', 'above', 'ignore']
     if ties not in ties_options:
-        raise ValueError("invalid 'ties' option '{}'; 'ties' must be one "
-                         "of: {}".format(ties, str(ties_options)[1:-1]))
+        raise ValueError(f"invalid 'ties' option '{ties}'; 'ties' must be one "
+                         f"of: {str(ties_options)[1:-1]}")
 
     data = [np.asarray(sample) for sample in samples]
 

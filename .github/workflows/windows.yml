@@ -17,11 +17,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  get_commit_message:
+    name: Get commit message
+    uses: ./.github/workflows/commit_message.yml
+
   test:
     name: cp310 (meson) fast
+    needs: get_commit_message
     # Ensure (a) this doesn't run on forks by default, and
     #        (b) it does run with Act locally (`github` doesn't exist there)
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: windows-2019
     steps:
       - name: Checkout
@@ -42,7 +49,7 @@ jobs:
 
       - name: pip-packages
         run: |
-          pip install numpy==1.22.4 cython!=3.0.3 pybind11 pythran meson ninja pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool hypothesis scipy-openblas32
+          pip install numpy==1.22.4 cython pybind11 pythran meson ninja pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool hypothesis "scipy-openblas32<=0.3.23.293.2"
 
       - name: Build
         run: |
@@ -57,7 +64,10 @@ jobs:
   #############################################################################
   full_dev_py_min_numpy:
     name: cp39 (meson) full, dev.py, minimum numpy
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: windows-2019
     steps:
       - name: Checkout
@@ -80,7 +90,7 @@ jobs:
         run: |
           # 1.22.4 is currently the oldest numpy usable on cp3.9 according
           # to pyproject.toml
-          python -m pip install numpy==1.22.4 cython!=3.0.3 pybind11 pythran meson-python meson ninja pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool hypothesis scipy-openblas32
+          python -m pip install numpy==1.22.4 cython pybind11 pythran meson-python meson ninja pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool hypothesis "scipy-openblas32<=0.3.23.293.2"
 
       - name: Build
         run: |
@@ -95,7 +105,10 @@ jobs:
   full_build_sdist_wheel:
     # TODO: enable ILP64 once possible
     name: cp311 (build sdist + wheel), full, no pythran
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: windows-2019
     steps:
       - name: Checkout
@@ -125,7 +138,7 @@ jobs:
 
       - name: pip-packages
         run: |
-          python -m pip install build delvewheel numpy cython!=3.0.3 pybind11 meson-python meson ninja pytest pytest-xdist pytest-timeout pooch hypothesis
+          python -m pip install build delvewheel numpy cython pybind11 meson-python meson ninja pytest pytest-xdist pytest-timeout pooch hypothesis
 
       - name: Build
         run: |

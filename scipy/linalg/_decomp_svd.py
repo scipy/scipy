@@ -114,8 +114,8 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     if not isinstance(lapack_driver, str):
         raise TypeError('lapack_driver must be a string')
     if lapack_driver not in ('gesdd', 'gesvd'):
-        raise ValueError('lapack_driver must be "gesdd" or "gesvd", not "%s"'
-                         % (lapack_driver,))
+        message = f'lapack_driver must be "gesdd" or "gesvd", not "{lapack_driver}"'
+        raise ValueError(message)
     funcs = (lapack_driver, lapack_driver + '_lwork')
     gesXd, gesXd_lwork = get_lapack_funcs(funcs, (a1,), ilp64='preferred')
 
@@ -474,7 +474,7 @@ def subspace_angles(A, B):
         raise ValueError(f'expected 2D array, got shape {B.shape}')
     if len(B) != len(QA):
         raise ValueError('A and B must have the same number of rows, got '
-                         '{} and {}'.format(QA.shape[0], B.shape[0]))
+                         f'{QA.shape[0]} and {B.shape[0]}')
     QB = orth(B)
     del B
 

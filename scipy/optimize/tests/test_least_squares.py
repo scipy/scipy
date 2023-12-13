@@ -182,8 +182,10 @@ class BaseMixin:
         a = 3.0
         for jac in ['2-point', '3-point', 'cs', jac_trivial]:
             with suppress_warnings() as sup:
-                sup.filter(UserWarning,
-                           "jac='(3-point|cs)' works equivalently to '2-point' for method='lm'")
+                sup.filter(
+                    UserWarning,
+                    "jac='(3-point|cs)' works equivalently to '2-point' for method='lm'"
+                )
                 res = least_squares(fun_trivial, 2.0, jac, args=(a,),
                                     method=self.method)
                 res1 = least_squares(fun_trivial, 2.0, jac, kwargs={'a': a},
@@ -200,8 +202,10 @@ class BaseMixin:
     def test_jac_options(self):
         for jac in ['2-point', '3-point', 'cs', jac_trivial]:
             with suppress_warnings() as sup:
-                sup.filter(UserWarning,
-                           "jac='(3-point|cs)' works equivalently to '2-point' for method='lm'")
+                sup.filter(
+                    UserWarning,
+                    "jac='(3-point|cs)' works equivalently to '2-point' for method='lm'"
+                )
                 res = least_squares(fun_trivial, 2.0, jac, method=self.method)
             assert_allclose(res.x, 0, atol=1e-4)
 
@@ -296,8 +300,10 @@ class BaseMixin:
                 [1.0, np.array([1.0, 0.2]), 'jac'],
                 ['exact', 'lsmr']):
             with suppress_warnings() as sup:
-                sup.filter(UserWarning,
-                           "jac='(3-point|cs)' works equivalently to '2-point' for method='lm'")
+                sup.filter(
+                    UserWarning,
+                    "jac='(3-point|cs)' works equivalently to '2-point' for method='lm'"
+                )
                 res = least_squares(fun_rosenbrock, x0, jac, x_scale=x_scale,
                                     tr_solver=tr_solver, method=self.method)
             assert_allclose(res.x, x_opt)

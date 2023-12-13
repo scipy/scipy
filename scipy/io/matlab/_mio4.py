@@ -119,7 +119,7 @@ class VarReader4:
         if M not in (0, 1):
             warnings.warn("We do not support byte ordering '%s'; returned "
                           "data may be corrupt" % order_codes[M],
-                          UserWarning)
+                          UserWarning, stacklevel=3)
         O, rest = divmod(rest, 100)  # unused, should be 0
         if O != 0:
             raise ValueError('O in MOPT integer should be 0, wrong format?')
