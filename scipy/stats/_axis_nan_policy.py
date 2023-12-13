@@ -42,9 +42,10 @@ def _broadcast_shapes(shapes, axis=None):
         axis = np.atleast_1d(axis)
         message = '`axis` must be an integer, a tuple of integers, or `None`.'
         try:
-            axis_int = axis.astype(int)
-        except:
-            raise AxisError(message)
+            with np.errstate(invalid='ignore'):
+                axis_int = axis.astype(int)
+        except ValueError as e:
+            raise AxisError(message) from e
         if not np.array_equal(axis_int, axis):
             raise AxisError(message)
         axis = axis_int

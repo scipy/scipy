@@ -11009,14 +11009,18 @@ def expectile(a, alpha=0.5, *, weights=None):
     res = root_scalar(first_order, x0=x0, x1=x1)
     return res.root
 
-def lmoments_iv(sample, n_moments, axis, sorted, standardize):
-    # If n_moments is invalid, passing `dtype=int` would make `asarray` fail.
-    # We want to raise a more readable error message.
+def lmoments_iv(sample, order, axis, sorted, standardize):
 
-    n_moments = np.asarray(n_moments)[()]
-    message = "`n_moments` must be a positive integer."
-    if (not np.issubdtype(n_moments.dtype, np.integer) or n_moments.ndim != 0
-            or n_moments <= 0):
+    sample = np.asarray(sample)
+    message = "`sample` must be an array of real numbers."
+    if np.issubdtype(sample.dtype, np.integer):
+        sample = sample.astype(np.float64)
+    if not np.issubdtype(sample.dtype, np.floating):
+        raise ValueError(message)
+
+    message = "`order` must be an array of positive integers."
+    order = np.asarray(order)
+    if (not np.issubdtype(order.dtype, np.integer) or np.any(order <= 0)):
         raise ValueError(message)
 
     axis = np.asarray(axis)[()]
@@ -11037,7 +11041,7 @@ def lmoments_iv(sample, n_moments, axis, sorted, standardize):
     sample = np.moveaxis(sample, axis, -1)
     sample = np.sort(sample, axis=-1) if not sorted else sample
 
-    return sample, n_moments, axis, sorted, standardize
+    return sample, order, axis, sorted, standardize
 
 
 def _br(x, *, r=0):
@@ -11045,7 +11049,8 @@ def _br(x, *, r=0):
     x = np.expand_dims(x, axis=-2)
     x = np.broadcast_to(x, x.shape[:-2] + (len(r), n))
     x = np.triu(x)
-    j = np.arange(n)
+    j = np.arange(n, dtype=x.dtype)
+    n = np.asarray(n, dtype=x.dtype)[()]
     return np.sum(special.binom(j, r[:, np.newaxis])*x, axis=-1) / special.binom(n-1, r) / n
 
 
@@ -11053,16 +11058,26 @@ def _prk(r, k):
     return (-1)**(r-k)*special.binom(r, k)*special.binom(r+k, k)
 
 
+def _lmoment_outputs(kwds):
+    # should share this with `moment`, but to do that we need
+    # to change argument `moment` to `order`
+    order = np.atleast_1d(kwds.get('order', [1, 2, 3, 4]))
+    message = "`order` must be a scalar or a non-empty 1D array."
+    if order.size == 0 or order.ndim > 1:
+        raise ValueError(message)
+    return len(order)
+
+
 @_axis_nan_policy_factory(  # noqa: E302
     _moment_result_object, n_samples=1, result_to_tuple=lambda x: (x,),
-    n_outputs=lambda kwds: kwds.get('n_moments', 4)
+    n_outputs=_lmoment_outputs
 )
-def lmoment(sample, n_moments=4, *, axis=0, sorted=False, standardize=True):
+def lmoment(sample, order=[1, 2, 3, 4], *, axis=0, sorted=False, standardize=True):
     r"""Compute sample L-moments.
 
     The L-moments of a probability distribution are summary statistics with
     uses similar to those of conventional moments, but they are defined in
-    terms of the expected value of order statistics.
+    terms of the expected values of order statistics.
     Sample L-moments are defined analogously to population L-moments, and
     they can serve as estimators of population L-moments. They tend to be less
     sensitive to extreme observations than conventional moments.
@@ -11070,13 +11085,15 @@ def lmoment(sample, n_moments=4, *, axis=0, sorted=False, standardize=True):
     Parameters
     ----------
     sample : array_like
-        Array containing numbers whose expectile is desired.
-    n_moments : int
-        The number of moments to compute.
-    axis : int
+        The real-valued sample whose L-moments are desired.
+    order : array_like, optional
+        The (positive integer) orders of the desired L-moments.
+        Must be a scalar or non-empty 1D array. Default is [1, 2, 3, 4].
+    axis : int, default=0
         The axis along which to compute L-moments.
     sorted : bool, default=False
-        Whether `sample` is sorted in increasing order along `axis`.
+        Whether `sample` is already sorted in increasing order along `axis`.
+        If False (default), `sample` will be sorted.
     standardize : bool, default=True
         Whether to return L-moment ratios for orders 3 and higher.
         L-moment ratios are analogous to standardized conventional
@@ -11086,7 +11103,7 @@ def lmoment(sample, n_moments=4, *, axis=0, sorted=False, standardize=True):
     Returns
     -------
     lmoments : ndarray
-        The sample L-moments of orders 1 through `n_moments`.
+        The sample L-moments of order `order`.
 
     See Also
     --------
@@ -11111,12 +11128,14 @@ def lmoment(sample, n_moments=4, *, axis=0, sorted=False, standardize=True):
     provide reasonable estimates.
 
     """
-    # Needs input validation and tests
+    args = lmoments_iv(sample, order, axis, sorted, standardize)
+    sample, order, axis, sorted, standardize = args
 
-    args = lmoments_iv(sample, n_moments, axis, sorted, standardize)
-    sample, n_moments, axis, sorted, standardize = args
+    if order.size == 0:  # defer degenerate case to NumPy
+        return np.mean(sample, axis=axis)
 
-    k = np.arange(n_moments, dtype=np.float64)
+    n_moments = np.max(order)
+    k = np.arange(n_moments, dtype=sample.dtype)
     prk = _prk(np.expand_dims(k, list(range(1, sample.ndim+1))), k)
     bk = _br(sample, r=k)
 
@@ -11128,6 +11147,4 @@ def lmoment(sample, n_moments=4, *, axis=0, sorted=False, standardize=True):
         lmoms[2:] /= lmoms[1]
 
     lmoms[n:] = np.nan  # add NaNs where appropriate
-    if n_moments == 1:
-        lmoms = lmoms[0]
-    return lmoms
+    return lmoms[order-1]

@@ -8582,34 +8582,46 @@ class TestLMoment:
 
     not_integers = [1.5, [1, 2, 3.5], np.nan, np.inf, 'a duck']
 
-    @pytest.mark.parametrize('n_moments', not_integers + [0])
-    def test_n_moments_iv(self, n_moments):
-        message = 'n_moments` must be a positive integer.'
+    @pytest.mark.parametrize('dtype', ['object', np.complex128])
+    def test_dtype_iv(self, dtype):
+        message = '`sample` must be an array of real numbers.'
         with pytest.raises(ValueError, match=message):
-            stats.lmoment(self.data, n_moments=n_moments)
+            stats.lmoment(np.array(self.data, dtype=dtype))
+
+    @pytest.mark.parametrize('order', not_integers + [0, -1])
+    def test_order_iv(self, order):
+        message = '`order` must be an array of positive integers.'
+        with pytest.raises(ValueError, match=message):
+            stats.lmoment(self.data, order=order)
+
+    @pytest.mark.parametrize('order', [[], [[1, 2, 3]]])
+    def test_order_iv2(self, order):
+        message = '`order` must be a scalar or a non-empty 1D array.'
+        with pytest.raises(ValueError, match=message):
+            stats.lmoment(self.data, order=order)
 
     @pytest.mark.parametrize('axis', not_integers)
     def test_axis_iv(self, axis):
-        message = 'axis` must be an integer, a tuple'
+        message = '`axis` must be an integer, a tuple'
         with pytest.raises(ValueError, match=message):
             stats.lmoment(self.data, axis=axis)
 
     @pytest.mark.parametrize('sorted', not_integers)
     def test_sorted_iv(self, sorted):
-        message = 'sorted` must be True or False.'
+        message = '`sorted` must be True or False.'
         with pytest.raises(ValueError, match=message):
             stats.lmoment(self.data, sorted=sorted)
 
     @pytest.mark.parametrize('standardize', not_integers)
     def test_standardize_iv(self, standardize):
-        message = 'standardize` must be True or False.'
+        message = '`standardize` must be True or False.'
         with pytest.raises(ValueError, match=message):
             stats.lmoment(self.data, standardize=standardize)
 
-    @pytest.mark.parametrize('n_moments', [1, 2, 3, 4])
+    @pytest.mark.parametrize('order', [1, 4, [1, 2, 3, 4]])
     @pytest.mark.parametrize('standardize', [False, True])
     @pytest.mark.parametrize('sorted', [False, True])
-    def test_lmoment(self, n_moments, standardize, sorted):
+    def test_lmoment(self, order, standardize, sorted):
         # Reference values from R package `lmom`
         # options(digits=16)
         # library(lmom)
@@ -8623,6 +8635,20 @@ class TestLMoment:
 
         data = np.sort(self.data) if sorted else self.data
 
-        res = stats.lmoment(data, n_moments,
-                            standardize=standardize, sorted=sorted)
-        assert_allclose(res, ref[:n_moments])
+        res = stats.lmoment(data, order, standardize=standardize, sorted=sorted)
+        assert_allclose(res, ref[np.asarray(order)-1])
+
+    def test_dtype(self):
+        dtype = np.float32
+        sample = np.asarray(self.data)
+        res = stats.lmoment(sample.astype(dtype))
+        ref = stats.lmoment(sample)
+        assert res.dtype.type == dtype
+        assert_allclose(res, ref, rtol=1e-4)
+
+        dtype = np.int64
+        sample = np.asarray([1, 2, 3, 4, 5])
+        res = stats.lmoment(sample.astype(dtype))
+        ref = stats.lmoment(sample.astype(np.float64))
+        assert res.dtype.type == np.float64
+        assert_allclose(res, ref, rtol=1e-15)
