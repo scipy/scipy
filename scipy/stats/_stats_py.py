@@ -11026,7 +11026,8 @@ def _br(x, *, r=0):
     x = np.triu(x)
     j = np.arange(n, dtype=x.dtype)
     n = np.asarray(n, dtype=x.dtype)[()]
-    return np.sum(special.binom(j, r[:, np.newaxis])*x, axis=-1) / special.binom(n-1, r) / n
+    return (np.sum(special.binom(j, r[:, np.newaxis])*x, axis=-1)
+            / special.binom(n-1, r) / n)
 
 
 def _prk(r, k):
@@ -11086,8 +11087,9 @@ def lmoment(sample, order=[1, 2, 3, 4], *, axis=0, sorted=False, standardize=Tru
 
     References
     ----------
-    D. Bilkova. "L-Moments and TL-Moments as an Alternative Tool of Statistical Data Analysis".
-    Journal of Applied Mathematics and Physics. 2014. :doi:`10.4236/jamp.2014.210104`
+    .. [1] D. Bilkova. "L-Moments and TL-Moments as an Alternative Tool of
+           Statistical Data Analysis". Journal of Applied Mathematics and
+           Physics. 2014. :doi:`10.4236/jamp.2014.210104`
 
     Examples
     --------
