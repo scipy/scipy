@@ -1641,32 +1641,6 @@ class CDistMetricWrapper:
 
 
 @dataclasses.dataclass(frozen=True)
-class CDistWeightedMetricWrapper:
-    metric_name: str
-    weighted_metric: str
-
-    def __call__(self, XA, XB, *, out=None, **kwargs):
-        XA = np.ascontiguousarray(XA)
-        XB = np.ascontiguousarray(XB)
-        mA, n = XA.shape
-        mB, _ = XB.shape
-        metric_name = self.metric_name
-        XA, XB, typ, kwargs = _validate_cdist_input(
-            XA, XB, mA, mB, n, _METRICS[metric_name], **kwargs)
-        dm = _prepare_out_argument(out, np.float64, (mA, mB))
-
-        w = kwargs.pop('w', None)
-        if w is not None:
-            metric_name = self.weighted_metric
-            kwargs['w'] = w
-
-        # get cdist wrapper
-        cdist_fn = getattr(_distance_wrap, f'cdist_{metric_name}_{typ}_wrap')
-        cdist_fn(XA, XB, dm, **kwargs)
-        return dm
-
-
-@dataclasses.dataclass(frozen=True)
 class PDistMetricWrapper:
     metric_name: str
 
@@ -1685,31 +1659,6 @@ class PDistMetricWrapper:
                 X, metric=metric, out=out, w=w, **kwargs)
 
         dm = _prepare_out_argument(out, np.float64, (out_size,))
-        # get pdist wrapper
-        pdist_fn = getattr(_distance_wrap, f'pdist_{metric_name}_{typ}_wrap')
-        pdist_fn(X, dm, **kwargs)
-        return dm
-
-
-@dataclasses.dataclass(frozen=True)
-class PDistWeightedMetricWrapper:
-    metric_name: str
-    weighted_metric: str
-
-    def __call__(self, X, *, out=None, **kwargs):
-        X = np.ascontiguousarray(X)
-        m, n = X.shape
-        metric_name = self.metric_name
-        X, typ, kwargs = _validate_pdist_input(
-            X, m, n, _METRICS[metric_name], **kwargs)
-        out_size = (m * (m - 1)) // 2
-        dm = _prepare_out_argument(out, np.float64, (out_size,))
-
-        w = kwargs.pop('w', None)
-        if w is not None:
-            metric_name = self.weighted_metric
-            kwargs['w'] = w
-
         # get pdist wrapper
         pdist_fn = getattr(_distance_wrap, f'pdist_{metric_name}_{typ}_wrap')
         pdist_fn(X, dm, **kwargs)
