@@ -1314,25 +1314,38 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
     else:
         # Test if the optimal lambda causes overflow
         x = np.asarray(x)
-        x_treme = np.max(x, axis=0) if res > 0 else np.min(x, axis=0)
-        istransinf = np.isinf(special.boxcox(x_treme, res))
         dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
-        if np.any(istransinf):
+        # 10000 is a safety factor because `special.boxcox` overflows prematurely.
+        ymax = np.finfo(dtype).max / 10000
+
+        isoverflow = False
+        if np.any(res > 1):
+            xmax = np.max(x)
+            if xmax > 1:
+                mask = special.boxcox(xmax, res) > ymax
+                if np.any(mask):
+                    isoverflow = True
+                    constrained_res = _boxcox_inv_lmbda(xmax, ymax)
+        elif np.any(res < 0):
+            xmin = np.min(x)
+            if xmin < 1:
+                mask = special.boxcox(xmin, res) < -ymax
+                if np.any(mask):
+                    isoverflow = True
+                    constrained_res = _boxcox_inv_lmbda(xmin, -ymax)
+
+        if isoverflow:
             warnings.warn(
-                f"The optimal lambda is {res}, but the returned lambda is "
-                f"the constrained optimum to ensure that the maximum of the "
-                f"transformed data does not cause overflow in {dtype}.",
+                f"The optimal lambda is {res}, but the returned lambda is the"
+                f"constrained optimum to ensure that the maximum or the minimum "
+                f"of the transformed data does not cause overflow in {dtype}.",
                 stacklevel=2
             )
 
             # Return the constrained lambda to ensure the transformation
-            # does not cause overflow. 10000 is a safety factor because
-            # `special.boxcox` overflows prematurely.
-            ymax = np.finfo(dtype).max / 10000
-            constrained_res = _boxcox_inv_lmbda(x_treme, ymax * np.sign(res))
-
+            # does not cause overflow.
             if isinstance(res, np.ndarray):
-                res[istransinf] = constrained_res
+                res[mask] = constrained_res
             else:
                 res = constrained_res
     return res
