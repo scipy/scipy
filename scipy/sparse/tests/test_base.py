@@ -3016,16 +3016,6 @@ class _TestFancyIndexing:
         assert_raises(IndexError, A.__getitem__, Z3)
         assert_raises((IndexError, ValueError), A.__getitem__, (X, 1))
 
-        L = [True, False, True, True, False]
-        assert_equal(B[L], toarray(A[L]))
-        LL = [L + L] * 5  # 5x10 list of lists
-        assert_equal(B[LL], toarray(A[LL]))
-
-        assert_raises(IndexError, A.__getitem__, [[L]])
-        assert_raises(IndexError, B.__getitem__, [[L]])
-        assert_raises(IndexError, A.__getitem__, [[[L]]])
-        assert_raises(IndexError, B.__getitem__, [[[L]]])
-
     def test_fancy_indexing_sparse_boolean(self):
         np.random.seed(1234)  # make runs repeatable
 

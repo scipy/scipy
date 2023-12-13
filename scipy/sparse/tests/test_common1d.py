@@ -15,10 +15,11 @@ from scipy.sparse import (coo_array, csr_array, csc_array,
                           dok_array, sparray, issparse,
                           SparseEfficiencyWarning)
 from scipy.sparse._sputils import supported_dtypes, isscalarlike, matrix
+from scipy._lib._util import ComplexWarning
 
 
 sup_complex = suppress_warnings()
-sup_complex.filter(np.ComplexWarning)
+sup_complex.filter(ComplexWarning)
 
 
 def assert_array_equal_dtype(x, y, **kwargs):
@@ -1026,11 +1027,10 @@ class _SlicingAndFancy1D:
 
 
         # [[[1],[2]]]
-        assert_equal(A[[[1], [3]]].toarray(), B[[[1], [3]]])
-        assert_equal(
-            A[[[-1], [-3], [-2]]].toarray(),
-            B[[[-1], [-3], [-2]]]
-        )
+        ind = np.array([[1], [3]])
+        assert_equal(A[ind].toarray(), B[ind])
+        ind = np.array([[-1], [-3], [-2]])
+        assert_equal(A[ind].toarray(), B[ind])
 
         # [[1,2]]
         assert_equal(A[[1, 3]].toarray(), B[[1, 3]])

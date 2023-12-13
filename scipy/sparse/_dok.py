@@ -162,7 +162,8 @@ class _dok_base(_spbase, IndexMixin):
             else:
                 new_idx = np.unravel_index(np.arange(len(dok_vals)), idx.shape)
                 new_idx = new_idx[0] if len(new_idx) == 1 else zip(*new_idx)
-                for i, v in zip(new_idx, dok_vals, strict=True):
+                # zip could use 'strict=True' With Python 3.10+
+                for i, v in zip(new_idx, dok_vals):  # , strict=True):
                     if v:
                         new_dok._dict[i] = v
         return new_dok
