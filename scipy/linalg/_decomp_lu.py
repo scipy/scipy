@@ -11,10 +11,6 @@ from ._misc import _datacopied, LinAlgWarning
 from .lapack import get_lapack_funcs
 from ._decomp_lu_cython import lu_dispatcher
 
-# deprecated imports to be removed in SciPy 1.13.0
-from scipy.linalg._flinalg_py import get_flinalg_funcs  # noqa: F401
-
-
 lapack_cast_dict = {x: ''.join([y for y in 'fdFD' if np.can_cast(x, y)])
                     for x in np.typecodes['All']}
 
