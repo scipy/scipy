@@ -22,7 +22,7 @@ sup_complex = suppress_warnings()
 sup_complex.filter(ComplexWarning)
 
 
-def assert_array_equal_dtype(x, y, **kwargs):
+def assert_array_equal_dtype(x, y, **kwargs):  # skip name check
     assert_(x.dtype == y.dtype)
     assert_array_equal(x, y, **kwargs)
 
@@ -42,7 +42,7 @@ class _Common1D:
     # Some sparse and dense matrices with data for every supported dtype.
     # This set union is a workaround for numpy#6295, which means that
     # two np.int64 dtypes don't hash to the same value.
-    math_dtypes = [np.int_, np.float_, np.complex_]
+    math_dtypes = [np.int64, np.float64, np.complex128]
     checked_dtypes = set(supported_dtypes).union(math_dtypes)
     dat_dtypes = {}
     for dtype in checked_dtypes:
@@ -759,7 +759,7 @@ class _Common1D:
         assert_array_equal(S.toarray(), [1, 0, 3, 0, 0])
 
 
-class _GetSet1D:
+class _GetSet1D:  # skip name check
     def test_getelement(self):
         D = np.array([4,3,0])
         A = self.spcreator(D)
@@ -1259,7 +1259,7 @@ class TestCOO1D(_Common1D, _MinMaxMixin1D):
 #        datsp_dtypes[dtype] = spcreator(_Common1D.dat1d.astype(dtype))
 
 
-#class TestCSR1D(_Common1D, _MinMaxMixin1D, _SlicingAndFancy1D):
+#class TestCSR1D(_Common1D, _MinMaxMixin1D, _GetSet1D, _SlicingAndFancy1D):
 #    spcreator = csr_array
 #    datsp = spcreator(_Common1D.dat1d)
 #    datsp_dtypes = {}
