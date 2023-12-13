@@ -15,12 +15,14 @@ from ._sparsetools import (get_csr_submatrix, csr_sample_offsets, csr_todense,
                            csr_column_index1, csr_column_index2)
 from ._index import IndexMixin
 from ._sputils import (upcast, upcast_char, to_native, isdense, isshape,
-                       getdtype, isscalarlike, isintlike, downcast_intp_index, get_sum_dtype, check_shape,
-                       is_pydata_spmatrix)
+                       getdtype, isscalarlike, isintlike, downcast_intp_index,
+                       get_sum_dtype, check_shape, is_pydata_spmatrix)
 
 
 class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
-    """base array/matrix class for compressed row- and column-oriented arrays/matrices"""
+    """
+    base array/matrix class for compressed row- and column-oriented arrays/matrices
+    """
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
         _data_matrix.__init__(self)
@@ -78,7 +80,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             try:
                 arg1 = np.asarray(arg1)
             except Exception as e:
-                raise ValueError(f"unrecognized {self.format}_matrix constructor usage") from e
+                msg = f"unrecognized {self.format}_matrix constructor usage"
+                raise ValueError(msg) from e
             self._set_self(self.__class__(
                 self._coo_container(arg1, dtype=dtype)
             ))
@@ -149,9 +152,11 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         # index arrays should have integer data types
         if self.indptr.dtype.kind != 'i':
-            warn(f"indptr array has non-integer dtype ({self.indptr.dtype.name})", stacklevel=3)
+            warn(f"indptr array has non-integer dtype ({self.indptr.dtype.name})",
+                 stacklevel=3)
         if self.indices.dtype.kind != 'i':
-            warn(f"indices array has non-integer dtype ({self.indices.dtype.name})", stacklevel=3)
+            warn(f"indices array has non-integer dtype ({self.indices.dtype.name})",
+                 stacklevel=3)
 
         # check array shapes
         for x in [self.data.ndim, self.indices.ndim, self.indptr.ndim]:
@@ -243,7 +248,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             all_true = self.__class__(np.ones(self.shape, dtype=np.bool_))
             return all_true - res
         else:
-            return False
+            return NotImplemented
 
     def __ne__(self, other):
         # Scalar other.
@@ -277,7 +282,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 other = other.asformat(self.format)
             return self._binopt(other, '_ne_')
         else:
-            return True
+            return NotImplemented
 
     def _inequality(self, other, op, op_name, bad_scalar_msg):
         # Scalar other.
@@ -285,7 +290,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             if 0 == other and op_name in ('_le_', '_ge_'):
                 raise NotImplementedError(" >= and <= don't work with 0.")
             elif op(0, other):
-                warn(bad_scalar_msg, SparseEfficiencyWarning)
+                warn(bad_scalar_msg, SparseEfficiencyWarning, stacklevel=3)
                 other_arr = np.empty(self.shape, dtype=np.result_type(other))
                 other_arr.fill(other)
                 other_arr = self.__class__(other_arr)
@@ -306,12 +311,13 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 return self._binopt(other, op_name)
 
             warn("Comparing sparse matrices using >= and <= is inefficient, "
-                 "using <, >, or !=, instead.", SparseEfficiencyWarning)
+                 "using <, >, or !=, instead.",
+                 SparseEfficiencyWarning, stacklevel=3)
             all_true = self.__class__(np.ones(self.shape, dtype=np.bool_))
             res = self._binopt(other, '_gt_' if op_name == '_le_' else '_lt_')
             return all_true - res
         else:
-            raise ValueError("Operands could not be compared.")
+            return NotImplemented
 
     def __lt__(self, other):
         return self._inequality(other, operator.lt, '_lt_',
@@ -419,6 +425,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             return np.multiply(self.toarray(), other)
         # Single element / wrapped object.
         if other.size == 1:
+            if other.dtype == np.object_:
+                # 'other' not convertible to ndarray.
+                return NotImplemented
             return self._mul_scalar(other.flat[0])
         # Fast case for trivial sparse matrix.
         elif self.shape == (1, 1):

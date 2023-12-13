@@ -101,7 +101,8 @@ def bayes_mvs(data, alpha=0.90):
     >>> var
     Variance(statistic=10.0, minmax=(3.176724206..., 24.45910382...))
     >>> std
-    Std_dev(statistic=2.9724954732045084, minmax=(1.7823367265645143, 4.945614605014631))
+    Std_dev(statistic=2.9724954732045084,
+            minmax=(1.7823367265645143, 4.945614605014631))
 
     Now we generate some normally distributed random data, and get estimates of
     mean and standard deviation with 95% confidence intervals for those
@@ -352,10 +353,11 @@ def kstatvar(data, n=2):
                      \frac{6 n \kappa^3_{2}}{(n-1) (n-2)}
         var(k_{4}) = \frac{\kappa^8}{n} + \frac{16 \kappa_2 \kappa_6}{n - 1} +
                      \frac{48 \kappa_{3} \kappa_5}{n - 1} +
-                     \frac{34 \kappa^2_{4}}{n-1} + \frac{72 n \kappa^2_{2} \kappa_4}{(n - 1) (n - 2)} +
+                     \frac{34 \kappa^2_{4}}{n-1} +
+                     \frac{72 n \kappa^2_{2} \kappa_4}{(n - 1) (n - 2)} +
                      \frac{144 n \kappa_{2} \kappa^2_{3}}{(n - 1) (n - 2)} +
                      \frac{24 (n + 1) n \kappa^4_{2}}{(n - 1) (n - 2) (n - 3)}
-    """
+    """  # noqa: E501
     data = ravel(data)
     N = len(data)
     if n == 1:
@@ -2193,7 +2195,7 @@ def anderson(x, dist='norm'):
     with a significance level of 2.5%, so the null hypothesis may be rejected
     at a significance level of 2.5%, but not at a significance level of 1%.
 
-    """  # noqa: E501
+    """ # numpy/numpydoc#87  # noqa: E501
     dist = dist.lower()
     if dist in {'extreme1', 'gumbel'}:
         dist = 'gumbel_l'
@@ -2752,7 +2754,7 @@ def ansari(x, y, alternative='two-sided'):
     repeats = (len(uxy) != len(xy))
     exact = ((m < 55) and (n < 55) and not repeats)
     if repeats and (m < 55 or n < 55):
-        warnings.warn("Ties preclude use of exact statistic.")
+        warnings.warn("Ties preclude use of exact statistic.", stacklevel=2)
     if exact:
         if alternative == 'two-sided':
             pval = 2.0 * np.minimum(_abw_state.cdf(AB, n, m),
@@ -4106,7 +4108,8 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     if n_zero > 0 and mode == "exact":
         mode = "approx"
         warnings.warn("Exact p-value calculation does not work if there are "
-                      "zeros. Switching to normal approximation.")
+                      "zeros. Switching to normal approximation.",
+                      stacklevel=2)
 
     if mode == "approx":
         if zero_method in ["wilcox", "pratt"]:
@@ -4119,7 +4122,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
 
     count = len(d)
     if count < 10 and mode == "approx":
-        warnings.warn("Sample size too small for normal approximation.")
+        warnings.warn("Sample size too small for normal approximation.", stacklevel=2)
 
     r = _stats_py.rankdata(abs(d))
     r_plus = np.sum((d > 0) * r)

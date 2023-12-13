@@ -17,7 +17,7 @@ np.import_array()
 @cython.boundscheck(False)
 @cython.initializedcheck(False)
 def evaluate_linear_2d(double_or_complex[:, :] values, # cannot declare as ::1
-                       const long[:, :] indices,       # unless prior
+                       const np.intp_t[:, :] indices,       # unless prior
                        double[:, :] norm_distances,    # np.ascontiguousarray
                        tuple grid not None,
                        double_or_complex[:] out):
@@ -87,7 +87,7 @@ def find_indices(tuple grid not None, const double[:, :] xi):
         int index = 0
 
         # Indices of relevant edges between which xi are situated
-        long[:,::1] indices = np.empty_like(xi, dtype=int)
+        np.intp_t[:,::1] indices = np.empty_like(xi, dtype=np.intp)
 
         # Distances to lower edge in unity units
         double[:,::1] norm_distances = np.zeros_like(xi, dtype=float)

@@ -824,7 +824,7 @@ def _logm_force_nonsingular_triangular_matrix(T, inplace=False):
     abs_diag = np.absolute(np.diag(T))
     if np.any(abs_diag == 0):
         exact_singularity_msg = 'The logm input matrix is exactly singular.'
-        warnings.warn(exact_singularity_msg, LogmExactlySingularWarning)
+        warnings.warn(exact_singularity_msg, LogmExactlySingularWarning, stacklevel=3)
         if not inplace:
             T = T.copy()
         n = T.shape[0]
@@ -833,7 +833,7 @@ def _logm_force_nonsingular_triangular_matrix(T, inplace=False):
                 T[i, i] = tri_eps
     elif np.any(abs_diag < tri_eps):
         near_singularity_msg = 'The logm input matrix may be nearly singular.'
-        warnings.warn(near_singularity_msg, LogmNearlySingularWarning)
+        warnings.warn(near_singularity_msg, LogmNearlySingularWarning, stacklevel=3)
     return T
 
 

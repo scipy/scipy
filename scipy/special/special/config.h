@@ -61,10 +61,10 @@ class numeric_limits;
 
 template <>
 class numeric_limits<double> {
-public:
-  SPECFUN_HOST_DEVICE static constexpr double infinity() { return CUDART_INF; }
+  public:
+    SPECFUN_HOST_DEVICE static constexpr double infinity() { return CUDART_INF; }
 
-  SPECFUN_HOST_DEVICE static constexpr double quiet_NaN() { return CUDART_NAN; }
+    SPECFUN_HOST_DEVICE static constexpr double quiet_NaN() { return CUDART_NAN; }
 };
 
 } // namespace std
@@ -84,27 +84,27 @@ using complex = thrust::complex<T>;
 
 template <typename T>
 SPECFUN_HOST_DEVICE T abs(const complex<T> &z) {
-  return thrust::abs(z);
+    return thrust::abs(z);
 }
 
 template <typename T>
 SPECFUN_HOST_DEVICE complex<T> exp(const complex<T> &z) {
-  return thrust::exp(z);
+    return thrust::exp(z);
 }
 
 template <typename T>
 SPECFUN_HOST_DEVICE complex<T> log(const complex<T> &z) {
-  return thrust::log(z);
+    return thrust::log(z);
 }
 
 template <typename T>
 SPECFUN_HOST_DEVICE T norm(const complex<T> &z) {
-  return thrust::norm(z);
+    return thrust::norm(z);
 }
 
 template <typename T>
 SPECFUN_HOST_DEVICE complex<T> sqrt(const complex<T> &z) {
-  return thrust::sqrt(z);
+    return thrust::sqrt(z);
 }
 
 } // namespace std

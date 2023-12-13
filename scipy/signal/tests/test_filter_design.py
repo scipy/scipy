@@ -31,9 +31,11 @@ except ImportError:
 
 
 def mpmath_check(min_ver):
-    return pytest.mark.skipif(mpmath is None or
-                              _pep440.parse(mpmath.__version__) < _pep440.Version(min_ver),
-                              reason="mpmath version >= %s required" % min_ver)
+    return pytest.mark.skipif(
+        mpmath is None
+        or _pep440.parse(mpmath.__version__) < _pep440.Version(min_ver),
+        reason=f"mpmath version >= {min_ver} required",
+    )
 
 
 class TestCplxPair:

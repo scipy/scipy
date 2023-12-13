@@ -796,7 +796,7 @@ class ShortTimeFFT:
                                  padding=padding, axis=axis)
 
     def stft_detrend(self, x: np.ndarray,
-                     detr: Callable[[np.ndarray], np.ndarray] | Literal['linear', 'constant'] | None,
+                     detr: Callable[[np.ndarray], np.ndarray] | Literal['linear', 'constant'] | None,  # noqa: E501
                      p0: int | None = None, p1: int | None = None, *,
                      k_offset: int = 0, padding: PAD_TYPE = 'zeros',
                      axis: int = -1) \
@@ -847,7 +847,8 @@ class ShortTimeFFT:
         return S
 
     def spectrogram(self, x: np.ndarray, y: np.ndarray | None = None,
-                    detr: Callable[[np.ndarray], np.ndarray] | Literal['linear', 'constant'] | None = None, *,
+                    detr: Callable[[np.ndarray], np.ndarray] | Literal['linear', 'constant'] | None = None,  # noqa: E501
+                    *,
                     p0: int | None = None, p1: int | None = None,
                     k_offset: int = 0, padding: PAD_TYPE = 'zeros',
                     axis: int = -1) \

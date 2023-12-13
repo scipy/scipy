@@ -1,7 +1,7 @@
 BasedOnStyle: LLVM
 Standard: Cpp11
 UseTab: Never
-IndentWidth: 2
+IndentWidth: 4
 BreakBeforeBraces: Attach
 Cpp11BracedListStyle: true
 NamespaceIndentation: Inner
