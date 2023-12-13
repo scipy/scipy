@@ -225,7 +225,7 @@ from ._decomp_cossin import *
 # Deprecated namespaces, to be removed in v2.0.0
 from . import (
     decomp, decomp_cholesky, decomp_lu, decomp_qr, decomp_svd, decomp_schur,
-    basic, misc, special_matrices, flinalg, matfuncs
+    basic, misc, special_matrices, matfuncs,
 )
 
 __all__ = [s for s in dir() if not s.startswith('_')]
