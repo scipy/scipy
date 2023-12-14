@@ -64,7 +64,7 @@
 #include <cuda_runtime.h>
 #endif
 
-namespace STD {
+namespace std {
 
 SPECFUN_HOST_DEVICE inline double abs(double num) { return cuda::std::abs(num); }
 
@@ -123,7 +123,7 @@ SPECFUN_HOST_DEVICE complex<T> sqrt(const complex<T> &z) {
     return thrust::sqrt(z);
 }
 
-} // namespace STD
+} // namespace std
 
 #else
 #define SPECFUN_HOST_DEVICE
@@ -133,7 +133,4 @@ SPECFUN_HOST_DEVICE complex<T> sqrt(const complex<T> &z) {
 #include <limits>
 #include <math.h>
 
-namespace STD {
-using namespace std;
-}
 #endif

@@ -30,15 +30,15 @@ constexpr double EXPN1 = 0.36787944117144232159553; // exp(-1)
 constexpr double OMEGA = 0.56714329040978387299997; // W(1, 0)
 
 namespace detail {
-    SPECFUN_HOST_DEVICE inline STD::complex<double> lambertw_branchpt(STD::complex<double> z) {
+    SPECFUN_HOST_DEVICE inline std::complex<double> lambertw_branchpt(std::complex<double> z) {
         // Series for W(z, 0) around the branch point; see 4.22 in [1].
         double coeffs[] = {-1.0 / 3.0, 1.0, -1.0};
-        STD::complex<double> p = STD::sqrt(2.0 * (M_E * z + 1.0));
+        std::complex<double> p = std::sqrt(2.0 * (M_E * z + 1.0));
 
         return cevalpoly(coeffs, 2, p);
     }
 
-    SPECFUN_HOST_DEVICE inline STD::complex<double> lambertw_pade0(STD::complex<double> z) {
+    SPECFUN_HOST_DEVICE inline std::complex<double> lambertw_pade0(std::complex<double> z) {
         // (3, 2) Pade approximation for W(z, 0) around 0.
         double num[] = {12.85106382978723404255, 12.34042553191489361902, 1.0};
         double denom[] = {32.53191489361702127660, 14.34042553191489361702, 1.0};
@@ -49,49 +49,49 @@ namespace detail {
         return z * cevalpoly(num, 2, z) / cevalpoly(denom, 2, z);
     }
 
-    SPECFUN_HOST_DEVICE inline STD::complex<double> lambertw_asy(STD::complex<double> z, long k) {
+    SPECFUN_HOST_DEVICE inline std::complex<double> lambertw_asy(std::complex<double> z, long k) {
         /* Compute the W function using the first two terms of the
          * asymptotic series. See 4.20 in [1].
          */
-        STD::complex<double> w = STD::log(z) + 2.0 * M_PI * k * STD::complex<double>(0, 1);
-        return w - STD::log(w);
+        std::complex<double> w = std::log(z) + 2.0 * M_PI * k * std::complex<double>(0, 1);
+        return w - std::log(w);
     }
 
 } // namespace detail
 
-SPECFUN_HOST_DEVICE inline STD::complex<double> lambertw(STD::complex<double> z, long k, double tol) {
+SPECFUN_HOST_DEVICE inline std::complex<double> lambertw(std::complex<double> z, long k, double tol) {
     double absz;
-    STD::complex<double> w;
-    STD::complex<double> ew, wew, wewz, wn;
+    std::complex<double> w;
+    std::complex<double> ew, wew, wewz, wn;
 
-    if (STD::isnan(z.real()) || STD::isnan(z.imag())) {
+    if (std::isnan(z.real()) || std::isnan(z.imag())) {
         return z;
     }
-    if (z.real() == STD::numeric_limits<double>::infinity()) {
-        return z + 2.0 * M_PI * k * STD::complex<double>(0, 1);
+    if (z.real() == std::numeric_limits<double>::infinity()) {
+        return z + 2.0 * M_PI * k * std::complex<double>(0, 1);
     }
-    if (z.real() == -STD::numeric_limits<double>::infinity()) {
-        return -z + (2.0 * M_PI * k + M_PI) * STD::complex<double>(0, 1);
+    if (z.real() == -std::numeric_limits<double>::infinity()) {
+        return -z + (2.0 * M_PI * k + M_PI) * std::complex<double>(0, 1);
     }
     if (z == 0.0) {
         if (k == 0) {
             return z;
         }
         set_error("lambertw", SF_ERROR_SINGULAR, NULL);
-        return -STD::numeric_limits<double>::infinity();
+        return -std::numeric_limits<double>::infinity();
     }
     if (z == 1.0 && k == 0) {
         // Split out this case because the asymptotic series blows up
         return OMEGA;
     }
 
-    absz = STD::abs(z);
+    absz = std::abs(z);
     // Get an initial guess for Halley's method
     if (k == 0) {
-        if (STD::abs(z + EXPN1) < 0.3) {
+        if (std::abs(z + EXPN1) < 0.3) {
             w = detail::lambertw_branchpt(z);
-        } else if (-1.0 < z.real() && z.real() < 1.5 && STD::abs(z.imag()) < 1.0 &&
-                   -2.5 * STD::abs(z.imag()) - 0.2 < z.real()) {
+        } else if (-1.0 < z.real() && z.real() < 1.5 && std::abs(z.imag()) < 1.0 &&
+                   -2.5 * std::abs(z.imag()) - 0.2 < z.real()) {
             /* Empirically determined decision boundary where the Pade
              * approximation is more accurate. */
             w = detail::lambertw_pade0(z);
@@ -100,7 +100,7 @@ SPECFUN_HOST_DEVICE inline STD::complex<double> lambertw(STD::complex<double> z,
         }
     } else if (k == -1) {
         if (absz <= EXPN1 && z.imag() == 0.0 && z.real() < 0.0) {
-            w = STD::log(-z.real());
+            w = std::log(-z.real());
         } else {
             w = detail::lambertw_asy(z, k);
         }
@@ -112,21 +112,21 @@ SPECFUN_HOST_DEVICE inline STD::complex<double> lambertw(STD::complex<double> z,
     if (w.real() >= 0) {
         // Rearrange the formula to avoid overflow in exp
         for (int i = 0; i < 100; i++) {
-            ew = STD::exp(-w);
+            ew = std::exp(-w);
             wewz = w - z * ew;
             wn = w - wewz / (w + 1.0 - (w + 2.0) * wewz / (2.0 * w + 2.0));
-            if (STD::abs(wn - w) <= tol * STD::abs(wn)) {
+            if (std::abs(wn - w) <= tol * std::abs(wn)) {
                 return wn;
             }
             w = wn;
         }
     } else {
         for (int i = 0; i < 100; i++) {
-            ew = STD::exp(w);
+            ew = std::exp(w);
             wew = w * ew;
             wewz = wew - z;
             wn = w - wewz / (wew + ew - (w + 2.0) * wewz / (2.0 * w + 2.0));
-            if (STD::abs(wn - w) <= tol * STD::abs(wn)) {
+            if (std::abs(wn - w) <= tol * std::abs(wn)) {
                 return wn;
             }
             w = wn;
@@ -134,7 +134,7 @@ SPECFUN_HOST_DEVICE inline STD::complex<double> lambertw(STD::complex<double> z,
     }
 
     set_error("lambertw", SF_ERROR_SLOW, "iteration failed to converge: %g + %gj", z.real(), z.imag());
-    return STD::complex<double>(STD::numeric_limits<double>::quiet_NaN(), STD::numeric_limits<double>::quiet_NaN());
+    return std::complex<double>(std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN());
 }
 
 } // namespace special
