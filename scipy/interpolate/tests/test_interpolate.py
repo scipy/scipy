@@ -933,6 +933,11 @@ class TestAkima1DInterpolator:
         assert_allclose(ak(xi), yi)
 
     def test_eval_mod(self):
+        # Reference values generated with the following MATLAB code:
+        # format longG
+        # x = 0:10; y = [0. 2. 1. 3. 2. 6. 5.5 5.5 2.7 5.1 3.];
+        # xi = [0. 0.5 1. 1.5 2.5 3.5 4.5 5.1 6.5 7.2 8.6 9.9 10.];
+        # makima(x, y, xi)
         x = np.arange(0., 11.)
         y = np.array([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
         ak = Akima1DInterpolator(x, y, modified=True)
