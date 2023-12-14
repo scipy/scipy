@@ -263,7 +263,6 @@ py3.extension_module('_ufuncs',
   [
     ufuncs_sources,
     uf_cython_gen.process(cython_special[0]),  # _ufuncs.pyx
-    cdflib_c
   ],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
   include_directories: ['../_lib', '../_build_utils/src'],
@@ -335,7 +334,6 @@ py3.extension_module('_ellip_harm_2',
 py3.extension_module('cython_special',
   [
     uf_cython_gen.process(cython_special[6]),  # cython_special.pyx
-    cdflib_c,
     '_cosine.c',
     'scaled_exp1.c',
     'amos_wrappers.c',
