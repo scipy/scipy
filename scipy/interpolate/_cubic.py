@@ -388,7 +388,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
         If ``True``, use the modified Akima interpolation[1991].
         Defaults to ``False``, use the Akima interpolation[1970].
 
-        .. versionadded:: 1.12.0
+        .. versionadded:: 1.13.0
 
     Methods
     -------
