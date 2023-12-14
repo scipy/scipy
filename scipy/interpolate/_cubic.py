@@ -419,6 +419,8 @@ class Akima1DInterpolator(CubicHermiteSpline):
     [2] A method of univariate interpolation that has the accuracy of
         a third-degree polynomial. Hiroshi Akima, J. ACM, September 1991,
         17(3), 341-366.
+    [3] Makima Piecewise Cubic Interpolation. Cleve Moler and Cosmin Ionita, 2019.
+        https://blogs.mathworks.com/cleve/2019/04/29/makima-piecewise-cubic-interpolation/
 
     """
 
