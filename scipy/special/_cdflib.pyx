@@ -4729,7 +4729,7 @@ cdef inline double dinvnr(double p, double q) noexcept nogil:
 
     for i in range(maxit):
         cum, _ = cumnor(xcur)
-        dx = (cum - pp) / (r2pi * exp(0.5*xcur*xcur))
+        dx = (cum - pp) / (r2pi * exp(-0.5*xcur*xcur))
         xcur -= dx
         if abs(dx / xcur) < eps:
             return -xcur if (p > q) else xcur
@@ -5119,7 +5119,7 @@ cdef inline double dt1(double p, double q, double df) noexcept nogil:
 
     x = abs(dinvnr(p, q))
     xx = x*x
-    ssum = 1.
+    ssum = x
     for i in range(4):
         term = (devlpl(coef[i], ideg[i], xx))*x
         denpow *= df
