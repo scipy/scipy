@@ -208,10 +208,12 @@ py3.extension_module('_specfun',
   subdir: 'scipy/special'
 )
 
+cdflib_c = cython_gen.process('_cdflib.pyx')
+
 py3.extension_module('_cdflib',
-  cython_gen.process('_cdflib.pyx'),
+  cdflib_c,
   c_args: numpy_nodepr_api,
-  dependencies: [np_dep, npymath_lib],
+  dependencies: [np_dep],
   install: true,
   subdir: 'scipy/special'
 )
@@ -261,7 +263,7 @@ py3.extension_module('_ufuncs',
   [
     ufuncs_sources,
     uf_cython_gen.process(cython_special[0]),  # _ufuncs.pyx
-    '_cdflib.pyx'
+    cdflib_c
   ],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
   include_directories: ['../_lib', '../_build_utils/src'],
@@ -333,7 +335,7 @@ py3.extension_module('_ellip_harm_2',
 py3.extension_module('cython_special',
   [
     uf_cython_gen.process(cython_special[6]),  # cython_special.pyx
-    '_cdflib.pyx',
+    cdflib_c,
     '_cosine.c',
     'scaled_exp1.c',
     'amos_wrappers.c',
