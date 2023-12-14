@@ -794,7 +794,6 @@ def _nsum_iv(f, a, b, step, args, log, maxterms, atol, rtol):
     message = '`log` must be True or False.'
     if log not in {True, False}:
         raise ValueError(message)
-    log = bool(log)
 
     if atol is None:
         atol = -np.inf if log else 0
@@ -850,7 +849,8 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
          where each element of ``x`` is a finite real and ``args`` is a tuple,
          which may contain an arbitrary number of arrays that are broadcastable
          with `x`. `f` must represent a smooth, positive, and monotone decreasing
-         function of `x`.
+         function of `x`; `_nsum` performs no checks to verify that these conditions
+         are met and may return erroneous results if they are violated.
     a, b : array_like
         Real lower and upper limits of summed terms. Must be broadcastable.
         Each element of `a` must be finite and less than the corresponding
@@ -899,7 +899,7 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
         sum : float
             An estimate of the sum.
         error : float
-            An estimate of the absolute error.
+            An estimate of the absolute error, assuming all terms are non-negative.
         nfev : int
             The number of points at which `func` was evaluated.
 
@@ -963,18 +963,16 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
     True
     
     """ # noqa: E501
-    # TODO
-    # - discuss how to make this do what the user intends when b is slightly
-    #   less than a plus an integer multiple of step. This needs a careful
-    #   review of the places this could get us into trouble.
-
     # Potential future work:
+    # - more careful testing of when `b` is slightly less than `a` plus an
+    #   integer multiple of step (needed before this is public)
+    # - improve error estimate of `_direct` sum
     # - add other methods for convergence acceleration (Richardson, epsilon)
     # - support infinite lower limit?
     # - support negative monotone increasing functions?
-    # - b < a or negative step?
+    # - b < a / negative step?
     # - complex-valued function?
-    # - look out for violations of monotonicity
+    # - check for violations of monotonicity?
 
     # Function-specific input validation / standardization
     tmp = _nsum_iv(f, a, b, step, args, log, maxterms, atol, rtol)
@@ -1051,8 +1049,12 @@ def _direct(f, a, b, step, args, constants, inclusive=True):
 
     # To allow computation in a single vectorized call, find the maximum number
     # of points (over all slices) at which the function needs to be evaluated.
+    # Note: if `inclusive` is `True`, then we want `1` more term in the sum.
+    # I didn't think it was great style to use `True` as `1` in Python, so I
+    # explicitly converted it to an `int` before using it.
     inclusive_adjustment = int(inclusive)
     steps = np.round((b - a) / step) + inclusive_adjustment
+    # Equivalently, steps = np.round((b - a) / step) + inclusive
     max_steps = int(np.max(steps))
 
     # In each slice, the function will be evaluated at the same number of points,
@@ -1073,7 +1075,8 @@ def _direct(f, a, b, step, args, constants, inclusive=True):
     fs[i_nan] = zero
     nfev = max_steps - i_nan.sum(axis=-1)
     S = _logsumexp(fs, axis=-1) if log else np.sum(fs, axis=-1)
-    E = np.real(S) + np.log(eps) if log else abs(eps) * S
+    # Rough, non-conservative error estimate. See gh-19667 for improvement ideas.
+    E = np.real(S) + np.log(eps) if log else eps * abs(S)
     return S, E, nfev
 
 
