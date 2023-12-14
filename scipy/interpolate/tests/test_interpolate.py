@@ -932,6 +932,18 @@ class TestAkima1DInterpolator:
             3.])
         assert_allclose(ak(xi), yi)
 
+    def test_eval_mod(self):
+        x = np.arange(0., 11.)
+        y = np.array([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
+        ak = Akima1DInterpolator(x, y, modified=True)
+        xi = np.array([0., 0.5, 1., 1.5, 2.5, 3.5, 4.5, 5.1, 6.5, 7.2,
+            8.6, 9.9, 10.])
+        yi = np.array([
+            0.0, 1.34471153846154, 2.0, 1.44375, 1.94375, 2.51939102564103,
+            4.10366931918656, 5.98501550899192, 5.51756330960439, 5.1757231914014,
+            4.12326636931311, 3.32931513157895, 3.0])
+        assert_allclose(ak(xi), yi)
+
     def test_eval_2d(self):
         x = np.arange(0., 11.)
         y = np.array([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
