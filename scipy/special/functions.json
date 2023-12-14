@@ -1102,8 +1102,8 @@
             "nctdtr": "ddd->d"        }
     },
     "nctdtridf": {
-        "cdf_wrappers.h": {
-            "cdftnc3_wrap": "ddd->d"
+        "_cdflib_wrappers.pxd": {
+            "nctdtridf": "ddd->d"
         }
     },
     "nctdtrinc": {
@@ -1382,8 +1382,8 @@
         }
     },
     "stdtrit": {
-        "cdf_wrappers.h": {
-            "cdft2_wrap": "dd->d"
+        "_cdflib_wrappers.pxd": {
+            "stdtrit": "dd->d"
         }
     },
     "_stirling2_inexact": {
