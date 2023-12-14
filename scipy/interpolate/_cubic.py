@@ -384,6 +384,11 @@ class Akima1DInterpolator(CubicHermiteSpline):
     axis : int, optional
         Axis in the ``y`` array corresponding to the x-coordinate values. Defaults
         to ``axis=0``.
+    modified : bool, optional
+        If ``True``, use the modified Akima interpolation[1991].
+        Defaults to ``False``, use the Akima interpolation[1970].
+
+        .. versionadded:: 1.12.0
 
     Methods
     -------
@@ -411,10 +416,13 @@ class Akima1DInterpolator(CubicHermiteSpline):
     [1] A new method of interpolation and smooth curve fitting based
         on local procedures. Hiroshi Akima, J. ACM, October 1970, 17(4),
         589-602.
+    [2] A method of univariate interpolation that has the accuracy of
+        a third-degree polynomial. Hiroshi Akima, J. ACM, September 1991,
+        17(3), 341-366.
 
     """
 
-    def __init__(self, x, y, axis=0):
+    def __init__(self, x, y, axis=0, modified=False):
         # Original implementation in MATLAB by N. Shamsundar (BSD licensed), see
         # https://www.mathworks.com/matlabcentral/fileexchange/1814-akima-interpolation
         x, dx, y, axis, _ = prepare_input(x, y, axis)
@@ -436,8 +444,13 @@ class Akima1DInterpolator(CubicHermiteSpline):
         t = .5 * (m[3:] + m[:-3])
         # get the denominator of the slope t
         dm = np.abs(np.diff(m, axis=0))
-        f1 = dm[2:]
-        f2 = dm[:-2]
+        if modified:
+            pm = np.abs(m[1:] + m[:-1])
+            f1 = dm[2:] + 0.5 * pm[2:]
+            f2 = dm[:-2] + 0.5 * pm[:-2]
+        else:
+            f1 = dm[2:]
+            f2 = dm[:-2]
         f12 = f1 + f2
         # These are the mask of where the slope at breakpoint is defined:
         ind = np.nonzero(f12 > 1e-9 * np.max(f12, initial=-np.inf))
