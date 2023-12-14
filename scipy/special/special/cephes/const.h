@@ -67,7 +67,7 @@ namespace cephes {
         // Euler's constant
         constexpr double SCIPY_EULER = 0.577215664901532860606512090082402431;
         // e as long double
-        constexpr double SCIPY_El = 2.718281828459045235360287471352662498L;
+        constexpr long double SCIPY_El = 2.718281828459045235360287471352662498L;
     } // namespace detail
 } // namespace cephes
 } // namespace special
