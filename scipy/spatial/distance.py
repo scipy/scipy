@@ -626,7 +626,7 @@ def correlation(u, v, w=None, centered=True):
     v = _validate_vector(v)
     if w is not None:
         w = _validate_weights(w)
-        w /= w.sum()
+        w = w / w.sum()
     if centered:
         if w is not None:
             umu = np.dot(u, w)
@@ -748,7 +748,7 @@ def hamming(u, v, w=None):
         w = _validate_weights(w)
         if w.shape != u.shape:
             raise ValueError("'w' should have the same length as 'u' and 'v'.")
-        w /= w.sum()
+        w = w / w.sum()
         return np.dot(u_ne_v, w)
     return np.mean(u_ne_v)
 
