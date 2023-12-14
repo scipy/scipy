@@ -1,11 +1,17 @@
 """Interpolation algorithms using piecewise cubic polynomials."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 
 from . import PPoly
 from ._polyint import _isscalar
 from scipy.linalg import solve_banded, solve
 
+if TYPE_CHECKING:
+    from typing import Literal
 
 __all__ = ["CubicHermiteSpline", "PchipInterpolator", "pchip_interpolate",
            "Akima1DInterpolator", "CubicSpline"]
@@ -384,9 +390,9 @@ class Akima1DInterpolator(CubicHermiteSpline):
     axis : int, optional
         Axis in the ``y`` array corresponding to the x-coordinate values. Defaults
         to ``axis=0``.
-    modified : bool, optional
-        If ``True``, use the modified Akima interpolation[1991].
-        Defaults to ``False``, use the Akima interpolation[1970].
+    method : str, optional
+        If ``"makima"``, use the modified Akima interpolation[1991].
+        Defaults to ``"akima"``, use the Akima interpolation[1970].
 
         .. versionadded:: 1.13.0
 
@@ -424,7 +430,9 @@ class Akima1DInterpolator(CubicHermiteSpline):
 
     """
 
-    def __init__(self, x, y, axis=0, *, modified=False):
+    def __init__(self, x, y, axis=0, *, method: Literal["akima", "makima"]="akima"):
+        if method not in {"akima", "makima"}:
+            raise NotImplementedError("`method`={} is unsupported.".format(method))
         # Original implementation in MATLAB by N. Shamsundar (BSD licensed), see
         # https://www.mathworks.com/matlabcentral/fileexchange/1814-akima-interpolation
         x, dx, y, axis, _ = prepare_input(x, y, axis)
@@ -446,7 +454,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
         t = .5 * (m[3:] + m[:-3])
         # get the denominator of the slope t
         dm = np.abs(np.diff(m, axis=0))
-        if modified:
+        if method == "makima":
             pm = np.abs(m[1:] + m[:-1])
             f1 = dm[2:] + 0.5 * pm[2:]
             f2 = dm[:-2] + 0.5 * pm[:-2]
