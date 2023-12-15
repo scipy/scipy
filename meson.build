@@ -147,10 +147,7 @@ endif
 libnpymath_dep = dependency(
   'libnpymath',
   fallback : ['libnpymath', 'libnpymath_dep'],
-  default_options: [
-    'libnpymath_headers_dir=scipy/_lib/libnpymath',
-    'libnpymath_lib_dir=scipy/_lib/libnpymath',
-  ]
+  default_options: ['install_lib=false']
 )
 
 subdir('scipy')
