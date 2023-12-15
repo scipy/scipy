@@ -1318,23 +1318,13 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
         # 10000 is a safety factor because `special.boxcox` overflows prematurely.
         ymax = np.finfo(dtype).max / 10000
 
-        isoverflow = False
-        if np.any(res > 1):
-            xmax = np.max(x)
-            if xmax > 1:
-                mask = special.boxcox(xmax, res) > ymax
-                if np.any(mask):
-                    isoverflow = True
-                    constrained_res = _boxcox_inv_lmbda(xmax, ymax)
-        elif np.any(res < 0):
-            xmin = np.min(x)
-            if xmin < 1:
-                mask = special.boxcox(xmin, res) < -ymax
-                if np.any(mask):
-                    isoverflow = True
-                    constrained_res = _boxcox_inv_lmbda(xmin, -ymax)
+        sign_lmbm1 = np.sign(res - 1)
+        x_treme = np.max(x) if np.any(sign_lmbm1) else np.min(x)
+        mask = False
+        if np.any((x_treme - 1) * sign_lmbm1):
+            mask = special.boxcox(x_treme, res) * sign_lmbm1 > ymax
 
-        if isoverflow:
+        if np.any(mask):
             warnings.warn(
                 f"The optimal lambda is {res}, but the returned lambda is the"
                 f"constrained optimum to ensure that the maximum or the minimum "
@@ -1342,6 +1332,7 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
                 stacklevel=2
             )
 
+            constrained_res = _boxcox_inv_lmbda(x_treme, ymax * sign_lmbm1)
             # Return the constrained lambda to ensure the transformation
             # does not cause overflow.
             if isinstance(res, np.ndarray):

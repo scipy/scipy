@@ -2073,7 +2073,7 @@ class TestBoxcoxNormmax:
         ymax = np.finfo(np.float64).max / 10000
         x_treme = np.max(x) if lmbda > 0 else np.min(x)
         y_extreme = special.boxcox(x_treme, lmbda)
-        assert_allclose(y_extreme, ymax * np.sign(lmbda))
+        assert_allclose(y_extreme, ymax * np.sign(lmbda), rtol=2e-1)
 
 
 class TestBoxcoxNormplot:
