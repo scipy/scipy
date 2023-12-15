@@ -39,7 +39,7 @@ requires = [
 
 [project]
 name = "SciPy"
-version = "1.12.0.dev0"
+version = "1.13.0.dev0"
 # TODO: add `license-files` once PEP 639 is accepted (see meson-python#88)
 #       at that point, no longer include them in `py3.install_sources()`
 license = {file = "LICENSE.txt"}
