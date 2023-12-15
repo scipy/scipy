@@ -184,12 +184,9 @@ class IndexMixin:
         # single boolean matrix
         if ((issparse(key) or isinstance(key, np.ndarray)) and
                 key.ndim == self.ndim and key.dtype.kind == 'b'):
-            for keyN, N in zip(key.shape, self._shape):
-                if keyN > N:
-                    raise IndexError("index shape bigger than indexed array")
+            if key.shape != self._shape:
+                raise IndexError("index shape doesn't match array shape")
             idx = key.nonzero()
-            if self.ndim == 1 and len(idx) > 1:
-                idx = (idx[1],)
             index = [self._asindices(ix, N) for N, ix in zip(self.shape, idx)]
             return tuple(index)
 
@@ -350,7 +347,7 @@ def _unpack_index(index, desired_shape):
 
             # Replace the Ellipsis object with 0, 1, or 2 null-slices as needed.
             i, = ellipsis_indices
-            num_slices = max(0, 3 - len(index))
+            num_slices = max(0, desired_ndim + 1 - len(index))
             index = index[:i] + (slice(None),) * num_slices + index[i + 1:]
 
         # pad tuples
