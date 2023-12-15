@@ -1,11 +1,10 @@
 #ifndef RCONT_H
 #define RCONT_H
 
-#include <numpy/random/distributions.h>
-#include <numpy/npy_common.h>
+#include <distributions.h>
 #include <stdint.h>
 
-typedef npy_int64 tab_t;
+typedef int64_t tab_t;
 
 void rcont1_init(tab_t *work, int nc, const tab_t *c);
 
