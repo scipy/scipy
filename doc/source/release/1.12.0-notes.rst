@@ -318,17 +318,19 @@ Authors
 * Ben Beasley (3) +
 * Doron Behar (1)
 * Peter Bell (1)
+* Sebastian Berg (1)
 * Ben Boeckel (1) +
-* Jake Bowhay (100)
+* David Boetius (1) +
+* Jake Bowhay (102)
 * Larry Bradley (1) +
 * Dietrich Brunn (5)
 * Evgeni Burovski (101)
 * Matthias Bussonnier (18)
-* CJ Carey (4)
+* CJ Carey (6)
 * Colin Carroll (1) +
 * Aadya Chinubhai (1) +
 * Luca Citi (1)
-* Lucas Colley (136) +
+* Lucas Colley (140) +
 * com3dian (1) +
 * Anirudh Dagar (4)
 * Danni (1) +
@@ -338,19 +340,20 @@ Authors
 * drestebon (1) +
 * Thomas Duvernay (1)
 * elbarso (1) +
+* emilfrost (2) +
 * Paul Estano (8) +
 * Evandro (2)
 * Franz Király (1) +
 * Nikita Furin (1) +
 * gabrielthomsen (1) +
-* Lukas Geiger (8) +
+* Lukas Geiger (9) +
 * Artem Glebov (22) +
 * Caden Gobat (1)
-* Ralf Gommers (120)
+* Ralf Gommers (125)
 * Alexander Goscinski (2) +
 * Rohit Goswami (2) +
 * Olivier Grisel (1)
-* Matt Haberland (238)
+* Matt Haberland (242)
 * Charles Harris (1)
 * harshilkamdar (1) +
 * Alon Hovav (2) +
@@ -358,6 +361,7 @@ Authors
 * Romain Jacob (1) +
 * jcwhitehead (1) +
 * Julien Jerphanion (13)
+* He Jia (1)
 * JohnWT (1) +
 * jokasimr (1) +
 * Evan W Jones (1)
@@ -399,12 +403,12 @@ Authors
 * Roberto Pastor Muela (3) +
 * Bijay Nayak (1) +
 * Andrew Nelson (105)
-* Praveer Nidamaluri (1) +
+* Praveer Nidamaluri (2) +
 * Lysandros Nikolaou (2)
 * Dimitri Papadopoulos Orfanos (7)
 * Pablo Rodríguez Pérez (1) +
 * Dimitri Papadopoulos (2)
-* Tirth Patel (13)
+* Tirth Patel (14)
 * Kyle Paterson (1) +
 * Paul (4) +
 * Yann Pellegrini (2) +
@@ -414,7 +418,7 @@ Authors
 * Bharat Raghunathan (1)
 * Chris Rapson (1) +
 * Matteo Raso (4)
-* Tyler Reddy (161)
+* Tyler Reddy (160)
 * Martin Reinecke (1)
 * Tilo Reneau-Cardoso (1) +
 * resting-dove (2) +
@@ -426,8 +430,8 @@ Authors
 * Masahiro Sakai (2) +
 * Omar Salman (14)
 * Andrej Savikin (1) +
-* Daniel Schmitz (50)
-* Dan Schult (18)
+* Daniel Schmitz (52)
+* Dan Schult (19)
 * Scott Shambaugh (9)
 * Sheila-nk (2) +
 * Mauro Silberberg (3) +
@@ -461,7 +465,7 @@ Authors
 * Jinzhe Zeng (1) +
 * JIMMY ZHAO (1) +
 
-A total of 157 people contributed to this release.
+A total of 161 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
@@ -1038,6 +1042,7 @@ Pull requests for 1.12.0
 * `#19623 <https://github.com/scipy/scipy/pull/19623>`__: MAINT: lint: enable \`stacklevel\` warnings check
 * `#19624 <https://github.com/scipy/scipy/pull/19624>`__: MAINT/TST: _lib: use value instead of deprecated s
 * `#19626 <https://github.com/scipy/scipy/pull/19626>`__: MAINT: more SciPy windows int shims
+* `#19628 <https://github.com/scipy/scipy/pull/19628>`__: DOC: 1.12.0 release notes
 * `#19635 <https://github.com/scipy/scipy/pull/19635>`__: MAINT: simplify Nakagami mean calculation
 * `#19637 <https://github.com/scipy/scipy/pull/19637>`__: DOC: Clarify integration error bound in \`integrate\` tutorial
 * `#19648 <https://github.com/scipy/scipy/pull/19648>`__: MAINT: simplify chi distribution mean calculation
@@ -1046,3 +1051,7 @@ Pull requests for 1.12.0
 * `#19658 <https://github.com/scipy/scipy/pull/19658>`__: MAINT: git blame ignores for lint clean-ups
 * `#19660 <https://github.com/scipy/scipy/pull/19660>`__: STY: special: use indent width of 4 in clang-format
 * `#19661 <https://github.com/scipy/scipy/pull/19661>`__: CI: fix pre-release job by correct version pin for scipy-openblas32
+* `#19677 <https://github.com/scipy/scipy/pull/19677>`__: DOC: array types: mention partial support in \`special\`
+* `#19686 <https://github.com/scipy/scipy/pull/19686>`__: TST: fix incorrect signal.sosfilt tests
+* `#19690 <https://github.com/scipy/scipy/pull/19690>`__: BLD: avoid fast-math for oneAPI compilers, fix up handling of...
+* `#19693 <https://github.com/scipy/scipy/pull/19693>`__: BUG: Prevent mutation of \`w\` parameter in \`spatial.distance.\*\`
