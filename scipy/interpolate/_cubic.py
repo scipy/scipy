@@ -6,9 +6,10 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from scipy.linalg import solve, solve_banded
+
 from . import PPoly
 from ._polyint import _isscalar
-from scipy.linalg import solve_banded, solve
 
 if TYPE_CHECKING:
     from typing import Literal
@@ -371,7 +372,7 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
 
 
 class Akima1DInterpolator(CubicHermiteSpline):
-    """
+    r"""
     Akima interpolator
 
     Fit piecewise cubic polynomials, given vectors x and y. The interpolation
@@ -417,16 +418,45 @@ class Akima1DInterpolator(CubicHermiteSpline):
     points exactly. This routine is useful for plotting a pleasingly smooth
     curve through a few given points for purposes of plotting.
 
+    Let :math:`\delta_i = (y_{i+1} - y_i) / (x_{i+1} - x_i)` be the slopes of
+    the interval :math:`\left[x_i, x_{i+1}\right)`. Akima's derivative at
+    :math:`x_i` is defined as:
+
+    .. math::
+
+        d_i = \frac{w_1}{w_1 + w_2}\delta_{i-1} + \frac{w_2}{w_1 + w_2}\delta_i
+
+    In the Akima interpolation[1970] (``method="akima"``), the weights are:
+
+    .. math::
+
+        \begin{aligned}
+        w_1 &= |\delta_{i+1} - \delta_i| \\
+        w_2 &= |\delta_{i-1} - \delta_{i-2}|
+        \end{aligned}
+
+    In the modified Akima interpolation[1991] (``method="makima"``),
+    to eliminate overshoot and avoid edge cases of both numerator and
+    denominator being equal to 0, the weights are modified as follows:
+
+    .. math::
+
+        \begin{align*}
+        w_1 &= |\delta_{i+1} - \delta_i| + |\delta_{i+1} + \delta_i| / 2 \\
+        w_2 &= |\delta_{i-1} - \delta_{i-2}| + |\delta_{i-1} + \delta_{i-2}| / 2
+        \end{align*}
+
+
     References
     ----------
-    [1] A new method of interpolation and smooth curve fitting based
-        on local procedures. Hiroshi Akima, J. ACM, October 1970, 17(4),
-        589-602.
-    [2] A method of univariate interpolation that has the accuracy of
-        a third-degree polynomial. Hiroshi Akima, J. ACM, September 1991,
-        17(3), 341-366.
-    [3] Makima Piecewise Cubic Interpolation. Cleve Moler and Cosmin Ionita, 2019.
-        https://blogs.mathworks.com/cleve/2019/04/29/makima-piecewise-cubic-interpolation/
+    .. [1] A new method of interpolation and smooth curve fitting based
+           on local procedures. Hiroshi Akima, J. ACM, October 1970, 17(4),
+           589-602. :doi:`10.1145/321607.321609`
+    .. [2] A method of univariate interpolation that has the accuracy of
+           a third-degree polynomial. Hiroshi Akima, J. ACM, September 1991,
+           17(3), 341-366. :doi:`10.1145/114697.116810`
+    .. [3] Makima Piecewise Cubic Interpolation. Cleve Moler and Cosmin Ionita, 2019.
+           https://blogs.mathworks.com/cleve/2019/04/29/makima-piecewise-cubic-interpolation/
 
     """
 
