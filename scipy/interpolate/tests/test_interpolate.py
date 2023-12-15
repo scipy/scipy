@@ -1008,6 +1008,13 @@ class TestAkima1DInterpolator:
         with pytest.raises(NotImplementedError, match=match):
             ak.extend(None, None)
 
+    def test_mod_invalid_method(self):
+        x = np.arange(0., 11.)
+        y = np.array([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
+        match = "`method`=invalid is unsupported."
+        with pytest.raises(NotImplementedError, match=match):
+            Akima1DInterpolator(x, y, method="invalid")  # type: ignore
+
 
 class TestPPolyCommon:
     # test basic functionality for PPoly and BPoly
