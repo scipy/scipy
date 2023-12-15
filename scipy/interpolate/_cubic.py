@@ -392,8 +392,8 @@ class Akima1DInterpolator(CubicHermiteSpline):
         Axis in the ``y`` array corresponding to the x-coordinate values. Defaults
         to ``axis=0``.
     method : {'akima', 'makima'}, optional
-        If ``"makima"``, use the modified Akima interpolation[1991].
-        Defaults to ``"akima"``, use the Akima interpolation[1970].
+        If ``"makima"``, use the modified Akima interpolation [2]_.
+        Defaults to ``"akima"``, use the Akima interpolation [1]_.
 
         .. versionadded:: 1.13.0
 
@@ -426,7 +426,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
 
         d_i = \frac{w_1}{w_1 + w_2}\delta_{i-1} + \frac{w_2}{w_1 + w_2}\delta_i
 
-    In the Akima interpolation[1970] (``method="akima"``), the weights are:
+    In the Akima interpolation [1]_ (``method="akima"``), the weights are:
 
     .. math::
 
@@ -435,7 +435,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
         w_2 &= |\delta_{i-1} - \delta_{i-2}|
         \end{aligned}
 
-    In the modified Akima interpolation[1991] (``method="makima"``),
+    In the modified Akima interpolation [2]_ (``method="makima"``),
     to eliminate overshoot and avoid edge cases of both numerator and
     denominator being equal to 0, the weights are modified as follows:
 
