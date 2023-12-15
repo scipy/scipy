@@ -391,7 +391,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
     axis : int, optional
         Axis in the ``y`` array corresponding to the x-coordinate values. Defaults
         to ``axis=0``.
-    method : str, optional
+    method : {'akima', 'makima'}, optional
         If ``"makima"``, use the modified Akima interpolation[1991].
         Defaults to ``"akima"``, use the Akima interpolation[1970].
 
