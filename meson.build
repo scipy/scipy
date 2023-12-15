@@ -144,4 +144,13 @@ if use_pythran
   xsimd_dep = dependency('xsimd', required: false)
 endif
 
+libnpymath_dep = dependency(
+  'libnpymath',
+  fallback : ['libnpymath', 'libnpymath_dep'],
+  default_options: [
+    'libnpymath_headers_dir=scipy/_lib/libnpymath',
+    'libnpymath_lib_dir=scipy/_lib/libnpymath',
+  ]
+)
+
 subdir('scipy')
