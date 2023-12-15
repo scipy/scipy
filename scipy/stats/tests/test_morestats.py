@@ -2071,9 +2071,10 @@ class TestBoxcoxNormmax:
         assert np.isfinite(special.boxcox(x, lmbda)).all()
         # 10000 is safety factor used in boxcox_normmax
         ymax = np.finfo(np.float64).max / 10000
-        x_treme = np.max(x) if lmbda > 0 else np.min(x)
+        sign_lmbm1 = np.sign(lmbda - 1)
+        x_treme = np.max(x) if sign_lmbm1 > 0 else np.min(x)
         y_extreme = special.boxcox(x_treme, lmbda)
-        assert_allclose(y_extreme, ymax * np.sign(lmbda), rtol=2e-1)
+        assert_allclose(y_extreme, ymax * sign_lmbm1)
 
 
 class TestBoxcoxNormplot:

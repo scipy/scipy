@@ -1319,7 +1319,7 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
         ymax = np.finfo(dtype).max / 10000
 
         sign_lmbm1 = np.sign(res - 1)
-        x_treme = np.max(x) if np.any(sign_lmbm1) else np.min(x)
+        x_treme = np.max(x) if np.any(sign_lmbm1 > 0) else np.min(x)
 
         # There are two conditions of overflow to check
         # 1. x>1, lmb>1; 2. x<1, lmb<1
