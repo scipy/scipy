@@ -446,6 +446,27 @@ class Akima1DInterpolator(CubicHermiteSpline):
         w_2 &= |\delta_{i-1} - \delta_{i-2}| + |\delta_{i-1} + \delta_{i-2}| / 2
         \end{align*}
 
+    Examples
+    --------
+    Comparison of ``method="akima"`` and ``method="makima"``:
+
+    >>> import numpy as np
+    >>> from scipy.interpolate import Akima1DInterpolator
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(1, 7, 7)
+    >>> y = np.array([-1, -1, -1, 0, 1, 1, 1])
+    >>> xs = np.linspace(min(x), max(x), num=100)
+    >>> y_akima = Akima1DInterpolator(x, y, method="akima")(xs)
+    >>> y_makima = Akima1DInterpolator(x, y, method="makima")(xs)
+
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, y, "o", label="data")
+    >>> ax.plot(xs, y_akima, label="akima")
+    >>> ax.plot(xs, y_makima, label="makima")
+    >>> ax.legend()
+    >>> fig.show()
+
+    The overshoot that occured in ``"akima"`` has been avoided in ``"makima"``.
 
     References
     ----------
