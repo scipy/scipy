@@ -15,7 +15,7 @@ from numpy.testing import (assert_array_equal, assert_almost_equal,
 import pytest
 from pytest import raises as assert_raises
 import re
-from scipy import optimize, stats
+from scipy import optimize, stats, special
 from scipy.stats._morestats import _abw_state, _get_As_weibull, _Avals_weibull
 from .common_tests import check_named_results
 from .._hypotests import _get_wilcoxon_distr, _get_wilcoxon_distr2
@@ -1989,19 +1989,6 @@ class TestBoxcox:
         with pytest.raises(ValueError, match=message):
             stats.boxcox_normmax(bad_x)
 
-    @pytest.mark.parametrize('x', [
-        # negative overflow
-        np.array([0.50000471, 0.50004979, 0.50005902, 0.50009312, 0.50001632]),
-        # positive overflow
-        np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0]),
-        # positive overflow
-        np.array([2003.0e200, 1950.0e200, 1997.0e200, 2000.0e200, 2009.0e200])
-    ])
-    def test_overflow(self, x):
-        with pytest.warns(UserWarning, match="The optimal lambda is"):
-            xt_bc, lam_bc = stats.boxcox(x)
-            assert np.all(np.isfinite(xt_bc))
-
 
 class TestBoxcoxNormmax:
     def setup_method(self):
@@ -2073,6 +2060,20 @@ class TestBoxcoxNormmax:
 
             stats.boxcox_normmax(self.x, brack=(-2.0, 2.0),
                                  optimizer=optimizer)
+
+    @pytest.mark.parametrize(
+        'x', ([2003.0, 1950.0, 1997.0, 2000.0, 2009.0],
+              [0.50000471, 0.50004979, 0.50005902, 0.50009312, 0.50001632]))
+    def test_overflow(self, x):
+        message = "The optimal lambda is..."
+        with pytest.warns(UserWarning, match=message):
+            lmbda = stats.boxcox_normmax(x, method='mle')
+        assert np.isfinite(special.boxcox(x, lmbda)).all()
+        # 10000 is safety factor used in boxcox_normmax
+        ymax = np.finfo(np.float64).max / 10000
+        x_treme = np.max(x) if lmbda > 0 else np.min(x)
+        y_extreme = special.boxcox(x_treme, lmbda)
+        assert_allclose(y_extreme, ymax * np.sign(lmbda))
 
 
 class TestBoxcoxNormplot:
