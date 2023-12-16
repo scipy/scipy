@@ -1827,6 +1827,7 @@ def yeojohnson_normplot(x, la, lb, plot=None, N=80):
 ShapiroResult = namedtuple('ShapiroResult', ('statistic', 'pvalue'))
 
 
+@_axis_nan_policy_factory(ShapiroResult, n_samples=1, too_small=2, default_axis=None)
 def shapiro(x):
     r"""Perform the Shapiro-Wilk test for normality.
 
@@ -1976,7 +1977,11 @@ def shapiro(x):
                       f"may not be accurate. Current N is {N}.",
                       stacklevel=2)
 
-    return ShapiroResult(w, pw)
+    # `w` and `pw` are always Python floats, which are double precision.
+    # We want to ensure that they are NumPy floats, so until dtypes are
+    # respected, we can explicitly convert each to float64 (faster than
+    # `np.array([w, pw])`).
+    return ShapiroResult(np.float64(w), np.float64(pw))
 
 
 # Values from Stephens, M A, "EDF Statistics for Goodness of Fit and
