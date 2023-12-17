@@ -37,7 +37,7 @@ FROM_MINPACK_TO_COMMON = {
 }
 
 
-def call_minpack(fun, x0, jac, ftol, xtol, gtol, max_nfev, x_scale, diff_step):
+def call_minpack(fun, x0, jac, ftol, xtol, gtol, max_nfev, x_scale, diff_step, method):
     n = x0.size
 
     if diff_step is None:
@@ -47,10 +47,14 @@ def call_minpack(fun, x0, jac, ftol, xtol, gtol, max_nfev, x_scale, diff_step):
 
     # Compute MINPACK's `diag`, which is inverse of our `x_scale` and
     # ``x_scale='jac'`` corresponds to ``diag=None``.
-    if isinstance(x_scale, str) and x_scale == 'jac':
+    if method == 'lm':
         diag = None
     else:
-        diag = 1 / x_scale
+        
+        if isinstance(x_scale, str) and x_scale == 'jac':
+            diag = None
+        else:
+            diag = 1 / x_scale
 
     full_output = True
     col_deriv = False
@@ -935,7 +939,7 @@ def least_squares(
 
     if method == 'lm':
         result = call_minpack(fun_wrapped, x0, jac_wrapped, ftol, xtol, gtol,
-                              max_nfev, x_scale, diff_step)
+                              max_nfev, x_scale, diff_step, method)
 
     elif method == 'trf':
         result = trf(fun_wrapped, jac_wrapped, x0, f0, J0, lb, ub, ftol, xtol,
