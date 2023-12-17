@@ -119,7 +119,7 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
                            subproblem=None, initial_trust_radius=1.0,
                            max_trust_radius=1000.0, eta=0.15, gtol=1e-4,
                            maxiter=None, disp=False, return_all=False,
-                           callback=None, inexact=True, subproblem_maxiter=0,
+                           callback=None, inexact=True, subproblem_maxiter=None,
                            **unknown_options):
     """
     Minimization of scalar function of one or more variables using a
@@ -143,9 +143,9 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
             Accuracy to solve subproblems. If True requires less nonlinear
             iterations, but more vector products. Only effective for method
             trust-krylov.
-        subproblem_maxiter : int
+        subproblem_maxiter : int or None
             Maximum number of iterations to perform per subproblem. Only
-            affects trust-exact.
+            affects trust-exact. Zero means infinite.
 
     This function is called by the `minimize` function.
     It is not supposed to be called directly.
