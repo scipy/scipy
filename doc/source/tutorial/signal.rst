@@ -925,7 +925,7 @@ in the amplitude response.
     \newcommand{\sinc}{\operatorname{sinc}}  % sinc(t) := sin(pi*t) / (pi*t)
 
 
-.. _SpectralAnalysisSection:
+.. _tutorial_SpectralAnalysis:
 
 Spectral Analysis
 ------------------
@@ -1231,7 +1231,7 @@ becomes the sum
     P_X^{a,b} = \Delta f\sum_{k=l_a}^{l_b-1} S^w_{xx}
               = \frac{1}{nT}\sum_{k=l_a}^{l_b-1} S^w_{xx}\ .
 
-The windowed frequency-discrete power spectral density :math:`\tau S^w_{xx}` can be
+The windowed frequency-discrete energy spectral density :math:`\tau S^w_{xx}` can be
 defined analogously.
 
 The discussion above shows that sampled versions of the spectral representations as in
@@ -1985,7 +1985,7 @@ table shows those correspondences:
 When using ``onesided`` output on complex-valued input signals, the old
 |old_spectrogram| switches to ``two-sided`` mode. The |ShortTimeFFT| raises
 a :exc:`TypeError`, since the utilized `~scipy.fft.rfft` function only accepts
-real-valued inputs. Consult the :ref:`SpectralAnalysisSection` section above for a
+real-valued inputs. Consult the :ref:`tutorial_SpectralAnalysis` section above for a
 discussion on the various spectral representations which are induced by the various
 parameterizations.
 

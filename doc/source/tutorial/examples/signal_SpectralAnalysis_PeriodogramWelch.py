@@ -11,8 +11,7 @@ t = np.arange(n) / fs
 x = (np.sqrt(2) * np.sin(2 * np.pi * f_x * t) +
      rng.normal(scale=np.sqrt(noise_power), size=t.shape))
 
-fg, axx = plt.subplots(1, 2, sharex='all', tight_layout=True,
-                       figsize=(7, 3.5))
+fg, axx = plt.subplots(1, 2, sharex='all', tight_layout=True, figsize=(7, 3.5))
 axx[0].set(title="Squared Magnitude Spectrum", ylabel="Square of Magnitude in V²")
 axx[1].set(title="Power Spectral Density", ylabel="Power Spectral Density in V²/Hz")
 for ax_, s_ in zip(axx, ('spectrum', 'density')):
