@@ -1626,7 +1626,8 @@ class TestSampledSpectralRepresentations:
     """Check energy/power relations from `Spectral Analysis` section in the user guide.
 
     A 32 sample cosine signal is used to compare the numerical to the expected results
-    stated in :ref:`tutorial_SpectralAnalysis` in file ``doc/source/tutorial/signal.rst``
+    stated in :ref:`tutorial_SpectralAnalysis` in
+    file ``doc/source/tutorial/signal.rst``
     """
     n: int = 32  #: number of samples
     T: float = 1/16  #: sampling interval
