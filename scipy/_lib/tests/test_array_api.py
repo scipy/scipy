@@ -5,7 +5,7 @@ from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (
     _GLOBAL_CONFIG, array_namespace, as_xparray, copy, xp_assert_equal, is_numpy
 )
-import scipy._lib.array_api_compat.array_api_compat.numpy as np_compat
+import scipy._lib.array_api_compat.numpy as np_compat
 
 
 @pytest.mark.skipif(not _GLOBAL_CONFIG["SCIPY_ARRAY_API"],
