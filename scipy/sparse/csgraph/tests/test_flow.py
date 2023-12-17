@@ -161,13 +161,6 @@ def test_add_reverse_edges_large_graph(method):
     assert_array_equal(res.flow.indptr, expected_flow.indptr)
 
 
-def test_residual_raises_deprecation_warning():
-    graph = csr_matrix([[0, 5, 0], [0, 0, 3], [0, 0, 0]])
-    res = maximum_flow(graph, 0, 2)
-    with pytest.deprecated_call():
-        res.residual
-
-
 @pytest.mark.parametrize("a,b_data_expected", [
     ([[]], []),
     ([[0], [0]], []),

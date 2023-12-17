@@ -42,7 +42,7 @@
  *
  *   message         condition      value returned
  * exp underflow    x < -MAXL2        0.0
- * exp overflow     x > MAXL2         NPY_INFINITY
+ * exp overflow     x > MAXL2         INFINITY
  *
  * For IEEE arithmetic, MAXL2 = 1024.
  */
@@ -80,7 +80,7 @@ double exp2(double x)
     if (cephes_isnan(x))
 	return (x);
     if (x > MAXL2) {
-	return (NPY_INFINITY);
+	return (INFINITY);
     }
 
     if (x < MINL2) {

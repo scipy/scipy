@@ -6,15 +6,15 @@ Routines for evaluating and manipulating B-splines.
 import numpy as np
 cimport numpy as cnp
 
+from numpy cimport npy_intp
+
 cimport cython
+from libc.math cimport NAN
 
 cnp.import_array()
 
 cdef extern from "src/__fitpack.h":
     void _deBoor_D(const double *t, double x, int k, int ell, int m, double *result) nogil
-
-cdef extern from "numpy/npy_math.h":
-    double nan "NPY_NAN"
 
 ctypedef double complex double_complex
 
@@ -22,6 +22,9 @@ ctypedef fused double_or_complex:
     double
     double complex
 
+ctypedef fused int32_or_int64:
+    cnp.npy_int32
+    cnp.npy_int64
 
 #------------------------------------------------------------------------------
 # B-splines
@@ -33,7 +36,7 @@ cdef inline int find_interval(const double[::1] t,
                        int k,
                        double xval,
                        int prev_l,
-                       bint extrapolate) nogil:
+                       bint extrapolate) noexcept nogil:
     """
     Find an interval such that t[interval] <= xval < t[interval+1].
 
@@ -90,7 +93,7 @@ cdef inline int find_interval(const double[::1] t,
 @cython.boundscheck(False)
 @cython.cdivision(True)
 def evaluate_spline(const double[::1] t,
-             double_or_complex[:, ::1] c,
+             const double_or_complex[:, ::1] c,
              int k,
              const double[::1] xp,
              int nu,
@@ -117,7 +120,7 @@ def evaluate_spline(const double[::1] t,
 
     """
 
-    cdef int ip, jp, n, a
+    cdef int ip, jp, a
     cdef int interval
     cdef double xval
 
@@ -131,8 +134,7 @@ def evaluate_spline(const double[::1] t,
     if nu < 0:
         raise NotImplementedError("Cannot do derivative order %s." % nu)
 
-    n = c.shape[0]
-    cdef double[::1] work = np.empty(2*k+2, dtype=np.float_)
+    cdef double[::1] work = np.empty(2*k+2, dtype=np.float64)
 
     # evaluate
     with nogil:
@@ -146,7 +148,7 @@ def evaluate_spline(const double[::1] t,
             if interval < 0:
                 # xval was nan etc
                 for jp in range(c.shape[1]):
-                    out[ip, jp] = nan
+                    out[ip, jp] = NAN
                 continue
 
             # Evaluate (k+1) b-splines which are non-zero on the interval.
@@ -215,7 +217,7 @@ def evaluate_all_bspl(const double[::1] t, int k, double xval, int m, int nu=0):
     >>> plt.show()
 
     """
-    bbb = np.empty(2*k+2, dtype=np.float_)
+    bbb = np.empty(2*k+2, dtype=np.float64)
     cdef double[::1] work = bbb
     _deBoor_D(&t[0], xval, k, m, nu, &work[0])
     return bbb[:k+1]
@@ -259,12 +261,11 @@ def _colloc(const double[::1] x, const double[::1] t, int k, double[::1, :] ab,
         skip this many rows
 
     """
-    cdef int nt = t.shape[0] - k - 1
     cdef int left, j, a, kl, ku, clmn
     cdef double xval
 
     kl = ku = k
-    cdef double[::1] wrk = np.empty(2*k + 2, dtype=np.float_)
+    cdef double[::1] wrk = np.empty(2*k + 2, dtype=np.float64)
 
     # collocation matrix
     with nogil:
@@ -288,7 +289,7 @@ def _colloc(const double[::1] x, const double[::1] t, int k, double[::1, :] ab,
 def _handle_lhs_derivatives(const double[::1]t, int k, double xval,
                             double[::1, :] ab,
                             int kl, int ku,
-                            const cnp.int_t[::1] deriv_ords,
+                            const cnp.npy_long[::1] deriv_ords,
                             int offset=0):
     """ Fill in the entries of the collocation matrix corresponding to known
     derivatives at xval.
@@ -319,7 +320,7 @@ def _handle_lhs_derivatives(const double[::1]t, int k, double xval,
     """
     cdef:
         int left, nu, a, clmn, row
-        double[::1] wrk = np.empty(2*k+2, dtype=np.float_)
+        double[::1] wrk = np.empty(2*k+2, dtype=np.float64)
 
     # derivatives @ xval
     with nogil:
@@ -339,7 +340,7 @@ def _handle_lhs_derivatives(const double[::1]t, int k, double xval,
 def _norm_eq_lsq(const double[::1] x,
                  const double[::1] t,
                  int k,
-                 double_or_complex[:, ::1] y,
+                 const double_or_complex[:, ::1] y,
                  const double[::1] w,
                  double[::1, :] ab,
                  double_or_complex[::1, :] rhs):
@@ -386,7 +387,7 @@ def _norm_eq_lsq(const double[::1] x,
     cdef:
         int j, r, s, row, clmn, left, ci
         double xval, wval
-        double[::1] wrk = np.empty(2*k + 2, dtype=np.float_)
+        double[::1] wrk = np.empty(2*k + 2, dtype=np.float64)
 
     with nogil:
         left = k
@@ -418,10 +419,15 @@ def _norm_eq_lsq(const double[::1] x,
 @cython.boundscheck(False)
 def _make_design_matrix(const double[::1] x,
                         const double[::1] t,
-                        int k):
+                        int k,
+                        bint extrapolate,
+                        int32_or_int64[::1] indices):
     """
-    Returns a design matrix in CSR format
-    
+    Returns a design matrix in CSR format.
+
+    Note that only indices is passed, but not indptr because indptr is already
+    precomputed in the calling Python function design_matrix.
+
     Parameters
     ----------
     x : array_like, shape (n,)
@@ -430,31 +436,239 @@ def _make_design_matrix(const double[::1] x,
         Sorted 1D array of knots.
     k : int
         B-spline degree.
+    extrapolate : bool, optional
+        Whether to extrapolate to ouf-of-bounds points.
+    indices : ndarray, shape (n * (k + 1),)
+        Preallocated indices of the final CSR array.
 
     Returns
     -------
-    data, (row_idx, col_idx)
-        Constructor parameters for a CSR matrix: in each row all the basis
-        elements are evaluated at the certain point (first row - x[0],
-        ..., last row - x[-1]).
+    data
+        The data array of a CSR array of the b-spline design matrix.
+        In each row all the basis elements are evaluated at the certain point
+        (first row - x[0], ..., last row - x[-1]).
+
+    indices
+        The indices array of a CSR array of the b-spline design matrix.
     """
     cdef:
-        cnp.npy_intp i, ind
+        cnp.npy_intp i, j, m, ind
         cnp.npy_intp n = x.shape[0]
-        double[::1] wrk = np.empty(2*k+2, dtype=float)
+        double[::1] work = np.empty(2*k+2, dtype=float)
         double[::1] data = np.zeros(n * (k + 1), dtype=float)
-        cnp.ndarray[long, ndim=1] row_ind = np.zeros(n * (k + 1), dtype=int)
-        cnp.ndarray[long, ndim=1] col_ind = np.zeros(n * (k + 1), dtype=int)
+        double xval
     ind = k
     for i in range(n):
-        
-        ind = find_interval(t, k, x[i], ind, 0)
-        _deBoor_D(&t[0], x[i], k, ind, 0, &wrk[0])
+        xval = x[i]
 
-        data[(k + 1) * i : (k + 1) * (i + 1)] = wrk[:k + 1]
-        row_ind[(k + 1) * i : (k + 1) * (i + 1)] = i
-        col_ind[(k + 1) * i : (k + 1) * (i + 1)] = np.arange(ind - k
-                                                            ,ind + 1
-                                                            ,dtype=int)
+        # Find correct interval. Note that interval >= 0 always as
+        # extrapolate=False and out of bound values are already dealt with in
+        # design_matrix
+        ind = find_interval(t, k, xval, ind, extrapolate)
+        _deBoor_D(&t[0], xval, k, ind, 0, &work[0])
 
-    return np.asarray(data), (row_ind, col_ind)
+        # data[(k + 1) * i : (k + 1) * (i + 1)] = work[:k + 1]
+        # indices[(k + 1) * i : (k + 1) * (i + 1)] = np.arange(ind - k, ind + 1)
+        for j in range(k + 1):
+            m = (k + 1) * i + j
+            data[m] = work[j]
+            indices[m] = ind - k + j
+
+    return np.asarray(data), np.asarray(indices)
+
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+@cython.nonecheck(False)
+def evaluate_ndbspline(const double[:, ::1] xi,
+                       const double[:, ::1] t,
+                       const long[::1] len_t,
+                       long[::1] k,
+                       int[::1] nu,
+                       bint extrapolate,
+                       const double_or_complex[::1] c1r,
+                       npy_intp num_c_tr,
+                       const npy_intp[::1] strides_c1,
+                       const npy_intp[:, ::] indices_k1d,
+                       double_or_complex[:, ::1] out,
+                      ):
+        """Evaluate an N-dim tensor product spline or its derivative.
+
+        Parameters
+        ----------
+        xi : ndarray, shape(npoints, ndim)
+            ``npoints`` values to evaluate the spline at, each value is
+            a point in an ``ndim``-dimensional space.
+        t : ndarray, shape(ndim, max_len_t)
+            Array of knots for each dimension.
+            This array packs the tuple of knot arrays per dimension into a single
+            2D array. The array is ragged (knot lengths may differ), hence
+            the real knots in dimension ``d`` are ``t[d, :len_t[d]]``.
+        len_t : ndarray, 1D, shape (ndim,)
+            Lengths of the knot arrays, per dimension.
+        k : tuple of ints, len(ndim)
+            Spline degrees in each dimension.
+        nu : ndarray of ints, shape(ndim,)
+            Orders of derivatives to compute, per dimension.
+        extrapolate : int
+            Whether to extrapolate out of bounds or return nans.
+        c1r: ndarray, one-dimensional
+            Flattened array of coefficients.
+            The original N-dimensional coefficient array ``c`` has shape
+            ``(n1, ..., nd, ...)`` where each ``ni == len(t[d]) - k[d] - 1``,
+            and the second "..." represents trailing dimensions of ``c``.
+            In code, given the C-ordered array ``c``, ``c1r`` is
+            ``c1 = c.reshape(c.shape[:ndim] + (-1,)); c1r = c1.ravel()``
+        num_c_tr : int
+            The number of elements of ``c1r``, which correspond to the trailing
+            dimensions of ``c``. In code, this is
+            ``c1 = c.reshape(c.shape[:ndim] + (-1,)); num_c_tr = c1.shape[-1]``.
+        strides_c1 : ndarray, one-dimensional
+            Pre-computed strides of the ``c1`` array.
+            Note: These are *data* strides, not numpy-style byte strides.
+            This array is equivalent to
+            ``[stride // s1.dtype.itemsize for stride in s1.strides]``.
+        indices_k1d : ndarray, shape((k+1)**ndim, ndim)
+            Pre-computed mapping between indices for iterating over a flattened
+            array of shape ``[k[d] + 1) for d in range(ndim)`` and
+            ndim-dimensional indices of the ``(k+1,)*ndim`` dimensional array.
+            This is essentially a transposed version of
+            ``np.unravel_index(np.arange((k+1)**ndim), (k+1,)*ndim)``.
+        out : ndarray, shape (npoints, num_c_tr)
+            Output values of the b-spline at given ``xi`` points.
+
+        Notes
+        -----
+
+        This function is essentially equivalent to the following: given an
+        N-dimensional vector ``x = (x1, x2, ..., xN)``, iterate over the
+        dimensions, form linear combinations of products,
+        B(x1) * B(x2) * ... B(xN) of (k+1)**N b-splines which are non-zero
+        at ``x``. 
+
+        Since b-splines are localized, the sum has (k+1)**N non-zero elements.
+
+        If ``i = (i1, i2, ..., iN)`` is a vector if intervals of the knot
+        vectors, ``t[d, id] <= xd < t[d, id+1]``, for ``d=1, 2, ..., N``, then
+        the core loop of this function is nothing but
+
+        ```
+        result = 0
+        iters = [range(i[d] - self.k[d], i[d] + 1) for d in range(ndim)]
+        for idx in itertools.product(*iters):
+            term = self.c[idx] * np.prod([B(x[d], self.k[d], idx[d], self.t[d])
+                                          for d in range(ndim)])
+            result += term
+        ```
+
+        For efficiency reasons, we iterate over the flattened versions of the
+        arrays.
+
+        """
+        cdef:
+            npy_intp ndim = len(t)
+
+            # 'intervals': indices for a point in xi into the knot arrays t
+            npy_intp[::1] i = np.empty(ndim, dtype=np.intp)
+
+            # container for non-zero b-splines at each point in xi
+            double[:, ::1] b = np.empty((ndim, max(k) + 1), dtype=float)
+
+            const double[::1] xv     # an ndim-dimensional input point
+            double xd               # d-th component of x
+
+            const double[::1] td    # knots in dimension d
+
+            npy_intp kd             # d-th component of k
+
+            npy_intp i_c      # index to loop over range(num_c_tr)
+            npy_intp iflat    # index to loop over (k+1)**ndim non-zero terms
+            npy_intp volume   # the number of non-zero terms
+            const npy_intp[:] idx_b   # ndim-dimensional index corresponding to iflat
+
+            int out_of_bounds
+            npy_intp idx_cflat_base, idx
+            double factor
+            double[::1] wrk = np.empty(2*max(k) + 2, dtype=float)
+
+        if xi.shape[1] != ndim:
+            raise ValueError(f"Expacted data points in {ndim}-D space, got"
+                             f" {xi.shape[1]}-D points.")
+
+        if out.shape[0] != xi.shape[0]:
+            raise ValueError(f"out and xi are inconsistent: expected"
+                             f" {xi.shape[0]} output values, got"
+                             f" {out.shape[0]}.")
+        if out.shape[1] != num_c_tr:
+            raise ValueError(f"out and c are inconsistent: num_c={num_c_tr} "
+                             f" and out.shape[1] = {out.shape[1]}.")
+
+
+        with nogil:
+            # the number of non-zero terms for each point in ``xi``.
+            volume = 1
+            for d in range(ndim):
+                volume *= k[d] + 1
+
+            ### Iterate over the data points
+            for j in range(xi.shape[0]):
+                xv = xi[j, :]
+
+                # For each point, iterate over the dimensions
+                out_of_bounds = 0
+                for d in range(ndim):
+                    td = t[d, :len_t[d]]
+                    xd = xv[d]
+                    kd = k[d]
+
+                    # get the location of x[d] in t[d]
+                    i[d] = find_interval(td, kd, xd, kd, extrapolate)
+
+                    if i[d] < 0:
+                        out_of_bounds = 1
+                        break
+
+                    # compute non-zero b-splines at this value of xd in dimension d
+                    _deBoor_D(&td[0], xd, kd, i[d], nu[d], &wrk[0])
+                    b[d, :kd+1] = wrk[:kd+1]
+
+                if out_of_bounds:
+                    # xd was nan or extrapolate=False: Fill the output array
+                    # *for this xv value*, and continue to the next xv in xi.
+                    for i_c in range(num_c_tr):
+                        out[j, i_c] = NAN
+                    continue
+
+                for i_c in range(num_c_tr):
+                    out[j, i_c] = 0.0
+
+                # iterate over the direct products of non-zero b-splines
+                for iflat in range(volume):
+                    idx_b = indices_k1d[iflat, :]
+                    # The line above is equivalent to 
+                    # idx_b = np.unravel_index(iflat, (k+1,)*ndim)
+                    
+                    # From the indices in ``idx_b``, we prepare to index into
+                    # c1.ravel() : for each dimension d, need to shift the index
+                    # by ``i[d] - k[d]`` (see the docstring above).
+                    #
+                    # Since the strides of `c1` are pre-computed, and the array
+                    # is already raveled and is guaranteed to be C-ordered, we only
+                    # need to compute the base index for iterating over ``num_c_tr``
+                    # elements which represent the trailing dimensions of ``c``.
+                    #
+                    # This all is essentially equivalent to iterating over
+                    # idx_cflat = np.ravel_multi_index(tuple(idx_c) + (i_c,),
+                    #                                  c1.shape)
+                    idx_cflat_base = 0
+                    factor = 1.0
+                    for d in range(ndim):
+                        factor *= b[d, idx_b[d]]
+                        idx = idx_b[d] + i[d] - k[d]
+                        idx_cflat_base += idx * strides_c1[d]
+
+                    ### collect linear combinations of coef * factor
+                    for i_c in range(num_c_tr):
+                        out[j, i_c] = out[j, i_c] + c1r[idx_cflat_base + i_c] * factor
+

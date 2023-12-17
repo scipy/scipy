@@ -37,7 +37,7 @@ A = LinearOperator(matvec=matvec, shape=Am.shape, dtype=Am.dtype)
 def do_solve(**kw):
     count[0] = 0
     x0, flag = lgmres(A, b, x0=zeros(A.shape[0]),
-                        inner_m=6, tol=1e-14, 
+                        inner_m=6, tol=1e-14,
                         atol=1e-14, **kw)
     count_0 = count[0]
     assert_(allclose(A@x0, b, rtol=1e-12, atol=1e-12), norm(A@x0-b))

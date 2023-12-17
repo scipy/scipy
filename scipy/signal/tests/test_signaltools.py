@@ -1,18 +1,16 @@
-# -*- coding: utf-8 -*-
 import sys
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from decimal import Decimal
 from itertools import product
 from math import gcd
-import warnings
 
 import pytest
 from pytest import raises as assert_raises
 from numpy.testing import (
     assert_equal,
     assert_almost_equal, assert_array_equal, assert_array_almost_equal,
-    assert_allclose, assert_, assert_warns, assert_array_less,
+    assert_allclose, assert_, assert_array_less,
     suppress_warnings)
 from numpy import array, arange
 import numpy as np
@@ -22,7 +20,7 @@ from scipy.ndimage import correlate1d
 from scipy.optimize import fmin, linear_sum_assignment
 from scipy import signal
 from scipy.signal import (
-    correlate, correlation_lags, convolve, convolve2d,
+    correlate, correlate2d, correlation_lags, convolve, convolve2d,
     fftconvolve, oaconvolve, choose_conv_method,
     hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, zpk2tf, zpk2sos,
     invres, invresz, vectorstrength, lfiltic, tf2sos, sosfilt, sosfiltfilt,
@@ -33,6 +31,7 @@ from scipy.signal._signaltools import (_filtfilt_gust, _compute_factors,
                                       _group_poles)
 from scipy.signal._upfirdn import _upfirdn_modes
 from scipy._lib import _testutils
+from scipy._lib._util import ComplexWarning, np_long, np_ulong
 
 
 class _TestConvolve:
@@ -183,16 +182,12 @@ class TestConvolve(_TestConvolve):
         assert_raises(ValueError, convolve, *(b, a), **{'mode': 'valid'})
 
     def test_convolve_method(self, n=100):
-        types = sum([t for _, t in np.sctypes.items()], [])
-        types = {np.dtype(t).name for t in types}
-
-        # These types include 'bool' and all precisions (int8, float32, etc)
-        # The removed types throw errors in correlate or fftconvolve
-        for dtype in ['complex256', 'complex192', 'float128', 'float96',
-                      'str', 'void', 'bytes', 'object', 'unicode', 'string']:
-            if dtype in types:
-                types.remove(dtype)
-
+        # this types data structure was manually encoded instead of
+        # using custom filters on the soon-to-be-removed np.sctypes
+        types = {'uint16', 'uint64', 'int64', 'int32',
+                 'complex128', 'float64', 'float16',
+                 'complex64', 'float32', 'int16',
+                 'uint8', 'uint32', 'int8', 'bool'}
         args = [(t1, t2, mode) for t1 in types for t2 in types
                                for mode in ['valid', 'full', 'same']]
 
@@ -300,30 +295,16 @@ class _TestConvolve2d:
                    [32, 46, 67, 62, 48]])
         assert_array_equal(c, d)
 
-    def test_fillvalue_deprecations(self):
-        # Deprecated 2017-07, scipy version 1.0.0
-        with suppress_warnings() as sup:
-            sup.filter(np.ComplexWarning, "Casting complex values to real")
-            r = sup.record(DeprecationWarning, "could not cast `fillvalue`")
-            convolve2d([[1]], [[1, 2]], fillvalue=1j)
-            assert_(len(r) == 1)
-            warnings.filterwarnings(
-                "error", message="could not cast `fillvalue`",
-                category=DeprecationWarning)
-            assert_raises(DeprecationWarning, convolve2d, [[1]], [[1, 2]],
-                          fillvalue=1j)
+    def test_fillvalue_errors(self):
+        msg = "could not cast `fillvalue` directly to the output "
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(ComplexWarning, "Casting complex values")
+            with assert_raises(ValueError, match=msg):
+                convolve2d([[1]], [[1, 2]], fillvalue=1j)
 
-        with suppress_warnings():
-            warnings.filterwarnings(
-                "always", message="`fillvalue` must be scalar or an array ",
-                category=DeprecationWarning)
-            assert_warns(DeprecationWarning, convolve2d, [[1]], [[1, 2]],
-                         fillvalue=[1, 2])
-            warnings.filterwarnings(
-                "error", message="`fillvalue` must be scalar or an array ",
-                category=DeprecationWarning)
-            assert_raises(DeprecationWarning, convolve2d, [[1]], [[1, 2]],
-                          fillvalue=[1, 2])
+        msg = "`fillvalue` must be scalar or an array with "
+        with assert_raises(ValueError, match=msg):
+            convolve2d([[1]], [[1, 2]], fillvalue=[1, 2])
 
     def test_fillvalue_empty(self):
         # Check that fillvalue being empty raises an error:
@@ -347,6 +328,44 @@ class _TestConvolve2d:
                    [52, 48, 62, 80, 84],
                    [82, 78, 92, 110, 114]])
         assert_array_equal(c, d)
+
+    @pytest.mark.parametrize('func', [convolve2d, correlate2d])
+    @pytest.mark.parametrize('boundary, expected',
+                             [('symm', [[37.0, 42.0, 44.0, 45.0]]),
+                              ('wrap', [[43.0, 44.0, 42.0, 39.0]])])
+    def test_same_with_boundary(self, func, boundary, expected):
+        # Test boundary='symm' and boundary='wrap' with a "long" kernel.
+        # The size of the kernel requires that the values in the "image"
+        # be extended more than once to handle the requested boundary method.
+        # This is a regression test for gh-8684 and gh-8814.
+        image = np.array([[2.0, -1.0, 3.0, 4.0]])
+        kernel = np.ones((1, 21))
+        result = func(image, kernel, mode='same', boundary=boundary)
+        # The expected results were calculated "by hand".  Because the
+        # kernel is all ones, the same result is expected for convolve2d
+        # and correlate2d.
+        assert_array_equal(result, expected)
+
+    def test_boundary_extension_same(self):
+        # Regression test for gh-12686.
+        # Use ndimage.convolve with appropriate arguments to create the
+        # expected result.
+        import scipy.ndimage as ndi
+        a = np.arange(1, 10*3+1, dtype=float).reshape(10, 3)
+        b = np.arange(1, 10*10+1, dtype=float).reshape(10, 10)
+        c = convolve2d(a, b, mode='same', boundary='wrap')
+        assert_array_equal(c, ndi.convolve(a, b, mode='wrap', origin=(-1, -1)))
+
+    def test_boundary_extension_full(self):
+        # Regression test for gh-12686.
+        # Use ndimage.convolve with appropriate arguments to create the
+        # expected result.
+        import scipy.ndimage as ndi
+        a = np.arange(1, 3*3+1, dtype=float).reshape(3, 3)
+        b = np.arange(1, 6*6+1, dtype=float).reshape(6, 6)
+        c = convolve2d(a, b, mode='full', boundary='wrap')
+        apad = np.pad(a, ((3, 3), (3, 3)), 'wrap')
+        assert_array_equal(c, ndi.convolve(apad, b, mode='wrap')[:-1, :-1])
 
     def test_invalid_shapes(self):
         # By "invalid," we mean that no one
@@ -777,6 +796,17 @@ class TestFFTConvolve:
         out = fftconvolve(a, b, 'full', axes=[0])
         assert_allclose(out, expected, atol=1e-10)
 
+    def test_fft_nan(self):
+        n = 1000
+        rng = np.random.default_rng(43876432987)
+        sig_nan = rng.standard_normal(n)
+
+        for val in [np.nan, np.inf]:
+            sig_nan[100] = val
+            coeffs = signal.firwin(200, 0.2)
+
+            with pytest.warns(RuntimeWarning, match="Use of fft convolution"):
+                signal.convolve(sig_nan, coeffs, mode='same', method='fft')
 
 def fftconvolve_err(*args, **kwargs):
     raise RuntimeError('Fell back to fftconvolve')
@@ -1008,7 +1038,7 @@ class TestAllFreqConvolves:
                            match="all axes must be unique"):
             convapproach([1], [2], axes=[0, 0])
 
-    @pytest.mark.parametrize('dtype', [np.longfloat, np.longcomplex])
+    @pytest.mark.parametrize('dtype', [np.longdouble, np.clongdouble])
     def test_longdtype_input(self, dtype):
         x = np.random.random((27, 27)).astype(dtype)
         y = np.random.random((4, 4)).astype(dtype)
@@ -1054,22 +1084,32 @@ class TestMedFilt:
         assert_array_equal(d, e)
 
     @pytest.mark.parametrize('dtype', [np.ubyte, np.byte, np.ushort, np.short,
-                                       np.uint, int, np.ulonglong, np.ulonglong,
-                                       np.float32, np.float64, np.longdouble])
+                                       np_ulong, np_long, np.ulonglong, np.ulonglong,
+                                       np.float32, np.float64])
     def test_types(self, dtype):
         # volume input and output types match
         in_typed = np.array(self.IN, dtype=dtype)
         assert_equal(signal.medfilt(in_typed).dtype, dtype)
         assert_equal(signal.medfilt2d(in_typed).dtype, dtype)
 
-    @pytest.mark.parametrize('dtype', [np.bool_, np.cfloat, np.cdouble,
+    def test_types_deprecated(self):
+        dtype = np.longdouble
+        in_typed = np.array(self.IN, dtype=dtype)
+        msg = "Using medfilt with arrays of dtype"
+        with pytest.deprecated_call(match=msg):
+            assert_equal(signal.medfilt(in_typed).dtype, dtype)
+        with pytest.deprecated_call(match=msg):
+            assert_equal(signal.medfilt2d(in_typed).dtype, dtype)
+
+
+    @pytest.mark.parametrize('dtype', [np.bool_, np.complex64, np.complex128,
                                        np.clongdouble, np.float16,])
     def test_invalid_dtypes(self, dtype):
         in_typed = np.array(self.IN, dtype=dtype)
-        with pytest.raises(ValueError, match="order_filterND"):
+        with pytest.raises(ValueError, match="not supported"):
             signal.medfilt(in_typed)
 
-        with pytest.raises(ValueError, match="order_filterND"):
+        with pytest.raises(ValueError, match="not supported"):
             signal.medfilt2d(in_typed)
 
     def test_none(self):
@@ -1101,10 +1141,12 @@ class TestMedFilt:
         assert_equal(x, [a, a])
 
     def test_object(self,):
-        in_object = np.array(self.IN, dtype=object)
-        out_object = np.array(self.OUT, dtype=object)
-        assert_array_equal(signal.medfilt(in_object, self.KERNEL_SIZE),
-                           out_object)
+        msg = "Using medfilt with arrays of dtype"
+        with pytest.deprecated_call(match=msg):
+            in_object = np.array(self.IN, dtype=object)
+            out_object = np.array(self.OUT, dtype=object)
+            assert_array_equal(signal.medfilt(in_object, self.KERNEL_SIZE),
+                               out_object)
 
     @pytest.mark.parametrize("dtype", [np.ubyte, np.float32, np.float64])
     def test_medfilt2d_parallel(self, dtype):
@@ -1256,7 +1298,7 @@ class TestResample:
         x = np.arange(10, dtype=np.float32)
         h = np.array([1, 1, 1], dtype=np.float32)
         y = signal.resample_poly(x, 1, 2, window=h, padtype=padtype)
-        assert(y.dtype == np.float32)
+        assert y.dtype == np.float32
 
     @pytest.mark.parametrize('padtype', padtype_options)
     @pytest.mark.parametrize('dtype', [np.float32, np.float64])
@@ -1264,7 +1306,7 @@ class TestResample:
         # Test that the dtype of x is preserved per issue #14733
         x = np.arange(10, dtype=dtype)
         y = signal.resample_poly(x, 1, 2, padtype=padtype)
-        assert(y.dtype == x.dtype)
+        assert y.dtype == x.dtype
 
     @pytest.mark.parametrize(
         "method, ext, padtype",
@@ -1545,8 +1587,10 @@ class _TestLinearFilter:
             zi = self.convert_dtype(np.ones(zi_shape))
             zi1 = self.convert_dtype([1])
             y, zf = lfilter(b, a, x, axis, zi)
-            lf0 = lambda w: lfilter(b, a, w, zi=zi1)[0]
-            lf1 = lambda w: lfilter(b, a, w, zi=zi1)[1]
+            def lf0(w):
+                return lfilter(b, a, w, zi=zi1)[0]
+            def lf1(w):
+                return lfilter(b, a, w, zi=zi1)[1]
             y_r = np.apply_along_axis(lf0, axis, x)
             zf_r = np.apply_along_axis(lf1, axis, x)
             assert_array_almost_equal(y, y_r)
@@ -1573,8 +1617,10 @@ class _TestLinearFilter:
             zi = self.convert_dtype(np.ones(zi_shape))
             zi1 = self.convert_dtype([1, 1])
             y, zf = lfilter(b, a, x, axis, zi)
-            lf0 = lambda w: lfilter(b, a, w, zi=zi1)[0]
-            lf1 = lambda w: lfilter(b, a, w, zi=zi1)[1]
+            def lf0(w):
+                return lfilter(b, a, w, zi=zi1)[0]
+            def lf1(w):
+                return lfilter(b, a, w, zi=zi1)[1]
             y_r = np.apply_along_axis(lf0, axis, x)
             zf_r = np.apply_along_axis(lf1, axis, x)
             assert_array_almost_equal(y, y_r)
@@ -1852,6 +1898,8 @@ class TestLinearFilterObject(_TestLinearFilter):
 def test_lfilter_bad_object():
     # lfilter: object arrays with non-numeric objects raise TypeError.
     # Regression test for ticket #1452.
+    if hasattr(sys, 'abiflags') and 'd' in sys.abiflags:
+        pytest.skip('test is flaky when run with python3-dbg')
     assert_raises(TypeError, lfilter, [1.0], [1.0], [1.0, None, 2.0])
     assert_raises(TypeError, lfilter, [1.0], [None], [1.0, 2.0, 3.0])
     assert_raises(TypeError, lfilter, [None], [1.0], [1.0, 2.0, 3.0])
@@ -1863,7 +1911,7 @@ def test_lfilter_notimplemented_input():
 
 
 @pytest.mark.parametrize('dt', [np.ubyte, np.byte, np.ushort, np.short,
-                                np.uint, int, np.ulonglong, np.ulonglong,
+                                np_ulong, np_long, np.ulonglong, np.ulonglong,
                                 np.float32, np.float64, np.longdouble,
                                 Decimal])
 class TestCorrelateReal:
@@ -1889,7 +1937,7 @@ class TestCorrelateReal:
         # FFT implementations convert longdouble arguments down to
         # double so don't expect better precision, see gh-9520
         if res_dt == np.longdouble:
-            return self.equal_tolerance(np.double)
+            return self.equal_tolerance(np.float64)
         else:
             return self.equal_tolerance(res_dt)
 
@@ -1902,8 +1950,12 @@ class TestCorrelateReal:
             y_fft = correlate(a, b, method='fft')
             y_direct = correlate(a, b, method='direct')
 
-            assert_array_almost_equal(y_r, y_fft, decimal=self.equal_tolerance_fft(y_fft.dtype))
-            assert_array_almost_equal(y_r, y_direct, decimal=self.equal_tolerance(y_direct.dtype))
+            assert_array_almost_equal(y_r,
+                                      y_fft,
+                                      decimal=self.equal_tolerance_fft(y_fft.dtype),)
+            assert_array_almost_equal(y_r,
+                                      y_direct,
+                                      decimal=self.equal_tolerance(y_direct.dtype),)
             assert_equal(y_fft.dtype, dt)
             assert_equal(y_direct.dtype, dt)
 
@@ -2141,7 +2193,8 @@ class TestCorrelateComplex:
 
         y_r = (correlate(a.real, b.real)
                + correlate(a.imag, b.imag)).astype(dt)
-        y_r += 1j * (-correlate(a.real, b.imag) + correlate(a.imag, b.real))
+        y_r += 1j * np.array(-correlate(a.real, b.imag) +
+                             correlate(a.imag, b.real))
 
         y = correlate(a, b, 'full')
         assert_array_almost_equal(y, y_r, decimal=self.decimal(dt) - 1)
@@ -2334,7 +2387,7 @@ def filtfilt_gust_opt(b, a, x):
     This function computes the same result as
     `scipy.signal._signaltools._filtfilt_gust`, but only 1-d arrays
     are accepted.  The problem is solved using `fmin` from `scipy.optimize`.
-    `_filtfilt_gust` is significanly faster than this implementation.
+    `_filtfilt_gust` is significantly faster than this implementation.
     """
     def filtfilt_gust_opt_func(ics, b, a, x):
         """Objective function used in filtfilt_gust_opt."""
@@ -2415,7 +2468,7 @@ def test_choose_conv_method():
 
             method_try, times = choose_conv_method(x, h, mode=mode, measure=True)
             assert_(method_try in {'fft', 'direct'})
-            assert_(type(times) is dict)
+            assert_(isinstance(times, dict))
             assert_('fft' in times.keys() and 'direct' in times.keys())
 
         n = 10
@@ -2509,7 +2562,7 @@ class TestDecimate:
         rate = 120
         rates_to = [15, 20, 30, 40]  # q = 8, 6, 4, 3
 
-        t_tot = int(100)  # Need to let antialiasing filters settle
+        t_tot = 100  # Need to let antialiasing filters settle
         t = np.arange(rate*t_tot+1) / float(rate)
 
         # Sinusoids at 0.8*nyquist, windowed to avoid edge artifacts
@@ -2564,6 +2617,85 @@ class TestDecimate:
         assert_allclose(np.linalg.norm(x), 1., rtol=1e-3)
         x_out = signal.decimate(x, 30, ftype='fir')
         assert_array_less(np.linalg.norm(x_out), 0.01)
+
+    def test_long_float32(self):
+        # regression: gh-15072.  With 32-bit float and either lfilter
+        # or filtfilt, this is numerically unstable
+        x = signal.decimate(np.ones(10_000, dtype=np.float32), 10)
+        assert not any(np.isnan(x))
+
+    def test_float16_upcast(self):
+        # float16 must be upcast to float64
+        x = signal.decimate(np.ones(100, dtype=np.float16), 10)
+        assert x.dtype.type == np.float64
+
+    def test_complex_iir_dlti(self):
+        # regression: gh-17845
+        # centre frequency for filter [Hz]
+        fcentre = 50
+        # filter passband width [Hz]
+        fwidth = 5
+        # sample rate [Hz]
+        fs = 1e3
+
+        z, p, k = signal.butter(2, 2*np.pi*fwidth/2, output='zpk', fs=fs)
+        z = z.astype(complex) * np.exp(2j * np.pi * fcentre/fs)
+        p = p.astype(complex) * np.exp(2j * np.pi * fcentre/fs)
+        system = signal.dlti(z, p, k)
+
+        t = np.arange(200) / fs
+
+        # input
+        u = (np.exp(2j * np.pi * fcentre * t)
+             + 0.5 * np.exp(-2j * np.pi * fcentre * t))
+
+        ynzp = signal.decimate(u, 2, ftype=system, zero_phase=False)
+        ynzpref = signal.lfilter(*signal.zpk2tf(z, p, k),
+                                 u)[::2]
+
+        assert_equal(ynzp, ynzpref)
+
+        yzp = signal.decimate(u, 2, ftype=system, zero_phase=True)
+        yzpref = signal.filtfilt(*signal.zpk2tf(z, p, k),
+                                 u)[::2]
+
+        assert_allclose(yzp, yzpref, rtol=1e-10, atol=1e-13)
+
+    def test_complex_fir_dlti(self):
+        # centre frequency for filter [Hz]
+        fcentre = 50
+        # filter passband width [Hz]
+        fwidth = 5
+        # sample rate [Hz]
+        fs = 1e3
+        numtaps = 20
+
+        # FIR filter about 0Hz
+        bbase = signal.firwin(numtaps, fwidth/2, fs=fs)
+
+        # rotate these to desired frequency
+        zbase = np.roots(bbase)
+        zrot = zbase * np.exp(2j * np.pi * fcentre/fs)
+        # FIR filter about 50Hz, maintaining passband gain of 0dB
+        bz = bbase[0] * np.poly(zrot)
+
+        system = signal.dlti(bz, 1)
+
+        t = np.arange(200) / fs
+
+        # input
+        u = (np.exp(2j * np.pi * fcentre * t)
+             + 0.5 * np.exp(-2j * np.pi * fcentre * t))
+
+        ynzp = signal.decimate(u, 2, ftype=system, zero_phase=False)
+        ynzpref = signal.upfirdn(bz, u, up=1, down=2)[:100]
+
+        assert_equal(ynzp, ynzpref)
+
+        yzp = signal.decimate(u, 2, ftype=system, zero_phase=True)
+        yzpref = signal.resample_poly(u, 1, 2, window=bz)
+
+        assert_equal(yzp, yzpref)
 
 
 class TestHilbert:
@@ -3196,20 +3328,6 @@ class TestVectorstrength:
         assert_raises(ValueError, vectorstrength, events, period)
 
 
-def cast_tf2sos(b, a):
-    """Convert TF2SOS, casting to complex128 and back to the original dtype."""
-    # tf2sos does not support all of the dtypes that we want to check, e.g.:
-    #
-    #     TypeError: array type complex256 is unsupported in linalg
-    #
-    # so let's cast, convert, and cast back -- should be fine for the
-    # systems and precisions we are testing.
-    dtype = np.asarray(b).dtype
-    b = np.array(b, np.complex128)
-    a = np.array(a, np.complex128)
-    return tf2sos(b, a).astype(dtype)
-
-
 def assert_allclose_cast(actual, desired, rtol=1e-7, atol=0):
     """Wrap assert_allclose while casting object arrays."""
     if actual.dtype.kind == 'O':
@@ -3242,7 +3360,7 @@ def test_nonnumeric_dtypes(func):
         func(*args, x=1.)
 
 
-@pytest.mark.parametrize('dt', 'fdgFDGO')
+@pytest.mark.parametrize('dt', 'fdFD')
 class TestSOSFilt:
 
     # The test_rank* tests are pulled from _TestLinearFilter
@@ -3253,15 +3371,15 @@ class TestSOSFilt:
 
         # Test simple IIR
         y_r = np.array([0, 2, 4, 6, 8, 10.]).astype(dt)
-        sos = cast_tf2sos(b, a)
-        assert_array_almost_equal(sosfilt(cast_tf2sos(b, a), x), y_r)
+        sos = tf2sos(b, a)
+        assert_array_almost_equal(sosfilt(tf2sos(b, a), x), y_r)
 
         # Test simple FIR
         b = np.array([1, 1]).astype(dt)
         # NOTE: This was changed (rel. to TestLinear...) to add a pole @zero:
         a = np.array([1, 0]).astype(dt)
         y_r = np.array([0, 1, 3, 5, 7, 9.]).astype(dt)
-        assert_array_almost_equal(sosfilt(cast_tf2sos(b, a), x), y_r)
+        assert_array_almost_equal(sosfilt(tf2sos(b, a), x), y_r)
 
         b = [1, 1, 0]
         a = [1, 0, 0]
@@ -3285,10 +3403,10 @@ class TestSOSFilt:
         y_r2_a1 = np.array([[0, 2, 0], [6, -4, 6], [12, -10, 12],
                             [18, -16, 18]], dtype=dt)
 
-        y = sosfilt(cast_tf2sos(b, a), x, axis=0)
+        y = sosfilt(tf2sos(b, a), x, axis=0)
         assert_array_almost_equal(y_r2_a0, y)
 
-        y = sosfilt(cast_tf2sos(b, a), x, axis=1)
+        y = sosfilt(tf2sos(b, a), x, axis=1)
         assert_array_almost_equal(y_r2_a1, y)
 
     def test_rank3(self, dt):
@@ -3299,7 +3417,7 @@ class TestSOSFilt:
         a = np.array([0.5, 0.5]).astype(dt)
 
         # Test last axis
-        y = sosfilt(cast_tf2sos(b, a), x)
+        y = sosfilt(tf2sos(b, a), x)
         for i in range(x.shape[0]):
             for j in range(x.shape[1]):
                 assert_array_almost_equal(y[i, j], lfilter(b, a, x[i, j]))
@@ -3451,6 +3569,42 @@ class TestDetrend:
         copy_array = detrend(x, overwrite_data=False)
         inplace = detrend(x, overwrite_data=True)
         assert_array_almost_equal(copy_array, inplace)
+
+    @pytest.mark.parametrize('kind', ['linear', 'constant'])
+    @pytest.mark.parametrize('axis', [0, 1, 2])
+    def test_axis(self, axis, kind):
+        data = np.arange(5*6*7).reshape(5, 6, 7)
+        detrended = detrend(data, type=kind, axis=axis)
+        assert detrended.shape == data.shape
+
+    def test_bp(self):
+        data = [0, 1, 2] + [5, 0, -5, -10]
+        detrended = detrend(data, type='linear', bp=3)
+        assert_allclose(detrended, 0, atol=1e-14)
+
+        # repeat with ndim > 1 and axis
+        data = np.asarray(data)[None, :, None]
+
+        detrended = detrend(data, type="linear", bp=3, axis=1)
+        assert_allclose(detrended, 0, atol=1e-14)
+
+        # breakpoint index > shape[axis]: raises
+        with assert_raises(ValueError):
+            detrend(data, type="linear", bp=3)
+
+    @pytest.mark.parametrize('bp', [np.array([0, 2]), [0, 2]])
+    def test_detrend_array_bp(self, bp):
+        # regression test for https://github.com/scipy/scipy/issues/18675
+        rng = np.random.RandomState(12345)
+        x = rng.rand(10)
+       # bp = np.array([0, 2])
+
+        res = detrend(x, bp=bp)
+        res_scipy_191 = np.array([-4.44089210e-16, -2.22044605e-16,
+            -1.11128506e-01, -1.69470553e-01,  1.14710683e-01,  6.35468419e-02,
+            3.53533144e-01, -3.67877935e-02, -2.00417675e-02, -1.94362049e-01])
+
+        assert_allclose(res, res_scipy_191, atol=1e-14)
 
 
 class TestUniqueRoots:

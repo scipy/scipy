@@ -772,10 +772,10 @@ subroutine <prefix2>syevr(compute_v,range,lower,n,a,lda,vl,vu,il,iu,abstol,w,z,m
     integer intent(hide),dimension(liwork),depend(liwork) :: iwork
 
     <ftype2> intent(out),dimension(n),depend(n) :: w
-    <ftype2> intent(out),dimension((compute_v?MAX(0,n):0),(compute_v?(*range=='I'?iu-il+1:MAX(1,n)):0)),depend(n,compute_v,range,iu,il) :: z
+    <ftype2> intent(out),dimension((compute_v?MAX(0,n):0),(compute_v?((*range=='I')?(iu-il+1):MAX(1,n)):0)),depend(n,compute_v,range,iu,il) :: z
     integer intent(out) :: m
     ! Only returned if range=='A' or range=='I' and il, iu = 1, n
-    integer intent(out),dimension((compute_v?(2*(*range=='A'||(*range=='I' && iu-il+1==n)?n:0)):0)),depend(n,iu,il,compute_v,range) :: isuppz
+    integer intent(out),dimension((compute_v?(2*((*range=='A')||((*range=='I') && (iu-il+1==n))?n:0)):0)),depend(n,iu,il,compute_v,range) :: isuppz
     integer intent(out) :: info
 
 end subroutine <prefix2>syevr
@@ -844,7 +844,7 @@ subroutine <prefix2c>heevr(compute_v,range,lower,n,a,lda,vl,vu,il,iu,abstol,w,z,
     integer intent(hide),dimension(liwork),depend(liwork) :: iwork
 
     <ftype2> intent(out),dimension(n),depend(n) :: w
-    <ftype2c> intent(out),dimension((compute_v?MAX(0,n):0),(compute_v?(*range=='I'?iu-il+1:MAX(1,n)):0)),depend(n,compute_v,range,iu,il) :: z
+    <ftype2c> intent(out),dimension((compute_v?MAX(0,n):0),(compute_v?((*range=='I')?(iu-il+1):MAX(1,n)):0)),depend(n,compute_v,range,iu,il) :: z
     integer intent(out) :: m
     ! MKL implementation has a bug that still accesses isuppz array even if
     ! range=='A' or range=='I' and il, iu = 1, n which is not the case for
@@ -852,7 +852,7 @@ subroutine <prefix2c>heevr(compute_v,range,lower,n,a,lda,vl,vu,il,iu,abstol,w,z,
     ! of the settings. It is wasteful but necessary. The bug is fixed in
     ! mkl 2020 update 2 and when time comes change this line with
     !
-    ! integer intent(out),dimension((compute_v?(2*(*range=='A'||(*range=='I' && iu-il+1==n)?n:0)):0)),depend(n,iu,il,range,compute_v) :: isuppz
+    ! integer intent(out),dimension((compute_v?(2*(*range=='A'||((*range=='I') && (iu-il+1==n))?n:0)):0)),depend(n,iu,il,range,compute_v) :: isuppz
     !
     integer intent(out),dimension(2*max(1,n)),depend(n) :: isuppz
     integer intent(out) :: info
@@ -919,7 +919,7 @@ subroutine <prefix2>syevx(compute_v,range,lower,n,a,lda,vl,vu,il,iu,abstol,w,z,m
     integer intent(hide),dimension(5*n),depend(n) :: iwork
 
     <ftype2> intent(out),dimension(n),depend(n) :: w
-    <ftype2> intent(out),dimension((compute_v?MAX(0,n):0),(compute_v?(*range=='I'?iu-il+1:MAX(1,n)):0)),depend(n,compute_v,range,iu,il) :: z
+    <ftype2> intent(out),dimension((compute_v?MAX(0,n):0),(compute_v?((*range=='I')?(iu-il+1):MAX(1,n)):0)),depend(n,compute_v,range,iu,il) :: z
     integer intent(out) :: m
     integer intent(out),dimension((compute_v?n:0)),depend(compute_v,n):: ifail
     integer intent(out) :: info
@@ -984,7 +984,7 @@ subroutine <prefix2c>heevx(compute_v,range,lower,n,a,lda,vl,vu,il,iu,abstol,w,z,
     <ftype2> intent(hide),dimension(7*n),depend(n) :: rwork
 
     <ftype2> intent(out),dimension(n),depend(n) :: w
-    <ftype2c> intent(out),dimension((compute_v*n),(compute_v?(*range=='I'?iu-il+1:MAX(1,n)):0)),depend(compute_v,range,n,iu,il) :: z
+    <ftype2c> intent(out),dimension((compute_v*n),(compute_v?((*range=='I')?(iu-il+1):MAX(1,n)):0)),depend(compute_v,range,n,iu,il) :: z
     integer intent(out) :: m
     integer intent(out),dimension(compute_v*n),depend(compute_v,n):: ifail
     integer intent(out) :: info
@@ -1222,7 +1222,7 @@ subroutine <prefix2>sygvx(itype,jobz,range,uplo,n,a,lda,b,ldb,vl,vu,il,iu,abstol
     integer intent(hide),dimension(5*n),depend(n) :: iwork
 
     <ftype2> intent(out),dimension(n),depend(n) :: w
-    <ftype2> intent(out),dimension((jobz[0]=='V'?MAX(0,n):0),(jobz[0]=='V'?(range[0]=='I'?iu-il+1:MAX(1,n)):0)),depend(n,jobz,range,iu,il) :: z
+    <ftype2> intent(out),dimension((jobz[0]=='V'?MAX(0,n):0),(jobz[0]=='V'?((range[0]=='I')?(iu-il+1):MAX(1,n)):0)),depend(n,jobz,range,iu,il) :: z
     integer intent(out) :: m
     integer intent(out),dimension((jobz[0]=='N'?0:n)),depend(jobz,n):: ifail
     integer intent(out) :: info
@@ -1293,7 +1293,7 @@ subroutine <prefix2c>hegvx(itype,jobz,range,uplo,n,a,lda,b,ldb,vl,vu,il,iu,absto
     <ftype2> intent(hide),dimension(7*n),depend(n) :: rwork
 
     <ftype2> intent(out),dimension(n),depend(n) :: w
-    <ftype2c> intent(out),dimension((jobz[0]=='V'?MAX(0,n):0),(jobz[0]=='V'?(range[0]=='I'?iu-il+1:MAX(1,n)):0)),depend(n,jobz,range,iu,il) :: z
+    <ftype2c> intent(out),dimension((jobz[0]=='V'?MAX(0,n):0),(jobz[0]=='V'?((range[0]=='I')?(iu-il+1):MAX(1,n)):0)),depend(n,jobz,range,iu,il) :: z
     integer intent(out) :: m
     integer intent(out),dimension((jobz[0]=='N'?0:n)),depend(jobz,n):: ifail
     integer intent(out) :: info

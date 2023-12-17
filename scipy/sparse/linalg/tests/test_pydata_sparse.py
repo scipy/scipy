@@ -4,7 +4,7 @@ import numpy as np
 import scipy.sparse as sp
 import scipy.sparse.linalg as splin
 
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal
 
 try:
     import sparse
@@ -73,6 +73,12 @@ def test_lsmr(matrices):
     res0 = splin.lsmr(A_dense, b)
     res = splin.lsmr(A_sparse, b)
     assert_allclose(res[0], res0[0], atol=1.8e-5)
+
+
+# test issue 17012
+def test_lsmr_output_shape():
+    x = splin.lsmr(A=np.ones((10, 1)), b=np.zeros(10), x0=np.ones(1))[0]
+    assert_equal(x.shape, (1,))
 
 
 def test_lsqr(matrices):

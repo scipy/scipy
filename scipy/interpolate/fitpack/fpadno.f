@@ -1,5 +1,6 @@
-      subroutine fpadno(maxtr,up,left,right,info,count,merk,jbind,
-     * n1,ier)
+      recursive subroutine fpadno(maxtr,up,left,right,info,count,
+     *   merk,jbind,n1,ier)
+      implicit none
 c  subroutine fpadno adds a branch of length n1 to the triply linked
 c  tree,the information of which is kept in the arrays up,left,right
 c  and info. the information field of the nodes of this new branch is

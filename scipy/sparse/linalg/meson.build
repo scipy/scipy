@@ -6,13 +6,13 @@ py3.install_sources([
     '_norm.py',
     '_onenormest.py',
     '_svdp.py',
+    '_special_sparse_arrays.py',
     'dsolve.py',
     'eigen.py',
     'interface.py',
     'isolve.py',
     'matfuncs.py'
   ],
-  pure: false,
   subdir: 'scipy/sparse/linalg'
 )
 

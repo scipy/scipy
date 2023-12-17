@@ -1,6 +1,7 @@
-      subroutine fpopsp(ifsu,ifsv,ifbu,ifbv,u,mu,v,mv,r,mr,r0,r1,dr,
-     * iopt,ider,tu,nu,tv,nv,nuest,nvest,p,step,c,nc,fp,fpu,fpv,
-     * nru,nrv,wrk,lwrk)
+      recursive subroutine fpopsp(ifsu,ifsv,ifbu,ifbv,u,mu,v,mv,r,
+     * mr,r0,r1,dr,iopt,ider,tu,nu,tv,nv,nuest,nvest,p,step,c,nc,
+     * fp,fpu,fpv,nru,nrv,wrk,lwrk)
+      implicit none
 c  given the set of function values r(i,j) defined on the rectangular
 c  grid (u(i),v(j)),i=1,2,...,mu;j=1,2,...,mv, fpopsp determines a
 c  smooth bicubic spline approximation with given knots tu(i),i=1,..,nu
@@ -57,7 +58,7 @@ c  ..array arguments..
 c  ..local scalars..
       real*8 sq,sqq,sq0,sq1,step1,step2,three
       integer i,id0,iop0,iop1,i1,j,l,lau,lav1,lav2,la0,la1,lbu,lbv,lb0,
-     * lb1,lc0,lc1,lcs,lq,lri,lsu,lsv,l1,l2,mm,mvnu,number
+     * lb1,lc0,lc1,lcs,lq,lri,lsu,lsv,l1,l2,mm,mvnu,number, id1
 c  ..local arrays..
       integer nr(6)
       real*8 delta(6),drr(6),sum(6),a(6,6),g(6)

@@ -9,12 +9,15 @@ py3.install_sources([
     'test__root.py',
     'test__shgo.py',
     'test__spectral.py',
+    'test_chandrupatla.py',
     'test_cobyla.py',
     'test_constraint_conversion.py',
     'test_constraints.py',
     'test_cython_optimize.py',
     'test_differentiable_functions.py',
+    'test_direct.py',
     'test_hessian_update_strategy.py',
+    'test_isotonic_regression.py',
     'test_lbfgsb_hessinv.py',
     'test_lbfgsb_setulb.py',
     'test_least_squares.py',
@@ -38,6 +41,5 @@ py3.install_sources([
     'test_trustregion_krylov.py',
     'test_zeros.py'
   ],
-  pure: false,
   subdir: 'scipy/optimize/tests'
 )

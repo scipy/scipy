@@ -45,7 +45,7 @@ class ProbArg:
         self.b = 1
 
     def values(self, n):
-        """Return an array containing approximatively n numbers."""
+        """Return an array containing approximately n numbers."""
         m = max(1, n//3)
         v1 = np.logspace(-30, np.log10(0.3), m)
         v2 = np.linspace(0.3, 0.7, m + 1, endpoint=False)[1:]
@@ -349,6 +349,12 @@ class TestCDFlib:
             _tukey_lmbda_quantile,
             0, [ProbArg(), Arg(0, 100, inclusive_a=False)],
             spfunc_first=False, rtol=1e-5)
+
+    # The values of lmdba are chosen so that 1/lmbda is exact.
+    @pytest.mark.parametrize('lmbda', [0.5, 1.0, 8.0])
+    def test_tklmbda_lmbda1(self, lmbda):
+        bound = 1/lmbda
+        assert_equal(sp.tklmbda([-bound, bound], lmbda), [0.0, 1.0])
 
 
 def test_nonfinite():

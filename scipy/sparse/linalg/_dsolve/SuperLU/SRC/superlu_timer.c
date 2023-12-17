@@ -57,9 +57,6 @@ double SuperLU_timer_()
 #include <unistd.h>
 #endif
 
-#ifndef CLK_TCK
-#define CLK_TCK 60
-#endif
 /*! \brief Timer function
  */ 
 double SuperLU_timer_()
@@ -77,7 +74,6 @@ double SuperLU_timer_()
     tmp = use.tms_utime;
     tmp += use.tms_stime;
 #endif
-    /*return (double)(tmp) / CLK_TCK;*/
     return (double)(tmp) / clocks_per_sec;
 }
 
@@ -88,7 +84,7 @@ double SuperLU_timer_()
 
 /*! \brief Timer function
  */ 
-double SuperLU_timer_()
+double SuperLU_timer_(void)
 {
     struct timeval tp;
     double tmp;

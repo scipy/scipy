@@ -658,9 +658,8 @@ def read(filename, mmap=False):
                 if data_chunk_received:
                     # End of file but data successfully read
                     warnings.warn(
-                        "Reached EOF prematurely; finished at {:d} bytes, "
-                        "expected {:d} bytes from header."
-                        .format(fid.tell(), file_size),
+                        f"Reached EOF prematurely; finished at {fid.tell():d} bytes, "
+                        f"expected {file_size:d} bytes from header.",
                         WavFileWarning, stacklevel=2)
                     break
                 else:
@@ -753,6 +752,7 @@ def write(filename, rate, data):
     Write to 16-bit PCM, Mono.
 
     >>> from scipy.io.wavfile import write
+    >>> import numpy as np
     >>> samplerate = 44100; fs = 100
     >>> t = np.linspace(0., 1., samplerate)
     >>> amplitude = np.iinfo(np.int16).max

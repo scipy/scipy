@@ -1,4 +1,3 @@
-# distutils: language=c++
 # cython: language_level=3
 
 from libcpp.string cimport string
@@ -10,4 +9,4 @@ cdef extern from "HighsStatus.h" nogil:
         HighsStatusWarning "HighsStatus::kWarning" = 1
 
 
-    string HighsStatusToString(HighsStatus status)
+    string highsStatusToString(HighsStatus status)

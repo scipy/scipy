@@ -29,7 +29,7 @@ double poch(double a, double m)
         }
         m -= 1.0;
         r *= (a + m);
-        if (!npy_isfinite(r) || r == 0) {
+        if (!isfinite(r) || r == 0) {
             break;
         }
     }
@@ -41,7 +41,7 @@ double poch(double a, double m)
         }
         r /= (a + m);
         m += 1.0;
-        if (!npy_isfinite(r) || r == 0) {
+        if (!isfinite(r) || r == 0) {
             break;
         }
     }
@@ -69,7 +69,7 @@ double poch(double a, double m)
 
     /* Check for infinity */
     if (is_nonpos_int(a + m) && !is_nonpos_int(a) && a + m != m) {
-        return NPY_INFINITY;
+        return INFINITY;
     }
 
     /* Check for zero */

@@ -135,7 +135,7 @@ class TestLocalMaxima1d:
         """Test input validation and raised exceptions."""
         with raises(ValueError, match="wrong number of dimensions"):
             _local_maxima_1d(np.ones((1, 1)))
-        with raises(ValueError, match="expected 'float64_t'"):
+        with raises(ValueError, match="expected 'const float64_t'"):
             _local_maxima_1d(np.ones(1, dtype=int))
         with raises(TypeError, match="list"):
             _local_maxima_1d([1., 2.])
@@ -169,7 +169,9 @@ class TestRidgeLines:
         line = _gen_ridge_line([0, 25], test_matr.shape, length, distances, gaps)
         test_matr[line[0], line[1]] = 1
         max_distances = np.full(20, max(distances))
-        identified_lines = _identify_ridge_lines(test_matr, max_distances, max(gaps) + 1)
+        identified_lines = _identify_ridge_lines(test_matr,
+                                                 max_distances,
+                                                 max(gaps) + 1)
         assert_array_equal(identified_lines, [line])
 
     def test_single_bigdist(self):
@@ -182,7 +184,9 @@ class TestRidgeLines:
         max_dist = 3
         max_distances = np.full(20, max_dist)
         #This should get 2 lines, since the distance is too large
-        identified_lines = _identify_ridge_lines(test_matr, max_distances, max(gaps) + 1)
+        identified_lines = _identify_ridge_lines(test_matr,
+                                                 max_distances,
+                                                 max(gaps) + 1)
         assert_(len(identified_lines) == 2)
 
         for iline in identified_lines:
@@ -769,6 +773,26 @@ class TestFindPeaks:
         assert_equal(props["width_heights"], 1)
         for key in ("left_bases", "right_bases", "left_ips", "right_ips"):
             assert_equal(props[key], peaks)
+
+    @pytest.mark.parametrize("kwargs", [
+        {},
+        {"distance": 3.0},
+        {"prominence": (None, None)},
+        {"width": (None, 2)},
+
+    ])
+    def test_readonly_array(self, kwargs):
+        """
+        Test readonly arrays are accepted.
+        """
+        x = np.linspace(0, 10, 15)
+        x_readonly = x.copy()
+        x_readonly.flags.writeable = False
+
+        peaks, _ = find_peaks(x)
+        peaks_readonly, _ = find_peaks(x_readonly, **kwargs)
+
+        assert_allclose(peaks, peaks_readonly)
 
 
 class TestFindPeaksCwt:

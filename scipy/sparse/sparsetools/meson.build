@@ -20,8 +20,9 @@ py3.extension_module('_sparsetools',
     _sparsetools_headers,
   ],
   cpp_args: numpy_nodepr_api,
-  include_directories: inc_np,
-  dependencies: py3_dep,
+  dependencies: np_dep,
+  include_directories: '../../_build_utils/src',
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/sparse'
 )

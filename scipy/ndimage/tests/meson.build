@@ -13,7 +13,6 @@ python_sources = [
 
 py3.install_sources(
   python_sources,
-  pure: false,
   subdir: 'scipy/ndimage/tests'
 )
 
@@ -22,6 +21,5 @@ py3.install_sources([
     'data/label_results.txt',
     'data/label_strels.txt',
   ],
-  pure: false,
   subdir: 'scipy/ndimage/tests/data'
 )

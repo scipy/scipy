@@ -1,7 +1,6 @@
-
 import pytest
 import numpy as np
-from numpy import arange, add, array, eye, copy, sqrt
+from numpy import arange, array, eye, copy, sqrt
 from numpy.testing import (assert_equal, assert_array_equal,
                            assert_array_almost_equal, assert_allclose)
 from pytest import raises as assert_raises
@@ -9,103 +8,11 @@ from pytest import raises as assert_raises
 from scipy.fft import fft
 from scipy.special import comb
 from scipy.linalg import (toeplitz, hankel, circulant, hadamard, leslie, dft,
-                          companion, tri, triu, tril, kron, block_diag,
+                          companion, kron, block_diag,
                           helmert, hilbert, invhilbert, pascal, invpascal,
                           fiedler, fiedler_companion, eigvals,
                           convolution_matrix)
 from numpy.linalg import cond
-
-
-def get_mat(n):
-    data = arange(n)
-    data = add.outer(data, data)
-    return data
-
-
-class TestTri:
-    def test_basic(self):
-        assert_equal(tri(4), array([[1, 0, 0, 0],
-                                    [1, 1, 0, 0],
-                                    [1, 1, 1, 0],
-                                    [1, 1, 1, 1]]))
-        assert_equal(tri(4, dtype='f'), array([[1, 0, 0, 0],
-                                               [1, 1, 0, 0],
-                                               [1, 1, 1, 0],
-                                               [1, 1, 1, 1]], 'f'))
-
-    def test_diag(self):
-        assert_equal(tri(4, k=1), array([[1, 1, 0, 0],
-                                         [1, 1, 1, 0],
-                                         [1, 1, 1, 1],
-                                         [1, 1, 1, 1]]))
-        assert_equal(tri(4, k=-1), array([[0, 0, 0, 0],
-                                          [1, 0, 0, 0],
-                                          [1, 1, 0, 0],
-                                          [1, 1, 1, 0]]))
-
-    def test_2d(self):
-        assert_equal(tri(4, 3), array([[1, 0, 0],
-                                       [1, 1, 0],
-                                       [1, 1, 1],
-                                       [1, 1, 1]]))
-        assert_equal(tri(3, 4), array([[1, 0, 0, 0],
-                                       [1, 1, 0, 0],
-                                       [1, 1, 1, 0]]))
-
-    def test_diag2d(self):
-        assert_equal(tri(3, 4, k=2), array([[1, 1, 1, 0],
-                                            [1, 1, 1, 1],
-                                            [1, 1, 1, 1]]))
-        assert_equal(tri(4, 3, k=-2), array([[0, 0, 0],
-                                             [0, 0, 0],
-                                             [1, 0, 0],
-                                             [1, 1, 0]]))
-
-
-class TestTril:
-    def test_basic(self):
-        a = (100*get_mat(5)).astype('l')
-        b = a.copy()
-        for k in range(5):
-            for l in range(k+1, 5):
-                b[k, l] = 0
-        assert_equal(tril(a), b)
-
-    def test_diag(self):
-        a = (100*get_mat(5)).astype('f')
-        b = a.copy()
-        for k in range(5):
-            for l in range(k+3, 5):
-                b[k, l] = 0
-        assert_equal(tril(a, k=2), b)
-        b = a.copy()
-        for k in range(5):
-            for l in range(max((k-1, 0)), 5):
-                b[k, l] = 0
-        assert_equal(tril(a, k=-2), b)
-
-
-class TestTriu:
-    def test_basic(self):
-        a = (100*get_mat(5)).astype('l')
-        b = a.copy()
-        for k in range(5):
-            for l in range(k+1, 5):
-                b[l, k] = 0
-        assert_equal(triu(a), b)
-
-    def test_diag(self):
-        a = (100*get_mat(5)).astype('f')
-        b = a.copy()
-        for k in range(5):
-            for l in range(max((k-1, 0)), 5):
-                b[l, k] = 0
-        assert_equal(triu(a, k=2), b)
-        b = a.copy()
-        for k in range(5):
-            for l in range(k+3, 5):
-                b[l, k] = 0
-        assert_equal(triu(a, k=-2), b)
 
 
 class TestToeplitz:
@@ -552,7 +459,7 @@ class TestPascal:
 
     def test_big(self):
         p = pascal(50)
-        assert_equal(p[-1, -1], comb(98, 49, exact=True))
+        assert p[-1, -1] == comb(98, 49, exact=True)
 
     def test_threshold(self):
         # Regression test.  An early version of `pascal` returned an
@@ -562,7 +469,7 @@ class TestPascal:
         p = pascal(34)
         assert_equal(2*p.item(-1, -2), p.item(-1, -1), err_msg="n = 34")
         p = pascal(35)
-        assert_equal(2*p.item(-1, -2), p.item(-1, -1), err_msg="n = 35")
+        assert_equal(2.*p.item(-1, -2), 1.*p.item(-1, -1), err_msg="n = 35")
 
 
 def test_invpascal():

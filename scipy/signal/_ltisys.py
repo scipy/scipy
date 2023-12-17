@@ -26,15 +26,15 @@ import warnings
 
 from scipy.linalg import qr as s_qr
 from scipy import integrate, interpolate, linalg
-from scipy.interpolate import interp1d
+from scipy.interpolate import make_interp_spline
 from ._filter_design import (tf2zpk, zpk2tf, normalize, freqs, freqz, freqs_zpk,
                             freqz_zpk)
 from ._lti_conversion import (tf2ss, abcd_normalize, ss2tf, zpk2ss, ss2zpk,
-                             cont2discrete)
+                             cont2discrete, _atleast_2d_or_none)
 
 import numpy
 import numpy as np
-from numpy import (real, atleast_1d, atleast_2d, squeeze, asarray, zeros,
+from numpy import (real, atleast_1d, squeeze, asarray, zeros,
                    dot, transpose, ones, zeros_like, linspace, nan_to_num)
 import copy
 
@@ -51,7 +51,7 @@ class LinearTimeInvariant:
             raise NotImplementedError('The LinearTimeInvariant class is not '
                                       'meant to be used directly, use `lti` '
                                       'or `dlti` instead.')
-        return super(LinearTimeInvariant, cls).__new__(cls)
+        return super().__new__(cls)
 
     def __init__(self):
         """
@@ -219,7 +219,7 @@ class lti(LinearTimeInvariant):
                 raise ValueError("`system` needs to be an instance of `lti` "
                                  "or have 2, 3 or 4 arguments.")
         # __new__ was called from a subclass, let it call its own functions
-        return super(lti, cls).__new__(cls)
+        return super().__new__(cls)
 
     def __init__(self, *system):
         """
@@ -403,7 +403,7 @@ class dlti(LinearTimeInvariant):
                 raise ValueError("`system` needs to be an instance of `dlti` "
                                  "or have 2, 3 or 4 arguments.")
         # __new__ was called from a subclass, let it call its own functions
-        return super(dlti, cls).__new__(cls)
+        return super().__new__(cls)
 
     def __init__(self, *system, **kwargs):
         """
@@ -494,7 +494,7 @@ class TransferFunction(LinearTimeInvariant):
     Represents the system as the continuous-time transfer function
     :math:`H(s)=\sum_{i=0}^N b[N-i] s^i / \sum_{j=0}^M a[M-j] s^j` or the
     discrete-time transfer function
-    :math:`H(s)=\sum_{i=0}^N b[N-i] z^i / \sum_{j=0}^M a[M-j] z^j`, where
+    :math:`H(z)=\sum_{i=0}^N b[N-i] z^i / \sum_{j=0}^M a[M-j] z^j`, where
     :math:`b` are elements of the numerator `num`, :math:`a` are elements of
     the denominator `den`, and ``N == len(b) - 1``, ``M == len(a) - 1``.
     `TransferFunction` systems inherit additional
@@ -583,7 +583,7 @@ class TransferFunction(LinearTimeInvariant):
                     **kwargs)
 
         # No special conversion needed
-        return super(TransferFunction, cls).__new__(cls)
+        return super().__new__(cls)
 
     def __init__(self, *system, **kwargs):
         """Initialize the state space LTI system."""
@@ -601,7 +601,7 @@ class TransferFunction(LinearTimeInvariant):
 
     def __repr__(self):
         """Return representation of the system's transfer function"""
-        return '{0}(\n{1},\n{2},\ndt: {3}\n)'.format(
+        return '{}(\n{},\n{},\ndt: {}\n)'.format(
             self.__class__.__name__,
             repr(self.num),
             repr(self.den),
@@ -794,6 +794,7 @@ class TransferFunctionContinuous(TransferFunction, lti):
     )
 
     """
+
     def to_discrete(self, dt, method='zoh', alpha=None):
         """
         Returns the discretized `TransferFunction` system.
@@ -965,7 +966,7 @@ class ZerosPolesGain(LinearTimeInvariant):
                     )
 
         # No special conversion needed
-        return super(ZerosPolesGain, cls).__new__(cls)
+        return super().__new__(cls)
 
     def __init__(self, *system, **kwargs):
         """Initialize the zeros, poles, gain system."""
@@ -983,7 +984,7 @@ class ZerosPolesGain(LinearTimeInvariant):
 
     def __repr__(self):
         """Return representation of the `ZerosPolesGain` system."""
-        return '{0}(\n{1},\n{2},\n{3},\ndt: {4}\n)'.format(
+        return '{}(\n{},\n{},\n{},\ndt: {}\n)'.format(
             self.__class__.__name__,
             repr(self.zeros),
             repr(self.poles),
@@ -1129,6 +1130,7 @@ class ZerosPolesGainContinuous(ZerosPolesGain, lti):
     )
 
     """
+
     def to_discrete(self, dt, method='zoh', alpha=None):
         """
         Returns the discretized `ZerosPolesGain` system.
@@ -1152,8 +1154,8 @@ class ZerosPolesGainDiscrete(ZerosPolesGain, dlti):
     Discrete-time Linear Time Invariant system in zeros, poles, gain form.
 
     Represents the system as the discrete-time transfer function
-    :math:`H(s)=k \prod_i (s - z[i]) / \prod_j (s - p[j])`, where :math:`k` is
-    the `gain`, :math:`z` are the `zeros` and :math:`p` are the `poles`.
+    :math:`H(z)=k \prod_i (z - q[i]) / \prod_j (z - p[j])`, where :math:`k` is
+    the `gain`, :math:`q` are the `zeros` and :math:`p` are the `poles`.
     Discrete-time `ZerosPolesGain` systems inherit additional functionality
     from the `dlti` class.
 
@@ -1202,7 +1204,7 @@ class ZerosPolesGainDiscrete(ZerosPolesGain, dlti):
     )
 
     Construct the transfer function
-    :math:`H(s) = \frac{5(z - 1)(z - 2)}{(z - 3)(z - 4)}` with a sampling time
+    :math:`H(z) = \frac{5(z - 1)(z - 2)}{(z - 3)(z - 4)}` with a sampling time
     of 0.1 seconds:
 
     >>> signal.ZerosPolesGain([1, 2], [3, 4], 5, dt=0.1)
@@ -1215,11 +1217,6 @@ class ZerosPolesGainDiscrete(ZerosPolesGain, dlti):
 
     """
     pass
-
-
-def _atleast_2d_or_none(arg):
-    if arg is not None:
-        return atleast_2d(arg)
 
 
 class StateSpace(LinearTimeInvariant):
@@ -1263,7 +1260,7 @@ class StateSpace(LinearTimeInvariant):
     Examples
     --------
     >>> from scipy import signal
-
+    >>> import numpy as np
     >>> a = np.array([[0, 1], [0, 0]])
     >>> b = np.array([[0], [1]])
     >>> c = np.array([[1, 0]])
@@ -1328,7 +1325,7 @@ class StateSpace(LinearTimeInvariant):
                                                   *system, **kwargs)
 
         # No special conversion needed
-        return super(StateSpace, cls).__new__(cls)
+        return super().__new__(cls)
 
     def __init__(self, *system, **kwargs):
         """Initialize the state space lti/dlti system."""
@@ -1348,7 +1345,7 @@ class StateSpace(LinearTimeInvariant):
 
     def __repr__(self):
         """Return representation of the `StateSpace` system."""
-        return '{0}(\n{1},\n{2},\n{3},\n{4},\ndt: {5}\n)'.format(
+        return '{}(\n{},\n{},\n{},\n{},\ndt: {}\n)'.format(
             self.__class__.__name__,
             repr(self.A),
             repr(self.B),
@@ -1414,7 +1411,7 @@ class StateSpace(LinearTimeInvariant):
             c = self.C
             d = np.dot(self.D, other)
 
-        common_dtype = np.find_common_type((a.dtype, b.dtype, c.dtype, d.dtype), ())
+        common_dtype = np.result_type(a.dtype, b.dtype, c.dtype, d.dtype)
         return StateSpace(np.asarray(a, dtype=common_dtype),
                           np.asarray(b, dtype=common_dtype),
                           np.asarray(c, dtype=common_dtype),
@@ -1432,7 +1429,7 @@ class StateSpace(LinearTimeInvariant):
         c = np.dot(other, self.C)
         d = np.dot(other, self.D)
 
-        common_dtype = np.find_common_type((a.dtype, b.dtype, c.dtype, d.dtype), ())
+        common_dtype = np.result_type(a.dtype, b.dtype, c.dtype, d.dtype)
         return StateSpace(np.asarray(a, dtype=common_dtype),
                           np.asarray(b, dtype=common_dtype),
                           np.asarray(c, dtype=common_dtype),
@@ -1453,8 +1450,7 @@ class StateSpace(LinearTimeInvariant):
         if isinstance(other, StateSpace):
             # Disallow mix of discrete and continuous systems.
             if type(other) is not type(self):
-                raise TypeError('Cannot add {} and {}'.format(type(self),
-                                                              type(other)))
+                raise TypeError(f'Cannot add {type(self)} and {type(other)}')
 
             if self.dt != other.dt:
                 raise TypeError('Cannot add systems with different `dt`.')
@@ -1484,10 +1480,9 @@ class StateSpace(LinearTimeInvariant):
                 d = self.D + other
             else:
                 raise ValueError("Cannot add systems with incompatible "
-                                 "dimensions ({} and {})"
-                                 .format(self.D.shape, other.shape))
+                                 f"dimensions ({self.D.shape} and {other.shape})")
 
-        common_dtype = np.find_common_type((a.dtype, b.dtype, c.dtype, d.dtype), ())
+        common_dtype = np.result_type(a.dtype, b.dtype, c.dtype, d.dtype)
         return StateSpace(np.asarray(a, dtype=common_dtype),
                           np.asarray(b, dtype=common_dtype),
                           np.asarray(c, dtype=common_dtype),
@@ -1663,6 +1658,7 @@ class StateSpaceContinuous(StateSpace, lti):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
 
     >>> a = np.array([[0, 1], [0, 0]])
@@ -1683,6 +1679,7 @@ class StateSpaceContinuous(StateSpace, lti):
     )
 
     """
+
     def to_discrete(self, dt, method='zoh', alpha=None):
         """
         Returns the discretized `StateSpace` system.
@@ -1739,6 +1736,7 @@ class StateSpaceDiscrete(StateSpace, dlti):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
 
     >>> a = np.array([[1, 0.1], [0, 1]])
@@ -1765,6 +1763,10 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
     """
     Simulate output of a continuous-time linear system, by using
     the ODE solver `scipy.integrate.odeint`.
+
+    .. deprecated:: 1.11.0
+        Function `lsim2` is deprecated in favor of the faster `lsim` function.
+        `lsim2` will be removed in SciPy 1.13.
 
     Parameters
     ----------
@@ -1803,26 +1805,32 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
     xout : ndarray
         The time-evolution of the state-vector.
 
+    See Also
+    --------
+    lsim
+
     Notes
     -----
-    This function uses `scipy.integrate.odeint` to solve the
-    system's differential equations.  Additional keyword arguments
-    given to `lsim2` are passed on to `odeint`.  See the documentation
+    This function uses `scipy.integrate.odeint` to solve the system's
+    differential equations.  Additional keyword arguments given to `lsim2`
+    are passed on to `scipy.integrate.odeint`.  See the documentation
     for `scipy.integrate.odeint` for the full list of arguments.
+
+    As `lsim2` is now deprecated, users are advised to switch to the faster
+    and more accurate `lsim` function. Keyword arguments for
+    `scipy.integrate.odeint` are not supported in `lsim`, but not needed in
+    general.
 
     If (num, den) is passed in for ``system``, coefficients for both the
     numerator and denominator should be specified in descending exponent
     order (e.g. ``s^2 + 3s + 5`` would be represented as ``[1, 3, 5]``).
-
-    See Also
-    --------
-    lsim
 
     Examples
     --------
     We'll use `lsim2` to simulate an analog Bessel filter applied to
     a signal.
 
+    >>> import numpy as np
     >>> from scipy.signal import bessel, lsim2
     >>> import matplotlib.pyplot as plt
 
@@ -1881,6 +1889,10 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
     >>> plt.show()
 
     """
+    warnings.warn("lsim2 is deprecated and will be removed from scipy 1.13. "
+                  "Use the feature-equivalent lsim function.",
+                  DeprecationWarning, stacklevel=2)
+
     if isinstance(system, lti):
         sys = system._as_ss()
     elif isinstance(system, dlti):
@@ -1925,7 +1937,7 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
 
         def fprime(x, t, sys, ufunc):
             """The vector field of the linear system."""
-            return dot(sys.A, x) + squeeze(dot(sys.B, nan_to_num(ufunc([t]))))
+            return dot(sys.A, x) + squeeze(dot(sys.B, nan_to_num(ufunc(t))))
         xout = integrate.odeint(fprime, X0, T, args=(sys, ufunc), **kwargs)
         yout = dot(sys.C, transpose(xout)) + dot(sys.D, transpose(U))
     else:
@@ -2001,6 +2013,7 @@ def lsim(system, U, T, X0=None, interp=True):
     We'll use `lsim` to simulate an analog Bessel filter applied to
     a signal.
 
+    >>> import numpy as np
     >>> from scipy.signal import bessel, lsim
     >>> import matplotlib.pyplot as plt
 
@@ -2092,25 +2105,23 @@ def lsim(system, U, T, X0=None, interp=True):
                 not np.any(U))
 
     if n_steps == 1:
-        yout = squeeze(dot(xout, transpose(C)))
+        yout = squeeze(xout @ C.T)
         if not no_input:
-            yout += squeeze(dot(U, transpose(D)))
-        return T, squeeze(yout), squeeze(xout)
+            yout += squeeze(U @ D.T)
+        return T, yout, squeeze(xout)
 
     dt = T[1] - T[0]
-    if not np.allclose((T[1:] - T[:-1]) / dt, 1.0):
-        warnings.warn("Non-uniform timesteps are deprecated. Results may be "
-                      "slow and/or inaccurate.", DeprecationWarning)
-        return lsim2(system, U, T, X0)
+    if not np.allclose(np.diff(T), dt):
+        raise ValueError("Time steps are not equally spaced.")
 
     if no_input:
         # Zero input: just use matrix exponential
         # take transpose because state is a row vector
-        expAT_dt = linalg.expm(transpose(A) * dt)
+        expAT_dt = linalg.expm(A.T * dt)
         for i in range(1, n_steps):
-            xout[i] = dot(xout[i-1], expAT_dt)
-        yout = squeeze(dot(xout, transpose(C)))
-        return T, squeeze(yout), squeeze(xout)
+            xout[i] = xout[i-1] @ expAT_dt
+        yout = squeeze(xout @ C.T)
+        return T, yout, squeeze(xout)
 
     # Nonzero input
     U = atleast_1d(U)
@@ -2136,11 +2147,11 @@ def lsim(system, U, T, X0=None, interp=True):
         M = np.vstack([np.hstack([A * dt, B * dt]),
                        np.zeros((n_inputs, n_states + n_inputs))])
         # transpose everything because the state and input are row vectors
-        expMT = linalg.expm(transpose(M))
+        expMT = linalg.expm(M.T)
         Ad = expMT[:n_states, :n_states]
         Bd = expMT[n_states:, :n_states]
         for i in range(1, n_steps):
-            xout[i] = dot(xout[i-1], Ad) + dot(U[i-1], Bd)
+            xout[i] = xout[i-1] @ Ad + U[i-1] @ Bd
     else:
         # Linear interpolation between steps
         # Algorithm: to integrate from time 0 to time dt, with linear
@@ -2157,15 +2168,15 @@ def lsim(system, U, T, X0=None, interp=True):
                        np.hstack([np.zeros((n_inputs, n_states + n_inputs)),
                                   np.identity(n_inputs)]),
                        np.zeros((n_inputs, n_states + 2 * n_inputs))])
-        expMT = linalg.expm(transpose(M))
+        expMT = linalg.expm(M.T)
         Ad = expMT[:n_states, :n_states]
         Bd1 = expMT[n_states+n_inputs:, :n_states]
         Bd0 = expMT[n_states:n_states + n_inputs, :n_states] - Bd1
         for i in range(1, n_steps):
-            xout[i] = (dot(xout[i-1], Ad) + dot(U[i-1], Bd0) + dot(U[i], Bd1))
+            xout[i] = xout[i-1] @ Ad + U[i-1] @ Bd0 + U[i] @ Bd1
 
-    yout = (squeeze(dot(xout, transpose(C))) + squeeze(dot(U, transpose(D))))
-    return T, squeeze(yout), squeeze(xout)
+    yout = squeeze(xout @ C.T) + squeeze(U @ D.T)
+    return T, yout, squeeze(xout)
 
 
 def _default_response_times(A, n):
@@ -2274,6 +2285,10 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
     """
     Impulse response of a single-input, continuous-time linear system.
 
+    .. deprecated:: 1.11.0
+        Function `impulse2` is deprecated in favor of the faster `impulse`
+        function. `impulse2` will be removed in SciPy 1.13.
+
     Parameters
     ----------
     system : an instance of the LTI class or a tuple of array_like
@@ -2317,6 +2332,11 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
     The solution is generated by calling `scipy.signal.lsim2`, which uses
     the differential equation solver `scipy.integrate.odeint`.
 
+    As `impulse2` is now deprecated, users are advised to switch to the faster
+    and more accurate `impulse` function. Keyword arguments for
+    `scipy.integrate.odeint` are not supported in `impulse`, but not needed in
+    general.
+
     If (num, den) is passed in for ``system``, coefficients for both the
     numerator and denominator should be specified in descending exponent
     order (e.g. ``s^2 + 3s + 5`` would be represented as ``[1, 3, 5]``).
@@ -2329,12 +2349,18 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
     root: ``x''(t) + 2*x'(t) + x(t) = u(t)``
 
     >>> from scipy import signal
+
     >>> system = ([1.0], [1.0, 2.0, 1.0])
+
     >>> t, y = signal.impulse2(system)
     >>> import matplotlib.pyplot as plt
     >>> plt.plot(t, y)
 
     """
+    warnings.warn("impulse2 is deprecated and will be removed from "
+                  "scipy 1.13. Use the feature-equivalent impulse function.",
+                  DeprecationWarning, stacklevel=2)
+
     if isinstance(system, lti):
         sys = system._as_ss()
     elif isinstance(system, dlti):
@@ -2356,7 +2382,14 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
     # Move the impulse in the input to the initial conditions, and then
     # solve using lsim2().
     ic = B + X0
-    Tr, Yr, Xr = lsim2(sys, T=T, X0=ic, **kwargs)
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            "lsim2 is deprecated and will be removed from scipy 1.13",
+            DeprecationWarning
+        )
+
+        Tr, Yr, Xr = lsim2(sys, T=T, X0=ic, **kwargs)
     return Tr, Yr
 
 
@@ -2389,9 +2422,6 @@ def step(system, X0=None, T=None, N=None):
     yout : 1D ndarray
         Step response of system.
 
-    See also
-    --------
-    scipy.signal.step2
 
     Notes
     -----
@@ -2437,6 +2467,10 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
     it uses the function `scipy.signal.lsim2` to compute the step
     response.
 
+    .. deprecated:: 1.11.0
+        Function `step2` is deprecated in favor of the faster `step` function.
+        `step2` will be removed in SciPy 1.13.
+
     Parameters
     ----------
     system : an instance of the LTI class or a tuple of array_like
@@ -2468,12 +2502,17 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
     yout : 1D ndarray
         Step response of system.
 
-    See also
+    See Also
     --------
     scipy.signal.step
 
     Notes
     -----
+    As `step2` is now deprecated, users are advised to switch to the faster
+    and more accurate `step` function. Keyword arguments for
+    `scipy.integrate.odeint` are not supported in `step`, but not needed in
+    general.
+
     If (num, den) is passed in for ``system``, coefficients for both the
     numerator and denominator should be specified in descending exponent
     order (e.g. ``s^2 + 3s + 5`` would be represented as ``[1, 3, 5]``).
@@ -2484,8 +2523,10 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
     --------
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+
     >>> lti = signal.lti([1.0], [1.0, 1.0])
     >>> t, y = signal.step2(lti)
+
     >>> plt.plot(t, y)
     >>> plt.xlabel('Time [s]')
     >>> plt.ylabel('Amplitude')
@@ -2493,6 +2534,10 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
     >>> plt.grid()
 
     """
+    warnings.warn("step2 is deprecated and will be removed from scipy 1.13. "
+                  "Use the feature-equivalent step function.",
+                  DeprecationWarning, stacklevel=2)
+
     if isinstance(system, lti):
         sys = system._as_ss()
     elif isinstance(system, dlti):
@@ -2507,7 +2552,14 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
     else:
         T = asarray(T)
     U = ones(T.shape, sys.A.dtype)
-    vals = lsim2(sys, U, T, X0=X0, **kwargs)
+
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            "lsim2 is deprecated and will be removed from scipy 1.13",
+            DeprecationWarning
+        )
+        vals = lsim2(sys, U, T, X0=X0, **kwargs)
     return vals[0], vals[1]
 
 
@@ -3160,6 +3212,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     algorithms.  This is example number 1 from section 4 of the reference KNV
     publication ([1]_):
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
@@ -3352,10 +3405,9 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
                 # don't annoy him
                 err_msg = (
                     "Convergence was not reached after maxiter iterations.\n"
-                    "You asked for a relative tolerance of %f we got %f" %
-                    (rtol, cur_rtol)
+                    f"You asked for a tolerance of {rtol}, we got {cur_rtol}."
                     )
-                warnings.warn(err_msg)
+                warnings.warn(err_msg, stacklevel=2)
 
         # reconstruct transfer_matrix to match complex conjugate pairs,
         # ie transfer_matrix_j/transfer_matrix_j+1 are
@@ -3447,6 +3499,7 @@ def dlsim(system, u, t=None, x0=None):
     A simple integrator transfer function with a discrete time step of 1.0
     could be implemented as:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> tf = ([1.0,], [1.0, -1.0], 1.0)
     >>> t_in = [0.0, 1.0, 2.0, 3.0]
@@ -3497,8 +3550,7 @@ def dlsim(system, u, t=None, x0=None):
         if len(u.shape) == 1:
             u = u[:, np.newaxis]
 
-        u_dt_interp = interp1d(t, u.transpose(), copy=False, bounds_error=True)
-        u_dt = u_dt_interp(tout).transpose()
+        u_dt = make_interp_spline(t, u, k=1)(tout)
 
     # Simulate the system
     for i in range(0, out_samples - 1):
@@ -3554,6 +3606,7 @@ def dimpulse(system, x0=None, t=None, n=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
@@ -3640,6 +3693,7 @@ def dstep(system, x0=None, t=None, n=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 

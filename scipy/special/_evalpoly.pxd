@@ -12,14 +12,13 @@ References
 [1] Knuth, "The Art of Computer Programming, Volume II"
 
 """
-from ._complexstuff cimport zabs
+from libc.math cimport fma
 
-cdef extern from "_c99compat.h":
-    double sc_fma(double x, double y, double z) nogil
+from ._complexstuff cimport zabs
 
 
 cdef inline double complex cevalpoly(double *coeffs, int degree,
-                                     double complex z) nogil:
+                                     double complex z) noexcept nogil:
     """Evaluate a polynomial with real coefficients at a complex point.
 
     Uses equation (3) in section 4.6.4 of [1]. Note that it is more
@@ -36,6 +35,6 @@ cdef inline double complex cevalpoly(double *coeffs, int degree,
 
     for j in range(2, degree + 1):
         tmp = b
-        b = sc_fma(-s, a, coeffs[j])
-        a = sc_fma(r, a, tmp)
+        b = fma(-s, a, coeffs[j])
+        a = fma(r, a, tmp)
     return z*a + b

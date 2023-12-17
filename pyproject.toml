@@ -8,59 +8,53 @@
 #     "pybind11>=2.4.3,<2.5.0",
 
 [build-system]
+build-backend = 'mesonpy'
 requires = [
-    "wheel",
-    "setuptools<60.0",  # do not increase, 60.0 enables vendored distutils
-    "Cython>=0.29.18",
-    "pybind11>=2.4.3",
-    "pythran>=0.9.12",
+    "meson-python>=0.15.0",
+    "Cython>=0.29.35,!=3.0.3",  # when updating version, also update check in meson.build
+    "pybind11>=2.10.4",
+    "pythran>=0.14.0",
 
-    # NumPy dependencies - to update these, sync from
-    # https://github.com/scipy/oldest-supported-numpy/, and then
-    # update minimum version to match our install_requires min version
-    # ----------------------------------------------------------------
-
-    # numpy 1.19 was the first minor release to provide aarch64 wheels, but
-    # wheels require fixes contained in numpy 1.19.2
-    "numpy==1.19.2; python_version=='3.8' and platform_machine=='aarch64' and platform_python_implementation != 'PyPy'",
-    # aarch64 for py39 is covered by default requirement below
-
-    # arm64 on Darwin supports Python 3.8 and above requires numpy>=1.20.0
-    "numpy==1.20.0; python_version=='3.8' and platform_machine=='arm64' and platform_system=='Darwin'",
-    "numpy==1.20.0; python_version=='3.9' and platform_machine=='arm64' and platform_system=='Darwin'",
+    # When numpy 2.0.0rc1 comes out, we should update this to build against 2.0,
+    # and then runtime depend on the range 1.22.X to <2.3. No need to switch to
+    # 1.25.2 in the meantime (1.25.x is the first version which exports older C
+    # API versions by default).
 
     # default numpy requirements
-    "numpy==1.18.5; python_version=='3.8' and (platform_machine!='arm64' or platform_system!='Darwin') and platform_machine!='aarch64' and platform_python_implementation != 'PyPy'",
-    "numpy==1.19.3; python_version=='3.9' and (platform_machine!='arm64' or platform_system!='Darwin') and platform_python_implementation != 'PyPy'",
-    "numpy==1.21.4; python_version=='3.10' and platform_python_implementation != 'PyPy'",
+    "numpy==1.22.4; python_version<='3.10' and platform_python_implementation != 'PyPy'",
+    "numpy==1.23.2; python_version=='3.11' and platform_python_implementation != 'PyPy'",
+    "numpy>=1.26.0,<1.27; python_version=='3.12'",
 
-    # For Python versions which aren't yet officially supported,
-    # we specify an unpinned NumPy which allows source distributions
-    # to be used and allows wheels to be used as soon as they
-    # become available.
-    "numpy; python_version>='3.11'",
-    "numpy; python_version>='3.8' and platform_python_implementation=='PyPy'",
+    # PyPy requirements; 1.25.0 was the first version to have pypy-3.9 wheels,
+    # and 1.25.0 also changed the C API target to 1.19.x, so no longer a need
+    # for an exact pin.
+    "numpy>=1.25.0; python_version>='3.9' and platform_python_implementation=='PyPy'",
+
+    # For Python versions which aren't yet officially supported, we specify an
+    # unpinned NumPy which allows source distributions to be used and allows
+    # wheels to be used as soon as they become available.
+    # Python 3.13 has known issues that are only fixed in numpy 2.0.0.dev0
+    "numpy>=2.0.0.dev0; python_version>='3.13'",
 ]
 
 [project]
 name = "SciPy"
+version = "1.13.0.dev0"
+# TODO: add `license-files` once PEP 639 is accepted (see meson-python#88)
+#       at that point, no longer include them in `py3.install_sources()`
 license = {file = "LICENSE.txt"}
-description = """
-SciPy (pronounced "Sigh Pie") is an open-source software for mathematics,
-science, and engineering. It includes modules for statistics, optimization,
-integration, linear algebra, Fourier transforms, signal and image processing,
-ODE solvers, and more.
-"""
-
+description = "Fundamental algorithms for scientific computing in Python"
 maintainers = [
     {name = "SciPy Developers", email = "scipy-dev@python.org"},
 ]
 # Note: Python and NumPy upper version bounds should be set correctly in
 # release branches, see:
 #     https://scipy.github.io/devdocs/dev/core-dev/index.html#version-ranges-for-numpy-and-other-dependencies
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dependencies = [
-    "numpy>=1.18.5",
+    # TODO: update to "pin-compatible" once possible, see
+    # https://github.com/mesonbuild/meson-python/issues/29
+    "numpy>=1.22.4",
 ]
 readme = "README.rst"
 classifiers = [
@@ -71,9 +65,10 @@ classifiers = [
     "Programming Language :: C",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Software Development :: Libraries",
     "Topic :: Scientific/Engineering",
     "Operating System :: Microsoft :: Windows",
@@ -82,32 +77,42 @@ classifiers = [
     "Operating System :: Unix",
     "Operating System :: MacOS",
 ]
-dynamic = ['version']
 
 [project.optional-dependencies]
 test = [
     "pytest",
     "pytest-cov",
+    "pytest-timeout",
     "pytest-xdist",
     "asv",
     "mpmath",
     "gmpy2",
     "threadpoolctl",
     "scikit-umfpack",
+    "pooch",
+    "hypothesis",
 ]
 doc = [
-    "sphinx!=3.1.0, !=4.1.0",
-    "pydata-sphinx-theme>=0.8.1",
-    "sphinx-panels>=0.5.2",
+    "sphinx!=4.1.0",
+    "pydata-sphinx-theme==0.9.0",
+    "sphinx-design>=0.2.0",
     "matplotlib>2",
     "numpydoc",
-    "sphinx-tabs",
+    "jupytext",
+    "myst-nb",
+    "pooch",
 ]
 dev = [
     "mypy",
     "typing_extensions",
+    "types-psutil",
     "pycodestyle",
-    "flake8",
+    "ruff",
+    "cython-lint>=0.12.2",
+    "rich-click",
+    "click",
+    "doit>=0.36.0",
+    "pydevtool",
 ]
 
 [project.urls]
@@ -117,7 +122,39 @@ source = "https://github.com/scipy/scipy"
 download = "https://github.com/scipy/scipy/releases"
 tracker = "https://github.com/scipy/scipy/issues"
 
-
 [tool.doit]
-dodoFile = "do.py"
+dodoFile = "dev.py"
 
+
+[tool.cibuildwheel]
+skip = "cp36-* cp37-* cp38-* pp* *_ppc64le *_i686 *_s390x"
+build-verbosity = "3"
+# gmpy2 and scikit-umfpack are usually added for testing. However, there are
+# currently wheels missing that make the test script fail.
+test-requires = ["pytest", "pytest-cov", "pytest-xdist", "mpmath", "threadpoolctl", "pooch", "hypothesis"]
+test-command = "bash {project}/tools/wheels/cibw_test_command.sh {project}"
+
+[tool.cibuildwheel.linux]
+manylinux-x86_64-image = "manylinux2014"
+manylinux-aarch64-image = "manylinux2014"
+before-build = "bash {project}/tools/wheels/cibw_before_build_linux.sh {project}"
+
+[tool.cibuildwheel.macos]
+before-build = "bash {project}/tools/wheels/cibw_before_build_macos.sh {project}"
+
+[tool.cibuildwheel.windows]
+before-build = "bash {project}/tools/wheels/cibw_before_build_win.sh {project}"
+repair-wheel-command = "bash ./tools/wheels/repair_windows.sh {wheel} {dest_dir}"
+
+[[tool.cibuildwheel.overrides]]
+select = "*-win32"
+
+[[tool.cibuildwheel.overrides]]
+select = "*-win_amd64"
+# can use pkg-config detection for win_amd64 because the installed rtools
+# provide a working pkg-config.
+# An alternative is to set CMAKE_PREFIX_PATH="c:/opt/openblas/if_32/32"
+# Don't use double backslash for path separators, they don't get passed
+# to the build correctly
+# environment = { CMAKE_PREFIX_PATH="c:/opt/64" }
+environment = { PKG_CONFIG_PATH="c:/opt/64/lib/pkgconfig" }

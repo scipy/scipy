@@ -52,8 +52,7 @@
 
 #include "mconf.h"
 
-double btdtr(a, b, x)
-double a, b, x;
+double btdtr(double a, double b, double x)
 {
 
     return (incbet(a, b, x));

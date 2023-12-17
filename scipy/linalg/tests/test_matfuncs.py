@@ -125,7 +125,7 @@ class TestLogM:
 
                 # Eigenvalues are related to the branch cut.
                 W = np.linalg.eigvals(M)
-                err_msg = 'M:{0} eivals:{1}'.format(M, W)
+                err_msg = f'M:{M} eivals:{W}'
 
                 # Check sqrtm round trip because it is used within logm.
                 M_sqrtm, info = sqrtm(M, disp=False)
@@ -410,6 +410,78 @@ class TestSqrtM:
         assert_allclose(np.dot(R, R), M, atol=1e-14)
         assert_allclose(sqrtm(M), R, atol=1e-14)
 
+    def test_gh17918(self):
+        M = np.empty((19, 19))
+        M.fill(0.94)
+        np.fill_diagonal(M, 1)
+        assert np.isrealobj(sqrtm(M))
+
+    def test_data_size_preservation_uint_in_float_out(self):
+        M = np.zeros((10, 10), dtype=np.uint8)
+        # input bit size is 8, but minimum float bit size is 16
+        assert sqrtm(M).dtype == np.float16
+        M = np.zeros((10, 10), dtype=np.uint16)
+        assert sqrtm(M).dtype == np.float16
+        M = np.zeros((10, 10), dtype=np.uint32)
+        assert sqrtm(M).dtype == np.float32
+        M = np.zeros((10, 10), dtype=np.uint64)
+        assert sqrtm(M).dtype == np.float64
+
+    def test_data_size_preservation_int_in_float_out(self):
+        M = np.zeros((10, 10), dtype=np.int8)
+        # input bit size is 8, but minimum float bit size is 16
+        assert sqrtm(M).dtype == np.float16
+        M = np.zeros((10, 10), dtype=np.int16)
+        assert sqrtm(M).dtype == np.float16
+        M = np.zeros((10, 10), dtype=np.int32)
+        assert sqrtm(M).dtype == np.float32
+        M = np.zeros((10, 10), dtype=np.int64)
+        assert sqrtm(M).dtype == np.float64
+
+    def test_data_size_preservation_int_in_comp_out(self):
+        M = np.array([[2, 4], [0, -2]], dtype=np.int8)
+        # input bit size is 8, but minimum complex bit size is 64
+        assert sqrtm(M).dtype == np.complex64
+        M = np.array([[2, 4], [0, -2]], dtype=np.int16)
+        # input bit size is 16, but minimum complex bit size is 64
+        assert sqrtm(M).dtype == np.complex64
+        M = np.array([[2, 4], [0, -2]], dtype=np.int32)
+        assert sqrtm(M).dtype == np.complex64
+        M = np.array([[2, 4], [0, -2]], dtype=np.int64)
+        assert sqrtm(M).dtype == np.complex128
+
+    def test_data_size_preservation_float_in_float_out(self):
+        M = np.zeros((10, 10), dtype=np.float16)
+        assert sqrtm(M).dtype == np.float16
+        M = np.zeros((10, 10), dtype=np.float32)
+        assert sqrtm(M).dtype == np.float32
+        M = np.zeros((10, 10), dtype=np.float64)
+        assert sqrtm(M).dtype == np.float64
+        if hasattr(np, 'float128'):
+            M = np.zeros((10, 10), dtype=np.float128)
+            assert sqrtm(M).dtype == np.float128
+
+    def test_data_size_preservation_float_in_comp_out(self):
+        M = np.array([[2, 4], [0, -2]], dtype=np.float16)
+        # input bit size is 16, but minimum complex bit size is 64
+        assert sqrtm(M).dtype == np.complex64
+        M = np.array([[2, 4], [0, -2]], dtype=np.float32)
+        assert sqrtm(M).dtype == np.complex64
+        M = np.array([[2, 4], [0, -2]], dtype=np.float64)
+        assert sqrtm(M).dtype == np.complex128
+        if hasattr(np, 'float128') and hasattr(np, 'complex256'):
+            M = np.array([[2, 4], [0, -2]], dtype=np.float128)
+            assert sqrtm(M).dtype == np.complex256
+
+    def test_data_size_preservation_comp_in_comp_out(self):
+        M = np.array([[2j, 4], [0, -2j]], dtype=np.complex64)
+        assert sqrtm(M).dtype == np.complex128
+        if hasattr(np, 'complex256'):
+            M = np.array([[2j, 4], [0, -2j]], dtype=np.complex128)
+            assert sqrtm(M).dtype == np.complex256
+            M = np.array([[2j, 4], [0, -2j]], dtype=np.complex256)
+            assert sqrtm(M).dtype == np.complex256
+
 
 class TestFractionalMatrixPower:
     def test_round_trip_random_complex(self):
@@ -490,7 +562,7 @@ class TestFractionalMatrixPower:
         A_sqrtm, info = sqrtm(A, disp=False)
         A_rem_power = _matfuncs_inv_ssq._remainder_matrix_power(A, 0.5)
         A_power = fractional_matrix_power(A, 0.5)
-        assert_array_equal(A_rem_power, A_power)
+        assert_allclose(A_rem_power, A_power, rtol=1e-11)
         assert_allclose(A_sqrtm, A_power)
         assert_allclose(A_sqrtm, A_funm_sqrt)
 

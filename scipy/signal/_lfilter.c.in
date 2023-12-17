@@ -283,14 +283,10 @@ scipy_signal__sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * ar
                 goto fail;
             }
             /* Give our reference to arVi to arVi_view */
-#if NPY_API_VERSION >= 0x00000007
             if (PyArray_SetBaseObject(arVi_view, (PyObject *)arVi) == -1) {
                 Py_DECREF(arVi_view);
                 goto fail;
             }
-#else
-            PyArray_BASE(arVi_view) = arVi;
-#endif
             arVi = arVi_view;
         }
 
@@ -447,7 +443,7 @@ RawFilter(const PyArrayObject * b, const PyArrayObject * a,
     }
     /* Initialize zero filled buffers to 0, so that we can use
      * Py_XINCREF/Py_XDECREF on it for object arrays (necessary for
-     * copyswap to work correctly). Stricly speaking, it is not needed for
+     * copyswap to work correctly). Strictly speaking, it is not needed for
      * fundamental types (as values are copied instead of pointers, without
      * refcounts), but oh well...
      */

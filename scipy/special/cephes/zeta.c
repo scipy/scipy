@@ -86,8 +86,7 @@ static double A[] = {
 /* 30 Nov 86 -- error in third coefficient fixed */
 
 
-double zeta(x, q)
-double x, q;
+double zeta(double x, double q)
 {
     int i;
     double a, b, k, s, t, w;
@@ -98,14 +97,14 @@ double x, q;
     if (x < 1.0) {
       domerr:
 	sf_error("zeta", SF_ERROR_DOMAIN, NULL);
-	return (NPY_NAN);
+	return (NAN);
     }
 
     if (q <= 0.0) {
 	if (q == floor(q)) {
 	    sf_error("zeta", SF_ERROR_SINGULAR, NULL);
 	  retinf:
-	    return (NPY_INFINITY);
+	    return (INFINITY);
 	}
 	if (x != floor(x))
 	    goto domerr;	/* because q^-x not defined */

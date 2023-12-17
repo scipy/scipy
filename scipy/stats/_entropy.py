@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Created on Fri Apr  2 09:06:05 2021
 
@@ -9,23 +8,34 @@ from __future__ import annotations
 import math
 import numpy as np
 from scipy import special
-from typing import Optional, Union
+from ._axis_nan_policy import _axis_nan_policy_factory, _broadcast_arrays
 
 __all__ = ['entropy', 'differential_entropy']
 
 
+@_axis_nan_policy_factory(
+    lambda x: x,
+    n_samples=lambda kwgs: (
+        2 if ("qk" in kwgs and kwgs["qk"] is not None)
+        else 1
+    ),
+    n_outputs=1, result_to_tuple=lambda x: (x,), paired=True,
+    too_small=-1  # entropy doesn't have too small inputs
+)
 def entropy(pk: np.typing.ArrayLike,
-            qk: Optional[np.typing.ArrayLike] = None,
-            base: Optional[float] = None,
+            qk: np.typing.ArrayLike | None = None,
+            base: float | None = None,
             axis: int = 0
-            ) -> Union[np.number, np.ndarray]:
-    """Calculate the entropy of a distribution for given probability values.
+            ) -> np.number | np.ndarray:
+    """
+    Calculate the Shannon entropy/relative entropy of given distribution(s).
 
-    If only probabilities `pk` are given, the entropy is calculated as
-    ``S = -sum(pk * log(pk), axis=axis)``.
+    If only probabilities `pk` are given, the Shannon entropy is calculated as
+    ``H = -sum(pk * log(pk))``.
 
-    If `qk` is not None, then compute the Kullback-Leibler divergence
-    ``S = sum(pk * log(pk / qk), axis=axis)``.
+    If `qk` is not None, then compute the relative entropy
+    ``D = sum(pk * log(pk / qk))``. This quantity is also known
+    as the Kullback-Leibler divergence.
 
     This routine will normalize `pk` and `qk` if they don't sum to 1.
 
@@ -48,39 +58,97 @@ def entropy(pk: np.typing.ArrayLike,
     S : {float, array_like}
         The calculated entropy.
 
+    Notes
+    -----
+    Informally, the Shannon entropy quantifies the expected uncertainty
+    inherent in the possible outcomes of a discrete random variable.
+    For example,
+    if messages consisting of sequences of symbols from a set are to be
+    encoded and transmitted over a noiseless channel, then the Shannon entropy
+    ``H(pk)`` gives a tight lower bound for the average number of units of
+    information needed per symbol if the symbols occur with frequencies
+    governed by the discrete distribution `pk` [1]_. The choice of base
+    determines the choice of units; e.g., ``e`` for nats, ``2`` for bits, etc.
+
+    The relative entropy, ``D(pk|qk)``, quantifies the increase in the average
+    number of units of information needed per symbol if the encoding is
+    optimized for the probability distribution `qk` instead of the true
+    distribution `pk`. Informally, the relative entropy quantifies the expected
+    excess in surprise experienced if one believes the true distribution is
+    `qk` when it is actually `pk`.
+
+    A related quantity, the cross entropy ``CE(pk, qk)``, satisfies the
+    equation ``CE(pk, qk) = H(pk) + D(pk|qk)`` and can also be calculated with
+    the formula ``CE = -sum(pk * log(qk))``. It gives the average
+    number of units of information needed per symbol if an encoding is
+    optimized for the probability distribution `qk` when the true distribution
+    is `pk`. It is not computed directly by `entropy`, but it can be computed
+    using two calls to the function (see Examples).
+
+    See [2]_ for more information.
+
+    References
+    ----------
+    .. [1] Shannon, C.E. (1948), A Mathematical Theory of Communication.
+           Bell System Technical Journal, 27: 379-423.
+           https://doi.org/10.1002/j.1538-7305.1948.tb01338.x
+    .. [2] Thomas M. Cover and Joy A. Thomas. 2006. Elements of Information
+           Theory (Wiley Series in Telecommunications and Signal Processing).
+           Wiley-Interscience, USA.
+
+
     Examples
     --------
-
-    >>> from scipy.stats import entropy
-
-    Bernoulli trial with different p.
     The outcome of a fair coin is the most uncertain:
 
-    >>> entropy([1/2, 1/2], base=2)
+    >>> import numpy as np
+    >>> from scipy.stats import entropy
+    >>> base = 2  # work in units of bits
+    >>> pk = np.array([1/2, 1/2])  # fair coin
+    >>> H = entropy(pk, base=base)
+    >>> H
     1.0
+    >>> H == -np.sum(pk * np.log(pk)) / np.log(base)
+    True
 
     The outcome of a biased coin is less uncertain:
 
-    >>> entropy([9/10, 1/10], base=2)
+    >>> qk = np.array([9/10, 1/10])  # biased coin
+    >>> entropy(qk, base=base)
     0.46899559358928117
 
-    Relative entropy:
+    The relative entropy between the fair coin and biased coin is calculated
+    as:
 
-    >>> entropy([1/2, 1/2], qk=[9/10, 1/10])
-    0.5108256237659907
+    >>> D = entropy(pk, qk, base=base)
+    >>> D
+    0.7369655941662062
+    >>> D == np.sum(pk * np.log(pk/qk)) / np.log(base)
+    True
+
+    The cross entropy can be calculated as the sum of the entropy and
+    relative entropy`:
+
+    >>> CE = entropy(pk, base=base) + entropy(pk, qk, base=base)
+    >>> CE
+    1.736965594166206
+    >>> CE == -np.sum(pk * np.log(qk)) / np.log(base)
+    True
 
     """
     if base is not None and base <= 0:
         raise ValueError("`base` must be a positive number or `None`.")
 
     pk = np.asarray(pk)
-    pk = 1.0*pk / np.sum(pk, axis=axis, keepdims=True)
+    with np.errstate(invalid='ignore'):
+        pk = 1.0*pk / np.sum(pk, axis=axis, keepdims=True)
     if qk is None:
         vec = special.entr(pk)
     else:
         qk = np.asarray(qk)
-        pk, qk = np.broadcast_arrays(pk, qk)
-        qk = 1.0*qk / np.sum(qk, axis=axis, keepdims=True)
+        pk, qk = _broadcast_arrays((pk, qk), axis=None)  # don't ignore any axes
+        sum_kwargs = dict(axis=axis, keepdims=True)
+        qk = 1.0*qk / np.sum(qk, **sum_kwargs)  # type: ignore[operator, call-overload]
         vec = special.rel_entr(pk, qk)
     S = np.sum(vec, axis=axis)
     if base is not None:
@@ -88,14 +156,28 @@ def entropy(pk: np.typing.ArrayLike,
     return S
 
 
+def _differential_entropy_is_too_small(samples, kwargs, axis=-1):
+    values = samples[0]
+    n = values.shape[axis]
+    window_length = kwargs.get("window_length",
+                               math.floor(math.sqrt(n) + 0.5))
+    if not 2 <= 2 * window_length < n:
+        return True
+    return False
+
+
+@_axis_nan_policy_factory(
+    lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,),
+    too_small=_differential_entropy_is_too_small
+)
 def differential_entropy(
     values: np.typing.ArrayLike,
     *,
-    window_length: Optional[int] = None,
-    base: Optional[float] = None,
+    window_length: int | None = None,
+    base: float | None = None,
     axis: int = 0,
     method: str = "auto",
-) -> Union[np.number, np.ndarray]:
+) -> np.number | np.ndarray:
     r"""Given a sample of a distribution, estimate the differential entropy.
 
     Several estimation methods are available using the `method` parameter. By
@@ -181,6 +263,7 @@ def differential_entropy(
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import differential_entropy, norm
 
     Entropy of a standard normal distribution:
