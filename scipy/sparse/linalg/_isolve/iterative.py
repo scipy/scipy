@@ -13,18 +13,17 @@ def _get_atol(name, b, tol=_NoValue, atol=0., rtol=1e-5):
     A helper function to handle tolerance deprecations and normalization
     """
     if tol is not _NoValue:
-        msg = (f"'scipy.sparse.linalg.{name}' keyword argument 'tol' is "
-               "deprecated in favor of 'rtol' and will be removed in SciPy "
-               "v.1.14.0. Until then, if set, it will override 'rtol'.")
+        msg = (f"'scipy.sparse.linalg.{name}' keyword argument `tol` is "
+               "deprecated in favor of `rtol` and will be removed in SciPy "
+               "v1.14. Until then, if set, it will override `rtol`.")
         warnings.warn(msg, category=DeprecationWarning, stacklevel=4)
         rtol = float(tol) if tol is not None else rtol
 
     if atol == 'legacy':
-        warnings.warn("scipy.sparse.linalg.{name} called with `atol` set to "
-                      "string. This behavior is deprecated and atol parameter"
-                      " only excepts floats. In SciPy 1.14, this will result"
-                      " with an error.", category=DeprecationWarning,
-                      stacklevel=4)
+        msg = (f"'scipy.sparse.linalg.{name}' called with `atol='legacy'`. "
+               "This behavior is deprecated and will result in an error in "
+               "SciPy v1.14. To preserve current behaviour, set `atol=0.0`.")
+        warnings.warn(msg, category=DeprecationWarning, stacklevel=4)
         atol = 0
 
     atol = max(float(atol), float(rtol) * float(np.linalg.norm(b)))
