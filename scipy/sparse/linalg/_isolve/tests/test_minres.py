@@ -63,35 +63,35 @@ def test_asymmetric_fail():
 
 def test_minres_non_default_x0():
     np.random.seed(1234)
-    tol = 10**(-6)
+    rtol = 1e-6
     a = np.random.randn(5, 5)
     a = np.dot(a, a.T)
     b = np.random.randn(5)
     c = np.random.randn(5)
-    x = minres(a, b, x0=c, tol=tol)[0]
-    assert norm(a @ x - b) <= tol * norm(b)
+    x = minres(a, b, x0=c, rtol=rtol)[0]
+    assert norm(a @ x - b) <= rtol * norm(b)
 
 
 def test_minres_precond_non_default_x0():
     np.random.seed(12345)
-    tol = 10**(-6)
+    rtol = 1e-6
     a = np.random.randn(5, 5)
     a = np.dot(a, a.T)
     b = np.random.randn(5)
     c = np.random.randn(5)
     m = np.random.randn(5, 5)
     m = np.dot(m, m.T)
-    x = minres(a, b, M=m, x0=c, tol=tol)[0]
-    assert norm(a @ x - b) <= tol * norm(b)
+    x = minres(a, b, M=m, x0=c, rtol=rtol)[0]
+    assert norm(a @ x - b) <= rtol * norm(b)
 
 
 def test_minres_precond_exact_x0():
     np.random.seed(1234)
-    tol = 10**(-6)
+    rtol = 1e-6
     a = np.eye(10)
     b = np.ones(10)
     c = np.ones(10)
     m = np.random.randn(10, 10)
     m = np.dot(m, m.T)
-    x = minres(a, b, M=m, x0=c, tol=tol)[0]
-    assert norm(a @ x - b) <= tol * norm(b)
+    x = minres(a, b, M=m, x0=c, rtol=rtol)[0]
+    assert norm(a @ x - b) <= rtol * norm(b)

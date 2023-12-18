@@ -26,7 +26,7 @@ def _get_atol_rtol(name, b_norm, tol=_NoValue, atol=0., rtol=1e-5):
         warnings.warn(msg, category=DeprecationWarning, stacklevel=4)
         atol = 0
 
-    # this branch is only hit from gcrotmk/lgmres
+    # this branch is only hit from gcrotmk/lgmres/tfqmr
     if atol is None:
         msg = (f"'scipy.sparse.linalg.{name}' called without specifying "
                "`atol`. This behavior is deprecated and will result in an "
