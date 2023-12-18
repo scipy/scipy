@@ -69,7 +69,7 @@ def minres(A, b, x0=None, *, shift=0.0, tol=_NoValue, maxiter=None,
     tol : float, optional, deprecated
 
         .. deprecated:: 1.12.0
-           `lgmres` keyword argument `tol` is deprecated in favor of `rtol`
+           `minres` keyword argument `tol` is deprecated in favor of `rtol`
            and will be removed in SciPy 1.14.
 
     Examples
