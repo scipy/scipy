@@ -49,6 +49,7 @@ def call_minpack(fun, x0, jac, ftol, xtol, gtol, max_nfev, x_scale, diff_step, m
     # ``x_scale='jac'`` corresponds to ``diag=None``.
     if method == 'lm' and x_scale == None:
         x_scale = 'jac'
+        diag = None
     else:
         
         if isinstance(x_scale, str) and x_scale == 'jac':
