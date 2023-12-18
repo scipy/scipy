@@ -130,7 +130,8 @@ def tfqmr(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None,
     v = M.matvec(A.matvec(r))
     uhat = v
     d = theta = eta = 0.
-    rho = np.inner(rstar.conjugate(), r)
+    # at this point we know rstar == r, so rho is always real
+    rho = np.inner(rstar.conjugate(), r).real
     rhoLast = rho
     r0norm = np.sqrt(rho)
     tau = r0norm
