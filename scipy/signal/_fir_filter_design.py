@@ -1148,8 +1148,8 @@ def minimum_phase(h, method='homomorphic', n_fft=None, *, half=True):
         The number of points to use for the FFT. Should be at least a
         few times larger than the signal length (see Notes).
     half : bool
-        If True, create a filter that is half the length of the original, with a
-        magnitude spectrum that is the square root of the original. If False,
+        If ``True``, create a filter that is half the length of the original, with a
+        magnitude spectrum that is the square root of the original. If ``False``,
         create a filter that is the same length as the original, with a magnitude
         spectrum that is designed to match the original (only supported when
         ``method='homomorphic'``).
@@ -1271,7 +1271,7 @@ def minimum_phase(h, method='homomorphic', n_fft=None, *, half=True):
             ('homomorphic', 'hilbert',):
         raise ValueError(f'method must be "homomorphic" or "hilbert", got {method!r}')
     if method == "hilbert" and not half:
-        raise ValueError("half=False is only supported when method='homomorphic'")
+        raise ValueError("`half=False` is only supported when `method='homomorphic'`")
     if n_fft is None:
         n_fft = 2 ** int(np.ceil(np.log2(2 * (len(h) - 1) / 0.01)))
     n_fft = int(n_fft)
