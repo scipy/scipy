@@ -244,12 +244,6 @@ def test_maxiter(case):
     assert info == 1
 
 
-def assert_normclose(a, b, tol=1e-8):
-    residual = norm(a - b)
-    tolerance = tol * norm(b)
-    assert residual < tolerance
-
-
 def test_convergence(case):
     A = case.A
 
@@ -598,7 +592,7 @@ class TestQMR:
         x, info = qmr(A, b, tol=1e-8, maxiter=15, M1=M1, M2=M2)
 
         assert info == 0
-        assert_normclose(A @ x, b, tol=1e-8)
+        assert norm(A @ x - b) <= 1e-8 * norm(b)
 
 
 class TestGMRES:
