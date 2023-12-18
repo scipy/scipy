@@ -1314,20 +1314,10 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
     else:
         # Test if the optimal lambda causes overflow
         x = np.asarray(x)
+        x_treme = np.max(x, axis=0) if res > 0 else np.min(x, axis=0)
+        istransinf = np.isinf(special.boxcox(x_treme, res))
         dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
-        # 10000 is a safety factor because `special.boxcox` overflows prematurely.
-        ymax = np.finfo(dtype).max / 10000
-
-        sign_lmbm1 = np.sign(res - 1)
-        x_treme = np.max(x) if np.any(sign_lmbm1 > 0) else np.min(x)
-
-        # There are two conditions of overflow to check
-        # 1. x>1, lmb>1; 2. x<1, lmb<1
-        mask = False
-        if np.any((x_treme - 1) * sign_lmbm1 > 0):
-            mask = special.boxcox(x_treme, res) * sign_lmbm1 > ymax
-
-        if np.any(mask):
+        if np.any(istransinf):
             warnings.warn(
                 f"The optimal lambda is {res}, but the returned lambda is the"
                 f"constrained optimum to ensure that the maximum or the minimum "
@@ -1335,11 +1325,14 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
                 stacklevel=2
             )
 
-            constrained_res = _boxcox_inv_lmbda(x_treme, ymax * sign_lmbm1)
             # Return the constrained lambda to ensure the transformation
-            # does not cause overflow.
+            # does not cause overflow. 10000 is a safety factor because
+            # `special.boxcox` overflows prematurely.
+            ymax = np.finfo(dtype).max / 10000
+            constrained_res = _boxcox_inv_lmbda(x_treme, ymax * np.sign(res))
+
             if isinstance(res, np.ndarray):
-                res[mask] = constrained_res
+                res[istransinf] = constrained_res
             else:
                 res = constrained_res
     return res
