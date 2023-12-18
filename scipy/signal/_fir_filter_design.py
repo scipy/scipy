@@ -1234,11 +1234,11 @@ def minimum_phase(h, method='homomorphic', n_fft=None, *, half=True):
 
     >>> fig, axs = plt.subplots(4, figsize=(4, 8), layout="constrained")
     >>> for h, style, color, label in (
-                (h_linear, '-', 'k', 'Linear'),
-                (h_min_hom, '-', 'r', 'Min-Hom'),
-                (h_min_hil, '-', 'c', 'Min-Hil'),
-                (h_min_hom_full, ':', 'r', 'Min-Hom Full'),
-                ):
+    ...         (h_linear, '-', 'k', 'Linear'),
+    ...         (h_min_hom, '-', 'r', 'Min-Hom'),
+    ...         (h_min_hil, '-', 'c', 'Min-Hil'),
+    ...         (h_min_hom_full, ':', 'r', 'Min-Hom Full'),
+    ...         ):
     ...     w, H = freqz(h)
     ...     w, gd = group_delay((h, 1))
     ...     w /= np.pi
