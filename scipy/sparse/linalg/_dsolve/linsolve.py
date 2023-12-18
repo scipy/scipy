@@ -230,7 +230,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     if not (issparse(A) and A.format in ("csc", "csr")):
         A = csc_matrix(A)
         warn('spsolve requires A be CSC or CSR matrix format',
-                SparseEfficiencyWarning)
+             SparseEfficiencyWarning, stacklevel=2)
 
     # b is a vector only if b have shape (n,) or (n, 1)
     b_is_sparse = issparse(b) or is_pydata_spmatrix(b)
@@ -292,7 +292,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
             x, info = _superlu.gssv(N, A.nnz, A.data, indices, indptr,
                                     b, flag, options=options)
             if info != 0:
-                warn("Matrix is exactly singular", MatrixRankWarning)
+                warn("Matrix is exactly singular", MatrixRankWarning, stacklevel=2)
                 x.fill(np.nan)
             if b_is_vector:
                 x = x.ravel()
@@ -302,7 +302,8 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
 
             if not (b.format == "csc" or is_pydata_spmatrix(b)):
                 warn('spsolve is more efficient when sparse b '
-                     'is in the CSC matrix format', SparseEfficiencyWarning)
+                     'is in the CSC matrix format',
+                     SparseEfficiencyWarning, stacklevel=2)
                 b = csc_matrix(b)
 
             # Create a sparse output matrix by repeatedly applying
@@ -411,7 +412,8 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
 
     if not (issparse(A) and A.format == "csc"):
         A = csc_matrix(A)
-        warn('splu converted its input to CSC format', SparseEfficiencyWarning)
+        warn('splu converted its input to CSC format',
+             SparseEfficiencyWarning, stacklevel=2)
 
     # sum duplicates for non-canonical format
     A.sum_duplicates()
@@ -506,7 +508,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     if not (issparse(A) and A.format == "csc"):
         A = csc_matrix(A)
         warn('spilu converted its input to CSC format',
-             SparseEfficiencyWarning)
+             SparseEfficiencyWarning, stacklevel=2)
 
     # sum duplicates for non-canonical format
     A.sum_duplicates()
@@ -574,7 +576,7 @@ def factorized(A):
         if not (issparse(A) and A.format == "csc"):
             A = csc_matrix(A)
             warn('splu converted its input to CSC format',
-                 SparseEfficiencyWarning)
+                 SparseEfficiencyWarning, stacklevel=2)
 
         A = A._asfptype()  # upcast to a floating point format
 
@@ -664,7 +666,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
     # Check the input for correct type and format.
     if not (issparse(A) and A.format == "csr"):
         warn('CSR matrix format is required. Converting to CSR matrix.',
-             SparseEfficiencyWarning)
+             SparseEfficiencyWarning, stacklevel=2)
         A = csr_matrix(A)
     elif not overwrite_A:
         A = A.copy()

@@ -393,7 +393,8 @@ def test_rotvec_calc_pipeline():
         [-3e-4, 3.5e-4, 7.5e-5]
         ])
     assert_allclose(Rotation.from_rotvec(rotvec).as_rotvec(), rotvec)
-    assert_allclose(Rotation.from_rotvec(rotvec, degrees=True).as_rotvec(degrees=True), rotvec)
+    assert_allclose(Rotation.from_rotvec(rotvec, degrees=True).as_rotvec(degrees=True),
+                    rotvec)
 
 
 def test_from_1d_single_mrp():
@@ -452,7 +453,10 @@ def test_past_180_degree_rotation():
     # ensure that a > 180 degree rotation is returned as a <180 rotation in MRPs
     # in this case 270 should be returned as -90
     expected_mrp = np.array([-np.tan(np.pi/2/4), 0.0, 0])
-    assert_array_almost_equal(Rotation.from_euler('xyz', [270, 0, 0], degrees=True).as_mrp(), expected_mrp)
+    assert_array_almost_equal(
+        Rotation.from_euler('xyz', [270, 0, 0], degrees=True).as_mrp(),
+        expected_mrp
+    )
 
 
 def test_as_mrp_single_1d_input():

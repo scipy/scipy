@@ -869,9 +869,9 @@ class ODR:
                 "delta0 is not a %s-shaped array" % repr(self.data.x.shape))
 
         if self.data.x.size == 0:
-            warn(("Empty data detected for ODR instance. "
-                  "Do not expect any fitting to occur"),
-                 OdrWarning)
+            warn("Empty data detected for ODR instance. "
+                 "Do not expect any fitting to occur",
+                 OdrWarning, stacklevel=3)
 
     def _gen_work(self):
         """ Generate a suitable work array if one does not already exist.

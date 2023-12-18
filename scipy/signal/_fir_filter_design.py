@@ -1251,8 +1251,8 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
         raise ValueError('h must be 1-D and at least 2 samples long')
     n_half = len(h) // 2
     if not np.allclose(h[-n_half:][::-1], h[:n_half]):
-        warnings.warn('h does not appear to by symmetric, conversion may '
-                      'fail', RuntimeWarning)
+        warnings.warn('h does not appear to by symmetric, conversion may fail',
+                      RuntimeWarning, stacklevel=2)
     if not isinstance(method, str) or method not in \
             ('homomorphic', 'hilbert',):
         raise ValueError(f'method must be "homomorphic" or "hilbert", got {method!r}')

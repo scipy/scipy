@@ -976,8 +976,8 @@ def general_hamming(M, alpha, sym=True):
     -----
     The generalized Hamming window is defined as
 
-    .. math:: w(n) = \alpha - \left(1 - \alpha\right) \cos\left(\frac{2\pi{n}}{M-1}\right)
-              \qquad 0 \leq n \leq M-1
+    .. math:: w(n) = \alpha - \left(1 - \alpha\right)
+              \cos\left(\frac{2\pi{n}}{M-1}\right) \qquad 0 \leq n \leq M-1
 
     Both the common Hamming window and Hann window are special cases of the
     generalized Hamming window with :math:`\alpha` = 0.54 and :math:`\alpha` =
@@ -1545,7 +1545,8 @@ def chebwin(M, at, sym=True):
                       "the equivalent noise bandwidth of a Chebyshev window "
                       "does not grow monotonically with increasing sidelobe "
                       "attenuation when the attenuation is smaller than "
-                      "about 45 dB.")
+                      "about 45 dB.",
+                      stacklevel=2)
     if _len_guards(M):
         return np.ones(M)
     M, needs_trunc = _extend(M, sym)

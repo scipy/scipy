@@ -4,7 +4,7 @@ project(
   # Note that the git commit hash cannot be added dynamically here (it is added
   # in the dynamically generated and installed `scipy/version.py` though - see
   # tools/version_utils.py
-  version: '1.12.0.dev0',
+  version: '1.13.0.dev0',
   license: 'BSD-3',
   meson_version: '>= 1.1.0',
   default_options: [
@@ -96,18 +96,18 @@ endif
 # is actually needed, everything else shouldn't be there).
 _intel_cflags = []
 _intel_fflags = []
-if cc.get_id() == 'intel'
+if cc.get_id() in ['intel', 'intel-llvm']
   _intel_cflags += cc.get_supported_arguments('-fp-model=strict')
-elif cc.get_id() == 'intel-cl'
+elif cc.get_id() in ['intel-cl', 'intel-llvm-cl']
   _intel_cflags += cc.get_supported_arguments('/fp:strict')
 endif
-if ff.get_id() == 'intel'
+if ff.get_id() in ['intel', 'intel-llvm']
   _intel_fflags = ff.get_supported_arguments('-fp-model=strict')
   minus0_arg = ['-assume', 'minus0']
   if ff.has_multi_arguments(minus0_arg)
     _intel_fflags += minus0_arg
   endif
-elif ff.get_id() == 'intel-cl'
+elif ff.get_id() in ['intel-cl', 'intel-llvm-cl']
   # Intel Fortran on Windows does things differently, so deal with that
   # (also specify dynamic linking and the right name mangling)
   _intel_fflags = ff.get_supported_arguments(

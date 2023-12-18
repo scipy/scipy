@@ -345,8 +345,10 @@ class interp2d:
             any_out_of_bounds_y = np.any(out_of_bounds_y)
 
         if self.bounds_error and (any_out_of_bounds_x or any_out_of_bounds_y):
-            raise ValueError("Values out of range; x must be in {!r}, y in {!r}".format((self.x_min, self.x_max),
-                                (self.y_min, self.y_max)))
+            raise ValueError(
+                f"Values out of range; x must be in {(self.x_min, self.x_max)!r}, "
+                f"y in {(self.y_min, self.y_max)!r}"
+            )
 
         z = _fitpack_py.bisplev(x, y, self.tck, dx, dy)
         z = atleast_2d(z)
@@ -1562,10 +1564,11 @@ class BPoly(_PPolyBase):
 
     .. math::
 
-        B(x) = 1 \\times b_{0, 2}(x) + 2 \\times b_{1, 2}(x) + 3 \\times b_{2, 2}(x) \\\\
+        B(x) = 1 \\times b_{0, 2}(x) + 2 \\times b_{1, 2}(x) + 3
+               \\times b_{2, 2}(x) \\\\
              = 1 \\times (1-x)^2 + 2 \\times 2 x (1 - x) + 3 \\times x^2
 
-    """
+    """  # noqa: E501
 
     def _evaluate(self, x, nu, extrapolate, out):
         _ppoly.evaluate_bernstein(

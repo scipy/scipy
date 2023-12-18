@@ -1398,8 +1398,8 @@ def riccati_yn(n, x):
 def erf_zeros(nt):
     """Compute the first nt zero in the first quadrant, ordered by absolute value.
 
-    Zeros in the other quadrants can be obtained by using the symmetries erf(-z) = erf(z) and
-    erf(conj(z)) = conj(erf(z)).
+    Zeros in the other quadrants can be obtained by using the symmetries
+    erf(-z) = erf(z) and erf(conj(z)) = conj(erf(z)).
 
 
     Parameters
@@ -1595,7 +1595,8 @@ def mathieu_even_coef(m, q):
 
     .. math:: \mathrm{ce}_{2n}(z, q) = \sum_{k=0}^{\infty} A_{(2n)}^{(2k)} \cos 2kz
 
-    .. math:: \mathrm{ce}_{2n+1}(z, q) = \sum_{k=0}^{\infty} A_{(2n+1)}^{(2k+1)} \cos (2k+1)z
+    .. math:: \mathrm{ce}_{2n+1}(z, q) = 
+              \sum_{k=0}^{\infty} A_{(2n+1)}^{(2k+1)} \cos (2k+1)z
 
     This function returns the coefficients :math:`A_{(2n)}^{(2k)}` for even
     input m=2n, and the coefficients :math:`A_{(2n+1)}^{(2k+1)}` for odd input
@@ -1635,7 +1636,7 @@ def mathieu_even_coef(m, q):
         qm = 17.0 + 3.1*sqrt(q) - .126*q + .0037*sqrt(q)*q
     km = int(qm + 0.5*m)
     if km > 251:
-        warnings.warn("Too many predicted coefficients.", RuntimeWarning, 2)
+        warnings.warn("Too many predicted coefficients.", RuntimeWarning, stacklevel=2)
     kd = 1
     m = int(floor(m))
     if m % 2:
@@ -1652,9 +1653,11 @@ def mathieu_odd_coef(m, q):
     The Fourier series of the odd solutions of the Mathieu differential
     equation are of the form
 
-    .. math:: \mathrm{se}_{2n+1}(z, q) = \sum_{k=0}^{\infty} B_{(2n+1)}^{(2k+1)} \sin (2k+1)z
+    .. math:: \mathrm{se}_{2n+1}(z, q) =
+              \sum_{k=0}^{\infty} B_{(2n+1)}^{(2k+1)} \sin (2k+1)z
 
-    .. math:: \mathrm{se}_{2n+2}(z, q) = \sum_{k=0}^{\infty} B_{(2n+2)}^{(2k+2)} \sin (2k+2)z
+    .. math:: \mathrm{se}_{2n+2}(z, q) =
+              \sum_{k=0}^{\infty} B_{(2n+2)}^{(2k+2)} \sin (2k+2)z
 
     This function returns the coefficients :math:`B_{(2n+2)}^{(2k+2)}` for even
     input m=2n+2, and the coefficients :math:`B_{(2n+1)}^{(2k+1)}` for odd
@@ -1692,7 +1695,7 @@ def mathieu_odd_coef(m, q):
         qm = 17.0 + 3.1*sqrt(q) - .126*q + .0037*sqrt(q)*q
     km = int(qm + 0.5*m)
     if km > 251:
-        warnings.warn("Too many predicted coefficients.", RuntimeWarning, 2)
+        warnings.warn("Too many predicted coefficients.", RuntimeWarning, stacklevel=2)
     kd = 4
     m = int(floor(m))
     if m % 2:
