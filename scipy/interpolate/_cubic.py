@@ -473,10 +473,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
     .. [1] A new method of interpolation and smooth curve fitting based
            on local procedures. Hiroshi Akima, J. ACM, October 1970, 17(4),
            589-602. :doi:`10.1145/321607.321609`
-    .. [2] A method of univariate interpolation that has the accuracy of
-           a third-degree polynomial. Hiroshi Akima, J. ACM, September 1991,
-           17(3), 341-366. :doi:`10.1145/114697.116810`
-    .. [3] Makima Piecewise Cubic Interpolation. Cleve Moler and Cosmin Ionita, 2019.
+    .. [2] Makima Piecewise Cubic Interpolation. Cleve Moler and Cosmin Ionita, 2019.
            https://blogs.mathworks.com/cleve/2019/04/29/makima-piecewise-cubic-interpolation/
 
     """
