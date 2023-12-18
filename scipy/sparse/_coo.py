@@ -81,7 +81,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 self._shape = check_shape(M.shape, allow_1d=is_array)
                 if shape is not None:
                     if check_shape(shape, allow_1d=is_array) != self._shape:
-                        raise ValueError(f'inconsistent shapes: {shape} != {self._shape}')
+                        message = f'inconsistent shapes: {shape} != {self._shape}'
+                        raise ValueError(message)
                 index_dtype = self._get_index_dtype(maxval=max(self._shape))
                 indices = M.nonzero()
                 self.indices = tuple(idx.astype(index_dtype, copy=False)
