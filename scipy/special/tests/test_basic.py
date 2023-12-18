@@ -2228,13 +2228,16 @@ class TestFactorialFunctions:
         assert_allclose(float(correct), special.factorial([n], False)[0],
                         rtol=rtol)
 
-    @pytest.mark.parametrize("exact", [True, False])
-    def test_factorial_float_reference(self, exact):
+    def test_factorial_float_reference(self):
         def _check(n, expected):
-            # support for exact=True with scalar floats grandfathered in
-            assert_allclose(special.factorial(n, exact=exact), expected)
-            # non-integer types in arrays only allowed with exact=False
+            assert_allclose(special.factorial(n), expected)
             assert_allclose(special.factorial([n])[0], expected)
+            # using floats with exact=True is deprecated for scalars...
+            with pytest.deprecated_call(match="Non-integer values.*"):
+                assert_allclose(special.factorial(n, exact=True), expected)
+            # ... and already an error for arrays
+            with pytest.raises(ValueError, match="factorial with `exact=Tr.*"):
+                special.factorial([n], exact=True)
 
         # Reference values from mpmath for gamma(n+1)
         _check(0.01, 0.994325851191506032181932988)
@@ -2300,7 +2303,12 @@ class TestFactorialFunctions:
         if (n is None or n is np.nan or np.issubdtype(type(n), np.integer)
                 or np.issubdtype(type(n), np.floating)):
             # no error
-            result = special.factorial(n, exact=exact)
+            if (np.issubdtype(type(n), np.floating) and exact
+                    and n is not np.nan):
+                with pytest.deprecated_call(match="Non-integer values.*"):
+                    result = special.factorial(n, exact=exact)
+            else:
+                result = special.factorial(n, exact=exact)
             exp = np.nan if n is np.nan or n is None else special.factorial(n)
             assert_equal(result, exp)
         else:

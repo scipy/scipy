@@ -2949,8 +2949,10 @@ def factorial(n, exact=False):
             return 0
         elif exact and np.issubdtype(type(n), np.integer):
             return math.factorial(n)
-        # we do not raise for non-integers with exact=True due to
-        # historical reasons, though deprecation would be possible
+        elif exact:
+            msg = ("Non-integer values of `n` together with `exact=True` are "
+                   "deprecated. Either ensure integer `n` or use `exact=False`.")
+            warnings.warn(msg, DeprecationWarning, stacklevel=2)
         return _ufuncs._factorial(n)
 
     # arrays & array-likes
