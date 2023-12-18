@@ -1588,7 +1588,7 @@ def medfilt(volume, kernel_size=None):
     return result
 
 
-def wiener(im, mysize=None, noise=None, boundary='fill', fillvalue=0):
+def wiener(im, mysize=None, noise=None, *, boundary='fill', fillvalue=0):
     """
     Perform a Wiener filter on an N-dimensional array.
 
