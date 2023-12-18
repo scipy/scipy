@@ -1120,7 +1120,7 @@ def _dhtm(mag):
     return recon
 
 
-def minimum_phase(h, method='homomorphic', n_fft=None):
+def minimum_phase(h, method='homomorphic', n_fft=None, *, half=True):
     """Convert a linear-phase FIR filter to minimum phase
 
     Parameters
@@ -1134,7 +1134,10 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
                 This method [4]_ [5]_ works best with filters with an
                 odd number of taps, and the resulting minimum phase filter
                 will have a magnitude response that approximates the square
-                root of the original filter's magnitude response.
+                root of the original filter's magnitude response using half
+                the number of taps when ``half=True`` (default), or the
+                original magnitude spectrum using the same number of taps
+                when ``half=False``.
 
             'hilbert'
                 This method [1]_ is designed to be used with equiripple
@@ -1144,12 +1147,20 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
     n_fft : int
         The number of points to use for the FFT. Should be at least a
         few times larger than the signal length (see Notes).
+    half : bool
+        If True, create a filter that is half the length of the original, with a
+        magnitude spectrum that is the square root of the original. If False,
+        create a filter that is the same length as the original, with a magnitude
+        spectrum that is designed to match the original (only supported when
+        ``method='homomorphic'``).
+
+        .. versionadded:: 1.12.0
 
     Returns
     -------
     h_minimum : array
         The minimum-phase version of the filter, with length
-        ``(length(h) + 1) // 2``.
+        ``(len(h) + 1) // 2`` when ``half is True`` or ``len(h)`` otherwise.
 
     See Also
     --------
@@ -1180,9 +1191,8 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
 
     Alternative implementations exist for creating minimum-phase filters,
     including zero inversion [2]_ and spectral factorization [3]_ [4]_.
-    For more information, see:
-
-        http://dspguru.com/dsp/howtos/how-to-design-minimum-phase-fir-filters
+    For more information, see `this DSPGuru page
+    <http://dspguru.com/dsp/howtos/how-to-design-minimum-phase-fir-filters>`__.
 
     References
     ----------
@@ -1200,8 +1210,8 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
     .. [4] J. S. Lim, Advanced Topics in Signal Processing.
            Englewood Cliffs, N.J.: Prentice Hall, 1988.
     .. [5] A. V. Oppenheim, R. W. Schafer, and J. R. Buck,
-           "Discrete-Time Signal Processing," 2nd edition.
-           Upper Saddle River, N.J.: Prentice Hall, 1999.
+           "Discrete-Time Signal Processing," 3rd edition.
+           Upper Saddle River, N.J.: Pearson, 2009.
 
     Examples
     --------
@@ -1218,30 +1228,34 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
 
     >>> h_min_hom = minimum_phase(h_linear, method='homomorphic')
     >>> h_min_hil = minimum_phase(h_linear, method='hilbert')
+    >>> h_min_hom_full = minimum_phase(h_linear, method='homomorphic', half=False)
 
     Compare the three filters:
 
-    >>> fig, axs = plt.subplots(4, figsize=(4, 8))
-    >>> for h, style, color in zip((h_linear, h_min_hom, h_min_hil),
-    ...                            ('-', '-', '--'), ('k', 'r', 'c')):
+    >>> fig, axs = plt.subplots(4, figsize=(4, 8), layout="constrained")
+    >>> for h, style, color, label in (
+                (h_linear, '-', 'k', 'Linear'),
+                (h_min_hom, '-', 'r', 'Min-Hom'),
+                (h_min_hil, '-', 'c', 'Min-Hil'),
+                (h_min_hom_full, ':', 'r', 'Min-Hom Full'),
+                ):
     ...     w, H = freqz(h)
     ...     w, gd = group_delay((h, 1))
     ...     w /= np.pi
     ...     axs[0].plot(h, color=color, linestyle=style)
-    ...     axs[1].plot(w, np.abs(H), color=color, linestyle=style)
+    ...     axs[1].plot(w, np.abs(H), color=color, linestyle=style, label=label)
     ...     axs[2].plot(w, 20 * np.log10(np.abs(H)), color=color, linestyle=style)
     ...     axs[3].plot(w, gd, color=color, linestyle=style)
     >>> for ax in axs:
     ...     ax.grid(True, color='0.5')
     ...     ax.fill_between(freq[1:3], *ax.get_ylim(), color='#ffeeaa', zorder=1)
     >>> axs[0].set(xlim=[0, len(h_linear) - 1], ylabel='Amplitude', xlabel='Samples')
-    >>> axs[1].legend(['Linear', 'Min-Hom', 'Min-Hil'], title='Phase')
+    >>> axs[1].legend(title='Phase')
     >>> for ax, ylim in zip(axs[1:], ([0, 1.1], [-150, 10], [-60, 60])):
     ...     ax.set(xlim=[0, 1], ylim=ylim, xlabel='Frequency')
     >>> axs[1].set(ylabel='Magnitude')
     >>> axs[2].set(ylabel='Magnitude (dB)')
     >>> axs[3].set(ylabel='Group delay')
-    >>> plt.tight_layout()
 
     """
     h = np.asarray(h)
@@ -1256,6 +1270,8 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
     if not isinstance(method, str) or method not in \
             ('homomorphic', 'hilbert',):
         raise ValueError(f'method must be "homomorphic" or "hilbert", got {method!r}')
+    if method == "hilbert" and not half:
+        raise ValueError("half=False is only supported when method='homomorphic'")
     if n_fft is None:
         n_fft = 2 ** int(np.ceil(np.log2(2 * (len(h) - 1) / 0.01)))
     n_fft = int(n_fft)
@@ -1278,19 +1294,22 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
         # take 0.25*log(|H|**2) = 0.5*log(|H|)
         h_temp += 1e-7 * h_temp[h_temp > 0].min()  # don't let log blow up
         np.log(h_temp, out=h_temp)
-        h_temp *= 0.5
+        if half:  # halving of magnitude spectrum optional
+            h_temp *= 0.5
         # IDFT
         h_temp = ifft(h_temp).real
         # multiply pointwise by the homomorphic filter
         # lmin[n] = 2u[n] - d[n]
+        # i.e., double the positive frequencies and zero out the negative ones;
+        # Oppenheim+Shafer 3rd ed p991 eq13.42b and p1004 fig13.7
         win = np.zeros(n_fft)
         win[0] = 1
-        stop = (len(h) + 1) // 2
+        stop = n_fft // 2
         win[1:stop] = 2
-        if len(h) % 2:
+        if n_fft % 2:
             win[stop] = 1
         h_temp *= win
         h_temp = ifft(np.exp(fft(h_temp)))
         h_minimum = h_temp.real
-    n_out = n_half + len(h) % 2
+    n_out = (n_half + len(h) % 2) if half else len(h)
     return h_minimum[:n_out]
