@@ -2127,9 +2127,8 @@ class TestFactorialFunctions:
             with pytest.raises(ValueError, match="Unsupported datatype.*"):
                 special.factorial([content], exact=exact)
         elif exact:
-            # cannot use `is np.nan` see https://stackoverflow.com/a/52124109
-            with pytest.warns(DeprecationWarning, match="Non-integer array.*"):
-                assert np.isnan(special.factorial([content], exact=exact)[0])
+            with pytest.raises(ValueError, match="factorial with `exact=Tr.*"):
+                special.factorial([content], exact=exact)
         else:
             assert np.isnan(special.factorial([content], exact=exact)[0])
         # factorial{2,k} don't support array case due to dtype constraints
@@ -2270,18 +2269,8 @@ class TestFactorialFunctions:
                   or np.issubdtype(n.dtype, np.floating)):
             with pytest.raises(ValueError, match="Unsupported datatype*"):
                 special.factorial(n, exact=exact)
-        elif (exact and not np.issubdtype(n.dtype, np.integer) and n.size and
-              np.allclose(n[~np.isnan(n)], n[~np.isnan(n)].astype(np.int64))):
-            # using integers but in array with wrong dtype (e.g. due to NaNs)
-            with pytest.warns(DeprecationWarning, match="Non-integer array.*"):
-                result = special.factorial(n, exact=exact)
-                # expected dtype is integer, unless there are NaNs
-                if np.any(np.isnan(n)):
-                    dtype = np.dtype(np.float64)
-                else:
-                    dtype = np.dtype(int)
         elif exact and not np.issubdtype(n.dtype, np.integer):
-            with pytest.raises(ValueError, match="factorial with exact=.*"):
+            with pytest.raises(ValueError, match="factorial with `exact=.*"):
                 special.factorial(n, exact=exact)
         else:
             # no error
@@ -2462,8 +2451,8 @@ class TestFactorialFunctions:
         x = np.array([np.nan, 1, 2, 3, np.nan])
         expected = np.array([np.nan, 1, 2, 6, np.nan])
         assert_equal(special.factorial(x, exact=False), expected)
-        with pytest.warns(DeprecationWarning, match=r"Non-integer array.*"):
-            assert_equal(special.factorial(x, exact=True), expected)
+        with pytest.raises(ValueError, match="factorial with `exact=True.*"):
+            special.factorial(x, exact=True)
 
 
 class TestFresnel:
