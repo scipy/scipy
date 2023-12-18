@@ -292,9 +292,6 @@ def gcrotmk(A, b, x0=None, *, tol=_NoValue, maxiter=1000, M=None, callback=None,
     if truncate not in ('oldest', 'smallest'):
         raise ValueError(f"Invalid value for 'truncate': {truncate!r}")
 
-    # we call this to get the right atol/rtol and raise warnings as necessary
-    atol, rtol = _get_atol_rtol('gcrotmk', b, tol, atol, rtol)
-
     matvec = A.matvec
     psolve = M.matvec
 
@@ -314,6 +311,10 @@ def gcrotmk(A, b, x0=None, *, tol=_NoValue, maxiter=1000, M=None, callback=None,
     axpy, dot, scal, nrm2 = get_blas_funcs(['axpy', 'dot', 'scal', 'nrm2'], (x, r))
 
     b_norm = nrm2(b)
+
+    # we call this to get the right atol/rtol and raise warnings as necessary
+    atol, rtol = _get_atol_rtol('gcrotmk', b_norm, tol, atol, rtol)
+
     if b_norm == 0:
         x = b
         return (postprocess(x), 0)

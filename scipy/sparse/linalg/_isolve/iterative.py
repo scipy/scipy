@@ -8,7 +8,7 @@ from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 __all__ = ['bicg', 'bicgstab', 'cg', 'cgs', 'gmres', 'qmr']
 
 
-def _get_atol_rtol(name, b, tol=_NoValue, atol=0., rtol=1e-5):
+def _get_atol_rtol(name, b_norm, tol=_NoValue, atol=0., rtol=1e-5):
     """
     A helper function to handle tolerance deprecations and normalization
     """
@@ -35,7 +35,7 @@ def _get_atol_rtol(name, b, tol=_NoValue, atol=0., rtol=1e-5):
         warnings.warn(msg, category=DeprecationWarning, stacklevel=4)
         atol = rtol
 
-    atol = max(float(atol), float(rtol) * float(np.linalg.norm(b)))
+    atol = max(float(atol), float(rtol) * float(b_norm))
 
     return atol, rtol
 
@@ -104,10 +104,10 @@ def bicg(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None, callback=None,
     A, M, x, b, postprocess = make_system(A, M, x0, b)
     bnrm2 = np.linalg.norm(b)
 
+    atol, _ = _get_atol_rtol('bicg', bnrm2, tol, atol, rtol)
+
     if bnrm2 == 0:
         return postprocess(b), 0
-
-    atol, _ = _get_atol_rtol('bicg', b, tol, atol, rtol)
 
     n = len(b)
     dotprod = np.vdot if np.iscomplexobj(x) else np.dot
@@ -237,10 +237,10 @@ def bicgstab(A, b, *, x0=None, tol=_NoValue, maxiter=None, M=None,
     A, M, x, b, postprocess = make_system(A, M, x0, b)
     bnrm2 = np.linalg.norm(b)
 
+    atol, _ = _get_atol_rtol('bicgstab', bnrm2, tol, atol, rtol)
+
     if bnrm2 == 0:
         return postprocess(b), 0
-
-    atol, _ = _get_atol_rtol('bicgstab', b, tol, atol, rtol)
 
     n = len(b)
 
@@ -380,10 +380,10 @@ def cg(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None, callback=None,
     A, M, x, b, postprocess = make_system(A, M, x0, b)
     bnrm2 = np.linalg.norm(b)
 
+    atol, _ = _get_atol_rtol('cg', bnrm2, tol, atol, rtol)
+
     if bnrm2 == 0:
         return postprocess(b), 0
-
-    atol, _ = _get_atol_rtol('cg', b, tol, atol, rtol)
 
     n = len(b)
 
@@ -495,10 +495,10 @@ def cgs(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None, callback=None,
     A, M, x, b, postprocess = make_system(A, M, x0, b)
     bnrm2 = np.linalg.norm(b)
 
+    atol, _ = _get_atol_rtol('cgs', bnrm2, tol, atol, rtol)
+
     if bnrm2 == 0:
         return postprocess(b), 0
-
-    atol, _ = _get_atol_rtol('cgs', b, tol, atol, rtol)
 
     n = len(b)
 
@@ -723,6 +723,8 @@ def gmres(A, b, x0=None, *, tol=_NoValue, restart=None, maxiter=None, M=None,
     n = len(b)
     bnrm2 = np.linalg.norm(b)
 
+    atol, _ = _get_atol_rtol('gmres', bnrm2, tol, atol, rtol)
+
     if bnrm2 == 0:
         return postprocess(b), 0
 
@@ -736,8 +738,6 @@ def gmres(A, b, x0=None, *, tol=_NoValue, restart=None, maxiter=None, M=None,
     if restart is None:
         restart = 20
     restart = min(restart, n)
-
-    atol, _ = _get_atol_rtol('gmres', b, tol, atol, rtol)
 
     Mb_nrm2 = np.linalg.norm(psolve(b))
 
@@ -936,10 +936,10 @@ def qmr(A, b, x0=None, *, tol=_NoValue, maxiter=None, M1=None, M2=None,
     A, M, x, b, postprocess = make_system(A, None, x0, b)
     bnrm2 = np.linalg.norm(b)
 
+    atol, _ = _get_atol_rtol('qmr', bnrm2, tol, atol, rtol)
+
     if bnrm2 == 0:
         return postprocess(b), 0
-
-    atol, _ = _get_atol_rtol('qmr', b, tol, atol, rtol)
 
     if M1 is None and M2 is None:
         if hasattr(A_, 'psolve'):

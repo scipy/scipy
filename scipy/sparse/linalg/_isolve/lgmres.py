@@ -135,9 +135,6 @@ def lgmres(A, b, x0=None, *, tol=_NoValue, maxiter=1000, M=None, callback=None,
     if not np.isfinite(b).all():
         raise ValueError("RHS must contain only finite numbers")
 
-    # we call this to get the right atol/rtol and raise warnings as necessary
-    atol, rtol = _get_atol_rtol('lgmres', b, tol, atol, rtol)
-
     matvec = A.matvec
     psolve = M.matvec
 
@@ -148,6 +145,10 @@ def lgmres(A, b, x0=None, *, tol=_NoValue, maxiter=1000, M=None, callback=None,
     nrm2 = get_blas_funcs('nrm2', [b])
 
     b_norm = nrm2(b)
+
+    # we call this to get the right atol/rtol and raise warnings as necessary
+    atol, rtol = _get_atol_rtol('lgmres', b_norm, tol, atol, rtol)
+
     if b_norm == 0:
         x = b
         return (postprocess(x), 0)
