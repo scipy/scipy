@@ -1977,9 +1977,8 @@ def lsim(system, U, T, X0=None, interp=True):
 def _default_response_times(A, n):
     """Compute a reasonable set of time samples for the response time.
 
-    This function is used by `impulse`, `step` and
-    to compute the response time when the `T` argument to the function
-    is None.
+    This function is used by `impulse` and `step`  to compute the response time
+    when the `T` argument to the function is None.
 
     Parameters
     ----------
