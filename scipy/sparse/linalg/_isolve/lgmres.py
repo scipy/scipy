@@ -130,12 +130,8 @@ def lgmres(A, b, x0=None, *, tol=1e-5, maxiter=1000, M=None, callback=None,
     if not np.isfinite(b).all():
         raise ValueError("RHS must contain only finite numbers")
 
-    if atol is None:
-        warnings.warn("scipy.sparse.linalg.lgmres called without specifying `atol`. "
-                      "The default value will change in the future. To preserve "
-                      "current behavior, set ``atol=tol``.",
-                      category=DeprecationWarning, stacklevel=2)
-        atol = tol
+    if not np.issubdtype(type(atol), np.floating):
+        raise ValueError("Parameter `atol` must be a floating-point number!")
 
     matvec = A.matvec
     psolve = M.matvec
