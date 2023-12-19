@@ -1131,7 +1131,7 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
 
 def _boxcox_inv_lmbda(x, y):
     # compute lmbda given x and y for Box-Cox transformation
-    num = special.lambertw(-(x ** (-1 / y)) * np.log(x) / y, k=1)
+    num = special.lambertw(-(x ** (-1 / y)) * np.log(x) / y, k=-1)
     return np.real(-num / np.log(x) - 1 / y)
 
 
@@ -1314,21 +1314,22 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
     else:
         # Test if the optimal lambda causes overflow
         x = np.asarray(x)
-        max_x = np.max(x, axis=0)
-        istransinf = np.isinf(special.boxcox(max_x, res))
+        x_treme = np.max(x, axis=0) if np.any(res > 0) else np.min(x, axis=0)
+        istransinf = np.isinf(special.boxcox(x_treme, res))
         dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
         if np.any(istransinf):
             warnings.warn(
-                f"The optimal lambda is {res}, but the returned lambda is "
-                f"the constrained optimum to ensure that the maximum of the "
-                f"transformed data does not cause overflow in {dtype}.",
+                f"The optimal lambda is {res}, but the returned lambda is the"
+                f"constrained optimum to ensure that the maximum or the minimum "
+                f"of the transformed data does not cause overflow in {dtype}.",
                 stacklevel=2
             )
 
             # Return the constrained lambda to ensure the transformation
-            # does not cause overflow
-            ymax = np.finfo(dtype).max / 100  # 100 is the safety factor
-            constrained_res = _boxcox_inv_lmbda(max_x, ymax)
+            # does not cause overflow. 10000 is a safety factor because
+            # `special.boxcox` overflows prematurely.
+            ymax = np.finfo(dtype).max / 10000
+            constrained_res = _boxcox_inv_lmbda(x_treme, ymax * np.sign(res))
 
             if isinstance(res, np.ndarray):
                 res[istransinf] = constrained_res
