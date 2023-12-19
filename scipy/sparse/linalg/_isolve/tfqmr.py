@@ -31,7 +31,8 @@ def tfqmr(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None,
 
         .. warning::
 
-           The default value for ``atol`` will be changed to 0.0 in SciPy 1.14.
+           The default value for ``atol`` will be changed to ``0.0`` in
+           SciPy 1.14.0.
     maxiter : int, optional
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
@@ -52,8 +53,8 @@ def tfqmr(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None,
     tol : float, optional, deprecated
 
         .. deprecated:: 1.12.0
-           `tfqmr` keyword argument `tol` is deprecated in favor of `rtol`
-           and will be removed in SciPy 1.14.
+           `tfqmr` keyword argument ``tol`` is deprecated in favor of ``rtol``
+           and will be removed in SciPy 1.14.0.
 
     Returns
     -------

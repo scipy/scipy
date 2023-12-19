@@ -207,7 +207,8 @@ def gcrotmk(A, b, x0=None, *, tol=_NoValue, maxiter=1000, M=None, callback=None,
 
         .. warning::
 
-           The default value for ``atol`` will be changed to 0.0 in SciPy 1.14.
+           The default value for ``atol`` will be changed to ``0.0`` in
+           SciPy 1.14.0.
     maxiter : int, optional
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
@@ -245,8 +246,8 @@ def gcrotmk(A, b, x0=None, *, tol=_NoValue, maxiter=1000, M=None, callback=None,
     tol : float, optional, deprecated
 
         .. deprecated:: 1.12.0
-           `gcrotmk` keyword argument `tol` is deprecated in favor of `rtol`
-           and will be removed in SciPy 1.14.
+           `gcrotmk` keyword argument ``tol`` is deprecated in favor of
+           ``rtol`` and will be removed in SciPy 1.14.0.
 
     Returns
     -------

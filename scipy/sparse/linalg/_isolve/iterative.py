@@ -15,14 +15,14 @@ def _get_atol_rtol(name, b_norm, tol=_NoValue, atol=0., rtol=1e-5):
     if tol is not _NoValue:
         msg = (f"'scipy.sparse.linalg.{name}' keyword argument `tol` is "
                "deprecated in favor of `rtol` and will be removed in SciPy "
-               "v1.14. Until then, if set, it will override `rtol`.")
+               "v1.14.0. Until then, if set, it will override `rtol`.")
         warnings.warn(msg, category=DeprecationWarning, stacklevel=4)
         rtol = float(tol) if tol is not None else rtol
 
     if atol == 'legacy':
         msg = (f"'scipy.sparse.linalg.{name}' called with `atol='legacy'`. "
                "This behavior is deprecated and will result in an error in "
-               "SciPy v1.14. To preserve current behaviour, set `atol=0.0`.")
+               "SciPy v1.14.0. To preserve current behaviour, set `atol=0.0`.")
         warnings.warn(msg, category=DeprecationWarning, stacklevel=4)
         atol = 0
 
@@ -30,7 +30,7 @@ def _get_atol_rtol(name, b_norm, tol=_NoValue, atol=0., rtol=1e-5):
     if atol is None:
         msg = (f"'scipy.sparse.linalg.{name}' called without specifying "
                "`atol`. This behavior is deprecated and will result in an "
-               "error in SciPy v1.14. To preserve current behaviour, set "
+               "error in SciPy v1.14.0. To preserve current behaviour, set "
                "`atol=rtol`, or, to adopt the future default, set `atol=0.0`.")
         warnings.warn(msg, category=DeprecationWarning, stacklevel=4)
         atol = rtol
@@ -74,8 +74,8 @@ def bicg(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None, callback=None,
     tol : float, optional, deprecated
 
         .. deprecated:: 1.12.0
-           `bicg` keyword argument `tol` is deprecated in favor of `rtol` and
-           will be removed in SciPy 1.14.0.
+           `bicg` keyword argument ``tol`` is deprecated in favor of ``rtol``
+           and will be removed in SciPy 1.14.0.
 
     Returns
     -------
@@ -203,8 +203,8 @@ def bicgstab(A, b, *, x0=None, tol=_NoValue, maxiter=None, M=None,
     tol : float, optional, deprecated
 
         .. deprecated:: 1.12.0
-           `bicgstab` keyword argument `tol` is deprecated in favor of `rtol`
-           and will be removed in SciPy 1.14.0.
+           `bicgstab` keyword argument ``tol`` is deprecated in favor of
+           ``rtol`` and will be removed in SciPy 1.14.0.
 
     Returns
     -------
@@ -347,7 +347,7 @@ def cg(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None, callback=None,
     tol : float, optional, deprecated
 
         .. deprecated:: 1.12.0
-           `cg` keyword argument `tol` is deprecated in favor of `rtol` and
+           `cg` keyword argument ``tol`` is deprecated in favor of ``rtol`` and
            will be removed in SciPy 1.14.0.
 
     Returns
@@ -461,8 +461,8 @@ def cgs(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None, callback=None,
     tol : float, optional, deprecated
 
         .. deprecated:: 1.12.0
-           `cgs` keyword argument `tol` is deprecated in favor of `rtol` and
-           will be removed in SciPy 1.14.0.
+           `cgs` keyword argument ``tol`` is deprecated in favor of ``rtol``
+           and will be removed in SciPy 1.14.0.
 
     Returns
     -------
@@ -635,13 +635,13 @@ def gmres(A, b, x0=None, *, tol=_NoValue, restart=None, maxiter=None, M=None,
     restrt : int, optional, deprecated
 
         .. deprecated:: 0.11.0
-           `gmres` keyword argument `restrt` is deprecated in favor of
-           `restart` and will be removed in SciPy 1.14.0.
+           `gmres` keyword argument ``restrt`` is deprecated in favor of
+           ``restart`` and will be removed in SciPy 1.14.0.
     tol : float, optional, deprecated
 
         .. deprecated:: 1.12.0
-           `gmres` keyword argument `tol` is deprecated in favor of `rtol` and
-           will be removed in SciPy 1.14.0
+           `gmres` keyword argument ``tol`` is deprecated in favor of ``rtol``
+           and will be removed in SciPy 1.14.0
 
     Returns
     -------
@@ -902,8 +902,8 @@ def qmr(A, b, x0=None, *, tol=_NoValue, maxiter=None, M1=None, M2=None,
     tol : float, optional, deprecated
 
         .. deprecated:: 1.12.0
-           `qmr` keyword argument `tol` is deprecated in favor of `rtol` and
-           will be removed in SciPy 1.14.0.
+           `qmr` keyword argument ``tol`` is deprecated in favor of ``rtol``
+           and will be removed in SciPy 1.14.0.
 
     Returns
     -------

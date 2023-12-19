@@ -48,7 +48,7 @@ def minres(A, b, x0=None, *, shift=0.0, tol=_NoValue, maxiter=None,
         Value to apply to the system ``(A - shift * I)x = b``. Default is 0.
     rtol : float
         Tolerance to achieve. The algorithm terminates when the relative
-        residual is below `rtol`.
+        residual is below ``rtol``.
     maxiter : integer
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
@@ -69,8 +69,8 @@ def minres(A, b, x0=None, *, shift=0.0, tol=_NoValue, maxiter=None,
     tol : float, optional, deprecated
 
         .. deprecated:: 1.12.0
-           `minres` keyword argument `tol` is deprecated in favor of `rtol`
-           and will be removed in SciPy 1.14.
+           `minres` keyword argument ``tol`` is deprecated in favor of ``rtol``
+           and will be removed in SciPy 1.14.0.
 
     Examples
     --------
