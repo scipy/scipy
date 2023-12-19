@@ -249,11 +249,6 @@ py3.install_sources(
   subdir: 'scipy'
 )
 
-py3.install_sources(
-  ['_build_utils/tests/test_scipy_version.py'],
-  subdir: 'scipy/_lib/tests'
-)
-
 # Copy the main __init__.py and pxd files to the build dir.
 # Needed to trick Cython, it won't do a relative import outside a package
 fs = import('fs')
