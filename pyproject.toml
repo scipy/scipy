@@ -13,7 +13,7 @@ requires = [
     "meson-python>=0.15.0,<0.16.0", # working with 0.15.x series at branch time
     "Cython>=0.29.35,!=3.0.3,<3.1.0",  # when updating version, also update check in meson.build
     "pybind11>=2.10.4,<2.12.0", # working with 2.11.x series at branch time
-    "pythran>=0.14.0,<0.15.0", # working with 0.14.x series at branch time
+    "pythran@git+https://github.com/serge-sans-paille/pythran", # TODO: pin back to stable release when ready
 
     # When numpy 2.0.0rc1 comes out, we should update this to build against 2.0,
     # and then runtime depend on the range 1.22.X to <2.3. No need to switch to
