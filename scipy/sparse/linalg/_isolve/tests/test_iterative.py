@@ -27,9 +27,9 @@ _SOLVERS = [bicg, bicgstab, cg, cgs, gcrotmk, gmres, lgmres,
             minres, qmr, tfqmr]
 
 pytestmark = [
-    pytest.mark.filterwarnings("ignore:.* keyword argument 'tol'.*"),
-    pytest.mark.filterwarnings("ignore:.*called without specifying.*")
-    ]
+    # remove this once atol defaults to 0.0 for all methods
+    pytest.mark.filterwarnings("ignore:.*called without specifying.*"),
+]
 
 
 # create parametrized fixture for easy reuse in tests
