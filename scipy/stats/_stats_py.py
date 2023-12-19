@@ -6711,7 +6711,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     Parameters
     ----------
     a : array_like
-        Sample observation.
+        Sample observations.
     popmean : float or array_like
         Expected value in null hypothesis. If array_like, then its length along
         `axis` must equal 1, and it must otherwise be broadcastable with `a`.
