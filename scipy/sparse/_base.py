@@ -356,7 +356,7 @@ class _spbase:
         shape_str = 'x'.join(str(x) for x in self.shape)
         return (
             f"<{shape_str} sparse {sparse_cls} of type '{self.dtype.type}'\n"
-            f"\twith {self.nnz} stored elements in {format_name} format>"
+            f"    with {self.nnz} stored elements in {format_name} format>"
         )
 
     def __str__(self):
@@ -367,12 +367,12 @@ class _spbase:
         # helper function, outputs "(i,j)  v"
         def tostr(row, col, data):
             triples = zip(list(zip(row, col)), data)
-            return '\n'.join([('  {}\t{}'.format(*t)) for t in triples])
+            return '\n'.join([('  {}    {}'.format(*t)) for t in triples])
 
         if self.nnz > maxprint:
             half = maxprint // 2
             out = tostr(A.row[:half], A.col[:half], A.data[:half])
-            out += "\n  :\t:\n"
+            out += "\n  :    :\n"
             half = maxprint - maxprint//2
             out += tostr(A.row[-half:], A.col[-half:], A.data[-half:])
         else:
