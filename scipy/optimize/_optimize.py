@@ -1573,10 +1573,10 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
 
     if disp:
         _print_success_message_or_warn(warnflag, msg)
-        print("         Current function value: %f" % fval)
-        print("         Iterations: %d" % k)
-        print("         Function evaluations: %d" % sf.nfev)
-        print("         Gradient evaluations: %d" % sf.ngev)
+        print("        Current function value: %f" % fval)
+        print("        Iterations: %d" % k)
+        print("        Function evaluations: %d" % sf.nfev)
+        print("        Gradient evaluations: %d" % sf.ngev)
 
     result = OptimizeResult(fun=fval, jac=gfk, hess_inv=Hk, nfev=sf.nfev,
                             njev=sf.ngev, status=warnflag,
@@ -1726,10 +1726,10 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
     >>> from scipy import optimize
     >>> res1 = optimize.fmin_cg(f, x0, fprime=gradf, args=args)
     Optimization terminated successfully.
-             Current function value: 1.617021
-             Iterations: 4
-             Function evaluations: 8
-             Gradient evaluations: 8
+            Current function value: 1.617021
+            Iterations: 4
+            Function evaluations: 8
+            Gradient evaluations: 8
     >>> res1
     array([-1.80851064, -0.25531915])
 
@@ -1917,10 +1917,10 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
 
     if disp:
         _print_success_message_or_warn(warnflag, msg)
-        print("         Current function value: %f" % fval)
-        print("         Iterations: %d" % k)
-        print("         Function evaluations: %d" % sf.nfev)
-        print("         Gradient evaluations: %d" % sf.ngev)
+        print("        Current function value: %f" % fval)
+        print("        Iterations: %d" % k)
+        print("        Function evaluations: %d" % sf.nfev)
+        print("        Gradient evaluations: %d" % sf.ngev)
 
     result = OptimizeResult(fun=fval, jac=gfk, nfev=sf.nfev,
                             njev=sf.ngev, status=warnflag,

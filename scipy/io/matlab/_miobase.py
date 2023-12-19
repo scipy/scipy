@@ -295,9 +295,9 @@ def matdims(arr, oned_as='column'):
     >>> matdims(np.array([])) # empty 1-D array
     (0, 0)
     >>> matdims(np.array([[]])) # empty 2-D array
-    (0, 0)
+    (1, 0)
     >>> matdims(np.array([[[]]])) # empty 3-D array
-    (0, 0, 0)
+    (1, 1, 0)
 
     Optional argument flips 1-D shape behavior.
 

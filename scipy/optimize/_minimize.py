@@ -488,10 +488,10 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     >>> res = minimize(rosen, x0, method='BFGS', jac=rosen_der,
     ...                options={'gtol': 1e-6, 'disp': True})
     Optimization terminated successfully.
-             Current function value: 0.000000
-             Iterations: 26
-             Function evaluations: 31
-             Gradient evaluations: 31
+            Current function value: 0.000000
+            Iterations: 26
+            Function evaluations: 31
+            Gradient evaluations: 31
     >>> res.x
     array([ 1.,  1.,  1.,  1.,  1.])
     >>> print(res.message)

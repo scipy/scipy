@@ -689,7 +689,7 @@ class MetaData:
         msg = ""
         msg += "Dataset: %s\n" % self.name
         for i in self._attributes:
-            msg += f"\t{i}'s type is {self._attributes[i].type_name}"
+            msg += f"    {i}'s type is {self._attributes[i].type_name}"
             if self._attributes[i].range:
                 msg += ", range is %s" % str(self._attributes[i].range)
             msg += '\n'
@@ -791,10 +791,10 @@ def loadarff(f):
           dtype=[('width', '<f8'), ('height', '<f8'), ('color', '|S6')])
     >>> meta
     Dataset: foo
-    \twidth's type is numeric
-    \theight's type is numeric
-    \tcolor's type is nominal, range is ('red', 'green', 'blue', 'yellow', 'black')
-
+        width's type is numeric
+        height's type is numeric
+        color's type is nominal, range is ('red', 'green', 'blue', 'yellow', 'black')
+    <BLANKLINE>
     """
     if hasattr(f, 'read'):
         ofile = f

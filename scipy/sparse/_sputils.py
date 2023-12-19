@@ -30,13 +30,13 @@ def upcast(*args):
     --------
     >>> from scipy.sparse._sputils import upcast
     >>> upcast('int32')
-    <type 'numpy.int32'>
+    <class 'numpy.int32'>
     >>> upcast('bool')
-    <type 'numpy.bool_'>
+    <class 'numpy.bool_'>
     >>> upcast('int32','float32')
-    <type 'numpy.float64'>
+    <class 'numpy.float64'>
     >>> upcast('bool',complex,float)
-    <type 'numpy.complex128'>
+    <class 'numpy.complex128'>
 
     """
 

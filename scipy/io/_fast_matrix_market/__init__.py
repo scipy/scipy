@@ -422,6 +422,7 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
     0
     0
     6.25
+    <BLANKLINE>
 
     Add a comment to the output file, and set the precision to 3.
 
@@ -441,6 +442,7 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
     0.00e+00
     0.00e+00
     6.25e+00
+    <BLANKLINE>
 
     Convert to a sparse matrix before calling ``mmwrite``.  This will
     result in the output format being ``'coordinate'`` rather than
@@ -455,6 +457,7 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
     1 1 1.00e+00
     2 2 2.50e+00
     2 4 6.25e+00
+    <BLANKLINE>
 
     Write a complex Hermitian array to a matrix market file.  Note that
     only six values are actually written to the file; the other values
@@ -478,6 +481,7 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
     1.0e+00 0.0e+00
     0.0e+00 5.0e+00
     2.5e+00 0.0e+00
+    <BLANKLINE>
 
     This method is threaded.
     The default number of threads is equal to the number of CPUs in the system.

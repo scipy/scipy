@@ -1759,6 +1759,7 @@ def normalize(b, a):
 
     >>> import warnings
     >>> with warnings.catch_warnings(record=True) as w:
+    ...     warnings.filterwarnings("always")
     ...     num, den = normalize([0, 3, 6], [2, -5, 4])
 
     >>> num
