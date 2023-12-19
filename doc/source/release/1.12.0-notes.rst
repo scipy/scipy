@@ -353,7 +353,7 @@ Authors
 * Alexander Goscinski (2) +
 * Rohit Goswami (2) +
 * Olivier Grisel (1)
-* Matt Haberland (242)
+* Matt Haberland (243)
 * Charles Harris (1)
 * harshilkamdar (1) +
 * Alon Hovav (2) +
@@ -418,7 +418,7 @@ Authors
 * Bharat Raghunathan (1)
 * Chris Rapson (1) +
 * Matteo Raso (4)
-* Tyler Reddy (160)
+* Tyler Reddy (165)
 * Martin Reinecke (1)
 * Tilo Reneau-Cardoso (1) +
 * resting-dove (2) +
@@ -458,7 +458,7 @@ Authors
 * Warren Weckesser (7)
 * Bernhard M. Wiedemann (4)
 * Levi John Wolf (1)
-* Xuefeng Xu (3) +
+* Xuefeng Xu (4) +
 * Rory Yorke (2)
 * YoussefAli1 (1) +
 * Irwin Zaid (4) +
@@ -493,6 +493,7 @@ Issues closed for 1.12.0
 * `#14480 <https://github.com/scipy/scipy/issues/14480>`__: LSODA implementation of dense output yields incorrect result
 * `#15533 <https://github.com/scipy/scipy/issues/15533>`__: BUG: test failure with MKL in presence of AVX512-capable processor
 * `#15676 <https://github.com/scipy/scipy/issues/15676>`__: ENH: Implement \`multivariate_normal.fit\`
+* `#15738 <https://github.com/scipy/scipy/issues/15738>`__: DEP: change default of atol in \`scipy.sparse.linalg.\*\`
 * `#16729 <https://github.com/scipy/scipy/issues/16729>`__: _fitpack / dfitpack duplication
 * `#16880 <https://github.com/scipy/scipy/issues/16880>`__: ENH: Add Rotation.align_vector
 * `#17290 <https://github.com/scipy/scipy/issues/17290>`__: ENH: multi dimensional wasserstein/earth mover distance in Scipy
@@ -1054,4 +1055,6 @@ Pull requests for 1.12.0
 * `#19677 <https://github.com/scipy/scipy/pull/19677>`__: DOC: array types: mention partial support in \`special\`
 * `#19686 <https://github.com/scipy/scipy/pull/19686>`__: TST: fix incorrect signal.sosfilt tests
 * `#19690 <https://github.com/scipy/scipy/pull/19690>`__: BLD: avoid fast-math for oneAPI compilers, fix up handling of...
+* `#19691 <https://github.com/scipy/scipy/pull/19691>`__: BUG: fix negative overflow in stats.boxcox_normmax
 * `#19693 <https://github.com/scipy/scipy/pull/19693>`__: BUG: Prevent mutation of \`w\` parameter in \`spatial.distance.\*\`
+* `#19702 <https://github.com/scipy/scipy/pull/19702>`__: DEP: Adopt \`\*tol\` deprecations also for \`gcrotmk/lgmres/minres/tfqmr\`
