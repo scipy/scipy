@@ -28,8 +28,9 @@ Highlights of this release
 - Experimental support for the array API standard has been added to part of
   `scipy.special`, and to all of `scipy.fft` and `scipy.cluster`. There are
   likely to be bugs and early feedback for usage with CuPy arrays, PyTorch
-  tensors, and other array API compatible libraries is appreciated.
-- A new class, ``ShortTimeFFT```, provides a more versatile implementation of the
+  tensors, and other array API compatible libraries is appreciated. Use the
+  ``SCIPY_ARRAY_API`` environment variable for testing.
+- A new class, ``ShortTimeFFT``, provides a more versatile implementation of the
   short-time Fourier transform (STFT), its inverse (ISTFT) as well as the (cross-)
   spectrogram. It utilizes an improved algorithm for calculating the ISTFT.
 - Several new constructors have been added for sparse arrays, and many operations
@@ -81,7 +82,7 @@ New features
   and knot vectors. This way it generalizes ``BSpline`` for 1D data to N-D, and
   parallels ``NdPPoly`` (which represents N-D tensor product polynomials).
   Evaluations exploit the localized nature of b-splines.
-- ``NeastNDInterpolator.__call__`` accepts ``**query_options``, which are
+- ``NearestNDInterpolator.__call__`` accepts ``**query_options``, which are
   passed through to the ``KDTree.query`` call to find nearest neighbors. This
   allows, for instance, to limit the neighbor search distance and parallelize
   the query using the ``workers`` keyword.
@@ -317,17 +318,19 @@ Authors
 * Ben Beasley (3) +
 * Doron Behar (1)
 * Peter Bell (1)
+* Sebastian Berg (1)
 * Ben Boeckel (1) +
-* Jake Bowhay (100)
+* David Boetius (1) +
+* Jake Bowhay (102)
 * Larry Bradley (1) +
 * Dietrich Brunn (5)
 * Evgeni Burovski (101)
 * Matthias Bussonnier (18)
-* CJ Carey (4)
+* CJ Carey (6)
 * Colin Carroll (1) +
 * Aadya Chinubhai (1) +
 * Luca Citi (1)
-* Lucas Colley (136) +
+* Lucas Colley (140) +
 * com3dian (1) +
 * Anirudh Dagar (4)
 * Danni (1) +
@@ -337,19 +340,20 @@ Authors
 * drestebon (1) +
 * Thomas Duvernay (1)
 * elbarso (1) +
+* emilfrost (2) +
 * Paul Estano (8) +
 * Evandro (2)
 * Franz Király (1) +
 * Nikita Furin (1) +
 * gabrielthomsen (1) +
-* Lukas Geiger (8) +
+* Lukas Geiger (9) +
 * Artem Glebov (22) +
 * Caden Gobat (1)
-* Ralf Gommers (120)
+* Ralf Gommers (125)
 * Alexander Goscinski (2) +
 * Rohit Goswami (2) +
 * Olivier Grisel (1)
-* Matt Haberland (238)
+* Matt Haberland (243)
 * Charles Harris (1)
 * harshilkamdar (1) +
 * Alon Hovav (2) +
@@ -357,6 +361,7 @@ Authors
 * Romain Jacob (1) +
 * jcwhitehead (1) +
 * Julien Jerphanion (13)
+* He Jia (1)
 * JohnWT (1) +
 * jokasimr (1) +
 * Evan W Jones (1)
@@ -398,12 +403,12 @@ Authors
 * Roberto Pastor Muela (3) +
 * Bijay Nayak (1) +
 * Andrew Nelson (105)
-* Praveer Nidamaluri (1) +
+* Praveer Nidamaluri (2) +
 * Lysandros Nikolaou (2)
 * Dimitri Papadopoulos Orfanos (7)
 * Pablo Rodríguez Pérez (1) +
 * Dimitri Papadopoulos (2)
-* Tirth Patel (13)
+* Tirth Patel (14)
 * Kyle Paterson (1) +
 * Paul (4) +
 * Yann Pellegrini (2) +
@@ -413,7 +418,7 @@ Authors
 * Bharat Raghunathan (1)
 * Chris Rapson (1) +
 * Matteo Raso (4)
-* Tyler Reddy (161)
+* Tyler Reddy (165)
 * Martin Reinecke (1)
 * Tilo Reneau-Cardoso (1) +
 * resting-dove (2) +
@@ -425,8 +430,8 @@ Authors
 * Masahiro Sakai (2) +
 * Omar Salman (14)
 * Andrej Savikin (1) +
-* Daniel Schmitz (50)
-* Dan Schult (18)
+* Daniel Schmitz (52)
+* Dan Schult (19)
 * Scott Shambaugh (9)
 * Sheila-nk (2) +
 * Mauro Silberberg (3) +
@@ -453,14 +458,14 @@ Authors
 * Warren Weckesser (7)
 * Bernhard M. Wiedemann (4)
 * Levi John Wolf (1)
-* Xuefeng Xu (3) +
+* Xuefeng Xu (4) +
 * Rory Yorke (2)
 * YoussefAli1 (1) +
 * Irwin Zaid (4) +
 * Jinzhe Zeng (1) +
 * JIMMY ZHAO (1) +
 
-A total of 157 people contributed to this release.
+A total of 161 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
@@ -488,6 +493,7 @@ Issues closed for 1.12.0
 * `#14480 <https://github.com/scipy/scipy/issues/14480>`__: LSODA implementation of dense output yields incorrect result
 * `#15533 <https://github.com/scipy/scipy/issues/15533>`__: BUG: test failure with MKL in presence of AVX512-capable processor
 * `#15676 <https://github.com/scipy/scipy/issues/15676>`__: ENH: Implement \`multivariate_normal.fit\`
+* `#15738 <https://github.com/scipy/scipy/issues/15738>`__: DEP: change default of atol in \`scipy.sparse.linalg.\*\`
 * `#16729 <https://github.com/scipy/scipy/issues/16729>`__: _fitpack / dfitpack duplication
 * `#16880 <https://github.com/scipy/scipy/issues/16880>`__: ENH: Add Rotation.align_vector
 * `#17290 <https://github.com/scipy/scipy/issues/17290>`__: ENH: multi dimensional wasserstein/earth mover distance in Scipy
@@ -1037,6 +1043,7 @@ Pull requests for 1.12.0
 * `#19623 <https://github.com/scipy/scipy/pull/19623>`__: MAINT: lint: enable \`stacklevel\` warnings check
 * `#19624 <https://github.com/scipy/scipy/pull/19624>`__: MAINT/TST: _lib: use value instead of deprecated s
 * `#19626 <https://github.com/scipy/scipy/pull/19626>`__: MAINT: more SciPy windows int shims
+* `#19628 <https://github.com/scipy/scipy/pull/19628>`__: DOC: 1.12.0 release notes
 * `#19635 <https://github.com/scipy/scipy/pull/19635>`__: MAINT: simplify Nakagami mean calculation
 * `#19637 <https://github.com/scipy/scipy/pull/19637>`__: DOC: Clarify integration error bound in \`integrate\` tutorial
 * `#19648 <https://github.com/scipy/scipy/pull/19648>`__: MAINT: simplify chi distribution mean calculation
@@ -1045,3 +1052,9 @@ Pull requests for 1.12.0
 * `#19658 <https://github.com/scipy/scipy/pull/19658>`__: MAINT: git blame ignores for lint clean-ups
 * `#19660 <https://github.com/scipy/scipy/pull/19660>`__: STY: special: use indent width of 4 in clang-format
 * `#19661 <https://github.com/scipy/scipy/pull/19661>`__: CI: fix pre-release job by correct version pin for scipy-openblas32
+* `#19677 <https://github.com/scipy/scipy/pull/19677>`__: DOC: array types: mention partial support in \`special\`
+* `#19686 <https://github.com/scipy/scipy/pull/19686>`__: TST: fix incorrect signal.sosfilt tests
+* `#19690 <https://github.com/scipy/scipy/pull/19690>`__: BLD: avoid fast-math for oneAPI compilers, fix up handling of...
+* `#19691 <https://github.com/scipy/scipy/pull/19691>`__: BUG: fix negative overflow in stats.boxcox_normmax
+* `#19693 <https://github.com/scipy/scipy/pull/19693>`__: BUG: Prevent mutation of \`w\` parameter in \`spatial.distance.\*\`
+* `#19702 <https://github.com/scipy/scipy/pull/19702>`__: DEP: Adopt \`\*tol\` deprecations also for \`gcrotmk/lgmres/minres/tfqmr\`
