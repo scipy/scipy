@@ -2817,7 +2817,7 @@ def _range_prod(lo, hi, k=1):
         return hi
 
 
-def _exact_factorialx_array(n, k=1):
+def _factorialx_array_exact(n, k=1):
     """
     Exact computation of factorial for an array.
 
@@ -2972,7 +2972,7 @@ def factorial(n, exact=False):
         raise ValueError(msg)
 
     if exact:
-        return _exact_factorialx_array(n)
+        return _factorialx_array_exact(n, k=1)
     # exact=False case
     res = _ufuncs._factorial(n)
     if isinstance(n, np.ndarray):
@@ -3049,7 +3049,7 @@ def factorial2(n, exact=False):
     if not np.issubdtype(n.dtype, np.integer):
         raise ValueError("factorial2 does not support non-integral arrays")
     if exact:
-        return _exact_factorialx_array(n, k=2)
+        return _factorialx_array_exact(n, k=2)
     # approximation
     vals = zeros(n.shape)
     cond = (n >= 0)
@@ -3179,7 +3179,7 @@ def factorialk(n, k, exact=None):
         msg = "factorialk does not support non-integral arrays!"
         raise ValueError(msg + helpmsg)
     if exact:
-        return _exact_factorialx_array(n, k=k)
+        return _factorialx_array_exact(n, k=k)
     # approximation
     vals = zeros(n.shape)
     cond = (n >= 0)
