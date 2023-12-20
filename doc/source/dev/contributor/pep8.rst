@@ -49,8 +49,15 @@ compliance before pushing your code:
    |autopep8|_ to automatically fix them before incorporating the code into
    SciPy.
 
+The line length limit of 88 characters was chosen to match the defaults of popular
+tools like `ruff`_ and `black`_. This strikes a balance between producing shorter
+files and reducing linter errors on the one hand, and maintaining reasonably short
+lines and the ability to view files side-by-side on the other.
+
 .. _PEP8: https://www.python.org/dev/peps/pep-0008/
 .. _enable Real-time code style analysis: https://stackoverflow.com/questions/51463223/how-to-use-pep8-module-using-spyder
+.. _ruff: https://pypi.org/project/ruff/
+.. _black: https://pypi.org/project/black/
 
 .. |autopep8| replace:: ``autopep8``
 .. _autopep8: https://pypi.org/project/autopep8/0.8/
