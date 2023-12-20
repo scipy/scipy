@@ -304,7 +304,7 @@ void bsr_matmat(const I maxnnz,
     if( R == 1 && N == 1 && C == 1 ){
         // Use CSR for 1x1 blocksize
         csr_matmat_maxnnz(n_brow, n_bcol, Ap, Aj, Ax, Bp, Bj, Bx, Cp);
-        std::inclusive_scan(Cp, Cp + n_brow + 1, Cp);
+        inclusive_scan(Cp, Cp + n_brow + 1, Cp);
         csr_matmat(n_brow, n_bcol, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx);
         return;
     }

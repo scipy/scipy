@@ -467,7 +467,7 @@ void csr_tocsc(const I n_row,
     }
 
     //cumsum the nnz per column to get Bp[]
-    std::exclusive_scan(Bp, Bp + n_col + 1, Bp, 0);
+    exclusive_scan(Bp, Bp + n_col + 1, Bp, 0);
 
     for(I row = 0; row < n_row; row++){
         for(I jj = Ap[row]; jj < Ap[row+1]; jj++){
@@ -969,7 +969,7 @@ void csr_binop_csr_canonical(const I n_row, const I n_col,
         csr_binop_csr_canonical_pattern(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op, 1);
 
         // Cp is a cumsum of row nnz.
-        std::exclusive_scan(Cp, Cp + n_row + 1, Cp, 0);
+        exclusive_scan(Cp, Cp + n_row + 1, Cp, 0);
 
         // Phase 2: Compute column indices and values, in parallel.
         csr_binop_csr_canonical_pattern(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op, 2);
