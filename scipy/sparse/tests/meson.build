@@ -9,6 +9,7 @@ python_sources = [
   'test_csr.py',
   'test_extract.py',
   'test_matrix_io.py',
+  'test_minmax1d.py',
   'test_sparsetools.py',
   'test_spfuncs.py',
   'test_sputils.py'
