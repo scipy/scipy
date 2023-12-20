@@ -412,23 +412,6 @@ class TestSS2TF:
 class TestLsim:
     digits_accuracy = 7
 
-    def test_nonzero_initial_time(self):
-        system = self.lti_nowarn(-1.,1.,1.,0.)
-        t = np.linspace(1,2)
-        u = np.zeros_like(t)
-        tout, y, x = lsim(system, u, t, X0=[1.0])
-        expected_y = np.exp(-tout)
-        assert_almost_equal(y, expected_y)
-
-    def test_nonequal_timesteps(self):
-        t = np.array([0.0, 1.0, 1.0, 3.0])
-        u = np.array([0.0, 0.0, 1.0, 1.0])
-        # Simple integrator: x'(t) = u(t)
-        system = ([1.0], [1.0, 0.0])
-        with assert_raises(ValueError,
-                           match="Time steps are not equally spaced."):
-            tout, y, x = lsim(system, u, t, X0=[1.0])
-
     def lti_nowarn(self, *args):
         with suppress_warnings() as sup:
             sup.filter(BadCoefficients)
@@ -534,6 +517,23 @@ class TestLsim:
         assert_almost_equal(x[:,0], expected_x0)
         assert_almost_equal(x[:,1], expected_x1)
 
+    def test_nonzero_initial_time(self):
+        system = self.lti_nowarn(-1.,1.,1.,0.)
+        t = np.linspace(1,2)
+        u = np.zeros_like(t)
+        tout, y, x = lsim(system, u, t, X0=[1.0])
+        expected_y = np.exp(-tout)
+        assert_almost_equal(y, expected_y)
+
+    def test_nonequal_timesteps(self):
+        t = np.array([0.0, 1.0, 1.0, 3.0])
+        u = np.array([0.0, 0.0, 1.0, 1.0])
+        # Simple integrator: x'(t) = u(t)
+        system = ([1.0], [1.0, 0.0])
+        with assert_raises(ValueError,
+                           match="Time steps are not equally spaced."):
+            tout, y, x = lsim(system, u, t, X0=[1.0])
+
 
 class TestImpulse:
     def test_first_order(self):
@@ -607,12 +607,6 @@ class TestImpulse:
 
 
 class TestStep:
-    def test_complex_input(self):
-        # Test that complex input doesn't raise an error.
-        # `step` doesn't seem to have been designed for complex input, but this
-        # works and may be used, so add regression test.  See gh-2654.
-        step(([], [-1], 1+0j))
-
     def test_first_order(self):
         # First order system: x'(t) + x(t) = u(t)
         # Exact step response is x(t) = 1 - exp(-t).
@@ -677,6 +671,12 @@ class TestStep:
         system = ([1.0], [1.0, 2.0, 1.0])
         # TODO: add meaningful test where X0 is a list
         tout, y = step(system, T=[5, 6])
+
+    def test_complex_input(self):
+        # Test that complex input doesn't raise an error.
+        # `step` doesn't seem to have been designed for complex input, but this
+        # works and may be used, so add regression test.  See gh-2654.
+        step(([], [-1], 1+0j))
 
 
 class TestLti:
