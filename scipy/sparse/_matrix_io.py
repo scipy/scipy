@@ -110,7 +110,7 @@ def load_npz(file):
     >>> sparse_array = sp.sparse.csc_array([[0, 0, 3], [4, 0, 0]])
     >>> sparse_array
     <2x3 sparse array of type '<class 'numpy.int64'>'
-       with 2 stored elements in Compressed Sparse Column format>
+        with 2 stored elements in Compressed Sparse Column format>
     >>> sparse_array.toarray()
     array([[0, 0, 3],
            [4, 0, 0]], dtype=int64)
