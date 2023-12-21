@@ -207,8 +207,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         where ``intermediate_result`` is a keyword parameter containing an
         `OptimizeResult` with attributes ``x`` and ``fun``, the present values
         of the parameter vector and objective function. If `jac` or `hess` are
-        specified as `Callable` they will also be present in 
-        ``intermdiate_result`` as attributes ``jac`` and ``hess``.
+        specified as callable they will also be present in 
+        ``intermediate_result`` as attributes ``jac`` and ``hess``.
         Note that the name of the parameter must be ``intermediate_result`` 
         for the callback to be passed an `OptimizeResult`. These methods will
         also terminate if the callback raises ``StopIteration``.
