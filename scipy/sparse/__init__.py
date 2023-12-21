@@ -303,6 +303,7 @@ from ._construct import *
 from ._extract import *
 from ._matrix import spmatrix
 from ._matrix_io import *
+from . import _sparsetools
 
 # For backward compatibility with v0.19.
 from . import csgraph
@@ -323,7 +324,7 @@ from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester
 
-# Register the sparsetools thread pool with threadpoolctl
+# Control sparsetools parallelism with threadpoolctl
 try:
     import threadpoolctl
 
@@ -347,5 +348,5 @@ try:
 
     threadpoolctl.register(_SparseToolsThreadPoolCtlController)
 except (ImportError, AttributeError):
-    # threadpoolctl not installed or version too old
+    # threadpoolctl not installed or version too old. Supports threadpoolctl >=3.2
     pass
