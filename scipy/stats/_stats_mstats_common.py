@@ -321,11 +321,11 @@ def theilslopes(y, x=None, alpha=0.95, method='separate'):
         raise ValueError("method must be either 'joint' or 'separate'."
                          f"'{method}' is invalid.")
     # We copy both x and y so we can use _find_repeats.
-    y = np.array(y).flatten()
+    y = np.array(y, dtype=float, copy=True).ravel()
     if x is None:
         x = np.arange(len(y), dtype=float)
     else:
-        x = np.array(x, dtype=float).flatten()
+        x = np.array(x, dtype=float, copy=True).ravel()
         if len(x) != len(y):
             raise ValueError(f"Incompatible lengths ! ({len(y)}<>{len(x)})")
 

@@ -843,7 +843,8 @@ class MatFile5Writer:
     def write_file_header(self):
         # write header
         hdr = np.zeros((), NDT_FILE_HDR)
-        hdr['description'] = f'MATLAB 5.0 MAT-file Platform: {os.name}, Created on: {time.asctime()}'
+        hdr['description'] = (f'MATLAB 5.0 MAT-file Platform: {os.name}, '
+                              f'Created on: {time.asctime()}')
         hdr['version'] = 0x0100
         hdr['endian_test'] = np.ndarray(shape=(),
                                       dtype='S2',

@@ -2278,9 +2278,11 @@ class TestUnitaryGroup:
         x = unitary_group.rvs(3)
         x2 = unitary_group.rvs(3, random_state=514)
 
-        expected = np.array([[0.308771+0.360312j, 0.044021+0.622082j, 0.160327+0.600173j],
-                             [0.732757+0.297107j, 0.076692-0.4614j, -0.394349+0.022613j],
-                             [-0.148844+0.357037j, -0.284602-0.557949j, 0.607051+0.299257j]])
+        expected = np.array(
+            [[0.308771+0.360312j, 0.044021+0.622082j, 0.160327+0.600173j],
+             [0.732757+0.297107j, 0.076692-0.4614j, -0.394349+0.022613j],
+             [-0.148844+0.357037j, -0.284602-0.557949j, 0.607051+0.299257j]]
+        )
 
         assert_array_almost_equal(x, expected)
         assert_array_almost_equal(x2, expected)
@@ -2499,7 +2501,8 @@ class TestMultivariateT:
         ([7, 7], [[7, 0], [0, 7]], 7, [7, 7], [[7, 0], [0, 7]], 7)
     ]
 
-    @pytest.mark.parametrize("loc, shape, df, loc_ans, shape_ans, df_ans", DEFAULT_ARGS_TESTS)
+    @pytest.mark.parametrize("loc, shape, df, loc_ans, shape_ans, df_ans",
+                             DEFAULT_ARGS_TESTS)
     def test_default_args(self, loc, shape, df, loc_ans, shape_ans, df_ans):
         dist = multivariate_t(loc=loc, shape=shape, df=df)
         assert_equal(dist.loc, loc_ans)
@@ -2512,8 +2515,10 @@ class TestMultivariateT:
         (np.array([-1]), np.array([2]), 3, [-1], [[2]], 3)
     ]
 
-    @pytest.mark.parametrize("loc, shape, df, loc_ans, shape_ans, df_ans", ARGS_SHAPES_TESTS)
-    def test_scalar_list_and_ndarray_arguments(self, loc, shape, df, loc_ans, shape_ans, df_ans):
+    @pytest.mark.parametrize("loc, shape, df, loc_ans, shape_ans, df_ans",
+                             ARGS_SHAPES_TESTS)
+    def test_scalar_list_and_ndarray_arguments(self, loc, shape, df, loc_ans,
+                                               shape_ans, df_ans):
         dist = multivariate_t(loc, shape, df)
         assert_equal(dist.loc, loc_ans)
         assert_equal(dist.shape, shape_ans)

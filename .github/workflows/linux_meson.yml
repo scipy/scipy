@@ -306,8 +306,11 @@ jobs:
     - name: Install Python packages
       run: |
         python -m pip install cython pythran ninja meson-python pybind11 click rich_click pydevtool
-        python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy "scipy-openblas32<=0.3.24.135"
+        python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
         python -m pip install --pre --upgrade pytest pytest-cov pytest-xdist mpmath gmpy2 threadpoolctl pooch matplotlib hypothesis
+        # TODO: once the scipy_ symbol prefix issue is fixed, install
+        # scipy-openblas32 from the pre-releases bucket again (see gh-19640)
+        python -m pip install "scipy-openblas32<=0.3.23.293.2"
 
     - name:  Prepare compiler cache
       id:    prep-ccache

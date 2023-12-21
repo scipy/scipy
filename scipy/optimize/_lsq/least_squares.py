@@ -109,7 +109,8 @@ def check_tolerance(ftol, xtol, gtol, method):
             tol = 0
         elif tol < EPS:
             warn(f"Setting `{name}` below the machine epsilon ({EPS:.2e}) effectively "
-                 "disables the corresponding termination condition.")
+                 f"disables the corresponding termination condition.",
+                 stacklevel=3)
         return tol
 
     ftol = check(ftol, "ftol")
@@ -882,8 +883,8 @@ def least_squares(
                                  "`jac_sparsity`.")
 
             if jac != '2-point':
-                warn(f"jac='{jac}' works equivalently to '2-point' "
-                     "for method='lm'.")
+                warn(f"jac='{jac}' works equivalently to '2-point' for method='lm'.",
+                     stacklevel=2)
 
             J0 = jac_wrapped = None
         else:
@@ -944,7 +945,8 @@ def least_squares(
     elif method == 'dogbox':
         if tr_solver == 'lsmr' and 'regularize' in tr_options:
             warn("The keyword 'regularize' in `tr_options` is not relevant "
-                 "for 'dogbox' method.")
+                 "for 'dogbox' method.",
+                 stacklevel=2)
             tr_options = tr_options.copy()
             del tr_options['regularize']
 

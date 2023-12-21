@@ -15,8 +15,7 @@ from numpy.testing import (assert_array_equal, assert_almost_equal,
 import pytest
 from pytest import raises as assert_raises
 import re
-from scipy import optimize
-from scipy import stats
+from scipy import optimize, stats, special
 from scipy.stats._morestats import _abw_state, _get_As_weibull, _Avals_weibull
 from .common_tests import check_named_results
 from .._hypotests import _get_wilcoxon_distr, _get_wilcoxon_distr2
@@ -206,8 +205,11 @@ class TestShapiro:
         shapiro_test = stats.shapiro(x)
         assert_equal(w, np.nan)
         assert_equal(shapiro_test.statistic, np.nan)
-        assert_almost_equal(pw, 1.0)
-        assert_almost_equal(shapiro_test.pvalue, 1.0)
+        # Originally, shapiro returned a p-value of 1 in this case,
+        # but there is no way to produce a numerical p-value if the
+        # statistic is not a number. NaN is more appropriate.
+        assert_almost_equal(pw, np.nan)
+        assert_almost_equal(shapiro_test.pvalue, np.nan)
 
     def test_gh14462(self):
         # shapiro is theoretically location-invariant, but when the magnitude
@@ -2076,21 +2078,31 @@ class TestBoxcoxNormmax:
             stats.boxcox_normmax(self.x, brack=(-2.0, 2.0),
                                  optimizer=optimizer)
 
+    @pytest.mark.parametrize(
+        'x', ([2003.0, 1950.0, 1997.0, 2000.0, 2009.0],
+              [0.50000471, 0.50004979, 0.50005902, 0.50009312, 0.50001632]))
+    def test_overflow(self, x):
+        message = "The optimal lambda is..."
+        with pytest.warns(UserWarning, match=message):
+            lmbda = stats.boxcox_normmax(x, method='mle')
+        assert np.isfinite(special.boxcox(x, lmbda)).all()
+        # 10000 is safety factor used in boxcox_normmax
+        ymax = np.finfo(np.float64).max / 10000
+        x_treme = np.max(x) if lmbda > 0 else np.min(x)
+        y_extreme = special.boxcox(x_treme, lmbda)
+        assert_allclose(y_extreme, ymax * np.sign(lmbda))
+
     def test_negative_ymax(self):
         with pytest.raises(ValueError, match="`ymax` must be strictly positive"):
             stats.boxcox_normmax(self.x, ymax=-1)
 
     @pytest.mark.parametrize("x", [
-        # Attempt to trigger overflow in power expressions.
-        np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0,
-                  2009.0, 1980.0, 1999.0, 2007.0, 1991.0],
-                 dtype=np.float64),
-        # Attempt to trigger overflow with a large optimal lambda.
+        # positive overflow in float64
         np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0],
                  dtype=np.float64),
-        # Attempt to trigger overflow with large data.
-        np.array([2003.0e200, 1950.0e200, 1997.0e200, 2000.0e200, 2009.0e200],
-                 dtype=np.float64)
+        # negative overflow in float64
+        np.array([0.50000471, 0.50004979, 0.50005902, 0.50009312, 0.50001632],
+                 dtype=np.float64),
     ])
     @pytest.mark.parametrize("ymax", [1e10, 1e100, None])
     # TODO: add method "pearsonr" after fix overflow issue
@@ -2100,22 +2112,20 @@ class TestBoxcoxNormmax:
         with pytest.warns(UserWarning, match="The optimal lambda is"):
             kwarg = {'ymax': ymax} if ymax is not None else {}
             lmb = stats.boxcox_normmax(x, method=method, **kwarg)
-            ymax_res = stats.boxcox(np.max(x), lmb)
+            x_treme = [np.min(x), np.max(x)]
+            ymax_res = max(abs(stats.boxcox(x_treme, lmb)))
             if ymax is None:
-                ymax = np.finfo(x.dtype).max / 100
+                # 10000 is safety factor used in boxcox_normmax
+                ymax = np.finfo(x.dtype).max / 10000
             assert_allclose(ymax, ymax_res, rtol=1e-1)
 
     @pytest.mark.parametrize("x", [
-        np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0,
-                  2009.0, 1980.0, 1999.0, 2007.0, 1991.0],
-                 dtype=np.float32),
-        np.array([200.3, 195.0, 199.7, 200.0, 200.9,
-                  200.9, 198.0, 199.9, 200.7, 199.1],
-                 dtype=np.float32),
-        np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0],
-                 dtype=np.float32),
+        # positive overflow in float32
         np.array([200.3, 195.0, 199.7, 200.0, 200.9],
-                 dtype=np.float32)
+                 dtype=np.float32),
+        # negative overflow in float32
+        np.array([2e-30, 1e-30, 1e-30, 1e-30, 1e-30, 1e-30],
+                 dtype=np.float32),
     ])
     @pytest.mark.parametrize("ymax", [1e8, 1e30, None])
     # TODO: add method "pearsonr" after fix overflow issue
@@ -2125,15 +2135,18 @@ class TestBoxcoxNormmax:
         with pytest.warns(UserWarning, match="The optimal lambda is"):
             kwarg = {'ymax': ymax} if ymax is not None else {}
             lmb = stats.boxcox_normmax(x, method=method, **kwarg)
-            ymax_res = stats.boxcox(np.max(x), lmb)
+            x_treme = [np.min(x), np.max(x)]
+            ymax_res = max(abs(stats.boxcox(x_treme, lmb)))
             if ymax is None:
-                ymax = np.finfo(x.dtype).max / 100
+                # 10000 is safety factor used in boxcox_normmax
+                ymax = np.finfo(x.dtype).max / 10000
             assert_allclose(ymax, ymax_res, rtol=1e-1)
 
     @pytest.mark.parametrize("x", [
-        np.array([200.3, 195.0, 199.7, 200.0, 200.9,
-                  200.9, 198.0, 199.9, 200.7, 199.1]),
-        np.array([200.3, 195.0, 199.7, 200.0, 200.9])
+        # positive overflow in float32 but not float64
+        [200.3, 195.0, 199.7, 200.0, 200.9],
+        # negative overflow in float32 but not float64
+        [2e-30, 1e-30, 1e-30, 1e-30, 1e-30, 1e-30],
     ])
     # TODO: add method "pearsonr" after fix overflow issue
     @pytest.mark.parametrize("method", ["mle"])
@@ -2687,7 +2700,8 @@ class TestMedianTest:
                       ties="foo")
 
     def test_bad_nan_policy(self):
-        assert_raises(ValueError, stats.median_test, [1, 2, 3], [4, 5], nan_policy='foobar')
+        assert_raises(ValueError, stats.median_test, [1, 2, 3], [4, 5],
+                      nan_policy='foobar')
 
     def test_bad_keyword(self):
         assert_raises(TypeError, stats.median_test, [1, 2, 3], [4, 5],
