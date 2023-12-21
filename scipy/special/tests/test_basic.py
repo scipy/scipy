@@ -2286,14 +2286,12 @@ class TestFactorialFunctions:
             assert_equal(x, y)
 
         if result is not None:
+            # keep 0-dim.; otherwise n.ravel().ndim==1, even if n.ndim==0
+            n_flat = n.ravel() if n.ndim else n
+            ref = special.factorial(n_flat, exact=exact) if n.size else []
             # expected result is empty if and only if n is empty,
             # and has the same dtype & dimension as n
-            with suppress_warnings() as sup:
-                sup.filter(DeprecationWarning)
-                # keep 0-dim.; otherwise n.ravel().ndim==1, even if n.ndim==0
-                n_flat = n.ravel() if n.ndim else n
-                r = special.factorial(n_flat, exact=exact) if n.size else []
-            expected = np.array(r, ndmin=dim, dtype=dtype)
+            expected = np.array(ref, ndmin=dim, dtype=dtype)
             assert_really_equal(result, expected)
 
     @pytest.mark.parametrize("exact", [True, False])
