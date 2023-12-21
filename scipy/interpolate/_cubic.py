@@ -1,11 +1,18 @@
 """Interpolation algorithms using piecewise cubic polynomials."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
+
+from scipy.linalg import solve, solve_banded
 
 from . import PPoly
 from ._polyint import _isscalar
-from scipy.linalg import solve_banded, solve
 
+if TYPE_CHECKING:
+    from typing import Literal
 
 __all__ = ["CubicHermiteSpline", "PchipInterpolator", "pchip_interpolate",
            "Akima1DInterpolator", "CubicSpline"]
@@ -365,7 +372,7 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
 
 
 class Akima1DInterpolator(CubicHermiteSpline):
-    """
+    r"""
     Akima interpolator
 
     Fit piecewise cubic polynomials, given vectors x and y. The interpolation
@@ -384,6 +391,11 @@ class Akima1DInterpolator(CubicHermiteSpline):
     axis : int, optional
         Axis in the ``y`` array corresponding to the x-coordinate values. Defaults
         to ``axis=0``.
+    method : {'akima', 'makima'}, optional
+        If ``"makima"``, use the modified Akima interpolation [2]_.
+        Defaults to ``"akima"``, use the Akima interpolation [1]_.
+
+        .. versionadded:: 1.13.0
 
     Methods
     -------
@@ -406,15 +418,69 @@ class Akima1DInterpolator(CubicHermiteSpline):
     points exactly. This routine is useful for plotting a pleasingly smooth
     curve through a few given points for purposes of plotting.
 
+    Let :math:`\delta_i = (y_{i+1} - y_i) / (x_{i+1} - x_i)` be the slopes of
+    the interval :math:`\left[x_i, x_{i+1}\right)`. Akima's derivative at
+    :math:`x_i` is defined as:
+
+    .. math::
+
+        d_i = \frac{w_1}{w_1 + w_2}\delta_{i-1} + \frac{w_2}{w_1 + w_2}\delta_i
+
+    In the Akima interpolation [1]_ (``method="akima"``), the weights are:
+
+    .. math::
+
+        \begin{aligned}
+        w_1 &= |\delta_{i+1} - \delta_i| \\
+        w_2 &= |\delta_{i-1} - \delta_{i-2}|
+        \end{aligned}
+
+    In the modified Akima interpolation [2]_ (``method="makima"``),
+    to eliminate overshoot and avoid edge cases of both numerator and
+    denominator being equal to 0, the weights are modified as follows:
+
+    .. math::
+
+        \begin{align*}
+        w_1 &= |\delta_{i+1} - \delta_i| + |\delta_{i+1} + \delta_i| / 2 \\
+        w_2 &= |\delta_{i-1} - \delta_{i-2}| + |\delta_{i-1} + \delta_{i-2}| / 2
+        \end{align*}
+
+    Examples
+    --------
+    Comparison of ``method="akima"`` and ``method="makima"``:
+
+    >>> import numpy as np
+    >>> from scipy.interpolate import Akima1DInterpolator
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(1, 7, 7)
+    >>> y = np.array([-1, -1, -1, 0, 1, 1, 1])
+    >>> xs = np.linspace(min(x), max(x), num=100)
+    >>> y_akima = Akima1DInterpolator(x, y, method="akima")(xs)
+    >>> y_makima = Akima1DInterpolator(x, y, method="makima")(xs)
+
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, y, "o", label="data")
+    >>> ax.plot(xs, y_akima, label="akima")
+    >>> ax.plot(xs, y_makima, label="makima")
+    >>> ax.legend()
+    >>> fig.show()
+
+    The overshoot that occured in ``"akima"`` has been avoided in ``"makima"``.
+
     References
     ----------
-    [1] A new method of interpolation and smooth curve fitting based
-        on local procedures. Hiroshi Akima, J. ACM, October 1970, 17(4),
-        589-602.
+    .. [1] A new method of interpolation and smooth curve fitting based
+           on local procedures. Hiroshi Akima, J. ACM, October 1970, 17(4),
+           589-602. :doi:`10.1145/321607.321609`
+    .. [2] Makima Piecewise Cubic Interpolation. Cleve Moler and Cosmin Ionita, 2019.
+           https://blogs.mathworks.com/cleve/2019/04/29/makima-piecewise-cubic-interpolation/
 
     """
 
-    def __init__(self, x, y, axis=0):
+    def __init__(self, x, y, axis=0, *, method: Literal["akima", "makima"]="akima"):
+        if method not in {"akima", "makima"}:
+            raise NotImplementedError(f"`method`={method} is unsupported.")
         # Original implementation in MATLAB by N. Shamsundar (BSD licensed), see
         # https://www.mathworks.com/matlabcentral/fileexchange/1814-akima-interpolation
         x, dx, y, axis, _ = prepare_input(x, y, axis)
@@ -436,8 +502,13 @@ class Akima1DInterpolator(CubicHermiteSpline):
         t = .5 * (m[3:] + m[:-3])
         # get the denominator of the slope t
         dm = np.abs(np.diff(m, axis=0))
-        f1 = dm[2:]
-        f2 = dm[:-2]
+        if method == "makima":
+            pm = np.abs(m[1:] + m[:-1])
+            f1 = dm[2:] + 0.5 * pm[2:]
+            f2 = dm[:-2] + 0.5 * pm[:-2]
+        else:
+            f1 = dm[2:]
+            f2 = dm[:-2]
         f12 = f1 + f2
         # These are the mask of where the slope at breakpoint is defined:
         ind = np.nonzero(f12 > 1e-9 * np.max(f12, initial=-np.inf))
