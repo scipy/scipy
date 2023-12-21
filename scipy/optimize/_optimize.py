@@ -1521,7 +1521,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         yk = gfkp1 - gfk
         gfk = gfkp1
         k += 1
-        intermediate_result = OptimizeResult(x=xk, fun=old_fval)
+        intermediate_result = OptimizeResult(x=xk, fun=old_fval, jac=gfk)
         if _call_callback_maybe_halt(callback, intermediate_result):
             break
         gnorm = vecnorm(gfk, ord=norm)
@@ -1899,7 +1899,7 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         if retall:
             allvecs.append(xk)
         k += 1
-        intermediate_result = OptimizeResult(x=xk, fun=old_fval)
+        intermediate_result = OptimizeResult(x=xk, fun=old_fval, jac=gfk)
         if _call_callback_maybe_halt(callback, intermediate_result):
             break
 
@@ -2227,7 +2227,9 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
         if retall:
             allvecs.append(xk)
         k += 1
-        intermediate_result = OptimizeResult(x=xk, fun=old_fval)
+        intermediate_result = OptimizeResult(x=xk, fun=old_fval, jac=gfk)
+        if fhess is not None:
+            intermediate_result.hess = A
         if _call_callback_maybe_halt(callback, intermediate_result):
             return terminate(5, "")
         update_l1norm = np.linalg.norm(update, ord=1)

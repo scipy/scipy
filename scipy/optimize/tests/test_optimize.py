@@ -1600,11 +1600,19 @@ class TestOptimizeSimple(CheckOptimize):
         if new_cb_interface == 1:
             def callback_interface(*, intermediate_result):
                 assert intermediate_result.fun == f(intermediate_result.x)
+                if "jac" in intermediate_result.keys():
+                    assert intermediate_result.jac == g(intermediate_result.x)
+                if "hess" in intermediate_result.keys():
+                    assert intermediate_result.hess == h(intermediate_result.x)
                 callback()
         elif new_cb_interface == 2:
             class Callback:
                 def __call__(self, intermediate_result: OptimizeResult):
                     assert intermediate_result.fun == f(intermediate_result.x)
+                    if "jac" in intermediate_result.keys():
+                        assert intermediate_result.jac == g(intermediate_result.x)
+                    if "hess" in intermediate_result.keys():
+                        assert intermediate_result.hess == h(intermediate_result.x)
                     callback()
             callback_interface = Callback()
         else:
