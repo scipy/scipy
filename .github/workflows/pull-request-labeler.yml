@@ -14,7 +14,7 @@ jobs:
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
-    - uses: thomasjpfan/labeler@v2.5.1
+    - uses: actions/labeler@v5
       continue-on-error: true
       if: github.repository == 'scipy/scipy'
       with:
