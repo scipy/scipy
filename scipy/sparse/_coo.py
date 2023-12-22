@@ -53,7 +53,9 @@ class _coo_base(_data_matrix, _minmax_mixin):
                     M, N = shape
                     self._shape = check_shape((M, N))
 
-                idx_dtype = self._get_index_dtype((row, col), maxval=max(self.shape), check_contents=True)
+                idx_dtype = self._get_index_dtype((row, col),
+                                                  maxval=max(self.shape),
+                                                  check_contents=True)
                 self.row = np.array(row, copy=copy, dtype=idx_dtype)
                 self.col = np.array(col, copy=copy, dtype=idx_dtype)
                 self.data = getdata(obj, copy=copy, dtype=dtype)
@@ -82,8 +84,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 self._shape = check_shape(M.shape)
                 if shape is not None:
                     if check_shape(shape) != self._shape:
-                        raise ValueError('inconsistent shapes: %s != %s' %
-                                         (shape, self._shape))
+                        message = f'inconsistent shapes: {shape} != {self._shape}'
+                        raise ValueError(message)
                 index_dtype = self._get_index_dtype(maxval=max(self._shape))
                 row, col = M.nonzero()
                 self.row = row.astype(index_dtype, copy=False)
@@ -113,12 +115,14 @@ class _coo_base(_data_matrix, _minmax_mixin):
             # Upcast to avoid overflows: the coo_array constructor
             # below will downcast the results to a smaller dtype, if
             # possible.
-            dtype = self._get_index_dtype(maxval=(ncols * max(0, nrows - 1) + max(0, ncols - 1)))
+            maxval = (ncols * max(0, nrows - 1) + max(0, ncols - 1))
+            dtype = self._get_index_dtype(maxval=maxval)
 
             flat_indices = np.multiply(ncols, self.row, dtype=dtype) + self.col
             new_row, new_col = divmod(flat_indices, shape[1])
         elif order == 'F':
-            dtype = self._get_index_dtype(maxval=(nrows * max(0, ncols - 1) + max(0, nrows - 1)))
+            maxval = (nrows * max(0, ncols - 1) + max(0, nrows - 1))
+            dtype = self._get_index_dtype(maxval=maxval)
 
             flat_indices = np.multiply(nrows, self.col, dtype=dtype) + self.row
             new_col, new_row = divmod(flat_indices, shape[0])
@@ -168,11 +172,11 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         # index arrays should have integer data types
         if self.row.dtype.kind != 'i':
-            warn("row index array has non-integer dtype (%s)  "
-                    % self.row.dtype.name)
+            warn(f"row index array has non-integer dtype ({self.row.dtype.name})",
+                 stacklevel=3)
         if self.col.dtype.kind != 'i':
-            warn("col index array has non-integer dtype (%s) "
-                    % self.col.dtype.name)
+            warn(f"col index array has non-integer dtype ({self.col.dtype.name})",
+                 stacklevel=3)
 
         idx_dtype = self._get_index_dtype((self.row, self.col), maxval=max(self.shape))
         self.row = np.asarray(self.row, dtype=idx_dtype)
@@ -329,7 +333,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
         if len(diags) > 100:
             # probably undesired, should todia() have a maxdiags parameter?
             warn("Constructing a DIA matrix with %d diagonals "
-                 "is inefficient" % len(diags), SparseEfficiencyWarning)
+                 "is inefficient" % len(diags),
+                 SparseEfficiencyWarning, stacklevel=2)
 
         #initialize and fill in data array
         if self.data.size == 0:
@@ -468,8 +473,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
     def _add_dense(self, other):
         if other.shape != self.shape:
-            raise ValueError('Incompatible shapes ({} and {})'
-                             .format(self.shape, other.shape))
+            raise ValueError(f'Incompatible shapes ({self.shape} and {other.shape})')
         dtype = upcast_char(self.dtype.char, other.dtype.char)
         result = np.array(other, dtype=dtype, copy=True)
         fortran = int(result.flags.f_contiguous)

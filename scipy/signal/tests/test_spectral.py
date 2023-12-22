@@ -415,7 +415,8 @@ class TestWelch:
         #for string-like window, input signal length < nperseg value gives
         #UserWarning, sets nperseg to x.shape[-1]
         with suppress_warnings() as sup:
-            sup.filter(UserWarning, "nperseg = 256 is greater than input length  = 8, using nperseg = 8")
+            msg = "nperseg = 256 is greater than input length  = 8, using nperseg = 8"
+            sup.filter(UserWarning, msg)
             f, p = welch(x,window='hann')  # default nperseg
             f1, p1 = welch(x,window='hann', nperseg=256)  # user-specified nperseg
         f2, p2 = welch(x, nperseg=8)  # valid nperseg, doesn't give warning
@@ -777,7 +778,8 @@ class TestCSD:
         #for string-like window, input signal length < nperseg value gives
         #UserWarning, sets nperseg to x.shape[-1]
         with suppress_warnings() as sup:
-            sup.filter(UserWarning, "nperseg = 256 is greater than input length  = 8, using nperseg = 8")
+            msg = "nperseg = 256 is greater than input length  = 8, using nperseg = 8"
+            sup.filter(UserWarning, msg)
             f, p = csd(x, x, window='hann')  # default nperseg
             f1, p1 = csd(x, x, window='hann', nperseg=256)  # user-specified nperseg
         f2, p2 = csd(x, x, nperseg=8)  # valid nperseg, doesn't give warning
@@ -956,7 +958,8 @@ class TestSpectrogram:
         f, _, p = spectrogram(x, fs, window=('tukey',0.25))  # default nperseg
         with suppress_warnings() as sup:
             sup.filter(UserWarning,
-                       "nperseg = 1025 is greater than input length  = 1024, using nperseg = 1024")
+                       "nperseg = 1025 is greater than input length  = 1024, "
+                       "using nperseg = 1024",)
             f1, _, p1 = spectrogram(x, fs, window=('tukey',0.25),
                                     nperseg=1025)  # user-specified nperseg
         f2, _, p2 = spectrogram(x, fs, nperseg=256)  # to compare w/default

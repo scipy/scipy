@@ -13,11 +13,11 @@ from numpy import (pi, asarray, floor, isscalar, iscomplex, real,
                    extract, inexact, nan, zeros, sinc)
 from . import _ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
-                      psi, hankel1, hankel2, yv, kv, poch, binom)
+                      psi, hankel1, hankel2, yv, kv, poch, binom,
+                      _stirling2_inexact)
 from . import _specfun
 from ._comb import _comb_int
 from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
-from scipy._lib._util import np_long
 
 
 __all__ = [
@@ -1398,8 +1398,8 @@ def riccati_yn(n, x):
 def erf_zeros(nt):
     """Compute the first nt zero in the first quadrant, ordered by absolute value.
 
-    Zeros in the other quadrants can be obtained by using the symmetries erf(-z) = erf(z) and
-    erf(conj(z)) = conj(erf(z)).
+    Zeros in the other quadrants can be obtained by using the symmetries
+    erf(-z) = erf(z) and erf(conj(z)) = conj(erf(z)).
 
 
     Parameters
@@ -1595,7 +1595,8 @@ def mathieu_even_coef(m, q):
 
     .. math:: \mathrm{ce}_{2n}(z, q) = \sum_{k=0}^{\infty} A_{(2n)}^{(2k)} \cos 2kz
 
-    .. math:: \mathrm{ce}_{2n+1}(z, q) = \sum_{k=0}^{\infty} A_{(2n+1)}^{(2k+1)} \cos (2k+1)z
+    .. math:: \mathrm{ce}_{2n+1}(z, q) = 
+              \sum_{k=0}^{\infty} A_{(2n+1)}^{(2k+1)} \cos (2k+1)z
 
     This function returns the coefficients :math:`A_{(2n)}^{(2k)}` for even
     input m=2n, and the coefficients :math:`A_{(2n+1)}^{(2k+1)}` for odd input
@@ -1635,7 +1636,7 @@ def mathieu_even_coef(m, q):
         qm = 17.0 + 3.1*sqrt(q) - .126*q + .0037*sqrt(q)*q
     km = int(qm + 0.5*m)
     if km > 251:
-        warnings.warn("Too many predicted coefficients.", RuntimeWarning, 2)
+        warnings.warn("Too many predicted coefficients.", RuntimeWarning, stacklevel=2)
     kd = 1
     m = int(floor(m))
     if m % 2:
@@ -1652,9 +1653,11 @@ def mathieu_odd_coef(m, q):
     The Fourier series of the odd solutions of the Mathieu differential
     equation are of the form
 
-    .. math:: \mathrm{se}_{2n+1}(z, q) = \sum_{k=0}^{\infty} B_{(2n+1)}^{(2k+1)} \sin (2k+1)z
+    .. math:: \mathrm{se}_{2n+1}(z, q) =
+              \sum_{k=0}^{\infty} B_{(2n+1)}^{(2k+1)} \sin (2k+1)z
 
-    .. math:: \mathrm{se}_{2n+2}(z, q) = \sum_{k=0}^{\infty} B_{(2n+2)}^{(2k+2)} \sin (2k+2)z
+    .. math:: \mathrm{se}_{2n+2}(z, q) =
+              \sum_{k=0}^{\infty} B_{(2n+2)}^{(2k+2)} \sin (2k+2)z
 
     This function returns the coefficients :math:`B_{(2n+2)}^{(2k+2)}` for even
     input m=2n+2, and the coefficients :math:`B_{(2n+1)}^{(2k+1)}` for odd
@@ -1692,7 +1695,7 @@ def mathieu_odd_coef(m, q):
         qm = 17.0 + 3.1*sqrt(q) - .126*q + .0037*sqrt(q)*q
     km = int(qm + 0.5*m)
     if km > 251:
-        warnings.warn("Too many predicted coefficients.", RuntimeWarning, 2)
+        warnings.warn("Too many predicted coefficients.", RuntimeWarning, stacklevel=2)
     kd = 4
     m = int(floor(m))
     if m % 2:
@@ -2844,7 +2847,7 @@ def _exact_factorialx_array(n, k=1):
             # e.g. k=3: 26!!! > np.iinfo(np.int32).max
             dt = np.int64
         else:
-            dt = np_long
+            dt = np.dtype("long")
     else:
         # for k >= 10, we always use object
         dt = object
@@ -2946,8 +2949,10 @@ def factorial(n, exact=False):
             return 0
         elif exact and np.issubdtype(type(n), np.integer):
             return math.factorial(n)
-        # we do not raise for non-integers with exact=True due to
-        # historical reasons, though deprecation would be possible
+        elif exact:
+            msg = ("Non-integer values of `n` together with `exact=True` are "
+                   "deprecated. Either ensure integer `n` or use `exact=False`.")
+            warnings.warn(msg, DeprecationWarning, stacklevel=2)
         return _ufuncs._factorial(n)
 
     # arrays & array-likes
@@ -2962,26 +2967,13 @@ def factorial(n, exact=False):
             "Permitted data types are integers and floating point numbers"
         )
     if exact and not np.issubdtype(n.dtype, np.integer):
-        # legacy behaviour is to support mixed integers/NaNs;
-        # deprecate this for exact=True
-        n_flt = n[~np.isnan(n)]
-        if np.allclose(n_flt, n_flt.astype(np.int64)):
-            warnings.warn(
-                "Non-integer arrays (e.g. due to presence of NaNs) "
-                "together with exact=True are deprecated. Either ensure "
-                "that the the array has integer dtype or use exact=False.",
-                DeprecationWarning,
-                stacklevel=2
-            )
-        else:
-            msg = ("factorial with exact=True does not "
-                   "support non-integral arrays")
-            raise ValueError(msg)
+        msg = ("factorial with `exact=True` does not "
+               "support non-integral arrays")
+        raise ValueError(msg)
 
     if exact:
         return _exact_factorialx_array(n)
-    # we do not raise for non-integers with exact=True due to
-    # historical reasons, though deprecation would be possible
+    # exact=False case
     res = _ufuncs._factorial(n)
     if isinstance(n, np.ndarray):
         # _ufuncs._factorial does not maintain 0-dim arrays
@@ -3142,7 +3134,7 @@ def factorialk(n, k, exact=True):
     return _exact_factorialx_array(n, k=k)
 
 
-def stirling2(N, K, *, exact=True):
+def stirling2(N, K, *, exact=False):
     r"""Generate Stirling number(s) of the second kind.
 
     Stirling numbers of the second kind count the number of ways to
@@ -3170,8 +3162,15 @@ def stirling2(N, K, *, exact=True):
     K : int, ndarray
         Number of non-empty subsets taken.
     exact : bool, optional
-        This keyword is reserved for a planned future implementation
-        that allows trading speed for accuracy.
+        Uses dynamic programming (DP) with floating point
+        numbers for smaller arrays and uses a second order approximation due to
+        Temme for larger entries  of `N` and `K` that allows trading speed for
+        accuracy. See [2]_ for a description. Temme approximation is used for
+        values `n>50`. The max error from the DP has max relative error
+        `4.5*10^-16` for `n<=50` and the max error from the Temme approximation
+        has max relative error `5*10^-5` for `51 <= n < 70` and
+        `9*10^-6` for `70 <= n < 101`. Note that these max relative errors will
+        decrease further as `n` increases.
 
     Returns
     -------
@@ -3197,6 +3196,9 @@ def stirling2(N, K, *, exact=True):
         Mathematics: A Foundation for Computer Science," Addison-Wesley
         Publishing Company, Boston, 1989. Chapter 6, page 258.
 
+    .. [2] Temme, Nico M. "Asymptotic estimates of Stirling numbers."
+        Studies in Applied Mathematics 89.3 (1993): 233-243.
+
     Examples
     --------
     >>> import numpy as np
@@ -3208,61 +3210,64 @@ def stirling2(N, K, *, exact=True):
 
     """
     output_is_scalar = np.isscalar(N) and np.isscalar(K)
-    if exact:
-        # make a min-heap of unique (n,k) pairs
-        N, K = asarray(N), asarray(K)
-        if not np.issubdtype(N.dtype, np.integer):
-            raise TypeError("Argument `N` must contain only integers")
-        if not np.issubdtype(K.dtype, np.integer):
-            raise TypeError("Argument `K` must contain only integers")
-        nk_pairs = list(
-            set([(n.take(0), k.take(0))
-                 for n, k in np.nditer([N, K], ['refs_ok'])])
-        )
-        heapify(nk_pairs)
-        # base mapping for small values
-        snsk_vals = defaultdict(int)
-        for pair in [(0, 0), (1, 1), (2, 1), (2, 2)]:
-            snsk_vals[pair] = 1
-        n_old, n_row = 2, [0, 1, 1]
-        # for each pair in the min-heap, calculate the value, store for later
-        while nk_pairs:
-            n, k = heappop(nk_pairs)
-            if n < 2 or k > n or k <= 0:
-                continue
-            elif k == n or k == 1:
-                snsk_vals[(n, k)] = 1
-                continue
-            elif n != n_old:
-                num_iters = n - n_old
-                while num_iters > 0:
-                    n_row.append(1)
-                    # traverse from back to remove second row
-                    for j in range(len(n_row)-2, 1, -1):
-                        n_row[j] = n_row[j]*j + n_row[j-1]
-                    num_iters -= 1
-                snsk_vals[(n, k)] = n_row[k]
-            else:
-                snsk_vals[(n, k)] = n_row[k]
-            n_old, n_row = n, n_row
-        # for each pair in the map, fetch the value, and populate the array
-        it = np.nditer(
-            [N, K, None],
-            ['buffered', 'refs_ok'],
-            [['readonly'], ['readonly'], ['writeonly', 'allocate']],
-            op_dtypes=[object, object, object],
-        )
-        with it:
-            while not it.finished:
-                it[2] = snsk_vals[(int(it[0]), int(it[1]))]
-                it.iternext()
-            output = it.operands[2]
-            # If N and K were both scalars, convert output to scalar.
-            if output_is_scalar:
-                output = output.take(0)
-            return output
-    else:  # this branch will house future Temme approx
-        raise NotImplementedError()
+    # make a min-heap of unique (n,k) pairs
+    N, K = asarray(N), asarray(K)
+    if not np.issubdtype(N.dtype, np.integer):
+        raise TypeError("Argument `N` must contain only integers")
+    if not np.issubdtype(K.dtype, np.integer):
+        raise TypeError("Argument `K` must contain only integers")
+    if not exact:
+        # NOTE: here we allow np.uint via casting to double types prior to
+        # passing to private ufunc dispatcher. All dispatched functions
+        # take double type for (n,k) arguments and return double.
+        return _stirling2_inexact(N.astype(float), K.astype(float))
+    nk_pairs = list(
+        set([(n.take(0), k.take(0))
+             for n, k in np.nditer([N, K], ['refs_ok'])])
+    )
+    heapify(nk_pairs)
+    # base mapping for small values
+    snsk_vals = defaultdict(int)
+    for pair in [(0, 0), (1, 1), (2, 1), (2, 2)]:
+        snsk_vals[pair] = 1
+    # for each pair in the min-heap, calculate the value, store for later
+    n_old, n_row = 2, [0, 1, 1]
+    while nk_pairs:
+        n, k = heappop(nk_pairs)
+        if n < 2 or k > n or k <= 0:
+            continue
+        elif k == n or k == 1:
+            snsk_vals[(n, k)] = 1
+            continue
+        elif n != n_old:
+            num_iters = n - n_old
+            while num_iters > 0:
+                n_row.append(1)
+                # traverse from back to remove second row
+                for j in range(len(n_row)-2, 1, -1):
+                    n_row[j] = n_row[j]*j + n_row[j-1]
+                num_iters -= 1
+            snsk_vals[(n, k)] = n_row[k]
+        else:
+            snsk_vals[(n, k)] = n_row[k]
+        n_old, n_row = n, n_row
+    out_types = [object, object, object] if exact else [float, float, float]
+    # for each pair in the map, fetch the value, and populate the array
+    it = np.nditer(
+        [N, K, None],
+        ['buffered', 'refs_ok'],
+        [['readonly'], ['readonly'], ['writeonly', 'allocate']],
+        op_dtypes=out_types,
+    )
+    with it:
+        while not it.finished:
+            it[2] = snsk_vals[(int(it[0]), int(it[1]))]
+            it.iternext()
+        output = it.operands[2]
+        # If N and K were both scalars, convert output to scalar.
+        if output_is_scalar:
+            output = output.take(0)
+    return output
 
 
 def zeta(x, q=None, out=None):

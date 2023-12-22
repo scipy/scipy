@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import numpy as np
 from numpy import abs, asarray
 
@@ -62,7 +61,7 @@ class Benchmark:
         self.custom_bounds = None
 
     def __str__(self):
-        return '{0} ({1} dimensions)'.format(self.__class__.__name__, self.N)
+        return f'{self.__class__.__name__} ({self.N} dimensions)'
 
     def __repr__(self):
         return self.__class__.__name__

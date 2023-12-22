@@ -99,8 +99,8 @@ class TestCephes:
         def binom_int(n, k):
             n = int(n)
             k = int(k)
-            num = int(1)
-            den = int(1)
+            num = 1
+            den = 1
             for i in range(1, k+1):
                 num *= i + n - k
                 den *= i
@@ -595,13 +595,17 @@ class TestCephes:
         def ce_smallq(m, q, z):
             z *= np.pi/180
             if m == 0:
-                return 2**(-0.5) * (1 - .5*q*cos(2*z))  # + O(q^2)
+                # + O(q^2)
+                return 2**(-0.5) * (1 - .5*q*cos(2*z))
             elif m == 1:
-                return cos(z) - q/8 * cos(3*z)  # + O(q^2)
+                # + O(q^2)
+                return cos(z) - q/8 * cos(3*z)
             elif m == 2:
-                return cos(2*z) - q*(cos(4*z)/12 - 1/4)  # + O(q^2)
+                # + O(q^2)
+                return cos(2*z) - q*(cos(4*z)/12 - 1/4)
             else:
-                return cos(m*z) - q*(cos((m+2)*z)/(4*(m+1)) - cos((m-2)*z)/(4*(m-1)))  # + O(q^2)
+                # + O(q^2)
+                return cos(m*z) - q*(cos((m+2)*z)/(4*(m+1)) - cos((m-2)*z)/(4*(m-1)))
         m = np.arange(0, 100)
         q = np.r_[0, np.logspace(-30, -9, 10)]
         assert_allclose(cephes.mathieu_cem(m[:,None], q[None,:], 0.123)[0],
@@ -616,11 +620,14 @@ class TestCephes:
         def se_smallq(m, q, z):
             z *= np.pi/180
             if m == 1:
-                return sin(z) - q/8 * sin(3*z)  # + O(q^2)
+                # + O(q^2)
+                return sin(z) - q/8 * sin(3*z)
             elif m == 2:
-                return sin(2*z) - q*sin(4*z)/12  # + O(q^2)
+                # + O(q^2)
+                return sin(2*z) - q*sin(4*z)/12
             else:
-                return sin(m*z) - q*(sin((m+2)*z)/(4*(m+1)) - sin((m-2)*z)/(4*(m-1)))  # + O(q^2)
+                # + O(q^2)
+                return sin(m*z) - q*(sin((m+2)*z)/(4*(m+1)) - sin((m-2)*z)/(4*(m-1)))
         m = np.arange(1, 100)
         q = np.r_[0, np.logspace(-30, -9, 10)]
         assert_allclose(cephes.mathieu_sem(m[:,None], q[None,:], 0.123)[0],
@@ -641,7 +648,8 @@ class TestCephes:
         y1 = cephes.mathieu_modcem2(m, q, -z)[0]
 
         fr = -cephes.mathieu_modcem2(m, q, 0)[0] / cephes.mathieu_modcem1(m, q, 0)[0]
-        y2 = -cephes.mathieu_modcem2(m, q, z)[0] - 2*fr*cephes.mathieu_modcem1(m, q, z)[0]
+        y2 = (-cephes.mathieu_modcem2(m, q, z)[0] 
+              - 2*fr*cephes.mathieu_modcem1(m, q, z)[0])
 
         assert_allclose(y1, y2, rtol=1e-10)
 
@@ -658,7 +666,8 @@ class TestCephes:
 
         y1 = cephes.mathieu_modsem2(m, q, -z)[0]
         fr = cephes.mathieu_modsem2(m, q, 0)[1] / cephes.mathieu_modsem1(m, q, 0)[1]
-        y2 = cephes.mathieu_modsem2(m, q, z)[0] - 2*fr*cephes.mathieu_modsem1(m, q, z)[0]
+        y2 = (cephes.mathieu_modsem2(m, q, z)[0]
+              - 2*fr*cephes.mathieu_modsem1(m, q, z)[0])
         assert_allclose(y1, y2, rtol=1e-10)
 
     def test_mathieu_overflow(self):
@@ -987,11 +996,23 @@ class TestAiry:
         # This tests the airy function to ensure 8 place accuracy in computation
 
         x = special.airy(.99)
-        assert_array_almost_equal(x,array([0.13689066,-0.16050153,1.19815925,0.92046818]),8)
+        assert_array_almost_equal(
+            x,
+            array([0.13689066,-0.16050153,1.19815925,0.92046818]),
+            8,
+        )
         x = special.airy(.41)
-        assert_array_almost_equal(x,array([0.25238916,-.23480512,0.80686202,0.51053919]),8)
+        assert_array_almost_equal(
+            x,
+            array([0.25238916,-.23480512,0.80686202,0.51053919]),
+            8,
+        )
         x = special.airy(-.36)
-        assert_array_almost_equal(x,array([0.44508477,-0.23186773,0.44939534,0.48105354]),8)
+        assert_array_almost_equal(
+            x,
+            array([0.44508477,-0.23186773,0.44939534,0.48105354]),
+            8,
+        )
 
     def test_airye(self):
         a = special.airye(0.01)
@@ -1661,13 +1682,19 @@ class TestEllip:
         xlin = np.linspace(1e-17, 0.1, 25)
         xlin2 = np.linspace(0.1, pi/2, 25, endpoint=False)
 
-        assert_allclose(special.ellipkinc(xlog, 1), np.arcsinh(np.tan(xlog)), rtol=1e14)
-        assert_allclose(special.ellipkinc(xlin, 1), np.arcsinh(np.tan(xlin)), rtol=1e14)
-        assert_allclose(special.ellipkinc(xlin2, 1), np.arcsinh(np.tan(xlin2)), rtol=1e14)
+        assert_allclose(special.ellipkinc(xlog, 1), np.arcsinh(np.tan(xlog)),
+                        rtol=1e14)
+        assert_allclose(special.ellipkinc(xlin, 1), np.arcsinh(np.tan(xlin)),
+                        rtol=1e14)
+        assert_allclose(special.ellipkinc(xlin2, 1), np.arcsinh(np.tan(xlin2)),
+                        rtol=1e14)
         assert_equal(special.ellipkinc(np.pi/2, 1), np.inf)
-        assert_allclose(special.ellipkinc(-xlog, 1), np.arcsinh(np.tan(-xlog)), rtol=1e14)
-        assert_allclose(special.ellipkinc(-xlin, 1), np.arcsinh(np.tan(-xlin)), rtol=1e14)
-        assert_allclose(special.ellipkinc(-xlin2, 1), np.arcsinh(np.tan(-xlin2)), rtol=1e14)
+        assert_allclose(special.ellipkinc(-xlog, 1), np.arcsinh(np.tan(-xlog)),
+                        rtol=1e14)
+        assert_allclose(special.ellipkinc(-xlin, 1), np.arcsinh(np.tan(-xlin)),
+                        rtol=1e14)
+        assert_allclose(special.ellipkinc(-xlin2, 1), np.arcsinh(np.tan(-xlin2)),
+                        rtol=1e14)
         assert_equal(special.ellipkinc(-np.pi/2, 1), np.inf)
 
     def test_ellipe(self):
@@ -2100,9 +2127,8 @@ class TestFactorialFunctions:
             with pytest.raises(ValueError, match="Unsupported datatype.*"):
                 special.factorial([content], exact=exact)
         elif exact:
-            # cannot use `is np.nan` see https://stackoverflow.com/a/52124109
-            with pytest.warns(DeprecationWarning, match="Non-integer array.*"):
-                assert np.isnan(special.factorial([content], exact=exact)[0])
+            with pytest.raises(ValueError, match="factorial with `exact=Tr.*"):
+                special.factorial([content], exact=exact)
         else:
             assert np.isnan(special.factorial([content], exact=exact)[0])
         # factorial{2,k} don't support array case due to dtype constraints
@@ -2202,13 +2228,16 @@ class TestFactorialFunctions:
         assert_allclose(float(correct), special.factorial([n], False)[0],
                         rtol=rtol)
 
-    @pytest.mark.parametrize("exact", [True, False])
-    def test_factorial_float_reference(self, exact):
+    def test_factorial_float_reference(self):
         def _check(n, expected):
-            # support for exact=True with scalar floats grandfathered in
-            assert_allclose(special.factorial(n, exact=exact), expected)
-            # non-integer types in arrays only allowed with exact=False
+            assert_allclose(special.factorial(n), expected)
             assert_allclose(special.factorial([n])[0], expected)
+            # using floats with exact=True is deprecated for scalars...
+            with pytest.deprecated_call(match="Non-integer values.*"):
+                assert_allclose(special.factorial(n, exact=True), expected)
+            # ... and already an error for arrays
+            with pytest.raises(ValueError, match="factorial with `exact=Tr.*"):
+                special.factorial([n], exact=True)
 
         # Reference values from mpmath for gamma(n+1)
         _check(0.01, 0.994325851191506032181932988)
@@ -2243,38 +2272,26 @@ class TestFactorialFunctions:
                   or np.issubdtype(n.dtype, np.floating)):
             with pytest.raises(ValueError, match="Unsupported datatype*"):
                 special.factorial(n, exact=exact)
-        elif (exact and not np.issubdtype(n.dtype, np.integer) and n.size and
-              np.allclose(n[~np.isnan(n)], n[~np.isnan(n)].astype(np.int64))):
-            # using integers but in array with wrong dtype (e.g. due to NaNs)
-            with pytest.warns(DeprecationWarning, match="Non-integer array.*"):
-                result = special.factorial(n, exact=exact)
-                # expected dtype is integer, unless there are NaNs
-                if np.any(np.isnan(n)):
-                    dtype = np.dtype(np.float64)
-                else:
-                    dtype = np.dtype(int)
         elif exact and not np.issubdtype(n.dtype, np.integer):
-            with pytest.raises(ValueError, match="factorial with exact=.*"):
+            with pytest.raises(ValueError, match="factorial with `exact=.*"):
                 special.factorial(n, exact=exact)
         else:
             # no error
             result = special.factorial(n, exact=exact)
 
-        # assert_equal does not distinguish scalars and 0-dim arrays of the same value, see
-        # https://github.com/numpy/numpy/issues/24050
+        # assert_equal does not distinguish scalars and 0-dim arrays of the same value,
+        # see https://github.com/numpy/numpy/issues/24050
         def assert_really_equal(x, y):
             assert type(x) == type(y), f"types not equal: {type(x)}, {type(y)}"
             assert_equal(x, y)
 
         if result is not None:
+            # keep 0-dim.; otherwise n.ravel().ndim==1, even if n.ndim==0
+            n_flat = n.ravel() if n.ndim else n
+            ref = special.factorial(n_flat, exact=exact) if n.size else []
             # expected result is empty if and only if n is empty,
             # and has the same dtype & dimension as n
-            with suppress_warnings() as sup:
-                sup.filter(DeprecationWarning)
-                # keep 0-dim.; otherwise n.ravel().ndim==1, even if n.ndim==0
-                n_flat = n.ravel() if n.ndim else n
-                r = special.factorial(n_flat, exact=exact) if n.size else []
-            expected = np.array(r, ndmin=dim, dtype=dtype)
+            expected = np.array(ref, ndmin=dim, dtype=dtype)
             assert_really_equal(result, expected)
 
     @pytest.mark.parametrize("exact", [True, False])
@@ -2284,7 +2301,12 @@ class TestFactorialFunctions:
         if (n is None or n is np.nan or np.issubdtype(type(n), np.integer)
                 or np.issubdtype(type(n), np.floating)):
             # no error
-            result = special.factorial(n, exact=exact)
+            if (np.issubdtype(type(n), np.floating) and exact
+                    and n is not np.nan):
+                with pytest.deprecated_call(match="Non-integer values.*"):
+                    result = special.factorial(n, exact=exact)
+            else:
+                result = special.factorial(n, exact=exact)
             exp = np.nan if n is np.nan or n is None else special.factorial(n)
             assert_equal(result, exp)
         else:
@@ -2435,8 +2457,8 @@ class TestFactorialFunctions:
         x = np.array([np.nan, 1, 2, 3, np.nan])
         expected = np.array([np.nan, 1, 2, 6, np.nan])
         assert_equal(special.factorial(x, exact=False), expected)
-        with pytest.warns(DeprecationWarning, match=r"Non-integer array.*"):
-            assert_equal(special.factorial(x, exact=True), expected)
+        with pytest.raises(ValueError, match="factorial with `exact=True.*"):
+            special.factorial(x, exact=True)
 
 
 class TestFresnel:
@@ -2645,106 +2667,108 @@ class TestHyper:
 
         # reference data obtained from mathematica [ a, b, x, m(a,b,x)]:
         # produced with test_hyp1f1.nb
-        ref_data = array([[-8.38132975e+00, -1.28436461e+01, -2.91081397e+01, 1.04178330e+04],
-                          [2.91076882e+00, -6.35234333e+00, -1.27083993e+01, 6.68132725e+00],
-                          [-1.42938258e+01, 1.80869131e-01, 1.90038728e+01, 1.01385897e+05],
-                          [5.84069088e+00, 1.33187908e+01, 2.91290106e+01, 1.59469411e+08],
-                          [-2.70433202e+01, -1.16274873e+01, -2.89582384e+01, 1.39900152e+24],
-                          [4.26344966e+00, -2.32701773e+01, 1.91635759e+01, 6.13816915e+21],
-                          [1.20514340e+01, -3.40260240e+00, 7.26832235e+00, 1.17696112e+13],
-                          [2.77372955e+01, -1.99424687e+00, 3.61332246e+00, 3.07419615e+13],
-                          [1.50310939e+01, -2.91198675e+01, -1.53581080e+01, -3.79166033e+02],
-                          [1.43995827e+01, 9.84311196e+00, 1.93204553e+01, 2.55836264e+10],
-                          [-4.08759686e+00, 1.34437025e+01, -1.42072843e+01, 1.70778449e+01],
-                          [8.05595738e+00, -1.31019838e+01, 1.52180721e+01, 3.06233294e+21],
-                          [1.81815804e+01, -1.42908793e+01, 9.57868793e+00, -2.84771348e+20],
-                          [-2.49671396e+01, 1.25082843e+01, -1.71562286e+01, 2.36290426e+07],
-                          [2.67277673e+01, 1.70315414e+01, 6.12701450e+00, 7.77917232e+03],
-                          [2.49565476e+01, 2.91694684e+01, 6.29622660e+00, 2.35300027e+02],
-                          [6.11924542e+00, -1.59943768e+00, 9.57009289e+00, 1.32906326e+11],
-                          [-1.47863653e+01, 2.41691301e+01, -1.89981821e+01, 2.73064953e+03],
-                          [2.24070483e+01, -2.93647433e+00, 8.19281432e+00, -6.42000372e+17],
-                          [8.04042600e-01, 1.82710085e+01, -1.97814534e+01, 5.48372441e-01],
-                          [1.39590390e+01, 1.97318686e+01, 2.37606635e+00, 5.51923681e+00],
-                          [-4.66640483e+00, -2.00237930e+01, 7.40365095e+00, 4.50310752e+00],
-                          [2.76821999e+01, -6.36563968e+00, 1.11533984e+01, -9.28725179e+23],
-                          [-2.56764457e+01, 1.24544906e+00, 1.06407572e+01, 1.25922076e+01],
-                          [3.20447808e+00, 1.30874383e+01, 2.26098014e+01, 2.03202059e+04],
-                          [-1.24809647e+01, 4.15137113e+00, -2.92265700e+01, 2.39621411e+08],
-                          [2.14778108e+01, -2.35162960e+00, -1.13758664e+01, 4.46882152e-01],
-                          [-9.85469168e+00, -3.28157680e+00, 1.67447548e+01, -1.07342390e+07],
-                          [1.08122310e+01, -2.47353236e+01, -1.15622349e+01, -2.91733796e+03],
-                          [-2.67933347e+01, -3.39100709e+00, 2.56006986e+01, -5.29275382e+09],
-                          [-8.60066776e+00, -8.02200924e+00, 1.07231926e+01, 1.33548320e+06],
-                          [-1.01724238e-01, -1.18479709e+01, -2.55407104e+01, 1.55436570e+00],
-                          [-3.93356771e+00, 2.11106818e+01, -2.57598485e+01, 2.13467840e+01],
-                          [3.74750503e+00, 1.55687633e+01, -2.92841720e+01, 1.43873509e-02],
-                          [6.99726781e+00, 2.69855571e+01, -1.63707771e+01, 3.08098673e-02],
-                          [-2.31996011e+01, 3.47631054e+00, 9.75119815e-01, 1.79971073e-02],
-                          [2.38951044e+01, -2.91460190e+01, -2.50774708e+00, 9.56934814e+00],
-                          [1.52730825e+01, 5.77062507e+00, 1.21922003e+01, 1.32345307e+09],
-                          [1.74673917e+01, 1.89723426e+01, 4.94903250e+00, 9.90859484e+01],
-                          [1.88971241e+01, 2.86255413e+01, 5.52360109e-01, 1.44165360e+00],
-                          [1.02002319e+01, -1.66855152e+01, -2.55426235e+01, 6.56481554e+02],
-                          [-1.79474153e+01, 1.22210200e+01, -1.84058212e+01, 8.24041812e+05],
-                          [-1.36147103e+01, 1.32365492e+00, -7.22375200e+00, 9.92446491e+05],
-                          [7.57407832e+00, 2.59738234e+01, -1.34139168e+01, 3.64037761e-02],
-                          [2.21110169e+00, 1.28012666e+01, 1.62529102e+01, 1.33433085e+02],
-                          [-2.64297569e+01, -1.63176658e+01, -1.11642006e+01, -2.44797251e+13],
-                          [-2.46622944e+01, -3.02147372e+00, 8.29159315e+00, -3.21799070e+05],
-                          [-1.37215095e+01, -1.96680183e+01, 2.91940118e+01, 3.21457520e+12],
-                          [-5.45566105e+00, 2.81292086e+01, 1.72548215e-01, 9.66973000e-01],
-                          [-1.55751298e+00, -8.65703373e+00, 2.68622026e+01, -3.17190834e+16],
-                          [2.45393609e+01, -2.70571903e+01, 1.96815505e+01, 1.80708004e+37],
-                          [5.77482829e+00, 1.53203143e+01, 2.50534322e+01, 1.14304242e+06],
-                          [-1.02626819e+01, 2.36887658e+01, -2.32152102e+01, 7.28965646e+02],
-                          [-1.30833446e+00, -1.28310210e+01, 1.87275544e+01, -9.33487904e+12],
-                          [5.83024676e+00, -1.49279672e+01, 2.44957538e+01, -7.61083070e+27],
-                          [-2.03130747e+01, 2.59641715e+01, -2.06174328e+01, 4.54744859e+04],
-                          [1.97684551e+01, -2.21410519e+01, -2.26728740e+01, 3.53113026e+06],
-                          [2.73673444e+01, 2.64491725e+01, 1.57599882e+01, 1.07385118e+07],
-                          [5.73287971e+00, 1.21111904e+01, 1.33080171e+01, 2.63220467e+03],
-                          [-2.82751072e+01, 2.08605881e+01, 9.09838900e+00, -6.60957033e-07],
-                          [1.87270691e+01, -1.74437016e+01, 1.52413599e+01, 6.59572851e+27],
-                          [6.60681457e+00, -2.69449855e+00, 9.78972047e+00, -2.38587870e+12],
-                          [1.20895561e+01, -2.51355765e+01, 2.30096101e+01, 7.58739886e+32],
-                          [-2.44682278e+01, 2.10673441e+01, -1.36705538e+01, 4.54213550e+04],
-                          [-4.50665152e+00, 3.72292059e+00, -4.83403707e+00, 2.68938214e+01],
-                          [-7.46540049e+00, -1.08422222e+01, -1.72203805e+01, -2.09402162e+02],
-                          [-2.00307551e+01, -7.50604431e+00, -2.78640020e+01, 4.15985444e+19],
-                          [1.99890876e+01, 2.20677419e+01, -2.51301778e+01, 1.23840297e-09],
-                          [2.03183823e+01, -7.66942559e+00, 2.10340070e+01, 1.46285095e+31],
-                          [-2.90315825e+00, -2.55785967e+01, -9.58779316e+00, 2.65714264e-01],
-                          [2.73960829e+01, -1.80097203e+01, -2.03070131e+00, 2.52908999e+02],
-                          [-2.11708058e+01, -2.70304032e+01, 2.48257944e+01, 3.09027527e+08],
-                          [2.21959758e+01, 4.00258675e+00, -1.62853977e+01, -9.16280090e-09],
-                          [1.61661840e+01, -2.26845150e+01, 2.17226940e+01, -8.24774394e+33],
-                          [-3.35030306e+00, 1.32670581e+00, 9.39711214e+00, -1.47303163e+01],
-                          [7.23720726e+00, -2.29763909e+01, 2.34709682e+01, -9.20711735e+29],
-                          [2.71013568e+01, 1.61951087e+01, -7.11388906e-01, 2.98750911e-01],
-                          [8.40057933e+00, -7.49665220e+00, 2.95587388e+01, 6.59465635e+29],
-                          [-1.51603423e+01, 1.94032322e+01, -7.60044357e+00, 1.05186941e+02],
-                          [-8.83788031e+00, -2.72018313e+01, 1.88269907e+00, 1.81687019e+00],
-                          [-1.87283712e+01, 5.87479570e+00, -1.91210203e+01, 2.52235612e+08],
-                          [-5.61338513e-01, 2.69490237e+01, 1.16660111e-01, 9.97567783e-01],
-                          [-5.44354025e+00, -1.26721408e+01, -4.66831036e+00, 1.06660735e-01],
-                          [-2.18846497e+00, 2.33299566e+01, 9.62564397e+00, 3.03842061e-01],
-                          [6.65661299e+00, -2.39048713e+01, 1.04191807e+01, 4.73700451e+13],
-                          [-2.57298921e+01, -2.60811296e+01, 2.74398110e+01, -5.32566307e+11],
-                          [-1.11431826e+01, -1.59420160e+01, -1.84880553e+01, -1.01514747e+02],
-                          [6.50301931e+00, 2.59859051e+01, -2.33270137e+01, 1.22760500e-02],
-                          [-1.94987891e+01, -2.62123262e+01, 3.90323225e+00, 1.71658894e+01],
-                          [7.26164601e+00, -1.41469402e+01, 2.81499763e+01, -2.50068329e+31],
-                          [-1.52424040e+01, 2.99719005e+01, -2.85753678e+01, 1.31906693e+04],
-                          [5.24149291e+00, -1.72807223e+01, 2.22129493e+01, 2.50748475e+25],
-                          [3.63207230e-01, -9.54120862e-02, -2.83874044e+01, 9.43854939e-01],
-                          [-2.11326457e+00, -1.25707023e+01, 1.17172130e+00, 1.20812698e+00],
-                          [2.48513582e+00, 1.03652647e+01, -1.84625148e+01, 6.47910997e-02],
-                          [2.65395942e+01, 2.74794672e+01, 1.29413428e+01, 2.89306132e+05],
-                          [-9.49445460e+00, 1.59930921e+01, -1.49596331e+01, 3.27574841e+02],
-                          [-5.89173945e+00, 9.96742426e+00, 2.60318889e+01, -3.15842908e-01],
-                          [-1.15387239e+01, -2.21433107e+01, -2.17686413e+01, 1.56724718e-01],
-                          [-5.30592244e+00, -2.42752190e+01, 1.29734035e+00, 1.31985534e+00]])
+        ref_data = array([
+            [-8.38132975e+00, -1.28436461e+01, -2.91081397e+01, 1.04178330e+04],
+            [2.91076882e+00, -6.35234333e+00, -1.27083993e+01, 6.68132725e+00],
+            [-1.42938258e+01, 1.80869131e-01, 1.90038728e+01, 1.01385897e+05],
+            [5.84069088e+00, 1.33187908e+01, 2.91290106e+01, 1.59469411e+08],
+            [-2.70433202e+01, -1.16274873e+01, -2.89582384e+01, 1.39900152e+24],
+            [4.26344966e+00, -2.32701773e+01, 1.91635759e+01, 6.13816915e+21],
+            [1.20514340e+01, -3.40260240e+00, 7.26832235e+00, 1.17696112e+13],
+            [2.77372955e+01, -1.99424687e+00, 3.61332246e+00, 3.07419615e+13],
+            [1.50310939e+01, -2.91198675e+01, -1.53581080e+01, -3.79166033e+02],
+            [1.43995827e+01, 9.84311196e+00, 1.93204553e+01, 2.55836264e+10],
+            [-4.08759686e+00, 1.34437025e+01, -1.42072843e+01, 1.70778449e+01],
+            [8.05595738e+00, -1.31019838e+01, 1.52180721e+01, 3.06233294e+21],
+            [1.81815804e+01, -1.42908793e+01, 9.57868793e+00, -2.84771348e+20],
+            [-2.49671396e+01, 1.25082843e+01, -1.71562286e+01, 2.36290426e+07],
+            [2.67277673e+01, 1.70315414e+01, 6.12701450e+00, 7.77917232e+03],
+            [2.49565476e+01, 2.91694684e+01, 6.29622660e+00, 2.35300027e+02],
+            [6.11924542e+00, -1.59943768e+00, 9.57009289e+00, 1.32906326e+11],
+            [-1.47863653e+01, 2.41691301e+01, -1.89981821e+01, 2.73064953e+03],
+            [2.24070483e+01, -2.93647433e+00, 8.19281432e+00, -6.42000372e+17],
+            [8.04042600e-01, 1.82710085e+01, -1.97814534e+01, 5.48372441e-01],
+            [1.39590390e+01, 1.97318686e+01, 2.37606635e+00, 5.51923681e+00],
+            [-4.66640483e+00, -2.00237930e+01, 7.40365095e+00, 4.50310752e+00],
+            [2.76821999e+01, -6.36563968e+00, 1.11533984e+01, -9.28725179e+23],
+            [-2.56764457e+01, 1.24544906e+00, 1.06407572e+01, 1.25922076e+01],
+            [3.20447808e+00, 1.30874383e+01, 2.26098014e+01, 2.03202059e+04],
+            [-1.24809647e+01, 4.15137113e+00, -2.92265700e+01, 2.39621411e+08],
+            [2.14778108e+01, -2.35162960e+00, -1.13758664e+01, 4.46882152e-01],
+            [-9.85469168e+00, -3.28157680e+00, 1.67447548e+01, -1.07342390e+07],
+            [1.08122310e+01, -2.47353236e+01, -1.15622349e+01, -2.91733796e+03],
+            [-2.67933347e+01, -3.39100709e+00, 2.56006986e+01, -5.29275382e+09],
+            [-8.60066776e+00, -8.02200924e+00, 1.07231926e+01, 1.33548320e+06],
+            [-1.01724238e-01, -1.18479709e+01, -2.55407104e+01, 1.55436570e+00],
+            [-3.93356771e+00, 2.11106818e+01, -2.57598485e+01, 2.13467840e+01],
+            [3.74750503e+00, 1.55687633e+01, -2.92841720e+01, 1.43873509e-02],
+            [6.99726781e+00, 2.69855571e+01, -1.63707771e+01, 3.08098673e-02],
+            [-2.31996011e+01, 3.47631054e+00, 9.75119815e-01, 1.79971073e-02],
+            [2.38951044e+01, -2.91460190e+01, -2.50774708e+00, 9.56934814e+00],
+            [1.52730825e+01, 5.77062507e+00, 1.21922003e+01, 1.32345307e+09],
+            [1.74673917e+01, 1.89723426e+01, 4.94903250e+00, 9.90859484e+01],
+            [1.88971241e+01, 2.86255413e+01, 5.52360109e-01, 1.44165360e+00],
+            [1.02002319e+01, -1.66855152e+01, -2.55426235e+01, 6.56481554e+02],
+            [-1.79474153e+01, 1.22210200e+01, -1.84058212e+01, 8.24041812e+05],
+            [-1.36147103e+01, 1.32365492e+00, -7.22375200e+00, 9.92446491e+05],
+            [7.57407832e+00, 2.59738234e+01, -1.34139168e+01, 3.64037761e-02],
+            [2.21110169e+00, 1.28012666e+01, 1.62529102e+01, 1.33433085e+02],
+            [-2.64297569e+01, -1.63176658e+01, -1.11642006e+01, -2.44797251e+13],
+            [-2.46622944e+01, -3.02147372e+00, 8.29159315e+00, -3.21799070e+05],
+            [-1.37215095e+01, -1.96680183e+01, 2.91940118e+01, 3.21457520e+12],
+            [-5.45566105e+00, 2.81292086e+01, 1.72548215e-01, 9.66973000e-01],
+            [-1.55751298e+00, -8.65703373e+00, 2.68622026e+01, -3.17190834e+16],
+            [2.45393609e+01, -2.70571903e+01, 1.96815505e+01, 1.80708004e+37],
+            [5.77482829e+00, 1.53203143e+01, 2.50534322e+01, 1.14304242e+06],
+            [-1.02626819e+01, 2.36887658e+01, -2.32152102e+01, 7.28965646e+02],
+            [-1.30833446e+00, -1.28310210e+01, 1.87275544e+01, -9.33487904e+12],
+            [5.83024676e+00, -1.49279672e+01, 2.44957538e+01, -7.61083070e+27],
+            [-2.03130747e+01, 2.59641715e+01, -2.06174328e+01, 4.54744859e+04],
+            [1.97684551e+01, -2.21410519e+01, -2.26728740e+01, 3.53113026e+06],
+            [2.73673444e+01, 2.64491725e+01, 1.57599882e+01, 1.07385118e+07],
+            [5.73287971e+00, 1.21111904e+01, 1.33080171e+01, 2.63220467e+03],
+            [-2.82751072e+01, 2.08605881e+01, 9.09838900e+00, -6.60957033e-07],
+            [1.87270691e+01, -1.74437016e+01, 1.52413599e+01, 6.59572851e+27],
+            [6.60681457e+00, -2.69449855e+00, 9.78972047e+00, -2.38587870e+12],
+            [1.20895561e+01, -2.51355765e+01, 2.30096101e+01, 7.58739886e+32],
+            [-2.44682278e+01, 2.10673441e+01, -1.36705538e+01, 4.54213550e+04],
+            [-4.50665152e+00, 3.72292059e+00, -4.83403707e+00, 2.68938214e+01],
+            [-7.46540049e+00, -1.08422222e+01, -1.72203805e+01, -2.09402162e+02],
+            [-2.00307551e+01, -7.50604431e+00, -2.78640020e+01, 4.15985444e+19],
+            [1.99890876e+01, 2.20677419e+01, -2.51301778e+01, 1.23840297e-09],
+            [2.03183823e+01, -7.66942559e+00, 2.10340070e+01, 1.46285095e+31],
+            [-2.90315825e+00, -2.55785967e+01, -9.58779316e+00, 2.65714264e-01],
+            [2.73960829e+01, -1.80097203e+01, -2.03070131e+00, 2.52908999e+02],
+            [-2.11708058e+01, -2.70304032e+01, 2.48257944e+01, 3.09027527e+08],
+            [2.21959758e+01, 4.00258675e+00, -1.62853977e+01, -9.16280090e-09],
+            [1.61661840e+01, -2.26845150e+01, 2.17226940e+01, -8.24774394e+33],
+            [-3.35030306e+00, 1.32670581e+00, 9.39711214e+00, -1.47303163e+01],
+            [7.23720726e+00, -2.29763909e+01, 2.34709682e+01, -9.20711735e+29],
+            [2.71013568e+01, 1.61951087e+01, -7.11388906e-01, 2.98750911e-01],
+            [8.40057933e+00, -7.49665220e+00, 2.95587388e+01, 6.59465635e+29],
+            [-1.51603423e+01, 1.94032322e+01, -7.60044357e+00, 1.05186941e+02],
+            [-8.83788031e+00, -2.72018313e+01, 1.88269907e+00, 1.81687019e+00],
+            [-1.87283712e+01, 5.87479570e+00, -1.91210203e+01, 2.52235612e+08],
+            [-5.61338513e-01, 2.69490237e+01, 1.16660111e-01, 9.97567783e-01],
+            [-5.44354025e+00, -1.26721408e+01, -4.66831036e+00, 1.06660735e-01],
+            [-2.18846497e+00, 2.33299566e+01, 9.62564397e+00, 3.03842061e-01],
+            [6.65661299e+00, -2.39048713e+01, 1.04191807e+01, 4.73700451e+13],
+            [-2.57298921e+01, -2.60811296e+01, 2.74398110e+01, -5.32566307e+11],
+            [-1.11431826e+01, -1.59420160e+01, -1.84880553e+01, -1.01514747e+02],
+            [6.50301931e+00, 2.59859051e+01, -2.33270137e+01, 1.22760500e-02],
+            [-1.94987891e+01, -2.62123262e+01, 3.90323225e+00, 1.71658894e+01],
+            [7.26164601e+00, -1.41469402e+01, 2.81499763e+01, -2.50068329e+31],
+            [-1.52424040e+01, 2.99719005e+01, -2.85753678e+01, 1.31906693e+04],
+            [5.24149291e+00, -1.72807223e+01, 2.22129493e+01, 2.50748475e+25],
+            [3.63207230e-01, -9.54120862e-02, -2.83874044e+01, 9.43854939e-01],
+            [-2.11326457e+00, -1.25707023e+01, 1.17172130e+00, 1.20812698e+00],
+            [2.48513582e+00, 1.03652647e+01, -1.84625148e+01, 6.47910997e-02],
+            [2.65395942e+01, 2.74794672e+01, 1.29413428e+01, 2.89306132e+05],
+            [-9.49445460e+00, 1.59930921e+01, -1.49596331e+01, 3.27574841e+02],
+            [-5.89173945e+00, 9.96742426e+00, 2.60318889e+01, -3.15842908e-01],
+            [-1.15387239e+01, -2.21433107e+01, -2.17686413e+01, 1.56724718e-01],
+            [-5.30592244e+00, -2.42752190e+01, 1.29734035e+00, 1.31985534e+00]
+        ])
 
         for a,b,c,expected in ref_data:
             result = special.hyp1f1(a,b,c)
@@ -2761,31 +2785,36 @@ class TestHyper:
 
     def test_hyp2f1(self):
         # a collection of special cases taken from AMS 55
-        values = [[0.5, 1, 1.5, 0.2**2, 0.5/0.2*log((1+0.2)/(1-0.2))],
-                  [0.5, 1, 1.5, -0.2**2, 1./0.2*arctan(0.2)],
-                  [1, 1, 2, 0.2, -1/0.2*log(1-0.2)],
-                  [3, 3.5, 1.5, 0.2**2,
-                      0.5/0.2/(-5)*((1+0.2)**(-5)-(1-0.2)**(-5))],
-                  [-3, 3, 0.5, sin(0.2)**2, cos(2*3*0.2)],
-                  [3, 4, 8, 1, special.gamma(8)*special.gamma(8-4-3)/special.gamma(8-3)/special.gamma(8-4)],
-                  [3, 2, 3-2+1, -1, 1./2**3*sqrt(pi) *
-                      special.gamma(1+3-2)/special.gamma(1+0.5*3-2)/special.gamma(0.5+0.5*3)],
-                  [5, 2, 5-2+1, -1, 1./2**5*sqrt(pi) *
-                      special.gamma(1+5-2)/special.gamma(1+0.5*5-2)/special.gamma(0.5+0.5*5)],
-                  [4, 0.5+4, 1.5-2*4, -1./3, (8./9)**(-2*4)*special.gamma(4./3) *
-                      special.gamma(1.5-2*4)/special.gamma(3./2)/special.gamma(4./3-2*4)],
-                  # and some others
-                  # ticket #424
-                  [1.5, -0.5, 1.0, -10.0, 4.1300097765277476484],
-                  # negative integer a or b, with c-a-b integer and x > 0.9
-                  [-2,3,1,0.95,0.715],
-                  [2,-3,1,0.95,-0.007],
-                  [-6,3,1,0.95,0.0000810625],
-                  [2,-5,1,0.95,-0.000029375],
-                  # huge negative integers
-                  (10, -900, 10.5, 0.99, 1.91853705796607664803709475658e-24),
-                  (10, -900, -10.5, 0.99, 3.54279200040355710199058559155e-18),
-                  ]
+        values = [
+            [0.5, 1, 1.5, 0.2**2, 0.5/0.2*log((1+0.2)/(1-0.2))],
+            [0.5, 1, 1.5, -0.2**2, 1./0.2*arctan(0.2)],
+            [1, 1, 2, 0.2, -1/0.2*log(1-0.2)],
+            [3, 3.5, 1.5, 0.2**2, 0.5/0.2/(-5)*((1+0.2)**(-5)-(1-0.2)**(-5))],
+            [-3, 3, 0.5, sin(0.2)**2, cos(2*3*0.2)],
+            [3, 4, 8, 1,
+             special.gamma(8) * special.gamma(8-4-3)
+             / special.gamma(8-3) / special.gamma(8-4)],
+            [3, 2, 3-2+1, -1,
+             1./2**3*sqrt(pi) * special.gamma(1+3-2)
+             / special.gamma(1+0.5*3-2) / special.gamma(0.5+0.5*3)],
+            [5, 2, 5-2+1, -1,
+             1./2**5*sqrt(pi) * special.gamma(1+5-2)
+             / special.gamma(1+0.5*5-2) / special.gamma(0.5+0.5*5)],
+            [4, 0.5+4, 1.5-2*4, -1./3,
+             (8./9)**(-2*4)*special.gamma(4./3) * special.gamma(1.5-2*4)
+             / special.gamma(3./2) / special.gamma(4./3-2*4)],
+            # and some others
+            # ticket #424
+            [1.5, -0.5, 1.0, -10.0, 4.1300097765277476484],
+            # negative integer a or b, with c-a-b integer and x > 0.9
+            [-2,3,1,0.95,0.715],
+            [2,-3,1,0.95,-0.007],
+            [-6,3,1,0.95,0.0000810625],
+            [2,-5,1,0.95,-0.000029375],
+            # huge negative integers
+            (10, -900, 10.5, 0.99, 1.91853705796607664803709475658e-24),
+            (10, -900, -10.5, 0.99, 3.54279200040355710199058559155e-18),
+        ]
         for i, (a, b, c, x, v) in enumerate(values):
             cv = special.hyp2f1(a, b, c, x)
             assert_almost_equal(cv, v, 8, err_msg='test #%d' % i)
@@ -2811,11 +2840,19 @@ class TestHyper:
 class TestBessel:
     def test_itj0y0(self):
         it0 = array(special.itj0y0(.2))
-        assert_array_almost_equal(it0,array([0.19933433254006822, -0.34570883800412566]),8)
+        assert_array_almost_equal(
+            it0,
+            array([0.19933433254006822, -0.34570883800412566]),
+            8,
+        )
 
     def test_it2j0y0(self):
         it2 = array(special.it2j0y0(.2))
-        assert_array_almost_equal(it2,array([0.0049937546274601858, -0.43423067011231614]),8)
+        assert_array_almost_equal(
+            it2,
+            array([0.0049937546274601858, -0.43423067011231614]),
+            8,
+        )
 
     def test_negv_iv(self):
         assert_equal(special.iv(3,2), special.iv(-3,2))
@@ -3075,15 +3112,22 @@ class TestBessel:
 
     def test_y1p_zeros(self):
         y1p = special.y1p_zeros(1,complex=1)
-        assert_array_almost_equal(y1p,(array([0.5768+0.904j]), array([-0.7635+0.5892j])),3)
+        assert_array_almost_equal(
+            y1p,
+            (array([0.5768+0.904j]), array([-0.7635+0.5892j])),
+            3,
+        )
 
     def test_yn_zeros(self):
         an = special.yn_zeros(4,2)
         assert_array_almost_equal(an,array([5.64515, 9.36162]),5)
         an = special.yn_zeros(443,5)
-        assert_allclose(an, [450.13573091578090314, 463.05692376675001542,
-                              472.80651546418663566, 481.27353184725625838,
-                              488.98055964441374646], rtol=1e-15)
+        assert_allclose(an, [450.13573091578090314,
+                             463.05692376675001542,
+                             472.80651546418663566,
+                             481.27353184725625838,
+                             488.98055964441374646],
+                        rtol=1e-15,)
 
     def test_ynp_zeros(self):
         ao = special.ynp_zeros(0,2)
@@ -3163,7 +3207,8 @@ class TestBessel:
     def test_yv_cephes_vs_amos_only_small_orders(self):
         def skipper(v, z):
             return abs(v) > 50
-        self.check_cephes_vs_amos(special.yv, special.yn, rtol=1e-11, atol=1e-305, skip=skipper)
+        self.check_cephes_vs_amos(special.yv, special.yn, rtol=1e-11, atol=1e-305,
+                                  skip=skipper)
 
     def test_iv_cephes_vs_amos(self):
         with np.errstate(all='ignore'):
@@ -3196,7 +3241,10 @@ class TestBessel:
 
         # Most error apparently comes from AMOS and not our implementation;
         # there are some problems near integer orders there
-        assert_(dc[k] < 2e-7, (v[k], x[k], special.iv(v[k], x[k]), special.iv(v[k], x[k]+0j)))
+        assert_(
+            dc[k] < 2e-7,
+            (v[k], x[k], special.iv(v[k], x[k]), special.iv(v[k], x[k]+0j))
+        )
 
     def test_kv_cephes_vs_amos(self):
         self.check_cephes_vs_amos(special.kv, special.kn, rtol=1e-9, atol=1e-305)
@@ -3248,8 +3296,14 @@ class TestBessel:
         assert_allclose(special.ive(-0.5,0.3+1j), special.iv(-0.5, 0.3+1j)*exp(-0.3))
         assert_allclose(special.kve(-0.5,0.3+1j), special.kv(-0.5, 0.3+1j)*exp(0.3+1j))
 
-        assert_allclose(special.hankel1(-0.5, 1+1j), special.jv(-0.5, 1+1j) + 1j*special.yv(-0.5,1+1j))
-        assert_allclose(special.hankel2(-0.5, 1+1j), special.jv(-0.5, 1+1j) - 1j*special.yv(-0.5,1+1j))
+        assert_allclose(
+            special.hankel1(-0.5, 1+1j),
+            special.jv(-0.5, 1+1j) + 1j*special.yv(-0.5,1+1j)
+        )
+        assert_allclose(
+            special.hankel2(-0.5, 1+1j),
+            special.jv(-0.5, 1+1j) - 1j*special.yv(-0.5,1+1j)
+        )
 
     def test_ticket_854(self):
         """Real-valued Bessel domains"""
@@ -3343,11 +3397,19 @@ class TestBessel:
 
     def test_iti0k0(self):
         iti0 = array(special.iti0k0(5))
-        assert_array_almost_equal(iti0,array([31.848667776169801, 1.5673873907283657]),5)
+        assert_array_almost_equal(
+            iti0,
+            array([31.848667776169801, 1.5673873907283657]),
+            5,
+        )
 
     def test_it2i0k0(self):
         it2k = special.it2i0k0(.1)
-        assert_array_almost_equal(it2k,array([0.0012503906973464409, 3.3309450354686687]),6)
+        assert_array_almost_equal(
+            it2k,
+            array([0.0012503906973464409, 3.3309450354686687]),
+            6,
+        )
 
     def test_iv(self):
         iv1 = special.iv(0,.1)*exp(-.1)
@@ -3391,10 +3453,16 @@ class TestLaguerre:
         lag1 = special.genlaguerre(1,k)
         lag2 = special.genlaguerre(2,k)
         lag3 = special.genlaguerre(3,k)
-        assert_equal(lag0.c,[1])
-        assert_equal(lag1.c,[-1,k+1])
-        assert_almost_equal(lag2.c,array([1,-2*(k+2),(k+1.)*(k+2.)])/2.0)
-        assert_almost_equal(lag3.c,array([-1,3*(k+3),-3*(k+2)*(k+3),(k+1)*(k+2)*(k+3)])/6.0)
+        assert_equal(lag0.c, [1])
+        assert_equal(lag1.c, [-1, k + 1])
+        assert_almost_equal(
+            lag2.c,
+            array([1,-2*(k+2),(k+1.)*(k+2.)])/2.0
+        )
+        assert_almost_equal(
+            lag3.c,
+            array([-1,3*(k+3),-3*(k+2)*(k+3),(k+1)*(k+2)*(k+3)])/6.0
+        )
 
 
 # Base polynomials come from Abrahmowitz and Stegan
@@ -3417,8 +3485,10 @@ class TestLegendre:
 class TestLambda:
     def test_lmbda(self):
         lam = special.lmbda(1,.1)
-        lamr = (array([special.jn(0,.1), 2*special.jn(1,.1)/.1]),
-                array([special.jvp(0,.1), -2*special.jv(1,.1)/.01 + 2*special.jvp(1,.1)/.1]))
+        lamr = (
+            array([special.jn(0,.1), 2*special.jn(1,.1)/.1]),
+            array([special.jvp(0,.1), -2*special.jv(1,.1)/.01 + 2*special.jvp(1,.1)/.1])
+        )
         assert_array_almost_equal(lam,lamr,8)
 
 
@@ -3718,7 +3788,10 @@ class TestRiccati:
 
 class TestRound:
     def test_round(self):
-        rnd = list(map(int,(special.round(10.1),special.round(10.4),special.round(10.5),special.round(10.6))))
+        rnd = list(map(int, (special.round(10.1),
+                             special.round(10.4),
+                             special.round(10.5),
+                             special.round(10.6))))
 
         # Note: According to the documentation, scipy.special.round is
         # supposed to round to the nearest even number if the fractional
@@ -3799,9 +3872,12 @@ class TestStruve:
 
     def test_regression_679(self):
         """Regression test for #679"""
-        assert_allclose(special.struve(-1.0, 20 - 1e-8), special.struve(-1.0, 20 + 1e-8))
-        assert_allclose(special.struve(-2.0, 20 - 1e-8), special.struve(-2.0, 20 + 1e-8))
-        assert_allclose(special.struve(-4.3, 20 - 1e-8), special.struve(-4.3, 20 + 1e-8))
+        assert_allclose(special.struve(-1.0, 20 - 1e-8),
+                        special.struve(-1.0, 20 + 1e-8))
+        assert_allclose(special.struve(-2.0, 20 - 1e-8),
+                        special.struve(-2.0, 20 + 1e-8))
+        assert_allclose(special.struve(-4.3, 20 - 1e-8),
+                        special.struve(-4.3, 20 + 1e-8))
 
 
 def test_chi2_smalldf():
@@ -4057,37 +4133,67 @@ class TestStirling2:
         [0, 1, 511, 9330, 34105, 42525, 22827, 5880, 750, 45, 1],
     ]
 
-    def test_table_cases(self):
-        for n in range(len(self.table)):
-            for k in range(len(self.table[n])):
-                assert_equal(self.table[n][k], stirling2(n, k))
+    @pytest.mark.parametrize("is_exact, comp, kwargs", [
+        (True, assert_equal, {}),
+        (False, assert_allclose, {'rtol': 1e-12})
+    ])
+    def test_table_cases(self, is_exact, comp, kwargs):
+        for n in range(1, len(self.table)):
+            k_values = list(range(n+1))
+            row = self.table[n]
+            comp(row, stirling2([n], k_values, exact=is_exact), **kwargs)
 
-    def test_valid_single_integer(self):
-        assert_equal(stirling2(0, 0), self.table[0][0])
-        assert_equal(stirling2(4, 2), self.table[4][2])
+    @pytest.mark.parametrize("is_exact, comp, kwargs", [
+        (True, assert_equal, {}),
+        (False, assert_allclose, {'rtol': 1e-12})
+    ])
+    def test_valid_single_integer(self, is_exact, comp, kwargs):
+        comp(stirling2(0, 0, exact=is_exact), self.table[0][0], **kwargs)
+        comp(stirling2(4, 2, exact=is_exact), self.table[4][2], **kwargs)
         # a single 2-tuple of integers as arguments must return an int and not
         # an array whereas arrays of single values should return array
-        assert stirling2(5, 3) == 25
-        assert array_equal(stirling2([5], [3]), [25])
+        comp(stirling2(5, 3, exact=is_exact), 25, **kwargs)
+        comp(stirling2([5], [3], exact=is_exact), [25], **kwargs)
 
-    def test_negative_integer(self):
+    @pytest.mark.parametrize("is_exact, comp, kwargs", [
+        (True, assert_equal, {}),
+        (False, assert_allclose, {'rtol': 1e-12})
+    ])
+    def test_negative_integer(self, is_exact, comp, kwargs):
         # negative integers for n or k arguments return 0
-        assert_equal(stirling2(-1, -1), 0)
-        assert_equal(stirling2(-1, 2), 0)
-        assert_equal(stirling2(2, -1), 0)
+        comp(stirling2(-1, -1, exact=is_exact), 0, **kwargs)
+        comp(stirling2(-1, 2, exact=is_exact), 0, **kwargs)
+        comp(stirling2(2, -1, exact=is_exact), 0, **kwargs)
 
-    def test_array_inputs(self):
+    @pytest.mark.parametrize("is_exact, comp, kwargs", [
+        (True, assert_equal, {}),
+        (False, assert_allclose, {'rtol': 1e-12})
+    ])
+    def test_array_inputs(self, is_exact, comp, kwargs):
         ans = [self.table[10][3], self.table[10][4]]
-        assert array_equal(stirling2(asarray([10, 10]), asarray([3, 4])), ans)
-        assert array_equal(stirling2([10, 10], asarray([3, 4])), ans)
-        assert array_equal(stirling2(asarray([10, 10]), [3, 4]), ans)
+        comp(stirling2(asarray([10, 10]),
+                               asarray([3, 4]),
+                               exact=is_exact),
+                     ans)
+        comp(stirling2([10, 10],
+                               asarray([3, 4]),
+                               exact=is_exact),
+                     ans)
+        comp(stirling2(asarray([10, 10]),
+                               [3, 4],
+                               exact=is_exact),
+                     ans)
 
-    def test_mixed_values(self):
+    @pytest.mark.parametrize("is_exact, comp, kwargs", [
+        (True, assert_equal, {}),
+        (False, assert_allclose, {'rtol': 1e-13})
+    ])
+    def test_mixed_values(self, is_exact, comp, kwargs):
         # negative values-of either n or k-should return 0 for the entry
         ans = [0, 1, 3, 25, 1050, 5880, 9330]
         n = [-1, 0, 3, 5, 8, 10, 10]
         k = [-2, 0, 2, 3, 5, 7, 3]
-        assert array_equal(stirling2(n, k), ans)
+        comp(stirling2(n, k, exact=is_exact), ans, **kwargs)
 
     def test_correct_parity(self):
         """Test parity follows well known identity.
@@ -4096,7 +4202,7 @@ class TestStirling2:
         """
         n, K = 100, np.arange(101)
         assert_equal(
-            stirling2(n, K) % 2,
+            stirling2(n, K, exact=True) % 2,
             [math.comb(n - (k // 2) - 1, n - k) % 2 for k in K],
         )
 
@@ -4105,47 +4211,66 @@ class TestStirling2:
         ans = asarray([48063331393110, 48004081105038305])
         n = [25, 30]
         k = [17, 4]
-        assert array_equal(stirling2(n, k), ans)
+        assert array_equal(stirling2(n, k, exact=True), ans)
         # bigger than 64 bit
         ans = asarray([2801934359500572414253157841233849412,
                        14245032222277144547280648984426251])
         n = [42, 43]
         k = [17, 23]
-        assert array_equal(stirling2(n, k), ans)
+        assert array_equal(stirling2(n, k, exact=True), ans)
 
-    @pytest.mark.parametrize("K", [3.5, 3, "2", None])
     @pytest.mark.parametrize("N", [4.5, 3., 4+1j, "12", np.nan])
-    def test_unsupported_input_types(self, N, K):
+    @pytest.mark.parametrize("K", [3.5, 3, "2", None])
+    @pytest.mark.parametrize("is_exact", [True, False])
+    def test_unsupported_input_types(self, N, K, is_exact):
         # object, float, string, complex are not supported and raise TypeError
-        # when exact=True
         with pytest.raises(TypeError):
-            special.stirling2(N, K, exact=True)
+            stirling2(N, K, exact=is_exact)
 
-    def test_numpy_array_int_object_dtype(self):
+    @pytest.mark.parametrize("is_exact", [True, False])
+    def test_numpy_array_int_object_dtype(self, is_exact):
         # python integers with arbitrary precision are *not* allowed as
         # object type in numpy arrays are inconsistent from api perspective
         ans = asarray(self.table[4][1:])
         n = asarray([4, 4, 4, 4], dtype=object)
         k = asarray([1, 2, 3, 4], dtype=object)
         with pytest.raises(TypeError):
-            array_equal(stirling2(n, k), ans)
+            array_equal(stirling2(n, k, exact=is_exact), ans)
 
-    def test_numpy_array_unsigned_int_dtype(self):
+    @pytest.mark.parametrize("is_exact, comp, kwargs", [
+        (True, assert_equal, {}),
+        (False, assert_allclose, {'rtol': 1e-13})
+    ])
+    def test_numpy_array_unsigned_int_dtype(self, is_exact, comp, kwargs):
         # numpy unsigned integers are allowed as dtype in numpy arrays
         ans = asarray(self.table[4][1:])
         n = asarray([4, 4, 4, 4], dtype=np_ulong)
         k = asarray([1, 2, 3, 4], dtype=np_ulong)
-        assert array_equal(stirling2(n, k), ans)
+        comp(stirling2(n, k, exact=False), ans, **kwargs)
 
-    def test_broadcasting_arrays_correctly(self):
+    @pytest.mark.parametrize("is_exact, comp, kwargs", [
+        (True, assert_equal, {}),
+        (False, assert_allclose, {'rtol': 1e-13})
+    ])
+    def test_broadcasting_arrays_correctly(self, is_exact, comp, kwargs):
         # broadcasting is handled by stirling2
         # test leading 1s are replicated
         ans = asarray([[1, 15, 25, 10], [1, 7, 6, 1]])  # shape (2,4)
         n = asarray([[5, 5, 5, 5], [4, 4, 4, 4]])  # shape (2,4)
         k = asarray([1, 2, 3, 4])  # shape (4,)
-        assert array_equal(stirling2(n, k), ans)
+        comp(stirling2(n, k, exact=is_exact), ans, **kwargs)
         # test that dims both mismatch broadcast correctly (5,1) & (6,)
         n = asarray([[4], [4], [4], [4], [4]])
         k = asarray([0, 1, 2, 3, 4, 5])
         ans = asarray([[0, 1, 7, 6, 1, 0] for _ in range(5)])
-        assert array_equal(stirling2(n, k), ans)
+        comp(stirling2(n, k, exact=False), ans, **kwargs)
+
+    def test_temme_rel_max_error(self):
+        # python integers with arbitrary precision are *not* allowed as
+        # object type in numpy arrays are inconsistent from api perspective
+        x = list(range(51, 101, 5))
+        for n in x:
+            k_entries = list(range(1, n+1))
+            denom = stirling2([n], k_entries, exact=True)
+            num = denom - stirling2([n], k_entries, exact=False)
+            assert np.max(np.abs(num / denom)) < 2e-5

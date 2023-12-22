@@ -10,7 +10,7 @@ from scipy.sparse.linalg import aslinearoperator
 
 from scipy.optimize import least_squares, Bounds
 from scipy.optimize._lsq.least_squares import IMPLEMENTED_LOSSES
-from scipy.optimize._lsq.common import EPS, make_strictly_feasible
+from scipy.optimize._lsq.common import EPS, make_strictly_feasible, CL_scaling_vector
 
 
 def fun_trivial(x, a=0):
@@ -182,8 +182,10 @@ class BaseMixin:
         a = 3.0
         for jac in ['2-point', '3-point', 'cs', jac_trivial]:
             with suppress_warnings() as sup:
-                sup.filter(UserWarning,
-                           "jac='(3-point|cs)' works equivalently to '2-point' for method='lm'")
+                sup.filter(
+                    UserWarning,
+                    "jac='(3-point|cs)' works equivalently to '2-point' for method='lm'"
+                )
                 res = least_squares(fun_trivial, 2.0, jac, args=(a,),
                                     method=self.method)
                 res1 = least_squares(fun_trivial, 2.0, jac, kwargs={'a': a},
@@ -200,8 +202,10 @@ class BaseMixin:
     def test_jac_options(self):
         for jac in ['2-point', '3-point', 'cs', jac_trivial]:
             with suppress_warnings() as sup:
-                sup.filter(UserWarning,
-                           "jac='(3-point|cs)' works equivalently to '2-point' for method='lm'")
+                sup.filter(
+                    UserWarning,
+                    "jac='(3-point|cs)' works equivalently to '2-point' for method='lm'"
+                )
                 res = least_squares(fun_trivial, 2.0, jac, method=self.method)
             assert_allclose(res.x, 0, atol=1e-4)
 
@@ -296,8 +300,10 @@ class BaseMixin:
                 [1.0, np.array([1.0, 0.2]), 'jac'],
                 ['exact', 'lsmr']):
             with suppress_warnings() as sup:
-                sup.filter(UserWarning,
-                           "jac='(3-point|cs)' works equivalently to '2-point' for method='lm'")
+                sup.filter(
+                    UserWarning,
+                    "jac='(3-point|cs)' works equivalently to '2-point' for method='lm'"
+                )
                 res = least_squares(fun_rosenbrock, x0, jac, x_scale=x_scale,
                                     tr_solver=tr_solver, method=self.method)
             assert_allclose(res.x, x_opt)
@@ -811,17 +817,30 @@ def test_fp32_gh12991():
     assert_allclose(res.x, np.array([0.4082241, 0.15530563]), atol=5e-5)
 
 
-def test_gh_18793():
+def test_gh_18793_and_19351():
     answer = 1e-12
     initial_guess = 1.1e-12
 
     def chi2(x):
         return (x-answer)**2
 
-    res = least_squares(chi2, x0=initial_guess, bounds=(0, np.inf))
+    gtol = 1e-15
+    res = least_squares(chi2, x0=initial_guess, gtol=1e-15, bounds=(0, np.inf))
+    # Original motivation: gh-18793
     # if we choose an initial condition that is close to the solution
     # we shouldn't return an answer that is further away from the solution
-    assert_allclose(res.x, answer, atol=initial_guess-answer)
+
+    # Update: gh-19351
+    # However this requirement does not go well with 'trf' algorithm logic.
+    # Some regressions were reported after the presumed fix.
+    # The returned solution is good as long as it satisfies the convergence
+    # conditions.
+    # Specifically in this case the scaled gradient will be sufficiently low.
+
+    scaling, _ = CL_scaling_vector(res.x, res.grad,
+                                   np.atleast_1d(0), np.atleast_1d(np.inf))
+    assert res.status == 1  # Converged by gradient
+    assert np.linalg.norm(res.grad * scaling, ord=np.inf) < gtol
 
 
 def test_gh_19103():

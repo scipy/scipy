@@ -47,7 +47,8 @@ def _discordant_pairs(A):
 #pythran export _a_ij_Aij_Dij2(int[:,:])
 def _a_ij_Aij_Dij2(A):
     """A term that appears in the ASE of Kendall's tau and Somers' D."""
-    # See `somersd` References [2] section 4: Modified ASEs to test the null hypothesis...
+    # See `somersd` References [2] section 4:
+    # Modified ASEs to test the null hypothesis...
     m, n = A.shape
     count = 0
     for i in range(m):

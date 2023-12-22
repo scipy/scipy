@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: BSD-2-Clause
 
 #include <fast_matrix_market/types.hpp>
+#include <cstdint>
 namespace fast_matrix_market {
     // Be able to set unsigned-integer field type. This type is only used by SciPy to represent uint64 values.
     field_type get_field_type([[maybe_unused]] const uint32_t* type) {

@@ -459,7 +459,8 @@ def new_constraint_to_old(con, x0):
                 con.keep_feasible):
             warn("Constraint options `finite_diff_jac_sparsity`, "
                  "`finite_diff_rel_step`, `keep_feasible`, and `hess`"
-                 "are ignored by this method.", OptimizeWarning)
+                 "are ignored by this method.",
+                 OptimizeWarning, stacklevel=3)
 
         fun = con.fun
         if callable(con.jac):
@@ -469,8 +470,8 @@ def new_constraint_to_old(con, x0):
 
     else:  # LinearConstraint
         if np.any(con.keep_feasible):
-            warn("Constraint option `keep_feasible` is ignored by this "
-                 "method.", OptimizeWarning)
+            warn("Constraint option `keep_feasible` is ignored by this method.",
+                 OptimizeWarning, stacklevel=3)
 
         A = con.A
         if issparse(A):
@@ -492,7 +493,8 @@ def new_constraint_to_old(con, x0):
 
     if np.any(i_unbounded):
         warn("At least one constraint is unbounded above and below. Such "
-             "constraints are ignored.", OptimizeWarning)
+             "constraints are ignored.",
+             OptimizeWarning, stacklevel=3)
 
     ceq = []
     if np.any(i_eq):
@@ -540,7 +542,8 @@ def new_constraint_to_old(con, x0):
         warn("Equality and inequality constraints are specified in the same "
              "element of the constraint list. For efficient use with this "
              "method, equality and inequality constraints should be specified "
-             "in separate elements of the constraint list. ", OptimizeWarning)
+             "in separate elements of the constraint list. ",
+             OptimizeWarning, stacklevel=3)
     return old_constraints
 
 

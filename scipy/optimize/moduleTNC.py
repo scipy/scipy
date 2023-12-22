@@ -6,7 +6,7 @@
 from scipy._lib.deprecation import _sub_module_deprecation
 
 
-__all__ = []  # noqa: F822
+__all__ = []
 
 
 def __dir__():

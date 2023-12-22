@@ -1408,8 +1408,7 @@ def test_sfrk_hfrk():
             A = A + A.T + n*eye(n)
 
         prefix = 's'if ind < 2 else 'h'
-        trttf, tfttr, shfrk = get_lapack_funcs(('trttf', 'tfttr', '{}frk'
-                                                ''.format(prefix)),
+        trttf, tfttr, shfrk = get_lapack_funcs(('trttf', 'tfttr', f'{prefix}frk'),
                                                dtype=dtype)
 
         Afp, _ = trttf(A)
@@ -2229,8 +2228,7 @@ def test_pttrf_pttrs_errors_singular_nonSPD(ddtype, dtype):
     e[0] = 0
     _d, _e, info = pttrf(d, e)
     assert_equal(_d[info - 1], 0,
-                 "?pttrf: _d[info-1] is {}, not the illegal value :0."
-                 .format(_d[info - 1]))
+                 f"?pttrf: _d[info-1] is {_d[info - 1]}, not the illegal value :0.")
 
     # test with non-spd matrix
     d = generate_random_dtype_array((n,), ddtype)
@@ -2498,8 +2496,7 @@ def test_standard_eigh_lworks(pfx, driver):
         _compute_lwork(sc_dlw, n, lower=1)
         _compute_lwork(dz_dlw, n, lower=1)
     except Exception as e:
-        pytest.fail("{}_lwork raised unexpected exception: {}"
-                    "".format(pfx+driver, e))
+        pytest.fail(f"{pfx+driver}_lwork raised unexpected exception: {e}")
 
 
 @pytest.mark.parametrize("driver", ['gv', 'gvx'])
@@ -2514,8 +2511,7 @@ def test_generalized_eigh_lworks(pfx, driver):
         _compute_lwork(sc_dlw, n, uplo="L")
         _compute_lwork(dz_dlw, n, uplo="L")
     except Exception as e:
-        pytest.fail("{}_lwork raised unexpected exception: {}"
-                    "".format(pfx+driver, e))
+        pytest.fail(f"{pfx+driver}_lwork raised unexpected exception: {e}")
 
 
 @pytest.mark.parametrize("dtype_", DTYPES)

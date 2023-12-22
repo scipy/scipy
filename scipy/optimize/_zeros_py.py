@@ -323,7 +323,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                         " Failed to converge after %d iterations, value is %s."
                         % (itr + 1, p0))
                     raise RuntimeError(msg)
-                warnings.warn(msg, RuntimeWarning)
+                warnings.warn(msg, RuntimeWarning, stacklevel=2)
                 return _results_select(
                     full_output, (p0, funcalls, itr + 1, _ECONVERR), method)
             newton_step = fval / fder
@@ -371,7 +371,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                             " Failed to converge after %d iterations, value is %s."
                             % (itr + 1, p1))
                         raise RuntimeError(msg)
-                    warnings.warn(msg, RuntimeWarning)
+                    warnings.warn(msg, RuntimeWarning, stacklevel=2)
                 p = (p1 + p0) / 2.0
                 return _results_select(
                     full_output, (p, funcalls, itr + 1, _ECONVERR), method)
@@ -475,21 +475,18 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2, full_output):
                 rms = np.sqrt(
                     sum((p1[zero_der_nz_dp] - p[zero_der_nz_dp]) ** 2)
                 )
-                warnings.warn(
-                    f'RMS of {rms:g} reached', RuntimeWarning)
+                warnings.warn(f'RMS of {rms:g} reached', RuntimeWarning, stacklevel=3)
         # Newton or Halley warnings
         else:
             all_or_some = 'all' if zero_der.all() else 'some'
             msg = f'{all_or_some:s} derivatives were zero'
-            warnings.warn(msg, RuntimeWarning)
+            warnings.warn(msg, RuntimeWarning, stacklevel=3)
     elif failures.any():
         all_or_some = 'all' if failures.all() else 'some'
-        msg = '{:s} failed to converge after {:d} iterations'.format(
-            all_or_some, maxiter
-        )
+        msg = f'{all_or_some:s} failed to converge after {maxiter:d} iterations'
         if failures.all():
             raise RuntimeError(msg)
-        warnings.warn(msg, RuntimeWarning)
+        warnings.warn(msg, RuntimeWarning, stacklevel=3)
 
     if full_output:
         result = namedtuple('result', ('root', 'converged', 'zero_der'))
@@ -1104,7 +1101,7 @@ class TOMS748Solver:
         # Noisily replace a high value of k with self._K_MAX
         if self.k > self._K_MAX:
             msg = "toms748: Overriding k: ->%d" % self._K_MAX
-            warnings.warn(msg, RuntimeWarning)
+            warnings.warn(msg, RuntimeWarning, stacklevel=3)
             self.k = self._K_MAX
 
     def _callf(self, x, error=True):
@@ -1148,7 +1145,7 @@ class TOMS748Solver:
 
         if np.sign(fb) * np.sign(fa) > 0:
             raise ValueError("f(a) and f(b) must have different signs, but "
-                             "f({:e})={:e}, f({:e})={:e} ".format(a, fa, b, fb))
+                             f"f({a:e})={fa:e}, f({b:e})={fb:e} ")
         self.fab[:] = [fa, fb]
 
         return _EINPROGRESS, sum(self.ab) / 2.0
@@ -1550,7 +1547,7 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None,
     If roots of the function are found, both `l` and `r` are set to the
     leftmost root.
 
-    """
+    """  # noqa: E501
     # Todo:
     # - find bracket with sign change in specified direction
     # - Add tolerance
@@ -2075,7 +2072,7 @@ def _scalar_optimization_loop(work, callback, shape, maxiter,
     cb_terminate = False
 
     # Initialize the result object and active element index array
-    n_elements = int(np.prod(shape)) or 1
+    n_elements = int(np.prod(shape))
     active = np.arange(n_elements)  # in-progress element indices
     res_dict = {i: np.zeros(n_elements, dtype=dtype) for i, j in res_work_pairs}
     res_dict['success'] = np.zeros(n_elements, dtype=bool)
@@ -2094,7 +2091,7 @@ def _scalar_optimization_loop(work, callback, shape, maxiter,
         if _call_callback_maybe_halt(callback, temp):
             cb_terminate = True
 
-    while work.nit < maxiter and active.size and not cb_terminate:
+    while work.nit < maxiter and active.size and not cb_terminate and n_elements:
         x = pre_func_eval(work)
 
         if work.args and work.args[0].ndim != x.ndim:
@@ -2489,9 +2486,13 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     >>> res.df  # approximation of the derivative
     array([2.71828183, 3.49034296, 4.48168907, 5.75460268, 7.3890561 ])
     >>> res.error  # estimate of the error
-    array([7.12940817e-12, 9.16688947e-12, 1.17594823e-11, 1.50972568e-11, 1.93942640e-11])
+    array(
+        [7.12940817e-12, 9.16688947e-12, 1.17594823e-11, 1.50972568e-11, 1.93942640e-11]
+    )
     >>> abs(res.df - df(x))  # true error
-    array([3.06421555e-14, 3.01980663e-14, 5.06261699e-14, 6.30606678e-14, 8.34887715e-14])
+    array(
+        [3.06421555e-14, 3.01980663e-14, 5.06261699e-14, 6.30606678e-14, 8.34887715e-14]
+    )
 
     Show the convergence of the approximation as the step size is reduced.
     Each iteration, the step size is reduced by `step_factor`, so for

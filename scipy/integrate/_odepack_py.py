@@ -245,11 +245,12 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
                              ixpr, mxstep, mxhnil, mxordn, mxords,
                              int(bool(tfirst)))
     if output[-1] < 0:
-        warning_msg = _msgs[output[-1]] + " Run with full_output = 1 to get quantitative information."
-        warnings.warn(warning_msg, ODEintWarning)
+        warning_msg = (f"{_msgs[output[-1]]} Run with full_output = 1 to "
+                       f"get quantitative information.")
+        warnings.warn(warning_msg, ODEintWarning, stacklevel=2)
     elif printmessg:
         warning_msg = _msgs[output[-1]]
-        warnings.warn(warning_msg, ODEintWarning)
+        warnings.warn(warning_msg, ODEintWarning, stacklevel=2)
 
     if full_output:
         output[1]['message'] = _msgs[output[-1]]
