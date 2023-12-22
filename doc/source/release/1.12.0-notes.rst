@@ -273,9 +273,9 @@ Deprecated features
 - All wavelet functions have been deprecated, as PyWavelets provides suitable
   implementations; affected functions are: ``signal.{daub, qmf, cascade,
   morlet, morlet2, ricker, cwt}``
-- `scipy.integrate.trapz`, `scipy.integrate.cumtrapz`, and `scipy.integrate.simps` have
+- ``scipy.integrate.trapz``, ``scipy.integrate.cumtrapz``, and ``scipy.integrate.simps`` have
   been deprecated in favour of `scipy.integrate.trapezoid`, `scipy.integrate.cumulative_trapezoid`,
-  and `scipy.integrate.simpson` and will be removed in SciPy 1.14.
+  and `scipy.integrate.simpson` respectively and will be removed in SciPy 1.14.
 - The deprecation of the ``tol`` argument of ``scipy.sparse.linalg.{gcrotmk,lgmres,minres,tfqmr}``
   is now consistent with the other iterative solvers and will be removed in SciPy 1.14
   in favour of ``rtol``. Further, the default value of ``atol`` for these functions is due
@@ -292,8 +292,8 @@ The following previously deprecated features are affected:
 - The ``centered`` keyword of `scipy.stats.qmc.LatinHypercube` has been removed.
   Use ``scrambled=False`` instead of ``centered=True``.
 - ``scipy.stats.binom_test`` has been removed in favour of `scipy.stats.binomtest`.
-- The use of ``scale='raw'`` has been removed in favour of ``'scale=1'`` in
-  `scipy.stats.iqr`.
+- In `scipy.stats.iqr`, the use of ``scale='raw'`` has been removed in favour 
+  of ``scale=1``.
 
 
 ******************************
