@@ -3783,11 +3783,6 @@ def mood(x, y, axis=0, alternative="two-sided"):
     x = np.asarray(x, dtype=float)
     y = np.asarray(y, dtype=float)
 
-    if axis is None:
-        x = x.flatten()
-        y = y.flatten()
-        axis = 0
-
     if axis < 0:
         axis = x.ndim + axis
 
@@ -4226,6 +4221,7 @@ MedianTestResult = _make_tuple_bunch(
     'MedianTestResult',
     ['statistic', 'pvalue', 'median', 'table'], []
 )
+
 
 def median_test(*samples, ties='below', correction=True, lambda_=1,
                 nan_policy='propagate'):
