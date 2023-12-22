@@ -2949,8 +2949,10 @@ def factorial(n, exact=False):
             return 0
         elif exact and np.issubdtype(type(n), np.integer):
             return math.factorial(n)
-        # we do not raise for non-integers with exact=True due to
-        # historical reasons, though deprecation would be possible
+        elif exact:
+            msg = ("Non-integer values of `n` together with `exact=True` are "
+                   "deprecated. Either ensure integer `n` or use `exact=False`.")
+            warnings.warn(msg, DeprecationWarning, stacklevel=2)
         return _ufuncs._factorial(n)
 
     # arrays & array-likes
@@ -2965,26 +2967,13 @@ def factorial(n, exact=False):
             "Permitted data types are integers and floating point numbers"
         )
     if exact and not np.issubdtype(n.dtype, np.integer):
-        # legacy behaviour is to support mixed integers/NaNs;
-        # deprecate this for exact=True
-        n_flt = n[~np.isnan(n)]
-        if np.allclose(n_flt, n_flt.astype(np.int64)):
-            warnings.warn(
-                "Non-integer arrays (e.g. due to presence of NaNs) "
-                "together with exact=True are deprecated. Either ensure "
-                "that the the array has integer dtype or use exact=False.",
-                DeprecationWarning,
-                stacklevel=2
-            )
-        else:
-            msg = ("factorial with exact=True does not "
-                   "support non-integral arrays")
-            raise ValueError(msg)
+        msg = ("factorial with `exact=True` does not "
+               "support non-integral arrays")
+        raise ValueError(msg)
 
     if exact:
         return _exact_factorialx_array(n)
-    # we do not raise for non-integers with exact=True due to
-    # historical reasons, though deprecation would be possible
+    # exact=False case
     res = _ufuncs._factorial(n)
     if isinstance(n, np.ndarray):
         # _ufuncs._factorial does not maintain 0-dim arrays
