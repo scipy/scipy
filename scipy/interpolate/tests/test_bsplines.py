@@ -10,7 +10,7 @@ import pytest
 from scipy.interpolate import (
         BSpline, BPoly, PPoly, make_interp_spline, make_lsq_spline, _bspl,
         splev, splrep, splprep, splder, splantider, sproot, splint, insert,
-        CubicSpline, NdBSpline, make_smoothing_spline
+        CubicSpline, NdBSpline, make_smoothing_spline, RegularGridInterpolator,
 )
 import scipy.linalg as sl
 
@@ -1566,10 +1566,10 @@ class TestSmoothingSpline:
         with assert_raises(ValueError):
             make_smoothing_spline(x_dupl, y)
 
-        # x and y length must be larger than 5
+        # x and y length must be >= 5
         x = np.arange(4)
         y = np.ones(4)
-        exception_message = "``x`` and ``y`` length must be larger than 5"
+        exception_message = "``x`` and ``y`` length must be at least 5"
         with pytest.raises(ValueError, match=exception_message):
             make_smoothing_spline(x, y)
 
@@ -1944,6 +1944,26 @@ class TestNdBSpline:
         assert_allclose(bspl2(xi),
                         [bspl2_0(xp) for xp in xi], atol=1e-14)
 
+    def test_tx_neq_ty(self):
+        # 2D separable spline w/ len(tx) != len(ty)
+        x = np.arange(6)
+        y = np.arange(7) + 1.5
+
+        spl_x = make_interp_spline(x, x**3, k=3)
+        spl_y = make_interp_spline(y, y**2 + 2*y, k=3)
+        cc = spl_x.c[:, None] * spl_y.c[None, :]
+        bspl = NdBSpline((spl_x.t, spl_y.t), cc, (spl_x.k, spl_y.k))
+
+        values = (x**3)[:, None] * (y**2 + 2*y)[None, :]
+        rgi = RegularGridInterpolator((x, y), values)
+
+        xi = [(a, b) for a, b in itertools.product(x, y)]
+        bxi = bspl(xi)
+
+        assert not np.isnan(bxi).any()
+        assert_allclose(bxi, rgi(xi), atol=1e-14)
+        assert_allclose(bxi.reshape(values.shape), values, atol=1e-14)
+
     def make_3d_case(self):
         # make a 3D separable spline
         x = np.arange(6)
@@ -2127,7 +2147,6 @@ class TestNdBSpline:
 
         assert_allclose(bspl2(xi),
                         [bspl2_0(xp) for xp in xi], atol=1e-14)
-
 
     def test_readonly(self):
         t3, c3, k = self.make_3d_case()

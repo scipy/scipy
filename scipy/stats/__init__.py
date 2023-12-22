@@ -207,6 +207,7 @@ Discrete distributions
 
    bernoulli                -- Bernoulli
    betabinom                -- Beta-Binomial
+   betanbinom               -- Beta-Negative Binomial
    binom                    -- Binomial
    boltzmann                -- Boltzmann (Truncated Discrete Exponential)
    dlaplace                 -- Discrete Laplacian
@@ -597,7 +598,7 @@ Result classes used in :mod:`scipy.stats`
 
    stats._result_classes
 
-"""
+"""  # noqa: E501
 
 from ._warnings_errors import (ConstantInputWarning, NearConstantInputWarning,
                                DegenerateDataWarning, FitError)
@@ -614,7 +615,7 @@ from . import qmc
 from ._multivariate import *
 from . import contingency
 from .contingency import chi2_contingency
-from ._censored_data import CensoredData  # noqa
+from ._censored_data import CensoredData
 from ._resampling import (bootstrap, monte_carlo_test, permutation_test,
                           MonteCarloMethod, PermutationMethod, BootstrapMethod)
 from ._entropy import *

@@ -1,7 +1,6 @@
 """Indexing mixin for sparse array/matrix classes.
 """
 import numpy as np
-from warnings import warn
 from ._sputils import isintlike
 
 INT_TYPES = (int, np.integer)
@@ -322,28 +321,12 @@ def _check_ellipsis(index):
     if not ellipsis_indices:
         return index
     if len(ellipsis_indices) > 1:
-        warn('multi-Ellipsis indexing is deprecated will be removed in v1.13.',
-             DeprecationWarning, stacklevel=2)
-    first_ellipsis = ellipsis_indices[0]
+        raise IndexError("an index can only have a single ellipsis ('...')")
 
-    # Try to expand it using shortcuts for common cases
-    if len(index) == 1:
-        return (slice(None), slice(None))
-    if len(index) == 2:
-        if first_ellipsis == 0:
-            if index[1] is Ellipsis:
-                return (slice(None), slice(None))
-            return (slice(None), index[1])
-        return (index[0], slice(None))
-
-    # Expand it using a general-purpose algorithm
-    tail = []
-    for v in index[first_ellipsis+1:]:
-        if v is not Ellipsis:
-            tail.append(v)
-    nd = first_ellipsis + len(tail)
-    nslice = max(0, 2 - nd)
-    return index[:first_ellipsis] + (slice(None),)*nslice + tuple(tail)
+    # Replace the Ellipsis object with 0, 1, or 2 null-slices as needed.
+    i, = ellipsis_indices
+    num_slices = max(0, 3 - len(index))
+    return index[:i] + (slice(None),) * num_slices + index[i + 1:]
 
 
 def _maybe_bool_ndarray(idx):

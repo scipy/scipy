@@ -65,7 +65,7 @@ def check_random_state(seed=None):
 
     Parameters
     ----------
-    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional  # noqa
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is an int or None, a new `numpy.random.Generator` is
         created using ``np.random.default_rng(seed)``.
         If `seed` is already a ``Generator`` or ``RandomState`` instance, then
@@ -780,6 +780,7 @@ def van_der_corput(
         else:
             permutations = np.asarray(permutations)
 
+        permutations = permutations.astype(np.int64)
         return _cy_van_der_corput_scrambled(n, base, start_index,
                                             permutations, workers)
 
@@ -2315,7 +2316,7 @@ class MultivariateNormalQMC:
         if self._inv_transform:
             # apply inverse transform
             # (values to close to 0/1 result in inf values)
-            return stats.norm.ppf(0.5 + (1 - 1e-10) * (samples - 0.5))  # type: ignore[attr-defined]
+            return stats.norm.ppf(0.5 + (1 - 1e-10) * (samples - 0.5))  # type: ignore[attr-defined]  # noqa: E501
         else:
             # apply Box-Muller transform (note: indexes starting from 1)
             even = np.arange(0, samples.shape[-1], 2)
@@ -2416,7 +2417,7 @@ class MultinomialQMC:
             base_draws = self.engine.random(self.n_trials).ravel()
             p_cumulative = np.empty_like(self.pvals, dtype=float)
             _fill_p_cumulative(np.array(self.pvals, dtype=float), p_cumulative)
-            sample_ = np.zeros_like(self.pvals, dtype=int)
+            sample_ = np.zeros_like(self.pvals, dtype=np.intp)
             _categorize(base_draws, p_cumulative, sample_)
             sample[i] = sample_
         return sample

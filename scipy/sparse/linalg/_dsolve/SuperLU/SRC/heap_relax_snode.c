@@ -56,7 +56,9 @@ heap_relax_snode (
     register int i, j, k, l, parent;
     register int snode_start;	/* beginning of a snode */
     int *et_save, *post, *inv_post, *iwork;
+#if ( PRNTlevel>=1 )
     int nsuper_et = 0, nsuper_et_post = 0;
+#endif
 
     /* The etree may not be postordered, but is heap ordered. */
 
@@ -94,7 +96,9 @@ heap_relax_snode (
 	    parent = et[j];
 	}
 	/* Found a supernode in postordered etree; j is the last column. */
+#if ( PRNTlevel>=1 )
 	++nsuper_et_post;
+#endif
 	k = n;
 	for (i = snode_start; i <= j; ++i)
 	    k = SUPERLU_MIN(k, inv_post[i]);
@@ -102,13 +106,17 @@ heap_relax_snode (
 	if ( (l - k) == (j - snode_start) ) {
 	    /* It's also a supernode in the original etree */
 	    relax_end[k] = l;		/* Last column is recorded */
+#if ( PRNTlevel>=1 )
 	    ++nsuper_et;
+#endif
 	} else {
 	    for (i = snode_start; i <= j; ++i) {
 	        l = inv_post[i];
 	        if ( descendants[i] == 0 ) {
 		    relax_end[l] = l;
+#if ( PRNTlevel>=1 )
 		    ++nsuper_et;
+#endif
 		}
 	    }
 	}

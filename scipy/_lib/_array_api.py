@@ -12,10 +12,13 @@ import os
 import warnings
 
 import numpy as np
-from numpy.testing import assert_
-import scipy._lib.array_api_compat.array_api_compat as array_api_compat
-from scipy._lib.array_api_compat.array_api_compat import size
-import scipy._lib.array_api_compat.array_api_compat.numpy as array_api_compat_numpy
+
+from scipy._lib import array_api_compat
+from scipy._lib.array_api_compat import (
+    is_array_api_obj,
+    size,
+    numpy as np_compat,
+)
 
 __all__ = ['array_namespace', 'as_xparray', 'size']
 
@@ -35,29 +38,37 @@ def compliance_scipy(arrays):
     """Raise exceptions on known-bad subclasses.
 
     The following subclasses are not supported and raise and error:
-    - `np.ma.MaskedArray`
+    - `numpy.ma.MaskedArray`
     - `numpy.matrix`
-    - Any array-like which is not Array API compatible or coercible by numpy
-    - object arrays
+    - NumPy arrays which do not have a boolean or numerical dtype
+    - Any array-like which is neither array API compatible nor coercible by NumPy
+    - Any array-like which is coerced by NumPy to an unsupported dtype
     """
     for i in range(len(arrays)):
         array = arrays[i]
         if isinstance(array, np.ma.MaskedArray):
-            raise TypeError("'numpy.ma.MaskedArray' are not supported")
+            raise TypeError("Inputs of type `numpy.ma.MaskedArray` are not supported.")
         elif isinstance(array, np.matrix):
-            raise TypeError("'numpy.matrix' are not supported")
-        elif not array_api_compat.is_array_api_obj(array):
+            raise TypeError("Inputs of type `numpy.matrix` are not supported.")
+        if isinstance(array, (np.ndarray, np.generic)):
+            dtype = array.dtype
+            if not (np.issubdtype(dtype, np.number) or np.issubdtype(dtype, np.bool_)):
+                raise TypeError(f"An argument has dtype `{dtype!r}`; "
+                                f"only boolean and numerical dtypes are supported.")
+        elif not is_array_api_obj(array):
             try:
                 array = np.asanyarray(array)
             except TypeError:
-                raise TypeError("Array is not Array API compatible or "
-                                "coercible by numpy")
-            if array.dtype is np.dtype('O'):
-                raise TypeError("An argument was coerced to an object array, "
-                                "but object arrays are not supported.")
+                raise TypeError("An argument is neither array API compatible nor "
+                                "coercible by NumPy.")
+            dtype = array.dtype
+            if not (np.issubdtype(dtype, np.number) or np.issubdtype(dtype, np.bool_)):
+                message = (
+                    f"An argument was coerced to an unsupported dtype `{dtype!r}`; "
+                    f"only boolean and numerical dtypes are supported."
+                )
+                raise TypeError(message)
             arrays[i] = array
-        elif array.dtype is np.dtype('O'):
-            raise TypeError('object arrays are not supported')
     return arrays
 
 
@@ -99,7 +110,7 @@ def array_namespace(*arrays):
     """
     if not _GLOBAL_CONFIG["SCIPY_ARRAY_API"]:
         # here we could wrap the namespace if needed
-        return array_api_compat_numpy
+        return np_compat
 
     arrays = [array for array in arrays if array is not None]
 
@@ -123,7 +134,7 @@ def as_xparray(
     """
     if xp is None:
         xp = array_namespace(array)
-    if xp.__name__ in {"numpy", "scipy._lib.array_api_compat.array_api_compat.numpy"}:
+    if xp.__name__ in {"numpy", "scipy._lib.array_api_compat.numpy"}:
         # Use NumPy API to support order
         if copy is True:
             array = np.array(array, order=order, dtype=dtype)
@@ -185,15 +196,15 @@ def copy(x, *, xp=None):
 
 
 def is_numpy(xp):
-    return xp.__name__ == 'scipy._lib.array_api_compat.array_api_compat.numpy'
+    return xp.__name__ == 'scipy._lib.array_api_compat.numpy'
 
 
 def is_cupy(xp):
-    return xp.__name__ == 'scipy._lib.array_api_compat.array_api_compat.cupy'
+    return xp.__name__ == 'scipy._lib.array_api_compat.cupy'
 
 
 def is_torch(xp):
-    return xp.__name__ == 'scipy._lib.array_api_compat.array_api_compat.torch'
+    return xp.__name__ == 'scipy._lib.array_api_compat.torch'
 
 
 def _strict_check(actual, desired, xp,
@@ -204,16 +215,12 @@ def _strict_check(actual, desired, xp,
     desired = xp.asarray(desired)
 
     if check_dtype:
-        assert_(actual.dtype == desired.dtype,
-                "dtypes do not match.\n"
-                f"Actual: {actual.dtype}\n"
-                f"Desired: {desired.dtype}")
+        _msg = "dtypes do not match.\nActual: {actual.dtype}\nDesired: {desired.dtype}"
+        assert actual.dtype == desired.dtype, _msg
 
     if check_shape:
-        assert_(actual.shape == desired.shape,
-                "Shapes do not match.\n"
-                f"Actual: {actual.shape}\n"
-                f"Desired: {desired.shape}")
+        _msg = "Shapes do not match.\nActual: {actual.shape}\nDesired: {desired.shape}"
+        assert actual.shape == desired.shape, _msg
         _check_scalar(actual, desired, xp)
 
     desired = xp.broadcast_to(desired, actual.shape)
@@ -225,10 +232,10 @@ def _assert_matching_namespace(actual, desired):
     desired_space = array_namespace(desired)
     for arr in actual:
         arr_space = array_namespace(arr)
-        assert_(arr_space == desired_space,
-                "Namespaces do not match.\n"
+        _msg = (f"Namespaces do not match.\n"
                 f"Actual: {arr_space.__name__}\n"
                 f"Desired: {desired_space.__name__}")
+        assert arr_space == desired_space, _msg
 
 
 def _check_scalar(actual, desired, xp):
@@ -250,11 +257,9 @@ def _check_scalar(actual, desired, xp):
     # the type of `desired[()]`. If the developer wants to override this
     # behavior, they can set `check_shape=False`.
     desired = desired[()]
-    assert_((xp.isscalar(actual) and xp.isscalar(desired)
-             or (not xp.isscalar(actual) and not xp.isscalar(desired))),
-            "Types do not match:\n"
-            f"Actual: {type(actual)}\n"
-            f"Desired: {type(desired)}")
+    _msg = f"Types do not match:\n Actual: {type(actual)}\n Desired: {type(desired)}"
+    assert (xp.isscalar(actual) and xp.isscalar(desired)
+            or (not xp.isscalar(actual) and not xp.isscalar(desired))), _msg
 
 
 def xp_assert_equal(actual, desired, check_namespace=True, check_dtype=True,

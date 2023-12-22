@@ -1,5 +1,5 @@
 from os.path import join, dirname
-from typing import Callable, Dict, Tuple, Union, Type
+from typing import Callable, Union
 
 import numpy as np
 from numpy.testing import (
@@ -195,8 +195,8 @@ def test_complex(transform, dtype):
     assert_array_almost_equal(x, y)
 
 
-DecMapType = Dict[
-    Tuple[Callable[..., np.ndarray], Union[Type[np.floating], Type[int]], int],
+DecMapType = dict[
+    tuple[Callable[..., np.ndarray], Union[type[np.floating], type[int]], int],
     int,
 ]
 

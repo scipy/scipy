@@ -240,7 +240,7 @@ def lobpcg(
     Notes
     -----
     The iterative loop runs ``maxit=maxiter`` (20 if ``maxit=None``)
-    iterations at most and finishes earler if the tolerance is met.
+    iterations at most and finishes earlier if the tolerance is met.
     Breaking backward compatibility with the previous version, LOBPCG
     now returns the block of iterative vectors with the best accuracy rather
     than the last one iterated, as a cure for possible divergence.
@@ -380,7 +380,7 @@ def lobpcg(
 
     The traditional callable `LinearOperator` is no longer
     necessary but still supported as the input to `lobpcg`.
-    Specifying ``matmat=A_matmat`` explicitely improves performance. 
+    Specifying ``matmat=A_matmat`` explicitly improves performance. 
 
     >>> A_lo = LinearOperator((n, n), matvec=A_matmat, matmat=A_matmat, dtype=np.int16)
     >>> eigenvalues, _ = lobpcg(A_lo, X, maxiter=80)
@@ -826,7 +826,7 @@ def lobpcg(
             # Once explicitGramFlag, forever explicitGramFlag.
             explicitGramFlag = True
 
-        # Shared memory assingments to simplify the code
+        # Shared memory assignments to simplify the code
         if B is None:
             blockVectorBX = blockVectorX
             activeBlockVectorBR = activeBlockVectorR

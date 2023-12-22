@@ -1477,10 +1477,10 @@ class KrylovJacobian(Jacobian):
         return r
 
     def solve(self, rhs, tol=0):
-        if 'tol' in self.method_kw:
+        if 'rtol' in self.method_kw:
             sol, info = self.method(self.op, rhs, **self.method_kw)
         else:
-            sol, info = self.method(self.op, rhs, tol=tol, **self.method_kw)
+            sol, info = self.method(self.op, rhs, rtol=tol, **self.method_kw)
         return sol
 
     def update(self, x, f):

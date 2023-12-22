@@ -107,12 +107,25 @@ class _data_matrix(_spbase):
 
         Parameters
         ----------
-        n : n is a scalar
+        n : scalar
+            n is a non-zero scalar (nonzero avoids dense ones creation)
+            If zero power is desired, special case it to use `np.ones`
 
         dtype : If dtype is not specified, the current dtype will be preserved.
+
+        Raises
+        ------
+        NotImplementedError : if n is a zero scalar
+            If zero power is desired, special case it to use
+            `np.ones(A.shape, dtype=A.dtype)`
         """
         if not isscalarlike(n):
             raise NotImplementedError("input is not scalar")
+        if not n:
+            raise NotImplementedError(
+                "zero power is not supported as it would densify the matrix.\n"
+                "Use `np.ones(A.shape, dtype=A.dtype)` for this case."
+            )
 
         data = self._deduped_data()
         if dtype is not None:
@@ -136,8 +149,8 @@ for npfunc in _ufuncs_with_fixed_point_at_zero:
             result = op(self._deduped_data())
             return self._with_data(result, copy=True)
 
-        method.__doc__ = ("Element-wise {}.\n\n"
-                          "See `numpy.{}` for more information.".format(name, name))
+        method.__doc__ = (f"Element-wise {name}.\n\n"
+                          f"See `numpy.{name}` for more information.")
         method.__name__ = name
 
         return method

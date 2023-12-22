@@ -6,7 +6,6 @@
 
 # cython: cpow=True
 
-# distutils: language = c++
 
 import numpy as np
 import scipy.sparse
@@ -555,7 +554,8 @@ cdef class cKDTree:
         data = np.array(data, order='C', copy=copy_data, dtype=np.float64)
 
         if data.ndim != 2:
-            raise ValueError("data must be 2 dimensions")
+            raise ValueError("data must be of shape (n, m), where there are"
+                             "n points of dimension m")
 
         if not np.isfinite(data).all():
             raise ValueError("data must be finite, check for nan or inf values")

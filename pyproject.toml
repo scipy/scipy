@@ -10,8 +10,8 @@
 [build-system]
 build-backend = 'mesonpy'
 requires = [
-    "meson-python>=0.14.0",
-    "Cython>=0.29.35",  # when updating version, also update check in meson.build
+    "meson-python>=0.15.0",
+    "Cython>=3.0.4",  # when updating version, also update check in meson.build
     "pybind11>=2.10.4",
     "pythran>=0.14.0",
 
@@ -23,16 +23,23 @@ requires = [
     # default numpy requirements
     "numpy==1.22.4; python_version<='3.10' and platform_python_implementation != 'PyPy'",
     "numpy==1.23.2; python_version=='3.11' and platform_python_implementation != 'PyPy'",
+    "numpy>=1.26.0,<1.27; python_version=='3.12'",
+
+    # PyPy requirements; 1.25.0 was the first version to have pypy-3.9 wheels,
+    # and 1.25.0 also changed the C API target to 1.19.x, so no longer a need
+    # for an exact pin.
+    "numpy>=1.25.0; python_version>='3.9' and platform_python_implementation=='PyPy'",
+
     # For Python versions which aren't yet officially supported, we specify an
     # unpinned NumPy which allows source distributions to be used and allows
     # wheels to be used as soon as they become available.
-    "numpy>=1.26.0b1; python_version>='3.12'",
-    "numpy; python_version>='3.9' and platform_python_implementation=='PyPy'",
+    # Python 3.13 has known issues that are only fixed in numpy 2.0.0.dev0
+    "numpy>=2.0.0.dev0; python_version>='3.13'",
 ]
 
 [project]
 name = "SciPy"
-version = "1.12.0.dev0"
+version = "1.13.0.dev0"
 # TODO: add `license-files` once PEP 639 is accepted (see meson-python#88)
 #       at that point, no longer include them in `py3.install_sources()`
 license = {file = "LICENSE.txt"}

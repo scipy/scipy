@@ -44,8 +44,7 @@ class TestFirwin:
         for freq, expected in expected_response:
             actual = abs(np.sum(h*np.exp(-1.j*np.pi*m*freq)))
             mse = abs(actual-expected)**2
-            assert_(mse < tol, 'response not as expected, mse=%g > %g'
-               % (mse, tol))
+            assert_(mse < tol, f'response not as expected, mse={mse:g} > {tol:g}')
 
     def test_response(self):
         N = 51
@@ -136,7 +135,8 @@ class TestFirWinMore:
         # Check the symmetry of taps.
         assert_array_almost_equal(taps[:ntaps//2], taps[ntaps:ntaps-ntaps//2-1:-1])
 
-        # Check the gain at a few samples where we know it should be approximately 0 or 1.
+        # Check the gain at a few samples where
+        # we know it should be approximately 0 or 1.
         freq_samples = np.array([0.0, 0.25, 0.5-width/2, 0.5+width/2, 0.75, 1.0])
         freqs, response = freqz(taps, worN=np.pi*freq_samples)
         assert_array_almost_equal(np.abs(response),
@@ -158,7 +158,8 @@ class TestFirWinMore:
         # Check the symmetry of taps.
         assert_array_almost_equal(taps[:ntaps//2], taps[ntaps:ntaps-ntaps//2-1:-1])
 
-        # Check the gain at a few samples where we know it should be approximately 0 or 1.
+        # Check the gain at a few samples where
+        # we know it should be approximately 0 or 1.
         freq_samples = np.array([0.0, 0.25, 0.5-width/2, 0.5+width/2, 0.75, 1.0])
         freqs, response = freqz(taps, worN=np.pi*freq_samples)
         assert_array_almost_equal(np.abs(response),
@@ -176,7 +177,8 @@ class TestFirWinMore:
         # Check the symmetry of taps.
         assert_array_almost_equal(taps[:ntaps//2], taps[ntaps:ntaps-ntaps//2-1:-1])
 
-        # Check the gain at a few samples where we know it should be approximately 0 or 1.
+        # Check the gain at a few samples where
+        # we know it should be approximately 0 or 1.
         freq_samples = np.array([0.0, 0.2, 0.3-width/2, 0.3+width/2, 0.5,
                                 0.7-width/2, 0.7+width/2, 0.8, 1.0])
         freqs, response = freqz(taps, worN=np.pi*freq_samples)
@@ -196,7 +198,8 @@ class TestFirWinMore:
         # Check the symmetry of taps.
         assert_array_almost_equal(taps[:ntaps//2], taps[ntaps:ntaps-ntaps//2-1:-1])
 
-        # Check the gain at a few samples where we know it should be approximately 0 or 1.
+        # Check the gain at a few samples where
+        # we know it should be approximately 0 or 1.
         freq_samples = np.array([0.0, 0.1, 0.2-width/2, 0.2+width/2, 0.35,
                                 0.5-width/2, 0.5+width/2, 0.65,
                                 0.8-width/2, 0.8+width/2, 0.9, 1.0])
@@ -220,7 +223,8 @@ class TestFirWinMore:
         # Check the symmetry of taps.
         assert_array_almost_equal(taps[:ntaps//2], taps[ntaps:ntaps-ntaps//2-1:-1])
 
-        # Check the gain at a few samples where we know it should be approximately 0 or 1.
+        # Check the gain at a few samples where
+        # we know it should be approximately 0 or 1.
         freq_samples = np.array([0.0, 200, 300-width/2, 300+width/2, 500,
                                 700-width/2, 700+width/2, 800, 1000])
         freqs, response = freqz(taps, worN=np.pi*freq_samples/nyquist)

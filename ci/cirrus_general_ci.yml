@@ -19,6 +19,9 @@ modified_clone: &MODIFIED_CLONE
       # However, if you do a PR against a maintenance branch we will want to
       # merge the PR into the maintenance branch, not main
       git checkout $CIRRUS_BASE_BRANCH
+    
+      # visualise the last 10 commits to aid git clone debugging.
+      git log -n10 --oneline
 
       # alpine git package needs default user.name and user.email to be set before a merge
       git -c user.email="you@example.com" merge --no-commit pull/$CIRRUS_PR
@@ -66,7 +69,7 @@ linux_aarch64_test_task:
     echo "PATH=$PATH" >> $CIRRUS_ENV
     echo "CCACHE_DIR=$PWD/.ccache" >> $CIRRUS_ENV
 
-    python -m pip install meson ninja numpy cython pybind11 pythran cython
+    python -m pip install meson ninja numpy cython pybind11 pythran
     python -m pip install click rich_click doit pydevtool
     python -m pip install pytest pooch pytest-xdist hypothesis
     
@@ -126,7 +129,7 @@ macos_arm64_test_task:
     source test_env/bin/activate
     cd $_CWD
 
-    python -m pip install meson ninja numpy cython pybind11 pythran cython
+    python -m pip install meson ninja numpy cython pybind11 pythran
     python -m pip install click rich_click doit pydevtool
     python -m pip install pytest pooch pytest-xdist hypothesis
     
