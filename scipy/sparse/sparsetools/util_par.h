@@ -35,7 +35,7 @@ using poolstl::for_each_chunk;
  * Enable/disable parallelism for non-matmul, non-binops.
  * Use to test library size / performance tradeoff.
  */
-#define PARALLEL_OTHERS 0
+#define PARALLEL_OTHERS 1
 
 class worker_pool {
 private:
@@ -97,11 +97,14 @@ public:
 
     /**
      * Decide if the estimated number of operations justifies running in parallel.
+     * A light operation is one that performs very little work at each memory location,
+     * making it dominated by memory bandwidth rather than processing power. Such
+     * operations need larger operands for parallelism to pay off.
      */
     template <class I>
-    bool decide_if_par(I estimated_flops) {
+    bool decide_if_par(I estimated_flops, bool light) {
         return par_threshold > 0
-               && (estimated_flops >= par_threshold)
+               && ((estimated_flops / (light ? 20 : 1)) >= par_threshold)
                && num_workers != 1;
     }
 
@@ -116,7 +119,12 @@ public:
 
     template <class I>
     poolstl::execution::parallel_policy par_if_flops(I estimated_flops) {
-        return par_if(decide_if_par(estimated_flops));
+        return par_if(decide_if_par(estimated_flops, false));
+    }
+
+    template <class I>
+    poolstl::execution::parallel_policy par_if_mem(I estimated_flops) {
+        return par_if(decide_if_par(estimated_flops, true));
     }
 #else
     poolstl::execution::pure_threads_policy par_if(bool call_par) {
@@ -125,7 +133,12 @@ public:
 
     template <class I>
     poolstl::execution::pure_threads_policy par_if_flops(I estimated_flops) {
-        return par_if(decide_if_par(estimated_flops));
+        return par_if(decide_if_par(estimated_flops, false));
+    }
+
+    template <class I>
+    poolstl::execution::pure_threads_policy par_if_mem(I estimated_flops) {
+        return par_if(decide_if_par(estimated_flops, true));
     }
 #endif
 };

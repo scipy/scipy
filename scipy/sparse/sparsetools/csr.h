@@ -142,7 +142,7 @@ void csr_scale_columns(const I n_row,
     const I nnz = Ap[n_row];
     std::for_each(
 #if PARALLEL_OTHERS
-                  workers.par_if_flops(nnz),
+                  workers.par_if_mem(nnz),
 #endif
                   iota_iter<I>(0), iota_iter<I>(nnz), [&](I i){
         Ax[i] *= Xx[Aj[i]];
@@ -315,7 +315,7 @@ bool csr_has_sorted_indices(const I n_row,
                             const I Aj[])
 {
 #if PARALLEL_OTHERS
-    return std::all_of(workers.par_if_flops(Ap[n_row]),
+    return std::all_of(workers.par_if_mem(Ap[n_row]),
                        iota_iter<I>(0), iota_iter<I>(n_row), [&](I i){
         for(I jj = Ap[i]; jj < Ap[i+1] - 1; jj++){
             if(Aj[jj] > Aj[jj+1]){
@@ -355,8 +355,8 @@ bool csr_has_canonical_format(const I n_row,
                               const I Ap[],
                               const I Aj[])
 {
-#if PARALLEL_OTHERS
-    return std::all_of(workers.par_if_flops(Ap[n_row]),
+#if PARALLEL_OTHERS || PARALLEL_BINOP
+    return std::all_of(workers.par_if_mem(Ap[n_row]),
                        iota_iter<I>(0), iota_iter<I>(n_row), [&](I i){
         if (Ap[i] > Ap[i+1])
             return false;
@@ -952,7 +952,7 @@ void csr_binop_csr_canonical_pattern(const I n_row, const I n_col,
  *           Cx will not contain any zero entries
  *
  */
-template <class I, class T, class T2, class binary_op>
+template <bool parallel, class I, class T, class T2, class binary_op>
 void csr_binop_csr_canonical(const I n_row, const I n_col,
                              const I Ap[], const I Aj[], const T Ax[],
                              const I Bp[], const I Bj[], const T Bx[],
@@ -960,25 +960,28 @@ void csr_binop_csr_canonical(const I n_row, const I n_col,
                              const binary_op& op)
 {
     //Method that works for canonical CSR matrices
-#if PARALLEL_BINOP
-    if (workers.decide_if_par(Ap[n_row] + Bp[n_row])) {
-        // Operands large enough to justify parallel version.
 
-        // Phase 1: Compute Cp. First compute the row nnz, in parallel.
-        std::fill(Cp, Cp + n_row + 1, 0);
-        csr_binop_csr_canonical_pattern(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op, 1);
+    if constexpr (PARALLEL_BINOP && parallel) {
+        // Binop is dominated by memory bandwidth. Operands must be very large
+        // for parallelism to be beneficial.
+        if (workers.decide_if_par(Ap[n_row] + Bp[n_row], true)) {
+            // Phase 1: Compute Cp. First compute the row nnz, in parallel.
+            std::fill(Cp, Cp + n_row + 1, 0);
+            csr_binop_csr_canonical_pattern(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op, 1);
 
-        // Cp is a cumsum of row nnz.
-        exclusive_scan(Cp, Cp + n_row + 1, Cp, 0);
+            // Cp is a cumsum of row nnz.
+            exclusive_scan(Cp, Cp + n_row + 1, Cp, 0);
 
-        // Phase 2: Compute column indices and values, in parallel.
-        csr_binop_csr_canonical_pattern(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op, 2);
-    } else
-#endif
-    {
-        // Sequential. Single pass.
-        csr_binop_csr_canonical_pattern(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op, 0);
+            // Phase 2: Compute column indices and values, in parallel.
+            csr_binop_csr_canonical_pattern(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op, 2);
+
+            return;
+        }
     }
+
+    // Sequential. Single pass.
+    // Called if matrices are small or parallelism not enabled for this binop.
+    csr_binop_csr_canonical_pattern(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op, 0);
 }
 
 
@@ -1013,7 +1016,7 @@ void csr_binop_csr_canonical(const I n_row, const I n_col,
  *           Cx will not contain any zero entries
  *
  */
-template <class I, class T, class T2, class binary_op>
+template <bool parallel=false, class I, class T, class T2, class binary_op>
 void csr_binop_csr(const I n_row,
                    const I n_col,
                    const I Ap[],
@@ -1028,7 +1031,7 @@ void csr_binop_csr(const I n_row,
                    const binary_op& op)
 {
     if (csr_has_canonical_format(n_row,Ap,Aj) && csr_has_canonical_format(n_row,Bp,Bj))
-        csr_binop_csr_canonical(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op);
+        csr_binop_csr_canonical<parallel>(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op);
     else
         csr_binop_csr_general(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op);
 }
@@ -1085,7 +1088,7 @@ void csr_elmul_csr(const I n_row, const I n_col,
                    const I Bp[], const I Bj[], const T Bx[],
                          I Cp[],       I Cj[],       T Cx[])
 {
-    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::multiplies<T>());
+    csr_binop_csr<true>(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::multiplies<T>());
 }
 
 template <class I, class T>
@@ -1104,7 +1107,7 @@ void csr_plus_csr(const I n_row, const I n_col,
                   const I Bp[], const I Bj[], const T Bx[],
                         I Cp[],       I Cj[],       T Cx[])
 {
-    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::plus<T>());
+    csr_binop_csr<true>(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::plus<T>());
 }
 
 template <class I, class T>
@@ -1113,7 +1116,7 @@ void csr_minus_csr(const I n_row, const I n_col,
                    const I Bp[], const I Bj[], const T Bx[],
                          I Cp[],       I Cj[],       T Cx[])
 {
-    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::minus<T>());
+    csr_binop_csr<true>(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::minus<T>());
 }
 
 template <class I, class T>
