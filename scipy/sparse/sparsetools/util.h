@@ -21,6 +21,52 @@ struct safe_divides {
     typedef T result_type;
 };
 
+/*
+ * Operator that implements multiple binops to be chosen at runtime.
+ * Allows building one copy of the large binop methods to be reused for several
+ * operands. Significantly speeds up compilation time and reduces library size.
+ * Binops are memory-bound operations, so the performance impact is negligible.
+ */
+template <class T>
+struct multi_op {
+    enum op_choice {MULTIPLY, DIVIDE, MAXIMUM, MINIMUM};
+    explicit multi_op(op_choice which): which(which) {}
+
+    T operator()(const T& a, const T& b) const {
+        switch (which) {
+        case MULTIPLY: return (a * b);
+        case DIVIDE: return safe_divides<T>()(a, b);
+        case MAXIMUM: return std::max<T>(a, b);
+        case MINIMUM: return std::min<T>(a, b);
+        }
+    }
+
+protected:
+    const op_choice which;
+};
+
+/*
+ * Comparator version of multi_op.
+ */
+template <class T>
+struct multi_op_bool {
+    enum op_choice {NOT_EQUAL_TO, LESS, GREATER, LESS_EQ, GREATER_EQ};
+    explicit multi_op_bool(op_choice which): which(which) {}
+
+    bool operator()(const T& a, const T& b) const {
+        switch (which) {
+        case NOT_EQUAL_TO: return (a != b);
+        case GREATER: return (a > b);
+        case LESS: return (a < b);
+        case GREATER_EQ: return (a >= b);
+        case LESS_EQ: return (a <= b);
+        }
+    }
+
+protected:
+    const op_choice which;
+};
+
 #define OVERRIDE_safe_divides(typ) \
     template<> inline typ safe_divides<typ>::operator()(const typ& x, const typ& y) const { return x/y; }
 
