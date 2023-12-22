@@ -2296,15 +2296,18 @@ class TestFactorialFunctions:
         # assert_equal does not distinguish scalars and 0-dim arrays of the same value,
         # see https://github.com/numpy/numpy/issues/24050
         def assert_really_equal(x, y):
-            assert type(x) == type(y), f"types not equal: {type(x)}, {type(y)}"  # noqa: E721
+            assert type(x) is type(y), f"types not equal: {type(x)}, {type(y)}"
+            if isinstance(x, np.ndarray):
+                assert x.dtype == y.dtype
             assert_equal(x, y)
 
         if result is not None:
-            # keep 0-dim.; otherwise n.ravel().ndim==1, even if n.ndim==0
-            n_flat = n.ravel() if n.ndim else n
-            ref = special.factorial(n_flat, exact=exact) if n.size else []
-            # expected result is empty if and only if n is empty,
-            # and has the same dtype & dimension as n
+            # use scalar case as reference; tested separately in *_scalar_corner_cases
+            ref = [special.factorial(x, exact=exact) for x in n.ravel()]
+            # unpack length-1 lists so that np.array(x, ndim=0) works correctly
+            ref = ref[0] if len(ref) == 1 else ref
+            # same dimension as n; dtype unchanged for empty, else depends on exact
+            dtype = (np.int64 if exact else np.float64) if n.size else dtype
             expected = np.array(ref, ndmin=dim, dtype=dtype)
             assert_really_equal(result, expected)
 
