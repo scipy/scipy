@@ -23,7 +23,7 @@ class BenchSVDS(Benchmark):
     # The assert uses the relative error since for some tested matrices
     # the maximal singular values are very large due to poor matrix scaling.
     # The `maxiter` and `tol` paremeters of `svds` are tuned for fair comaprison.
-    # The dense SVD solve is benchmaked as the base. 
+    # The dense SVD solve is benchmarked as the base. 
     params = [
         [20],
         ["abb313", "illc1033", "illc1850", "qh1484", "rbs480a", "tols4000",
