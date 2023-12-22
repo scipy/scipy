@@ -164,8 +164,8 @@ def _check_laplacian_dtype(
 INT_DTYPES = {np.intc, np_long, np.longlong}
 REAL_DTYPES = {np.float32, np.float64, np.longdouble}
 COMPLEX_DTYPES = {np.complex64, np.complex128, np.clongdouble}
-# use sorted tuple to ensure fixed order of tests
-DTYPES = tuple(sorted(INT_DTYPES ^ REAL_DTYPES ^ COMPLEX_DTYPES, key=str))
+# use sorted list to ensure fixed order of tests
+DTYPES = sorted(INT_DTYPES ^ REAL_DTYPES ^ COMPLEX_DTYPES, key=str)
 
 
 @pytest.mark.parametrize("dtype", DTYPES)

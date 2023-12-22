@@ -1291,8 +1291,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         raise ValueError("First and last points does not match while "
                          "periodic case expected")
     if x.size != y.shape[0]:
-        raise ValueError('Shapes of x {} and y {} are incompatible'
-                         .format(x.shape, y.shape))
+        raise ValueError(f'Shapes of x {x.shape} and y {y.shape} are incompatible')
     if np.any(x[1:] == x[:-1]):
         raise ValueError("Expect x to not have duplicates")
     if x.ndim != 1 or np.any(x[1:] < x[:-1]):
@@ -1371,7 +1370,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     if nt - n != nleft + nright:
         raise ValueError("The number of derivatives at boundaries does not "
-                         "match: expected {}, got {}+{}".format(nt-n, nleft, nright))
+                         f"match: expected {nt-n}, got {nleft}+{nright}")
 
     # bail out if the `y` array is zero-sized
     if y.size == 0:
@@ -1383,9 +1382,11 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     ab = np.zeros((2*kl + ku + 1, nt), dtype=np.float64, order='F')
     _bspl._colloc(x, t, k, ab, offset=nleft)
     if nleft > 0:
-        _bspl._handle_lhs_derivatives(t, k, x[0], ab, kl, ku, deriv_l_ords)
+        _bspl._handle_lhs_derivatives(t, k, x[0], ab, kl, ku,
+                                      deriv_l_ords.astype(np.dtype("long")))
     if nright > 0:
-        _bspl._handle_lhs_derivatives(t, k, x[-1], ab, kl, ku, deriv_r_ords,
+        _bspl._handle_lhs_derivatives(t, k, x[-1], ab, kl, ku,
+                                      deriv_r_ords.astype(np.dtype("long")),
                                       offset=nt-nright)
 
     # set up the RHS: values to interpolate (+ derivative values, if any)
@@ -1542,13 +1543,11 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
     if t.ndim != 1 or np.any(t[1:] - t[:-1] < 0):
         raise ValueError("Expect t to be a 1-D sorted array_like.")
     if x.size != y.shape[0]:
-        raise ValueError('Shapes of x {} and y {} are incompatible'
-                         .format(x.shape, y.shape))
+        raise ValueError(f'Shapes of x {x.shape} and y {y.shape} are incompatible')
     if k > 0 and np.any((x < t[k]) | (x > t[-k])):
         raise ValueError('Out of bounds w/ x = %s.' % x)
     if x.size != w.size:
-        raise ValueError('Shapes of x {} and w {} are incompatible'
-                         .format(x.shape, w.shape))
+        raise ValueError(f'Shapes of x {x.shape} and w {w.shape} are incompatible')
 
     # number of coefficients
     n = t.size - k - 1
@@ -1877,9 +1876,9 @@ def make_smoothing_spline(x, y, w=None, lam=None):
     Parameters
     ----------
     x : array_like, shape (n,)
-        Abscissas. `n` must be larger than 5.
+        Abscissas. `n` must be at least 5.
     y : array_like, shape (n,)
-        Ordinates. `n` must be larger than 5.
+        Ordinates. `n` must be at least 5.
     w : array_like, shape (n,), optional
         Vector of weights. Default is ``np.ones_like(x)``.
     lam : float, (:math:`\lambda \geq 0`), optional
@@ -1981,7 +1980,7 @@ def make_smoothing_spline(x, y, w=None, lam=None):
     n = x.shape[0]
 
     if n <= 4:
-        raise ValueError('``x`` and ``y`` length must be larger than 5')
+        raise ValueError('``x`` and ``y`` length must be at least 5')
 
     # It is known that the solution to the stated minimization problem exists
     # and is a natural cubic spline with vector of knots equal to the unique

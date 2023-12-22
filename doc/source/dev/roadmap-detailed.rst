@@ -59,14 +59,6 @@ add new benchmarks, however running the benchmarks is not very intuitive.
 Making this easier is a priority.
 
 
-Moving to the Meson build system
-````````````````````````````````
-Support for the Meson build system was merged into SciPy main in Dec 2021,
-and SciPy 1.9.3 was the first release where all wheels were also built with
-Meson. What is left to do is removing support for
-``numpy.distutils``/``setuptools``, this will happen soon.
-
-
 Use of Cython
 `````````````
 Cython's old syntax for using NumPy arrays should be removed and replaced with
@@ -78,10 +70,8 @@ can define ``NPY_NO_DEPRECATED_API`` unconditionally.
 Use of Pythran
 ``````````````
 Pythran is still an optional build dependency, and can be disabled with
-``SCIPY_USE_PYTHRAN=0``. The aim is to make it a hard dependency - for that to
-happen it must be clear that the maintenance burden is low enough (Meson will
-help here, because it removes the monkey patching that is now done to enable
-Pythran).
+``-Duse-pythran=false``. The aim is to make it a hard dependency - for that to
+happen it must be clear that the maintenance burden is low enough.
 
 
 Use of venerable Fortran libraries
@@ -317,10 +307,9 @@ things are done in `interpolate`), and eliminate any duplication.
 
 *Filter design*: merge `firwin` and `firwin2` so `firwin2` can be removed.
 
-*Continuous-Time Linear Systems*: remove `lsim2`, `impulse2`, `step2`.  The
-`lsim`, `impulse` and `step` functions now "just work" for any input system.
-Further improve the performance of ``ltisys`` (fewer internal transformations
-between different representations). Fill gaps in lti system conversion functions.
+*Continuous-Time Linear Systems*: Further improve the performance of ``ltisys``
+(fewer internal transformations between different representations). Fill gaps in lti
+system conversion functions.
 
 *Second Order Sections*: Make SOS filtering equally capable as existing
 methods. This includes ltisys objects, an `lfiltic` equivalent, and numerically

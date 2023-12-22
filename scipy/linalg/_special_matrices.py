@@ -1,10 +1,9 @@
 import math
-import warnings
 
 import numpy as np
 from numpy.lib.stride_tricks import as_strided
 
-__all__ = ['tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',
+__all__ = ['toeplitz', 'circulant', 'hankel',
            'hadamard', 'leslie', 'kron', 'block_diag', 'companion',
            'helmert', 'hilbert', 'invhilbert', 'pascal', 'invpascal', 'dft',
            'fiedler', 'fiedler_companion', 'convolution_matrix']
@@ -13,146 +12,6 @@ __all__ = ['tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',
 # -----------------------------------------------------------------------------
 #  matrix construction functions
 # -----------------------------------------------------------------------------
-
-#
-# *Note*: tri{,u,l} is implemented in NumPy, but an important bug was fixed in
-# 2.0.0.dev-1af2f3, the following tri{,u,l} definitions are here for backwards
-# compatibility.
-
-def tri(N, M=None, k=0, dtype=None):
-    """
-    .. deprecated:: 1.11.0
-        `tri` is deprecated in favour of `numpy.tri` and will be removed in
-        SciPy 1.13.0.    
-    
-    Construct (N, M) matrix filled with ones at and below the kth diagonal.
-
-    The matrix has A[i,j] == 1 for j <= i + k
-
-    Parameters
-    ----------
-    N : int
-        The size of the first dimension of the matrix.
-    M : int or None, optional
-        The size of the second dimension of the matrix. If `M` is None,
-        `M = N` is assumed.
-    k : int, optional
-        Number of subdiagonal below which matrix is filled with ones.
-        `k` = 0 is the main diagonal, `k` < 0 subdiagonal and `k` > 0
-        superdiagonal.
-    dtype : dtype, optional
-        Data type of the matrix.
-
-    Returns
-    -------
-    tri : (N, M) ndarray
-        Tri matrix.
-
-    Examples
-    --------
-    >>> from scipy.linalg import tri
-    >>> tri(3, 5, 2, dtype=int)
-    array([[1, 1, 1, 0, 0],
-           [1, 1, 1, 1, 0],
-           [1, 1, 1, 1, 1]])
-    >>> tri(3, 5, -1, dtype=int)
-    array([[0, 0, 0, 0, 0],
-           [1, 0, 0, 0, 0],
-           [1, 1, 0, 0, 0]])
-
-    """
-    warnings.warn("'tri'/'tril/'triu' are deprecated as of SciPy 1.11.0 and "
-                  "will be removed in v1.13.0. Please use "
-                  "numpy.(tri/tril/triu) instead.",
-                  DeprecationWarning, stacklevel=2)
-    
-    if M is None:
-        M = N
-    if isinstance(M, str):
-        # pearu: any objections to remove this feature?
-        #       As tri(N,'d') is equivalent to tri(N,dtype='d')
-        dtype = M
-        M = N
-    m = np.greater_equal.outer(np.arange(k, N+k), np.arange(M))
-    if dtype is None:
-        return m
-    else:
-        return m.astype(dtype)
-
-
-def tril(m, k=0):
-    """
-    .. deprecated:: 1.11.0
-        `tril` is deprecated in favour of `numpy.tril` and will be removed in
-        SciPy 1.13.0.
-
-    Make a copy of a matrix with elements above the kth diagonal zeroed.
-
-    Parameters
-    ----------
-    m : array_like
-        Matrix whose elements to return
-    k : int, optional
-        Diagonal above which to zero elements.
-        `k` == 0 is the main diagonal, `k` < 0 subdiagonal and
-        `k` > 0 superdiagonal.
-
-    Returns
-    -------
-    tril : ndarray
-        Return is the same shape and type as `m`.
-
-    Examples
-    --------
-    >>> from scipy.linalg import tril
-    >>> tril([[1,2,3],[4,5,6],[7,8,9],[10,11,12]], -1)
-    array([[ 0,  0,  0],
-           [ 4,  0,  0],
-           [ 7,  8,  0],
-           [10, 11, 12]])
-
-    """
-    m = np.asarray(m)
-    out = tri(m.shape[0], m.shape[1], k=k, dtype=m.dtype.char) * m
-    return out
-
-
-def triu(m, k=0):
-    """
-    .. deprecated:: 1.11.0
-        `tril` is deprecated in favour of `numpy.triu` and will be removed in
-        SciPy 1.13.0.
-
-    Make a copy of a matrix with elements below the kth diagonal zeroed.
-
-    Parameters
-    ----------
-    m : array_like
-        Matrix whose elements to return
-    k : int, optional
-        Diagonal below which to zero elements.
-        `k` == 0 is the main diagonal, `k` < 0 subdiagonal and
-        `k` > 0 superdiagonal.
-
-    Returns
-    -------
-    triu : ndarray
-        Return matrix with zeroed elements below the kth diagonal and has
-        same shape and type as `m`.
-
-    Examples
-    --------
-    >>> from scipy.linalg import triu
-    >>> triu([[1,2,3],[4,5,6],[7,8,9],[10,11,12]], -1)
-    array([[ 1,  2,  3],
-           [ 4,  5,  6],
-           [ 0,  8,  9],
-           [ 0,  0, 12]])
-
-    """
-    m = np.asarray(m)
-    out = (1 - tri(m.shape[0], m.shape[1], k - 1, m.dtype.char)) * m
-    return out
 
 
 def toeplitz(c, r=None):
@@ -1049,7 +908,7 @@ def dft(n, scale=None):
     """
     if scale not in [None, 'sqrtn', 'n']:
         raise ValueError("scale must be None, 'sqrtn', or 'n'; "
-                         "{!r} is not valid.".format(scale))
+                         f"{scale!r} is not valid.")
 
     omegas = np.exp(-2j * np.pi * np.arange(n) / n).reshape(-1, 1)
     m = omegas ** np.arange(n)

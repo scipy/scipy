@@ -8,15 +8,18 @@
 #pragma once
 
 #include <algorithm>
-#include <complex>
 #include <future>
 #include <iostream>
 #include <map>
 #include <string>
 #include <sstream>
 #include <utility>
+#include <vector>
 
 #include "types.hpp"
+
+// Support std::string as a user type
+#include "app/user_type_string.hpp"
 
 namespace fast_matrix_market {
 
@@ -24,13 +27,10 @@ namespace fast_matrix_market {
     // Keep in sync with python/pyproject.toml
 #define FAST_MATRIX_MARKET_VERSION_MAJOR 1
 #define FAST_MATRIX_MARKET_VERSION_MINOR 7
-#define FAST_MATRIX_MARKET_VERSION_PATCH 3
+#define FAST_MATRIX_MARKET_VERSION_PATCH 4
 
     constexpr std::string_view kSpace = " ";
     constexpr std::string_view kNewline = "\n";
-
-    template<class T> struct is_complex : std::false_type {};
-    template<class T> struct is_complex<std::complex<T>> : std::true_type {};
 
     /**
      *
@@ -117,6 +117,10 @@ namespace fast_matrix_market {
      * MSVC does not like std::negate<bool>
      */
     inline bool negate(const bool o) {
+        return !o;
+    }
+
+    inline bool negate(const std::vector<bool>::reference o) {
         return !o;
     }
 

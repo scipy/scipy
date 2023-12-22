@@ -478,7 +478,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
         h = (npp_polyval(zm1, b, tensor=False) /
              npp_polyval(zm1, a, tensor=False))
 
-    w = w*fs/(2*pi)
+    w = w*(fs/(2*pi))
 
     if plot is not None:
         plot(w, h)
@@ -588,7 +588,7 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=2*pi):
     zm1 = exp(1j * w)
     h = k * polyvalfromroots(zm1, z) / polyvalfromroots(zm1, p)
 
-    w = w*fs/(2*pi)
+    w = w*(fs/(2*pi))
 
     return w, h
 
@@ -708,7 +708,7 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
             stacklevel=2
         )
 
-    w = w*fs/(2*pi)
+    w = w*(fs/(2*pi))
 
     return w, gd
 
@@ -1544,8 +1544,7 @@ def zpk2sos(z, p, k, pairing=None, *, analog=False):
 
     valid_pairings = ['nearest', 'keep_odd', 'minimal']
     if pairing not in valid_pairings:
-        raise ValueError('pairing must be one of %s, not %s'
-                         % (valid_pairings, pairing))
+        raise ValueError(f'pairing must be one of {valid_pairings}, not {pairing}')
 
     if analog and pairing != 'minimal':
         raise ValueError('for analog zpk2sos conversion, '
@@ -1801,7 +1800,8 @@ def normalize(b, a):
     # Trim leading zeros of numerator
     if leading_zeros > 0:
         warnings.warn("Badly conditioned filter coefficients (numerator): the "
-                      "results may be meaningless", BadCoefficients)
+                      "results may be meaningless",
+                      BadCoefficients, stacklevel=2)
         # Make sure at least one column remains
         if leading_zeros == num.shape[1]:
             leading_zeros -= 1
@@ -2382,8 +2382,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
 
     if wp.shape[0] != ws.shape[0] or wp.shape not in [(1,), (2,)]:
         raise ValueError("wp and ws must have one or two elements each, and"
-                         "the same shape, got %s and %s"
-                         % (wp.shape, ws.shape))
+                         f"the same shape, got {wp.shape} and {ws.shape}")
 
     if any(wp <= 0) or any(ws <= 0):
         raise ValueError("Values for wp, ws must be greater than 0")
@@ -2394,7 +2393,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
                 raise ValueError("Values for wp, ws must be less than 1")
         elif any(wp >= fs/2) or any(ws >= fs/2):
             raise ValueError("Values for wp, ws must be less than fs/2"
-                             " (fs={} -> fs/2={})".format(fs, fs/2))
+                             f" (fs={fs} -> fs/2={fs/2})")
 
     if wp.shape[0] == 2:
         if not ((ws[0] < wp[0] and wp[1] < ws[1]) or
@@ -3964,7 +3963,7 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
     except ZeroDivisionError:
         W0 = 1.0
         warnings.warn("Order is zero...check input parameters.",
-                      RuntimeWarning, 2)
+                      RuntimeWarning, stacklevel=2)
 
     # now convert this frequency back from lowpass prototype
     # to the original analog filter
@@ -4365,7 +4364,8 @@ def cheb2ap(N, rs):
     """
     Return (z,p,k) for Nth-order Chebyshev type II analog lowpass filter.
 
-    The returned filter prototype has attenuation of at least ``rs`` decibels in the stopband.
+    The returned filter prototype has attenuation of at least ``rs`` decibels
+    in the stopband.
 
     The filter's angular (e.g. rad/s) cutoff frequency is normalized to 1,
     defined as the point at which the attenuation first reaches ``rs``.
@@ -5300,8 +5300,8 @@ def iircomb(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False):
     # Check for invalid cutoff frequency or filter type
     ftype = ftype.lower()
     if not 0 < w0 < fs / 2:
-        raise ValueError("w0 must be between 0 and {}"
-                         " (nyquist), but given {}.".format(fs / 2, w0))
+        raise ValueError(f"w0 must be between 0 and {fs / 2}"
+                         f" (nyquist), but given {w0}.")
     if ftype not in ('notch', 'peak'):
         raise ValueError('ftype must be either notch or peak.')
 
@@ -5468,8 +5468,8 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
     ftype = ftype.lower()
     filter_types = ['fir', 'iir']
     if not 0 < freq < fs / 2:
-        raise ValueError("The frequency must be between 0 and {}"
-                         " (nyquist), but given {}.".format(fs / 2, freq))
+        raise ValueError(f"The frequency must be between 0 and {fs / 2}"
+                         f" (nyquist), but given {freq}.")
     if ftype not in filter_types:
         raise ValueError('ftype must be either fir or iir.')
 
@@ -5507,9 +5507,9 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
     elif ftype == 'iir':
         # Raise warning if order and/or numtaps is passed
         if order is not None:
-            warnings.warn('order is not used for IIR gammatone filter.')
+            warnings.warn('order is not used for IIR gammatone filter.', stacklevel=2)
         if numtaps is not None:
-            warnings.warn('numtaps is not used for IIR gammatone filter.')
+            warnings.warn('numtaps is not used for IIR gammatone filter.', stacklevel=2)
 
         # Gammatone impulse response settings
         T = 1./fs

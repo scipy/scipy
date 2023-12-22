@@ -419,12 +419,15 @@ def main():
     # Generate code for method struct
     method_defs = ""
     for name in names:
-        method_defs += f"NPY_VISIBILITY_HIDDEN PyObject *{name}_method(PyObject *, PyObject *);\n"
+        method_defs += (f"NPY_VISIBILITY_HIDDEN PyObject *{name}"
+                        f"_method(PyObject *, PyObject *);\n")
 
     method_struct = """\nstatic struct PyMethodDef sparsetools_methods[] = {"""
     for name in names:
-        method_struct += """
-        {"%(name)s", (PyCFunction)%(name)s_method, METH_VARARGS, NULL},""" % dict(name=name)
+        method_struct += ("""
+            {{"{name}", (PyCFunction){name}_method, METH_VARARGS, NULL}},"""
+            .format(**dict(name=name))
+        )
     method_struct += """
         {NULL, NULL, 0, NULL}
     };"""

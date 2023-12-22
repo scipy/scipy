@@ -104,6 +104,25 @@ namespace fast_matrix_market {
     // Chunks
     ///////////////////////////////////////////////////////////////////
 
+    template <typename RET, typename T>
+    RET get_symmetric_value(const T& v, const symmetry_type& symmetry) {
+        switch (symmetry) {
+            case symmetric:
+                return v;
+            case skew_symmetric:
+                if constexpr (std::is_unsigned_v<T>) {
+                    throw invalid_argument("Cannot load skew-symmetric matrix into unsigned value type.");
+                } else {
+                    return negate(v);
+                }
+            case hermitian:
+                return complex_conjugate(v);
+            case general:
+                return v;
+        }
+        return v;
+    }
+
     template<typename HANDLER, typename IT, typename VT>
     void generalize_symmetry_coordinate(HANDLER& handler,
                                         const matrix_market_header &header,
@@ -445,11 +464,9 @@ namespace fast_matrix_market {
         }
 #endif
 
-        // Verify generalize symmetry is compatible with this file.
-        if (header.symmetry != general && options.generalize_symmetry) {
-            if (header.object != matrix) {
-                throw invalid_mm("Invalid Symmetry: vectors cannot have symmetry. Set generalize_symmetry=false to disregard this symmetry.");
-            }
+        // Sanity check input
+        if (header.object == vector && header.symmetry != general) {
+            throw invalid_mm("Vectors cannot have symmetry.");
         }
 
         if (header.format == array && header.field == pattern) {
@@ -546,7 +563,7 @@ namespace fast_matrix_market {
                                  HANDLER& handler,
                                  typename HANDLER::value_type pattern_value,
                                  const read_options& options = {}) {
-        if (header.field == complex && !is_complex<typename HANDLER::value_type>::value) {
+        if (header.field == complex && !can_read_complex<typename HANDLER::value_type>::value) {
             // the file is complex but the values are not
             throw complex_incompatible("Matrix Market file has complex fields but passed data structure cannot handle complex values.");
         }

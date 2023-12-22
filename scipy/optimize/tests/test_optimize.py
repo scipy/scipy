@@ -282,7 +282,8 @@ class CheckOptimizeParameterized(CheckOptimize):
         assert res_c1_small.nfev > res_c1_big.nfev
 
     def test_bfgs_c2(self):
-        # test that modification of c2 parameter results in different number of iterations
+        # test that modification of c2 parameter
+        # results in different number of iterations
         x0 = [1.3, 0.7, 0.8, 1.9, 1.2]
         res_default = optimize.minimize(optimize.rosen,
                                         x0, method='bfgs', options={'c2': .9})
@@ -1228,7 +1229,8 @@ class TestOptimizeSimple(CheckOptimize):
                                      method=method)
             sol2 = optimize.minimize(func, [1, 1], jac=jac, tol=1.0,
                                      method=method)
-            assert func(sol1.x) < func(sol2.x), f"{method}: {func(sol1.x)} vs. {func(sol2.x)}"
+            assert func(sol1.x) < func(sol2.x), \
+                   f"{method}: {func(sol1.x)} vs. {func(sol2.x)}"
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')  # See gh-18547
@@ -1294,7 +1296,8 @@ class TestOptimizeSimple(CheckOptimize):
         # and have no memory overlap
         assert len(results) > 2
         assert all(np.all(x == y) for x, y in results)
-        assert not any(np.may_share_memory(x[0], y[0]) for x, y in itertools.combinations(results, 2))
+        combinations = itertools.combinations(results, 2)
+        assert not any(np.may_share_memory(x[0], y[0]) for x, y in combinations)
 
     @pytest.mark.parametrize('method', ['nelder-mead', 'powell', 'cg',
                                         'bfgs', 'newton-cg', 'l-bfgs-b',
@@ -1478,9 +1481,7 @@ class TestOptimizeSimple(CheckOptimize):
             res = optimize.minimize(f, x0, jac=g, method=method,
                                     options=options)
 
-            err_msg = "{} {}: {}: {}".format(method, scale,
-                                                 first_step_size,
-                                                 res)
+            err_msg = f"{method} {scale}: {first_step_size}: {res}"
 
             assert res.success, err_msg
             assert_allclose(res.x, [1.0], err_msg=err_msg)
@@ -2669,7 +2670,8 @@ class TestIterationLimits:
                     else:
                         assert res["nit"] <= default_iters*2
                 else:
-                    assert res["nfev"] >= default_iters*2 or res["nit"] >= default_iters*2
+                    assert (res["nfev"] >= default_iters*2
+                            or res["nit"] >= default_iters*2)
 
 
 def test_result_x_shape_when_len_x_is_one():

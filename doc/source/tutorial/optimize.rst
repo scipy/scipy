@@ -94,8 +94,8 @@ code block for the example parameters ``a=0.5`` and ``b=1``.
     ...	               args=(0.5, 1.), options={'xatol': 1e-8, 'disp': True})
     Optimization terminated successfully.
              Current function value: 1.000000
-             Iterations: 319
-             Function evaluations: 525
+             Iterations: 319 # may vary
+             Function evaluations: 525 # may vary
 
     >>> print(res.x)
     [1.         1.         1.         1.         0.99999999]

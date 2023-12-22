@@ -202,10 +202,10 @@ def get_index_dtype(arrays=(), maxval=None, check_contents=False):
 
 def get_sum_dtype(dtype: np.dtype) -> np.dtype:
     """Mimic numpy's casting for np.sum"""
-    if dtype.kind == 'u' and np.can_cast(dtype, np_ulong):
-        return np.dtype(np_ulong)
-    if np.can_cast(dtype, np_long):
-        return np.dtype(np_long)
+    if dtype.kind == 'u' and np.can_cast(dtype, np.uint):
+        return np.uint
+    if np.can_cast(dtype, np.int_):
+        return np.int_
     return dtype
 
 

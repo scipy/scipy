@@ -22,7 +22,7 @@ from __future__ import annotations
 # Linter does not allow to import ``Generator`` from ``typing`` module:
 from collections.abc import Generator
 from functools import cache, lru_cache, partial
-from typing import Callable, get_args, Literal, Union
+from typing import Callable, get_args, Literal
 
 import numpy as np
 
@@ -357,7 +357,7 @@ class ShortTimeFFT:
                    phase_shift=phase_shift)
 
     @classmethod
-    def from_window(cls, win_param: Union[str, tuple, float],
+    def from_window(cls, win_param: str | tuple | float,
                     fs: float, nperseg: int, noverlap: int, *,
                     symmetric_win: bool = False,
                     fft_mode: FFT_MODE_TYPE = 'onesided',
@@ -796,8 +796,7 @@ class ShortTimeFFT:
                                  padding=padding, axis=axis)
 
     def stft_detrend(self, x: np.ndarray,
-                     detr: Union[Callable[[np.ndarray], np.ndarray],
-                                 Literal['linear', 'constant'], None],
+                     detr: Callable[[np.ndarray], np.ndarray] | Literal['linear', 'constant'] | None,  # noqa: E501
                      p0: int | None = None, p1: int | None = None, *,
                      k_offset: int = 0, padding: PAD_TYPE = 'zeros',
                      axis: int = -1) \
@@ -848,8 +847,8 @@ class ShortTimeFFT:
         return S
 
     def spectrogram(self, x: np.ndarray, y: np.ndarray | None = None,
-                    detr: Union[Callable[[np.ndarray], np.ndarray],
-                                Literal['linear', 'constant'], None] = None, *,
+                    detr: Callable[[np.ndarray], np.ndarray] | Literal['linear', 'constant'] | None = None,  # noqa: E501
+                    *,
                     p0: int | None = None, p1: int | None = None,
                     k_offset: int = 0, padding: PAD_TYPE = 'zeros',
                     axis: int = -1) \

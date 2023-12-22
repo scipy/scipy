@@ -65,7 +65,7 @@ bad_pdfs_common = [
     # Returning wrong type
     (lambda x: [], TypeError, floaterr),
     # Undefined name inside the function
-    (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa
+    (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa: F821, E501
     # Infinite value returned => Overflow error.
     (lambda x: np.inf, UNURANError, r"..."),
     # NaN value => internal error in UNU.RAN
@@ -84,7 +84,7 @@ bad_dpdf_common = [
     # Returning wrong type
     (lambda x: [], TypeError, floaterr),
     # Undefined name inside the function
-    (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa
+    (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa: F821, E501
     # signature of dPDF wrong
     (lambda: 1.0, TypeError, r"takes 0 positional arguments but 1 was given")
 ]
@@ -95,7 +95,7 @@ bad_logpdfs_common = [
     # Returning wrong type
     (lambda x: [], TypeError, floaterr),
     # Undefined name inside the function
-    (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa
+    (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa: F821, E501
     # Infinite value returned => Overflow error.
     (lambda x: np.inf, UNURANError, r"..."),
     # NaN value => internal error in UNU.RAN
@@ -294,12 +294,12 @@ def test_with_scipy_distribution():
     check_discr_samples(rng, pv, dist.stats())
 
 
-def check_cont_samples(rng, dist, mv_ex):
+def check_cont_samples(rng, dist, mv_ex, rtol=1e-7, atol=1e-1):
     rvs = rng.rvs(100000)
     mv = rvs.mean(), rvs.var()
     # test the moments only if the variance is finite
     if np.isfinite(mv_ex[1]):
-        assert_allclose(mv, mv_ex, rtol=1e-7, atol=1e-1)
+        assert_allclose(mv, mv_ex, rtol=rtol, atol=atol)
     # Cramer Von Mises test for goodness-of-fit
     rvs = rng.rvs(500)
     dist.cdf = np.vectorize(dist.cdf)
@@ -307,11 +307,11 @@ def check_cont_samples(rng, dist, mv_ex):
     assert pval > 0.1
 
 
-def check_discr_samples(rng, pv, mv_ex):
+def check_discr_samples(rng, pv, mv_ex, rtol=1e-3, atol=1e-1):
     rvs = rng.rvs(100000)
     # test if the first few moments match
     mv = rvs.mean(), rvs.var()
-    assert_allclose(mv, mv_ex, rtol=1e-3, atol=1e-1)
+    assert_allclose(mv, mv_ex, rtol=rtol, atol=atol)
     # normalize
     pv = pv / pv.sum()
     # chi-squared test for goodness-of-fit
@@ -674,7 +674,7 @@ class TestDiscreteAliasUrn:
         (lambda x: 0.0, ValueError,
          r"must contain at least one non-zero value"),
         # Undefined name inside the function
-        (lambda x: foo, NameError,  # type: ignore[name-defined]  # noqa
+        (lambda x: foo, NameError,  # type: ignore[name-defined]  # noqa: F821
          r"name 'foo' is not defined"),
         # Returning wrong type.
         (lambda x: [], ValueError,
@@ -738,6 +738,13 @@ class TestDiscreteAliasUrn:
 
         with pytest.raises(ValueError, match=msg):
             DiscreteAliasUrn(dist)
+
+    def test_gh19359(self):
+        pv = special.softmax(np.ones((1533,)))
+        rng = DiscreteAliasUrn(pv, random_state=42)
+        # check the correctness
+        check_discr_samples(rng, pv, (1532 / 2, (1532**2 - 1) / 12),
+                            rtol=5e-3)
 
 
 class TestNumericalInversePolynomial:

@@ -58,12 +58,12 @@ dsnode_bmod (
     double         alpha = -1.0, beta = 1.0;
 #endif
 
-    int            luptr, nsupc, nsupr, nrow;
-    int            isub, irow, i, iptr; 
-    register int   ufirst, nextlu;
-    int            *lsub, *xlsub;
-    double         *lusup;
-    int            *xlusup;
+    int     nsupc, nsupr, nrow;
+    int_t   isub, irow;
+    int_t   ufirst, nextlu;
+    int_t   *lsub, *xlsub;
+    double *lusup;
+    int_t   *xlusup, luptr;
     flops_t *ops = stat->ops;
 
     lsub    = Glu->lsub;
@@ -105,10 +105,10 @@ dsnode_bmod (
 		&lusup[ufirst], &incx, &beta, &lusup[ufirst+nsupc], &incy );
 #else
 #if SCIPY_FIX
-	if (nsupr < nsupc) {
-	    /* Fail early rather than passing in invalid parameters to DTRSV. */
-	    ABORT("failed to factorize matrix");
-	}
+       if (nsupr < nsupc) {
+           /* Fail early rather than passing in invalid parameters to TRSV. */
+           ABORT("failed to factorize matrix");
+       }
 #endif
 	dtrsv_( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr, 
 	      &lusup[ufirst], &incx );
@@ -120,6 +120,7 @@ dsnode_bmod (
 	dmatvec ( nsupr, nrow, nsupc, &lusup[luptr+nsupc], 
 			&lusup[ufirst], &tempv[0] );
 
+	int_t i, iptr; 
         /* Scatter tempv[*] into lusup[*] */
 	iptr = ufirst + nsupc;
 	for (i = 0; i < nrow; i++) {
