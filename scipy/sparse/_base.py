@@ -67,7 +67,15 @@ class _spbase:
 
     __array_priority__ = 10.1
     _format = 'und'  # undefined
-    ndim = 2
+    
+    @property
+    def ndim(self) -> int:
+        return len(self._shape)
+
+    @property
+    def _shape_as_2d(self):
+        s = self._shape
+        return (1, s[-1]) if len(s) == 1 else s
 
     @property
     def _bsr_container(self):
@@ -568,7 +576,10 @@ class _spbase:
         # This method has to be different from `__matmul__` because it is also
         # called by sparse matrix classes.
 
-        M, N = self.shape
+        # Currently matrix multiplication is only supported
+        # for 2D arrays. Hence we unpacked and use only the
+        # two last axes' lengths.
+        M, N = self._shape_as_2d
 
         if other.__class__ is np.ndarray:
             # Fast path for the most common case
@@ -586,6 +597,8 @@ class _spbase:
         if issparse(other):
             if self.shape[1] != other.shape[0]:
                 raise ValueError('dimension mismatch')
+            if other.ndim == 1:
+                raise ValueError('Cannot yet multiply a 1d sparse array')
             return self._mul_sparse_matrix(other)
 
         # If it's a list or whatever, treat it like an array
