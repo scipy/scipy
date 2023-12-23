@@ -617,9 +617,21 @@ class TestMannWhitneyU:
         rng = np.random.default_rng(7600451795963068007)
         x = rng.random(size=5)
         y = rng.random(size=11)
+        _mwu_state._fmnks = -np.ones((1, 1, 1))  # reset cache
         stats.mannwhitneyu(x, y, method='exact')
         shape = _mwu_state._fmnks.shape
+        assert shape[0] < shape[1]
         stats.mannwhitneyu(y, x, method='exact')
+        assert shape == _mwu_state._fmnks.shape
+
+        # Also, we weren't exploiting the symmmetry of the null distribution
+        # to its full potential. Ensure that the null distribution is not
+        # evaluated explicitly for `k > m*n/2`.
+        _mwu_state._fmnks = -np.ones((1, 1, 1))  # reset cache
+        stats.mannwhitneyu(x, 0*y, method='exact', alternative='greater')
+        shape = _mwu_state._fmnks.shape
+        assert shape[-1] == 1  # k is smallest possible
+        stats.mannwhitneyu(0*x, y, method='exact', alternative='greater')
         assert shape == _mwu_state._fmnks.shape
 
     def teardown_method(self):

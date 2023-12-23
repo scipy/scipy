@@ -26,6 +26,14 @@ class _MWU:
         self._recursive = None
 
     def pmf(self, k, m, n):
+
+        # In practice, `pmf` is never called with k > m*n/2.
+        # If it were, we'd exploit symmetry here:
+        # k = np.array(k, copy=True)
+        # k2 = m*n - k
+        # i = k2 < k
+        # k[i] = k2[i]
+
         if (self._recursive is None and m <= 500 and n <= 500
                 or self._recursive):
             return self.pmf_recursive(k, m, n)
@@ -51,22 +59,30 @@ class _MWU:
 
     def cdf(self, k, m, n):
         '''Cumulative distribution function'''
-        # We could use the fact that the distribution is symmetric to avoid
-        # summing more than m*n/2 terms, but it might not be worth the
-        # overhead. Let's leave that to an improvement.
+
+        # In practice, `cdf` is never called with k > m*n/2.
+        # If it were, we'd exploit symmetry here rather than in `sf`
         pmfs = self.pmf(np.arange(0, np.max(k) + 1), m, n)
         cdfs = np.cumsum(pmfs)
         return cdfs[k]
 
     def sf(self, k, m, n):
         '''Survival function'''
-        # Use the fact that the distribution is symmetric; i.e.
-        # _f(m, n, m*n-k) = _f(m, n, k), and sum from the left
-        k = m*n - k
         # Note that both CDF and SF include the PMF at k. The p-value is
         # calculated from the SF and should include the mass at k, so this
         # is desirable
-        return self.cdf(k, m, n)
+
+        # Use the fact that the distribution is symmetric; i.e.
+        # _f(m, n, m*n-k) = _f(m, n, k), and sum from the left
+        kc = np.asarray(m*n - k)  # complement of k
+        i = k < kc
+        if np.any(i):
+            kc[i] = k[i]
+            cdfs = np.asarray(self.cdf(kc, m, n))
+            cdfs[i] = 1. - cdfs[i] + self.pmf(kc[i], m, n)
+        else:
+            cdfs = self.cdf(kc, m, n)
+        return cdfs[()]
 
     def _resize_fmnks(self, m, n, k):
         '''If necessary, expand the array that remembers PMF values'''
