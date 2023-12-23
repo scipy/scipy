@@ -488,7 +488,7 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
         U, f = np.maximum(U1, U2), 2  # multiply SF by two for two-sided test
 
     if method == "exact":
-        p = _mwu_state.sf(U.astype(int), n1, n2)
+        p = _mwu_state.sf(U.astype(int), min(n1, n2), max(n1, n2))
     elif method == "asymptotic":
         z = _get_mwu_z(U, n1, n2, ranks, continuity=use_continuity)
         p = stats.norm.sf(z)

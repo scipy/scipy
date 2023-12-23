@@ -609,6 +609,19 @@ class TestMannWhitneyU:
                            method="asymptotic")
         assert_allclose(res, expected, rtol=1e-12)
 
+    def test_gh19692_smaller_table(self):
+        # In gh-19692, we noted that the shape of the cache used in calculating
+        # p-values was dependent on the order of the inputs because the sample
+        # sizes n1 and n2 changed. This was indicative of unnecessary cache
+        # growth and redundant calculation. Check that this is resolved.
+        rng = np.random.default_rng(7600451795963068007)
+        x = rng.random(size=5)
+        y = rng.random(size=11)
+        stats.mannwhitneyu(x, y, method='exact')
+        shape = _mwu_state._fmnks.shape
+        stats.mannwhitneyu(y, x, method='exact')
+        assert shape == _mwu_state._fmnks.shape
+
     def teardown_method(self):
         _mwu_state._recursive = None
 
