@@ -1,25 +1,18 @@
-name: "Pull Request Labeler"
+name: "Issue Labeler"
 on:
-  pull_request_target:
+  issues:
     types: [opened]
 
 jobs:
-  label_pull_request:
-    # Permissions needed for labelling Pull Requests automatically
+  label_issue:
+    # Permissions needed for labelling issues automatically
     # https://docs.github.com/en/actions/security-guides/automatic-token-authentication
     permissions:
       contents: read
-      pull-requests: write
+      issues: write
     runs-on: ubuntu-latest
     steps:
-    # label based on changed files
-    - uses: actions/labeler@v5
-      continue-on-error: true
-      if: github.repository == 'scipy/scipy'
-      with:
-        repo-token: "${{ secrets.GITHUB_TOKEN }}"
-        configuration-path: ".github/label-globs.yml"
-    # label based on PR title
+    # label based on issue title
     - uses: github/issue-labeler@v3.3
       if: github.repository == 'scipy/scipy'
       with:
