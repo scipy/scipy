@@ -157,11 +157,25 @@ def _mwu_f_iterative(m, n, k, fmnks):
     return fmnks
 
 
-def _tie_term(ranks):
-    """Tie correction term"""
-    # element i of t is the number of elements sharing rank i
-    _, t = np.unique(ranks, return_counts=True, axis=-1)
-    return (t**3 - t).sum(axis=-1)
+def _tie_term(ranks, axis=-1):
+    ranks = np.moveaxis(ranks, axis, -1)
+    ranks = np.sort(ranks, axis=-1)
+    shape = ranks.shape
+    ranks = ranks.ravel()
+    # Nonzeros where unique elements first appear, zeros elsewhere
+    l = np.diff(ranks, prepend=0)
+    # Locations of first occurrences of unique elements
+    i = l != 0
+    # Indices of locations of first occurrences of unique elements
+    indices = np.arange(ranks.size)[i]
+    # Counts of unique elements
+    j = np.diff(indices, append=ranks.size)
+    # Replace nonzeros in `l` with counts
+    l[i] = j
+    # Compute tie correction
+    l = l.reshape(shape)
+    t = (l**3 - l).sum(axis=-1)
+    return t
 
 
 def _get_mwu_z(U, n1, n2, ranks, axis=0, continuity=True):
@@ -171,12 +185,8 @@ def _get_mwu_z(U, n1, n2, ranks, axis=0, continuity=True):
     n = n1 + n2
 
     # Tie correction according to [2]
-    tie_term = np.apply_along_axis(_tie_term, -1, ranks)
+    tie_term = _tie_term(ranks, axis=-1)
     s = np.sqrt(n1*n2/12 * ((n + 1) - tie_term/(n*(n-1))))
-
-    # equivalent to using scipy.stats.tiecorrect
-    # T = np.apply_along_axis(stats.tiecorrect, -1, ranks)
-    # s = np.sqrt(T * n1 * n2 * (n1+n2+1) / 12.0)
 
     numerator = U - mu
 
