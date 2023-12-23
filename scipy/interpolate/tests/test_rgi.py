@@ -850,6 +850,9 @@ class TestInterpN:
 
     @parametrize_rgi_interp_methods
     def test_complex(self, method):
+        if method == "pchip":
+            pytest.skip("pchip does not make sense for complex data")
+
         x, y, values = self._sample_2d_data()
         points = (x, y)
         values = values - 2j*values
