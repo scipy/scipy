@@ -231,10 +231,11 @@ def _mwu_input_validation(x, y, use_continuity, alternative, axis, method):
     if axis != axis_int:
         raise ValueError('`axis` must be an integer.')
 
-    methods = {"asymptotic", "exact", "auto"}
-    method = method.lower()
-    if method not in methods:
-        raise ValueError(f'`method` must be one of {methods}.')
+    if not isinstance(method, stats.PermutationMethod):
+        methods = {"asymptotic", "exact", "auto"}
+        method = method.lower()
+        if method not in methods:
+            raise ValueError(f'`method` must be one of {methods}.')
 
     return x, y, use_continuity, alternative, axis_int, method
 
@@ -307,7 +308,7 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
         see [5] section 5.1.
     axis : int, optional
         Axis along which to perform the test. Default is 0.
-    method : {'auto', 'asymptotic', 'exact'}, optional
+    method : {'auto', 'asymptotic', 'exact'} or `stats.PermutationMethod`, optional
         Selects the method used to calculate the *p*-value.
         Default is 'auto'. The following options are available.
 
@@ -319,6 +320,10 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
         * ``'auto'``: chooses ``'exact'`` when the size of one of the samples
           is less than or equal to 8 and there are no ties;
           chooses ``'asymptotic'`` otherwise.
+
+        `method` may also be an instance of `stats.PermutationMethod`, in which
+        case the p-value is computed using `scipy.stats.permutation_test` with
+        the provided configuration options and other appropriate settings.
 
     Returns
     -------
@@ -345,7 +350,9 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     relation originally proposed in [1]_ as it is described in [3]_.
     Note that the exact method is *not* corrected for ties, but
     `mannwhitneyu` will not raise errors or warnings if there are ties in the
-    data.
+    data. If there are ties and either samples is small (fewer than ~10
+    observations), consider passing an instance of `stats.PermutationMethod`
+    as the `method` to perform a permutation test.
 
     The Mann-Whitney U test is a non-parametric version of the t-test for
     independent samples. When the means of samples from the populations
@@ -508,6 +515,17 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     elif method == "asymptotic":
         z = _get_mwu_z(U, n1, n2, ranks, continuity=use_continuity)
         p = stats.norm.sf(z)
+    else:
+        def statistic(x, y, axis):
+            return mannwhitneyu(x, y, use_continuity=use_continuity,
+                                alternative=alternative, axis=axis,
+                                method="asymptotic").statistic
+
+        res = stats.permutation_test((x, y), statistic, axis=axis,
+                                     **method._asdict(), alternative=alternative)
+        p = res.pvalue
+        f = 1
+
     p *= f
 
     # Ensure that test statistic is not greater than 1

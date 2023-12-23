@@ -634,6 +634,18 @@ class TestMannWhitneyU:
         stats.mannwhitneyu(0*x, y, method='exact', alternative='greater')
         assert shape == _mwu_state._fmnks.shape
 
+    @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
+    def test_permutation_method(self, alternative):
+        rng = np.random.default_rng(7600451795963068007)
+        x = rng.random(size=(2, 5))
+        y = rng.random(size=(2, 6))
+        res = stats.mannwhitneyu(x, y, method=stats.PermutationMethod(),
+                                 alternative=alternative, axis=1)
+        res2 = stats.mannwhitneyu(x, y, method='exact',
+                                  alternative=alternative, axis=1)
+        assert_allclose(res.statistic, res2.statistic, rtol=1e-15)
+        assert_allclose(res.pvalue, res2.pvalue, rtol=1e-15)
+
     def teardown_method(self):
         _mwu_state._recursive = None
 
