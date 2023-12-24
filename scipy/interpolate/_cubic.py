@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import warnings
+
 import numpy as np
 
 from scipy.linalg import solve, solve_banded
@@ -239,6 +241,13 @@ class PchipInterpolator(CubicHermiteSpline):
 
     def __init__(self, x, y, axis=0, extrapolate=None):
         x, _, y, axis, _ = prepare_input(x, y, axis)
+        if np.iscomplexobj(y):
+            msg = ("`PchipInterpolator` only works with real values for `y`. "
+                   "Passing an array with a complex dtype for `y` is deprecated "
+                   "and will raise an error in SciPy 1.15.0. If you are trying to "
+                   "use the real components of the passed array, use `np.real` on "
+                   "the array before passing to `PchipInterpolator`.")
+            warnings.warn(msg, DeprecationWarning, stacklevel=2)
         xp = x.reshape((x.shape[0],) + (1,)*(y.ndim-1))
         dk = self._find_derivatives(xp, y)
         super().__init__(x, y, dk, axis=0, extrapolate=extrapolate)
@@ -484,6 +493,14 @@ class Akima1DInterpolator(CubicHermiteSpline):
         # Original implementation in MATLAB by N. Shamsundar (BSD licensed), see
         # https://www.mathworks.com/matlabcentral/fileexchange/1814-akima-interpolation
         x, dx, y, axis, _ = prepare_input(x, y, axis)
+
+        if np.iscomplexobj(y):
+            msg = ("`Akima1DInterpolator` only works with real values for `y`. "
+                   "Passing an array with a complex dtype for `y` is deprecated "
+                   "and will raise an error in SciPy 1.15.0. If you are trying to "
+                   "use the real components of the passed array, use `np.real` on "
+                   "the array before passing to `Akima1DInterpolator`.")
+            warnings.warn(msg, DeprecationWarning, stacklevel=2)
 
         # determine slopes between breakpoints
         m = np.empty((x.size + 3, ) + y.shape[1:])
