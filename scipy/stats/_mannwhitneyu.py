@@ -81,7 +81,7 @@ class _MWU:
             cdfs = np.asarray(self.cdf(kc, m, n))
             cdfs[i] = 1. - cdfs[i] + self.pmf(kc[i], m, n)
         else:
-            cdfs = self.cdf(kc, m, n)
+            cdfs = np.asarray(self.cdf(kc, m, n))
         return cdfs[()]
 
     def _resize_fmnks(self, m, n, k):

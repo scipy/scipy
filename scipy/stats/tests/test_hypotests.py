@@ -620,9 +620,9 @@ class TestMannWhitneyU:
         _mwu_state._fmnks = -np.ones((1, 1, 1))  # reset cache
         stats.mannwhitneyu(x, y, method='exact')
         shape = _mwu_state._fmnks.shape
-        assert shape[0] < shape[1]
+        assert shape[0] <= 6 and shape[1] <= 12  # one more than sizes
         stats.mannwhitneyu(y, x, method='exact')
-        assert shape == _mwu_state._fmnks.shape
+        assert shape == _mwu_state._fmnks.shape  # unchanged when sizes are reversed
 
         # Also, we weren't exploiting the symmmetry of the null distribution
         # to its full potential. Ensure that the null distribution is not
