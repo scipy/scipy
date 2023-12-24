@@ -160,29 +160,31 @@ def _mwu_f_iterative(m, n, k, fmnks):
 def rankdata(x, axis=-1):
     x = np.swapaxes(x, axis, -1)
     shape = x.shape
-
+    # Sort array, remembering sort order
     j = np.argsort(x, axis=-1)
     y = np.take_along_axis(x, j, axis=-1)
+    # Logical indices of unique elements
     i = np.concatenate([np.ones(y.shape[:-1] + (1,), dtype=np.bool_),
                         y[..., :-1] != y[..., 1:]], axis=-1)
+    # Integer indices of unique elements
     indices = np.arange(y.size)[i.ravel()]
+    # Counts of unique elements
     counts = np.diff(indices, append=y.size)
-
-    low_ranks = np.broadcast_to(np.arange(1, y.shape[-1]+1), y.shape)[i]
-    high_ranks = low_ranks + counts - 1
-
-    low_ranks = np.repeat(low_ranks, counts).reshape(shape)
-    high_ranks = np.repeat(high_ranks, counts).reshape(shape)
-
-    mid_ranks = (low_ranks + high_ranks)/2
-    l = np.zeros(mid_ranks.shape, dtype=float)
-    l[i] = counts
-    t = (l**3 - l).sum(axis=-1)
-
+    # Compute `'min'`, `'max'`, and `'mid'` ranks of unique elements
+    min_ranks = np.broadcast_to(np.arange(1, y.shape[-1]+1), y.shape)[i]
+    max_ranks = min_ranks + counts - 1
+    min_ranks = np.repeat(min_ranks, counts).reshape(shape)
+    max_ranks = np.repeat(max_ranks, counts).reshape(shape)
+    mid_ranks = (min_ranks + max_ranks) / 2
+    # Compute tie correction
+    t = np.zeros(mid_ranks.shape, dtype=float)
+    t[i] = counts
+    tie_correct = (t**3 - t).sum(axis=-1)
+    # Return ranks to original order and shape
     ranks = np.empty_like(mid_ranks)
     np.put_along_axis(ranks, j, mid_ranks, axis=-1)
     ranks = np.swapaxes(ranks, axis, -1)
-    return ranks, t
+    return ranks, tie_correct
 
 
 def _get_mwu_z(U, n1, n2, tie_term, axis=0, continuity=True):
