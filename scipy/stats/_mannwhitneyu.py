@@ -157,35 +157,41 @@ def _mwu_f_iterative(m, n, k, fmnks):
     return fmnks
 
 
-def _tie_term(ranks, axis=-1):
-    ranks = np.moveaxis(ranks, axis, -1)
-    ranks = np.sort(ranks, axis=-1)
-    shape = ranks.shape
-    ranks = ranks.ravel()
-    # Nonzeros where unique elements first appear, zeros elsewhere
-    l = np.diff(ranks, prepend=0)
-    # Locations of first occurrences of unique elements
-    i = l != 0
-    # Indices of locations of first occurrences of unique elements
-    indices = np.arange(ranks.size)[i]
-    # Counts of unique elements
-    j = np.diff(indices, append=ranks.size)
-    # Replace nonzeros in `l` with counts
-    l[i] = j
-    # Compute tie correction
-    l = l.reshape(shape)
+def rankdata(x, axis=-1):
+    x = np.swapaxes(x, axis, -1)
+    shape = x.shape
+
+    j = np.argsort(x, axis=-1)
+    y = np.take_along_axis(x, j, axis=-1)
+    i = np.concatenate([np.ones(y.shape[:-1] + (1,), dtype=np.bool_),
+                        y[..., :-1] != y[..., 1:]], axis=-1)
+    indices = np.arange(y.size)[i.ravel()]
+    counts = np.diff(indices, append=y.size)
+
+    low_ranks = np.broadcast_to(np.arange(1, y.shape[-1]+1), y.shape)[i]
+    high_ranks = low_ranks + counts - 1
+
+    low_ranks = np.repeat(low_ranks, counts).reshape(shape)
+    high_ranks = np.repeat(high_ranks, counts).reshape(shape)
+
+    mid_ranks = (low_ranks + high_ranks)/2
+    l = np.zeros(mid_ranks.shape, dtype=float)
+    l[i] = counts
     t = (l**3 - l).sum(axis=-1)
-    return t
+
+    ranks = np.empty_like(mid_ranks)
+    np.put_along_axis(ranks, j, mid_ranks, axis=-1)
+    ranks = np.swapaxes(ranks, axis, -1)
+    return ranks, t
 
 
-def _get_mwu_z(U, n1, n2, ranks, axis=0, continuity=True):
+def _get_mwu_z(U, n1, n2, tie_term, axis=0, continuity=True):
     '''Standardized MWU statistic'''
     # Follows mannwhitneyu [2]
     mu = n1 * n2 / 2
     n = n1 + n2
 
     # Tie correction according to [2]
-    tie_term = _tie_term(ranks, axis=-1)
     s = np.sqrt(n1*n2/12 * ((n + 1) - tie_term/(n*(n-1))))
 
     numerator = U - mu
@@ -233,13 +239,7 @@ def _mwu_input_validation(x, y, use_continuity, alternative, axis, method):
     return x, y, use_continuity, alternative, axis_int, method
 
 
-def _tie_check(xy):
-    """Find any ties in data"""
-    _, t = np.unique(xy, return_counts=True, axis=-1)
-    return np.any(t != 1)
-
-
-def _mwu_choose_method(n1, n2, xy, method):
+def _mwu_choose_method(n1, n2, ties, method):
     """Choose method 'asymptotic' or 'exact' depending on input size, ties"""
 
     # if both inputs are large, asymptotic is OK
@@ -247,7 +247,7 @@ def _mwu_choose_method(n1, n2, xy, method):
         return "asymptotic"
 
     # if there are any ties, asymptotic is preferred
-    if np.apply_along_axis(_tie_check, -1, xy).any():
+    if ties:
         return "asymptotic"
 
     return "exact"
@@ -481,14 +481,14 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
 
     n1, n2 = x.shape[-1], y.shape[-1]
 
-    if method == "auto":
-        method = _mwu_choose_method(n1, n2, xy, method)
-
     # Follows [2]
-    ranks = stats.rankdata(xy, axis=-1)  # method 2, step 1
-    R1 = ranks[..., :n1].sum(axis=-1)    # method 2, step 2
-    U1 = R1 - n1*(n1+1)/2                # method 2, step 3
-    U2 = n1 * n2 - U1                    # as U1 + U2 = n1 * n2
+    ranks, tie_term = rankdata(xy, axis=-1)  # method 2, step 1
+    R1 = ranks[..., :n1].sum(axis=-1)        # method 2, step 2
+    U1 = R1 - n1*(n1+1)/2                    # method 2, step 3
+    U2 = n1 * n2 - U1                        # as U1 + U2 = n1 * n2
+
+    if method == "auto":
+        method = _mwu_choose_method(n1, n2, np.any(tie_term), method)
 
     if alternative == "greater":
         U, f = U1, 1  # U is the statistic to use for p-value, f is a factor
@@ -500,7 +500,7 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     if method == "exact":
         p = _mwu_state.sf(U.astype(int), n1, n2)
     elif method == "asymptotic":
-        z = _get_mwu_z(U, n1, n2, ranks, continuity=use_continuity)
+        z = _get_mwu_z(U, n1, n2, tie_term, continuity=use_continuity)
         p = stats.norm.sf(z)
     p *= f
 
