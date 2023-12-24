@@ -42,8 +42,10 @@ MINIMIZE_METHODS = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
                     'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov']
 
 # These methods may possibly pass jacobians or hessians to the callback
-MINIMIZE_METHODS_DERIV = ['bfgs', 'newton-cg', 'trust-constr',
-                        'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov']
+MINIMIZE_METHODS_JAC = ['bfgs', 'l-bfgs-b', 'newton-cg', 'dogleg', 
+                        'trust-ncg', 'trust-exact', 'trust-krylov',
+                        'cg']
+MINIMIZE_METHODS_HESS = ['dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov']
 
 # These methods support the new callback interface (passed an OptimizeResult)
 MINIMIZE_METHODS_NEW_CB = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
@@ -209,10 +211,13 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             ``callback(intermediate_result: OptimizeResult)``
 
         where ``intermediate_result`` is a keyword parameter containing an
-        `OptimizeResult` with attributes ``x`` and ``fun``, the present values
-        of the parameter vector and objective function. If ``jac`` or ``hess`` 
-        are specified as callable they will also be present in 
-        ``intermediate_result`` as attributes ``jac`` and ``hess``.
+        `OptimizeResult` with attributes ``x`` and ``fun`` and ``jac``, the
+        present values of the parameter vector, the objective function and
+        its gradient. 
+        Note that ``jac`` is only present if the method is in some form
+        using gradients during iteration. 
+        If ``hess`` is specified as callable it will also be 
+        present in ``intermediate_result`` as attribute ``hess``.
         Note that the name of the parameter must be ``intermediate_result`` 
         for the callback to be passed an `OptimizeResult`. These methods will
         also terminate if the callback raises ``StopIteration``.

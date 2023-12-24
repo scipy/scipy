@@ -23,7 +23,8 @@ from scipy import optimize
 from scipy.optimize._minimize import Bounds, NonlinearConstraint
 from scipy.optimize._minimize import (MINIMIZE_METHODS,
                                       MINIMIZE_METHODS_NEW_CB,
-                                      MINIMIZE_METHODS_DERIV,
+                                      MINIMIZE_METHODS_JAC,
+                                      MINIMIZE_METHODS_HESS,
                                       MINIMIZE_SCALAR_METHODS)
 from scipy.optimize._linprog import LINPROG_METHODS
 from scipy.optimize._root import ROOT_METHODS
@@ -1601,17 +1602,27 @@ class TestOptimizeSimple(CheckOptimize):
         if new_cb_interface == 1:
             def callback_interface(*, intermediate_result):
                 assert intermediate_result.fun == f(intermediate_result.x)
-                if method in MINIMIZE_METHODS_DERIV:
-                    assert intermediate_result.jac == g(intermediate_result.x)
-                    assert intermediate_result.hess == h(intermediate_result.x)
+                if method in MINIMIZE_METHODS_JAC:
+                    assert_allclose(
+                        intermediate_result.jac, g(intermediate_result.x)
+                    )
+                if method in MINIMIZE_METHODS_HESS:
+                    assert_allclose(
+                        intermediate_result.hess, h(intermediate_result.x)
+                    )
                 callback()
         elif new_cb_interface == 2:
             class Callback:
                 def __call__(self, intermediate_result: OptimizeResult):
-                    assert intermediate_result.fun == f(intermediate_result.x)
-                    if method in MINIMIZE_METHODS_DERIV:
-                        assert intermediate_result.jac == g(intermediate_result.x)
-                        assert intermediate_result.hess == h(intermediate_result.x)
+                    assert_allclose(intermediate_result.fun, f(intermediate_result.x))
+                    if method in MINIMIZE_METHODS_JAC:
+                        assert_allclose(
+                            intermediate_result.jac, g(intermediate_result.x)
+                        )
+                    if method in MINIMIZE_METHODS_HESS:
+                        assert_allclose(
+                            intermediate_result.hess, h(intermediate_result.x)
+                        )
                     callback()
             callback_interface = Callback()
         else:

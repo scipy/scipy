@@ -1,4 +1,4 @@
-#__docformat__ = "restructuredtext en"
+# __docformat__ = "restructuredtext en"
 # ******NOTICE***************
 # optimize.py module by Travis E. Oliphant
 #
@@ -282,8 +282,8 @@ def _check_positive_definite(Hk):
     if Hk is not None:
         if not is_pos_def(Hk):
             raise ValueError("'hess_inv0' matrix isn't positive definite.")
-        
-        
+
+
 def _check_unknown_options(unknown_options):
     if unknown_options:
         msg = ", ".join(map(str, unknown_options.keys()))
@@ -2130,6 +2130,8 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
                                 njev=sf.ngev, nhev=hcalls, status=warnflag,
                                 success=(warnflag == 0), message=msg, x=xk,
                                 nit=k)
+        if fhess is not None:
+            result.hess = A
         if retall:
             result['allvecs'] = allvecs
         return result
@@ -2206,8 +2208,10 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
             dri0 = dri1          # update np.dot(ri,ri) for next time.
         else:
             # curvature keeps increasing, bail out
-            msg = ("Warning: CG iterations didn't converge. The Hessian is not "
-                   "positive definite.")
+            msg = (
+                "Warning: CG iterations didn't converge. The Hessian is not "
+                "positive definite."
+            )
             return terminate(3, msg)
 
         pk = xsupi  # search direction is solution to system.
@@ -2227,7 +2231,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
         if retall:
             allvecs.append(xk)
         k += 1
-        intermediate_result = OptimizeResult(x=xk, fun=old_fval, jac=gfk)
+        intermediate_result = OptimizeResult(x=xk, fun=old_fval, jac=gfkp1)
         if fhess is not None:
             intermediate_result.hess = A
         if _call_callback_maybe_halt(callback, intermediate_result):
