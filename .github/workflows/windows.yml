@@ -143,7 +143,7 @@ jobs:
 
       - name: Build
         run: |
-          python -m build -Csetup-args="-Duse-pythran=false"
+          python -m build --no-isolation -x -Csetup-args="-Duse-pythran=false"
 
           # Vendor openblas.dll and the DLL's it depends on into the wheel 
           $env:wheel_name=Get-ChildItem -Path dist/* -Include *.whl
