@@ -2951,6 +2951,32 @@ def _factorialx_approx_core(n, k):
     return result
 
 
+def _is_subdtype(dtype, dtypes):
+    """
+    Shorthand for calculating whether dtype is subtype of some dtypes.
+
+    Also allows specifying a list instead of just a single dtype.
+
+    Additionaly, the most important supertypes from
+        https://numpy.org/doc/stable/reference/arrays.scalars.html
+    can optionally be specified using abbreviations as follows:
+        "i": np.integer
+        "f": np.floating
+        "c": np.complexfloating
+        "n": np.number (contains the other three)
+    """
+    dtypes = dtypes if isinstance(dtypes, list) else [dtypes]
+    # map single character abbreviations, if they are in dtypes
+    mapping = {
+        "i": np.integer,
+        "f": np.floating,
+        "c": np.complexfloating,
+        "n": np.number
+    }
+    dtypes = [mapping.get(x, x) for x in dtypes]
+    return any(np.issubdtype(dtype, dt) for dt in dtypes)
+
+
 def factorial(n, exact=False):
     """
     The factorial of a number or array of numbers.
@@ -3004,15 +3030,14 @@ def factorial(n, exact=False):
         # scalar cases
         if n is None or np.isnan(n):
             return np.nan
-        elif not (np.issubdtype(type(n), np.integer)
-                  or np.issubdtype(type(n), np.floating)):
+        elif not _is_subdtype(type(n), ["i", "f"]):
             raise ValueError(
                 f"Unsupported datatype for factorial: {type(n)}\n"
                 "Permitted data types are integers and floating point numbers"
             )
         elif n < 0:
             return 0
-        elif exact and np.issubdtype(type(n), np.integer):
+        elif exact and _is_subdtype(type(n), "i"):
             return math.factorial(n)
         elif exact:
             msg = ("Non-integer values of `n` together with `exact=True` are "
@@ -3025,13 +3050,12 @@ def factorial(n, exact=False):
     if n.size == 0:
         # return empty arrays unchanged
         return n
-    if not (np.issubdtype(n.dtype, np.integer)
-            or np.issubdtype(n.dtype, np.floating)):
+    if not _is_subdtype(n.dtype, ["i", "f"]):
         raise ValueError(
             f"Unsupported datatype for factorial: {n.dtype}\n"
             "Permitted data types are integers and floating point numbers"
         )
-    if exact and not np.issubdtype(n.dtype, np.integer):
+    if exact and not _is_subdtype(n.dtype, "i"):
         msg = ("factorial with `exact=True` does not "
                "support non-integral arrays")
         raise ValueError(msg)
@@ -3081,7 +3105,7 @@ def factorial2(n, exact=False):
         # scalar cases
         if n is None or np.isnan(n):
             return np.nan
-        elif not np.issubdtype(type(n), np.integer):
+        elif not _is_subdtype(type(n), "i"):
             msg = "factorial2 does not support non-integral scalar arguments"
             raise ValueError(msg)
         elif n < 0:
@@ -3097,7 +3121,7 @@ def factorial2(n, exact=False):
     if n.size == 0:
         # return empty arrays unchanged
         return n
-    if not np.issubdtype(n.dtype, np.integer):
+    if not _is_subdtype(n.dtype, "i"):
         raise ValueError("factorial2 does not support non-integral arrays")
     if exact:
         return _factorialx_array_exact(n, k=2)
@@ -3165,7 +3189,7 @@ def factorialk(n, k, exact=None):
     .. [1] Complex extension to multifactorial
             https://en.wikipedia.org/wiki/Double_factorial#Alternative_extension_of_the_multifactorial
     """
-    if not np.issubdtype(type(k), np.integer) or k < 1:
+    if not _is_subdtype(type(k), "i") or k < 1:
         raise ValueError(f"k must be a positive integer, received: {k}")
     if exact is None:
         msg = (
@@ -3187,7 +3211,7 @@ def factorialk(n, k, exact=None):
         # scalar cases
         if n is None or np.isnan(n):
             return np.nan
-        elif not np.issubdtype(type(n), np.integer):
+        elif not _is_subdtype(type(n), "i"):
             msg = "factorialk does not support non-integral scalar arguments!"
             raise ValueError(msg + helpmsg)
         elif n < 0:
@@ -3203,7 +3227,7 @@ def factorialk(n, k, exact=None):
     if n.size == 0:
         # return empty arrays unchanged
         return n
-    if not np.issubdtype(n.dtype, np.integer):
+    if not _is_subdtype(n.dtype, "i"):
         msg = "factorialk does not support non-integral arrays!"
         raise ValueError(msg + helpmsg)
     if exact:
