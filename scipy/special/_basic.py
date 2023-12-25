@@ -2914,16 +2914,24 @@ def _factorialx_approx_core(n, k):
             result = np.array(result)
         return result
 
+    n_mod_k = n % k
+    # scalar case separately, unified handling would be inefficient for arrays;
+    # don't use isscalar due to numpy/numpy#23574; 0-dim arrays treated below
+    if not isinstance(n, np.ndarray):
+        return (
+            np.power(k, (n - n_mod_k) / k)
+            * gamma(n / k + 1) / gamma(n_mod_k / k + 1)
+            * max(n_mod_k, 1)
+        )
+
     # factor that's independent of the residue class (see factorialk docstring)
     result = np.power(k, n / k) * gamma(n / k + 1)
-    mask = np.ones_like(n, dtype=np.float64)
-    # factor dependent on r (for `r=0` it's 1, which `mask` has already;
-    # so we skip `r=0` below and thus also avoid evaluating `max(r, 1)`)
+    # factor dependent on residue r (for `r=0` it's 1, so we skip `r=0`
+    # below and thus also avoid evaluating `max(r, 1)`)
     def corr(k, r): return np.power(k, -r / k) / gamma(r / k + 1) * r
     for r in range(1, k):
-        mask[n % k == r] = corr(k, r)
-    # bring together the two factors
-    return result * mask
+        result[n_mod_k == r] *= corr(k, r)
+    return result
 
 
 def factorial(n, exact=False):
