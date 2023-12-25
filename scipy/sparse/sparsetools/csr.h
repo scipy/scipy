@@ -87,15 +87,11 @@ void expandptr(const I n_row,
                const I Ap[],
                      I Bi[])
 {
-    std::for_each(
-#if PARALLEL_OTHERS
-                  workers.par_if_flops(Ap[n_row]),
-#endif
-                  iota_iter<I>(0), iota_iter<I>(n_row), [&](I i){
+    for(I i = 0; i < n_row; i++){
         for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
             Bi[jj] = i;
         }
-    });
+    }
 }
 
 
@@ -113,15 +109,11 @@ void csr_scale_rows(const I n_row,
                           T Ax[],
                     const T Xx[])
 {
-    std::for_each(
-#if PARALLEL_OTHERS
-                  workers.par_if_flops(Ap[n_row]),
-#endif
-                  iota_iter<I>(0), iota_iter<I>(n_row), [&](I i){
+    for(I i = 0; i < n_row; i++){
         for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
             Ax[jj] *= Xx[i];
         }
-    });
+    }
 }
 
 
@@ -140,13 +132,9 @@ void csr_scale_columns(const I n_row,
                        const T Xx[])
 {
     const I nnz = Ap[n_row];
-    std::for_each(
-#if PARALLEL_OTHERS
-                  workers.par_if_mem(nnz),
-#endif
-                  iota_iter<I>(0), iota_iter<I>(nnz), [&](I i){
+    for(I i = 0; i < nnz; i++){
         Ax[i] *= Xx[Aj[i]];
-    });
+    }
 }
 
 
@@ -287,16 +275,13 @@ void csr_todense(const I n_row,
                  const T Ax[],
                        T Bx[])
 {
-    std::for_each(
-#if PARALLEL_OTHERS
-                  workers.par_if_flops(Ap[n_row]),
-#endif
-                  iota_iter<I>(0), iota_iter<I>(n_row), [&](I i){
-        T* Bx_row = Bx + ((npy_intp)n_col * i);
+    T * Bx_row = Bx;
+    for(I i = 0; i < n_row; i++){
         for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
             Bx_row[Aj[jj]] += Ax[jj];
         }
-    });
+        Bx_row += (npy_intp)n_col;
+    }
 }
 
 
@@ -314,17 +299,6 @@ bool csr_has_sorted_indices(const I n_row,
                             const I Ap[],
                             const I Aj[])
 {
-#if PARALLEL_OTHERS
-    return std::all_of(workers.par_if_mem(Ap[n_row]),
-                       iota_iter<I>(0), iota_iter<I>(n_row), [&](I i){
-        for(I jj = Ap[i]; jj < Ap[i+1] - 1; jj++){
-            if(Aj[jj] > Aj[jj+1]){
-                return false;
-            }
-        }
-        return true;
-    });
-#else
   for(I i = 0; i < n_row; i++){
       for(I jj = Ap[i]; jj < Ap[i+1] - 1; jj++){
           if(Aj[jj] > Aj[jj+1]){
@@ -333,7 +307,6 @@ bool csr_has_sorted_indices(const I n_row,
       }
   }
   return true;
-#endif
 }
 
 
@@ -355,19 +328,6 @@ bool csr_has_canonical_format(const I n_row,
                               const I Ap[],
                               const I Aj[])
 {
-#if PARALLEL_OTHERS || PARALLEL_BINOP
-    return std::all_of(workers.par_if_mem(Ap[n_row]),
-                       iota_iter<I>(0), iota_iter<I>(n_row), [&](I i){
-        if (Ap[i] > Ap[i+1])
-            return false;
-        for(I jj = Ap[i] + 1; jj < Ap[i+1]; jj++){
-            if( !(Aj[jj-1] < Aj[jj]) ){
-                return false;
-            }
-        }
-        return true;
-    });
-#else
     for(I i = 0; i < n_row; i++){
         if (Ap[i] > Ap[i+1])
             return false;
@@ -378,7 +338,6 @@ bool csr_has_canonical_format(const I n_row,
         }
     }
     return true;
-#endif
 }
 
 
@@ -842,101 +801,6 @@ void csr_binop_csr_general(const I n_row, const I n_col,
 }
 
 
-template <class I, class T, class T2, class binary_op>
-void csr_binop_csr_canonical_pattern(const I n_row, const I n_col,
-                                     const I Ap[], const I Aj[], const T Ax[],
-                                     const I Bp[], const I Bj[], const T Bx[],
-                                           I Cp[],       I Cj[],       T2 Cx[],
-                                     const binary_op& op, int phase)
-{
-    //Method that works for canonical CSR matrices
-
-    Cp[0] = 0;
-    const bool write_values = (phase != 1);
-
-    std::for_each(
-#if PARALLEL_BINOP
-                  workers.par_if(phase != 0),
-#endif
-                  iota_iter<I>(0), iota_iter<I>(n_row), [&](I i){
-        I A_pos = Ap[i];
-        I B_pos = Bp[i];
-        I A_end = Ap[i+1];
-        I B_end = Bp[i+1];
-
-        I nnz = Cp[i];
-
-        //while not finished with either row
-        while(A_pos < A_end && B_pos < B_end){
-            I A_j = Aj[A_pos];
-            I B_j = Bj[B_pos];
-
-            if(A_j == B_j){
-                T result = op(Ax[A_pos],Bx[B_pos]);
-                if(result != 0){
-                    if (write_values) {
-                        Cj[nnz] = A_j;
-                        Cx[nnz] = result;
-                    }
-                    nnz++;
-                }
-                A_pos++;
-                B_pos++;
-            } else if (A_j < B_j) {
-                T result = op(Ax[A_pos],0);
-                if (result != 0){
-                    if (write_values) {
-                        Cj[nnz] = A_j;
-                        Cx[nnz] = result;
-                    }
-                    nnz++;
-                }
-                A_pos++;
-            } else {
-                //B_j < A_j
-                T result = op(0,Bx[B_pos]);
-                if (result != 0){
-                    if (write_values) {
-                        Cj[nnz] = B_j;
-                        Cx[nnz] = result;
-                    }
-                    nnz++;
-                }
-                B_pos++;
-            }
-        }
-
-        //tail
-        while(A_pos < A_end){
-            T result = op(Ax[A_pos],0);
-            if (result != 0){
-                if (write_values) {
-                    Cj[nnz] = Aj[A_pos];
-                    Cx[nnz] = result;
-                }
-                nnz++;
-            }
-            A_pos++;
-        }
-        while(B_pos < B_end){
-            T result = op(0,Bx[B_pos]);
-            if (result != 0){
-                if (write_values) {
-                    Cj[nnz] = Bj[B_pos];
-                    Cx[nnz] = result;
-                }
-                nnz++;
-            }
-            B_pos++;
-        }
-
-        if (phase == 0) {
-            Cp[i+1] = nnz;
-        } else if (phase == 1) {
-            Cp[i] = nnz - Cp[i];
-        }
-    });
-}
 
 /*
  * Compute C = A (binary_op) B for CSR matrices that are in the
@@ -952,7 +816,7 @@ void csr_binop_csr_canonical_pattern(const I n_row, const I n_col,
  *           Cx will not contain any zero entries
  *
  */
-template <bool parallel, class I, class T, class T2, class binary_op>
+template <class I, class T, class T2, class binary_op>
 void csr_binop_csr_canonical(const I n_row, const I n_col,
                              const I Ap[], const I Aj[], const T Ax[],
                              const I Bp[], const I Bj[], const T Bx[],
@@ -961,27 +825,71 @@ void csr_binop_csr_canonical(const I n_row, const I n_col,
 {
     //Method that works for canonical CSR matrices
 
-    if constexpr (PARALLEL_BINOP && parallel) {
-        // Binop is dominated by memory bandwidth. Operands must be very large
-        // for parallelism to be beneficial.
-        if (workers.decide_if_par(Ap[n_row] + Bp[n_row], true)) {
-            // Phase 1: Compute Cp. First compute the row nnz, in parallel.
-            std::fill(Cp, Cp + n_row + 1, 0);
-            csr_binop_csr_canonical_pattern(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op, 1);
+    Cp[0] = 0;
+    I nnz = 0;
 
-            // Cp is a cumsum of row nnz.
-            exclusive_scan(Cp, Cp + n_row + 1, Cp, 0);
+    for(I i = 0; i < n_row; i++){
+        I A_pos = Ap[i];
+        I B_pos = Bp[i];
+        I A_end = Ap[i+1];
+        I B_end = Bp[i+1];
 
-            // Phase 2: Compute column indices and values, in parallel.
-            csr_binop_csr_canonical_pattern(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op, 2);
+        //while not finished with either row
+        while(A_pos < A_end && B_pos < B_end){
+            I A_j = Aj[A_pos];
+            I B_j = Bj[B_pos];
 
-            return;
+            if(A_j == B_j){
+                T result = op(Ax[A_pos],Bx[B_pos]);
+                if(result != 0){
+                    Cj[nnz] = A_j;
+                    Cx[nnz] = result;
+                    nnz++;
+                }
+                A_pos++;
+                B_pos++;
+            } else if (A_j < B_j) {
+                T result = op(Ax[A_pos],0);
+                if (result != 0){
+                    Cj[nnz] = A_j;
+                    Cx[nnz] = result;
+                    nnz++;
+                }
+                A_pos++;
+            } else {
+                //B_j < A_j
+                T result = op(0,Bx[B_pos]);
+                if (result != 0){
+                    Cj[nnz] = B_j;
+                    Cx[nnz] = result;
+                    nnz++;
+                }
+                B_pos++;
+            }
         }
-    }
 
-    // Sequential. Single pass.
-    // Called if matrices are small or parallelism not enabled for this binop.
-    csr_binop_csr_canonical_pattern(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op, 0);
+        //tail
+        while(A_pos < A_end){
+            T result = op(Ax[A_pos],0);
+            if (result != 0){
+                Cj[nnz] = Aj[A_pos];
+                Cx[nnz] = result;
+                nnz++;
+            }
+            A_pos++;
+        }
+        while(B_pos < B_end){
+            T result = op(0,Bx[B_pos]);
+            if (result != 0){
+                Cj[nnz] = Bj[B_pos];
+                Cx[nnz] = result;
+                nnz++;
+            }
+            B_pos++;
+        }
+
+        Cp[i+1] = nnz;
+    }
 }
 
 
@@ -1016,7 +924,7 @@ void csr_binop_csr_canonical(const I n_row, const I n_col,
  *           Cx will not contain any zero entries
  *
  */
-template <bool parallel=false, class I, class T, class T2, class binary_op>
+template <class I, class T, class T2, class binary_op>
 void csr_binop_csr(const I n_row,
                    const I n_col,
                    const I Ap[],
@@ -1031,7 +939,7 @@ void csr_binop_csr(const I n_row,
                    const binary_op& op)
 {
     if (csr_has_canonical_format(n_row,Ap,Aj) && csr_has_canonical_format(n_row,Bp,Bj))
-        csr_binop_csr_canonical<parallel>(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op);
+        csr_binop_csr_canonical(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op);
     else
         csr_binop_csr_general(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op);
 }
@@ -1088,7 +996,7 @@ void csr_elmul_csr(const I n_row, const I n_col,
                    const I Bp[], const I Bj[], const T Bx[],
                          I Cp[],       I Cj[],       T Cx[])
 {
-    csr_binop_csr<true>(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::multiplies<T>());
+    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::multiplies<T>());
 }
 
 template <class I, class T>
@@ -1107,7 +1015,7 @@ void csr_plus_csr(const I n_row, const I n_col,
                   const I Bp[], const I Bj[], const T Bx[],
                         I Cp[],       I Cj[],       T Cx[])
 {
-    csr_binop_csr<true>(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::plus<T>());
+    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::plus<T>());
 }
 
 template <class I, class T>
@@ -1116,7 +1024,7 @@ void csr_minus_csr(const I n_row, const I n_col,
                    const I Bp[], const I Bj[], const T Bx[],
                          I Cp[],       I Cj[],       T Cx[])
 {
-    csr_binop_csr<true>(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::minus<T>());
+    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::minus<T>());
 }
 
 template <class I, class T>
@@ -1256,10 +1164,7 @@ void csr_matvec(const I n_row,
                 const T Xx[],
                       T Yx[])
 {
-    std::for_each(
-#if PARALLEL_OTHERS
-                  workers.par_if_flops(Ap[n_row]),
-#endif
+    std::for_each(workers.par_if_flops(Ap[n_row]),
                   iota_iter<I>(0), iota_iter<I>(n_row), [&](I i){
         T sum = Yx[i];
         for(I jj = Ap[i]; jj < Ap[i+1]; jj++){

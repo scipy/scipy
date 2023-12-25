@@ -25,19 +25,8 @@ using poolstl::for_each_chunk;
  */
 #define USE_POOL 0
 
-/**
- * Enable/disable parallelism for binops.
- * Use to test library size / performance tradeoff.
- */
-#define PARALLEL_BINOP 1
 
-/**
- * Enable/disable parallelism for non-matmul, non-binops.
- * Use to test library size / performance tradeoff.
- */
-#define PARALLEL_OTHERS 1
-
-class worker_pool {
+class worker_config {
 private:
     // The thread pool is started on first use with this many worker threads.
     int num_workers = 1;
@@ -143,7 +132,7 @@ public:
 #endif
 };
 
-extern worker_pool workers;
+extern worker_config workers;
 
 
 /**

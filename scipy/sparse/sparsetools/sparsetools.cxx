@@ -534,9 +534,9 @@ static PyObject *c_array_from_object(PyObject *obj, int typenum, int is_output)
 }
 
 /*
- * Worker thread pool. Used to parallelize CSR operations.
+ * Worker configuration. Used to parallelize CSR operations.
  */
-worker_pool workers;
+worker_config workers;
 
 /*
  * Python module initialization
