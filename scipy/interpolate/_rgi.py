@@ -265,8 +265,16 @@ class RegularGridInterpolator:
             warnings.warn(msg, DeprecationWarning, stacklevel=2)
         if method in self._SPLINE_METHODS_ndbspl:
             self._spline = self._construct_spline(method, solver, **solver_args)
+        else:
+            if solver is not None or solver_args:
+                raise ValueError(
+                    f"{method =} does not accept the 'solver' argument. Got "
+                    f" {solver = } and with arguments {solver_args}."
+                )
 
-    def _construct_spline(self, method, solver=ssl.gcrotmk, **solver_args):
+    def _construct_spline(self, method, solver=None, **solver_args):
+        if solver is None:
+            solver = ssl.gcrotmk
         spl, _ = make_ndbspl(
                 self.grid, self.values, self._SPLINE_DEGREE_MAP[method],
                 solver=solver, **solver_args

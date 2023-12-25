@@ -638,6 +638,28 @@ class TestRegularGridInterpolator:
         # having a float32 kernel
         assert_allclose(interp(pts), [134.10469388, 153.40069388], atol=1e-7)
 
+    def test_bad_solver(self):
+        x = np.linspace(0, 3, 7)
+        y = np.linspace(0, 3, 7)
+        xg, yg = np.meshgrid(x, y, indexing='ij', sparse=True)
+        data = xg + yg
+
+        # default method 'linear' does not accept 'solver'
+        with assert_raises(ValueError):
+            RegularGridInterpolator((x, y), data, solver=lambda x: x)
+
+        with assert_raises(TypeError):
+            # wrong solver interface
+            RegularGridInterpolator(
+                (x, y), data, method='slinear', solver=lambda x: x
+            )
+
+        with assert_raises(TypeError):
+            # unknown argument
+            RegularGridInterpolator(
+                (x, y), data, method='slinear', solver=lambda x: x, woof='woof'
+            )
+
 
 class MyValue:
     """

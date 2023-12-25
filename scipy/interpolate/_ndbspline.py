@@ -1,4 +1,5 @@
 import itertools
+import functools
 import operator
 import numpy as np
 
@@ -341,7 +342,7 @@ def make_ndbspl(points, values, k=3, *, solver=ssl.gcrotmk, **solver_args):
     vals = values.reshape(vals_shape)
 
     if solver != ssl.spsolve:
-        solver = _iter_solve
+        solver = functools.partial(_iter_solve, solver=solver)
         if "atol" not in solver_args:
             # avoid a DeprecationWarning, grumble grumble
             solver_args["atol"] = 1e-6
