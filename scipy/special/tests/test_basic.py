@@ -2100,6 +2100,26 @@ class TestExp:
         assert_array_almost_equal(ex1,exrl1,8)
 
 
+def assert_really_equal(x, y, rtol=None):
+    """
+    Sharper assertion function that is stricter about matching types, not just values
+
+    This is useful/necessary in some cases:
+      * 0-dim arrays vs. scalars (see numpy/numpy#24050)
+      * dtypes for arrays that have the same _values_ (e.g. element 1.0 vs 1)
+
+    We still want to be able to allow a relative tolerance for the values though.
+    """
+    def assert_func(x, y):
+        assert_equal(x, y) if rtol is None else assert_allclose(x, y, rtol=rtol)
+
+    assert type(x) == type(y), f"types not equal: {type(x)}, {type(y)}"
+    if isinstance(x, np.ndarray):
+        # assert_equal does not compare (all) types, only values
+        assert x.dtype == y.dtype
+    assert_func(x, y)
+
+
 class TestFactorialFunctions:
     @pytest.mark.parametrize("exact", [True, False])
     def test_factorialx_scalar_return_type(self, exact):
@@ -2292,14 +2312,6 @@ class TestFactorialFunctions:
         else:
             # no error
             result = special.factorial(n, exact=exact)
-
-        # assert_equal does not distinguish scalars and 0-dim arrays of the same value,
-        # see https://github.com/numpy/numpy/issues/24050
-        def assert_really_equal(x, y):
-            assert type(x) is type(y), f"types not equal: {type(x)}, {type(y)}"
-            if isinstance(x, np.ndarray):
-                assert x.dtype == y.dtype
-            assert_equal(x, y)
 
         if result is not None:
             # use scalar case as reference; tested separately in *_scalar_corner_cases
