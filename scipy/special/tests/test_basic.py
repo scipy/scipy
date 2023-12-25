@@ -43,8 +43,9 @@ from scipy.special import mathieu_odd_coef, mathieu_even_coef, stirling2
 from scipy._lib.deprecation import _NoValue
 from scipy._lib._util import np_long, np_ulong
 
-from scipy.special._basic import _FACTORIALK_LIMITS_64BITS, \
-    _FACTORIALK_LIMITS_32BITS
+from scipy.special._basic import (
+    _FACTORIALK_LIMITS_64BITS, _FACTORIALK_LIMITS_32BITS, _is_subdtype
+)
 from scipy.special._testutils import with_special_errors, \
      assert_func_equal, FuncData
 
@@ -2268,11 +2269,10 @@ class TestFactorialFunctions:
         result = None
         if not content:
             result = special.factorial(n, exact=exact)
-        elif not (np.issubdtype(n.dtype, np.integer)
-                  or np.issubdtype(n.dtype, np.floating)):
+        elif not _is_subdtype(n.dtype, ["i", "f"]):
             with pytest.raises(ValueError, match="Unsupported datatype*"):
                 special.factorial(n, exact=exact)
-        elif exact and not np.issubdtype(n.dtype, np.integer):
+        elif exact and not _is_subdtype(n.dtype, "i"):
             with pytest.raises(ValueError, match="factorial with `exact=.*"):
                 special.factorial(n, exact=exact)
         else:
@@ -2301,11 +2301,9 @@ class TestFactorialFunctions:
     @pytest.mark.parametrize("n", [1, 1.1, 2 + 2j, np.nan, None],
                              ids=["1", "1.1", "2+2j", "NaN", "None"])
     def test_factorial_scalar_corner_cases(self, n, exact):
-        if (n is None or n is np.nan or np.issubdtype(type(n), np.integer)
-                or np.issubdtype(type(n), np.floating)):
+        if n is None or n is np.nan or _is_subdtype(type(n), ["i", "f"]):
             # no error
-            if (np.issubdtype(type(n), np.floating) and exact
-                    and n is not np.nan):
+            if _is_subdtype(type(n), "f") and exact and n is not np.nan:
                 with pytest.deprecated_call(match="Non-integer values.*"):
                     result = special.factorial(n, exact=exact)
             else:
@@ -2356,7 +2354,7 @@ class TestFactorialFunctions:
         # np.array(x, ndim=0) will not be 0-dim. unless x is too
         content = content if (dim > 0 or len(content) != 1) else content[0]
         n = np.array(content, ndmin=dim, dtype=dtype)
-        if np.issubdtype(n.dtype, np.integer) or (not content):
+        if _is_subdtype(n.dtype, "i") or (not content):
             # no error
             result = special.factorial2(n, exact=exact)
             # expected result is identical to n for exact=True resp. empty
@@ -2371,7 +2369,7 @@ class TestFactorialFunctions:
     @pytest.mark.parametrize("n", [1, 1.1, 2 + 2j, np.nan, None],
                              ids=["1", "1.1", "2+2j", "NaN", "None"])
     def test_factorial2_scalar_corner_cases(self, n, exact):
-        if n is None or n is np.nan or np.issubdtype(type(n), np.integer):
+        if n is None or n is np.nan or _is_subdtype(type(n), "i"):
             # no error
             result = special.factorial2(n, exact=exact)
             exp = np.nan if n is np.nan or n is None else special.factorial(n)
@@ -2423,7 +2421,7 @@ class TestFactorialFunctions:
         # np.array(x, ndim=0) will not be 0-dim. unless x is too
         content = content if (dim > 0 or len(content) != 1) else content[0]
         n = np.array(content, ndmin=dim, dtype=dtype if exact else np.float64)
-        if np.issubdtype(n.dtype, np.integer) or (not content):
+        if _is_subdtype(n.dtype, "i") or (not content):
             # no error; expected result is identical to n
             assert_equal(special.factorialk(n, 3, exact=exact), n)
         else:
@@ -2435,7 +2433,7 @@ class TestFactorialFunctions:
     @pytest.mark.parametrize("n", [1, 1.1, 2 + 2j, np.nan, None],
                              ids=["1", "1.1", "2+2j", "NaN", "None"])
     def test_factorialk_scalar_corner_cases(self, n, k, exact):
-        if n is None or n is np.nan or np.issubdtype(type(n), np.integer):
+        if n is None or n is np.nan or _is_subdtype(type(n), "i"):
             if exact is None:
                 with pytest.deprecated_call(match="factorialk will default.*"):
                     result = special.factorialk(n, k=k, exact=exact)
