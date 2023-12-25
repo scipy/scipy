@@ -766,20 +766,27 @@ void csr_binop_csr_general(const I n_row, const I n_col,
 
 /*
  * Compute C = A (binary_op) B for CSR matrices that are in the
- * canonical CSR format.  Specifically, this method requires that
+ * canonical CSR format.  Specifically, this method computes C only if
  * the rows of the input matrices are free of duplicate column indices
  * and that the column indices are in sorted order.
  *
- * Refer to csr_binop_csr() for additional information
+ * If the input matrices do not meet these criteria then this method terminates
+ * early with a false return value. C's arrays may be partially overwritten and are
+ * left undefined.
+ *
+ * Refer to csr_binop_csr() for additional information.
  *
  * Note:
  *   Input:  A and B column indices are assumed to be in sorted order
- *   Output: C column indices will be in sorted order
+ *   Output: returns true if operands are in canonical CSR format and:
+ *           C column indices will be in sorted order
  *           Cx will not contain any zero entries
+ *           returns false if operands are not in canonical CSR format and C's arrays
+ *           are left undefined.
  *
  */
 template <class I, class T, class T2, class binary_op>
-void csr_binop_csr_canonical(const I n_row, const I n_col,
+bool csr_binop_csr_canonical(const I n_row, const I n_col,
                              const I Ap[], const I Aj[], const T Ax[],
                              const I Bp[], const I Bj[], const T Bx[],
                                    I Cp[],       I Cj[],       T2 Cx[],
@@ -796,10 +803,25 @@ void csr_binop_csr_canonical(const I n_row, const I n_col,
         I A_end = Ap[i+1];
         I B_end = Bp[i+1];
 
+        // for checking if matrices are canonical
+        I A_j_prev, B_j_prev;
+        I A_pos_start = A_pos;
+        I B_pos_start = B_pos;
+
+        // Check if row pointers are canonical
+        if (Ap[i] > Ap[i+1] || Bp[i] > Bp[i+1])
+            return false;
+
         //while not finished with either row
         while(A_pos < A_end && B_pos < B_end){
             I A_j = Aj[A_pos];
             I B_j = Bj[B_pos];
+
+            // check if matrices are canonical
+            if (A_pos != A_pos_start && (!(A_j_prev < A_j) || !(B_j_prev < B_j)))
+                return false;
+            A_j_prev = A_j;
+            B_j_prev = B_j;
 
             if(A_j == B_j){
                 T result = op(Ax[A_pos],Bx[B_pos]);
@@ -832,18 +854,32 @@ void csr_binop_csr_canonical(const I n_row, const I n_col,
 
         //tail
         while(A_pos < A_end){
+            I A_j = Aj[A_pos];
+
+            // check if matrices are canonical
+            if (A_pos != A_pos_start && !(A_j_prev < A_j))
+                return false;
+            A_j_prev = A_j;
+
             T result = op(Ax[A_pos],0);
             if (result != 0){
-                Cj[nnz] = Aj[A_pos];
+                Cj[nnz] = A_j;
                 Cx[nnz] = result;
                 nnz++;
             }
             A_pos++;
         }
         while(B_pos < B_end){
+            I B_j = Bj[B_pos];
+
+            // check if matrices are canonical
+            if (B_pos != B_pos_start && !(B_j_prev < B_j))
+                return false;
+            B_j_prev = B_j;
+
             T result = op(0,Bx[B_pos]);
             if (result != 0){
-                Cj[nnz] = Bj[B_pos];
+                Cj[nnz] = B_j;
                 Cx[nnz] = result;
                 nnz++;
             }
@@ -852,6 +888,7 @@ void csr_binop_csr_canonical(const I n_row, const I n_col,
 
         Cp[i+1] = nnz;
     }
+    return true;
 }
 
 
@@ -900,9 +937,7 @@ void csr_binop_csr(const I n_row,
                          T2 Cx[],
                    const binary_op& op)
 {
-    if (csr_has_canonical_format(n_row,Ap,Aj) && csr_has_canonical_format(n_row,Bp,Bj))
-        csr_binop_csr_canonical(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op);
-    else
+    if (!csr_binop_csr_canonical(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op))
         csr_binop_csr_general(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op);
 }
 
