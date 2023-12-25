@@ -876,7 +876,7 @@ class TestInterpN:
 
         sample = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
                            [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
-        with pytest.warns(DeprecationWarning):
+        with pytest.deprecated_call(match='complex'):
             interpn(points, values, sample, method='pchip')
 
     def test_complex_spline2fd(self):

@@ -1020,7 +1020,7 @@ class TestAkima1DInterpolator:
         x = np.arange(0., 11.)
         y = np.array([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
         y = y - 2j*y
-        with pytest.warns(DeprecationWarning):
+        with pytest.deprecated_call(match='complex'):
             Akima1DInterpolator(x, y)
 
 
