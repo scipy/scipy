@@ -2297,7 +2297,8 @@ class TestFactorialFunctions:
                              [[], [1], [1.1], [np.nan], [np.nan, 1]],
                              ids=["[]", "[1]", "[1.1]", "[NaN]", "[NaN, 1]"])
     def test_factorial_array_corner_cases(self, content, dim, exact, dtype):
-        if dtype == np.int64 and any(np.isnan(x) for x in content):
+        # get dtype without calling array constructor (that might fail or mutate)
+        if dtype == np.int64 and any(np.isnan(x) or (x != int(x)) for x in content):
             pytest.skip("impossible combination")
 
         kw = {"exact": exact}
@@ -2377,10 +2378,11 @@ class TestFactorialFunctions:
     @pytest.mark.parametrize("exact", [True, False])
     @pytest.mark.parametrize("dim", range(0, 5))
     # test empty & non-empty arrays, with nans and mixed
-    @pytest.mark.parametrize("content", [[], [1], [np.nan], [np.nan, 1]],
-                             ids=["[]", "[1]", "[NaN]", "[NaN, 1]"])
+    @pytest.mark.parametrize("content", [[], [1], [1.1], [np.nan], [np.nan, 1]],
+                             ids=["[]", "[1]", "[1.1]", "[NaN]", "[NaN, 1]"])
     def test_factorial2_array_corner_cases(self, content, dim, exact, dtype):
-        if dtype == np.int64 and any(np.isnan(x) for x in content):
+        # get dtype without calling array constructor (that might fail or mutate)
+        if dtype == np.int64 and any(np.isnan(x) or (x != int(x)) for x in content):
             pytest.skip("impossible combination")
 
         kw = {"exact": exact}
@@ -2458,10 +2460,11 @@ class TestFactorialFunctions:
     @pytest.mark.parametrize("exact", [True, False])
     @pytest.mark.parametrize("dim", range(0, 5))
     # test empty & non-empty arrays, with nans and mixed
-    @pytest.mark.parametrize("content", [[], [1], [np.nan], [np.nan, 1]],
-                             ids=["[]", "[1]", "[NaN]", "[NaN, 1]"])
+    @pytest.mark.parametrize("content", [[], [1], [1.1], [np.nan], [np.nan, 1]],
+                             ids=["[]", "[1]", "[1.1]", "[NaN]", "[NaN, 1]"])
     def test_factorialk_array_corner_cases(self, content, dim, exact, dtype):
-        if dtype == np.int64 and any(np.isnan(x) for x in content):
+        # get dtype without calling array constructor (that might fail or mutate)
+        if dtype == np.int64 and any(np.isnan(x) or (x != int(x)) for x in content):
             pytest.skip("impossible combination")
 
         kw = {"k": 3, "exact": exact}
