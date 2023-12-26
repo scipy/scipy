@@ -3047,9 +3047,9 @@ def factorial(n, exact=False):
         if not _is_subdtype(type(n), ["i", "f", type(None)]):
             raise ValueError(msg_wrong_dtype.format(dtype=type(n)))
         elif n is None or np.isnan(n):
-            return np.nan
+            return np.float64("nan")
         elif n < 0:
-            return 0
+            return 0 if exact else np.float64(0)
         elif exact and _is_subdtype(type(n), "i"):
             return math.factorial(n)
         elif exact:
