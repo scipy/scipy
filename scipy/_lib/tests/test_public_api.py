@@ -215,8 +215,8 @@ SKIP_LIST = [
 
 
 # XXX: this test does more than it says on the tin - in using `pkgutil.walk_packages`,
-# it will raise if it encounters any exceptions which are not of type `ImportError` or
-# handled by `ignore_errors` while attempting to import each discovered package.
+# it will raise if it encounters any exceptions which are not handled by `ignore_errors`
+# while attempting to import each discovered package.
 # For now, `ignore_errors` only ignores what is necessary, but this could be expanded -
 # for example, to all errors from private modules or git subpackages - if desired.
 def test_all_modules_are_expected():
