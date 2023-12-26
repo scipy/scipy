@@ -30,11 +30,6 @@ Files: scipy/io/_fast_matrix_market/fast_matrix_market/dependencies/ryu/*
 License: BSL-1.0
   For details, see scipy/io/_fast_matrix_market/fast_matrix_market/dependencies/ryu/LICENSE-BOOST
 
-Name: poolSTL
-Files: scipy/sparse/sparsetools/poolstl.hpp
-License: 2-clause BSD
-  For details, see the header inside scipy/sparse/sparsetools/poolstl.hpp
-
 Name: ID
 Files: scipy/linalg/src/id_dist/*
 License: 3-clause BSD

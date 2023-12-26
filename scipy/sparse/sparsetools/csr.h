@@ -8,7 +8,7 @@
 #include <numeric>
 
 #include "util.h"
-#include "util_par.h"
+#include "util_par_config.h"
 #include "dense.h"
 
 /*
