@@ -2261,18 +2261,19 @@ class TestFactorialFunctions:
         assert_array_equal(correct, special.factorial([n], True)[0])
 
         rtol = 6e-14 if sys.platform == 'win32' else 1e-15
-        assert_allclose(float(correct), special.factorial(n, False),
-                        rtol=rtol)
-        assert_allclose(float(correct), special.factorial([n], False)[0],
-                        rtol=rtol)
+        # need to cast exact result to float due to numpy/numpy#21220
+        correct = float(correct)
+        assert_allclose(correct, special.factorial(n, exact=False), rtol=rtol)
+        assert_allclose(correct, special.factorial([n], exact=False)[0], rtol=rtol)
 
     def test_factorial_float_reference(self):
         def _check(n, expected):
-            assert_allclose(special.factorial(n), expected)
-            assert_allclose(special.factorial([n])[0], expected)
+            rtol = 1e-15
+            assert_allclose(special.factorial(n), expected, rtol=rtol)
+            assert_allclose(special.factorial([n])[0], expected, rtol=rtol)
             # using floats with `exact=True` raises an error for scalars and arrays
             with pytest.raises(ValueError, match="Non-integer values.*"):
-                assert_allclose(special.factorial(n, exact=True), expected)
+                assert_allclose(special.factorial(n, exact=True), expected, rtol=rtol)
             with pytest.raises(ValueError, match="factorial with `exact=Tr.*"):
                 special.factorial([n], exact=True)
 
@@ -2370,8 +2371,11 @@ class TestFactorialFunctions:
         assert_array_equal(correct, special.factorial2(n, True))
         assert_array_equal(correct, special.factorial2([n], True)[0])
 
-        assert_allclose(float(correct), special.factorial2(n, False))
-        assert_allclose(float(correct), special.factorial2([n], False)[0])
+        rtol = 1e-15
+        # need to cast exact result to float due to numpy/numpy#21220
+        correct = float(correct)
+        assert_allclose(correct, special.factorial2(n, exact=False), rtol=rtol)
+        assert_allclose(correct, special.factorial2([n], exact=False)[0], rtol=rtol)
 
     @pytest.mark.parametrize("dtype", [np.int64, np.float64,
                                        np.complex128, object])
@@ -2433,11 +2437,12 @@ class TestFactorialFunctions:
         # Compare exact=True vs False, i.e. that the accuracy of the
         # approximation is better than the specified tolerance.
 
+        rtol = 2e-14
         # need to cast exact result to float due to numpy/numpy#21220
         assert_allclose(float(special.factorialk(n, k=k, exact=True)),
-                        special.factorialk(n, k=k, exact=False))
+                        special.factorialk(n, k=k, exact=False), rtol=rtol)
         assert_allclose(special.factorialk([n], k=k, exact=True).astype(float),
-                        special.factorialk([n], k=k, exact=False))
+                        special.factorialk([n], k=k, exact=False), rtol=rtol)
 
     @pytest.mark.parametrize('k', list(range(1, 5)) + [10, 20])
     @pytest.mark.parametrize('n',
@@ -2452,8 +2457,11 @@ class TestFactorialFunctions:
         assert_array_equal(correct, special.factorialk(n, k, True))
         assert_array_equal(correct, special.factorialk([n], k, True)[0])
 
-        assert_allclose(float(correct), special.factorialk(n, k, False))
-        assert_allclose(float(correct), special.factorialk([n], k, False)[0])
+        rtol = 1e-14
+        # need to cast exact result to float due to numpy/numpy#21220
+        correct = float(correct)
+        assert_allclose(correct, special.factorialk(n, k, exact=False), rtol=rtol)
+        assert_allclose(correct, special.factorialk([n], k, exact=False)[0], rtol=rtol)
 
     @pytest.mark.parametrize("dtype", [np.int64, np.float64,
                                        np.complex128, object])
