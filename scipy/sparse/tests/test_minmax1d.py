@@ -6,7 +6,7 @@ import numpy as np
 
 from numpy.testing import assert_equal, assert_array_equal
 
-from scipy.sparse import coo_array  # , dok_array
+from scipy.sparse import coo_array
 from scipy.sparse._sputils import isscalarlike
 
 
@@ -16,7 +16,7 @@ def toarray(a):
     return a.toarray()
 
 
-formats_for_minmax = [coo_array]  # , dok_array]
+formats_for_minmax = [coo_array]
 
 
 @pytest.mark.parametrize("spcreator", formats_for_minmax)
