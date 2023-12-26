@@ -3035,16 +3035,18 @@ def factorial(n, exact=False):
     120
 
     """
+    msg_wrong_dtype = (
+        "Unsupported data type for factorial: {dtype}\n"
+        "Permitted data types are integers and floating point numbers."
+    )
+
     # don't use isscalar due to numpy/numpy#23574; 0-dim arrays treated below
     if np.ndim(n) == 0 and not isinstance(n, np.ndarray):
         # scalar cases
         if n is None or np.isnan(n):
             return np.nan
         elif not _is_subdtype(type(n), ["i", "f"]):
-            raise ValueError(
-                f"Unsupported datatype for factorial: {type(n)}\n"
-                "Permitted data types are integers and floating point numbers"
-            )
+            raise ValueError(msg_wrong_dtype.format(dtype=type(n)))
         elif n < 0:
             return 0
         elif exact and _is_subdtype(type(n), "i"):
@@ -3061,10 +3063,7 @@ def factorial(n, exact=False):
         # return empty arrays unchanged
         return n
     if not _is_subdtype(n.dtype, ["i", "f"]):
-        raise ValueError(
-            f"Unsupported datatype for factorial: {n.dtype}\n"
-            "Permitted data types are integers and floating point numbers"
-        )
+        raise ValueError(msg_wrong_dtype.format(dtype=n.dtype))
     if exact and not _is_subdtype(n.dtype, "i"):
         msg = ("factorial with `exact=True` does not "
                "support non-integral arrays")
@@ -3109,6 +3108,10 @@ def factorial2(n, exact=False):
     105
 
     """
+    msg_wrong_dtype = (
+        "Unsupported data type for factorial2: {dtype}\n"
+        "Only integers are permitted."
+    )
 
     # don't use isscalar due to numpy/numpy#23574; 0-dim arrays treated below
     if np.ndim(n) == 0 and not isinstance(n, np.ndarray):
@@ -3116,8 +3119,7 @@ def factorial2(n, exact=False):
         if n is None or np.isnan(n):
             return np.nan
         elif not _is_subdtype(type(n), "i"):
-            msg = "factorial2 does not support non-integral scalar arguments"
-            raise ValueError(msg)
+            raise ValueError(msg_wrong_dtype.format(dtype=type(n)))
         elif n < 0:
             return 0
         elif n in {0, 1}:
@@ -3132,7 +3134,7 @@ def factorial2(n, exact=False):
         # return empty arrays unchanged
         return n
     if not _is_subdtype(n.dtype, "i"):
-        raise ValueError("factorial2 does not support non-integral arrays")
+        raise ValueError(msg_wrong_dtype.format(dtype=n.dtype))
     if exact:
         return _factorialx_array_exact(n, k=2)
     return _factorialx_array_approx(n, k=2)
@@ -3211,6 +3213,11 @@ def factorialk(n, k, exact=None):
         warnings.warn(msg, DeprecationWarning, stacklevel=2)
         exact = True
 
+    msg_wrong_dtype = (
+        "Unsupported data type for factorialk: {dtype}\n"
+        "Only integers are permitted."
+    )
+
     helpmsg = ""
     if k in {1, 2}:
         func = "factorial" if k == 1 else "factorial2"
@@ -3222,8 +3229,7 @@ def factorialk(n, k, exact=None):
         if n is None or np.isnan(n):
             return np.nan
         elif not _is_subdtype(type(n), "i"):
-            msg = "factorialk does not support non-integral scalar arguments!"
-            raise ValueError(msg + helpmsg)
+            raise ValueError(msg_wrong_dtype.format(dtype=type(n)) + helpmsg)
         elif n < 0:
             return 0
         elif n in {0, 1}:
@@ -3238,8 +3244,7 @@ def factorialk(n, k, exact=None):
         # return empty arrays unchanged
         return n
     if not _is_subdtype(n.dtype, "i"):
-        msg = "factorialk does not support non-integral arrays!"
-        raise ValueError(msg + helpmsg)
+        raise ValueError(msg_wrong_dtype.format(dtype=n.dtype) + helpmsg)
     if exact:
         return _factorialx_array_exact(n, k=k)
     return _factorialx_array_approx(n, k=k)
