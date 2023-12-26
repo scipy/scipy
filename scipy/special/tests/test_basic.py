@@ -2145,30 +2145,32 @@ class TestFactorialFunctions:
         assert_func(special.factorialk([-5, -4, 0, 1], 3, exact=exact),
                     [0, 0, 1, 1])
 
-    @pytest.mark.parametrize("exact", [True, False])
-    @pytest.mark.parametrize("content", [np.nan, None, np.datetime64('nat')],
+    @pytest.mark.parametrize("boxed", [True, False])
+    @pytest.mark.parametrize("n", [np.nan, None, np.datetime64('nat')],
                              ids=["NaN", "None", "NaT"])
-    def test_factorialx_nan(self, content, exact):
-        # scalar
-        assert special.factorial(content, exact=exact) is np.nan
-        assert special.factorial2(content, exact=exact) is np.nan
-        assert special.factorialk(content, 3, exact=exact) is np.nan
-        # array-like (initializes np.array with default dtype)
-        if content is not np.nan:
-            # None causes object dtype, which is not supported; as is datetime
+    @pytest.mark.parametrize(
+        "factorialx",
+        [special.factorial, special.factorial2, special.factorialk]
+    )
+    def test_factorialx_nan(self, factorialx, n, boxed):
+        # NaNs not allowed (by dtype) for exact=True
+        kw = {"exact": False}
+        if factorialx == special.factorialk:
+            kw["k"] = 3
+
+        # factorial also allows floats
+        permissible_types = ["i", "f"] if factorialx == special.factorial else ["i"]
+        if not boxed:
+            # np.nan/None/NaT currently allowed in scalar case
+            permissible_types += ["f", type(None), np.datetime64]
+
+        if not _is_subdtype(type(n), permissible_types):
             with pytest.raises(ValueError, match="Unsupported data type.*"):
-                special.factorial([content], exact=exact)
-        elif exact:
-            with pytest.raises(ValueError, match="factorial with `exact=Tr.*"):
-                special.factorial([content], exact=exact)
+                factorialx([n] if boxed else n, **kw)
         else:
-            assert np.isnan(special.factorial([content], exact=exact)[0])
-        # factorial{2,k} don't support array case due to dtype constraints
-        with pytest.raises(ValueError, match="Unsupported data type.*"):
-            special.factorial2([content], exact=exact)
-        with pytest.raises(ValueError, match="Unsupported data type.*"):
-            special.factorialk([content], 3, exact=exact)
-        # array-case also tested in test_factorial{,2,k}_corner_cases
+            result = factorialx([n], **kw)[0] if boxed else factorialx(n, **kw)
+            assert_equal(result, np.nan)
+            # also tested in test_factorial{,2,k}_{array,scalar}_corner_cases
 
     @pytest.mark.parametrize("levels", range(1, 5))
     @pytest.mark.parametrize("exact", [True, False])
@@ -2297,29 +2299,33 @@ class TestFactorialFunctions:
     def test_factorial_array_corner_cases(self, content, dim, exact, dtype):
         if dtype == np.int64 and any(np.isnan(x) for x in content):
             pytest.skip("impossible combination")
+
+        kw = {"exact": exact}
         # np.array(x, ndim=0) will not be 0-dim. unless x is too
         content = content if (dim > 0 or len(content) != 1) else content[0]
         n = np.array(content, ndmin=dim, dtype=dtype)
+
         result = None
         if not content:
             result = special.factorial(n, exact=exact)
         elif not _is_subdtype(n.dtype, ["i", "f"]):
             with pytest.raises(ValueError, match="Unsupported data type.*"):
-                special.factorial(n, exact=exact)
+                special.factorial(n, **kw)
         elif exact and not _is_subdtype(n.dtype, "i"):
             with pytest.raises(ValueError, match="factorial with `exact=.*"):
-                special.factorial(n, exact=exact)
+                special.factorial(n, **kw)
         else:
-            # no error
-            result = special.factorial(n, exact=exact)
+            result = special.factorial(n, **kw)
 
         if result is not None:
             # use scalar case as reference; tested separately in *_scalar_corner_cases
-            ref = [special.factorial(x, exact=exact) for x in n.ravel()]
+            ref = [special.factorial(x, **kw) for x in n.ravel()]
             # unpack length-1 lists so that np.array(x, ndim=0) works correctly
             ref = ref[0] if len(ref) == 1 else ref
-            # same dimension as n; dtype unchanged for empty, else depends on exact
-            dtype = (np.int64 if exact else np.float64) if n.size else dtype
+            # result is empty if and only if n is empty, and has the same dimension
+            # as n; dtype stays the same, except when not empty and not exact:
+            if n.size:
+                dtype = np.int64 if exact else np.float64
             expected = np.array(ref, ndmin=dim, dtype=dtype)
             assert_really_equal(result, expected)
 
@@ -2327,18 +2333,17 @@ class TestFactorialFunctions:
     @pytest.mark.parametrize("n", [1, 1.1, 2 + 2j, np.nan, None],
                              ids=["1", "1.1", "2+2j", "NaN", "None"])
     def test_factorial_scalar_corner_cases(self, n, exact):
-        if n is None or n is np.nan or _is_subdtype(type(n), ["i", "f"]):
-            # no error
-            if _is_subdtype(type(n), "f") and exact and n is not np.nan:
-                with pytest.raises(ValueError, match="Non-integer values.*"):
-                    special.factorial(n, exact=exact)
-            else:
-                result = special.factorial(n, exact=exact)
-                exp = np.nan if n is np.nan or n is None else special.factorial(n)
-                assert_equal(result, exp)
+        kw = {"exact": exact}
+        if n is None or np.isnan(n):
+            assert_equal(special.factorial(n, **kw), np.nan)
+        elif exact and _is_subdtype(type(n), "f"):
+            with pytest.raises(ValueError, match="Non-integer values.*"):
+                special.factorial(n, **kw)
+        elif _is_subdtype(type(n), ["i", "f"]):
+            assert_equal(special.factorial(n, **kw), special.gamma(n + 1))
         else:
             with pytest.raises(ValueError, match="Unsupported data type.*"):
-                special.factorial(n, exact=exact)
+                special.factorial(n, **kw)
 
     # use odd increment to make sure both odd & even numbers are tested!
     @pytest.mark.parametrize('n', range(30, 180, 11))
@@ -2377,32 +2382,46 @@ class TestFactorialFunctions:
     def test_factorial2_array_corner_cases(self, content, dim, exact, dtype):
         if dtype == np.int64 and any(np.isnan(x) for x in content):
             pytest.skip("impossible combination")
+
+        kw = {"exact": exact}
         # np.array(x, ndim=0) will not be 0-dim. unless x is too
         content = content if (dim > 0 or len(content) != 1) else content[0]
         n = np.array(content, ndmin=dim, dtype=dtype)
+
+        result = None
         if _is_subdtype(n.dtype, "i") or (not content):
-            # no error
-            result = special.factorial2(n, exact=exact)
+            result = special.factorial2(n, **kw)
+        else:
+            with pytest.raises(ValueError, match="Unsupported data type.*"):
+                special.factorial2(n, **kw)
+
+        if result is not None:
+            # use scalar case as reference; tested separately in *_scalar_corner_cases
+            ref = [special.factorial2(x, **kw) for x in n.ravel()]
+            # unpack length-1 lists so that np.array(x, ndim=0) works correctly
+            ref = ref[0] if len(ref) == 1 else ref
+            # result is empty if and only if n is empty, and has the same dimension
+            # as n; dtype stays the same, except when not empty and not exact:
+            if n.size:
+                dtype = np.int64 if exact else np.float64
+            expected = np.array(ref, ndmin=dim, dtype=dtype)
             # expected result is identical to n for exact=True resp. empty
             # arrays (assert_allclose chokes on object), otherwise up to tol
             func = assert_equal if exact or (not content) else assert_allclose
-            func(result, n)
-        else:
-            with pytest.raises(ValueError, match="Unsupported data type.*"):
-                special.factorial2(n, 3)
+            func(result, expected)
 
     @pytest.mark.parametrize("exact", [True, False])
     @pytest.mark.parametrize("n", [1, 1.1, 2 + 2j, np.nan, None],
                              ids=["1", "1.1", "2+2j", "NaN", "None"])
     def test_factorial2_scalar_corner_cases(self, n, exact):
-        if n is None or n is np.nan or _is_subdtype(type(n), "i"):
-            # no error
-            result = special.factorial2(n, exact=exact)
-            exp = np.nan if n is np.nan or n is None else special.factorial(n)
-            assert_equal(result, exp)
+        kw = {"exact": exact}
+        if n is None or np.isnan(n):
+            assert_equal(special.factorial2(n, **kw), np.nan)
+        elif _is_subdtype(type(n), "i"):
+            assert_equal(special.factorial2(n, **kw), 1)
         else:
             with pytest.raises(ValueError, match="Unsupported data type.*"):
-                special.factorial2(n, exact=exact)
+                special.factorial2(n, **kw)
 
     @pytest.mark.parametrize("k", range(1, 5))
     # note that n=170 is the last integer such that factorial(n) fits float64;
@@ -2444,31 +2463,47 @@ class TestFactorialFunctions:
     def test_factorialk_array_corner_cases(self, content, dim, exact, dtype):
         if dtype == np.int64 and any(np.isnan(x) for x in content):
             pytest.skip("impossible combination")
+
+        kw = {"k": 3, "exact": exact}
         # np.array(x, ndim=0) will not be 0-dim. unless x is too
         content = content if (dim > 0 or len(content) != 1) else content[0]
-        n = np.array(content, ndmin=dim, dtype=dtype if exact else np.float64)
+        n = np.array(content, ndmin=dim, dtype=dtype)
+
+        result = None
         if _is_subdtype(n.dtype, "i") or (not content):
-            # no error; expected result is identical to n
-            assert_equal(special.factorialk(n, 3, exact=exact), n)
+            result = special.factorialk(n, **kw)
         else:
             with pytest.raises(ValueError, match="Unsupported data type.*"):
-                special.factorialk(n, 3, exact=exact)
+                special.factorialk(n, **kw)
+
+        if result is not None:
+            # use scalar case as reference; tested separately in *_scalar_corner_cases
+            ref = [special.factorialk(x, **kw) for x in n.ravel()]
+            # unpack length-1 lists so that np.array(x, ndim=0) works correctly
+            ref = ref[0] if len(ref) == 1 else ref
+            # result is empty if and only if n is empty, and has the same dimension
+            # as n; dtype stays the same, except when not empty and not exact:
+            if n.size:
+                dtype = np.int64 if exact else np.float64
+            expected = np.array(ref, ndmin=dim, dtype=dtype)
+            # see comment in test_factorial2_array_corner_cases
+            assert_func = assert_equal if exact or (not content) else assert_allclose
+            assert_func(result, expected)
 
     @pytest.mark.parametrize("exact", [True, False])
     @pytest.mark.parametrize("k", range(1, 5))
     @pytest.mark.parametrize("n", [1, 1.1, 2 + 2j, np.nan, None],
                              ids=["1", "1.1", "2+2j", "NaN", "None"])
     def test_factorialk_scalar_corner_cases(self, n, k, exact):
-        if n is None or n is np.nan or _is_subdtype(type(n), "i"):
-            result = special.factorialk(n, k=k, exact=exact)
-
-            nan_cond = n is np.nan or n is None
+        kw = {"k": k, "exact": exact}
+        if n is None or np.isnan(n):
+            assert_equal(special.factorialk(n, **kw), np.nan)
+        elif _is_subdtype(type(n), "i"):
             # factorialk(1, k) == 1 for all k
-            expected = np.nan if nan_cond else 1
-            assert_equal(result, expected)
+            assert_equal(special.factorialk(n, **kw), 1)
         else:
             with pytest.raises(ValueError, match="Unsupported data type.*"):
-                special.factorialk(n, k=k, exact=exact)
+                special.factorialk(n, **kw)
 
     @pytest.mark.parametrize("k", range(1, 5))
     def test_factorialk_deprecation_exact(self, k):
