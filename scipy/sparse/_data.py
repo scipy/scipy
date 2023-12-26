@@ -237,8 +237,7 @@ class _minmax_mixin:
 
     def _arg_min_or_max_axis(self, axis, argmin_or_argmax, compare):
         if self.shape[axis] == 0:
-            raise ValueError("Can't apply the operation along a zero-sized "
-                             "dimension.")
+            raise ValueError("Cannot apply the operation along a zero-sized dimension.")
 
         if axis < 0:
             axis += 2
@@ -287,7 +286,7 @@ class _minmax_mixin:
             return self._arg_min_or_max_axis(axis, argmin_or_argmax, compare)
 
         if 0 in self.shape:
-            raise ValueError("Can't apply the operation to an empty matrix.")
+            raise ValueError("Cannot apply the operation to an empty matrix.")
 
         if self.nnz == 0:
             return 0
@@ -301,7 +300,7 @@ class _minmax_mixin:
         num_col = mat.shape[-1]
 
         # If the min value is less than zero, or max is greater than zero,
-        # then we don't need to worry about implicit zeros.
+        # then we do not need to worry about implicit zeros.
         if compare(extreme_value, zero):
             # cast to Python int to avoid overflow and RuntimeError
             return int(mat.row[extreme_index]) * num_col + int(mat.col[extreme_index])

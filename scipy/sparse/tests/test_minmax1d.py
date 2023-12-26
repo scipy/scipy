@@ -43,8 +43,10 @@ class Test_MinMaxMixin1D:
                 toarray(X.min(axis=axis)), D.min(axis=axis, keepdims=True)
             )
         for axis in [-2, 1]:
-            pytest.raises(ValueError, X.min, axis=axis)
-            pytest.raises(ValueError, X.max, axis=axis)
+            with pytest.raises(ValueError, match="axis out of range"):
+                X.min(axis=axis)
+            with pytest.raises(ValueError, match="axis out of range"):
+                X.max(axis=axis)
 
 
     def test_numpy_minmax(self, spcreator):
@@ -74,5 +76,7 @@ class Test_MinMaxMixin1D:
 
         for axis in [None, 0]:
             mat = spcreator(D6)
-            pytest.raises(ValueError, mat.argmax, axis=axis)
-            pytest.raises(ValueError, mat.argmin, axis=axis)
+            with pytest.raises(ValueError, match="to an empty matrix"):
+                mat.argmin(axis=axis)
+            with pytest.raises(ValueError, match="to an empty matrix"):
+                mat.argmax(axis=axis)
