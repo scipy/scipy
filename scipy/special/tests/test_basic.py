@@ -2096,17 +2096,31 @@ def assert_really_equal(x, y, rtol=None):
     This is useful/necessary in some cases:
       * 0-dim arrays vs. scalars (see numpy/numpy#24050)
       * dtypes for arrays that have the same _values_ (e.g. element 1.0 vs 1)
+      * distinguishing complex from real NaN
 
     We still want to be able to allow a relative tolerance for the values though.
     """
     def assert_func(x, y):
         assert_equal(x, y) if rtol is None else assert_allclose(x, y, rtol=rtol)
 
+    def assert_complex_nan(x):
+        assert np.isnan(x.real) and np.isnan(x.imag)
+
     assert type(x) == type(y), f"types not equal: {type(x)}, {type(y)}"
+
+    # ensure we also compare the values _within_ an array appropriately,
+    # e.g. assert_equal does not distinguish different complex nans in arrays
     if isinstance(x, np.ndarray):
         # assert_equal does not compare (all) types, only values
         assert x.dtype == y.dtype
-    assert_func(x, y)
+        # for empty arrays resp. to ensure shapes match
+        assert_func(x, y)
+        for elem_x, elem_y in zip(x.ravel(), y.ravel()):
+            assert_really_equal(elem_x, elem_y, rtol=rtol)
+    elif np.isnan(x) and np.isnan(y) and _is_subdtype(type(x), "c"):
+        assert_complex_nan(x) and assert_complex_nan(y)
+    else:
+        assert_func(x, y)
 
 
 class TestFactorialFunctions:
@@ -2137,8 +2151,17 @@ class TestFactorialFunctions:
         assert_really_equal(special.factorialk(n, k=3, **kw), expected, rtol=rtol)
 
     @pytest.mark.parametrize("boxed", [True, False])
-    @pytest.mark.parametrize("n", [np.nan, None, np.datetime64('nat')],
-                             ids=["NaN", "None", "NaT"])
+    @pytest.mark.parametrize(
+        "n",
+        [
+            np.nan, np.float64("nan"), np.nan + np.nan*1j, np.complex128("nan+nanj"),
+            None, np.datetime64("nat")
+        ],
+        ids=[
+            "NaN", "np.float64('nan')", "NaN+i*NaN", "np.complex128('nan+nanj')",
+            "None", "NaT"
+        ]
+    )
     @pytest.mark.parametrize(
         "factorialx",
         [special.factorial, special.factorial2, special.factorialk]
@@ -2160,7 +2183,7 @@ class TestFactorialFunctions:
                 factorialx([n] if boxed else n, **kw)
         else:
             result = factorialx([n], **kw)[0] if boxed else factorialx(n, **kw)
-            assert_equal(result, np.nan)
+            assert_really_equal(result, np.float64("nan"))
             # also tested in test_factorial{,2,k}_{array,scalar}_corner_cases
 
     @pytest.mark.parametrize("levels", range(1, 5))
@@ -2282,12 +2305,16 @@ class TestFactorialFunctions:
     @pytest.mark.parametrize("exact", [True, False])
     @pytest.mark.parametrize("dim", range(0, 5))
     # test empty & non-empty arrays, with nans and mixed
-    @pytest.mark.parametrize("content",
-                             [[], [1], [1.1], [np.nan], [np.nan, 1]],
-                             ids=["[]", "[1]", "[1.1]", "[NaN]", "[NaN, 1]"])
+    @pytest.mark.parametrize(
+        "content",
+        [[], [1], [1.1], [np.nan], [np.nan + np.nan * 1j], [np.nan, 1]],
+        ids=["[]", "[1]", "[1.1]", "[NaN]", "[NaN+i*NaN]", "[NaN, 1]"],
+    )
     def test_factorial_array_corner_cases(self, content, dim, exact, dtype):
         # get dtype without calling array constructor (that might fail or mutate)
         if dtype == np.int64 and any(np.isnan(x) or (x != int(x)) for x in content):
+            pytest.skip("impossible combination")
+        if dtype == np.float64 and any(_is_subdtype(type(x), "c") for x in content):
             pytest.skip("impossible combination")
 
         kw = {"exact": exact}
@@ -2318,15 +2345,15 @@ class TestFactorialFunctions:
             assert_really_equal(result, expected)
 
     @pytest.mark.parametrize("exact", [True, False])
-    @pytest.mark.parametrize("n", [1, 1.1, 2 + 2j, np.nan, None],
-                             ids=["1", "1.1", "2+2j", "NaN", "None"])
+    @pytest.mark.parametrize("n", [1, 1.1, 2 + 2j, np.nan, np.nan + np.nan*1j, None],
+                             ids=["1", "1.1", "2+2j", "NaN", "NaN+i*NaN", "None"])
     def test_factorial_scalar_corner_cases(self, n, exact):
         kw = {"exact": exact}
         if not _is_subdtype(type(n), ["i", "f", type(None)]):
             with pytest.raises(ValueError, match="Unsupported data type.*"):
                 special.factorial(n, **kw)
         elif n is None or np.isnan(n):
-            assert_equal(special.factorial(n, **kw), np.nan)
+            assert_really_equal(special.factorial(n, **kw), np.float64("nan"))
         elif exact and _is_subdtype(type(n), "f"):
             with pytest.deprecated_call(match="Non-integer values.*"):
                 result = special.factorial(n, **kw)
@@ -2369,11 +2396,16 @@ class TestFactorialFunctions:
     @pytest.mark.parametrize("exact", [True, False])
     @pytest.mark.parametrize("dim", range(0, 5))
     # test empty & non-empty arrays, with nans and mixed
-    @pytest.mark.parametrize("content", [[], [1], [1.1], [np.nan], [np.nan, 1]],
-                             ids=["[]", "[1]", "[1.1]", "[NaN]", "[NaN, 1]"])
+    @pytest.mark.parametrize(
+        "content",
+        [[], [1], [1.1], [np.nan], [np.nan + np.nan * 1j], [np.nan, 1]],
+        ids=["[]", "[1]", "[1.1]", "[NaN]", "[NaN+i*NaN]", "[NaN, 1]"],
+    )
     def test_factorial2_array_corner_cases(self, content, dim, exact, dtype):
         # get dtype without calling array constructor (that might fail or mutate)
         if dtype == np.int64 and any(np.isnan(x) or (x != int(x)) for x in content):
+            pytest.skip("impossible combination")
+        if dtype == np.float64 and any(_is_subdtype(type(x), "c") for x in content):
             pytest.skip("impossible combination")
 
         kw = {"exact": exact}
@@ -2401,8 +2433,8 @@ class TestFactorialFunctions:
             assert_really_equal(result, expected, rtol=1e-15)
 
     @pytest.mark.parametrize("exact", [True, False])
-    @pytest.mark.parametrize("n", [1, 1.1, 2 + 2j, np.nan, None],
-                             ids=["1", "1.1", "2+2j", "NaN", "None"])
+    @pytest.mark.parametrize("n", [1, 1.1, 2 + 2j, np.nan, np.nan + np.nan*1j, None],
+                             ids=["1", "1.1", "2+2j", "NaN", "NaN+i*NaN", "None"])
     def test_factorial2_scalar_corner_cases(self, n, exact):
         kw = {"exact": exact}
         if not _is_subdtype(type(n), "i"):
@@ -2450,11 +2482,16 @@ class TestFactorialFunctions:
     @pytest.mark.parametrize("exact", [True, False])
     @pytest.mark.parametrize("dim", range(0, 5))
     # test empty & non-empty arrays, with nans and mixed
-    @pytest.mark.parametrize("content", [[], [1], [1.1], [np.nan], [np.nan, 1]],
-                             ids=["[]", "[1]", "[1.1]", "[NaN]", "[NaN, 1]"])
+    @pytest.mark.parametrize(
+        "content",
+        [[], [1], [1.1], [np.nan], [np.nan + np.nan * 1j], [np.nan, 1]],
+        ids=["[]", "[1]", "[1.1]", "[NaN]", "[NaN+i*NaN]", "[NaN, 1]"],
+    )
     def test_factorialk_array_corner_cases(self, content, dim, exact, dtype):
         # get dtype without calling array constructor (that might fail or mutate)
         if dtype == np.int64 and any(np.isnan(x) or (x != int(x)) for x in content):
+            pytest.skip("impossible combination")
+        if dtype == np.float64 and any(_is_subdtype(type(x), "c") for x in content):
             pytest.skip("impossible combination")
 
         kw = {"k": 3, "exact": exact}
@@ -2483,8 +2520,8 @@ class TestFactorialFunctions:
 
     @pytest.mark.parametrize("exact", [True, False])
     @pytest.mark.parametrize("k", range(1, 5))
-    @pytest.mark.parametrize("n", [1, 1.1, 2 + 2j, np.nan, None],
-                             ids=["1", "1.1", "2+2j", "NaN", "None"])
+    @pytest.mark.parametrize("n", [1, 1.1, 2 + 2j, np.nan, np.nan + np.nan*1j, None],
+                             ids=["1", "1.1", "2+2j", "NaN", "NaN+i*NaN", "None"])
     def test_factorialk_scalar_corner_cases(self, n, k, exact):
         kw = {"k": k, "exact": exact}
         if not _is_subdtype(type(n), "i"):
