@@ -2454,18 +2454,13 @@ class TestFactorialFunctions:
             with pytest.raises(ValueError, match="factorialk does not*"):
                 special.factorialk(n, 3, exact=exact)
 
-    @pytest.mark.parametrize("exact", [True, False, None])
+    @pytest.mark.parametrize("exact", [True, False])
     @pytest.mark.parametrize("k", range(1, 5))
     @pytest.mark.parametrize("n", [1, 1.1, 2 + 2j, np.nan, None],
                              ids=["1", "1.1", "2+2j", "NaN", "None"])
     def test_factorialk_scalar_corner_cases(self, n, k, exact):
         if n is None or n is np.nan or _is_subdtype(type(n), "i"):
-            if exact is None:
-                with pytest.deprecated_call(match="factorialk will default.*"):
-                    result = special.factorialk(n, k=k, exact=exact)
-            else:
-                # no error
-                result = special.factorialk(n, k=k, exact=exact)
+            result = special.factorialk(n, k=k, exact=exact)
 
             nan_cond = n is np.nan or n is None
             # factorialk(1, k) == 1 for all k
@@ -2473,9 +2468,14 @@ class TestFactorialFunctions:
             assert_equal(result, expected)
         else:
             with pytest.raises(ValueError, match="factorialk does not*"):
-                with suppress_warnings() as sup:
-                    sup.filter(DeprecationWarning, "factorialk will default")
-                    special.factorialk(n, k=k, exact=exact)
+                special.factorialk(n, k=k, exact=exact)
+
+    @pytest.mark.parametrize("k", range(1, 5))
+    def test_factorialk_deprecation_exact(self, k):
+        with pytest.deprecated_call(match="factorialk will default.*"):
+            # leaving exact= unspecified raises warning;
+            # cannot happen for extend="complex" because it requires non-default exact
+            special.factorialk(1, k=k)
 
     @pytest.mark.parametrize("k", [0, 1.1, np.nan, "1"])
     def test_factorialk_raises_k(self, k):
