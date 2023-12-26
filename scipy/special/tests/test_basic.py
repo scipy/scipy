@@ -2148,7 +2148,7 @@ class TestFactorialFunctions:
         # array-like (initializes np.array with default dtype)
         if content is not np.nan:
             # None causes object dtype, which is not supported; as is datetime
-            with pytest.raises(ValueError, match="Unsupported datatype.*"):
+            with pytest.raises(ValueError, match="Unsupported data type.*"):
                 special.factorial([content], exact=exact)
         elif exact:
             with pytest.raises(ValueError, match="factorial with `exact=Tr.*"):
@@ -2156,9 +2156,9 @@ class TestFactorialFunctions:
         else:
             assert np.isnan(special.factorial([content], exact=exact)[0])
         # factorial{2,k} don't support array case due to dtype constraints
-        with pytest.raises(ValueError, match="factorial2 does not support.*"):
+        with pytest.raises(ValueError, match="Unsupported data type.*"):
             special.factorial2([content], exact=exact)
-        with pytest.raises(ValueError, match="factorialk does not support.*"):
+        with pytest.raises(ValueError, match="Unsupported data type.*"):
             special.factorialk([content], 3, exact=exact)
         # array-case also tested in test_factorial{,2,k}_corner_cases
 
@@ -2296,7 +2296,7 @@ class TestFactorialFunctions:
         if not content:
             result = special.factorial(n, exact=exact)
         elif not _is_subdtype(n.dtype, ["i", "f"]):
-            with pytest.raises(ValueError, match="Unsupported datatype*"):
+            with pytest.raises(ValueError, match="Unsupported data type.*"):
                 special.factorial(n, exact=exact)
         elif exact and not _is_subdtype(n.dtype, "i"):
             with pytest.raises(ValueError, match="factorial with `exact=.*"):
@@ -2329,7 +2329,7 @@ class TestFactorialFunctions:
                 exp = np.nan if n is np.nan or n is None else special.factorial(n)
                 assert_equal(result, exp)
         else:
-            with pytest.raises(ValueError, match="Unsupported datatype*"):
+            with pytest.raises(ValueError, match="Unsupported data type.*"):
                 special.factorial(n, exact=exact)
 
     # use odd increment to make sure both odd & even numbers are tested!
@@ -2380,7 +2380,7 @@ class TestFactorialFunctions:
             func = assert_equal if exact or (not content) else assert_allclose
             func(result, n)
         else:
-            with pytest.raises(ValueError, match="factorial2 does not*"):
+            with pytest.raises(ValueError, match="Unsupported data type.*"):
                 special.factorial2(n, 3)
 
     @pytest.mark.parametrize("exact", [True, False])
@@ -2393,7 +2393,7 @@ class TestFactorialFunctions:
             exp = np.nan if n is np.nan or n is None else special.factorial(n)
             assert_equal(result, exp)
         else:
-            with pytest.raises(ValueError, match="factorial2 does not*"):
+            with pytest.raises(ValueError, match="Unsupported data type.*"):
                 special.factorial2(n, exact=exact)
 
     @pytest.mark.parametrize("k", range(1, 5))
@@ -2443,7 +2443,7 @@ class TestFactorialFunctions:
             # no error; expected result is identical to n
             assert_equal(special.factorialk(n, 3, exact=exact), n)
         else:
-            with pytest.raises(ValueError, match="factorialk does not*"):
+            with pytest.raises(ValueError, match="Unsupported data type.*"):
                 special.factorialk(n, 3, exact=exact)
 
     @pytest.mark.parametrize("exact", [True, False])
@@ -2459,7 +2459,7 @@ class TestFactorialFunctions:
             expected = np.nan if nan_cond else 1
             assert_equal(result, expected)
         else:
-            with pytest.raises(ValueError, match="factorialk does not*"):
+            with pytest.raises(ValueError, match="Unsupported data type.*"):
                 special.factorialk(n, k=k, exact=exact)
 
     @pytest.mark.parametrize("k", range(1, 5))
