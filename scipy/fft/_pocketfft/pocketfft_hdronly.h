@@ -149,7 +149,7 @@ template<> struct VLEN<double> { static constexpr size_t val=2; };
 #endif
 #endif
 
-#if __cplusplus >= 201703L || (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
+#if (__cplusplus >= 201703L || (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)) && (defined(__cpp_aligned_new) && __cpp_aligned_new >= 201606L)
 inline void *aligned_alloc(size_t align, size_t size)
   {
   void *ptr = ::aligned_alloc(align,size);
