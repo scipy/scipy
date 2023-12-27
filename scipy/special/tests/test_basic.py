@@ -2123,27 +2123,29 @@ def assert_really_equal(x, y, rtol=None):
 class TestFactorialFunctions:
     @pytest.mark.parametrize("exact", [True, False])
     def test_factorialx_scalar_return_type(self, exact):
-        assert np.isscalar(special.factorial(1, exact=exact))
-        assert np.isscalar(special.factorial2(1, exact=exact))
-        assert np.isscalar(special.factorialk(1, 3, exact=exact))
+        kw = {"exact": exact}
+        assert np.isscalar(special.factorial(1, **kw))
+        assert np.isscalar(special.factorial2(1, **kw))
+        assert np.isscalar(special.factorialk(1, k=3, **kw))
 
     @pytest.mark.parametrize("n", [-1, -2, -3])
     @pytest.mark.parametrize("exact", [True, False])
     def test_factorialx_negative(self, exact, n):
-        assert_equal(special.factorial(n, exact=exact), 0)
-        assert_equal(special.factorial2(n, exact=exact), 0)
-        assert_equal(special.factorialk(n, 3, exact=exact), 0)
+        kw = {"exact": exact}
+        assert_equal(special.factorial(n, **kw), 0)
+        assert_equal(special.factorial2(n, **kw), 0)
+        assert_equal(special.factorialk(n, k=3, **kw), 0)
 
     @pytest.mark.parametrize("exact", [True, False])
     def test_factorialx_negative_array(self, exact):
-        assert_func = assert_array_equal if exact else assert_allclose
+        kw = {"exact": exact}
+        rtol = 1e-15
+        n = [-5, -4, 0, 1]
         # Consistent output for n < 0
-        assert_func(special.factorial([-5, -4, 0, 1], exact=exact),
-                    [0, 0, 1, 1])
-        assert_func(special.factorial2([-5, -4, 0, 1], exact=exact),
-                    [0, 0, 1, 1])
-        assert_func(special.factorialk([-5, -4, 0, 1], 3, exact=exact),
-                    [0, 0, 1, 1])
+        expected = np.array([0, 0, 1, 1], dtype=np.int64 if exact else np.float64)
+        assert_really_equal(special.factorial(n, **kw), expected, rtol=rtol)
+        assert_really_equal(special.factorial2(n, **kw), expected, rtol=rtol)
+        assert_really_equal(special.factorialk(n, k=3, **kw), expected, rtol=rtol)
 
     @pytest.mark.parametrize("boxed", [True, False])
     @pytest.mark.parametrize("n", [np.nan, None, np.datetime64('nat')],
@@ -2257,8 +2259,8 @@ class TestFactorialFunctions:
     def test_factorial_int_reference(self, n):
         # Compare all with math.factorial
         correct = math.factorial(n)
-        assert_array_equal(correct, special.factorial(n, True))
-        assert_array_equal(correct, special.factorial([n], True)[0])
+        assert_array_equal(correct, special.factorial(n, exact=True))
+        assert_array_equal(correct, special.factorial([n], exact=True)[0])
 
         rtol = 6e-14 if sys.platform == 'win32' else 1e-15
         # need to cast exact result to float due to numpy/numpy#21220
@@ -2368,8 +2370,8 @@ class TestFactorialFunctions:
         # Cannot use np.product due to overflow
         correct = functools.reduce(operator.mul, list(range(n, 0, -2)), 1)
 
-        assert_array_equal(correct, special.factorial2(n, True))
-        assert_array_equal(correct, special.factorial2([n], True)[0])
+        assert_array_equal(correct, special.factorial2(n, exact=True))
+        assert_array_equal(correct, special.factorial2([n], exact=True)[0])
 
         rtol = 1e-15
         # need to cast exact result to float due to numpy/numpy#21220
@@ -2454,8 +2456,8 @@ class TestFactorialFunctions:
         # broken on windows, see numpy/numpy#21219
         correct = functools.reduce(operator.mul, list(range(n, 0, -k)), 1)
 
-        assert_array_equal(correct, special.factorialk(n, k, True))
-        assert_array_equal(correct, special.factorialk([n], k, True)[0])
+        assert_array_equal(correct, special.factorialk(n, k, exact=True))
+        assert_array_equal(correct, special.factorialk([n], k, exact=True)[0])
 
         rtol = 1e-14
         # need to cast exact result to float due to numpy/numpy#21220
@@ -2523,10 +2525,25 @@ class TestFactorialFunctions:
             # cannot happen for extend="complex" because it requires non-default exact
             special.factorialk(1, k=k)
 
-    @pytest.mark.parametrize("k", [0, 1.1, np.nan, "1"])
-    def test_factorialk_raises_k(self, k):
+    @pytest.mark.parametrize("boxed", [True, False])
+    @pytest.mark.parametrize("exact", [True, False])
+    @pytest.mark.parametrize("k", [0, 1.1, np.nan])
+    def test_factorialk_raises_k_complex(self, k, exact, boxed):
+        n = [1] if boxed else 1
+        kw = {"k": k, "exact": exact}
         with pytest.raises(ValueError, match="k must be a positive integer*"):
-            special.factorialk(1, k)
+            special.factorialk(n, **kw)
+
+    @pytest.mark.parametrize("boxed", [True, False])
+    @pytest.mark.parametrize("exact", [True, False])
+    # neither integer, float nor complex
+    @pytest.mark.parametrize("k", ["string", np.datetime64("nat")],
+                             ids=["string", "NaT"])
+    def test_factorialk_raises_k_other(self, k, exact, boxed):
+        n = [1] if boxed else 1
+        kw = {"k": k, "exact": exact}
+        with pytest.raises(ValueError, match="k must be a positive integer*"):
+            special.factorialk(n, **kw)
 
     @pytest.mark.parametrize("exact", [True, False])
     @pytest.mark.parametrize("k", range(1, 12))
