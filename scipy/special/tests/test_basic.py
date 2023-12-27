@@ -2133,6 +2133,7 @@ def assert_really_equal(x, y, rtol=None):
             assert_really_equal(elem_x, elem_y, rtol=rtol)
     elif np.isnan(x) and np.isnan(y) and _is_subdtype(type(x), "c"):
         assert_complex_nan(x) and assert_complex_nan(y)
+    # no need to consider complex infinities due to numpy/numpy#25493
     else:
         assert_func(x, y)
 
@@ -2228,18 +2229,18 @@ class TestFactorialFunctions:
         "n",
         [
             np.nan, np.float64("nan"), np.nan + np.nan*1j, np.complex128("nan+nanj"),
-            None, np.datetime64("nat")
+            np.inf, np.inf + 0j, -np.inf, -np.inf + 0j, None, np.datetime64("nat")
         ],
         ids=[
             "NaN", "np.float64('nan')", "NaN+i*NaN", "np.complex128('nan+nanj')",
-            "None", "NaT"
+            "inf", "inf+0i", "-inf", "-inf+0i", "None", "NaT"
         ]
     )
     @pytest.mark.parametrize(
         "factorialx",
         [special.factorial, special.factorial2, special.factorialk]
     )
-    def test_factorialx_nan(self, factorialx, n, extend, boxed):
+    def test_factorialx_inf_nan(self, factorialx, n, extend, boxed):
         # NaNs not allowed (by dtype) for exact=True
         kw = {"exact": False, "extend": extend}
         if factorialx == special.factorialk:
@@ -2262,6 +2263,11 @@ class TestFactorialFunctions:
             # note that the type of the naïve `np.nan + np.nan * 1j` is `complex`
             # instead of `numpy.complex128`, which trips up assert_really_equal
             expected = np.complex128("nan+nanj") if complexify else np.float64("nan")
+            # the only exception are real infinities
+            if _is_subdtype(type(n), "f") and np.isinf(n):
+                # unchanged for positive infinity; negative one depends on extension
+                neg_inf_result = np.float64(0 if (extend == "zero") else "nan")
+                expected = np.float64("inf") if (n > 0) else neg_inf_result
 
             result = factorialx([n], **kw)[0] if boxed else factorialx(n, **kw)
             assert_really_equal(result, expected)

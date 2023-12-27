@@ -2941,8 +2941,10 @@ def _factorialx_approx_core(n, k, extend):
         # gamma only returns inf for real inputs, so no fix needed for complex inputs
         if isinstance(res, np.ndarray):
             if not _is_subdtype(vals.dtype, "c"):
-                res[np.isinf(res)] = np.nan
-        elif np.isinf(res):
+                # we _do_ keep infinity where input itself was +∞
+                keep_as_inf = np.isinf(vals) & (vals > 0)
+                res[np.isinf(res) & ~keep_as_inf] = np.nan
+        elif np.isinf(res) and not (np.isinf(vals) and (vals > 0)):
             res = np.float64("nan")
         return res
 
