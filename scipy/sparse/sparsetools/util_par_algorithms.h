@@ -69,8 +69,7 @@ namespace util_par {
 
                 if (loop_end == last) {
                     // execute the last (or only) chunk in the calling thread
-                    std::invoke(std::forward<Chunk>(chunk), first, loop_end,
-                                std::forward<A>(chunk_args)...);
+                    chunk(first, loop_end, std::forward<A>(chunk_args)...);
                 } else {
                     threads.emplace_back(std::thread(std::forward<Chunk>(chunk),
                                                      first, loop_end,
