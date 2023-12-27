@@ -2138,8 +2138,9 @@ def assert_really_equal(x, y, rtol=None):
 
 
 class TestFactorialFunctions:
-    @pytest.mark.parametrize("exact", [True, False])
-    def test_factorialx_scalar_return_type(self, exact):
+    @pytest.mark.parametrize("exact,extend",
+                             [(True, "zero"), (False, "zero"), (False, "complex")])
+    def test_factorialx_scalar_return_type(self, exact, extend):
         kw = {"exact": exact}
         assert np.isscalar(special.factorial(1, **kw))
         assert np.isscalar(special.factorial2(1, **kw))
@@ -2147,14 +2148,14 @@ class TestFactorialFunctions:
 
     @pytest.mark.parametrize("n", [-1, -2, -3])
     @pytest.mark.parametrize("exact", [True, False])
-    def test_factorialx_negative(self, exact, n):
+    def test_factorialx_negative_extend_zero(self, exact, n):
         kw = {"exact": exact}
         assert_equal(special.factorial(n, **kw), 0)
         assert_equal(special.factorial2(n, **kw), 0)
         assert_equal(special.factorialk(n, k=3, **kw), 0)
 
     @pytest.mark.parametrize("exact", [True, False])
-    def test_factorialx_negative_array(self, exact):
+    def test_factorialx_negative_extend_zero_array(self, exact):
         kw = {"exact": exact}
         rtol = 1e-15
         n = [-5, -4, 0, 1]
@@ -2164,7 +2165,17 @@ class TestFactorialFunctions:
         assert_really_equal(special.factorial2(n, **kw), expected, rtol=rtol)
         assert_really_equal(special.factorialk(n, k=3, **kw), expected, rtol=rtol)
 
+    @pytest.mark.parametrize("n", [-1.1, -2.2, -3.3])
+    def test_factorialx_negative_extend_complex(self, n):
+        pass
+
+    @pytest.mark.parametrize("imag", [0, 0j])
+    @pytest.mark.parametrize("n_outer", [-1, -2, -3])
+    def test_factorialx_negative_extend_complex_poles(self, n_outer, imag):
+        pass
+
     @pytest.mark.parametrize("boxed", [True, False])
+    @pytest.mark.parametrize("extend", ["zero", "complex"])
     @pytest.mark.parametrize(
         "n",
         [
@@ -2180,7 +2191,7 @@ class TestFactorialFunctions:
         "factorialx",
         [special.factorial, special.factorial2, special.factorialk]
     )
-    def test_factorialx_nan(self, factorialx, n, boxed):
+    def test_factorialx_nan(self, factorialx, n, extend, boxed):
         # NaNs not allowed (by dtype) for exact=True
         kw = {"exact": False}
         if factorialx == special.factorialk:
@@ -2199,6 +2210,10 @@ class TestFactorialFunctions:
             result = factorialx([n], **kw)[0] if boxed else factorialx(n, **kw)
             assert_really_equal(result, np.float64("nan"))
             # also tested in test_factorial{,2,k}_{array,scalar}_corner_cases
+
+    @pytest.mark.parametrize("extend", [0, 1.1, np.nan, "string"])
+    def test_factorialx_raises_extend(self, extend):
+        pass
 
     @pytest.mark.parametrize("levels", range(1, 5))
     @pytest.mark.parametrize("exact", [True, False])
@@ -2317,8 +2332,12 @@ class TestFactorialFunctions:
         # close to maximum for float64
         _check(170.6243, 1.79698185749571048960082e+308)
 
+    def test_factorial_complex_reference(self):
+        pass
+
     @pytest.mark.parametrize("dtype", [np.int64, np.float64,
                                        np.complex128, object])
+    @pytest.mark.parametrize("extend", ["zero", "complex"])
     @pytest.mark.parametrize("exact", [True, False])
     @pytest.mark.parametrize("dim", range(0, 5))
     # test empty & non-empty arrays, with nans and mixed
@@ -2327,7 +2346,7 @@ class TestFactorialFunctions:
         [[], [1], [1.1], [np.nan], [np.nan + np.nan * 1j], [np.nan, 1]],
         ids=["[]", "[1]", "[1.1]", "[NaN]", "[NaN+i*NaN]", "[NaN, 1]"],
     )
-    def test_factorial_array_corner_cases(self, content, dim, exact, dtype):
+    def test_factorial_array_corner_cases(self, content, dim, exact, extend, dtype):
         if dtype is object and SCIPY_ARRAY_API:
             pytest.skip("object arrays unsupported in array API mode")
         # get dtype without calling array constructor (that might fail or mutate)
@@ -2363,10 +2382,11 @@ class TestFactorialFunctions:
             expected = np.array(ref, ndmin=dim, dtype=dtype)
             assert_really_equal(result, expected)
 
+    @pytest.mark.parametrize("extend", ["zero", "complex"])
     @pytest.mark.parametrize("exact", [True, False])
     @pytest.mark.parametrize("n", [1, 1.1, 2 + 2j, np.nan, np.nan + np.nan*1j, None],
                              ids=["1", "1.1", "2+2j", "NaN", "NaN+i*NaN", "None"])
-    def test_factorial_scalar_corner_cases(self, n, exact):
+    def test_factorial_scalar_corner_cases(self, n, exact, extend):
         kw = {"exact": exact}
         if not _is_subdtype(type(n), ["i", "f", type(None)]):
             with pytest.raises(ValueError, match="Unsupported data type.*"):
@@ -2409,8 +2429,12 @@ class TestFactorialFunctions:
         assert_allclose(correct, special.factorial2(n, exact=False), rtol=rtol)
         assert_allclose(correct, special.factorial2([n], exact=False)[0], rtol=rtol)
 
+    def test_factorial2_complex_reference(self):
+        pass
+
     @pytest.mark.parametrize("dtype", [np.int64, np.float64,
                                        np.complex128, object])
+    @pytest.mark.parametrize("extend", ["zero", "complex"])
     @pytest.mark.parametrize("exact", [True, False])
     @pytest.mark.parametrize("dim", range(0, 5))
     # test empty & non-empty arrays, with nans and mixed
@@ -2419,7 +2443,7 @@ class TestFactorialFunctions:
         [[], [1], [1.1], [np.nan], [np.nan + np.nan * 1j], [np.nan, 1]],
         ids=["[]", "[1]", "[1.1]", "[NaN]", "[NaN+i*NaN]", "[NaN, 1]"],
     )
-    def test_factorial2_array_corner_cases(self, content, dim, exact, dtype):
+    def test_factorial2_array_corner_cases(self, content, dim, exact, extend, dtype):
         # get dtype without calling array constructor (that might fail or mutate)
         if dtype == np.int64 and any(np.isnan(x) or (x != int(x)) for x in content):
             pytest.skip("impossible combination")
@@ -2450,10 +2474,11 @@ class TestFactorialFunctions:
             expected = np.array(ref, ndmin=dim, dtype=dtype)
             assert_really_equal(result, expected, rtol=1e-15)
 
+    @pytest.mark.parametrize("extend", ["zero", "complex"])
     @pytest.mark.parametrize("exact", [True, False])
     @pytest.mark.parametrize("n", [1, 1.1, 2 + 2j, np.nan, np.nan + np.nan*1j, None],
                              ids=["1", "1.1", "2+2j", "NaN", "NaN+i*NaN", "None"])
-    def test_factorial2_scalar_corner_cases(self, n, exact):
+    def test_factorial2_scalar_corner_cases(self, n, exact, extend):
         kw = {"exact": exact}
         if not _is_subdtype(type(n), "i"):
             with pytest.raises(ValueError, match="Unsupported data type.*"):
@@ -2495,8 +2520,12 @@ class TestFactorialFunctions:
         assert_allclose(correct, special.factorialk(n, k, exact=False), rtol=rtol)
         assert_allclose(correct, special.factorialk([n], k, exact=False)[0], rtol=rtol)
 
+    def test_factorialk_complex_reference(self):
+        pass
+
     @pytest.mark.parametrize("dtype", [np.int64, np.float64,
                                        np.complex128, object])
+    @pytest.mark.parametrize("extend", ["zero", "complex"])
     @pytest.mark.parametrize("exact", [True, False])
     @pytest.mark.parametrize("dim", range(0, 5))
     # test empty & non-empty arrays, with nans and mixed
@@ -2505,7 +2534,7 @@ class TestFactorialFunctions:
         [[], [1], [1.1], [np.nan], [np.nan + np.nan * 1j], [np.nan, 1]],
         ids=["[]", "[1]", "[1.1]", "[NaN]", "[NaN+i*NaN]", "[NaN, 1]"],
     )
-    def test_factorialk_array_corner_cases(self, content, dim, exact, dtype):
+    def test_factorialk_array_corner_cases(self, content, dim, exact, extend, dtype):
         # get dtype without calling array constructor (that might fail or mutate)
         if dtype == np.int64 and any(np.isnan(x) or (x != int(x)) for x in content):
             pytest.skip("impossible combination")
@@ -2536,11 +2565,12 @@ class TestFactorialFunctions:
             expected = np.array(ref, ndmin=dim, dtype=dtype)
             assert_really_equal(result, expected, rtol=1e-15)
 
+    @pytest.mark.parametrize("extend", ["zero", "complex"])
     @pytest.mark.parametrize("exact", [True, False])
     @pytest.mark.parametrize("k", range(1, 5))
     @pytest.mark.parametrize("n", [1, 1.1, 2 + 2j, np.nan, np.nan + np.nan*1j, None],
                              ids=["1", "1.1", "2+2j", "NaN", "NaN+i*NaN", "None"])
-    def test_factorialk_scalar_corner_cases(self, n, k, exact):
+    def test_factorialk_scalar_corner_cases(self, n, k, exact, extend):
         kw = {"k": k, "exact": exact}
         if not _is_subdtype(type(n), "i"):
             with pytest.raises(ValueError, match="Unsupported data type.*"):
@@ -2557,28 +2587,31 @@ class TestFactorialFunctions:
             special.factorialk(1, k=k)
 
     @pytest.mark.parametrize("boxed", [True, False])
-    @pytest.mark.parametrize("exact", [True, False])
-    @pytest.mark.parametrize("k", [0, 1.1, np.nan])
-    def test_factorialk_raises_k_complex(self, k, exact, boxed):
+    @pytest.mark.parametrize("exact,extend",
+                             [(True, "zero"), (False, "zero"), (False, "complex")])
+    @pytest.mark.parametrize("k", [-1, -1.0, 0, 0.0, 0 + 1j, 1.1, np.nan])
+    def test_factorialk_raises_k_complex(self, k, exact, extend, boxed):
         n = [1] if boxed else 1
         kw = {"k": k, "exact": exact}
         with pytest.raises(ValueError, match="k must be a positive integer*"):
             special.factorialk(n, **kw)
 
     @pytest.mark.parametrize("boxed", [True, False])
-    @pytest.mark.parametrize("exact", [True, False])
+    @pytest.mark.parametrize("exact,extend",
+                             [(True, "zero"), (False, "zero"), (False, "complex")])
     # neither integer, float nor complex
     @pytest.mark.parametrize("k", ["string", np.datetime64("nat")],
                              ids=["string", "NaT"])
-    def test_factorialk_raises_k_other(self, k, exact, boxed):
+    def test_factorialk_raises_k_other(self, k, exact, extend, boxed):
         n = [1] if boxed else 1
         kw = {"k": k, "exact": exact}
         with pytest.raises(ValueError, match="k must be a positive integer*"):
             special.factorialk(n, **kw)
 
-    @pytest.mark.parametrize("exact", [True, False])
+    @pytest.mark.parametrize("exact,extend",
+                             [(True, "zero"), (False, "zero"), (False, "complex")])
     @pytest.mark.parametrize("k", range(1, 12))
-    def test_factorialk_dtype(self, k, exact):
+    def test_factorialk_dtype(self, k, exact, extend):
         kw = {"k": k, "exact": exact}
         if exact and k in _FACTORIALK_LIMITS_64BITS.keys():
             n = np.array([_FACTORIALK_LIMITS_32BITS[k]])
