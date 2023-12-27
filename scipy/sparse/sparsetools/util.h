@@ -1,6 +1,8 @@
 #ifndef __SPTOOLS_UTIL_H__
 #define __SPTOOLS_UTIL_H__
 
+#include <stdexcept>
+
 /*
  * Same as std::divides, except return x/0 == 0 for integer types, without
  * raising a SIGFPE.
@@ -38,6 +40,7 @@ struct multi_op {
         case DIVIDE: return safe_divides<T>()(a, b);
         case MAXIMUM: return std::max<T>(a, b);
         case MINIMUM: return std::min<T>(a, b);
+        default: throw std::invalid_argument("Invalid multi_op argument");
         }
     }
 
@@ -60,6 +63,7 @@ struct multi_op_bool {
         case LESS: return (a < b);
         case GREATER_EQ: return (a >= b);
         case LESS_EQ: return (a <= b);
+        default: throw std::invalid_argument("Invalid multi_op_bool argument");
         }
     }
 
