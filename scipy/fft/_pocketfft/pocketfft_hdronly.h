@@ -149,7 +149,11 @@ template<> struct VLEN<double> { static constexpr size_t val=2; };
 #endif
 #endif
 
-#if __cplusplus >= 201703L && !defined(_MSVC_LANG)
+// MSVC does not provide the standard aligned allocation functions,
+// yet _still_ sets the feature test macro (__cpp_aligned_new)...
+// While there are replacement functions (_aligned_malloc & _aligned_free),
+// those produce crashes when used here, see GH-19726
+#if __cplusplus >= 201703L && !defined(_MSC_VER)
 inline void *aligned_alloc(size_t align, size_t size)
   {
   void *ptr = ::aligned_alloc(align,size);
