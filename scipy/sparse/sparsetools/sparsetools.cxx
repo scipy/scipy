@@ -35,7 +35,7 @@
 
 #include "sparsetools.h"
 #include "util.h"
-#include "util_par.h"
+#include "util_par_config.h"
 
 #define MAX_ARGS 16
 
