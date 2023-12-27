@@ -2805,6 +2805,9 @@ def _range_prod(lo, hi, k=1):
     Breaks into smaller products first for speed:
     _range_prod(2, 9) = ((2*3)*(4*5))*((6*7)*(8*9))
     """
+    if lo == 1 and k == 1:
+        return math.factorial(hi)
+
     if lo + k < hi:
         mid = (hi + lo) // 2
         if k > 1:
@@ -3076,7 +3079,7 @@ def factorial(n, exact=False, extend="zero"):
         elif extend == "zero" and n < 0:
             return 0 if exact else np.float64(0)
         elif exact and _is_subdtype(type(n), "i"):
-            return math.factorial(n)
+            return _range_prod(1, n, k=1)
         elif exact:
             msg = ("Non-integer values of `n` together with `exact=True` are "
                    "deprecated. Either ensure integer `n` or use `exact=False`.")
