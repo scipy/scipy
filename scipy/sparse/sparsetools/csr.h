@@ -818,7 +818,8 @@ bool csr_binop_csr_canonical(const I n_row, const I n_col,
             I B_j = Bj[B_pos];
 
             // check if matrices are canonical
-            if (A_pos != A_pos_start && (!(A_j_prev < A_j) || !(B_j_prev < B_j)))
+            if ((A_pos != A_pos_start && !(A_j_prev < A_j)) ||
+                (B_pos != B_pos_start && !(B_j_prev < B_j)))
                 return false;
             A_j_prev = A_j;
             B_j_prev = B_j;
