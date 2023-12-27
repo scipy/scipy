@@ -3221,16 +3221,11 @@ def factorialk(n, k, exact=None):
         "Only integers are permitted."
     )
 
-    helpmsg = ""
-    if k in {1, 2}:
-        func = "factorial" if k == 1 else "factorial2"
-        helpmsg = f"\nYou can try to use {func} instead"
-
     # don't use isscalar due to numpy/numpy#23574; 0-dim arrays treated below
     if np.ndim(n) == 0 and not isinstance(n, np.ndarray):
         # scalar cases
         if not _is_subdtype(type(n), "i"):
-            raise ValueError(msg_wrong_dtype.format(dtype=type(n)) + helpmsg)
+            raise ValueError(msg_wrong_dtype.format(dtype=type(n)))
         elif n < 0:
             return 0
         elif n in {0, 1}:
@@ -3244,7 +3239,7 @@ def factorialk(n, k, exact=None):
     n = asarray(n)
 
     if not _is_subdtype(n.dtype, "i"):
-        raise ValueError(msg_wrong_dtype.format(dtype=n.dtype) + helpmsg)
+        raise ValueError(msg_wrong_dtype.format(dtype=n.dtype))
 
     if n.size == 0:
         # return empty arrays unchanged
