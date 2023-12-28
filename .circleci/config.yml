@@ -75,7 +75,7 @@ jobs:
           name: setup Python venv
           command: |
             pip install numpy cython pybind11 pythran ninja meson
-            pip install -r doc_requirements.txt
+            pip install -r requirements/doc.txt
             pip install "myst-nb<1.0.0"
             pip install mpmath gmpy2 "asv>=0.6.0" click rich-click doit pydevtool pooch threadpoolctl
             # extra benchmark deps
