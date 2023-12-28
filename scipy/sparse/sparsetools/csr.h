@@ -677,32 +677,19 @@ void csr_matmat(const I n_row,
             }
         }
 
-        // Populate Cj indices from linked list `next`.
-        I start = Cp[i];
-        I end = Cp[i+1];
-        // If (length == expected row size) then all sums are nonzero
-        // and do not need to be individually tested.
-        bool row_is_all_nz = (length == end - start);
         for(I jj = 0; jj < length; jj++){
-            if(row_is_all_nz || sums[head] != 0){
+
+            if(sums[head] != 0){
                 Cj[nnz] = head;
+                Cx[nnz] = sums[head];
                 nnz++;
             }
+
             I temp = head;
             head = next[head];
 
-            next[temp] = -1; //clear array
-        }
-
-        // Sort nonzeros so C is in canonical form
-        std::sort(&Cj[start], &Cj[end]);
-
-        // Copy and clear values in vectorization-friendly loops
-        for(I jj = start; jj < end; jj++){
-            Cx[jj] = sums[Cj[jj]];
-        }
-        for(I jj = start; jj < end; jj++){
-            sums[Cj[jj]] = 0;
+            next[temp] = -1; //clear arrays
+            sums[temp] =  0;
         }
     });
 }
