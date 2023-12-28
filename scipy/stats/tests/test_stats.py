@@ -3188,6 +3188,14 @@ class TestMoments:
                                              r" non-empty 1D list/array."):
             stats.moment([1, 2, 3, 4], order=[])
 
+    def test_rename_moment_order(self):
+        # Parameter 'order' was formerly known as 'moment'. The old name
+        # has not been deprecated, so it must continue to work.
+        x = np.arange(10)
+        res = stats.moment(x, moment=3)
+        ref = stats.moment(x, order=3)
+        np.testing.assert_equal(res, ref)
+
     def test_skewness(self):
         # Scalar test case
         y = stats.skew(self.scalar_testcase)
