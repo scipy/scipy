@@ -40,6 +40,9 @@ on:
     branches:
       - main
       - maintenance/**
+  push:
+    branches:
+      - ci-blas
 
 defaults:
   run:
@@ -91,7 +94,7 @@ jobs:
 
 
   netlib-split:
-    if: "github.repository == 'scipy/scipy'"
+    if: "github.repository == 'rgommers/scipy'"
     runs-on: ubuntu-latest
     container: opensuse/tumbleweed
     name: "OpenSUSE Netlib BLAS/LAPACK"
