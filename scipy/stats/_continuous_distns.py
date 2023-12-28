@@ -10946,14 +10946,14 @@ class crystalball_gen(rv_continuous):
     from a power-law to a Gaussian distribution.  :math:`m` is the power
     of the power-law tail.
 
+    %(after_notes)s
+
+    .. versionadded:: 0.19.0
+
     References
     ----------
     .. [1] "Crystal Ball Function",
            https://en.wikipedia.org/wiki/Crystal_Ball_function
-
-    %(after_notes)s
-
-    .. versionadded:: 0.19.0
 
     %(example)s
     """
