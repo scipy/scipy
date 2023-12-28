@@ -2296,8 +2296,8 @@ cdef class Rotation:
     def concatenate(cls, rotations):
         """Concatenate a sequence of `Rotation` objects into a single object.
 
-        This is useful if you want to for example take the mean of a set of
-        rotations, and need to pack them into a single object to do so.
+        This is useful if you want to, for example, take the mean of a set of
+        rotations and need to pack them into a single object to do so.
 
         Parameters
         ----------
@@ -2312,7 +2312,6 @@ cdef class Rotation:
         Examples
         --------
         >>> from scipy.spatial.transform import Rotation as R
-        >>> import numpy as np
         >>> r1 = R.from_rotvec([0, 0, 1])
         >>> r2 = R.from_rotvec([0, 0, 2])
         >>> rc = R.concatenate([r1, r2])
