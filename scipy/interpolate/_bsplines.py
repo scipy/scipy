@@ -116,6 +116,7 @@ class BSpline:
     derivative
     antiderivative
     integrate
+    insert_knot
     construct_fast
     design_matrix
     from_power_basis
@@ -829,6 +830,44 @@ class BSpline:
                         * np.power(-1, k - m)\
                         * _diff_dual_poly(j, k, x[n - 2], m, t)
         return cls.construct_fast(t, c, k, pp.extrapolate, pp.axis)
+
+    def insert_knot(self, x, m=1):
+        """Insert a new knot at `x` of multiplicity `m`.
+
+        Parameters
+        ----------
+        x : float
+            The position of the new knot
+        m : int, optional
+            The multiplicity of the new knot. Default is 1.
+
+        Returns
+        -------
+        spl : BSpline object
+            A new BSpline object with the new knot inserted.
+
+        """
+        if self.extrapolate == "periodic":
+            # XXX: implement
+            raise NotImplementedError()
+        if x < self.t[self.k] or x > self.t[-self.k-1]:
+            raise ValueError(f"Cannot insert a knot at {x}.")
+        if m <= 0:
+            raise ValueError(f"`m` must be positive, got {m = }.")
+
+        extradim = self.c.shape[1:]
+        num_extra = prod(extradim)
+
+        tt = self.t.copy()
+        cc = self.c.copy()
+        cc = cc.reshape(-1, num_extra)
+
+        for _ in range(m):
+            tt, cc = _bspl.insert(x, tt, cc, self.k)
+
+        return self.construct_fast(
+            tt, cc.reshape((-1,) + extradim), self.k, self.extrapolate, self.axis
+        )
 
 
 #################################

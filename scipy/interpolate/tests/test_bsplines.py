@@ -610,6 +610,71 @@ class TestBSpline:
         b = BSpline(t=t, c=c, k=0)
         assert_allclose(b(xx), 3)
 
+    @pytest.mark.parametrize('xval', [0.0, 1.0, 2.5, 4, 6.5, 7.0])
+    def test_insert(self, xval):
+        # insert a knot, incl edges (0.0, 7.0) and exactly at an existing knot (4.0)
+        x = np.arange(8)
+        y = np.sin(x)**3
+        spl = make_interp_spline(x, y, k=3)
+
+        spl_1f = insert(xval, spl)     # FITPACK
+        spl_1 = spl.insert_knot(xval)
+
+        assert_allclose(spl_1.t, spl_1f.t, atol=1e-15)
+        assert_allclose(spl_1.c, spl_1f.c[:-spl.k-1], atol=1e-15)
+
+        # knot insertion preserves values, unless multiplicity >= k+1
+        xx = x if xval != x[-1] else x[:-1]
+        xx = np.r_[xx, 0.5*(x[1:] + x[:-1])]
+        assert_allclose(spl(xx), spl_1(xx), atol=1e-15)
+
+        # ... repeat with ndim > 1
+        y1 = np.cos(x)**3
+        spl_y1 = make_interp_spline(x, y1, k=3)
+        spl_yy = make_interp_spline(x, np.c_[y, y1], k=3)
+        spl_yy1 = spl_yy.insert_knot(xval)
+
+        assert_allclose(spl_yy1.t, spl_1.t, atol=1e-15)
+        assert_allclose(spl_yy1.c, np.c_[spl.insert_knot(xval).c,
+                                         spl_y1.insert_knot(xval).c], atol=1e-15)
+
+        xx = x if xval != x[-1] else x[:-1]
+        xx = np.r_[xx, 0.5*(x[1:] + x[:-1])]
+        assert_allclose(spl_yy(xx), spl_yy1(xx), atol=1e-15)
+
+
+    @pytest.mark.parametrize(
+        'xval, m', [(0.0, 2), (1.0, 3), (1.5, 5), (4, 2), (7.0, 2)]
+    )
+    def test_insert_multi(self, xval, m):
+        x = np.arange(8)
+        y = np.sin(x)**3
+        spl = make_interp_spline(x, y, k=3)
+
+        spl_1f = insert(xval, spl, m=m)
+        spl_1 = spl.insert_knot(xval, m)
+
+        assert_allclose(spl_1.t, spl_1f.t, atol=1e-15)
+        assert_allclose(spl_1.c, spl_1f.c[:-spl.k-1], atol=1e-15)
+
+        xx = x if xval != x[-1] else x[:-1]
+        xx = np.r_[xx, 0.5*(x[1:] + x[:-1])]
+        assert_allclose(spl(xx), spl_1(xx), atol=1e-15)
+
+    def test_insert_random(self):
+        rng = np.random.default_rng(12345)
+        n, k = 11, 3
+
+        t = np.sort(rng.uniform(size=n+k+1))
+        c = rng.uniform(size=(n, 3, 2))
+        spl = BSpline(t, c, k)
+
+        xv = rng.uniform(low=t[k+1], high=t[-k-1])
+        spl_1 = spl.insert_knot(xv)
+
+        xx = rng.uniform(low=t[k+1], high=t[-k-1], size=33)
+        assert_allclose(spl(xx), spl_1(xx), atol=1e-15)
+
 
 def test_knots_multiplicity():
     # Take a spline w/ random coefficients, throw in knots of varying

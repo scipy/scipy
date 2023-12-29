@@ -223,6 +223,42 @@ def evaluate_all_bspl(const double[::1] t, int k, double xval, int m, int nu=0):
     return bbb[:k+1]
 
 
+def insert(double xval,
+           const double[::1] t,
+           const double_or_complex[:, ::1] c,
+           int k,
+        ):
+    """Insert a single knot at `xval`.
+    """
+    cdef:
+        int interval, i
+
+    interval = find_interval(t, k, xval, k, False)
+    if interval < 0:
+        raise ValueError("cannot happen.")
+
+    # super edge case: a knot with multiplicity > k+1
+    # see https://github.com/scipy/scipy/commit/037204c3e91
+    if t[interval] == t[interval + k + 1]:
+        interval -= 1
+
+    # knots
+    tt = np.r_[t[:interval+1], xval, t[interval+1:]]
+
+    cc = np.zeros((c.shape[0]+1, c.shape[1]))
+
+    # coefficients
+    cc[interval+1:] = c[interval:]
+
+    for i in range(interval, interval-k, -1):
+        fac = (xval - tt[i]) / (tt[i+k+1] - tt[i])
+        cc[i] = fac*c[i, ...] + (1. - fac)*c[i-1, ...]
+
+    cc[:interval - k+1] = c[:interval - k+1]
+
+    return tt, cc
+
+
 @cython.wraparound(False)
 @cython.boundscheck(False)
 def _colloc(const double[::1] x, const double[::1] t, int k, double[::1, :] ab,
