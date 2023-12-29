@@ -208,6 +208,7 @@ py3.install_sources([
     '_tukeylambda_stats.py',
     '_variation.py',
     '_warnings_errors.py',
+    '_wilcoxon.py',
     'biasedurn.py',
     'contingency.py',
     'distributions.py',

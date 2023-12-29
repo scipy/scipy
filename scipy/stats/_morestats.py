@@ -14,7 +14,7 @@ from scipy._lib._bunch import _make_tuple_bunch
 from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
 
 from ._ansari_swilk_statistics import gscale, swilk
-from . import _stats_py
+from . import _stats_py, _wilcoxon
 from ._fit import FitResult
 from ._stats_py import find_repeats, _normtest_finish, SignificanceResult
 from .contingency import chi2_contingency
@@ -4074,6 +4074,13 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     WilcoxonResult(statistic=6.0, pvalue=0.4375)
 
     """
+    if np.ndim(x) <= 1 and np.ndim(y) <= 1:
+        return _wilcoxon_1d(x, y, zero_method, correction, alternative, method)
+    else:
+        return _wilcoxon._wilcoxon_nd(x, y, zero_method, correction, alternative, method)
+
+
+def _wilcoxon_1d(x, y, zero_method, correction, alternative, method):
     mode = method
 
     if mode not in ["auto", "approx", "exact"]:
