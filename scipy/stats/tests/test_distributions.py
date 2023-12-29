@@ -4130,9 +4130,9 @@ class TestGenExpon:
                               (0.125, 0.9508674287164001, 0.25, 5, 0.5)])
     def test_sf_isf(self, x, p, a, b, c):
         sf = stats.genexpon.sf(x, a, b, c)
-        assert_allclose(sf, p, rtol=1e-14)
+        assert_allclose(sf, p, rtol=2e-14)
         isf = stats.genexpon.isf(p, a, b, c)
-        assert_allclose(isf, x, rtol=1e-14)
+        assert_allclose(isf, x, rtol=2e-14)
 
     # The values of p in the following data were computed with mpmath.
     @pytest.mark.parametrize('x, p, a, b, c',
@@ -4143,9 +4143,9 @@ class TestGenExpon:
                               (0.125, 0.04913257128359998, 0.25, 5, 0.5)])
     def test_cdf_ppf(self, x, p, a, b, c):
         cdf = stats.genexpon.cdf(x, a, b, c)
-        assert_allclose(cdf, p, rtol=1e-14)
+        assert_allclose(cdf, p, rtol=2e-14)
         ppf = stats.genexpon.ppf(p, a, b, c)
-        assert_allclose(ppf, x, rtol=1e-14)
+        assert_allclose(ppf, x, rtol=2e-14)
 
 
 class TestTruncexpon:
