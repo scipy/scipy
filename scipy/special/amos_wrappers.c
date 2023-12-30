@@ -319,7 +319,7 @@ npy_cdouble cbesi_wrap( double v, npy_cdouble z) {
 
   if (sign == -1) {
     if (!reflect_i(&cy, v)) {
-      nz = amos_besi(z99, v, kode, n, cy_k99, &ierr);
+      nz = amos_besk(z99, v, kode, n, cy_k99, &ierr);
       NPY_CSETREAL(&cy_k, creal(cy_k99[0]));
       NPY_CSETIMAG(&cy_k, cimag(cy_k99[0]));
       DO_SFERR("iv(kv):", &cy_k);
