@@ -920,7 +920,7 @@ def _moment_result_object(*args):
 #   returns it.
 # Currently this leads to a slight inconsistency: when the input array is
 # empty, there is no distinction between the `moment` function being called
-# with parameter `moments=1` and `moments=[1]`; the latter *should* produce
+# with parameter `order=1` and `order=[1]`; the latter *should* produce
 # the same as the former but with a singleton zeroth dimension.
 @_rename_parameter('moment', 'order')
 @_axis_nan_policy_factory(  # noqa: E302
