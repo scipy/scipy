@@ -990,9 +990,9 @@ def moment(a, order=1, axis=0, nan_policy='propagate', *, center=None):
     Examples
     --------
     >>> from scipy.stats import moment
-    >>> moment([1, 2, 3, 4, 5], moment=1)
+    >>> moment([1, 2, 3, 4, 5], order=1)
     0.0
-    >>> moment([1, 2, 3, 4, 5], moment=2)
+    >>> moment([1, 2, 3, 4, 5], order=2)
     2.0
 
     """
