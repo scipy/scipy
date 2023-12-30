@@ -1,5 +1,8 @@
 #include "_amos.h"
 
+#ifndef CMPLX
+#define CMPLX(x, y) ((double complex)((double)(x) + I * (double)(y)))
+#endif /* CMPLX */
 
 static double d1mach[5] = {
     2.2250738585072014e-308, /* np.finfo(np.float64).tiny */
@@ -305,7 +308,6 @@ static double zunhj_beta[210] = {
      1.59690280765839059e-03,  1.42111975664438546e-03
 };
 
-
 static double zunhj_gama[30] = {
     6.29960524947436582e-01, 2.51984209978974633e-01,
     1.54790300415655846e-01, 1.10713062416159013e-01,
@@ -323,7 +325,6 @@ static double zunhj_gama[30] = {
     1.32643378994276568e-02, 1.27517121970498651e-02,
     1.22761545318762767e-02, 1.18338262398482403e-02
 };
-
 
 static double zunik_c[120] = {
      1.00000000000000000e+00, -2.08333333333333333e-01,
@@ -387,7 +388,6 @@ static double zunik_c[120] = {
     -2.18229277575292237e+10,  1.24700929351271032e+09,
     -2.91883881222208134e+07,  1.18838426256783253e+05
 };
-
 
 static double dgamln_gln[100] = {
     0.00000000000000000e+00, 0.00000000000000000e+00,
@@ -455,6 +455,29 @@ static double dgamln_cf[22] = {
     3.47320283765002252e+11, -1.23696021422692745e+13,
     4.88788064793079335e+14, -2.13203339609193739e+16
 };
+
+static int amos_acai(double complex, double, int, int, int, double complex *, double, double, double, double);
+static int amos_acon(double complex, double, int, int, int, double complex *, double, double, double, double, double);
+static int amos_asyi(double complex, double, int, int, double complex *, double, double, double, double);
+static int amos_binu(double complex, double fnu, int, int, double complex *, double, double, double, double, double);
+static int amos_bknu(double complex, double, int, int, double complex *, double, double, double);
+static int amos_buni(double complex, double, int, int, double complex *, int, int *, double, double, double, double);
+static int amos_bunk(double complex, double, int, int, int, double complex *, double, double, double);
+static double amos_gamln(double);
+static int amos_kscl(double complex, double, int, double complex *, double complex, double *, double, double);
+static int amos_mlri(double complex, double, int, int, double complex *, double);
+static void amos_rati(double complex, double, int, double complex *, double);
+static int amos_seri(double complex, double, int, int, double complex *, double, double, double);
+static int amos_s1s2(double complex, double complex *, double complex *, double, double, int *);
+static int amos_uchk(double complex, double, double);
+static void amos_unhj(double complex, double, int, double, double complex *, double complex *, double complex *, double complex *, double complex *, double complex *);
+static void amos_uni1(double complex, double, int, int, double complex *, int *, int *, double, double, double, double);
+static void amos_uni2(double complex, double, int, int, double complex *, int *, int *, double, double, double, double);
+static void amos_unik(double complex, double, int, int, double, int *, double complex *, double complex *, double complex *, double complex *, double complex *);
+static int amos_unk1(double complex, double, int, int, int, double complex *, double, double, double);
+static int amos_unk2(double complex, double, int, int, int, double complex *, double, double, double);
+static int amos_uoik(double complex, double, int, int, int, double complex *, double, double, double);
+static int amos_wrsk(double complex, double, int, int, double complex *, double complex *, double, double, double);
 
 
 int amos_acai(
@@ -588,8 +611,8 @@ int amos_acon(
         if (nw == 0) {
             s1 = cy[0];
             fmr = mr;
-            sgn = ( fmr < 0 ? -pi : pi );
-            csgn = sgn*I;
+            sgn = ( fmr < 0 ? pi : -pi );
+            csgn = CMPLX(0.0, sgn);
             if (kode != 1) {
                 yy = -cimag(zn);
                 csgn *= CMPLX(cos(yy), sin(yy));
@@ -806,7 +829,7 @@ double complex amos_airy(
     k1 = i1mach[14];
     k2 = i1mach[15];
     r1m5 = d1mach[4];
-    k = (abs(k1) > abs(k2) ? abs(k2) : abs(k1) );
+    k = (int)(fabs(k1) > fabs(k2) ? fabs(k2) : fabs(k1) );
     elim = 2.303 * (k*r1m5 - 3.0);
     k1 = i1mach[13] - 1;
     aa = r1m5*k1;
@@ -944,7 +967,7 @@ int amos_asyi(
     // OVERFLOW TEST
     ak1 = csqrt(rpi / z);
     cz = z;
-    if (kode == 2) { cz = z - x; }
+    if (kode == 2) { cz = CMPLX(0.0, cimag(z)); }
     acz = creal(cz);
     if (fabs(acz) <= elim) {
         dnu2 = dfnu + dfnu;
@@ -962,7 +985,7 @@ int amos_asyi(
         // IMAGINARY PART.
         aez = 8. * az;
         s = tol / aez;
-        jl = rl + rl + 2;
+        jl = (int)(rl + rl) + 2;
         yy = cimag(z);
         p1 = 0.;
         if (yy != 0.) {
@@ -972,7 +995,7 @@ int amos_asyi(
             ak = -sin(arg);
             bk = cos(arg);
             if (yy < 0.) { bk = -bk; }
-            p1 = ak + bk*I;
+            p1 = CMPLX(ak, bk);
             if (inu % 2 == 1) { p1 = -p1; }
         }
         for (int k = 1; k < (il+1); k++)
@@ -1003,7 +1026,7 @@ int amos_asyi(
             }
             if ((j == jl) && (aa > atol)) { return -2; }
 
-            /* 20 */
+            /* 50 */
             s2 = cs1;
             if (x + x < elim) { s2 += p1*cs2*cexp(-z-z); }
             fdn += 8. * dfnu + 4.;
@@ -1075,11 +1098,11 @@ int amos_besh(
     k1 = i1mach[14];
     k2 = i1mach[15];
     r1m5 = d1mach[4];
-    k = (abs(k1) > abs(k2) ? abs(k2) : abs(k1) );
+    k = (int)(fabs(k1) > fabs(k2) ? fabs(k2) : fabs(k1) );
     elim = 2.303 * (k*r1m5 - 3.0);
     k1 = i1mach[13] - 1;
     aa = r1m5*k1;
-    dig = (aa > 18.0 ? 18.0 : aa);
+    dig = fmin(aa, 18.0);
     aa *= 2.303;
     alim = elim + fmax(-aa, -41.45);
     fnul = 10.0 + 6.0 * (dig - 3.0);
@@ -1087,126 +1110,134 @@ int amos_besh(
     fn = fnu + (nn - 1);
     mm = 3 - m - m;
     fmm = mm;
-    zn = z * (-fmm * I);
+    zn = z * CMPLX(0.0, -fmm);
     xn = creal(zn);
     yn = cimag(zn);
+    //
+    // TEST FOR PROPER RANGE
+    //
     az = cabs(z);
-
-    //
-    // TEST FOR RANGE
-    //
-    aa = 0.5 / tol;
     bb = d1mach[1] * 0.5;
-    aa = fmin(aa, bb);
-    if (az <= aa) {
-        if (fn <= aa) {
-            aa = sqrt(aa);
-            if (az > aa) { *ierr = 3; }
-            if (fn > aa) { *ierr = 3; }
+    aa = fmin(0.5 / tol, bb);
+    if ((az > aa) || (fn > aa)){ *ierr =4; return 0; }  /* GO TO 260 */
+    aa = sqrt(aa);
+    if (az > aa) { *ierr = 3; }
+    if (fn > aa) { *ierr = 3; }
+    //
+    // OVERFLOW TEST ON THE LAST MEMBER OF THE SEQUENCE
+    //
+    ufl = d1mach[0] * 1.0e3;
+    if (az < ufl) { *ierr = 2; return 0; }  /* GO TO 230 */
+    if (fnu <= fnul) {
+        //
+        // Untangling GOTOs with explicit conditions
+        //
+        if ((fn > 1.0) && (fn <= 2.0) && (az <= tol)) {
+            /* Failed through all checks */
+            arg = 0.5 * az;
+            aln = -fn * log(arg);
+            if (aln > elim) { *ierr = 2; return 0; }  /* GO TO 230 */
+            /* GO TO 70 */
+        } else if ((fn > 1.0) && (fn <= 2.0) && (az > tol)) {
+            /* Failed all but the az > tol hence do nothing and GO TO 70 */
+        } else if ((fn > 1.0) && (fn > 2.0)) {
+            /* GO TO 60 */
+            nuf = amos_uoik(zn, fnu, kode, 2, nn, cy, tol, elim, alim);
+            if (nuf < 0) { *ierr = 2; return 0; }  /* GO TO 230 */
+            nz += nuf;
+            nn -= nuf;
             //
-            // OVERFLOW TEST ON THE LAST MEMBER OF THE SEQUENCE
+            // HERE NN=N OR NN=0 SINCE NUF=0,NN, OR -1 ON RETURN FROM CUOIK
+            // IF NUF=NN, THEN CY(I)=CZERO FOR ALL I
             //
-            ufl = d1mach[0] * 1.0e3;
-            if (az >= ufl) {
-                if (fnu <= fnul) {
-                    if (fn > 1.0) {
-                        if (fn <= 2.0) {
-                            if (az > tol) { goto L10; }
-                            arg = 0.5 * az;
-                            aln = -fn * log(arg);
-                            if (aln > elim) { goto L50; }
-                        } else {
-                            nuf = amos_uoik(zn, fnu, kode, 2, nn, cy, tol, elim, alim);
-                            if (nuf < 0) { goto L50; }
-                            nz += nuf;
-                            nn -= nuf;
-                            //
-                            // HERE NN=N OR NN=0 SINCE NUF=0,NN, OR -1 ON RETURN FROM CUOIK
-                            // IF NUF=NN, THEN CY(I)=CZERO FOR ALL I
-                            //
-                            if (nn == 0) goto L40;
-                        }
-                    }
-L10:
-                    if (!((xn < 0.0) || ((xn == 0.0) && (yn < 0.0) && (m == 2)))) {
-                        //
-                        // RIGHT HALF PLANE COMPUTATION, XN >= 0.  .AND.  (XN.NE.0.  .OR.
-                        // YN >= 0.  .OR.  M=1)
-                        //
-                        nz = amos_bknu(zn, fnu, kode, nn, cy, tol, elim, alim);
-                        goto L20;
-                    }
-                    //
-                    // LEFT HALF PLANE COMPUTATION
-                    //
-                    mr = -mm;
-                    nw = amos_acon(zn, fnu, kode, mr, nn, cy, rl, fnul, tol, elim, alim);
-                    if (nw < 0) { goto L60; }
-                    nz = nw;
-                } else {
-                    //
-                    // UNIFORM ASYMPTOTIC EXPANSIONS FOR FNU > FNUL
-                    //
-                    mr = 0;
-                    if ((xn < 0.0) || ((xn == 0.0) && (yn < 0.0) && (m == 2))) {
-                        mr = -mm;
-                        if ((xn == 0.0) && (yn < 0.0)) { zn = -zn; }
-                    }
-                    nw = amos_bunk(zn, fnu, kode, mr, nn, cy, tol, elim, alim);
-                    if (nw < 0) { goto L60; }
-                    nz += nw;
-                }
-                //
-                // H(M,FNU,Z) = -FMM*(I/HPI)*(ZT**FNU)*K(FNU,-Z*ZT)
-                //
-                // ZT=EXP(-FMM*HPI*I) = CMPLX(0.0,-FMM), FMM=3-2*M, M=1,2
-                //
-L20:
-                sgn = copysign(hpi, -fmm);
-                //
-                // CALCULATE EXP(FNU*HPI*I) TO MINIMIZE LOSSES OF SIGNIFICANCE
-                // WHEN FNU IS LARGE
-                //
-                inu = (int)fnu;
-                inuh = inu / 2;
-                ir = inu - 2 * inuh;
-                arg = (fnu - (inu - ir)) * sgn;
-                rhpi = 1.0 / sgn;
-                cpn = rhpi * cos(arg);
-                spn = rhpi * sin(arg);
-                csgn = CMPLX(-spn, cpn);
-                if (inuh % 2 == 1) { csgn = -csgn; }
-                zt = -fmm*I;
-                rtol = 1.0 / tol;
-                ascle = ufl * rtol;
-                for (i = 1; i < (nn+1); i++) {
-                    zn = cy[i-1];
-                    aa = creal(zn);
-                    bb = cimag(zn);
-                    atol = 1.0;
-                    if (fmax(fabs(aa), fabs(bb)) <= ascle) {
-                        zn *= rtol;
-                        atol = tol;
-                    }
-                    zn *= csgn;
-                    cy[i-1] = zn * atol;
-                    csgn *= zt;
-                }
+            if (nn == 0) {
+                /* GO TO 140 */
+                if (xn < 0.0) { *ierr = 2; return 0; }  /* GO TO 230 */
                 return nz;
-L40:
-                if (xn >= 0.0) return nz;
             }
-L50:
-            *ierr = 2;
-            return 0;
-L60:
-            if (nw == -1) goto L50;
+            /* GO TO 70 */
+        } else {
+            /* Passed the first hence GO TO 70 */
+        }
+
+        /* GO TO 70 */
+        //
+        // More GOTOs untangling
+        //
+        if ((xn < 0.0) || ((xn == 0.0) && (yn < 0.0) && (m == 2))) {
+            /* GO TO 80 */
+            mr = -mm;
+            nw = amos_acon(zn, fnu, kode, mr, nn, cy, rl, fnul, tol, elim, alim);
+            if (nw < 0) {
+                /* GO TO 240 */
+                if (nw == -1) { *ierr = 2; return 0; }  /* GO TO 230 */
+                *ierr = 5;
+                return 0; 
+            }
+            nz = nw;
+            /* GO TO 110 */
+        } else {
+            //
+            // RIGHT HALF PLANE COMPUTATION, XN >= 0.  .AND.  (XN.NE.0.  .OR.
+            // YN >= 0.  .OR.  M=1)
+            //
+            nz = amos_bknu(zn, fnu, kode, nn, cy, tol, elim, alim);
+            /* GO TO 110 */
+        }
+    } else {
+        /* GO TO 90 */
+        //
+        // UNIFORM ASYMPTOTIC EXPANSIONS FOR FNU > FNUL
+        //
+        mr = 0;
+        if (!((xn >= 0.0) && ((xn != 0.0) || (yn >= 0.0) || (m != 2)))) {
+            mr = -mm;
+            if ((xn == 0.0) && (yn < 0.0)) { zn = -zn; }
+        }
+        /* GO TO 100 */            
+        nw = amos_bunk(zn, fnu, kode, mr, nn, cy, tol, elim, alim);
+        if (nw < 0) {
+            /* GO TO 240 */
+            if (nw == -1) { *ierr = 2; return 0; }  /* GO TO 230 */
             *ierr = 5;
             return 0;
         }
+        nz += nw;
     }
-    *ierr = 4;
-    return 0;
+    /* 110 */ 
+    //
+    // H(M,FNU,Z) = -FMM*(I/HPI)*(ZT**FNU)*K(FNU,-Z*ZT)
+    // ZT=EXP(-FMM*HPI*I) = CMPLX(0.0,-FMM), FMM=3-2*M, M=1,2
+    //
+    sgn = (-fmm < 0 ? -hpi : hpi);
+    //
+    // CALCULATE EXP(FNU*HPI*I) TO MINIMIZE LOSSES OF SIGNIFICANCE
+    // WHEN FNU IS LARGE
+    //
+    inu = (int)fnu;
+    inuh = inu / 2;
+    ir = inu - 2 * inuh;
+    arg = (fnu - (inu - ir)) * sgn;
+    rhpi = 1.0 / sgn;
+    cpn = rhpi * cos(arg);
+    spn = -rhpi * sin(arg);
+    csgn = CMPLX(spn, cpn);
+    if (inuh % 2 == 1) { csgn = -csgn; }
+    zt = CMPLX(0.0, -fmm);
+    rtol = 1.0 / tol;
+    ascle = ufl * rtol;
+    for (i = 1; i < (nn+1); i++) {
+        zn = cy[i-1];
+        atol = 1.0;
+        if (fmax(fabs(creal(zn)), fabs(cimag(zn))) <= ascle) {
+            zn *= rtol;
+            atol = tol;
+        }
+        zn *= csgn;
+        cy[i-1] = zn * atol;
+        csgn *= zt;
+    }
+    return nz;
 }
 
 
@@ -1219,8 +1250,8 @@ int amos_besi(
     int *ierr
 ) {
     double complex csgn, zn;
-    double aa, alim, arg, dig, elim, fnul, rl, r1m5, s1, s2, tol, xx, yy, az,\
-           fn, bb, ascle, rtol, atol;
+    double aa, alim, arg, atol, ascle, az, bb, dig, elim, fn, fnul, rl, rtol,\
+           r1m5, tol, xx, yy;
     int i, inu, k, k1, k2, nn, nz;
     double pi = 3.14159265358979324;
 
@@ -1247,80 +1278,75 @@ int amos_besi(
     k1 = i1mach[14];
     k2 = i1mach[15];
     r1m5 = d1mach[4];
-    k = (abs(k1) > abs(k2) ? abs(k2) : abs(k1) );
+    k = (int)(fabs(k1) > fabs(k2) ? fabs(k2) : fabs(k1) );
     elim = 2.303 * (k*r1m5 - 3.0);
     k1 = i1mach[13] - 1;
     aa = r1m5*k1;
-    dig = (aa > 18.0 ? 18.0 : aa);
+    dig = fmin(aa, 18.0);
     aa *= 2.303;
-    alim = elim + (-aa > -41.45 ? -aa : -41.45);
+    alim = elim + fmax(-aa, -41.45);
     rl = 1.2 * dig + 3.0;
     fnul = 10.0 + 6.0 * (dig - 3.0);
-    az = cabs(z);
     //
-    // TEST FOR RANGE
+    // TEST FOR PROPER RANGE
     // 
+    az = cabs(z);
+    fn = fnu + (n - 1);
     aa = 0.5 / tol;
-    bb = d1mach[1]*0.5;
+    bb = i1mach[8]*0.5;
     aa = fmin(aa, bb);
-    if (az <= aa) {
-        fn = fnu + (n - 1);
-        if (fn <= aa) {
-            aa = sqrt(aa);
-            if (az > aa) { *ierr = 3; }
-            if (fn > aa) { *ierr = 3; }
-            zn = z;
-            csgn = 1.0;
-            if (xx < 0.0) {
-                zn = -z;
-                //
-                // CALCULATE CSGN=EXP(FNU*PI*I) TO MINIMIZE LOSSES OF SIGNIFICANCE
-                // WHEN FNU IS LARGE
-                //
-                inu = (int)fnu;
-                arg = (fnu - inu)*pi;
-                if (yy < 0.0) { arg = -arg; }
-                s1 = cos(arg);
-                s2 = sin(arg);
-                csgn = CMPLX(s1, s2);
-                if (inu % 2 == 1) { csgn = -csgn; }
-            }
-            nz = amos_binu(zn, fnu, kode, n, cy, rl, fnul, tol, elim, alim);
-            if (nz >= 0) {
-                if (xx > 0.0) { return nz; }
-                //
-                // ANALYTIC CONTINUATION TO THE LEFT HALF PLANE
-                //
-                nn = n - z;
-                if (nn == 0) { return nz; }
-                rtol = 1.0 / tol;
-                ascle = d1mach[0]*rtol*1e3;
-                for (i = 1; i < (nn+1); i++)
-                {
-                    zn = cy[i-1];
-                    aa = creal(zn);
-                    bb = cimag(zn);
-                    atol = 1.0;
-                    if (fmax(fabs(aa), fabs(bb)) <= ascle) {
-                        zn *= rtol;
-                        atol = tol;
-                    }
-                    zn *= csgn;
-                    cy[i-1] = zn*atol;
-                    csgn = -csgn;
-                }
-                return nz;
-            }
-            if (nz != 2) {
-                *ierr = 2;
-                return 0;
-            }
+    if ((az > aa) || (fn > aa)) {
+        *ierr = 4;
+        return 0;
+    }
+    aa = sqrt(aa);
+    if (az > aa) { *ierr = 3; }
+    if (fn > aa) { *ierr = 3; }
+    zn = z;
+    csgn = 1.0;
+    if (xx < 0.0) {
+        zn = -z;
+        //
+        // CALCULATE CSGN=EXP(FNU*PI*I) TO MINIMIZE LOSSES OF SIGNIFICANCE
+        // WHEN FNU IS LARGE
+        //
+        inu = (int)fnu;
+        arg = (fnu - inu)*pi;
+        if (yy < 0.0) { arg = -arg; }
+        csgn = CMPLX(cos(arg), sin(arg));
+        if (inu % 2 == 1) { csgn = -csgn; }
+    }
+    /* 40 */
+    nz = amos_binu(zn, fnu, kode, n, cy, rl, fnul, tol, elim, alim);
+    if (nz < 0) {
+        if (nz == -2) {
             *ierr = 5;
             return 0;
         }
+        *ierr = 2;
+        return 0;
     }
-    *ierr = 4;
-    return 0;
+    if (xx > 0.0) { return nz; }
+    //
+    // ANALYTIC CONTINUATION TO THE LEFT HALF PLANE
+    //
+    nn = n - nz;
+    if (nn == 0) { return nz; }
+    rtol = 1.0 / tol;
+    ascle = d1mach[0]*rtol*1e3;
+    for (i = 1; i < (nn+1); i++)
+    {
+        zn = cy[i-1];
+        atol = 1.0;
+        if (fmax(fabs(creal(zn)), fabs(cimag(zn))) <= ascle) {
+            zn *= rtol;
+            atol = tol;
+        }
+        cy[i-1] = atol*(zn*csgn);
+        csgn = -csgn;
+    }
+    *ierr = 0;
+    return nz;
 }
 
 
@@ -1344,89 +1370,93 @@ int amos_besj(
     if (kode < 1 || kode > 2) *ierr = 1;
     if (n < 1) *ierr = 1;
     if (*ierr != 0) return nz;
-
+    //
+    // SET PARAMETERS RELATED TO MACHINE CONSTANTS.
+    // TOL IS THE APPROXIMATE UNIT ROUNDOFF LIMITED TO 1.0E-18.
+    // ELIM IS THE APPROXIMATE EXPONENTIAL OVER- AND UNDERFLOW LIMIT.
+    // EXP(-ELIM).LT.EXP(-ALIM)=EXP(-ELIM)/TOL    AND
+    // EXP(ELIM).GT.EXP(ALIM)=EXP(ELIM)*TOL       ARE INTERVALS NEAR
+    // UNDERFLOW AND OVERFLOW LIMITS WHERE SCALED ARITHMETIC IS DONE.
+    // RL IS THE LOWER BOUNDARY OF THE ASYMPTOTIC EXPANSION FOR LARGE Z.
+    // DIG = NUMBER OF BASE 10 DIGITS IN TOL = 10**(-DIG).
+    // FNUL IS THE LOWER BOUNDARY OF THE ASYMPTOTIC SERIES FOR LARGE FNU.
+    //
     tol = fmax(d1mach[3], 1e-18);
     k1 = i1mach[14];
     k2 = i1mach[15];
     r1m5 = d1mach[4];
-    k = (abs(k1) > abs(k2) ? abs(k2) : abs(k1) );
+    k = (int)(fabs(k1) > fabs(k2) ? fabs(k2) : fabs(k1) );
     elim = 2.303 * (k*r1m5 - 3.0);
     k1 = i1mach[13] - 1;
     aa = r1m5*k1;
-    dig = (aa > 18.0 ? 18.0 : aa);
+    dig = fmin(aa, 18.0);
     aa *= 2.303;
-    alim = elim + (-aa > -41.45 ? -aa : -41.45);
+    alim = elim + fmax(-aa, -41.45);
     fnul = 10.0 + 6.0 * (dig - 3.0);
     rl = 1.2*dig + 3.0;
-    ci = I;
+    //
+    // TEST FOR PROPER RANGE
+    //
     yy = cimag(z);
     az = cabs(z);
+    fn = fnu + (n - 1);
 
-    //-----------------------------------------------------------------------
-    //     TEST FOR RANGE
-    //-----------------------------------------------------------------------
     aa = 0.5 / tol;
     bb = d1mach[1] * 0.5;
     aa = fmin(aa, bb);
-    fn = fnu + (n - 1);
-    if (az <= aa) {
-        if (fn <= aa) {
-            aa = sqrt(aa);
-            if (az > aa) *ierr = 3;
-            if (fn > aa) *ierr = 3;
-            //-----------------------------------------------------------------------
-            //     CALCULATE CSGN = EXP(FNU*HPI*I) TO MINIMIZE LOSSES OF SIGNIFICANCE
-            //     WHEN FNU IS LARGE
-            //-----------------------------------------------------------------------
-            inu = (int)fnu;
-            inuh = inu / 2;
-            ir = inu - 2 * inuh;
-            arg = (fnu - (inu - ir)) * hpi;
-            r1 = cos(arg);
-            r2 = sin(arg);
-            csgn = CMPLX(r1, r2);
-            if (inuh % 2 == 1) { csgn = -csgn; }
-            //-----------------------------------------------------------------------
-            //     ZN IS IN THE RIGHT HALF PLANE
-            //-----------------------------------------------------------------------
-            zn = -z * ci;
-            if (yy < 0.0) {
-                zn = -zn;
-                csgn = conj(csgn);
-                ci = conj(ci);
-            }
-            nz = amos_binu(zn, fnu, kode, n, cy, rl, fnul, tol, elim, alim);
-            if (nz >= 0) {
-                nl = n - nz;
-                if (nl == 0) { return nz; }
-                rtol = 1.0 / tol;
-                ascle = d1mach[0]*rtol*1e3;
-                for (i = 1; i < (nl+1); i++) 
-                {
-                    zn = cy[i-1];
-                    aa = creal(zn);
-                    bb = cimag(zn);
-                    atol = 1.0;
-                    if (fmax(fabs(aa), fabs(bb)) <= ascle) {
-                        zn *= rtol;
-                        atol = tol;
-                    }
-                    zn *= csgn;
-                    cy[i-1] = zn * atol;
-                    csgn = csgn * ci;
-                }
-                return nz;
-            }
-            if (nz != -2) {
-                *ierr = 2;
-                return 0;
-            }
-            *ierr = 5;
-            return 0;
-        }
+    if ((az > aa) ||  (fn > aa)) {
+        *ierr = 4;
+        return 0;
     }
-    *ierr = 4;
-    return 0;
+    aa = sqrt(aa);
+    if (az > aa) { *ierr = 3; }
+    if (fn > aa) { *ierr = 3; }
+    //
+    // CALCULATE CSGN = EXP(FNU*HPI*I) TO MINIMIZE LOSSES OF SIGNIFICANCE
+    // WHEN FNU IS LARGE
+    //
+    ci = I;
+    inu = (int)fnu;
+    inuh = inu / 2;
+    ir = inu - 2*inuh;
+    arg = (fnu - (inu - ir)) * hpi;
+    r1 = cos(arg);
+    r2 = sin(arg);
+    csgn = CMPLX(r1, r2);
+    if (inuh % 2 == 1) { csgn = -csgn; }
+    //
+    // ZN IS IN THE RIGHT HALF PLANE
+    //
+    zn = -z * ci;
+    if (yy < 0.0) {
+        zn = -zn;
+        csgn = conj(csgn);
+        ci = conj(ci);
+    }
+    nz = amos_binu(zn, fnu, kode, n, cy, rl, fnul, tol, elim, alim);
+    if (nz < 0) {
+        if (nz == -2) { *ierr = 5; return 0; }
+        *ierr = 2;
+        return 0;
+    }
+    nl = n - nz;
+    if (nl == 0) { return nz; }
+    rtol = 1.0 / tol;
+    ascle = d1mach[0]*rtol*1e3;
+    for (i = 1; i < (nl+1); i++) 
+    {
+        zn = cy[i-1];
+        aa = creal(zn);
+        bb = cimag(zn);
+        atol = 1.0;
+        if (fmax(fabs(aa), fabs(bb)) <= ascle) {
+            zn *= rtol;
+            atol = tol;
+        }
+        cy[i-1] = atol*(zn * csgn);
+        csgn = csgn * ci;
+    }
+    return nz;
 }
 
 
@@ -1468,96 +1498,119 @@ int amos_besk(
     k1 = i1mach[14];
     k2 = i1mach[15];
     r1m5 = d1mach[4];
-    k = (abs(k1) > abs(k2) ? abs(k2) : abs(k1) );
+    k = (int)(fabs(k1) > fabs(k2) ? fabs(k2) : fabs(k1) );
     elim = 2.303 * (k*r1m5 - 3.0);
     k1 = i1mach[13] - 1;
     aa = r1m5*k1;
-    dig = (aa > 18.0 ? 18.0 : aa);
+    dig = fmin(aa, 18.0);
     aa *= 2.303;
-    alim = elim + (-aa > -41.45 ? -aa : -41.45);
+    alim = elim + fmax(-aa, -41.45);
     fnul = 10.0 + 6.0 * (dig - 3.0);
     rl = 1.2 * dig + 3.0;
+    //
+    // TEST FOR PROPER RANGE
+    //
     az = cabs(z);
     fn = fnu + (nn - 1);
-    //
-    // TEST FOR RANGE
-    //
     aa = 0.5 / tol;
-    bb = d1mach[1] * 0.5;
+    bb = i1mach[8] * 0.5;
     aa = fmin(aa, bb);
-    if (az <= aa) {
-        if (fn <= aa) {
-            aa = sqrt(aa);
-            if (az > aa) { *ierr = 3; }
-            if (fn > aa) { *ierr = 3; }
-            //
-            // OVERFLOW TEST ON THE LAST MEMBER OF THE SEQUENCE
-            //
-            ufl = d1mach[0] * 1.0E+3;
-            if (az >= ufl) {
-                if (fnu <= fnul) {
-                    if (fn > 1.0) {
-                        if (fn <= 2.0) {
-                            if (az > tol) { goto L10; }
-                            arg = 0.5 * az;
-                            aln = -fn * log(arg);
-                            if (aln > elim) { goto L30; }
-                        } else {
-                            nuf = amos_uoik(z, fnu, kode, 2, nn, cy, tol, elim, alim);
-                            if (nuf < 0) { goto L30; }
-                            nz += nuf;
-                            nn -= nuf;
-                            //
-                            // HERE NN=N OR NN=0 SINCE NUF=0,NN, OR -1 ON RETURN FROM CUOIK
-                            // IF NUF=NN, THEN CY(I)=CZERO FOR ALL I
-                            //
-                            if (nn == 0) { goto L20; }
-                        }
-                    }
-L10:
-                    if (xx >= 0.0) {
-                        //
-                        // RIGHT HALF PLANE COMPUTATION, REAL(Z) >= 0.
-                        //
-                        nw = amos_bknu(z, fnu, kode, nn, cy, tol, elim, alim);
-                        if (nw < 0) { goto L40; }
-                        return nw;
-                    }
-                    //
-                    // LEFT HALF PLANE COMPUTATION
-                    // PI/2 < ARG(Z) <= PI AND -PI < ARG(Z) < -PI/2.
-                    //
-                    if (nz != 0) { goto L30; }
-                    mr = 1;
-                    if (yy < 0.0) { mr = -1; }
-                    nw = amos_acon(z, fnu, kode, mr, nn, cy, rl, fnul, tol, elim, alim);
-                    if (nw < 0) { goto L40; }
-                    return nw;
+    if ((az > aa) ||  (fn > aa)) {
+        *ierr = 4;
+        return 0;
+    }
+    aa = sqrt(aa);
+    if (az > aa) { *ierr = 3; }
+    if (fn > aa) { *ierr = 3; }
+    //
+    // OVERFLOW TEST ON THE LAST MEMBER OF THE SEQUENCE
+    //
+    ufl = d1mach[0] * 1.0E+3;
+    if (az < ufl) {
+        *ierr = 2;
+        return 0;
+    }
+    if (fnu <= fnul) {
+        if (fn > 1.0) {
+            if (fn <= 2.0) {
+                if (az <= tol) {
+                    arg = 0.5 * az;
+                    aln = -fn * log(arg);
+                    if (aln > elim) { *ierr = 2; return 0; }
                 }
-                // Uniform asymptotic expansions for fnu > fnul
-                mr = 0;
-                if (xx < 0.0) {
-                    mr = 1;
-                    if (yy < 0.0) { mr = -1; }
+                /* GO TO 60 */
+            } else {
+                nuf = amos_uoik(z, fnu, kode, 2, nn, cy, tol, elim, alim);
+                if (nuf < 0) { *ierr = 2; return 0; }
+                nz += nuf;
+                nn -= nuf;
+                //
+                // HERE NN=N OR NN=0 SINCE NUF=0,NN, OR -1 ON RETURN FROM CUOIK
+                // IF NUF=NN, THEN CY(I)=CZERO FOR ALL I
+                //
+                if (nn == 0) {
+                    if (xx < 0.0) { *ierr = 2; return 0; }
+                    return nz;
                 }
-                nw = amos_bunk(z, fnu, kode, mr, nn, cy, tol, elim, alim);
-                if (nw < 0) { goto L40; }
-                nz += nw;
-                return nz;
-L20:            
-                if (xx > 0.0) { return nz ; }
             }
-L30:
-            *ierr = 2;
-            return 0;
-L40:
-            if (nw == -1) { goto L30; }
-            *ierr = 5;
+        }
+
+        /* 60 */
+        if (xx >= 0.0) {
+            //
+            // RIGHT HALF PLANE COMPUTATION, REAL(Z) >= 0.
+            //
+            nw = amos_bknu(z, fnu, kode, nn, cy, tol, elim, alim);
+            if (nw < 0) {
+                if (nw == -1) {
+                    *ierr = 2;
+                } else {
+                    *ierr = 5;
+                }
+                return 0;
+            }
+            return nw;
+        }
+        /* 70 */
+        //
+        // LEFT HALF PLANE COMPUTATION
+        // PI/2 < ARG(Z) <= PI AND -PI < ARG(Z) < -PI/2.
+        //
+        if (nz != 0) { *ierr = 2; return 0; }
+        mr = 1;
+        if (yy < 0.0) { mr = -1; }
+        nw = amos_acon(z, fnu, kode, mr, nn, cy, rl, fnul, tol, elim, alim);
+        if (nw < 0) {
+            if (nw == -1) {
+                *ierr = 2;
+            } else {
+                *ierr = 5;
+            }
             return 0;
         }
+        return nw;
     }
-    *ierr = 4;
-    return 0;
+
+    /* 80 */
+    //
+    // UNIFORM ASYMPTOTIC EXPANSIONS FOR FNU > FNUL
+    //
+    mr = 0;
+    if (xx < 0.0) {
+        mr = 1;
+        if (yy < 0.0) { mr = -1; }
+    }
+    nw = amos_bunk(z, fnu, kode, mr, nn, cy, tol, elim, alim);
+    if (nw < 0) {
+        if (nw == -1) {
+            *ierr = 2;
+        } else {
+            *ierr = 5;
+        }
+        return 0;
+    }
+    nz += nw;
+    return nz;
 }
 
 
@@ -1568,98 +1621,91 @@ int amos_besy(
     int n,
     double complex *cy,
     int *ierr
-    ) {
-    double complex ci, csgn, cspn, cwrk[n], ex, zu, zv, zz, zn;
-    double arg, elim, ey, r1, r2, tay, xx, yy, ascle, rtol, atol, tol, aa, bb,
-        ffnu, rhpi, r1m5;
-    int i, ifnu, k, k1, k2, nz, nz1, nz2, i4;
-    double complex cip[4] = { 1.0, I, -1.0, -I };
-    double hpi = 1.57079632679489662; /* 0.5 PI */
+) {
+    double complex c1, c2, hci, st;
+    double elim, exr, exi, ey, tay, xx, yy, ascle, rtol, atol, tol, aa, bb, r1m5;
+    int i, k, k1, k2, nz, nz1, nz2;
+    double complex cwrk[n];
 
     xx = creal(z);
     yy = cimag(z);
     *ierr = 0;
     nz = 0;
+
     if ((xx == 0.0) && (yy == 0.0)) { *ierr = 1; }
     if (fnu < 0.0) { *ierr = 1; }
     if ((kode < 1) || (kode > 2)) { *ierr = 1; }
     if (n < 1) { *ierr = 1; }
     if (*ierr != 0) { return nz; }
-    ci = I;
-    zz = z;
-    if (yy < 0.0) { zz = conj(z); }
-    zn = -ci * zz;
-    nz1 = amos_besi(zn, fnu, kode, n, cy, ierr);
-    if (*ierr == 0 || *ierr == 3) {
-        nz2 = amos_besk(zn, fnu, kode, n, cwrk, ierr);
-        if (*ierr == 0 || *ierr == 3) {
-            nz = (nz1 < nz2 ? nz1 : nz2);
-            ifnu = (int)fnu;
-            ffnu = fnu - ifnu;
-            arg = hpi * ffnu;
-            csgn = CMPLX(cos(arg), sin(arg));
-            i4 = (ifnu % 4) + 1;
-            csgn = csgn * cip[i4-1];
-            rhpi = 1.0 / hpi;
-            cspn = conj(csgn) * rhpi;
-            csgn = csgn * ci;
-            if (kode != 2) {
-                for (i = 1; i < (n+1); i++) {
-                    cy[i-1] = csgn * cy[i-1] - cspn * cwrk[i-1];
-                    csgn = ci * csgn;
-                    cspn = -ci * cspn;
-                }
-                if (yy < 0.0)
-                    for (i = 0; i < n; i++) { cy[i] = conj(cy[i]); }
-                return nz;
-            }
-            r1 = cos(xx);
-            r2 = sin(xx);
-            ex = CMPLX(r1, r2);
-            tol = fmax(d1mach[3], 1e-18);
-            k1 = i1mach[14];
-            k2 = i1mach[15];
-            r1m5 = d1mach[4];
-            k = (abs(k1) > abs(k2) ? abs(k2) : abs(k1) );
-            elim = 2.303 * (k*r1m5 - 3.0);
-            ey = 0.0;
-            tay = fabs(yy + yy);
-            if (tay < elim) { ey = exp(-tay); }
-            cspn = ex * ey * cspn;
-            nz = 0;
-            rtol = 1.0 / tol;
-            ascle = d1mach[0]*rtol*1e3;
-            for (i = 1; i < (n+1); i++) {
-                zv = cwrk[i-1];
-                aa = creal(zv);
-                bb = cimag(zv);
-                atol = 1.0;
-                if (fmax(fabs(aa), fabs(bb)) <= ascle) {
-                    zv *= rtol;
-                    atol = tol;
-                }
-                zv *= cspn;
-                zv *= atol;
-                zu = cy[i-1];
-                aa = creal(zu);
-                bb = cimag(zu);
-                atol = 1.0;
-                if (fmax(fabs(aa), fabs(bb)) <= ascle) {
-                    zu *= rtol;
-                    atol = tol;
-                }
-                zu *= csgn;
-                zu *= atol;
-                cy[i-1] = zu - zv;
-                if (yy < 0.0) { cy[i-1] = conj(cy[i-1]); }
-                if ((cy[i] == 0.0) && (ey == 0.0)) { nz = nz + 1; }
-                csgn *= ci; 
-                cspn *= -ci;
-            }
-        return nz;
+    
+    hci = CMPLX(0.0, 0.5);
+    nz1 = amos_besh(z, fnu, kode, 1, n, cy, ierr);
+    if ((*ierr != 0) && (*ierr != 3)) { return 0; }
+    
+    nz2 = amos_besh(z, fnu, kode, 2, n, cwrk, ierr);
+    if ((*ierr != 0) && (*ierr != 3)) { return 0; }
+    
+    nz = (nz1 > nz2 ? nz2 : nz1);
+    if (kode != 2) {
+        for (i = 1; i < (n+1); i++)
+        {
+            cy[i-1] = hci * (cwrk[i-1] - cy[i-1]);
         }
+        return nz;
     }
-    return 0;
+    
+    tol = fmax(d1mach[3], 1e-18);
+    k1 = i1mach[14];
+    k2 = i1mach[15];
+    r1m5 = d1mach[4];
+    k = (int)(fabs(k1) > fabs(k2) ? fabs(k2) : fabs(k1) );
+    //
+    // ELIM IS THE APPROXIMATE EXPONENTIAL UNDER- AND OVERFLOW LIMIT
+    //
+    elim = 2.303 * (k*r1m5 - 3.0);
+    exr = cos(xx);
+    exi = sin(xx);
+    ey = 0.0;
+    tay = fabs(yy + yy);
+    if (tay < elim) { ey = exp(-tay); }
+    if (yy < 0.0) {
+        /* 90 */
+        c1 = CMPLX(exr, exi);
+        c2 = ey*CMPLX(exr, -exi);
+    } else {
+        c1 = ey*CMPLX(exr, exi);
+        c2 = CMPLX(exr, -exi);
+    }
+    
+    nz = 0;
+    rtol = 1.0 / tol;
+    ascle = 1e3*d1mach[0]*rtol;
+    for (i = 1; i< (n+1); i++)
+    {
+        aa = creal(cwrk[i-1]);
+        bb = cimag(cwrk[i-1]);
+        atol = 1.0;
+        if (fmax(fabs(aa), fabs(bb)) <= ascle) {
+            aa *= rtol;
+            bb *= rtol;
+            atol = tol;
+        }
+        
+        st = CMPLX(aa, bb) * c2 * atol;
+        aa = creal(cy[i-1]);
+        bb = cimag(cy[i-1]);
+        atol = 1.0;
+        if (fmax(fabs(aa), fabs(bb)) <= ascle) {
+            aa *= rtol;
+            bb *= rtol;
+            atol = tol;
+        }
+        
+        st -= CMPLX(aa, bb) * c1 * atol;
+        cy[i-1] = st*hci;
+        if ((st == 0.0) && (ey == 0.0)) { nz += 1; }
+    }
+    return nz;
 }
 
 
@@ -1686,7 +1732,7 @@ int amos_binu(
     if ((az <= 2.) || (az*az*0.25 <= (dfnu + 1.0))) {
         /* GOTO 10 */
         nw = amos_seri(z,fnu, kode, n, cy, tol, elim, alim);
-        inw = abs(nw);
+        inw = (int)fabs(nw);
         nz += inw;
         nn -= inw;
         if (nn == 0) { return nz; }
@@ -1741,6 +1787,9 @@ int amos_binu(
     dfnu = fnu + (nn -1);
     /* GOTO 110s handled here */
     if ((dfnu > fnul) || (az > fnul)) {
+        //
+        // INCREMENT FNU+NN-1 UP TO FNUL, COMPUTE AND RECUR BACKWARD
+        //
         nui = (int)(fnul-dfnu) + 1;
         nui = (nui > 0 ? nui : 0);
         nw = amos_buni(z, fnu, kode, nn, cy, nui, &nlast, fnul, tol, elim, alim);
@@ -1803,9 +1852,9 @@ double complex amos_biry(
     int k, k1, k2, nz;
     double complex cy[2] = { 0.0 };
     double tth = 2. / 3.;
-    double c1 = 0.614926627446000735150922369;  /* 1/( 3**(1/6) Gamma(2/3)) */
-    double c2 = 0.448288357353826357914823710;  /* 3**(1/6) / Gamma(1/3) */
-    double coef = 0.577350269189625764509148780;  /* sqrt( 1 / 3) */
+    double c1 = 0.614926627446000735150922369;   /* 1/( 3**(1/6) Gamma(2/3)) */
+    double c2 = 0.448288357353826357914823710;   /* 3**(1/6) / Gamma(1/3) */
+    double coef = 0.577350269189625764509148780; /* sqrt( 1 / 3) */
     double pi = 3.141592653589793238462643383;
 
     *ierr = 0;
@@ -1814,7 +1863,7 @@ double complex amos_biry(
     if ((kode < 1) || (kode > 2)) { *ierr= 1; }
     if ( *ierr != 0) { return 0.0;}
     az = cabs(z);
-    tol = d1mach[3];
+    tol = fmax(d1mach[3], 1e-18);
     fid = id;
     if (az <= 1.0) {
         //
@@ -1823,7 +1872,7 @@ double complex amos_biry(
         s1 = 1.0;
         s2 = 1.0;
         if (az < tol) {
-            aa = c1 * (1.0 - fid) + fid * c2;
+            aa = c1*(1.0 - fid) + fid*c2;
             return aa;
         }
         aa = az*az;
@@ -1856,7 +1905,9 @@ double complex amos_biry(
                 ak += 18.0;
                 bk += 18.0;
             }
+        /* 30 */    
         }
+        /* 40 */
         if (id != 1) {
             bi = s1*c1 + z*s2*c2;
             if (kode == 1) { return bi; }
@@ -1865,14 +1916,16 @@ double complex amos_biry(
             bi *= exp(aa);
             return bi;
         }
+        /* 50 */
         bi = s2*c2;
         if (az > tol) { bi += z*z*s1*c1/(1.0 + fid ); }
         if (kode == 1) { return bi; }
         zta = z*csqrt(z)*tth;
         aa = -fabs(creal(zta));
-        bi += exp(aa);
+        bi *= exp(aa);
         return bi;
     }
+    /* 70 */
     //
     // CASE FOR ABS(Z) > 1.0
     //
@@ -1891,23 +1944,23 @@ double complex amos_biry(
     k1 = i1mach[14];
     k2 = i1mach[15];
     r1m5 = d1mach[4];
-    k = (abs(k1) > abs(k2) ? abs(k2) : abs(k1) );
+    k = (int)(fabs(k1) > fabs(k2) ? fabs(k2) : fabs(k1) );
     elim = 2.303 * (k*r1m5 - 3.0);
     k1 = i1mach[13] - 1;
     aa = r1m5*k1;
-    dig = (aa > 18.0 ? 18.0 : aa);
+    dig = fmin(aa, 18.0);
     aa *= 2.303;
-    alim = elim + (-aa > -41.45 ? -aa : -41.45);
+    alim = elim + fmax(-aa, -41.45);
     rl = 1.2*dig + 3.0;
     fnul = 10.0 + 6.0*(dig - 3.0);
     // 
     // TEST FOR RANGE
     // 
     aa = 0.5 / tol;
-    bb = d1mach[1] * 0.5;
+    bb = i1mach[8] * 0.5;
     aa = fmin(aa, bb);
     aa = pow(aa, tth);
-    if (az > aa) { *ierr = 4; nz = 0; return 0.0; }
+    if (az > aa) { *ierr = 4; return 0.0; } 
     aa = sqrt(aa);
     if (az > aa) { *ierr = 3; }
     csq = csqrt(z);
@@ -1924,7 +1977,9 @@ double complex amos_biry(
         ck = -fabs(bk);
         zta = CMPLX(ck, ak);
     }
-    if ((zi == 0.0) && (zr <= 0.0)) { zta = ak*I; }
+    /* 80 */
+    if ((zi == 0.0) && (zr <= 0.0)) { zta = CMPLX(0.0, ak); }
+    /* 90 */
     aa = creal(zta);
     if (kode != 2) {
         //
@@ -1932,17 +1987,19 @@ double complex amos_biry(
         //
         bb = fabs(aa);
         if (bb >= alim) {
-            bb += 0.5*log(az);
+            bb += 0.25*log(az);
             sfac = tol;
-            if (bb > elim) { nz = 0; *ierr = 2; return 0.0; }
+            if (bb > elim) { *ierr = 2; return 0.0; }
         }
     }
+    /* 100 */
     fmr = 0.0;
     if ((aa < 0.0) || (zr <= 0.0)) {
         fmr = pi;
         if (zi < 0.0) { fmr = -pi; }
         zta = -zta;
     }
+    /* 110 */
     //
     // AA=FACTOR FOR ANALYTIC CONTINUATION OF I(FNU,ZTA)
     // KODE=2 RETURNS EXP(-ABS(XZTA))*I(FNU,ZTA) FROM CBINU
@@ -1950,18 +2007,16 @@ double complex amos_biry(
     nz = amos_binu(zta, fnu, kode, 1, cy, rl, fnul, tol, elim, alim);
     if (nz < 0) {
         if (nz == -1) {
-            nz = 0;
             *ierr = 2;
         } else {
-        nz = 0;
-        *ierr = 5;
+            *ierr = 5;
         }
         return 0.0;
     }
     aa = fmr*fnu;
     z3 = sfac;
     s1 = cy[0] * CMPLX(cos(aa), sin(aa)) * z3;
-    fnu = (2 - fid) / 3.0;
+    fnu = (2.0 - fid) / 3.0;
     nz = amos_binu(zta, fnu, kode, 2, cy, rl, fnul, tol, elim, alim);
     cy[0] *= z3;
     cy[1] *= z3;
@@ -1976,6 +2031,7 @@ double complex amos_biry(
         bi = s1 / sfac;
         return bi;
     }
+    /* 120 */
     s1 *= z;
     bi = s1 / sfac;
     return bi;
@@ -2151,13 +2207,17 @@ L40:
     coef = rthpi / csqrt(z);
     kflag = 2;
     if (koded != 2) {
-        if (xx > alim) { goto L200; }
-        a1 = exp(-xx)*creal(css[kflag-1]);
-        pt = a1*CMPLX(cos(yy), -sin(yy));
-        coef *= pt;
+        if (xx > alim) {
+            koded = 2;
+            iflag = 1;
+            kflag = 2;
+        } else {
+            a1 = exp(-xx)*creal(css[kflag-1]);
+            pt = a1*CMPLX(cos(yy), -sin(yy));
+            coef *= pt;
+        }
     }
 
-L50:
     if (fabs(dnu) == 0.5) {
         s1 = coef;
         s2 = coef;
@@ -2417,7 +2477,7 @@ L190:
     ascle = bry[0];
     nz = amos_kscl(zd, fnu, n, &y[0], rz, &ascle, tol, elim);
     inu = n - nz;
-    if (inu < 0) { return nz; }
+    if (inu <= 0) { return nz; }
     kk = nz + 1;
     s1 = y[kk-1];
     y[kk-1] = s1 * csr[0];
@@ -2430,11 +2490,6 @@ L190:
     ck = t2 * rz;
     kflag = 1;
     goto L140;
-L200:
-    koded = 2;
-    iflag = 1;
-    kflag = 2;
-    goto L50;
 }
 
 
@@ -2522,10 +2577,10 @@ int amos_buni(
         s1 = cy[1] * cscl;
         s2 = cy[0] * cscl;
         rz = 2.0 / z;
-        for (i = 1; i < nui; i++)
+        for (i = 1; i < (nui+1); i++)
         {
             st = s2;
-            s2 = (dfnu +fnui)*rz*s2 + s1;
+            s2 = (dfnu +fnui)*rz*st + s1;
             s1 = st;
             fnui -= 1.0;
             if (iflag < 3) {
@@ -2861,23 +2916,25 @@ int amos_kscl(
     int ic = 0;
     int nn = ( n > 2 ? 2 : n );
     int kk = 0;
+    int i;
     double elm = exp(-elim);
     xx = creal(zr);
-    for (int i = 0; i < nn; i++)
+
+    for (i = 1; i < (nn + 1); i++)
     {
-        s1 = y[i];
-        cy[i] = s1;
+        s1 = y[i-1];
+        cy[i-1] = s1;
         as = cabs(s1);
         acs = -creal(zr) + log(as);
         nz += 1;
-        y[i] = 0.;
+        y[i-1] = 0.;
         if (acs < -elim) {
             continue;
         }
         cs = -zr + clog(s1);
         cs = (exp(creal(cs))/tol)*(cos(cimag(cs)) + sin(cimag(cs)*I));
         if (!amos_uchk(cs, *ascle, tol)) {
-            y[i] = cs;
+            y[i-1] = cs;
             nz -= 1;
             ic = i;
         }
@@ -2898,7 +2955,7 @@ int amos_kscl(
     s2 = cy[1];
     zri = cimag(zr);
     zd = zr;
-    for (int i = 3; i < (n+1); i++)
+    for (i = 3; i < (n+1); i++)
     {
         kk = i;
         cs = s2;
@@ -2914,27 +2971,24 @@ int amos_kscl(
         if (acs >= -elim) {
             cs = clog(s2);
             cs -= zd;
-            cs = (exp(creal(cs))/tol)*(cos(cimag(cs)) + sin(cimag(cs)*I));
+            cs = (exp(creal(cs))/tol)*CMPLX(cos(cimag(cs)), sin(cimag(cs)));
             if (!amos_uchk(cs, *ascle, tol)) {
                 y[i-1] = cs;
                 nz -= 1;
                 if (ic == kk-1) {
                     nz = kk - 2;
-                    for (int i = 0; i < nz; i++)
-                    {
-                        y[i] = 0.;
-                    }
+                    for (int i = 0; i < nz; i++) { y[i] = 0.; }
                     return nz;
                 }
                 ic = kk;
                 continue;
             }
-            if (alas >= 0.5*elim){
-                xx -= elim;
-                s1 *= elm;
-                s2 *= elm;
-                zd = xx + zri*I;
-            }
+        }
+        if (alas >= 0.5*elim){
+            xx -= elim;
+            zd = CMPLX(xx, zri);
+            s1 *= elm;
+            s2 *= elm;
         }
     }
     nz = n;
@@ -2943,10 +2997,7 @@ int amos_kscl(
     } else {
         nz = kk - 2;
     }
-    for (int i = 0; i < nz; i++)
-    {
-        y[i] = 0.;
-    }
+    for (int i = 0; i < nz; i++) { y[i] = 0.; }
     return nz;
 }
 
@@ -3082,8 +3133,8 @@ int amos_seri(
     crsc = 1.0;
     iflag = 0;
     if (az >= arm) {
-        hz = z*0.5;
-        cz = 0.;
+        hz = 0.5*z;
+        cz = 0.0;
         if (az > rtr1) { cz = hz*hz; }
         acz = cabs(cz);
         nn = n;
@@ -3121,7 +3172,7 @@ L30:
         ak = cimag(ak1);
         aa = exp(rak1);
         if (iflag == 1) { aa *= ss; }
-        coef = aa * (cos(ak) + sin(ak)*I);
+        coef = aa * CMPLX(cos(ak), sin(ak));
         atol = tol * acz / fnup;
         il = (nn > 2 ? 2 : nn);
         for (int i = 1; i < (il +1); i++)
@@ -3134,21 +3185,24 @@ L30:
                 ak = fnup + 2.0;
                 s = fnup;
                 aa = 2.0;
-L40:
-                rs = 1.0 / s;
-                ak1 *= cz * rs;
-                s1 += ak1;
-                s += ak;
-                ak += 2.0;
-                aa *= acz * rs;
-                if (aa > atol) { goto L40; }
+                while (1) {
+                    rs = 1.0 / s;
+                    ak1 *= cz;
+                    ak1 *= rs;
+                    s1 += ak1;
+                    s += ak;
+                    ak += 2.0;
+                    aa *= acz;
+                    aa *= rs;
+                    if (aa <= atol) { break; }
+                }
             }
-            m = nn - i + 1;
             s2 = s1 * coef;
             w[i-1] = s2;
             if (iflag != 0) {
                 if (amos_uchk(s2, ascle, tol)) { goto L20; }
             }
+            m = nn - i + 1;
             y[m-1] = s2 * crsc;
             if (i != il) { coef *= dfnu / hz; }
         }
@@ -3167,6 +3221,13 @@ L60:
         }
         return nz;
 L80:
+        //
+        // RECUR BACKWARD WITH SCALED VALUES
+        //
+        //
+        // EXP(-ALIM)=EXP(-ELIM)/TOL=APPROX. ONE PRECISION ABOVE THE
+        // UNDERFLOW LIMIT = ASCLE = D1MACH(1)*SS*1000
+        //
         s1 = w[0];
         s2 = w[1];
         l = 3;
@@ -3277,7 +3338,7 @@ void amos_unhj(
     double complex tfn, t2, w, w2, za, zb, zc, zeta, zth;
     double ang, atol, aw2, azth, btol, fn13, fn23, pp, rfn13;
     double rfnu, rfnu2, wi, wr, zci, zcr, zetai, zetar, zthi;
-    double zthr, asumr, asumi, bsumr, bsumi, test, tstr, tsti, ac;
+    double zthr, asumr, asumi, bsumr, bsumi, test, ac;
     double ex1 = 1./3.;
     double ex2 = 2./3.;
     double hpi = 1.57079632679489662;
@@ -3292,13 +3353,13 @@ void amos_unhj(
     double ap[30] = { 0. };
 
     rfnu = 1. / fnu;
-    tstr = creal(z);
-    tsti = cimag(z);
+    //
+    // OVERFLOW TEST (Z/FNU TOO SMALL)
+    //
     test = d1mach[0] * 1e3;
     ac = fnu*test;
-    if ((fabs(tstr) <= ac) && (fabs(tsti) <= ac)) {
-        ac = 2.*fabs(log(test)) + fnu;
-        *zeta1 = ac;
+    if ((fabs(creal(z)) <= ac) && (fabs(cimag(z)) <= ac)) {
+        *zeta1 = 2.0*fabs(log(test)) + fnu;
         *zeta2 = fnu;
         *phi = 1.;
         *arg = 1.;
@@ -3306,19 +3367,27 @@ void amos_unhj(
     }
     zb = z*rfnu;
     rfnu2 = rfnu*rfnu;
-
+    //
+    // COMPUTE IN THE FOURTH QUADRANT
+    //
     fn13 = pow(fnu, ex1);
     fn23 = fn13 * fn13;
-    rfn13 = 1./fn13;
-    w2 = 1. - zb*zb;
+    rfn13 = 1.0/fn13;
+    w2 = 1.0 - zb*zb;
+    /* AMOS AZSQRT and C CSQRT differs when imaginary 0.0 swaps sign */
+    w2 = 1.0 - zb*zb;
+    if (cimag(w2) == -0.0) { w2 = creal(w2); }
     aw2 = cabs(w2);
     if (aw2 <= 0.25) {
+        //
+        // POWER SERIES FOR ABS(W2) <= 0.25
+        //
         k = 1;
         p[0] = 1.;
         suma = zunhj_gama[0];
         ap[0] = 1.;
         if (aw2 >= tol) {
-            for (int k = 2; k < 31; k++)
+            for (k = 2; k < 31; k++)
             {
                 p[k-1] = p[k-2]*w2;
                 suma += p[k-1]*zunhj_gama[k-1];
@@ -3326,33 +3395,39 @@ void amos_unhj(
                 if (ap[k-1] < tol) { break; }
             }
         }
+        /* Check for exhausted loop */
+        if (k == 31) { k = 30; }
 
         kmax = k;
         zeta = w2*suma;
         *arg = zeta*fn23;
-        za = sqrt(suma);
-        *zeta2 = sqrt(w2)*fnu;
-        *zeta1 = *zeta2 * (1. + zeta*za*ex2);
+        za = csqrt(suma);
+        *zeta2 = csqrt(w2)*fnu;
+        *zeta1 = (*zeta2) * (1. + zeta*za*ex2);
         za = za + za;
-        *phi = sqrt(za)*rfn13;
+        *phi = csqrt(za)*rfn13;
         if (ipmtr == 1) { return; }
-
-        sumb = 0.;
-        for (k = 1; k < kmax+1; k++) {
+        //
+        // SUM SERIES FOR ASUM AND BSUM
+        //
+        sumb = 0.0;
+        for (k = 1; k < (kmax+1); k++) {
             sumb += p[k-1]*zunhj_beta[k-1];
         }
-        *asum = 0.;
+        *asum = 0.0;
         *bsum = sumb;
         l1 = 0;
         l2 = 30;
         btol = tol * (fabs(creal(*bsum)) + fabs(cimag(*bsum)));
         atol = tol;
-        pp = 1.;
+        pp = 1.0;
         ias = 0;
         ibs = 0;
         if (rfnu2 < tol) {
+            /* 110 */
             *asum += 1.;
             *bsum *= rfnu*rfn13;
+            /* 120 */
             return;
         }
         for (int is = 2; is < 8; is++)
@@ -3360,28 +3435,28 @@ void amos_unhj(
             atol /= rfnu2;
             pp *= rfnu2;
             if (ias != 1) {
-                suma = 0.;
-                for (int k = 1; k < (kmax+1); k++)
+                suma = 0.0;
+                for (k = 1; k < (kmax+1); k++)
                 {
                     m = l1 + k;
                     suma += p[k-1]*zunhj_alfa[m-1];
-                    if (ap[k-1] < atol) { return; }
+                    if (ap[k-1] < atol) { break; }
                 }
                 *asum += suma*pp;
                 if (pp < tol) { ias = 1; }
             }
             if (ibs != 1) {
-                sumb = 0.;
-                for (int k = 1; k < (kmax+1); k++)
+                sumb = 0.0;
+                for (k = 1; k < (kmax+1); k++)
                 {
                     m = l2 + k;
                     sumb += p[k-1]*zunhj_beta[m-1];
-                    if (ap[k-1] < atol) { return; }
+                    if (ap[k-1] < atol) { break; }
                 }
                 *bsum += sumb*pp;
                 if (pp < btol) { ibs = 1; }
             }
-            if ((ias == 1) && (ibs == 1)) { return; }
+            if ((ias == 1) && (ibs == 1)) { break; }
             l1 += 30;
             l2 += 30;
         }
@@ -3389,12 +3464,13 @@ void amos_unhj(
         *bsum *= rfnu*rfn13;
         return;
     } else {
+        //
+        // ABS(W2) > 0.25
         w = csqrt(w2);
         wr = creal(w);
         wi = cimag(w);
         if (wr < 0) { wr = 0.;}
         if (wi < 0) { wi = 0.;}
-        w = wr + wi*I;
         za = (1. + w) / zb;
         zc = clog(za);
         zcr = creal(zc);
@@ -3402,7 +3478,7 @@ void amos_unhj(
         if (zci < 0) { zci = 0.;}
         if (zci > hpi) { zci = hpi;}
         if (zcr < 0) { zcr = 0.;}
-        zc = zcr + zci*I;
+        zc = CMPLX(zcr, zci);
         zth = (zc-w)*1.5;
         cfnu = fnu;
         *zeta1 = zc*cfnu;
@@ -3423,7 +3499,7 @@ void amos_unhj(
         zetar = pp * cos(ang);
         zetai = pp * sin(ang);
         if (zetai < 0.) { zetai = 0.; }
-        zeta = zetar + zetai*I;
+        zeta = CMPLX(zetar, zetai);
         *arg = zeta*fn23;
         rtzta = zth / zeta;
         za = rtzta / w;
@@ -3445,8 +3521,8 @@ void amos_unhj(
 
         przth = rzth;
         ptfn = tfn;
-        up[0] = 1.;
-        pp = 1.;
+        up[0] = 1.0;
+        pp = 1.0;
         bsumr = creal(*bsum);
         bsumi = cimag(*bsum);
         btol = tol * (fabs(bsumr) + fabs(bsumi));
@@ -3459,7 +3535,11 @@ void amos_unhj(
         for (int lr = 2; lr < 13; lr += 2)
         {
             lrp1 = lr + 1;
-            for (int k = lr; k < (lrp1+1); k++)
+            //
+            // COMPUTE TWO ADDITIONAL CR, DR, AND UP FOR TWO MORE TERMS IN
+            // NEXT SUMA AND SUMB
+            //
+            for (k = lr; k < (lrp1+1); k++)
             {
                 ks += 1;
                 kp1 += 1;
@@ -3527,29 +3607,38 @@ void amos_uni1(
     double elim,
     double alim
 ) {
-    double complex cfn, crsc, cscl, c1, c2, phi, rz, sum, s1, s2,\
-                   zeta1 = 0.0, zeta2 = 0.0;
-    double aphi, ascle, c2i, c2m, c2r, fn, rs1, yy;
-    int iflag, init, k, m, nd, nn, resetfor = 0;
+    double complex c2, phi, rz, sum, s1, s2, zeta1 = 0, zeta2 = 0;
+    double aphi, ascle, c1r, crsc, cscl, fn, rs1;
+    int i, iflag, init, k, m, nd, nn, nuf;
     double complex cwrk[16] = { 0. };
     double complex cy[2] = { 0. };
-    nz = 0;
+    *nz = 0;
     nd = n;
-    nlast = 0;
-    cscl = 1.;
+    *nlast = 0;
+    //
+    // COMPUTED VALUES WITH EXPONENTS BETWEEN ALIM AND ELIM IN
+    // MAGNITUDE ARE SCALED TO KEEP INTERMEDIATE ARITHMETIC ON SCALE,
+    // EXP(ALIM)=EXP(ELIM)*TOL
+    //
+    cscl = 1.0 / tol;
     crsc = tol;
-    double complex css[3] = {cscl, 1., crsc};
-    double complex csr[3] = {crsc, 1., cscl};
+    double css[3] = {cscl, 1., crsc};
+    double csr[3] = {crsc, 1., cscl};
     double bry[3] = {1e3*d1mach[0]/tol, 0., 0.};
-    fn = fmax(fnu, 1.);
+    bry[1] = 1.0 / bry[0];
+    bry[2] = d1mach[1];
+    //
+    // CHECK FOR UNDERFLOW AND OVERFLOW ON FIRST MEMBER
+    //
+    fn = fmax(fnu, 1.0);
     init = 0;
     amos_unik(z, fn, 1, 1, tol, &init, &phi, &zeta1, &zeta2, &sum, &cwrk[0]);
     if (kode != 1) {
-        cfn = fn;
-        s1 = -zeta1 + cfn * (cfn/(z + zeta2));
+        s1 = -zeta1 + fn*(fn / (z + zeta2));
     } else {
-        s1 = zeta2 - zeta1;
+        s1 = -zeta1 + zeta2 ;
     }
+    
     rs1 = creal(s1);
     if (fabs(rs1) > elim) {
         if (rs1 > 0) {
@@ -3557,162 +3646,95 @@ void amos_uni1(
             return;
         }
         *nz = n;
-        for (int i = 0; i < n; i++) { y[i] = 0.; }
+        for (i = 0; i < n; i++) { y[i] = 0.0; }
     }
-
-    while (1) {
-        if (resetfor == 1) { resetfor = 0; }
-        nn = (nd > 2 ? 2 : nd);
-        for (int i = 1; i < (nn+1); i++)
-        {
-            fn = fnu + (nd-i);
-            init = 0;
-            amos_unik(z, fn, 1, 0, tol, &init, &phi, &zeta1, &zeta2, &sum, &cwrk[0]);
-            if (kode != 1) {
-                cfn = fn;
-                yy = cimag(z);
-                s1 = -zeta1 + cfn*(cfn/(z/zeta2)) + yy*I;
-            } else {
-                s1 = zeta2 - zeta1;
-            }
-            //
-            // TEST FOR UNDERFLOW AND OVERFLOW
-            //
-            rs1 = creal(s1);
-            if (fabs(rs1) > elim) {
-                if (rs1 <= 0.) {
-                    y[nd-1] = 0.;
-                    nz += 1;
-                    nd -= 1;
-                    if (nd == 0) { return; }
-                    int nuf = amos_uoik(z, fnu, kode, 1, nd, &y[0], tol, elim, alim);
-                    if (nuf >= 0) {
-                        nd -= nuf;
-                        nz += nuf;
-                        if (nd == 0) { return; }
-                        fn = fnu + (nd -1);
-                        /* Resetting for loop (GOTO 30) */
-                        if (fn >= fnul) {
-                            resetfor = 1;
-                            break;
-                        }
-                        *nlast = nd;
-                        return;
-                    }
-                }
-            }
-            if (i == 1) { iflag = 2; }
-            if (fabs(rs1) >= alim) {
-                //
-                // REFINE TEST AND SCALE
-                //
-                aphi = cabs(phi);
-                rs1 += log(aphi);
-
-                /* another go to 110 */
-                if (fabs(rs1) > elim) {
-                    if (rs1 <= 0.) {
-                        y[nd-1] = 0.;
-                        nz += 1;
-                        nd -= 1;
-                        if (nd == 0) { return; }
-                        int nuf = amos_uoik(z, fnu, kode, 1, nd, &y[0], tol, elim, alim);
-                        if (nuf >= 0) {
-                            nd -= nuf;
-                            nz += nuf;
-                            if (nd == 0) { return; }
-                            fn = fnu + (nd -1);
-                            /* Resetting for loop (GOTO 30) */
-                            if (fn >= fnul) {
-                                resetfor = 1;
-                                break;
-                            }
-                            *nlast = nd;
-                            return;
-                        }
-                    }
-                }
-                if (i == 1) { iflag = 1; }
-                if ((rs1 >= 0.) && (i == 1)) {
-                    iflag = 3;
-                }
-            }
-            //
-            // SCALE S1 IF ABS(S1) < ASCLE
-            //
-            s2 = phi * sum;
-            c2r = creal(s1);
-            c2i = cimag(s1);
-            c2m = exp(c2r)*creal(css[iflag-1]);
-            s1 = c2m * (cos(c2i) + sin(c2i)*I);
-            s2 *= s1;
-            if (iflag == 1) {
-                if (!(amos_uchk(s2, bry[0], tol))) {
-                    /* another go to 110 */
-                    if (rs1 <= 0.) {
-                        y[nd-1] = 0.;
-                        nz += 1;
-                        nd -= 1;
-                        if (nd == 0) { return; }
-                        int nuf = amos_uoik(z, fnu, kode, 1, nd, &y[0], tol, elim, alim);
-                        if (nuf >= 0) {
-                            nd -= nuf;
-                            nz += nuf;
-                            if (nd == 0) { return; }
-                            fn = fnu + (nd -1);
-                            /* Resetting for loop (GOTO 30) */
-                            if (fn >= fnul) {
-                                resetfor = 1;
-                                break;
-                            }
-                            *nlast = nd;
-                            return;
-                        }
-                    }
-                }
-            }
-            m = nd - i + 1;
-            cy[i-1] = s2;
-            y[m-1] = s2*csr[iflag-1];
-        }
-        /* Get out of while loop */
-        if (resetfor == 0) { break; }
-    }    
-    if (nd <= 2) { return; }
-
-    rz = 2. / z;
-    bry[1] = 1. / bry[0];
-    bry[2] = d1mach[1];
-    s1 = cy[0];
-    s2 = cy[1];
-    c1 = csr[iflag-1];
-    ascle = bry[iflag-1];
-    k = nd - 2;
-    fn = k;
-    for (int i = 3; i < nd+1; i++)
+L30:
+    nn = ( nd > 2 ? 2 : nd);
+    for (i = 1; i < (nn+1); i++)
     {
-        c2 = s2;
-        s2 = s1 + (fnu+fn)*rz*s2;
-        s1 = c2;
-        c2 = s2*c1;
-        y[k-1] = c2;
-        k -= 1;
-        fn -= 1.;
-        if (iflag < 3) {
-            c2r = fabs(creal(c2));
-            c2i = fabs(cimag(c2));
-            c2m = fmax(c2r, c2i);
-            if (c2m > ascle) {
-                iflag += 1;
-                ascle = bry[iflag-1];
-                s1 *= c1;
-                s2 = c2;
-                s1 *= css[iflag-1];
-                s2 *= css[iflag-1];
-                c1 = csr[iflag-1];
-            }
+        fn = fnu + nd - i;
+        init = 0;
+        amos_unik(z, fn, 1, 0, tol, &init, &phi, &zeta1, &zeta2, &sum, &cwrk[0]);
+        if (kode != 1) {
+            s1 = -zeta1 + fn*(fn / (z + zeta2)) + CMPLX(0.0, cimag(z));
+        } else {
+            s1 = -zeta1 + zeta2;
         }
+        //
+        // TEST FOR UNDERFLOW AND OVERFLOW
+        //
+        rs1 = creal(s1);
+        if (fabs(rs1) > elim) { goto L110; }
+        if (i == 1) { iflag = 2; }
+        if (fabs(rs1) >= alim) {
+            //
+            // REFINE TEST AND SCALE
+            //
+            aphi = cabs(phi);
+            rs1 += log(aphi);
+            if (fabs(rs1) > elim) { goto L110; }
+            if (i == 1) { iflag = 1; }
+            if (rs1 >= 0.0) { if (i == 1) { iflag = 3; } }
+        }
+    /* 60 */
+        //
+        // SCALE S1 IF CABS(S1) < ASCLE
+        //
+        s2 = phi*sum;
+        s1 = exp(creal(s1))*css[iflag-1]*CMPLX(cos(cimag(s1)), sin(cimag(s1)));
+        s2 *= s1;
+        if (iflag == 1) { if (amos_uchk(s2, bry[0], tol)) { goto L110; } }
+    /* 70 */
+        cy[i-1] = s2;
+        m = nd - i + 1;
+        y[m-1] = s2*csr[iflag-1];
     }
+    /* 80 */
+    if (nd > 2) {
+        rz = 1.0 / z;
+        s1 = cy[0];
+        s2 = cy[1];
+        c1r = csr[iflag-1];
+        ascle = bry[iflag-1];
+        k = nd - 2;
+        fn = k;
+        for (i = 3; i < (nd+1); i++)
+        {
+            c2 = s2;
+            s2 = s1 + (fnu + fn)*rz*c2;
+            s1 = c2;
+            c2 = s2*c1r;
+            y[k-1] = c2;
+            k -= 1;
+            fn -= 1.0;
+            if (iflag >= 3) { continue; }
+            if (fmax(fabs(creal(c2)), fabs(cimag(c2))) <= ascle) { continue; }
+            iflag += 1;
+            ascle = bry[iflag-1];
+            s1 *= c1r;
+            s2 = c2;
+            s1 *= css[iflag-1];
+            s2 *= css[iflag-1];
+            c1r = csr[iflag-1];
+        }
+    /* 90 */
+    }
+    /* 100 */
+    return;
+L110:
+    if (rs1 > 0.0) { *nz = -1; return; }
+    y[nd - 1] = 0.0;
+    *nz += 1;
+    nd -= 1;
+    if (nd == 0) { return; }
+    nuf = amos_uoik(z, fnu, kode, 1, nd, y, tol, elim, alim);
+    if (nuf < 0) { *nz = -1; return; }
+    nd -= nuf;
+    *nz += nuf;
+    if (nd == 0) { return; }
+    fn = fnu + nd - 1;
+    if (fn >= fnul) { goto L30; }
+    *nlast = nd;
     return;
 }
 
@@ -3747,11 +3769,11 @@ void amos_uni2(
     crsc = tol;
     double complex csr[3] = { crsc, 1.0, cscl };
     double complex css[3] = { cscl, 1.0, crsc };
-    double bry[3] = { 1.0+3*d1mach[0]/tol, 0.0, 0.0 };
+    double bry[3] = { 1e3*d1mach[0]/tol, 0.0, 0.0 };
     double complex cy[2] = { 0.0 };
     yy = cimag(z);
     *nz = 0;
-    nd = 0;
+    nd = n;
     *nlast = 0;
     //
     // ZN IS IN THE RIGHT HALF PLANE AFTER ROTATION BY CI OR -CI
@@ -3765,7 +3787,7 @@ void amos_uni2(
     zar = c2;
     in = inu + n - 1;
     in = in % 4;
-    c2 = cip[in];
+    c2 *= cip[in];
     if (yy <= 0.0) {
       zn = conj(-zn);
       zb = conj(zb);
@@ -3794,15 +3816,15 @@ void amos_uni2(
         }
         return;
     }
-    
 L10:
     nn = (nd > 2 ? 2 : nd);
     i = 1;
-    for (i = 1; i < (nn+1); i++) {
+    for (i = 1; i < (nn+1); i++) 
+    {
         fn = fnu + (nd-i);
         amos_unhj(zn, fn, 0, tol, &phi, &arg, &zeta1, &zeta2, &asum, &bsum);
         if (kode != 1) {
-            cfn = fnu;
+            cfn = fn;
             ay = fabs(yy);
             s1 = -zeta1 + cfn*(cfn/(zb + zeta2)) + ay*I;
         } else {
@@ -3832,11 +3854,11 @@ L10:
         ai = amos_airy(arg, 0, 2, &nai, &idum);
         dai = amos_airy(arg, 1, 2, &ndai, &idum);
         s2 = phi * (ai*asum + dai*bsum);
-        c2r = creal(s1);
+        c2r = exp(creal(s1))*css[iflag-1];
         c2i = cimag(s1);
-        c2m = exp(c2r)*CMPLX(cos(c2i), sin(c2i));
+        s1 = c2r*CMPLX(cos(c2i), sin(c2i));
         s2 *= s1;
-        if (iflag == 1) { if (amos_uchk(s1, bry[0], tol)) { goto L50; } }
+        if (iflag == 1) { if (amos_uchk(s2, bry[0], tol)) { goto L50; } }
         if (yy <= 0.0) { s2 = conj(s2); }
         j = nd - i + 1;
         s2 *= c2;
@@ -3879,7 +3901,6 @@ L10:
         }
     }
     return;
-
 L50:
     if (rs1 <= 0.0) {
         //
@@ -3935,10 +3956,11 @@ void amos_unik(
 ) {
     double complex cfn, crfn, s, sr, t, t2, zn;
     double ac, rfn, test, tstr, tsti;
-    int k, l;
-    double con[2] = { 3.98942280401432678, 1.25331413731550025 };
+    int i, j, k, l;
+    /* ( 1/sqrt(2 PI), sqrt(PI/2) ) */
+    double con[2] = { 3.98942280401432678e-01, 1.25331413731550025 };
 
-    if (init == 0) {
+    if (*init == 0) {
         rfn = 1. / fnu;
         crfn = rfn;
 
@@ -3947,22 +3969,22 @@ void amos_unik(
         test = d1mach[0] * 1e3;
         ac = fnu * test;
         if ((fabs(tstr) <= ac) && (fabs(tsti) <= ac)) {
-            ac = 2.*fabs(log(test)) + fnu;
+            ac = 2.0 * fabs(log(test)) + fnu;
             *zeta1 = ac;
             *zeta2 = fnu;
-            *phi = 1.;
+            *phi = 1.0;
         }
         t = zr * crfn;
-        s = 1. + t*t;
-        sr = sqrt(s);
+        s = 1.0 + t*t;
+        sr = csqrt(s);
         cfn = fnu;
         zn = (1. + sr) / t;
-        *zeta1 = cfn * log(zn);
+        *zeta1 = cfn * clog(zn);
         *zeta2 = cfn * sr;
-        t = 1. / sr;
+        t = 1.0 / sr;
         sr = t*crfn;
-        cwrk[15] = sqrt(sr);
-        *phi = sqrt(sr)*con[ikflg-1];
+        cwrk[15] = csqrt(sr);
+        *phi = cwrk[15]*con[ikflg-1];
         if (ipmtr != 0) { return; }
         t2 = 1. / s;
         cwrk[0] = 1.;
@@ -3970,10 +3992,10 @@ void amos_unik(
         ac = 1.;
         l = 1;
         k = 2;
-        for (int k = 2; k < 16; k++)
+        for (k = 2; k < 16; k++)
         {
-            s = 0.;
-            for (int j = 1; j < (k+1); j++)
+            s = 0.0;
+            for (j = 1; j < (k+1); j++)
             {
                 l += 1;
                 s = s*t2 + zunik_c[l-1];
@@ -3988,29 +4010,35 @@ void amos_unik(
                 break;
             }
         }
+        /* Guard against exhausted loop */
+        if (k == 16) { k-=1; }
         *init = k;
     }
-    
-    if (ikflg != 2) {
-        *total = 0.;
-        for (int i = 0; i < (k+1); i++) { *total += cwrk[i]; }
-        *phi = cwrk[15] * con[0];
-        return;
-    }
 
-    s = 0.;
-    t = 1.;
-    for (int i = 1; i < (k+1); i++) {
-        s += t*cwrk[i];
-        t = -t;
+    *total = 0.0;    
+    t = 1.0;
+    if (ikflg != 2) {
+
+        for (i = 0; i < (*init); i++) {
+            *total += cwrk[i];
+        }
+        *phi = cwrk[15] * con[0];
+        
+    } else {
+        
+        for (i = 1; i < (*init + 1); i++) {
+            *total += t * cwrk[i-1];
+            t = -t;
+        }
+        *phi = cwrk[15] * con[1];
+
     }
-    *total = s;
-    *phi = cwrk[15] * con[1];
     return;
 }
 
 
-int amos_unk1(double complex z,
+int amos_unk1(
+    double complex z,
     double fnu,
     int kode,
     int mr,
@@ -4040,6 +4068,8 @@ int amos_unk1(double complex z,
     double pi = 3.14159265358979324;
 
     kdflg = 1;
+    kflag = 1;
+    fn = fnu;
     nz = 0;
     x = creal(z);
     zr = z;
@@ -4050,7 +4080,8 @@ int amos_unk1(double complex z,
         j = 3 - j; /* j flip flops between 1, 2 */
         jc = j - 1; /* dummy index for 0-indexing */
         fn = fnu + (i - 1);
-        amos_unik(zr, fn, 2, 0, tol, &init[j-1], &phi[jc], &zeta1[jc], &zeta2[jc], &sum[jc], cwrk[jc]);
+        init[jc] = 0;
+        amos_unik(zr, fn, 2, 0, tol, &init[jc], &phi[jc], &zeta1[jc], &zeta2[jc], &sum[jc], &cwrk[jc][0]);
         if (kode != 1) {
             cfn = fn;
             s1 = zeta1[jc] - cfn*(cfn / (zr + zeta2[jc]));
@@ -4097,7 +4128,7 @@ L10:
         kdflg = 1;
         y[i-1] = 0.0;
         nz += 1;
-        if (i != 1) {
+        if (i > 1) {
             if (y[i-2] != 0.0) {
                 y[i-2] = 0.0;
                 nz += 1;
@@ -4119,7 +4150,7 @@ L30:
         ipard = 1;
         if (mr != 0) { ipard = 0; }
         initd = 0;
-        amos_unik(zr, fn, 2, ipard, tol, &initd, &phid, &zeta1d, &zeta2d, &sumd, cwrk[2]);
+        amos_unik(zr, fn, 2, ipard, tol, &initd, &phid, &zeta1d, &zeta2d, &sumd, &cwrk[2][0]);
         if (kode != 1) {
             cfn = fn;
             s1 = zeta1d - cfn*(cfn / (zr + zeta2d));
@@ -4184,7 +4215,7 @@ L50:
     //
     // CSPN AND CSGN ARE COEFF OF K AND I FUNCIONS RESP.
     //
-    csgn = sgn*I;
+    csgn = CMPLX(0.0, sgn);
     inu = (int)fnu;
     fnf = fnu - inu;
     ifn = inu + n - 1;
@@ -4222,7 +4253,7 @@ L80:
             initd = 0;
         }
 L90:
-        amos_unik(zr, fn, 1, 0, tol, &initd, &phid, &zeta1d, &zeta2d, &sumd, cwrk[m-1]);
+        amos_unik(zr, fn, 1, 0, tol, &initd, &phid, &zeta1d, &zeta2d, &sumd, &cwrk[m-1][0]);
         if (kode != 1) {
             cfn = fn;
             s1 = -zeta1d + cfn * (cfn/(zr + zeta2d));
@@ -4251,7 +4282,7 @@ L90:
         c2i = cimag(s1);
         c2m = exp(c2r) * creal(css[iflag-1]);
         s1 = c2m * CMPLX(cos(c2i), sin(c2i));
-        s2 = s2 * s1;
+        s2 *= s1;
         if (iflag == 1) { if (amos_uchk(s2, bry[0], tol)) { s2 = 0.0; } }
 L100:
         cy[kdflg -1] = s2;
@@ -4280,8 +4311,8 @@ L110:
         s2 = 0.0;
         goto L100;
     }
-    k = n;
-
+    /* If loop is exhausted */
+    if (k == n+1) { k -= 1; }
 L130:
     il = n-k;
     if (il == 0) { return nz; };
@@ -4323,7 +4354,8 @@ L130:
 };
 
 
-int amos_unk2(double complex z,
+int amos_unk2(
+    double complex z,
     double fnu,
     int kode,
     int mr,
@@ -4340,12 +4372,12 @@ int amos_unk2(double complex z,
     int i, ib, iflag = 0, ifn, il, in, inu, iuf, k, kdflg, kflag, kk, nai, ndai,\
         nw, nz, idum, j, ipard, ic;
 
-    double complex cr1 = CMPLX(1.0, 1.73205080756887729);
-    double complex cr2 = CMPLX(-0.5, -8.66025403784438647e-1);
-    double hpi = 1.57079632679489662;  /* 0.5 pi */
+    double complex cr1 = CMPLX(1.0, 1.73205080756887729);      /*   1 + sqrt(3)i  */
+    double complex cr2 = CMPLX(-0.5, -8.66025403784438647e-1); /*      0.5 cr1    */
+    double hpi = 1.57079632679489662;                          /*      0.5 pi     */
     double pi = 3.14159265358979324;
-    double aic = 1.26551212348464539;  /* log(2 sqrt(pi)) */
-    double complex cip[4] = {1.0, I, -1.0, -I};
+    double aic = 1.26551212348464539;                          /* log(2 sqrt(pi)) */
+    double complex cip[4] = {1.0, -I, -1.0, I};
     cscl = 1.0 / tol;
     crsc = tol;
     double complex css[3] = {cscl, 1.0, crsc };
@@ -4357,9 +4389,11 @@ int amos_unk2(double complex z,
     double complex asum[2] = { 0.0 };
     double complex bsum[2] = { 0.0 };
     double complex cy[2] = { 0.0 };
-    double bry[3] = { 1e3*d1mach[0] / tol, tol / 1e3*d1mach[0], d1mach[1]};
+    double bry[3] = { (1.0 + 1e3*d1mach[0] / tol), 1.0/(1.0 + 1e3*d1mach[0] / tol), d1mach[1]};
 
     kdflg = 1;
+    kflag = 1;
+    fn = fnu;
     nz = 0;
     //
     // EXP(-ALIM)=EXP(-ELIM)/TOL=APPROX. ONE PRECISION GREATER THAN
@@ -4376,9 +4410,9 @@ int amos_unk2(double complex z,
     ang = -hpi * fnf;
     car = cos(ang);
     sar = sin(ang);
-    cpn = -hpi * car;
-    spn = -hpi * sar;
-    c2 = CMPLX(-spn, cpn);
+    cpn = hpi * car;
+    spn = hpi * sar;
+    c2 = CMPLX(spn, -cpn);
     kk = (inu % 4) + 1;
     cs = cr1 * c2 * cip[kk - 1];
     if (yy <= 0.0) {
@@ -4395,7 +4429,7 @@ int amos_unk2(double complex z,
     {
         j = 3 - j;
         fn = fnu + (i-1);
-        amos_unhj(zn, fn, 0, tol, &phi[j-1], &arg[j-1], &zeta1[j-1], &zeta2[j-1], &asum[j-1],&bsum[j-1]);
+        amos_unhj(zn, fn, 0, tol, &phi[j-1], &arg[j-1], &zeta1[j-1], &zeta2[j-1], &asum[j-1], &bsum[j-1]);
         if (kode != 1) {
             cfn = fn;
             s1 = zeta1[j-1] - cfn*(cfn/(zb + zeta2[j-1]));
@@ -4411,10 +4445,22 @@ int amos_unk2(double complex z,
             if (fabs(rs1) >= alim) {
                 //
                 // REFINE TEST AND SCALE
+                //
                 aphi = cabs(phi[j-1]);
                 aarg = cabs(arg[j-1]);
                 rs1 += log(aphi) - 0.25 * log(aarg) - aic;
-                if (fabs(rs1) > elim) { goto L10; }
+                if (fabs(rs1) > elim) {
+                    /* GO TO 70 */
+                    if (rs1 > 0.0) { return -1; }
+                    /* FOR X < 0.0, THE I FUNCTION TO BE ADDED WILL OVERFLOW */
+                    if (x < 0.0) { return -1; }
+                    kdflg = 1;
+                    y[i-1] = 0.0;
+                    cs *= -I;
+                    nz += 1;
+                    if (i != 1) { if (y[i-2] != 0.0) { y[i-2] = 0.0;nz += 1; } }
+                    continue;
+                }
                 if (kdflg == 1) { kflag = 1; }
                 if (rs1 >= 0.0) { if (kdflg == 1) { kflag = 3; } }
             }
@@ -4431,34 +4477,32 @@ int amos_unk2(double complex z,
             c2m = exp(c2r) * creal(css[kflag-1]);
             s1 = c2m * CMPLX(cos(c2i), sin(c2i));
             s2 *= s1;
-            if (kflag == 1) { if (amos_uchk(s2, bry[0], tol)) { goto L10; } };
+            if (kflag == 1) {
+                if (amos_uchk(s2, bry[0], tol)) {
+                    /* GO TO 70 */
+                    if (rs1 > 0.0) { return -1; }
+                    /* FOR X < 0.0, THE I FUNCTION TO BE ADDED WILL OVERFLOW */
+                    if (x < 0.0) { return -1; }
+                    kdflg = 1;
+                    y[i-1] = 0.0;
+                    cs *= -I;
+                    nz += 1;
+                    if (i != 1) { if (y[i-2] != 0.0) { y[i-2] = 0.0;nz += 1; } }
+                    continue;
+                }
+            }
             if (yy <= 0.0) { s2 = conj(s2); }
             cy[kdflg-1] = s2;
             y[i-1] = s2 * csr[kflag-1];
             cs *= -I;
-            if (kdflg == 2) { goto L30; }
+            if (kdflg == 2) { break; }
             kdflg = 2;
             continue;
         }
-L10:
-        if (rs1 > 0.0) { return -1; }
-        //
-        // FOR X < 0.0, THE I FUNCTION TO BE ADDED WILL OVERFLOW
-        //
-        if (x < 0.0) { return -1; }
-        kdflg = 1;
-        y[i-1] = 0.0;
-        cs *= -I;
-        nz += 1;
-        if (i != 1) {
-            if (y[i-2] != 0.0) {
-                y[i-2] = 0.0;
-                nz += 1;
-            }
-        }
     }
-    i = n;
-L30:
+    /* Check for exhausted loop */
+    if (i == n+1) { i = n; }
+
     rz = 2.0 / zr;
     ck = fn * rz;
     ib = i + 1;
@@ -4475,14 +4519,14 @@ L30:
         }
         rs1 = creal(s1);
         if (fabs(rs1) <= elim) {
-            if (fabs(rs1) < alim) { goto L50; }
+            if (fabs(rs1) < alim) { goto L120; }
             //
             // REFINE ESTIMATE AND TEST
             //
             aphi = cabs(phid);
             aarg = cabs(argd);
             rs1 += log(aphi) - 0.25 * log(aarg) - aic;
-            if (fabs(rs1) < elim) { goto L50; }
+            if (fabs(rs1) < elim) { goto L120; }
         }
         if (rs1 > 0.0) { return -1; }
         //
@@ -4492,7 +4536,7 @@ L30:
         nz = n;
         for (i = 0; i < n; i++) { y[i] = 0.0; }
         return nz;
-L50:
+L120:
         //
         // SCALED FORWARD RECURRENCE FOR REMAINDER OF THE SEQUENCE
         //
@@ -4524,15 +4568,15 @@ L50:
     }
     if (mr == 0) { return nz; }
     //
-    // ANALYTIC CONTINUATION FOR RE(Z) < 0.0_dp
+    // ANALYTIC CONTINUATION FOR RE(Z) < 0.0
     //
     nz = 0;
     fmr = mr;
-    sgn = ( fmr < 0.0 ? -pi : pi);
+    sgn = ( fmr < 0.0 ? pi : -pi);
     //
     // CSPN AND CSGN ARE COEFF OF K AND I FUNCTIONS RESP.
     //
-    csgn = sgn*I;
+    csgn = CMPLX(0.0, sgn);
     if (yy <= 0.0) { csgn = -csgn; }
     ifn = inu + n - 1;
     ang = fnf*sgn;
@@ -4549,15 +4593,15 @@ L50:
     c2 = cip[in-1];
     cs *= conj(c2);
     asc = bry[0];
+    iuf = 0;
     kk = n;
     kdflg = 1;
     ib -= 1;
     ic = ib - 1;
-    iuf = 0;
-    for (k = 1; k <= (n+1); k++) {
+    for (k = 1; k < (n+1); k++) {
         fn = fnu + (kk-1);
-        if (n > 2) { goto L80; }
-L70:
+        if (n > 2) { goto L175; }
+L172:
         phid = phi[j-1];
         argd = arg[j-1];
         zeta1d = zeta1[j-1];
@@ -4565,13 +4609,13 @@ L70:
         asumd = asum[j-1];
         bsumd = bsum[j-1];
         j = 3 - j;
-        goto L90;
-L80:
+        goto L210;
+L175:
         if (!((kk == n) && (ib < n))) {
-            if ((kk == ib) || (kk == ic)) { goto L70; }
+            if ((kk == ib) || (kk == ic)) { goto L172; }
             amos_unhj(zn, fn, 0, tol, &phid, &argd, &zeta1d, &zeta2d, &asumd, &bsumd);
         }
-L90:
+L210:
         if (kode != 1) {
             cfn = fn;
             s1 = -zeta1d + cfn * (cfn/(zb + zeta2d));
@@ -4582,13 +4626,24 @@ L90:
         // TEST FOR UNDERFLOW AND OVERFLOW
         //
         rs1 = creal(s1);
-        if (fabs(rs1) > elim) { goto L110; }
+        if (fabs(rs1) > elim) {
+            if (rs1 > 0.0) { return -1; }
+            s2 = 0.0;
+            goto L250;
+        }
         if (kdflg == 1) { iflag = 2; }
         if (fabs(rs1) >= alim) {
+            //
+            // REFINE  TEST AND SCALE
+            // 
             aphi = cabs(phid);
             aarg = cabs(argd);
             rs1 += log(aphi) - 0.25f * log(aarg) - aic;
-            if (fabs(rs1) > elim) { goto L110; }
+            if (fabs(rs1) > elim) {
+                if (rs1 > 0.0) { return -1; }
+                s2 = 0.0;
+                goto L250;
+            }
             if (kdflg == 1) { iflag = 1; }
             if (rs1 >= 0.0) { if (kdflg == 1) {iflag = 3;} }
         }
@@ -4602,8 +4657,7 @@ L90:
         s1 = c2m * CMPLX(cos(c2i), sin(c2i));
         s2 *= s1;
         if (iflag == 1) { if (amos_uchk(s2, bry[0], tol)) { s2 = 0.0; } }
-
-L100:
+L250:
         if (yy <= 0.0) { s2 = conj(s2); }
         cy[kdflg-1] = s2;
         c2 = s2;
@@ -4624,19 +4678,13 @@ L100:
             kdflg = 1;
             continue;
         }
-        if (kdflg == 2) { goto L130; }
+        if (kdflg == 2) { break; }
         kdflg = 2;
         continue;
-
-L110:
-        if (rs1 > 0.0) { return -1; }
-        s2 = 0.0;
-        goto L100;
-
     }
-    k = n;
+    /* Check for exhausted loop */
+    if (k == n+1) { k = n; }
 
-L130:
     il = n - k;
     if (il == 0) { return nz; }
     //
@@ -4651,7 +4699,7 @@ L130:
     fn = inu + il;
     for (i = 1; i < (il+1); i++) {
         c2 = s2;
-        s2 = s1 + (fn + fnf) * rz * s2;
+        s2 = s1 + (fn + fnf) * rz * c2;
         s1 = c2;
         fn -= 1.0;
         c2 = s2 * cs;
@@ -4678,7 +4726,7 @@ L130:
         }
     }
     return nz;
-};
+}
 
 
 int amos_uoik(
@@ -4837,14 +4885,14 @@ int amos_wrsk(
     nz = 0;
     nw = amos_bknu(zr, fnu, kode, 2, cw, tol, elim, alim);
     if (nw != 0) {
+        /* 50 */
         nz = -1;
         if (nw == -2) {
             nz = -2;
         }
         return nz;
     }
-    
-    amos_rati(zr, fnu, 2, y, tol);
+    amos_rati(zr, fnu, n, y, tol);
     //
     // RECUR FORWARD ON I(FNU+1,Z) = R(FNU,Z)*I(FNU,Z),
     // R(FNU+J-1,Z)=Y(J),  J=1,...,N
@@ -4861,7 +4909,7 @@ int amos_wrsk(
     // IS ON SCALE.
     //
     acw = cabs(cw[1]);
-    ascle = 1.0 + 3*d1mach[0]/tol;
+    ascle = 1e3*d1mach[0]/tol;
     cscl = 1.0;
     
     if (acw <= ascle) {
