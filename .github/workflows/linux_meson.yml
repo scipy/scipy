@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python-version: ['3.10', '3.12'] # these are the runs which would use python dev versions
+        python-version: ['3.10', '3.12'] # this run will use python dev versions when available
         maintenance-branch:
           - ${{ contains(github.ref, 'maintenance/') || contains(github.base_ref, 'maintenance/') }}
         exclude:
