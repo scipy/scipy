@@ -1318,7 +1318,7 @@ class TestMood:
         assert_allclose(p2, p1/2)
         assert_allclose(p3, 1 - p1/2)
 
-        with pytest.raises(ValueError, match="alternative must be..."):
+        with pytest.raises(ValueError, match="`alternative` must be..."):
             stats.mood(x, y, alternative='ekki-ekki')
 
     @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
