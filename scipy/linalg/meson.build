@@ -66,6 +66,7 @@ fblas_module = custom_target('fblas_module',
 # LAPACK - we have historically put these in `_fblas`.
 py3.extension_module('_fblas',
   fblas_module,
+  fortran_args: _fflag_lp64,
   link_args: version_link_args,
   dependencies: [lapack_dep, blas_dep, fortranobject_dep],
   install: true,
@@ -95,6 +96,7 @@ flapack_module = custom_target('flapack_module',
 py3.extension_module('_flapack',
   flapack_module,
   c_args: [Wno_empty_body],
+  fortran_args: _fflag_lp64,
   link_args: version_link_args,
   dependencies: [lapack_dep, blas_dep, fortranobject_dep],
   install: true,
@@ -115,36 +117,23 @@ py3.extension_module('_flapack',
 #       and then uses both in the build (search for `Download-OpenBLAS('1'))
 #       in azure-pipelines.yml if you want to check that).
 if use_ilp64
-  conf_data = configuration_data()
-  if cc.sizeof('long') == 8
-    conf_data.set('int64_name', 'long')
-  elif cc.sizeof('long long') == 8
-    conf_data.set('int64_name', 'long long')
-  else
-    error('Neither `long` nor `long long` is 64-bit, giving up.')
-  endif
-
-  int64_f2cmap = configure_file(
-    input: '../_build_utils/int64.f2cmap.in',
-    output: 'int64.f2cmap',
-    configuration: conf_data,
-    install: false,
-  )
-
-  f2py_ilp64_opts = ['--f2cmap', int64_f2cmap]
-
   fblas64_module = custom_target('fblas64_module',
     output: ['_fblas_64module.c', '_fblas_64-f2pywrappers.f'],
     input: 'fblas_64.pyf.src',
-    command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'] + f2py_ilp64_opts
+    command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'] + f2py_ilp64_opts,
+    depend_files:
+      [
+        'fblas_l1.pyf.src',
+        'fblas_l2.pyf.src',
+        'fblas_l3.pyf.src',
+      ]
   )
 
   py3.extension_module('_fblas_64',
     fblas64_module,
-    c_args: numpy_nodepr_api,
     fortran_args: _fflag_ilp64,
     link_args: version_link_args,
-    dependencies: [lapack, blas, fortranobject_dep, g77_abi_wrappers],
+    dependencies: [lapack_ilp64, blas_ilp64, fortranobject_dep, g77_abi_wrappers],
     install: true,
     link_language: 'fortran',
     subdir: 'scipy/linalg'
@@ -153,15 +142,15 @@ if use_ilp64
   flapack64_module = custom_target('flapack64_module',
     output: ['_flapack_64module.c', '_flapack_64-f2pywrappers.f'],
     input: 'flapack_64.pyf.src',
-    command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'] + f2py_ilp64_opts
+    command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'] + f2py_ilp64_opts
   )
 
   py3.extension_module('_flapack_64',
     flapack64_module,
-    c_args: [numpy_nodepr_api, Wno_empty_body],
+    c_args: [Wno_empty_body],
     fortran_args: _fflag_ilp64,
     link_args: version_link_args,
-    dependencies: [lapack, blas, fortranobject_dep, g77_abi_wrappers],
+    dependencies: [lapack_ilp64, blas_ilp64, fortranobject_dep, g77_abi_wrappers],
     install: true,
     link_language: 'fortran',
     subdir: 'scipy/linalg'
@@ -170,6 +159,7 @@ endif
 
 
 # TODO: cblas/clapack are built *only* for ATLAS. Why? Is it still needed?
+
 
 # _decomp_interpolative
 py3.extension_module('_decomp_interpolative',

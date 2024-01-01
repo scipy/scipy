@@ -41,10 +41,6 @@ mach_lib = static_library('mach_lib',
   fortran_args: [fortran_ignore_warnings, _fflag_ilp64],
 )
 
-quadpack_lib = static_library('quadpack_lib',
-  quadpack_src,
-  fortran_args: [fortran_ignore_warnings, _fflag_ilp64],
-)
 
 lsoda_lib = static_library('lsoda_lib',
   lsoda_src,
@@ -62,7 +58,7 @@ vode_lib = static_library('vode_lib',
 
 dop_lib = static_library('dop_lib',
   dop_src,
-  fortran_args: [fortran_ignore_warnings, _fflag_ilp64]
+  fortran_args: [fortran_ignore_warnings, _fflag_ilp64],
   gnu_symbol_visibility: 'hidden',
 )
 
@@ -102,7 +98,6 @@ py3.extension_module('_lsoda',
   link_with: [lsoda_lib, mach_lib],
   c_args: [Wno_unused_variable],
   dependencies: [lapack_ilp64, fortranobject_dep],
-  c_args: [numpy_nodepr_api, Wno_unused_variable],
   link_args: version_link_args,
   install: true,
   link_language: 'fortran',
