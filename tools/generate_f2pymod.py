@@ -266,6 +266,8 @@ def main():
     parser.add_argument("--free-threading",
                         action=argparse.BooleanOptionalAction,
                         help="Whether to add --free-threading-compatible")
+    parser.add_argument("--f2cmap", type=str,
+                        help="Path to the f2cmap file")
     args = parser.parse_args()
 
     if not args.infile.endswith(('.pyf', '.pyf.src', '.f.src')):
@@ -290,10 +292,13 @@ def main():
 
     # Now invoke f2py to generate the C API module file
     if args.infile.endswith(('.pyf.src', '.pyf')):
-        p = subprocess.Popen(
-            ['f2py', fname_pyf, '--build-dir', outdir_abs] + nogil_arg,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=os.getcwd()
-        )
+        cmd = [sys.executable, '-m', 'numpy.f2py', fname_pyf,
+               '--build-dir', outdir_abs] + nogil_arg
+        if args.f2cmap:
+            cmd += ['--f2cmap', args.f2cmap]
+
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE, cwd=os.getcwd())
         out, err = p.communicate()
         if not (p.returncode == 0):
             raise RuntimeError(f"Processing {fname_pyf} with f2py failed!\n"

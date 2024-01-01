@@ -123,7 +123,7 @@ py3.extension_module('_ufuncs',
   cpp_args: ['-DSP_SPECFUN_ERROR'],
   include_directories: ['..', '../_lib', '../_build_utils/src'],
   dependencies: [
-    lapack_dep,
+    lapack_ilp64,
     npymath_lib,
     np_dep,
   ],
@@ -235,7 +235,6 @@ npz_files = [
     '_data_gsl',
     'tests/data/gsl/mathieu_ab.txt',
     'gsl',
-    'gsl.npz'
   ],
   [
     '_data_local',
