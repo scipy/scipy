@@ -85,7 +85,12 @@ else
   _incdir_numpy_abs = incdir_numpy
 endif
 inc_np = include_directories(incdir_numpy)
-np_dep = declare_dependency(include_directories: inc_np)
+# Don't use the deprecated NumPy C API. Define this to a fixed version instead of
+# NPY_API_VERSION in order not to break compilation for released SciPy versions
+# when NumPy introduces a new deprecation.
+numpy_nodepr_api = ['-DNPY_NO_DEPRECATED_API=NPY_1_9_API_VERSION']
+np_dep = declare_dependency(include_directories: inc_np, compile_args: numpy_nodepr_api)
+
 
 incdir_f2py = incdir_numpy / '..' / '..' / 'f2py' / 'src'
 inc_f2py = include_directories(incdir_f2py)
@@ -138,7 +143,6 @@ cpp_args_pythran = [
 # Share this object across multiple modules.
 fortranobject_lib = static_library('_fortranobject',
   fortranobject_c,
-  c_args: numpy_nodepr_api,
   dependencies: py3_dep,
   include_directories: [inc_np, inc_f2py],
   gnu_symbol_visibility: 'hidden',
@@ -324,12 +328,15 @@ if blas_symbol_suffix == 'auto'
   blas_symbol_suffix = blas.get_variable('symbol_suffix', default_value: '')
   message(f'BLAS symbol suffix: @blas_symbol_suffix@')
 endif
+_blas_incdir = []
 if blas_symbol_suffix != ''
   _args_blas += ['-DBLAS_SYMBOL_SUFFIX=' + blas_symbol_suffix]
+  _blas_incdir = ['.']  # for the generated symbol rename shims in the build dir
 endif
 blas_dep = declare_dependency(
   dependencies: [blas],
   compile_args: _args_blas,
+  include_directories: _blas_incdir,
 )
 
 # LAPACK detection
@@ -357,19 +364,6 @@ lapack_dep = declare_dependency(dependencies: [lapack, blas_dep])
 
 
 
-###############################################
-# TODO: 64-bit BLAS and LAPACK
-#
-# Note that this works as long as BLAS and LAPACK are detected properly via
-# pkg-config. By default we look for OpenBLAS, other libraries can be configured via
-# `meson configure -Dblas=blas -Dlapack=lapack` (example to build with Netlib
-# BLAS and LAPACK).
-# For MKL and for auto-detecting one of multiple libs, we'll need a custom
-# dependency in Meson (like is done for scalapack) - see
-# https://github.com/mesonbuild/meson/issues/2835
-blas_name = get_option('blas')
-lapack_name = get_option('lapack')
-
 macOS13_3_or_later = false
 if host_machine.system() == 'darwin'
   r = run_command('xcrun', '-sdk', 'macosx', '--show-sdk-version', check: true)
@@ -393,27 +387,7 @@ if blas_name == 'accelerate'
   accelerate_flag = '-a'
 endif
 
-# First try scipy-openblas, and if found don't look for cblas or lapack, we
-# know what's inside the scipy-openblas wheels already.
-if blas_name == 'openblas' or blas_name == 'auto'
-  blas = dependency('scipy-openblas', method: 'pkg-config', required: false)
-  if blas.found()
-    blas_name = 'scipy-openblas'
-    generate_blas_wrappers = true
-  endif
-endif
 
-# pkg-config uses a lower-case name while CMake uses a capitalized name, so try
-# that too to make the fallback detection with CMake work
-if blas_name == 'openblas'
-  blas = dependency(['openblas', 'OpenBLAS'])
-elif blas_name != 'scipy-openblas'  # if so, we found it already
-  blas = dependency(blas_name)
-endif
-blas_dep = declare_dependency(
-  dependencies: blas,
-  compile_args: _args_blas_lapack
-)
 if blas_name == 'blas'
   # Netlib BLAS has a separate `libcblas.so` which we use directly in the g77
   # ABI wrappers, so detect it and error out if we cannot find it.
@@ -425,19 +399,6 @@ else
   cblas = []
 endif
 
-if 'mkl' in blas.name() or blas.name().to_lower() == 'accelerate' or blas_name == 'scipy-openblas'
-  # For these libraries we know that they contain LAPACK, and it's desirable to
-  # use that - no need to run the full detection twice.
-  lapack = blas
-elif lapack_name == 'openblas'
-  lapack = dependency(['openblas', 'OpenBLAS'])
-else
-  lapack = dependency(lapack_name)
-endif
-lapack_dep = declare_dependency(
-  dependencies: lapack,
-  compile_args: _args_blas_lapack
-)
 
 dependency_map = {
   'BLAS': blas,
@@ -511,13 +472,16 @@ if use_ilp64
     endif
     message(f'BLAS symbol suffix (ILP64): @blas_symbol_suffix@')
   endif
+  _blas_incdir = []
   if blas_symbol_suffix != ''
     _args_blas += ['-DBLAS_SYMBOL_SUFFIX=' + blas_symbol_suffix]
+    _blas_incdir = ['.']
   endif
   # Declare the ILP64 dependencies
   blas_ilp64 = declare_dependency(
     dependencies: [blas_ilp64],
     compile_args: _args_blas,
+    include_directories: _blas_incdir,
   )
   lapack_ilp64 = declare_dependency(dependencies: [lapack_ilp64, blas_ilp64])
 else
@@ -555,9 +519,9 @@ python_sources = [
   '__init__.py',
   '_distributor_init.py',
   'conftest.py',
-  'linalg.pxd',
-  'optimize.pxd',
-  'special.pxd',
+ # 'linalg.pxd',
+ # 'optimize.pxd',
+ # 'special.pxd',
 ]
 
 if fs.exists('_distributor_init_local.py')
@@ -677,22 +641,27 @@ fortran_ignore_warnings = ff.get_supported_arguments(
 
 # Intel Fortran (ifort) does not run the preprocessor by default, if Fortran
 # code uses preprocessor statements, add this compile flag to it.
-_fflag_fpp = []
-if ff.get_id() in ['intel-cl', 'intel-llvm-cl']
-  if is_windows
-    _fflag_fpp = ff.get_supported_arguments('/fpp')
-  else
-    _fflag_fpp = ff.get_supported_arguments('-fpp')
-  endif
+
+# Gfortran does run the preprocessor for .F files, and PROPACK is the only
+# component which needs the preprocessor (unless we need symbol renaming for
+# blas_symbol_suffix).
+_fflag_preprocess = []
+_gfortran_preprocess = ['-cpp', '-ffree-line-length-none', '-ffixed-line-length-none']
+if ff.has_multi_arguments(_gfortran_preprocess)
+  _fflag_preprocess = _gfortran_preprocess
+else
+  _fflag_preprocess = ff.first_supported_argument(['-fpp', '/fpp', 'cpp'])
 endif
 
+_fflag_lp64 = []
 _fflag_ilp64 = []
 f2py_ilp64_opts = []
 if use_ilp64
-  # Gfortran uses `-fdefault-integer-8` to switch to 64-bit integers by
+  # Gfortran and Clang use `-fdefault-integer-8` to switch to 64-bit integers by
   # default, all other known compilers use `-i8`
-  _fflag_ilp64 = ff.get_supported_arguments(['-i8', '-fdefault-integer-8'])
+  _fflag_ilp64 = ff.first_supported_argument(['-fdefault-integer-8', '-i8'])
 
+  # Write out a mapping file for f2py for defaulting to ILP64
   conf_data = configuration_data()
   if cc.sizeof('long') == 8
     conf_data.set('int64_name', 'long')
@@ -701,15 +670,22 @@ if use_ilp64
   else
     error('Neither `long` nor `long long` is 64-bit, giving up.')
   endif
-
   int64_f2cmap = configure_file(
     input: '_build_utils/int64.f2cmap.in',
     output: 'int64.f2cmap',
     configuration: conf_data,
     install: false,
   )
-
   f2py_ilp64_opts = ['--f2cmap', int64_f2cmap]
+endif
+
+if blas_symbol_suffix != ''
+  # We need to patch source files that use BLAS/LAPACK symbols.
+  # In addition, we now need to enable the Fortran preprocessor on all targets
+  # that depend on BLAS/LAPACK
+  # Note: this came from `scipy/build_utils/_fortran.py` in the distutils build.
+  _fflag_lp64 += _fflag_preprocess  # TODO: propagate _fflag_lp64
+  _fflag_ilp64 += _fflag_preprocess
 endif
 
 # Deal with M_PI & friends; add `use_math_defines` to c_args or cpp_args

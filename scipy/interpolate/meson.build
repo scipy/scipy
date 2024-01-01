@@ -151,9 +151,11 @@ py3.extension_module('_dierckx',
 )
 
 
+_c_args_fitpack = []
 if use_ilp64
   _c_args_fitpack += ['-DHAVE_BLAS_ILP64']
 endif
+
 _fitpack = py3.extension_module('_fitpack',
   ['src/_fitpackmodule.c'],
   c_args: _c_args_fitpack,

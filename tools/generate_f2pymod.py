@@ -9,6 +9,7 @@ import argparse
 import os
 import re
 import subprocess
+import sys
 
 
 # START OF CODE VENDORED FROM `numpy.distutils.from_template`
