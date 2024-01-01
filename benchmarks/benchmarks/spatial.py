@@ -413,8 +413,8 @@ class SingleDist(Benchmark):
             self.kwargs = {}
 
     def time_dist(self, metric):
-        """Time scipy.spatial.distance.pdist over a range of input data
-        sizes and metrics.
+        """Time distance metrics individually (without batching with
+        cdist or pdist).
         """
         getattr(distance, self.metric)(self.points[0], self.points[1],
                                        **self.kwargs)
@@ -470,8 +470,8 @@ class SingleDistWeighted(Benchmark):
             self.kwargs = {'w': np.ones(3)}
 
     def time_dist_weighted(self, metric):
-        """Time scipy.spatial.distance.pdist over a range of input data
-        sizes and metrics.
+        """Time weighted distance metrics individually (without batching
+        with cdist or pdist).
         """
         getattr(distance, self.metric)(self.points[0], self.points[1],
                                        **self.kwargs)
