@@ -30,7 +30,10 @@ from scipy.optimize._root_scalar import ROOT_SCALAR_METHODS
 from scipy.optimize._qap import QUADRATIC_ASSIGNMENT_METHODS
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
 from scipy.optimize._optimize import MemoizeJac, show_options, OptimizeResult
+from scipy.optimize import rosen, rosen_der, rosen_hess
 
+from scipy.sparse import (coo_matrix, csc_matrix, csr_matrix, coo_array,
+                          csr_array, csc_array)
 
 def test_check_grad():
     # Verify if check_grad is able to estimate the derivative of the
@@ -3125,3 +3128,27 @@ def test_gh12594():
 
     assert_allclose(res.fun, ref.fun)
     assert_allclose(res.x, ref.x)
+
+
+@pytest.mark.parametrize('sparse_type', [coo_matrix, csc_matrix, csr_matrix,
+                                         coo_array, csr_array, csc_array])
+def test_gh8792(sparse_type):
+    # gh-8792 reported an error for minimization with `newton_cg` when `hess`
+    # returns a sparse matrix. Check that results are the same whether `hess`
+    # returns a dense or sparse matrix.
+
+    def sparse_rosen_hess(x):
+        return sparse_type(rosen_hess(x))
+
+    x0 = [2., 2.]
+
+    res_sparse = optimize.minimize(rosen, x0, method="Newton-CG",
+                          jac=rosen_der, hess=sparse_rosen_hess)
+    res_dense = optimize.minimize(rosen, x0, method="Newton-CG",
+                          jac=rosen_der, hess=rosen_hess)
+
+    assert_allclose(res_dense.fun, res_sparse.fun)
+    assert_allclose(res_dense.x, res_sparse.x)
+    assert res_dense.nfev == res_sparse.nfev
+    assert res_dense.njev == res_sparse.njev
+    assert res_dense.nhev == res_sparse.nhev
