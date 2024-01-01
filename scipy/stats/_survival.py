@@ -8,6 +8,7 @@ import numpy as np
 from scipy import special, interpolate, stats
 from scipy.stats._censored_data import CensoredData
 from scipy.stats._common import ConfidenceInterval
+from scipy.stats import norm  # type: ignore[attr-defined]
 
 if TYPE_CHECKING:
     from typing import Literal
@@ -680,6 +681,6 @@ def logrank(
     statistic = (n_died_x - sum_exp_deaths_x)/np.sqrt(sum_var)
 
     # Equivalent to chi2(df=1).sf(statistic**2) when alternative='two-sided'
-    pvalue = stats._stats_py._get_pvalue(statistic, stats.norm, alternative)
+    pvalue = stats._stats_py._get_pvalue(statistic, norm, alternative)
 
     return LogRankResult(statistic=statistic[()], pvalue=pvalue[()])
