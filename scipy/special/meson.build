@@ -223,7 +223,6 @@ py3.install_sources(
 )
 
 # Must use `custom_target`, because `py3.install_sources` does not work with
-# generated sources - see https://github.com/mesonbuild/meson/issues/7372
 npz_files = [
   [
     '_data_boost',
@@ -235,6 +234,7 @@ npz_files = [
     '_data_gsl',
     'tests/data/gsl/mathieu_ab.txt',
     'gsl',
+    'gsl.npz'
   ],
   [
     '_data_local',
@@ -257,6 +257,75 @@ foreach npz_file: npz_files
     install_tag: 'tests',
   )
 endforeach
+
+
+# Headers for special functions in `xsf` library are included in
+# both build and install dirs for development purposes. Not public!
+
+xsf_sources = [
+  'xsf/config.h',
+  'xsf/error.h',
+  'xsf/evalpoly.h',
+  'xsf/lambertw.h',
+  'xsf/binom.h',
+  'xsf/trig.h',
+  'xsf/zlog1.h',
+  'xsf/loggamma.h',
+  'xsf/digamma.h',
+  'xsf/wright_bessel.h',
+  'xsf/hyp2f1.h',
+  'xsf/tools.h',
+  'xsf/iv_ratio.h',
+  'xsf/cdflib.h',
+  'xsf/sici.h',
+  'xsf/expint.h'
+]
+
+xsf_cephes_sources = [
+  'xsf/cephes/const.h',
+  'xsf/cephes/polevl.h',
+  'xsf/cephes/beta.h',
+  'xsf/cephes/gamma.h',
+  'xsf/cephes/trig.h',
+  'xsf/cephes/zeta.h',
+  'xsf/cephes/psi.h',
+  'xsf/cephes/lanczos.h',
+  'xsf/cephes/rgamma.h',
+  'xsf/cephes/chbevl.h',
+  'xsf/cephes/poch.h',
+  'xsf/cephes/hyp2f1.h',
+  'xsf/cephes/besselpoly.h',
+  'xsf/cephes/i0.h',
+  'xsf/cephes/i1.h',
+  'xsf/cephes/scipy_iv.h',
+  'xsf/cephes/j0.h',
+  'xsf/cephes/j1.h',
+  'xsf/cephes/jv.h',
+  'xsf/cephes/cbrt.h',
+  'xsf/cephes/airy.h',
+  'xsf/cephes/k0.h',
+  'xsf/cephes/k1.h',
+  'xsf/cephes/kn.h',
+  'xsf/cephes/ndtr.h',
+  'xsf/cephes/igam.h',
+  'xsf/cephes/unity.h',
+  'xsf/cephes/chdtr.h',
+  'xsf/cephes/igami.h',
+  'xsf/cephes/hyperg.h',
+  'xsf/cephes/expn.h',
+  'xsf/cephes/ellie.h',
+  'xsf/cephes/ellik.h',
+  'xsf/cephes/ellpe.h',
+  'xsf/cephes/ellpk.h',
+  'xsf/cephes/igam_asymp_coeff.h',
+  'xsf/cephes/sici.h',
+  'xsf/cephes/shichi.h',
+  'xsf/cephes/sindg.h',
+  'xsf/cephes/tandg.h'
+]
+
+py3.install_sources(xsf_sources, subdir: 'scipy/special/xsf')
+py3.install_sources(xsf_cephes_sources, subdir: 'scipy/special/xsf/cephes')
 
 
 python_sources = [
