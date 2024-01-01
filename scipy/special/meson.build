@@ -302,7 +302,8 @@ cython_special = custom_target('cython_special',
   input: ['_generate_pyx.py', 'functions.json', '_add_newdocs.py'],
   command: [py3, '@INPUT0@', '-o', '@OUTDIR@'],
   install: true,
-  install_dir: py3.get_install_dir() / 'scipy/special'
+  install_dir: py3.get_install_dir() / 'scipy/special',
+  install_tag: 'devel',
 )
 
 # Only needed to establish a dependency; see comments in linalg/meson.build
@@ -473,7 +474,8 @@ foreach npz_file: npz_files
       '--use-timestamp', npz_file[2], '-o', '@OUTDIR@'
     ],
     install: true,
-    install_dir: py3.get_install_dir() / 'scipy/special/tests/data'
+    install_dir: py3.get_install_dir() / 'scipy/special/tests/data',
+    install_tag: 'python-runtime',
   )
 endforeach
 
