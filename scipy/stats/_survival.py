@@ -682,4 +682,4 @@ def logrank(
     # Equivalent to chi2(df=1).sf(statistic**2) when alternative='two-sided'
     pvalue = stats._stats_py._get_pvalue(statistic, stats.norm, alternative)
 
-    return LogRankResult(statistic=statistic, pvalue=pvalue)
+    return LogRankResult(statistic=statistic[()], pvalue=pvalue[()])

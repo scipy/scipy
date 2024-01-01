@@ -5423,7 +5423,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
     else:
         rs[variable_has_nan, :] = np.nan
         rs[:, variable_has_nan] = np.nan
-        res = SignificanceResult(rs, prob)
+        res = SignificanceResult(rs[()], prob[()])
         res.correlation = rs
         return res
 
@@ -5849,7 +5849,7 @@ def kendalltau(x, y, *, initial_lexsort=_NoValue, nan_policy='propagate',
                          "variant must be 'b' or 'c'.")
 
     # Limit range to fix computational errors
-    tau = min(1., max(-1., tau))
+    tau = np.minimum(1., max(-1., tau))
 
     # The p-value calculation is the same for all variants since the p-value
     # depends only on con_minus_dis.
@@ -5871,14 +5871,14 @@ def kendalltau(x, y, *, initial_lexsort=_NoValue, nan_policy='propagate',
         var = ((m * (2*size + 5) - x1 - y1) / 18 +
                (2 * xtie * ytie) / m + x0 * y0 / (9 * m * (size - 2)))
         z = con_minus_dis / np.sqrt(var)
-        pvalue = _get_pvalue(z, distributions.norm, alternative)[()]
+        pvalue = _get_pvalue(z, distributions.norm, alternative)
     else:
         raise ValueError(f"Unknown method {method} specified.  Use 'auto', "
                          "'exact' or 'asymptotic'.")
 
     # create result object with alias for backward compatibility
-    res = SignificanceResult(tau, pvalue)
-    res.correlation = tau
+    res = SignificanceResult(tau[()], pvalue[()])
+    res.correlation = tau[()]
     return res
 
 
@@ -9493,22 +9493,14 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
                        "(0/0). Try using `distribution='normal'")
             warnings.warn(message, RuntimeWarning, stacklevel=2)
 
-        p = distributions.t.cdf(wbfn, df)
+        distribution = distributions.t(df)
     elif distribution == "normal":
-        p = distributions.norm.cdf(wbfn)
+        distribution = distributions.norm()
     else:
         raise ValueError(
             "distribution should be 't' or 'normal'")
 
-    if alternative == "greater":
-        pass
-    elif alternative == "less":
-        p = 1 - p
-    elif alternative == "two-sided":
-        p = 2 * np.min([p, 1-p])
-    else:
-        raise ValueError(
-            "alternative should be 'less', 'greater' or 'two-sided'")
+    p = _get_pvalue(-wbfn, distribution, alternative)
 
     return BrunnerMunzelResult(wbfn, p)
 
