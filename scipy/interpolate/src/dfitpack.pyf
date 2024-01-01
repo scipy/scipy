@@ -13,7 +13,7 @@ python module _dfitpack ! in
 
   usercode '''
 
-#ifdef HAVE_ILP64
+#ifdef HAVE_BLAS_ILP64
 typedef npy_int64 F_INT;
 #else
 typedef int F_INT;

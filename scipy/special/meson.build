@@ -124,7 +124,7 @@ py3.extension_module('_ufuncs',
   include_directories: ['..', '../_lib', '../_build_utils/src'],
   dependencies: [
     xsf_dep,
-    lapack_dep,
+    lapack_ilp64,
     npymath_lib,
     np_dep,
   ],
@@ -235,7 +235,6 @@ npz_files = [
     '_data_gsl',
     'tests/data/gsl/mathieu_ab.txt',
     'gsl',
-    'gsl.npz'
   ],
   [
     '_data_local',

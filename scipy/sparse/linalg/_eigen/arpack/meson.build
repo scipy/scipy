@@ -12,7 +12,7 @@ arnaud_incdir = include_directories('arnaud/include')
 arnaud_lib = static_library('arnaud',
   arnaud_sources,
   include_directories: arnaud_incdir,
-  dependencies: [m_dep, lapack_dep, blas_dep],
+  dependencies: [m_dep, lapack_ilp64, blas_ilp64],
 )
 
 py3.extension_module('_arpacklib',
@@ -32,3 +32,4 @@ py3.install_sources([
 )
 
 subdir('tests')
+
