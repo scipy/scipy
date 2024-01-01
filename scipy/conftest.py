@@ -161,7 +161,7 @@ def skip_if_array_api(xp, request):
     Parameters
     ----------
     *backends : tuple
-        Backends to skip, e.g. ``("numpy.array_api", "torch")``.
+        Backends to skip, e.g. ``("array_api_strict", "torch")``.
         These are overriden when ``np_only`` is ``True``, and are not
         necessary to provide for non-CPU backends when ``cpu_only`` is ``True``.
     reasons : list, optional
