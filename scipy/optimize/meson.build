@@ -67,7 +67,7 @@ py3.extension_module('_lbfgsb',
     '__lbfgsb.h',
     '__lbfgsb.c',
   ],
-  dependencies: [lapack_ilp64, blas_ilp64],
+  dependencies: [lapack_ilp64, blas_ilp64, np_dep],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize'

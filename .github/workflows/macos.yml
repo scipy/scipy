@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - maintenance/**
+      - ci-blas
   pull_request:
     branches:
       - main
@@ -236,11 +237,16 @@ jobs:
       with:
         xcode-version: '14.3'
 
+    - name: Install gfortran with Homebrew
+      run: |
+        brew install gfortran
+        brew list
+        gfortran --version
+
     - name: Install dependencies
       run: |
         pip install -r requirements/all.txt
         pip install git+https://github.com/numpy/meson.git@main-numpymeson
-        brew install gfortran
 
     - name: Build against Accelerate (LP64)
       run: python dev.py build
