@@ -1,6 +1,9 @@
 #include "amos_wrappers.h"
 #define CADDR(z) ((double *) (&(z))), (&(((double *) (&(z)))[1]))
 
+#ifndef CMPLX
+#define CMPLX(x, y) ((double complex)((double)(x) + I * (double)(y)))
+#endif /* CMPLX */
 
 int ierr_to_sferr(int nz, int ierr) {
   /* Return sf_error equivalents for ierr values */
@@ -140,7 +143,7 @@ int cairy_wrap(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi
   int ierr = 0;
   int kode = 1;
   int nz;
-  double complex z99 = CMPLX(z.real, z.imag);
+  double complex z99 = CMPLX(npy_creal(z), npy_cimag(z));
   double complex res;
   
   NPY_CSETREAL(ai, NAN);
@@ -182,7 +185,7 @@ int cairy_wrap_e(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *
   int kode = 2;        /* Exponential scaling */
   int nz, ierr;
 
-  double complex z99 = CMPLX(z.real, z.imag);
+  double complex z99 = CMPLX(npy_creal(z), npy_cimag(z));
   double complex res;
 
   NPY_CSETREAL(ai, NAN);
@@ -282,7 +285,7 @@ npy_cdouble cbesi_wrap( double v, npy_cdouble z) {
   int nz, ierr;
   npy_cdouble cy, cy_k;
 
-  double complex z99 = CMPLX(z.real, z.imag);
+  double complex z99 = CMPLX(npy_creal(z), npy_cimag(z));
   double complex cy99[1] = { NAN };
   double complex cy_k99[1] = { NAN };
 
@@ -337,7 +340,7 @@ npy_cdouble cbesi_wrap_e( double v, npy_cdouble z) {
   int nz, ierr;
   npy_cdouble cy, cy_k;
 
-  double complex z99 = CMPLX(z.real, z.imag);
+  double complex z99 = CMPLX(npy_creal(z), npy_cimag(z));
   double complex cy99[1] = { NAN };
   double complex cy_k99[1] = { NAN };
 
@@ -397,7 +400,7 @@ npy_cdouble cbesj_wrap( double v, npy_cdouble z) {
   int sign = 1;
   npy_cdouble cy_j, cy_y;
 
-  double complex z99 = CMPLX(z.real, z.imag);
+  double complex z99 = CMPLX(npy_creal(z), npy_cimag(z));
   double complex cy_j99[1] = { NAN };
   double complex cy_y99[1] = { NAN };
 
@@ -464,7 +467,7 @@ npy_cdouble cbesj_wrap_e( double v, npy_cdouble z) {
   int sign = 1;
   npy_cdouble cy_j, cy_y;
 
-  double complex z99 = CMPLX(z.real, z.imag);
+  double complex z99 = CMPLX(npy_creal(z), npy_cimag(z));
   double complex cy_j99[1] = { NAN };
   double complex cy_y99[1] = { NAN };
 
@@ -515,7 +518,7 @@ npy_cdouble cbesy_wrap( double v, npy_cdouble z) {
   int sign = 1;
   npy_cdouble cy_y, cy_j;
 
-  double complex z99 = CMPLX(z.real, z.imag);
+  double complex z99 = CMPLX(npy_creal(z), npy_cimag(z));
   double complex cy_j99[1] = { NAN };
   double complex cy_y99[1] = { NAN };
 
@@ -593,7 +596,7 @@ npy_cdouble cbesy_wrap_e( double v, npy_cdouble z) {
   int sign = 1;
   npy_cdouble cy_y, cy_j;
 
-  double complex z99 = CMPLX(z.real, z.imag);
+  double complex z99 = CMPLX(npy_creal(z), npy_cimag(z));
   double complex cy_j99[1] = { NAN };
   double complex cy_y99[1] = { NAN };
 
@@ -651,7 +654,7 @@ npy_cdouble cbesk_wrap( double v, npy_cdouble z) {
   int nz, ierr;
   npy_cdouble cy;
 
-  double complex z99 = CMPLX(z.real, z.imag);
+  double complex z99 = CMPLX(npy_creal(z), npy_cimag(z));
   double complex cy99[1] = { NAN };
 
   NPY_CSETREAL(&cy, NAN);
@@ -685,7 +688,7 @@ npy_cdouble cbesk_wrap_e( double v, npy_cdouble z) {
   int nz, ierr;
   npy_cdouble cy;
 
-  double complex z99 = CMPLX(z.real, z.imag);
+  double complex z99 = CMPLX(npy_creal(z), npy_cimag(z));
   double complex cy99[1] = { NAN };
 
   NPY_CSETREAL(&cy, NAN);
@@ -765,7 +768,7 @@ npy_cdouble cbesh_wrap1( double v, npy_cdouble z) {
   int sign = 1;
   npy_cdouble cy;
 
-  double complex z99 = CMPLX(z.real, z.imag);
+  double complex z99 = CMPLX(npy_creal(z), npy_cimag(z));
   double complex cy99[1] = { NAN };
 
   NPY_CSETREAL(&cy, NAN);
@@ -796,7 +799,7 @@ npy_cdouble cbesh_wrap1_e( double v, npy_cdouble z) {
   int sign = 1;
   npy_cdouble cy;
 
-  double complex z99 = CMPLX(z.real, z.imag);
+  double complex z99 = CMPLX(npy_creal(z), npy_cimag(z));
   double complex cy99[1] = { NAN };
 
   NPY_CSETREAL(&cy, NAN);
@@ -827,7 +830,7 @@ npy_cdouble cbesh_wrap2( double v, npy_cdouble z) {
   int sign = 1;
   npy_cdouble cy;
 
-  double complex z99 = CMPLX(z.real, z.imag);
+  double complex z99 = CMPLX(npy_creal(z), npy_cimag(z));
   double complex cy99[1] = { NAN };
 
   NPY_CSETREAL(&cy, NAN);
@@ -858,7 +861,7 @@ npy_cdouble cbesh_wrap2_e( double v, npy_cdouble z) {
   int sign = 1;
   npy_cdouble cy;
 
-  double complex z99 = CMPLX(z.real, z.imag);
+  double complex z99 = CMPLX(npy_creal(z), npy_cimag(z));
   double complex cy99[1] = { NAN };
 
   NPY_CSETREAL(&cy, NAN);
