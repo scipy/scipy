@@ -845,11 +845,7 @@ class BSpline:
         -------
         spl : BSpline object
             A new BSpline object with the new knot inserted.
-
         """
-        if self.extrapolate == "periodic":
-            # XXX: implement
-            raise NotImplementedError()
         if x < self.t[self.k] or x > self.t[-self.k-1]:
             raise ValueError(f"Cannot insert a knot at {x}.")
         if m <= 0:
@@ -863,7 +859,7 @@ class BSpline:
         cc = cc.reshape(-1, num_extra)
 
         for _ in range(m):
-            tt, cc = _bspl.insert(x, tt, cc, self.k)
+            tt, cc = _bspl.insert(x, tt, cc, self.k, self.extrapolate == "periodic")
 
         return self.construct_fast(
             tt, cc.reshape((-1,) + extradim), self.k, self.extrapolate, self.axis
