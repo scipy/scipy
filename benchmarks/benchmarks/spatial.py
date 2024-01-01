@@ -388,6 +388,38 @@ class Xdist(Benchmark):
         distance.pdist(self.points, self.metric, **self.kwargs)
 
 
+class SingleDist(Benchmark):
+    params = (['euclidean', 'minkowski', 'cityblock',
+               'seuclidean', 'sqeuclidean', 'cosine', 'correlation',
+               'hamming', 'jaccard', 'jensenshannon', 'chebyshev', 'canberra',
+               'braycurtis', 'mahalanobis', 'yule', 'dice', 'kulczynski1',
+               'rogerstanimoto', 'russellrao', 'sokalmichener', 'sokalsneath',
+               'minkowski-P3'])
+    param_names = ['metric']
+
+    def setup(self, metric):
+        rng = np.random.default_rng(123)
+        self.points = rng.random((2, 3))
+        self.metric = metric
+        if metric == 'minkowski-P3':
+            # p=2 is just the euclidean metric, try another p value as well
+            self.kwargs = {'p': 3.0}
+            self.metric = 'minkowski'
+        elif metric == 'mahalanobis':
+            self.kwargs = {'VI': [[1, 0.5, 0.5], [0.5, 1, 0.5], [0.5, 0.5, 1]]}
+        elif metric == 'seuclidean':
+            self.kwargs = {'V': [1, 0.1, 0.1]}
+        else:
+            self.kwargs = {}
+
+    def time_dist(self, metric):
+        """Time scipy.spatial.distance.pdist over a range of input data
+        sizes and metrics.
+        """
+        getattr(distance, self.metric)(self.points[0], self.points[1],
+                                       **self.kwargs)
+
+
 class XdistWeighted(Benchmark):
     params = (
         [10, 20, 100],
@@ -417,6 +449,32 @@ class XdistWeighted(Benchmark):
     def time_pdist(self, num_points, metric):
         """Time scipy.spatial.distance.pdist for weighted distance metrics."""
         distance.pdist(self.points, self.metric, w=self.weights, **self.kwargs)
+
+
+class SingleDistWeighted(Benchmark):
+    params = (['euclidean', 'minkowski', 'cityblock', 'sqeuclidean', 'cosine',
+               'correlation', 'hamming', 'jaccard', 'chebyshev', 'canberra',
+               'braycurtis', 'yule', 'dice', 'kulczynski1', 'rogerstanimoto',
+               'russellrao', 'sokalmichener', 'sokalsneath', 'minkowski-P3'])
+    param_names = ['metric']
+
+    def setup(self, metric):
+        rng = np.random.default_rng(123)
+        self.points = rng.random((2, 3))
+        self.metric = metric
+        if metric == 'minkowski-P3':
+            # p=2 is just the euclidean metric, try another p value as well
+            self.kwargs = {'p': 3.0, 'w': np.ones(3)}
+            self.metric = 'minkowski'
+        else:
+            self.kwargs = {'w': np.ones(3)}
+
+    def time_dist_weighted(self, metric):
+        """Time scipy.spatial.distance.pdist over a range of input data
+        sizes and metrics.
+        """
+        getattr(distance, self.metric)(self.points[0], self.points[1],
+                                       **self.kwargs)
 
 
 class ConvexHullBench(Benchmark):
