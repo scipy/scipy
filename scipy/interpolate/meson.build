@@ -90,7 +90,7 @@ fitpack_src = [
 # TODO: Add flags for 64 bit ints
 fitpack_lib = static_library('fitpack_lib',
   fitpack_src,
-  fortran_args: _fflag_Wno_maybe_uninitialized,
+  fortran_args: [_fflag_Wno_maybe_uninitialized, _fflag_ilp64],
   override_options: ['b_lto=false'],
   gnu_symbol_visibility: 'hidden',
 )
@@ -150,9 +150,13 @@ py3.extension_module('_dierckx',
     subdir: 'scipy/interpolate'
 )
 
-# TODO: Add flags for 64 bit ints
-py3.extension_module('_fitpack',
+
+if use_ilp64
+  _c_args_fitpack += ['-DHAVE_BLAS_ILP64']
+endif
+_fitpack = py3.extension_module('_fitpack',
   ['src/_fitpackmodule.c'],
+  c_args: _c_args_fitpack,
   link_with: [fitpack_lib],
   include_directories: 'src/',
   dependencies: np_dep,
@@ -162,18 +166,20 @@ py3.extension_module('_fitpack',
   subdir: 'scipy/interpolate'
 )
 
+
 # TODO: Add flags for 64 bit ints
 py3.extension_module('_dfitpack',
   f2py_gen.process('src/dfitpack.pyf'),
   c_args: [Wno_unused_variable],
   link_args: version_link_args,
-  dependencies: [lapack_dep, fortranobject_dep],
+  dependencies: [lapack_ilp64, fortranobject_dep],
   link_with: [fitpack_lib],
   override_options: ['b_lto=false'],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/interpolate'
 )
+
 
 if use_pythran
   py3.extension_module('_rbfinterp_pythran',
