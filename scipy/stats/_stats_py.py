@@ -10797,7 +10797,6 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     array([ 2.,  3.,  4., nan,  1., nan])
 
     """
-    method = str(method).lower()
     methods = ('average', 'min', 'max', 'dense', 'ordinal')
     if method not in methods:
         raise ValueError(f'unknown method "{method}"')
@@ -10860,15 +10859,14 @@ def _rankdata(x, method, return_ties=False):
     counts = np.diff(indices, append=y.size)
 
     # Compute `'min'`, `'max'`, and `'mid'` ranks of unique elements
-    match method:
-        case 'min':
-            ranks = ordinal_ranks[i]
-        case 'max':
-            ranks = ordinal_ranks[i] + counts - 1
-        case 'average':
-            ranks = ordinal_ranks[i] + (counts - 1)/2
-        case 'dense':
-            ranks = np.cumsum(i, axis=-1)[i]
+    if method == 'min':
+        ranks = ordinal_ranks[i]
+    elif method == 'max':
+        ranks = ordinal_ranks[i] + counts - 1
+    elif method == 'average':
+        ranks = ordinal_ranks[i] + (counts - 1)/2
+    elif method == 'dense':
+        ranks = np.cumsum(i, axis=-1)[i]
 
     ranks = np.repeat(ranks, counts).reshape(shape)
     ranks = _order_ranks(ranks, j)
