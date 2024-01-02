@@ -5,6 +5,7 @@ Laplacian of a compressed-sparse graph
 import numpy as np
 from scipy.sparse import issparse
 from scipy.sparse.linalg import LinearOperator
+from scipy.sparse._sputils import convert_pydata_sparse_to_scipy
 
 
 ###############################################################################
@@ -329,6 +330,7 @@ def laplacian(
     in the middle by deleting a single edge.
     Both determined partitions are optimal.
     """
+    csgraph = convert_pydata_sparse_to_scipy(csgraph)
     if csgraph.ndim != 2 or csgraph.shape[0] != csgraph.shape[1]:
         raise ValueError('csgraph must be a square matrix or array')
 

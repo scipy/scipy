@@ -4,7 +4,7 @@ import numpy as np
 from numpy import asarray
 from scipy.sparse import (issparse,
                           SparseEfficiencyWarning, csc_matrix, csr_matrix)
-from scipy.sparse._sputils import is_pydata_spmatrix
+from scipy.sparse._sputils import is_pydata_spmatrix, convert_pydata_sparse_to_scipy
 from scipy.linalg import LinAlgError
 import copy
 
@@ -223,9 +223,8 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     >>> np.allclose(A.dot(x).toarray(), B.toarray())
     True
     """
-
-    if is_pydata_spmatrix(A):
-        A = A.to_scipy_sparse().tocsc()
+    A = convert_pydata_sparse_to_scipy(A)
+    b = convert_pydata_sparse_to_scipy(b)
 
     if not (issparse(A) and A.format in ("csc", "csr")):
         A = csc_matrix(A)
@@ -233,7 +232,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
              SparseEfficiencyWarning, stacklevel=2)
 
     # b is a vector only if b have shape (n,) or (n, 1)
-    b_is_sparse = issparse(b) or is_pydata_spmatrix(b)
+    b_is_sparse = issparse(b)
     if not b_is_sparse:
         b = asarray(b)
     b_is_vector = ((b.ndim == 1) or (b.ndim == 2 and b.shape[1] == 1))

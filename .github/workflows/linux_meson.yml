@@ -219,7 +219,7 @@ jobs:
 
   #################################################################################
   gcc8:
-    # Purpose is to examine builds with oldest-supported gcc.
+    # Purpose is to examine builds with oldest-supported gcc and test with pydata/sparse.
     name: Build with gcc-8
     needs: get_commit_message
     if: >
@@ -250,6 +250,7 @@ jobs:
           pip install build meson-python ninja pythran pybind11 cython
           # test deps
           pip install gmpy2 threadpoolctl mpmath pooch pythran pybind11 pytest pytest-xdist==2.5.0 pytest-timeout hypothesis
+          pip install sparse
 
       - name: Build wheel and install
         run: |
@@ -271,7 +272,7 @@ jobs:
   #################################################################################
   prerelease_deps_coverage_64bit_blas:
     # TODO: re-enable ILP64 build.
-    name: Prerelease deps, coverage, and 64-bit BLAS
+    name: Prerelease deps, coverage and 64-bit BLAS
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
