@@ -41,7 +41,7 @@ dependencies:
   - matplotlib
   - pydata-sphinx-theme==0.9.0
   - sphinx-design
-  - jupytext
+  - jupytexp
   - myst-nb
   # Some optional test dependencies
   - mpmath
