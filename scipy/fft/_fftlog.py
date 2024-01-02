@@ -56,6 +56,21 @@ def fht(a, dln, mu, offset=0.0, bias=0.0):
     where :math:`J_\mu` is the Bessel function of order :math:`\mu`.  The index
     :math:`\mu` may be any real number, positive or negative.
 
+    The definition as written is not a typo; the DHT and IDHT are commonly defined using :math:`k dr`
+ and :math:`r dk`, respectively (see for example [2]_). The DHT makes clever use of the convolution theorem for a function of argument  :math:`r`
+, and a kernel of argument  :math:`kr = exp(ln k + ln r)`.
+. Defining the integrals using :math:`k dr`
+ means that, after the logarithmic change of variables, :math:`k dr = kr dln r`
+ and we obtain a factor of :math:`kr`
+ that is absorbed into the kernel. Conversely, using :math:`r dr = r^2dln r`
+ would yield a factor of :math:`r^2`
+ that is absorbed into the function, not the kernel.
+
+Using the definition as it is, one only needs to multiply inputs by :math:`r`
+ and divide outputs by :math:`k`
+ to recover the textbook definition of the Hankel transform.
+ The DHT approximates the continuous Hankel transform when the transformed function is periodic over its given logarithmic interval. If you don't modify the function, you can immediately inspect if that is the case, by looking at the function you are providing. 
+
     The input array `a` is a periodic sequence of length :math:`n`, uniformly
     logarithmically spaced with spacing `dln`,
 
