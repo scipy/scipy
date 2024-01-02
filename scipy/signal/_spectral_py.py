@@ -615,7 +615,7 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
                 nfft=None, detrend='constant', return_onesided=True,
                 scaling='density', axis=-1, mode='psd'):
-    """Compute a spectrogram with consecutive Fourier transforms.
+    """Compute a spectrogram with consecutive Fourier transforms (legacy function).
 
     Spectrograms can be used as a way of visualizing the change of a
     nonstationary signal's frequency content over time.
@@ -1047,7 +1047,7 @@ def check_NOLA(window, nperseg, noverlap, tol=1e-10):
 def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
          detrend=False, return_onesided=True, boundary='zeros', padded=True,
          axis=-1, scaling='spectrum'):
-    r"""Compute the Short Time Fourier Transform (STFT).
+    r"""Compute the Short Time Fourier Transform (legacy function).
 
     STFTs can be used as a way of quantifying the change of a
     nonstationary signal's frequency and phase content over time.
@@ -1238,7 +1238,7 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
 def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
           input_onesided=True, boundary=True, time_axis=-1, freq_axis=-2,
           scaling='spectrum'):
-    r"""Perform the inverse Short Time Fourier transform (iSTFT).
+    r"""Perform the inverse Short Time Fourier transform (legacy function).
 
     .. legacy:: function
 
