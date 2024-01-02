@@ -332,10 +332,11 @@ Authors
 * Sebastian Berg (1)
 * Ben Boeckel (1) +
 * David Boetius (1) +
-* Jake Bowhay (102)
+* Matt Borland (1)
+* Jake Bowhay (103)
 * Larry Bradley (1) +
 * Dietrich Brunn (5)
-* Evgeni Burovski (101)
+* Evgeni Burovski (102)
 * Matthias Bussonnier (18)
 * CJ Carey (6)
 * Colin Carroll (1) +
@@ -397,7 +398,7 @@ Authors
 * Thomas Loke (4) +
 * Malte Londschien (1) +
 * Christian Lorentzen (6)
-* Adam Lugowski (9) +
+* Adam Lugowski (10) +
 * lutefiskhotdish (1)
 * mainak33 (1) +
 * Ben Mares (11) +
@@ -429,7 +430,7 @@ Authors
 * Bharat Raghunathan (1)
 * Chris Rapson (1) +
 * Matteo Raso (4)
-* Tyler Reddy (165)
+* Tyler Reddy (180)
 * Martin Reinecke (1)
 * Tilo Reneau-Cardoso (1) +
 * resting-dove (2) +
@@ -476,7 +477,7 @@ Authors
 * Jinzhe Zeng (1) +
 * JIMMY ZHAO (1) +
 
-A total of 161 people contributed to this release.
+A total of 162 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
@@ -502,7 +503,6 @@ Issues closed for 1.12.0
 * `#13437 <https://github.com/scipy/scipy/issues/13437>`__: DOC: Add example as to how to use solve_ivp to solve complex...
 * `#14037 <https://github.com/scipy/scipy/issues/14037>`__: ENH: other quality metrics for random sampling
 * `#14480 <https://github.com/scipy/scipy/issues/14480>`__: LSODA implementation of dense output yields incorrect result
-* `#15533 <https://github.com/scipy/scipy/issues/15533>`__: BUG: test failure with MKL in presence of AVX512-capable processor
 * `#15676 <https://github.com/scipy/scipy/issues/15676>`__: ENH: Implement \`multivariate_normal.fit\`
 * `#15738 <https://github.com/scipy/scipy/issues/15738>`__: DEP: change default of atol in \`scipy.sparse.linalg.\*\`
 * `#16729 <https://github.com/scipy/scipy/issues/16729>`__: _fitpack / dfitpack duplication
@@ -1063,9 +1063,14 @@ Pull requests for 1.12.0
 * `#19658 <https://github.com/scipy/scipy/pull/19658>`__: MAINT: git blame ignores for lint clean-ups
 * `#19660 <https://github.com/scipy/scipy/pull/19660>`__: STY: special: use indent width of 4 in clang-format
 * `#19661 <https://github.com/scipy/scipy/pull/19661>`__: CI: fix pre-release job by correct version pin for scipy-openblas32
+* `#19670 <https://github.com/scipy/scipy/pull/19670>`__: MAINT: version bounds for 1.12.0rc1
 * `#19677 <https://github.com/scipy/scipy/pull/19677>`__: DOC: array types: mention partial support in \`special\`
 * `#19686 <https://github.com/scipy/scipy/pull/19686>`__: TST: fix incorrect signal.sosfilt tests
 * `#19690 <https://github.com/scipy/scipy/pull/19690>`__: BLD: avoid fast-math for oneAPI compilers, fix up handling of...
 * `#19691 <https://github.com/scipy/scipy/pull/19691>`__: BUG: fix negative overflow in stats.boxcox_normmax
 * `#19693 <https://github.com/scipy/scipy/pull/19693>`__: BUG: Prevent mutation of \`w\` parameter in \`spatial.distance.\*\`
 * `#19702 <https://github.com/scipy/scipy/pull/19702>`__: DEP: Adopt \`\*tol\` deprecations also for \`gcrotmk/lgmres/minres/tfqmr\`
+* `#19735 <https://github.com/scipy/scipy/pull/19735>`__: DOC: update release notes with all deprecations for 1.12 release
+* `#19748 <https://github.com/scipy/scipy/pull/19748>`__: TST: skip RGI(..., method="pchip" for complex values)
+* `#19751 <https://github.com/scipy/scipy/pull/19751>`__: BUG: Make FMM classes \`py::module_local\` (fix for 1.12RC)
+* `#19761 <https://github.com/scipy/scipy/pull/19761>`__: MAINT: Avoid use of aligned_alloc in pocketfft on windows
