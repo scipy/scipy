@@ -278,7 +278,7 @@ Deprecated features
   and `scipy.integrate.simpson` respectively and will be removed in SciPy 1.14.
 - The ``tol`` argument of ``scipy.sparse.linalg.{bcg,bicstab,cg,cgs,gcrotmk,gmres,lgmres,minres,qmr,tfqmr}``
   is now deprecated in favour of ``rtol`` and will be removed in SciPy 1.14.
-  in favour of ``rtol``. Further, the default value of ``atol`` for these functions is due
+  Furthermore, the default value of ``atol`` for these functions is due
   to change to ``0.0`` in SciPy 1.14.
   
 
