@@ -10797,66 +10797,85 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     array([ 2.,  3.,  4., nan,  1., nan])
 
     """
-    if method not in ('average', 'min', 'max', 'dense', 'ordinal'):
+    methods = ('average', 'min', 'max', 'dense', 'ordinal')
+    if method not in methods:
         raise ValueError(f'unknown method "{method}"')
 
-    a = np.asarray(a)
+    x = np.asarray(a)
 
-    if axis is not None:
-        if a.size == 0:
-            # The return values of `normalize_axis_index` are ignored.  The
-            # call validates `axis`, even though we won't use it.
-            normalize_axis_index(axis, a.ndim)
-            if method == 'average':
-                dt = np.dtype(np.float64)
-            else:
-                dt = np.dtype(int)
-            return np.empty(a.shape, dtype=dt)
-        return np.apply_along_axis(rankdata, axis, a, method,
-                                   nan_policy=nan_policy)
+    if x.size == 0:
+        dtype = float if method == 'average' else int
+        return np.empty(x.shape, dtype=dtype)
 
-    arr = np.ravel(a)
-    contains_nan, nan_policy = _contains_nan(arr, nan_policy)
-    nan_indexes = None
+    if axis is None:
+        x = x.ravel()
+        axis = -1
+
+    contains_nan, nan_policy = _contains_nan(x, nan_policy)
+
+    x = np.swapaxes(x, axis, -1)
+    ranks = _rankdata(x, method)
+
     if contains_nan:
-        if nan_policy == 'omit':
-            nan_indexes = np.isnan(arr)
-        if nan_policy == 'propagate':
-            return np.full_like(arr, np.nan)
+        i_nan = (np.isnan(x) if nan_policy == 'omit'
+                 else np.isnan(x).any(axis=-1))
+        ranks = ranks.astype(float, copy=False)
+        ranks[i_nan] = np.nan
 
-    algo = 'mergesort' if method == 'ordinal' else 'quicksort'
-    sorter = np.argsort(arr, kind=algo)
+    ranks = np.swapaxes(ranks, axis, -1)
+    return ranks
 
-    inv = np.empty(sorter.size, dtype=np.intp)
-    inv[sorter] = np.arange(sorter.size, dtype=np.intp)
 
+def _order_ranks(ranks, j):
+    # Reorder ascending order `ranks` according to `j`
+    ordered_ranks = np.empty(j.shape, dtype=ranks.dtype)
+    np.put_along_axis(ordered_ranks, j, ranks, axis=-1)
+    return ordered_ranks
+
+
+def _rankdata(x, method, return_ties=False):
+    # Rank data `x` by desired `method`; `return_ties` if desired
+
+    shape = x.shape
+
+    # Get sort order
+    kind = 'mergesort' if method == 'ordinal' else 'quicksort'
+    j = np.argsort(x, axis=-1, kind=kind)
+    ordinal_ranks = np.broadcast_to(np.arange(1, shape[-1]+1, dtype=int), shape)
+
+    # Ordinal ranks is very easy because ties don't matter. We're done.
     if method == 'ordinal':
-        result = inv + 1
-    else:
-        arr = arr[sorter]
-        obs = np.r_[True, arr[1:] != arr[:-1]]
-        dense = obs.cumsum()[inv]
+        return _order_ranks(ordinal_ranks, j)  # never return ties
 
-        if method == 'dense':
-            result = dense
-        else:
-            # cumulative counts of each unique value
-            count = np.r_[np.nonzero(obs)[0], len(obs)]
+    # Sort array
+    y = np.take_along_axis(x, j, axis=-1)
+    # Logical indices of unique elements
+    i = np.concatenate([np.ones(shape[:-1] + (1,), dtype=np.bool_),
+                       y[..., :-1] != y[..., 1:]], axis=-1)
 
-            if method == 'max':
-                result = count[dense]
+    # Integer indices of unique elements
+    indices = np.arange(y.size)[i.ravel()]
+    # Counts of unique elements
+    counts = np.diff(indices, append=y.size)
 
-            if method == 'min':
-                result = count[dense - 1] + 1
+    # Compute `'min'`, `'max'`, and `'mid'` ranks of unique elements
+    if method == 'min':
+        ranks = ordinal_ranks[i]
+    elif method == 'max':
+        ranks = ordinal_ranks[i] + counts - 1
+    elif method == 'average':
+        ranks = ordinal_ranks[i] + (counts - 1)/2
+    elif method == 'dense':
+        ranks = np.cumsum(i, axis=-1)[i]
 
-            if method == 'average':
-                result = .5 * (count[dense] + count[dense - 1] + 1)
+    ranks = np.repeat(ranks, counts).reshape(shape)
+    ranks = _order_ranks(ranks, j)
 
-    if nan_indexes is not None:
-        result = result.astype('float64')
-        result[nan_indexes] = np.nan
-
-    return result
+    if return_ties:
+        t = np.zeros(shape, dtype=float)
+        t[i] = counts
+        return ranks, t
+    return ranks
 
 
 def expectile(a, alpha=0.5, *, weights=None):
