@@ -11,46 +11,42 @@ from scipy._lib._util import _lazywhere
 
 class WilcoxonDistribution:
 
-    def __init__(self):
-        self._dists = {}
-
-    def _get_dist(self, n):
-        if n not in self._dists:
-            self._dists[n] = _get_wilcoxon_distr(n)
-        return self._dists[n]
+    def __init__(self, n):
+        n = np.asarray(n).astype(int, copy=False)
+        self.n = n
+        self._dists = {ni: _get_wilcoxon_distr(ni) for ni in np.unique(n)}
 
     def _cdf1(self, k, n):
-        pmfs = self._get_dist(n)
+        pmfs = self._dists[n]
         return pmfs[:k + 1].sum()
 
     def _cdf(self, k, n):
         return np.vectorize(self._cdf1, otypes=[float])(k, n)
 
     def _sf1(self, k, n):
-        pmfs = self._get_dist(n)
+        pmfs = self._dists[n]
         return pmfs[k:].sum()
 
     def _sf(self, k, n):
         return np.vectorize(self._sf1, otypes=[float])(k, n)
 
-    def mean(self, n):
-        return n * (n + 1) // 4
+    def mean(self):
+        return self.n * (self.n + 1) // 4
 
-    def _prep(self, k, n):
+    def _prep(self, k):
         k = np.asarray(k).astype(int, copy=False)
-        n = np.asarray(n).astype(int, copy=False)
-        mn = self.mean(n)
+        mn = self.mean()
         out = np.empty(k.shape, dtype=np.float64)
-        return k, n, mn, out
+        return k, mn, out
 
-    def cdf(self, k, n):
-        k, n, mn, out = self._prep(k, n)
-        return _lazywhere(k <= mn, (k, n), self._cdf,
+    def cdf(self, k):
+        k, mn, out = self._prep(k)
+        return _lazywhere(k <= mn, (k, self.n), self._cdf,
                           f2=lambda k, n: 1 - self._sf(k+1, n))[()]
 
-    def sf(self, k, n):
-        k, n, mn, out = self._prep(k, n)
-        return _lazywhere(k <= mn, (k, n), self._sf,
+    def sf(self, k):
+        k, mn, out = self._prep(k)
+        return _lazywhere(k <= mn, (k, self.n), self._sf,
                           f2=lambda k, n: 1 - self._cdf(k-1, n))[()]
 
 
@@ -207,14 +203,13 @@ def _wilcoxon_nd(x, y=None, zero_method='wilcox', correction=True, alternative='
             z -= sign * 0.5 / se
         z, p = _normtest_finish(z, alternative)
     elif method == 'exact':
-        dist = WilcoxonDistribution()
+        dist = WilcoxonDistribution(count)
         if alternative == 'less':
-            p = dist.cdf(r_plus, count)
+            p = dist.cdf(r_plus)
         elif alternative == 'greater':
-            p = dist.sf(r_plus, count)
+            p = dist.sf(r_plus)
         else:
-            p = 2 * np.minimum(dist.sf(r_plus, count),
-                               dist.cdf(r_plus, count))
+            p = 2 * np.minimum(dist.sf(r_plus), dist.cdf(r_plus))
             p = np.clip(p, 0, 1)
     else:
         p = stats.permutation_test(
