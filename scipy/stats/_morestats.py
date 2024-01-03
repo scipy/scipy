@@ -1721,10 +1721,12 @@ def yeojohnson_normmax(x, brack=None):
         # variance in the transformed space
         llf[np.isinf(llf)] = -np.inf
         return -llf
-    
+
+    def _safe_atanh(lmbda):
+        return np.arctanh(lmbda) if np.abs(lmbda) != 1 else lmbda * np.inf
+
     def _arctanh_neg_llf(lmbda, data):
-        safe_atanh = lambda l: np.arctanh(l) if np.abs(l) != 1 else l * np.inf
-        return _neg_llf(safe_atanh(lmbda), data)
+        return _neg_llf(_safe_atanh(lmbda), data)
 
     def _pos_bound(x, side):
         # Determine the extremal value c as half of the floating point exponent
@@ -1739,15 +1741,14 @@ def yeojohnson_normmax(x, brack=None):
         x, c = np.float64(x), np.float64(c)
         # Solve ((1 + x) ** λ - 1) / λ = c for λ given a positive x and c.
         k = 0 if side == 'lb' and x > c else -1
-        Wreal = lambda x: special.lambertw(x, k)
         log1px = np.log1p(x)
         with np.errstate(under='ignore'):
             Warg = -log1px / c + np.log(log1px) - np.log(c)
-            lmbda1 = -Wreal(-np.exp(Warg)).real / log1px - 1 / c
+            lmbda1 = -special.lambertw(-np.exp(Warg), k).real / log1px - 1 / c
         if side == 'ub':
             # Avoid overflow in the numerator by solving (1 + x) ** λ - 1 < c for λ
             # given a positive x and c.
-            c = np.exp((np.log(np.finfo(dtype).max) + log_eps))
+            c = np.exp(np.log(np.finfo(dtype).max) + log_eps)
             lmbda2 = np.log1p(c) / log1px
             # Take the most conservative of the two bounds.
             lmbda = min(lmbda1, lmbda2)
@@ -1787,11 +1788,23 @@ def yeojohnson_normmax(x, brack=None):
             lmbda_lb = max(lmbda_lb, _pos_bound(min_pos_x / safety_factor, 'lb'))
             lmbda_ub = min(lmbda_ub, _pos_bound(min_pos_x / safety_factor, 'ub'))
         if max_neg_x < 0:
-            lmbda_lb = max(lmbda_lb, 2 - _pos_bound(safety_factor * np.abs(max_neg_x), 'ub'))
-            lmbda_ub = min(lmbda_ub, 2 - _pos_bound(safety_factor * np.abs(max_neg_x), 'lb'))
+            lmbda_lb = max(
+                lmbda_lb,
+                2 - _pos_bound(safety_factor * np.abs(max_neg_x), 'ub')
+            )
+            lmbda_ub = min(
+                lmbda_ub,
+                2 - _pos_bound(safety_factor * np.abs(max_neg_x), 'lb')
+            )
         if min_neg_x < 0:
-            lmbda_lb = max(lmbda_lb, 2 - _pos_bound(np.abs(min_neg_x) / safety_factor, 'ub'))
-            lmbda_ub = min(lmbda_ub, 2 - _pos_bound(np.abs(min_neg_x) / safety_factor, 'lb'))
+            lmbda_lb = max(
+                lmbda_lb,
+                2 - _pos_bound(np.abs(min_neg_x) / safety_factor, 'ub')
+            )
+            lmbda_ub = min(
+                lmbda_ub,
+                2 - _pos_bound(np.abs(min_neg_x) / safety_factor, 'lb')
+            )
         # Optimize for tanh(λ) as Brent's method is prone to overflow when
         # optimizing λ for large lower and upper bounds. Equivalent to:
         #   lmbda = optimize.fminbound(
