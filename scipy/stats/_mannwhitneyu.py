@@ -2,6 +2,7 @@ import numpy as np
 from collections import namedtuple
 from scipy import special
 from scipy import stats
+from scipy.stats._stats_py import _rankdata
 from ._axis_nan_policy import _axis_nan_policy_factory
 
 
@@ -157,43 +158,15 @@ def _mwu_f_iterative(m, n, k, fmnks):
     return fmnks
 
 
-def rankdata(x, axis=-1):
-    x = np.swapaxes(x, axis, -1)
-    shape = x.shape
-    # Sort array, remembering sort order
-    j = np.argsort(x, axis=-1)
-    y = np.take_along_axis(x, j, axis=-1)
-    # Logical indices of unique elements
-    i = np.concatenate([np.ones(y.shape[:-1] + (1,), dtype=np.bool_),
-                        y[..., :-1] != y[..., 1:]], axis=-1)
-    # Integer indices of unique elements
-    indices = np.arange(y.size)[i.ravel()]
-    # Counts of unique elements
-    counts = np.diff(indices, append=y.size)
-    # Compute `'min'`, `'max'`, and `'mid'` ranks of unique elements
-    min_ranks = np.broadcast_to(np.arange(1, y.shape[-1]+1), y.shape)[i]
-    max_ranks = min_ranks + counts - 1
-    min_ranks = np.repeat(min_ranks, counts).reshape(shape)
-    max_ranks = np.repeat(max_ranks, counts).reshape(shape)
-    mid_ranks = (min_ranks + max_ranks) / 2
-    # Compute tie correction
-    t = np.zeros(mid_ranks.shape, dtype=float)
-    t[i] = counts
-    tie_correct = (t**3 - t).sum(axis=-1)
-    # Return ranks to original order and shape
-    ranks = np.empty_like(mid_ranks)
-    np.put_along_axis(ranks, j, mid_ranks, axis=-1)
-    ranks = np.swapaxes(ranks, axis, -1)
-    return ranks, tie_correct
-
-
-def _get_mwu_z(U, n1, n2, tie_term, axis=0, continuity=True):
+def _get_mwu_z(U, n1, n2, t, axis=0, continuity=True):
     '''Standardized MWU statistic'''
     # Follows mannwhitneyu [2]
     mu = n1 * n2 / 2
     n = n1 + n2
 
-    # Tie correction according to [2]
+    # Tie correction according to [2], "Normal approximation and tie correction"
+    # "A more computationally-efficient form..."
+    tie_term = (t**3 - t).sum(axis=-1)
     s = np.sqrt(n1*n2/12 * ((n + 1) - tie_term/(n*(n-1))))
 
     numerator = U - mu
@@ -484,13 +457,13 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     n1, n2 = x.shape[-1], y.shape[-1]
 
     # Follows [2]
-    ranks, tie_term = rankdata(xy, axis=-1)  # method 2, step 1
-    R1 = ranks[..., :n1].sum(axis=-1)        # method 2, step 2
-    U1 = R1 - n1*(n1+1)/2                    # method 2, step 3
-    U2 = n1 * n2 - U1                        # as U1 + U2 = n1 * n2
+    ranks, t = _rankdata(xy, 'average', return_ties=True)  # method 2, step 1
+    R1 = ranks[..., :n1].sum(axis=-1)                      # method 2, step 2
+    U1 = R1 - n1*(n1+1)/2                                  # method 2, step 3
+    U2 = n1 * n2 - U1                                      # as U1 + U2 = n1 * n2
 
     if method == "auto":
-        method = _mwu_choose_method(n1, n2, np.any(tie_term), method)
+        method = _mwu_choose_method(n1, n2, np.any(t > 1), method)
 
     if alternative == "greater":
         U, f = U1, 1  # U is the statistic to use for p-value, f is a factor
@@ -502,7 +475,7 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     if method == "exact":
         p = _mwu_state.sf(U.astype(int), n1, n2)
     elif method == "asymptotic":
-        z = _get_mwu_z(U, n1, n2, tie_term, continuity=use_continuity)
+        z = _get_mwu_z(U, n1, n2, t, continuity=use_continuity)
         p = stats.norm.sf(z)
     p *= f
 
