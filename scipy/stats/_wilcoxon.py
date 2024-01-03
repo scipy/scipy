@@ -2,7 +2,7 @@ import warnings
 import numpy as np
 
 from scipy import stats
-from ._stats_py import _normtest_finish
+from ._stats_py import _normtest_finish, _rankdata
 from . import _morestats
 from ._axis_nan_policy import _broadcast_arrays
 from ._hypotests import _get_wilcoxon_distr
@@ -52,41 +52,6 @@ class WilcoxonDistribution:
         k, n, mn, out = self._prep(k, n)
         return _lazywhere(k <= mn, (k, n), self._sf,
                           f2=lambda k, n: 1 - self._cdf(k-1, n))[()]
-
-
-def rankdata(x, axis=-1):
-    # - NaNs do not affect ranks of other values
-    # - NaNs are not counted as ties in `t`
-
-    x = np.swapaxes(x, axis, -1)
-    shape = x.shape
-
-    # Sort array, remembering sort order
-    j = np.argsort(x, axis=-1)
-    y = np.take_along_axis(x, j, axis=-1)
-
-    # Logical indices of unique elements
-    i = np.concatenate([np.ones(y.shape[:-1] + (1,), dtype=np.bool_),
-                        y[..., :-1] != y[..., 1:]], axis=-1)
-    # Integer indices of unique elements
-    indices = np.arange(y.size)[i.ravel()]
-    # Counts of unique elements
-    counts = np.diff(indices, append=y.size)
-    # Compute `'min'`, `'max'`, and `'mid'` ranks of unique elements
-    min_ranks = np.broadcast_to(np.arange(1, y.shape[-1]+1), y.shape)[i]
-    max_ranks = min_ranks + counts - 1
-    min_ranks = np.repeat(min_ranks, counts).reshape(shape)
-    max_ranks = np.repeat(max_ranks, counts).reshape(shape)
-    mid_ranks = (min_ranks + max_ranks) / 2
-    # Compute tie correction
-    t = np.zeros(mid_ranks.shape, dtype=float)
-    t[i] = counts
-    # Return ranks to original order and shape
-    ranks = np.empty_like(mid_ranks)
-    np.put_along_axis(ranks, j, mid_ranks, axis=-1)
-    ranks = np.swapaxes(ranks, axis, -1)
-
-    return ranks, t
 
 
 def _wilcoxon_iv(x, y, zero_method, correction, alternative, method, axis):
@@ -142,14 +107,14 @@ def _wilcoxon_iv(x, y, zero_method, correction, alternative, method, axis):
         if method not in methods:
             raise ValueError(message)
 
-    message = ("Zeros are present, but `method='exact'` does not compute"
+    message = ("Zeros are present, but `method='exact'` does not compute "
                "accurate p-values in the presence of zeros.")
     n_zero = np.sum(d == 0, axis=-1)
     has_zeros = np.any(n_zero > 0)
     if has_zeros and method == "exact":
         warnings.warn(message, stacklevel=2)
 
-    message = ("The sample size is small (fewer than 10 nonzero elements);"
+    message = ("The sample size is small (fewer than 10 nonzero elements); "
                "so `method='approx'` may not produce accurate p-values.")
     count = d.shape[-1] - n_zero
     too_small = np.any(count < 10)
@@ -181,7 +146,7 @@ def _wilcoxon_statistic(d, zero_method='wilcox'):
     n_nan = np.sum(i_nan, axis=-1)
     count = d.shape[-1] - n_nan
 
-    r, t = rankdata(abs(d))
+    r, t = _rankdata(abs(d), 'average', return_ties=True)
     r_plus = np.sum((d > 0) * r, axis=-1)
     r_minus = np.sum((d < 0) * r, axis=-1)
 
