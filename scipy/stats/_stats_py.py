@@ -3827,22 +3827,22 @@ def trim1(a, proportiontocut, tail='right', axis=0):
 
 
 def trim_mean(a, proportiontocut, axis=0):
-    """Return mean of array after trimming distribution from both tails.
+    """Return mean of array after trimming a specified fraction of extreme values
 
-    If `proportiontocut` = 0.1, slices off 'leftmost' and 'rightmost' 10% of
-    scores. The input is sorted before slicing. Slices off less if proportion
-    results in a non-integer slice index (i.e., conservatively slices off
-    `proportiontocut` ).
+    Removes the specified proportion of elements from *each* end of the
+    sorted array, then computes the mean of the remaining elements.
 
     Parameters
     ----------
     a : array_like
         Input array.
     proportiontocut : float
-        Fraction to cut off of both tails of the distribution.
-    axis : int or None, optional
-        Axis along which the trimmed means are computed. Default is 0.
-        If None, compute over the whole array `a`.
+        Fraction of the most positive and most negative elements to remove.
+        When the specified proportion does not result in an integer number of
+        elements, the number of elements to trim is rounded down.
+    axis : int or None, default: 0
+        Axis along which the trimmed means are computed.
+        If None, compute over the raveled array.
 
     Returns
     -------
@@ -3851,27 +3851,41 @@ def trim_mean(a, proportiontocut, axis=0):
 
     See Also
     --------
-    trimboth
-    tmean : Compute the trimmed mean ignoring values outside given `limits`.
+    trimboth : Remove a proportion of elements from each end of an array.
+    tmean : Compute the mean after trimming values outside specified limits.
+
+    Notes
+    -----
+    For 1-D array `a`, `trim_mean` is approximately equivalent to the following
+    calculation::
+
+        import numpy as np
+        a = np.sort(a)
+        m = int(proportiontocut * len(a))
+        np.mean(a[m: len(a) - m])
 
     Examples
     --------
     >>> import numpy as np
     >>> from scipy import stats
-    >>> x = np.arange(20)
-    >>> stats.trim_mean(x, 0.1)
-    9.5
-    >>> x2 = x.reshape(5, 4)
-    >>> x2
-    array([[ 0,  1,  2,  3],
-           [ 4,  5,  6,  7],
-           [ 8,  9, 10, 11],
-           [12, 13, 14, 15],
-           [16, 17, 18, 19]])
+    >>> x = [1, 2, 3, 5]
+    >>> stats.trim_mean(x, 0.25)
+    2.5
+
+    When the specified proportion does not result in an integer number of
+    elements, the number of elements to trim is rounded down.
+
+    >>> stats.trim_mean(x, 0.24999) == np.mean(x)
+    True
+
+    Use `axis` to specify the axis along which the calculation is performed.
+
+    >>> x2 = [[1, 2, 3, 5],
+    ...       [10, 20, 30, 50]]
     >>> stats.trim_mean(x2, 0.25)
-    array([  8.,   9.,  10.,  11.])
+    array([ 5.5, 11. , 16.5, 27.5])
     >>> stats.trim_mean(x2, 0.25, axis=1)
-    array([  1.5,   5.5,   9.5,  13.5,  17.5])
+    array([ 2.5, 25. ])
 
     """
     a = np.asarray(a)
