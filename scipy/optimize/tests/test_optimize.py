@@ -3130,22 +3130,24 @@ def test_gh12594():
     assert_allclose(res.x, ref.x)
 
 
+@pytest.mark.parametrize('method', ['Newton-CG', 'trust-constr'])
 @pytest.mark.parametrize('sparse_type', [coo_matrix, csc_matrix, csr_matrix,
                                          coo_array, csr_array, csc_array])
-def test_gh8792(sparse_type):
+def test_sparse_hessian(method, sparse_type):
     # gh-8792 reported an error for minimization with `newton_cg` when `hess`
     # returns a sparse matrix. Check that results are the same whether `hess`
-    # returns a dense or sparse matrix.
+    # returns a dense or sparse matrix for optimization methods that accept
+    # sparse Hessian matrices.
 
     def sparse_rosen_hess(x):
         return sparse_type(rosen_hess(x))
 
     x0 = [2., 2.]
 
-    res_sparse = optimize.minimize(rosen, x0, method="Newton-CG",
-                          jac=rosen_der, hess=sparse_rosen_hess)
-    res_dense = optimize.minimize(rosen, x0, method="Newton-CG",
-                          jac=rosen_der, hess=rosen_hess)
+    res_sparse = optimize.minimize(rosen, x0, method=method,
+                                   jac=rosen_der, hess=sparse_rosen_hess)
+    res_dense = optimize.minimize(rosen, x0, method=method,
+                                  jac=rosen_der, hess=rosen_hess)
 
     assert_allclose(res_dense.fun, res_sparse.fun)
     assert_allclose(res_dense.x, res_sparse.x)
