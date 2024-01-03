@@ -214,7 +214,7 @@ def _mwu_input_validation(x, y, use_continuity, alternative, axis, method):
     return x, y, use_continuity, alternative, axis_int, method
 
 
-def _mwu_choose_method(n1, n2, ties, method):
+def _mwu_choose_method(n1, n2, ties):
     """Choose method 'asymptotic' or 'exact' depending on input size, ties"""
 
     # if both inputs are large, asymptotic is OK
@@ -462,15 +462,15 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     U1 = R1 - n1*(n1+1)/2                                  # method 2, step 3
     U2 = n1 * n2 - U1                                      # as U1 + U2 = n1 * n2
 
-    if method == "auto":
-        method = _mwu_choose_method(n1, n2, np.any(t > 1), method)
-
     if alternative == "greater":
         U, f = U1, 1  # U is the statistic to use for p-value, f is a factor
     elif alternative == "less":
         U, f = U2, 1  # Due to symmetry, use SF of U2 rather than CDF of U1
     else:
         U, f = np.maximum(U1, U2), 2  # multiply SF by two for two-sided test
+
+    if method == "auto":
+        method = _mwu_choose_method(n1, n2, np.any(t > 1))
 
     if method == "exact":
         p = _mwu_state.sf(U.astype(int), n1, n2)

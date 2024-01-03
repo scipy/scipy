@@ -10835,7 +10835,6 @@ def _order_ranks(ranks, j):
 
 def _rankdata(x, method, return_ties=False):
     # Rank data `x` by desired `method`; `return_ties` if desired
-
     shape = x.shape
 
     # Get sort order
@@ -10872,6 +10871,22 @@ def _rankdata(x, method, return_ties=False):
     ranks = _order_ranks(ranks, j)
 
     if return_ties:
+        # Tie information is returned in a format that is useful to functions that
+        # rely on this (private) function. Example:
+        # >>> x = np.asarray([3, 2, 1, 2, 2, 2, 1])
+        # >>> _, t = _rankdata(x, 'average', return_ties=True)
+        # >>> t  # array([2., 0., 4., 0., 0., 0., 1.])  # two 1s, four 2s, and one 3
+        # Unlike ranks, tie counts are *not* reordered to correspond with the order of
+        # the input; e.g. the number of appearances of the lowest rank element comes
+        # first. This is a useful format because:
+        # - The shape of the result is the shape of the input. Different slices can
+        #   have different numbers of tied elements but not result in a ragged array.
+        # - Functions that use `t` usually don't need to which each element of the
+        #   original array is associated with each tie count; they perform a reduction
+        #   over the tie counts onnly. The tie counts are naturally computed in a
+        #   sorted order, so this does not unnecesarily reorder them.
+        # - One exception is `wilcoxon`, which needs the number of zeros. Zeros always
+        #   have the lowest rank, so it is easy to find them at the zeroth index.
         t = np.zeros(shape, dtype=float)
         t[i] = counts
         return ranks, t
