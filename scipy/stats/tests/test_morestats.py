@@ -2291,7 +2291,7 @@ class TestYeojohnson:
         # Attempt to trigger overflow with a large optimal lambda.
         np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0]),
         # Attempt to trigger overflow with large data.
-        np.array([2003.0e200, 1950.0e200, 1997.0e200, 2000.0e200, 2009.0e200])
+        np.array([2003.0e300, 1950.0e300, 1997.0e300, 2000.0e300, 2009.0e300])
     ])
     def test_overflow(self, x):
         # non-regression test for gh-18389
@@ -2316,7 +2316,7 @@ class TestYeojohnson:
                   2009.0, 1980.0, 1999.0, 2007.0, 1991.0]),
         np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0])
     ])
-    @pytest.mark.parametrize('scale', [1, 1e-12, 1e-32, 1e-150, 1e32, 1e200])
+    @pytest.mark.parametrize('scale', [1, 1e-12, 1e-32, 1e-147, 1e32, 1e300])
     @pytest.mark.parametrize('sign', [1, -1])
     def test_overflow_underflow_signed_data(self, x, scale, sign):
         # non-regression test for gh-18389

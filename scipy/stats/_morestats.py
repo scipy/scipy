@@ -1721,6 +1721,42 @@ def yeojohnson_normmax(x, brack=None):
         # variance in the transformed space
         llf[np.isinf(llf)] = -np.inf
         return -llf
+    
+    def _arctanh_neg_llf(lmbda, data):
+        safe_atanh = lambda l: np.arctanh(l) if np.abs(l) != 1 else l * np.inf
+        return _neg_llf(safe_atanh(lmbda), data)
+
+    def _pos_bound(x, side):
+        # Determine the extremal value c as half of the floating point exponent
+        # range to allow safe computation of the variance of the transformed data.
+        dtype = x.dtype
+        log_eps = np.log(np.finfo(dtype).eps)
+        if side == 'lb':
+            c = np.exp((np.log(np.finfo(dtype).tiny) - log_eps) / 2)
+        elif side == 'ub':
+            c = np.exp((np.log(np.finfo(dtype).max) + log_eps) / 2)
+        # Convert to double precision to compute λ accurately.
+        x, c = np.float64(x), np.float64(c)
+        # Solve ((1 + x) ** λ - 1) / λ = c for λ given a positive x and c.
+        k = 0 if side == 'lb' and x > c else -1
+        Wreal = lambda x: special.lambertw(x, k)
+        log1px = np.log1p(x)
+        with np.errstate(under='ignore'):
+            Warg = -log1px / c + np.log(log1px) - np.log(c)
+            lmbda1 = -Wreal(-np.exp(Warg)).real / log1px - 1 / c
+        if side == 'ub':
+            # Avoid overflow in the numerator by solving (1 + x) ** λ - 1 < c for λ
+            # given a positive x and c.
+            c = np.exp((np.log(np.finfo(dtype).max) + log_eps))
+            lmbda2 = np.log1p(c) / log1px
+            # Take the most conservative of the two bounds.
+            lmbda = min(lmbda1, lmbda2)
+        else:
+            # We don't try to avoid underflow in the numerator because the
+            # constraint resulting from |(1 + x) ** λ - 1| > c does not result in a
+            # simple lower and upper bound on λ.
+            lmbda = lmbda1
+        return lmbda
 
     with np.errstate(invalid='ignore'):
         if not np.all(np.isfinite(x)):
@@ -1731,28 +1767,45 @@ def yeojohnson_normmax(x, brack=None):
             return optimize.brent(_neg_llf, brack=brack, args=(x,))
         x = np.asarray(x)
         dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
+        x = x.astype(dtype)
         # Allow values up to 20 times the maximum observed value to be safely
         # transformed without over- or underflow.
-        log1p_max_x = np.log1p(20 * np.max(np.abs(x)))
-        # Use half of floating point's exponent range to allow safe computation
-        # of the variance of the transformed data.
-        log_eps = np.log(np.finfo(dtype).eps)
-        log_tiny_float = (np.log(np.finfo(dtype).tiny) - log_eps) / 2
-        log_max_float = (np.log(np.finfo(dtype).max) + log_eps) / 2
-        # Compute the bounds by approximating the inverse of the Yeo-Johnson
-        # transform on the smallest and largest floating point exponents, given
-        # the largest data we expect to observe. See [1] for further details.
-        # [1] https://github.com/scipy/scipy/pull/18852#issuecomment-1630286174
-        lb = log_tiny_float / log1p_max_x
-        ub = log_max_float / log1p_max_x
-        # Convert the bounds if all or some of the data is negative.
-        if np.all(x < 0):
-            lb, ub = 2 - ub, 2 - lb
-        elif np.any(x < 0):
-            lb, ub = max(2 - ub, lb), min(2 - lb, ub)
-        # Match `optimize.brent`'s tolerance.
-        tol_brent = 1.48e-08
-        return optimize.fminbound(_neg_llf, lb, ub, args=(x,), xtol=tol_brent)
+        max_pos_x = np.max(x[x > 0], initial=-np.inf)
+        min_pos_x = np.min(x[x > 0], initial=max_pos_x)
+        max_neg_x = np.min(x[x < 0], initial=np.inf)
+        min_neg_x = np.max(x[x < 0], initial=max_neg_x)
+        safety_factor = 20
+        # Determine the bounds on λ by evaluating the minimum and maximum value
+        # for transforming the smallest (largest) positive (negative) values of
+        # x (with an additional safety factor applied so that new values may
+        # also be safely transformed).
+        lmbda_lb, lmbda_ub = np.finfo(dtype).min, np.finfo(dtype).max
+        if max_pos_x > 0:
+            lmbda_lb = max(lmbda_lb, _pos_bound(safety_factor * max_pos_x, 'lb'))
+            lmbda_ub = min(lmbda_ub, _pos_bound(safety_factor * max_pos_x, 'ub'))
+        if min_pos_x > 0:
+            lmbda_lb = max(lmbda_lb, _pos_bound(min_pos_x / safety_factor, 'lb'))
+            lmbda_ub = min(lmbda_ub, _pos_bound(min_pos_x / safety_factor, 'ub'))
+        if max_neg_x < 0:
+            lmbda_lb = max(lmbda_lb, 2 - _pos_bound(safety_factor * np.abs(max_neg_x), 'ub'))
+            lmbda_ub = min(lmbda_ub, 2 - _pos_bound(safety_factor * np.abs(max_neg_x), 'lb'))
+        if min_neg_x < 0:
+            lmbda_lb = max(lmbda_lb, 2 - _pos_bound(np.abs(min_neg_x) / safety_factor, 'ub'))
+            lmbda_ub = min(lmbda_ub, 2 - _pos_bound(np.abs(min_neg_x) / safety_factor, 'lb'))
+        # Optimize for tanh(λ) as Brent's method is prone to overflow when
+        # optimizing λ for large lower and upper bounds. Equivalent to:
+        #   lmbda = optimize.fminbound(
+        #       _neg_llf, lmbda_lb, lmbda_ub, args=(x,), xtol=1.48e-08
+        #   )
+        tanh_lmbda = optimize.fminbound(
+            _arctanh_neg_llf,
+            np.tanh(lmbda_lb),
+            np.tanh(lmbda_ub),
+            args=(x,),
+            xtol=1.48e-08  # Match `optimize.brent`'s tolerance.
+        )
+        lmbda = np.arctanh(tanh_lmbda)
+        return lmbda
 
 
 def yeojohnson_normplot(x, la, lb, plot=None, N=80):
