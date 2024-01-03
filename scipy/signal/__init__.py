@@ -25,9 +25,6 @@ B-splines
 .. autosummary::
    :toctree: generated/
 
-   bspline        -- B-spline basis function of order n.
-   cubic          -- B-spline basis function of order 3.
-   quadratic      -- B-spline basis function of order 2.
    gauss_spline   -- Gaussian approximation to the B-spline basis function.
    cspline1d      -- Coefficients for 1-D cubic (3rd order) B-spline.
    qspline1d      -- Coefficients for 1-D quadratic (2nd order) B-spline.
@@ -277,7 +274,7 @@ Spectral analysis
    welch          -- Compute a periodogram using Welch's method.
    csd            -- Compute the cross spectral density, using Welch's method.
    coherence      -- Compute the magnitude squared coherence, using Welch's method.
-   spectrogram    -- Compute the spectrogram.
+   spectrogram    -- Compute the spectrogram (legacy).
    lombscargle    -- Computes the Lomb-Scargle periodogram.
    vectorstrength -- Computes the vector strength.
    ShortTimeFFT   -- Interface for calculating the \

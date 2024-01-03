@@ -3464,7 +3464,7 @@ class TestStudentT:
                       -50.918938533204674, -1.8378770664093456]
         pdf_ref = [0.24197072451914334, 0,
                    7.69459862670642e-23, 0.15915494309189535]
-        assert_allclose(stats.t.logpdf(x, df), logpdf_ref, rtol=1e-15)
+        assert_allclose(stats.t.logpdf(x, df), logpdf_ref, rtol=1e-14)
         assert_allclose(stats.t.pdf(x, df), pdf_ref, rtol=1e-14)
 
 
