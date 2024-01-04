@@ -199,11 +199,17 @@ html_theme = 'pydata_sphinx_theme'
 html_logo = '_static/logo.svg'
 html_favicon = '_static/favicon.ico'
 
+html_sidebars = {
+    "index": "search-button-field",
+    "**": ["search-button-field", "sidebar-nav-bs"]
+}
+
 html_theme_options = {
   "github_url": "https://github.com/scipy/scipy",
   "twitter_url": "https://twitter.com/SciPy_team",
   "icon_links": [],
   "navbar_end": ["theme-switcher", "version-switcher", "navbar-icon-links"],
+  "navigation_depth": 1,
   "switcher": {
       "json_url": "https://scipy.github.io/devdocs/_static/version_switcher.json",
       "version_match": version,
