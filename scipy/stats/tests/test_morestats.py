@@ -2117,7 +2117,7 @@ class TestBoxcoxNormmax:
             if ymax is None:
                 # 10000 is safety factor used in boxcox_normmax
                 ymax = np.finfo(x.dtype).max / 10000
-            assert_allclose(ymax, ymax_res, rtol=1e-1)
+            assert_allclose(ymax, ymax_res, rtol=1e-5)
 
     @pytest.mark.parametrize("x", [
         # positive overflow in float32
@@ -2140,7 +2140,7 @@ class TestBoxcoxNormmax:
             if ymax is None:
                 # 10000 is safety factor used in boxcox_normmax
                 ymax = np.finfo(x.dtype).max / 10000
-            assert_allclose(ymax, ymax_res, rtol=1e-1)
+            assert_allclose(ymax, ymax_res, rtol=1e-5)
 
     @pytest.mark.parametrize("x", [
         # positive overflow in float32 but not float64

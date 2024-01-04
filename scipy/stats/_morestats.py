@@ -1139,11 +1139,6 @@ class BigFloat:
     def __repr__(self):
         return "BIG_FLOAT"
 
-    def __call__(self, x):
-        dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
-        # 10000 is a safety factor because `special.boxcox` overflows prematurely.
-        return np.finfo(dtype).max / 10000
-
 
 def boxcox_normmax(
     x, brack=None, method='pearsonr', optimizer=None, *, ymax=BigFloat()
@@ -1193,11 +1188,12 @@ def boxcox_normmax(
         `scipy.optimize.minimize_scalar` for more information.
     ymax : float, optional
         The unconstrained optimal transform parameter may cause Box-Cox
-        transformed data to have extreme magnitude or even overflow. This
-        parameter constrains MLE optimization such that the transformed
-        `x` does not exceed `ymax`. The default is the maximum value of the
-        input dtype. If set to infinity, `boxcox_normmax` returns the
-        unconstrained optimal lambda. Ignored when ``method='pearsonr'``.
+        transformed data to have extreme magnitude or even overflow.
+        This parameter constrains MLE optimization such that the magnitude
+        of the transformed `x` does not exceed `ymax`. The default is
+        the maximum value of the input dtype. If set to infinity,
+        `boxcox_normmax` returns the unconstrained optimal lambda.
+        Ignored when ``method='pearsonr'``.
 
     Returns
     -------
@@ -1257,8 +1253,9 @@ def boxcox_normmax(
     x = np.asarray(x)
     end_msg = "exceed specified `ymax`."
     if isinstance(ymax, BigFloat):
-        ymax = ymax(x)
         dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
+        # 10000 is a safety factor because `special.boxcox` overflows prematurely.
+        ymax = np.finfo(dtype).max / 10000
         end_msg = f"overflow in {dtype}."
     elif ymax <= 0:
         raise ValueError("`ymax` must be strictly positive")
@@ -1348,10 +1345,11 @@ def boxcox_normmax(
             x_treme = xmin
         else:  # xmin < 1 < xmax
             indicator = special.boxcox(xmax, res) > abs(special.boxcox(xmin, res))
-            x_treme = xmax if np.any(indicator) else xmin
+            if isinstance(res, np.ndarray):
+                indicator = indicator[1]  # select corresponds with 'mle'
+            x_treme = xmax if indicator else xmin
 
-        sign_x_treme_m1 = np.sign(x_treme - 1)
-        mask = special.boxcox(x_treme, res) * sign_x_treme_m1 > ymax
+        mask = abs(special.boxcox(x_treme, res)) > ymax
         if np.any(mask):
             message = (
                 f"The optimal lambda is {res}, but the returned lambda is the"
@@ -1361,8 +1359,8 @@ def boxcox_normmax(
             warnings.warn(message, stacklevel=2)
 
             # Return the constrained lambda to ensure the transformation
-            # does not cause overflow or exceed specified `ymax``
-            constrained_res = _boxcox_inv_lmbda(x_treme, ymax * sign_x_treme_m1)
+            # does not cause overflow or exceed specified `ymax`
+            constrained_res = _boxcox_inv_lmbda(x_treme, ymax * np.sign(x_treme - 1))
 
             if isinstance(res, np.ndarray):
                 res[mask] = constrained_res
