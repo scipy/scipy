@@ -54,10 +54,9 @@ def fht(a, dln, mu, offset=0.0, bias=0.0):
         A(k) = \int_{0}^{\infty} \! a(r) \, J_\mu(kr) \, k \, dr \;,
 
     where :math:`J_\mu` is the Bessel function of order :math:`\mu`.  The index
-    :math:`\mu` may be any real number, positive or negative.
-
-    Note that the numerical Hankel transform uses an integrand of :math:`k dr`, 
-    while the mathematical Hankel transform is commonly defined using :math:`r dr`.
+    :math:`\mu` may be any real number, positive or negative.  Note that the
+    numerical Hankel transform uses an integrand of :math:`k dr`, while the
+    mathematical Hankel transform is commonly defined using :math:`r dr`.
 
     The input array `a` is a periodic sequence of length :math:`n`, uniformly
     logarithmically spaced with spacing `dln`,
