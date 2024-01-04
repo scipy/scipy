@@ -2724,8 +2724,9 @@ class TestZmapZscore:
         assert_equal(z, x)
 
     def test_gzscore_normal_array(self):
-        z = stats.gzscore([1, 2, 3, 4])
-        desired = np.log(z / stats.gmean(z)) / np.log(stats.gstd(z, ddof=0))
+        x = np.array([1, 2, 3, 4])
+        z = stats.gzscore(x)
+        desired = np.log(x / stats.gmean(x)) / np.log(stats.gstd(x, ddof=0))
         assert_allclose(desired, z)
 
     def test_gzscore_masked_array(self):
