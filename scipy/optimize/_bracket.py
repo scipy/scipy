@@ -1,7 +1,7 @@
 import numpy as np
 from ._optimize import OptimizeResult
-from scipy._lib._elementwise_algorithm import (_scalar_optimization_initialize,
-                                               _scalar_optimization_loop,
+from scipy._lib._elementwise_algorithm import (_elementwise_algorithm_initialize,
+                                               _elementwise_algorithm_loop,
                                                _ECONVERGED, _ESIGNERR, _ECONVERR,
                                                _EVALUEERR, _ECALLBACK, _EINPROGRESS
                                                )
@@ -161,7 +161,7 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None,
     func, a, b, min, max, factor, args, maxiter = temp
 
     xs = (a, b)
-    temp = _scalar_optimization_initialize(func, xs, args)
+    temp = _elementwise_algorithm_initialize(func, xs, args)
     xs, fs, args, shape, dtype = temp  # line split for PEP8
 
     # The approach is to treat the left and right searches as though they were
@@ -194,7 +194,7 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None,
     active = np.arange(2*n)
     args = [np.concatenate((arg, arg)) for arg in args]
 
-    # This is needed due to inner workings of `_scalar_optimization_loop`.
+    # This is needed due to inner workings of `_elementwise_algorithm_loop`.
     # We're abusing it a tiny bit.
     shape = shape + (2,)
 
@@ -379,8 +379,8 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None,
 
         return shape[:-1]
 
-    return _scalar_optimization_loop(work, callback, shape,
-                                     maxiter, func, args, dtype,
-                                     pre_func_eval, post_func_eval,
-                                     check_termination, post_termination_check,
-                                     customize_result, res_work_pairs)
+    return _elementwise_algorithm_loop(work, callback, shape,
+                                       maxiter, func, args, dtype,
+                                       pre_func_eval, post_func_eval,
+                                       check_termination, post_termination_check,
+                                       customize_result, res_work_pairs)

@@ -8,7 +8,8 @@ _ECALLBACK = -4
 _ECONVERGED = 0
 _EINPROGRESS = 1
 
-def _scalar_optimization_initialize(func, xs, args, complex_ok=False):
+
+def _elementwise_algorithm_initialize(func, xs, args, complex_ok=False):
     """Initialize abscissa, function, and args arrays for elementwise function
 
     Parameters
@@ -87,10 +88,10 @@ def _scalar_optimization_initialize(func, xs, args, complex_ok=False):
     return xs, fs, args, shape, xfat
 
 
-def _scalar_optimization_loop(work, callback, shape, maxiter,
-                              func, args, dtype, pre_func_eval, post_func_eval,
-                              check_termination, post_termination_check,
-                              customize_result, res_work_pairs):
+def _elementwise_algorithm_loop(work, callback, shape, maxiter,
+                                func, args, dtype, pre_func_eval, post_func_eval,
+                                check_termination, post_termination_check,
+                                customize_result, res_work_pairs):
     """Main loop of a vectorized scalar optimization algorithm
 
     Parameters
@@ -168,11 +169,11 @@ def _scalar_optimization_loop(work, callback, shape, maxiter,
     res = OptimizeResult(res_dict)
     work.args = args
 
-    active = _scalar_optimization_check_termination(
+    active = _elementwise_algorithm_check_termination(
         work, res, res_work_pairs, active, check_termination)
 
     if callback is not None:
-        temp = _scalar_optimization_prepare_result(
+        temp = _elementwise_algorithm_prepare_result(
             work, res, res_work_pairs, active, shape, customize_result)
         if _call_callback_maybe_halt(callback, temp):
             cb_terminate = True
@@ -182,7 +183,7 @@ def _scalar_optimization_loop(work, callback, shape, maxiter,
 
         if work.args and work.args[0].ndim != x.ndim:
             # `x` always starts as 1D. If the SciPy function that uses
-            # _scalar_optimization_loop added dimensions to `x`, we need to
+            # _elementwise_algorithm_loop added dimensions to `x`, we need to
             # add them to the elements of `args`.
             dims = np.arange(x.ndim, dtype=np.int64)
             work.args = [np.expand_dims(arg, tuple(dims[arg.ndim:]))
@@ -195,11 +196,11 @@ def _scalar_optimization_loop(work, callback, shape, maxiter,
         post_func_eval(x, f, work)
 
         work.nit += 1
-        active = _scalar_optimization_check_termination(
+        active = _elementwise_algorithm_check_termination(
             work, res, res_work_pairs, active, check_termination)
 
         if callback is not None:
-            temp = _scalar_optimization_prepare_result(
+            temp = _elementwise_algorithm_prepare_result(
                 work, res, res_work_pairs, active, shape, customize_result)
             if _call_callback_maybe_halt(callback, temp):
                 cb_terminate = True
@@ -210,12 +211,12 @@ def _scalar_optimization_loop(work, callback, shape, maxiter,
         post_termination_check(work)
 
     work.status[:] = _ECALLBACK if cb_terminate else _ECONVERR
-    return _scalar_optimization_prepare_result(
+    return _elementwise_algorithm_prepare_result(
         work, res, res_work_pairs, active, shape, customize_result)
 
 
-def _scalar_optimization_check_termination(work, res, res_work_pairs, active,
-                                           check_termination):
+def _elementwise_algorithm_check_termination(work, res, res_work_pairs, active,
+                                             check_termination):
     # Checks termination conditions, updates elements of `res` with
     # corresponding elements of `work`, and compresses `work`.
 
@@ -224,8 +225,8 @@ def _scalar_optimization_check_termination(work, res, res_work_pairs, active,
     if np.any(stop):
         # update the active elements of the result object with the active
         # elements for which a termination condition has been met
-        _scalar_optimization_update_active(work, res, res_work_pairs, active,
-                                           stop)
+        _elementwise_algorithm_update_active(work, res, res_work_pairs, active,
+                                             stop)
 
         # compress the arrays to avoid unnecessary computation
         proceed = ~stop
@@ -237,8 +238,8 @@ def _scalar_optimization_check_termination(work, res, res_work_pairs, active,
     return active
 
 
-def _scalar_optimization_update_active(work, res, res_work_pairs, active,
-                                       mask=None):
+def _elementwise_algorithm_update_active(work, res, res_work_pairs, active,
+                                         mask=None):
     # Update `active` indices of the arrays in result object `res` with the
     # contents of the scalars and arrays in `update_dict`. When provided,
     # `mask` is a boolean array applied both to the arrays in `update_dict`
@@ -255,13 +256,13 @@ def _scalar_optimization_update_active(work, res, res_work_pairs, active,
             res[key][active] = val
 
 
-def _scalar_optimization_prepare_result(work, res, res_work_pairs, active,
-                                        shape, customize_result):
+def _elementwise_algorithm_prepare_result(work, res, res_work_pairs, active,
+                                          shape, customize_result):
     # Prepare the result object `res` by creating a copy, copying the latest
     # data from work, running the provided result customization function,
     # and reshaping the data to the original shapes.
     res = res.copy()
-    _scalar_optimization_update_active(work, res, res_work_pairs, active)
+    _elementwise_algorithm_update_active(work, res, res_work_pairs, active)
 
     shape = customize_result(res, shape)
 

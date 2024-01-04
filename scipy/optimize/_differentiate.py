@@ -1,7 +1,7 @@
 import numpy as np
 from ._optimize import OptimizeResult
-from scipy._lib._elementwise_algorithm import (_scalar_optimization_initialize,
-                                               _scalar_optimization_loop,
+from scipy._lib._elementwise_algorithm import (_elementwise_algorithm_initialize,
+                                               _elementwise_algorithm_loop,
                                                _ECONVERGED, _ESIGNERR, _ECONVERR,
                                                _EVALUEERR, _ECALLBACK, _EINPROGRESS
                                                )
@@ -277,11 +277,11 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     # possible to eliminate this function evaluation. However, it's useful for
     # input validation and standardization, and everything else is designed to
     # reduce function calls, so let's keep it simple.
-    xs, fs, args, shape, dtype = _scalar_optimization_initialize(func, (x,), args)
+    xs, fs, args, shape, dtype = _elementwise_algorithm_initialize(func, (x,), args)
     x, f = xs[0], fs[0]
     df = np.full_like(f, np.nan)
-    # Ideally we'd broadcast the shape of `hdir` in `_scalar_opt_init`, but
-    # it's simpler to do it here than to generalize `_scalar_opt_init` further.
+    # Ideally we'd broadcast the shape of `hdir` in `_elementwise_algo_init`, but
+    # it's simpler to do it here than to generalize `_elementwise_algo_init` further.
     # `hdir` and `x` are already broadcasted in `_differentiate_iv`, so we know
     # that `hdir` can be broadcasted to the final shape.
     hdir = np.broadcast_to(hdir, shape).flatten()
@@ -457,11 +457,11 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     def customize_result(res, shape):
         return shape
 
-    return _scalar_optimization_loop(work, callback, shape,
-                                     maxiter, func, args, dtype,
-                                     pre_func_eval, post_func_eval,
-                                     check_termination, post_termination_check,
-                                     customize_result, res_work_pairs)
+    return _elementwise_algorithm_loop(work, callback, shape,
+                                       maxiter, func, args, dtype,
+                                       pre_func_eval, post_func_eval,
+                                       check_termination, post_termination_check,
+                                       customize_result, res_work_pairs)
 
 
 def _differentiate_weights(work, n):

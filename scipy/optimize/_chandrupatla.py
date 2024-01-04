@@ -1,8 +1,8 @@
 import numpy as np
 from scipy.optimize._optimize import OptimizeResult
 from ._zeros_py import _xtol, _rtol, _iter
-from scipy._lib._elementwise_algorithm import (_scalar_optimization_initialize,
-                                               _scalar_optimization_loop,
+from scipy._lib._elementwise_algorithm import (_elementwise_algorithm_initialize,
+                                               _elementwise_algorithm_loop,
                                                _ECONVERGED, _ESIGNERR, _ECONVERR,
                                                _EVALUEERR, _ECALLBACK, _EINPROGRESS
                                                )
@@ -127,8 +127,8 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
     func, args, xatol, xrtol, fatol, frtol, maxiter, callback = res
 
     # Initialization
-    xs, fs, args, shape, dtype = _scalar_optimization_initialize(func, (a, b),
-                                                                 args)
+    xs, fs, args, shape, dtype = _elementwise_algorithm_initialize(func, (a, b),
+                                                                   args)
     x1, x2 = xs
     f1, f2 = fs
     status = np.full_like(x1, _EINPROGRESS, dtype=int)  # in progress
@@ -219,11 +219,11 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
         res['fr'] = np.choose(i, (fl, fr))
         return shape
 
-    return _scalar_optimization_loop(work, callback, shape,
-                                     maxiter, func, args, dtype,
-                                     pre_func_eval, post_func_eval,
-                                     check_termination, post_termination_check,
-                                     customize_result, res_work_pairs)
+    return _elementwise_algorithm_loop(work, callback, shape,
+                                       maxiter, func, args, dtype,
+                                       pre_func_eval, post_func_eval,
+                                       check_termination, post_termination_check,
+                                       customize_result, res_work_pairs)
 
 
 def _chandrupatla_iv(func, args, xatol, xrtol,
@@ -377,7 +377,7 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
 
     # Initialization
     xs = (x1, x2, x3)
-    temp = _scalar_optimization_initialize(func, xs, args)
+    temp = _elementwise_algorithm_initialize(func, xs, args)
     xs, fs, args, shape, dtype = temp  # line split for PEP8
     x1, x2, x3 = xs
     f1, f2, f3 = fs
@@ -526,8 +526,8 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
         res['fr'] = np.choose(i, (fl, fr))
         return shape
 
-    return _scalar_optimization_loop(work, callback, shape,
-                                     maxiter, func, args, dtype,
-                                     pre_func_eval, post_func_eval,
-                                     check_termination, post_termination_check,
-                                     customize_result, res_work_pairs)
+    return _elementwise_algorithm_loop(work, callback, shape,
+                                       maxiter, func, args, dtype,
+                                       pre_func_eval, post_func_eval,
+                                       check_termination, post_termination_check,
+                                       customize_result, res_work_pairs)

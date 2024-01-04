@@ -2,8 +2,8 @@
 import numpy as np
 from scipy import special
 from scipy.optimize import OptimizeResult
-from scipy._lib._elementwise_algorithm import (_scalar_optimization_initialize,
-                                               _scalar_optimization_loop,
+from scipy._lib._elementwise_algorithm import (_elementwise_algorithm_initialize,
+                                               _elementwise_algorithm_loop,
                                                _ECONVERGED, _ESIGNERR, _ECONVERR,
                                                _EVALUEERR, _ECALLBACK, _EINPROGRESS
                                                )
@@ -224,7 +224,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     f, a, b, log, maxfun, maxlevel, minlevel, atol, rtol, args, callback = tmp
 
     # Initialization
-    # `_scalar_optimization_initialize` does several important jobs, including
+    # `_elementwise_algorithm_initialize` does several important jobs, including
     # ensuring that limits, each of the `args`, and the output of `f`
     # broadcast correctly and are of consistent types. To save a function
     # evaluation, I pass the midpoint of the integration interval. This comes
@@ -236,7 +236,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
         c[np.isinf(a)] = b[np.isinf(a)]  # takes care of infinite a
         c[np.isinf(b)] = a[np.isinf(b)]  # takes care of infinite b
         c[np.isnan(c)] = 0  # takes care of infinite a and b
-        tmp = _scalar_optimization_initialize(f, (c,), args, complex_ok=True)
+        tmp = _elementwise_algorithm_initialize(f, (c,), args, complex_ok=True)
     xs, fs, args, shape, dtype = tmp
     a = np.broadcast_to(a, shape).astype(dtype).ravel()
     b = np.broadcast_to(b, shape).astype(dtype).ravel()
@@ -374,11 +374,11 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     # Suppress all warnings initially, since there are many places in the code
     # for which this is expected behavior.
     with np.errstate(over='ignore', invalid='ignore', divide='ignore'):
-        res = _scalar_optimization_loop(work, callback, shape, maxiter, f,
-                                        args, dtype, pre_func_eval,
-                                        post_func_eval, check_termination,
-                                        post_termination_check,
-                                        customize_result, res_work_pairs)
+        res = _elementwise_algorithm_loop(work, callback, shape, maxiter, f,
+                                          args, dtype, pre_func_eval,
+                                          post_func_eval, check_termination,
+                                          post_termination_check,
+                                          customize_result, res_work_pairs)
     return res
 
 
@@ -979,7 +979,7 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
     f, a, b, step, valid_abstep, args, log, maxterms, atol, rtol = tmp
 
     # Additional elementwise algorithm input validation / standardization
-    tmp = _scalar_optimization_initialize(f, (a,), args, complex_ok=False)
+    tmp = _elementwise_algorithm_initialize(f, (a,), args, complex_ok=False)
     xs, fs, args, shape, dtype = tmp
 
     # Finish preparing `a`, `b`, and `step` arrays
