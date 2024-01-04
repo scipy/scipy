@@ -2103,23 +2103,6 @@ class TestBoxcoxNormmax:
         # negative overflow in float64
         np.array([0.50000471, 0.50004979, 0.50005902, 0.50009312, 0.50001632],
                  dtype=np.float64),
-    ])
-    @pytest.mark.parametrize("ymax", [1e10, 1e100, None])
-    # TODO: add method "pearsonr" after fix overflow issue
-    @pytest.mark.parametrize("method", ["mle"])
-    def test_user_defined_ymax_input_float64(self, x, ymax, method):
-        # Test the maximum of the transformed data close to ymax
-        with pytest.warns(UserWarning, match="The optimal lambda is"):
-            kwarg = {'ymax': ymax} if ymax is not None else {}
-            lmb = stats.boxcox_normmax(x, method=method, **kwarg)
-            x_treme = [np.min(x), np.max(x)]
-            ymax_res = max(abs(stats.boxcox(x_treme, lmb)))
-            if ymax is None:
-                # 10000 is safety factor used in boxcox_normmax
-                ymax = np.finfo(x.dtype).max / 10000
-            assert_allclose(ymax, ymax_res, rtol=1e-5)
-
-    @pytest.mark.parametrize("x", [
         # positive overflow in float32
         np.array([200.3, 195.0, 199.7, 200.0, 200.9],
                  dtype=np.float32),
@@ -2127,10 +2110,10 @@ class TestBoxcoxNormmax:
         np.array([2e-30, 1e-30, 1e-30, 1e-30, 1e-30, 1e-30],
                  dtype=np.float32),
     ])
-    @pytest.mark.parametrize("ymax", [1e8, 1e30, None])
+    @pytest.mark.parametrize("ymax", [1e10, 1e30, None])
     # TODO: add method "pearsonr" after fix overflow issue
     @pytest.mark.parametrize("method", ["mle"])
-    def test_user_defined_ymax_input_float32(self, x, ymax, method):
+    def test_user_defined_ymax_input_float64_32(self, x, ymax, method):
         # Test the maximum of the transformed data close to ymax
         with pytest.warns(UserWarning, match="The optimal lambda is"):
             kwarg = {'ymax': ymax} if ymax is not None else {}
