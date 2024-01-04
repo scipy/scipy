@@ -413,7 +413,7 @@ Building the Documentation
  Tool                 Version
 ====================  =================================================
 Sphinx                Whatever recent versions work. >= 2.0.
-PyData Sphinx theme   Whatever recent versions work. >= 0.10.0.
+PyData Sphinx theme   Whatever recent versions work. >= 0.15.1.
 Sphinx-Design         Whatever recent versions work. >= 0.2.0.
 numpydoc              Whatever recent versions work. >= 0.8.0.
 matplotlib            Generally suggest >= 2.0.

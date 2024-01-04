@@ -209,7 +209,6 @@ html_theme_options = {
       "version_match": version,
   },
   "secondary_sidebar_items": ["page-toc"],
-  "navigation_depth": 1,
   # The service https://plausible.io is used to gather simple
   # and privacy-friendly analytics for the site. The dashboard can be accessed
   # at https://analytics.scientific-python.org/docs.scipy.org

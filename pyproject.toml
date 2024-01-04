@@ -94,7 +94,7 @@ test = [
 ]
 doc = [
     "sphinx!=4.1.0",
-    "pydata-sphinx-theme==0.15.0rc0",
+    "pydata-sphinx-theme>=0.15.1",
     "sphinx-design>=0.2.0",
     "matplotlib>2",
     "numpydoc",
