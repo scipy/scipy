@@ -1174,7 +1174,7 @@ Note that an inverse STFT does not necessarily exist for all windows and hop siz
 window :math:`w[m]` the hop size :math:`h` must be small enough to ensure that
 every sample of :math:`x[k]` is touched by a non-zero value of at least one
 window slice. This is sometimes referred as the "non-zero overlap condition"
-(see :func:`check_NOLA <scipy.signal.check_NOLA>`). Some more details are
+(see :func:`~scipy.signal.check_NOLA`). Some more details are
 given in the subsection :ref:`tutorial_stft_dual_win`.
 
 .. _tutorial_stft_sliding_win:
@@ -1258,8 +1258,7 @@ will be sketched out in the following:
 Since the STFT given in Eq. :math:numref:`eq_dSTFT` is a linear mapping in
 :math:`x[k]`, it can be expressed in vector-matrix notation. This allows us to
 express the inverse via the formal solution of the linear least squares method
-(as in :func:`lstsq <scipy.linalg.lstsq>`), which leads to a beautiful and
-simple result.
+(as in :func:`~scipy.linalg.lstsq`), which leads to a beautiful and simple result.
 
 We begin by reformulating the windowing of Eq. :math:numref:`eq_STFT_windowing`
 
@@ -1463,8 +1462,7 @@ with a negative slope:
     >>> f0, Sz0 = fftshift(f0_u), fftshift(Sz0_u, axes=0)
     ...
     >>> # New STFT:
-    >>> SFT = ShortTimeFFT.from_window(win, fs, nperseg, noverlap,
-    ...                                fft_mode='centered',
+    >>> SFT = ShortTimeFFT.from_window(win, fs, nperseg, noverlap, fft_mode='centered',
     ...                                scale_to='magnitude', phase_shift=None)
     >>> Sz1 = SFT.stft(z)
     ...
@@ -1472,16 +1470,16 @@ with a negative slope:
     >>> fig1, axx = plt.subplots(2, 1, sharex='all', sharey='all',
     ...                          figsize=(6., 5.))  # enlarge figure a bit
     >>> t_lo, t_hi, f_lo, f_hi = SFT.extent(N, center_bins=True)
-    >>> t_str0 = r"Legacy stft() produces $%d\times%d$ points" % Sz0.T.shape
-    >>> t_str1 = r"ShortTimeFFT produces $%d\times%d$ points" % Sz1.T.shape
-    >>> _ = axx[0].set(title=t_str0, xlim=(t_lo, t_hi), ylim=(f_lo, f_hi))
-    >>> _ = axx[1].set(title=t_str1, xlabel="Time $t$ in seconds " +
-    ...                rf"($\Delta t= %g\,$s)" % SFT.delta_t)
+    >>> axx[0].set_title(r"Legacy stft() produces $%d\times%d$ points" % Sz0.T.shape)
+    >>> axx[0].set_xlim(t_lo, t_hi)
+    >>> axx[0].set_ylim(f_lo, f_hi)
+    >>> axx[1].set_title(r"ShortTimeFFT produces $%d\times%d$ points" % Sz1.T.shape)
+    >>> axx[1].set_xlabel(rf"Time $t$ in seconds ($\Delta t= {SFT.delta_t:g}\,$s)")
     ...
-    >>> # Calculate extent of plot with centered bins since imshow
-    ... # does not interpolate by default:
-    ... dt2 = (nperseg-noverlap) / fs  / 2 # equals SFT.delta_t / 2
-    >>> df2 = fs / nperseg / 2 # equals SFT.delta_f / 2
+    >>> # Calculate extent of plot with centered bins since
+    >>> # imshow does not interpolate by default:
+    >>> dt2 = (nperseg-noverlap) / fs / 2  # equals SFT.delta_t / 2
+    >>> df2 = fs / nperseg / 2  # equals SFT.delta_f / 2
     >>> extent0 = (-dt2, t0[-1] + dt2, f0[0] - df2, f0[-1] - df2)
     >>> extent1 = SFT.extent(N, center_bins=True)
     ...
@@ -1489,8 +1487,8 @@ with a negative slope:
     >>> im1a = axx[0].imshow(abs(Sz0), extent=extent0, **kw)
     >>> im1b = axx[1].imshow(abs(Sz1), extent=extent1, **kw)
     >>> fig1.colorbar(im1b, ax=axx, label="Magnitude $|S_z(t, f)|$")
-    >>> _ = fig1.supylabel(rf"Frequency $f$ in Hertz ($\Delta f = %g\,$Hz)" %
-    ...                    SFT.delta_f)
+    >>> _ = fig1.supylabel(r"Frequency $f$ in Hertz ($\Delta f = %g\,$Hz)" %
+    ...                    SFT.delta_f, x=0.08, y=0.5, fontsize='medium')
     >>> plt.show()
 
 

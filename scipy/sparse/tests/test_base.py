@@ -1230,13 +1230,13 @@ class _TestCommon:
         chk = self.datsp.todense(out=out)
         assert_array_equal(self.dat, out)
         assert_array_equal(self.dat, chk)
-        assert_(chk.base is out)
+        assert np.may_share_memory(chk, out)
         # Check with out array (matrix).
         out = asmatrix(np.zeros(self.datsp.shape, dtype=self.datsp.dtype))
         chk = self.datsp.todense(out=out)
         assert_array_equal(self.dat, out)
         assert_array_equal(self.dat, chk)
-        assert_(chk is out)
+        assert np.may_share_memory(chk, out)
         a = array([[1.,2.,3.]])
         dense_dot_dense = a @ self.dat
         check = a @ self.datsp.todense()
@@ -1336,9 +1336,8 @@ class _TestCommon:
         S = self.spcreator(D)
         if hasattr(S, 'data'):
             S.data.flags.writeable = False
-        if hasattr(S, 'indptr'):
+        if S.format in ('csr', 'csc', 'bsr'):
             S.indptr.flags.writeable = False
-        if hasattr(S, 'indices'):
             S.indices.flags.writeable = False
         for x in supported_dtypes:
             D_casted = D.astype(x)
@@ -2098,8 +2097,16 @@ class _TestCommon:
                 assert_equal(datsp.shape, sploaded.shape)
                 assert_array_equal(datsp.toarray(), sploaded.toarray())
                 assert_equal(datsp.format, sploaded.format)
+                # Hacky check for class member equality. This assumes that
+                # all instance variables are one of:
+                #  1. Plain numpy ndarrays
+                #  2. Tuples of ndarrays
+                #  3. Types that support equality comparison with ==
                 for key, val in datsp.__dict__.items():
                     if isinstance(val, np.ndarray):
+                        assert_array_equal(val, sploaded.__dict__[key])
+                    elif (isinstance(val, tuple) and val
+                          and isinstance(val[0], np.ndarray)):
                         assert_array_equal(val, sploaded.__dict__[key])
                     else:
                         assert_(val == sploaded.__dict__[key])

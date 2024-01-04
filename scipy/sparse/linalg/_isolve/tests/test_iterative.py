@@ -27,9 +27,9 @@ _SOLVERS = [bicg, bicgstab, cg, cgs, gcrotmk, gmres, lgmres,
             minres, qmr, tfqmr]
 
 pytestmark = [
-    pytest.mark.filterwarnings("ignore:.* keyword argument 'tol'.*"),
-    pytest.mark.filterwarnings("ignore:.*called without specifying.*")
-    ]
+    # remove this once atol defaults to 0.0 for all methods
+    pytest.mark.filterwarnings("ignore:.*called without specifying.*"),
+]
 
 
 # create parametrized fixture for easy reuse in tests
@@ -228,7 +228,7 @@ def test_maxiter(case):
     if not case.convergence:
         pytest.skip("Solver - Breakdown case, see gh-8829")
     A = case.A
-    tol = 1e-12
+    rtol = 1e-12
 
     b = case.b
     x0 = 0 * b
@@ -238,35 +238,29 @@ def test_maxiter(case):
     def callback(x):
         residuals.append(norm(b - case.A * x))
 
-    x, info = case.solver(A, b, x0=x0, tol=tol, maxiter=1, callback=callback)
+    x, info = case.solver(A, b, x0=x0, rtol=rtol, maxiter=1, callback=callback)
 
     assert len(residuals) == 1
     assert info == 1
-
-
-def assert_normclose(a, b, tol=1e-8):
-    residual = norm(a - b)
-    tolerance = tol * norm(b)
-    assert residual < tolerance
 
 
 def test_convergence(case):
     A = case.A
 
     if A.dtype.char in "dD":
-        tol = 1e-8
+        rtol = 1e-8
     else:
-        tol = 1e-2
+        rtol = 1e-2
 
     b = case.b
     x0 = 0 * b
 
-    x, info = case.solver(A, b, x0=x0, tol=tol)
+    x, info = case.solver(A, b, x0=x0, rtol=rtol)
 
     assert_array_equal(x0, 0 * b)  # ensure that x0 is not overwritten
     if case.convergence:
         assert info == 0
-        assert norm(A @ x - b) <= norm(b)*tol
+        assert norm(A @ x - b) <= norm(b) * rtol
     else:
         assert info != 0
         assert norm(A @ x - b) <= norm(b)
@@ -276,7 +270,7 @@ def test_precond_dummy(case):
     if not case.convergence:
         pytest.skip("Solver - Breakdown case, see gh-8829")
 
-    tol = 1e-8
+    rtol = 1e-8
 
     def identity(b, which=None):
         """trivial preconditioner"""
@@ -297,19 +291,19 @@ def test_precond_dummy(case):
     precond = LinearOperator(A.shape, identity, rmatvec=identity)
 
     if case.solver is qmr:
-        x, info = case.solver(A, b, M1=precond, M2=precond, x0=x0, tol=tol)
+        x, info = case.solver(A, b, M1=precond, M2=precond, x0=x0, rtol=rtol)
     else:
-        x, info = case.solver(A, b, M=precond, x0=x0, tol=tol)
+        x, info = case.solver(A, b, M=precond, x0=x0, rtol=rtol)
     assert info == 0
-    assert norm(A @ x - b) <= norm(b)*tol
+    assert norm(A @ x - b) <= norm(b) * rtol
 
     A = aslinearoperator(A)
     A.psolve = identity
     A.rpsolve = identity
 
-    x, info = case.solver(A, b, x0=x0, tol=tol)
+    x, info = case.solver(A, b, x0=x0, rtol=rtol)
     assert info == 0
-    assert norm(A @ x - b) <= norm(b)*tol
+    assert norm(A @ x - b) <= norm(b) * rtol
 
 
 # Specific test for poisson1d and poisson2d cases
@@ -321,7 +315,7 @@ def test_precond_inverse(case):
         if solver in case.skip or solver is qmr:
             continue
 
-        tol = 1e-8
+        rtol = 1e-8
 
         def inverse(b, which=None):
             """inverse preconditioner"""
@@ -355,10 +349,10 @@ def test_precond_inverse(case):
 
         # Solve with preconditioner
         matvec_count = [0]
-        x, info = solver(A, b, M=precond, x0=x0, tol=tol)
+        x, info = solver(A, b, M=precond, x0=x0, rtol=rtol)
 
         assert info == 0
-        assert norm(case.A @ x - b) <= norm(b)*tol
+        assert norm(case.A @ x - b) <= norm(b) * rtol
 
         # Solution should be nearly instant
         assert matvec_count[0] <= 3
@@ -392,8 +386,8 @@ def test_atol(solver):
     M0 = M0 @ M0.T
     Ms = [None, 1e-6 * M0, 1e6 * M0]
 
-    for M, tol, atol in itertools.product(Ms, tols, tols):
-        if tol == 0 and atol == 0:
+    for M, rtol, atol in itertools.product(Ms, tols, tols):
+        if rtol == 0 and atol == 0:
             continue
 
         if solver is qmr:
@@ -402,14 +396,14 @@ def test_atol(solver):
                 M2 = aslinearoperator(np.eye(10))
             else:
                 M2 = None
-            x, info = solver(A, b, M1=M, M2=M2, tol=tol, atol=atol)
+            x, info = solver(A, b, M1=M, M2=M2, rtol=rtol, atol=atol)
         else:
-            x, info = solver(A, b, M=M, tol=tol, atol=atol)
+            x, info = solver(A, b, M=M, rtol=rtol, atol=atol)
 
         assert info == 0
         residual = A @ x - b
         err = np.linalg.norm(residual)
-        atol2 = tol * b_norm
+        atol2 = rtol * b_norm
         # Added 1.00025 fudge factor because of `err` exceeding `atol` just
         # very slightly on s390x (see gh-17839)
         assert err <= 1.00025 * max(atol, atol2)
@@ -424,24 +418,24 @@ def test_zero_rhs(solver):
     tols = np.r_[np.logspace(-10, 2, 7)]
 
     for tol in tols:
-        x, info = solver(A, b, tol=tol)
+        x, info = solver(A, b, rtol=tol)
         assert info == 0
         assert_allclose(x, 0., atol=1e-15)
 
-        x, info = solver(A, b, tol=tol, x0=ones(10))
+        x, info = solver(A, b, rtol=tol, x0=ones(10))
         assert info == 0
         assert_allclose(x, 0., atol=tol)
 
         if solver is not minres:
-            x, info = solver(A, b, tol=tol, atol=0, x0=ones(10))
+            x, info = solver(A, b, rtol=tol, atol=0, x0=ones(10))
             if info == 0:
                 assert_allclose(x, 0)
 
-            x, info = solver(A, b, tol=tol, atol=tol)
+            x, info = solver(A, b, rtol=tol, atol=tol)
             assert info == 0
             assert_allclose(x, 0, atol=1e-300)
 
-            x, info = solver(A, b, tol=tol, atol=0)
+            x, info = solver(A, b, rtol=tol, atol=0)
             assert info == 0
             assert_allclose(x, 0, atol=1e-300)
 
@@ -478,7 +472,7 @@ def test_maxiter_worsening(solver):
     slack_tol = 9
 
     for maxiter in range(1, 20):
-        x, info = solver(A, v, maxiter=maxiter, tol=1e-8, atol=0)
+        x, info = solver(A, v, maxiter=maxiter, rtol=1e-8, atol=0)
 
         if info == 0:
             assert norm(A @ x - v) <= 1e-8 * norm(v)
@@ -500,9 +494,9 @@ def test_x0_working(solver):
     x0 = rng.random(n)
 
     if solver is minres:
-        kw = dict(tol=1e-6)
+        kw = dict(rtol=1e-6)
     else:
-        kw = dict(atol=0, tol=1e-6)
+        kw = dict(atol=0, rtol=1e-6)
 
     x, info = solver(A, b, **kw)
     assert info == 0
@@ -519,12 +513,12 @@ def test_x0_equals_Mb(case):
     A = case.A
     b = case.b
     x0 = 'Mb'
-    tol = 1e-8
-    x, info = case.solver(A, b, x0=x0, tol=tol)
+    rtol = 1e-8
+    x, info = case.solver(A, b, x0=x0, rtol=rtol)
 
     assert_array_equal(x0, 'Mb')  # ensure that x0 is not overwritten
     assert info == 0
-    assert norm(A @ x - b) <= tol*norm(b)
+    assert norm(A @ x - b) <= rtol * norm(b)
 
 
 # Specific tfqmr test
@@ -595,10 +589,11 @@ class TestQMR:
         M1 = LinearOperator((n, n), matvec=L_solve, rmatvec=LT_solve)
         M2 = LinearOperator((n, n), matvec=U_solve, rmatvec=UT_solve)
 
-        x, info = qmr(A, b, tol=1e-8, maxiter=15, M1=M1, M2=M2)
+        rtol = 1e-8
+        x, info = qmr(A, b, rtol=rtol, maxiter=15, M1=M1, M2=M2)
 
         assert info == 0
-        assert_normclose(A @ x, b, tol=1e-8)
+        assert norm(A @ x - b) <= rtol * norm(b)
 
 
 class TestGMRES:
@@ -631,7 +626,7 @@ class TestGMRES:
         def callback(r):
             return store_residual(r, rvec)
 
-        x, flag = gmres(A, b, x0=zeros(A.shape[0]), tol=1e-16,
+        x, flag = gmres(A, b, x0=zeros(A.shape[0]), rtol=1e-16,
                         maxiter=maxiter, callback=callback)
 
         # Expected output from SciPy 1.0.0
@@ -641,7 +636,7 @@ class TestGMRES:
         M = 1e-3 * np.eye(A.shape[0])
         rvec = zeros(maxiter + 1)
         rvec[0] = 1.0
-        x, flag = gmres(A, b, M=M, tol=1e-16, maxiter=maxiter,
+        x, flag = gmres(A, b, M=M, rtol=1e-16, maxiter=maxiter,
                         callback=callback)
 
         # Expected output from SciPy 1.0.0
@@ -665,19 +660,19 @@ class TestGMRES:
 
         A = eye(2)
         b = ones(2)
-        x, info = gmres(A, b, tol=1e-5)
+        x, info = gmres(A, b, rtol=1e-5)
         assert np.linalg.norm(A @ x - b) <= 1e-5 * np.linalg.norm(b)
         assert_allclose(x, b, atol=0, rtol=1e-8)
 
         rndm = np.random.RandomState(12345)
         A = rndm.rand(30, 30)
         b = 1e-6 * ones(30)
-        x, info = gmres(A, b, tol=1e-7, restart=20)
+        x, info = gmres(A, b, rtol=1e-7, restart=20)
         assert np.linalg.norm(A @ x - b) > 1e-7
 
         A = eye(2)
         b = 1e-10 * ones(2)
-        x, info = gmres(A, b, tol=1e-8, atol=0)
+        x, info = gmres(A, b, rtol=1e-8, atol=0)
         assert np.linalg.norm(A @ x - b) <= 1e-8 * np.linalg.norm(b)
 
     def test_defective_precond_breakdown(self):
@@ -689,7 +684,7 @@ class TestGMRES:
         x = np.array([1, 0, 0])
         A = np.diag([2, 3, 4])
 
-        x, info = gmres(A, b, x0=x, M=M, tol=1e-15, atol=0)
+        x, info = gmres(A, b, x0=x, M=M, rtol=1e-15, atol=0)
 
         # Should not return nans, nor terminate with false success
         assert not np.isnan(x).any()
@@ -703,12 +698,13 @@ class TestGMRES:
         # Breakdown due to defective matrix
         A = np.array([[0, 1, 0], [1, 0, 0], [0, 0, 0]])
         b = np.array([1, 0, 1])
-        x, info = gmres(A, b, tol=1e-8, atol=0)
+        rtol = 1e-8
+        x, info = gmres(A, b, rtol=rtol, atol=0)
 
         # Should not return nans, nor terminate with false success
         assert not np.isnan(x).any()
         if info == 0:
-            assert np.linalg.norm(A @ x - b) <= 1e-8 * np.linalg.norm(b)
+            assert np.linalg.norm(A @ x - b) <= rtol * np.linalg.norm(b)
 
         # The solution should be OK outside null space of A
         assert_allclose(A @ (A @ x), A @ b)
@@ -731,28 +727,28 @@ class TestGMRES:
 
         # 2 iterations is not enough to solve the problem
         cb_count = [0]
-        x, info = gmres(A, b, tol=1e-6, atol=0, callback=pr_norm_cb,
+        x, info = gmres(A, b, rtol=1e-6, atol=0, callback=pr_norm_cb,
                         maxiter=2, restart=50)
         assert info == 2
         assert cb_count[0] == 2
 
         # With `callback_type` specified, no warning should be raised
         cb_count = [0]
-        x, info = gmres(A, b, tol=1e-6, atol=0, callback=pr_norm_cb,
+        x, info = gmres(A, b, rtol=1e-6, atol=0, callback=pr_norm_cb,
                         maxiter=2, restart=50, callback_type='legacy')
         assert info == 2
         assert cb_count[0] == 2
 
         # 2 restart cycles is enough to solve the problem
         cb_count = [0]
-        x, info = gmres(A, b, tol=1e-6, atol=0, callback=pr_norm_cb,
+        x, info = gmres(A, b, rtol=1e-6, atol=0, callback=pr_norm_cb,
                         maxiter=2, restart=50, callback_type='pr_norm')
         assert info == 0
         assert cb_count[0] > 2
 
         # 2 restart cycles is enough to solve the problem
         cb_count = [0]
-        x, info = gmres(A, b, tol=1e-6, atol=0, callback=x_cb, maxiter=2,
+        x, info = gmres(A, b, rtol=1e-6, atol=0, callback=x_cb, maxiter=2,
                         restart=50, callback_type='x')
         assert info == 0
         assert cb_count[0] == 1
@@ -772,7 +768,7 @@ class TestGMRES:
             prev_r[0] = r
             count[0] += 1
 
-        x, info = gmres(A, b, tol=1e-6, atol=0, callback=x_cb, maxiter=20,
+        x, info = gmres(A, b, rtol=1e-6, atol=0, callback=x_cb, maxiter=20,
                         restart=10, callback_type='x')
         assert info == 20
         assert count[0] == 20

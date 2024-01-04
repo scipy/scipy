@@ -321,7 +321,7 @@ def directed_hausdorff(u, v, seed=0):
         Input array with M points in N dimensions.
     v : (O,N) array_like
         Input array with O points in N dimensions.
-    seed : int or None
+    seed : int or None, optional
         Local `numpy.random.RandomState` seed. Default is 0, a random
         shuffling of u and v that guarantees reproducibility.
 
@@ -1881,7 +1881,7 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
         'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto',
         'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath',
         'sqeuclidean', 'yule'.
-    out : ndarray
+    out : ndarray, optional
         The output array.
         If not None, condensed distance matrix Y is stored in this array.
     **kwargs : dict, optional

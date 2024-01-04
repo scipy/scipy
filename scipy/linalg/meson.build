@@ -23,7 +23,8 @@ cython_linalg = custom_target('cython_linalg',
   # TODO - we only want to install the .pxd files! See comments for
   #        `pxd_files` further down.
   install: true,
-  install_dir: py3.get_install_dir() / 'scipy/linalg'
+  install_dir: py3.get_install_dir() / 'scipy/linalg',
+  install_tag: 'devel'
 )
 
 # This dummy custom target is only needed to establish a dependency on
