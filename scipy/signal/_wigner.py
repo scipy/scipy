@@ -53,6 +53,9 @@ def wigner_ville(
     ----------
     .. [1] S. Mallat, "A Wavelet Tour of Signal Processing (3rd Edition)",
         Academic Press, 2009.
+    .. [2] S. C. Bradford V, "Time-Frequency Analysis of Systems with Changing
+        Dynamic Properties", Dissertation, California Institute of Technology,
+        2007.
 
     Examples
     --------
