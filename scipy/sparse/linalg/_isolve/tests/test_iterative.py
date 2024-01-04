@@ -551,7 +551,11 @@ def test_positional_deprecation(solver):
     A = A @ A.T
     b = rng.random(n)
     x0 = rng.random(n)
-    with pytest.deprecated_call(match="use keyword arguments"):
+    with pytest.deprecated_call(
+        # due to the use of the _deprecate_positional_args decorator, it's not possible
+        # to separate the two warnings (1 for positional use, 1 for `tol` deprecation).
+        match="use keyword arguments.*|argument `tol` is deprecated.*"
+    ):
         solver(A, b, x0, 1e-5)
 
 

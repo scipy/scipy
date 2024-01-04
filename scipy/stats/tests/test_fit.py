@@ -461,7 +461,7 @@ class TestFit:
         with pytest.raises(ValueError, match=message):
             stats.fit(self.dist, self.data, self.shape_bounds_d, guess=guess)
 
-        message = "Guess for parameter `n` rounded..."
+        message = "Guess for parameter `n` rounded.*|Guess for parameter `p` clipped.*"
         guess = {'n': 4.5, 'p': -0.5}
         with pytest.warns(RuntimeWarning, match=message):
             stats.fit(self.dist, self.data, self.shape_bounds_d, guess=guess)
