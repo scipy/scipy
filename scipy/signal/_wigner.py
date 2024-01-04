@@ -77,8 +77,8 @@ def wigner_ville(
     >>> fig, ax = plt.subplots()
     >>> ax.pcolormesh(t, f, wv, shading='nearest')
     >>> ax.set_xlabel('Time $t$ / s')
-    >>> plt.ylabel('Frequency $f$ / Hz')
-    >>> ax.set_ylabel([0, 6])
+    >>> ax.set_ylabel('Frequency $f$ / Hz')
+    >>> ax.set_ylim([0, 6])
     >>> plt.show()
     """
     x = np.asarray(x)
