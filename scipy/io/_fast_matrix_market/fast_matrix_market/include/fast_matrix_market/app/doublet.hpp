@@ -7,7 +7,7 @@
 #include "../fast_matrix_market.hpp"
 
 namespace fast_matrix_market {
-#if __cplusplus >= 202002L
+#if __cplusplus >= 202002L || (defined(_MSVC_LANG) && _MSVC_LANG >= 202002L)
     // If available, use C++20 concepts for programmer clarity.
     // This shows what fast_matrix_market expects each template type to support.
 
@@ -89,7 +89,7 @@ namespace fast_matrix_market {
         header.object = vector;
         if (header.nnz > 0 && (values.cbegin() == values.cend())) {
             header.field = pattern;
-        } else if (header.field != pattern) {
+        } else if (header.field != pattern && options.fill_header_field_type) {
             header.field = get_field_type((const VT *) nullptr);
         }
         header.format = coordinate;

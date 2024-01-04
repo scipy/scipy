@@ -406,7 +406,7 @@ cpdef void _fill_p_cumulative(cnp.float_t[::1] p,
 @cython.wraparound(False)
 cpdef void _categorize(cnp.float_t[::1] draws,
                        cnp.float_t[::1] p_cumulative,
-                       cnp.int_t[::1] result) noexcept nogil:
+                       cnp.intp_t[::1] result) noexcept nogil:
     cdef int i
     cdef int n_p = p_cumulative.shape[0]
     for i in range(draws.shape[0]):

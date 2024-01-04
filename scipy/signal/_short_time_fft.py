@@ -22,7 +22,7 @@ from __future__ import annotations
 # Linter does not allow to import ``Generator`` from ``typing`` module:
 from collections.abc import Generator
 from functools import cache, lru_cache, partial
-from typing import Callable, get_args, Literal, Union
+from typing import Callable, get_args, Literal
 
 import numpy as np
 
@@ -357,7 +357,7 @@ class ShortTimeFFT:
                    phase_shift=phase_shift)
 
     @classmethod
-    def from_window(cls, win_param: Union[str, tuple, float],
+    def from_window(cls, win_param: str | tuple | float,
                     fs: float, nperseg: int, noverlap: int, *,
                     symmetric_win: bool = False,
                     fft_mode: FFT_MODE_TYPE = 'onesided',
@@ -529,14 +529,14 @@ class ShortTimeFFT:
 
         'twosided':
             Two-sided FFT, where values for the negative frequencies are in
-            upper half of the array. Corresponds to :func:`scipy.fft.fft()`.
+            upper half of the array. Corresponds to :func:`~scipy.fft.fft()`.
         'centered':
             Two-sided FFT with the values being ordered along monotonically
             increasing frequencies. Corresponds to applying
-            :func:`scipy.fft.fftshift()` to :func:`scipy.fft.fft()`.
+            :func:`~scipy.fft.fftshift()` to :func:`~scipy.fft.fft()`.
         'onesided':
             Calculates only values for non-negative frequency values.
-            Corresponds to :func:`scipy.fft.rfft()`.
+            Corresponds to :func:`~scipy.fft.rfft()`.
         'onesided2X':
             Like `onesided`, but the non-zero frequencies are doubled if
             `scaling` is set to 'magnitude' or multiplied by ``sqrt(2)`` if
@@ -613,8 +613,8 @@ class ShortTimeFFT:
         If not ``None``, the FFTs can be either interpreted as a magnitude or
         a power spectral density spectrum.
 
-        The window function can be scaled by calling the `scale_to()` method,
-        or it is set by the initializer parameter `scale_to`.
+        The window function can be scaled by calling the `scale_to` method,
+        or it is set by the initializer parameter ``scale_to``.
 
         See Also
         --------
@@ -796,8 +796,7 @@ class ShortTimeFFT:
                                  padding=padding, axis=axis)
 
     def stft_detrend(self, x: np.ndarray,
-                     detr: Union[Callable[[np.ndarray], np.ndarray],
-                                 Literal['linear', 'constant'], None],
+                     detr: Callable[[np.ndarray], np.ndarray] | Literal['linear', 'constant'] | None,  # noqa: E501
                      p0: int | None = None, p1: int | None = None, *,
                      k_offset: int = 0, padding: PAD_TYPE = 'zeros',
                      axis: int = -1) \
@@ -848,8 +847,8 @@ class ShortTimeFFT:
         return S
 
     def spectrogram(self, x: np.ndarray, y: np.ndarray | None = None,
-                    detr: Union[Callable[[np.ndarray], np.ndarray],
-                                Literal['linear', 'constant'], None] = None, *,
+                    detr: Callable[[np.ndarray], np.ndarray] | Literal['linear', 'constant'] | None = None,  # noqa: E501
+                    *,
                     p0: int | None = None, p1: int | None = None,
                     k_offset: int = 0, padding: PAD_TYPE = 'zeros',
                     axis: int = -1) \
@@ -1629,7 +1628,7 @@ class ShortTimeFFT:
         """Return minimum and maximum values time-frequency values.
 
         A tuple with four floats  ``(t0, t1, f0, f1)`` for 'tf' and
-        ``(f0, f1, t0, t1)`` for 'ft') is returned describing the corners
+        ``(f0, f1, t0, t1)`` for 'ft' is returned describing the corners
         of the time-frequency domain of the `~ShortTimeFFT.stft`.
         That tuple can be passed to `matplotlib.pyplot.imshow` as a parameter
         with the same name.

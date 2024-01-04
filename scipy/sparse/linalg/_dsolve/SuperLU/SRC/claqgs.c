@@ -99,7 +99,8 @@ claqgs(SuperMatrix *A, float *r, float *c,
     /* Local variables */
     NCformat *Astore;
     singlecomplex   *Aval;
-    int i, j, irow;
+    int_t i, j;
+    int   irow;
     float large, small, cj;
     float temp;
 

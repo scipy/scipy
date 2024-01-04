@@ -7,7 +7,7 @@
 #include "../fast_matrix_market.hpp"
 
 namespace fast_matrix_market {
-#if __cplusplus >= 202002L
+#if __cplusplus >= 202002L || (defined(_MSVC_LANG) && _MSVC_LANG >= 202002L)
     // If available, use C++20 concepts for programmer clarity.
     // This shows what fast_matrix_market expects each template type to support.
 
@@ -37,6 +37,75 @@ namespace fast_matrix_market {
 #endif
 
     /**
+     * Generalize symmetry of triplet.
+     *
+     * Does not duplicate diagonal elements.
+     */
+    template <typename IVEC, typename VVEC>
+    void generalize_symmetry_triplet(IVEC& rows, IVEC& cols, VVEC& values, const symmetry_type& symmetry) {
+        if (symmetry == general) {
+            return;
+        }
+
+        std::size_t num_diagonal_elements = 0;
+
+        // count how many diagonal elements there are (these do not get duplicated)
+        for (std::size_t i = 0; i < rows.size(); ++i) {
+            if (rows[i] == cols[i]) {
+                ++num_diagonal_elements;
+            }
+        }
+
+        // resize vectors
+        auto orig_size = rows.size();
+        auto new_size = 2*orig_size - num_diagonal_elements;
+        rows.resize(new_size);
+        cols.resize(new_size);
+        values.resize(new_size);
+
+        // fill in the new values
+        auto row_iter = rows.begin() + orig_size;
+        auto col_iter = cols.begin() + orig_size;
+        auto val_iter = values.begin() + orig_size;
+        for (std::size_t i = 0; i < orig_size; ++i) {
+            if (rows[i] == cols[i]) {
+                continue;
+            }
+
+            *row_iter = cols[i];
+            *col_iter = rows[i];
+            *val_iter = get_symmetric_value<typename VVEC::value_type>(values[i], symmetry);
+
+            ++row_iter; ++col_iter; ++val_iter;
+        }
+    }
+
+    template <triplet_read_vector IVEC, triplet_read_vector VVEC, typename T>
+    void read_matrix_market_body_triplet(std::istream &instream,
+                                         const matrix_market_header& header,
+                                         IVEC& rows, IVEC& cols, VVEC& values,
+                                         T pattern_value,
+                                         read_options options = {}) {
+        bool app_generalize = false;
+        if (options.generalize_symmetry && options.generalize_symmetry_app) {
+            app_generalize = true;
+            options.generalize_symmetry = false;
+        }
+
+        auto nnz = get_storage_nnz(header, options);
+        rows.resize(nnz);
+        cols.resize(nnz);
+        values.resize(nnz);
+
+        auto handler = triplet_parse_handler(rows.begin(), cols.begin(), values.begin());
+        read_matrix_market_body(instream, header, handler, pattern_value, options);
+
+        if (app_generalize) {
+            generalize_symmetry_triplet(rows, cols, values, header.symmetry);
+        }
+    }
+
+    /**
      * Read a Matrix Market file into a triplet (i.e. row, column, value vectors).
      */
     template <triplet_read_vector IVEC, triplet_read_vector VVEC>
@@ -44,16 +113,10 @@ namespace fast_matrix_market {
                                     matrix_market_header& header,
                                     IVEC& rows, IVEC& cols, VVEC& values,
                                     const read_options& options = {}) {
-        using VT = typename std::iterator_traits<decltype(values.begin())>::value_type;
-
         read_header(instream, header);
 
-        rows.resize(get_storage_nnz(header, options));
-        cols.resize(get_storage_nnz(header, options));
-        values.resize(get_storage_nnz(header, options));
-
-        auto handler = triplet_parse_handler(rows.begin(), cols.begin(), values.begin());
-        read_matrix_market_body(instream, header, handler, pattern_default_value((const VT*)nullptr), options);
+        using VT = typename std::iterator_traits<decltype(values.begin())>::value_type;
+        read_matrix_market_body_triplet(instream, header, rows, cols, values, pattern_default_value((const VT*)nullptr), options);
     }
 
     /**
@@ -88,7 +151,7 @@ namespace fast_matrix_market {
         header.object = matrix;
         if (header.nnz > 0 && (values.cbegin() == values.cend())) {
             header.field = pattern;
-        } else if (header.field != pattern) {
+        } else if (header.field != pattern && options.fill_header_field_type) {
             header.field = get_field_type((const VT *) nullptr);
         }
         header.format = coordinate;
@@ -122,7 +185,7 @@ namespace fast_matrix_market {
         header.object = matrix;
         if (header.nnz > 0 && (values.cbegin() == values.cend())) {
             header.field = pattern;
-        } else if (header.field != pattern) {
+        } else if (header.field != pattern && options.fill_header_field_type) {
             header.field = get_field_type((const VT *) nullptr);
         }
         header.format = coordinate;

@@ -5,11 +5,12 @@ from pytest import raises as assert_raises
 from scipy import sparse
 
 from scipy.sparse import csgraph
+from scipy._lib._util import np_long, np_ulong
 
 
 def check_int_type(mat):
     return np.issubdtype(mat.dtype, np.signedinteger) or np.issubdtype(
-        mat.dtype, np.uint
+        mat.dtype, np_ulong
     )
 
 
@@ -160,11 +161,11 @@ def _check_laplacian_dtype(
                 _assert_allclose_sparse(L, mat)
 
 
-INT_DTYPES = {np.intc, np.int_, np.longlong}
+INT_DTYPES = {np.intc, np_long, np.longlong}
 REAL_DTYPES = {np.float32, np.float64, np.longdouble}
 COMPLEX_DTYPES = {np.complex64, np.complex128, np.clongdouble}
-# use sorted tuple to ensure fixed order of tests
-DTYPES = tuple(sorted(INT_DTYPES ^ REAL_DTYPES ^ COMPLEX_DTYPES, key=str))
+# use sorted list to ensure fixed order of tests
+DTYPES = sorted(INT_DTYPES ^ REAL_DTYPES ^ COMPLEX_DTYPES, key=str)
 
 
 @pytest.mark.parametrize("dtype", DTYPES)

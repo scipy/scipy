@@ -601,9 +601,8 @@ class FitDataError(ValueError):
     def __init__(self, distr, lower, upper):
         self.args = (
             "Invalid values in `data`.  Maximum likelihood "
-            "estimation with {distr!r} requires that {lower!r} < "
-            "(x - loc)/scale  < {upper!r} for each x in `data`.".format(
-                distr=distr, lower=lower, upper=upper),
+            f"estimation with {distr!r} requires that {lower!r} < "
+            f"(x - loc)/scale  < {upper!r} for each x in `data`.",
         )
 
 
@@ -1155,7 +1154,8 @@ class burr_gen(rv_continuous):
         g1 = _lazywhere(
             c > 3.0,
             (c, e1, e2, e3, mu2_if_c),
-            lambda c, e1, e2, e3, mu2_if_c: (e3 - 3*e2*e1 + 2*e1**3) / np.sqrt((mu2_if_c)**3),
+            lambda c, e1, e2, e3, mu2_if_c: ((e3 - 3*e2*e1 + 2*e1**3)
+                                             / np.sqrt((mu2_if_c)**3)),
             fillvalue=np.nan)
         g2 = _lazywhere(
             c > 4.0,
@@ -1468,7 +1468,8 @@ class chi_gen(rv_continuous):
         return np.sqrt(2*sc.gammainccinv(.5*df, q))
 
     def _stats(self, df):
-        mu = np.sqrt(2)*np.exp(sc.gammaln(df/2.0+0.5)-sc.gammaln(df/2.0))
+        # poch(df/2, 1/2) = gamma(df/2 + 1/2) / gamma(df/2)
+        mu = np.sqrt(2) * sc.poch(0.5 * df, 0.5)
         mu2 = df - mu*mu
         g1 = (2*mu**3.0 + mu*(1-2*df))/np.asarray(np.power(mu2, 1.5))
         g2 = 2*df*(1.0-df)-6*mu**4 + 4*mu**2 * (2*df-1)
@@ -1631,7 +1632,9 @@ class cosine_gen(rv_continuous):
         return -scu._cosine_invcdf(p)
 
     def _stats(self):
-        return 0.0, np.pi*np.pi/3.0-2.0, 0.0, -6.0*(np.pi**4-90)/(5.0*(np.pi*np.pi-6)**2)
+        v = (np.pi * np.pi / 3.0) - 2.0
+        k = -6.0 * (np.pi**4 - 90) / (5.0 * (np.pi * np.pi - 6)**2)
+        return 0.0, v, 0.0, k
 
     def _entropy(self):
         return np.log(4*np.pi)-1.0
@@ -2282,8 +2285,8 @@ class f_gen(rv_continuous):
 
     Notes
     -----
-    The F distribution with :math:`df_1 > 0` and :math:`df_2 > 0` degrees of freedom is the
-    distribution of the ratio of two independent chi-squared distributions with
+    The F distribution with :math:`df_1 > 0` and :math:`df_2 > 0` degrees of freedom is
+    the distribution of the ratio of two independent chi-squared distributions with
     :math:`df_1` and :math:`df_2` degrees of freedom, after rescaling by
     :math:`df_2 / df_1`.
     
@@ -3312,7 +3315,8 @@ class gamma_gen(rv_continuous):
 
     .. math::
 
-        f(x, \alpha, \beta) = \frac{\beta^\alpha x^{\alpha - 1} e^{-\beta x }}{\Gamma(\alpha)}
+        f(x, \alpha, \beta) =
+        \frac{\beta^\alpha x^{\alpha - 1} e^{-\beta x }}{\Gamma(\alpha)}
 
     Note that this parameterization is equivalent to the above, with
     ``scale = 1 / beta``.
@@ -3491,10 +3495,9 @@ class erlang_gen(gamma_gen):
         if not allint:
             # An Erlang distribution shouldn't really have a non-integer
             # shape parameter, so warn the user.
-            warnings.warn(
-                'The shape parameter of the erlang distribution '
-                'has been given a non-integer value {!r}.'.format(a),
-                RuntimeWarning)
+            message = ('The shape parameter of the erlang distribution '
+                       f'has been given a non-integer value {a!r}.')
+            warnings.warn(message, RuntimeWarning, stacklevel=3)
         return a > 0
 
     def _shape_info(self):
@@ -3838,7 +3841,7 @@ class genhyperbolic_gen(rv_continuous):
         if np.isnan(intgrl):
             msg = ("Infinite values encountered in scipy.special.kve. "
                    "Values replaced by NaN to avoid incorrect results.")
-            warnings.warn(msg, RuntimeWarning)
+            warnings.warn(msg, RuntimeWarning, stacklevel=3)
         return max(0.0, min(1.0, intgrl))
 
     def _cdf(self, x, p, a, b):
@@ -4877,7 +4880,7 @@ class geninvgauss_gen(rv_continuous):
         if np.isnan(z).any():
             msg = ("Infinite values encountered in scipy.special.kve(p, b). "
                    "Values replaced by NaN to avoid incorrect results.")
-            warnings.warn(msg, RuntimeWarning)
+            warnings.warn(msg, RuntimeWarning, stacklevel=3)
         return z
 
     def _pdf(self, x, p, b):
@@ -5056,8 +5059,8 @@ class geninvgauss_gen(rv_continuous):
 
                 if (simulated == 0) and (i*N >= 50000):
                     msg = ("Not a single random variate could be generated "
-                           "in {} attempts. Sampling does not appear to "
-                           "work for the provided parameters.".format(i*N))
+                           f"in {i*N} attempts. Sampling does not appear to "
+                           "work for the provided parameters.")
                     raise RuntimeError(msg)
                 i += 1
         else:
@@ -5128,7 +5131,7 @@ class geninvgauss_gen(rv_continuous):
             msg = ("Infinite values encountered in the moment calculation "
                    "involving scipy.special.kve. Values replaced by NaN to "
                    "avoid incorrect results.")
-            warnings.warn(msg, RuntimeWarning)
+            warnings.warn(msg, RuntimeWarning, stacklevel=3)
             m = np.full_like(num, np.nan, dtype=np.float64)
             m[~inf_vals] = num[~inf_vals] / denom[~inf_vals]
         else:
@@ -5210,9 +5213,9 @@ class norminvgauss_gen(rv_continuous):
 
     def _pdf(self, x, a, b):
         gamma = np.sqrt(a**2 - b**2)
-        fac1 = a / np.pi * np.exp(gamma)
+        fac1 = a / np.pi
         sq = np.hypot(1, x)  # reduce overflows
-        return fac1 * sc.k1e(a * sq) * np.exp(b*x - a*sq) / sq
+        return fac1 * sc.k1e(a * sq) * np.exp(b*x - a*sq + gamma) / sq
 
     def _sf(self, x, a, b):
         if np.isscalar(x):
@@ -6343,7 +6346,8 @@ loglaplace = loglaplace_gen(a=0.0, name='loglaplace')
 
 def _lognorm_logpdf(x, s):
     return _lazywhere(x != 0, (x, s),
-                      lambda x, s: -np.log(x)**2 / (2*s**2) - np.log(s*x*np.sqrt(2*np.pi)),
+                      lambda x, s: (-np.log(x)**2 / (2 * s**2)
+                                    - np.log(s * x * np.sqrt(2 * np.pi))),
                       -np.inf)
 
 
@@ -7252,7 +7256,7 @@ class nakagami_gen(rv_continuous):
         return np.sqrt(1/nu * sc.gammainccinv(nu, p))
 
     def _stats(self, nu):
-        mu = sc.gamma(nu+0.5)/sc.gamma(nu)/np.sqrt(nu)
+        mu = sc.poch(nu, 0.5)/np.sqrt(nu)
         mu2 = 1.0-mu*mu
         g1 = mu * (1 - 4*nu*mu2) / 2.0 / nu / np.power(mu2, 1.5)
         g2 = -6*mu**4*nu + (8*nu-2)*mu**2-2*nu + 1
@@ -7541,29 +7545,15 @@ class t_gen(rv_continuous):
 
     def _logpdf(self, x, df):
 
-        def regular_formula(x, df):
-            return (sc.gammaln((df + 1)/2) - sc.gammaln(df/2)
-                    - (0.5 * np.log(df*np.pi))
+        def t_logpdf(x, df):
+            return (np.log(sc.poch(0.5 * df, 0.5))
+                    - 0.5 * (np.log(df) + np.log(np.pi))
                     - (df + 1)/2*np.log1p(x * x/df))
-
-        def asymptotic_formula(x, df):
-            return (- 0.5 * (1 + np.log(2 * np.pi)) + df/2 * np.log1p(1/df)
-                    + 1/6 * (df + 1)**-1. - 1/45*(df + 1)**-3.
-                    - 1/6 * df**-1. + 1/45*df**-3.
-                    - (df + 1)/2 * np.log1p(x*x/df))
 
         def norm_logpdf(x, df):
             return norm._logpdf(x)
 
-        return _lazyselect(
-            ((df == np.inf),
-             (df >= 200) & np.isfinite(df),
-             (df < 200)),
-            (norm_logpdf,
-             asymptotic_formula,
-             regular_formula),
-            (x, df, )
-        )
+        return _lazywhere(df == np.inf, (x, df, ), f=norm_logpdf, f2=t_logpdf)
 
     def _cdf(self, x, df):
         return sc.stdtr(df, x)
@@ -9117,6 +9107,12 @@ class skewnorm_gen(rv_continuous):
             f2=lambda x, a: 2.*_norm_pdf(x)*_norm_cdf(a*x)
         )
 
+    def _logpdf(self, x, a):
+        return _lazywhere(
+            a == 0, (x, a), lambda x, a: _norm_logpdf(x),
+            f2=lambda x, a: np.log(2)+_norm_logpdf(x)+_norm_logcdf(a*x),
+        )
+
     def _cdf(self, x, a):
         a = np.atleast_1d(a)
         cdf = _boost._skewnorm_cdf(x, 0, 1, a)
@@ -9221,6 +9217,8 @@ class skewnorm_gen(rv_continuous):
         shape parameter ``a`` will be infinite.
         \n\n""")
     def fit(self, data, *args, **kwds):
+        if kwds.pop("superfit", False):
+            return super().fit(data, *args, **kwds)
         if isinstance(data, CensoredData):
             if data.num_censored() == 0:
                 data = data._uncensor()
@@ -9244,13 +9242,6 @@ class skewnorm_gen(rv_continuous):
                 np.pi/2 * s_23 / (s_23 + ((4 - np.pi)/2)**(2/3))
             )
 
-        # If skewness of data is greater than max possible population skewness,
-        # MoM won't provide a good guess. Get out early.
-        s = stats.skew(data)
-        s_max = skew_d(1)
-        if abs(s) >= s_max and method != "mm" and fa is None and not args:
-            return super().fit(data, *args, **kwds)
-
         # If method is method of moments, we don't need the user's guesses.
         # Otherwise, extract the guesses from args and kwds.
         if method == "mm":
@@ -9263,7 +9254,14 @@ class skewnorm_gen(rv_continuous):
         if fa is None and a is None:  # not fixed and no guess: use MoM
             # Solve for a that matches sample distribution skewness to sample
             # skewness.
-            s = np.clip(s, -s_max, s_max)
+            s = stats.skew(data)
+            if method == 'mle':
+                # For MLE initial conditions, clip skewness to a large but
+                # reasonable value in case the data skewness is out-of-range.
+                s = np.clip(s, -0.99, 0.99)
+            else:
+                s_max = skew_d(1)
+                s = np.clip(s, -s_max, s_max)
             d = d_skew(s)
             with np.errstate(divide='ignore'):
                 a = np.sqrt(np.divide(d**2, (1-d**2)))*np.sign(s)
@@ -9891,37 +9889,36 @@ class truncpareto_gen(rv_continuous):
         return self.a, c
 
     def _pdf(self, x, b, c):
-        return b * x**-(b+1) / (1 - c**-b)
+        return b * x**-(b+1) / (1 - 1/c**b)
 
     def _logpdf(self, x, b, c):
-        # return np.log(b) - np.log1p(-c**-b) - (b+1)*np.log(x)
         return np.log(b) - np.log(-np.expm1(-b*np.log(c))) - (b+1)*np.log(x)
 
     def _cdf(self, x, b, c):
-        return (1 - x**-b) / (1 - c**-b)
+        return (1 - x**-b) / (1 - 1/c**b)
 
     def _logcdf(self, x, b, c):
-        return np.log1p(-x**-b) - np.log1p(-c**-b)
+        return np.log1p(-x**-b) - np.log1p(-1/c**b)
 
     def _ppf(self, q, b, c):
-        return pow(1 - (1 - c**-b)*q, -1/b)
+        return pow(1 - (1 - 1/c**b)*q, -1/b)
 
     def _sf(self, x, b, c):
-        return (x**-b - c**-b) / (1 - c**-b)
+        return (x**-b - 1/c**b) / (1 - 1/c**b)
 
     def _logsf(self, x, b, c):
-        return np.log(x**-b - c**-b) - np.log1p(-c**-b)
+        return np.log(x**-b - 1/c**b) - np.log1p(-1/c**b)
 
     def _isf(self, q, b, c):
-        return pow(c**-b + (1 - c**-b)*q, -1/b)
+        return pow(1/c**b + (1 - 1/c**b)*q, -1/b)
 
     def _entropy(self, b, c):
-        return -(np.log(b/(1 - c**-b))
+        return -(np.log(b/(1 - 1/c**b))
                  + (b+1)*(np.log(c)/(c**b - 1) - 1/b))
 
     def _munp(self, n, b, c):
         if (n == b).all():
-            return b*np.log(c) / (1 - c**-b)
+            return b*np.log(c) / (1 - 1/c**b)
         else:
             return b / (b-n) * (c**b - c**n) / (c**b - 1)
 
@@ -10935,14 +10932,14 @@ class crystalball_gen(rv_continuous):
     from a power-law to a Gaussian distribution.  :math:`m` is the power
     of the power-law tail.
 
+    %(after_notes)s
+
+    .. versionadded:: 0.19.0
+
     References
     ----------
     .. [1] "Crystal Ball Function",
            https://en.wikipedia.org/wiki/Crystal_Ball_function
-
-    %(after_notes)s
-
-    .. versionadded:: 0.19.0
 
     %(example)s
     """

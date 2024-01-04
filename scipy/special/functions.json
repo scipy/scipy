@@ -31,9 +31,9 @@
         }
     },
     "_lambertw": {
-        "_lambertw.pxd": {
+	"_special.h++": {
             "lambertw_scalar": "Dld->D"
-        }
+	}
     },
     "_lanczos_sum_expg_scaled": {
         "cephes.h": {
@@ -247,7 +247,7 @@
         }
     },
     "binom": {
-        "orthogonal_eval.pxd": {
+        "_special.h++": {
             "binom": "dd->d"
         }
     },
@@ -1400,6 +1400,11 @@
     "stdtrit": {
         "cdf_wrappers.h": {
             "cdft2_wrap": "dd->d"
+        }
+    },
+    "_stirling2_inexact": {
+        "stirling2.h++": {
+            "_stirling2_inexact": "dd->d"
         }
     },
     "struve": {

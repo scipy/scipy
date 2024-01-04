@@ -23,7 +23,8 @@ cython_linalg = custom_target('cython_linalg',
   # TODO - we only want to install the .pxd files! See comments for
   #        `pxd_files` further down.
   install: true,
-  install_dir: py3.get_install_dir() / 'scipy/linalg'
+  install_dir: py3.get_install_dir() / 'scipy/linalg',
+  install_tag: 'devel'
 )
 
 # This dummy custom target is only needed to establish a dependency on
@@ -96,23 +97,6 @@ py3.extension_module('_flapack',
 )
 
 # TODO: cblas/clapack are built *only* for ATLAS. Why? Is it still needed?
-
-# _flinalg
-flinalg_module = custom_target('flinalg_module',
-  output: '_flinalgmodule.c',
-  input: ['src/flinalg.pyf'],
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
-)
-
-py3.extension_module('_flinalg',
-  ['src/det.f', 'src/lu.f', flinalg_module],
-  c_args: numpy_nodepr_api,
-  link_args: version_link_args,
-  dependencies: [lapack, fortranobject_dep],
-  install: true,
-  link_language: 'fortran',
-  subdir: 'scipy/linalg'
-)
 
 # _interpolative
 interpolative_module = custom_target('interpolative_module',
@@ -302,7 +286,6 @@ python_sources = [
   '_decomp_schur.py',
   '_decomp_svd.py',
   '_expm_frechet.py',
-  '_flinalg_py.py',
   '_interpolative_backend.py',
   '_matfuncs.py',
   '_matfuncs_expm.pyi',
@@ -322,7 +305,6 @@ python_sources = [
   'decomp_qr.py',
   'decomp_schur.py',
   'decomp_svd.py',
-  'flinalg.py',
   'interpolative.py',
   'lapack.py',
   'matfuncs.py',

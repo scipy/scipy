@@ -2,13 +2,6 @@
 # Created by: Pearu Peterson, April 2002
 #
 
-__usage__ = """
-Build linalg:
-  python setup.py build
-Run tests if scipy is installed:
-  python -c 'import scipy;scipy.linalg.test()'
-"""
-
 import math
 import pytest
 import numpy as np

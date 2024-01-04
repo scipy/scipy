@@ -11,7 +11,6 @@ from typing import (
     Optional,
     Union,
     TYPE_CHECKING,
-    Type,
     TypeVar,
 )
 
@@ -19,19 +18,40 @@ import numpy as np
 from scipy._lib._array_api import array_namespace
 
 
-AxisError: Type[Exception]
-ComplexWarning: Type[Warning]
-VisibleDeprecationWarning: Type[Warning]
+AxisError: type[Exception]
+ComplexWarning: type[Warning]
+VisibleDeprecationWarning: type[Warning]
 
 if np.lib.NumpyVersion(np.__version__) >= '1.25.0':
     from numpy.exceptions import (
-        AxisError, ComplexWarning, VisibleDeprecationWarning  # noqa: F401
+        AxisError, ComplexWarning, VisibleDeprecationWarning,
+        DTypePromotionError
     )
 else:
     from numpy import (
         AxisError, ComplexWarning, VisibleDeprecationWarning  # noqa: F401
     )
+    DTypePromotionError = TypeError  # type: ignore
 
+np_long: type
+np_ulong: type
+
+if np.lib.NumpyVersion(np.__version__) >= "2.0.0.dev0":
+    try:
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                r".*In the future `np\.long` will be defined as.*",
+                FutureWarning,
+            )
+            np_long = np.long  # type: ignore[attr-defined]
+            np_ulong = np.ulong  # type: ignore[attr-defined]
+    except AttributeError:
+            np_long = np.int_
+            np_ulong = np.uint
+else:
+    np_long = np.int_
+    np_ulong = np.uint
 
 IntNumber = Union[int, np.integer]
 DecimalNumber = Union[float, np.floating, np.integer]
@@ -47,7 +67,7 @@ if TYPE_CHECKING:
 try:
     from numpy.random import Generator as Generator
 except ImportError:
-    class Generator():  # type: ignore[no-redef]
+    class Generator:  # type: ignore[no-redef]
         pass
 
 
@@ -513,7 +533,7 @@ def rng_integers(gen, low, high=None, size=None, dtype='int64',
         Desired dtype of the result. All dtypes are determined by their name,
         i.e., 'int64', 'int', etc, so byteorder is not available and a specific
         precision may have different C types depending on the platform.
-        The default value is np.int_.
+        The default value is 'int64'.
     endpoint : bool, optional
         If True, sample from the interval [low, high] instead of the default
         [low, high) Defaults to False.
@@ -773,7 +793,11 @@ def _rng_spawn(rng, n_children):
 def _get_nan(*data):
     # Get NaN of appropriate dtype for data
     data = [np.asarray(item) for item in data]
-    dtype = np.result_type(*data, np.half)  # must be a float16 at least
+    try:
+        dtype = np.result_type(*data, np.half)  # must be a float16 at least
+    except DTypePromotionError:
+        # fallback to float64
+        return np.array(np.nan, dtype=np.float64)[()]
     return np.array(np.nan, dtype=dtype)[()]
 
 

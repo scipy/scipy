@@ -841,7 +841,7 @@ except ImportError:
 
 # Expose all functions (only flapack --- clapack is an implementation detail)
 empty_module = None
-from scipy.linalg._flapack import *
+from scipy.linalg._flapack import *  # noqa: E402, F403
 del empty_module
 
 __all__ = ['get_lapack_funcs']

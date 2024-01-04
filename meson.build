@@ -4,7 +4,7 @@ project(
   # Note that the git commit hash cannot be added dynamically here (it is added
   # in the dynamically generated and installed `scipy/version.py` though - see
   # tools/version_utils.py
-  version: '1.12.0.dev0',
+  version: '1.13.0.dev0',
   license: 'BSD-3',
   meson_version: '>= 1.1.0',
   default_options: [
@@ -18,9 +18,7 @@ project(
   ],
 )
 
-# https://mesonbuild.com/Python-module.html
-py_mod = import('python')
-py3 = py_mod.find_installation(pure: false)
+py3 = import('python').find_installation(pure: false)
 py3_dep = py3.dependency()
 
 # Emit a warning for 32-bit Python installs on Windows; users are getting
@@ -50,8 +48,8 @@ elif cc.get_id() == 'msvc'
           'when building with MSVC')
   endif
 endif
-if not cy.version().version_compare('>=0.29.35')
-  error('SciPy requires Cython >= 0.29.35')
+if not cy.version().version_compare('>=3.0.4')
+  error('SciPy requires Cython >= 3.0.4')
 endif
 
 _global_c_args = cc.get_supported_arguments(
@@ -73,9 +71,7 @@ endif
 if host_machine.system() == 'os400'
   # IBM i system, needed to avoid build errors - see gh-17193
   add_project_arguments('-D__STDC_FORMAT_MACROS', language : 'cpp')
-  add_project_link_arguments('-Wl,-bnotextro', language : 'c')
-  add_project_link_arguments('-Wl,-bnotextro', language : 'cpp')
-  add_project_link_arguments('-Wl,-bnotextro', language : 'fortran')
+  add_project_link_arguments('-Wl,-bnotextro', language : ['c', 'cpp', 'fortran'])
 endif
 
 # Adding at project level causes many spurious -lgfortran flags.
@@ -83,6 +79,11 @@ add_languages('fortran', native: false)
 ff = meson.get_compiler('fortran')
 if ff.has_argument('-Wno-conversion')
   add_project_arguments('-Wno-conversion', language: 'fortran')
+endif
+
+if host_machine.system() == 'darwin' and cc.has_link_argument('-Wl,-ld_classic')
+  # New linker introduced in macOS 14 not working yet, see gh-19357 and gh-19387
+  add_project_link_arguments('-Wl,-ld_classic', language : ['c', 'cpp', 'fortran'])
 endif
 
 # Intel compilers default to fast-math, so disable it if we detect Intel
@@ -93,18 +94,18 @@ endif
 # is actually needed, everything else shouldn't be there).
 _intel_cflags = []
 _intel_fflags = []
-if cc.get_id() == 'intel'
+if cc.get_id() in ['intel', 'intel-llvm']
   _intel_cflags += cc.get_supported_arguments('-fp-model=strict')
-elif cc.get_id() == 'intel-cl'
+elif cc.get_id() in ['intel-cl', 'intel-llvm-cl']
   _intel_cflags += cc.get_supported_arguments('/fp:strict')
 endif
-if ff.get_id() == 'intel'
+if ff.get_id() in ['intel', 'intel-llvm']
   _intel_fflags = ff.get_supported_arguments('-fp-model=strict')
   minus0_arg = ['-assume', 'minus0']
   if ff.has_multi_arguments(minus0_arg)
     _intel_fflags += minus0_arg
   endif
-elif ff.get_id() == 'intel-cl'
+elif ff.get_id() in ['intel-cl', 'intel-llvm-cl']
   # Intel Fortran on Windows does things differently, so deal with that
   # (also specify dynamic linking and the right name mangling)
   _intel_fflags = ff.get_supported_arguments(
@@ -135,6 +136,9 @@ tempita = files('scipy/_build_utils/tempita.py')
 use_pythran = get_option('use-pythran')
 if use_pythran
   pythran = find_program('pythran', native: true)
+  if not pythran.version().version_compare('>=0.14.0')
+    error('SciPy requires pythran >= 0.14.0')
+  endif
   # xsimd is unvendored from pythran by conda-forge, and due to a compiler
   # activation bug the default <prefix>/include/ may not be visible (see
   # gh-15698). Hence look for xsimd explicitly.

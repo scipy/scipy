@@ -21,9 +21,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  get_commit_message:
+    name: Get commit message
+    uses: ./.github/workflows/commit_message.yml
+
   pytorch_cpu:
     name: Linux PyTorch CPU
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-22.04
     strategy:
       matrix:

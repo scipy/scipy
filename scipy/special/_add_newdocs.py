@@ -165,7 +165,8 @@ add_newdoc("voigt_profile",
 
     If ``sigma = 0``, PDF of Cauchy distribution is returned.
     Conversely, if ``gamma = 0``, PDF of Normal distribution is returned.
-    If ``sigma = gamma = 0``, the return value is ``Inf`` for ``x = 0``, and ``0`` for all other ``x``.
+    If ``sigma = gamma = 0``, the return value is ``Inf`` for ``x = 0``,
+    and ``0`` for all other ``x``.
 
     Parameters
     ----------
@@ -568,7 +569,8 @@ add_newdoc("bdtr",
     Sum of the terms 0 through `floor(k)` of the Binomial probability density.
 
     .. math::
-        \mathrm{bdtr}(k, n, p) = \sum_{j=0}^{\lfloor k \rfloor} {{n}\choose{j}} p^j (1-p)^{n-j}
+        \mathrm{bdtr}(k, n, p) =
+        \sum_{j=0}^{\lfloor k \rfloor} {{n}\choose{j}} p^j (1-p)^{n-j}
 
     Parameters
     ----------
@@ -593,7 +595,8 @@ add_newdoc("bdtr",
     function is employed, according to the formula,
 
     .. math::
-        \mathrm{bdtr}(k, n, p) = I_{1 - p}(n - \lfloor k \rfloor, \lfloor k \rfloor + 1).
+        \mathrm{bdtr}(k, n, p) =
+        I_{1 - p}(n - \lfloor k \rfloor, \lfloor k \rfloor + 1).
 
     Wrapper for the Cephes [1]_ routine `bdtr`.
 
@@ -614,7 +617,8 @@ add_newdoc("bdtrc",
     density,
 
     .. math::
-        \mathrm{bdtrc}(k, n, p) = \sum_{j=\lfloor k \rfloor +1}^n {{n}\choose{j}} p^j (1-p)^{n-j}
+        \mathrm{bdtrc}(k, n, p) =
+        \sum_{j=\lfloor k \rfloor +1}^n {{n}\choose{j}} p^j (1-p)^{n-j}
 
     Parameters
     ----------
@@ -3296,7 +3300,7 @@ add_newdoc(
     widely in the order of magnitude. [5]_
 
     The input values are subject to certain sufficient but not necessary
-    constaints when input arguments are complex. Notably, ``x``, ``y``, and
+    constraints when input arguments are complex. Notably, ``x``, ``y``, and
     ``z`` must have non-negative real parts, unless two of them are
     non-negative and complex-conjugates to each other while the other is a real
     non-negative number. [1]_ If the inputs do not satisfy the sufficient
@@ -3378,7 +3382,8 @@ add_newdoc("entr",
 
     Elementwise function for computing entropy.
 
-    .. math:: \text{entr}(x) = \begin{cases} - x \log(x) & x > 0  \\ 0 & x = 0 \\ -\infty & \text{otherwise} \end{cases}
+    .. math:: \text{entr}(x) = \begin{cases} - x \log(x) & x > 0  \\ 0 & x = 0
+              \\ -\infty & \text{otherwise} \end{cases}
 
     Parameters
     ----------
@@ -6471,7 +6476,8 @@ add_newdoc("hankel1",
     A wrapper for the AMOS [1]_ routine `zbesh`, which carries out the
     computation using the relation,
 
-    .. math:: H^{(1)}_v(z) = \frac{2}{\imath\pi} \exp(-\imath \pi v/2) K_v(z \exp(-\imath\pi/2))
+    .. math:: H^{(1)}_v(z) =
+              \frac{2}{\imath\pi} \exp(-\imath \pi v/2) K_v(z \exp(-\imath\pi/2))
 
     where :math:`K_v` is the modified Bessel function of the second kind.
     For negative orders, the relation
@@ -6516,7 +6522,8 @@ add_newdoc("hankel1e",
     A wrapper for the AMOS [1]_ routine `zbesh`, which carries out the
     computation using the relation,
 
-    .. math:: H^{(1)}_v(z) = \frac{2}{\imath\pi} \exp(-\imath \pi v/2) K_v(z \exp(-\imath\pi/2))
+    .. math:: H^{(1)}_v(z) =
+              \frac{2}{\imath\pi} \exp(-\imath \pi v/2) K_v(z \exp(-\imath\pi/2))
 
     where :math:`K_v` is the modified Bessel function of the second kind.
     For negative orders, the relation
@@ -6561,7 +6568,8 @@ add_newdoc("hankel2",
     A wrapper for the AMOS [1]_ routine `zbesh`, which carries out the
     computation using the relation,
 
-    .. math:: H^{(2)}_v(z) = -\frac{2}{\imath\pi} \exp(\imath \pi v/2) K_v(z \exp(\imath\pi/2))
+    .. math:: H^{(2)}_v(z) =
+              -\frac{2}{\imath\pi} \exp(\imath \pi v/2) K_v(z \exp(\imath\pi/2))
 
     where :math:`K_v` is the modified Bessel function of the second kind.
     For negative orders, the relation
@@ -6606,7 +6614,8 @@ add_newdoc("hankel2e",
     A wrapper for the AMOS [1]_ routine `zbesh`, which carries out the
     computation using the relation,
 
-    .. math:: H^{(2)}_v(z) = -\frac{2}{\imath\pi} \exp(\frac{\imath \pi v}{2}) K_v(z exp(\frac{\imath\pi}{2}))
+    .. math:: H^{(2)}_v(z) = -\frac{2}{\imath\pi}
+              \exp(\frac{\imath \pi v}{2}) K_v(z exp(\frac{\imath\pi}{2}))
 
     where :math:`K_v` is the modified Bessel function of the second kind.
     For negative orders, the relation
@@ -6629,7 +6638,9 @@ add_newdoc("huber",
 
     Huber loss function.
 
-    .. math:: \text{huber}(\delta, r) = \begin{cases} \infty & \delta < 0  \\ \frac{1}{2}r^2 & 0 \le \delta, | r | \le \delta \\ \delta ( |r| - \frac{1}{2}\delta ) & \text{otherwise} \end{cases}
+    .. math:: \text{huber}(\delta, r) = \begin{cases} \infty & \delta < 0  \\
+              \frac{1}{2}r^2 & 0 \le \delta, | r | \le \delta \\
+              \delta ( |r| - \frac{1}{2}\delta ) & \text{otherwise} \end{cases}
 
     Parameters
     ----------
@@ -9049,7 +9060,7 @@ add_newdoc("kolmogi",
     Notes
     -----
     `kolmogorov` is used by `stats.kstest` in the application of the
-    Kolmogorov-Smirnov Goodness of Fit test. For historial reasons this
+    Kolmogorov-Smirnov Goodness of Fit test. For historical reasons this
     function is exposed in `scpy.special`, but the recommended way to achieve
     the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
     `stats.kstwobign` distribution.
@@ -9098,7 +9109,7 @@ add_newdoc("kolmogorov",
     Notes
     -----
     `kolmogorov` is used by `stats.kstest` in the application of the
-    Kolmogorov-Smirnov Goodness of Fit test. For historial reasons this
+    Kolmogorov-Smirnov Goodness of Fit test. For historical reasons this
     function is exposed in `scpy.special`, but the recommended way to achieve
     the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
     `stats.kstwobign` distribution.
@@ -9135,8 +9146,10 @@ add_newdoc("kolmogorov",
     >>> print('Dn=%f, sqrt(n)*Dn=%f' % (Dn, Kn))
     Dn=0.043363, sqrt(n)*Dn=1.371265
     >>> print(chr(10).join(['For a sample of size n drawn from a N(0, 1) distribution:',
-    ...   ' the approximate Kolmogorov probability that sqrt(n)*Dn>=%f is %f' %  (Kn, kolmogorov(Kn)),
-    ...   ' the approximate Kolmogorov probability that sqrt(n)*Dn<=%f is %f' %  (Kn, kstwobign.cdf(Kn))]))
+    ...   ' the approximate Kolmogorov probability that sqrt(n)*Dn>=%f is %f' %
+    ...    (Kn, kolmogorov(Kn)),
+    ...   ' the approximate Kolmogorov probability that sqrt(n)*Dn<=%f is %f' %
+    ...    (Kn, kstwobign.cdf(Kn))]))
     For a sample of size n drawn from a N(0, 1) distribution:
      the approximate Kolmogorov probability that sqrt(n)*Dn>=1.371265 is 0.046533
      the approximate Kolmogorov probability that sqrt(n)*Dn<=1.371265 is 0.953467
@@ -9150,8 +9163,10 @@ add_newdoc("kolmogorov",
     >>> plt.ylim([0, 1]); plt.grid(True); plt.legend();
     >>> # Add vertical lines marking Dn+ and Dn-
     >>> iminus, iplus = np.argmax(gaps, axis=0)
-    >>> plt.vlines([x[iminus]], ecdfs[iminus], cdfs[iminus], color='r', linestyle='dashed', lw=4)
-    >>> plt.vlines([x[iplus]], cdfs[iplus], ecdfs[iplus+1], color='r', linestyle='dashed', lw=4)
+    >>> plt.vlines([x[iminus]], ecdfs[iminus], cdfs[iminus],
+    ...            color='r', linestyle='dashed', lw=4)
+    >>> plt.vlines([x[iplus]], cdfs[iplus], ecdfs[iplus+1],
+    ...            color='r', linestyle='dashed', lw=4)
     >>> plt.show()
     """)
 
@@ -10384,7 +10399,8 @@ add_newdoc("nbdtrik",
     Formula 26.5.26 of [2]_,
 
     .. math::
-        \sum_{j=k + 1}^\infty {{n + j - 1}\choose{j}} p^n (1 - p)^j = I_{1 - p}(k + 1, n),
+        \sum_{j=k + 1}^\infty {{n + j - 1}
+        \choose{j}} p^n (1 - p)^j = I_{1 - p}(k + 1, n),
 
     is used to reduce calculation of the cumulative distribution function to
     that of a regularized incomplete beta :math:`I`.
@@ -10488,7 +10504,8 @@ add_newdoc("nbdtrin",
     Formula 26.5.26 of [2]_,
 
     .. math::
-        \sum_{j=k + 1}^\infty {{n + j - 1}\choose{j}} p^n (1 - p)^j = I_{1 - p}(k + 1, n),
+        \sum_{j=k + 1}^\infty {{n + j - 1}
+        \choose{j}} p^n (1 - p)^j = I_{1 - p}(k + 1, n),
 
     is used to reduce calculation of the cumulative distribution function to
     that of a regularized incomplete beta :math:`I`.
@@ -10573,7 +10590,8 @@ add_newdoc("ncfdtr",
     [2]_:
 
     .. math::
-        F(d_n, d_d, n_c, f) = \sum_{j=0}^\infty e^{-n_c/2} \frac{(n_c/2)^j}{j!} I_{x}(\frac{d_n}{2} + j, \frac{d_d}{2}),
+        F(d_n, d_d, n_c, f) = \sum_{j=0}^\infty e^{-n_c/2}
+        \frac{(n_c/2)^j}{j!} I_{x}(\frac{d_n}{2} + j, \frac{d_d}{2}),
 
     where :math:`I` is the regularized incomplete beta function, and
     :math:`x = f d_n/(f d_n + d_d)`.
@@ -11672,7 +11690,7 @@ add_newdoc("pdtri",
     Returns
     -------
     scalar or ndarray
-        Values of the shape paramter `m` such that ``pdtr(k, m) = p``
+        Values of the shape parameter `m` such that ``pdtr(k, m) = p``
 
     See Also
     --------
@@ -12062,7 +12080,8 @@ add_newdoc("pseudo_huber",
 
     Pseudo-Huber loss function.
 
-    .. math:: \mathrm{pseudo\_huber}(\delta, r) = \delta^2 \left( \sqrt{ 1 + \left( \frac{r}{\delta} \right)^2 } - 1 \right)
+    .. math:: \mathrm{pseudo\_huber}(\delta, r) =
+              \delta^2 \left( \sqrt{ 1 + \left( \frac{r}{\delta} \right)^2 } - 1 \right)
 
     Parameters
     ----------
@@ -12747,7 +12766,7 @@ add_newdoc("smirnov",
     Notes
     -----
     `smirnov` is used by `stats.kstest` in the application of the
-    Kolmogorov-Smirnov Goodness of Fit test. For historial reasons this
+    Kolmogorov-Smirnov Goodness of Fit test. For historical reasons this
     function is exposed in `scpy.special`, but the recommended way to achieve
     the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
     `stats.ksone` distribution.
@@ -12857,7 +12876,7 @@ add_newdoc("smirnovi",
     Notes
     -----
     `smirnov` is used by `stats.kstest` in the application of the
-    Kolmogorov-Smirnov Goodness of Fit test. For historial reasons this
+    Kolmogorov-Smirnov Goodness of Fit test. For historical reasons this
     function is exposed in `scpy.special`, but the recommended way to achieve
     the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
     `stats.ksone` distribution.
@@ -13242,7 +13261,8 @@ add_newdoc("struve",
     function is defined as,
 
     .. math::
-        H_v(x) = (z/2)^{v + 1} \sum_{n=0}^\infty \frac{(-1)^n (z/2)^{2n}}{\Gamma(n + \frac{3}{2}) \Gamma(n + v + \frac{3}{2})},
+        H_v(x) = (z/2)^{v + 1} \sum_{n=0}^\infty
+        \frac{(-1)^n (z/2)^{2n}}{\Gamma(n + \frac{3}{2}) \Gamma(n + v + \frac{3}{2})},
 
     where :math:`\Gamma` is the gamma function.
 
@@ -13585,7 +13605,7 @@ add_newdoc("xlogy",
 
     A lower loss is usually better as it indicates that the predictions are
     similar to the actual labels. In this example since our predicted
-    probabilties are close to the actual labels, we get an overall loss
+    probabilities are close to the actual labels, we get an overall loss
     that is reasonably low and appropriate.
 
     """)
@@ -14374,7 +14394,7 @@ add_newdoc("wright_bessel",
 
     Notes
     -----
-    Due to the compexity of the function with its three parameters, only
+    Due to the complexity of the function with its three parameters, only
     non-negative arguments are implemented.
 
     References
@@ -14453,4 +14473,9 @@ add_newdoc("ndtri_exp",
     -39.88469483825668
     >>> sc.ndtri_exp(-1e-20)
     9.262340089798409
+    """)
+
+add_newdoc("_stirling2_inexact",
+    r"""
+    Internal function, do not use.
     """)

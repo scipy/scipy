@@ -107,12 +107,25 @@ class _data_matrix(_spbase):
 
         Parameters
         ----------
-        n : n is a scalar
+        n : scalar
+            n is a non-zero scalar (nonzero avoids dense ones creation)
+            If zero power is desired, special case it to use `np.ones`
 
         dtype : If dtype is not specified, the current dtype will be preserved.
+
+        Raises
+        ------
+        NotImplementedError : if n is a zero scalar
+            If zero power is desired, special case it to use
+            `np.ones(A.shape, dtype=A.dtype)`
         """
         if not isscalarlike(n):
             raise NotImplementedError("input is not scalar")
+        if not n:
+            raise NotImplementedError(
+                "zero power is not supported as it would densify the matrix.\n"
+                "Use `np.ones(A.shape, dtype=A.dtype)` for this case."
+            )
 
         data = self._deduped_data()
         if dtype is not None:
@@ -136,8 +149,8 @@ for npfunc in _ufuncs_with_fixed_point_at_zero:
             result = op(self._deduped_data())
             return self._with_data(result, copy=True)
 
-        method.__doc__ = ("Element-wise {}.\n\n"
-                          "See `numpy.{}` for more information.".format(name, name))
+        method.__doc__ = (f"Element-wise {name}.\n\n"
+                          f"See `numpy.{name}` for more information.")
         method.__name__ = name
 
         return method
@@ -194,10 +207,13 @@ class _minmax_mixin:
 
     def _min_or_max(self, axis, out, min_or_max):
         if out is not None:
-            raise ValueError("Sparse matrices do not support "
-                              "an 'out' parameter.")
+            raise ValueError("Sparse arrays do not support an 'out' parameter.")
 
         validateaxis(axis)
+        if self.ndim == 1:
+            if axis not in (None, 0, -1):
+                raise ValueError("axis out of range")
+            axis = None  # avoid calling special axis case. no impact on 1d
 
         if axis is None:
             if 0 in self.shape:
@@ -221,8 +237,7 @@ class _minmax_mixin:
 
     def _arg_min_or_max_axis(self, axis, argmin_or_argmax, compare):
         if self.shape[axis] == 0:
-            raise ValueError("Can't apply the operation along a zero-sized "
-                             "dimension.")
+            raise ValueError("Cannot apply the operation along a zero-sized dimension.")
 
         if axis < 0:
             axis += 2
@@ -262,11 +277,16 @@ class _minmax_mixin:
 
         validateaxis(axis)
 
+        if self.ndim == 1:
+            if axis not in (None, 0, -1):
+                raise ValueError("axis out of range")
+            axis = None  # avoid calling special axis case. no impact on 1d
+
         if axis is not None:
             return self._arg_min_or_max_axis(axis, argmin_or_argmax, compare)
 
         if 0 in self.shape:
-            raise ValueError("Can't apply the operation to an empty matrix.")
+            raise ValueError("Cannot apply the operation to an empty matrix.")
 
         if self.nnz == 0:
             return 0
@@ -277,20 +297,18 @@ class _minmax_mixin:
         mat.sum_duplicates()
         extreme_index = argmin_or_argmax(mat.data)
         extreme_value = mat.data[extreme_index]
-        num_row, num_col = mat.shape
+        num_col = mat.shape[-1]
 
         # If the min value is less than zero, or max is greater than zero,
-        # then we don't need to worry about implicit zeros.
+        # then we do not need to worry about implicit zeros.
         if compare(extreme_value, zero):
             # cast to Python int to avoid overflow and RuntimeError
-            return (int(mat.row[extreme_index]) * num_col +
-                    int(mat.col[extreme_index]))
+            return int(mat.row[extreme_index]) * num_col + int(mat.col[extreme_index])
 
         # Cheap test for the rare case where we have no implicit zeros.
-        size = num_row * num_col
+        size = np.prod(self.shape)
         if size == mat.nnz:
-            return (int(mat.row[extreme_index]) * num_col +
-                    int(mat.col[extreme_index]))
+            return int(mat.row[extreme_index]) * num_col + int(mat.col[extreme_index])
 
         # At this stage, any implicit zero could be the min or max value.
         # After sum_duplicates(), the `row` and `col` arrays are guaranteed to

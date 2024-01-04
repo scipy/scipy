@@ -360,7 +360,8 @@ class TestMMIOReadLargeIntegers:
         with open(self.fn, 'w') as f:
             f.write(example)
         assert_equal(mminfo(self.fn), info)
-        if (over32 and (np.intp(0).itemsize < 8) and mmwrite == scipy.io._mmio.mmwrite) or over64:
+        if ((over32 and (np.intp(0).itemsize < 8) and mmwrite == scipy.io._mmio.mmwrite)
+            or over64):
             assert_raises(OverflowError, mmread, self.fn)
         else:
             b = mmread(self.fn)

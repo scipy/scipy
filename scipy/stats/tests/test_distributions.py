@@ -33,7 +33,7 @@ from scipy.special import xlogy, polygamma, entr
 from scipy.stats._distr_params import distcont, invdistcont
 from .test_discrete_basic import distdiscrete, invdistdiscrete
 from scipy.stats._continuous_distns import FitDataError, _argus_phi
-from scipy.optimize import root, fmin
+from scipy.optimize import root, fmin, differential_evolution
 from itertools import product
 
 # python -OO strips docstrings
@@ -487,9 +487,18 @@ class TestChi:
         x = stats.chi.isf(self.CHI_SF_10_4, 4)
         assert_allclose(x, 10, rtol=1e-15)
 
-    def test_mean(self):
-        x = stats.chi.mean(df=1000)
-        assert_allclose(x, self.CHI_MEAN_1000, rtol=1e-12)
+    # reference value for 1e14 was computed via mpmath
+    # from mpmath import mp
+    # mp.dps = 500
+    # df = mp.mpf(1e14)
+    # float(mp.rf(mp.mpf(0.5) * df, mp.mpf(0.5)) * mp.sqrt(2.))
+
+    @pytest.mark.parametrize('df, ref',
+                             [(1e3, CHI_MEAN_1000),
+                              (1e14, 9999999.999999976)]
+                            ) 
+    def test_mean(self, df, ref):
+        assert_allclose(stats.chi.mean(df), ref, rtol=1e-12)
 
     # Entropy references values were computed with the following mpmath code
     # from mpmath import mp
@@ -3455,7 +3464,7 @@ class TestStudentT:
                       -50.918938533204674, -1.8378770664093456]
         pdf_ref = [0.24197072451914334, 0,
                    7.69459862670642e-23, 0.15915494309189535]
-        assert_allclose(stats.t.logpdf(x, df), logpdf_ref, rtol=1e-15)
+        assert_allclose(stats.t.logpdf(x, df), logpdf_ref, rtol=1e-14)
         assert_allclose(stats.t.pdf(x, df), pdf_ref, rtol=1e-14)
 
 
@@ -3787,6 +3796,22 @@ class TestSkewNorm:
         computed = stats.skewnorm.stats(a=-4, loc=5, scale=2, moments='mvsk')
         assert_array_almost_equal(computed, expected, decimal=2)
 
+    def test_pdf_large_x(self):
+        # Triples are [x, a, logpdf(x, a)].  These values were computed
+        # using Log[PDF[SkewNormalDistribution[0, 1, a], x]] in Wolfram Alpha.
+        logpdfvals = [
+            [40, -1, -1604.834233366398515598970],
+            [40, -1/2, -1004.142946723741991369168],
+            [40, 0, -800.9189385332046727417803],
+            [40, 1/2, -800.2257913526447274323631],
+            [-40, -1/2, -800.2257913526447274323631],
+            [-2, 1e7, -2.000000000000199559727173e14],
+            [2, -1e7, -2.000000000000199559727173e14],
+        ]
+        for x, a, logpdfval in logpdfvals:
+            logp = stats.skewnorm.logpdf(x, a)
+            assert_allclose(logp, logpdfval, rtol=1e-8)
+
     def test_cdf_large_x(self):
         # Regression test for gh-7746.
         # The x values are large enough that the closest 64 bit floating
@@ -3798,7 +3823,7 @@ class TestSkewNorm:
 
     def test_cdf_sf_small_values(self):
         # Triples are [x, a, cdf(x, a)].  These values were computed
-        # using CDF[SkewNormDistribution[0, 1, a], x] in Wolfram Alpha.
+        # using CDF[SkewNormalDistribution[0, 1, a], x] in Wolfram Alpha.
         cdfvals = [
             [-8, 1, 3.870035046664392611e-31],
             [-4, 2, 8.1298399188811398e-21],
@@ -3866,6 +3891,33 @@ class TestSkewNorm:
         a7p, loc7p, scale7p = stats.skewnorm.fit(rvs, method='mm')
         a7m, loc7m, scale7m = stats.skewnorm.fit(-rvs, method='mm')
         assert_allclose([a7m, loc7m, scale7m], [-a7p, -loc7p, scale7p])
+
+    def test_fit_gh19332(self):
+        # When the skewness of the data was high, `skewnorm.fit` fell back on
+        # generic `fit` behavior with a bad guess of the skewness parameter.
+        # Test that this is improved; `skewnorm.fit` is now better at finding
+        # the global optimum when the sample is highly skewed. See gh-19332.
+        x = np.array([-5, -1, 1 / 100_000] + 12 * [1] + [5])
+
+        params = stats.skewnorm.fit(x)
+        res = stats.skewnorm.nnlf(params, x)
+
+        # Compare overridden fit against generic fit.
+        # res should be about 32.01, and generic fit is worse at 32.64.
+        # In case the generic fit improves, remove this assertion (see gh-19333).
+        params_super = stats.skewnorm.fit(x, superfit=True)
+        ref = stats.skewnorm.nnlf(params_super, x)
+        assert res < ref - 0.5
+
+        # Compare overridden fit against stats.fit
+        rng = np.random.default_rng(9842356982345693637)
+        bounds = {'a': (-5, 5), 'loc': (-10, 10), 'scale': (1e-16, 10)}
+        def optimizer(fun, bounds):
+            return differential_evolution(fun, bounds, seed=rng)
+
+        fit_result = stats.fit(stats.skewnorm, x, bounds, optimizer=optimizer)
+        np.testing.assert_allclose(params, fit_result.params, rtol=1e-4)
+
 
 class TestExpon:
     def test_zero(self):
@@ -4078,9 +4130,9 @@ class TestGenExpon:
                               (0.125, 0.9508674287164001, 0.25, 5, 0.5)])
     def test_sf_isf(self, x, p, a, b, c):
         sf = stats.genexpon.sf(x, a, b, c)
-        assert_allclose(sf, p, rtol=1e-14)
+        assert_allclose(sf, p, rtol=2e-14)
         isf = stats.genexpon.isf(p, a, b, c)
-        assert_allclose(isf, x, rtol=1e-14)
+        assert_allclose(isf, x, rtol=2e-14)
 
     # The values of p in the following data were computed with mpmath.
     @pytest.mark.parametrize('x, p, a, b, c',
@@ -4091,9 +4143,9 @@ class TestGenExpon:
                               (0.125, 0.04913257128359998, 0.25, 5, 0.5)])
     def test_cdf_ppf(self, x, p, a, b, c):
         cdf = stats.genexpon.cdf(x, a, b, c)
-        assert_allclose(cdf, p, rtol=1e-14)
+        assert_allclose(cdf, p, rtol=2e-14)
         ppf = stats.genexpon.ppf(p, a, b, c)
-        assert_allclose(ppf, x, rtol=1e-14)
+        assert_allclose(ppf, x, rtol=2e-14)
 
 
 class TestTruncexpon:
@@ -4614,6 +4666,17 @@ class TestGamma:
         #     return float(mp.digamma(x) * (mp.one - x) + x + mp.loggamma(x))
 
         assert_allclose(stats.gamma.entropy(a), ref, rtol=rtol)
+
+def test_pdf_overflow_gh19616():
+    # Confirm that gh19616 (intermediate over/underflows in PDF) is resolved
+    # Reference value from R GeneralizedHyperbolic library
+    # library(GeneralizedHyperbolic)
+    # options(digits=16)
+    # jitter = 1e-3
+    # dnig(1, a=2**0.5 / jitter**2, b=1 / jitter**2)
+    jitter = 1e-3
+    Z = stats.norminvgauss(2**0.5 / jitter**2, 1 / jitter**2, loc=0, scale=1)
+    assert_allclose(Z.pdf(1.0), 282.0948446666433)
 
 
 class TestDgamma:
@@ -5224,14 +5287,15 @@ class TestLevyStable:
                   (subdata2['relerr'] >= rtol) |
                   np.isnan(p)
                 ]
+                message = (
+                    f"pdf test {ix} failed with method '{default_method}' "
+                    f"[platform: {platform_desc}]\n{failures.dtype.names}\n{failures}"
+                )
                 assert_allclose(
                     p,
                     subdata['p'],
                     rtol,
-                    err_msg="pdf test %s failed with method '%s'"
-                            " [platform: %s]\n%s\n%s" %
-                    (ix, default_method, platform_desc, failures.dtype.names,
-                        failures),
+                    err_msg=message,
                     verbose=False
                 )
 
@@ -5370,12 +5434,13 @@ class TestLevyStable:
                   (subdata2['relerr'] >= rtol) |
                   np.isnan(p)
                 ]
+                message = (f"cdf test {ix} failed with method '{default_method}'\n"
+                           f"{failures.dtype.names}\n{failures}")
                 assert_allclose(
                     p,
                     subdata['p'],
                     rtol,
-                    err_msg="cdf test %s failed with method '%s'\n%s\n%s" %
-                    (ix, default_method, failures.dtype.names, failures),
+                    err_msg=message,
                     verbose=False
                 )
 
@@ -9068,6 +9133,18 @@ class TestNakagami:
     def test_entropy_overflow(self):
         assert np.isfinite(stats.nakagami._entropy(1e100))
         assert np.isfinite(stats.nakagami._entropy(1e-100))
+
+    @pytest.mark.parametrize("nu, ref",
+                             [(1e10, 0.9999999999875),
+                              (1e3, 0.9998750078173821),
+                              (1e-10, 1.772453850659802e-05)])
+    def test_mean(self, nu, ref):
+        # reference values were computed with mpmath
+        # from mpmath import mp
+        # mp.dps = 500
+        # nu = mp.mpf(1e10)
+        # float(mp.rf(nu, mp.mpf(0.5))/mp.sqrt(nu))
+        assert_allclose(stats.nakagami.mean(nu), ref, rtol=1e-12)
 
     @pytest.mark.xfail(reason="Fit of nakagami not reliable, see gh-10908.")
     @pytest.mark.parametrize('nu', [1.6, 2.5, 3.9])

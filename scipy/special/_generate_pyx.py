@@ -75,7 +75,6 @@ from stat import ST_MTIME
 import argparse
 import re
 import textwrap
-from typing import List
 
 import numpy
 
@@ -371,7 +370,8 @@ def generate_loop(func_inputs, func_outputs, func_retval,
     name = "loop_{}_{}_{}_As_{}_{}".format(
         func_retval, func_inputs, func_outputs, ufunc_inputs, ufunc_outputs
         )
-    body = "cdef void %s(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) noexcept nogil:\n" % name
+    body = (f"cdef void {name}(char **args, np.npy_intp *dims, np.npy_intp *steps, "
+            f"void *data) noexcept nogil:\n")
     body += "    cdef np.npy_intp i, n = dims[0]\n"
     body += "    cdef void *func = (<void**>data)[0]\n"
     body += "    cdef char *func_name = <char*>(<void**>data)[1]\n"
@@ -425,7 +425,8 @@ def generate_loop(func_inputs, func_outputs, func_retval,
         body += "        if %s:\n" % (" and ".join(input_checks))
         body += "    " + funcall
         body += "        else:\n"
-        body += "            sf_error.error(func_name, sf_error.DOMAIN, \"invalid input argument\")\n"
+        body += ("            sf_error.error(func_name, sf_error.DOMAIN, "
+                 "\"invalid input argument\")\n")
         for j, outtype in enumerate(outtypecodes):
             body += "            ov%d = <%s>%s\n" % (
                 j, CY_TYPES[outtype], NAN_VALUE[outtype])
@@ -439,7 +440,8 @@ def generate_loop(func_inputs, func_outputs, func_retval,
             body += "            (<%s *>op%d)[0] = <%s>ov%d\n" % (
                 CY_TYPES[outtype], j, CY_TYPES[outtype], j)
             body += "        else:\n"
-            body += "            sf_error.error(func_name, sf_error.DOMAIN, \"invalid output\")\n"
+            body += ("            sf_error.error(func_name, sf_error.DOMAIN, "
+                     "\"invalid output\")\n")
             body += "            (<%s *>op%d)[0] = <%s>%s\n" % (
                 CY_TYPES[outtype], j, CY_TYPES[outtype], NAN_VALUE[outtype])
         else:
@@ -605,7 +607,8 @@ class Func:
                 self.signatures.append((name, inarg, outarg, ret, header))
 
     def _parse_signature(self, sig):
-        m = re.match(r"\s*([fdgFDGil]*)\s*\*\s*([fdgFDGil]*)\s*->\s*([*fdgFDGil]*)\s*$", sig)
+        m = re.match(r"\s*([fdgFDGil]*)\s*\*\s*([fdgFDGil]*)\s*->\s*([*fdgFDGil]*)\s*$",
+                     sig)
         if m:
             inarg, outarg, ret = (x.strip() for x in m.groups())
             if ret.count('*') > 1:
@@ -629,7 +632,8 @@ class Func:
             if header.endswith("h") and nptypes_for_h:
                 cy_proto = c_proto + "nogil"
             else:
-                cy_proto = "{} (*)({}) noexcept nogil".format(CY_TYPES[ret], ", ".join(cy_args))
+                cy_proto = ("{} (*)({}) noexcept nogil"
+                            .format(CY_TYPES[ret], ", ".join(cy_args)))
             prototypes.append((func_name, c_proto, cy_proto, header))
         return prototypes
 
@@ -665,7 +669,8 @@ class Ufunc(Func):
         the C-level functions and types of their input arguments
         and return values.
 
-        The syntax is 'function_name: inputparams*outputparams->output_retval*ignored_retval'
+        The syntax is
+        'function_name: inputparams*outputparams->output_retval*ignored_retval'
 
     Attributes
     ----------
@@ -702,9 +707,11 @@ class Ufunc(Func):
             if "v" in outp:
                 raise ValueError(f"{self.name}: void signature {sig!r}")
             if len(inp) != inarg_num or len(outp) != outarg_num:
-                raise ValueError("%s: signature %r does not have %d/%d input/output args" % (
-                    self.name, sig,
-                    inarg_num, outarg_num))
+                raise ValueError(
+                    "%s: signature %r does not have %d/%d input/output args" % (
+                        self.name, sig, inarg_num, outarg_num
+                    )
+                )
 
             loop_name, loop = generate_loop(inarg, outarg, ret, inp, outp)
             all_loops[loop_name] = loop
@@ -753,24 +760,29 @@ class Ufunc(Func):
             loops.append(loop_name)
             funcs.append(func_name)
 
-        toplevel += "cdef np.PyUFuncGenericFunction ufunc_%s_loops[%d]\n" % (self.name, len(loops))
+        toplevel += ("cdef np.PyUFuncGenericFunction ufunc_%s_loops[%d]\n" %
+                     (self.name, len(loops)))
         toplevel += "cdef void *ufunc_%s_ptr[%d]\n" % (self.name, 2*len(funcs))
         toplevel += "cdef void *ufunc_%s_data[%d]\n" % (self.name, len(funcs))
         toplevel += "cdef char ufunc_%s_types[%d]\n" % (self.name, len(types))
         toplevel += 'cdef char *ufunc_{}_doc = (\n    "{}")\n'.format(
             self.name,
-            self.doc.replace("\\", "\\\\").replace('"', '\\"').replace('\n', '\\n\"\n    "')
-            )
+            self.doc.replace("\\", "\\\\").replace('"', '\\"')
+            .replace('\n', '\\n\"\n    "')
+        )
 
         for j, function in enumerate(loops):
-            toplevel += "ufunc_%s_loops[%d] = <np.PyUFuncGenericFunction>%s\n" % (self.name, j, function)
+            toplevel += ("ufunc_%s_loops[%d] = <np.PyUFuncGenericFunction>%s\n" %
+                         (self.name, j, function))
         for j, type in enumerate(types):
             toplevel += "ufunc_%s_types[%d] = <char>%s\n" % (self.name, j, type)
         for j, func in enumerate(funcs):
-            toplevel += "ufunc_%s_ptr[2*%d] = <void*>%s\n" % (self.name, j,
-                                                              self.cython_func_name(func, specialized=True))
-            toplevel += "ufunc_%s_ptr[2*%d+1] = <void*>(<char*>\"%s\")\n" % (self.name, j,
-                                                                             self.name)
+            toplevel += "ufunc_%s_ptr[2*%d] = <void*>%s\n" % (
+                self.name, j, self.cython_func_name(func, specialized=True)
+            )
+            toplevel += "ufunc_%s_ptr[2*%d+1] = <void*>(<char*>\"%s\")\n" % (
+                self.name, j, self.name
+            )
         for j, func in enumerate(funcs):
             toplevel += "ufunc_%s_data[%d] = &ufunc_%s_ptr[2*%d]\n" % (
                 self.name, j, self.name, j)
@@ -1077,7 +1089,7 @@ class FusedFunc(Func):
         for n, (intype, _) in enumerate(self.intypes):
             callvars.append(f"{intype} {self.invars[n]}")
         (outtype, _) = self.outtypes[0]
-        dec = "cpdef {} {}({}) nogil".format(outtype, self.name, ", ".join(callvars))
+        dec = f'cpdef {outtype} {self.name}({", ".join(callvars)}) noexcept nogil'
         head.append(dec + ":")
         head.append(tab + f'"""{self.doc}"""')
 
@@ -1126,9 +1138,11 @@ class FusedFunc(Func):
                 callvars.append(f"{outtype} *{outvar}")
         if len(self.outvars) == 1:
             outtype, _ = self.outtypes[0]
-            dec = "cpdef {} {}({}) noexcept nogil".format(outtype, self.name, ", ".join(callvars))
+            dec = ("cpdef {} {}({}) noexcept nogil"
+                   .format(outtype, self.name, ", ".join(callvars)))
         else:
-            dec = "cdef void {}({}) noexcept nogil".format(self.name, ", ".join(callvars))
+            dec = ("cdef void {}({}) noexcept nogil"
+                   .format(self.name, ", ".join(callvars)))
         head.append(dec + ":")
         head.append(tab + f'"""{self.doc}"""')
         if len(self.outvars) == 1:
@@ -1260,7 +1274,8 @@ def generate_ufuncs(fn_prefix, cxx_fn_prefix, ufuncs):
     cxx_defs = []
     cxx_pxd_defs = [
         "from . cimport sf_error",
-        "cdef void _set_action(sf_error.sf_error_t, sf_error.sf_action_t) noexcept nogil"
+        "cdef void _set_action(sf_error.sf_error_t, sf_error.sf_action_t) "
+        "noexcept nogil"
     ]
     cxx_defs_h = []
 
@@ -1274,21 +1289,27 @@ def generate_ufuncs(fn_prefix, cxx_fn_prefix, ufuncs):
                 header = header[:-2]
 
                 # for the CXX module
-                item_defs, item_defs_h, var_name = get_declaration(ufunc, c_name, c_proto, cy_proto,
-                                                                   header, cxx_proto_h_filename)
+                item_defs, item_defs_h, var_name = get_declaration(
+                    ufunc, c_name, c_proto, cy_proto, header, cxx_proto_h_filename
+                )
                 cxx_defs.extend(item_defs)
                 cxx_defs_h.extend(item_defs_h)
 
                 cxx_defs.append("cdef void *_export_{} = <void*>{}".format(
-                    var_name, ufunc.cython_func_name(c_name, specialized=True, override=False)))
+                    var_name,
+                    ufunc.cython_func_name(c_name, specialized=True, override=False)
+                ))
                 cxx_pxd_defs.append(f"cdef void *_export_{var_name}")
 
                 # let cython grab the function pointer from the c++ shared library
-                ufunc.function_name_overrides[c_name] = "scipy.special._ufuncs_cxx._export_" + var_name
+                ufunc.function_name_overrides[c_name] = (
+                    "scipy.special._ufuncs_cxx._export_" + var_name
+                )
             else:
                 # usual case
-                item_defs, item_defs_h, _ = get_declaration(ufunc, c_name, c_proto, cy_proto, header,
-                                                            proto_h_filename)
+                item_defs, item_defs_h, _ = get_declaration(
+                    ufunc, c_name, c_proto, cy_proto, header, proto_h_filename
+                )
                 defs.extend(item_defs)
                 defs_h.extend(item_defs_h)
 
@@ -1332,7 +1353,6 @@ def generate_ufuncs(fn_prefix, cxx_fn_prefix, ufuncs):
         f.write(UFUNCS_EXTRA_CODE_COMMON)
         f.write("\n")
         f.write("\n".join(cxx_defs))
-        f.write("\n# distutils: language = c++\n")
 
     with open(cxx_pxd_filename, 'w') as f:
         f.write("\n".join(cxx_pxd_defs))
@@ -1408,7 +1428,7 @@ def generate_fused_funcs(modname, ufunc_fn_prefix, fused_funcs):
         f.write("\n\n".join(bench_aux))
 
 
-def generate_ufuncs_type_stubs(module_name: str, ufuncs: List[Ufunc]):
+def generate_ufuncs_type_stubs(module_name: str, ufuncs: list[Ufunc]):
     stubs, module_all = [], []
     for ufunc in ufuncs:
         stubs.append(f'{ufunc.name}: np.ufunc')
@@ -1511,9 +1531,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if not args.outdir:
-        #raise ValueError(f"Missing `--outdir` argument to _generate_pyx.py")
-        # We're dealing with a distutils build here, write in-place:
-        outdir_abs = os.path.abspath(os.path.dirname(__file__))
+        raise ValueError("Missing `--outdir` argument to _generate_pyx.py")
     else:
         outdir_abs = os.path.join(os.getcwd(), args.outdir)
 

@@ -40,7 +40,7 @@ def test_fortranfiles_read():
 def test_fortranfiles_mixed_record():
     filename = path.join(DATA_PATH, "fortran-mixed.dat")
     with FortranFile(filename, 'r', '<u4') as f:
-        record = f.read_record('<i4,<f4,<i8,(2)<f8')
+        record = f.read_record('<i4,<f4,<i8,2<f8')
 
     assert_equal(record['f0'][0], 1)
     assert_allclose(record['f1'][0], 2.3)
@@ -100,12 +100,12 @@ def test_fortranfile_read_mixed_record():
 def test_fortranfile_write_mixed_record(tmpdir):
     tf = path.join(str(tmpdir), 'test.dat')
 
-    records = [
-        (('f4', 'f4', 'i4'), (np.float32(2), np.float32(3), np.int32(100))),
-        (('4f4', '(3,3)f4', '8i4'), (np.random.randint(255, size=[4]).astype(np.float32),
-                                     np.random.randint(255, size=[3, 3]).astype(np.float32),
-                                     np.random.randint(255, size=[8]).astype(np.int32)))
-    ]
+    r1 = (('f4', 'f4', 'i4'), (np.float32(2), np.float32(3), np.int32(100)))
+    r2 = (('4f4', '(3,3)f4', '8i4'),
+          (np.random.randint(255, size=[4]).astype(np.float32),
+           np.random.randint(255, size=[3, 3]).astype(np.float32),
+           np.random.randint(255, size=[8]).astype(np.int32)))
+    records = [r1, r2]
 
     for dtype, a in records:
         with FortranFile(tf, 'w') as f:

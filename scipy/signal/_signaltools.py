@@ -447,7 +447,7 @@ def _init_freq_conv_axes(in1, in2, mode, axes, sorted_axes=False):
     if not all(s1[a] == s2[a] or s1[a] == 1 or s2[a] == 1
                for a in range(in1.ndim) if a not in axes):
         raise ValueError("incompatible shapes for in1 and in2:"
-                         " {} and {}".format(s1, s2))
+                         f" {s1} and {s2}")
 
     # Check that input sizes are compatible with 'valid' mode.
     if _inputs_swap_needed(mode, s1, s2, axes=axes):
@@ -1030,7 +1030,7 @@ def _conv_ops(x_shape, h_shape, mode):
         out_shape = x_shape
     else:
         raise ValueError("Acceptable mode flags are 'valid',"
-                         " 'same', or 'full', not mode={}".format(mode))
+                         f" 'same', or 'full', not mode={mode}")
 
     s1, s2 = x_shape, h_shape
     if len(x_shape) == 1:
@@ -1562,7 +1562,8 @@ def medfilt(volume, kernel_size=None):
             raise ValueError("Each element of kernel_size should be odd.")
     if any(k > s for k, s in zip(kernel_size, volume.shape)):
         warnings.warn('kernel_size exceeds volume extent: the volume will be '
-                      'zero-padded.')
+                      'zero-padded.',
+                      stacklevel=2)
 
     domain = np.ones(kernel_size, dtype=volume.dtype)
 
@@ -2120,8 +2121,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
                         strides[k] = 0
                     else:
                         raise ValueError('Unexpected shape for zi: expected '
-                                         '%s, found %s.' %
-                                         (expected_shape, zi.shape))
+                                         f'{expected_shape}, found {zi.shape}.')
                 zi = np.lib.stride_tricks.as_strided(zi, expected_shape,
                                                      strides)
             inputs.append(zi)
@@ -3132,7 +3132,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
 
     if domain not in ('time', 'freq'):
         raise ValueError("Acceptable domain flags are 'time' or"
-                         " 'freq', not domain={}".format(domain))
+                         f" 'freq', not domain={domain}")
 
     x = np.asarray(x)
     Nx = x.shape[axis]

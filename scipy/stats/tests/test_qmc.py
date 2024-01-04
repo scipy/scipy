@@ -14,7 +14,7 @@ from scipy.stats._qmc import (
     van_der_corput, n_primes, primes_from_2_to,
     update_discrepancy, QMCEngine, _l1_norm,
     _perturb_discrepancy, _lloyd_centroidal_voronoi_tessellation
-)  # noqa
+)
 
 
 class TestUtils:
@@ -453,10 +453,10 @@ def test_subclassing_QMCEngine():
 def test_raises():
     # input validation
     with pytest.raises(ValueError, match=r"d must be a non-negative integer"):
-        RandomEngine((2,))  # noqa
+        RandomEngine((2,))
 
     with pytest.raises(ValueError, match=r"d must be a non-negative integer"):
-        RandomEngine(-1)  # noqa
+        RandomEngine(-1)
 
     msg = r"'u_bounds' and 'l_bounds' must be integers"
     with pytest.raises(ValueError, match=msg):

@@ -1,6 +1,7 @@
 __all__ = ['RegularGridInterpolator', 'interpn']
 
 import itertools
+import warnings
 
 import numpy as np
 
@@ -48,7 +49,7 @@ def _check_dimensionality(points, values):
 
 class RegularGridInterpolator:
     """
-    Interpolation on a regular or rectilinear grid in arbitrary dimensions.
+    Interpolator on a regular or rectilinear grid in arbitrary dimensions.
 
     The data must be defined on a rectilinear grid; that is, a rectangular
     grid with even or uneven spacing. Linear, nearest-neighbor, spline
@@ -63,8 +64,14 @@ class RegularGridInterpolator:
         strictly ascending or descending.
 
     values : array_like, shape (m1, ..., mn, ...)
-        The data on the regular grid in n dimensions. Complex data can be
-        acceptable.
+        The data on the regular grid in n dimensions. Complex data is
+        accepted.
+
+        .. deprecated:: 1.13.0
+            Complex data is deprecated with ``method="pchip"`` and will raise an
+            error in SciPy 1.15.0. This is because ``PchipInterpolator`` only
+            works with real values. If you are trying to use the real components of
+            the passed array, use ``np.real`` on ``values``.
 
     method : str, optional
         The method of interpolation to perform. Supported are "linear",
@@ -198,10 +205,10 @@ class RegularGridInterpolator:
 
     See Also
     --------
-    NearestNDInterpolator : Nearest neighbor interpolation on *unstructured*
+    NearestNDInterpolator : Nearest neighbor interpolator on *unstructured*
                             data in N dimensions
 
-    LinearNDInterpolator : Piecewise linear interpolant on *unstructured* data
+    LinearNDInterpolator : Piecewise linear interpolator on *unstructured* data
                            in N dimensions
 
     interpn : a convenience function which wraps `RegularGridInterpolator`
@@ -243,6 +250,14 @@ class RegularGridInterpolator:
         self.fill_value = self._check_fill_value(self.values, fill_value)
         if self._descending_dimensions:
             self.values = np.flip(values, axis=self._descending_dimensions)
+        
+        if self.method == "pchip" and np.iscomplexobj(self.values):
+            msg = ("`PchipInterpolator` only works with real values. Passing "
+                   "complex-dtyped `values` with `method='pchip'` is deprecated "
+                   "and will raise an error in SciPy 1.15.0. If you are trying to "
+                   "use the real components of the passed array, use `np.real` on "
+                   "the array before passing to `RegularGridInterpolator`.")
+            warnings.warn(msg, DeprecationWarning, stacklevel=2)
 
     def _check_dimensionality(self, grid, values):
         _check_dimensionality(grid, values)
@@ -321,8 +336,8 @@ class RegularGridInterpolator:
         >>> interp([[1.5, 1.3], [0.3, 4.5]], method='linear')
         array([ 4.7, 24.3])
         """
-        is_method_changed = self.method != method
         method = self.method if method is None else method
+        is_method_changed = self.method != method
         if method not in self._ALL_METHODS:
             raise ValueError("Method '%s' is not defined" % method)
 
@@ -530,8 +545,14 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
         strictly ascending or descending.
 
     values : array_like, shape (m1, ..., mn, ...)
-        The data on the regular grid in n dimensions. Complex data can be
-        acceptable.
+        The data on the regular grid in n dimensions. Complex data is
+        accepted.
+
+        .. deprecated:: 1.13.0
+            Complex data is deprecated with ``method="pchip"`` and will raise an
+            error in SciPy 1.15.0. This is because ``PchipInterpolator`` only
+            works with real values. If you are trying to use the real components of
+            the passed array, use ``np.real`` on ``values``.
 
     xi : ndarray of shape (..., ndim)
         The coordinates to sample the gridded data at

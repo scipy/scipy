@@ -6,13 +6,14 @@ import operator
 import numpy as np
 from math import prod
 import scipy.sparse as sp
+from scipy._lib._util import np_long, np_ulong
 
 
 __all__ = ['upcast', 'getdtype', 'getdata', 'isscalarlike', 'isintlike',
            'isshape', 'issequence', 'isdense', 'ismatrix', 'get_sum_dtype']
 
 supported_dtypes = [np.bool_, np.byte, np.ubyte, np.short, np.ushort, np.intc,
-                    np.uintc, np.int_, np.uint, np.longlong, np.ulonglong,
+                    np.uintc, np_long, np_ulong, np.longlong, np.ulonglong,
                     np.float32, np.float64, np.longdouble, 
                     np.complex64, np.complex128, np.clongdouble]
 
@@ -199,7 +200,7 @@ def get_index_dtype(arrays=(), maxval=None, check_contents=False):
     return dtype
 
 
-def get_sum_dtype(dtype):
+def get_sum_dtype(dtype: np.dtype) -> np.dtype:
     """Mimic numpy's casting for np.sum"""
     if dtype.kind == 'u' and np.can_cast(dtype, np.uint):
         return np.uint
@@ -235,14 +236,14 @@ def isintlike(x) -> bool:
     return True
 
 
-def isshape(x, nonneg=False, allow_ndim=False) -> bool:
+def isshape(x, nonneg=False, *, allow_1d=False) -> bool:
     """Is x a valid tuple of dimensions?
 
     If nonneg, also checks that the dimensions are non-negative.
-    If allow_ndim, shapes of any dimensionality are allowed.
+    If allow_1d, shapes of length 1 or 2 are allowed.
     """
     ndim = len(x)
-    if not allow_ndim and ndim != 2:
+    if ndim != 2 and not (allow_1d and ndim == 1):
         return False
     for d in x:
         if not isintlike(d):
@@ -291,8 +292,26 @@ def validateaxis(axis) -> None:
         raise ValueError("axis out of range")
 
 
-def check_shape(args, current_shape=None):
-    """Imitate numpy.matrix handling of shape arguments"""
+def check_shape(args, current_shape=None, *, allow_1d=False) -> tuple[int, ...]:
+    """Imitate numpy.matrix handling of shape arguments
+
+    Parameters
+    ----------
+    args : array_like
+        Data structures providing information about the shape of the sparse array.
+    current_shape : tuple, optional
+        The current shape of the sparse array or matrix.
+        If None (default), the current shape will be inferred from args.
+    allow_1d : bool, optional
+        If True, then 1-D or 2-D arrays are accepted.
+        If False (default), then only 2-D arrays are accepted and an error is
+        raised otherwise.
+
+    Returns
+    -------
+    new_shape: tuple
+        The new shape after validation.
+    """
     if len(args) == 0:
         raise TypeError("function missing 1 required positional argument: "
                         "'shape'")
@@ -307,9 +326,13 @@ def check_shape(args, current_shape=None):
         new_shape = tuple(operator.index(arg) for arg in args)
 
     if current_shape is None:
-        if len(new_shape) != 2:
+        if allow_1d:
+            if len(new_shape) not in (1, 2):
+                raise ValueError('shape must be a 1- or 2-tuple of positive '
+                                 'integers')
+        elif len(new_shape) != 2:
             raise ValueError('shape must be a 2-tuple of positive integers')
-        elif any(d < 0 for d in new_shape):
+        if any(d < 0 for d in new_shape):
             raise ValueError("'shape' elements cannot be negative")
     else:
         # Check the current size only if needed
@@ -334,7 +357,7 @@ def check_shape(args, current_shape=None):
         else:
             raise ValueError('can only specify one unknown dimension')
 
-    if len(new_shape) != 2:
+    if len(new_shape) != 2 and not (allow_1d and len(new_shape) == 1):
         raise ValueError('matrix shape must be two-dimensional')
 
     return new_shape
