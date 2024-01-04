@@ -2,11 +2,11 @@
 import numpy as np
 from scipy import special
 from scipy.optimize import OptimizeResult
-from scipy.optimize._zeros_py import (  # noqa: F401
-    _scalar_optimization_initialize,
-    _scalar_optimization_loop,
-    _ECONVERGED, _ESIGNERR, _ECONVERR,
-    _EVALUEERR, _ECALLBACK, _EINPROGRESS)
+from scipy._lib._elementwise_algorithm import (_scalar_optimization_initialize,
+                                               _scalar_optimization_loop,
+                                               _ECONVERGED, _ESIGNERR, _ECONVERR,
+                                               _EVALUEERR, _ECALLBACK, _EINPROGRESS
+                                               )
 
 # todo:
 #  figure out warning situation

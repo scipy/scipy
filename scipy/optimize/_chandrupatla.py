@@ -1,10 +1,11 @@
 import numpy as np
 from scipy.optimize._optimize import OptimizeResult
-from scipy.optimize._zeros_py import (_scalar_optimization_initialize,  # noqa: F401
-                                      _chandrupatla_iv,
-                                      _scalar_optimization_loop,
-                                      _ECONVERGED, _ESIGNERR, _ECONVERR,
-                                      _EVALUEERR, _ECALLBACK, _EINPROGRESS)
+from scipy._lib._elementwise_algorithm import (_scalar_optimization_initialize,
+                                               _scalar_optimization_loop,
+                                               _ECONVERGED, _ESIGNERR, _ECONVERR,
+                                               _EVALUEERR, _ECALLBACK, _EINPROGRESS
+                                               )
+from scipy.optimize._zeros_py import _chandrupatla_iv
 
 
 def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
