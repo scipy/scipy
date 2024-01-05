@@ -215,8 +215,8 @@ def ifht(A, dln, mu, offset=0.0, bias=0.0):
 
     where :math:`J_\mu` is the Bessel function of order :math:`\mu`.  The index
     :math:`\mu` may be any real number, positive or negative. Note that the
-    numerical inverse Hankel transform uses an integrand of :math:`r dk`, while the
-    mathematical inverse Hankel transform is commonly defined using :math:`k dk`.
+    numerical inverse Hankel transform uses an integrand of :math:`r \, dk`, while the
+    mathematical inverse Hankel transform is commonly defined using :math:`k \, dk`.
 
     See `fht` for further details.
     """
