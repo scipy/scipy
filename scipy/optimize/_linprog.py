@@ -632,13 +632,10 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     # Give unmodified problem to HiGHS
     if meth.startswith('highs'):
-        if callback is not None:
-            raise NotImplementedError("HiGHS solvers do not support the "
-                                      "callback interface.")
         highs_solvers = {'highs-ipm': 'ipm', 'highs-ds': 'simplex',
                          'highs': None}
 
-        sol = _linprog_highs(lp, solver=highs_solvers[meth],
+        sol = _linprog_highs(lp, solver=highs_solvers[meth], callback=callback,
                              **solver_options)
         sol['status'], sol['message'] = (
             _check_result(sol['x'], sol['fun'], sol['status'], sol['slack'],
