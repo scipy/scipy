@@ -1077,8 +1077,8 @@ Note that the units presented in the table above are not unambiguous, e.g.,
 spectrum, it is called a magnitude spectrum. Furthermore, note that the naming scheme
 of the representations is not consistent and varies in literature.
 
-For real-valued signals the so-called "onesided" spectral is often utilized. It only
-uses the non-negative frequencies (due to :math:`X(-f)= \conj{X}(f)` if
+For real-valued signals the so-called "onesided" spectral representation is often utilized.
+It only uses the non-negative frequencies (due to :math:`X(-f)= \conj{X}(f)` if
 :math:`x(t)\in\IR`). Sometimes the values of the negative frequencies are added to their
 positive counterparts. Then the amplitude spectrum allows to read off the full (not
 half) amplitude sine  of :math:`x(t)` at :math:`f_z` and the area of an interval in
