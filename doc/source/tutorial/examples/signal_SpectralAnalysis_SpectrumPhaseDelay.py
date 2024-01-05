@@ -25,7 +25,7 @@ for Z_, n_, m_ in zip((X, Y), ("Input $X(f)$", "Output $Y(f)$"), ('+-', 'x-')):
     ax0.plot(f, abs(Z_), m_, alpha=.5, label=n_)
     ax1.plot(f, np.unwrap(np.angle(Z_)), m_, alpha=.5, label=n_)
 
-ax0.set(title="Impulse Response of 3 Sample Delay Filter (no window)",
+ax0.set(title="Frequency Response of 3 Sample Delay Filter (no window)",
         ylabel="Magnitude", xlim=(0, f[-1]), ylim=(0, 1.1))
 ax1.set(xlabel=rf"Frequency $f$ in Hertz ($\Delta f = {1/n}\,$Hz)",
         ylabel=r"Phase in rad")
