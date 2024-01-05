@@ -1135,13 +1135,13 @@ def _boxcox_inv_lmbda(x, y):
     return np.real(-num / np.log(x) - 1 / y)
 
 
-class BigFloat:
+class _BigFloat:
     def __repr__(self):
         return "BIG_FLOAT"
 
 
 def boxcox_normmax(
-    x, brack=None, method='pearsonr', optimizer=None, *, ymax=BigFloat()
+    x, brack=None, method='pearsonr', optimizer=None, *, ymax=_BigFloat()
 ):
     """Compute optimal Box-Cox transform parameter for input data.
 
@@ -1252,7 +1252,7 @@ def boxcox_normmax(
     """
     x = np.asarray(x)
     end_msg = "exceed specified `ymax`."
-    if isinstance(ymax, BigFloat):
+    if isinstance(ymax, _BigFloat):
         dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
         # 10000 is a safety factor because `special.boxcox` overflows prematurely.
         ymax = np.finfo(dtype).max / 10000
@@ -1352,7 +1352,7 @@ def boxcox_normmax(
         mask = abs(special.boxcox(x_treme, res)) > ymax
         if np.any(mask):
             message = (
-                f"The optimal lambda is {res}, but the returned lambda is the"
+                f"The optimal lambda is {res}, but the returned lambda is the "
                 f"constrained optimum to ensure that the maximum or the minimum "
                 f"of the transformed data does not " + end_msg
             )
