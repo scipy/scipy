@@ -18,7 +18,7 @@ for c_, (a_, tau_) in enumerate(zip(aa, taus), start=1):
     axx[0].plot(f_, aZ_)
     axx[1].plot(f_, aZ_ / tau_)
     axx[2].plot(f_, aZ_ / np.sqrt(tau_))
-    x_labels.append(f"$a={a_:g}$, $\tau={tau_:g}$")
+    x_labels.append(rf"$a={a_:g}$, $\tau={tau_:g}$")
     x_ticks.append(c_ * 5)
 
 axx[2].set_xticks(x_ticks)
