@@ -15,7 +15,7 @@ __all__ = [  # noqa: F822
     'filtfilt', 'decimate', 'vectorstrength',
     'timeit', 'cKDTree', 'dlti', 'upfirdn', 'linalg',
     'sp_fft', 'lambertw', 'get_window', 'axis_slice', 'axis_reverse',
-    'odd_ext', 'even_ext', 'const_ext', 'cheby1', 'firwin'
+    'odd_ext', 'even_ext', 'const_ext', 'cheby1', 'firwin', 'envelope'
 ]
 
 

@@ -21,7 +21,7 @@ from ._arraytools import axis_slice, axis_reverse, odd_ext, even_ext, const_ext
 from ._filter_design import cheby1, _validate_sos, zpk2sos
 from ._fir_filter_design import firwin
 from ._sosfilt import _sosfilt
-
+from scipy.interpolate import UnivariateSpline
 
 __all__ = ['correlate', 'correlation_lags', 'correlate2d',
            'convolve', 'convolve2d', 'fftconvolve', 'oaconvolve',
@@ -30,7 +30,7 @@ __all__ = ['correlate', 'correlation_lags', 'correlate2d',
            'cmplx_sort', 'unique_roots', 'invres', 'invresz', 'residue',
            'residuez', 'resample', 'resample_poly', 'detrend',
            'lfilter_zi', 'sosfilt_zi', 'sosfiltfilt', 'choose_conv_method',
-           'filtfilt', 'decimate', 'vectorstrength']
+           'filtfilt', 'decimate', 'vectorstrength', 'envelope']
 
 
 _modedict = {'valid': 0, 'same': 1, 'full': 2}
@@ -4625,3 +4625,150 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
         sl[axis] = slice(None, None, q)
 
     return y[tuple(sl)]
+
+def envelope(x,N = None,method = 'analytic'):
+    """
+    Calculate the upper and lower envelopes of a 1-dimensional signal.
+
+    By default, the envelopes of x are calculated by the magnitude of its
+    analytical signal.
+
+    Parameters
+    ----------
+    x : ndarray
+        The signal for which the envelopes are going to be calculated, as a
+        1-dimensional NumPy array.
+    N : int, optional
+        If `method` = `analytic`, `N` is the number of Fourier components. If
+        `method` = `rms`, `N` is the sliding window length. If `method` = `peak`
+        , `N` is the required minimal horizontal distance between neighbouring
+        peaks. For the `rms` and `peak` methods `N` must be specified and must
+        be positive. Default: x.shape[0]
+    method : str {`analytic`, `rms`, `peak`}, optional
+        A string indicating which method to use to calculate the envelopes.
+
+        ``analytic``
+           The envelopes of x are calculated by the magnitude of its
+           analytical signal.
+        ``rms``
+           Calculates the upper and lower root-mean-square envelopes of `x`. The
+           mean is determined by a sliding window of `N` samples.
+        ``peak``
+           Calculates the upper and lower peak envelopes of `x`. The envelopes
+           are determined by employing spline interpolation between adjacent
+           local maxima that are at least `N` samples apart.
+
+    Returns
+    -------
+    upper : ndarray
+        The upper envelope of the signal.
+    lower : ndarray
+        The lower envelope of the signal.
+
+    Raises
+    -------
+    ValueError
+        If `method` is not one of `analytic`,`rms` or `peak`.
+    AssertionError
+        If `N` is neither None nor positive int.
+        If `x` is not a 1D NumPy array.
+        If `method` is `rms` or `peak`, but `N` is None.
+
+    See Also
+    --------
+    hilbert : Compute the analytic signal, using the Hilbert transform.
+    find_peaks : Find peaks inside a signal based on peak properties.
+
+    Examples
+    --------
+
+    >>> import numpy as np
+    >>> from scipy.signal import envelope
+    >>> import matplotlib.pyplot as plt
+
+    Create a synthetic signal and calculate its analytical envelopes.
+
+    >>> t = np.arange(0, 2, 1/2000)
+    >>> signal = (1+0.5*np.cos(2*np.pi*1*t))*np.cos(2*np.pi*10*t)+5
+    >>> upper,lower = envelope(signal)
+    >>> plt.plot(t,signal)
+    >>> plt.plot(t,upper)
+    >>> plt.plot(t,lower)
+    >>> plt.show()
+
+    Create a synthetic signal and calculate its root-mean-square envelopes.
+
+    >>> t = np.arange(0, 2, 1/2000)
+    >>> signal = (1+0.5*np.cos(2*np.pi*1*t))*
+    np.random.normal(size = t.shape[0])+5
+    >>> upper,lower = envelope(signal,N = 150,method = 'rms')
+    >>> plt.plot(t,signal)
+    >>> plt.plot(t,upper)
+    >>> plt.plot(t,lower)
+    >>> plt.show()
+
+    """
+    from ._peak_finding import find_peaks
+
+    #Assert that x is a 1D numpy array
+    assert isinstance(x, np.ndarray) and x.ndim == 1\
+            , 'x must be a 1-dimensional NumPy array'
+
+    if N or N==0: #N is not None.
+        assert isinstance(N,int) and N>0,\
+         'If N is not None, it must be a positive integer.'
+
+    if method == 'analytic':
+
+        #Calculate the mean of x and remove it
+        x_mean = np.mean(x)
+        x_zero_mean = x-x_mean
+
+        #Take the absolute value of the Hilbert transform
+        #to calculate the analytical envelope of the zero mean
+        #version of x
+        zero_mean_envelope = np.abs(hilbert(x_zero_mean,N = N))
+
+        #Calculate and return upper and lower envelopes
+        return x_mean+zero_mean_envelope,x_mean-zero_mean_envelope
+
+    elif method == 'rms':
+
+        #Assert that N is specified
+        assert N, 'N cannot be None when using the rms method.'
+
+        #Calculate the mean of x and remove it
+        x_mean = np.mean(x)
+        x_zero_mean = x-x_mean
+
+        #Calculate the RMS envelope of the zero mean version of x.
+        #Moving average is calculated using np.convolve
+        zero_mean_envelope = np.sqrt(convolve(x_zero_mean**2,np.ones(N)/N,\
+                                mode = 'same',method = 'direct'))
+
+        #Calculate and return upper and lower envelopes
+        return x_mean+zero_mean_envelope,x_mean-zero_mean_envelope
+
+    elif method == 'peak':
+
+        #Assert that N is specified
+        assert N, 'N cannot be None when using the peak method.'
+
+        #Calculate local maxima and minima which will serve
+        #as peaks for upper and lower envelopes respectively
+        peaks_upper,_ = find_peaks(x,distance = N)
+        peaks_lower,_ = find_peaks(-x,distance = N)
+
+        #Calculate upper and lower envelopes by interpolating
+        #peaks using a Univariate spline
+        upper_spline = UnivariateSpline(peaks_upper,x[peaks_upper])
+        lower_spline = UnivariateSpline(peaks_lower,x[peaks_lower])
+        upper_envelope = upper_spline(np.arange(x.shape[0]))
+        lower_envelope = lower_spline(np.arange(x.shape[0]))
+
+        #Return the envelopes
+        return upper_envelope,lower_envelope
+
+    else:
+
+        raise ValueError('%s is not a valid method' %(method))
