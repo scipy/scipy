@@ -295,28 +295,28 @@ class _minmax_mixin:
         mat = self.tocoo()
         # Convert to canonical form: no duplicates, sorted indices.
         mat.sum_duplicates()
-        extreme_index = argmin_or_argmax(mat.data)
-        extreme_value = mat.data[extreme_index]
+        extreme_idx = argmin_or_argmax(mat.data)
+        extreme_value = mat.data[extreme_idx]
         num_col = mat.shape[-1]
 
         # If the min value is less than zero, or max is greater than zero,
         # then we do not need to worry about implicit zeros.
         if compare(extreme_value, zero):
             # cast to Python int to avoid overflow and RuntimeError
-            return int(mat.row[extreme_index]) * num_col + int(mat.col[extreme_index])
+            return int(mat.row_as_2d[extreme_idx]) * num_col + int(mat.col[extreme_idx])
 
         # Cheap test for the rare case where we have no implicit zeros.
         size = np.prod(self.shape)
         if size == mat.nnz:
-            return int(mat.row[extreme_index]) * num_col + int(mat.col[extreme_index])
+            return int(mat.row_as_2d[extreme_idx]) * num_col + int(mat.col[extreme_idx])
 
         # At this stage, any implicit zero could be the min or max value.
         # After sum_duplicates(), the `row` and `col` arrays are guaranteed to
         # be sorted in C-order, which means the linearized indices are sorted.
-        linear_indices = mat.row * num_col + mat.col
+        linear_indices = mat.row_as_2d * num_col + mat.col
         first_implicit_zero_index = _find_missing_index(linear_indices, size)
         if extreme_value == zero:
-            return min(first_implicit_zero_index, extreme_index)
+            return min(first_implicit_zero_index, extreme_idx)
         return first_implicit_zero_index
 
     def max(self, axis=None, out=None):
