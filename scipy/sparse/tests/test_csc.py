@@ -6,17 +6,17 @@ import pytest
 
 
 # Run the entire test suite with both sequential and parallel codepaths
-@pytest.fixture(scope='module', params=(False, True), autouse=True)
-def implementations(request):
-    import scipy.sparse._sparsetools
-    if request.param:
+@pytest.fixture(scope='module', params=("sequential", "parallel"), autouse=True)
+def fixture_parallelize_test_csc(request):
+    from scipy.sparse import _sparsetools
+    if request.param == "parallel":
         # parallelize everything
-        scipy.sparse._sparsetools.set_par_threshold(1)
-        scipy.sparse._sparsetools.set_workers(4)
+        _sparsetools.set_par_threshold(1)
+        _sparsetools.set_workers(4)
     else:
         # parallelize nothing
-        scipy.sparse._sparsetools.set_par_threshold(0)
-        scipy.sparse._sparsetools.set_workers(1)
+        _sparsetools.set_par_threshold(0)
+        _sparsetools.set_workers(1)
 
 
 def test_csc_getrow():

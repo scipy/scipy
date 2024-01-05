@@ -44,19 +44,6 @@ from scipy._lib._util import ComplexWarning
 import pytest
 
 
-# Run the entire test suite with both sequential and parallel codepaths
-@pytest.fixture(scope='module', params=(False, True), autouse=True)
-def implementations(request):
-    if request.param:
-        # parallelize everything
-        scipy.sparse._sparsetools.set_par_threshold(1)
-        scipy.sparse._sparsetools.set_workers(4)
-    else:
-        # parallelize nothing
-        scipy.sparse._sparsetools.set_par_threshold(0)
-        scipy.sparse._sparsetools.set_workers(1)
-
-
 IS_COLAB = ('google.colab' in sys.modules)
 
 
@@ -277,6 +264,19 @@ class ComparisonTester:
 class _TestCommon:
     """test common functionality shared by all sparse formats"""
     math_dtypes = supported_dtypes
+
+    # Run all tests with both sequential and parallel codepaths
+    @pytest.fixture(scope='class', params=("sequential", "parallel"), autouse=True)
+    def fixture_parallelize_test_base(self, request):
+        from scipy.sparse import _sparsetools
+        if request.param == "parallel":
+            # parallelize everything
+            _sparsetools.set_par_threshold(1)
+            _sparsetools.set_workers(4)
+        else:
+            # parallelize nothing
+            _sparsetools.set_par_threshold(0)
+            _sparsetools.set_workers(1)
 
     @classmethod
     def init_class(cls):
