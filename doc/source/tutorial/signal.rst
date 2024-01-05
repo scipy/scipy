@@ -1074,8 +1074,8 @@ In summary, this subsection presented five ways to represent a spectrum:
 Note that the units presented in the table above are not unambiguous, e.g.,
 :math:`\text{V}^2\text{s} / \text{Hz} = \text{V}^2\text{s}^2 = \text{V}^2/
 \text{Hz}^2`. When using the absolute value of :math:`|X(f) / \tau|` of the amplitude
-spectrum, it is called magnitude spectrum. Furthermore, note that the naming scheme of
-the representations is not consistent and varies in literature.
+spectrum, it is called a magnitude spectrum. Furthermore, note that the naming scheme
+of the representations is not consistent and varies in literature.
 
 For real-valued signals the so-called "onesided" spectral is often utilized. It only
 uses the non-negative frequencies (due to :math:`X(-f)= \conj{X}(f)` if
