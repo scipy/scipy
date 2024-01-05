@@ -199,7 +199,6 @@ specfun_module = custom_target('specfun_module',
 
 py3.extension_module('_specfun',
   specfun_module,
-  c_args: numpy_nodepr_api,
   link_args: version_link_args,
   dependencies: [fortranobject_dep],
   link_with: specfun_lib,
@@ -212,7 +211,6 @@ cdflib_c = cython_gen.process('_cdflib.pyx')
 
 py3.extension_module('_cdflib',
   cdflib_c,
-  c_args: numpy_nodepr_api,
   dependencies: [np_dep],
   install: true,
   subdir: 'scipy/special'
