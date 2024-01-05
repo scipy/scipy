@@ -131,22 +131,6 @@ namespace std {
     };
 }
 
-// GCC 8 does not have std::exclusive_scan. Reimplement if necessary.
-template<typename InputIt, typename OutputIt, typename T>
-OutputIt exclusive_scan(InputIt first, InputIt last, OutputIt result, T init)
-{
-#if (!defined(_GLIBCXX_RELEASE) || _GLIBCXX_RELEASE >= 9)
-    return std::exclusive_scan(first, last, result, init);
-#else
-    for (; first != last; ++first) {
-        auto v = init;
-        init = init + *first;
-        *result++ = v;
-    }
-    return result;
-#endif
-}
-
 // GCC 8 does not have std::inclusive_scan. Reimplement if necessary.
 template<typename InputIt, typename OutputIt>
 OutputIt inclusive_scan(InputIt first, InputIt last, OutputIt result)
