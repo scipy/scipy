@@ -3689,14 +3689,14 @@ class TestUniqueRoots:
 class TestEnvelope:
     def test_bad_args(self):
         # x must be a 1D numpy array
-        msg = 'x must be a 1-dimensional NumPy array'
+        msg = 'x must be a 1-dimensional array'
 
         with assert_raises(AssertionError, match=msg):
             x = 0
             envelope(x)
 
         with assert_raises(AssertionError, match=msg):
-            x = [0,1,2]
+            x = [[0,1,2],[3,4,5]]
             envelope(x)
 
         with assert_raises(AssertionError, match=msg):

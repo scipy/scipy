@@ -4628,23 +4628,23 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
 
 def envelope(x,N = None,method = 'analytic'):
     """
-    Calculate the upper and lower envelopes of a 1-dimensional signal.
+    Calculate the upper and lower envelopes of a 1-D signal.
 
-    By default, the envelopes of x are calculated by the magnitude of its
+    By default, the envelopes of `x` are calculated by the magnitude of its
     analytical signal.
 
     Parameters
     ----------
-    x : ndarray
+    x : array_like
         The signal for which the envelopes are going to be calculated, as a
-        1-dimensional NumPy array.
+        1-dimensional array.
     N : int, optional
-        If `method` = `analytic`, `N` is the number of Fourier components. If
-        `method` = `rms`, `N` is the sliding window length. If `method` = `peak`
-        , `N` is the required minimal horizontal distance between neighbouring
-        peaks. For the `rms` and `peak` methods `N` must be specified and must
-        be positive. Default: x.shape[0]
-    method : str {`analytic`, `rms`, `peak`}, optional
+        If `method` = `'analytic'`, `N` is the number of Fourier components. If
+        `method` = `'rms'`, `N` is the sliding window length. If `method` =
+        `'peak'`, `N` is the required minimal horizontal distance between
+        neighbouring peaks. For the `'rms'` and `'peak'` methods `N` must be
+        specified and must be positive. Default: ``x.shape[0]``
+    method : str {`'analytic'`, `'rms'`, `'peak'`}, optional
         A string indicating which method to use to calculate the envelopes.
 
         ``analytic``
@@ -4664,15 +4664,6 @@ def envelope(x,N = None,method = 'analytic'):
         The upper envelope of the signal.
     lower : ndarray
         The lower envelope of the signal.
-
-    Raises
-    -------
-    ValueError
-        If `method` is not one of `analytic`,`rms` or `peak`.
-    AssertionError
-        If `N` is neither None nor positive int.
-        If `x` is not a 1D NumPy array.
-        If `method` is `rms` or `peak`, but `N` is None.
 
     See Also
     --------
@@ -4699,20 +4690,21 @@ def envelope(x,N = None,method = 'analytic'):
     Create a synthetic signal and calculate its root-mean-square envelopes.
 
     >>> t = np.arange(0, 2, 1/2000)
-    >>> signal = (1+0.5*np.cos(2*np.pi*1*t))*
-    np.random.normal(size = t.shape[0])+5
+    >>> signal = (1+0.5*np.cos(2*np.pi*1*t))*np.random.normal(size = t.shape[0])+5
     >>> upper,lower = envelope(signal,N = 150,method = 'rms')
     >>> plt.plot(t,signal)
     >>> plt.plot(t,upper)
     >>> plt.plot(t,lower)
     >>> plt.show()
 
+    .. versionadded:: 1.12.0
     """
     from ._peak_finding import find_peaks
 
-    #Assert that x is a 1D numpy array
+    #Assert that x is a 1D array
+    x = np.asarray(x)
     assert isinstance(x, np.ndarray) and x.ndim == 1\
-            , 'x must be a 1-dimensional NumPy array'
+            , 'x must be a 1-dimensional array'
 
     if N or N==0: #N is not None.
         assert isinstance(N,int) and N>0,\
