@@ -148,13 +148,13 @@ def test_transpose_with_axis():
 def test_1d_row_and_col():
     res = coo_array([1, -2, -3])
     assert np.array_equal(res.col, np.array([0, 1, 2]))
-    assert np.array_equal(res.row_as_2d, np.zeros_like(res.col))
-    assert res.row_as_2d.dtype == res.col.dtype
+    assert np.array_equal(res._row_as_2d, np.zeros_like(res.col))
+    assert res._row_as_2d.dtype == res.col.dtype
 
     res.col = [1, 2, 3]
     assert len(res.indices) == 1
     assert np.array_equal(res.col, np.array([1, 2, 3]))
-    assert res.row_as_2d.dtype == res.col.dtype
+    assert res._row_as_2d.dtype == res.col.dtype
 
     with pytest.raises(ValueError, match="1d sparse arrays have no row attribute"):
         res.row
@@ -219,7 +219,7 @@ def test_eliminate_zeros():
     assert arr1d.count_nonzero() == 1
     assert np.array_equal(arr1d.toarray(), np.array([0, 1]))
     assert np.array_equal(arr1d.col, np.array([1]))
-    assert np.array_equal(arr1d.row_as_2d, np.array([0]))
+    assert np.array_equal(arr1d._row_as_2d, np.array([0]))
     with pytest.raises(ValueError, match="1d sparse arrays have no row attribute"):
         arr1d.row
 

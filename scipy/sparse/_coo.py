@@ -96,7 +96,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         self._check()
 
     @property
-    def row_as_2d(self):
+    def _row_as_2d(self):
         return self.indices[-2] if self.ndim > 1 else np.zeros_like(self.col)
 
     @property
@@ -273,7 +273,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         # This handles both 0D and 1D cases correctly regardless of the
         # original shape.
         M, N = self._shape_as_2d
-        coo_todense(M, N, self.nnz, self.row_as_2d, self.col, self.data,
+        coo_todense(M, N, self.nnz, self._row_as_2d, self.col, self.data,
                     B.ravel('A'), fortran)
         # Note: reshape() doesn't copy here, but does return a new array (view).
         return B.reshape(self.shape)
@@ -532,7 +532,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         result = np.array(other, dtype=dtype, copy=True)
         fortran = int(result.flags.f_contiguous)
         M, N = self._shape_as_2d
-        coo_todense(M, N, self.nnz, self.row_as_2d, self.col, self.data,
+        coo_todense(M, N, self.nnz, self._row_as_2d, self.col, self.data,
                     result.ravel('A'), fortran)
         return self._container(result, copy=False)
 
