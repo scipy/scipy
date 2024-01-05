@@ -209,7 +209,7 @@ html_theme_options = {
   "twitter_url": "https://twitter.com/SciPy_team",
   "header_links_before_dropdown": 6,
   "icon_links": [],
-  "navbar_end": ["theme-switcher", "version-switcher", "navbar-icon-links"],
+  "navbar_start": ["navbar-logo", "version-switcher"],
   "navbar_persistent": [],
   "navigation_depth": 1,
   "switcher": {
