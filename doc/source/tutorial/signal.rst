@@ -1118,7 +1118,8 @@ energy and power, i.e.,
 
 delivers the identical result as in the continuous time case of Eq.
 :math:numref:`eq_SpectA_ContEnergy`. The discrete Fourier transform (DFT) and its
-inverse (as implemented in the :mod:`scipy.fft` module) is given by
+inverse (as implemented using efficient FFT calculations in the :mod:`scipy.fft` module)
+is given by
 
 .. math::
 
