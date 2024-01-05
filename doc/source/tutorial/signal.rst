@@ -1103,7 +1103,7 @@ information about the signal's amplitude.
 
 Sampled Sine Signal
 ^^^^^^^^^^^^^^^^^^^
-In practice sampled signals are used. I.e., the signal is represented by :math:`n`
+In practice sampled signals are widely used. I.e., the signal is represented by :math:`n`
 samples :math:`x_k := x(kT)`, :math:`k=0, \ldots, n-1`, where :math:`T` is the sampling
 interval, :math:`\tau:=nT` the signal's duration and :math:`f_S := 1/T` the sampling
 frequency. Note that the continuous signal needs to be band-limited to :math:`[-f_S/2,
