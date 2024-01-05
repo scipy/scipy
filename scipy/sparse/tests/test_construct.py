@@ -614,6 +614,12 @@ class TestConstructUtils:
         # one 1d matrix and a scalar
         assert_array_equal(construct.block_diag([[2,3], 4]).toarray(),
                            [[2, 3, 0], [0, 0, 4]])
+        # 1d sparse arrays
+        A = coo_array([1,0,3])
+        B = coo_array([0,4])
+        assert_array_equal(construct.block_diag([A, B]).toarray(),
+                           [[1, 0, 3, 0, 0], [0, 0, 0, 0, 4]])
+
 
     def test_block_diag_1(self):
         """ block_diag with one matrix """

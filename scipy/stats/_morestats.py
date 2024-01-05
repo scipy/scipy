@@ -3682,6 +3682,15 @@ def _mood_inner_lc(xy, x, diffs, sorted_xy, n, m, N) -> float:
     return ((T - E_0_T) / np.sqrt(varM),)
 
 
+def _mood_too_small(samples, kwargs, axis=-1):
+    x, y = samples
+    n = x.shape[axis]
+    m = y.shape[axis]
+    N = m + n
+    return N < 3
+
+
+@_axis_nan_policy_factory(SignificanceResult, n_samples=2, too_small=_mood_too_small)
 def mood(x, y, axis=0, alternative="two-sided"):
     """Perform Mood's test for equal scale parameters.
 
@@ -3773,11 +3782,6 @@ def mood(x, y, axis=0, alternative="two-sided"):
     """
     x = np.asarray(x, dtype=float)
     y = np.asarray(y, dtype=float)
-
-    if axis is None:
-        x = x.flatten()
-        y = y.flatten()
-        axis = 0
 
     if axis < 0:
         axis = x.ndim + axis

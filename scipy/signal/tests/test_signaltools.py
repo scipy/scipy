@@ -805,7 +805,8 @@ class TestFFTConvolve:
             sig_nan[100] = val
             coeffs = signal.firwin(200, 0.2)
 
-            with pytest.warns(RuntimeWarning, match="Use of fft convolution"):
+            msg = "Use of fft convolution.*|invalid value encountered.*"
+            with pytest.warns(RuntimeWarning, match=msg):
                 signal.convolve(sig_nan, coeffs, mode='same', method='fft')
 
 def fftconvolve_err(*args, **kwargs):
@@ -1114,9 +1115,12 @@ class TestMedFilt:
 
     def test_none(self):
         # gh-1651, trac #1124. Ensure this does not segfault.
-        with pytest.warns(UserWarning):
+        msg = "kernel_size exceeds volume.*|Using medfilt with arrays of dtype.*"
+        with pytest.warns((UserWarning, DeprecationWarning), match=msg):
             assert_raises(TypeError, signal.medfilt, None)
-        # Expand on this test to avoid a regression with possible contiguous
+
+    def test_odd_strides(self):
+        # Avoid a regression with possible contiguous
         # numpy arrays that have odd strides. The stride value below gets
         # us into wrong memory if used (but it does not need to be used)
         dummy = np.arange(10, dtype=np.float64)
@@ -1133,7 +1137,8 @@ class TestMedFilt:
         else:
             n = 10
         # Shouldn't segfault:
-        with pytest.warns(UserWarning):
+        msg = "kernel_size exceeds volume.*|Using medfilt with arrays of dtype.*"
+        with pytest.warns((UserWarning, DeprecationWarning), match=msg):
             for j in range(n):
                 signal.medfilt(x)
         if hasattr(sys, 'getrefcount'):

@@ -1419,9 +1419,10 @@ def test_kendalltau_nan_2nd_arg():
 
 
 def test_kendalltau_deprecations():
-    with pytest.deprecated_call(match="keyword argument 'initial_lexsort"):
+    msg_dep = "keyword argument 'initial_lexsort'"
+    with pytest.deprecated_call(match=msg_dep):
         stats.kendalltau([], [], initial_lexsort=True)
-    with pytest.deprecated_call(match="use keyword arguments"):
+    with pytest.deprecated_call(match=f"use keyword arguments|{msg_dep}"):
         stats.kendalltau([], [], True)
 
 
@@ -3136,7 +3137,7 @@ class TestMoments:
         assert_allclose(y, [0, 1.25, 0, 2.5625])
 
         # test empty input
-        message = "Mean of empty slice."
+        message = r"Mean of empty slice\.|invalid value encountered.*"
         with pytest.warns(RuntimeWarning, match=message):
             y = stats.moment([])
             self._assert_equal(y, np.nan, dtype=np.float64)
@@ -3310,7 +3311,7 @@ class TestMoments:
             stats.skew(a)[0]
 
     def test_empty_1d(self):
-        message = "Mean of empty slice."
+        message = r"Mean of empty slice\.|invalid value encountered.*"
         with pytest.warns(RuntimeWarning, match=message):
             stats.skew([])
         with pytest.warns(RuntimeWarning, match=message):
@@ -7888,7 +7889,8 @@ class TestBrunnerMunzel:
         x = [1, 2, 3]
         y = [5, 6, 7, 8, 9]
 
-        with pytest.warns(RuntimeWarning, match='p-value cannot be estimated'):
+        msg = "p-value cannot be estimated|divide by zero|invalid value encountered"
+        with pytest.warns(RuntimeWarning, match=msg):
             stats.brunnermunzel(x, y, distribution="t")
 
     def test_brunnermunzel_normal_dist(self):

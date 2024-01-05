@@ -363,6 +363,10 @@ class TestCumulative_trapezoid:
             res = cumulative_trapezoid(y, initial=initial)
         assert_allclose(res, [initial, *np.cumsum(y[1:] + y[:-1])/2])
 
+    def test_zero_len_y(self):
+        with pytest.raises(ValueError, match="At least one point is required"):
+            cumulative_trapezoid(y=[])
+
     def test_cumtrapz(self):
         # Basic coverage test for the alias
         x = np.arange(3 * 2 * 4).reshape(3, 2, 4)
@@ -538,6 +542,13 @@ class TestQMCQuad:
 
 
 def cumulative_simpson_nd_reference(y, *, x=None, dx=None, initial=None, axis=-1):
+    # Use cumulative_trapezoid if length of y < 3
+    if y.shape[axis] < 3:
+        if initial is None:
+            return cumulative_trapezoid(y, x=x, dx=dx, axis=axis, initial=None)
+        else:
+            return initial + cumulative_trapezoid(y, x=x, dx=dx, axis=axis, initial=0)
+
     # Ensure that working axis is last axis
     y = np.moveaxis(y, axis, -1)
     x = np.moveaxis(x, axis, -1) if np.ndim(x) > 1 else x
@@ -608,14 +619,16 @@ class TestCumulativeSimpson:
 
     @pytest.mark.parametrize('axis', np.arange(-3, 3))
     @pytest.mark.parametrize('x_ndim', (1, 3))
+    @pytest.mark.parametrize('x_len', (1, 2, 7))
     @pytest.mark.parametrize('i_ndim', (None, 0, 3,))
     @pytest.mark.parametrize('dx', (None, True))
-    def test_nd(self, axis, x_ndim, i_ndim, dx):
+    def test_nd(self, axis, x_ndim, x_len, i_ndim, dx):
         # Test behavior of `cumulative_simpson` with N-D `y`
         rng = np.random.default_rng(82456839535679456794)
 
         # determine shapes
-        shape = [5, 6, 7]
+        shape = [5, 6, x_len]
+        shape[axis], shape[-1] = shape[-1], shape[axis]
         shape_len_1 = shape.copy()
         shape_len_1[axis] = 1
         i_shape = shape_len_1 if i_ndim == 3 else ()
@@ -636,10 +649,10 @@ class TestCumulativeSimpson:
         np.testing.assert_allclose(res, ref, rtol=1e-15)
 
     @pytest.mark.parametrize(('message', 'kwarg_update'), [
-        ("x must be monotonically increasing", dict(x=[2, 2, 3, 4])),
-        ("x must be monotonically", dict(x=[x0, [2, 2, 4, 8]], y=[y0, y0])),
-        ("x must be monotonically", dict(x=[x0, x0, x0], y=[y0, y0, y0], axis=0)),
-        ("At least 3 points are required", dict(x=x0[:2], y=y0[:2])),
+        ("x must be strictly increasing", dict(x=[2, 2, 3, 4])),
+        ("x must be strictly increasing", dict(x=[x0, [2, 2, 4, 8]], y=[y0, y0])),
+        ("x must be strictly increasing", dict(x=[x0, x0, x0], y=[y0, y0, y0], axis=0)),
+        ("At least one point is required", dict(x=[], y=[])),
         ("`axis=4` is not valid for `y` with `y.ndim=1`", dict(axis=4)),
         ("shape of `x` must be the same as `y` or 1-D", dict(x=np.arange(5))),
         ("`initial` must either be a scalar or...", dict(initial=np.arange(5))),
@@ -659,7 +672,6 @@ class TestCumulativeSimpson:
 
         # Should add tests of:
         # - all elements of `x` identical
-        # - y of size 1 and 2
         # These should work as they do for `simpson`
 
     def _get_theoretical_diff_between_simps_and_cum_simps(self, y, x):

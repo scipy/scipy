@@ -300,17 +300,16 @@ fftconvolve, convolve2d, correlate2d, and sepfir2d.) Eliminate the overlap with
 convolution and correlation, put the implementation somewhere, and use that
 consistently throughout SciPy.
 
-*B-splines*: (Relevant functions are bspline, cubic, quadratic, gauss_spline,
+*B-splines*: (Relevant functions are gauss_spline,
 cspline1d, qspline1d, cspline2d, qspline2d, cspline1d_eval, and spline_filter.)
 Move the good stuff to `interpolate` (with appropriate API changes to match how
 things are done in `interpolate`), and eliminate any duplication.
 
 *Filter design*: merge `firwin` and `firwin2` so `firwin2` can be removed.
 
-*Continuous-Time Linear Systems*: remove `lsim2`, `impulse2`, `step2`.  The
-`lsim`, `impulse` and `step` functions now "just work" for any input system.
-Further improve the performance of ``ltisys`` (fewer internal transformations
-between different representations). Fill gaps in lti system conversion functions.
+*Continuous-Time Linear Systems*: Further improve the performance of ``ltisys``
+(fewer internal transformations between different representations). Fill gaps in lti
+system conversion functions.
 
 *Second Order Sections*: Make SOS filtering equally capable as existing
 methods. This includes ltisys objects, an `lfiltic` equivalent, and numerically

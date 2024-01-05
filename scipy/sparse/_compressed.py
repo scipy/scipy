@@ -376,6 +376,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             if self.shape == other.shape:
                 other = self.__class__(other)
                 return self._binopt(other, '_elmul_')
+            if other.ndim == 1:
+                raise TypeError("broadcast from a 1d array not yet supported")
             # Single element.
             elif other.shape == (1, 1):
                 return self._mul_scalar(other.toarray()[0, 0])

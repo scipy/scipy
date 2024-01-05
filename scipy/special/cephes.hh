@@ -14,7 +14,7 @@
 // Namespace the include to avoid polluting global namespace.
 namespace special {
     namespace cephes {
-	namespace detail {
+    namespace detail {
 
 #include "cephes.h"
 
@@ -127,25 +127,26 @@ namespace special {
 #undef kolmogc
 #undef kolmogci
 #undef owens_t
-	}
+#undef tukeylambdacdf
+        }
     }
 }
 
 namespace special {
     namespace cephes {
-	// Functions are being added as needed.
+    // Functions are being added as needed.
 
-	inline double beta(double a, double b) {
-	    return detail::cephes_beta(a, b);
-	}
+    inline double beta(double a, double b) {
+        return detail::cephes_beta(a, b);
+    }
 
-	inline double lbeta(double a, double b) {
-	    return detail::cephes_lbeta(a, b);
-	}
+    inline double lbeta(double a, double b) {
+        return detail::cephes_lbeta(a, b);
+    }
 
-	inline double Gamma(double x) {
-	    return detail::cephes_Gamma(x);
-	}
+    inline double Gamma(double x) {
+        return detail::cephes_Gamma(x);
+    }
 
     }
 }

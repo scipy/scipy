@@ -36,12 +36,12 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python-version: ['3.10', '3.12-dev']
+        python-version: ['3.10', '3.12'] # this run will use python dev versions when available
         maintenance-branch:
           - ${{ contains(github.ref, 'maintenance/') || contains(github.base_ref, 'maintenance/') }}
         exclude:
           - maintenance-branch: true
-            python-version: '3.12-dev'
+            python-version: '3.12'
 
     steps:
     - uses: actions/checkout@v3
@@ -67,11 +67,11 @@ jobs:
         python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson click rich-click doit pydevtool pooch hypothesis
 
     - name: Install Python packages from repositories
-      if: matrix.python-version == '3.12-dev'
+      if: matrix.python-version == '3.12' # this run will use python dev versions when available
       run: |
         python -m pip install git+https://github.com/numpy/numpy.git
         python -m pip install ninja cython pytest pybind11 pytest-xdist pytest-timeout click rich-click doit pydevtool pooch hypothesis "setuptools<67.3"
-        python -m pip install git+https://github.com/serge-sans-paille/pythran.git@e3babfd
+        python -m pip install git+https://github.com/serge-sans-paille/pythran.git
         python -m pip install git+https://github.com/mesonbuild/meson.git
 
     - name:  Prepare compiler cache
@@ -118,7 +118,7 @@ jobs:
       if: matrix.python-version == '3.10'
       run: |
         # Packages that are only needed for their annotations
-        python -m pip install -r mypy_requirements.txt
+        python -m pip install mypy==1.0.0 types-psutil typing_extensions
         python -m pip install pybind11 sphinx
 
         python -u dev.py mypy
