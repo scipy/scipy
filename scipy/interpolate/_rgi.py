@@ -236,8 +236,9 @@ class RegularGridInterpolator:
     # see https://github.com/JohannesBuchner/regulargrid
 
     _SPLINE_DEGREE_MAP = {"slinear": 1, "cubic": 3, "quintic": 5, 'pchip': 3,
-                          "slinear_": 1, "cubic_": 3, "quintic_": 5,}
-    _SPLINE_METHODS_recurive = {"slinear_", "cubic_", "quintic_", "pchip"}
+                          "slinear_legacy": 1, "cubic_legacy": 3, "quintic_legacy": 5,}
+    _SPLINE_METHODS_recurive = {"slinear_legacy", "cubic_legacy",
+                                "quintic_legacy", "pchip"}
     _SPLINE_METHODS_ndbspl = {"slinear", "cubic", "quintic"}
     _SPLINE_METHODS = list(_SPLINE_DEGREE_MAP.keys())
     _ALL_METHODS = ["linear", "nearest"] + _SPLINE_METHODS
@@ -667,7 +668,7 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     # sanity check 'method' kwarg
     if method not in ["linear", "nearest", "cubic", "quintic", "pchip",
                       "splinef2d", "slinear",
-                      "slinear_", "cubic_", "quintic_"]:
+                      "slinear_legacy", "cubic_legacy", "quintic_legacy"]:
         raise ValueError("interpn only understands the methods 'linear', "
                          "'nearest', 'slinear', 'cubic', 'quintic', 'pchip', "
                          f"and 'splinef2d'. You provided {method}.")
@@ -708,7 +709,7 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
                                  "in dimension %d" % i)
 
     # perform interpolation
-    if method in ["linear", "nearest", "slinear", "cubic", "quintic", "pchip", "slinear_", "cubic_", "quintic_"]:
+    if method in RegularGridInterpolator._ALL_METHODS:
         interp = RegularGridInterpolator(points, values, method=method,
                                          bounds_error=bounds_error,
                                          fill_value=fill_value)
