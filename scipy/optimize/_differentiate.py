@@ -1,3 +1,4 @@
+# mypy: disable-error-code="attr-defined"
 import numpy as np
 from scipy._lib._elementwise_algorithm import (  # noqa: F401
     _elementwise_algorithm_initialize, _elementwise_algorithm_loop, _RichResult,

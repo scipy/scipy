@@ -1,3 +1,4 @@
+# mypy: disable-error-code="attr-defined"
 import pytest
 
 import numpy as np
