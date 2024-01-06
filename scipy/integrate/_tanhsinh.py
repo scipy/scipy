@@ -2,11 +2,9 @@
 import numpy as np
 from scipy import special
 from scipy.optimize import OptimizeResult
-from scipy._lib._elementwise_algorithm import (_elementwise_algorithm_initialize,
-                                               _elementwise_algorithm_loop,
-                                               _ECONVERGED, _ESIGNERR, _ECONVERR,
-                                               _EVALUEERR, _ECALLBACK, _EINPROGRESS
-                                               )
+from scipy._lib._elementwise_algorithm import (  # noqa: F401
+    _elementwise_algorithm_initialize, _elementwise_algorithm_loop,
+    _ECONVERGED, _ESIGNERR, _ECONVERR, _EVALUEERR, _ECALLBACK, _EINPROGRESS)
 
 # todo:
 #  figure out warning situation

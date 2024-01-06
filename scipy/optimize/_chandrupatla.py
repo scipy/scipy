@@ -1,11 +1,9 @@
 import numpy as np
 from scipy.optimize._optimize import OptimizeResult
 from ._zeros_py import _xtol, _rtol, _iter
-from scipy._lib._elementwise_algorithm import (_elementwise_algorithm_initialize,
-                                               _elementwise_algorithm_loop,
-                                               _ECONVERGED, _ESIGNERR, _ECONVERR,
-                                               _EVALUEERR, _ECALLBACK, _EINPROGRESS
-                                               )
+from scipy._lib._elementwise_algorithm import (  # noqa: F401
+    _elementwise_algorithm_initialize, _elementwise_algorithm_loop,
+    _ECONVERGED, _ESIGNERR, _ECONVERR, _EVALUEERR, _ECALLBACK, _EINPROGRESS)
 
 
 def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
