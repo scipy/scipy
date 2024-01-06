@@ -12,7 +12,7 @@
 # `scipy.integrate._tanhsinh._tanhsinh` for numerical quadrature.
 
 import numpy as np
-from scipy.optimize._optimize import OptimizeResult, _call_callback_maybe_halt
+from ._util import _RichResult, _call_callback_maybe_halt
 
 _ESIGNERR = -1
 _ECONVERR = -2
@@ -108,7 +108,7 @@ def _elementwise_algorithm_loop(work, callback, shape, maxiter,
 
     Parameters
     ----------
-    work : OptimizeResult
+    work : _RichResult
         All variables that need to be retained between iterations. Must
         contain attributes `nit`, `nfev`, and `success`
     callback : callable
@@ -149,12 +149,12 @@ def _elementwise_algorithm_loop(work, callback, shape, maxiter,
         Identifies correspondence between attributes of `res` and attributes
         of `work`; i.e., attributes of active elements of `work` will be
         copied to the appropriate indices of `res` when appropriate. The order
-        determines the order in which OptimizeResult attributes will be
+        determines the order in which _RichResult attributes will be
         pretty-printed.
 
     Returns
     -------
-    res : OptimizeResult
+    res : _RichResult
         The final result object
 
     Notes
@@ -178,7 +178,7 @@ def _elementwise_algorithm_loop(work, callback, shape, maxiter,
     res_dict['status'] = np.full(n_elements, _EINPROGRESS)
     res_dict['nit'] = np.zeros(n_elements, dtype=int)
     res_dict['nfev'] = np.zeros(n_elements, dtype=int)
-    res = OptimizeResult(res_dict)
+    res = _RichResult(res_dict)
     work.args = args
 
     active = _elementwise_algorithm_check_termination(
@@ -281,4 +281,4 @@ def _elementwise_algorithm_prepare_result(work, res, res_work_pairs, active,
     for key, val in res.items():
         res[key] = np.reshape(val, shape)[()]
     res['_order_keys'] = ['success'] + [i for i, j in res_work_pairs]
-    return OptimizeResult(**res)
+    return _RichResult(**res)

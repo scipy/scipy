@@ -1,9 +1,8 @@
 # mypy: disable-error-code="attr-defined"
 import numpy as np
 from scipy import special
-from scipy.optimize import OptimizeResult
 from scipy._lib._elementwise_algorithm import (  # noqa: F401
-    _elementwise_algorithm_initialize, _elementwise_algorithm_loop,
+    _elementwise_algorithm_initialize, _elementwise_algorithm_loop, _RichResult,
     _ECONVERGED, _ESIGNERR, _ECONVERR, _EVALUEERR, _ECALLBACK, _EINPROGRESS)
 
 # todo:
@@ -96,7 +95,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     callback : callable, optional
         An optional user-supplied function to be called before the first
         iteration and after each iteration.
-        Called as ``callback(res)``, where ``res`` is an ``OptimizeResult``
+        Called as ``callback(res)``, where ``res`` is a ``_RichResult``
         similar to that returned by `_differentiate` (but containing the
         current iterate's values of all variables). If `callback` raises a
         ``StopIteration``, the algorithm will terminate immediately and
@@ -104,8 +103,8 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
 
     Returns
     -------
-    res : OptimizeResult
-        An instance of `scipy.optimize.OptimizeResult` with the following
+    res : _RichResult
+        An instance of `scipy._lib._util._RichResult` with the following
         attributes. (The descriptions are written as though the values will be
         scalars; however, if `func` returns an array, the outputs will be
         arrays of the same shape.)
@@ -269,7 +268,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     wl0 = np.zeros(shape, dtype=dtype).ravel()
     d4 = np.zeros(shape, dtype=dtype).ravel()
 
-    work = OptimizeResult(
+    work = _RichResult(
         Sn=Sn, Sk=Sk, aerr=aerr, h=h0, log=log, dtype=dtype, pi=pi, eps=eps,
         a=a.reshape(-1, 1), b=b.reshape(-1, 1),  # integration limits
         n=minlevel, nit=nit, nfev=nfev, status=status,  # iter/eval counts
@@ -880,8 +879,8 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
 
     Returns
     -------
-    res : OptimizeResult
-        An instance of `scipy.optimize.OptimizeResult` with the following
+    res : _RichResult
+        An instance of `scipy._lib._util._RichResult` with the following
         attributes. (The descriptions are written as though the values will be
         scalars; however, if `func` returns an array, the outputs will be
 
@@ -1026,8 +1025,8 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
     # Return results
     S, E = S.reshape(shape)[()], E.reshape(shape)[()]
     status, nfev = status.reshape(shape)[()], nfev.reshape(shape)[()]
-    return OptimizeResult(sum=S, error=E, status=status, success=status == 0,
-                          nfev=nfev)
+    return _RichResult(sum=S, error=E, status=status, success=status == 0,
+                       nfev=nfev)
 
 
 def _direct(f, a, b, step, args, constants, inclusive=True):

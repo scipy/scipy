@@ -1,8 +1,7 @@
 import numpy as np
-from scipy.optimize._optimize import OptimizeResult
 from ._zeros_py import _xtol, _rtol, _iter
 from scipy._lib._elementwise_algorithm import (  # noqa: F401
-    _elementwise_algorithm_initialize, _elementwise_algorithm_loop,
+    _elementwise_algorithm_initialize, _elementwise_algorithm_loop, _RichResult,
     _ECONVERGED, _ESIGNERR, _ECONVERR, _EVALUEERR, _ECALLBACK, _EINPROGRESS)
 
 
@@ -39,7 +38,7 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
     callback : callable, optional
         An optional user-supplied function to be called before the first
         iteration and after each iteration.
-        Called as ``callback(res)``, where ``res`` is an ``OptimizeResult``
+        Called as ``callback(res)``, where ``res`` is a ``_RichResult``
         similar to that returned by `_chandrupatla` (but containing the current
         iterate's values of all variables). If `callback` raises a
         ``StopIteration``, the algorithm will terminate immediately and
@@ -47,8 +46,8 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
 
     Returns
     -------
-    res : OptimizeResult
-        An instance of `scipy.optimize.OptimizeResult` with the following
+    res : _RichResult
+        An instance of `scipy._lib._util._RichResult` with the following
         attributes. The descriptions are written as though the values will be
         scalars; however, if `func` returns an array, the outputs will be
         arrays of the same shape.
@@ -135,9 +134,9 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
     xrtol = _rtol if xrtol is None else xrtol
     fatol = np.finfo(dtype).tiny if fatol is None else fatol
     frtol = frtol * np.minimum(np.abs(f1), np.abs(f2))
-    work = OptimizeResult(x1=x1, f1=f1, x2=x2, f2=f2, x3=None, f3=None, t=0.5,
-                          xatol=xatol, xrtol=xrtol, fatol=fatol, frtol=frtol,
-                          nit=nit, nfev=nfev, status=status)
+    work = _RichResult(x1=x1, f1=f1, x2=x2, f2=f2, x3=None, f3=None, t=0.5,
+                       xatol=xatol, xrtol=xrtol, fatol=fatol, frtol=frtol,
+                       nit=nit, nfev=nfev, status=status)
     res_work_pairs = [('status', 'status'), ('x', 'xmin'), ('fun', 'fmin'),
                       ('nit', 'nit'), ('nfev', 'nfev'), ('xl', 'x1'),
                       ('fl', 'f1'), ('xr', 'x2'), ('fr', 'f2')]
@@ -293,7 +292,7 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
     callback : callable, optional
         An optional user-supplied function to be called before the first
         iteration and after each iteration.
-        Called as ``callback(res)``, where ``res`` is an ``OptimizeResult``
+        Called as ``callback(res)``, where ``res`` is a ``_RichResult``
         similar to that returned by `_chandrupatla_minimize` (but containing
         the current iterate's values of all variables). If `callback` raises a
         ``StopIteration``, the algorithm will terminate immediately and
@@ -301,8 +300,8 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
 
     Returns
     -------
-    res : OptimizeResult
-        An instance of `scipy.optimize.OptimizeResult` with the following
+    res : _RichResult
+        An instance of `scipy._lib._util._RichResult` with the following
         attributes. (The descriptions are written as though the values will be
         scalars; however, if `func` returns an array, the outputs will be
         arrays of the same shape.)
@@ -394,9 +393,9 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
     f1, f2, f3 = np.take_along_axis(fs, i, axis=0)
     q0 = x3.copy()  # "At the start, q0 is set at x3..." ([1] after (7))
 
-    work = OptimizeResult(x1=x1, f1=f1, x2=x2, f2=f2, x3=x3, f3=f3, phi=phi,
-                          xatol=xatol, xrtol=xrtol, fatol=fatol, frtol=frtol,
-                          nit=nit, nfev=nfev, status=status, q0=q0, args=args)
+    work = _RichResult(x1=x1, f1=f1, x2=x2, f2=f2, x3=x3, f3=f3, phi=phi,
+                       xatol=xatol, xrtol=xrtol, fatol=fatol, frtol=frtol,
+                       nit=nit, nfev=nfev, status=status, q0=q0, args=args)
     res_work_pairs = [('status', 'status'),
                       ('x', 'x2'), ('fun', 'f2'),
                       ('nit', 'nit'), ('nfev', 'nfev'),

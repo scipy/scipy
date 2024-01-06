@@ -1,7 +1,6 @@
 import numpy as np
-from ._optimize import OptimizeResult
 from scipy._lib._elementwise_algorithm import (  # noqa: F401
-    _elementwise_algorithm_initialize, _elementwise_algorithm_loop,
+    _elementwise_algorithm_initialize, _elementwise_algorithm_loop, _RichResult,
     _ECONVERGED, _ESIGNERR, _ECONVERR, _EVALUEERR, _ECALLBACK, _EINPROGRESS)
 
 _ELIMITS = -1  # used in _bracket_root
@@ -92,8 +91,8 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None,
 
     Returns
     -------
-    res : OptimizeResult
-        An instance of `scipy.optimize.OptimizeResult` with the following
+    res : _RichResult
+        An instance of `scipy._lib._util._RichResult` with the following
         attributes. The descriptions are written as though the values will be
         scalars; however, if `func` returns an array, the outputs will be
         arrays of the same shape.
@@ -210,10 +209,10 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None,
     status = np.full_like(x, _EINPROGRESS, dtype=int)  # in progress
     nit, nfev = 0, 1  # one function evaluation per side performed above
 
-    work = OptimizeResult(x=x, x0=x0, f=f, limit=limit, factor=factor,
-                          active=active, d=d, x_last=x_last, f_last=f_last,
-                          nit=nit, nfev=nfev, status=status, args=args,
-                          xl=None, xr=None, fl=None, fr=None, n=n)
+    work = _RichResult(x=x, x0=x0, f=f, limit=limit, factor=factor,
+                       active=active, d=d, x_last=x_last, f_last=f_last,
+                       nit=nit, nfev=nfev, status=status, args=args,
+                       xl=None, xr=None, fl=None, fr=None, n=n)
     res_work_pairs = [('status', 'status'), ('xl', 'xl'), ('xr', 'xr'),
                       ('nit', 'nit'), ('nfev', 'nfev'), ('fl', 'fl'),
                       ('fr', 'fr'), ('x', 'x'), ('f', 'f'),

@@ -1,7 +1,6 @@
 import numpy as np
-from ._optimize import OptimizeResult
 from scipy._lib._elementwise_algorithm import (  # noqa: F401
-    _elementwise_algorithm_initialize, _elementwise_algorithm_loop,
+    _elementwise_algorithm_initialize, _elementwise_algorithm_loop, _RichResult,
     _ECONVERGED, _ESIGNERR, _ECONVERR, _EVALUEERR, _ECALLBACK, _EINPROGRESS)
 
 _EERRORINCREASE = -1  # used in _differentiate
@@ -107,7 +106,7 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     callback : callable, optional
         An optional user-supplied function to be called before the first
         iteration and after each iteration.
-        Called as ``callback(res)``, where ``res`` is an ``OptimizeResult``
+        Called as ``callback(res)``, where ``res`` is a ``_RichResult``
         similar to that returned by `_differentiate` (but containing the
         current iterate's values of all variables). If `callback` raises a
         ``StopIteration``, the algorithm will terminate immediately and
@@ -115,8 +114,8 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
 
     Returns
     -------
-    res : OptimizeResult
-        An instance of `scipy.optimize.OptimizeResult` with the following
+    res : _RichResult
+        An instance of `scipy._lib._util._RichResult` with the following
         attributes. (The descriptions are written as though the values will be
         scalars; however, if `func` returns an array, the outputs will be
         arrays of the same shape.)
@@ -299,11 +298,11 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     #   `_differentiate_weights`).
     # - `terms` (which could probably use a better name) is half the `order`,
     #   which is always even.
-    work = OptimizeResult(x=x, df=df, fs=f[:, np.newaxis], error=np.nan, h=h0,
-                          df_last=np.nan, error_last=np.nan, h0=h0, fac=fac,
-                          atol=atol, rtol=rtol, nit=nit, nfev=nfev,
-                          status=status, dtype=dtype, terms=(order+1)//2,
-                          hdir=hdir, il=il, ic=ic, ir=ir, io=io)
+    work = _RichResult(x=x, df=df, fs=f[:, np.newaxis], error=np.nan, h=h0,
+                       df_last=np.nan, error_last=np.nan, h0=h0, fac=fac,
+                       atol=atol, rtol=rtol, nit=nit, nfev=nfev,
+                       status=status, dtype=dtype, terms=(order+1)//2,
+                       hdir=hdir, il=il, ic=ic, ir=ir, io=io)
     # This is the correspondence between terms in the `work` object and the
     # final result. In this case, the mapping is trivial. Note that `success`
     # is prepended automatically.
