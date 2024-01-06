@@ -196,15 +196,16 @@ superlu_lib = static_library('superlu_lib',
     'SuperLU/SRC/zutil.c'
   ],
   c_args: _superlu_lib_c_args,
+  dependencies: blas_dep,
   include_directories: ['SuperLU/SRC']
 )
 
 py3.extension_module('_superlu',
   ['_superlumodule.c', '_superlu_utils.c', '_superluobject.c'],
-  link_with: [superlu_lib],
+  link_with: [superlu_lib, blas_lapack_wrapper_lib],
   include_directories: ['SuperLU/SRC'],
   link_args: version_link_args,
-  dependencies: [lapack, blas, np_dep],
+  dependencies: [lapack_dep, blas_dep, np_dep],
   install: true,
   subdir: 'scipy/sparse/linalg/_dsolve'
 )

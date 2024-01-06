@@ -34,6 +34,9 @@ NPY_TYPES = {'c': 'npy_complex64', 'z': 'npy_complex128',
 # wrappers from G77 ABI wrapper)
 WRAPPED_FUNCS = ['cdotc', 'cdotu', 'zdotc', 'zdotu', 'cladiv', 'zladiv']
 
+# Missing from new Accelerate so use standard old Accelerate symbols
+USE_OLD_ACCELERATE = ['lsame', 'dcabs1']
+
 C_PREAMBLE = """
 #include "fortran_defs.h"
 #include "npy_cblas.h"
@@ -66,8 +69,8 @@ CPP_GUARD_END = """
 
 def read_signatures(lines):
     """
-    Read BLAS/LAPACK signatures and split into name, return type, C parameter
-    list (e.g. `int* a, bint* b`), and argument names (e.g. `a, b`).
+    Read BLAS/LAPACK signatures and split into name, return type, argument
+    names, and argument types.
     """
     sigs = []
     for line in lines:
@@ -116,8 +119,14 @@ def all_newer(dst_files, src_files):
                for dst in dst_files for src in src_files)
 
 
-def get_blas_macro_and_name(name):
-    """Complex-valued functions have special symbols."""
+def get_blas_macro_and_name(name, accelerate):
+    """Complex-valued and some Accelerate functions have special symbols."""
+    if accelerate:
+        if name in USE_OLD_ACCELERATE:
+            return '', f'{name}_'
+        # Not in new Accelerate but old symbol has double underscore suffix
+        elif name == 'xerbla_array':
+            return '', name + '__'
     if name in WRAPPED_FUNCS:
         return '', name + 'wrp_'
     return 'BLAS_FUNC', name
