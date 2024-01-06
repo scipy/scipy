@@ -1,3 +1,16 @@
+# `_elementwise_algorithm.py` includes tools for writing functions that
+# - are vectorized to work elementwise on arrays,
+# - implement non-trivial, iterative algorithms with a callback interface, and
+# - return rich objects with iteration count, termination status, etc.
+#
+# Excamples include:
+# `scipy.optimize._chandrupatla._chandrupatla for scalar rootfinding,
+# `scipy.optimize._chandrupatla._chandrupatla_minimize for scalar minimization,
+# `scipy.optimize._differentiate._differentiate for numerical differentiation,
+# `scipy.optimize._bracket._bracket_root for finding rootfinding brackets,
+# `scipy.optimize._bracket._bracket_minimize for finding minimization brackets,
+# `scipy.integrate._tanhsinh._tanhsinh` for numerical quadrature.
+
 import numpy as np
 from scipy.optimize._optimize import OptimizeResult, _call_callback_maybe_halt
 
@@ -7,7 +20,6 @@ _EVALUEERR = -3
 _ECALLBACK = -4
 _ECONVERGED = 0
 _EINPROGRESS = 1
-
 
 def _elementwise_algorithm_initialize(func, xs, args, complex_ok=False):
     """Initialize abscissa, function, and args arrays for elementwise function
