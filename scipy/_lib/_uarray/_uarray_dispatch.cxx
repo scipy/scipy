@@ -1775,8 +1775,8 @@ PyModuleDef uarray_module = {
 
 } // namespace
 
-PyMODINIT_FUNC
-PyInit__uarray(void) {
+
+PyMODINIT_FUNC PyInit__uarray(void) {
 
   auto m = py_ref::steal(PyModule_Create(&uarray_module));
   if (!m)
