@@ -167,7 +167,6 @@ change is made.
 
 .. toctree::
    :maxdepth: 1
-   :hidden:
    :titlesonly:
 
    scipy <main_namespace>
