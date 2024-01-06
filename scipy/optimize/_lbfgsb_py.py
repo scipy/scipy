@@ -173,10 +173,11 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
 
     Examples
     --------
-    Solve a linear regression problem via `fmin_l_bfgs_b`. To do this, first we define an objective function ``f(m,b) = 
-    (y - y_model)**2``, where `y` describes the observations and `y_model` the prediction of the linear model as 
-    ``y_model = m * x + b``. The bounds for the parameters, m and b, are arbitrarily chosen as (0,5) and (5,10) 
-    for this example.
+    Solve a linear regression problem via `fmin_l_bfgs_b`. To do this, first we define
+    an objective function ``f(m, b) = (y - y_model)**2``, where `y` describes the
+    observations and `y_model` the prediction of the linear model as
+    ``y_model = m*x + b``. The bounds for the parameters, ``m`` and ``b``, are arbitrarily
+    chosen as ``(0,5)`` and ``(5,10)`` for this example.
 
     >>> import numpy as np
     >>> from scipy.optimize import fmin_l_bfgs_b
@@ -195,18 +196,18 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
     >>> initial_values = np.array([0.0, 1.0])
     >>> bounds = [(0,5), (5,10)]
 
-    >>> result = fmin_l_bfgs_b(func, x0 = initial_values, args = (X, Y),
-    ...                                          approx_grad=True)
+    >>> result = fmin_l_bfgs_b(func, x0=initial_values, args=(X, Y),
+    ...                        approx_grad=True)
     >>> result.x, result.fun
     array([1.99999999, 3.00000006]), 1.7746231151323805e-14  # may vary
 
     The optimized parameters in ``result.x`` agree with the ground truth parameters
-    `m` and `b`. Next, let us perform a bound contrained optimization using the `bounds`
+    ``m`` and ``b``. Next, let us perform a bound contrained optimization using the `bounds`
     parameter. 
 
     >>> bounds = [(0,5), (5,10)]
-    >>> bounded_result =  fmin_l_bfgs_b(func, x0 = initial_values, args = (X, Y),
-    ...                                                            bounds = bounds, approx_grad=True)
+    >>> bounded_result = fmin_l_bfgs_b(func, x0=initial_values, args=(X, Y),
+    ...                                bounds=bounds, approx_grad=True)
     >>> bounded_result.x, bounded_result.fun
     array([1.65990508, 5.31649385]), 15.721334516453945  # may vary    
     """
