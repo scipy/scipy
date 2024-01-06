@@ -897,7 +897,7 @@ class multivariate_normal_frozen(multi_rv_frozen):
         >>> r.cov
         array([[1.]])
 
-        """
+        """ # numpy/numpydoc#87  # noqa: E501
         self._dist = multivariate_normal_gen(seed)
         self.dim, self.mean, self.cov_object = (
             self._dist._process_parameters(mean, cov, allow_singular))
@@ -3715,7 +3715,7 @@ class special_ortho_group_frozen(multi_rv_frozen):
         >>> g = special_ortho_group(5)
         >>> x = g.rvs()
 
-        """
+        """ # numpy/numpydoc#87  # noqa: E501
         self._dist = special_ortho_group_gen(seed)
         self.dim = self._dist._process_parameters(dim)
 
@@ -3868,7 +3868,7 @@ class ortho_group_frozen(multi_rv_frozen):
         >>> g = ortho_group(5)
         >>> x = g.rvs()
 
-        """
+        """ # numpy/numpydoc#87  # noqa: E501
         self._dist = ortho_group_gen(seed)
         self.dim = self._dist._process_parameters(dim)
 
@@ -4131,7 +4131,7 @@ class random_correlation_frozen(multi_rv_frozen):
         rvs : ndarray or scalar
             Random size N-dimensional matrices, dimension (size, dim, dim),
             each having eigenvalues eigs.
-        """
+        """ # numpy/numpydoc#87  # noqa: E501
 
         self._dist = random_correlation_gen(seed)
         self.tol = tol
@@ -4281,7 +4281,7 @@ class unitary_group_frozen(multi_rv_frozen):
         >>> x = unitary_group(3)
         >>> x.rvs()
 
-        """
+        """ # numpy/numpydoc#87  # noqa: E501
         self._dist = unitary_group_gen(seed)
         self.dim = self._dist._process_parameters(dim)
 

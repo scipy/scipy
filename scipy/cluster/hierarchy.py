@@ -2275,7 +2275,12 @@ def _check_hierarchy_uses_cluster_more_than_once(Z):
     n = Z.shape[0] + 1
     chosen = set()
     for i in range(0, n - 1):
-        if (float(Z[i, 0]) in chosen) or (float(Z[i, 1]) in chosen) or Z[i, 0] == Z[i, 1]:
+        used_more_than_once = (
+            (float(Z[i, 0]) in chosen)
+            or (float(Z[i, 1]) in chosen)
+            or Z[i, 0] == Z[i, 1]
+        )
+        if used_more_than_once:
             return True
         chosen.add(float(Z[i, 0]))
         chosen.add(float(Z[i, 1]))
@@ -2639,11 +2644,13 @@ def fclusterdata(X, t, criterion='inconsistent',
     This is a convenience method that abstracts all the steps to perform in a
     typical SciPy's hierarchical clustering workflow.
 
-    * Transform the input data into a condensed matrix with `scipy.spatial.distance.pdist`.
+    * Transform the input data into a condensed matrix with
+      `scipy.spatial.distance.pdist`.
 
     * Apply a clustering method.
 
-    * Obtain flat clusters at a user defined distance threshold ``t`` using `scipy.cluster.hierarchy.fcluster`.
+    * Obtain flat clusters at a user defined distance threshold ``t`` using
+      `scipy.cluster.hierarchy.fcluster`.
 
     >>> X = [[0, 0], [0, 1], [1, 0],
     ...      [0, 4], [0, 3], [1, 4],
@@ -3155,7 +3162,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
             # a rotation of 90 degrees.
             dendrogram(Z, leaf_label_func=llf, leaf_rotation=90)
 
-            # leaf_label_func can also be used together with ``truncate_mode`` parameter,
+            # leaf_label_func can also be used together with ``truncate_mode``,
             # in which case you will get your leaves labeled after truncation:
             dendrogram(Z, leaf_label_func=llf, leaf_rotation=90,
                        truncate_mode='level', p=2)

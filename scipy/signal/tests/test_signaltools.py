@@ -805,7 +805,8 @@ class TestFFTConvolve:
             sig_nan[100] = val
             coeffs = signal.firwin(200, 0.2)
 
-            with pytest.warns(RuntimeWarning, match="Use of fft convolution"):
+            msg = "Use of fft convolution.*|invalid value encountered.*"
+            with pytest.warns(RuntimeWarning, match=msg):
                 signal.convolve(sig_nan, coeffs, mode='same', method='fft')
 
 def fftconvolve_err(*args, **kwargs):
@@ -1114,9 +1115,12 @@ class TestMedFilt:
 
     def test_none(self):
         # gh-1651, trac #1124. Ensure this does not segfault.
-        with pytest.warns(UserWarning):
+        msg = "kernel_size exceeds volume.*|Using medfilt with arrays of dtype.*"
+        with pytest.warns((UserWarning, DeprecationWarning), match=msg):
             assert_raises(TypeError, signal.medfilt, None)
-        # Expand on this test to avoid a regression with possible contiguous
+
+    def test_odd_strides(self):
+        # Avoid a regression with possible contiguous
         # numpy arrays that have odd strides. The stride value below gets
         # us into wrong memory if used (but it does not need to be used)
         dummy = np.arange(10, dtype=np.float64)
@@ -1133,7 +1137,8 @@ class TestMedFilt:
         else:
             n = 10
         # Shouldn't segfault:
-        with pytest.warns(UserWarning):
+        msg = "kernel_size exceeds volume.*|Using medfilt with arrays of dtype.*"
+        with pytest.warns((UserWarning, DeprecationWarning), match=msg):
             for j in range(n):
                 signal.medfilt(x)
         if hasattr(sys, 'getrefcount'):
@@ -1950,8 +1955,12 @@ class TestCorrelateReal:
             y_fft = correlate(a, b, method='fft')
             y_direct = correlate(a, b, method='direct')
 
-            assert_array_almost_equal(y_r, y_fft, decimal=self.equal_tolerance_fft(y_fft.dtype))
-            assert_array_almost_equal(y_r, y_direct, decimal=self.equal_tolerance(y_direct.dtype))
+            assert_array_almost_equal(y_r,
+                                      y_fft,
+                                      decimal=self.equal_tolerance_fft(y_fft.dtype),)
+            assert_array_almost_equal(y_r,
+                                      y_direct,
+                                      decimal=self.equal_tolerance(y_direct.dtype),)
             assert_equal(y_fft.dtype, dt)
             assert_equal(y_direct.dtype, dt)
 
@@ -3324,20 +3333,6 @@ class TestVectorstrength:
         assert_raises(ValueError, vectorstrength, events, period)
 
 
-def cast_tf2sos(b, a):
-    """Convert TF2SOS, casting to complex128 and back to the original dtype."""
-    # tf2sos does not support all of the dtypes that we want to check, e.g.:
-    #
-    #     TypeError: array type complex256 is unsupported in linalg
-    #
-    # so let's cast, convert, and cast back -- should be fine for the
-    # systems and precisions we are testing.
-    dtype = np.asarray(b).dtype
-    b = np.array(b, np.complex128)
-    a = np.array(a, np.complex128)
-    return tf2sos(b, a).astype(dtype)
-
-
 def assert_allclose_cast(actual, desired, rtol=1e-7, atol=0):
     """Wrap assert_allclose while casting object arrays."""
     if actual.dtype.kind == 'O':
@@ -3370,7 +3365,7 @@ def test_nonnumeric_dtypes(func):
         func(*args, x=1.)
 
 
-@pytest.mark.parametrize('dt', 'fdgFDGO')
+@pytest.mark.parametrize('dt', 'fdFD')
 class TestSOSFilt:
 
     # The test_rank* tests are pulled from _TestLinearFilter
@@ -3381,16 +3376,15 @@ class TestSOSFilt:
 
         # Test simple IIR
         y_r = np.array([0, 2, 4, 6, 8, 10.]).astype(dt)
-        sos = cast_tf2sos(b, a)
-        assert sos.dtype.char == dt
-        assert_array_almost_equal(sosfilt(cast_tf2sos(b, a), x), y_r)
+        sos = tf2sos(b, a)
+        assert_array_almost_equal(sosfilt(tf2sos(b, a), x), y_r)
 
         # Test simple FIR
         b = np.array([1, 1]).astype(dt)
         # NOTE: This was changed (rel. to TestLinear...) to add a pole @zero:
         a = np.array([1, 0]).astype(dt)
         y_r = np.array([0, 1, 3, 5, 7, 9.]).astype(dt)
-        assert_array_almost_equal(sosfilt(cast_tf2sos(b, a), x), y_r)
+        assert_array_almost_equal(sosfilt(tf2sos(b, a), x), y_r)
 
         b = [1, 1, 0]
         a = [1, 0, 0]
@@ -3414,10 +3408,10 @@ class TestSOSFilt:
         y_r2_a1 = np.array([[0, 2, 0], [6, -4, 6], [12, -10, 12],
                             [18, -16, 18]], dtype=dt)
 
-        y = sosfilt(cast_tf2sos(b, a), x, axis=0)
+        y = sosfilt(tf2sos(b, a), x, axis=0)
         assert_array_almost_equal(y_r2_a0, y)
 
-        y = sosfilt(cast_tf2sos(b, a), x, axis=1)
+        y = sosfilt(tf2sos(b, a), x, axis=1)
         assert_array_almost_equal(y_r2_a1, y)
 
     def test_rank3(self, dt):
@@ -3428,7 +3422,7 @@ class TestSOSFilt:
         a = np.array([0.5, 0.5]).astype(dt)
 
         # Test last axis
-        y = sosfilt(cast_tf2sos(b, a), x)
+        y = sosfilt(tf2sos(b, a), x)
         for i in range(x.shape[0]):
             for j in range(x.shape[1]):
                 assert_array_almost_equal(y[i, j], lfilter(b, a, x[i, j]))

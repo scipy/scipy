@@ -1,5 +1,6 @@
 # Copyright (C) 2022-2023 Adam Lugowski. All rights reserved.
-# Use of this source code is governed by the BSD 2-clause license found in the LICENSE.txt file.
+# Use of this source code is governed by the BSD 2-clause license found in
+# the LICENSE.txt file.
 # SPDX-License-Identifier: BSD-2-Clause
 """
 Matrix Market I/O with a C++ backend.
@@ -26,8 +27,9 @@ Use `threadpoolctl` to set this value.
 
 ALWAYS_FIND_SYMMETRY = False
 """
-Whether mmwrite() with symmetry='AUTO' will always search for symmetry inside the matrix.
-This is scipy.io._mmio.mmwrite()'s default behavior, but has a significant performance cost on large matrices.
+Whether mmwrite() with symmetry='AUTO' will always search for symmetry
+inside the matrix. This is scipy.io._mmio.mmwrite()'s default behavior,
+but has a significant performance cost on large matrices.
 """
 
 _field_to_dtype = {
@@ -103,7 +105,8 @@ class _TextToBytesWrapper(io.BufferedReader):
         return self._encoding_call('peek', size)
 
     def seek(self, offset, whence=0):
-        # Random seeks are not allowed because of non-trivial conversion between byte and character offsets,
+        # Random seeks are not allowed because of non-trivial conversion
+        # between byte and character offsets,
         # with the possibility of a byte offset landing within a character.
         if offset == 0 and whence == 0 or \
            offset == 0 and whence == 2:
@@ -111,8 +114,9 @@ class _TextToBytesWrapper(io.BufferedReader):
             super().seek(offset, whence)
         else:
             # Drop any other seek
-            # In this application this may happen when pystreambuf seeks during sync(), which can happen when closing
-            # a partially-read stream. Ex. when mminfo() only reads the header then exits.
+            # In this application this may happen when pystreambuf seeks during sync(),
+            # which can happen when closing a partially-read stream.
+            # Ex. when mminfo() only reads the header then exits.
             pass
 
 
@@ -201,7 +205,8 @@ def _get_read_cursor(source, parallelism=None):
         raise TypeError("Unknown source type")
 
 
-def _get_write_cursor(target, h=None, comment=None, parallelism=None, symmetry="general", precision=None):
+def _get_write_cursor(target, h=None, comment=None, parallelism=None,
+                      symmetry="general", precision=None):
     """
     Open file for writing.
     """
@@ -237,7 +242,7 @@ def _get_write_cursor(target, h=None, comment=None, parallelism=None, symmetry="
 
 def _apply_field(data, field, no_pattern=False):
     """
-    Ensure that a NumPy array has a dtype compatible with the specified MatrixMarket field type.
+    Ensure that ``data.dtype`` is compatible with the specified MatrixMarket field type.
 
     Parameters
     ----------
@@ -336,7 +341,8 @@ def mmread(source):
            [4., 5., 6., 7., 0.],
            [0., 0., 0., 0., 0.]])
 
-    This method is threaded. The default number of threads is equal to the number of CPUs in the system.
+    This method is threaded.
+    The default number of threads is equal to the number of CPUs in the system.
     Use `threadpoolctl <https://github.com/joblib/threadpoolctl>`_ to override:
 
     >>> import threadpoolctl
@@ -473,7 +479,8 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
     0.0e+00 5.0e+00
     2.5e+00 0.0e+00
 
-    This method is threaded. The default number of threads is equal to the number of CPUs in the system.
+    This method is threaded.
+    The default number of threads is equal to the number of CPUs in the system.
     Use `threadpoolctl <https://github.com/joblib/threadpoolctl>`_ to override:
 
     >>> import threadpoolctl
@@ -498,7 +505,8 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
         symmetry = _mmio.MMFile()._get_symmetry(a)
 
     symmetry = _validate_symmetry(symmetry)
-    cursor = _get_write_cursor(target, comment=comment, precision=precision, symmetry=symmetry)
+    cursor = _get_write_cursor(target, comment=comment,
+                               precision=precision, symmetry=symmetry)
 
     if isinstance(a, np.ndarray):
         # Write dense numpy arrays

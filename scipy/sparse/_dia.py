@@ -9,7 +9,9 @@ import numpy as np
 from ._matrix import spmatrix
 from ._base import issparse, _formats, _spbase, sparray
 from ._data import _data_matrix
-from ._sputils import (isshape, upcast_char, getdtype, get_sum_dtype, validateaxis, check_shape)
+from ._sputils import (
+    isshape, upcast_char, getdtype, get_sum_dtype, validateaxis, check_shape
+)
 from ._sparsetools import dia_matvec
 
 
@@ -47,14 +49,16 @@ class _dia_base(_data_matrix):
                     # Try interpreting it as (data, offsets)
                     data, offsets = arg1
                 except Exception as e:
-                    raise ValueError('unrecognized form for dia_array constructor') from e
+                    message = 'unrecognized form for dia_array constructor'
+                    raise ValueError(message) from e
                 else:
                     if shape is None:
                         raise ValueError('expected a shape argument')
                     self.data = np.atleast_2d(np.array(arg1[0], dtype=dtype, copy=copy))
-                    self.offsets = np.atleast_1d(np.array(arg1[1],
-                                                          dtype=self._get_index_dtype(maxval=max(shape)),
-                                                          copy=copy))
+                    offsets = np.array(arg1[1],
+                                       dtype=self._get_index_dtype(maxval=max(shape)),
+                                       copy=copy)
+                    self.offsets = np.atleast_1d(offsets)
                     self._shape = check_shape(shape)
         else:
             #must be dense, convert to COO first, then to DIA
@@ -203,7 +207,8 @@ class _dia_base(_data_matrix):
 
         M,N = self.shape
 
-        dia_matvec(M,N, len(self.offsets), L, self.offsets, self.data, x.ravel(), y.ravel())
+        dia_matvec(M,N, len(self.offsets), L, self.offsets, self.data,
+                   x.ravel(), y.ravel())
 
         return y
 

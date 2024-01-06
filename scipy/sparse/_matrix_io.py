@@ -62,7 +62,8 @@ def save_npz(file, matrix, compressed=True):
     elif matrix.format == 'coo':
         arrays_dict.update(row=matrix.row, col=matrix.col)
     else:
-        raise NotImplementedError(f'Save is not implemented for sparse matrix of format {matrix.format}.')
+        msg = f'Save is not implemented for sparse matrix of format {matrix.format}.'
+        raise NotImplementedError(msg)
     arrays_dict.update(
         format=matrix.format.encode('ascii'),
         shape=matrix.shape,
@@ -134,7 +135,7 @@ def load_npz(file):
         sparse_format = loaded.get('format')
         if sparse_format is None:
             raise ValueError(f'The file {file} does not contain '
-                             'a sparse array or matrix.')
+                             f'a sparse array or matrix.')
         sparse_format = sparse_format.item()
 
         if not isinstance(sparse_format, str):
@@ -153,11 +154,14 @@ def load_npz(file):
             raise ValueError(f'Unknown format "{sparse_type}"') from e
 
         if sparse_format in ('csc', 'csr', 'bsr'):
-            return cls((loaded['data'], loaded['indices'], loaded['indptr']), shape=loaded['shape'])
+            return cls((loaded['data'], loaded['indices'], loaded['indptr']),
+                       shape=loaded['shape'])
         elif sparse_format == 'dia':
-            return cls((loaded['data'], loaded['offsets']), shape=loaded['shape'])
+            return cls((loaded['data'], loaded['offsets']),
+                       shape=loaded['shape'])
         elif sparse_format == 'coo':
-            return cls((loaded['data'], (loaded['row'], loaded['col'])), shape=loaded['shape'])
+            return cls((loaded['data'], (loaded['row'], loaded['col'])),
+                       shape=loaded['shape'])
         else:
-            raise NotImplementedError('Load is not implemented for '
+            raise NotImplementedError(f'Load is not implemented for '
                                       f'sparse matrix of format {sparse_format}.')

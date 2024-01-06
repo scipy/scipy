@@ -617,7 +617,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
     >>> axs[0].legend(axs[0].get_lines()[::-1], labels, bbox_to_anchor=(0., 1.02, 1., .102),
     ...               loc='lower left', ncols=3, mode="expand", borderaxespad=0., frameon=False)
     >>> plt.show()
-    """
+    """ # numpy/numpydoc#87  # noqa: E501
 
     def __init__(self, xi, yi=None, axis=0, *, wi=None, random_state=None):
         super().__init__(xi, yi, axis)

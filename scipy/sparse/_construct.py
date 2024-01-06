@@ -1043,14 +1043,15 @@ def block_diag(mats, format=None, dtype=None):
     c_idx = 0
     for a in mats:
         if isinstance(a, (list, numbers.Number)):
-            a = coo_array(a)
-        nrows, ncols = a.shape
+            a = coo_array(np.atleast_2d(a))
         if issparse(a):
             a = a.tocoo()
+            nrows, ncols = a._shape_as_2d
             row.append(a.row + r_idx)
             col.append(a.col + c_idx)
             data.append(a.data)
         else:
+            nrows, ncols = a.shape
             a_row, a_col = np.divmod(np.arange(nrows*ncols), ncols)
             row.append(a_row + r_idx)
             col.append(a_col + c_idx)
@@ -1137,7 +1138,8 @@ def random_array(shape, *, density=0.01, format='coo', dtype=None,
     Providing a sampler for the values:
 
     >>> rvs = sp.stats.poisson(25, loc=10).rvs
-    >>> S = sp.sparse.random_array((3, 4), density=0.25, random_state=rng, data_sampler=rvs)
+    >>> S = sp.sparse.random_array((3, 4), density=0.25,
+    ...                            random_state=rng, data_sampler=rvs)
     >>> S.toarray()
     array([[ 36.,   0.,  33.,   0.],   # random
            [  0.,   0.,   0.,   0.],
@@ -1166,7 +1168,8 @@ def random_array(shape, *, density=0.01, format='coo', dtype=None,
     ...         return random_state.standard_normal(size) ** 2
     >>> X = NormalSquared()
     >>> Y = X().rvs
-    >>> S = sp.sparse.random_array((3, 4), density=0.25, random_state=rng, data_sampler=Y)
+    >>> S = sp.sparse.random_array((3, 4), density=0.25,
+    ...                            random_state=rng, data_sampler=Y)
     """
     # Use the more efficient RNG by default.
     if random_state is None:

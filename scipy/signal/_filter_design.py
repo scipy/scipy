@@ -4364,7 +4364,8 @@ def cheb2ap(N, rs):
     """
     Return (z,p,k) for Nth-order Chebyshev type II analog lowpass filter.
 
-    The returned filter prototype has attenuation of at least ``rs`` decibels in the stopband.
+    The returned filter prototype has attenuation of at least ``rs`` decibels
+    in the stopband.
 
     The filter's angular (e.g. rad/s) cutoff frequency is normalized to 1,
     defined as the point at which the attenuation first reaches ``rs``.

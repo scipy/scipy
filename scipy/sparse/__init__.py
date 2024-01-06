@@ -316,7 +316,8 @@ from . import (
 __all__ = [s for s in dir() if not s.startswith('_')]
 
 # Filter PendingDeprecationWarning for np.matrix introduced with numpy 1.15
-_warnings.filterwarnings('ignore', message='the matrix subclass is not the recommended way')
+msg = 'the matrix subclass is not the recommended way'
+_warnings.filterwarnings('ignore', message=msg)
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

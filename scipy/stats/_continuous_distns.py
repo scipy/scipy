@@ -1154,7 +1154,8 @@ class burr_gen(rv_continuous):
         g1 = _lazywhere(
             c > 3.0,
             (c, e1, e2, e3, mu2_if_c),
-            lambda c, e1, e2, e3, mu2_if_c: (e3 - 3*e2*e1 + 2*e1**3) / np.sqrt((mu2_if_c)**3),
+            lambda c, e1, e2, e3, mu2_if_c: ((e3 - 3*e2*e1 + 2*e1**3)
+                                             / np.sqrt((mu2_if_c)**3)),
             fillvalue=np.nan)
         g2 = _lazywhere(
             c > 4.0,
@@ -1631,7 +1632,9 @@ class cosine_gen(rv_continuous):
         return -scu._cosine_invcdf(p)
 
     def _stats(self):
-        return 0.0, np.pi*np.pi/3.0-2.0, 0.0, -6.0*(np.pi**4-90)/(5.0*(np.pi*np.pi-6)**2)
+        v = (np.pi * np.pi / 3.0) - 2.0
+        k = -6.0 * (np.pi**4 - 90) / (5.0 * (np.pi * np.pi - 6)**2)
+        return 0.0, v, 0.0, k
 
     def _entropy(self):
         return np.log(4*np.pi)-1.0
@@ -2282,8 +2285,8 @@ class f_gen(rv_continuous):
 
     Notes
     -----
-    The F distribution with :math:`df_1 > 0` and :math:`df_2 > 0` degrees of freedom is the
-    distribution of the ratio of two independent chi-squared distributions with
+    The F distribution with :math:`df_1 > 0` and :math:`df_2 > 0` degrees of freedom is
+    the distribution of the ratio of two independent chi-squared distributions with
     :math:`df_1` and :math:`df_2` degrees of freedom, after rescaling by
     :math:`df_2 / df_1`.
     
@@ -3312,7 +3315,8 @@ class gamma_gen(rv_continuous):
 
     .. math::
 
-        f(x, \alpha, \beta) = \frac{\beta^\alpha x^{\alpha - 1} e^{-\beta x }}{\Gamma(\alpha)}
+        f(x, \alpha, \beta) =
+        \frac{\beta^\alpha x^{\alpha - 1} e^{-\beta x }}{\Gamma(\alpha)}
 
     Note that this parameterization is equivalent to the above, with
     ``scale = 1 / beta``.
@@ -6342,7 +6346,8 @@ loglaplace = loglaplace_gen(a=0.0, name='loglaplace')
 
 def _lognorm_logpdf(x, s):
     return _lazywhere(x != 0, (x, s),
-                      lambda x, s: -np.log(x)**2 / (2*s**2) - np.log(s*x*np.sqrt(2*np.pi)),
+                      lambda x, s: (-np.log(x)**2 / (2 * s**2)
+                                    - np.log(s * x * np.sqrt(2 * np.pi))),
                       -np.inf)
 
 
@@ -7540,29 +7545,15 @@ class t_gen(rv_continuous):
 
     def _logpdf(self, x, df):
 
-        def regular_formula(x, df):
-            return (sc.gammaln((df + 1)/2) - sc.gammaln(df/2)
-                    - (0.5 * np.log(df*np.pi))
+        def t_logpdf(x, df):
+            return (np.log(sc.poch(0.5 * df, 0.5))
+                    - 0.5 * (np.log(df) + np.log(np.pi))
                     - (df + 1)/2*np.log1p(x * x/df))
-
-        def asymptotic_formula(x, df):
-            return (- 0.5 * (1 + np.log(2 * np.pi)) + df/2 * np.log1p(1/df)
-                    + 1/6 * (df + 1)**-1. - 1/45*(df + 1)**-3.
-                    - 1/6 * df**-1. + 1/45*df**-3.
-                    - (df + 1)/2 * np.log1p(x*x/df))
 
         def norm_logpdf(x, df):
             return norm._logpdf(x)
 
-        return _lazyselect(
-            ((df == np.inf),
-             (df >= 200) & np.isfinite(df),
-             (df < 200)),
-            (norm_logpdf,
-             asymptotic_formula,
-             regular_formula),
-            (x, df, )
-        )
+        return _lazywhere(df == np.inf, (x, df, ), f=norm_logpdf, f2=t_logpdf)
 
     def _cdf(self, x, df):
         return sc.stdtr(df, x)
@@ -10941,14 +10932,14 @@ class crystalball_gen(rv_continuous):
     from a power-law to a Gaussian distribution.  :math:`m` is the power
     of the power-law tail.
 
+    %(after_notes)s
+
+    .. versionadded:: 0.19.0
+
     References
     ----------
     .. [1] "Crystal Ball Function",
            https://en.wikipedia.org/wiki/Crystal_Ball_function
-
-    %(after_notes)s
-
-    .. versionadded:: 0.19.0
 
     %(example)s
     """

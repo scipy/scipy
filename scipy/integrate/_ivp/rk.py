@@ -263,7 +263,8 @@ class RK23(RungeKutta):
     nfev : int
         Number evaluations of the system's right-hand side.
     njev : int
-        Number of evaluations of the Jacobian. Is always 0 for this solver as it does not use the Jacobian.
+        Number of evaluations of the Jacobian.
+        Is always 0 for this solver as it does not use the Jacobian.
     nlu : int
         Number of LU decompositions. Is always 0 for this solver.
 
@@ -360,7 +361,8 @@ class RK45(RungeKutta):
     nfev : int
         Number evaluations of the system's right-hand side.
     njev : int
-        Number of evaluations of the Jacobian. Is always 0 for this solver as it does not use the Jacobian.
+        Number of evaluations of the Jacobian.
+        Is always 0 for this solver as it does not use the Jacobian.
     nlu : int
         Number of LU decompositions. Is always 0 for this solver.
 

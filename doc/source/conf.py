@@ -38,7 +38,7 @@ os.environ['_SCIPY_BUILDING_DOC'] = 'True'
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
-import numpydoc.docscrape as np_docscrape  # noqa:E402
+import numpydoc.docscrape as np_docscrape  # noqa: E402
 
 extensions = [
     'sphinx.ext.autodoc',
@@ -322,9 +322,6 @@ coverage_ignore_c_items = {}
 plot_pre_code = """
 import warnings
 for key in (
-        'lsim2 is deprecated',  # Deprecation of scipy.signal.lsim2
-        'impulse2 is deprecated',  # Deprecation of scipy.signal.impulse2
-        'step2 is deprecated',  # Deprecation of scipy.signal.step2
         'interp2d` is deprecated',  # Deprecation of scipy.interpolate.interp2d
         'scipy.misc',  # scipy.misc deprecated in v1.10.0; use scipy.datasets
         'kurtosistest only valid',  # intentionally "bad" excample in docstring

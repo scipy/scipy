@@ -575,8 +575,9 @@ class SHGO:
             self.minimizer_kwargs['options'] = {'ftol': 1e-12}
 
         if (
-            self.minimizer_kwargs['method'].lower() in ('slsqp', 'cobyla', 'trust-constr') and
-            (
+            self.minimizer_kwargs['method'].lower() in ('slsqp', 'cobyla',
+                                                        'trust-constr')
+            and (
                 minimizer_kwargs is not None and
                 'constraints' not in minimizer_kwargs and
                 constraints is not None

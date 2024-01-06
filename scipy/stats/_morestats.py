@@ -101,7 +101,8 @@ def bayes_mvs(data, alpha=0.90):
     >>> var
     Variance(statistic=10.0, minmax=(3.176724206..., 24.45910382...))
     >>> std
-    Std_dev(statistic=2.9724954732045084, minmax=(1.7823367265645143, 4.945614605014631))
+    Std_dev(statistic=2.9724954732045084,
+            minmax=(1.7823367265645143, 4.945614605014631))
 
     Now we generate some normally distributed random data, and get estimates of
     mean and standard deviation with 95% confidence intervals for those
@@ -352,10 +353,11 @@ def kstatvar(data, n=2):
                      \frac{6 n \kappa^3_{2}}{(n-1) (n-2)}
         var(k_{4}) = \frac{\kappa^8}{n} + \frac{16 \kappa_2 \kappa_6}{n - 1} +
                      \frac{48 \kappa_{3} \kappa_5}{n - 1} +
-                     \frac{34 \kappa^2_{4}}{n-1} + \frac{72 n \kappa^2_{2} \kappa_4}{(n - 1) (n - 2)} +
+                     \frac{34 \kappa^2_{4}}{n-1} +
+                     \frac{72 n \kappa^2_{2} \kappa_4}{(n - 1) (n - 2)} +
                      \frac{144 n \kappa_{2} \kappa^2_{3}}{(n - 1) (n - 2)} +
                      \frac{24 (n + 1) n \kappa^4_{2}}{(n - 1) (n - 2) (n - 3)}
-    """
+    """  # noqa: E501
     data = ravel(data)
     N = len(data)
     if n == 1:
@@ -1129,7 +1131,7 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
 
 def _boxcox_inv_lmbda(x, y):
     # compute lmbda given x and y for Box-Cox transformation
-    num = special.lambertw(-(x ** (-1 / y)) * np.log(x) / y, k=1)
+    num = special.lambertw(-(x ** (-1 / y)) * np.log(x) / y, k=-1)
     return np.real(-num / np.log(x) - 1 / y)
 
 
@@ -1312,21 +1314,22 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
     else:
         # Test if the optimal lambda causes overflow
         x = np.asarray(x)
-        max_x = np.max(x, axis=0)
-        istransinf = np.isinf(special.boxcox(max_x, res))
+        x_treme = np.max(x, axis=0) if np.any(res > 0) else np.min(x, axis=0)
+        istransinf = np.isinf(special.boxcox(x_treme, res))
         dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
         if np.any(istransinf):
             warnings.warn(
-                f"The optimal lambda is {res}, but the returned lambda is "
-                f"the constrained optimum to ensure that the maximum of the "
-                f"transformed data does not cause overflow in {dtype}.",
+                f"The optimal lambda is {res}, but the returned lambda is the"
+                f"constrained optimum to ensure that the maximum or the minimum "
+                f"of the transformed data does not cause overflow in {dtype}.",
                 stacklevel=2
             )
 
             # Return the constrained lambda to ensure the transformation
-            # does not cause overflow
-            ymax = np.finfo(dtype).max / 100  # 100 is the safety factor
-            constrained_res = _boxcox_inv_lmbda(max_x, ymax)
+            # does not cause overflow. 10000 is a safety factor because
+            # `special.boxcox` overflows prematurely.
+            ymax = np.finfo(dtype).max / 10000
+            constrained_res = _boxcox_inv_lmbda(x_treme, ymax * np.sign(res))
 
             if isinstance(res, np.ndarray):
                 res[istransinf] = constrained_res
@@ -1825,6 +1828,7 @@ def yeojohnson_normplot(x, la, lb, plot=None, N=80):
 ShapiroResult = namedtuple('ShapiroResult', ('statistic', 'pvalue'))
 
 
+@_axis_nan_policy_factory(ShapiroResult, n_samples=1, too_small=2, default_axis=None)
 def shapiro(x):
     r"""Perform the Shapiro-Wilk test for normality.
 
@@ -1974,7 +1978,11 @@ def shapiro(x):
                       f"may not be accurate. Current N is {N}.",
                       stacklevel=2)
 
-    return ShapiroResult(w, pw)
+    # `w` and `pw` are always Python floats, which are double precision.
+    # We want to ensure that they are NumPy floats, so until dtypes are
+    # respected, we can explicitly convert each to float64 (faster than
+    # `np.array([w, pw])`).
+    return ShapiroResult(np.float64(w), np.float64(pw))
 
 
 # Values from Stephens, M A, "EDF Statistics for Goodness of Fit and
@@ -2193,7 +2201,7 @@ def anderson(x, dist='norm'):
     with a significance level of 2.5%, so the null hypothesis may be rejected
     at a significance level of 2.5%, but not at a significance level of 1%.
 
-    """  # noqa: E501
+    """ # numpy/numpydoc#87  # noqa: E501
     dist = dist.lower()
     if dist in {'extreme1', 'gumbel'}:
         dist = 'gumbel_l'
@@ -3674,6 +3682,15 @@ def _mood_inner_lc(xy, x, diffs, sorted_xy, n, m, N) -> float:
     return ((T - E_0_T) / np.sqrt(varM),)
 
 
+def _mood_too_small(samples, kwargs, axis=-1):
+    x, y = samples
+    n = x.shape[axis]
+    m = y.shape[axis]
+    N = m + n
+    return N < 3
+
+
+@_axis_nan_policy_factory(SignificanceResult, n_samples=2, too_small=_mood_too_small)
 def mood(x, y, axis=0, alternative="two-sided"):
     """Perform Mood's test for equal scale parameters.
 
@@ -3765,11 +3782,6 @@ def mood(x, y, axis=0, alternative="two-sided"):
     """
     x = np.asarray(x, dtype=float)
     y = np.asarray(y, dtype=float)
-
-    if axis is None:
-        x = x.flatten()
-        y = y.flatten()
-        axis = 0
 
     if axis < 0:
         axis = x.ndim + axis

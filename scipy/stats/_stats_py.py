@@ -69,8 +69,9 @@ from scipy._lib._util import normalize_axis_index
 
 # In __all__ but deprecated for removal in SciPy 1.13.0
 from scipy._lib._util import float_factorial  # noqa: F401
-from scipy.stats._mstats_basic import (PointbiserialrResult, Ttest_1sampResult,  # noqa: F401
-                                       Ttest_relResult)
+from scipy.stats._mstats_basic import (  # noqa: F401
+    PointbiserialrResult, Ttest_1sampResult,  Ttest_relResult
+)
 
 
 # Functions/classes in other files should be added in `__init__.py`, not here
@@ -1414,6 +1415,7 @@ def _normtest_finish(z, alternative):
 SkewtestResult = namedtuple('SkewtestResult', ('statistic', 'pvalue'))
 
 
+@_axis_nan_policy_factory(SkewtestResult, n_samples=1, too_small=7)
 def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     r"""Test whether the skew is different from the normal distribution.
 
@@ -1573,17 +1575,6 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     agree fairly closely, even for our small sample.
 
     """
-    a, axis = _chk_asarray(a, axis)
-
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
-
-    if contains_nan and nan_policy == 'omit':
-        a = ma.masked_invalid(a)
-        return mstats_basic.skewtest(a, axis, alternative)
-
-    if axis is None:
-        a = np.ravel(a)
-        axis = 0
     b2 = skew(a, axis)
     n = a.shape[axis]
     if n < 8:
@@ -1605,6 +1596,7 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
 KurtosistestResult = namedtuple('KurtosistestResult', ('statistic', 'pvalue'))
 
 
+@_axis_nan_policy_factory(KurtosistestResult, n_samples=1, too_small=4)
 def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     r"""Test whether a dataset has normal kurtosis.
 
@@ -1769,14 +1761,6 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     hypothesis [4]_.
 
     """
-    a, axis = _chk_asarray(a, axis)
-
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
-
-    if contains_nan and nan_policy == 'omit':
-        a = ma.masked_invalid(a)
-        return mstats_basic.kurtosistest(a, axis, alternative)
-
     n = a.shape[axis]
     if n < 5:
         raise ValueError(
@@ -1814,6 +1798,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
 NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))
 
 
+@_axis_nan_policy_factory(NormaltestResult, n_samples=1, too_small=7)
 def normaltest(a, axis=0, nan_policy='propagate'):
     r"""Test whether a sample differs from a normal distribution.
 
@@ -1962,14 +1947,6 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     hypothesis [5]_.
 
     """
-    a, axis = _chk_asarray(a, axis)
-
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
-
-    if contains_nan and nan_policy == 'omit':
-        a = ma.masked_invalid(a)
-        return mstats_basic.normaltest(a, axis)
-
     s, _ = skewtest(a, axis)
     k, _ = kurtosistest(a, axis)
     k2 = s*s + k*k
@@ -3850,22 +3827,22 @@ def trim1(a, proportiontocut, tail='right', axis=0):
 
 
 def trim_mean(a, proportiontocut, axis=0):
-    """Return mean of array after trimming distribution from both tails.
+    """Return mean of array after trimming a specified fraction of extreme values
 
-    If `proportiontocut` = 0.1, slices off 'leftmost' and 'rightmost' 10% of
-    scores. The input is sorted before slicing. Slices off less if proportion
-    results in a non-integer slice index (i.e., conservatively slices off
-    `proportiontocut` ).
+    Removes the specified proportion of elements from *each* end of the
+    sorted array, then computes the mean of the remaining elements.
 
     Parameters
     ----------
     a : array_like
         Input array.
     proportiontocut : float
-        Fraction to cut off of both tails of the distribution.
-    axis : int or None, optional
-        Axis along which the trimmed means are computed. Default is 0.
-        If None, compute over the whole array `a`.
+        Fraction of the most positive and most negative elements to remove.
+        When the specified proportion does not result in an integer number of
+        elements, the number of elements to trim is rounded down.
+    axis : int or None, default: 0
+        Axis along which the trimmed means are computed.
+        If None, compute over the raveled array.
 
     Returns
     -------
@@ -3874,27 +3851,41 @@ def trim_mean(a, proportiontocut, axis=0):
 
     See Also
     --------
-    trimboth
-    tmean : Compute the trimmed mean ignoring values outside given `limits`.
+    trimboth : Remove a proportion of elements from each end of an array.
+    tmean : Compute the mean after trimming values outside specified limits.
+
+    Notes
+    -----
+    For 1-D array `a`, `trim_mean` is approximately equivalent to the following
+    calculation::
+
+        import numpy as np
+        a = np.sort(a)
+        m = int(proportiontocut * len(a))
+        np.mean(a[m: len(a) - m])
 
     Examples
     --------
     >>> import numpy as np
     >>> from scipy import stats
-    >>> x = np.arange(20)
-    >>> stats.trim_mean(x, 0.1)
-    9.5
-    >>> x2 = x.reshape(5, 4)
-    >>> x2
-    array([[ 0,  1,  2,  3],
-           [ 4,  5,  6,  7],
-           [ 8,  9, 10, 11],
-           [12, 13, 14, 15],
-           [16, 17, 18, 19]])
+    >>> x = [1, 2, 3, 5]
+    >>> stats.trim_mean(x, 0.25)
+    2.5
+
+    When the specified proportion does not result in an integer number of
+    elements, the number of elements to trim is rounded down.
+
+    >>> stats.trim_mean(x, 0.24999) == np.mean(x)
+    True
+
+    Use `axis` to specify the axis along which the calculation is performed.
+
+    >>> x2 = [[1, 2, 3, 5],
+    ...       [10, 20, 30, 50]]
     >>> stats.trim_mean(x2, 0.25)
-    array([  8.,   9.,  10.,  11.])
+    array([ 5.5, 11. , 16.5, 27.5])
     >>> stats.trim_mean(x2, 0.25, axis=1)
-    array([  1.5,   5.5,   9.5,  13.5,  17.5])
+    array([ 2.5, 25. ])
 
     """
     a = np.asarray(a)
@@ -6734,7 +6725,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     Parameters
     ----------
     a : array_like
-        Sample observation.
+        Sample observations.
     popmean : float or array_like
         Expected value in null hypothesis. If array_like, then its length along
         `axis` must equal 1, and it must otherwise be broadcastable with `a`.
@@ -8267,6 +8258,19 @@ def _compute_dminus(cdfvals, x):
     return (dminus[amax], loc_max)
 
 
+def _tuple_to_KstestResult(statistic, pvalue,
+                           statistic_location, statistic_sign):
+    return KstestResult(statistic, pvalue,
+                        statistic_location=statistic_location,
+                        statistic_sign=statistic_sign)
+
+
+def _KstestResult_to_tuple(res):
+    return *res, res.statistic_location, res.statistic_sign
+
+
+@_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=1, n_outputs=4,
+                          result_to_tuple=_KstestResult_to_tuple)
 @_rename_parameter("mode", "method")
 def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
     """
@@ -8393,24 +8397,23 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
         alternative.lower()[0], alternative)
     if alternative not in ['two-sided', 'greater', 'less']:
         raise ValueError("Unexpected alternative %s" % alternative)
-    if np.ma.is_masked(x):
-        x = x.compressed()
 
     N = len(x)
     x = np.sort(x)
     cdfvals = cdf(x, *args)
+    np_one = np.int8(1)
 
     if alternative == 'greater':
         Dplus, d_location = _compute_dplus(cdfvals, x)
         return KstestResult(Dplus, distributions.ksone.sf(Dplus, N),
                             statistic_location=d_location,
-                            statistic_sign=1)
+                            statistic_sign=np_one)
 
     if alternative == 'less':
         Dminus, d_location = _compute_dminus(cdfvals, x)
         return KstestResult(Dminus, distributions.ksone.sf(Dminus, N),
                             statistic_location=d_location,
-                            statistic_sign=-1)
+                            statistic_sign=-np_one)
 
     # alternative == 'two-sided':
     Dplus, dplus_location = _compute_dplus(cdfvals, x)
@@ -8418,11 +8421,11 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
     if Dplus > Dminus:
         D = Dplus
         d_location = dplus_location
-        d_sign = 1
+        d_sign = np_one
     else:
         D = Dminus
         d_location = dminus_location
-        d_sign = -1
+        d_sign = -np_one
 
     if mode == 'auto':  # Always select exact
         mode = 'exact'
@@ -8602,6 +8605,8 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
     return True, d, prob
 
 
+@_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=2, n_outputs=4,
+                          result_to_tuple=_KstestResult_to_tuple)
 @_rename_parameter("mode", "method")
 def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
     """
@@ -8832,8 +8837,11 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
             prob = np.exp(expt)
 
     prob = np.clip(prob, 0, 1)
-    return KstestResult(d, prob, statistic_location=d_location,
-                        statistic_sign=d_sign)
+    # Currently, `d` is a Python float. We want it to be a NumPy type, so
+    # float64 is appropriate. An enhancement would be for `d` to respect the
+    # dtype of the input.
+    return KstestResult(np.float64(d), prob, statistic_location=d_location,
+                        statistic_sign=np.int8(d_sign))
 
 
 def _parse_kstest_args(data1, data2, args, N):
@@ -8865,6 +8873,13 @@ def _parse_kstest_args(data1, data2, args, N):
     return data1, data2, cdf
 
 
+def _kstest_n_samples(kwargs):
+    cdf = kwargs['cdf']
+    return 1 if (isinstance(cdf, str) or callable(cdf)) else 2
+
+
+@_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=_kstest_n_samples,
+                          n_outputs=4, result_to_tuple=_KstestResult_to_tuple)
 @_rename_parameter("mode", "method")
 def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method='auto'):
     """
@@ -9038,8 +9053,9 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method='auto'):
     xvals, yvals, cdf = _parse_kstest_args(rvs, cdf, args, N)
     if cdf:
         return ks_1samp(xvals, cdf, args=args, alternative=alternative,
-                        method=method)
-    return ks_2samp(xvals, yvals, alternative=alternative, method=method)
+                        method=method, _no_deco=True)
+    return ks_2samp(xvals, yvals, alternative=alternative, method=method,
+                    _no_deco=True)
 
 
 def tiecorrect(rankvals):
@@ -9145,11 +9161,14 @@ def ranksums(x, y, alternative='two-sided'):
     >>> sample1 = rng.uniform(-1, 1, 200)
     >>> sample2 = rng.uniform(-0.5, 1.5, 300) # a shifted distribution
     >>> ranksums(sample1, sample2)
-    RanksumsResult(statistic=-7.887059, pvalue=3.09390448e-15)  # may vary
+    RanksumsResult(statistic=-7.887059,
+                   pvalue=3.09390448e-15) # may vary
     >>> ranksums(sample1, sample2, alternative='less')
-    RanksumsResult(statistic=-7.750585297581713, pvalue=4.573497606342543e-15) # may vary
+    RanksumsResult(statistic=-7.750585297581713,
+                   pvalue=4.573497606342543e-15) # may vary
     >>> ranksums(sample1, sample2, alternative='greater')
-    RanksumsResult(statistic=-7.750585297581713, pvalue=0.9999999999999954) # may vary
+    RanksumsResult(statistic=-7.750585297581713,
+                   pvalue=0.9999999999999954) # may vary
 
     The p-value of less than ``0.05`` indicates that this test rejects the
     hypothesis at the 5% significance level.
@@ -10792,66 +10811,100 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     array([ 2.,  3.,  4., nan,  1., nan])
 
     """
-    if method not in ('average', 'min', 'max', 'dense', 'ordinal'):
+    methods = ('average', 'min', 'max', 'dense', 'ordinal')
+    if method not in methods:
         raise ValueError(f'unknown method "{method}"')
 
-    a = np.asarray(a)
+    x = np.asarray(a)
 
-    if axis is not None:
-        if a.size == 0:
-            # The return values of `normalize_axis_index` are ignored.  The
-            # call validates `axis`, even though we won't use it.
-            normalize_axis_index(axis, a.ndim)
-            if method == 'average':
-                dt = np.dtype(np.float64)
-            else:
-                dt = np.dtype(int)
-            return np.empty(a.shape, dtype=dt)
-        return np.apply_along_axis(rankdata, axis, a, method,
-                                   nan_policy=nan_policy)
+    if x.size == 0:
+        dtype = float if method == 'average' else int
+        return np.empty(x.shape, dtype=dtype)
 
-    arr = np.ravel(a)
-    contains_nan, nan_policy = _contains_nan(arr, nan_policy)
-    nan_indexes = None
+    if axis is None:
+        x = x.ravel()
+        axis = -1
+
+    contains_nan, nan_policy = _contains_nan(x, nan_policy)
+
+    x = np.swapaxes(x, axis, -1)
+    ranks = _rankdata(x, method)
+
     if contains_nan:
-        if nan_policy == 'omit':
-            nan_indexes = np.isnan(arr)
-        if nan_policy == 'propagate':
-            return np.full_like(arr, np.nan)
+        i_nan = (np.isnan(x) if nan_policy == 'omit'
+                 else np.isnan(x).any(axis=-1))
+        ranks = ranks.astype(float, copy=False)
+        ranks[i_nan] = np.nan
 
-    algo = 'mergesort' if method == 'ordinal' else 'quicksort'
-    sorter = np.argsort(arr, kind=algo)
+    ranks = np.swapaxes(ranks, axis, -1)
+    return ranks
 
-    inv = np.empty(sorter.size, dtype=np.intp)
-    inv[sorter] = np.arange(sorter.size, dtype=np.intp)
 
+def _order_ranks(ranks, j):
+    # Reorder ascending order `ranks` according to `j`
+    ordered_ranks = np.empty(j.shape, dtype=ranks.dtype)
+    np.put_along_axis(ordered_ranks, j, ranks, axis=-1)
+    return ordered_ranks
+
+
+def _rankdata(x, method, return_ties=False):
+    # Rank data `x` by desired `method`; `return_ties` if desired
+    shape = x.shape
+
+    # Get sort order
+    kind = 'mergesort' if method == 'ordinal' else 'quicksort'
+    j = np.argsort(x, axis=-1, kind=kind)
+    ordinal_ranks = np.broadcast_to(np.arange(1, shape[-1]+1, dtype=int), shape)
+
+    # Ordinal ranks is very easy because ties don't matter. We're done.
     if method == 'ordinal':
-        result = inv + 1
-    else:
-        arr = arr[sorter]
-        obs = np.r_[True, arr[1:] != arr[:-1]]
-        dense = obs.cumsum()[inv]
+        return _order_ranks(ordinal_ranks, j)  # never return ties
 
-        if method == 'dense':
-            result = dense
-        else:
-            # cumulative counts of each unique value
-            count = np.r_[np.nonzero(obs)[0], len(obs)]
+    # Sort array
+    y = np.take_along_axis(x, j, axis=-1)
+    # Logical indices of unique elements
+    i = np.concatenate([np.ones(shape[:-1] + (1,), dtype=np.bool_),
+                       y[..., :-1] != y[..., 1:]], axis=-1)
 
-            if method == 'max':
-                result = count[dense]
+    # Integer indices of unique elements
+    indices = np.arange(y.size)[i.ravel()]
+    # Counts of unique elements
+    counts = np.diff(indices, append=y.size)
 
-            if method == 'min':
-                result = count[dense - 1] + 1
+    # Compute `'min'`, `'max'`, and `'mid'` ranks of unique elements
+    if method == 'min':
+        ranks = ordinal_ranks[i]
+    elif method == 'max':
+        ranks = ordinal_ranks[i] + counts - 1
+    elif method == 'average':
+        ranks = ordinal_ranks[i] + (counts - 1)/2
+    elif method == 'dense':
+        ranks = np.cumsum(i, axis=-1)[i]
 
-            if method == 'average':
-                result = .5 * (count[dense] + count[dense - 1] + 1)
+    ranks = np.repeat(ranks, counts).reshape(shape)
+    ranks = _order_ranks(ranks, j)
 
-    if nan_indexes is not None:
-        result = result.astype('float64')
-        result[nan_indexes] = np.nan
-
-    return result
+    if return_ties:
+        # Tie information is returned in a format that is useful to functions that
+        # rely on this (private) function. Example:
+        # >>> x = np.asarray([3, 2, 1, 2, 2, 2, 1])
+        # >>> _, t = _rankdata(x, 'average', return_ties=True)
+        # >>> t  # array([2., 0., 4., 0., 0., 0., 1.])  # two 1s, four 2s, and one 3
+        # Unlike ranks, tie counts are *not* reordered to correspond with the order of
+        # the input; e.g. the number of appearances of the lowest rank element comes
+        # first. This is a useful format because:
+        # - The shape of the result is the shape of the input. Different slices can
+        #   have different numbers of tied elements but not result in a ragged array.
+        # - Functions that use `t` usually don't need to which each element of the
+        #   original array is associated with each tie count; they perform a reduction
+        #   over the tie counts onnly. The tie counts are naturally computed in a
+        #   sorted order, so this does not unnecesarily reorder them.
+        # - One exception is `wilcoxon`, which needs the number of zeros. Zeros always
+        #   have the lowest rank, so it is easy to find them at the zeroth index.
+        t = np.zeros(shape, dtype=float)
+        t[i] = counts
+        return ranks, t
+    return ranks
 
 
 def expectile(a, alpha=0.5, *, weights=None):

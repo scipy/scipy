@@ -38,7 +38,6 @@ from ._linesearch import (line_search_wolfe1, line_search_wolfe2,
                           line_search_wolfe2 as line_search,
                           LineSearchWarning)
 from ._numdiff import approx_derivative
-from ._hessian_update_strategy import HessianUpdateStrategy
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from scipy._lib._util import MapWrapper, check_random_state
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
@@ -859,10 +858,9 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         lower_bound, upper_bound = bounds.lb, bounds.ub
         # check bounds
         if (lower_bound > upper_bound).any():
-            raise ValueError(
-                "Nelder Mead - one of the lower bounds is greater than an upper bound.",
-                stacklevel=3
-            )
+            raise ValueError("Nelder Mead - one of the lower bounds "
+                             "is greater than an upper bound.",
+                             stacklevel=3)
         if np.any(lower_bound > x0) or np.any(x0 > upper_bound):
             warnings.warn("Initial guess is not within the specified bounds",
                           OptimizeWarning, stacklevel=3)
@@ -1312,8 +1310,8 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
     c2 : float, default: 0.9
         Parameter for curvature condition rule.
     hess_inv0 : None or ndarray, optional``
-        Initial inverse hessian estimate, shape (n, n). If None (default) then the identity
-        matrix is used.
+        Initial inverse hessian estimate, shape (n, n). If None (default) then
+        the identity matrix is used.
 
     Returns
     -------
@@ -1451,8 +1449,8 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     c2 : float, default: 0.9
         Parameter for curvature condition rule.
     hess_inv0 : None or ndarray, optional
-        Initial inverse hessian estimate, shape (n, n). If None (default) then the identity
-        matrix is used.
+        Initial inverse hessian estimate, shape (n, n). If None (default) then
+        the identity matrix is used.
 
     Notes
     -----
@@ -1884,8 +1882,8 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         try:
             alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
                      _line_search_wolfe12(f, myfprime, xk, pk, gfk, old_fval,
-                                          old_old_fval, c1=c1, c2=c2, amin=1e-100, amax=1e100,
-                                          extra_condition=descent_condition)
+                                          old_old_fval, c1=c1, c2=c2, amin=1e-100,
+                                          amax=1e100, extra_condition=descent_condition)
         except _LineSearchError:
             # Line search failed to find a better solution.
             warnflag = 2
@@ -2180,11 +2178,9 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
                     Ap = fhess_p(xk, psupi, *args)
                     hcalls += 1
             else:
-                if isinstance(A, HessianUpdateStrategy):
-                    # if hess was supplied as a HessianUpdateStrategy
-                    Ap = A.dot(psupi)
-                else:
-                    Ap = np.dot(A, psupi)
+                # hess was supplied as a callable or hessian update strategy, so
+                # A is a dense numpy array or sparse matrix
+                Ap = A.dot(psupi)
             # check curvature
             Ap = asarray(Ap).squeeze()  # get rid of matrices...
             curv = np.dot(psupi, Ap)

@@ -932,7 +932,8 @@ class vode(IntegratorBase):
                 else:
                     miter = 5  # Chord iteration with internal banded Jacobian.
             else:
-                # self.with_jacobian is set by the user in the call to ode.set_integrator.
+                # self.with_jacobian is set by the user in
+                # the call to ode.set_integrator.
                 if self.with_jacobian:
                     miter = 2  # Chord iteration with internal full Jacobian.
                 else:

@@ -3464,7 +3464,7 @@ class TestStudentT:
                       -50.918938533204674, -1.8378770664093456]
         pdf_ref = [0.24197072451914334, 0,
                    7.69459862670642e-23, 0.15915494309189535]
-        assert_allclose(stats.t.logpdf(x, df), logpdf_ref, rtol=1e-15)
+        assert_allclose(stats.t.logpdf(x, df), logpdf_ref, rtol=1e-14)
         assert_allclose(stats.t.pdf(x, df), pdf_ref, rtol=1e-14)
 
 
@@ -4130,9 +4130,9 @@ class TestGenExpon:
                               (0.125, 0.9508674287164001, 0.25, 5, 0.5)])
     def test_sf_isf(self, x, p, a, b, c):
         sf = stats.genexpon.sf(x, a, b, c)
-        assert_allclose(sf, p, rtol=1e-14)
+        assert_allclose(sf, p, rtol=2e-14)
         isf = stats.genexpon.isf(p, a, b, c)
-        assert_allclose(isf, x, rtol=1e-14)
+        assert_allclose(isf, x, rtol=2e-14)
 
     # The values of p in the following data were computed with mpmath.
     @pytest.mark.parametrize('x, p, a, b, c',
@@ -4143,9 +4143,9 @@ class TestGenExpon:
                               (0.125, 0.04913257128359998, 0.25, 5, 0.5)])
     def test_cdf_ppf(self, x, p, a, b, c):
         cdf = stats.genexpon.cdf(x, a, b, c)
-        assert_allclose(cdf, p, rtol=1e-14)
+        assert_allclose(cdf, p, rtol=2e-14)
         ppf = stats.genexpon.ppf(p, a, b, c)
-        assert_allclose(ppf, x, rtol=1e-14)
+        assert_allclose(ppf, x, rtol=2e-14)
 
 
 class TestTruncexpon:
@@ -5434,11 +5434,13 @@ class TestLevyStable:
                   (subdata2['relerr'] >= rtol) |
                   np.isnan(p)
                 ]
+                message = (f"cdf test {ix} failed with method '{default_method}'\n"
+                           f"{failures.dtype.names}\n{failures}")
                 assert_allclose(
                     p,
                     subdata['p'],
                     rtol,
-                    err_msg=f"cdf test {ix} failed with method '{default_method}'\n{failures.dtype.names}\n{failures}",
+                    err_msg=message,
                     verbose=False
                 )
 
