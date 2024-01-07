@@ -244,7 +244,7 @@ class RegularGridInterpolator:
     _ALL_METHODS = ["linear", "nearest"] + _SPLINE_METHODS
 
     def __init__(self, points, values, method="linear", bounds_error=True,
-                 fill_value=np.nan, *, solver=None, **solver_args):
+                 fill_value=np.nan, *, solver=None, solver_args=None):
         if method not in self._ALL_METHODS:
             raise ValueError("Method '%s' is not defined" % method)
         elif method in self._SPLINE_METHODS:
@@ -265,6 +265,8 @@ class RegularGridInterpolator:
                    "the array before passing to `RegularGridInterpolator`.")
             warnings.warn(msg, DeprecationWarning, stacklevel=2)
         if method in self._SPLINE_METHODS_ndbspl:
+            if solver_args is None:
+                solver_args = {}
             self._spline = self._construct_spline(method, solver, **solver_args)
         else:
             if solver is not None or solver_args:
