@@ -157,9 +157,9 @@ class RegularGridInterpolator:
     you may supply the starting value or target tolerance). See the
     `scipy.sparse.linalg` documentation for the full list of available options.
 
-    Alternatively, you may instead use the legacy methods, "slinear_legacy", "cubic_legacy"
-    and "quintic_legacy". These methods allow faster construction but evaluations
-    will be much slower.
+    Alternatively, you may instead use the legacy methods, "slinear_legacy",
+    "cubic_legacy" and "quintic_legacy". These methods allow faster construction
+    but evaluations will be much slower.
 
     Examples
     --------

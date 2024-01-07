@@ -163,10 +163,11 @@ class NdBSpline:
         else:
             nu = np.asarray(nu, dtype=np.intc)
             if nu.ndim != 1 or nu.shape[0] != ndim:
-                raise ValueError(f"invalid number of derivative orders {nu = }")
+                raise ValueError(
+                    f"invalid number of derivative orders {nu = } for "
+                    f"ndim = {len(self.t)}.")
             if any(nu < 0):
                 raise ValueError(f"derivatives must be positive, got {nu = }")
-
 
         # prepare xi : shape (..., m1, ..., md) -> (1, m1, ..., md)
         xi = np.asarray(xi, dtype=float)

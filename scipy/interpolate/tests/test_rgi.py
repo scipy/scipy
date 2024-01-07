@@ -119,6 +119,26 @@ class TestRegularGridInterpolator:
         v2 = interp(sample)
         assert_allclose(v1, v2)
 
+    def test_derivatives(self):
+        points, values = self._get_sample_4d()
+        sample = np.array([[0.1 , 0.1 , 1.  , 0.9 ],
+                           [0.2 , 0.1 , 0.45, 0.8 ],
+                           [0.5 , 0.5 , 0.5 , 0.5 ]])
+        interp = RegularGridInterpolator(points, values, method="slinear")
+
+        with assert_raises(ValueError):
+            # wrong number of derivatives (need 4)
+            interp(sample, nu=1)
+
+        assert_allclose(interp(sample, nu=(1, 0, 0, 0)),
+                        [1, 1, 1], atol=1e-15)
+        assert_allclose(interp(sample, nu=(0, 1, 0, 0)),
+                        [10, 10, 10], atol=1e-15)
+
+        # 2nd derivatives of a linear function are zero
+        assert_allclose(interp(sample, nu=(0, 1, 1, 0)),
+                        [0, 0, 0], atol=1e-12)
+
     @parametrize_rgi_interp_methods
     def test_complex(self, method):
         if method == "pchip":
