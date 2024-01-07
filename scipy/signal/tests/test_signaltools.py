@@ -3688,44 +3688,45 @@ class TestUniqueRoots:
 
 class TestEnvelope:
     def test_bad_args(self):
-        # x must be a 1D numpy array
-        msg = 'x must be a 1-dimensional array'
+        msg = "Input array must be a 1D array"
 
-        with assert_raises(AssertionError, match=msg):
+        with assert_raises(ValueError, match=msg):
             x = 0
             envelope(x)
 
-        with assert_raises(AssertionError, match=msg):
-            x = [[0,1,2],[3,4,5]]
-            envelope(x)
-
-        with assert_raises(AssertionError, match=msg):
-            x = np.array([[0,1],[2,3]])
-            envelope(x)
-
-        # N must be either None or positive integer.
-        msg = 'If N is not None, it must be a positive integer.'
-        x = np.array([0,1,2,3,4,5])
-
-        with assert_raises(AssertionError, match=msg):
-            envelope(x,N=-1)
-
-        with assert_raises(AssertionError, match=msg):
-            envelope(x,N=0)
-
-        with assert_raises(AssertionError, match=msg):
-            envelope(x,N=[0,1])
-
-        # If method is 'rms' or 'peak', N must be specified.
-        msg = 'N cannot be None when using the rms method.'
-        with assert_raises(AssertionError, match=msg):
-            envelope(x,method = 'rms')
-
-        msg = 'N cannot be None when using the peak method.'
-        with assert_raises(AssertionError, match=msg):
-            envelope(x,method = 'peak')
-
-        #Invalid method name
-        msg = 'linear is not a valid method'
         with assert_raises(ValueError, match=msg):
-            envelope(x,method = 'linear')
+            x = [[0, 1, 2], [3, 4, 5]]
+            envelope(x)
+
+        with assert_raises(ValueError, match=msg):
+            x = np.array([[0, 1], [2, 3]])
+            envelope(x)
+
+        msg = 'If N is not None, it must be a positive integer.'
+        x = np.array([0, 1, 2, 3, 4, 5])
+
+        with assert_raises(ValueError, match=msg):
+            envelope(x, N=-1)
+
+        with assert_raises(ValueError, match=msg):
+            envelope(x, N=0)
+
+        with assert_raises(ValueError, match=msg):
+            envelope(x, N=[0, 1])
+
+        msg = ('N cannot be None when using the rms method; '
+               'it must specify the sliding window length.')
+
+        with assert_raises(ValueError, match=msg):
+            envelope(x, method='rms')
+
+        msg = ('N cannot be None when using the peak method; it must specify'
+               'the minimal horizontal distance between neighbouring peaks')
+
+        with assert_raises(ValueError, match=msg):
+            envelope(x, method='peak')
+
+        msg = 'linear is not a valid method'
+
+        with assert_raises(ValueError, match=msg):
+            envelope(x, method='linear')

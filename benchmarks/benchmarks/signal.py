@@ -247,19 +247,19 @@ class FIRLS(Benchmark):
 class Envelope(Benchmark):
     param_names = ['N']
     params = [
-        [100,200,500,1000]
-        ]
+        [100, 200, 500, 1000]
+    ]
 
-    def setup(self,N):
-        t = np.arange(0, 4, 1/48000)
-        self.x = 1000*(1 + 0.5 * np.cos(2 * np.pi * 10 * t)) \
-                                    * np.cos(2 * np.pi * 1000 * t)
+    def setup(self, N):
+        t = np.arange(0, 4, 1 / 48000)
+        self.x = 1000 * (1 + 0.5 * np.cos(2 * np.pi * 10 * t)) \
+                 * np.cos(2 * np.pi * 1000 * t)
 
-    def time_analytical(self,N):
-        signal.envelope(self.x,N = N,method = 'analytic')
+    def time_analytical(self, N):
+        signal.envelope(self.x, N=N, method='analytic')
 
-    def time_rms(self,N):
-        signal.envelope(self.x,N = N,method = 'rms')
+    def time_rms(self, N):
+        signal.envelope(self.x, N=N, method='rms')
 
-    def time_peak(self,N):
-        signal.envelope(self.x,N = N,method = 'peak')
+    def time_peak(self, N):
+        signal.envelope(self.x, N=N, method='peak')

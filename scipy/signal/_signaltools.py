@@ -4626,7 +4626,7 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
 
     return y[tuple(sl)]
 
-def envelope(x,N = None,method = 'analytic'):
+def envelope(x, N=None, method='analytic'):
     """
     Calculate the upper and lower envelopes of a 1-D signal.
 
@@ -4636,27 +4636,27 @@ def envelope(x,N = None,method = 'analytic'):
     Parameters
     ----------
     x : array_like
-        The signal for which the envelopes are going to be calculated, as a
-        1-dimensional array.
-    N : int, optional
-        If `method` = `'analytic'`, `N` is the number of Fourier components. If
-        `method` = `'rms'`, `N` is the sliding window length. If `method` =
-        `'peak'`, `N` is the required minimal horizontal distance between
-        neighbouring peaks. For the `'rms'` and `'peak'` methods `N` must be
+        The 1-D array holding the signal data for which the envelopes are
+        calculated.
+    N : int
+        If `method` is `'analytic'`, `N` represents the number of Fourier components.
+        If `method` is `'rms'`, `N` is the sliding window length.
+        If `method` is `'peak'`, `N` is the required minimal horizontal distance
+        between neighboring peaks. For `'rms'` and `'peak'` methods, `N` must be
         specified and must be positive. Default: ``x.shape[0]``
     method : str {`'analytic'`, `'rms'`, `'peak'`}, optional
         A string indicating which method to use to calculate the envelopes.
 
         ``analytic``
-           The envelopes of x are calculated by the magnitude of its
-           analytical signal.
+            The envelopes of `x` are calculated by the magnitude of its
+            analytical signal.
         ``rms``
-           Calculates the upper and lower root-mean-square envelopes of `x`. The
-           mean is determined by a sliding window of `N` samples.
+            Calculates the upper and lower root-mean-square envelopes of `x`. The
+            mean is determined by a sliding window of `N` samples.
         ``peak``
-           Calculates the upper and lower peak envelopes of `x`. The envelopes
-           are determined by employing spline interpolation between adjacent
-           local maxima that are at least `N` samples apart.
+            Calculates the upper and lower peak envelopes of `x`. The envelopes
+            are determined by employing spline interpolation between adjacent
+            local maxima that are at least `N` samples apart.
 
     Returns
     -------
@@ -4670,97 +4670,83 @@ def envelope(x,N = None,method = 'analytic'):
     hilbert : Compute the analytic signal, using the Hilbert transform.
     find_peaks : Find peaks inside a signal based on peak properties.
 
+    Notes
+    -----
+    .. versionadded:: 1.12.0
+
     Examples
     --------
-
     >>> import numpy as np
     >>> from scipy.signal import envelope
     >>> import matplotlib.pyplot as plt
 
-    Create a synthetic signal and calculate its analytical envelopes.
+    Create a signal and calculate its analytical envelopes.
 
     >>> t = np.arange(0, 2, 1/2000)
-    >>> signal = (1+0.5*np.cos(2*np.pi*1*t))*np.cos(2*np.pi*10*t)+5
-    >>> upper,lower = envelope(signal)
-    >>> plt.plot(t,signal)
-    >>> plt.plot(t,upper)
-    >>> plt.plot(t,lower)
+    >>> signal = (1 + 0.5 * np.cos(2 * np.pi * 1 * t)) * np.cos(2 * np.pi * 10 * t) + 5
+    >>> upper, lower = envelope(signal)
+    >>> plt.plot(t, signal)
+    >>> plt.plot(t, upper)
+    >>> plt.plot(t, lower)
     >>> plt.show()
 
-    Create a synthetic signal and calculate its root-mean-square envelopes.
+    Generate an amplitude modulated Gaussian white noise and calculate its
+    root-mean-square envelopes.
 
     >>> t = np.arange(0, 2, 1/2000)
-    >>> signal = (1+0.5*np.cos(2*np.pi*1*t))*np.random.normal(size = t.shape[0])+5
-    >>> upper,lower = envelope(signal,N = 150,method = 'rms')
-    >>> plt.plot(t,signal)
-    >>> plt.plot(t,upper)
-    >>> plt.plot(t,lower)
+    >>> gaussian_white_noise = np.random.normal(size=t.shape[0])
+    >>> signal = (1 + 0.5 * np.cos(2 * np.pi * 1 * t)) * gaussian_white_noise + 5
+    >>> upper, lower = envelope(signal, N=150, method='rms')
+    >>> plt.plot(t, signal)
+    >>> plt.plot(t, upper)
+    >>> plt.plot(t, lower)
     >>> plt.show()
 
-    .. versionadded:: 1.12.0
+    Raises
+    ------
+    ValueError
+        If the input array is not 1D.
+        If `N` is not a positive integer.
+        If `N` is not specified when using the `'rms'` or `'peak'` method.
+        If the specified method is not valid.
     """
-    from ._peak_finding import find_peaks
-
-    #Assert that x is a 1D array
-    x = np.asarray(x)
-    assert isinstance(x, np.ndarray) and x.ndim == 1\
-            , 'x must be a 1-dimensional array'
-
-    if N or N==0: #N is not None.
-        assert isinstance(N,int) and N>0,\
-         'If N is not None, it must be a positive integer.'
-
+    x = np.squeeze(np.asarray(x))
+    if x.ndim != 1:
+        raise ValueError("Input array must be a 1D array")
+    if N is not None and (not isinstance(N, int) or N <= 0):
+        raise ValueError('If N is not None, it must be a positive integer.')
     if method == 'analytic':
-
-        #Calculate the mean of x and remove it
         x_mean = np.mean(x)
-        x_zero_mean = x-x_mean
-
-        #Take the absolute value of the Hilbert transform
-        #to calculate the analytical envelope of the zero mean
-        #version of x
-        zero_mean_envelope = np.abs(hilbert(x_zero_mean,N = N))
-
-        #Calculate and return upper and lower envelopes
-        return x_mean+zero_mean_envelope,x_mean-zero_mean_envelope
-
+        x_zero_mean = x - x_mean
+        zero_mean_envelope = np.abs(hilbert(x_zero_mean, N=N))
+        return x_mean + zero_mean_envelope, x_mean - zero_mean_envelope
     elif method == 'rms':
-
-        #Assert that N is specified
-        assert N, 'N cannot be None when using the rms method.'
-
-        #Calculate the mean of x and remove it
+        if N is None:
+            raise ValueError('N cannot be None when using the rms method; '
+                             'it must specify the sliding window length.')
         x_mean = np.mean(x)
-        x_zero_mean = x-x_mean
-
-        #Calculate the RMS envelope of the zero mean version of x.
-        #Moving average is calculated using np.convolve
-        zero_mean_envelope = np.sqrt(convolve(x_zero_mean**2,np.ones(N)/N,\
-                                mode = 'same',method = 'direct'))
-
-        #Calculate and return upper and lower envelopes
-        return x_mean+zero_mean_envelope,x_mean-zero_mean_envelope
-
+        x_zero_mean = x - x_mean
+        zero_mean_envelope = np.sqrt(convolve(x_zero_mean**2, np.ones(N)/N,
+                                             mode='same', method='direct'))
+        return x_mean + zero_mean_envelope, x_mean - zero_mean_envelope
     elif method == 'peak':
+        # Doing this import at the top of the file throws a circular import
+        # error. One way to avoid this error is doing a local import as
+        # implemented here. Another way is to move this function to
+        # _peak_finding and importing hilbert,convolve and UnivariateSpline
+        # there.
+        from ._peak_finding import find_peaks
 
-        #Assert that N is specified
-        assert N, 'N cannot be None when using the peak method.'
-
-        #Calculate local maxima and minima which will serve
-        #as peaks for upper and lower envelopes respectively
-        peaks_upper,_ = find_peaks(x,distance = N)
-        peaks_lower,_ = find_peaks(-x,distance = N)
-
-        #Calculate upper and lower envelopes by interpolating
-        #peaks using a Univariate spline
-        upper_spline = UnivariateSpline(peaks_upper,x[peaks_upper])
-        lower_spline = UnivariateSpline(peaks_lower,x[peaks_lower])
+        if N is None:
+            msg = ('N cannot be None when using the peak method; it must specify'
+                   'the minimal horizontal distance between neighbouring peaks')
+            raise ValueError(msg)
+        peaks_upper, _ = find_peaks(x, distance=N)
+        peaks_lower, _ = find_peaks(-x, distance=N)
+        upper_spline = UnivariateSpline(peaks_upper, x[peaks_upper])
+        lower_spline = UnivariateSpline(peaks_lower, x[peaks_lower])
         upper_envelope = upper_spline(np.arange(x.shape[0]))
         lower_envelope = lower_spline(np.arange(x.shape[0]))
-
-        #Return the envelopes
-        return upper_envelope,lower_envelope
-
+        return upper_envelope, lower_envelope
     else:
-
-        raise ValueError('%s is not a valid method' %(method))
+        raise ValueError(f'{method} is not a valid method')
