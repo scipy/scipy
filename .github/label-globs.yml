@@ -4,109 +4,110 @@
 scipy.cluster:
 - changed-files:
   - any-glob-to-any-file:
-    - scipy/cluster/**/*
+    - scipy/cluster/**
 
 scipy.constants:
 - changed-files:
   - any-glob-to-any-file:
-    - scipy/constants/**/*
+    - scipy/constants/**
 
 scipy.fft:
 - changed-files:
   - any-glob-to-any-file:
-    - scipy/fft/**/*
+    - scipy/fft/**
 
 scipy.fftpack:
 - changed-files:
   - any-glob-to-any-file:
-    - scipy/fftpack/**/*
+    - scipy/fftpack/**
 
 scipy.integrate:
 - changed-files:
   - any-glob-to-any-file:
-    - scipy/integrate/**/*
+    - scipy/integrate/**
 
 scipy.interpolate:
 - changed-files:
   - any-glob-to-any-file:
-    - scipy/interpolate/**/*
+    - scipy/interpolate/**
 
 scipy.io:
 - changed-files:
   - any-glob-to-any-file:
-    - scipy/io/**/*
+    - scipy/io/**
 
 scipy._lib:
 - changed-files:
   - any-glob-to-any-file:
-    - scipy/_lib/**/*
+    - scipy/_lib/**
 
 scipy.linalg:
 - changed-files:
   - any-glob-to-any-file:
-    - scipy/linalg/**/*
+    - scipy/linalg/**
 
 scipy.misc:
 - changed-files:
   - any-glob-to-any-file:
-    - scipy/misc/**/*
+    - scipy/misc/**
 
 scipy.ndimage:
 - changed-files:
   - any-glob-to-any-file:
-    - scipy/ndimage/**/*
+    - scipy/ndimage/**
 
 scipy.odr:
 - changed-files:
   - any-glob-to-any-file:
-    - scipy/odr/**/*
+    - scipy/odr/**
 
 scipy.optimize:
 - changed-files:
   - any-glob-to-any-file:
-    - scipy/optimize/**/*
+    - scipy/optimize/**
 
 scipy.signal:
 - changed-files:
   - any-glob-to-any-file:
-    - scipy/signal/**/*
+    - scipy/signal/**
 
 scipy.sparse:
 - changed-files:
   - any-glob-to-any-file:
-    - scipy/sparse/**/*
+    - scipy/sparse/**
 
 scipy.sparse.csgraph:
 - changed-files:
   - any-glob-to-any-file:
-    - scipy/sparse/csgraph/**/*
+    - scipy/sparse/csgraph/**
 
 scipy.sparse.linalg:
 - changed-files:
   - any-glob-to-any-file:
-    - scipy/sparse/linalg/**/*
+    - scipy/sparse/linalg/**
 
 scipy.spatial:
 - changed-files:
   - any-glob-to-any-file:
-    - scipy/spatial/**/*
+    - scipy/spatial/**
 
 scipy.special:
 - changed-files:
   - any-glob-to-any-file:
-    - scipy/special/**/*
+    - scipy/special/**
 
 scipy.stats:
 - changed-files:
   - any-glob-to-any-file:
-    - scipy/stats/**/*
+    - scipy/stats/**
 
 Cython:
 - changed-files:
   - any-glob-to-any-file:
-    - scipy/**/*.pyx.*
-    - scipy/**/*.pxd.*
-    - scipy/**/*.pxi.*
+    - scipy/**/*.pyx*
+    - scipy/**/*.pxd*
+    - scipy/**/*.pxi*
+    - scipy/**/_generate_pyx.py
 
 Fortran:
 - changed-files:
@@ -115,6 +116,7 @@ Fortran:
     - scipy/**/*.f.src
     - scipy/**/*.F
     - scipy/**/*.f90
+    - scipy/**/*.pyf
 
 C/C++:
 - changed-files:
@@ -143,4 +145,28 @@ Meson:
 Documentation:
 - changed-files:
   - any-glob-to-any-file:
-    - doc/**/*
+    - doc/**
+
+CI:
+- changed-files:
+  - any-glob-to-any-file:
+    - .circleci/**
+    - .github/workflows/**
+    - ci/**
+    - .cirrus.star
+
+DX:
+- changed-files:
+  - any-glob-to-any-file:
+    - doc/source/dev/**
+
+BLD:
+- changed-files:
+  - any-glob-to-any-file:
+    - scipy/_build_utils/**
+
+uarray:
+- changed-files:
+  - any-glob-to-any-file:
+    - scipy/_lib/_uarray/**
+    - scipy/_lib/uarray.py
