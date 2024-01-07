@@ -195,8 +195,8 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
 
     >>> initial_values = np.array([0.0, 1.0])
 
-   >>> x_opt, f_opt, info = fmin_l_bfgs_b(func, x0=initial_values, args=(X, Y),
-   ...                                    approx_grad=True)
+    >>> x_opt, f_opt, info = fmin_l_bfgs_b(func, x0=initial_values, args=(X, Y),
+    ...                                    approx_grad=True)
     >>> x_opt, f_opt
     array([1.99999999, 3.00000006]), 1.7746231151323805e-14  # may vary
 
@@ -205,8 +205,8 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
     parameter. 
 
     >>> bounds = [(0, 5), (5, 10)]
-   >>> x_opt, f_op, info = fmin_l_bfgs_b(func, x0=initial_values, args=(X, Y),
-   ...                                   approx_grad=True, bounds=bounds)
+    >>> x_opt, f_op, info = fmin_l_bfgs_b(func, x0=initial_values, args=(X, Y),
+    ...                                   approx_grad=True, bounds=bounds)
     >>> x_opt, f_opt
     array([1.65990508, 5.31649385]), 15.721334516453945  # may vary    
     """
