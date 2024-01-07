@@ -252,8 +252,8 @@ class Envelope(Benchmark):
 
     def setup(self, N):
         t = np.arange(0, 4, 1 / 48000)
-        self.x = 1000 * (1 + 0.5 * np.cos(2 * np.pi * 10 * t)) \
-                 * np.cos(2 * np.pi * 1000 * t)
+        self.x = (1000 * (1 + 0.5 * np.cos(2 * np.pi * 10 * t))
+                  * np.cos(2 * np.pi * 1000 * t))
 
     def time_analytical(self, N):
         signal.envelope(self.x, N=N, method='analytic')
