@@ -93,6 +93,18 @@ class RegularGridInterpolator:
         If None, values outside the domain are extrapolated.
         Default is ``np.nan``.
 
+    solver : callable, optional
+        Only used for methods "slinear", "cubic" and "quintic".
+        Sparse linear algebra solver for construction of the NdBSpline instance.
+        Default is the iterative solver `scipy.sparse.linalg.gcrotmk`.
+
+        .. versionadded:: 1.13
+
+    solver_args: dict, optional
+        Additional arguments to pass to `solver`, if any.
+
+        .. versionadded:: 1.13
+
     Methods
     -------
     __call__
@@ -132,6 +144,22 @@ class RegularGridInterpolator:
     If the input data is such that dimensions have incommensurate
     units and differ by many orders of magnitude, the interpolant may have
     numerical artifacts. Consider rescaling the data before interpolating.
+
+    **Choosing a solver for spline methods**
+
+    Spline methods, "slinear", "cubic" and "quintic" involve solving a
+    large sparse linear system at instantiation time. Depending on data,
+    the default solver may or may not be adequate. When it is not, you may
+    need to experiment with an optional `solver` argument, where you may
+    choose between the direct solver (`scipy.sparse.linalg.spsolve`) or
+    iterative solvers from `scipy.sparse.linalg`. You may need to supply
+    additional parameters via the optional `solver_args` parameter (for instance,
+    you may supply the starting value or target tolerance). See the
+    `scipy.sparse.linalg` documentation for the full list of available options.
+
+    Alternatively, you may instead use the legacy methods, "slinear_legacy", "cubic_legacy"
+    and "quintic_legacy". These methods allow faster construction but evaluations
+    will be much slower.
 
     Examples
     --------
@@ -327,8 +355,10 @@ class RegularGridInterpolator:
 
         nu : sequence of ints, length ndim, optional
             If not None, the orders of the derivatives to evaluate.
-            Each entry must be positive.
+            Each entry must be non-negative.
             Only allowed for methods "slinear", "cubic" and "quintic".
+
+            .. versionadded:: 1.13
 
         Returns
         -------
