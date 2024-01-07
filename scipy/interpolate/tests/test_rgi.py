@@ -660,6 +660,12 @@ class TestRegularGridInterpolator:
                 (x, y), data, method='slinear', solver=lambda x: x, woof='woof'
             )
 
+        with assert_raises(TypeError):
+            # unknown argument
+            RegularGridInterpolator(
+                (x, y), data, method='slinear',  solver_args={'woof': 42}
+            )
+
 
 class MyValue:
     """
