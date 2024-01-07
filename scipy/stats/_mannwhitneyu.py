@@ -308,7 +308,7 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
         see [5] section 5.1.
     axis : int, optional
         Axis along which to perform the test. Default is 0.
-    method : {'auto', 'asymptotic', 'exact'} or `stats.PermutationMethod`, optional
+    method : {'auto', 'asymptotic', 'exact'} or `PermutationMethod` instance, optional
         Selects the method used to calculate the *p*-value.
         Default is 'auto'. The following options are available.
 
@@ -320,8 +320,8 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
         * ``'auto'``: chooses ``'exact'`` when the size of one of the samples
           is less than or equal to 8 and there are no ties;
           chooses ``'asymptotic'`` otherwise.
-        * `scipy.stats.PermutationMethod` instance. In this case, the p-value
-          is computed using`scipy.stats.permutation_test` with the provided
+        * `PermutationMethod` instance. In this case, the p-value
+          is computed using `permutation_test` with the provided
           configuration options and other appropriate settings.
 
     Returns
@@ -350,7 +350,7 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     Note that the exact method is *not* corrected for ties, but
     `mannwhitneyu` will not raise errors or warnings if there are ties in the
     data. If there are ties and either samples is small (fewer than ~10
-    observations), consider passing an instance of `stats.PermutationMethod`
+    observations), consider passing an instance of `PermutationMethod`
     as the `method` to perform a permutation test.
 
     The Mann-Whitney U test is a non-parametric version of the t-test for
