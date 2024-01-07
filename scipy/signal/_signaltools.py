@@ -4738,7 +4738,7 @@ def envelope(x, N=None, method='analytic'):
         from ._peak_finding import find_peaks
 
         if N is None:
-            msg = ('N cannot be None when using the peak method; it must specify'
+            msg = ('N cannot be None when using the peak method; it must specify '
                    'the minimal horizontal distance between neighbouring peaks')
             raise ValueError(msg)
         peaks_upper, _ = find_peaks(x, distance=N)
