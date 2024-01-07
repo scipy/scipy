@@ -18,9 +18,7 @@ project(
   ],
 )
 
-# https://mesonbuild.com/Python-module.html
-py_mod = import('python')
-py3 = py_mod.find_installation(pure: false)
+py3 = import('python').find_installation(pure: false)
 py3_dep = py3.dependency()
 
 # Emit a warning for 32-bit Python installs on Windows; users are getting
@@ -50,8 +48,8 @@ elif cc.get_id() == 'msvc'
           'when building with MSVC')
   endif
 endif
-if not cy.version().version_compare('>=0.29.35')
-  error('SciPy requires Cython >= 0.29.35')
+if not cy.version().version_compare('>=3.0.4')
+  error('SciPy requires Cython >= 3.0.4')
 endif
 
 _global_c_args = cc.get_supported_arguments(
@@ -138,6 +136,9 @@ tempita = files('scipy/_build_utils/tempita.py')
 use_pythran = get_option('use-pythran')
 if use_pythran
   pythran = find_program('pythran', native: true)
+  if not pythran.version().version_compare('>=0.14.0')
+    error('SciPy requires pythran >= 0.14.0')
+  endif
   # xsimd is unvendored from pythran by conda-forge, and due to a compiler
   # activation bug the default <prefix>/include/ may not be visible (see
   # gh-15698). Hence look for xsimd explicitly.

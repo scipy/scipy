@@ -228,7 +228,8 @@ generate_version = custom_target(
   output: 'version.py',
   input: '../tools/version_utils.py',
   command: [py3, '@INPUT@', '--source-root', '@SOURCE_ROOT@'],
-  install_dir: scipy_dir
+  install_dir: scipy_dir,
+  install_tag: 'python-runtime',
 )
 
 python_sources = [
@@ -247,11 +248,6 @@ endif
 py3.install_sources(
   python_sources,
   subdir: 'scipy'
-)
-
-py3.install_sources(
-  ['_build_utils/tests/test_scipy_version.py'],
-  subdir: 'scipy/_lib/tests'
 )
 
 # Copy the main __init__.py and pxd files to the build dir.
@@ -484,6 +480,7 @@ configure_file(
   output: '__config__.py',
   configuration : conf_data,
   install_dir: scipy_dir,
+  install_tag: 'python-runtime',
 )
 
 # Ordering of subdirs: special and linalg come first, because other submodules

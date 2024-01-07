@@ -7,7 +7,7 @@ from scipy.special._support_alternative_backends import (get_array_special_func,
 from scipy.conftest import array_api_compatible
 from scipy import special
 from scipy._lib._array_api import xp_assert_close
-from scipy._lib.array_api_compat.array_api_compat import numpy as np
+from scipy._lib.array_api_compat import numpy as np
 import numpy.array_api as np_array_api
 
 

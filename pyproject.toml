@@ -11,7 +11,7 @@
 build-backend = 'mesonpy'
 requires = [
     "meson-python>=0.15.0",
-    "Cython>=0.29.35,!=3.0.3",  # when updating version, also update check in meson.build
+    "Cython>=3.0.4",  # when updating version, also update check in meson.build
     "pybind11>=2.10.4",
     "pythran>=0.14.0",
 
@@ -110,7 +110,6 @@ dev = [
     "ruff",
     "cython-lint>=0.12.2",
     "rich-click",
-    "click",
     "doit>=0.36.0",
     "pydevtool",
 ]

@@ -8,7 +8,7 @@ channels:
   - conda-forge
 dependencies:
   - python
-  - cython!=3.0.3
+  - cython>=3.0.4
   - compilers  # Currently unavailable for Windows. Comment out this line and download Rtools and add <path>\ucrt64\bin\ to your path: https://cran.r-project.org/bin/windows/Rtools/rtools40.html
   - meson
   - meson-python
