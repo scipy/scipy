@@ -306,10 +306,10 @@ class RegularGridInterpolator:
     def _construct_spline(self, method, solver=None, **solver_args):
         if solver is None:
             solver = ssl.gcrotmk
-        spl, _ = make_ndbspl(
+        spl = make_ndbspl(
                 self.grid, self.values, self._SPLINE_DEGREE_MAP[method],
                 solver=solver, **solver_args
-                )
+              )
         return spl
 
     def _check_dimensionality(self, grid, values):

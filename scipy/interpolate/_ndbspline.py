@@ -311,7 +311,7 @@ def make_ndbspl(points, values, k=3, *, solver=ssl.gcrotmk, **solver_args):
     -----
     Boundary conditions are not-a-knot in all dimensions.
     """
-    # TODO: 1. check consistency of inputs
+    # XXX: if this is made public, need to check consistency of inputs
     ndim = len(points)
     xi_shape = tuple(len(x) for x in points)
 
@@ -350,5 +350,5 @@ def make_ndbspl(points, values, k=3, *, solver=ssl.gcrotmk, **solver_args):
 
     coef = solver(matr, vals, **solver_args)
     coef = coef.reshape(xi_shape + v_shape[ndim:])
-    return NdBSpline(t, coef, k), 1
+    return NdBSpline(t, coef, k)
 

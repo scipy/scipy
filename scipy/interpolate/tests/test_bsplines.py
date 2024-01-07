@@ -2166,7 +2166,7 @@ class TestNdBSpline:
 
 class TestMakeND:
     def make_2d_case(self):
-        # make a 2D separable spline ; XXX: remove as not needed?
+        # make a 2D separable spline
         x = np.arange(6)
         y = x**3
         spl = make_interp_spline(x, y, k=3)
@@ -2185,7 +2185,7 @@ class TestMakeND:
         values = x[:, None]**3 * (y**3 + 2*y)[None, :]
         xi = [(a, b) for a, b in itertools.product(x, y)]
 
-        bspl, dense = make_ndbspl((x, y), values, k=1)
+        bspl = make_ndbspl((x, y), values, k=1)
         assert_allclose(bspl(xi), values.ravel(), atol=1e-15)
 
         # test the coefficients vs outer product of 1D coefficients
@@ -2208,7 +2208,7 @@ class TestMakeND:
         # make values4.shape = (6, 6, 4)
         values = x[:, None]**3 * (y**3 + 2*y)[None, :]
         values4 = np.dstack((values, values, values, values))
-        bspl, dense = make_ndbspl((x, y), values4, k=3, solver=ssl.spsolve)
+        bspl = make_ndbspl((x, y), values4, k=3, solver=ssl.spsolve)
 
         result = bspl(xi)
         target = np.dstack((values, values, values, values))
@@ -2218,7 +2218,7 @@ class TestMakeND:
 
         # now two trailing dimensions
         values22 = values4.reshape((6, 6, 2, 2))
-        bspl, dense = make_ndbspl((x, y), values22, k=3, solver=ssl.spsolve)
+        bspl = make_ndbspl((x, y), values22, k=3, solver=ssl.spsolve)
 
         result = bspl(xi)
         assert result.shape == (36, 2, 2)
@@ -2233,7 +2233,7 @@ class TestMakeND:
         xi = [(a, b) for a, b in itertools.product(x, y)]
 
         values = (x**3)[:, None] * (y**2 + 2*y)[None, :]
-        bspl, dense = make_ndbspl((x, y), values, k=k, solver=ssl.spsolve)
+        bspl = make_ndbspl((x, y), values, k=k, solver=ssl.spsolve)
         assert_allclose(bspl(xi), values.ravel(), atol=1e-15)
 
     def _get_sample_2d_data(self):
@@ -2254,7 +2254,7 @@ class TestMakeND:
 
     def test_2D_vs_RGI_linear(self):
         x, y, z = self._get_sample_2d_data()
-        bspl, _ = make_ndbspl((x, y), z, k=1)
+        bspl = make_ndbspl((x, y), z, k=1)
         rgi = RegularGridInterpolator((x, y), z, method='linear')
 
         xi = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
@@ -2264,7 +2264,7 @@ class TestMakeND:
 
     def test_2D_vs_RGI_cubic(self):
         x, y, z = self._get_sample_2d_data()
-        bspl, _ = make_ndbspl((x, y), z, k=3, solver=ssl.spsolve)
+        bspl = make_ndbspl((x, y), z, k=3, solver=ssl.spsolve)
         rgi = RegularGridInterpolator((x, y), z, method='cubic_legacy')
 
         xi = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
@@ -2279,7 +2279,7 @@ class TestMakeND:
         # target accuracy of 1e-14. (the relation between solver atol/rtol
         # and the accuracy of the final result is not direct and needs experimenting)
         x, y, z = self._get_sample_2d_data()
-        bspl, _ = make_ndbspl((x, y), z, k=3, solver=solver, rtol=1e-6)
+        bspl = make_ndbspl((x, y), z, k=3, solver=solver, rtol=1e-6)
         rgi = RegularGridInterpolator((x, y), z, method='cubic_legacy')
 
         xi = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
@@ -2289,7 +2289,7 @@ class TestMakeND:
 
     def test_2D_vs_RGI_quintic(self):
         x, y, z = self._get_sample_2d_data()
-        bspl, _ = make_ndbspl((x, y), z, k=5, solver=ssl.spsolve)
+        bspl = make_ndbspl((x, y), z, k=5, solver=ssl.spsolve)
         rgi = RegularGridInterpolator((x, y), z, method='quintic_legacy')
 
         xi = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
@@ -2307,7 +2307,7 @@ class TestMakeND:
         z = np.cumsum(rndm.uniform(size=8))
         values = rndm.uniform(size=(6, 7, 8))
 
-        bspl, _ = make_ndbspl((x, y, z), values, k=k, solver=ssl.spsolve)
+        bspl = make_ndbspl((x, y, z), values, k=k, solver=ssl.spsolve)
         rgi = RegularGridInterpolator((x, y, z), values, method=meth)
 
         xi = np.random.uniform(low=0.7, high=2.1, size=(11, 3))
