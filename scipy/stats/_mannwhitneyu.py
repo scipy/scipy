@@ -320,10 +320,9 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
         * ``'auto'``: chooses ``'exact'`` when the size of one of the samples
           is less than or equal to 8 and there are no ties;
           chooses ``'asymptotic'`` otherwise.
-
-        `method` may also be an instance of `stats.PermutationMethod`, in which
-        case the p-value is computed using `scipy.stats.permutation_test` with
-        the provided configuration options and other appropriate settings.
+        * `scipy.stats.PermutationMethod` instance. In this case, the p-value
+          is computed using`scipy.stats.permutation_test` with the provided
+          configuration options and other appropriate settings.
 
     Returns
     -------
@@ -515,7 +514,7 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     elif method == "asymptotic":
         z = _get_mwu_z(U, n1, n2, ranks, continuity=use_continuity)
         p = stats.norm.sf(z)
-    else:
+    else:  # `PermutationMethod` instance (already validated)
         def statistic(x, y, axis):
             return mannwhitneyu(x, y, use_continuity=use_continuity,
                                 alternative=alternative, axis=axis,
