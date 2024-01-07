@@ -5,7 +5,6 @@
 extern "C" {
 #endif
 
-// True if python supports vectorcall on custom classes
 #ifdef PYPY_VERSION
 #  define Q_Py_TPFLAGS_HAVE_VECTORCALL 0
 #  define Q_Py_TPFLAGS_METHOD_DESCRIPTOR 0
