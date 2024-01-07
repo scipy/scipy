@@ -4727,7 +4727,7 @@ def envelope(x, N=None, method='analytic'):
         x_mean = np.mean(x)
         x_zero_mean = x - x_mean
         zero_mean_envelope = np.sqrt(convolve(x_zero_mean**2, np.ones(N)/N,
-                                             mode='same', method='direct'))
+                                              mode='same', method='direct'))
         return x_mean + zero_mean_envelope, x_mean - zero_mean_envelope
     elif method == 'peak':
         # Doing this import at the top of the file throws a circular import
