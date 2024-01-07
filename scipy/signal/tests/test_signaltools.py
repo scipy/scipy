@@ -25,7 +25,7 @@ from scipy.signal import (
     hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, zpk2tf, zpk2sos,
     invres, invresz, vectorstrength, lfiltic, tf2sos, sosfilt, sosfiltfilt,
     sosfilt_zi, tf2zpk, BadCoefficients, detrend, unique_roots, residue,
-    residuez,envelope)
+    residuez, envelope)
 from scipy.signal.windows import hann
 from scipy.signal._signaltools import (_filtfilt_gust, _compute_factors,
                                       _group_poles)
