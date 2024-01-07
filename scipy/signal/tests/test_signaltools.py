@@ -3720,7 +3720,7 @@ class TestEnvelope:
         with assert_raises(ValueError, match=msg):
             envelope(x, method='rms')
 
-        msg = ('N cannot be None when using the peak method; it must specify'
+        msg = ('N cannot be None when using the peak method; it must specify '
                'the minimal horizontal distance between neighbouring peaks')
 
         with assert_raises(ValueError, match=msg):
