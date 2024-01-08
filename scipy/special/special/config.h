@@ -131,6 +131,11 @@ SPECFUN_HOST_DEVICE complex<T> sqrt(const complex<T> &z) {
     return thrust::sqrt(z);
 }
 
+template <typename T>
+SPECFUN_HOST_DEVICE complex<T> conj(const complex<T> &z) {
+    return thrust::conj(z);
+}
+
 } // namespace std
 
 #else
