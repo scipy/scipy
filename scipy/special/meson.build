@@ -417,30 +417,21 @@ special_sources = [
   'special/error.h',
   'special/evalpoly.h',
   'special/lambertw.h',
-  'special/binom.h'
+  'special/binom.h',
+  'special/trig.h',
+  'special/zlog1.h',
+  'special/loggamma.h'
 ]
 
 special_cephes_sources = [
   'special/cephes/const.h',
   'special/cephes/polevl.h',
   'special/cephes/beta.h',
-  'special/cephes/gamma.h'
+  'special/cephes/gamma.h',
+  'special/cephes/trig.h'
 ]
 py3.install_sources(special_sources, subdir: 'scipy/special/special')
-foreach header: special_sources
-  fs.copyfile(header)
-endforeach
-
-
-foreach header: special_cephes_sources
-  configure_file(
-    input: header,
-    output: header.split('/')[-1],
-    copy: true,
-    install: true,
-    install_dir: py3.get_install_dir() / 'scipy/special/special/cephes'
-  )
-endforeach
+py3.install_sources(special_cephes_sources, subdir: 'scipy/special/special/cephes')
 
 python_sources = [
   '__init__.py',
