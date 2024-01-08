@@ -59,11 +59,11 @@ inline double loggamma_real(double x) {
 
 						    
 inline double digamma(double z) {
-    return scipy::special::digamma(z);
+    return special::digamma(z);
 }
 
 inline npy_cdouble cdigamma(npy_cdouble zp) {
     std::complex<double> z(npy_creal(zp), npy_cimag(zp));
-    std::complex<double> w = scipy::special::digamma(z);
+    std::complex<double> w = special::digamma(z);
     return npy_cpack(real(w), imag(w));
 }

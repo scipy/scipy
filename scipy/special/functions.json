@@ -1267,7 +1267,7 @@
         }
     },
     "psi": {
-        "_extra_special.h++": {
+        "_special.h++": {
             "cdigamma": "D->D",
             "digamma": "d->d"
         }
