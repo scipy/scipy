@@ -428,21 +428,9 @@ special_cephes_sources = [
   'special/cephes/beta.h',
   'special/cephes/gamma.h'
 ]
+
 py3.install_sources(special_sources, subdir: 'scipy/special/special')
-foreach header: special_sources
-  fs.copyfile(header)
-endforeach
-
-
-foreach header: special_cephes_sources
-  configure_file(
-    input: header,
-    output: header.split('/')[-1],
-    copy: true,
-    install: true,
-    install_dir: py3.get_install_dir() / 'scipy/special/special/cephes'
-  )
-endforeach
+py3.install_sources(special_cephes_sources, subdir: 'scipy/special/special/cephes')
 
 python_sources = [
   '__init__.py',
