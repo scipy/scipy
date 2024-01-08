@@ -265,6 +265,19 @@ class _TestCommon:
     """test common functionality shared by all sparse formats"""
     math_dtypes = supported_dtypes
 
+    # Run all tests with both sequential and parallel codepaths
+    @pytest.fixture(scope='class', params=("sequential", "parallel"), autouse=True)
+    def fixture_parallelize_test_base(self, request):
+        from scipy.sparse import _sparsetools
+        if request.param == "parallel":
+            # parallelize everything
+            _sparsetools.set_par_threshold(1)
+            _sparsetools.set_workers(4)
+        else:
+            # parallelize nothing
+            _sparsetools.set_par_threshold(0)
+            _sparsetools.set_workers(1)
+
     @classmethod
     def init_class(cls):
         # Canonical data.

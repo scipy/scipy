@@ -35,6 +35,7 @@
 
 #include "sparsetools.h"
 #include "util.h"
+#include "util_par_config.h"
 
 #define MAX_ARGS 16
 
@@ -532,6 +533,10 @@ static PyObject *c_array_from_object(PyObject *obj, int typenum, int is_output)
     }
 }
 
+/*
+ * Worker configuration. Used to parallelize CSR operations.
+ */
+worker_config workers;
 
 /*
  * Python module initialization

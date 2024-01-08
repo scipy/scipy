@@ -15,7 +15,7 @@ from ._base import issparse, _formats, _spbase, sparray
 from ._sputils import (isshape, getdtype, getdata, to_native, upcast,
                        check_shape)
 from . import _sparsetools
-from ._sparsetools import (bsr_matvec, bsr_matvecs, csr_matmat_maxnnz,
+from ._sparsetools import (bsr_matvec, bsr_matvecs, bsr_matmat_maxnnz,
                            bsr_matmat, bsr_transpose, bsr_sort_indices,
                            bsr_tocsr)
 
@@ -296,7 +296,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
         idx_dtype = self._get_index_dtype((self.indptr, self.indices,
                                            other.indptr, other.indices))
 
-        bnnz = csr_matmat_maxnnz(M//R, N//C,
+        bnnz = bsr_matmat_maxnnz(M//R, N//C,
                                  self.indptr.astype(idx_dtype),
                                  self.indices.astype(idx_dtype),
                                  other.indptr.astype(idx_dtype),

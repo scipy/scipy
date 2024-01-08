@@ -56,6 +56,23 @@ def test_threads():
         assert_(np.all(b.toarray() == 2))
 
 
+def test_threadpoolctl():
+    try:
+        import threadpoolctl
+        if not hasattr(threadpoolctl, "register"):
+            pytest.skip("threadpoolctl too old")
+            return
+    except ImportError:
+        pytest.skip("no threadpoolctl")
+        return
+
+    with threadpoolctl.threadpool_limits(limits=4):
+        assert_equal(_sparsetools.get_workers(), 4)
+
+    with threadpoolctl.threadpool_limits(limits=2, user_api='scipy'):
+        assert_equal(_sparsetools.get_workers(), 2)
+
+
 def test_regression_std_vector_dtypes():
     # Regression test for gh-3780, checking the std::vector typemaps
     # in sparsetools.cxx are complete.

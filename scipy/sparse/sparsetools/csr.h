@@ -8,6 +8,7 @@
 #include <numeric>
 
 #include "util.h"
+#include "util_par_config.h"
 #include "dense.h"
 
 /*
@@ -361,25 +362,15 @@ void csr_sort_indices(const I n_row,
                             I Aj[],
                             T Ax[])
 {
-    std::vector< std::pair<I,T> > temp;
-
-    for(I i = 0; i < n_row; i++){
+    std::for_each(workers.par_if_flops(Ap[n_row]),
+                  iota_iter<I>(0), iota_iter<I>(n_row), [&](I i){
         I row_start = Ap[i];
         I row_end   = Ap[i+1];
 
-        temp.resize(row_end - row_start);
-        for (I jj = row_start, n = 0; jj < row_end; jj++, n++){
-            temp[n].first  = Aj[jj];
-            temp[n].second = Ax[jj];
-        }
-
-        std::sort(temp.begin(),temp.end(),kv_pair_less<I,T>);
-
-        for(I jj = row_start, n = 0; jj < row_end; jj++, n++){
-            Aj[jj] = temp[n].first;
-            Ax[jj] = temp[n].second;
-        }
-    }
+        std::sort(kv_pair_iters(Aj + row_start, Ax + row_start),
+                  kv_pair_iters(Aj + row_end, Ax + row_end),
+                  kv_pair_less<I,T>);
+    });
 }
 
 
@@ -556,36 +547,70 @@ void csr_toell(const I n_row,
  */
 
 /*
- * Compute the number of non-zeroes (nnz) in the result of C = A * B.
- *
+ * Compute the total number of non-zeroes (nnz) in the result of C = A * B,
+ * as well as the per-row nnz. The per-row nnz is offset by 1 so that
+ * np.cumsum (or std::inclusive_scan) will compute Cp.
  */
-template <class I>
+template <class I, class T>
 npy_intp csr_matmat_maxnnz(const I n_row,
                            const I n_col,
                            const I Ap[],
                            const I Aj[],
+                           const T Ax[],
                            const I Bp[],
-                           const I Bj[])
+                           const I Bj[],
+                           const T Bx[],
+                                 I C_row_nnz[])
 {
-    // method that uses O(n) temp storage
-    std::vector<I> mask(n_col, -1);
+    // method uses O(n * num_threads) temp storage
 
-    npy_intp nnz = 0;
-    for(I i = 0; i < n_row; i++){
-        npy_intp row_nnz = 0;
+    C_row_nnz[0] = 0;
+
+    // Group the rows into chunks, with each chunk having its own workspace.
+    // Chunks are independent and can be processed in parallel.
+    for_each_chunk(workers.par_if_flops(Ap[n_row] + Bp[n_col]),
+                   iota_iter<I>(0), iota_iter<I>(n_row), [&n_col]{
+        // create workspace for one chunk of rows
+        return make_pair(
+            std::vector<I>(n_col, -1),  // mask
+            std::vector<T>(n_col, 0));  // sums
+    }, [&](I i, auto& workspace){
+        auto& [mask, sums] = workspace;
+
+        I row_nnz = 0;
 
         for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
             I j = Aj[jj];
+            T v = Ax[jj];
             for(I kk = Bp[j]; kk < Bp[j+1]; kk++){
                 I k = Bj[kk];
                 if(mask[k] != i){
-                    mask[k] = i;
-                    row_nnz++;
+                    T sum = v*Bx[kk];
+                    if (sum != 0){
+                        sums[k] = sum;
+                        mask[k] = i;
+                        row_nnz++;
+                    }
+                }else{
+                    T sum = sums[k];
+                    sum += v*Bx[kk];
+                    if(sum != 0){
+                        sums[k] = sum;
+                    }else{
+                        mask[k] = -1;
+                        row_nnz--;
+                    }
                 }
             }
         }
 
-        npy_intp next_nnz = nnz + row_nnz;
+        C_row_nnz[i+1] = row_nnz;
+    });
+
+    // compute C nnz while testing for overflow
+    npy_intp nnz = 0;
+    for(I i = 0; i < n_row; i++){
+        npy_intp row_nnz = C_row_nnz[i+1];
 
         if (row_nnz > NPY_MAX_INTP - nnz) {
             /*
@@ -594,7 +619,7 @@ npy_intp csr_matmat_maxnnz(const I n_row,
             throw std::overflow_error("nnz of the result is too large");
         }
 
-        nnz = next_nnz;
+        nnz += row_nnz;
     }
 
     return nnz;
@@ -603,6 +628,8 @@ npy_intp csr_matmat_maxnnz(const I n_row,
 /*
  * Compute CSR entries for matrix C = A*B.
  *
+ * NOTE: Cp must have already been precomputed by csr_matmat_maxnnz followed by
+ * np.cumsum or std::inclusive_scan.
  */
 template <class I, class T>
 void csr_matmat(const I n_row,
@@ -613,18 +640,24 @@ void csr_matmat(const I n_row,
                 const I Bp[],
                 const I Bj[],
                 const T Bx[],
-                      I Cp[],
+                const I Cp[],
                       I Cj[],
                       T Cx[])
 {
-    std::vector<I> next(n_col,-1);
-    std::vector<T> sums(n_col, 0);
+    // method uses O(n * num_threads) temp storage
 
-    I nnz = 0;
+    // Group the rows into chunks, with each chunk having its own workspace.
+    // Chunks are independent and can be processed in parallel.
+    for_each_chunk(workers.par_if_flops(Ap[n_row] + Bp[n_col]),
+                   iota_iter<I>(0), iota_iter<I>(n_row), [&n_col]{
+        // create workspace for one chunk of rows
+        return make_pair(
+            std::vector<I>(n_col, -1),  // next
+            std::vector<T>(n_col, 0));  // sums
+    }, [&](I i, auto& workspace){
+        auto& [next, sums] = workspace;
 
-    Cp[0] = 0;
-
-    for(I i = 0; i < n_row; i++){
+        I nnz = Cp[i];
         I head   = -2;
         I length =  0;
 
@@ -663,9 +696,7 @@ void csr_matmat(const I n_row,
             next[temp] = -1; //clear arrays
             sums[temp] =  0;
         }
-
-        Cp[i+1] = nnz;
-    }
+    });
 }
 
 
@@ -696,7 +727,6 @@ void csr_binop_csr_general(const I n_row, const I n_col,
                            const binary_op& op)
 {
     //Method that works for duplicate and/or unsorted indices
-
     std::vector<I>  next(n_col,-1);
     std::vector<T> A_row(n_col, 0);
     std::vector<T> B_row(n_col, 0);
@@ -1126,13 +1156,14 @@ void csr_matvec(const I n_row,
                 const T Xx[],
                       T Yx[])
 {
-    for(I i = 0; i < n_row; i++){
+    std::for_each(workers.par_if_flops(Ap[n_row]),
+                  iota_iter<I>(0), iota_iter<I>(n_row), [&](I i){
         T sum = Yx[i];
         for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
             sum += Ax[jj] * Xx[Aj[jj]];
         }
         Yx[i] = sum;
-    }
+    });
 }
 
 
@@ -1700,6 +1731,18 @@ inline int test_throw_error() {
     return 1;
 }
 
+inline int get_workers() {
+    return workers.get_workers();
+}
+
+inline void set_workers(int desired_workers) {
+    workers.set_workers(desired_workers);
+}
+
+inline void set_par_threshold(int threshold) {
+    workers.set_par_threshold(threshold);
+}
+
 #define SPTOOLS_CSR_EXTERN_TEMPLATE(I, T) \
   extern template void csr_diagonal(const I k, const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], T Yx[]); \
   extern template void csr_scale_rows(const I n_row, const I n_col, const I Ap[], const I Aj[], T Ax[], const T Xx[]); \
@@ -1709,7 +1752,7 @@ inline int test_throw_error() {
   extern template void csr_sort_indices(const I n_row, const I Ap[], I Aj[], T Ax[]); \
   extern template void csr_tocsc(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], I Bp[], I Bi[], T Bx[]); \
   extern template void csr_toell(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I row_length, I Bj[], T Bx[]); \
-  extern template void csr_matmat(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[]); \
+  extern template void csr_matmat(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], const I Cp[], I Cj[], T Cx[]); \
   extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const std::not_equal_to<T>& op); \
   extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const std::less<T>& op); \
   extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const std::less_equal<T>& op); \

@@ -520,19 +520,23 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         idx_dtype = self._get_index_dtype((self.indptr, self.indices,
                                      other.indptr, other.indices))
+        indptr = np.empty(major_axis + 1, dtype=idx_dtype)
 
         fn = getattr(_sparsetools, self.format + '_matmat_maxnnz')
         nnz = fn(M, N,
                  np.asarray(self.indptr, dtype=idx_dtype),
                  np.asarray(self.indices, dtype=idx_dtype),
+                 self.data,
                  np.asarray(other.indptr, dtype=idx_dtype),
-                 np.asarray(other.indices, dtype=idx_dtype))
+                 np.asarray(other.indices, dtype=idx_dtype),
+                 other.data,
+                 indptr)
 
         idx_dtype = self._get_index_dtype((self.indptr, self.indices,
                                      other.indptr, other.indices),
                                     maxval=nnz)
 
-        indptr = np.empty(major_axis + 1, dtype=idx_dtype)
+        indptr = np.cumsum(indptr, dtype=idx_dtype)
         indices = np.empty(nnz, dtype=idx_dtype)
         data = np.empty(nnz, dtype=upcast(self.dtype, other.dtype))
 

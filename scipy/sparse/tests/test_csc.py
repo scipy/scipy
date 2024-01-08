@@ -5,6 +5,20 @@ from scipy.sparse import csr_matrix, csc_matrix, lil_matrix
 import pytest
 
 
+# Run the entire test suite with both sequential and parallel codepaths
+@pytest.fixture(scope='module', params=("sequential", "parallel"), autouse=True)
+def fixture_parallelize_test_csc(request):
+    from scipy.sparse import _sparsetools
+    if request.param == "parallel":
+        # parallelize everything
+        _sparsetools.set_par_threshold(1)
+        _sparsetools.set_workers(4)
+    else:
+        # parallelize nothing
+        _sparsetools.set_par_threshold(0)
+        _sparsetools.set_workers(1)
+
+
 def test_csc_getrow():
     N = 10
     np.random.seed(0)

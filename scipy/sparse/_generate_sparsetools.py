@@ -37,6 +37,7 @@ bsr_scale_rows      v iiiiII*TT
 bsr_scale_columns   v iiiiII*TT
 bsr_sort_indices    v iiii*I*I*T
 bsr_transpose       v iiiiIIT*I*I*T
+bsr_matmat_maxnnz   l iiIIII
 bsr_matmat          v iiiiiiIITIIT*I*I*T
 bsr_matvec          v iiiiIITT*T
 bsr_matvecs         v iiiiiIITT*T
@@ -57,8 +58,8 @@ bsr_ge_bsr          v iiiiIITIIT*I*I*B
 CSC_ROUTINES = """
 csc_diagonal        v iiiIIT*T
 csc_tocsr           v iiIIT*I*I*T
-csc_matmat_maxnnz   l iiIIII
-csc_matmat          v iiIITIIT*I*I*T
+csc_matmat_maxnnz   l iiIITIIT*I
+csc_matmat          v iiIITIITI*I*T
 csc_matvec          v iiIITT*T
 csc_matvecs         v iiiIITT*T
 csc_elmul_csc       v iiIITIIT*I*I*T
@@ -76,8 +77,8 @@ csc_ge_csc          v iiIITIIT*I*I*B
 
 # csr.h
 CSR_ROUTINES = """
-csr_matmat_maxnnz   l iiIIII
-csr_matmat          v iiIITIIT*I*I*T
+csr_matmat_maxnnz   l iiIITIIT*I
+csr_matmat          v iiIITIITI*I*T
 csr_diagonal        v iiiIIT*T
 csr_tocsc           v iiIIT*I*I*T
 csr_tobsr           v iiiiIIT*I*I*T
@@ -111,6 +112,9 @@ csr_sample_offsets  i iiIIiII*I
 csr_hstack          v iiIIIT*I*I*T
 expandptr           v iI*I
 test_throw_error    i
+get_workers         i
+set_workers         v i
+set_par_threshold   v i
 csr_has_sorted_indices    i iII
 csr_has_canonical_format  i iII
 """
