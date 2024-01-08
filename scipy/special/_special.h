@@ -5,8 +5,8 @@
 
 #include "special/binom.h"
 #include "special/lambertw.h"
-#include "_loggamma.h"
-#include "_trig.h"
+#include "special/loggamma.h"
+#include "special/trig.h"
 
 
 inline double binom(double n, double k) {
