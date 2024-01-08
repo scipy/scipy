@@ -111,7 +111,7 @@ SPECFUN_HOST_DEVICE inline std::complex<double> loggamma(std::complex<double> z)
         set_error("loggamma", SF_ERROR_SINGULAR, NULL);
         return std::complex<double>(std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN());
     }
-    if (z.real() > detail::loggamma_SMALLX || std::fabs(z.imag()) > detail::loggamma_SMALLY) {
+    if (z.real() > detail::loggamma_SMALLX || std::abs(z.imag()) > detail::loggamma_SMALLY) {
         return detail::loggamma_stirling(z);
     }
     if (std::abs(z - 1.0) < detail::loggamma_TAYLOR_RADIUS) {
