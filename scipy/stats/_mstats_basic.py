@@ -84,7 +84,7 @@ def _chk_size(a, b):
     (na, nb) = (a.size, b.size)
     if na != nb:
         raise ValueError("The size of the input array should match!"
-                         " ({} <> {})".format(na, nb))
+                         f" ({na} <> {nb})")
     return (a, b, na)
 
 
@@ -3008,8 +3008,9 @@ def kurtosistest(a, axis=0, alternative='two-sided'):
             " were given." % np.min(n))
     if np.min(n) < 20:
         warnings.warn(
-            "kurtosistest only valid for n>=20 ... continuing anyway, n=%i" %
-            np.min(n))
+            "kurtosistest only valid for n>=20 ... continuing anyway, n=%i" % np.min(n),
+            stacklevel=2,
+        )
 
     b2 = kurtosis(a, axis, fisher=False)
     E = 3.0*(n-1) / (n+1)

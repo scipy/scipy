@@ -303,9 +303,10 @@ def check_discrete_chisquare(distfn, arg, rvs, alpha, msg):
     freq, hsupp = np.histogram(rvs, histsupp)
     chis, pval = stats.chisquare(np.array(freq), len(rvs)*distmass)
 
-    npt.assert_(pval > alpha,
-                'chisquare - test for %s at arg = %s with pval = %s' %
-                (msg, str(arg), str(pval)))
+    npt.assert_(
+        pval > alpha,
+        f'chisquare - test for {msg} at arg = {str(arg)} with pval = {str(pval)}'
+    )
 
 
 def check_scale_docstring(distfn):

@@ -32,8 +32,8 @@ def _check_func(checker, argname, thefunc, x0, args, numinputs,
             if len(output_shape) > 1:
                 if output_shape[1] == 1:
                     return shape(res)
-            msg = "{}: there is a mismatch between the input and output " \
-                  "shape of the '{}' argument".format(checker, argname)
+            msg = f"{checker}: there is a mismatch between the input and output " \
+                  f"shape of the '{argname}' argument"
             func_name = getattr(thefunc, '__name__', None)
             if func_name:
                 msg += " '%s'." % func_name
@@ -178,7 +178,7 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
         elif status == 1:
             pass
         elif status in [2, 3, 4, 5]:
-            warnings.warn(msg, RuntimeWarning)
+            warnings.warn(msg, RuntimeWarning, stacklevel=2)
         else:
             raise TypeError(msg)
         return res['x']
@@ -449,9 +449,9 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=False,
               2: ["The relative error between two consecutive "
                   "iterates is at most %f" % xtol, None],
               3: ["Both actual and predicted relative reductions in "
-                  "the sum of squares\n  are at most {:f} and the "
+                  f"the sum of squares\n  are at most {ftol:f} and the "
                   "relative error between two consecutive "
-                  "iterates is at \n  most {:f}".format(ftol, xtol), None],
+                  f"iterates is at \n  most {xtol:f}", None],
               4: ["The cosine of the angle between func(x) and any "
                   "column of the\n  Jacobian is at most %f in "
                   "absolute value" % gtol, None],
@@ -496,7 +496,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=False,
         return (retval[0], cov_x) + retval[1:-1] + (errors[info][0], info)
     else:
         if info in LEASTSQ_FAILURE:
-            warnings.warn(errors[info][0], RuntimeWarning)
+            warnings.warn(errors[info][0], RuntimeWarning, stacklevel=2)
         elif info == 0:
             raise errors[info][1](errors[info][0])
         return retval[0], info
@@ -559,7 +559,9 @@ def _wrap_jac(jac, xdata, transform):
             return transform[:, np.newaxis] * np.asarray(jac(xdata, *params))
     else:
         def jac_wrapped(params):
-            return solve_triangular(transform, np.asarray(jac(xdata, *params)), lower=True)
+            return solve_triangular(transform,
+                                    np.asarray(jac(xdata, *params)),
+                                    lower=True)
     return jac_wrapped
 
 
@@ -1020,7 +1022,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     if warn_cov:
         warnings.warn('Covariance of the parameters could not be estimated',
-                      category=OptimizeWarning)
+                      category=OptimizeWarning, stacklevel=2)
 
     if full_output:
         return popt, pcov, infodict, errmsg, ier

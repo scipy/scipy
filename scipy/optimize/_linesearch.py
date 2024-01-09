@@ -315,7 +315,8 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
             extra_condition2, maxiter=maxiter)
 
     if derphi_star is None:
-        warn('The line search algorithm did not converge', LineSearchWarning)
+        warn('The line search algorithm did not converge',
+             LineSearchWarning, stacklevel=2)
     else:
         # derphi_star is a number (derphi) -- so use the most recently
         # calculated gradient used in computing it derphi = gfk*pk
@@ -427,7 +428,7 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
                 msg = "The line search algorithm could not find a solution " + \
                       "less than or equal to amax: %s" % amax
 
-            warn(msg, LineSearchWarning)
+            warn(msg, LineSearchWarning, stacklevel=2)
             break
 
         not_first_iteration = i > 0
@@ -468,7 +469,8 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
         alpha_star = alpha1
         phi_star = phi_a1
         derphi_star = None
-        warn('The line search algorithm did not converge', LineSearchWarning)
+        warn('The line search algorithm did not converge',
+             LineSearchWarning, stacklevel=2)
 
     return alpha_star, phi_star, phi0, derphi_star
 

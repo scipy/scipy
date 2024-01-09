@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from numpy import cos, exp, log, pi, sin, sqrt
 
 from .go_benchmark import Benchmark
@@ -216,7 +215,8 @@ class Problem07(Benchmark):
 
     .. math::
 
-       f_{\\text{Problem07}}(x) = \\sin(x) + \\sin \\left(\\frac{10}{3}x \\right) + \\log(x) - 0.84x + 3
+       f_{\\text{Problem07}}(x) = \\sin(x) + \\sin \\left(\\frac{10}{3}x
+                                  \\right) + \\log(x) - 0.84x + 3
 
     Bound constraints: :math:`x \\in [2.7, 7.5]`
 
@@ -572,8 +572,9 @@ class Problem18(Benchmark):
 
     .. math::
 
-         f_{\\text{Problem18}}(x) = \\begin{cases}(x-2)^2 & \\textrm{if} \\hspace{5pt} x \\leq 3 \\\\
-                                                  2\\log(x-2)+1&\\textrm{otherwise}\\end{cases}
+         f_{\\text{Problem18}}(x)
+         = \\begin{cases}(x-2)^2 & \\textrm{if} \\hspace{5pt} x
+           \\leq 3 \\\\ 2\\log(x-2)+1&\\textrm{otherwise}\\end{cases}
 
     Bound constraints: :math:`x \\in [0, 6]`
 

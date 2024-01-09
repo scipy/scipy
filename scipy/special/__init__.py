@@ -768,7 +768,7 @@ Convenience functions
    exprel    -- Relative error exponential, (exp(x)-1)/x, for use when `x` is near zero.
    sinc      -- Return the sinc function.
 
-"""
+"""  # noqa: E501
 
 import warnings
 
@@ -852,3 +852,12 @@ def btdtri(*args, **kwargs):  # type: ignore [no-redef]
 
 
 btdtri.__doc__ = _ufuncs.btdtri.__doc__  # type: ignore [misc]
+
+
+def _get_include():
+    """This function is for development purposes only.
+
+    This function could disappear or its behavior could change at any time.
+    """
+    import os
+    return os.path.dirname(__file__)

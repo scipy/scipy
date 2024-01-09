@@ -336,9 +336,9 @@ class nbinom_gen(rv_discrete):
 
     def _logcdf(self, x, n, p):
         k = floor(x)
+        k, n, p = np.broadcast_arrays(k, n, p)
         cdf = self._cdf(k, n, p)
         cond = cdf > 0.5
-
         def f1(k, n, p):
             return np.log1p(-special.betainc(k + 1, n, 1 - p))
 
