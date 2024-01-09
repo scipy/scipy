@@ -9,7 +9,7 @@ from numpy.testing import assert_equal, assert_
 import pytest
 from pytest import raises as assert_raises
 import hypothesis.extra.numpy as npst
-from hypothesis import given, strategies, reproduce_failure  # noqa
+from hypothesis import given, strategies, reproduce_failure  # noqa: F401
 from scipy.conftest import array_api_compatible
 
 from scipy._lib._array_api import xp_assert_equal

@@ -144,8 +144,10 @@ class TestExpM:
             a = scale * speye(3, 3, dtype=dtype, format='csc')
             e = exp(scale, dtype=dtype) * eye(3, dtype=dtype)
             with suppress_warnings() as sup:
-                sup.filter(SparseEfficiencyWarning,
-                           "Changing the sparsity structure of a csc_matrix is expensive.")
+                sup.filter(
+                    SparseEfficiencyWarning,
+                    "Changing the sparsity structure of a csc_matrix is expensive."
+                )
                 exact_onenorm = _expm(a, use_exact_onenorm=True).toarray()
                 inexact_onenorm = _expm(a, use_exact_onenorm=False).toarray()
             assert_array_almost_equal_nulp(exact_onenorm, e, nulp=100)
@@ -158,8 +160,10 @@ class TestExpM:
             a = scale * speye(3, 3, dtype=dtype, format='csc')
             e = exp(scale) * eye(3, dtype=dtype)
             with suppress_warnings() as sup:
-                sup.filter(SparseEfficiencyWarning,
-                           "Changing the sparsity structure of a csc_matrix is expensive.")
+                sup.filter(
+                    SparseEfficiencyWarning,
+                    "Changing the sparsity structure of a csc_matrix is expensive."
+                )
                 assert_array_almost_equal_nulp(expm(a).toarray(), e, nulp=100)
 
     def test_logm_consistency(self):
@@ -472,7 +476,7 @@ class TestExpM:
         # This is Ward's example #4.
         # This is a version of the Forsythe matrix.
         # The eigenvector problem is badly conditioned.
-        # Ward's algorithm has difficulty esimating the accuracy
+        # Ward's algorithm has difficulty estimating the accuracy
         # of its results for this problem.
         #
         # Check the construction of one instance of this family of matrices.

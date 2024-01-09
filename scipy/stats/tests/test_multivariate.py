@@ -18,7 +18,6 @@ import numpy as np
 import scipy.linalg
 from scipy.stats._multivariate import (_PSD,
                                        _lnB,
-                                       _cho_inv_batch,
                                        multivariate_normal_frozen)
 from scipy.stats import (multivariate_normal, multivariate_hypergeom,
                          matrix_normal, special_ortho_group, ortho_group,
@@ -1483,6 +1482,50 @@ class TestWishart:
             assert_equal(w.entropy(), wishart.entropy(df, scale))
             assert_equal(w.pdf(x), wishart.pdf(x, df, scale))
 
+    def test_wishart_2D_rvs(self):
+        dim = 3
+        df = 10
+
+        # Construct a simple non-diagonal positive definite matrix
+        scale = np.eye(dim)
+        scale[0,1] = 0.5
+        scale[1,0] = 0.5
+
+        # Construct frozen Wishart random variables
+        w = wishart(df, scale)
+
+        # Get the generated random variables from a known seed
+        np.random.seed(248042)
+        w_rvs = wishart.rvs(df, scale)
+        np.random.seed(248042)
+        frozen_w_rvs = w.rvs()
+
+        # Manually calculate what it should be, based on the Bartlett (1933)
+        # decomposition of a Wishart into D A A' D', where D is the Cholesky
+        # factorization of the scale matrix and A is the lower triangular matrix
+        # with the square root of chi^2 variates on the diagonal and N(0,1)
+        # variates in the lower triangle.
+        np.random.seed(248042)
+        covariances = np.random.normal(size=3)
+        variances = np.r_[
+            np.random.chisquare(df),
+            np.random.chisquare(df-1),
+            np.random.chisquare(df-2),
+        ]**0.5
+
+        # Construct the lower-triangular A matrix
+        A = np.diag(variances)
+        A[np.tril_indices(dim, k=-1)] = covariances
+
+        # Wishart random variate
+        D = np.linalg.cholesky(scale)
+        DA = D.dot(A)
+        manual_w_rvs = np.dot(DA, DA.T)
+
+        # Test for equality
+        assert_allclose(w_rvs, manual_w_rvs)
+        assert_allclose(frozen_w_rvs, manual_w_rvs)
+
     def test_1D_is_chisquared(self):
         # The 1-dimensional Wishart with an identity scale matrix is just a
         # chi-squared distribution.
@@ -1787,7 +1830,7 @@ class TestInvwishart:
             # entropy
             assert_allclose(iw.entropy(), ig.entropy())
 
-    def test_wishart_invwishart_2D_rvs(self):
+    def test_invwishart_2D_rvs(self):
         dim = 3
         df = 10
 
@@ -1796,72 +1839,69 @@ class TestInvwishart:
         scale[0,1] = 0.5
         scale[1,0] = 0.5
 
-        # Construct frozen Wishart and inverse Wishart random variables
-        w = wishart(df, scale)
+        # Construct frozen inverse-Wishart random variables
         iw = invwishart(df, scale)
 
         # Get the generated random variables from a known seed
-        np.random.seed(248042)
-        w_rvs = wishart.rvs(df, scale)
-        np.random.seed(248042)
-        frozen_w_rvs = w.rvs()
-        np.random.seed(248042)
+        np.random.seed(608072)
         iw_rvs = invwishart.rvs(df, scale)
-        np.random.seed(248042)
+        np.random.seed(608072)
         frozen_iw_rvs = iw.rvs()
 
-        # Manually calculate what it should be, based on the Bartlett (1933)
-        # decomposition of a Wishart into D A A' D', where D is the Cholesky
-        # factorization of the scale matrix and A is the lower triangular matrix
-        # with the square root of chi^2 variates on the diagonal and N(0,1)
-        # variates in the lower triangle.
-        np.random.seed(248042)
+        # Manually calculate what it should be, based on the decomposition in
+        # https://arxiv.org/abs/2310.15884 of an invers-Wishart into L L',
+        # where L A = D, D is the Cholesky factorization of the scale matrix,
+        # and A is the lower triangular matrix with the square root of chi^2
+        # variates on the diagonal and N(0,1) variates in the lower triangle.
+        # the diagonal chi^2 variates in this A are reversed compared to those
+        # in the Bartlett decomposition A for Wishart rvs.
+        np.random.seed(608072)
         covariances = np.random.normal(size=3)
         variances = np.r_[
-            np.random.chisquare(df),
-            np.random.chisquare(df-1),
             np.random.chisquare(df-2),
+            np.random.chisquare(df-1),
+            np.random.chisquare(df),
         ]**0.5
 
         # Construct the lower-triangular A matrix
         A = np.diag(variances)
         A[np.tril_indices(dim, k=-1)] = covariances
 
-        # Wishart random variate
+        # inverse-Wishart random variate
         D = np.linalg.cholesky(scale)
-        DA = D.dot(A)
-        manual_w_rvs = np.dot(DA, DA.T)
-
-        # inverse Wishart random variate
-        # Supposing that the inverse wishart has scale matrix `scale`, then the
-        # random variate is the inverse of a random variate drawn from a Wishart
-        # distribution with scale matrix `inv_scale = np.linalg.inv(scale)`
-        iD = np.linalg.cholesky(np.linalg.inv(scale))
-        iDA = iD.dot(A)
-        manual_iw_rvs = np.linalg.inv(np.dot(iDA, iDA.T))
+        L = np.linalg.solve(A.T, D.T).T
+        manual_iw_rvs = np.dot(L, L.T)
 
         # Test for equality
-        assert_allclose(w_rvs, manual_w_rvs)
-        assert_allclose(frozen_w_rvs, manual_w_rvs)
         assert_allclose(iw_rvs, manual_iw_rvs)
         assert_allclose(frozen_iw_rvs, manual_iw_rvs)
 
-    def test_cho_inv_batch(self):
-        """Regression test for gh-8844."""
-        a0 = np.array([[2, 1, 0, 0.5],
-                       [1, 2, 0.5, 0.5],
-                       [0, 0.5, 3, 1],
-                       [0.5, 0.5, 1, 2]])
-        a1 = np.array([[2, -1, 0, 0.5],
-                       [-1, 2, 0.5, 0.5],
-                       [0, 0.5, 3, 1],
-                       [0.5, 0.5, 1, 4]])
-        a = np.array([a0, a1])
-        ainv = a.copy()
-        _cho_inv_batch(ainv)
-        ident = np.eye(4)
-        assert_allclose(a[0].dot(ainv[0]), ident, atol=1e-15)
-        assert_allclose(a[1].dot(ainv[1]), ident, atol=1e-15)
+    def test_sample_mean(self):
+        """Test that sample mean consistent with known mean."""
+        # Construct an arbitrary positive definite scale matrix
+        df = 10
+        sample_size = 20_000
+        for dim in [1, 5]:
+            scale = np.diag(np.arange(dim) + 1)
+            scale[np.tril_indices(dim, k=-1)] = np.arange(dim * (dim - 1) / 2)
+            scale = np.dot(scale.T, scale)
+
+            dist = invwishart(df, scale)
+            Xmean_exp = dist.mean()
+            Xvar_exp = dist.var()
+            Xmean_std = (Xvar_exp / sample_size)**0.5  # asymptotic SE of mean estimate
+
+            X = dist.rvs(size=sample_size, random_state=1234)
+            Xmean_est = X.mean(axis=0)
+
+            ntests = dim*(dim + 1)//2
+            fail_rate = 0.01 / ntests  # correct for multiple tests
+            max_diff = norm.ppf(1 - fail_rate / 2)
+            assert np.allclose(
+                (Xmean_est - Xmean_exp) / Xmean_std,
+                0,
+                atol=max_diff,
+            )
 
     def test_logpdf_4x4(self):
         """Regression test for gh-8844."""
@@ -1944,7 +1984,7 @@ class TestSpecialOrthoGroup:
 
         # Dot a few rows (0, 1, 2) with unit vectors (0, 2, 4, 3),
         #   effectively picking off entries in the matrices of xs.
-        #   These projections should all have the same disribution,
+        #   These projections should all have the same distribution,
         #     establishing rotational invariance. We use the two-sided
         #     KS test to confirm this.
         #   We could instead test that angles between random vectors
@@ -2032,7 +2072,7 @@ class TestOrthoGroup:
 
         # Dot a few rows (0, 1, 2) with unit vectors (0, 2, 4, 3),
         #   effectively picking off entries in the matrices of xs.
-        #   These projections should all have the same disribution,
+        #   These projections should all have the same distribution,
         #     establishing rotational invariance. We use the two-sided
         #     KS test to confirm this.
         #   We could instead test that angles between random vectors
@@ -2238,9 +2278,11 @@ class TestUnitaryGroup:
         x = unitary_group.rvs(3)
         x2 = unitary_group.rvs(3, random_state=514)
 
-        expected = np.array([[0.308771+0.360312j, 0.044021+0.622082j, 0.160327+0.600173j],
-                             [0.732757+0.297107j, 0.076692-0.4614j, -0.394349+0.022613j],
-                             [-0.148844+0.357037j, -0.284602-0.557949j, 0.607051+0.299257j]])
+        expected = np.array(
+            [[0.308771+0.360312j, 0.044021+0.622082j, 0.160327+0.600173j],
+             [0.732757+0.297107j, 0.076692-0.4614j, -0.394349+0.022613j],
+             [-0.148844+0.357037j, -0.284602-0.557949j, 0.607051+0.299257j]]
+        )
 
         assert_array_almost_equal(x, expected)
         assert_array_almost_equal(x2, expected)
@@ -2459,7 +2501,8 @@ class TestMultivariateT:
         ([7, 7], [[7, 0], [0, 7]], 7, [7, 7], [[7, 0], [0, 7]], 7)
     ]
 
-    @pytest.mark.parametrize("loc, shape, df, loc_ans, shape_ans, df_ans", DEFAULT_ARGS_TESTS)
+    @pytest.mark.parametrize("loc, shape, df, loc_ans, shape_ans, df_ans",
+                             DEFAULT_ARGS_TESTS)
     def test_default_args(self, loc, shape, df, loc_ans, shape_ans, df_ans):
         dist = multivariate_t(loc=loc, shape=shape, df=df)
         assert_equal(dist.loc, loc_ans)
@@ -2472,8 +2515,10 @@ class TestMultivariateT:
         (np.array([-1]), np.array([2]), 3, [-1], [[2]], 3)
     ]
 
-    @pytest.mark.parametrize("loc, shape, df, loc_ans, shape_ans, df_ans", ARGS_SHAPES_TESTS)
-    def test_scalar_list_and_ndarray_arguments(self, loc, shape, df, loc_ans, shape_ans, df_ans):
+    @pytest.mark.parametrize("loc, shape, df, loc_ans, shape_ans, df_ans",
+                             ARGS_SHAPES_TESTS)
+    def test_scalar_list_and_ndarray_arguments(self, loc, shape, df, loc_ans,
+                                               shape_ans, df_ans):
         dist = multivariate_t(loc, shape, df)
         assert_equal(dist.loc, loc_ans)
         assert_equal(dist.shape, shape_ans)
@@ -2875,7 +2920,7 @@ class TestMultivariateHypergeom:
              [5, 10], [[8, 8], [8, 2]],
              [[0.3916084, 0.006993007], [0, 0.4761905]]),
             # test with empty arrays.
-            (np.array([], np.int_), np.array([], np.int_), 0, []),
+            (np.array([], dtype=int), np.array([], dtype=int), 0, []),
             ([1, 2], [4, 5], 5, 0),
             # Ground truth value from R dmvhyper
             ([3, 3, 0], [5, 6, 7], 6, 0.01077354)
@@ -2967,7 +3012,7 @@ class TestMultivariateHypergeom:
         assert_allclose(mean2, [[np.nan, np.nan, np.nan], [1., 0., 1.]],
                         rtol=1e-17)
 
-        mean3 = multivariate_hypergeom.mean(m=np.array([], np.int_), n=0)
+        mean3 = multivariate_hypergeom.mean(m=np.array([], dtype=int), n=0)
         assert_equal(mean3, [])
         assert_(mean3.shape == (0, ))
 
@@ -2982,7 +3027,7 @@ class TestMultivariateHypergeom:
         assert_allclose(var2, [[np.nan, np.nan, np.nan], [0., 0., 0.]],
                         rtol=1e-17)
 
-        var3 = multivariate_hypergeom.var(m=np.array([], np.int_), n=0)
+        var3 = multivariate_hypergeom.var(m=np.array([], dtype=int), n=0)
         assert_equal(var3, [])
         assert_(var3.shape == (0, ))
 
@@ -2995,7 +3040,7 @@ class TestMultivariateHypergeom:
         cov4 = [[0., 0., 0.], [0., 0., 0.], [0., 0., 0.]]
         assert_equal(cov3, cov4)
 
-        cov5 = multivariate_hypergeom.cov(m=np.array([], np.int_), n=0)
+        cov5 = multivariate_hypergeom.cov(m=np.array([], dtype=int), n=0)
         cov6 = np.array([], dtype=np.float64).reshape(0, 0)
         assert_allclose(cov5, cov6, rtol=1e-17)
         assert_(cov5.shape == (0, 0))
@@ -3007,7 +3052,7 @@ class TestMultivariateHypergeom:
         m = [7, 9, 11, 13]
         x = [[0, 0, 0, 12], [0, 0, 1, 11], [0, 1, 1, 10],
              [1, 1, 1, 9], [1, 1, 2, 8]]
-        x = np.asarray(x, dtype=np.int_)
+        x = np.asarray(x, dtype=int)
         mhg_frozen = multivariate_hypergeom(m, n)
         assert_allclose(mhg_frozen.pmf(x),
                         multivariate_hypergeom.pmf(x, m, n))

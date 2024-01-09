@@ -128,7 +128,6 @@ _mul_overflow_f_int(F_INT mx, F_INT my) {
 	#if defined(NO_APPEND_FORTRAN)
 	/* nothing to do */
 	#else
-		#define PERCUR PERCUR_
 		#define PARCUR PARCUR_
 		#define CLOCUR CLOCUR_
 		#define SURFIT SURFIT_
@@ -136,13 +135,11 @@ _mul_overflow_f_int(F_INT mx, F_INT my) {
 	#endif
 #else
 	#if defined(NO_APPEND_FORTRAN)
-		#define PERCUR percur
 		#define PARCUR parcur
 		#define CLOCUR clocur
 		#define SURFIT surfit
 		#define INSERT insert
 	#else
-		#define PERCUR percur_
 		#define PARCUR parcur_
 		#define CLOCUR clocur_
 		#define SURFIT surfit_
@@ -150,9 +147,6 @@ _mul_overflow_f_int(F_INT mx, F_INT my) {
 	#endif
 #endif
 
-void PERCUR(F_INT*,F_INT*,double*,double*,double*,F_INT*,
-        double*,F_INT*,F_INT*,double*,double*,double*,
-        double*,F_INT*,F_INT*,F_INT*);
 void PARCUR(F_INT*,F_INT*,F_INT*,F_INT*,double*,F_INT*,double*,
         double*,double*,double*,F_INT*,double*,F_INT*,F_INT*,
         double*,F_INT*,double*,double*,double*,F_INT*,F_INT*,F_INT*);

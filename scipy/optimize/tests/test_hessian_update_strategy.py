@@ -112,7 +112,7 @@ class TestHessianUpdateStrategy(TestCase):
                         qn.update(np.ones(ndims), np.arange(ndims))
 
     def test_rosenbrock_with_no_exception(self):
-        # Define auxiliar problem
+        # Define auxiliary problem
         prob = Rosenbrock(n=5)
         # Define iteration points
         x_list = [[0.0976270, 0.4303787, 0.2055267, 0.0897663, -0.15269040],
@@ -225,7 +225,7 @@ class TestHessianUpdateStrategy(TestCase):
         assert_array_equal(B, B_updated)
 
     def test_BFGS_skip_update(self):
-        # Define auxiliar problem
+        # Define auxiliary problem
         prob = Rosenbrock(n=5)
         # Define iteration points
         x_list = [[0.0976270, 0.4303787, 0.2055267, 0.0897663, -0.15269040],

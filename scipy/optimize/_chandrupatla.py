@@ -1,10 +1,10 @@
 import numpy as np
 from scipy.optimize._optimize import OptimizeResult
-from scipy.optimize._zeros_py import (_scalar_optimization_initialize,
+from scipy.optimize._zeros_py import (_scalar_optimization_initialize,  # noqa: F401
                                       _chandrupatla_iv,
                                       _scalar_optimization_loop,
-                                      _ECONVERGED, _ESIGNERR, _ECONVERR,  # noqa
-                                      _EVALUEERR, _ECALLBACK, _EINPROGRESS)  # noqa
+                                      _ECONVERGED, _ESIGNERR, _ECONVERR,
+                                      _EVALUEERR, _ECALLBACK, _EINPROGRESS)
 
 
 def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
@@ -160,7 +160,7 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
 
     def pre_func_eval(work):
         # `_check_termination` is called first -> `x3 - x2 > x2 - x1`
-        # But let's calculate a few terms that we'll re-use
+        # But let's calculate a few terms that we'll reuse
         x21 = work.x2 - work.x1
         x32 = work.x3 - work.x2
 

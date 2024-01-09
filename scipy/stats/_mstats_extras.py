@@ -15,7 +15,7 @@ __all__ = ['compare_medians_ms',
 
 
 import numpy as np
-from numpy import float64, int_, ndarray
+from numpy import float64, ndarray
 
 import numpy.ma as ma
 from numpy.ma import MaskedArray
@@ -37,7 +37,7 @@ def hdquantiles(data, prob=list([.25,.5,.75]), axis=None, var=False,):
     data : array_like
         Data array.
     prob : sequence, optional
-        Sequence of quantiles to compute.
+        Sequence of probabilities at which to compute the quantiles.
     axis : int or None, optional
         Axis along which to compute the quantiles. If None, use a flattened
         array.
@@ -54,6 +54,27 @@ def hdquantiles(data, prob=list([.25,.5,.75]), axis=None, var=False,):
     See Also
     --------
     hdquantiles_sd
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.stats.mstats import hdquantiles
+    >>>
+    >>> # Sample data
+    >>> data = np.array([1.2, 2.5, 3.7, 4.0, 5.1, 6.3, 7.0, 8.2, 9.4])
+    >>>
+    >>> # Probabilities at which to compute quantiles
+    >>> probabilities = [0.25, 0.5, 0.75]
+    >>>
+    >>> # Compute Harrell-Davis quantile estimates
+    >>> quantile_estimates = hdquantiles(data, prob=probabilities)
+    >>>
+    >>> # Display the quantile estimates
+    >>> for i, quantile in enumerate(probabilities):
+    ...     print(f"{int(quantile * 100)}th percentile: {quantile_estimates[i]}")
+    25th percentile: 3.1505820231763066 # may vary
+    50th percentile: 5.194344084883956
+    75th percentile: 7.430626414674935
 
     """
     def _hd_1D(data,prob,var):
@@ -259,7 +280,7 @@ def mjci(data, prob=[0.25,0.5,0.75], axis=None):
     def _mjci_1D(data, p):
         data = np.sort(data.compressed())
         n = data.size
-        prob = (np.array(p) * n + 0.5).astype(int_)
+        prob = (np.array(p) * n + 0.5).astype(int)
         betacdf = beta.cdf
 
         mj = np.empty(len(prob), float64)

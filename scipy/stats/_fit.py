@@ -166,7 +166,7 @@ class FitResult:
         >>> plt.show()
         """
         try:
-            import matplotlib  # noqa
+            import matplotlib  # noqa: F401
         except ModuleNotFoundError as exc:
             message = "matplotlib must be installed to use method `plot`."
             raise ModuleNotFoundError(message) from exc
@@ -1027,7 +1027,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     (0.1119257570456813, 0.0196)
 
     Indeed, this p-value is much smaller, and small enough to (correctly)
-    reject the null hypothesis at common signficance levels, including 5% and
+    reject the null hypothesis at common significance levels, including 5% and
     2.5%.
 
     However, the KS statistic is not very sensitive to all deviations from

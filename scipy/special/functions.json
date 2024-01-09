@@ -31,9 +31,9 @@
         }
     },
     "_lambertw": {
-        "_lambertw.pxd": {
+	"_special.h++": {
             "lambertw_scalar": "Dld->D"
-        }
+	}
     },
     "_lanczos_sum_expg_scaled": {
         "cephes.h": {
@@ -178,14 +178,13 @@
         }
     },
     "bdtrik": {
-        "cdf_wrappers.h": {
-            "cdfbin2_wrap": "ddd->d"
+        "_cdflib_wrappers.pxd": {
+            "bdtrik": "ddd->d"
         }
     },
     "bdtrin": {
-        "cdf_wrappers.h": {
-            "cdfbin3_wrap": "ddd->d"
-        }
+        "_cdflib_wrappers.pxd": {
+            "bdtrin": "ddd->d"        }
     },
     "bei": {
         "specfun_wrappers.h": {
@@ -247,7 +246,7 @@
         }
     },
     "binom": {
-        "orthogonal_eval.pxd": {
+        "_special.h++": {
             "binom": "dd->d"
         }
     },
@@ -272,13 +271,13 @@
         }
     },
     "btdtria": {
-        "cdf_wrappers.h": {
-            "cdfbet3_wrap": "ddd->d"
+        "_cdflib_wrappers.pxd": {
+            "btdtria": "ddd->d"
         }
     },
     "btdtrib": {
-        "cdf_wrappers.h": {
-            "cdfbet4_wrap": "ddd->d"
+        "_cdflib_wrappers.pxd": {
+            "btdtrib": "ddd->d"
         }
     },
     "cbrt": {
@@ -302,29 +301,24 @@
         }
     },
     "chdtriv": {
-        "cdf_wrappers.h": {
-            "cdfchi3_wrap": "dd->d"
-        }
+        "_cdflib_wrappers.pxd": {
+            "chdtriv": "dd->d"        }
     },
     "chndtr": {
-        "cdf_wrappers.h": {
-            "cdfchn1_wrap": "ddd->d"
-        }
+        "_cdflib_wrappers.pxd": {
+            "chndtr": "ddd->d"        }
     },
     "chndtridf": {
-        "cdf_wrappers.h": {
-            "cdfchn3_wrap": "ddd->d"
-        }
+        "_cdflib_wrappers.pxd": {
+            "chndtridf": "ddd->d"        }
     },
     "chndtrinc": {
-        "cdf_wrappers.h": {
-            "cdfchn4_wrap": "ddd->d"
-        }
+        "_cdflib_wrappers.pxd": {
+            "chndtrinc": "ddd->d"        }
     },
     "chndtrix": {
-        "cdf_wrappers.h": {
-            "cdfchn2_wrap": "ddd->d"
-        }
+        "_cdflib_wrappers.pxd": {
+            "chndtrix": "ddd->d"        }
     },
     "cosdg": {
         "cephes.h": {
@@ -628,9 +622,8 @@
         }
     },
     "fdtridfd": {
-        "cdf_wrappers.h": {
-            "cdff4_wrap": "ddd->d"
-        }
+        "_cdflib_wrappers.pxd": {
+            "fdtridfd": "ddd->d"        }
     },
     "fresnel": {
         "cephes.h": {
@@ -689,19 +682,17 @@
         }
     },
     "gdtria": {
-        "cdf_wrappers.h": {
-            "cdfgam4_wrap": "ddd->d"
+        "_cdflib_wrappers.pxd": {
+            "gdtria": "ddd->d"
         }
     },
     "gdtrib": {
-        "cdf_wrappers.h": {
-            "cdfgam3_wrap": "ddd->d"
-        }
+        "_cdflib_wrappers.pxd": {
+            "gdtrib": "ddd->d"        }
     },
     "gdtrix": {
-        "cdf_wrappers.h": {
-            "cdfgam2_wrap": "ddd->d"
-        }
+        "_cdflib_wrappers.pxd": {
+            "gdtrix": "ddd->d"        }
     },
     "hankel1": {
         "amos_wrappers.h": {
@@ -1075,58 +1066,54 @@
         }
     },
     "nbdtrik": {
-        "cdf_wrappers.h": {
-            "cdfnbn2_wrap": "ddd->d"
-        }
+        "_cdflib_wrappers.pxd": {
+            "nbdtrik": "ddd->d"        }
     },
     "nbdtrin": {
-        "cdf_wrappers.h": {
-            "cdfnbn3_wrap": "ddd->d"
+        "_cdflib_wrappers.pxd": {
+            "nbdtrin": "ddd->d"
         }
     },
     "ncfdtr": {
-        "cdf_wrappers.h": {
-            "cdffnc1_wrap": "dddd->d"
+        "_cdflib_wrappers.pxd": {
+            "ncfdtr": "dddd->d"
         }
     },
     "ncfdtri": {
-        "cdf_wrappers.h": {
-            "cdffnc2_wrap": "dddd->d"
+        "_cdflib_wrappers.pxd": {
+            "ncfdtri": "dddd->d"
         }
     },
     "ncfdtridfd": {
-        "cdf_wrappers.h": {
-            "cdffnc4_wrap": "dddd->d"
+        "_cdflib_wrappers.pxd": {
+            "ncfdtridfd": "dddd->d"
         }
     },
     "ncfdtridfn": {
-        "cdf_wrappers.h": {
-            "cdffnc3_wrap": "dddd->d"
-        }
+        "_cdflib_wrappers.pxd": {
+            "ncfdtridfn": "dddd->d"        }
     },
     "ncfdtrinc": {
-        "cdf_wrappers.h": {
-            "cdffnc5_wrap": "dddd->d"
-        }
+        "_cdflib_wrappers.pxd": {
+            "ncfdtrinc": "dddd->d"        }
     },
     "nctdtr": {
-        "cdf_wrappers.h": {
-            "cdftnc1_wrap": "ddd->d"
-        }
+        "_cdflib_wrappers.pxd": {
+            "nctdtr": "ddd->d"        }
     },
     "nctdtridf": {
-        "cdf_wrappers.h": {
-            "cdftnc3_wrap": "ddd->d"
+        "_cdflib_wrappers.pxd": {
+            "nctdtridf": "ddd->d"
         }
     },
     "nctdtrinc": {
-        "cdf_wrappers.h": {
-            "cdftnc4_wrap": "ddd->d"
+        "_cdflib_wrappers.pxd": {
+            "nctdtrinc": "ddd->d"
         }
     },
     "nctdtrit": {
-        "cdf_wrappers.h": {
-            "cdftnc2_wrap": "ddd->d"
+        "_cdflib_wrappers.pxd": {
+            "nctdtrit": "ddd->d"
         }
     },
     "ndtr": {
@@ -1143,13 +1130,12 @@
         }
     },
     "nrdtrimn": {
-        "cdf_wrappers.h": {
-            "cdfnor3_wrap": "ddd->d"
-        }
+        "_cdflib_wrappers.pxd": {
+            "nrdtrimn": "ddd->d"        }
     },
     "nrdtrisd": {
-        "cdf_wrappers.h": {
-            "cdfnor4_wrap": "ddd->d"
+        "_cdflib_wrappers.pxd": {
+            "nrdtrisd": "ddd->d"
         }
     },
     "obl_ang1": {
@@ -1226,9 +1212,8 @@
         }
     },
     "pdtrik": {
-        "cdf_wrappers.h": {
-            "cdfpoi2_wrap": "dd->d"
-        }
+        "_cdflib_wrappers.pxd": {
+            "pdtrik": "dd->d"        }
     },
     "poch": {
         "cephes.h": {
@@ -1388,18 +1373,22 @@
         }
     },
     "stdtr": {
-        "cdf_wrappers.h": {
-            "cdft1_wrap": "dd->d"
-        }
+        "_cdflib_wrappers.pxd": {
+            "stdtr": "dd->d"        }
     },
     "stdtridf": {
-        "cdf_wrappers.h": {
-            "cdft3_wrap": "dd->d"
+        "_cdflib_wrappers.pxd": {
+            "stdtridf": "dd->d"
         }
     },
     "stdtrit": {
-        "cdf_wrappers.h": {
-            "cdft2_wrap": "dd->d"
+        "_cdflib_wrappers.pxd": {
+            "stdtrit": "dd->d"
+        }
+    },
+    "_stirling2_inexact": {
+        "stirling2.h++": {
+            "_stirling2_inexact": "dd->d"
         }
     },
     "struve": {
@@ -1413,7 +1402,7 @@
         }
     },
     "tklmbda": {
-        "cdf_wrappers.h": {
+        "cephes.h": {
             "tukeylambdacdf": "dd->d"
         }
     },

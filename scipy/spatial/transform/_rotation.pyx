@@ -117,8 +117,70 @@ cdef inline void _quat_canonical(double[:, :] q) noexcept:
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
+cdef inline void _get_angles(
+    double[:] angles, bint extrinsic, bint symmetric, bint sign, 
+    double lamb, double a, double b, double c, double d):
+    
+    # intrinsic/extrinsic conversion helpers
+    cdef int angle_first, angle_third
+    if extrinsic:
+        angle_first = 0
+        angle_third = 2
+    else:
+        angle_first = 2
+        angle_third = 0
+
+    cdef double half_sum, half_diff
+    cdef int case
+
+    # Step 2
+    # Compute second angle...
+    angles[1] = 2 * atan2(hypot(c, d), hypot(a, b))
+
+    # ... and check if equal to is 0 or pi, causing a singularity
+    if abs(angles[1]) <= 1e-7:
+        case = 1
+    elif abs(angles[1] - <double>pi) <= 1e-7:
+        case = 2
+    else:
+        case = 0 # normal case
+
+    # Step 3
+    # compute first and third angles, according to case
+    half_sum = atan2(b, a)
+    half_diff = atan2(d, c)
+    
+    if case == 0:  # no singularities
+        angles[angle_first] = half_sum - half_diff
+        angles[angle_third] = half_sum + half_diff
+    
+    else:  # any degenerate case
+        angles[2] = 0
+        if case == 1:
+            angles[0] = 2 * half_sum
+        else:
+            angles[0] = 2 * half_diff * (-1 if extrinsic else 1)
+            
+    # for Tait-Bryan/asymmetric sequences
+    if not symmetric:
+        angles[angle_third] *= sign
+        angles[1] -= lamb
+
+    for idx in range(3):
+        if angles[idx] < -pi:
+            angles[idx] += 2 * pi
+        elif angles[idx] > pi:
+            angles[idx] -= 2 * pi
+
+    if case != 0:
+        warnings.warn("Gimbal lock detected. Setting third angle to zero "
+                      "since it is not possible to uniquely determine "
+                      "all angles.", stacklevel=3)
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
 cdef double[:, :] _compute_euler_from_matrix(
-    np.ndarray[double, ndim=3] matrix, const uchar[:] seq, bint extrinsic=False
+    np.ndarray[double, ndim=3] matrix, const uchar[:] seq, bint extrinsic
 ) noexcept:
     # This is being replaced by the newer: _compute_euler_from_quat
     #
@@ -261,7 +323,7 @@ cdef double[:, :] _compute_euler_from_matrix(
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef double[:, :] _compute_euler_from_quat(
-    np.ndarray[double, ndim=2] quat, const uchar[:] seq, bint extrinsic=False
+    np.ndarray[double, ndim=2] quat, const uchar[:] seq, bint extrinsic
 ) noexcept:
     # The algorithm assumes extrinsic frame transformations. The algorithm
     # in the paper is formulated for rotation quaternions, which are stored
@@ -269,15 +331,8 @@ cdef double[:, :] _compute_euler_from_quat(
     # Adapt the algorithm for our case by reversing both axis sequence and 
     # angles for intrinsic rotations when needed
     
-    # intrinsic/extrinsic conversion helpers
-    cdef int angle_first, angle_third
-    if extrinsic:
-        angle_first = 0
-        angle_third = 2
-    else:
+    if not extrinsic:
         seq = seq[::-1]
-        angle_first = 2
-        angle_third = 0
         
     cdef int i = _elementary_basis_index(seq[0])
     cdef int j = _elementary_basis_index(seq[1])
@@ -294,15 +349,10 @@ cdef double[:, :] _compute_euler_from_quat(
     cdef Py_ssize_t num_rotations = quat.shape[0]
 
     # some forward definitions
-    cdef double[:, :] angles = _empty2(num_rotations, 3)
-    cdef double[:] _angles # accessor for each rotation
     cdef double a, b, c, d
-    cdef double half_sum, half_diff
-    cdef double eps = 1e-7
-    cdef int case
+    cdef double[:, :] angles = _empty2(num_rotations, 3)
 
     for ind in range(num_rotations):
-        _angles = angles[ind, :]
 
         # Step 1
         # Permutate quaternion elements            
@@ -316,50 +366,68 @@ cdef double[:, :] _compute_euler_from_quat(
             b = quat[ind, i] + quat[ind, k] * sign
             c = quat[ind, j] + quat[ind, 3]
             d = quat[ind, k] * sign - quat[ind, i]
-        
-        # Step 2
-        # Compute second angle...
-        _angles[1] = 2 * atan2(hypot(c, d), hypot(a, b))
 
-        # ... and check if equal to is 0 or pi, causing a singularity
-        if abs(_angles[1]) <= eps:
-            case = 1
-        elif abs(_angles[1] - <double>pi) <= eps:
-            case = 2
-        else:
-            case = 0 # normal case
+        _get_angles(angles[ind], extrinsic, symmetric, sign, pi / 2, a, b, c, d)
 
-        # Step 3
-        # compute first and third angles, according to case
-        half_sum = atan2(b, a)
-        half_diff = atan2(d, c)
-        
-        if case == 0:  # no singularities
-            _angles[angle_first] = half_sum - half_diff
-            _angles[angle_third] = half_sum + half_diff
-        
-        else:  # any degenerate case
-            _angles[2] = 0
-            if case == 1:
-                _angles[0] = 2 * half_sum
-            else:
-                _angles[0] = 2 * half_diff * (-1 if extrinsic else 1)
-                
-        # for Tait-Bryan angles
-        if not symmetric:
-            _angles[angle_third] *= sign
-            _angles[1] -= pi / 2
-            
-        for idx in range(3):
-            if _angles[idx] < -pi:
-                _angles[idx] += 2 * pi
-            elif _angles[idx] > pi:
-                _angles[idx] -= 2 * pi
+    return angles
 
-        if case != 0:
-            warnings.warn("Gimbal lock detected. Setting third angle to zero "
-                          "since it is not possible to uniquely determine "
-                          "all angles.")
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef double[:, :] _compute_davenport_from_quat(
+    np.ndarray[double, ndim=2] quat, np.ndarray[double, ndim=1] n1,
+    np.ndarray[double, ndim=1] n2, np.ndarray[double, ndim=1] n3,
+    bint extrinsic
+):
+    # The algorithm assumes extrinsic frame transformations. The algorithm
+    # in the paper is formulated for rotation quaternions, which are stored
+    # directly by Rotation.
+    # Adapt the algorithm for our case by reversing both axis sequence and
+    # angles for intrinsic rotations when needed
+
+    if not extrinsic:
+        n1, n3 = n3, n1
+
+    cdef double[:] n_cross = _cross3(n1, n2)
+    cdef double lamb = atan2(_dot3(n3, n_cross), _dot3(n3, n1))
+
+    cdef int correct_set = False
+    if lamb < 0:
+        # alternative set of angles compatible with as_euler implementation
+        n2 = -n2
+        lamb = -lamb
+        n_cross[0] = -n_cross[0]
+        n_cross[1] = -n_cross[1]
+        n_cross[2] = -n_cross[2]
+        correct_set = True
+
+    cdef double[:] quat_lamb = np.array([
+            sin(lamb / 2) * n2[0],
+            sin(lamb / 2) * n2[1],
+            sin(lamb / 2) * n2[2],
+            cos(lamb / 2)]
+    )
+
+    cdef Py_ssize_t num_rotations = quat.shape[0]
+
+    # some forward definitions
+    cdef double[:, :] angles = _empty2(num_rotations, 3)
+    cdef double[:] quat_transformed = _empty1(4)
+    cdef double a, b, c, d
+
+    for ind in range(num_rotations):
+        _compose_quat_single(quat_lamb, quat[ind], quat_transformed)
+
+        # Step 1
+        # Permutate quaternion elements
+        a = quat_transformed[3]
+        b = _dot3(quat_transformed[:3], n1)
+        c = _dot3(quat_transformed[:3], n2)
+        d = _dot3(quat_transformed[:3], n_cross)
+
+        _get_angles(angles[ind], extrinsic, False, 1, lamb, a, b, c, d)
+
+        if correct_set:
+            angles[ind, 1] = -angles[ind, 1]
 
     return angles
 
@@ -433,6 +501,48 @@ cdef double[:, :] _elementary_quat_compose(
                 result)
     return result
 
+def _format_angles(angles, degrees, num_axes):
+    angles = np.asarray(angles, dtype=float)
+    if degrees:
+        angles = np.deg2rad(angles)
+
+    is_single = False
+    # Prepare angles to have shape (num_rot, num_axes)
+    if num_axes == 1:
+        if angles.ndim == 0:
+            # (1, 1)
+            angles = angles.reshape((1, 1))
+            is_single = True
+        elif angles.ndim == 1:
+            # (N, 1)
+            angles = angles[:, None]
+        elif angles.ndim == 2 and angles.shape[-1] != 1:
+            raise ValueError("Expected `angles` parameter to have shape "
+                             "(N, 1), got {}.".format(angles.shape))
+        elif angles.ndim > 2:
+            raise ValueError("Expected float, 1D array, or 2D array for "
+                             "parameter `angles` corresponding to `seq`, "
+                             "got shape {}.".format(angles.shape))
+    else:  # 2 or 3 axes
+        if angles.ndim not in [1, 2] or angles.shape[-1] != num_axes:
+            raise ValueError("Expected `angles` to be at most "
+                             "2-dimensional with width equal to number "
+                             "of axes specified, got "
+                             "{} for shape".format(angles.shape))
+
+        if angles.ndim == 1:
+            # (1, num_axes)
+            angles = angles[None, :]
+            is_single = True
+
+    # By now angles should have shape (num_rot, num_axes)
+    # sanity check
+    if angles.ndim != 2 or angles.shape[-1] != num_axes:
+        raise ValueError("Expected angles to have shape (num_rotations, "
+                         "num_axes), got {}.".format(angles.shape))
+
+    return angles, is_single
+
 cdef class Rotation:
     """Rotation in 3 dimensions.
 
@@ -470,11 +580,13 @@ cdef class Rotation:
     from_rotvec
     from_mrp
     from_euler
+    from_davenport
     as_quat
     as_matrix
     as_rotvec
     as_mrp
     as_euler
+    as_davenport
     concatenate
     apply
     __mul__
@@ -1227,44 +1339,7 @@ cdef class Rotation:
 
         seq = seq.lower()
 
-        angles = np.asarray(angles, dtype=float)
-        if degrees:
-            angles = np.deg2rad(angles)
-
-        is_single = False
-        # Prepare angles to have shape (num_rot, num_axes)
-        if num_axes == 1:
-            if angles.ndim == 0:
-                # (1, 1)
-                angles = angles.reshape((1, 1))
-                is_single = True
-            elif angles.ndim == 1:
-                # (N, 1)
-                angles = angles[:, None]
-            elif angles.ndim == 2 and angles.shape[-1] != 1:
-                raise ValueError("Expected `angles` parameter to have shape "
-                                 "(N, 1), got {}.".format(angles.shape))
-            elif angles.ndim > 2:
-                raise ValueError("Expected float, 1D array, or 2D array for "
-                                 "parameter `angles` corresponding to `seq`, "
-                                 "got shape {}.".format(angles.shape))
-        else:  # 2 or 3 axes
-            if angles.ndim not in [1, 2] or angles.shape[-1] != num_axes:
-                raise ValueError("Expected `angles` to be at most "
-                                 "2-dimensional with width equal to number "
-                                 "of axes specified, got {} for shape".format(
-                                 angles.shape))
-
-            if angles.ndim == 1:
-                # (1, num_axes)
-                angles = angles[None, :]
-                is_single = True
-
-        # By now angles should have shape (num_rot, num_axes)
-        # sanity check
-        if angles.ndim != 2 or angles.shape[-1] != num_axes:
-            raise ValueError("Expected angles to have shape (num_rotations, "
-                             "num_axes), got {}.".format(angles.shape))
+        angles, is_single = _format_angles(angles, degrees, num_axes)
 
         quat = _elementary_quat_compose(seq.encode(), angles, intrinsic)
 
@@ -1272,6 +1347,162 @@ cdef class Rotation:
             return cls(quat[0], normalize=False, copy=False)
         else:
             return cls(quat, normalize=False, copy=False)
+
+    @cython.embedsignature(True)
+    @classmethod
+    def from_davenport(cls, axes, order, angles, degrees=False):
+        """Initialize from Davenport angles.
+
+        Rotations in 3-D can be represented by a sequence of 3
+        rotations around a sequence of axes.
+
+        The three rotations can either be in a global frame of reference
+        (extrinsic) or in a body centred frame of reference (intrinsic), which
+        is attached to, and moves with, the object under rotation [1]_.
+
+        For both Euler angles and Davenport angles, consecutive axes must 
+        be are orthogonal (``axis2`` is orthogonal to both ``axis1`` and 
+        ``axis3``). For Euler angles, there is an additional relationship 
+        between ``axis1`` or ``axis3``, with two possibilities:
+
+            - ``axis1`` and ``axis3`` are also orthogonal (asymmetric sequence)
+            - ``axis1 == axis3`` (symmetric sequence)
+
+        For Davenport angles, this last relationship is relaxed [2]_, and only
+        the consecutive orthogonal axes requirement is maintained.
+
+        Parameters
+        ----------
+        axes : array_like, shape (3,) or ([1 or 2 or 3], 3)
+            Axis of rotation, if one dimensional. If two dimensional, describes the 
+            sequence of axes for rotations, where each axes[i, :] is the ith
+            axis. If more than one axis is given, then the second axis must be
+            orthogonal to both the first and third axes.
+        order : string
+            If it is equal to 'e' or 'extrinsic', the sequence will be 
+            extrinsic. If it is equal to 'i' or 'intrinsic', sequence 
+            will be treated as intrinsic.
+        angles : float or array_like, shape (N,) or (N, [1 or 2 or 3])
+            Euler angles specified in radians (`degrees` is False) or degrees
+            (`degrees` is True).
+            For a single axis, `angles` can be:
+
+            - a single value
+            - array_like with shape (N,), where each `angle[i]`
+              corresponds to a single rotation
+            - array_like with shape (N, 1), where each `angle[i, 0]`
+              corresponds to a single rotation
+
+            For 2 and 3 axes, `angles` can be:
+
+            - array_like with shape (W,) where `W` is the number of rows of
+              `axes`, which corresponds to a single rotation with `W` axes
+            - array_like with shape (N, W) where each `angle[i]`
+              corresponds to a sequence of Davenport angles describing a 
+              single rotation
+
+        degrees : bool, optional
+            If True, then the given angles are assumed to be in degrees. 
+            Default is False.
+
+        Returns
+        -------
+        rotation : `Rotation` instance
+            Object containing the rotation represented by the sequence of
+            rotations around given axes with given angles.
+
+        References
+        ----------
+        .. [1] https://en.wikipedia.org/wiki/Euler_angles#Definition_by_intrinsic_rotations
+        .. [2] Shuster, Malcolm & Markley, Landis. (2003). Generalization of
+               the Euler Angles. Journal of the Astronautical Sciences. 51. 123-132. 10.1007/BF03546304.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+
+        Davenport angles are a generalization of Euler angles, when we use the
+        canonical basis axes:
+
+        >>> ex = [1, 0, 0]
+        >>> ey = [0, 1, 0]
+        >>> ez = [0, 0, 1]
+
+        Initialize a single rotation with a given axis sequence:
+
+        >>> axes = [ez, ey, ex]
+        >>> r = R.from_davenport(axes, 'extrinsic', [90, 0, 0], degrees=True)
+        >>> r.as_quat().shape
+        (4,)
+
+        It is equivalent to Euler angles in this case:
+
+        >>> r.as_euler('zyx', degrees=True)
+        array([90.,  0., -0.])
+
+        Initialize multiple rotations in one object:
+
+        >>> r = R.from_davenport(axes, 'extrinsic', [[90, 45, 30], [35, 45, 90]], degrees=True)
+        >>> r.as_quat().shape
+        (2, 4)
+
+        Using only one or two axes is also possible:
+
+        >>> r = R.from_davenport([ez, ex], 'extrinsic', [[90, 45], [35, 45]], degrees=True)
+        >>> r.as_quat().shape
+        (2, 4)
+
+        Non-canonical axes are possible, and they do not need to be normalized,
+        as long as consecutive axes are orthogonal:
+
+        >>> e1 = [2, 0, 0]
+        >>> e2 = [0, 1, 0]
+        >>> e3 = [1, 0, 1]
+        >>> axes = [e1, e2, e3]
+        >>> r = R.from_davenport(axes, 'extrinsic', [90, 45, 30], degrees=True)
+        >>> r.as_quat()
+        [ 0.701057,  0.430459, -0.092296,  0.560986]
+        """
+        if order in ['e', 'extrinsic']:
+            extrinsic = True
+        elif order in ['i', 'intrinsic']:
+            extrinsic = False
+        else:
+            raise ValueError("order should be 'e'/'extrinsic' for extrinsic "
+                             "sequences or 'i'/'intrinsic' for intrinsic "
+                             "sequences, got {}".format(order))
+
+        axes = np.asarray(axes)
+        if axes.ndim == 1:
+            axes = axes.reshape([1, 3])
+
+        num_axes = len(axes)
+
+        if axes.shape[1] != 3:
+            raise ValueError("Axes must be vectors of length 3.")
+
+        if num_axes < 1 or num_axes > 3:
+            raise ValueError("Expected up to 3 axes, got {}".format(num_axes))
+
+        # normalize axes
+        norm = np.repeat(np.linalg.norm(axes, axis=1), 3)
+        axes = axes / norm.reshape(num_axes, 3)
+
+        if (num_axes > 1 and abs(np.dot(axes[0], axes[1])) >= 1e-7 or 
+            num_axes > 2 and abs(np.dot(axes[1], axes[2])) >= 1e-7):
+            raise ValueError("Consecutive axes must be orthogonal.")
+            
+        angles, is_single = _format_angles(angles, degrees, num_axes)
+
+        q = Rotation.identity(len(angles))
+        for i in range(num_axes):
+            qi = Rotation.from_rotvec(angles[:, i, np.newaxis] * axes[i])
+            if extrinsic:
+                q = qi * q
+            else:
+                q = q * qi
+
+        return q[0] if is_single else q
 
     @cython.embedsignature(True)
     @classmethod
@@ -1284,7 +1515,7 @@ cdef class Rotation:
         magnitude is equal to ``tan(theta / 4)``, where ``theta`` is the angle of rotation
         (in radians) [1]_.
 
-        MRPs have a singuarity at 360 degrees which can be avoided by ensuring the angle of
+        MRPs have a singularity at 360 degrees which can be avoided by ensuring the angle of
         rotation does not exceed 180 degrees, i.e. switching the direction of the rotation when
         it is past 180 degrees.
 
@@ -1301,7 +1532,7 @@ cdef class Rotation:
 
         References
         ----------
-        .. [1] Shuster, M. D. "A Survery of Attitude Representations",
+        .. [1] Shuster, M. D. "A Survey of Attitude Representations",
                The Journal of Astronautical Sciences, Vol. 41, No.4, 1993,
                pp. 475-476
 
@@ -1836,6 +2067,152 @@ cdef class Rotation:
         return self._compute_euler(seq, degrees, 'from_quat')
 
     @cython.embedsignature(True)
+    def as_davenport(self, axes, order, degrees=False):
+        """Represent as Davenport angles.
+
+        Any orientation can be expressed as a composition of 3 elementary
+        rotations.
+
+        For both Euler angles and Davenport angles, consecutive axes must 
+        be are orthogonal (``axis2`` is orthogonal to both ``axis1`` and 
+        ``axis3``). For Euler angles, there is an additional relationship 
+        between ``axis1`` or ``axis3``, with two possibilities:
+
+            - ``axis1`` and ``axis3`` are also orthogonal (asymmetric sequence)
+            - ``axis1 == axis3`` (symmetric sequence)
+
+        For Davenport angles, this last relationship is relaxed [1]_, and only
+        the consecutive orthogonal axes requirement is maintained.
+
+        A slightly modified version of the algorithm from [2]_ has been used to
+        calculate Davenport angles for the rotation about a given sequence of
+        axes.
+
+        Davenport angles, just like Euler angles, suffer from the problem of
+        gimbal lock [3]_, where the representation loses a degree of freedom
+        and it is not possible to determine the first and third angles
+        uniquely. In this case, a warning is raised, and the third angle is set
+        to zero. Note however that the returned angles still represent the
+        correct rotation.
+
+        Parameters
+        ----------
+        axes : array_like, shape (3,) or ([1 or 2 or 3], 3)
+            Axis of rotation, if one dimensional. If two dimensional, describes the 
+            sequence of axes for rotations, where each axes[i, :] is the ith
+            axis. If more than one axis is given, then the second axis must be
+            orthogonal to both the first and third axes.
+        order : string
+            If it belongs to the set {'e', 'extrinsic'}, the sequence will be 
+            extrinsic. If if belongs to the set {'i', 'intrinsic'}, sequence 
+            will be treated as intrinsic.
+        degrees : boolean, optional
+            Returned angles are in degrees if this flag is True, else they are
+            in radians. Default is False.
+
+        Returns
+        -------
+        angles : ndarray, shape (3,) or (N, 3)
+            Shape depends on shape of inputs used to initialize object.
+            The returned angles are in the range:
+
+            - First angle belongs to [-180, 180] degrees (both inclusive)
+            - Third angle belongs to [-180, 180] degrees (both inclusive)
+            - Second angle belongs to a set of size 180 degrees, 
+              given by: ``[-abs(lambda), 180 - abs(lambda)]``, where ``lambda``
+              is the angle between the first and third axes.
+
+        References
+        ----------
+        .. [1] Shuster, Malcolm & Markley, Landis. (2003). Generalization of
+               the Euler Angles. Journal of the Astronautical Sciences. 51. 123-132. 10.1007/BF03546304.
+        .. [2] Bernardes E, Viollet S (2022) Quaternion to Euler angles
+               conversion: A direct, general and computationally efficient method.
+               PLoS ONE 17(11): e0276302. 10.1371/journal.pone.0276302
+        .. [3] https://en.wikipedia.org/wiki/Gimbal_lock#In_applied_mathematics
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+        >>> import numpy as np
+
+        Davenport angles are a generalization of Euler angles, when we use the
+        canonical basis axes:
+
+        >>> ex = [1, 0, 0]
+        >>> ey = [0, 1, 0]
+        >>> ez = [0, 0, 1]
+
+        Represent a single rotation:
+
+        >>> r = R.from_rotvec([0, 0, np.pi/2])
+        >>> r.as_davenport([ez, ex, ey], 'extrinsic', degrees=True)
+        array([90.,  0.,  0.])
+        >>> r.as_euler('zxy', degrees=True)
+        array([90.,  0.,  0.])
+        >>> r.as_davenport([ez, ex, ey], 'extrinsic', degrees=True).shape
+        (3,)
+
+        Represent a stack of single rotation:
+
+        >>> r = R.from_rotvec([[0, 0, np.pi/2]])
+        >>> r.as_davenport([ez, ex, ey], 'extrinsic', degrees=True)
+        array([[90.,  0.,  0.]])
+        >>> r.as_davenport([ez, ex, ey], 'extrinsic', degrees=True).shape
+        (1, 3)
+
+        Represent multiple rotations in a single object:
+
+        >>> r = R.from_rotvec([
+        ... [0, 0, 90],
+        ... [45, 0, 0]], degrees=True)
+        >>> r.as_davenport([ez, ex, ey], 'extrinsic', degrees=True)
+        array([[90.,  0.,  0.],
+               [ 0., 45.,  0.]])
+        >>> r.as_davenport([ez, ex, ey], 'extrinsic', degrees=True).shape
+        (2, 3)
+        """
+        if order in ['e', 'extrinsic']:
+            extrinsic = True
+        elif order in ['i', 'intrinsic']:
+            extrinsic = False
+        else:
+            raise ValueError("order should be 'e'/'extrinsic' for extrinsic "
+                             "sequences or 'i'/'intrinsic' for intrinsic "
+                             "sequences, got {}".format(order))
+
+        if len(axes) != 3:
+            raise ValueError("Expected 3 axes, got {}.".format(len(axes)))
+
+        axes = np.asarray(axes)
+
+        if axes.shape[1] != 3:
+            raise ValueError("Axes must be vectors of length 3.")
+
+        n1, n2, n3 = axes
+
+        # normalize axes
+        n1 = n1 / np.linalg.norm(n1)
+        n2 = n2 / np.linalg.norm(n2)
+        n3 = n3 / np.linalg.norm(n3)
+
+        if np.dot(n1, n2) >= 1e-7:
+            raise ValueError("Consecutive axes must be orthogonal.")
+        if np.dot(n2, n3) >= 1e-7:
+            raise ValueError("Consecutive axes must be orthogonal.")
+
+        quat = self.as_quat()
+        if quat.ndim == 1:
+            quat = quat[None, :]
+        angles = np.asarray(_compute_davenport_from_quat(
+                quat, n1, n2, n3, extrinsic))
+
+        if degrees:
+            angles = np.rad2deg(angles)
+
+        return angles[0] if self._single else angles
+
+    @cython.embedsignature(True)
     def as_mrp(self):
         """Represent as Modified Rodrigues Parameters (MRPs).
 
@@ -1843,7 +2220,7 @@ cdef class Rotation:
         magnitude is equal to ``tan(theta / 4)``, where ``theta`` is the angle of rotation
         (in radians) [1]_.
 
-        MRPs have a singuarity at 360 degrees which can be avoided by ensuring the angle of
+        MRPs have a singularity at 360 degrees which can be avoided by ensuring the angle of
         rotation does not exceed 180 degrees, i.e. switching the direction of the rotation when
         it is past 180 degrees. This function will always return MRPs corresponding to a rotation
         of less than or equal to 180 degrees.
@@ -1855,7 +2232,7 @@ cdef class Rotation:
 
         References
         ----------
-        .. [1] Shuster, M. D. "A Survery of Attitude Representations",
+        .. [1] Shuster, M. D. "A Survey of Attitude Representations",
                The Journal of Astronautical Sciences, Vol. 41, No.4, 1993,
                pp. 475-476
 
@@ -1917,7 +2294,10 @@ cdef class Rotation:
     @cython.embedsignature(True)
     @classmethod
     def concatenate(cls, rotations):
-        """Concatenate a sequence of `Rotation` objects.
+        """Concatenate a sequence of `Rotation` objects into a single object.
+
+        This is useful if you want to, for example, take the mean of a set of
+        rotations and need to pack them into a single object to do so.
 
         Parameters
         ----------
@@ -1928,6 +2308,26 @@ cdef class Rotation:
         -------
         concatenated : `Rotation` instance
             The concatenated rotations.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+        >>> r1 = R.from_rotvec([0, 0, 1])
+        >>> r2 = R.from_rotvec([0, 0, 2])
+        >>> rc = R.concatenate([r1, r2])
+        >>> rc.as_rotvec()
+        array([[0., 0., 1.],
+               [0., 0., 2.]])
+        >>> rc.mean().as_rotvec()
+        array([0., 0., 1.5])
+
+        Note that it may be simpler to create the desired rotations by passing
+        in a single list of the data during initialization, rather then by
+        concatenating:
+
+        >>> R.from_rotvec([[0, 0, 1], [0, 0, 2]]).as_rotvec()
+        array([[0., 0., 1.],
+               [0., 0., 2.]])
 
         Notes
         -----
@@ -1952,8 +2352,8 @@ cdef class Rotation:
               frame as it rotates. In this case the vector components are
               expressed in the original frame before and after the rotation.
 
-        In terms of rotation matricies, this application is the same as
-        ``self.as_matrix().dot(vectors)``.
+        In terms of rotation matrices, this application is the same as
+        ``self.as_matrix() @ vectors``.
 
         Parameters
         ----------
@@ -2098,14 +2498,14 @@ cdef class Rotation:
         If `p` and `q` are two rotations, then the composition of 'q followed
         by p' is equivalent to `p * q`. In terms of rotation matrices,
         the composition can be expressed as
-        ``p.as_matrix().dot(q.as_matrix())``.
+        ``p.as_matrix() @ q.as_matrix()``.
 
         Parameters
         ----------
         other : `Rotation` instance
             Object containing the rotations to be composed with this one. Note
             that rotation compositions are not commutative, so ``p * q`` is
-            different from ``q * p``.
+            generally different from ``q * p``.
 
         Returns
         -------
@@ -2309,6 +2709,11 @@ cdef class Rotation:
         >>> from scipy.spatial.transform import Rotation as R
         >>> import numpy as np
         >>> r = R.from_quat(np.eye(4))
+        >>> r.as_quat()
+        array([[ 1., 0., 0., 0.],
+               [ 0., 1., 0., 0.],
+               [ 0., 0., 1., 0.],
+               [ 0., 0., 0., 1.]])
         >>> r.magnitude()
         array([3.14159265, 3.14159265, 3.14159265, 0.        ])
 
@@ -2387,6 +2792,18 @@ cdef class Rotation:
     def mean(self, weights=None):
         """Get the mean of the rotations.
 
+        The mean used is the chordal L2 mean (also called the projected or
+        induced arithmetic mean) [1]_. If ``A`` is a set of rotation matrices,
+        then the mean ``M`` is the rotation matrix that minimizes the
+        following loss function:
+
+        .. math::
+
+            L(M) = \\sum_{i = 1}^{n} w_i \\lVert \\mathbf{A}_i -
+            \\mathbf{M} \\rVert^2 ,
+
+        where :math:`w_i`'s are the `weights` corresponding to each matrix.
+
         Parameters
         ----------
         weights : array_like shape (N,), optional
@@ -2400,12 +2817,11 @@ cdef class Rotation:
             Object containing the mean of the rotations in the current
             instance.
 
-        Notes
-        -----
-        The mean used is the chordal L2 mean (also called the projected or
-        induced arithmetic mean). If ``p`` is a set of rotations with mean
-        ``m``, then ``m`` is the rotation which minimizes
-        ``(weights[:, None, None] * (p.as_matrix() - m.as_matrix())**2).sum()``.
+        References
+        ----------
+        .. [1] Hartley, Richard, et al.,
+                "Rotation Averaging", International Journal of Computer Vision
+                103, 2013, pp. 267-305.
 
         Examples
         --------
@@ -2767,7 +3183,7 @@ cdef class Rotation:
         where :math:`w_i`'s are the `weights` corresponding to each vector.
 
         The rotation is estimated with Kabsch algorithm [1]_, and solves what
-        is known as the "pointing problem", or "Wahba's problem".
+        is known as the "pointing problem", or "Wahba's problem" [2]_.
 
         There are two special cases. The first is if a single vector is given
         for `a` and `b`, in which the shortest distance rotation that aligns
@@ -2781,13 +3197,13 @@ cdef class Rotation:
         of these two rotations. The result via this process is the same as the
         Kabsch algorithm as the corresponding weight approaches infinity in
         the limit. For a single secondary vector this is known as the
-        align-constrain algorithm [2]_.
+        "align-constrain" algorithm [3]_.
 
         For both special cases (single vectors or an infinite weight), the
         sensitivity matrix does not have physical meaning and an error will be
         raised if it is requested. For an infinite weight, the primary vectors
         act as a constraint with perfect alignment, so their contribution to
-        `rssd` will be forced to 0.
+        `rssd` will be forced to 0 even if they are of different lengths.
 
         Parameters
         ----------
@@ -2824,42 +3240,43 @@ cdef class Rotation:
         sensitivity_matrix : ndarray, shape (3, 3)
             Sensitivity matrix of the estimated rotation estimate as explained
             in Notes. Returned only when `return_sensitivity` is True. Not
-            valid if aligning a single pair of vectors of if there is an
+            valid if aligning a single pair of vectors or if there is an
             infinite weight, in which cases an error will be raised.
 
         Notes
         -----
-        This method can also compute the sensitivity of the estimated rotation
+        The sensitivity matrix gives the sensitivity of the estimated rotation
         to small perturbations of the vector measurements. Specifically we
         consider the rotation estimate error as a small rotation vector of
         frame A. The sensitivity matrix is proportional to the covariance of
         this rotation vector assuming that the vectors in `a` was measured with
         errors significantly less than their lengths. To get the true
         covariance matrix, the returned sensitivity matrix must be multiplied
-        by harmonic mean [3]_ of variance in each observation. Note that
+        by harmonic mean [4]_ of variance in each observation. Note that
         `weights` are supposed to be inversely proportional to the observation
         variances to get consistent results. For example, if all vectors are
         measured with the same accuracy of 0.01 (`weights` must be all equal),
         then you should multiple the sensitivity matrix by 0.01**2 to get the
         covariance.
 
-        Refer to [4]_ for more rigorous discussion of the covariance
-        estimation. See [5]_ for more discussion of the pointing problem and
+        Refer to [5]_ for more rigorous discussion of the covariance
+        estimation. See [6]_ for more discussion of the pointing problem and
         minimal proper pointing.
 
         References
         ----------
         .. [1] https://en.wikipedia.org/wiki/Kabsch_algorithm
-        .. [2] Magner, Robert,
+        .. [2] https://en.wikipedia.org/wiki/Wahba%27s_problem
+        .. [3] Magner, Robert,
                 "Extending target tracking capabilities through trajectory and
                 momentum setpoint optimization." Small Satellite Conference,
                 2018.
-        .. [3] https://en.wikipedia.org/wiki/Harmonic_mean
-        .. [4] F. Landis Markley,
+        .. [4] https://en.wikipedia.org/wiki/Harmonic_mean
+        .. [5] F. Landis Markley,
                 "Attitude determination using vector observations: a fast
                 optimal matrix algorithm", Journal of Astronautical Sciences,
                 Vol. 41, No.2, 1993, pp. 261-280.
-        .. [5] Bar-Itzhack, Itzhack Y., Daniel Hershkowitz, and Leiba Rodman,
+        .. [6] Bar-Itzhack, Itzhack Y., Daniel Hershkowitz, and Leiba Rodman,
                 "Pointing in Real Euclidean Space", Journal of Guidance,
                 Control, and Dynamics, Vol. 20, No. 5, 1997, pp. 916-922.
 
@@ -2868,8 +3285,9 @@ cdef class Rotation:
         >>> import numpy as np
         >>> from scipy.spatial.transform import Rotation as R
 
-        Best align two sets of vectors with the Kabsch algorithm, where there
-        is noise on the last two vector measurements of the ``b`` set:
+        Here we run the baseline Kabsch algorithm to best align two sets of
+        vectors, where there is noise on the last two vector measurements of
+        the ``b`` set:
 
         >>> a = [[0, 1, 0], [0, 1, 1], [0, 1, 1]]
         >>> b = [[1, 0, 0], [1, 1.1, 0], [1, 0.9, 0]]
@@ -2936,6 +3354,7 @@ cdef class Rotation:
 
         Here the secondary vectors must be best-fit:
 
+        >>> a = [[0, 1, 0], [0, 1, 1]]
         >>> b = [[1, 0, 0], [1, 2, 0]]
         >>> rot, _ = R.align_vectors(a, b, weights=[np.inf, 1])
         >>> rot.as_matrix()

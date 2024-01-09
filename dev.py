@@ -102,7 +102,7 @@ import shutil
 import json
 import datetime
 import time
-import platform
+import importlib
 import importlib.util
 import errno
 import contextlib
@@ -266,7 +266,7 @@ def cli(ctx, **kwargs):
 
     \b**python dev.py --build-dir my-build test -s stats**
 
-    """  # noqa: E501
+    """
     CLI.update_context(ctx, kwargs)
 
 
@@ -426,13 +426,10 @@ class Build(Task):
     show_build_log = Option(
         ['--show-build-log'], default=False, is_flag=True,
         help="Show build output rather than using a log file")
-    win_cp_openblas = Option(
-        ['--win-cp-openblas'], default=False, is_flag=True,
-        help=("If set, and on Windows, copy OpenBLAS lib to install directory "
-              "after meson install. "
-              "Note: this argument may be removed in the future once a "
-              "`site.cfg`-like mechanism to select BLAS/LAPACK libraries is "
-              "implemented for Meson"))
+    with_scipy_openblas = Option(
+        ['--with-scipy-openblas'], default=False, is_flag=True,
+        help=("If set, use the `scipy-openblas32` wheel installed into the "
+              "current environment as the BLAS/LAPACK to build against."))
 
     @classmethod
     def setup_build(cls, dirs, args):
@@ -485,6 +482,12 @@ class Build(Task):
             cmd += ['-Db_sanitize=address,undefined']
         if args.setup_args:
             cmd += [str(arg) for arg in args.setup_args]
+        if args.with_scipy_openblas:
+            cls.configure_scipy_openblas()
+            env['PKG_CONFIG_PATH'] = os.pathsep.join([
+                    os.path.join(os.getcwd(), '.openblas'),
+                    env.get('PKG_CONFIG_PATH', '')
+                    ])
 
         # Setting up meson build
         cmd_str = ' '.join([str(p) for p in cmd])
@@ -558,8 +561,8 @@ class Build(Task):
                         log_size = os.stat(log_filename).st_size
                         if log_size > last_log_size:
                             elapsed = datetime.datetime.now() - start_time
-                            print("    ... installation in progress ({} "
-                                  "elapsed)".format(elapsed))
+                            print(f"    ... installation in progress ({elapsed} "
+                                  "elapsed)")
                             last_blip = time.time()
                             last_log_size = log_size
 
@@ -589,68 +592,34 @@ class Build(Task):
         return
 
     @classmethod
-    def copy_openblas(cls, dirs):
+    def configure_scipy_openblas(self, blas_variant='32'):
+        """Create .openblas/scipy-openblas.pc and scipy/_distributor_init_local.py
+
+        Requires a pre-installed scipy-openblas32 wheel from PyPI.
         """
-        Copies OpenBLAS DLL to the SciPy install dir, and also overwrites the
-        default `_distributor_init.py` file with the one
-        we use for wheels uploaded to PyPI so that DLL gets loaded.
+        basedir = os.getcwd()
+        openblas_dir = os.path.join(basedir, ".openblas")
+        pkg_config_fname = os.path.join(openblas_dir, "scipy-openblas.pc")
 
-        Assumes pkg-config is installed and aware of OpenBLAS.
+        if os.path.exists(pkg_config_fname):
+            return None
 
-        The "dirs" parameter is typically a "Dirs" object with the
-        structure as the following, say, if dev.py is run from the
-        folder "repo":
+        module_name = f"scipy_openblas{blas_variant}"
+        try:
+            openblas = importlib.import_module(module_name)
+        except ModuleNotFoundError:
+            raise RuntimeError(f"Importing '{module_name}' failed. "
+                               "Make sure it is installed and reachable "
+                               "by the current Python executable. You can "
+                               f"install it via 'pip install {module_name}'.")
 
-        dirs = Dirs(
-            root=WindowsPath('C:/.../repo'),
-            build=WindowsPath('C:/.../repo/build'),
-            installed=WindowsPath('C:/.../repo/build-install'),
-            site=WindowsPath('C:/.../repo/build-install/Lib/site-packages'
-            )
+        local = os.path.join(basedir, "scipy", "_distributor_init_local.py")
+        with open(local, "w", encoding="utf8") as fid:
+            fid.write(f"import {module_name}\n")
 
-        """
-        # Get OpenBLAS lib path from pkg-config
-        cmd = ['pkg-config', '--variable', 'libdir', 'openblas']
-        result = subprocess.run(cmd, capture_output=True, text=True)
-        # pkg-config does not return any meaningful error message if fails
-        if result.returncode != 0:
-            print('"pkg-config --variable libdir openblas" '
-                  'command did not manage to find OpenBLAS '
-                  'succesfully. Try running manually on the '
-                  'command prompt for more information.')
-            print("OpenBLAS copy failed!")
-            sys.exit(result.returncode)
-
-        # Skip the drive letter of the path -> /c to get Windows drive
-        # to be appended correctly to avoid "C:\c\..." from stdout.
-        openblas_lib_path = Path(result.stdout.strip()[2:]).resolve()
-        if not openblas_lib_path.stem == 'lib':
-            raise RuntimeError('"pkg-config --variable libdir openblas" '
-                               'command did not return a path ending with'
-                               ' "lib" folder. Instead it returned '
-                               f'"{openblas_lib_path}"')
-
-        # Look in bin subdirectory for OpenBLAS binaries.
-        bin_path = openblas_lib_path.parent / 'bin'
-        # Locate, make output .libs directory in Scipy install directory.
-        scipy_path = dirs.site / 'scipy'
-        libs_path = scipy_path / '.libs'
-        libs_path.mkdir(exist_ok=True)
-        # Copy DLL files from OpenBLAS install to scipy install .libs subdir.
-        for dll_fn in bin_path.glob('*.dll'):
-            out_fname = libs_path / dll_fn.name
-            print(f'Copying {dll_fn} ----> {out_fname}')
-            out_fname.write_bytes(dll_fn.read_bytes())
-
-        # Write _distributor_init.py to scipy install dir;
-        # this ensures the .libs file is on the DLL search path at run-time,
-        # so OpenBLAS gets found
-        openblas_support = import_module_from_path(
-            'openblas_support',
-            dirs.root / 'tools' / 'openblas_support.py'
-        )
-        openblas_support.make_init(scipy_path)
-        print('OpenBLAS copied')
+        os.makedirs(openblas_dir, exist_ok=True)
+        with open(pkg_config_fname, "w", encoding="utf8") as fid:
+            fid.write(openblas.get_pkg_config().replace("\\", "/"))
 
     @classmethod
     def run(cls, add_path=False, **kwargs):
@@ -666,8 +635,6 @@ class Build(Task):
             env = cls.setup_build(dirs, args)
             cls.build_project(dirs, args, env)
             cls.install_project(dirs, args)
-            if args.win_cp_openblas and platform.system() == 'Windows':
-                cls.copy_openblas(dirs)
 
         # add site to sys.path
         if add_path:
@@ -688,7 +655,7 @@ class Test(Task):
     $ python dev.py test -s stats -- --tb=line  # `--` passes next args to pytest
     $ python dev.py test -b numpy -b pytorch -s cluster
     ```
-    """  # noqa: E501
+    """
     ctx = CONTEXT
 
     verbose = Option(
@@ -873,8 +840,7 @@ class Bench(Task):
             for a in extra_argv:
                 bench_args.extend(['--bench', ' '.join(str(x) for x in a)])
             if not args.compare:
-                print("Running benchmarks for Scipy version %s at %s"
-                      % (version, mod_path))
+                print(f"Running benchmarks for Scipy version {version} at {mod_path}")
                 cmd = ['asv', 'run', '--dry-run', '--show-stderr',
                        '--python=same', '--quick'] + bench_args
                 retval = cls.run_asv(dirs, cmd)
@@ -972,7 +938,7 @@ def task_check_test_name():
 
 
 @cli.cls_cmd('lint')
-class Lint():
+class Lint:
     """:dash: Run linter on modified files and check for
     disallowed Unicode characters and possibly-invalid test names."""
     def run():
@@ -1361,7 +1327,8 @@ def cpu_count(only_physical_cores=False):
             f"following reason:\n{exception}\n"
             "Returning the number of logical cores instead. You can "
             "silence this warning by setting LOKY_MAX_CPU_COUNT to "
-            "the number of cores you want to use."
+            "the number of cores you want to use.",
+            stacklevel=2
         )
         traceback.print_tb(exception.__traceback__)
 
@@ -1400,7 +1367,7 @@ def _cpu_count_cgroup(os_cpu_count):
             return math.ceil(cpu_quota_us / cpu_period_us)
         else:  # pragma: no cover
             # Setting a negative cpu_quota_us value is a valid way to disable
-            # cgroup CPU bandwith limits
+            # cgroup CPU bandwidth limits
             return os_cpu_count
 
 
@@ -1432,7 +1399,8 @@ def _cpu_count_affinity(os_cpu_count):
             # havoc, typically on CI workers.
             warnings.warn(
                 "Failed to inspect CPU affinity constraints on this system. "
-                "Please install psutil or explictly set LOKY_MAX_CPU_COUNT."
+                "Please install psutil or explicitly set LOKY_MAX_CPU_COUNT.",
+                stacklevel=4
             )
 
     # This can happen for platforms that do not implement any kind of CPU

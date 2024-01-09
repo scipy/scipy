@@ -30,7 +30,10 @@ from scipy.optimize._root_scalar import ROOT_SCALAR_METHODS
 from scipy.optimize._qap import QUADRATIC_ASSIGNMENT_METHODS
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
 from scipy.optimize._optimize import MemoizeJac, show_options, OptimizeResult
+from scipy.optimize import rosen, rosen_der, rosen_hess
 
+from scipy.sparse import (coo_matrix, csc_matrix, csr_matrix, coo_array,
+                          csr_array, csc_array)
 
 def test_check_grad():
     # Verify if check_grad is able to estimate the derivative of the
@@ -282,7 +285,8 @@ class CheckOptimizeParameterized(CheckOptimize):
         assert res_c1_small.nfev > res_c1_big.nfev
 
     def test_bfgs_c2(self):
-        # test that modification of c2 parameter results in different number of iterations
+        # test that modification of c2 parameter
+        # results in different number of iterations
         x0 = [1.3, 0.7, 0.8, 1.9, 1.2]
         res_default = optimize.minimize(optimize.rosen,
                                         x0, method='bfgs', options={'c2': .9})
@@ -1228,7 +1232,8 @@ class TestOptimizeSimple(CheckOptimize):
                                      method=method)
             sol2 = optimize.minimize(func, [1, 1], jac=jac, tol=1.0,
                                      method=method)
-            assert func(sol1.x) < func(sol2.x), f"{method}: {func(sol1.x)} vs. {func(sol2.x)}"
+            assert func(sol1.x) < func(sol2.x), \
+                   f"{method}: {func(sol1.x)} vs. {func(sol2.x)}"
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')  # See gh-18547
@@ -1294,7 +1299,8 @@ class TestOptimizeSimple(CheckOptimize):
         # and have no memory overlap
         assert len(results) > 2
         assert all(np.all(x == y) for x, y in results)
-        assert not any(np.may_share_memory(x[0], y[0]) for x, y in itertools.combinations(results, 2))
+        combinations = itertools.combinations(results, 2)
+        assert not any(np.may_share_memory(x[0], y[0]) for x, y in combinations)
 
     @pytest.mark.parametrize('method', ['nelder-mead', 'powell', 'cg',
                                         'bfgs', 'newton-cg', 'l-bfgs-b',
@@ -1478,9 +1484,7 @@ class TestOptimizeSimple(CheckOptimize):
             res = optimize.minimize(f, x0, jac=g, method=method,
                                     options=options)
 
-            err_msg = "{} {}: {}: {}".format(method, scale,
-                                                 first_step_size,
-                                                 res)
+            err_msg = f"{method} {scale}: {first_step_size}: {res}"
 
             assert res.success, err_msg
             assert_allclose(res.x, [1.0], err_msg=err_msg)
@@ -2559,8 +2563,8 @@ class TestBrute:
         def func(z, *params):
             return rng.random(1) * 1000  # never converged problem
 
-        with pytest.warns(RuntimeWarning,
-                          match=r'Either final optimization did not succeed'):
+        msg = "final optimization did not succeed.*|Maximum number of function eval.*"
+        with pytest.warns(RuntimeWarning, match=msg):
             optimize.brute(func, self.rranges, args=self.params, disp=True)
 
     def test_coerce_args_param(self):
@@ -2669,7 +2673,8 @@ class TestIterationLimits:
                     else:
                         assert res["nit"] <= default_iters*2
                 else:
-                    assert res["nfev"] >= default_iters*2 or res["nit"] >= default_iters*2
+                    assert (res["nfev"] >= default_iters*2
+                            or res["nit"] >= default_iters*2)
 
 
 def test_result_x_shape_when_len_x_is_one():
@@ -2931,7 +2936,7 @@ def test_equal_bounds(method, kwds, bound_type, constraints, callback):
         # above, down to res.nfev. However, testing found that when TNC is
         # called with or without a callback the output is different. The two
         # should be the same! This indicates that the TNC callback may be
-        # mutating something when it should't.
+        # mutating something when it shouldn't.
         assert_allclose(res.x[[0, 2]], fd_res.x, rtol=2e-6)
 
 
@@ -3123,3 +3128,29 @@ def test_gh12594():
 
     assert_allclose(res.fun, ref.fun)
     assert_allclose(res.x, ref.x)
+
+
+@pytest.mark.parametrize('method', ['Newton-CG', 'trust-constr'])
+@pytest.mark.parametrize('sparse_type', [coo_matrix, csc_matrix, csr_matrix,
+                                         coo_array, csr_array, csc_array])
+def test_sparse_hessian(method, sparse_type):
+    # gh-8792 reported an error for minimization with `newton_cg` when `hess`
+    # returns a sparse matrix. Check that results are the same whether `hess`
+    # returns a dense or sparse matrix for optimization methods that accept
+    # sparse Hessian matrices.
+
+    def sparse_rosen_hess(x):
+        return sparse_type(rosen_hess(x))
+
+    x0 = [2., 2.]
+
+    res_sparse = optimize.minimize(rosen, x0, method=method,
+                                   jac=rosen_der, hess=sparse_rosen_hess)
+    res_dense = optimize.minimize(rosen, x0, method=method,
+                                  jac=rosen_der, hess=rosen_hess)
+
+    assert_allclose(res_dense.fun, res_sparse.fun)
+    assert_allclose(res_dense.x, res_sparse.x)
+    assert res_dense.nfev == res_sparse.nfev
+    assert res_dense.njev == res_sparse.njev
+    assert res_dense.nhev == res_sparse.nhev

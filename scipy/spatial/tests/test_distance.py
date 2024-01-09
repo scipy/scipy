@@ -47,6 +47,8 @@ from numpy.testing import (verbose, assert_,
                            break_cycles, IS_PYPY)
 import pytest
 
+import scipy.spatial.distance
+
 from scipy.spatial.distance import (
     squareform, pdist, cdist, num_obs_y, num_obs_dm, is_valid_dm, is_valid_y,
     _validate_vector, _METRICS_NAMES)
@@ -60,6 +62,7 @@ from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     minkowski, rogerstanimoto,
                                     russellrao, seuclidean, sokalmichener,  # noqa: F401
                                     sokalsneath, sqeuclidean, yule)
+from scipy._lib._util import np_long, np_ulong
 
 
 @pytest.fixture(params=_METRICS_NAMES, scope="session")
@@ -127,8 +130,8 @@ def load_testing_files():
     eo['pdist-boolean-inp'] = np.bool_(eo['pdist-boolean-inp'])
     eo['random-bool-data'] = np.bool_(eo['random-bool-data'])
     eo['random-float32-data'] = np.float32(eo['random-double-data'])
-    eo['random-int-data'] = np.int_(eo['random-int-data'])
-    eo['random-uint-data'] = np.uint(eo['random-uint-data'])
+    eo['random-int-data'] = np_long(eo['random-int-data'])
+    eo['random-uint-data'] = np_ulong(eo['random-uint-data'])
 
 
 load_testing_files()
@@ -240,7 +243,8 @@ def _rand_split(arrays, weights, axis, split_per, seed=None):
                                for i in range(a.ndim)])
 
     n_obs = arrays[0].shape[axis]
-    assert all(a.shape[axis] == n_obs for a in arrays), "data must be aligned on sample axis"
+    assert all(a.shape[axis] == n_obs for a in arrays), \
+           "data must be aligned on sample axis"
     for i in range(int(split_per) * n_obs):
         split_ix = seeded_rand.randint(n_obs + i)
         prev_w = weights[split_ix]
@@ -271,8 +275,9 @@ def _rough_check(a, b, compare_assert=partial(assert_allclose, atol=1e-5),
 def _weight_checked(fn, n_args=2, default_axis=None, key=lambda x: x, weight_arg='w',
                     squeeze=True, silent=False,
                     ones_test=True, const_test=True, dup_test=True,
-                    split_test=True, dud_test=True, ma_safe=False, ma_very_safe=False, nan_safe=False,
-                    split_per=1.0, seed=0, compare_assert=partial(assert_allclose, atol=1e-5)):
+                    split_test=True, dud_test=True, ma_safe=False, ma_very_safe=False,
+                    nan_safe=False, split_per=1.0, seed=0,
+                    compare_assert=partial(assert_allclose, atol=1e-5)):
     """runs fn on its arguments 2 or 3 ways, checks that the results are the same,
        then returns the same thing it would have returned before"""
     @wraps(fn)
@@ -284,13 +289,14 @@ def _weight_checked(fn, n_args=2, default_axis=None, key=lambda x: x, weight_arg
         weights = kwargs.get(weight_arg, None)
         axis = kwargs.get('axis', default_axis)
 
-        chked = _chk_weights(arrays, weights=weights, axis=axis, force_weights=True, mask_screen=True)
+        chked = _chk_weights(arrays, weights=weights, axis=axis,
+                             force_weights=True, mask_screen=True)
         arrays, weights, axis = chked[:-2], chked[-2], chked[-1]
         if squeeze:
             arrays = [np.atleast_1d(a.squeeze()) for a in arrays]
 
         try:
-            # WEIGHTS CHECK 1: EQUAL WEIGHTED OBESERVATIONS
+            # WEIGHTS CHECK 1: EQUAL WEIGHTED OBSERVATIONS
             args = tuple(arrays) + rest
             if ones_test:
                 kwargs[weight_arg] = weights
@@ -307,8 +313,9 @@ def _weight_checked(fn, n_args=2, default_axis=None, key=lambda x: x, weight_arg
             # WEIGHTS CHECK 2: ADDL 0-WEIGHTED OBS
             if dud_test:
                 # add randomly resampled rows, weighted at 0
-                dud_arrays, dud_weights = _rand_split(arrays, weights, axis, split_per=split_per, seed=seed)
-                dud_weights[:weights.size] = weights  # not exactly 1 because of masked arrays
+                dud_arrays, dud_weights = _rand_split(arrays, weights, axis,
+                                                      split_per=split_per, seed=seed)
+                dud_weights[:weights.size] = weights # not exactly 1 because of masked arrays  # noqa: E501
                 dud_weights[weights.size:] = 0
                 dud_args = tuple(dud_arrays) + rest
                 kwargs[weight_arg] = dud_weights
@@ -351,7 +358,9 @@ def _weight_checked(fn, n_args=2, default_axis=None, key=lambda x: x, weight_arg
 
             # WEIGHT CHECK 3: RANDOM SPLITTING
             if split_test and split_per > 0:
-                split_arrays, split_weights = _rand_split(arrays, weights, axis, split_per=split_per, seed=seed)
+                split = _rand_split(arrays, weights, axis,
+                                    split_per=split_per, seed=seed)
+                split_arrays, split_weights = split
                 split_args = tuple(split_arrays) + rest
                 kwargs[weight_arg] = split_weights
                 _rough_check(result, fn(*split_args, **kwargs), key=key)
@@ -359,15 +368,18 @@ def _weight_checked(fn, n_args=2, default_axis=None, key=lambda x: x, weight_arg
             # when some combination of arguments makes weighting impossible,
             #  this is the desired response
             if not silent:
-                warnings.warn(f"{fn.__name__} NotImplemented weights: {e}")
+                warnings.warn(f"{fn.__name__} NotImplemented weights: {e}",
+                              stacklevel=3)
         return result
     return wrapped
 
 
 wcdist = _weight_checked(cdist, default_axis=1, squeeze=False)
-wcdist_no_const = _weight_checked(cdist, default_axis=1, squeeze=False, const_test=False)
+wcdist_no_const = _weight_checked(cdist, default_axis=1,
+                                  squeeze=False, const_test=False)
 wpdist = _weight_checked(pdist, default_axis=1, squeeze=False, n_args=1)
-wpdist_no_const = _weight_checked(pdist, default_axis=1, squeeze=False, const_test=False, n_args=1)
+wpdist_no_const = _weight_checked(pdist, default_axis=1, squeeze=False,
+                                  const_test=False, n_args=1)
 wrogerstanimoto = _weight_checked(rogerstanimoto)
 wmatching = whamming = _weight_checked(hamming, dud_test=False)
 wyule = _weight_checked(yule)
@@ -393,8 +405,8 @@ class TestCdist:
         self.rnd_eo_names = ['random-float32-data', 'random-int-data',
                              'random-uint-data', 'random-double-data',
                              'random-bool-data']
-        self.valid_upcasts = {'bool': [np.uint, np.int_, np.float32, np.float64],
-                              'uint': [np.int_, np.float32, np.float64],
+        self.valid_upcasts = {'bool': [np_ulong, np_long, np.float32, np.float64],
+                              'uint': [np_long, np.float32, np.float64],
                               'int': [np.float32, np.float64],
                               'float32': [np.float64]}
 
@@ -688,8 +700,8 @@ class TestPdist:
         self.rnd_eo_names = ['random-float32-data', 'random-int-data',
                              'random-uint-data', 'random-double-data',
                              'random-bool-data']
-        self.valid_upcasts = {'bool': [np.uint, np.int_, np.float32, np.float64],
-                              'uint': [np.int_, np.float32, np.float64],
+        self.valid_upcasts = {'bool': [np_ulong, np_long, np.float32, np.float64],
+                              'uint': [np_long, np.float32, np.float64],
                               'int': [np.float32, np.float64],
                               'float32': [np.float64]}
 
@@ -1807,7 +1819,7 @@ class TestIsValidDM:
     def test_is_valid_dm_improper_shape_1D_E(self):
         D = np.zeros((5,), dtype=np.float64)
         with pytest.raises(ValueError):
-            is_valid_dm_throw((D))
+            is_valid_dm_throw(D)
 
     def test_is_valid_dm_improper_shape_1D_F(self):
         D = np.zeros((5,), dtype=np.float64)
@@ -1816,7 +1828,7 @@ class TestIsValidDM:
     def test_is_valid_dm_improper_shape_3D_E(self):
         D = np.zeros((3, 3, 3), dtype=np.float64)
         with pytest.raises(ValueError):
-            is_valid_dm_throw((D))
+            is_valid_dm_throw(D)
 
     def test_is_valid_dm_improper_shape_3D_F(self):
         D = np.zeros((3, 3, 3), dtype=np.float64)
@@ -1828,7 +1840,7 @@ class TestIsValidDM:
         for i in range(0, 5):
             D[i, i] = 2.0
         with pytest.raises(ValueError):
-            is_valid_dm_throw((D))
+            is_valid_dm_throw(D)
 
     def test_is_valid_dm_nonzero_diagonal_F(self):
         y = np.random.rand(10)
@@ -1842,7 +1854,7 @@ class TestIsValidDM:
         D = squareform(y)
         D[1, 3] = D[3, 1] + 1
         with pytest.raises(ValueError):
-            is_valid_dm_throw((D))
+            is_valid_dm_throw(D)
 
     def test_is_valid_dm_asymmetric_F(self):
         y = np.random.rand(10)
@@ -1887,7 +1899,7 @@ class TestIsValidY:
     def test_is_valid_y_improper_shape_2D_E(self):
         y = np.zeros((3, 3,), dtype=np.float64)
         with pytest.raises(ValueError):
-            is_valid_y_throw((y))
+            is_valid_y_throw(y)
 
     def test_is_valid_y_improper_shape_2D_F(self):
         y = np.zeros((3, 3,), dtype=np.float64)
@@ -1896,7 +1908,7 @@ class TestIsValidY:
     def test_is_valid_y_improper_shape_3D_E(self):
         y = np.zeros((3, 3, 3), dtype=np.float64)
         with pytest.raises(ValueError):
-            is_valid_y_throw((y))
+            is_valid_y_throw(y)
 
     def test_is_valid_y_improper_shape_3D_F(self):
         y = np.zeros((3, 3, 3), dtype=np.float64)
@@ -2240,3 +2252,11 @@ def test_gh_17703():
     actual = cdist(np.atleast_2d(arr_1),
                    np.atleast_2d(arr_2), metric='dice')
     assert_allclose(actual, expected)
+
+
+def test_immutable_input(metric):
+    if metric in ("jensenshannon", "mahalanobis", "seuclidean"):
+        pytest.skip("not applicable")
+    x = np.arange(10, dtype=np.float64)
+    x.setflags(write=False)
+    getattr(scipy.spatial.distance, metric)(x, x, w=x)

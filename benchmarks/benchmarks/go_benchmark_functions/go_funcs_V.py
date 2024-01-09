@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from numpy import sum, cos, sin, log
 from .go_benchmark import Benchmark
 

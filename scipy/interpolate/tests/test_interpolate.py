@@ -566,8 +566,8 @@ class TestInterp1D:
         raises_bounds_error([0.0, 5.0, 9.0])
 
     def _bounds_check_int_nan_fill(self, kind='linear'):
-        x = np.arange(10).astype(np.int_)
-        y = np.arange(10).astype(np.int_)
+        x = np.arange(10).astype(int)
+        y = np.arange(10).astype(int)
         c = interp1d(x, y, kind=kind, fill_value=np.nan, bounds_error=False)
         yi = c(x - 1)
         assert_(np.isnan(yi[0]))
@@ -932,6 +932,23 @@ class TestAkima1DInterpolator:
             3.])
         assert_allclose(ak(xi), yi)
 
+    def test_eval_mod(self):
+        # Reference values generated with the following MATLAB code:
+        # format longG
+        # x = 0:10; y = [0. 2. 1. 3. 2. 6. 5.5 5.5 2.7 5.1 3.];
+        # xi = [0. 0.5 1. 1.5 2.5 3.5 4.5 5.1 6.5 7.2 8.6 9.9 10.];
+        # makima(x, y, xi)
+        x = np.arange(0., 11.)
+        y = np.array([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
+        ak = Akima1DInterpolator(x, y, method="makima")
+        xi = np.array([0., 0.5, 1., 1.5, 2.5, 3.5, 4.5, 5.1, 6.5, 7.2,
+                       8.6, 9.9, 10.])
+        yi = np.array([
+            0.0, 1.34471153846154, 2.0, 1.44375, 1.94375, 2.51939102564103,
+            4.10366931918656, 5.98501550899192, 5.51756330960439, 5.1757231914014,
+            4.12326636931311, 3.32931513157895, 3.0])
+        assert_allclose(ak(xi), yi)
+
     def test_eval_2d(self):
         x = np.arange(0., 11.)
         y = np.array([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
@@ -990,6 +1007,24 @@ class TestAkima1DInterpolator:
         match = "Extending a 1-D Akima interpolator is not yet implemented"
         with pytest.raises(NotImplementedError, match=match):
             ak.extend(None, None)
+
+    def test_mod_invalid_method(self):
+        x = np.arange(0., 11.)
+        y = np.array([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
+        match = "`method`=invalid is unsupported."
+        with pytest.raises(NotImplementedError, match=match):
+            Akima1DInterpolator(x, y, method="invalid")  # type: ignore
+
+    def test_complex(self):
+        # Complex-valued data deprecated
+        x = np.arange(0., 11.)
+        y = np.array([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
+        y = y - 2j*y
+        # actually raises ComplexWarning, which subclasses RuntimeWarning, see
+        # https://github.com/numpy/numpy/blob/main/numpy/exceptions.py
+        msg = "Passing an array with a complex.*|Casting complex values to real.*"
+        with pytest.warns((RuntimeWarning, DeprecationWarning), match=msg):
+            Akima1DInterpolator(x, y)
 
 
 class TestPPolyCommon:

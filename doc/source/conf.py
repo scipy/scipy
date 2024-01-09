@@ -18,8 +18,8 @@ from scipy._lib._util import _rng_html_rewrite
 # Workaround for sphinx-doc/sphinx#6573
 # ua._Function should not be treated as an attribute
 import scipy._lib.uarray as ua
-from scipy.stats._distn_infrastructure import rv_generic  # noqa: E402
-from scipy.stats._multivariate import multi_rv_generic  # noqa: E402
+from scipy.stats._distn_infrastructure import rv_generic
+from scipy.stats._multivariate import multi_rv_generic
 
 
 old_isdesc = inspect.isdescriptor
@@ -38,7 +38,7 @@ os.environ['_SCIPY_BUILDING_DOC'] = 'True'
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
-import numpydoc.docscrape as np_docscrape  # noqa:E402
+import numpydoc.docscrape as np_docscrape  # noqa: E402
 
 extensions = [
     'sphinx.ext.autodoc',
@@ -212,7 +212,7 @@ html_theme_options = {
 if 'dev' in version:
     html_theme_options["switcher"]["version_match"] = "development"
 
-if 'versionwarning' in tags:  # noqa
+if 'versionwarning' in tags:  # noqa: F821
     # Specific to docs.scipy.org deployment.
     # See https://github.com/scipy/docs.scipy.org/blob/main/_static/versionwarning.js_t
     src = ('var script = document.createElement("script");\n'
@@ -322,18 +322,23 @@ coverage_ignore_c_items = {}
 plot_pre_code = """
 import warnings
 for key in (
-        'lsim2 is deprecated',  # Deprecation of scipy.signal.lsim2
-        'impulse2 is deprecated',  # Deprecation of scipy.signal.impulse2
-        'step2 is deprecated',  # Deprecation of scipy.signal.step2
         'interp2d` is deprecated',  # Deprecation of scipy.interpolate.interp2d
         'scipy.misc',  # scipy.misc deprecated in v1.10.0; use scipy.datasets
         'kurtosistest only valid',  # intentionally "bad" excample in docstring
+        'scipy.signal.daub is deprecated',
+        'scipy.signal.qmf is deprecated',
+        'scipy.signal.cascade is deprecated',
+        'scipy.signal.morlet is deprecated',
+        'scipy.signal.morlet2 is deprecated',
+        'scipy.signal.ricker is deprecated',
+        'scipy.signal.cwt is deprecated',
         ):
     warnings.filterwarnings(action='ignore', message='.*' + key + '.*')
 
 import numpy as np
 np.random.seed(123)
 """
+
 plot_include_source = True
 plot_formats = [('png', 96)]
 plot_html_show_formats = False

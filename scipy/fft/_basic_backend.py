@@ -1,4 +1,6 @@
-from scipy._lib._array_api import array_namespace, is_numpy, xp_unsupported_param_msg
+from scipy._lib._array_api import (
+    array_namespace, is_numpy, xp_unsupported_param_msg, is_complex
+)
 from . import _pocketfft
 import numpy as np
 
@@ -104,22 +106,12 @@ def ifftn(x, s=None, axes=None, norm=None,
 
 def fft2(x, s=None, axes=(-2, -1), norm=None,
          overwrite_x=False, workers=None, *, plan=None):
-    xp = array_namespace(x)
-    x = np.asarray(x)
-    y = _pocketfft.fft2(x, s=s, axes=axes, norm=norm,
-                        overwrite_x=overwrite_x,
-                        workers=workers, plan=plan)
-    return xp.asarray(y)
+    return fftn(x, s, axes, norm, overwrite_x, workers, plan=plan)
 
 
 def ifft2(x, s=None, axes=(-2, -1), norm=None,
           overwrite_x=False, workers=None, *, plan=None):
-    xp = array_namespace(x)
-    x = np.asarray(x)
-    y = _pocketfft.ifft2(x, s=s, axes=axes, norm=norm,
-                         overwrite_x=overwrite_x,
-                         workers=workers, plan=plan)
-    return xp.asarray(y)
+    return ifftn(x, s, axes, norm, overwrite_x, workers, plan=plan)
 
 
 def rfftn(x, s=None, axes=None, norm=None,
@@ -130,12 +122,7 @@ def rfftn(x, s=None, axes=None, norm=None,
 
 def rfft2(x, s=None, axes=(-2, -1), norm=None,
          overwrite_x=False, workers=None, *, plan=None):
-    xp = array_namespace(x)
-    x = np.asarray(x)
-    y = _pocketfft.rfft2(x, s=s, axes=axes, norm=norm,
-                         overwrite_x=overwrite_x,
-                         workers=workers, plan=plan)
-    return xp.asarray(y)
+    return rfftn(x, s, axes, norm, overwrite_x, workers, plan=plan)
 
 
 def irfftn(x, s=None, axes=None, norm=None,
@@ -146,49 +133,44 @@ def irfftn(x, s=None, axes=None, norm=None,
 
 def irfft2(x, s=None, axes=(-2, -1), norm=None,
            overwrite_x=False, workers=None, *, plan=None):
-    xp = array_namespace(x)
-    x = np.asarray(x)
-    y = _pocketfft.irfft2(x, s=s, axes=axes, norm=norm,
-                          overwrite_x=overwrite_x,
-                          workers=workers, plan=plan)
-    return xp.asarray(y)
+    return irfftn(x, s, axes, norm, overwrite_x, workers, plan=plan)
+
+
+def _swap_direction(norm):
+    if norm in (None, 'backward'):
+        norm = 'forward'
+    elif norm == 'forward':
+        norm = 'backward'
+    elif norm != 'ortho':
+        raise ValueError('Invalid norm value %s; should be "backward", '
+                         '"ortho", or "forward".' % norm)
+    return norm
 
 
 def hfftn(x, s=None, axes=None, norm=None,
           overwrite_x=False, workers=None, *, plan=None):
     xp = array_namespace(x)
-    x = np.asarray(x)
-    y = _pocketfft.hfftn(x, s=s, axes=axes, norm=norm,
-                         overwrite_x=overwrite_x,
-                         workers=workers, plan=plan)
-    return xp.asarray(y)
+    if is_numpy(xp):
+        return _pocketfft.hfftn(x, s, axes, norm, overwrite_x, workers, plan=plan)
+    if is_complex(x, xp):
+        x = xp.conj(x)
+    return irfftn(x, s, axes, _swap_direction(norm),
+                  overwrite_x, workers, plan=plan)
 
 
 def hfft2(x, s=None, axes=(-2, -1), norm=None,
           overwrite_x=False, workers=None, *, plan=None):
-    xp = array_namespace(x)
-    x = np.asarray(x)
-    y = _pocketfft.hfft2(x, s=s, axes=axes, norm=norm,
-                         overwrite_x=overwrite_x,
-                         workers=workers, plan=plan)
-    return xp.asarray(y)
+    return hfftn(x, s, axes, norm, overwrite_x, workers, plan=plan)
 
 
 def ihfftn(x, s=None, axes=None, norm=None,
            overwrite_x=False, workers=None, *, plan=None):
     xp = array_namespace(x)
-    x = np.asarray(x)
-    y = _pocketfft.ihfftn(x, s=s, axes=axes, norm=norm,
-                          overwrite_x=overwrite_x,
-                          workers=workers, plan=plan)
-    return xp.asarray(y)
-
+    if is_numpy(xp):
+        return _pocketfft.ihfftn(x, s, axes, norm, overwrite_x, workers, plan=plan)
+    return xp.conj(rfftn(x, s, axes, _swap_direction(norm),
+                         overwrite_x, workers, plan=plan))
 
 def ihfft2(x, s=None, axes=(-2, -1), norm=None,
            overwrite_x=False, workers=None, *, plan=None):
-    xp = array_namespace(x)
-    x = np.asarray(x)
-    y = _pocketfft.ihfft2(x, s=s, axes=axes, norm=norm,
-                          overwrite_x=overwrite_x,
-                          workers=workers, plan=plan)
-    return xp.asarray(y)
+    return ihfftn(x, s, axes, norm, overwrite_x, workers, plan=plan)
