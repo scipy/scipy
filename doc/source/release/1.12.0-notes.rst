@@ -315,7 +315,7 @@ Authors
 
 * Name (commits)
 * endolith (1)
-* h-vetinari (29)
+* h-vetinari (32)
 * Tom Adamczewski (3) +
 * Anudeep Adiraju (1) +
 * akeemlh (1)
@@ -342,7 +342,7 @@ Authors
 * Colin Carroll (1) +
 * Aadya Chinubhai (1) +
 * Luca Citi (1)
-* Lucas Colley (140) +
+* Lucas Colley (141) +
 * com3dian (1) +
 * Anirudh Dagar (4)
 * Danni (1) +
@@ -415,7 +415,7 @@ Authors
 * Roberto Pastor Muela (3) +
 * Bijay Nayak (1) +
 * Andrew Nelson (105)
-* Praveer Nidamaluri (2) +
+* Praveer Nidamaluri (3) +
 * Lysandros Nikolaou (2)
 * Dimitri Papadopoulos Orfanos (7)
 * Pablo Rodríguez Pérez (1) +
@@ -430,7 +430,7 @@ Authors
 * Bharat Raghunathan (1)
 * Chris Rapson (1) +
 * Matteo Raso (4)
-* Tyler Reddy (180)
+* Tyler Reddy (191)
 * Martin Reinecke (1)
 * Tilo Reneau-Cardoso (1) +
 * resting-dove (2) +
@@ -442,7 +442,7 @@ Authors
 * Masahiro Sakai (2) +
 * Omar Salman (14)
 * Andrej Savikin (1) +
-* Daniel Schmitz (52)
+* Daniel Schmitz (54)
 * Dan Schult (19)
 * Scott Shambaugh (9)
 * Sheila-nk (2) +
@@ -494,6 +494,7 @@ Issues closed for 1.12.0
 * `#5022 <https://github.com/scipy/scipy/issues/5022>`__: bicg returns last iterate, not the smallest-residue vector
 * `#6198 <https://github.com/scipy/scipy/issues/6198>`__: callback for Krylov methods
 * `#7241 <https://github.com/scipy/scipy/issues/7241>`__: ENH: Implement Chandrupatla's algorithm for root finding (simpler/faster...
+* `#8792 <https://github.com/scipy/scipy/issues/8792>`__: Newton-CG throws error when Hessian is a \`scipy.sparse\` class
 * `#9527 <https://github.com/scipy/scipy/issues/9527>`__: Anderson-Darling ksamples can not estimate p-values beyond given...
 * `#11516 <https://github.com/scipy/scipy/issues/11516>`__: Recommend ccache for benchmarks in contributor documentation
 * `#12017 <https://github.com/scipy/scipy/issues/12017>`__: Expose FACTOR parameter instead of using magic number in scipy.optimize.nnls
@@ -615,6 +616,9 @@ Issues closed for 1.12.0
 * `#19620 <https://github.com/scipy/scipy/issues/19620>`__: _lib: Test error in test_warning_calls_filters because of a Python...
 * `#19636 <https://github.com/scipy/scipy/issues/19636>`__: DOC: issue in documentation for the callback argument in scipy.optimize.minimize
 * `#19640 <https://github.com/scipy/scipy/issues/19640>`__: CI, MAINT: pre-release job failures with scipy-openblas32
+* `#19747 <https://github.com/scipy/scipy/issues/19747>`__: BUG: Invalid \`IndexError\` from \`scipy.stats.nbinom.logcdf\`
+* `#19795 <https://github.com/scipy/scipy/issues/19795>`__: MAINT: need stable Pythran release for SciPy 1.12.0 RC2
+* `#19804 <https://github.com/scipy/scipy/issues/19804>`__: MAINT/TST: Warnings failing test suite with \`pytest 8\`
 
 ************************
 Pull requests for 1.12.0
@@ -1070,7 +1074,13 @@ Pull requests for 1.12.0
 * `#19691 <https://github.com/scipy/scipy/pull/19691>`__: BUG: fix negative overflow in stats.boxcox_normmax
 * `#19693 <https://github.com/scipy/scipy/pull/19693>`__: BUG: Prevent mutation of \`w\` parameter in \`spatial.distance.\*\`
 * `#19702 <https://github.com/scipy/scipy/pull/19702>`__: DEP: Adopt \`\*tol\` deprecations also for \`gcrotmk/lgmres/minres/tfqmr\`
+* `#19709 <https://github.com/scipy/scipy/pull/19709>`__: MAINT: Cumulative simpson follow-up comments
 * `#19735 <https://github.com/scipy/scipy/pull/19735>`__: DOC: update release notes with all deprecations for 1.12 release
 * `#19748 <https://github.com/scipy/scipy/pull/19748>`__: TST: skip RGI(..., method="pchip" for complex values)
 * `#19751 <https://github.com/scipy/scipy/pull/19751>`__: BUG: Make FMM classes \`py::module_local\` (fix for 1.12RC)
 * `#19761 <https://github.com/scipy/scipy/pull/19761>`__: MAINT: Avoid use of aligned_alloc in pocketfft on windows
+* `#19779 <https://github.com/scipy/scipy/pull/19779>`__: BUG: Fix \`nbinom.logcdf\` for invalid input
+* `#19785 <https://github.com/scipy/scipy/pull/19785>`__: BUG: support sparse Hessian in \`Newton-CG\`
+* `#19800 <https://github.com/scipy/scipy/pull/19800>`__: TST: loosen tolerances for tests that fail otherwise on windows+MKL
+* `#19806 <https://github.com/scipy/scipy/pull/19806>`__: TST: fix compatibility with pytest 8
+* `#19830 <https://github.com/scipy/scipy/pull/19830>`__: REL: bump copyright to 2024
